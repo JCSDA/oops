@@ -17,7 +17,6 @@
 #include "lorenz95/GomL95.h"
 #include "lorenz95/IncrementL95.h"
 #include "lorenz95/LocsL95.h"
-#include "lorenz95/LocalizationMatrixL95.h"
 #include "lorenz95/ModelBias.h"
 #include "lorenz95/ModelBiasCorrection.h"
 #include "lorenz95/ModelBiasCovariance.h"
@@ -35,6 +34,7 @@ namespace lorenz95 {
 
 struct L95Traits {
   static std::string name() {return "Lorenz 95";}
+  static std::string nameCovar() {return "L95Error";}  // Won't work if more than one
 
   typedef lorenz95::Resolution             Geometry;
   typedef lorenz95::NoVariables            Variables;
@@ -57,8 +57,6 @@ struct L95Traits {
 
   typedef lorenz95::GomL95                 GeoVaLs;
   typedef lorenz95::LocsL95                Locations;
-
-  typedef lorenz95::LocalizationMatrixL95  LocalizationMatrix;
 };
 
 }  // namespace lorenz95

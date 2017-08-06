@@ -8,15 +8,19 @@
  * does it submit to any jurisdiction.
  */
 
-#include "model/QgTraits.h"
-#include "model/instantiateQgLocalizationFactory.h"
-#include "oops/runs/Variational.h"
-#include "oops/runs/Run.h"
+#ifndef QG_MODEL_INSTANTIATEQGLOCALIZATIONFACTORY_H_
+#define QG_MODEL_INSTANTIATEQGLOCALIZATIONFACTORY_H_
 
-int main(int argc,  char ** argv) {
-  oops::Run run(argc, argv);
-  qg::instantiateQgLocalizationFactory();
-  oops::Variational<qg::QgTraits> var;
-  run.execute(var);
-  return 0;
-};
+#include "oops/interface/LocalizationBase.h"
+#include "model/LocalizationMatrixQG.h"
+#include "model/QgTraits.h"
+
+namespace qg {
+
+void instantiateQgLocalizationFactory() {
+  static oops::LocalizationMaker<qg::QgTraits, LocalizationMatrixQG> makerWSpeed_("QG");
+}
+
+}  // namespace qg
+
+#endif  // QG_MODEL_INSTANTIATEQGLOCALIZATIONFACTORY_H_

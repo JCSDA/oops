@@ -21,7 +21,7 @@
         "covariance": "hybrid",
         "ensemble_weight": "0.4",
         "static": {
-          "covariance": "static",
+          "covariance": "L95Error",
           "standard_deviation": "0.6",
           "length_scale": "1.0",
           "date": "2010-01-01T03:00:00Z"
@@ -32,6 +32,7 @@
           "members": "10",
           "variables": null,
           "localization": {
+            "localization": "L95",
             "length_scale": "1.0"
           },
           "state": [

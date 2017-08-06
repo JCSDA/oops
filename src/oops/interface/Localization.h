@@ -19,6 +19,7 @@
 #include "util/Logger.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
+#include "oops/interface/LocalizationBase.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 #include "util/Timer.h"
@@ -35,7 +36,7 @@ template <typename MODEL>
 class Localization : public util::Printable,
                      private boost::noncopyable,
                      private util::ObjectCounter<Localization<MODEL> > {
-  typedef typename MODEL::LocalizationMatrix Localization_;
+  typedef LocalizationBase<MODEL>    LocalizationBase_;
   typedef Geometry<MODEL>            Geometry_;
   typedef Increment<MODEL>           Increment_;
 
@@ -49,7 +50,7 @@ class Localization : public util::Printable,
 
  private:
   void print(std::ostream &) const;
-  boost::scoped_ptr<Localization_> local_;
+  boost::scoped_ptr<LocalizationBase_> local_;
 };
 
 // =============================================================================
@@ -60,7 +61,7 @@ Localization<MODEL>::Localization(const Geometry_ & resol,
 {
   Log::trace() << "Localization<MODEL>::Localization starting" << std::endl;
   util::Timer timer(classname(), "Localization");
-  local_.reset(new Localization_(resol.geometry(), conf));
+  local_.reset(LocalizationFactory<MODEL>::create(resol, conf));
   Log::trace() << "Localization<MODEL>::Localization done" << std::endl;
 }
 
@@ -80,7 +81,7 @@ template<typename MODEL>
 void Localization<MODEL>::multiply(Increment_ & dx) const {
   Log::trace() << "Localization<MODEL>::mult starting" << std::endl;
   util::Timer timer(classname(), "mult");
-  local_->multiply(dx.increment());
+  local_->multiply(dx);
   Log::trace() << "Localization<MODEL>::mult done" << std::endl;
 }
 

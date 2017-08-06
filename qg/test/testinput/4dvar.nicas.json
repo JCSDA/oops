@@ -1,4 +1,7 @@
 {
+  "logging": {
+    "categories": "Info, Test, Warning, Error, Trace, Stats"
+  },
   "resolution": {
     "nx": "40",
     "ny": "20",
@@ -22,69 +25,109 @@
         }]
       },
       "Covariance": {
-        "covariance": "QgError",
-        "standard_deviation": "0.8",
-        "vertical_correlation": "0.2",
-        "horizontal_length_scale": "1e6",
-        "maximum_condition_number": "1.0e6",
-        "date": "2010-01-01T00:00:00Z"
+        "covariance": "ensemble",
+        "members": "5",
+        "variables": {
+          "variables": "ci"
+        },
+        "date": "2010-01-01T00:00:00Z",
+        "localization": {
+          "localization": "NICAS"
+        },
+        "state": [
+          {
+            "filename": "Data/test.ens.1.2009-12-31T00:00:00Z.P1D",
+            "date": "2010-01-01T00:00:00Z"
+          },
+          {
+            "filename": "Data/test.ens.2.2009-12-31T00:00:00Z.P1D",
+            "date": "2010-01-01T00:00:00Z"
+          },
+          {
+            "filename": "Data/test.ens.3.2009-12-31T00:00:00Z.P1D",
+            "date": "2010-01-01T00:00:00Z"
+          },
+          {
+            "filename": "Data/test.ens.4.2009-12-31T00:00:00Z.P1D",
+            "date": "2010-01-01T00:00:00Z"
+          },
+          {
+            "filename": "Data/test.ens.5.2009-12-31T00:00:00Z.P1D",
+            "date": "2010-01-01T00:00:00Z"
+          }
+        ]
       }
     },
-    "Jo": {
-      "ObsTypes": [
-        {
+    "Jo": [
+      {
+        "Observation": {
           "ObsType": "Stream",
           "ObsData": {
             "ObsDataIn": {
               "obsfile": "Data/qg.truth4d.obt"
             },
             "ObsDataOut": {
-              "obsfile": "Data/qg.4drpcg.obt"
+              "obsfile": "Data/qg.4dvar.drplanczos.obt"
             },
             "obsvalue": "ObsVal"
-          },
-          "Covariance": {
-            "covariance": "diagonal",
-            "obserror": "ObsErr"
           }
         },
-        {
+        "Covariance": {
+          "covariance": "diagonal",
+          "obserror": "ObsErr"
+        }
+      },
+      {
+        "Observation": {
           "ObsType": "Wind",
           "ObsData": {
             "ObsDataIn": {
               "obsfile": "Data/qg.truth4d.obt"
             },
             "ObsDataOut": {
-              "obsfile": "Data/qg.4drpcg.obt"
+              "obsfile": "Data/qg.4dvar.drplanczos.obt"
             },
             "obsvalue": "ObsVal"
-          },
-          "Covariance": {
-            "covariance": "diagonal",
-            "obserror": "ObsErr"
           }
         },
-        {
+        "Covariance": {
+          "covariance": "diagonal",
+          "obserror": "ObsErr"
+        }
+      },
+      {
+        "Observation": {
           "ObsType": "WSpeed",
           "ObsData": {
             "ObsDataIn": {
               "obsfile": "Data/qg.truth4d.obt"
             },
             "ObsDataOut": {
-              "obsfile": "Data/qg.4drpcg.obt"
+              "obsfile": "Data/qg.4dvar.drplanczos.obt"
             },
             "obsvalue": "ObsVal"
-          },
-          "Covariance": {
-            "covariance": "diagonal",
-            "obserror": "ObsErr"
           }
+        },
+        "Covariance": {
+          "covariance": "diagonal",
+          "obserror": "ObsErr"
         }
-      ]
-    }
+      }
+    ],
+    "Jc": [{
+      "jcdfi": {
+        "type": "DolphChebyshev",
+        "variables": "x",
+        "cutoff": "PT3H",
+        "alpha": "10.0"
+      }
+    }]
   },
   "minimizer": {
-    "algorithm": "RPCG"
+    "algorithm": "DRPLanczos",
+    "preconditioner": {
+      "maxpairs": "3"
+    }
   },
   "output": {
     "first": "PT0S",
@@ -117,14 +160,6 @@
         "test": "on",
         "diagnostics": {
           "departures": "ombg"
-        },
-        "onlineDiagnostics": {
-          "tlmApproxTest": "false",
-          "tlmTaylorTest": "false",
-          "tlmPropagTest": "false",
-          "adjTlmTest": "false",
-          "adjObsTest": "false",
-          "onlineAdjTest": "true"
         }
       },
       {

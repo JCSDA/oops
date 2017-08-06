@@ -64,6 +64,7 @@ fft_f.cc
 fft_f.h
 fft_mod.F90
 generate_locations.f90
+instantiateQgLocalizationFactory.h
 invent_state.f90
 invert_pv.f90
 invert_pv_ad.f90

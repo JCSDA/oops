@@ -24,6 +24,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "oops/runs/Test.h"
+#include "oops/generic/instantiateLocalizationFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/Localization.h"
@@ -63,6 +64,7 @@ template <typename MODEL> class LocalizationFixture : private boost::noncopyable
     time_.reset(new util::DateTime(TestEnvironment::config().getString("TestDate")));
 
 //  Setup the localization matrix
+    oops::instantiateLocalizationFactory<MODEL>();
     const eckit::LocalConfiguration conf(TestEnvironment::config(), "Localization");
     local_.reset(new Localization_(*resol_, conf));
   }

@@ -35,6 +35,7 @@ namespace qg {
 
 struct QgTraits {
   static std::string name() {return "QG";}
+  static std::string nameCovar() {return "QgError";}
 
   typedef qg::GeometryQG            Geometry;
   typedef qg::VariablesQG           Variables;
