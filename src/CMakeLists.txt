@@ -160,6 +160,8 @@ oops/generic/UnstructuredGrid.h
 oops/generic/column_data_mod.F90
 oops/generic/instantiateLocalizationFactory.h
 oops/generic/instantiateObsErrorFactory.h
+oops/generic/nicas_f.h
+oops/generic/nicas_mod.F90
 oops/generic/unstructured_grid_f.h
 oops/generic/unstructured_grid_mod.F90
 
