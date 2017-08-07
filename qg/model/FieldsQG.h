@@ -28,6 +28,10 @@ namespace eckit {
   class Configuration;
 }
 
+namespace oops {
+  class UnstructuredGrid;
+}
+
 namespace qg {
   class LocationsQG;
   class GomQG;
@@ -67,6 +71,10 @@ class FieldsQG : public util::Printable,
   void changeResolution(const FieldsQG &);
   void add(const FieldsQG &);
   void diff(const FieldsQG &, const FieldsQG &);
+
+// Convert to/from unstructured grid
+  void convert_to(oops::UnstructuredGrid &) const;
+  void convert_from(const oops::UnstructuredGrid &);
 
 // Utilities
   void read(const eckit::Configuration &);

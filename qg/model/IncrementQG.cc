@@ -14,7 +14,6 @@
 #include <string>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Logger.h"
 #include "model/GomQG.h"
 #include "model/LocationsQG.h"
 #include "model/ModelBiasIncrement.h"
@@ -23,11 +22,12 @@
 #include "model/GeometryQG.h"
 #include "model/StateQG.h"
 #include "model/VariablesQG.h"
+#include "oops/generic/UnstructuredGrid.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
+#include "util/Logger.h"
 
 using oops::Log;
-
 
 namespace qg {
 
@@ -163,6 +163,16 @@ void IncrementQG::interpolateAD(const LocationsQG & locs, const GomQG & cols) {
   Log::debug() << "IncrementQG::interpolateAD fields in" << *fields_ << std::endl;
   fields_->interpolateAD(locs, cols);
   Log::debug() << "IncrementQG::interpolateAD fields out" << *fields_ << std::endl;
+}
+// -----------------------------------------------------------------------------
+/// Convert to/from unstructured grid
+// -----------------------------------------------------------------------------
+void IncrementQG::convert_to(oops::UnstructuredGrid & ug) const {
+  fields_->convert_to(ug);
+}
+// -----------------------------------------------------------------------------
+void IncrementQG::convert_from(const oops::UnstructuredGrid & ug) {
+  fields_->convert_from(ug);
 }
 // -----------------------------------------------------------------------------
 /// I/O and diagnostics

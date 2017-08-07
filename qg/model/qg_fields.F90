@@ -25,7 +25,10 @@ public :: qg_field, &
         & self_add, self_schur, self_sub, self_mul, axpy, &
         & dot_prod, add_incr, diff_incr, &
         & read_file, write_file, gpnorm, fldrms, &
-        & change_resol, interp_tl, interp_ad
+        & change_resol, interp_tl, interp_ad, convert_to_ug, convert_from_ug
+
+! ------------------------------------------------------------------------------
+
 public :: qg_field_registry
 
 ! ------------------------------------------------------------------------------
@@ -48,7 +51,7 @@ type :: qg_field
   real(kind=kind_real), pointer :: qbound(:,:)      !< PV on walls
   real(kind=kind_real), pointer :: q_north(:,:)     !< PV on northern wall
   real(kind=kind_real), pointer :: q_south(:,:)     !< PV on southern wall
-  character(len=1), allocatable :: fldnames(:) !< Variable identifiers
+  character(len=1), allocatable :: fldnames(:)      !< Variable identifiers
 end type qg_field
 
 #define LISTED_TYPE qg_field
@@ -875,6 +878,60 @@ k2=ii+2
 
 return
 end subroutine lin_weights
+
+! ------------------------------------------------------------------------------
+
+subroutine convert_to_ug(self, ug)
+use unstructured_grid_mod
+implicit none
+type(qg_field), intent(in) :: self
+type(unstructured_grid), intent(inout) :: ug
+real(kind=kind_real) :: xlat, xlon, dx, dy, zz(2)
+integer :: jx,jy
+
+zz(1) = 0.0
+zz(2) = 1.0
+call create_unstructured_grid(ug, 2, zz)
+
+dx=360.0_kind_real/real(self%nx,kind_real)
+dy=40.0_kind_real/real(self%ny,kind_real)
+
+do jy=1,self%ny
+  xlat = (jy-1) * dy
+  do jx=1,self%nx
+    xlon = (jx-1) * dx
+    call add_column(ug, xlat, xlon, 2, 1, 0)
+    ug%last%column%cols(1) = self%x(jx,jy,1)
+    ug%last%column%cols(2) = self%x(jx,jy,2)
+  enddo
+enddo
+
+end subroutine convert_to_ug
+
+! ------------------------------------------------------------------------------
+
+subroutine convert_from_ug(self, ug)
+use unstructured_grid_mod
+implicit none
+type(qg_field), intent(inout) :: self
+type(unstructured_grid), intent(in) :: ug
+type(column_element), pointer :: current
+real(kind=kind_real) :: dx, dy
+integer :: jx,jy
+
+dx=360.0_kind_real/real(self%nx,kind_real)
+dy=40.0_kind_real/real(self%ny,kind_real)
+
+current => ug%head
+do while (associated(current))
+  jy = nint(current%column%lat / dy) + 1
+  jx = nint(current%column%lon / dx) + 1
+  self%x(jx,jy,1) = current%column%cols(1)
+  self%x(jx,jy,2) = current%column%cols(2)
+  current => current%next
+enddo
+
+end subroutine convert_from_ug
 
 ! ------------------------------------------------------------------------------
 

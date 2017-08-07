@@ -155,8 +155,13 @@ oops/base/instantiateCovarFactory.h
 
 oops/generic/LocalizationNICAS.h
 oops/generic/ObsErrorDiag.h
+oops/generic/UnstructuredGrid.cc
+oops/generic/UnstructuredGrid.h
+oops/generic/column_data_mod.F90
 oops/generic/instantiateLocalizationFactory.h
 oops/generic/instantiateObsErrorFactory.h
+oops/generic/unstructured_grid_f.h
+oops/generic/unstructured_grid_mod.F90
 
 oops/interface/ErrorCovariance.h
 oops/interface/Geometry.h

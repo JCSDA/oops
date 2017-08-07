@@ -28,6 +28,10 @@ namespace eckit {
   class Configuration;
 }
 
+namespace oops {
+  class UnstructuredGrid;
+}
+
 namespace lorenz95 {
   class GomL95;
   class LocsL95;
@@ -71,6 +75,10 @@ class IncrementL95 : public util::Printable,
 /// Interpolate to observation location
   void interpolateTL(const LocsL95 &, GomL95 &) const;
   void interpolateAD(const LocsL95 &, const GomL95 &);
+
+/// Convert to/from generic unstructured grid
+  void convert_to(oops::UnstructuredGrid &) const;
+  void convert_from(const oops::UnstructuredGrid &);
 
 // Utilities
   void read(const eckit::Configuration &);

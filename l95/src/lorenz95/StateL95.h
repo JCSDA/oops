@@ -26,6 +26,10 @@ namespace eckit {
   class Configuration;
 }
 
+namespace oops {
+  class UnstructuredGrid;
+}
+
 namespace lorenz95 {
   class GomL95;
   class IncrementL95;
@@ -60,6 +64,10 @@ class StateL95 : public util::Printable,
 
 /// Interactions with increments
   StateL95 & operator+=(const IncrementL95 &);
+
+/// Convert to/from generic unstructured grid
+  void convert_to(oops::UnstructuredGrid &) const;
+  void convert_from(const oops::UnstructuredGrid &);
 
 // Utilities
   const FieldL95 & getField() const {return fld_;}

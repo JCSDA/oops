@@ -30,6 +30,10 @@ namespace eckit {
   class Configuration;
 }
 
+namespace oops {
+  class UnstructuredGrid;
+}
+
 namespace qg {
   class GomQG;
   class LocationsQG;
@@ -84,6 +88,10 @@ class IncrementQG : public oops::GeneralizedDepartures,
   const util::DateTime & validTime() const {return fields_->time();}
   util::DateTime & validTime() {return fields_->time();}
   void updateTime(const util::Duration & dt) {fields_->time() += dt;}
+
+/// Convert to/from unstructured grid
+  void convert_to(oops::UnstructuredGrid &) const;
+  void convert_from(const oops::UnstructuredGrid &);
 
 /// Access to fields
   FieldsQG & fields() {return *fields_;}

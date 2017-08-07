@@ -16,6 +16,7 @@
 #include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/PostProcessorTL.h"
 #include "oops/base/PostProcessorAD.h"
+#include "oops/generic/UnstructuredGrid.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Locations.h"
@@ -91,6 +92,10 @@ class Increment : public oops::GeneralizedDepartures,
 
 /// Get geometry
   Geometry_ geometry() const;
+
+/// Convert to/from generic unstructured grid
+  void convert_to(UnstructuredGrid &) const;
+  void convert_from(const UnstructuredGrid &);
 
  private:
   void print(std::ostream &) const;
@@ -340,6 +345,26 @@ Geometry<MODEL> Increment<MODEL>::geometry() const {
   Geometry<MODEL> geom(increment_->geometry());
   Log::trace() << "Increment<MODEL>::geometry done" << std::endl;
   return geom;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::convert_to(UnstructuredGrid & ug) const {
+  Log::trace() << "Increment<MODEL>::convert_to starting" << std::endl;
+  util::Timer timer(classname(), "convert_to");
+  increment_->convert_to(ug);
+  Log::trace() << "Increment<MODEL>::convert_to done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::convert_from(const UnstructuredGrid & ug) {
+  Log::trace() << "Increment<MODEL>::convert_from starting" << std::endl;
+  util::Timer timer(classname(), "convert_from");
+  increment_->convert_from(ug);
+  Log::trace() << "Increment<MODEL>::convert_from done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

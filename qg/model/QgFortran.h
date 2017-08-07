@@ -110,6 +110,8 @@ extern "C" {
   void qg_field_interp_f90(const F90flds &, const F90locs &, const F90goms &);
   void qg_field_interp_tl_f90(const F90flds &, const F90locs &, const F90goms &);
   void qg_field_interp_ad_f90(const F90flds &, const F90locs &, const F90goms &);
+  void qg_field_convert_to_f90(const F90flds &, const int &);
+  void qg_field_convert_from_f90(const F90flds &, const int &);
 
   void qg_field_gpnorm_f90(const F90flds &, const int &, double &);
   void qg_field_sizes_f90(const F90flds &, int &, int &, int &, int &);

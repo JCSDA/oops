@@ -19,6 +19,8 @@
 #include "lorenz95/GomL95.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/Resolution.h"
+#include "oops/generic/UnstructuredGrid.h"
+#include "util/abor1_cpp.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
@@ -128,6 +130,14 @@ void FieldL95::interpAD(const LocsL95 & locs, const GomL95 & gom) {
     if (ii == resol_) ii = 0;
     x_[ii] += gom[gom.current()+jobs];
   }
+}
+// -----------------------------------------------------------------------------
+void FieldL95::convert_to(oops::UnstructuredGrid & ug) const {
+  ABORT("FieldL95 conversion to unstructured grid not implemented.");
+}
+// -----------------------------------------------------------------------------
+void FieldL95::convert_from(const oops::UnstructuredGrid & ug) {
+  ABORT("FieldL95 conversion from unstructured grid not implemented.");
 }
 // -----------------------------------------------------------------------------
 void FieldL95::read(std::ifstream & fin) {

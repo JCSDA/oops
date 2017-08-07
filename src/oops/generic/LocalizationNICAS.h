@@ -60,7 +60,14 @@ LocalizationNICAS<MODEL>::~LocalizationNICAS() {
 template<typename MODEL>
 void LocalizationNICAS<MODEL>::multiply(Increment_ & dx) const {
   Log::trace() << "LocalizationNICAS:multiply starting" << std::endl;
+
+  UnstructuredGrid incr;
+  dx.convert_to(incr);
+
   Log::info() << "LocalizationNICAS:multiply doing nothing" << std::endl;
+
+  dx.convert_from(incr);
+
   Log::trace() << "LocalizationNICAS:multiply done" << std::endl;
 }
 
