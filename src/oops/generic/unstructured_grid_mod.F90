@@ -37,7 +37,7 @@ end type unstructured_grid
 #define LISTED_TYPE unstructured_grid
 
 !> Linked list interface - defines registry_t type
-#include "linkedList_i.f"
+#include "util/linkedList_i.f"
 
 !> Global registry
 type(registry_t) :: unstructured_grid_registry
@@ -47,7 +47,7 @@ contains
 !-------------------------------------------------------------------------------
 
 !> Linked list implementation
-#include "linkedList_c.f"
+#include "util/linkedList_c.f"
 
 ! ------------------------------------------------------------------------------
 

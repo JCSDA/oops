@@ -29,7 +29,7 @@ end type qg_3d_covar_config
 #define LISTED_TYPE qg_3d_covar_config
 
 !> Linked list interface - defines registry_t type
-#include "linkedList_i.f"
+#include "util/linkedList_i.f"
 
 !> Global registry
 type(registry_t) :: qg_3d_cov_registry
@@ -38,7 +38,7 @@ type(registry_t) :: qg_3d_cov_registry
 contains
 ! ------------------------------------------------------------------------------
 !> Linked list implementation
-#include "linkedList_c.f"
+#include "util/linkedList_c.f"
 ! ------------------------------------------------------------------------------
 
 ! ------------------------------------------------------------------------------

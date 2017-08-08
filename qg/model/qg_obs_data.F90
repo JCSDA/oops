@@ -43,7 +43,7 @@ end type obs_data
 #define LISTED_TYPE obs_data
 
 !> Linked list interface - defines registry_t type
-#include "linkedList_i.f"
+#include "util/linkedList_i.f"
 
 !> Global registry
 type(registry_t) :: obs_data_registry
@@ -81,7 +81,7 @@ end interface obs_count
 contains
 ! ------------------------------------------------------------------------------
 !> Linked list implementation
-#include "linkedList_c.f"
+#include "util/linkedList_c.f"
 
 ! ------------------------------------------------------------------------------
 
