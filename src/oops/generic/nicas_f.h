@@ -15,7 +15,8 @@ namespace eckit {
 
 namespace oops {
 extern "C" {
-  void create_nicas_f90(int &, const eckit::Configuration * const *);
+  void create_nicas_f90(int &, const eckit::Configuration * const *,
+                        const int &, const double *, const double *, const int &, const double *, const int *);
   void delete_nicas_f90(const int &);
   void nicas_multiply_f90(const int &, const int &);
 }

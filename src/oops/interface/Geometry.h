@@ -13,6 +13,7 @@
 
 #include <ostream>
 #include <string>
+#include <vector>
 
 #include <boost/shared_ptr.hpp>
 
@@ -41,6 +42,12 @@ class Geometry : public util::Printable,
   Geometry(const Geometry &);
   explicit Geometry(boost::shared_ptr<const Geometry_>);
   ~Geometry();
+
+  std::vector<double> getLats() const;  // one value per point on the 2D horizontal grid
+  std::vector<double> getLons() const;  // one value per point on the 2D horizontal grid
+  std::vector<double> getLevs() const;  // vertical unit (one column)
+  std::vector<int> getMask(const int &) const;  // one value per point on the 2D horizontal grid
+                                                // for a given level (for ocean for example)
 
 /// Interfacing
   const Geometry_ & geometry() const {return *geom_;}
@@ -84,6 +91,43 @@ Geometry<MODEL>::~Geometry() {
   geom_.reset();
   Log::trace() << "Geometry<MODEL>::~Geometry done" << std::endl;
 }
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+std::vector<double> Geometry<MODEL>::getLats() const {
+  Log::trace() << "Geometry<MODEL>::getLats" << std::endl;
+  util::Timer timer(classname(), "getLats");
+  return geom_.getLats();
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+std::vector<double> Geometry<MODEL>::getLons() const {
+  Log::trace() << "Geometry<MODEL>::getLons" << std::endl;
+  util::Timer timer(classname(), "getLons");
+  return geom_.getLons();
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+std::vector<double> Geometry<MODEL>::getLevs() const {
+  Log::trace() << "Geometry<MODEL>::getLevs" << std::endl;
+  util::Timer timer(classname(), "getLevs");
+  return geom_.getLevs();
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+std::vector<int> Geometry<MODEL>::getMask(const int & ilev) const {
+  Log::trace() << "Geometry<MODEL>::getMask" << std::endl;
+  util::Timer timer(classname(), "getMask");
+  return geom_.getMask();
+}
+
 
 // -----------------------------------------------------------------------------
 
