@@ -1,11 +1,11 @@
 {
   "resolution": {
-    "nx": "40",
-    "ny": "20",
+    "nx": "160",
+    "ny": "80",
     "bc": "1"
   },
   "model": {
-    "tstep": "PT10M",
+    "tstep": "PT05M",
     "top_layer_depth": "6000.0",
     "bottom_layer_depth": "4000.0"
   },

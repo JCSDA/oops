@@ -43,9 +43,11 @@ class Geometry : public util::Printable,
   explicit Geometry(boost::shared_ptr<const Geometry_>);
   ~Geometry();
 
-  std::vector<double> getLats() const;  // one value per point on the 2D horizontal grid
-  std::vector<double> getLons() const;  // one value per point on the 2D horizontal grid
+  std::vector<int> getDims() const;  // grid dimensions (1 integer if unstructured; 2 if structured), should be consistent with the packing
+  std::vector<double> getLats() const;  // one value per point on the 2D horizontal grid (packed)
+  std::vector<double> getLons() const;  // one value per point on the 2D horizontal grid (packed)
   std::vector<double> getLevs() const;  // vertical unit (one column)
+  std::vector<double> getArea() const;  // area of each level (one column)
   std::vector<int> getMask(const int &) const;  // one value per point on the 2D horizontal grid
                                                 // for a given level (for ocean for example)
 
@@ -95,6 +97,15 @@ Geometry<MODEL>::~Geometry() {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
+std::vector<int> Geometry<MODEL>::getDims() const {
+  Log::trace() << "Geometry<MODEL>::getDims" << std::endl;
+  util::Timer timer(classname(), "getDims");
+  return geom_.getDims();
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
 std::vector<double> Geometry<MODEL>::getLats() const {
   Log::trace() << "Geometry<MODEL>::getLats" << std::endl;
   util::Timer timer(classname(), "getLats");
@@ -117,6 +128,15 @@ std::vector<double> Geometry<MODEL>::getLevs() const {
   Log::trace() << "Geometry<MODEL>::getLevs" << std::endl;
   util::Timer timer(classname(), "getLevs");
   return geom_.getLevs();
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+std::vector<double> Geometry<MODEL>::getArea() const {
+  Log::trace() << "Geometry<MODEL>::getArea" << std::endl;
+  util::Timer timer(classname(), "getAra");
+  return geom_.getArea();
 }
 
 // -----------------------------------------------------------------------------

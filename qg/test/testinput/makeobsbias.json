@@ -36,8 +36,7 @@
         "obs_density": "100",
         "nx": "40",
         "ny": "20",
-        "obs_error": "0.4",
-        "nval": "1"
+        "obs_error": "0.4"
       }
     },
     {
@@ -54,8 +53,7 @@
         "obs_density": "100",
         "nx": "40",
         "ny": "20",
-        "obs_error": "0.6",
-        "nval": "2"
+        "obs_error": "0.6"
       }
     },
     {
@@ -72,8 +70,7 @@
         "obs_density": "100",
         "nx": "40",
         "ny": "20",
-        "obs_error": "1.2",
-        "nval": "1"
+        "obs_error": "1.2"
       }
     }
   ]},

@@ -20,6 +20,10 @@ set( CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH} 
 set( ECBUILD_DEFAULT_BUILD_TYPE Release )
 set( ENABLE_OS_TESTS OFF CACHE BOOL "Disable OS tests" FORCE )
 set( ENABLE_LARGE_FILE_SUPPORT OFF CACHE BOOL "Disable testing of large file support" FORCE )
+set( ENABLE_MPI ON CACHE BOOL "Do compile with MPI" )
+set( FIND_OMP ON CACHE BOOL "Do compile with OpenMP" )
+set( HAVE_OMP ON ) # Why?
+set( NETCDF_F90 ON CACHE BOOL "Do compile with Fortran NetCDF" )
 
 include( ecbuild_system NO_POLICY_SCOPE )
 ecbuild_requires_macro_version( 1.6 )
@@ -69,11 +73,26 @@ if( NOT ( BUILD_SITE MATCHES "cc[abt].*" ) )  # Should depend on toolchain, not 
   include_directories( ${LAPACK_INCLUDE_DIR} )
 endif()
 
+# Xml2
+find_package( LibXml2 REQUIRED )
+include_directories( ${LIBXML2_INCLUDE_DIR} )
+
+# NetCDF
+find_package( NetCDF REQUIRED )
+include_directories( ${NETCDF_INCLUDE_DIR} )
+
+# ESMF
+find_package( ESMF REQUIRED )
+include_directories( ${ESMF_INCLUDE_DIR} )
+
+# OpenMP
+find_package( OpenMP REQUIRED )
+
 ################################################################################
 # Export package info
 ################################################################################
 
-list( APPEND OOPS_TPLS LAPACK )
+list( APPEND OOPS_TPLS LAPACK LibXml2 NetCDF ESMF OpenMP )
 set( OOPS_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/src
                        ${CMAKE_Fortran_MODULE_DIRECTORY} )
 set( OOPS_LIBRARIES oops )
@@ -108,6 +127,8 @@ add_subdirectory( src )
 add_subdirectory( l95 )
 add_subdirectory( qg )
 
+add_subdirectory( ModelX )
+
 ecbuild_dont_pack ( FILES .pydevproject .project .cproject oops.sublime-project )
 ecbuild_dont_pack ( FILES .settings tools l95/tools qg/scripts )
 
@@ -120,4 +141,3 @@ ecbuild_install_project( NAME oops )
 
 # print the summary of the configuration
 ecbuild_print_summary()
-
