@@ -1,6 +1,6 @@
 !----------------------------------------------------------------------
 ! Module: type_com
-!> Purpose: communication derived type
+!> Purpose: communications derived type
 !> <br>
 !> Author: Benjamin Menetrier
 !> <br>
@@ -10,30 +10,92 @@
 !----------------------------------------------------------------------
 module type_com
 
+use module_namelist, only: nam
 use netcdf
 use tools_missing, only: msi,msr
 use tools_nc, only: ncfloat,ncerr
+
 implicit none
 
 ! Communication derived type
 type comtype
    character(len=1024) :: prefix         !< Communication prefix
    integer :: nproc                      !< Number of tasks
+   integer :: nhalo                      !< Halo buffer size
+   integer :: nexcl                      !< Exclusive interior buffer size
    integer,allocatable :: jhalocounts(:) !< Halo counts
    integer,allocatable :: jexclcounts(:) !< Exclusive interior counts
    integer,allocatable :: jhalodispl(:)  !< Halo displacement
    integer,allocatable :: jexcldispl(:)  !< Exclusive interior displacement
-   integer :: nhalo                      !< Halo buffer size
-   integer :: nexcl                      !< Exclusive interior buffer size
    integer,allocatable :: halo(:)        !< Halo buffer
    integer,allocatable :: excl(:)        !< Exclusive interior buffer
 end type comtype
 
 private
 public :: comtype
-public :: com_read,com_write
+public :: com_dealloc,com_copy,com_read,com_write
 
 contains
+
+!----------------------------------------------------------------------
+! Subroutine: com_dealloc
+!> Purpose: communications object deallocation
+!----------------------------------------------------------------------
+subroutine com_dealloc(com)
+
+implicit none
+
+! Passed variables
+type(comtype),intent(inout) :: com !< Linear operator
+
+! Release memory
+if (allocated(com%jhalocounts)) deallocate(com%jhalocounts)
+if (allocated(com%jexclcounts)) deallocate(com%jexclcounts)
+if (allocated(com%jhalodispl)) deallocate(com%jhalodispl)
+if (allocated(com%jexcldispl)) deallocate(com%jexcldispl)
+if (allocated(com%halo)) deallocate(com%halo)
+if (allocated(com%excl)) deallocate(com%excl)
+
+end subroutine com_dealloc
+
+!----------------------------------------------------------------------
+! Subroutine: com_copy
+!> Purpose: communications object copyment
+!----------------------------------------------------------------------
+subroutine com_copy(com_in,com_out)
+
+implicit none
+
+! Passed variables
+type(comtype),intent(in) :: com_in     !< Input linear operator
+type(comtype),intent(inout) :: com_out !< Output linear operator
+
+! Copy attributes
+com_out%prefix = trim(com_in%prefix)
+com_out%nproc = com_in%nproc
+com_out%nhalo = com_in%nhalo
+com_out%nexcl = com_in%nexcl
+
+! Deallocation
+call com_dealloc(com_out)
+
+! Allocation
+allocate(com_out%jhalocounts(nam%nproc))
+allocate(com_out%jexclcounts(nam%nproc))
+allocate(com_out%jhalodispl(nam%nproc))
+allocate(com_out%jexcldispl(nam%nproc))
+allocate(com_out%halo(com_out%nhalo))
+allocate(com_out%excl(com_out%nexcl))
+
+! Copy data
+com_out%jhalocounts = com_in%jhalocounts
+com_out%jexclcounts = com_in%jexclcounts
+com_out%jhalodispl = com_in%jhalodispl
+com_out%jexcldispl = com_in%jexcldispl
+com_out%halo = com_in%halo
+com_out%excl = com_in%excl
+
+end subroutine com_copy
 
 !----------------------------------------------------------------------
 ! Subroutine: com_read
@@ -54,7 +116,7 @@ integer :: nproc_id,nhalo_id,nexcl_id,jhalocounts_id,jexclcounts_id,jhalodispl_i
 character(len=1024) :: subr = 'com_read'
 
 ! Copy prefix
-com%prefix = prefix
+com%prefix = trim(prefix)
 
 ! Get dimensions
 call ncerr(subr,nf90_inq_dimid(ncid,'nproc',nproc_id))

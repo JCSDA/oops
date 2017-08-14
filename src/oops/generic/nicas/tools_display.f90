@@ -13,6 +13,7 @@ module tools_display
 use iso_c_binding
 use tools_kinds, only: kind_real
 use type_mpl, only: mpl,mpl_abort
+
 implicit none
 
 ! Display colors

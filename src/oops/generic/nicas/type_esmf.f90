@@ -10,6 +10,7 @@
 !----------------------------------------------------------------------
 module type_esmf
 
+use iso_c_binding
 use esmf
 use netcdf
 use tools_const, only: pi,rad2deg
@@ -18,8 +19,9 @@ use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsi
 use tools_nc, only: ncerr
 use type_linop, only: linoptype,linop_alloc
+use type_ndata, only: ndatatype
 use type_randgen, only: rand_integer
-use type_sdata, only: sdatatype
+
 implicit none
 
 ! ESMF parameters
@@ -39,7 +41,7 @@ contains
 ! Subroutine: esmf_start
 !> Purpose: initialize esmf
 !----------------------------------------------------------------------
-subroutine esmf_start
+subroutine esmf_start() bind(c, name='esmf_start_f90')
 
 implicit none
 
@@ -65,7 +67,7 @@ end subroutine esmf_start
 ! Subroutine: esmf_end
 !> Purpose: finalize esmf
 !----------------------------------------------------------------------
-subroutine esmf_end
+subroutine esmf_end() bind(c, name='esmf_end_f90')
 
 implicit none
 
@@ -97,12 +99,12 @@ end subroutine esmf_check
 ! Subroutine: esmf_create_field_from_mesh
 !> Purpose: create an ESMF field with an appropriate mesh
 !----------------------------------------------------------------------
-subroutine esmf_create_field_from_mesh(sdata,n,lon,lat,meshmask,field)
+subroutine esmf_create_field_from_mesh(ndata,n,lon,lat,meshmask,field)
 
 implicit none
 
 ! Passed variables
-type(sdatatype),intent(in) :: sdata   !< Sampling data
+type(ndatatype),intent(in) :: ndata   !< Sampling data
 integer,intent(in) :: n               !< Number of nodes
 real(kind_real),intent(in) :: lon(n)  !< Points longitudes
 real(kind_real),intent(in) :: lat(n)  !< Points latitudes
@@ -126,7 +128,7 @@ do i=1,n
    order(i) = i
 end do
 do i=n,2,-1
-   call rand_integer(sdata%rng,1,n,j)
+   call rand_integer(ndata%rng,1,n,j)
    k = order(j)
    order(j) = order(i)
    order(i) = k
@@ -214,18 +216,18 @@ end subroutine esmf_create_field_from_mesh
 ! Subroutine: esmf_create_field_from_grid
 !> Purpose: create an ESMF field
 !----------------------------------------------------------------------
-subroutine esmf_create_field_from_grid(sdata)
+subroutine esmf_create_field_from_grid(ndata)
 
 implicit none
 
 ! Passed variables
-type(sdatatype),intent(inout) :: sdata !< Sampling data
+type(ndatatype),intent(inout) :: ndata !< Sampling data
 
 ! Local variables
-integer :: imask2d(sdata%nlon,sdata%nlat),ilon,ilat,info
-real(kind_real) :: lon2d(sdata%nlon,sdata%nlat)
-real(kind_real) :: lat2d(sdata%nlon,sdata%nlat)
-logical :: mask_unpack(sdata%nlon,sdata%nlat),lmask2d(sdata%nlon,sdata%nlat)
+integer :: imask2d(ndata%nlon,ndata%nlat),ilon,ilat,info
+real(kind_real) :: lon2d(ndata%nlon,ndata%nlat)
+real(kind_real) :: lat2d(ndata%nlon,ndata%nlat)
+logical :: mask_unpack(ndata%nlon,ndata%nlat),lmask2d(ndata%nlon,ndata%nlat)
 type(esmf_grid) :: grid
 type(esmf_array) :: array
 type(esmf_arrayspec) :: arrayspec
@@ -237,20 +239,20 @@ call msr(lon2d)
 call msr(lat2d)
 
 ! Unpack
-lmask2d = unpack(any(sdata%mask,dim=2),mask=mask_unpack,field=lmask2d)
-lon2d = unpack(sdata%lon,mask=mask_unpack,field=lon2d)
-lat2d = unpack(sdata%lat,mask=mask_unpack,field=lat2d)
+lmask2d = unpack(any(ndata%mask,dim=2),mask=mask_unpack,field=lmask2d)
+lon2d = unpack(ndata%lon,mask=mask_unpack,field=lon2d)
+lat2d = unpack(ndata%lat,mask=mask_unpack,field=lat2d)
 
 ! Logical to array
 imask2d = 0
-do ilon=1,sdata%nlon
-   do ilat=1,sdata%nlat
+do ilon=1,ndata%nlon
+   do ilat=1,ndata%nlat
       if (lmask2d(ilon,ilat)) imask2d(ilon,ilat) = 1
    end do
 end do
 
 ! Create grid
-grid = esmf_gridcreate1peridim(minindex=(/1,1/),maxindex=(/sdata%nlon,sdata%nlat/),regdecomp=(/1,1/), &
+grid = esmf_gridcreate1peridim(minindex=(/1,1/),maxindex=(/ndata%nlon,ndata%nlat/),regdecomp=(/1,1/), &
  & coordsys=esmf_coordsys_sph_rad,gridedgelwidth=(/0,0/),gridedgeuwidth=(/0,1/), &
  & indexflag=esmf_index_global,rc=info)
 call esmf_check(info)
@@ -286,11 +288,11 @@ call esmf_arrayspecset(arrayspec,2,esmffloat,rc=info)
 call esmf_check(info)
 
 ! Create field
-sdata%c0field = esmf_fieldcreate(grid,arrayspec,staggerloc=esmf_staggerloc_center,rc=info)
+ndata%c0field = esmf_fieldcreate(grid,arrayspec,staggerloc=esmf_staggerloc_center,rc=info)
 call esmf_check(info)
 
 ! Validate field
-call esmf_fieldvalidate(sdata%c0field,rc=info)
+call esmf_fieldvalidate(ndata%c0field,rc=info)
 call esmf_check(info)
 
 end subroutine esmf_create_field_from_grid
@@ -304,8 +306,8 @@ subroutine esmf_create_interp(srcfield,dstfield,regionalflag,interp)
 implicit none
 
 ! Passed variables
-type(esmf_field),intent(in)   :: srcField    !< Source field
-type(esmf_field),intent(inout)   :: dstField !< Destination field
+type(esmf_field),intent(in)   :: srcfield    !< Source field
+type(esmf_field),intent(inout)   :: dstfield !< Destination field
 logical,intent(in) :: regionalflag           !< Regional flag
 type(linoptype),intent(inout) :: interp      !< Interpolation
 

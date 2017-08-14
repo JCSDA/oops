@@ -11,6 +11,7 @@
 module type_fields
 
 use tools_kinds, only: kind_real
+
 implicit none
 
 ! Full field derived type
@@ -27,12 +28,9 @@ type alphatype
    real(kind_real),allocatable :: valc(:) !< Local subgrid variable data, halo C
 end type alphatype
 
-! Buffer derived type
-type buftype
-   real(kind_real),allocatable :: val(:) !< Buffer data
-end type buftype
-
 private
-public :: fldtype,alphatype,buftype
+public :: fldtype,alphatype
+
+contains
 
 end module type_fields

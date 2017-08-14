@@ -17,7 +17,7 @@ use module_namelist, only: nam,namcheck
 use tools_display, only: listing_setup
 use type_esmf, only: esmf_start,esmf_end
 use type_mpl, only: mpl
-use type_sdata, only: sdatatype
+use type_ndata, only: ndatatype,ndataloctype
 use fckit_log_module, only : log
 
 implicit none
@@ -29,7 +29,7 @@ public nicas, create_nicas, delete_nicas, nicas_multiply
 !>  Derived type containing the data
 
 type nicas
-  type(sdatatype) :: sdata
+  type(ndataloctype) :: ndataloc
 end type nicas
 
 ! ------------------------------------------------------------------------------
@@ -111,18 +111,21 @@ real(kind=kind_real), intent(in) :: lats(:), lons(:), levs(:), area(:)
 integer, intent(in) :: dims(:),mask(:)
 integer :: ndims,nc0,nlev
 character(len=4) :: myprocchar,nprocchar,nthreadchar
+type(ndatatype) :: ndata
 
 ! NICAS setup
 call log%info("NICAS setup")
 
-! Read and check namelist JSON
-call log%info("Read and check namelist JSON")
+! Read JSON
+call log%info("Read JSON")
 call nicas_read_conf(c_conf, self)
-call namcheck
 
 ! Setup display
 call log%info("Listing setup")
 call listing_setup(nam%colorlog)
+
+! Check namelist parameters
+call namcheck
 
 ! Write parallel setup
 write(nprocchar,'(i4)') mpl%nproc
@@ -135,10 +138,13 @@ call esmf_start
 
 ! Initialize coordinates
 call log%info("Initialize coordinates")
-call model_oops_coord(dims, lats, lons, levs, area, mask, self%sdata)
+call model_oops_coord(dims, lats, lons, levs, area, mask, ndata)
 
 ! Call driver
-call nicas_driver(self%sdata)
+call nicas_driver(ndata,self%ndataloc)
+
+! Close listing files
+if ((mpl%main.and..not.nam%colorlog).or..not.mpl%main) close(unit=mpl%unit)
 
 write(*,*) 'NICAS setup done'
 
@@ -169,7 +175,9 @@ nam%check_adjoints = integer_to_logical(config_get_int(c_conf,"check_adjoints"))
 nam%check_pos_def = integer_to_logical(config_get_int(c_conf,"check_pos_def"))
 nam%check_mpi = integer_to_logical(config_get_int(c_conf,"check_mpi"))
 nam%check_dirac = integer_to_logical(config_get_int(c_conf,"check_dirac"))
+nam%check_perf = integer_to_logical(config_get_int(c_conf,"check_perf"))
 nam%ndir = config_get_int(c_conf,"ndir")
+nam%dirlev = config_get_int(c_conf,"dirlev")
 do idir=1,nam%ndir
    write(idirchar,'(i3)') idir
    nam%dirlon(idir) = config_get_real(c_conf,"dirlon("//trim(adjustl(idirchar))//")")
@@ -224,12 +232,6 @@ subroutine delete_nicas(self)
 implicit none
 type(nicas), intent(inout) :: self
 
-! Close listing files
-if ((mpl%main.and..not.nam%colorlog).or..not.mpl%main) close(unit=mpl%unit)
-
-! Finalize ESMF
-call esmf_end
-
 end subroutine delete_nicas
 
 !-------------------------------------------------------------------------------
@@ -239,20 +241,39 @@ implicit none
 type(nicas), intent(in) :: self
 type(unstructured_grid), intent(inout) :: dx
 
-type(column_element), pointer :: current, prev
+!integer :: ncol
+!type(column_element), pointer :: current, prev
 
 ! Multiply with NICAS
 call log%info("NICAS multiply")
 
-!nvars = dx%head%nvars
-!nsurf = dx%head%nsurf
+! Count columns
+!current = dx%head
+!ncol = 0
+!do while (associated(current))
+!   ncol = ncol+1
+!   current => current%next
+!end do
+!write(*,*) "Number of columns:",ncol
+! Allocation
 
-current => dx%head
-do while (associated(current))
-  ! BLa
-!  current%column%cols
-!  current => current%next
-enddo
+
+! Loop over 3D variables
+!do ivars=1,dx%head%column%nvars
+!   do while (associated(current))
+      !
+!      current%column%cols
+
+      ! Next column
+!      current => current%next
+!   end do
+!enddo
+
+! Loop over 2D variables
+!do ivars=1,dx%head%column%nsurfs
+
+
+!end do
 
 end subroutine nicas_multiply
 

@@ -19,10 +19,11 @@ use tools_kinds,only: kind_real
 use tools_missing, only: msvali,msvalr,msi,msr,isnotmsr,isnotmsi
 use tools_nc, only: ncfloat,ncerr
 use type_ctree, only: ctreetype,create_ctree,find_nearest_neighbors,delete_ctree
-use type_linop, only: linoptype,linop_alloc,linop_dealloc,linop_reorder
+use type_linop, only: linoptype,linop_alloc,linop_dealloc,linop_copy,linop_reorder
 use type_mpl, only: mpl,mpl_bcast,mpl_recv,mpl_send
+use type_ndata, only: ndatatype
 use type_randgen, only: initialize_sampling,rand_integer
-use type_sdata, only: sdatatype
+
 implicit none
 
 real(kind_real),parameter :: S_inf = 1.0e-2  !< Minimum value for the convolution coefficients
@@ -37,14 +38,14 @@ contains
 ! Subroutine: compute_convol_network
 !> Purpose: compute convolution with a network approach
 !----------------------------------------------------------------------
-subroutine compute_convol_network(sdata,rh0,rv0)
+subroutine compute_convol_network(ndata,rh0,rv0)
 
 implicit none
 
 ! Passed variables
-type(sdatatype),intent(inout) :: sdata                 !< Sampling data
-real(kind_real),intent(in) :: rh0(sdata%nc0,sdata%nl0) !< Scaled horizontal support radius
-real(kind_real),intent(in) :: rv0(sdata%nc0,sdata%nl0) !< Scaled vertical support radius
+type(ndatatype),intent(inout) :: ndata                 !< Sampling data
+real(kind_real),intent(in) :: rh0(ndata%nc0,ndata%nl0) !< Scaled horizontal support radius
+real(kind_real),intent(in) :: rv0(ndata%nc0,ndata%nl0) !< Scaled vertical support radius
 
 ! Local variables
 integer :: n_s_max,progint,ithread,is,ic1,il1,ic0,il0,np,np_new,ip,jc0,jl0,kc0,kl0,jp,i,js
@@ -59,13 +60,13 @@ type(linoptype) :: c(mpl%nthread),ctmp(mpl%nthread)
 
 ! MPI splitting
 do iproc=1,mpl%nproc
-   is_s(iproc) = (iproc-1)*(sdata%ns/mpl%nproc+1)+1
-   is_e(iproc) = min(iproc*(sdata%ns/mpl%nproc+1),sdata%ns)
+   is_s(iproc) = (iproc-1)*(ndata%ns/mpl%nproc+1)+1
+   is_e(iproc) = min(iproc*(ndata%ns/mpl%nproc+1),ndata%ns)
    ns_loc(iproc) = is_e(iproc)-is_s(iproc)+1
 end do
 
 ! Allocation
-n_s_max = 100*nint(float(sdata%nc0*sdata%nl0)/float(mpl%nthread*mpl%nproc))
+n_s_max = 100*nint(float(ndata%nc0*ndata%nl0)/float(mpl%nthread*mpl%nproc))
 do ithread=1,mpl%nthread
    c(ithread)%n_s = n_s_max
    call linop_alloc(c(ithread))
@@ -82,16 +83,16 @@ do is_loc=1,ns_loc(mpl%myproc)
    ! Indices
    is = is_s(mpl%myproc)+is_loc-1
    ithread = omp_get_thread_num()+1
-   ic1 = sdata%is_to_ic1(is)
-   il1 = sdata%is_to_il1(is)
-   ic0 = sdata%ic1_to_ic0(ic1)
-   il0 = sdata%il1_to_il0(il1)
+   ic1 = ndata%is_to_ic1(is)
+   il1 = ndata%is_to_il1(is)
+   ic0 = ndata%ic1_to_ic0(ic1)
+   il0 = ndata%il1_to_il0(il1)
 
    ! Allocation
-   allocate(plist(sdata%nc0*sdata%nl0,2))
-   allocate(plist_new(sdata%nc0*sdata%nl0,2))
-   allocate(dist(sdata%nc0,sdata%nl0))
-   allocate(valid(sdata%nc0,sdata%nl0))
+   allocate(plist(ndata%nc0*ndata%nl0,2))
+   allocate(plist_new(ndata%nc0*ndata%nl0,2))
+   allocate(dist(ndata%nc0,ndata%nl0))
+   allocate(valid(ndata%nc0,ndata%nl0))
 
    ! Initialize the front
    np = 1
@@ -112,19 +113,19 @@ do is_loc=1,ns_loc(mpl%myproc)
          jl0 = plist(ip,2)
 
          ! Loop over neighbors
-         do i=1,sdata%grid_nnb(jc0)
-            kc0 = sdata%grid_inb(i,jc0)
-            do kl0=max(jl0-1,1),min(jl0+1,sdata%nl0)
-               if (sdata%mask(kc0,kl0)) then
-                  distnorm = sqrt(sdata%grid_dnb(i,jc0)/(0.5*(rh0(jc0,jl0)**2+rh0(kc0,kl0)**2)) &
-                           & +abs(sdata%vunit(jl0)-sdata%vunit(kl0))/(0.5*(rv0(jc0,jl0)**2+rv0(kc0,kl0)**2)))
+         do i=1,ndata%grid_nnb(jc0)
+            kc0 = ndata%grid_inb(i,jc0)
+            do kl0=max(jl0-1,1),min(jl0+1,ndata%nl0)
+               if (ndata%mask(kc0,kl0)) then
+                  distnorm = sqrt(ndata%grid_dnb(i,jc0)/(0.5*(rh0(jc0,jl0)**2+rh0(kc0,kl0)**2)) &
+                           & +abs(ndata%vunit(jl0)-ndata%vunit(kl0))/(0.5*(rv0(jc0,jl0)**2+rv0(kc0,kl0)**2)))
                   disttest = dist(jc0,jl0)+distnorm
                   if (disttest<1.0) then
                      ! Point is inside the support
                      if (disttest<dist(kc0,kl0)) then
                         ! Update distance
                         dist(kc0,kl0) = disttest
-                        valid(kc0,kl0) = isnotmsi(sdata%ic0il0_to_is(kc0,kl0))
+                        valid(kc0,kl0) = isnotmsi(ndata%ic0il0_to_is(kc0,kl0))
 
                         ! Check if the point should be added to the front (avoid duplicates)
                         add_to_front = .true.
@@ -154,64 +155,22 @@ do is_loc=1,ns_loc(mpl%myproc)
    end do
 
    ! Count convolution operations
-   do il0=1,sdata%nl0
-      do ic0=1,sdata%nc0
+   do il0=1,ndata%nl0
+      do ic0=1,ndata%nc0
          if (valid(ic0,il0)) then
-            js = sdata%ic0il0_to_is(ic0,il0)
+            js = ndata%ic0il0_to_is(ic0,il0)
 
+            ! Only half of the (symmetric) matrix coefficients should be stored
             if (is>js) then
-               ! Distance deformation
-               distnorm = dist(ic0,il0)+deform*sin(pi*dist(ic0,il0))
+               ! Normalized distance
+               distnorm = dist(ic0,il0)
 
-               ! Distance check bound
-               if (.not.(distnorm>0.0)) call msgerror('negative normalized distance')
+               if (distnorm<1.0) then
+                  ! Gaspari-Cohn (1999) function
+                  S_test = gc99(distnorm)
 
-               ! Square-root
-               if (nam%lsqrt) distnorm = distnorm*sqrt(2.0)
-
-               ! Gaspari-Cohn (1999) function
-               if (distnorm<tiny(1.0)) then
-                  S_test = 1.0
-               elseif (distnorm<0.5) then
-                  S_test = 1.0-8.0*distnorm**5+8.0*distnorm**4+5.0*distnorm**3-20.0/3.0*distnorm**2
-               else if (distnorm<1.0) then
-                  S_test = 8.0/3.0*distnorm**5-8.0*distnorm**4+5.0*distnorm**3 &
-                         & +20.0/3.0*distnorm**2-10.0*distnorm+4.0-1.0/(3.0*distnorm)
-               else
-                  S_test = 0.0
-               end if
-
-               ! Check convolution value
-               if (S_test>S_inf) then
-                  c_n_s(ithread) = c_n_s(ithread)+1
-                  if (c_n_s(ithread)>c(ithread)%n_s) then
-                     ! Allocation
-                     ctmp(ithread)%n_s = c(ithread)%n_s
-                     call linop_alloc(ctmp(ithread))
-
-                     ! Copy data
-                     ctmp(ithread)%row = c(ithread)%row
-                     ctmp(ithread)%col = c(ithread)%col
-                     ctmp(ithread)%S = c(ithread)%S
-
-                     ! Reallocate larger linear operation
-                     call linop_dealloc(c(ithread))
-                     c(ithread)%n_s = 2*ctmp(ithread)%n_s
-                     call linop_alloc(c(ithread))
-
-                     ! Copy data
-                     c(ithread)%row(1:ctmp(ithread)%n_s) = ctmp(ithread)%row
-                     c(ithread)%col(1:ctmp(ithread)%n_s) = ctmp(ithread)%col
-                     c(ithread)%S(1:ctmp(ithread)%n_s) = ctmp(ithread)%S
-
-                     ! Release memory
-                     call linop_dealloc(ctmp(ithread))
-                  end if
-
-                  ! New operation
-                  c(ithread)%row(c_n_s(ithread)) = is
-                  c(ithread)%col(c_n_s(ithread)) = js
-                  c(ithread)%S(c_n_s(ithread)) = S_test
+                  ! Check convolution value
+                  call check_convol(is,js,S_test,c_n_s(ithread),c(ithread))
                end if
             end if
          end if
@@ -232,10 +191,10 @@ end do
 write(mpl%unit,'(a)') '100%'
 
 ! Gather data
-sdata%c%prefix = 'c'
-sdata%c%n_src = sdata%ns
-sdata%c%n_dst = sdata%ns
-call convol_gather_data(c_n_s,c,sdata%c)
+ndata%c%prefix = 'c'
+ndata%c%n_src = ndata%ns
+ndata%c%n_dst = ndata%ns
+call convol_gather_data(c_n_s,c,ndata%c)
 
 ! Release memory
 do ithread=1,mpl%nthread
@@ -248,14 +207,14 @@ end subroutine compute_convol_network
 ! Subroutine: compute_convol_distance
 !> Purpose: compute convolution with a distance approach
 !----------------------------------------------------------------------
-subroutine compute_convol_distance(sdata,rhs,rvs)
+subroutine compute_convol_distance(ndata,rhs,rvs)
 
 implicit none
 
 ! Passed variables
-type(sdatatype),intent(inout) :: sdata             !< Sampling data
-real(kind_real),intent(in) :: rhs(sdata%ns)        !< Scaled horizontal support radius
-real(kind_real),intent(in) :: rvs(sdata%ns)        !< Scaled vertical support radius
+type(ndatatype),intent(inout) :: ndata             !< Sampling data
+real(kind_real),intent(in) :: rhs(ndata%ns)        !< Scaled horizontal support radius
+real(kind_real),intent(in) :: rvs(ndata%ns)        !< Scaled vertical support radius
 
 ! Local variables
 integer :: ms,n_s_max,progint,ithread,is,ic1,il1,il0,jc1,jl1,jl0,js,i
@@ -264,46 +223,46 @@ integer :: c_n_s(mpl%nthread)
 integer,allocatable :: mask_ctree(:),nn_index(:,:)
 real(kind_real) :: distnorm,S_test
 real(kind_real),allocatable :: nn_dist(:,:)
-logical :: submask(sdata%nc1,sdata%nl1)
+logical :: submask(ndata%nc1,ndata%nl1)
 logical,allocatable :: done(:)
 type(ctreetype) :: ctree
-type(linoptype) :: c(mpl%nthread),ctmp(mpl%nthread)
+type(linoptype) :: c(mpl%nthread)
 
 ! Define submask
 submask = .false.
-do is=1,sdata%ns
-   ic1 = sdata%is_to_ic1(is)
-   il1 = sdata%is_to_il1(is)
+do is=1,ndata%ns
+   ic1 = ndata%is_to_ic1(is)
+   il1 = ndata%is_to_il1(is)
    submask(ic1,il1) = .true.
 end do
 
 ! Compute cover tree
 write(mpl%unit,'(a10,a)') '','Compute cover tree'
-allocate(mask_ctree(sdata%nc1))
+allocate(mask_ctree(ndata%nc1))
 mask_ctree = 1
-ctree = create_ctree(sdata%nc1,dble(sdata%lon(sdata%ic1_to_ic0)),dble(sdata%lat(sdata%ic1_to_ic0)),mask_ctree)
+ctree = create_ctree(ndata%nc1,dble(ndata%lon(ndata%ic1_to_ic0)),dble(ndata%lat(ndata%ic1_to_ic0)),mask_ctree)
 deallocate(mask_ctree)
 
 ! Compute nearest neighbors
 write(mpl%unit,'(a10,a)') '','Compute nearest neighbors'
-ms = 10*min(floor(pi*nam%resol**2*(1.0-cos(minval(rhs)))/(sqrt(3.0)*minval(rhs)**2)),sdata%nc1)
-ms = min(ms,sdata%nc1)
-allocate(nn_index(ms,sdata%nc1))
-allocate(nn_dist(ms,sdata%nc1))
-do ic1=1,sdata%nc1
-   call find_nearest_neighbors(ctree,dble(sdata%lon(sdata%ic1_to_ic0(ic1))), &
- & dble(sdata%lat(sdata%ic1_to_ic0(ic1))),ms,nn_index(:,ic1),nn_dist(:,ic1))
+ms = 10*min(floor(pi*nam%resol**2*(1.0-cos(minval(rhs)))/(sqrt(3.0)*minval(rhs)**2)),ndata%nc1)
+ms = min(ms,ndata%nc1)
+allocate(nn_index(ms,ndata%nc1))
+allocate(nn_dist(ms,ndata%nc1))
+do ic1=1,ndata%nc1
+   call find_nearest_neighbors(ctree,dble(ndata%lon(ndata%ic1_to_ic0(ic1))), &
+ & dble(ndata%lat(ndata%ic1_to_ic0(ic1))),ms,nn_index(:,ic1),nn_dist(:,ic1))
 end do
 
 ! MPI splitting
 do iproc=1,mpl%nproc
-   is_s(iproc) = (iproc-1)*(sdata%ns/mpl%nproc+1)+1
-   is_e(iproc) = min(iproc*(sdata%ns/mpl%nproc+1),sdata%ns)
+   is_s(iproc) = (iproc-1)*(ndata%ns/mpl%nproc+1)+1
+   is_e(iproc) = min(iproc*(ndata%ns/mpl%nproc+1),ndata%ns)
    ns_loc(iproc) = is_e(iproc)-is_s(iproc)+1
 end do
 
 ! Allocation
-n_s_max = 100*nint(float(sdata%nc0*sdata%nl0)/float(mpl%nthread*mpl%nproc))
+n_s_max = 100*nint(float(ndata%nc0*ndata%nl0)/float(mpl%nthread*mpl%nproc))
 do ithread=1,mpl%nthread
    c(ithread)%n_s = n_s_max
    call linop_alloc(c(ithread))
@@ -319,72 +278,30 @@ do is_loc=1,ns_loc(mpl%myproc)
    ! Indices
    is = is_s(mpl%myproc)+is_loc-1
    ithread = omp_get_thread_num()+1
-   ic1 = sdata%is_to_ic1(is)
-   il1 = sdata%is_to_il1(is)
-   il0 = sdata%il1_to_il0(il1)
+   ic1 = ndata%is_to_ic1(is)
+   il1 = ndata%is_to_il1(is)
+   il0 = ndata%il1_to_il0(il1)
 
    ! Loop on nearest neighbors
    do i=1,ms
       jc1 = nn_index(i,ic1)
-      do jl1=1,sdata%nl1
+      do jl1=1,ndata%nl1
          if (submask(jc1,jl1)) then
-            jl0 = sdata%il1_to_il0(jl1)
-            js = sdata%ic1il1_to_is(jc1,jl1)
+            jl0 = ndata%il1_to_il0(jl1)
+            js = ndata%ic1il1_to_is(jc1,jl1)
+
             ! Only half of the (symmetric) matrix coefficients should be stored
             if (is>js) then
                ! Normalized distance
                distnorm = sqrt(nn_dist(i,ic1)**2/(0.5*(rhs(is)**2+rhs(js)**2)) &
-                        & +(sdata%vunit(il0)-sdata%vunit(jl0))**2/(0.5*(rvs(is)**2+rvs(js)**2)))
+                        & +(ndata%vunit(il0)-ndata%vunit(jl0))**2/(0.5*(rvs(is)**2+rvs(js)**2)))
 
                if (distnorm<1.0) then
-                  ! Distance deformation
-                  distnorm = distnorm+deform*sin(pi*distnorm)
-
-                  ! Square-root
-                  if (nam%lsqrt) distnorm = distnorm*sqrt(2.0)
-
                   ! Gaspari-Cohn (1999) function
-                  if (distnorm<0.5) then
-                     S_test = 1.0-8.0*distnorm**5+8.0*distnorm**4+5.0*distnorm**3-20.0/3.0*distnorm**2
-                  else if (distnorm<1.0) then
-                     S_test = 8.0/3.0*distnorm**5-8.0*distnorm**4+5.0*distnorm**3 &
-                            & +20.0/3.0*distnorm**2-10.0*distnorm+4.0-1.0/(3.0*distnorm)
-                  else
-                     S_test = 0.0
-                  end if
+                  S_test = gc99(distnorm)
 
                   ! Check convolution value
-                  if (S_test>S_inf) then
-                     c_n_s(ithread) = c_n_s(ithread)+1
-                     if (c_n_s(ithread)>c(ithread)%n_s) then
-                        ! Allocation
-                        ctmp(ithread)%n_s = c(ithread)%n_s
-                        call linop_alloc(ctmp(ithread))
-
-                        ! Copy data
-                        ctmp(ithread)%row = c(ithread)%row
-                        ctmp(ithread)%col = c(ithread)%col
-                        ctmp(ithread)%S = c(ithread)%S
-
-                        ! Reallocate larger linear operation
-                        call linop_dealloc(c(ithread))
-                        c(ithread)%n_s = 2*ctmp(ithread)%n_s
-                        call linop_alloc(c(ithread))
-
-                        ! Copy data
-                        c(ithread)%row(1:ctmp(ithread)%n_s) = ctmp(ithread)%row
-                        c(ithread)%col(1:ctmp(ithread)%n_s) = ctmp(ithread)%col
-                        c(ithread)%S(1:ctmp(ithread)%n_s) = ctmp(ithread)%S
-
-                        ! Release memory
-                        call linop_dealloc(ctmp(ithread))
-                     end if
-
-                     ! New operation
-                     c(ithread)%row(c_n_s(ithread)) = is
-                     c(ithread)%col(c_n_s(ithread)) = js
-                     c(ithread)%S(c_n_s(ithread)) = S_test
-                  end if
+                  call check_convol(is,js,S_test,c_n_s(ithread),c(ithread))
                end if
             end if
          end if
@@ -399,10 +316,10 @@ end do
 write(mpl%unit,'(a)') '100%'
 
 ! Gather data
-sdata%c%prefix = 'c'
-sdata%c%n_src = sdata%ns
-sdata%c%n_dst = sdata%ns
-call convol_gather_data(c_n_s,c,sdata%c)
+ndata%c%prefix = 'c'
+ndata%c%n_src = ndata%ns
+ndata%c%n_dst = ndata%ns
+call convol_gather_data(c_n_s,c,ndata%c)
 
 ! Release memory
 call delete_ctree(ctree)
@@ -413,6 +330,88 @@ do ithread=1,mpl%nthread
 end do
 
 end subroutine compute_convol_distance
+
+!----------------------------------------------------------------------
+! Function: gc99
+!> Purpose: Gaspari and Cohn (1999) function, with the support radius as a parameter
+!----------------------------------------------------------------------
+function gc99(distnorm)
+
+! Passed variables
+real(kind_real),intent(in) :: distnorm
+
+! Returned variable
+real(kind_real) :: gc99
+
+! Local variable
+real(kind_real) :: d
+
+! Distance deformation
+d = distnorm+deform*sin(pi*distnorm)
+
+! Distance check bound
+if (.not.(d>0.0)) call msgerror('negative normalized distance')
+
+! Square-root
+if (nam%lsqrt) d = d*sqrt(2.0)
+
+if (d<0.5) then
+   gc99 = 1.0-8.0*d**5+8.0*d**4+5.0*d**3-20.0/3.0*d**2
+else if (d<1.0) then
+   gc99 = 8.0/3.0*d**5-8.0*d**4+5.0*d**3+20.0/3.0*d**2-10.0*d+4.0-1.0/(3.0*d)
+else
+   gc99 = 0.0
+end if
+
+return
+
+end function gc99
+
+!----------------------------------------------------------------------
+! Subroutine: check_convol
+!> Purpose: check convolution value and add it if necessary
+!----------------------------------------------------------------------
+subroutine check_convol(is,js,S_test,c_n_s,c)
+
+implicit none
+
+! Passed variables
+integer,intent(in) :: is
+integer,intent(in) :: js
+real(kind_real),intent(in) :: S_test
+integer,intent(inout) :: c_n_s
+type(linoptype),intent(inout) :: c         
+
+! Local variables
+type(linoptype) :: ctmp
+
+if (S_test>S_inf) then
+   c_n_s = c_n_s+1
+   if (c_n_s>c%n_s) then
+      ! Copy
+      call linop_copy(c,ctmp)
+
+      ! Reallocate larger linear operation
+      call linop_dealloc(c)
+      c%n_s = 2*ctmp%n_s
+      call linop_alloc(c)
+
+      ! Copy data
+      c%row(1:ctmp%n_s) = ctmp%row
+      c%col(1:ctmp%n_s) = ctmp%col
+      c%S(1:ctmp%n_s) = ctmp%S
+
+      ! Release memory
+      call linop_dealloc(ctmp)
+   end if
+
+   ! New operation
+   c%row(c_n_s) = is
+   c%col(c_n_s) = js
+   c%S(c_n_s) = S_test
+end if
+
+end subroutine check_convol
 
 !----------------------------------------------------------------------
 ! Subroutine: convol_gather_data

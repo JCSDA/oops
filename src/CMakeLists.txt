@@ -181,6 +181,7 @@ oops/generic/nicas/module_apply_com.f90
 oops/generic/nicas/module_apply_convol.f90
 oops/generic/nicas/module_apply_interp.f90
 oops/generic/nicas/module_apply_nicas.f90
+oops/generic/nicas/module_apply_nicas_sqrt.f90
 oops/generic/nicas/module_mpi.f90
 oops/generic/nicas/module_namelist.f90
 oops/generic/nicas/module_normalization.f90
@@ -204,12 +205,12 @@ oops/generic/nicas/type_esmf.f90
 oops/generic/nicas/type_fields.f90
 oops/generic/nicas/type_linop.f90
 oops/generic/nicas/type_mpl.f90
+oops/generic/nicas/type_ndata.f90
 oops/generic/nicas/type_randgen_api.cpp
 oops/generic/nicas/type_randgen.cpp
 oops/generic/nicas/type_randgen.f90
 oops/generic/nicas/type_randgen.h
 oops/generic/nicas/type_randgen.hpp
-oops/generic/nicas/type_sdata.f90
 oops/generic/nicas/type_timer.f90
 oops/generic/nicas/external/Cover_Tree.h
 oops/generic/nicas/external/Cover_Tree_Point.cpp

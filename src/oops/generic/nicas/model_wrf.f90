@@ -17,7 +17,8 @@ use tools_kinds,only: kind_real
 use tools_missing, only: msvalr,msr,isanynotmsr
 use tools_nc, only: ncerr,ncfloat
 use type_esmf, only: esmf_create_field
-use type_sdata, only: sdatatype,sdata_alloc
+use type_ndata, only: ndatatype,ndata_alloc
+
 implicit none
 
 private
@@ -29,12 +30,12 @@ contains
 ! Subroutine: model_wrf_coord
 !> Purpose: get WRF coordinates
 !----------------------------------------------------------------------
-subroutine model_wrf_coord(sdata)
+subroutine model_wrf_coord(ndata)
 
 implicit none
 
 ! Passed variables
-type(sdatatype),intent(inout) :: sdata !< Sampling data
+type(ndatatype),intent(inout) :: ndata !< Sampling data
 
 ! Local variables
 integer :: ncid,nlon_id,nlat_id,nlev_id,lon_id,lat_id,pres_id
@@ -45,52 +46,52 @@ character(len=1024) :: subr = 'model_wrf_coord'
 ! Open file and get dimensions
 call ncerr(subr,nf90_open(trim(nam%datadir)//'/grid.nc',nf90_nowrite,ncid))
 call ncerr(subr,nf90_inq_dimid(ncid,'west_east',nlon_id))
-call ncerr(subr,nf90_inquire_dimension(ncid,nlon_id,len=sdata%nlon))
+call ncerr(subr,nf90_inquire_dimension(ncid,nlon_id,len=ndata%nlon))
 call ncerr(subr,nf90_inq_dimid(ncid,'south_north',nlat_id))
-call ncerr(subr,nf90_inquire_dimension(ncid,nlat_id,len=sdata%nlat))
-sdata%nc0 = sdata%nlon*sdata%nlat
+call ncerr(subr,nf90_inquire_dimension(ncid,nlat_id,len=ndata%nlat))
+ndata%nc0 = ndata%nlon*ndata%nlat
 call ncerr(subr,nf90_inq_dimid(ncid,'bottom_top',nlev_id))
-call ncerr(subr,nf90_inquire_dimension(ncid,nlev_id,len=sdata%nlev))
+call ncerr(subr,nf90_inquire_dimension(ncid,nlev_id,len=ndata%nlev))
 
 ! Allocation
-allocate(lon(sdata%nlon,sdata%nlat))
-allocate(lat(sdata%nlon,sdata%nlat))
-allocate(pres(sdata%nlev))
+allocate(lon(ndata%nlon,ndata%nlat))
+allocate(lat(ndata%nlon,ndata%nlat))
+allocate(pres(ndata%nlev))
 
 ! Read data and close file
 call ncerr(subr,nf90_inq_varid(ncid,'XLONG',lon_id))
 call ncerr(subr,nf90_inq_varid(ncid,'XLAT',lat_id))
 call ncerr(subr,nf90_inq_varid(ncid,'PB',pres_id))
-call ncerr(subr,nf90_get_var(ncid,lon_id,lon,(/1,1,1/),(/sdata%nlon,sdata%nlat,1/)))
-call ncerr(subr,nf90_get_var(ncid,lat_id,lat,(/1,1,1/),(/sdata%nlon,sdata%nlat,1/)))
+call ncerr(subr,nf90_get_var(ncid,lon_id,lon,(/1,1,1/),(/ndata%nlon,ndata%nlat,1/)))
+call ncerr(subr,nf90_get_var(ncid,lat_id,lat,(/1,1,1/),(/ndata%nlon,ndata%nlat,1/)))
 call ncerr(subr,nf90_get_var(ncid,pres_id,pres))
 call ncerr(subr,nf90_get_att(ncid,nf90_global,'DX',dx))
 call ncerr(subr,nf90_get_att(ncid,nf90_global,'DY',dy))
 call ncerr(subr,nf90_close(ncid))
 
 ! Compute normalized area
-allocate(sdata%area(sdata%nl0))
-sdata%area = float(sdata%nlon*sdata%nlat)*dx*dy/req**2
+allocate(ndata%area(ndata%nl0))
+ndata%area = float(ndata%nlon*ndata%nlat)*dx*dy/req**2
 
 ! Conversion to radian
 lon = lon*real(deg2rad,kind=4)
 lat = lat*real(deg2rad,kind=4)
 
 ! Pack
-call sdata_alloc(sdata)
-sdata%lon = pack(real(lon,kind_real),mask=.true.)
-sdata%lat = pack(real(lat,kind_real),mask=.true.)
-sdata%mask = .true.
+call ndata_alloc(ndata)
+ndata%lon = pack(real(lon,kind_real),mask=.true.)
+ndata%lat = pack(real(lat,kind_real),mask=.true.)
+ndata%mask = .true.
 
 ! Vertical unit
 if (nam%logpres) then
-   sdata%vunit = log(pres(nam%levs(1:sdata%nl0)))
+   ndata%vunit = log(pres(nam%levs(1:ndata%nl0)))
 else
-   sdata%vunit = float(nam%levs(1:sdata%nl0))
+   ndata%vunit = float(nam%levs(1:ndata%nl0))
 end if
 
 ! Create ESMF field from grid
-call esmf_create_field(sdata)
+call esmf_create_field(ndata)
 
 ! Release memory
 deallocate(lon)
@@ -103,15 +104,15 @@ end subroutine model_wrf_coord
 ! Subroutine: model_wrf_read
 !> Purpose: read WRF field
 !----------------------------------------------------------------------
-subroutine model_wrf_read(ncid,varname,sdata,fld)
+subroutine model_wrf_read(ncid,varname,ndata,fld)
 
 implicit none
 
 ! Passed variables
 integer,intent(in) :: ncid                              !< NetCDF file ID
 character(len=*),intent(in) :: varname                  !< Variable name
-type(sdatatype),intent(in) :: sdata                     !< Sampling data
-real(kind_real),intent(out) :: fld(sdata%nc0,sdata%nl0) !< Read field
+type(ndatatype),intent(in) :: ndata                     !< Sampling data
+real(kind_real),intent(out) :: fld(ndata%nc0,ndata%nl0) !< Read field
 
 ! Local variables
 integer :: il0
@@ -123,14 +124,14 @@ character(len=1024) :: subr = 'model_wrf_read'
 call msr(fld)
 
 ! Allocation
-allocate(fld_loc(sdata%nlon,sdata%nlat))
+allocate(fld_loc(ndata%nlon,ndata%nlat))
 
 ! Get variable id
 call ncerr(subr,nf90_inq_varid(ncid,trim(varname),fld_id))
 
 ! Read variable
-do il0=1,sdata%nl0
-   call ncerr(subr,nf90_get_var(ncid,fld_id,fld_loc,(/1,1,nam%levs(il0),1/),(/sdata%nlon,sdata%nlat,1,1/)))
+do il0=1,ndata%nl0
+   call ncerr(subr,nf90_get_var(ncid,fld_id,fld_loc,(/1,1,nam%levs(il0),1/),(/ndata%nlon,ndata%nlat,1,1/)))
    fld(:,il0) = pack(real(fld_loc,kind_real),mask=.true.)
 end do
 
@@ -144,21 +145,21 @@ end subroutine model_wrf_read
 ! Subroutine: model_wrf_write
 !> Purpose: write WRF field
 !----------------------------------------------------------------------
-subroutine model_wrf_write(ncid,varname,sdata,fld)
+subroutine model_wrf_write(ncid,varname,ndata,fld)
 
 implicit none
 
 ! Passed variables
 integer,intent(in) :: ncid                             !< NetCDF file ID
 character(len=*),intent(in) :: varname                 !< Variable name
-type(sdatatype),intent(in) :: sdata                    !< Sampling data
-real(kind_real),intent(in) :: fld(sdata%nc0,sdata%nl0) !< Written field
+type(ndatatype),intent(in) :: ndata                    !< Sampling data
+real(kind_real),intent(in) :: fld(ndata%nc0,ndata%nl0) !< Written field
 
 ! Local variables
 integer :: il0,ierr
 integer :: nlon_id,nlat_id,nlev_id,nt_id,fld_id
-real(kind_real) :: fld_loc(sdata%nlon,sdata%nlat)
-logical :: mask_unpack(sdata%nlon,sdata%nlat)
+real(kind_real) :: fld_loc(ndata%nlon,ndata%nlat)
+logical :: mask_unpack(ndata%nlon,ndata%nlat)
 character(len=1024) :: subr = 'model_wrf_write'
 
 ! Initialization
@@ -171,11 +172,11 @@ ierr = nf90_inq_varid(ncid,trim(varname),fld_id)
 if (ierr/=nf90_noerr) then
    call ncerr(subr,nf90_redef(ncid))
    ierr = nf90_inq_dimid(ncid,'west_east',nlon_id)
-   if (ierr/=nf90_noerr) call ncerr(subr,nf90_def_dim(ncid,'west_east',sdata%nlon,nlon_id))
+   if (ierr/=nf90_noerr) call ncerr(subr,nf90_def_dim(ncid,'west_east',ndata%nlon,nlon_id))
    ierr = nf90_inq_dimid(ncid,'south_north',nlat_id)
-   if (ierr/=nf90_noerr) call ncerr(subr,nf90_def_dim(ncid,'south_north',sdata%nlat,nlat_id))
+   if (ierr/=nf90_noerr) call ncerr(subr,nf90_def_dim(ncid,'south_north',ndata%nlat,nlat_id))
    ierr = nf90_inq_dimid(ncid,'bottom_top',nlev_id)
-   if (ierr/=nf90_noerr) call ncerr(subr,nf90_def_dim(ncid,'bottom_top',sdata%nl0,nlev_id))
+   if (ierr/=nf90_noerr) call ncerr(subr,nf90_def_dim(ncid,'bottom_top',ndata%nl0,nlev_id))
    ierr = nf90_inq_dimid(ncid,'Time',nt_id)
    if (ierr/=nf90_noerr) call ncerr(subr,nf90_def_dim(ncid,'Time',1,nt_id))
    call ncerr(subr,nf90_def_var(ncid,trim(varname),ncfloat,(/nlon_id,nlat_id,nlev_id,nt_id/),fld_id))
@@ -184,11 +185,11 @@ if (ierr/=nf90_noerr) then
 end if
 
 ! Write data
-do il0=1,sdata%nl0
+do il0=1,ndata%nl0
    if (isanynotmsr(fld(:,il0))) then
       call msr(fld_loc)
       fld_loc = unpack(fld(:,il0),mask=mask_unpack,field=fld_loc)
-      call ncerr(subr,nf90_put_var(ncid,fld_id,fld_loc,(/1,1,il0,1/),(/sdata%nlon,sdata%nlat,1,1/)))
+      call ncerr(subr,nf90_put_var(ncid,fld_id,fld_loc,(/1,1,il0,1/),(/ndata%nlon,ndata%nlat,1,1/)))
    end if
 end do
 

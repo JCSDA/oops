@@ -14,6 +14,7 @@ use iso_c_binding
 use mpi
 use omp_lib
 use tools_kinds, only: kind_real
+
 implicit none
 
 type mpltype
@@ -56,9 +57,13 @@ interface mpl_send
   module procedure mpl_send_logical_array_1d
 end interface
 
+interface mpl_alltoallv
+  module procedure mpl_alltoallv_real
+end interface
+
 private
 public :: mpl
-public :: mpl_start,mpl_end,mpl_abort,mpl_barrier,mpl_bcast,mpl_recv,mpl_send
+public :: mpl_start,mpl_end,mpl_abort,mpl_barrier,mpl_bcast,mpl_recv,mpl_send,mpl_alltoallv
 
 contains
 
@@ -124,13 +129,13 @@ mpl%main = (mpl%myproc==mpl%ioproc)
 ! Define unit and open file
 mpl%unit = 5+mpl%myproc
 
-! Define real type for bcast
+! Define real type for MPI
 if (kind_real==4) then
    mpl%rtype = mpi_real
 elseif (kind_real==8) then
    mpl%rtype = mpi_double
 else
-   call mpl_abort('unknown real kind for mpl_bcast interface')
+   call mpl_abort('unknown real kind for MPI')
 end if
 
 ! Initialize tag
@@ -640,5 +645,34 @@ call mpi_send(var,n,mpi_logical,dst-1,tag,mpi_comm_world,info)
 call mpl_check(info)
 
 end subroutine mpl_send_logical_array_1d
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_alltoallv_real
+!> Purpose: alltoallv for a real array
+!----------------------------------------------------------------------
+subroutine mpl_alltoallv_real(ns,sbuf,scounts,sdispl,nr,rbuf,rcounts,rdispl)
+
+implicit none
+
+! Passed variables
+integer,intent(in) :: ns            
+real(kind_real),intent(in) :: sbuf(ns)  !< Sent buffer
+integer,intent(in) :: scounts(mpl%nproc)       !< Sending counts
+integer,intent(in) :: sdispl(mpl%nproc)        !< Sending displacement
+integer,intent(in) :: nr
+real(kind_real),intent(out) :: rbuf(nr) !< Received buffer
+integer,intent(in) :: rcounts(mpl%nproc)      !< Receiving counts
+integer,intent(in) :: rdispl(mpl%nproc)       !< SenReceivingding displacement
+
+! Local variable
+integer :: info
+
+! Send
+call mpi_alltoallv(sbuf,scounts,sdispl,mpl%rtype,rbuf,rcounts,rdispl,mpl%rtype,mpi_comm_world,info)
+
+! Check
+call mpl_check(info)
+
+end subroutine mpl_alltoallv_real
 
 end module type_mpl

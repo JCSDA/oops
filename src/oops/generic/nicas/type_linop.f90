@@ -17,6 +17,7 @@ use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsr
 use tools_nc, only: ncfloat,ncerr
 use type_mpl, only: mpl
+
 implicit none
 
 ! Linear operator derived type
@@ -43,7 +44,8 @@ logical :: check_data = .false. !< Activate data check for all linear operations
 
 private
 public :: linoptype
-public :: linop_alloc,linop_dealloc,linop_reorder,apply_linop,apply_linop_ad,apply_linop_sym,linop_read,linop_write
+public :: linop_alloc,linop_dealloc,linop_copy,linop_reorder, &
+ & apply_linop,apply_linop_ad,apply_linop_sym,linop_read,linop_write
 
 contains
 
@@ -82,11 +84,42 @@ implicit none
 type(linoptype),intent(inout) :: linop !< Linear operator
 
 ! Release memory
-deallocate(linop%row)
-deallocate(linop%col)
-deallocate(linop%S)
+if (allocated(linop%row)) deallocate(linop%row)
+if (allocated(linop%col)) deallocate(linop%col)
+if (allocated(linop%S)) deallocate(linop%S)
 
 end subroutine linop_dealloc
+
+!----------------------------------------------------------------------
+! Subroutine: linop_copy
+!> Purpose: linear operator object copy
+!----------------------------------------------------------------------
+subroutine linop_copy(linop_in,linop_out)
+
+implicit none
+
+! Passed variables
+type(linoptype),intent(in) :: linop_in     !< Input linear operator
+type(linoptype),intent(inout) :: linop_out !< Output linear operator
+
+! Copy attributes
+linop_out%prefix = trim(linop_in%prefix)
+linop_out%n_src = linop_in%n_src
+linop_out%n_dst = linop_in%n_dst
+linop_out%n_s = linop_in%n_s
+
+! Deallocation
+call linop_dealloc(linop_out)
+
+! Allocation
+call linop_alloc(linop_out)
+
+! Copy data
+linop_out%row = linop_in%row
+linop_out%col = linop_in%col
+linop_out%S = linop_in%S
+
+end subroutine linop_copy
 
 !----------------------------------------------------------------------
 ! Subroutine: linop_reorder
@@ -293,7 +326,7 @@ integer :: n_s_id,row_id,col_id,S_id
 character(len=1024) :: subr = 'linop_read_single'
 
 ! Copy prefix
-linop%prefix = prefix
+linop%prefix = trim(prefix)
 
 ! Get operator size
 info = nf90_inq_dimid(ncid,trim(prefix)//'_n_s',n_s_id)
@@ -370,7 +403,7 @@ if ((narr>0).and.(n_s_max>0)) then
 
    do iarr=1,narr
       ! Copy prefix
-      linop(iarr)%prefix = prefix
+      linop(iarr)%prefix = trim(prefix)
 
       ! Get operator size
       call ncerr(subr,nf90_get_var(ncid,n_s_id,linop(iarr)%n_s,(/iarr/)))
@@ -408,6 +441,9 @@ type(linoptype),intent(in) :: linop !< Linear operator
 ! Local variables
 integer :: n_s_id,row_id,col_id,S_id
 character(len=1024) :: subr = 'linop_write_single'
+
+! Processor verification
+if (.not.mpl%main) call msgerror('only I/O proc should enter '//trim(subr))
 
 if (linop%n_s>0) then
    ! Start definition mode
@@ -452,6 +488,9 @@ type(linoptype),intent(in) :: linop(:) !< Linear operator
 integer :: narr,iarr,n_s_max
 integer :: n_s_max_id,narr_id,n_s_id,row_id,col_id,S_id
 character(len=1024) :: subr = 'linop_write_array'
+
+! Processor verification
+if (.not.mpl%main) call msgerror('only I/O proc should enter '//trim(subr))
 
 ! Array size
 narr = size(linop)

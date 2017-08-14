@@ -13,6 +13,7 @@ module type_timer
 use tools_display, only: msgerror
 use tools_kinds, only: kind_real
 use type_mpl, only: mpl
+
 implicit none
 
 ! Timer data derived type

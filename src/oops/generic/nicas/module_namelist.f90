@@ -14,9 +14,10 @@ use netcdf, only: nf90_put_att,nf90_global
 use omp_lib, only: omp_get_num_procs
 use tools_display, only: msgerror,msgwarning
 use tools_kinds,only: kind_real
-use tools_missing, only: msr
+use tools_missing, only: msi,msr
 use tools_nc, only: ncerr
 use type_mpl, only: mpl,mpl_bcast
+
 implicit none
 
 ! Namelist parameters maximum sizes
@@ -37,7 +38,9 @@ logical :: check_adjoints          !< Test adjoints
 logical :: check_pos_def           !< Test positive definiteness
 logical :: check_mpi               !< Test single proc/multi-procs equivalence
 logical :: check_dirac             !< Test NICAS application on diracs
-integer :: ndir                    !< Number of diracs
+logical :: check_perf              !< Test NICAS performance
+integer :: ndir                    !< Number of Diracs
+integer :: dirlev                  !< Diracs level
 real(kind_real) :: dirlon(ndirmax) !< Diracs longitudes
 real(kind_real) :: dirlat(ndirmax) !< Diracs latitudes
 
@@ -86,39 +89,41 @@ subroutine namread
 implicit none
 
 ! Local variables
-character(len=1024) :: datadir     !< Data directory
-character(len=1024) :: prefix      !< Files prefix
-character(len=1024) :: model       !< Model name ('aro','arp', 'gfs', 'ifs','mpas', 'nemo' or 'wrf')
-logical :: colorlog                !< Add colors to the log (for display on terminal)
-integer :: nl                      !< Number of levels
-integer :: levs(nlmax)             !< Levels
-logical :: new_param               !< Compute new parameters (if false, read file)
-logical :: new_mpi                 !< Compute new mpi splitting (if false, read file)
-logical :: check_adjoints          !< Test adjoints
-logical :: check_pos_def           !< Test positive definiteness
-logical :: check_mpi               !< Test single proc/multi-procs equivalence
-logical :: check_dirac             !< Test NICAS application on diracs
-integer :: ndir                    !< Number of diracs
-real(kind_real) :: dirlon(ndirmax) !< Diracs longitudes
-real(kind_real) :: dirlat(ndirmax) !< Diracs latitudes
-logical :: sam_default_seed        !< Default seed for random numbers
-logical :: mask_check              !< Check that interpolations do not cross mask boundaries
-integer :: ntry                    !< Number of tries to get the most separated point for the zero-separation sampling
-integer :: nrep                    !< Number of replacement to improve homogeneity of the zero-separation sampling
-logical :: logpres                 !< Use pressure logarithm as vertical coordinate (model level if .false.)
-logical :: lsqrt                   !< Square-root formulation
-character(len=1024) :: Lbh_file    !< Horizontal length-scale file
-real(kind_real) :: Lbh(nlmax)      !< Horizontal length-scale
-character(len=1024) :: Lbv_file    !< Vertical length-scale file
-real(kind_real) :: Lbv(nlmax)      !< Vertical length-scale
-real(kind_real) :: resol           !< Resolution
-logical :: network                 !< Network-base convolution calculation (distance-based if false)
-integer :: nproc                   !< Number of tasks
+character(len=1024) :: datadir
+character(len=1024) :: prefix
+character(len=1024) :: model
+logical :: colorlog
+integer :: nl
+integer :: levs(nlmax)
+logical :: new_param
+logical :: new_mpi
+logical :: check_adjoints
+logical :: check_pos_def
+logical :: check_mpi
+logical :: check_dirac
+logical :: check_perf
+integer :: ndir
+integer :: dirlev
+real(kind_real) :: dirlon(ndirmax)
+real(kind_real) :: dirlat(ndirmax)
+logical :: sam_default_seed
+logical :: mask_check
+integer :: ntry
+integer :: nrep
+logical :: logpres
+logical :: lsqrt
+character(len=1024) :: Lbh_file
+real(kind_real) :: Lbh(nlmax)
+character(len=1024) :: Lbv_file
+real(kind_real) :: Lbv(nlmax)
+real(kind_real) :: resol
+logical :: network
+integer :: nproc
 integer :: mpicom 
 
 ! Namelist blocks
 namelist/general_param/datadir,prefix,colorlog,model,nl,levs,new_param,new_mpi, &
- & check_adjoints,check_pos_def,check_mpi,check_dirac,ndir,dirlon,dirlat
+ & check_adjoints,check_pos_def,check_mpi,check_dirac,check_perf,ndir,dirlev,dirlon,dirlat
 namelist/sampling_param/sam_default_seed,mask_check,ntry,nrep,logpres
 namelist/nicas_param/lsqrt,Lbh_file,Lbh,Lbv_file,Lbv,resol,network,nproc,mpicom
 
@@ -129,35 +134,37 @@ datadir = ''
 prefix = ''
 colorlog = .false.
 model = ''
-nl = -1
-levs = -1
+call msi(nl)
+call msi(levs)
 new_param = .false.
 new_mpi = .false.
 check_adjoints = .false.
 check_pos_def = .false.
 check_mpi = .false.
 check_dirac = .false.
-ndir = -1
-dirlon = -999.0
-dirlat = -999.0
+check_dirac = .false.
+call msi(ndir)
+call msi(dirlev)
+call msr(dirlon)
+call msr(dirlat)
 
 ! sampling_param
 sam_default_seed = .false.
 mask_check = .false.
-ntry = -1
-nrep = -1
+call msi(ntry)
+call msi(nrep)
 logpres = .false.
 
 ! nicas_param
 lsqrt = .false.
 Lbh_file = ''
-Lbh = -1.0
+call msr(Lbh)
 Lbv_file = ''
-Lbv = -1.0
-resol = -1.0
+call msr(Lbv)
+call msr(resol)
 network = .false.
-nproc = -1
-mpicom = -1
+call msi(nproc)
+call msi(mpicom)
 
 if (mpl%main) then
    ! Read namelist
@@ -178,7 +185,9 @@ if (mpl%main) then
    nam%check_pos_def = check_pos_def
    nam%check_mpi = check_mpi
    nam%check_dirac = check_dirac
+   nam%check_perf = check_perf
    nam%ndir = ndir
+   nam%dirlev = dirlev
    nam%dirlon = dirlon
    nam%dirlat = -dirlat
    nam%sam_default_seed = sam_default_seed
@@ -210,7 +219,9 @@ call mpl_bcast(nam%check_adjoints,mpl%ioproc)
 call mpl_bcast(nam%check_pos_def,mpl%ioproc)
 call mpl_bcast(nam%check_mpi,mpl%ioproc)
 call mpl_bcast(nam%check_dirac,mpl%ioproc)
+call mpl_bcast(nam%check_perf,mpl%ioproc)
 call mpl_bcast(nam%ndir,mpl%ioproc)
+call mpl_bcast(nam%dirlev,mpl%ioproc)
 call mpl_bcast(nam%dirlon,mpl%ioproc)
 call mpl_bcast(nam%dirlat,mpl%ioproc)
 call mpl_bcast(nam%sam_default_seed,mpl%ioproc)
@@ -260,9 +271,10 @@ if (nam%new_param.and.(.not.nam%new_mpi)) then
 end if
 if (nam%check_dirac) then
    if (nam%ndir<1) call msgerror('ndir should be positive')
+   if (.not.any(nam%dirlev==nam%levs(1:nam%nl))) call msgerror('wrong level for a Dirac')
    do idir=1,nam%ndir
-      if ((nam%dirlon(idir)<-180.0).or.(nam%dirlon(idir)>180.0)) call msgerror('dirac longitude should lie between -180 and 180')
-      if ((nam%dirlat(idir)<-90.0).or.(nam%dirlat(idir)>90.0)) call msgerror('dirac latitude should lie between -90 and 90')
+      if ((nam%dirlon(idir)<-180.0).or.(nam%dirlon(idir)>180.0)) call msgerror('Dirac longitude should lie between -180 and 180')
+      if ((nam%dirlat(idir)<-90.0).or.(nam%dirlat(idir)>90.0)) call msgerror('Dirac latitude should lie between -90 and 90')
    end do
 end if
 
@@ -291,9 +303,14 @@ if (trim(nam%Lbv_file)=='none') then
       if (nam%Lbv(il)<tiny(1.0)) call msgerror('Lbv should be positive')
    end do
 end if
-if (nam%resol<tiny(1.0)) call msgerror('resol should be positive')
-if (nam%nproc<0) call msgerror('nproc should be non-negative')
+if (.not.(nam%resol>0.0)) call msgerror('resol should be positive')
+if (nam%nproc<1) call msgerror('nproc should be positive')
 if ((nam%mpicom/=1).and.(nam%mpicom/=2)) call msgerror('mpicom should be 1 or 2')
+
+! Cross-check
+if (nam%check_mpi.or.nam%check_dirac) then
+   if (nam%nproc/=mpl%nproc) call msgerror('nam%nproc should be equal to mpl%nproc for parallel tests')
+end if
 
 end subroutine namcheck
 
@@ -307,6 +324,12 @@ implicit none
 
 ! Passed variables
 integer,intent(in) :: ncid !< NetCDF file id
+
+! Local variables
+character(len=1024) :: subr = 'namncwrite'
+
+! Processor verification
+if (.not.mpl%main) call msgerror('only I/O proc should enter '//trim(subr))
 
 ! general_param
 call namncwrite_param(ncid,'general_param_datadir',trim(nam%datadir))

@@ -17,7 +17,8 @@ use tools_kinds,only: kind_real
 use tools_missing, only: msvalr,msi,msr,isanynotmsr,isnotmsr,isnotmsi
 use tools_nc, only: ncerr,ncfloat
 use type_esmf, only: esmf_create_field
-use type_sdata, only: sdatatype,sdata_alloc
+use type_ndata, only: ndatatype,ndata_alloc
+
 implicit none
 
 private
@@ -29,12 +30,12 @@ contains
 ! Subroutine: model_arp_coord
 !> Purpose: get ARPEGE coordinates
 !----------------------------------------------------------------------
-subroutine model_arp_coord(sdata)
+subroutine model_arp_coord(ndata)
 
 implicit none
 
 ! Passed variables
-type(sdatatype),intent(inout) :: sdata !< Sampling data
+type(ndatatype),intent(inout) :: ndata !< Sampling data
 
 ! Local variables
 integer :: ilon,ilat,il0
@@ -44,22 +45,22 @@ real(kind=8),allocatable :: lon(:,:),lat(:,:),a(:),b(:)
 character(len=1024) :: subr = 'model_arp_coord'
 
 ! Open file and get dimensions
-call msi(sdata%nlon)
-call msi(sdata%nlat)
+call msi(ndata%nlon)
+call msi(ndata%nlat)
 call ncerr(subr,nf90_open(trim(nam%datadir)//'/grid.nc',nf90_nowrite,ncid))
 call ncerr(subr,nf90_inq_dimid(ncid,'longitude',nlon_id))
 call ncerr(subr,nf90_inq_dimid(ncid,'latitude',nlat_id))
-call ncerr(subr,nf90_inquire_dimension(ncid,nlon_id,len=sdata%nlon))
-call ncerr(subr,nf90_inquire_dimension(ncid,nlat_id,len=sdata%nlat))
+call ncerr(subr,nf90_inquire_dimension(ncid,nlon_id,len=ndata%nlon))
+call ncerr(subr,nf90_inquire_dimension(ncid,nlat_id,len=ndata%nlat))
 call ncerr(subr,nf90_inq_dimid(ncid,'Z',nlev_id))
-call ncerr(subr,nf90_inquire_dimension(ncid,nlev_id,len=sdata%nlev))
+call ncerr(subr,nf90_inquire_dimension(ncid,nlev_id,len=ndata%nlev))
 
 ! Allocation
-allocate(lon(sdata%nlon,sdata%nlat))
-allocate(lat(sdata%nlon,sdata%nlat))
-allocate(sdata%rgmask(sdata%nlon,sdata%nlat))
-allocate(a(sdata%nlev+1))
-allocate(b(sdata%nlev+1))
+allocate(lon(ndata%nlon,ndata%nlat))
+allocate(lat(ndata%nlon,ndata%nlat))
+allocate(ndata%rgmask(ndata%nlon,ndata%nlat))
+allocate(a(ndata%nlev+1))
+allocate(b(ndata%nlev+1))
 
 ! Read data and close file
 call ncerr(subr,nf90_inq_varid(ncid,'longitude',lon_id))
@@ -73,50 +74,50 @@ call ncerr(subr,nf90_get_var(ncid,b_id,b))
 call ncerr(subr,nf90_close(ncid))
 
 ! Compute normalized area
-allocate(sdata%area(sdata%nl0))
-sdata%area = 4.0*pi
+allocate(ndata%area(ndata%nl0))
+ndata%area = 4.0*pi
 
 ! Define mask for the reduced Gaussian grid
-do ilon=1,sdata%nlon
-   do ilat=1,sdata%nlat
+do ilon=1,ndata%nlon
+   do ilat=1,ndata%nlat
       if (lon(ilon,ilat)>-1000.0) then
          ! Valid point
-         sdata%rgmask(ilon,ilat) = .true.
+         ndata%rgmask(ilon,ilat) = .true.
 
          ! Convert to radian
          lon(ilon,ilat) = lon(ilon,ilat)*real(deg2rad,kind=8)
          lat(ilon,ilat) = lat(ilon,ilat)*real(deg2rad,kind=8)
       else
          ! Missing point
-         sdata%rgmask(ilon,ilat) = .false.
+         ndata%rgmask(ilon,ilat) = .false.
          call msr(lon(ilon,ilat))
          call msr(lat(ilon,ilat))
       end if
    end do
 end do
-sdata%nc0 = count(sdata%rgmask)
+ndata%nc0 = count(ndata%rgmask)
 
 ! Pack
-call sdata_alloc(sdata)
-sdata%lon = pack(real(lon,kind_real),mask=sdata%rgmask)
-sdata%lat = pack(real(lat,kind_real),mask=sdata%rgmask)
-sdata%mask = .true.
+call ndata_alloc(ndata)
+ndata%lon = pack(real(lon,kind_real),mask=ndata%rgmask)
+ndata%lat = pack(real(lat,kind_real),mask=ndata%rgmask)
+ndata%mask = .true.
 
 ! Vertical unit
 if (nam%logpres) then
-   do il0=1,sdata%nl0
-      if (nam%levs(il0)<=sdata%nlev) then
-         sdata%vunit(il0) = log(0.5*(a(nam%levs(il0))+a(nam%levs(il0)+1))+0.5*(b(nam%levs(il0))+b(nam%levs(il0)+1))*ps)
+   do il0=1,ndata%nl0
+      if (nam%levs(il0)<=ndata%nlev) then
+         ndata%vunit(il0) = log(0.5*(a(nam%levs(il0))+a(nam%levs(il0)+1))+0.5*(b(nam%levs(il0))+b(nam%levs(il0)+1))*ps)
       else
-         sdata%vunit(il0) = log(ps)
+         ndata%vunit(il0) = log(ps)
       end if
    end do
 else
-   sdata%vunit = float(nam%levs(1:sdata%nl0))
+   ndata%vunit = float(nam%levs(1:ndata%nl0))
 end if
 
 ! Create ESMF field from mesh
-call esmf_create_field(sdata,sdata%nc0,sdata%lon,sdata%lat,any(sdata%mask,dim=2),sdata%c0field)
+call esmf_create_field(ndata,ndata%nc0,ndata%lon,ndata%lat,any(ndata%mask,dim=2),ndata%c0field)
 
 ! Release memory
 deallocate(lon)
@@ -130,20 +131,20 @@ end subroutine model_arp_coord
 ! Subroutine: model_arp_read
 !> Purpose: read ARPEGE field
 !----------------------------------------------------------------------
-subroutine model_arp_read(ncid,varname,sdata,fld)
+subroutine model_arp_read(ncid,varname,ndata,fld)
 
 implicit none
 
 ! Passed variables
 integer,intent(in) :: ncid                              !< NetCDF file ID
 character(len=*),intent(in) :: varname                  !< Variable name
-type(sdatatype),intent(in) :: sdata                     !< Sampling data
-real(kind_real),intent(out) :: fld(sdata%nc0,sdata%nl0) !< Read field
+type(ndatatype),intent(in) :: ndata                     !< Sampling data
+real(kind_real),intent(out) :: fld(ndata%nc0,ndata%nl0) !< Read field
 
 ! Local variables
 integer :: il0
 integer :: fld_id
-real(kind_real) :: fld_loc(sdata%nlon,sdata%nlat,sdata%nl0)
+real(kind_real) :: fld_loc(ndata%nlon,ndata%nlat,ndata%nl0)
 character(len=1024) :: subr = 'model_arp_read'
 
 ! Initialize field
@@ -153,13 +154,13 @@ call msr(fld)
 call ncerr(subr,nf90_inq_varid(ncid,trim(varname),fld_id))
 
 ! Read data
-do il0=1,sdata%nl0
-   call ncerr(subr,nf90_get_var(ncid,fld_id,fld_loc(:,:,il0),(/1,1,nam%levs(il0)/),(/sdata%nlon,sdata%nlat,1/)))
+do il0=1,ndata%nl0
+   call ncerr(subr,nf90_get_var(ncid,fld_id,fld_loc(:,:,il0),(/1,1,nam%levs(il0)/),(/ndata%nlon,ndata%nlat,1/)))
 end do
 
 ! Pack data
-do il0=1,sdata%nl0
-   fld(:,il0) = pack(real(fld_loc(:,:,il0),kind_real),mask=sdata%rgmask)
+do il0=1,ndata%nl0
+   fld(:,il0) = pack(real(fld_loc(:,:,il0),kind_real),mask=ndata%rgmask)
 end do
 
 end subroutine model_arp_read
@@ -168,20 +169,20 @@ end subroutine model_arp_read
 ! Subroutine: model_arp_write
 !> Purpose: write ARPEGE field
 !----------------------------------------------------------------------
-subroutine model_arp_write(ncid,varname,sdata,fld)
+subroutine model_arp_write(ncid,varname,ndata,fld)
 
 implicit none
 
 ! Passed variables
 integer,intent(in) :: ncid                             !< NetCDF file ID
 character(len=*),intent(in) :: varname                 !< Variable name
-type(sdatatype),intent(in) :: sdata                    !< Sampling data
-real(kind_real),intent(in) :: fld(sdata%nc0,sdata%nl0) !< Written field
+type(ndatatype),intent(in) :: ndata                    !< Sampling data
+real(kind_real),intent(in) :: fld(ndata%nc0,ndata%nl0) !< Written field
 
 ! Local variables
 integer :: il0,ierr,ilon,ilat
 integer :: nlon_id,nlat_id,nlev_id,fld_id,lat_id,lon_id
-real(kind_real) :: fld_loc(sdata%nlon,sdata%nlat)
+real(kind_real) :: fld_loc(ndata%nlon,ndata%nlat)
 character(len=1024) :: subr = 'model_arp_write'
 
 ! Get variable id
@@ -191,22 +192,22 @@ ierr = nf90_inq_varid(ncid,trim(varname),fld_id)
 if (ierr/=nf90_noerr) then
    call ncerr(subr,nf90_redef(ncid))
    ierr = nf90_inq_dimid(ncid,'longitude',nlon_id)
-   if (ierr/=nf90_noerr) call ncerr(subr,nf90_def_dim(ncid,'longitude',sdata%nlon,nlon_id))
+   if (ierr/=nf90_noerr) call ncerr(subr,nf90_def_dim(ncid,'longitude',ndata%nlon,nlon_id))
    ierr = nf90_inq_dimid(ncid,'latitude',nlat_id)
-   if (ierr/=nf90_noerr) call ncerr(subr,nf90_def_dim(ncid,'latitude',sdata%nlat,nlat_id))
+   if (ierr/=nf90_noerr) call ncerr(subr,nf90_def_dim(ncid,'latitude',ndata%nlat,nlat_id))
    ierr = nf90_inq_dimid(ncid,'level',nlev_id)
-   if (ierr/=nf90_noerr) call ncerr(subr,nf90_def_dim(ncid,'level',sdata%nl0,nlev_id))
+   if (ierr/=nf90_noerr) call ncerr(subr,nf90_def_dim(ncid,'level',ndata%nl0,nlev_id))
    call ncerr(subr,nf90_def_var(ncid,trim(varname),ncfloat,(/nlon_id,nlat_id,nlev_id/),fld_id))
    call ncerr(subr,nf90_put_att(ncid,fld_id,'_FillValue',msvalr))
    call ncerr(subr,nf90_enddef(ncid))
 end if
 
 ! Write data
-do il0=1,sdata%nl0
+do il0=1,ndata%nl0
    if (isanynotmsr(fld(:,il0))) then
       call msr(fld_loc)
-      fld_loc = unpack(fld(:,il0),mask=sdata%rgmask,field=fld_loc)
-      call ncerr(subr,nf90_put_var(ncid,fld_id,fld_loc,(/1,1,il0/),(/sdata%nlon,sdata%nlat,1/)))
+      fld_loc = unpack(fld(:,il0),mask=ndata%rgmask,field=fld_loc)
+      call ncerr(subr,nf90_put_var(ncid,fld_id,fld_loc,(/1,1,il0/),(/ndata%nlon,ndata%nlat,1/)))
    end if
 end do
 
@@ -220,17 +221,17 @@ if (ierr/=nf90_noerr) then
    call ncerr(subr,nf90_put_att(ncid,lat_id,'_FillValue',msvalr))
    call ncerr(subr,nf90_enddef(ncid))
    call msr(fld_loc)
-   fld_loc = unpack(sdata%lon,mask=sdata%rgmask,field=fld_loc)
-   do ilon=1,sdata%nlon
-      do ilat=1,sdata%nlat
+   fld_loc = unpack(ndata%lon,mask=ndata%rgmask,field=fld_loc)
+   do ilon=1,ndata%nlon
+      do ilat=1,ndata%nlat
          if (isnotmsr(fld_loc(ilon,ilat))) fld_loc(ilon,ilat) = fld_loc(ilon,ilat)*rad2deg
       end do
    end do
    call ncerr(subr,nf90_put_var(ncid,lon_id,fld_loc))
    call msr(fld_loc)
-   fld_loc = unpack(sdata%lat,mask=sdata%rgmask,field=fld_loc)
-   do ilon=1,sdata%nlon
-      do ilat=1,sdata%nlat
+   fld_loc = unpack(ndata%lat,mask=ndata%rgmask,field=fld_loc)
+   do ilon=1,ndata%nlon
+      do ilat=1,ndata%nlat
          if (isnotmsr(fld_loc(ilon,ilat))) fld_loc(ilon,ilat) = fld_loc(ilon,ilat)*rad2deg
       end do
    end do

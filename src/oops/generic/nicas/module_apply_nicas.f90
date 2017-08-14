@@ -10,228 +10,158 @@
 !----------------------------------------------------------------------
 module module_apply_nicas
 
-use module_apply_com, only: fld_com_gl,fld_com_lg,alpha_copy_AB
+use module_apply_com, only: alpha_com_ab,alpha_com_ba,alpha_com_ca,alpha_copy_bc,alpha_copy_ac
 use module_apply_convol, only: convol
 use module_apply_interp, only: interp,interp_ad
+use module_apply_nicas_sqrt, only: apply_nicas_sqrt,apply_nicas_sqrt_ad
 use module_namelist, only: nam
 use type_fields, only: fldtype,alphatype
 use type_mpl, only: mpl
-use type_sdata, only: sdatatype
+use type_ndata, only: ndatatype,ndataloctype
 
 implicit none
 
+interface apply_nicas
+   module procedure apply_nicas_global
+   module procedure apply_nicas_local
+end interface
+
+interface apply_nicas_from_sqrt
+   module procedure apply_nicas_from_sqrt_global
+   module procedure apply_nicas_from_sqrt_local
+end interface
+
 private
-public :: apply_nicas,apply_nicas_sqrt,apply_nicas_sqrt_ad,apply_nicas_from_sqrt
+public :: apply_nicas,apply_nicas_from_sqrt
 
 contains
 
 !----------------------------------------------------------------------
-! Subroutine: apply_nicas
-!> Purpose: apply NICAS method
+! Subroutine: apply_nicas_global
+!> Purpose: apply NICAS method, global
 !----------------------------------------------------------------------
-subroutine apply_nicas(sdata,fld)
+subroutine apply_nicas_global(ndata,fld)
 
 implicit none
 
 ! Passed variables
-type(sdatatype),intent(in) :: sdata !< Sampling data
+type(ndatatype),intent(in) :: ndata !< Sampling data
 type(fldtype),intent(inout) :: fld  !< Field
 
 ! Local variables
-integer :: iproc
-type(fldtype) :: fld_tmp(sdata%nproc)
-type(alphatype) :: alpha(sdata%nproc)
+type(alphatype) :: alpha
 
 ! Allocation
-if (nam%nproc==0) then
-   allocate(fld_tmp(1)%val(sdata%nc0,sdata%nl0))
-   allocate(alpha(1)%val(sdata%ns))
-elseif (nam%nproc>0) then
-   do iproc=1,sdata%nproc
-      allocate(alpha(iproc)%valb(sdata%mpi(iproc)%nsb))
-   end do
-end if
-
-if (nam%nproc==0) then
-   ! Copy data
-   fld_tmp(1)%val = fld%val
-elseif (nam%nproc>0) then
-   ! Global to local
-   call fld_com_gl(sdata,fld,fld_tmp)
-end if
+allocate(alpha%val(ndata%ns))
 
 ! Adjoint interpolation
-call interp_ad(sdata,fld_tmp,alpha)
+call interp_ad(ndata,fld,alpha)
 
 ! Convolution
-call convol(sdata,alpha)
+call convol(ndata,alpha)
 
 ! Interpolation
-call interp(sdata,alpha,fld_tmp)
-
-if (nam%nproc==0) then
-   ! Copy data
-   fld%val = fld_tmp(1)%val
-elseif (nam%nproc>0) then
-   ! Local to global
-   call fld_com_lg(sdata,fld_tmp,fld)
-end if
+call interp(ndata,alpha,fld)
 
 ! Release memory
-if (nam%nproc==0) then
-   deallocate(fld_tmp(1)%val)
-   deallocate(alpha(1)%val)
-elseif (nam%nproc>0) then
-   do iproc=1,sdata%nproc
-      deallocate(alpha(iproc)%valb)
-   end do
-end if
-end subroutine apply_nicas
+deallocate(alpha%val)
+
+end subroutine apply_nicas_global
 
 !----------------------------------------------------------------------
-! Subroutine: apply_nicas_from_sqrt
-!> Purpose: apply NICAS method from its square-root formulation
+! Subroutine: apply_nicas_local
+!> Purpose: apply NICAS method, local
 !----------------------------------------------------------------------
-subroutine apply_nicas_from_sqrt(sdata,fld)
+subroutine apply_nicas_local(ndataloc,fld)
 
 implicit none
 
 ! Passed variables
-type(sdatatype),intent(in) :: sdata !< Sampling data
+type(ndataloctype),intent(in) :: ndataloc !< Sampling data
+type(fldtype),intent(inout) :: fld     !< Field
+
+! Local variables
+type(alphatype) :: alpha
+
+! Allocation
+allocate(alpha%valb(ndataloc%nsb))
+
+! Adjoint interpolation
+call interp_ad(ndataloc,fld,alpha)
+
+! Communication
+if (ndataloc%mpicom==1) then
+   ! Copy zone B into zone C
+   call alpha_copy_BC(ndataloc,alpha)
+elseif (ndataloc%mpicom==2) then
+   ! Halo reduction from zone B to zone A
+   call alpha_com_BA(ndataloc,alpha)
+
+   ! Copy zone A into zone C
+   call alpha_copy_AC(ndataloc,alpha)
+end if
+
+! Convolution
+call convol(ndataloc,alpha)
+
+! Halo reduction from zone C to zone A
+call alpha_com_CA(ndataloc,alpha)
+
+! Halo extension from zone A to zone B
+call alpha_com_AB(ndataloc,alpha)
+
+! Interpolation
+call interp(ndataloc,alpha,fld)
+
+! Release memory
+deallocate(alpha%valb)
+
+end subroutine apply_nicas_local
+
+!----------------------------------------------------------------------
+! Subroutine: apply_nicas_from_sqrt_global
+!> Purpose: apply NICAS method from its square-root formulation, global
+!----------------------------------------------------------------------
+subroutine apply_nicas_from_sqrt_global(ndata,fld)
+
+implicit none
+
+! Passed variables
+type(ndatatype),intent(in) :: ndata !< Sampling data
 type(fldtype),intent(inout) :: fld  !< Field
 
 ! Local variables
-type(alphatype) :: alpha(sdata%nproc)
+type(alphatype) :: alpha
 
 ! Apply square-root adjoint
-call apply_nicas_sqrt_ad(sdata,fld,alpha)
+call apply_nicas_sqrt_ad(ndata,fld,alpha)
 
 ! Apply square-root
-call apply_nicas_sqrt(sdata,alpha,fld)
+call apply_nicas_sqrt(ndata,alpha,fld)
 
-end subroutine apply_nicas_from_sqrt
+end subroutine apply_nicas_from_sqrt_global
 
 !----------------------------------------------------------------------
-! Subroutine: apply_nicas_sqrt
-!> Purpose: apply NICAS method square-root
+! Subroutine: apply_nicas_from_sqrt_local
+!> Purpose: apply NICAS method from its square-root formulation, local
 !----------------------------------------------------------------------
-subroutine apply_nicas_sqrt(sdata,alpha,fld)
+subroutine apply_nicas_from_sqrt_local(ndataloc,fld)
 
 implicit none
 
 ! Passed variables
-type(sdatatype),intent(in) :: sdata              !< Sampling data
-type(alphatype),intent(in) :: alpha(sdata%nproc) !< Subgrid variable
-type(fldtype),intent(inout) :: fld               !< Field
+type(ndataloctype),intent(in) :: ndataloc !< Sampling data
+type(fldtype),intent(inout) :: fld        !< Field
 
 ! Local variables
-integer :: iproc
-type(fldtype) :: fld_tmp(sdata%nproc)
-type(alphatype) :: alpha_tmp(sdata%nproc)
+type(alphatype) :: alpha
 
-! Allocation
-if (nam%nproc==0) then
-   allocate(fld_tmp(1)%val(sdata%nc0,sdata%nl0))
-   allocate(alpha_tmp(1)%val(sdata%ns))
-elseif (nam%nproc>0) then
-   do iproc=1,sdata%nproc
-      allocate(fld_tmp(iproc)%vala(sdata%mpi(iproc)%nc0a,sdata%mpi(iproc)%nl0))
-      allocate(alpha_tmp(iproc)%vala(sdata%mpi(iproc)%nsa))
-   end do
-end if
-if (.not.allocated(fld%val)) allocate(fld%val(sdata%nc0,sdata%nl0))
+! Apply square-root adjoint
+call apply_nicas_sqrt_ad(ndataloc,fld,alpha)
 
-if (nam%nproc==0) then
-   ! Copy data
-   alpha_tmp(1)%val = alpha(1)%val
-elseif (nam%nproc>0) then
-   ! Copy from zone A to zone B
-   do iproc=1,sdata%nproc
-      alpha_tmp(iproc)%vala = alpha(iproc)%vala
-      call alpha_copy_AB(sdata%mpi(iproc),alpha_tmp(iproc))
-   end do
-end if
+! Apply square-root
+call apply_nicas_sqrt(ndataloc,alpha,fld)
 
-! Convolution
-call convol(sdata,alpha_tmp)
-
-! Interpolation
-call interp(sdata,alpha_tmp,fld_tmp)
-
-if (nam%nproc==0) then
-   ! Copy data
-   fld%val = fld_tmp(1)%val
-elseif (nam%nproc>0) then
-   ! Local to global
-   call fld_com_lg(sdata,fld_tmp,fld)
-end if
-
-! Release memory
-if (nam%nproc==0) then
-   deallocate(fld_tmp(1)%val)
-   deallocate(alpha_tmp(1)%val)
-elseif (nam%nproc>0) then
-   do iproc=1,sdata%nproc
-      deallocate(fld_tmp(iproc)%vala)
-      deallocate(alpha_tmp(iproc)%vala)
-   end do
-end if
-
-end subroutine apply_nicas_sqrt
-
-!----------------------------------------------------------------------
-! Subroutine: apply_nicas_sqrt_ad
-!> Purpose: apply NICAS method square-root adjoint
-!----------------------------------------------------------------------
-subroutine apply_nicas_sqrt_ad(sdata,fld,alpha)
-
-implicit none
-
-! Passed variables
-type(sdatatype),intent(in) :: sdata                 !< Sampling data
-type(fldtype),intent(in) :: fld                     !< Field
-type(alphatype),intent(inout) :: alpha(sdata%nproc) !< Subgrid variable
-
-! Local variables
-integer :: iproc
-type(fldtype) :: fld_copy,fld_tmp(sdata%nproc)
-
-! Allocation
-if (nam%nproc==0) then
-   allocate(fld_tmp(1)%val(sdata%nc0,sdata%nl0))
-   if (.not.allocated(alpha(1)%val)) allocate(alpha(1)%val(sdata%ns))
-elseif (nam%nproc>0) then
-   allocate(fld_copy%val(sdata%nc0,sdata%nl0))
-   do iproc=1,sdata%nproc
-      if (.not.allocated(alpha(iproc)%valb)) allocate(alpha(iproc)%valb(sdata%mpi(iproc)%nsb))
-   end do
-end if
-
-if (nam%nproc==0) then
-   ! Copy data
-   fld_tmp(1)%val = fld%val
-elseif (nam%nproc>0) then
-   ! Global to local
-   fld_copy%val = fld%val
-   call fld_com_gl(sdata,fld_copy,fld_tmp)
-end if
-
-! Adjoint interpolation
-call interp_ad(sdata,fld_tmp,alpha)
-
-! Convolution
-call convol(sdata,alpha)
-
-! Release memory
-if (nam%nproc==0) then
-   deallocate(fld_tmp(1)%val)
-elseif (nam%nproc>0) then
-   deallocate(fld_copy%val)
-   do iproc=1,sdata%nproc
-      deallocate(fld_tmp(iproc)%vala)
-   end do
-end if
-
-end subroutine apply_nicas_sqrt_ad
+end subroutine apply_nicas_from_sqrt_local
 
 end module module_apply_nicas

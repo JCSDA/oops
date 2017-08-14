@@ -46,7 +46,9 @@
           "check_pos_def": 0,
           "check_mpi": 1,
           "check_dirac": 1,
+          "check_perf": 0,
           "ndir": 3,
+          "dirlev": 1,
           "dirlon(1)": -1.2,
           "dirlon(2)": 147.0,
           "dirlon(3)": -79.8,
@@ -67,7 +69,7 @@
           "Lbv(2)": 0.5,
           "resol": 8.0,
           "network": 0,
-          "nproc": 0,
+          "nproc": 1,
           "mpicom": 2
         },
         "state": [

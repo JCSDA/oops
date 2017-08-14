@@ -17,8 +17,19 @@ use tools_kinds,only: kind_real
 use tools_missing, only: msr
 use type_fields, only: fldtype,alphatype
 use type_linop, only: apply_linop,apply_linop_ad
-use type_sdata, only: sdatatype,sdatampitype
+use type_ndata, only: ndatatype,ndataloctype
+
 implicit none
+
+interface interp
+   module procedure interp_global
+   module procedure interp_local
+end interface
+
+interface interp_ad
+   module procedure interp_ad_global
+   module procedure interp_ad_local
+end interface
 
 private
 public :: interp,interp_ad
@@ -26,85 +37,57 @@ public :: interp,interp_ad
 contains
 
 !----------------------------------------------------------------------
-! Subroutine: interp
-!> Purpose: interpolation
-!----------------------------------------------------------------------
-subroutine interp(sdata,alpha,fld)
-
-implicit none
-
-! Passed variables
-type(sdatatype),intent(in) :: sdata              !< Sampling data
-type(alphatype),intent(in) :: alpha(sdata%nproc) !< Subgrid variable
-type(fldtype),intent(inout) :: fld(sdata%nproc)  !< Field
-
-! Local variables
-integer :: iproc
-
-if (nam%nproc==0) then
-   ! Apply global interpolation
-   call interp_global(sdata,alpha(1),fld(1))
-elseif (nam%nproc>0) then
-   ! Apply local interpolation
-   do iproc=1,sdata%nproc
-      call interp_local(sdata%mpi(iproc),alpha(iproc),fld(iproc))
-   end do
-end if
-
-end subroutine interp
-
-!----------------------------------------------------------------------
 ! Subroutine: interp_global
 !> Purpose: interpolation, global
 !----------------------------------------------------------------------
-subroutine interp_global(sdata,alpha,fld)
+subroutine interp_global(ndata,alpha,fld)
 
 implicit none
 
 ! Passed variables
-type(sdatatype),intent(in) :: sdata !< Sampling data
+type(ndatatype),intent(in) :: ndata !< Sampling data
 type(alphatype),intent(in) :: alpha !< Subgrid variable
 type(fldtype),intent(inout) :: fld  !< Field
 
 ! Local variables
 integer :: is,il1,ic1,il0
-real(kind_real) :: beta(sdata%nc1,sdata%nl1),gamma(sdata%nc1,sdata%nl1),delta(sdata%nc1,sdata%nl0)
+real(kind_real) :: beta(ndata%nc1,ndata%nl1),gamma(ndata%nc1,ndata%nl1),delta(ndata%nc1,ndata%nl0)
 
 !$omp parallel do private(is)
-do is=1,sdata%ns
+do is=1,ndata%ns
    if (nam%lsqrt) then
       ! Internal normalization
-      beta(sdata%is_to_ic2(is),sdata%is_to_il1(is)) = alpha%val(is)*sdata%norm_sqrt%val(is)
+      beta(ndata%is_to_ic2(is),ndata%is_to_il1(is)) = alpha%val(is)*ndata%norm_sqrt%val(is)
    else
       ! Copy
-      beta(sdata%is_to_ic2(is),sdata%is_to_il1(is)) = alpha%val(is)
+      beta(ndata%is_to_ic2(is),ndata%is_to_il1(is)) = alpha%val(is)
    end if
 end do
 !$omp end parallel do
 
 ! Subsampling horizontal interpolation
 !$omp parallel do private(il1)
-do il1=1,sdata%nl1
-   call apply_linop(sdata%s(il1),beta(1:sdata%nc2(il1),il1),gamma(:,il1))
+do il1=1,ndata%nl1
+   call apply_linop(ndata%s(il1),beta(1:ndata%nc2(il1),il1),gamma(:,il1))
 end do
 !$omp end parallel do
 
 ! Vertical interpolation
 !$omp parallel do private(ic1)
-do ic1=1,sdata%nc1
-   call apply_linop(sdata%v(sdata%vbot(ic1)),gamma(ic1,:),delta(ic1,:))
+do ic1=1,ndata%nc1
+   call apply_linop(ndata%v(ndata%vbot(ic1)),gamma(ic1,:),delta(ic1,:))
 end do
 !$omp end parallel do
 
 ! Horizontal interpolation
 !$omp parallel do private(il0)
-do il0=1,sdata%nl0
-   call apply_linop(sdata%h(min(il0,sdata%nl0i)),delta(:,il0),fld%val(:,il0))
+do il0=1,ndata%nl0
+   call apply_linop(ndata%h(min(il0,ndata%nl0i)),delta(:,il0),fld%val(:,il0))
 end do
 !$omp end parallel do
 
 ! Normalization
-fld%val = fld%val*sdata%norm%val
+fld%val = fld%val*ndata%norm%val
 
 end subroutine interp_global
 
@@ -112,138 +95,110 @@ end subroutine interp_global
 ! Subroutine: interp_local
 !> Purpose: interpolation, local
 !----------------------------------------------------------------------
-subroutine interp_local(sdatampi,alpha,fld)
+subroutine interp_local(ndataloc,alpha,fld)
 
 implicit none
 
 ! Passed variables
-type(sdatampitype),intent(in) :: sdatampi !< Sampling data
+type(ndataloctype),intent(in) :: ndataloc !< Sampling data
 type(alphatype),intent(in) :: alpha       !< Subgrid variable
 type(fldtype),intent(inout) :: fld        !< Field
 
 ! Local variables
 integer :: isb,il1,ic1b,il0
-real(kind_real) :: beta(sdatampi%nc1b,sdatampi%nl1),gamma(sdatampi%nc1b,sdatampi%nl1),delta(sdatampi%nc1b,sdatampi%nl0)
+real(kind_real) :: beta(ndataloc%nc1b,ndataloc%nl1),gamma(ndataloc%nc1b,ndataloc%nl1),delta(ndataloc%nc1b,ndataloc%nl0)
 
 !$omp parallel do private(isb)
-do isb=1,sdatampi%nsb
+do isb=1,ndataloc%nsb
    if (nam%lsqrt) then
       ! Internal normalization
-      beta(sdatampi%isb_to_ic2b(isb),sdatampi%isb_to_il1(isb)) = alpha%valb(isb)*sdatampi%norm_sqrt%valb(isb)
+      beta(ndataloc%isb_to_ic2b(isb),ndataloc%isb_to_il1(isb)) = alpha%valb(isb)*ndataloc%norm_sqrt%valb(isb)
    else
       ! Copy
-      beta(sdatampi%isb_to_ic2b(isb),sdatampi%isb_to_il1(isb)) = alpha%valb(isb)
+      beta(ndataloc%isb_to_ic2b(isb),ndataloc%isb_to_il1(isb)) = alpha%valb(isb)
    end if
 end do
 !$omp end parallel do
 
 ! Subsampling horizontal interpolation
 !$omp parallel do private(il1)
-do il1=1,sdatampi%nl1
-   call apply_linop(sdatampi%s(il1),beta(1:sdatampi%nc2b(il1),il1),gamma(:,il1))
+do il1=1,ndataloc%nl1
+   call apply_linop(ndataloc%s(il1),beta(1:ndataloc%nc2b(il1),il1),gamma(:,il1))
 end do
 !$omp end parallel do
 
 ! Vertical interpolation
 !$omp parallel do private(ic1b)
-do ic1b=1,sdatampi%nc1b
-   call apply_linop(sdatampi%v(sdatampi%vbot(ic1b)),gamma(ic1b,:),delta(ic1b,:))
+do ic1b=1,ndataloc%nc1b
+   call apply_linop(ndataloc%v(ndataloc%vbot(ic1b)),gamma(ic1b,:),delta(ic1b,:))
 end do
 !$omp end parallel do
 
 ! Horizontal interpolation
 !$omp parallel do private(il0)
-do il0=1,sdatampi%nl0
-   call apply_linop(sdatampi%h(min(il0,sdatampi%nl0i)),delta(:,il0),fld%vala(:,il0))
+do il0=1,ndataloc%nl0
+   call apply_linop(ndataloc%h(min(il0,ndataloc%nl0i)),delta(:,il0),fld%vala(:,il0))
 end do
 !$omp end parallel do
 
 ! Normalization
-fld%vala = fld%vala*sdatampi%norm%vala
+fld%vala = fld%vala*ndataloc%norm%vala
 
 end subroutine interp_local
-
-!----------------------------------------------------------------------
-! Subroutine: interp_ad
-!> Purpose: interpolation adjoint
-!----------------------------------------------------------------------
-subroutine interp_ad(sdata,fld,alpha)
-
-implicit none
-
-! Passed variables
-type(sdatatype),intent(in) :: sdata                 !< Sampling data
-type(fldtype),intent(in) :: fld(sdata%nproc)        !< Field
-type(alphatype),intent(inout) :: alpha(sdata%nproc) !< Subgrid variable
-
-! Local variables
-integer :: iproc
-
-if (nam%nproc==0) then
-   ! Apply global adjoint interpolation
-   call interp_ad_global(sdata,fld(1),alpha(1))
-elseif (nam%nproc>0) then
-   ! Apply local adjoint interpolation
-   do iproc=1,sdata%nproc
-      call interp_ad_local(sdata%mpi(iproc),fld(iproc),alpha(iproc))
-   end do
-end if
-
-end subroutine interp_ad
 
 !----------------------------------------------------------------------
 ! Subroutine: interp_ad_global
 !> Purpose: interpolation adjoint, global
 !----------------------------------------------------------------------
-subroutine interp_ad_global(sdata,fld,alpha)
+subroutine interp_ad_global(ndata,fld,alpha)
 
 implicit none
 
 ! Passed variables
-type(sdatatype),intent(in) :: sdata    !< Sampling data
+type(ndatatype),intent(in) :: ndata    !< Sampling data
 type(fldtype),intent(in) :: fld        !< Field
 type(alphatype),intent(inout) :: alpha !< Subgrid variable
 
 ! Local variables
 integer :: is,il1,ic1,il0
-real(kind_real) :: beta(sdata%nc1,sdata%nl1),gamma(sdata%nc1,sdata%nl1),delta(sdata%nc1,sdata%nl0)
+real(kind_real) :: beta(ndata%nc1,ndata%nl1),gamma(ndata%nc1,ndata%nl1),delta(ndata%nc1,ndata%nl0)
 type(fldtype) :: fld_tmp
 
 ! Allocation
-allocate(fld_tmp%val(sdata%nc0,sdata%nl0))
+allocate(fld_tmp%val(ndata%nc0,ndata%nl0))
 
 ! Normalization
-fld_tmp%val = fld%val*sdata%norm%val
+fld_tmp%val = fld%val*ndata%norm%val
 
 ! Horizontal interpolation
 !$omp parallel do private(il0)
-do il0=1,sdata%nl0
-   call apply_linop_ad(sdata%h(min(il0,sdata%nl0i)),fld_tmp%val(:,il0),delta(:,il0))
+do il0=1,ndata%nl0
+   call apply_linop_ad(ndata%h(min(il0,ndata%nl0i)),fld_tmp%val(:,il0),delta(:,il0))
 end do
 !$omp end parallel do
 
 ! Vertical interpolation
 !$omp parallel do private(ic1)
-do ic1=1,sdata%nc1
-   call apply_linop_ad(sdata%v(sdata%vbot(ic1)),delta(ic1,:),gamma(ic1,:))
+do ic1=1,ndata%nc1
+   call apply_linop_ad(ndata%v(ndata%vbot(ic1)),delta(ic1,:),gamma(ic1,:))
 end do
 !$omp end parallel do
 
 ! Subsampling horizontal interpolation
 !$omp parallel do private(il1)
-do il1=1,sdata%nl1
-   call apply_linop_ad(sdata%s(il1),gamma(:,il1),beta(1:sdata%nc2(il1),il1))
+do il1=1,ndata%nl1
+   call apply_linop_ad(ndata%s(il1),gamma(:,il1),beta(1:ndata%nc2(il1),il1))
 end do
 !$omp end parallel do
 
 !$omp parallel do private(is)
-do is=1,sdata%ns
+do is=1,ndata%ns
    if (nam%lsqrt) then
       ! Internal normalization
-      alpha%val(is) = beta(sdata%is_to_ic2(is),sdata%is_to_il1(is))*sdata%norm_sqrt%val(is)
+      alpha%val(is) = beta(ndata%is_to_ic2(is),ndata%is_to_il1(is))*ndata%norm_sqrt%val(is)
    else
       ! Copy
-      alpha%val(is) = beta(sdata%is_to_ic2(is),sdata%is_to_il1(is))
+      alpha%val(is) = beta(ndata%is_to_ic2(is),ndata%is_to_il1(is))
    end if
 end do
 !$omp end parallel do
@@ -254,55 +209,55 @@ end subroutine interp_ad_global
 ! Subroutine: interp_ad_local
 !> Purpose: interpolation adjoint, local
 !----------------------------------------------------------------------
-subroutine interp_ad_local(sdatampi,fld,alpha)
+subroutine interp_ad_local(ndataloc,fld,alpha)
 
 implicit none
 
 ! Passed variables
-type(sdatampitype),intent(in) :: sdatampi  !< Sampling data
+type(ndataloctype),intent(in) :: ndataloc  !< Sampling data
 type(fldtype),intent(in) :: fld            !< Field
 type(alphatype),intent(inout) :: alpha     !< Subgrid variable
 
 ! Local variables
 integer :: isb,il1,ic1b,il0
-real(kind_real) :: beta(sdatampi%nc1b,sdatampi%nl1),gamma(sdatampi%nc1b,sdatampi%nl1),delta(sdatampi%nc1b,sdatampi%nl0)
+real(kind_real) :: beta(ndataloc%nc1b,ndataloc%nl1),gamma(ndataloc%nc1b,ndataloc%nl1),delta(ndataloc%nc1b,ndataloc%nl0)
 type(fldtype) :: fld_tmp
 
 ! Allocation
-allocate(fld_tmp%vala(sdatampi%nc0a,sdatampi%nl0))
+allocate(fld_tmp%vala(ndataloc%nc0a,ndataloc%nl0))
 
 ! Normalization
-fld_tmp%vala = fld%vala*sdatampi%norm%vala
+fld_tmp%vala = fld%vala*ndataloc%norm%vala
 
 ! Horizontal interpolation
 !$omp parallel do private(il0)
-do il0=1,sdatampi%nl0
-   call apply_linop_ad(sdatampi%h(min(il0,sdatampi%nl0i)),fld_tmp%vala(:,il0),delta(:,il0))
+do il0=1,ndataloc%nl0
+   call apply_linop_ad(ndataloc%h(min(il0,ndataloc%nl0i)),fld_tmp%vala(:,il0),delta(:,il0))
 end do
 !$omp end parallel do
 
 ! Vertical interpolation
 !$omp parallel do private(ic1b)
-do ic1b=1,sdatampi%nc1b
-   call apply_linop_ad(sdatampi%v(sdatampi%vbot(ic1b)),delta(ic1b,:),gamma(ic1b,:))
+do ic1b=1,ndataloc%nc1b
+   call apply_linop_ad(ndataloc%v(ndataloc%vbot(ic1b)),delta(ic1b,:),gamma(ic1b,:))
 end do
 !$omp end parallel do
 
 ! Subsampling horizontal interpolation
 !$omp parallel do private(il1)
-do il1=1,sdatampi%nl1
-   call apply_linop_ad(sdatampi%s(il1),gamma(:,il1),beta(1:sdatampi%nc2b(il1),il1))
+do il1=1,ndataloc%nl1
+   call apply_linop_ad(ndataloc%s(il1),gamma(:,il1),beta(1:ndataloc%nc2b(il1),il1))
 end do
 !$omp end parallel do
 
 !$omp parallel do private(isb)
-do isb=1,sdatampi%nsb
+do isb=1,ndataloc%nsb
    if (nam%lsqrt) then
       ! Internal normalization
-      alpha%valb(isb) = beta(sdatampi%isb_to_ic2b(isb),sdatampi%isb_to_il1(isb))*sdatampi%norm_sqrt%valb(isb)
+      alpha%valb(isb) = beta(ndataloc%isb_to_ic2b(isb),ndataloc%isb_to_il1(isb))*ndataloc%norm_sqrt%valb(isb)
    else
       ! Copy
-      alpha%valb(isb) = beta(sdatampi%isb_to_ic2b(isb),sdatampi%isb_to_il1(isb))
+      alpha%valb(isb) = beta(ndataloc%isb_to_ic2b(isb),ndataloc%isb_to_il1(isb))
    end if
 end do
 !$omp end parallel do
