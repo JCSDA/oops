@@ -3,8 +3,8 @@
     "categories": "Info, Test, Warning, Error"
   },
   "resolution": {
-    "nx": "160",
-    "ny": "80",
+    "nx": "40",
+    "ny": "20",
     "bc": "1"
   },
   "model": {
@@ -648,8 +648,8 @@
     "iteration": [
       {
         "resolution": {
-          "nx": "160",
-          "ny": "80",
+          "nx": "40",
+          "ny": "20",
           "bc": "1"
         },
         "linearmodel": {
@@ -672,8 +672,8 @@
       },
       {
         "resolution": {
-          "nx": "160",
-          "ny": "80",
+          "nx": "40",
+          "ny": "20",
           "bc": "1"
         },
         "linearmodel": {

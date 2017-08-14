@@ -1,13 +1,7 @@
 {
-<<<<<<< HEAD
-  "Geometry": {
+  "resolution": {
     "nx": "40",
     "ny": "20",
-=======
-  "resolution": {
-    "nx": "160",
-    "ny": "80",
->>>>>>> NICAS-QG
     "bc": "1"
   },
   "Model": {

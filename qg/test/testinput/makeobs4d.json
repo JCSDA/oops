@@ -1,5 +1,5 @@
 {
-  "Geometry": {
+  "resolution": {
     "nx": "40",
     "ny": "20",
     "bc": "1"
