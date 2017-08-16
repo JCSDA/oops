@@ -18,15 +18,12 @@ project( oops C CXX Fortran)
 set( CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../ecbuild/cmake")
 
 set( ECBUILD_DEFAULT_BUILD_TYPE Release )
-set( ENABLE_OS_TESTS OFF CACHE BOOL "Disable OS tests" FORCE )
+set( ENABLE_OS_TESTS           OFF CACHE BOOL "Disable OS tests" FORCE )
 set( ENABLE_LARGE_FILE_SUPPORT OFF CACHE BOOL "Disable testing of large file support" FORCE )
-set( ENABLE_MPI ON CACHE BOOL "Do compile with MPI" )
-set( FIND_OMP ON CACHE BOOL "Do compile with OpenMP" )
-set( HAVE_OMP ON ) # Why?
-set( NETCDF_F90 ON CACHE BOOL "Do compile with Fortran NetCDF" )
 
 include( ecbuild_system NO_POLICY_SCOPE )
-ecbuild_requires_macro_version( 1.6 )
+
+ecbuild_requires_macro_version( 2.5 )
 
 ################################################################################
 # OOPS project
@@ -37,18 +34,22 @@ ecbuild_declare_project()
 ecbuild_enable_fortran( REQUIRED )
 
 # eckit
-ecbuild_use_package( PROJECT eckit VERSION 0.12.0 REQUIRED )
-include_directories( ${ECKIT_INCLUDE_DIRS} )
+ecbuild_use_package( PROJECT eckit VERSION 0.16.0 REQUIRED )
+#yt include_directories( ${ECKIT_INCLUDE_DIRS} )
+
+# options & dependencies
+ecbuild_add_cxx11_flags()
 
 # fckit (optional for now)
-ecbuild_use_package( PROJECT fckit )
+ecbuild_use_package( PROJECT fckit VERSION 0.2.0 REQUIRED )
 ecbuild_add_option( FEATURE FCTEST
                     DEFAULT ${ENABLE_TESTS}
                     DESCRIPTION "Fortran Unit Testing Framework"
                     REQUIRED_PACKAGES "PROJECT fckit" )
-include_directories( ${FCKIT_INCLUDE_DIRS} )
+#yt include_directories( ${FCKIT_INCLUDE_DIRS} )
 
-list( APPEND OOPS_TPLS eckit )
+
+list( APPEND OOPS_TPLS eckit fckit )
 
 set( OOPS_LINKER_LANGUAGE CXX )
 
@@ -77,18 +78,46 @@ endif()
 find_package( LibXml2 REQUIRED )
 include_directories( ${LIBXML2_INCLUDE_DIR} )
 
-# NetCDF
-find_package( NetCDF REQUIRED )
-include_directories( ${NETCDF_INCLUDE_DIR} )
+# MPI
+#yt set( ENABLE_MPI                ON CACHE BOOL "Compile with MPI" )
+#find_package( MPI REQUIRED )
+#include_directories( ${MPI_INCLUDE_DIR} )
+ecbuild_add_option( FEATURE MPI DEFAULT ON
+                    DESCRIPTION "Support for MPI distributed parallelism"
+                    REQUIRED_PACKAGES "MPI COMPONENTS CXX Fortran" )
+
+if ( NOT ECKIT_HAVE_MPI )
+  ecbuild_error("OOPS requested to build with MPI but eckit wasn't built with MPI: ECKIT_HAVE_MPI = ${ECKIT_HAVE_MPI}")
+endif()
+
+#if( HAVE_MPI )
+  set( OOPS_MPI_C_LIBRARIES            ${MPI_CXX_LIBRARIES} )
+  ecbuild_include_mpi()
+  link_libraries(${MPI_CXX_LIBRARIES} ${MPI_Fortran_LIBRARIES})
+#endif()
 
 # OpenMP
-find_package( OpenMP REQUIRED )
+ecbuild_add_option( FEATURE OMP
+                    DESCRIPTION "Support for OpenMP threaded parallelism"
+                    REQUIRED_PACKAGES "OMP COMPONENTS CXX Fortran" )
+
+if( HAVE_OMP )
+  ecbuild_enable_omp()
+else()
+  ecbuild_enable_ompstubs()
+endif()
+
+# NetCDF
+set( NETCDF_F90 ON CACHE BOOL "Compile with Fortran NetCDF" )
+find_package( NetCDF REQUIRED )
+include_directories( ${NETCDF_INCLUDE_DIR} )
 
 ################################################################################
 # Export package info
 ################################################################################
 
-list( APPEND OOPS_TPLS LAPACK LibXml2 NetCDF OpenMP )
+list( APPEND OOPS_TPLS LAPACK LibXml2 MPI NetCDF )
+
 set( OOPS_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/src
                        ${CMAKE_Fortran_MODULE_DIRECTORY} )
 set( OOPS_LIBRARIES oops )
@@ -107,7 +136,7 @@ endforeach()
 ################################################################################
 
 ecbuild_add_cxx11_flags()
-ecbuild_add_option( FEATURE MPI DEFAULT OFF )
+ecbuild_add_option( FEATURE MPI DEFAULT ON )
 
 if ( HAVE_MPI AND NOT ECKIT_HAVE_MPI )
   ecbuild_error("OOPS was requested to build with MPI but eckit wasn't built with MPI: ECKIT_HAVE_MPI = ${ECKIT_HAVE_MPI}")
