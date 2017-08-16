@@ -90,6 +90,7 @@ template <typename MODEL> class Dirac : public Application {
     Increment_ dx(dxinit);
     loc_->multiply(dx);
     Log::info() << "Apply NICAS OK" << std::endl;
+    Log::test() << "Increment norm: " << dx.norm() << std::endl;
 
 //  Write increment
     const eckit::LocalConfiguration output_nicas(fullConfig, "output_nicas");
@@ -107,6 +108,7 @@ template <typename MODEL> class Dirac : public Application {
     Increment_ dxout(resol, vars, bgndate);
     Bens->multiply(dxin,dxout);
     Log::info() << "Apply full ensemble B matrix OK" << std::endl;
+    Log::test() << "Increment norm: " << dxout.norm() << std::endl;
 
 //  Write increment
     const eckit::LocalConfiguration output_Bens(fullConfig, "output_Bens");

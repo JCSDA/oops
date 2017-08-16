@@ -468,8 +468,8 @@ type(qg_field), pointer :: fld
 
 call qg_field_registry%get(c_key_fld,fld)
 
-nx = fld%nx
-ny = fld%ny
+nx = fld%geom%nx
+ny = fld%geom%ny
 nf = fld%nf
 nb =0
 if (fld%lbc) nb = 2
