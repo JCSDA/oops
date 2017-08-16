@@ -8,8 +8,10 @@
 module unstructured_grid_mod
 
 use iso_c_binding
+use config_mod
 use kinds
 use column_data_mod
+use tools_dirac, only: setup_dirac_points
 
 implicit none
 private
@@ -50,6 +52,8 @@ contains
 #include "util/linkedList_c.f"
 
 ! ------------------------------------------------------------------------------
+!  C++ interfaces
+! ------------------------------------------------------------------------------
 
 subroutine create_ug_c(key) bind(c, name='create_ug_f90')
 implicit none
@@ -68,6 +72,17 @@ call unstructured_grid_registry%get(key,self)
 call delete_unstructured_grid(self)
 call unstructured_grid_registry%remove(key)
 end subroutine
+
+! ------------------------------------------------------------------------------
+
+subroutine setup_dirac_c(key, c_conf) bind(c, name='setup_dirac_f90')
+implicit none
+integer(c_int), intent(inout) :: key
+type(c_ptr), intent(in) :: c_conf
+type(unstructured_grid), pointer :: self
+call unstructured_grid_registry%get(key,self)
+call setup_dirac(self, c_conf)
+end subroutine setup_dirac_c
 
 ! ------------------------------------------------------------------------------
 
@@ -126,6 +141,79 @@ endif
 call create_column_data(self%last%column, plat, plon, klevs, kvars, ksurf)
 
 end subroutine add_column
+
+!-------------------------------------------------------------------------------
+
+subroutine setup_dirac(self, c_conf)
+implicit none
+type(unstructured_grid), intent(inout) :: self
+type(c_ptr), intent(in) :: c_conf
+integer :: ndir,idir,levdir,ivardir
+integer,allocatable :: ic0dir(:) 
+real(kind_real),allocatable :: lon(:),lat(:),londir(:),latdir(:)
+integer :: nc0a,ic0a
+logical,allocatable :: lmask(:)
+type(column_element), pointer :: current
+character(len=3) :: idirchar
+
+! Get nc0a
+nc0a = 0
+current => self%head
+do while (associated(current))
+   nc0a = nc0a+1
+   current => current%next
+end do
+
+! Allocation
+allocate(lon(nc0a))
+allocate(lat(nc0a))
+allocate(lmask(nc0a))
+
+! Get lon/lat/mask
+ic0a = 0
+current => self%head
+do while (associated(current))
+   ic0a = ic0a+1
+   lon(ic0a) = current%column%lon
+   lat(ic0a) = current%column%lat
+   lmask(ic0a) = .true. ! TODO: add mask in column data
+   current => current%next
+end do
+
+! Get Dirac properties from JSON
+ndir = config_get_int(c_conf,"ndir")
+allocate(londir(ndir))
+allocate(latdir(ndir))
+do idir=1,ndir
+   write(idirchar,'(i3)') idir
+   londir(idir) = config_get_real(c_conf,"londir("//trim(adjustl(idirchar))//")")
+   latdir(idir) = config_get_real(c_conf,"latdir("//trim(adjustl(idirchar))//")")
+end do
+levdir = config_get_int(c_conf,"levdir")
+ivardir = config_get_int(c_conf,"ivardir")
+
+! Setup dirac field
+allocate(ic0dir(ndir))
+call setup_dirac_points(nc0a,lon,lat,lmask,ndir,londir,latdir,ic0dir)
+
+! Set all columns to zero
+current => self%head
+do while (associated(current))
+   current%column%cols = 0.0
+   current => current%next
+end do
+
+! Set Dirac
+ic0a = 0
+current => self%head
+do while (associated(current))
+   ic0a = ic0a+1
+   if (any((latdir==current%column%lat).and.(londir==current%column%lon))) & 
+ & current%column%cols((ivardir-1)*self%head%column%nlevs+levdir) = 1.0 
+   current => current%next
+end do
+
+end subroutine setup_dirac
 
 !-------------------------------------------------------------------------------
 

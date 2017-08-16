@@ -16,7 +16,6 @@ use tools_const, only: pi,req,deg2rad,ps,rad2deg
 use tools_kinds,only: kind_real
 use tools_missing, only: msvalr,msi,msr,isanynotmsr,isnotmsr,isnotmsi
 use tools_nc, only: ncerr,ncfloat
-use type_esmf, only: esmf_create_field
 use type_ndata, only: ndatatype,ndata_alloc
 
 implicit none
@@ -115,9 +114,6 @@ if (nam%logpres) then
 else
    ndata%vunit = float(nam%levs(1:ndata%nl0))
 end if
-
-! Create ESMF field from mesh
-call esmf_create_field(ndata,ndata%nc0,ndata%lon,ndata%lat,any(ndata%mask,dim=2),ndata%c0field)
 
 ! Release memory
 deallocate(lon)

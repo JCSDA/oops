@@ -19,8 +19,8 @@ use tools_kinds,only: kind_real
 use tools_missing, only: msvali,msvalr,msi,msr,isnotmsr,isnotmsi
 use tools_nc, only: ncfloat,ncerr
 use type_ctree, only: ctreetype,create_ctree,find_nearest_neighbors,delete_ctree
-use type_esmf, only: esmf_create_field,esmf_create_interp
 use type_linop, only: linoptype,linop_alloc,linop_dealloc,linop_copy,linop_reorder
+use type_mesh, only: meshtype,create_mesh
 use type_mpl, only: mpl,mpl_bcast,mpl_recv,mpl_send
 use type_ndata, only: ndatatype
 use type_randgen, only: initialize_sampling,rand_integer
@@ -30,7 +30,7 @@ implicit none
 real(kind_real),parameter :: S_inf = 1.0e-3 !< Minimum value for the interpolation coefficients
 
 private
-public :: compute_interp_h,compute_interp_v,compute_interp_s
+public :: compute_interp_h,compute_interp_v,compute_interp_s,interp_horiz
 
 contains
 
@@ -51,19 +51,17 @@ integer :: iproc,i_s_s(mpl%nproc),i_s_e(mpl%nproc),n_s_loc(mpl%nproc),i_s_loc
 integer,allocatable :: mask_ctree(:)
 real(kind_real) :: dum(1)
 real(kind_real) :: renorm(ndata%nc0)
-real(kind_real),allocatable :: x(:),y(:),z(:),v1(:),v2(:),va(:),vp(:),t(:)
+real(kind_real),allocatable :: v1(:),v2(:),va(:),vp(:),t(:)
 logical,allocatable :: done(:),valid(:),validg(:,:),missing(:)
 type(linoptype) :: hbase,htmp
 type(ctreetype) :: ctree
 
-! Create ESMF field for C1
-call esmf_create_field(ndata,ndata%nc1,ndata%lon(ndata%ic1_to_ic0),ndata%lat(ndata%ic1_to_ic0), &
- & any(ndata%mask(ndata%ic1_to_ic0,:),dim=2),ndata%c1field)
-
 ! Compute interpolation
-call esmf_create_interp(ndata%c1field,ndata%c0field,ndata%regional,hbase)
+call interp_horiz(ndata,ndata%nc1,ndata%lon(ndata%ic1_to_ic0), &
+ & ndata%lat(ndata%ic1_to_ic0),ndata%nc0,ndata%lon,ndata%lat,any(ndata%mask,dim=2),hbase)
 
 ! Allocation
+allocate(valid(hbase%n_s))
 allocate(ndata%h(ndata%nl0i))
 
 do il0i=1,ndata%nl0i
@@ -71,17 +69,7 @@ do il0i=1,ndata%nl0i
    call linop_copy(hbase,htmp)
 
    ! Check interpolation coefficient
-   valid = (htmp%S>S_inf)
-
-   ! Check mask
-   do i_s=1,htmp%n_s
-      if (valid(i_s)) then
-         ic0 = htmp%row(i_s)
-         jc1 = htmp%col(i_s)
-         jc0 = ndata%ic1_to_ic0(jc1)
-         valid(i_s) = ndata%mask(ic0,il0i).and.ndata%mask(jc0,il0i)
-      end if
-   end do
+   valid = .true.
 
    ! Check mask boundaries
    if (nam%mask_check) then
@@ -328,24 +316,19 @@ integer :: iproc,i_s_s(mpl%nproc),i_s_e(mpl%nproc),n_s_loc(mpl%nproc),i_s_loc
 integer,allocatable :: mask_ctree(:)
 real(kind_real) :: dum(1)
 real(kind_real) :: renorm(ndata%nc1)
-real(kind_real),allocatable :: x(:),y(:),z(:),v1(:),v2(:),va(:),vp(:),t(:)
+real(kind_real),allocatable :: v1(:),v2(:),va(:),vp(:),t(:)
 logical,allocatable :: done(:),valid(:),validg(:,:),missing(:)
 type(linoptype) :: stmp
 type(ctreetype) :: ctree
 
 ! Allocation
-allocate(ndata%c2field(ndata%nl1))
 allocate(ndata%s(ndata%nl1))
 
 do il1=1,ndata%nl1
-   ! Create ESMF field for C2
-   call esmf_create_field(ndata,ndata%nc2(il1),ndata%lon(ndata%ic2il1_to_ic0(1:ndata%nc2(il1),il1)), & 
- & ndata%lat(ndata%ic2il1_to_ic0(1:ndata%nc2(il1),il1)), &
- & ndata%mask(ndata%ic2il1_to_ic0(1:ndata%nc2(il1),il1), &
- & ndata%il1_to_il0(il1)),ndata%c2field(il1))
-
    ! Compute interpolation
-   call esmf_create_interp(ndata%c2field(il1),ndata%c1field,ndata%regional,interp=stmp)
+   call interp_horiz(ndata,ndata%nc2(il1),ndata%lon(ndata%ic2il1_to_ic0(1:ndata%nc2(il1),il1)), & 
+ & ndata%lat(ndata%ic2il1_to_ic0(1:ndata%nc2(il1),il1)),ndata%nc1,ndata%lon(ndata%ic1_to_ic0), &
+ & ndata%lat(ndata%ic1_to_ic0),ndata%mask(ndata%ic1_to_ic0,ndata%il1_to_il0(il1)),stmp)
 
    ! Allocation
    allocate(valid(stmp%n_s))
@@ -356,7 +339,7 @@ do il1=1,ndata%nl1
    ! Check mask boundaries
    if (nam%mask_check) then
       call check_mask_bnd(ndata,stmp,valid,ndata%il1_to_il0(il1), &
-    & row_to_ic0=ndata%ic1_to_ic0,col_to_ic0=ndata%ic1_to_ic0(ndata%ic2il1_to_ic1(:,il1)))
+    & row_to_ic0=ndata%ic1_to_ic0,col_to_ic0=ndata%ic1_to_ic0(ndata%ic2il1_to_ic1(1:ndata%nc2(il1),il1)))
    else
       write(mpl%unit,'(a10,a,i3)') '','Level ',nam%levs(ndata%il1_to_il0(il1))
    end if
@@ -448,6 +431,91 @@ end do
 end subroutine compute_interp_s
 
 !----------------------------------------------------------------------
+! Subroutine: interp_horiz
+!> Purpose: compute horizontal interpolation
+!----------------------------------------------------------------------
+subroutine interp_horiz(ndata,n_src,lon_src,lat_src,n_dst,lon_dst,lat_dst,mask_dst,interp)
+
+implicit none
+
+! Passed variables
+type(ndatatype),intent(in) :: ndata
+integer,intent(in) :: n_src
+real(kind_real),intent(in) :: lon_src(n_src)
+real(kind_real),intent(in) :: lat_src(n_src)
+integer,intent(in) :: n_dst
+real(kind_real),intent(in) :: lon_dst(n_dst)
+real(kind_real),intent(in) :: lat_dst(n_dst)
+logical,intent(in) :: mask_dst(n_dst)
+type(linoptype),intent(inout) :: interp
+
+! Local variables
+integer :: info,i_src,j_src,k_src,i,ibnd,il0,nt,i_dst,inn(1),n_s
+integer :: ib(3),row(3*n_dst),col(3*n_dst)
+integer,allocatable :: mask_ctree(:)
+real(kind_real) :: dum(1),p(3),b(3),S(3*n_dst)
+logical :: init
+type(ctreetype) :: ctree
+type(meshtype) :: mesh
+
+! Create mesh
+call create_mesh(ndata%rng,n_src,lon_src,lat_src,.false.,mesh)
+
+! Compute cover tree
+allocate(mask_ctree(mesh%nnr))
+mask_ctree = 1
+ctree = create_ctree(mesh%nnr,dble(lon_src(mesh%order)),dble(lat_src(mesh%order)),mask_ctree)
+
+! Compute interpolation
+n_s = 0
+do i_dst=1,n_dst
+   if (mask_dst(i_dst)) then
+      ! Find nearest neighbor
+      call find_nearest_neighbors(ctree,dble(lon_dst(i_dst)), &
+    & dble(lat_dst(i_dst)),1,inn,dum)
+
+      ! Transform to cartesian coordinates
+      call trans(1,lat_dst(i_dst),lon_dst(i_dst),p(1),p(2),p(3))
+
+      ! Compute barycentric coordinates
+      call trfind(inn(1),dble(p),mesh%nnr,mesh%x,mesh%y,mesh%z,mesh%list,mesh%lptr,mesh%lend, &
+    & b(1),b(2),b(3),ib(1),ib(2),ib(3))
+
+      if (sum(b)>0.0) then
+         ! Normalize barycentric coordinates
+         b = b/sum(b)
+
+         ! Add interpolation elements
+         do i=1,3
+            if (b(i)>S_inf) then
+               n_s = n_s+1
+               row(n_s) = i_dst
+               col(n_s) = mesh%order(ib(i))
+               S(n_s) = b(i)
+            end if
+         end do
+      end if
+   end if
+end do
+
+! Allocation
+interp%n_s = n_s
+interp%n_src = n_src
+interp%n_dst = n_dst
+call linop_alloc(interp)
+
+! Copy data
+interp%row = row(1:n_s)
+interp%col = col(1:n_s)
+interp%S = S(1:n_s)
+
+! Release memory
+call delete_ctree(ctree)
+!call delete_mesh(mesh) TODO
+
+end subroutine interp_horiz
+
+!----------------------------------------------------------------------
 ! Subroutine: check_mask_bnd
 !> Purpose: check mask boundaries for interpolations
 !----------------------------------------------------------------------
@@ -459,8 +527,8 @@ implicit none
 type(ndatatype),intent(in) :: ndata          !< Sampling data
 type(linoptype),intent(inout) :: interp          !< Interpolation
 logical,intent(inout) :: valid(interp%n_s)   !< Valid vector
-integer,intent(in),optional :: row_to_ic0(:) !< Conversion from row to ic0 (identity if missing)
-integer,intent(in),optional :: col_to_ic0(:) !< Conversion from col to ic0 (identity if missing)
+integer,intent(in),optional :: row_to_ic0(interp%n_dst) !< Conversion from row to ic0 (identity if missing)
+integer,intent(in),optional :: col_to_ic0(interp%n_src) !< Conversion from col to ic0 (identity if missing)
 
 ! Local variables
 integer :: ic0,ic1,i_s,ibnd,jc0,jc1,progint,il0

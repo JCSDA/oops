@@ -5,7 +5,7 @@
     "bc": "1"
   },
   "model": {
-    "tstep": "PT05M",
+    "tstep": "PT10M",
     "top_layer_depth": "6000.0",
     "bottom_layer_depth": "4000.0"
   },

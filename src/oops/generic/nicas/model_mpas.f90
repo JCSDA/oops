@@ -16,7 +16,6 @@ use tools_const, only: pi,deg2rad,rad2deg
 use tools_kinds,only: kind_real
 use tools_missing, only: msvalr,msi,msr,isanynotmsr
 use tools_nc, only: ncerr,ncfloat
-use type_esmf, only: esmf_create_field
 use type_ndata, only: ndatatype,ndata_alloc
 
 implicit none
@@ -86,9 +85,6 @@ end if
 deallocate(lon)
 deallocate(lat)
 deallocate(pres)
-
-! Create ESMF field from mesh
-call esmf_create_field(ndata,ndata%nc0,ndata%lon,ndata%lat,any(ndata%mask,dim=2),ndata%c0field)
 
 end subroutine model_mpas_coord
 

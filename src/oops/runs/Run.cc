@@ -26,9 +26,7 @@
 
 extern "C" {
     void mpl_start_f90();
-    void esmf_start_f90();
     void mpl_end_f90();
-    void esmf_end_f90();
 }
 
 namespace oops {
@@ -36,9 +34,8 @@ namespace oops {
 // -----------------------------------------------------------------------------
 
 Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(), timer_() {
-// Start MPI and ESMF for NICAS
+// Start MPI for NICAS
   mpl_start_f90();
-  esmf_start_f90();
 
 // Get configuration file from command line
   ASSERT(argc >= 2);
@@ -58,8 +55,7 @@ Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(
 // -----------------------------------------------------------------------------
 
 Run::~Run() {
-// Finalize MPI end ESMF for NICAS
-    esmf_end_f90();
+// Finalize MPI for NICAS
     mpl_end_f90();
 
     LibOOPS::instance().finalise();

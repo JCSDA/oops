@@ -13,7 +13,6 @@ module module_normalization
 use module_namelist, only: nam
 use omp_lib
 use tools_display, only: msgerror,ddis,prog_init,prog_print
-use type_fields, only: fldtype,alphatype
 use tools_kinds,only: kind_real
 use tools_missing, only: msr,isnotmsi,msi
 use type_mpl, only: mpl,mpl_bcast,mpl_recv,mpl_send,mpl_barrier
@@ -153,7 +152,7 @@ if (nam%lsqrt) then
    write(mpl%unit,'(a7,a)') '','Compute internal normalization weights'
 
    ! Allocation
-   allocate(ndata%norm_sqrt%val(ndata%ns))
+   allocate(ndata%norm_sqrt(ndata%ns))
 
    do is=1,ndata%ns
       ! Allocation
@@ -170,13 +169,13 @@ if (nam%lsqrt) then
       end do
 
       ! Sum of squared values
-      ndata%norm_sqrt%val(is) = 1.0
+      ndata%norm_sqrt(is) = 1.0
       do js=1,ndata%ns
-         if (valid_list_tmp(js)) ndata%norm_sqrt%val(is) = ndata%norm_sqrt%val(is)+S_list_tmp(js)**2
+         if (valid_list_tmp(js)) ndata%norm_sqrt(is) = ndata%norm_sqrt(is)+S_list_tmp(js)**2
       end do
 
       ! Normalization factor
-      ndata%norm_sqrt%val(is) = 1.0/sqrt(ndata%norm_sqrt%val(is))
+      ndata%norm_sqrt(is) = 1.0/sqrt(ndata%norm_sqrt(is))
 
       ! Release memory
       deallocate(S_list_tmp)
@@ -253,7 +252,7 @@ do il0=1,ndata%nl0
             ! Internal normalization
             do ilr=1,nlr
                is = is_list(ilr)
-               S_list(ilr) = S_list(ilr)*ndata%norm_sqrt%val(is)
+               S_list(ilr) = S_list(ilr)*ndata%norm_sqrt(is)
             end do
 
             ! Initialization
@@ -333,7 +332,7 @@ end do
 write(mpl%unit,'(a)') '100%'
 
 ! Allocation
-allocate(ndata%norm%val(ndata%nc0,ndata%nl0))
+allocate(ndata%norm(ndata%nc0,ndata%nl0))
 
 ! Communication
 if (mpl%main) then
@@ -356,7 +355,7 @@ if (mpl%main) then
          do ic0_loc=1,nc0_loc(iproc)
             ic0 = ic0_s(iproc)+ic0_loc-1
             ibuf = (il0-1)*nc0_loc(iproc)+ic0_loc
-            ndata%norm%val(ic0,il0) = normg(ibuf,iproc)
+            ndata%norm(ic0,il0) = normg(ibuf,iproc)
          end do
       end do
    end do
@@ -370,7 +369,7 @@ end if
 mpl%tag = mpl%tag+1
 
 ! Broadcast data
-call mpl_bcast(ndata%norm%val,mpl%ioproc)
+call mpl_bcast(ndata%norm,mpl%ioproc)
 
 ! Release memory
 deallocate(norm)

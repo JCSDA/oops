@@ -10,11 +10,11 @@
 !----------------------------------------------------------------------
 module module_apply_nicas_sqrt
 
-use module_apply_com, only: alpha_com_ab,alpha_com_ba
+use module_apply_com, only: alpha_com_AB,alpha_com_BA,alpha_com_AC,alpha_com_CA
 use module_apply_convol, only: convol
 use module_apply_interp, only: interp,interp_ad
 use module_namelist, only: nam
-use type_fields, only: fldtype,alphatype
+use tools_kinds, only: kind_real
 use type_mpl, only: mpl
 use type_ndata, only: ndatatype,ndataloctype
 
@@ -45,14 +45,20 @@ implicit none
 
 ! Passed variables
 type(ndatatype),intent(in) :: ndata !< Sampling data
-type(alphatype),intent(inout) :: alpha !< Subgrid variable
-type(fldtype),intent(inout) :: fld  !< Field
+real(kind_real),intent(in) :: alpha(ndata%ns) !< Subgrid variable
+real(kind_real),intent(out) :: fld(ndata%nc0,ndata%nl0)  !< Field
+
+! Local variable
+real(kind_real) :: alpha_tmp(ndata%ns)
+
+! Copy
+alpha_tmp = alpha
 
 ! Convolution
-call convol(ndata,alpha)
+call convol(ndata,alpha_tmp)
 
 ! Interpolation
-call interp(ndata,alpha,fld)
+call interp(ndata,alpha_tmp,fld)
 
 end subroutine apply_nicas_sqrt_global
 
@@ -66,17 +72,35 @@ implicit none
 
 ! Passed variables
 type(ndataloctype),intent(in) :: ndataloc !< Sampling data
-type(alphatype),intent(inout) :: alpha       !< Subgrid variable
-type(fldtype),intent(inout) :: fld        !< Field
+real(kind_real),intent(in) :: alpha(ndataloc%nsa) !< Subgrid variable
+real(kind_real),intent(out) :: fld(ndataloc%nc0a,ndataloc%nl0)  !< Field
 
-! Halo reduction from zone A to zone B
-call alpha_com_AB(ndataloc,alpha)
+! Local variable
+real(kind_real),allocatable :: alpha_tmp(:)
+
+! Allocation
+allocate(alpha_tmp(ndataloc%nsa))
+
+! Copy
+alpha_tmp = alpha
+
+! Halo extension from zone A to zone C
+call alpha_com_AC(ndataloc,alpha_tmp)
 
 ! Convolution
-call convol(ndataloc,alpha)
+call convol(ndataloc,alpha_tmp)
+
+! Halo reduction from zone C to zone A
+call alpha_com_CA(ndataloc,alpha_tmp)
+
+! Halo extension from zone A to zone B
+call alpha_com_AB(ndataloc,alpha_tmp)
 
 ! Interpolation
-call interp(ndataloc,alpha,fld)
+call interp(ndataloc,alpha_tmp,fld)
+
+! Release memory
+deallocate(alpha_tmp)
 
 end subroutine apply_nicas_sqrt_local
 
@@ -90,8 +114,8 @@ implicit none
 
 ! Passed variables
 type(ndatatype),intent(in) :: ndata    !< Sampling data
-type(fldtype),intent(in) :: fld        !< Field
-type(alphatype),intent(inout) :: alpha !< Subgrid variable
+real(kind_real),intent(in) :: fld(ndata%nc0,ndata%nl0)  !< Field
+real(kind_real),intent(out) :: alpha(ndata%ns) !< Subgrid variable
 
 ! Adjoint interpolation
 call interp_ad(ndata,fld,alpha)
@@ -111,17 +135,35 @@ implicit none
 
 ! Passed variables
 type(ndataloctype),intent(in) :: ndataloc !< Sampling data
-type(fldtype),intent(in) :: fld           !< Field
-type(alphatype),intent(inout) :: alpha    !< Subgrid variable
+real(kind_real),intent(in) :: fld(ndataloc%nc0a,ndataloc%nl0)  !< Field
+real(kind_real),intent(out) :: alpha(ndataloc%nsa) !< Subgrid variable
+
+! Local variable
+real(kind_real),allocatable :: alpha_tmp(:)
+
+! Allocation
+allocate(alpha_tmp(ndataloc%nsb))
 
 ! Adjoint interpolation
-call interp_ad(ndataloc,fld,alpha)
-
-! Convolution
-call convol(ndataloc,alpha)
+call interp_ad(ndataloc,fld,alpha_tmp)
 
 ! Halo reduction from zone B to zone A
-call alpha_com_BA(ndataloc,alpha)
+call alpha_com_BA(ndataloc,alpha_tmp)
+
+! Halo extension from zone A to zone C
+call alpha_com_AC(ndataloc,alpha_tmp)
+
+! Convolution
+call convol(ndataloc,alpha_tmp)
+
+! Halo reduction from zone C to zone A
+call alpha_com_CA(ndataloc,alpha_tmp)
+
+! Copy
+alpha = alpha_tmp
+
+! Release memory
+deallocate(alpha_tmp)
 
 end subroutine apply_nicas_sqrt_ad_local
 

@@ -14,12 +14,6 @@
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-std::vector<int> Resolution::getDims() const {
-  std::vector<int> dims(1);
-  dims[0] = resol_;
-  return dims;
-}
-// -----------------------------------------------------------------------------
 std::vector<double> Resolution::getLats() const {
   std::vector<double> lats(resol_);
   for (int jj = 0; jj < resol_; ++jj) lats[jj] = 0.0;
@@ -37,12 +31,6 @@ std::vector<double> Resolution::getLevs() const {
   std::vector<double> levs(1);
   levs[0] = 0.0;
   return levs;
-}
-// -----------------------------------------------------------------------------
-std::vector<double> Resolution::getArea() const {
-  std::vector<double> area(1);
-  area[0] = 1.0;
-  return area;
 }
 // -----------------------------------------------------------------------------
 std::vector<int> Resolution::getMask(const int &) const {

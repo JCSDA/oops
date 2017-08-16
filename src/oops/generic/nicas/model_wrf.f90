@@ -16,7 +16,6 @@ use tools_const, only: deg2rad,req
 use tools_kinds,only: kind_real
 use tools_missing, only: msvalr,msr,isanynotmsr
 use tools_nc, only: ncerr,ncfloat
-use type_esmf, only: esmf_create_field
 use type_ndata, only: ndatatype,ndata_alloc
 
 implicit none
@@ -89,9 +88,6 @@ if (nam%logpres) then
 else
    ndata%vunit = float(nam%levs(1:ndata%nl0))
 end if
-
-! Create ESMF field from grid
-call esmf_create_field(ndata)
 
 ! Release memory
 deallocate(lon)

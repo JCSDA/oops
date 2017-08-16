@@ -113,11 +113,11 @@ do is_loc=1,ns_loc(mpl%myproc)
          jl0 = plist(ip,2)
 
          ! Loop over neighbors
-         do i=1,ndata%grid_nnb(jc0)
-            kc0 = ndata%grid_inb(i,jc0)
+         do i=1,ndata%net_nnb(jc0)
+            kc0 = ndata%net_inb(i,jc0)
             do kl0=max(jl0-1,1),min(jl0+1,ndata%nl0)
                if (ndata%mask(kc0,kl0)) then
-                  distnorm = sqrt(ndata%grid_dnb(i,jc0)/(0.5*(rh0(jc0,jl0)**2+rh0(kc0,kl0)**2)) &
+                  distnorm = sqrt(ndata%net_dnb(i,jc0)/(0.5*(rh0(jc0,jl0)**2+rh0(kc0,kl0)**2)) &
                            & +abs(ndata%vunit(jl0)-ndata%vunit(kl0))/(0.5*(rv0(jc0,jl0)**2+rv0(kc0,kl0)**2)))
                   disttest = dist(jc0,jl0)+distnorm
                   if (disttest<1.0) then

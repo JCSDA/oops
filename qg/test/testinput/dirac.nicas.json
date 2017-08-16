@@ -1,0 +1,112 @@
+{
+  "logging": {
+    "categories": "Info, Test, Warning, Error"
+  },
+  "resolution": {
+    "nx": "40",
+    "ny": "20",
+    "bc": "1"
+  },
+  "variables": {
+    "variables": "ci"
+  },
+  "model": {
+    "tstep": "PT1H",
+    "top_layer_depth": "5500.0",
+    "bottom_layer_depth": "4500.0"
+  },
+  "initial": {
+    "filename": "Data/truth.fc.2009-12-15T00:00:00Z.P17D",
+    "date": "2010-01-01T00:00:00Z"
+  },
+  "Covariance": {
+    "covariance": "ensemble",
+    "members": "5",
+    "variables": {
+      "variables": "ci"
+    },
+    "date": "2010-01-01T00:00:00Z",
+    "localization": {
+      "localization": "NICAS",
+      "datadir": ".",
+      "prefix": "qg",
+      "colorlog": 0,
+      "model": "oops",
+      "nl": 2,
+      "levs(1)": 1,
+      "levs(2)": 2,
+      "new_param": 1,
+      "new_mpi": 1,
+      "check_adjoints": 1,
+      "check_pos_def": 0,
+      "check_mpi": 1,
+      "check_dirac": 1,
+      "check_perf": 0,
+      "ndir": 3,
+      "levdir": 1,
+      "londir(1)": -1.2,
+      "londir(2)": 147.0,
+      "londir(3)": -79.8,
+      "latdir(1)": -31.7,
+      "latdir(2)": 10.7,
+      "latdir(3)": 21.7,
+      "sam_default_seed": 1,
+      "mask_check": 0,
+      "ntry": 30,
+      "nrep": 2,
+      "logpres": 0,
+      "lsqrt": 0,
+      "Lbh_file": "none",
+      "Lbh(1)": 3000.0e3,
+      "Lbh(2)": 3000.0e3,
+      "Lbv_file": "none",
+      "Lbv(1)": 0.4,
+      "Lbv(2)": 0.4,
+      "resol": 12.0,
+      "network": 0,
+      "nproc": 1,
+      "mpicom": 2
+    },
+        "state": [
+          {
+            "filename": "Data/test.ens.1.2009-12-31T00:00:00Z.P1D",
+            "date": "2010-01-01T00:00:00Z"
+          },
+          {
+            "filename": "Data/test.ens.2.2009-12-31T00:00:00Z.P1D",
+            "date": "2010-01-01T00:00:00Z"
+          },
+          {
+            "filename": "Data/test.ens.3.2009-12-31T00:00:00Z.P1D",
+            "date": "2010-01-01T00:00:00Z"
+          },
+          {
+            "filename": "Data/test.ens.4.2009-12-31T00:00:00Z.P1D",
+            "date": "2010-01-01T00:00:00Z"
+          },
+          {
+            "filename": "Data/test.ens.5.2009-12-31T00:00:00Z.P1D",
+            "date": "2010-01-01T00:00:00Z"
+          }
+        ]
+  },
+  "Dirac": {
+    "ndir": 1,
+    "londir(1)": 180.0,
+    "latdir(1)": 0.0,
+    "levdir": 1,
+    "ivardir": 1
+  },
+  "output_nicas": {
+    "datadir": "Data",
+    "exp": "dirac",
+    "type": "an",
+    "date": "2009-12-31T00:00:00Z"
+  },
+  "output_Bens": {
+    "datadir": "Data",
+    "exp": "Bens",
+    "type": "an",
+    "date": "2009-12-31T00:00:00Z"
+  }
+}

@@ -191,6 +191,7 @@ oops/generic/nicas/module_parameters.f90
 oops/generic/nicas/module_parameters_interp.f90
 oops/generic/nicas/module_test.f90
 oops/generic/nicas/tools_const.f90
+oops/generic/nicas/tools_dirac.f90
 oops/generic/nicas/tools_display.f90
 oops/generic/nicas/tools_kinds.f90
 oops/generic/nicas/tools_missing.f90
@@ -201,9 +202,9 @@ oops/generic/nicas/type_ctree.cpp
 oops/generic/nicas/type_ctree.f90
 oops/generic/nicas/type_ctree.h
 oops/generic/nicas/type_ctree.hpp
-oops/generic/nicas/type_esmf.f90
 oops/generic/nicas/type_fields.f90
 oops/generic/nicas/type_linop.f90
+oops/generic/nicas/type_mesh.f90
 oops/generic/nicas/type_mpl.f90
 oops/generic/nicas/type_ndata.f90
 oops/generic/nicas/type_randgen_api.cpp
@@ -247,6 +248,7 @@ oops/interface/State.h
 oops/interface/Variables.h
 
 oops/runs/Application.h
+oops/runs/Dirac.h
 oops/runs/EnsForecasts.h
 oops/runs/ExternalDFI.h
 oops/runs/Forecast.h
@@ -297,7 +299,7 @@ ecbuild_add_library( TARGET     oops
                      SOURCES    
                                 ${FORTRAN_BINDINGS}
                                 ${oops_src_files}
-                     LIBS       ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES} ${NETCDF_LIBRARIES} ${ESMF_LIBRARIES} fckit eckit_mpi eckit
+                     LIBS       ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES} ${NETCDF_LIBRARIES} fckit eckit_mpi eckit
                      INSTALL_HEADERS LISTED
                      LINKER_LANGUAGE ${OOPS_LINKER_LANGUAGE}
                    )

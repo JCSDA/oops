@@ -81,10 +81,6 @@ include_directories( ${LIBXML2_INCLUDE_DIR} )
 find_package( NetCDF REQUIRED )
 include_directories( ${NETCDF_INCLUDE_DIR} )
 
-# ESMF
-find_package( ESMF REQUIRED )
-include_directories( ${ESMF_INCLUDE_DIR} )
-
 # OpenMP
 find_package( OpenMP REQUIRED )
 
@@ -92,7 +88,7 @@ find_package( OpenMP REQUIRED )
 # Export package info
 ################################################################################
 
-list( APPEND OOPS_TPLS LAPACK LibXml2 NetCDF ESMF OpenMP )
+list( APPEND OOPS_TPLS LAPACK LibXml2 NetCDF OpenMP )
 set( OOPS_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/src
                        ${CMAKE_Fortran_MODULE_DIRECTORY} )
 set( OOPS_LIBRARIES oops )

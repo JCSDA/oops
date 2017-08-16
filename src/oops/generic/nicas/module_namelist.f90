@@ -40,9 +40,9 @@ logical :: check_mpi               !< Test single proc/multi-procs equivalence
 logical :: check_dirac             !< Test NICAS application on diracs
 logical :: check_perf              !< Test NICAS performance
 integer :: ndir                    !< Number of Diracs
-integer :: dirlev                  !< Diracs level
-real(kind_real) :: dirlon(ndirmax) !< Diracs longitudes
-real(kind_real) :: dirlat(ndirmax) !< Diracs latitudes
+integer :: levdir                  !< Diracs level
+real(kind_real) :: londir(ndirmax) !< Diracs longitudes
+real(kind_real) :: latdir(ndirmax) !< Diracs latitudes
 
 ! sampling_param
 logical :: sam_default_seed        !< Default seed for random numbers
@@ -103,9 +103,9 @@ logical :: check_mpi
 logical :: check_dirac
 logical :: check_perf
 integer :: ndir
-integer :: dirlev
-real(kind_real) :: dirlon(ndirmax)
-real(kind_real) :: dirlat(ndirmax)
+integer :: levdir
+real(kind_real) :: londir(ndirmax)
+real(kind_real) :: latdir(ndirmax)
 logical :: sam_default_seed
 logical :: mask_check
 integer :: ntry
@@ -123,7 +123,7 @@ integer :: mpicom
 
 ! Namelist blocks
 namelist/general_param/datadir,prefix,colorlog,model,nl,levs,new_param,new_mpi, &
- & check_adjoints,check_pos_def,check_mpi,check_dirac,check_perf,ndir,dirlev,dirlon,dirlat
+ & check_adjoints,check_pos_def,check_mpi,check_dirac,check_perf,ndir,levdir,londir,latdir
 namelist/sampling_param/sam_default_seed,mask_check,ntry,nrep,logpres
 namelist/nicas_param/lsqrt,Lbh_file,Lbh,Lbv_file,Lbv,resol,network,nproc,mpicom
 
@@ -144,9 +144,9 @@ check_mpi = .false.
 check_dirac = .false.
 check_dirac = .false.
 call msi(ndir)
-call msi(dirlev)
-call msr(dirlon)
-call msr(dirlat)
+call msi(levdir)
+call msr(londir)
+call msr(latdir)
 
 ! sampling_param
 sam_default_seed = .false.
@@ -187,9 +187,9 @@ if (mpl%main) then
    nam%check_dirac = check_dirac
    nam%check_perf = check_perf
    nam%ndir = ndir
-   nam%dirlev = dirlev
-   nam%dirlon = dirlon
-   nam%dirlat = -dirlat
+   nam%levdir = levdir
+   nam%londir = londir
+   nam%latdir = latdir
    nam%sam_default_seed = sam_default_seed
    nam%mask_check = mask_check
    nam%ntry = ntry
@@ -221,9 +221,9 @@ call mpl_bcast(nam%check_mpi,mpl%ioproc)
 call mpl_bcast(nam%check_dirac,mpl%ioproc)
 call mpl_bcast(nam%check_perf,mpl%ioproc)
 call mpl_bcast(nam%ndir,mpl%ioproc)
-call mpl_bcast(nam%dirlev,mpl%ioproc)
-call mpl_bcast(nam%dirlon,mpl%ioproc)
-call mpl_bcast(nam%dirlat,mpl%ioproc)
+call mpl_bcast(nam%levdir,mpl%ioproc)
+call mpl_bcast(nam%londir,mpl%ioproc)
+call mpl_bcast(nam%latdir,mpl%ioproc)
 call mpl_bcast(nam%sam_default_seed,mpl%ioproc)
 call mpl_bcast(nam%mask_check,mpl%ioproc)
 call mpl_bcast(nam%ntry,mpl%ioproc)
@@ -271,10 +271,10 @@ if (nam%new_param.and.(.not.nam%new_mpi)) then
 end if
 if (nam%check_dirac) then
    if (nam%ndir<1) call msgerror('ndir should be positive')
-   if (.not.any(nam%dirlev==nam%levs(1:nam%nl))) call msgerror('wrong level for a Dirac')
+   if (.not.any(nam%levdir==nam%levs(1:nam%nl))) call msgerror('wrong level for a Dirac')
    do idir=1,nam%ndir
-      if ((nam%dirlon(idir)<-180.0).or.(nam%dirlon(idir)>180.0)) call msgerror('Dirac longitude should lie between -180 and 180')
-      if ((nam%dirlat(idir)<-90.0).or.(nam%dirlat(idir)>90.0)) call msgerror('Dirac latitude should lie between -90 and 90')
+      if ((nam%londir(idir)<-180.0).or.(nam%londir(idir)>180.0)) call msgerror('Dirac longitude should lie between -180 and 180')
+      if ((nam%latdir(idir)<-90.0).or.(nam%latdir(idir)>90.0)) call msgerror('Dirac latitude should lie between -90 and 90')
    end do
 end if
 
@@ -345,8 +345,8 @@ call namncwrite_param(ncid,'general_param_check_pos_def',nam%check_pos_def)
 call namncwrite_param(ncid,'general_param_check_mpi',nam%check_mpi)
 call namncwrite_param(ncid,'general_param_check_dirac',nam%check_dirac)
 call namncwrite_param(ncid,'general_param_ndir',nam%ndir)
-call namncwrite_param(ncid,'general_param_dirlon',nam%ndir,nam%dirlon)
-call namncwrite_param(ncid,'general_param_dirlat',nam%ndir,nam%dirlat)
+call namncwrite_param(ncid,'general_param_londir',nam%ndir,nam%londir)
+call namncwrite_param(ncid,'general_param_latdir',nam%ndir,nam%latdir)
 
 ! sampling_param
 call namncwrite_param(ncid,'sampling_param_sam_default_seed',nam%sam_default_seed)

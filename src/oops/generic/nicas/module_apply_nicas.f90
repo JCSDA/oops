@@ -15,8 +15,8 @@ use module_apply_convol, only: convol
 use module_apply_interp, only: interp,interp_ad
 use module_apply_nicas_sqrt, only: apply_nicas_sqrt,apply_nicas_sqrt_ad
 use module_namelist, only: nam
-use type_fields, only: fldtype,alphatype
-use type_mpl, only: mpl
+use tools_kinds, only: kind_real
+use type_mpl, only: mpl,mpl_barrier
 use type_ndata, only: ndatatype,ndataloctype
 
 implicit none
@@ -46,13 +46,10 @@ implicit none
 
 ! Passed variables
 type(ndatatype),intent(in) :: ndata !< Sampling data
-type(fldtype),intent(inout) :: fld  !< Field
+real(kind_real),intent(inout) :: fld(ndata%nc0,ndata%nl0)  !< Field
 
 ! Local variables
-type(alphatype) :: alpha
-
-! Allocation
-allocate(alpha%val(ndata%ns))
+real(kind_real) :: alpha(ndata%ns)
 
 ! Adjoint interpolation
 call interp_ad(ndata,fld,alpha)
@@ -62,9 +59,6 @@ call convol(ndata,alpha)
 
 ! Interpolation
 call interp(ndata,alpha,fld)
-
-! Release memory
-deallocate(alpha%val)
 
 end subroutine apply_nicas_global
 
@@ -78,22 +72,22 @@ implicit none
 
 ! Passed variables
 type(ndataloctype),intent(in) :: ndataloc !< Sampling data
-type(fldtype),intent(inout) :: fld     !< Field
+real(kind_real),intent(inout) :: fld(ndataloc%nc0a,ndataloc%nl0)  !< Field
 
 ! Local variables
-type(alphatype) :: alpha
+real(kind_real),allocatable :: alpha(:)
 
 ! Allocation
-allocate(alpha%valb(ndataloc%nsb))
+allocate(alpha(ndataloc%nsb))
 
 ! Adjoint interpolation
 call interp_ad(ndataloc,fld,alpha)
 
 ! Communication
-if (ndataloc%mpicom==1) then
+if (nam%mpicom==1) then
    ! Copy zone B into zone C
    call alpha_copy_BC(ndataloc,alpha)
-elseif (ndataloc%mpicom==2) then
+elseif (nam%mpicom==2) then
    ! Halo reduction from zone B to zone A
    call alpha_com_BA(ndataloc,alpha)
 
@@ -114,7 +108,7 @@ call alpha_com_AB(ndataloc,alpha)
 call interp(ndataloc,alpha,fld)
 
 ! Release memory
-deallocate(alpha%valb)
+deallocate(alpha)
 
 end subroutine apply_nicas_local
 
@@ -128,10 +122,10 @@ implicit none
 
 ! Passed variables
 type(ndatatype),intent(in) :: ndata !< Sampling data
-type(fldtype),intent(inout) :: fld  !< Field
+real(kind_real),intent(inout) :: fld(ndata%nc0,ndata%nl0)  !< Field
 
 ! Local variables
-type(alphatype) :: alpha
+real(kind_real) :: alpha(ndata%ns)
 
 ! Apply square-root adjoint
 call apply_nicas_sqrt_ad(ndata,fld,alpha)
@@ -151,10 +145,10 @@ implicit none
 
 ! Passed variables
 type(ndataloctype),intent(in) :: ndataloc !< Sampling data
-type(fldtype),intent(inout) :: fld        !< Field
+real(kind_real),intent(inout) :: fld(ndataloc%nc0a,ndataloc%nl0)  !< Field
 
 ! Local variables
-type(alphatype) :: alpha
+real(kind_real) :: alpha(ndataloc%nsa)
 
 ! Apply square-root adjoint
 call apply_nicas_sqrt_ad(ndataloc,fld,alpha)

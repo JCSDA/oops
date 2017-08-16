@@ -46,8 +46,8 @@ implicit none
 
 ! Passed variables
 type(ndatatype),intent(in) :: ndata !< Sampling data
-type(alphatype),intent(in) :: alpha !< Subgrid variable
-type(fldtype),intent(inout) :: fld  !< Field
+real(kind_real),intent(in) :: alpha(ndata%ns) !< Subgrid variable
+real(kind_real),intent(out) :: fld(ndata%nc0,ndata%nl0)  !< Field
 
 ! Local variables
 integer :: is,il1,ic1,il0
@@ -57,10 +57,10 @@ real(kind_real) :: beta(ndata%nc1,ndata%nl1),gamma(ndata%nc1,ndata%nl1),delta(nd
 do is=1,ndata%ns
    if (nam%lsqrt) then
       ! Internal normalization
-      beta(ndata%is_to_ic2(is),ndata%is_to_il1(is)) = alpha%val(is)*ndata%norm_sqrt%val(is)
+      beta(ndata%is_to_ic2(is),ndata%is_to_il1(is)) = alpha(is)*ndata%norm_sqrt(is)
    else
       ! Copy
-      beta(ndata%is_to_ic2(is),ndata%is_to_il1(is)) = alpha%val(is)
+      beta(ndata%is_to_ic2(is),ndata%is_to_il1(is)) = alpha(is)
    end if
 end do
 !$omp end parallel do
@@ -82,12 +82,12 @@ end do
 ! Horizontal interpolation
 !$omp parallel do private(il0)
 do il0=1,ndata%nl0
-   call apply_linop(ndata%h(min(il0,ndata%nl0i)),delta(:,il0),fld%val(:,il0))
+   call apply_linop(ndata%h(min(il0,ndata%nl0i)),delta(:,il0),fld(:,il0))
 end do
 !$omp end parallel do
 
 ! Normalization
-fld%val = fld%val*ndata%norm%val
+fld = fld*ndata%norm
 
 end subroutine interp_global
 
@@ -101,8 +101,8 @@ implicit none
 
 ! Passed variables
 type(ndataloctype),intent(in) :: ndataloc !< Sampling data
-type(alphatype),intent(in) :: alpha       !< Subgrid variable
-type(fldtype),intent(inout) :: fld        !< Field
+real(kind_real),intent(in) :: alpha(ndataloc%nsb) !< Subgrid variable
+real(kind_real),intent(out) :: fld(ndataloc%nc0a,ndataloc%nl0)  !< Field
 
 ! Local variables
 integer :: isb,il1,ic1b,il0
@@ -112,10 +112,10 @@ real(kind_real) :: beta(ndataloc%nc1b,ndataloc%nl1),gamma(ndataloc%nc1b,ndataloc
 do isb=1,ndataloc%nsb
    if (nam%lsqrt) then
       ! Internal normalization
-      beta(ndataloc%isb_to_ic2b(isb),ndataloc%isb_to_il1(isb)) = alpha%valb(isb)*ndataloc%norm_sqrt%valb(isb)
+      beta(ndataloc%isb_to_ic2b(isb),ndataloc%isb_to_il1(isb)) = alpha(isb)*ndataloc%norm_sqrt(isb)
    else
       ! Copy
-      beta(ndataloc%isb_to_ic2b(isb),ndataloc%isb_to_il1(isb)) = alpha%valb(isb)
+      beta(ndataloc%isb_to_ic2b(isb),ndataloc%isb_to_il1(isb)) = alpha(isb)
    end if
 end do
 !$omp end parallel do
@@ -137,12 +137,12 @@ end do
 ! Horizontal interpolation
 !$omp parallel do private(il0)
 do il0=1,ndataloc%nl0
-   call apply_linop(ndataloc%h(min(il0,ndataloc%nl0i)),delta(:,il0),fld%vala(:,il0))
+   call apply_linop(ndataloc%h(min(il0,ndataloc%nl0i)),delta(:,il0),fld(:,il0))
 end do
 !$omp end parallel do
 
 ! Normalization
-fld%vala = fld%vala*ndataloc%norm%vala
+fld = fld*ndataloc%norm
 
 end subroutine interp_local
 
@@ -156,24 +156,21 @@ implicit none
 
 ! Passed variables
 type(ndatatype),intent(in) :: ndata    !< Sampling data
-type(fldtype),intent(in) :: fld        !< Field
-type(alphatype),intent(inout) :: alpha !< Subgrid variable
+real(kind_real),intent(in) :: fld(ndata%nc0,ndata%nl0)  !< Field
+real(kind_real),intent(out) :: alpha(ndata%ns) !< Subgrid variable
 
 ! Local variables
 integer :: is,il1,ic1,il0
 real(kind_real) :: beta(ndata%nc1,ndata%nl1),gamma(ndata%nc1,ndata%nl1),delta(ndata%nc1,ndata%nl0)
-type(fldtype) :: fld_tmp
-
-! Allocation
-allocate(fld_tmp%val(ndata%nc0,ndata%nl0))
+real(kind_real) :: fld_tmp(ndata%nc0,ndata%nl0)
 
 ! Normalization
-fld_tmp%val = fld%val*ndata%norm%val
+fld_tmp = fld*ndata%norm
 
 ! Horizontal interpolation
 !$omp parallel do private(il0)
 do il0=1,ndata%nl0
-   call apply_linop_ad(ndata%h(min(il0,ndata%nl0i)),fld_tmp%val(:,il0),delta(:,il0))
+   call apply_linop_ad(ndata%h(min(il0,ndata%nl0i)),fld_tmp(:,il0),delta(:,il0))
 end do
 !$omp end parallel do
 
@@ -195,10 +192,10 @@ end do
 do is=1,ndata%ns
    if (nam%lsqrt) then
       ! Internal normalization
-      alpha%val(is) = beta(ndata%is_to_ic2(is),ndata%is_to_il1(is))*ndata%norm_sqrt%val(is)
+      alpha(is) = beta(ndata%is_to_ic2(is),ndata%is_to_il1(is))*ndata%norm_sqrt(is)
    else
       ! Copy
-      alpha%val(is) = beta(ndata%is_to_ic2(is),ndata%is_to_il1(is))
+      alpha(is) = beta(ndata%is_to_ic2(is),ndata%is_to_il1(is))
    end if
 end do
 !$omp end parallel do
@@ -215,24 +212,21 @@ implicit none
 
 ! Passed variables
 type(ndataloctype),intent(in) :: ndataloc  !< Sampling data
-type(fldtype),intent(in) :: fld            !< Field
-type(alphatype),intent(inout) :: alpha     !< Subgrid variable
+real(kind_real),intent(in) :: fld(ndataloc%nc0a,ndataloc%nl0)  !< Field
+real(kind_real),intent(out) :: alpha(ndataloc%nsb) !< Subgrid variable
 
 ! Local variables
 integer :: isb,il1,ic1b,il0
 real(kind_real) :: beta(ndataloc%nc1b,ndataloc%nl1),gamma(ndataloc%nc1b,ndataloc%nl1),delta(ndataloc%nc1b,ndataloc%nl0)
-type(fldtype) :: fld_tmp
-
-! Allocation
-allocate(fld_tmp%vala(ndataloc%nc0a,ndataloc%nl0))
+real(kind_real) :: fld_tmp(ndataloc%nc0a,ndataloc%nl0)
 
 ! Normalization
-fld_tmp%vala = fld%vala*ndataloc%norm%vala
+fld_tmp = fld*ndataloc%norm
 
 ! Horizontal interpolation
 !$omp parallel do private(il0)
 do il0=1,ndataloc%nl0
-   call apply_linop_ad(ndataloc%h(min(il0,ndataloc%nl0i)),fld_tmp%vala(:,il0),delta(:,il0))
+   call apply_linop_ad(ndataloc%h(min(il0,ndataloc%nl0i)),fld_tmp(:,il0),delta(:,il0))
 end do
 !$omp end parallel do
 
@@ -254,10 +248,10 @@ end do
 do isb=1,ndataloc%nsb
    if (nam%lsqrt) then
       ! Internal normalization
-      alpha%valb(isb) = beta(ndataloc%isb_to_ic2b(isb),ndataloc%isb_to_il1(isb))*ndataloc%norm_sqrt%valb(isb)
+      alpha(isb) = beta(ndataloc%isb_to_ic2b(isb),ndataloc%isb_to_il1(isb))*ndataloc%norm_sqrt(isb)
    else
       ! Copy
-      alpha%valb(isb) = beta(ndataloc%isb_to_ic2b(isb),ndataloc%isb_to_il1(isb))
+      alpha(isb) = beta(ndataloc%isb_to_ic2b(isb),ndataloc%isb_to_il1(isb))
    end if
 end do
 !$omp end parallel do

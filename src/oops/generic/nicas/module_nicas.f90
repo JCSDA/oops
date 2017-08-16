@@ -43,10 +43,7 @@ type(ndataloctype),intent(inout) :: ndataloc !< Sampling data,local
 ! Local variables
 integer :: il0,iproc
 logical :: same_mask
-type(ndataloctype) :: ndataloc_arr((nam%nproc))
-
-! Determine whether the model is regional
-ndata%regional = all(ndata%area<4.0*pi)
+type(ndataloctype),allocatable :: ndataloc_arr(:)
 
 ! Check whether the mask is the same for all levels
 same_mask = .true.
@@ -101,6 +98,7 @@ else
 
    call ndata_read_param(ndata)
 end if
+call flush(mpl%unit)
 
 !----------------------------------------------------------------------
 ! Read NICAS local distribution
@@ -110,8 +108,12 @@ write(mpl%unit,'(a)') '---------------------------------------------------------
 write(mpl%unit,'(a)') '--- Read NICAS local distribution'
 
 call ndata_read_local(ndata)
+call flush(mpl%unit)
 
 if (nam%new_mpi) then
+   ! Allocation
+   allocate(ndataloc_arr(nam%nproc))
+
    !----------------------------------------------------------------------
    ! Compute NICAS MPI distribution
    !----------------------------------------------------------------------
@@ -147,7 +149,10 @@ if (nam%new_mpi) then
 
       ! Release memory
       call ndataloc_dealloc(ndataloc_arr(iproc))     
-   end do 
+   end do
+
+   ! Release memory
+   deallocate(ndataloc_arr)
 else
    !----------------------------------------------------------------------
    ! Read NICAS MPI distribution
@@ -158,9 +163,7 @@ else
 
    call ndata_read_mpi(ndataloc)
 end if
-
-! Release memory
-if (.not.mpl%main) call ndata_dealloc(ndata)
+call flush(mpl%unit)
 
 if (nam%check_adjoints) then
    !----------------------------------------------------------------------
@@ -172,6 +175,7 @@ if (nam%check_adjoints) then
 
    if (mpl%main) call test_adjoints(ndata)
 end if
+call flush(mpl%unit)
 
 if (nam%check_pos_def) then
    !----------------------------------------------------------------------
@@ -183,6 +187,7 @@ if (nam%check_pos_def) then
 
    if (mpl%main) call test_pos_def(ndata)
 end if
+call flush(mpl%unit)
 
 if (nam%check_mpi.and.(nam%nproc>0)) then
    !----------------------------------------------------------------------
@@ -194,6 +199,7 @@ if (nam%check_mpi.and.(nam%nproc>0)) then
 
   call test_mpi(ndata,ndataloc)
 end if
+call flush(mpl%unit)
 
 if (nam%check_dirac) then
    !----------------------------------------------------------------------
@@ -205,8 +211,9 @@ if (nam%check_dirac) then
 
    call test_dirac(ndata,ndataloc)
 end if
+call flush(mpl%unit)
 
-if (.true.) then
+if (nam%check_perf) then
    !----------------------------------------------------------------------
    ! Test NICAS performance
    !----------------------------------------------------------------------
@@ -214,10 +221,8 @@ if (.true.) then
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Test NICAS performance'
 
-   if (mpl%main) call test_perf(ndata)
+   call test_perf(ndataloc)
 end if
-
-! Flush units
 call flush(mpl%unit)
 
 end subroutine nicas_driver

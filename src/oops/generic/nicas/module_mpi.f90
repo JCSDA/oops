@@ -15,9 +15,8 @@ use netcdf
 use omp_lib
 use tools_const, only: pi,rad2deg,req,sphere_dist
 use tools_display, only: msgerror,prog_init,prog_print
-use tools_missing, only: msvali,msvalr,msi,msr,isnotmsr
+use tools_missing, only: msvali,msvalr,msi,msr,isnotmsr,isnotmsi
 use tools_nc, only: ncfloat,ncerr
-use type_fields, only: fldtype
 use type_linop, only: linop_alloc,linop_reorder
 use type_mpl, only: mpl
 use type_ndata, only: ndatatype,ndataloctype
@@ -66,13 +65,11 @@ type(typeconv) :: conv(nam%nproc)
 ! Allocation
 do iproc=1,nam%nproc
    ndataloc_arr(iproc)%AB%prefix = 'AB'
-   ndataloc_arr(iproc)%AB%nproc = nam%nproc
    allocate(ndataloc_arr(iproc)%AB%jhalocounts(nam%nproc))
    allocate(ndataloc_arr(iproc)%AB%jexclcounts(nam%nproc))
    allocate(ndataloc_arr(iproc)%AB%jhalodispl(nam%nproc))
    allocate(ndataloc_arr(iproc)%AB%jexcldispl(nam%nproc))
    ndataloc_arr(iproc)%AC%prefix = 'AC'
-   ndataloc_arr(iproc)%AC%nproc = nam%nproc
    allocate(ndataloc_arr(iproc)%AC%jhalocounts(nam%nproc))
    allocate(ndataloc_arr(iproc)%AC%jexclcounts(nam%nproc))
    allocate(ndataloc_arr(iproc)%AC%jhalodispl(nam%nproc))
@@ -103,11 +100,10 @@ do il0i=1,ndata%nl0i
 end do
 
 do iproc=1,nam%nproc
-   ! Copy number of levels and number of communication steps
+   ! Copy number of levels
    ndataloc_arr(iproc)%nl0 = ndata%nl0
    ndataloc_arr(iproc)%nl1 = ndata%nl1
    ndataloc_arr(iproc)%nl0i = ndata%nl0i
-   ndataloc_arr(iproc)%mpicom = nam%mpicom
 
    ! Allocation
    allocate(ndataloc_arr(iproc)%nc2b(ndataloc_arr(iproc)%nl1))
@@ -444,19 +440,19 @@ end do
 
 ! Copy norm over processors
 do iproc=1,nam%nproc
-   allocate(ndataloc_arr(iproc)%norm%vala(ndataloc_arr(iproc)%nc0a,ndataloc_arr(iproc)%nl0))
-   if (nam%lsqrt) allocate(ndataloc_arr(iproc)%norm_sqrt%valb(ndataloc_arr(iproc)%nsb))
+   allocate(ndataloc_arr(iproc)%norm(ndataloc_arr(iproc)%nc0a,ndataloc_arr(iproc)%nl0))
+   if (nam%lsqrt) allocate(ndataloc_arr(iproc)%norm_sqrt(ndataloc_arr(iproc)%nsb))
 end do
 do ic0=1,ndata%nc0
    iproc = ndata%ic0_to_iproc(ic0)
    ic0a = ndata%ic0_to_ic0a(ic0)
-   ndataloc_arr(iproc)%norm%vala(ic0a,1:ndataloc_arr(iproc)%nl0) = ndata%norm%val(ic0,1:ndata%nl0)
+   ndataloc_arr(iproc)%norm(ic0a,1:ndataloc_arr(iproc)%nl0) = ndata%norm(ic0,1:ndata%nl0)
 end do
 if (nam%lsqrt) then
    do iproc=1,nam%nproc
       do isb=1,ndataloc_arr(iproc)%nsb
          is = conv(iproc)%isb_to_is(isb)
-         ndataloc_arr(iproc)%norm_sqrt%valb(isb) = ndata%norm_sqrt%val(is)
+         ndataloc_arr(iproc)%norm_sqrt(isb) = ndata%norm_sqrt(is)
       end do
    end do
 end if

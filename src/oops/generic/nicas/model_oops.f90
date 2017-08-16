@@ -17,7 +17,6 @@ use tools_display, only: msgerror
 use tools_kinds,only: kind_real
 use tools_missing, only: msvalr,msi,msr,isanynotmsr
 use tools_nc, only: ncerr,ncfloat
-use type_esmf, only: esmf_create_field
 use type_mpl, only: mpl
 use type_ndata, only: ndatatype,ndata_alloc
 
@@ -32,16 +31,14 @@ contains
 ! Subroutine: model_oops_coord
 !> Purpose: load OOPS coordinates
 !----------------------------------------------------------------------
-subroutine model_oops_coord(dims,lats,lons,levs,area,mask,ndata)
+subroutine model_oops_coord(lats,lons,levs,mask,ndata)
 
 implicit none
 
 ! Passed variables
-integer,intent(in) :: dims(:)
 real(kind_real),intent(in) :: lats(:)
 real(kind_real),intent(in) :: lons(:)
 real(kind_real),intent(in) :: levs(:)
-real(kind_real),intent(in) :: area(:)
 integer,intent(in) :: mask(:)
 type(ndatatype),intent(inout) :: ndata !< Sampling data
 
@@ -54,11 +51,6 @@ ndata%nl0 = nam%nl
 ! Number of nodes
 ndata%nc0 = size(lats)
 ndata%nlev = size(levs)
-if (ndata%nc0/=product(dims)) call msgerror ('product(dims) should be equal to nc0')
-
-! Normalized area
-allocate(ndata%area(ndata%nl0))
-ndata%area = area(nam%levs)
 
 ! Pack
 call ndata_alloc(ndata)
@@ -79,20 +71,6 @@ end do
 
 ! Vertical unit
 ndata%vunit = levs
-
-! ESMF field for interpolations
-if (size(dims)==1) then
-   ! Create ESMF field from mesh
-   call esmf_create_field(ndata,ndata%nc0,ndata%lon,ndata%lat,any(ndata%mask,dim=2),ndata%c0field)
-elseif (size(dims)==2) then
-   ! Create ESMF field from grid
-   ndata%nlon = dims(1)
-   ndata%nlat = dims(2)
-   call esmf_create_field(ndata)
-else
-   ! Not yet implemented
-   call msgerror('wrong dims size in create_nicas')
-end if
 
 end subroutine model_oops_coord
 

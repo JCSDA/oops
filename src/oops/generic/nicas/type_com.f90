@@ -20,7 +20,6 @@ implicit none
 ! Communication derived type
 type comtype
    character(len=1024) :: prefix         !< Communication prefix
-   integer :: nproc                      !< Number of tasks
    integer :: nhalo                      !< Halo buffer size
    integer :: nexcl                      !< Exclusive interior buffer size
    integer,allocatable :: jhalocounts(:) !< Halo counts
@@ -72,7 +71,6 @@ type(comtype),intent(inout) :: com_out !< Output linear operator
 
 ! Copy attributes
 com_out%prefix = trim(com_in%prefix)
-com_out%nproc = com_in%nproc
 com_out%nhalo = com_in%nhalo
 com_out%nexcl = com_in%nexcl
 
@@ -119,8 +117,6 @@ character(len=1024) :: subr = 'com_read'
 com%prefix = trim(prefix)
 
 ! Get dimensions
-call ncerr(subr,nf90_inq_dimid(ncid,'nproc',nproc_id))
-call ncerr(subr,nf90_inquire_dimension(ncid,nproc_id,len=com%nproc))
 info = nf90_inq_dimid(ncid,trim(prefix)//'_nhalo',nhalo_id)
 if (info==nf90_noerr) then
    call ncerr(subr,nf90_inquire_dimension(ncid,nhalo_id,len=com%nhalo))
@@ -135,10 +131,10 @@ else
 end if
 
 ! Allocation
-allocate(com%jhalocounts(com%nproc))
-allocate(com%jexclcounts(com%nproc))
-allocate(com%jhalodispl(com%nproc))
-allocate(com%jexcldispl(com%nproc))
+allocate(com%jhalocounts(nam%nproc))
+allocate(com%jexclcounts(nam%nproc))
+allocate(com%jhalodispl(nam%nproc))
+allocate(com%jexcldispl(nam%nproc))
 if (com%nhalo>0) allocate(com%halo(com%nhalo))
 if (com%nexcl>0) allocate(com%excl(com%nexcl))
 
@@ -182,7 +178,7 @@ call ncerr(subr,nf90_redef(ncid))
 
 ! Define dimensions
 info = nf90_inq_dimid(ncid,'nproc',nproc_id)
-if (info/=nf90_noerr) call ncerr(subr,nf90_def_dim(ncid,'nproc',com%nproc,nproc_id))
+if (info/=nf90_noerr) call ncerr(subr,nf90_def_dim(ncid,'nproc',nam%nproc,nproc_id))
 if (com%nhalo>0) call ncerr(subr,nf90_def_dim(ncid,trim(com%prefix)//'_nhalo',com%nhalo,nhalo_id))
 if (com%nexcl>0) call ncerr(subr,nf90_def_dim(ncid,trim(com%prefix)//'_nexcl',com%nexcl,nexcl_id))
 

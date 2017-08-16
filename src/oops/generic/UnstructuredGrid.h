@@ -10,6 +10,7 @@
 
 #include <boost/noncopyable.hpp>
 
+#include "eckit/config/Configuration.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 
@@ -29,9 +30,10 @@ class UnstructuredGrid : public util::Printable,
 // Will be useful for tests
   void zero();
   void random();
+  void dirac(const eckit::Configuration &);
   double dot_product_with(const UnstructuredGrid &) const;
-// Will be useful for tests
 
+// Will be useful for tests
   int & toFortran() {return keyUGrid_;}
   const int & toFortran() const {return keyUGrid_;}
 
