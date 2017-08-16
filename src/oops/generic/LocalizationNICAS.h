@@ -16,6 +16,7 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/generic/nicas_f.h"
+#include "oops/generic/UnstructuredGrid.h"
 #include "oops/interface/LocalizationBase.h"
 #include "util/Logger.h"
 
@@ -30,11 +31,11 @@ namespace oops {
 
 template<typename MODEL>
 class LocalizationNICAS : public LocalizationBase<MODEL> {
-  typedef typename MODEL::Geometry              Geometry_;
   typedef typename MODEL::Increment             Increment_;
+  typedef typename MODEL::State                 State_;
 
  public:
-  LocalizationNICAS(const Geometry_ &, const eckit::Configuration &);
+  LocalizationNICAS(const State_ &, const eckit::Configuration &);
   ~LocalizationNICAS();
 
   void multiply(Increment_ &) const;
@@ -48,19 +49,23 @@ class LocalizationNICAS : public LocalizationBase<MODEL> {
 // =============================================================================
 
 template<typename MODEL>
-LocalizationNICAS<MODEL>::LocalizationNICAS(const Geometry_ & grid, const eckit::Configuration & conf) {
+LocalizationNICAS<MODEL>::LocalizationNICAS(const State_ & xx, const eckit::Configuration & conf) {
   const eckit::Configuration * fconf = &conf;
-  std::vector<double> lats = grid.getLats();
-  std::vector<double> lons = grid.getLons();
-  std::vector<double> levs = grid.getLevs();
-  std::vector<int> mask;
+
+// Get lat/lon/mask from the unstructured grid
+  UnstructuredGrid ugrid;
+  xx.convert_to(ugrid);
+  std::vector<double> lats = ugrid.getLats();
+  std::vector<double> lons = ugrid.getLons();
+  std::vector<double> levs = ugrid.getLevs();
+  std::vector<int> cmask;
   for (int jlev = 0; jlev < levs.size(); ++jlev) {
-    std::vector<int> tmp = grid.getMask(jlev);
-    mask.insert(mask.end(), tmp.begin(), tmp.end());
+    std::vector<int> tmp = ugrid.getCmask(jlev);
+    cmask.insert(cmask.end(), tmp.begin(), tmp.end());
   }
   int nh = lats.size();
   int nv = levs.size();
-  create_nicas_f90(keyNicas_, &fconf, nh, &lats[0], &lons[0], nv, &levs[0], &mask[0]);
+  create_nicas_f90(keyNicas_, &fconf, nh, &lats[0], &lons[0], nv, &levs[0], &cmask[0]);
   Log::trace() << "LocalizationNICAS:LocalizationNICAS constructed" << std::endl;
 }
 

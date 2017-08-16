@@ -63,6 +63,7 @@ class IncrementL95 : public util::Printable,
   void diff(const StateL95 &, const StateL95 &);
   void zero();
   void zero(const util::DateTime &);
+  void dirac(const eckit::Configuration &);
   IncrementL95 & operator =(const IncrementL95 &);
   IncrementL95 & operator+=(const IncrementL95 &);
   IncrementL95 & operator-=(const IncrementL95 &);

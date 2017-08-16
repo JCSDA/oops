@@ -119,6 +119,11 @@ void FieldsQG::random() {
   qg_field_random_f90(keyFlds_);
 }
 // -----------------------------------------------------------------------------
+void QgFields::dirac(const eckit::Configuration & config) {
+  const eckit::Configuration * conf = &config;
+  qg_field_dirac_f90(keyFlds_, &conf);
+}
+// -----------------------------------------------------------------------------
 void FieldsQG::interpolate(const LocationsQG & locs, GomQG & gom) const {
   qg_field_interp_tl_f90(keyFlds_, locs.toFortran(), gom.toFortran());
 }

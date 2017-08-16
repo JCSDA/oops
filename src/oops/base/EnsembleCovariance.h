@@ -86,7 +86,7 @@ void EnsembleCovariance<MODEL>::linearize(const State_ & xb,
   EnsemblesCollection_::getInstance().put(xb.validTime(), ens_k);
 
   const eckit::LocalConfiguration conf(config_, "localization");
-  loc_.reset(new Localization_(resol, conf));
+  loc_.reset(new Localization_(xb, conf));
   Log::trace() << "EnsembleCovariance linearized." << std::endl;
 }
 // -----------------------------------------------------------------------------

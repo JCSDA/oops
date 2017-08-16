@@ -57,24 +57,25 @@ contains
 !  C++ interfaces
 ! ------------------------------------------------------------------------------
 
-subroutine create_nicas_c(key, c_conf, cnh, clats, clons, cnv, clevs, cmask) bind(c, name='create_nicas_f90')
+subroutine create_nicas_c(key, c_conf, cnh, clats, clons, cnv, clevs, ccmask) bind(c, name='create_nicas_f90')
 implicit none
 integer(c_int), intent(inout) :: key
 type(c_ptr), intent(in) :: c_conf
 integer(c_int), intent(in) :: cnh, cnv
 real(c_double), intent(in) :: clats(cnh), clons(cnh), clevs(cnv)
-integer(c_int), intent(in) :: cmask(cnh*cnv)
+integer(c_int), intent(in) :: ccmask(cnh*cnv)
 type(nicas), pointer :: self
 real(kind=kind_real) :: lats(cnh), lons(cnh), levs(cnv)
-integer :: mask(cnh*cnv)
+integer :: cmask(cnh*cnv)
 call nicas_registry%init()
 call nicas_registry%add(key)
 call nicas_registry%get(key,self)
 lats(:)=clats(:)
 lons(:)=clons(:)
 levs(:)=clevs(:)
-mask(:)=cmask(:)
-call create_nicas(self, c_conf, lats, lons, levs, mask)
+cmask(:)=ccmask(:)
+
+call create_nicas(self, c_conf, lats, lons, levs, cmask)
 end subroutine create_nicas_c
 
 ! ------------------------------------------------------------------------------

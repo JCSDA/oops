@@ -55,6 +55,21 @@ void FieldL95::zero() {
   for (int jj = 0; jj < resol_; ++jj) x_[jj] = 0.0;
 }
 // -----------------------------------------------------------------------------
+void FieldL95::dirac(const eckit::Configuration & config) {
+// Get Diracs position
+  std::vector<int> ixdir(config.getIntVector("ixdir"));
+
+// Check
+  ASSERT(ixdir.size() > 0);
+  for (int jj = 0; jj < ixdir.size(); ++jj) {
+     ASSERT(ixdir[jj] < resol_);
+  }
+
+// Setup Dirac
+  for (int jj = 0; jj < resol_; ++jj) x_[jj] = 0.0;
+  for (int jj = 0; jj < ixdir.size(); ++jj) x_[ixdir[jj]] = 1.0;
+}
+// -----------------------------------------------------------------------------
 FieldL95 & FieldL95::operator=(const FieldL95 & rhs) {
   ASSERT(rhs.resol_ == resol_);
   for (int jj = 0; jj < resol_; ++jj) x_[jj] = rhs.x_[jj];

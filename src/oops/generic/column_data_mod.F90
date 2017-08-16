@@ -21,6 +21,8 @@ type column_data
   integer :: nlevs             !> Number of levels
   integer :: nvars             !> Number of variables in 3D fields
   integer :: nsurf             !> Number of variables in 2D fields
+  integer, allocatable :: cmask(:)              !> levs mask (size nlevs)
+  integer :: smask                              !> surface mask
   real(kind=kind_real), allocatable :: cols(:)  !> column of values (size nlevs * nvars)
   real(kind=kind_real), allocatable :: surf(:)  !> surface fields   (size nsurf)
 end type column_data
@@ -29,7 +31,7 @@ end type column_data
 contains
 !-------------------------------------------------------------------------------
 
-subroutine create_column_data(self, plat, plon, klevs, kvars, ksurf)
+subroutine create_column_data(self, plat, plon, klevs, kvars, ksurf, kcmask, ksmask)
 implicit none
 type(column_data), intent(inout) :: self
 real(kind=kind_real), intent(in) :: plat
@@ -37,12 +39,16 @@ real(kind=kind_real), intent(in) :: plon
 integer, intent(in) :: klevs
 integer, intent(in) :: kvars
 integer, intent(in) :: ksurf
-
+integer, intent(in) :: kcmask(klevs)
+integer, intent(in) :: ksmask
 self%lat = plat
 self%lon = plon
 self%nlevs = klevs
 self%nvars = kvars
 self%nsurf = ksurf
+allocate(self%cmask(self%nlevs))
+self%cmask = kcmask
+self%smask = ksmask
 allocate(self%cols(self%nlevs*self%nvars))
 allocate(self%surf(self%nsurf))
 

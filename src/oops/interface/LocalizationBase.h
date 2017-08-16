@@ -13,8 +13,8 @@
 #include <string>
 
 #include "util/Logger.h"
-#include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
+#include "oops/interface/State.h"
 #include "eckit/config/Configuration.h"
 #include "util/abor1_cpp.h"
 #include "util/Printable.h"
@@ -28,6 +28,7 @@ template<typename MODEL>
 class LocalizationBase : public util::Printable,
                          private boost::noncopyable {
   typedef Increment<MODEL>        Increment_;
+  typedef State<MODEL>            State_;
 
  public:
   LocalizationBase() {}
@@ -45,14 +46,14 @@ class LocalizationBase : public util::Printable,
 /// LocalizationFactory Factory
 template <typename MODEL>
 class LocalizationFactory {
-  typedef Geometry<MODEL> Geometry_;
+  typedef State<MODEL> State_;
  public:
-  static LocalizationBase<MODEL> * create(const Geometry_ &, const eckit::Configuration &);
+  static LocalizationBase<MODEL> * create(const State_ &, const eckit::Configuration &);
   virtual ~LocalizationFactory() { getMakers().clear(); }
  protected:
   explicit LocalizationFactory(const std::string &);
  private:
-  virtual LocalizationBase<MODEL> * make(const Geometry_ &, const eckit::Configuration &) =0;
+  virtual LocalizationBase<MODEL> * make(const State_ &, const eckit::Configuration &) =0;
   static std::map < std::string, LocalizationFactory<MODEL> * > & getMakers() {
     static std::map < std::string, LocalizationFactory<MODEL> * > makers_;
     return makers_;
@@ -63,9 +64,9 @@ class LocalizationFactory {
 
 template<class MODEL, class T>
 class LocalizationMaker : public LocalizationFactory<MODEL> {
-  typedef Geometry<MODEL> Geometry_;
-  virtual LocalizationBase<MODEL> * make(const Geometry_ & geom, const eckit::Configuration & conf)
-    { return new T(geom.geometry(), conf); }
+  typedef State<MODEL> State_;
+  virtual LocalizationBase<MODEL> * make(const State_ & xx, const eckit::Configuration & conf)
+    { return new T(xx.state(), conf); }
  public:
   explicit LocalizationMaker(const std::string & name) : LocalizationFactory<MODEL>(name) {}
 };
@@ -84,7 +85,7 @@ LocalizationFactory<MODEL>::LocalizationFactory(const std::string & name) {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-LocalizationBase<MODEL>* LocalizationFactory<MODEL>::create(const Geometry_ & geom,
+LocalizationBase<MODEL>* LocalizationFactory<MODEL>::create(const State_ & xx,
                                                             const eckit::Configuration & conf) {
   Log::trace() << "LocalizationBase<MODEL>::create starting" << std::endl;
   const std::string id = conf.getString("localization");
@@ -94,7 +95,7 @@ LocalizationBase<MODEL>* LocalizationFactory<MODEL>::create(const Geometry_ & ge
     Log::error() << id << " does not exist in localization factory." << std::endl;
     ABORT("Element does not exist in LocalizationFactory.");
   }
-  LocalizationBase<MODEL> * ptr = jloc->second->make(geom, conf);
+  LocalizationBase<MODEL> * ptr = jloc->second->make(xx, conf);
   Log::trace() << "LocalizationBase<MODEL>::create done" << std::endl;
   return ptr;
 }

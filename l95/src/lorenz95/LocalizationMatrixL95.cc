@@ -21,9 +21,9 @@
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 
-LocalizationMatrixL95::LocalizationMatrixL95(const Resolution & geom,
+LocalizationMatrixL95::LocalizationMatrixL95(const StateL95 & xx,
                                              const eckit::Configuration & config)
-  : resol_(geom.npoints()),
+  : resol_(xx.geometry()->npoints()),
     rscale_(1.0/config.getDouble("length_scale"))
 {
 // Gaussian structure function

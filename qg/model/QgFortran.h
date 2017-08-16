@@ -96,6 +96,7 @@ extern "C" {
   void qg_field_dot_prod_f90(const F90flds &, const F90flds &, double &);
   void qg_field_self_schur_f90(const F90flds &, const F90flds &);
   void qg_field_random_f90(const F90flds &);
+  void qg_field_dirac_f90(const F90flds &, const eckit::Configuration * const *);
 
   void qg_field_add_incr_f90(const F90flds &, const F90flds &);
   void qg_field_diff_incr_f90(const F90flds &, const F90flds &, const F90flds &);

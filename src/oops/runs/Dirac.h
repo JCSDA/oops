@@ -74,24 +74,20 @@ template <typename MODEL> class Dirac : public Application {
     Log::info() << "Setup times OK" << std::endl;
 
 //  Setup localization
-    const eckit::LocalConfiguration covar(fullConfig, "Covariance");
-    const eckit::LocalConfiguration conf(covar, "localization");
+    const eckit::LocalConfiguration covarConfig(fullConfig, "Covariance");
+    const eckit::LocalConfiguration locConfig(covarConfig, "localization");
     boost::scoped_ptr<Localization_> loc_;
-    loc_.reset(new Localization_(resol, conf));
+    loc_.reset(new Localization_(xx, locConfig));
     Log::info() << "Setup localization OK" << std::endl;
 
 //  Setup increment
-    Increment_ dirac(resol, vars, bgndate);
-    dirac.zero();
-    UnstructuredGrid ugrid;
-    dirac.convert_to(ugrid);
-    const eckit::LocalConfiguration diracConfig(fullConfig, "Dirac");
-    ugrid.dirac(diracConfig);
-    dirac.convert_from(ugrid);
-    Log::info() << "Setup dirac OK" << std::endl;
+    Increment_ dxinit(resol, vars, bgndate);
+    const eckit::LocalConfiguration diracConfig(fullConfig, "dirac");
+    dxinit.dirac(diracConfig);
+    Log::info() << "Setup increment OK" << std::endl;
 
 //  Apply NICAS
-    Increment_ dx(dirac);
+    Increment_ dx(dxinit);
     loc_->multiply(dx);
     Log::info() << "Apply NICAS OK" << std::endl;
 
@@ -102,12 +98,12 @@ template <typename MODEL> class Dirac : public Application {
 
 //  Setup full ensemble B matrix
     boost::scoped_ptr< ModelSpaceCovarianceBase<MODEL> >
-      Bens(CovarianceFactory<MODEL>::create(covar, resol, vars, xx));
+      Bens(CovarianceFactory<MODEL>::create(covarConfig, resol, vars, xx));
     Bens->linearize(xx, resol);
     Log::info() << "Setup full ensemble B matrix OK" << std::endl;
 
 //  Apply full ensemble B matrix
-    Increment_ dxin(dirac);
+    Increment_ dxin(dxinit);
     Increment_ dxout(resol, vars, bgndate);
     Bens->multiply(dxin,dxout);
     Log::info() << "Apply full ensemble B matrix OK" << std::endl;

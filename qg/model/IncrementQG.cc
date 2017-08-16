@@ -149,6 +149,10 @@ void IncrementQG::random() {
   fields_->random();
 }
 // -----------------------------------------------------------------------------
+void QgIncrement::dirac(const eckit::Configuration & config) {
+  fields_->dirac(config);
+}
+// -----------------------------------------------------------------------------
 /// Interpolate to observation location
 // -----------------------------------------------------------------------------
 void IncrementQG::interpolateTL(const LocationsQG & locs, GomQG & cols) const {

@@ -21,7 +21,7 @@ implicit none
 private
 
 public :: qg_field, &
-        & create, delete, zeros, random, copy, &
+        & create, delete, zeros, dirac, random, copy, &
         & self_add, self_schur, self_sub, self_mul, axpy, &
         & dot_prod, add_incr, diff_incr, &
         & read_file, write_file, gpnorm, fldrms, &
@@ -37,6 +37,8 @@ public :: qg_field_registry
 type :: qg_field
   integer :: nx                     !< Zonal grid dimension
   integer :: ny                     !< Meridional grid dimension
+  real(kind=kind_real), allocatable :: lons(:)  !< Longitudes
+  real(kind=kind_real), allocatable :: lats(:)  !< Latitudes
   integer :: nl                     !< Number of levels
   integer :: nf                     !< Number of fields
   logical :: lbc                    !< North-South boundary is present
@@ -79,6 +81,10 @@ integer :: ioff
 
 self%nx = geom%nx
 self%ny = geom%ny
+allocate(self%lons(self%nx))
+allocate(self%lats(self%ny))
+self%lons = geom%lons
+self%lats = geom%lats
 self%nl = 2
 self%nf = vars%nv
 self%lbc = vars%lbc
@@ -157,6 +163,47 @@ if (self%lbc) then
 endif
 
 end subroutine zeros
+
+! ------------------------------------------------------------------------------
+
+subroutine dirac(self, c_conf)
+use iso_c_binding
+implicit none
+type(qg_field), intent(inout) :: self
+type(c_ptr), intent(in)       :: c_conf   !< Configuration
+integer :: ndir,idir,ildir,ifdir,ioff
+integer,allocatable :: ixdir(:),iydir(:)
+character(len=3) :: idirchar
+
+call check(self)
+
+! Get Diracs positions
+ndir = config_get_int(c_conf,"ndir")
+allocate(ixdir(ndir))
+allocate(iydir(ndir))
+do idir=1,ndir
+   write(idirchar,'(i3)') idir
+   ixdir(idir) = config_get_int(c_conf,"ixdir("//trim(adjustl(idirchar))//")")
+   iydir(idir) = config_get_int(c_conf,"iydir("//trim(adjustl(idirchar))//")")
+end do
+ildir = config_get_int(c_conf,"ildir")
+ifdir = config_get_int(c_conf,"ifdir")
+
+! Check
+if (ndir<1) call abor1_ftn("qg_fields:dirac non-positive ndir")
+if (any(ixdir<1).or.any(ixdir>self%nx)) call abor1_ftn("qg_fields:dirac invalid ixdir")
+if (any(iydir<1).or.any(iydir>self%ny)) call abor1_ftn("qg_fields:dirac invalid iydir")
+if ((ildir<1).or.(ildir>self%nl)) call abor1_ftn("qg_fields:dirac invalid ildir")
+if ((ifdir<1).or.(ifdir>self%nf)) call abor1_ftn("qg_fields:dirac invalid ifdir")
+
+! Setup Diracs
+call zeros(self)
+ioff = (ifdir-1)*self%nl
+do idir=1,ndir
+   self%gfld3d(ixdir(idir),iydir(idir),ioff+ildir) = 1.0
+end do
+
+end subroutine dirac
 
 ! ------------------------------------------------------------------------------
 
@@ -886,21 +933,18 @@ use unstructured_grid_mod
 implicit none
 type(qg_field), intent(in) :: self
 type(unstructured_grid), intent(inout) :: ug
-real(kind=kind_real) :: xlat, xlon, dx, dy, zz(2)
-integer :: jx,jy
+real(kind=kind_real) :: zz(2)
+integer :: jx,jy,cmask(2)
 
 zz(1) = 0.0
 zz(2) = 1.0
 call create_unstructured_grid(ug, 2, zz)
 
-dx=360.0_kind_real/real(self%nx,kind_real)
-dy=80.0_kind_real/real(self%ny,kind_real)
-
+cmask(1) = 1
+cmask(2) = 1
 do jy=1,self%ny
-  xlat = (jy-1) * dy - 40.0_kind_real
   do jx=1,self%nx
-    xlon = (jx-1) * dx
-    call add_column(ug, xlat, xlon, 2, 1, 0)
+    call add_column(ug, self%lats(jy), self%lons(jx), 2, 1, 0, cmask, 1)
     ug%last%column%cols(1) = self%x(jx,jy,1)
     ug%last%column%cols(2) = self%x(jx,jy,2)
   enddo
@@ -916,19 +960,15 @@ implicit none
 type(qg_field), intent(inout) :: self
 type(unstructured_grid), intent(in) :: ug
 type(column_element), pointer :: current
-real(kind=kind_real) :: dx, dy
 integer :: jx,jy
 
-dx=360.0_kind_real/real(self%nx,kind_real)
-dy=80.0_kind_real/real(self%ny,kind_real)
-
 current => ug%head
-do while (associated(current))
-  jy = nint((current%column%lat + 40.0_kind_real) / dy) + 1
-  jx = nint(current%column%lon / dx) + 1
-  self%x(jx,jy,1) = current%column%cols(1)
-  self%x(jx,jy,2) = current%column%cols(2)
-  current => current%next
+do jy=1,self%ny
+  do jx=1,self%nx
+    self%x(jx,jy,1) = current%column%cols(1)
+    self%x(jx,jy,2) = current%column%cols(2)
+    current => current%next
+  enddo
 enddo
 
 end subroutine convert_from_ug

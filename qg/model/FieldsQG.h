@@ -60,6 +60,7 @@ class FieldsQG : public util::Printable,
   void axpy(const double &, const FieldsQG &);
   double dot_product_with(const FieldsQG &) const;
   void schur_product_with(const FieldsQG &);
+  void dirac(const eckit::Configuration &);
   void random();
 
 // Interpolate to given location

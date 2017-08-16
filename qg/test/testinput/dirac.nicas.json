@@ -90,12 +90,12 @@
           }
         ]
   },
-  "Dirac": {
+  "dirac": {
     "ndir": 1,
-    "londir(1)": 180.0,
-    "latdir(1)": 0.0,
-    "levdir": 1,
-    "ivardir": 1
+    "ixdir(1)": 20,
+    "iydir(1)": 10,
+    "ildir": 1,
+    "ifdir": 1
   },
   "output_nicas": {
     "datadir": "Data",

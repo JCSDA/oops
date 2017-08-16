@@ -97,6 +97,10 @@ void IncrementL95::zero(const util::DateTime & vt) {
   time_ = vt;
 }
 // -----------------------------------------------------------------------------
+void IncrementL95::dirac(const eckit::Configuration & config) {
+  fld_.dirac(config);
+}
+// -----------------------------------------------------------------------------
 void IncrementL95::axpy(const double & zz, const IncrementL95 & rhs,
                         const bool check) {
   ASSERT(!check || time_ == rhs.time_);

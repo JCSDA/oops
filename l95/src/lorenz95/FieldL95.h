@@ -18,6 +18,10 @@
 #include "util/Printable.h"
 
 // Forward declarations
+namespace eckit {
+  class Configuration;
+}
+
 namespace oops {
   class UnstructuredGrid;
 }
@@ -41,6 +45,7 @@ class FieldL95 : public util::Printable {
 
 /// Linear algebra
   void zero();
+  void dirac(const eckit::Configuration &);
   FieldL95 & operator=(const FieldL95 &);
   FieldL95 & operator+=(const FieldL95 &);
   FieldL95 & operator-=(const FieldL95 &);

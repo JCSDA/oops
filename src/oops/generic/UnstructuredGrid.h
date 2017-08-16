@@ -27,10 +27,15 @@ class UnstructuredGrid : public util::Printable,
   UnstructuredGrid();
   ~UnstructuredGrid();
 
+// Get local geometry
+  std::vector<double> getLats();
+  std::vector<double> getLons();
+  std::vector<double> getLevs();
+  std::vector<int> getCmask(const int &);
+
 // Will be useful for tests
   void zero();
   void random();
-  void dirac(const eckit::Configuration &);
   double dot_product_with(const UnstructuredGrid &) const;
 
 // Will be useful for tests

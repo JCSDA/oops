@@ -76,6 +76,7 @@ class IncrementQG : public oops::GeneralizedDepartures,
   double dot_product_with(const IncrementQG &) const;
   void schur_product_with(const IncrementQG &);
   void random();
+  void dirac(const eckit::Configuration &);
 
 /// Interpolate to observation location
   void interpolateTL(const LocationsQG &, GomQG &) const;

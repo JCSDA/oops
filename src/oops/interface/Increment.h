@@ -75,6 +75,7 @@ class Increment : public oops::GeneralizedDepartures,
 /// Linear algebra operators
   void zero();
   void zero(const util::DateTime &);
+  void dirac(const eckit::Configuration &);
   Increment & operator =(const Increment &);
   Increment & operator+=(const Increment &);
   Increment & operator-=(const Increment &);
@@ -208,6 +209,16 @@ void Increment<MODEL>::zero(const util::DateTime & tt) {
   util::Timer timer(classname(), "zero");
   increment_->zero(tt);
   Log::trace() << "Increment<MODEL>::zero done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::dirac(const eckit::Configuration & config) {
+  Log::trace() << "Increment<MODEL>::dirac starting" << std::endl;
+  util::Timer timer(classname(), "dirac");
+  increment_->dirac(config);
+  Log::trace() << "Increment<MODEL>::dirac done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
