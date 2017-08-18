@@ -300,12 +300,11 @@ logical :: init
 type(meshtype) :: mesh
 
 ! Create mesh
-if ((.not.allocated(ndata%area)).or.nam%mask_check.or.nam%network) &
+if ((.not.all(ndata%area>0.0)).or.nam%mask_check.or.nam%network) &
  & call create_mesh(ndata%rng,ndata%nc0,ndata%lon,ndata%lat,.true.,mesh)
 
-if (.not.allocated(ndata%area)) then
+if ((.not.all(ndata%area>0.0))) then
    ! Allocation
-   allocate(ndata%area(ndata%nl0))
    allocate(ltri(6,2*(mesh%nnr-2)))
 
    ! Create triangles list
@@ -380,16 +379,6 @@ end if
 
 
 if (nam%network) then
-   ! Compute distances
-   allocate(ndata%net_dnb(maxval(ndata%net_nnb),ndata%nc0))
-   do ic0=1,ndata%nc0
-      do i=1,ndata%net_nnb(ic0)
-         call sphere_dist(ndata%lon(ic0),ndata%lat(ic0),ndata%lon(ndata%net_inb(i,ic0)), &
-       & ndata%lat(ndata%net_inb(i,ic0)),ndata%net_dnb(i,ic0))
-         ndata%net_dnb(i,ic0) = (ndata%net_dnb(i,ic0)/req)**2
-      end do
-   end do
-
    if (.not.allocated(ndata%net_nnb)) then
       ! Allocation
       allocate(ndata%net_nnb(ndata%nc0))
@@ -430,6 +419,16 @@ if (nam%network) then
          end if
       end do
    end if
+
+   ! Compute distances
+   allocate(ndata%net_dnb(maxval(ndata%net_nnb),ndata%nc0))
+   do ic0=1,ndata%nc0
+      do i=1,ndata%net_nnb(ic0)
+         call sphere_dist(ndata%lon(ic0),ndata%lat(ic0),ndata%lon(ndata%net_inb(i,ic0)), &
+       & ndata%lat(ndata%net_inb(i,ic0)),ndata%net_dnb(i,ic0))
+         ndata%net_dnb(i,ic0) = (ndata%net_dnb(i,ic0)/req)**2
+      end do
+   end do
 end if
 
 end subroutine compute_grid_mesh

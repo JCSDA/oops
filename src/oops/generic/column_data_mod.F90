@@ -18,6 +18,7 @@ public column_data, create_column_data, delete_column_data
 type column_data
   real(kind=kind_real) :: lat  !> Latitude of column
   real(kind=kind_real) :: lon  !> Longitude of column
+  real(kind=kind_real) :: area !> Area of column cell
   integer :: nlevs             !> Number of levels
   integer :: nvars             !> Number of variables in 3D fields
   integer :: nsurf             !> Number of variables in 2D fields
@@ -31,11 +32,12 @@ end type column_data
 contains
 !-------------------------------------------------------------------------------
 
-subroutine create_column_data(self, plat, plon, klevs, kvars, ksurf, kcmask, ksmask)
+subroutine create_column_data(self, plat, plon, parea, klevs, kvars, ksurf, kcmask, ksmask)
 implicit none
 type(column_data), intent(inout) :: self
 real(kind=kind_real), intent(in) :: plat
 real(kind=kind_real), intent(in) :: plon
+real(kind=kind_real), intent(in) :: parea
 integer, intent(in) :: klevs
 integer, intent(in) :: kvars
 integer, intent(in) :: ksurf
@@ -43,6 +45,7 @@ integer, intent(in) :: kcmask(klevs)
 integer, intent(in) :: ksmask
 self%lat = plat
 self%lon = plon
+self%area = parea
 self%nlevs = klevs
 self%nvars = kvars
 self%nsurf = ksurf

@@ -11,10 +11,10 @@
 module type_mesh
 
 use omp_lib
-use tools_display, only: msgerror
+use tools_display, only: msgerror,prog_init,prog_print
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsi,isnotmsr
-use type_mpl, only: mpl
+use type_mpl, only: mpl,mpl_send,mpl_recv,mpl_bcast
 use type_randgen, only: randgentype,rand_integer
 
 implicit none
@@ -34,7 +34,7 @@ end type meshtype
 
 private
 public :: meshtype
-public :: create_mesh
+public :: create_mesh,mesh_dealloc
 
 contains
 
@@ -56,20 +56,85 @@ type(meshtype),intent(inout) :: mesh
 
 ! Local variables
 integer :: i,j,k,lnew,info
-integer,allocatable :: near(:),next(:)
+integer :: n_loc(mpl%nproc),i_loc,iproc,progint
+integer,allocatable :: near(:),next(:),i_glb(:,:),rbuf(:),sbuf(:)
 real(kind_real),allocatable :: dist(:)
+logical,allocatable :: done(:)
 
-! Look for redundant points TODO : change that, make it parallel?
+! Allocation
 allocate(mesh%redundant(n))
 call msi(mesh%redundant)
+
+! Look for redundant points
 if (lred) then
+   ! MPI splitting
+   iproc = 1
+   n_loc = 0
+   allocate(i_glb(n/mpl%nproc+1,mpl%nproc))
    do i=1,n
-      if (.not.isnotmsi(mesh%redundant(i))) then
-         do j=i+1,n
-            if ((abs(lon(i)-lon(j))<tiny(1.0)).and.(abs(lat(i)-lat(j))<tiny(1.0))) mesh%redundant(j) = i
-         end do
-      end if
+      n_loc(iproc) = n_loc(iproc)+1
+      i_glb(n_loc(iproc),iproc) = i
+      iproc = iproc+1
+      if (iproc>mpl%nproc) iproc = 1
    end do
+
+   ! Allocation
+   allocate(done(n_loc(mpl%myproc)))
+
+   write(mpl%unit,'(a10,a)',advance='no') '','Look for redundant points: '
+   call prog_init(progint,done)
+   !$omp parallel do private(i_loc,i,j)
+   do i_loc=1,n_loc(mpl%myproc)
+      i = i_glb(i_loc,mpl%myproc)
+      do j=1,i-1
+         if ((abs(lon(i)-lon(j))<tiny(1.0)).and.(abs(lat(i)-lat(j))<tiny(1.0))) then
+            mesh%redundant(i) = j
+            exit
+         end if
+      end do
+      done(i_loc) = .true.
+      call prog_print(progint,done)
+   end do
+   !$omp end parallel do
+   write(mpl%unit,'(a)') '100%'
+
+   ! Communication
+   if (mpl%main) then 
+      do iproc=1,mpl%nproc
+         ! Allocation
+         allocate(rbuf(n_loc(iproc)))
+
+         if (iproc==mpl%ioproc) then
+            ! Copy data
+            rbuf = mesh%redundant(i_glb(1:n_loc(iproc),iproc))
+         else
+            ! Receive data on ioproc
+            call mpl_recv(n_loc(iproc),rbuf,iproc,mpl%tag)
+         end if
+
+         ! Format data
+         mesh%redundant(i_glb(1:n_loc(iproc),iproc)) = rbuf
+
+         ! Release memory
+         deallocate(rbuf)
+      end do
+   else
+      ! Allocation
+      allocate(sbuf(n_loc(mpl%myproc)))
+
+      ! Format data
+      sbuf = mesh%redundant(i_glb(1:n_loc(mpl%myproc),mpl%myproc))
+
+      ! Send data to ioproc
+      call mpl_send(n_loc(mpl%myproc),sbuf,mpl%ioproc,mpl%tag)
+
+      ! Release memory
+      deallocate(sbuf)
+   end if
+   mpl%tag = mpl%tag+1
+
+   ! Broadcast data
+   call mpl_bcast(mesh%redundant,mpl%ioproc)
 end if
 mesh%nnr = count(.not.isnotmsi(mesh%redundant))
 
@@ -108,5 +173,28 @@ mesh%list = 0
 call trmesh(mesh%nnr,mesh%x,mesh%y,mesh%z,mesh%list,mesh%lptr,mesh%lend,lnew,near,next,dist,info)
 
 end subroutine create_mesh
+
+!----------------------------------------------------------------------
+! Subroutine: mesh_dealloc
+!> Purpose: deallocate mesh
+!----------------------------------------------------------------------
+subroutine mesh_dealloc(mesh)
+
+implicit none
+
+! Passed variables
+type(meshtype),intent(inout) :: mesh
+
+! Release memory
+deallocate(mesh%redundant)
+deallocate(mesh%x)
+deallocate(mesh%y)
+deallocate(mesh%z)
+deallocate(mesh%list)
+deallocate(mesh%lptr)
+deallocate(mesh%lend)
+deallocate(mesh%order)
+
+end subroutine mesh_dealloc
 
 end module type_mesh

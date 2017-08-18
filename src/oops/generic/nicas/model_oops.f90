@@ -12,7 +12,7 @@ module model_oops
 
 use module_namelist, only: nam
 use netcdf
-use tools_const, only: pi,deg2rad,rad2deg
+use tools_const, only: pi,deg2rad,rad2deg,req
 use tools_display, only: msgerror
 use tools_kinds,only: kind_real
 use tools_missing, only: msvalr,msi,msr,isanynotmsr
@@ -31,13 +31,14 @@ contains
 ! Subroutine: model_oops_coord
 !> Purpose: load OOPS coordinates
 !----------------------------------------------------------------------
-subroutine model_oops_coord(lats,lons,levs,mask,ndata)
+subroutine model_oops_coord(lats,lons,areas,levs,mask,ndata)
 
 implicit none
 
 ! Passed variables
 real(kind_real),intent(in) :: lats(:)
 real(kind_real),intent(in) :: lons(:)
+real(kind_real),intent(in) :: areas(:)
 real(kind_real),intent(in) :: levs(:)
 integer,intent(in) :: mask(:)
 type(ndatatype),intent(inout) :: ndata !< Sampling data
@@ -51,6 +52,9 @@ ndata%nl0 = nam%nl
 ! Number of nodes
 ndata%nc0 = size(lats)
 ndata%nlev = size(levs)
+
+! Check
+if (any(nam%levs>ndata%nlev)) call msgerror('not enough levels in model_oops')
 
 ! Pack
 call ndata_alloc(ndata)
@@ -68,6 +72,9 @@ do il0=1,ndata%nl0
       end if
    end do
 end do
+
+! Normalized area
+ndata%area = sum(areas)/req**2
 
 ! Vertical unit
 ndata%vunit = levs

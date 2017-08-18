@@ -190,10 +190,12 @@ end do
 !$omp end parallel do
 write(mpl%unit,'(a)') '100%'
 
-! Gather data
+! Initialize object
 ndata%c%prefix = 'c'
 ndata%c%n_src = ndata%ns
 ndata%c%n_dst = ndata%ns
+
+! Gather data
 call convol_gather_data(c_n_s,c,ndata%c)
 
 ! Release memory
@@ -217,12 +219,15 @@ real(kind_real),intent(in) :: rhs(ndata%ns)        !< Scaled horizontal support 
 real(kind_real),intent(in) :: rvs(ndata%ns)        !< Scaled vertical support radius
 
 ! Local variables
-integer :: ms,n_s_max,progint,ithread,is,ic1,il1,il0,jc1,jl1,jl0,js,i
-integer :: iproc,is_s(mpl%nproc),is_e(mpl%nproc),ns_loc(mpl%nproc),is_loc
+integer :: ms,n_s_max,progint,ithread,is,ic1,il1,il0,jc1,jl1,jl0,js,i,iproc
+integer :: is_s(mpl%nproc),is_e(mpl%nproc),ns_loc(mpl%nproc),is_loc
+integer :: ic1_s(mpl%nproc),ic1_e(mpl%nproc),nc1_loc(mpl%nproc),ic1_loc
 integer :: c_n_s(mpl%nthread)
 integer,allocatable :: mask_ctree(:),nn_index(:,:)
+integer,allocatable :: rbuf_index(:),sbuf_index(:)
 real(kind_real) :: distnorm,S_test
 real(kind_real),allocatable :: nn_dist(:,:)
+real(kind_real),allocatable :: rbuf_dist(:),sbuf_dist(:)
 logical :: submask(ndata%nc1,ndata%nl1)
 logical,allocatable :: done(:)
 type(ctreetype) :: ctree
@@ -243,15 +248,33 @@ mask_ctree = 1
 ctree = create_ctree(ndata%nc1,dble(ndata%lon(ndata%ic1_to_ic0)),dble(ndata%lat(ndata%ic1_to_ic0)),mask_ctree)
 deallocate(mask_ctree)
 
-! Compute nearest neighbors
-write(mpl%unit,'(a10,a)') '','Compute nearest neighbors'
+! Number of neighbors
 ms = 10*min(floor(pi*nam%resol**2*(1.0-cos(minval(rhs)))/(sqrt(3.0)*minval(rhs)**2)),ndata%nc1)
 ms = min(ms,ndata%nc1)
+
+! MPI splitting
+do iproc=1,mpl%nproc
+   ic1_s(iproc) = (iproc-1)*(ndata%nc1/mpl%nproc+1)+1
+   ic1_e(iproc) = min(iproc*(ndata%nc1/mpl%nproc+1),ndata%nc1)
+   nc1_loc(iproc) = ic1_e(iproc)-ic1_s(iproc)+1
+end do
+
+! Allocation
 allocate(nn_index(ms,ndata%nc1))
 allocate(nn_dist(ms,ndata%nc1))
-do ic1=1,ndata%nc1
+
+! Compute nearest neighbors
+write(mpl%unit,'(a10,a)') '','Compute nearest neighbors'
+do ic1_loc=1,nc1_loc(mpl%myproc)
+   ic1 = ic1_s(mpl%myproc)+ic1_loc-1
    call find_nearest_neighbors(ctree,dble(ndata%lon(ndata%ic1_to_ic0(ic1))), &
  & dble(ndata%lat(ndata%ic1_to_ic0(ic1))),ms,nn_index(:,ic1),nn_dist(:,ic1))
+end do
+
+! Broadcast
+do iproc=1,mpl%nproc
+   call mpl_bcast(nn_index(:,ic1_s(iproc):ic1_e(iproc)),iproc)
+   call mpl_bcast(nn_dist(:,ic1_s(iproc):ic1_e(iproc)),iproc)
 end do
 
 ! MPI splitting
@@ -315,10 +338,12 @@ end do
 !$omp end parallel do
 write(mpl%unit,'(a)') '100%'
 
-! Gather data
+! Initialize object
 ndata%c%prefix = 'c'
 ndata%c%n_src = ndata%ns
 ndata%c%n_dst = ndata%ns
+
+! Gather data
 call convol_gather_data(c_n_s,c,ndata%c)
 
 ! Release memory

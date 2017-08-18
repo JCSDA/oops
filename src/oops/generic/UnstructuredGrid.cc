@@ -35,6 +35,14 @@ std::vector<double> UnstructuredGrid::getLons() {
   return lons;
 }
 // -----------------------------------------------------------------------------
+std::vector<double> UnstructuredGrid::getAreas() {
+  int ncols;
+  get_ncols_f90(keyUGrid_, ncols);
+  std::vector<double> areas(ncols);
+  get_areas_f90(keyUGrid_, ncols, &areas[0]);
+  return areas;
+}
+// -----------------------------------------------------------------------------
 std::vector<double> UnstructuredGrid::getLevs() {
   int nlevs;
   get_nlevs_f90(keyUGrid_, nlevs);

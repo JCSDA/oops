@@ -134,7 +134,7 @@ type(unstructured_grid), pointer :: self
 ! Get self
 call unstructured_grid_registry%get(key,self)
 
-! Get lats
+! Get lons
 icols = 0
 current => self%head
 do while (associated(current))
@@ -144,6 +144,31 @@ do while (associated(current))
 end do
 
 end subroutine get_lons_c
+
+!-------------------------------------------------------------------------------
+
+subroutine get_areas_c(key, ncols, areas) bind(c, name='get_areas_f90')
+implicit none
+integer(c_int), intent(inout) :: key
+integer(c_int), intent(in) :: ncols
+real(kind=kind_real),intent(out) :: areas(ncols)
+integer :: icols
+type(column_element), pointer :: current
+type(unstructured_grid), pointer :: self
+
+! Get self
+call unstructured_grid_registry%get(key,self)
+
+! Get area
+icols = 0
+current => self%head
+do while (associated(current))
+   icols = icols+1
+   areas(icols) = current%column%area
+   current => current%next
+end do
+
+end subroutine get_areas_c
 
 !-------------------------------------------------------------------------------
 
@@ -227,11 +252,12 @@ end subroutine delete_unstructured_grid
 
 !-------------------------------------------------------------------------------
 
-subroutine add_column(self, plat, plon, klevs, kvars, ksurf, kcmask, ksmask)
+subroutine add_column(self, plat, plon, parea, klevs, kvars, ksurf, kcmask, ksmask)
 implicit none
 type(unstructured_grid), intent(inout) :: self
 real(kind=kind_real), intent(in) :: plat
 real(kind=kind_real), intent(in) :: plon
+real(kind=kind_real), intent(in) :: parea
 integer, intent(in) :: klevs
 integer, intent(in) :: kvars
 integer, intent(in) :: ksurf
@@ -245,7 +271,7 @@ else
   allocate(self%head)
   self%last => self%head
 endif
-call create_column_data(self%last%column, plat, plon, klevs, kvars, ksurf, kcmask, ksmask)
+call create_column_data(self%last%column, plat, plon, parea, klevs, kvars, ksurf, kcmask, ksmask)
 self%ncols = self%ncols+1
 
 end subroutine add_column

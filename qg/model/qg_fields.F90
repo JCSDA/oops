@@ -15,6 +15,8 @@ use qg_geom_mod
 use qg_locs_mod
 use qg_vars_mod
 use qg_goms_mod
+use netcdf
+use tools_nc, only: ncerr
 use kinds
 
 implicit none
@@ -62,6 +64,11 @@ end type qg_field
 type(registry_t) :: qg_field_registry
 
 ! ------------------------------------------------------------------------------
+
+logical :: netcdfio = .true.
+
+! ------------------------------------------------------------------------------
+
 contains
 ! ------------------------------------------------------------------------------
 !> Linked list implementation
@@ -511,7 +518,9 @@ character(len=4)  :: cnx
 character(len=11) :: fmt1='(X,ES24.16)'
 character(len=1024)  :: buf
 integer :: ic, iy, il, ix, is, jx, jy, jf, iread, nf
+integer :: ncid, nx_id, ny_id, nl_id, nc_id, gfld3d_id, xbound_id, qbound_id
 real(kind=kind_real), allocatable :: zz(:)
+character(len=1024) :: subr='read_file'
 
 iread = 1
 if (config_element_exists(c_conf,"read_from_file")) then
@@ -529,52 +538,99 @@ else
   filename = config_get_string(c_conf,len(filename),"filename")
   WRITE(buf,*) 'qg_field:read_file: opening '//filename
   call fckit_log%info(buf)
-  open(unit=iunit, file=trim(filename), form='formatted', action='read')
 
-  read(iunit,*) ix, iy, il, ic, is
-  if (ix /= fld%geom%nx .or. iy /= fld%geom%ny .or. il /= fld%nl) then
-    write (record,*) "qg_fields:read_file: ", &
-                   & "input fields have wrong dimensions: ",ix,iy,il
-    call fckit_log%error(record)
-    write (record,*) "qg_fields:read_file: expected: ",fld%geom%nx,fld%geom%ny,fld%nl
-    call fckit_log%error(record)
-    call abor1_ftn("qg_fields:read_file: input fields have wrong dimensions")
-  endif
+  if (netcdfio) then
 
-  read(iunit,*) sdate
-  WRITE(buf,*) 'validity date is: '//sdate
-  call fckit_log%info(buf)
-  call datetime_set(sdate, vdate)
-
-  if (fld%geom%nx>9999)  call abor1_ftn("Format too small")
-  write(cnx,'(I4)')fld%geom%nx
-  fmtn='('//trim(cnx)//fmt1//')'
-
-  nf = min(fld%nf, ic)
-  do jf=1,il*nf
-    do jy=1,fld%geom%ny
-      read(iunit,fmtn) (fld%gfld3d(jx,jy,jf), jx=1,fld%geom%nx)
+    call ncerr(subr,nf90_open(trim(filename)//'.nc',nf90_nowrite,ncid))
+    call ncerr(subr,nf90_inq_dimid(ncid,'nx',nx_id))
+    call ncerr(subr,nf90_inq_dimid(ncid,'ny',ny_id))
+    call ncerr(subr,nf90_inq_dimid(ncid,'nl',nl_id))
+    call ncerr(subr,nf90_inq_dimid(ncid,'nc',nc_id))
+    call ncerr(subr,nf90_inquire_dimension(ncid,nx_id,len=ix))
+    call ncerr(subr,nf90_inquire_dimension(ncid,ny_id,len=iy))
+    call ncerr(subr,nf90_inquire_dimension(ncid,nl_id,len=il))
+    call ncerr(subr,nf90_inquire_dimension(ncid,nl_id,len=ic))
+    if (ix /= fld%geom%nx .or. iy /= fld%geom%ny .or. il /= fld%nl) then
+      write (record,*) "qg_fields:read_file: ", &
+                     & "input fields have wrong dimensions: ",ix,iy,il
+      call fckit_log%error(record)
+      write (record,*) "qg_fields:read_file: expected: ",fld%geom%nx,fld%geom%ny,fld%nl
+      call fckit_log%error(record)
+      call abor1_ftn("qg_fields:read_file: input fields have wrong dimensions")
+    endif
+    call ncerr(subr,nf90_get_att(ncid,nf90_global,'lbc',is))
+  
+    call ncerr(subr,nf90_get_att(ncid,nf90_global,'sdate',sdate))
+    WRITE(buf,*) 'validity date is: '//sdate
+    call fckit_log%info(buf)
+    call datetime_set(sdate, vdate)
+  
+    nf = min(fld%nf, ic)
+    call ncerr(subr,nf90_inq_varid(ncid,'gfld3d',gfld3d_id))
+    do jf=1,il*nf
+      call ncerr(subr,nf90_get_var(ncid,gfld3d_id,fld%gfld3d(:,:,jf),(/1,1,jf/),(/ix,iy,1/)))
     enddo
-  enddo
+  
+    if (fld%lbc) then
+      call ncerr(subr,nf90_inq_varid(ncid,'xbound',xbound_id))
+      call ncerr(subr,nf90_get_var(ncid,xbound_id,fld%xbound))
+      call ncerr(subr,nf90_inq_varid(ncid,'qbound',qbound_id))
+      call ncerr(subr,nf90_get_var(ncid,qbound_id,fld%qbound))
+    endif
+  
+    call ncerr(subr,nf90_close(ncid))
+
+  else
+
+    open(unit=iunit, file=trim(filename), form='formatted', action='read')
+  
+    read(iunit,*) ix, iy, il, ic, is
+    if (ix /= fld%geom%nx .or. iy /= fld%geom%ny .or. il /= fld%nl) then
+      write (record,*) "qg_fields:read_file: ", &
+                     & "input fields have wrong dimensions: ",ix,iy,il
+      call fckit_log%error(record)
+      write (record,*) "qg_fields:read_file: expected: ",fld%geom%nx,fld%geom%ny,fld%nl
+      call fckit_log%error(record)
+      call abor1_ftn("qg_fields:read_file: input fields have wrong dimensions")
+    endif
+  
+    read(iunit,*) sdate
+    WRITE(buf,*) 'validity date is: '//sdate
+    call fckit_log%info(buf)
+    call datetime_set(sdate, vdate)
+  
+    if (fld%geom%nx>9999)  call abor1_ftn("Format too small")
+    write(cnx,'(I4)')fld%geom%nx
+    fmtn='('//trim(cnx)//fmt1//')'
+  
+    nf = min(fld%nf, ic)
+    do jf=1,il*nf
+      do jy=1,fld%geom%ny
+        read(iunit,fmtn) (fld%gfld3d(jx,jy,jf), jx=1,fld%geom%nx)
+      enddo
+    enddo
 ! Skip un-necessary data from file if any
-  allocate(zz(fld%geom%nx))
-  do jf=nf*il+1, ic*il
-    do jy=1,fld%geom%ny
-      read(iunit,fmtn) (zz(jx), jx=1,fld%geom%nx)
+    allocate(zz(fld%geom%nx))
+    do jf=nf*il+1, ic*il
+      do jy=1,fld%geom%ny
+        read(iunit,fmtn) (zz(jx), jx=1,fld%geom%nx)
+      enddo
     enddo
-  enddo
-  deallocate(zz)
+    deallocate(zz)
+  
+    if (fld%lbc) then
+      do jf=1,4
+        read(iunit,fmt1) fld%xbound(jf)
+      enddo
+      do jf=1,4
+        read(iunit,fmtn) (fld%qbound(jx,jf), jx=1,fld%geom%nx)
+      enddo
+    endif
+  
+    close(iunit)
 
-  if (fld%lbc) then
-    do jf=1,4
-      read(iunit,fmt1) fld%xbound(jf)
-    enddo
-    do jf=1,4
-      read(iunit,fmtn) (fld%qbound(jx,jf), jx=1,fld%geom%nx)
-    enddo
   endif
 
-  close(iunit)
 endif
 
 call check(fld)
@@ -596,6 +652,7 @@ type(datetime), intent(in) :: vdate  !< DateTime
 
 integer, parameter :: iunit=11
 integer, parameter :: max_string_length=800 ! Yuk!
+integer :: ncid, nx_id, ny_id, nl_id, nc_id, ntot_id, four_id, gfld3d_id, xbound_id, qbound_id
 character(len=max_string_length+50) :: record
 character(len=max_string_length) :: filename
 character(len=20) :: sdate, fmtn
@@ -603,42 +660,78 @@ character(len=4)  :: cnx
 character(len=11) :: fmt1='(X,ES24.16)'
 character(len=1024):: buf
 integer :: jf, jy, jx, is
+character(len=1024) :: subr='write_file'
 
 call check(fld)
 
 filename = genfilename(c_conf,max_string_length,vdate)
 WRITE(buf,*) 'qg_field:write_file: writing '//filename
 call fckit_log%info(buf)
-open(unit=iunit, file=trim(filename), form='formatted', action='write')
 
 is=0
 if (fld%lbc) is=1
-
-write(iunit,*) fld%geom%nx, fld%geom%ny, fld%nl, fld%nf, is
-
 call datetime_to_string(vdate, sdate)
-write(iunit,*) sdate
 
-if (fld%geom%nx>9999)  call abor1_ftn("Format too small")
-write(cnx,'(I4)')fld%geom%nx
-fmtn='('//trim(cnx)//fmt1//')'
 
-do jf=1,fld%nl*fld%nf
-  do jy=1,fld%geom%ny
-    write(iunit,fmtn) (fld%gfld3d(jx,jy,jf), jx=1,fld%geom%nx)
+if (netcdfio) then
+  
+  call ncerr(subr,nf90_create(trim(filename)//'.nc',or(nf90_clobber,nf90_64bit_offset),ncid))
+  call ncerr(subr,nf90_def_dim(ncid,'nx',fld%geom%nx,nx_id))
+  call ncerr(subr,nf90_def_dim(ncid,'ny',fld%geom%ny,ny_id))
+  call ncerr(subr,nf90_def_dim(ncid,'nl',fld%nl,nl_id))
+  call ncerr(subr,nf90_def_dim(ncid,'nc',fld%nf,nc_id))
+  call ncerr(subr,nf90_def_dim(ncid,'ntot',fld%nl*fld%nf,ntot_id))
+  call ncerr(subr,nf90_def_dim(ncid,'four',4,four_id))
+  call ncerr(subr,nf90_put_att(ncid,nf90_global,'lbc',is))
+  
+  call ncerr(subr,nf90_put_att(ncid,nf90_global,'sdate',sdate))
+  call ncerr(subr,nf90_def_var(ncid,'gfld3d',nf90_double,(/nx_id,ny_id,ntot_id/),gfld3d_id))
+  
+  if (fld%lbc) then
+    call ncerr(subr,nf90_def_var(ncid,'xbound',nf90_double,(/four_id/),xbound_id))
+    call ncerr(subr,nf90_def_var(ncid,'qbound',nf90_double,(/nx_id,four_id/),qbound_id))
+  end if
+  
+  call ncerr(subr,nf90_enddef(ncid))
+  
+  call ncerr(subr,nf90_put_var(ncid,gfld3d_id,fld%gfld3d))
+  
+  if (fld%lbc) then
+    call ncerr(subr,nf90_put_var(ncid,xbound_id,fld%xbound))
+    call ncerr(subr,nf90_put_var(ncid,qbound_id,fld%qbound))
+  end if
+  
+  call ncerr(subr,nf90_close(ncid))
+
+else
+
+  open(unit=iunit, file=trim(filename), form='formatted', action='write')
+  
+  write(iunit,*) fld%geom%nx, fld%geom%ny, fld%nl, fld%nf, is
+  write(iunit,*) sdate
+  
+  if (fld%geom%nx>9999)  call abor1_ftn("Format too small")
+  write(cnx,'(I4)')fld%geom%nx
+  fmtn='('//trim(cnx)//fmt1//')'
+  
+  do jf=1,fld%nl*fld%nf
+    do jy=1,fld%geom%ny
+      write(iunit,fmtn) (fld%gfld3d(jx,jy,jf), jx=1,fld%geom%nx)
+    enddo
   enddo
-enddo
+  
+  if (fld%lbc) then
+    do jf=1,4
+      write(iunit,fmt1) fld%xbound(jf)
+    enddo
+    do jf=1,4
+      write(iunit,fmtn) (fld%qbound(jx,jf), jx=1,fld%geom%nx)
+    enddo
+  endif
+  
+  close(iunit)
 
-if (fld%lbc) then
-  do jf=1,4
-    write(iunit,fmt1) fld%xbound(jf)
-  enddo
-  do jf=1,4
-    write(iunit,fmtn) (fld%qbound(jx,jf), jx=1,fld%geom%nx)
-  enddo
-endif
-
-close(iunit)
+end if
 
 return
 end subroutine write_file
@@ -937,7 +1030,7 @@ call create_unstructured_grid(ug, self%nl, zz)
 cmask = 1
 do jy=1,self%geom%ny
   do jx=1,self%geom%nx
-    call add_column(ug, self%geom%lats(jy), self%geom%lons(jx), self%nl, self%nf, 0, cmask, 1)
+    call add_column(ug, self%geom%lats(jy), self%geom%lons(jx), self%geom%areas(jx,jy), self%nl, self%nf, 0, cmask, 1)
     j = 0
     do jf=1,self%nf
       joff = (jf-1)*self%nl

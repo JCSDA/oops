@@ -402,9 +402,6 @@ do iproc=1,nam%nproc
    do il0i=1,ndataloc_arr(iproc)%nl0i
       write(mpl%unit,'(a10,a,i3,a,i8)') '','h(',il0i,')%n_s = ',ndataloc_arr(iproc)%h(il0i)%n_s
    end do
-   do il0i=1,ndataloc_arr(iproc)%nl0i
-      write(mpl%unit,'(a10,a,i3,a,i8)') '','v(',il0i,')%n_s = ',ndataloc_arr(iproc)%v(il0i)%n_s
-   end do
    do il1=1,ndataloc_arr(iproc)%nl1
       write(mpl%unit,'(a10,a,i3,a,i8)') '','s(',il1,')%n_s = ',ndataloc_arr(iproc)%s(il1)%n_s
    end do

@@ -73,18 +73,18 @@ template <typename MODEL> class Dirac : public Application {
     const util::DateTime bgndate(xx.validTime());
     Log::info() << "Setup times OK" << std::endl;
 
+//  Setup increment
+    Increment_ dxinit(resol, vars, bgndate);
+    const eckit::LocalConfiguration diracConfig(fullConfig, "dirac");
+    dxinit.dirac(diracConfig);
+    Log::info() << "Setup increment OK" << std::endl;
+
 //  Setup localization
     const eckit::LocalConfiguration covarConfig(fullConfig, "Covariance");
     const eckit::LocalConfiguration locConfig(covarConfig, "localization");
     boost::scoped_ptr<Localization_> loc_;
     loc_.reset(new Localization_(xx, locConfig));
     Log::info() << "Setup localization OK" << std::endl;
-
-//  Setup increment
-    Increment_ dxinit(resol, vars, bgndate);
-    const eckit::LocalConfiguration diracConfig(fullConfig, "dirac");
-    dxinit.dirac(diracConfig);
-    Log::info() << "Setup increment OK" << std::endl;
 
 //  Apply NICAS
     Increment_ dx(dxinit);

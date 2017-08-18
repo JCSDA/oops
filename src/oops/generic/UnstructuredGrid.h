@@ -30,6 +30,7 @@ class UnstructuredGrid : public util::Printable,
 // Get local geometry
   std::vector<double> getLats();
   std::vector<double> getLons();
+  std::vector<double> getAreas();
   std::vector<double> getLevs();
   std::vector<int> getCmask(const int &);
 

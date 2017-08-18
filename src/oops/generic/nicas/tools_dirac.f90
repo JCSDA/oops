@@ -58,7 +58,7 @@ ctree = create_ctree(n,dble(lon),dble(lat),mask_ctree)
 ! Compute nearest neighbors
 do idir=1,ndir
    call find_nearest_neighbors(ctree,dble(londir(idir)*deg2rad), &
- & dble(londir(idir)*deg2rad),1,ic0dir(idir:idir),dum)
+ & dble(latdir(idir)*deg2rad),1,ic0dir(idir:idir),dum)
 end do
 
 ! Release memory

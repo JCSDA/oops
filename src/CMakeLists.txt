@@ -182,10 +182,10 @@ oops/generic/nicas/module_apply_convol.f90
 oops/generic/nicas/module_apply_interp.f90
 oops/generic/nicas/module_apply_nicas.f90
 oops/generic/nicas/module_apply_nicas_sqrt.f90
+oops/generic/nicas/module_driver.f90
 oops/generic/nicas/module_mpi.f90
 oops/generic/nicas/module_namelist.f90
 oops/generic/nicas/module_normalization.f90
-oops/generic/nicas/module_nicas.f90
 oops/generic/nicas/module_parameters_convol.f90
 oops/generic/nicas/module_parameters.f90
 oops/generic/nicas/module_parameters_interp.f90

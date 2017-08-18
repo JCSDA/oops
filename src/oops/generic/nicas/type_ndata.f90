@@ -146,7 +146,7 @@ end type ndataloctype
 
 private
 public :: ndatatype,ndataloctype
-public :: ndata_alloc,ndata_dealloc,ndataloc_dealloc, ndataloc_copy, &
+public :: ndata_alloc,ndataloc_dealloc, ndataloc_copy, &
  & ndata_read_param,ndata_read_local,ndata_read_mpi, &
  & ndata_write_param,ndata_write_mpi,ndata_write_mpi_summary
 
@@ -166,6 +166,7 @@ type(ndatatype),intent(inout) :: ndata !< Sampling data
 ! Allocation
 allocate(ndata%lon(ndata%nc0))
 allocate(ndata%lat(ndata%nc0))
+allocate(ndata%area(ndata%nl0))
 allocate(ndata%mask(ndata%nc0,ndata%nl0))
 allocate(ndata%vunit(ndata%nl0))
 
@@ -177,22 +178,6 @@ call msr(ndata%vunit)
 ndata%rng = create_randgen()
 
 end subroutine ndata_alloc
-
-!----------------------------------------------------------------------
-! Subroutine: ndata_dealloc
-!> Purpose: ndata object deallocation
-!----------------------------------------------------------------------
-subroutine ndata_dealloc(ndata)
-
-implicit none
-
-! Passed variables
-type(ndatatype),intent(inout) :: ndata !< Sampling data
-
-! Release memory
-! TODO
-
-end subroutine ndata_dealloc
 
 !----------------------------------------------------------------------
 ! Subroutine: ndataloc_dealloc

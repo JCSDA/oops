@@ -25,8 +25,9 @@ public :: qg_geom_registry
 type :: qg_geom
   integer :: nx
   integer :: ny
-  real(kind=kind_real),allocatable :: lons(:)
   real(kind=kind_real),allocatable :: lats(:)
+  real(kind=kind_real),allocatable :: lons(:)
+  real(kind=kind_real),allocatable :: areas(:,:)
 end type qg_geom
 
 #define LISTED_TYPE qg_geom
@@ -63,6 +64,7 @@ self%ny = config_get_int(c_conf, "ny")
 
 allocate(self%lons(self%nx))
 allocate(self%lats(self%ny))
+allocate(self%areas(self%nx,self%ny))
 
 dx = 360.0 / real(self%nx,kind=kind_real);
 dytot = 360.0 * real(self%ny,kind=kind_real) / real(self%nx,kind=kind_real);
@@ -72,6 +74,9 @@ do ix=1,self%nx
 end do
 do iy=1,self%ny
    self%lats(iy) = -0.5*dytot+(real(iy,kind=kind_real)-0.5)*dy;
+end do
+do iy=1,self%ny
+   self%areas(:,iy) = 6.371e6**2*cos(self%lats(iy)*acos(-1.0)/180.0)*dx*dy
 end do
 
 end subroutine c_qg_geo_setup
@@ -92,8 +97,11 @@ other%nx = self%nx
 other%ny = self%ny
 allocate(other%lons(other%nx))
 allocate(other%lats(other%ny))
+allocate(other%areas(other%nx,other%ny))
 other%lons = self%lons
 other%lats = self%lats
+other%areas = self%areas
+
 end subroutine c_qg_geo_clone
 
 ! ------------------------------------------------------------------------------

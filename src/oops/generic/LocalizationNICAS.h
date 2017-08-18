@@ -57,6 +57,7 @@ LocalizationNICAS<MODEL>::LocalizationNICAS(const State_ & xx, const eckit::Conf
   xx.convert_to(ugrid);
   std::vector<double> lats = ugrid.getLats();
   std::vector<double> lons = ugrid.getLons();
+  std::vector<double> areas = ugrid.getAreas();
   std::vector<double> levs = ugrid.getLevs();
   std::vector<int> cmask;
   for (int jlev = 0; jlev < levs.size(); ++jlev) {
@@ -65,7 +66,7 @@ LocalizationNICAS<MODEL>::LocalizationNICAS(const State_ & xx, const eckit::Conf
   }
   int nh = lats.size();
   int nv = levs.size();
-  create_nicas_f90(keyNicas_, &fconf, nh, &lats[0], &lons[0], nv, &levs[0], &cmask[0]);
+  create_nicas_f90(keyNicas_, &fconf, nh, &lats[0], &lons[0], &areas[0], nv, &levs[0], &cmask[0]);
   Log::trace() << "LocalizationNICAS:LocalizationNICAS constructed" << std::endl;
 }
 

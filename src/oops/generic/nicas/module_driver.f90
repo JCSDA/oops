@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! Module: module_nicas
+! Module: module_driver
 !> Purpose: nicas driver
 !> <br>
 !> Author: Benjamin Menetrier
@@ -8,7 +8,7 @@
 !> <br>
 !> Copyright © 2017 METEO-FRANCE
 !----------------------------------------------------------------------
-module module_nicas
+module module_driver
 
 use module_mpi, only: compute_mpi
 use module_namelist, only: nam
@@ -17,7 +17,7 @@ use module_parameters, only: compute_parameters
 use module_test, only: test_adjoints,test_pos_def,test_mpi,test_dirac,test_perf
 use tools_const, only: pi
 use type_mpl, only: mpl
-use type_ndata, only: ndatatype,ndataloctype,ndata_dealloc,ndataloc_dealloc,ndataloc_copy, &
+use type_ndata, only: ndatatype,ndataloctype,ndataloc_dealloc,ndataloc_copy, &
 & ndata_read_param,ndata_read_local,ndata_read_mpi, &
 & ndata_write_param,ndata_write_mpi,ndata_write_mpi_summary
 
@@ -227,4 +227,4 @@ call flush(mpl%unit)
 
 end subroutine nicas_driver
 
-end module module_nicas
+end module module_driver

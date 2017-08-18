@@ -43,7 +43,7 @@ integer,allocatable :: ineh(:,:),inev(:,:),ines(:,:),inec(:),order(:),is_list(:)
 integer,allocatable :: interp_h(:,:,:),interp_v(:,:,:),interp_s(:,:,:),convol_c(:,:)
 real(kind_real) :: S_add
 real(kind_real),allocatable :: interp_h_S(:,:,:),interp_v_S(:,:,:),interp_s_S(:,:,:),convol_c_S(:,:)
-real(kind_real),allocatable :: S_list(:),S_list_tmp(:),norm(:),normg(:,:)
+real(kind_real),allocatable :: S_list(:),S_list_tmp(:)
 logical :: conv
 logical,allocatable :: done(:),valid_list_tmp(:)
 
@@ -191,9 +191,9 @@ do iproc=1,mpl%nproc
 end do
 
 ! Allocation
+allocate(ndata%norm(ndata%nc0,ndata%nl0))
 allocate(done(nc0_loc(mpl%myproc)*ndata%nl0))
-allocate(norm(nc0_loc(mpl%myproc)*ndata%nl0))
-call msr(norm)
+call msr(ndata%norm)
 
 ! Compute normalization weights
 write(mpl%unit,'(a7,a)',advance='no') '','Compute normalization weights: '
@@ -201,12 +201,11 @@ call prog_init(progint,done)
 do il0=1,ndata%nl0
    il0i = min(il0,ndata%nl0i)
 
-   !$omp parallel do private(ic0_loc,ic0,ibuf,is_list,order,S_list,S_list_tmp,valid_list_tmp,nlr) &
+   !$omp parallel do private(ic0_loc,ic0,is_list,order,S_list,S_list_tmp,valid_list_tmp,nlr) &
    !$omp&            private(is_add,S_add,ih,ic1,iv,il1,is,ilr,conv,ic,jlr,js)
    do ic0_loc=1,nc0_loc(mpl%myproc)
       ! MPI offset
       ic0 = ic0_s(mpl%myproc)+ic0_loc-1
-      ibuf = (il0-1)*nc0_loc(mpl%myproc)+ic0_loc
 
       if (ndata%mask(ic0,il0)) then
          ! Allocation
@@ -275,15 +274,15 @@ do il0=1,ndata%nl0
             end do
 
             ! Sum of squared values
-            norm(ibuf) = 0.0
+            ndata%norm(ic0,il0) = 0.0
             do js=1,ndata%ns
                if (valid_list_tmp(js)) then
-                  norm(ibuf) = norm(ibuf)+S_list_tmp(js)**2
+                  ndata%norm(ic0,il0) = ndata%norm(ic0,il0)+S_list_tmp(js)**2
                end if
             end do
 
             ! Normalization factor
-            norm(ibuf) = 1.0/sqrt(norm(ibuf))
+            ndata%norm(ic0,il0) = 1.0/sqrt(ndata%norm(ic0,il0))
          else
             ! Sort arrays
             call qsort(nlr,is_list(1:nlr),order(1:nlr))
@@ -312,11 +311,11 @@ do il0=1,ndata%nl0
             end do
 
             ! Normalization factor
-            if (nlr>0) norm(ibuf) = 1.0/sqrt(sum(S_list(1:nlr)*S_list_tmp(1:nlr)))
+            if (nlr>0) ndata%norm(ic0,il0) = 1.0/sqrt(sum(S_list(1:nlr)*S_list_tmp(1:nlr)))
          end if
 
          ! Print progression
-         done(ibuf) = .true.
+         done((il0-1)*nc0_loc(mpl%myproc)+ic0_loc) = .true.
          call prog_print(progint,done)
 
          ! Release memory
@@ -328,51 +327,15 @@ do il0=1,ndata%nl0
       end if
    end do
    !$omp end parallel do
+
+   ! Broadcast
+   do iproc=1,mpl%nproc
+      call mpl_bcast(ndata%norm(ic0_s(iproc):ic0_e(iproc),il0),iproc)
+   end do
 end do
 write(mpl%unit,'(a)') '100%'
 
-! Allocation
-allocate(ndata%norm(ndata%nc0,ndata%nl0))
-
-! Communication
-if (mpl%main) then
-   ! Allocation
-   allocate(normg(maxval(nc0_loc)*ndata%nl0,mpl%nproc))
-
-   do iproc=1,mpl%nproc
-      if (iproc==mpl%ioproc) then
-         ! Copy data
-         normg(1:nc0_loc(iproc)*ndata%nl0,iproc) = norm
-      else
-         ! Receive data on ioproc
-         call mpl_recv(nc0_loc(iproc)*ndata%nl0,normg(1:nc0_loc(iproc)*ndata%nl0,iproc),iproc,mpl%tag)
-      end if
-   end do
-
-   ! Format data
-   do iproc=1,mpl%nproc
-      do il0=1,ndata%nl0
-         do ic0_loc=1,nc0_loc(iproc)
-            ic0 = ic0_s(iproc)+ic0_loc-1
-            ibuf = (il0-1)*nc0_loc(iproc)+ic0_loc
-            ndata%norm(ic0,il0) = normg(ibuf,iproc)
-         end do
-      end do
-   end do
-
-   ! Release memory
-   deallocate(normg)
-else
-   ! Send data to ioproc
-   call mpl_send(nc0_loc(mpl%myproc)*ndata%nl0,norm,mpl%ioproc,mpl%tag)
-end if
-mpl%tag = mpl%tag+1
-
-! Broadcast data
-call mpl_bcast(ndata%norm,mpl%ioproc)
-
 ! Release memory
-deallocate(norm)
 deallocate(done)
 
 end subroutine compute_normalization

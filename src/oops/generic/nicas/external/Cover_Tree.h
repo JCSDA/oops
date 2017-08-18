@@ -125,7 +125,7 @@ class CoverTree
                     bool& multi);
 
  public:
-    const double base = 2.0;
+    static constexpr double base = 2.0;
 
     /**
      * Constructs a cover tree which begins with all points in points.

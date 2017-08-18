@@ -75,12 +75,6 @@ do il0=1,ndata%nl0
 end do
 call ncerr(subr,nf90_close(ncid))
 
-! Compute normalized area
-allocate(ndata%area(ndata%nl0))
-do il0=1,ndata%nl0
-   ndata%area(il0) = sum(e1t(:,:,il0)*e2t(:,:,il0),mask=tmask(:,:,il0)>0.0)/req**2
-end do
-
 ! Convert to radian
 lon = lon*real(deg2rad,kind=4)
 lat = lat*real(deg2rad,kind=4)
@@ -120,6 +114,11 @@ ndata%lat = pack(real(lat,kind_real),mask=.true.)
 do il0=1,ndata%nl0
    ! Land/sea mask
    ndata%mask(:,il0) = pack(tmask(:,:,il0)>0,mask=.true.)
+end do
+
+! Compute normalized area
+do il0=1,ndata%nl0
+   ndata%area(il0) = sum(e1t(:,:,il0)*e2t(:,:,il0),mask=tmask(:,:,il0)>0.0)/req**2
 end do
 
 ! Vertical unit
