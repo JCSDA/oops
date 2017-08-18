@@ -67,28 +67,28 @@
       "nproc": 1,
       "mpicom": 2
     },
-        "state": [
-          {
-            "filename": "Data/test.ens.1.2009-12-31T00:00:00Z.P1D",
-            "date": "2010-01-01T00:00:00Z"
-          },
-          {
-            "filename": "Data/test.ens.2.2009-12-31T00:00:00Z.P1D",
-            "date": "2010-01-01T00:00:00Z"
-          },
-          {
-            "filename": "Data/test.ens.3.2009-12-31T00:00:00Z.P1D",
-            "date": "2010-01-01T00:00:00Z"
-          },
-          {
-            "filename": "Data/test.ens.4.2009-12-31T00:00:00Z.P1D",
-            "date": "2010-01-01T00:00:00Z"
-          },
-          {
-            "filename": "Data/test.ens.5.2009-12-31T00:00:00Z.P1D",
-            "date": "2010-01-01T00:00:00Z"
-          }
-        ]
+    "state": [
+      {
+        "filename": "Data/test.ens.1.2009-12-31T00:00:00Z.P1D",
+        "date": "2010-01-01T00:00:00Z"
+      },
+      {
+        "filename": "Data/test.ens.2.2009-12-31T00:00:00Z.P1D",
+        "date": "2010-01-01T00:00:00Z"
+      },
+      {
+        "filename": "Data/test.ens.3.2009-12-31T00:00:00Z.P1D",
+        "date": "2010-01-01T00:00:00Z"
+      },
+      {
+        "filename": "Data/test.ens.4.2009-12-31T00:00:00Z.P1D",
+        "date": "2010-01-01T00:00:00Z"
+      },
+      {
+        "filename": "Data/test.ens.5.2009-12-31T00:00:00Z.P1D",
+        "date": "2010-01-01T00:00:00Z"
+      }
+    ]
   },
   "dirac": {
     "ndir": 1,
