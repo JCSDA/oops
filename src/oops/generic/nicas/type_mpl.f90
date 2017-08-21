@@ -38,8 +38,10 @@ interface mpl_bcast
   module procedure mpl_bcast_real
   module procedure mpl_bcast_real_array_1d
   module procedure mpl_bcast_real_array_2d
+  module procedure mpl_bcast_real_array_3d
   module procedure mpl_bcast_logical
   module procedure mpl_bcast_logical_array_1d
+  module procedure mpl_bcast_logical_array_2d
   module procedure mpl_bcast_string
 end interface
 
@@ -61,9 +63,13 @@ interface mpl_alltoallv
   module procedure mpl_alltoallv_real
 end interface
 
+interface mpl_allreduce_sum
+  module procedure mpl_allreduce_sum_real
+end interface
+
 private
 public :: mpl
-public :: mpl_start,mpl_end,mpl_abort,mpl_barrier,mpl_bcast,mpl_recv,mpl_send,mpl_alltoallv
+public :: mpl_start,mpl_end,mpl_abort,mpl_barrier,mpl_bcast,mpl_recv,mpl_send,mpl_alltoallv,mpl_allreduce_sum
 
 contains
 
@@ -367,6 +373,32 @@ call mpl_barrier
 end subroutine mpl_bcast_real_array_2d
 
 !----------------------------------------------------------------------
+! Subroutine: mpl_bcast_real_array_3d
+!> Purpose: broadcast 3d real array
+!----------------------------------------------------------------------
+subroutine mpl_bcast_real_array_3d(var,root)
+
+implicit none
+
+! Passed variables
+real(kind_real),dimension(:,:,:),intent(in) :: var !< Real array, 2d
+integer,intent(in) :: root                         !< Root task
+
+! Local variable
+integer :: info
+
+! Broadcast
+call mpi_bcast(var,size(var),mpl%rtype,root-1,mpi_comm_world,info)
+
+! Check
+call mpl_check(info)
+
+! Wait
+call mpl_barrier
+
+end subroutine mpl_bcast_real_array_3d
+
+!----------------------------------------------------------------------
 ! Subroutine: mpl_bcast_logical
 !> Purpose: broadcast logical
 !----------------------------------------------------------------------
@@ -417,6 +449,32 @@ call mpl_check(info)
 call mpl_barrier
 
 end subroutine mpl_bcast_logical_array_1d
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_bcast_logical_array_2d
+!> Purpose: broadcast 2d logical array
+!----------------------------------------------------------------------
+subroutine mpl_bcast_logical_array_2d(var,root)
+
+implicit none
+
+! Passed variables
+logical,dimension(:,:),intent(in) :: var !< Logical array, 1d
+integer,intent(in) :: root               !< Root task
+
+! Local variable
+integer :: info
+
+! Broadcast
+call mpi_bcast(var,size(var),mpi_logical,root-1,mpi_comm_world,info)
+
+! Check
+call mpl_check(info)
+
+! Wait
+call mpl_barrier
+
+end subroutine mpl_bcast_logical_array_2d
 
 !----------------------------------------------------------------------
 ! Subroutine: mpl_bcast_string
@@ -674,5 +732,31 @@ call mpi_alltoallv(sbuf,scounts,sdispl,mpl%rtype,rbuf,rcounts,rdispl,mpl%rtype,m
 call mpl_check(info)
 
 end subroutine mpl_alltoallv_real
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_allreduce_sum_real
+!> Purpose: allreduce sum for an integer
+!----------------------------------------------------------------------
+subroutine mpl_allreduce_sum_real(var_in,var_out)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: var_in   !< Input integer
+real(kind_real),intent(out) :: var_out !< Output integer
+
+! Local variable
+integer :: info
+real(kind_real) :: sbuf(1),rbuf(1)
+
+! Send
+sbuf(1) = var_in
+call mpi_allreduce(sbuf,rbuf,1,mpl%rtype,mpi_sum,mpi_comm_world,info)
+var_out = rbuf(1)
+
+! Check
+call mpl_check(info)
+
+end subroutine mpl_allreduce_sum_real
 
 end module type_mpl

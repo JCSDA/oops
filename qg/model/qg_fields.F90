@@ -18,6 +18,7 @@ use qg_goms_mod
 use netcdf
 use tools_nc, only: ncerr
 use kinds
+use type_mpl, only: mpl,mpl_recv,mpl_send,mpl_bcast
 
 implicit none
 private
@@ -1020,25 +1021,40 @@ type(qg_field), intent(in) :: self
 type(unstructured_grid), intent(inout) :: ug
 real(kind=kind_real) :: zz(self%nl)
 integer :: jx,jy,jl,jf,joff,j
-integer :: cmask(self%nl)
+integer :: mask3d(self%nl),mask2d,glbind
 
+! Define vertical unit
 do jl=1,self%nl
   zz(jl) = real(jl,kind=kind_real)
 enddo
+
+! Create unstructured grid
 call create_unstructured_grid(ug, self%nl, zz)
 
-cmask = 1
+! No mask
+mask3d = 1
+mask2d = 1
+
 do jy=1,self%geom%ny
   do jx=1,self%geom%nx
-    call add_column(ug, self%geom%lats(jy), self%geom%lons(jx), self%geom%areas(jx,jy), self%nl, self%nf, 0, cmask, 1)
-    j = 0
-    do jf=1,self%nf
-      joff = (jf-1)*self%nl
-      do jl=1,self%nl
-         j = j+1
-         ug%last%column%cols(j) = self%gfld3d(jx,jy,joff+jl)
+    ! Define a global index
+    glbind = (jy-1)*self%geom%nx+jx
+
+    ! Add column only for a given MPI task
+    if (self%geom%iproc(jx,jy)==mpl%myproc) then
+      ! Add column
+      call add_column(ug, self%geom%lats(jy), self%geom%lons(jx), self%geom%areas(jx,jy), self%nl, self%nf, 0, mask3d, 1, glbind)
+
+      ! Copy data
+      j = 0
+      do jf=1,self%nf
+        joff = (jf-1)*self%nl
+        do jl=1,self%nl
+          j = j+1
+          ug%last%column%fld3d(j) = self%gfld3d(jx,jy,joff+jl)
+        enddo
       enddo
-    enddo
+    endif
   enddo
 enddo
 
@@ -1052,22 +1068,89 @@ implicit none
 type(qg_field), intent(inout) :: self
 type(unstructured_grid), intent(in) :: ug
 type(column_element), pointer :: current
-integer :: jx,jy,jl,jf,joff,j
+integer :: jx,jy,jl,jf,joff,j,nbuf,jbuf,iproc
+real(kind=kind_real),allocatable :: rbuf(:),sbuf(:)
 
 current => ug%head
 do jy=1,self%geom%ny
   do jx=1,self%geom%nx
-    j = 0
-    do jf=1,self%nf
-      joff = (jf-1)*self%nl
-      do jl=1,self%nl
-         j = j+1
-         self%gfld3d(jx,jy,joff+jl) = current%column%cols(j)
+    ! Get column only for a given MPI task
+    if (self%geom%iproc(jx,jy)==mpl%myproc) then
+      j = 0
+      do jf=1,self%nf
+        joff = (jf-1)*self%nl
+        do jl=1,self%nl
+          j = j+1
+          self%gfld3d(jx,jy,joff+jl) = current%column%fld3d(j)
+        enddo
       enddo
-    enddo
-    current => current%next
+      current => current%next
+    endif
   enddo
 enddo
+
+! Communication
+if (mpl%main) then
+   do iproc=1,mpl%nproc
+      if (iproc/=mpl%ioproc) then
+         ! Allocation
+         nbuf = count(self%geom%iproc==iproc)*self%nf*self%nl
+         allocate(rbuf(nbuf))
+
+         ! Receive data on ioproc
+         call mpl_recv(nbuf,rbuf,iproc,mpl%tag)
+
+         ! Format data
+         jbuf = 0
+         do jy=1,self%geom%ny
+           do jx=1,self%geom%nx
+             if (self%geom%iproc(jx,jy)==iproc) then
+               do jf=1,self%nf
+                 joff = (jf-1)*self%nl
+                 do jl=1,self%nl
+                   jbuf = jbuf+1
+                   self%gfld3d(jx,jy,joff+jl) = rbuf(jbuf)
+                 enddo
+               enddo
+             endif
+           enddo
+         enddo
+
+         ! Release memory
+         deallocate(rbuf)
+      end if
+   end do
+else
+   ! Allocation
+   nbuf = count(self%geom%iproc==mpl%myproc)*self%nf*self%nl
+   allocate(sbuf(nbuf))
+
+   ! Format data
+   jbuf = 0
+   do jy=1,self%geom%ny
+     do jx=1,self%geom%nx
+       if (self%geom%iproc(jx,jy)==mpl%myproc) then
+         do jf=1,self%nf
+           joff = (jf-1)*self%nl
+           do jl=1,self%nl
+             jbuf = jbuf+1
+             sbuf(jbuf) = self%gfld3d(jx,jy,joff+jl)
+           enddo
+         enddo
+       endif
+     enddo
+   enddo
+
+   ! Send data to ioproc
+   call mpl_send(nbuf,sbuf,mpl%ioproc,mpl%tag)
+
+   ! Release memory
+   deallocate(sbuf)
+end if
+mpl%tag = mpl%tag+1
+
+! Broadcast
+call mpl_bcast(self%gfld3d,mpl%ioproc)
 
 end subroutine convert_from_ug
 

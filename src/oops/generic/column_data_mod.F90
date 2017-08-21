@@ -16,44 +16,47 @@ public column_data, create_column_data, delete_column_data
 !>  Derived type containing the data
 
 type column_data
-  real(kind=kind_real) :: lat  !> Latitude of column
-  real(kind=kind_real) :: lon  !> Longitude of column
-  real(kind=kind_real) :: area !> Area of column cell
-  integer :: nlevs             !> Number of levels
-  integer :: nvars             !> Number of variables in 3D fields
-  integer :: nsurf             !> Number of variables in 2D fields
-  integer, allocatable :: cmask(:)              !> levs mask (size nlevs)
-  integer :: smask                              !> surface mask
-  real(kind=kind_real), allocatable :: cols(:)  !> column of values (size nlevs * nvars)
-  real(kind=kind_real), allocatable :: surf(:)  !> surface fields   (size nsurf)
+  real(kind=kind_real) :: lat                   !> Latitude of column
+  real(kind=kind_real) :: lon                   !> Longitude of column
+  real(kind=kind_real) :: area                  !> Area of column cell
+  integer :: nlevs                              !> Number of levels
+  integer :: nvar3d                             !> Number of 3d variables
+  integer :: nvar2d                             !> Number of 2d variables
+  integer, allocatable :: mask3d(:)             !> 3d mask (size nlevs)
+  integer :: mask2d                             !> 2d mask
+  real(kind=kind_real), allocatable :: fld3d(:) !> 3d fields values (size nlevs * nvar3d)
+  real(kind=kind_real), allocatable :: fld2d(:) !> 2d fields values (size nfld2d)
+  integer :: glbind                             !> global index (optional)
 end type column_data
 
 !-------------------------------------------------------------------------------
 contains
 !-------------------------------------------------------------------------------
 
-subroutine create_column_data(self, plat, plon, parea, klevs, kvars, ksurf, kcmask, ksmask)
+subroutine create_column_data(self, plat, plon, parea, klevs, kvar3d, kvar2d, kmask3d, kmask2d, kglbind)
 implicit none
 type(column_data), intent(inout) :: self
 real(kind=kind_real), intent(in) :: plat
 real(kind=kind_real), intent(in) :: plon
 real(kind=kind_real), intent(in) :: parea
 integer, intent(in) :: klevs
-integer, intent(in) :: kvars
-integer, intent(in) :: ksurf
-integer, intent(in) :: kcmask(klevs)
-integer, intent(in) :: ksmask
+integer, intent(in) :: kvar3d
+integer, intent(in) :: kvar2d
+integer, intent(in) :: kmask3d(klevs)
+integer, intent(in) :: kmask2d
+integer, intent(in) :: kglbind
 self%lat = plat
 self%lon = plon
 self%area = parea
 self%nlevs = klevs
-self%nvars = kvars
-self%nsurf = ksurf
-allocate(self%cmask(self%nlevs))
-self%cmask = kcmask
-self%smask = ksmask
-allocate(self%cols(self%nlevs*self%nvars))
-allocate(self%surf(self%nsurf))
+self%nvar3d = kvar3d
+self%nvar2d = kvar2d
+allocate(self%mask3d(self%nlevs))
+self%mask3d = kmask3d
+self%mask2d = kmask2d
+allocate(self%fld3d(self%nlevs*self%nvar3d))
+allocate(self%fld2d(self%nvar2d))
+self%glbind = kglbind
 
 end subroutine create_column_data
 
@@ -63,8 +66,8 @@ subroutine delete_column_data(self)
 implicit none
 type(column_data), intent(inout) :: self
 
-deallocate(self%cols)
-deallocate(self%surf)
+deallocate(self%fld3d)
+deallocate(self%fld2d)
 
 end subroutine delete_column_data
 

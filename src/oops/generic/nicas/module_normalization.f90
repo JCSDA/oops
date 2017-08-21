@@ -328,10 +328,22 @@ do il0=1,ndata%nl0
    end do
    !$omp end parallel do
 
-   ! Broadcast
-   do iproc=1,mpl%nproc
-      call mpl_bcast(ndata%norm(ic0_s(iproc):ic0_e(iproc),il0),iproc)
-   end do
+   ! Communication
+   if (mpl%main) then 
+      do iproc=1,mpl%nproc
+         if (iproc/=mpl%ioproc) then
+            ! Receive data on ioproc
+            call mpl_recv(nc0_loc(iproc),ndata%norm(ic0_s(iproc):ic0_e(iproc),il0),iproc,mpl%tag)
+         end if
+      end do
+   else
+      ! Send data to ioproc
+      call mpl_send(nc0_loc(mpl%myproc),ndata%norm(ic0_s(mpl%myproc):ic0_e(mpl%myproc),il0),mpl%ioproc,mpl%tag)
+   end if
+   mpl%tag = mpl%tag+1
+
+   ! Broadcast data
+   call mpl_bcast(ndata%norm(:,il0),mpl%ioproc)
 end do
 write(mpl%unit,'(a)') '100%'
 

@@ -64,7 +64,6 @@
       "Lbv(2)": 0.4,
       "resol": 12.0,
       "network": 0,
-      "nproc": 1,
       "mpicom": 2
     },
     "state": [

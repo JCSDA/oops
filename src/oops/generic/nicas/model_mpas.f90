@@ -64,15 +64,14 @@ call ncerr(subr,nf90_get_var(ncid,lat_id,lat))
 call ncerr(subr,nf90_get_var(ncid,pres_id,pres))
 call ncerr(subr,nf90_close(ncid))
 
-! Compute normalized area
-allocate(ndata%area(ndata%nl0))
-ndata%area = 4.0*pi
-
 ! Pack
 call ndata_alloc(ndata)
 ndata%lon = real(lon,kind_real)
 ndata%lat = real(lat,kind_real)
 ndata%mask = .true.
+
+! Compute normalized area
+ndata%area = 4.0*pi
 
 ! Vertical unit
 if (nam%logpres) then

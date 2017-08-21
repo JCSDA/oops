@@ -57,16 +57,17 @@ contains
 !  C++ interfaces
 ! ------------------------------------------------------------------------------
 
-subroutine create_nicas_c(key, c_conf, cnh, clats, clons, careas, cnv, clevs, ccmask) bind(c, name='create_nicas_f90')
+subroutine create_nicas_c(key, c_conf, cnh, clats, clons, careas, cnv, clevs, cmask3d, cmask2d, cglbind) &
+ & bind(c, name='create_nicas_f90')
 implicit none
 integer(c_int), intent(inout) :: key
 type(c_ptr), intent(in) :: c_conf
 integer(c_int), intent(in) :: cnh, cnv
 real(c_double), intent(in) :: clats(cnh), clons(cnh), careas(cnh), clevs(cnv)
-integer(c_int), intent(in) :: ccmask(cnh*cnv)
+integer(c_int), intent(in) :: cmask3d(cnh*cnv), cmask2d(cnh), cglbind(cnh)
 type(nicas), pointer :: self
 real(kind=kind_real) :: lats(cnh), lons(cnh), areas(cnh), levs(cnv)
-integer :: cmask(cnh*cnv)
+integer :: mask3d(cnh*cnv), mask2d(cnh), glbind(cnh)
 call nicas_registry%init()
 call nicas_registry%add(key)
 call nicas_registry%get(key,self)
@@ -74,9 +75,10 @@ lats(:)=clats(:)
 lons(:)=clons(:)
 areas(:)=careas(:)
 levs(:)=clevs(:)
-cmask(:)=ccmask(:)
-
-call create_nicas(self, c_conf, lats, lons, areas, levs, cmask)
+mask3d(:)=cmask3d(:)
+mask2d(:)=cmask2d(:)
+glbind(:)=cglbind(:)
+call create_nicas(self, c_conf, lats, lons, areas, levs, mask3d, mask2d, glbind)
 end subroutine create_nicas_c
 
 ! ------------------------------------------------------------------------------
@@ -107,13 +109,13 @@ end subroutine nicas_multiply_c
 !  End C++ interfaces
 ! ------------------------------------------------------------------------------
 
-subroutine create_nicas(self, c_conf, lats, lons, areas, levs, mask)
+subroutine create_nicas(self, c_conf, lats, lons, areas, levs, mask3d, mask2d, glbind)
 implicit none
 type(nicas), intent(inout) :: self
 type(c_ptr), intent(in) :: c_conf
 real(kind=kind_real), intent(in) :: lats(:), lons(:), areas(:), levs(:)
-integer, intent(in) :: mask(:)
-integer :: nc0,nlev
+integer, intent(in) :: mask3d(:), mask2d(:), glbind(:)
+integer :: nlev
 character(len=4) :: myprocchar,nprocchar,nthreadchar
 
 ! NICAS setup
@@ -137,7 +139,7 @@ call log%info("Parallel setup: "//nprocchar//" MPI tasks and "//nthreadchar//" O
 
 ! Initialize coordinates
 call log%info("Initialize coordinates")
-call model_oops_coord(lats,lons,areas,levs,mask,self%ndata)
+call model_oops_coord(lats,lons,areas,levs,mask3d,mask2d,glbind,self%ndata)
 
 ! Call driver
 call nicas_driver(self%ndata,self%ndataloc)
@@ -203,7 +205,7 @@ do il=1,nam%nl
 end do
 nam%resol = config_get_real(c_conf,"resol")
 nam%network = integer_to_logical(config_get_int(c_conf,"network"))
-nam%nproc = config_get_int(c_conf,"nproc")
+nam%nproc = mpl%nproc ! Not read in the JSON file
 nam%mpicom = config_get_int(c_conf,"mpicom")
 
 end subroutine nicas_read_conf
@@ -238,7 +240,7 @@ subroutine nicas_multiply(self,dx)
 implicit none
 type(nicas), intent(in) :: self
 type(unstructured_grid), intent(inout) :: dx
-integer :: ivars,ic0a
+integer :: ivar,ic0a
 real(kind_real) :: fld(self%ndataloc%nc0a,self%ndataloc%nl0)
 type(column_element), pointer :: current
 
@@ -246,13 +248,13 @@ type(column_element), pointer :: current
 call log%info("NICAS multiply")
 
 ! Loop over 3D variables
-do ivars=1,dx%head%column%nvars
+do ivar=1,dx%head%column%nvar3d
    ! Copy field
    ic0a = 0
    current => dx%head
    do while (associated(current))
       ic0a = ic0a+1
-      fld(ic0a,:) = current%column%cols((ivars-1)*self%ndataloc%nl0+1:ivars*self%ndataloc%nl0)
+      fld(ic0a,:) = current%column%fld3d((ivar-1)*self%ndataloc%nl0+1:ivar*self%ndataloc%nl0)
       current => current%next
    end do
 
@@ -264,15 +266,12 @@ do ivars=1,dx%head%column%nvars
    current => dx%head
    do while (associated(current))
       ic0a = ic0a+1
-      current%column%cols((ivars-1)*self%ndataloc%nl0+1:ivars*self%ndataloc%nl0) = fld(ic0a,:)
+      current%column%fld3d((ivar-1)*self%ndataloc%nl0+1:ivar*self%ndataloc%nl0) = fld(ic0a,:)
       current => current%next
    end do
 enddo
 
-! Loop over 2D variables
-!do ivars=1,dx%head%column%nsurfs
-! TODO
-!end do
+! TODO: do something for 2D variables
 
 end subroutine nicas_multiply
 

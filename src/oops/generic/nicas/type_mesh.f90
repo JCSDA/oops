@@ -81,6 +81,7 @@ if (lred) then
    ! Allocation
    allocate(done(n_loc(mpl%myproc)))
 
+   ! Loop over points
    write(mpl%unit,'(a10,a)',advance='no') '','Look for redundant points: '
    call prog_init(progint,done)
    !$omp parallel do private(i_loc,i,j)
@@ -101,22 +102,19 @@ if (lred) then
    ! Communication
    if (mpl%main) then 
       do iproc=1,mpl%nproc
-         ! Allocation
-         allocate(rbuf(n_loc(iproc)))
+         if (iproc/=mpl%ioproc) then
+            ! Allocation
+            allocate(rbuf(n_loc(iproc)))
 
-         if (iproc==mpl%ioproc) then
-            ! Copy data
-            rbuf = mesh%redundant(i_glb(1:n_loc(iproc),iproc))
-         else
             ! Receive data on ioproc
             call mpl_recv(n_loc(iproc),rbuf,iproc,mpl%tag)
+
+            ! Format data
+            mesh%redundant(i_glb(1:n_loc(iproc),iproc)) = rbuf
+
+            ! Release memory
+            deallocate(rbuf)
          end if
-
-         ! Format data
-         mesh%redundant(i_glb(1:n_loc(iproc),iproc)) = rbuf
-
-         ! Release memory
-         deallocate(rbuf)
       end do
    else
       ! Allocation

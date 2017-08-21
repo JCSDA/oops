@@ -28,7 +28,7 @@ end type column_element
 
 type unstructured_grid
   integer :: ncols
-  integer :: nlevs                              !> Number of levels
+  integer :: nlevs 
   real(kind=kind_real), allocatable :: levs(:)  !> Definition of vertical coordinate
   type(column_element), pointer :: head         !> Linked list containing the columns
   type(column_element), pointer :: last         !> Last element of linked list
@@ -189,12 +189,12 @@ end subroutine get_levs_c
 
 !-------------------------------------------------------------------------------
 
-subroutine get_cmask_c(key, ncols, ilev, cmask) bind(c, name='get_cmask_f90')
+subroutine get_mask3d_c(key, ncols, ilev, mask3d) bind(c, name='get_mask3d_f90')
 implicit none
 integer(c_int), intent(inout) :: key
 integer,intent(in) :: ncols
 integer,intent(in) :: ilev
-integer,intent(out) :: cmask(ncols)
+integer,intent(out) :: mask3d(ncols)
 integer :: icols
 type(column_element), pointer :: current
 type(unstructured_grid), pointer :: self
@@ -207,11 +207,61 @@ icols = 0
 current => self%head
 do while (associated(current))
    icols = icols+1
-   cmask(icols) = current%column%cmask(ilev+1) ! +1 for arrays offset from C++ to Fortran
+   mask3d(icols) = current%column%mask3d(ilev+1) ! +1 for arrays offset from C++ to Fortran
    current => current%next
 end do
 
-end subroutine get_cmask_c
+end subroutine get_mask3d_c
+
+!-------------------------------------------------------------------------------
+
+subroutine get_mask2d_c(key, ncols, mask2d) bind(c, name='get_mask2d_f90')
+implicit none
+integer(c_int), intent(inout) :: key
+integer,intent(in) :: ncols
+integer,intent(out) :: mask2d(ncols)
+integer :: icols
+type(column_element), pointer :: current
+type(unstructured_grid), pointer :: self
+
+! Get self
+call unstructured_grid_registry%get(key,self)
+
+! Get mask
+icols = 0
+current => self%head
+do while (associated(current))
+   icols = icols+1
+   mask2d(icols) = current%column%mask2d
+   current => current%next
+end do
+
+end subroutine get_mask2d_c
+
+!-------------------------------------------------------------------------------
+
+subroutine get_glbind_c(key, ncols, glbind) bind(c, name='get_glbind_f90')
+implicit none
+integer(c_int), intent(inout) :: key
+integer,intent(in) :: ncols
+integer,intent(out) :: glbind(ncols)
+integer :: icols
+type(column_element), pointer :: current
+type(unstructured_grid), pointer :: self
+
+! Get self
+call unstructured_grid_registry%get(key,self)
+
+! Get mask
+icols = 0
+current => self%head
+do while (associated(current))
+   icols = icols+1
+   glbind(icols) = current%column%glbind
+   current => current%next
+end do
+
+end subroutine get_glbind_c
 
 ! ------------------------------------------------------------------------------
 
@@ -252,18 +302,21 @@ end subroutine delete_unstructured_grid
 
 !-------------------------------------------------------------------------------
 
-subroutine add_column(self, plat, plon, parea, klevs, kvars, ksurf, kcmask, ksmask)
+subroutine add_column(self, plat, plon, parea, klevs, kvar3d, kvar2d, kmask3d, kmask2d, kglbind)
 implicit none
 type(unstructured_grid), intent(inout) :: self
 real(kind=kind_real), intent(in) :: plat
 real(kind=kind_real), intent(in) :: plon
 real(kind=kind_real), intent(in) :: parea
 integer, intent(in) :: klevs
-integer, intent(in) :: kvars
-integer, intent(in) :: ksurf
-integer, intent(in) :: kcmask(klevs)
-integer, intent(in) :: ksmask
+integer, intent(in) :: kvar3d
+integer, intent(in) :: kvar2d
+integer, intent(in) :: kmask3d(klevs)
+integer, intent(in) :: kmask2d
+integer, optional, intent(in) :: kglbind
+integer :: glbind
 
+! Update pointer
 if (associated(self%last)) then
   allocate(self%last%next)
   self%last => self%last%next
@@ -271,7 +324,13 @@ else
   allocate(self%head)
   self%last => self%head
 endif
-call create_column_data(self%last%column, plat, plon, parea, klevs, kvars, ksurf, kcmask, ksmask)
+
+! Global index
+glbind = -1
+if (present(kglbind)) glbind = kglbind
+
+! Create column
+call create_column_data(self%last%column, plat, plon, parea, klevs, kvar3d, kvar2d, kmask3d, kmask2d, glbind)
 self%ncols = self%ncols+1
 
 end subroutine add_column

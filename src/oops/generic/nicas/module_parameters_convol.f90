@@ -271,11 +271,55 @@ do ic1_loc=1,nc1_loc(mpl%myproc)
  & dble(ndata%lat(ndata%ic1_to_ic0(ic1))),ms,nn_index(:,ic1),nn_dist(:,ic1))
 end do
 
+! Communication
+if (mpl%main) then
+   do iproc=1,mpl%nproc
+      if (iproc/=mpl%ioproc) then
+         ! Allocation
+         allocate(rbuf_index(ms*nc1_loc(iproc)))
+         allocate(rbuf_dist(ms*nc1_loc(iproc)))
+
+         ! Receive data on ioproc
+         call mpl_recv(ms*nc1_loc(iproc),rbuf_index,iproc,mpl%tag)
+         call mpl_recv(ms*nc1_loc(iproc),rbuf_dist,iproc,mpl%tag+1)
+
+         ! Format data
+         do ic1_loc=1,nc1_loc(iproc)
+            ic1 = ic1_s(iproc)+ic1_loc-1
+            nn_index(:,ic1) = rbuf_index((ic1_loc-1)*ms+1:ic1_loc*ms)
+            nn_dist(:,ic1) = rbuf_dist((ic1_loc-1)*ms+1:ic1_loc*ms)
+         end do
+ 
+         ! Release memory
+         deallocate(rbuf_index)
+         deallocate(rbuf_dist)
+      end if
+   end do
+else
+   ! Allocation
+   allocate(sbuf_index(ms*nc1_loc(mpl%myproc)))
+   allocate(sbuf_dist(ms*nc1_loc(mpl%myproc)))
+
+   ! Format data
+   do ic1_loc=1,nc1_loc(mpl%myproc)
+      ic1 = ic1_s(mpl%myproc)+ic1_loc-1
+      sbuf_index((ic1_loc-1)*ms+1:ic1_loc*ms) = nn_index(:,ic1)
+      sbuf_dist((ic1_loc-1)*ms+1:ic1_loc*ms) = nn_dist(:,ic1)
+   end do
+
+   ! Send data to ioproc
+   call mpl_send(ms*nc1_loc(mpl%myproc),sbuf_index,mpl%ioproc,mpl%tag)
+   call mpl_send(ms*nc1_loc(mpl%myproc),sbuf_dist,mpl%ioproc,mpl%tag+1)
+
+   ! Release memory
+   deallocate(sbuf_index)
+   deallocate(sbuf_dist)
+end if
+mpl%tag = mpl%tag+2
+
 ! Broadcast
-do iproc=1,mpl%nproc
-   call mpl_bcast(nn_index(:,ic1_s(iproc):ic1_e(iproc)),iproc)
-   call mpl_bcast(nn_dist(:,ic1_s(iproc):ic1_e(iproc)),iproc)
-end do
+call mpl_bcast(nn_index,mpl%ioproc)
+call mpl_bcast(nn_dist,mpl%ioproc)
 
 ! MPI splitting
 do iproc=1,mpl%nproc
@@ -452,9 +496,9 @@ type(linoptype),intent(in) :: cin(mpl%nthread) !< Linear operator for each threa
 type(linoptype),intent(inout) :: cout          !< Gathered linear operator
 
 ! Local variables
-integer :: ithread,offset,iproc,i_s
+integer :: ithread,offset,iproc
 integer :: csum_n_sg(mpl%nproc)
-type(linoptype) :: csum,cg(mpl%nproc)
+type(linoptype) :: csum
 
 ! Allocation
 csum%n_s = sum(c_n_s)
@@ -495,40 +539,22 @@ call linop_alloc(cout)
 
 ! Communication
 if (mpl%main) then
-   ! Allocation
-   do iproc=1,mpl%nproc
-      cg(iproc)%n_s = maxval(csum_n_sg)
-      call linop_alloc(cg(iproc))
-   end do
-
+   offset = 0
    do iproc=1,mpl%nproc
       if (iproc==mpl%ioproc) then
          ! Copy data
-         cg(iproc)%row(1:csum_n_sg(iproc)) = csum%row
-         cg(iproc)%col(1:csum_n_sg(iproc)) = csum%col
-         cg(iproc)%S(1:csum_n_sg(iproc)) = csum%S
+         cout%row(offset+1:offset+csum_n_sg(iproc)) = csum%row
+         cout%col(offset+1:offset+csum_n_sg(iproc)) = csum%col
+         cout%S(offset+1:offset+csum_n_sg(iproc)) = csum%S
       else
          ! Receive data on ioproc
-         call mpl_recv(csum_n_sg(iproc),cg(iproc)%row(1:csum_n_sg(iproc)),iproc,mpl%tag)
-         call mpl_recv(csum_n_sg(iproc),cg(iproc)%col(1:csum_n_sg(iproc)),iproc,mpl%tag+1)
-         call mpl_recv(csum_n_sg(iproc),cg(iproc)%S(1:csum_n_sg(iproc)),iproc,mpl%tag+2)
+         call mpl_recv(csum_n_sg(iproc),cout%row(offset+1:offset+csum_n_sg(iproc)),iproc,mpl%tag)
+         call mpl_recv(csum_n_sg(iproc),cout%col(offset+1:offset+csum_n_sg(iproc)),iproc,mpl%tag+1)
+         call mpl_recv(csum_n_sg(iproc),cout%S(offset+1:offset+csum_n_sg(iproc)),iproc,mpl%tag+2)
       end if
-   end do
 
-   ! Format data
-   offset = 0
-   do iproc=1,mpl%nproc
-      do i_s=1,csum_n_sg(iproc)
-         cout%row(offset+i_s) = cg(iproc)%row(i_s)
-         cout%col(offset+i_s) = cg(iproc)%col(i_s)
-         cout%S(offset+i_s) = cg(iproc)%S(i_s)
-      end do
+      !  Update offset
       offset = offset+csum_n_sg(iproc)
-   end do
-
-   ! Release memory
-   do iproc=1,mpl%nproc
-      call linop_dealloc(cg(iproc))
    end do
 else
    ! Send data to ioproc

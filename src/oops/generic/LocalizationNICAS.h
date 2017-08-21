@@ -52,21 +52,23 @@ template<typename MODEL>
 LocalizationNICAS<MODEL>::LocalizationNICAS(const State_ & xx, const eckit::Configuration & conf) {
   const eckit::Configuration * fconf = &conf;
 
-// Get lat/lon/mask from the unstructured grid
+// Get lat/lon/area/levs/mask from the unstructured grid
   UnstructuredGrid ugrid;
   xx.convert_to(ugrid);
   std::vector<double> lats = ugrid.getLats();
   std::vector<double> lons = ugrid.getLons();
   std::vector<double> areas = ugrid.getAreas();
   std::vector<double> levs = ugrid.getLevs();
-  std::vector<int> cmask;
+  std::vector<int> mask3d;
   for (int jlev = 0; jlev < levs.size(); ++jlev) {
-    std::vector<int> tmp = ugrid.getCmask(jlev);
-    cmask.insert(cmask.end(), tmp.begin(), tmp.end());
+    std::vector<int> tmp = ugrid.getMask3d(jlev);
+    mask3d.insert(mask3d.end(), tmp.begin(), tmp.end());
   }
+  std::vector<int> mask2d = ugrid.getMask2d();
+  std::vector<int> glbind = ugrid.getGlbInd();
   int nh = lats.size();
   int nv = levs.size();
-  create_nicas_f90(keyNicas_, &fconf, nh, &lats[0], &lons[0], &areas[0], nv, &levs[0], &cmask[0]);
+  create_nicas_f90(keyNicas_, &fconf, nh, &lats[0], &lons[0], &areas[0], nv, &levs[0], &mask3d[0], &mask2d[0], &glbind[0]);
   Log::trace() << "LocalizationNICAS:LocalizationNICAS constructed" << std::endl;
 }
 

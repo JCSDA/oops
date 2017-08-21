@@ -23,7 +23,7 @@ use tools_dirac, only: setup_dirac_points
 use tools_display, only: msgerror
 use tools_kinds,only: kind_real
 use tools_missing, only: msi,msr,isnotmsi,isnotmsr
-use type_mpl, only: mpl,mpl_bcast
+use type_mpl, only: mpl
 use type_ndata, only: ndatatype,ndataloctype
 use type_timer, only: timertype,timer_start,timer_end
 

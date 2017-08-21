@@ -473,7 +473,6 @@ logical :: init
 logical,allocatable :: done(:)
 type(ctreetype) :: ctree
 type(meshtype) :: mesh
-type(linoptype) :: interpg(mpl%nproc)
 
 ! Create mesh
 call create_mesh(ndata%rng,n_src,lon_src,lat_src,.false.,mesh)
@@ -576,40 +575,22 @@ call linop_alloc(interp)
 
 ! Communication
 if (mpl%main) then
-   ! Allocation
-   do iproc=1,mpl%nproc
-      interpg(iproc)%n_s = maxval(n_sg)
-      call linop_alloc(interpg(iproc))
-   end do
-
+   offset = 0
    do iproc=1,mpl%nproc
       if (iproc==mpl%ioproc) then
          ! Copy data
-         interpg(iproc)%row(1:n_sg(iproc)) = row(1:n_sg(iproc))
-         interpg(iproc)%col(1:n_sg(iproc)) = col(1:n_sg(iproc))
-         interpg(iproc)%S(1:n_sg(iproc)) = S(1:n_sg(iproc))
+         interp%row(offset+1:offset+n_sg(iproc)) = row(1:n_sg(iproc))
+         interp%col(offset+1:offset+n_sg(iproc)) = col(1:n_sg(iproc))
+         interp%S(offset+1:offset+n_sg(iproc)) = S(1:n_sg(iproc))
       else
          ! Receive data on ioproc
-         call mpl_recv(n_sg(iproc),interpg(iproc)%row(1:n_sg(iproc)),iproc,mpl%tag)
-         call mpl_recv(n_sg(iproc),interpg(iproc)%col(1:n_sg(iproc)),iproc,mpl%tag+1)
-         call mpl_recv(n_sg(iproc),interpg(iproc)%S(1:n_sg(iproc)),iproc,mpl%tag+2)
+         call mpl_recv(n_sg(iproc),interp%row(offset+1:offset+n_sg(iproc)),iproc,mpl%tag)
+         call mpl_recv(n_sg(iproc),interp%col(offset+1:offset+n_sg(iproc)),iproc,mpl%tag+1)
+         call mpl_recv(n_sg(iproc),interp%S(offset+1:offset+n_sg(iproc)),iproc,mpl%tag+2)
       end if
-   end do
 
-   ! Format data
-   offset = 0
-   do iproc=1,mpl%nproc
-      do i_s=1,n_sg(iproc)
-         interp%row(offset+i_s) = interpg(iproc)%row(i_s)
-         interp%col(offset+i_s) = interpg(iproc)%col(i_s)
-         interp%S(offset+i_s) = interpg(iproc)%S(i_s)
-      end do
+      ! Update offset
       offset = offset+n_sg(iproc)
-   end do
-
-   ! Release memory
-   do iproc=1,mpl%nproc
-      call linop_dealloc(interpg(iproc))
    end do
 else
    ! Send data to ioproc

@@ -20,7 +20,7 @@
     "covariance": "QgError",
     "standard_deviation": "0.8",
     "vertical_correlation": "0.2",
-    "horizontal_length_scale": "1e6",
+    "horizontal_length_scale": "3e5",
     "maximum_condition_number": "1.0e6",
     "date": "2009-12-31T00:00:00Z"
   },

@@ -51,12 +51,28 @@ std::vector<double> UnstructuredGrid::getLevs() {
   return levs;
 }
 // -----------------------------------------------------------------------------
-std::vector<int> UnstructuredGrid::getCmask(const int & ilev) {
+std::vector<int> UnstructuredGrid::getMask3d(const int & ilev) {
   int ncols;
   get_ncols_f90(keyUGrid_, ncols);
-  std::vector<int> cmask(ncols);
-  get_cmask_f90(keyUGrid_, ncols, ilev, &cmask[0]);
-  return cmask;
+  std::vector<int> mask3d(ncols);
+  get_mask3d_f90(keyUGrid_, ncols, ilev, &mask3d[0]);
+  return mask3d;
+}
+// -----------------------------------------------------------------------------
+std::vector<int> UnstructuredGrid::getMask2d() {
+  int ncols;
+  get_ncols_f90(keyUGrid_, ncols);
+  std::vector<int> mask2d(ncols);
+  get_mask2d_f90(keyUGrid_, ncols, &mask2d[0]);
+  return mask2d;
+}
+// -----------------------------------------------------------------------------
+std::vector<int> UnstructuredGrid::getGlbInd() {
+  int ncols;
+  get_ncols_f90(keyUGrid_, ncols);
+  std::vector<int> glbind(ncols);
+  get_glbind_f90(keyUGrid_, ncols, &glbind[0]);
+  return glbind;
 }
 // -----------------------------------------------------------------------------
 void UnstructuredGrid::zero() {

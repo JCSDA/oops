@@ -410,47 +410,49 @@ character(len=4) :: nprocchar
 character(len=1024) :: filename
 character(len=1024) :: subr = 'ndata_read_local'
 
-! Allocation
-allocate(ndata%ic0_to_iproc(ndata%nc0))
-allocate(ndata%ic0_to_ic0a(ndata%nc0))
-
-if (nam%nproc==1) then
-   ! All points on a single processor
-   ndata%ic0_to_iproc = 1
-   do ic0=1,ndata%nc0
-      ndata%ic0_to_ic0a(ic0) = ic0
-   end do
-   ndata%nc0amax = ndata%nc0
-elseif (nam%nproc>1) then
-   ! Open file
-   write(nprocchar,'(i4.4)') nam%nproc
-   filename = trim(nam%prefix)//'_distribution_'//nprocchar//'.nc'
-   info = nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_nowrite,ncid)
-
-   if (info==nf90_noerr) then
-      ! Read data and close file
-      call ncerr(subr,nf90_inq_varid(ncid,'ic0_to_iproc',ic0_to_iproc_id))
-      call ncerr(subr,nf90_inq_varid(ncid,'ic0_to_ic0a',ic0_to_ic0a_id))
-      call ncerr(subr,nf90_get_var(ncid,ic0_to_iproc_id,ndata%ic0_to_iproc))
-      call ncerr(subr,nf90_get_var(ncid,ic0_to_ic0a_id,ndata%ic0_to_ic0a))
-      call ncerr(subr,nf90_close(ncid))
-      ndata%nc0amax = maxval(ndata%ic0_to_ic0a)
-   else
-      ! Generate a distribution (use METIS one day?)
-      ndata%nc0amax = ndata%nc0/nam%nproc
-      if (ndata%nc0amax*nam%nproc<ndata%nc0) ndata%nc0amax = ndata%nc0amax+1
-      iproc = 1
-      ic0a = 1
+if (.not.allocated(ndata%ic0_to_iproc)) then
+   ! Allocation
+   allocate(ndata%ic0_to_iproc(ndata%nc0))
+   allocate(ndata%ic0_to_ic0a(ndata%nc0))
+   
+   if (nam%nproc==1) then
+      ! All points on a single processor
+      ndata%ic0_to_iproc = 1
       do ic0=1,ndata%nc0
-         ndata%ic0_to_iproc(ic0) = iproc
-         ndata%ic0_to_ic0a(ic0) = ic0a
-         ic0a = ic0a+1
-         if (ic0a>ndata%nc0amax) then
-            ! Change proc
-            iproc = iproc+1
-            ic0a = 1
-         end if
+         ndata%ic0_to_ic0a(ic0) = ic0
       end do
+      ndata%nc0amax = ndata%nc0
+   elseif (nam%nproc>1) then
+      ! Open file
+      write(nprocchar,'(i4.4)') nam%nproc
+      filename = trim(nam%prefix)//'_distribution_'//nprocchar//'.nc'
+      info = nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_nowrite,ncid)
+   
+      if (info==nf90_noerr) then
+         ! Read data and close file
+         call ncerr(subr,nf90_inq_varid(ncid,'ic0_to_iproc',ic0_to_iproc_id))
+         call ncerr(subr,nf90_inq_varid(ncid,'ic0_to_ic0a',ic0_to_ic0a_id))
+         call ncerr(subr,nf90_get_var(ncid,ic0_to_iproc_id,ndata%ic0_to_iproc))
+         call ncerr(subr,nf90_get_var(ncid,ic0_to_ic0a_id,ndata%ic0_to_ic0a))
+         call ncerr(subr,nf90_close(ncid))
+         ndata%nc0amax = maxval(ndata%ic0_to_ic0a)
+      else
+         ! Generate a distribution (use METIS one day?)
+         ndata%nc0amax = ndata%nc0/nam%nproc
+         if (ndata%nc0amax*nam%nproc<ndata%nc0) ndata%nc0amax = ndata%nc0amax+1
+         iproc = 1
+         ic0a = 1
+         do ic0=1,ndata%nc0
+            ndata%ic0_to_iproc(ic0) = iproc
+            ndata%ic0_to_ic0a(ic0) = ic0a
+            ic0a = ic0a+1
+            if (ic0a>ndata%nc0amax) then
+               ! Change proc
+               iproc = iproc+1
+               ic0a = 1
+            end if
+         end do
+      end if
    end if
 end if
 

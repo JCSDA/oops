@@ -13,6 +13,7 @@ module qg_geom_mod
 use iso_c_binding
 use config_mod
 use kinds
+use type_mpl, only: mpl
 
 implicit none
 private
@@ -28,6 +29,7 @@ type :: qg_geom
   real(kind=kind_real),allocatable :: lats(:)
   real(kind=kind_real),allocatable :: lons(:)
   real(kind=kind_real),allocatable :: areas(:,:)
+  integer,allocatable :: iproc(:,:)
 end type qg_geom
 
 #define LISTED_TYPE qg_geom
@@ -51,7 +53,7 @@ implicit none
 integer(c_int), intent(inout) :: c_key_self
 type(c_ptr), intent(in)    :: c_conf
 
-integer :: ix,iy
+integer :: ix,iy,nx_loc,ix_loc,iproc
 real(kind=kind_real) :: dx,dytot,dy
 type(qg_geom), pointer :: self
 
@@ -65,6 +67,7 @@ self%ny = config_get_int(c_conf, "ny")
 allocate(self%lons(self%nx))
 allocate(self%lats(self%ny))
 allocate(self%areas(self%nx,self%ny))
+allocate(self%iproc(self%nx,self%ny))
 
 dx = 360.0 / real(self%nx,kind=kind_real);
 dytot = 360.0 * real(self%ny,kind=kind_real) / real(self%nx,kind=kind_real);
@@ -77,6 +80,20 @@ do iy=1,self%ny
 end do
 do iy=1,self%ny
    self%areas(:,iy) = 6.371e6**2*cos(self%lats(iy)*acos(-1.0)/180.0)*dx*dy
+end do
+
+! Artificial grid distribution for tests
+nx_loc = self%nx/mpl%nproc
+if (nx_loc*mpl%nproc<self%nx) nx_loc = nx_loc+1
+ix_loc = 1
+iproc = 1
+do ix=1,self%nx
+   self%iproc(ix,:) = iproc
+   ix_loc = ix_loc+1
+   if (ix_loc>nx_loc) then
+      ix_loc = 1
+      iproc = iproc+1
+   end if
 end do
 
 end subroutine c_qg_geo_setup
@@ -98,9 +115,11 @@ other%ny = self%ny
 allocate(other%lons(other%nx))
 allocate(other%lats(other%ny))
 allocate(other%areas(other%nx,other%ny))
+allocate(other%iproc(other%nx,other%ny))
 other%lons = self%lons
 other%lats = self%lats
 other%areas = self%areas
+other%iproc = self%iproc
 
 end subroutine c_qg_geo_clone
 

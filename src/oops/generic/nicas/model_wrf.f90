@@ -68,10 +68,6 @@ call ncerr(subr,nf90_get_att(ncid,nf90_global,'DX',dx))
 call ncerr(subr,nf90_get_att(ncid,nf90_global,'DY',dy))
 call ncerr(subr,nf90_close(ncid))
 
-! Compute normalized area
-allocate(ndata%area(ndata%nl0))
-ndata%area = float(ndata%nlon*ndata%nlat)*dx*dy/req**2
-
 ! Conversion to radian
 lon = lon*real(deg2rad,kind=4)
 lat = lat*real(deg2rad,kind=4)
@@ -81,6 +77,9 @@ call ndata_alloc(ndata)
 ndata%lon = pack(real(lon,kind_real),mask=.true.)
 ndata%lat = pack(real(lat,kind_real),mask=.true.)
 ndata%mask = .true.
+
+! Compute normalized area
+ndata%area = float(ndata%nlon*ndata%nlat)*dx*dy/req**2
 
 ! Vertical unit
 if (nam%logpres) then

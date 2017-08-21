@@ -17,7 +17,7 @@ use tools_display, only: msgerror
 use tools_kinds,only: kind_real
 use tools_missing, only: msvalr,msi,msr,isanynotmsr
 use tools_nc, only: ncerr,ncfloat
-use type_mpl, only: mpl
+use type_mpl, only: mpl,mpl_send,mpl_recv,mpl_bcast,mpl_allreduce_sum
 use type_ndata, only: ndatatype,ndata_alloc
 
 implicit none
@@ -31,7 +31,7 @@ contains
 ! Subroutine: model_oops_coord
 !> Purpose: load OOPS coordinates
 !----------------------------------------------------------------------
-subroutine model_oops_coord(lats,lons,areas,levs,mask,ndata)
+subroutine model_oops_coord(lats,lons,areas,levs,mask3d,mask2d,glbind,ndata)
 
 implicit none
 
@@ -40,41 +40,151 @@ real(kind_real),intent(in) :: lats(:)
 real(kind_real),intent(in) :: lons(:)
 real(kind_real),intent(in) :: areas(:)
 real(kind_real),intent(in) :: levs(:)
-integer,intent(in) :: mask(:)
+integer,intent(in) :: mask3d(:)
+integer,intent(in) :: mask2d(:)
+integer,intent(in) :: glbind(:)
 type(ndatatype),intent(inout) :: ndata !< Sampling data
 
 ! Local variables
-integer :: ic0,il0,offset
+integer :: nc0a,nc0ag(mpl%nproc),ic0,ic0a,il0,offset,iproc
+integer,allocatable :: glbindg(:),order(:)
+logical,allocatable :: lmask3d(:,:)
 
 ! TODO: change that one day
 ndata%nl0 = nam%nl
 
-! Number of nodes
-ndata%nc0 = size(lats)
+! Local number of nodes and levels
+nc0a = size(lats)
 ndata%nlev = size(levs)
 
-! Check
+! Check TODO: check dimensions consistency of all arrays
 if (any(nam%levs>ndata%nlev)) call msgerror('not enough levels in model_oops')
 
-! Pack
-call ndata_alloc(ndata)
-ndata%lon = lons*deg2rad
-ndata%lat = lats*deg2rad
-do il0=1,ndata%nl0
-   offset = (nam%levs(il0)-1)*ndata%nc0
-   do ic0=1,ndata%nc0
-      if (mask(offset+ic0)==0) then
-         ndata%mask(ic0,il0) = .false.
-      elseif (mask(offset+ic0)==1) then
-         ndata%mask(ic0,il0) = .true.
+! Communication
+if (mpl%main) then
+   do iproc=1,mpl%nproc
+      if (iproc==mpl%ioproc) then
+         ! Copy data
+         nc0ag(iproc) = nc0a
       else
-         call msgerror('wrong mask value in model_oops_coord')
+         ! Receive data on ioproc
+         call mpl_recv(nc0ag(iproc),iproc,mpl%tag)
+      end if
+   end do
+else
+   ! Send data to ioproc
+   call mpl_send(nc0a,mpl%ioproc,mpl%tag)
+end if
+mpl%tag = mpl%tag+1
+
+! Broadcast data
+call mpl_bcast(nc0ag,mpl%ioproc)
+
+! Global number of nodes
+ndata%nc0 = sum(nc0ag)
+
+! Allocation
+call ndata_alloc(ndata)
+allocate(ndata%ic0_to_iproc(ndata%nc0))
+allocate(ndata%ic0_to_ic0a(ndata%nc0))
+allocate(lmask3d(nc0a,ndata%nl0))
+allocate(glbindg(ndata%nc0))
+
+! Define local index and MPI task
+ndata%nc0amax = maxval(nc0ag)
+ic0 = 0
+do iproc=1,mpl%nproc
+   do ic0a=1,nc0ag(iproc)
+      ic0 = ic0+1
+      ndata%ic0_to_iproc(ic0) = iproc
+      ndata%ic0_to_ic0a(ic0) = ic0a
+   end do
+end do
+
+! Convert 3d mask
+do il0=1,ndata%nl0
+   offset = (nam%levs(il0)-1)*nc0a
+   do ic0a=1,nc0a
+      if (mask3d(offset+ic0a)==0) then
+         lmask3d(ic0a,il0) = .false.
+      elseif (mask3d(offset+ic0a)==1) then
+         lmask3d(ic0a,il0) = .true.
+      else
+         call msgerror('wrong 3d mask value in model_oops_coord')
       end if
    end do
 end do
 
+! Communication and reordering
+if (mpl%main) then
+   ! Allocation
+   offset = 0
+   do iproc=1,mpl%nproc
+      if (iproc==mpl%ioproc) then
+         ! Copy data
+         ndata%lon(offset+1:offset+nc0ag(iproc)) = lons*deg2rad
+         ndata%lat(offset+1:offset+nc0ag(iproc)) = lats*deg2rad
+         do il0=1,ndata%nl0
+            ndata%mask(offset+1:offset+nc0ag(iproc),il0) = lmask3d(:,il0)
+         end do
+         glbindg(offset+1:offset+nc0ag(iproc)) = glbind
+      else
+         ! Receive data on ioproc
+         call mpl_recv(nc0ag(iproc),ndata%lon(offset+1:offset+nc0ag(iproc)),iproc,mpl%tag)
+         call mpl_recv(nc0ag(iproc),ndata%lat(offset+1:offset+nc0ag(iproc)),iproc,mpl%tag+1)
+         do il0=1,ndata%nl0
+            call mpl_recv(nc0ag(iproc),ndata%mask(offset+1:offset+nc0ag(iproc),il0),iproc,mpl%tag+1+il0)
+         end do
+         call mpl_recv(nc0ag(iproc),glbindg(offset+1:offset+nc0ag(iproc)),iproc,mpl%tag+2+ndata%nl0)
+      end if
+
+      !  Update offset
+      offset = offset+nc0ag(iproc)
+   end do
+else
+   ! Send data to ioproc
+   call mpl_send(nc0a,lons*deg2rad,mpl%ioproc,mpl%tag)
+   call mpl_send(nc0a,lats*deg2rad,mpl%ioproc,mpl%tag+1)
+   do il0=1,ndata%nl0
+      call mpl_send(nc0a,lmask3d(:,il0),mpl%ioproc,mpl%tag+1+il0)
+   end do
+   call mpl_send(nc0a,glbind,mpl%ioproc,mpl%tag+2+ndata%nl0)
+end if
+mpl%tag = mpl%tag+3+ndata%nl0
+
+! Broadcast data
+call mpl_bcast(ndata%lon,mpl%ioproc)
+call mpl_bcast(ndata%lat,mpl%ioproc)
+call mpl_bcast(ndata%mask,mpl%ioproc)
+call mpl_bcast(glbindg,mpl%ioproc)
+
+! Reorder data
+if (all(glbindg>0)) then
+   ! Allocation
+   allocate(order(ndata%nc0))
+
+   ! Sort glbindg
+   call qsort(ndata%nc0,glbindg,order)
+
+   ! Check glbindg
+   do ic0=2,ndata%nc0
+      if (glbindg(ic0)<=glbindg(ic0-1)) call msgerror('wrong glbindg in model_oops')
+   end do
+
+   ! Reorder columns
+   ndata%lon = ndata%lon(order)
+   ndata%lat = ndata%lat(order)
+   do il0=1,ndata%nl0
+      ndata%mask(:,il0) = ndata%mask(order,il0)
+   end do
+   ndata%ic0_to_iproc = ndata%ic0_to_iproc(order)
+   ndata%ic0_to_ic0a = ndata%ic0_to_ic0a(order)
+end if
+
 ! Normalized area
-ndata%area = sum(areas)/req**2
+do il0=1,ndata%nl0
+   call mpl_allreduce_sum(sum(areas,mask=lmask3d(:,il0))/req**2,ndata%area(il0))
+end do
 
 ! Vertical unit
 ndata%vunit = levs

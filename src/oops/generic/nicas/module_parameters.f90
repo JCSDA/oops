@@ -22,7 +22,7 @@ use tools_kinds,only: kind_real
 use tools_missing, only: msvali,msvalr,msi,msr,isnotmsr,isnotmsi
 use tools_nc, only: ncfloat,ncerr
 use type_mesh, only: meshtype,create_mesh
-use type_mpl, only: mpl,mpl_bcast
+use type_mpl, only: mpl
 use type_ndata, only: ndatatype
 use type_randgen, only: initialize_sampling,rand_integer
 

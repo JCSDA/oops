@@ -372,4 +372,3 @@ ecbuild_add_test( TARGET test_qg_dfi
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_dfi.x testinput/dfi.json"
                        testoutput/dfi.test
                   DEPENDS qg_dfi.x )
-

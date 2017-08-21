@@ -26,7 +26,7 @@ use tools_display, only: msgerror
 use tools_kinds,only: kind_real
 use tools_missing, only: msvalr,msr
 use tools_nc, only: ncfloat,ncerr
-use type_mpl, only: mpl,mpl_bcast
+use type_mpl, only: mpl
 use type_ndata, only: ndatatype
 
 implicit none
