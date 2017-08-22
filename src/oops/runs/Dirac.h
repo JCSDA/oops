@@ -73,11 +73,13 @@ template <typename MODEL> class Dirac : public Application {
     const util::DateTime bgndate(xx.validTime());
     Log::info() << "Setup times OK" << std::endl;
 
-//  Setup increment
-    Increment_ dxinit(resol, vars, bgndate);
+//  Setup Dirac and random increments
+    Increment_ dxdir(resol, vars, bgndate);
     const eckit::LocalConfiguration diracConfig(fullConfig, "dirac");
-    dxinit.dirac(diracConfig);
-    Log::info() << "Setup increment OK" << std::endl;
+    dxdir.dirac(diracConfig);
+    Increment_ dxrnd(resol, vars, bgndate);
+    dxrnd.random();
+    Log::info() << "Setup increments OK" << std::endl;
 
 //  Setup localization
     const eckit::LocalConfiguration covarConfig(fullConfig, "Covariance");
@@ -87,15 +89,17 @@ template <typename MODEL> class Dirac : public Application {
     Log::info() << "Setup localization OK" << std::endl;
 
 //  Apply NICAS
-    Increment_ dx(dxinit);
-    loc_->multiply(dx);
+    Increment_ dxdirout(dxdir);
+    loc_->multiply(dxdirout);
+    Increment_ dxrndout(dxrnd);
+    loc_->multiply(dxrndout);
     Log::info() << "Apply NICAS OK" << std::endl;
-    Log::test() << "Increment norm: " << dx.norm() << std::endl;
 
 //  Write increment
     const eckit::LocalConfiguration output_nicas(fullConfig, "output_nicas");
-    dx.write(output_nicas);
+    dxdirout.write(output_nicas);
     Log::info() << "Write increment OK" << std::endl;
+    Log::test() << "Increment norm: " << dxrndout.norm() << std::endl;
 
 //  Setup full ensemble B matrix
     boost::scoped_ptr< ModelSpaceCovarianceBase<MODEL> >
@@ -103,17 +107,16 @@ template <typename MODEL> class Dirac : public Application {
     Bens->linearize(xx, resol);
     Log::info() << "Setup full ensemble B matrix OK" << std::endl;
 
-//  Apply full ensemble B matrix
-    Increment_ dxin(dxinit);
-    Increment_ dxout(resol, vars, bgndate);
-    Bens->multiply(dxin,dxout);
+//  Apply full ensemble B matrix to Dirac increment
+    Bens->multiply(dxdir,dxdirout);
+    Bens->multiply(dxrnd,dxrndout);
     Log::info() << "Apply full ensemble B matrix OK" << std::endl;
-    Log::test() << "Increment norm: " << dxout.norm() << std::endl;
 
 //  Write increment
     const eckit::LocalConfiguration output_Bens(fullConfig, "output_Bens");
-    dxout.write(output_Bens);
+    dxdirout.write(output_Bens);
     Log::info() << "Write increment OK" << std::endl;
+    Log::test() << "Increment norm: " << dxrndout.norm() << std::endl;
 
     return 0;
   }
