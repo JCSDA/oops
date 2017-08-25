@@ -18,9 +18,10 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
+#include "oops/interface/ObsOperatorBase.h"
 #include "model/ObsSpaceQG.h"
-#include "model/ObservationsQG.h"
 #include "model/ObsStreamTLAD.h"
+#include "model/QgTraits.h"
 #include "util/ObjectCounter.h"
 
 // Forward declarations
@@ -40,11 +41,8 @@ namespace qg {
 
 // -----------------------------------------------------------------------------
 /// Streamfunction observation for QG model.
-/*!
- *  ObsStreamQG for QG model inherits from ObsEquivalent.
- */
 
-class ObsStreamQG : public ObservationsQG,
+class ObsStreamQG : public oops::ObsOperatorBase<QgTraits>,
                     private util::ObjectCounter<ObsStreamQG> {
  public:
   static const std::string classname() {return "qg::ObsStreamQG";}
@@ -56,7 +54,7 @@ class ObsStreamQG : public ObservationsQG,
   void obsEquiv(const GomQG &, ObsVecQG &, const ObsBias &) const;
 
 // Is there a way to put this in the TLAD class?
-  LinearObsOp * getTLAD() const {return new ObsStreamTLAD(obsdb_, keyOperStrm_);}
+  LinearObsOp * newTLAD() const {return new ObsStreamTLAD(obsdb_, keyOperStrm_);}
 
 // Other
   void generateObsError(const eckit::Configuration &);

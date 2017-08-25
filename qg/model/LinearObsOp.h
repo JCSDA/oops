@@ -17,16 +17,11 @@
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include "model/ObservationsQG.h"
 #include "eckit/config/Configuration.h"
-
-namespace util {
-  class DateTime;
-}
+#include "oops/interface/ObsOperatorBase.h"
 
 namespace qg {
   class GomQG;
-  class ObsSpaceQG;
   class ObsVecQG;
   class ObsBias;
   class ObsBiasIncrement;
@@ -36,8 +31,6 @@ namespace qg {
 
 class LinearObsOp : private boost::noncopyable {
  public:
-  static LinearObsOp * create(const ObservationsQG & obs) {return obs.getTLAD();}
-
   LinearObsOp() {}
   virtual ~LinearObsOp() {}
 

@@ -23,6 +23,8 @@ using oops::Log;
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
+static oops::ObsOperatorMaker<QgTraits, ObsStreamQG> makerStream_("Stream");
+// -----------------------------------------------------------------------------
 
 ObsStreamQG::ObsStreamQG(ObsSpaceQG & odb, const eckit::Configuration & config)
   : obsdb_(odb), obsname_("Stream"), varin_()

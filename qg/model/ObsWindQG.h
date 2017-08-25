@@ -18,9 +18,10 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
+#include "oops/interface/ObsOperatorBase.h"
 #include "model/ObsSpaceQG.h"
-#include "model/ObservationsQG.h"
 #include "model/ObsWindTLAD.h"
+#include "model/QgTraits.h"
 #include "util/ObjectCounter.h"
 
 // Forward declarations
@@ -41,11 +42,8 @@ namespace qg {
 
 // -----------------------------------------------------------------------------
 /// Wind observation for QG model.
-/*!
- *  ObsWindQG for QG model inherits from ObsEquivalent.
- */
 
-class ObsWindQG : public ObservationsQG,
+class ObsWindQG : public oops::ObsOperatorBase<QgTraits>,
                   private util::ObjectCounter<ObsWindQG> {
  public:
   static const std::string classname() {return "qg::ObsWindQG";}
@@ -57,7 +55,7 @@ class ObsWindQG : public ObservationsQG,
   void obsEquiv(const GomQG &, ObsVecQG &, const ObsBias &) const;
 
 // Is there a way to put this in the TLAD class?
-  LinearObsOp * getTLAD() const {return new ObsWindTLAD(obsdb_, keyOperWind_);}
+  LinearObsOp * newTLAD() const {return new ObsWindTLAD(obsdb_, keyOperWind_);}
 
 // Other
   void generateObsError(const eckit::Configuration &);

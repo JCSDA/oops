@@ -19,6 +19,7 @@
 #include "oops/interface/ModelAtLocations.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObservationSpace.h"
+#include "oops/interface/ObsOperatorBase.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/interface/Variables.h"
 #include "eckit/config/Configuration.h"
@@ -38,7 +39,7 @@ namespace oops {
 template <typename MODEL>
 class ObsOperator : public util::Printable,
                     private util::ObjectCounter<ObsOperator<MODEL> > {
-  typedef typename MODEL::ObsOperator           ObsOperator_;
+  typedef ObsOperatorBase<MODEL>     ObsOperatorBase_;
   typedef ModelAtLocations<MODEL>    ModelAtLocations_;
   typedef ObsAuxControl<MODEL>       ObsAuxControl_;
   typedef ObsVector<MODEL>           ObsVector_;
@@ -53,7 +54,7 @@ class ObsOperator : public util::Printable,
   ~ObsOperator();
 
 /// Interfacing
-  const ObsOperator_ & obsoperator() const {return *oper_;}
+  const ObsOperatorBase_ & obsoperator() const {return *oper_;}
 
 /// Obs Operator
   void obsEquiv(const ModelAtLocations_ &, ObsVector_ &, const ObsAuxControl_ &) const;
@@ -65,7 +66,7 @@ class ObsOperator : public util::Printable,
  private:
   ObsOperator & operator=(const ObsOperator &);
   void print(std::ostream &) const;
-  boost::shared_ptr<ObsOperator_> oper_;
+  boost::shared_ptr<ObsOperatorBase_> oper_;
 };
 
 // -----------------------------------------------------------------------------
@@ -76,7 +77,7 @@ ObsOperator<MODEL>::ObsOperator(const ObsSpace_ & os, const eckit::Configuration
 {
   Log::trace() << "ObsOperator<MODEL>::ObsOperator starting" << std::endl;
   util::Timer timer(classname(), "ObsOperator");
-  oper_.reset(ObsOperator_::create(os.observationspace(), conf));
+  oper_.reset(ObsOperatorFactory<MODEL>::create(os.observationspace(), conf));
   Log::trace() << "ObsOperator<MODEL>::ObsOperator done" << std::endl;
 }
 
@@ -136,7 +137,7 @@ template<typename MODEL>
 void ObsOperator<MODEL>::print(std::ostream & os) const {
   Log::trace() << "ObsOperator<MODEL>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
-//  os << *increment_;
+  os << *oper_;
   Log::trace() << "ObsOperator<MODEL>::print done" << std::endl;
 }
 

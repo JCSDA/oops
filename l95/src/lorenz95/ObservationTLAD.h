@@ -16,22 +16,12 @@
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include "lorenz95/ObservationL95.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 
 // Forward declarations
-namespace eckit {
-  class Configuration;
-}
-
-namespace util {
-  class DateTime;
-}
-
 namespace lorenz95 {
   class GomL95;
-  class ObservationL95;
   class ObsBias;
   class ObsBiasCorrection;
   class ObsTable;
@@ -51,9 +41,7 @@ class ObservationTLAD : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::ObservationTLAD";}
 
-  static ObservationTLAD * create(const ObservationL95 & hop)
-    {return new ObservationTLAD(hop.table());}
-
+  explicit ObservationTLAD(const ObsTable &);
   ~ObservationTLAD();
 
 // Obs Operators
@@ -66,7 +54,6 @@ class ObservationTLAD : public util::Printable,
 
  private:
   void print(std::ostream &) const;
-  explicit ObservationTLAD(const ObsTable &);
   boost::shared_ptr<const NoVariables> inputs_;
 };
 

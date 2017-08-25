@@ -13,8 +13,6 @@
 #include <string>
 
 #include "eckit/config/Configuration.h"
-#include "util/Logger.h"
-#include "util/DateTime.h"
 
 #include "lorenz95/GomL95.h"
 #include "lorenz95/NoVariables.h"

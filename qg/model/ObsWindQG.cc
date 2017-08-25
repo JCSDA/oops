@@ -27,6 +27,8 @@ using oops::Log;
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
+static oops::ObsOperatorMaker<QgTraits, ObsWindQG>   makerWind_("Wind");
+// -----------------------------------------------------------------------------
 
 ObsWindQG::ObsWindQG(ObsSpaceQG & odb, const eckit::Configuration & config)
   : obsdb_(odb), obsname_("Wind"), varin_()

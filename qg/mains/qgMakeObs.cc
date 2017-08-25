@@ -8,14 +8,12 @@
  * does it submit to any jurisdiction.
  */
 
-#include "model/instantiateQgObsFactory.h"
 #include "model/QgTraits.h"
 #include "oops/runs/MakeObs.h"
 #include "oops/runs/Run.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  qg::instantiateQgObsFactory();
   oops::MakeObs<qg::QgTraits> mkobs;
   run.execute(mkobs);
   return 0;

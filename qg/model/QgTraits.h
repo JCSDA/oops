@@ -24,7 +24,6 @@
 #include "model/ModelBias.h"
 #include "model/ModelBiasIncrement.h"
 #include "model/ModelBiasCovariance.h"
-#include "model/ObservationsQG.h"
 #include "model/ObsBias.h"
 #include "model/ObsBiasIncrement.h"
 #include "model/ObsBiasCovariance.h"
@@ -39,7 +38,7 @@ struct QgTraits {
   static std::string name() {return "QG";}
 
   typedef qg::GeometryQG            Geometry;
-  typedef qg::VariablesQG                 Variables;
+  typedef qg::VariablesQG           Variables;
 
   typedef qg::StateQG               State;
   typedef qg::ModelQG               Model;
@@ -51,7 +50,6 @@ struct QgTraits {
   typedef qg::ModelBiasCovariance   ModelAuxCovariance;
 
   typedef qg::ObsSpaceQG            ObsSpace;
-  typedef qg::ObservationsQG        ObsOperator;
   typedef qg::LinearObsOp           LinearObsOperator;
   typedef qg::ObsVecQG              ObsVector;
 

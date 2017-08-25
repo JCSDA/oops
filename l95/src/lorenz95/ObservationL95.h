@@ -14,19 +14,16 @@
 #include <ostream>
 #include <string>
 
-#include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 
+#include "oops/interface/ObsOperatorBase.h"
 #include "util/ObjectCounter.h"
-#include "util/Printable.h"
+#include "lorenz95/ObservationTLAD.h"
+#include "lorenz95/L95Traits.h"
 
 // Forward declarations
 namespace eckit {
   class Configuration;
-}
-
-namespace util {
-  class DateTime;
 }
 
 namespace lorenz95 {
@@ -43,15 +40,12 @@ namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
 
-class ObservationL95 : public util::Printable,
-                       private boost::noncopyable,
+class ObservationL95 : public oops::ObsOperatorBase<L95Traits>,
                        private util::ObjectCounter<ObservationL95> {
  public:
   static const std::string classname() {return "lorenz95::ObservationL95";}
 
-  static ObservationL95 * create(ObsTable & ot, const eckit::Configuration & conf)
-    {return new ObservationL95(ot, conf);}
-
+  ObservationL95(ObsTable &, const eckit::Configuration &);
   ~ObservationL95();
 
 // Obs Operators
@@ -60,12 +54,12 @@ class ObservationL95 : public util::Printable,
 // Other
   void generateObsError(const eckit::Configuration &);
   boost::shared_ptr<const NoVariables> variables() const {return inputs_;}
+  ObservationTLAD * newTLAD() const {return new ObservationTLAD(obsdb_);}
 
   const ObsTable & table() const {return obsdb_;}
 
  private:
   void print(std::ostream &) const;
-  ObservationL95(ObsTable &, const eckit::Configuration &);
   ObsTable & obsdb_;
   boost::shared_ptr<const NoVariables> inputs_;
 };

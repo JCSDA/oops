@@ -27,6 +27,8 @@ using oops::Log;
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
+static oops::ObsOperatorMaker<QgTraits, ObsWSpeedQG> makerWSpeed_("WSpeed");
+// -----------------------------------------------------------------------------
 
 ObsWSpeedQG::ObsWSpeedQG(ObsSpaceQG & odb, const eckit::Configuration & config)
   : obsdb_(odb), obsname_("WSpeed"), varin_()

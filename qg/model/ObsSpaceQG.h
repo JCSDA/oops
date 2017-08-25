@@ -29,7 +29,6 @@ namespace eckit {
 
 namespace qg {
   class ObsVecQG;
-  class ObservationsQG;
 
 /// Wrapper around ObsHelpQG, mostly to hide the factory
 

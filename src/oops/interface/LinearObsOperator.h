@@ -79,7 +79,7 @@ LinearObsOperator<MODEL>::LinearObsOperator(const ObsOperator_ & hop): oper_()
 {
   Log::trace() << "LinearObsOperator<MODEL>::LinearObsOperator starting" << std::endl;
   util::Timer timer(classname(), "LinearObsOperator");
-  oper_.reset(LinearObsOperator_::create(hop.obsoperator()));
+  oper_.reset(hop.obsoperator().newTLAD());
   Log::trace() << "LinearObsOperator<MODEL>::LinearObsOperator done" << std::endl;
 }
 

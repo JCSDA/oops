@@ -13,7 +13,6 @@
 #include <string>
 
 #include "util/Logger.h"
-#include "model/ObservationsQG.h"
 #include "model/QgFortran.h"
 #include "eckit/config/Configuration.h"
 #include "util/DateTime.h"

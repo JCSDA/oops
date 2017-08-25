@@ -21,9 +21,12 @@
 #include "lorenz95/NoVariables.h"
 #include "lorenz95/ObsBias.h"
 #include "lorenz95/ObsVec1D.h"
+#include "lorenz95/L95Traits.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
+// -----------------------------------------------------------------------------
+static oops::ObsOperatorMaker<L95Traits, ObservationL95> makerObsL95_("Lorenz 95");
 // -----------------------------------------------------------------------------
 
 ObservationL95::ObservationL95(ObsTable & ot, const eckit::Configuration & conf)
