@@ -17,7 +17,6 @@
 #include <boost/shared_ptr.hpp>
 
 #include "oops/base/Departures.h"
-#include "oops/base/Observations.h"
 #include "oops/base/PostBaseAD.h"
 #include "oops/interface/Locations.h"
 #include "oops/interface/ModelAtLocations.h"
@@ -35,7 +34,6 @@ template <typename MODEL, typename INCR> class ObserverAD : public PostBaseAD<IN
   typedef Departures<MODEL>          Departures_;
   typedef Locations<MODEL>           Locations_;
   typedef ModelAtLocations<MODEL>    GOM_;
-  typedef Observations<MODEL>        Observations_;
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
   typedef LinearObsOperator<MODEL>   LinearObsOperator_;
   typedef ObservationSpace<MODEL>    ObsSpace_;

@@ -42,8 +42,7 @@ template <typename MODEL, typename STATE> class Observer : public PostBase<STATE
   typedef ObservationSpace<MODEL>    ObsSpace_;
 
  public:
-  Observer(const ObsSpace_ &, const ObsOperator_ &,
-           const Observations_ &, const ObsAuxCtrl_ &,
+  Observer(const ObsSpace_ &, const ObsOperator_ &, const ObsAuxCtrl_ &,
            const util::Duration & tslot = util::Duration(0), const bool subwin = false,
            boost::shared_ptr<LinearObsOperator_> htlad = boost::shared_ptr<LinearObsOperator_>() );
   ~Observer() {}
@@ -80,7 +79,6 @@ template <typename MODEL, typename STATE> class Observer : public PostBase<STATE
 template <typename MODEL, typename STATE>
 Observer<MODEL, STATE>::Observer(const ObsSpace_ & obsdb,
                                  const ObsOperator_ & hop,
-                                 const Observations_ & yobs,
                                  const ObsAuxCtrl_ & ybias,
                                  const util::Duration & tslot, const bool swin,
                                  boost::shared_ptr<LinearObsOperator_> htlad)

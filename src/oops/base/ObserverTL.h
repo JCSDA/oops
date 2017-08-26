@@ -16,7 +16,6 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "oops/base/Departures.h"
-#include "oops/base/Observations.h"
 #include "oops/base/PostBaseTL.h"
 #include "oops/interface/Locations.h"
 #include "oops/interface/ModelAtLocations.h"
@@ -34,14 +33,12 @@ template <typename MODEL, typename INCR> class ObserverTL : public PostBaseTL<IN
   typedef Departures<MODEL>          Departures_;
   typedef Locations<MODEL>           Locations_;
   typedef ModelAtLocations<MODEL>    GOM_;
-  typedef Observations<MODEL>        Observations_;
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
   typedef LinearObsOperator<MODEL>   LinearObsOperator_;
   typedef ObservationSpace<MODEL>    ObsSpace_;
 
  public:
-  ObserverTL(const ObsSpace_ &, const LinearObsOperator_ &,
-             const Observations_ &, const ObsAuxIncr_ &,
+  ObserverTL(const ObsSpace_ &, const LinearObsOperator_ &, const ObsAuxIncr_ &,
              const util::Duration &, const bool subwin = false);
   ~ObserverTL() {}
 
@@ -76,7 +73,7 @@ template <typename MODEL, typename INCR> class ObserverTL : public PostBaseTL<IN
 template <typename MODEL, typename INCR>
 ObserverTL<MODEL, INCR>::ObserverTL(const ObsSpace_ & obsdb,
                                     const LinearObsOperator_ & hoptlad,
-                                    const Observations_ & yobs, const ObsAuxIncr_ & ybias,
+                                    const ObsAuxIncr_ & ybias,
                                     const util::Duration & tslot, const bool subwin)
   : PostBaseTL<INCR>(obsdb.windowStart(), obsdb.windowEnd()),
     obspace_(obsdb), hoptlad_(hoptlad),

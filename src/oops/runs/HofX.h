@@ -100,10 +100,9 @@ template <typename MODEL> class HofX : public Application {
       Log::debug() << "Observation configuration is:" << obsconf[jobs] << std::endl;
       ObsSpace_ obsdb(obsconf[jobs], winbgn, winend);
       ObsOperator_ hop(obsdb, obsconf[jobs]);
-      Observations_ yy(obsdb);
 
       boost::shared_ptr<Observer<MODEL, State_> >
-        pp(new Observer<MODEL, State_>(obsdb, hop, yy, ybias));
+        pp(new Observer<MODEL, State_>(obsdb, hop, ybias));
       post.enrollProcessor(pp);
       pobs.push_back(pp);
     }

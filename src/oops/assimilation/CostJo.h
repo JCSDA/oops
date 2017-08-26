@@ -150,7 +150,7 @@ template<typename MODEL>
 boost::shared_ptr<PostBase<State<MODEL> > >
 CostJo<MODEL>::initialize(const CtrlVar_ & xx) const {
   ASSERT(ltraj_ == false);
-  pobs_.reset(new Observer<MODEL, State_>(obspace_, hop_, yobs_, xx.obsVar(),
+  pobs_.reset(new Observer<MODEL, State_>(obspace_, hop_, xx.obsVar(),
                                           tslot_, subwindows_));
   return pobs_;
 }
@@ -188,7 +188,7 @@ CostJo<MODEL>::initializeTraj(const CtrlVar_ & xx, const Geometry_ &,
                               const eckit::Configuration &) {
   ltraj_ = true;
   hoptlad_.reset(new LinearObsOperator_(hop_));
-  pobs_.reset(new Observer<MODEL, State_>(obspace_, hop_, yobs_, xx.obsVar(),
+  pobs_.reset(new Observer<MODEL, State_>(obspace_, hop_, xx.obsVar(),
                                           tslot_, subwindows_, hoptlad_));
   return pobs_;
 }
@@ -228,7 +228,7 @@ boost::shared_ptr<PostBaseTL<Increment<MODEL> > > CostJo<MODEL>::setupTL(
                                const CtrlInc_ & dx) const {
   ASSERT(hoptlad_);
   boost::shared_ptr<PostBaseTL<Increment_> > spobs;
-  spobs.reset(new ObserverTL<MODEL, Increment_>(obspace_, *hoptlad_, yobs_, dx.obsVar(),
+  spobs.reset(new ObserverTL<MODEL, Increment_>(obspace_, *hoptlad_, dx.obsVar(),
                                                 tslot_, subwindows_));
   return spobs;
 }

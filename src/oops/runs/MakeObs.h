@@ -113,10 +113,8 @@ template <typename MODEL> class MakeObs : public Application {
       ObsOperator_ hop(obspaces.at(jobs), obsconf[jobs]);
       hop.generateObsError(genConf);
 
-      Observations_ yy(obspaces.at(jobs));
-
       boost::shared_ptr<Observer<MODEL, State_> >
-        pp(new Observer<MODEL, State_>(obspaces.at(jobs), hop, yy, ybias));
+        pp(new Observer<MODEL, State_>(obspaces.at(jobs), hop, ybias));
       post.enrollProcessor(pp);
       pobs.push_back(pp);
     }
