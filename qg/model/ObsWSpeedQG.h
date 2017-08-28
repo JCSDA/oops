@@ -48,7 +48,7 @@ class ObsWSpeedQG : public oops::ObsOperatorBase<QgTraits>,
  public:
   static const std::string classname() {return "qg::ObsWSpeedQG";}
 
-  ObsWSpeedQG(ObsSpaceQG &, const eckit::Configuration &);
+  ObsWSpeedQG(const ObsSpaceQG &, const eckit::Configuration &);
   virtual ~ObsWSpeedQG();
 
 // Obs Operator
@@ -58,7 +58,6 @@ class ObsWSpeedQG : public oops::ObsOperatorBase<QgTraits>,
   LinearObsOp * newTLAD() const {return new ObsWSpeedTLAD(obsdb_, keyOperWspeed_);}
 
 // Other
-  void generateObsError(const eckit::Configuration &);
   boost::shared_ptr<const VariablesQG> variables() const {return varin_;}
 
   int & toFortran() {return keyOperWspeed_;}
@@ -66,7 +65,7 @@ class ObsWSpeedQG : public oops::ObsOperatorBase<QgTraits>,
 
  private:
   void print(std::ostream &) const;
-  ObsSpaceQG & obsdb_;
+  const ObsSpaceQG & obsdb_;
   const std::string obsname_;
   F90hop keyOperWspeed_;
   boost::shared_ptr<const VariablesQG> varin_;

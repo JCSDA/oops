@@ -15,17 +15,13 @@
 #include <ostream>
 #include <string>
 
+#include "eckit/config/LocalConfiguration.h"
 #include "util/DateTime.h"
 #include "util/Logger.h"
 #include "util/Printable.h"
 
 #include "model/ObsHelpQG.h"
 #include "model/QgFortran.h"
-
-// Forward declarations
-namespace eckit {
-  class Configuration;
-}
 
 namespace qg {
   class ObsVecQG;
@@ -63,6 +59,7 @@ class ObsSpaceQG : public util::Printable {
   const std::string & obsname() const {return obsname_;}
   const util::DateTime & windowStart() const {return winbgn_;}
   const util::DateTime & windowEnd() const {return winend_;}
+  const eckit::Configuration & config() const {return conf_;}
 
   int & toFortran() {return helper_->toFortran();}
   const int & toFortran() const {return helper_->toFortran();}
@@ -76,6 +73,7 @@ class ObsSpaceQG : public util::Printable {
   unsigned int nobs_;
   unsigned int nvin_;
   unsigned int nout_;
+  const eckit::LocalConfiguration conf_;
   const util::DateTime winbgn_;
   const util::DateTime winend_;
 

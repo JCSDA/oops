@@ -231,7 +231,6 @@ extern "C" {
   void qg_obsdb_generate_f90(const F90odb &, const int &, const char *,
                              const eckit::Configuration * const *, const util::DateTime * const *,
                              const util::Duration * const *, const int &, int &);
-  void qg_obsdb_seterr_f90(const F90odb &, const F90hop &, const double &);
   void qg_obsdb_nobs_f90(const F90odb &, const int &, const char *, int &);
   void qg_obsoper_inputs_f90(const F90hop &, F90vars &);
 }

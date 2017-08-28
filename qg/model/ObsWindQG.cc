@@ -30,7 +30,7 @@ namespace qg {
 static oops::ObsOperatorMaker<QgTraits, ObsWindQG>   makerWind_("Wind");
 // -----------------------------------------------------------------------------
 
-ObsWindQG::ObsWindQG(ObsSpaceQG & odb, const eckit::Configuration & config)
+ObsWindQG::ObsWindQG(const ObsSpaceQG & odb, const eckit::Configuration & config)
   : obsdb_(odb), obsname_("Wind"), varin_()
 {
   const eckit::Configuration * configc = &config;
@@ -52,13 +52,6 @@ ObsWindQG::~ObsWindQG() {
 void ObsWindQG::obsEquiv(const GomQG & gom, ObsVecQG & ovec,
                          const ObsBias & bias) const {
   qg_wind_equiv_f90(gom.toFortran(), ovec.toFortran(), bias.wind());
-}
-
-// -----------------------------------------------------------------------------
-
-void ObsWindQG::generateObsError(const eckit::Configuration & conf) {
-  const double err = conf.getDouble("obs_error");
-  qg_obsdb_seterr_f90(obsdb_.toFortran(), keyOperWind_, err);
 }
 
 // -----------------------------------------------------------------------------

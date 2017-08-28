@@ -48,7 +48,7 @@ class ObsWindQG : public oops::ObsOperatorBase<QgTraits>,
  public:
   static const std::string classname() {return "qg::ObsWindQG";}
 
-  ObsWindQG(ObsSpaceQG &, const eckit::Configuration &);
+  ObsWindQG(const ObsSpaceQG &, const eckit::Configuration &);
   virtual ~ObsWindQG();
 
 // Obs Operators
@@ -58,7 +58,6 @@ class ObsWindQG : public oops::ObsOperatorBase<QgTraits>,
   LinearObsOp * newTLAD() const {return new ObsWindTLAD(obsdb_, keyOperWind_);}
 
 // Other
-  void generateObsError(const eckit::Configuration &);
   boost::shared_ptr<const VariablesQG> variables() const {return varin_;}
 
   int & toFortran() {return keyOperWind_;}
@@ -66,7 +65,7 @@ class ObsWindQG : public oops::ObsOperatorBase<QgTraits>,
 
  private:
   void print(std::ostream &) const;
-  ObsSpaceQG & obsdb_;
+  const ObsSpaceQG & obsdb_;
   const std::string obsname_;
   F90hop keyOperWind_;
   boost::shared_ptr<const VariablesQG> varin_;

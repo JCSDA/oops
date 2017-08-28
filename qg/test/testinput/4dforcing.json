@@ -48,9 +48,9 @@
         }
       ]
     },
-    "Jo": [
-      {
-        "Observation": {
+    "Jo": {
+      "ObsTypes": [
+        {
           "ObsType": "Stream",
           "ObsData": {
             "ObsDataIn": {
@@ -60,15 +60,13 @@
               "obsfile": "Data/qg.4dforcing.obt"
             },
             "obsvalue": "ObsVal"
+          },
+          "Covariance": {
+            "covariance": "diagonal",
+            "obserror": "ObsErr"
           }
         },
-        "Covariance": {
-          "covariance": "diagonal",
-          "obserror": "ObsErr"
-        }
-      },
-      {
-        "Observation": {
+        {
           "ObsType": "Wind",
           "ObsData": {
             "ObsDataIn": {
@@ -78,15 +76,13 @@
               "obsfile": "Data/qg.4dforcing.obt"
             },
             "obsvalue": "ObsVal"
+          },
+          "Covariance": {
+            "covariance": "diagonal",
+            "obserror": "ObsErr"
           }
         },
-        "Covariance": {
-          "covariance": "diagonal",
-          "obserror": "ObsErr"
-        }
-      },
-      {
-        "Observation": {
+        {
           "ObsType": "WSpeed",
           "ObsData": {
             "ObsDataIn": {
@@ -96,14 +92,14 @@
               "obsfile": "Data/qg.4dforcing.obt"
             },
             "obsvalue": "ObsVal"
+          },
+          "Covariance": {
+            "covariance": "diagonal",
+            "obserror": "ObsErr"
           }
-        },
-        "Covariance": {
-          "covariance": "diagonal",
-          "obserror": "ObsErr"
         }
-      }
-    ],
+      ]
+    },
     "Jc": [{
       "jcdfi": {
         "type": "DolphChebyshev",

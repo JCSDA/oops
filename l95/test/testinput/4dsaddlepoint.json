@@ -39,8 +39,8 @@
         }
       ]
     },
-    "Jo": [{
-      "Observation": {
+    "Jo": {
+      "ObsTypes": [{
         "ObsType": "Lorenz 95",
         "ObsData": {
           "ObsDataIn": {
@@ -49,14 +49,15 @@
           "ObsDataOut": {
             "filename": "Data/l95.4dsaddlepoint.2010-01-02T00:00:00Z.obt"
           },
-          "obsvalue": "ObsVal"
+          "obsvalue": "ObsVal",
+          "obserror": "ObsErr"
+        },
+        "Covariance": {
+          "covariance": "diagonal",
+          "obserror": "ObsErr"
         }
-      },
-      "Covariance": {
-        "covariance": "diagonal",
-        "obserror": "ObsErr"
-      }
-    }],
+      }]
+    },
     "Jc": [{
       "jcdfi": {
         "cutoff": "PT3H",

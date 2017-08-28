@@ -29,18 +29,18 @@ std::map < std::string, int > ObsSpaceQG::theObsFileCount_;
 
 ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config,
                        const util::DateTime & bgn, const util::DateTime & end)
-  : winbgn_(bgn), winend_(end)
+  : conf_(config), winbgn_(bgn), winend_(end)
 {
   static std::map < std::string, ObsHelpQG * > theObsFileRegister_;
   typedef std::map< std::string, ObsHelpQG * >::iterator otiter;
 
   std::string ofin("-");
-  if (config.has("ObsData.ObsDataIn")) {
-    ofin = config.getString("ObsData.ObsDataIn.obsfile");
+  if (conf_.has("ObsData.ObsDataIn")) {
+    ofin = conf_.getString("ObsData.ObsDataIn.obsfile");
   }
   std::string ofout("-");
-  if (config.has("ObsData.ObsDataOut")) {
-    ofout = config.getString("ObsData.ObsDataOut.obsfile");
+  if (conf_.has("ObsData.ObsDataOut")) {
+    ofout = conf_.getString("ObsData.ObsDataOut.obsfile");
   }
   Log::trace() << "ObsSpaceQG: Obs files are: " << ofin << " and " << ofout << std::endl;
   ref_ = ofin + ofout;
@@ -52,7 +52,7 @@ ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config,
   if (it == theObsFileRegister_.end()) {
     // Open new file
     Log::trace() << "ObsSpaceQG::getHelper: " << "Opening " << ref_ << std::endl;
-    helper_ = new ObsHelpQG(config);
+    helper_ = new ObsHelpQG(conf_);
     theObsFileCount_[ref_]=1;
     theObsFileRegister_[ref_]=helper_;
     Log::trace() << "ObsSpaceQG created, count=" << theObsFileCount_[ref_] << std::endl;
@@ -66,7 +66,7 @@ ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config,
     ASSERT(theObsFileCount_[ref_] > 1);
   }
 
-  obsname_ = config.getString("ObsType");
+  obsname_ = conf_.getString("ObsType");
   nobs_ = helper_->nobs(obsname_);
 
   // Very UGLY!!!

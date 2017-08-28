@@ -12,17 +12,17 @@
 #define OOPS_BASE_OBSERVERAD_H_
 
 #include <memory>
+#include <vector>
 
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "oops/base/Departures.h"
+#include "oops/base/LinearObsOperators.h"
+#include "oops/base/ObsSpace.h"
 #include "oops/base/PostBaseAD.h"
 #include "oops/interface/Locations.h"
 #include "oops/interface/ModelAtLocations.h"
 #include "oops/interface/ObsAuxIncrement.h"
-#include "oops/interface/ObservationSpace.h"
-#include "oops/interface/LinearObsOperator.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
 
@@ -32,11 +32,11 @@ namespace oops {
 
 template <typename MODEL, typename INCR> class ObserverAD : public PostBaseAD<INCR> {
   typedef Departures<MODEL>          Departures_;
+  typedef LinearObsOperators<MODEL>  LinearObsOperator_;
   typedef Locations<MODEL>           Locations_;
   typedef ModelAtLocations<MODEL>    GOM_;
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
-  typedef LinearObsOperator<MODEL>   LinearObsOperator_;
-  typedef ObservationSpace<MODEL>    ObsSpace_;
+  typedef ObsSpace<MODEL>            ObsSpace_;
 
  public:
   ObserverAD(const ObsSpace_ &, const LinearObsOperator_ &,
@@ -51,8 +51,8 @@ template <typename MODEL, typename INCR> class ObserverAD : public PostBaseAD<IN
   void doLastAD(INCR &) override;
 
 // Obs operator
-  ObsSpace_ obspace_;
-  const LinearObsOperator_ hoptlad_;
+  const ObsSpace_ & obspace_;
+  const LinearObsOperator_ & hoptlad_;
 
 // Data
   boost::shared_ptr<const Departures_> ydep_;
@@ -65,7 +65,7 @@ template <typename MODEL, typename INCR> class ObserverAD : public PostBaseAD<IN
   util::Duration hslot_;    //!< Half time slot
   const bool subwindows_;
 
-  boost::scoped_ptr<GOM_> gom_;
+  std::vector<boost::shared_ptr<GOM_> > goms_;
 };
 
 // ====================================================================================
@@ -99,9 +99,13 @@ void ObserverAD<MODEL, INCR>::doFirstAD(INCR & dx, const util::DateTime & bgn,
   }
   if (bgn_ < winbgn_) bgn_ = winbgn_;
   if (end_ > winend_) end_ = winend_;
-// Pass the Geometry for IFS -- Bad...
-  gom_.reset(new GOM_(obspace_, hoptlad_.variables(), bgn_, end_, dx.geometry()));
-  ydep_->runObsOperatorAD(hoptlad_, *gom_, ybias_);
+
+  for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
+    boost::shared_ptr<GOM_>
+      gom(new GOM_(obspace_[jj], hoptlad_.variables(jj), bgn_, end_, dx.geometry()));
+    hoptlad_[jj].obsEquivAD(*gom, (*ydep_)[jj], ybias_);
+    goms_.push_back(gom);
+  }
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename INCR>
@@ -111,16 +115,18 @@ void ObserverAD<MODEL, INCR>::doProcessingAD(INCR & dx) {
   if (t1 < bgn_) t1 = bgn_;
   if (t2 > end_) t2 = end_;
 
-// Get locations info for interpolator
-  Locations_ locs(obspace_, t1, t2);
+  for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
+//  Get locations info for interpolator
+    Locations_ locs(obspace_[jj], t1, t2);
 
-// Interpolate state variables to obs locations
-  dx.interpolateAD(locs, *gom_);
+//  Interpolate state variables to obs locations
+    dx.interpolateAD(locs, *goms_.at(jj));
+  }
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename INCR>
 void ObserverAD<MODEL, INCR>::doLastAD(INCR &) {
-  gom_.reset();
+  goms_.clear();
 }
 // -----------------------------------------------------------------------------
 

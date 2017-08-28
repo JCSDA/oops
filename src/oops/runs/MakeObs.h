@@ -23,6 +23,9 @@
 #include "oops/base/Departures.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
+#include "oops/base/ObsErrors.h"
+#include "oops/base/ObsOperators.h"
+#include "oops/base/ObsSpace.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
@@ -30,9 +33,6 @@
 #include "oops/interface/Model.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/ObsAuxControl.h"
-#include "oops/interface/ObservationSpace.h"
-#include "oops/interface/ObsErrorCovariance.h"
-#include "oops/interface/ObsOperator.h"
 #include "oops/interface/State.h"
 #include "oops/runs/Application.h"
 #include "util/DateTime.h"
@@ -47,8 +47,8 @@ template <typename MODEL> class MakeObs : public Application {
   typedef ModelAuxControl<MODEL>     ModelAux_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef Observations<MODEL>        Observations_;
-  typedef ObservationSpace<MODEL>    ObsSpace_;
-  typedef ObsOperator<MODEL>         ObsOperator_;
+  typedef ObsSpace<MODEL>            ObsSpace_;
+  typedef ObsOperators<MODEL>        ObsOperator_;
   typedef State<MODEL>               State_;
 
  public:
@@ -61,22 +61,22 @@ template <typename MODEL> class MakeObs : public Application {
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
 //  Setup observation window
-    const eckit::LocalConfiguration windowConf(fullConfig, "assimilation_window");
-    const util::DateTime bgn(windowConf.getString("begin"));
-    const util::DateTime end(windowConf.getString("end"));
+    const eckit::LocalConfiguration windowConf(fullConfig, "Assimilation Window");
+    const util::DateTime bgn(windowConf.getString("Begin"));
+    const util::DateTime end(windowConf.getString("End"));
     const util::Duration fclen(end - bgn);
     Log::info() << "Observation window is:" << windowConf << std::endl;
 
 //  Setup resolution
-    const eckit::LocalConfiguration resolConfig(fullConfig, "resolution");
+    const eckit::LocalConfiguration resolConfig(fullConfig, "Geometry");
     const Geometry_ resol(resolConfig);
 
 //  Setup Model
-    const eckit::LocalConfiguration modelConfig(fullConfig, "model");
+    const eckit::LocalConfiguration modelConfig(fullConfig, "Model");
     const Model_ model(resol, modelConfig);
 
 //  Setup initial "true" state
-    const eckit::LocalConfiguration initialConfig(fullConfig, "initial");
+    const eckit::LocalConfiguration initialConfig(fullConfig, "Initial Condition");
     Log::info() << "Initial configuration is:" << initialConfig << std::endl;
     State_ xx(resol, initialConfig);
     Log::test() << "Initial state: " << xx.norm() << std::endl;
@@ -97,50 +97,39 @@ template <typename MODEL> class MakeObs : public Application {
     ObsAuxCtrl_ ybias(biasConf);
 
 //  Setup observations
-    std::vector<boost::shared_ptr<Observer<MODEL, State_> > > pobs;
-    boost::ptr_vector<ObsSpace_> obspaces;
+    const eckit::LocalConfiguration obsconf(fullConfig, "Observations");
+    Log::info() << "Observation configuration is:" << obsconf << std::endl;
+    ObsSpace_ obspace(obsconf, bgn, end);
+    ObsOperator_ hop(obspace);
 
-    std::vector<eckit::LocalConfiguration> obsconf;
-    fullConfig.get("Observation", obsconf);
-    size_t nobs = obsconf.size();
-
-    for (size_t jobs = 0; jobs < nobs; ++jobs) {
-      Log::info() << "Observation configuration is:" << obsconf[jobs] << std::endl;
-      obspaces.push_back(new ObsSpace_(obsconf[jobs], bgn, end));
-      const eckit::LocalConfiguration genConf(obsconf[jobs], "Generate");
-      obspaces.at(jobs).generateDistribution(genConf);
-
-      ObsOperator_ hop(obspaces.at(jobs), obsconf[jobs]);
-      hop.generateObsError(genConf);
-
-      boost::shared_ptr<Observer<MODEL, State_> >
-        pp(new Observer<MODEL, State_>(obspaces.at(jobs), hop, ybias));
-      post.enrollProcessor(pp);
-      pobs.push_back(pp);
-    }
+    boost::shared_ptr<Observer<MODEL, State_> >
+      pobs(new Observer<MODEL, State_>(obspace, hop, ybias));
+    post.enrollProcessor(pobs);
 
 //  Run forecast and generate observations
     model.forecast(xx, moderr, fclen, post);
-    Log::info() << "MakeObs: Finished observation generation." << std::endl;
     Log::test() << "Final state: " << xx.norm() << std::endl;
+    Log::info() << "MakeObs: Finished observation generation." << std::endl;
 
-    for (size_t jobs = 0; jobs < nobs; ++jobs) {
-      boost::scoped_ptr<Observations_> yobs(pobs[jobs]->release());
+    boost::scoped_ptr<Observations_> yobs(pobs->release());
+    Log::info() << "Generated observation: " << *yobs << std::endl;
 
-//    Perturb observations
-      if (obsconf[jobs].has("obspert")) {
-        ObsErrorCovariance<MODEL> matR(obspaces.at(jobs), obsconf[jobs]);
-        Departures_ ypert(obspaces.at(jobs));
-        matR.randomize(ypert);
-        double opert = obsconf[jobs].getDouble("obspert");
-        ypert *= opert;
-        *yobs += ypert;
-      }
-
-//    Save observations
-      Log::test() << "Generated observation: " << *yobs << std::endl;
-      yobs->save("ObsVal");
+//  Perturb observations
+    if (obsconf.has("obspert")) {
+      Departures_ ypert(obspace);
+      ObsErrors<MODEL> matR(obspace);
+      matR.randomize(ypert);
+      double opert = obsconf.getDouble("obspert");
+      ypert *= opert;
+      *yobs += ypert;
+      Log::info() << "Perturbed observation: " << *yobs << std::endl;
     }
+
+//  Save observations
+    for (std::size_t jj = 0; jj < yobs->size(); ++jj) {
+      Log::test() << "Generated observation: " << (*yobs)[jj] << std::endl;
+    }
+    yobs->save("ObsVal");
 
     return 0;
   }

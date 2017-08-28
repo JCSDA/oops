@@ -54,6 +54,7 @@ class ObservationSpace : public util::Printable,
 /// Assimilation window
   const util::DateTime & windowStart() const {return obsdb_->windowStart();}
   const util::DateTime & windowEnd() const {return obsdb_->windowEnd();}
+  const eckit::Configuration & config() const {return obsdb_->config();}
 
 // Other
   void generateDistribution(const eckit::Configuration &);
@@ -70,7 +71,7 @@ class ObservationSpace : public util::Printable,
 template <typename MODEL>
 ObservationSpace<MODEL>::ObservationSpace(const eckit::Configuration & conf,
                                           const util::DateTime & bgn,
-                                          const util::DateTime & end): obsdb_() {
+                                          const util::DateTime & end) : obsdb_() {
   Log::trace() << "ObservationSpace<MODEL>::ObservationSpace starting" << std::endl;
   util::Timer timer(classname(), "ObservationSpace");
   obsdb_.reset(new ObsSpace_(conf, bgn, end));

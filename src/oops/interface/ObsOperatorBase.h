@@ -42,7 +42,6 @@ class ObsOperatorBase : public util::Printable,
 
 /// Other
   virtual boost::shared_ptr<const Variables_> variables() const =0;  // Required from Model
-  virtual void generateObsError(const eckit::Configuration &) =0;
   virtual ObsOpTLAD_ * newTLAD() const =0;
 
  private:
@@ -56,12 +55,12 @@ template <typename MODEL>
 class ObsOperatorFactory {
   typedef typename MODEL::ObsSpace ObsSpace_;
  public:
-  static ObsOperatorBase<MODEL> * create(ObsSpace_ &, const eckit::Configuration &);
+  static ObsOperatorBase<MODEL> * create(const ObsSpace_ &, const eckit::Configuration &);
   virtual ~ObsOperatorFactory() { getMakers().clear(); }
  protected:
   explicit ObsOperatorFactory(const std::string &);
  private:
-  virtual ObsOperatorBase<MODEL> * make(ObsSpace_ &, const eckit::Configuration &) =0;
+  virtual ObsOperatorBase<MODEL> * make(const ObsSpace_ &, const eckit::Configuration &) =0;
   static std::map < std::string, ObsOperatorFactory<MODEL> * > & getMakers() {
     static std::map < std::string, ObsOperatorFactory<MODEL> * > makers_;
     return makers_;
@@ -72,8 +71,8 @@ class ObsOperatorFactory {
 
 template<class MODEL, class T>
 class ObsOperatorMaker : public ObsOperatorFactory<MODEL> {
-  typedef typename MODEL::ObsSpace ObsSpace_;
-  virtual ObsOperatorBase<MODEL> * make(ObsSpace_ & odb, const eckit::Configuration & conf)
+  typedef typename MODEL::ObsSpace const ObsSpace_;
+  virtual ObsOperatorBase<MODEL> * make(const ObsSpace_ & odb, const eckit::Configuration & conf)
     { return new T(odb, conf); }
  public:
   explicit ObsOperatorMaker(const std::string & name) : ObsOperatorFactory<MODEL>(name) {}
@@ -93,9 +92,10 @@ ObsOperatorFactory<MODEL>::ObsOperatorFactory(const std::string & name) {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-ObsOperatorBase<MODEL>* ObsOperatorFactory<MODEL>::create(ObsSpace_ & odb,
+ObsOperatorBase<MODEL>* ObsOperatorFactory<MODEL>::create(const ObsSpace_ & odb,
                                                           const eckit::Configuration & conf) {
   Log::trace() << "ObsOperatorBase<MODEL>::create starting" << std::endl;
+  Log::debug() << "ObsOperatorBase<MODEL>::create conf" << conf << std::endl;
   const std::string id = conf.getString("ObsType");
   typename std::map<std::string, ObsOperatorFactory<MODEL>*>::iterator
     jloc = getMakers().find(id);

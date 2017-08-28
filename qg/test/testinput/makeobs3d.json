@@ -1,24 +1,24 @@
 {
-  "resolution": {
+  "Geometry": {
     "nx": "40",
     "ny": "20",
     "bc": "1"
   },
-  "model": {
+  "Model": {
     "tstep": "PT1H",
     "top_layer_depth": "5500.0",
     "bottom_layer_depth": "4500.0"
   },
-  "initial": {
+  "Initial Condition": {
     "filename": "Data/truth.fc.2009-12-15T00:00:00Z.P17D",
     "date": "2010-01-01T00:00:00Z"
   },
-  "assimilation_window": {
-    "begin": "2010-01-01T00:00:00Z",
-    "end": "2010-01-01T15:00:00Z"
+  "Assimilation Window": {
+    "Begin": "2010-01-01T00:00:00Z",
+    "End": "2010-01-01T15:00:00Z"
   },
-  "Observation": [
-    {
+  "Observations": {
+    "ObsTypes": [{
       "ObsType": "Stream",
       "ObsData": {
         "ObsDataOut": {
@@ -32,7 +32,8 @@
         "obs_density": "100",
         "nx": "40",
         "ny": "20",
-        "obs_error": "0.4"
+        "obs_error": "0.4",
+        "nval": "1"
       }
     },
     {
@@ -49,7 +50,8 @@
         "obs_density": "100",
         "nx": "40",
         "ny": "20",
-        "obs_error": "0.6"
+        "obs_error": "0.6",
+        "nval": "2"
       }
     },
     {
@@ -66,8 +68,9 @@
         "obs_density": "100",
         "nx": "40",
         "ny": "20",
-        "obs_error": "1.2"
+        "obs_error": "1.2",
+        "nval": "1"
       }
     }
-  ]
+  ]}
 }

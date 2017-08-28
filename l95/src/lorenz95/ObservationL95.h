@@ -45,14 +45,13 @@ class ObservationL95 : public oops::ObsOperatorBase<L95Traits>,
  public:
   static const std::string classname() {return "lorenz95::ObservationL95";}
 
-  ObservationL95(ObsTable &, const eckit::Configuration &);
+  ObservationL95(const ObsTable &, const eckit::Configuration &);
   ~ObservationL95();
 
 // Obs Operators
   void obsEquiv(const GomL95 &, ObsVec1D &, const ObsBias &) const;
 
 // Other
-  void generateObsError(const eckit::Configuration &);
   boost::shared_ptr<const NoVariables> variables() const {return inputs_;}
   ObservationTLAD * newTLAD() const {return new ObservationTLAD(obsdb_);}
 
@@ -60,7 +59,7 @@ class ObservationL95 : public oops::ObsOperatorBase<L95Traits>,
 
  private:
   void print(std::ostream &) const;
-  ObsTable & obsdb_;
+  const ObsTable & obsdb_;
   boost::shared_ptr<const NoVariables> inputs_;
 };
 

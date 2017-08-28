@@ -22,15 +22,10 @@
 #include "oops/interface/ObsOperatorBase.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/interface/Variables.h"
-#include "eckit/config/Configuration.h"
 #include "util/DateTime.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 #include "util/Timer.h"
-
-namespace eckit {
-  class Configuration;
-}
 
 namespace oops {
 
@@ -49,7 +44,7 @@ class ObsOperator : public util::Printable,
  public:
   static const std::string classname() {return "oops::ObsOperator";}
 
-  ObsOperator(const ObsSpace_ &, const eckit::Configuration &);
+  explicit ObsOperator(const ObsSpace_ &);
   ObsOperator(const ObsOperator &);
   ~ObsOperator();
 
@@ -61,7 +56,6 @@ class ObsOperator : public util::Printable,
 
 /// Other
   Variables_ variables() const;  // Required inputs variables from Model
-  void generateObsError(const eckit::Configuration &);
 
  private:
   ObsOperator & operator=(const ObsOperator &);
@@ -72,12 +66,12 @@ class ObsOperator : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-ObsOperator<MODEL>::ObsOperator(const ObsSpace_ & os, const eckit::Configuration & conf)
+ObsOperator<MODEL>::ObsOperator(const ObsSpace_ & os)
   : oper_()
 {
   Log::trace() << "ObsOperator<MODEL>::ObsOperator starting" << std::endl;
   util::Timer timer(classname(), "ObsOperator");
-  oper_.reset(ObsOperatorFactory<MODEL>::create(os.observationspace(), conf));
+  oper_.reset(ObsOperatorFactory<MODEL>::create(os.observationspace(), os.config()));
   Log::trace() << "ObsOperator<MODEL>::ObsOperator done" << std::endl;
 }
 
@@ -119,16 +113,6 @@ Variables<MODEL> ObsOperator<MODEL>::variables() const {
   Variables<MODEL> var(oper_->variables());
   Log::trace() << "ObsOperator<MODEL>::variables done" << std::endl;
   return var;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-void ObsOperator<MODEL>::generateObsError(const eckit::Configuration & conf) {
-  Log::trace() << "ObsOperator<MODEL>::generateObsError starting" << std::endl;
-  util::Timer timer(classname(), "generateObsError");
-  oper_->generateObsError(conf);
-  Log::trace() << "ObsOperator<MODEL>::generateObsError done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

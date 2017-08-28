@@ -41,12 +41,12 @@ namespace lorenz95 {
 
 ObsTable::ObsTable(const eckit::Configuration & config,
                    const util::DateTime & bgn, const util::DateTime & end)
-  : winbgn_(bgn), winend_(end)
+  : conf_(config), winbgn_(bgn), winend_(end)
 {
   nameIn_.clear();
   nameOut_.clear();
-  if (config.has("ObsData")) {
-    const eckit::LocalConfiguration dataConfig(config, "ObsData");
+  if (conf_.has("ObsData")) {
+    const eckit::LocalConfiguration dataConfig(conf_, "ObsData");
     if (dataConfig.has("ObsDataIn")) {
       nameIn_ = dataConfig.getString("ObsDataIn.filename");
       Log::trace() << "ObsTable::ObsTable reading observations from " << nameIn_ << std::endl;
@@ -150,6 +150,14 @@ void ObsTable::generateDistribution(const eckit::Configuration & config) {
     step += freq;
   }
   ASSERT(iobs == nobs);
+
+// Generate obs error
+  const double err = config.getDouble("obs_error");
+  std::vector<double> obserr(nobs);
+  for (unsigned int jj = 0; jj < nobs; ++jj) {
+    obserr[jj] = err;
+  }
+  this->putdb("ObsErr", obserr);
 
   Log::trace() << "ObsTable::generateDistribution done" << std::endl;
 }

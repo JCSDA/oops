@@ -47,7 +47,7 @@ class ObsStreamQG : public oops::ObsOperatorBase<QgTraits>,
  public:
   static const std::string classname() {return "qg::ObsStreamQG";}
 
-  ObsStreamQG(ObsSpaceQG &, const eckit::Configuration &);
+  ObsStreamQG(const ObsSpaceQG &, const eckit::Configuration &);
   virtual ~ObsStreamQG();
 
 // Obs Operator
@@ -57,7 +57,6 @@ class ObsStreamQG : public oops::ObsOperatorBase<QgTraits>,
   LinearObsOp * newTLAD() const {return new ObsStreamTLAD(obsdb_, keyOperStrm_);}
 
 // Other
-  void generateObsError(const eckit::Configuration &);
   boost::shared_ptr<const VariablesQG> variables() const {return varin_;}
 
   int & toFortran() {return keyOperStrm_;}
@@ -65,7 +64,7 @@ class ObsStreamQG : public oops::ObsOperatorBase<QgTraits>,
 
  private:
   void print(std::ostream &) const;
-  ObsSpaceQG & obsdb_;
+  const ObsSpaceQG & obsdb_;
   const std::string obsname_;
   F90hop keyOperStrm_;
   boost::shared_ptr<const VariablesQG> varin_;

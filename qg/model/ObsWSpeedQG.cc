@@ -30,7 +30,7 @@ namespace qg {
 static oops::ObsOperatorMaker<QgTraits, ObsWSpeedQG> makerWSpeed_("WSpeed");
 // -----------------------------------------------------------------------------
 
-ObsWSpeedQG::ObsWSpeedQG(ObsSpaceQG & odb, const eckit::Configuration & config)
+ObsWSpeedQG::ObsWSpeedQG(const ObsSpaceQG & odb, const eckit::Configuration & config)
   : obsdb_(odb), obsname_("WSpeed"), varin_()
 {
   const eckit::Configuration * configc = &config;
@@ -55,13 +55,6 @@ void ObsWSpeedQG::obsEquiv(const GomQG & gom, ObsVecQG & ovec,
   Log::debug() << "ObsWSpeedQG obsEquiv gom : " << gom << std::endl;
   qg_wspeed_eqv_f90(gom.toFortran(), ovec.toFortran(), bias.wspd());
   Log::debug() << "ObsWSpeedQG obsEquiv ovec : " << ovec << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-void ObsWSpeedQG::generateObsError(const eckit::Configuration & conf) {
-  const double err = conf.getDouble("obs_error");
-  qg_obsdb_seterr_f90(obsdb_.toFortran(), keyOperWspeed_, err);
 }
 
 // -----------------------------------------------------------------------------

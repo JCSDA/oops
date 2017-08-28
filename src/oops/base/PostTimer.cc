@@ -20,7 +20,6 @@
 #include "util/Logger.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
-#include "util/abor1_cpp.h"
 
 namespace oops {
 // -----------------------------------------------------------------------------

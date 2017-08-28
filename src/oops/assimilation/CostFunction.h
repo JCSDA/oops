@@ -207,12 +207,9 @@ void CostFunction<MODEL>::setupTerms(const eckit::Configuration & config) {
   Log::trace() << "CostFunction: setupTerms starting" << std::endl;
 
 // Jo
-  std::vector<eckit::LocalConfiguration> jos;
-  config.get("Jo", jos);
-  for (size_t jj = 0; jj < jos.size(); ++jj) {
-    CostJo<MODEL> * jo = this->newJo(jos[jj]);
-    jterms_.push_back(jo);
-  }
+  eckit::LocalConfiguration joconf(config, "Jo");
+  CostJo<MODEL> * jo = this->newJo(joconf);
+  jterms_.push_back(jo);
   Log::trace() << "CostFunction: setupTerms Jo added" << std::endl;
 
 // Jb

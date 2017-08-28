@@ -26,7 +26,7 @@ namespace qg {
 static oops::ObsOperatorMaker<QgTraits, ObsStreamQG> makerStream_("Stream");
 // -----------------------------------------------------------------------------
 
-ObsStreamQG::ObsStreamQG(ObsSpaceQG & odb, const eckit::Configuration & config)
+ObsStreamQG::ObsStreamQG(const ObsSpaceQG & odb, const eckit::Configuration & config)
   : obsdb_(odb), obsname_("Stream"), varin_()
 {
   const eckit::Configuration * configc = &config;
@@ -48,13 +48,6 @@ ObsStreamQG::~ObsStreamQG() {
 void ObsStreamQG::obsEquiv(const GomQG & gom, ObsVecQG & ovec,
                            const ObsBias & bias) const {
   qg_stream_equiv_f90(gom.toFortran(), ovec.toFortran(), bias.stream());
-}
-
-// -----------------------------------------------------------------------------
-
-void ObsStreamQG::generateObsError(const eckit::Configuration & conf) {
-  const double err = conf.getDouble("obs_error");
-  qg_obsdb_seterr_f90(obsdb_.toFortran(), keyOperStrm_, err);
 }
 
 // -----------------------------------------------------------------------------

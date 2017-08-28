@@ -19,14 +19,10 @@
 
 #include <boost/noncopyable.hpp>
 
+#include "eckit/config/LocalConfiguration.h"
 #include "util/DateTime.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
-
-// Forward declarations
-namespace eckit {
-  class Configuration;
-}
 
 namespace lorenz95 {
   class ObsVec1D;
@@ -57,12 +53,14 @@ class ObsTable : public util::Printable,
   unsigned int nobs() const {return times_.size();}
   const util::DateTime & windowStart() const {return winbgn_;}
   const util::DateTime & windowEnd() const {return winend_;}
+  const eckit::Configuration & config() const {return conf_;}
 
  private:
   void print(std::ostream &) const;
   void otOpen(const std::string &);
   void otWrite(const std::string &) const;
 
+  const eckit::LocalConfiguration conf_;
   const util::DateTime winbgn_;
   const util::DateTime winend_;
 

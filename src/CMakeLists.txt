@@ -125,7 +125,10 @@ oops/base/EnsemblesCollection.h
 oops/base/GeneralizedDepartures.h
 oops/base/HybridCovariance.h
 oops/base/IdentityMatrix.h
+oops/base/LinearObsOperators.h
 oops/base/ModelSpaceCovarianceBase.h
+oops/base/ObsOperators.h
+oops/base/ObsSpace.h
 oops/base/Observations.h
 oops/base/Observer.h
 oops/base/ObserverTL.h
