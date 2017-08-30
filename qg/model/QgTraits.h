@@ -17,7 +17,6 @@
 #include "model/GeometryQG.h"
 #include "model/GomQG.h"
 #include "model/IncrementQG.h"
-#include "model/LinearObsOp.h"
 #include "model/LocalizationMatrixQG.h"
 #include "model/LocationsQG.h"
 #include "model/ModelQG.h"
@@ -50,7 +49,6 @@ struct QgTraits {
   typedef qg::ModelBiasCovariance   ModelAuxCovariance;
 
   typedef qg::ObsSpaceQG            ObsSpace;
-  typedef qg::LinearObsOp           LinearObsOperator;
   typedef qg::ObsVecQG              ObsVector;
 
   typedef qg::ObsBias               ObsAuxControl;
@@ -58,7 +56,7 @@ struct QgTraits {
   typedef qg::ObsBiasCovariance     ObsAuxCovariance;
 
   typedef qg::GomQG                 ModelAtLocations;
-  typedef qg::LocationsQG                 Locations;
+  typedef qg::LocationsQG           Locations;
 
   typedef qg::LocalizationMatrixQG  LocalizationMatrix;
 };

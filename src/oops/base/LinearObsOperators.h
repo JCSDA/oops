@@ -49,7 +49,6 @@ class LinearObsOperators : public util::Printable {
   explicit LinearObsOperators(const LinearObsOperators &);
   ~LinearObsOperators();
 
-/// Obs Operators
 //  void setTrajectory(const ModelAtLocations_ &, const ObsAuxControl_ &);
 //  void obsEquivTL(const ModelAtLocations_ &, ObsVector_ &, const ObsAuxIncrement_ &) const;
 //  void obsEquivAD(ModelAtLocations_ &, const ObsVector_ &, ObsAuxIncrement_ &) const;

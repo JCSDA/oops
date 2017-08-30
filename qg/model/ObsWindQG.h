@@ -55,7 +55,7 @@ class ObsWindQG : public oops::ObsOperatorBase<QgTraits>,
   void obsEquiv(const GomQG &, ObsVecQG &, const ObsBias &) const;
 
 // Is there a way to put this in the TLAD class?
-  LinearObsOp * newTLAD() const {return new ObsWindTLAD(obsdb_, keyOperWind_);}
+  ObsWindTLAD * newTLAD() const {return new ObsWindTLAD(obsdb_, keyOperWind_);}
 
 // Other
   boost::shared_ptr<const VariablesQG> variables() const {return varin_;}

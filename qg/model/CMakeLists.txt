@@ -9,7 +9,6 @@ GomQG.cc
 GomQG.h
 IncrementQG.cc
 IncrementQG.h
-LinearObsOp.h
 LocationsQG.h
 LocalizationMatrixQG.cc
 LocalizationMatrixQG.h

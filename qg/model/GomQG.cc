@@ -12,7 +12,6 @@
 
 #include "util/Logger.h"
 #include "model/ObsSpaceQG.h"
-#include "model/LinearObsOp.h"
 #include "model/QgFortran.h"
 #include "model/VariablesQG.h"
 

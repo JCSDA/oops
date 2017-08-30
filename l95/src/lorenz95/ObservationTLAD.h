@@ -13,11 +13,12 @@
 
 #include <ostream>
 #include <string>
-#include <boost/noncopyable.hpp>
+
 #include <boost/shared_ptr.hpp>
 
+#include "oops/interface/LinearObsOperBase.h"
 #include "util/ObjectCounter.h"
-#include "util/Printable.h"
+#include "lorenz95/L95Traits.h"
 
 // Forward declarations
 namespace lorenz95 {
@@ -35,8 +36,7 @@ namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
 
-class ObservationTLAD : public util::Printable,
-                        private boost::noncopyable,
+class ObservationTLAD : public oops::LinearObsOperBase<L95Traits>,
                         private util::ObjectCounter<ObservationTLAD> {
  public:
   static const std::string classname() {return "lorenz95::ObservationTLAD";}

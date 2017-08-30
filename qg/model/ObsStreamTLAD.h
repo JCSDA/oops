@@ -12,33 +12,26 @@
 #define QG_MODEL_OBSSTREAMTLAD_H_
 
 #include <string>
-#include <vector>
 
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include "model/LinearObsOp.h"
-#include "model/ObsSpaceQG.h"
+#include "oops/interface/LinearObsOperBase.h"
 #include "util/ObjectCounter.h"
+#include "model/QgTraits.h"
 
 // Forward declarations
-namespace util {
-  class DateTime;
-}
-
 namespace qg {
   class GomQG;
   class ObsBias;
   class ObsBiasIncrement;
+  class ObsSpaceQG;
   class ObsVecQG;
 
 // -----------------------------------------------------------------------------
-/// Streamfunction observation for QG model.
-/*!
- *  ObsStreamTLAD for QG model inherits from ObsEquivalent.
- */
+/// Streamfunction TL/AD observation operator for QG model.
 
-class ObsStreamTLAD : public LinearObsOp, private util::ObjectCounter<ObsStreamTLAD> {
+class ObsStreamTLAD : public oops::LinearObsOperBase<QgTraits>,
+                      private util::ObjectCounter<ObsStreamTLAD> {
  public:
   static const std::string classname() {return "qg::ObsStreamTLAD";}
 
@@ -53,10 +46,11 @@ class ObsStreamTLAD : public LinearObsOp, private util::ObjectCounter<ObsStreamT
 // Other
   boost::shared_ptr<const VariablesQG> variables() const {return varin_;}
 
-  int& toFortran() {return keyOperStrm_;}
-  const int& toFortran() const {return keyOperStrm_;}
+  int & toFortran() {return keyOperStrm_;}
+  const int & toFortran() const {return keyOperStrm_;}
 
  private:
+  void print(std::ostream &) const override;
   F90hop keyOperStrm_;
   boost::shared_ptr<const VariablesQG> varin_;
 };

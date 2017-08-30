@@ -12,29 +12,26 @@
 #define QG_MODEL_OBSWSPEEDTLAD_H_
 
 #include <string>
-#include <vector>
 
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include "model/GomQG.h"
-#include "model/LinearObsOp.h"
-#include "model/ObsSpaceQG.h"
+#include "oops/interface/LinearObsOperBase.h"
 #include "util/ObjectCounter.h"
+#include "model/QgTraits.h"
 
 // Forward declarations
-namespace util {
-  class DateTime;
-}
-
 namespace qg {
+  class GomQG;
   class ObsBias;
   class ObsBiasIncrement;
+  class ObsSpaceQG;
   class ObsVecQG;
 
 // -----------------------------------------------------------------------------
+/// Wind speed TL/AD observation operator for QG model.
 
-class ObsWSpeedTLAD : public LinearObsOp, private util::ObjectCounter<ObsWSpeedTLAD> {
+class ObsWSpeedTLAD : public oops::LinearObsOperBase<QgTraits>,
+                      private util::ObjectCounter<ObsWSpeedTLAD> {
  public:
   static const std::string classname() {return "qg::ObsWSpeedTLAD";}
 
@@ -53,6 +50,7 @@ class ObsWSpeedTLAD : public LinearObsOp, private util::ObjectCounter<ObsWSpeedT
   const int & toFortran() const {return keyOperWspeed_;}
 
  private:
+  void print(std::ostream &) const override;
   F90hop keyOperWspeed_;
   GomQG traj_;
   boost::shared_ptr<const VariablesQG> varin_;

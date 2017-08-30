@@ -73,4 +73,10 @@ void ObsWSpeedTLAD::obsEquivAD(GomQG & gom, const ObsVecQG & ovec,
 
 // -----------------------------------------------------------------------------
 
+void ObsWSpeedTLAD::print(std::ostream & os) const {
+  os << "ObsStreamTLAD::print not implemented" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
 }  // namespace qg

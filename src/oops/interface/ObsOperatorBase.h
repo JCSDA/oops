@@ -8,12 +8,14 @@
 #ifndef OOPS_INTERFACE_OBSOPERATORBASE_H_
 #define OOPS_INTERFACE_OBSOPERATORBASE_H_
 
-#include <boost/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
 #include <map>
 #include <string>
 
+#include <boost/noncopyable.hpp>
+#include <boost/shared_ptr.hpp>
+
 #include "eckit/config/Configuration.h"
+#include "oops/interface/LinearObsOperBase.h"
 #include "util/abor1_cpp.h"
 #include "util/Logger.h"
 #include "util/Printable.h"
@@ -31,7 +33,7 @@ class ObsOperatorBase : public util::Printable,
   typedef typename MODEL::ObsSpace            ObsSpace_;
   typedef typename MODEL::ObsVector           ObsVector_;
   typedef typename MODEL::Variables           Variables_;
-  typedef typename MODEL::LinearObsOperator   ObsOpTLAD_;
+  typedef LinearObsOperBase<MODEL>            ObsOpTLAD_;
 
  public:
   ObsOperatorBase() {}

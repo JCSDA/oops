@@ -60,4 +60,10 @@ void ObsStreamTLAD::obsEquivAD(GomQG & gom, const ObsVecQG & ovec,
 
 // -----------------------------------------------------------------------------
 
+void ObsStreamTLAD::print(std::ostream & os) const {
+  os << "ObsStreamTLAD::print not implemented" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
 }  // namespace qg
