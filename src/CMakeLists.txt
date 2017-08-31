@@ -127,8 +127,9 @@ oops/base/HybridCovariance.h
 oops/base/IdentityMatrix.h
 oops/base/LinearObsOperators.h
 oops/base/ModelSpaceCovarianceBase.h
+oops/base/ObsErrors.h
 oops/base/ObsOperators.h
-oops/base/ObsSpace.h
+oops/base/ObsSpaces.h
 oops/base/Observations.h
 oops/base/Observer.h
 oops/base/ObserverTL.h
@@ -159,6 +160,7 @@ oops/interface/ErrorCovariance.h
 oops/interface/Geometry.h
 oops/interface/Increment.h
 oops/interface/LinearModel.h
+oops/interface/LinearObsOperBase.h
 oops/interface/LinearObsOperator.h
 oops/interface/Localization.h
 oops/interface/Locations.h
@@ -173,6 +175,7 @@ oops/interface/ObsAuxIncrement.h
 oops/interface/ObsErrorBase.h
 oops/interface/ObsErrorCovariance.h
 oops/interface/ObsOperator.h
+oops/interface/ObsOperatorBase.h
 oops/interface/ObsVector.h
 oops/interface/ObservationSpace.h
 oops/interface/State.h

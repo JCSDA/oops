@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(test_h_obs_type) {
     double dist = dot_product(dep, dep);
 
     std::ostringstream oss;
-    oss << std::setprecision(20) << "[MSG]   Obs type  (" << jobs << " nbObs= " << dep.numberOfObs()
+    oss << std::setprecision(20) << "[MSG]   Obs type  (" << jobs <<
         << " ) dist[ H(OOPS), H(SCREENING) ] = " << dist;
     BOOST_TEST_MESSAGE(oss.str());
     BOOST_CHECK_SMALL(dist, tolAD());

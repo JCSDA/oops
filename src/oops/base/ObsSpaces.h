@@ -8,8 +8,8 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef OOPS_BASE_OBSSPACE_H_
-#define OOPS_BASE_OBSSPACE_H_
+#ifndef OOPS_BASE_OBSSPACES_H_
+#define OOPS_BASE_OBSSPACES_H_
 
 #include <cstddef>
 #include <ostream>
@@ -26,7 +26,6 @@
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 #include "util/Timer.h"
-#include "util/abor1_cpp.h"
 
 namespace oops {
   template <typename T>
@@ -35,17 +34,17 @@ namespace oops {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-class ObsSpace : public util::Printable,
-                 private boost::noncopyable,
-                 private util::ObjectCounter<ObsSpace<MODEL> > {
+class ObsSpaces : public util::Printable,
+                  private boost::noncopyable,
+                  private util::ObjectCounter<ObsSpaces<MODEL> > {
   typedef Departures<MODEL>         Departures_;
   typedef ObservationSpace<MODEL>   ObsSpace_;
 
  public:
-  static const std::string classname() {return "oops::ObsSpace";}
+  static const std::string classname() {return "oops::ObsSpaces";}
 
-  ObsSpace(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
-  ~ObsSpace();
+  ObsSpaces(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
+  ~ObsSpaces();
 
 /// Access
   std::size_t size() const {return spaces_.size();}
@@ -56,7 +55,7 @@ class ObsSpace : public util::Printable,
   const util::DateTime & windowEnd() const {return wend_;}
 
 /// Other
-  void printJo(const Departures_ &, const Departures_ &) const;
+  void printJo(const Departures_ &, const Departures_ &) const;  // To be changed
 
  private:
   void print(std::ostream &) const;
@@ -68,14 +67,14 @@ class ObsSpace : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-ObsSpace<MODEL>::ObsSpace(const eckit::Configuration & conf,
-                          const util::DateTime & bgn, const util::DateTime & end)
+ObsSpaces<MODEL>::ObsSpaces(const eckit::Configuration & conf,
+                            const util::DateTime & bgn, const util::DateTime & end)
  : spaces_(0), wbgn_(bgn), wend_(end)
 {
   std::vector<eckit::LocalConfiguration> obsconf;
   conf.get("ObsTypes", obsconf);
   for (std::size_t jj = 0; jj < obsconf.size(); ++jj) {
-    Log::debug() << "ObsSpace::ObsSpace : conf " << obsconf[jj] << std::endl;
+    Log::debug() << "ObsSpaces::ObsSpaces : conf " << obsconf[jj] << std::endl;
     boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf[jj], bgn, end));
     spaces_.push_back(tmp);
 //  Generate locations etc... if required
@@ -89,12 +88,12 @@ ObsSpace<MODEL>::ObsSpace(const eckit::Configuration & conf,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-ObsSpace<MODEL>::~ObsSpace() {}
+ObsSpaces<MODEL>::~ObsSpaces() {}
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void ObsSpace<MODEL>::print(std::ostream & os) const {
+void ObsSpaces<MODEL>::print(std::ostream & os) const {
   for (std::size_t jj = 0; jj < spaces_.size(); ++jj) {
     os << *spaces_[jj];
   }
@@ -103,8 +102,7 @@ void ObsSpace<MODEL>::print(std::ostream & os) const {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void ObsSpace<MODEL>::printJo(const Departures_ & dy, const Departures_ & grad) const {
-  ABORT("ObsSpace::printJo not implemented");
+void ObsSpaces<MODEL>::printJo(const Departures_ & dy, const Departures_ & grad) const {
   for (std::size_t jj = 0; jj < spaces_.size(); ++jj) {
     spaces_[jj]->printJo(dy[jj], grad[jj]);
   }
@@ -114,4 +112,4 @@ void ObsSpace<MODEL>::printJo(const Departures_ & dy, const Departures_ & grad) 
 
 }  // namespace oops
 
-#endif  // OOPS_BASE_OBSSPACE_H_
+#endif  // OOPS_BASE_OBSSPACES_H_

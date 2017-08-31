@@ -25,7 +25,7 @@
 #include "oops/base/Observer.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/ObsOperators.h"
-#include "oops/base/ObsSpace.h"
+#include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
@@ -47,7 +47,7 @@ template <typename MODEL> class MakeObs : public Application {
   typedef ModelAuxControl<MODEL>     ModelAux_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef Observations<MODEL>        Observations_;
-  typedef ObsSpace<MODEL>            ObsSpace_;
+  typedef ObsSpaces<MODEL>           ObsSpace_;
   typedef ObsOperators<MODEL>        ObsOperator_;
   typedef State<MODEL>               State_;
 

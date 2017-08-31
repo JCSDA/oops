@@ -16,7 +16,6 @@
 #include <boost/shared_ptr.hpp>
 
 #include "util/Logger.h"
-#include "oops/base/ObsSpace.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/interface/LinearObsOperator.h"
 #include "oops/interface/ModelAtLocations.h"
@@ -24,7 +23,6 @@
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/interface/Variables.h"
-#include "eckit/config/Configuration.h"
 #include "util/DateTime.h"
 #include "util/Printable.h"
 
@@ -49,11 +47,7 @@ class LinearObsOperators : public util::Printable {
   explicit LinearObsOperators(const LinearObsOperators &);
   ~LinearObsOperators();
 
-//  void setTrajectory(const ModelAtLocations_ &, const ObsAuxControl_ &);
-//  void obsEquivTL(const ModelAtLocations_ &, ObsVector_ &, const ObsAuxIncrement_ &) const;
-//  void obsEquivAD(ModelAtLocations_ &, const ObsVector_ &, ObsAuxIncrement_ &) const;
-
-/// Other
+/// Access
   std::size_t size() const {return ops_.size();}
   LinearObsOperator_ & operator[](const std::size_t ii) {return *ops_.at(ii);} 
   const LinearObsOperator_ & operator[](const std::size_t ii) const {return *ops_.at(ii);} 
@@ -87,36 +81,6 @@ LinearObsOperators<MODEL>::LinearObsOperators(const LinearObsOperators & other)
 
 template <typename MODEL>
 LinearObsOperators<MODEL>::~LinearObsOperators() {}
-
-// -----------------------------------------------------------------------------
-
-//template <typename MODEL>
-//void LinearObsOperators<MODEL>::setTrajectory(const ModelAtLocations_ & gom,
-//                                              const ObsAuxControl_ & aux) {
-////  oper_->setTrajectory(gom.modelatlocations(), aux.obsauxcontrol());
-//}
-
-// -----------------------------------------------------------------------------
-
-//template <typename MODEL>
-//void LinearObsOperators<MODEL>::obsEquivTL(const ModelAtLocations_ & gom, ObsVector_ & yy,
-//                                           const ObsAuxIncrement_ & aux) const {
-////  oper_->obsEquivTL(gom.modelatlocations(), yy.obsvector(), aux.obsauxincrement());
-//  for (std::size_t jobs = 0; jobs < ops_.size(); ++jobs) {
-//    ops_[jobs]->obsEquivTL(gom[jobs], yy[jobs], aux);
-//  }
-//}
-
-// -----------------------------------------------------------------------------
-
-// template <typename MODEL>
-// void LinearObsOperators<MODEL>::obsEquivAD(ModelAtLocations_ & gom, const ObsVector_ & yy,
-//                                            ObsAuxIncrement_ & aux) const {
-// //  oper_->obsEquivAD(gom.modelatlocations(), yy.obsvector(), aux.obsauxincrement());
-//   for (std::size_t jobs = 0; jobs < ops_.size(); ++jobs) {
-//     ops_[jobs]->obsEquivAD(gom[jobs], yy[jobs], aux);
-//   }
-// }
 
 // -----------------------------------------------------------------------------
 

@@ -81,7 +81,6 @@ ObsErrorCovariance<MODEL>::ObsErrorCovariance(const ObsSpace_ & obsdb,
 {
   Log::trace() << "ObsErrorCovariance<MODEL>::ObsErrorCovariance starting" << std::endl;
   util::Timer timer(classname(), "ObsErrorCovariance");
-
   covar_.reset(ObsErrorFactory<MODEL>::create(obsdb, conf));
   Log::trace() << "ObsErrorCovariance<MODEL>::ObsErrorCovariance done" << std::endl;
 }

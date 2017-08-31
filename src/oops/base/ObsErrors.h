@@ -20,15 +20,11 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Departures.h"
 #include "oops/base/Observations.h"
-#include "oops/base/ObsSpace.h"
+#include "oops/base/ObsSpaces.h"
 #include "oops/interface/ObsErrorCovariance.h"
 #include "oops/interface/ObsVector.h"
 #include "util/Logger.h"
 #include "util/Printable.h"
-
-namespace eckit {
-  class Configuration;
-}
 
 namespace oops {
 
@@ -40,7 +36,7 @@ class ObsErrors : public util::Printable,
   typedef Departures<MODEL>          Departures_;
   typedef Observations<MODEL>        Observations_;
   typedef ObsErrorCovariance<MODEL>  ObsError_;
-  typedef ObsSpace<MODEL>            ObsSpace_;
+  typedef ObsSpaces<MODEL>           ObsSpace_;
   typedef ObsVector<MODEL>           ObsVector_;
 
  public:

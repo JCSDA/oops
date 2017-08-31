@@ -29,7 +29,7 @@
 #include "oops/base/ObserverAD.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/ObsOperators.h"
-#include "oops/base/ObsSpace.h"
+#include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
 #include "oops/base/PostBaseTL.h"
 #include "oops/base/PostBaseAD.h"
@@ -62,7 +62,7 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   typedef Increment<MODEL>           Increment_;
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
   typedef ObsOperators<MODEL>        ObsOperator_;
-  typedef ObsSpace<MODEL>            ObsSpace_;
+  typedef ObsSpaces<MODEL>           ObsSpace_;
   typedef LinearObsOperators<MODEL>  LinearObsOperator_;
 
  public:
@@ -281,10 +281,9 @@ void CostJo<MODEL>::resetLinearization() {
 
 template<typename MODEL>
 double CostJo<MODEL>::printJo(const Departures_ & dy, const Departures_ & grad) const {
-  // print Jo table
-//YT  obspace_.printJo(dy, grad);
-  double zjo = 0.0;
+  obspace_.printJo(dy, grad);
 
+  double zjo = 0.0;
   for (std::size_t jj = 0; jj < dy.size(); ++jj) {
     const double zz = 0.5 * dot_product(dy[jj], grad[jj]);
     const unsigned nobs = dy[jj].size();

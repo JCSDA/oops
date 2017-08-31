@@ -19,7 +19,7 @@
 #include "oops/base/LinearObsOperators.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObsOperators.h"
-#include "oops/base/ObsSpace.h"
+#include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
 #include "oops/interface/Locations.h"
 #include "oops/interface/ModelAtLocations.h"
@@ -41,7 +41,7 @@ template <typename MODEL, typename STATE> class Observer : public PostBase<STATE
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef Observations<MODEL>        Observations_;
   typedef ObsOperators<MODEL>        ObsOperator_;
-  typedef ObsSpace<MODEL>            ObsSpace_;
+  typedef ObsSpaces<MODEL>           ObsSpace_;
 
  public:
   Observer(const ObsSpace_ &, const ObsOperator_ &, const ObsAuxCtrl_ &,

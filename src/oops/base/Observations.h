@@ -22,7 +22,7 @@
 #include "eckit/config/Configuration.h"
 #include "util/Logger.h"
 #include "oops/base/Departures.h"
-#include "oops/base/ObsSpace.h"
+#include "oops/base/ObsSpaces.h"
 #include "oops/interface/ModelAtLocations.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsOperator.h"
@@ -47,7 +47,7 @@ template <typename MODEL> class Observations : public util::Printable {
   typedef ModelAtLocations<MODEL>    GOM_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef ObsOperator<MODEL>         ObsOperator_;
-  typedef ObsSpace<MODEL>            ObsSpace_;
+  typedef ObsSpaces<MODEL>           ObsSpace_;
   typedef ObsVector<MODEL>           ObsVector_;
 
  public:

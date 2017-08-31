@@ -20,7 +20,7 @@
 
 #include "util/Logger.h"
 #include "oops/base/GeneralizedDepartures.h"
-#include "oops/base/ObsSpace.h"
+#include "oops/base/ObsSpaces.h"
 #include "oops/interface/ModelAtLocations.h"
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/ObsErrorBase.h"
@@ -52,7 +52,7 @@ class Departures : public util::Printable,
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
   typedef ObsErrorBase<MODEL>        ObsErrorBase_;
   typedef LinearObsOperator<MODEL>   LinearObsOperator_;
-  typedef ObsSpace<MODEL>            ObsSpace_;
+  typedef ObsSpaces<MODEL>           ObsSpace_;
   typedef ObsVector<MODEL>           ObsVector_;
 
  public:
@@ -79,19 +79,8 @@ class Departures : public util::Printable,
   void axpy(const double &, const Departures &);
   double dot_product_with(const Departures &) const;
 
-/// Get departue values
-//  const ObsVector_ & depvalues() const {return *dep_;}
-
 /// Save departures values
   void save(const std::string &) const;
-
-/// Number of obs (for info only)
-  unsigned int numberOfObs() const;
-
-/// Double despatch for obs error covariance
-//  void helpCovarRandomize(const ObsErrorBase_ & R) {
-//    R.randomize(*dep_);
-//  }
 
  private:
   void print(std::ostream &) const;
@@ -217,15 +206,6 @@ void Departures<MODEL>::save(const std::string & name) const {
   for (std::size_t jj = 0; jj < dep_.size(); ++jj) {
     dep_[jj]->save(name);
   }
-}
-// -----------------------------------------------------------------------------
-template <typename MODEL>
-unsigned int Departures<MODEL>::numberOfObs() const {
-  unsigned int nn = 0;
-  for (std::size_t jj = 0; jj < dep_.size(); ++jj) {
-    nn += dep_[jj]->size();
-  }
-  return nn;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>

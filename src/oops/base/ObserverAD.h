@@ -18,7 +18,7 @@
 
 #include "oops/base/Departures.h"
 #include "oops/base/LinearObsOperators.h"
-#include "oops/base/ObsSpace.h"
+#include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBaseAD.h"
 #include "oops/interface/Locations.h"
 #include "oops/interface/ModelAtLocations.h"
@@ -36,7 +36,7 @@ template <typename MODEL, typename INCR> class ObserverAD : public PostBaseAD<IN
   typedef Locations<MODEL>           Locations_;
   typedef ModelAtLocations<MODEL>    GOM_;
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
-  typedef ObsSpace<MODEL>            ObsSpace_;
+  typedef ObsSpaces<MODEL>           ObsSpace_;
 
  public:
   ObserverAD(const ObsSpace_ &, const LinearObsOperator_ &,

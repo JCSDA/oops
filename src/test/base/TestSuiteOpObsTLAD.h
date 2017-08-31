@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE(test_adjoint_obs_type) {
     double dy1dy2 = dot_product(*dy1, *dy2);
 
     std::ostringstream oss;
-    oss << std::setprecision(20) << "[MSG]   Obs type  (" << jj << " nbObs= " << dy1->numberOfObs() << " ) : dx1.dx2 = "
+    oss << std::setprecision(20) << "[MSG]   Obs type  (" << jj << " ) : dx1.dx2 = "
     << dx1dx2 << " dy1.dy2 = " << dy1dy2 << " diff = " << (dx1dx2-dy1dy2);
     BOOST_TEST_MESSAGE(oss.str());
 
