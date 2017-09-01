@@ -176,6 +176,7 @@ oops/interface/ObsErrorBase.h
 oops/interface/ObsErrorCovariance.h
 oops/interface/ObsOperator.h
 oops/interface/ObsOperatorBase.h
+oops/interface/ObsSpaceBase.h
 oops/interface/ObsVector.h
 oops/interface/ObservationSpace.h
 oops/interface/State.h

@@ -9,6 +9,7 @@ ecbuild_add_library( TARGET lorenz95
                          IncrementL95.cc
                          IncrementL95.h
                          L95Traits.h
+                         LocsL95.cc
                          LocsL95.h
                          ModelBias.cc
                          ModelBias.h

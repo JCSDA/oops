@@ -34,7 +34,8 @@ class GomL95 : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::GomL95";}
 
-  GomL95(const ObsTable &, const NoVariables &, const util::DateTime &, const util::DateTime &, const Resolution &);
+  GomL95(const ObsTable &, const NoVariables &,
+         const util::DateTime &, const util::DateTime &, const Resolution &);
   ~GomL95();
 
   double dot_product_with(const GomL95 &) const;

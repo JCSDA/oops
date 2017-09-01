@@ -16,7 +16,6 @@
 
 #include <boost/shared_ptr.hpp>
 
-//#include "oops/interface/ObsVector.h"
 #include "util/Logger.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
@@ -37,6 +36,7 @@ namespace oops {
 
 template <typename MODEL>
 class ObservationSpace : public util::Printable,
+                         private boost::noncopyable,
                          private util::ObjectCounter<ObservationSpace<MODEL> > {
   typedef typename MODEL::ObsSpace  ObsSpace_;
   typedef ObsVector<MODEL>          ObsVector_;
@@ -44,8 +44,8 @@ class ObservationSpace : public util::Printable,
  public:
   static const std::string classname() {return "oops::ObservationSpace";}
 
-  ObservationSpace(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
-  ObservationSpace(const ObservationSpace &);
+  ObservationSpace(const eckit::Configuration &,
+                   const util::DateTime &, const util::DateTime &);
   ~ObservationSpace();
 
 /// Interfacing
@@ -61,7 +61,6 @@ class ObservationSpace : public util::Printable,
   void printJo(const ObsVector_ &, const ObsVector_ &) const;
 
  private:
-  ObservationSpace & operator=(const ObservationSpace &);
   void print(std::ostream &) const;
   boost::shared_ptr<ObsSpace_> obsdb_;
 };
@@ -76,15 +75,6 @@ ObservationSpace<MODEL>::ObservationSpace(const eckit::Configuration & conf,
   util::Timer timer(classname(), "ObservationSpace");
   obsdb_.reset(new ObsSpace_(conf, bgn, end));
   Log::trace() << "ObservationSpace<MODEL>::ObservationSpace done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-ObservationSpace<MODEL>::ObservationSpace(const ObservationSpace & other)
-  : obsdb_(other.obsdb_)
-{
-  Log::trace() << "ObservationSpace<MODEL>::ObservationSpace copied" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

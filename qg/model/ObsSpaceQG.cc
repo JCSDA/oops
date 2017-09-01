@@ -20,8 +20,6 @@
 
 #include "model/ObsVecQG.h"
 
-using oops::Log;
-
 namespace qg {
 // -----------------------------------------------------------------------------
 std::map < std::string, int > ObsSpaceQG::theObsFileCount_;
@@ -29,20 +27,20 @@ std::map < std::string, int > ObsSpaceQG::theObsFileCount_;
 
 ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config,
                        const util::DateTime & bgn, const util::DateTime & end)
-  : conf_(config), winbgn_(bgn), winend_(end)
+  : oops::ObsSpaceBase(config, bgn, end), winbgn_(bgn), winend_(end)
 {
   static std::map < std::string, ObsHelpQG * > theObsFileRegister_;
   typedef std::map< std::string, ObsHelpQG * >::iterator otiter;
 
   std::string ofin("-");
-  if (conf_.has("ObsData.ObsDataIn")) {
-    ofin = conf_.getString("ObsData.ObsDataIn.obsfile");
+  if (config.has("ObsData.ObsDataIn")) {
+    ofin = config.getString("ObsData.ObsDataIn.obsfile");
   }
   std::string ofout("-");
-  if (conf_.has("ObsData.ObsDataOut")) {
-    ofout = conf_.getString("ObsData.ObsDataOut.obsfile");
+  if (config.has("ObsData.ObsDataOut")) {
+    ofout = config.getString("ObsData.ObsDataOut.obsfile");
   }
-  Log::trace() << "ObsSpaceQG: Obs files are: " << ofin << " and " << ofout << std::endl;
+  oops::Log::trace() << "ObsSpaceQG: Obs files are: " << ofin << " and " << ofout << std::endl;
   ref_ = ofin + ofout;
   if (ref_ == "--") {
     ABORT("Underspecified observation files.");
@@ -51,22 +49,22 @@ ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config,
   otiter it = theObsFileRegister_.find(ref_);
   if (it == theObsFileRegister_.end()) {
     // Open new file
-    Log::trace() << "ObsSpaceQG::getHelper: " << "Opening " << ref_ << std::endl;
-    helper_ = new ObsHelpQG(conf_);
+    oops::Log::trace() << "ObsSpaceQG::getHelper: " << "Opening " << ref_ << std::endl;
+    helper_ = new ObsHelpQG(config);
     theObsFileCount_[ref_]=1;
     theObsFileRegister_[ref_]=helper_;
-    Log::trace() << "ObsSpaceQG created, count=" << theObsFileCount_[ref_] << std::endl;
+    oops::Log::trace() << "ObsSpaceQG created, count=" << theObsFileCount_[ref_] << std::endl;
     ASSERT(theObsFileCount_[ref_] == 1);
   } else {
     // File already open
-    Log::trace() << "ObsSpaceQG::getHelper: " << ref_ << " already opened." << std::endl;
+    oops::Log::trace() << "ObsSpaceQG::getHelper: " << ref_ << " already opened." << std::endl;
     helper_ = it->second;
     theObsFileCount_[ref_]+=1;
-    Log::trace() << "ObsSpaceQG count=" << theObsFileCount_[ref_] << std::endl;
+    oops::Log::trace() << "ObsSpaceQG count=" << theObsFileCount_[ref_] << std::endl;
     ASSERT(theObsFileCount_[ref_] > 1);
   }
 
-  obsname_ = conf_.getString("ObsType");
+  obsname_ = config.getString("ObsType");
   nobs_ = helper_->nobs(obsname_);
 
   // Very UGLY!!!
@@ -85,7 +83,7 @@ ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config,
 // -----------------------------------------------------------------------------
 
 void ObsSpaceQG::printJo(const ObsVecQG & dy, const ObsVecQG & grad) {
-  Log::info() << "ObsSpaceQG::printJo not implemented" << std::endl;
+  oops::Log::info() << "ObsSpaceQG::printJo not implemented" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -93,21 +91,10 @@ void ObsSpaceQG::printJo(const ObsVecQG & dy, const ObsVecQG & grad) {
 ObsSpaceQG::~ObsSpaceQG() {
   ASSERT(theObsFileCount_[ref_] > 0);
   theObsFileCount_[ref_]-=1;
-  Log::trace() << "ObsSpaceQG cleared, count=" << theObsFileCount_[ref_] << std::endl;
+  oops::Log::trace() << "ObsSpaceQG cleared, count=" << theObsFileCount_[ref_] << std::endl;
   if (theObsFileCount_[ref_] == 0) {
     delete helper_;
   }
-}
-
-// -----------------------------------------------------------------------------
-
-ObsSpaceQG::ObsSpaceQG(const ObsSpaceQG & other)
-  : ref_(other.ref_), helper_(other.helper_),
-    obsname_(other.obsname_), nobs_(other.nobs_), nvin_(other.nvin_), nout_(other.nout_)
-{
-  ASSERT(theObsFileCount_[ref_] > 0);
-  theObsFileCount_[ref_]+=1;
-  Log::trace() << "ObsSpaceQG copied, count=" << theObsFileCount_[ref_] << std::endl;
 }
 
 // -----------------------------------------------------------------------------

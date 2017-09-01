@@ -17,12 +17,13 @@
 #include <string>
 #include <vector>
 
-#include <boost/noncopyable.hpp>
-
-#include "eckit/config/LocalConfiguration.h"
+#include "oops/interface/ObsSpaceBase.h"
 #include "util/DateTime.h"
 #include "util/ObjectCounter.h"
-#include "util/Printable.h"
+
+namespace eckit {
+  class Configuration;
+}
 
 namespace lorenz95 {
   class ObsVec1D;
@@ -34,8 +35,7 @@ namespace lorenz95 {
  */
 
 // -----------------------------------------------------------------------------
-class ObsTable : public util::Printable,
-                 private boost::noncopyable,
+class ObsTable : public oops::ObsSpaceBase,
                  private util::ObjectCounter<ObsTable> {
  public:
   static const std::string classname() {return "lorenz95::ObsTable";}
@@ -51,16 +51,12 @@ class ObsTable : public util::Printable,
   void generateDistribution(const eckit::Configuration &);
   void printJo(const ObsVec1D &, const ObsVec1D &);
   unsigned int nobs() const {return times_.size();}
-  const util::DateTime & windowStart() const {return winbgn_;}
-  const util::DateTime & windowEnd() const {return winend_;}
-  const eckit::Configuration & config() const {return conf_;}
 
  private:
   void print(std::ostream &) const;
   void otOpen(const std::string &);
   void otWrite(const std::string &) const;
 
-  const eckit::LocalConfiguration conf_;
   const util::DateTime winbgn_;
   const util::DateTime winend_;
 
