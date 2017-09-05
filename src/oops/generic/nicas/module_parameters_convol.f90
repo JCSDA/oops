@@ -10,14 +10,12 @@
 !----------------------------------------------------------------------
 module module_parameters_convol
 
-use module_namelist, only: nam
-use netcdf
+use module_namelist, only: namtype
 use omp_lib
 use tools_const, only: pi,req,deg2rad,rad2deg,sphere_dist,vector_product,vector_triple_product
 use tools_display, only: prog_init,prog_print,msgerror
 use tools_kinds,only: kind_real
 use tools_missing, only: msvali,msvalr,msi,msr,isnotmsr,isnotmsi
-use tools_nc, only: ncfloat,ncerr
 use type_ctree, only: ctreetype,create_ctree,find_nearest_neighbors,delete_ctree
 use type_linop, only: linoptype,linop_alloc,linop_dealloc,linop_copy,linop_reorder
 use type_mpl, only: mpl,mpl_bcast,mpl_recv,mpl_send
@@ -38,11 +36,12 @@ contains
 ! Subroutine: compute_convol_network
 !> Purpose: compute convolution with a network approach
 !----------------------------------------------------------------------
-subroutine compute_convol_network(ndata,rh0,rv0)
+subroutine compute_convol_network(nam,ndata,rh0,rv0)
 
 implicit none
 
 ! Passed variables
+type(namtype),intent(in) :: nam !< Namelist variables
 type(ndatatype),intent(inout) :: ndata                 !< Sampling data
 real(kind_real),intent(in) :: rh0(ndata%nc0,ndata%nl0) !< Scaled horizontal support radius
 real(kind_real),intent(in) :: rv0(ndata%nc0,ndata%nl0) !< Scaled vertical support radius
@@ -56,7 +55,7 @@ real(kind_real) :: distnorm,disttest,S_test
 real(kind_real),allocatable :: dist(:,:)
 logical :: add_to_front
 logical,allocatable :: done(:),valid(:,:)
-type(linoptype) :: c(mpl%nthread),ctmp(mpl%nthread)
+type(linoptype) :: c(mpl%nthread)
 
 ! MPI splitting
 do iproc=1,mpl%nproc
@@ -113,12 +112,12 @@ do is_loc=1,ns_loc(mpl%myproc)
          jl0 = plist(ip,2)
 
          ! Loop over neighbors
-         do i=1,ndata%net_nnb(jc0)
-            kc0 = ndata%net_inb(i,jc0)
+         do i=1,ndata%geom%net_nnb(jc0)
+            kc0 = ndata%geom%net_inb(i,jc0)
             do kl0=max(jl0-1,1),min(jl0+1,ndata%nl0)
-               if (ndata%mask(kc0,kl0)) then
-                  distnorm = sqrt(ndata%net_dnb(i,jc0)/(0.5*(rh0(jc0,jl0)**2+rh0(kc0,kl0)**2)) &
-                           & +abs(ndata%vunit(jl0)-ndata%vunit(kl0))/(0.5*(rv0(jc0,jl0)**2+rv0(kc0,kl0)**2)))
+               if (ndata%geom%mask(kc0,kl0)) then
+                  distnorm = sqrt(ndata%geom%net_dnb(i,jc0)/(0.5*(rh0(jc0,jl0)**2+rh0(kc0,kl0)**2)) &
+                           & +abs(ndata%geom%vunit(jl0)-ndata%geom%vunit(kl0))/(0.5*(rv0(jc0,jl0)**2+rv0(kc0,kl0)**2)))
                   disttest = dist(jc0,jl0)+distnorm
                   if (disttest<1.0) then
                      ! Point is inside the support
@@ -167,7 +166,7 @@ do is_loc=1,ns_loc(mpl%myproc)
 
                if (distnorm<1.0) then
                   ! Gaspari-Cohn (1999) function
-                  S_test = gc99(distnorm)
+                  S_test = gc99(nam,distnorm)
 
                   ! Check convolution value
                   call check_convol(is,js,S_test,c_n_s(ithread),c(ithread))
@@ -209,11 +208,12 @@ end subroutine compute_convol_network
 ! Subroutine: compute_convol_distance
 !> Purpose: compute convolution with a distance approach
 !----------------------------------------------------------------------
-subroutine compute_convol_distance(ndata,rhs,rvs)
+subroutine compute_convol_distance(nam,ndata,rhs,rvs)
 
 implicit none
 
 ! Passed variables
+type(namtype),intent(in) :: nam !< Namelist variables
 type(ndatatype),intent(inout) :: ndata             !< Sampling data
 real(kind_real),intent(in) :: rhs(ndata%ns)        !< Scaled horizontal support radius
 real(kind_real),intent(in) :: rvs(ndata%ns)        !< Scaled vertical support radius
@@ -245,7 +245,7 @@ end do
 write(mpl%unit,'(a10,a)') '','Compute cover tree'
 allocate(mask_ctree(ndata%nc1))
 mask_ctree = 1
-ctree = create_ctree(ndata%nc1,dble(ndata%lon(ndata%ic1_to_ic0)),dble(ndata%lat(ndata%ic1_to_ic0)),mask_ctree)
+ctree = create_ctree(ndata%nc1,dble(ndata%geom%lon(ndata%ic1_to_ic0)),dble(ndata%geom%lat(ndata%ic1_to_ic0)),mask_ctree)
 deallocate(mask_ctree)
 
 ! Number of neighbors
@@ -267,8 +267,8 @@ allocate(nn_dist(ms,ndata%nc1))
 write(mpl%unit,'(a10,a)') '','Compute nearest neighbors'
 do ic1_loc=1,nc1_loc(mpl%myproc)
    ic1 = ic1_s(mpl%myproc)+ic1_loc-1
-   call find_nearest_neighbors(ctree,dble(ndata%lon(ndata%ic1_to_ic0(ic1))), &
- & dble(ndata%lat(ndata%ic1_to_ic0(ic1))),ms,nn_index(:,ic1),nn_dist(:,ic1))
+   call find_nearest_neighbors(ctree,dble(ndata%geom%lon(ndata%ic1_to_ic0(ic1))), &
+ & dble(ndata%geom%lat(ndata%ic1_to_ic0(ic1))),ms,nn_index(:,ic1),nn_dist(:,ic1))
 end do
 
 ! Communication
@@ -361,11 +361,11 @@ do is_loc=1,ns_loc(mpl%myproc)
             if (is>js) then
                ! Normalized distance
                distnorm = sqrt(nn_dist(i,ic1)**2/(0.5*(rhs(is)**2+rhs(js)**2)) &
-                        & +(ndata%vunit(il0)-ndata%vunit(jl0))**2/(0.5*(rvs(is)**2+rvs(js)**2)))
+                        & +(ndata%geom%vunit(il0)-ndata%geom%vunit(jl0))**2/(0.5*(rvs(is)**2+rvs(js)**2)))
 
                if (distnorm<1.0) then
                   ! Gaspari-Cohn (1999) function
-                  S_test = gc99(distnorm)
+                  S_test = gc99(nam,distnorm)
 
                   ! Check convolution value
                   call check_convol(is,js,S_test,c_n_s(ithread),c(ithread))
@@ -404,9 +404,10 @@ end subroutine compute_convol_distance
 ! Function: gc99
 !> Purpose: Gaspari and Cohn (1999) function, with the support radius as a parameter
 !----------------------------------------------------------------------
-function gc99(distnorm)
+function gc99(nam,distnorm)
 
 ! Passed variables
+type(namtype),intent(in) :: nam !< Namelist variables
 real(kind_real),intent(in) :: distnorm
 
 ! Returned variable
@@ -499,6 +500,8 @@ type(linoptype),intent(inout) :: cout          !< Gathered linear operator
 integer :: ithread,offset,iproc
 integer :: csum_n_sg(mpl%nproc)
 type(linoptype) :: csum
+
+write(mpl%unit,'(a10,a)') '','Gather convolution weights'
 
 ! Allocation
 csum%n_s = sum(c_n_s)

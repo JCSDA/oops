@@ -166,7 +166,6 @@ oops/generic/unstructured_grid_f.h
 oops/generic/unstructured_grid_mod.F90
 
 oops/generic/nicas/model_aro.f90
-oops/generic/nicas/model_aro.f90
 oops/generic/nicas/model_arp.f90
 oops/generic/nicas/model_gem.f90
 oops/generic/nicas/model_geos.f90
@@ -177,7 +176,6 @@ oops/generic/nicas/model_mpas.f90
 oops/generic/nicas/model_nemo.f90
 oops/generic/nicas/model_oops.f90
 oops/generic/nicas/model_wrf.f90
-oops/generic/nicas/module_apply_com.f90
 oops/generic/nicas/module_apply_convol.f90
 oops/generic/nicas/module_apply_interp.f90
 oops/generic/nicas/module_apply_nicas.f90
@@ -193,6 +191,7 @@ oops/generic/nicas/module_test.f90
 oops/generic/nicas/tools_const.f90
 oops/generic/nicas/tools_dirac.f90
 oops/generic/nicas/tools_display.f90
+oops/generic/nicas/tools_interp.f90
 oops/generic/nicas/tools_kinds.f90
 oops/generic/nicas/tools_missing.f90
 oops/generic/nicas/tools_nc.f90
@@ -202,7 +201,7 @@ oops/generic/nicas/type_ctree.cpp
 oops/generic/nicas/type_ctree.f90
 oops/generic/nicas/type_ctree.h
 oops/generic/nicas/type_ctree.hpp
-oops/generic/nicas/type_fields.f90
+oops/generic/nicas/type_geom.f90
 oops/generic/nicas/type_linop.f90
 oops/generic/nicas/type_mesh.f90
 oops/generic/nicas/type_mpl.f90
@@ -217,8 +216,13 @@ oops/generic/nicas/external/Cover_Tree.h
 oops/generic/nicas/external/Cover_Tree_Point.cpp
 oops/generic/nicas/external/Cover_Tree_Point.h
 oops/generic/nicas/external/fgetpid.c
-oops/generic/nicas/external/qsort.f90
-oops/generic/nicas/external/stripack.f90
+oops/generic/nicas/external/tools_qsort.f90
+oops/generic/nicas/external/tools_stripack.f90
+oops/generic/nicas/obsop/module_apply_obsop.f90
+oops/generic/nicas/obsop/module_mpi_obsop.f90
+oops/generic/nicas/obsop/module_parameters_obsop.f90
+oops/generic/nicas/obsop/module_test_obsop.f90
+oops/generic/nicas/obsop/type_odata.f90
 
 oops/interface/ErrorCovariance.h
 oops/interface/Geometry.h

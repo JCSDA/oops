@@ -11,7 +11,7 @@
 module type_randgen
 
 use iso_c_binding, only: c_ptr,c_int,c_double
-use module_namelist, only: nam
+use module_namelist, only: namtype
 use tools_kinds, only: kind_real
 use type_mpl, only: mpl,mpl_bcast
 
@@ -20,6 +20,8 @@ implicit none
 type randgentype
    type(c_ptr) :: ptr !< Pointer to the C++ class
 end type randgentype
+
+type(randgentype) :: rng !< Random number generator
 
 ! C++ interface
 interface
@@ -48,6 +50,16 @@ interface
    end subroutine rand_integer_c
 end interface
 interface
+   subroutine rand_real_c(randgen,binf,bsup,rr) bind(C,name="rand_real")
+   use iso_c_binding
+   implicit none
+   type(c_ptr),value :: randgen
+   real(c_double),value :: binf
+   real(c_double),value :: bsup
+   real(c_double) :: rr
+   end subroutine rand_real_c
+end interface
+interface
    subroutine initialize_sampling_c(randgen,n,lon,lat,mask,L,ntry,nrep,ns,nfor,ifor,ihor) bind(C,name="initialize_sampling")
    use iso_c_binding
    implicit none
@@ -66,8 +78,19 @@ interface
    end subroutine initialize_sampling_c
 end interface
 
+interface rand_integer
+  module procedure rand_integer_0d
+  module procedure rand_integer_1d
+end interface
+
+interface rand_real
+  module procedure rand_real_0d
+  module procedure rand_real_1d
+  module procedure rand_real_2d
+end interface
+
 private
-public :: randgentype,create_randgen,delete_randgen,rand_integer,initialize_sampling
+public :: rng,randgentype,create_randgen,delete_randgen,rand_integer,rand_real,initialize_sampling
 
 contains
 
@@ -75,11 +98,12 @@ contains
 ! Subroutine: create_randgen
 !> Purpose: create a random number generator
 !----------------------------------------------------------------------
-function create_randgen()
+function create_randgen(nam)
 
 implicit none
 
 ! Passed variables
+type(namtype),intent(in) :: nam !< Namelist variables
 type(randgentype) :: create_randgen !< Random number generator object
 
 ! Local variable
@@ -118,10 +142,10 @@ end if
 end subroutine delete_randgen
 
 !----------------------------------------------------------------------
-! Subroutine: rand_integer
-!> Purpose: generate a random integer
+! Subroutine: rand_integer_0d
+!> Purpose: generate a random integer, 0d
 !----------------------------------------------------------------------
-subroutine rand_integer(this,binf,bsup,ir)
+subroutine rand_integer_0d(this,binf,bsup,bcast,ir)
 
 implicit none
 
@@ -129,6 +153,7 @@ implicit none
 class(randgentype),intent(in) :: this !< Random number generator object
 integer,intent(in) :: binf            !< Lower bound
 integer,intent(in) :: bsup            !< Upper bound
+logical,intent(in) :: bcast           !< Broadcast result
 integer,intent(out) :: ir             !< Random integer
 
 if (mpl%main) then
@@ -137,9 +162,126 @@ if (mpl%main) then
 end if
 
 ! Broadcast
-call mpl_bcast(ir,mpl%ioproc)
+if (bcast) call mpl_bcast(ir,mpl%ioproc)
 
-end subroutine rand_integer
+end subroutine rand_integer_0d
+
+!----------------------------------------------------------------------
+! Subroutine: rand_integer_1d
+!> Purpose: generate a random integer, 1d
+!----------------------------------------------------------------------
+subroutine rand_integer_1d(this,binf,bsup,bcast,ir)
+
+implicit none
+
+! Passed variables
+class(randgentype),intent(in) :: this !< Random number generator object
+integer,intent(in) :: binf            !< Lower bound
+integer,intent(in) :: bsup            !< Upper bound
+logical,intent(in) :: bcast           !< Broadcast result
+integer,intent(out) :: ir(:)          !< Random integer
+
+! Local variables
+integer :: i
+
+if (mpl%main) then
+   do i=1,size(ir)
+      ! Call C++ function
+      call rand_integer_c(this%ptr,binf,bsup,ir(i))
+   end do
+end if
+
+! Broadcast
+if (bcast) call mpl_bcast(ir,mpl%ioproc)
+
+end subroutine rand_integer_1d
+
+!----------------------------------------------------------------------
+! Subroutine: rand_real_0d
+!> Purpose: generate a random real, 0d
+!----------------------------------------------------------------------
+subroutine rand_real_0d(this,binf,bsup,bcast,rr)
+
+implicit none
+
+! Passed variables
+class(randgentype),intent(in) :: this !< Random number generator object
+real(kind_real),intent(in) :: binf    !< Lower bound
+real(kind_real),intent(in) :: bsup    !< Upper bound
+logical,intent(in) :: bcast           !< Broadcast result
+real(kind_real),intent(out) :: rr     !< Random integer
+
+if (mpl%main) then
+   ! Call C++ function
+   call rand_real_c(this%ptr,binf,bsup,rr)
+end if
+
+! Broadcast
+if (bcast) call mpl_bcast(rr,mpl%ioproc)
+
+end subroutine rand_real_0d
+
+!----------------------------------------------------------------------
+! Subroutine: rand_real_1d
+!> Purpose: generate a random real, 1d
+!----------------------------------------------------------------------
+subroutine rand_real_1d(this,binf,bsup,bcast,rr)
+
+implicit none
+
+! Passed variables
+class(randgentype),intent(in) :: this !< Random number generator object
+real(kind_real),intent(in) :: binf    !< Lower bound
+real(kind_real),intent(in) :: bsup    !< Upper bound
+logical,intent(in) :: bcast           !< Broadcast result
+real(kind_real),intent(out) :: rr(:)  !< Random integer
+
+! Local variables
+integer :: i
+
+if (mpl%main) then
+   do i=1,size(rr)
+      ! Call C++ function
+      call rand_real_c(this%ptr,binf,bsup,rr(i))
+   end do
+end if
+
+! Broadcast
+if (bcast) call mpl_bcast(rr,mpl%ioproc)
+
+end subroutine rand_real_1d
+
+!----------------------------------------------------------------------
+! Subroutine: rand_real_2d
+!> Purpose: generate a random real, 2d
+!----------------------------------------------------------------------
+subroutine rand_real_2d(this,binf,bsup,bcast,rr)
+
+implicit none
+
+! Passed variables
+class(randgentype),intent(in) :: this  !< Random number generator object
+real(kind_real),intent(in) :: binf     !< Lower bound
+real(kind_real),intent(in) :: bsup     !< Upper bound
+logical,intent(in) :: bcast           !< Broadcast result
+real(kind_real),intent(out) :: rr(:,:) !< Random integer
+
+! Local variables
+integer :: i,j
+
+if (mpl%main) then
+   do i=1,size(rr,1)
+      do j=1,size(rr,2)
+         ! Call C++ function
+         call rand_real_c(this%ptr,binf,bsup,rr(i,j))
+      end do
+   end do
+end if
+
+! Broadcast
+if (bcast) call mpl_bcast(rr,mpl%ioproc)
+
+end subroutine rand_real_2d
 
 !----------------------------------------------------------------------
 ! Subroutine: initialize_sampling

@@ -335,7 +335,7 @@ real(kind_real),intent(in) :: r !< Real number
 ! Returned value
 logical :: isnotmsr_0d
 
-isnotmsr_0d = abs(r-msvalr)>tiny(1.0)
+isnotmsr_0d = abs(r-msvalr)>0.0
 
 end function isnotmsr_0d
 
@@ -353,7 +353,7 @@ real(kind_real),intent(in) :: r(:) !< Real number
 ! Returned value
 logical :: isnotmsr_1d(size(r))
 
-isnotmsr_1d = abs(r-msvalr)>tiny(1.0)
+isnotmsr_1d = abs(r-msvalr)>0.0
 
 end function isnotmsr_1d
 
@@ -371,7 +371,7 @@ real(kind_real),intent(in) :: r(:,:) !< Real number
 ! Returned value
 logical :: isnotmsr_2d(size(r,1),size(r,2))
 
-isnotmsr_2d = abs(r-msvalr)>tiny(1.0)
+isnotmsr_2d = abs(r-msvalr)>0.0
 
 end function isnotmsr_2d
 
@@ -389,7 +389,7 @@ real(kind_real),intent(in) :: r(:,:,:) !< Real number
 ! Returned value
 logical :: isnotmsr_3d(size(r,1),size(r,2),size(r,3))
 
-isnotmsr_3d = abs(r-msvalr)>tiny(1.0)
+isnotmsr_3d = abs(r-msvalr)>0.0
 
 end function isnotmsr_3d
 

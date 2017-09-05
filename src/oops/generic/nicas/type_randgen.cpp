@@ -40,6 +40,16 @@ void randGen::rand_integer(int binf, int bsup, int *ir) const{
     return;
 }
 
+// Random real generator
+void randGen::rand_real(double binf, double bsup, double *rr) const{
+    // Initialize uniform distribution
+    std::uniform_real_distribution<double> dis(binf,bsup);
+
+    // Generate random real
+    *rr=dis(*gen);
+    return;
+}
+
 // Sampling initialization
 void randGen::initialize_sampling(int n, double lon[], double lat[], int mask[], double L[], int ntry, int nrep, int ns, int nfor, int ifor[], int ihor[]) const{
     // Initialize uniform distribution

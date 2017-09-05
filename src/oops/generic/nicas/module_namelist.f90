@@ -63,8 +63,6 @@ integer :: nproc                   !< Number of tasks
 integer :: mpicom                  !< Number of communication steps
 end type namtype
 
-type(namtype) :: nam
-
 interface namncwrite_param
   module procedure namncwrite_integer
   module procedure namncwrite_integer_array
@@ -75,7 +73,7 @@ interface namncwrite_param
 end interface
 
 private
-public :: nam
+public :: namtype
 public :: namread,namcheck,namncwrite
 
 contains
@@ -84,9 +82,12 @@ contains
 ! Subroutine: namread
 !> Purpose: read and check namelist parameters
 !----------------------------------------------------------------------
-subroutine namread
+subroutine namread(nam)
 
 implicit none
+
+! Passed variable
+type(namtype),intent(out) :: nam !< Namelist variables
 
 ! Local variables
 character(len=1024) :: datadir
@@ -245,9 +246,12 @@ end subroutine namread
 ! Subroutine: namcheck
 !> Purpose: check namelist parameters
 !----------------------------------------------------------------------
-subroutine namcheck
+subroutine namcheck(nam)
 
 implicit none
+
+! Passed variable
+type(namtype),intent(inout) :: nam !< Namelist variables
 
 ! Local variables
 integer :: il,idir
@@ -294,13 +298,13 @@ end if
 if (trim(nam%Lbh_file)=='none') then
    nam%Lbh(1:nam%nl) = nam%Lbh(nam%levs(1:nam%nl))
    do il=1,nam%nl
-      if (nam%Lbh(il)<tiny(1.0)) call msgerror('Lbh should be positive')
+      if (.not.(abs(nam%Lbh(il))>0.0)) call msgerror('Lbh should be positive')
    end do
 end if
 if (trim(nam%Lbv_file)=='none') then
    nam%Lbv(1:nam%nl) = nam%Lbv(nam%levs(1:nam%nl))
    do il=1,nam%nl
-      if (nam%Lbv(il)<tiny(1.0)) call msgerror('Lbv should be positive')
+      if (.not.(abs(nam%Lbv(il))>0.0)) call msgerror('Lbv should be positive')
    end do
 end if
 if (.not.(nam%resol>0.0)) call msgerror('resol should be positive')
@@ -318,18 +322,13 @@ end subroutine namcheck
 ! Subroutine: namncwrite
 !> Purpose: write namelist parameters as NetCDF attributes
 !----------------------------------------------------------------------
-subroutine namncwrite(ncid)
+subroutine namncwrite(nam,ncid)
 
 implicit none
 
-! Passed variables
+! Passed variable
+type(namtype),intent(in) :: nam !< Namelist variables
 integer,intent(in) :: ncid !< NetCDF file id
-
-! Local variables
-character(len=1024) :: subr = 'namncwrite'
-
-! Processor verification
-if (.not.mpl%main) call msgerror('only I/O proc should enter '//trim(subr))
 
 ! general_param
 call namncwrite_param(ncid,'general_param_datadir',trim(nam%datadir))

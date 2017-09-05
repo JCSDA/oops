@@ -1,6 +1,6 @@
 !----------------------------------------------------------------------
 ! Module: module_mpi.f90
-!> Purpose: compute NICAS parameters
+!> Purpose: compute NICAS parameters MPI distribution
 !> <br>
 !> Author: Benjamin Menetrier
 !> <br>
@@ -10,22 +10,23 @@
 !----------------------------------------------------------------------
 module module_mpi
 
-use module_namelist, only: nam
+use module_namelist, only: namtype
 use netcdf
 use omp_lib
 use tools_const, only: pi,rad2deg,req,sphere_dist
 use tools_display, only: msgerror,prog_init,prog_print
 use tools_missing, only: msvali,msvalr,msi,msr,isnotmsr,isnotmsi
 use tools_nc, only: ncfloat,ncerr
-use type_linop, only: linop_alloc,linop_reorder
+use type_com, only: comtype,com_dealloc,com_copy,com_setup
+use type_linop, only: linop_alloc,linop_copy,linop_reorder
 use type_mpl, only: mpl
-use type_ndata, only: ndatatype,ndataloctype
+use type_ndata, only: ndatatype,ndataloctype,ndataloc_dealloc,ndataloc_copy
 use type_randgen, only: initialize_sampling
 
 implicit none
 
 ! Conversion derived type (private to module_mpi)
-type typeconv
+type convtype
    integer,allocatable :: isa_to_is(:)   !< Subgrid, halo A to global
    integer,allocatable :: is_to_isa(:)   !< Subgrid, global to halo A
    integer,allocatable :: isb_to_is(:)   !< Subgrid, halo B to global
@@ -43,16 +44,17 @@ contains
 ! Subroutine: compute_mpi
 !> Purpose: compute NICAS MPI distribution
 !----------------------------------------------------------------------
-subroutine compute_mpi(ndata,ndataloc_arr)
+subroutine compute_mpi(nam,ndata,ndataloc)
 
 implicit none
 
 ! Passed variables
+type(namtype),intent(in) :: nam !< Namelist variables
 type(ndatatype),intent(inout) :: ndata                      !< Sampling data
-type(ndataloctype),intent(inout) :: ndataloc_arr(nam%nproc) !< Sampling data, local
+type(ndataloctype),intent(inout) :: ndataloc !< Sampling data, local
 
 ! Local variables
-integer :: il0i,iproc,ic0,ic0a,ic1,ic2,jc2,ic1b,ic2b,il1,isa,isb,isc,i_s,i_s_loc,is,js,jproc,i,s_n_s_max,s_n_s_max_loc
+integer :: il0i,iproc,ic0,ic0a,ic1,ic2,jc2,ic1b,ic2b,il0,il1,isa,isb,isc,i_s,i_s_loc,is,js,jproc,s_n_s_max,s_n_s_max_loc
 integer :: interph_row_proc(ndata%h(1)%n_s,ndata%nl0i)
 integer,allocatable :: ic1b_to_ic1(:),ic1_to_ic1b(:),ic2il1_to_ic2b(:,:)
 integer,allocatable :: interph_i_s_lg(:,:),interps_i_s_lg(:,:),convol_i_s_lg(:)
@@ -60,43 +62,20 @@ logical :: lcheck_nc1b(ndata%nc1),lcheck_nc2b(ndata%nc1,ndata%nl1)
 logical :: lcheck_nsa(ndata%ns),lcheck_nsb(ndata%ns),lcheck_nsc(ndata%ns)
 logical :: lcheck_h(ndata%h(1)%n_s,ndata%nl0i),lcheck_c(ndata%c%n_s)
 logical,allocatable :: lcheck_s(:,:)
-type(typeconv) :: conv(nam%nproc)
+type(comtype) :: comAB(nam%nproc),comAC(nam%nproc)
+type(convtype) :: conv(nam%nproc)
+type(ndataloctype) :: ndataloc_arr(nam%nproc)
 
 ! Allocation
-do iproc=1,nam%nproc
-   ndataloc_arr(iproc)%AB%prefix = 'AB'
-   allocate(ndataloc_arr(iproc)%AB%jhalocounts(nam%nproc))
-   allocate(ndataloc_arr(iproc)%AB%jexclcounts(nam%nproc))
-   allocate(ndataloc_arr(iproc)%AB%jhalodispl(nam%nproc))
-   allocate(ndataloc_arr(iproc)%AB%jexcldispl(nam%nproc))
-   ndataloc_arr(iproc)%AC%prefix = 'AC'
-   allocate(ndataloc_arr(iproc)%AC%jhalocounts(nam%nproc))
-   allocate(ndataloc_arr(iproc)%AC%jexclcounts(nam%nproc))
-   allocate(ndataloc_arr(iproc)%AC%jhalodispl(nam%nproc))
-   allocate(ndataloc_arr(iproc)%AC%jexcldispl(nam%nproc))
-end do
 s_n_s_max = 0
 do il1=1,ndata%nl1
    s_n_s_max = max(s_n_s_max,ndata%s(il1)%n_s)
 end do
 allocate(lcheck_s(s_n_s_max,ndata%nl1))
 
-! Initialization
-ndata%nc0amax = 0
-do iproc=1,nam%nproc
-   ndataloc_arr(iproc)%AB%jhalocounts = 0
-   ndataloc_arr(iproc)%AB%jexclcounts = 0
-   ndataloc_arr(iproc)%AB%jhalodispl = 0
-   ndataloc_arr(iproc)%AB%jexcldispl = 0
-   ndataloc_arr(iproc)%AC%jhalocounts = 0
-   ndataloc_arr(iproc)%AC%jexclcounts = 0
-   ndataloc_arr(iproc)%AC%jhalodispl = 0
-   ndataloc_arr(iproc)%AC%jexcldispl = 0
-end do
-
 ! Find on which processor are the grid-points and what is their local index for interpolation
 do il0i=1,ndata%nl0i
-   interph_row_proc(1:ndata%h(il0i)%n_s,il0i) = ndata%ic0_to_iproc(ndata%h(il0i)%row)
+   interph_row_proc(1:ndata%h(il0i)%n_s,il0i) = ndata%geom%ic0_to_iproc(ndata%h(il0i)%row)
 end do
 
 do iproc=1,nam%nproc
@@ -108,7 +87,6 @@ do iproc=1,nam%nproc
    ! Allocation
    allocate(ndataloc_arr(iproc)%nc2b(ndataloc_arr(iproc)%nl1))
    allocate(ndataloc_arr(iproc)%h(ndataloc_arr(iproc)%nl0i))
-   allocate(ndataloc_arr(iproc)%v(ndataloc_arr(iproc)%nl0i))
    allocate(ndataloc_arr(iproc)%s(ndataloc_arr(iproc)%nl1))
 
    ! Halo definitions
@@ -118,7 +96,9 @@ do iproc=1,nam%nproc
    do is=1,ndata%ns
       ic1 = ndata%is_to_ic1(is)
       ic0 = ndata%ic1_to_ic0(ic1)
-      if (ndata%ic0_to_iproc(ic0)==iproc) lcheck_nsa(is) = .true.
+      il1 = ndata%is_to_il1(is)
+      il0 = ndata%il1_to_il0(il1)
+      if (ndata%geom%mask(ic0,il0).and.(ndata%geom%ic0_to_iproc(ic0)==iproc)) lcheck_nsa(is) = .true.
    end do
    ndataloc_arr(iproc)%nsa = count(lcheck_nsa)
 
@@ -177,7 +157,7 @@ do iproc=1,nam%nproc
       end do
    elseif (nam%mpicom==2) then
       ! 2 communication steps
-      lcheck_nsc = lcheck_nsa
+      lcheck_nsc = lcheck_nsb
       lcheck_c = .false.
       do i_s=1,ndata%c%n_s
          is = ndata%c%row(i_s)
@@ -191,6 +171,19 @@ do iproc=1,nam%nproc
    end if
    ndataloc_arr(iproc)%nsc = count(lcheck_nsc)
    ndataloc_arr(iproc)%c%n_s = count(lcheck_c)
+
+   ! Check halos consistency
+   do is=1,ndata%ns
+      if (lcheck_nsa(is).and.(.not.lcheck_nsb(is))) then
+         call msgerror('point in halo A but not in halo B')
+      end if
+      if (lcheck_nsa(is).and.(.not.lcheck_nsc(is))) then
+         call msgerror('point in halo A but not in halo C')
+      end if
+      if (lcheck_nsb(is).and.(.not.lcheck_nsc(is))) then
+         call msgerror('point in halo B but not in halo C')
+      end if
+   end do
 
    ! Global <-> local conversions for fields
 
@@ -313,8 +306,7 @@ do iproc=1,nam%nproc
    end if
 
    ! Number of cells
-   ndataloc_arr(iproc)%nc0a = count(ndata%ic0_to_iproc==iproc)
-   ndata%nc0amax = max(ndata%nc0amax,ndataloc_arr(iproc)%nc0a)
+   ndataloc_arr(iproc)%nc0a = ndata%geom%iproc_to_nc0a(iproc)
 
    ! Local data
 
@@ -326,7 +318,7 @@ do iproc=1,nam%nproc
       call linop_alloc(ndataloc_arr(iproc)%h(il0i))
       do i_s_loc=1,ndataloc_arr(iproc)%h(il0i)%n_s
          i_s = interph_i_s_lg(i_s_loc,il0i)
-         ndataloc_arr(iproc)%h(il0i)%row(i_s_loc) = ndata%ic0_to_ic0a(ndata%h(il0i)%row(i_s))
+         ndataloc_arr(iproc)%h(il0i)%row(i_s_loc) = ndata%geom%ic0_to_ic0a(ndata%h(il0i)%row(i_s))
          ndataloc_arr(iproc)%h(il0i)%col(i_s_loc) = ic1_to_ic1b(ndata%h(il0i)%col(i_s))
          ndataloc_arr(iproc)%h(il0i)%S(i_s_loc) = ndata%h(il0i)%S(i_s)
       end do
@@ -334,12 +326,12 @@ do iproc=1,nam%nproc
    end do
 
    ! Vertical interpolation
-   do il0i=1,ndataloc_arr(iproc)%nl0i
-      ndataloc_arr(iproc)%v(il0i) = ndata%v(il0i)
-   end do
+   call linop_copy(ndata%v,ndataloc_arr(iproc)%v)
    if (ndataloc_arr(iproc)%nc1b>0) then
       allocate(ndataloc_arr(iproc)%vbot(ndataloc_arr(iproc)%nc1b))
+      allocate(ndataloc_arr(iproc)%vtop(ndataloc_arr(iproc)%nc1b))
       ndataloc_arr(iproc)%vbot = ndata%vbot(ic1b_to_ic1)
+      ndataloc_arr(iproc)%vtop = ndata%vtop(ic1b_to_ic1)
    end if
 
    ! Subsampling horizontal interpolation
@@ -402,6 +394,7 @@ do iproc=1,nam%nproc
    do il0i=1,ndataloc_arr(iproc)%nl0i
       write(mpl%unit,'(a10,a,i3,a,i8)') '','h(',il0i,')%n_s = ',ndataloc_arr(iproc)%h(il0i)%n_s
    end do
+   write(mpl%unit,'(a10,a,i8)') '','v%n_s =     ',ndataloc_arr(iproc)%v%n_s
    do il1=1,ndataloc_arr(iproc)%nl1
       write(mpl%unit,'(a10,a,i3,a,i8)') '','s(',il1,')%n_s = ',ndataloc_arr(iproc)%s(il1)%n_s
    end do
@@ -444,8 +437,8 @@ do iproc=1,nam%nproc
    if (nam%lsqrt) allocate(ndataloc_arr(iproc)%norm_sqrt(ndataloc_arr(iproc)%nsb))
 end do
 do ic0=1,ndata%nc0
-   iproc = ndata%ic0_to_iproc(ic0)
-   ic0a = ndata%ic0_to_ic0a(ic0)
+   iproc = ndata%geom%ic0_to_iproc(ic0)
+   ic0a = ndata%geom%ic0_to_ic0a(ic0)
    ndataloc_arr(iproc)%norm(ic0a,1:ndataloc_arr(iproc)%nl0) = ndata%norm(ic0,1:ndata%nl0)
 end do
 if (nam%lsqrt) then
@@ -457,129 +450,68 @@ if (nam%lsqrt) then
    end do
 end if
 
-! Communications setup
 do iproc=1,nam%nproc
+   ! Allocation
+   comAB(iproc)%nred = ndataloc_arr(iproc)%nsa
+   comAB(iproc)%next = ndataloc_arr(iproc)%nsb
+   allocate(comAB(iproc)%iext_to_iproc(comAB(iproc)%next))
+   allocate(comAB(iproc)%iext_to_ired(comAB(iproc)%next))
+   allocate(comAB(iproc)%ired_to_iext(comAB(iproc)%nred))
+   comAC(iproc)%nred = ndataloc_arr(iproc)%nsa
+   comAC(iproc)%next = ndataloc_arr(iproc)%nsc
+   allocate(comAC(iproc)%iext_to_iproc(comAC(iproc)%next))
+   allocate(comAC(iproc)%iext_to_ired(comAC(iproc)%next))
+   allocate(comAC(iproc)%ired_to_iext(comAC(iproc)%nred))
+
+   ! Initialization
    do isb=1,ndataloc_arr(iproc)%nsb
       ! Check for points that are in zone B but are not in zone A
       is = conv(iproc)%isb_to_is(isb)
       ic1 = ndata%is_to_ic1(is)
       ic0 = ndata%ic1_to_ic0(ic1)
-      jproc = ndata%ic0_to_iproc(ic0)
-      if (jproc/=iproc) then
-         ! Count of points sent from IPROC to JPROC
-         ndataloc_arr(iproc)%AB%jhalocounts(jproc) = ndataloc_arr(iproc)%AB%jhalocounts(jproc)+1
-
-         ! Count of points received on JPROC from IPROC
-         ndataloc_arr(jproc)%AB%jexclcounts(iproc) = ndataloc_arr(jproc)%AB%jexclcounts(iproc)+1
-      end if
+      jproc = ndata%geom%ic0_to_iproc(ic0)
+      comAB(iproc)%iext_to_iproc(isb) = jproc
+      isa = conv(jproc)%is_to_isa(is)
+      comAB(iproc)%iext_to_ired(isb) = isa
    end do
+   comAB(iproc)%ired_to_iext = ndataloc_arr(iproc)%isa_to_isb
    do isc=1,ndataloc_arr(iproc)%nsc
       ! Check for points that are in zone C but are not in zone A
       is = conv(iproc)%isc_to_is(isc)
       ic1 = ndata%is_to_ic1(is)
       ic0 = ndata%ic1_to_ic0(ic1)
-      jproc = ndata%ic0_to_iproc(ic0)
-      if (jproc/=iproc) then
-         ! Count of points sent from IPROC to JPROC
-         ndataloc_arr(iproc)%AC%jhalocounts(jproc) = ndataloc_arr(iproc)%AC%jhalocounts(jproc)+1
-
-         ! Count of points received on JPROC from IPROC
-         ndataloc_arr(jproc)%AC%jexclcounts(iproc) = ndataloc_arr(jproc)%AC%jexclcounts(iproc)+1
-      end if
+      jproc = ndata%geom%ic0_to_iproc(ic0)
+      isa =  conv(jproc)%is_to_isa(is)
+      comAC(iproc)%iext_to_iproc(isc) = jproc
+      comAC(iproc)%iext_to_ired(isc) = isa
    end do
+   comAC(iproc)%ired_to_iext = ndataloc_arr(iproc)%isa_to_isc
 end do
 
-! Compute displacement
+! Communications setup
+call com_setup(nam,comAB)
+call com_setup(nam,comAC)
+
+! Communications copy
 do iproc=1,nam%nproc
-   ndataloc_arr(iproc)%AB%jhalodispl(1) = 0
-   ndataloc_arr(iproc)%AB%jexcldispl(1) = 0
-   ndataloc_arr(iproc)%AC%jhalodispl(1) = 0
-   ndataloc_arr(iproc)%AC%jexcldispl(1) = 0
-   do jproc=2,nam%nproc
-      ndataloc_arr(iproc)%AB%jhalodispl(jproc) = & 
-    & ndataloc_arr(iproc)%AB%jhalodispl(jproc-1)+ndataloc_arr(iproc)%AB%jhalocounts(jproc-1)
-      ndataloc_arr(iproc)%AB%jexcldispl(jproc) = &
-    & ndataloc_arr(iproc)%AB%jexcldispl(jproc-1)+ndataloc_arr(iproc)%AB%jexclcounts(jproc-1)
-      ndataloc_arr(iproc)%AC%jhalodispl(jproc) = &
-    & ndataloc_arr(iproc)%AC%jhalodispl(jproc-1)+ndataloc_arr(iproc)%AC%jhalocounts(jproc-1)
-      ndataloc_arr(iproc)%AC%jexcldispl(jproc) = &
-    & ndataloc_arr(iproc)%AC%jexcldispl(jproc-1)+ndataloc_arr(iproc)%AC%jexclcounts(jproc-1)
-   end do
+   comAB(iproc)%prefix = 'AB'
+   call com_copy(nam,comAB(iproc),ndataloc_arr(iproc)%AB)
+   comAC(iproc)%prefix = 'AC'
+   call com_copy(nam,comAC(iproc),ndataloc_arr(iproc)%AC)
 end do
 
-! Allocation
+! Release memory
 do iproc=1,nam%nproc
-   ndataloc_arr(iproc)%AB%nhalo = sum(ndataloc_arr(iproc)%AB%jhalocounts)
-   ndataloc_arr(iproc)%AB%nexcl = sum(ndataloc_arr(iproc)%AB%jexclcounts)
-   ndataloc_arr(iproc)%AC%nhalo = sum(ndataloc_arr(iproc)%AC%jhalocounts)
-   ndataloc_arr(iproc)%AC%nexcl = sum(ndataloc_arr(iproc)%AC%jexclcounts)
-   allocate(ndataloc_arr(iproc)%AB%halo(ndataloc_arr(iproc)%AB%nhalo))
-   allocate(ndataloc_arr(iproc)%AB%excl(ndataloc_arr(iproc)%AB%nexcl))
-   allocate(ndataloc_arr(iproc)%AC%halo(ndataloc_arr(iproc)%AC%nhalo))
-   allocate(ndataloc_arr(iproc)%AC%excl(ndataloc_arr(iproc)%AC%nexcl))
+   call com_dealloc(comAB(iproc))
+   call com_dealloc(comAC(iproc))
 end do
 
-! Fill halo array
+! Copy ndataloc for the concerned processor
+call ndataloc_copy(nam,ndataloc_arr(mpl%myproc),ndataloc)  
+
+! Release memory
 do iproc=1,nam%nproc
-   ndataloc_arr(iproc)%AB%jhalocounts = 0
-   ndataloc_arr(iproc)%AC%jhalocounts = 0
-end do
-do iproc=1,nam%nproc
-   do isb=1,ndataloc_arr(iproc)%nsb
-      ! Check for points that ARE in zone B but ARE NOT in zone A
-      is = conv(iproc)%isb_to_is(isb)
-      ic1 = ndata%is_to_ic1(is)
-      ic0 = ndata%ic1_to_ic0(ic1)
-      jproc = ndata%ic0_to_iproc(ic0)
-      if (jproc/=iproc) then
-         ! Count of points sent from IPROC to JPROC
-         ndataloc_arr(iproc)%AB%jhalocounts(jproc) = ndataloc_arr(iproc)%AB%jhalocounts(jproc)+1
-
-         ! Global index of points sent from IPROC to JPROC
-         ndataloc_arr(iproc)%AB%halo(ndataloc_arr(iproc)%AB%jhalodispl(jproc)+ndataloc_arr(iproc)%AB%jhalocounts(jproc)) = is
-      end if
-   end do
-   do isc=1,ndataloc_arr(iproc)%nsc
-      ! Check for points that ARE in zone C but ARE NOT in zone A
-      is = conv(iproc)%isc_to_is(isc)
-      ic1 = ndata%is_to_ic1(is)
-      ic0 = ndata%ic1_to_ic0(ic1)
-      jproc = ndata%ic0_to_iproc(ic0)
-      if (jproc/=iproc) then
-         ! Count of points sent from IPROC to JPROC
-         ndataloc_arr(iproc)%AC%jhalocounts(jproc) = ndataloc_arr(iproc)%AC%jhalocounts(jproc)+1
-
-         ! Global index of points sent from IPROC to JPROC
-         ndataloc_arr(iproc)%AC%halo(ndataloc_arr(iproc)%AC%jhalodispl(jproc)+ndataloc_arr(iproc)%AC%jhalocounts(jproc)) = is
-      end if
-   end do
-end do
-
-! Fill excl array
-do jproc=1,nam%nproc
-   ! Loop over processors sending data to JPROC
-   do iproc=1,nam%nproc
-      do i=1,ndataloc_arr(iproc)%AB%jhalocounts(jproc)
-         ! Global index of points received on JPROC from IPROC
-         ndataloc_arr(jproc)%AB%excl(ndataloc_arr(jproc)%AB%jexcldispl(iproc)+i) = &
-       & ndataloc_arr(iproc)%AB%halo(ndataloc_arr(iproc)%AB%jhalodispl(jproc)+i)
-      end do
-      do i=1,ndataloc_arr(iproc)%AC%jhalocounts(jproc)
-         ! Global index of points received on JPROC from IPROC
-         ndataloc_arr(jproc)%AC%excl(ndataloc_arr(jproc)%AC%jexcldispl(iproc)+i) = &
-       & ndataloc_arr(iproc)%AC%halo(ndataloc_arr(iproc)%AC%jhalodispl(jproc)+i)
-      end do
-   end do
-end do
-
-! Transform to local indices
-do iproc=1,nam%nproc
-   if ((ndataloc_arr(iproc)%nsa>0).and.(ndataloc_arr(iproc)%nsb>0).and.(ndataloc_arr(iproc)%nsc>0)) then
-      ndataloc_arr(iproc)%AB%halo = conv(iproc)%is_to_isb(ndataloc_arr(iproc)%AB%halo)
-      ndataloc_arr(iproc)%AB%excl = conv(iproc)%is_to_isa(ndataloc_arr(iproc)%AB%excl)
-      ndataloc_arr(iproc)%AC%halo = conv(iproc)%is_to_isc(ndataloc_arr(iproc)%AC%halo)
-      ndataloc_arr(iproc)%AC%excl = conv(iproc)%is_to_isa(ndataloc_arr(iproc)%AC%excl)
-   end if
+   call ndataloc_dealloc(ndataloc_arr(iproc))
 end do
 
 end subroutine compute_mpi

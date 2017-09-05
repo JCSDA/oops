@@ -10,11 +10,12 @@
 !----------------------------------------------------------------------
 module module_normalization
 
-use module_namelist, only: nam
+use module_namelist, only: namtype
 use omp_lib
 use tools_display, only: msgerror,ddis,prog_init,prog_print
 use tools_kinds,only: kind_real
 use tools_missing, only: msr,isnotmsi,msi
+use tools_qsort, only: qsort
 use type_mpl, only: mpl,mpl_bcast,mpl_recv,mpl_send,mpl_barrier
 use type_ndata, only: ndatatype
 
@@ -29,20 +30,21 @@ contains
 ! Subroutine: compute_normalization
 !> Purpose: compute normalization
 !----------------------------------------------------------------------
-subroutine compute_normalization(ndata)
+subroutine compute_normalization(nam,ndata)
 
 implicit none
 
 ! Passed variables
+type(namtype),intent(in) :: nam !< Namelist variables
 type(ndatatype),intent(inout) :: ndata !< Sampling data
 
 ! Local variables
 integer :: il0i,i_s,ic1,jc2,is,js,ic0,il0,il1,ih,iv,nlr,ilr,jlr,ic,progint,is_add
-integer :: iproc,ic0_s(mpl%nproc),ic0_e(mpl%nproc),nc0_loc(mpl%nproc),ic0_loc,ibuf
-integer,allocatable :: ineh(:,:),inev(:,:),ines(:,:),inec(:),order(:),is_list(:)
-integer,allocatable :: interp_h(:,:,:),interp_v(:,:,:),interp_s(:,:,:),convol_c(:,:)
+integer :: iproc,ic0_s(mpl%nproc),ic0_e(mpl%nproc),nc0_loc(mpl%nproc),ic0_loc
+integer,allocatable :: ineh(:,:),inev(:),ines(:,:),inec(:),order(:),is_list(:)
+integer,allocatable :: interp_h(:,:,:),interp_v(:,:),interp_s(:,:,:),convol_c(:,:)
 real(kind_real) :: S_add
-real(kind_real),allocatable :: interp_h_S(:,:,:),interp_v_S(:,:,:),interp_s_S(:,:,:),convol_c_S(:,:)
+real(kind_real),allocatable :: interp_h_S(:,:,:),interp_v_S(:,:),interp_s_S(:,:,:),convol_c_S(:,:)
 real(kind_real),allocatable :: S_list(:),S_list_tmp(:)
 logical :: conv
 logical,allocatable :: done(:),valid_list_tmp(:)
@@ -69,24 +71,20 @@ do il0i=1,ndata%nl0i
 end do
 
 ! Compute vertical interpolation inverse mapping
-allocate(inev(ndata%nl0,ndata%nl0i))
+allocate(inev(ndata%nl0))
 inev = 0
-do il0i=1,ndata%nl0i
-   do i_s=1,ndata%v(il0i)%n_s
-      il0 = ndata%v(il0i)%row(i_s)
-      inev(il0,il0i) = inev(il0,il0i)+1
-   end do
+do i_s=1,ndata%v%n_s
+   il0 = ndata%v%row(i_s)
+   inev(il0) = inev(il0)+1
 end do
-allocate(interp_v(maxval(inev),ndata%nl0,ndata%nl0i))
-allocate(interp_v_S(maxval(inev),ndata%nl0,ndata%nl0i))
+allocate(interp_v(maxval(inev),ndata%nl0))
+allocate(interp_v_S(maxval(inev),ndata%nl0))
 inev = 0
-do il0i=1,ndata%nl0i
-   do i_s=1,ndata%v(il0i)%n_s
-      il0 = ndata%v(il0i)%row(i_s)
-      inev(il0,il0i) = inev(il0,il0i)+1
-      interp_v(inev(il0,il0i),il0,il0i) = ndata%v(il0i)%col(i_s)
-      interp_v_S(inev(il0,il0i),il0,il0i) = ndata%v(il0i)%S(i_s)
-   end do
+do i_s=1,ndata%v%n_s
+   il0 = ndata%v%row(i_s)
+   inev(il0) = inev(il0)+1
+   interp_v(inev(il0),il0) = ndata%v%col(i_s)
+   interp_v_S(inev(il0),il0) = ndata%v%S(i_s)
 end do
 
 ! Compute subsampling interpolation inverse mapping
@@ -207,16 +205,16 @@ do il0=1,ndata%nl0
       ! MPI offset
       ic0 = ic0_s(mpl%myproc)+ic0_loc-1
 
-      if (ndata%mask(ic0,il0)) then
+      if (ndata%geom%mask(ic0,il0)) then
          ! Allocation
-         allocate(is_list(ineh(ic0,il0i)*maxval(inev(il0,:))*maxval(ines)))
-         allocate(order(ineh(ic0,il0i)*maxval(inev(il0,:))*maxval(ines)))
-         allocate(S_list(ineh(ic0,il0i)*maxval(inev(il0,:))*maxval(ines)))
+         allocate(is_list(ineh(ic0,il0i)*inev(il0)*maxval(ines)))
+         allocate(order(ineh(ic0,il0i)*inev(il0)*maxval(ines)))
+         allocate(S_list(ineh(ic0,il0i)*inev(il0)*maxval(ines)))
          if (nam%lsqrt) then
             allocate(S_list_tmp(ndata%ns))
             allocate(valid_list_tmp(ndata%ns))
          else
-            allocate(S_list_tmp(ineh(ic0,il0i)*inev(il0,il0i)*maxval(ines)))
+            allocate(S_list_tmp(ineh(ic0,il0i)*inev(il0)*maxval(ines)))
          end if
 
          ! Initialization
@@ -227,23 +225,25 @@ do il0=1,ndata%nl0
          nlr = 0
          do ih=1,ineh(ic0,il0i)
             ic1 = interp_h(ih,ic0,il0i)
-            do iv=1,inev(il0,il0i)
-               il1 = interp_v(iv,il0,il0i)
-               do is=1,ines(ic1,il1)
-                  is_add = interp_s(is,ic1,il1)
-                  S_add = interp_h_S(ih,ic0,il0i)*interp_v_S(iv,il0,il0i)*interp_s_S(is,ic1,il1)
-                  if (nlr==0) then
-                     ilr = 1
-                     nlr = 1
-                  else
-                     do ilr=1,nlr
-                        if (is_add==is_list(ilr)) exit
-                     end do
-                     if (ilr==nlr+1) nlr = nlr+1
-                  end if
-                  is_list(ilr) = is_add
-                  S_list(ilr) = S_list(ilr)+S_add
-               end do
+            do iv=1,inev(il0)
+               il1 = interp_v(iv,il0)
+               if ((ndata%il1_to_il0(il1)>=ndata%vbot(ic1)).and.(ndata%il1_to_il0(il1)<=ndata%vtop(ic1))) then
+                  do is=1,ines(ic1,il1)
+                     is_add = interp_s(is,ic1,il1)
+                     S_add = interp_h_S(ih,ic0,il0i)*interp_v_S(iv,il0)*interp_s_S(is,ic1,il1)
+                     if (nlr==0) then
+                        ilr = 1
+                        nlr = 1
+                     else
+                        do ilr=1,nlr
+                           if (is_add==is_list(ilr)) exit
+                        end do
+                        if (ilr==nlr+1) nlr = nlr+1
+                     end if
+                     is_list(ilr) = is_add
+                     S_list(ilr) = S_list(ilr)+S_add
+                  end do
+               end if
             end do
          end do
 

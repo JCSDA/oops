@@ -10,12 +10,10 @@
 !----------------------------------------------------------------------
 module module_apply_interp
 
-use module_apply_com, only: alpha_com_AB
-use module_namelist, only: nam
+use module_namelist, only: namtype
 use omp_lib
 use tools_kinds,only: kind_real
 use tools_missing, only: msr
-use type_fields, only: fldtype,alphatype
 use type_linop, only: apply_linop,apply_linop_ad
 use type_ndata, only: ndatatype,ndataloctype
 
@@ -40,11 +38,12 @@ contains
 ! Subroutine: interp_global
 !> Purpose: interpolation, global
 !----------------------------------------------------------------------
-subroutine interp_global(ndata,alpha,fld)
+subroutine interp_global(nam,ndata,alpha,fld)
 
 implicit none
 
 ! Passed variables
+type(namtype),intent(in) :: nam !< Namelist variables
 type(ndatatype),intent(in) :: ndata !< Sampling data
 real(kind_real),intent(in) :: alpha(ndata%ns) !< Subgrid variable
 real(kind_real),intent(out) :: fld(ndata%nc0,ndata%nl0)  !< Field
@@ -52,6 +51,7 @@ real(kind_real),intent(out) :: fld(ndata%nc0,ndata%nl0)  !< Field
 ! Local variables
 integer :: is,il1,ic1,il0
 real(kind_real) :: beta(ndata%nc1,ndata%nl1),gamma(ndata%nc1,ndata%nl1),delta(ndata%nc1,ndata%nl0)
+real(kind_real) :: gammaT(ndata%nl1,ndata%nc1),deltaT(ndata%nl0,ndata%nc1)
 
 !$omp parallel do private(is)
 do is=1,ndata%ns
@@ -72,12 +72,18 @@ do il1=1,ndata%nl1
 end do
 !$omp end parallel do
 
+! Transpose data
+gammaT = transpose(gamma)
+
 ! Vertical interpolation
 !$omp parallel do private(ic1)
 do ic1=1,ndata%nc1
-   call apply_linop(ndata%v(ndata%vbot(ic1)),gamma(ic1,:),delta(ic1,:))
+   call apply_linop(ndata%v,gammaT(:,ic1),deltaT(:,ic1))
 end do
 !$omp end parallel do
+
+! Transpose data
+delta = transpose(deltaT)
 
 ! Horizontal interpolation
 !$omp parallel do private(il0)
@@ -95,11 +101,12 @@ end subroutine interp_global
 ! Subroutine: interp_local
 !> Purpose: interpolation, local
 !----------------------------------------------------------------------
-subroutine interp_local(ndataloc,alpha,fld)
+subroutine interp_local(nam,ndataloc,alpha,fld)
 
 implicit none
 
 ! Passed variables
+type(namtype),intent(in) :: nam !< Namelist variables
 type(ndataloctype),intent(in) :: ndataloc !< Sampling data
 real(kind_real),intent(in) :: alpha(ndataloc%nsb) !< Subgrid variable
 real(kind_real),intent(out) :: fld(ndataloc%nc0a,ndataloc%nl0)  !< Field
@@ -107,6 +114,7 @@ real(kind_real),intent(out) :: fld(ndataloc%nc0a,ndataloc%nl0)  !< Field
 ! Local variables
 integer :: isb,il1,ic1b,il0
 real(kind_real) :: beta(ndataloc%nc1b,ndataloc%nl1),gamma(ndataloc%nc1b,ndataloc%nl1),delta(ndataloc%nc1b,ndataloc%nl0)
+real(kind_real) :: gammaT(ndataloc%nl1,ndataloc%nc1b),deltaT(ndataloc%nl0,ndataloc%nc1b)
 
 !$omp parallel do private(isb)
 do isb=1,ndataloc%nsb
@@ -127,12 +135,18 @@ do il1=1,ndataloc%nl1
 end do
 !$omp end parallel do
 
+! Transpose data
+gammaT = transpose(gamma)
+
 ! Vertical interpolation
 !$omp parallel do private(ic1b)
 do ic1b=1,ndataloc%nc1b
-   call apply_linop(ndataloc%v(ndataloc%vbot(ic1b)),gamma(ic1b,:),delta(ic1b,:))
+   call apply_linop(ndataloc%v,gammaT(:,ic1b),deltaT(:,ic1b))
 end do
 !$omp end parallel do
+
+! Transpose data
+delta = transpose(deltaT)
 
 ! Horizontal interpolation
 !$omp parallel do private(il0)
@@ -150,11 +164,12 @@ end subroutine interp_local
 ! Subroutine: interp_ad_global
 !> Purpose: interpolation adjoint, global
 !----------------------------------------------------------------------
-subroutine interp_ad_global(ndata,fld,alpha)
+subroutine interp_ad_global(nam,ndata,fld,alpha)
 
 implicit none
 
 ! Passed variables
+type(namtype),intent(in) :: nam !< Namelist variables
 type(ndatatype),intent(in) :: ndata    !< Sampling data
 real(kind_real),intent(in) :: fld(ndata%nc0,ndata%nl0)  !< Field
 real(kind_real),intent(out) :: alpha(ndata%ns) !< Subgrid variable
@@ -162,6 +177,7 @@ real(kind_real),intent(out) :: alpha(ndata%ns) !< Subgrid variable
 ! Local variables
 integer :: is,il1,ic1,il0
 real(kind_real) :: beta(ndata%nc1,ndata%nl1),gamma(ndata%nc1,ndata%nl1),delta(ndata%nc1,ndata%nl0)
+real(kind_real) :: gammaT(ndata%nl1,ndata%nc1),deltaT(ndata%nl0,ndata%nc1)
 real(kind_real) :: fld_tmp(ndata%nc0,ndata%nl0)
 
 ! Normalization
@@ -174,12 +190,18 @@ do il0=1,ndata%nl0
 end do
 !$omp end parallel do
 
+! Transpose data
+deltaT = transpose(delta)
+
 ! Vertical interpolation
 !$omp parallel do private(ic1)
 do ic1=1,ndata%nc1
-   call apply_linop_ad(ndata%v(ndata%vbot(ic1)),delta(ic1,:),gamma(ic1,:))
+   call apply_linop_ad(ndata%v,deltaT(:,ic1),gammaT(:,ic1))
 end do
 !$omp end parallel do
+
+! Transpose data
+gamma = transpose(gammaT)
 
 ! Subsampling horizontal interpolation
 !$omp parallel do private(il1)
@@ -206,11 +228,12 @@ end subroutine interp_ad_global
 ! Subroutine: interp_ad_local
 !> Purpose: interpolation adjoint, local
 !----------------------------------------------------------------------
-subroutine interp_ad_local(ndataloc,fld,alpha)
+subroutine interp_ad_local(nam,ndataloc,fld,alpha)
 
 implicit none
 
 ! Passed variables
+type(namtype),intent(in) :: nam !< Namelist variables
 type(ndataloctype),intent(in) :: ndataloc  !< Sampling data
 real(kind_real),intent(in) :: fld(ndataloc%nc0a,ndataloc%nl0)  !< Field
 real(kind_real),intent(out) :: alpha(ndataloc%nsb) !< Subgrid variable
@@ -218,6 +241,7 @@ real(kind_real),intent(out) :: alpha(ndataloc%nsb) !< Subgrid variable
 ! Local variables
 integer :: isb,il1,ic1b,il0
 real(kind_real) :: beta(ndataloc%nc1b,ndataloc%nl1),gamma(ndataloc%nc1b,ndataloc%nl1),delta(ndataloc%nc1b,ndataloc%nl0)
+real(kind_real) :: gammaT(ndataloc%nl1,ndataloc%nc1b),deltaT(ndataloc%nl0,ndataloc%nc1b)
 real(kind_real) :: fld_tmp(ndataloc%nc0a,ndataloc%nl0)
 
 ! Normalization
@@ -230,12 +254,18 @@ do il0=1,ndataloc%nl0
 end do
 !$omp end parallel do
 
+! Transpose data
+deltaT = transpose(delta)
+
 ! Vertical interpolation
 !$omp parallel do private(ic1b)
 do ic1b=1,ndataloc%nc1b
-   call apply_linop_ad(ndataloc%v(ndataloc%vbot(ic1b)),delta(ic1b,:),gamma(ic1b,:))
+   call apply_linop_ad(ndataloc%v,deltaT(:,ic1b),gammaT(:,ic1b))
 end do
 !$omp end parallel do
+
+! Transpose data
+gamma = transpose(gammaT)
 
 ! Subsampling horizontal interpolation
 !$omp parallel do private(il1)

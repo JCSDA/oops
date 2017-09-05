@@ -14,10 +14,13 @@ use unstructured_grid_mod
 use model_oops, only: model_oops_coord
 use module_apply_nicas, only: apply_nicas
 use module_driver, only: nicas_driver
-use module_namelist, only: nam,namcheck
+use module_namelist, only: namtype,namcheck
 use tools_display, only: listing_setup
+use tools_missing, only: msi,msr
+use type_geom, only: geomtype
 use type_mpl, only: mpl
-use type_ndata, only: ndatatype,ndataloctype
+use type_ndata, only: ndataloctype
+use type_randgen, only: rng,create_randgen
 use fckit_log_module, only : log
 
 implicit none
@@ -29,7 +32,8 @@ public nicas, create_nicas, delete_nicas, nicas_multiply
 !>  Derived type containing the data
 
 type nicas
-  type(ndatatype) :: ndata
+  type(namtype) :: nam
+  type(geomtype) :: geom
   type(ndataloctype) :: ndataloc
   integer,allocatable :: ic0_dir(:)
   integer,allocatable :: ic0a_dir(:)
@@ -123,29 +127,33 @@ call log%info("NICAS setup")
 
 ! Read JSON
 call log%info("Read JSON")
-call nicas_read_conf(c_conf)
+call nicas_read_conf(c_conf,self%nam)
 
 ! Setup display
 call log%info("Listing setup")
-call listing_setup(nam%colorlog)
+call listing_setup(self%nam%colorlog)
 
 ! Check namelist parameters
-call namcheck
+call namcheck(self%nam)
 
 ! Write parallel setup
 write(nprocchar,'(i4)') mpl%nproc
 write(nthreadchar,'(i4)') mpl%nthread
 call log%info("Parallel setup: "//nprocchar//" MPI tasks and "//nthreadchar//" OpenMP threads")
 
+! Initialize random number generator
+call log%info("Initialize random number generator")
+rng = create_randgen(self%nam)
+
 ! Initialize coordinates
 call log%info("Initialize coordinates")
-call model_oops_coord(lats,lons,areas,levs,mask3d,mask2d,glbind,self%ndata)
+call model_oops_coord(self%nam,lats,lons,areas,levs,mask3d,mask2d,glbind,self%geom)
 
 ! Call driver
-call nicas_driver(self%ndata,self%ndataloc)
+call nicas_driver(self%nam,self%geom,self%ndataloc)
 
 ! Close listing files
-if ((mpl%main.and..not.nam%colorlog).or..not.mpl%main) close(unit=mpl%unit)
+if ((mpl%main.and..not.self%nam%colorlog).or..not.mpl%main) close(unit=mpl%unit)
 
 call log%info('NICAS setup done')
 
@@ -153,11 +161,53 @@ end subroutine create_nicas
 
 !-------------------------------------------------------------------------------
 
-subroutine nicas_read_conf(c_conf)
+subroutine nicas_read_conf(c_conf,nam)
 implicit none
 type(c_ptr), intent(in) :: c_conf
+type(namtype), intent(out) :: nam
 integer :: il,idir
 character(len=3) :: ilchar,idirchar
+
+! Default initialization
+
+! general_param
+nam%datadir = ''
+nam%prefix = ''
+nam%colorlog = .false.
+nam%model = ''
+call msi(nam%nl)
+call msi(nam%levs)
+nam%new_param = .false.
+nam%new_mpi = .false.
+nam%check_adjoints = .false.
+nam%check_pos_def = .false.
+nam%check_mpi = .false.
+nam%check_dirac = .false.
+nam%check_dirac = .false.
+call msi(nam%ndir)
+call msi(nam%levdir)
+call msr(nam%londir)
+call msr(nam%latdir)
+
+! sampling_param
+nam%sam_default_seed = .false.
+nam%mask_check = .false.
+call msi(nam%ntry)
+call msi(nam%nrep)
+nam%logpres = .false.
+
+! nicas_param
+nam%lsqrt = .false.
+nam%Lbh_file = ''
+call msr(nam%Lbh)
+nam%Lbv_file = ''
+call msr(nam%Lbv)
+call msr(nam%resol)
+nam%network = .false.
+call msi(nam%nproc)
+call msi(nam%mpicom)
+
+! Setup from configuration
 
 ! general_param
 nam%datadir = config_get_string(c_conf,1024,"datadir")
@@ -259,7 +309,7 @@ do ivar=1,dx%head%column%nvar3d
    end do
 
    ! Apply NICAS
-   call apply_nicas(self%ndataloc,fld)
+   call apply_nicas(self%nam,self%ndataloc,fld)
 
    ! Return to columns
    ic0a = 0

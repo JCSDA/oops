@@ -10,8 +10,6 @@
 !----------------------------------------------------------------------
 module module_apply_convol
 
-use module_apply_com, only: alpha_com_AB,alpha_com_BA,alpha_com_CA,alpha_copy_AC,alpha_copy_BC
-use module_namelist, only: nam
 use omp_lib
 use tools_kinds, only: kind_real
 use tools_missing, only: msr

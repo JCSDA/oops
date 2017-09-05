@@ -18,6 +18,9 @@ extern "C"
     // Random integer generator
     void rand_integer(const RANDGEN* randgen, int binf, int bsup, int *ir);
 
+    // Random real generator
+    void rand_real(const RANDGEN* randgen, double binf, double bsup, double *rr);
+
     // Sampling initialization
     void initialize_sampling(const RANDGEN* randgen, int n, double lon[], double lat[], int mask[], double L[], int ntry, int nrep, int ns, int nfor, int ifor[], int ihor[]);
 }
