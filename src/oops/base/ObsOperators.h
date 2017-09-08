@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -13,6 +13,7 @@
 
 #include <string>
 
+#include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "oops/base/ObsSpaces.h"
@@ -23,7 +24,6 @@
 #include "oops/interface/Variables.h"
 #include "util/DateTime.h"
 #include "util/Logger.h"
-#include "util/ObjectCounter.h"
 #include "util/Printable.h"
 #include "util/Timer.h"
 
@@ -33,7 +33,7 @@ namespace oops {
 
 template <typename MODEL>
 class ObsOperators : public util::Printable,
-                     private util::ObjectCounter<ObsOperators<MODEL> > {
+                     private boost::noncopyable {
   typedef ModelAtLocations<MODEL>    ModelAtLocations_;
   typedef ObsAuxControl<MODEL>       ObsAuxControl_;
   typedef ObsOperator<MODEL>         ObsOperator_;
@@ -45,16 +45,14 @@ class ObsOperators : public util::Printable,
   static const std::string classname() {return "oops::ObsOperators";}
 
   explicit ObsOperators(const ObsSpace_ &);
-  ObsOperators(const ObsOperators &);
   ~ObsOperators();
 
 /// Access
   std::size_t size() const {return ops_.size();}
-  const ObsOperator_ & operator[](const std::size_t ii) const {return *ops_.at(ii);} 
+  const ObsOperator_ & operator[](const std::size_t ii) const {return *ops_.at(ii);}
   Variables_ variables(const std::size_t jobs) const;
 
  private:
-  ObsOperators & operator=(const ObsOperators &);
   void print(std::ostream &) const;
   std::vector<boost::shared_ptr<ObsOperator_> > ops_;
 };
@@ -69,12 +67,6 @@ ObsOperators<MODEL>::ObsOperators(const ObsSpace_ & os) : ops_(0)
     ops_.push_back(tmp);
   }
 }
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-ObsOperators<MODEL>::ObsOperators(const ObsOperators & other) : ops_(other.ops_)
-{}
 
 // -----------------------------------------------------------------------------
 
