@@ -10,7 +10,7 @@
 
 #include "model/ObsWindTLAD.h"
 
-#include "util/Logger.h"
+#include "eckit/config/Configuration.h"
 #include "model/GomQG.h"
 #include "model/ObsBias.h"
 #include "model/ObsBiasIncrement.h"
@@ -18,27 +18,29 @@
 #include "model/ObsVecQG.h"
 #include "model/QgFortran.h"
 #include "model/VariablesQG.h"
-
-
-using oops::Log;
+#include "util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
+static oops::LinearObsOpMaker<QgTraits, ObsWindTLAD> makerWindTL_("Wind");
+// -----------------------------------------------------------------------------
 
-ObsWindTLAD::ObsWindTLAD(const ObsSpaceQG & odb, const int & keyOperWind)
-  : keyOperWind_(keyOperWind), varin_()
+ObsWindTLAD::ObsWindTLAD(const ObsSpaceQG &, const eckit::Configuration & config)
+  : keyOperWind_(0), varin_()
 {
+  const eckit::Configuration * configc = &config;
+  qg_wind_setup_f90(keyOperWind_, &configc);
   int keyVarin;
   qg_obsoper_inputs_f90(keyOperWind_, keyVarin);
   varin_.reset(new VariablesQG(keyVarin));
-  Log::trace() << "ObsWindTLAD created" << std::endl;
+  oops::Log::trace() << "ObsWindTLAD created" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 ObsWindTLAD::~ObsWindTLAD() {
-  Log::trace() << "ObsWindTLAD destrcuted" << std::endl;
+  oops::Log::trace() << "ObsWindTLAD destructed" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

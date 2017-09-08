@@ -13,24 +13,17 @@
 
 #include <ostream>
 #include <string>
-#include <vector>
 
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "oops/interface/ObsOperatorBase.h"
 #include "model/ObsSpaceQG.h"
-#include "model/ObsStreamTLAD.h"
 #include "model/QgTraits.h"
 #include "util/ObjectCounter.h"
 
 // Forward declarations
 namespace eckit {
   class Configuration;
-}
-
-namespace util {
-  class DateTime;
 }
 
 namespace qg {
@@ -53,9 +46,6 @@ class ObsStreamQG : public oops::ObsOperatorBase<QgTraits>,
 // Obs Operator
   void obsEquiv(const GomQG &, ObsVecQG &, const ObsBias &) const;
 
-// Is there a way to put this in the TLAD class?
-  ObsStreamTLAD * newTLAD() const {return new ObsStreamTLAD(obsdb_, keyOperStrm_);}
-
 // Other
   boost::shared_ptr<const VariablesQG> variables() const {return varin_;}
 
@@ -64,8 +54,6 @@ class ObsStreamQG : public oops::ObsOperatorBase<QgTraits>,
 
  private:
   void print(std::ostream &) const;
-  const ObsSpaceQG & obsdb_;
-  const std::string obsname_;
   F90hop keyOperStrm_;
   boost::shared_ptr<const VariablesQG> varin_;
 };

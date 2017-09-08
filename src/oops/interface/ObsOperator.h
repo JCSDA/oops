@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -13,7 +13,8 @@
 
 #include <string>
 
-#include <boost/shared_ptr.hpp>
+#include <boost/noncopyable.hpp>
+#include <boost/scoped_ptr.hpp>
 
 #include "util/Logger.h"
 #include "oops/interface/ModelAtLocations.h"
@@ -33,6 +34,7 @@ namespace oops {
 
 template <typename MODEL>
 class ObsOperator : public util::Printable,
+                    private boost::noncopyable,
                     private util::ObjectCounter<ObsOperator<MODEL> > {
   typedef ObsOperatorBase<MODEL>     ObsOperatorBase_;
   typedef ModelAtLocations<MODEL>    ModelAtLocations_;
@@ -45,7 +47,6 @@ class ObsOperator : public util::Printable,
   static const std::string classname() {return "oops::ObsOperator";}
 
   explicit ObsOperator(const ObsSpace_ &);
-  ObsOperator(const ObsOperator &);
   ~ObsOperator();
 
 /// Interfacing
@@ -58,29 +59,18 @@ class ObsOperator : public util::Printable,
   Variables_ variables() const;  // Required inputs variables from Model
 
  private:
-  ObsOperator & operator=(const ObsOperator &);
   void print(std::ostream &) const;
-  boost::shared_ptr<ObsOperatorBase_> oper_;
+  boost::scoped_ptr<ObsOperatorBase_> oper_;
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-ObsOperator<MODEL>::ObsOperator(const ObsSpace_ & os)
-  : oper_()
-{
+ObsOperator<MODEL>::ObsOperator(const ObsSpace_ & os) : oper_() {
   Log::trace() << "ObsOperator<MODEL>::ObsOperator starting" << std::endl;
   util::Timer timer(classname(), "ObsOperator");
   oper_.reset(ObsOperatorFactory<MODEL>::create(os.observationspace(), os.config()));
   Log::trace() << "ObsOperator<MODEL>::ObsOperator done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-ObsOperator<MODEL>::ObsOperator(const ObsOperator & other) : oper_(other.oper_)
-{
-  Log::trace() << "ObsOperator<MODEL>::ObsOperator copied" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

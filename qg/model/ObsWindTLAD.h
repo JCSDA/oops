@@ -20,6 +20,10 @@
 #include "model/QgTraits.h"
 
 // Forward declarations
+namespace eckit {
+  class Configuration;
+}
+
 namespace qg {
   class GomQG;
   class ObsBias;
@@ -35,7 +39,7 @@ class ObsWindTLAD : public oops::LinearObsOperBase<QgTraits>,
  public:
   static const std::string classname() {return "qg::ObsWindTLAD";}
 
-  ObsWindTLAD(const ObsSpaceQG &, const int &);
+  ObsWindTLAD(const ObsSpaceQG &, const eckit::Configuration &);
   virtual ~ObsWindTLAD();
 
 // Obs Operators

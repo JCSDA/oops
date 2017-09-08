@@ -10,15 +10,13 @@
 
 #include "model/ObsStreamQG.h"
 
-#include "util/Logger.h"
+#include "eckit/config/Configuration.h"
 #include "model/GomQG.h"
 #include "model/ObsBias.h"
 #include "model/ObsSpaceQG.h"
 #include "model/ObsVecQG.h"
 #include "model/VariablesQG.h"
-#include "eckit/config/Configuration.h"
-
-using oops::Log;
+#include "util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {
@@ -27,20 +25,21 @@ static oops::ObsOperatorMaker<QgTraits, ObsStreamQG> makerStream_("Stream");
 // -----------------------------------------------------------------------------
 
 ObsStreamQG::ObsStreamQG(const ObsSpaceQG & odb, const eckit::Configuration & config)
-  : obsdb_(odb), obsname_("Stream"), varin_()
+  : keyOperStrm_(0), varin_()
 {
   const eckit::Configuration * configc = &config;
   qg_stream_setup_f90(keyOperStrm_, &configc);
   int keyVarin;
   qg_obsoper_inputs_f90(keyOperStrm_, keyVarin);
   varin_.reset(new VariablesQG(keyVarin));
-  Log::trace() << "ObsStreamQG created " << obsname_ << std::endl;
+  oops::Log::trace() << "ObsStreamQG created." << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 ObsStreamQG::~ObsStreamQG() {
   qg_stream_delete_f90(keyOperStrm_);
+  oops::Log::trace() << "ObsStreamQG destructed." << std::endl;
 }
 
 // -----------------------------------------------------------------------------

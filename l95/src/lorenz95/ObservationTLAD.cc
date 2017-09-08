@@ -23,8 +23,10 @@
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
+static oops::LinearObsOpMaker<L95Traits, ObservationTLAD> makerLOpL95_("Lorenz 95");
+// -----------------------------------------------------------------------------
 
-ObservationTLAD::ObservationTLAD(const ObsTable &)
+ObservationTLAD::ObservationTLAD(const ObsTable &, const eckit::Configuration &)
   : inputs_(new NoVariables())
 {}
 

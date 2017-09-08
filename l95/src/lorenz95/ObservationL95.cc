@@ -29,7 +29,7 @@ namespace lorenz95 {
 static oops::ObsOperatorMaker<L95Traits, ObservationL95> makerObsL95_("Lorenz 95");
 // -----------------------------------------------------------------------------
 
-ObservationL95::ObservationL95(const ObsTable & ot, const eckit::Configuration & conf)
+ObservationL95::ObservationL95(const ObsTable & ot, const eckit::Configuration &)
   : obsdb_(ot), inputs_(new NoVariables())
 {}
 

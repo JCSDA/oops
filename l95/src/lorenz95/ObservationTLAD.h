@@ -21,6 +21,10 @@
 #include "lorenz95/L95Traits.h"
 
 // Forward declarations
+namespace eckit {
+  class Configuration;
+}
+
 namespace lorenz95 {
   class GomL95;
   class ObsBias;
@@ -41,7 +45,7 @@ class ObservationTLAD : public oops::LinearObsOperBase<L95Traits>,
  public:
   static const std::string classname() {return "lorenz95::ObservationTLAD";}
 
-  explicit ObservationTLAD(const ObsTable &);
+  ObservationTLAD(const ObsTable &, const eckit::Configuration &);
   ~ObservationTLAD();
 
 // Obs Operators

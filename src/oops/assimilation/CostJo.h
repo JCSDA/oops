@@ -185,7 +185,7 @@ boost::shared_ptr<PostBase<State<MODEL> > >
 CostJo<MODEL>::initializeTraj(const CtrlVar_ & xx, const Geometry_ &,
                               const eckit::Configuration &) {
   ltraj_ = true;
-  hoptlad_.reset(new LinearObsOperator_(hop_));
+  hoptlad_.reset(new LinearObsOperator_(obspace_));
   pobs_.reset(new Observer<MODEL, State_>(obspace_, hop_, xx.obsVar(),
                                           tslot_, subwindows_, hoptlad_));
   return pobs_;

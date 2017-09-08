@@ -1,8 +1,8 @@
 /*
  * (C) Copyright 2017 UCAR
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
 #ifndef OOPS_INTERFACE_OBSOPERATORBASE_H_
@@ -15,7 +15,6 @@
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
-#include "oops/interface/LinearObsOperBase.h"
 #include "util/abor1_cpp.h"
 #include "util/Logger.h"
 #include "util/Printable.h"
@@ -33,7 +32,6 @@ class ObsOperatorBase : public util::Printable,
   typedef typename MODEL::ObsSpace            ObsSpace_;
   typedef typename MODEL::ObsVector           ObsVector_;
   typedef typename MODEL::Variables           Variables_;
-  typedef LinearObsOperBase<MODEL>            ObsOpTLAD_;
 
  public:
   ObsOperatorBase() {}
@@ -44,7 +42,6 @@ class ObsOperatorBase : public util::Printable,
 
 /// Other
   virtual boost::shared_ptr<const Variables_> variables() const =0;  // Required from Model
-  virtual ObsOpTLAD_ * newTLAD() const =0;
 
  private:
   virtual void print(std::ostream &) const =0;

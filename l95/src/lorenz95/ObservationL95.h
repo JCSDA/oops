@@ -53,7 +53,6 @@ class ObservationL95 : public oops::ObsOperatorBase<L95Traits>,
 
 // Other
   boost::shared_ptr<const NoVariables> variables() const {return inputs_;}
-  ObservationTLAD * newTLAD() const {return new ObservationTLAD(obsdb_);}
 
   const ObsTable & table() const {return obsdb_;}
 
