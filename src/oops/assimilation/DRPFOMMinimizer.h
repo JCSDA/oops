@@ -249,7 +249,7 @@ double DRPFOMMinimizer<MODEL>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_ & r
   }
 
   // Calculate the solution (dxh = Binv dx)
-  for (int jj = 0; jj < ss.size(); ++jj) {
+  for (unsigned int jj = 0; jj < ss.size(); ++jj) {
     dx.axpy(ss[jj], zvecs_[jj]);
     dxh.axpy(ss[jj], hvecs_[jj]);
   }
