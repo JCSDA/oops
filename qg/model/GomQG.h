@@ -40,7 +40,10 @@ class GomQG : public util::Printable,
   ~GomQG();
 
   void zero();
-  double dot_product_with(const GomQG & other) const;
+  void random();
+  double dot_product_with(const GomQG &) const;
+  void read(const eckit::Configuration &);
+  void write(const eckit::Configuration &) const;
 
   int & toFortran() {return keyGom_;}
   const int & toFortran() const {return keyGom_;}

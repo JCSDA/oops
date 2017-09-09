@@ -10,6 +10,7 @@
 
 #include "model/GomQG.h"
 
+#include "eckit/config/Configuration.h"
 #include "util/Logger.h"
 #include "model/ObsSpaceQG.h"
 #include "model/ObservationsQG.h"
@@ -38,14 +39,24 @@ void GomQG::zero() {
   qg_gom_zero_f90(keyGom_);
 }
 // -----------------------------------------------------------------------------
-// void GomQG::random() {
-//   qg_gom_random_f90(keyGom_);
-// }
+ void GomQG::random() {
+   qg_gom_random_f90(keyGom_);
+ }
 // -----------------------------------------------------------------------------
 double GomQG::dot_product_with(const GomQG & other) const {
   double zz;
-  qg_gom_dotprod_f90(keyGom_, other.toFortran(), zz);
+  qg_gom_dotprod_f90(keyGom_, other.keyGom_, zz);
   return zz;
+}
+// -----------------------------------------------------------------------------
+void GomQG::read(const eckit::Configuration & config) {
+  const eckit::Configuration * conf = &config;
+  qg_gom_read_file_f90(keyGom_, &conf);
+}
+// -----------------------------------------------------------------------------
+void GomQG::write(const eckit::Configuration & config) const {
+  const eckit::Configuration * conf = &config;
+  qg_gom_write_file_f90(keyGom_, &conf);
 }
 // -----------------------------------------------------------------------------
 void GomQG::print(std::ostream & os) const {

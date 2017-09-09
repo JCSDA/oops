@@ -117,6 +117,17 @@ end subroutine c_qg_gom_zero
 
 ! ------------------------------------------------------------------------------
 
+subroutine c_qg_gom_random(c_key_self) bind(c,name='qg_gom_random_f90')
+use random_vectors_mod
+implicit none
+integer(c_int), intent(in) :: c_key_self
+type(qg_goms), pointer :: self
+call qg_goms_registry%get(c_key_self, self)
+call random_vector(self%values(:,:))
+end subroutine c_qg_gom_random
+
+! ------------------------------------------------------------------------------
+
 subroutine c_qg_gom_dotprod(c_key_self, c_key_other, prod) bind(c,name='qg_gom_dotprod_f90')
 implicit none
 integer(c_int), intent(in) :: c_key_self, c_key_other
@@ -152,6 +163,95 @@ pmax=maxval(self%values(:,:))
 prms=sqrt(sum(self%values(:,:)**2)/real(self%nobs*self%nvar,kind_real))
 
 end subroutine c_qg_gom_minmaxavg
+
+! ------------------------------------------------------------------------------
+
+subroutine qg_gom_read_file_c(c_key_self, c_conf) bind(c,name='qg_gom_read_file_f90')
+use config_mod
+use fckit_log_module, only : fckit_log
+implicit none
+integer(c_int), intent(in) :: c_key_self
+type(c_ptr), intent(in)    :: c_conf
+type(qg_goms), pointer :: self
+
+integer, parameter :: iunit=10
+integer, parameter :: max_string_length=250 ! Yuk!
+character(len=max_string_length) :: filename, record
+character(len=4)  :: cnx
+character(len=15) :: fmtn
+character(len=11) :: fmt1='(X,ES24.16)'
+integer :: jj, jo
+
+call qg_goms_registry%get(c_key_self, self)
+if (self%lalloc) call abor1_ftn("qg_gom_read_file gom alredy allocated")
+
+filename = config_get_string(c_conf,len(filename),"filename")
+write(record,*)'qg_gom_read_file: opening '//trim(filename)
+call fckit_log%info(record)
+open(unit=iunit, file=trim(filename), form='formatted', action='read')
+
+read(iunit,*) self%nobs, self%nvar, self%used
+allocate(self%indx(self%nobs))
+allocate(self%variables(self%nvar))
+allocate(self%values(self%nvar,self%nobs))
+
+read(iunit,*) self%indx(:)
+read(iunit,*) self%variables(:)
+
+if (self%nvar>9999)  call abor1_ftn("Format too small")
+write(cnx,'(I4)')self%nvar
+fmtn='('//trim(cnx)//fmt1//')'
+
+do jo=1,self%nobs
+  read(iunit,fmtn) (self%values(jj,jo), jj=1,self%nvar)
+enddo
+
+close(iunit)
+self%lalloc = .true.
+
+end subroutine qg_gom_read_file_c
+
+! ------------------------------------------------------------------------------
+
+subroutine qg_gom_write_file_c(c_key_self, c_conf) bind(c,name='qg_gom_write_file_f90')
+use config_mod
+use fckit_log_module, only : fckit_log
+implicit none
+integer(c_int), intent(in) :: c_key_self
+type(c_ptr), intent(in) :: c_conf
+type(qg_goms), pointer :: self
+
+integer, parameter :: iunit=10
+integer, parameter :: max_string_length=250 ! Yuk!
+character(len=max_string_length) :: filename, record
+character(len=4)  :: cnx
+character(len=15) :: fmtn
+character(len=11) :: fmt1='(X,ES24.16)'
+integer :: jj, jo
+
+call qg_goms_registry%get(c_key_self, self)
+if (.not.self%lalloc) call abor1_ftn("qg_gom_write_file gom not allocated")
+
+filename = config_get_string(c_conf,len(filename),"filename")
+write(record,*)'qg_gom_write_file: opening '//trim(filename)
+call fckit_log%info(record)
+open(unit=iunit, file=trim(filename), form='formatted', action='write')
+
+write(iunit,*) self%nobs, self%nvar, self%used
+write(iunit,*) self%indx(:)
+write(iunit,*) self%variables(:)
+
+if (self%nvar>9999) call abor1_ftn("Format too small")
+write(cnx,'(I4)')self%nvar
+fmtn='('//trim(cnx)//fmt1//')'
+
+do jo=1,self%nobs
+  write(iunit,fmtn) (self%values(jj,jo), jj=1,self%nvar)
+enddo
+
+close(iunit)
+
+end subroutine qg_gom_write_file_c
 
 ! ------------------------------------------------------------------------------
 
