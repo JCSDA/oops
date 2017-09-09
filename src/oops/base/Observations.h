@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -17,7 +17,7 @@
 #include "eckit/config/Configuration.h"
 #include "util/Logger.h"
 #include "oops/base/Departures.h"
-#include "oops/interface/ModelAtLocations.h"
+#include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsOperator.h"
@@ -38,7 +38,7 @@ template<typename MODEL> class Observations;
 // -----------------------------------------------------------------------------
 template <typename MODEL> class Observations : public util::Printable {
   typedef Departures<MODEL>          Departures_;
-  typedef ModelAtLocations<MODEL>    GOM_;
+  typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef ObsOperator<MODEL>         ObsOperator_;
   typedef ObservationSpace<MODEL>    ObsSpace_;
@@ -55,7 +55,7 @@ template <typename MODEL> class Observations : public util::Printable {
   Observations & operator+=(const Departures_ &);
 
 /// Compute observations equivalents
-  void runObsOperator(const ObsOperator_ &, const GOM_ &, const ObsAuxCtrl_ &);
+  void runObsOperator(const ObsOperator_ &, const GeoVaLs_ &, const ObsAuxCtrl_ &);
 
 /// Get observations values
   const ObsVector_ & obsvalues() const {return obs_;}
@@ -109,9 +109,9 @@ Observations<MODEL> & Observations<MODEL>::operator+=(const Departures_ & dy) {
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-void Observations<MODEL>::runObsOperator(const ObsOperator_ & hop, const GOM_ & gom,
+void Observations<MODEL>::runObsOperator(const ObsOperator_ & hop, const GeoVaLs_ & gvals,
                                          const ObsAuxCtrl_ & ybias) {
-  hop.obsEquiv(gom, obs_, ybias);
+  hop.obsEquiv(gvals, obs_, ybias);
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>

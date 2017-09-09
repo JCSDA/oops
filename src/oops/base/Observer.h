@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -17,8 +17,8 @@
 
 #include "oops/base/Observations.h"
 #include "oops/base/PostBase.h"
+#include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Locations.h"
-#include "oops/interface/ModelAtLocations.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsOperator.h"
@@ -33,8 +33,8 @@ namespace oops {
 // weak constraint 4D-Var. YT
 
 template <typename MODEL, typename STATE> class Observer : public PostBase<STATE> {
+  typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef Locations<MODEL>           Locations_;
-  typedef ModelAtLocations<MODEL>    GOM_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef Observations<MODEL>        Observations_;
   typedef ObsOperator<MODEL>         ObsOperator_;
@@ -72,7 +72,7 @@ template <typename MODEL, typename STATE> class Observer : public PostBase<STATE
   util::Duration hslot_;    //!< Half time slot
   const bool subwindows_;
 
-  boost::scoped_ptr<GOM_> gom_;
+  boost::scoped_ptr<GeoVaLs_> gvals_;
 };
 
 // ====================================================================================
@@ -88,7 +88,7 @@ Observer<MODEL, STATE>::Observer(const ObsSpace_ & obsdb,
     yobs_(new Observations_(obsdb)), ybias_(ybias),
     winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
     bgn_(winbgn_), end_(winend_), hslot_(tslot/2), subwindows_(swin),
-    gom_()
+    gvals_()
 {}
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename STATE>
@@ -108,7 +108,7 @@ void Observer<MODEL, STATE>::doInitialize(const STATE & xx,
   if (bgn_ < winbgn_) bgn_ = winbgn_;
   if (end_ > winend_) end_ = winend_;
 // Pass the Geometry for IFS -- Bad...
-  gom_.reset(new GOM_(obspace_, hop_.variables(), bgn_, end_, xx.geometry()));
+  gvals_.reset(new GeoVaLs_(obspace_, hop_.variables(), bgn_, end_, xx.geometry()));
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename STATE>
@@ -122,14 +122,14 @@ void Observer<MODEL, STATE>::doProcessing(const STATE & xx) {
   Locations_ locs(obspace_, t1, t2);
 
 // Interpolate state variables to obs locations
-  xx.interpolate(locs, *gom_);
+  xx.interpolate(locs, *gvals_);
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename STATE>
 void Observer<MODEL, STATE>::doFinalize(const STATE &) {
-  if (htlad_) htlad_->setTrajectory(*gom_, ybias_);
-  yobs_->runObsOperator(hop_, *gom_, ybias_);
-  gom_.reset();
+  if (htlad_) htlad_->setTrajectory(*gvals_, ybias_);
+  yobs_->runObsOperator(hop_, *gvals_, ybias_);
+  gvals_.reset();
 }
 // -----------------------------------------------------------------------------
 

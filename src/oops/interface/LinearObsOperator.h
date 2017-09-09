@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -16,7 +16,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "util/Logger.h"
-#include "oops/interface/ModelAtLocations.h"
+#include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/ObservationSpace.h"
@@ -41,7 +41,7 @@ template <typename MODEL>
 class LinearObsOperator : public util::Printable,
                           private util::ObjectCounter<LinearObsOperator<MODEL> > {
   typedef typename MODEL::LinearObsOperator     LinearObsOperator_;
-  typedef ModelAtLocations<MODEL>    ModelAtLocations_;
+  typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef ObsAuxControl<MODEL>       ObsAuxControl_;
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncrement_;
   typedef ObsOperator<MODEL>         ObsOperator_;
@@ -59,9 +59,9 @@ class LinearObsOperator : public util::Printable,
   const LinearObsOperator_ & linearobsoperator() const {return *oper_;}
 
 /// Obs Operators
-  void setTrajectory(const ModelAtLocations_ &, const ObsAuxControl_ &);
-  void obsEquivTL(const ModelAtLocations_ &, ObsVector_ &, const ObsAuxIncrement_ &) const;
-  void obsEquivAD(ModelAtLocations_ &, const ObsVector_ &, ObsAuxIncrement_ &) const;
+  void setTrajectory(const GeoVaLs_ &, const ObsAuxControl_ &);
+  void obsEquivTL(const GeoVaLs_ &, ObsVector_ &, const ObsAuxIncrement_ &) const;
+  void obsEquivAD(GeoVaLs_ &, const ObsVector_ &, ObsAuxIncrement_ &) const;
 
 /// Other
   Variables_ variables() const;  // Required inputs variables from LinearModel
@@ -104,32 +104,32 @@ LinearObsOperator<MODEL>::~LinearObsOperator() {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void LinearObsOperator<MODEL>::setTrajectory(const ModelAtLocations_ & gom, const ObsAuxControl_ & aux) {
+void LinearObsOperator<MODEL>::setTrajectory(const GeoVaLs_ & gvals, const ObsAuxControl_ & aux) {
   Log::trace() << "LinearObsOperator<MODEL>::obsEquiv starting" << std::endl;
   util::Timer timer(classname(), "ObsEquiv");
-  oper_->setTrajectory(gom.modelatlocations(), aux.obsauxcontrol());
+  oper_->setTrajectory(gvals.geovals(), aux.obsauxcontrol());
   Log::trace() << "LinearObsOperator<MODEL>::obsEquiv done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void LinearObsOperator<MODEL>::obsEquivTL(const ModelAtLocations_ & gom, ObsVector_ & yy,
+void LinearObsOperator<MODEL>::obsEquivTL(const GeoVaLs_ & gvals, ObsVector_ & yy,
                                           const ObsAuxIncrement_ & aux) const {
   Log::trace() << "LinearObsOperator<MODEL>::obsEquivTL starting" << std::endl;
   util::Timer timer(classname(), "ObsEquivTL");
-  oper_->obsEquivTL(gom.modelatlocations(), yy.obsvector(), aux.obsauxincrement());
+  oper_->obsEquivTL(gvals.geovals(), yy.obsvector(), aux.obsauxincrement());
   Log::trace() << "LinearObsOperator<MODEL>::obsEquivTL done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void LinearObsOperator<MODEL>::obsEquivAD(ModelAtLocations_ & gom, const ObsVector_ & yy,
+void LinearObsOperator<MODEL>::obsEquivAD(GeoVaLs_ & gvals, const ObsVector_ & yy,
                                           ObsAuxIncrement_ & aux) const {
   Log::trace() << "LinearObsOperator<MODEL>::obsEquivAD starting" << std::endl;
   util::Timer timer(classname(), "ObsEquivAD");
-  oper_->obsEquivAD(gom.modelatlocations(), yy.obsvector(), aux.obsauxincrement());
+  oper_->obsEquivAD(gvals.geovals(), yy.obsvector(), aux.obsauxincrement());
   Log::trace() << "LinearObsOperator<MODEL>::obsEquivAD done" << std::endl;
 }
 

@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -17,8 +17,8 @@
 #include "oops/base/PostProcessorTL.h"
 #include "oops/base/PostProcessorAD.h"
 #include "oops/interface/Geometry.h"
+#include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Locations.h"
-#include "oops/interface/ModelAtLocations.h"
 #include "oops/interface/State.h"
 #include "oops/interface/Variables.h"
 #include "util/DateTime.h"
@@ -42,8 +42,8 @@ class Increment : public oops::GeneralizedDepartures,
                   private util::ObjectCounter<Increment<MODEL> > {
   typedef typename MODEL::Increment  Increment_;
   typedef Geometry<MODEL>            Geometry_;
+  typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef Locations<MODEL>           Locations_;
-  typedef ModelAtLocations<MODEL>    ModelAtLocations_;
   typedef State<MODEL>               State_;
   typedef Variables<MODEL>           Variables_;
 
@@ -61,8 +61,8 @@ class Increment : public oops::GeneralizedDepartures,
   const Increment_ & increment() const {return *increment_;}
 
 /// Interpolate to observation location
-  void interpolateTL(const Locations_ &, ModelAtLocations_ &) const;
-  void interpolateAD(const Locations_ &, const ModelAtLocations_ &);
+  void interpolateTL(const Locations_ &, GeoVaLs_ &) const;
+  void interpolateAD(const Locations_ &, const GeoVaLs_ &);
 
 /// Interactions with State
   void diff(const State_ &, const State_ &);
@@ -158,20 +158,20 @@ Increment<MODEL>::~Increment() {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void Increment<MODEL>::interpolateTL(const Locations_ & loc, ModelAtLocations_ & gom) const {
+void Increment<MODEL>::interpolateTL(const Locations_ & loc, GeoVaLs_ & gvals) const {
   Log::trace() << "Increment<MODEL>::interpolateTL starting" << std::endl;
   util::Timer timer(classname(), "interpolateTL");
-  increment_->interpolateTL(loc.locations(), gom.modelatlocations());
+  increment_->interpolateTL(loc.locations(), gvals.geovals());
   Log::trace() << "Increment<MODEL>::interpolateTL done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void Increment<MODEL>::interpolateAD(const Locations_ & loc, const ModelAtLocations_ & gom) {
+void Increment<MODEL>::interpolateAD(const Locations_ & loc, const GeoVaLs_ & gvals) {
   Log::trace() << "Increment<MODEL>::interpolateAD starting" << std::endl;
   util::Timer timer(classname(), "interpolateAD");
-  increment_->interpolateAD(loc.locations(), gom.modelatlocations());
+  increment_->interpolateAD(loc.locations(), gvals.geovals());
   Log::trace() << "Increment<MODEL>::interpolateAD done" << std::endl;
 }
 
