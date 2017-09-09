@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "eckit/config/Configuration.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 
@@ -34,11 +35,15 @@ class GomL95 : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::GomL95";}
 
-  GomL95(const ObsTable &, const NoVariables &, const util::DateTime &, const util::DateTime &, const Resolution &);
+  GomL95(const ObsTable &, const NoVariables &, const util::DateTime &, const util::DateTime &,
+         const Resolution &);
   ~GomL95();
 
-  double dot_product_with(const GomL95 &) const;
   void zero();
+  void random();
+  double dot_product_with(const GomL95 &) const;
+  void read(const eckit::Configuration &);
+  void write(const eckit::Configuration &) const;
 
   const double & operator[](const int ii) const {return locval_[ii];}
   double & operator[](const int ii) {return locval_[ii];}

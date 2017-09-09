@@ -58,7 +58,7 @@ void ObservationL95::generateObsError(const eckit::Configuration & conf) {
 // -----------------------------------------------------------------------------
 
 void ObservationL95::print(std::ostream & os) const {
-  os << "ObservationL95::print not implemented";
+  os << "ObservationL95: Lorenz 95 Obs Operator";
 }
 
 // -----------------------------------------------------------------------------

@@ -111,7 +111,7 @@ template <typename MODEL>
 void GeoVaLs<MODEL>::random() {
   Log::trace() << "GeoVaLs<MODEL>::random starting" << std::endl;
   util::Timer timer(classname(), "random");
-//  gvals_->random();
+  gvals_->random();
   Log::trace() << "GeoVaLs<MODEL>::random done" << std::endl;
 }
 
@@ -121,7 +121,7 @@ template<typename MODEL>
 void GeoVaLs<MODEL>::read(const eckit::Configuration & conf) {
   Log::trace() << "GeoVaLs<MODEL>::read starting" << std::endl;
   util::Timer timer(classname(), "read");
-//  GeoVaLs_->read(conf);
+  gvals_->read(conf);
   Log::trace() << "GeoVaLs<MODEL>::read done" << std::endl;
 }
 
@@ -131,7 +131,7 @@ template<typename MODEL>
 void GeoVaLs<MODEL>::write(const eckit::Configuration & conf) const {
   Log::trace() << "GeoVaLs<MODEL>::write starting" << std::endl;
   util::Timer timer(classname(), "write");
-//  GeoVaLs_->write(conf);
+  gvals_->write(conf);
   Log::trace() << "GeoVaLs<MODEL>::write done" << std::endl;
 }
 

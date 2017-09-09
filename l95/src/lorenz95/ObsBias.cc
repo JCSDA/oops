@@ -17,19 +17,16 @@
 #include "lorenz95/ObsBiasCorrection.h"
 #include "eckit/config/Configuration.h"
 
-
-using oops::Log;
-
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 ObsBias::ObsBias(const eckit::Configuration & conf) : bias_(0.0), active_(false)
 {
-  Log::trace() << "ObsBias::ObsBias conf is:" << conf << std::endl;
+  oops::Log::trace() << "ObsBias::ObsBias conf is:" << conf << std::endl;
   if (conf.has("bias")) {
     bias_ = conf.getDouble("bias");
     active_ = true;
-    Log::info() << "ObsBias::ObsBias created, bias = " << bias_ << std::endl;
+    oops::Log::info() << "ObsBias::ObsBias created, bias = " << bias_ << std::endl;
   }
 }
 // -----------------------------------------------------------------------------

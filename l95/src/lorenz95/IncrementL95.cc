@@ -26,8 +26,6 @@
 #include "lorenz95/Resolution.h"
 #include "lorenz95/StateL95.h"
 
-using oops::Log;
-
 namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
@@ -38,24 +36,24 @@ IncrementL95::IncrementL95(const Resolution & resol, const NoVariables &,
   : fld_(resol), time_(vt)
 {
   fld_.zero();
-  Log::trace() << "IncrementL95::IncrementL95 created." << std::endl;
+  oops::Log::trace() << "IncrementL95::IncrementL95 created." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementL95::IncrementL95(const Resolution & resol, const IncrementL95 & dx)
   : fld_(resol), time_(dx.time_)
 {
   fld_ = dx.fld_;
-  Log::trace() << "IncrementL95::IncrementL95 created by interpolation." << std::endl;
+  oops::Log::trace() << "IncrementL95::IncrementL95 created by interpolation." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementL95::IncrementL95(const IncrementL95 & dx, const bool copy)
   : fld_(dx.fld_), time_(dx.time_)
 {
-  Log::trace() << "IncrementL95::IncrementL95 copy-created." << std::endl;
+  oops::Log::trace() << "IncrementL95::IncrementL95 copy-created." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementL95::~IncrementL95() {
-  Log::trace() << "IncrementL95::~IncrementL95 destructed" << std::endl;
+  oops::Log::trace() << "IncrementL95::~IncrementL95 destructed" << std::endl;
 }
 // -----------------------------------------------------------------------------
 /// Basic operators
@@ -125,7 +123,7 @@ void IncrementL95::accumul(const double & zz, const StateL95 & xx) {
 // -----------------------------------------------------------------------------
 void IncrementL95::read(const eckit::Configuration & config) {
   const std::string filename(config.getString("filename"));
-  Log::trace() << "IncrementL95::read opening " << filename << std::endl;
+  oops::Log::trace() << "IncrementL95::read opening " << filename << std::endl;
   std::ifstream fin(filename.c_str());
   if (!fin.is_open()) ABORT("IncrementL95::read: Error opening file");
 
@@ -145,7 +143,7 @@ void IncrementL95::read(const eckit::Configuration & config) {
   fld_.read(fin);
 
   fin.close();
-  Log::trace() << "IncrementL95::read: file closed." << std::endl;
+  oops::Log::trace() << "IncrementL95::read: file closed." << std::endl;
 }
 // -----------------------------------------------------------------------------
 void IncrementL95::write(const eckit::Configuration & config) const {
@@ -159,7 +157,7 @@ void IncrementL95::write(const eckit::Configuration & config) const {
   const util::Duration step = time_ - antime;
   filename += "."+step.toString();
 
-  Log::trace() << "IncrementL95::write opening " << filename << std::endl;
+  oops::Log::trace() << "IncrementL95::write opening " << filename << std::endl;
   std::ofstream fout(filename.c_str());
   if (!fout.is_open()) ABORT("IncrementL95::write: Error opening file");
 
@@ -169,7 +167,7 @@ void IncrementL95::write(const eckit::Configuration & config) const {
   fout << std::endl;
 
   fout.close();
-  Log::trace() << "IncrementL95::write file closed." << std::endl;
+  oops::Log::trace() << "IncrementL95::write file closed." << std::endl;
 }
 // -----------------------------------------------------------------------------
 void IncrementL95::print(std::ostream & os) const {

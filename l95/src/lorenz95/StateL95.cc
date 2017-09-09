@@ -28,10 +28,6 @@
 #include "lorenz95/ModelTrajectory.h"
 #include "lorenz95/Resolution.h"
 
-
-
-using oops::Log;
-
 namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
@@ -41,31 +37,31 @@ StateL95::StateL95(const Resolution & resol, const NoVariables &,
                    const util::DateTime & vt)
   : fld_(resol), time_(vt)
 {
-  Log::trace() << "StateL95::StateL95 created" << std::endl;
+  oops::Log::trace() << "StateL95::StateL95 created" << std::endl;
 }
 // -----------------------------------------------------------------------------
 StateL95::StateL95(const Resolution & resol, const eckit::Configuration & file)
   : fld_(resol), time_(util::DateTime())
 {
   this->read(file);
-  Log::trace() << "StateL95::StateL95 created and read in." << std::endl;
+  oops::Log::trace() << "StateL95::StateL95 created and read in." << std::endl;
 }
 // -----------------------------------------------------------------------------
 StateL95::StateL95(const Resolution & resol, const StateL95 & xx)
   : fld_(resol), time_(xx.time_)
 {
   fld_ = xx.fld_;
-  Log::trace() << "StateL95::StateL95 created by interpolation." << std::endl;
+  oops::Log::trace() << "StateL95::StateL95 created by interpolation." << std::endl;
 }
 // -----------------------------------------------------------------------------
 StateL95::StateL95(const StateL95 & xx)
   : fld_(xx.fld_), time_(xx.time_)
 {
-  Log::trace() << "StateL95::StateL95 copy-created." << std::endl;
+  oops::Log::trace() << "StateL95::StateL95 copy-created." << std::endl;
 }
 // -----------------------------------------------------------------------------
 StateL95::~StateL95() {
-  Log::trace() << "StateL95::StateL95 destructed." << std::endl;
+  oops::Log::trace() << "StateL95::StateL95 destructed." << std::endl;
 }
 // -----------------------------------------------------------------------------
 /// Basic operators
@@ -94,7 +90,7 @@ StateL95 & StateL95::operator+=(const IncrementL95 & dx) {
 // -----------------------------------------------------------------------------
 void StateL95::read(const eckit::Configuration & config) {
   const std::string filename(config.getString("filename"));
-  Log::trace() << "StateL95::read opening " << filename << std::endl;
+  oops::Log::trace() << "StateL95::read opening " << filename << std::endl;
   std::ifstream fin(filename.c_str());
   if (!fin.is_open()) ABORT("StateL95::read: Error opening file");
 
@@ -114,7 +110,7 @@ void StateL95::read(const eckit::Configuration & config) {
   fld_.read(fin);
 
   fin.close();
-  Log::trace() << "StateL95::read: file closed." << std::endl;
+  oops::Log::trace() << "StateL95::read: file closed." << std::endl;
 }
 // -----------------------------------------------------------------------------
 void StateL95::write(const eckit::Configuration & config) const {
@@ -139,7 +135,7 @@ void StateL95::write(const eckit::Configuration & config) const {
     filename += "."+time_.toString();
   }
 
-  Log::trace() << "StateL95::write opening " << filename << std::endl;
+  oops::Log::trace() << "StateL95::write opening " << filename << std::endl;
   std::ofstream fout(filename.c_str());
   if (!fout.is_open()) ABORT("StateL95::write: Error opening file");
 
@@ -149,7 +145,7 @@ void StateL95::write(const eckit::Configuration & config) const {
   fout << std::endl;
 
   fout.close();
-  Log::trace() << "StateL95::write file closed." << std::endl;
+  oops::Log::trace() << "StateL95::write file closed." << std::endl;
 }
 // -----------------------------------------------------------------------------
 void StateL95::print(std::ostream & os) const {

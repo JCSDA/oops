@@ -62,7 +62,7 @@ void ObservationTLAD::obsEquivAD(GomL95 & gom, const ObsVec1D & ovec,
 // -----------------------------------------------------------------------------
 
 void ObservationTLAD::print(std::ostream & os) const {
-  os << "ObservationTLAD::print not implemented";
+  os << "ObservationTLAD: Lorenz 95 Linear Obs Operator";
 }
 
 // -----------------------------------------------------------------------------

@@ -62,7 +62,8 @@ void LocalizationMatrixL95::multiply(IncrementL95 & dx) const {
 // -----------------------------------------------------------------------------
 
 void LocalizationMatrixL95::print(std::ostream & os) const {
-  os << "LocalizationMatrixL95::print not implemented";
+  os << "LocalizationMatrixL95: resolution = " << resol_
+     << ", length scale = " << 1.0/rscale_ << std::endl;
 }
 
 // -----------------------------------------------------------------------------
