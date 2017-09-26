@@ -43,12 +43,12 @@ class ObsWSpeedTLAD : public oops::LinearObsOperBase<QgTraits>,
   virtual ~ObsWSpeedTLAD();
 
 // Obs Operators
-  void setTrajectory(const GomQG &, const ObsBias &);
-  void obsEquivTL(const GomQG &, ObsVecQG &, const ObsBiasIncrement &) const;
-  void obsEquivAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &) const;
+  void setTrajectory(const GomQG &, const ObsBias &) override;
+  void obsEquivTL(const GomQG &, ObsVecQG &, const ObsBiasIncrement &) const override;
+  void obsEquivAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &) const override;
 
 // Other
-  boost::shared_ptr<const VariablesQG> variables() const {return varin_;}
+  boost::shared_ptr<const VariablesQG> variables() const override {return varin_;}
 
   int & toFortran() {return keyOperWspeed_;}
   const int & toFortran() const {return keyOperWspeed_;}
