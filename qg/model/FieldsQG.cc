@@ -119,7 +119,7 @@ void FieldsQG::random() {
   qg_field_random_f90(keyFlds_);
 }
 // -----------------------------------------------------------------------------
-void QgFields::dirac(const eckit::Configuration & config) {
+void FieldsQG::dirac(const eckit::Configuration & config) {
   const eckit::Configuration * conf = &config;
   qg_field_dirac_f90(keyFlds_, &conf);
 }

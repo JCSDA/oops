@@ -149,7 +149,7 @@ void IncrementQG::random() {
   fields_->random();
 }
 // -----------------------------------------------------------------------------
-void QgIncrement::dirac(const eckit::Configuration & config) {
+void IncrementQG::dirac(const eckit::Configuration & config) {
   fields_->dirac(config);
 }
 // -----------------------------------------------------------------------------

@@ -61,13 +61,13 @@ void FieldL95::dirac(const eckit::Configuration & config) {
 
 // Check
   ASSERT(ixdir.size() > 0);
-  for (int jj = 0; jj < ixdir.size(); ++jj) {
+  for (unsigned int jj = 0; jj < ixdir.size(); ++jj) {
      ASSERT(ixdir[jj] < resol_);
   }
 
 // Setup Dirac
   for (int jj = 0; jj < resol_; ++jj) x_[jj] = 0.0;
-  for (int jj = 0; jj < ixdir.size(); ++jj) x_[ixdir[jj]] = 1.0;
+  for (unsigned int jj = 0; jj < ixdir.size(); ++jj) x_[ixdir[jj]] = 1.0;
 }
 // -----------------------------------------------------------------------------
 FieldL95 & FieldL95::operator=(const FieldL95 & rhs) {

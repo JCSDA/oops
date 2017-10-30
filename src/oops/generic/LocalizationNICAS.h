@@ -51,6 +51,7 @@ class LocalizationNICAS : public LocalizationBase<MODEL> {
 template<typename MODEL>
 LocalizationNICAS<MODEL>::LocalizationNICAS(const State_ & xx, const eckit::Configuration & conf) {
   const eckit::Configuration * fconf = &conf;
+  Log::trace() << "LocalizationNICAS:LocalizationNICAS starting" << std::endl;
 
 // Get lat/lon/area/levs/mask from the unstructured grid
   UnstructuredGrid ugrid;
@@ -60,7 +61,7 @@ LocalizationNICAS<MODEL>::LocalizationNICAS(const State_ & xx, const eckit::Conf
   std::vector<double> areas = ugrid.getAreas();
   std::vector<double> levs = ugrid.getLevs();
   std::vector<int> mask3d;
-  for (int jlev = 0; jlev < levs.size(); ++jlev) {
+  for (unsigned int jlev = 0; jlev < levs.size(); ++jlev) {
     std::vector<int> tmp = ugrid.getMask3d(jlev);
     mask3d.insert(mask3d.end(), tmp.begin(), tmp.end());
   }

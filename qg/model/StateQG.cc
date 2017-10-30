@@ -128,11 +128,11 @@ StateQG & StateQG::operator+=(const IncrementQG & dx) {
 // -----------------------------------------------------------------------------
 /// Convert to/from unstructured grid
 // -----------------------------------------------------------------------------
-void QgState::convert_to(oops::UnstructuredGrid & ug) const {
+void StateQG::convert_to(oops::UnstructuredGrid & ug) const {
   fields_->convert_to(ug);
 }
 // -----------------------------------------------------------------------------
-void QgState::convert_from(const oops::UnstructuredGrid & ug) {
+void StateQG::convert_from(const oops::UnstructuredGrid & ug) {
   fields_->convert_from(ug);
 }
 // -----------------------------------------------------------------------------
