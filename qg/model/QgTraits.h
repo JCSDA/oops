@@ -17,7 +17,6 @@
 #include "model/GeometryQG.h"
 #include "model/GomQG.h"
 #include "model/IncrementQG.h"
-#include "model/LocalizationMatrixQG.h"
 #include "model/LocationsQG.h"
 #include "model/ModelQG.h"
 #include "model/ModelBias.h"
@@ -58,8 +57,6 @@ struct QgTraits {
 
   typedef qg::GomQG                 GeoVaLs;
   typedef qg::LocationsQG           Locations;
-
-  typedef qg::LocalizationMatrixQG  LocalizationMatrix;
 };
 
 }  // namespace qg

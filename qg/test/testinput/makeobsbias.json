@@ -1,5 +1,5 @@
 {
-  "resolution": {
+  "Geometry": {
     "nx": "40",
     "ny": "20",
     "bc": "1"
@@ -36,6 +36,7 @@
         "obs_density": "100",
         "nx": "40",
         "ny": "20",
+        "nval": "1",
         "obs_error": "0.4"
       }
     },
@@ -53,6 +54,7 @@
         "obs_density": "100",
         "nx": "40",
         "ny": "20",
+        "nval": "2",
         "obs_error": "0.6"
       }
     },
@@ -70,6 +72,7 @@
         "obs_density": "100",
         "nx": "40",
         "ny": "20",
+        "nval": "1",
         "obs_error": "1.2"
       }
     }

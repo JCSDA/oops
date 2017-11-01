@@ -74,14 +74,9 @@ if( NOT ( BUILD_SITE MATCHES "cc[abt].*" ) )  # Should depend on toolchain, not 
   include_directories( ${LAPACK_INCLUDE_DIR} )
 endif()
 
-# Xml2
-find_package( LibXml2 REQUIRED )
-include_directories( ${LIBXML2_INCLUDE_DIR} )
+ecbuild_add_cxx11_flags()
 
 # MPI
-#yt set( ENABLE_MPI                ON CACHE BOOL "Compile with MPI" )
-#find_package( MPI REQUIRED )
-#include_directories( ${MPI_INCLUDE_DIR} )
 ecbuild_add_option( FEATURE MPI DEFAULT ON
                     DESCRIPTION "Support for MPI distributed parallelism"
                     REQUIRED_PACKAGES "MPI COMPONENTS CXX Fortran" )
@@ -116,7 +111,7 @@ include_directories( ${NETCDF_INCLUDE_DIR} )
 # Export package info
 ################################################################################
 
-list( APPEND OOPS_TPLS LAPACK LibXml2 MPI NetCDF )
+list( APPEND OOPS_TPLS LAPACK MPI NetCDF )
 
 set( OOPS_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/src
                        ${CMAKE_Fortran_MODULE_DIRECTORY} )
@@ -134,13 +129,6 @@ endforeach()
 ################################################################################
 # Sources
 ################################################################################
-
-ecbuild_add_cxx11_flags()
-ecbuild_add_option( FEATURE MPI DEFAULT ON )
-
-if ( HAVE_MPI AND NOT ECKIT_HAVE_MPI )
-  ecbuild_error("OOPS was requested to build with MPI but eckit wasn't built with MPI: ECKIT_HAVE_MPI = ${ECKIT_HAVE_MPI}")
-endif()
 
 include( oops_compiler_flags )
 include_directories( ${OOPS_INCLUDE_DIRS} ${OOPS_EXTRA_INCLUDE_DIRS} )
