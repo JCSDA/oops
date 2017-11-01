@@ -69,15 +69,11 @@ if( NOT ( BUILD_SITE MATCHES "cc[abt].*" ) )  # Should depend on toolchain, not 
   include_directories( ${LAPACK_INCLUDE_DIR} )
 endif()
 
-# Xml2
-find_package( LibXml2 REQUIRED )
-include_directories( ${LIBXML2_INCLUDE_DIR} )
-
 ################################################################################
 # Export package info
 ################################################################################
 
-list( APPEND OOPS_TPLS LAPACK LibXml2 )
+list( APPEND OOPS_TPLS LAPACK )
 set( OOPS_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/src
                        ${CMAKE_Fortran_MODULE_DIRECTORY} )
 set( OOPS_LIBRARIES oops )

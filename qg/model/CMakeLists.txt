@@ -106,12 +106,7 @@ zonal_wind_ad.f90
 zonal_wind_tl.f90
 )
 
-if ( CMAKE_Fortran_COMPILER_ID MATCHES "Cray" )
-  set( cfdealloc C_F_NO_DEALLOC )
-endif()
-
 ecbuild_add_library( TARGET   qg
-                     DEFINITIONS ${cfdealloc}
                      SOURCES  ${oops_qg_src_files}
                      LIBS     oops ${LAPACK_LIBRARIES}
                      INSTALL_HEADERS LISTED

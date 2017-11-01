@@ -64,12 +64,6 @@ ControlIncrement<MODEL> * LBMinimizer<MODEL>::doMinimize(const eckit::Configurat
   int ninner = config.getInt("ninner");
   double gnreduc = config.getDouble("gradient_norm_reduction");
 
-  bool runOnlineAdjTest = false;
-  if (config.has("onlineDiagnostics")) {
-    const eckit::LocalConfiguration onlineDiag(config, "onlineDiagnostics");
-    runOnlineAdjTest = onlineDiag.getBool("onlineAdjTest");
-  }
-
   if (gradJb_ == 0) {
     gradJb_.reset(new CtrlInc_(J_.jb()));
   } else {
