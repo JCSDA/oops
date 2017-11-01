@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -16,7 +16,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "util/Logger.h"
-#include "oops/interface/ModelAtLocations.h"
+#include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsVector.h"
@@ -39,7 +39,7 @@ template <typename MODEL>
 class ObsOperator : public util::Printable,
                     private util::ObjectCounter<ObsOperator<MODEL> > {
   typedef typename MODEL::ObsOperator           ObsOperator_;
-  typedef ModelAtLocations<MODEL>    ModelAtLocations_;
+  typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef ObsAuxControl<MODEL>       ObsAuxControl_;
   typedef ObsVector<MODEL>           ObsVector_;
   typedef ObservationSpace<MODEL>    ObsSpace_;
@@ -56,7 +56,7 @@ class ObsOperator : public util::Printable,
   const ObsOperator_ & obsoperator() const {return *oper_;}
 
 /// Obs Operator
-  void obsEquiv(const ModelAtLocations_ &, ObsVector_ &, const ObsAuxControl_ &) const;
+  void obsEquiv(const GeoVaLs_ &, ObsVector_ &, const ObsAuxControl_ &) const;
 
 /// Other
   Variables_ variables() const;  // Required inputs variables from Model
@@ -101,11 +101,11 @@ ObsOperator<MODEL>::~ObsOperator() {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void ObsOperator<MODEL>::obsEquiv(const ModelAtLocations_ & gom, ObsVector_ & yy,
+void ObsOperator<MODEL>::obsEquiv(const GeoVaLs_ & gvals, ObsVector_ & yy,
                                   const ObsAuxControl_ & aux) const {
   Log::trace() << "ObsOperator<MODEL>::obsEquiv starting" << std::endl;
   util::Timer timer(classname(), "ObsEquiv");
-  oper_->obsEquiv(gom.modelatlocations(), yy.obsvector(), aux.obsauxcontrol());
+  oper_->obsEquiv(gvals.geovals(), yy.obsvector(), aux.obsauxcontrol());
   Log::trace() << "ObsOperator<MODEL>::obsEquiv done" << std::endl;
 }
 

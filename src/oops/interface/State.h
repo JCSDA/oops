@@ -15,19 +15,16 @@
 
 #include <boost/scoped_ptr.hpp>
 
+#include "eckit/config/Configuration.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/interface/Geometry.h"
+#include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Locations.h"
-#include "oops/interface/ModelAtLocations.h"
 #include "oops/interface/Variables.h"
 #include "util/DateTime.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 #include "util/Timer.h"
-
-namespace eckit {
-  class Configuration;
-}
 
 namespace oops {
 
@@ -38,10 +35,10 @@ namespace oops {
 template <typename MODEL>
 class State : public util::Printable,
               private util::ObjectCounter<State<MODEL> > {
-  typedef typename MODEL::State                 State_;
+  typedef typename MODEL::State      State_;
   typedef Geometry<MODEL>            Geometry_;
+  typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef Locations<MODEL>           Locations_;
-  typedef ModelAtLocations<MODEL>    ModelAtLocations_;
   typedef Variables<MODEL>           Variables_;
 
  public:
@@ -59,7 +56,7 @@ class State : public util::Printable,
   const State_ & state() const {return *state_;}
 
 /// Interpolate to observation location
-  void interpolate(const Locations_ &, ModelAtLocations_ &) const;
+  void interpolate(const Locations_ &, GeoVaLs_ &) const;
 
 /// Time
   const util::DateTime validTime() const {return state_->validTime();}
@@ -150,10 +147,10 @@ State<MODEL> & State<MODEL>::operator=(const State & rhs) {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void State<MODEL>::interpolate(const Locations_ & locs, ModelAtLocations_ & gom) const {
+void State<MODEL>::interpolate(const Locations_ & locs, GeoVaLs_ & gvals) const {
   Log::trace() << "State<MODEL>::interpolate starting" << std::endl;
   util::Timer timer(classname(), "interpolate");
-  state_->interpolate(locs.locations(), gom.modelatlocations());
+  state_->interpolate(locs.locations(), gvals.geovals());
   Log::trace() << "State<MODEL>::interpolate done" << std::endl;
 }
 

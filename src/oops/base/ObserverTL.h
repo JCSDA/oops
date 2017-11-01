@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -18,8 +18,8 @@
 #include "oops/base/Departures.h"
 #include "oops/base/Observations.h"
 #include "oops/base/PostBaseTL.h"
+#include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Locations.h"
-#include "oops/interface/ModelAtLocations.h"
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/LinearObsOperator.h"
@@ -32,8 +32,8 @@ namespace oops {
 
 template <typename MODEL, typename INCR> class ObserverTL : public PostBaseTL<INCR> {
   typedef Departures<MODEL>          Departures_;
+  typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef Locations<MODEL>           Locations_;
-  typedef ModelAtLocations<MODEL>    GOM_;
   typedef Observations<MODEL>        Observations_;
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
   typedef LinearObsOperator<MODEL>   LinearObsOperator_;
@@ -68,7 +68,7 @@ template <typename MODEL, typename INCR> class ObserverTL : public PostBaseTL<IN
   util::Duration hslot_;    //!< Half time slot
   const bool subwindows_;
 
-  boost::scoped_ptr<GOM_> gom_;
+  boost::scoped_ptr<GeoVaLs_> gvals_;
 };
 
 // ====================================================================================
@@ -102,7 +102,7 @@ void ObserverTL<MODEL, INCR>::doInitializeTL(const INCR & dx,
   if (bgn_ < winbgn_) bgn_ = winbgn_;
   if (end_ > winend_) end_ = winend_;
 // Pass the Geometry for IFS -- Bad...
-  gom_.reset(new GOM_(obspace_, hoptlad_.variables(), bgn_, end_, dx.geometry()));
+  gvals_.reset(new GeoVaLs_(obspace_, hoptlad_.variables(), bgn_, end_, dx.geometry()));
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename INCR>
@@ -116,13 +116,13 @@ void ObserverTL<MODEL, INCR>::doProcessingTL(const INCR & dx) {
   Locations_ locs(obspace_, t1, t2);
 
 // Interpolate state variables to obs locations
-  dx.interpolateTL(locs, *gom_);
+  dx.interpolateTL(locs, *gvals_);
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename INCR>
 void ObserverTL<MODEL, INCR>::doFinalizeTL(const INCR &) {
-  ydep_->runObsOperatorTL(hoptlad_, *gom_, ybias_);
-  gom_.reset();
+  ydep_->runObsOperatorTL(hoptlad_, *gvals_, ybias_);
+  gvals_.reset();
 }
 // -----------------------------------------------------------------------------
 

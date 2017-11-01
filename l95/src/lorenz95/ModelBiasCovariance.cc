@@ -19,8 +19,6 @@
 #include "lorenz95/ModelBiasCorrection.h"
 #include "eckit/config/Configuration.h"
 
-using oops::Log;
-
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
@@ -32,7 +30,7 @@ ModelBiasCovariance::ModelBiasCovariance(const eckit::Configuration & conf, cons
     const double zz = conf_.getDouble("standard_deviation");
     variance_ = zz * zz;
     ASSERT(variance_ > 0.0);
-    Log::info() << "ModelBiasCovariance variance = " << variance_ << std::endl;
+    oops::Log::info() << "ModelBiasCovariance variance = " << variance_ << std::endl;
   }
 }
 // -----------------------------------------------------------------------------
@@ -64,7 +62,11 @@ void ModelBiasCovariance::randomize(ModelBiasCorrection & dx) const {
 }
 // -----------------------------------------------------------------------------
 void ModelBiasCovariance::print(std::ostream & os) const {
-  os << "ModelBiasCovariance::print not implemented";
+  if (active_) {
+    os << "ModelBiasCovariance: variance = " << variance_ << std::endl;
+  } else {
+    os << "ModelBiasCovariance not active" << std::endl;
+  }
 }
 // -----------------------------------------------------------------------------
 }  // namespace lorenz95

@@ -59,7 +59,7 @@ struct L95Traits {
   typedef lorenz95::ObsBiasCorrection      ObsAuxIncrement;
   typedef lorenz95::ObsBiasCovariance      ObsAuxCovariance;
 
-  typedef lorenz95::GomL95                 ModelAtLocations;
+  typedef lorenz95::GomL95                 GeoVaLs;
   typedef lorenz95::LocsL95                Locations;
 
   typedef lorenz95::LocalizationMatrixL95  LocalizationMatrix;

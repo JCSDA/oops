@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -19,7 +19,7 @@
 
 #include "util/Logger.h"
 #include "oops/base/GeneralizedDepartures.h"
-#include "oops/interface/ModelAtLocations.h"
+#include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/ObsErrorBase.h"
 #include "oops/interface/ObservationSpace.h"
@@ -47,7 +47,7 @@ template<typename MODEL> class Departures;
 template <typename MODEL>
 class Departures : public util::Printable,
                    public GeneralizedDepartures {
-  typedef ModelAtLocations<MODEL>    GOM_;
+  typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
   typedef ObsErrorBase<MODEL>        ObsErrorBase_;
   typedef LinearObsOperator<MODEL>   LinearObsOperator_;
@@ -74,10 +74,10 @@ class Departures : public util::Printable,
   double dot_product_with(const Departures &) const;
 
 /// Compute observations equivalents (TL)
-  void runObsOperatorTL(const LinearObsOperator_ &, const GOM_ &, const ObsAuxIncr_ &);
+  void runObsOperatorTL(const LinearObsOperator_ &, const GeoVaLs_ &, const ObsAuxIncr_ &);
 
 /// Compute observations equivalents (AD)
-  void runObsOperatorAD(const LinearObsOperator_ &, GOM_ &, ObsAuxIncr_ &) const;
+  void runObsOperatorAD(const LinearObsOperator_ &, GeoVaLs_ &, ObsAuxIncr_ &) const;
 
 /// Get departue values
   const ObsVector_ & depvalues() const {return *dep_;}
@@ -125,15 +125,15 @@ Departures<MODEL>::~Departures() {
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-void Departures<MODEL>::runObsOperatorTL(const LinearObsOperator_ & hop, const GOM_ & gom,
+void Departures<MODEL>::runObsOperatorTL(const LinearObsOperator_ & hop, const GeoVaLs_ & gvals,
                                          const ObsAuxIncr_ & octl) {
-  hop.obsEquivTL(gom, *dep_, octl);
+  hop.obsEquivTL(gvals, *dep_, octl);
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-void Departures<MODEL>::runObsOperatorAD(const LinearObsOperator_ & hop, GOM_ & gom,
+void Departures<MODEL>::runObsOperatorAD(const LinearObsOperator_ & hop, GeoVaLs_ & gvals,
                                          ObsAuxIncr_ & octl) const {
-  hop.obsEquivAD(gom, *dep_, octl);
+  hop.obsEquivAD(gvals, *dep_, octl);
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>

@@ -18,9 +18,6 @@
 #include "lorenz95/ObsBiasCovariance.h"
 #include "eckit/config/Configuration.h"
 
-
-using oops::Log;
-
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
@@ -28,7 +25,7 @@ ObsBiasCorrection::ObsBiasCorrection(const eckit::Configuration & conf)
   : bias_(0.0), active_(false)
 {
   active_ = conf.has("standard_deviation");
-  if (active_) {Log::trace() << "ObsBiasCorrection::ObsBiasCorrection created." << std::endl;}
+  if (active_) {oops::Log::trace() << "ObsBiasCorrection::ObsBiasCorrection created." << std::endl;}
 }
 // -----------------------------------------------------------------------------
 ObsBiasCorrection::ObsBiasCorrection(const ObsBiasCorrection & other,

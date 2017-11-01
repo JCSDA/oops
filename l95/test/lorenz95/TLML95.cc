@@ -142,7 +142,7 @@ BOOST_FIXTURE_TEST_SUITE(test_tlmL95, TlmTestFixture)
     // then read the value that was written to the file
     std::string inputString;
     std::string inputStartsWith;
-    std::string testString("L95 Model Trajectory, nstep=");
+    std::string testString("TLML95: resol = ");
     int endPos = testString.size();
     std::ifstream inputFile(filename.c_str());
     if (inputFile.is_open()) {

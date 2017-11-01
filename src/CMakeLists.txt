@@ -154,13 +154,13 @@ oops/generic/instantiateObsErrorFactory.h
 
 oops/interface/ErrorCovariance.h
 oops/interface/Geometry.h
+oops/interface/GeoVaLs.h
 oops/interface/Increment.h
 oops/interface/LinearModel.h
 oops/interface/LinearObsOperator.h
 oops/interface/Localization.h
 oops/interface/Locations.h
 oops/interface/Model.h
-oops/interface/ModelAtLocations.h
 oops/interface/ModelAuxControl.h
 oops/interface/ModelAuxCovariance.h
 oops/interface/ModelAuxIncrement.h

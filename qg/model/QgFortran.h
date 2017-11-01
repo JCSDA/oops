@@ -156,8 +156,11 @@ extern "C" {
   void qg_gom_create_f90(F90goms &);
   void qg_gom_delete_f90(F90goms &);
   void qg_gom_zero_f90(const F90goms &);
+  void qg_gom_random_f90(const F90goms &);
   void qg_gom_dotprod_f90(const F90goms &, const F90goms &, double &);
   void qg_gom_minmaxavg_f90(const F90goms &, int &, double &, double &, double &);
+  void qg_gom_read_file_f90(const F90goms &, const eckit::Configuration * const *);
+  void qg_gom_write_file_f90(const F90goms &, const eckit::Configuration * const *);
 
 // -----------------------------------------------------------------------------
 //  Streamfunction observations

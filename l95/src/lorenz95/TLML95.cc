@@ -25,8 +25,6 @@
 #include "util/Logger.h"
 #include "util/abor1_cpp.h"
 
-using oops::Log;
-
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 static oops::LinearModelMaker<L95Traits, TLML95> makerTLML95_("L95TLM");
@@ -36,14 +34,15 @@ TLML95::TLML95(const Resolution & resol, const eckit::Configuration & tlConf)
     dt_(tstep_.toSeconds()/432000.0), traj_(),
     lrmodel_(resol_, eckit::LocalConfiguration(tlConf, "trajectory"))
 {
-  Log::trace() << "TLML95::TLML95 created" << std::endl;
+  oops::Log::info() << "TLML95: resol = " << resol_ << ", tstep = " << tstep_ << std::endl;
+  oops::Log::trace() << "TLML95::TLML95 created" << std::endl;
 }
 // -----------------------------------------------------------------------------
 TLML95::~TLML95() {
   for (trajIter jtra = traj_.begin(); jtra != traj_.end(); ++jtra) {
     delete jtra->second;
   }
-  Log::trace() << "TLML95::~TLML95 destructed" << std::endl;
+  oops::Log::trace() << "TLML95::~TLML95 destructed" << std::endl;
 }
 // -----------------------------------------------------------------------------
 void TLML95::setTrajectory(const StateL95 & xx, StateL95 &, const ModelBias & bias) {
@@ -58,7 +57,7 @@ void TLML95::setTrajectory(const StateL95 & xx, StateL95 &, const ModelBias & bi
 const ModelTrajectory * TLML95::getTrajectory(const util::DateTime & tt) const {
   trajICst itra = traj_.find(tt);
   if (itra == traj_.end()) {
-    Log::error() << "TLML95: trajectory not available at time " << tt << std::endl;
+    oops::Log::error() << "TLML95: trajectory not available at time " << tt << std::endl;
     ABORT("TLML95: trajectory not available");
   }
   return itra->second;
@@ -174,6 +173,7 @@ void TLML95::tendenciesAD(FieldL95 & xx, double & bias,
 }
 // -----------------------------------------------------------------------------
 void TLML95::print(std::ostream & os) const {
+  os << "TLML95: resol = " << resol_ << ", tstep = " << tstep_;
   os << "L95 Model Trajectory, nstep=" << traj_.size() << "\n";
   typedef std::map< util::DateTime, ModelTrajectory * >::const_iterator trajICst;
   if (traj_.size() > 0) {

@@ -19,9 +19,6 @@
 #include "eckit/config/Configuration.h"
 #include "util/Duration.h"
 
-
-using oops::Log;
-
 namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
@@ -31,13 +28,14 @@ ModelL95::ModelL95(const Resolution & resol, const eckit::Configuration & config
     tstep_(util::Duration(config.getString("tstep"))),
     dt_(tstep_.toSeconds()/432000.0)
 {
-  Log::trace() << "ModelL95::ModelL95 created" << std::endl;
+  oops::Log::info() << *this << std::endl;
+  oops::Log::trace() << "ModelL95::ModelL95 created" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 ModelL95::~ModelL95()
 {
-  Log::trace() << "ModelL95::~ModelL95 destructed" << std::endl;
+  oops::Log::trace() << "ModelL95::~ModelL95 destructed" << std::endl;
 }
 // -----------------------------------------------------------------------------
 void ModelL95::initialize(StateL95 &) const {}
@@ -103,7 +101,7 @@ void ModelL95::tendencies(const FieldL95 & xx, const double & bias,
 // -----------------------------------------------------------------------------
 
 void ModelL95::print(std::ostream & os) const {
-  os << "ModelL95::print not implemented";
+  os << "ModelL95: resol = " << resol_ << ", f = " << f_ << ", tstep = " << tstep_;
 }
 
 // -----------------------------------------------------------------------------

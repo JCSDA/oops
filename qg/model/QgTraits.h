@@ -39,7 +39,7 @@ struct QgTraits {
   static std::string name() {return "QG";}
 
   typedef qg::GeometryQG            Geometry;
-  typedef qg::VariablesQG                 Variables;
+  typedef qg::VariablesQG           Variables;
 
   typedef qg::StateQG               State;
   typedef qg::ModelQG               Model;
@@ -59,8 +59,8 @@ struct QgTraits {
   typedef qg::ObsBiasIncrement      ObsAuxIncrement;
   typedef qg::ObsBiasCovariance     ObsAuxCovariance;
 
-  typedef qg::GomQG                 ModelAtLocations;
-  typedef qg::LocationsQG                 Locations;
+  typedef qg::GomQG                 GeoVaLs;
+  typedef qg::LocationsQG           Locations;
 
   typedef qg::LocalizationMatrixQG  LocalizationMatrix;
 };

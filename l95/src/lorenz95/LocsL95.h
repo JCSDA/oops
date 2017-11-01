@@ -41,7 +41,7 @@ class LocsL95 : public util::Printable,
 
  private:
   void print(std::ostream & os) const {
-    os << "LocsL95::print not implemented";
+    os << "LocsL95: number of locations = " << locs_.size() << std::endl;
   }
   std::vector<double> locs_;
 };

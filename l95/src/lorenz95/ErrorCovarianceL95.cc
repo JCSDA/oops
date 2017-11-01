@@ -86,7 +86,8 @@ void ErrorCovarianceL95::randomize(IncrementL95 & dx) const {
 }
 // -----------------------------------------------------------------------------
 void ErrorCovarianceL95::print(std::ostream & os) const {
-  os << "ErrorCovarianceL95::print not implemented";
+  os << "ErrorCovarianceL95: time = " << time_ << ", std dev = " << sigmab_
+     << ", length scale = " << 1.0/rscale_ << std::endl;
 }
 // -----------------------------------------------------------------------------
 
