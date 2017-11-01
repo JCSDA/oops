@@ -148,6 +148,12 @@ ecbuild_add_test( TARGET  test_qg_variables
                   ARGS    "testinput/interfaces.json"
                   LIBS    qg )
 
+ecbuild_add_test( TARGET  test_qg_geovals
+                  BOOST
+                  SOURCES executables/TestGeoVaLs.cc
+                  ARGS    "testinput/interfaces.json"
+                  LIBS    qg )
+
 ecbuild_add_test( TARGET  test_qg_state
                   BOOST
                   SOURCES executables/TestState.cc
@@ -206,6 +212,18 @@ ecbuild_add_test( TARGET test_qg_obsvector
                   BOOST
                   SOURCES executables/TestObsVector.cc
                   ARGS "testinput/interfaces.json"
+                  LIBS    qg )
+
+ecbuild_add_test( TARGET  test_qg_obsoperator
+                  BOOST
+                  SOURCES executables/TestObsOperator.cc
+                  ARGS    "testinput/interfaces.json"
+                  LIBS    qg )
+
+ecbuild_add_test( TARGET  test_qg_linobsoperator
+                  BOOST
+                  SOURCES executables/TestLinearObsOperator.cc
+                  ARGS    "testinput/interfaces.json"
                   LIBS    qg )
 
 ecbuild_add_test( TARGET test_qg_obserrorcovar

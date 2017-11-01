@@ -193,10 +193,6 @@ oops/runs/Run.h
 oops/runs/Run.cc
 oops/runs/Test.h
 oops/runs/Variational.h
-
-test/base/TestSuiteOpObsFixture.h
-test/base/TestSuiteOpObsTLAD.h
-test/base/TestSuiteOpObsTL.h
 )
 
 function(generate_fortran_bindings output filename)
