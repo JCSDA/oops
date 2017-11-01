@@ -1,0 +1,318 @@
+% (C) Copyright 2009-2016 ECMWF.
+% 
+% This software is licensed under the terms of the Apache Licence Version 2.0
+% which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+% In applying this licence, ECMWF does not waive the privileges and immunities 
+% granted to it by virtue of its status as an intergovernmental organisation nor
+% does it submit to any jurisdiction.
+
+\documentclass[12pt]{article}
+
+\usepackage{listings}
+\lstloadlanguages{c++}
+
+\parskip=12pt
+\parindent=0pt
+\title{The OOPS Linear Equation Solvers}
+\author{Mike Fisher, ECMWF}
+
+\newcommand{\vect}[1]{{\bf #1}}                         % vector
+\newcommand{\mat}[1]{{\bf #1}}                          % matrix
+\newcommand{\calH}{{\cal H}}                           % matrix
+\newcommand{\calM}{{\cal M}}                           % matrix
+\newcommand{\rmT}{{\rm T}}                           % matrix
+
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+This note describes the linear equation solvers implemented in OOPS.
+The solvers are designed to be as generic as possible, to allow their
+use with a variety of different vector and matrix classes.
+
+\section{Generic Code Design}
+
+The solvers are implemented as generic (templated) functions. The functions
+are templated on a type VECTOR and one or more matrix types (AMATRIX,
+PMATRIX, etc.). Thus, we require that all vector arguments are of the same
+class, but the matrices do not have to be derived from a single class.
+
+In addition to the vector and matrix arguments, there are two arguments
+specifying the maximum number of iterations to be performed, and the
+required reduction in residual norm. Iteration will stop when either the
+iteration limit is reached or the residual norm is reduced below the
+required factor. The return value from all the solvers is the achieved 
+reduction in residual norm.
+
+As a typical example, consider the IPCG solver:
+\begin{center}
+\begin{minipage}{0.8\textwidth}
+\begin{lstlisting}[language=c++]
+template <typename VECTOR,
+          typename AMATRIX,
+          typename PMATRIX>
+double IPCG (VECTOR & x,
+             const VECTOR & b,
+             const AMATRIX & A,
+             const PMATRIX & precond,
+             const int maxiter,
+             const double tol );
+\end{lstlisting}
+\end{minipage}
+\end{center}
+
+For all the solvers, VECTOR is expected to implement basic linear algebra
+operations:
+\begin{itemize}
+\item {\tt double dot\_product(VECTOR \&, VECTOR \&);}
+\item {\tt operator(=)}
+\item {\tt operator(+=)}
+\item {\tt operator(-=)}
+\item {\tt operator(*=)} (double times VECTOR)
+\item {\tt axpy} (u.axpy(a,v) sets $u := u + a*v$)
+\end{itemize}
+
+The matrix classes are expected to implement:
+\begin{itemize}
+\item {\tt void apply(const VECTOR\&, VECTOR\&) const}
+\end{itemize}
+This function represents application of the matrix to the first
+argument, with the result returned in the second. For all the current
+algorithms, application of the preconditioner may be approximate, for
+example as the result of an iterative solution method.
+
+\section{The algorithms}
+
+The following algorithms are available:
+\begin{itemize}
+\item IPCG: Inexact-Preconditioned Conjugate Gradients.
+\item DRIPCG: ``Derber-Rosati'' Inexact-Preconditioned Conjugate Gradients.
+\item GMRESR.
+\item DRGMRESR: A ``Derber-Rosati'' version of GMRESR.
+\end{itemize}
+
+\subsection{IPCG}
+
+Inexact Preconditioned Conjugate Gradients (Golub and Ye, 1990/2000) is a
+slight variation on the well-known Preconditioned Conjugate Gradients
+algorithm. Given an initial vector $\vect{x}_0$, a symmetric, positive definite
+matrix $\mat{A}$, and preconditioners $\mat{E}_k \approx \mat{A}^{-1}$,
+IPCG solves $\mat{A}\vect{x} = \vect{b}$ as follows:
+\begin{center}
+\begin{minipage}{0.8\textwidth}
+\begin{eqnarray}
+  \label{IPCG-precond-eqn}
+  \vect{s}_k &=& \mat{E}_k \vect{r}_k \\
+  \beta_k &=& 
+           \frac{ \vect{s}_k^\rmT (\vect{r}_k -\vect{r}_{k-1})}
+                { \vect{s}_k^\rmT \vect{r}_{k-1} }
+                                   \qquad\mbox{for $k>0$} \\
+  \vect{d}_k &=& \left\{
+       \begin{array}{ll}
+           \vect{s}_k & \qquad\mbox{if $k=0$} \\
+           \vect{s}_k + \beta_k \vect{d}_{k-1}
+                                   & \qquad\mbox{if $k>0$}
+       \end{array} \right. \\
+  \vect{w}_k &=& \mat{A} \vect{d}_k \\
+  \alpha_k &=& (\vect{s}_k^\rmT \vect{r}_k )/(\vect{d}_k^\rmT \vect{w}_k )\\
+  \vect{x}_{k+1} &=& \vect{x}_k + \alpha_k \vect{d}_k \\
+  \vect{r}_{k+1} &=& \vect{r}_k - \alpha_k \vect{w}_k
+\end{eqnarray}
+\end{minipage}
+\end{center}
+
+The algorithm differs from PCG only in the definition of $\beta_k$, which
+PCG defines as:
+\begin{equation}
+  \beta_k = \frac{\vect{s}_k^\rmT \vect{r}_k }
+                 {\vect{s}_k^\rmT \vect{r}_{k-1} }
+                                   \qquad\mbox{for $k>0$}. \\
+\end{equation}
+This slight modification requires additional storage for the vector
+$\vect{r}_{k-1}$, but has the advantage of significantly improving the
+convergence properties of the algorithm in the case that the preconditioner
+varies from iteration to iteration. In particular, $\vect{s}_k$ in
+equation \ref{IPCG-precond-eqn} can be determined as the result of a
+truncated iterative solution of the equation
+$\mat{\tilde A} \vect{s}_k = \vect{r}_k$, for some approximation
+$\mat{\tilde A} \approx \mat{A}$.
+
+Convergence results for IPCG are presented by Golub and Ye ({\it op.\ cit.\/}).
+Further results are given by Knyazev and Lashuk (2007).
+
+\subsection{DRIPCG}
+
+In many applications in variational data assimilation, the matrix $\mat{A}$
+takes the particular form:
+\begin{equation}
+   \mat{A} = \mat{B}^{-1} + \mat{C}
+\end{equation}
+Furthermore, the matrix $\mat{B}^{-1}$ may be ill-conditioned or
+unavailable. In this case, Derber and Rosati (1989) showed that the
+PCG algorithm could be modified in such a way that application of
+$\mat{B}^{-1}$ is not required during the iterations.
+The algorithm requires an additional initial vector,
+$\vect{\hat x}_0 = \mat{B}^{-1} \vect{x}_0$. However application of
+$\mat{B}^{-1}$ can be avoided for the initial vector if the initial
+guess is taken as $\vect{x}_0 = \vect{0}$, or if both $\vect{x}_0$
+and $\vect{\hat x}_0$ are retained from a previous application of
+the algorithm.
+
+Derber and Rosati ({\it op.\ cit.\/}) modified PCG. However, their approach
+can be applied more widely to a range of linear equation solvers. The
+essence of the approach is to introduce auxilliary vectors:
+\begin{eqnarray}
+  \vect{\hat x}_k &=& \mat{B}^{-1} \vect{x}_k \\
+  \vect{\hat s}_k &=& \mat{B}^{-1} \vect{s}_k \\
+  \vect{\hat d}_k &=& \mat{B}^{-1} \vect{d}_k
+\end{eqnarray}
+
+Defining $\mat{F}_k = \mat{B}^{-1} \mat{E}_k$, and
+$\vect{r}_0 = \vect{b} - \vect{\hat x}_0 - \mat{C}\vect{x}_0$
+(i.e. $\vect{r}_0 =\vect{b} -\mat{A}\vect{x}_0$),
+we can write the IPCG algorithm as:
+\begin{center}
+\begin{minipage}{0.8\textwidth}
+\begin{eqnarray}
+  \vect{\hat s}_k &=& \mat{F}_k \vect{r}_k \\
+  \vect{s}_k &=& \mat{B} \vect{r}_k \\
+  \beta_k &=& 
+           \frac{ \vect{s}_k^\rmT (\vect{r}_k -\vect{r}_{k-1})}
+                { \vect{s}_k^\rmT \vect{r}_{k-1} }
+                                   \qquad\mbox{for $k>0$} \\
+  \vect{d}_k &=& \left\{
+       \begin{array}{ll}
+           \vect{s}_k & \qquad\mbox{if $k=0$} \\
+           \vect{s}_k + \beta_k \vect{d}_{k-1}
+                                   & \qquad\mbox{if $k>0$}
+       \end{array} \right. \\
+  \vect{\hat d}_k &=& \left\{
+       \begin{array}{ll}
+           \vect{\hat s}_k & \qquad\mbox{if $k=0$} \\
+           \vect{\hat s}_k + \beta_k \vect{\hat d}_{k-1}
+                                   & \qquad\mbox{if $k>0$}
+       \end{array} \right. \\
+  \vect{w}_k &=& \vect{\hat d}_k + \mat{C} \vect{d}_k \\
+  \alpha_k &=& (\vect{s}_k^\rmT \vect{r}_k )/(\vect{d}_k^\rmT \vect{w}_k )\\
+  \label{DRIPCG-eqn-for-x}
+  \vect{x}_{k+1} &=& \vect{x}_k + \alpha_k \vect{d}_k \\
+  \vect{\hat x}_{k+1} &=& \vect{\hat x}_k + \alpha_k \vect{\hat d}_k \\
+  \vect{r}_{k+1} &=& \vect{r}_k - \alpha_k \vect{w}_k
+\end{eqnarray}
+\end{minipage}
+\end{center}
+
+Note that no applications of $\mat{B}^{-1}$ are required during the
+iteration. Note also that $\vect{x}_k$ is not used during the iteration,
+so that equation \ref{DRIPCG-eqn-for-x} can be removed. After some number
+$N$ of iterations, we can recover $\vect{x}_N$ from $\vect{\hat x}_N$ by
+multiplying the latter by $\mat{B}$.
+
+The Derber Rosati algorithm is sometimes called ``Double'' PCG. We have
+adopted this nomenclature for algorithms that include similar
+modifications. thus, we call the algorithm described above
+Derber-Rosati Inexact-Preconditioned Conjugate Gradients, or DRIPCG.
+The algorithm algorithm is closely related to CGMOD
+(Gratton, personal communication).
+
+DRIPCG is algebraically equivalent to IPCG provided that the preconditioners
+are related by $\mat{F}_k = \mat{B}^{-1} \mat{E}_k$. A common preconditioning
+is to choose $\mat{E}_k = \mat{B}$, in which case $\mat{F}_k = \mat{I}$.
+
+\subsection{GMRESR}
+
+GMRESR (Van der Vorst and Vuik, 1994) is a robust algorithm for square,
+non-symmetric systems. Like IPCG, it allows the preconditioner to vary
+from iteration to iteration. The algorithm starts with
+$ \vect{r}_0 = \vect{b} - \mat{A}\vect{x}_0$, and iterates the following
+steps for $k=0,1,2,\ldots$.
+\begin{center}
+\begin{minipage}{0.8\textwidth}
+\begin{eqnarray}
+  \vect{z} &:=& \mat{E}_k \vect{r}_k \\
+  \vect{c} &:=& \mat{A}\vect{z} \\
+  && \mbox{\bf for} \quad j = 0,1,\ldots,k-1 \nonumber \\
+  && \qquad \alpha := \vect{c}_j^\rmT \vect{c} \\
+  && \qquad \vect{c} := \vect{c} - \alpha \vect{c}_j \\
+  && \qquad \vect{z} := \vect{z} - \alpha \vect{u}_j \\
+  && \mbox{\bf end for} \nonumber \\
+  \vect{c}_k &:=& \frac{\vect{c}}{\Vert \vect{c} \Vert_2} \\
+  \vect{u}_k &:=& \frac{\vect{z}}{\Vert \vect{c} \Vert_2} \\
+  \beta_k &:=& \vect{c}_k^\rmT \vect{r}_k \\
+  \vect{x}_{k+1} &:=& \vect{x}_k + \beta_k \vect{u}_k \\
+  \vect{r}_{k+1} &:=& \vect{r}_k - \beta_k \vect{c}_k
+\end{eqnarray}
+\end{minipage}
+\end{center}
+
+For a symmetric matrix and constant SPD preconditioner, GMRESR is
+algebraically equivalent to PCG. In this case, the explicit
+orthogonalisation of $\vect{c}_k$ against earlier vectors mitigates
+the effects of rounding error, resulting in somewhat faster convergence
+and a preservation of the super-linear convergence properties of PCG.
+
+The storage requirements of GMRESR are significant, since the vectors
+$\vect{c}_k$ and $\vect{u}_k$ must be retained for all subsequent
+iterations. Note that this is twice the storage required for a
+fully-orthogonalizing PCG algorithm such as CONGRAD (Fisher, 1998).
+
+\subsection{DRGMRESR}
+
+A ``Derber-Rosati'' version of GMRESR is easy to derive. As in the case of DRIPCG,
+we define $\mat{F}_k = \mat{B}^{-1} \mat{E}_k$, and calculate
+the starting point as
+$\vect{r}_0 = \vect{b} - \vect{\hat x}_0 - \mat{C}\vect{x}_0$, where
+$\vect{\hat x}_0 = \mat{B}^{-1} \vect{x}_0$. Defining also the auxilliary
+vectors:
+\begin{eqnarray}
+  \vect{\hat z} &=& \mat{B}^{-1} \vect{z} \\
+  \vect{\hat u}_k &=& \mat{B}^{-1} \vect{u}_k \\
+\end{eqnarray}
+we have:
+\begin{center}
+\begin{minipage}{0.8\textwidth}
+\begin{eqnarray}
+  \vect{\hat z} &:=& \mat{F}_k \vect{r}_k \\
+  \vect{z} &:=& \mat{B} \vect{\hat z}_k \\
+  \vect{c} &:=& \vect{\hat z} + \mat{C}\vect{z} \\
+  && \mbox{\bf for} \quad j = 0,1,\ldots,k-1 \nonumber \\
+  && \qquad \alpha := \vect{c}_j^\rmT \vect{c} \\
+  && \qquad \vect{c} := \vect{c} - \alpha \vect{c}_j \\
+  && \qquad \vect{z} := \vect{z} - \alpha \vect{u}_j \\
+  && \qquad \vect{\hat z} := \vect{\hat z} - \alpha \vect{\hat u}_j \\
+  && \mbox{\bf end for} \nonumber \\
+  \vect{c}_k &:=& \frac{\vect{c}}{\Vert \vect{c} \Vert_2} \\
+  \vect{u}_k &:=& \frac{\vect{z}}{\Vert \vect{c} \Vert_2} \\
+  \vect{\hat u}_k &:=& \frac{\vect{\hat z}}{\Vert \vect{c} \Vert_2} \\
+  \beta_k &:=& \vect{c}_k^\rmT \vect{r}_k \\
+  \vect{\hat x}_{k+1} &:=& \vect{\hat x}_k + \beta_k \vect{\hat u}_k \\
+  \vect{r}_{k+1} &:=& \vect{r}_k - \beta_k \vect{c}_k
+\end{eqnarray}
+\end{minipage}
+\end{center}
+
+As in the case of DRIPCG, after $N$ iterations, we can recover the solution
+$\vect{x}_N$ from $\vect{\hat x}_N$ by multiplying the latter by $\mat{B}$.
+
+\section{References}
+
+Fisher, M., 1998: Minimization algorithms for variational data assimilation.
+{\it In Proceedings of the ECMWF Seminar on Recent Developments in Numerical
+Methods for Atmospheric Modelling\/}, 364--385, Reading, England, 7-11
+September 1998.
+
+Golub G.H. and Q. Ye, 1999/2000. Inexact preconditioned conjugate gradient
+method with inner-outer iteration.  {\it SIAM J. Sci. Comput.\/},
+{\bf 21(4)}, 1305--1320.
+
+Knyazev A.V. and I. Lashuk, 2007. Steepest descent and conjugate gradient
+methods with variable preconditioning. {\it SIAM Journal on Matrix Analysis
+and Applications\/}, {\bf 29(4)}, 1267--1280.
+
+Van der Vorst H.A. and C. Vuik, 1994. GMRESR: A family of nested GMRES
+methods. {\it Numerical Linear Algebra with Applications\/}, {\bf 1(4)},
+369--386.
+
+
+\end{document}

@@ -1,0 +1,8 @@
+Test     : CostJb   : Nonlinear Jb = 0
+Test     : CostJo   : Nonlinear Jo = 115.159, nobs = 120, Jo/n = 0.959659, err = 0.4
+Test     : CostFunction: Nonlinear J = 115.159
+Test     : DRPCGMinimizer: reduction in residual norm = 0.000520493
+Test     : CostFunction::addIncrement: Analysis norm: 8.01937
+Test     : CostJb   : Nonlinear Jb = 12.2572
+Test     : CostJo   : Nonlinear Jo = 11.0963, nobs = 120, Jo/n = 0.0924693, err = 0.4
+Test     : CostFunction: Nonlinear J = 23.3535

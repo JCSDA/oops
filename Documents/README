@@ -1,0 +1,92 @@
+// This is the README file. It explains how to build and run OOPS.
+// This file is best viewed by browsing the doxygen-generated documentation
+// Consult the README file for instructions on generating the documentation!
+/*! \page README The README file
+\section how_to_build_dox How to build the documentation
+
+The documentation has to be built from the source code using "doxygen"
+(see: www.doxygen.org) and "pdflatex".
+
+  - gmake docs
+
+(At ECMWF, you should execute <tt>"use latex"</tt> before building the
+documentation.)
+
+You can control the contents of the documentation by editing Doxyfile.
+For example, if the "dot" tool from graphviz (www.graphviz.org) is
+available on your system, you can generate call graphs by setting
+CALL_GRAPH to YES.
+
+Once the documentation is built, point your web browser at:
+Documents/html/index.html
+
+\section how_to_build_execs How to build the executables
+
+Under linux, use version 4.4.2 or later of gcc and gfortran.
+At ECMWF, you will get this by default on the newer (openSUSE 11.3)
+systems. On the older systems, you can use the following commands:
+
+  - export GNU_VERSION=4.4.3
+  - use gcc
+
+On AIX, use version 13.1.0.4 or later of xlf. At ECMWF this can be selected with:
+
+  - module switch fortran/xlf fortran/xlf/13.1.0.4
+
+Then, to build the executables:
+
+  - (cd src; gmake)
+  - (cd $model; gmake)
+
+where <tt>$model</tt> determines which model you will be using.
+Currently, the options are <tt>"l95"</tt> for the Lorenz 1995 model,
+or <tt>"qg"</tt> for the QG model.
+
+The build examines the environment variable "ARCH" to determine which compilers
+to use. If $ARCH = linux then "gmake" will use gcc and gfortran.
+
+\section external_libraries External Libraries
+
+We use the following external libraries:
+
+  - <tt>boost</tt> -
+           <A HREF="http://www.boost.org">The Boost C++ libraries.</A>
+  - <tt>libxml2</tt> -
+           <A HREF="http://xmlsoft.org">The Gnome XML C parser and toolkit.</A>
+  - <tt>liblapack</tt> (QG model only) -
+           <A HREF="http://www.netlib.org/lapack">
+                              The LAPACK Linear Algebra PACKage.</A>
+
+\section how_to_run How to run the toy system
+
+(In the following,
+set <tt>model="l95"</tt> for the Lorenz 1995 model, or <tt>model="qg"</tt>
+for the QG model.)
+
+There are three executables for each model. To run an assimilation, you
+will typically need to run the following four steps:
+
+  - Generate truth:
+    - <tt>${model}/${model}_forecast.x ${model}/scripts/truth.xml</tt>
+  - Generate observations from the truth:
+    - <tt>${model}/${model}_makeobs.x ${model}/scripts/makeobs4d.xml</tt>
+  - Perform a short forecast from the truth run, to generate the background:
+    - <tt>${model}/${model}_forecast.x ${model}/scripts/forecast.xml</tt>
+  - Run incremental 4dVar:
+    - <tt>${model}/${model}_4dvar.x ${model}/scripts/4dvar.xml</tt>
+
+Data files are saved in the "Data" directory, as specified in the XML files.
+Make sure you have created the "Data" and "Data/FDB" directories before
+you run the above.
+
+\section how_to_test How to test the toy system
+
+Executing the script <tt>$model/runtest.ksh</tt> will run several of the main
+configurations and compare some of the key outputs to a control output stored in
+<tt>$model/control.summary.txt</tt>.
+
+\section coding_guidelines Coding Guidelines
+
+- Coding guidelines for C++ can be found \link CppCodingGuidelines here\endlink.
+- Baudouin's recommended C++ header file is \link ExampleHeader here\endlink.
+*/

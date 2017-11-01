@@ -1,0 +1,167 @@
+% (C) Copyright 2009-2016 ECMWF.
+% 
+% This software is licensed under the terms of the Apache Licence Version 2.0
+% which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+% In applying this licence, ECMWF does not waive the privileges and immunities 
+% granted to it by virtue of its status as an intergovernmental organisation nor
+% does it submit to any jurisdiction.
+
+\documentclass[12pt]{article}
+\parskip=12pt
+\parindent=0pt
+\title{A Two Level Quasi-geostrophic Model}
+\author{Mike Fisher, ECMWF}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+This note describes a simple two-level quasi-gestrophic model, intended
+for use as a ``toy'' system with which to conduct idealised studies of
+data assimilation methods. In developing the model, the emphasis has been
+placed on speed and convenience rather than accuracy and conservation.
+
+\section{The Continuous Equations}
+The equations of the two-level model are given by Fandry and Leslie (1984)
+(see also Pedlosky, 1979 pp386-393), and are expressed in terms of
+non-dimensionalised variables:
+\begin{equation}
+  \frac{{\rm D}q_1}{{\rm D}t} = \frac{{\rm D}q_2}{{\rm D}t} = 0
+\end{equation}
+where $q_1$ and $q_2$ denote the quasi-geostrophic potential vorticity
+on each of the two layers, with a subscript 1 denoting the upper layer:
+\begin{eqnarray}
+q_1 &=& \nabla^2 \psi_1 - F_1 (\psi_1 -\psi_2 ) + \beta y \label{q_1}\\
+q_2 &=& \nabla^2 \psi_2 - F_2 (\psi_2 -\psi_1 ) + \beta y + R_s \label{q_2}
+\end{eqnarray}
+
+Here, $\beta$ is the (non-dimensionalised) northward derivative of the
+Coriolis parameter, and $R_s$ represents orography or heating.
+
+The model domain is assumed to be cyclic in the zonal direction, and
+the meridional velocity is assumed to vanish one grid space to the
+north and south of the domain.
+
+\section{Details of the Non-Dimensionalisation}
+The non-dimensionalisation is standard, but is given here for completeness.
+We define a typical length scale $L$, a typical velocity $U$, the depths
+of the upper and lower layers $D_1$ and $D_2$, the Coriolis parameter
+at the southern boundary $f_0$ and its northward derivative $\beta_0$,
+the acceleration due to gravity $g$, the difference in potential
+temperature across the layer interface $\Delta\theta$, and the mean
+potential temperature $\overline\theta$.
+
+Denoting dimensional time, spatial coordinates and velocities with
+tildes, we have:
+\begin{eqnarray*}
+t &=& \tilde t \frac{\overline U}{L} \\
+x &=& \frac{\tilde x}{L} \\
+y &=& \frac{\tilde y}{L} \\
+u &=& \frac{\tilde u}{\overline U} \\
+v &=& \frac{\tilde v}{\overline U} \\
+F_1 &=& \frac{f_0^2 L^2}{D_1 g \Delta\theta / {\overline\theta}} \\
+F_2 &=& \frac{f_0^2 L^2}{D_2 g \Delta\theta / {\overline\theta}} \\
+\beta &=& \beta_0 \frac{L^2}{\overline U}
+\end{eqnarray*}
+
+The Rossby number is $\epsilon = {\overline U} / f_0 L$.
+
+\section{Solution Algorithm}
+The prognostic variable of the model is streamfunction, defined on a
+rectangular grid of dimension {\tt nx} $\times$ {\tt ny}.
+The grid indices increase in the eastward and northward directions.
+
+The time-stepping algorithm is designed for speed rather than accuracy,
+and is accurate only to first-order in $\Delta t$. It has the practical
+advantage that a timestep may be performed given information at only a
+single time-level.
+
+In principle, a timestep could start from values of streamfunction at a
+single time, $t$, and return values of streamfunction at $t+\Delta t$.
+However, to make wind (and potential vorticity) available to the
+analysis layer (e.g. to allow assimilation of wind observations), it is
+more convenient to split the timestep as follows:
+
+\subsection{Before an integration of the model}
+
+Before an integration of the model, values of wind and potential
+vorticity are calculated by {\tt c\_qg\_prepare\_integration}.
+
+The velocity at each gridpoint is calculated using centred,
+finite-difference approximations to:
+
+\begin{equation}
+u = -\frac{\partial \psi}{\partial y} ,\qquad
+v =  \frac{\partial \psi}{\partial x} .
+\end{equation}
+
+Values of $\psi$ one grid-space to the north and south of the grid are
+required in order to calculate the $u$-component of velocity on the
+first and last grid row. These values are user-supplied constants,
+and determine the mean zonal velocity in each layer, which remains
+constant throughout the integration. (Note that the condition that
+$v$ should vanish at the northern and southern boundaries implies
+that $\psi$ is independent of $x$ at the boundaries.)
+
+Potential vorticity is calculated using equations
+\ref{q_1} and \ref{q_2}. A standard 5-point finite-difference
+approximation to the Laplacian operator is used.
+
+\subsection{Steps evaluated at every timestep}
+
+The following steps are repeated for each timestep:
+
+\begin{enumerate}
+\item For each gridpoint, $(x_{ij} ,y_{ij})$, the departure point is
+calculated as:
+\begin{equation}
+  x^D_{ij} = x_{ij} - \frac{\Delta t}{\Delta x} u^t_{ij} ,\qquad
+  y^D_{ij} = y_{ij} - \frac{\Delta t}{\Delta y} v^t_{ij} .
+\end{equation}
+
+\item The potential vorticity field at the end of the timestep is
+calculated by interpolating to the departure point:
+\begin{equation}
+  q^{t+\Delta t}_{ij} = q(x^D_{ij}, y^D_{ij})
+\end{equation}
+The interpolation is bi-cubic. Advection from outside the domain is
+handled by assuming the potential vorticity to be constant for all
+points one grid-space or more outside the domain.
+The boundary values of potential vorticity are supplied by the user.
+
+\item The streamfunction corresponding to $q^{t+\Delta t}$ is determined
+by inverting equations \ref{q_1} and \ref{q_2}, as described below. 
+
+\item The velocity components at time $t+\Delta t$ are calculated from
+the streamfunction.
+\end{enumerate}
+
+\subsection{Inversion of Potential Vorticity}
+Applying $\nabla^2$ to equation \ref{q_1} and subtracting $F_1$ times
+equation \ref{q_1} and $F_2$ times equation \ref{q_2} eliminates
+$\psi_1$, and yields the following equation for $\psi_1$:
+\begin{equation}
+\nabla^2 q_1 -F_2 q_1 -F_1 q_2 = \nabla^2 \left( \nabla^2 \psi_1 \right)
+                               - \left( F_1 + F_2 \right) \nabla^2 \psi_1
+\label{2d_helmholz_eqn}
+\end{equation}
+This is a two-dimensional Helmholz equation, which can be solved 
+for $\nabla^2 \psi_1$. The Laplacian can then be inverted to
+determine $psi_1$. Once $\psi_1$ and $\nabla^2 \psi_1$ are known, the
+streamfunction on level 2 can be determined by substitution into
+equation \ref{q_1}.
+
+Solution of the Helmholz equation and inversion of the Laplacian are achieved
+using an FFT-based method. Applying a Fourier transform in the east-west
+direction to equation \ref{2d_helmholz_eqn} gives a set of independent
+equations for each wavenumber. In the case of the five-point discrete
+Laplacian, these are tri-diagaonal matrix equations, which can be solved
+using the standard (Thomas) algorithm.
+
+\section{References}
+Fandry, C.B. and L.M. Leslie, 1984: A Two-Layer Quasi-Geostrophic Model of
+Summer Trough Formation in the Australian Subtropical Easterlies.
+J.A.S., {\bf 41}, pp807-817.
+
+Pedlosky, J., 1979: Geophysical Fluid Dynamics. {\it Springer-Verlag}.
+\end{document}

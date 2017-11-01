@@ -1,0 +1,40 @@
+
+For up to date instructions, see 
+https://software.ecmwf.int/wiki/display/OOPS/How+to+build+and+run+OOPS
+
+#---------------------------------------------------------------
+
+To make a out-of-source build with cmake:
+
+1) Create the build directory outside of the src directory
+$ mkdir $HOME/oops_build
+$ cd $HOME/oops_build
+
+2) Configure
+$ cmake $OOPS_SRC_DIR \
+    -DBOOST_ROOT=/usr/local/apps/boost/new \ 
+    -DEIGEN_INCLUDE_DIR=/home/rd/rdx/OOPS/include \
+    -DCMAKE_INSTALL_PREFIX=$OOPS_INSTALL_DIR
+
+3) Compile
+$ make -j3
+
+4) Test
+$ make test
+
+5) Install
+$ make install
+
+
+#---------------------------------------------------------------
+
+Extra options to pass to CMake:
+ BUILD_SHARED_LIBS=OFF      # for static libraries
+ CMAKE_BUILD_TYPE=Release   # for build with full optimization
+                  Debug     # for build running in debug
+
+Tip:
+ $ ccmake ./    # Allows to change configured variables  
+
+Individual tests can also be selected (check options of ctest):
+ $ ctest -R l95_test

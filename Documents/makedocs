@@ -1,0 +1,19 @@
+#!/bin/sh
+set -e
+
+if type doxygen &>/dev/null ; then
+  doxygen Doxyfile
+else
+  echo "Cannot generate doxygen documentation because doxygen is not installed"
+fi
+
+if type pdflatex &>/dev/null ; then
+  for f in *.tex; do
+    pdflatex $f
+    pdflatex $f
+  done
+else
+  echo "Cannot generate pdf documentation because pdflatex is not installed"
+fi
+
+exit

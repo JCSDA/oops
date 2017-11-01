@@ -1,0 +1,16 @@
+Test     : CostJb   : Nonlinear Jb = 0
+Test     : CostJo   : Nonlinear Jo = 123.856, nobs = 160, Jo/n = 0.774102, err = 0.4
+Test     : CostJcDFI: Nonlinear Jc = 0.327606
+Test     : CostFunction: Nonlinear J = 124.184
+Test     : DRPCGMinimizer: reduction in residual norm = 0.00364813
+Test     : CostFunction::addIncrement: Analysis norm: 8.00453
+Test     : CostJb   : Nonlinear Jb = 2.01229
+Test     : CostJo   : Nonlinear Jo = 0.901937, nobs = 160, Jo/n = 0.0056371, err = 0.4
+Test     : CostJcDFI: Nonlinear Jc = 0.369308
+Test     : CostFunction: Nonlinear J = 3.28354
+Test     : DRPCGMinimizer: reduction in residual norm = 0.0180937
+Test     : CostFunction::addIncrement: Analysis norm: 8.01188
+Test     : CostJb   : Nonlinear Jb = 2.12253
+Test     : CostJo   : Nonlinear Jo = 0.581857, nobs = 160, Jo/n = 0.00363661, err = 0.4
+Test     : CostJcDFI: Nonlinear Jc = 0.356092
+Test     : CostFunction: Nonlinear J = 3.06048

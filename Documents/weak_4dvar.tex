@@ -1,0 +1,257 @@
+% (C) Copyright 2009-2016 ECMWF.
+% 
+% This software is licensed under the terms of the Apache Licence Version 2.0
+% which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+% In applying this licence, ECMWF does not waive the privileges and immunities 
+% granted to it by virtue of its status as an intergovernmental organisation nor
+% does it submit to any jurisdiction.
+
+\documentclass[12pt]{article}
+\parskip=12pt
+\parindent=0pt
+\title{Formulation of Weak Constraint 4D-Var}
+\author{Mike Fisher, ECMWF}
+
+\newcommand{\vect}[1]{{\bf #1}}                         % vector
+\newcommand{\mat}[1]{{\bf #1}}                          % matrix
+\newcommand{\calH}{{\cal H}}                           % matrix
+\newcommand{\calM}{{\cal M}}                           % matrix
+\newcommand{\rmT}{{\rm T}}                           % matrix
+
+
+\begin{document}
+\maketitle
+
+\section{Nonlinear Cost Function}
+This note describes the formulation of weak constraint 4D-Var, and its
+implementation in OOPS.
+
+\section{Nonlinear Cost Function}
+
+Let $\vect{x}_k$ denote the state at time $t_k$.  The weak constraint 4D-Var
+cost function (equation \ref{cost-nonlin})
+is a function a set of model states $\vect{x}_k$ defined at regular intervals
+over a time window $[ t_0 , t_N )$. We refer to this set of states as
+the ``four-dimensional state vector''. Note that there are $N$ sub-windows and
+that the four-dimensional state vector contains the $N$ states
+$\vect{x}_0 , \ldots , \vect{x}_{N-1}$.
+
+\begin{eqnarray}
+\label{cost-nonlin}
+&&  J( \vect{x}_0 , \vect{x}_1 , \ldots , \vect{x}_{N-1} ) = \\
+&&\qquad \phantom{+}
+           \frac{1}{2} \left( \vect{x}_0 - \vect{x}_b \right)^\rmT
+                      \mat{B}^{-1}
+                       \left( \vect{x}_0 - \vect{x}_b \right) \nonumber \\
+&&\qquad + \frac{1}{2} \sum_{k=0}^N-1 \sum_{j=0}^{M-1}
+             \left( \vect{y}_{k,j} - \calH_{k,j} (\vect{x}_{k,j} ) \right)^\rmT
+                      \mat{R}_{k,j}^{-1}
+             \left( \vect{y}_{k,j} - \calH_{k,j} (\vect{x}_{k,j} ) \right)
+                        \nonumber \\
+&&\qquad + \frac{1}{2} \sum_{k=1}^{N-1}
+                       \left( \vect{q}_k - \vect{\bar q}  \right)^\rmT
+                      \mat{Q}_k^{-1}
+                       \left( \vect{q}_k - \vect{\bar q}  \right)
+                        \nonumber
+\end{eqnarray}
+
+The cost function has three terms. The first term penalises departures
+of $\vect{x}_0$ from a prior estimate (the ``background''), $\vect{x}_b$.
+The matrix $\mat{B}$ is the covariance matrix of background error.
+
+The second term of the cost function penalises the discrepancies between
+observations $\vect{y}_{k,j}$ and their model equivalents, $\vect{x}_{k,j}$.
+Here, the double subscript denotes a time such that (for
+$j=1 \ldots M-1$) $t_{k,j} \in [t_k , t_{k+1} )$. We assume that
+$t_{k,0} = t_k$ and $t_{k,M} = t_{k+1}$.
+We refer to the interval $[t_k , t_{k+1} )$ as a ``sub-window'', and the
+times $t_{k,j}$ as ``observation time slots''.
+The operator $\calH_{k,j}$ is the (nonlinear) observation operator, and
+$\mat{R}_{k,j}$ is the covariance matrix of observation error.
+
+The final term in the cost function penalises departures of model error
+$\vect{q}_k$, defined at the boundaries between sub-windows, from a
+separately-estimated systematic model error, $\vect{\bar q}$. The matrix
+$\mat{Q}_k$ is the covariance matrix of model error.
+
+The states at times $t_{k,j}$ are given by an un-forced integration of
+the model:
+\begin{equation}
+\label{nonlin-propagate-eqn}
+   \vect{x}_{k,j} = \calM_{k,j} (\vect{x}_{k,j-1} )
+\end{equation}
+for $k=0 \ldots N-1$ and $j=1 , \ldots , M$.
+
+The model errors are determined as the difference between the state at the
+start of a sub-window and the corresponding state at the end of the preceding
+sub-window. There are $N-1$ model errors corresponding to the $N-1$
+boundaries between sub-windows:
+\begin{equation}
+\label{nonlin-model-error-eqn}
+   \vect{q}_k = \vect{x}_{k,0} - \vect{x}_{k-1,M}
+               \qquad\mbox{for $k=1 , \ldots , N-1$}.
+\end{equation}
+
+\section{Linear (Incremental) Cost Function}
+
+The linear (incremental) cost function is defined by linearising the
+operators in equation \ref{cost-nonlin} around a ``trajectory'', to give
+a quadratic approximation ${\hat J}$ of the cost function. In principle, the
+trajectory is known at every timestep of the model. In practice, it may
+be necessary to assume the trajectory remains constant over small time
+intervals.
+
+Let us denote by $\vect{x}_k^t$ the trajectory state at time $t_k$.
+The approximate cost function is expressed as a function of increments
+$\delta\vect{x}_k$ to these trajectory states:
+
+\begin{eqnarray}
+\label{cost-linear}
+&&  {\hat J} ( \delta\vect{x}_0 , \delta\vect{x}_1 , \ldots ,
+                                               \delta\vect{x}_{N-1} ) = \\
+&&\qquad \phantom{+}
+           \frac{1}{2} \left( \delta\vect{x}_0 + \vect{x}^t_0
+                                              - \vect{x}_b \right)^\rmT
+                      \mat{B}^{-1}
+                       \left( \delta\vect{x}_0 + \vect{x}^t_0
+                                              - \vect{x}_b \right) \nonumber \\
+&&\qquad + \frac{1}{2} \sum_{k=0}^{N-1} \sum_{j=0}^{M-1}
+             \left( \vect{d}_{k,j} - \mat{H}_{k,j} (\delta\vect{x}_{k,j} )
+                                                        \right)^\rmT
+                      \mat{R}_{k,j}^{-1}
+             \left( \vect{d}_{k,j} - \mat{H}_{k,j} (\delta\vect{x}_{k,j} )
+                                                        \right)
+                        \nonumber \\
+&&\qquad + \frac{1}{2} \sum_{k=1}^{N-1}
+                       \left( \delta\vect{q}_k + \vect{q}^t_k
+                                           - \vect{\bar q}  \right)^\rmT
+                      \mat{Q}_k^{-1}
+                       \left( \delta\vect{q}_k + \vect{q}^t_k
+                                           - \vect{\bar q}  \right)
+                        \nonumber
+\end{eqnarray}
+
+Here, $\mat{H}_{k,j}$ is a linearisation of $\calH_{k,j}$ about the
+trajectory $\vect{x}^t_{k,j}$. The vector $\vect{d}_{k,j}$ is defined
+as:
+\begin{equation}
+   \vect{d}_{k,j} = \vect{y}_{k,j} - \calH_{k,j} (\vect{x}^t_{k,j} ) .
+\end{equation}
+
+The increments $\delta\vect{x}_{k,j}$ satisfy a linearised version of equation
+\ref{nonlin-propagate-eqn}:
+\begin{equation}
+   \label{linear-propagate-eqn}
+   \delta\vect{x}_{k,j} = \vect{M}_{k,j} \delta\vect{x}_{k,j-1}
+\end{equation}
+for $k=0 \ldots N-1$ and $j=1 , \ldots , M$.
+
+The model error increments are given by:
+\begin{equation}
+\label{linear-model-error-eqn}
+   \delta\vect{q}_k = \delta\vect{x}_{k,0} - \delta\vect{x}_{k-1,M}
+               \qquad\mbox{for $k=1 , \ldots , N-1$}.
+\end{equation}
+
+
+\section{Solution Algorithm: Outer Loop}
+
+The cost function (equation \ref{cost-nonlin}) is minimised by successive
+quadratic approximations according to the following algorithm:
+
+Given an initial four-dimensional state
+$\{ \vect{x}_0 , \vect{x}_1 , \ldots , \vect{x}_{N-1} \}$:
+\begin{enumerate}
+\item For each sub-window, integrate equation \ref{nonlin-propagate-eqn}
+from the initial condition $\vect{x}_{k,0} = \vect{x}_k$, to determine
+the trajectory and the state $\vect{x}_{k,M}$ at the end of the sub-window.
+\label{step-one}
+
+\item Calculate the model errors from equation \ref{nonlin-model-error-eqn}.
+
+\item Minimise the linear cost function (equation \ref{cost-linear})
+to determine the increments $\delta\vect{x}_k$ and $\delta\vect{q}_k$.
+
+\item Set $\vect{x}_k:=\vect{x}_k + \delta\vect{x}_k$ and
+          $\vect{q}_k:=\vect{q}_k + \delta\vect{q}_k$.
+\item Repeat from step \ref{step-one}.
+\end{enumerate}
+
+\section{Solution Algorithm: Inner Loop}
+
+There are several possibilities for minimising the linear cost function.
+Some of these are described in the following sub-sections.
+
+\subsection{Initial State and Forcing Formulation}
+The initial state and forcing formulation expresses the linear cost
+function as a function of the initial increment $\delta\vect{x}_0$ and
+the model error increments $\delta\vect{q}_1 , \ldots , \delta\vect{q}_{N-1}$.
+
+The control vector for the minimisation comprises a set of three-dimensional
+vectors $\vect{\chi}_k$ for $k=0, \ldots , N-1$, and is defined by:
+\begin{eqnarray}
+  \label{psi-to-dx0-eqn}
+  \mat{B}^{1/2} \vect{\chi}_0  &=& 
+     \left( \delta\vect{x}_0 + \vect{x}^t_0 - \vect{x}_b \right) \\
+  \label{psi-to-dq-eqn}
+  \mat{Q}_k^{1/2} \vect{\chi}_k  &=& 
+     \left( \delta\vect{q}_k + \vect{q}^t_k - \vect{\bar q}  \right)
+     \qquad \mbox{for $k=1, \ldots , N-1$}
+\end{eqnarray}
+
+The background and observation terms of the cost function can be evaluated
+directly from the control vector as:
+\begin{equation}
+     J_b = \frac{1}{2} \vect{\chi}_0^\rmT \vect{\chi}_0 \qquad\mbox{and}\qquad
+     J_q = \frac{1}{2} \sum_{k=1}^{N-1} \vect{\chi}_k^\rmT \vect{\chi}_k
+\end{equation}
+The contribution to the gradient of the cost function from these terms is
+simply equal to the control vector itself.
+
+To evaluate the observation term, we must generate the four-dimensional
+increment: $\{ \delta\vect{x}_k ; k=0, \ldots , N-1\}$. This is done by
+first calculating $\delta\vect{x}_0$ and $\delta\vect{q}_k$ from
+equations \ref{psi-to-dx0-eqn} and \ref{psi-to-dq-eqn}, and then
+generating $\delta\vect{x}_k$ using equations
+\ref{linear-propagate-eqn} and \ref{linear-model-error-eqn}.
+
+The cost function is minimised, resulting in an updated control vector,
+corresponding to the minimum of the linear cost function. From this cost
+function, we must generate the four-dimensional increment required
+by the outer loop. This is done using equations
+\ref{linear-propagate-eqn} and \ref{linear-model-error-eqn}, and
+requires a integration of the tangent linear model
+
+\subsection{Four Dimensional State Formulation}
+In the four dimensional state formulation, the cost function is expressed
+as a function of the four dimensional state,
+$\delta\vect{x}_0 , \ldots , \delta\vect{x}_{N-1}$.
+
+The control vector for the minimisation is defined by:
+\begin{eqnarray}
+  \label{psi-to-dx4d0-eqn}
+  \mat{B}^{1/2} \vect{\chi}_0  &=& 
+     \left( \delta\vect{x}_0 + \vect{x}^t_0 - \vect{x}_b \right) \\
+  \label{psi-to-dx4dk-eqn}
+  \mat{Q}_k^{1/2} \vect{\chi}_k  &=& \delta\vect{x}_k
+     \qquad \mbox{for $k=1, \ldots , N-1$}
+\end{eqnarray}
+
+With this choice for $\vect{\chi}_0$, the backgroud term of the cost function
+can be evaluated as $ J_b = \frac{1}{2} \vect{\chi}_0^\rmT \vect{\chi}_0 $.
+However, the model error term must now be evaluated explicity as:
+\begin{equation}
+J_q =  \frac{1}{2} \sum_{k=1}^{N-1}
+                       \left( \delta\vect{q}_k + \vect{q}^t_k
+                                           - \vect{\bar q}  \right)^\rmT
+                      \mat{Q}_k^{-1}
+                       \left( \delta\vect{q}_k + \vect{q}^t_k
+                                           - \vect{\bar q}  \right)
+\end{equation}
+where $\delta\vect{q}_k$ is determined from equation
+\ref{linear-model-error-eqn}.
+
+Note that this requires that the inverse model error covariance matrix is
+available, and is resonably well conditioned.
+
+\end{document}

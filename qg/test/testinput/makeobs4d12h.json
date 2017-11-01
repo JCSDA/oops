@@ -1,0 +1,76 @@
+{
+  "resolution": {
+    "nx": "40",
+    "ny": "20",
+    "bc": "1"
+  },
+  "model": {
+    "tstep": "PT1H",
+    "top_layer_depth": "5500.0",
+    "bottom_layer_depth": "4500.0"
+  },
+  "initial": {
+    "filename": "Data/truth.fc.2009-12-15T00:00:00Z.P17D",
+    "date": "2010-01-01T00:00:00Z"
+  },
+  "assimilation_window": {
+    "begin": "2010-01-01T00:00:00Z",
+    "end": "2010-01-01T12:00:00Z"
+  },
+  "Observation": [
+    {
+      "ObsType": "Stream",
+      "ObsData": {
+        "ObsDataOut": {
+          "obsfile": "Data/qg.truth4d12h.obt"
+        },
+        "obserror": "ObsErr"
+      },
+      "Generate": {
+        "begin": "PT2H",
+        "obs_period": "PT2H",
+        "obs_density": "50",
+        "nx": "40",
+        "ny": "20",
+        "obs_error": "0.4"
+      }
+    },
+    {
+      "ObsType": "Wind",
+      "ObsData": {
+        "ObsDataOut": {
+          "obsfile": "Data/qg.truth4d12h.obt"
+        },
+        "obserror": "ObsErr"
+      },
+      "Generate": {
+        "begin": "PT1H",
+        "obs_period": "PT6H",
+        "obs_density": "40",
+        "nx": "40",
+        "ny": "20",
+        "obs_error": "0.6"
+      }
+    },
+    {
+      "ObsType": "WSpeed",
+      "ObsData": {
+        "ObsDataOut": {
+          "obsfile": "Data/qg.truth4d12h.obt"
+        },
+        "obserror": "ObsErr"
+      },
+      "Generate": {
+        "begin": "PT1H",
+        "obs_period": "PT2H",
+        "obs_density": "50",
+        "nx": "40",
+        "ny": "20",
+        "obs_error": "1.2"
+      }
+    }
+  ],
+  "prints": {
+    "frequency": "PT3H"
+  }
+}

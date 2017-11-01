@@ -1,0 +1,37 @@
+{
+  "resolution": {
+    "nx": "40",
+    "ny": "20",
+    "bc": "1"
+  },
+  "variables": {
+    "variables": "ci"
+  },
+  "model": {
+    "tstep": "PT1H",
+    "top_layer_depth": "5500.0",
+    "bottom_layer_depth": "4500.0"
+  },
+  "initial": {
+    "filename": "Data/truth.fc.2009-12-15T00:00:00Z.P16D",
+    "date": "2009-12-31T00:00:00Z"
+  },
+  "Covariance": {
+    "covariance": "static",
+    "standard_deviation": "0.8",
+    "vertical_correlation": "0.2",
+    "horizontal_length_scale": "1e6",
+    "maximum_condition_number": "1.0e6",
+    "date": "2009-12-31T00:00:00Z"
+  },
+  "members": "10",
+  "forecast_length": "P1DT12H",
+  "output": {
+    "first": "PT24H",
+    "frequency": "PT1H",
+    "datadir": "Data",
+    "exp": "test",
+    "type": "ens",
+    "date": "2009-12-31T00:00:00Z"
+  }
+}

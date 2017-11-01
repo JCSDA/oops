@@ -1,0 +1,347 @@
+// This file describes the coding guidelines for c++.
+// It file is best viewed by browsing the doxygen-generated documentation.
+// It appears under the the "Related Pages" tab.
+// Consult the README file for instructions on generating the documentation.
+/*! \page CppCodingGuidelines C++ Coding Guidelines
+The following guidelines are based on a draft document from Baudouin Raoult,
+and were updated following the OOPS code review 11-15 July 2011.
+
+\section files_extensions Files Extensions
+- Each class is defined in two files:
+  - The header file contains the class definition and has the extension
+    <tt>.h</tt>.
+  - The implementation file defines the methods and has the extension
+    <tt>.cc</tt>
+- The file names should match the name of the class.
+- <tt>.cc</tt> and <tt>.h</tt> files must be in the same directory.
+
+\section header_files Header Files
+- Header files should follow the layout suggested in
+    \link ExampleHeader Documents/ExampleHeader.h\endlink.
+- The <tt>public</tt>, <tt>protected</tt> and <tt>private</tt> sections
+  of a class should be declared in that order (i.e. <tt>public</tt> first,
+  <tt>private</tt> last).
+- Use <tt>\#include</tt> guards to protect against multiple inclusions.
+- The guard name should be constructed from the path to the <tt>.h</tt>
+  file, as it appears in a <tt>\#include</tt> statement (see below), but
+  with lowercase characters converted to uppercase, special characters
+  replaced by underscores, and with a trailing underscore.
+- The <tt>\#endif</tt> for the guard should be followed on the same line
+  by // and then the name of the guard.
+- All headers should be self-sufficient. A header should compile by itself.
+- There should be one main class per file. Helper classes are allowed, as
+  long as they are only used from within the file.
+
+\section code_documentation Code Documentation
+- Documentation is generated using doxygen.
+  - Instructions on building the documentation are in the
+    \link README README\endlink file.
+  - The doxygen manual can be found
+    <A HREF="http://www.stack.nl/~dimitri/doxygen/manual.html">here</A>.
+  - See <A HREF="http://www.stack.nl/~dimitri/doxygen/formulas.html">here</A>
+  for instructions on including \f$\mbox{\LaTeX}\f$ mathematical formulae.
+- Doxygen recognises special comments:
+  - A brief comment is a single line like this:
+\verbatim /// This one-line comment gives a brief description of a class or method.\endverbatim
+  - A detailed comment looks like this:
+\verbatim /*!
+ * This is a detailed comment. It has more than one line,
+ * and provides more complete information about a class or method.
+ */ \endverbatim
+- Class definitions should be preceded by a doxygen brief comment
+  followed by a detailed comment.
+- Method and member declarations should be preceded by a doxygen brief
+  comment, unless the role of the method or member is completely obvious from
+  its name. A detailed comment may also be provided.
+- Normal C++ comments should be used in <tt>.cc</tt> files where necessary to
+  explain the internal logic of a function.
+- The code should be self-explanatory. But, add comments to explain complex
+  algorithms.
+- Do not comment-out code. Use the source-code management system!
+- Don't include comments to indicate authorship or modification history.
+  That is what <tt>git blame</tt> is for!
+- HTML links to auxiliary documents (e.g. pdf files) can be made to appear on
+  the \link Overview Overview\endlink page by adding them to
+  Documents/overview.h
+
+\section includes Includes
+- Do not include unnecessary headers. Use class forwarding. The compiler only
+  needs to see a class definition when calling methods or establishing the size
+  of an object. When referring to a pointer or a reference, the compiler does not
+  need to know the detail of the class.
+- <tt>\#include\<iosfwd\></tt> instead of <tt>\#include\<iostream\></tt>,
+  if possible.
+- Included ".h" files must use the full path from the build directory ("oops")
+- Order of header files:
+  - Own ".h" file.
+  - C System headers (e.g. <tt>\<unistd.h\></tt>).
+  - C++ system headers (e.g. <tt>\<iostream\></tt>).
+  - Other library headers <tt>\<boost/...\></tt>).
+  - Oops/util/logger project headers.
+- Within each of these categories,use alphabetical ordering.
+
+\section identifiers Identifiers
+- Identifiers should be in "camel case". That is, they should be mainly
+  in lower case, with an upper case letter at the start of each internal
+  word: e.g. changeResolution.
+- Do not use underscores to separate words.
+- Class names should start with an upper case letter.
+- Method and member names should start with a lower case letter.
+- Member names have an underscore at the end.
+- Use short identifiers for local variables, loop indices, etc.
+- Use longer, meaningful names for methods, members, classes, etc.
+
+\section use_of_const Use of Const
+- Use const wherever possible.
+- Avoid passing objects by const value. Pass by const reference instead.
+- Remember. The rule when reading definitions is to work from right
+  to left. So, for example, <tt>char * const test</tt> means that
+  <tt>test</tt> is a <tt>const</tt> pointer to a <tt>char</tt> object:
+  <tt>
+  - const char *       test = "xyz"; // non-const pointer to const data
+  - char *       const test = "xyz"; // const pointer to non-const data
+  - const char * const test = "xyz"; // const pointer to const data
+  - bool isEmpty() const; // the isEmpty method does not change its object.
+  </tt>
+
+\section classdesign How to Design Classes
+- By default make classes noncopyable (using <tt>boost::noncopyable</tt>),
+  unless copy is needed
+- If you need copy, assignment or a destructor, then you probably need
+  all three.
+- Make interfaces non-virtual.
+- Make virtual functions private.
+- Check for assignment to self in <tt>operator=</tt>.
+- <i>A lot more guidelines needed here...</i>
+
+\section interfaceprinciple Interface Principle
+- <i>Guideline to be written...</i>
+
+\section templates Templates versus Inheritance
+- <i>Guideline to be written...</i>
+
+\section inheritance Proper Inheritance
+ - Remember the Liskov substitution principle: don't derive a "square" from
+   a "rectangle"!
+ - <i>More guidelines required here...</i>
+
+\section constructors_and_destructors Constructors and Destructors
+- Always declare copy and assignment constructors. Make them private unless
+you need to copy.
+- If the default copy constructor is sufficient, include a comment to this
+  effect in the class definition.
+- Write the constructors and the destructors at the same time.
+- If the class has a virtual table, its destructor must be virtual.
+- All resources allocated by an object must be deallocated in the destructor.
+- Beware of partially constructed objects.
+- Except for the copy constructor, single-argument constructors should be
+  declared <tt>explicit</tt> to prohibit implicit type conversions.
+- Base class destructors must be either <tt>public</tt> and <tt>virtual</tt>,
+  or <tt>protected</tt> and not <tt>virtual</tt>.
+- The copy constructor should copy all the data. However, you may wish to give it a second,
+default argument to allow this behaviour to be over-ridden.
+- Do not code <tt>MyClass a = b;</tt>
+  - This looks like assignment, but in fact calls the copy constructor.
+  - Code <tt>MyClass a(b);</tt> instead.
+
+\section members Member Variables
+- Member variables should always be private.
+- Use accessors if you need to access a member variable from outside a class.
+- Don't use the accessors from within the class. Use the member itself.
+
+\section accessors Accessors
+- Accessors (a.k.a. getters and setters) should only be implemented if
+  necessary. They break the encapsulation.
+- Accessors should be inline.
+- Accessors must have the same name as the member (but without the underscore)
+  for example, the accessors for a member <tt>Foo foo_;</tt> should be:
+  - const Foo& foo() const {return foo_; }
+  - void foo(const Foo& f) { foo_ = f; }
+
+\section Methods
+- A method is a request to an object to do something or to provide something.
+  The name of the method should reflect this.
+  - E.g. <tt>changeResolution</tt> is preferable to <tt>resolutionChanger</tt>.
+- If a method is virtual in a base class, declare it as virtual in all derived
+  classes that override it.
+
+\section opoverload Operator Overloading
+- Don't do it unless it is meaningful.
+- Don't subvert the mathematical properties (associativity, etc.).
+- Don't use an operator for conversion. Implement an "asDouble" method rather
+  than "operator double()".
+
+\section pointers Pointers and References
+- Prefer references to pointers. If an object is guaranteed to exist, use a
+  reference.
+- Passing or returning a non-const pointer means passing ownership of the
+  pointed object.
+- Passing or returning a const pointer means keeping ownership of the pointed
+  object, and that the pointed object can be null
+- In any other case, pass a reference to the object. Use const whenever the
+  object will not be modified. 
+
+\section static Use of Static
+ - Avoid <tt>static</tt> if possible.
+ - Be aware there are different types of static (function-local, file-scope).
+ - Be aware that static variables cause problems in multi-threaded applications.
+
+\section useofcasts Use of Casts
+ - Use c++ style casts.
+ - Avoid downcasting. It is a symptom of bad inheritance, or not enough
+   functionality in the base class
+ - Write "double(expression)", not "(double) expression"
+ - <i>Guideline for the use of const cast to be written...</i>.
+
+\section c_code C Code
+- Don't use C functions (e.g. <tt>printf</tt>) if C++ provides the same
+  functionality.
+- If you must use a C function, prefix it with a double colon
+  (e.g. <tt>"::sleep(10)"</tt>)
+- When possible, wrap any C function in a C++ object (e.g. Sleeper)
+- Never use C style casts.
+- For unsigned value, use a typedef: <tt>typedef unsigned long ulong;</tt>
+
+\section preprocessor Preprocessor
+- The preprocessor should only be used to define <tt>\#include</tt> guards in
+<tt>.h</tt> files and for variables specified via the <tt>-D</tt> flag at
+compile time.
+- The preprocessor should not be used to define macros or constants.
+  - The only permitted macros are <tt>ABORT</tt>, <tt>ASSERT</tt> and
+    <tt>LOG</tt>, and macros defined in the <tt>boost</tt> library
+    (e.g. <tt>BOOST_AUTO_TEST_CASE</tt>).
+- Don't pepper the code with ifdef's for machine/compiler dependent
+  conditional compilation. Put any such code in a header file that can be
+  included wherever needed.
+
+\section namespaces Namespaces
+- Model-independent code should be defined in the <tt>oops</tt> namespace.
+- Model-specific code should be defined in a separate, model-specific
+  namespace.
+- Do not <tt>use</tt> an entire namespace (i.e. using directive).
+- By preference, use explicit namespace qualifications
+  (e.g. <tt>std::string</tt>).
+  However, <tt>using std::string</tt> etc. is acceptable.
+- <tt>using</tt> statements must never be used at global scope in a header file.
+- Use anonymous namespaces to restrict classes (e.g. Factories) to file scope.
+
+\section readability Readability
+- As far as possible, adhere to the rules listed in the
+   <A HREF="http://google-styleguide.googlecode.com/svn/trunk/cppguide.xml">
+   Google C++ Style Guide</A>. Note however that, contrary to the Google rules:
+  - We do use streams.
+  - We do (currently) use dynamic-casts
+  - We allow non-const references as arguments.
+- Use <A HREF="http://google-styleguide.googlecode.com/svn/trunk/cpplint/">
+      cpplint</A> to check your code. You may wish to turn off the following
+      cpplint filters:
+    - <tt>build/include_alpha</tt> (Because our idea of alphabetic order is
+      different from Google's.)
+    - <tt>build/include_order</tt> (Because cpplint wrongly thinks boost header
+      files are c-system header files.)
+    - <tt>readability/streams</tt> (Because we use streams.)
+    - <tt>runtime/rtti</tt> (Because we use dynamic_casts.)
+- Keep lines below 80 characters.
+- Tab characters are not allowed.
+- Indent class and function bodies, <tt>if</tt> and <tt>for</tt> blocks, etc.
+  - <tt>public</tt>,
+    <tt>private</tt> and <tt>protected</tt> labels in a class definition
+    should be indented one space with respect to the start of the class
+    definition.
+  - Use a two space indent for everything else.
+  - It is preferable to indent code inside a namespace block. (However, we
+    have many examples where this is not done.)
+- Split long lines in a way that makes it obvious that the code continues
+  on the next line.
+- Continuation lines should be indented.
+- If you split an argument list, align the arguments with those on
+  the previous line.
+- The opening brace should appear
+  on the same line as the argument list, initialisation list,
+  loop expression. etc.
+- The closing brace should appear on its own line, and aligned with
+  the start of the statement it closes.
+- Braces should be used for all control structures (<tt>if</tt>, <tt>for</tt>,
+  <tt>switch</tt>, etc.), even for "one-liners".
+- The <tt>else</tt> statement should be on the same line as the closing
+  brace of the preceding block, and the opening brace of the following block.
+- Don't declare more than one member per line.
+- Don't initialise on the same line as you declare: (e.g. <tt>int i=3;</tt>).
+- Only one statement per line.
+- Remove whitespace at the end of a line.
+- Add a space after a comma in an argument list
+- All operators, except <tt>"!"</tt> should be surrounded by spaces.
+- Separate inline comments from code by at least two spaces
+- There should be a space after <tt>//</tt> (or after <tt>///</tt> in the
+  case of a Doxygen inline comment).
+- If the initialisation list in a class definition is too long to be on the
+  same line, put in on the next line with the colon indented by 4 spaces.
+
+\section optimization Optimization
+- Pass objects by reference, not by value.
+- Prefer initialization over assignment.
+- Use <tt>++i</tt>, not <tt>i++</tt> when incrementing iterators.
+- Use the initialization list to initialize member objects.
+
+\section logging Logging
+- All logging messages should use the <tt>Logger</tt> class.
+  Do not write to <tt>cout</tt> or <tt>cerr</tt>.
+- The logger adds a newline at the end of each message, so you don't need to.
+- <tt>endl</tt> forces an unnecessary buffer flush. Use <tt>\\n</tt> instead.
+- Use the appropriate logging category:
+  - <b>Info</b> is for normal output
+  - <b>Trace</b> is for more verbose output that could help the user
+    understand the logical flow of the program.
+  - <b>Warning</b> is for non-fatal error messages.
+  - <b>Error</b> is for fatal error messages.
+  - <b>Debug</b> is for debugging. Code in the shared repository should
+    not output to this category.
+
+\section abort_and_assert ABORT, ASSERT and Error Handling
+- Errors should abort
+- Use the <tt>ABORT</tt> macro to exit after an error.
+  Do not call <tt>exit</tt> directly.
+- Use the <tt>ASSERT</tt> macro liberally. It compiles to nothing unless
+  the <tt>CHECK_ASSERTS</tt> macro variable is set, and it helps the
+  reader to understand the code.
+- Remember, asserts can be disabled. Your code should not change behaviour
+  if you disable the asserts. Use "if" and ABORT if you want something to be
+  always checked.
+- Do not use exceptions (try/catch/throw)
+
+\section pointers Pointers and Smart Pointers
+- Use references instead of pointers as much as possible.
+- Use smart pointers in preference to c pointers.
+  - Use <tt>boost::scoped_ptr</tt> if possible,
+    otherwise <tt>boost::shared_ptr</tt>.
+- Do not use <tt>auto_ptr</tt>.
+
+\section retval Return Values
+- Use return values instead of argument where possible.
+   - However, do not assume that the compiler will perform return value
+     optimization.
+
+\section c_ftn_interface Interfacing Fortran and C++
+- use ISO_C_BINDING
+- Only pass pointers and scalar variables between Fortran and C++
+- naming convention <i>(to be written...)</i>
+- functions <i>(to be written...)</i>
+- parameters <i>(to be written...)</i>
+- const <i>(to be written...)</i>
+- order (input first, output last) <i>(to be written...)</i>
+- c prototype of Fortran function - generate automatically?
+  <i>to be written...)</i>
+
+\section privpubprot Private, Public and Protected Access
+- Do not use "protected".
+- <i>More rules please</i>
+
+\section build Build
+- <i>Tomas to write this!</i>
+
+\section dirstruct Directory Structure
+- Code for each library should be in its own directory.
+- <i>Add a rule on where to add a new model.</i>
+
+
+*/

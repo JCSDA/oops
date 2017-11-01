@@ -1,0 +1,114 @@
+{
+  "toleranceTestAD": "1.0e-5",
+  "delta_x": "0.1",
+  "resolution": {
+    "nx": "40",
+    "ny": "20",
+    "bc": "1"
+  },
+  "model": {
+    "tstep": "PT1H",
+    "top_layer_depth": "5500.0",
+    "bottom_layer_depth": "4500.0"
+  },
+  "cost_function": {
+    "cost_type": "4D-Var",
+    "window_begin": "2010-01-01T00:00:00Z",
+    "window_length": "P1D",
+    "Jb": {
+      "Background": {
+        "state": {
+          "filename": "Data/example.fc.2009-12-31T00:00:00Z.P1D",
+          "date": "2010-01-01T00:00:00Z"
+        }
+      },
+      "Covariance": {
+        "covariance": "static",
+        "standard_deviation": "0.8",
+        "vertical_correlation": "0.2",
+        "horizontal_length_scale": "1e6",
+        "maximum_condition_number": "1.0e6",
+        "date": "2010-01-01T00:00:00Z"
+      }
+    },
+    "Jo": [
+      {
+        "Observation": {
+          "ObsType": "Stream",
+          "ObsData": {
+            "ObsDataIn": {
+              "obsfile": "Data/qg.truth4d.obt"
+            },
+            "ObsDataOut": {
+              "obsfile": "Data/qg.4dvar.dripcg.obt"
+            },
+            "obsvalue": "ObsVal"
+          }
+        },
+        "Covariance": {
+          "covariance": "diagonal",
+          "obserror": "ObsErr"
+        }
+      },
+      {
+        "Observation": {
+          "ObsType": "Wind",
+          "ObsData": {
+            "ObsDataIn": {
+              "obsfile": "Data/qg.truth4d.obt"
+            },
+            "ObsDataOut": {
+              "obsfile": "Data/qg.4dvar.dripcg.obt"
+            },
+            "obsvalue": "ObsVal"
+          }
+        },
+        "Covariance": {
+          "covariance": "diagonal",
+          "obserror": "ObsErr"
+        }
+      },
+      {
+        "Observation": {
+          "ObsType": "WSpeed",
+          "ObsData": {
+            "ObsDataIn": {
+              "obsfile": "Data/qg.truth4d.obt"
+            },
+            "ObsDataOut": {
+              "obsfile": "Data/qg.4dvar.dripcg.obt"
+            },
+            "obsvalue": "ObsVal"
+          }
+        },
+        "Covariance": {
+          "covariance": "diagonal",
+          "obserror": "ObsErr"
+        }
+      }
+    ]
+  },
+  "QgTLM": {
+    "resolution": {
+      "nx": "40",
+      "ny": "20",
+      "bc": "1"
+    },
+    "lrmodel": {
+      "tstep": "PT1H",
+      "top_layer_depth": "5500.0",
+      "bottom_layer_depth": "4500.0"
+    },
+    "tlmodel": {
+      "tstep": "PT1H",
+      "top_layer_depth": "5500.0",
+      "bottom_layer_depth": "4500.0"
+    },
+    "ninner": "10",
+    "gradient_norm_reduction": "1e-10",
+    "test": "on",
+    "diagnostics": {
+      "departures": "ombg"
+    }
+  }
+}
