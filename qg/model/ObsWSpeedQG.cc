@@ -10,56 +10,44 @@
 
 #include "model/ObsWSpeedQG.h"
 
-#include "util/Logger.h"
+#include "eckit/config/Configuration.h"
 #include "model/GomQG.h"
-#include "model/LocationsQG.h"
 #include "model/ObsBias.h"
-#include "model/ObsBiasIncrement.h"
 #include "model/ObsSpaceQG.h"
 #include "model/ObsVecQG.h"
 #include "model/QgFortran.h"
 #include "model/VariablesQG.h"
-#include "eckit/config/Configuration.h"
-
-
-using oops::Log;
+#include "util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
+static oops::ObsOperatorMaker<QgTraits, ObsWSpeedQG> makerWSpeed_("WSpeed");
+// -----------------------------------------------------------------------------
 
-ObsWSpeedQG::ObsWSpeedQG(ObsSpaceQG & odb, const eckit::Configuration & config)
-  : obsdb_(odb), obsname_("WSpeed"), varin_()
+ObsWSpeedQG::ObsWSpeedQG(const ObsSpaceQG & odb, const eckit::Configuration & config)
+  : keyOperWspeed_(0), varin_()
 {
   const eckit::Configuration * configc = &config;
   qg_wspeed_setup_f90(keyOperWspeed_, &configc);
   int keyVarin;
   qg_obsoper_inputs_f90(keyOperWspeed_, keyVarin);
   varin_.reset(new VariablesQG(keyVarin));
-  Log::trace() << "ObsWSpeedQG created " << obsname_ << std::endl;
+  oops::Log::trace() << "ObsWSpeedQG created." << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 ObsWSpeedQG::~ObsWSpeedQG() {
   qg_wspeed_delete_f90(keyOperWspeed_);
-  Log::trace() << "ObsWSpeedQG destructed" << std::endl;
+  oops::Log::trace() << "ObsWSpeedQG destructed" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsWSpeedQG::obsEquiv(const GomQG & gom, ObsVecQG & ovec,
                            const ObsBias & bias) const {
-  Log::debug() << "ObsWSpeedQG obsEquiv gom : " << gom << std::endl;
   qg_wspeed_eqv_f90(gom.toFortran(), ovec.toFortran(), bias.wspd());
-  Log::debug() << "ObsWSpeedQG obsEquiv ovec : " << ovec << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-void ObsWSpeedQG::generateObsError(const eckit::Configuration & conf) {
-  const double err = conf.getDouble("obs_error");
-  qg_obsdb_seterr_f90(obsdb_.toFortran(), keyOperWspeed_, err);
 }
 
 // -----------------------------------------------------------------------------

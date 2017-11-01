@@ -11,19 +11,25 @@
 #ifndef OOPS_BASE_OBSERVATIONS_H_
 #define OOPS_BASE_OBSERVATIONS_H_
 
+#include <cstddef>
 #include <ostream>
 #include <string>
+#include <vector>
+
+#include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
 #include "util/Logger.h"
 #include "oops/base/Departures.h"
+#include "oops/base/ObsSpaces.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
-#include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsOperator.h"
 #include "oops/interface/ObsVector.h"
 #include "util/DateTime.h"
 #include "util/Printable.h"
+#include "util/abor1_cpp.h"
 
 namespace oops {
 
@@ -41,7 +47,7 @@ template <typename MODEL> class Observations : public util::Printable {
   typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef ObsOperator<MODEL>         ObsOperator_;
-  typedef ObservationSpace<MODEL>    ObsSpace_;
+  typedef ObsSpaces<MODEL>           ObsSpace_;
   typedef ObsVector<MODEL>           ObsVector_;
 
  public:
@@ -50,12 +56,14 @@ template <typename MODEL> class Observations : public util::Printable {
   ~Observations();
   Observations & operator=(const Observations &);
 
-/// Interactions with Departures
-  ObsVector_ * operator-(const Observations & other) const;
-  Observations & operator+=(const Departures_ &);
+/// Access
+  std::size_t size() const {return obs_.size();}
+  ObsVector_ & operator[](const std::size_t ii) {return obs_.at(ii);} 
+  const ObsVector_ & operator[](const std::size_t ii) const {return obs_.at(ii);} 
 
-/// Compute observations equivalents
-  void runObsOperator(const ObsOperator_ &, const GeoVaLs_ &, const ObsAuxCtrl_ &);
+/// Interactions with Departures
+  std::vector<boost::shared_ptr<ObsVector_> > operator-(const Observations & other) const;
+  Observations & operator+=(const Departures_ &);
 
 /// Get observations values
   const ObsVector_ & obsvalues() const {return obs_;}
@@ -67,14 +75,17 @@ template <typename MODEL> class Observations : public util::Printable {
  private:
   void print(std::ostream &) const;
 
-  ObsVector_ obs_;
+  boost::ptr_vector<ObsVector_> obs_;
 };
 
 // =============================================================================
 
 template <typename MODEL>
-Observations<MODEL>::Observations(const ObsSpace_ & obsdb): obs_(obsdb)
+Observations<MODEL>::Observations(const ObsSpace_ & obsdb): obs_(0)
 {
+  for (std::size_t jj = 0; jj < obsdb.size(); ++jj) {
+    obs_.push_back(new ObsVector_(obsdb[jj]));
+  }
   Log::trace() << "Observations created" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -91,44 +102,53 @@ Observations<MODEL>::~Observations() {
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 Observations<MODEL> & Observations<MODEL>::operator=(const Observations & rhs) {
-  obs_ = rhs.obs_;
+  for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
+    obs_[jj] = rhs.obs_[jj];
+  }
   return *this;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-ObsVector<MODEL> * Observations<MODEL>::operator-(const Observations & other) const {
-  ObsVector_ * ovec = new ObsVector_(obs_, true);
-  *ovec -= other.obs_;
-  return ovec;
+std::vector<boost::shared_ptr<ObsVector<MODEL> > >
+Observations<MODEL>::operator-(const Observations & other) const {
+  std::vector<boost::shared_ptr<ObsVector_> > out;
+  for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
+    boost::shared_ptr<ObsVector_> ovec(new ObsVector_(obs_[jj], true));
+    *ovec -= other.obs_[jj];
+    out.push_back(ovec);
+  }
+  return out;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 Observations<MODEL> & Observations<MODEL>::operator+=(const Departures_ & dy) {
-  obs_ += dy.depvalues();
+  for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
+    obs_[jj] += dy[jj];
+  }
   return *this;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-void Observations<MODEL>::runObsOperator(const ObsOperator_ & hop, const GeoVaLs_ & gvals,
-                                         const ObsAuxCtrl_ & ybias) {
-  hop.obsEquiv(gvals, obs_, ybias);
-}
-// -----------------------------------------------------------------------------
-template <typename MODEL>
 void Observations<MODEL>::save(const std::string & name) const {
-  obs_.save(name);
+  for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
+    obs_[jj].save(name);
+  }
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 void Observations<MODEL>::read(const eckit::Configuration & config) {
-  const std::string name = config.getString("ObsData.obsvalue");
-  obs_.read(name);
+  std::vector<eckit::LocalConfiguration> conf;
+  config.get("ObsTypes", conf);
+  for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
+    const std::string name = conf[jj].getString("ObsData.obsvalue");
+    obs_[jj].read(name);
+  }
   Log::trace() << "Observations:Observations have been read" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 void Observations<MODEL>::print(std::ostream & os) const {
-  os << obs_;
+  for (std::size_t jj = 0; jj < obs_.size(); ++jj) os << obs_[jj];
 }
 // -----------------------------------------------------------------------------
 }  // namespace oops

@@ -312,30 +312,6 @@ end subroutine obs_getgom
 
 ! ------------------------------------------------------------------------------
 
-subroutine obs_err_generate(c_key_self, c_key_type, perr) bind(c,name='qg_obsdb_seterr_f90')
-implicit none
-integer(c_int), intent(in) :: c_key_self
-integer(c_int), intent(in) :: c_key_type
-real(c_double), intent(in) :: perr
-
-type(obs_data), pointer :: self
-type(qg_obsoper), pointer :: otyp
-type(obs_vect) :: obserr
-integer :: nobs
-
-call obs_data_registry%get(c_key_self, self)
-call qg_obsoper_registry%get(c_key_type, otyp)
-
-call obs_count(self, otyp%request, nobs)
-call obsvec_setup(obserr,otyp%ncol,nobs)
-obserr%values(:,:)=perr
-call obs_put(self, trim(otyp%request), "ObsErr", obserr)
-deallocate(obserr%values)
-
-end subroutine obs_err_generate
-
-! ------------------------------------------------------------------------------
-
 subroutine obs_generate(c_key_self, lreq, c_req, c_conf, c_bgn, c_step, ktimes, kobs) bind(c,name='qg_obsdb_generate_f90')
 implicit none
 integer(c_int), intent(in) :: c_key_self
@@ -350,10 +326,12 @@ type(obs_data), pointer :: self
 character(len=lreq) :: req
 type(datetime) :: bgn
 type(duration) :: step
+real(c_double) :: err
+integer :: nobs, ncol
 
 integer :: nlocs
 type(datetime), allocatable :: times(:)
-type(obs_vect) :: obsloc
+type(obs_vect) :: obsloc, obserr
 
 call obs_data_registry%get(c_key_self, self)
 call c_f_string(c_req, req)
@@ -370,6 +348,14 @@ call obs_create(self, trim(req), times, obsloc)
 
 deallocate(times)
 deallocate(obsloc%values)
+
+! Create obs error
+err = config_get_real(c_conf, "obs_error");
+ncol = config_get_int(c_conf, "nval");
+call obsvec_setup(obserr,ncol,kobs)
+obserr%values(:,:)=err
+call obs_put(self, trim(req), "ObsErr", obserr)
+deallocate(obserr%values)
 
 end subroutine obs_generate
 

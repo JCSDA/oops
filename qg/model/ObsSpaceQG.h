@@ -15,28 +15,25 @@
 #include <ostream>
 #include <string>
 
+#include "oops/interface/ObsSpaceBase.h"
 #include "util/DateTime.h"
-#include "util/Logger.h"
 #include "util/Printable.h"
 
 #include "model/ObsHelpQG.h"
 #include "model/QgFortran.h"
 
-// Forward declarations
 namespace eckit {
   class Configuration;
 }
 
 namespace qg {
   class ObsVecQG;
-  class ObservationsQG;
 
 /// Wrapper around ObsHelpQG, mostly to hide the factory
 
-class ObsSpaceQG : public util::Printable {
+class ObsSpaceQG : public oops::ObsSpaceBase {
  public:
   ObsSpaceQG(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
-  ObsSpaceQG(const ObsSpaceQG &);
   ~ObsSpaceQG();
 
   void getdb(const std::string & col, int & keyData) const {
@@ -62,15 +59,12 @@ class ObsSpaceQG : public util::Printable {
   int nvin() const {return nvin_;}
   int nout() const {return nout_;}
   const std::string & obsname() const {return obsname_;}
-  const util::DateTime & windowStart() const {return winbgn_;}
-  const util::DateTime & windowEnd() const {return winend_;}
 
   int & toFortran() {return helper_->toFortran();}
   const int & toFortran() const {return helper_->toFortran();}
 
  private:
   void print(std::ostream &) const;
-  ObsSpaceQG & operator= (const ObsSpaceQG &);
   std::string ref_;
   mutable ObsHelpQG * helper_;
   std::string obsname_;

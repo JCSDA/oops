@@ -17,16 +17,10 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "lorenz95/ObsTable.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 
-namespace eckit {
-  class Configuration;
-}
-
 namespace lorenz95 {
-  class GomL95;
   class ObsTable;
 
 // -----------------------------------------------------------------------------

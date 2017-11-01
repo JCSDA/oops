@@ -13,23 +13,17 @@
 
 #include <ostream>
 #include <string>
-#include <vector>
 
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
+#include "oops/interface/ObsOperatorBase.h"
 #include "model/ObsSpaceQG.h"
-#include "model/ObservationsQG.h"
-#include "model/ObsWSpeedTLAD.h"
+#include "model/QgTraits.h"
 #include "util/ObjectCounter.h"
 
 // Forward declarations
 namespace eckit {
   class Configuration;
-}
-
-namespace util {
-  class DateTime;
 }
 
 namespace qg {
@@ -41,26 +35,19 @@ namespace qg {
 
 // -----------------------------------------------------------------------------
 /// Wind speed observation for QG model.
-/*!
- *  ObsWSpeedQG for QG model inherits from ObsEquivalent.
- */
 
-class ObsWSpeedQG : public ObservationsQG,
+class ObsWSpeedQG : public oops::ObsOperatorBase<QgTraits>,
                     private util::ObjectCounter<ObsWSpeedQG> {
  public:
   static const std::string classname() {return "qg::ObsWSpeedQG";}
 
-  ObsWSpeedQG(ObsSpaceQG &, const eckit::Configuration &);
+  ObsWSpeedQG(const ObsSpaceQG &, const eckit::Configuration &);
   virtual ~ObsWSpeedQG();
 
 // Obs Operator
   void obsEquiv(const GomQG &, ObsVecQG &, const ObsBias &) const;
 
-// Is there a way to put this in the TLAD class?
-  LinearObsOp * getTLAD() const {return new ObsWSpeedTLAD(obsdb_, keyOperWspeed_);}
-
 // Other
-  void generateObsError(const eckit::Configuration &);
   boost::shared_ptr<const VariablesQG> variables() const {return varin_;}
 
   int & toFortran() {return keyOperWspeed_;}
@@ -68,8 +55,6 @@ class ObsWSpeedQG : public ObservationsQG,
 
  private:
   void print(std::ostream &) const;
-  ObsSpaceQG & obsdb_;
-  const std::string obsname_;
   F90hop keyOperWspeed_;
   boost::shared_ptr<const VariablesQG> varin_;
 };

@@ -11,18 +11,19 @@
 #ifndef OOPS_BASE_DEPARTURES_H_
 #define OOPS_BASE_DEPARTURES_H_
 
+#include <cstddef>
 #include <iostream>
 #include <string>
+#include <vector>
 
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "util/Logger.h"
 #include "oops/base/GeneralizedDepartures.h"
+#include "oops/base/ObsSpaces.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/ObsErrorBase.h"
-#include "oops/interface/ObservationSpace.h"
 #include "oops/interface/LinearObsOperator.h"
 #include "oops/interface/ObsVector.h"
 #include "util/DateTime.h"
@@ -51,15 +52,20 @@ class Departures : public util::Printable,
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
   typedef ObsErrorBase<MODEL>        ObsErrorBase_;
   typedef LinearObsOperator<MODEL>   LinearObsOperator_;
-  typedef ObservationSpace<MODEL>    ObsSpace_;
+  typedef ObsSpaces<MODEL>           ObsSpace_;
   typedef ObsVector<MODEL>           ObsVector_;
 
  public:
 // Constructors and destructor
   explicit Departures(const ObsSpace_ &);
-  explicit Departures(ObsVector_ *);
+  explicit Departures(std::vector<boost::shared_ptr<ObsVector_> >);
   explicit Departures(const Departures &);
   ~Departures();
+
+/// Access
+  std::size_t size() const {return dep_.size();}
+  ObsVector_ & operator[](const std::size_t ii) {return *dep_.at(ii);} 
+  const ObsVector_ & operator[](const std::size_t ii) const {return *dep_.at(ii);} 
 
 // Linear algebra operators
   Departures & operator=(const Departures &);
@@ -73,49 +79,42 @@ class Departures : public util::Printable,
   void axpy(const double &, const Departures &);
   double dot_product_with(const Departures &) const;
 
-/// Compute observations equivalents (TL)
-  void runObsOperatorTL(const LinearObsOperator_ &, const GeoVaLs_ &, const ObsAuxIncr_ &);
-
-/// Compute observations equivalents (AD)
-  void runObsOperatorAD(const LinearObsOperator_ &, GeoVaLs_ &, ObsAuxIncr_ &) const;
-
-/// Get departue values
-  const ObsVector_ & depvalues() const {return *dep_;}
-
 /// Save departures values
   void save(const std::string &) const;
-
-/// Number of obs (for info only)
-  unsigned int numberOfObs() const {return dep_->size();}
-
-/// Double despatch for obs error covariance
-  void helpCovarRandomize(const ObsErrorBase_ & R) {
-    R.randomize(*dep_);
-  }
 
  private:
   void print(std::ostream &) const;
 
-  boost::scoped_ptr<ObsVector_> dep_;
+  std::vector<boost::shared_ptr<ObsVector_> > dep_;
 };
 
 // =============================================================================
 
 template<typename MODEL>
-Departures<MODEL>::Departures(const ObsSpace_ & obsgeom): dep_(new ObsVector_(obsgeom))
+Departures<MODEL>::Departures(const ObsSpace_ & obsgeom): dep_(0)
+{
+  for (std::size_t jj = 0; jj < obsgeom.size(); ++jj) {
+    boost::shared_ptr<ObsVector_> tmp(new ObsVector_(obsgeom[jj]));
+    dep_.push_back(tmp);
+  }
+  Log::trace() << "Departures created" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+Departures<MODEL>::Departures(std::vector<boost::shared_ptr<ObsVector_> > val)
+ : dep_(val)
 {
   Log::trace() << "Departures created" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-Departures<MODEL>::Departures(ObsVector_ * val): dep_(val)
+Departures<MODEL>::Departures(const Departures & other): dep_(0)
 {
-  Log::trace() << "Departures created" << std::endl;
-}
-// -----------------------------------------------------------------------------
-template<typename MODEL>
-Departures<MODEL>::Departures(const Departures & other): dep_(new ObsVector_(*other.dep_))
-{
+// We want deep copy here
+  for (std::size_t jj = 0; jj < other.dep_.size(); ++jj) {
+    boost::shared_ptr<ObsVector_> tmp(new ObsVector_(*other.dep_[jj]));
+    dep_.push_back(tmp);
+  }
   Log::trace() << "Departures copy-created" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -125,82 +124,95 @@ Departures<MODEL>::~Departures() {
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-void Departures<MODEL>::runObsOperatorTL(const LinearObsOperator_ & hop, const GeoVaLs_ & gvals,
-                                         const ObsAuxIncr_ & octl) {
-  hop.obsEquivTL(gvals, *dep_, octl);
-}
-// -----------------------------------------------------------------------------
-template<typename MODEL>
-void Departures<MODEL>::runObsOperatorAD(const LinearObsOperator_ & hop, GeoVaLs_ & gvals,
-                                         ObsAuxIncr_ & octl) const {
-  hop.obsEquivAD(gvals, *dep_, octl);
-}
-// -----------------------------------------------------------------------------
-template<typename MODEL>
 Departures<MODEL> & Departures<MODEL>::operator=(const Departures & rhs) {
-  *dep_ = *rhs.dep_;
+  for (std::size_t jj = 0; jj < dep_.size(); ++jj) {
+    *dep_[jj] = *rhs.dep_[jj];
+  }
   return *this;
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 Departures<MODEL> & Departures<MODEL>::operator+=(const Departures & rhs) {
-  *dep_ += *rhs.dep_;
+  for (std::size_t jj = 0; jj < dep_.size(); ++jj) {
+    *dep_[jj] += *rhs.dep_[jj];
+  }
   return *this;
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 Departures<MODEL> & Departures<MODEL>::operator-=(const Departures & rhs) {
-  *dep_ -= *rhs.dep_;
+  for (std::size_t jj = 0; jj < dep_.size(); ++jj) {
+    *dep_[jj] -= *rhs.dep_[jj];
+  }
   return *this;
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 Departures<MODEL> & Departures<MODEL>::operator*=(const double & zz) {
-  *dep_ *= zz;
+  for (std::size_t jj = 0; jj < dep_.size(); ++jj) {
+    *dep_[jj] *= zz;
+  }
   return *this;
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 Departures<MODEL> & Departures<MODEL>::operator*=(const Departures & rhs) {
-  *dep_ *= *rhs.dep_;
+  for (std::size_t jj = 0; jj < dep_.size(); ++jj) {
+    *dep_[jj] *= *rhs.dep_[jj];
+  }
   return *this;
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 Departures<MODEL> & Departures<MODEL>::operator/=(const Departures & rhs) {
-  *dep_ /= *rhs.dep_;
+  for (std::size_t jj = 0; jj < dep_.size(); ++jj) {
+    *dep_[jj] /= *rhs.dep_[jj];
+  }
   return *this;
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 void Departures<MODEL>::zero() {
-  dep_->zero();
+  for (std::size_t jj = 0; jj < dep_.size(); ++jj) {
+    dep_[jj]->zero();
+  }
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 void Departures<MODEL>::invert() {
-  dep_->invert();
+  for (std::size_t jj = 0; jj < dep_.size(); ++jj) {
+    dep_[jj]->invert();
+  }
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 void Departures<MODEL>::axpy(const double & zz, const Departures & rhs) {
-  dep_->axpy(zz, *rhs.dep_);
+  for (std::size_t jj = 0; jj < dep_.size(); ++jj) {
+    dep_[jj]->axpy(zz, *rhs.dep_[jj]);
+  }
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 double Departures<MODEL>::dot_product_with(const Departures & other) const {
-  double zz = dot_product(*dep_, *other.dep_);
+  double zz = 0.0;
+  for (std::size_t jj = 0; jj < dep_.size(); ++jj) {
+    zz += dot_product(*dep_[jj], *other.dep_[jj]);
+  }
   return zz;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 void Departures<MODEL>::save(const std::string & name) const {
-  dep_->save(name);
+  for (std::size_t jj = 0; jj < dep_.size(); ++jj) {
+    dep_[jj]->save(name);
+  }
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 void Departures<MODEL>::print(std::ostream & os) const {
-  os << *dep_;
+  for (std::size_t jj = 0; jj < dep_.size(); ++jj) {
+    os << *dep_[jj];
+  }
 }
 // -----------------------------------------------------------------------------
 }  // namespace oops

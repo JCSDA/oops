@@ -74,19 +74,6 @@ template <typename MODEL> void testConstructor() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testCopyConstructor() {
-  typedef ObservationSpaceFixture<MODEL> Test_;
-  typedef oops::ObservationSpace<MODEL>  ObsSpace_;
-
-  boost::scoped_ptr<ObsSpace_> other(new ObsSpace_(Test_::obspace()));
-  BOOST_CHECK(other.get());
-
-  other.reset();
-  BOOST_CHECK(!other.get());
-}
-
-// -----------------------------------------------------------------------------
-
 template <typename MODEL> class ObservationSpace : public oops::Test {
  public:
   ObservationSpace() {}
@@ -98,7 +85,6 @@ template <typename MODEL> class ObservationSpace : public oops::Test {
     boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/ObservationSpace");
 
     ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testCopyConstructor<MODEL>));
 
     boost::unit_test::framework::master_test_suite().add(ts);
   }

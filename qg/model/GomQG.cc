@@ -13,8 +13,6 @@
 #include "eckit/config/Configuration.h"
 #include "util/Logger.h"
 #include "model/ObsSpaceQG.h"
-#include "model/ObservationsQG.h"
-#include "model/LinearObsOp.h"
 #include "model/QgFortran.h"
 #include "model/VariablesQG.h"
 

@@ -26,7 +26,6 @@
 #include "oops/interface/Variables.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
-#include "util/abor1_cpp.h"
 #include "util/dot_product.h"
 
 namespace oops {

@@ -21,12 +21,15 @@
 #include "lorenz95/NoVariables.h"
 #include "lorenz95/ObsBias.h"
 #include "lorenz95/ObsVec1D.h"
+#include "lorenz95/L95Traits.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
+static oops::ObsOperatorMaker<L95Traits, ObservationL95> makerObsL95_("Lorenz 95");
+// -----------------------------------------------------------------------------
 
-ObservationL95::ObservationL95(ObsTable & ot, const eckit::Configuration & conf)
+ObservationL95::ObservationL95(const ObsTable & ot, const eckit::Configuration &)
   : obsdb_(ot), inputs_(new NoVariables())
 {}
 
@@ -42,17 +45,6 @@ void ObservationL95::obsEquiv(const GomL95 & gom, ObsVec1D & ovec,
     const int ii = gom.getindx(jj);
     ovec(ii)=gom[jj] + bias.value();
   }
-}
-
-// -----------------------------------------------------------------------------
-
-void ObservationL95::generateObsError(const eckit::Configuration & conf) {
-  const double err = conf.getDouble("obs_error");
-  std::vector<double> obserr(obsdb_.nobs());
-  for (unsigned int jj = 0; jj < obserr.size(); ++jj) {
-    obserr[jj] = err;
-  }
-  obsdb_.putdb("ObsErr", obserr);
 }
 
 // -----------------------------------------------------------------------------

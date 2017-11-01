@@ -22,20 +22,20 @@
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/ControlVariable.h"
 #include "oops/base/Departures.h"
+#include "oops/base/LinearObsOperators.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
 #include "oops/base/ObserverTL.h"
 #include "oops/base/ObserverAD.h"
+#include "oops/base/ObsErrors.h"
+#include "oops/base/ObsOperators.h"
+#include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
 #include "oops/base/PostBaseTL.h"
 #include "oops/base/PostBaseAD.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/ObsAuxIncrement.h"
-#include "oops/interface/ObservationSpace.h"
-#include "oops/interface/ObsErrorCovariance.h"
-#include "oops/interface/ObsOperator.h"
-#include "oops/interface/LinearObsOperator.h"
 #include "oops/interface/State.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
@@ -61,9 +61,9 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   typedef State<MODEL>               State_;
   typedef Increment<MODEL>           Increment_;
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
-  typedef ObsOperator<MODEL>         ObsOperator_;
-  typedef ObservationSpace<MODEL>    ObsSpace_;
-  typedef LinearObsOperator<MODEL>   LinearObsOperator_;
+  typedef ObsOperators<MODEL>        ObsOperator_;
+  typedef ObsSpaces<MODEL>           ObsSpace_;
+  typedef LinearObsOperators<MODEL>  LinearObsOperator_;
 
  public:
   /// Construct \f$ J_o\f$ from \f$ R\f$ and \f$ y_{obs}\f$.
@@ -109,7 +109,7 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   const ObsSpace_ obspace_;
   const ObsOperator_ hop_;
   Observations_ yobs_;
-  ObsErrorCovariance<MODEL> R_;
+  ObsErrors<MODEL> R_;
 
   /// Gradient at first guess : \f$ R^{-1} (H(x_{fg})-y_{obs}) \f$.
   boost::scoped_ptr<Departures_> gradFG_;
@@ -132,15 +132,13 @@ template<typename MODEL>
 CostJo<MODEL>::CostJo(const eckit::Configuration & joConf,
                       const util::DateTime & winbgn, const util::DateTime & winend,
                       const util::Duration & ts, const bool subwindows)
-  : obspace_(eckit::LocalConfiguration(joConf, "Observation"), winbgn, winend),
-    hop_(obspace_, eckit::LocalConfiguration(joConf, "Observation")),
-    yobs_(obspace_),
-    R_(obspace_, eckit::LocalConfiguration(joConf, "Covariance")),
+  : obspace_(joConf, winbgn, winend),
+    hop_(obspace_), yobs_(obspace_), R_(obspace_),
     gradFG_(), pobs_(), tslot_(ts),
     hoptlad_(), subwindows_(subwindows), ltraj_(false)
 {
   Log::debug() << "CostJo:setup tslot_ = " << tslot_ << std::endl;
-  yobs_.read(eckit::LocalConfiguration(joConf, "Observation"));
+  yobs_.read(joConf);
   Log::trace() << "CostJo:CostJo done" << std::endl;
 }
 
@@ -150,7 +148,7 @@ template<typename MODEL>
 boost::shared_ptr<PostBase<State<MODEL> > >
 CostJo<MODEL>::initialize(const CtrlVar_ & xx) const {
   ASSERT(ltraj_ == false);
-  pobs_.reset(new Observer<MODEL, State_>(obspace_, hop_, yobs_, xx.obsVar(),
+  pobs_.reset(new Observer<MODEL, State_>(obspace_, hop_, xx.obsVar(),
                                           tslot_, subwindows_));
   return pobs_;
 }
@@ -187,8 +185,8 @@ boost::shared_ptr<PostBase<State<MODEL> > >
 CostJo<MODEL>::initializeTraj(const CtrlVar_ & xx, const Geometry_ &,
                               const eckit::Configuration &) {
   ltraj_ = true;
-  hoptlad_.reset(new LinearObsOperator_(hop_));
-  pobs_.reset(new Observer<MODEL, State_>(obspace_, hop_, yobs_, xx.obsVar(),
+  hoptlad_.reset(new LinearObsOperator_(obspace_));
+  pobs_.reset(new Observer<MODEL, State_>(obspace_, hop_, xx.obsVar(),
                                           tslot_, subwindows_, hoptlad_));
   return pobs_;
 }
@@ -228,7 +226,7 @@ boost::shared_ptr<PostBaseTL<Increment<MODEL> > > CostJo<MODEL>::setupTL(
                                const CtrlInc_ & dx) const {
   ASSERT(hoptlad_);
   boost::shared_ptr<PostBaseTL<Increment_> > spobs;
-  spobs.reset(new ObserverTL<MODEL, Increment_>(obspace_, *hoptlad_, yobs_, dx.obsVar(),
+  spobs.reset(new ObserverTL<MODEL, Increment_>(obspace_, *hoptlad_, dx.obsVar(),
                                                 tslot_, subwindows_));
   return spobs;
 }
@@ -283,20 +281,21 @@ void CostJo<MODEL>::resetLinearization() {
 
 template<typename MODEL>
 double CostJo<MODEL>::printJo(const Departures_ & dy, const Departures_ & grad) const {
-  const double zjo = 0.5 * dot_product(dy, grad);
-
-  // print Jo table
   obspace_.printJo(dy, grad);
 
-  // print total Jo
-  const unsigned nobs = dy.numberOfObs();
-  if (nobs > 0) {
-    Log::test() << "CostJo   : Nonlinear Jo = " << zjo
-                << ", nobs = " << nobs << ", Jo/n = " << zjo/nobs
-                << ", err = " << R_.getRMSE() << std::endl;
-  } else {
-    Log::test() << "CostJo   : Nonlinear Jo = " << zjo << " --- No Observations" << std::endl;
-    Log::warning() << "CostJo: No Observations!!!" << std::endl;
+  double zjo = 0.0;
+  for (std::size_t jj = 0; jj < dy.size(); ++jj) {
+    const double zz = 0.5 * dot_product(dy[jj], grad[jj]);
+    const unsigned nobs = dy[jj].size();
+    if (nobs > 0) {
+      Log::test() << "CostJo   : Nonlinear Jo = " << zz
+                  << ", nobs = " << nobs << ", Jo/n = " << zz/nobs
+                  << ", err = " << R_[jj].getRMSE() << std::endl;
+    } else {
+      Log::test() << "CostJo   : Nonlinear Jo = " << zz << " --- No Observations" << std::endl;
+      Log::warning() << "CostJo: No Observations!!!" << std::endl;
+    }
+    zjo += zz;
   }
 
   return zjo;

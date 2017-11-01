@@ -13,23 +13,20 @@
 
 #include <string>
 
-#include <boost/shared_ptr.hpp>
+#include <boost/noncopyable.hpp>
+#include <boost/scoped_ptr.hpp>
 
 #include "util/Logger.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObservationSpace.h"
+#include "oops/interface/ObsOperatorBase.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/interface/Variables.h"
-#include "eckit/config/Configuration.h"
 #include "util/DateTime.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 #include "util/Timer.h"
-
-namespace eckit {
-  class Configuration;
-}
 
 namespace oops {
 
@@ -37,9 +34,10 @@ namespace oops {
 
 template <typename MODEL>
 class ObsOperator : public util::Printable,
+                    private boost::noncopyable,
                     private util::ObjectCounter<ObsOperator<MODEL> > {
-  typedef typename MODEL::ObsOperator           ObsOperator_;
   typedef GeoVaLs<MODEL>             GeoVaLs_;
+  typedef ObsOperatorBase<MODEL>     ObsOperatorBase_;
   typedef ObsAuxControl<MODEL>       ObsAuxControl_;
   typedef ObsVector<MODEL>           ObsVector_;
   typedef ObservationSpace<MODEL>    ObsSpace_;
@@ -48,44 +46,31 @@ class ObsOperator : public util::Printable,
  public:
   static const std::string classname() {return "oops::ObsOperator";}
 
-  ObsOperator(const ObsSpace_ &, const eckit::Configuration &);
-  ObsOperator(const ObsOperator &);
+  explicit ObsOperator(const ObsSpace_ &);
   ~ObsOperator();
 
 /// Interfacing
-  const ObsOperator_ & obsoperator() const {return *oper_;}
+  const ObsOperatorBase_ & obsoperator() const {return *oper_;}
 
 /// Obs Operator
   void obsEquiv(const GeoVaLs_ &, ObsVector_ &, const ObsAuxControl_ &) const;
 
 /// Other
   Variables_ variables() const;  // Required inputs variables from Model
-  void generateObsError(const eckit::Configuration &);
 
  private:
-  ObsOperator & operator=(const ObsOperator &);
   void print(std::ostream &) const;
-  boost::shared_ptr<ObsOperator_> oper_;
+  boost::scoped_ptr<ObsOperatorBase_> oper_;
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-ObsOperator<MODEL>::ObsOperator(const ObsSpace_ & os, const eckit::Configuration & conf)
-  : oper_()
-{
+ObsOperator<MODEL>::ObsOperator(const ObsSpace_ & os) : oper_() {
   Log::trace() << "ObsOperator<MODEL>::ObsOperator starting" << std::endl;
   util::Timer timer(classname(), "ObsOperator");
-  oper_.reset(ObsOperator_::create(os.observationspace(), conf));
+  oper_.reset(ObsOperatorFactory<MODEL>::create(os.observationspace(), os.config()));
   Log::trace() << "ObsOperator<MODEL>::ObsOperator done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-ObsOperator<MODEL>::ObsOperator(const ObsOperator & other) : oper_(other.oper_)
-{
-  Log::trace() << "ObsOperator<MODEL>::ObsOperator copied" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -122,21 +107,11 @@ Variables<MODEL> ObsOperator<MODEL>::variables() const {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void ObsOperator<MODEL>::generateObsError(const eckit::Configuration & conf) {
-  Log::trace() << "ObsOperator<MODEL>::generateObsError starting" << std::endl;
-  util::Timer timer(classname(), "generateObsError");
-  oper_->generateObsError(conf);
-  Log::trace() << "ObsOperator<MODEL>::generateObsError done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
 template<typename MODEL>
 void ObsOperator<MODEL>::print(std::ostream & os) const {
   Log::trace() << "ObsOperator<MODEL>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
-//  os << *increment_;
+  os << *oper_;
   Log::trace() << "ObsOperator<MODEL>::print done" << std::endl;
 }
 

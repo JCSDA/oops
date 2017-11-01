@@ -16,10 +16,9 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
-#include "oops/base/Departures.h"
-#include "oops/base/Observations.h"
 #include "oops/interface/ObsErrorBase.h"
 #include "oops/interface/ObservationSpace.h"
+#include "oops/interface/ObsVector.h"
 #include "util/Printable.h"
 
 namespace eckit {
@@ -45,10 +44,9 @@ template <typename MODEL>
 class ObsErrorCovariance : public util::Printable,
                            private util::ObjectCounter<ObsErrorCovariance<MODEL> >,
                            private boost::noncopyable {
-  typedef Departures<MODEL>          Departures_;
-  typedef Observations<MODEL>        Observations_;
   typedef ObsErrorBase<MODEL>        ObsErrorBase_;
   typedef ObservationSpace<MODEL>    ObsSpace_;
+  typedef ObsVector<MODEL>           ObsVector_;
 
  public:
   static const std::string classname() {return "oops::ObsErrorCovariance";}
@@ -57,14 +55,14 @@ class ObsErrorCovariance : public util::Printable,
   ~ObsErrorCovariance();
 
 /// Linearize and reset for inner loop if needed
-  void linearize(const Observations_ &);
+  void linearize(const ObsVector_ &);
 
 /// Multiply a Departure by \f$R\f$ and \f$R^{-1}\f$
-  Departures_ * multiply(const Departures_ &) const;
-  Departures_ * inverseMultiply(const Departures_ &) const;
+  ObsVector_ * multiply(const ObsVector_ &) const;
+  ObsVector_ * inverseMultiply(const ObsVector_ &) const;
 
 /// Generate random perturbation
-  void randomize(Departures_ &) const;
+  void randomize(ObsVector_ &) const;
 
 /// Get mean error for Jo table
   double getRMSE() const;
@@ -100,20 +98,20 @@ ObsErrorCovariance<MODEL>::~ObsErrorCovariance() {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void ObsErrorCovariance<MODEL>::linearize(const Observations_ & yy) {
+void ObsErrorCovariance<MODEL>::linearize(const ObsVector_ & yy) {
   Log::trace() << "ObsErrorCovariance<MODEL>::linearize starting" << std::endl;
   util::Timer timer(classname(), "linearize");
-  covar_->linearize(yy.obsvalues());
+  covar_->linearize(yy.obsvector());
   Log::trace() << "ObsErrorCovariance<MODEL>::linearize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-Departures<MODEL> * ObsErrorCovariance<MODEL>::multiply(const Departures_ & dy) const {
+ObsVector<MODEL> * ObsErrorCovariance<MODEL>::multiply(const ObsVector_ & dy) const {
   Log::trace() << "ObsErrorCovariance<MODEL>::multiply starting" << std::endl;
   util::Timer timer(classname(), "multiply");
-  Departures_ * dz = new Departures_(covar_->multiply(dy.depvalues()));
+  ObsVector_ * dz = new ObsVector_(covar_->multiply(dy.obsvector()));
   Log::trace() << "ObsErrorCovariance<MODEL>::multiply done" << std::endl;
   return dz;
 }
@@ -121,10 +119,10 @@ Departures<MODEL> * ObsErrorCovariance<MODEL>::multiply(const Departures_ & dy) 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-Departures<MODEL> * ObsErrorCovariance<MODEL>::inverseMultiply(const Departures_ & dy) const {
+ObsVector<MODEL> * ObsErrorCovariance<MODEL>::inverseMultiply(const ObsVector_ & dy) const {
   Log::trace() << "ObsErrorCovariance<MODEL>::inverseMultiply starting" << std::endl;
   util::Timer timer(classname(), "inverseMultiply");
-  Departures_ * dz = new Departures_(covar_->inverseMultiply(dy.depvalues()));
+  ObsVector_ * dz = new ObsVector_(covar_->inverseMultiply(dy.obsvector()));
   Log::trace() << "ObsErrorCovariance<MODEL>::inverseMultiply done" << std::endl;
   return dz;
 }
@@ -132,10 +130,10 @@ Departures<MODEL> * ObsErrorCovariance<MODEL>::inverseMultiply(const Departures_
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void ObsErrorCovariance<MODEL>::randomize(Departures_ & dy) const {
+void ObsErrorCovariance<MODEL>::randomize(ObsVector_ & dy) const {
   Log::trace() << "ObsErrorCovariance<MODEL>::randomize starting" << std::endl;
   util::Timer timer(classname(), "randomize");
-  dy.helpCovarRandomize(*covar_);
+  covar_->randomize(dy.obsvector());
   Log::trace() << "ObsErrorCovariance<MODEL>::randomize done" << std::endl;
 }
 

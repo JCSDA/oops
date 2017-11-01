@@ -68,7 +68,8 @@
         "ObsDataOut": {
           "filename": "Data/test.2010-01-02T00:00:00Z.obt"
         },
-        "obsvalue": "ObsVal"
+        "obsvalue": "ObsVal",
+        "obserror": "ObsErr"
       }
     },
     "Covariance": {
@@ -78,7 +79,8 @@
     "Generate": {
       "begin": "PT3H",
       "obs_frequency": "PT3H",
-      "obs_density": "20"
+      "obs_density": "20",
+      "obs_error": "0.4"
     }
   },
   "testInnerLoop": null

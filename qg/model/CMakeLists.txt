@@ -9,7 +9,6 @@ GomQG.cc
 GomQG.h
 IncrementQG.cc
 IncrementQG.h
-LinearObsOp.h
 LocationsQG.h
 LocalizationMatrixQG.cc
 LocalizationMatrixQG.h
@@ -42,8 +41,6 @@ ObsWindQG.cc
 ObsWindQG.h
 ObsWindTLAD.cc
 ObsWindTLAD.h
-ObservationsQG.cc
-ObservationsQG.h
 QgFortran.h
 QgTraits.h
 StateQG.cc
@@ -67,7 +64,6 @@ fft_f.cc
 fft_f.h
 fft_mod.F90
 generate_locations.f90
-instantiateQgObsFactory.h
 invent_state.f90
 invert_pv.f90
 invert_pv_ad.f90

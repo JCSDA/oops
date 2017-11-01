@@ -1,32 +1,35 @@
 {
-  "Observation": [{
-    "ObsType": "Lorenz 95",
-    "ObsData": {
-      "ObsDataOut": {
-        "filename": "Data/l95.truth4d.2010-01-02T00:00:00Z.obt"
+  "Observations": {
+    "ObsTypes": [{
+      "ObsType": "Lorenz 95",
+      "ObsData": {
+        "ObsDataOut": {
+          "filename": "Data/l95.truth4d.2010-01-02T00:00:00Z.obt"
+        },
+        "obsvalue": "ObsVal",
+        "obserror": "ObsErr"
       },
-      "obserror": "ObsErr"
-    },
-    "Generate": {
-      "begin": "PT3H",
-      "obs_frequency": "PT3H",
-      "obs_density": "20",
-      "obs_error": "0.4"
-    }
-  }],
-  "resolution": {
+      "Generate": {
+        "begin": "PT3H",
+        "obs_frequency": "PT3H",
+        "obs_density": "20",
+        "obs_error": "0.4"
+      }
+    }]
+  },
+  "Geometry": {
     "resol": "40"
   },
-  "model": {
+  "Model": {
     "tstep": "PT1H30M",
     "f": "8.0"
   },
-  "initial": {
+  "Initial Condition": {
     "filename": "Data/truth.fc.2010-01-01T00:00:00Z.PT3H",
     "date": "2010-01-01T03:00:00Z"
   },
-  "assimilation_window": {
-    "begin": "2010-01-01T03:00:00Z",
-    "end": "2010-01-02T03:00:00Z"
+  "Assimilation Window": {
+    "Begin": "2010-01-01T03:00:00Z",
+    "End": "2010-01-02T03:00:00Z"
   }
 }

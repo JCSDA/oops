@@ -33,7 +33,7 @@ namespace lorenz95 {
 
 ObsTable::ObsTable(const eckit::Configuration & config,
                    const util::DateTime & bgn, const util::DateTime & end)
-  : winbgn_(bgn), winend_(end)
+  : oops::ObsSpaceBase(config, bgn, end), winbgn_(bgn), winend_(end)
 {
   nameIn_.clear();
   nameOut_.clear();
@@ -41,7 +41,6 @@ ObsTable::ObsTable(const eckit::Configuration & config,
     const eckit::LocalConfiguration dataConfig(config, "ObsData");
     if (dataConfig.has("ObsDataIn")) {
       nameIn_ = dataConfig.getString("ObsDataIn.filename");
-      oops::Log::trace() << "ObsTable::ObsTable reading observations from " << nameIn_ << std::endl;
       otOpen(nameIn_);
     }
     if (dataConfig.has("ObsDataOut")) {
@@ -55,7 +54,6 @@ ObsTable::ObsTable(const eckit::Configuration & config,
 
 ObsTable::~ObsTable() {
   if (!nameOut_.empty()) {
-    oops::Log::trace() << "ObsTable::~ObsTable saving nameOut = " << nameOut_ << std::endl;
     otWrite(nameOut_);
   }
   oops::Log::trace() << "ObsTable::ObsTable destructed" << std::endl;
@@ -123,7 +121,6 @@ void ObsTable::generateDistribution(const eckit::Configuration & config) {
   const unsigned int nobs_locations = config.getInt("obs_density");
   const unsigned int nobs = nobs_locations*nobstimes;
   double dx = 1.0/static_cast<double>(nobs_locations);
-  oops::Log::trace() << "ObservationL95:generateDistribution nobs=" << nobs << std::endl;
 
   times_.resize(nobs);
   locations_.resize(nobs);
@@ -142,6 +139,14 @@ void ObsTable::generateDistribution(const eckit::Configuration & config) {
     step += freq;
   }
   ASSERT(iobs == nobs);
+
+// Generate obs error
+  const double err = config.getDouble("obs_error");
+  std::vector<double> obserr(nobs);
+  for (unsigned int jj = 0; jj < nobs; ++jj) {
+    obserr[jj] = err;
+  }
+  this->putdb("ObsErr", obserr);
 
   oops::Log::trace() << "ObsTable::generateDistribution done" << std::endl;
 }

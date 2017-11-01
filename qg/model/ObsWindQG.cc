@@ -10,33 +10,30 @@
 
 #include "model/ObsWindQG.h"
 
-#include "util/Logger.h"
+#include "eckit/config/Configuration.h"
 #include "model/GomQG.h"
-#include "model/LocationsQG.h"
 #include "model/ObsBias.h"
-#include "model/ObsBiasIncrement.h"
 #include "model/ObsSpaceQG.h"
 #include "model/ObsVecQG.h"
 #include "model/QgFortran.h"
 #include "model/VariablesQG.h"
-#include "eckit/config/Configuration.h"
-
-
-using oops::Log;
+#include "util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
+static oops::ObsOperatorMaker<QgTraits, ObsWindQG>   makerWind_("Wind");
+// -----------------------------------------------------------------------------
 
-ObsWindQG::ObsWindQG(ObsSpaceQG & odb, const eckit::Configuration & config)
-  : obsdb_(odb), obsname_("Wind"), varin_()
+ObsWindQG::ObsWindQG(const ObsSpaceQG & odb, const eckit::Configuration & config)
+  : keyOperWind_(0), varin_()
 {
   const eckit::Configuration * configc = &config;
   qg_wind_setup_f90(keyOperWind_, &configc);
   int keyVarin;
   qg_obsoper_inputs_f90(keyOperWind_, keyVarin);
   varin_.reset(new VariablesQG(keyVarin));
-  Log::trace() << "ObsWindQG created " << obsname_ << std::endl;
+  oops::Log::trace() << "ObsWindQG created." << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -50,13 +47,6 @@ ObsWindQG::~ObsWindQG() {
 void ObsWindQG::obsEquiv(const GomQG & gom, ObsVecQG & ovec,
                          const ObsBias & bias) const {
   qg_wind_equiv_f90(gom.toFortran(), ovec.toFortran(), bias.wind());
-}
-
-// -----------------------------------------------------------------------------
-
-void ObsWindQG::generateObsError(const eckit::Configuration & conf) {
-  const double err = conf.getDouble("obs_error");
-  qg_obsdb_seterr_f90(obsdb_.toFortran(), keyOperWind_, err);
 }
 
 // -----------------------------------------------------------------------------

@@ -13,25 +13,21 @@
 
 #include <string>
 
-#include <boost/shared_ptr.hpp>
+#include <boost/noncopyable.hpp>
+#include <boost/scoped_ptr.hpp>
 
 #include "util/Logger.h"
 #include "oops/interface/GeoVaLs.h"
+#include "oops/interface/LinearObsOperBase.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/ObservationSpace.h"
-#include "oops/interface/ObsOperator.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/interface/Variables.h"
-#include "eckit/config/Configuration.h"
 #include "util/DateTime.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 #include "util/Timer.h"
-
-namespace eckit {
-  class Configuration;
-}
 
 namespace oops {
 
@@ -39,24 +35,24 @@ namespace oops {
 
 template <typename MODEL>
 class LinearObsOperator : public util::Printable,
+                          private boost::noncopyable,
                           private util::ObjectCounter<LinearObsOperator<MODEL> > {
-  typedef typename MODEL::LinearObsOperator     LinearObsOperator_;
   typedef GeoVaLs<MODEL>             GeoVaLs_;
+  typedef LinearObsOperBase<MODEL>   LinearObsOperBase_;
   typedef ObsAuxControl<MODEL>       ObsAuxControl_;
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncrement_;
-  typedef ObsOperator<MODEL>         ObsOperator_;
+  typedef ObservationSpace<MODEL>    ObsSpace_;
   typedef ObsVector<MODEL>           ObsVector_;
   typedef Variables<MODEL>           Variables_;
 
  public:
   static const std::string classname() {return "oops::LinearObsOperator";}
 
-  explicit LinearObsOperator(const ObsOperator_ &);
-  explicit LinearObsOperator(const LinearObsOperator &);
+  explicit LinearObsOperator(const ObsSpace_ &);
   ~LinearObsOperator();
 
 /// Interfacing
-  const LinearObsOperator_ & linearobsoperator() const {return *oper_;}
+  const LinearObsOperBase_ & linearobsoperator() const {return *oper_;}
 
 /// Obs Operators
   void setTrajectory(const GeoVaLs_ &, const ObsAuxControl_ &);
@@ -67,28 +63,18 @@ class LinearObsOperator : public util::Printable,
   Variables_ variables() const;  // Required inputs variables from LinearModel
 
  private:
-  LinearObsOperator & operator=(const LinearObsOperator &);
   void print(std::ostream &) const;
-  boost::shared_ptr<LinearObsOperator_> oper_;
+  boost::scoped_ptr<LinearObsOperBase_> oper_;
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-LinearObsOperator<MODEL>::LinearObsOperator(const ObsOperator_ & hop): oper_()
-{
+LinearObsOperator<MODEL>::LinearObsOperator(const ObsSpace_ & os): oper_() {
   Log::trace() << "LinearObsOperator<MODEL>::LinearObsOperator starting" << std::endl;
   util::Timer timer(classname(), "LinearObsOperator");
-  oper_.reset(LinearObsOperator_::create(hop.obsoperator()));
+  oper_.reset(LinearObsOperFactory<MODEL>::create(os.observationspace(), os.config()));
   Log::trace() << "LinearObsOperator<MODEL>::LinearObsOperator done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-LinearObsOperator<MODEL>::LinearObsOperator(const LinearObsOperator & other) : oper_(other.oper_)
-{
-  Log::trace() << "LinearObsOperator<MODEL>::LinearObsOperator copied" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -150,7 +136,7 @@ template<typename MODEL>
 void LinearObsOperator<MODEL>::print(std::ostream & os) const {
   Log::trace() << "LinearObsOperator<MODEL>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
-//  os << *increment_;
+  os << *oper_;
   Log::trace() << "LinearObsOperator<MODEL>::print done" << std::endl;
 }
 

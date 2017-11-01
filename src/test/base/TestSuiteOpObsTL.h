@@ -53,7 +53,6 @@ BOOST_AUTO_TEST_CASE(test_tl_obs_type) {
       ratio /= (*eps_H_dx);
 
       /* This test makes sense only with a single obs file */
-      BOOST_CHECK_EQUAL(ratio.numberOfObs(), 1);
       double scal_ratio = sqrt(dot_product(ratio, ratio));
 
       std::ostringstream oss;

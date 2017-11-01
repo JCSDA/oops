@@ -11,14 +11,13 @@
 #ifndef OOPS_INTERFACE_OBSERRORBASE_H_
 #define OOPS_INTERFACE_OBSERRORBASE_H_
 
-#include <boost/noncopyable.hpp>
 #include <map>
 #include <string>
 
+#include <boost/noncopyable.hpp>
 #include "eckit/config/Configuration.h"
 
 #include "oops/interface/ObservationSpace.h"
-#include "oops/interface/ObsVector.h"
 #include "util/abor1_cpp.h"
 #include "util/Logger.h"
 #include "util/Printable.h"
@@ -39,31 +38,24 @@ namespace oops {
 template<typename MODEL>
 class ObsErrorBase : public util::Printable,
                      private boost::noncopyable {
-  typedef ObsVector<MODEL>        ObsVector_;
+  typedef typename MODEL::ObsVector        ObsVector_;
 
  public:
   ObsErrorBase() {}
   virtual ~ObsErrorBase() {}
 
 /// Linearize and reset for inner loop if needed
-  void linearize(const ObsVector_ &);
+  virtual void linearize(const ObsVector_ &) =0;
 
 /// Multiply a Departure by \f$R\f$ and \f$R^{-1}\f$
-  ObsVector_ * multiply(const ObsVector_ &) const;
-  ObsVector_ * inverseMultiply(const ObsVector_ &) const;
+  virtual ObsVector_ * multiply(const ObsVector_ &) const =0;
+  virtual ObsVector_ * inverseMultiply(const ObsVector_ &) const =0;
 
 /// Generate random perturbation
-  void randomize(ObsVector_ &) const;
+  virtual void randomize(ObsVector_ &) const =0;
 
 /// Get mean error for Jo table
   virtual double getRMSE() const =0;
-
- private:
-  virtual void linearize(const typename MODEL::ObsVector &) =0;
-  virtual typename MODEL::ObsVector * multiply(const typename MODEL::ObsVector &) const =0;
-  virtual typename MODEL::ObsVector * inverseMultiply(const typename MODEL::ObsVector &) const =0;
-  virtual void randomize(typename MODEL::ObsVector &) const =0;
-  virtual void print(std::ostream &) const =0;
 };
 
 // =============================================================================
@@ -123,44 +115,6 @@ ObsErrorBase<MODEL>* ObsErrorFactory<MODEL>::create(const ObsSpace_ & obs,
   ObsErrorBase<MODEL> * ptr = jerr->second->make(obs, conf);
   Log::trace() << "ObsErrorBase<MODEL>::create done" << std::endl;
   return ptr;
-}
-
-// =============================================================================
-
-template <typename MODEL>
-void ObsErrorBase<MODEL>::linearize(const ObsVector_ & yy) {
-  Log::trace() << "ObsErrorBase<MODEL>::linearize starting" << std::endl;
-  this->linearize(yy.obsvector());
-  Log::trace() << "ObsErrorBase<MODEL>::linearize done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-ObsVector<MODEL> * ObsErrorBase<MODEL>::multiply(const ObsVector_ & dy) const {
-  Log::trace() << "ObsErrorBase<MODEL>::multiply starting" << std::endl;
-  ObsVector_ * dz = new ObsVector_(this->multiply(dy.obsvector()));
-  Log::trace() << "ObsErrorBase<MODEL>::multiply done" << std::endl;
-  return dz;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-ObsVector<MODEL> * ObsErrorBase<MODEL>::inverseMultiply(const ObsVector_ & dy) const {
-  Log::trace() << "ObsErrorBase<MODEL>::inverseMultiply starting" << std::endl;
-  ObsVector_ * dz = new ObsVector_(this->inverseMultiply(dy.obsvector()));
-  Log::trace() << "ObsErrorBase<MODEL>::inverseMultiply done" << std::endl;
-  return dz;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-void ObsErrorBase<MODEL>::randomize(ObsVector_ & dy) const {
-  Log::trace() << "ObsErrorBase<MODEL>::randomize starting" << std::endl;
-  this->randomize(dy.obsvector());
-  Log::trace() << "ObsErrorBase<MODEL>::randomize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

@@ -15,12 +15,15 @@
 #include <string>
 #include <vector>
 
-#include "lorenz95/ObsTable.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 
+namespace util {
+  class DateTime;
+}
+
 namespace lorenz95 {
-  class ObservationL95;
+  class ObsTable;
 
 /// LocsL95 class to handle locations for L95 model.
 
@@ -29,20 +32,14 @@ class LocsL95 : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::LocsL95";}
 
-  LocsL95(const ObsTable & ot,
-          const util::DateTime & t1, const util::DateTime & t2) {
-    locs_ = ot.locations(t1, t2);
-  }
+  LocsL95(const ObsTable &, const util::DateTime &, const util::DateTime &);
   ~LocsL95() {}
 
   int nobs() const {return locs_.size();}
-
   const double & operator[](const int ii) const {return locs_[ii];}
 
  private:
-  void print(std::ostream & os) const {
-    os << "LocsL95: number of locations = " << locs_.size() << std::endl;
-  }
+  void print(std::ostream & os) const;
   std::vector<double> locs_;
 };
 

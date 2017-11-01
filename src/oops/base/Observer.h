@@ -12,16 +12,18 @@
 #define OOPS_BASE_OBSERVER_H_
 
 #include <memory>
+#include <vector>
 
-#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
+#include "oops/base/LinearObsOperators.h"
 #include "oops/base/Observations.h"
+#include "oops/base/ObsOperators.h"
+#include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Locations.h"
 #include "oops/interface/ObsAuxControl.h"
-#include "oops/interface/ObservationSpace.h"
-#include "oops/interface/ObsOperator.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
 
@@ -34,16 +36,15 @@ namespace oops {
 
 template <typename MODEL, typename STATE> class Observer : public PostBase<STATE> {
   typedef GeoVaLs<MODEL>             GeoVaLs_;
+  typedef LinearObsOperators<MODEL>  LinearObsOperator_;
   typedef Locations<MODEL>           Locations_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef Observations<MODEL>        Observations_;
-  typedef ObsOperator<MODEL>         ObsOperator_;
-  typedef LinearObsOperator<MODEL>   LinearObsOperator_;
-  typedef ObservationSpace<MODEL>    ObsSpace_;
+  typedef ObsOperators<MODEL>        ObsOperator_;
+  typedef ObsSpaces<MODEL>           ObsSpace_;
 
  public:
-  Observer(const ObsSpace_ &, const ObsOperator_ &,
-           const Observations_ &, const ObsAuxCtrl_ &,
+  Observer(const ObsSpace_ &, const ObsOperator_ &, const ObsAuxCtrl_ &,
            const util::Duration & tslot = util::Duration(0), const bool subwin = false,
            boost::shared_ptr<LinearObsOperator_> htlad = boost::shared_ptr<LinearObsOperator_>() );
   ~Observer() {}
@@ -57,8 +58,8 @@ template <typename MODEL, typename STATE> class Observer : public PostBase<STATE
   void doFinalize(const STATE &) override;
 
 // Obs operator
-  ObsSpace_ obspace_;
-  const ObsOperator_ hop_;
+  const ObsSpace_ & obspace_;
+  const ObsOperator_ & hop_;
   boost::shared_ptr<LinearObsOperator_> htlad_;
 
 // Data
@@ -72,7 +73,7 @@ template <typename MODEL, typename STATE> class Observer : public PostBase<STATE
   util::Duration hslot_;    //!< Half time slot
   const bool subwindows_;
 
-  boost::scoped_ptr<GeoVaLs_> gvals_;
+  std::vector<boost::shared_ptr<GeoVaLs_> > gvals_;
 };
 
 // ====================================================================================
@@ -80,7 +81,6 @@ template <typename MODEL, typename STATE> class Observer : public PostBase<STATE
 template <typename MODEL, typename STATE>
 Observer<MODEL, STATE>::Observer(const ObsSpace_ & obsdb,
                                  const ObsOperator_ & hop,
-                                 const Observations_ & yobs,
                                  const ObsAuxCtrl_ & ybias,
                                  const util::Duration & tslot, const bool swin,
                                  boost::shared_ptr<LinearObsOperator_> htlad)
@@ -88,7 +88,7 @@ Observer<MODEL, STATE>::Observer(const ObsSpace_ & obsdb,
     yobs_(new Observations_(obsdb)), ybias_(ybias),
     winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
     bgn_(winbgn_), end_(winend_), hslot_(tslot/2), subwindows_(swin),
-    gvals_()
+    gvals_(0)
 {}
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename STATE>
@@ -107,8 +107,13 @@ void Observer<MODEL, STATE>::doInitialize(const STATE & xx,
   }
   if (bgn_ < winbgn_) bgn_ = winbgn_;
   if (end_ > winend_) end_ = winend_;
+
 // Pass the Geometry for IFS -- Bad...
-  gvals_.reset(new GeoVaLs_(obspace_, hop_.variables(), bgn_, end_, xx.geometry()));
+  for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
+    boost::shared_ptr<GeoVaLs_>
+      tmp(new GeoVaLs_(obspace_[jj], hop_.variables(jj), bgn_, end_, xx.geometry()));
+    gvals_.push_back(tmp);
+  }
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename STATE>
@@ -118,18 +123,22 @@ void Observer<MODEL, STATE>::doProcessing(const STATE & xx) {
   if (t1 < bgn_) t1 = bgn_;
   if (t2 > end_) t2 = end_;
 
-// Get locations info for interpolator
-  Locations_ locs(obspace_, t1, t2);
+  for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
+//  Get locations info for interpolator
+    Locations_ locs(obspace_[jj], t1, t2);
 
-// Interpolate state variables to obs locations
-  xx.interpolate(locs, *gvals_);
+//  Interpolate state variables to obs locations
+    xx.interpolate(locs, *gvals_.at(jj));
+  }
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename STATE>
 void Observer<MODEL, STATE>::doFinalize(const STATE &) {
-  if (htlad_) htlad_->setTrajectory(*gvals_, ybias_);
-  yobs_->runObsOperator(hop_, *gvals_, ybias_);
-  gvals_.reset();
+  for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
+    if (htlad_) (*htlad_)[jj].setTrajectory(*gvals_.at(jj), ybias_);
+    hop_[jj].obsEquiv(*gvals_.at(jj), (*yobs_)[jj], ybias_);
+  }
+  gvals_.clear();
 }
 // -----------------------------------------------------------------------------
 

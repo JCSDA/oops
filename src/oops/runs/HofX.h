@@ -21,14 +21,14 @@
 #include "util/Logger.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
+#include "oops/base/ObsOperators.h"
+#include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Model.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/ObsAuxControl.h"
-#include "oops/interface/ObservationSpace.h"
-#include "oops/interface/ObsOperator.h"
 #include "oops/interface/State.h"
 #include "oops/runs/Application.h"
 #include "util/DateTime.h"
@@ -42,8 +42,8 @@ template <typename MODEL> class HofX : public Application {
   typedef ModelAuxControl<MODEL>     ModelAux_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef Observations<MODEL>        Observations_;
-  typedef ObsOperator<MODEL>         ObsOperator_;
-  typedef ObservationSpace<MODEL>    ObsSpace_;
+  typedef ObsOperators<MODEL>        ObsOperator_;
+  typedef ObsSpaces<MODEL>           ObsSpace_;
   typedef State<MODEL>               State_;
 
  public:
@@ -54,22 +54,22 @@ template <typename MODEL> class HofX : public Application {
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
 //  Setup observation window
-    const eckit::LocalConfiguration windowConf(fullConfig, "assimilation_window");
-    const util::Duration winlen(windowConf.getString("window_length"));
-    const util::DateTime winbgn(windowConf.getString("window_begin"));
+    const eckit::LocalConfiguration windowConf(fullConfig, "Assimilation Window");
+    const util::Duration winlen(windowConf.getString("Length"));
+    const util::DateTime winbgn(windowConf.getString("Begin"));
     const util::DateTime winend(winbgn + winlen);
     Log::info() << "Observation window is:" << windowConf << std::endl;
 
 //  Setup resolution
-    const eckit::LocalConfiguration resolConfig(fullConfig, "resolution");
+    const eckit::LocalConfiguration resolConfig(fullConfig, "Geometry");
     const Geometry_ resol(resolConfig);
 
 //  Setup Model
-    const eckit::LocalConfiguration modelConfig(fullConfig, "model");
+    const eckit::LocalConfiguration modelConfig(fullConfig, "Model");
     const Model_ model(resol, modelConfig);
 
 //  Setup initial state
-    const eckit::LocalConfiguration initialConfig(fullConfig, "initial");
+    const eckit::LocalConfiguration initialConfig(fullConfig, "Initial Condition");
     Log::info() << "Initial configuration is:" << initialConfig << std::endl;
     State_ xx(resol, initialConfig);
     Log::test() << "Initial state: " << xx.norm() << std::endl;
@@ -81,7 +81,7 @@ template <typename MODEL> class HofX : public Application {
     PostProcessor<State_> post;
 
     eckit::LocalConfiguration prtConf;
-    fullConfig.get("prints", prtConf);
+    fullConfig.get("Prints", prtConf);
     post.enrollProcessor(new StateInfo<State_>("fc", prtConf));
 
 //  Setup observations
@@ -90,23 +90,14 @@ template <typename MODEL> class HofX : public Application {
     ObsAuxCtrl_ ybias(biasConf);
 
 //  Setup observations
-    std::vector<boost::shared_ptr<Observer<MODEL, State_> > > pobs;
+    eckit::LocalConfiguration obsconf(fullConfig, "Observations");
+    Log::debug() << "Observations configuration is:" << obsconf << std::endl;
+    ObsSpace_ obsdb(obsconf, winbgn, winend);
+    ObsOperator_ hop(obsdb);
 
-    std::vector<eckit::LocalConfiguration> obsconf;
-    fullConfig.get("Observation", obsconf);
-    size_t nobs = obsconf.size();
-
-    for (size_t jobs = 0; jobs < nobs; ++jobs) {
-      Log::debug() << "Observation configuration is:" << obsconf[jobs] << std::endl;
-      ObsSpace_ obsdb(obsconf[jobs], winbgn, winend);
-      ObsOperator_ hop(obsdb, obsconf[jobs]);
-      Observations_ yy(obsdb);
-
-      boost::shared_ptr<Observer<MODEL, State_> >
-        pp(new Observer<MODEL, State_>(obsdb, hop, yy, ybias));
-      post.enrollProcessor(pp);
-      pobs.push_back(pp);
-    }
+    boost::shared_ptr<Observer<MODEL, State_> >
+      pobs(new Observer<MODEL, State_>(obsdb, hop, ybias));
+    post.enrollProcessor(pobs);
 
 //  Compute H(x)
     model.forecast(xx, moderr, winlen, post);
@@ -114,11 +105,9 @@ template <typename MODEL> class HofX : public Application {
     Log::test() << "Final state: " << xx.norm() << std::endl;
 
 //  Save H(x)
-    for (size_t jobs = 0; jobs < nobs; ++jobs) {
-      boost::scoped_ptr<Observations_> yobs(pobs[jobs]->release());
-      Log::test() << "H(x): " << *yobs << std::endl;
-      yobs->save("hofx");
-    }
+    boost::scoped_ptr<Observations_> yobs(pobs->release());
+    Log::test() << "H(x): " << *yobs << std::endl;
+    yobs->save("hofx");
 
     return 0;
   }
@@ -131,4 +120,5 @@ template <typename MODEL> class HofX : public Application {
 };
 
 }  // namespace oops
+
 #endif  // OOPS_RUNS_HOFX_H_
