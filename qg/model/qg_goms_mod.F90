@@ -178,7 +178,7 @@ integer, parameter :: iunit=10
 integer, parameter :: max_string_length=250 ! Yuk!
 character(len=max_string_length) :: filename, record
 character(len=4)  :: cnx
-character(len=15) :: fmtn
+character(len=17) :: fmtn
 character(len=11) :: fmt1='(X,ES24.16)'
 integer :: jj, jo
 
@@ -225,7 +225,7 @@ integer, parameter :: iunit=10
 integer, parameter :: max_string_length=250 ! Yuk!
 character(len=max_string_length) :: filename, record
 character(len=4)  :: cnx
-character(len=15) :: fmtn
+character(len=17) :: fmtn
 character(len=11) :: fmt1='(X,ES24.16)'
 integer :: jj, jo
 

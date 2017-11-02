@@ -18,7 +18,7 @@
 
 #include "oops/base/LinearObsOperators.h"
 #include "oops/base/Observations.h"
-#include "oops/base/ObsFilter.h"
+#include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
@@ -27,6 +27,8 @@
 #include "oops/interface/ObsAuxControl.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
+#include "util/Logger.h"
+#include "util/Printable.h"
 
 namespace oops {
 
@@ -35,18 +37,19 @@ namespace oops {
 // Sub-windows knowledge could be removed if vector of obs was used in
 // weak constraint 4D-Var. YT
 
-template <typename MODEL, typename STATE> class Observer : public PostBase<STATE> {
+template <typename MODEL, typename STATE>
+class Observer : public util::Printable, public PostBase<STATE> {
   typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef LinearObsOperators<MODEL>  LinearObsOperator_;
   typedef Locations<MODEL>           Locations_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
-  typedef ObsFilter<MODEL>           ObsFilter_;
+  typedef ObsFilters<MODEL>          ObsFilters_;
   typedef Observations<MODEL>        Observations_;
   typedef ObsOperators<MODEL>        ObsOperator_;
   typedef ObsSpaces<MODEL>           ObsSpace_;
 
  public:
-  Observer(const ObsSpace_ &, const ObsOperator_ &, const ObsAuxCtrl_ &, const ObsFilter_ &,
+  Observer(const ObsSpace_ &, const ObsOperator_ &, const ObsAuxCtrl_ &, const ObsFilters_ &,
            const util::Duration & tslot = util::Duration(0), const bool subwin = false,
            boost::shared_ptr<LinearObsOperator_> htlad = boost::shared_ptr<LinearObsOperator_>()
            );
@@ -59,6 +62,7 @@ template <typename MODEL, typename STATE> class Observer : public PostBase<STATE
   void doInitialize(const STATE &, const util::DateTime &, const util::Duration &) override;
   void doProcessing(const STATE &) override;
   void doFinalize(const STATE &) override;
+  void print(std::ostream &) const;
 
 // Obs operator
   const ObsSpace_ & obspace_;
@@ -77,7 +81,7 @@ template <typename MODEL, typename STATE> class Observer : public PostBase<STATE
   const bool subwindows_;
 
   std::vector<boost::shared_ptr<GeoVaLs_> > gvals_;
-  const ObsFilter_ filter_;
+  const ObsFilters_ filters_;
 };
 
 // ====================================================================================
@@ -86,15 +90,18 @@ template <typename MODEL, typename STATE>
 Observer<MODEL, STATE>::Observer(const ObsSpace_ & obsdb,
                                  const ObsOperator_ & hop,
                                  const ObsAuxCtrl_ & ybias,
-                                 const ObsFilter_ & filter,
+                                 const ObsFilters_ & filters,
                                  const util::Duration & tslot, const bool swin,
                                  boost::shared_ptr<LinearObsOperator_> htlad)
   : PostBase<STATE>(), obspace_(obsdb), hop_(hop), htlad_(htlad),
     yobs_(new Observations_(obsdb)), ybias_(ybias),
     winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
     bgn_(winbgn_), end_(winend_), hslot_(tslot/2), subwindows_(swin),
-    gvals_(0), filter_(filter)
-{}
+    gvals_(0), filters_(filters)
+{
+  Log::trace() << "Observer created" << std::endl;
+  Log::debug() << "Observer filter is " << filters_ << std::endl;
+}
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename STATE>
 void Observer<MODEL, STATE>::doInitialize(const STATE & xx,
@@ -141,12 +148,14 @@ template <typename MODEL, typename STATE>
 void Observer<MODEL, STATE>::doFinalize(const STATE &) {
   for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
     if (htlad_) (*htlad_)[jj].setTrajectory(*gvals_.at(jj), ybias_);
-    filter_.preProcess(*gvals_.at(jj), obspace_[jj]);
     hop_[jj].obsEquiv(*gvals_.at(jj), (*yobs_)[jj], ybias_);
-    filter_.postProcess(*gvals_.at(jj), (*yobs_)[jj], obspace_[jj]);
+    filters_[jj].postFilter(*gvals_.at(jj), (*yobs_)[jj], obspace_[jj]);
   }
   gvals_.clear();
 }
+// -----------------------------------------------------------------------------
+template <typename MODEL, typename STATE>
+void Observer<MODEL, STATE>::print(std::ostream &) const {}
 // -----------------------------------------------------------------------------
 
 }  // namespace oops

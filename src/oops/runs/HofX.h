@@ -21,11 +21,12 @@
 #include "util/Logger.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
-#include "oops/base/ObsFilter.h"
+#include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
+#include "oops/base/instantiateFilterFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Model.h"
 #include "oops/interface/ModelAuxControl.h"
@@ -43,14 +44,16 @@ template <typename MODEL> class HofX : public Application {
   typedef ModelAuxControl<MODEL>     ModelAux_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef Observations<MODEL>        Observations_;
-  typedef ObsFilter<MODEL>           ObsFilter_;
+  typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsOperators<MODEL>        ObsOperator_;
   typedef ObsSpaces<MODEL>           ObsSpace_;
   typedef State<MODEL>               State_;
 
  public:
 // -----------------------------------------------------------------------------
-  HofX() {}
+  HofX() {
+    instantiateFilterFactory<MODEL>();
+  }
 // -----------------------------------------------------------------------------
   virtual ~HofX() {}
 // -----------------------------------------------------------------------------
@@ -97,7 +100,12 @@ template <typename MODEL> class HofX : public Application {
     ObsSpace_ obsdb(obsconf, winbgn, winend);
     ObsOperator_ hop(obsdb);
 
-    ObsFilter_ filter;
+//  Setup QC filters
+    eckit::LocalConfiguration filterConf;
+    obsconf.get("ObsFilters", filterConf);
+    ObsFilters_ filter(obsdb, obsconf);
+
+//  Setup Observer
     boost::shared_ptr<Observer<MODEL, State_> >
       pobs(new Observer<MODEL, State_>(obsdb, hop, ybias, filter));
     post.enrollProcessor(pobs);

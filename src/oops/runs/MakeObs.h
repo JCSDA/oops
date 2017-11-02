@@ -24,11 +24,12 @@
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
 #include "oops/base/ObsErrors.h"
-#include "oops/base/ObsFilter.h"
+#include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
+#include "oops/base/instantiateFilterFactory.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Model.h"
@@ -48,7 +49,7 @@ template <typename MODEL> class MakeObs : public Application {
   typedef ModelAuxControl<MODEL>     ModelAux_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef Observations<MODEL>        Observations_;
-  typedef ObsFilter<MODEL>           ObsFilter_;
+  typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsSpaces<MODEL>           ObsSpace_;
   typedef ObsOperators<MODEL>        ObsOperator_;
   typedef State<MODEL>               State_;
@@ -57,6 +58,7 @@ template <typename MODEL> class MakeObs : public Application {
 // -----------------------------------------------------------------------------
   MakeObs() {
     instantiateObsErrorFactory<MODEL>();
+    instantiateFilterFactory<MODEL>();
   }
 // -----------------------------------------------------------------------------
   virtual ~MakeObs() {}
@@ -104,7 +106,12 @@ template <typename MODEL> class MakeObs : public Application {
     ObsSpace_ obspace(obsconf, bgn, end);
     ObsOperator_ hop(obspace);
 
-    ObsFilter_ filter;
+//  Setup QC filters
+    eckit::LocalConfiguration filterConf;
+    obsconf.get("ObsFilters", filterConf);
+    ObsFilters_ filter(obspace, obsconf);
+
+//  Setup Observer
     boost::shared_ptr<Observer<MODEL, State_> >
       pobs(new Observer<MODEL, State_>(obspace, hop, ybias, filter));
     post.enrollProcessor(pobs);

@@ -124,12 +124,14 @@ oops/base/EnsembleCovariance.h
 oops/base/EnsemblesCollection.h
 oops/base/FilterBase.h
 oops/base/GeneralizedDepartures.h
+oops/base/GeoVaLsWriter.h
 oops/base/HybridCovariance.h
 oops/base/IdentityMatrix.h
 oops/base/LinearObsOperators.h
 oops/base/ModelSpaceCovarianceBase.h
 oops/base/ObsErrors.h
 oops/base/ObsFilter.h
+oops/base/ObsFilters.h
 oops/base/ObsOperators.h
 oops/base/ObsSpaces.h
 oops/base/Observations.h
@@ -154,6 +156,7 @@ oops/base/WeightedMean.h
 oops/base/WeightingFct.h
 oops/base/WeightingFct.cc
 oops/base/instantiateCovarFactory.h
+oops/base/instantiateFilterFactory.h
 
 oops/generic/ObsErrorDiag.h
 oops/generic/instantiateObsErrorFactory.h
