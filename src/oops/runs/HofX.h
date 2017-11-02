@@ -21,6 +21,7 @@
 #include "util/Logger.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
+#include "oops/base/ObsFilter.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
@@ -42,6 +43,7 @@ template <typename MODEL> class HofX : public Application {
   typedef ModelAuxControl<MODEL>     ModelAux_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef Observations<MODEL>        Observations_;
+  typedef ObsFilter<MODEL>           ObsFilter_;
   typedef ObsOperators<MODEL>        ObsOperator_;
   typedef ObsSpaces<MODEL>           ObsSpace_;
   typedef State<MODEL>               State_;
@@ -95,8 +97,9 @@ template <typename MODEL> class HofX : public Application {
     ObsSpace_ obsdb(obsconf, winbgn, winend);
     ObsOperator_ hop(obsdb);
 
+    ObsFilter_ filter;
     boost::shared_ptr<Observer<MODEL, State_> >
-      pobs(new Observer<MODEL, State_>(obsdb, hop, ybias));
+      pobs(new Observer<MODEL, State_>(obsdb, hop, ybias, filter));
     post.enrollProcessor(pobs);
 
 //  Compute H(x)

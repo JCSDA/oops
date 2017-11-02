@@ -49,11 +49,11 @@ class ObsOperator : public util::Printable,
   explicit ObsOperator(const ObsSpace_ &);
   ~ObsOperator();
 
-/// Interfacing
-  const ObsOperatorBase_ & obsoperator() const {return *oper_;}
-
 /// Obs Operator
   void obsEquiv(const GeoVaLs_ &, ObsVector_ &, const ObsAuxControl_ &) const;
+
+/// Interfacing
+  const ObsOperatorBase_ & obsoperator() const {return *oper_;}
 
 /// Other
   Variables_ variables() const;  // Required inputs variables from Model
@@ -90,7 +90,7 @@ void ObsOperator<MODEL>::obsEquiv(const GeoVaLs_ & gvals, ObsVector_ & yy,
                                   const ObsAuxControl_ & aux) const {
   Log::trace() << "ObsOperator<MODEL>::obsEquiv starting" << std::endl;
   util::Timer timer(classname(), "ObsEquiv");
-  oper_->obsEquiv(gvals.geovals(), yy.obsvector(), aux.obsauxcontrol());
+  oper_->calcObsEquiv(gvals.geovals(), yy.obsvector(), aux.obsauxcontrol());
   Log::trace() << "ObsOperator<MODEL>::obsEquiv done" << std::endl;
 }
 

@@ -18,6 +18,7 @@
 
 #include "oops/base/LinearObsOperators.h"
 #include "oops/base/Observations.h"
+#include "oops/base/ObsFilter.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
@@ -39,14 +40,16 @@ template <typename MODEL, typename STATE> class Observer : public PostBase<STATE
   typedef LinearObsOperators<MODEL>  LinearObsOperator_;
   typedef Locations<MODEL>           Locations_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
+  typedef ObsFilter<MODEL>           ObsFilter_;
   typedef Observations<MODEL>        Observations_;
   typedef ObsOperators<MODEL>        ObsOperator_;
   typedef ObsSpaces<MODEL>           ObsSpace_;
 
  public:
-  Observer(const ObsSpace_ &, const ObsOperator_ &, const ObsAuxCtrl_ &,
+  Observer(const ObsSpace_ &, const ObsOperator_ &, const ObsAuxCtrl_ &, const ObsFilter_ &,
            const util::Duration & tslot = util::Duration(0), const bool subwin = false,
-           boost::shared_ptr<LinearObsOperator_> htlad = boost::shared_ptr<LinearObsOperator_>() );
+           boost::shared_ptr<LinearObsOperator_> htlad = boost::shared_ptr<LinearObsOperator_>()
+           );
   ~Observer() {}
 
   Observations_ * release() {return yobs_.release();}
@@ -74,6 +77,7 @@ template <typename MODEL, typename STATE> class Observer : public PostBase<STATE
   const bool subwindows_;
 
   std::vector<boost::shared_ptr<GeoVaLs_> > gvals_;
+  const ObsFilter_ filter_;
 };
 
 // ====================================================================================
@@ -82,13 +86,14 @@ template <typename MODEL, typename STATE>
 Observer<MODEL, STATE>::Observer(const ObsSpace_ & obsdb,
                                  const ObsOperator_ & hop,
                                  const ObsAuxCtrl_ & ybias,
+                                 const ObsFilter_ & filter,
                                  const util::Duration & tslot, const bool swin,
                                  boost::shared_ptr<LinearObsOperator_> htlad)
   : PostBase<STATE>(), obspace_(obsdb), hop_(hop), htlad_(htlad),
     yobs_(new Observations_(obsdb)), ybias_(ybias),
     winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
     bgn_(winbgn_), end_(winend_), hslot_(tslot/2), subwindows_(swin),
-    gvals_(0)
+    gvals_(0), filter_(filter)
 {}
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename STATE>
@@ -136,7 +141,9 @@ template <typename MODEL, typename STATE>
 void Observer<MODEL, STATE>::doFinalize(const STATE &) {
   for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
     if (htlad_) (*htlad_)[jj].setTrajectory(*gvals_.at(jj), ybias_);
+    filter_.preProcess(*gvals_.at(jj), obspace_[jj]);
     hop_[jj].obsEquiv(*gvals_.at(jj), (*yobs_)[jj], ybias_);
+    filter_.postProcess(*gvals_.at(jj), (*yobs_)[jj], obspace_[jj]);
   }
   gvals_.clear();
 }

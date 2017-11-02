@@ -122,12 +122,14 @@ oops/base/DolphChebyshev.cc
 oops/base/Ensemble.h
 oops/base/EnsembleCovariance.h
 oops/base/EnsemblesCollection.h
+oops/base/FilterBase.h
 oops/base/GeneralizedDepartures.h
 oops/base/HybridCovariance.h
 oops/base/IdentityMatrix.h
 oops/base/LinearObsOperators.h
 oops/base/ModelSpaceCovarianceBase.h
 oops/base/ObsErrors.h
+oops/base/ObsFilter.h
 oops/base/ObsOperators.h
 oops/base/ObsSpaces.h
 oops/base/Observations.h
