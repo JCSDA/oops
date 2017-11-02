@@ -13,6 +13,8 @@
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsVector.h"
+#include "util/dot_product.h"
+#include "util/Logger.h"
 
 namespace oops {
 
@@ -29,6 +31,8 @@ class GeoVaLsWriter : public FilterBase<MODEL> {
   ~GeoVaLsWriter() {}
 
   void postFilter(const GeoVaLs_ & gv, const ObsVector_ &, const ObsSpace_ &) const override {
+    const double zz = sqrt(dot_product(gv, gv));
+    Log::debug() << "GeoVaLsWriter norm = " << zz << std::endl;
     gv.write(conf_);
   }
 

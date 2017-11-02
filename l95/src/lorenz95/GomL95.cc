@@ -36,6 +36,12 @@ GomL95::GomL95(const ObsTable & ot, const NoVariables &,
   locval_.resize(size_);
 }
 // -----------------------------------------------------------------------------
+GomL95::GomL95(const eckit::Configuration & conf)
+  : size_(0), iobs_(), locval_(), current_(0)
+{
+  this->read(conf);
+}
+// -----------------------------------------------------------------------------
 GomL95::~GomL95() {}
 // -----------------------------------------------------------------------------
 void GomL95::zero() {
@@ -62,8 +68,14 @@ void GomL95::read(const eckit::Configuration & conf) {
 
   int size;
   fin >> size;
-  ASSERT(size_ == size);
 
+  if (size_ != size) {
+    size_ = size;
+    iobs_.resize(size_);
+    locval_.resize(size_);
+  }
+
+  for (int jj = 0; jj < size_; ++jj) fin >> iobs_[jj];
   for (int jj = 0; jj < size_; ++jj) fin >> locval_[jj];
 
   fin.close();
@@ -77,6 +89,8 @@ void GomL95::write(const eckit::Configuration & conf) const {
   if (!fout.is_open()) ABORT("GomL95::write: Error opening file");
 
   fout << size_ << std::endl;
+  for (int jj = 0; jj < size_; ++jj) fout << iobs_[jj] << " ";
+  fout << std::endl;
   fout.precision(std::numeric_limits<double>::digits10);
   for (int jj = 0; jj < size_; ++jj) fout << locval_[jj] << " ";
   fout << std::endl;

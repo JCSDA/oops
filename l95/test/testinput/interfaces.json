@@ -82,5 +82,9 @@
         "obserror": "ObsErr"
       }
     }
-  ]
+  ],
+  "GeoVaLs": [{
+    "filename": "Data/l95.gom",
+    "norm": "101.4587929124312"
+  }]
 }

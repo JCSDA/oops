@@ -12,9 +12,7 @@
 #define OOPS_RUNS_MAKEOBS_H_
 
 #include <string>
-#include <vector>
 
-#include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 

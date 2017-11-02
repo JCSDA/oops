@@ -8,6 +8,7 @@
 #ifndef TEST_INTERFACE_GEOVALS_H_
 #define TEST_INTERFACE_GEOVALS_H_
 
+#include <cmath>
 #include <string>
 #include <vector>
 
@@ -27,6 +28,7 @@
 #include "test/TestEnvironment.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "util/DateTime.h"
+#include "util/dot_product.h"
 
 namespace test {
 
@@ -40,6 +42,8 @@ template <typename MODEL> class GeoVaLsFixture : private boost::noncopyable {
   static const ObsSpace_   & obspace() {return *getInstance().obspace_;}
   static const Variables_  & vars()    {return *getInstance().vars_;}
   static const Geometry_   & resol()   {return *getInstance().resol_;}
+  static const util::DateTime & t1()   {return *getInstance().t1_;}
+  static const util::DateTime & t2()   {return *getInstance().t2_;}
 
  private:
   static GeoVaLsFixture<MODEL>& getInstance() {
@@ -48,8 +52,8 @@ template <typename MODEL> class GeoVaLsFixture : private boost::noncopyable {
   }
 
   GeoVaLsFixture() {
-    const util::DateTime tbgn(TestEnvironment::config().getString("window_begin"));
-    const util::DateTime tend(TestEnvironment::config().getString("window_end"));
+    t1_.reset(new util::DateTime(TestEnvironment::config().getString("window_begin")));
+    t2_.reset(new util::DateTime(TestEnvironment::config().getString("window_end")));
 
     const eckit::LocalConfiguration varConfig(TestEnvironment::config(), "Variables");
     vars_.reset(new Variables_(varConfig));
@@ -61,7 +65,7 @@ template <typename MODEL> class GeoVaLsFixture : private boost::noncopyable {
     TestEnvironment::config().get("Observations", obsConfs);
     BOOST_CHECK(obsConfs.size() > 0);
     const eckit::LocalConfiguration obsConf(obsConfs[0], "Observation");
-    obspace_.reset(new ObsSpace_(obsConf, tbgn, tend));
+    obspace_.reset(new ObsSpace_(obsConf, *t1_, *t2_));
   }
 
   ~GeoVaLsFixture() {}
@@ -69,22 +73,56 @@ template <typename MODEL> class GeoVaLsFixture : private boost::noncopyable {
   boost::scoped_ptr<ObsSpace_>        obspace_;
   boost::scoped_ptr<const Variables_> vars_;
   boost::scoped_ptr<const Geometry_>  resol_;
+  boost::scoped_ptr<const util::DateTime> t1_;
+  boost::scoped_ptr<const util::DateTime> t2_;
 };
+
 // -----------------------------------------------------------------------------
 
 template <typename MODEL> void testConstructor() {
   typedef GeoVaLsFixture<MODEL> Test_;
   typedef oops::GeoVaLs<MODEL>  GeoVaLs_;
 
-  const util::DateTime t1(TestEnvironment::config().getString("window_begin"));
-  const util::DateTime t2(TestEnvironment::config().getString("window_end"));
-
   boost::scoped_ptr<GeoVaLs_> ov(new GeoVaLs_(Test_::obspace(), Test_::vars(),
-                                              t1, t2, Test_::resol()));
+                                              Test_::t1(), Test_::t2(), Test_::resol()));
   BOOST_CHECK(ov.get());
 
   ov.reset();
   BOOST_CHECK(!ov.get());
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testUtils() {
+  typedef GeoVaLsFixture<MODEL> Test_;
+  typedef oops::GeoVaLs<MODEL>  GeoVaLs_;
+
+  GeoVaLs_ gval(Test_::obspace(), Test_::vars(), Test_::t1(), Test_::t2(), Test_::resol());
+
+  gval.random();
+  const double zz1 = dot_product(gval, gval);
+  BOOST_CHECK(zz1 > 0.0);
+
+  gval.zero();
+  const double zz2 = dot_product(gval, gval);
+  BOOST_CHECK_EQUAL(zz2, 0.0);
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testRead() {
+  typedef oops::GeoVaLs<MODEL>  GeoVaLs_;
+
+  std::vector<eckit::LocalConfiguration> conf;
+  TestEnvironment::config().get("GeoVaLs", conf);
+
+  const double tol = 1.0e-8;
+  for (std::size_t jj = 0; jj < conf.size(); ++jj) {
+    GeoVaLs_ gval(conf[jj]);
+    const double xx = conf[jj].getDouble("norm");
+    const double zz = sqrt(dot_product(gval, gval));
+    BOOST_CHECK_CLOSE(xx, zz, tol);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -100,6 +138,8 @@ template <typename MODEL> class GeoVaLs : public oops::Test {
     boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/GeoVaLs");
 
     ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
+    ts->add(BOOST_TEST_CASE(&testUtils<MODEL>));
+    ts->add(BOOST_TEST_CASE(&testRead<MODEL>));
 
     boost::unit_test::framework::master_test_suite().add(ts);
   }

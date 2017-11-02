@@ -12,7 +12,6 @@
 #define OOPS_RUNS_HOFX_H_
 
 #include <string>
-#include <vector>
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>

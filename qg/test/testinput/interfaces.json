@@ -132,5 +132,17 @@
         "obserror": "ObsErr"
       }
     }
-  ]
+  ],
+  "GeoVaLs": [{
+    "filename": "Data/qg.wind.gom",
+    "norm": "120.590296066919"
+  },
+  {
+    "filename": "Data/qg.wspeed.gom",
+    "norm": "122.535512929154"
+  },
+  {
+    "filename": "Data/qg.stream.gom",
+    "norm": "356.985842472369"
+  }]
 }
