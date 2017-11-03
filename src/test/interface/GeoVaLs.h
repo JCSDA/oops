@@ -23,27 +23,24 @@
 #include "oops/runs/Test.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeoVaLs.h"
-#include "oops/interface/ObservationSpace.h"
 #include "oops/interface/Variables.h"
 #include "test/TestEnvironment.h"
+#include "test/interface/ObsTestsFixture.h"
 #include "eckit/config/LocalConfiguration.h"
-#include "util/DateTime.h"
 #include "util/dot_product.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
-template <typename MODEL> class GeoVaLsFixture : private boost::noncopyable {
+
+template <typename MODEL>
+class GeoVaLsFixture : public ObsTestsFixture<MODEL> {
   typedef oops::Geometry<MODEL>          Geometry_;
-  typedef oops::ObservationSpace<MODEL>  ObsSpace_;
   typedef oops::Variables<MODEL>         Variables_;
 
  public:
-  static const ObsSpace_   & obspace() {return *getInstance().obspace_;}
   static const Variables_  & vars()    {return *getInstance().vars_;}
   static const Geometry_   & resol()   {return *getInstance().resol_;}
-  static const util::DateTime & t1()   {return *getInstance().t1_;}
-  static const util::DateTime & t2()   {return *getInstance().t2_;}
 
  private:
   static GeoVaLsFixture<MODEL>& getInstance() {
@@ -52,29 +49,17 @@ template <typename MODEL> class GeoVaLsFixture : private boost::noncopyable {
   }
 
   GeoVaLsFixture() {
-    t1_.reset(new util::DateTime(TestEnvironment::config().getString("window_begin")));
-    t2_.reset(new util::DateTime(TestEnvironment::config().getString("window_end")));
-
     const eckit::LocalConfiguration varConfig(TestEnvironment::config(), "Variables");
     vars_.reset(new Variables_(varConfig));
 
     const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "Geometry");
     resol_.reset(new Geometry_(resolConfig));
-
-    std::vector<eckit::LocalConfiguration> obsConfs;
-    TestEnvironment::config().get("Observations", obsConfs);
-    BOOST_CHECK(obsConfs.size() > 0);
-    const eckit::LocalConfiguration obsConf(obsConfs[0], "Observation");
-    obspace_.reset(new ObsSpace_(obsConf, *t1_, *t2_));
   }
 
   ~GeoVaLsFixture() {}
 
-  boost::scoped_ptr<ObsSpace_>        obspace_;
   boost::scoped_ptr<const Variables_> vars_;
   boost::scoped_ptr<const Geometry_>  resol_;
-  boost::scoped_ptr<const util::DateTime> t1_;
-  boost::scoped_ptr<const util::DateTime> t2_;
 };
 
 // -----------------------------------------------------------------------------
@@ -83,12 +68,14 @@ template <typename MODEL> void testConstructor() {
   typedef GeoVaLsFixture<MODEL> Test_;
   typedef oops::GeoVaLs<MODEL>  GeoVaLs_;
 
-  boost::scoped_ptr<GeoVaLs_> ov(new GeoVaLs_(Test_::obspace(), Test_::vars(),
-                                              Test_::t1(), Test_::t2(), Test_::resol()));
-  BOOST_CHECK(ov.get());
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    boost::scoped_ptr<GeoVaLs_> ov(new GeoVaLs_(Test_::obspace()[jj], Test_::vars(),
+                                                Test_::tbgn(), Test_::tend(), Test_::resol()));
+    BOOST_CHECK(ov.get());
 
-  ov.reset();
-  BOOST_CHECK(!ov.get());
+    ov.reset();
+    BOOST_CHECK(!ov.get());
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -97,15 +84,18 @@ template <typename MODEL> void testUtils() {
   typedef GeoVaLsFixture<MODEL> Test_;
   typedef oops::GeoVaLs<MODEL>  GeoVaLs_;
 
-  GeoVaLs_ gval(Test_::obspace(), Test_::vars(), Test_::t1(), Test_::t2(), Test_::resol());
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    GeoVaLs_ gval(Test_::obspace()[jj], Test_::vars(),
+                  Test_::tbgn(), Test_::tend(), Test_::resol());
 
-  gval.random();
-  const double zz1 = dot_product(gval, gval);
-  BOOST_CHECK(zz1 > 0.0);
+    gval.random();
+    const double zz1 = dot_product(gval, gval);
+    BOOST_CHECK(zz1 > 0.0);
 
-  gval.zero();
-  const double zz2 = dot_product(gval, gval);
-  BOOST_CHECK_EQUAL(zz2, 0.0);
+    gval.zero();
+    const double zz2 = dot_product(gval, gval);
+    BOOST_CHECK_EQUAL(zz2, 0.0);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -113,13 +103,15 @@ template <typename MODEL> void testUtils() {
 template <typename MODEL> void testRead() {
   typedef oops::GeoVaLs<MODEL>  GeoVaLs_;
 
+  const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
   std::vector<eckit::LocalConfiguration> conf;
-  TestEnvironment::config().get("GeoVaLs", conf);
+  obsconf.get("ObsTypes", conf);
 
   const double tol = 1.0e-8;
   for (std::size_t jj = 0; jj < conf.size(); ++jj) {
-    GeoVaLs_ gval(conf[jj]);
-    const double xx = conf[jj].getDouble("norm");
+    const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
+    GeoVaLs_ gval(gconf);
+    const double xx = gconf.getDouble("norm");
     const double zz = sqrt(dot_product(gval, gval));
     BOOST_CHECK_CLOSE(xx, zz, tol);
   }

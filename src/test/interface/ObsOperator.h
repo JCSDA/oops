@@ -20,53 +20,63 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "oops/runs/Test.h"
+#include "oops/interface/GeoVaLs.h"
+#include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsOperator.h"
-#include "oops/interface/ObservationSpace.h"
+#include "oops/interface/ObsVector.h"
 #include "test/TestEnvironment.h"
+#include "test/interface/ObsTestsFixture.h"
 #include "eckit/config/LocalConfiguration.h"
-#include "util/DateTime.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
-template <typename MODEL> class ObsOperFixture : private boost::noncopyable {
-  typedef oops::ObservationSpace<MODEL>  ObsSpace_;
-
- public:
-  static const ObsSpace_   & obspace() {return *getInstance().obspace_;}
-
- private:
-  static ObsOperFixture<MODEL>& getInstance() {
-    static ObsOperFixture<MODEL> theObsOperFixture;
-    return theObsOperFixture;
-  }
-
-  ObsOperFixture() {
-    const util::DateTime tbgn(TestEnvironment::config().getString("window_begin"));
-    const util::DateTime tend(TestEnvironment::config().getString("window_end"));
-
-    std::vector<eckit::LocalConfiguration> obsConfs;
-    TestEnvironment::config().get("Observations", obsConfs);
-    BOOST_CHECK(obsConfs.size() > 0);
-    const eckit::LocalConfiguration obsConf(obsConfs[0], "Observation");
-    obspace_.reset(new ObsSpace_(obsConf, tbgn, tend));
-  }
-
-  ~ObsOperFixture() {}
-
-  boost::scoped_ptr<ObsSpace_>        obspace_;
-};
-// -----------------------------------------------------------------------------
 
 template <typename MODEL> void testConstructor() {
-  typedef ObsOperFixture<MODEL> Test_;
-  typedef oops::ObsOperator<MODEL>  ObsOperator_;
+  typedef ObsTestsFixture<MODEL> Test_;
+  typedef oops::ObsOperator<MODEL>       ObsOperator_;
 
-  boost::scoped_ptr<ObsOperator_> ov(new ObsOperator_(Test_::obspace()));
-  BOOST_CHECK(ov.get());
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    boost::scoped_ptr<ObsOperator_> hop(new ObsOperator_(Test_::obspace()[jj]));
+    BOOST_CHECK(hop.get());
 
-  ov.reset();
-  BOOST_CHECK(!ov.get());
+    hop.reset();
+    BOOST_CHECK(!hop.get());
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testEquiv() {
+  typedef ObsTestsFixture<MODEL> Test_;
+  typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
+  typedef oops::ObsAuxControl<MODEL>     ObsAuxCtrl_;
+  typedef oops::ObsOperator<MODEL>       ObsOperator_;
+  typedef oops::ObsVector<MODEL>         ObsVector_;
+
+  const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
+  std::vector<eckit::LocalConfiguration> conf;
+  obsconf.get("ObsTypes", conf);
+
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    ObsOperator_ hop(Test_::obspace()[jj]);
+
+    const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
+    const GeoVaLs_ gval(gconf);
+
+    eckit::LocalConfiguration biasConf;
+    conf[jj].get("ObsBias", biasConf);
+    const ObsAuxCtrl_ ybias(biasConf);
+
+    ObsVector_ ovec(Test_::obspace()[jj]);
+
+    hop.obsEquiv(gval, ovec, ybias);
+
+    const double tol = 1.0e-8;
+    const double zz = ovec.rms();
+    const double xx = conf[jj].getDouble("rmsequiv");
+    BOOST_CHECK_CLOSE(xx, zz, tol);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -82,6 +92,7 @@ template <typename MODEL> class ObsOperator : public oops::Test {
     boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/ObsOperator");
 
     ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
+    ts->add(BOOST_TEST_CASE(&testEquiv<MODEL>));
 
     boost::unit_test::framework::master_test_suite().add(ts);
   }

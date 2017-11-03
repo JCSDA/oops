@@ -12,7 +12,6 @@
 #define TEST_INTERFACE_OBSERVATIONSPACE_H_
 
 #include <string>
-#include <vector>
 
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API
@@ -25,51 +24,20 @@
 #include "oops/runs/Test.h"
 #include "oops/interface/ObservationSpace.h"
 #include "test/TestEnvironment.h"
+#include "test/interface/ObsTestsFixture.h"
 #include "eckit/config/LocalConfiguration.h"
-#include "util/DateTime.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
-template <typename MODEL> class ObservationSpaceFixture : private boost::noncopyable {
-  typedef oops::ObservationSpace<MODEL>        ObsSpace_;
-
- public:
-  static const eckit::Configuration & config() {return *getInstance().conf_;}
-  static const util::DateTime & bgn()  {return *getInstance().tbgn_;}
-  static const util::DateTime & end()  {return *getInstance().tend_;}
-  static const ObsSpace_ &  obspace()  {return *getInstance().obspace_;}
-
- private:
-  static ObservationSpaceFixture<MODEL>& getInstance() {
-    static ObservationSpaceFixture<MODEL> theObservationSpaceFixture;
-    return theObservationSpaceFixture;
-  }
-
-  ObservationSpaceFixture() {
-    tbgn_.reset(new util::DateTime(TestEnvironment::config().getString("window_begin")));
-    tend_.reset(new util::DateTime(TestEnvironment::config().getString("window_end")));
-
-    std::vector<eckit::LocalConfiguration> obsConfs;
-    TestEnvironment::config().get("Observations", obsConfs);
-    BOOST_CHECK(obsConfs.size() > 0);
-    const eckit::LocalConfiguration obsConf(obsConfs[0], "Observation");
-    obspace_.reset(new ObsSpace_(obsConf, *tbgn_, *tend_));
-  }
-
-  ~ObservationSpaceFixture() {}
-
-  boost::scoped_ptr<const util::DateTime> tbgn_;
-  boost::scoped_ptr<const util::DateTime> tend_;
-  boost::scoped_ptr<ObsSpace_> obspace_;
-};
-// -----------------------------------------------------------------------------
 
 template <typename MODEL> void testConstructor() {
-  typedef ObservationSpaceFixture<MODEL> Test_;
+  typedef ObsTestsFixture<MODEL> Test_;
 
-  BOOST_CHECK_EQUAL(Test_::obspace().windowStart(), Test_::bgn());
-  BOOST_CHECK_EQUAL(Test_::obspace().windowEnd(),   Test_::end());
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    BOOST_CHECK_EQUAL(Test_::obspace()[jj].windowStart(), Test_::tbgn());
+    BOOST_CHECK_EQUAL(Test_::obspace()[jj].windowEnd(),   Test_::tend());
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -90,7 +58,7 @@ template <typename MODEL> class ObservationSpace : public oops::Test {
   }
 };
 
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 }  // namespace test
 

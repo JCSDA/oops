@@ -9,64 +9,34 @@
 #define TEST_INTERFACE_LINEAROBSOPERATOR_H_
 
 #include <string>
-#include <vector>
 
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 
-#include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include "oops/runs/Test.h"
 #include "oops/interface/LinearObsOperator.h"
-#include "oops/interface/ObservationSpace.h"
 #include "test/TestEnvironment.h"
-#include "eckit/config/LocalConfiguration.h"
-#include "util/DateTime.h"
+#include "test/interface/ObsTestsFixture.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
-template <typename MODEL> class ObsOperFixture : private boost::noncopyable {
-  typedef oops::ObservationSpace<MODEL>  ObsSpace_;
-
- public:
-  static const ObsSpace_   & obspace() {return *getInstance().obspace_;}
-
- private:
-  static ObsOperFixture<MODEL>& getInstance() {
-    static ObsOperFixture<MODEL> theObsOperFixture;
-    return theObsOperFixture;
-  }
-
-  ObsOperFixture() {
-    const util::DateTime tbgn(TestEnvironment::config().getString("window_begin"));
-    const util::DateTime tend(TestEnvironment::config().getString("window_end"));
-
-    std::vector<eckit::LocalConfiguration> obsConfs;
-    TestEnvironment::config().get("Observations", obsConfs);
-    BOOST_CHECK(obsConfs.size() > 0);
-    const eckit::LocalConfiguration obsConf(obsConfs[0], "Observation");
-    obspace_.reset(new ObsSpace_(obsConf, tbgn, tend));
-  }
-
-  ~ObsOperFixture() {}
-
-  boost::scoped_ptr<ObsSpace_>        obspace_;
-};
-// -----------------------------------------------------------------------------
 
 template <typename MODEL> void testConstructor() {
-  typedef ObsOperFixture<MODEL> Test_;
+  typedef ObsTestsFixture<MODEL>  Test_;
   typedef oops::LinearObsOperator<MODEL>  LinearObsOperator_;
 
-  boost::scoped_ptr<LinearObsOperator_> ov(new LinearObsOperator_(Test_::obspace()));
-  BOOST_CHECK(ov.get());
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    boost::scoped_ptr<LinearObsOperator_> ov(new LinearObsOperator_(Test_::obspace()[jj]));
+    BOOST_CHECK(ov.get());
 
-  ov.reset();
-  BOOST_CHECK(!ov.get());
+    ov.reset();
+    BOOST_CHECK(!ov.get());
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -87,7 +57,7 @@ template <typename MODEL> class LinearObsOperator : public oops::Test {
   }
 };
 
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 }  // namespace test
 
