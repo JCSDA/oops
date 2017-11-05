@@ -47,9 +47,6 @@
 #include "util/Duration.h"
 #include "util/dot_product.h"
 
-
-using oops::Log;
-
 namespace test {
 
 // =============================================================================
@@ -281,14 +278,14 @@ template <typename MODEL> void testLinearApproximation() {
     derr -= diff;
     const double errnorm = derr.norm();
     errors.push_back(errnorm / difnorm);
-    Log::test() << "TL error = " << std::setprecision(16) << err
-                << ", relative error = " << errnorm / difnorm << std::endl;
+    oops::Log::test() << "TL error = " << std::setprecision(16) << err
+                      << ", relative error = " << errnorm / difnorm << std::endl;
     zz /= 10.0;
   }
 
 // Analyze results
   const double approx = *std::min_element(errors.begin(), errors.end());
-  Log::test() << "Test TL min error = " << approx << std::endl;
+  oops::Log::test() << "Test TL min error = " << approx << std::endl;
   const double tol = Test_::test().getDouble("toleranceTL");
   BOOST_CHECK(approx < tol);
 }

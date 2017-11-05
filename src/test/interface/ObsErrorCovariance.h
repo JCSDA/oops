@@ -19,63 +19,37 @@
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 
-#include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include "oops/runs/Test.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
-#include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsErrorCovariance.h"
 #include "test/TestEnvironment.h"
+#include "test/interface/ObsTestsFixture.h"
 #include "eckit/config/LocalConfiguration.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
-template <typename MODEL> class ObsErrorCovarianceFixture : private boost::noncopyable {
-  typedef oops::ObservationSpace<MODEL>        ObsSpace_;
-
- public:
-  static const eckit::Configuration & config() {return *getInstance().conf_;}
-  static const ObsSpace_ &  obspace()  {return *getInstance().obspace_;}
-
- private:
-  static ObsErrorCovarianceFixture<MODEL>& getInstance() {
-    static ObsErrorCovarianceFixture<MODEL> theObsErrorCovarianceFixture;
-    return theObsErrorCovarianceFixture;
-  }
-
-  ObsErrorCovarianceFixture() {
-    oops::instantiateObsErrorFactory<MODEL>();
-
-    const util::DateTime tbgn(TestEnvironment::config().getString("window_begin"));
-    const util::DateTime tend(TestEnvironment::config().getString("window_end"));
-
-    std::vector<eckit::LocalConfiguration> obsConfs;
-    TestEnvironment::config().get("Observations", obsConfs);
-    BOOST_CHECK(obsConfs.size() > 0);
-    const eckit::LocalConfiguration obsConf(obsConfs[0], "Observation");
-    obspace_.reset(new ObsSpace_(obsConf, tbgn, tend));
-
-    conf_.reset(new eckit::LocalConfiguration(obsConfs[0], "Covariance"));
-  }
-
-  ~ObsErrorCovarianceFixture() {}
-
-  boost::scoped_ptr<const eckit::LocalConfiguration> conf_;
-  boost::scoped_ptr<const ObsSpace_> obspace_;
-};
-// -----------------------------------------------------------------------------
 
 template <typename MODEL> void testConstructor() {
-  typedef ObsErrorCovarianceFixture<MODEL> Test_;
+  typedef ObsTestsFixture<MODEL>  Test_;
   typedef oops::ObsErrorCovariance<MODEL>  Covar_;
 
-  boost::scoped_ptr<Covar_> R(new Covar_(Test_::obspace(), Test_::config()));
-  BOOST_CHECK(R.get());
+  oops::instantiateObsErrorFactory<MODEL>();
 
-  R.reset();
-  BOOST_CHECK(!R.get());
+  const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
+  std::vector<eckit::LocalConfiguration> conf;
+  obsconf.get("ObsTypes", conf);
+
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    const eckit::LocalConfiguration rconf(conf[jj], "Covariance");
+    boost::scoped_ptr<Covar_> R(new Covar_(Test_::obspace()[jj], rconf));
+    BOOST_CHECK(R.get());
+
+    R.reset();
+    BOOST_CHECK(!R.get());
+  }
 }
 
 // -----------------------------------------------------------------------------

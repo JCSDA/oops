@@ -19,74 +19,47 @@
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 
-#include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include "oops/runs/Test.h"
-#include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsVector.h"
 #include "test/TestEnvironment.h"
-#include "eckit/config/LocalConfiguration.h"
-#include "util/DateTime.h"
+#include "test/interface/ObsTestsFixture.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
-template <typename MODEL> class ObsVectorFixture : private boost::noncopyable {
-  typedef oops::ObservationSpace<MODEL>        ObsSpace_;
-
- public:
-  static const ObsSpace_ &  obspace()  {return *getInstance().obspace_;}
-
- private:
-  static ObsVectorFixture<MODEL>& getInstance() {
-    static ObsVectorFixture<MODEL> theObsVectorFixture;
-    return theObsVectorFixture;
-  }
-
-  ObsVectorFixture() {
-    const util::DateTime tbgn(TestEnvironment::config().getString("window_begin"));
-    const util::DateTime tend(TestEnvironment::config().getString("window_end"));
-
-    std::vector<eckit::LocalConfiguration> obsConfs;
-    TestEnvironment::config().get("Observations", obsConfs);
-    BOOST_CHECK(obsConfs.size() > 0);
-    const eckit::LocalConfiguration obsConf(obsConfs[0], "Observation");
-    obspace_.reset(new ObsSpace_(obsConf, tbgn, tend));
-  }
-
-  ~ObsVectorFixture() {}
-
-  boost::scoped_ptr<ObsSpace_> obspace_;
-};
-// -----------------------------------------------------------------------------
 
 template <typename MODEL> void testConstructor() {
-  typedef ObsVectorFixture<MODEL> Test_;
+  typedef ObsTestsFixture<MODEL>  Test_;
   typedef oops::ObsVector<MODEL>  ObsVector_;
 
-  boost::scoped_ptr<ObsVector_> ov(new ObsVector_(Test_::obspace()));
-  BOOST_CHECK(ov.get());
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    boost::scoped_ptr<ObsVector_> ov(new ObsVector_(Test_::obspace()[jj]));
+    BOOST_CHECK(ov.get());
 
-  ov.reset();
-  BOOST_CHECK(!ov.get());
+    ov.reset();
+    BOOST_CHECK(!ov.get());
+  }
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL> void testCopyConstructor() {
-  typedef ObsVectorFixture<MODEL> Test_;
+  typedef ObsTestsFixture<MODEL>  Test_;
   typedef oops::ObsVector<MODEL>  ObsVector_;
 
-  boost::scoped_ptr<ObsVector_> ov(new ObsVector_(Test_::obspace()));
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    boost::scoped_ptr<ObsVector_> ov(new ObsVector_(Test_::obspace()[jj]));
 
-  boost::scoped_ptr<ObsVector_> other(new ObsVector_(*ov));
-  BOOST_CHECK(other.get());
+    boost::scoped_ptr<ObsVector_> other(new ObsVector_(*ov));
+    BOOST_CHECK(other.get());
 
-  other.reset();
-  BOOST_CHECK(!other.get());
+    other.reset();
+    BOOST_CHECK(!other.get());
 
-  BOOST_CHECK(ov.get());
+    BOOST_CHECK(ov.get());
+  }
 }
 
 // -----------------------------------------------------------------------------

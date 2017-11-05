@@ -178,9 +178,9 @@ integer, parameter :: iunit=10
 integer, parameter :: max_string_length=250 ! Yuk!
 character(len=max_string_length) :: filename, record
 character(len=4)  :: cnx
-character(len=15) :: fmtn
+character(len=17) :: fmtn
 character(len=11) :: fmt1='(X,ES24.16)'
-integer :: jj, jo
+integer :: jj, jo, jv
 
 call qg_goms_registry%get(c_key_self, self)
 if (self%lalloc) call abor1_ftn("qg_gom_read_file gom alredy allocated")
@@ -196,7 +196,9 @@ allocate(self%variables(self%nvar))
 allocate(self%values(self%nvar,self%nobs))
 
 read(iunit,*) self%indx(:)
-read(iunit,*) self%variables(:)
+do jv=1,self%nvar
+  read(iunit,*) self%variables(jv)
+enddo
 
 if (self%nvar>9999)  call abor1_ftn("Format too small")
 write(cnx,'(I4)')self%nvar
@@ -225,9 +227,9 @@ integer, parameter :: iunit=10
 integer, parameter :: max_string_length=250 ! Yuk!
 character(len=max_string_length) :: filename, record
 character(len=4)  :: cnx
-character(len=15) :: fmtn
+character(len=17) :: fmtn
 character(len=11) :: fmt1='(X,ES24.16)'
-integer :: jj, jo
+integer :: jj, jo, jv
 
 call qg_goms_registry%get(c_key_self, self)
 if (.not.self%lalloc) call abor1_ftn("qg_gom_write_file gom not allocated")
@@ -239,7 +241,9 @@ open(unit=iunit, file=trim(filename), form='formatted', action='write')
 
 write(iunit,*) self%nobs, self%nvar, self%used
 write(iunit,*) self%indx(:)
-write(iunit,*) self%variables(:)
+do jv=1,self%nvar
+  write(iunit,*) self%variables(jv)
+enddo
 
 if (self%nvar>9999) call abor1_ftn("Format too small")
 write(cnx,'(I4)')self%nvar

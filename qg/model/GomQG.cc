@@ -29,6 +29,12 @@ GomQG::GomQG(const ObsSpaceQG & obsdb, const VariablesQG & var,
                       var.toFortran(), &p1, &p2, keyGom_);
 }
 // -----------------------------------------------------------------------------
+GomQG::GomQG(const eckit::Configuration & config) {
+  qg_gom_create_f90(keyGom_);
+  const eckit::Configuration * conf = &config;
+  qg_gom_read_file_f90(keyGom_, &conf);
+}
+// -----------------------------------------------------------------------------
 GomQG::~GomQG() {
   qg_gom_delete_f90(keyGom_);
 }

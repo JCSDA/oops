@@ -33,6 +33,7 @@ class GomQG : public util::Printable,
 
   GomQG(const ObsSpaceQG &, const VariablesQG &,
         const util::DateTime &, const util::DateTime &, const GeometryQG &);
+  GomQG(const eckit::Configuration &);
 
   explicit GomQG(): keyGom_(0) {}
   explicit GomQG(int & fgom): keyGom_(fgom) {}

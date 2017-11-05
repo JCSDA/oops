@@ -72,7 +72,24 @@
         "nval": "1"
       }
     }
-  ]},
+  ],
+  "ObsFilters": [
+    {
+      "ObsType": "Stream",
+      "Filter": "GOMsaver",
+      "filename": "Data/qg.stream.gom"
+    },
+    {
+      "ObsType": "Wind",
+      "Filter": "GOMsaver",
+      "filename": "Data/qg.wind.gom"
+    },
+    {
+      "ObsType": "WSpeed",
+      "Filter": "GOMsaver",
+      "filename": "Data/qg.wspeed.gom"
+    }]
+  },
   "prints": {
     "frequency": "PT3H"
   }
