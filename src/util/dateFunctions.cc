@@ -110,7 +110,7 @@ void secondToHms(const int seconds, int & hh, int & mm, int & ss) {
 // -----------------------------------------------------------------------------
 
 bool isLeapYear(const int year) {
-  return ((year%4 == 0 && year%100 != 0) || year%400) == 0;
+  return ((year%4 == 0 && year%100 != 0) || year%400 == 0);
 }
 
 // -----------------------------------------------------------------------------
