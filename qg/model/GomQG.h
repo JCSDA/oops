@@ -21,7 +21,6 @@
 
 namespace qg {
   class ObsSpaceQG;
-  class GeometryQG;
   class VariablesQG;
 
 /// GomQG class to handle local model values for QG model.
@@ -32,7 +31,7 @@ class GomQG : public util::Printable,
   static const std::string classname() {return "qg::GomQG";}
 
   GomQG(const ObsSpaceQG &, const VariablesQG &,
-        const util::DateTime &, const util::DateTime &, const GeometryQG &);
+        const util::DateTime &, const util::DateTime &);
   GomQG(const eckit::Configuration &);
 
   explicit GomQG(): keyGom_(0) {}

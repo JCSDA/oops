@@ -56,7 +56,7 @@ class StateL95 : public util::Printable,
   StateL95 & operator=(const StateL95 &);
 
 /// Interpolate to observation location
-  void interpolate(const LocsL95 &, GomL95 &) const;
+  void interpolate(const LocsL95 &, const NoVariables &, GomL95 &) const;
 
 /// Interactions with increments
   StateL95 & operator+=(const IncrementL95 &);

@@ -17,12 +17,10 @@
 #include "model/VariablesQG.h"
 
 namespace qg {
-  class GeometryQG;
 
 // -----------------------------------------------------------------------------
 GomQG::GomQG(const ObsSpaceQG & obsdb, const VariablesQG & var,
-             const util::DateTime & t1, const util::DateTime & t2,
-             const GeometryQG &) {
+             const util::DateTime & t1, const util::DateTime & t2) {
   const util::DateTime * p1 = &t1;
   const util::DateTime * p2 = &t2;
   qg_obsdb_getgom_f90(obsdb.toFortran(), obsdb.obsname().size(), obsdb.obsname().c_str(),

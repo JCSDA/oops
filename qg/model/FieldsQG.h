@@ -59,9 +59,9 @@ class FieldsQG : public util::Printable,
   void random();
 
 // Interpolate to given location
-  void interpolate(const LocationsQG &, GomQG &) const;
-  void interpolateTL(const LocationsQG &, GomQG &) const;
-  void interpolateAD(const LocationsQG &, const GomQG &);
+  void interpolate(const LocationsQG &, const VariablesQG &, GomQG &) const;
+  void interpolateTL(const LocationsQG &, const VariablesQG &, GomQG &) const;
+  void interpolateAD(const LocationsQG &, const VariablesQG &, const GomQG &);
 
 // Interpolate full fields
   void changeResolution(const FieldsQG &);

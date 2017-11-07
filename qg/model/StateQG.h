@@ -53,7 +53,7 @@ class StateQG : public util::Printable,
   StateQG & operator=(const StateQG &);
 
 /// Interpolate to observation location
-  void interpolate(const LocationsQG &, GomQG &) const;
+  void interpolate(const LocationsQG &, const VariablesQG &, GomQG &) const;
 
 /// Interpolate full fields
   void changeResolution(const StateQG & xx);

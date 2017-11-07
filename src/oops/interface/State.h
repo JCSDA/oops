@@ -56,7 +56,7 @@ class State : public util::Printable,
   const State_ & state() const {return *state_;}
 
 /// Interpolate to observation location
-  void interpolate(const Locations_ &, GeoVaLs_ &) const;
+  void interpolate(const Locations_ &, const Variables_ &, GeoVaLs_ &) const;
 
 /// Time
   const util::DateTime validTime() const {return state_->validTime();}
@@ -147,10 +147,11 @@ State<MODEL> & State<MODEL>::operator=(const State & rhs) {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void State<MODEL>::interpolate(const Locations_ & locs, GeoVaLs_ & gvals) const {
+void State<MODEL>::interpolate(const Locations_ & locs, const Variables_ & vars,
+                               GeoVaLs_ & gvals) const {
   Log::trace() << "State<MODEL>::interpolate starting" << std::endl;
   util::Timer timer(classname(), "interpolate");
-  state_->interpolate(locs.locations(), gvals.geovals());
+  state_->interpolate(locs.locations(), vars.variables(), gvals.geovals());
   Log::trace() << "State<MODEL>::interpolate done" << std::endl;
 }
 

@@ -23,12 +23,10 @@
 #include "util/Logger.h"
 
 namespace lorenz95 {
-  class Resolution;
 
 // -----------------------------------------------------------------------------
 GomL95::GomL95(const ObsTable & ot, const NoVariables &,
-               const util::DateTime & t1, const util::DateTime & t2,
-               const Resolution &)
+               const util::DateTime & t1, const util::DateTime & t2)
   : size_(0), iobs_(), locval_(), current_(0)
 {
   iobs_ = ot.timeSelect(t1, t2);
