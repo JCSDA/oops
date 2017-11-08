@@ -89,6 +89,7 @@ ObsSpaces<MODEL>::ObsSpaces(const eckit::Configuration & conf,
       spaces_[jj]->generateDistribution(gconf);
     }
   }
+  ASSERT(spaces_.size() >0);
 }
 
 // -----------------------------------------------------------------------------
