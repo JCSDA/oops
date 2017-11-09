@@ -25,7 +25,7 @@ namespace qg {
 static oops::ObsOperatorMaker<QgTraits, ObsWSpeedQG> makerWSpeed_("WSpeed");
 // -----------------------------------------------------------------------------
 
-ObsWSpeedQG::ObsWSpeedQG(const ObsSpaceQG & odb, const eckit::Configuration & config)
+ObsWSpeedQG::ObsWSpeedQG(const ObsSpaceQG &, const eckit::Configuration & config)
   : keyOperWspeed_(0), varin_(std::vector<std::string>{"u","v"})
 {
   const eckit::Configuration * configc = &config;
