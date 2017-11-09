@@ -47,6 +47,11 @@ void GomQG::zero() {
    qg_gom_random_f90(keyGom_);
  }
 // -----------------------------------------------------------------------------
+GomQG & GomQG::operator*=(const double & zz) {
+  qg_gom_mult_f90(keyGom_, zz);
+  return *this;
+}
+// -----------------------------------------------------------------------------
 double GomQG::dot_product_with(const GomQG & other) const {
   double zz;
   qg_gom_dotprod_f90(keyGom_, other.keyGom_, zz);

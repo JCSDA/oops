@@ -54,6 +54,7 @@ class GeoVaLs : public util::Printable,
 /// Linear algebra and utilities, mostly for writing tests
   void zero();
   void random();
+  GeoVaLs & operator*=(const double &);
   double dot_product_with(const GeoVaLs &) const;
   void read(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;
@@ -104,6 +105,17 @@ double GeoVaLs<MODEL>::dot_product_with(const GeoVaLs & other) const {
   double zz = gvals_->dot_product_with(*other.gvals_);
   Log::trace() << "GeoVaLs<MODEL>::dot_product_with done" << std::endl;
   return zz;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+GeoVaLs<MODEL> & GeoVaLs<MODEL>::operator*=(const double & zz) {
+  Log::trace() << "GeoVaLs<MODEL>::operator*= starting" << std::endl;
+  util::Timer timer(classname(), "operator*=");
+  *gvals_ *= zz;
+  Log::trace() << "GeoVaLs<MODEL>::operator*= done" << std::endl;
+  return *this;
 }
 
 // -----------------------------------------------------------------------------
