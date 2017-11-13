@@ -75,7 +75,8 @@
   },
   "window_begin": "2010-01-01T00:00:00Z",
   "window_end": "2010-01-02T00:00:00Z",
-  "Observations": [
+  "Observations": {
+    "ObsType": [
     {
       "Observation": {
         "ObsType": "Stream",
@@ -90,10 +91,15 @@
           "obsvalue": "ObsVal"
         }
       },
+      "GeoVaLs": {
+        "filename": "Data/qg.stream.gom",
+        "norm": "356.985842472369"
+      },
       "Covariance": {
         "covariance": "diagonal",
         "obserror": "ObsErr"
-      }
+      },
+      "rmsequiv": "12.62135549999"
     },
     {
       "Observation": {
@@ -109,10 +115,15 @@
           "obsvalue": "ObsVal"
         }
       },
+      "GeoVaLs": {
+        "filename": "Data/qg.wind.gom",
+        "norm": "120.590296066919"
+      },
       "Covariance": {
         "covariance": "diagonal",
         "obserror": "ObsErr"
-      }
+      },
+      "rmsequiv": "122.535512929154"
     },
     {
       "Observation": {
@@ -128,10 +139,15 @@
           "obsvalue": "ObsVal"
         }
       },
+      "GeoVaLs": {
+        "filename": "Data/qg.wspeed.gom",
+        "norm": "122.535512929154"
+      },
       "Covariance": {
         "covariance": "diagonal",
         "obserror": "ObsErr"
-      }
+      },
+      "rmsequiv": "122.535512929154"
     }
-  ]
+  ]}
 }

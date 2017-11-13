@@ -1,15 +1,12 @@
 /*
- * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2017 UCAR
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
- * granted to it by virtue of its status as an intergovernmental organisation nor
- * does it submit to any jurisdiction.
  */
 
-#ifndef TEST_INTERFACE_OBSERVATIONSPACE_H_
-#define TEST_INTERFACE_OBSERVATIONSPACE_H_
+#ifndef TEST_INTERFACE_LINEAROBSOPERATOR_H_
+#define TEST_INTERFACE_LINEAROBSOPERATOR_H_
 
 #include <string>
 
@@ -18,39 +15,41 @@
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 
-#include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include "oops/runs/Test.h"
-#include "oops/interface/ObservationSpace.h"
+#include "oops/interface/LinearObsOperator.h"
 #include "test/TestEnvironment.h"
 #include "test/interface/ObsTestsFixture.h"
-#include "eckit/config/LocalConfiguration.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL> void testConstructor() {
-  typedef ObsTestsFixture<MODEL> Test_;
+  typedef ObsTestsFixture<MODEL>  Test_;
+  typedef oops::LinearObsOperator<MODEL>  LinearObsOperator_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    BOOST_CHECK_EQUAL(Test_::obspace()[jj].windowStart(), Test_::tbgn());
-    BOOST_CHECK_EQUAL(Test_::obspace()[jj].windowEnd(),   Test_::tend());
+    boost::scoped_ptr<LinearObsOperator_> ov(new LinearObsOperator_(Test_::obspace()[jj]));
+    BOOST_CHECK(ov.get());
+
+    ov.reset();
+    BOOST_CHECK(!ov.get());
   }
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> class ObservationSpace : public oops::Test {
+template <typename MODEL> class LinearObsOperator : public oops::Test {
  public:
-  ObservationSpace() {}
-  virtual ~ObservationSpace() {}
+  LinearObsOperator() {}
+  virtual ~LinearObsOperator() {}
  private:
-  std::string testid() const {return "test::ObservationSpace<" + MODEL::name() + ">";}
+  std::string testid() const {return "test::LinearObsOperator<" + MODEL::name() + ">";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/ObservationSpace");
+    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/LinearObsOperator");
 
     ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
 
@@ -62,4 +61,4 @@ template <typename MODEL> class ObservationSpace : public oops::Test {
 
 }  // namespace test
 
-#endif  // TEST_INTERFACE_OBSERVATIONSPACE_H_
+#endif  // TEST_INTERFACE_LINEAROBSOPERATOR_H_

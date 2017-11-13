@@ -275,6 +275,12 @@ ecbuild_add_test( TARGET test_l95_variables
                   ARGS "testinput/interfaces.json"
                   LIBS    lorenz95 )
 
+ecbuild_add_test( TARGET test_l95_geovals
+                  BOOST
+                  SOURCES executables/TestGeoVaLs.cc
+                  ARGS "testinput/interfaces.json"
+                  LIBS    lorenz95 )
+
 ecbuild_add_test( TARGET test_l95_state
                   BOOST
                   SOURCES executables/TestState.cc
@@ -332,6 +338,18 @@ ecbuild_add_test( TARGET test_l95_observationspace
 ecbuild_add_test( TARGET test_l95_obsvector
                   BOOST
                   SOURCES executables/TestObsVector.cc
+                  ARGS "testinput/interfaces.json"
+                  LIBS    lorenz95 )
+
+ecbuild_add_test( TARGET test_l95_obsoperator
+                  BOOST
+                  SOURCES executables/TestObsOperator.cc
+                  ARGS "testinput/interfaces.json"
+                  LIBS    lorenz95 )
+
+ecbuild_add_test( TARGET test_l95_linobsoperator
+                  BOOST
+                  SOURCES executables/TestLinearObsOperator.cc
                   ARGS "testinput/interfaces.json"
                   LIBS    lorenz95 )
 

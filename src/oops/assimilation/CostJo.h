@@ -28,6 +28,7 @@
 #include "oops/base/ObserverTL.h"
 #include "oops/base/ObserverAD.h"
 #include "oops/base/ObsErrors.h"
+#include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
@@ -61,6 +62,7 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   typedef State<MODEL>               State_;
   typedef Increment<MODEL>           Increment_;
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
+  typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsOperators<MODEL>        ObsOperator_;
   typedef ObsSpaces<MODEL>           ObsSpace_;
   typedef LinearObsOperators<MODEL>  LinearObsOperator_;
@@ -148,7 +150,9 @@ template<typename MODEL>
 boost::shared_ptr<PostBase<State<MODEL> > >
 CostJo<MODEL>::initialize(const CtrlVar_ & xx) const {
   ASSERT(ltraj_ == false);
-  pobs_.reset(new Observer<MODEL, State_>(obspace_, hop_, xx.obsVar(),
+  const eckit::LocalConfiguration conf;
+  ObsFilters_ filter(obspace_, conf);
+  pobs_.reset(new Observer<MODEL, State_>(obspace_, hop_, xx.obsVar(), filter,
                                           tslot_, subwindows_));
   return pobs_;
 }
@@ -183,10 +187,11 @@ double CostJo<MODEL>::finalize(const eckit::Configuration & conf) const {
 template<typename MODEL>
 boost::shared_ptr<PostBase<State<MODEL> > >
 CostJo<MODEL>::initializeTraj(const CtrlVar_ & xx, const Geometry_ &,
-                              const eckit::Configuration &) {
+                              const eckit::Configuration & conf) {
   ltraj_ = true;
   hoptlad_.reset(new LinearObsOperator_(obspace_));
-  pobs_.reset(new Observer<MODEL, State_>(obspace_, hop_, xx.obsVar(),
+  ObsFilters_ filter(obspace_, conf);
+  pobs_.reset(new Observer<MODEL, State_>(obspace_, hop_, xx.obsVar(), filter,
                                           tslot_, subwindows_, hoptlad_));
   return pobs_;
 }

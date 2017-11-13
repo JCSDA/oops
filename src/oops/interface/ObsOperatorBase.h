@@ -38,14 +38,23 @@ class ObsOperatorBase : public util::Printable,
   virtual ~ObsOperatorBase() {}
 
 /// Obs Operator
-  virtual void obsEquiv(const GeoVaLs_ &, ObsVector_ &, const ObsAuxControl_ &) const =0;
+  void calcObsEquiv(const GeoVaLs_ &, ObsVector_ &, const ObsAuxControl_ &) const;
 
 /// Other
   virtual boost::shared_ptr<const Variables_> variables() const =0;  // Required from Model
 
  private:
+  virtual void obsEquiv(const GeoVaLs_ &, ObsVector_ &, const ObsAuxControl_ &) const =0;
   virtual void print(std::ostream &) const =0;
 };
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+void ObsOperatorBase<MODEL>::calcObsEquiv(const GeoVaLs_ & gvals, ObsVector_ & yy,
+                                          const ObsAuxControl_ & aux) const {
+  this->obsEquiv(gvals, yy, aux);
+}
 
 // =============================================================================
 

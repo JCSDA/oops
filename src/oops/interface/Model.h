@@ -40,7 +40,7 @@ class Model : public util::Printable,
               private util::ObjectCounter<Model<MODEL> >  {
   typedef typename MODEL::Model                 Model_;
   typedef Geometry<MODEL>            Geometry_;
-  typedef ModelAuxControl<MODEL>      ModelAux_;
+  typedef ModelAuxControl<MODEL>     ModelAux_;
   typedef State<MODEL>               State_;
 
  public:

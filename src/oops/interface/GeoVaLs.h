@@ -44,6 +44,7 @@ class GeoVaLs : public util::Printable,
   GeoVaLs(const ObsSpace_ &, const Variables_ &,
           const util::DateTime &, const util::DateTime &,
           const Geometry_ &);
+  explicit GeoVaLs(const eckit::Configuration &);
   ~GeoVaLs();
 
 /// Interfacing
@@ -77,6 +78,16 @@ GeoVaLs<MODEL>::GeoVaLs(const ObsSpace_ & os, const Variables_ & var,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
+GeoVaLs<MODEL>::GeoVaLs(const eckit::Configuration & conf) : gvals_() {
+  Log::trace() << "GeoVaLs<MODEL>::GeoVaLs read starting" << std::endl;
+  util::Timer timer(classname(), "GeoVaLs");
+  gvals_.reset(new GeoVaLs_(conf));
+  Log::trace() << "GeoVaLs<MODEL>::GeoVaLs read done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
 GeoVaLs<MODEL>::~GeoVaLs() {
   Log::trace() << "GeoVaLs<MODEL>::~GeoVaLs starting" << std::endl;
   util::Timer timer(classname(), "~GeoVaLs");
@@ -90,7 +101,7 @@ template <typename MODEL>
 double GeoVaLs<MODEL>::dot_product_with(const GeoVaLs & other) const {
   Log::trace() << "GeoVaLs<MODEL>::dot_product_with starting" << std::endl;
   util::Timer timer(classname(), "dot_product_with");
-  double zz = gvals_->dot_product_with(other.gvals_);
+  double zz = gvals_->dot_product_with(*other.gvals_);
   Log::trace() << "GeoVaLs<MODEL>::dot_product_with done" << std::endl;
   return zz;
 }

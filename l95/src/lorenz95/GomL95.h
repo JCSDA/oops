@@ -37,6 +37,7 @@ class GomL95 : public util::Printable,
 
   GomL95(const ObsTable &, const NoVariables &, const util::DateTime &, const util::DateTime &,
          const Resolution &);
+  explicit GomL95(const eckit::Configuration &);
   ~GomL95();
 
   void zero();

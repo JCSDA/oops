@@ -64,24 +64,28 @@
   },
   "window_begin": "2010-01-01T03:00:00Z",
   "window_end": "2010-01-02T03:00:00Z",
-  "Observations": [
+  "Observations": {
+    "ObsTypes": [
     {
-      "Observation": {
-        "ObsType": "Lorenz 95",
-        "ObsData": {
-          "ObsDataIn": {
-            "filename": "Data/truth.2010-01-02T00:00:00Z.obt"
-          },
-          "ObsDataOut": {
-            "filename": "Data/test.2010-01-02T00:00:00Z.obt"
-          },
-          "obsvalue": "ObsVal"
-        }
+      "ObsType": "Lorenz 95",
+      "ObsData": {
+        "ObsDataIn": {
+          "filename": "Data/truth.2010-01-02T00:00:00Z.obt"
+        },
+        "ObsDataOut": {
+          "filename": "Data/test.2010-01-02T00:00:00Z.obt"
+        },
+        "obsvalue": "ObsVal"
+      },
+      "GeoVaLs": {
+        "filename": "Data/l95.gom",
+        "norm": "101.4587929124312"
       },
       "Covariance": {
         "covariance": "diagonal",
         "obserror": "ObsErr"
-      }
+      },
+      "rmsequiv": "8.02102185636578"
     }
-  ]
+  ]}
 }
