@@ -41,6 +41,7 @@ class GomQG : public util::Printable,
 
   void zero();
   void random();
+  GomQG & operator*=(const double &);
   double dot_product_with(const GomQG &) const;
   void read(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;

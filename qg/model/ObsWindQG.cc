@@ -25,7 +25,7 @@ namespace qg {
 static oops::ObsOperatorMaker<QgTraits, ObsWindQG>   makerWind_("Wind");
 // -----------------------------------------------------------------------------
 
-ObsWindQG::ObsWindQG(const ObsSpaceQG & odb, const eckit::Configuration & config)
+ObsWindQG::ObsWindQG(const ObsSpaceQG &, const eckit::Configuration & config)
   : keyOperWind_(0), varin_()
 {
   const eckit::Configuration * configc = &config;
