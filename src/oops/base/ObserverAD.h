@@ -100,10 +100,9 @@ void ObserverAD<MODEL, INCR>::doFirstAD(INCR & dx, const util::DateTime & bgn,
   if (bgn_ < winbgn_) bgn_ = winbgn_;
   if (end_ > winend_) end_ = winend_;
 
-// Pass the Geometry for IFS -- Bad...
   for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
     boost::shared_ptr<GeoVaLs_>
-      gom(new GeoVaLs_(obspace_[jj], hoptlad_.variables(jj), bgn_, end_, dx.geometry()));
+      gom(new GeoVaLs_(obspace_[jj], hoptlad_.variables(jj), bgn_, end_));
     hoptlad_[jj].obsEquivAD(*gom, (*ydep_)[jj], ybias_);
     gvals_.push_back(gom);
   }
@@ -121,7 +120,7 @@ void ObserverAD<MODEL, INCR>::doProcessingAD(INCR & dx) {
     Locations_ locs(obspace_[jj], t1, t2);
 
 //  Interpolate state variables to obs locations
-    dx.interpolateAD(locs, *gvals_.at(jj));
+    dx.interpolateAD(locs, hoptlad_.variables(jj), *gvals_.at(jj));
   }
 }
 // -----------------------------------------------------------------------------

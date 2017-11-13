@@ -75,7 +75,7 @@ StateL95 & StateL95::operator=(const StateL95 & rhs) {
 // -----------------------------------------------------------------------------
 /// Interpolate to observation location
 // -----------------------------------------------------------------------------
-void StateL95::interpolate(const LocsL95 & locs, GomL95 & vals) const {
+void StateL95::interpolate(const LocsL95 & locs, const NoVariables &, GomL95 & vals) const {
   fld_.interp(locs, vals);
 }
 // -----------------------------------------------------------------------------

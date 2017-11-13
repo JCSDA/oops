@@ -828,10 +828,11 @@ end subroutine fldrms
 
 ! ------------------------------------------------------------------------------
 
-subroutine interp_tl(fld, locs, gom)
+subroutine interp_tl(fld, locs, vars, gom)
 implicit none
 type(qg_field), intent(in)   :: fld
 type(qg_locs), intent(in)    :: locs
+type(qg_vars), intent(in)    :: vars
 type(qg_goms), intent(inout) :: gom
 real(kind=kind_real) :: di, dj, ai, aj, valb, valt
 integer :: jloc,joff,jvar,ii,jj,kk,iright,jsearch
@@ -859,8 +860,9 @@ do jloc=1,locs%nloc
 
 ! Loop on required variables
   gom%used=gom%used+1
-  do jvar=1,gom%nvar
-    cvar=gom%variables(jvar)
+  if (vars%nv/=gom%nvar) call abor1_ftn ("qg_fields_interp_tl: inconsistent var and gom")
+  do jvar=1,vars%nv
+    cvar=vars%fldnames(jvar)
     joff=-1
     do jsearch=1,fld%nf
       if (fld%fldnames(jsearch)==cvar) joff=jsearch-1
@@ -913,10 +915,11 @@ end subroutine interp_tl
 
 ! ------------------------------------------------------------------------------
 
-subroutine interp_ad(fld, locs, gom)
+subroutine interp_ad(fld, locs, vars, gom)
 implicit none
 type(qg_field), intent(inout) :: fld
 type(qg_locs), intent(in)     :: locs
+type(qg_vars), intent(in)     :: vars
 type(qg_goms), intent(inout)  :: gom
 real(kind=kind_real) :: di, dj, ai, aj, valb, valt
 integer :: jloc,joff,jvar,ii,jj,kk,iright,jsearch
@@ -944,8 +947,9 @@ do jloc=locs%nloc,1,-1
 
 ! Loop on required variables
   gom%used=gom%used+1
-  do jvar=gom%nvar,1,-1
-    cvar=gom%variables(jvar)
+  if (vars%nv/=gom%nvar) call abor1_ftn ("qg_fields_interp_tl: inconsistent var and gom")
+  do jvar=vars%nv,1,-1
+    cvar=vars%fldnames(jvar)
     joff=-1
     do jsearch=1,fld%nf
       if (fld%fldnames(jsearch)==cvar) joff=jsearch-1

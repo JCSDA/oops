@@ -155,18 +155,16 @@ void IncrementQG::dirac(const eckit::Configuration & config) {
 // -----------------------------------------------------------------------------
 /// Interpolate to observation location
 // -----------------------------------------------------------------------------
-void IncrementQG::interpolateTL(const LocationsQG & locs, GomQG & cols) const {
+void IncrementQG::interpolateTL(const LocationsQG & locs, const VariablesQG & vars, GomQG & cols) const {
   Log::debug() << "IncrementQG::interpolateTL fields in" << *fields_ << std::endl;
-  fields_->interpolateTL(locs, cols);
-  Log::debug() << "IncrementQG::interpolateTL fields out" << *fields_ << std::endl;
+  fields_->interpolateTL(locs, vars, cols);
   Log::debug() << "IncrementQG::interpolateTL gom " << cols << std::endl;
 }
 // -----------------------------------------------------------------------------
-void IncrementQG::interpolateAD(const LocationsQG & locs, const GomQG & cols) {
+void IncrementQG::interpolateAD(const LocationsQG & locs, const VariablesQG & vars, const GomQG & cols) {
   Log::debug() << "IncrementQG::interpolateAD gom " << cols << std::endl;
   Log::debug() << "IncrementQG::interpolateAD fields in" << *fields_ << std::endl;
-  fields_->interpolateAD(locs, cols);
-  Log::debug() << "IncrementQG::interpolateAD fields out" << *fields_ << std::endl;
+  fields_->interpolateAD(locs, vars, cols);
 }
 // -----------------------------------------------------------------------------
 /// Convert to/from unstructured grid

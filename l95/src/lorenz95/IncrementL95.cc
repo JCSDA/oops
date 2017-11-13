@@ -182,11 +182,11 @@ void IncrementL95::print(std::ostream & os) const {
 // -----------------------------------------------------------------------------
 /// Interpolate to observation location
 // -----------------------------------------------------------------------------
-void IncrementL95::interpolateTL(const LocsL95 & locs, GomL95 & vals) const {
+void IncrementL95::interpolateTL(const LocsL95 & locs, const NoVariables &, GomL95 & vals) const {
   fld_.interp(locs, vals);
 }
 // -----------------------------------------------------------------------------
-void IncrementL95::interpolateAD(const LocsL95 & locs, const GomL95 & vals) {
+void IncrementL95::interpolateAD(const LocsL95 & locs, const NoVariables &, const GomL95 & vals) {
   fld_.interpAD(locs, vals);
 }
 // -----------------------------------------------------------------------------

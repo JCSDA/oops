@@ -100,10 +100,9 @@ void ObserverTL<MODEL, INCR>::doInitializeTL(const INCR & dx,
   if (bgn_ < winbgn_) bgn_ = winbgn_;
   if (end_ > winend_) end_ = winend_;
 
-// Pass the Geometry for IFS -- Bad...
   for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
     boost::shared_ptr<GeoVaLs_>
-      gom(new GeoVaLs_(obspace_[jj], hoptlad_.variables(jj), bgn_, end_, dx.geometry()));
+      gom(new GeoVaLs_(obspace_[jj], hoptlad_.variables(jj), bgn_, end_));
     gvals_.push_back(gom);
   }
 }
@@ -120,7 +119,7 @@ void ObserverTL<MODEL, INCR>::doProcessingTL(const INCR & dx) {
     Locations_ locs(obspace_[jj], t1, t2);
 
 //  Interpolate state variables to obs locations
-    dx.interpolateTL(locs, *gvals_.at(jj));
+    dx.interpolateTL(locs, hoptlad_.variables(jj), *gvals_.at(jj));
   }
 }
 // -----------------------------------------------------------------------------

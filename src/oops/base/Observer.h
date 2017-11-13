@@ -120,10 +120,8 @@ void Observer<MODEL, STATE>::doInitialize(const STATE & xx,
   if (bgn_ < winbgn_) bgn_ = winbgn_;
   if (end_ > winend_) end_ = winend_;
 
-// Pass the Geometry for IFS -- Bad...
   for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
-    boost::shared_ptr<GeoVaLs_>
-      tmp(new GeoVaLs_(obspace_[jj], hop_.variables(jj), bgn_, end_, xx.geometry()));
+    boost::shared_ptr<GeoVaLs_> tmp(new GeoVaLs_(obspace_[jj], hop_.variables(jj), bgn_, end_));
     gvals_.push_back(tmp);
   }
 }
@@ -140,7 +138,7 @@ void Observer<MODEL, STATE>::doProcessing(const STATE & xx) {
     Locations_ locs(obspace_[jj], t1, t2);
 
 //  Interpolate state variables to obs locations
-    xx.interpolate(locs, *gvals_.at(jj));
+    xx.interpolate(locs, hop_.variables(jj), *gvals_.at(jj));
   }
 }
 // -----------------------------------------------------------------------------

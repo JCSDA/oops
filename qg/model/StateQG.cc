@@ -106,8 +106,8 @@ StateQG & StateQG::operator=(const StateQG & rhs) {
 // -----------------------------------------------------------------------------
 /// Interpolate to observation location
 // -----------------------------------------------------------------------------
-void StateQG::interpolate(const LocationsQG & locs, GomQG & cols) const {
-  fields_->interpolate(locs, cols);
+void StateQG::interpolate(const LocationsQG & locs, const VariablesQG & vars, GomQG & cols) const {
+  fields_->interpolate(locs, vars, cols);
 }
 // -----------------------------------------------------------------------------
 /// Interpolate full fields

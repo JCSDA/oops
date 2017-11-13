@@ -412,47 +412,55 @@ end subroutine qg_field_rms_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine qg_field_interp_tl_c(c_key_fld,c_key_loc,c_key_gom) bind(c,name='qg_field_interp_tl_f90')
+subroutine qg_field_interp_tl_c(c_key_fld,c_key_loc,c_key_var,c_key_gom) bind(c,name='qg_field_interp_tl_f90')
 use iso_c_binding
 use qg_fields
 use qg_locs_mod
+use qg_vars_mod
 use qg_goms_mod
 implicit none
-integer(c_int), intent(in) :: c_key_fld
-integer(c_int), intent(in) :: c_key_loc
-integer(c_int), intent(in) :: c_key_gom
+integer(c_int), intent(in) :: c_key_fld  !< Fields to be interpolated
+integer(c_int), intent(in) :: c_key_loc  !< List of requested locations
+integer(c_int), intent(in) :: c_key_var  !< List of requested variables
+integer(c_int), intent(in) :: c_key_gom  !< Interpolated values
 type(qg_field), pointer :: fld
 type(qg_locs),  pointer :: locs
+type(qg_vars),  pointer :: vars
 type(qg_goms),  pointer :: gom
 
-call qg_field_registry%get(c_key_fld,fld)
-call qg_locs_registry%get(c_key_loc,locs)
-call qg_goms_registry%get(c_key_gom,gom)
+call qg_field_registry%get(c_key_fld, fld)
+call qg_locs_registry%get(c_key_loc, locs)
+call qg_vars_registry%get(c_key_var, vars)
+call qg_goms_registry%get(c_key_gom, gom)
 
-call interp_tl(fld, locs, gom)
+call interp_tl(fld, locs, vars, gom)
 
 end subroutine qg_field_interp_tl_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine qg_field_interp_ad_c(c_key_fld,c_key_loc,c_key_gom) bind(c,name='qg_field_interp_ad_f90')
+subroutine qg_field_interp_ad_c(c_key_fld,c_key_loc,c_key_var,c_key_gom) bind(c,name='qg_field_interp_ad_f90')
 use iso_c_binding
 use qg_fields
 use qg_locs_mod
+use qg_vars_mod
 use qg_goms_mod
 implicit none
-integer(c_int), intent(in) :: c_key_fld
-integer(c_int), intent(in) :: c_key_loc
-integer(c_int), intent(in) :: c_key_gom
+integer(c_int), intent(in) :: c_key_fld  !< Fields to be interpolated
+integer(c_int), intent(in) :: c_key_loc  !< List of requested locations
+integer(c_int), intent(in) :: c_key_var  !< List of requested variables
+integer(c_int), intent(in) :: c_key_gom  !< Interpolated values
 type(qg_field), pointer :: fld
 type(qg_locs),  pointer :: locs
+type(qg_vars),  pointer :: vars
 type(qg_goms),  pointer :: gom
 
-call qg_field_registry%get(c_key_fld,fld)
-call qg_locs_registry%get(c_key_loc,locs)
-call qg_goms_registry%get(c_key_gom,gom)
+call qg_field_registry%get(c_key_fld, fld)
+call qg_locs_registry%get(c_key_loc, locs)
+call qg_vars_registry%get(c_key_var, vars)
+call qg_goms_registry%get(c_key_gom, gom)
 
-call interp_ad(fld, locs, gom)
+call interp_ad(fld, locs, vars, gom)
 
 end subroutine qg_field_interp_ad_c
 

@@ -76,20 +76,18 @@
   "window_begin": "2010-01-01T00:00:00Z",
   "window_end": "2010-01-02T00:00:00Z",
   "Observations": {
-    "ObsType": [
+    "ObsTypes": [
     {
-      "Observation": {
-        "ObsType": "Stream",
-        "ObsData": {
-          "ObsHandler": "ObsHelpQG",
-          "ObsDataIn": {
-            "obsfile": "Data/qg.truth4d.obt"
-          },
-          "ObsDataOut": {
-            "obsfile": "Data/qg.test.obt"
-          },
-          "obsvalue": "ObsVal"
-        }
+      "ObsType": "Stream",
+      "ObsData": {
+        "ObsHandler": "ObsHelpQG",
+        "ObsDataIn": {
+          "obsfile": "Data/qg.truth4d.obt"
+        },
+        "ObsDataOut": {
+          "obsfile": "Data/qg.test.obt"
+        },
+        "obsvalue": "ObsVal"
       },
       "GeoVaLs": {
         "filename": "Data/qg.stream.gom",
@@ -102,18 +100,16 @@
       "rmsequiv": "12.62135549999"
     },
     {
-      "Observation": {
-        "ObsType": "Wind",
-        "ObsData": {
-          "ObsHandler": "ObsHelpQG",
-          "ObsDataIn": {
-            "obsfile": "Data/qg.truth4d.obt"
-          },
-          "ObsDataOut": {
-            "obsfile": "Data/qg.test.obt"
-          },
-          "obsvalue": "ObsVal"
-        }
+      "ObsType": "Wind",
+      "ObsData": {
+        "ObsHandler": "ObsHelpQG",
+        "ObsDataIn": {
+          "obsfile": "Data/qg.truth4d.obt"
+        },
+        "ObsDataOut": {
+          "obsfile": "Data/qg.test.obt"
+        },
+        "obsvalue": "ObsVal"
       },
       "GeoVaLs": {
         "filename": "Data/qg.wind.gom",
@@ -123,21 +119,19 @@
         "covariance": "diagonal",
         "obserror": "ObsErr"
       },
-      "rmsequiv": "122.535512929154"
+      "rmsequiv": "4.2635108047106"
     },
     {
-      "Observation": {
-        "ObsType": "WSpeed",
-        "ObsData": {
-          "ObsHandler": "ObsHelpQG",
-          "ObsDataIn": {
-            "obsfile": "Data/qg.truth4d.obt"
-          },
-          "ObsDataOut": {
-            "obsfile": "Data/qg.test.obt"
-          },
-          "obsvalue": "ObsVal"
-        }
+      "ObsType": "WSpeed",
+      "ObsData": {
+        "ObsHandler": "ObsHelpQG",
+        "ObsDataIn": {
+          "obsfile": "Data/qg.truth4d.obt"
+        },
+        "ObsDataOut": {
+          "obsfile": "Data/qg.test.obt"
+        },
+        "obsvalue": "ObsVal"
       },
       "GeoVaLs": {
         "filename": "Data/qg.wspeed.gom",
@@ -147,7 +141,7 @@
         "covariance": "diagonal",
         "obserror": "ObsErr"
       },
-      "rmsequiv": "122.535512929154"
+      "rmsequiv": "6.12677564645768"
     }
   ]}
 }

@@ -124,16 +124,16 @@ void FieldsQG::dirac(const eckit::Configuration & config) {
   qg_field_dirac_f90(keyFlds_, &conf);
 }
 // -----------------------------------------------------------------------------
-void FieldsQG::interpolate(const LocationsQG & locs, GomQG & gom) const {
-  qg_field_interp_tl_f90(keyFlds_, locs.toFortran(), gom.toFortran());
+void FieldsQG::interpolate(const LocationsQG & locs, const VariablesQG & vars, GomQG & gom) const {
+  qg_field_interp_tl_f90(keyFlds_, locs.toFortran(), vars.toFortran(), gom.toFortran());
 }
 // -----------------------------------------------------------------------------
-void FieldsQG::interpolateTL(const LocationsQG & locs, GomQG & gom) const {
-  qg_field_interp_tl_f90(keyFlds_, locs.toFortran(), gom.toFortran());
+void FieldsQG::interpolateTL(const LocationsQG & locs, const VariablesQG & vars, GomQG & gom) const {
+  qg_field_interp_tl_f90(keyFlds_, locs.toFortran(), vars.toFortran(), gom.toFortran());
 }
 // -----------------------------------------------------------------------------
-void FieldsQG::interpolateAD(const LocationsQG & locs, const GomQG & gom) {
-  qg_field_interp_ad_f90(keyFlds_, locs.toFortran(), gom.toFortran());
+void FieldsQG::interpolateAD(const LocationsQG & locs, const VariablesQG & vars, const GomQG & gom) {
+  qg_field_interp_ad_f90(keyFlds_, locs.toFortran(), vars.toFortran(), gom.toFortran());
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::changeResolution(const FieldsQG & other) {

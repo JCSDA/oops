@@ -74,8 +74,8 @@ class IncrementL95 : public util::Printable,
   void random();
 
 /// Interpolate to observation location
-  void interpolateTL(const LocsL95 &, GomL95 &) const;
-  void interpolateAD(const LocsL95 &, const GomL95 &);
+  void interpolateTL(const LocsL95 &, const NoVariables &, GomL95 &) const;
+  void interpolateAD(const LocsL95 &, const NoVariables &, const GomL95 &);
 
 /// Convert to/from generic unstructured grid
   void convert_to(oops::UnstructuredGrid &) const;

@@ -79,8 +79,8 @@ class IncrementQG : public oops::GeneralizedDepartures,
   void dirac(const eckit::Configuration &);
 
 /// Interpolate to observation location
-  void interpolateTL(const LocationsQG &, GomQG &) const;
-  void interpolateAD(const LocationsQG &, const GomQG &);
+  void interpolateTL(const LocationsQG &, const VariablesQG &, GomQG &) const;
+  void interpolateAD(const LocationsQG &, const VariablesQG &, const GomQG &);
 
 /// I/O and diagnostics
   void read(const eckit::Configuration &);
