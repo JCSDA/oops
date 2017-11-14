@@ -74,9 +74,11 @@ template <typename MODEL> void testEquiv() {
 
     const eckit::LocalConfiguration oconf(conf[jj], "GeoVaLs");
     ObsCheck_ ocheck(oconf);
-    ocheck.postFilter(gval,ovec,Test_::obspace()[jj]);
+    ocheck.priorFilter(gval,ovec,Test_::obspace()[jj]);
 
     hop.obsEquiv(gval, ovec, ybias);
+
+    ocheck.postFilter(gval,ovec,Test_::obspace()[jj]);
 
     const double tol = 1.0e-8;
     const double zz = ovec.rms();

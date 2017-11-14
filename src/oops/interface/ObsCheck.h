@@ -40,6 +40,7 @@ class ObsCheck : public FilterBase<MODEL> {
   ~ObsCheck();
 
   void postFilter(const GeoVaLs_ &, const ObsVector_ &, const ObsSpace_ &) const;
+  void priorFilter(const GeoVaLs_ &, const ObsVector_ &, const ObsSpace_ &) const;
 
  private:
   const eckit::LocalConfiguration conf_;
@@ -84,6 +85,16 @@ void ObsCheck<MODEL>::postFilter(const GeoVaLs_ & gv, const ObsVector_ & ov, con
   util::Timer timer(classname(), "ObsCheck");
     obsc_->postFilter(gv.geovals(),ov.obsvector(),os.observationspace());
   Log::trace() << "ObsCheck<MODEL>::postFilter done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+void ObsCheck<MODEL>::priorFilter(const GeoVaLs_ & gv, const ObsVector_ & ov, const ObsSpace_ & os) const {
+  Log::trace() << "ObsCheck<MODEL>:: priorFilter starting" << std::endl;
+  util::Timer timer(classname(), "ObsCheck");
+    obsc_->priorFilter(gv.geovals(),ov.obsvector(),os.observationspace());
+  Log::trace() << "ObsCheck<MODEL>:: priorFilter done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
