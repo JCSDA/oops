@@ -8,6 +8,7 @@
   "Variables": {
     "variables": ["x"]
   },
+  "Locations": {},
   "TestDate": "2009-12-31T00:00:00Z",
   "State": {
     "filename": "Data/truth.fc.2009-12-15T00:00:00Z.P16D",
@@ -15,8 +16,8 @@
   },
   "StateTest": {
     "date": "2009-12-31T00:00:00Z",
-    "norm": "15.010",
-    "tolerance": "0.005"
+    "norm": "15.010355026",
+    "tolerance": "1.0e-8"
   },
   "ModelBias": null,
   "Model": {

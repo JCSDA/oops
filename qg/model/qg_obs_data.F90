@@ -243,7 +243,7 @@ integer(c_int), intent(in) :: c_key_self
 integer(c_int), intent(in) :: lreq
 character(kind=c_char,len=1), intent(in) :: c_req(lreq+1)
 type(c_ptr), intent(in) :: c_t1, c_t2
-integer(c_int), intent(inout) :: c_key_locs
+integer(c_int), intent(in) :: c_key_locs
 
 type(obs_data), pointer :: self
 character(len=lreq) :: req

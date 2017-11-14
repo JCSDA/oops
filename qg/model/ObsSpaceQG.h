@@ -47,7 +47,6 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
   LocationsQG * locations(const util::DateTime & t1, const util::DateTime & t2) const {
     int key_locs = helper_->locations(obsname_, t1, t2);
     return new LocationsQG(key_locs);
-  }
 
   void generateDistribution(const eckit::Configuration & conf) {
     helper_->generateDistribution(conf, obsname_, winbgn_, winend_, nobs_);

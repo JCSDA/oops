@@ -3,6 +3,9 @@
   "Geometry": {
     "resol": "40"
   },
+  "Locations": {
+    "position": "0.717"
+  },
   "Variables": null,
   "TestDate": "2010-01-01T03:00:00Z",
   "State": {
@@ -11,8 +14,8 @@
   },
   "StateTest": {
     "date": "2010-01-01T03:00:00Z",
-    "norm": "8.026",
-    "tolerance": "0.005"
+    "norm": "8.02582642225",
+    "tolerance": "1.0e-10"
   },
   "ModelBias": {
     "bias": "0.2"
