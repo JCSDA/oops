@@ -98,13 +98,24 @@ template <typename MODEL> void testStateConstructors() {
 
 // -----------------------------------------------------------------------------
 
-//  void interpolate(const Locations_ &, GeoVaLs_ &) const;
 template <typename MODEL> void testStateInterpolation() {
-  typedef StateFixture<MODEL>   Test_;
-  typedef oops::State<MODEL>    State_;
+  typedef StateFixture<MODEL>     Test_;
+  typedef oops::State<MODEL>      State_;
+  typedef oops::Locations<MODEL>  Locations_;
+  typedef oops::GeoVaLs<MODEL>    GeoVaLs_;
 
-  const eckit::LocalConfiguration conf(TestEnvironment::config(), "State");
-  State_ xx(Test_::resol(), conf);
+  const eckit::LocalConfiguration confs(TestEnvironment::config(), "State");
+  State_ xx(Test_::resol(), confs);
+
+  const eckit::LocalConfiguration confl(TestEnvironment::config(), "Locations");
+  Locations_ locs(confl);
+
+  const eckit::LocalConfiguration confg(TestEnvironment::config(), "GeoVaLs");
+  GeoVaLs_ gval(confg);
+
+  xx.interpolate(locs, gval);
+
+//  BOOST_CHECK_CLOSE();
 }
 
 // -----------------------------------------------------------------------------
@@ -120,7 +131,7 @@ template <typename MODEL> class State : public oops::Test {
     boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/State");
 
     ts->add(BOOST_TEST_CASE(&testStateConstructors<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testStateInterpolation<MODEL>));
+//    ts->add(BOOST_TEST_CASE(&testStateInterpolation<MODEL>));
 
     boost::unit_test::framework::master_test_suite().add(ts);
   }

@@ -44,10 +44,15 @@ StateL95::StateL95(const Resolution & resol, const oops::Variables &,
   oops::Log::trace() << "StateL95::StateL95 created" << std::endl;
 }
 // -----------------------------------------------------------------------------
-StateL95::StateL95(const Resolution & resol, const eckit::Configuration & file)
-  : fld_(resol), time_(util::DateTime())
+StateL95::StateL95(const Resolution & resol, const eckit::Configuration & conf)
+  : fld_(resol), time_(conf.getString("date"))
 {
-  this->read(file);
+  oops::Log::trace() << "StateL95::StateL95 conf " << conf << std::endl;
+  if (conf.has("filename")) {
+    this->read(conf);
+  } else {
+    ABORT("StateL95: no filename.");
+  }
   oops::Log::trace() << "StateL95::StateL95 created and read in." << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -105,11 +110,9 @@ void StateL95::read(const eckit::Configuration & config) {
   std::string stime;
   fin >> stime;
   const util::DateTime tt(stime);
-  const util::DateTime tc(config.getString("date"));
-  if (tc != tt) {
+  if (time_ != tt) {
     ABORT("StateL95::read: date and data file inconsistent.");
   }
-  time_ = tt;
 
   fld_.read(fin);
 
