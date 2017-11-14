@@ -48,7 +48,7 @@ template <typename MODEL> void testConstructor() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testEquiv() {
+template <typename MODEL> void testObsCheck() {
   typedef ObsTestsFixture<MODEL> Test_;
   typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
   typedef oops::ObsAuxControl<MODEL>     ObsAuxCtrl_;
@@ -74,7 +74,7 @@ template <typename MODEL> void testEquiv() {
 
     const eckit::LocalConfiguration oconf(conf[jj], "GeoVaLs");
     ObsCheck_ ocheck(oconf);
-    ocheck.priorFilter(gval,ovec,Test_::obspace()[jj]);
+    ocheck.priorFilter(Test_::obspace()[jj]);
 
     hop.obsEquiv(gval, ovec, ybias);
 
@@ -83,6 +83,8 @@ template <typename MODEL> void testEquiv() {
     const double tol = 1.0e-8;
     const double zz = ovec.rms();
     const double xx = conf[jj].getDouble("rmsequiv");
+    
+    oops::Log::trace() << "ObsCheck check filter zz = " << zz << " and xx " <<std::endl;
 //    BOOST_CHECK_CLOSE(xx, zz, tol);
   }
 }
@@ -100,7 +102,7 @@ template <typename MODEL> class ObsCheck : public oops::Test {
     boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/ObsCheck");
 
     ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testEquiv<MODEL>));
+    ts->add(BOOST_TEST_CASE(&testObsCheck<MODEL>));
 
     boost::unit_test::framework::master_test_suite().add(ts);
   }
