@@ -87,7 +87,7 @@ template <typename MODEL>
 void ObsCheck<MODEL>::postFilter(const GeoVaLs_ & gv, const ObsVector_ & ov, const ObsSpace_ & os) const {
   Log::trace() << "ObsCheck<MODEL>::postFilter starting" << std::endl;
   util::Timer timer(classname(), "ObsCheck");
-    obsc_->postFilter(gv.geovals(),ov.obsvector(),os.observationspace());
+    obsc_->postFilter(gv.geovals(), ov.obsvector(), os.observationspace());
   Log::trace() << "ObsCheck<MODEL>::postFilter done" << std::endl;
 }
 

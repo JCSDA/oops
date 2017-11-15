@@ -33,9 +33,8 @@ class FilterBase : public util::Printable,
   FilterBase() {}
   virtual ~FilterBase() {}
 
-  virtual void postFilter(const GeoVaLs_ &, const ObsVector_ &, const ObsSpace_ &) const =0;
-
   virtual void priorFilter(const ObsSpace_ &) const =0;
+  virtual void postFilter(const GeoVaLs_ &, const ObsVector_ &, const ObsSpace_ &) const =0;
 
  private:
   virtual void print(std::ostream &) const =0;
