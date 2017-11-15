@@ -31,6 +31,8 @@
 #include "test/TestEnvironment.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "util/DateTime.h"
+#include "util/Logger.h"
+#include "util/dot_product.h"
 
 namespace test {
 
@@ -103,19 +105,25 @@ template <typename MODEL> void testStateInterpolation() {
   typedef oops::State<MODEL>      State_;
   typedef oops::Locations<MODEL>  Locations_;
   typedef oops::GeoVaLs<MODEL>    GeoVaLs_;
+  typedef oops::Variables<MODEL>  Variables_;
 
-  const eckit::LocalConfiguration confs(TestEnvironment::config(), "State");
-  State_ xx(Test_::resol(), confs);
+  const eckit::LocalConfiguration confs(TestEnvironment::config(), "StateTest");
+  const State_ xx(Test_::resol(), confs);
+  BOOST_CHECK_CLOSE(xx.norm(), 8.124, 0.001);
 
   const eckit::LocalConfiguration confl(TestEnvironment::config(), "Locations");
-  Locations_ locs(confl);
+  const Locations_ locs(confl);
 
-  const eckit::LocalConfiguration confg(TestEnvironment::config(), "GeoVaLs");
-  GeoVaLs_ gval(confg);
+  const eckit::LocalConfiguration confv(TestEnvironment::config(), "Variables");
+  const Variables_ vars(confv);
+
+  GeoVaLs_ gval(locs, vars);
 
   xx.interpolate(locs, gval);
 
-//  BOOST_CHECK_CLOSE();
+  const double ref = confs.getDouble("value");
+  const double zz = std::sqrt(dot_product(gval, gval));
+  BOOST_CHECK_CLOSE(zz, ref, 0.5);
 }
 
 // -----------------------------------------------------------------------------
@@ -131,7 +139,7 @@ template <typename MODEL> class State : public oops::Test {
     boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/State");
 
     ts->add(BOOST_TEST_CASE(&testStateConstructors<MODEL>));
-//    ts->add(BOOST_TEST_CASE(&testStateInterpolation<MODEL>));
+    ts->add(BOOST_TEST_CASE(&testStateInterpolation<MODEL>));
 
     boost::unit_test::framework::master_test_suite().add(ts);
   }

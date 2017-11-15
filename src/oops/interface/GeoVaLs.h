@@ -71,6 +71,16 @@ GeoVaLs<MODEL>::GeoVaLs(const Locations_ & locs, const Variables & vars) : gvals
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
+GeoVaLs<MODEL>::GeoVaLs(const Locations_ & loc, const Variables_ & var) : gvals_() {
+  Log::trace() << "GeoVaLs<MODEL>::GeoVaLs starting" << std::endl;
+  util::Timer timer(classname(), "GeoVaLs");
+  gvals_.reset(new GeoVaLs_(loc.locations(), var.variables()));
+  Log::trace() << "GeoVaLs<MODEL>::GeoVaLs done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
 GeoVaLs<MODEL>::GeoVaLs(const eckit::Configuration & conf) : gvals_() {
   Log::trace() << "GeoVaLs<MODEL>::GeoVaLs read starting" << std::endl;
   util::Timer timer(classname(), "GeoVaLs");

@@ -51,7 +51,7 @@ StateL95::StateL95(const Resolution & resol, const eckit::Configuration & conf)
   if (conf.has("filename")) {
     this->read(conf);
   } else {
-    ABORT("StateL95: no filename.");
+    fld_.generate(conf);
   }
   oops::Log::trace() << "StateL95::StateL95 created and read in." << std::endl;
 }

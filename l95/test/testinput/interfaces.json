@@ -15,7 +15,10 @@
   "StateTest": {
     "date": "2010-01-01T03:00:00Z",
     "norm": "8.02582642225",
-    "tolerance": "1.0e-10"
+    "tolerance": "1.0e-10",
+    "mean": "8.0",
+    "sinus": "2.0",
+    "value": "6.042838"
   },
   "ModelBias": {
     "bias": "0.2"
