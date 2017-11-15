@@ -107,6 +107,26 @@ end subroutine c_qg_gom_delete
 
 ! ------------------------------------------------------------------------------
 
+subroutine c_qg_gom_assign(c_key_self, c_key_other) bind(c,name='qg_gom_assign_f90')
+implicit none
+integer(c_int), intent(in) :: c_key_self
+integer(c_int), intent(in) :: c_key_other
+type(qg_goms), pointer :: self
+type(qg_goms), pointer :: other
+integer :: jo, jv
+
+call qg_goms_registry%get(c_key_self, self)
+call qg_goms_registry%get(c_key_other, other)
+do jo=1,self%nobs
+   do jv=1,self%nvar
+    self%values(jv,jo) = other%values(jv,jo)
+  enddo
+enddo
+
+end subroutine c_qg_gom_assign
+
+! ------------------------------------------------------------------------------
+
 subroutine c_qg_gom_zero(c_key_self) bind(c,name='qg_gom_zero_f90')
 implicit none
 integer(c_int), intent(in) :: c_key_self
@@ -143,6 +163,26 @@ do jo=1,self%nobs
 enddo
 
 end subroutine c_qg_gom_mult
+
+! ------------------------------------------------------------------------------
+
+subroutine c_qg_gom_add(c_key_self, c_key_other) bind(c,name='qg_gom_add_f90')
+implicit none
+integer(c_int), intent(in) :: c_key_self
+integer(c_int), intent(in) :: c_key_other
+type(qg_goms), pointer :: self
+type(qg_goms), pointer :: other
+integer :: jo, jv
+
+call qg_goms_registry%get(c_key_self, self)
+call qg_goms_registry%get(c_key_other, other)
+do jo=1,self%nobs
+  do jv=1,self%nvar
+    self%values(jv,jo) = self%values(jv,jo) + other%values(jv,jo)
+  enddo
+enddo
+
+end subroutine c_qg_gom_add
 
 ! ------------------------------------------------------------------------------
 

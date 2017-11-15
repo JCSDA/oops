@@ -18,6 +18,9 @@
     "norm": "15.010",
     "tolerance": "0.005"
   },
+  "LinObsOpTest": {
+    "tlm_tol": "1e-8"
+  },    
   "ModelBias": null,
   "Model": {
     "tstep": "PT1H",
