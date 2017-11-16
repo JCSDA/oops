@@ -53,7 +53,7 @@ include_directories( ${Boost_INCLUDE_DIR} )
 # LAPACK
 if( NOT ( BUILD_SITE MATCHES "cc[abt].*" ) )  # Should depend on toolchain, not machine
   ecbuild_find_package( NAME LAPACK REQUIRED )
-  set( LAPACK_LIBRARIES lapack )
+  set( LAPACK_LIBRARIES lapack blas )
   include_directories( ${LAPACK_INCLUDE_DIR} )
 endif()
 
