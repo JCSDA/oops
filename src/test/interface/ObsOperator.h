@@ -72,9 +72,9 @@ template <typename MODEL> void testEquiv() {
 
     hop.obsEquiv(gval, ovec, ybias);
 
-    const double tol = 1.0e-8;
     const double zz = ovec.rms();
     const double xx = conf[jj].getDouble("rmsequiv");
+    const double tol = conf[jj].getDouble("tolerance");
     BOOST_CHECK_CLOSE(xx, zz, tol);
   }
 }
