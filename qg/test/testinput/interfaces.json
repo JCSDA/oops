@@ -97,7 +97,8 @@
         "covariance": "diagonal",
         "obserror": "ObsErr"
       },
-      "rmsequiv": "12.62135549999"
+      "rmsequiv": "12.62135549999",
+      "tolerance": "1.0e-8"
     },
     {
       "ObsType": "Wind",
@@ -119,7 +120,8 @@
         "covariance": "diagonal",
         "obserror": "ObsErr"
       },
-      "rmsequiv": "4.2635108047106"
+      "rmsequiv": "4.2635108047106",
+      "tolerance": "1.0e-8"
     },
     {
       "ObsType": "WSpeed",
@@ -141,7 +143,8 @@
         "covariance": "diagonal",
         "obserror": "ObsErr"
       },
-      "rmsequiv": "6.12677564645768"
+      "rmsequiv": "6.12677564645768",
+      "tolerance": "1.0e-8"
     }
   ]}
 }

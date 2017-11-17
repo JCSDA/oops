@@ -85,7 +85,8 @@
         "covariance": "diagonal",
         "obserror": "ObsErr"
       },
-      "rmsequiv": "8.02102185636578"
+      "rmsequiv": "8.02102185636578",
+      "tolerance": "1.0e-8"
     }
   ]}
 }
