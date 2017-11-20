@@ -22,7 +22,7 @@ set( ENABLE_LARGE_FILE_SUPPORT OFF CACHE BOOL "Disable testing of large file sup
 
 include( ecbuild_system NO_POLICY_SCOPE )
 
-ecbuild_requires_macro_version( 2.5 )
+ecbuild_requires_macro_version( 2.7 )
 
 ################################################################################
 # Project
@@ -58,19 +58,12 @@ if( NOT ( BUILD_SITE MATCHES "cc[abt].*" ) )  # Should depend on toolchain, not 
 endif()
 
 # MPI
-ecbuild_add_option( FEATURE MPI DEFAULT ON
-                    DESCRIPTION "Support for MPI distributed parallelism"
-                    REQUIRED_PACKAGES "MPI COMPONENTS CXX Fortran" )
-
-if ( NOT ECKIT_HAVE_MPI )
-  ecbuild_error("OOPS requested to build with MPI but eckit wasn't built with MPI: ECKIT_HAVE_MPI = ${ECKIT_HAVE_MPI}")
-endif()
-
-#if( HAVE_MPI )
-  set( OOPS_MPI_C_LIBRARIES            ${MPI_CXX_LIBRARIES} )
-  ecbuild_include_mpi()
-  link_libraries(${MPI_CXX_LIBRARIES} ${MPI_Fortran_LIBRARIES})
-#endif()
+#ecbuild_add_option( FEATURE MPI DEFAULT ON
+#                    DESCRIPTION "Support for MPI distributed parallelism"
+#                    REQUIRED_PACKAGES "MPI COMPONENTS CXX Fortran" )
+ecbuild_find_mpi( COMPONENTS CXX Fortran REQUIRED )
+ecbuild_include_mpi()
+link_libraries(${MPI_CXX_LIBRARIES} ${MPI_Fortran_LIBRARIES})
 
 # OpenMP
 ecbuild_add_option( FEATURE OMP
@@ -92,12 +85,12 @@ include_directories( ${NETCDF_INCLUDE_DIR} )
 ecbuild_use_package( PROJECT eckit VERSION 0.18.0 REQUIRED )
 include_directories( ${ECKIT_INCLUDE_DIRS} )
 
-# fckit (optional for now)
+if ( NOT ECKIT_HAVE_MPI )
+  ecbuild_error("OOPS requested to build with MPI but eckit wasn't built with MPI: ECKIT_HAVE_MPI = ${ECKIT_HAVE_MPI}")
+endif()
+
+# fckit
 ecbuild_use_package( PROJECT fckit VERSION 0.4.1 REQUIRED )
-ecbuild_add_option( FEATURE FCTEST
-                    DEFAULT ${ENABLE_TESTS}
-                    DESCRIPTION "Fortran Unit Testing Framework"
-                    REQUIRED_PACKAGES "PROJECT fckit" )
 include_directories( ${FCKIT_INCLUDE_DIRS} )
 
 ################################################################################
