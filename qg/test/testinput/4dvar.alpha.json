@@ -13,7 +13,7 @@
     "cost_type": "4D-Var",
     "window_begin": "2010-01-01T00:00:00Z",
     "window_length": "P1D",
-    "variables": "ci",
+    "variables": ["x"],
     "Jb": {
       "Background": {
         "state": [{
@@ -25,7 +25,7 @@
         "covariance": "ensemble",
         "members": "5",
         "variables": {
-          "variables": "ci"
+          "variables": ["x"]
         },
         "date": "2010-01-01T00:00:00Z",
         "localization": {
@@ -113,7 +113,7 @@
     "Jc": [{
       "jcdfi": {
         "type": "DolphChebyshev",
-        "variables": "x",
+        "variables": ["x"],
         "cutoff": "PT3H",
         "alpha": "10.0"
       }

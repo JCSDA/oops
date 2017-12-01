@@ -149,6 +149,8 @@ oops/base/PostTimer.cc
 oops/base/StateInfo.h
 oops/base/StateWriter.h
 oops/base/TrajectorySaver.h
+oops/base/Variables.h
+oops/base/Variables.cc
 oops/base/WeightedDiff.h
 oops/base/WeightedDiffTL.h
 oops/base/WeightedDiffAD.h
@@ -185,7 +187,6 @@ oops/interface/ObsSpaceBase.h
 oops/interface/ObsVector.h
 oops/interface/ObservationSpace.h
 oops/interface/State.h
-oops/interface/Variables.h
 
 oops/runs/Application.h
 oops/runs/EnsForecasts.h
@@ -245,6 +246,7 @@ ecbuild_add_test( TARGET  test_util.x
                           util/test/Duration.cc
                           util/test/test_main.cc
                   LIBS    oops )
+#                          test/base/Variables.cc
 
 if( HAVE_FCTEST )
 add_fctest( TARGET  test_util_config_intfb.x

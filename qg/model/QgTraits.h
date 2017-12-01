@@ -29,7 +29,6 @@
 #include "model/ObsSpaceQG.h"
 #include "model/ObsVecQG.h"
 #include "model/StateQG.h"
-#include "model/VariablesQG.h"
 
 namespace qg {
 
@@ -37,7 +36,6 @@ struct QgTraits {
   static std::string name() {return "QG";}
 
   typedef qg::GeometryQG            Geometry;
-  typedef qg::VariablesQG           Variables;
 
   typedef qg::StateQG               State;
   typedef qg::ModelQG               Model;

@@ -21,9 +21,9 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "oops/base/ObsSpaces.h"
-#include "oops/runs/Test.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
-#include "oops/interface/Variables.h"
+#include "oops/runs/Test.h"
 #include "test/TestEnvironment.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "util/dot_product.h"
@@ -35,13 +35,12 @@ namespace test {
 template <typename MODEL>
 class GeoVaLsFixture : private boost::noncopyable {
   typedef oops::ObsSpaces<MODEL>  ObsSpaces_;
-  typedef oops::Variables<MODEL>         Variables_;
 
  public:
-  static const util::DateTime & tbgn() {return *getInstance().tbgn_;}
-  static const util::DateTime & tend() {return *getInstance().tend_;}
-  static ObsSpaces_ & obspace()        {return *getInstance().ospaces_;}
-  static const Variables_  & vars()    {return *getInstance().vars_;}
+  static const util::DateTime  & tbgn() {return *getInstance().tbgn_;}
+  static const util::DateTime  & tend() {return *getInstance().tend_;}
+  static ObsSpaces_         & obspace() {return *getInstance().ospaces_;}
+  static const oops::Variables & vars() {return *getInstance().vars_;}
 
  private:
   static GeoVaLsFixture<MODEL>& getInstance() {
@@ -57,7 +56,7 @@ class GeoVaLsFixture : private boost::noncopyable {
     ospaces_.reset(new ObsSpaces_(conf, *tbgn_, *tend_));
 
     const eckit::LocalConfiguration varConfig(TestEnvironment::config(), "Variables");
-    vars_.reset(new Variables_(varConfig));
+    vars_.reset(new oops::Variables(varConfig));
   }
 
   ~GeoVaLsFixture() {}
@@ -65,7 +64,7 @@ class GeoVaLsFixture : private boost::noncopyable {
   boost::scoped_ptr<const util::DateTime> tbgn_;
   boost::scoped_ptr<const util::DateTime> tend_;
   boost::scoped_ptr<ObsSpaces_> ospaces_;
-  boost::scoped_ptr<const Variables_> vars_;
+  boost::scoped_ptr<const oops::Variables> vars_;
 };
 
 // -----------------------------------------------------------------------------

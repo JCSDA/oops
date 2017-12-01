@@ -20,10 +20,10 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "util/Logger.h"
 #include "oops/base/Accumulator.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
-#include "oops/interface/Variables.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
 #include "util/dot_product.h"
@@ -38,7 +38,6 @@ template<typename MODEL> class Ensemble {
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
   typedef Increment<MODEL>           Increment_;
-  typedef Variables<MODEL>           Variables_;
 
  public:
 /// Constructor
@@ -60,13 +59,13 @@ template<typename MODEL> class Ensemble {
 
   void linearize(const State_ &, const Geometry_ &);
 
-  const Variables_ & controlVariables() const {return vars_;}
+  const Variables & controlVariables() const {return vars_;}
 
  private:
   const eckit::LocalConfiguration config_;
   const util::DateTime validTime_;
   boost::scoped_ptr<const Geometry_> resol_;
-  const Variables_ vars_;
+  const Variables vars_;
   unsigned int rank_;
   boost::ptr_vector<Increment_> ensemblePerturbs_;
 };

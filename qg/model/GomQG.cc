@@ -11,15 +11,15 @@
 #include "model/GomQG.h"
 
 #include "eckit/config/Configuration.h"
+#include "oops/base/Variables.h"
 #include "util/Logger.h"
 #include "model/ObsSpaceQG.h"
 #include "model/QgFortran.h"
-#include "model/VariablesQG.h"
 
 namespace qg {
 
 // -----------------------------------------------------------------------------
-GomQG::GomQG(const ObsSpaceQG & obsdb, const VariablesQG & var,
+GomQG::GomQG(const ObsSpaceQG & obsdb, const oops::Variables & var,
              const util::DateTime & t1, const util::DateTime & t2) {
   const util::DateTime * p1 = &t1;
   const util::DateTime * p2 = &t2;

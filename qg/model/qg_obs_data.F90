@@ -271,18 +271,18 @@ end subroutine obs_locations
 
 ! ------------------------------------------------------------------------------
 
-subroutine obs_getgom(c_key_self, lreq, c_req, c_key_vars, c_t1, c_t2, c_key_gom) bind(c,name='qg_obsdb_getgom_f90')
+subroutine obs_getgom(c_key_self, lreq, c_req, c_vars, c_t1, c_t2, c_key_gom) bind(c,name='qg_obsdb_getgom_f90')
 implicit none
 integer(c_int), intent(in) :: c_key_self
 integer(c_int), intent(in) :: lreq
 character(kind=c_char,len=1), intent(in) :: c_req(lreq+1)
-integer(c_int), intent(in) :: c_key_vars
+integer(c_int), dimension(*), intent(in) :: c_vars     !< List of variables
 type(c_ptr), intent(in) :: c_t1, c_t2
 integer(c_int), intent(inout) :: c_key_gom
 
 type(obs_data), pointer :: self
 character(len=lreq) :: req
-type(qg_vars), pointer :: vars
+type(qg_vars) :: vars
 type(datetime) :: t1, t2
 type(qg_goms), pointer :: gom
 
@@ -291,9 +291,10 @@ integer, allocatable :: mobs(:)
 
 call obs_data_registry%get(c_key_self, self)
 call c_f_string(c_req, req)
-call qg_vars_registry%get(c_key_vars, vars)
 call c_f_datetime(c_t1, t1)
 call c_f_datetime(c_t2, t2)
+
+call qg_vars_create(vars, c_vars)
 
 call obs_count(self, req, t1, t2, nobs)
 allocate(mobs(nobs))

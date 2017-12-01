@@ -24,10 +24,10 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
-#include "oops/runs/Test.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/State.h"
-#include "oops/interface/Variables.h"
+#include "oops/runs/Test.h"
 #include "test/TestEnvironment.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "util/DateTime.h"
@@ -39,14 +39,13 @@ namespace test {
 template <typename MODEL> class StateFixture : private boost::noncopyable {
   typedef oops::Geometry<MODEL>       Geometry_;
   typedef oops::State<MODEL>          State_;
-  typedef oops::Variables<MODEL>      Variables_;
 
  public:
   static const eckit::Configuration & test()  {return *getInstance().test_;}
-  static const Geometry_    & resol() {return *getInstance().resol_;}
-  static const Variables_   & vars()  {return *getInstance().vars_;}
-  static const State_       & xref()  {return *getInstance().xref_;}
-  static const double       & norm()  {return getInstance().refnorm_;}
+  static const Geometry_       & resol() {return *getInstance().resol_;}
+  static const oops::Variables & vars()  {return *getInstance().vars_;}
+  static const State_          & xref()  {return *getInstance().xref_;}
+  static const double          & norm()  {return getInstance().refnorm_;}
 
  private:
   static StateFixture<MODEL>& getInstance() {
@@ -61,7 +60,7 @@ template <typename MODEL> class StateFixture : private boost::noncopyable {
     resol_.reset(new Geometry_(resolConfig));
 
     const eckit::LocalConfiguration varConfig(TestEnvironment::config(), "Variables");
-    vars_.reset(new Variables_(varConfig));
+    vars_.reset(new oops::Variables(varConfig));
 
     const eckit::LocalConfiguration conf(TestEnvironment::config(), "State");
     xref_.reset(new State_(*resol_, conf));
@@ -71,10 +70,10 @@ template <typename MODEL> class StateFixture : private boost::noncopyable {
   ~StateFixture<MODEL>() {}
 
   boost::scoped_ptr<const eckit::LocalConfiguration>  test_;
-  boost::scoped_ptr<Geometry_>     resol_;
-  boost::scoped_ptr<Variables_>    vars_;
-  boost::scoped_ptr<State_>        xref_;
-  double                           refnorm_;
+  boost::scoped_ptr<Geometry_>       resol_;
+  boost::scoped_ptr<oops::Variables> vars_;
+  boost::scoped_ptr<State_>          xref_;
+  double                             refnorm_;
 };
 
 // =============================================================================

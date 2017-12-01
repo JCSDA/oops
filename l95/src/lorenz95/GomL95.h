@@ -23,9 +23,12 @@ namespace util {
   class DateTime;
 }
 
+namespace oops {
+  class Variables;
+}
+
 namespace lorenz95 {
   class ObsTable;
-  class NoVariables;
 
 /// GomL95 class to handle locations for L95 model.
 
@@ -34,7 +37,7 @@ class GomL95 : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::GomL95";}
 
-  GomL95(const ObsTable &, const NoVariables &, const util::DateTime &, const util::DateTime &);
+  GomL95(const ObsTable &, const oops::Variables &, const util::DateTime &, const util::DateTime &);
   explicit GomL95(const eckit::Configuration &);
   ~GomL95();
 

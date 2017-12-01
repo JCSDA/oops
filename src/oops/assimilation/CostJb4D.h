@@ -22,9 +22,9 @@
 #include "oops/assimilation/Increment4D.h"
 #include "oops/assimilation/State4D.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
-#include "oops/interface/Variables.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
 #include "util/dot_product.h"
@@ -49,11 +49,10 @@ template<typename MODEL> class CostJb4D : public CostJbState<MODEL> {
   typedef Increment4D<MODEL>         Increment4D_;
   typedef ControlIncrement<MODEL>    CtrlInc_;
   typedef Geometry<MODEL>            Geometry_;
-  typedef Variables<MODEL>           Variables_;
 
  public:
 /// Construct \f$ J_b\f$.
-  CostJb4D(const eckit::Configuration &, const Geometry_ &, const Variables_ &,
+  CostJb4D(const eckit::Configuration &, const Geometry_ &, const Variables &,
            const util::Duration &, const State4D_ &);
 
 /// Destructor
@@ -90,7 +89,7 @@ template<typename MODEL> class CostJb4D : public CostJbState<MODEL> {
 
  private:
   boost::ptr_vector< ModelSpaceCovarianceBase<MODEL> > B_;
-  const Variables_ controlvars_;
+  const Variables controlvars_;
   boost::scoped_ptr<const Geometry_> resol_;
   std::vector<util::DateTime> times_;
 };
@@ -102,7 +101,7 @@ template<typename MODEL> class CostJb4D : public CostJbState<MODEL> {
 
 template<typename MODEL>
 CostJb4D<MODEL>::CostJb4D(const eckit::Configuration & config, const Geometry_ & resolouter,
-                          const Variables_ & ctlvars, const util::Duration &, const State4D_ & xb)
+                          const Variables & ctlvars, const util::Duration &, const State4D_ & xb)
   : B_(), controlvars_(ctlvars), resol_(), times_()
 {
 // Create one row of blocks of the whole BMatrix, one object for each

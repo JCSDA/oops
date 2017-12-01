@@ -11,8 +11,8 @@
 #ifndef OOPS_BASE_ACCUMULATOR_H_
 #define OOPS_BASE_ACCUMULATOR_H_
 
+#include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
-#include "oops/interface/Variables.h"
 #include "util/DateTime.h"
 
 namespace oops {
@@ -21,9 +21,8 @@ namespace oops {
 
 template <typename MODEL, typename ACC, typename FLDS> class Accumulator : public ACC {
   typedef Geometry<MODEL>            Geometry_;
-  typedef Variables<MODEL>           Variables_;
  public:
-  explicit Accumulator(const Geometry_ & resol, const Variables_ & vars,
+  explicit Accumulator(const Geometry_ & resol, const Variables & vars,
                        const util::DateTime & vt)
     : ACC(resol, vars, vt) {ACC::zero();}
   ~Accumulator() {}

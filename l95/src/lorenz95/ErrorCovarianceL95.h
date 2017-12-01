@@ -24,10 +24,13 @@
 #include "util/Printable.h"
 
 // Forward declarations
+namespace oops {
+  class Variables;
+}
+
 namespace lorenz95 {
   class IncrementL95;
   class StateL95;
-  class NoVariables;
   class Resolution;
 
 /// Background error covariance matrix for Lorenz 95 model.
@@ -42,7 +45,7 @@ class ErrorCovarianceL95 : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::ErrorCovarianceL95";}
 
-  ErrorCovarianceL95(const Resolution &, const NoVariables &,
+  ErrorCovarianceL95(const Resolution &, const oops::Variables &,
                      const eckit::Configuration &, const StateL95 &);
   ~ErrorCovarianceL95();
 

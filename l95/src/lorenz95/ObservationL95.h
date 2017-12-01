@@ -14,8 +14,7 @@
 #include <ostream>
 #include <string>
 
-#include <boost/shared_ptr.hpp>
-
+#include "oops/base/Variables.h"
 #include "oops/interface/ObsOperatorBase.h"
 #include "util/ObjectCounter.h"
 #include "lorenz95/ObservationTLAD.h"
@@ -31,7 +30,6 @@ namespace lorenz95 {
   class ObsBias;
   class ObsTable;
   class ObsVec1D;
-  class NoVariables;
 
 /// Observation for Lorenz 95 model.
 /*!
@@ -52,14 +50,14 @@ class ObservationL95 : public oops::ObsOperatorBase<L95Traits>,
   void obsEquiv(const GomL95 &, ObsVec1D &, const ObsBias &) const;
 
 // Other
-  boost::shared_ptr<const NoVariables> variables() const {return inputs_;}
+  const oops::Variables & variables() const {return inputs_;}
 
   const ObsTable & table() const {return obsdb_;}
 
  private:
   void print(std::ostream &) const;
   const ObsTable & obsdb_;
-  boost::shared_ptr<const NoVariables> inputs_;
+  const oops::Variables inputs_;
 };
 
 // -----------------------------------------------------------------------------

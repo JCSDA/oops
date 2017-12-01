@@ -14,6 +14,7 @@
 #include <string>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/base/Variables.h"
 #include "util/Logger.h"
 #include "model/GomQG.h"
 #include "model/LocationsQG.h"
@@ -22,59 +23,53 @@
 #include "model/FieldsQG.h"
 #include "model/GeometryQG.h"
 #include "model/StateQG.h"
-#include "model/VariablesQG.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
-
-using oops::Log;
-
 
 namespace qg {
 
 // -----------------------------------------------------------------------------
 /// Constructor, destructor
 // -----------------------------------------------------------------------------
-IncrementQG::IncrementQG(const GeometryQG & resol, const VariablesQG & vars,
+IncrementQG::IncrementQG(const GeometryQG & resol, const oops::Variables & vars,
                          const util::DateTime & vt)
   : fields_(new FieldsQG(resol, vars, vt)), stash_()
 {
   fields_->zero();
-  Log::trace() << "IncrementQG constructed." << std::endl;
+  oops::Log::trace() << "IncrementQG constructed." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementQG::IncrementQG(const GeometryQG & resol, const IncrementQG & other)
   : fields_(new FieldsQG(*other.fields_, resol)), stash_()
 {
-  Log::trace() << "IncrementQG constructed from other." << std::endl;
+  oops::Log::trace() << "IncrementQG constructed from other." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementQG::IncrementQG(const IncrementQG & other, const bool copy)
   : fields_(new FieldsQG(*other.fields_, copy)), stash_()
 {
-  Log::trace() << "IncrementQG copy-created." << std::endl;
+  oops::Log::trace() << "IncrementQG copy-created." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementQG::IncrementQG(const IncrementQG & other)
   : fields_(new FieldsQG(*other.fields_)), stash_()
 {
-  Log::trace() << "IncrementQG copy-created." << std::endl;
+  oops::Log::trace() << "IncrementQG copy-created." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementQG::~IncrementQG() {
-  Log::trace() << "IncrementQG destructed" << std::endl;
+  oops::Log::trace() << "IncrementQG destructed" << std::endl;
 }
 // -----------------------------------------------------------------------------
 void IncrementQG::activateModel() {
-// Should get variables from model. YT
-  eckit::LocalConfiguration modelvars;
-  modelvars.set("variables", "tl");
-  VariablesQG vars(modelvars);
-// Should get variables from model. YT
+// Should get variables from linear model. YT
+  const std::vector<std::string> vv{"x","q","u","v"};
+  oops::Variables vars(vv);
   stash_.reset(new FieldsQG(*fields_, vars));
   swap(fields_, stash_);
   ASSERT(fields_);
   ASSERT(stash_);
-  Log::trace() << "IncrementQG activated for TLM" << std::endl;
+  oops::Log::trace() << "IncrementQG activated for TLM" << std::endl;
 }
 // -----------------------------------------------------------------------------
 void IncrementQG::deactivateModel() {
@@ -83,7 +78,7 @@ void IncrementQG::deactivateModel() {
   stash_.reset();
   ASSERT(fields_);
   ASSERT(!stash_);
-  Log::trace() << "IncrementQG deactivated for TLM" << std::endl;
+  oops::Log::trace() << "IncrementQG deactivated for TLM" << std::endl;
 }
 // -----------------------------------------------------------------------------
 /// Basic operators
@@ -91,9 +86,9 @@ void IncrementQG::deactivateModel() {
 void IncrementQG::diff(const StateQG & x1, const StateQG & x2) {
   ASSERT(this->validTime() == x1.validTime());
   ASSERT(this->validTime() == x2.validTime());
-  Log::debug() << "IncrementQG:diff incr " << *fields_ << std::endl;
-  Log::debug() << "IncrementQG:diff x1 " << x1.fields() << std::endl;
-  Log::debug() << "IncrementQG:diff x2 " << x2.fields() << std::endl;
+  oops::Log::debug() << "IncrementQG:diff incr " << *fields_ << std::endl;
+  oops::Log::debug() << "IncrementQG:diff x1 " << x1.fields() << std::endl;
+  oops::Log::debug() << "IncrementQG:diff x2 " << x2.fields() << std::endl;
   fields_->diff(x1.fields(), x2.fields());
 }
 // -----------------------------------------------------------------------------
@@ -151,15 +146,17 @@ void IncrementQG::random() {
 // -----------------------------------------------------------------------------
 /// Interpolate to observation location
 // -----------------------------------------------------------------------------
-void IncrementQG::interpolateTL(const LocationsQG & locs, const VariablesQG & vars, GomQG & cols) const {
-  Log::debug() << "IncrementQG::interpolateTL fields in" << *fields_ << std::endl;
+void IncrementQG::interpolateTL(const LocationsQG & locs, const oops::Variables & vars,
+                                GomQG & cols) const {
+  oops::Log::debug() << "IncrementQG::interpolateTL fields in" << *fields_ << std::endl;
   fields_->interpolateTL(locs, vars, cols);
-  Log::debug() << "IncrementQG::interpolateTL gom " << cols << std::endl;
+  oops::Log::debug() << "IncrementQG::interpolateTL gom " << cols << std::endl;
 }
 // -----------------------------------------------------------------------------
-void IncrementQG::interpolateAD(const LocationsQG & locs, const VariablesQG & vars, const GomQG & cols) {
-  Log::debug() << "IncrementQG::interpolateAD gom " << cols << std::endl;
-  Log::debug() << "IncrementQG::interpolateAD fields in" << *fields_ << std::endl;
+void IncrementQG::interpolateAD(const LocationsQG & locs, const oops::Variables & vars,
+                                const GomQG & cols) {
+  oops::Log::debug() << "IncrementQG::interpolateAD gom " << cols << std::endl;
+  oops::Log::debug() << "IncrementQG::interpolateAD fields in" << *fields_ << std::endl;
   fields_->interpolateAD(locs, vars, cols);
 }
 // -----------------------------------------------------------------------------

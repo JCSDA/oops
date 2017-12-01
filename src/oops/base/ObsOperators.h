@@ -17,10 +17,10 @@
 #include <boost/shared_ptr.hpp>
 
 #include "oops/base/ObsSpaces.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsOperator.h"
 #include "oops/interface/ObsVector.h"
-#include "oops/interface/Variables.h"
 #include "util/DateTime.h"
 #include "util/Logger.h"
 #include "util/Printable.h"
@@ -37,7 +37,6 @@ class ObsOperators : public util::Printable,
   typedef ObsOperator<MODEL>         ObsOperator_;
   typedef ObsVector<MODEL>           ObsVector_;
   typedef ObsSpaces<MODEL>           ObsSpace_;
-  typedef Variables<MODEL>           Variables_;
 
  public:
   static const std::string classname() {return "oops::ObsOperators";}
@@ -48,7 +47,7 @@ class ObsOperators : public util::Printable,
 /// Access
   std::size_t size() const {return ops_.size();}
   const ObsOperator_ & operator[](const std::size_t ii) const {return *ops_.at(ii);}
-  Variables_ variables(const std::size_t jobs) const;
+  const Variables & variables(const std::size_t jobs) const;
 
  private:
   void print(std::ostream &) const;
@@ -74,9 +73,8 @@ ObsOperators<MODEL>::~ObsOperators() {}
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-Variables<MODEL> ObsOperators<MODEL>::variables(const std::size_t jobs) const {
-  Variables<MODEL> var(ops_.at(jobs)->variables());
-  return var;
+const Variables & ObsOperators<MODEL>::variables(const std::size_t jobs) const {
+  return ops_.at(jobs)->variables();
 }
 
 // -----------------------------------------------------------------------------

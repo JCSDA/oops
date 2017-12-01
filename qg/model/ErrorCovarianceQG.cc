@@ -12,34 +12,32 @@
 
 #include <cmath>
 
+#include "eckit/config/Configuration.h"
+#include "oops/base/Variables.h"
 #include "util/Logger.h"
 #include "model/FieldsQG.h"
 #include "model/QgFortran.h"
 #include "model/GeometryQG.h"
 #include "model/IncrementQG.h"
 #include "model/StateQG.h"
-#include "eckit/config/Configuration.h"
-
-
-using oops::Log;
 
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
 
-ErrorCovarianceQG::ErrorCovarianceQG(const GeometryQG & resol, const VariablesQG &,
+ErrorCovarianceQG::ErrorCovarianceQG(const GeometryQG & resol, const oops::Variables &,
                                      const eckit::Configuration & conf, const StateQG &) {
   time_ = util::DateTime(conf.getString("date"));
   const eckit::Configuration * configc = &conf;
   qg_b_setup_f90(keyFtnConfig_, &configc, resol.toFortran());
-  Log::trace() << "ErrorCovarianceQG created" << std::endl;
+  oops::Log::trace() << "ErrorCovarianceQG created" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 ErrorCovarianceQG::~ErrorCovarianceQG() {
   qg_b_delete_f90(keyFtnConfig_);
-  Log::trace() << "ErrorCovarianceQG destructed" << std::endl;
+  oops::Log::trace() << "ErrorCovarianceQG destructed" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
