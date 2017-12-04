@@ -12,12 +12,12 @@
 #define OOPS_GENERIC_INSTANTIATELOCALIZATIONFACTORY_H_
 
 #include "oops/interface/LocalizationBase.h"
-#include "oops/generic/LocalizationNICAS.h"
+#include "oops/generic/LocalizationHDIAG_NICAS.h"
 
 namespace oops {
 
 template <typename MODEL> void instantiateLocalizationFactory() {
-  static LocalizationMaker<MODEL, LocalizationNICAS<MODEL> > makerNicas_("NICAS");
+  static LocalizationMaker<MODEL, LocalizationHDIAG_NICAS<MODEL> > makerHdiag_nicas_("HDIAG_NICAS");
 }
 
 }  // namespace oops

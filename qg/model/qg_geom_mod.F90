@@ -55,6 +55,7 @@ type(c_ptr), intent(in)    :: c_conf
 
 integer :: ix,iy,nx_loc,ix_loc,iproc
 real(kind=kind_real) :: dx,dytot,dy
+real(kind=kind_real),parameter :: pi = acos(-1.0), req = 6371229.0
 type(qg_geom), pointer :: self
 
 call qg_geom_registry%init()
@@ -69,17 +70,17 @@ allocate(self%lats(self%ny))
 allocate(self%areas(self%nx,self%ny))
 allocate(self%iproc(self%nx,self%ny))
 
-dx = 360.0 / real(self%nx,kind=kind_real);
-dytot = 360.0 * real(self%ny,kind=kind_real) / real(self%nx,kind=kind_real);
+dx = 2.0 * pi / real(self%nx,kind=kind_real);
+dytot = 2.0 * pi * real(self%ny,kind=kind_real) / real(self%nx,kind=kind_real);
 dy = dytot / real(self%ny,kind=kind_real);
 do ix=1,self%nx
-   self%lons(ix) = -180.0+(real(ix,kind=kind_real)-0.5)*dx
+   self%lons(ix) = -pi+(real(ix,kind=kind_real)-0.5)*dx
 end do
 do iy=1,self%ny
    self%lats(iy) = -0.5*dytot+(real(iy,kind=kind_real)-0.5)*dy;
 end do
 do iy=1,self%ny
-   self%areas(:,iy) = 6.371e6**2*cos(self%lats(iy)*acos(-1.0)/180.0)*dx*dy
+   self%areas(:,iy) = 6.371e6**2*cos(self%lats(iy))*dx*dy
 end do
 
 ! Artificial grid distribution for tests

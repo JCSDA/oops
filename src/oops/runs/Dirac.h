@@ -69,7 +69,7 @@ template <typename MODEL> class Dirac : public Application {
     const State_ xx(resol, initialConfig);
     Log::info() << "Setup initial state OK" << std::endl;
 
-//  Setup times
+//  Setup time
     const util::DateTime bgndate(xx.validTime());
     Log::info() << "Setup times OK" << std::endl;
 
@@ -85,7 +85,7 @@ template <typename MODEL> class Dirac : public Application {
     const eckit::LocalConfiguration covarConfig(fullConfig, "Covariance");
     const eckit::LocalConfiguration locConfig(covarConfig, "localization");
     boost::scoped_ptr<Localization_> loc_;
-    loc_.reset(new Localization_(xx, locConfig));
+    loc_.reset(new Localization_(resol, locConfig));
     Log::info() << "Setup localization OK" << std::endl;
 
 //  Apply NICAS
