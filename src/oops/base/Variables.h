@@ -33,7 +33,8 @@ class Variables : public util::Printable {
 
   Variables(const Variables &);
 
-  const int * toFortran() const {return &fvars_[0];}
+  const std::vector<std::string> & variables() const {return vars_;}
+//  const int * toFortran() const {return &fvars_[0];}
 
  private:
   void print(std::ostream &) const;

@@ -60,7 +60,7 @@ void Variables::setF90() {
      if (vars_[jj]=="u") ii = 3;
      if (vars_[jj]=="v") ii = 4;
      if (vars_[jj]=="bc") ii = 5;
-     ASSERT(ii > 0);
+//     ASSERT(ii > 0);
      fvars_[jj+1] = ii;
   }
   fvars_[nv+1] = 999;  // just for checking
