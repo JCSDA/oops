@@ -10,7 +10,7 @@
 
 #include "model/QgTraits.h"
 #include "oops/runs/Run.h"
-#include "test/interface/Variables.h"
+#include "test/base/Variables.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
