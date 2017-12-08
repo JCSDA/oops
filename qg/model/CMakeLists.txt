@@ -49,6 +49,8 @@ TlmIdQG.cc
 TlmIdQG.h
 TlmQG.cc
 TlmQG.h
+VariablesQG.cc
+VariablesQG.h
 advect_pv.f90
 advect_pv_ad.f90
 advect_pv_tl.f90

@@ -23,6 +23,7 @@
 #include "model/LocationsQG.h"
 #include "model/QgFortran.h"
 #include "model/GeometryQG.h"
+#include "model/VariablesQG.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {
@@ -120,17 +121,20 @@ void FieldsQG::random() {
 // -----------------------------------------------------------------------------
 void FieldsQG::interpolate(const LocationsQG & locs, const oops::Variables & vars,
                            GomQG & gom) const {
-  qg_field_interp_tl_f90(keyFlds_, locs.toFortran(), vars.toFortran(), gom.toFortran());
+  const VariablesQG varqg(vars);
+  qg_field_interp_tl_f90(keyFlds_, locs.toFortran(), varqg.toFortran(), gom.toFortran());
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::interpolateTL(const LocationsQG & locs, const oops::Variables & vars,
                              GomQG & gom) const {
-  qg_field_interp_tl_f90(keyFlds_, locs.toFortran(), vars.toFortran(), gom.toFortran());
+  const VariablesQG varqg(vars);
+  qg_field_interp_tl_f90(keyFlds_, locs.toFortran(), varqg.toFortran(), gom.toFortran());
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::interpolateAD(const LocationsQG & locs, const oops::Variables & vars,
                              const GomQG & gom) {
-  qg_field_interp_ad_f90(keyFlds_, locs.toFortran(), vars.toFortran(), gom.toFortran());
+  const VariablesQG varqg(vars);
+  qg_field_interp_ad_f90(keyFlds_, locs.toFortran(), varqg.toFortran(), gom.toFortran());
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::changeResolution(const FieldsQG & other) {

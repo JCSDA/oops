@@ -16,8 +16,8 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "oops/base/Variables.h"
 #include "model/GeometryQG.h"
+#include "model/VariablesQG.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
 #include "util/ObjectCounter.h"
@@ -26,6 +26,10 @@
 // Forward declarations
 namespace eckit {
   class Configuration;
+}
+
+namespace oops {
+  class Variables;
 }
 
 namespace qg {
@@ -86,7 +90,7 @@ class FieldsQG : public util::Printable,
   void print(std::ostream &) const;
   F90flds keyFlds_;
   boost::shared_ptr<const GeometryQG> geom_;
-  const oops::Variables vars_;
+  const VariablesQG vars_;
   util::DateTime time_;
 };
 // -----------------------------------------------------------------------------
