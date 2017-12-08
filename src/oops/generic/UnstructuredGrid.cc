@@ -43,12 +43,12 @@ std::vector<double> UnstructuredGrid::getAreas() {
   return areas;
 }
 // -----------------------------------------------------------------------------
-std::vector<double> UnstructuredGrid::getLevs() {
+std::vector<double> UnstructuredGrid::getVunit() {
   int nlevs;
   get_nlevs_f90(keyUGrid_, nlevs);
-  std::vector<double> levs(nlevs);
-  get_levs_f90(keyUGrid_, nlevs, &levs[0]);
-  return levs;
+  std::vector<double> vunit(nlevs);
+  get_vunit_f90(keyUGrid_, nlevs, &vunit[0]);
+  return vunit;
 }
 // -----------------------------------------------------------------------------
 std::vector<int> UnstructuredGrid::getMask3d(const int & ilev) {
@@ -75,6 +75,24 @@ std::vector<int> UnstructuredGrid::getGlbInd() {
   return glbind;
 }
 // -----------------------------------------------------------------------------
+int UnstructuredGrid::getNvar3d() {
+  int nvar3d;
+  get_nvar3d_f90(keyUGrid_, nvar3d);
+  return nvar3d;
+}
+// -----------------------------------------------------------------------------
+std::vector<double> UnstructuredGrid::getData() {
+  int nlevs;
+  get_nlevs_f90(keyUGrid_, nlevs);
+  int ncols;
+  get_ncols_f90(keyUGrid_, ncols);
+  int nvar3d;
+  get_nvar3d_f90(keyUGrid_, nvar3d);
+  std::vector<double> data(nlevs*ncols*nvar3d);
+  get_data_f90(keyUGrid_, nlevs*ncols*nvar3d, &data[0]);
+  return data;
+}
+// -----------------------------------------------------------------------------
 void UnstructuredGrid::zero() {
 }
 // -----------------------------------------------------------------------------
@@ -83,8 +101,6 @@ void UnstructuredGrid::random() {
 // -----------------------------------------------------------------------------
 double UnstructuredGrid::dot_product_with(const UnstructuredGrid & other) const {
   double zz = 0.0;
-//  const int keyOvecOther = other.keyUGrid_;
-//  dotprod_f90(keyUGrid_, keyOvecOther, zz);
   return zz;
 }
 // -----------------------------------------------------------------------------

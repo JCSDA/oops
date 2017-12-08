@@ -16,8 +16,6 @@
 #include <vector>
 #include <boost/noncopyable.hpp>
 
-#include <unsupported/Eigen/FFT>
-
 #include "eckit/config/Configuration.h"
 #include "oops/interface/LocalizationBase.h"
 #include "util/DateTime.h"
@@ -29,7 +27,6 @@
 // Forward declarations
 namespace lorenz95 {
   class IncrementL95;
-  class StateL95;
 
 /// Localization matrix for Lorenz 95 model.
 
@@ -39,7 +36,7 @@ class LocalizationMatrixL95: public oops::LocalizationBase<L95Traits>,
  public:
   static const std::string classname() {return "lorenz95::LocalizationMatrixL95";}
 
-  LocalizationMatrixL95(const StateL95 &, const eckit::Configuration &);
+  LocalizationMatrixL95(const Resolution &, const eckit::Configuration &);
   ~LocalizationMatrixL95();
   void multiply(IncrementL95 &) const;
 
@@ -48,7 +45,6 @@ class LocalizationMatrixL95: public oops::LocalizationBase<L95Traits>,
   const unsigned int resol_;
   const double rscale_;
   std::vector<double> coefs_;
-  mutable Eigen::FFT<double> fft_;
 };
 // -----------------------------------------------------------------------------
 }  // namespace lorenz95

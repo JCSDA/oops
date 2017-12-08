@@ -19,10 +19,12 @@ extern "C" {
   void get_lats_f90(int &, const int &, double *);
   void get_lons_f90(int &, const int &, double *);
   void get_areas_f90(int &, const int &, double *);
-  void get_levs_f90(int &, const int &, double *);
+  void get_vunit_f90(int &, const int &, double *);
   void get_mask3d_f90(int &, const int &, const int &, int *);
   void get_mask2d_f90(int &, const int &, int *);
   void get_glbind_f90(int &, const int &, int *);
+  void get_nvar3d_f90(int &, int &);
+  void get_data_f90(int &, const int &, double *);
 }
 }  // namespace oops
 
