@@ -18,6 +18,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/LinearObsOperBase.h"
 #include "util/abor1_cpp.h"
 #include "util/Logger.h"
@@ -34,7 +35,6 @@ class LinearObsOperBase : public util::Printable,
   typedef typename MODEL::ObsAuxControl       ObsAuxControl_;
   typedef typename MODEL::ObsAuxIncrement     ObsAuxIncrement_;
   typedef typename MODEL::ObsVector           ObsVector_;
-  typedef typename MODEL::Variables           Variables_;
 
  public:
   LinearObsOperBase() {}
@@ -46,7 +46,7 @@ class LinearObsOperBase : public util::Printable,
   virtual void obsEquivAD(GeoVaLs_ &, const ObsVector_ &, ObsAuxIncrement_ &) const =0;
 
 /// Other
-  virtual boost::shared_ptr<const Variables_> variables() const =0;  // Required from Model
+  virtual const Variables & variables() const =0;  // Required from Model
 
  private:
   virtual void print(std::ostream &) const =0;

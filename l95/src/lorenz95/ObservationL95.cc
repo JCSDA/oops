@@ -13,12 +13,12 @@
 #include <string>
 #include <vector>
 
-#include "util/Logger.h"
 #include "eckit/config/Configuration.h"
+#include "oops/base/Variables.h"
 #include "util/DateTime.h"
+#include "util/Logger.h"
 
 #include "lorenz95/GomL95.h"
-#include "lorenz95/NoVariables.h"
 #include "lorenz95/ObsBias.h"
 #include "lorenz95/ObsVec1D.h"
 #include "lorenz95/L95Traits.h"
@@ -29,8 +29,8 @@ namespace lorenz95 {
 static oops::ObsOperatorMaker<L95Traits, ObservationL95> makerObsL95_("Lorenz 95");
 // -----------------------------------------------------------------------------
 
-ObservationL95::ObservationL95(const ObsTable & ot, const eckit::Configuration &)
-  : obsdb_(ot), inputs_(new NoVariables())
+ObservationL95::ObservationL95(const ObsTable & ot, const eckit::Configuration & conf)
+  : obsdb_(ot), inputs_(conf)
 {}
 
 // -----------------------------------------------------------------------------

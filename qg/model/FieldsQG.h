@@ -30,6 +30,7 @@ namespace eckit {
 
 namespace oops {
   class UnstructuredGrid;
+  class Variables;
 }
 
 namespace qg {
@@ -44,9 +45,9 @@ class FieldsQG : public util::Printable,
   static const std::string classname() {return "qg::FieldsQG";}
 
 // Constructors and basic operators
-  FieldsQG(const GeometryQG &, const VariablesQG &, const util::DateTime &);
+  FieldsQG(const GeometryQG &, const oops::Variables &, const util::DateTime &);
   FieldsQG(const FieldsQG &, const GeometryQG &);
-  FieldsQG(const FieldsQG &, const VariablesQG &);
+  FieldsQG(const FieldsQG &, const oops::Variables &);
   FieldsQG(const FieldsQG &, const bool);
   FieldsQG(const FieldsQG &);
   ~FieldsQG();
@@ -64,9 +65,9 @@ class FieldsQG : public util::Printable,
   void random();
 
 // Interpolate to given location
-  void interpolate(const LocationsQG &, const VariablesQG &, GomQG &) const;
-  void interpolateTL(const LocationsQG &, const VariablesQG &, GomQG &) const;
-  void interpolateAD(const LocationsQG &, const VariablesQG &, const GomQG &);
+  void interpolate(const LocationsQG &, const oops::Variables &, GomQG &) const;
+  void interpolateTL(const LocationsQG &, const oops::Variables &, GomQG &) const;
+  void interpolateAD(const LocationsQG &, const oops::Variables &, const GomQG &);
 
 // Interpolate full fields
   void changeResolution(const FieldsQG &);
@@ -95,7 +96,7 @@ class FieldsQG : public util::Printable,
   void print(std::ostream &) const;
   F90flds keyFlds_;
   boost::shared_ptr<const GeometryQG> geom_;
-  boost::shared_ptr<const VariablesQG> vars_;
+  const VariablesQG vars_;
   util::DateTime time_;
 };
 // -----------------------------------------------------------------------------

@@ -144,11 +144,11 @@ ecbuild_add_test( TARGET  test_qg_locations
                   ARGS    "testinput/interfaces.json"
                   LIBS    qg )
 
-ecbuild_add_test( TARGET  test_qg_variables
-                  BOOST
-                  SOURCES executables/TestVariables.cc
-                  ARGS    "testinput/interfaces.json"
-                  LIBS    qg )
+#ecbuild_add_test( TARGET  test_qg_variables
+#                  BOOST
+#                  SOURCES executables/TestVariables.cc
+#                  ARGS    "testinput/interfaces.json"
+#                  LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_geovals
                   BOOST

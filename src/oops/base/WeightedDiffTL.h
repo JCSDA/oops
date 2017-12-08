@@ -19,9 +19,9 @@
 #include "oops/base/Accumulator.h"
 #include "oops/base/DolphChebyshev.h"
 #include "oops/base/PostBaseTL.h"
+#include "oops/base/Variables.h"
 #include "oops/base/WeightingFct.h"
 #include "oops/interface/Geometry.h"
-#include "oops/interface/Variables.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
 
@@ -42,7 +42,6 @@ namespace oops {
 template <typename MODEL, typename INCR>
 class WeightedDiffTL : public PostBaseTL<INCR> {
   typedef Geometry<MODEL>            Geometry_;
-  typedef Variables<MODEL>           Variables_;
 
  public:
   WeightedDiffTL(const util::DateTime &, const util::Duration &,
@@ -86,7 +85,7 @@ WeightedDiffTL<MODEL, INCR>::WeightedDiffTL(const util::DateTime & vt,
     vtime_(vt), bgn_(vt-span/2), end_(vt+span/2), tstep_(tstep),
     bgnleg_(), endleg_()
 {
-  Variables_ vars(config);
+  const Variables vars(config);
   avg_ = new Accumulator<MODEL, INCR, INCR>(resol, vars, vtime_);
 }
 

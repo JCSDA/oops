@@ -26,9 +26,9 @@
 #include "oops/assimilation/JqTermAD.h"
 #include "oops/assimilation/State4D.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
-#include "oops/interface/Variables.h"
 #include "util/Duration.h"
 #include "util/dot_product.h"
 
@@ -49,11 +49,10 @@ template<typename MODEL> class CostJbJq : public CostJbState<MODEL> {
   typedef Increment4D<MODEL>         Increment4D_;
   typedef ControlIncrement<MODEL>    CtrlInc_;
   typedef Geometry<MODEL>            Geometry_;
-  typedef Variables<MODEL>           Variables_;
 
  public:
 /// Construct \f$ J_b\f$.
-  CostJbJq(const eckit::Configuration &, const Geometry_ &, const Variables_ &,
+  CostJbJq(const eckit::Configuration &, const Geometry_ &, const Variables &,
            const util::Duration &, const State4D_ &, const bool);
 
 /// Destructor
@@ -93,7 +92,7 @@ template<typename MODEL> class CostJbJq : public CostJbState<MODEL> {
 
   const util::Duration subwin_;
   const bool forcing_;
-  const Variables_ controlvars_;
+  const Variables controlvars_;
   boost::scoped_ptr<const Geometry_> resol_;
   std::vector<util::DateTime> times_;
 };
@@ -105,7 +104,7 @@ template<typename MODEL> class CostJbJq : public CostJbState<MODEL> {
 
 template<typename MODEL>
 CostJbJq<MODEL>::CostJbJq(const eckit::Configuration & config, const Geometry_ & resolouter,
-                          const Variables_ & ctlvars, const util::Duration & len,
+                          const Variables & ctlvars, const util::Duration & len,
                           const State4D_ & xb, const bool forcing)
   : B_(0), subwin_(len), forcing_(forcing), controlvars_(ctlvars), resol_(), times_()
 {

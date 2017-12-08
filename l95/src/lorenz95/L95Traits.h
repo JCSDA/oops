@@ -21,7 +21,6 @@
 #include "lorenz95/ModelBiasCorrection.h"
 #include "lorenz95/ModelBiasCovariance.h"
 #include "lorenz95/ModelL95.h"
-#include "lorenz95/NoVariables.h"
 #include "lorenz95/ObsBias.h"
 #include "lorenz95/ObsBiasCorrection.h"
 #include "lorenz95/ObsBiasCovariance.h"
@@ -37,7 +36,6 @@ struct L95Traits {
   static std::string nameCovar() {return "L95Error";}  // Won't work if more than one
 
   typedef lorenz95::Resolution             Geometry;
-  typedef lorenz95::NoVariables            Variables;
 
   typedef lorenz95::StateL95               State;
   typedef lorenz95::ModelL95               Model;

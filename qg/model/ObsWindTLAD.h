@@ -15,6 +15,7 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include "oops/base/Variables.h"
 #include "oops/interface/LinearObsOperBase.h"
 #include "util/ObjectCounter.h"
 #include "model/QgTraits.h"
@@ -48,7 +49,7 @@ class ObsWindTLAD : public oops::LinearObsOperBase<QgTraits>,
   void obsEquivAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &) const override;
 
 // Other
-  boost::shared_ptr<const VariablesQG> variables() const override {return varin_;}
+  const oops::Variables & variables() const override {return varin_;}
 
   int & toFortran() {return keyOperWind_;}
   const int & toFortran() const {return keyOperWind_;}
@@ -56,7 +57,7 @@ class ObsWindTLAD : public oops::LinearObsOperBase<QgTraits>,
  private:
   void print(std::ostream &) const override;
   F90hop keyOperWind_;
-  boost::shared_ptr<const VariablesQG> varin_;
+  const oops::Variables varin_;
 };
 // -----------------------------------------------------------------------------
 

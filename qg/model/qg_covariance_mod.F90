@@ -23,7 +23,6 @@ type :: qg_3d_covar_config
   real(kind=kind_real), allocatable :: sqrt_merid(:,:) !< sqrt(meridional correlation matrix)
   real(kind=kind_real), allocatable :: sqrt_inv_merid(:,:) !< Its inverse
   real(kind=kind_real), allocatable :: sqrt_zonal(:) !< Spectral weights for sqrt(zonal corr)
-
 end type qg_3d_covar_config
 
 #define LISTED_TYPE qg_3d_covar_config
@@ -192,21 +191,13 @@ end subroutine qg_3d_covar_setup
 
 !> Delete for the QG model's 3d error covariance matrices
 
-subroutine qg_3d_covar_delete(c_key_conf)
-
-use iso_c_binding
-
+subroutine qg_3d_covar_delete(self)
 implicit none
-integer(c_int), intent(inout) :: c_key_conf !< The model covariance structure
+type(qg_3d_covar_config) :: self
 
-type(qg_3d_covar_config), pointer :: conf !< covar structure
-
-call qg_3d_cov_registry%get(c_key_conf, conf)
-
-deallocate(conf%sqrt_zonal)
-deallocate(conf%sqrt_merid)
-deallocate(conf%sqrt_inv_merid)
-call qg_3d_cov_registry%remove(c_key_conf)
+deallocate(self%sqrt_zonal)
+deallocate(self%sqrt_merid)
+deallocate(self%sqrt_inv_merid)
 
 end subroutine qg_3d_covar_delete
 

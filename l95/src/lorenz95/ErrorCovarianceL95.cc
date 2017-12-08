@@ -19,10 +19,14 @@
 #include "lorenz95/StateL95.h"
 #include "util/Logger.h"
 
+namespace oops {
+  class Variables;
+}
+
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-ErrorCovarianceL95::ErrorCovarianceL95(const Resolution & geom, const NoVariables &,
+ErrorCovarianceL95::ErrorCovarianceL95(const Resolution & geom, const oops::Variables &,
                                        const eckit::Configuration & config, const StateL95 &) :
   time_(util::DateTime(config.getString("date"))),
   sigmab_(config.getDouble("standard_deviation")),

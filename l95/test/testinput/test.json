@@ -18,7 +18,6 @@
   "resolution": {
     "resol": "40"
   },
-  "variables": null,
   "outputFile": {
     "datadir": "Data",
     "exp": "IncrementL95Test",

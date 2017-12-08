@@ -24,10 +24,13 @@
 #include "util/Printable.h"
 
 // Forward declarations
+namespace oops {
+  class Variables;
+}
+
 namespace qg {
   class IncrementQG;
   class StateQG;
-  class VariablesQG;
 
 // -----------------------------------------------------------------------------
 /// Background error covariance matrix for QG model.
@@ -38,7 +41,7 @@ class ErrorCovarianceQG : public util::Printable,
  public:
   static const std::string classname() {return "qg::ErrorCovarianceQG";}
 
-  ErrorCovarianceQG(const GeometryQG &, const VariablesQG &, const eckit::Configuration &, const StateQG &);
+  ErrorCovarianceQG(const GeometryQG &, const oops::Variables &, const eckit::Configuration &, const StateQG &);
   ~ErrorCovarianceQG();
 
   void linearize(const StateQG &, const GeometryQG &);

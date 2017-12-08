@@ -20,13 +20,13 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/StateWriter.h"
+#include "oops/base/Variables.h"
 #include "oops/base/instantiateCovarFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/Model.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
-#include "oops/interface/Variables.h"
 #include "oops/runs/Application.h"
 #include "eckit/config/Configuration.h"
 #include "util/DateTime.h"
@@ -40,7 +40,6 @@ template <typename MODEL> class GenEnsPertB : public Application {
   typedef ModelAuxControl<MODEL>      ModelAux_;
   typedef Increment<MODEL>           Increment_;
   typedef State<MODEL>               State_;
-  typedef Variables<MODEL>           Variables_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -57,7 +56,7 @@ template <typename MODEL> class GenEnsPertB : public Application {
 
 //  Setup variables
     const eckit::LocalConfiguration varConfig(fullConfig, "variables");
-    const Variables_ vars(varConfig);
+    const Variables vars(varConfig);
 
 //  Setup Model
     const eckit::LocalConfiguration modelConfig(fullConfig, "model");

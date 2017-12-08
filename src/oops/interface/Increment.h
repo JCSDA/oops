@@ -16,12 +16,12 @@
 #include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/PostProcessorTL.h"
 #include "oops/base/PostProcessorAD.h"
+#include "oops/base/Variables.h"
 #include "oops/generic/UnstructuredGrid.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Locations.h"
 #include "oops/interface/State.h"
-#include "oops/interface/Variables.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
 #include "util/ObjectCounter.h"
@@ -46,13 +46,12 @@ class Increment : public oops::GeneralizedDepartures,
   typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef Locations<MODEL>           Locations_;
   typedef State<MODEL>               State_;
-  typedef Variables<MODEL>           Variables_;
 
  public:
   static const std::string classname() {return "oops::Increment";}
 
 /// Constructor, destructor
-  Increment(const Geometry_ &, const Variables_ &, const util::DateTime &);
+  Increment(const Geometry_ &, const Variables &, const util::DateTime &);
   Increment(const Geometry_ &, const Increment &);
   Increment(const Increment &, const bool copy = true);
   virtual ~Increment();
@@ -62,8 +61,8 @@ class Increment : public oops::GeneralizedDepartures,
   const Increment_ & increment() const {return *increment_;}
 
 /// Interpolate to observation location
-  void interpolateTL(const Locations_ &, const Variables_ &, GeoVaLs_ &) const;
-  void interpolateAD(const Locations_ &, const Variables_ &, const GeoVaLs_ &);
+  void interpolateTL(const Locations_ &, const Variables &, GeoVaLs_ &) const;
+  void interpolateAD(const Locations_ &, const Variables &, const GeoVaLs_ &);
 
 /// Interactions with State
   void diff(const State_ &, const State_ &);
@@ -119,12 +118,12 @@ State<MODEL> & operator+=(State<MODEL> & xx, const Increment<MODEL> & dx) {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-Increment<MODEL>::Increment(const Geometry_ & resol, const Variables_ & vars,
+Increment<MODEL>::Increment(const Geometry_ & resol, const Variables & vars,
                             const util::DateTime & time) : increment_()
 {
   Log::trace() << "Increment<MODEL>::Increment starting" << std::endl;
   util::Timer timer(classname(), "Increment");
-  increment_.reset(new Increment_(resol.geometry(), vars.variables(), time));
+  increment_.reset(new Increment_(resol.geometry(), vars, time));
   Log::trace() << "Increment<MODEL>::Increment done" << std::endl;
 }
 
@@ -164,22 +163,22 @@ Increment<MODEL>::~Increment() {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void Increment<MODEL>::interpolateTL(const Locations_ & loc, const Variables_ & vars,
+void Increment<MODEL>::interpolateTL(const Locations_ & loc, const Variables & vars,
                                      GeoVaLs_ & gvals) const {
   Log::trace() << "Increment<MODEL>::interpolateTL starting" << std::endl;
   util::Timer timer(classname(), "interpolateTL");
-  increment_->interpolateTL(loc.locations(), vars.variables(), gvals.geovals());
+  increment_->interpolateTL(loc.locations(), vars, gvals.geovals());
   Log::trace() << "Increment<MODEL>::interpolateTL done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void Increment<MODEL>::interpolateAD(const Locations_ & loc, const Variables_ & vars,
+void Increment<MODEL>::interpolateAD(const Locations_ & loc, const Variables & vars,
                                      const GeoVaLs_ & gvals) {
   Log::trace() << "Increment<MODEL>::interpolateAD starting" << std::endl;
   util::Timer timer(classname(), "interpolateAD");
-  increment_->interpolateAD(loc.locations(), vars.variables(), gvals.geovals());
+  increment_->interpolateAD(loc.locations(), vars, gvals.geovals());
   Log::trace() << "Increment<MODEL>::interpolateAD done" << std::endl;
 }
 

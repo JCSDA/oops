@@ -16,11 +16,11 @@
 #include <boost/test/unit_test.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/base/Variables.h"
 #include "./TestConfig.h"
 #include "lorenz95/GomL95.h"
 #include "lorenz95/IncrementL95.h"
 #include "lorenz95/LocsL95.h"
-#include "lorenz95/NoVariables.h"
 #include "lorenz95/Resolution.h"
 #include "lorenz95/StateL95.h"
 #include "util/DateTime.h"
@@ -37,14 +37,14 @@ class IncrementTestFixture : TestFixture {
     resol_.reset(new lorenz95::Resolution(res));
     date_str_ = "2010-01-01T09:00:00Z";
     time_.reset(new util::DateTime(date_str_));
-    vars_.reset(new lorenz95::NoVariables(TestConfig::config()));
+    vars_.reset(new oops::Variables(TestConfig::config()));
   }
   ~IncrementTestFixture() {}
   boost::scoped_ptr<const eckit::LocalConfiguration> file_;
   boost::scoped_ptr<lorenz95::Resolution> resol_;
   std::string date_str_;
   boost::scoped_ptr<util::DateTime> time_;
-  boost::scoped_ptr<lorenz95::NoVariables> vars_;
+  boost::scoped_ptr<oops::Variables> vars_;
 };
 // -----------------------------------------------------------------------------
 

@@ -12,9 +12,9 @@
 #include <boost/test/unit_test.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/base/Variables.h"
 #include "./TestConfig.h"
 #include "lorenz95/GomL95.h"
-#include "lorenz95/NoVariables.h"
 #include "lorenz95/ObservationL95.h"
 #include "lorenz95/ObsTable.h"
 #include "util/DateTime.h"
@@ -33,13 +33,15 @@ class GomTestFixture : TestFixture {
     ot_.reset(new lorenz95::ObsTable(otconf, bgn, end));
     t1_.reset(new util::DateTime("2010-01-01T03:00:00Z"));
     t2_.reset(new util::DateTime("2010-01-02T06:00:00Z"));
-    novar_.reset(new lorenz95::NoVariables());
+    eckit::LocalConfiguration vconf;
+    conf.get("Variables", vconf);
+    novar_.reset(new oops::Variables(vconf));
   }
   ~GomTestFixture() {}
   boost::scoped_ptr<lorenz95::ObsTable> ot_;
   boost::scoped_ptr<util::DateTime> t1_;
   boost::scoped_ptr<util::DateTime> t2_;
-  boost::scoped_ptr<lorenz95::NoVariables> novar_;
+  boost::scoped_ptr<oops::Variables> novar_;
 };
 // -----------------------------------------------------------------------------
 
