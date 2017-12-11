@@ -15,6 +15,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
+#include "oops/base/Variables.h"
 #include "util/abor1_cpp.h"
 #include "util/Logger.h"
 #include "util/Printable.h"
@@ -31,7 +32,6 @@ class ObsOperatorBase : public util::Printable,
   typedef typename MODEL::ObsAuxControl       ObsAuxControl_;
   typedef typename MODEL::ObsSpace            ObsSpace_;
   typedef typename MODEL::ObsVector           ObsVector_;
-  typedef typename MODEL::Variables           Variables_;
 
  public:
   ObsOperatorBase() {}
@@ -41,7 +41,7 @@ class ObsOperatorBase : public util::Printable,
   void calcObsEquiv(const GeoVaLs_ &, ObsVector_ &, const ObsAuxControl_ &) const;
 
 /// Other
-  virtual boost::shared_ptr<const Variables_> variables() const =0;  // Required from Model
+  virtual const Variables & variables() const =0;  // Required from Model
 
  private:
   virtual void obsEquiv(const GeoVaLs_ &, ObsVector_ &, const ObsAuxControl_ &) const =0;

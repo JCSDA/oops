@@ -18,14 +18,17 @@
 
 #include "eckit/config/Configuration.h"
 #include "lorenz95/ObsTable.h"
-#include "lorenz95/NoVariables.h"
 #include "util/abor1_cpp.h"
 #include "util/Logger.h"
+
+namespace oops {
+  class Variables;
+}
 
 namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
-GomL95::GomL95(const ObsTable & ot, const NoVariables &,
+GomL95::GomL95(const ObsTable & ot, const oops::Variables &,
                const util::DateTime & t1, const util::DateTime & t2)
   : size_(0), iobs_(), locval_(), current_(0)
 {

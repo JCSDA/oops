@@ -13,9 +13,9 @@
 #include <string>
 
 #include "eckit/config/Configuration.h"
+#include "oops/base/Variables.h"
 
 #include "lorenz95/GomL95.h"
-#include "lorenz95/NoVariables.h"
 #include "lorenz95/ObsBiasCorrection.h"
 #include "lorenz95/ObsTable.h"
 #include "lorenz95/ObsVec1D.h"
@@ -26,8 +26,8 @@ namespace lorenz95 {
 static oops::LinearObsOpMaker<L95Traits, ObservationTLAD> makerLOpL95_("Lorenz 95");
 // -----------------------------------------------------------------------------
 
-ObservationTLAD::ObservationTLAD(const ObsTable &, const eckit::Configuration &)
-  : inputs_(new NoVariables())
+ObservationTLAD::ObservationTLAD(const ObsTable &, const eckit::Configuration & conf)
+  : inputs_(conf)
 {}
 
 // -----------------------------------------------------------------------------

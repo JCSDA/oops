@@ -62,11 +62,13 @@ end subroutine qg_localization_setup
 
 ! ------------------------------------------------------------------------------
 
-subroutine qg_localization_delete(c_key_conf) bind(c,name='qg_localization_delete_f90')
+subroutine qg_localization_delete(c_key_self) bind(c,name='qg_localization_delete_f90')
 implicit none
-integer(c_int), intent(inout) :: c_key_conf !< The model covariance structure
+integer(c_int), intent(inout) :: c_key_self
+type(qg_3d_covar_config), pointer :: self
 
-call qg_3d_covar_delete(c_key_conf)
+call qg_3d_cov_registry%get(c_key_self, self)
+call qg_3d_covar_delete(self)
 
 end subroutine qg_localization_delete
 

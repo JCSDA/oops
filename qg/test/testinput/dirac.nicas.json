@@ -8,7 +8,7 @@
     "bc": "1"
   },
   "variables": {
-    "variables": "ci"
+    "variables": ["x"]
   },
   "model": {
     "tstep": "PT1H",
@@ -23,13 +23,13 @@
     "covariance": "ensemble",
     "members": "5",
     "variables": {
-      "variables": "ci"
+      "variables": ["x"]
     },
     "date": "2010-01-01T00:00:00Z",
     "localization": {
       "localization": "HDIAG_NICAS",
       "variables": {
-        "variables": "ci"
+        "variables": ["x"]
       },
       "hdiag_ensemble": [
       {

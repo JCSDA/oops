@@ -19,10 +19,10 @@
 #include "oops/base/EnsembleCovariance.h"
 #include "oops/base/IdentityMatrix.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
-#include "oops/interface/Variables.h"
 #include "util/DateTime.h"
 #include "util/abor1_cpp.h"
 
@@ -36,10 +36,9 @@ class HybridCovariance : public ModelSpaceCovarianceBase<MODEL> {
   typedef Geometry<MODEL>            Geometry_;
   typedef Increment<MODEL>           Increment_;
   typedef State<MODEL>               State_;
-  typedef Variables<MODEL>           Variables_;
 
  public:
-  HybridCovariance(const Geometry_ &, const Variables_ &, const eckit::Configuration &, const State_ &);
+  HybridCovariance(const Geometry_ &, const Variables &, const eckit::Configuration &, const State_ &);
   ~HybridCovariance();
 
   void linearize(const State_ &, const Geometry_ &) override;
@@ -60,7 +59,7 @@ class HybridCovariance : public ModelSpaceCovarianceBase<MODEL> {
 /// Constructor, destructor
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-HybridCovariance<MODEL>::HybridCovariance(const Geometry_ & resol, const Variables_ & vars,
+HybridCovariance<MODEL>::HybridCovariance(const Geometry_ & resol, const Variables & vars,
                                           const eckit::Configuration & config, const State_ & xb)
   : static_(CovarianceFactory<MODEL>::create(eckit::LocalConfiguration(config, "static"), resol, vars, xb))
 {

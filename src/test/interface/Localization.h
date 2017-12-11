@@ -25,28 +25,28 @@
 
 #include "oops/runs/Test.h"
 #include "oops/generic/instantiateLocalizationFactory.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/Localization.h"
-#include "oops/interface/Variables.h"
+#include "oops/runs/Test.h"
 #include "test/TestEnvironment.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "util/DateTime.h"
 
 namespace test {
 
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 template <typename MODEL> class LocalizationFixture : private boost::noncopyable {
   typedef oops::Localization<MODEL>   Localization_;
   typedef oops::Geometry<MODEL>       Geometry_;
-  typedef oops::Variables<MODEL>      Variables_;
 
  public:
-  static const Geometry_      & resol()        {return *getInstance().resol_;}
-  static const Variables_     & ctlvars()      {return *getInstance().ctlvars_;}
-  static const util::DateTime & time()         {return *getInstance().time_;}
-  static const Localization_  & localization() {return *getInstance().local_;}
+  static const Geometry_       & resol()        {return *getInstance().resol_;}
+  static const oops::Variables & ctlvars()      {return *getInstance().ctlvars_;}
+  static const util::DateTime  & time()         {return *getInstance().time_;}
+  static const Localization_   & localization() {return *getInstance().local_;}
 
  private:
   static LocalizationFixture<MODEL>& getInstance() {
@@ -59,7 +59,7 @@ template <typename MODEL> class LocalizationFixture : private boost::noncopyable
     resol_.reset(new Geometry_(resolConfig));
 
     const eckit::LocalConfiguration varConfig(TestEnvironment::config(), "Variables");
-    ctlvars_.reset(new Variables_(varConfig));
+    ctlvars_.reset(new oops::Variables(varConfig));
 
     time_.reset(new util::DateTime(TestEnvironment::config().getString("TestDate")));
 
@@ -71,13 +71,13 @@ template <typename MODEL> class LocalizationFixture : private boost::noncopyable
 
   ~LocalizationFixture<MODEL>() {}
 
-  boost::scoped_ptr<const Geometry_>      resol_;
-  boost::scoped_ptr<const Variables_>     ctlvars_;
-  boost::scoped_ptr<const util::DateTime> time_;
-  boost::scoped_ptr<Localization_>        local_;
+  boost::scoped_ptr<const Geometry_>       resol_;
+  boost::scoped_ptr<const oops::Variables> ctlvars_;
+  boost::scoped_ptr<const util::DateTime>  time_;
+  boost::scoped_ptr<Localization_>         local_;
 };
 
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 template <typename MODEL> void testLocalizationZero() {
   typedef LocalizationFixture<MODEL> Test_;
@@ -103,7 +103,8 @@ template <typename MODEL> void testLocalizationMultiply() {
   Test_::localization().multiply(dx);
   BOOST_CHECK(dx.norm() > 0.0);
 }
-// =============================================================================
+
+// -----------------------------------------------------------------------------
 
 template <typename MODEL> class Localization : public oops::Test {
  public:
@@ -122,7 +123,7 @@ template <typename MODEL> class Localization : public oops::Test {
   }
 };
 
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 }  // namespace test
 

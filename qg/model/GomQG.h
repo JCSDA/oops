@@ -19,9 +19,12 @@
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 
+namespace oops {
+  class Variables;
+}
+
 namespace qg {
   class ObsSpaceQG;
-  class VariablesQG;
 
 /// GomQG class to handle local model values for QG model.
 
@@ -30,7 +33,7 @@ class GomQG : public util::Printable,
  public:
   static const std::string classname() {return "qg::GomQG";}
 
-  GomQG(const ObsSpaceQG &, const VariablesQG &,
+  GomQG(const ObsSpaceQG &, const oops::Variables &,
         const util::DateTime &, const util::DateTime &);
   GomQG(const eckit::Configuration &);
 

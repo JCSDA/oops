@@ -17,6 +17,7 @@
 #include "eckit/config/Configuration.h"
 #include "oops/base/Ensemble.h"
 #include "oops/base/EnsemblesCollection.h"
+#include "oops/base/Variables.h"
 #include "oops/generic/hdiag_nicas_f.h"
 #include "oops/generic/UnstructuredGrid.h"
 #include "oops/interface/LocalizationBase.h"
@@ -38,7 +39,6 @@ class LocalizationHDIAG_NICAS : public LocalizationBase<MODEL> {
   typedef typename MODEL::Geometry              Geometry_;
   typedef typename MODEL::Increment             Increment_;
   typedef typename MODEL::State                 State_;
-  typedef typename MODEL::Variables             Variables_;
 
   typedef boost::shared_ptr<Ensemble<MODEL> >   EnsemblePtr_;
   typedef EnsemblesCollection<MODEL>            EnsemblesCollection_;
@@ -63,7 +63,7 @@ LocalizationHDIAG_NICAS<MODEL>::LocalizationHDIAG_NICAS(const Geometry_ & resol,
 
 // Setup variables
   const eckit::LocalConfiguration varConfig(conf, "variables");
-  const Variables_ vars(varConfig);
+  const Variables vars(varConfig);
 
 // Setup dummy time
   const util::DateTime date;

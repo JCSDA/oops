@@ -52,7 +52,6 @@ integer(c_int), intent(inout) :: c_key_self
 type(qg_obsoper), pointer :: self
 
 call qg_obsoper_registry%get(c_key_self, self)
-deallocate(self%varin%fldnames)
 call qg_obsoper_registry%remove(c_key_self)
 
 end subroutine c_qg_wspeed_delete
@@ -149,15 +148,17 @@ enddo
 
 end subroutine qg_wspeed_equiv_ad
 ! ------------------------------------------------------------------------------
-subroutine qg_wspeed_gettraj(c_key_self, c_nobs, c_key_traj) bind(c,name='qg_wspeed_gettraj_f90')
+subroutine qg_wspeed_gettraj(c_key_self, c_nobs, c_vars, c_key_traj) bind(c,name='qg_wspeed_gettraj_f90')
 use fckit_log_module, only : fckit_log
 implicit none
 integer(c_int), intent(in) :: c_key_self
 integer(c_int), intent(in) :: c_nobs
+integer(c_int), dimension(*), intent(in) :: c_vars     !< List of variables
 integer(c_int), intent(inout) :: c_key_traj
 
 type(qg_obsoper), pointer :: self
 type(qg_goms), pointer :: traj
+type(qg_vars) :: vars
 integer, allocatable :: mobs(:)
 integer :: jj
 
@@ -166,11 +167,12 @@ call qg_obsoper_registry%get(c_key_self, self)
 call qg_goms_registry%init()
 call qg_goms_registry%add(c_key_traj)
 call qg_goms_registry%get(c_key_traj,traj)
+call qg_vars_create(vars, c_vars)
 allocate(mobs(c_nobs))
 do jj=1,c_nobs
   mobs(jj)=jj
 enddo
-call gom_setup(traj, self%varin, mobs)
+call gom_setup(traj, vars, mobs)
 deallocate(mobs)
 
 end subroutine qg_wspeed_gettraj

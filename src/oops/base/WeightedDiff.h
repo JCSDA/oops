@@ -18,9 +18,9 @@
 #include "oops/base/Accumulator.h"
 #include "oops/base/DolphChebyshev.h"
 #include "oops/base/PostBase.h"
+#include "oops/base/Variables.h"
 #include "oops/base/WeightingFct.h"
 #include "oops/interface/Geometry.h"
-#include "oops/interface/Variables.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
 
@@ -38,7 +38,6 @@ namespace oops {
 template <typename MODEL, typename INCR, typename FLDS>
 class WeightedDiff : public PostBase<FLDS> {
   typedef Geometry<MODEL>            Geometry_;
-  typedef Variables<MODEL>           Variables_;
 
  public:
   WeightedDiff(const util::DateTime &, const util::Duration &,
@@ -80,7 +79,7 @@ WeightedDiff<MODEL, INCR, FLDS>::WeightedDiff(const util::DateTime & vt,
     vtime_(vt), bgn_(vt-span/2), end_(vt+span/2), tstep_(tstep),
     bgnleg_(), endleg_()
 {
-  Variables_ vars(config);
+  const Variables vars(config);
   avg_ = new Accumulator<MODEL, INCR, FLDS>(resol, vars, vtime_);
 }
 

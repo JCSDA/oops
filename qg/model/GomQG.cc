@@ -11,6 +11,7 @@
 #include "model/GomQG.h"
 
 #include "eckit/config/Configuration.h"
+#include "oops/base/Variables.h"
 #include "util/Logger.h"
 #include "model/ObsSpaceQG.h"
 #include "model/QgFortran.h"
@@ -19,12 +20,13 @@
 namespace qg {
 
 // -----------------------------------------------------------------------------
-GomQG::GomQG(const ObsSpaceQG & obsdb, const VariablesQG & var,
+GomQG::GomQG(const ObsSpaceQG & obsdb, const oops::Variables & var,
              const util::DateTime & t1, const util::DateTime & t2) {
   const util::DateTime * p1 = &t1;
   const util::DateTime * p2 = &t2;
+  const VariablesQG varqg(var);
   qg_obsdb_getgom_f90(obsdb.toFortran(), obsdb.obsname().size(), obsdb.obsname().c_str(),
-                      var.toFortran(), &p1, &p2, keyGom_);
+                      varqg.toFortran(), &p1, &p2, keyGom_);
 }
 // -----------------------------------------------------------------------------
 GomQG::GomQG(const eckit::Configuration & config) {
