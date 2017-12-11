@@ -1,9 +1,14 @@
 /*
- * (C) Copyright 2017 UCAR
- * 
- * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- */
+* Copyright 2011 ECMWF
+*
+* This software was developed at ECMWF for evaluation
+* and may be used for academic and research purposes only.
+* The software is provided as is without any warranty.
+*
+* This software can be used, copied and modified but not
+* redistributed or sold. This notice must be reproduced
+* on each copy made.
+*/
 
 #ifndef OOPS_INTERFACE_LOCALIZATIONBASE_H_
 #define OOPS_INTERFACE_LOCALIZATIONBASE_H_
@@ -12,9 +17,9 @@
 #include <map>
 #include <string>
 
-#include "util/Logger.h"
-#include "oops/interface/Increment.h"
+#include "boost/date_time/posix_time/posix_time.hpp"
 #include "oops/interface/Geometry.h"
+#include "oops/interface/Increment.h"
 #include "eckit/config/Configuration.h"
 #include "util/abor1_cpp.h"
 #include "util/Printable.h"
@@ -70,7 +75,7 @@ class LocalizationMaker : public LocalizationFactory<MODEL> {
   explicit LocalizationMaker(const std::string & name) : LocalizationFactory<MODEL>(name) {}
 };
 
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 template <typename MODEL>
 LocalizationFactory<MODEL>::LocalizationFactory(const std::string & name) {
@@ -91,7 +96,7 @@ LocalizationBase<MODEL>* LocalizationFactory<MODEL>::create(const Geometry_ & re
   typename std::map<std::string, LocalizationFactory<MODEL>*>::iterator
     jloc = getMakers().find(id);
   if (jloc == getMakers().end()) {
-    Log::error() << id << " does not exist in localization factory." << std::endl;
+    Log::trace() << id << " does not exist in localization factory." << std::endl;
     ABORT("Element does not exist in LocalizationFactory.");
   }
   LocalizationBase<MODEL> * ptr = jloc->second->make(resol, conf);
@@ -99,12 +104,15 @@ LocalizationBase<MODEL>* LocalizationFactory<MODEL>::create(const Geometry_ & re
   return ptr;
 }
 
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 template <typename MODEL>
 void LocalizationBase<MODEL>::multiply(Increment_ & dx) const {
   Log::trace() << "LocalizationBase<MODEL>::multiply starting" << std::endl;
-  this->multiply(dx.increment());
+  boost::posix_time::ptime ti = boost::posix_time::microsec_clock::local_time();
+  this->multiply(dx.increment());boost::posix_time::ptime t = boost::posix_time::microsec_clock::local_time();
+  boost::posix_time::time_duration diff = t - ti;
+  Log::info() << "Localization time proc : "<< diff.total_nanoseconds()/1000 << " µs" << std::endl;
   Log::trace() << "LocalizationBase<MODEL>::multiply done" << std::endl;
 }
 

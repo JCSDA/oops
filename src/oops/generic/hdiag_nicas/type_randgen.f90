@@ -41,6 +41,14 @@ interface
    end subroutine delete_randgen_c
 end interface
 interface
+   subroutine get_version_c(randgen,version) bind(C,name="get_version")
+   use iso_c_binding
+   implicit none
+   type(c_ptr),value :: randgen
+   integer(c_int) :: version
+   end subroutine get_version_c
+end interface
+interface
    subroutine rand_integer_c(randgen,binf,bsup,ir) bind(C,name="rand_integer")
    use iso_c_binding
    implicit none
@@ -111,10 +119,10 @@ implicit none
 type(namtype),intent(in) :: nam !< Namelist variables
 
 ! Local variable
-integer :: default_seed
+integer :: default_seed,version
 
 ! Set default seed key to integer
-if (nam%sam_default_seed) then
+if (nam%default_seed) then
    default_seed = 1
 else
    default_seed = 0
@@ -122,6 +130,20 @@ end if
 
 ! Call C++ function
 rng%ptr = create_randgen_c(default_seed)
+
+! Print result
+if (nam%default_seed) then
+   write(mpl%unit,'(a7,a)') '','Generator ran3 initialized with a default seed'
+else
+   ! Get version
+   call get_version_c(rng%ptr,version)
+
+   if (version==1) then
+      write(mpl%unit,'(a7,a)') '','Generator Mersenne Twister 19937 initialized'
+   else
+      write(mpl%unit,'(a7,a)') '','Generator ran3 initialized'
+   end if 
+end if
 
 end subroutine create_randgen
 

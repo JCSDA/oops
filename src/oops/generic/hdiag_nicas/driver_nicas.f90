@@ -139,16 +139,26 @@ do ib=1,bpar%nb+1
          ! Write NICAS MPI distribution
          write(mpl%unit,'(a)') '-------------------------------------------------------------------'
          write(mpl%unit,'(a)') '--- Write NICAS MPI distribution'
-         call ndataloc_write(nam,geom,ndataloc(ib),bpar%nicas_block(ib))
+         call ndataloc_write(nam,geom,ndataloc(ib),bpar%nicas_block(ib),bpar%auto_block(ib))
       end if
    elseif (nam%check_adjoints.or.nam%check_mpi.or.nam%check_dirac.or.nam%check_perf.or.nam%check_hdiag) then
       if (bpar%diag_block(ib)) then
          ! Read NICAS MPI distribution
          write(mpl%unit,'(a)') '-------------------------------------------------------------------'
          write(mpl%unit,'(a)') '--- Read NICAS MPI distribution'
-         call ndataloc_read(nam,geom,ndataloc(ib),bpar%nicas_block(ib))
+         call ndataloc_read(nam,geom,ndataloc(ib),bpar%nicas_block(ib),bpar%auto_block(ib))
       end if
       call flush(mpl%unit)
+   end if
+
+   if (nam%transform.and.bpar%auto_block(ib)) then
+      ! Allocation
+      allocate(ndataloc(ib)%trans(geom%nl0,geom%nl0))
+      allocate(ndataloc(ib)%transinv(geom%nl0,geom%nl0))
+
+      ! Copy
+      ndataloc(ib)%trans = bdata(ib)%trans
+      ndataloc(ib)%transinv = bdata(ib)%transinv
    end if
 
    if (bpar%nicas_block(ib)) then

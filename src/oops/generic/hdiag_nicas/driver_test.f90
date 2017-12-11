@@ -10,8 +10,9 @@
 !----------------------------------------------------------------------
 module driver_test
 
-use module_test, only: test_loc_adjoint,test_nicas_dirac,test_loc_dirac,test_nicas_perf,test_hdiag
+use module_test, only: test_loc_adjoint,test_nicas_dirac,test_loc_dirac,test_loc_ens_dirac,test_nicas_perf,test_hdiag
 use tools_display, only: msgerror
+use tools_kinds,only: kind_real
 use type_bdata, only: bdatatype
 use type_bpar, only: bpartype
 use type_geom, only: geomtype
@@ -30,16 +31,17 @@ contains
 ! Subroutine: run_test
 !> Purpose: test NICAS method
 !----------------------------------------------------------------------
-subroutine run_test(nam,geom,bpar,bdata,ndataloc)
+subroutine run_test(nam,geom,bpar,bdata,ndataloc,ens1)
 
 implicit none
 
 ! Passed variables
-type(namtype),intent(inout) :: nam                   !< Namelist
-type(geomtype),intent(in) :: geom                    !< Geometry
-type(bpartype),intent(in) :: bpar                    !< Block parameters
-type(bdatatype),intent(in) :: bdata(bpar%nb+1)       !< B data
-type(ndataloctype),intent(in) :: ndataloc(bpar%nb+1) !< NICAS data,local
+type(namtype),intent(inout) :: nam                                                         !< Namelist
+type(geomtype),intent(in) :: geom                                                          !< Geometry
+type(bpartype),intent(in) :: bpar                                                          !< Block parameters
+type(bdatatype),intent(in) :: bdata(bpar%nb+1)                                             !< B data
+type(ndataloctype),intent(in) :: ndataloc(bpar%nb+1)                                       !< NICAS data,local
+real(kind_real),intent(in),optional :: ens1(geom%nc0a,geom%nl0,nam%nv,nam%nts,nam%ens1_ne) !< Ensemble 1
 
 ! Local variables
 integer :: ib
@@ -79,11 +81,19 @@ if (nam%check_adjoints) then
 end if
 
 if (nam%check_dirac) then
-   ! Apply NICAS to diracs
+   ! Apply localization to diracs
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Apply localization to diracs'
    call test_loc_dirac(nam,geom,bpar,ndataloc)
    call flush(mpl%unit)
+
+   if (present(ens1)) then
+      ! Apply localized ensemble covariance to diracs
+      write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+      write(mpl%unit,'(a)') '--- Apply localized ensemble covariance  to diracs'
+      call test_loc_ens_dirac(nam,geom,bpar,ndataloc,ens1)
+      call flush(mpl%unit)
+   end if
 end if
 
 if (nam%check_hdiag) then

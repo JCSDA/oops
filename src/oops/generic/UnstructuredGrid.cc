@@ -51,20 +51,12 @@ std::vector<double> UnstructuredGrid::getVunit() {
   return vunit;
 }
 // -----------------------------------------------------------------------------
-std::vector<int> UnstructuredGrid::getMask3d(const int & ilev) {
+std::vector<int> UnstructuredGrid::getMask(const int & ilev) {
   int ncols;
   get_ncols_f90(keyUGrid_, ncols);
-  std::vector<int> mask3d(ncols);
-  get_mask3d_f90(keyUGrid_, ncols, ilev, &mask3d[0]);
-  return mask3d;
-}
-// -----------------------------------------------------------------------------
-std::vector<int> UnstructuredGrid::getMask2d() {
-  int ncols;
-  get_ncols_f90(keyUGrid_, ncols);
-  std::vector<int> mask2d(ncols);
-  get_mask2d_f90(keyUGrid_, ncols, &mask2d[0]);
-  return mask2d;
+  std::vector<int> mask(ncols);
+  get_mask_f90(keyUGrid_, ncols, ilev, &mask[0]);
+  return mask;
 }
 // -----------------------------------------------------------------------------
 std::vector<int> UnstructuredGrid::getGlbInd() {
@@ -75,10 +67,10 @@ std::vector<int> UnstructuredGrid::getGlbInd() {
   return glbind;
 }
 // -----------------------------------------------------------------------------
-int UnstructuredGrid::getNvar3d() {
-  int nvar3d;
-  get_nvar3d_f90(keyUGrid_, nvar3d);
-  return nvar3d;
+int UnstructuredGrid::getNvar() {
+  int nvar;
+  get_nvar_f90(keyUGrid_, nvar);
+  return nvar;
 }
 // -----------------------------------------------------------------------------
 std::vector<double> UnstructuredGrid::getData() {
@@ -86,10 +78,10 @@ std::vector<double> UnstructuredGrid::getData() {
   get_nlevs_f90(keyUGrid_, nlevs);
   int ncols;
   get_ncols_f90(keyUGrid_, ncols);
-  int nvar3d;
-  get_nvar3d_f90(keyUGrid_, nvar3d);
-  std::vector<double> data(nlevs*ncols*nvar3d);
-  get_data_f90(keyUGrid_, nlevs*ncols*nvar3d, &data[0]);
+  int nvar;
+  get_nvar_f90(keyUGrid_, nvar);
+  std::vector<double> data(nlevs*ncols*nvar);
+  get_data_f90(keyUGrid_, nlevs*ncols*nvar, &data[0]);
   return data;
 }
 // -----------------------------------------------------------------------------

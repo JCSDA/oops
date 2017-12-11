@@ -24,6 +24,7 @@ interface put_att
   module procedure put_att_real
   module procedure put_att_real_array
   module procedure put_att_logical
+  module procedure put_att_logical_array
   module procedure put_att_string
   module procedure put_att_string_array
 end interface
@@ -179,6 +180,45 @@ else
 end if
 
 end subroutine put_att_logical
+
+!----------------------------------------------------------------------
+! Subroutine: put_att_logical_array
+!> Purpose: write namelist logical array as NetCDF attribute
+!----------------------------------------------------------------------
+subroutine put_att_logical_array(ncid,varname,n,var)
+
+implicit none
+
+! Passed variables
+integer,intent(in) :: ncid             !< NetCDF file id
+character(len=*),intent(in) :: varname !< Variable name
+integer,intent(in) :: n                !< Real array size
+logical,intent(in) :: var(n)           !< Logical array
+
+! Local variables
+integer :: i
+character(len=1024) :: str,fullstr
+character(len=1024) :: subr='put_att_logical_array'
+
+! Write real array as a string
+if (n>0) then
+   if (var(1)) then
+      write(fullstr,'(a6)') '.true.'
+   else
+      write(fullstr,'(a7)') '.false.'
+   end if
+   do i=2,n
+      if (var(i)) then
+         write(str,'(a6)') '.true.'
+      else
+         write(str,'(a7)') '.false.'
+      end if
+      fullstr = trim(fullstr)//':'//trim(str)
+   end do
+   call ncerr(subr,nf90_put_att(ncid,nf90_global,trim(varname),trim(fullstr)))
+end if
+
+end subroutine put_att_logical_array
 
 !----------------------------------------------------------------------
 ! Subroutine: put_att_string

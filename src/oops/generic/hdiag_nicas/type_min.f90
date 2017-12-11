@@ -42,12 +42,11 @@ type mintype
 
    ! Specific data (LCT)
    integer :: nscales                         !< Number of LCT scales
-   integer :: ncomp                           !< Number of LCT components
+   integer,allocatable :: ncomp(:)            !< Number of LCT components
    real(kind_real),allocatable :: dx(:,:)     !< Zonal separation
    real(kind_real),allocatable :: dy(:,:)     !< Meridian separation
    real(kind_real),allocatable :: dz(:)       !< Vertical separation
    logical,allocatable :: dmask(:,:)          !< Mask
-   logical :: lct_diag                        !< Diagonal tensor key
 end type mintype
 
 private

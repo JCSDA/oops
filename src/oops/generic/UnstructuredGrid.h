@@ -32,10 +32,9 @@ class UnstructuredGrid : public util::Printable,
   std::vector<double> getLons();
   std::vector<double> getAreas();
   std::vector<double> getVunit();
-  std::vector<int> getMask3d(const int &);
-  std::vector<int> getMask2d();
+  std::vector<int> getMask(const int &);
   std::vector<int> getGlbInd();
-  int getNvar3d();
+  int getNvar();
   std::vector<double> getData();
 
 // Will be useful for tests

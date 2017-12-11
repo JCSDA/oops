@@ -29,6 +29,8 @@ type momtype
    real(kind_real),allocatable :: m22(:,:,:,:,:)  !< Fourth-order centered moment
    real(kind_real),allocatable :: m1full(:,:,:)   !< Full mean
    real(kind_real),allocatable :: m2full(:,:,:)   !< Full variance
+   real(kind_real),allocatable :: trans(:,:)      !< Direct transform
+   real(kind_real),allocatable :: transinv(:,:)   !< Inverse transform
 end type momtype
 
 private

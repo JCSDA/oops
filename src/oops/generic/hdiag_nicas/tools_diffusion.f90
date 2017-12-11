@@ -45,7 +45,7 @@ if (mod(M,2)>0) call msgerror('M should be even')
 ! Initialization
 matern = 0.0
 beta = 1.0
-xtmp = x*sqrt(float(2*M-3))
+xtmp = x*sqrt(float(2*M-5))
 
 do j=0,M-3
    ! Update sum

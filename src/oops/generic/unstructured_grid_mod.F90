@@ -29,7 +29,7 @@ end type column_element
 type unstructured_grid
   integer :: ncols
   integer :: nlevs 
-  real(kind=kind_real), allocatable :: vunit(:) !> Definition of vertical unit
+  real(kind=kind_real), allocatable :: vunit(:) !> Definition of the vertical unit
   type(column_element), pointer :: head         !> Linked list containing the columns
   type(column_element), pointer :: last         !> Last element of linked list
 end type unstructured_grid
@@ -191,12 +191,12 @@ end subroutine get_vunit_c
 
 !-------------------------------------------------------------------------------
 
-subroutine get_mask3d_c(key, ncols, ilev, mask3d) bind(c, name='get_mask3d_f90')
+subroutine get_mask_c(key, ncols, ilev, mask) bind(c, name='get_mask_f90')
 implicit none
 integer(c_int), intent(inout) :: key
 integer,intent(in) :: ncols
 integer,intent(in) :: ilev
-integer,intent(out) :: mask3d(ncols)
+integer,intent(out) :: mask(ncols)
 integer :: icols
 type(column_element), pointer :: current
 class(unstructured_grid), pointer :: self
@@ -209,36 +209,11 @@ icols = 0
 current => self%head
 do while (associated(current))
    icols = icols+1
-   mask3d(icols) = current%column%mask3d(ilev+1) ! +1 for arrays offset from C++ to Fortran
+   mask(icols) = current%column%mask(ilev+1) ! +1 for arrays offset from C++ to Fortran
    current => current%next
 end do
 
-end subroutine get_mask3d_c
-
-!-------------------------------------------------------------------------------
-
-subroutine get_mask2d_c(key, ncols, mask2d) bind(c, name='get_mask2d_f90')
-implicit none
-integer(c_int), intent(inout) :: key
-integer,intent(in) :: ncols
-integer,intent(out) :: mask2d(ncols)
-integer :: icols
-type(column_element), pointer :: current
-class(unstructured_grid), pointer :: self
-
-! Get self
-call unstructured_grid_registry%get(key,self)
-
-! Get mask
-icols = 0
-current => self%head
-do while (associated(current))
-   icols = icols+1
-   mask2d(icols) = current%column%mask2d
-   current => current%next
-end do
-
-end subroutine get_mask2d_c
+end subroutine get_mask_c
 
 !-------------------------------------------------------------------------------
 
@@ -267,19 +242,19 @@ end subroutine get_glbind_c
 
 !-------------------------------------------------------------------------------
 
-subroutine get_nvar3d_c(key, nvar3d) bind(c, name='get_nvar3d_f90')
+subroutine get_nvar_c(key, nvar) bind(c, name='get_nvar_f90')
 implicit none
 integer(c_int), intent(inout) :: key
-integer,intent(out) :: nvar3d
+integer,intent(out) :: nvar
 class(unstructured_grid), pointer :: self
 
 ! Get self
 call unstructured_grid_registry%get(key,self)
 
-! Get nvar3d
-nvar3d = self%head%column%nvar3d
+! Get nvar
+nvar = self%head%column%nvar
 
-end subroutine get_nvar3d_c
+end subroutine get_nvar_c
 
 !-------------------------------------------------------------------------------
 
@@ -299,8 +274,8 @@ call unstructured_grid_registry%get(key,self)
 offset = 0
 current => self%head
 do while (associated(current))
-  fld(offset+1:offset+self%head%column%nvar3d*self%head%column%nlevs) = current%column%fld3d
-  offset = offset+self%head%column%nvar3d*self%head%column%nlevs
+  fld(offset+1:offset+self%head%column%nvar*self%head%column%nlevs) = pack(current%column%fld,mask=.true.)
+  offset = offset+self%head%column%nvar*self%head%column%nlevs
   current => current%next
 end do
 
@@ -345,17 +320,15 @@ end subroutine delete_unstructured_grid
 
 !-------------------------------------------------------------------------------
 
-subroutine add_column(self, plat, plon, parea, klevs, kvar3d, kvar2d, kmask3d, kmask2d, kglbind)
+subroutine add_column(self, plat, plon, parea, klevs, kvar, kmask, kglbind)
 implicit none
 class(unstructured_grid), intent(inout) :: self
 real(kind=kind_real), intent(in) :: plat
 real(kind=kind_real), intent(in) :: plon
 real(kind=kind_real), intent(in) :: parea
 integer, intent(in) :: klevs
-integer, intent(in) :: kvar3d
-integer, intent(in) :: kvar2d
-integer, intent(in) :: kmask3d(klevs)
-integer, intent(in) :: kmask2d
+integer, intent(in) :: kvar
+integer, intent(in) :: kmask(klevs)
 integer, optional, intent(in) :: kglbind
 integer :: glbind
 
@@ -373,7 +346,7 @@ glbind = -1
 if (present(kglbind)) glbind = kglbind
 
 ! Create column
-call create_column_data(self%last%column, plat, plon, parea, klevs, kvar3d, kvar2d, kmask3d, kmask2d, glbind)
+call create_column_data(self%last%column, plat, plon, parea, klevs, kvar, kmask, glbind)
 self%ncols = self%ncols+1
 
 end subroutine add_column

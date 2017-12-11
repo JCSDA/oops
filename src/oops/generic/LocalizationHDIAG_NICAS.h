@@ -78,38 +78,52 @@ LocalizationHDIAG_NICAS<MODEL>::LocalizationHDIAG_NICAS(const Geometry_ & resol,
   std::vector<double> lons = ugrid.getLons();
   std::vector<double> areas = ugrid.getAreas();
   std::vector<double> vunit = ugrid.getVunit();
-  std::vector<int> mask3d;
+  std::vector<int> mask;
   for (int jlev = 0; jlev < vunit.size(); ++jlev) {
-    std::vector<int> tmp = ugrid.getMask3d(jlev);
-    mask3d.insert(mask3d.end(), tmp.begin(), tmp.end());
+    std::vector<int> tmp = ugrid.getMask(jlev);
+    mask.insert(mask.end(), tmp.begin(), tmp.end());
   }
-  std::vector<int> mask2d = ugrid.getMask2d();
   std::vector<int> glbind = ugrid.getGlbInd();
-  int nv = ugrid.getNvar3d();
+  int nv = ugrid.getNvar();
   int nc0a = lats.size();
   int nlev = vunit.size();
 
   int nts = 1;
-  std::vector<eckit::LocalConfiguration> confs;
-  conf.get("hdiag_ensemble", confs);
-  int ens1_ne = confs.size();
-  Log::info() << "HDIAG ensemble: "  << ens1_ne << " members / " << nts << " timeslots" << std::endl;
-  ASSERT(confs.size()==ens1_ne*nts);
+  int ens1_ne;
   std::vector<double> ens1;
-  int i=0;
-  for (unsigned int ie = 0; ie < ens1_ne; ++ie) {
-    for (unsigned int its = 0; its < nts; ++its) { 
-      Log::info() << "Read member " << ie+1 << " at timeslot " << its+1 << " (total index " << i << ")" << std::endl;
-      State_ xmem(resol,confs[i]);
-      Log::info() << "Convert member to unstructured grid" << std::endl;
-      UnstructuredGrid umem;
-      xmem.convert_to(umem);
-      std::vector<double> tmp = umem.getData();
+  int new_hdiag = conf.getInt("new_hdiag");
+  if (new_hdiag==1) {
+    std::vector<eckit::LocalConfiguration> confs;
+    conf.get("hdiag_ensemble", confs);
+    ens1_ne = confs.size();
+    Log::info() << "HDIAG ensemble: " << ens1_ne << " members / " << nts << " timeslots" << std::endl;
+    ASSERT(confs.size()==ens1_ne*nts);
+    int i=0;
+    for (unsigned int ie = 0; ie < ens1_ne; ++ie) {
+      for (unsigned int its = 0; its < nts; ++its) { 
+        Log::info() << "Read member " << ie+1 << " at timeslot " << its+1 << " (total index " << i << ")" << std::endl;
+        State_ xmem(resol,confs[i]);
+        Log::info() << "Convert member to unstructured grid" << std::endl;
+        UnstructuredGrid umem;
+        xmem.convert_to(umem);
+        std::vector<double> tmp = umem.getData();
+        ens1.insert(ens1.end(), tmp.begin(), tmp.end());
+        i++;
+      }
+    }
+  }
+  else
+  {
+    ens1_ne = 4;
+    int i=0;
+    for (unsigned int ie = 0; ie < ens1_ne; ++ie) {
+      std::vector<double> tmp(nts*nv*nlev*nc0a);
+      std::fill(tmp.begin(),tmp.end(),-999.0);
       ens1.insert(ens1.end(), tmp.begin(), tmp.end());
       i++;
     }
   }
-  create_hdiag_nicas_f90(keyHdiag_nicas_, &fconf, nv, nc0a, &lats[0], &lons[0], &areas[0], nlev, &vunit[0], &mask3d[0], &mask2d[0], &glbind[0], nts, ens1_ne, &ens1[0]);
+  create_hdiag_nicas_f90(keyHdiag_nicas_, &fconf, nv, nc0a, &lats[0], &lons[0], &areas[0], nlev, &vunit[0], &mask[0], &glbind[0], nts, ens1_ne, &ens1[0]);
   Log::trace() << "LocalizationHDIAG_NICAS:LocalizationHDIAG_NICAS constructed" << std::endl;
 }
 

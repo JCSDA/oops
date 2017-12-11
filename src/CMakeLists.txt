@@ -187,6 +187,7 @@ oops/generic/hdiag_nicas/model_mpas.f90
 oops/generic/hdiag_nicas/model_nemo.f90
 oops/generic/hdiag_nicas/model_oops.f90
 oops/generic/hdiag_nicas/model_wrf.f90
+oops/generic/hdiag_nicas/module_apply_bens.f90
 oops/generic/hdiag_nicas/module_apply_convol.f90
 oops/generic/hdiag_nicas/module_apply_interp.f90
 oops/generic/hdiag_nicas/module_apply_localization.f90
@@ -212,6 +213,7 @@ oops/generic/hdiag_nicas/module_parameters_obsop.f90
 oops/generic/hdiag_nicas/module_sampling.f90
 oops/generic/hdiag_nicas/module_test.f90
 oops/generic/hdiag_nicas/module_test_obsop.f90
+oops/generic/hdiag_nicas/module_transform.f90
 oops/generic/hdiag_nicas/tools_const.f90
 oops/generic/hdiag_nicas/tools_diffusion.f90
 oops/generic/hdiag_nicas/tools_display.f90
@@ -261,7 +263,6 @@ oops/generic/hdiag_nicas/external/tools_jacobi_eigenvalue.f90
 oops/generic/hdiag_nicas/external/tools_praxis.f90
 oops/generic/hdiag_nicas/external/tools_qsort.f90
 oops/generic/hdiag_nicas/external/tools_stripack.f90
-
 
 oops/interface/ErrorCovariance.h
 oops/interface/Geometry.h

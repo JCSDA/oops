@@ -56,21 +56,29 @@ interface isanynotmsi
   module procedure isanynotmsi_1d
   module procedure isanynotmsi_2d
   module procedure isanynotmsi_3d
+  module procedure isanynotmsi_4d
+  module procedure isanynotmsi_5d
 end interface
 interface isanynotmsr
   module procedure isanynotmsr_1d
   module procedure isanynotmsr_2d
   module procedure isanynotmsr_3d
+  module procedure isanynotmsr_4d
+  module procedure isanynotmsr_5d
 end interface
 interface isallnotmsi
   module procedure isallnotmsi_1d
   module procedure isallnotmsi_2d
   module procedure isallnotmsi_3d
+  module procedure isallnotmsi_4d
+  module procedure isallnotmsi_5d
 end interface
 interface isallnotmsr
   module procedure isallnotmsr_1d
   module procedure isallnotmsr_2d
   module procedure isallnotmsr_3d
+  module procedure isallnotmsr_4d
+  module procedure isallnotmsr_5d
 end interface
 
 private
@@ -551,6 +559,36 @@ isanynotmsi_3d = any(abs(i-msvali)>0)
 end function isanynotmsi_3d
 
 !----------------------------------------------------------------------
+! Function: isanynotmsi_4d
+!> Purpose: check if an integer is not set to missing value
+!----------------------------------------------------------------------
+logical function isanynotmsi_4d(i)
+
+implicit none
+
+! Passed variables
+integer,intent(in) :: i(:,:,:,:) !< Integer
+
+isanynotmsi_4d = any(abs(i-msvali)>0)
+
+end function isanynotmsi_4d
+
+!----------------------------------------------------------------------
+! Function: isanynotmsi_5d
+!> Purpose: check if an integer is not set to missing value
+!----------------------------------------------------------------------
+logical function isanynotmsi_5d(i)
+
+implicit none
+
+! Passed variables
+integer,intent(in) :: i(:,:,:,:,:) !< Integer
+
+isanynotmsi_5d = any(abs(i-msvali)>0)
+
+end function isanynotmsi_5d
+
+!----------------------------------------------------------------------
 ! Function: isanynotmsr_1d
 !> Purpose: check if a real is not set to missing value
 !----------------------------------------------------------------------
@@ -594,6 +632,36 @@ real(kind_real),intent(in) :: r(:,:,:) !< Real
 isanynotmsr_3d = any(abs(r-msvalr)>0)
 
 end function isanynotmsr_3d
+
+!----------------------------------------------------------------------
+! Function: isanynotmsr_4d
+!> Purpose: check if a real is not set to missing value
+!----------------------------------------------------------------------
+logical function isanynotmsr_4d(r)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: r(:,:,:,:) !< Real
+
+isanynotmsr_4d = any(abs(r-msvalr)>0)
+
+end function isanynotmsr_4d
+
+!----------------------------------------------------------------------
+! Function: isanynotmsr_5d
+!> Purpose: check if a real is not set to missing value
+!----------------------------------------------------------------------
+logical function isanynotmsr_5d(r)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: r(:,:,:,:,:) !< Real
+
+isanynotmsr_5d = any(abs(r-msvalr)>0)
+
+end function isanynotmsr_5d
 
 !----------------------------------------------------------------------
 ! Function: isallnotmsi_1d
@@ -641,6 +709,36 @@ isallnotmsi_3d = all(abs(i-msvali)>0)
 end function isallnotmsi_3d
 
 !----------------------------------------------------------------------
+! Function: isallnotmsi_4d
+!> Purpose: check if an integer is not set to missing value
+!----------------------------------------------------------------------
+logical function isallnotmsi_4d(i)
+
+implicit none
+
+! Passed variables
+integer,intent(in) :: i(:,:,:,:) !< Integer
+
+isallnotmsi_4d = all(abs(i-msvali)>0)
+
+end function isallnotmsi_4d
+
+!----------------------------------------------------------------------
+! Function: isallnotmsi_5d
+!> Purpose: check if an integer is not set to missing value
+!----------------------------------------------------------------------
+logical function isallnotmsi_5d(i)
+
+implicit none
+
+! Passed variables
+integer,intent(in) :: i(:,:,:,:,:) !< Integer
+
+isallnotmsi_5d = all(abs(i-msvali)>0)
+
+end function isallnotmsi_5d
+
+!----------------------------------------------------------------------
 ! Function: isallnotmsr_1d
 !> Purpose: check if a real is not set to missing value
 !----------------------------------------------------------------------
@@ -684,5 +782,35 @@ real(kind_real),intent(in) :: r(:,:,:) !< Real
 isallnotmsr_3d = all(abs(r-msvalr)>0)
 
 end function isallnotmsr_3d
+
+!----------------------------------------------------------------------
+! Function: isallnotmsr_4d
+!> Purpose: check if a real is not set to missing value
+!----------------------------------------------------------------------
+logical function isallnotmsr_4d(r)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: r(:,:,:,:) !< Real
+
+isallnotmsr_4d = all(abs(r-msvalr)>0)
+
+end function isallnotmsr_4d
+
+!----------------------------------------------------------------------
+! Function: isallnotmsr_5d
+!> Purpose: check if a real is not set to missing value
+!----------------------------------------------------------------------
+logical function isallnotmsr_5d(r)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: r(:,:,:,:,:) !< Real
+
+isallnotmsr_5d = all(abs(r-msvalr)>0)
+
+end function isallnotmsr_5d
 
 end module tools_missing

@@ -147,6 +147,19 @@ do isub=1,nsub
       end if
 
       do ib=1,bpar%nb
+         if (nam%transform.and.bpar%auto_block(ib)) then
+            ! Apply transform
+            do its=1,nam%nts
+               do iv=1,nam%nv
+                  do ic0=1,geom%nc0
+                     fld(ic0,:,iv,its) = matmul(mom(ib)%transinv,fld(ic0,:,iv,its))
+                  end do
+               end do
+            end do
+         end if
+      end do
+
+      do ib=1,bpar%nb
          if (bpar%diag_block(ib)) then
             ! Allocation
             allocate(fld_1(nam%nc1,bpar%icmax(ib),bpar%nl0(ib),geom%nl0))
@@ -161,7 +174,7 @@ do isub=1,nsub
             ! Copy valid field points
             call msr(fld_1)
             call msr(fld_2)
-            if ((iv==jv).and.(its==jts)) then
+            if (bpar%auto_block(ib)) then
                ! Copy all separations points
                !$omp parallel do schedule(static) private(jl0,il0r,il0,ic,ic1,ic0,jc0)
                do jl0=1,geom%nl0

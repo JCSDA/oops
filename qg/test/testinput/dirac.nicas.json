@@ -54,7 +54,7 @@
       }
       ],
       "prefix": "qg",
-      "sam_default_seed": 1,
+      "default_seed": 1,
       "method": "cor",
       "strategy": "common",
       "new_hdiag": 1,
@@ -70,6 +70,7 @@
       "new_lct": 0,
       "new_obsop": 1,
       "logpres": 0,
+      "transform": 0,
       "mask_type": "none",
       "mask_th": 0,
       "mask_check": 0,
