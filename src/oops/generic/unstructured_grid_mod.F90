@@ -69,7 +69,7 @@ end subroutine
 subroutine delete_ug_c(key) bind(c, name='delete_ug_f90')
 implicit none
 integer(c_int), intent(inout) :: key
-class(unstructured_grid), pointer :: self
+type(unstructured_grid), pointer :: self
 call unstructured_grid_registry%get(key,self)
 call delete_unstructured_grid(self)
 call unstructured_grid_registry%remove(key)
@@ -81,7 +81,7 @@ subroutine get_nlevs_c(key, nlevs) bind(c, name='get_nlevs_f90')
 implicit none
 integer(c_int), intent(inout) :: key
 integer,intent(out) :: nlevs
-class(unstructured_grid), pointer :: self
+type(unstructured_grid), pointer :: self
 call unstructured_grid_registry%get(key,self)
 nlevs = self%nlevs
 end subroutine get_nlevs_c
@@ -92,7 +92,7 @@ subroutine get_ncols_c(key, ncols) bind(c, name='get_ncols_f90')
 implicit none
 integer(c_int), intent(inout) :: key
 integer,intent(out) :: ncols
-class(unstructured_grid), pointer :: self
+type(unstructured_grid), pointer :: self
 call unstructured_grid_registry%get(key,self)
 ncols = self%ncols
 end subroutine get_ncols_c
@@ -106,7 +106,7 @@ integer(c_int), intent(in) :: ncols
 real(kind=kind_real),intent(out) :: lats(ncols)
 integer :: icols
 type(column_element), pointer :: current
-class(unstructured_grid), pointer :: self
+type(unstructured_grid), pointer :: self
 
 ! Get self
 call unstructured_grid_registry%get(key,self)
@@ -131,7 +131,7 @@ integer(c_int), intent(in) :: ncols
 real(kind=kind_real),intent(out) :: lons(ncols)
 integer :: icols
 type(column_element), pointer :: current
-class(unstructured_grid), pointer :: self
+type(unstructured_grid), pointer :: self
 
 ! Get self
 call unstructured_grid_registry%get(key,self)
@@ -156,7 +156,7 @@ integer(c_int), intent(in) :: ncols
 real(kind=kind_real),intent(out) :: areas(ncols)
 integer :: icols
 type(column_element), pointer :: current
-class(unstructured_grid), pointer :: self
+type(unstructured_grid), pointer :: self
 
 ! Get self
 call unstructured_grid_registry%get(key,self)
@@ -179,7 +179,7 @@ implicit none
 integer(c_int), intent(inout) :: key
 integer(c_int), intent(in) :: nlevs
 real(kind=kind_real),intent(out) :: vunit(nlevs)
-class(unstructured_grid), pointer :: self
+type(unstructured_grid), pointer :: self
 
 ! Get self
 call unstructured_grid_registry%get(key,self)
@@ -199,7 +199,7 @@ integer,intent(in) :: ilev
 integer,intent(out) :: mask3d(ncols)
 integer :: icols
 type(column_element), pointer :: current
-class(unstructured_grid), pointer :: self
+type(unstructured_grid), pointer :: self
 
 ! Get self
 call unstructured_grid_registry%get(key,self)
@@ -224,7 +224,7 @@ integer,intent(in) :: ncols
 integer,intent(out) :: mask2d(ncols)
 integer :: icols
 type(column_element), pointer :: current
-class(unstructured_grid), pointer :: self
+type(unstructured_grid), pointer :: self
 
 ! Get self
 call unstructured_grid_registry%get(key,self)
@@ -249,7 +249,7 @@ integer,intent(in) :: ncols
 integer,intent(out) :: glbind(ncols)
 integer :: icols
 type(column_element), pointer :: current
-class(unstructured_grid), pointer :: self
+type(unstructured_grid), pointer :: self
 
 ! Get self
 call unstructured_grid_registry%get(key,self)
@@ -271,7 +271,7 @@ subroutine get_nvar3d_c(key, nvar3d) bind(c, name='get_nvar3d_f90')
 implicit none
 integer(c_int), intent(inout) :: key
 integer,intent(out) :: nvar3d
-class(unstructured_grid), pointer :: self
+type(unstructured_grid), pointer :: self
 
 ! Get self
 call unstructured_grid_registry%get(key,self)
@@ -290,7 +290,7 @@ integer(c_int), intent(in) :: ntot
 real(kind=kind_real),intent(out) :: fld(ntot)
 integer :: offset,ivar
 type(column_element), pointer :: current
-class(unstructured_grid), pointer :: self
+type(unstructured_grid), pointer :: self
 
 ! Get self
 call unstructured_grid_registry%get(key,self)
@@ -310,7 +310,7 @@ end subroutine get_data_c
 
 subroutine create_unstructured_grid(self, nlevs, vunit)
 implicit none
-class(unstructured_grid), intent(inout) :: self
+type(unstructured_grid), intent(inout) :: self
 integer, intent(in) :: nlevs
 real(kind=kind_real), intent(in) :: vunit(nlevs)
 
@@ -327,7 +327,7 @@ end subroutine create_unstructured_grid
 
 subroutine delete_unstructured_grid(self)
 implicit none
-class(unstructured_grid), intent(inout) :: self
+type(unstructured_grid), intent(inout) :: self
 type(column_element), pointer :: current, prev
 
 do while (associated(self%head))
@@ -347,7 +347,7 @@ end subroutine delete_unstructured_grid
 
 subroutine add_column(self, plat, plon, parea, klevs, kvar3d, kvar2d, kmask3d, kmask2d, kglbind)
 implicit none
-class(unstructured_grid), intent(inout) :: self
+type(unstructured_grid), intent(inout) :: self
 real(kind=kind_real), intent(in) :: plat
 real(kind=kind_real), intent(in) :: plon
 real(kind=kind_real), intent(in) :: parea

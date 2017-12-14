@@ -79,7 +79,7 @@ type(c_ptr), intent(in) :: c_conf
 integer(c_int), intent(in) :: cnv, cnc0a, cnlev, cens1_ne, cnts
 real(c_double), intent(in) :: clats(cnc0a), clons(cnc0a), careas(cnc0a), cvunit(cnlev), cens1(cens1_ne*cnts*cnv*cnlev*cnc0a)
 integer(c_int), intent(in) :: cmask3d(cnlev*cnc0a), cmask2d(cnc0a), cglbind(cnc0a)
-class(hdiag_nicas), pointer :: self
+type(hdiag_nicas), pointer :: self
 integer :: nv,nc0a,nlev,nts,ens1_ne
 real(kind=kind_real) :: lats(cnc0a), lons(cnc0a), areas(cnc0a), vunit(cnlev), ens1(cens1_ne*cnts*cnv*cnlev*cnc0a)
 integer :: mask3d(cnlev*cnc0a), mask2d(cnc0a), glbind(cnc0a)
@@ -105,7 +105,7 @@ end subroutine create_hdiag_nicas_c
 subroutine delete_hdiag_nicas_c(key) bind(c, name='delete_hdiag_nicas_f90')
 implicit none
 integer(c_int), intent(inout) :: key
-class(hdiag_nicas), pointer :: self
+type(hdiag_nicas), pointer :: self
 call hdiag_nicas_registry%get(key,self)
 call delete_hdiag_nicas(self)
 call hdiag_nicas_registry%remove(key)
@@ -117,8 +117,8 @@ subroutine hdiag_nicas_multiply_c(key, idx) bind(c, name='hdiag_nicas_multiply_f
 implicit none
 integer(c_int), intent(in) :: key
 integer(c_int), intent(in) :: idx
-class(hdiag_nicas), pointer :: self
-class(unstructured_grid), pointer :: udx
+type(hdiag_nicas), pointer :: self
+type(unstructured_grid), pointer :: udx
 call hdiag_nicas_registry%get(key,self)
 call unstructured_grid_registry%get(idx, udx)
 call hdiag_nicas_multiply(self, udx)
