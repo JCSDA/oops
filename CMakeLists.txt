@@ -58,9 +58,9 @@ if( NOT ( BUILD_SITE MATCHES "cc[abt].*" ) )  # Should depend on toolchain, not 
 endif()
 
 # MPI
-#ecbuild_add_option( FEATURE MPI DEFAULT ON
-#                    DESCRIPTION "Support for MPI distributed parallelism"
-#                    REQUIRED_PACKAGES "MPI COMPONENTS CXX Fortran" )
+ecbuild_add_option( FEATURE MPI DEFAULT ON
+                    DESCRIPTION "Support for MPI distributed parallelism"
+                    REQUIRED_PACKAGES "MPI COMPONENTS CXX Fortran" )
 ecbuild_find_mpi( COMPONENTS CXX Fortran REQUIRED )
 ecbuild_include_mpi()
 link_libraries(${MPI_CXX_LIBRARIES} ${MPI_Fortran_LIBRARIES})
