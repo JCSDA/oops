@@ -43,20 +43,20 @@ class LocsTestFixture : TestFixture {
 BOOST_FIXTURE_TEST_SUITE(test_LocsL95, LocsTestFixture)
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_LocsL95_constructor) {
-    boost::scoped_ptr<lorenz95::LocsL95> locs(new lorenz95::LocsL95(*ot_, *t1_, *t2_));
+    boost::scoped_ptr<lorenz95::LocsL95> locs(ot_->locations(*t1_, *t2_));
     BOOST_CHECK(locs.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_LocsL95_nobs) {
-    boost::scoped_ptr<lorenz95::LocsL95> locs(new lorenz95::LocsL95(*ot_, *t1_, *t2_));
-    BOOST_CHECK_EQUAL(locs->nobs(), 80);
+    boost::scoped_ptr<lorenz95::LocsL95> locs(ot_->locations(*t1_, *t2_));
+    BOOST_CHECK_EQUAL(locs->size(), 80);
   }
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_LocsL95_operator) {
-    boost::scoped_ptr<lorenz95::LocsL95> locs(new lorenz95::LocsL95(*ot_, *t1_, *t2_));
+    boost::scoped_ptr<lorenz95::LocsL95> locs(ot_->locations(*t1_, *t2_));
     double pos = 0.0;
-    for (int i = 0; i < locs->nobs(); ++i) {
-      BOOST_CHECK_CLOSE((*locs)[i], pos, 0.000001);
+    for (size_t jj = 0; jj < locs->size(); ++jj) {
+      BOOST_CHECK_CLOSE((*locs)[jj], pos, 0.000001);
       pos += 0.05;
       if (pos >= 1.0) pos=0.0;
     }

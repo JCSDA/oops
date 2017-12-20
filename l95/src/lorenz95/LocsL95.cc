@@ -16,15 +16,18 @@ namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
 
-LocsL95::LocsL95(const ObsTable & ot,
-                 const util::DateTime & t1, const util::DateTime & t2) {
-  locs_ = ot.locations(t1, t2);
+LocsL95::LocsL95(const std::vector<int> & indx, const std::vector<double> & locs)
+ : indx_(indx), locs_(locs)
+{
+  ASSERT(indx_.size() == locs_.size());
 }
 
 // -----------------------------------------------------------------------------
 
 void LocsL95::print(std::ostream & os) const {
-  os << "LocsL95::print not implemented";
+  os << locs_.size();
+  if (locs_.size() > 0) os << " " << locs_.at(1);
+  if (locs_.size() > 1) os << " " << locs_.at(locs_.size() - 1);
 }
 
 // -----------------------------------------------------------------------------

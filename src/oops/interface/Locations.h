@@ -13,10 +13,9 @@
 
 #include <string>
 
-#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include "util/Logger.h"
-#include "oops/interface/ObservationSpace.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 #include "util/Timer.h"
@@ -33,8 +32,8 @@ class Locations : public util::Printable,
  public:
   static const std::string classname() {return "oops::Locations";}
 
-  Locations(const ObservationSpace<MODEL> &,
-            const util::DateTime &, const util::DateTime &);
+  explicit Locations(const Locations_ *);
+  Locations(const Locations &);
   ~Locations();
 
 /// Interfacing
@@ -42,20 +41,25 @@ class Locations : public util::Printable,
 
  private:
   void print(std::ostream &) const;
-  boost::scoped_ptr<Locations_> locs_;
+  boost::shared_ptr<const Locations_> locs_;
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-Locations<MODEL>::Locations(const ObservationSpace<MODEL> & os,
-                            const util::DateTime & t1, const util::DateTime & t2)
-  : locs_()
+Locations<MODEL>::Locations(const Locations_ * locs)
+  : locs_(locs)
 {
-  Log::trace() << "Locations<MODEL>::Locations starting" << std::endl;
-  util::Timer timer(classname(), "Locations");
-  locs_.reset(new Locations_(os.observationspace(), t1, t2));
-  Log::trace() << "Locations<MODEL>::Locations done" << std::endl;
+  Log::trace() << "Locations<MODEL>::Locations constructed" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+Locations<MODEL>::Locations(const Locations & other)
+  : locs_(other.locs_)
+{
+  Log::trace() << "Locations<MODEL>::Locations copied" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -74,7 +78,7 @@ template<typename MODEL>
 void Locations<MODEL>::print(std::ostream & os) const {
   Log::trace() << "Locations<MODEL>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
-//  os << *increment_;
+  os << *locs_;
   Log::trace() << "Locations<MODEL>::print done" << std::endl;
 }
 

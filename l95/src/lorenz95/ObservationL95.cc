@@ -41,7 +41,7 @@ ObservationL95::~ObservationL95() {}
 
 void ObservationL95::obsEquiv(const GomL95 & gom, ObsVec1D & ovec,
                               const ObsBias & bias) const {
-  for (int jj = 0; jj < gom.nobs(); ++jj) {
+  for (size_t jj = 0; jj < gom.size(); ++jj) {
     const int ii = gom.getindx(jj);
     ovec(ii)=gom[jj] + bias.value();
   }

@@ -263,12 +263,6 @@ ecbuild_add_test( TARGET test_l95_geometry
                   ARGS "testinput/interfaces.json"
                   LIBS    lorenz95 )
 
-ecbuild_add_test( TARGET test_l95_locations
-                  BOOST
-                  SOURCES executables/TestLocations.cc
-                  ARGS "testinput/interfaces.json"
-                  LIBS    lorenz95 )
-
 ecbuild_add_test( TARGET test_l95_geovals
                   BOOST
                   SOURCES executables/TestGeoVaLs.cc
