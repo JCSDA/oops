@@ -26,6 +26,7 @@ namespace eckit {
 }
 
 namespace lorenz95 {
+  class LocsL95;
   class ObsVec1D;
 
 /// A Simple Observation Data Handler
@@ -46,7 +47,7 @@ class ObsTable : public oops::ObsSpaceBase,
   void putdb(const std::string &, const std::vector<double> &) const;
   void getdb(const std::string &, std::vector<double> &) const;
 
-  std::vector<double> locations(const util::DateTime &, const util::DateTime &) const;
+  LocsL95 * locations(const util::DateTime & t1, const util::DateTime & t2) const;
   std::vector<int> timeSelect(const util::DateTime &, const util::DateTime &) const;
   void generateDistribution(const eckit::Configuration &);
   void printJo(const ObsVec1D &, const ObsVec1D &);

@@ -126,20 +126,20 @@ void FieldL95::random() {
 // -----------------------------------------------------------------------------
 void FieldL95::interp(const LocsL95 & locs, GomL95 & gom) const {
   const double dres = static_cast<double>(resol_);
-  for (int jobs = 0; jobs < locs.nobs(); ++jobs) {
+  for (size_t jobs = 0; jobs < locs.size(); ++jobs) {
     int ii = round(locs[jobs] * dres);
     ASSERT(ii >= 0 && ii <= resol_);
     if (ii == resol_) ii = 0;
     gom[gom.current()+jobs] = x_[ii];
   }
-  gom.current() += locs.nobs();
+  gom.current() += locs.size();
 }
 // -----------------------------------------------------------------------------
 void FieldL95::interpAD(const LocsL95 & locs, const GomL95 & gom) {
   const double dres = static_cast<double>(resol_);
-  if (gom.current() == 0) gom.current() = gom.nobs();
-  gom.current() -= locs.nobs();
-  for (int jobs = 0; jobs < locs.nobs(); ++jobs) {
+  if (gom.current() == 0) gom.current() = gom.size();
+  gom.current() -= locs.size();
+  for (size_t jobs = 0; jobs < locs.size(); ++jobs) {
     int ii = round(locs[jobs] * dres);
     ASSERT(ii >= 0 && ii <= resol_);
     if (ii == resol_) ii = 0;

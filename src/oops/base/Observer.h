@@ -23,7 +23,6 @@
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
 #include "oops/interface/GeoVaLs.h"
-#include "oops/interface/Locations.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
@@ -41,7 +40,6 @@ template <typename MODEL, typename STATE>
 class Observer : public util::Printable, public PostBase<STATE> {
   typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef LinearObsOperators<MODEL>  LinearObsOperator_;
-  typedef Locations<MODEL>           Locations_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef ObsFilters<MODEL>          ObsFilters_;
   typedef Observations<MODEL>        Observations_;
@@ -105,7 +103,8 @@ Observer<MODEL, STATE>::Observer(const ObsSpace_ & obsdb,
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename STATE>
 void Observer<MODEL, STATE>::doInitialize(const STATE & xx,
-              const util::DateTime & end, const util::Duration & tstep) {
+                                          const util::DateTime & end,
+                                          const util::Duration & tstep) {
   const util::DateTime bgn(xx.validTime());
   if (hslot_ == util::Duration(0)) hslot_ = tstep/2;
   if (subwindows_) {
@@ -120,8 +119,8 @@ void Observer<MODEL, STATE>::doInitialize(const STATE & xx,
   if (bgn_ < winbgn_) bgn_ = winbgn_;
   if (end_ > winend_) end_ = winend_;
 
-  for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
-    boost::shared_ptr<GeoVaLs_> tmp(new GeoVaLs_(obspace_[jj], hop_.variables(jj), bgn_, end_));
+  for (size_t jj = 0; jj < obspace_.size(); ++jj) {
+    boost::shared_ptr<GeoVaLs_> tmp(new GeoVaLs_(obspace_[jj].locations(bgn_, end_), hop_.variables(jj)));
     gvals_.push_back(tmp);
   }
 }
@@ -133,18 +132,15 @@ void Observer<MODEL, STATE>::doProcessing(const STATE & xx) {
   if (t1 < bgn_) t1 = bgn_;
   if (t2 > end_) t2 = end_;
 
-  for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
-//  Get locations info for interpolator
-    Locations_ locs(obspace_[jj], t1, t2);
-
-//  Interpolate state variables to obs locations
-    xx.interpolate(locs, hop_.variables(jj), *gvals_.at(jj));
+// Interpolate state variables to obs locations
+  for (size_t jj = 0; jj < obspace_.size(); ++jj) {
+    xx.interpolate(obspace_[jj].locations(t1, t2), hop_.variables(jj), *gvals_.at(jj));
   }
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename STATE>
 void Observer<MODEL, STATE>::doFinalize(const STATE &) {
-  for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
+  for (size_t jj = 0; jj < obspace_.size(); ++jj) {
     if (htlad_) (*htlad_)[jj].setTrajectory(*gvals_.at(jj), ybias_);
     hop_[jj].obsEquiv(*gvals_.at(jj), (*yobs_)[jj], ybias_);
     filters_[jj].postFilter(*gvals_.at(jj), (*yobs_)[jj], obspace_[jj]);

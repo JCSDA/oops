@@ -25,6 +25,7 @@
 #include "util/Duration.h"
 #include "util/Logger.h"
 
+#include "lorenz95/LocsL95.h"
 #include "lorenz95/ObsVec1D.h"
 
 // -----------------------------------------------------------------------------
@@ -80,13 +81,12 @@ void ObsTable::getdb(const std::string & col, std::vector<double> & vec) const {
 
 // -----------------------------------------------------------------------------
 
-std::vector<double> ObsTable::locations(const util::DateTime & t1,
-                                        const util::DateTime & t2) const {
+LocsL95 * ObsTable::locations(const util::DateTime & t1, const util::DateTime & t2) const {
   std::vector<int> olist = timeSelect(t1, t2);
   const int nobs = olist.size();
   std::vector<double> locs(nobs);
   for (int jobs = 0; jobs < nobs; ++jobs) locs[jobs]=locations_[olist[jobs]];
-  return locs;
+  return new LocsL95(olist, locs);
 }
 
 // -----------------------------------------------------------------------------

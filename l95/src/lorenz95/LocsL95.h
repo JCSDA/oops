@@ -18,28 +18,24 @@
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 
-namespace util {
-  class DateTime;
-}
-
 namespace lorenz95 {
-  class ObsTable;
 
 /// LocsL95 class to handle locations for L95 model.
-
 class LocsL95 : public util::Printable,
                 private util::ObjectCounter<LocsL95> {
  public:
   static const std::string classname() {return "lorenz95::LocsL95";}
 
-  LocsL95(const ObsTable &, const util::DateTime &, const util::DateTime &);
+  LocsL95(const std::vector<int> &, const std::vector<double> &);
   ~LocsL95() {}
 
-  int nobs() const {return locs_.size();}
-  const double & operator[](const int ii) const {return locs_[ii];}
+  size_t size() const {return locs_.size();}
+  const double & operator[](const size_t ii) const {return locs_.at(ii);}
+  const int & globalIndex(const size_t ii) const {return indx_.at(ii);}
 
  private:
   void print(std::ostream & os) const;
+  std::vector<int> indx_;
   std::vector<double> locs_;
 };
 

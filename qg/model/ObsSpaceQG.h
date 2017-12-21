@@ -19,6 +19,7 @@
 #include "util/DateTime.h"
 #include "util/Printable.h"
 
+#include "model/LocationsQG.h"
 #include "model/ObsHelpQG.h"
 #include "model/QgFortran.h"
 
@@ -43,10 +44,9 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
     helper_->putdb(obsname_, col, keyData);
   }
 
-  int locations(const util::DateTime & t1, const util::DateTime & t2) const {
-    int key_locs;
-    key_locs = helper_->locations(obsname_, t1, t2);
-    return key_locs;
+  LocationsQG * locations(const util::DateTime & t1, const util::DateTime & t2) const {
+    int key_locs = helper_->locations(obsname_, t1, t2);
+    return new LocationsQG(key_locs);
   }
 
   void generateDistribution(const eckit::Configuration & conf) {
