@@ -105,7 +105,6 @@ template <typename MODEL> void testStateInterpolation() {
   typedef oops::State<MODEL>      State_;
   typedef oops::Locations<MODEL>  Locations_;
   typedef oops::GeoVaLs<MODEL>    GeoVaLs_;
-  typedef oops::Variables<MODEL>  Variables_;
 
   const eckit::LocalConfiguration confs(TestEnvironment::config(), "StateTest");
   const State_ xx(Test_::resol(), confs);
@@ -115,11 +114,11 @@ template <typename MODEL> void testStateInterpolation() {
   const Locations_ locs(confl);
 
   const eckit::LocalConfiguration confv(TestEnvironment::config(), "Variables");
-  const Variables_ vars(confv);
+  const oops::Variables vars(confv);
 
   GeoVaLs_ gval(locs, vars);
 
-  xx.interpolate(locs, gval);
+  xx.interpolate(locs, vars, gval);
 
   const double ref = confs.getDouble("value");
   const double zz = std::sqrt(dot_product(gval, gval));

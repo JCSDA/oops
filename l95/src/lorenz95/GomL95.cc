@@ -40,13 +40,6 @@ GomL95::GomL95(const LocsL95 & locs, const oops::Variables &)
   for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = locs[jj];
 }
 // -----------------------------------------------------------------------------
-GomL95::GomL95(const LocsL95 & locs, const NoVariables &)
-  : size_(0), iobs_(), locval_(), current_(0)
-{
-  size_ = locs.nobs();
-  locval_.resize(size_);
-}
-// -----------------------------------------------------------------------------
 GomL95::GomL95(const eckit::Configuration & conf)
   : size_(0), iobs_(), locval_(), current_(0)
 {
@@ -56,7 +49,7 @@ GomL95::GomL95(const eckit::Configuration & conf)
 GomL95::~GomL95() {}
 // -----------------------------------------------------------------------------
 GomL95 & GomL95::operator*=(const double & zz) {
-  for (int jj = 0; jj < size_; ++jj) locval_[jj] *= zz;
+  for (size_t jj = 0; jj < size_; ++jj) locval_[jj] *= zz;
   return *this;
 }
 // -----------------------------------------------------------------------------

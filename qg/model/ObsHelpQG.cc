@@ -53,12 +53,13 @@ void ObsHelpQG::getdb(const std::string & obsname, const std::string & col, int 
 
 // -----------------------------------------------------------------------------
 
-void ObsHelpQG::locations(const std::string & obsname,
-                          const util::DateTime & t1, const util::DateTime & t2,
-                          const int & key_locs) const {
+F90locs ObsHelpQG::locations(const std::string & obsname,
+                             const util::DateTime & t1, const util::DateTime & t2) const {
   const util::DateTime * p1 = &t1;
   const util::DateTime * p2 = &t2;
+  F90locs key_locs;
   qg_obsdb_locations_f90(keyHelp_, obsname.size(), obsname.c_str(), &p1, &p2, key_locs);
+  return key_locs;
 }
 
 // -----------------------------------------------------------------------------

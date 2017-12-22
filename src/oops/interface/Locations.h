@@ -59,6 +59,7 @@ Locations<MODEL>::Locations(const Locations_ * locs) : locs_(locs)
 
 // -----------------------------------------------------------------------------
 
+template <typename MODEL>
 Locations<MODEL>::Locations(const eckit::Configuration & conf) {
   Log::trace() << "Locations<MODEL>::Locations starting" << std::endl;
   util::Timer timer(classname(), "Locations");

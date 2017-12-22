@@ -38,7 +38,7 @@ class ObsHelpQG : private boost::noncopyable,
   void getdb(const std::string &, const std::string &, int & keyOvec) const;
   void putdb(const std::string &, const std::string &, const int & keyOvec);
 
-  void locations(const std::string &, const util::DateTime &, const util::DateTime &, const int &) const;
+  F90locs locations(const std::string &, const util::DateTime &, const util::DateTime &) const;
   void generateDistribution(const eckit::Configuration &, const std::string &,
                             const util::DateTime &, const util::DateTime &, unsigned int &);
   int nobs(const std::string &) const;
