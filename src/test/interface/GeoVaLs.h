@@ -109,6 +109,7 @@ template <typename MODEL> void testUtils() {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL> void testRead() {
+  typedef GeoVaLsFixture<MODEL> Test_;
   typedef oops::GeoVaLs<MODEL>  GeoVaLs_;
 
   const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
@@ -116,7 +117,7 @@ template <typename MODEL> void testRead() {
   obsconf.get("ObsTypes", conf);
 
   const double tol = 1.0e-8;
-  for (std::size_t jj = 0; jj < conf.size(); ++jj) {
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
     GeoVaLs_ gval(gconf);
     const double xx = gconf.getDouble("norm");
