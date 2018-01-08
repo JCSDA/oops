@@ -39,15 +39,17 @@ type(odatatype),intent(inout) :: odata   !< Observation operator data
 
 if (nam%new_obsop) then
    ! Define number of observations
-   odata%nobs = int(1.0e-2*float(geom%nc0))
+   odata%nobs = nam%nobs
 
    ! Allocation
    allocate(odata%lonobs(odata%nobs))
    allocate(odata%latobs(odata%nobs))
 
    ! Generate random observation network
-   if (mpl%main) call rand_real(-pi,pi,odata%lonobs)
-   if (mpl%main) call rand_real(-0.5*pi,0.5*pi,odata%latobs)
+   if (mpl%main) then
+      call rand_real(minval(geom%lon),maxval(geom%lon),odata%lonobs)
+      call rand_real(minval(geom%lat),maxval(geom%lat),odata%latobs)
+   end if
    call mpl_bcast(odata%lonobs,mpl%ioproc)
    call mpl_bcast(odata%latobs,mpl%ioproc)
 

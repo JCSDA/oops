@@ -15,7 +15,7 @@ use tools_kinds, only: kind_real
 implicit none
 
 private
-public :: areas,bnodes,scoord,trans,trfind,trlist,trmesh
+public :: addnod,areas,bnodes,crlist,scoord,trans,trfind,trlist,trmesh
 
 contains
 
@@ -704,6 +704,92 @@ subroutine bnodes ( n, list, lptr, lend, nodes, nb, na, nt )
 
   return
 end
+subroutine circum ( v1, v2, v3, c, ier )
+
+!*****************************************************************************80
+!
+!! CIRCUM returns the circumcenter of a spherical triangle.
+!
+!  Discussion:
+!
+!    This subroutine returns the circumcenter of a spherical triangle on the
+!    unit sphere:  the point on the sphere surface that is equally distant
+!    from the three triangle vertices and lies in the same hemisphere, where
+!    distance is taken to be arc-length on the sphere surface.
+!
+!  Modified:
+!
+!    16 June 2007
+!
+!  Author:
+!
+!    Robert Renka
+!
+!  Reference:
+!
+!    Robert Renka,
+!    Algorithm 772: STRIPACK,
+!    Delaunay Triangulation and Voronoi Diagram on the Surface of a Sphere,
+!    ACM Transactions on Mathematical Software,
+!    Volume 23, Number 3, September 1997, pages 416-434.
+!
+!  Parameters:
+!
+!    Input, real V1(3), V2(3), V3(3), the coordinates of the
+!    three triangle vertices (unit vectors) in counter clockwise order.
+!
+!    Output, real C(3), the coordinates of the circumcenter unless
+!    0 < IER, in which case C is not defined.  C = (V2-V1) X (V3-V1)
+!    normalized to a unit vector.
+!
+!    Output, integer IER = Error indicator:
+!    0, if no errors were encountered.
+!    1, if V1, V2, and V3 lie on a common line:  (V2-V1) X (V3-V1) = 0.
+!
+!  Local parameters:
+!
+!    CNORM = Norm of CU:  used to compute C
+!    CU =    Scalar multiple of C:  E1 X E2
+!    E1,E2 = Edges of the underlying planar triangle:
+!            V2-V1 and V3-V1, respectively
+!    I =     DO-loop index
+!
+  implicit none
+
+  real (kind_real) c(3)
+  real (kind_real) cnorm
+  real (kind_real) cu(3)
+  real (kind_real) e1(3)
+  real (kind_real) e2(3)
+  integer ier
+  real (kind_real) v1(3)
+  real (kind_real) v2(3)
+  real (kind_real) v3(3)
+
+  ier = 0
+
+  e1(1:3) = v2(1:3) - v1(1:3)
+  e2(1:3) = v3(1:3) - v1(1:3)
+!
+!  Compute CU = E1 X E2 and CNORM**2.
+!
+  cu(1) = e1(2) * e2(3) - e1(3) * e2(2)
+  cu(2) = e1(3) * e2(1) - e1(1) * e2(3)
+  cu(3) = e1(1) * e2(2) - e1(2) * e2(1)
+
+  cnorm = sqrt ( sum ( cu(1:3)**2 ) )
+!
+!  The vertices lie on a common line if and only if CU is the zero vector.
+!
+  if ( .not.(abs(cnorm)>0.0) ) then
+    ier = 1
+    return
+  end if
+
+  c(1:3) = cu(1:3) / cnorm
+
+  return
+end
 subroutine covsph ( kk, n0, list, lptr, lend, lnew )
 
 !*****************************************************************************80
@@ -841,6 +927,646 @@ subroutine det ( x1, y1, z1, x2, y2, z2, x0, y0, z0, output )
 
   output = x0*(y1*z2-y2*z1) - y0*(x1*z2-x2*z1) + z0*(x1*y2-x2*y1)
 
+end
+subroutine crlist ( n, ncol, x, y, z, list, lend, lptr, lnew, &
+  ltri, listc, nb, xc, yc, zc, rc, ier )
+
+!*****************************************************************************80
+!
+!! CRLIST returns triangle circumcenters and other information.
+!
+!  Discussion:
+!
+!    Given a Delaunay triangulation of nodes on the surface
+!    of the unit sphere, this subroutine returns the set of
+!    triangle circumcenters corresponding to Voronoi vertices,
+!    along with the circumradii and a list of triangle indexes
+!    LISTC stored in one-to-one correspondence with LIST/LPTR
+!    entries.
+!
+!    A triangle circumcenter is the point (unit vector) lying
+!    at the same angular distance from the three vertices and
+!    contained in the same hemisphere as the vertices.  (Note
+!    that the negative of a circumcenter is also equidistant
+!    from the vertices.)  If the triangulation covers the
+!    surface, the Voronoi vertices are the circumcenters of the
+!    triangles in the Delaunay triangulation.  LPTR, LEND, and
+!    LNEW are not altered in this case.
+!
+!    On the other hand, if the nodes are contained in a
+!    single hemisphere, the triangulation is implicitly extended
+!    to the entire surface by adding pseudo-arcs (of length
+!    greater than 180 degrees) between boundary nodes forming
+!    pseudo-triangles whose 'circumcenters' are included in the
+!    list.  This extension to the triangulation actually
+!    consists of a triangulation of the set of boundary nodes in
+!    which the swap test is reversed (a non-empty circumcircle
+!    test).  The negative circumcenters are stored as the
+!    pseudo-triangle 'circumcenters'.  LISTC, LPTR, LEND, and
+!    LNEW contain a data structure corresponding to the
+!    extended triangulation (Voronoi diagram), but LIST is not
+!    altered in this case.  Thus, if it is necessary to retain
+!    the original (unextended) triangulation data structure,
+!    copies of LPTR and LNEW must be saved before calling this
+!    routine.
+!
+!  Modified:
+!
+!    16 June 2007
+!
+!  Author:
+!
+!    Robert Renka
+!
+!  Reference:
+!
+!    Robert Renka,
+!    Algorithm 772: STRIPACK,
+!    Delaunay Triangulation and Voronoi Diagram on the Surface of a Sphere,
+!    ACM Transactions on Mathematical Software,
+!    Volume 23, Number 3, September 1997, pages 416-434.
+!
+!  Parameters:
+!
+!    Input, integer N, the number of nodes in the triangulation.
+!    3 <= N.  Note that, if N = 3, there are only two Voronoi vertices
+!    separated by 180 degrees, and the Voronoi regions are not well defined.
+!
+!    Input, integer NCOL, the number of columns reserved for LTRI.
+!    This must be at least NB-2, where NB is the number of boundary nodes.
+!
+!    Input, real X(N), Y(N), Z(N), the coordinates of the nodes
+!    (unit vectors).
+!
+!    Input, integer LIST(6*(N-2)), the set of adjacency lists.
+!    Refer to TRMESH.
+!
+!    Input, integer LEND(N), the set of pointers to ends of
+!    adjacency lists.  Refer to TRMESH.
+!
+!    Input/output, integer LPTR(6*(N-2)), pointers associated
+!    with LIST.  Refer to TRMESH.  On output, pointers associated with LISTC.
+!    Updated for the addition of pseudo-triangles if the original triangulation
+!    contains boundary nodes (0 < NB).
+!
+!    Input/output, integer LNEW.  On input, a pointer to the first
+!    empty location in LIST and LPTR (list length plus one).  On output,
+!    pointer to the first empty location in LISTC and LPTR (list length plus
+!    one).  LNEW is not altered if NB = 0.
+!
+!    Output, integer LTRI(6,NCOL).  Triangle list whose first NB-2
+!    columns contain the indexes of a clockwise-ordered sequence of vertices
+!    (first three rows) followed by the LTRI column indexes of the triangles
+!    opposite the vertices (or 0 denoting the exterior region) in the last
+!    three rows. This array is not generally of any further use outside this
+!    routine.
+!
+!    Output, integer LISTC(3*NT), where NT = 2*N-4 is the number
+!    of triangles in the triangulation (after extending it to cover the entire
+!    surface if necessary).  Contains the triangle indexes (indexes to XC, YC,
+!    ZC, and RC) stored in 1-1 correspondence with LIST/LPTR entries (or entries
+!    that would be stored in LIST for the extended triangulation):  the index
+!    of triangle (N1,N2,N3) is stored in LISTC(K), LISTC(L), and LISTC(M),
+!    where LIST(K), LIST(L), and LIST(M) are the indexes of N2 as a neighbor
+!    of N1, N3 as a neighbor of N2, and N1 as a neighbor of N3.  The Voronoi
+!    region associated with a node is defined by the CCW-ordered sequence of
+!    circumcenters in one-to-one correspondence with its adjacency
+!    list (in the extended triangulation).
+!
+!    Output, integer NB, the number of boundary nodes unless
+!    IER = 1.
+!
+!    Output, real XC(2*N-4), YC(2*N-4), ZC(2*N-4), the coordinates
+!    of the triangle circumcenters (Voronoi vertices).  XC(I)**2 + YC(I)**2
+!    + ZC(I)**2 = 1.  The first NB-2 entries correspond to pseudo-triangles
+!    if 0 < NB.
+!
+!    Output, real RC(2*N-4), the circumradii (the arc lengths or
+!    angles between the circumcenters and associated triangle vertices) in
+!    1-1 correspondence with circumcenters.
+!
+!    Output, integer IER = Error indicator:
+!    0, if no errors were encountered.
+!    1, if N < 3.
+!    2, if NCOL < NB-2.
+!    3, if a triangle is degenerate (has vertices lying on a common geodesic).
+!
+!  Local parameters:
+!
+!    C =         Circumcenter returned by Subroutine CIRCUM
+!    I1,I2,I3 =  Permutation of (1,2,3):  LTRI row indexes
+!    I4 =        LTRI row index in the range 1 to 3
+!    IERR =      Error flag for calls to CIRCUM
+!    KT =        Triangle index
+!    KT1,KT2 =   Indexes of a pair of adjacent pseudo-triangles
+!    KT11,KT12 = Indexes of the pseudo-triangles opposite N1
+!                and N2 as vertices of KT1
+!    KT21,KT22 = Indexes of the pseudo-triangles opposite N1
+!                and N2 as vertices of KT2
+!    LP,LPN =    LIST pointers
+!    LPL =       LIST pointer of the last neighbor of N1
+!    N0 =        Index of the first boundary node (initial
+!                value of N1) in the loop on boundary nodes
+!                used to store the pseudo-triangle indexes
+!                in LISTC
+!    N1,N2,N3 =  Nodal indexes defining a triangle (CCW order)
+!                or pseudo-triangle (clockwise order)
+!    N4 =        Index of the node opposite N2 -> N1
+!    NM2 =       N-2
+!    NN =        Local copy of N
+!    NT =        Number of pseudo-triangles:  NB-2
+!    SWP =       Logical variable set to TRUE in each optimization
+!                loop (loop on pseudo-arcs) iff a swap is performed.
+!
+!    V1,V2,V3 =  Vertices of triangle KT = (N1,N2,N3) sent to subroutine
+!                CIRCUM
+!
+  implicit none
+
+  integer n
+  integer ncol
+
+  real (kind_real) c(3)
+  integer i1
+  integer i2
+  integer i3
+  integer i4
+  integer ier
+  integer ierr
+  integer kt
+  integer kt1
+  integer kt11
+  integer kt12
+  integer kt2
+  integer kt21
+  integer kt22
+  integer lend(n)
+  integer list(6*(n-2))
+  integer listc(6*(n-2))
+  integer lnew
+  integer lp
+  integer lpl
+  integer lpn
+  integer lptr(6*(n-2))
+  integer ltri(6,ncol)
+  integer n0
+  integer n1
+  integer n2
+  integer n3
+  integer n4
+  integer nb
+  integer nm2
+  integer nn
+  integer nt
+  real (kind_real) rc(2*n-4)
+  logical swp
+  real (kind_real) t
+  real (kind_real) v1(3)
+  real (kind_real) v2(3)
+  real (kind_real) v3(3)
+  real (kind_real) x(n)
+  real (kind_real) xc(2*n-4)
+  real (kind_real) y(n)
+  real (kind_real) yc(2*n-4)
+  real (kind_real) z(n)
+  real (kind_real) zc(2*n-4)
+  logical output
+
+  nn = n
+  nb = 0
+  nt = 0
+
+  if ( nn < 3 ) then
+    ier = 1
+    return
+  end if
+!
+!  Search for a boundary node N1.
+!
+  lp = 0
+
+  do n1 = 1, nn
+
+    if ( list(lend(n1)) < 0 ) then
+      lp = lend(n1)
+      exit
+    end if
+
+  end do
+!
+!  Does the triangulation already cover the sphere?
+!
+  if ( lp /= 0 ) then
+!
+!  There are 3 <= NB boundary nodes.  Add NB-2 pseudo-triangles (N1,N2,N3)
+!  by connecting N3 to the NB-3 boundary nodes to which it is not
+!  already adjacent.
+!
+!  Set N3 and N2 to the first and last neighbors,
+!  respectively, of N1.
+!
+    n2 = -list(lp)
+    lp = lptr(lp)
+    n3 = list(lp)
+!
+!  Loop on boundary arcs N1 -> N2 in clockwise order,
+!  storing triangles (N1,N2,N3) in column NT of LTRI
+!  along with the indexes of the triangles opposite
+!  the vertices.
+!
+    do
+
+      nt = nt + 1
+
+      if ( nt <= ncol ) then
+        ltri(1,nt) = n1
+        ltri(2,nt) = n2
+        ltri(3,nt) = n3
+        ltri(4,nt) = nt + 1
+        ltri(5,nt) = nt - 1
+        ltri(6,nt) = 0
+      end if
+
+      n1 = n2
+      lp = lend(n1)
+      n2 = -list(lp)
+
+      if ( n2 == n3 ) then
+        exit
+      end if
+
+    end do
+
+    nb = nt + 2
+
+    if ( ncol < nt ) then
+      ier = 2
+      return
+    end if
+
+    ltri(4,nt) = 0
+!
+!  Optimize the exterior triangulation (set of pseudo-
+!  triangles) by applying swaps to the pseudo-arcs N1-N2
+!  (pairs of adjacent pseudo-triangles KT1 and KT1 < KT2).
+!  The loop on pseudo-arcs is repeated until no swaps are
+!  performed.
+!
+    if ( nt /= 1 ) then
+
+      do
+
+        swp = .false.
+
+        do kt1 = 1, nt - 1
+
+          do i3 = 1, 3
+
+            kt2 = ltri(i3+3,kt1)
+
+            if ( kt2 <= kt1 ) then
+              cycle
+            end if
+!
+!  The LTRI row indexes (I1,I2,I3) of triangle KT1 =
+!  (N1,N2,N3) are a cyclical permutation of (1,2,3).
+!
+            if ( i3 == 1 ) then
+              i1 = 2
+              i2 = 3
+            else if ( i3 == 2 ) then
+              i1 = 3
+              i2 = 1
+            else
+              i1 = 1
+              i2 = 2
+            end if
+
+            n1 = ltri(i1,kt1)
+            n2 = ltri(i2,kt1)
+            n3 = ltri(i3,kt1)
+!
+!  KT2 = (N2,N1,N4) for N4 = LTRI(I,KT2), where LTRI(I+3,KT2) = KT1.
+!
+            if ( ltri(4,kt2) == kt1 ) then
+              i4 = 1
+            else if ( ltri(5,kt2 ) == kt1 ) then
+              i4 = 2
+            else
+              i4 = 3
+            end if
+
+            n4 = ltri(i4,kt2)
+!
+!  The empty circumcircle test is reversed for the pseudo-
+!  triangles.  The reversal is implicit in the clockwise
+!  ordering of the vertices.
+!
+            call swptst ( n1, n2, n3, n4, x, y, z, output )
+            if ( .not. output ) then
+              cycle
+            end if
+!
+!  Swap arc N1-N2 for N3-N4.  KTij is the triangle opposite
+!  Nj as a vertex of KTi.
+!
+            swp = .true.
+            kt11 = ltri(i1+3,kt1)
+            kt12 = ltri(i2+3,kt1)
+
+            if ( i4 == 1 ) then
+              i2 = 2
+              i1 = 3
+            else if ( i4 == 2 ) then
+              i2 = 3
+              i1 = 1
+            else
+              i2 = 1
+              i1 = 2
+            end if
+
+            kt21 = ltri(i1+3,kt2)
+            kt22 = ltri(i2+3,kt2)
+            ltri(1,kt1) = n4
+            ltri(2,kt1) = n3
+            ltri(3,kt1) = n1
+            ltri(4,kt1) = kt12
+            ltri(5,kt1) = kt22
+            ltri(6,kt1) = kt2
+            ltri(1,kt2) = n3
+            ltri(2,kt2) = n4
+            ltri(3,kt2) = n2
+            ltri(4,kt2) = kt21
+            ltri(5,kt2) = kt11
+            ltri(6,kt2) = kt1
+!
+!  Correct the KT11 and KT22 entries that changed.
+!
+            if ( kt11 /= 0 ) then
+              i4 = 4
+              if ( ltri(4,kt11) /= kt1 ) then
+                i4 = 5
+                if ( ltri(5,kt11) /= kt1 ) i4 = 6
+              end if
+              ltri(i4,kt11) = kt2
+            end if
+
+            if ( kt22 /= 0 ) then
+              i4 = 4
+              if ( ltri(4,kt22) /= kt2 ) then
+                i4 = 5
+                if ( ltri(5,kt22) /= kt2 ) then
+                  i4 = 6
+                end if
+              end if
+              ltri(i4,kt22) = kt1
+            end if
+
+          end do
+
+        end do
+
+        if ( .not. swp ) then
+          exit
+        end if
+
+      end do
+
+    end if
+!
+!  Compute and store the negative circumcenters and radii of
+!  the pseudo-triangles in the first NT positions.
+!
+    do kt = 1, nt
+
+      n1 = ltri(1,kt)
+      n2 = ltri(2,kt)
+      n3 = ltri(3,kt)
+      v1(1) = x(n1)
+      v1(2) = y(n1)
+      v1(3) = z(n1)
+      v2(1) = x(n2)
+      v2(2) = y(n2)
+      v2(3) = z(n2)
+      v3(1) = x(n3)
+      v3(2) = y(n3)
+      v3(3) = z(n3)
+
+      call circum ( v1, v2, v3, c, ierr )
+
+      if ( ierr /= 0 ) then
+        ier = 3
+        return
+      end if
+!
+!  Store the negative circumcenter and radius (computed from <V1,C>).
+!
+      xc(kt) = c(1)
+      yc(kt) = c(2)
+      zc(kt) = c(3)
+
+      t = dot_product ( v1(1:3), c(1:3) )
+      t = max ( t, -1.0_kind_real )
+      t = min ( t, +1.0_kind_real )
+
+      rc(kt) = acos ( t )
+
+    end do
+
+  end if
+!
+!  Compute and store the circumcenters and radii of the
+!  actual triangles in positions KT = NT+1, NT+2, ...
+!
+!  Also, store the triangle indexes KT in the appropriate LISTC positions.
+!
+  kt = nt
+!
+!  Loop on nodes N1.
+!
+  nm2 = nn - 2
+
+  do n1 = 1, nm2
+
+    lpl = lend(n1)
+    lp = lpl
+    n3 = list(lp)
+!
+!  Loop on adjacent neighbors N2,N3 of N1 for which N1 < N2 and N1 < N3.
+!
+    do
+
+      lp = lptr(lp)
+      n2 = n3
+      n3 = abs ( list(lp) )
+
+      if ( n1 < n2 .and. n1 < n3 ) then
+
+        kt = kt + 1
+!
+!  Compute the circumcenter C of triangle KT = (N1,N2,N3).
+!
+        v1(1) = x(n1)
+        v1(2) = y(n1)
+        v1(3) = z(n1)
+        v2(1) = x(n2)
+        v2(2) = y(n2)
+        v2(3) = z(n2)
+        v3(1) = x(n3)
+        v3(2) = y(n3)
+        v3(3) = z(n3)
+
+        call circum ( v1, v2, v3, c, ierr )
+
+        if ( ierr /= 0 ) then
+          ier = 3
+          return
+        end if
+!
+!  Store the circumcenter, radius and triangle index.
+!
+        xc(kt) = c(1)
+        yc(kt) = c(2)
+        zc(kt) = c(3)
+
+        t = dot_product ( v1(1:3), c(1:3) )
+        t = max ( t, -1.0_kind_real )
+        t = min ( t, +1.0_kind_real )
+
+        rc(kt) = acos ( t )
+!
+!  Store KT in LISTC(LPN), where abs ( LIST(LPN) ) is the
+!  index of N2 as a neighbor of N1, N3 as a neighbor
+!  of N2, and N1 as a neighbor of N3.
+!
+        call lstptr ( lpl, n2, list, lptr, lpn )
+        listc(lpn) = kt
+        call lstptr ( lend(n2), n3, list, lptr, lpn )
+        listc(lpn) = kt
+        call lstptr ( lend(n3), n1, list, lptr, lpn )
+        listc(lpn) = kt
+
+      end if
+
+      if ( lp == lpl ) then
+        exit
+      end if
+
+    end do
+
+  end do
+
+  if ( nt == 0 ) then
+    ier = 0
+    return
+  end if
+!
+!  Store the first NT triangle indexes in LISTC.
+!
+!  Find a boundary triangle KT1 = (N1,N2,N3) with a boundary arc opposite N3.
+!
+  kt1 = 0
+
+  do
+
+    kt1 = kt1 + 1
+
+    if ( ltri(4,kt1) == 0 ) then
+      i1 = 2
+      i2 = 3
+      i3 = 1
+      exit
+    else if ( ltri(5,kt1) == 0 ) then
+      i1 = 3
+      i2 = 1
+      i3 = 2
+      exit
+    else if ( ltri(6,kt1) == 0 ) then
+      i1 = 1
+      i2 = 2
+      i3 = 3
+      exit
+    end if
+
+  end do
+
+  n1 = ltri(i1,kt1)
+  n0 = n1
+!
+!  Loop on boundary nodes N1 in CCW order, storing the
+!  indexes of the clockwise-ordered sequence of triangles
+!  that contain N1.  The first triangle overwrites the
+!  last neighbor position, and the remaining triangles,
+!  if any, are appended to N1's adjacency list.
+!
+!  A pointer to the first neighbor of N1 is saved in LPN.
+!
+  do
+
+    lp = lend(n1)
+    lpn = lptr(lp)
+    listc(lp) = kt1
+!
+!  Loop on triangles KT2 containing N1.
+!
+    do
+
+      kt2 = ltri(i2+3,kt1)
+
+      if ( kt2 == 0 ) then
+        exit
+      end if
+!
+!  Append KT2 to N1's triangle list.
+!
+      lptr(lp) = lnew
+      lp = lnew
+      listc(lp) = kt2
+      lnew = lnew + 1
+!
+!  Set KT1 to KT2 and update (I1,I2,I3) such that LTRI(I1,KT1) = N1.
+!
+      kt1 = kt2
+
+      if ( ltri(1,kt1) == n1 ) then
+        i1 = 1
+        i2 = 2
+        i3 = 3
+      else if ( ltri(2,kt1) == n1 ) then
+        i1 = 2
+        i2 = 3
+        i3 = 1
+      else
+        i1 = 3
+        i2 = 1
+        i3 = 2
+      end if
+
+    end do
+!
+!  Store the saved first-triangle pointer in LPTR(LP), set
+!  N1 to the next boundary node, test for termination,
+!  and permute the indexes:  the last triangle containing
+!  a boundary node is the first triangle containing the
+!  next boundary node.
+!
+    lptr(lp) = lpn
+    n1 = ltri(i3,kt1)
+
+    if ( n1 == n0 ) then
+      exit
+    end if
+
+    i4 = i3
+    i3 = i2
+    i2 = i1
+    i1 = i4
+
+  end do
+
+  ier = 0
+
+  return
 end
 subroutine insert ( k, lp, list, lptr, lnew )
 

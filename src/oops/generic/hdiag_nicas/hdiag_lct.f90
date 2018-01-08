@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! Module: module_lct.f90
+! Module: hdiag_lct.f90
 !> Purpose: LCT routines
 !> <br>
 !> Author: Benjamin Menetrier
@@ -8,10 +8,10 @@
 !> <br>
 !> Copyright © 2017 METEO-FRANCE
 !----------------------------------------------------------------------
-module module_lct
+module hdiag_lct
 
 use model_interface, only: model_write
-use module_fit_lct, only: compute_fit_lct
+use hdiag_fit_lct, only: compute_fit_lct
 use omp_lib
 use tools_display, only: msgerror
 use tools_kinds, only: kind_real
@@ -42,7 +42,7 @@ type(lcttype),intent(out) :: lct(hdata%nam%nc1,hdata%geom%nl0,hdata%bpar%nb) !< 
 
 
 ! Local variables
-integer :: ib,isub,il0,jl0,ic,ic1
+integer :: ib,jsub,jl0,il0,jc3,ic1
 real(kind_real) :: den
 
 ! Associate
@@ -52,35 +52,35 @@ do ib=1,bpar%nb
    write(mpl%unit,'(a7,a,a)') '','Block: ',trim(bpar%blockname(ib))
 
    ! Allocation
-   do il0=1,geom%nl0
+   do jl0=1,geom%nl0
       do ic1=1,nam%nc1
-         call lct_alloc(hdata,ib,lct(ic1,il0,ib))
+         call lct_alloc(hdata,ib,lct(ic1,jl0,ib))
       end do
    end do
 
    ! Compute correlations
    write(mpl%unit,'(a10,a)') '','Compute correlations'
-   do isub=1,mom(ib)%nsub
-      do jl0=1,geom%nl0
-         do il0=1,bpar%nl0(ib)
-            do ic=1,nam%nc
+   do jsub=1,mom(ib)%nsub
+      do il0=1,geom%nl0
+         do jl0=1,bpar%nl0(ib)
+            do jc3=1,nam%nc3
                do ic1=1,nam%nc1
-                  den = mom(ib)%m2_1(ic1,ic,il0,jl0,isub)*mom(ib)%m2_2(ic1,ic,il0,jl0,isub)
+                  den = mom(ib)%m2_1(ic1,jc3,jl0,il0,jsub)*mom(ib)%m2_2(ic1,jc3,jl0,il0,jsub)
                   if (den>0.0) then
-                     lct(ic1,jl0,ib)%raw(ic,il0) = lct(ic1,jl0,ib)%raw(ic,il0)+mom(ib)%m11(ic1,ic,il0,jl0,isub)/sqrt(den)
-                     lct(ic1,jl0,ib)%norm(ic,il0) = lct(ic1,jl0,ib)%norm(ic,il0)+1.0
+                     lct(ic1,il0,ib)%raw(jc3,jl0) = lct(ic1,il0,ib)%raw(jc3,jl0)+mom(ib)%m11(ic1,jc3,jl0,il0,jsub)/sqrt(den)
+                     lct(ic1,il0,ib)%norm(jc3,jl0) = lct(ic1,il0,ib)%norm(jc3,jl0)+1.0
                   end if
                end do
             end do
          end do
       end do
    end do
-   do jl0=1,geom%nl0
-      do il0=1,bpar%nl0(ib)
-         do ic=1,nam%nc
-            do ic1=1,nam%nc
-               if (lct(ic1,jl0,ib)%norm(ic,il0)>0.0) lct(ic1,jl0,ib)%raw(ic,il0) = lct(ic1,jl0,ib)%raw(ic,il0) &
-                                                                                 & /lct(ic1,jl0,ib)%norm(ic,il0)
+   do il0=1,geom%nl0
+      do jl0=1,bpar%nl0(ib)
+         do jc3=1,nam%nc3
+            do ic1=1,nam%nc3
+               if (lct(ic1,il0,ib)%norm(jc3,jl0)>0.0) lct(ic1,il0,ib)%raw(jc3,jl0) = lct(ic1,il0,ib)%raw(jc3,jl0) &
+                                                                                 & /lct(ic1,il0,ib)%norm(jc3,jl0)
             end do
          end do
       end do
@@ -96,4 +96,4 @@ end associate
 
 end subroutine compute_lct
 
-end module module_lct
+end module hdiag_lct

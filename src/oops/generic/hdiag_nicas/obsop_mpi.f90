@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! Module: module_mpi_obsop.f90
+! Module: obsop_mpi.f90
 !> Purpose: compute observation operator MPI distribution
 !> <br>
 !> Author: Benjamin Menetrier
@@ -8,7 +8,7 @@
 !> <br>
 !> Copyright © 2017 METEO-FRANCE
 !----------------------------------------------------------------------
-module module_mpi_obsop
+module obsop_mpi
 
 use tools_display, only: msgerror
 use tools_kinds, only: kind_real
@@ -25,15 +25,15 @@ use type_randgen, only: rand_real
 implicit none
 
 private
-public :: compute_mpi_obsop
+public :: compute_mpi
 
 contains
 
 !----------------------------------------------------------------------
-! Subroutine: compute_mpi_obsop
+! Subroutine: compute_mpi
 !> Purpose: compute observation operator MPI distribution
 !----------------------------------------------------------------------
-subroutine compute_mpi_obsop(odata,odataloc)
+subroutine compute_mpi(odata,odataloc)
 
 implicit none
 
@@ -252,6 +252,6 @@ end do
 ! End associate
 end associate
 
-end subroutine compute_mpi_obsop
+end subroutine compute_mpi
 
-end module module_mpi_obsop
+end module obsop_mpi

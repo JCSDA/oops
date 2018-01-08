@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! Module: module_mpi.f90
+! Module: nicas_mpi.f90
 !> Purpose: compute NICAS parameters MPI distribution
 !> <br>
 !> Author: Benjamin Menetrier
@@ -8,7 +8,7 @@
 !> <br>
 !> Copyright © 2017 METEO-FRANCE
 !----------------------------------------------------------------------
-module module_mpi
+module nicas_mpi
 
 use netcdf
 use omp_lib
@@ -581,4 +581,4 @@ end associate
 
 end subroutine compute_mpi
 
-end module module_mpi
+end module nicas_mpi

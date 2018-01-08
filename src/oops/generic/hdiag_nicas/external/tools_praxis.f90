@@ -11,7 +11,7 @@
 module tools_praxis
 
 use tools_kinds, only: kind_real
-use type_min, only: mintype
+use type_mdata, only: mdatatype
 implicit none
 
 private
@@ -19,7 +19,7 @@ public :: praxis
 
 contains
 
-subroutine flin ( mindata, func, n, jsearch, l, x, nf, v, q0, q1, qd0, qd1, qa, qb, qc, output )
+subroutine flin ( mdata, func, n, jsearch, l, x, nf, v, q0, q1, qd0, qd1, qa, qb, qc, output )
 
 !*****************************************************************************80
 !
@@ -98,13 +98,13 @@ subroutine flin ( mindata, func, n, jsearch, l, x, nf, v, q0, q1, qd0, qd1, qa, 
 !
   implicit none
 
-  type(mintype),intent(inout) :: mindata !< Minimization data
+  type(mdatatype),intent(inout) :: mdata !< Minimization data
   interface
-    subroutine func(mindata,x,f)
+    subroutine func(mdata,x,f)
     use tools_kinds, only: kind_real
-    use type_min, only: mintype
-    type(mintype),intent(in) :: mindata
-    real(kind_real),intent(in) :: x(mindata%nx)
+    use type_mdata, only: mdatatype
+    type(mdatatype),intent(in) :: mdata
+    real(kind_real),intent(in) :: x(mdata%nx)
     real(kind_real),intent(out) :: f
     end subroutine
   end interface
@@ -150,7 +150,7 @@ subroutine flin ( mindata, func, n, jsearch, l, x, nf, v, q0, q1, qd0, qd1, qa, 
 !
 !  Evaluate the function.
 !
-  call func(mindata,t,output)
+  call func(mdata,t,output)
 
   return
 end
@@ -543,7 +543,7 @@ subroutine minfit ( n, tol, a, q )
 
   return
 end
-subroutine minny ( mindata, func, n, jsearch, nits, d2, x1, f1, fk, x, t, h, v, q0, q1, &
+subroutine minny ( mdata, func, n, jsearch, nits, d2, x1, f1, fk, x, t, h, v, q0, q1, &
   nl, nf, dmin, ldt, fx, qa, qb, qc, qd0, qd1 )
 
 !*****************************************************************************80
@@ -644,13 +644,13 @@ subroutine minny ( mindata, func, n, jsearch, nits, d2, x1, f1, fk, x, t, h, v, 
 !
   implicit none
 
-  type(mintype),intent(inout) :: mindata !< Minimization data
+  type(mdatatype),intent(inout) :: mdata !< Minimization data
   interface
-    subroutine func(mindata,x,f)
+    subroutine func(mdata,x,f)
     use tools_kinds, only: kind_real
-    use type_min, only: mintype
-    type(mintype),intent(in) :: mindata
-    real(kind_real),intent(in) :: x(mindata%nx)
+    use type_mdata, only: mdatatype
+    type(mdatatype),intent(in) :: mdata
+    real(kind_real),intent(in) :: x(mdata%nx)
     real(kind_real),intent(out) :: f
     end subroutine
   end interface
@@ -742,7 +742,7 @@ subroutine minny ( mindata, func, n, jsearch, nits, d2, x1, f1, fk, x, t, h, v, 
     end if
 
     x1 = temp * t2
-    call flin ( mindata, func, n, jsearch, x1, x, nf, v, q0, q1, qd0, qd1, qa, qb, qc, f1)
+    call flin ( mdata, func, n, jsearch, x1, x, nf, v, q0, q1, qd0, qd1, qa, qb, qc, f1)
 
   end if
 
@@ -763,7 +763,7 @@ subroutine minny ( mindata, func, n, jsearch, nits, d2, x1, f1, fk, x, t, h, v, 
         x2 = - x1
       end if
 
-      call flin ( mindata, func, n, jsearch, x2, x, nf, v, q0, q1, qd0, qd1, qa, qb, qc, f2 )
+      call flin ( mdata, func, n, jsearch, x2, x, nf, v, q0, q1, qd0, qd1, qa, qb, qc, f2 )
 
       if ( f2 <= fm ) then
         xm = x2
@@ -812,7 +812,7 @@ subroutine minny ( mindata, func, n, jsearch, nits, d2, x1, f1, fk, x, t, h, v, 
 
     do
 
-      call flin ( mindata, func, n, jsearch, x2, x, nf, v, q0, q1, qd0, qd1, qa, qb, qc, f2 )
+      call flin ( mdata, func, n, jsearch, x2, x, nf, v, q0, q1, qd0, qd1, qa, qb, qc, f2 )
 
       if ( nits <= k .or. f2 <= f0 ) then
         exit
@@ -875,7 +875,7 @@ subroutine minny ( mindata, func, n, jsearch, nits, d2, x1, f1, fk, x, t, h, v, 
 
   return
 end
-function praxis ( mindata, func, t0, h0, n, prin, x )
+function praxis ( mdata, func, t0, h0, n, prin, x )
 
 !*****************************************************************************80
 !
@@ -981,13 +981,13 @@ function praxis ( mindata, func, t0, h0, n, prin, x )
 !
   implicit none
 
-  type(mintype),intent(inout) :: mindata !< Minimization data
+  type(mdatatype),intent(inout) :: mdata !< Minimization data
   interface
-    subroutine func(mindata,x,f)
+    subroutine func(mdata,x,f)
     use tools_kinds, only: kind_real
-    use type_min, only: mintype
-    type(mintype),intent(in) :: mindata
-    real(kind_real),intent(in) :: x(mindata%nx)
+    use type_mdata, only: mdatatype
+    type(mdatatype),intent(in) :: mdata
+    real(kind_real),intent(in) :: x(mdata%nx)
     real(kind_real),intent(out) :: f
     end subroutine
   end interface
@@ -1087,7 +1087,7 @@ function praxis ( mindata, func, t0, h0, n, prin, x )
   kt = 0
   nl = 0
   nf = 1
-  call func(mindata,x,fx)
+  call func(mdata,x,fx)
   qf1 = fx
   t = small + abs ( t0 )
   t2 = t
@@ -1132,7 +1132,7 @@ function praxis ( mindata, func, t0, h0, n, prin, x )
     value = fx
     fk = .false.
 
-    call minny ( mindata, func, n, jsearch, nits, d2, s, value, fk, x, t, &
+    call minny ( mdata, func, n, jsearch, nits, d2, s, value, fk, x, t, &
       h, v, q0, q1, nl, nf, dmin, ldt, fx, qa, qb, qc, qd0, qd1 )
 
     d(1) = d2
@@ -1174,7 +1174,7 @@ function praxis ( mindata, func, t0, h0, n, prin, x )
             x(1:n) = x(1:n) + s * v(1:n,i)
           end do
 
-          call func(mindata,x,fx)
+          call func(mdata,x,fx)
           nf = nf + 1
 
         end if
@@ -1192,7 +1192,7 @@ function praxis ( mindata, func, t0, h0, n, prin, x )
           value = fx
           fk = .false.
 
-          call minny ( mindata, func, n, jsearch, nits, d2, s, value, fk, x, t, &
+          call minny ( mdata, func, n, jsearch, nits, d2, s, value, fk, x, t, &
             h, v, q0, q1, nl, nf, dmin, ldt, fx, qa, qb, qc, qd0, qd1 )
 
           d(k2) = d2
@@ -1240,7 +1240,7 @@ function praxis ( mindata, func, t0, h0, n, prin, x )
         value = fx
         fk = .false.
 
-        call minny ( mindata, func, n, jsearch, nits, d2, s, value, fk, x, t, &
+        call minny ( mdata, func, n, jsearch, nits, d2, s, value, fk, x, t, &
           h, v, q0, q1, nl, nf, dmin, ldt, fx, qa, qb, qc, qd0, qd1 )
 
         d(k2) = d2
@@ -1286,7 +1286,7 @@ function praxis ( mindata, func, t0, h0, n, prin, x )
         value = f1
         fk = .true.
 
-        call minny ( mindata, func, n, jsearch, nits, d2, lds, value, fk, x, t, &
+        call minny ( mdata, func, n, jsearch, nits, d2, lds, value, fk, x, t, &
           h, v, q0, q1, nl, nf, dmin, ldt, fx, qa, qb, qc, qd0, qd1 )
 
         d(k) = d2
@@ -1334,7 +1334,7 @@ function praxis ( mindata, func, t0, h0, n, prin, x )
 !
 !  Try quadratic extrapolation in case we are in a curved valley.
 !
-    call quad ( mindata, func, n, x, t, h, v, q0, q1, nl, nf, dmin, ldt, fx, qf1, &
+    call quad ( mdata, func, n, x, t, h, v, q0, q1, nl, nf, dmin, ldt, fx, qf1, &
       qa, qb, qc, qd0, qd1 )
 
     d(1:n) = 1.0 / sqrt ( d(1:n) )
@@ -1538,7 +1538,7 @@ subroutine print2 ( n, x, prin, fx, nf, nl )
 
   return
 end
-subroutine quad ( mindata, func, n, x, t, h, v, q0, q1, nl, nf, dmin, ldt, fx, qf1, &
+subroutine quad ( mdata, func, n, x, t, h, v, q0, q1, nl, nf, dmin, ldt, fx, qf1, &
   qa, qb, qc, qd0, qd1 )
 
 !*****************************************************************************80
@@ -1610,13 +1610,13 @@ subroutine quad ( mindata, func, n, x, t, h, v, q0, q1, nl, nf, dmin, ldt, fx, q
 !
   implicit none
 
-  type(mintype),intent(inout) :: mindata !< Minimization data
+  type(mdatatype),intent(inout) :: mdata !< Minimization data
   interface
-    subroutine func(mindata,x,f)
+    subroutine func(mdata,x,f)
     use tools_kinds, only: kind_real
-    use type_min, only: mintype
-    type(mintype),intent(in) :: mindata
-    real(kind_real),intent(in) :: x(mindata%nx)
+    use type_mdata, only: mdatatype
+    type(mdatatype),intent(in) :: mdata
+    real(kind_real),intent(in) :: x(mdata%nx)
     real(kind_real),intent(out) :: f
     end subroutine
   end interface
@@ -1674,7 +1674,7 @@ subroutine quad ( mindata, func, n, x, t, h, v, q0, q1, nl, nf, dmin, ldt, fx, q
     value = qf1
     fk = .true.
 
-    call minny ( mindata, func, n, jsearch, nits, s, l, value, fk, x, t, &
+    call minny ( mdata, func, n, jsearch, nits, s, l, value, fk, x, t, &
       h, v, q0, q1, nl, nf, dmin, ldt, fx, qa, qb, qc, qd0, qd1 )
 
     qa =                 l * ( l - qd1 )       / ( qd0 + qd1 ) / qd0

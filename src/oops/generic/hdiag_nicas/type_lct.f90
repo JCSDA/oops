@@ -11,10 +11,9 @@
 module type_lct
 
 use model_interface, only: model_write
-use module_diag_tools, only: diag_filter,diag_interpolation
 use tools_const, only: req,reqkm
+use hdiag_tools, only: diag_filter,diag_interpolation
 use tools_kinds, only: kind_real
-use tools_interp, only: compute_grid_interp_bilin
 use tools_missing, only: msr,isnotmsr,isallnotmsr
 use type_hdata, only: hdatatype
 use type_mpl, only: mpl
@@ -112,12 +111,12 @@ associate(nam=>hdata%nam,bpar=>hdata%bpar)
 call lct_alloc_basic(hdata,lct)
 
 ! Allocation
-allocate(lct%raw(nam%nc,bpar%nl0(ib)))
-allocate(lct%norm(nam%nc,bpar%nl0(ib)))
-allocate(lct%fit(nam%nc,bpar%nl0(ib)))
+allocate(lct%raw(nam%nc3,bpar%nl0(ib)))
+allocate(lct%norm(nam%nc3,bpar%nl0(ib)))
+allocate(lct%fit(nam%nc3,bpar%nl0(ib)))
 
 ! Initialization
-lct%npack = sum(lct%ncomp)+lct%nscales+nam%nc*bpar%nl0(ib)
+lct%npack = sum(lct%ncomp)+lct%nscales+nam%nc3*bpar%nl0(ib)
 lct%raw = 0.0
 lct%norm = 0.0
 call msr(lct%fit)
@@ -173,7 +172,7 @@ buf(offset+1:offset+sum(lct%ncomp)) = pack(lct%H,.true.)
 offset = offset+sum(lct%ncomp)
 buf(offset+1:offset+lct%nscales) = lct%coef
 offset = offset+lct%nscales
-buf(offset+1:offset+nam%nc*bpar%nl0(ib)) = pack(lct%fit,.true.)
+buf(offset+1:offset+nam%nc3*bpar%nl0(ib)) = pack(lct%fit,.true.)
 
 ! End associate
 end associate
@@ -202,7 +201,7 @@ logical,allocatable :: mask_unpack(:,:)
 associate(nam=>hdata%nam,bpar=>hdata%bpar)
 
 ! Allocation
-allocate(mask_unpack(nam%nc,bpar%nl0(ib)))
+allocate(mask_unpack(nam%nc3,bpar%nl0(ib)))
 mask_unpack = .true.
 
 ! Unpack
@@ -211,7 +210,7 @@ lct%H = buf(offset+1:offset+sum(lct%ncomp))
 offset = offset+sum(lct%ncomp)
 lct%coef = buf(offset+1:offset+lct%nscales)
 offset = offset+lct%nscales
-lct%fit = unpack(buf(offset+1:offset+nam%nc*bpar%nl0(ib)),mask_unpack,lct%fit)
+lct%fit = unpack(buf(offset+1:offset+nam%nc3*bpar%nl0(ib)),mask_unpack,lct%fit)
 
 ! End associate
 end associate
@@ -231,9 +230,9 @@ type(hdatatype),intent(inout) :: hdata                                      !< H
 type(lcttype),intent(in) :: lct(hdata%nam%nc1,hdata%geom%nl0,hdata%bpar%nb) !< LCT array
 
 ! Local variables
-integer :: ib,iv,il0,jl0,il0r,ic1,ic,icomp,ic0,iscales,offset
+integer :: ib,iv,il0,jl0r,jl0,ic1,jc3,icomp,ic0,iscales,offset
 real(kind_real) :: fac,det,rmse,rmse_count
-real(kind_real),allocatable :: fld_nc1(:,:,:),fld(:,:,:)
+real(kind_real),allocatable :: fld_c1(:,:,:),fld(:,:,:)
 logical :: valid
 character(len=1) :: iscaleschar
 
@@ -248,10 +247,10 @@ do ib=1,bpar%nb
 
    do iscales=1,lct(1,1,ib)%nscales
       ! Allocation
-      allocate(fld_nc1(hdata%nam%nc1,hdata%geom%nl0,lct(1,1,ib)%ncomp(iscales)+1))
+      allocate(fld_c1(hdata%nam%nc1,hdata%geom%nl0,lct(1,1,ib)%ncomp(iscales)+1))
       allocate(fld(hdata%geom%nc0,hdata%geom%nl0,lct(1,1,ib)%ncomp(iscales)+2))
-  
-      do jl0=1,geom%nl0
+
+      do il0=1,geom%nl0
          write(mpl%unit,'(a10,a,i3,a)') '','Level ',nam%levs(il0),': '
 
          ! Initialization
@@ -260,25 +259,24 @@ do ib=1,bpar%nb
 
          do while (.not.valid)
             ! Copy LCT
-            call msr(fld_nc1(:,il0,:))
+            call msr(fld_c1(:,il0,:))
             do ic1=1,nam%nc1
-               fld_nc1(ic1,jl0,1:lct(1,1,ib)%ncomp(iscales)) = lct(ic1,jl0,ib)%H(offset+1:offset+lct(1,1,ib)%ncomp(iscales))
-               fld_nc1(ic1,jl0,lct(1,1,ib)%ncomp(iscales)+1) = lct(ic1,jl0,ib)%coef(iscales)
+               fld_c1(ic1,il0,1:lct(1,1,ib)%ncomp(iscales)) = lct(ic1,il0,ib)%H(offset+1:offset+lct(1,1,ib)%ncomp(iscales))
+               fld_c1(ic1,il0,lct(1,1,ib)%ncomp(iscales)+1) = lct(ic1,il0,ib)%coef(iscales)
             end do
-               
+
             ! Check invalid points
             valid = .true.
             do ic1=1,nam%nc1
-               if (geom%mask(hdata%ic1_to_ic0(ic1),jl0).and.(.not.isallnotmsr(fld_nc1(ic1,jl0,:)))) valid = .false.
+               if (geom%mask(hdata%c1_to_c0(ic1),il0).and.(.not.isallnotmsr(fld_c1(ic1,il0,:)))) valid = .false.
             end do
 
             if (.not.valid) then
                ! Filter LCT
                write(mpl%unit,'(a13,a,f9.2,a)') '','Filter LCT with radius ',fac*nam%diag_rhflt*reqkm,' km'
-               hdata%nc2 = nam%nc1
                do icomp=1,lct(1,1,ib)%ncomp(iscales)+1
-                  call diag_filter(hdata,jl0,'median',fac*nam%diag_rhflt,fld_nc1(:,jl0,icomp))
-                  call diag_filter(hdata,jl0,'average',fac*nam%diag_rhflt,fld_nc1(:,jl0,icomp))
+                  call diag_filter(hdata,il0,'median',fac*nam%diag_rhflt,fld_c1(:,il0,icomp))
+                  call diag_filter(hdata,il0,'average',fac*nam%diag_rhflt,fld_c1(:,il0,icomp))
                end do
 
                ! Update fac (increase smoothing)
@@ -286,11 +284,11 @@ do ib=1,bpar%nb
             end if
          end do
       end do
-   
+
       ! Interpolate LCT
       write(mpl%unit,'(a10,a)') '','Interpolate LCT'
       do icomp=1,lct(1,1,ib)%ncomp(iscales)+1
-         call diag_interpolation(hdata,fld_nc1(:,:,icomp),fld(:,:,icomp))
+         call diag_interpolation(hdata,fld_c1(:,:,icomp),fld(:,:,icomp))
       end do
 
       ! Compute horizontal length-scale
@@ -303,7 +301,7 @@ do ib=1,bpar%nb
                else
                   det = fld(ic0,il0,1)*fld(ic0,il0,2)-fld(ic0,il0,4)**2
                end if
-    
+
                ! Length-scale = determinant^{1/4}
                if (det>0.0) fld(ic0,il0,lct(1,1,ib)%ncomp(iscales)+2) = 1.0/sqrt(sqrt(det))
             end if
@@ -313,7 +311,7 @@ do ib=1,bpar%nb
       if (mpl%main) then
          ! Write LCT
          write(mpl%unit,'(a10,a)') '','Write LCT'
-         iv = bpar%ib_to_iv(ib)
+         iv = bpar%b_to_v2(ib)
          write(iscaleschar,'(i1)') iscales
          call model_write(nam,geom,trim(nam%prefix)//'_lct.nc',trim(nam%varname(iv))//'_H11_'//iscaleschar, &
        & fld(:,:,1)/req**2)
@@ -330,21 +328,21 @@ do ib=1,bpar%nb
       end if
 
       ! Release memory
-      deallocate(fld_nc1)
+      deallocate(fld_c1)
       deallocate(fld)
    end do
 
    ! Compute RMSE
    rmse = 0.0
    rmse_count = 0.0
-   do jl0=1,geom%nl0
+   do il0=1,geom%nl0
       do ic1=1,nam%nc1
-         do il0r=1,bpar%nl0(ib)
-            il0 = bpar%il0rjl0ib_to_il0(il0r,jl0,ib)
-            do ic=1,nam%nc
-               if (hdata%ic1il0_log(ic1,jl0).and.hdata%ic1icil0_log(ic1,ic,il0)) then
-                  if (isnotmsr(lct(ic1,jl0,ib)%fit(ic,il0))) then
-                     rmse = rmse+(lct(ic1,jl0,ib)%fit(ic,il0)-lct(ic1,jl0,ib)%raw(ic,il0))**2
+         do jl0r=1,bpar%nl0(ib)
+            jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
+            do jc3=1,nam%nc3
+               if (hdata%c1l0_log(ic1,il0).and.hdata%c1c3l0_log(ic1,jc3,jl0)) then
+                  if (isnotmsr(lct(ic1,il0,ib)%fit(jc3,jl0))) then
+                     rmse = rmse+(lct(ic1,il0,ib)%fit(jc3,jl0)-lct(ic1,il0,ib)%raw(jc3,jl0))**2
                      rmse_count = rmse_count+1.0
                   end if
                end if
@@ -360,34 +358,34 @@ do ib=1,bpar%nb
       allocate(fld(hdata%geom%nc0,hdata%geom%nl0,2))
 
       ! Select level
-      jl0 = 1
-   
+      il0 = 1
+
       ! Write raw LCT
       write(mpl%unit,'(a7,a)') '','Write LCT diag'
       call msr(fld)
       do ic1=1,nam%nc1
          ! Check diagnostic area
          valid = .true.
-         do il0r=1,bpar%nl0(ib)
-            il0 = bpar%il0rjl0ib_to_il0(il0r,jl0,ib)
-            do ic=1,nam%nc
-               if (valid.and.hdata%ic1il0_log(ic1,jl0).and.hdata%ic1icil0_log(ic1,ic,il0)) &
-            &  valid = valid.and.(.not.isnotmsr(fld(hdata%ic1icil0_to_ic0(ic1,ic,il0),il0,1)))
+         do jl0r=1,bpar%nl0(ib)
+            jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
+            do jc3=1,nam%nc3
+               if (valid.and.hdata%c1l0_log(ic1,il0).and.hdata%c1c3l0_log(ic1,jc3,jl0)) &
+            &  valid = valid.and.(.not.isnotmsr(fld(hdata%c1c3_to_c0(ic1,jc3),jl0,1)))
             end do
          end do
          if (valid) then
-            do il0r=1,bpar%nl0(ib)
-               il0 = bpar%il0rjl0ib_to_il0(il0r,jl0,ib)
-               do ic=1,nam%nc
-                  if (hdata%ic1il0_log(ic1,jl0).and.hdata%ic1icil0_log(ic1,ic,il0)) then
-                     fld(hdata%ic1icil0_to_ic0(ic1,ic,il0),il0,1) = lct(ic1,jl0,ib)%raw(ic,il0)
-                     fld(hdata%ic1icil0_to_ic0(ic1,ic,il0),il0,2) = lct(ic1,jl0,ib)%fit(ic,il0)
+            do jl0r=1,bpar%nl0(ib)
+               jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
+               do jc3=1,nam%nc3
+                  if (hdata%c1l0_log(ic1,il0).and.hdata%c1c3l0_log(ic1,jc3,jl0)) then
+                     fld(hdata%c1c3_to_c0(ic1,jc3),jl0,1) = lct(ic1,il0,ib)%raw(jc3,jl0)
+                     fld(hdata%c1c3_to_c0(ic1,jc3),jl0,2) = lct(ic1,il0,ib)%fit(jc3,jl0)
                   end if
                end do
             end do
          end if
       end do
-      iv = bpar%ib_to_iv(ib)
+      iv = bpar%b_to_v2(ib)
       call model_write(nam,geom,trim(nam%prefix)//'_lct.nc',trim(nam%varname(iv))//'_raw',fld(:,:,1))
       call model_write(nam,geom,trim(nam%prefix)//'_lct.nc',trim(nam%varname(iv))//'_fit',fld(:,:,2))
 

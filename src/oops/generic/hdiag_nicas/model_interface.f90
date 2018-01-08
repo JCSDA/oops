@@ -159,7 +159,15 @@ ietot = 0
 call msr(ens1)
 
 do isub=1,nam%ens1_nsub
+   if (nam%ens1_nsub==1) then
+      write(mpl%unit,'(a7,a)',advance='no') '','Full ensemble, member:'
+   else
+      write(mpl%unit,'(a7,a,i4,a)',advance='no') '','Sub-ensemble ',isub,', member:'
+   end if
+
    do ie=1,nam%ens1_ne/nam%ens1_nsub
+      write(mpl%unit,'(i4)',advance='no') nam%ens1_ne_offset+ie
+
       ! Read member
       if (mpl%main) then
          allocate(fld(geom%nc0,geom%nl0,nam%nv,nam%nts))
@@ -168,7 +176,7 @@ do isub=1,nam%ens1_nsub
          else
             jsub = isub
          end if
-         call model_read(nam,geom,'ens1',ie,jsub,fld)
+         call model_read(nam,geom,'ens1',nam%ens1_ne_offset+ie,jsub,fld)
       end if
 
       ! Split over processors
@@ -181,6 +189,7 @@ do isub=1,nam%ens1_nsub
       ! Release memory
       deallocate(fld)
    end do
+   write(mpl%unit,'(a)') ''
 end do
 
 end subroutine load_ensemble

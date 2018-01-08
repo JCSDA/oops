@@ -31,7 +31,7 @@ integer,parameter :: ntrim = 1                !< Minimum number of remaining poi
 
 private
 public :: pi,deg2rad,rad2deg,req,reqkm,ps
-public :: lonmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,gc99,median,taverage,add,divide,fac
+public :: lonmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,gc99,median,add,divide,fac
 
 contains
 
@@ -249,47 +249,6 @@ end if
 return
 
 end function median
-
-!----------------------------------------------------------------------
-! Function: taverage
-!> Purpose: compute the trimmed average
-!----------------------------------------------------------------------
-real(kind_real) function taverage(n,list)
-
-implicit none
-
-! Passed variables
-integer,intent(in) :: n        !< Number of values
-real(kind_real),intent(in) :: list(n)     !< List values
-
-! Local variable
-integer :: nrm,nvalid
-integer :: order(n)
-real(kind_real) :: list_copy(n)
-
-! Copy list
-list_copy = list
-
-! Compute the number of values to remove
-nrm = floor(n*qtrim)
-
-if (n-2*nrm>=ntrim) then
-   ! Order array
-   call qsort(n,list_copy,order)
-
-   ! Compute trimmed average
-   nvalid = count(isnotmsr(list_copy(1+nrm:n-nrm)))
-   if (nvalid>0) then
-      taverage = sum(list_copy(1+nrm:n-nrm),mask=isnotmsr(list_copy(1+nrm:n-nrm)))/float(nvalid)
-   else
-      call msr(taverage)
-   end if
-else
-   ! Missing value
-   call msr(taverage)
-end if
-
-end function taverage
 
 !----------------------------------------------------------------------
 ! Subroutine: add

@@ -16,6 +16,9 @@ class randGen {
         // Destructor
         ~randGen();
 
+        // Reseed generator
+        void reseed_randgen(int seed);
+
         // Get version
         void get_version(int *version) const {*version=version_;};
 
@@ -33,10 +36,10 @@ class randGen {
 
 #if __cplusplus > 199711L
         // Mersenne Twister 19937 generator
-        std::mt19937 *gen;
+        std::mt19937 *gen_;
 #endif
 
         // ran3 generator
-        int seed;
+        int seed_;
         double ran3();
 };

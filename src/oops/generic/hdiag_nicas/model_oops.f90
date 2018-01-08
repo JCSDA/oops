@@ -86,8 +86,8 @@ write(mpl%unit,'(a10,a,i8,a)') '','Total: ',geom%nc0,' grid-points'
 
 ! Allocation
 call geom_alloc(geom)
-allocate(geom%ic0_to_iproc(geom%nc0))
-allocate(geom%ic0_to_ic0a(geom%nc0))
+allocate(geom%c0_to_proc(geom%nc0))
+allocate(geom%c0_to_c0a(geom%nc0))
 allocate(lmask(geom%nc0a,geom%nl0))
 allocate(glbindg(geom%nc0))
 
@@ -96,8 +96,8 @@ ic0 = 0
 do iproc=1,mpl%nproc
    do ic0a=1,nc0ag(iproc)
       ic0 = ic0+1
-      geom%ic0_to_iproc(ic0) = iproc
-      geom%ic0_to_ic0a(ic0) = ic0a
+      geom%c0_to_proc(ic0) = iproc
+      geom%c0_to_c0a(ic0) = ic0a
    end do
 end do
 
@@ -177,8 +177,8 @@ if (all(glbindg>0)) then
    do il0=1,geom%nl0
       geom%mask(:,il0) = geom%mask(order,il0)
    end do
-   geom%ic0_to_iproc = geom%ic0_to_iproc(order)
-   geom%ic0_to_ic0a = geom%ic0_to_ic0a(order)
+   geom%c0_to_proc = geom%c0_to_proc(order)
+   geom%c0_to_c0a = geom%c0_to_c0a(order)
 end if
 
 ! Normalized area

@@ -12,7 +12,7 @@ module type_linop
 
 use netcdf
 use omp_lib
-use tools_display, only: msgerror
+use tools_display, only: msgerror,msgwarning
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsr
 use tools_nc, only: ncfloat,ncerr
@@ -41,7 +41,7 @@ interface linop_write
   module procedure linop_write_array
 end interface
 
-logical :: check_data = .false. !< Activate data check for all linear operations
+logical :: check_data = .true. !< Activate data check for all linear operations
 
 private
 public :: linoptype
@@ -137,33 +137,37 @@ type(linoptype),intent(inout) :: linop !< Linear operator
 integer :: row,i_s_s,i_s_e,n_s,i_s
 integer,allocatable :: order(:)
 
-! Sort with respect to row
-allocate(order(linop%n_s))
-call qsort(linop%n_s,linop%row,order)
+if (linop%n_s<1000000) then
+   ! Sort with respect to row
+   allocate(order(linop%n_s))
+   call qsort(linop%n_s,linop%row,order)
 
-! Sort col and S
-linop%col = linop%col(order)
-linop%S = linop%S(order)
-deallocate(order)
+   ! Sort col and S
+   linop%col = linop%col(order)
+   linop%S = linop%S(order)
+   deallocate(order)
 
-! Sort with respect to col for each row
-row = minval(linop%row)
-i_s_s = 1
-call msi(i_s_e)
-do i_s=1,linop%n_s
-   if (linop%row(i_s)==row) then
-      i_s_e = i_s
-   else
-      n_s = i_s_e-i_s_s+1
-      allocate(order(n_s))
-      call qsort(n_s,linop%col(i_s_s:i_s_e),order)
-      order = order+i_s_s-1
-      linop%S(i_s_s:i_s_e) = linop%S(order)
-      deallocate(order)
-      i_s_s = i_s+1
-      row = linop%row(i_s)
-   end if
-end do
+   ! Sort with respect to col for each row
+   row = minval(linop%row)
+   i_s_s = 1
+   call msi(i_s_e)
+   do i_s=1,linop%n_s
+      if (linop%row(i_s)==row) then
+         i_s_e = i_s
+      else
+         n_s = i_s_e-i_s_s+1
+         allocate(order(n_s))
+         call qsort(n_s,linop%col(i_s_s:i_s_e),order)
+         order = order+i_s_s-1
+         linop%S(i_s_s:i_s_e) = linop%S(order)
+         deallocate(order)
+         i_s_s = i_s+1
+         row = linop%row(i_s)
+      end if
+   end do
+else
+   call msgwarning('linear operator is too big, impossible to reorder')
+end if
 
 end subroutine linop_reorder
 
@@ -194,6 +198,7 @@ if (check_data) then
    ! Check input
    if (any(fld_src>huge(1.0))) call msgerror('Overflowing number in fld_src for linear operation '//trim(linop%prefix))
    if (any(isnan(fld_src))) call msgerror('NaN in fld_src for linear operation '//trim(linop%prefix))
+   if (any(.not.isnotmsr(fld_src))) call msgerror('Missing value in fld_src for linear operation '//trim(linop%prefix))
 end if
 
 ! Initialization
@@ -238,6 +243,7 @@ if (check_data) then
    ! Check input
    if (any(fld_dst>huge(1.0))) call msgerror('Overflowing number in fld_dst for adjoint linear operation '//trim(linop%prefix))
    if (any(isnan(fld_dst))) call msgerror('NaN in fld_dst for adjoint linear operation '//trim(linop%prefix))
+   if (any(.not.isnotmsr(fld_dst))) call msgerror('Missing value in fld_dst for adjoint linear operation '//trim(linop%prefix))
 end if
 
 ! Initialization
@@ -282,6 +288,7 @@ if (check_data) then
    ! Check input
    if (any(fld>huge(1.0))) call msgerror('Overflowing number in fld for symmetric linear operation '//trim(linop%prefix))
    if (any(isnan(fld))) call msgerror('NaN in fld for symmetric linear operation '//trim(linop%prefix))
+   if (any(.not.isnotmsr(fld))) call msgerror('Missing value in fld for symmetric linear operation '//trim(linop%prefix))
 end if
 
 ! Initialization

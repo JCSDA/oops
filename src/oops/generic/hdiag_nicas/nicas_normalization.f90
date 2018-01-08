@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! Module: module_normalization.f90
+! Module: nicas_normalization.f90
 !> Purpose: normalization routines
 !> <br>
 !> Author: Benjamin Menetrier
@@ -8,14 +8,14 @@
 !> <br>
 !> Copyright © 2017 METEO-FRANCE
 !----------------------------------------------------------------------
-module module_normalization
+module nicas_normalization
 
 use omp_lib
 use tools_display, only: msgerror,prog_init,prog_print
 use tools_kinds,only: kind_real
 use tools_missing, only: msr,isnotmsi,msi
 use tools_qsort, only: qsort
-use type_mpl, only: mpl,mpl_bcast,mpl_recv,mpl_send,mpl_barrier
+use type_mpl, only: mpl,mpl_bcast,mpl_recv,mpl_send,mpl_barrier,mpl_split
 use type_ndata, only: ndatatype
 
 implicit none
@@ -37,8 +37,8 @@ implicit none
 type(ndatatype),intent(inout) :: ndata !< NICAS data
 
 ! Local variables
-integer :: il0i,i_s,ic1,jc2,is,js,ic0,il0,il1,ih,iv,nlr,ilr,jlr,ic,progint,is_add
-integer :: iproc,ic0_s(mpl%nproc),ic0_e(mpl%nproc),nc0_loc(mpl%nproc),ic0_loc
+integer :: il0i,i_s,ic1,jc2,is,js,ic0,il0,il1,ih,iv,nlr,ilr,jlr,ic,is_add
+integer :: iproc,ic0_s(mpl%nproc),ic0_e(mpl%nproc),nc0_loc(mpl%nproc),ic0_loc,progint
 integer,allocatable :: ineh(:,:),inev(:),ines(:,:),inec(:),order(:),is_list(:)
 integer,allocatable :: interp_h(:,:,:),interp_v(:,:),interp_s(:,:,:),convol_c(:,:)
 real(kind_real) :: S_add
@@ -183,11 +183,7 @@ if (nam%lsqrt) then
 end if
 
 ! MPI splitting
-do iproc=1,mpl%nproc
-   ic0_s(iproc) = (iproc-1)*(geom%nc0/mpl%nproc+1)+1
-   ic0_e(iproc) = min(iproc*(geom%nc0/mpl%nproc+1),geom%nc0)
-   nc0_loc(iproc) = ic0_e(iproc)-ic0_s(iproc)+1
-end do
+call mpl_split(geom%nc0,ic0_s,ic0_e,nc0_loc)
 
 ! Allocation
 allocate(ndata%norm(geom%nc0,geom%nl0))
@@ -360,4 +356,4 @@ end associate
 
 end subroutine compute_normalization
 
-end module module_normalization
+end module nicas_normalization

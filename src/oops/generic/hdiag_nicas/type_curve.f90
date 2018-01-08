@@ -11,8 +11,8 @@
 module type_curve
 
 use model_interface, only: model_write
-use module_diag_tools, only: diag_write,diag_filter,diag_interpolation
 use netcdf
+use hdiag_tools, only: diag_interpolation,diag_com_lg
 use tools_display, only: vunitchar,msgerror
 use tools_jacobi_eigenvalue, only: jacobi_eigenvalue
 use tools_kinds, only: kind_real
@@ -65,18 +65,19 @@ associate(nam=>hdata%nam,geom=>hdata%geom,bpar=>hdata%bpar)
 curve%cname = cname
 
 ! Allocation
-allocate(curve%raw(nam%nc,bpar%nl0(ib),geom%nl0))
+allocate(curve%raw(nam%nc3,bpar%nl0(ib),geom%nl0))
 allocate(curve%raw_coef_ens(geom%nl0))
 
 ! Initialization
-curve%npack = nam%nc*geom%nl0*bpar%nl0(ib)+2*geom%nl0
+curve%npack = nam%nc3*geom%nl0*bpar%nl0(ib)+2*geom%nl0
 call msr(curve%raw)
 call msr(curve%raw_coef_ens)
+call msr(curve%raw_coef_sta)
 
 if (trim(nam%fit_type)/='none') then
    ! Allocation
-   allocate(curve%fit_wgt(nam%nc,bpar%nl0(ib),geom%nl0))
-   allocate(curve%fit(nam%nc,bpar%nl0(ib),geom%nl0))
+   allocate(curve%fit_wgt(nam%nc3,bpar%nl0(ib),geom%nl0))
+   allocate(curve%fit(nam%nc3,bpar%nl0(ib),geom%nl0))
    allocate(curve%fit_rh(geom%nl0))
    allocate(curve%fit_rv(geom%nl0))
 
@@ -136,7 +137,7 @@ integer,intent(in) :: ib               !< Block index
 type(curvetype),intent(inout) :: curve !< Curve
 
 ! Local variables
-integer :: il0r,il0,jl0,ic
+integer :: il0r,il0,jl0,jc3
 
 ! Associate
 associate(nam=>hdata%nam,geom=>hdata%geom,bpar=>hdata%bpar)
@@ -150,10 +151,10 @@ end do
 ! Normalize
 do jl0=1,geom%nl0
    do il0r=1,bpar%nl0(ib)
-      il0 = bpar%il0rjl0ib_to_il0(il0r,jl0,ib)
-      do ic=1,bpar%icmax(ib)
-         if (isnotmsr(curve%raw(ic,il0r,jl0)).and.isnotmsr(curve%raw_coef_ens(il0)).and.isnotmsr(curve%raw_coef_ens(jl0))) &
-       & curve%raw(ic,il0r,jl0) = curve%raw(ic,il0r,jl0)/sqrt(curve%raw_coef_ens(il0)*curve%raw_coef_ens(jl0))
+      il0 = bpar%l0rl0b_to_l0(il0r,jl0,ib)
+      do jc3=1,bpar%nc3(ib)
+         if (isnotmsr(curve%raw(jc3,il0r,jl0)).and.isnotmsr(curve%raw_coef_ens(il0)).and.isnotmsr(curve%raw_coef_ens(jl0))) &
+       & curve%raw(jc3,il0r,jl0) = curve%raw(jc3,il0r,jl0)/sqrt(curve%raw_coef_ens(il0)*curve%raw_coef_ens(jl0))
       end do
    end do
 end do
@@ -184,8 +185,8 @@ associate(nam=>hdata%nam,geom=>hdata%geom,bpar=>hdata%bpar)
 
 ! Pack
 offset = 0
-buf(offset+1:offset+nam%nc*nam%nl0r*geom%nl0) = pack(curve%fit,.true.)
-offset = offset+nam%nc*nam%nl0r*geom%nl0
+buf(offset+1:offset+nam%nc3*nam%nl0r*geom%nl0) = pack(curve%fit,.true.)
+offset = offset+nam%nc3*nam%nl0r*geom%nl0
 buf(offset+1:offset+geom%nl0) = curve%fit_rh
 offset = offset+geom%nl0
 buf(offset+1:offset+geom%nl0) = curve%fit_rv
@@ -216,13 +217,13 @@ logical,allocatable :: mask_unpack(:,:,:)
 associate(nam=>hdata%nam,geom=>hdata%geom,bpar=>hdata%bpar)
 
 ! Allocation
-allocate(mask_unpack(nam%nc,nam%nl0r,geom%nl0))
+allocate(mask_unpack(nam%nc3,nam%nl0r,geom%nl0))
 mask_unpack = .true.
 
 ! Unpack
 offset = 0
-curve%fit = unpack(buf(offset+1:offset+nam%nc*nam%nl0r*geom%nl0),mask_unpack,curve%fit)
-offset = offset+nam%nc*nam%nl0r*geom%nl0
+curve%fit = unpack(buf(offset+1:offset+nam%nc3*nam%nl0r*geom%nl0),mask_unpack,curve%fit)
+offset = offset+nam%nc3*nam%nl0r*geom%nl0
 curve%fit_rh = buf(offset+1:offset+geom%nl0)
 offset = offset+geom%nl0
 curve%fit_rv = buf(offset+1:offset+geom%nl0)
@@ -337,21 +338,19 @@ character(len=1024) :: subr = 'curve_write_all'
 ! Associate
 associate(nam=>hdata%nam,geom=>hdata%geom,bpar=>hdata%bpar)
 
-! Processor verification
-if (.not.mpl%main) call msgerror('only I/O proc should enter '//trim(subr))
-
+! TODO : comments
 call system('rm -f '//trim(nam%datadir)//'/'//trim(filename))
 call ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_clobber,nf90_64bit_offset),ncid))
 call namncwrite(nam,ncid)
 call ncerr(subr,nf90_put_att(ncid,nf90_global,'vunitchar',trim(vunitchar)))
 call ncerr(subr,nf90_def_dim(ncid,'one',1,one_id))
-call ncerr(subr,nf90_def_dim(ncid,'nc',nam%nc,nc_id))
+call ncerr(subr,nf90_def_dim(ncid,'nc',nam%nc3,nc_id))
 call ncerr(subr,nf90_def_dim(ncid,'nl0r',nam%nl0r,nl0r_id))
 call ncerr(subr,nf90_def_dim(ncid,'nl0',geom%nl0,nl0_id))
 call ncerr(subr,nf90_def_var(ncid,'disth',ncfloat,(/nc_id/),disth_id))
 call ncerr(subr,nf90_def_var(ncid,'vunit',ncfloat,(/nl0_id/),vunit_id))
 call ncerr(subr,nf90_enddef(ncid))
-call ncerr(subr,nf90_put_var(ncid,disth_id,geom%disth(1:nam%nc)))
+call ncerr(subr,nf90_put_var(ncid,disth_id,geom%disth(1:nam%nc3)))
 call ncerr(subr,nf90_put_var(ncid,vunit_id,geom%vunit))
 do ib=1,bpar%nb+1
    if (bpar%diag_block(ib)) then
@@ -385,54 +384,63 @@ end subroutine curve_write_all
 ! Subroutine: curve_write_local
 !> Purpose: write all curves
 !----------------------------------------------------------------------
-subroutine curve_write_local(hdata,filename,curve_nc2)
+subroutine curve_write_local(hdata,filename,curve_c2)
 
 implicit none
 
 ! Passed variables
 type(hdatatype),intent(in) :: hdata                                !< HDIAG data
 character(len=*),intent(in) :: filename                            !< File name
-type(curvetype),intent(in) :: curve_nc2(hdata%nc2,hdata%bpar%nb+1) !< Curves array
+type(curvetype),intent(in) :: curve_c2(hdata%nc2a,hdata%bpar%nb+1) !< Curves array
 
 ! Local variables
 integer :: ncid
-integer :: ic2,ib
-real(kind_real) :: fld_nc2(hdata%nc2,hdata%geom%nl0),fld(hdata%geom%nc0,hdata%geom%nl0)
+integer :: ic2a,ib,i
+real(kind_real) :: fld(hdata%geom%nc0,hdata%geom%nl0)
+real(kind_real),allocatable :: fld_c2(:,:)
 character(len=1024) :: subr = 'curve_write_all'
 
 ! Associate
 associate(nam=>hdata%nam,geom=>hdata%geom,bpar=>hdata%bpar)
 
-! Processor verification
-if (.not.mpl%main) call msgerror('only I/O proc should enter '//trim(subr))
-
+! TODO : comments
 call ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_clobber,nf90_64bit_offset),ncid))
 call namncwrite(nam,ncid)
 call ncerr(subr,nf90_close(ncid))
 do ib=1,bpar%nb+1
    if (bpar%fit_block(ib)) then
-      call msr(fld_nc2)
-      do ic2=1,hdata%nc2
-         fld_nc2(ic2,:) = curve_nc2(ic2,ib)%fit_rh
+      do i=1,2
+         ! Allocation
+         allocate(fld_c2(hdata%nc2a,geom%nl0))
+
+         ! Copy data
+         do ic2a=1,hdata%nc2a
+            if (i==1) then
+               fld_c2(ic2a,:) = curve_c2(ic2a,ib)%fit_rh
+            elseif (i==2) then
+               fld_c2(ic2a,:) = curve_c2(ic2a,ib)%fit_rv
+            end if
+         end do
+
+         ! Local to global
+         call diag_com_lg(hdata,fld_c2)
+
+         if (mpl%main) then
+            ! Interpolate
+
+            call diag_interpolation(hdata,fld_c2,fld)
+
+            ! Write
+            if (i==1) then
+               call model_write(nam,geom,filename,trim(bpar%blockname(ib))//'_fit_rh',fld)
+            elseif (i==2) then
+               call model_write(nam,geom,filename,trim(bpar%blockname(ib))//'_fit_rv',fld)
+            end if
+
+             ! Release memory
+             deallocate(fld_c2)
+          end if
       end do
-      call diag_interpolation(hdata,fld_nc2,fld)
-      call model_write(nam,geom,filename,trim(bpar%blockname(ib))//'_fit_rh',fld)
-      if (trim(nam%flt_type)/='none') then
-         call diag_filter(hdata,nam%flt_type,nam%diag_rhflt,fld_nc2)
-         call diag_interpolation(hdata,fld_nc2,fld)
-         call model_write(nam,geom,filename,trim(bpar%blockname(ib))//'_fit_rh_flt',fld)
-      end if
-      call msr(fld_nc2)
-      do ic2=1,hdata%nc2
-         fld_nc2(ic2,:) = curve_nc2(ic2,ib)%fit_rv
-      end do
-      call diag_interpolation(hdata,fld_nc2,fld)
-      call model_write(nam,geom,filename,trim(bpar%blockname(ib))//'_fit_rv',fld)
-      if (trim(nam%flt_type)/='none') then
-         call diag_filter(hdata,nam%flt_type,nam%diag_rhflt,fld_nc2)
-         call diag_interpolation(hdata,fld_nc2,fld)
-         call model_write(nam,geom,filename,trim(bpar%blockname(ib))//'_fit_rv_flt',fld)
-      end if
    end if
 end do
 

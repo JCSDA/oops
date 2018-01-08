@@ -13,9 +13,8 @@ use config_mod
 use unstructured_grid_mod
 use driver_hdiag, only: run_hdiag
 use driver_nicas, only: run_nicas
-use driver_test, only: run_test
 use model_oops, only: model_oops_coord
-use module_apply_localization, only: apply_localization
+use nicas_apply_localization, only: apply_localization
 use tools_const, only: req
 use tools_display, only: listing_setup,msgerror
 use tools_missing, only: msi,msr
@@ -24,7 +23,7 @@ use type_bpar, only: bpartype,bpar_alloc
 use type_geom, only: geomtype,compute_grid_mesh
 use type_mpl, only: mpl,mpl_start,mpl_barrier
 use type_nam, only: namtype,namcheck
-use type_ndata, only: ndataloctype
+use type_ndata, only: ndatatype
 use type_randgen, only: create_randgen
 
 implicit none
@@ -40,7 +39,7 @@ type hdiag_nicas
   type(geomtype) :: geom
   type(bpartype) :: bpar
   type(bdatatype),allocatable :: bdata(:)
-  type(ndataloctype),allocatable :: ndataloc(:)
+  type(ndatatype),allocatable :: ndata(:)
 end type hdiag_nicas
 
 ! ------------------------------------------------------------------------------
@@ -217,13 +216,9 @@ end do
 call run_hdiag(self%nam,self%geom,self%bpar,self%bdata,ens1)
 
 ! Call NICAS driver
-call run_nicas(self%nam,self%geom,self%bpar,self%bdata,self%ndataloc)
-
-! Call test driver
-call run_test(self%nam,self%geom,self%bpar,self%bdata,self%ndataloc)
+call run_nicas(self%nam,self%geom,self%bpar,self%bdata,self%ndata,ens1)
 
 ! Close listing files
-call mpl_barrier
 write(mpl%unit,*) 'HDIAG_NICAS setup done'
 if ((mpl%main.and..not.self%nam%colorlog).or..not.mpl%main) close(unit=mpl%unit)
 
@@ -250,10 +245,8 @@ nam%method = ''
 nam%strategy = ''
 nam%new_hdiag = .false.
 nam%new_param = .false.
-nam%new_mpi = .false.
 nam%check_adjoints = .false.
 nam%check_pos_def = .false.
-nam%check_mpi = .false.
 nam%check_sqrt = .false.
 nam%check_dirac = .false.
 nam%check_perf = .false.
@@ -274,7 +267,7 @@ nam%mask_check = .false.
 call msi(nam%nc1)
 call msi(nam%ntry)
 call msi(nam%nrep)
-call msi(nam%nc)
+call msi(nam%nc3)
 call msr(nam%dc)
 call msi(nam%nl0r)
 
@@ -295,6 +288,7 @@ nam%fit_wgt = .false.
 nam%lhomh = .false.
 nam%lhomv = .false.
 call msr(nam%rvflt)
+call msi(nam%lct_nscales)
 nam%lct_diag = .false.
 
 ! output_param default
@@ -306,10 +300,12 @@ call msr(nam%lon_ldwv)
 call msr(nam%lat_ldwv)
 nam%flt_type = ''
 call msr(nam%diag_rhflt)
+nam%diag_interp = ''
 
 ! nicas_param default
 nam%lsqrt = .false.
 call msr(nam%resol)
+nam%nicas_interp = ''
 nam%network = .false.
 call msi(nam%mpicom)
 call msi(nam%ndir)
@@ -319,43 +315,46 @@ call msi(nam%levdir)
 call msi(nam%ivdir)
 call msi(nam%itsdir)
 
+! obsop_param default
+call msi(nam%nobs)
+call msr(nam%obsdis)
+nam%obsop_interp = ''
+
 ! Setup from configuration
 
 ! general_param
 nam%prefix = config_get_string(c_conf,1024,"prefix")
 nam%default_seed = integer_to_logical(config_get_int(c_conf,"default_seed"))
 
-! driver_param default
+! driver_param
 nam%method = config_get_string(c_conf,1024,"method")
 nam%strategy = config_get_string(c_conf,1024,"strategy")
 nam%new_hdiag = integer_to_logical(config_get_int(c_conf,"new_hdiag"))
 nam%new_param = integer_to_logical(config_get_int(c_conf,"new_param"))
-nam%new_mpi = integer_to_logical(config_get_int(c_conf,"new_mpi"))
 nam%check_adjoints = integer_to_logical(config_get_int(c_conf,"check_adjoints"))
 nam%check_pos_def = integer_to_logical(config_get_int(c_conf,"check_pos_def"))
-nam%check_mpi = integer_to_logical(config_get_int(c_conf,"check_mpi"))
 nam%check_sqrt = integer_to_logical(config_get_int(c_conf,"check_sqrt"))
 nam%check_dirac = integer_to_logical(config_get_int(c_conf,"check_dirac"))
 nam%check_hdiag = integer_to_logical(config_get_int(c_conf,"check_hdiag"))
 nam%new_lct = integer_to_logical(config_get_int(c_conf,"new_lct"))
 nam%new_obsop = integer_to_logical(config_get_int(c_conf,"new_obsop"))
 
-! model_param default
+! model_param
 nam%logpres = integer_to_logical(config_get_int(c_conf,"logpres"))
 nam%transform = integer_to_logical(config_get_int(c_conf,"transform"))
 
-! sampling_param default
+! sampling_param
 nam%mask_type = config_get_string(c_conf,1024,"mask_type")
 nam%mask_th = config_get_real(c_conf,"mask_th")
 nam%mask_check = integer_to_logical(config_get_int(c_conf,"mask_check"))
 nam%nc1 = config_get_int(c_conf,"nc1")
 nam%ntry = config_get_int(c_conf,"ntry")
 nam%nrep = config_get_int(c_conf,"nrep")
-nam%nc = config_get_int(c_conf,"nc")
+nam%nc3 = config_get_int(c_conf,"nc3")
 nam%dc = config_get_real(c_conf,"dc")/req
 nam%nl0r = config_get_int(c_conf,"nl0r")
 
-! diag_param default
+! diag_param
 nam%ne = config_get_int(c_conf,"ne")
 nam%gau_approx = integer_to_logical(config_get_int(c_conf,"gau_approx"))
 nam%full_var = integer_to_logical(config_get_int(c_conf,"full_var"))
@@ -367,16 +366,14 @@ nam%displ_niter = config_get_int(c_conf,"displ_niter")
 nam%displ_rhflt = config_get_real(c_conf,"displ_rhflt")/req
 nam%displ_tol = config_get_real(c_conf,"displ_tol")
 
-! fit_param default
+! fit_param
 nam%fit_type = config_get_string(c_conf,1024,"fit_type")
 nam%fit_wgt = integer_to_logical(config_get_int(c_conf,"fit_wgt"))
 nam%lhomh = integer_to_logical(config_get_int(c_conf,"lhomh"))
 nam%lhomv = integer_to_logical(config_get_int(c_conf,"lhomv"))
 nam%rvflt = config_get_real(c_conf,"rvflt")
-nam%lct_diag = integer_to_logical(config_get_int(c_conf,"lct_diag"))
-nam%lct_nscales = config_get_int(c_conf,"lct_nscales")
 
-! output_param default
+! output_param
 nam%nldwh = config_get_int(c_conf,"nldwh")
 do ildwh=1,nam%nldwh
    write(ildwvchar,'(i3)') ildwh
@@ -391,10 +388,12 @@ do ildwv=1,nam%nldwv
 end do
 nam%flt_type = config_get_string(c_conf,1024,"flt_type")
 nam%diag_rhflt = config_get_real(c_conf,"diag_rhflt")/req
+nam%diag_interp = config_get_string(c_conf,1024,"diag_interp")
 
-! nicas_param default
+! nicas_param
 nam%lsqrt = integer_to_logical(config_get_int(c_conf,"lsqrt"))
 nam%resol = config_get_real(c_conf,"resol")
+nam%nicas_interp = config_get_string(c_conf,1024,"nicas_interp")
 nam%network = integer_to_logical(config_get_int(c_conf,"network"))
 nam%mpicom = config_get_int(c_conf,"mpicom")
 nam%ndir = config_get_int(c_conf,"ndir")
@@ -406,6 +405,11 @@ do idir=1,nam%ndir
    nam%ivdir(idir) = config_get_int(c_conf,"ivdir("//trim(adjustl(idirchar))//")")
    nam%itsdir(idir) = config_get_int(c_conf,"itsdir("//trim(adjustl(idirchar))//")")
 end do
+
+! obsop_param
+nam%nobs = config_get_int(c_conf,"nobs")
+nam%obsdis = config_get_real(c_conf,"obsdis")
+nam%obsop_interp = config_get_string(c_conf,1024,"obsop_interp")
 
 end subroutine hdiag_nicas_read_conf
 
@@ -460,7 +464,7 @@ do while (associated(current))
 end do
 
 ! Apply localization
-call apply_localization(self%nam,self%geom,self%bpar,self%ndataloc,fld)
+call apply_localization(self%nam,self%geom,self%bpar,self%ndata,fld)
 
 ! Initialization
 ic0a = 1

@@ -23,21 +23,30 @@ randGen::randGen(int default_seed) {
     if (default_seed==0) {
 #if __cplusplus > 199711L
         std::random_device rd;
-        gen = new std::mt19937(rd());
+        gen_ = new std::mt19937(rd());
         version_ = 1;
 #else
-        seed = clock();
+        seed_ = clock();
         version_ = 0;
 #endif
     }
     else {
-        seed = -14051987;
+        seed_ = -abs(default_seed);
         version_ = 0;
     }
 }
 
 // Destructor
 randGen::~randGen(){}
+
+// Reseed generator
+void randGen::reseed_randgen(int seed) {
+#if __cplusplus > 199711L
+    gen_ = new std::mt19937(abs(seed));
+#endif
+    seed_ = -abs(seed);
+    return;
+}
 
 // Random integer generator
 void randGen::rand_integer(int binf, int bsup, int *ir) {
@@ -47,7 +56,7 @@ void randGen::rand_integer(int binf, int bsup, int *ir) {
         std::uniform_int_distribution<int> dis(binf,bsup);
 
         // Generate random integer
-        *ir=dis(*gen);
+        *ir=dis(*gen_);
 #endif
     }
     else {
@@ -69,7 +78,7 @@ void randGen::rand_real(double binf, double bsup, double *rr) {
         std::uniform_real_distribution<double> dis(binf,bsup);
 
         // Generate random real
-        *rr=dis(*gen);
+        *rr=dis(*gen_);
 #endif
     }
     else {
@@ -220,9 +229,9 @@ double randGen::ran3() {
     long mj,mk;
     int i,ii,k;
 
-    if (seed < 0 || iff == 0) {
+    if (seed_ < 0 || iff == 0) {
         iff=1;
-        mj=MSEED-(seed < 0 ? -seed : seed);
+        mj=MSEED-(seed_ < 0 ? -seed_ : seed_);
         mj %= MBIG;
         ma[55]=mj;
         mk=1;
@@ -240,7 +249,7 @@ double randGen::ran3() {
             }
         inext=0;
         inextp=31;
-        seed=1;
+        seed_=1;
     }
     if (++inext == 56) inext=1;
     if (++inextp == 56) inextp=1;

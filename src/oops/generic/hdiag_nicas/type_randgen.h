@@ -15,6 +15,9 @@ extern "C"
     // Destructor
     void delete_randgen(RANDGEN* randgen);
 
+    // Reseed generator
+    void reseed_randgen(RANDGEN* randgen, int seed);
+
     // Get version
     void get_version(const RANDGEN* randgen, int *version);
 

@@ -136,7 +136,7 @@ character(len=*),intent(in) :: filename !< File name
 type(displtype),intent(in) :: displ     !< Displacement data
 
 ! Local variables
-integer :: its,ncid,nts_id,nl0_1_id,na_id,two_id,displ_niter_id,vunit_id,larc_id,valid_id,dist_id,rhflt_id
+integer :: its,ncid,nts_id,nl0_id,na_id,two_id,displ_niter_id,vunit_id,larc_id,valid_id,dist_id,rhflt_id
 character(len=2) :: itschar
 character(len=1024) :: subr = 'displ_write'
 
@@ -152,20 +152,20 @@ call namncwrite(nam,ncid)
 
 ! Define dimensions
 call ncerr(subr,nf90_def_dim(ncid,'nts',nam%nts-1,nts_id))
-call ncerr(subr,nf90_def_dim(ncid,'nl0',geom%nl0,nl0_1_id))
+call ncerr(subr,nf90_def_dim(ncid,'nl0',geom%nl0,nl0_id))
 call ncerr(subr,nf90_def_dim(ncid,'na',3*hdata%nc2-6,na_id))
 call ncerr(subr,nf90_def_dim(ncid,'two',2,two_id))
 call ncerr(subr,nf90_def_dim(ncid,'niter',nam%displ_niter+1,displ_niter_id))
 
 ! Define arrays
-call ncerr(subr,nf90_def_var(ncid,'vunit',ncfloat,(/nl0_1_id/),vunit_id))
+call ncerr(subr,nf90_def_var(ncid,'vunit',ncfloat,(/nl0_id/),vunit_id))
 call ncerr(subr,nf90_def_var(ncid,'larc',nf90_int,(/two_id,na_id/),larc_id))
 call ncerr(subr,nf90_put_att(ncid,larc_id,'_FillValue',msvali))
-call ncerr(subr,nf90_def_var(ncid,'valid',ncfloat,(/displ_niter_id,nl0_1_id,nts_id/),valid_id))
+call ncerr(subr,nf90_def_var(ncid,'valid',ncfloat,(/displ_niter_id,nl0_id,nts_id/),valid_id))
 call ncerr(subr,nf90_put_att(ncid,valid_id,'_FillValue',msvalr))
-call ncerr(subr,nf90_def_var(ncid,'dist',ncfloat,(/displ_niter_id,nl0_1_id,nts_id/),dist_id))
+call ncerr(subr,nf90_def_var(ncid,'dist',ncfloat,(/displ_niter_id,nl0_id,nts_id/),dist_id))
 call ncerr(subr,nf90_put_att(ncid,dist_id,'_FillValue',msvalr))
-call ncerr(subr,nf90_def_var(ncid,'rhflt',ncfloat,(/displ_niter_id,nl0_1_id,nts_id/),rhflt_id))
+call ncerr(subr,nf90_def_var(ncid,'rhflt',ncfloat,(/displ_niter_id,nl0_id,nts_id/),rhflt_id))
 call ncerr(subr,nf90_put_att(ncid,rhflt_id,'_FillValue',msvalr))
 
 ! End definition mode

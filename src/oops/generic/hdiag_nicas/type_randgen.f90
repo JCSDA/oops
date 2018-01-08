@@ -13,7 +13,7 @@ module type_randgen
 use iso_c_binding, only: c_ptr,c_int,c_double
 use tools_kinds, only: kind_real
 use tools_missing, only: msi
-use type_mpl, only: mpl,mpl_bcast
+use type_mpl, only: mpl
 use type_nam, only: namtype
 
 implicit none
@@ -39,6 +39,14 @@ interface
    implicit none
    type(c_ptr),value :: randgen
    end subroutine delete_randgen_c
+end interface
+interface
+   subroutine reseed_randgen_c(randgen,seed) bind(C,name="reseed_randgen")
+   use iso_c_binding
+   implicit none
+   type(c_ptr),value :: randgen
+   integer(c_int) :: seed
+   end subroutine reseed_randgen_c
 end interface
 interface
    subroutine get_version_c(randgen,version) bind(C,name="get_version")
@@ -102,14 +110,17 @@ interface rand_gau
   module procedure rand_gau_1d
 end interface
 
+! Default seed
+integer,parameter :: seed = 14051987
+
 private
-public :: create_randgen,delete_randgen,rand_integer,rand_real,rand_gau,initialize_sampling
+public :: create_randgen,delete_randgen,reseed_randgen,rand_integer,rand_real,rand_gau,initialize_sampling
 
 contains
 
 !----------------------------------------------------------------------
 ! Subroutine: create_randgen
-!> Purpose: create a random number generator
+!> Purpose: create the random number generator
 !----------------------------------------------------------------------
 subroutine create_randgen(nam)
 
@@ -123,7 +134,7 @@ integer :: default_seed,version
 
 ! Set default seed key to integer
 if (nam%default_seed) then
-   default_seed = 1
+   default_seed = seed+mpl%myproc
 else
    default_seed = 0
 end if
@@ -142,14 +153,14 @@ else
       write(mpl%unit,'(a7,a)') '','Generator Mersenne Twister 19937 initialized'
    else
       write(mpl%unit,'(a7,a)') '','Generator ran3 initialized'
-   end if 
+   end if
 end if
 
 end subroutine create_randgen
 
 !----------------------------------------------------------------------
 ! Subroutine: delete_randgen
-!> Purpose: delete a random number generator
+!> Purpose: delete the random number generator
 !----------------------------------------------------------------------
 subroutine delete_randgen()
 
@@ -159,6 +170,19 @@ implicit none
 call delete_randgen_c(rng%ptr)
 
 end subroutine delete_randgen
+
+!----------------------------------------------------------------------
+! Subroutine: reseed_randgen
+!> Purpose: re-seed the random number generator
+!----------------------------------------------------------------------
+subroutine reseed_randgen()
+
+implicit none
+
+! Call C++ function
+call reseed_randgen_c(rng%ptr,seed+mpl%myproc)
+
+end subroutine reseed_randgen
 
 !----------------------------------------------------------------------
 ! Subroutine: rand_integer_0d
@@ -395,8 +419,7 @@ if (ns>=sum(mask)) then
       ihor(is) = i
    end do
 else
-   if (mpl%main) call initialize_sampling_c(rng%ptr,n,lon,lat,mask,rh,ntry,nrep,ns,ihor)
-   call mpl_bcast(ihor,mpl%ioproc)
+   call initialize_sampling_c(rng%ptr,n,lon,lat,mask,rh,ntry,nrep,ns,ihor)
 end if
 
 end subroutine initialize_sampling

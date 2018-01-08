@@ -26,7 +26,7 @@ implicit none
 integer,parameter :: nvmax = 20                     !< Maximum number of variables
 integer,parameter :: ntsmax = 20                    !< Maximum number of time slots
 integer,parameter :: nlmax = 200                    !< Maximum number of levels
-integer,parameter :: ncmax = 1000                   !< Maximum number of classes
+integer,parameter :: nc3max = 1000                   !< Maximum number of classes
 integer,parameter :: nscalesmax = 5                 !< Maximum number of variables
 integer,parameter :: nldwvmax = 100                 !< Maximum number of local diagnostic profiles
 integer,parameter :: ndirmax = 100                  !< Maximum number of diracs
@@ -45,10 +45,8 @@ type namtype
    character(len=1024) :: strategy                  !< Localization strategy ('common', 'specific_univariate', 'specific_multivariate' or 'common_weighted')
    logical :: new_hdiag                             !< Compute new hybrid_diag parameters (if false, read file)
    logical :: new_param                             !< Compute new parameters (if false, read file)
-   logical :: new_mpi                               !< Compute new mpi splitting (if false, read file)
    logical :: check_adjoints                        !< Test adjoints
    logical :: check_pos_def                         !< Test positive definiteness
-   logical :: check_mpi                             !< Test single proc/multi-procs equivalence
    logical :: check_sqrt                            !< Test full/square-root equivalence
    logical :: check_dirac                           !< Test NICAS application on diracs
    logical :: check_perf                            !< Test NICAS performance
@@ -86,7 +84,7 @@ type namtype
    integer :: nc1                                   !< Number of sampling points
    integer :: ntry                                  !< Number of tries to get the most separated point for the zero-separation sampling
    integer :: nrep                                  !< Number of replacement to improve homogeneity of the zero-separation sampling
-   integer :: nc                                    !< Number of classes
+   integer :: nc3                                    !< Number of classes
    real(kind_real) ::  dc                           !< Class size (for sam_type='hor'), should be larger than the typical grid cell size
    integer :: nl0r                                  !< Reduced number of levels for diagnostics
 
@@ -113,19 +111,21 @@ type namtype
 
    ! output_param
    integer :: nldwh                                 !< Number of local diagnostics fields to write (for local_diag = .true.)
-   integer :: il_ldwh(nlmax*ncmax)                  !< Levels of local diagnostics fields to write (for local_diag = .true.)
-   integer :: ic_ldwh(nlmax*ncmax)                  !< Classes of local diagnostics fields to write (for local_diag = .true.)
+   integer :: il_ldwh(nlmax*nc3max)                  !< Levels of local diagnostics fields to write (for local_diag = .true.)
+   integer :: ic_ldwh(nlmax*nc3max)                  !< Classes of local diagnostics fields to write (for local_diag = .true.)
    integer :: nldwv                                 !< Number of local diagnostics profiles to write (for local_diag = .true.)
    real(kind_real) ::  lon_ldwv(nldwvmax)           !< Longitudes (in degrees) local diagnostics profiles to write (for local_diag = .true.)
    real(kind_real) ::  lat_ldwv(nldwvmax)           !< Latitudes (in degrees) local diagnostics profiles to write (for local_diag = .true.)
    character(len=1024) :: flt_type                  !< Diagnostics filtering type ('none', 'average', 'gc99', 'median')
    real(kind_real) ::  diag_rhflt                   !< Diagnostics filtering radius
+   character(len=1024) :: diag_interp              !< Diagnostics interpolation type
 
    ! nicas_param
    logical :: lsqrt                                 !< Square-root formulation
    real(kind_real) :: rh(nlmax)                     !< Default horizontal support radius
    real(kind_real) :: rv(nlmax)                     !< Default vertical support radius
    real(kind_real) :: resol                         !< Resolution
+   character(len=1024) :: nicas_interp              !< NICAS interpolation type
    logical :: network                               !< Network-base convolution calculation (distance-based if false)
    integer :: mpicom                                !< Number of communication steps
    integer :: ndir                                  !< Number of Diracs
@@ -134,6 +134,11 @@ type namtype
    integer :: levdir(ndirmax)                       !< Diracs level
    integer :: ivdir(ndirmax)                        !< Diracs variable
    integer :: itsdir(ndirmax)                       !< Diracs timeslot
+
+   ! obsop_param
+   integer :: nobs                                  !< Number of observations
+   real(kind_real) :: obsdis                        !< Observation distribution parameter
+   character(len=1024) :: obsop_interp              !< Observation operator interpolation type
 end type namtype
 
 private
@@ -158,29 +163,30 @@ integer :: iv
 
 ! Namelist variables
 integer :: nl,levs(nlmax),nv,nts,timeslot(ntsmax),ens1_ne,ens1_ne_offset,ens1_nsub,ens2_ne,ens2_ne_offset,ens2_nsub
-integer :: nc1,ntry,nrep,nc,nl0r,ne,displ_niter,lct_nscales,nldwh,il_ldwh(nlmax*ncmax),ic_ldwh(nlmax*ncmax),nldwv
-integer :: mpicom,ndir,levdir(ndirmax),ivdir(ndirmax),itsdir(ndirmax)
+integer :: nc1,ntry,nrep,nc3,nl0r,ne,displ_niter,lct_nscales,nldwh,il_ldwh(nlmax*nc3max),ic_ldwh(nlmax*nc3max),nldwv
+integer :: mpicom,ndir,levdir(ndirmax),ivdir(ndirmax),itsdir(ndirmax),nobs
 logical :: colorlog,default_seed,load_ensemble
-logical :: new_hdiag,new_param,new_mpi,check_adjoints,check_pos_def,check_sqrt,check_mpi,check_dirac,check_perf,check_hdiag,new_lct
+logical :: new_hdiag,new_param,check_adjoints,check_pos_def,check_sqrt,check_dirac,check_perf,check_hdiag,new_lct
 logical :: new_obsop,logpres,transform,sam_write,sam_read,mask_check,gau_approx,full_var,local_diag,displ_diag
 logical :: fit_wgt,lhomh,lhomv,lct_diag(nscalesmax),lsqrt,network
 real(kind_real) :: mask_th,dc,local_rad,displ_rad,displ_rhflt,displ_tol,rvflt,lon_ldwv(nldwvmax),lat_ldwv(nldwvmax),diag_rhflt
-real(kind_real) :: rh(nlmax),rv(nlmax),resol,londir(ndirmax),latdir(ndirmax)
-character(len=1024) :: datadir,prefix,model,strategy,method,mask_type,fit_type,flt_type
+real(kind_real) :: rh(nlmax),rv(nlmax),resol,londir(ndirmax),latdir(ndirmax),obsdis
+character(len=1024) :: datadir,prefix,model,strategy,method,mask_type,fit_type,flt_type,diag_interp,nicas_interp,obsop_interp
 character(len=1024),dimension(nvmax) :: varname,addvar2d
 
 ! Namelist blocks
 namelist/general_param/datadir,prefix,model,colorlog,default_seed,load_ensemble
-namelist/driver_param/method,strategy,new_hdiag,new_param,new_mpi,check_adjoints,check_pos_def,check_sqrt,check_mpi,check_dirac, &
+namelist/driver_param/method,strategy,new_hdiag,new_param,check_adjoints,check_pos_def,check_sqrt,check_dirac, &
                     & check_perf,check_hdiag,new_lct,new_obsop
 namelist/model_param/nl,levs,logpres,nv,varname,addvar2d,nts,timeslot,transform
 namelist/ens1_param/ens1_ne,ens1_ne_offset,ens1_nsub
 namelist/ens2_param/ens2_ne,ens2_ne_offset,ens2_nsub
-namelist/sampling_param/sam_write,sam_read,mask_type,mask_th,mask_check,nc1,ntry,nrep,nc,dc,nl0r
+namelist/sampling_param/sam_write,sam_read,mask_type,mask_th,mask_check,nc1,ntry,nrep,nc3,dc,nl0r
 namelist/diag_param/ne,gau_approx,full_var,local_diag,local_rad,displ_diag,displ_rad,displ_niter,displ_rhflt,displ_tol
 namelist/fit_param/fit_type,fit_wgt,lhomh,lhomv,rvflt,lct_nscales,lct_diag
-namelist/output_param/nldwh,il_ldwh,ic_ldwh,nldwv,lon_ldwv,lat_ldwv,flt_type,diag_rhflt
-namelist/nicas_param/lsqrt,rh,rv,resol,network,mpicom,ndir,londir,latdir,levdir,ivdir,itsdir
+namelist/output_param/nldwh,il_ldwh,ic_ldwh,nldwv,lon_ldwv,lat_ldwv,flt_type,diag_rhflt,diag_interp
+namelist/nicas_param/lsqrt,rh,rv,resol,nicas_interp,network,mpicom,ndir,londir,latdir,levdir,ivdir,itsdir
+namelist/obsop_param/nobs,obsdis,obsop_interp
 
 ! Default initialization
 
@@ -197,11 +203,9 @@ method = ''
 strategy = ''
 new_hdiag = .false.
 new_param = .false.
-new_mpi = .false.
 check_adjoints = .false.
 check_pos_def = .false.
 check_sqrt = .false.
-check_mpi = .false.
 check_dirac = .false.
 check_perf = .false.
 check_hdiag = .false.
@@ -240,7 +244,7 @@ mask_check = .false.
 call msi(nc1)
 call msi(ntry)
 call msi(nrep)
-call msi(nc)
+call msi(nc3)
 call msr(dc)
 call msi(nl0r)
 
@@ -273,12 +277,14 @@ call msr(lon_ldwv)
 call msr(lat_ldwv)
 flt_type = ''
 call msr(diag_rhflt)
+diag_interp = ''
 
 ! nicas_param default
 lsqrt = .false.
 call msr(rh)
 call msr(rv)
 call msr(resol)
+nicas_interp = ''
 network = .false.
 call msi(mpicom)
 call msi(ndir)
@@ -287,6 +293,11 @@ call msr(latdir)
 call msi(levdir)
 call msi(ivdir)
 call msi(itsdir)
+
+! obsop_param default
+call msi(nobs)
+call msr(obsdis)
+obsop_interp = ''
 
 if (mpl%main) then
    ! Read namelist and copy into derived type
@@ -306,10 +317,8 @@ if (mpl%main) then
    nam%strategy = strategy
    nam%new_hdiag = new_hdiag
    nam%new_param = new_param
-   nam%new_mpi = new_mpi
    nam%check_adjoints = check_adjoints
    nam%check_pos_def = check_pos_def
-   nam%check_mpi = check_mpi
    nam%check_sqrt = check_sqrt
    nam%check_dirac = check_dirac
    nam%check_perf = check_perf
@@ -351,7 +360,7 @@ if (mpl%main) then
    nam%nc1 = nc1
    nam%ntry = ntry
    nam%nrep = nrep
-   nam%nc = nc
+   nam%nc3 = nc3
    nam%dc = dc/req
    nam%nl0r = nl0r
 
@@ -388,6 +397,7 @@ if (mpl%main) then
    nam%lat_ldwv = lat_ldwv
    nam%flt_type = flt_type
    nam%diag_rhflt = diag_rhflt/req
+   nam%diag_interp = diag_interp
 
    ! nicas_param
    read(*,nml=nicas_param)
@@ -395,6 +405,7 @@ if (mpl%main) then
    nam%rh = rh/req
    nam%rv = rv
    nam%resol = resol
+   nam%nicas_interp = nicas_interp
    nam%network = network
    nam%mpicom = mpicom
    nam%ndir = ndir
@@ -403,6 +414,12 @@ if (mpl%main) then
    nam%levdir = levdir
    nam%ivdir = ivdir
    nam%itsdir = itsdir
+
+   ! obsop_param
+   read(*,nml=obsop_param)
+   nam%nobs = nobs
+   nam%obsdis = obsdis
+   nam%obsop_interp = obsop_interp
 end if
 
 ! Broadcast parameters
@@ -420,10 +437,8 @@ call mpl_bcast(nam%method,mpl%ioproc)
 call mpl_bcast(nam%strategy,mpl%ioproc)
 call mpl_bcast(nam%new_hdiag,mpl%ioproc)
 call mpl_bcast(nam%new_param,mpl%ioproc)
-call mpl_bcast(nam%new_mpi,mpl%ioproc)
 call mpl_bcast(nam%check_adjoints,mpl%ioproc)
 call mpl_bcast(nam%check_pos_def,mpl%ioproc)
-call mpl_bcast(nam%check_mpi,mpl%ioproc)
 call mpl_bcast(nam%check_sqrt,mpl%ioproc)
 call mpl_bcast(nam%check_dirac,mpl%ioproc)
 call mpl_bcast(nam%check_perf,mpl%ioproc)
@@ -461,7 +476,7 @@ call mpl_bcast(nam%mask_check,mpl%ioproc)
 call mpl_bcast(nam%nc1,mpl%ioproc)
 call mpl_bcast(nam%ntry,mpl%ioproc)
 call mpl_bcast(nam%nrep,mpl%ioproc)
-call mpl_bcast(nam%nc,mpl%ioproc)
+call mpl_bcast(nam%nc3,mpl%ioproc)
 call mpl_bcast(nam%dc,mpl%ioproc)
 call mpl_bcast(nam%nl0r,mpl%ioproc)
 
@@ -495,12 +510,14 @@ call mpl_bcast(nam%lon_ldwv,mpl%ioproc)
 call mpl_bcast(nam%lat_ldwv,mpl%ioproc)
 call mpl_bcast(nam%flt_type,mpl%ioproc)
 call mpl_bcast(nam%diag_rhflt,mpl%ioproc)
+call mpl_bcast(nam%diag_interp,mpl%ioproc)
 
 ! nicas_param
 call mpl_bcast(nam%lsqrt,mpl%ioproc)
 call mpl_bcast(nam%rh,mpl%ioproc)
 call mpl_bcast(nam%rv,mpl%ioproc)
 call mpl_bcast(nam%resol,mpl%ioproc)
+call mpl_bcast(nam%nicas_interp,mpl%ioproc)
 call mpl_bcast(nam%network,mpl%ioproc)
 call mpl_bcast(nam%mpicom,mpl%ioproc)
 call mpl_bcast(nam%ndir,mpl%ioproc)
@@ -509,6 +526,11 @@ call mpl_bcast(nam%latdir,mpl%ioproc)
 call mpl_bcast(nam%levdir,mpl%ioproc)
 call mpl_bcast(nam%ivdir,mpl%ioproc)
 call mpl_bcast(nam%itsdir,mpl%ioproc)
+
+! obsop_param
+call mpl_bcast(nam%nobs,mpl%ioproc)
+call mpl_bcast(nam%obsdis,mpl%ioproc)
+call mpl_bcast(nam%obsop_interp,mpl%ioproc)
 
 end subroutine namread
 
@@ -543,14 +565,12 @@ case default
    call msgerror('wrong method')
 end select
 select case (trim(nam%strategy))
-case ('common','specific_univariate','specific_multivariate','common_weighted')
+case ('common','specific_univariate','common_weighted')
+case ('specific_multivariate')
+   if (.not.nam%lsqrt) call msgerror('specific multivariate strategy requires a square-root formulation')
 case default
    call msgerror('wrong strategy')
 end select
-if (nam%new_param.and.(.not.nam%new_mpi)) then
-   call msgwarning('new parameters calculation implies new MPI splitting, resetting new_mpi to .true.')
-   nam%new_mpi = .true.
-end if
 if (nam%check_sqrt.and.(.not.nam%new_param)) call msgerror('square-root check requires new parameters calculation')
 if (nam%check_hdiag) then
    if (.not.nam%new_hdiag) call msgerror('new_hdiag required for check_hdiag')
@@ -558,7 +578,7 @@ if (nam%check_hdiag) then
    if (.not.nam%lsqrt) call msgerror('lsqrt required for check_hdiag')
 end if
 if (nam%new_lct) then
-   if (nam%new_hdiag.or.nam%new_param.or.nam%new_mpi.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_mpi.or. &
+   if (nam%new_hdiag.or.nam%new_param.or.nam%check_adjoints.or.nam%check_pos_def.or. &
  & nam%check_sqrt.or.nam%check_dirac.or.nam%check_perf.or.nam%check_hdiag) call msgerror('new_lct should be executed alone')
    if (.not.nam%local_diag) then
       call msgwarning('new_lct requires local_diag, resetting local_diag to .true.')
@@ -615,13 +635,21 @@ if (nam%new_hdiag.or.nam%new_lct) then
    if (nam%nc1<=0) call msgerror('nc1 should be positive')
    if (nam%ntry<=0) call msgerror('ntry should be positive')
    if (nam%nrep<0) call msgerror('nrep should be non-negative')
-   if (nam%nc<=0) call msgerror('nc should be positive')
+   if (nam%nc3<=0) call msgerror('nc3 should be positive')
    if (nam%dc<0.0) call msgerror('dc should be positive')
    if (nam%nl0r<1) call msgerror ('nl0r should be positive')
-   if (nam%nl0r>nam%nl) then
-      call msgwarning('nl0r should be lower that nl, resetting nl0r to nl or the lower odd number')
-      nam%nl0r = nam%nl
-      if (mod(nam%nl0r,2)<1) nam%nl0r = nam%nl0r-1
+   if (any(nam%addvar2d(1:nam%nv)/='')) then
+      if (nam%nl0r>nam%nl+1) then
+         call msgwarning('nl0r should be lower that nl+1, resetting nl0r to nl+1 or the lower odd number')
+         nam%nl0r = nam%nl+1
+         if (mod(nam%nl0r,2)<1) nam%nl0r = nam%nl0r-1
+      end if
+   else
+      if (nam%nl0r>nam%nl) then
+         call msgwarning('nl0r should be lower that nl, resetting nl0r to nl or the lower odd number')
+         nam%nl0r = nam%nl
+         if (mod(nam%nl0r,2)<1) nam%nl0r = nam%nl0r-1
+      end if
    end if
    if (mod(nam%nl0r,2)<1) call msgerror ('nl0r should be odd')
 
@@ -655,7 +683,7 @@ if (nam%new_hdiag.or.nam%new_lct) then
       if (any(nam%il_ldwh(1:nam%nldwh)<0)) call msgerror('il_ldwh should be non-negative')
       if (any(nam%il_ldwh(1:nam%nldwh)>nam%nl)) call msgerror('il_ldwh should be lower than nl')
       if (any(nam%ic_ldwh(1:nam%nldwh)<0)) call msgerror('ic_ldwh should be non-negative')
-      if (any(nam%ic_ldwh(1:nam%nldwh)>nam%nc)) call msgerror('ic_ldwh should be lower than nc')
+      if (any(nam%ic_ldwh(1:nam%nldwh)>nam%nc3)) call msgerror('ic_ldwh should be lower than nc3')
       if (nam%nldwv<0) call msgerror('nldwv should be non-negative')
       if (any(nam%lon_ldwv(1:nam%nldwv)<-180.0).or.any(nam%lon_ldwv(1:nam%nldwv)>180.0)) call msgerror('wrong lon_ldwv')
       if (any(nam%lat_ldwv(1:nam%nldwv)<-90.0).or.any(nam%lat_ldwv(1:nam%nldwv)>90.0)) call msgerror('wrong lat_ldwv')
@@ -669,6 +697,11 @@ if (nam%new_hdiag.or.nam%new_lct) then
          call msgerror('wrong filtering type')
       end select
    end if
+   select case (trim(nam%diag_interp))
+   case ('bilin','natural')
+   case default
+      call msgerror('wrong interpolation for diagnostics')
+   end select
 
    ! Check ensemble sizes
    if (trim(nam%method)/='cor') then
@@ -687,7 +720,8 @@ end if
 if (nam%new_param) then
    if (.not.(nam%resol>0.0)) call msgerror('resol should be positive')
 end if
-if (nam%new_mpi.or.nam%check_mpi.or.nam%check_dirac.or.nam%check_perf) then
+if (nam%new_param.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_sqrt.or.nam%check_dirac.or.nam%check_perf.or.& 
+ & nam%check_hdiag) then
    if ((nam%mpicom/=1).and.(nam%mpicom/=2)) call msgerror('mpicom should be 1 or 2')
 end if
 if (nam%check_dirac) then
@@ -695,14 +729,31 @@ if (nam%check_dirac) then
    do idir=1,nam%ndir
       if ((nam%londir(idir)<-180.0).or.(nam%londir(idir)>180.0)) call msgerror('Dirac longitude should lie between -180 and 180')
       if ((nam%latdir(idir)<-90.0).or.(nam%latdir(idir)>90.0)) call msgerror('Dirac latitude should lie between -90 and 90')
-      if (.not.any(nam%levs(1:nam%nl)==nam%levdir(idir))) call msgerror('wrong level for a Dirac')
+      if (.not.(any(nam%levs(1:nam%nl)==nam%levdir(idir)).or.(any(nam%addvar2d(1:nam%nv)/='') &
+    & .and.(nam%levs(nam%nl+1)==nam%levdir(idir))))) call msgerror('wrong level for a Dirac')
       if ((nam%ivdir(idir)<1).or.(nam%ivdir(idir)>nam%nv)) call msgerror('wrong variable for a Dirac')
       if ((nam%itsdir(idir)<1).or.(nam%itsdir(idir)>nam%nts)) call msgerror('wrong timeslot for a Dirac')
    end do
 end if
+select case (trim(nam%diag_interp))
+case ('bilin','natural')
+case default
+   call msgerror('wrong interpolation for NICAS')
+end select
+
+! Check obsop_param
+if (nam%new_obsop) then
+   if (nam%nobs<1) call msgerror('nobs should be positive')
+   if (nam%obsdis>1.0) call msgerror('obsdis should be lower than 1')
+   select case (trim(nam%diag_interp))
+   case ('bilin','natural')
+   case default
+      call msgerror('wrong interpolation for observation operator')
+   end select
+end if
 
 ! Clean files
-if (nam%check_dirac) call system('rm -f '//trim(nam%datadir)//'/'//trim(nam%prefix)//'_dirac.nc')
+if (nam%check_dirac) call system('rm -f '//trim(nam%datadir)//'/'//trim(nam%prefix)//'_dirac.nc3')
 
 end subroutine namcheck
 
@@ -731,10 +782,8 @@ call put_att(ncid,'method',trim(nam%method))
 call put_att(ncid,'strategy',trim(nam%strategy))
 call put_att(ncid,'new_hdiag',nam%new_hdiag)
 call put_att(ncid,'new_param',nam%new_param)
-call put_att(ncid,'new_mpi',nam%new_mpi)
 call put_att(ncid,'check_adjoints',nam%check_adjoints)
 call put_att(ncid,'check_pos_def',nam%check_pos_def)
-call put_att(ncid,'check_mpi',nam%check_mpi)
 call put_att(ncid,'check_sqrt',nam%check_sqrt)
 call put_att(ncid,'check_dirac',nam%check_dirac)
 call put_att(ncid,'check_perf',nam%check_perf)
@@ -771,7 +820,7 @@ call put_att(ncid,'mask_check',nam%mask_check)
 call put_att(ncid,'nc1',nam%nc1)
 call put_att(ncid,'ntry',nam%ntry)
 call put_att(ncid,'nrep',nam%nrep)
-call put_att(ncid,'nc',nam%nc)
+call put_att(ncid,'nc3',nam%nc3)
 call put_att(ncid,'dc',nam%dc)
 call put_att(ncid,'nl0r',nam%nl0r)
 
@@ -805,12 +854,14 @@ call put_att(ncid,'lon_ldwv',nam%nldwv,nam%lon_ldwv(1:nam%nldwv))
 call put_att(ncid,'lat_ldwv',nam%nldwv,nam%lat_ldwv(1:nam%nldwv))
 call put_att(ncid,'flt_type',nam%flt_type)
 call put_att(ncid,'diag_rhflt',nam%diag_rhflt)
+call put_att(ncid,'diag_interp',nam%diag_interp)
 
 ! nicas_param
 call put_att(ncid,'lsqrt',nam%lsqrt)
 call put_att(ncid,'rh',nam%nl,nam%rh(1:nam%nl))
 call put_att(ncid,'rv',nam%nl,nam%rv(1:nam%nl))
 call put_att(ncid,'resol',nam%resol)
+call put_att(ncid,'nicas_interp',nam%nicas_interp)
 call put_att(ncid,'network',nam%network)
 call put_att(ncid,'mpicom',nam%mpicom)
 call put_att(ncid,'ndir',nam%ndir)
@@ -819,6 +870,11 @@ call put_att(ncid,'latdir',nam%ndir,nam%latdir(1:nam%ndir))
 call put_att(ncid,'levdir',nam%ndir,nam%levdir(1:nam%ndir))
 call put_att(ncid,'ivdir',nam%ndir,nam%ivdir(1:nam%ndir))
 call put_att(ncid,'itsdir',nam%ndir,nam%itsdir(1:nam%ndir))
+
+! obsop_param
+call put_att(ncid,'nobs',nam%nobs)
+call put_att(ncid,'obsdis',nam%obsdis)
+call put_att(ncid,'obsop_interp',nam%obsop_interp)
 
 end subroutine namncwrite
 

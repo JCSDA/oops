@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! Module: module_apply_bens.f90
+! Module: nicas_apply_bens.f90
 !> Purpose: apply localized ensemble covariance
 !> <br>
 !> Author: Benjamin Menetrier
@@ -8,9 +8,9 @@
 !> <br>
 !> Copyright © 2017 METEO-FRANCE
 !----------------------------------------------------------------------
-module module_apply_bens
+module nicas_apply_bens
 
-use module_apply_localization, only: apply_localization,apply_localization_from_sqrt
+use nicas_apply_localization, only: apply_localization,apply_localization_from_sqrt
 use tools_display, only: msgerror
 use tools_kinds, only: kind_real
 use tools_missing, only: msr,isnotmsr
@@ -18,7 +18,7 @@ use type_bpar, only: bpartype
 use type_geom, only: geomtype
 use type_mpl, only: mpl
 use type_nam, only: namtype
-use type_ndata, only: ndataloctype
+use type_ndata, only: ndatatype
 
 implicit none
 
@@ -31,7 +31,7 @@ contains
 ! Subroutine: apply_bens
 !> Purpose: apply localized ensemble covariance
 !----------------------------------------------------------------------
-subroutine apply_bens(nam,geom,bpar,ndataloc,ens1,fld)
+subroutine apply_bens(nam,geom,bpar,ndata,ens1,fld)
 
 implicit none
 
@@ -39,9 +39,9 @@ implicit none
 type(namtype),target,intent(in) :: nam                                            !< Namelist
 type(geomtype),target,intent(in) :: geom                                          !< Geometry
 type(bpartype),target,intent(in) :: bpar                                          !< Blocal parameters
-type(ndataloctype),intent(in) :: ndataloc(bpar%nb+1)                              !< NICAS data, local
+type(ndatatype),intent(in) :: ndata(bpar%nb+1)                                    !< NICAS data
 real(kind_real),intent(in) :: ens1(geom%nc0a,geom%nl0,nam%nv,nam%nts,nam%ens1_ne) !< Ensemble 1
-real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts)           !< Field, local
+real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts)           !< Field
 
 ! Local variable
 integer :: ie,ib,its,iv,ic0a
@@ -51,16 +51,20 @@ real(kind_real) :: mean(geom%nc0a,geom%nl0,nam%nv,nam%nts),pert(geom%nc0a,geom%n
 ! Compute mean
 mean = sum(ens1,dim=5)/float(nam%ens1_ne)
 
-! Apply adjoint transform vector
-do ib=1,bpar%nb
-   if (bpar%diag_block(ib)) then
-      its = bpar%ib_to_its(ib)
-      iv = bpar%ib_to_iv(ib)
-      do ic0a=1,geom%nc0a
-         fld_copy(ic0a,:,its,iv) = matmul(transpose(ndataloc(ib)%trans),fld(ic0a,:,its,iv))
-      end do
-   end if
-end do
+! Apply adjoint transform
+if (nam%transform) then
+   do ib=1,bpar%nb
+      if (bpar%auto_block(ib)) then
+         iv = bpar%b_to_v1(ib)
+         its = bpar%b_to_ts1(ib)
+         do ic0a=1,geom%nc0a
+            fld_copy(ic0a,:,its,iv) = matmul(transpose(ndata(ib)%trans),fld(ic0a,:,its,iv))
+         end do
+      end if
+   end do
+else
+   fld_copy = fld
+end if
 
 ! Apply localized ensemble covariance formula
 fld = 0.0
@@ -70,23 +74,23 @@ do ie=1,nam%ens1_ne
 
    ! Apply inverse transform
    do ib=1,bpar%nb
-      if (bpar%diag_block(ib)) then
-         its = bpar%ib_to_its(ib)
-         iv = bpar%ib_to_iv(ib)
+      if (nam%transform.and.bpar%auto_block(ib)) then
+         iv = bpar%b_to_v1(ib)
+         its = bpar%b_to_ts1(ib)
          do ic0a=1,geom%nc0a
-            pert(ic0a,:,its,iv) = matmul(ndataloc(ib)%transinv,pert(ic0a,:,its,iv))
+            pert(ic0a,:,its,iv) = matmul(ndata(ib)%transinv,pert(ic0a,:,its,iv))
          end do
       end if
    end do
-   
+
    ! Schur product
    fld_tmp = pert*fld_copy
 
    ! Apply localization
    if (nam%lsqrt) then
-      call apply_localization_from_sqrt(nam,geom,bpar,ndataloc,fld_tmp)
+      call apply_localization_from_sqrt(nam,geom,bpar,ndata,fld_tmp)
    else
-      call apply_localization(nam,geom,bpar,ndataloc,fld_tmp)
+      call apply_localization(nam,geom,bpar,ndata,fld_tmp)
    end if
 
    ! Schur product
@@ -94,16 +98,18 @@ do ie=1,nam%ens1_ne
 end do
 
 ! Apply direct transform
-do ib=1,bpar%nb
-   if (bpar%diag_block(ib)) then
-      its = bpar%ib_to_its(ib)
-      iv = bpar%ib_to_iv(ib)
-      do ic0a=1,geom%nc0a
-         fld(ic0a,:,its,iv) = matmul(ndataloc(ib)%trans,fld(ic0a,:,its,iv))
-      end do
-   end if
-end do
+if (nam%transform) then
+   do ib=1,bpar%nb
+      if (bpar%auto_block(ib)) then
+         iv = bpar%b_to_v1(ib)
+         its = bpar%b_to_ts1(ib)
+         do ic0a=1,geom%nc0a
+            fld(ic0a,:,its,iv) = matmul(ndata(ib)%trans,fld(ic0a,:,its,iv))
+         end do
+      end if
+   end do
+end if
 
 end subroutine apply_bens
 
-end module module_apply_bens
+end module nicas_apply_bens

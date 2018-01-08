@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! Module: module_localization.f90
+! Module: hdiag_localization.f90
 !> Purpose: localization routines
 !> <br>
 !> Author: Benjamin Menetrier
@@ -8,9 +8,9 @@
 !> <br>
 !> Copyright © 2017 METEO-FRANCE
 !----------------------------------------------------------------------
-module module_localization
+module hdiag_localization
 
-use module_fit, only: compute_fit
+use hdiag_fit, only: compute_fit
 use tools_display, only: msgwarning,msgerror,prog_init,prog_print
 use tools_fit, only: ver_smooth
 use tools_kinds, only: kind_real
@@ -47,20 +47,22 @@ type(avgtype),intent(in) :: avg      !< Averaged statistics
 type(curvetype),intent(inout) :: loc !< Localizations
 
 ! Local variables
-integer :: il0,jl0,ic
+integer :: il0,jl0r,jc3
 
 ! Associate
 associate(nam=>hdata%nam,geom=>hdata%geom,bpar=>hdata%bpar)
 
 ! Compute raw localization
-do jl0=1,geom%nl0
-   do il0=1,bpar%nl0(ib)
-      do ic=1,bpar%icmax(ib)
-         if (isnotmsr(avg%m11asysq(ic,il0,jl0)).and.isnotmsr(avg%m11sq(ic,il0,jl0))) &
-       & loc%raw(ic,il0,jl0) = avg%m11asysq(ic,il0,jl0)/avg%m11sq(ic,il0,jl0)
+!$omp parallel do schedule(static) private(il0,jl0r,jc3)
+do il0=1,geom%nl0
+   do jl0r=1,bpar%nl0(ib)
+      do jc3=1,bpar%nc3(ib)
+         if (isnotmsr(avg%m11asysq(jc3,jl0r,il0)).and.isnotmsr(avg%m11sq(jc3,jl0r,il0))) &
+       & loc%raw(jc3,jl0r,il0) = avg%m11asysq(jc3,jl0r,il0)/avg%m11sq(jc3,jl0r,il0)
       end do
    end do
 end do
+!$omp end parallel do
 
 ! Normalize localization
 call curve_normalization(hdata,ib,loc)
@@ -88,29 +90,29 @@ subroutine compute_localization_local(hdata,ib,avg,loc)
 implicit none
 
 ! Passed variables
-type(hdatatype),intent(in) :: hdata             !< HDIAG data
-integer,intent(in) :: ib                        !< Block index
-type(avgtype),intent(in) :: avg(hdata%nc2)      !< Averaged statistics
-type(curvetype),intent(inout) :: loc(hdata%nc2) !< Localizations
+type(hdatatype),intent(in) :: hdata              !< HDIAG data
+integer,intent(in) :: ib                         !< Block index
+type(avgtype),intent(in) :: avg(hdata%nc2a)      !< Averaged statistics
+type(curvetype),intent(inout) :: loc(hdata%nc2a) !< Localizations
 
 ! Local variables
-integer :: ic2,progint
-logical :: done(hdata%nc2)
+integer :: ic2a,progint
+logical :: done(hdata%nc2a)
+
+! Initialization
+call prog_init(progint,done)
 
 ! Loop over points
-call prog_init(progint,done)
-!$omp parallel do schedule(static) private(ic2)
-do ic2=1,hdata%nc2
+do ic2a=1,hdata%nc2a
    ! Compute localization
-   call compute_localization(hdata,ib,avg(ic2),loc(ic2))
+   call compute_localization(hdata,ib,avg(ic2a),loc(ic2a))
 
    ! Print progression
-   done(ic2) = .true.
+   done(ic2a) = .true.
    call prog_print(progint,done)
 end do
-!$omp end parallel do
 write(mpl%unit,'(a)') '100%'
 
 end subroutine compute_localization_local
 
-end module module_localization
+end module hdiag_localization
