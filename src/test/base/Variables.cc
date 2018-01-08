@@ -10,26 +10,19 @@
 
 #include <string>
 
+#include <boost/scoped_ptr.hpp>
 #include <boost/test/unit_test.hpp>
 
 #include "oops/base/Variables.h"
-#include "oops/runs/Test.h"
 #include "test/TestEnvironment.h"
-#include "eckit/config/Configuration.h"
+#include "test/TestFixture.h"
+#include "eckit/config/LocalConfiguration.h"
 
-namespace {
+namespace test {
 
 // -----------------------------------------------------------------------------
-class VariablesFixture : private boost::noncopyable {
+class VariablesFixture : TestFixture {
  public:
-  static const eckit::Configuration & getConfig() {return *getInstance().conf_;}
-
- private:
-  static VariablesFixture & getInstance() {
-    static VariablesFixture theVariablesFixture;
-    return theVariablesFixture;
-  }
-
   VariablesFixture() {
     conf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "Variables"));
   }
@@ -38,13 +31,14 @@ class VariablesFixture : private boost::noncopyable {
 
   boost::scoped_ptr<const eckit::LocalConfiguration> conf_;
 };
+// -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------
-BOOST_AUTO_TEST_SUITE(test_Variables)
+BOOST_FIXTURE_TEST_SUITE(test_Variables, VariablesFixture)
 // -----------------------------------------------------------------------------
 
 BOOST_AUTO_TEST_CASE(testConstructor) {
-  boost::scoped_ptr<Variables> vars(new Variables(VariablesFixture::getConfig()));
+  boost::scoped_ptr<oops::Variables> vars(new oops::Variables(*conf_));
   BOOST_CHECK(vars.get());
 
   vars.reset();
@@ -54,9 +48,9 @@ BOOST_AUTO_TEST_CASE(testConstructor) {
 // -----------------------------------------------------------------------------
 
 BOOST_AUTO_TEST_CASE(testCopyConstructor) {
-  boost::scoped_ptr<Variables> vars(new Variables(VariablesFixture::getConfig()));
+  boost::scoped_ptr<oops::Variables> vars(new oops::Variables(*conf_));
 
-  boost::scoped_ptr<Variables> other(new Variables(*vars));
+  boost::scoped_ptr<oops::Variables> other(new oops::Variables(*vars));
   BOOST_CHECK(other.get());
 
   other.reset();
@@ -66,7 +60,7 @@ BOOST_AUTO_TEST_CASE(testCopyConstructor) {
 }
 
 // -----------------------------------------------------------------------------
-
 BOOST_AUTO_TEST_SUITE_END()
+// -----------------------------------------------------------------------------
 
-}  // anonymous namespace
+}  // namespace test

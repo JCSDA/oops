@@ -23,7 +23,6 @@
 #include "model/FieldsQG.h"
 #include "model/GeometryQG.h"
 #include "model/StateQG.h"
-#include "model/VariablesQG.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
 #include "util/Logger.h"

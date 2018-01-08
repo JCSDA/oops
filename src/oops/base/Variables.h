@@ -12,11 +12,10 @@
 #include <string>
 #include <vector>
 
-#include "util/Printable.h"
+#include <boost/scoped_ptr.hpp>
 
-namespace eckit {
-  class Configuration;
-}
+#include "eckit/config/LocalConfiguration.h"
+#include "util/Printable.h"
 
 namespace oops {
 
@@ -34,12 +33,14 @@ class Variables : public util::Printable {
   Variables(const Variables &);
 
   const std::vector<std::string> & variables() const {return vars_;}
+  const eckit::Configuration & asConfig() const {return conf_;}
 
  private:
   void print(std::ostream &) const;
 
   std::string convention_;
   std::vector<std::string> vars_;
+  eckit::LocalConfiguration conf_;
 };
 
 // -----------------------------------------------------------------------------

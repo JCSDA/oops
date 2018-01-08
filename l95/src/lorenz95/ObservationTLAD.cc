@@ -42,7 +42,7 @@ void ObservationTLAD::setTrajectory(const GomL95 &, const ObsBias &) {}
 
 void ObservationTLAD::obsEquivTL(const GomL95 & gom, ObsVec1D & ovec,
                                  const ObsBiasCorrection & bias) const {
-  for (int jj = 0; jj < gom.nobs(); ++jj) {
+  for (size_t jj = 0; jj < gom.size(); ++jj) {
     const int ii = gom.getindx(jj);
     ovec(ii) = gom[jj] + bias.value();
   }
@@ -52,7 +52,7 @@ void ObservationTLAD::obsEquivTL(const GomL95 & gom, ObsVec1D & ovec,
 
 void ObservationTLAD::obsEquivAD(GomL95 & gom, const ObsVec1D & ovec,
                                  ObsBiasCorrection & bias) const {
-  for (int jj = 0; jj < gom.nobs(); ++jj) {
+  for (size_t jj = 0; jj < gom.size(); ++jj) {
     const int ii = gom.getindx(jj);
     gom[jj] = ovec(ii);
     bias.value() += ovec(ii);

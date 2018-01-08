@@ -24,7 +24,6 @@
 #include "model/GeometryQG.h"
 #include "model/IncrementQG.h"
 #include "model/ModelQG.h"
-#include "model/VariablesQG.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
 #include "util/Logger.h"

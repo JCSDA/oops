@@ -23,6 +23,7 @@
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
+#include "oops/interface/Locations.h"
 #include "oops/runs/Test.h"
 #include "test/TestEnvironment.h"
 #include "eckit/config/LocalConfiguration.h"
@@ -71,11 +72,12 @@ class GeoVaLsFixture : private boost::noncopyable {
 
 template <typename MODEL> void testConstructor() {
   typedef GeoVaLsFixture<MODEL> Test_;
-  typedef oops::GeoVaLs<MODEL>  GeoVaLs_;
+  typedef oops::GeoVaLs<MODEL>    GeoVaLs_;
+  typedef oops::Locations<MODEL>  Locations_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    boost::scoped_ptr<GeoVaLs_> ov(new GeoVaLs_(Test_::obspace()[jj], Test_::vars(),
-                                                Test_::tbgn(), Test_::tend()));
+    Locations_ locs(Test_::obspace()[jj].locations(Test_::tbgn(), Test_::tend()));
+    boost::scoped_ptr<GeoVaLs_> ov(new GeoVaLs_(locs, Test_::vars()));
     BOOST_CHECK(ov.get());
 
     ov.reset();
@@ -87,11 +89,12 @@ template <typename MODEL> void testConstructor() {
 
 template <typename MODEL> void testUtils() {
   typedef GeoVaLsFixture<MODEL> Test_;
-  typedef oops::GeoVaLs<MODEL>  GeoVaLs_;
+  typedef oops::GeoVaLs<MODEL>    GeoVaLs_;
+  typedef oops::Locations<MODEL>  Locations_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    GeoVaLs_ gval(Test_::obspace()[jj], Test_::vars(),
-                  Test_::tbgn(), Test_::tend());
+    Locations_ locs(Test_::obspace()[jj].locations(Test_::tbgn(), Test_::tend()));
+    GeoVaLs_ gval(locs, Test_::vars());
 
     gval.random();
     const double zz1 = dot_product(gval, gval);

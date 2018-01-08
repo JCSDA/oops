@@ -13,6 +13,7 @@
 
 #include "./TestConfig.h"
 #include "eckit/config/LocalConfiguration.h"
+#include "lorenz95/LocsL95.h"
 #include "lorenz95/ObsTable.h"
 #include "test/TestFixture.h"
 
@@ -83,9 +84,9 @@ BOOST_FIXTURE_TEST_SUITE(test_ObsTable, ObsTableTestFixture)
     boost::scoped_ptr<lorenz95::ObsTable> ot(new lorenz95::ObsTable(*testconf_, *bgn_, *end_));
     util::DateTime t1("2010-01-01T09:00:00Z");
     util::DateTime t2("2010-01-01T21:00:00Z");
-    std::vector<double> locs = ot->locations(t1, t2);
-    const unsigned int size = 80;
-    BOOST_CHECK_EQUAL(locs.size(), size);
+    lorenz95::LocsL95 * locs = ot->locations(t1, t2);
+    const size_t size = 80;
+    BOOST_CHECK_EQUAL(locs->size(), size);
   }
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_observationL95_distribute) {

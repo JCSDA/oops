@@ -19,15 +19,12 @@
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 
-namespace util {
-  class DateTime;
-}
-
 namespace oops {
   class Variables;
 }
 
 namespace lorenz95 {
+  class LocsL95;
   class ObsTable;
 
 /// GomL95 class to handle locations for L95 model.
@@ -37,7 +34,7 @@ class GomL95 : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::GomL95";}
 
-  GomL95(const ObsTable &, const oops::Variables &, const util::DateTime &, const util::DateTime &);
+  GomL95(const LocsL95 &, const oops::Variables &);
   explicit GomL95(const eckit::Configuration &);
   ~GomL95();
 
@@ -48,15 +45,15 @@ class GomL95 : public util::Printable,
   void read(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;
 
+  size_t size() const {return size_;}
   const double & operator[](const int ii) const {return locval_[ii];}
   double & operator[](const int ii) {return locval_[ii];}
   int getindx(const int il) const {return iobs_[il];}
-  int nobs() const {return size_;}
   int & current() const {return current_;}
 
  private:
   void print(std::ostream &) const;
-  int size_;
+  size_t size_;
   std::vector<int> iobs_;
   std::vector<double> locval_;
   mutable int current_;
