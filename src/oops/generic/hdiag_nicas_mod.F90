@@ -21,7 +21,7 @@ use tools_missing, only: msi,msr
 use type_bdata, only: bdatatype
 use type_bpar, only: bpartype,bpar_alloc
 use type_geom, only: geomtype,compute_grid_mesh
-use type_mpl, only: mpl,mpl_start,mpl_barrier
+use type_mpl, only: mpl,mpl_start
 use type_nam, only: namtype,namcheck
 use type_ndata, only: ndatatype
 use type_randgen, only: create_randgen
@@ -446,9 +446,6 @@ type(unstructured_grid), intent(inout) :: dx
 integer :: iv,ic0a,il0
 real(kind_real) :: fld(self%geom%nc0a,self%geom%nl0,self%nam%nv,self%nam%nts)
 type(column_element), pointer :: current
-
-! Multiply with HDIAG_NICAS
-write(mpl%unit,*) "HDIAG_NICAS multiply"
 
 ! Initialization
 ic0a = 1
