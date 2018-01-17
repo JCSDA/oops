@@ -15,7 +15,7 @@ namespace eckit {
 
 namespace oops {
 extern "C" {
-  void create_hdiag_nicas_f90(int &, const eckit::Configuration * const *, const int &, const int &, const double *, const double *, const double *, const int &, const double *, const int *, const int *, const int *, const int &, const int &, const double *);
+  void create_hdiag_nicas_f90(int &, const eckit::Configuration * const *, const int &, const int &, const double *, const double *, const double *, const int &, const double *, const int *, const int *, const int &, const int &, const double *);
   void delete_hdiag_nicas_f90(const int &);
   void hdiag_nicas_multiply_f90(const int &, const int &);
 }

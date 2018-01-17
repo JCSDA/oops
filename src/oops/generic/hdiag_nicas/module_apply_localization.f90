@@ -1,6 +1,6 @@
 !----------------------------------------------------------------------
 ! Module: module_apply_localization.f90
-!> Purpose: apply 4D localization
+!> Purpose: apply localization
 !> <br>
 !> Author: Benjamin Menetrier
 !> <br>

@@ -117,6 +117,21 @@ template <typename MODEL> class Dirac : public Application {
     Log::info() << "Write increment OK" << std::endl;
     Log::test() << "Increment norm: " << dxrndout.norm() << std::endl;
 
+//  Test NICAS adjoint
+    Increment_ x1(dxdir);
+    Increment_ x2(dxdir);
+    Increment_ x1save(dxdir);
+    Increment_ x2save(dxdir);
+    x1.random();
+    x2.random();
+    x1save = x1;
+    x2save = x2;
+    loc_->multiply(x1);
+    loc_->multiply(x2);
+    double p1 = x1.dot_product_with(x2save);
+    double p2 = x2.dot_product_with(x1save);
+    Log::test() << "Adjoint test: " << p1 << " / " << p2 << std::endl;
+
     return 0;
   }
 // -----------------------------------------------------------------------------

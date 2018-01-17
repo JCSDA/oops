@@ -119,6 +119,10 @@ type ndataloctype
    ! Communications
    type(comtype) :: AB                          !< Communication between halos A and B
    type(comtype) :: AC                          !< Communication between halos A and C
+
+   ! Transforms
+   real(kind_real),allocatable :: trans(:,:)    !< Direct transform
+   real(kind_real),allocatable :: transinv(:,:) !< Inverse transform
 end type ndataloctype
 
 private
@@ -302,7 +306,7 @@ end subroutine ndata_read
 ! Subroutine: ndataloc_read
 !> Purpose: read ndataloc object
 !----------------------------------------------------------------------
-subroutine ndataloc_read(nam,geom,ndataloc,nicas_block)
+subroutine ndataloc_read(nam,geom,ndataloc,nicas_block,auto_block)
 
 implicit none
 
@@ -311,13 +315,14 @@ type(namtype),target,intent(in) :: nam       !< Namelist
 type(geomtype),target,intent(inout) :: geom  !< Geometry
 type(ndataloctype),intent(inout) :: ndataloc !< NICAS data, local
 logical,intent(in) :: nicas_block            !< NICAS block key
+logical,intent(in) :: auto_block             !< Autocovariance block key
 
 ! Local variables
 integer :: ncid,info
 integer :: nc0a_id,nc1b_id,nl1_id,nsa_id,nsb_id
 integer :: vbot_id,vtop_id,nc2b_id,isb_to_ic2b_id,isb_to_il1_id
 integer :: isa_to_isb_id,isa_to_isc_id,isb_to_isc_id
-integer :: norm_id,norm_sqrt_id,coef_ens_id
+integer :: norm_id,norm_sqrt_id,coef_ens_id,trans_id,transinv_id
 character(len=1024) :: filename
 character(len=1024) :: subr = 'ndataloc_read'
 
@@ -402,6 +407,20 @@ if (nicas_block) then
    call linop_read(ncid,'h',ndataloc%h)
    call linop_read(ncid,'v',ndataloc%v)
    call linop_read(ncid,'s',ndataloc%s)
+end if
+
+if (nam%transform.and.auto_block) then
+   ! Allocation
+   allocate(ndataloc%trans(geom%nc0,geom%nl0))
+   allocate(ndataloc%transinv(geom%nc0,geom%nl0))
+
+   ! Get variable id
+   call ncerr(subr,nf90_inq_varid(ncid,'trans',trans_id))
+   call ncerr(subr,nf90_inq_varid(ncid,'transinv',transinv_id))
+
+   ! Read data
+   call ncerr(subr,nf90_get_var(ncid,trans_id,ndataloc%trans))
+   call ncerr(subr,nf90_get_var(ncid,transinv_id,ndataloc%transinv))
 end if
 
 ! Close file
@@ -521,7 +540,7 @@ end subroutine ndata_write
 ! Subroutine: ndataloc_write
 !> Purpose: write ndataloc object
 !----------------------------------------------------------------------
-subroutine ndataloc_write(nam,geom,ndataloc,nicas_block)
+subroutine ndataloc_write(nam,geom,ndataloc,nicas_block,auto_block)
 
 implicit none
 
@@ -530,13 +549,14 @@ type(namtype),target,intent(in) :: nam    !< Namelist
 type(geomtype),target,intent(in) :: geom  !< Geometry
 type(ndataloctype),intent(in) :: ndataloc !< NICAS data, local
 logical,intent(in) :: nicas_block         !< NICAS block key
+logical,intent(in) :: auto_block          !< Autocovariance block key
 
 ! Local variables
 integer :: ncid
-integer :: nc0a_id,nl0_id,nc1b_id,nl1_id,nsa_id,nsb_id
+integer :: nc0a_id,nl0_id,nc1b_id,nl1_id,nsa_id,nsb_id,nl0_2_id
 integer :: vbot_id,vtop_id,nc2b_id,isb_to_ic2b_id,isb_to_il1_id
 integer :: isa_to_isb_id,isa_to_isc_id,isb_to_isc_id
-integer :: norm_id,norm_sqrt_id,coef_ens_id
+integer :: norm_id,norm_sqrt_id,coef_ens_id,trans_id,transinv_id
 character(len=1024) :: filename
 character(len=1024) :: subr = 'ndataloc_write'
 
@@ -548,9 +568,9 @@ call ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_clobb
 call namncwrite(nam,ncid)
 
 ! Define dimensions
+call ncerr(subr,nf90_def_dim(ncid,'nl0',geom%nl0,nl0_id))
 if (nicas_block) then
    call ncerr(subr,nf90_def_dim(ncid,'nc0a',geom%nc0a,nc0a_id))
-   call ncerr(subr,nf90_def_dim(ncid,'nl0',geom%nl0,nl0_id))
    call ncerr(subr,nf90_put_att(ncid,nf90_global,'nl0i',geom%nl0i))
    if (ndataloc%nc1b>0) call ncerr(subr,nf90_def_dim(ncid,'nc1b',ndataloc%nc1b,nc1b_id))
    call ncerr(subr,nf90_def_dim(ncid,'nl1',ndataloc%nl1,nl1_id))
@@ -558,6 +578,7 @@ if (nicas_block) then
    if (ndataloc%nsb>0) call ncerr(subr,nf90_def_dim(ncid,'nsb',ndataloc%nsb,nsb_id))
    call ncerr(subr,nf90_put_att(ncid,nf90_global,'nsc',ndataloc%nsc))
 end if
+if (nam%transform.and.auto_block) call ncerr(subr,nf90_def_dim(ncid,'nl0_2',geom%nl0,nl0_2_id))
 
 ! Write main weight
 call ncerr(subr,nf90_put_att(ncid,nf90_global,'wgt',ndataloc%wgt))
@@ -582,6 +603,12 @@ if (nicas_block) then
    call ncerr(subr,nf90_put_att(ncid,norm_id,'_FillValue',msvalr))
    if (nam%lsqrt) call ncerr(subr,nf90_put_att(ncid,norm_sqrt_id,'_FillValue',msvalr))
    call ncerr(subr,nf90_put_att(ncid,coef_ens_id,'_FillValue',msvalr))
+end if
+if (nam%transform.and.auto_block) then
+   call ncerr(subr,nf90_def_var(ncid,'trans',ncfloat,(/nl0_id,nl0_2_id/),trans_id))
+   call ncerr(subr,nf90_put_att(ncid,trans_id,'_FillValue',msvalr))
+   call ncerr(subr,nf90_def_var(ncid,'transinv',ncfloat,(/nl0_id,nl0_2_id/),transinv_id))
+   call ncerr(subr,nf90_put_att(ncid,transinv_id,'_FillValue',msvalr))
 end if
 
 ! End definition mode
@@ -610,6 +637,10 @@ if (nicas_block) then
    call linop_write(ncid,ndataloc%h)
    call linop_write(ncid,ndataloc%v)
    call linop_write(ncid,ndataloc%s)
+end if
+if (nam%transform.and.auto_block) then
+   call ncerr(subr,nf90_put_var(ncid,trans_id,ndataloc%trans))
+   call ncerr(subr,nf90_put_var(ncid,transinv_id,ndataloc%transinv))
 end if
 
 ! Close file

@@ -103,7 +103,7 @@ end if
 if (lct%nscales>1) Hvbar = Hvbar*Hscale
 
 ! Allocation
-mindata%nx = lct%nscales*lct%ncomp+lct%nscales
+mindata%nx = sum(lct%ncomp)+lct%nscales
 mindata%ny = nam%nc*bpar%nl0(ib)
 allocate(mindata%x(mindata%nx))
 allocate(mindata%guess(mindata%nx))
@@ -115,29 +115,27 @@ allocate(mindata%dx(nam%nc,bpar%nl0(ib)))
 allocate(mindata%dy(nam%nc,bpar%nl0(ib)))
 allocate(mindata%dz(bpar%nl0(ib)))
 allocate(mindata%dmask(nam%nc,bpar%nl0(ib)))
+allocate(mindata%ncomp(lct%nscales))
 call lct_alloc(hdata,lct_guess)
 call lct_alloc(hdata,lct_norm)
 call lct_alloc(hdata,lct_binf)
 call lct_alloc(hdata,lct_bsup)
 
 ! Define norm and bounds
-lct_guess%H(1,1:3) = (/Hhbar,Hhbar,Hvbar/)
-lct_norm%H(1,1:3) = (/Hhbar,Hhbar,Hvbar/)
-lct_binf%H(1,1:3) = (/1.0/sqrt(Hscale),1.0/sqrt(Hscale),1.0/sqrt(Hscale)/)*lct_guess%H(1,1:3)
-lct_bsup%H(1,1:3) = (/sqrt(Hscale),sqrt(Hscale),sqrt(Hscale)/)*lct_guess%H(1,1:3)
-do iscales=2,lct%nscales
-   lct_guess%H(iscales,1:3) = lct_guess%H(1,1:3)/Hscale**(iscales-1)
-   lct_norm%H(iscales,1:3) = lct_norm%H(1,1:3)/Hscale**(iscales-1)
-   lct_binf%H(iscales,1:3) = lct_binf%H(1,1:3)/Hscale**(iscales-1)
-   lct_bsup%H(iscales,1:3) = lct_bsup%H(1,1:3)/Hscale**(iscales-1)
-end do
-if (lct%ncomp==4) then
-   lct_guess%H(:,4) = 0.0
-   lct_norm%H(:,4) = 1.0
-   lct_binf%H(:,4) = -1.0
-   lct_bsup%H(:,4) = 1.0
-end if
+offset = 0
 do iscales=1,lct%nscales
+   lct_guess%H(offset+1:offset+3) = (/Hhbar,Hhbar,Hvbar/)/Hscale**(iscales-1)
+   lct_norm%H(offset+1:offset+3) = (/Hhbar,Hhbar,Hvbar/)/Hscale**(iscales-1)
+   lct_binf%H(offset+1:offset+3) = (/1.0/sqrt(Hscale),1.0/sqrt(Hscale),1.0/sqrt(Hscale)/)*lct_guess%H(1:3)/Hscale**(iscales-1)
+   lct_bsup%H(offset+1:offset+3) = (/sqrt(Hscale),sqrt(Hscale),sqrt(Hscale)/)*lct_guess%H(1:3)/Hscale**(iscales-1)
+   offset = offset+3
+   if (lct%ncomp(iscales)==4) then
+      lct_guess%H(offset+1) = 0.0
+      lct_norm%H(offset+1) = 1.0
+      lct_binf%H(offset+1) = -1.0
+      lct_bsup%H(offset+1) = 1.0
+      offset = offset+1
+   end if
    lct_guess%coef(iscales) = 1.0/float(lct%nscales)
    lct_norm%coef(iscales) = 1.0/float(lct%nscales)
    lct_binf%coef(iscales) = 0.0
@@ -145,18 +143,14 @@ do iscales=1,lct%nscales
 end do
 
 ! Fill mindata
-offset = 0
-do iscales=1,lct%nscales
-   mindata%guess(offset+1:offset+lct%ncomp) = lct_guess%H(iscales,:)
-   mindata%norm(offset+1:offset+lct%ncomp) = lct_norm%H(iscales,:)
-   mindata%binf(offset+1:offset+lct%ncomp) = lct_binf%H(iscales,:)
-   mindata%bsup(offset+1:offset+lct%ncomp) = lct_bsup%H(iscales,:)
-   offset = offset+lct%ncomp
-end do
-mindata%guess(offset+1:offset+lct%nscales) = lct_guess%coef
-mindata%norm(offset+1:offset+lct%nscales) = lct_norm%coef
-mindata%binf(offset+1:offset+lct%nscales) = lct_binf%coef
-mindata%bsup(offset+1:offset+lct%nscales) = lct_bsup%coef
+mindata%guess(1:sum(lct%ncomp)) = lct_guess%H
+mindata%norm(1:sum(lct%ncomp)) = lct_norm%H
+mindata%binf(1:sum(lct%ncomp)) = lct_binf%H
+mindata%bsup(1:sum(lct%ncomp)) = lct_bsup%H
+mindata%guess(sum(lct%ncomp)+1:sum(lct%ncomp)+lct%nscales) = lct_guess%coef
+mindata%norm(sum(lct%ncomp)+1:sum(lct%ncomp)+lct%nscales) = lct_norm%coef
+mindata%binf(sum(lct%ncomp)+1:sum(lct%ncomp)+lct%nscales) = lct_binf%coef
+mindata%bsup(sum(lct%ncomp)+1:sum(lct%ncomp)+lct%nscales) = lct_bsup%coef
 mindata%obs = pack(lct%raw,.true.)
 mindata%fit_type = trim(nam%fit_type)
 mindata%nc = nam%nc
@@ -172,31 +166,34 @@ mindata%ncomp = lct%ncomp
 call minim(mindata,func,.false.)
 
 ! Copy parameters
-offset = 0
-do iscales=1,mindata%nscales
-   lct%H(iscales,:) = mindata%x(offset+1:offset+mindata%ncomp)
-   offset = offset+mindata%ncomp
-end do
-lct%coef = mindata%x(offset+1:offset+mindata%nscales)
+lct%H = mindata%x(1:sum(lct%ncomp))
+lct%coef = mindata%x(sum(lct%ncomp)+1:sum(lct%ncomp)+lct%nscales)
 
 ! Dummy call to avoid warnings
 call dummy(mindata)
 
 ! Fixed positive value for the 2D case
-if (bpar%nl0(ib)==1) lct%H(:,3) = 1.0
+if (bpar%nl0(ib)==1) then
+   offset = 0
+   do iscales=1,lct%nscales
+      lct%H(offset+3) = 1.0
+      offset = offset+lct%ncomp(iscales)
+   end do
+end if
 
 ! Check positive-definiteness
 spd = .true.
 do iscales=1,lct%nscales
-   if (lct%ncomp==3) then
-      det = lct%H(iscales,1)*lct%H(iscales,2)
+   offset = 0
+   if (lct%ncomp(iscales)==3) then
+      det = lct%H(offset+1)*lct%H(offset+2)
    else
-      det = lct%H(iscales,1)*lct%H(iscales,2)-lct%H(iscales,4)**2
+      det = lct%H(offset+1)*lct%H(offset+2)-lct%H(offset+4)**2
    end if
-   det = det*lct%H(iscales,3)
-   spd = spd.and.(det>0.0)
-   
+   det = det*lct%H(offset+3)
+   spd = spd.and.(det>0.0)  
    if (lct%coef(iscales)<0.0) lct%coef(iscales) = 0.0
+   offset = offset+lct%ncomp(iscales)
 end do
 if (lct%nscales==1) then
    lct%coef(1) = 1.0
@@ -359,25 +356,26 @@ real(kind_real),intent(in) :: dy(nc,nl0)       !< Meridian separation
 real(kind_real),intent(in) :: dz(nl0)          !< Vertical separation
 logical,intent(in) :: dmask(nc,nl0)            !< Mask
 integer,intent(in) :: nscales                  !< Number of LCT scales
-integer,intent(in) :: ncomp                    !< Number of LCT components
-real(kind_real),intent(in) :: H(nscales,ncomp) !< LCT components
-real(kind_real),intent(in) :: coef(nscales)  !< LCT coefficients
+integer,intent(in) :: ncomp(nscales)           !< Number of LCT components
+real(kind_real),intent(in) :: H(sum(ncomp))    !< LCT components
+real(kind_real),intent(in) :: coef(nscales)    !< LCT coefficients
 real(kind_real),intent(out) :: fit(nc,nl0)     !< Fit
 
 ! Local variables
-integer :: il0,ic,iscales
+integer :: il0,ic,iscales,offset
 real(kind_real) :: H11,H22,H33,Hc12,rsq
 
 ! Initialization
 call msr(fit)
 
+offset = 0
 do iscales=1,nscales
    ! Force positive definiteness
-   H11 = max(Hmin,H(iscales,1))
-   H22 = max(Hmin,H(iscales,2))
-   H33 = max(Hmin,H(iscales,3))
+   H11 = max(Hmin,H(offset+1))
+   H22 = max(Hmin,H(offset+2))
+   H33 = max(Hmin,H(offset+3))
    call msr(Hc12)
-   if (ncomp==4) Hc12 = max(-1.0_kind_real,min(H(iscales,4),1.0_kind_real))
+   if (ncomp(iscales)==4) Hc12 = max(-1.0_kind_real,min(H(offset+4),1.0_kind_real))
 
    ! Homogeneous anisotropic approximation
    do il0=1,nl0
@@ -388,7 +386,7 @@ do iscales=1,nscales
                
             ! Squared distance
             rsq = H11*dx(ic,il0)**2+H22*dy(ic,il0)**2+H33*dz(il0)**2
-            if (ncomp==4) rsq = rsq+2.0*sqrt(H11*H22)*Hc12*dx(ic,il0)*dy(ic,il0)
+            if (ncomp(iscales)==4) rsq = rsq+2.0*sqrt(H11*H22)*Hc12*dx(ic,il0)*dy(ic,il0)
 
             if (M==0) then
                ! Gaussian function
@@ -400,6 +398,7 @@ do iscales=1,nscales
          end if
       end do
    end do
+   offset = offset+ncomp(iscales)
 end do
 
 end subroutine define_fit
@@ -418,24 +417,16 @@ real(kind_real),intent(in) :: x(mindata%nx) !< Control vector
 real(kind_real),intent(out) :: f            !< Cost function value
 
 ! Local variables
-integer :: ix,iscales,offset
-real(kind_real) :: H(mindata%nscales,mindata%ncomp),coef(mindata%nscales)
+integer :: ix
 real(kind_real) :: fit(mindata%nc,mindata%nl0)
 real(kind_real) :: xtmp(mindata%nx),fit_pack(mindata%ny),xx
 
 ! Renormalize
 xtmp = x*mindata%norm
 
-! Get data
-offset = 0
-do iscales=1,mindata%nscales
-   H(iscales,:) = xtmp(offset+1:offset+mindata%ncomp)
-   offset = offset+mindata%ncomp
-end do
-coef = xtmp(offset+1:offset+mindata%nscales)
-
 ! Compute function
-call define_fit(mindata%nc,mindata%nl0,mindata%dx,mindata%dy,mindata%dz,mindata%dmask,mindata%nscales,mindata%ncomp,H,coef,fit)
+call define_fit(mindata%nc,mindata%nl0,mindata%dx,mindata%dy,mindata%dz,mindata%dmask,mindata%nscales,mindata%ncomp, &
+ & xtmp(1:sum(mindata%ncomp)),xtmp(sum(mindata%ncomp)+1:sum(mindata%ncomp)+mindata%nscales),fit)
 
 ! Pack
 fit_pack = pack(fit,mask=.true.)

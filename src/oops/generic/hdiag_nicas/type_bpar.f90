@@ -24,6 +24,7 @@ type bpartype
    integer,allocatable :: il0rjl0ib_to_il0(:,:,:) !< Effective level to level
    integer,allocatable :: il0rz(:,:)              !< Effective zero separation level
    integer,allocatable :: icmax(:)                !< Maximum class
+   logical,allocatable :: auto_block(:)           !< Autocovariance block
    logical,allocatable :: diag_block(:)           !< HDIAG block
    logical,allocatable :: avg_block(:)            !< Averaging block
    logical,allocatable :: fit_block(:)            !< Fit block
@@ -71,6 +72,7 @@ allocate(bpar%il0rjl0ib_to_il0(nam%nl0r,geom%nl0,bpar%nb+1))
 allocate(bpar%il0rz(geom%nl0,bpar%nb+1))
 allocate(bpar%nl0(bpar%nb+1))
 allocate(bpar%icmax(bpar%nb+1))
+allocate(bpar%auto_block(bpar%nb+1))
 allocate(bpar%diag_block(bpar%nb+1))
 allocate(bpar%avg_block(bpar%nb+1))
 allocate(bpar%fit_block(bpar%nb+1))
@@ -103,6 +105,7 @@ if (nam%new_lct) then
          end do
          bpar%icmax(ib) = nam%nc
          bpar%icmax(ib) = nam%nc
+         bpar%auto_block(ib) = .true.
          bpar%diag_block(ib) = .true.
          bpar%avg_block(ib) = .false.
          bpar%nicas_block(ib) = .false.
@@ -126,6 +129,7 @@ if (nam%new_lct) then
    bpar%il0rz(:,bpar%nb+1) = 0
    bpar%nl0(bpar%nb+1) = 0
    bpar%icmax(bpar%nb+1) = 0
+   bpar%auto_block(bpar%nb+1) = .false.
    bpar%diag_block(bpar%nb+1) = .false.
    bpar%avg_block(bpar%nb+1) = .false.
    bpar%nicas_block(bpar%nb+1) = .false.
@@ -163,6 +167,7 @@ else
                end if
 
                ! Select blocks
+               bpar%auto_block(ib) = (iv==jv).and.(its==jts)
                select case (nam%strategy)
                case ('common')
                   bpar%diag_block(ib) = (iv==jv).and.(its==1)
@@ -210,6 +215,7 @@ else
    bpar%icmax(ib) = nam%nc
 
    ! Select blocks
+   bpar%auto_block(ib) = .false.
    select case (nam%strategy)
    case ('common','common_weighted')
       bpar%diag_block(ib) = .true.

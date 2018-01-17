@@ -32,25 +32,24 @@ contains
 ! Subroutine: model_oops_coord
 !> Purpose: load OOPS coordinates
 !----------------------------------------------------------------------
-subroutine model_oops_coord(nam,geom,lats,lons,areas,levs,mask3d,mask2d,glbind)
+subroutine model_oops_coord(nam,geom,lats,lons,areas,vunit,imask,glbind)
 
 implicit none
 
 ! Passed variables
-type(namtype),intent(inout) :: nam                !< Namelist
-type(geomtype),intent(inout) :: geom              !< Geometry
-real(kind_real),intent(in) :: lats(geom%nc0a)     !< Latitudes
-real(kind_real),intent(in) :: lons(geom%nc0a)     !< Longitudes
-real(kind_real),intent(in) :: areas(geom%nc0a)    !< Areas
-real(kind_real),intent(in) :: levs(geom%nlev)     !< Levels
-integer,intent(in) :: mask3d(geom%nc0a*geom%nlev) !< 3D mask
-integer,intent(in) :: mask2d(geom%nc0a)           !< 2D mask
-integer,intent(in) :: glbind(geom%nc0a)           !< Global index
+type(namtype),intent(inout) :: nam               !< Namelist
+type(geomtype),intent(inout) :: geom             !< Geometry
+real(kind_real),intent(in) :: lats(geom%nc0a)    !< Latitudes
+real(kind_real),intent(in) :: lons(geom%nc0a)    !< Longitudes
+real(kind_real),intent(in) :: areas(geom%nc0a)   !< Areas
+real(kind_real),intent(in) :: vunit(geom%nlev)   !< Vertical unit
+integer,intent(in) :: imask(geom%nc0a*geom%nlev) !< Mask
+integer,intent(in) :: glbind(geom%nc0a)          !< Global index
 
 ! Local variables
 integer :: nc0ag(mpl%nproc),ic0,ic0a,il0,offset,iproc
 integer,allocatable :: glbindg(:),order(:)
-logical,allocatable :: lmask3d(:,:),lmask2d(:)
+logical,allocatable :: lmask(:,:)
 
 ! Communication
 if (mpl%main) then
@@ -72,11 +71,8 @@ mpl%tag = mpl%tag+1
 ! Broadcast data
 call mpl_bcast(nc0ag,mpl%ioproc)
 
-! Number of levels (given by the unstructured grid, not the namelist/JSON)
+! Number of levels
 geom%nl0 = geom%nlev
-do il0=1,geom%nl0
-   nam%levs(il0) = il0
-end do
 
 ! Global number of nodes
 geom%nc0 = sum(nc0ag)
@@ -92,8 +88,7 @@ write(mpl%unit,'(a10,a,i8,a)') '','Total: ',geom%nc0,' grid-points'
 call geom_alloc(geom)
 allocate(geom%ic0_to_iproc(geom%nc0))
 allocate(geom%ic0_to_ic0a(geom%nc0))
-allocate(lmask3d(geom%nc0a,geom%nl0))
-allocate(lmask2d(geom%nc0a))
+allocate(lmask(geom%nc0a,geom%nl0))
 allocate(glbindg(geom%nc0))
 
 ! Define local index and MPI task
@@ -106,27 +101,18 @@ do iproc=1,mpl%nproc
    end do
 end do
 
-! Convert 3d mask
+! Convert mask
 do il0=1,geom%nl0
    offset = (nam%levs(il0)-1)*geom%nc0a
    do ic0a=1,geom%nc0a
-      if (mask3d(offset+ic0a)==0) then
-         lmask3d(ic0a,il0) = .false.
-      elseif (mask3d(offset+ic0a)==1) then
-         lmask3d(ic0a,il0) = .true.
+      if (imask(offset+ic0a)==0) then
+         lmask(ic0a,il0) = .false.
+      elseif (imask(offset+ic0a)==1) then
+         lmask(ic0a,il0) = .true.
       else
-         call msgerror('wrong 3d mask value in model_oops_coord')
+         call msgerror('wrong mask value in model_oops_coord')
       end if
    end do
-end do
-do ic0a=1,geom%nc0a
-   if (mask2d(ic0a)==0) then
-      lmask2d(ic0a) = .false.
-   elseif (mask2d(ic0a)==1) then
-      lmask2d(ic0a) = .true.
-   else
-      call msgerror('wrong 2d mask value in model_oops_coord')
-   end if
 end do
 
 ! Communication and reordering
@@ -139,7 +125,7 @@ if (mpl%main) then
          geom%lon(offset+1:offset+nc0ag(iproc)) = lons
          geom%lat(offset+1:offset+nc0ag(iproc)) = lats
          do il0=1,geom%nl0
-            geom%mask(offset+1:offset+nc0ag(iproc),il0) = lmask3d(:,il0)
+            geom%mask(offset+1:offset+nc0ag(iproc),il0) = lmask(:,il0)
          end do
          glbindg(offset+1:offset+nc0ag(iproc)) = glbind
       else
@@ -160,7 +146,7 @@ else
    call mpl_send(geom%nc0a,lons,mpl%ioproc,mpl%tag)
    call mpl_send(geom%nc0a,lats,mpl%ioproc,mpl%tag+1)
    do il0=1,geom%nl0
-      call mpl_send(geom%nc0a,lmask3d(:,il0),mpl%ioproc,mpl%tag+1+il0)
+      call mpl_send(geom%nc0a,lmask(:,il0),mpl%ioproc,mpl%tag+1+il0)
    end do
    call mpl_send(geom%nc0a,glbind,mpl%ioproc,mpl%tag+2+geom%nl0)
 end if
@@ -197,11 +183,11 @@ end if
 
 ! Normalized area
 do il0=1,geom%nl0
-   call mpl_allreduce_sum(sum(areas,mask=lmask3d(:,il0))/req**2,geom%area(il0))
+   call mpl_allreduce_sum(sum(areas,mask=lmask(:,il0))/req**2,geom%area(il0))
 end do
 
 ! Vertical unit
-geom%vunit = levs
+geom%vunit = vunit
 
 end subroutine model_oops_coord
 

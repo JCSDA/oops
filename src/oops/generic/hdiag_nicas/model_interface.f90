@@ -25,14 +25,14 @@ use tools_display, only: msgerror
 use tools_kinds,only: kind_real
 use tools_missing, only: msvalr,msr,isnotmsi
 use tools_nc, only: ncfloat,ncerr
-use type_geom, only: geomtype
+use type_geom, only: geomtype,fld_com_gl
 use type_mpl, only: mpl
 use type_nam, only: namtype
 
 implicit none
 
 private
-public :: model_coord,model_read,model_write
+public :: model_coord,model_read,load_ensemble,model_write
 
 contains
 
@@ -133,6 +133,57 @@ do its=1,nam%nts
 end do
 
 end subroutine model_read
+
+!----------------------------------------------------------------------
+! Subroutine: load_ensemble
+!> Purpose: load ensemble
+!----------------------------------------------------------------------
+subroutine load_ensemble(nam,geom,ens1)
+
+implicit none
+
+! Passed variables
+type(namtype),intent(in) :: nam                            !< Namelist
+type(geomtype),intent(in) :: geom                          !< Sampling data
+real(kind_real),allocatable,intent(out) :: ens1(:,:,:,:,:) !< Ensemble 1
+
+! Local variables
+integer :: isub,jsub,ie,ietot
+real(kind_real),allocatable :: fld(:,:,:,:)
+
+! Allocation
+allocate(ens1(geom%nc0a,geom%nl0,nam%nv,nam%nts,nam%ens1_ne))
+
+! Initialization
+ietot = 0
+call msr(ens1)
+
+do isub=1,nam%ens1_nsub
+   do ie=1,nam%ens1_ne/nam%ens1_nsub
+      ! Read member
+      if (mpl%main) then
+         allocate(fld(geom%nc0,geom%nl0,nam%nv,nam%nts))
+         if (nam%ens1_nsub==1) then
+            jsub = 0
+         else
+            jsub = isub
+         end if
+         call model_read(nam,geom,'ens1',ie,jsub,fld)
+      end if
+
+      ! Split over processors
+      call fld_com_gl(nam,geom,fld)
+
+      ! Copy
+      ietot = ietot+1
+      ens1(:,:,:,:,ietot) = fld
+
+      ! Release memory
+      deallocate(fld)
+   end do
+end do
+
+end subroutine load_ensemble
 
 !----------------------------------------------------------------------
 ! Subroutine: model_write

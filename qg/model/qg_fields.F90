@@ -1037,7 +1037,7 @@ type(qg_field), intent(in) :: self
 type(unstructured_grid), intent(inout) :: ug
 real(kind=kind_real) :: zz(self%nl)
 integer :: jx,jy,jl,jf,joff,j
-integer :: mask3d(self%nl),mask2d,glbind
+integer :: imask(self%nl),glbind
 
 ! Define vertical unit
 do jl=1,self%nl
@@ -1048,8 +1048,7 @@ enddo
 call create_unstructured_grid(ug, self%nl, zz)
 
 ! No mask
-mask3d = 1
-mask2d = 1
+imask = 1
 
 do jy=1,self%geom%ny
   do jx=1,self%geom%nx
@@ -1059,15 +1058,13 @@ do jy=1,self%geom%ny
     ! Add column only for a given MPI task
     if (self%geom%iproc(jx,jy)==mpl%myproc) then
       ! Add column
-      call add_column(ug, self%geom%lats(jy), self%geom%lons(jx), self%geom%areas(jx,jy), self%nl, self%nf, 0, mask3d, 1, glbind)
+      call add_column(ug, self%geom%lats(jy), self%geom%lons(jx), self%geom%areas(jx,jy), self%nl, self%nf, imask, glbind)
 
       ! Copy data
-      j = 0
       do jf=1,self%nf
         joff = (jf-1)*self%nl
         do jl=1,self%nl
-          j = j+1
-          ug%last%column%fld3d(j) = self%gfld3d(jx,jy,joff+jl)
+          ug%last%column%fld(jl,jf) = self%gfld3d(jx,jy,joff+jl)
         enddo
       enddo
     endif
@@ -1092,12 +1089,10 @@ do jy=1,self%geom%ny
   do jx=1,self%geom%nx
     ! Get column only for a given MPI task
     if (self%geom%iproc(jx,jy)==mpl%myproc) then
-      j = 0
       do jf=1,self%nf
         joff = (jf-1)*self%nl
         do jl=1,self%nl
-          j = j+1
-          self%gfld3d(jx,jy,joff+jl) = current%column%fld3d(j)
+          self%gfld3d(jx,jy,joff+jl) = current%column%fld(jl,jf)
         enddo
       enddo
       current => current%next

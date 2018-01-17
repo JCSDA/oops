@@ -12,6 +12,7 @@ module module_test
 
 use driver_hdiag, only: run_hdiag
 use model_interface, only: model_write
+use module_apply_bens, only: apply_bens
 use module_apply_convol, only: convol
 use module_apply_interp, only: interp,interp_ad
 use module_apply_localization, only: apply_localization,apply_localization_from_sqrt,randomize_localization
@@ -41,7 +42,7 @@ integer,parameter :: nitermax = 50        !< Nunmber of iterations for the posit
 
 private
 public :: test_nicas_adjoints,test_nicas_pos_def,test_nicas_mpi,test_nicas_sqrt,test_nicas_dirac,test_nicas_perf
-public :: test_loc_adjoint,test_loc_dirac,test_hdiag
+public :: test_loc_adjoint,test_loc_dirac,test_loc_ens_dirac,test_hdiag
 
 contains
 
@@ -617,15 +618,15 @@ type(ndataloctype),intent(in) :: ndataloc(bpar%nb+1) !< NICAS data, local
 ! Local variables
 integer :: il0,il0dir(nam%ndir),ic0dir(nam%ndir),idir,iv,its
 real(kind_real) :: dum(1)
-real(kind_real),allocatable :: fld(:,:,:,:)
+real(kind_real),allocatable :: dirac(:,:,:,:)
 character(len=2) :: itschar
 
 if (mpl%main) then
    ! Allocation
-   allocate(fld(geom%nc0,geom%nl0,nam%nv,nam%nts))
+   allocate(dirac(geom%nc0,geom%nl0,nam%nv,nam%nts))
 
    ! Generate diracs field
-   fld = 0.0
+   dirac = 0.0
    do idir=1,nam%ndir
       ! Find level index
       do il0=1,geom%nl0
@@ -637,34 +638,97 @@ if (mpl%main) then
     & dble(nam%latdir(idir)*deg2rad),1,ic0dir(idir:idir),dum)
 
       ! Dirac value
-      fld(ic0dir(idir),il0dir(idir),nam%ivdir(idir),nam%itsdir(idir)) = 1.0
+      dirac(ic0dir(idir),il0dir(idir),nam%ivdir(idir),nam%itsdir(idir)) = 1.0
    end do
 end if
 
 ! Global to local
-call fld_com_gl(nam,geom,fld)
+call fld_com_gl(nam,geom,dirac)
 
-! Apply localization
+! Apply localization to dirac
 if (nam%lsqrt) then
-   call apply_localization_from_sqrt(nam,geom,bpar,ndataloc,fld)
+   call apply_localization_from_sqrt(nam,geom,bpar,ndataloc,dirac)
 else
-   call apply_localization(nam,geom,bpar,ndataloc,fld)
+   call apply_localization(nam,geom,bpar,ndataloc,dirac)
 end if
 
 ! Local to global
-call fld_com_lg(nam,geom,fld)
+call fld_com_lg(nam,geom,dirac)
 
 if (mpl%main) then
    ! Write field
    do its=1,nam%nts
       write(itschar,'(i2.2)') its
       do iv=1,nam%nv
-         call model_write(nam,geom,trim(nam%prefix)//'_dirac.nc',trim(nam%varname(iv))//'_'//itschar,fld(:,:,iv,its))
+         call model_write(nam,geom,trim(nam%prefix)//'_dirac.nc',trim(nam%varname(iv))//'_'//itschar,dirac(:,:,iv,its))
       end do
    end do
 end if
 
 end subroutine test_loc_dirac
+
+!----------------------------------------------------------------------
+! Subroutine: test_loc_ens_dirac
+!> Purpose: apply localized ensemble to diracs
+!----------------------------------------------------------------------
+subroutine test_loc_ens_dirac(nam,geom,bpar,ndataloc,ens1)
+
+implicit none
+
+! Passed variables
+type(namtype),intent(in) :: nam                                                   !< Namelist
+type(geomtype),intent(in) :: geom                                                 !< Geometry
+type(bpartype),intent(in) :: bpar                                                 !< Block parameters
+type(ndataloctype),intent(in) :: ndataloc(bpar%nb+1)                              !< NICAS data, local
+real(kind_real),intent(in) :: ens1(geom%nc0a,geom%nl0,nam%nv,nam%nts,nam%ens1_ne) !< Ensemble 1
+
+! Local variables
+integer :: il0,il0dir(nam%ndir),ic0dir(nam%ndir),idir,iv,its
+real(kind_real) :: dum(1)
+real(kind_real),allocatable :: dirac(:,:,:,:)
+character(len=2) :: itschar
+
+if (mpl%main) then
+   ! Allocation
+   allocate(dirac(geom%nc0,geom%nl0,nam%nv,nam%nts))
+
+   ! Generate diracs field
+   dirac = 0.0
+   do idir=1,nam%ndir
+      ! Find level index
+      do il0=1,geom%nl0
+          if (nam%levs(il0)==nam%levdir(idir)) il0dir(idir) = il0
+      end do
+
+      ! Find nearest neighbor
+      call find_nearest_neighbors(geom%ctree(min(il0dir(idir),geom%nl0i)),dble(nam%londir(idir)*deg2rad), &
+    & dble(nam%latdir(idir)*deg2rad),1,ic0dir(idir:idir),dum)
+
+      ! Dirac value
+      dirac(ic0dir(idir),il0dir(idir),nam%ivdir(idir),nam%itsdir(idir)) = 1.0
+   end do
+end if
+
+! Global to local
+call fld_com_gl(nam,geom,dirac)
+
+! Apply localized ensemble covariance
+call apply_bens(nam,geom,bpar,ndataloc,ens1,dirac)
+
+! Local to global
+call fld_com_lg(nam,geom,dirac)
+
+if (mpl%main) then
+   ! Write field
+   do its=1,nam%nts
+      write(itschar,'(i2.2)') its
+      do iv=1,nam%nv
+         call model_write(nam,geom,trim(nam%prefix)//'_dirac.nc',trim(nam%varname(iv))//'_'//itschar//'_Bens',dirac(:,:,iv,its))
+      end do
+   end do
+end if
+
+end subroutine test_loc_ens_dirac
 
 !----------------------------------------------------------------------
 ! Subroutine: test_hdiag

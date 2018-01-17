@@ -27,7 +27,13 @@ namespace oops {
     conf_.set("variables", vars_);
   }
 
-  // -----------------------------------------------------------------------------
+Variables::Variables(const eckit::Configuration & conf)
+ : convention_(""), vars_(0), conf_()
+{
+  conf.get("variables", vars_);
+  conf_.set("nvars", vars_.size());
+  conf_.set("variables", vars_);
+}
 
   Variables::Variables(const std::vector<std::string> & vars, const std::string & conv)
     : convention_(conv), vars_(vars), conf_()
@@ -36,7 +42,12 @@ namespace oops {
     conf_.set("variables", vars_);
   }
 
-  // -----------------------------------------------------------------------------
+Variables::Variables(const std::vector<std::string> & vars, const std::string & conv)
+ : convention_(conv), vars_(vars), conf_()
+{
+  conf_.set("nvars", vars_.size());
+  conf_.set("variables", vars_);
+}
 
   Variables::Variables(const Variables & other)
     : convention_(other.convention_), vars_(other.vars_)

@@ -24,16 +24,15 @@ randGen::randGen(int default_seed) {
 #if __cplusplus > 199711L
         std::random_device rd;
         gen = new std::mt19937(rd());
+        version_ = 1;
 #else
-        srand(time(0));
+        seed = clock();
+        version_ = 0;
 #endif
     }
     else {
-#if __cplusplus > 199711L
-        gen = new std::mt19937;
-#else
-        srand(1);
-#endif
+        seed = -14051987;
+        version_ = 0;
     }
 }
 
@@ -41,43 +40,47 @@ randGen::randGen(int default_seed) {
 randGen::~randGen(){}
 
 // Random integer generator
-void randGen::rand_integer(int binf, int bsup, int *ir) const{
+void randGen::rand_integer(int binf, int bsup, int *ir) {
+    if (version_==1) {
 #if __cplusplus > 199711L
-    // Initialize uniform distribution
-    std::uniform_int_distribution<int> dis(binf,bsup);
+        // Initialize uniform distribution
+        std::uniform_int_distribution<int> dis(binf,bsup);
 
-    // Generate random integer
-    *ir=dis(*gen);
-#else
-    // Generate random integer
-    int range=bsup-binf+1;
-    *ir=rand()%range+binf;
+        // Generate random integer
+        *ir=dis(*gen);
 #endif
+    }
+    else {
+        // Generate random integer
+        int range=bsup-binf+1;
+        double r;
+        r = ran3();
+        r *= range;
+        *ir=binf+(int)r;
+    }
     return;
 }
 
 // Random real generator
-void randGen::rand_real(double binf, double bsup, double *rr) const{
+void randGen::rand_real(double binf, double bsup, double *rr) {
+    if (version_==1) {
 #if __cplusplus > 199711L
-    // Initialize uniform distribution
-    std::uniform_real_distribution<double> dis(binf,bsup);
+        // Initialize uniform distribution
+        std::uniform_real_distribution<double> dis(binf,bsup);
 
-    // Generate random real
-    *rr=dis(*gen);
-#else
-    // Generate random real
-    *rr=binf+(rand()/(RAND_MAX/(bsup-binf)));
+        // Generate random real
+        *rr=dis(*gen);
 #endif
+    }
+    else {
+       // Generate random real
+       *rr=binf+ran3()*(bsup-binf);
+    }
     return;
 }
 
 // Sampling initialization
-void randGen::initialize_sampling(int n, double lon[], double lat[], int mask[], double rh[], int ntry, int nrep, int ns, int ihor[]) const{
-#if __cplusplus > 199711L
-    // Initialize uniform distribution
-    std::uniform_int_distribution<int> dis(0,n-1);
-#endif
-
+void randGen::initialize_sampling(int n, double lon[], double lat[], int mask[], double rh[], int ntry, int nrep, int ns, int ihor[]) {
     // Declaration
     int ir;
 
@@ -99,11 +102,7 @@ void randGen::initialize_sampling(int n, double lon[], double lat[], int mask[],
         int itry=0;
         while(itry<ntry) {
             // Generate random real
-#if __cplusplus > 199711L
-            ir=dis(*gen);
-#else
-            ir=rand()%n;
-#endif
+            rand_integer(0,n-1,&ir);
             if(mask_copy[ir]==1) {
                 if(is>0) {
                     // Find nearest neighbor
@@ -167,11 +166,7 @@ void randGen::initialize_sampling(int n, double lon[], double lat[], int mask[],
             int itry=0;
             while(itry<ntry) {
                 // Generate random number
-#if __cplusplus > 199711L
-                ir=dis(*gen);
-#else
-                ir=rand()%n;
-#endif
+                rand_integer(0,n-1,&ir);
                 if(mask_copy[ir]==1) {
                     // Find nearest neighbor
                     vector<CoverTreePoint> neighbors(cTree.kNearestNeighbors(CoverTreePoint(-999,lon[ir],lat[ir]),1));
@@ -213,3 +208,48 @@ void randGen::initialize_sampling(int n, double lon[], double lat[], int mask[],
     return;
 }
 
+// ran3 generator
+#define MBIG 1000000000
+#define MSEED 161803398
+#define MZ 0
+#define FAC (1.0/MBIG)
+double randGen::ran3() {
+    static int inext,inextp;
+    static long ma[56];
+    static int iff=0;
+    long mj,mk;
+    int i,ii,k;
+
+    if (seed < 0 || iff == 0) {
+        iff=1;
+        mj=MSEED-(seed < 0 ? -seed : seed);
+        mj %= MBIG;
+        ma[55]=mj;
+        mk=1;
+        for (i=1;i<=54;i++) {
+            ii=(21*i) % 55;
+            ma[ii]=mk;
+            mk=mj-mk;
+            if (mk < MZ) mk += MBIG;
+            mj=ma[ii];
+        }
+        for (k=1;k<=4;k++)
+            for (i=1;i<=55;i++) {
+                ma[i] -= ma[1+(i+30) % 55];
+                if (ma[i] < MZ) ma[i] += MBIG;
+            }
+        inext=0;
+        inextp=31;
+        seed=1;
+    }
+    if (++inext == 56) inext=1;
+    if (++inextp == 56) inextp=1;
+    mj=ma[inext]-ma[inextp];
+    if (mj < MZ) mj += MBIG;
+    ma[inext]=mj;
+    return (double)mj*FAC;
+}
+#undef MBIG
+#undef MSEED
+#undef MZ
+#undef FAC

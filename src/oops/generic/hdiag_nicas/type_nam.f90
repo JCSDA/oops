@@ -27,6 +27,7 @@ integer,parameter :: nvmax = 20                     !< Maximum number of variabl
 integer,parameter :: ntsmax = 20                    !< Maximum number of time slots
 integer,parameter :: nlmax = 200                    !< Maximum number of levels
 integer,parameter :: ncmax = 1000                   !< Maximum number of classes
+integer,parameter :: nscalesmax = 5                 !< Maximum number of variables
 integer,parameter :: nldwvmax = 100                 !< Maximum number of local diagnostic profiles
 integer,parameter :: ndirmax = 100                  !< Maximum number of diracs
 
@@ -36,7 +37,8 @@ type namtype
    character(len=1024) :: prefix                    !< Files prefix
    character(len=1024) :: model                     !< Model name ('aro', 'arp', 'gem', 'geos', 'gfs', 'ifs', 'mpas', 'nemo' or 'wrf')
    logical :: colorlog                              !< Add colors to the log (for display on terminal)
-   logical :: sam_default_seed                      !< Default seed for random numbers
+   logical :: default_seed                      !< Default seed for random numbers
+   logical :: load_ensemble                         !< Load ensemble before computations
 
    ! driver_param
    character(len=1024) :: method                    !< Localization/hybridization to compute ('cor', 'loc', 'hyb-avg', 'hyb-rnd' or 'dual-ens')
@@ -63,6 +65,7 @@ type namtype
    character(len=1024),dimension(nvmax) :: addvar2d !< Additionnal 2d variables names
    integer :: nts                                   !< Number of time slots
    integer,dimension(ntsmax) :: timeslot            !< Timeslots
+   logical :: transform                             !< Apply transforms
 
    ! ens1_param
    integer :: ens1_ne                               !< Ensemble 1 size
@@ -105,8 +108,8 @@ type namtype
    logical :: lhomh                                 !< Vertically homogenous horizontal support radius
    logical :: lhomv                                 !< Vertically homogenous vertical support radius
    real(kind_real) ::  rvflt                        !< Vertical smoother support radius
-   logical :: lct_diag                              !< Diagnostic of diagonal LCT components only
    integer :: lct_nscales                           !< Number of LCT scales
+   logical :: lct_diag(nscalesmax)                  !< Diagnostic of diagonal LCT components only
 
    ! output_param
    integer :: nldwh                                 !< Number of local diagnostics fields to write (for local_diag = .true.)
@@ -157,25 +160,25 @@ integer :: iv
 integer :: nl,levs(nlmax),nv,nts,timeslot(ntsmax),ens1_ne,ens1_ne_offset,ens1_nsub,ens2_ne,ens2_ne_offset,ens2_nsub
 integer :: nc1,ntry,nrep,nc,nl0r,ne,displ_niter,lct_nscales,nldwh,il_ldwh(nlmax*ncmax),ic_ldwh(nlmax*ncmax),nldwv
 integer :: mpicom,ndir,levdir(ndirmax),ivdir(ndirmax),itsdir(ndirmax)
-logical :: colorlog,sam_default_seed
+logical :: colorlog,default_seed,load_ensemble
 logical :: new_hdiag,new_param,new_mpi,check_adjoints,check_pos_def,check_sqrt,check_mpi,check_dirac,check_perf,check_hdiag,new_lct
-logical :: new_obsop,logpres,sam_write,sam_read,mask_check,gau_approx,full_var,local_diag,displ_diag
-logical :: fit_wgt,lhomh,lhomv,lct_diag,lsqrt,network
+logical :: new_obsop,logpres,transform,sam_write,sam_read,mask_check,gau_approx,full_var,local_diag,displ_diag
+logical :: fit_wgt,lhomh,lhomv,lct_diag(nscalesmax),lsqrt,network
 real(kind_real) :: mask_th,dc,local_rad,displ_rad,displ_rhflt,displ_tol,rvflt,lon_ldwv(nldwvmax),lat_ldwv(nldwvmax),diag_rhflt
 real(kind_real) :: rh(nlmax),rv(nlmax),resol,londir(ndirmax),latdir(ndirmax)
 character(len=1024) :: datadir,prefix,model,strategy,method,mask_type,fit_type,flt_type
 character(len=1024),dimension(nvmax) :: varname,addvar2d
 
 ! Namelist blocks
-namelist/general_param/datadir,prefix,model,colorlog,sam_default_seed
+namelist/general_param/datadir,prefix,model,colorlog,default_seed,load_ensemble
 namelist/driver_param/method,strategy,new_hdiag,new_param,new_mpi,check_adjoints,check_pos_def,check_sqrt,check_mpi,check_dirac, &
                     & check_perf,check_hdiag,new_lct,new_obsop
-namelist/model_param/nl,levs,logpres,nv,varname,addvar2d,nts,timeslot
+namelist/model_param/nl,levs,logpres,nv,varname,addvar2d,nts,timeslot,transform
 namelist/ens1_param/ens1_ne,ens1_ne_offset,ens1_nsub
 namelist/ens2_param/ens2_ne,ens2_ne_offset,ens2_nsub
 namelist/sampling_param/sam_write,sam_read,mask_type,mask_th,mask_check,nc1,ntry,nrep,nc,dc,nl0r
 namelist/diag_param/ne,gau_approx,full_var,local_diag,local_rad,displ_diag,displ_rad,displ_niter,displ_rhflt,displ_tol
-namelist/fit_param/fit_type,fit_wgt,lhomh,lhomv,rvflt,lct_diag,lct_nscales
+namelist/fit_param/fit_type,fit_wgt,lhomh,lhomv,rvflt,lct_nscales,lct_diag
 namelist/output_param/nldwh,il_ldwh,ic_ldwh,nldwv,lon_ldwv,lat_ldwv,flt_type,diag_rhflt
 namelist/nicas_param/lsqrt,rh,rv,resol,network,mpicom,ndir,londir,latdir,levdir,ivdir,itsdir
 
@@ -186,7 +189,8 @@ datadir = ''
 prefix = ''
 model = ''
 colorlog = .false.
-sam_default_seed = .false.
+default_seed = .false.
+load_ensemble = .false.
 
 ! driver_param default
 method = ''
@@ -215,6 +219,7 @@ do iv=1,nvmax
 end do
 call msi(nts)
 call msi(timeslot)
+transform = .false.
 
 ! ens1_param default
 call msi(ens1_ne)
@@ -256,8 +261,8 @@ fit_wgt = .false.
 lhomh = .false.
 lhomv = .false.
 call msr(rvflt)
-lct_diag = .false.
 call msi(lct_nscales)
+lct_diag = .false.
 
 ! output_param default
 call msi(nldwh)
@@ -292,7 +297,8 @@ if (mpl%main) then
    nam%prefix = prefix
    nam%model = model
    nam%colorlog = colorlog
-   nam%sam_default_seed = sam_default_seed
+   nam%default_seed = default_seed
+   nam%load_ensemble = load_ensemble
 
    ! driver_param
    read(*,nml=driver_param)
@@ -321,6 +327,7 @@ if (mpl%main) then
    nam%addvar2d = addvar2d
    nam%nts = nts
    nam%timeslot = timeslot
+   nam%transform = transform
 
    ! ens1_param
    read(*,nml=ens1_param)
@@ -368,8 +375,8 @@ if (mpl%main) then
    nam%lhomh = lhomh
    nam%lhomv = lhomv
    nam%rvflt = rvflt
-   nam%lct_diag = lct_diag
    nam%lct_nscales = lct_nscales
+   nam%lct_diag = lct_diag
 
    ! output_param
    read(*,nml=output_param)
@@ -405,7 +412,8 @@ call mpl_bcast(nam%datadir,mpl%ioproc)
 call mpl_bcast(nam%prefix,mpl%ioproc)
 call mpl_bcast(nam%model,mpl%ioproc)
 call mpl_bcast(nam%colorlog,mpl%ioproc)
-call mpl_bcast(nam%sam_default_seed,mpl%ioproc)
+call mpl_bcast(nam%default_seed,mpl%ioproc)
+call mpl_bcast(nam%load_ensemble,mpl%ioproc)
 
 ! driver_param
 call mpl_bcast(nam%method,mpl%ioproc)
@@ -432,6 +440,7 @@ call mpl_bcast(nam%varname,mpl%ioproc)
 call mpl_bcast(nam%addvar2d,mpl%ioproc)
 call mpl_bcast(nam%nts,mpl%ioproc)
 call mpl_bcast(nam%timeslot,mpl%ioproc)
+call mpl_bcast(nam%transform,mpl%ioproc)
 
 ! ens1_param
 call mpl_bcast(nam%ens1_ne,mpl%ioproc)
@@ -474,8 +483,8 @@ call mpl_bcast(nam%fit_wgt,mpl%ioproc)
 call mpl_bcast(nam%lhomh,mpl%ioproc)
 call mpl_bcast(nam%lhomv,mpl%ioproc)
 call mpl_bcast(nam%rvflt,mpl%ioproc)
-call mpl_bcast(nam%lct_diag,mpl%ioproc)
 call mpl_bcast(nam%lct_nscales,mpl%ioproc)
+call mpl_bcast(nam%lct_diag,mpl%ioproc)
 
 ! output_param
 call mpl_bcast(nam%nldwh,mpl%ioproc)
@@ -714,7 +723,8 @@ call put_att(ncid,'datadir',trim(nam%datadir))
 call put_att(ncid,'prefix',trim(nam%prefix))
 call put_att(ncid,'model',trim(nam%model))
 call put_att(ncid,'colorlog',nam%colorlog)
-call put_att(ncid,'sam_default_seed',nam%sam_default_seed)
+call put_att(ncid,'default_seed',nam%default_seed)
+call put_att(ncid,'load_ensemble',nam%load_ensemble)
 
 ! driver_param
 call put_att(ncid,'method',trim(nam%method))
@@ -740,6 +750,7 @@ call put_att(ncid,'varname',nam%nv,nam%varname(1:nam%nv))
 call put_att(ncid,'addvar2d',nam%nv,nam%addvar2d(1:nam%nv))
 call put_att(ncid,'nts',nam%nts)
 call put_att(ncid,'timeslot',nam%nts,nam%timeslot(1:nam%nts))
+call put_att(ncid,'transform',nam%transform)
 
 ! ens1_param
 call put_att(ncid,'ens1_ne',nam%ens1_ne)
@@ -782,8 +793,8 @@ call put_att(ncid,'fit_wgt',nam%fit_wgt)
 call put_att(ncid,'lhomh',nam%lhomh)
 call put_att(ncid,'lhomv',nam%lhomv)
 call put_att(ncid,'rvflt',nam%rvflt)
-call put_att(ncid,'lct_diag',nam%lct_diag)
 call put_att(ncid,'lct_nscales',nam%lct_nscales)
+call put_att(ncid,'lct_diag',nam%lct_nscales,nam%lct_diag)
 
 ! output_param
 call put_att(ncid,'nldwh',nam%nldwh)
