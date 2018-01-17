@@ -74,7 +74,7 @@ type(c_ptr), intent(in) :: c_conf
 integer(c_int), intent(in) :: cnv, cnc0a, cnlev, cens1_ne, cnts
 real(c_double), intent(in) :: clats(cnc0a), clons(cnc0a), careas(cnc0a), cvunit(cnlev), cens1(cens1_ne*cnts*cnv*cnlev*cnc0a)
 integer(c_int), intent(in) :: cimask(cnlev*cnc0a), cglbind(cnc0a)
-class(hdiag_nicas), pointer :: self
+type(hdiag_nicas), pointer :: self
 integer :: nv,nc0a,nlev,nts,ens1_ne
 real(kind=kind_real) :: lats(cnc0a), lons(cnc0a), areas(cnc0a), vunit(cnlev), ens1(cens1_ne*cnts*cnv*cnlev*cnc0a)
 integer :: imask(cnlev*cnc0a), glbind(cnc0a)

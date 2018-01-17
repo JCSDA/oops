@@ -246,7 +246,7 @@ subroutine get_nvar_c(key, nvar) bind(c, name='get_nvar_f90')
 implicit none
 integer(c_int), intent(inout) :: key
 integer,intent(out) :: nvar
-class(unstructured_grid), pointer :: self
+type(unstructured_grid), pointer :: self
 
 ! Get self
 call unstructured_grid_registry%get(key,self)
