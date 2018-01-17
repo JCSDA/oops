@@ -28,11 +28,11 @@ LocsL95::LocsL95(const std::vector<int> & indx, const std::vector<double> & locs
 // -----------------------------------------------------------------------------
 
 LocsL95::LocsL95(const eckit::Configuration & conf) : indx_(), locs_() {
-  const double zz = conf.getDouble("position");
-  ASSERT(zz >= 0.0 && zz <= 1.0);
-  locs_.push_back(zz);
-  indx_.push_back(1);
-  oops::Log::trace() << "LocsL95::LocsL95 created" << std::endl;
+  conf.get("positions", locs_);
+  for (size_t jj = 0; jj < locs_.size(); ++jj) {
+    ASSERT(locs_.at(jj) >= 0.0 && locs_.at(jj) <= 1.0);
+    indx_.push_back(jj + 1);
+  }
 }
 
 // -----------------------------------------------------------------------------

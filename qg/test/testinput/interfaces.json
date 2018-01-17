@@ -15,9 +15,27 @@
     "date": "2009-12-31T00:00:00Z"
   },
   "StateTest": {
+    "StateFile": {
+      "filename": "Data/truth.fc.2009-12-15T00:00:00Z.P16D",
+      "date": "2009-12-31T00:00:00Z"
+    },
     "date": "2009-12-31T00:00:00Z",
-    "norm": "15.010355026",
-    "tolerance": "1.0e-8"
+    "norm-file": "15.010355026",
+    "StateGenerate" : {
+      "filename": "Data/truth.fc.2009-12-15T00:00:00Z.P16D",
+      "date": "2009-12-31T00:00:00Z",
+      "mean": 8.0,
+      "sinus": 2.0
+    },
+    "norm-gen": "15.010355026",
+    "tolerance": 1.0e-8,
+    "Locations": {
+      "positions": [0.717]
+    },
+    "Variables": {
+      "variables": ["x"]
+    },
+    "values": [6.042838]
   },
   "ModelBias": null,
   "Model": {

@@ -71,12 +71,12 @@ template <typename MODEL> void testStateConstructors() {
   typedef StateFixture<MODEL>   Test_;
   typedef oops::State<MODEL>    State_;
 
-  const double norm = Test_::test().getDouble("norm");
+  const double norm = Test_::test().getDouble("norm-file");
   const double tol = Test_::test().getDouble("tolerance");
   const util::DateTime vt(Test_::test().getString("date"));
 
 // Test main constructor
-  const eckit::LocalConfiguration conf(TestEnvironment::config(), "State");
+  const eckit::LocalConfiguration conf(Test_::test(), "StateFile");
   boost::scoped_ptr<State_> xx1(new State_(Test_::resol(), conf));
 
   BOOST_CHECK(xx1.get());
@@ -90,10 +90,11 @@ template <typename MODEL> void testStateConstructors() {
   BOOST_CHECK_CLOSE(xx2->norm(), norm, tol);
   BOOST_CHECK_EQUAL(xx2->validTime(), vt);
 
+// Destruct copy
   xx2.reset();
   BOOST_CHECK(!xx2.get());
 
-// Recomputing initial norm to make sure nothing bad happened
+// Recompute initial norm to make sure nothing bad happened
   const double norm2 = xx1->norm();
   BOOST_CHECK_EQUAL(norm1, norm2);
 }
@@ -106,23 +107,29 @@ template <typename MODEL> void testStateInterpolation() {
   typedef oops::Locations<MODEL>  Locations_;
   typedef oops::GeoVaLs<MODEL>    GeoVaLs_;
 
-  const eckit::LocalConfiguration confs(TestEnvironment::config(), "StateTest");
+  const eckit::LocalConfiguration confs(Test_::test(), "StateGenerate");
   const State_ xx(Test_::resol(), confs);
-  BOOST_CHECK_CLOSE(xx.norm(), 8.124, 0.001);
+  const double norm = Test_::test().getDouble("norm-gen");
+  const double tol = Test_::test().getDouble("tolerance");
+  BOOST_CHECK_CLOSE(xx.norm(), norm, tol);
 
-  const eckit::LocalConfiguration confl(TestEnvironment::config(), "Locations");
+  const eckit::LocalConfiguration confl(Test_::test(), "Locations");
   const Locations_ locs(confl);
 
-  const eckit::LocalConfiguration confv(TestEnvironment::config(), "Variables");
+  const eckit::LocalConfiguration confv(Test_::test(), "Variables");
   const oops::Variables vars(confv);
 
   GeoVaLs_ gval(locs, vars);
 
   xx.interpolate(locs, vars, gval);
 
-  const double ref = confs.getDouble("value");
-  const double zz = std::sqrt(dot_product(gval, gval));
-  BOOST_CHECK_CLOSE(zz, ref, 0.5);
+  std::vector<double> values;
+  Test_::test().get("values", values);
+  if (values.size() > 0) {
+    const double zz = std::sqrt(dot_product(gval, gval));
+    const double ref = values[0];
+    BOOST_CHECK_CLOSE(zz, ref, 0.5);
+  }
 }
 
 // -----------------------------------------------------------------------------
