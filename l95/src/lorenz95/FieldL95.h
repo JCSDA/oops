@@ -17,6 +17,10 @@
 
 #include "util/Printable.h"
 
+namespace eckit {
+  class Configuration;
+}
+
 // Forward declarations
 namespace eckit {
   class Configuration;
@@ -55,6 +59,7 @@ class FieldL95 : public util::Printable {
   double dot_product_with(const FieldL95 &) const;
   void schur(const FieldL95 &);
   void random();
+  void generate(const eckit::Configuration &);
 
 /// Utilities
   void read(std::ifstream &);

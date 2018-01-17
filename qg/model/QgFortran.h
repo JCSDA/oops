@@ -142,12 +142,14 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Locations
 // -----------------------------------------------------------------------------
+  void qg_loc_create_f90(F90locs &);
   void qg_loc_delete_f90(F90locs &);
   void qg_loc_nobs_f90(const F90locs &, int &);
 
 // -----------------------------------------------------------------------------
 //  Local Values (GOM)
 // -----------------------------------------------------------------------------
+  void qg_gom_setup_f90(F90goms &, const F90locs &, const F90vars *);
   void qg_gom_create_f90(F90goms &);
   void qg_gom_delete_f90(F90goms &);
   void qg_gom_zero_f90(const F90goms &);
@@ -224,9 +226,6 @@ extern "C" {
   void qg_obsdb_locations_f90(const F90odb &, const int &, const char *,
                               const util::DateTime * const *, const util::DateTime * const *,
                               F90locs &);
-  void qg_obsdb_getgom_f90(const F90odb &, const int &, const char *, const F90vars *,
-                           const util::DateTime * const *, const util::DateTime * const *,
-                           F90goms &);
   void qg_obsdb_generate_f90(const F90odb &, const int &, const char *,
                              const eckit::Configuration * const *, const util::DateTime * const *,
                              const util::Duration * const *, const int &, int &);

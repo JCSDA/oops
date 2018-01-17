@@ -15,7 +15,6 @@
 #include <string>
 
 #include "model/QgFortran.h"
-#include "util/DateTime.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 
@@ -24,7 +23,7 @@ namespace oops {
 }
 
 namespace qg {
-  class ObsSpaceQG;
+  class LocationsQG;
 
 /// GomQG class to handle local model values for QG model.
 
@@ -33,8 +32,7 @@ class GomQG : public util::Printable,
  public:
   static const std::string classname() {return "qg::GomQG";}
 
-  GomQG(const ObsSpaceQG &, const oops::Variables &,
-        const util::DateTime &, const util::DateTime &);
+  GomQG(const LocationsQG &, const oops::Variables &);
   GomQG(const eckit::Configuration &);
 
   explicit GomQG(): keyGom_(0) {}

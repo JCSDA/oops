@@ -18,8 +18,7 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/ObservationSpace.h"
-#include "util/DateTime.h"
+#include "oops/interface/Locations.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 #include "util/Timer.h"
@@ -33,13 +32,12 @@ class GeoVaLs : public util::Printable,
                 private boost::noncopyable,
                 private util::ObjectCounter<GeoVaLs<MODEL> > {
   typedef typename MODEL::GeoVaLs          GeoVaLs_;
-  typedef ObservationSpace<MODEL>          ObsSpace_;
+  typedef Locations<MODEL>                 Locations_;
 
  public:
   static const std::string classname() {return "oops::GeoVaLs";}
 
-  GeoVaLs(const ObsSpace_ &, const Variables &,
-          const util::DateTime &, const util::DateTime &);
+  GeoVaLs(const Locations_ &, const Variables &);
   explicit GeoVaLs(const eckit::Configuration &);
   ~GeoVaLs();
 
@@ -63,11 +61,10 @@ class GeoVaLs : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-GeoVaLs<MODEL>::GeoVaLs(const ObsSpace_ & os, const Variables & vars,
-                        const util::DateTime & t1, const util::DateTime & t2) : gvals_() {
+GeoVaLs<MODEL>::GeoVaLs(const Locations_ & locs, const Variables & vars) : gvals_() {
   Log::trace() << "GeoVaLs<MODEL>::GeoVaLs starting" << std::endl;
   util::Timer timer(classname(), "GeoVaLs");
-  gvals_.reset(new GeoVaLs_(os.observationspace(), vars, t1, t2));
+  gvals_.reset(new GeoVaLs_(locs.locations(), vars));
   Log::trace() << "GeoVaLs<MODEL>::GeoVaLs done" << std::endl;
 }
 

@@ -14,7 +14,6 @@
 #include <ostream>
 #include <string>
 
-#include "model/ObsSpaceQG.h"
 #include "model/QgFortran.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
@@ -24,18 +23,20 @@ namespace qg {
 /// LocationsQG class to handle locations for QG model.
 
 class LocationsQG : public util::Printable,
-              private util::ObjectCounter<LocationsQG> {
+                    private util::ObjectCounter<LocationsQG> {
  public:
   static const std::string classname() {return "qg::LocationsQG";}
 
-  LocationsQG(const ObsSpaceQG & ot,
-        const util::DateTime & t1, const util::DateTime & t2) {
-    keyLoc_ = ot.locations(t1, t2);
+
+  explicit LocationsQG(const F90locs key) : keyLoc_(key) {}
+
+  explicit LocationsQG(const eckit::Configuration &) {
+    qg_loc_create_f90(keyLoc_);
   }
 
   ~LocationsQG() {qg_loc_delete_f90(keyLoc_);}
 
-  int nobs() const {
+  size_t size() const {
     int nobs;
     qg_loc_nobs_f90(keyLoc_, nobs);
     return nobs;

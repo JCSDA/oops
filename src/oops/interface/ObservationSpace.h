@@ -16,6 +16,7 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include "oops/interface/Locations.h"
 #include "util/Logger.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
@@ -38,6 +39,7 @@ template <typename MODEL>
 class ObservationSpace : public util::Printable,
                          private boost::noncopyable,
                          private util::ObjectCounter<ObservationSpace<MODEL> > {
+  typedef Locations<MODEL>          Locations_;
   typedef typename MODEL::ObsSpace  ObsSpace_;
   typedef ObsVector<MODEL>          ObsVector_;
 
@@ -57,6 +59,7 @@ class ObservationSpace : public util::Printable,
   const eckit::Configuration & config() const {return obsdb_->config();}
 
 // Other
+  Locations_ locations(const util::DateTime &, const util::DateTime &) const;
   void generateDistribution(const eckit::Configuration &);
   void printJo(const ObsVector_ &, const ObsVector_ &) const;
 
@@ -102,6 +105,16 @@ void ObservationSpace<MODEL>::generateDistribution(const eckit::Configuration & 
   util::Timer timer(classname(), "generateDistribution");
   obsdb_->generateDistribution(conf);
   Log::trace() << "ObservationSpace<MODEL>::generateDistribution done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+Locations<MODEL> ObservationSpace<MODEL>::locations(const util::DateTime & t1,
+                                                    const util::DateTime & t2) const {
+  Log::trace() << "ObservationSpace<MODEL>::locations starting" << std::endl;
+  util::Timer timer(classname(), "locations");
+  return Locations_(obsdb_->locations(t1, t2));
 }
 
 // -----------------------------------------------------------------------------
