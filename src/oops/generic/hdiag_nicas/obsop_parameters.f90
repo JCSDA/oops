@@ -45,7 +45,7 @@ implicit none
 type(odatatype),intent(inout) :: odata !< Observation operator data
 
 ! Local variables
-integer :: iobs,jobs,iobsa,iproc,jproc,nobsa,i_s,ic0,ic0b,i,ic0a,nc0a,nc0b,nhalo,delta,nres,ind(1),itest,ntest,lunit
+integer :: iobs,jobs,iobsa,iproc,jproc,nobsa,i_s,ic0,ic0b,i,ic0a,nc0a,nc0b,nhalo,delta,nres,ind(1),lunit
 integer,allocatable :: nop(:),iop(:),srcproc(:,:),srcic0(:,:),order(:),nobsa_to_move(:)
 integer,allocatable :: c0_to_c0a(:),c0a_to_c0(:),c0b_to_c0(:),c0a_to_c0b(:)
 real(kind_real),allocatable :: list(:)
@@ -93,16 +93,6 @@ do i_s=1,odata%hfull%n_s
    srcproc(iop(iobs),iobs) = iproc
    srcic0(iop(iobs),iobs) = ic0
 end do
-
-ntest = 11
-do itest=0,ntest
-   if (itest==0) then
-      nam%obsdis = -1.0
-      suffix = 'ran'
-   else
-      nam%obsdis = float(itest-1)/float(ntest-1)
-      write(suffix,'(f3.1)') nam%obsdis
-   end if
 
 ! Generate observation distribution on processors
 if (nam%obsdis<0.0) then
@@ -388,14 +378,12 @@ call com_bcast(comobs,odata%com)
 
 ! Write data
 if (mpl%main) then
-   if (itest==0) then
-      lunit = newunit()
-      open(unit=lunit,file=trim(nam%datadir)//'/'//trim(nam%prefix)//'_observations_out.dat',status='replace')  
-      do iobs=1,odata%nobs
-         write(lunit,*) odata%lonobs(iobs)*rad2deg,odata%latobs(iobs)*rad2deg
-      end do
-      close(unit=lunit)
-   end if
+   lunit = newunit()
+   open(unit=lunit,file=trim(nam%datadir)//'/'//trim(nam%prefix)//'_observations_out.dat',status='replace')  
+   do iobs=1,odata%nobs
+      write(lunit,*) odata%lonobs(iobs)*rad2deg,odata%latobs(iobs)*rad2deg
+   end do
+   close(unit=lunit)
 
    lunit = newunit()
    open(unit=lunit,file=trim(nam%datadir)//'/'//trim(nam%prefix)//'_distribution_'//suffix//'.dat',status='replace')
@@ -409,15 +397,6 @@ if (mpl%main) then
       call com_dealloc(comobs(iproc))
    end do
 end if
-if (itest<ntest) then
-   call linop_dealloc(odata%h)
-   deallocate(odata%c0b_to_c0)
-   deallocate(odata%c0_to_c0b)
-   deallocate(odata%c0a_to_c0b)
-   call com_dealloc(odata%com)
-end if
-
-end do
 
 ! Print results
 write(mpl%unit,'(a7,a)') '','Number of observations per MPI task:'

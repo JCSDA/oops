@@ -43,19 +43,25 @@ real(kind_real) :: sum1,sum2
 real(kind_real) :: fld(odata%geom%nc0a,odata%geom%nl0),fld_save(odata%geom%nc0a,odata%geom%nl0)
 real(kind_real) :: yobs(odata%nobsa,odata%geom%nl0),yobs_save(odata%nobsa,odata%geom%nl0)
 
+! Associate
+associate(geom=>odata%geom)
+
 ! Generate random fields
 call rand_real(0.0_kind_real,1.0_kind_real,fld_save)
 call rand_real(0.0_kind_real,1.0_kind_real,yobs_save)
 
 ! Apply direct and adjoint obsservation operators
-call apply_obsop(odata,fld_save,yobs)
-call apply_obsop_ad(odata,yobs_save,fld)
+call apply_obsop(geom,odata,fld_save,yobs)
+call apply_obsop_ad(geom,odata,yobs_save,fld)
 
 ! Compute adjoint test
 call mpl_dot_prod(fld,fld_save,sum1)
 call mpl_dot_prod(yobs,yobs_save,sum2)
 write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Observation operator adjoint test: ', &
  & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
+
+! End associate
+end associate
 
 end subroutine test_adjoint
 
@@ -98,8 +104,8 @@ call fld_com_gl(geom,lon)
 call fld_com_gl(geom,lat)
 
 ! Apply obsop
-call apply_obsop(odata,lon,ylon)
-call apply_obsop(odata,lat,ylat)
+call apply_obsop(geom,odata,lon,ylon)
+call apply_obsop(geom,odata,lat,ylat)
 
 ! Local to global
 call yobs_com_lg(odata,ylon)

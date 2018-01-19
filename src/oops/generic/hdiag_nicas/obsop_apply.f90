@@ -15,6 +15,7 @@ use tools_display, only: msgerror
 use tools_kinds, only: kind_real
 use tools_missing, only: isnotmsi
 use type_com, only: com_ext,com_red
+use type_geom, only: geomtype
 use type_linop, only: apply_linop,apply_linop_ad
 use type_mpl, only: mpl
 use type_odata, only: odatatype
@@ -30,22 +31,20 @@ contains
 ! Subroutine: apply_obsop
 !> Purpose: observation operator interpolation
 !----------------------------------------------------------------------
-subroutine apply_obsop(odata,fld,obs)
+subroutine apply_obsop(geom,odata,fld,obs)
 
 implicit none
 
 ! Passed variables
-type(odatatype),intent(in) :: odata                            !< Observation operator data
-real(kind_real),intent(in) :: fld(odata%nc0a,odata%geom%nl0)   !< Field
-real(kind_real),intent(out) :: obs(odata%nobsa,odata%geom%nl0) !< Observations columns
+type(geomtype),intent(in) :: geom                        !< Geometry
+type(odatatype),intent(in) :: odata                      !< Observation operator data
+real(kind_real),intent(in) :: fld(odata%nc0a,geom%nl0)   !< Field
+real(kind_real),intent(out) :: obs(odata%nobsa,geom%nl0) !< Observations columns
 
 ! Local variables
 integer :: il0
-real(kind_real) :: fld_ext(odata%nc0b,odata%geom%nl0)
+real(kind_real) :: fld_ext(odata%nc0b,geom%nl0)
 real(kind_real),allocatable :: slab(:)
-
-! Associate
-associate(geom=>odata%geom)
 
 ! Halo extension
 do il0=1,geom%nl0
@@ -72,31 +71,26 @@ do il0=1,geom%nl0
 end do
 !$omp end parallel do
 
-! End associate
-end associate
-
 end subroutine apply_obsop
 
 !----------------------------------------------------------------------
 ! Subroutine: apply_obsop_ad
 !> Purpose: observation operator interpolation adjoint
 !----------------------------------------------------------------------
-subroutine apply_obsop_ad(odata,obs,fld)
+subroutine apply_obsop_ad(geom,odata,obs,fld)
 
 implicit none
 
 ! Passed variables
-type(odatatype),intent(in) :: odata                           !< Observation operator data
-real(kind_real),intent(in) :: obs(odata%nobsa,odata%geom%nl0) !< Observations columns
-real(kind_real),intent(out) :: fld(odata%nc0a,odata%geom%nl0) !< Field
+type(geomtype),intent(in) :: geom                       !< Geometry
+type(odatatype),intent(in) :: odata                     !< Observation operator data
+real(kind_real),intent(in) :: obs(odata%nobsa,geom%nl0) !< Observations columns
+real(kind_real),intent(out) :: fld(odata%nc0a,geom%nl0) !< Field
 
 ! Local variables
 integer :: il0
-real(kind_real) :: fld_ext(odata%nc0b,odata%geom%nl0)
+real(kind_real) :: fld_ext(odata%nc0b,geom%nl0)
 real(kind_real),allocatable :: slab(:)
-
-! Associate
-associate(geom=>odata%geom)
 
 ! Horizontal interpolation
 !$omp parallel do schedule(static) private(il0)
@@ -122,9 +116,6 @@ do il0=1,geom%nl0
    ! Release memory
    deallocate(slab)
 end do
-
-! End associate
-end associate
 
 end subroutine apply_obsop_ad
 

@@ -13,6 +13,7 @@ module driver_obsgen
 use tools_const, only: pi
 use tools_display, only: msgerror
 use tools_kinds, only: kind_real
+use type_geom, only: geomtype
 use type_mpl, only: mpl,mpl_bcast
 use type_nam, only: namtype
 use type_odata, only: odatatype
@@ -20,7 +21,7 @@ use type_randgen, only: rand_real
 
 implicit none
 
-logical,parameter :: readobs = .true. !< Read observations
+logical,parameter :: readobs = .false. !< Read observations
 logical,parameter :: allobs = .true.   !< All observation are used
 
 private
@@ -32,13 +33,14 @@ contains
 ! Subroutine: run_obsgen
 !> Purpose: generate random observations locations
 !----------------------------------------------------------------------
-subroutine run_obsgen(nam,odata)
+subroutine run_obsgen(nam,geom,odata)
 
 implicit none
 
 ! Passed variables
-type(namtype),target,intent(in) :: nam   !< Namelist
-type(odatatype),intent(inout) :: odata   !< Observation operator data
+type(namtype),intent(in) :: nam        !< Namelist
+type(geomtype),intent(in) :: geom      !< Geometry
+type(odatatype),intent(inout) :: odata !< Observation operator data
 
 ! Local variables
 integer :: info,iobs,active
@@ -84,9 +86,16 @@ if (nam%new_obsop) then
          close(unit=100)
       else
          ! Generate random observation network
-         call rand_real(-pi,pi,odata%lonobs)
-         call rand_real(-1.0_kind_real,1.0_kind_real,odata%latobs)
-         odata%latobs = 0.5*pi-acos(odata%latobs)
+         if (.true.) then
+            ! Limited-area domain
+            call rand_real(minval(geom%lon),maxval(geom%lon),odata%lonobs)
+            call rand_real(minval(geom%lat),maxval(geom%lat),odata%latobs)
+         else
+            ! Global domain
+            call rand_real(-pi,pi,odata%lonobs)
+            call rand_real(-1.0_kind_real,1.0_kind_real,odata%latobs)
+            odata%latobs = 0.5*pi-acos(odata%latobs)
+         end if
       end if
    end if
 
