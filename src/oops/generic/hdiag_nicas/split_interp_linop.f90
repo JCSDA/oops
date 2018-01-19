@@ -101,7 +101,7 @@ hinterp_loc%n_s = 0
 do i_s=1,hinterp_glb%n_s
    iobs = hinterp_glb%row(i_s)
    jproc = iobs_to_iproc(iobs)
-   if (iproc==jproc) then
+   if (jproc==mpl%myproc) then
       hinterp_loc%n_s = hinterp_loc%n_s+1
       hinterp_loc%row(hinterp_loc%n_s) = iobs_to_iobsa(iobs)
       hinterp_loc%col(hinterp_loc%n_s) = ic0_to_ic0b(hinterp_glb%col(i_s))

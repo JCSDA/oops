@@ -209,20 +209,24 @@ if (mpl%main) then
          interp%col(offset+1:offset+n_sg(iproc)) = col(1:n_sg(iproc))
          interp%S(offset+1:offset+n_sg(iproc)) = S(1:n_sg(iproc))
       else
-         ! Receive data on ioproc
-         call mpl_recv(n_sg(iproc),interp%row(offset+1:offset+n_sg(iproc)),iproc,mpl%tag)
-         call mpl_recv(n_sg(iproc),interp%col(offset+1:offset+n_sg(iproc)),iproc,mpl%tag+1)
-         call mpl_recv(n_sg(iproc),interp%S(offset+1:offset+n_sg(iproc)),iproc,mpl%tag+2)
+         if (n_sg(iproc) > 0) then
+            ! Receive data on ioproc
+            call mpl_recv(n_sg(iproc),interp%row(offset+1:offset+n_sg(iproc)),iproc,mpl%tag)
+            call mpl_recv(n_sg(iproc),interp%col(offset+1:offset+n_sg(iproc)),iproc,mpl%tag+1)
+            call mpl_recv(n_sg(iproc),interp%S(offset+1:offset+n_sg(iproc)),iproc,mpl%tag+2)
+         end if
       end if
 
       ! Update offset
       offset = offset+n_sg(iproc)
    end do
 else
-   ! Send data to ioproc
-   call mpl_send(n_s,row(1:n_s),mpl%ioproc,mpl%tag)
-   call mpl_send(n_s,col(1:n_s),mpl%ioproc,mpl%tag+1)
-   call mpl_send(n_s,S(1:n_s),mpl%ioproc,mpl%tag+2)
+    if (n_s > 0) then
+      ! Send data to ioproc
+      call mpl_send(n_s,row(1:n_s),mpl%ioproc,mpl%tag)
+      call mpl_send(n_s,col(1:n_s),mpl%ioproc,mpl%tag+1)
+      call mpl_send(n_s,S(1:n_s),mpl%ioproc,mpl%tag+2)
+    end if
 end if
 mpl%tag = mpl%tag+3
 
