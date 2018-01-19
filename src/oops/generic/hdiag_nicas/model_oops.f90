@@ -32,12 +32,11 @@ contains
 ! Subroutine: model_oops_coord
 !> Purpose: load OOPS coordinates
 !----------------------------------------------------------------------
-subroutine model_oops_coord(nam,geom,lon,lat,area,vunit,imask)
+subroutine model_oops_coord(geom,lon,lat,area,vunit,imask)
 
 implicit none
 
 ! Passed variables
-type(namtype),intent(inout) :: nam               !< Namelist
 type(geomtype),intent(inout) :: geom             !< Geometry
 real(kind_real),intent(in) :: lon(geom%nc0a)     !< Longitudes
 real(kind_real),intent(in) :: lat(geom%nc0a)     !< Latitudes
@@ -80,7 +79,7 @@ end do
 
 ! Convert mask
 do il0=1,geom%nl0
-   offset = (nam%levs(il0)-1)*geom%nc0a
+   offset = (il0-1)*geom%nc0a
    do ic0a=1,geom%nc0a
       if (imask(offset+ic0a)==0) then
          lmask(ic0a,il0) = .false.

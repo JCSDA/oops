@@ -196,7 +196,7 @@ call create_randgen(self%nam)
 ! Initialize coordinates
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Initialize geometry'
-call model_oops_coord(self%nam,self%geom,lon,lat,area,vunit,imask)
+call model_oops_coord(self%geom,lon,lat,area,vunit,imask)
 
 ! Initialize block parameters
 call bpar_alloc(self%nam,self%geom,self%bpar)
