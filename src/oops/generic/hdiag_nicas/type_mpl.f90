@@ -69,12 +69,6 @@ interface mpl_allgather
   module procedure mpl_allgather_logical
 end interface
 
-interface mpl_allgatherv
-  module procedure mpl_allgatherv_integer
-  module procedure mpl_allgatherv_real
-  module procedure mpl_allgatherv_logical
-end interface
-
 interface mpl_alltoallv
   module procedure mpl_alltoallv_real
 end interface
@@ -93,7 +87,7 @@ end interface
 
 private
 public :: mpl
-public :: mpl_start,mpl_end,mpl_abort,mpl_barrier,mpl_bcast,mpl_recv,mpl_send,mpl_allgather,mpl_allgatherv, &
+public :: mpl_start,mpl_end,mpl_abort,mpl_barrier,mpl_bcast,mpl_recv,mpl_send,mpl_allgather, &
         & mpl_alltoallv,mpl_allreduce_sum,mpl_split,mpl_dot_prod
 
 contains
@@ -900,102 +894,6 @@ call mpi_allgather(sbuf,ns,mpi_logical,rbuf,ns,mpi_logical,mpi_comm_world,info)
 call mpl_check(info)
 
 end subroutine mpl_allgather_logical
-
-!----------------------------------------------------------------------
-! Subroutine: mpl_allgatherv_integer
-!> Purpose: allgatherv for a integer array
-!----------------------------------------------------------------------
-subroutine mpl_allgatherv_integer(ns,sbuf,nr,rbuf,rcounts)
-
-implicit none
-
-! Passed variables
-integer,intent(in) :: ns                 !< Sent buffer size
-integer,intent(in) :: sbuf(ns)           !< Sent buffer
-integer,intent(in) :: nr                 !< Received buffer size
-integer,intent(out) :: rbuf(nr)          !< Received buffer
-integer,intent(in) :: rcounts(mpl%nproc) !< Receiving counts
-
-! Local variable
-integer :: displ(mpl%nproc),iproc,info
-
-! Compute displacement
-displ(1) = 0
-do iproc=2,mpl%nproc
-   displ(iproc) = displ(iproc-1)+rcounts(iproc-1)
-end do
-
-! Allgather
-call mpi_allgatherv(sbuf,ns,mpi_integer,rbuf,rcounts,displ,mpi_integer,mpi_comm_world,info)
-
-! Check
-call mpl_check(info)
-
-end subroutine mpl_allgatherv_integer
-
-!----------------------------------------------------------------------
-! Subroutine: mpl_allgatherv_real
-!> Purpose: allgatherv for a real array
-!----------------------------------------------------------------------
-subroutine mpl_allgatherv_real(ns,sbuf,nr,rbuf,rcounts)
-
-implicit none
-
-! Passed variables
-integer,intent(in) :: ns                 !< Sent buffer size
-real(kind_real),intent(in) :: sbuf(ns)   !< Sent buffer
-integer,intent(in) :: nr                 !< Received buffer size
-real(kind_real),intent(out) :: rbuf(nr)  !< Received buffer
-integer,intent(in) :: rcounts(mpl%nproc) !< Receiving counts
-
-! Local variable
-integer :: displ(mpl%nproc),iproc,info
-
-! Compute displacement
-displ(1) = 0
-do iproc=2,mpl%nproc
-   displ(iproc) = displ(iproc-1)+rcounts(iproc-1)
-end do
-
-! Allgather
-call mpi_allgatherv(sbuf,ns,mpl%rtype,rbuf,rcounts,displ,mpl%rtype,mpi_comm_world,info)
-
-! Check
-call mpl_check(info)
-
-end subroutine mpl_allgatherv_real
-
-!----------------------------------------------------------------------
-! Subroutine: mpl_allgatherv_logical
-!> Purpose: allgatherv for a logical array
-!----------------------------------------------------------------------
-subroutine mpl_allgatherv_logical(ns,sbuf,nr,rbuf,rcounts)
-
-implicit none
-
-! Passed variables
-integer,intent(in) :: ns                 !< Sent buffer size
-logical,intent(in) :: sbuf(ns)           !< Sent buffer
-integer,intent(in) :: nr                 !< Received buffer size
-logical,intent(out) :: rbuf(nr)          !< Received buffer
-integer,intent(in) :: rcounts(mpl%nproc) !< Receiving counts
-
-! Local variable
-integer :: displ(mpl%nproc),iproc,info
-
-! Compute displacement
-displ(1) = 0
-do iproc=2,mpl%nproc
-   displ(iproc) = displ(iproc-1)+rcounts(iproc-1)
-end do
-
-! Allgather
-call mpi_allgatherv(sbuf,ns,mpi_logical,rbuf,rcounts,displ,mpi_logical,mpi_comm_world,info)
-
-! Check
-call mpl_check(info)
-
-end subroutine mpl_allgatherv_logical
 
 !----------------------------------------------------------------------
 ! Subroutine: mpl_alltoallv_real

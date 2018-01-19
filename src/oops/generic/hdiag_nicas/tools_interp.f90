@@ -20,7 +20,7 @@ use type_ctree, only: ctreetype,create_ctree,find_nearest_neighbors,delete_ctree
 use type_geom, only: geomtype
 use type_linop, only: linoptype,linop_alloc,linop_dealloc,linop_copy,linop_reorder
 use type_mesh, only: meshtype,create_mesh,mesh_dealloc,copy_mesh,barycentric,addnode,polygon
-use type_mpl, only: mpl,mpl_bcast,mpl_allgather,mpl_allgatherv,mpl_split
+use type_mpl, only: mpl,mpl_bcast,mpl_allgather,mpl_split,mpl_send,mpl_recv
 
 implicit none
 
@@ -124,7 +124,7 @@ character(len=1024),intent(in) :: interp_type !< Interpolation type
 type(linoptype),intent(inout) :: interp       !< Interpolation data
 
 ! Local variables
-integer :: i,i_src,i_dst,nn_index(1),n_s,progint,ib(3),nnat,inat,np
+integer :: i,i_src,i_dst,nn_index(1),n_s,progint,ib(3),nnat,inat,np,iproc,offset
 integer :: i_dst_s(mpl%nproc),i_dst_e(mpl%nproc),n_dst_loc(mpl%nproc),i_dst_loc,n_sg(mpl%nproc)
 integer,allocatable :: natis(:),row(:),col(:)
 real(kind_real) :: nn_dist(1),b(3)
@@ -262,9 +262,40 @@ interp%n_dst = n_dst
 call linop_alloc(interp)
 
 ! Communication
-call mpl_allgatherv(n_s,row(1:max(1,n_s)),interp%n_s,interp%row,n_sg)
-call mpl_allgatherv(n_s,col(1:max(1,n_s)),interp%n_s,interp%col,n_sg)
-call mpl_allgatherv(n_s,S(1:max(1,n_s)),interp%n_s,interp%S,n_sg)
+if (mpl%main) then
+   offset = 0
+   do iproc=1,mpl%nproc
+      if (n_sg(iproc)>0) then
+         if (iproc==mpl%ioproc) then
+            ! Copy data
+            interp%row(offset+1:offset+n_sg(iproc)) = row(1:n_sg(iproc))
+            interp%col(offset+1:offset+n_sg(iproc)) = col(1:n_sg(iproc))
+            interp%S(offset+1:offset+n_sg(iproc)) = S(1:n_sg(iproc))
+         else
+            ! Receive data on ioproc
+            call mpl_recv(n_sg(iproc),interp%row(offset+1:offset+n_sg(iproc)),iproc,mpl%tag)
+            call mpl_recv(n_sg(iproc),interp%col(offset+1:offset+n_sg(iproc)),iproc,mpl%tag+1)
+            call mpl_recv(n_sg(iproc),interp%S(offset+1:offset+n_sg(iproc)),iproc,mpl%tag+2)
+         end if
+      end if
+
+      ! Update offset
+      offset = offset+n_sg(iproc)
+   end do
+else
+   if (n_s>0) then
+      ! Send data to ioproc
+      call mpl_send(n_s,row(1:n_s),mpl%ioproc,mpl%tag)
+      call mpl_send(n_s,col(1:n_s),mpl%ioproc,mpl%tag+1)
+      call mpl_send(n_s,S(1:n_s),mpl%ioproc,mpl%tag+2)
+   end if
+end if
+mpl%tag = mpl%tag+3
+
+! Broadcast data
+call mpl_bcast(interp%row,mpl%ioproc)
+call mpl_bcast(interp%col,mpl%ioproc)
+call mpl_bcast(interp%S,mpl%ioproc)
 
 end subroutine compute_interp_from_mesh_ctree
 
@@ -401,7 +432,7 @@ integer,intent(in),optional :: row_to_ic0(interp%n_dst) !< Conversion from row t
 integer,intent(in),optional :: col_to_ic0(interp%n_src) !< Conversion from col to ic0 (identity if missing)
 
 ! Local variables
-integer :: ic0,i_s,jc0,jc1,progint,il0
+integer :: ic0,i_s,jc0,jc1,progint,il0,iproc
 integer :: i_s_s(mpl%nproc),i_s_e(mpl%nproc),n_s_loc(mpl%nproc),i_s_loc
 real(kind_real),allocatable :: x(:),y(:),z(:),v1(:),v2(:),va(:),vp(:),t(:)
 logical,allocatable :: done(:)
@@ -444,7 +475,25 @@ end do
 write(mpl%unit,'(a)') '100%'
 
 ! Communication
-call mpl_allgatherv(n_s_loc(mpl%myproc),valid(i_s_s(mpl%myproc):i_s_e(mpl%myproc)),interp%n_s,valid,n_s_loc)
+if (mpl%main) then
+   do iproc=1,mpl%nproc
+      if (n_s_loc(iproc)>0) then
+         if (iproc/=mpl%ioproc) then
+            ! Receive data on ioproc
+            call mpl_recv(n_s_loc(iproc),valid(i_s_s(iproc):i_s_e(iproc)),iproc,mpl%tag)
+         end if
+      end if
+   end do
+else
+   if (n_s_loc(mpl%myproc)>0) then
+      ! Send data to ioproc
+      call mpl_send(n_s_loc(mpl%myproc),valid(i_s_s(mpl%myproc):i_s_e(mpl%myproc)),mpl%ioproc,mpl%tag)
+   end if
+end if
+mpl%tag = mpl%tag+1
+
+! Broadcast data
+call mpl_bcast(valid,mpl%ioproc)
 
 ! Release memory
 deallocate(done)

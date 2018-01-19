@@ -239,8 +239,8 @@ if (mpl%main) then
          call mpl_send(mpl%nproc,com_in(iproc)%jexclcounts,iproc,mpl%tag+2)
          call mpl_send(mpl%nproc,com_in(iproc)%jhalodispl,iproc,mpl%tag+3)
          call mpl_send(mpl%nproc,com_in(iproc)%jexcldispl,iproc,mpl%tag+4)
-         call mpl_send(com_in(iproc)%nhalo,com_in(iproc)%halo,iproc,mpl%tag+5)
-         call mpl_send(com_in(iproc)%nexcl,com_in(iproc)%excl,iproc,mpl%tag+6)
+         if (com_in(iproc)%nhalo>0) call mpl_send(com_in(iproc)%nhalo,com_in(iproc)%halo,iproc,mpl%tag+5)
+         if (com_in(iproc)%nexcl>0) call mpl_send(com_in(iproc)%nexcl,com_in(iproc)%excl,iproc,mpl%tag+6)
       end if
    end do
 else
@@ -250,8 +250,8 @@ else
    call mpl_recv(mpl%nproc,com_out%jexclcounts,mpl%ioproc,mpl%tag+2)
    call mpl_recv(mpl%nproc,com_out%jhalodispl,mpl%ioproc,mpl%tag+3)
    call mpl_recv(mpl%nproc,com_out%jexcldispl,mpl%ioproc,mpl%tag+4)
-   call mpl_recv(com_out%nhalo,com_out%halo,mpl%ioproc,mpl%tag+5)
-   call mpl_recv(com_out%nexcl,com_out%excl,mpl%ioproc,mpl%tag+6)
+   if (com_out%nhalo>0) call mpl_recv(com_out%nhalo,com_out%halo,mpl%ioproc,mpl%tag+5)
+   if (com_out%nexcl>0) call mpl_recv(com_out%nexcl,com_out%excl,mpl%ioproc,mpl%tag+6)
 end if
 mpl%tag = mpl%tag+7
 
