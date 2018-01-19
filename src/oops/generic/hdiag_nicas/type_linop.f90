@@ -12,7 +12,7 @@ module type_linop
 
 use netcdf
 use omp_lib
-use tools_display, only: msgerror
+use tools_display, only: msgerror,msgwarning
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsr
 use tools_nc, only: ncfloat,ncerr
@@ -137,33 +137,37 @@ type(linoptype),intent(inout) :: linop !< Linear operator
 integer :: row,i_s_s,i_s_e,n_s,i_s
 integer,allocatable :: order(:)
 
-! Sort with respect to row
-allocate(order(linop%n_s))
-call qsort(linop%n_s,linop%row,order)
+if (linop%n_s<1000000) then
+   ! Sort with respect to row
+   allocate(order(linop%n_s))
+   call qsort(linop%n_s,linop%row,order)
 
-! Sort col and S
-linop%col = linop%col(order)
-linop%S = linop%S(order)
-deallocate(order)
+   ! Sort col and S
+   linop%col = linop%col(order)
+   linop%S = linop%S(order)
+   deallocate(order)
 
-! Sort with respect to col for each row
-row = minval(linop%row)
-i_s_s = 1
-call msi(i_s_e)
-do i_s=1,linop%n_s
-   if (linop%row(i_s)==row) then
-      i_s_e = i_s
-   else
-      n_s = i_s_e-i_s_s+1
-      allocate(order(n_s))
-      call qsort(n_s,linop%col(i_s_s:i_s_e),order)
-      order = order+i_s_s-1
-      linop%S(i_s_s:i_s_e) = linop%S(order)
-      deallocate(order)
-      i_s_s = i_s+1
-      row = linop%row(i_s)
-   end if
-end do
+   ! Sort with respect to col for each row
+   row = minval(linop%row)
+   i_s_s = 1
+   call msi(i_s_e)
+   do i_s=1,linop%n_s
+      if (linop%row(i_s)==row) then
+         i_s_e = i_s
+      else
+         n_s = i_s_e-i_s_s+1
+         allocate(order(n_s))
+         call qsort(n_s,linop%col(i_s_s:i_s_e),order)
+         order = order+i_s_s-1
+         linop%S(i_s_s:i_s_e) = linop%S(order)
+         deallocate(order)
+         i_s_s = i_s+1
+         row = linop%row(i_s)
+      end if
+   end do
+else
+   call msgwarning('linear operator is too big, impossible to reorder')
+end if
 
 end subroutine linop_reorder
 
@@ -194,6 +198,7 @@ if (check_data) then
    ! Check input
    if (any(fld_src>huge(1.0))) call msgerror('Overflowing number in fld_src for linear operation '//trim(linop%prefix))
    if (any(isnan(fld_src))) call msgerror('NaN in fld_src for linear operation '//trim(linop%prefix))
+   if (any(.not.isnotmsr(fld_src))) call msgerror('Missing value in fld_src for linear operation '//trim(linop%prefix))
 end if
 
 ! Initialization
@@ -238,6 +243,7 @@ if (check_data) then
    ! Check input
    if (any(fld_dst>huge(1.0))) call msgerror('Overflowing number in fld_dst for adjoint linear operation '//trim(linop%prefix))
    if (any(isnan(fld_dst))) call msgerror('NaN in fld_dst for adjoint linear operation '//trim(linop%prefix))
+   if (any(.not.isnotmsr(fld_dst))) call msgerror('Missing value in fld_dst for adjoint linear operation '//trim(linop%prefix))
 end if
 
 ! Initialization
@@ -264,12 +270,12 @@ subroutine apply_linop_sym(linop,fld)
 implicit none
 
 ! Passed variables
-type(linoptype),intent(in) :: linop                 !< Linear operator
-real(kind_real),intent(inout) :: fld(linop%n_src)   !< Source/destination vector
+type(linoptype),intent(in) :: linop               !< Linear operator
+real(kind_real),intent(inout) :: fld(linop%n_src) !< Source/destination vector
 
 ! Local variables
 integer :: i_s,ithread
-real(kind_real) :: fld_tmp(linop%n_dst,mpl%nthread)
+real(kind_real) :: fld_arr(linop%n_dst,mpl%nthread)
 
 if (check_data) then
    ! Check linear operation
@@ -282,23 +288,22 @@ if (check_data) then
    ! Check input
    if (any(fld>huge(1.0))) call msgerror('Overflowing number in fld for symmetric linear operation '//trim(linop%prefix))
    if (any(isnan(fld))) call msgerror('NaN in fld for symmetric linear operation '//trim(linop%prefix))
+   if (any(.not.isnotmsr(fld))) call msgerror('Missing value in fld for symmetric linear operation '//trim(linop%prefix))
 end if
 
-! Initialization
-fld_tmp = 0.0
-
 ! Apply weights
+fld_arr = 0.0
 !$omp parallel do schedule(static) private(i_s,ithread)
 do i_s=1,linop%n_s
    ithread = omp_get_thread_num()+1
-   fld_tmp(linop%row(i_s),ithread) = fld_tmp(linop%row(i_s),ithread)+linop%S(i_s)*fld(linop%col(i_s))
-   fld_tmp(linop%col(i_s),ithread) = fld_tmp(linop%col(i_s),ithread)+linop%S(i_s)*fld(linop%row(i_s))
+   fld_arr(linop%row(i_s),ithread) = fld_arr(linop%row(i_s),ithread)+linop%S(i_s)*fld(linop%col(i_s))
+   fld_arr(linop%col(i_s),ithread) = fld_arr(linop%col(i_s),ithread)+linop%S(i_s)*fld(linop%row(i_s))
 end do
 !$omp end parallel do
 
 ! Sum over threads
 do ithread=1,mpl%nthread
-   fld = fld+fld_tmp(:,ithread)
+   fld = fld+fld_arr(:,ithread)
 end do
 
 if (check_data) then

@@ -24,7 +24,6 @@
 #include "model/GeometryQG.h"
 #include "model/IncrementQG.h"
 #include "model/ModelQG.h"
-#include "model/VariablesQG.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
 #include "util/Logger.h"
@@ -123,7 +122,11 @@ StateQG & StateQG::operator+=(const IncrementQG & dx) {
   return *this;
 }
 // -----------------------------------------------------------------------------
-/// Convert to/from unstructured grid
+/// Define and convert to/from unstructured grid
+// -----------------------------------------------------------------------------
+void StateQG::define(oops::UnstructuredGrid & ug) const {
+  fields_->define(ug);
+}
 // -----------------------------------------------------------------------------
 void StateQG::convert_to(oops::UnstructuredGrid & ug) const {
   fields_->convert_to(ug);

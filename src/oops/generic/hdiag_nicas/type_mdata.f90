@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! Module: type_min
+! Module: type_mdata
 !> Purpose: minimization data derived type
 !> <br>
 !> Author: Benjamin Menetrier
@@ -8,14 +8,14 @@
 !> <br>
 !> Copyright © 2017 METEO-FRANCE
 !----------------------------------------------------------------------
-module type_min
+module type_mdata
 
 use tools_kinds, only: kind_real
 
 implicit none
 
 ! Minimization data derived type
-type mintype
+type mdatatype
    ! Generic data
    integer :: nx                              !< Control vector size
    integer :: ny                              !< Function output size
@@ -30,13 +30,13 @@ type mintype
 
    ! Common data
    integer :: nl0                             !< Number of levels
-   integer :: nc                              !< Number of classes
+   integer :: nc3                             !< Number of classes
 
    ! Specific data (fit)
    integer :: nl0r                            !< Reduced number of levels
    logical :: lhomh                           !< Vertically homogenous horizontal support radius key
    logical :: lhomv                           !< Vertically homogenous vertical support radius key
-   integer,allocatable :: il0rjl0_to_il0(:,:) !< Reduced level to level
+   integer,allocatable :: l0rl0_to_l0(:,:)    !< Reduced level to level
    real(kind_real),allocatable :: distvr(:,:) !< Vertical distance
    real(kind_real),allocatable :: disth(:)    !< Horizontal distance
 
@@ -47,9 +47,9 @@ type mintype
    real(kind_real),allocatable :: dy(:,:)     !< Meridian separation
    real(kind_real),allocatable :: dz(:)       !< Vertical separation
    logical,allocatable :: dmask(:,:)          !< Mask
-end type mintype
+end type mdatatype
 
 private
-public :: mintype
+public :: mdatatype
 
-end module type_min
+end module type_mdata

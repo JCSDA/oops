@@ -28,7 +28,7 @@ public :: qg_field, &
         & self_add, self_schur, self_sub, self_mul, axpy, &
         & dot_prod, add_incr, diff_incr, &
         & read_file, write_file, gpnorm, fldrms, &
-        & change_resol, interp_tl, interp_ad, convert_to_ug, convert_from_ug
+        & change_resol, interp_tl, interp_ad, define_ug, convert_to_ug, convert_from_ug
 
 ! ------------------------------------------------------------------------------
 
@@ -1030,41 +1030,75 @@ end subroutine lin_weights
 
 ! ------------------------------------------------------------------------------
 
+subroutine define_ug(self, ug)
+use unstructured_grid_mod
+implicit none
+type(qg_field), intent(in) :: self
+type(unstructured_grid), intent(inout) :: ug
+
+integer,allocatable :: imask(:,:)
+real(kind=kind_real),allocatable :: lon(:),lat(:),area(:),vunit(:)
+integer :: nc0a,ic0a,jx,jy,jl,jf,joff
+
+! Define local index
+nc0a = 0
+do jy=1,self%geom%ny
+  do jx=1,self%geom%nx
+    if (self%geom%iproc(jx,jy)==mpl%myproc) nc0a = nc0a+1
+  enddo
+enddo
+
+! Allocation
+allocate(lon(nc0a))
+allocate(lat(nc0a))
+allocate(area(nc0a))
+allocate(vunit(self%nl))
+allocate(imask(nc0a,self%nl))
+
+! Copy coordinates
+ic0a = 0
+do jy=1,self%geom%ny
+  do jx=1,self%geom%nx
+    if (self%geom%iproc(jx,jy)==mpl%myproc) then
+      ic0a = ic0a+1
+      lon(ic0a) = self%geom%lon(jx)
+      lat(ic0a) = self%geom%lat(jy)
+      area(ic0a) = self%geom%area(jx,jy)
+    endif
+  enddo
+enddo
+imask = 1
+
+! Define vertical unit
+do jl=1,self%nl
+  vunit(jl) = real(jl,kind=kind_real)
+enddo
+
+! Create unstructured grid
+call create_unstructured_grid(ug, nc0a, self%nl, self%nf, 1, lon, lat, area, vunit, imask)
+
+end subroutine define_ug
+
+! ------------------------------------------------------------------------------
+
 subroutine convert_to_ug(self, ug)
 use unstructured_grid_mod
 implicit none
 type(qg_field), intent(in) :: self
 type(unstructured_grid), intent(inout) :: ug
-real(kind=kind_real) :: zz(self%nl)
-integer :: jx,jy,jl,jf,joff,j
-integer :: imask(self%nl),glbind
 
-! Define vertical unit
-do jl=1,self%nl
-  zz(jl) = real(jl,kind=kind_real)
-enddo
+integer :: ic0a,jx,jy,jl,jf,joff
 
-! Create unstructured grid
-call create_unstructured_grid(ug, self%nl, zz)
-
-! No mask
-imask = 1
-
+! Copy field
+ic0a = 0
 do jy=1,self%geom%ny
   do jx=1,self%geom%nx
-    ! Define a global index
-    glbind = (jy-1)*self%geom%nx+jx
-
-    ! Add column only for a given MPI task
     if (self%geom%iproc(jx,jy)==mpl%myproc) then
-      ! Add column
-      call add_column(ug, self%geom%lats(jy), self%geom%lons(jx), self%geom%areas(jx,jy), self%nl, self%nf, imask, glbind)
-
-      ! Copy data
+      ic0a = ic0a+1
       do jf=1,self%nf
         joff = (jf-1)*self%nl
         do jl=1,self%nl
-          ug%last%column%fld(jl,jf) = self%gfld3d(jx,jy,joff+jl)
+          ug%fld(ic0a,jl,jf,1) = self%gfld3d(jx,jy,joff+jl)
         enddo
       enddo
     endif
@@ -1080,22 +1114,22 @@ use unstructured_grid_mod
 implicit none
 type(qg_field), intent(inout) :: self
 type(unstructured_grid), intent(in) :: ug
-type(column_element), pointer :: current
-integer :: jx,jy,jl,jf,joff,j,nbuf,jbuf,iproc
+
+integer :: ic0a,jx,jy,jl,jf,joff,nbuf,jbuf,iproc
 real(kind=kind_real),allocatable :: rbuf(:),sbuf(:)
 
-current => ug%head
+! Copy field
+ic0a = 0
 do jy=1,self%geom%ny
   do jx=1,self%geom%nx
-    ! Get column only for a given MPI task
     if (self%geom%iproc(jx,jy)==mpl%myproc) then
+      ic0a = ic0a+1
       do jf=1,self%nf
         joff = (jf-1)*self%nl
         do jl=1,self%nl
-          self%gfld3d(jx,jy,joff+jl) = current%column%fld(jl,jf)
+          self%gfld3d(jx,jy,joff+jl) = ug%fld(ic0a,jl,jf,1)
         enddo
       enddo
-      current => current%next
     endif
   enddo
 enddo
@@ -1105,7 +1139,7 @@ if (mpl%main) then
    do iproc=1,mpl%nproc
       if (iproc/=mpl%ioproc) then
          ! Allocation
-         nbuf = count(self%geom%iproc==iproc)*self%nf*self%nl
+         nbuf = count(self%geom%iproc==iproc)*self%nl*self%nf
          allocate(rbuf(nbuf))
 
          ! Receive data on ioproc

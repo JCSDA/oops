@@ -71,24 +71,21 @@ LocalizationHDIAG_NICAS<MODEL>::LocalizationHDIAG_NICAS(const Geometry_ & resol,
 // Setup dummy increment
   Increment_ dx(resol, vars, date);
 
-// Get lat/lon/area/vunit/mask from the unstructured grid
-  UnstructuredGrid ugrid;
-  dx.convert_to(ugrid); // TODO: add key, not to copy data
-  std::vector<double> lats = ugrid.getLats();
-  std::vector<double> lons = ugrid.getLons();
-  std::vector<double> areas = ugrid.getAreas();
-  std::vector<double> vunit = ugrid.getVunit();
-  std::vector<int> mask;
-  for (int jlev = 0; jlev < vunit.size(); ++jlev) {
-    std::vector<int> tmp = ugrid.getMask(jlev);
-    mask.insert(mask.end(), tmp.begin(), tmp.end());
-  }
-  std::vector<int> glbind = ugrid.getGlbInd();
-  int nv = ugrid.getNvar();
-  int nc0a = lats.size();
-  int nlev = vunit.size();
+// Convert to unstructured grid
+  UnstructuredGrid ug;
+  dx.define(ug);
 
-  int nts = 1;
+// Get sizes and coordinates from the unstructured grid
+  int nc0a = ug.getSize(1);
+  int nl0 = ug.getSize(2);
+  int nv = ug.getSize(3);
+  int nts = 1; //ug.getSize(4); not read yet for 4D
+  std::vector<double> lon = ug.getLon();
+  std::vector<double> lat = ug.getLat();
+  std::vector<double> area = ug.getArea();
+  std::vector<double> vunit = ug.getVunit();
+  std::vector<int> imask = ug.getImask();
+
   int ens1_ne;
   std::vector<double> ens1;
   int new_hdiag = conf.getInt("new_hdiag");
@@ -96,34 +93,27 @@ LocalizationHDIAG_NICAS<MODEL>::LocalizationHDIAG_NICAS(const Geometry_ & resol,
     std::vector<eckit::LocalConfiguration> confs;
     conf.get("hdiag_ensemble", confs);
     ens1_ne = confs.size();
-    Log::info() << "HDIAG ensemble: " << ens1_ne << " members / " << nts << " timeslots" << std::endl;
+    Log::info() << "HDIAG ensemble: " << ens1_ne << " members" << std::endl;
     ASSERT(confs.size()==ens1_ne*nts);
-    int i=0;
     for (unsigned int ie = 0; ie < ens1_ne; ++ie) {
-      for (unsigned int its = 0; its < nts; ++its) { 
-        Log::info() << "Read member " << ie+1 << " at timeslot " << its+1 << " (total index " << i << ")" << std::endl;
-        State_ xmem(resol,confs[i]);
-        Log::info() << "Convert member to unstructured grid" << std::endl;
-        UnstructuredGrid umem;
-        xmem.convert_to(umem);
-        std::vector<double> tmp = umem.getData();
-        ens1.insert(ens1.end(), tmp.begin(), tmp.end());
-        i++;
-      }
+      Log::info() << "Read member " << ie+1 << std::endl;
+      State_ xmem(resol,confs[ie]);
+      Log::info() << "Convert member to unstructured grid" << std::endl;
+      xmem.convert_to(ug);
+      std::vector<double> tmp = ug.getData();
+      ens1.insert(ens1.end(), tmp.begin(), tmp.end());
     }
   }
   else
   {
     ens1_ne = 4;
-    int i=0;
     for (unsigned int ie = 0; ie < ens1_ne; ++ie) {
-      std::vector<double> tmp(nts*nv*nlev*nc0a);
+      std::vector<double> tmp(nc0a*nl0*nv*nts);
       std::fill(tmp.begin(),tmp.end(),-999.0);
       ens1.insert(ens1.end(), tmp.begin(), tmp.end());
-      i++;
     }
   }
-  create_hdiag_nicas_f90(keyHdiag_nicas_, &fconf, nv, nc0a, &lats[0], &lons[0], &areas[0], nlev, &vunit[0], &mask[0], &glbind[0], nts, ens1_ne, &ens1[0]);
+  create_hdiag_nicas_f90(keyHdiag_nicas_, &fconf, nc0a, nl0, nv, nts, ens1_ne, &lon[0], &lat[0], &area[0], &vunit[0], &imask[0], &ens1[0]);
   Log::trace() << "LocalizationHDIAG_NICAS:LocalizationHDIAG_NICAS constructed" << std::endl;
 }
 
@@ -141,12 +131,35 @@ template<typename MODEL>
 void LocalizationHDIAG_NICAS<MODEL>::multiply(Increment_ & dx) const {
   Log::trace() << "LocalizationHDIAG_NICAS:multiply starting" << std::endl;
 
-  UnstructuredGrid ugrid;
-  dx.convert_to(ugrid);
+  UnstructuredGrid ug;
 
-  hdiag_nicas_multiply_f90(keyHdiag_nicas_, ugrid.toFortran());
+  MPI_Barrier(MPI_COMM_WORLD);
+  boost::posix_time::ptime ti0 = boost::posix_time::microsec_clock::local_time();
+  dx.define(ug);
+  boost::posix_time::ptime t0 = boost::posix_time::microsec_clock::local_time();
+  boost::posix_time::time_duration diff0 = t0 - ti0;
+  Log::info() << "define time: " << diff0.total_nanoseconds()/1000 << " microseconds" << std::endl;
 
-  dx.convert_from(ugrid);
+  MPI_Barrier(MPI_COMM_WORLD);
+  boost::posix_time::ptime ti1 = boost::posix_time::microsec_clock::local_time();
+  dx.convert_to(ug);
+  boost::posix_time::ptime t1 = boost::posix_time::microsec_clock::local_time();
+  boost::posix_time::time_duration diff1 = t1 - ti1;
+  Log::info() << "convert_to time: " << diff1.total_nanoseconds()/1000 << " microseconds" << std::endl;
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  boost::posix_time::ptime ti2 = boost::posix_time::microsec_clock::local_time();
+  hdiag_nicas_multiply_f90(keyHdiag_nicas_, ug.toFortran());
+  boost::posix_time::ptime t2 = boost::posix_time::microsec_clock::local_time();
+  boost::posix_time::time_duration diff2 = t2 - ti2;
+  Log::info() << "multiply time: " << diff2.total_nanoseconds()/1000 << " microseconds" << std::endl;
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  boost::posix_time::ptime ti3 = boost::posix_time::microsec_clock::local_time();
+  dx.convert_from(ug);
+  boost::posix_time::ptime t3 = boost::posix_time::microsec_clock::local_time();
+  boost::posix_time::time_duration diff3 = t3 - ti3;
+  Log::info() << "convert_from time: " << diff3.total_nanoseconds()/1000 << " microseconds" << std::endl;
 
   Log::trace() << "LocalizationHDIAG_NICAS:multiply done" << std::endl;
 }

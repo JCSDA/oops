@@ -155,6 +155,10 @@ void FieldsQG::diff(const FieldsQG & x1, const FieldsQG & x2) {
   qg_field_diff_incr_f90(keyFlds_, x1.keyFlds_, x2.keyFlds_);
 }
 // -----------------------------------------------------------------------------
+void FieldsQG::define(oops::UnstructuredGrid & ug) const {
+  qg_field_define_f90(keyFlds_, ug.toFortran());
+}
+// -----------------------------------------------------------------------------
 void FieldsQG::convert_to(oops::UnstructuredGrid & ug) const {
   qg_field_convert_to_f90(keyFlds_, ug.toFortran());
 }

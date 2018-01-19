@@ -11,7 +11,7 @@
 module tools_asa047
 
 use tools_kinds, only: kind_real
-use type_min, only: mintype
+use type_mdata, only: mdatatype
 implicit none
 
 private
@@ -19,7 +19,7 @@ public :: nelmin
 
 contains
 
-subroutine nelmin ( mindata, func, n, start, xmin, ynewlo, reqmin, step, konvge, kcount, &
+subroutine nelmin ( mdata, func, n, start, xmin, ynewlo, reqmin, step, konvge, kcount, &
   icount, numres, ifault )
 
 !*****************************************************************************80
@@ -115,13 +115,13 @@ subroutine nelmin ( mindata, func, n, start, xmin, ynewlo, reqmin, step, konvge,
 !
   implicit none
 
-  type(mintype),intent(inout) :: mindata
+  type(mdatatype),intent(inout) :: mdata
   interface
-    subroutine func(mindata,x,f)
+    subroutine func(mdata,x,f)
     use tools_kinds, only: kind_real
-    use type_min, only: mintype
-    type(mintype),intent(in) :: mindata
-    real(kind_real),intent(in) :: x(mindata%nx)
+    use type_mdata, only: mdatatype
+    type(mdatatype),intent(in) :: mdata
+    real(kind_real),intent(in) :: x(mdata%nx)
     real(kind_real),intent(out) :: f
     end subroutine
   end interface
@@ -191,7 +191,7 @@ subroutine nelmin ( mindata, func, n, start, xmin, ynewlo, reqmin, step, konvge,
   do
 
     p(1:n,n+1) = start(1:n)
-    call func(mindata,start,y(n+1))
+    call func(mdata,start,y(n+1))
     icount = icount + 1
 !
 !  Define the initial simplex.
@@ -200,7 +200,7 @@ subroutine nelmin ( mindata, func, n, start, xmin, ynewlo, reqmin, step, konvge,
       x = start(j)
       start(j) = start(j) + step(j) * del
       p(1:n,j) = start(1:n)
-      call func(mindata,start,y(j))
+      call func(mdata,start,y(j))
       icount = icount + 1
       start(j) = x
     end do
@@ -230,7 +230,7 @@ subroutine nelmin ( mindata, func, n, start, xmin, ynewlo, reqmin, step, konvge,
 !  Reflection through the centroid.
 !
       pstar(1:n) = pbar(1:n) + rcoeff * ( pbar(1:n) - p(1:n,ihi) )
-      call func(mindata,pstar,ystar)
+      call func(mdata,pstar,ystar)
       icount = icount + 1
 !
 !  Successful reflection, so extension.
@@ -238,7 +238,7 @@ subroutine nelmin ( mindata, func, n, start, xmin, ynewlo, reqmin, step, konvge,
       if ( ystar < ylo ) then
 
         p2star(1:n) = pbar(1:n) + ecoeff * ( pstar(1:n) - pbar(1:n) )
-        call func(mindata,p2star,y2star)
+        call func(mdata,p2star,y2star)
         icount = icount + 1
 !
 !  Retain extension or contraction.
@@ -272,7 +272,7 @@ subroutine nelmin ( mindata, func, n, start, xmin, ynewlo, reqmin, step, konvge,
         else if ( l == 0 ) then
 
           p2star(1:n) = pbar(1:n) + ccoeff * ( p(1:n,ihi) - pbar(1:n) )
-          call func(mindata,p2star,y2star)
+          call func(mdata,p2star,y2star)
           icount = icount + 1
 !
 !  Contract the whole simplex.
@@ -282,7 +282,7 @@ subroutine nelmin ( mindata, func, n, start, xmin, ynewlo, reqmin, step, konvge,
             do j = 1, n + 1
               p(1:n,j) = ( p(1:n,j) + p(1:n,ilo) ) * 0.5
               xmin(1:n) = p(1:n,j)
-              call func(mindata,xmin,y(j))
+              call func(mdata,xmin,y(j))
               icount = icount + 1
             end do
 
@@ -303,7 +303,7 @@ subroutine nelmin ( mindata, func, n, start, xmin, ynewlo, reqmin, step, konvge,
         else if ( l == 1 ) then
 
           p2star(1:n) = pbar(1:n) + ccoeff * ( pstar(1:n) - pbar(1:n) )
-          call func(mindata,p2star,y2star)
+          call func(mdata,p2star,y2star)
           icount = icount + 1
 !
 !  Retain reflection?
@@ -365,14 +365,14 @@ subroutine nelmin ( mindata, func, n, start, xmin, ynewlo, reqmin, step, konvge,
     do i = 1, n
       del = step(i) * eps
       xmin(i) = xmin(i) + del
-      call func(mindata,xmin,z)
+      call func(mdata,xmin,z)
       icount = icount + 1
       if ( z < ynewlo ) then
         ifault = 2
         exit
       end if
       xmin(i) = xmin(i) - del - del
-      call func(mindata,xmin,z)
+      call func(mdata,xmin,z)
       icount = icount + 1
       if ( z < ynewlo ) then
         ifault = 2

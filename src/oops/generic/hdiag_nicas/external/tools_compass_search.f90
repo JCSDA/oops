@@ -11,7 +11,7 @@
 module tools_compass_search
 
 use tools_kinds, only: kind_real
-use type_min, only: mintype
+use type_mdata, only: mdatatype
 implicit none
 
 private
@@ -19,7 +19,7 @@ public :: compass_search
 
 contains
 
-subroutine compass_search ( mindata, func, m, x0, delta_tol, delta_init, &
+subroutine compass_search ( mdata, func, m, x0, delta_tol, delta_init, &
   k_max, x, fx, k )
 
 !*****************************************************************************80
@@ -70,13 +70,13 @@ subroutine compass_search ( mindata, func, m, x0, delta_tol, delta_init, &
 !
   implicit none
 
-  type(mintype),intent(inout) :: mindata !< Minimization data
+  type(mdatatype),intent(inout) :: mdata !< Minimization data
   interface
-    subroutine func(mindata,x,f)
+    subroutine func(mdata,x,f)
     use tools_kinds, only: kind_real
-    use type_min, only: mintype
-    type(mintype),intent(in) :: mindata
-    real(kind_real),intent(in) :: x(mindata%nx)
+    use type_mdata, only: mdatatype
+    type(mdatatype),intent(in) :: mdata
+    real(kind_real),intent(in) :: x(mdata%nx)
     real(kind_real),intent(out) :: f
     end subroutine
   end interface
@@ -100,7 +100,7 @@ subroutine compass_search ( mindata, func, m, x0, delta_tol, delta_init, &
 
   k = 0
   x(1:m) = x0(1:m)
-  call func(mindata,x,fx)
+  call func(mdata,x,fx)
 
   if ( delta_tol <= 0 ) then
     write ( *, '(a)' ) ' '
@@ -136,7 +136,7 @@ subroutine compass_search ( mindata, func, m, x0, delta_tol, delta_init, &
 
       xd = x
       xd(i) = xd(i) + s * delta
-      call func(mindata,xd,fxd)
+      call func(mdata,xd,fxd)
 !
 !  As soon as a decrease is noticed, accept the new point.
 !

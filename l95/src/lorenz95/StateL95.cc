@@ -96,7 +96,11 @@ StateL95 & StateL95::operator+=(const IncrementL95 & dx) {
   return *this;
 }
 // -----------------------------------------------------------------------------
-/// Convert to/from unstructured grid
+/// Define and convert to/from unstructured grid
+// -----------------------------------------------------------------------------
+void StateL95::define(oops::UnstructuredGrid & ug) const {
+  fld_.define(ug);
+}
 // -----------------------------------------------------------------------------
 void StateL95::convert_to(oops::UnstructuredGrid & ug) const {
   fld_.convert_to(ug);

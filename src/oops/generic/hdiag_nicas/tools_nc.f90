@@ -16,8 +16,6 @@ use tools_kinds, only: kind_real
 
 implicit none
 
-integer,parameter :: ncfloat = nf90_double !< NetCDF type for real
-
 interface put_att
   module procedure put_att_integer
   module procedure put_att_integer_array
@@ -28,6 +26,8 @@ interface put_att
   module procedure put_att_string
   module procedure put_att_string_array
 end interface
+
+integer,parameter :: ncfloat = nf90_double !< NetCDF type for real
 
 private
 public :: ncfloat

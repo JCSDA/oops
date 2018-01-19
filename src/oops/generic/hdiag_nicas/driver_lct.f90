@@ -10,9 +10,9 @@
 !----------------------------------------------------------------------
 module driver_lct
 
-use module_moments, only: compute_moments
-use module_sampling, only: setup_sampling
-use module_lct, only: compute_lct
+use hdiag_moments, only: compute_moments
+use hdiag_sampling, only: setup_sampling
+use hdiag_lct, only: compute_lct
 use tools_kinds, only: kind_real
 use type_bpar, only: bpartype
 use type_displ, only: displtype

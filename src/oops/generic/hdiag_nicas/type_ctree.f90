@@ -11,6 +11,7 @@
 module type_ctree
 
 use iso_c_binding, only: c_ptr,c_int,c_double
+use tools_display, only: msgerror
 use tools_kinds, only: kind_real
 
 implicit none
@@ -73,6 +74,9 @@ logical,intent(in) :: mask(n)        !< Mask
 
 ! Local variable
 integer :: i,imask(n)
+
+! Check mask
+if (count(mask)<1) call msgerror('mask should have at least one valid point to create a ctree')
 
 ! Convert mask
 do i=1,n

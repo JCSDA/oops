@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! Module: module_dualens.f90
+! Module: hdiag_dualens.f90
 !> Purpose: dual-ensemble routines
 !> <br>
 !> Author: Benjamin Menetrier
@@ -8,9 +8,9 @@
 !> <br>
 !> Copyright © 2017 METEO-FRANCE
 !----------------------------------------------------------------------
-module module_dualens
+module hdiag_dualens
 
-use module_fit, only: compute_fit
+use hdiag_fit, only: compute_fit
 use tools_display, only: msgwarning
 use tools_fit, only: ver_smooth
 use tools_kinds, only: kind_real
@@ -42,27 +42,27 @@ type(curvetype),intent(inout) :: loc_deh    !< Adapted high-resolution localizat
 type(curvetype),intent(inout) :: loc_deh_lr !< Adapted low-resolution localizations
 
 ! Local variables
-integer :: il0,jl0,ic
-real(kind_real) :: num(hdata%nam%nc),num_lr(hdata%nam%nc),den(hdata%nam%nc)
+integer :: il0,jl0r,jc3
+real(kind_real) :: num(hdata%nam%nc3),num_lr(hdata%nam%nc3),den(hdata%nam%nc3)
 
 ! Associate
 associate(nam=>hdata%nam,geom=>hdata%geom,bpar=>hdata%bpar)
 
 ! Compute raw dual-ensemble hybridization
-do jl0=1,geom%nl0
-   do il0=1,bpar%nl0(ib)
-      do ic=1,bpar%icmax(ib)
-         if (isnotmsr(avg%m11asysq(ic,il0,jl0)).and.isnotmsr(avg%m11sq(ic,il0,jl0)) &
-       & .and.isnotmsr(avg_lr%m11lrm11asy(ic,il0,jl0)).and.isnotmsr(avg_lr%m11lrm11(ic,il0,jl0)) &
-       & .and.isnotmsr(avg_lr%m11sq(ic,il0,jl0)).and.isnotmsr(avg_lr%m11lrm11asy(ic,il0,jl0))) then
-            num(ic) = avg%m11asysq(ic,il0,jl0)*avg_lr%m11sq(ic,il0,jl0) &
-                    & -avg_lr%m11lrm11asy(ic,il0,jl0)*avg_lr%m11lrm11(ic,il0,jl0)
-            num_lr(ic) = avg_lr%m11lrm11asy(ic,il0,jl0)*avg%m11sq(ic,il0,jl0) &
-                       & -avg%m11asysq(ic,il0,jl0)*avg_lr%m11lrm11(ic,il0,jl0)
-            den(ic) = avg%m11sq(ic,il0,jl0)*avg_lr%m11sq(ic,il0,jl0)-avg_lr%m11lrm11(ic,il0,jl0)**2
-            if ((num(ic)>0.0).and.(den(ic)>0.0)) then
-               loc_deh%raw(ic,il0,jl0) = num(ic)/den(ic)
-               loc_deh_lr%raw(ic,il0,jl0) = num_lr(ic)/den(ic)
+do il0=1,geom%nl0
+   do jl0r=1,bpar%nl0r(ib)
+      do jc3=1,bpar%nc3(ib)
+         if (isnotmsr(avg%m11asysq(jc3,jl0r,il0)).and.isnotmsr(avg%m11sq(jc3,jl0r,il0)) &
+       & .and.isnotmsr(avg_lr%m11lrm11asy(jc3,jl0r,il0)).and.isnotmsr(avg_lr%m11lrm11(jc3,jl0r,il0)) &
+       & .and.isnotmsr(avg_lr%m11sq(jc3,jl0r,il0)).and.isnotmsr(avg_lr%m11lrm11asy(jc3,jl0r,il0))) then
+            num(jc3) = avg%m11asysq(jc3,jl0r,il0)*avg_lr%m11sq(jc3,jl0r,il0) &
+                    & -avg_lr%m11lrm11asy(jc3,jl0r,il0)*avg_lr%m11lrm11(jc3,jl0r,il0)
+            num_lr(jc3) = avg_lr%m11lrm11asy(jc3,jl0r,il0)*avg%m11sq(jc3,jl0r,il0) &
+                       & -avg%m11asysq(jc3,jl0r,il0)*avg_lr%m11lrm11(jc3,jl0r,il0)
+            den(jc3) = avg%m11sq(jc3,jl0r,il0)*avg_lr%m11sq(jc3,jl0r,il0)-avg_lr%m11lrm11(jc3,jl0r,il0)**2
+            if ((num(jc3)>0.0).and.(den(jc3)>0.0)) then
+               loc_deh%raw(jc3,jl0r,il0) = num(jc3)/den(jc3)
+               loc_deh_lr%raw(jc3,jl0r,il0) = num_lr(jc3)/den(jc3)
             end if
          end if
       end do
@@ -91,4 +91,4 @@ end associate
 
 end subroutine compute_dualens
 
-end module module_dualens
+end module hdiag_dualens

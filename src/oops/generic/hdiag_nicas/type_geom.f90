@@ -11,16 +11,16 @@
 module type_geom
 
 use netcdf
-use tools_const, only: req,deg2rad,sphere_dist,vector_product
-use tools_display, only: msgerror
+use tools_const, only: req,deg2rad,lonlatmod,sphere_dist,vector_product
+use tools_display, only: msgerror,newunit
 use tools_kinds, only: kind_real
 use tools_missing, only: msr,isnotmsi
 use tools_nc, only: ncerr
 use tools_stripack, only: areas,trans,trlist
 use type_ctree, only: ctreetype,create_ctree,find_nearest_neighbors
 use type_mesh, only: meshtype,create_mesh
-use type_mpl, only: mpl,mpl_recv,mpl_send,mpl_barrier
-use type_nam, only: namtype
+use type_mpl, only: mpl,mpl_recv,mpl_send,mpl_bcast
+use type_nam, only: namtype,namncwrite
 
 implicit none
 
@@ -50,7 +50,7 @@ type geomtype
    type(meshtype) :: mesh                      !< Mesh
 
    ! Cover tree
-   type(ctreetype),allocatable :: ctree(:)     !< Cover trees
+   type(ctreetype) :: ctree                    !< Cover tree
 
    ! Boundary nodes
    integer,allocatable :: nbnd(:)              !< Number of boundary nodes
@@ -59,16 +59,12 @@ type geomtype
    real(kind_real),allocatable :: zbnd(:,:,:)  !< Boundary nodes, z-coordinate
    real(kind_real),allocatable :: vbnd(:,:,:)  !< Boundary nodes, orthogonal vector
 
-   ! Neighbors
-   integer,allocatable :: net_nnb(:)           !< Number of neighbors on the full grid
-   integer,allocatable :: net_inb(:,:)         !< Neighbors indices on the full grid
-   real(kind_real),allocatable :: net_dnb(:,:) !< Neighbors distances on the full grid
-
    ! MPI distribution
    integer :: nc0a !< Halo A size
-   integer,allocatable :: ic0_to_iproc(:)      !< Subset Sc0 to local task
-   integer,allocatable :: ic0_to_ic0a(:)       !< Subset Sc0, global to halo A
-   integer,allocatable :: iproc_to_nc0a(:)     !< Halo A size for each proc
+   integer,allocatable :: c0_to_proc(:)        !< Subset Sc0 to local task
+   integer,allocatable :: c0_to_c0a(:)         !< Subset Sc0, global to halo A
+   integer,allocatable :: proc_to_nc0a(:)      !< Halo A size for each proc
+   integer,allocatable :: c0a_to_c0(:)         !< Subset Sc0, halo A to global
 end type geomtype
 
 interface fld_com_gl
@@ -83,7 +79,7 @@ end interface
 
 private
 public :: geomtype
-public :: geom_alloc,compute_grid_mesh,geom_read_local,fld_com_gl,fld_com_lg
+public :: geom_alloc,compute_grid_mesh,fld_com_gl,fld_com_lg
 
 contains
 
@@ -128,27 +124,26 @@ type(namtype),intent(in) :: nam      !< Namelist
 type(geomtype),intent(inout) :: geom !< Geometry
 
 ! Local variables
-integer :: il0,il0i,jl0,ic
-logical :: same_mask
+integer :: ic0,il0,jl0,jc3
+logical :: same_mask,ctree_mask(geom%nc0)
+
+! Set longitude and latitude bounds
+do ic0=1,geom%nc0
+   call lonlatmod(geom%lon(ic0),geom%lat(ic0))
+end do
 
 ! Define mask
 call define_mask(nam,geom)
 
 ! Create mesh
 if ((.not.all(geom%area>0.0)).or.(nam%new_hdiag.and.nam%displ_diag).or.((nam%new_param.or.nam%new_lct) &
- & .and.(nam%mask_check.or.nam%network))) call create_mesh(geom%nc0,geom%lon,geom%lat,.true.,geom%mesh)
+ & .and.nam%mask_check).or.nam%new_obsop) call create_mesh(geom%nc0,geom%lon,geom%lat,.true.,geom%mesh)
 
 ! Compute area
 if ((.not.all(geom%area>0.0))) call compute_area(geom)
 
 ! Compute mask boundaries
 if ((nam%new_param.or.nam%new_lct).and.nam%mask_check) call compute_mask_boundaries(geom)
-
-! Find grid neighbors
-if (nam%new_param.and.nam%network.and..not.allocated(geom%net_nnb)) call find_grid_neighbors(geom)
-
-! Compute distances between neighbors
-if (nam%new_param.and.nam%network) call compute_grid_neighbors_distances(geom)
 
 ! Check whether the mask is the same for all levels
 same_mask = .true.
@@ -166,12 +161,9 @@ end if
 write(mpl%unit,'(a7,a,i3)') '','Number of independent levels: ',geom%nl0i
 
 ! Create cover tree
-if ((nam%new_hdiag.and.nam%displ_diag).or.nam%check_dirac.or.(nam%new_lct)) then
-   allocate(geom%ctree(geom%nl0i))
-   do il0i=1,geom%nl0i
-      geom%ctree(il0i) = create_ctree(geom%nc0,geom%lon,geom%lat,geom%mask(:,il0i))
-   end do
-end if
+ctree_mask = .true.
+if (nam%new_hdiag.or.nam%check_dirac.or.nam%new_lct.or.nam%new_obsop) & 
+ & geom%ctree = create_ctree(geom%nc0,geom%lon,geom%lat,ctree_mask)
 
 ! Vertical distance
 do jl0=1,geom%nl0
@@ -181,9 +173,9 @@ do jl0=1,geom%nl0
 end do
 
 ! Horizontal distance
-allocate(geom%disth(nam%nc))
-do ic=1,nam%nc
-   geom%disth(ic) = float(ic-1)*nam%dc
+allocate(geom%disth(nam%nc3))
+do jc3=1,nam%nc3
+   geom%disth(jc3) = float(jc3-1)*nam%dc
 end do
 
 ! Read local distribution
@@ -378,89 +370,62 @@ end do
 end subroutine compute_mask_boundaries
 
 !----------------------------------------------------------------------
-! Subroutine: find_grid_neighbors
-!> Purpose: find full grid neighbors
+! Subroutine: compute_metis_graph
+!> Purpose: compute METIS graph
 !----------------------------------------------------------------------
-subroutine find_grid_neighbors(geom)
+subroutine compute_metis_graph(nam,geom)
 
 implicit none
 
 ! Passed variables
-type(geomtype),intent(inout) :: geom !< Geometry
+type(namtype),intent(in) :: nam   !< Namelist
+type(geomtype),intent(in) :: geom !< Geometry
 
 ! Local variables
-integer :: ic0,i
+integer :: na,ic0,jc0,i,lunit
 logical :: init
+character(len=1024) :: filename
 
-! Allocation
-allocate(geom%net_nnb(geom%nc0))
-
-! Count neighbors
-geom%net_nnb = 0
-do ic0=1,geom%mesh%nnr
-   i = geom%mesh%lend(ic0)
-   init = .true.
-   do while ((i/=geom%mesh%lend(ic0)).or.init)
-      geom%net_nnb(geom%mesh%order(ic0)) = geom%net_nnb(geom%mesh%order(ic0))+1
-      i = geom%mesh%lptr(i)
-      init = .false.
+if (mpl%main) then
+   ! Count arcs
+   na = 0
+   do ic0=1,geom%mesh%nnr
+      i = geom%mesh%lend(ic0)
+      init = .true.
+      do while ((i/=geom%mesh%lend(ic0)).or.init)
+         na = na+1
+         i = geom%mesh%lptr(i)
+         init = .false.
+      end do
    end do
-end do
+   na = na/2
 
-! Allocation
-allocate(geom%net_inb(maxval(geom%net_nnb),geom%nc0))
-
-! Find neighbors
-geom%net_nnb = 0
-do ic0=1,geom%mesh%nnr
-   i = geom%mesh%lend(ic0)
-   init = .true.
-   do while ((i/=geom%mesh%lend(ic0)).or.init)
-      geom%net_nnb(geom%mesh%order(ic0)) = geom%net_nnb(geom%mesh%order(ic0))+1
-      geom%net_inb(geom%net_nnb(geom%mesh%order(ic0)),geom%mesh%order(ic0)) = geom%mesh%order(abs(geom%mesh%list(i)))
-      i = geom%mesh%lptr(i)
-      init = .false.
+   ! Open file
+   filename = trim(nam%prefix)//'_metis'
+   lunit = newunit()
+   open(unit=lunit,file=trim(nam%datadir)//'/'//trim(filename),status='replace')
+   
+   ! Write header
+   write(lunit,*) geom%mesh%nnr,na
+   
+   ! Write connectivity
+   do ic0=1,geom%mesh%n
+      i = geom%mesh%lend(ic0)
+      init = .true.
+      do while ((i/=geom%mesh%lend(ic0)).or.init)
+         jc0 = geom%mesh%list(i)
+         if (jc0>0) write(lunit,'(i7)',advance='no') jc0
+         i = geom%mesh%lptr(i)
+         init = .false.
+      end do
+      write(lunit,*) ''
    end do
-end do
 
-! Copy neighbors for redudant points
-do ic0=1,geom%nc0
-   if (isnotmsi(geom%mesh%redundant(ic0))) then
-      geom%net_nnb(ic0) = geom%net_nnb(geom%mesh%redundant(ic0))
-      geom%net_inb(:,ic0) = geom%net_inb(:,geom%mesh%redundant(ic0))
-   end if
-end do
+   ! Close file
+   close(unit=lunit)
+end if
 
-end subroutine find_grid_neighbors
-
-!----------------------------------------------------------------------
-! Subroutine: compute_grid_neighbors_distances
-!> Purpose: compute distances between full grid neighbors
-!----------------------------------------------------------------------
-subroutine compute_grid_neighbors_distances(geom)
-
-implicit none
-
-! Passed variables
-type(geomtype),intent(inout) :: geom !< Geometry
-
-! Local variables
-integer :: ic0,i
-
-
-! Allocation
-allocate(geom%net_dnb(maxval(geom%net_nnb),geom%nc0))
-
-! Compute distances
-do ic0=1,geom%nc0
-   do i=1,geom%net_nnb(ic0)
-      call sphere_dist(geom%lon(ic0),geom%lat(ic0),geom%lon(geom%net_inb(i,ic0)), &
-    & geom%lat(geom%net_inb(i,ic0)),geom%net_dnb(i,ic0))
-      geom%net_dnb(i,ic0) = geom%net_dnb(i,ic0)/req
-   end do
-end do
-
-end subroutine compute_grid_neighbors_distances
+end subroutine compute_metis_graph
 
 !----------------------------------------------------------------------
 ! Subroutine: geom_read_local
@@ -475,67 +440,139 @@ type(namtype),intent(in) :: nam      !< Namelist
 type(geomtype),intent(inout) :: geom !< Geometry
 
 ! Local variables
-integer :: ic0,info,iproc,ic0a,nc0amax
-integer :: ncid,ic0_to_iproc_id,ic0_to_ic0a_id
+integer :: ic0,info,iproc,ic0a,nc0amax,lunit
+integer :: ncid,c0_to_proc_id,c0_to_c0a_id,nc0_id
+integer,allocatable :: c0_to_proc(:),ic0a_arr(:)
+logical :: ismetis
 character(len=4) :: nprocchar
-character(len=1024) :: filename
+character(len=1024) :: filename_nc,filename_metis
 character(len=1024) :: subr = 'geom_read_local'
 
-if (.not.allocated(geom%ic0_to_iproc)) then
+if (.not.allocated(geom%c0_to_proc)) then
    ! Allocation
-   allocate(geom%ic0_to_iproc(geom%nc0))
-   allocate(geom%ic0_to_ic0a(geom%nc0))
+   allocate(geom%c0_to_proc(geom%nc0))
+   allocate(geom%c0_to_c0a(geom%nc0))
 
    if (mpl%nproc==1) then
       ! All points on a single processor
-      geom%ic0_to_iproc = 1
+      geom%c0_to_proc = 1
       do ic0=1,geom%nc0
-         geom%ic0_to_ic0a(ic0) = ic0
+         geom%c0_to_c0a(ic0) = ic0
       end do
    elseif (mpl%nproc>1) then
       ! Open file
+      write(mpl%unit,'(a7,a,i4,a)') '','Try to read local distribution for ',mpl%nproc,' MPI tasks'
       write(nprocchar,'(i4.4)') mpl%nproc
-      filename = trim(nam%prefix)//'_distribution_'//nprocchar//'.nc'
-      info = nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_nowrite,ncid)
+      filename_nc = trim(nam%prefix)//'_distribution_'//nprocchar//'.nc'
+      info = nf90_open(trim(nam%datadir)//'/'//trim(filename_nc),nf90_nowrite,ncid)
 
       if (info==nf90_noerr) then
          ! Read data and close file
-         call ncerr(subr,nf90_inq_varid(ncid,'ic0_to_iproc',ic0_to_iproc_id))
-         call ncerr(subr,nf90_inq_varid(ncid,'ic0_to_ic0a',ic0_to_ic0a_id))
-         call ncerr(subr,nf90_get_var(ncid,ic0_to_iproc_id,geom%ic0_to_iproc))
-         call ncerr(subr,nf90_get_var(ncid,ic0_to_ic0a_id,geom%ic0_to_ic0a))
+         call ncerr(subr,nf90_inq_varid(ncid,'c0_to_proc',c0_to_proc_id))
+         call ncerr(subr,nf90_inq_varid(ncid,'c0_to_c0a',c0_to_c0a_id))
+         call ncerr(subr,nf90_get_var(ncid,c0_to_proc_id,geom%c0_to_proc))
+         call ncerr(subr,nf90_get_var(ncid,c0_to_c0a_id,geom%c0_to_c0a))
          call ncerr(subr,nf90_close(ncid))
 
          ! Check
-         if (maxval(geom%ic0_to_iproc)>mpl%nproc) call msgerror('wrong distribution')
+         if (maxval(geom%c0_to_proc)>mpl%nproc) call msgerror('wrong distribution')
       else
-         ! Generate a distribution (use METIS one day?)
-         nc0amax = geom%nc0/mpl%nproc
-         if (nc0amax*mpl%nproc<geom%nc0) nc0amax = nc0amax+1
-         iproc = 1
-         ic0a = 1
-         do ic0=1,geom%nc0
-            geom%ic0_to_iproc(ic0) = iproc
-            geom%ic0_to_ic0a(ic0) = ic0a
-            ic0a = ic0a+1
-            if (ic0a>nc0amax) then
-               ! Change proc
-               iproc = iproc+1
+         ! Create a mesh
+         if (.not.allocated(geom%mesh%redundant)) call create_mesh(geom%nc0,geom%lon,geom%lat,.true.,geom%mesh)
+
+         ! Generate a distribution
+         if (mpl%main) then
+            ! Try to use METIS
+            call compute_metis_graph(nam,geom)
+            filename_metis = trim(nam%prefix)//'_metis'
+            write(nprocchar,'(i4)') mpl%nproc
+            call system('gpmetis '//trim(nam%datadir)//'/'//trim(filename_metis)//' '//adjustl(nprocchar)//' > '// &
+          & trim(nam%datadir)//'/'//trim(filename_metis)//'.out')
+            inquire(file=trim(nam%datadir)//'/'//trim(filename_metis)//'.part.'//adjustl(nprocchar),exist=ismetis)
+            if (ismetis) then
+               write(mpl%unit,'(a7,a)') '','Use METIS to generate the local distribution'
+
+               ! Allocation
+               allocate(c0_to_proc(geom%mesh%nnr))
+               allocate(ic0a_arr(mpl%nproc))
+
+               ! Read METIS file
+               lunit = newunit()
+               open(unit=lunit,file=trim(nam%datadir)//'/'//trim(filename_metis)//'.part.'//adjustl(nprocchar),status='old')
+               do ic0=1,geom%mesh%nnr
+                  read(lunit,*) c0_to_proc(ic0)
+               end do
+               close(unit=lunit)
+
+               ! Reorder and offset
+               do ic0=1,geom%nc0
+                  geom%c0_to_proc(ic0) = c0_to_proc(geom%mesh%order_inv(ic0))+1
+               end do
+
+               ! Local index
+               ic0a_arr = 0
+               do ic0=1,geom%nc0
+                  iproc = geom%c0_to_proc(ic0)
+                  ic0a_arr(iproc) = ic0a_arr(iproc)+1
+                  geom%c0_to_c0a(ic0) = ic0a_arr(iproc)
+               end do
+            else
+               write(mpl%unit,'(a7,a)') '','Define a basic local distribution (METIS not available)'
+
+               ! Basic distribution
+               nc0amax = geom%nc0/mpl%nproc
+               if (nc0amax*mpl%nproc<geom%nc0) nc0amax = nc0amax+1
+               iproc = 1
                ic0a = 1
+               do ic0=1,geom%nc0
+                  geom%c0_to_proc(ic0) = iproc
+                  geom%c0_to_c0a(ic0) = ic0a
+                  ic0a = ic0a+1
+                  if (ic0a>nc0amax) then
+                     ! Change proc
+                     iproc = iproc+1
+                     ic0a = 1
+                  end if
+               end do
             end if
-         end do
+         end if
+
+         ! Broadcast distribution
+         call mpl_bcast(geom%c0_to_proc,mpl%ioproc)
+         call mpl_bcast(geom%c0_to_c0a,mpl%ioproc)
+
+         if (mpl%main) then
+            ! Write distribution
+            call ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename_nc),or(nf90_clobber,nf90_64bit_offset),ncid))
+            call namncwrite(nam,ncid)
+            call ncerr(subr,nf90_def_dim(ncid,'nc0',geom%nc0,nc0_id))
+            call ncerr(subr,nf90_def_var(ncid,'c0_to_proc',nf90_int,(/nc0_id/),c0_to_proc_id))
+            call ncerr(subr,nf90_def_var(ncid,'c0_to_c0a',nf90_int,(/nc0_id/),c0_to_c0a_id))
+            call ncerr(subr,nf90_enddef(ncid))
+            call ncerr(subr,nf90_put_var(ncid,c0_to_proc_id,geom%c0_to_proc))
+            call ncerr(subr,nf90_put_var(ncid,c0_to_c0a_id,geom%c0_to_c0a))
+            call ncerr(subr,nf90_close(ncid))
+         end if
       end if
    end if
 end if
 
-! Allocation
-allocate(geom%iproc_to_nc0a(mpl%nproc))
-
 ! Size of tiles
+allocate(geom%proc_to_nc0a(mpl%nproc))
 do iproc=1,mpl%nproc
-   geom%iproc_to_nc0a(iproc) = count(geom%ic0_to_iproc==iproc)
+   geom%proc_to_nc0a(iproc) = count(geom%c0_to_proc==iproc)
 end do
-geom%nc0a = geom%iproc_to_nc0a(mpl%myproc)
+geom%nc0a = geom%proc_to_nc0a(mpl%myproc)
+
+! Conversion
+allocate(geom%c0a_to_c0(geom%nc0a))
+ic0a = 0
+do ic0=1,geom%nc0
+   if (geom%c0_to_proc(ic0)==mpl%myproc) then
+      ic0a = ic0a+1
+      geom%c0a_to_c0(ic0a) = ic0
+   end if
+end do
 
 end subroutine geom_read_local
 
@@ -560,8 +597,8 @@ logical :: mask_unpack(geom%nc0a,geom%nl0)
 if (mpl%main) then
    do iproc=1,mpl%nproc
       ! Allocation
-      allocate(fld_loc(geom%iproc_to_nc0a(iproc),geom%nl0))
-      allocate(sbuf(geom%iproc_to_nc0a(iproc)*geom%nl0))
+      allocate(fld_loc(geom%proc_to_nc0a(iproc),geom%nl0))
+      allocate(sbuf(geom%proc_to_nc0a(iproc)*geom%nl0))
 
       ! Initialization
       call msr(sbuf)
@@ -569,9 +606,9 @@ if (mpl%main) then
       ! Prepare buffer
       do il0=1,geom%nl0
          do ic0=1,geom%nc0
-            jproc = geom%ic0_to_iproc(ic0)
+            jproc = geom%c0_to_proc(ic0)
             if (jproc==iproc) then
-               ic0a = geom%ic0_to_ic0a(ic0)
+               ic0a = geom%c0_to_c0a(ic0)
                fld_loc(ic0a,il0) = fld(ic0,il0)
             end if
          end do
@@ -580,13 +617,13 @@ if (mpl%main) then
 
       if (iproc==mpl%ioproc) then
          ! Allocation
-         allocate(rbuf(geom%iproc_to_nc0a(iproc)*geom%nl0))
+         allocate(rbuf(geom%proc_to_nc0a(iproc)*geom%nl0))
 
          ! Copy data
          rbuf = sbuf
       else
          ! Send data to iproc
-         call mpl_send(geom%iproc_to_nc0a(iproc)*geom%nl0,sbuf,iproc,mpl%tag)
+         call mpl_send(geom%proc_to_nc0a(iproc)*geom%nl0,sbuf,iproc,mpl%tag)
       end if
 
       ! Release memory
@@ -609,9 +646,6 @@ allocate(fld(geom%nc0a,geom%nl0))
 ! Copy from buffer
 mask_unpack = .true.
 fld = unpack(rbuf,mask=mask_unpack,field=fld)
-
-! Wait
-call mpl_barrier()
 
 end subroutine fld_com_gl
 
@@ -637,8 +671,8 @@ logical :: mask_unpack(geom%nc0a,geom%nl0,nam%nv,nam%nts)
 if (mpl%main) then
    do iproc=1,mpl%nproc
       ! Allocation
-      allocate(fld_loc(geom%iproc_to_nc0a(iproc),geom%nl0,nam%nv,nam%nts))
-      allocate(sbuf(geom%iproc_to_nc0a(iproc)*geom%nl0*nam%nv*nam%nts))
+      allocate(fld_loc(geom%proc_to_nc0a(iproc),geom%nl0,nam%nv,nam%nts))
+      allocate(sbuf(geom%proc_to_nc0a(iproc)*geom%nl0*nam%nv*nam%nts))
 
       ! Initialization
       call msr(sbuf)
@@ -648,9 +682,9 @@ if (mpl%main) then
          do iv=1,nam%nv
             do il0=1,geom%nl0
                do ic0=1,geom%nc0
-                  jproc = geom%ic0_to_iproc(ic0)
+                  jproc = geom%c0_to_proc(ic0)
                   if (jproc==iproc) then
-                     ic0a = geom%ic0_to_ic0a(ic0)
+                     ic0a = geom%c0_to_c0a(ic0)
                      fld_loc(ic0a,il0,iv,its) = fld(ic0,il0,iv,its)
                   end if
                end do
@@ -661,13 +695,13 @@ if (mpl%main) then
 
       if (iproc==mpl%ioproc) then
          ! Allocation
-         allocate(rbuf(geom%iproc_to_nc0a(iproc)*geom%nl0*nam%nv*nam%nts))
+         allocate(rbuf(geom%proc_to_nc0a(iproc)*geom%nl0*nam%nv*nam%nts))
 
          ! Copy data
          rbuf = sbuf
       else
          ! Send data to iproc
-         call mpl_send(geom%iproc_to_nc0a(iproc)*geom%nl0*nam%nv*nam%nts,sbuf,iproc,mpl%tag)
+         call mpl_send(geom%proc_to_nc0a(iproc)*geom%nl0*nam%nv*nam%nts,sbuf,iproc,mpl%tag)
       end if
 
       ! Release memory
@@ -690,9 +724,6 @@ allocate(fld(geom%nc0a,geom%nl0,nam%nv,nam%nts))
 ! Copy from buffer
 mask_unpack = .true.
 fld = unpack(rbuf,mask=mask_unpack,field=fld)
-
-! Wait
-call mpl_barrier()
 
 end subroutine fld_com_gl_multi
 
@@ -729,16 +760,16 @@ if (mpl%main) then
 
    do iproc=1,mpl%nproc
       ! Allocation
-      allocate(fld_loc(geom%iproc_to_nc0a(iproc),geom%nl0))
-      allocate(mask_unpack(geom%iproc_to_nc0a(iproc),geom%nl0))
-      allocate(rbuf(geom%iproc_to_nc0a(iproc)*geom%nl0))
+      allocate(fld_loc(geom%proc_to_nc0a(iproc),geom%nl0))
+      allocate(mask_unpack(geom%proc_to_nc0a(iproc),geom%nl0))
+      allocate(rbuf(geom%proc_to_nc0a(iproc)*geom%nl0))
 
       if (iproc==mpl%ioproc) then
          ! Copy data
          rbuf = sbuf
       else
          ! Receive data from iproc
-         call mpl_recv(geom%iproc_to_nc0a(iproc)*geom%nl0,rbuf,iproc,mpl%tag)
+         call mpl_recv(geom%proc_to_nc0a(iproc)*geom%nl0,rbuf,iproc,mpl%tag)
       end if
 
       ! Copy from buffer
@@ -746,9 +777,9 @@ if (mpl%main) then
       fld_loc = unpack(rbuf,mask=mask_unpack,field=fld_loc)
       do il0=1,geom%nl0
          do ic0=1,geom%nc0
-            jproc = geom%ic0_to_iproc(ic0)
+            jproc = geom%c0_to_proc(ic0)
             if (jproc==iproc) then
-               ic0a = geom%ic0_to_ic0a(ic0)
+               ic0a = geom%c0_to_c0a(ic0)
                fld(ic0,il0) = fld_loc(ic0a,il0)
             end if
          end do
@@ -764,9 +795,6 @@ else
    call mpl_send(geom%nc0a*geom%nl0,sbuf,mpl%ioproc,mpl%tag)
 end if
 mpl%tag = mpl%tag+1
-
-! Wait
-call mpl_barrier()
 
 end subroutine fld_com_lg
 
@@ -804,16 +832,16 @@ if (mpl%main) then
 
    do iproc=1,mpl%nproc
       ! Allocation
-      allocate(fld_loc(geom%iproc_to_nc0a(iproc),geom%nl0,nam%nv,nam%nts))
-      allocate(mask_unpack(geom%iproc_to_nc0a(iproc),geom%nl0,nam%nv,nam%nts))
-      allocate(rbuf(geom%iproc_to_nc0a(iproc)*geom%nl0*nam%nv*nam%nts))
+      allocate(fld_loc(geom%proc_to_nc0a(iproc),geom%nl0,nam%nv,nam%nts))
+      allocate(mask_unpack(geom%proc_to_nc0a(iproc),geom%nl0,nam%nv,nam%nts))
+      allocate(rbuf(geom%proc_to_nc0a(iproc)*geom%nl0*nam%nv*nam%nts))
 
       if (iproc==mpl%ioproc) then
          ! Copy data
          rbuf = sbuf
       else
          ! Receive data from iproc
-         call mpl_recv(geom%iproc_to_nc0a(iproc)*geom%nl0*nam%nv*nam%nts,rbuf,iproc,mpl%tag)
+         call mpl_recv(geom%proc_to_nc0a(iproc)*geom%nl0*nam%nv*nam%nts,rbuf,iproc,mpl%tag)
       end if
 
       ! Copy from buffer
@@ -823,9 +851,9 @@ if (mpl%main) then
          do iv=1,nam%nv
             do il0=1,geom%nl0
                do ic0=1,geom%nc0
-                  jproc = geom%ic0_to_iproc(ic0)
+                  jproc = geom%c0_to_proc(ic0)
                   if (jproc==iproc) then
-                     ic0a = geom%ic0_to_ic0a(ic0)
+                     ic0a = geom%c0_to_c0a(ic0)
                      fld(ic0,il0,iv,its) = fld_loc(ic0a,il0,iv,its)
                   end if
                end do
@@ -843,9 +871,6 @@ else
    call mpl_send(geom%nc0a*geom%nl0*nam%nv*nam%nts,sbuf,mpl%ioproc,mpl%tag)
 end if
 mpl%tag = mpl%tag+1
-
-! Wait
-call mpl_barrier()
 
 end subroutine fld_com_lg_multi
 

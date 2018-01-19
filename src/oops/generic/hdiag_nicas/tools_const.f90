@@ -13,7 +13,6 @@ module tools_const
 use tools_display, only: msgerror
 use tools_kinds, only: kind_real
 use tools_missing, only: msr,isnotmsr
-use tools_qsort, only: qsort
 
 implicit none
 
@@ -31,30 +30,39 @@ integer,parameter :: ntrim = 1                !< Minimum number of remaining poi
 
 private
 public :: pi,deg2rad,rad2deg,req,reqkm,ps
-public :: lonmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,gc99,median,taverage,add,divide,fac
+public :: lonlatmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,gc99,add,divide,fac
 
 contains
 
 !----------------------------------------------------------------------
-! Function: lonmod
-!> Purpose: set longitude between -pi and pi
+! Subroutine: lonlatmod
+!> Purpose: set latitude between -pi/2 and pi/2 and longitude between -pi and pi
 !----------------------------------------------------------------------
-real(kind_real) function lonmod(lon)
+subroutine lonlatmod(lon,lat)
 
 implicit none
 
 ! Passed variables
-real(kind_real),intent(in) :: lon !< Longitude
+real(kind_real),intent(inout) :: lon !< Longitude
+real(kind_real),intent(inout) :: lat !< Latitude
 
-! Check bounds
-lonmod = lon
-if (lonmod>pi) then
-   lonmod = lonmod-2.0*pi
-elseif (lonmod<-pi) then
-   lonmod = lonmod+2.0*pi
+! Check latitude bounds
+if (lat>0.5*pi) then
+   lat = pi-lat
+   lon = lon+pi
+elseif (lat<-0.5*pi) then
+   lat = -pi-lat
+   lon = lon+pi
 end if
 
-end function lonmod
+! Check longitude bounds
+if (lon>pi) then
+   lon = lon-2.0*pi
+elseif (lon<-pi) then
+   lon = lon+2.0*pi
+end if
+
+end subroutine lonlatmod
 
 !----------------------------------------------------------------------
 ! Function: sphere_dist
@@ -212,86 +220,6 @@ return
 end function gc99
 
 !----------------------------------------------------------------------
-! Function: median
-!> Purpose: compute median of a list
-!----------------------------------------------------------------------
-function median(n,list)
-
-implicit none
-
-! Passed variables
-integer,intent(in) :: n               !< Size of the list
-real(kind_real),intent(in) :: list(n) !< List
-
-! Returned variable
-real(kind_real) :: median
-
-! Local variables
-integer :: order(n)
-real(kind_real) :: list_copy(n)
-
-! Copy list
-list_copy = list
-
-! Order array
-call qsort(n,list_copy,order)
-
-! Get median
-call msr(median)
-if (mod(n,2)==0) then
-   ! Even number of values
-   median = 0.5*(list_copy(n/2)+list_copy(n/2+1))
-else
-   ! Odd number of values
-   median = list_copy((n+1)/2)
-end if
-
-return
-
-end function median
-
-!----------------------------------------------------------------------
-! Function: taverage
-!> Purpose: compute the trimmed average
-!----------------------------------------------------------------------
-real(kind_real) function taverage(n,list)
-
-implicit none
-
-! Passed variables
-integer,intent(in) :: n        !< Number of values
-real(kind_real),intent(in) :: list(n)     !< List values
-
-! Local variable
-integer :: nrm,nvalid
-integer :: order(n)
-real(kind_real) :: list_copy(n)
-
-! Copy list
-list_copy = list
-
-! Compute the number of values to remove
-nrm = floor(n*qtrim)
-
-if (n-2*nrm>=ntrim) then
-   ! Order array
-   call qsort(n,list_copy,order)
-
-   ! Compute trimmed average
-   nvalid = count(isnotmsr(list_copy(1+nrm:n-nrm)))
-   if (nvalid>0) then
-      taverage = sum(list_copy(1+nrm:n-nrm),mask=isnotmsr(list_copy(1+nrm:n-nrm)))/float(nvalid)
-   else
-      call msr(taverage)
-   end if
-else
-   ! Missing value
-   call msr(taverage)
-end if
-
-end function taverage
-
-!----------------------------------------------------------------------
 ! Subroutine: add
 !> Purpose: check if missing and add
 !----------------------------------------------------------------------
@@ -345,15 +273,12 @@ end subroutine divide
 ! Function: fac
 !> Purpose: factorial
 !----------------------------------------------------------------------
-function fac(n)
+integer function fac(n)
 
 implicit none
 
-! Result
-integer :: fac
-
 ! Passed variables
-integer,intent(in) :: n
+integer,intent(in) :: n !< Argument
 
 ! Local variables
 integer :: j

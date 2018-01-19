@@ -19,6 +19,11 @@ void delete_randgen(RANDGEN* randgen){
     delete randgen;
 }
 
+// Reseed generator
+void reseed_randgen(RANDGEN* randgen, int seed) {
+    randgen->reseed_randgen(seed);
+}
+
 // Get version
 void get_version(const RANDGEN* randgen, int *version) {
     randgen->get_version(version);

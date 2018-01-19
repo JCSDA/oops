@@ -77,7 +77,8 @@ class IncrementL95 : public util::Printable,
   void interpolateTL(const LocsL95 &, const oops::Variables &, GomL95 &) const;
   void interpolateAD(const LocsL95 &, const oops::Variables &, const GomL95 &);
 
-/// Convert to/from generic unstructured grid
+/// Define and convert to/from generic unstructured grid
+  void define(oops::UnstructuredGrid &) const;
   void convert_to(oops::UnstructuredGrid &) const;
   void convert_from(const oops::UnstructuredGrid &);
 

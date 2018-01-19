@@ -39,7 +39,7 @@ type(namtype),intent(in) :: nam      !< Namelist
 type(geomtype),intent(inout) :: geom !< Geometry
 
 ! Local variables
-integer :: il0,ic0,jc0,ilat,jlat,klat,ilon,jlon,klon,i
+integer :: il0
 integer :: ncid,nlon_id,nlat_id,nlev_id,lon_id,lat_id,tmask_id,e1t_id,e2t_id
 integer(kind=1),allocatable :: tmask(:,:,:)
 real(kind=4),allocatable :: lon(:,:),lat(:,:),e1t(:,:,:),e2t(:,:,:)
@@ -80,34 +80,6 @@ call ncerr(subr,nf90_close(ncid))
 ! Convert to radian
 lon = lon*real(deg2rad,kind=4)
 lat = lat*real(deg2rad,kind=4)
-
-if (nam%network) then
-   ! Find grid neighbors
-   allocate(geom%net_nnb(geom%nc0))
-   geom%net_nnb = 8
-   allocate(geom%net_inb(8,geom%nc0))
-   do ilat=1,geom%nlat
-      do ilon=1,geom%nlon
-         ic0 = (ilat-1)*geom%nlon+ilon
-         i = 0
-         do jlat=ilat-1,ilat+1
-            klat = jlat
-            if (klat==0) klat = geom%nlat
-            if (klat==geom%nlat+1) klat = 1
-            do jlon=ilon-1,ilon+1
-               klon = jlon
-               if (klon==0) klon = geom%nlon
-               if (klon==geom%nlon+1) klon = 1
-               if ((jlat/=ilat).or.(jlon/=ilon)) then
-                  i = i+1
-                  jc0 = (klat-1)*geom%nlon+klon
-                  geom%net_inb(i,ic0) = jc0
-               end if
-            end do
-         end do
-      end do
-   end do
-end if
 
 ! Pack
 call geom_alloc(geom)

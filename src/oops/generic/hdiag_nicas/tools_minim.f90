@@ -15,7 +15,7 @@ use tools_compass_search, only: compass_search
 use tools_display, only: msgwarning
 use tools_kinds, only: kind_real
 use tools_praxis, only: praxis
-use type_min, only: mintype
+use type_mdata, only: mdatatype
 use type_mpl, only: mpl
 
 implicit none
@@ -37,72 +37,72 @@ contains
 ! subroutine: minim
 !> Purpose: minimize ensuring bounds constraints
 !----------------------------------------------------------------------
-subroutine minim(mindata,func,lprt)
+subroutine minim(mdata,func,lprt)
 
 implicit none
 
 ! Passed variables
-type(mintype),intent(inout) :: mindata         !< Minimization data
+type(mdatatype),intent(inout) :: mdata       !< Minimization data
 interface
-   subroutine func(mindata,x,f)                !< Cost function
+   subroutine func(mdata,x,f)                !< Cost function
    use tools_kinds, only: kind_real
-   use type_min, only: mintype
-   type(mintype),intent(in) :: mindata         !< Minimization data
-   real(kind_real),intent(in) :: x(mindata%nx) !< Control vector
-   real(kind_real),intent(out) :: f            !< Cost function value
+   use type_mdata, only: mdatatype
+   type(mdatatype),intent(in) :: mdata       !< Minimization data
+   real(kind_real),intent(in) :: x(mdata%nx) !< Control vector
+   real(kind_real),intent(out) :: f          !< Cost function value
    end subroutine
 end interface
-logical,intent(in) :: lprt                     !< Print key
+logical,intent(in) :: lprt                   !< Print key
 
 ! Local variables
 integer :: icount,numres,info,ix
-real(kind_real) :: guess(mindata%nx),xmin(mindata%nx),y,ynewlo,step(mindata%nx)
+real(kind_real) :: guess(mdata%nx),xmin(mdata%nx),y,ynewlo,step(mdata%nx)
 real(kind_real) :: delta_init,h0
 
 ! Initialization
-do ix=1,mindata%nx
-   if (abs(mindata%norm(ix))>0.0) then
-      guess(ix) = mindata%guess(ix)/mindata%norm(ix)
+do ix=1,mdata%nx
+   if (abs(mdata%norm(ix))>0.0) then
+      guess(ix) = mdata%guess(ix)/mdata%norm(ix)
    else
       guess(ix) = 0.0
    end if
 end do
 
 ! Initial cost
-mindata%f_guess = 0.0
-call func(mindata,guess,y)
-mindata%f_guess = y
+mdata%f_guess = 0.0
+call func(mdata,guess,y)
+mdata%f_guess = y
 
-select case (trim(mindata%fit_type))
+select case (trim(mdata%fit_type))
 case ('nelder_mead')
    ! Initialization
    step = 0.1
 
    ! Nelder-Mead algorithm
-   call nelmin(mindata,func,mindata%nx,guess,xmin,ynewlo,reqmin,step,konvge,kcount,icount,numres,info)
+   call nelmin(mdata,func,mdata%nx,guess,xmin,ynewlo,reqmin,step,konvge,kcount,icount,numres,info)
 case ('compass_search')
    ! Initialization
    delta_init = 0.1
 
    ! Compass search
-   call compass_search(mindata,func,mindata%nx,guess,delta_tol,delta_init,k_max,xmin,ynewlo,icount)
+   call compass_search(mdata,func,mdata%nx,guess,delta_tol,delta_init,k_max,xmin,ynewlo,icount)
 case ('praxis')
    ! Initialization
    h0 = 0.1
    xmin = guess
 
    ! Praxis
-   ynewlo = praxis(mindata,func,t0,h0,mindata%nx,0,xmin)
+   ynewlo = praxis(mdata,func,t0,h0,mdata%nx,0,xmin)
 end select
 
 ! Test
 if (ynewlo<y) then
-   mindata%x = xmin*mindata%norm
-   if (lprt) write(mpl%unit,'(a7,a,f6.1,a)') '','Minimizer '//trim(mindata%fit_type)//', cost function decrease:', &
+   mdata%x = xmin*mdata%norm
+   if (lprt) write(mpl%unit,'(a7,a,f6.1,a)') '','Minimizer '//trim(mdata%fit_type)//', cost function decrease:', &
  & abs(ynewlo-y)/y*100.0,'%'
 else
-   mindata%x = mindata%guess
-   if (lprt) call msgwarning('Minimizer '//trim(mindata%fit_type)//' failed')
+   mdata%x = mdata%guess
+   if (lprt) call msgwarning('Minimizer '//trim(mdata%fit_type)//' failed')
 end if
 
 end subroutine minim

@@ -40,6 +40,8 @@ interface mpl_bcast
   module procedure mpl_bcast_real_array_2d
   module procedure mpl_bcast_real_array_3d
   module procedure mpl_bcast_real_array_4d
+  module procedure mpl_bcast_real_array_5d
+  module procedure mpl_bcast_real_array_6d
   module procedure mpl_bcast_logical
   module procedure mpl_bcast_logical_array_1d
   module procedure mpl_bcast_logical_array_2d
@@ -61,17 +63,38 @@ interface mpl_send
   module procedure mpl_send_logical_array_1d
 end interface
 
+interface mpl_allgather
+  module procedure mpl_allgather_integer
+  module procedure mpl_allgather_real
+  module procedure mpl_allgather_logical
+end interface
+
+interface mpl_allgatherv
+  module procedure mpl_allgatherv_integer
+  module procedure mpl_allgatherv_real
+  module procedure mpl_allgatherv_logical
+end interface
+
 interface mpl_alltoallv
   module procedure mpl_alltoallv_real
 end interface
 
 interface mpl_allreduce_sum
   module procedure mpl_allreduce_sum_real
+  module procedure mpl_allreduce_sum_real_array_1d
+end interface
+
+interface mpl_dot_prod
+  module procedure mpl_dot_prod_1d
+  module procedure mpl_dot_prod_2d
+  module procedure mpl_dot_prod_3d
+  module procedure mpl_dot_prod_4d
 end interface
 
 private
 public :: mpl
-public :: mpl_start,mpl_end,mpl_abort,mpl_barrier,mpl_bcast,mpl_recv,mpl_send,mpl_alltoallv,mpl_allreduce_sum
+public :: mpl_start,mpl_end,mpl_abort,mpl_barrier,mpl_bcast,mpl_recv,mpl_send,mpl_allgather,mpl_allgatherv, &
+        & mpl_alltoallv,mpl_allreduce_sum,mpl_split,mpl_dot_prod
 
 contains
 
@@ -134,16 +157,13 @@ mpl%myproc = mpl%myproc+1
 ! Define main task
 mpl%main = (mpl%myproc==mpl%ioproc)
 
-! Define unit and open file
-mpl%unit = 5+mpl%myproc
-
 ! Define real type for MPI
 if (kind_real==4) then
    mpl%rtype = mpi_real
 elseif (kind_real==8) then
    mpl%rtype = mpi_double
 else
-   call mpl_abort('unknown real kind for MPI')
+   call mpl_abort('Unknown real kind for MPI')
 end if
 
 ! Initialize tag
@@ -425,6 +445,58 @@ call mpl_check(info)
 call mpl_barrier
 
 end subroutine mpl_bcast_real_array_4d
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_bcast_real_array_5d
+!> Purpose: broadcast 5d real array
+!----------------------------------------------------------------------
+subroutine mpl_bcast_real_array_5d(var,root)
+
+implicit none
+
+! Passed variables
+real(kind_real),dimension(:,:,:,:,:),intent(in) :: var !< Real array, 5d
+integer,intent(in) :: root                             !< Root task
+
+! Local variable
+integer :: info
+
+! Broadcast
+call mpi_bcast(var,size(var),mpl%rtype,root-1,mpi_comm_world,info)
+
+! Check
+call mpl_check(info)
+
+! Wait
+call mpl_barrier
+
+end subroutine mpl_bcast_real_array_5d
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_bcast_real_array_6d
+!> Purpose: broadcast 6d real array
+!----------------------------------------------------------------------
+subroutine mpl_bcast_real_array_6d(var,root)
+
+implicit none
+
+! Passed variables
+real(kind_real),dimension(:,:,:,:,:,:),intent(in) :: var !< Real array, 6d
+integer,intent(in) :: root                               !< Root task
+
+! Local variable
+integer :: info
+
+! Broadcast
+call mpi_bcast(var,size(var),mpl%rtype,root-1,mpi_comm_world,info)
+
+! Check
+call mpl_check(info)
+
+! Wait
+call mpl_barrier
+
+end subroutine mpl_bcast_real_array_6d
 
 !----------------------------------------------------------------------
 ! Subroutine: mpl_bcast_logical
@@ -758,6 +830,174 @@ call mpl_check(info)
 end subroutine mpl_send_logical_array_1d
 
 !----------------------------------------------------------------------
+! Subroutine: mpl_allgather_integer
+!> Purpose: allgather for a integer array
+!----------------------------------------------------------------------
+subroutine mpl_allgather_integer(ns,sbuf,rbuf)
+
+implicit none
+
+! Passed variables
+integer,intent(in) :: ns                   !< Sent buffer size
+integer,intent(in) :: sbuf(ns)             !< Sent buffer
+integer,intent(out) :: rbuf(mpl%myproc*ns) !< Received buffer
+
+! Local variable
+integer :: info
+
+! Allgather
+call mpi_allgather(sbuf,ns,mpi_integer,rbuf,ns,mpi_integer,mpi_comm_world,info)
+
+! Check
+call mpl_check(info)
+
+end subroutine mpl_allgather_integer
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_allgather_real
+!> Purpose: allgather for a real array
+!----------------------------------------------------------------------
+subroutine mpl_allgather_real(ns,sbuf,rbuf)
+
+implicit none
+
+! Passed variables
+integer,intent(in) :: ns                           !< Sent buffer size
+real(kind_real),intent(in) :: sbuf(ns)             !< Sent buffer
+real(kind_real),intent(out) :: rbuf(mpl%myproc*ns) !< Received buffer
+
+! Local variable
+integer :: info
+
+! Allgather
+call mpi_allgather(sbuf,ns,mpl%rtype,rbuf,ns,mpl%rtype,mpi_comm_world,info)
+
+! Check
+call mpl_check(info)
+
+end subroutine mpl_allgather_real
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_allgather_logical
+!> Purpose: allgather for a logical array
+!----------------------------------------------------------------------
+subroutine mpl_allgather_logical(ns,sbuf,rbuf)
+
+implicit none
+
+! Passed variables
+integer,intent(in) :: ns                   !< Sent buffer size
+logical,intent(in) :: sbuf(ns)             !< Sent buffer
+logical,intent(out) :: rbuf(mpl%myproc*ns) !< Received buffer
+
+! Local variable
+integer :: info
+
+! Allgather
+call mpi_allgather(sbuf,ns,mpi_logical,rbuf,ns,mpi_logical,mpi_comm_world,info)
+
+! Check
+call mpl_check(info)
+
+end subroutine mpl_allgather_logical
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_allgatherv_integer
+!> Purpose: allgatherv for a integer array
+!----------------------------------------------------------------------
+subroutine mpl_allgatherv_integer(ns,sbuf,nr,rbuf,rcounts)
+
+implicit none
+
+! Passed variables
+integer,intent(in) :: ns                 !< Sent buffer size
+integer,intent(in) :: sbuf(ns)           !< Sent buffer
+integer,intent(in) :: nr                 !< Received buffer size
+integer,intent(out) :: rbuf(nr)          !< Received buffer
+integer,intent(in) :: rcounts(mpl%nproc) !< Receiving counts
+
+! Local variable
+integer :: displ(mpl%nproc),iproc,info
+
+! Compute displacement
+displ(1) = 0
+do iproc=2,mpl%nproc
+   displ(iproc) = displ(iproc-1)+rcounts(iproc-1)
+end do
+
+! Allgather
+call mpi_allgatherv(sbuf,ns,mpi_integer,rbuf,rcounts,displ,mpi_integer,mpi_comm_world,info)
+
+! Check
+call mpl_check(info)
+
+end subroutine mpl_allgatherv_integer
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_allgatherv_real
+!> Purpose: allgatherv for a real array
+!----------------------------------------------------------------------
+subroutine mpl_allgatherv_real(ns,sbuf,nr,rbuf,rcounts)
+
+implicit none
+
+! Passed variables
+integer,intent(in) :: ns                 !< Sent buffer size
+real(kind_real),intent(in) :: sbuf(ns)   !< Sent buffer
+integer,intent(in) :: nr                 !< Received buffer size
+real(kind_real),intent(out) :: rbuf(nr)  !< Received buffer
+integer,intent(in) :: rcounts(mpl%nproc) !< Receiving counts
+
+! Local variable
+integer :: displ(mpl%nproc),iproc,info
+
+! Compute displacement
+displ(1) = 0
+do iproc=2,mpl%nproc
+   displ(iproc) = displ(iproc-1)+rcounts(iproc-1)
+end do
+
+! Allgather
+call mpi_allgatherv(sbuf,ns,mpl%rtype,rbuf,rcounts,displ,mpl%rtype,mpi_comm_world,info)
+
+! Check
+call mpl_check(info)
+
+end subroutine mpl_allgatherv_real
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_allgatherv_logical
+!> Purpose: allgatherv for a logical array
+!----------------------------------------------------------------------
+subroutine mpl_allgatherv_logical(ns,sbuf,nr,rbuf,rcounts)
+
+implicit none
+
+! Passed variables
+integer,intent(in) :: ns                 !< Sent buffer size
+logical,intent(in) :: sbuf(ns)           !< Sent buffer
+integer,intent(in) :: nr                 !< Received buffer size
+logical,intent(out) :: rbuf(nr)          !< Received buffer
+integer,intent(in) :: rcounts(mpl%nproc) !< Receiving counts
+
+! Local variable
+integer :: displ(mpl%nproc),iproc,info
+
+! Compute displacement
+displ(1) = 0
+do iproc=2,mpl%nproc
+   displ(iproc) = displ(iproc-1)+rcounts(iproc-1)
+end do
+
+! Allgather
+call mpi_allgatherv(sbuf,ns,mpi_logical,rbuf,rcounts,displ,mpi_logical,mpi_comm_world,info)
+
+! Check
+call mpl_check(info)
+
+end subroutine mpl_allgatherv_logical
+
+!----------------------------------------------------------------------
 ! Subroutine: mpl_alltoallv_real
 !> Purpose: alltoallv for a real array
 !----------------------------------------------------------------------
@@ -773,12 +1013,12 @@ integer,intent(in) :: sdispl(mpl%nproc)  !< Sending displacement
 integer,intent(in) :: nr                 !< Received buffer size
 real(kind_real),intent(out) :: rbuf(nr)  !< Received buffer
 integer,intent(in) :: rcounts(mpl%nproc) !< Receiving counts
-integer,intent(in) :: rdispl(mpl%nproc)  !< SenReceivingding displacement
+integer,intent(in) :: rdispl(mpl%nproc)  !< Receiving displacement
 
 ! Local variable
 integer :: info
 
-! Send
+! Alltoallv
 call mpi_alltoallv(sbuf,scounts,sdispl,mpl%rtype,rbuf,rcounts,rdispl,mpl%rtype,mpi_comm_world,info)
 
 ! Check
@@ -788,21 +1028,21 @@ end subroutine mpl_alltoallv_real
 
 !----------------------------------------------------------------------
 ! Subroutine: mpl_allreduce_sum_real
-!> Purpose: allreduce sum for an integer
+!> Purpose: allreduce sum for a real number
 !----------------------------------------------------------------------
 subroutine mpl_allreduce_sum_real(var_in,var_out)
 
 implicit none
 
 ! Passed variables
-real(kind_real),intent(in) :: var_in   !< Input integer
-real(kind_real),intent(out) :: var_out !< Output integer
+real(kind_real),intent(in) :: var_in   !< Input real
+real(kind_real),intent(out) :: var_out !< Output real
 
 ! Local variable
 integer :: info
 real(kind_real) :: sbuf(1),rbuf(1)
 
-! Send
+! Allreduce
 sbuf(1) = var_in
 call mpi_allreduce(sbuf,rbuf,1,mpl%rtype,mpi_sum,mpi_comm_world,info)
 var_out = rbuf(1)
@@ -811,5 +1051,205 @@ var_out = rbuf(1)
 call mpl_check(info)
 
 end subroutine mpl_allreduce_sum_real
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_allreduce_sum_real_array_1d
+!> Purpose: allreduce sum for a real array, 1d
+!----------------------------------------------------------------------
+subroutine mpl_allreduce_sum_real_array_1d(var_in,var_out)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: var_in(:)   !< Input real
+real(kind_real),intent(out) :: var_out(:) !< Output real
+
+! Local variable
+integer :: info
+real(kind_real) :: sbuf(size(var_in)),rbuf(size(var_in))
+
+! Allreduce
+sbuf = var_in
+call mpi_allreduce(sbuf,rbuf,size(var_in),mpl%rtype,mpi_sum,mpi_comm_world,info)
+var_out = rbuf
+
+! Check
+call mpl_check(info)
+
+end subroutine mpl_allreduce_sum_real_array_1d
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_dot_prod_1d
+!> Purpose: global dot product over local fields, 1d
+!----------------------------------------------------------------------
+subroutine mpl_dot_prod_1d(fld1,fld2,dp)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: fld1(:) !< Field 1
+real(kind_real),intent(in) :: fld2(:) !< Field 2
+real(kind_real),intent(out) :: dp     !< Global dot product
+
+! Local variable
+integer :: info
+real(kind_real) :: dp_loc(1),dp_out(1)
+
+! Product and sum
+dp_loc(1) = sum(fld1*fld2)
+
+! Allreduce
+call mpi_allreduce(dp_loc,dp_out,1,mpl%rtype,mpi_sum,mpi_comm_world,info)
+dp = dp_out(1)
+
+! Check
+call mpl_check(info)
+
+! Broadcast
+call mpl_bcast(dp,mpl%ioproc)
+
+! Check
+call mpl_check(info)
+
+end subroutine mpl_dot_prod_1d
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_dot_prod_2d
+!> Purpose: global dot product over local fields, 2d
+!----------------------------------------------------------------------
+subroutine mpl_dot_prod_2d(fld1,fld2,dp)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: fld1(:,:) !< Field 1
+real(kind_real),intent(in) :: fld2(:,:) !< Field 2
+real(kind_real),intent(out) :: dp       !< Global dot product
+
+! Local variable
+integer :: info
+real(kind_real) :: dp_loc(1),dp_out(1)
+
+! Product and sum
+dp_loc(1) = sum(fld1*fld2)
+
+! Allreduce
+call mpi_allreduce(dp_loc,dp_out,1,mpl%rtype,mpi_sum,mpi_comm_world,info)
+dp = dp_out(1)
+
+! Check
+call mpl_check(info)
+
+! Broadcast
+call mpl_bcast(dp,mpl%ioproc)
+
+! Check
+call mpl_check(info)
+
+end subroutine mpl_dot_prod_2d
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_dot_prod_3d
+!> Purpose: global dot product over local fields, 3d
+!----------------------------------------------------------------------
+subroutine mpl_dot_prod_3d(fld1,fld2,dp)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: fld1(:,:,:) !< Field 1
+real(kind_real),intent(in) :: fld2(:,:,:) !< Field 2
+real(kind_real),intent(out) :: dp         !< Global dot product
+
+! Local variable
+integer :: info
+real(kind_real) :: dp_loc(1),dp_out(1)
+
+! Product and sum
+dp_loc(1) = sum(fld1*fld2)
+
+! Allreduce
+call mpi_allreduce(dp_loc,dp_out,1,mpl%rtype,mpi_sum,mpi_comm_world,info)
+dp = dp_out(1)
+
+! Check
+call mpl_check(info)
+
+! Broadcast
+call mpl_bcast(dp,mpl%ioproc)
+
+! Check
+call mpl_check(info)
+
+end subroutine mpl_dot_prod_3d
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_dot_prod_4d
+!> Purpose: global dot product over local fields, 4d
+!----------------------------------------------------------------------
+subroutine mpl_dot_prod_4d(fld1,fld2,dp)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: fld1(:,:,:,:) !< Field 1
+real(kind_real),intent(in) :: fld2(:,:,:,:) !< Field 2
+real(kind_real),intent(out) :: dp           !< Global dot product
+
+! Local variable
+integer :: info
+real(kind_real) :: dp_loc(1),dp_out(1)
+
+! Product and sum
+dp_loc(1) = sum(fld1*fld2)
+
+! Allreduce
+call mpi_allreduce(dp_loc,dp_out,1,mpl%rtype,mpi_sum,mpi_comm_world,info)
+dp = dp_out(1)
+
+! Check
+call mpl_check(info)
+
+! Broadcast
+call mpl_bcast(dp,mpl%ioproc)
+
+! Check
+call mpl_check(info)
+
+end subroutine mpl_dot_prod_4d
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_split
+!> Purpose: split array over different MPI tasks
+!----------------------------------------------------------------------
+subroutine mpl_split(n,i_s,i_e,n_loc)
+
+implicit none
+
+! Passed variables
+integer,intent(in) :: n                 !< Total array size
+integer,intent(out) :: i_s(mpl%nproc)   !< Index start
+integer,intent(out) :: i_e(mpl%nproc)   !< Index end
+integer,intent(out) :: n_loc(mpl%nproc) !< Local array size
+
+! Local variable
+integer :: iproc,nres,delta
+
+! MPI splitting
+nres = n
+do iproc=1,mpl%nproc
+   if (iproc==1) then
+      i_s(iproc) = 1
+   else
+      i_s(iproc) = i_e(iproc-1)+1
+   end if
+   delta = n/mpl%nproc
+   if (nres>(mpl%nproc-iproc+1)*delta) delta = delta+1
+   i_e(iproc) = i_s(iproc)+delta-1
+   n_loc(iproc) = delta
+   nres = nres-delta
+end do
+
+end subroutine mpl_split
 
 end module type_mpl
