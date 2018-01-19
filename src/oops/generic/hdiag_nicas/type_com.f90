@@ -43,7 +43,7 @@ end type comtype
 
 private
 public :: comtype
-public :: com_dealloc,com_bcast,com_setup,com_ext,com_red,com_read,com_write
+public :: com_dealloc,com_bcast,com_setup,com_ext,com_ext_v2,com_red,com_read,com_write
 
 contains
 
@@ -292,6 +292,42 @@ if (com%nexcl>0) then
 end if
 
 end subroutine com_ext
+
+!----------------------------------------------------------------------
+! Subroutine: com_ext
+!> Purpose: communicate field to halo (extension) without allocations
+!----------------------------------------------------------------------
+subroutine com_ext_v2(com,vec,ext)
+
+implicit none
+
+! Passed variables
+type(comtype),intent(in) :: com           !< Communication data
+real(kind_real), intent(in) :: vec(:)     !< Subgrid field
+real(kind_real), intent(inout) :: ext(:)  !< Subgrid field with halo
+
+! Local variables
+real(kind_real) :: sbuf(com%nexcl),rbuf(com%nhalo)
+
+if (com%nexcl>0) then
+   ! Check input vector size
+   if (size(vec)/=com%nred) call msgerror('vec size inconsistent in com_ext')
+   if (size(ext)/=com%next) call msgerror('ext size inconsistent in com_ext')
+
+   ! Prepare buffers to send
+   sbuf = vec(com%excl)
+
+   ! Communication
+   call mpl_alltoallv(com%nexcl,sbuf,com%jexclcounts,com%jexcldispl,com%nhalo,rbuf,com%jhalocounts,com%jhalodispl)
+
+   ! Copy interior
+   ext(com%ired_to_iext) = vec
+
+   ! Copy halo
+   ext(com%halo) = rbuf
+end if
+
+end subroutine com_ext_v2
 
 !----------------------------------------------------------------------
 ! Subroutine: com_red

@@ -216,6 +216,7 @@ oops/generic/hdiag_nicas/module_sampling.f90
 oops/generic/hdiag_nicas/module_test.f90
 oops/generic/hdiag_nicas/module_test_obsop.f90
 oops/generic/hdiag_nicas/module_transform.f90
+oops/generic/hdiag_nicas/split_interp_linop.f90
 oops/generic/hdiag_nicas/tools_const.f90
 oops/generic/hdiag_nicas/tools_diffusion.f90
 oops/generic/hdiag_nicas/tools_display.f90
