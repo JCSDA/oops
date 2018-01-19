@@ -47,7 +47,8 @@ real(kind_real),intent(in),optional :: ens1(hdata%geom%nc0a,hdata%geom%nl0,hdata
 ! Local variables
 integer :: ne,ne_offset,nsub,ie,jc0,ic0c,jc0c,ic0,jl0r,jl0,il0,isub,jsub,jc3,ic1,ic1a,ib,jv,iv,jts,its
 real(kind_real) :: fac1,fac2,fac3,fac4,fac5,fac6
-real(kind_real),allocatable :: fld(:,:,:,:),fld_halo(:,:,:,:),fld_com(:),fld_1(:,:,:,:),fld_2(:,:,:,:)
+real(kind_real),allocatable :: fld(:,:,:,:),fld_halo(:,:,:,:),fld_com(:,:),fld_1(:,:,:,:),fld_2(:,:,:,:)
+logical,allocatable :: mask_unpack(:,:)
 
 ! Associate
 associate(nam=>hdata%nam,geom=>hdata%geom,bpar=>hdata%bpar)
@@ -74,15 +75,15 @@ do ib=1,bpar%nb
       ! Allocation
       mom(ib)%ne = ne
       mom(ib)%nsub = nsub
-      allocate(mom(ib)%m1_1(hdata%nc1a,bpar%nc3(ib),bpar%nl0(ib),geom%nl0,mom(ib)%nsub))
-      allocate(mom(ib)%m2_1(hdata%nc1a,bpar%nc3(ib),bpar%nl0(ib),geom%nl0,mom(ib)%nsub))
-      allocate(mom(ib)%m1_2(hdata%nc1a,bpar%nc3(ib),bpar%nl0(ib),geom%nl0,mom(ib)%nsub))
-      allocate(mom(ib)%m2_2(hdata%nc1a,bpar%nc3(ib),bpar%nl0(ib),geom%nl0,mom(ib)%nsub))
-      allocate(mom(ib)%m11(hdata%nc1a,bpar%nc3(ib),bpar%nl0(ib),geom%nl0,mom(ib)%nsub))
+      allocate(mom(ib)%m1_1(hdata%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,mom(ib)%nsub))
+      allocate(mom(ib)%m2_1(hdata%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,mom(ib)%nsub))
+      allocate(mom(ib)%m1_2(hdata%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,mom(ib)%nsub))
+      allocate(mom(ib)%m2_2(hdata%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,mom(ib)%nsub))
+      allocate(mom(ib)%m11(hdata%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,mom(ib)%nsub))
       if (.not.nam%gau_approx) then
-         allocate(mom(ib)%m12(hdata%nc1a,bpar%nc3(ib),bpar%nl0(ib),geom%nl0,mom(ib)%nsub))
-         allocate(mom(ib)%m21(hdata%nc1a,bpar%nc3(ib),bpar%nl0(ib),geom%nl0,mom(ib)%nsub))
-         allocate(mom(ib)%m22(hdata%nc1a,bpar%nc3(ib),bpar%nl0(ib),geom%nl0,mom(ib)%nsub))
+         allocate(mom(ib)%m12(hdata%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,mom(ib)%nsub))
+         allocate(mom(ib)%m21(hdata%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,mom(ib)%nsub))
+         allocate(mom(ib)%m22(hdata%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,mom(ib)%nsub))
       end if
       if (nam%full_var) then
          allocate(mom(ib)%m1full(geom%nc0a,geom%nl0,mom(ib)%nsub))
@@ -149,30 +150,29 @@ do isub=1,nsub
 
       ! Allocation
       allocate(fld_halo(hdata%nc0c,geom%nl0,nam%nv,nam%nts))
+      allocate(mask_unpack(hdata%nc0c,geom%nl0))
+      mask_unpack = .true.
 
       do ib=1,bpar%nb
          if (bpar%auto_block(ib)) then
             ! Indices
             iv = bpar%b_to_v1(ib)
             its = bpar%b_to_ts1(ib)
-          
-            ! Communicate halo
-            do il0=1,geom%nl0
-               ! Allocation
-               allocate(fld_com(geom%nc0a))
 
-               ! Copy points
-               fld_com = fld(:,il0,iv,its)
+            ! Allocation
+            allocate(fld_com(geom%nc0a,geom%nl0))
 
-               ! Halo extension
-               call com_ext(hdata%AC,fld_com)
+            ! Copy points
+            fld_com = fld(:,:,iv,its)
 
-               ! Copy points
-               fld_halo(:,il0,iv,its) = fld_com
+            ! Halo extension
+            call com_ext(hdata%AC,fld_com)
 
-               ! Release memory
-               deallocate(fld_com)
-            end do
+            ! Copy points
+            fld_halo(:,:,iv,its) = fld_com
+
+            ! Release memory
+            deallocate(fld_com)
 
             ! Apply transform
             if (nam%transform) then
@@ -186,8 +186,8 @@ do isub=1,nsub
       do ib=1,bpar%nb
          if (bpar%diag_block(ib)) then
             ! Allocation
-            allocate(fld_1(hdata%nc1a,bpar%nc3(ib),bpar%nl0(ib),geom%nl0))
-            allocate(fld_2(hdata%nc1a,bpar%nc3(ib),bpar%nl0(ib),geom%nl0))
+            allocate(fld_1(hdata%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
+            allocate(fld_2(hdata%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
 
             ! Initialization
             iv = bpar%b_to_v1(ib)
@@ -202,7 +202,7 @@ do isub=1,nsub
                ! Copy all separations points
                !$omp parallel do schedule(static) private(il0,jl0r,jl0,jc3,ic1a,ic1,ic0,jc0,ic0c,jc0c)
                do il0=1,geom%nl0
-                  do jl0r=1,bpar%nl0(ib)
+                  do jl0r=1,bpar%nl0r(ib)
                      jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
                      do jc3=1,bpar%nc3(ib)
                         do ic1a=1,hdata%nc1a
@@ -229,11 +229,12 @@ do isub=1,nsub
             else
                if (nam%displ_diag) then
                   ! Interpolate zero separation points
-                  call msgerror('not implemented yet') ! TODO
-!                  do il0=1,geom%nl0
-!                     call apply_linop(displ%d(il0,its),fld(:,il0,iv,its),fld_1(:,1,1,il0))
-!                     call apply_linop(displ%d(il0,jts),fld(:,il0,jv,jts),fld_2(:,1,1,il0))
-!                  end do
+                  !$omp parallel do schedule(static) private(il0)
+                  do il0=1,geom%nl0
+                     call apply_linop(hdata%d(il0,its),fld_halo(:,il0,iv,its),fld_1(:,1,1,il0))
+                     call apply_linop(hdata%d(il0,jts),fld_halo(:,il0,jv,jts),fld_2(:,1,1,il0))
+                  end do
+                  !$omp end parallel do
                else
                   ! Copy zero separation points
                   !$omp parallel do schedule(static) private(il0,ic1a,ic1,ic0,ic0c)
@@ -246,8 +247,8 @@ do isub=1,nsub
                            ic0c = hdata%c0_to_c0c(ic0)
 
                            ! Copy points
-                           fld_1(ic1a,1,1,il0) = fld(ic0c,il0,iv,its)
-                           fld_2(ic1a,1,1,il0) = fld(ic0c,il0,jv,jts)
+                           fld_1(ic1a,1,1,il0) = fld_halo(ic0c,il0,iv,its)
+                           fld_2(ic1a,1,1,il0) = fld_halo(ic0c,il0,jv,jts)
                         end if
                      end do
                   end do
@@ -315,6 +316,7 @@ do isub=1,nsub
 
       ! Release memory
       deallocate(fld_halo)
+      deallocate(mask_unpack)
    end do
    write(mpl%unit,'(a)') ''
 

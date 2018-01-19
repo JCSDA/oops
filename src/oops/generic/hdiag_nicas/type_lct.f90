@@ -36,7 +36,7 @@ type lcttype
    real(kind_real),allocatable :: fit(:,:)  !< Fitted correlations
 end type lcttype
 
-logical,parameter :: write_cor = .true. !< Write raw and fitted correlations
+logical,parameter :: write_cor = .true.     !< Write raw and fitted correlations
 
 interface lct_alloc
   module procedure lct_alloc_basic
@@ -59,7 +59,7 @@ implicit none
 
 ! Passed variables
 type(hdatatype),intent(in) :: hdata !< HDIAG data
-type(lcttype),intent(inout) :: lct  !< lct
+type(lcttype),intent(inout) :: lct  !< LCT
 
 ! Local variables
 integer :: iscales
@@ -102,7 +102,7 @@ implicit none
 ! Passed variables
 type(hdatatype),intent(in) :: hdata !< HDIAG data
 integer,intent(in) :: ib            !< Block index
-type(lcttype),intent(inout) :: lct  !< lct
+type(lcttype),intent(inout) :: lct  !< LCT
 
 ! Associate
 associate(nam=>hdata%nam,bpar=>hdata%bpar)
@@ -111,12 +111,12 @@ associate(nam=>hdata%nam,bpar=>hdata%bpar)
 call lct_alloc_basic(hdata,lct)
 
 ! Allocation
-allocate(lct%raw(nam%nc3,bpar%nl0(ib)))
-allocate(lct%norm(nam%nc3,bpar%nl0(ib)))
-allocate(lct%fit(nam%nc3,bpar%nl0(ib)))
+allocate(lct%raw(nam%nc3,bpar%nl0r(ib)))
+allocate(lct%norm(nam%nc3,bpar%nl0r(ib)))
+allocate(lct%fit(nam%nc3,bpar%nl0r(ib)))
 
 ! Initialization
-lct%npack = sum(lct%ncomp)+lct%nscales+nam%nc3*bpar%nl0(ib)
+lct%npack = sum(lct%ncomp)+lct%nscales+nam%nc3*bpar%nl0r(ib)
 lct%raw = 0.0
 lct%norm = 0.0
 call msr(lct%fit)
@@ -172,7 +172,7 @@ buf(offset+1:offset+sum(lct%ncomp)) = pack(lct%H,.true.)
 offset = offset+sum(lct%ncomp)
 buf(offset+1:offset+lct%nscales) = lct%coef
 offset = offset+lct%nscales
-buf(offset+1:offset+nam%nc3*bpar%nl0(ib)) = pack(lct%fit,.true.)
+buf(offset+1:offset+nam%nc3*bpar%nl0r(ib)) = pack(lct%fit,.true.)
 
 ! End associate
 end associate
@@ -201,7 +201,7 @@ logical,allocatable :: mask_unpack(:,:)
 associate(nam=>hdata%nam,bpar=>hdata%bpar)
 
 ! Allocation
-allocate(mask_unpack(nam%nc3,bpar%nl0(ib)))
+allocate(mask_unpack(nam%nc3,bpar%nl0r(ib)))
 mask_unpack = .true.
 
 ! Unpack
@@ -210,7 +210,7 @@ lct%H = buf(offset+1:offset+sum(lct%ncomp))
 offset = offset+sum(lct%ncomp)
 lct%coef = buf(offset+1:offset+lct%nscales)
 offset = offset+lct%nscales
-lct%fit = unpack(buf(offset+1:offset+nam%nc3*bpar%nl0(ib)),mask_unpack,lct%fit)
+lct%fit = unpack(buf(offset+1:offset+nam%nc3*bpar%nl0r(ib)),mask_unpack,lct%fit)
 
 ! End associate
 end associate
@@ -337,7 +337,7 @@ do ib=1,bpar%nb
    rmse_count = 0.0
    do il0=1,geom%nl0
       do ic1=1,nam%nc1
-         do jl0r=1,bpar%nl0(ib)
+         do jl0r=1,bpar%nl0r(ib)
             jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
             do jc3=1,nam%nc3
                if (hdata%c1l0_log(ic1,il0).and.hdata%c1c3l0_log(ic1,jc3,jl0)) then
@@ -366,7 +366,7 @@ do ib=1,bpar%nb
       do ic1=1,nam%nc1
          ! Check diagnostic area
          valid = .true.
-         do jl0r=1,bpar%nl0(ib)
+         do jl0r=1,bpar%nl0r(ib)
             jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
             do jc3=1,nam%nc3
                if (valid.and.hdata%c1l0_log(ic1,il0).and.hdata%c1c3l0_log(ic1,jc3,jl0)) &
@@ -374,7 +374,7 @@ do ib=1,bpar%nb
             end do
          end do
          if (valid) then
-            do jl0r=1,bpar%nl0(ib)
+            do jl0r=1,bpar%nl0r(ib)
                jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
                do jc3=1,nam%nc3
                   if (hdata%c1l0_log(ic1,il0).and.hdata%c1c3l0_log(ic1,jc3,jl0)) then

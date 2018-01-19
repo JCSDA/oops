@@ -13,7 +13,7 @@ module nicas_parameters
 use model_interface,only: model_write
 use nicas_parameters_convol, only: compute_convol_network,compute_convol_distance
 use nicas_parameters_interp, only: compute_interp_h,compute_interp_v,compute_interp_s
-use nicas_parameters_mpi, only: compute_mpi_1,compute_mpi_2
+use nicas_parameters_mpi, only: compute_mpi_ab,compute_mpi_c
 use nicas_parameters_normalization, only: compute_normalization
 use nicas_parameters_sampling, only: compute_sampling
 use tools_display, only: msgerror
@@ -63,8 +63,9 @@ call compute_interp_v(ndata)
 write(mpl%unit,'(a7,a)') '','Compute subsampling horizontal interpolation data'
 call compute_interp_s(ndata)
 
-! MPI splitting, first step
-call compute_mpi_1(ndata)
+! Compute MPI distribution, halos A-B
+write(mpl%unit,'(a7,a)') '','Compute MPI distribution, halos A-B'
+call compute_mpi_ab(ndata)
 
 ! Compute convolution data
 write(mpl%unit,'(a7,a)') '','Compute convolution data'
@@ -74,8 +75,9 @@ else
    call compute_convol_distance(bdata,ndata)
 end if
 
-! MPI splitting, second step
-call compute_mpi_2(ndata)
+! Compute MPI distribution, halo C
+write(mpl%unit,'(a7,a)') '','Compute MPI distribution, halo C'
+call compute_mpi_c(ndata)
 
 ! Compute normalization
 write(mpl%unit,'(a7,a)') '','Compute normalization'
@@ -89,11 +91,9 @@ write(mpl%unit,'(a10,a,i8)') '','nl0 =       ',geom%nl0
 write(mpl%unit,'(a10,a,i8)') '','nc1 =       ',ndata%nc1
 write(mpl%unit,'(a10,a,i8)') '','nc1a =      ',ndata%nc1a
 write(mpl%unit,'(a10,a,i8)') '','nc1b =      ',ndata%nc1b
-if (.not.nam%network) write(mpl%unit,'(a10,a,i8)') '','nc1bb =     ',ndata%nc1bb
 write(mpl%unit,'(a10,a,i8)') '','nl1 =       ',ndata%nl1
 do il1=1,ndata%nl1
    write(mpl%unit,'(a10,a,i3,a,i8)') '','nc2(',il1,') =   ',ndata%nc2(il1)
-   write(mpl%unit,'(a10,a,i3,a,i8)') '','nc2b(',il1,') =  ',ndata%nc2b(il1)
 end do
 write(mpl%unit,'(a10,a,i8)') '','ns =        ',ndata%ns
 write(mpl%unit,'(a10,a,i8)') '','nsa =       ',ndata%nsa

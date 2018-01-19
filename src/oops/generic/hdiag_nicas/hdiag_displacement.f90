@@ -12,13 +12,14 @@ module hdiag_displacement
 
 use model_interface, only: model_read
 use omp_lib
-use tools_const, only: req,reqkm,rad2deg,deg2rad,lonmod,sphere_dist,reduce_arc,vector_product
+use tools_const, only: req,reqkm,rad2deg,deg2rad,lonlatmod,sphere_dist,reduce_arc,vector_product
 use hdiag_tools, only: diag_filter,diag_com_lg
 use tools_display, only: msgerror,prog_init,prog_print
 use tools_kinds, only: kind_real
 use tools_interp, only: compute_interp
-use tools_missing, only: msr,isnotmsr,isallnotmsr
+use tools_missing, only: msr,isnotmsr,isallnotmsr,isanynotmsr
 use tools_qsort, only: qsort
+use tools_stripack, only: trans,scoord
 use type_com, only: com_ext
 use type_displ, only: displtype,displ_alloc
 use type_geom, only: fld_com_gl
@@ -28,7 +29,7 @@ use type_mpl, only: mpl,mpl_bcast
 use type_hdata, only: hdatatype
 implicit none
 
-real(kind_real),parameter :: cor_th = 0.0     !< Correlation threshold
+real(kind_real),parameter :: cor_th = 0.2     !< Correlation threshold
 logical,parameter :: common_sampling = .true. !< Common sampling for all variables
 
 private
@@ -50,18 +51,21 @@ type(displtype),intent(inout) :: displ                                          
 real(kind_real),intent(in),optional :: ens1(hdata%geom%nc0a,hdata%geom%nl0,hdata%nam%nv,hdata%nam%nts,hdata%nam%ens1_ne) !< Ensemble 1
 
 ! Local variables
-integer :: ne,ne_offset,nsub,ic0,ic1,ic2,ic2a,jc0,jc1,il0,isub,jsub,iv,its,ie,iter,ic0a,jc0d,kc1,kc0
+integer :: ne,ne_offset,nsub,ic0,ic1,ic2,ic2a,jc0,jc1,il0,isub,jsub,iv,its,ie,iter,ic0a,jc0d
 integer,allocatable :: order(:)
-real(kind_real) :: fac4,fac6,m11_avg,m2m2_avg,drhflt,lon_tmp,lat_tmp
-real(kind_real),allocatable :: fld(:,:,:,:),fld_halo(:,:,:,:),fld_com(:),fld_1(:,:,:),fld_2(:,:,:)
+real(kind_real) :: fac4,fac6,m11_avg,m2m2_avg,fld_1,fld_2,drhflt,dum
+real(kind_real),allocatable :: fld(:,:,:,:),fld_halo(:,:,:,:),fld_com(:,:)
 real(kind_real),allocatable :: m1_1(:,:,:,:,:,:),m2_1(:,:,:,:,:,:)
 real(kind_real),allocatable :: m1_2(:,:,:,:,:,:),m2_2(:,:,:,:,:,:)
 real(kind_real),allocatable :: m11(:,:,:,:,:,:)
 real(kind_real),allocatable :: cor(:),cor_avg(:)
-real(kind_real),allocatable :: dlon(:),dlat(:),dist(:)
-real(kind_real) :: lon(hdata%nc2,hdata%geom%nl0),lat(hdata%nc2,hdata%geom%nl0)
+real(kind_real),allocatable :: dlon_c2(:),dlat_c2(:),dist_c2(:)
+real(kind_real) :: lon_c2_ori(hdata%nc2,hdata%geom%nl0),lat_c2_ori(hdata%nc2,hdata%geom%nl0)
 real(kind_real) :: lon_c2(hdata%nc2),lat_c2(hdata%nc2),valid(hdata%nc2)
-real(kind_real) :: dlon_ini(hdata%nc2),dlat_ini(hdata%nc2)
+real(kind_real) :: x_ori(hdata%nc2),y_ori(hdata%nc2),z_ori(hdata%nc2)
+real(kind_real) :: dx_ini(hdata%nc2),dy_ini(hdata%nc2),dz_ini(hdata%nc2)
+real(kind_real) :: dx(hdata%nc2),dy(hdata%nc2),dz(hdata%nc2)
+real(kind_real) :: dlon_c0(hdata%geom%nc0),dlat_c0(hdata%geom%nc0)
 real(kind_real) :: lon_c1(hdata%nam%nc1),lat_c1(hdata%nam%nc1)
 logical :: dichotomy,convergence
 
@@ -75,8 +79,7 @@ nsub = nam%ens1_nsub
 
 ! Allocation
 call displ_alloc(hdata,displ)
-allocate(fld_1(nam%nc1,hdata%nc2a,geom%nl0))
-allocate(fld_2(nam%nc1,hdata%nc2a,geom%nl0))
+allocate(fld_halo(hdata%nc0d,geom%nl0,nam%nv,2:nam%nts))
 allocate(m1_1(nam%nc1,hdata%nc2a,geom%nl0,nam%nv,2:nam%nts,nsub))
 allocate(m2_1(nam%nc1,hdata%nc2a,geom%nl0,nam%nv,2:nam%nts,nsub))
 allocate(m1_2(nam%nc1,hdata%nc2a,geom%nl0,nam%nv,2:nam%nts,nsub))
@@ -93,12 +96,18 @@ m11 = 0.0
 ! Initial point
 do il0=1,geom%nl0
    do ic2=1,hdata%nc2
-      if (hdata%c1l0_log(hdata%c2_to_c1(ic2),il0)) then
-         lon(ic2,il0) = geom%lon(hdata%c2_to_c0(ic2))
-         lat(ic2,il0) = geom%lat(hdata%c2_to_c0(ic2))
-      end if
+      ic1 = hdata%c2_to_c1(ic2)
+      ic0 = hdata%c2_to_c0(ic2)
+      if (hdata%c1l0_log(ic1,il0)) then
+         lon_c2_ori(ic2,il0) = geom%lon(ic0)
+         lat_c2_ori(ic2,il0) = geom%lat(ic0)
+      end if   
    end do
 end do
+
+! Copy
+displ%lon = lon_c2_ori
+displ%lat = lat_c2_ori
 
 ! Compute moments
 write(mpl%unit,'(a7,a)') '','Compute moments'
@@ -141,79 +150,70 @@ do isub=1,nsub
          call fld_com_gl(nam,geom,fld)
       end if
 
-      ! Allocation
-      allocate(fld_halo(hdata%nc0d,geom%nl0,nam%nv,2:nam%nts))
+      do its=2,nam%nts
+         do iv=1,nam%nv
+            ! Allocation
+            allocate(fld_com(geom%nc0a,geom%nl0))
 
-      do iv=1,nam%nv
-        do its=2,nam%nts
-            ! Communicate halo
-            do il0=1,geom%nl0
-               ! Allocation
-               allocate(fld_com(geom%nc0a))
+            ! Copy points
+            fld_com = fld(:,:,iv,its)
 
-               ! Copy points
-               fld_com = fld(:,il0,iv,its)
+            ! Halo extension
+            call com_ext(hdata%AD,fld_com)
 
-               ! Halo extension
-               call com_ext(hdata%AD,fld_com)
+            ! Copy points
+            fld_halo(:,:,iv,its) = fld_com
 
-               ! Copy points
-               fld_halo(:,il0,iv,its) = fld_com
-
-               ! Release memory
-               deallocate(fld_com)
-            end do
+            ! Release memory
+            deallocate(fld_com)
          end do
       end do
 
-      if (mpl%main) then
-         do its=2,nam%nts
-            do iv=1,nam%nv  
-               !$omp parallel do schedule(static) private(il0,ic2a,ic2,ic1,jc1,ic0,jc0,ic0a,jc0d)
-               do il0=1,geom%nl0
-                  do ic2a=1,hdata%nc2a
-                     ic2 = hdata%c2a_to_c2(ic2a)
-                     ic1 = hdata%c2_to_c1(ic2)
-                     if (hdata%c1l0_log(ic1,il0)) then
-                        do jc1=1,nam%nc1
-                           if (hdata%displ_mask(jc1,ic2,min(il0,geom%nl0i))) then
-                              ! Indices
-                              ic0 = hdata%c2_to_c0(ic2)
-                              jc0 = hdata%c1_to_c0(jc1)
-                              ic0a = geom%c0_to_c0a(ic0)
-                              jc0d = hdata%c0_to_c0d(jc0)
+      do its=2,nam%nts
+         do iv=1,nam%nv  
+            !$omp parallel do schedule(static) private(il0,ic2a,ic2,ic1,jc1,ic0,jc0,ic0a,jc0d,fld_1,fld_2)
+            do il0=1,geom%nl0
+               do ic2a=1,hdata%nc2a
+                  ic2 = hdata%c2a_to_c2(ic2a)
+                  ic1 = hdata%c2_to_c1(ic2)
+                  if (hdata%c1l0_log(ic1,il0)) then
+                     do jc1=1,nam%nc1
+                        if (hdata%displ_mask(jc1,ic2,min(il0,geom%nl0i))) then
+                           ! Indices
+                           ic0 = hdata%c2_to_c0(ic2)
+                           jc0 = hdata%c1_to_c0(jc1)
+                           ic0a = geom%c0_to_c0a(ic0)
+                           jc0d = hdata%c0_to_c0d(jc0)
 
-                              ! Copy points
-                              fld_1(jc1,ic2a,il0) = fld(ic0a,il0,iv,1)
-                              fld_2(jc1,ic2a,il0) = fld_halo(jc0d,il0,iv,its)
+                           ! Copy points
+                           fld_1 = fld(ic0a,il0,iv,1)
+                           fld_2 = fld_halo(jc0d,il0,iv,its)
 
-                              ! Remove means
-                              fld_1(jc1,ic2a,il0) = fld_1(jc1,ic2a,il0) - m1_1(jc1,ic2a,il0,iv,its,isub)
-                              fld_2(jc1,ic2a,il0) = fld_2(jc1,ic2a,il0) - m1_2(jc1,ic2a,il0,iv,its,isub)
-   
-                              ! Update high-order moments
-                              if (ie>1) then
-                                 ! Covariance
-                                 m11(jc1,ic2a,il0,iv,its,isub) = m11(jc1,ic2a,il0,iv,its,isub)+fac6*fld_1(jc1,ic2a,il0) &
-                                                               & *fld_2(jc1,ic2a,il0)
-   
-                                 ! Variances
-                                 m2_1(jc1,ic2a,il0,iv,its,isub) = m2_1(jc1,ic2a,il0,iv,its,isub)+fac6*fld_1(jc1,ic2a,il0)**2
-                                 m2_2(jc1,ic2a,il0,iv,its,isub) = m2_2(jc1,ic2a,il0,iv,its,isub)+fac6*fld_2(jc1,ic2a,il0)**2
-                              end if
-   
-                              ! Update means
-                              m1_1(jc1,ic2a,il0,iv,its,isub) = m1_1(jc1,ic2a,il0,iv,its,isub)+fac4*fld_1(jc1,ic2a,il0)
-                              m1_2(jc1,ic2a,il0,iv,its,isub) = m1_2(jc1,ic2a,il0,iv,its,isub)+fac4*fld_2(jc1,ic2a,il0)
+                           ! Remove means
+                           fld_1 = fld_1 - m1_1(jc1,ic2a,il0,iv,its,isub)
+                           fld_2 = fld_2 - m1_2(jc1,ic2a,il0,iv,its,isub)
+
+                           ! Update high-order moments
+                           if (ie>1) then
+                              ! Covariance
+                              m11(jc1,ic2a,il0,iv,its,isub) = m11(jc1,ic2a,il0,iv,its,isub)+fac6*fld_1*fld_2
+
+                              ! Variances
+                              m2_1(jc1,ic2a,il0,iv,its,isub) = m2_1(jc1,ic2a,il0,iv,its,isub)+fac6*fld_1**2
+                              m2_2(jc1,ic2a,il0,iv,its,isub) = m2_2(jc1,ic2a,il0,iv,its,isub)+fac6*fld_2**2
                            end if
-                        end do
-                     end if
-                  end do
+
+                           ! Update means
+                           m1_1(jc1,ic2a,il0,iv,its,isub) = m1_1(jc1,ic2a,il0,iv,its,isub)+fac4*fld_1
+                           m1_2(jc1,ic2a,il0,iv,its,isub) = m1_2(jc1,ic2a,il0,iv,its,isub)+fac4*fld_2
+                        end if
+                     end do
+                  end if
                end do
-               !$omp end parallel do   
             end do
+            !$omp end parallel do   
          end do
-      end if
+      end do
    end do
    write(mpl%unit,'(a)') ''
 end do
@@ -226,11 +226,11 @@ do its=2,nam%nts
       write(mpl%unit,'(a10,a,i2,a,i3)') '','Timeslot ',its,' - level ',nam%levs(il0)
 
       ! Allocation
-      allocate(dlon(hdata%nc2a))
-      allocate(dlat(hdata%nc2a))
-      allocate(dist(hdata%nc2a))
+      allocate(dlon_c2(hdata%nc2a))
+      allocate(dlat_c2(hdata%nc2a))
+      allocate(dist_c2(hdata%nc2a))
 
-      !$omp parallel do schedule(static) private(ic2a,ic2,ic1,cor,cor_avg,order,jc1,iv,m11_avg,m2m2_avg,kc1,kc0)
+      !$omp parallel do schedule(static) private(ic2a,ic2,ic1,cor,cor_avg,order,jc1,jc0,iv,m11_avg,m2m2_avg)
       do ic2a=1,hdata%nc2a
          ic2 = hdata%c2a_to_c2(ic2a)
          ic1 = hdata%c2_to_c1(ic2)
@@ -241,6 +241,9 @@ do its=2,nam%nts
             allocate(order(nam%nc1))
 
             do jc1=1,nam%nc1
+               ! Initialization
+               call msr(cor_avg(jc1))
+
                if (hdata%displ_mask(jc1,ic2,min(il0,geom%nl0i))) then
                   ! Compute correlation for each variable
                   do iv=1,nam%nv
@@ -255,9 +258,11 @@ do its=2,nam%nts
                   end do
 
                   ! Average correlations
-                  cor_avg(jc1) = sum(cor,mask=isnotmsr(cor))/float(count(isnotmsr(cor)))
-               else
-                  call msr(cor_avg(jc1))
+                  if (isanynotmsr(cor)) then
+                     cor_avg(jc1) = sum(cor,mask=isnotmsr(cor))/float(count(isnotmsr(cor)))
+                  else
+                     call msgerror('average correlation contains missing values only')
+                  end if
                end if
             end do
 
@@ -266,11 +271,16 @@ do its=2,nam%nts
 
             ! Locate the maximum correlation, with a correlation threshold
             if (cor_avg(nam%nc1)>cor_th) then
-               kc1 = order(nam%nc1)
-               kc0 = hdata%c1_to_c0(kc1)
-               dlon(ic2a) = lonmod(geom%lon(kc1)-lon(ic2,il0))
-               dlat(ic2a) = geom%lat(kc1)-lat(ic2,il0)
-               call sphere_dist(lon(ic2,il0),lat(ic2,il0),geom%lon(kc0),geom%lat(kc0),dist(ic2a))
+               jc1 = order(nam%nc1)
+               jc0 = hdata%c1_to_c0(jc1)
+               dlon_c2(ic2a) = geom%lon(jc0)-lon_c2_ori(ic2,il0)
+               dlat_c2(ic2a) = geom%lat(jc0)-lat_c2_ori(ic2,il0)
+               call lonlatmod(dlon_c2(ic2a),dlat_c2(ic2a))
+               call sphere_dist(lon_c2_ori(ic2,il0),lat_c2_ori(ic2,il0),geom%lon(jc0),geom%lat(jc0),dist_c2(ic2a))
+            else
+               dlon_c2(ic2a) = 0.0
+               dlat_c2(ic2a) = 0.0
+               dist_c2(ic2a) = 0.0
             end if
 
             ! Release memory
@@ -282,49 +292,51 @@ do its=2,nam%nts
       !$omp end parallel do
 
       ! Gather data
-      call diag_com_lg(hdata,dlon)
-      call diag_com_lg(hdata,dlat)
-      call diag_com_lg(hdata,dist)
+      call diag_com_lg(hdata,dlon_c2)
+      call diag_com_lg(hdata,dlat_c2)
+      call diag_com_lg(hdata,dist_c2)
 
-      ! Allocation
       if (.not.mpl%main) then
-         allocate(dlon(hdata%nc2))
-         allocate(dlat(hdata%nc2))
-         allocate(dist(hdata%nc2))
+         ! Allocation
+         allocate(dlon_c2(hdata%nc2))
+         allocate(dlat_c2(hdata%nc2))
+         allocate(dist_c2(hdata%nc2))
       end if
 
       ! Broadcast data
-      call mpl_bcast(dlon,mpl%ioproc)
-      call mpl_bcast(dlat,mpl%ioproc)
-      call mpl_bcast(dist,mpl%ioproc)
+      call mpl_bcast(dlon_c2,mpl%ioproc)
+      call mpl_bcast(dlat_c2,mpl%ioproc)
+      call mpl_bcast(dist_c2,mpl%ioproc)
 
       ! Average distance
-      displ%dist(0,il0,its) = sum(dist,mask=hdata%c1l0_log(hdata%c2_to_c1,il0)) &
+      displ%dist(0,il0,its) = sum(dist_c2,mask=hdata%c1l0_log(hdata%c2_to_c1,il0)) &
                             & /count(hdata%c1l0_log(hdata%c2_to_c1,il0))
 
       ! Check raw mesh
       do ic2=1,hdata%nc2
-         lon_c2(ic2) = lonmod(lon(ic2,il0)+dlon(ic2))
-         lat_c2(ic2) = lat(ic2,il0)+dlat(ic2)
+         lon_c2(ic2) = lon_c2_ori(ic2,il0)+dlon_c2(ic2)
+         lat_c2(ic2) = lat_c2_ori(ic2,il0)+dlat_c2(ic2)
+         call lonlatmod(lon_c2(ic2),lat_c2(ic2))
       end do
       call check_mesh(hdata%nc2,lon_c2,lat_c2,hdata%nt,hdata%ltri,valid)
       displ%valid(0,il0,its) = sum(valid,mask=hdata%c1l0_log(hdata%c2_to_c1,il0)) &
                              & /count(hdata%c1l0_log(hdata%c2_to_c1,il0))
       displ%rhflt(0,il0,its) = 0.0
 
-      ! Raw displacement interpolation
-      call apply_linop(hdata%h(min(il0,geom%nl0i)),dlon,displ%dlon_raw(:,il0,its))
-      call apply_linop(hdata%h(min(il0,geom%nl0i)),dlat,displ%dlat_raw(:,il0,its))
+      ! Copy
+      displ%lon_raw(:,il0,its) = lon_c2
+      displ%lat_raw(:,il0,its) = lat_c2
+      displ%dist_raw(:,il0,its) = dist_c2
 
       if (nam%displ_niter>0) then
          ! Filter displacement
 
-         ! Allocation
-         allocate(order(hdata%nc2))
-
-         ! Compute displacement
-         dlon_ini = dlon*cos(lat(:,il0))
-         dlat_ini = dlat
+         ! Compute raw displacement in cartesian coordinates
+         call trans(hdata%nc2,lat_c2_ori(:,il0),lon_c2_ori(:,il0),x_ori,y_ori,z_ori)
+         call trans(hdata%nc2,lat_c2,lon_c2,dx_ini,dy_ini,dz_ini)
+         dx_ini = dx_ini-x_ori
+         dy_ini = dy_ini-y_ori
+         dz_ini = dz_ini-z_ori
 
          ! Iterative filtering
          convergence = .true.
@@ -336,35 +348,42 @@ do its=2,nam%nts
 
          do iter=1,nam%displ_niter
             ! Copy increment
-            dlon = dlon_ini
-            dlat = dlat_ini
+            dx = dx_ini
+            dy = dy_ini
+            dz = dz_ini
 
             ! Median filter to remove extreme values
-            call diag_filter(hdata,il0,'median',displ%rhflt(iter,il0,its),dlon)
-            call diag_filter(hdata,il0,'median',displ%rhflt(iter,il0,its),dlat)
+            call diag_filter(hdata,il0,'median',displ%rhflt(iter,il0,its),dx)
+            call diag_filter(hdata,il0,'median',displ%rhflt(iter,il0,its),dy)
+            call diag_filter(hdata,il0,'median',displ%rhflt(iter,il0,its),dz)
 
             ! Average filter to smooth displacement
-            call diag_filter(hdata,il0,'average',displ%rhflt(iter,il0,its),dlon)
-            call diag_filter(hdata,il0,'average',displ%rhflt(iter,il0,its),dlat)
+            call diag_filter(hdata,il0,'gc99',displ%rhflt(iter,il0,its),dx)
+            call diag_filter(hdata,il0,'gc99',displ%rhflt(iter,il0,its),dy)
+            call diag_filter(hdata,il0,'gc99',displ%rhflt(iter,il0,its),dz)
 
-            ! Compute displaced location
-            dlon = dlon/cos(lat(:,il0))
+            ! Back to spherical coordinates
+            dx = dx+x_ori
+            dy = dy+y_ori
+            dz = dz+z_ori
+            do ic2=1,hdata%nc2
+               call scoord(dx(ic2),dy(ic2),dz(ic2),lat_c2(ic2),lon_c2(ic2),dum)
+            end do
 
             ! Reduce distance with respect to boundary
             do ic2=1,hdata%nc2
                if (hdata%c1l0_log(hdata%c2_to_c1(ic2),il0)) then
-                  lon_tmp = lonmod(lon(ic2,il0)+dlon(ic2))
-                  lat_tmp = lat(ic2,il0)+dlat(ic2)
-                  call reduce_arc(lon(ic2,il0),lat(ic2,il0),lon_tmp,lat_tmp,hdata%bdist(ic2),dist(ic2))
-                  dlon(ic2) = lonmod(lon_tmp-lon(ic2,il0))
-                  dlat(ic2) = lat_tmp-lat(ic2,il0)
+                  call reduce_arc(lon_c2_ori(ic2,il0),lat_c2_ori(ic2,il0),lon_c2(ic2),lat_c2(ic2),hdata%bdist(ic2),dist_c2(ic2))
+                  dlon_c2(ic2) = lon_c2(ic2)-lon_c2_ori(ic2,il0)
+                  dlat_c2(ic2) = lat_c2(ic2)-lat_c2_ori(ic2,il0)
                end if
             end do
 
             ! Check mesh
             do ic2=1,hdata%nc2
-               lon_c2(ic2) = lonmod(lon(ic2,il0)+dlon(ic2))
-               lat_c2(ic2) = lat(ic2,il0)+dlat(ic2)
+               lon_c2(ic2) = lon_c2_ori(ic2,il0)+dlon_c2(ic2)
+               lat_c2(ic2) = lat_c2_ori(ic2,il0)+dlat_c2(ic2)
+               call lonlatmod(lon_c2(ic2),lat_c2(ic2))
             end do
             call check_mesh(hdata%nc2,lon_c2,lat_c2,hdata%nt,hdata%ltri,valid)
             displ%valid(iter,il0,its) = sum(valid,mask=hdata%c1l0_log(hdata%c2_to_c1,il0)) &
@@ -372,10 +391,10 @@ do its=2,nam%nts
 
             ! Compute distances
             do ic2=1,hdata%nc2
-               if (hdata%c1l0_log(hdata%c2_to_c1(ic2),il0)) call sphere_dist(lon(ic2,il0),lat(ic2,il0), &
-             & lonmod(lon(ic2,il0)+dlon(ic2)),lat(ic2,il0)+dlat(ic2),dist(ic2))
+               if (hdata%c1l0_log(hdata%c2_to_c1(ic2),il0)) call sphere_dist(lon_c2_ori(ic2,il0),lat_c2_ori(ic2,il0), &
+             & lon_c2(ic2),lat_c2(ic2),dist_c2(ic2))
             end do
-            displ%dist(iter,il0,its) = sum(dist,mask=hdata%c1l0_log(hdata%c2_to_c1,il0)) &
+            displ%dist(iter,il0,its) = sum(dist_c2,mask=hdata%c1l0_log(hdata%c2_to_c1,il0)) &
                                      & /count(hdata%c1l0_log(hdata%c2_to_c1,il0))
 
             ! Print results
@@ -409,55 +428,66 @@ do its=2,nam%nts
             if (dichotomy) drhflt = 0.5*drhflt
          end do
 
+         ! Copy  
+         displ%lon_flt(:,il0,its) = lon_c2
+         displ%lat_flt(:,il0,its) = lat_c2
+         displ%dist_flt(:,il0,its) = dist_c2
+
          ! Check convergence
          if (.not.convergence) call msgerror('iterative filtering failed')
-
-         ! Release memory
-         deallocate(order)
+      else
+         ! Print results
+         write(mpl%unit,'(a10,a22,f8.2,a,f6.2,a,f7.2,a)') '','Raw displacement: rhflt = ', &
+       & displ%rhflt(0,il0,its)*reqkm,' km, valid points: ',100.0*displ%valid(0,il0,its),'%, average displacement = ', &
+       & displ%dist(0,il0,its)*reqkm,' km'
       end if
 
       ! Filtered displacement interpolation
-      call apply_linop(hdata%h(min(il0,geom%nl0i)),dlon,displ%dlon_flt(:,il0,its))
-      call apply_linop(hdata%h(min(il0,geom%nl0i)),dlat,displ%dlat_flt(:,il0,its))
+      call apply_linop(hdata%h(min(il0,geom%nl0i)),dlon_c2,dlon_c0)
+      call apply_linop(hdata%h(min(il0,geom%nl0i)),dlat_c2,dlat_c0)
 
       ! Initialize sampling interpolation
-      displ%d(il0,its)%prefix = 'd'
-      displ%d(il0,its)%n_src = geom%nc0
-      displ%d(il0,its)%n_dst = nam%nc1
+      displ%dfull(il0,its)%prefix = 'd'
+      displ%dfull(il0,its)%n_src = geom%nc0
+      displ%dfull(il0,its)%n_dst = nam%nc1
 
       ! Compute sampling interpolation
       do ic1=1,nam%nc1
-         lon_c1(ic1) = lonmod(geom%lon(hdata%c1_to_c0(ic1))+displ%dlon_flt(hdata%c1_to_c0(ic1),il0,its))
-         lat_c1(ic1) = geom%lat(hdata%c1_to_c0(ic1))+displ%dlat_flt(hdata%c1_to_c0(ic1),il0,its)
+         lon_c1(ic1) = geom%lon(hdata%c1_to_c0(ic1))+dlon_c0(hdata%c1_to_c0(ic1))
+         lat_c1(ic1) = geom%lat(hdata%c1_to_c0(ic1))+dlat_c0(hdata%c1_to_c0(ic1))
+         call lonlatmod(lon_c1(ic1),lat_c1(ic1))
       end do
       call compute_interp(geom%mesh,geom%ctree,geom%nc0,geom%mask(:,il0), &
-    & nam%nc1,lon_c1,lat_c1,hdata%c1l0_log(:,il0),nam%diag_interp,displ%d(il0,its))
+    & nam%nc1,lon_c1,lat_c1,hdata%c1l0_log(:,il0),nam%diag_interp,displ%dfull(il0,its))
 
       ! Release memory
-      allocate(dlon(hdata%nc2a))
-      allocate(dlat(hdata%nc2a))
-      allocate(dist(hdata%nc2a))
+      deallocate(dlon_c2)
+      deallocate(dlat_c2)
+      deallocate(dist_c2)
    end do
 end do
 
 ! Compute dummy sampling interpolation (timeslot 1)
 do il0=1,geom%nl0
    ! Initialize interpolation
-   displ%d(il0,1)%prefix = 'd'
-   displ%d(il0,1)%n_src = geom%nc0
-   displ%d(il0,1)%n_dst = nam%nc1
+   displ%dfull(il0,1)%prefix = 'd'
+   displ%dfull(il0,1)%n_src = geom%nc0
+   displ%dfull(il0,1)%n_dst = nam%nc1
 
    ! Compute interpolation
    call compute_interp(geom%mesh,geom%ctree,geom%nc0,geom%mask(:,il0),nam%nc1,geom%lon(hdata%c1_to_c0), &
- & geom%lat(hdata%c1_to_c0),hdata%c1l0_log(:,il0),nam%diag_interp,displ%d(il0,1))
+ & geom%lat(hdata%c1_to_c0),hdata%c1l0_log(:,il0),nam%diag_interp,displ%dfull(il0,1))
 end do
 
 ! Output units
-displ%dlon_raw = displ%dlon_raw*rad2deg
-displ%dlat_raw = displ%dlat_raw*rad2deg
-displ%dlon_flt = displ%dlon_flt*rad2deg
-displ%dlat_flt = displ%dlat_flt*rad2deg
-displ%dist = displ%dist*reqkm
+displ%lon = displ%lon*rad2deg
+displ%lat = displ%lat*rad2deg
+displ%lon_raw = displ%lon_raw*rad2deg
+displ%lat_raw = displ%lat_raw*rad2deg
+displ%dist_raw = displ%dist_raw*reqkm
+displ%lon_flt = displ%lon_flt*rad2deg
+displ%lat_flt = displ%lat_flt*rad2deg
+displ%dist_flt = displ%dist_flt*reqkm
 displ%rhflt = displ%rhflt*reqkm
 
 ! End associate

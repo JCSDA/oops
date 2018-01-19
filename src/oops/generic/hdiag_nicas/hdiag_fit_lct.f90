@@ -11,7 +11,7 @@
 module hdiag_fit_lct
 
 use omp_lib
-use tools_const, only: lonmod
+use tools_const, only: lonlatmod
 use tools_diffusion, only: matern
 use tools_display, only: msgerror,msgwarning,prog_init,prog_print
 use tools_kinds, only: kind_real
@@ -47,17 +47,17 @@ subroutine compute_fit_lct(hdata,ib,dx,dy,dz,dmask,lct)
 implicit none
 
 ! Passed variables
-type(hdatatype),intent(in) :: hdata                               !< HDIAG data
-integer,intent(in) :: ib                                          !< Block index
-real(kind_real),intent(in) :: dx(hdata%nam%nc3,hdata%bpar%nl0(ib)) !< Zonal separation
-real(kind_real),intent(in) :: dy(hdata%nam%nc3,hdata%bpar%nl0(ib)) !< Meridian separation
-real(kind_real),intent(in) :: dz(hdata%bpar%nl0(ib))              !< Vertical separation
-logical,intent(in) :: dmask(hdata%nam%nc3,hdata%bpar%nl0(ib))      !< Mask
-type(lcttype),intent(inout) :: lct                                !< LCT
+type(hdatatype),intent(in) :: hdata                                 !< HDIAG data
+integer,intent(in) :: ib                                            !< Block index
+real(kind_real),intent(in) :: dx(hdata%nam%nc3,hdata%bpar%nl0r(ib)) !< Zonal separation
+real(kind_real),intent(in) :: dy(hdata%nam%nc3,hdata%bpar%nl0r(ib)) !< Meridian separation
+real(kind_real),intent(in) :: dz(hdata%bpar%nl0r(ib))               !< Vertical separation
+logical,intent(in) :: dmask(hdata%nam%nc3,hdata%bpar%nl0r(ib))      !< Mask
+type(lcttype),intent(inout) :: lct                                  !< LCT
 
 ! Local variables
 integer :: jl0r,jc3,iscales,offset
-real(kind_real) :: distsq,Hh(hdata%nam%nc3),Hv(hdata%bpar%nl0(ib)),Hhbar,Hvbar,det
+real(kind_real) :: distsq,Hh(hdata%nam%nc3),Hv(hdata%bpar%nl0r(ib)),Hhbar,Hvbar,det
 logical :: spd
 type(lcttype) :: lct_guess,lct_norm,lct_binf,lct_bsup
 type(mdatatype) :: mdata
@@ -67,7 +67,7 @@ associate(nam=>hdata%nam,geom=>hdata%geom,bpar=>hdata%bpar)
 
 ! Approximate homogeneous horizontal length-scale
 call msr(Hh)
-do jl0r=1,bpar%nl0(ib)
+do jl0r=1,bpar%nl0r(ib)
    if (.not.(abs(dz(jl0r))>0.0)) then
       do jc3=1,nam%nc3
          if (dmask(jc3,jl0r)) then
@@ -87,11 +87,11 @@ if (lct%nscales>1) Hhbar = Hhbar*Hscale
 ! Approximate homogeneous vertical length-scale
 call msr(Hv)
 jc3 = 1
-do jl0r=1,bpar%nl0(ib)
+do jl0r=1,bpar%nl0r(ib)
    distsq = dz(jl0r)**2
    if ((lct%raw(jc3,jl0r)>0.0).and.(distsq>0.0)) Hv(jl0r) = -2.0*log(lct%raw(jc3,jl0r))/distsq
 end do
-if (bpar%nl0(ib)>0) then
+if (bpar%nl0r(ib)>0) then
    Hvbar = 1.0
 else
    if (count(isnotmsr(Hv))>0) then
@@ -104,17 +104,17 @@ if (lct%nscales>1) Hvbar = Hvbar*Hscale
 
 ! Allocation
 mdata%nx = sum(lct%ncomp)+lct%nscales
-mdata%ny = nam%nc3*bpar%nl0(ib)
+mdata%ny = nam%nc3*bpar%nl0r(ib)
 allocate(mdata%x(mdata%nx))
 allocate(mdata%guess(mdata%nx))
 allocate(mdata%norm(mdata%nx))
 allocate(mdata%binf(mdata%nx))
 allocate(mdata%bsup(mdata%nx))
 allocate(mdata%obs(mdata%ny))
-allocate(mdata%dx(nam%nc3,bpar%nl0(ib)))
-allocate(mdata%dy(nam%nc3,bpar%nl0(ib)))
-allocate(mdata%dz(bpar%nl0(ib)))
-allocate(mdata%dmask(nam%nc3,bpar%nl0(ib)))
+allocate(mdata%dx(nam%nc3,bpar%nl0r(ib)))
+allocate(mdata%dy(nam%nc3,bpar%nl0r(ib)))
+allocate(mdata%dz(bpar%nl0r(ib)))
+allocate(mdata%dmask(nam%nc3,bpar%nl0r(ib)))
 allocate(mdata%ncomp(lct%nscales))
 call lct_alloc(hdata,lct_guess)
 call lct_alloc(hdata,lct_norm)
@@ -154,7 +154,7 @@ mdata%bsup(sum(lct%ncomp)+1:sum(lct%ncomp)+lct%nscales) = lct_bsup%coef
 mdata%obs = pack(lct%raw,.true.)
 mdata%fit_type = trim(nam%fit_type)
 mdata%nc3 = nam%nc3
-mdata%nl0 = bpar%nl0(ib)
+mdata%nl0 = bpar%nl0r(ib)
 mdata%dx = dx
 mdata%dy = dy
 mdata%dz = dz
@@ -173,7 +173,7 @@ lct%coef = mdata%x(sum(lct%ncomp)+1:sum(lct%ncomp)+lct%nscales)
 call dummy(mdata)
 
 ! Fixed positive value for the 2D case
-if (bpar%nl0(ib)==1) then
+if (bpar%nl0r(ib)==1) then
    offset = 0
    do iscales=1,lct%nscales
       lct%H(offset+3) = 1.0
@@ -202,7 +202,7 @@ else
 end if
 if (spd) then
    ! Rebuild fit
-   call define_fit(nam%nc3,bpar%nl0(ib),dx,dy,dz,dmask,lct%nscales,lct%ncomp,lct%H,lct%coef,lct%fit)
+   call define_fit(nam%nc3,bpar%nl0r(ib),dx,dy,dz,dmask,lct%nscales,lct%ncomp,lct%H,lct%coef,lct%fit)
 else
    ! Set as missing
    call msr(lct%H)
@@ -242,10 +242,10 @@ call mpl_split(nam%nc1,ic1_s,ic1_e,nc1_loc)
 
 ! Allocation
 npack = lct(1,1)%npack
-allocate(dx(nam%nc3,bpar%nl0(ib)))
-allocate(dy(nam%nc3,bpar%nl0(ib)))
-allocate(dz(bpar%nl0(ib)))
-allocate(dmask(nam%nc3,bpar%nl0(ib)))
+allocate(dx(nam%nc3,bpar%nl0r(ib)))
+allocate(dy(nam%nc3,bpar%nl0r(ib)))
+allocate(dz(bpar%nl0r(ib)))
+allocate(dmask(nam%nc3,bpar%nl0r(ib)))
 allocate(sbuf(nc1_loc(mpl%myproc)*npack))
 allocate(rbuf(nam%nc1*npack))
 allocate(done(nc1_loc(mpl%myproc)))
@@ -260,14 +260,15 @@ do il0=1,geom%nl0
       ic1 = ic1_s(mpl%myproc)+ic1_loc-1
 
       ! Prepare vectors
-      do jl0r=1,bpar%nl0(ib)
+      do jl0r=1,bpar%nl0r(ib)
          jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
          do jc3=1,nam%nc3
             dmask(jc3,jl0r) = hdata%c1l0_log(ic1,il0).and.hdata%c1c3l0_log(ic1,jc3,jl0)
             if (dmask(jc3,jl0r)) then
-               dx(jc3,jl0r) = lonmod(geom%lon(hdata%c1c3_to_c0(ic1,jc3))-geom%lon(hdata%c1c3_to_c0(ic1,1))) &
-                           & /cos(geom%lat(hdata%c1c3_to_c0(ic1,1)))
+               dx(jc3,jl0r) = geom%lon(hdata%c1c3_to_c0(ic1,jc3))-geom%lon(hdata%c1c3_to_c0(ic1,1))
                dy(jc3,jl0r) = geom%lat(hdata%c1c3_to_c0(ic1,jc3))-geom%lat(hdata%c1c3_to_c0(ic1,1))
+               call lonlatmod(dx(jc3,jl0r),dy(jc3,jl0r))
+               dx(jc3,jl0r) = dx(jc3,jl0r)/cos(geom%lat(hdata%c1c3_to_c0(ic1,1)))
             end if
          end do
          dz(jl0r) = float(nam%levs(jl0)-nam%levs(il0))
@@ -319,17 +320,17 @@ subroutine define_fit(nc,nl0,dx,dy,dz,dmask,nscales,ncomp,H,coef,fit)
 implicit none
 
 ! Passed variables
-integer,intent(in) :: nc                       !< Number of classes
-integer,intent(in) :: nl0                      !< Number of levels
-real(kind_real),intent(in) :: dx(nc,nl0)       !< Zonal separation
-real(kind_real),intent(in) :: dy(nc,nl0)       !< Meridian separation
-real(kind_real),intent(in) :: dz(nl0)          !< Vertical separation
-logical,intent(in) :: dmask(nc,nl0)            !< Mask
-integer,intent(in) :: nscales                  !< Number of LCT scales
-integer,intent(in) :: ncomp(nscales)           !< Number of LCT components
-real(kind_real),intent(in) :: H(sum(ncomp))    !< LCT components
-real(kind_real),intent(in) :: coef(nscales)    !< LCT coefficients
-real(kind_real),intent(out) :: fit(nc,nl0)     !< Fit
+integer,intent(in) :: nc                    !< Number of classes
+integer,intent(in) :: nl0                   !< Number of levels
+real(kind_real),intent(in) :: dx(nc,nl0)    !< Zonal separation
+real(kind_real),intent(in) :: dy(nc,nl0)    !< Meridian separation
+real(kind_real),intent(in) :: dz(nl0)       !< Vertical separation
+logical,intent(in) :: dmask(nc,nl0)         !< Mask
+integer,intent(in) :: nscales               !< Number of LCT scales
+integer,intent(in) :: ncomp(nscales)        !< Number of LCT components
+real(kind_real),intent(in) :: H(sum(ncomp)) !< LCT components
+real(kind_real),intent(in) :: coef(nscales) !< LCT coefficients
+real(kind_real),intent(out) :: fit(nc,nl0)  !< Fit
 
 ! Local variables
 integer :: jl0,jc3,iscales,offset
@@ -382,9 +383,9 @@ subroutine func(mdata,x,f)
 implicit none
 
 ! Passed variables
-type(mdatatype),intent(in) :: mdata         !< Minimization data
+type(mdatatype),intent(in) :: mdata       !< Minimization data
 real(kind_real),intent(in) :: x(mdata%nx) !< Control vector
-real(kind_real),intent(out) :: f            !< Cost function value
+real(kind_real),intent(out) :: f          !< Cost function value
 
 ! Local variables
 integer :: ix

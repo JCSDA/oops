@@ -194,7 +194,11 @@ void IncrementL95::interpolateAD(const LocsL95 & locs, const oops::Variables &, 
   fld_.interpAD(locs, vals);
 }
 // -----------------------------------------------------------------------------
-/// Convert to/from unstructured grid
+/// Define and convert to/from unstructured grid
+// -----------------------------------------------------------------------------
+void IncrementL95::define(oops::UnstructuredGrid & ug) const {
+  fld_.define(ug);
+}
 // -----------------------------------------------------------------------------
 void IncrementL95::convert_to(oops::UnstructuredGrid & ug) const {
   fld_.convert_to(ug);

@@ -43,7 +43,7 @@ implicit none
 type(hdatatype),intent(inout) :: hdata !< HDIAG data
 
 ! Local variables
-integer :: info,ic0,il0,ic1,ic2,ildw,jc3,i_s,il0i,jc1,ic2a,iproc
+integer :: info,ic0,il0,ic1,ic2,ildw,jc3,i_s,il0i,jc1,kc1,ic2a,iproc
 integer :: mask_ind(hdata%nam%nc1)
 integer,allocatable :: vbot(:),vtop(:),nn_c1_index(:),c2a_to_c2(:)
 real(kind_real) :: rh0(hdata%geom%nc0,hdata%geom%nl0),dum(1)
@@ -62,13 +62,13 @@ end if
 ! Define nc2
 if (nam%new_lct) then
    hdata%nc2 = nam%nc1
-else
-   if (nam%local_diag.or.nam%displ_diag) then
-      hdata%nc2 = int(2.0*maxval(geom%area)/(sqrt(3.0)*(nam%local_rad)**2))
-      write(mpl%unit,'(a7,a,i8)') '','Estimated nc2 from local diagnostic radius: ',hdata%nc2
-      hdata%nc2 = min(hdata%nc2,nam%nc1)
-      write(mpl%unit,'(a7,a,i8)') '','Final nc2: ',hdata%nc2
-   end if
+elseif (nam%local_diag) then
+   hdata%nc2 = int(2.0*maxval(geom%area)/(sqrt(3.0)*(nam%local_rad)**2))
+   write(mpl%unit,'(a7,a,i8)') '','Estimated nc2 from local diagnostic radius: ',hdata%nc2
+   hdata%nc2 = min(hdata%nc2,nam%nc1)
+   write(mpl%unit,'(a7,a,i8)') '','Final nc2: ',hdata%nc2
+elseif (nam%displ_diag) then
+   hdata%nc2 = nam%nc1
 end if
 
 ! Allocation
@@ -143,16 +143,16 @@ if (nam%local_diag.or.nam%displ_diag) then
          write(mpl%unit,'(a10,a,i3)') '','Independent level ',il0i
          ctree_diag = create_ctree(nam%nc1,geom%lon(hdata%c1_to_c0),geom%lat(hdata%c1_to_c0),hdata%c1l0_log(:,il0i))
          do ic2=1,hdata%nc2
+            ic1 = hdata%c2_to_c1(ic2)
             ic0 = hdata%c2_to_c0(ic2)
-            if (hdata%c1l0_log(hdata%c2_to_c1(ic2),il0i)) then
+            if (hdata%c1l0_log(ic1,il0i)) then
                ! Find nearest neighbors
-               call find_nearest_neighbors(ctree_diag,geom%lon(ic0),geom%lat(ic0), &
-             & nam%nc1,nn_c1_index,nn_c1_dist)
+               call find_nearest_neighbors(ctree_diag,geom%lon(ic0),geom%lat(ic0),nam%nc1,nn_c1_index,nn_c1_dist)
 
-               do ic1=1,nam%nc1
-                  jc1 = nn_c1_index(ic1)
-                  hdata%local_mask(jc1,ic2,il0i) = (ic1==1).or.(nn_c1_dist(ic1)<min(nam%local_rad,hdata%bdist(ic2)))
-                  hdata%displ_mask(jc1,ic2,il0i) = (ic1==1).or.(nn_c1_dist(ic1)<min(nam%displ_rad,hdata%bdist(ic2)))
+               do jc1=1,nam%nc1
+                  kc1 = nn_c1_index(jc1)
+                  hdata%local_mask(kc1,ic2,il0i) = (jc1==1).or.(nn_c1_dist(jc1)<min(nam%local_rad,hdata%bdist(ic2)))
+                  hdata%displ_mask(kc1,ic2,il0i) = (jc1==1).or.(nn_c1_dist(jc1)<min(nam%displ_rad,hdata%bdist(ic2)))
                end do
             end if
          end do

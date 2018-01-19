@@ -42,17 +42,17 @@ subroutine minim(mdata,func,lprt)
 implicit none
 
 ! Passed variables
-type(mdatatype),intent(inout) :: mdata         !< Minimization data
+type(mdatatype),intent(inout) :: mdata       !< Minimization data
 interface
    subroutine func(mdata,x,f)                !< Cost function
    use tools_kinds, only: kind_real
    use type_mdata, only: mdatatype
-   type(mdatatype),intent(in) :: mdata         !< Minimization data
+   type(mdatatype),intent(in) :: mdata       !< Minimization data
    real(kind_real),intent(in) :: x(mdata%nx) !< Control vector
-   real(kind_real),intent(out) :: f            !< Cost function value
+   real(kind_real),intent(out) :: f          !< Cost function value
    end subroutine
 end interface
-logical,intent(in) :: lprt                     !< Print key
+logical,intent(in) :: lprt                   !< Print key
 
 ! Local variables
 integer :: icount,numres,info,ix

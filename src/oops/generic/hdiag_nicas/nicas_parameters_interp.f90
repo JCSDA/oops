@@ -64,7 +64,7 @@ subroutine compute_interp_v(ndata)
 implicit none
 
 ! Passed variables
-type(ndatatype),intent(inout) :: ndata     !< NICAS data
+type(ndatatype),intent(inout) :: ndata !< NICAS data
 
 ! Local variables
 integer :: jl0,il0,jl1,il0inf,il0sup
@@ -143,6 +143,7 @@ type(ndatatype),intent(inout) :: ndata !< NICAS data
 ! Local variables
 integer :: il1,i_s
 real(kind_real) :: renorm(ndata%nc1)
+logical :: mask_src(ndata%nc1),mask_dst(ndata%nc1)
 logical,allocatable :: valid(:)
 type(linoptype) :: stmp
 
@@ -155,12 +156,12 @@ allocate(ndata%sfull(ndata%nl1))
 do il1=1,ndata%nl1
    ! Initialize object
    ndata%sfull(il1)%prefix = 's'
-   ndata%sfull(il1)%n_src = ndata%nc2(il1)
+   ndata%sfull(il1)%n_src = ndata%nc1
    ndata%sfull(il1)%n_dst = ndata%nc1
 
    if (ndata%nc2(il1)==ndata%nc1) then
       ! No interpolation
-      ndata%sfull(il1)%n_s = ndata%nc2(il1)
+      ndata%sfull(il1)%n_s = ndata%nc1
       call linop_alloc(ndata%sfull(il1))
       do i_s=1,ndata%sfull(il1)%n_s
          ndata%sfull(il1)%row(i_s) = i_s
@@ -168,12 +169,13 @@ do il1=1,ndata%nl1
          ndata%sfull(il1)%S(i_s) = 1.0
       end do
    else
-      ! Compute interpolation
-      call compute_interp(ndata%nc2(il1),geom%lon(ndata%c2l1_to_c0(1:ndata%nc2(il1),il1)), &
-    & geom%lat(ndata%c2l1_to_c0(1:ndata%nc2(il1),il1)), &
-    & geom%mask(ndata%c2l1_to_c0(1:ndata%nc2(il1),il1),ndata%l1_to_l0(il1)), &
-    & ndata%nc1,geom%lon(ndata%c1_to_c0),geom%lat(ndata%c1_to_c0), &
-    & geom%mask(ndata%c1_to_c0,ndata%l1_to_l0(il1)),nam%nicas_interp,stmp)
+      ! Mask
+      mask_src = ndata%c2mask(:,il1)
+      mask_dst = .true.
+
+      ! Compute interpolation     
+      call compute_interp(ndata%nc1,geom%lon(ndata%c1_to_c0),geom%lat(ndata%c1_to_c0),mask_src, &
+    & ndata%nc1,geom%lon(ndata%c1_to_c0),geom%lat(ndata%c1_to_c0),mask_dst,nam%nicas_interp,stmp)
 
       ! Allocation
       allocate(valid(stmp%n_s))
@@ -183,7 +185,7 @@ do il1=1,ndata%nl1
       if (nam%mask_check) then
          write(mpl%unit,'(a10,a,i3,a)',advance='no') '','Sublevel ',il1,': '
          call check_mask_bnd(geom,stmp,valid,ndata%l1_to_l0(il1), &
-       & row_to_ic0=ndata%c1_to_c0,col_to_ic0=ndata%c1_to_c0(ndata%c2l1_to_c1(1:ndata%nc2(il1),il1)))
+       & row_to_ic0=ndata%c1_to_c0,col_to_ic0=ndata%c1_to_c0)
       else
          write(mpl%unit,'(a10,a,i3)') '','Sublevel ',il1
       end if
@@ -212,8 +214,7 @@ do il1=1,ndata%nl1
       deallocate(valid)
 
       ! Count points that are not interpolated
-      call interp_missing(ndata%nc1,geom%lon(ndata%c1_to_c0),geom%lat(ndata%c1_to_c0),geom%mask(ndata%c1_to_c0,ndata%l1_to_l0), &
-    & ndata%sfull(il1))
+      call interp_missing(ndata%nc1,geom%lon(ndata%c1_to_c0),geom%lat(ndata%c1_to_c0),mask_dst,nam%nicas_interp,ndata%sfull(il1))
    end if
 end do
 

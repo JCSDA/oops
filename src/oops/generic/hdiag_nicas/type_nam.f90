@@ -26,7 +26,7 @@ implicit none
 integer,parameter :: nvmax = 20                     !< Maximum number of variables
 integer,parameter :: ntsmax = 20                    !< Maximum number of time slots
 integer,parameter :: nlmax = 200                    !< Maximum number of levels
-integer,parameter :: nc3max = 1000                   !< Maximum number of classes
+integer,parameter :: nc3max = 1000                  !< Maximum number of classes
 integer,parameter :: nscalesmax = 5                 !< Maximum number of variables
 integer,parameter :: nldwvmax = 100                 !< Maximum number of local diagnostic profiles
 integer,parameter :: ndirmax = 100                  !< Maximum number of diracs
@@ -37,7 +37,7 @@ type namtype
    character(len=1024) :: prefix                    !< Files prefix
    character(len=1024) :: model                     !< Model name ('aro', 'arp', 'gem', 'geos', 'gfs', 'ifs', 'mpas', 'nemo' or 'wrf')
    logical :: colorlog                              !< Add colors to the log (for display on terminal)
-   logical :: default_seed                      !< Default seed for random numbers
+   logical :: default_seed                          !< Default seed for random numbers
    logical :: load_ensemble                         !< Load ensemble before computations
 
    ! driver_param
@@ -84,7 +84,7 @@ type namtype
    integer :: nc1                                   !< Number of sampling points
    integer :: ntry                                  !< Number of tries to get the most separated point for the zero-separation sampling
    integer :: nrep                                  !< Number of replacement to improve homogeneity of the zero-separation sampling
-   integer :: nc3                                    !< Number of classes
+   integer :: nc3                                   !< Number of classes
    real(kind_real) ::  dc                           !< Class size (for sam_type='hor'), should be larger than the typical grid cell size
    integer :: nl0r                                  !< Reduced number of levels for diagnostics
 
@@ -111,14 +111,14 @@ type namtype
 
    ! output_param
    integer :: nldwh                                 !< Number of local diagnostics fields to write (for local_diag = .true.)
-   integer :: il_ldwh(nlmax*nc3max)                  !< Levels of local diagnostics fields to write (for local_diag = .true.)
-   integer :: ic_ldwh(nlmax*nc3max)                  !< Classes of local diagnostics fields to write (for local_diag = .true.)
+   integer :: il_ldwh(nlmax*nc3max)                 !< Levels of local diagnostics fields to write (for local_diag = .true.)
+   integer :: ic_ldwh(nlmax*nc3max)                 !< Classes of local diagnostics fields to write (for local_diag = .true.)
    integer :: nldwv                                 !< Number of local diagnostics profiles to write (for local_diag = .true.)
    real(kind_real) ::  lon_ldwv(nldwvmax)           !< Longitudes (in degrees) local diagnostics profiles to write (for local_diag = .true.)
    real(kind_real) ::  lat_ldwv(nldwvmax)           !< Latitudes (in degrees) local diagnostics profiles to write (for local_diag = .true.)
    character(len=1024) :: flt_type                  !< Diagnostics filtering type ('none', 'average', 'gc99', 'median')
    real(kind_real) ::  diag_rhflt                   !< Diagnostics filtering radius
-   character(len=1024) :: diag_interp              !< Diagnostics interpolation type
+   character(len=1024) :: diag_interp               !< Diagnostics interpolation type
 
    ! nicas_param
    logical :: lsqrt                                 !< Square-root formulation
@@ -767,7 +767,7 @@ implicit none
 
 ! Passed variable
 type(namtype),intent(in) :: nam !< Namelist
-integer,intent(in) :: ncid !< NetCDF file id
+integer,intent(in) :: ncid      !< NetCDF file id
 
 ! general_param
 call put_att(ncid,'datadir',trim(nam%datadir))

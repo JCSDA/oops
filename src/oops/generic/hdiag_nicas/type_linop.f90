@@ -41,7 +41,7 @@ interface linop_write
   module procedure linop_write_array
 end interface
 
-logical :: check_data = .true. !< Activate data check for all linear operations
+logical :: check_data = .false. !< Activate data check for all linear operations
 
 private
 public :: linoptype
@@ -270,12 +270,12 @@ subroutine apply_linop_sym(linop,fld)
 implicit none
 
 ! Passed variables
-type(linoptype),intent(in) :: linop                 !< Linear operator
-real(kind_real),intent(inout) :: fld(linop%n_src)   !< Source/destination vector
+type(linoptype),intent(in) :: linop               !< Linear operator
+real(kind_real),intent(inout) :: fld(linop%n_src) !< Source/destination vector
 
 ! Local variables
 integer :: i_s,ithread
-real(kind_real) :: fld_tmp(linop%n_dst,mpl%nthread)
+real(kind_real) :: fld_arr(linop%n_dst,mpl%nthread)
 
 if (check_data) then
    ! Check linear operation
@@ -291,21 +291,19 @@ if (check_data) then
    if (any(.not.isnotmsr(fld))) call msgerror('Missing value in fld for symmetric linear operation '//trim(linop%prefix))
 end if
 
-! Initialization
-fld_tmp = 0.0
-
 ! Apply weights
+fld_arr = 0.0
 !$omp parallel do schedule(static) private(i_s,ithread)
 do i_s=1,linop%n_s
    ithread = omp_get_thread_num()+1
-   fld_tmp(linop%row(i_s),ithread) = fld_tmp(linop%row(i_s),ithread)+linop%S(i_s)*fld(linop%col(i_s))
-   fld_tmp(linop%col(i_s),ithread) = fld_tmp(linop%col(i_s),ithread)+linop%S(i_s)*fld(linop%row(i_s))
+   fld_arr(linop%row(i_s),ithread) = fld_arr(linop%row(i_s),ithread)+linop%S(i_s)*fld(linop%col(i_s))
+   fld_arr(linop%col(i_s),ithread) = fld_arr(linop%col(i_s),ithread)+linop%S(i_s)*fld(linop%row(i_s))
 end do
 !$omp end parallel do
 
 ! Sum over threads
 do ithread=1,mpl%nthread
-   fld = fld+fld_tmp(:,ithread)
+   fld = fld+fld_arr(:,ithread)
 end do
 
 if (check_data) then

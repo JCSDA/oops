@@ -46,6 +46,7 @@ real(kind_real) :: fit_rm,fit_rp
 logical :: valid
 
 if (raw(iz)>0.0) then
+   ! At least one positive point is needed
    valid = .false.
    do i=1,n
      if (i/=iz) then
@@ -53,7 +54,9 @@ if (raw(iz)>0.0) then
      end if
    end do
 
+   ! Initialization
    fit_r = 0.0
+
    if (valid) then
       ! Define threshold and its inverse
       if (minval(raw/raw(iz),mask=(raw>0.0))<0.5) then

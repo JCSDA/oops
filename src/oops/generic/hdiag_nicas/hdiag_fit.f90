@@ -91,8 +91,8 @@ do il0=1,geom%nl0
    rawv = curve%raw(1,:,il0)
    call fast_fit(nam%nl0r,jl0r,distvr(:,il0),rawv,curve%fit_rv(il0))
 end do
-if (nam%lhomh) curve%fit_rh = sum(curve%fit_rh)/float(geom%nl0)
-if (nam%lhomv) curve%fit_rv = sum(curve%fit_rv)/float(geom%nl0)
+if (nam%lhomh) curve%fit_rh = sum(curve%fit_rh,mask=isnotmsr(curve%fit_rh))/float(count(isnotmsr(curve%fit_rh)))
+if (nam%lhomv) curve%fit_rv = sum(curve%fit_rv,mask=isnotmsr(curve%fit_rv))/float(count(isnotmsr(curve%fit_rv)))
 
 ! Scaling optimization (brute-force)
 mse_opt = huge(1.0)
@@ -142,7 +142,7 @@ case ('nelder_mead','compass_search','praxis')
    allocate(mdata%binf(mdata%nx))
    allocate(mdata%bsup(mdata%nx))
    allocate(mdata%obs(mdata%ny))
-   allocate(mdata%l0rl0_to_l0(nam%nl0r,nam%nl0r))
+   allocate(mdata%l0rl0_to_l0(nam%nl0r,geom%nl0))
    allocate(mdata%disth(nam%nc3))
    allocate(mdata%distvr(nam%nl0r,geom%nl0))
 
@@ -178,6 +178,9 @@ case ('nelder_mead','compass_search','praxis')
 
    ! Compute fit
    call minim(mdata,func,prt)
+
+   ! Apply bounds
+   mdata%x = max(mdata%binf,min(mdata%x,mdata%bsup))
 
    ! Copy parameters
    offset = 0
@@ -253,23 +256,23 @@ end subroutine compute_fit_local
 ! Subroutine: define_fit
 !> Purpose: define the fit
 !----------------------------------------------------------------------
-subroutine define_fit(nc,nl0r,nl0,l0rl0_to_l0,disth,distvr,rh,rv,fit)
+subroutine define_fit(nc3,nl0r,nl0,l0rl0_to_l0,disth,distvr,rh,rv,fit)
 
 implicit none
 
 ! Passed variables
-integer,intent(in) :: nc                        !< Number of classes
-integer,intent(in) :: nl0r                      !< Reduced number of levels
-integer,intent(in) :: nl0                       !< Number of levels
-integer,intent(in) :: l0rl0_to_l0(nl0r,nl0)     !< Reduced level to level
-real(kind_real),intent(in) :: disth(nc)         !< Horizontal distance
-real(kind_real),intent(in) :: distvr(nl0r,nl0)  !< Vertical distance
-real(kind_real),intent(in) :: rh(nl0)           !< Horizontal support radius
-real(kind_real),intent(in) :: rv(nl0)           !< Vertical support radius
-real(kind_real),intent(out) :: fit(nc,nl0r,nl0) !< Fit
+integer,intent(in) :: nc3                        !< Number of classes
+integer,intent(in) :: nl0r                       !< Reduced number of levels
+integer,intent(in) :: nl0                        !< Number of levels
+integer,intent(in) :: l0rl0_to_l0(nl0r,nl0)      !< Reduced level to level
+real(kind_real),intent(in) :: disth(nc3)         !< Horizontal distance
+real(kind_real),intent(in) :: distvr(nl0r,nl0)   !< Vertical distance
+real(kind_real),intent(in) :: rh(nl0)            !< Horizontal support radius
+real(kind_real),intent(in) :: rv(nl0)            !< Vertical support radius
+real(kind_real),intent(out) :: fit(nc3,nl0r,nl0) !< Fit
 
 ! Local variables
-integer :: jl0r,jl0,il0,kl0r,kl0,jc3,kc,ip,jp,np,np_new
+integer :: jl0r,jl0,il0,kl0r,kl0,jc3,kc3,ip,jp,np,np_new
 integer,allocatable :: plist(:,:),plist_new(:,:)
 real(kind_real) :: rhsq,rvsq,distnorm,disttest
 real(kind_real),allocatable :: dist(:,:)
@@ -280,9 +283,9 @@ fit = 0.0
 
 do il0=1,nl0
    ! Allocation
-   allocate(plist(nc*nl0r,2))
-   allocate(plist_new(nc*nl0r,2))
-   allocate(dist(nc,nl0r))
+   allocate(plist(nc3*nl0r,2))
+   allocate(plist_new(nc3*nl0r,2))
+   allocate(dist(nc3,nl0r))
 
    ! Initialize the front
    np = 1
@@ -305,7 +308,7 @@ do il0=1,nl0
          jl0 = l0rl0_to_l0(jl0r,il0)
 
          ! Loop over neighbors
-         do kc=jc3,min(jc3+1,nc)
+         do kc3=max(jc3-1,1),min(jc3+1,nc3)
             do kl0r=max(jl0r-1,1),min(jl0r+1,nl0r)
                kl0 = l0rl0_to_l0(kl0r,il0)
                if (isnotmsr(rh(jl0)).and.isnotmsr(rh(kl0))) then
@@ -320,8 +323,8 @@ do il0=1,nl0
                end if
                distnorm = 0.0
                if (rhsq>0.0) then
-                  distnorm = distnorm+(disth(kc)-disth(jc3))**2/rhsq
-               elseif (kc/=jc3) then
+                  distnorm = distnorm+(disth(kc3)-disth(jc3))**2/rhsq
+               elseif (kc3/=jc3) then
                   distnorm = huge(1.0)
                end if
                if (rvsq>0.0) then
@@ -329,17 +332,17 @@ do il0=1,nl0
                elseif (kl0r/=jl0r) then
                   distnorm = huge(1.0)
                end if
-               disttest = sqrt(dist(jc3,jl0r)**2+distnorm)
+               disttest = dist(jc3,jl0r)+sqrt(distnorm)
                if (disttest<1.0) then
                   ! Point is inside the support
-                  if (disttest<dist(kc,kl0r)) then
+                  if (disttest<dist(kc3,kl0r)) then
                      ! Update distance
-                     dist(kc,kl0r) = disttest
+                     dist(kc3,kl0r) = disttest
 
                      ! Check if the point should be added to the front (avoid duplicates)
                      add_to_front = .true.
                      do jp=1,np_new
-                        if ((plist_new(jp,1)==kc).and.(plist_new(jp,2)==kl0r)) then
+                        if ((plist_new(jp,1)==kc3).and.(plist_new(jp,2)==kl0r)) then
                            add_to_front = .false.
                            exit
                         end if
@@ -348,7 +351,7 @@ do il0=1,nl0
                      if (add_to_front) then
                         ! Add point to the front
                         np_new = np_new+1
-                        plist_new(np_new,1) = kc
+                        plist_new(np_new,1) = kc3
                         plist_new(np_new,2) = kl0r
                      end if
                   end if
@@ -363,7 +366,7 @@ do il0=1,nl0
    end do
 
    do jl0r=1,nl0r
-      do jc3=1,nc
+      do jc3=1,nc3
          ! Gaspari-Cohn (1999) function
          distnorm = dist(jc3,jl0r)
          if (distnorm<1.0) fit(jc3,jl0r,il0) = gc99(distnorm)

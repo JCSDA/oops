@@ -325,7 +325,7 @@ type(bdatatype),intent(in) :: bdata    !< B data
 type(ndatatype),intent(inout) :: ndata !< NICAS data
 
 ! Local variables
-integer :: ms,n_s_max,progint,ithread,is,ic1,jl0,jc1,il1,jl1,il0,j,js,isb,ic1bb,offset
+integer :: ms,n_s_max,progint,ithread,is,ic1,jl0,jc1,il1,jl1,il0,j,js,isb,ic1b,offset
 integer :: c_n_s(mpl%nthread),c_nor_n_s(mpl%nthread)
 integer,allocatable :: nn_index(:,:)
 real(kind_real) :: rhssq,rvssq,distnorm,S_test
@@ -356,9 +356,8 @@ deallocate(mask_ctree)
 ! Theoretical number of neighbors
 ms = 0
 do il1=1,ndata%nl1
-   ms = max(ms,floor(0.25*float(ndata%nc1)*(sum(bdata%rh0(ndata%c2l1_to_c0(1:ndata%nc2(il1),il1),ndata%l1_to_l0(il1)), &
-      & mask=geom%mask(ndata%c2l1_to_c0(1:ndata%nc2(il1),il1),ndata%l1_to_l0(il1))) &
-      & /float(count(geom%mask(ndata%c2l1_to_c0(1:ndata%nc2(il1),il1),ndata%l1_to_l0(il1)))))**2))
+   ms = max(ms,floor(0.25*float(ndata%nc1)*(sum(bdata%rh0(ndata%c1_to_c0,ndata%l1_to_l0(il1)),mask=ndata%c2mask(:,il1)) &
+      & /float(ndata%nc2(il1)))**2))
 end do
 
 ! Find all necessary neighbors
@@ -372,35 +371,35 @@ do while (.not.valid)
    ! Allocation 
    if (allocated(nn_index)) deallocate(nn_index)
    if (allocated(nn_dist)) deallocate(nn_dist)
-   allocate(nn_index(ms,ndata%nc1bb))
-   allocate(nn_dist(ms,ndata%nc1bb))
+   allocate(nn_index(ms,ndata%nc1b))
+   allocate(nn_dist(ms,ndata%nc1b))
 
    ! Loop over points
    test = .true.
-   ic1bb = 1
-   do while ((test.or.force).and.(ic1bb<=ndata%nc1bb))
-      ic1 = ndata%c1bb_to_c1(ic1bb)
+   ic1b = 1
+   do while ((test.or.force).and.(ic1b<=ndata%nc1b))
+      ic1 = ndata%c1b_to_c1(ic1b)
 
       ! Compute nearest neighbors 
       call find_nearest_neighbors(ctree,dble(geom%lon(ndata%c1_to_c0(ic1))), &
-    & dble(geom%lat(ndata%c1_to_c0(ic1))),ms,nn_index(:,ic1bb),nn_dist(:,ic1bb))
+    & dble(geom%lat(ndata%c1_to_c0(ic1))),ms,nn_index(:,ic1b),nn_dist(:,ic1b))
 
       ! Loop over levels
-      jc1 = nn_index(ms,ic1bb)
+      jc1 = nn_index(ms,ic1b)
       il1 = 1
       do while ((test.or.force).and.(il1<=ndata%nl1))
          rhssq = 0.5*(bdata%rh0(ndata%c1_to_c0(ic1),ndata%l1_to_l0(il1))**2+ &
                & bdata%rh0(ndata%c1_to_c0(jc1),ndata%l1_to_l0(il1))**2)
-         distnorm = nn_dist(ms,ic1bb)**2/rhssq
+         distnorm = nn_dist(ms,ic1b)**2/rhssq
          if ((distnorm<1.0).and.(.not.force)) then
             ms = 2*ms
             test = .false.
          end if
          il1 = il1+1
       end do
-      ic1bb = ic1bb+1
+      ic1b = ic1b+1
    end do
-   if ((ic1bb>ndata%nc1bb).or.force) valid = .true.
+   if ((ic1b>ndata%nc1b).or.force) valid = .true.
 end do
 
 ! Allocation
@@ -418,19 +417,19 @@ write(mpl%unit,'(a10,a)',advance='no') '','Compute weights: '
 call prog_init(progint,done)
 c_n_s = 0
 c_nor_n_s = 0
-!$omp parallel do schedule(static) private(isb,is,ithread,ic1,ic1bb,il1,il0,j,jc1,jl1,jl0,js,rhssq,rvssq,distnorm,S_test)
+!$omp parallel do schedule(static) private(isb,is,ithread,ic1,ic1b,il1,il0,j,jc1,jl1,jl0,js,rhssq,rvssq,distnorm,S_test)
 do isb=1,ndata%nsb
    ! Indices
    is = ndata%sb_to_s(isb)
    ithread = omp_get_thread_num()+1
    ic1 = ndata%s_to_c1(is)
-   ic1bb = ndata%c1_to_c1bb(ic1)
+   ic1b = ndata%c1_to_c1b(ic1)
    il1 = ndata%s_to_l1(is)
    il0 = ndata%l1_to_l0(il1)
 
    ! Loop on nearest neighbors
    do j=1,ms
-      jc1 = nn_index(j,ic1bb)
+      jc1 = nn_index(j,ic1b)
       do jl1=1,ndata%nl1
          if (submask(jc1,jl1)) then
             jl0 = ndata%l1_to_l0(jl1)
@@ -442,7 +441,7 @@ do isb=1,ndata%nsb
             rvssq = 0.5*(bdata%rv0(ndata%c1_to_c0(ndata%s_to_c1(is)),ndata%l1_to_l0(ndata%s_to_l1(is)))**2+ &
                   & bdata%rv0(ndata%c1_to_c0(ndata%s_to_c1(js)),ndata%l1_to_l0(ndata%s_to_l1(js)))**2)
             distnorm = 0.0
-            if (rhssq>0.0) distnorm = distnorm+nn_dist(j,ic1bb)**2/rhssq
+            if (rhssq>0.0) distnorm = distnorm+nn_dist(j,ic1b)**2/rhssq
             if (rvssq>0.0) distnorm = distnorm+geom%distv(il0,jl0)**2/rvssq
             distnorm = sqrt(distnorm)
 

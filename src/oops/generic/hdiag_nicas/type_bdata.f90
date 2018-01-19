@@ -13,6 +13,7 @@ module type_bdata
 use model_interface, only: model_write
 use netcdf
 use hdiag_tools, only: diag_filter,diag_interpolation,diag_com_lg
+use tools_const, only: rad2deg
 use tools_display, only: msgwarning,msgerror,prog_init,prog_print
 use tools_kinds, only: kind_real
 use tools_missing, only: msvalr,msr,isnotmsr,isallnotmsr,isanynotmsr
@@ -21,7 +22,7 @@ use type_curve, only: curvetype
 use type_geom, only: geomtype
 use type_hdata, only: hdatatype
 use type_mpl, only: mpl,mpl_bcast
-use type_nam, only: namtype
+use type_nam, only: namtype,namncwrite
 
 implicit none
 
@@ -232,7 +233,7 @@ implicit none
 
 ! Passed variables
 type(hdatatype),intent(in) :: hdata                            !< HDIAG data
-type(curvetype),intent(in) :: diag(hdata%nc2a,hdata%bpar%nb+1) !< Diagnostic curves
+type(curvetype),intent(in) :: diag(hdata%nc2a,hdata%bpar%nb+1) !< Diagnostics
 type(bdatatype),intent(inout) :: bdata(hdata%bpar%nb+1)        !< B data
 
 ! Local variables
@@ -529,7 +530,7 @@ logical,intent(in) :: nicas_block   !< NICAS block key
 
 ! Local variables
 integer :: ncid,nc0_id,nl0_1_id,nl0_2_id
-integer :: coef_ens_id,coef_sta_id,rh0_id,rv0_id,rh0s_id,rv0s_id,trans_id,transinv_id
+integer :: lon_id,lat_id,coef_ens_id,coef_sta_id,rh0_id,rv0_id,rh0s_id,rv0s_id,trans_id,transinv_id
 character(len=1024) :: subr = 'bdata_write'
 
 ! Associate
@@ -541,6 +542,7 @@ if (.not.mpl%main) call msgerror('only I/O proc should enter '//trim(subr))
 ! Create file
 call ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(nam%prefix)//'_'//trim(bdata%cname)//'.nc', &
  & or(nf90_clobber,nf90_64bit_offset),ncid))
+call namncwrite(nam,ncid)
 
 if (nicas_block) then
    ! Define dimensions
@@ -549,6 +551,10 @@ if (nicas_block) then
    if (nam%transform.and.auto_block) call ncerr(subr,nf90_def_dim(ncid,'nl0_2',geom%nl0,nl0_2_id))
 
    ! Define arrays
+   call ncerr(subr,nf90_def_var(ncid,'lon',ncfloat,(/nc0_id/),lon_id))
+   call ncerr(subr,nf90_put_att(ncid,lon_id,'_FillValue',msvalr))
+   call ncerr(subr,nf90_def_var(ncid,'lat',ncfloat,(/nc0_id/),lat_id))
+   call ncerr(subr,nf90_put_att(ncid,lat_id,'_FillValue',msvalr))
    call ncerr(subr,nf90_def_var(ncid,'coef_ens',ncfloat,(/nc0_id,nl0_1_id/),coef_ens_id))
    call ncerr(subr,nf90_put_att(ncid,coef_ens_id,'_FillValue',msvalr))
    call ncerr(subr,nf90_def_var(ncid,'coef_sta',ncfloat,(/nc0_id,nl0_1_id/),coef_sta_id))
@@ -580,6 +586,8 @@ call ncerr(subr,nf90_enddef(ncid))
 
 ! Write arrays
 if (nicas_block) then
+   call ncerr(subr,nf90_put_var(ncid,lon_id,geom%lon*rad2deg))
+   call ncerr(subr,nf90_put_var(ncid,lat_id,geom%lat*rad2deg))
    call ncerr(subr,nf90_put_var(ncid,coef_ens_id,bdata%coef_ens))
    call ncerr(subr,nf90_put_var(ncid,coef_sta_id,bdata%coef_sta))
    call ncerr(subr,nf90_put_var(ncid,rh0_id,bdata%rh0))
@@ -596,18 +604,6 @@ end if
 
 ! Close file
 call ncerr(subr,nf90_close(ncid))
-
-! Write gridded data (for visualisation)
-if (nicas_block) then
-   call model_write(nam,geom,trim(nam%prefix)//'_gridded_'//trim(bdata%cname)//'.nc','coef_ens',bdata%coef_ens)
-   call model_write(nam,geom,trim(nam%prefix)//'_gridded_'//trim(bdata%cname)//'.nc','rh0',bdata%rh0)
-   call model_write(nam,geom,trim(nam%prefix)//'_gridded_'//trim(bdata%cname)//'.nc','rv0',bdata%rv0)
-   if (trim(nam%strategy)=='specific_multivariate') then
-      call model_write(nam,geom,trim(nam%prefix)//'_gridded_'//trim(bdata%cname)//'.nc','rh0s',bdata%rh0s)
-      call model_write(nam,geom,trim(nam%prefix)//'_gridded_'//trim(bdata%cname)//'.nc','rv0s',bdata%rv0s)
-   end if
-   call model_write(nam,geom,trim(nam%prefix)//'_gridded_'//trim(bdata%cname)//'.nc','coef_sta',bdata%coef_sta)
-end if
 
 ! End associate
 end associate

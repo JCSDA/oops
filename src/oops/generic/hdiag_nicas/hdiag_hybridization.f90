@@ -50,7 +50,7 @@ associate(nam=>hdata%nam,geom=>hdata%geom,bpar=>hdata%bpar)
 num = 0.0
 den = 0.0
 do il0=1,geom%nl0
-   do jl0r=1,bpar%nl0(ib)
+   do jl0r=1,bpar%nl0r(ib)
       do jc3=1,bpar%nc3(ib)
          if (isnotmsr(avg%m11asysq(jc3,jl0r,il0)).and.isnotmsr(avg%m11sq(jc3,jl0r,il0)) &
        & .and.isnotmsr(avg%m11sta(jc3,jl0r,il0)).and.isnotmsr(avg%stasq(jc3,jl0r,il0))) then
@@ -62,7 +62,7 @@ do il0=1,geom%nl0
 end do
 if ((num>0.0).and.(den>0.0)) loc_hyb%raw_coef_sta = num/den
 do il0=1,geom%nl0
-   do jl0r=1,bpar%nl0(ib)
+   do jl0r=1,bpar%nl0r(ib)
       do jc3=1,bpar%nc3(ib)
          if (isnotmsr(avg%m11asysq(jc3,jl0r,il0)).and.isnotmsr(loc_hyb%raw_coef_sta) &
        & .and.isnotmsr(avg%m11sta(jc3,jl0r,il0)).and.isnotmsr(avg%stasq(jc3,jl0r,il0)) &

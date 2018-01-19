@@ -62,7 +62,7 @@ do ib=1,bpar%nb
    write(mpl%unit,'(a10,a)') '','Compute correlations'
    do jsub=1,mom(ib)%nsub
       do il0=1,geom%nl0
-         do jl0=1,bpar%nl0(ib)
+         do jl0=1,bpar%nl0r(ib)
             do jc3=1,nam%nc3
                do ic1=1,nam%nc1
                   den = mom(ib)%m2_1(ic1,jc3,jl0,il0,jsub)*mom(ib)%m2_2(ic1,jc3,jl0,il0,jsub)
@@ -76,7 +76,7 @@ do ib=1,bpar%nb
       end do
    end do
    do il0=1,geom%nl0
-      do jl0=1,bpar%nl0(ib)
+      do jl0=1,bpar%nl0r(ib)
          do jc3=1,nam%nc3
             do ic1=1,nam%nc3
                if (lct(ic1,il0,ib)%norm(jc3,jl0)>0.0) lct(ic1,il0,ib)%raw(jc3,jl0) = lct(ic1,il0,ib)%raw(jc3,jl0) &

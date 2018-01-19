@@ -91,12 +91,10 @@ do ib=1,bpar%nb+1
          write(mpl%unit,'(a)') '--- Write NICAS parameters'
          call ndata_write(nam,geom,ndata(ib),bpar%nicas_block(ib),bpar%auto_block(ib))
 
-         if (mpl%main.and.(mpl%nproc>1)) then
-            ! Write NICAS MPI summary
-            write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-            write(mpl%unit,'(a)') '--- Write NICAS MPI summary'
-            call ndata_write_mpi_summary(ndata(ib))
-         end if
+         ! Write NICAS MPI summary
+         write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+         write(mpl%unit,'(a)') '--- Write NICAS MPI summary'
+         call ndata_write_mpi_summary(ndata(ib))
       end if
    elseif (nam%new_param.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_sqrt.or.nam%check_dirac.or.nam%check_perf.or.& 
  & nam%check_hdiag) then
@@ -158,7 +156,7 @@ do ib=1,bpar%nb+1
          write(mpl%unit,'(a)') '-------------------------------------------------------------------'
          write(mpl%unit,'(a)') '--- Test NICAS performance'
          write(mpl%unit,'(a7,a)') '','Performance results (elapsed time) for block: '//trim(bpar%blockname(ib))
-         call test_nicas_perf(nam,geom,ndata(ib))
+         call test_nicas_perf(geom,ndata(ib))
          call flush(mpl%unit)
       end if
    end if

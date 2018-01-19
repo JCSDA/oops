@@ -12,11 +12,12 @@ module hdiag_tools
 
 use netcdf
 use omp_lib
-use tools_const, only: req,sphere_dist,rad2deg,gc99,median
+use tools_const, only: req,sphere_dist,rad2deg,gc99
 use tools_display, only: msgerror
 use tools_kinds, only: kind_real
 use tools_missing, only: msvalr,msr,isnotmsi,isnotmsr,isanynotmsr,isallnotmsr
 use tools_nc, only: ncfloat,ncerr
+use tools_qsort, only: qsort
 use type_hdata, only: hdatatype
 use type_linop, only: apply_linop
 use type_mpl, only: mpl,mpl_send,mpl_recv
@@ -49,8 +50,9 @@ real(kind_real),intent(inout) :: diag(hdata%nc2) !< Filtered diagnostics
 
 ! Local variables
 integer :: ic2,jc2,nc2eff
+integer,allocatable :: order(:)
 real(kind_real) :: diag_tmp(hdata%nc2),distnorm,norm,wgt
-real(kind_real),allocatable :: list(:),list_dist(:)
+real(kind_real),allocatable :: diag_eff(:),diag_eff_dist(:)
 
 ! Associate
 associate(nam=>hdata%nam,geom=>hdata%geom)
@@ -58,22 +60,22 @@ associate(nam=>hdata%nam,geom=>hdata%geom)
 ! Copy diagnostics
 diag_tmp = diag
 
-!$omp parallel do schedule(static) private(ic2,list,list_dist,nc2eff,jc2,distnorm,norm,wgt)
+!$omp parallel do schedule(static) private(ic2,diag_eff,diag_eff_dist,nc2eff,jc2,distnorm,norm,order,wgt)
 do ic2=1,hdata%nc2
    if (hdata%c1l0_log(hdata%c2_to_c1(ic2),il0)) then
       ! Allocation
-      allocate(list(hdata%nc2))
-      allocate(list_dist(hdata%nc2))
+      allocate(diag_eff(hdata%nc2))
+      allocate(diag_eff_dist(hdata%nc2))
 
-      ! Build list of valid points
+      ! Build diag_eff of valid points
       nc2eff = 0
       jc2 = 1
       do while (hdata%nn_c2_dist(jc2,ic2,min(il0,geom%nl0i))<r)
          ! Check the point validity
          if (isnotmsr(diag_tmp(hdata%nn_c2_index(jc2,ic2,min(il0,geom%nl0i))))) then
             nc2eff = nc2eff+1
-            list(nc2eff) = diag_tmp(hdata%nn_c2_index(jc2,ic2,min(il0,geom%nl0i)))
-            list_dist(nc2eff) = hdata%nn_c2_dist(jc2,ic2,min(il0,geom%nl0i))
+            diag_eff(nc2eff) = diag_tmp(hdata%nn_c2_index(jc2,ic2,min(il0,geom%nl0i)))
+            diag_eff_dist(nc2eff) = hdata%nn_c2_dist(jc2,ic2,min(il0,geom%nl0i))
          end if
          jc2 = jc2+1
          if (jc2>hdata%nc2) exit
@@ -84,21 +86,28 @@ do ic2=1,hdata%nc2
          select case (trim(filter_type))
          case ('average')
             ! Compute average
-            diag(ic2) = sum(list(1:nc2eff))/float(nc2eff)
+            diag(ic2) = sum(diag_eff(1:nc2eff))/float(nc2eff)
          case ('gc99')
             ! Gaspari-Cohn (1999) kernel
             diag(ic2) = 0.0
             norm = 0.0
             do jc2=1,nc2eff
-               distnorm = list_dist(jc2)/r
+               distnorm = diag_eff_dist(jc2)/r
                wgt = gc99(distnorm)
-               diag(ic2) = diag(ic2)+wgt*list(jc2)
+               diag(ic2) = diag(ic2)+wgt*diag_eff(jc2)
                norm = norm+wgt
             end do
             diag(ic2) = diag(ic2)/norm
          case ('median')
             ! Compute median
-            diag(ic2) = median(nc2eff,list(1:nc2eff))
+            allocate(order(nc2eff))
+            call qsort(nc2eff,diag_eff(1:nc2eff),order)
+            if (mod(nc2eff,2)==0) then
+               diag(ic2) = 0.5*(diag_eff(nc2eff/2)+diag_eff(nc2eff/2+1))
+            else
+               diag(ic2) = diag_eff((nc2eff+1)/2)
+            end if
+            deallocate(order)
          case default
             ! Wrong filter
             call msgerror('wrong filter type')
@@ -108,8 +117,8 @@ do ic2=1,hdata%nc2
       end if
 
       ! Release memory
-      deallocate(list)
-      deallocate(list_dist)
+      deallocate(diag_eff)
+      deallocate(diag_eff_dist)
    end if
 end do
 !$omp end parallel do
@@ -129,8 +138,8 @@ implicit none
 
 ! Passed variables
 type(hdatatype),intent(in) :: hdata                               !< HDIAG data
-real(kind_real),intent(in) :: fld_c2(hdata%nc2,hdata%geom%nl0)   !< Subgrid field
-real(kind_real),intent(out) :: fld(hdata%geom%nc0,hdata%geom%nl0) !< Field
+real(kind_real),intent(in) :: fld_c2(hdata%nc2,hdata%geom%nl0)    !< Diagnostic
+real(kind_real),intent(out) :: fld(hdata%geom%nc0,hdata%geom%nl0) !< Interpolated diagnostic
 
 ! Local variables
 integer :: il0
@@ -157,8 +166,8 @@ subroutine diag_com_lg_single(hdata,diag)
 implicit none
 
 ! Passed variables
-type(hdatatype),intent(in) :: hdata                 !< HDIAG data
-real(kind_real),allocatable,intent(inout) :: diag(:) !< Field
+type(hdatatype),intent(in) :: hdata                  !< HDIAG data
+real(kind_real),allocatable,intent(inout) :: diag(:) !< Diagnostic
 
 ! Local variables
 integer :: ic2,ic2a,iproc,jproc
@@ -225,8 +234,8 @@ subroutine diag_com_lg(hdata,diag)
 implicit none
 
 ! Passed variables
-type(hdatatype),intent(in) :: hdata                   !< HDIAG data
-real(kind_real),allocatable,intent(inout) :: diag(:,:) !< Field
+type(hdatatype),intent(in) :: hdata                    !< HDIAG data
+real(kind_real),allocatable,intent(inout) :: diag(:,:) !< Diagnostic
 
 ! Local variables
 integer :: ic2,ic2a,iproc,jproc

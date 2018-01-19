@@ -14,7 +14,8 @@ use driver_hdiag, only: run_hdiag
 use model_interface, only: model_write
 use nicas_apply_bens, only: apply_bens
 use nicas_apply_convol, only: apply_convol
-use nicas_apply_interp, only: apply_interp,apply_interp_ad
+use nicas_apply_interp, only: apply_interp,apply_interp_s,apply_interp_v,apply_interp_h, &
+                            & apply_interp_ad,apply_interp_h_ad,apply_interp_v_ad,apply_interp_s_ad
 use nicas_apply_localization, only: apply_localization,apply_localization_from_sqrt,randomize_localization
 use nicas_apply_nicas, only: apply_nicas,apply_nicas_sqrt,apply_nicas_sqrt_ad,apply_nicas_from_sqrt
 use omp_lib
@@ -27,6 +28,7 @@ use type_bpar, only: bpartype
 use type_com, only: com_ext,com_red
 use type_ctree, only: find_nearest_neighbors
 use type_geom, only: geomtype,fld_com_gl,fld_com_lg
+use type_linop, only: apply_linop,apply_linop_ad
 use type_mpl, only: mpl,mpl_dot_prod
 use type_nam, only: namtype
 use type_ndata, only: ndatatype
@@ -57,15 +59,72 @@ type(ndatatype),intent(in) :: ndata !< NICAS data
 
 ! Local variables
 real(kind_real) :: sum1,sum2
-real(kind_real) :: alpha(ndata%nsb),alpha_save(ndata%nsb)
-real(kind_real) :: alpha1(ndata%nsc),alpha1_save(ndata%nsc)
-real(kind_real) :: alpha2(ndata%nsc),alpha2_save(ndata%nsc)
-real(kind_real) :: fld(ndata%geom%nc0a,ndata%geom%nl0),fld_save(ndata%geom%nc0a,ndata%geom%nl0)
-real(kind_real),allocatable :: fld1(:,:),fld1_save(:,:)
-real(kind_real),allocatable :: fld2(:,:),fld2_save(:,:)
+real(kind_real),allocatable :: alpha(:),alpha_save(:),alpha1(:),alpha1_save(:),alpha2(:),alpha2_save(:)
+real(kind_real),allocatable :: gamma(:,:),gamma_save(:,:),delta(:,:),delta_save(:,:)
+real(kind_real),allocatable :: fld(:,:),fld_save(:,:),fld1(:,:),fld1_save(:,:),fld2(:,:),fld2_save(:,:)
 
 ! Associate
 associate(nam=>ndata%nam,geom=>ndata%geom)
+
+! Allocation
+allocate(alpha(ndata%nsb))
+allocate(alpha_save(ndata%nsb))
+allocate(gamma(ndata%nc1b,ndata%nl1))
+allocate(gamma_save(ndata%nc1b,ndata%nl1))
+allocate(delta(ndata%nc1b,geom%nl0))
+allocate(delta_save(ndata%nc1b,geom%nl0))
+allocate(fld(geom%nc0a,ndata%geom%nl0))
+allocate(fld_save(geom%nc0a,ndata%geom%nl0))
+
+! Interpolation (subsampling)
+
+! Initialization
+call rand_real(0.0_kind_real,1.0_kind_real,alpha_save)
+call rand_real(0.0_kind_real,1.0_kind_real,gamma_save)
+
+! Adjoint test
+call apply_interp_s(ndata,alpha_save,gamma)
+call apply_interp_s_ad(ndata,gamma_save,alpha)
+
+! Print result
+call mpl_dot_prod(alpha,alpha_save,sum1)
+call mpl_dot_prod(gamma,gamma_save,sum2)
+write(mpl%unit,'(a7,a42,e15.8,a,e15.8,a,e15.8)') '','Interpolation adjoint test (subsampling): ', &
+ & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
+
+! Interpolation (vertical)
+
+! Initialization
+call rand_real(0.0_kind_real,1.0_kind_real,gamma_save)
+call rand_real(0.0_kind_real,1.0_kind_real,delta_save)
+
+! Adjoint test
+call apply_interp_v(geom,ndata,gamma_save,delta)
+call apply_interp_v_ad(geom,ndata,delta_save,gamma)
+
+! Print result
+call mpl_dot_prod(gamma,gamma_save,sum1)
+call mpl_dot_prod(delta,delta_save,sum2)
+write(mpl%unit,'(a7,a42,e15.8,a,e15.8,a,e15.8)') '','Interpolation adjoint test (vertical): ', &
+ & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
+
+! Interpolation (horizontal)
+
+! Initialization
+call rand_real(0.0_kind_real,1.0_kind_real,delta_save)
+call rand_real(0.0_kind_real,1.0_kind_real,fld_save)
+
+! Adjoint test
+call apply_interp_h(geom,ndata,delta_save,fld)
+call apply_interp_h_ad(geom,ndata,fld_save,delta)
+
+! Print result
+call mpl_dot_prod(delta,delta_save,sum1)
+call mpl_dot_prod(fld,fld_save,sum2)
+write(mpl%unit,'(a7,a42,e15.8,a,e15.8,a,e15.8)') '','Interpolation adjoint test (horizontal): ', &
+ & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
+
+! Interpolation (total)
 
 ! Initialization
 call rand_real(0.0_kind_real,1.0_kind_real,alpha_save)
@@ -76,10 +135,16 @@ call apply_interp(geom,ndata,alpha_save,fld)
 call apply_interp_ad(geom,ndata,fld_save,alpha)
 
 ! Print result
-sum1 = sum(alpha*alpha_save)
-sum2 = sum(fld*fld_save)
-write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Interpolation adjoint test: ', &
+call mpl_dot_prod(alpha,alpha_save,sum1)
+call mpl_dot_prod(fld,fld_save,sum2)
+write(mpl%unit,'(a7,a42,e15.8,a,e15.8,a,e15.8)') '','Interpolation adjoint test (total): ', &
  & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
+
+! Allocation
+allocate(alpha1(ndata%nsc))
+allocate(alpha1_save(ndata%nsc))
+allocate(alpha2(ndata%nsc))
+allocate(alpha2_save(ndata%nsc))
 
 ! Initialization
 call rand_real(0.0_kind_real,1.0_kind_real,alpha1_save)
@@ -92,32 +157,76 @@ call apply_convol(ndata,alpha1)
 call apply_convol(ndata,alpha2)
 
 ! Print result
-sum1 = sum(alpha1*alpha2_save)
-sum2 = sum(alpha2*alpha1_save)
-write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Convolution adjoint test:   ', &
+call mpl_dot_prod(alpha1,alpha2_save,sum1)
+call mpl_dot_prod(alpha2,alpha1_save,sum2)
+write(mpl%unit,'(a7,a42,e15.8,a,e15.8,a,e15.8)') '','Convolution adjoint test: ', &
  & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
 
-if (mpl%main) then
-   ! Allocation
-   allocate(fld1_save(geom%nc0,geom%nl0))
-   allocate(fld2_save(geom%nc0,geom%nl0))
-
-   ! Generate random field
-   call rand_real(0.0_kind_real,1.0_kind_real,fld1_save)
-   call rand_real(0.0_kind_real,1.0_kind_real,fld2_save)
-end if
-
-! Global to local
-call fld_com_gl(geom,fld1_save)
-call fld_com_gl(geom,fld2_save)
-
 ! Allocation
-allocate(fld1(ndata%geom%nc0a,ndata%geom%nl0))
-allocate(fld2(ndata%geom%nc0a,ndata%geom%nl0))
+deallocate(alpha1)
+deallocate(alpha1_save)
+deallocate(alpha2)
+deallocate(alpha2_save)
+allocate(alpha1(ndata%nsb))
+allocate(alpha1_save(ndata%nsb))
+allocate(alpha2(ndata%nsa))
+allocate(alpha2_save(ndata%nsa))
+
+! Initialization
+call rand_real(0.0_kind_real,1.0_kind_real,alpha1_save)
+call rand_real(0.0_kind_real,1.0_kind_real,alpha2_save)
+alpha1 = alpha1_save
+alpha2 = alpha2_save
 
 ! Adjoint test
+call com_red(ndata%AB,alpha1)
+call com_ext(ndata%AB,alpha2)
+
+! Print result
+call mpl_dot_prod(alpha1,alpha2_save,sum1)
+call mpl_dot_prod(alpha2,alpha1_save,sum2)
+write(mpl%unit,'(a7,a42,e15.8,a,e15.8,a,e15.8)') '','Communication AB adjoint test: ', &
+ & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
+
+! Allocation
+deallocate(alpha1)
+deallocate(alpha1_save)
+deallocate(alpha2)
+deallocate(alpha2_save)
+allocate(alpha1(ndata%nsc))
+allocate(alpha1_save(ndata%nsc))
+allocate(alpha2(ndata%nsa))
+allocate(alpha2_save(ndata%nsa))
+
+! Initialization
+call rand_real(0.0_kind_real,1.0_kind_real,alpha1_save)
+call rand_real(0.0_kind_real,1.0_kind_real,alpha2_save)
+alpha1 = alpha1_save
+alpha2 = alpha2_save
+
+! Adjoint test
+call com_red(ndata%AC,alpha1)
+call com_ext(ndata%AC,alpha2)
+
+! Print result
+call mpl_dot_prod(alpha1,alpha2_save,sum1)
+call mpl_dot_prod(alpha2,alpha1_save,sum2)
+write(mpl%unit,'(a7,a42,e15.8,a,e15.8,a,e15.8)') '','Communication AC adjoint test: ', &
+ & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
+
+! Allocation
+allocate(fld1(geom%nc0a,ndata%geom%nl0))
+allocate(fld2(geom%nc0a,ndata%geom%nl0))
+allocate(fld1_save(geom%nc0,geom%nl0))
+allocate(fld2_save(geom%nc0,geom%nl0))
+
+! Generate random field
+call rand_real(0.0_kind_real,1.0_kind_real,fld1_save)
+call rand_real(0.0_kind_real,1.0_kind_real,fld2_save)
 fld1 = fld1_save
 fld2 = fld2_save
+
+! Adjoint test
 if (nam%lsqrt) then
    call apply_nicas_from_sqrt(geom,ndata,fld1)
    call apply_nicas_from_sqrt(geom,ndata,fld2)
@@ -129,7 +238,7 @@ end if
 ! Print result
 call mpl_dot_prod(fld1,fld2_save,sum1)
 call mpl_dot_prod(fld2,fld1_save,sum2)
-write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','NICAS adjoint test:         ', &
+write(mpl%unit,'(a7,a42,e15.8,a,e15.8,a,e15.8)') '','NICAS adjoint test: ', &
  & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
 
 ! End associate
@@ -364,12 +473,11 @@ end subroutine test_nicas_dirac
 ! Subroutine: test_nicas_perf
 !> Purpose: test NICAS performance
 !----------------------------------------------------------------------
-subroutine test_nicas_perf(nam,geom,ndata)
+subroutine test_nicas_perf(geom,ndata)
 
 implicit none
 
 ! Passed variables
-type(namtype),intent(in) :: nam     !< Namelist
 type(geomtype),intent(in) :: geom   !< Geometry
 type(ndatatype),intent(in) :: ndata !< NICAS data
 
@@ -392,12 +500,12 @@ end if
 call fld_com_gl(geom,fld)
 
 ! Adjoint interpolation
-call timer_start(timer_interp_ad)
+if (mpl%main) call timer_start(timer_interp_ad)
 call apply_interp_ad(geom,ndata,fld,alpha)
-call timer_end(timer_interp_ad)
+if (mpl%main) call timer_end(timer_interp_ad)
 
 ! Communication
-call timer_start(timer_com_1)
+if (mpl%main) call timer_start(timer_com_1)
 if (ndata%mpicom==1) then
    ! Allocation
    allocate(alpha_tmp(ndata%nsb))
@@ -440,35 +548,37 @@ elseif (ndata%mpicom==2) then
    ! Release memory
    deallocate(alpha_tmp)
 end if
-call timer_end(timer_com_1)
+if (mpl%main) call timer_end(timer_com_1)
 
 ! Convolution
-call timer_start(timer_convol)
+if (mpl%main) call timer_start(timer_convol)
 call apply_convol(ndata,alpha)
-call timer_start(timer_convol)
+if (mpl%main) call timer_start(timer_convol)
 
-call timer_start(timer_com_2)
+if (mpl%main) call timer_start(timer_com_2)
 ! Halo reduction from zone C to zone A
 call com_red(ndata%AC,alpha)
 
 ! Halo extension from zone A to zone B
 call com_ext(ndata%AB,alpha)
-call timer_end(timer_com_2)
+if (mpl%main) call timer_end(timer_com_2)
 
 ! Interpolation
-call timer_start(timer_interp)
+if (mpl%main) call timer_start(timer_interp)
 call apply_interp(geom,ndata,alpha,fld)
-call timer_end(timer_interp)
+if (mpl%main) call timer_end(timer_interp)
 
 ! Release memory
 deallocate(alpha)
 
 ! Print results
-write(mpl%unit,'(a10,a,f6.1,a)') '','Adjoint interpolation: ',timer_interp_ad%elapsed,' s'
-write(mpl%unit,'(a10,a,f6.1,a)') '','Communication - 1    : ',timer_com_1%elapsed,' s'
-write(mpl%unit,'(a10,a,f6.1,a)') '','Convolution          : ',timer_convol%elapsed,' s'
-write(mpl%unit,'(a10,a,f6.1,a)') '','Communication - 2    : ',timer_com_2%elapsed,' s'
-write(mpl%unit,'(a10,a,f6.1,a)') '','Interpolation        : ',timer_interp%elapsed,' s'
+if (mpl%main) then
+   write(mpl%unit,'(a10,a,f6.1,a)') '','Adjoint interpolation: ',timer_interp_ad%elapsed,' s'
+   write(mpl%unit,'(a10,a,f6.1,a)') '','Communication - 1    : ',timer_com_1%elapsed,' s'
+   write(mpl%unit,'(a10,a,f6.1,a)') '','Convolution          : ',timer_convol%elapsed,' s'
+   write(mpl%unit,'(a10,a,f6.1,a)') '','Communication - 2    : ',timer_com_2%elapsed,' s'
+   write(mpl%unit,'(a10,a,f6.1,a)') '','Interpolation        : ',timer_interp%elapsed,' s'
+end if
 
 end subroutine test_nicas_perf
 

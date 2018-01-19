@@ -157,16 +157,13 @@ mpl%myproc = mpl%myproc+1
 ! Define main task
 mpl%main = (mpl%myproc==mpl%ioproc)
 
-! Define unit and open file
-mpl%unit = 5+mpl%myproc
-
 ! Define real type for MPI
 if (kind_real==4) then
    mpl%rtype = mpi_real
 elseif (kind_real==8) then
    mpl%rtype = mpi_double
 else
-   call mpl_abort('unknown real kind for MPI')
+   call mpl_abort('Unknown real kind for MPI')
 end if
 
 ! Initialize tag

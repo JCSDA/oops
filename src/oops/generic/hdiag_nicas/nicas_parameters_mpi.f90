@@ -25,15 +25,15 @@ use type_ndata, only: ndatatype
 implicit none
 
 private
-public :: compute_mpi_1,compute_mpi_2
+public :: compute_mpi_ab,compute_mpi_c
 
 contains
 
 !----------------------------------------------------------------------
-! Subroutine: compute_mpi_1
-!> Purpose: compute NICAS MPI distribution, first step
+! Subroutine: compute_mpi_ab
+!> Purpose: compute NICAS MPI distribution, halos A-B
 !----------------------------------------------------------------------
-subroutine compute_mpi_1(ndata)
+subroutine compute_mpi_ab(ndata)
 
 implicit none
 
@@ -41,8 +41,8 @@ implicit none
 type(ndatatype),intent(inout) :: ndata !< NICAS data
 
 ! Local variables
-integer :: il0i,ic0,iproc,ic1,jc1,ic1a,ic2,jc2,ic1b,ic1bb,ic2b,il0,il1,isa,isb,i_s,is,js,h_n_s_max,s_n_s_max
-
+integer :: il0i,ic0,iproc,ic1,jc1,ic1a,ic1b,il0,il1,isa,isb,i_s,is,js,h_n_s_max,s_n_s_max
+logical :: lcheck_c1b_h(ndata%nc1)
 ! Associate
 associate(nam=>ndata%nam,geom=>ndata%geom)
 
@@ -55,13 +55,10 @@ s_n_s_max = 0
 do il1=1,ndata%nl1
    s_n_s_max = max(s_n_s_max,ndata%sfull(il1)%n_s)
 end do
-allocate(ndata%nc2b(ndata%nl1))
 allocate(ndata%h(geom%nl0i))
 allocate(ndata%s(ndata%nl1))
 allocate(ndata%lcheck_c1a(ndata%nc1))
 allocate(ndata%lcheck_c1b(ndata%nc1))
-if (.not.nam%network) allocate(ndata%lcheck_c1bb(ndata%nc1))
-allocate(ndata%lcheck_c2b(ndata%nc1,ndata%nl1))
 allocate(ndata%lcheck_sa(ndata%ns))
 allocate(ndata%lcheck_sb(ndata%ns))
 allocate(ndata%lcheck_h(h_n_s_max,geom%nl0i))
@@ -77,7 +74,7 @@ do is=1,ndata%ns
    ic0 = ndata%c1_to_c0(ic1)
    il1 = ndata%s_to_l1(is)
    il0 = ndata%l1_to_l0(il1)
-   if (geom%mask(ic0,il0).and.(geom%c0_to_proc(ic0)==mpl%myproc)) then
+   if (geom%c0_to_proc(ic0)==mpl%myproc) then
       ndata%lcheck_c1a(ic1) = .true.
       ndata%lcheck_sa(is) = .true.
    end if  
@@ -87,7 +84,7 @@ end do
 
 ! Horizontal interpolation
 ndata%lcheck_h = .false.
-ndata%lcheck_c1b = .false.
+lcheck_c1b_h = .false.
 do il0i=1,geom%nl0i
    do i_s=1,ndata%hfull(il0i)%n_s
       ic0 = ndata%hfull(il0i)%row(i_s)
@@ -95,42 +92,27 @@ do il0i=1,geom%nl0i
       if (iproc==mpl%myproc) then
          jc1 = ndata%hfull(il0i)%col(i_s)
          ndata%lcheck_h(i_s,il0i) = .true.
-         ndata%lcheck_c1b(jc1) = .true.
+         lcheck_c1b_h(jc1) = .true.
       end if
    end do
 end do
 
 ! Subsampling horizontal interpolation
-ndata%lcheck_c2b = .false.
 ndata%lcheck_sb = .false.
 ndata%lcheck_s = .false.
+ndata%lcheck_c1b = lcheck_c1b_h
 do il1=1,ndata%nl1
    do i_s=1,ndata%sfull(il1)%n_s
       ic1 = ndata%sfull(il1)%row(i_s)
-      if (ndata%lcheck_c1b(ic1)) then
-         jc2 = ndata%sfull(il1)%col(i_s)
-         js = ndata%c2l1_to_s(jc2,il1)
-         ndata%lcheck_c2b(jc2,il1) = .true.
+      if (lcheck_c1b_h(ic1)) then
+         jc1 = ndata%sfull(il1)%col(i_s)
+         js = ndata%c1l1_to_s(jc1,il1)
+         ndata%lcheck_c1b(jc1) = .true.
          ndata%lcheck_sb(js) = .true.
          ndata%lcheck_s(i_s,il1) = .true.
       end if
    end do
 end do
-
-if (.not.nam%network) then
-   ! Extended subset Sc1 on halo B, extended for subgrid nodes on halo B
-   ndata%lcheck_c1bb = ndata%lcheck_c1b
-   do il1=1,ndata%nl1
-      do i_s=1,ndata%sfull(il1)%n_s
-         ic1 = ndata%sfull(il1)%row(i_s)
-         if (ndata%lcheck_c1b(ic1)) then
-            jc2 = ndata%sfull(il1)%col(i_s)
-            jc1 = ndata%c2l1_to_c1(jc2,il1)
-            ndata%lcheck_c1bb(jc1) = .true.
-         end if
-      end do
-   end do
-end if
 
 ! Check halos consistency
 do is=1,ndata%ns
@@ -144,10 +126,8 @@ do il0i=1,geom%nl0i
    ndata%h(il0i)%n_s = count(ndata%lcheck_h(:,il0i))
 end do
 ndata%nc1b = count(ndata%lcheck_c1b)
-if (.not.nam%network) ndata%nc1bb = count(ndata%lcheck_c1bb)
 ndata%nsb = count(ndata%lcheck_sb)
 do il1=1,ndata%nl1
-   ndata%nc2b(il1) = count(ndata%lcheck_c2b(:,il1))
    ndata%s(il1)%n_s = count(ndata%lcheck_s(:,il1))
 end do
 
@@ -188,32 +168,6 @@ do ic1=1,ndata%nc1
    end if
 end do
 
-if (.not.nam%network) then
-   allocate(ndata%c1bb_to_c1(ndata%nc1bb))
-   allocate(ndata%c1_to_c1bb(ndata%nc1))
-   call msi(ndata%c1_to_c1bb)
-   ic1bb = 0
-   do ic1=1,ndata%nc1
-      if (ndata%lcheck_c1bb(ic1)) then
-         ic1bb = ic1bb+1
-         ndata%c1bb_to_c1(ic1bb) = ic1
-         ndata%c1_to_c1bb(ic1) = ic1bb
-      end if
-   end do
-end if
-
-allocate(ndata%c2l1_to_c2b(ndata%nc1,ndata%nl1))
-call msi(ndata%c2l1_to_c2b)
-do il1=1,ndata%nl1
-   ic2b = 0
-   do ic2=1,ndata%nc2(il1)
-      if (ndata%lcheck_c2b(ic2,il1)) then
-         ic2b = ic2b+1
-         ndata%c2l1_to_c2b(ic2,il1) = ic2b
-      end if
-   end do
-end do
-
 allocate(ndata%sb_to_s(ndata%nsb))
 allocate(ndata%s_to_sb(ndata%ns))
 call msi(ndata%s_to_sb)
@@ -229,13 +183,13 @@ end do
 ! End associate
 end associate
 
-end subroutine compute_mpi_1
+end subroutine compute_mpi_ab
 
 !----------------------------------------------------------------------
-! Subroutine: compute_mpi_2
-!> Purpose: compute NICAS MPI distribution, second step
+! Subroutine: compute_mpi_c
+!> Purpose: compute NICAS MPI distribution, halo C
 !----------------------------------------------------------------------
-subroutine compute_mpi_2(ndata)
+subroutine compute_mpi_c(ndata)
 
 implicit none
 
@@ -243,7 +197,7 @@ implicit none
 type(ndatatype),intent(inout) :: ndata !< NICAS data
 
 ! Local variables
-integer :: iproc,il0i,ic0,ic1,ic2,ic2b,il1,isa,isb,isc,i_s,i_s_loc,is,js,h_n_s_max_loc,s_n_s_max_loc
+integer :: iproc,il0i,ic0,ic1,ic1b,il1,isa,isb,isc,i_s,i_s_loc,is,js,h_n_s_max_loc,s_n_s_max_loc
 integer :: nsa,nsb,nsc
 integer,allocatable :: interph_lg(:,:),interps_lg(:,:)
 integer,allocatable :: s_to_sa(:),sa_to_s(:),sb_to_s(:),sc_to_s(:),sa_to_sb(:),sa_to_sc(:)
@@ -394,13 +348,13 @@ end do
 ! Subsampling horizontal interpolation
 do il1=1,ndata%nl1
    ndata%s(il1)%prefix = 's'
-   ndata%s(il1)%n_src = ndata%nc2b(il1)
+   ndata%s(il1)%n_src = ndata%nc1b
    ndata%s(il1)%n_dst = ndata%nc1b
    call linop_alloc(ndata%s(il1))
    do i_s_loc=1,ndata%s(il1)%n_s
       i_s = interps_lg(i_s_loc,il1)
       ndata%s(il1)%row(i_s_loc) = ndata%c1_to_c1b(ndata%sfull(il1)%row(i_s))
-      ndata%s(il1)%col(i_s_loc) = ndata%c2l1_to_c2b(ndata%sfull(il1)%col(i_s),il1)
+      ndata%s(il1)%col(i_s_loc) = ndata%c1_to_c1b(ndata%sfull(il1)%col(i_s))
       ndata%s(il1)%S(i_s_loc) = ndata%sfull(il1)%S(i_s)
    end do
    call linop_reorder(ndata%s(il1))
@@ -425,39 +379,19 @@ end do
 call linop_reorder(ndata%c_nor)
 
 ! Conversions
-allocate(ndata%sb_to_c2b(ndata%nsb))
+allocate(ndata%sb_to_c1b(ndata%nsb))
 allocate(ndata%sb_to_l1(ndata%nsb))
-allocate(ndata%c2bl1_to_sb(maxval(ndata%nc2b),ndata%nl1))
-call msi(ndata%c2bl1_to_sb)
+allocate(ndata%c1bl1_to_sb(ndata%nc1b,ndata%nl1))
+call msi(ndata%c1bl1_to_sb)
 do isb=1,ndata%nsb
    is = ndata%sb_to_s(isb)
    il1 = ndata%s_to_l1(is)
-   ic2 = ndata%s_to_c2(is)
-   ic2b = ndata%c2l1_to_c2b(ic2,il1)
-   ndata%sb_to_c2b(isb) = ic2b
+   ic1 = ndata%s_to_c1(is)
+   ic1b = ndata%c1_to_c1b(ic1)
+   ndata%sb_to_c1b(isb) = ic1b
    ndata%sb_to_l1(isb) = il1
-   ndata%c2bl1_to_sb(ic2b,il1) = isb
+   ndata%c1bl1_to_sb(ic1b,il1) = isb
 end do
-
-if (mpl%main) then
-   ! Illustration
-   allocate(ndata%halo(geom%nc0))
-   ndata%halo = 0
-   do i_s=1,ndata%c%n_s
-      ic0 = ndata%c1_to_c0(ndata%s_to_c1(ndata%sc_to_s(ndata%c%row(i_s))))
-      ndata%halo(ic0) = 1
-      ic0 = ndata%c1_to_c0(ndata%s_to_c1(ndata%sc_to_s(ndata%c%col(i_s))))
-      ndata%halo(ic0) = 1
-   end do
-   do i_s=1,ndata%h(1)%n_s
-      ic0 = ndata%c1_to_c0(ndata%c1b_to_c1(ndata%h(1)%col(i_s)))
-      ndata%halo(ic0) = 2
-   end do
-   do isa=1,ndata%nsa
-      ic0 = ndata%c1_to_c0(ndata%s_to_c1(ndata%sa_to_s(isa)))
-      ndata%halo(ic0) = 3
-   end do
-end if
 
 ! Get global distribution of the subgrid on ioproc
 if (mpl%main) then
@@ -611,6 +545,6 @@ ndata%mpicom = nam%mpicom
 ! End associate
 end associate
 
-end subroutine compute_mpi_2
+end subroutine compute_mpi_c
 
 end module nicas_parameters_mpi

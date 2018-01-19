@@ -45,7 +45,7 @@ type(avgtype),intent(inout) :: avg  !< Averaged statistics
 ! Local variables
 integer :: il0,jl0,jl0r,ic2,jc3,isub,jsub,ic1a,ic1,nc1amax,nc1a
 real(kind_real) :: m2m2
-real(kind_real),allocatable :: list_m11(:),list_m11m11(:,:,:),list_m2m2(:,:,:),list_m22(:,:),list_cor(:),buf(:)
+real(kind_real),allocatable :: list_m11(:),list_m11m11(:,:,:),list_m2m2(:,:,:),list_m22(:,:),list_cor(:),sbuf(:),rbuf(:)
 logical :: valid
 
 ! Associate
@@ -69,7 +69,7 @@ end if
 !$omp parallel do schedule(static) private(il0,jl0r,jl0,nc1amax,list_m11,list_m11m11,list_m2m2,list_m22,list_cor,jc3), &
 !$omp&                             private(nc1a,ic1a,ic1,valid,m2m2,isub,jsub)
 do il0=1,geom%nl0
-   do jl0r=1,bpar%nl0(ib)
+   do jl0r=1,bpar%nl0r(ib)
       jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
 
       ! Allocation
@@ -144,21 +144,22 @@ end do
 
 if (ic2a==0) then
    ! Allocation
-   allocate(buf(avg%npack))
+   allocate(sbuf(avg%npack))
+   allocate(rbuf(avg%npack))
 
    ! Pack data
-   call avg_pack(hdata,ib,avg,buf)
+   call avg_pack(hdata,ib,avg,sbuf)
 
    ! Allreduce
-   call mpl_allreduce_sum(buf,buf)
+   call mpl_allreduce_sum(sbuf,rbuf)
 
    ! Unpack data
-   call avg_unpack(hdata,ib,avg,buf)
+   call avg_unpack(hdata,ib,avg,rbuf)
 end if
 
 ! Normalize
 do il0=1,geom%nl0
-   do jl0r=1,bpar%nl0(ib)
+   do jl0r=1,bpar%nl0r(ib)
       do jc3=1,bpar%nc3(ib)
          if (avg%nc1a(jc3,jl0r,il0)>0.0) then
             avg%m11(jc3,jl0r,il0) = avg%m11(jc3,jl0r,il0)/avg%nc1a(jc3,jl0r,il0)
@@ -205,7 +206,7 @@ associate(nam=>hdata%nam,geom=>hdata%geom,bpar=>hdata%bpar)
 ! Average
 !$omp parallel do schedule(static) private(il0,jl0r,jl0,jc3)
 do il0=1,geom%nl0
-   do jl0r=1,bpar%nl0(ib)
+   do jl0r=1,bpar%nl0r(ib)
       jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
       do jc3=1,bpar%nc3(ib)
          ! LR covariance/HR covariance product average TODO: revisit...
@@ -272,7 +273,7 @@ P17 = float((n-1)**2)/float((n-2)*(n+1))
 ! Asymptotic statistics
 !$omp parallel do schedule(static) private(il0,jl0r,jc3,isub,jsub,m11asysq,m2m2asy,m22asy)
 do il0=1,geom%nl0
-   do jl0r=1,bpar%nl0(ib)
+   do jl0r=1,bpar%nl0r(ib)
       do jc3=1,bpar%nc3(ib)
          if (avg%nc1a(jc3,jl0r,il0)>0.0) then
             ! Allocation

@@ -11,16 +11,16 @@
 module type_geom
 
 use netcdf
-use tools_const, only: req,deg2rad,lonmod,sphere_dist,vector_product
-use tools_display, only: msgerror
+use tools_const, only: req,deg2rad,lonlatmod,sphere_dist,vector_product
+use tools_display, only: msgerror,newunit
 use tools_kinds, only: kind_real
 use tools_missing, only: msr,isnotmsi
 use tools_nc, only: ncerr
 use tools_stripack, only: areas,trans,trlist
 use type_ctree, only: ctreetype,create_ctree,find_nearest_neighbors
 use type_mesh, only: meshtype,create_mesh
-use type_mpl, only: mpl,mpl_recv,mpl_send
-use type_nam, only: namtype
+use type_mpl, only: mpl,mpl_recv,mpl_send,mpl_bcast
+use type_nam, only: namtype,namncwrite
 
 implicit none
 
@@ -61,10 +61,10 @@ type geomtype
 
    ! MPI distribution
    integer :: nc0a !< Halo A size
-   integer,allocatable :: c0_to_proc(:)      !< Subset Sc0 to local task
-   integer,allocatable :: c0_to_c0a(:)       !< Subset Sc0, global to halo A
-   integer,allocatable :: proc_to_nc0a(:)     !< Halo A size for each proc
-   integer,allocatable :: c0a_to_c0(:)       !< Subset Sc0, halo A to global
+   integer,allocatable :: c0_to_proc(:)        !< Subset Sc0 to local task
+   integer,allocatable :: c0_to_c0a(:)         !< Subset Sc0, global to halo A
+   integer,allocatable :: proc_to_nc0a(:)      !< Halo A size for each proc
+   integer,allocatable :: c0a_to_c0(:)         !< Subset Sc0, halo A to global
 end type geomtype
 
 interface fld_com_gl
@@ -127,9 +127,9 @@ type(geomtype),intent(inout) :: geom !< Geometry
 integer :: ic0,il0,jl0,jc3
 logical :: same_mask,ctree_mask(geom%nc0)
 
-! Set longitude between -pi and pi
+! Set longitude and latitude bounds
 do ic0=1,geom%nc0
-   geom%lon(ic0) = lonmod(geom%lon(ic0))
+   call lonlatmod(geom%lon(ic0),geom%lat(ic0))
 end do
 
 ! Define mask
@@ -370,6 +370,64 @@ end do
 end subroutine compute_mask_boundaries
 
 !----------------------------------------------------------------------
+! Subroutine: compute_metis_graph
+!> Purpose: compute METIS graph
+!----------------------------------------------------------------------
+subroutine compute_metis_graph(nam,geom)
+
+implicit none
+
+! Passed variables
+type(namtype),intent(in) :: nam   !< Namelist
+type(geomtype),intent(in) :: geom !< Geometry
+
+! Local variables
+integer :: na,ic0,jc0,i,lunit
+logical :: init
+character(len=1024) :: filename
+
+if (mpl%main) then
+   ! Count arcs
+   na = 0
+   do ic0=1,geom%mesh%nnr
+      i = geom%mesh%lend(ic0)
+      init = .true.
+      do while ((i/=geom%mesh%lend(ic0)).or.init)
+         na = na+1
+         i = geom%mesh%lptr(i)
+         init = .false.
+      end do
+   end do
+   na = na/2
+
+   ! Open file
+   filename = trim(nam%prefix)//'_metis'
+   lunit = newunit()
+   open(unit=lunit,file=trim(nam%datadir)//'/'//trim(filename),status='replace')
+   
+   ! Write header
+   write(lunit,*) geom%mesh%nnr,na
+   
+   ! Write connectivity
+   do ic0=1,geom%mesh%n
+      i = geom%mesh%lend(ic0)
+      init = .true.
+      do while ((i/=geom%mesh%lend(ic0)).or.init)
+         jc0 = geom%mesh%list(i)
+         if (jc0>0) write(lunit,'(i7)',advance='no') jc0
+         i = geom%mesh%lptr(i)
+         init = .false.
+      end do
+      write(lunit,*) ''
+   end do
+
+   ! Close file
+   close(unit=lunit)
+end if
+
+end subroutine compute_metis_graph
+
+!----------------------------------------------------------------------
 ! Subroutine: geom_read_local
 !> Purpose: read local distribution
 !----------------------------------------------------------------------
@@ -382,10 +440,12 @@ type(namtype),intent(in) :: nam      !< Namelist
 type(geomtype),intent(inout) :: geom !< Geometry
 
 ! Local variables
-integer :: ic0,info,iproc,ic0a,nc0amax
-integer :: ncid,c0_to_proc_id,c0_to_c0a_id
+integer :: ic0,info,iproc,ic0a,nc0amax,lunit
+integer :: ncid,c0_to_proc_id,c0_to_c0a_id,nc0_id
+integer,allocatable :: c0_to_proc(:),ic0a_arr(:)
+logical :: ismetis
 character(len=4) :: nprocchar
-character(len=1024) :: filename
+character(len=1024) :: filename_nc,filename_metis
 character(len=1024) :: subr = 'geom_read_local'
 
 if (.not.allocated(geom%c0_to_proc)) then
@@ -401,9 +461,10 @@ if (.not.allocated(geom%c0_to_proc)) then
       end do
    elseif (mpl%nproc>1) then
       ! Open file
+      write(mpl%unit,'(a7,a,i4,a)') '','Try to read local distribution for ',mpl%nproc,' MPI tasks'
       write(nprocchar,'(i4.4)') mpl%nproc
-      filename = trim(nam%prefix)//'_distribution_'//nprocchar//'.nc'
-      info = nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_nowrite,ncid)
+      filename_nc = trim(nam%prefix)//'_distribution_'//nprocchar//'.nc'
+      info = nf90_open(trim(nam%datadir)//'/'//trim(filename_nc),nf90_nowrite,ncid)
 
       if (info==nf90_noerr) then
          ! Read data and close file
@@ -416,21 +477,82 @@ if (.not.allocated(geom%c0_to_proc)) then
          ! Check
          if (maxval(geom%c0_to_proc)>mpl%nproc) call msgerror('wrong distribution')
       else
-         ! Generate a distribution (use METIS one day?)
-         nc0amax = geom%nc0/mpl%nproc
-         if (nc0amax*mpl%nproc<geom%nc0) nc0amax = nc0amax+1
-         iproc = 1
-         ic0a = 1
-         do ic0=1,geom%nc0
-            geom%c0_to_proc(ic0) = iproc
-            geom%c0_to_c0a(ic0) = ic0a
-            ic0a = ic0a+1
-            if (ic0a>nc0amax) then
-               ! Change proc
-               iproc = iproc+1
+         ! Create a mesh
+         if (.not.allocated(geom%mesh%redundant)) call create_mesh(geom%nc0,geom%lon,geom%lat,.true.,geom%mesh)
+
+         ! Generate a distribution
+         if (mpl%main) then
+            ! Try to use METIS
+            call compute_metis_graph(nam,geom)
+            filename_metis = trim(nam%prefix)//'_metis'
+            write(nprocchar,'(i4)') mpl%nproc
+            call system('gpmetis '//trim(nam%datadir)//'/'//trim(filename_metis)//' '//adjustl(nprocchar)//' > '// &
+          & trim(nam%datadir)//'/'//trim(filename_metis)//'.out')
+            inquire(file=trim(nam%datadir)//'/'//trim(filename_metis)//'.part.'//adjustl(nprocchar),exist=ismetis)
+            if (ismetis) then
+               write(mpl%unit,'(a7,a)') '','Use METIS to generate the local distribution'
+
+               ! Allocation
+               allocate(c0_to_proc(geom%mesh%nnr))
+               allocate(ic0a_arr(mpl%nproc))
+
+               ! Read METIS file
+               lunit = newunit()
+               open(unit=lunit,file=trim(nam%datadir)//'/'//trim(filename_metis)//'.part.'//adjustl(nprocchar),status='old')
+               do ic0=1,geom%mesh%nnr
+                  read(lunit,*) c0_to_proc(ic0)
+               end do
+               close(unit=lunit)
+
+               ! Reorder and offset
+               do ic0=1,geom%nc0
+                  geom%c0_to_proc(ic0) = c0_to_proc(geom%mesh%order_inv(ic0))+1
+               end do
+
+               ! Local index
+               ic0a_arr = 0
+               do ic0=1,geom%nc0
+                  iproc = geom%c0_to_proc(ic0)
+                  ic0a_arr(iproc) = ic0a_arr(iproc)+1
+                  geom%c0_to_c0a(ic0) = ic0a_arr(iproc)
+               end do
+            else
+               write(mpl%unit,'(a7,a)') '','Define a basic local distribution (METIS not available)'
+
+               ! Basic distribution
+               nc0amax = geom%nc0/mpl%nproc
+               if (nc0amax*mpl%nproc<geom%nc0) nc0amax = nc0amax+1
+               iproc = 1
                ic0a = 1
+               do ic0=1,geom%nc0
+                  geom%c0_to_proc(ic0) = iproc
+                  geom%c0_to_c0a(ic0) = ic0a
+                  ic0a = ic0a+1
+                  if (ic0a>nc0amax) then
+                     ! Change proc
+                     iproc = iproc+1
+                     ic0a = 1
+                  end if
+               end do
             end if
-         end do
+         end if
+
+         ! Broadcast distribution
+         call mpl_bcast(geom%c0_to_proc,mpl%ioproc)
+         call mpl_bcast(geom%c0_to_c0a,mpl%ioproc)
+
+         if (mpl%main) then
+            ! Write distribution
+            call ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename_nc),or(nf90_clobber,nf90_64bit_offset),ncid))
+            call namncwrite(nam,ncid)
+            call ncerr(subr,nf90_def_dim(ncid,'nc0',geom%nc0,nc0_id))
+            call ncerr(subr,nf90_def_var(ncid,'c0_to_proc',nf90_int,(/nc0_id/),c0_to_proc_id))
+            call ncerr(subr,nf90_def_var(ncid,'c0_to_c0a',nf90_int,(/nc0_id/),c0_to_c0a_id))
+            call ncerr(subr,nf90_enddef(ncid))
+            call ncerr(subr,nf90_put_var(ncid,c0_to_proc_id,geom%c0_to_proc))
+            call ncerr(subr,nf90_put_var(ncid,c0_to_c0a_id,geom%c0_to_c0a))
+            call ncerr(subr,nf90_close(ncid))
+         end if
       end if
    end if
 end if

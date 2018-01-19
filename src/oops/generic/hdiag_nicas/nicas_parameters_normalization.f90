@@ -39,12 +39,12 @@ implicit none
 type(ndatatype),intent(inout) :: ndata !< NICAS data
 
 ! Local variables
-integer :: il0i,i_s,ic1,ic1b,jc2b,is,js,isc,jsb,jsc,ic0,ic0a,il0,il1,ih,jv,nlr,ilr,jlr,ic,isc_add,progint
+integer :: il0i,i_s,ic1,ic1b,jc1b,is,js,isc,jsb,jsc,ic0,ic0a,il0,il1,ih,jv,nlr,ilr,jlr,ic,isc_add,progint
 integer,allocatable :: ineh(:,:),inev(:),ines(:,:),inec(:),order(:),isc_list(:)
 integer,allocatable :: h_col(:,:,:),v_col(:,:),s_col(:,:,:),c_ind(:,:)
 real(kind_real) :: S_add
 real(kind_real),allocatable :: h_S(:,:,:),v_S(:,:),s_S(:,:,:),c_S(:,:)
-real(kind_real),allocatable :: S_list(:),S_list_tmp(:),fld(:,:)
+real(kind_real),allocatable :: S_list(:),S_list_tmp(:)
 logical :: conv
 logical,allocatable :: done(:)
 
@@ -105,8 +105,8 @@ do il1=1,ndata%nl1
    do i_s=1,ndata%s(il1)%n_s
       ic1b = ndata%s(il1)%row(i_s)
       ines(ic1b,il1) = ines(ic1b,il1)+1
-      jc2b = ndata%s(il1)%col(i_s)
-      jsb = ndata%c2bl1_to_sb(jc2b,il1)
+      jc1b = ndata%s(il1)%col(i_s)
+      jsb = ndata%c1bl1_to_sb(jc1b,il1)
       jsc = ndata%sb_to_sc_nor(jsb)
       s_col(ines(ic1b,il1),ic1b,il1) = jsc
       s_S(ines(ic1b,il1),ic1b,il1) = ndata%s(il1)%S(i_s)

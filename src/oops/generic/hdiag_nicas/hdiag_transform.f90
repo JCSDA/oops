@@ -18,8 +18,8 @@ use type_mpl, only: mpl
 use type_hdata, only: hdatatype
 implicit none
 
-real(kind_real),parameter :: rvth = 0.5
-real(kind_real),parameter :: egvmin = 1.0e-12
+real(kind_real),parameter :: rvth = 0.5       !< Theoretical vertical support radius
+real(kind_real),parameter :: egvmin = 1.0e-12 !< Minimum eigenvalue
 
 private
 public :: compute_transform
@@ -55,7 +55,7 @@ associate(nam=>hdata%nam,geom=>hdata%geom,bpar=>hdata%bpar)
 ! Copy correlation
 cor = 0.0
 do il0=1,geom%nl0
-   do jl0r=1,bpar%nl0(ib)
+   do jl0r=1,bpar%nl0r(ib)
       jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
       cor(jl0,il0) = avg%cor(1,jl0r,il0)
    end do
@@ -79,7 +79,7 @@ corsqrtinv = matmul(v,matmul(ddinv,transpose(v)))
 
 ! Theoretical correlation
 do il0=1,geom%nl0
-   do jl0r=1,bpar%nl0(ib)
+   do jl0r=1,bpar%nl0r(ib)
       jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
       corth(jl0,il0) = exp(-0.5*(geom%distv(jl0,il0)/rvth)**2)
    end do

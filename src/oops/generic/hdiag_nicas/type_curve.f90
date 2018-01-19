@@ -65,19 +65,19 @@ associate(nam=>hdata%nam,geom=>hdata%geom,bpar=>hdata%bpar)
 curve%cname = cname
 
 ! Allocation
-allocate(curve%raw(nam%nc3,bpar%nl0(ib),geom%nl0))
+allocate(curve%raw(nam%nc3,bpar%nl0r(ib),geom%nl0))
 allocate(curve%raw_coef_ens(geom%nl0))
 
 ! Initialization
-curve%npack = nam%nc3*geom%nl0*bpar%nl0(ib)+2*geom%nl0
+curve%npack = nam%nc3*geom%nl0*bpar%nl0r(ib)+2*geom%nl0
 call msr(curve%raw)
 call msr(curve%raw_coef_ens)
 call msr(curve%raw_coef_sta)
 
 if (trim(nam%fit_type)/='none') then
    ! Allocation
-   allocate(curve%fit_wgt(nam%nc3,bpar%nl0(ib),geom%nl0))
-   allocate(curve%fit(nam%nc3,bpar%nl0(ib),geom%nl0))
+   allocate(curve%fit_wgt(nam%nc3,bpar%nl0r(ib),geom%nl0))
+   allocate(curve%fit(nam%nc3,bpar%nl0r(ib),geom%nl0))
    allocate(curve%fit_rh(geom%nl0))
    allocate(curve%fit_rv(geom%nl0))
 
@@ -150,7 +150,7 @@ end do
 
 ! Normalize
 do jl0=1,geom%nl0
-   do il0r=1,bpar%nl0(ib)
+   do il0r=1,bpar%nl0r(ib)
       il0 = bpar%l0rl0b_to_l0(il0r,jl0,ib)
       do jc3=1,bpar%nc3(ib)
          if (isnotmsr(curve%raw(jc3,il0r,jl0)).and.isnotmsr(curve%raw_coef_ens(il0)).and.isnotmsr(curve%raw_coef_ens(jl0))) &
@@ -338,18 +338,26 @@ character(len=1024) :: subr = 'curve_write_all'
 ! Associate
 associate(nam=>hdata%nam,geom=>hdata%geom,bpar=>hdata%bpar)
 
-! TODO : comments
-call system('rm -f '//trim(nam%datadir)//'/'//trim(filename))
+! Create file
 call ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_clobber,nf90_64bit_offset),ncid))
+
+! Add namelist
 call namncwrite(nam,ncid)
-call ncerr(subr,nf90_put_att(ncid,nf90_global,'vunitchar',trim(vunitchar)))
+
+! Define dimensions
 call ncerr(subr,nf90_def_dim(ncid,'one',1,one_id))
 call ncerr(subr,nf90_def_dim(ncid,'nc',nam%nc3,nc_id))
 call ncerr(subr,nf90_def_dim(ncid,'nl0r',nam%nl0r,nl0r_id))
 call ncerr(subr,nf90_def_dim(ncid,'nl0',geom%nl0,nl0_id))
+
+! Define variables
 call ncerr(subr,nf90_def_var(ncid,'disth',ncfloat,(/nc_id/),disth_id))
 call ncerr(subr,nf90_def_var(ncid,'vunit',ncfloat,(/nl0_id/),vunit_id))
+
+! End definition
 call ncerr(subr,nf90_enddef(ncid))
+
+! Write variables
 call ncerr(subr,nf90_put_var(ncid,disth_id,geom%disth(1:nam%nc3)))
 call ncerr(subr,nf90_put_var(ncid,vunit_id,geom%vunit))
 do ib=1,bpar%nb+1
@@ -373,6 +381,8 @@ do ib=1,bpar%nb+1
       end if
    end if
 end do
+
+! Close file
 call ncerr(subr,nf90_close(ncid))
 
 ! End associate
@@ -403,10 +413,15 @@ character(len=1024) :: subr = 'curve_write_all'
 ! Associate
 associate(nam=>hdata%nam,geom=>hdata%geom,bpar=>hdata%bpar)
 
-! TODO : comments
+! Create file
 call ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_clobber,nf90_64bit_offset),ncid))
+
+! Add namelist
 call namncwrite(nam,ncid)
+
+! Close file
 call ncerr(subr,nf90_close(ncid))
+
 do ib=1,bpar%nb+1
    if (bpar%fit_block(ib)) then
       do i=1,2
@@ -427,10 +442,9 @@ do ib=1,bpar%nb+1
 
          if (mpl%main) then
             ! Interpolate
-
             call diag_interpolation(hdata,fld_c2,fld)
 
-            ! Write
+            ! Write fields
             if (i==1) then
                call model_write(nam,geom,filename,trim(bpar%blockname(ib))//'_fit_rh',fld)
             elseif (i==2) then

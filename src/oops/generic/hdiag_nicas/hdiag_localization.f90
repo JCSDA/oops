@@ -55,7 +55,7 @@ associate(nam=>hdata%nam,geom=>hdata%geom,bpar=>hdata%bpar)
 ! Compute raw localization
 !$omp parallel do schedule(static) private(il0,jl0r,jc3)
 do il0=1,geom%nl0
-   do jl0r=1,bpar%nl0(ib)
+   do jl0r=1,bpar%nl0r(ib)
       do jc3=1,bpar%nc3(ib)
          if (isnotmsr(avg%m11asysq(jc3,jl0r,il0)).and.isnotmsr(avg%m11sq(jc3,jl0r,il0))) &
        & loc%raw(jc3,jl0r,il0) = avg%m11asysq(jc3,jl0r,il0)/avg%m11sq(jc3,jl0r,il0)

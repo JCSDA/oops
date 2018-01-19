@@ -21,6 +21,7 @@ use type_geom, only: geomtype
 use type_mpl, only: mpl
 use type_nam, only: namtype
 use type_ndata, only: ndatatype
+use yomhook, only: lhook,dr_hook
 
 implicit none
 
@@ -46,39 +47,80 @@ type(ndatatype),intent(in) :: ndata(bpar%nb+1)                          !< NICAS
 real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) !< Field
 
 ! Local variable
-integer :: ib,its,iv,jv
+integer :: ib,its,iv,jv,il0,ic0a
+real(kind_real) :: zhook_handle
 real(kind_real),allocatable :: fld_3d(:,:),fld_4d(:,:,:),fld_4d_tmp(:,:,:)
 real(kind_real),allocatable :: wgt(:,:),wgt_diag(:)
+
+if (lhook) call dr_hook('apply_localization',0,zhook_handle)
 
 select case (nam%strategy)
 case ('common')
    ! Allocation
    allocate(fld_3d(geom%nc0a,geom%nl0))
 
+   ! Adjoint displacement
+!   if (nam%displ_diag) then
+!      do its=2,nam%nts
+!         
+!      end do
+!   end if
+
    ! Sum product over variables and timeslots
    fld_3d = 0.0
-   do its=1,nam%nts
-      do iv=1,nam%nv
-         fld_3d = fld_3d+fld(:,:,iv,its)
+   !$omp parallel do schedule(static) private(il0,ic0a,its,iv)
+   do il0=1,geom%nl0
+      do ic0a=1,geom%nc0a
+         do its=1,nam%nts
+            do iv=1,nam%nv
+               fld_3d(ic0a,il0) = fld_3d(ic0a,il0)+fld(ic0a,il0,iv,its)
+            end do
+         end do
       end do
    end do
+   !$omp end parallel do
 
    ! Apply common ensemble coefficient square-root
-   fld_3d = fld_3d*sqrt(ndata(bpar%nb+1)%coef_ens)
+!   !$omp parallel do schedule(static) private(il0,ic0a)
+!   do il0=1,geom%nl0
+!      do ic0a=1,geom%nc0a
+!         fld_3d(ic0a,il0) = fld_3d(ic0a,il0)*sqrt(ndata(bpar%nb+1)%coef_ens(ic0a,il0))
+!      end do
+!   end do
+!   !$omp end parallel do
 
    ! Apply common localization
    call apply_nicas(geom,ndata(bpar%nb+1),fld_3d)
 
    ! Apply common ensemble coefficient square-root
-   fld_3d = fld_3d*sqrt(ndata(bpar%nb+1)%coef_ens)
+!   !$omp parallel do schedule(static) private(il0,ic0a)
+!   do il0=1,geom%nl0
+!      do ic0a=1,geom%nc0a
+!         fld_3d(ic0a,il0) = fld_3d(ic0a,il0)*sqrt(ndata(bpar%nb+1)%coef_ens(ic0a,il0))
+!      end do
+!   end do
+!   !$omp end parallel do
 
    ! Build final vector
-   do its=1,nam%nts
-      do iv=1,nam%nv
-         fld(:,:,iv,its) = fld_3d
+   !$omp parallel do schedule(static) private(il0,ic0a,its,iv)
+   do il0=1,geom%nl0
+      do ic0a=1,geom%nc0a
+         do its=1,nam%nts
+            do iv=1,nam%nv
+               fld(ic0a,il0,iv,its) = fld_3d(ic0a,il0)
+            end do
+         end do
       end do
    end do
-case ('specific_unjvariate')
+   !$omp end parallel do
+
+   ! Displacement
+!   if (nam%displ_diag) then
+!      do its=2,nam%nts
+!         
+!      end do
+!   end if
+case ('specific_univariate')
    ! Allocation
    allocate(fld_4d(geom%nc0a,geom%nl0,nam%nv))
 
@@ -108,8 +150,8 @@ case ('specific_unjvariate')
    do its=1,nam%nts
       fld(:,:,:,its) = fld_4d
    end do
-case ('specific_multjvariate')
-   call msgerror('specific multjvariate strategy should not be called from apply_localization')
+case ('specific_multivariate')
+   call msgerror('specific multivariate strategy should not be called from apply_localization')
 case ('common_weighted')
    ! Allocation
    allocate(fld_4d(geom%nc0a,geom%nl0,nam%nv))
@@ -170,6 +212,8 @@ case ('common_weighted')
    end do
 end select
 
+if (lhook) call dr_hook('apply_localization',1,zhook_handle)
+
 end subroutine apply_localization
 
 !----------------------------------------------------------------------
@@ -190,8 +234,11 @@ real(kind_real),intent(out) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) !< Field
 
 ! Local variable
 integer :: ib,its,iv,jv,i,nullty,info
+real(kind_real) :: zhook_handle
 real(kind_real),allocatable :: fld_3d(:,:),fld_4d(:,:,:),fld_4d_tmp(:,:,:)
 real(kind_real),allocatable :: wgt(:,:),wgt_diag(:),a(:),u(:)
+
+if (lhook) call dr_hook('apply_localization_sqrt',0,zhook_handle)
 
 select case (nam%strategy)
 case ('common')
@@ -210,7 +257,7 @@ case ('common')
          fld(:,:,iv,its) = fld_3d
       end do
    end do
-case ('specific_unjvariate')
+case ('specific_univariate')
    ! Allocation
    allocate(fld_4d(geom%nc0a,geom%nl0,nam%nv))
 
@@ -231,7 +278,7 @@ case ('specific_unjvariate')
    do its=1,nam%nts
       fld(:,:,:,its) = fld_4d
    end do
-case ('specific_multjvariate')
+case ('specific_multivariate')
    ! Allocation
    allocate(fld_4d(geom%nc0a,geom%nl0,nam%nv))
 
@@ -292,7 +339,7 @@ case ('common_weighted')
       end do
    end do
    call cholesky(a,nam%nv,(nam%nv*(nam%nv+1))/2,u,nullty,info)
-   if (info==2) call msgerror('weights are not positjve definite in apply_localization')
+   if (info==2) call msgerror('weights are not positive definite in apply_localization')
    i = 0
    wgt = 0.0
    do iv=1,nam%nv
@@ -329,6 +376,8 @@ case ('common_weighted')
    end do
 end select
 
+if (lhook) call dr_hook('apply_localization_sqrt',1,zhook_handle)
+
 end subroutine apply_localization_sqrt
 
 !----------------------------------------------------------------------
@@ -349,9 +398,12 @@ type(cvtype),intent(out) :: cv(bpar%nb+1)                            !< Control 
 
 ! Local variable
 integer :: ib,its,iv,jv,i,nullty,info
+real(kind_real) :: zhook_handle
 real(kind_real),allocatable :: fld_3d(:,:),fld_4d(:,:,:),fld_4d_tmp(:,:,:)
 real(kind_real),allocatable :: wgt(:,:),wgt_diag(:),a(:),u(:)
 type(cvtype) :: cv_tmp(bpar%nb+1)
+
+if (lhook) call dr_hook('apply_localization_sqrt_ad',0,zhook_handle)
 
 ! Allocation
 call cv_alloc(bpar,ndata,cv)
@@ -374,7 +426,7 @@ case ('common')
 
    ! Apply common localization
    call apply_nicas_sqrt_ad(geom,ndata(bpar%nb+1),fld_3d,cv(bpar%nb+1)%alpha)
-case ('specific_unjvariate')
+case ('specific_univariate')
    ! Allocation
    allocate(fld_4d(geom%nc0a,geom%nl0,nam%nv))
 
@@ -396,7 +448,7 @@ case ('specific_unjvariate')
          call apply_nicas_sqrt_ad(geom,ndata(ib),fld_4d(:,:,iv),cv(ib)%alpha)
       end if
    end do
-case ('specific_multjvariate')
+case ('specific_multivariate')
    ! Allocation
    allocate(fld_4d(geom%nc0a,geom%nl0,nam%nv))
    call cv_alloc(bpar,ndata,cv_tmp)
@@ -465,7 +517,7 @@ case ('common_weighted')
       end do
    end do
    call cholesky(a,nam%nv,(nam%nv*(nam%nv+1))/2,u,nullty,info)
-   if (info==2) call msgerror('weights are not positjve definite in apply_localization')
+   if (info==2) call msgerror('weights are not positive definite in apply_localization')
    i = 0
    wgt = 0.0
    do jv=1,nam%nv
@@ -503,6 +555,8 @@ case ('common_weighted')
    end do
 end select
 
+if (lhook) call dr_hook('apply_localization_sqrt_ad',1,zhook_handle)
+
 end subroutine apply_localization_sqrt_ad
 
 !----------------------------------------------------------------------
@@ -521,13 +575,18 @@ type(ndatatype),intent(in) :: ndata(bpar%nb+1)                          !< NICAS
 real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) !< Field
 
 ! Local variable
+real(kind_real) :: zhook_handle
 type(cvtype) :: cv(bpar%nb+1)
+
+if (lhook) call dr_hook('apply_localization_from_sqrt',0,zhook_handle)
 
 ! Apply square-root adjoint
 call apply_localization_sqrt_ad(nam,geom,bpar,ndata,fld,cv)
 
 ! Apply square-root
 call apply_localization_sqrt(nam,geom,bpar,ndata,cv,fld)
+
+if (lhook) call dr_hook('apply_localization_from_sqrt',1,zhook_handle)
 
 end subroutine apply_localization_from_sqrt
 
@@ -549,7 +608,10 @@ real(kind_real),intent(out) :: ens(geom%nc0a,geom%nl0,nam%nv,nam%nts,ne) !< Ense
 
 ! Local variable
 integer :: ie
+real(kind_real) :: zhook_handle
 type(cvtype) :: cv(bpar%nb+1,ne)
+
+if (lhook) call dr_hook('randomize_localization',0,zhook_handle)
 
 ! Random control vector
 call cv_random(bpar,ndata,ne,cv)
@@ -558,6 +620,8 @@ do ie=1,ne
    ! Apply square-root
    call apply_localization_sqrt(nam,geom,bpar,ndata,cv(:,ie),ens(:,:,:,:,ie))
 end do
+
+if (lhook) call dr_hook('randomize_localization',1,zhook_handle)
 
 end subroutine randomize_localization
 

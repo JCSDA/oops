@@ -23,16 +23,13 @@ contains
 ! Function: diffusion
 !> Purpose: compute the normalized diffusion function from eq. (55) of Mirouze and Weaver (2013), for the 3d case (d = 3)
 !----------------------------------------------------------------------
-function matern(M,x)
+real(kind_real) function matern(M,x)
 
 implicit none
 
-! Result
-real(kind_real) :: matern
-
 ! Passed variables
-integer,intent(in) :: M
-real(kind_real),intent(in) :: x
+integer,intent(in) :: M         !< Matern function order
+real(kind_real),intent(in) :: x !< Argument
 
 ! Local variables
 integer :: j

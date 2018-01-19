@@ -29,64 +29,67 @@ implicit none
 ! Sampling data derived type
 type hdatatype
    ! Namelist
-   type(namtype),pointer :: nam                      !< Namelist
+   type(namtype),pointer :: nam                     !< Namelist
 
    ! Geometry
-   type(geomtype),pointer :: geom                    !< Geometry
+   type(geomtype),pointer :: geom                   !< Geometry
 
    ! Block parameters
-   type(bpartype),pointer :: bpar                    !< Block parameters
+   type(bpartype),pointer :: bpar                   !< Block parameters
 
    ! Sampling
-   integer,allocatable :: c1_to_c0(:)              !< First sampling index
-   logical,allocatable :: c1l0_log(:,:)            !< Log for the first sampling index
-   integer,allocatable :: c1c3_to_c0(:,:)          !< Second horizontal sampling index
-   logical,allocatable :: c1c3l0_log(:,:,:)        !< Log for the second horizontal sampling index
-   integer :: nc2                                    !< Subgrid size
-   integer,allocatable :: c2_to_c1(:)              !< Subgrid to diagnostic points
-   integer,allocatable :: c2_to_c0(:)              !< Subgrid to grid
+   integer,allocatable :: c1_to_c0(:)               !< First sampling index
+   logical,allocatable :: c1l0_log(:,:)             !< Log for the first sampling index
+   integer,allocatable :: c1c3_to_c0(:,:)           !< Second horizontal sampling index
+   logical,allocatable :: c1c3l0_log(:,:,:)         !< Log for the second horizontal sampling index
+   integer :: nc2                                   !< Subgrid size
+   integer,allocatable :: c2_to_c1(:)               !< Subgrid to diagnostic points
+   integer,allocatable :: c2_to_c0(:)               !< Subgrid to grid
 
    ! MPI splitting
-   integer :: nc2a                                  !< Subgrid size
-   integer,allocatable :: c2a_to_c2(:)              !< 
-   integer,allocatable :: c2_to_c2a(:)              !< 
-   integer,allocatable :: c2_to_proc(:)             !< 
-   integer,allocatable :: proc_to_nc2a(:)           !< 
+   integer :: nc2a                                  !< Number of points in subset Sc2, halo A
+   integer,allocatable :: c2a_to_c2(:)              !< Subset Sc2, halo A to global
+   integer,allocatable :: c2_to_c2a(:)              !< Subset Sc2, global to halo A
+   integer,allocatable :: c2_to_proc(:)             !< Subset Sc2, global to processor
+   integer,allocatable :: proc_to_nc2a(:)           !< Number of points in subset Sc2, halo A, for each processor
 
    ! Cover tree and nearest neighbors
-   logical,allocatable ::  local_mask(:,:,:)         !< Local mask
-   logical,allocatable ::  displ_mask(:,:,:)         !< Displacement mask
+   logical,allocatable ::  local_mask(:,:,:)        !< Local mask
+   logical,allocatable ::  displ_mask(:,:,:)        !< Displacement mask
    integer,allocatable :: nn_c2_index(:,:,:)        !< Nearest diagnostic neighbors from diagnostic points
    real(kind_real),allocatable :: nn_c2_dist(:,:,:) !< Nearest diagnostic neighbors distance from diagnostic points
-   integer,allocatable :: nn_ldwv_index(:)           !< Nearest diagnostic neighbors for local diagnostics profiles
+   integer,allocatable :: nn_ldwv_index(:)          !< Nearest diagnostic neighbors for local diagnostics profiles
 
    ! Sampling mesh
-   integer :: nt                                     !< Number of triangles
-   integer,allocatable :: ltri(:,:)                  !< Triangles indices
-   integer,allocatable :: larc(:,:)                  !< Arcs indices
-   real(kind_real),allocatable :: bdist(:)           !< Distance to the closest boundary arc
+   integer :: nt                                    !< Number of triangles
+   integer,allocatable :: ltri(:,:)                 !< Triangles indices
+   integer,allocatable :: larc(:,:)                 !< Arcs indices
+   real(kind_real),allocatable :: bdist(:)          !< Distance to the closest boundary arc
 
    ! Interpolations
-   type(linoptype),allocatable :: h(:)               !< Horizontal interpolation from Sc2 to Sc0
-   type(linoptype),allocatable :: s(:)               !< Horizontal interpolation from Sc2 to Sc1
+   type(linoptype),allocatable :: h(:)              !< Horizontal interpolation from Sc2 to Sc0
+   type(linoptype),allocatable :: s(:)              !< Horizontal interpolation from Sc2 to Sc1
+   type(linoptype),allocatable :: d(:,:)            !< Displacement interpolation
 
    ! MPI distribution
-   integer :: nc0c                                   !< 
-   integer :: nc0d                                   !< 
-   integer :: nc1a                                   !< 
-   logical,allocatable :: lcheck_c0a(:)             !<
-   logical,allocatable :: lcheck_c0c(:)             !<
-   logical,allocatable :: lcheck_c0d(:)             !<
-   logical,allocatable :: lcheck_c1a(:)             !<  
-   integer,allocatable :: c0c_to_c0(:)             !< 
-   integer,allocatable :: c0d_to_c0(:)             !< 
-   integer,allocatable :: c0_to_c0c(:)             !< 
-   integer,allocatable :: c0_to_c0d(:)             !< 
-   integer,allocatable :: c0a_to_c0c(:)            !<
-   integer,allocatable :: c0a_to_c0d(:)            !<
-   type(comtype) :: AC                               !< Communication between halos A and C
-   type(comtype) :: AD                               !< Communication between halos A and D
-   integer,allocatable :: c1a_to_c1(:)             !< 
+   integer :: nc0c                                  !< Number of points in subset Sc0, halo C
+   integer :: nc0d                                  !< Number of points in subset Sc0, halo D
+   integer :: nc1a                                  !< Number of points in subset Sc1, halo A
+   logical,allocatable :: lcheck_c0a(:)             !< Detection of halo A on subset Sc0
+   logical,allocatable :: lcheck_c0c(:)             !< Detection of halo C on subset Sc0
+   logical,allocatable :: lcheck_c0d(:)             !< Detection of halo D on subset Sc0
+   logical,allocatable :: lcheck_c1a(:)             !< Detection of halo A on subset Sc1
+   logical,allocatable :: lcheck_d(:,:,:)           !< Detection of displacement interpolation coefficients
+   integer,allocatable :: c0c_to_c0(:)              !< Subset Sc0, halo C to global
+   integer,allocatable :: c0_to_c0c(:)              !< Subset Sc0, global to halo C
+   integer,allocatable :: c0a_to_c0c(:)             !< Subset Sc0, halo A to halo C
+   integer,allocatable :: c0d_to_c0(:)              !< Subset Sc0, halo D to global
+   integer,allocatable :: c0_to_c0d(:)              !< Subset Sc0, global to halo D
+   integer,allocatable :: c0a_to_c0d(:)             !< Subset Sc0, halo A to halo D
+   integer,allocatable :: c1a_to_c1(:)              !< Subset Sc1, halo A to global
+   integer,allocatable :: c1_to_c1a(:)              !< Subset Sc1, global to halo A
+   type(comtype) :: AC                              !< Communication between halos A and C
+   type(comtype) :: AD                              !< Communication between halos A and D
 end type hdatatype
 
 private

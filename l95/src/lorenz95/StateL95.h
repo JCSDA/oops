@@ -65,7 +65,8 @@ class StateL95 : public util::Printable,
 /// Interactions with increments
   StateL95 & operator+=(const IncrementL95 &);
 
-/// Convert to/from generic unstructured grid
+/// Define and convert to/from generic unstructured grid
+  void define(oops::UnstructuredGrid &) const;
   void convert_to(oops::UnstructuredGrid &) const;
   void convert_from(const oops::UnstructuredGrid &);
 

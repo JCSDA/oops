@@ -68,7 +68,7 @@ subroutine test_accuracy(odata)
 implicit none
 
 ! Passed variables
-type(odatatype),intent(inout) :: odata       !< Observation operator data
+type(odatatype),intent(inout) :: odata !< Observation operator data
 
 ! Local variables
 integer :: il0,iobs,ind(1)
@@ -82,12 +82,10 @@ associate(geom=>odata%geom)
 ! Allocation
 allocate(ylon(odata%nobs,geom%nl0))
 allocate(ylat(odata%nobs,geom%nl0))
+allocate(lon(geom%nc0,geom%nl0))
+allocate(lat(geom%nc0,geom%nl0))
 
 if (mpl%main) then
-   ! Allocation
-   allocate(lon(geom%nc0,geom%nl0))
-   allocate(lat(geom%nc0,geom%nl0))
-
    ! Initialization
    do il0=1,geom%nl0
       lon(:,il0) = geom%lon

@@ -60,7 +60,7 @@ type(meshtype),intent(inout) :: mesh  !< Mesh
 
 ! Local variables
 integer :: i,j,k,info
-integer :: i_s(mpl%nproc),i_e(mpl%nproc),n_loc(mpl%nproc),i_loc,iproc,progint
+integer :: i_s(mpl%nproc),i_e(mpl%nproc),n_loc(mpl%nproc),i_loc,progint
 integer,allocatable :: jtab(:),near(:),next(:),sbuf(:)
 real(kind_real),allocatable :: dist(:)
 logical,allocatable :: done(:)
@@ -71,7 +71,7 @@ allocate(mesh%redundant(mesh%n))
 call msi(mesh%redundant)
 
 ! Look for redundant points
-if (lred) then
+if (lred.and..false.) then
    ! MPI splitting
    call mpl_split(n,i_s,i_e,n_loc)
 
@@ -190,8 +190,8 @@ subroutine copy_mesh(mesh_in,mesh_out)
 implicit none
 
 ! Passed variables
-type(meshtype),intent(in) :: mesh_in
-type(meshtype),intent(out) :: mesh_out
+type(meshtype),intent(in) :: mesh_in   !< Input mesh
+type(meshtype),intent(out) :: mesh_out !< Output mesh
 
 ! Copy sizes
 mesh_out%n = mesh_in%n
@@ -317,12 +317,12 @@ subroutine barycentric(lon,lat,mesh,istart,b,ib)
 implicit none
 
 ! Passed variables
-real(kind_real),intent(in) :: lon(1)
-real(kind_real),intent(in) :: lat(1)
-type(meshtype),intent(in) :: mesh
-integer,intent(in) :: istart
-real(kind_real),intent(out) :: b(3)
-integer,intent(out) :: ib(3)
+real(kind_real),intent(in) :: lon(1) !< Longitude
+real(kind_real),intent(in) :: lat(1) !< Latitude
+type(meshtype),intent(in) :: mesh    !< Mesh
+integer,intent(in) :: istart         !< Starting index
+real(kind_real),intent(out) :: b(3)  !< Barycentric weights
+integer,intent(out) :: ib(3)         !< Barycentric indices
 
 ! Local variables
 real(kind_real) :: p(3)
@@ -344,16 +344,18 @@ subroutine addnode(lon,lat,mesh)
 implicit none
 
 ! Passed variables
-real(kind_real),intent(in) :: lon(1)
-real(kind_real),intent(in) :: lat(1)
-type(meshtype),intent(inout) :: mesh
+real(kind_real),intent(in) :: lon(1) !< Longitude
+real(kind_real),intent(in) :: lat(1) !< Latitude
+type(meshtype),intent(inout) :: mesh !< Mesh
 
 ! Local variables
 integer :: info
-integer,allocatable :: list(:),lptr(:),lend(:)
+integer,allocatable :: order(:),order_inv(:),list(:),lptr(:),lend(:)
 real(kind_real),allocatable :: x(:),y(:),z(:)
 
 ! Allocation
+allocate(order(mesh%nnr))
+allocate(order_inv(mesh%n))
 allocate(x(mesh%nnr))
 allocate(y(mesh%nnr))
 allocate(z(mesh%nnr))
@@ -362,6 +364,8 @@ allocate(lptr(6*(mesh%nnr-2)))
 allocate(lend(mesh%nnr))
 
 ! Copy
+order = mesh%order
+order_inv = mesh%order_inv
 x = mesh%x
 y = mesh%y
 z = mesh%z
@@ -370,14 +374,18 @@ lptr = mesh%lptr
 lend = mesh%lend
 
 ! Reallocation
+deallocate(mesh%order)
+deallocate(mesh%order_inv)
 deallocate(mesh%x)
 deallocate(mesh%y)
 deallocate(mesh%z)
 deallocate(mesh%list)
 deallocate(mesh%lptr)
 deallocate(mesh%lend)
-mesh%n = mesh%n
+mesh%n = mesh%n+1
 mesh%nnr = mesh%nnr+1
+allocate(mesh%order(mesh%nnr))
+allocate(mesh%order_inv(mesh%n))
 allocate(mesh%x(mesh%nnr))
 allocate(mesh%y(mesh%nnr))
 allocate(mesh%z(mesh%nnr))
@@ -386,6 +394,8 @@ allocate(mesh%lptr(6*(mesh%nnr-2)))
 allocate(mesh%lend(mesh%nnr))
 
 ! Copy
+mesh%order(1:mesh%nnr-1) = order
+mesh%order_inv(1:mesh%n-1) = order_inv
 mesh%x(1:mesh%nnr-1) = x
 mesh%y(1:mesh%nnr-1) = y
 mesh%z(1:mesh%nnr-1) = z
@@ -399,6 +409,10 @@ call trans(1,lat,lon,mesh%x(mesh%nnr:mesh%nnr),mesh%y(mesh%nnr:mesh%nnr),mesh%z(
 ! Update mesh
 call addnod(1,mesh%nnr,mesh%x,mesh%y,mesh%z,mesh%list,mesh%lptr,mesh%lend,mesh%lnew,info)
 
+! Update order
+mesh%order(mesh%nnr) = mesh%n
+mesh%order_inv(mesh%n) = mesh%nnr
+
 end subroutine addnode
 
 !----------------------------------------------------------------------
@@ -410,10 +424,10 @@ subroutine polygon(mesh,np,plist,area_polygon)
 implicit none
 
 ! Passed variables
-type(meshtype),intent(in) :: mesh
-integer,intent(in) :: np
-integer,intent(in) :: plist(np)
-real(kind_real),intent(out) :: area_polygon(np)
+type(meshtype),intent(in) :: mesh               !< Mesh
+integer,intent(in) :: np                        !< Number of points
+integer,intent(in) :: plist(np)                 !< List of indices
+real(kind_real),intent(out) :: area_polygon(np) !< Area
 
 ! Local variables
 integer :: ip,i_src,index_triangle,i_src_last,i_src_new,i_src_stop,vertex_last,vertex_new,nb,info

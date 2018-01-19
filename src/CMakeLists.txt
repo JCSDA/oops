@@ -164,7 +164,6 @@ oops/generic/LocalizationHDIAG_NICAS.h
 oops/generic/ObsErrorDiag.h
 oops/generic/UnstructuredGrid.cc
 oops/generic/UnstructuredGrid.h
-oops/generic/column_data_mod.F90
 oops/generic/instantiateLocalizationFactory.h
 oops/generic/instantiateObsErrorFactory.h
 oops/generic/hdiag_nicas_f.h
@@ -254,6 +253,7 @@ oops/generic/hdiag_nicas/type_randgen.f90
 oops/generic/hdiag_nicas/type_randgen.h
 oops/generic/hdiag_nicas/type_randgen.hpp
 oops/generic/hdiag_nicas/type_timer.f90
+oops/generic/hdiag_nicas/yomhook.f90
 oops/generic/hdiag_nicas/external/Cover_Tree.h
 oops/generic/hdiag_nicas/external/Cover_Tree_Point.cpp
 oops/generic/hdiag_nicas/external/Cover_Tree_Point.h

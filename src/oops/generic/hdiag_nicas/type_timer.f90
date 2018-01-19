@@ -10,7 +10,7 @@
 !----------------------------------------------------------------------
 module type_timer
 
-use tools_display, only: msgerror
+use tools_display, only: msgerror,newunit
 use tools_kinds, only: kind_real
 use type_mpl, only: mpl
 
@@ -31,9 +31,6 @@ type timertype
    character(len=10) :: rchar         !< Read data volume
    character(len=10) :: wchar         !< Written data volume
 end type timertype
-
-! I/O unit
-integer,parameter :: iunit = 100 !< I/O unit
 
 private
 public :: timertype,timer_start,timer_end,timer_display
@@ -93,7 +90,7 @@ implicit none
 type(timertype),intent(inout) :: timer !< Timer data
 
 ! Local variables
-integer :: ierr,get_pid
+integer :: ierr,get_pid,lunit
 real(kind_real) :: VmPeak,VmHWM,rchar,wchar
 logical :: isfile
 character(len=8) :: pidchar
@@ -110,9 +107,10 @@ write(pidchar,'(i8)') get_pid
 filename = '/proc/'//trim(adjustl(pidchar))//'/status'
 inquire(file=filename,exist=isfile)
 if (isfile) then
-   open(unit=iunit,file=filename,action='read')
+   lunit = newunit()
+   open(unit=lunit,file=filename,action='read')
    do
-      read(iunit,'(a)',iostat=ierr) line
+      read(lunit,'(a)',iostat=ierr) line
       if (ierr>0) then
          call msgerror('cannot read /proc/pid/status')
       elseif (ierr<0) then
@@ -154,7 +152,7 @@ if (isfile) then
          end if
       end if
    end do
-   close(iunit)
+   close(lunit)
 end if
 
 ! I/O info
@@ -164,9 +162,10 @@ call fgetpid(get_pid)
 write(pidchar,'(i8)') get_pid
 filename = '/proc/'//trim(adjustl(pidchar))//'/io'
 if (isfile) then
-   open(unit=iunit,file=filename,action='read')
+   lunit = newunit()
+   open(unit=lunit,file=filename,action='read')
    do
-      read(iunit,'(a)',iostat=ierr) line
+      read(lunit,'(a)',iostat=ierr) line
       if (ierr>0) then
          call msgerror('cannot read /proc/pid/io')
       elseif (ierr<0) then
@@ -208,7 +207,7 @@ if (isfile) then
          end if
       end if
    end do
-   close(iunit)
+   close(lunit)
 endif
 
 ! Display

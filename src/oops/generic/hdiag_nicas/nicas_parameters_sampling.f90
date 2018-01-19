@@ -24,7 +24,7 @@ use type_randgen, only: initialize_sampling,reseed_randgen
 
 implicit none
 
-integer,parameter :: nc1max = 15000
+integer,parameter :: nc1max = 15000 !< Maximum size of the Sc1 subset
 
 private
 public :: compute_sampling
@@ -45,8 +45,8 @@ type(ndatatype),intent(inout) :: ndata !< NICAS data
 
 ! Local variables
 integer :: il0,il0_prev,il1,ic0,ic1,ic2,is
-integer :: mask_ind_col(ndata%geom%nc0)
-integer,allocatable :: mask_ind(:,:)
+integer :: mask_c0(ndata%geom%nc0)
+integer,allocatable :: mask_c1(:),c2_to_c1(:)
 real(kind_real) :: rh0s(ndata%geom%nc0,ndata%geom%nl0),rv0s(ndata%geom%nc0,ndata%geom%nl0)
 real(kind_real) :: rh0minavg,rv1min,distnorm
 real(kind_real) :: rh0min(ndata%geom%nc0)
@@ -89,15 +89,15 @@ if (ndata%nc1>nc1max) then
    ndata%nc1 = nc1max
    write(mpl%unit,'(a10,a,f5.2)') '','Effective resolution: ',sqrt(float(ndata%nc1)*sqrt(3.0)*rh0minavg**2/(2.0*maxval(geom%area)))
 end if
-mask_ind_col = 0
+mask_c0 = 0
 do ic0=1,geom%nc0
-   if (any(geom%mask(ic0,:))) mask_ind_col(ic0) = 1
+   if (any(geom%mask(ic0,:))) mask_c0(ic0) = 1
 end do
 
 ! Compute subset
 write(mpl%unit,'(a7,a)') '','Compute horizontal subset C1'
 allocate(ndata%c1_to_c0(ndata%nc1))
-if (mpl%main) call initialize_sampling(geom%nc0,dble(geom%lon),dble(geom%lat),mask_ind_col,rh0min,nam%ntry,nam%nrep, &
+if (mpl%main) call initialize_sampling(geom%nc0,dble(geom%lon),dble(geom%lat),mask_c0,rh0min,nam%ntry,nam%nrep, &
  & ndata%nc1,ndata%c1_to_c0)
 call mpl_bcast(ndata%c1_to_c0,mpl%ioproc)
 
@@ -179,35 +179,47 @@ end do
 
 ! Horizontal subsampling
 allocate(ndata%nc2(ndata%nl1))
-allocate(ndata%c2l1_to_c1(ndata%nc1,ndata%nl1))
-allocate(mask_ind(ndata%nc1,ndata%nl1))
-call msi(ndata%c2l1_to_c1)
-mask_ind = 0
-do il1=1,ndata%nl1
-   il0 = ndata%l1_to_l0(il1)
-   do ic1=1,ndata%nc1
-      ic0 = ndata%c1_to_c0(ic1)
-      if (geom%mask(ic0,il0)) mask_ind(ic1,il1) = 1
-   end do
-end do
-
+allocate(ndata%c2mask(ndata%nc1,ndata%nl1))
+allocate(mask_c1(ndata%nc1))
 do il1=1,ndata%nl1
    write(mpl%unit,'(a7,a,i3,a)') '','Compute horizontal subset C2 (level ',il1,')'
+
+   ! Compute nc2
    il0 = ndata%l1_to_l0(il1)
    ndata%nc2(il1) = floor(2.0*geom%area(il0)*nam%resol**2/(sqrt(3.0)*(sum(rh0s(ndata%c1_to_c0,ndata%l1_to_l0(il1)), &
                   & mask=isnotmsr(rh0s(ndata%c1_to_c0,ndata%l1_to_l0(il1)))) &
                   & /float(count(isnotmsr(rh0s(ndata%c1_to_c0,ndata%l1_to_l0(il1))))))**2))
    ndata%nc2(il1) = max(ndata%nc1/4,min(ndata%nc2(il1),ndata%nc1))
+
    if (ndata%nc2(il1)<ndata%nc1) then
+      ! Allocation
+      allocate(c2_to_c1(ndata%nc2(il1)))
+
+      ! Mask
+      mask_c1 = 0
+      do ic1=1,ndata%nc1
+         ic0 = ndata%c1_to_c0(ic1)
+         if (geom%mask(ic0,il0)) mask_c1(ic1) = 1
+      end do
+
       ! Compute subset
       if (mpl%main) call initialize_sampling(ndata%nc1,dble(geom%lon(ndata%c1_to_c0)), &
-    & dble(geom%lat(ndata%c1_to_c0)),mask_ind(:,il1),rh0s(ndata%c1_to_c0,il0),nam%ntry,nam%nrep, &
-    & ndata%nc2(il1),ndata%c2l1_to_c1(1:ndata%nc2(il1),il1))
-      call mpl_bcast(ndata%c2l1_to_c1(1:ndata%nc2(il1),il1),mpl%ioproc)
-   else
+    & dble(geom%lat(ndata%c1_to_c0)),mask_c1,rh0s(ndata%c1_to_c0,il0),nam%ntry,nam%nrep, &
+    & ndata%nc2(il1),c2_to_c1)
+      call mpl_bcast(c2_to_c1,mpl%ioproc)
+
+      ! Fill C2 mask
+      ndata%c2mask(:,il1) = .false.
       do ic2=1,ndata%nc2(il1)
-         ndata%c2l1_to_c1(ic2,il1) = ic2
+         ic1 = c2_to_c1(ic2)
+         ndata%c2mask(ic1,il1) = .true. 
       end do
+
+      ! Release memory
+      deallocate(c2_to_c1)
+   else
+      ! Fill C2 mask
+      ndata%c2mask(:,il1) = .true.
    end if
 end do
 
@@ -215,30 +227,17 @@ end do
 ndata%ns = sum(ndata%nc2)
 allocate(ndata%s_to_c1(ndata%ns))
 allocate(ndata%s_to_l1(ndata%ns))
-allocate(ndata%s_to_c2(ndata%ns))
-allocate(ndata%c0l0_to_s(geom%nc0,geom%nl0))
-allocate(ndata%c2l1_to_c0(ndata%nc1,ndata%nl1))
-allocate(ndata%c2l1_to_s(ndata%nc1,ndata%nl1))
 allocate(ndata%c1l1_to_s(ndata%nc1,ndata%nl1))
-call msi(ndata%c0l0_to_s)
-call msi(ndata%c2l1_to_c0)
-call msi(ndata%c2l1_to_s)
 call msi(ndata%c1l1_to_s)
 is = 0
 do il1=1,ndata%nl1
-   do ic2=1,ndata%nc2(il1)
-      is = is+1
-      ic1 = ndata%c2l1_to_c1(ic2,il1)
-      ic0 = ndata%c1_to_c0(ic1)
-      il0 = ndata%l1_to_l0(il1)
-
-      ndata%s_to_c1(is) = ic1
-      ndata%s_to_l1(is) = il1
-      ndata%s_to_c2(is) = ic2
-      ndata%c0l0_to_s(ic0,il0) = is
-      ndata%c2l1_to_c0(ic2,il1) = ic0
-      ndata%c2l1_to_s(ic2,il1) = is
-      ndata%c1l1_to_s(ic1,il1) = is
+   do ic1=1,ndata%nc1
+      if (ndata%c2mask(ic1,il1)) then
+         is = is+1
+         ndata%s_to_c1(is) = ic1
+         ndata%s_to_l1(is) = il1
+         ndata%c1l1_to_s(ic1,il1) = is
+      end if
    end do
 end do
 

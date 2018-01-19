@@ -58,21 +58,44 @@ character(len=1024),intent(in) :: interp_type !< Interpolation type
 type(linoptype),intent(inout) :: interp       !< Interpolation data
 
 ! Local variables
-logical,allocatable :: mask_ctree(:)
+integer :: n_src_eff,i_src,i_src_eff
+integer,allocatable :: src_eff_to_src(:)
+logical,allocatable :: mask_ctree(:),mask_src_eff(:)
 type(ctreetype) :: ctree
 type(meshtype) :: mesh
 
+! Count non-missing source points
+n_src_eff = count(mask_src)
+
+! Allocation
+allocate(src_eff_to_src(n_src_eff))
+allocate(mask_src_eff(n_src_eff))
+
+! Conversion
+i_src_eff = 0
+do i_src=1,n_src
+   if (mask_src(i_src)) then
+      i_src_eff = i_src_eff+1
+      src_eff_to_src(i_src_eff) = i_src
+   end if
+end do
+
 ! Create mesh
-call create_mesh(n_src,lon_src,lat_src,.false.,mesh)
+call create_mesh(n_src_eff,lon_src(src_eff_to_src),lat_src(src_eff_to_src),.false.,mesh)
 
 ! Compute cover tree
-allocate(mask_ctree(mesh%nnr))
+allocate(mask_ctree(n_src_eff))
 mask_ctree = .true.
-ctree = create_ctree(mesh%nnr,dble(lon_src(mesh%order)),dble(lat_src(mesh%order)),mask_ctree)
+ctree = create_ctree(n_src_eff,dble(lon_src(src_eff_to_src)),dble(lat_src(src_eff_to_src)),mask_ctree)
 deallocate(mask_ctree)
 
 ! Compute interpolation
-call compute_interp_from_mesh_ctree(mesh,ctree,n_src,mask_src,n_dst,lon_dst,lat_dst,mask_dst,interp_type,interp)
+mask_src_eff = .true.
+call compute_interp_from_mesh_ctree(mesh,ctree,n_src_eff,mask_src_eff,n_dst,lon_dst,lat_dst,mask_dst,interp_type,interp)
+
+! Effective points conversion
+interp%n_src = n_src
+interp%col = src_eff_to_src(interp%col)
 
 ! Release memory
 call delete_ctree(ctree)
@@ -156,7 +179,7 @@ do i_dst_loc=1,n_dst_loc(mpl%myproc)
 
       if (abs(nn_dist(1))>0.0) then
          ! Compute barycentric coordinates
-         call barycentric(lon_dst(i_dst),lat_dst(i_dst),mesh,mesh%order_inv(nn_index(1)),b,ib)
+         call barycentric(lon_dst(i_dst),lat_dst(i_dst),mesh,nn_index(1),b,ib)
 
          if (all(ib>0)) then
             if (all(mask_src(mesh%order(ib)))) then
@@ -219,7 +242,7 @@ do i_dst_loc=1,n_dst_loc(mpl%myproc)
          ! Subsampled point
          n_s = n_s+1
          row(n_s) = i_dst
-         col(n_s) = mesh%order(nn_index(1))
+         col(n_s) = nn_index(1)
          S(n_s) = 1.0
       end if
    end if
@@ -239,9 +262,9 @@ interp%n_dst = n_dst
 call linop_alloc(interp)
 
 ! Communication
-call mpl_allgatherv(n_s,row(1:n_s),interp%n_s,interp%row,n_sg)
-call mpl_allgatherv(n_s,col(1:n_s),interp%n_s,interp%col,n_sg)
-call mpl_allgatherv(n_s,S(1:n_s),interp%n_s,interp%S,n_sg)
+call mpl_allgatherv(n_s,row(1:max(1,n_s)),interp%n_s,interp%row,n_sg)
+call mpl_allgatherv(n_s,col(1:max(1,n_s)),interp%n_s,interp%col,n_sg)
+call mpl_allgatherv(n_s,S(1:max(1,n_s)),interp%n_s,interp%S,n_sg)
 
 end subroutine compute_interp_from_mesh_ctree
 
@@ -341,7 +364,7 @@ do il0i=1,geom%nl0i
    allocate(missing(geom%nc0))
 
    ! Count points that are not interpolated
-   call interp_missing(geom%nc0,geom%lon,geom%lat,geom%mask(:,il0i),h(il0i))
+   call interp_missing(geom%nc0,geom%lon,geom%lat,geom%mask(:,il0i),interp_type,h(il0i))
 
    ! Test interpolation
    test_c0 = geom%mask(:,min(il0i,geom%nl0i))
@@ -484,16 +507,17 @@ end subroutine check_arc
 ! Subroutine: interp_missing
 !> Purpose: deal with missing interpolation points
 !----------------------------------------------------------------------
-subroutine interp_missing(n_dst,lon_dst,lat_dst,mask_dst,interp)
+subroutine interp_missing(n_dst,lon_dst,lat_dst,mask_dst,interp_type,interp)
 
 implicit none
 
 ! Passed variables
-integer,intent(in) :: n_dst                  !< 
-real(kind_real),intent(in) :: lon_dst(n_dst) !< 
-real(kind_real),intent(in) :: lat_dst(n_dst) !< 
-logical,intent(in) :: mask_dst(n_dst) !< 
-type(linoptype),intent(inout) :: interp !< 
+integer,intent(in) :: n_dst                   !< Destination size
+real(kind_real),intent(in) :: lon_dst(n_dst)  !< Destination longitude
+real(kind_real),intent(in) :: lat_dst(n_dst)  !< Destination latitude
+logical,intent(in) :: mask_dst(n_dst)         !< Destination mask
+character(len=1024),intent(in) :: interp_type !< Interpolation type
+type(linoptype),intent(inout) :: interp       !< Interpolation data
 
 ! Local variables
 integer :: i_dst,i_s
@@ -508,24 +532,26 @@ missing = .false.
 do i_dst=1,n_dst
    if (mask_dst(i_dst)) missing(i_dst) = .true.
 end do
-
 do i_s=1,interp%n_s
    missing(interp%row(i_s)) = .false.
 end do
 
 if (count(missing)>0) then
-   ! Copy
-   call linop_copy(interp,interp_tmp)
+   ! Allocate temporary interpolation
+   if (trim(interp_type)=='bilin') then
+      interp_tmp%n_s = interp%n_s+3*count(missing)
+   elseif (trim(interp_type)=='natural') then
+      interp_tmp%n_s = interp%n_s+40*count(missing)
+   end if
+   call linop_alloc(interp_tmp)
 
-   ! Reallocate interpolation
-   call linop_dealloc(interp)
-   interp%n_s = interp%n_s+40*count(missing)
-   call linop_alloc(interp)
+   ! Fill arrays
+   interp_tmp%row(1:interp%n_s) = interp%row
+   interp_tmp%col(1:interp%n_s) = interp%col
+   interp_tmp%S(1:interp%n_s) = interp%S
 
-   ! Fill permanent arrays
-   interp%row(1:interp_tmp%n_s) = interp_tmp%row
-   interp%col(1:interp_tmp%n_s) = interp_tmp%col
-   interp%S(1:interp_tmp%n_s) = interp_tmp%S
+   ! Reset size
+   interp_tmp%n_s = interp%n_s
 
    ! Mask
    lmask = mask_dst.and.(.not.missing)
@@ -544,21 +570,23 @@ if (count(missing)>0) then
             if (interp%row(i_s)==nn(1)) then
                found = .true.
                interp_tmp%n_s = interp_tmp%n_s+1
-               interp%row(interp_tmp%n_s) = i_dst
-               interp%col(interp_tmp%n_s) = interp%col(i_s)
-               interp%S(interp_tmp%n_s) = interp%S(i_s)
+               interp_tmp%row(interp_tmp%n_s) = i_dst
+               interp_tmp%col(interp_tmp%n_s) = interp%col(i_s)
+               interp_tmp%S(interp_tmp%n_s) = interp%S(i_s)
             end if
          end do
          if (.not.found) call msgerror('missing point not found')
       end if
    end do
 
-   ! Dummy coefficients
-   do i_s=interp_tmp%n_s+1,interp%n_s
-      interp%row(i_s) = 1
-      interp%col(i_s) = 1
-      interp%S(i_s) = 0.0
-   end do
+   ! Reallocate interpolation
+   call linop_dealloc(interp)
+   interp%n_s = interp_tmp%n_s
+
+   ! Fill arrays
+   interp%row = interp_tmp%row(1:interp%n_s)
+   interp%col = interp_tmp%col(1:interp%n_s)
+   interp%S = interp_tmp%S(1:interp%n_s)
 
    ! Release memory
    call linop_dealloc(interp_tmp)

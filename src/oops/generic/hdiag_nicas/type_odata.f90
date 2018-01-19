@@ -37,12 +37,12 @@ type odatatype
    type(linoptype) :: hfull                 !< Full interpolation data
 
    ! MPI distribution
-   integer,allocatable :: obs_to_proc(:)  !< Observation to processor
-   integer,allocatable :: obs_to_obsa(:)  !< Observation to local observation
-   integer,allocatable :: proc_to_nobsa(:) !< Processor to local number of observations
-   integer,allocatable :: c0b_to_c0(:)  !< 
-   integer,allocatable :: c0_to_c0b(:)  !< 
-   integer,allocatable :: c0a_to_c0b(:) !< 
+   integer,allocatable :: obs_to_proc(:)    !< Observation to processor
+   integer,allocatable :: obs_to_obsa(:)    !< Observation to local observation
+   integer,allocatable :: proc_to_nobsa(:)  !< Processor to local number of observations
+   integer,allocatable :: c0b_to_c0(:)      !< Subset Sc0, halo B to global
+   integer,allocatable :: c0_to_c0b(:)      !< Subset Sc0, global to halo B
+   integer,allocatable :: c0a_to_c0b(:)     !< Subset Sc0, halo A to halo B
 
    ! Required data to apply an observation operator
 
@@ -54,7 +54,7 @@ type odatatype
    integer :: nobsa                         !< Local number of observations
 
    ! Interpolation data
-   type(linoptype) :: h                      !< Interpolation data
+   type(linoptype) :: h                     !< Interpolation data
 
    ! Communication data
    type(comtype) :: com                     !< Communication data
@@ -74,8 +74,8 @@ subroutine yobs_com_gl(odata,yobs)
 implicit none
 
 ! Passed variables
-type(odatatype),intent(in) :: odata                     !< Observation operator data
-real(kind_real),allocatable,intent(inout) :: yobs(:,:)  !< Observations
+type(odatatype),intent(in) :: odata                    !< Observation operator data
+real(kind_real),allocatable,intent(inout) :: yobs(:,:) !< Observations
 
 ! Local variables
 integer :: iobs,iobsa,iproc,jproc

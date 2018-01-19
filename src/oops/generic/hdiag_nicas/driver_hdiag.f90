@@ -17,7 +17,7 @@ use hdiag_fit, only: compute_fit
 use hdiag_hybridization, only: compute_hybridization
 use hdiag_localization, only: compute_localization
 use hdiag_moments, only: compute_moments
-use hdiag_mpi, only: compute_mpi
+use hdiag_mpi, only: compute_mpi_a,compute_mpi_d,compute_mpi_c
 use hdiag_sampling, only: setup_sampling
 use hdiag_transform, only: compute_transform
 use model_interface, only: model_write
@@ -99,17 +99,24 @@ if (nam%new_hdiag) then
    call setup_sampling(hdata)
    call flush(mpl%unit)
 
-   ! Compute MPI distribution
+   ! Compute MPI distribution, halo A
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Compute MPI distribution'
+   write(mpl%unit,'(a)') '--- Compute MPI distribution, halo A'
 
-   call compute_mpi(hdata)
+   call compute_mpi_a(hdata)
    call flush(mpl%unit)
 
    if (nam%displ_diag) then
+      ! Compute MPI distribution, halo D
+      write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+      write(mpl%unit,'(a)') '--- Compute MPI distribution, halo D'
+
+      call compute_mpi_d(hdata)
+      call flush(mpl%unit)
+
       ! Compute displacement diagnostic
-      write(*,'(a)') '-------------------------------------------------------------------'
-      write(*,'(a)') '--- Compute displacement diagnostic'
+      write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+      write(mpl%unit,'(a)') '--- Compute displacement diagnostic'
 
       if (present(ens1)) then
          call compute_displacement(hdata,displ,ens1)
@@ -117,6 +124,13 @@ if (nam%new_hdiag) then
         call compute_displacement(hdata,displ)
       end if
    end if
+   call flush(mpl%unit)
+
+   ! Compute MPI distribution, halo C
+   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(mpl%unit,'(a)') '--- Compute MPI distribution, halo C'
+
+   call compute_mpi_c(hdata,displ)
    call flush(mpl%unit)
 
    ! Compute sample moments

@@ -13,6 +13,7 @@ module obsop_apply
 use omp_lib
 use tools_display, only: msgerror
 use tools_kinds, only: kind_real
+use tools_missing, only: isnotmsi
 use type_com, only: com_ext,com_red
 use type_linop, only: apply_linop,apply_linop_ad
 use type_mpl, only: mpl
@@ -46,14 +47,22 @@ real(kind_real),allocatable :: slab(:)
 ! Associate
 associate(geom=>odata%geom)
 
-! Allocation
-allocate(slab(odata%nc0a))
-
 ! Halo extension
 do il0=1,geom%nl0
+   ! Allocation
+   allocate(slab(odata%nc0a))
+
+   ! Copy reduced slab
    slab = fld(:,il0)
+
+   ! Extend halo
    call com_ext(odata%com,slab)
+
+   ! Copy extended slab
    fld_ext(:,il0) = slab
+
+   ! Release memory
+   deallocate(slab)
 end do
 
 ! Horizontal interpolation
@@ -89,9 +98,6 @@ real(kind_real),allocatable :: slab(:)
 ! Associate
 associate(geom=>odata%geom)
 
-! Allocation
-allocate(slab(odata%nc0a))
-
 ! Horizontal interpolation
 !$omp parallel do schedule(static) private(il0)
 do il0=1,geom%nl0
@@ -101,9 +107,20 @@ end do
 
 ! Halo reduction
 do il0=1,geom%nl0
+   ! Allocation
+   allocate(slab(odata%nc0a))
+
+   ! Copy extended slab
    slab = fld_ext(:,il0)
+
+   ! Reduce halo
    call com_red(odata%com,slab)
+
+   ! Copy reduced slab
    fld(:,il0) = slab
+
+   ! Release memory
+   deallocate(slab)
 end do
 
 ! End associate

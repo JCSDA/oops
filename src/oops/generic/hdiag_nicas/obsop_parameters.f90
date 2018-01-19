@@ -10,15 +10,16 @@
 !----------------------------------------------------------------------
 module obsop_parameters
 
-use tools_display, only: msgerror
+use tools_const, only: rad2deg
+use tools_display, only: msgerror,newunit
 use tools_interp, only: compute_interp
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,isnotmsi
 use tools_qsort, only: qsort
-use type_com, only: comtype,com_setup,com_bcast
+use type_com, only: comtype,com_setup,com_bcast,com_dealloc
 use type_ctree, only: ctreetype,create_ctree
 use type_geom, only: geomtype
-use type_linop, only: linoptype,linop_alloc,linop_reorder
+use type_linop, only: linoptype,linop_alloc,linop_reorder,linop_dealloc
 use type_mesh, only: create_mesh
 use type_mpl, only: mpl,mpl_send,mpl_recv,mpl_bcast
 use type_nam, only: namtype
@@ -44,12 +45,12 @@ implicit none
 type(odatatype),intent(inout) :: odata !< Observation operator data
 
 ! Local variables
-integer :: iobs,jobs,iobsa,iproc,jproc,nobsa,i_s,ic0,ic0b,i,ic0a,nc0a,nc0b,nhalo,delta,nres,ind(1)
-integer,allocatable :: iop(:),srcproc(:,:),srcic0(:,:),order(:),nobsa_to_move(:)
+integer :: iobs,jobs,iobsa,iproc,jproc,nobsa,i_s,ic0,ic0b,i,ic0a,nc0a,nc0b,nhalo,delta,nres,ind(1),itest,ntest,lunit
+integer,allocatable :: nop(:),iop(:),srcproc(:,:),srcic0(:,:),order(:),nobsa_to_move(:)
 integer,allocatable :: c0_to_c0a(:),c0a_to_c0(:),c0b_to_c0(:),c0a_to_c0b(:)
 real(kind_real),allocatable :: list(:)
-logical :: lcheck_nc0b(odata%geom%nc0)
-logical,allocatable :: maskobs(:)
+logical,allocatable :: maskobs(:),lcheck_nc0b(:)
+character(len=3) :: suffix
 type(comtype) :: comobs(mpl%nproc)
 
 ! Associate
@@ -57,9 +58,9 @@ associate(geom=>odata%geom,nam=>odata%nam)
 
 ! Allocation
 allocate(maskobs(odata%nobs))
+allocate(nop(odata%nobs))
 allocate(iop(odata%nobs))
-allocate(srcproc(3,odata%nobs))
-allocate(srcic0(3,odata%nobs))
+allocate(lcheck_nc0b(odata%geom%nc0))
 allocate(odata%obs_to_proc(odata%nobs))
 allocate(odata%obs_to_obsa(odata%nobs))
 allocate(odata%proc_to_nobsa(mpl%nproc))
@@ -70,6 +71,15 @@ write(mpl%unit,'(a7,a)') '','Single level:'
 maskobs = .true.
 call compute_interp(geom%mesh,geom%ctree,geom%nc0,any(geom%mask,dim=2),odata%nobs,odata%lonobs,odata%latobs, &
  & maskobs,nam%obsop_interp,odata%hfull)
+
+! Allocation
+nop = 0
+do i_s=1,odata%hfull%n_s
+   iobs = odata%hfull%row(i_s)
+   nop(iobs) = nop(iobs)+1
+end do
+allocate(srcproc(maxval(nop),odata%nobs))
+allocate(srcic0(maxval(nop),odata%nobs))
 
 ! Find grid points origin
 iop = 0
@@ -83,6 +93,16 @@ do i_s=1,odata%hfull%n_s
    srcproc(iop(iobs),iobs) = iproc
    srcic0(iop(iobs),iobs) = ic0
 end do
+
+ntest = 11
+do itest=0,ntest
+   if (itest==0) then
+      nam%obsdis = -1.0
+      suffix = 'ran'
+   else
+      nam%obsdis = float(itest-1)/float(ntest-1)
+      write(suffix,'(f3.1)') nam%obsdis
+   end if
 
 ! Generate observation distribution on processors
 if (nam%obsdis<0.0) then
@@ -107,6 +127,10 @@ if (nam%obsdis<0.0) then
          iobsa = 1
       end if
    end do
+
+   ! Release memory
+   deallocate(list)
+   deallocate(order)
 else
    ! Source grid-based repartition
    do iobs=1,odata%nobs
@@ -166,6 +190,9 @@ else
          end do
       end if
    end do
+
+   ! Release memory
+   deallocate(nobsa_to_move)
 end if
 
 ! Local observations
@@ -191,9 +218,9 @@ end do
 
 ! Count halo points
 lcheck_nc0b = .false.
-do ic0=1,geom%nc0
-   iproc = geom%c0_to_proc(ic0)
-   if (iproc==mpl%myproc) lcheck_nc0b(ic0) = .true.
+do ic0a=1,geom%nc0a
+   ic0 = geom%c0a_to_c0(ic0a)
+   if (geom%c0_to_proc(ic0)==mpl%myproc) lcheck_nc0b(ic0) = .true.
 end do
 do iobs=1,odata%nobs
    iproc = odata%obs_to_proc(iobs)
@@ -229,11 +256,12 @@ call linop_alloc(odata%h)
 odata%h%n_s = 0
 do i_s=1,odata%hfull%n_s
    iobs = odata%hfull%row(i_s)
+   ic0 = odata%hfull%col(i_s)
    iproc = odata%obs_to_proc(iobs)
    if (iproc==mpl%myproc) then
       odata%h%n_s = odata%h%n_s+1
       odata%h%row(odata%h%n_s) = odata%obs_to_obsa(iobs)
-      odata%h%col(odata%h%n_s) = odata%c0_to_c0b(odata%hfull%col(i_s))
+      odata%h%col(odata%h%n_s) = odata%c0_to_c0b(ic0)
       odata%h%S(odata%h%n_s) = odata%hfull%S(i_s)
    end if
 end do
@@ -340,6 +368,9 @@ if (mpl%main) then
 
    ! Communications setup
    call com_setup(comobs)
+
+   ! Release memory
+   deallocate(c0_to_c0a)
 else
    ! Send dimensions to ioproc
    call mpl_send(odata%nc0a,mpl%ioproc,mpl%tag)
@@ -355,23 +386,61 @@ mpl%tag = mpl%tag+4
 odata%com%prefix = 'o'
 call com_bcast(comobs,odata%com)
 
+! Write data
+if (mpl%main) then
+   if (itest==0) then
+      lunit = newunit()
+      open(unit=lunit,file=trim(nam%datadir)//'/'//trim(nam%prefix)//'_observations_out.dat',status='replace')  
+      do iobs=1,odata%nobs
+         write(lunit,*) odata%lonobs(iobs)*rad2deg,odata%latobs(iobs)*rad2deg
+      end do
+      close(unit=lunit)
+   end if
+
+   lunit = newunit()
+   open(unit=lunit,file=trim(nam%datadir)//'/'//trim(nam%prefix)//'_distribution_'//suffix//'.dat',status='replace')
+   do iproc=1,mpl%nproc
+      write(lunit,*) odata%proc_to_nobsa(iproc),comobs(iproc)%nhalo,comobs(iproc)%nexcl
+   end do
+   close(unit=lunit)
+end if
+if (mpl%main) then
+   do iproc=1,mpl%nproc
+      call com_dealloc(comobs(iproc))
+   end do
+end if
+if (itest<ntest) then
+   call linop_dealloc(odata%h)
+   deallocate(odata%c0b_to_c0)
+   deallocate(odata%c0_to_c0b)
+   deallocate(odata%c0a_to_c0b)
+   call com_dealloc(odata%com)
+end if
+
+end do
+
 ! Print results
 write(mpl%unit,'(a7,a)') '','Number of observations per MPI task:'
 do iproc=1,mpl%nproc
-   write(mpl%unit,'(a10,a,i3,a,i8)') '','Task ',iproc,': ',count(odata%obs_to_proc==iproc)
+   write(mpl%unit,'(a10,a,i3,a,i8)') '','Task ',iproc,': ',odata%proc_to_nobsa(iproc)
 end do
 write(mpl%unit,'(a7,a,f5.1,a)') '','Observation repartition imbalance: ', &
  & 100.0*float(maxval(odata%proc_to_nobsa)-minval(odata%proc_to_nobsa))/(float(sum(odata%proc_to_nobsa))/float(mpl%nproc)),' %'
 write(mpl%unit,'(a7,a)') '','Number of grid points, halo size and number of received values per MPI task:'
-do iproc=1,mpl%nproc
-   write(mpl%unit,'(a10,a,i3,a,i8,a,i8,a,i8)') '','Task ',iproc,': ', &
- & comobs(iproc)%nred,' / ',comobs(iproc)%next,' / ',comobs(iproc)%nhalo
-end do
-nhalo = 0
-do iproc=1,mpl%nproc
-   nhalo = nhalo+comobs(iproc)%nhalo
-end do
-write(mpl%unit,'(a7,a,f5.1,a)') '','Ratio between communications and observations: ',100.0*float(nhalo)/float(odata%nobs),' %'
+if (mpl%main) then
+   do iproc=1,mpl%nproc
+      write(mpl%unit,'(a10,a,i3,a,i8,a,i8,a,i8)') '','Task ',iproc,': ', &
+    & comobs(iproc)%nred,' / ',comobs(iproc)%next,' / ',comobs(iproc)%nhalo
+   end do
+   nhalo = 0
+   do iproc=1,mpl%nproc
+      nhalo = nhalo+comobs(iproc)%nhalo
+   end do
+   write(mpl%unit,'(a7,a,f5.1,a)') '','Ratio between communications and observations: ',100.0*float(nhalo)/float(odata%nobs),' %'
+else
+   write(mpl%unit,'(a10,a,i3,a,i8,a,i8,a,i8)') '','Task ',mpl%myproc,': ', &
+ & odata%com%nred,' / ',odata%com%next,' / ',odata%com%nhalo
+end if
 
 ! End associate
 end associate

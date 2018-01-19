@@ -11,35 +11,42 @@
 module type_com
 
 use netcdf
+use omp_lib
 use tools_display, only: msgerror
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr
 use type_geom, only: geomtype
 use type_mpl, only: mpl,mpl_send,mpl_recv,mpl_alltoallv
 use tools_nc, only: ncfloat,ncerr
+use yomhook, only: lhook,dr_hook
 
 implicit none
 
 ! Communication derived type
 type comtype
    ! Setup data
-   integer,allocatable :: ext_to_proc(:)
-   integer,allocatable :: ext_to_red(:)
+   integer,allocatable :: ext_to_proc(:) !< Extended index to processor
+   integer,allocatable :: ext_to_red(:)  !< Extended index to reduced index
 
    ! Communication data
-   character(len=1024) :: prefix          !< Communication prefix
-   integer :: nred                        !< Reduction size
-   integer :: next                        !< Extension size
-   integer,allocatable :: red_to_ext(:) !< Indices conversion
-   integer :: nhalo                       !< Halo buffer size
-   integer :: nexcl                       !< Exclusive interior buffer size
-   integer,allocatable :: jhalocounts(:)  !< Halo counts
-   integer,allocatable :: jexclcounts(:)  !< Exclusive interior counts
-   integer,allocatable :: jhalodispl(:)   !< Halo displacement
-   integer,allocatable :: jexcldispl(:)   !< Exclusive interior displacement
-   integer,allocatable :: halo(:)         !< Halo buffer
-   integer,allocatable :: excl(:)         !< Exclusive interior buffer
+   character(len=1024) :: prefix         !< Communication prefix
+   integer :: nred                       !< Reduction size
+   integer :: next                       !< Extension size
+   integer,allocatable :: red_to_ext(:)  !< Indices conversion
+   integer :: nhalo                      !< Halo buffer size
+   integer :: nexcl                      !< Exclusive interior buffer size
+   integer,allocatable :: jhalocounts(:) !< Halo counts
+   integer,allocatable :: jexclcounts(:) !< Exclusive interior counts
+   integer,allocatable :: jhalodispl(:)  !< Halo displacement
+   integer,allocatable :: jexcldispl(:)  !< Exclusive interior displacement
+   integer,allocatable :: halo(:)        !< Halo buffer
+   integer,allocatable :: excl(:)        !< Exclusive interior buffer
 end type comtype
+
+interface com_ext
+  module procedure com_ext_1d
+  module procedure com_ext_2d
+end interface
 
 private
 public :: comtype
@@ -56,7 +63,7 @@ subroutine com_dealloc(com)
 implicit none
 
 ! Passed variables
-type(comtype),intent(inout) :: com !< Linear operator
+type(comtype),intent(inout) :: com !< Communication data
 
 ! Release memory
 if (allocated(com%red_to_ext)) deallocate(com%red_to_ext)
@@ -78,7 +85,7 @@ subroutine com_setup(com)
 implicit none
 
 ! Passed variables
-type(comtype),intent(inout) :: com(mpl%nproc) !< Communication
+type(comtype),intent(inout) :: com(mpl%nproc) !< Communication data
 
 ! Local variables
 integer :: iproc,jproc,iext,icount
@@ -172,8 +179,8 @@ subroutine com_bcast(com_in,com_out)
 implicit none
 
 ! Passed variables
-type(comtype),intent(in) :: com_in(mpl%nproc) !< Input linear operator
-type(comtype),intent(inout) :: com_out    !< Output linear operator
+type(comtype),intent(in) :: com_in(mpl%nproc) !< Input communication data
+type(comtype),intent(inout) :: com_out        !< Output communication data
 
 ! Local variables
 integer :: iproc
@@ -251,50 +258,132 @@ mpl%tag = mpl%tag+7
 end subroutine com_bcast
 
 !----------------------------------------------------------------------
-! Subroutine: com_ext
-!> Purpose: communicate field to halo (extension)
+! Subroutine: com_ext_1d
+!> Purpose: communicate field to halo (extension), 1d
 !----------------------------------------------------------------------
-subroutine com_ext(com,vec)
+subroutine com_ext_1d(com,vec)
 
 implicit none
 
 ! Passed variables
 type(comtype),intent(in) :: com                     !< Communication data
-real(kind_real),allocatable,intent(inout) :: vec(:) !< Subgrid field
+real(kind_real),allocatable,intent(inout) :: vec(:) !< Vector
 
 ! Local variables
 integer :: iexcl,ired,ihalo
 real(kind_real) :: sbuf(com%nexcl),rbuf(com%nhalo),vec_tmp(com%nred)
+real(kind_real) :: zhook_handle
 
-   ! Check input vector size
-   if (size(vec)/=com%nred) call msgerror('vector size inconsistent in com_ext')
+if (lhook) call dr_hook('com_ext_1d',0,zhook_handle)
 
-   ! Prepare buffers to send
+! Check input vector size
+if (size(vec)/=com%nred) call msgerror('vector size inconsistent in com_ext')
+
+! Prepare buffers to send
+!$omp parallel do schedule(static) private(iexcl)
+do iexcl=1,com%nexcl
+   sbuf(iexcl) = vec(com%excl(iexcl))
+end do
+!$omp end parallel do
+
+! Communication
+call mpl_alltoallv(com%nexcl,sbuf,com%jexclcounts,com%jexcldispl,com%nhalo,rbuf,com%jhalocounts,com%jhalodispl)
+
+! Copy
+vec_tmp = vec
+
+! Reallocation
+deallocate(vec)
+allocate(vec(com%next))
+
+! Copy interior
+!$omp parallel do schedule(static) private(ired)
+do ired=1,com%nred
+   vec(com%red_to_ext(ired)) = vec_tmp(ired)
+end do
+!$omp end parallel do
+
+! Copy halo
+!$omp parallel do schedule(static) private(ihalo)
+do ihalo=1,com%nhalo
+   vec(com%halo(ihalo)) = rbuf(ihalo)
+end do
+!$omp end parallel do
+
+if (lhook) call dr_hook('com_ext_1d',1,zhook_handle)
+
+end subroutine com_ext_1d
+
+!----------------------------------------------------------------------
+! Subroutine: com_ext_2d
+!> Purpose: communicate field to halo (extension), 2d
+!----------------------------------------------------------------------
+subroutine com_ext_2d(com,vec)
+
+implicit none
+
+! Passed variables
+type(comtype),intent(in) :: com                       !< Communication data
+real(kind_real),allocatable,intent(inout) :: vec(:,:) !< Vector
+
+! Local variables
+integer :: nl,il,iexcl,ired,ihalo
+real(kind_real),allocatable :: sbuf(:),rbuf(:),vec_tmp(:,:)
+real(kind_real) :: zhook_handle
+
+if (lhook) call dr_hook('com_ext_2d',0,zhook_handle)
+
+! Check input vector size
+if (size(vec,1)/=com%nred) call msgerror('vector size inconsistent in com_ext')
+
+! Second dimension
+nl = size(vec,2)
+
+! Allocation
+allocate(sbuf(com%nexcl*nl))
+allocate(rbuf(com%nhalo*nl))
+allocate(vec_tmp(com%nred,nl))
+
+! Prepare buffers to send
+!$omp parallel do schedule(static) private(il,iexcl)
+do il=1,nl
    do iexcl=1,com%nexcl
-      sbuf(iexcl) = vec(com%excl(iexcl))
+      sbuf((iexcl-1)*nl+il) = vec(com%excl(iexcl),il)
    end do
+end do
+!$omp end parallel do
 
-   ! Communication
-   call mpl_alltoallv(com%nexcl,sbuf,com%jexclcounts,com%jexcldispl,com%nhalo,rbuf,com%jhalocounts,com%jhalodispl)
+! Communication
+call mpl_alltoallv(com%nexcl*nl,sbuf,com%jexclcounts*nl,com%jexcldispl*nl,com%nhalo*nl,rbuf,com%jhalocounts*nl,com%jhalodispl*nl)
 
-   ! Copy
-   vec_tmp = vec
+! Copy
+vec_tmp = vec
 
-   ! Reallocation
-   deallocate(vec)
-   allocate(vec(com%next))
+! Reallocation
+deallocate(vec)
+allocate(vec(com%next,nl))
 
-   ! Copy interior
+! Copy interior
+!$omp parallel do schedule(static) private(il,ired)
+do il=1,nl
    do ired=1,com%nred
-      vec(com%red_to_ext(ired)) = vec_tmp(ired)
+      vec(com%red_to_ext(ired),il) = vec_tmp(ired,il)
    end do
+end do
+!$omp end parallel do
 
-   ! Copy halo
+! Copy halo
+!$omp parallel do schedule(static) private(il,ihalo)
+do il=1,nl
    do ihalo=1,com%nhalo
-      vec(com%halo(ihalo)) = rbuf(ihalo)
+      vec(com%halo(ihalo),il) = rbuf((ihalo-1)*nl+il)
    end do
+end do
+!$omp end parallel do
 
-end subroutine com_ext
+if (lhook) call dr_hook('com_ext_2d',1,zhook_handle)
+
+end subroutine com_ext_2d
 
 !----------------------------------------------------------------------
 ! Subroutine: com_red
@@ -306,39 +395,57 @@ implicit none
 
 ! Passed variables
 type(comtype),intent(in) :: com                     !< Communication data
-real(kind_real),allocatable,intent(inout) :: vec(:) !< Subgrid field
+real(kind_real),allocatable,intent(inout) :: vec(:) !< Vector
 
 ! Local variables
-integer :: ihalo,ired,iexcl
-real(kind_real) :: sbuf(com%nhalo),rbuf(com%nexcl),vec_tmp(com%next)
+integer :: ihalo,ired,iexcl,ithread
+real(kind_real) :: sbuf(com%nhalo),rbuf(com%nexcl),vec_tmp(com%next),vec_arr(com%nred,mpl%nthread)
+real(kind_real) :: zhook_handle
+
+if (lhook) call dr_hook('com_red',0,zhook_handle)
 
 ! Check input vector size
 if (size(vec)/=com%next) call msgerror('vector size inconsistent in com_red')
 
-   ! Prepare buffers to send
-   do ihalo=1,com%nhalo
-      sbuf(ihalo) = vec(com%halo(ihalo))
-   end do
+! Prepare buffers to send
+!$omp parallel do schedule(static) private(ihalo)
+do ihalo=1,com%nhalo
+   sbuf(ihalo) = vec(com%halo(ihalo))
+end do
+!$omp end parallel do
 
-   ! Communication
-   call mpl_alltoallv(com%nhalo,sbuf,com%jhalocounts,com%jhalodispl,com%nexcl,rbuf,com%jexclcounts,com%jexcldispl)
+! Communication
+call mpl_alltoallv(com%nhalo,sbuf,com%jhalocounts,com%jhalodispl,com%nexcl,rbuf,com%jexclcounts,com%jexcldispl)
 
-   ! Copy
-   vec_tmp = vec
+! Copy
+vec_tmp = vec
 
-   ! Reallocation
-   deallocate(vec)
-   allocate(vec(com%nred))
+! Reallocation
+deallocate(vec)
+allocate(vec(com%nred))
 
-   ! Copy interior
-   do ired=1,com%nred
-      vec(ired) = vec_tmp(com%red_to_ext(ired))
-   end do
+! Copy interior
+!$omp parallel do schedule(static) private(ired)
+do ired=1,com%nred
+   vec(ired) = vec_tmp(com%red_to_ext(ired))
+end do
+!$omp end parallel do
 
-   ! Copy halo
-   do iexcl=1,com%nexcl
-      vec(com%excl(iexcl)) = vec(com%excl(iexcl))+rbuf(iexcl)
-   end do
+! Copy halo
+vec_arr = 0.0
+!$omp parallel do schedule(static) private(iexcl,ithread)
+do iexcl=1,com%nexcl
+   ithread = omp_get_thread_num()+1
+   vec_arr(com%excl(iexcl),ithread) = vec_arr(com%excl(iexcl),ithread)+rbuf(iexcl)
+end do
+!$omp end parallel do
+
+! Sum over threads
+do ithread=1,mpl%nthread
+   vec = vec+vec_arr(:,ithread)
+end do
+
+if (lhook) call dr_hook('com_red',1,zhook_handle)
 
 end subroutine com_red
 

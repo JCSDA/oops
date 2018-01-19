@@ -72,7 +72,8 @@ class FieldL95 : public util::Printable {
   void interp(const LocsL95 &, GomL95 &) const;
   void interpAD(const LocsL95 &, const GomL95 &);
 
-/// Convert to/from generic unstructured grid
+/// Define and convert to/from generic unstructured grid
+  void define(oops::UnstructuredGrid &) const;
   void convert_to(oops::UnstructuredGrid &) const;
   void convert_from(const oops::UnstructuredGrid &);
 

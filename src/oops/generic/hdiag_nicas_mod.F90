@@ -65,32 +65,33 @@ contains
 !  C++ interfaces
 ! ------------------------------------------------------------------------------
 
-subroutine create_hdiag_nicas_c(key, c_conf, cnv, cnc0a, clats, clons, careas, cnlev, cvunit, cimask, cglbind, cnts, & 
- & cens1_ne, cens1) bind(c, name='create_hdiag_nicas_f90')
+subroutine create_hdiag_nicas_c(key, c_conf, nc0a, nl0, nv, nts, ens1_ne, lon, lat, area, vunit, imask, ens1) &
+ & bind(c, name='create_hdiag_nicas_f90')
 implicit none
 integer(c_int), intent(inout) :: key
 type(c_ptr), intent(in) :: c_conf
-integer(c_int), intent(in) :: cnv, cnc0a, cnlev, cens1_ne, cnts
-real(c_double), intent(in) :: clats(cnc0a), clons(cnc0a), careas(cnc0a), cvunit(cnlev), cens1(cens1_ne*cnts*cnv*cnlev*cnc0a)
-integer(c_int), intent(in) :: cimask(cnlev*cnc0a), cglbind(cnc0a)
+integer(c_int), intent(in) :: nc0a
+integer(c_int), intent(in) :: nl0
+integer(c_int), intent(in) :: nv
+integer(c_int), intent(in) :: nts
+integer(c_int), intent(in) :: ens1_ne
+real(c_double), intent(in) :: lon(nc0a)
+real(c_double), intent(in) :: lat(nc0a)
+real(c_double), intent(in) :: area(nc0a)
+real(c_double), intent(in) :: vunit(nl0)
+integer(c_int), intent(in) :: imask(nc0a*nl0)
+real(c_double), intent(in) :: ens1(nc0a*nl0*nv*nts*ens1_ne)
+
 class(hdiag_nicas), pointer :: self
-integer :: nv,nc0a,nlev,nts,ens1_ne
-real(kind=kind_real) :: lats(cnc0a), lons(cnc0a), areas(cnc0a), vunit(cnlev), ens1(cens1_ne*cnts*cnv*cnlev*cnc0a)
-integer :: imask(cnlev*cnc0a), glbind(cnc0a)
+
+! Initialize hdiag_nicas registry
 call hdiag_nicas_registry%init()
 call hdiag_nicas_registry%add(key)
 call hdiag_nicas_registry%get(key,self)
-nv=cnv
-lats=clats
-lons=clons
-areas=careas
-vunit=cvunit
-imask=cimask
-glbind=cglbind
-nts=cnts
-ens1_ne=cens1_ne
-ens1=cens1
-call create_hdiag_nicas(self, c_conf, nv, lats, lons, areas, vunit, imask, glbind, nts, ens1_ne, ens1)
+
+! Create hdiag_nicas object
+call create_hdiag_nicas(self, c_conf, nc0a, nl0, nv, nts, ens1_ne, lon, lat, area, vunit, imask, ens1)
+
 end subroutine create_hdiag_nicas_c
 
 ! ------------------------------------------------------------------------------
@@ -98,10 +99,13 @@ end subroutine create_hdiag_nicas_c
 subroutine delete_hdiag_nicas_c(key) bind(c, name='delete_hdiag_nicas_f90')
 implicit none
 integer(c_int), intent(inout) :: key
+
 class(hdiag_nicas), pointer :: self
+
 call hdiag_nicas_registry%get(key,self)
 call delete_hdiag_nicas(self)
 call hdiag_nicas_registry%remove(key)
+
 end subroutine delete_hdiag_nicas_c
 
 ! ------------------------------------------------------------------------------
@@ -110,63 +114,69 @@ subroutine hdiag_nicas_multiply_c(key, idx) bind(c, name='hdiag_nicas_multiply_f
 implicit none
 integer(c_int), intent(in) :: key
 integer(c_int), intent(in) :: idx
+
 class(hdiag_nicas), pointer :: self
-class(unstructured_grid), pointer :: udx
+class(unstructured_grid), pointer :: ug
+
 call hdiag_nicas_registry%get(key,self)
-call unstructured_grid_registry%get(idx, udx)
-call hdiag_nicas_multiply(self, udx)
+call unstructured_grid_registry%get(idx, ug)
+call hdiag_nicas_multiply(self, ug)
+
 end subroutine hdiag_nicas_multiply_c
 
 ! ------------------------------------------------------------------------------
 !  End C++ interfaces
 ! ------------------------------------------------------------------------------
 
-subroutine create_hdiag_nicas(self, c_conf, nv, lats, lons, areas, vunit, imask, glbind, nts, ens1_ne, ens1_vec)
+subroutine create_hdiag_nicas(self, c_conf, nc0a, nl0, nv, nts, ens1_ne, lon, lat, area, vunit, imask, ens1_vec)
 
 implicit none
 type(hdiag_nicas), intent(inout) :: self
 type(c_ptr), intent(in) :: c_conf
+integer, intent(in) :: nc0a
+integer, intent(in) :: nl0
 integer, intent(in) :: nv
-real(kind=kind_real), intent(in) :: lats(:)
-real(kind=kind_real), intent(in) :: lons(:)
-real(kind=kind_real), intent(in) :: areas(:)
-real(kind=kind_real), intent(in) :: vunit(:)
-integer, intent(in) :: imask(:)
-integer, intent(in) ::  glbind(:)
 integer, intent(in) :: nts
 integer, intent(in) :: ens1_ne
-real(kind=kind_real), intent(in) :: ens1_vec(:)
-integer :: offset,ie,its,ic0a,iv,il0,ib,il
+real(kind=kind_real), intent(in) :: lon(nc0a)
+real(kind=kind_real), intent(in) :: lat(nc0a)
+real(kind=kind_real), intent(in) :: area(nc0a)
+real(kind=kind_real), intent(in) :: vunit(nl0)
+integer, intent(in) :: imask(nc0a*nl0)
+real(kind=kind_real), intent(in) :: ens1_vec(nc0a*nl0*nv*nts*ens1_ne)
+
+integer :: iv,il,ie,offset
 real(kind=kind_real), allocatable :: ens1(:,:,:,:,:)
-logical,allocatable :: mask_unpack(:,:)
+logical,allocatable :: mask_unpack(:,:,:,:)
 
 ! Initialize mpl
 call mpl_start
 
-! Get sizes 
-self%geom%nc0a = size(lats)
-self%geom%nlev = size(vunit)
-
-! Read JSON
-call hdiag_nicas_read_conf(c_conf,self%nam)
+! Copy sizes 
+self%geom%nc0a = nc0a
+self%geom%nl0 = nl0
+self%geom%nlev = nl0
+self%nam%nl = nl0
+self%nam%nv = nv
+self%nam%nts = nts
+self%nam%ens1_ne = ens1_ne
 
 ! Force other namelist variables
 self%nam%datadir = '.'
 self%nam%model = 'oops'
 self%nam%colorlog = .false.
-self%nam%nv = nv
-self%nam%nts = nts
-self%nam%ens1_ne = ens1_ne
 self%nam%ens1_ne_offset = 0
 self%nam%ens1_nsub = 1
 do iv=1,self%nam%nv
    write(self%nam%varname(iv),'(a,i2.2)') 'var_',iv
    self%nam%addvar2d(iv) = ''
 end do
-self%nam%nl = self%geom%nlev
 do il=1,self%nam%nl
    self%nam%levs(il) = il
 end do
+
+! Read JSON
+call hdiag_nicas_read_conf(c_conf,self%nam)
 
 ! Setup display
 call listing_setup(self%nam%colorlog,self%nam%logpres)
@@ -186,9 +196,7 @@ call create_randgen(self%nam)
 ! Initialize coordinates
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Initialize geometry'
-call model_oops_coord(self%nam,self%geom,lats,lons,areas,vunit,imask,glbind)
-
-write(mpl%unit,*) 'Number of levels:',self%nam%nl,self%geom%nl0,self%geom%nlev
+call model_oops_coord(self%nam,self%geom,lon,lat,area,vunit,imask)
 
 ! Initialize block parameters
 call bpar_alloc(self%nam,self%geom,self%bpar)
@@ -200,16 +208,13 @@ call compute_grid_mesh(self%nam,self%geom)
 
 ! Transform ensemble data from vector to array
 allocate(ens1(self%geom%nc0a,self%geom%nl0,self%nam%nv,self%nam%nts,self%nam%ens1_ne))
-allocate(mask_unpack(self%geom%nl0,self%nam%nv))
-call msr(ens1)
+allocate(mask_unpack(self%geom%nc0a,self%geom%nl0,self%nam%nv,self%nam%nts))
+mask_unpack = .true.
 offset = 0
 do ie=1,self%nam%ens1_ne
-   do its=1,self%nam%nts
-      do ic0a=1,self%geom%nc0a
-         ens1(ic0a,:,:,its,ie) = unpack(ens1_vec(offset+1:offset+self%geom%nl0*self%nam%nv),mask_unpack,ens1(ic0a,:,:,its,ie))
-         offset = offset+self%geom%nl0*self%nam%nv
-      end do
-   end do
+   ens1(:,:,:,:,ie) = unpack(ens1_vec(offset+1:offset+self%geom%nc0a*self%geom%nl0*self%nam%nv*self%nam%nts),mask_unpack, &
+ & ens1(:,:,:,:,ie))
+   offset = offset+self%geom%nc0a*self%geom%nl0*self%nam%nv*self%nam%nts
 end do
 
 ! Call hybrid_diag driver
@@ -229,7 +234,7 @@ end subroutine create_hdiag_nicas
 subroutine hdiag_nicas_read_conf(c_conf,nam)
 implicit none
 type(c_ptr), intent(in) :: c_conf
-type(namtype), intent(out) :: nam
+type(namtype), intent(inout) :: nam
 integer :: il,its,ildwh,ildwv,idir
 character(len=3) :: ilchar,itschar,ildwhchar,ildwvchar,idirchar
 
@@ -439,42 +444,13 @@ end subroutine delete_hdiag_nicas
 
 !-------------------------------------------------------------------------------
 
-subroutine hdiag_nicas_multiply(self,dx)
+subroutine hdiag_nicas_multiply(self,ug)
 implicit none
 type(hdiag_nicas), intent(inout) :: self
-type(unstructured_grid), intent(inout) :: dx
-integer :: iv,ic0a,il0
-real(kind_real) :: fld(self%geom%nc0a,self%geom%nl0,self%nam%nv,self%nam%nts)
-type(column_element), pointer :: current
-
-! Initialization
-ic0a = 1
-current => dx%head
-
-do while (associated(current))
-   ! Copy field
-   fld(ic0a,:,:,1) = current%column%fld
-
-   ! Update index and pointer
-   ic0a = ic0a+1
-   current => current%next
-end do
+type(unstructured_grid), intent(inout) :: ug
 
 ! Apply localization
-call apply_localization(self%nam,self%geom,self%bpar,self%ndata,fld)
-
-! Initialization
-ic0a = 1
-current => dx%head
-
-do while (associated(current))
-   ! Copy field
-   current%column%fld = fld(ic0a,:,:,1)
-
-   ! Update index and pointer
-   ic0a = ic0a+1
-   current => current%next
-end do
+call apply_localization(self%nam,self%geom,self%bpar,self%ndata,ug%fld)
 
 end subroutine hdiag_nicas_multiply
 

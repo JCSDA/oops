@@ -36,7 +36,7 @@ type mdatatype
    integer :: nl0r                            !< Reduced number of levels
    logical :: lhomh                           !< Vertically homogenous horizontal support radius key
    logical :: lhomv                           !< Vertically homogenous vertical support radius key
-   integer,allocatable :: l0rl0_to_l0(:,:) !< Reduced level to level
+   integer,allocatable :: l0rl0_to_l0(:,:)    !< Reduced level to level
    real(kind_real),allocatable :: distvr(:,:) !< Vertical distance
    real(kind_real),allocatable :: disth(:)    !< Horizontal distance
 

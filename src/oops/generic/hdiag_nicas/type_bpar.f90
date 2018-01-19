@@ -19,19 +19,19 @@ implicit none
 
 type bpartype
    ! Block parameters
-   integer :: nb                                  !< Number of blocks
-   integer,allocatable :: nl0(:)                  !< Effective number of levels
-   integer,allocatable :: l0rl0b_to_l0(:,:,:) !< Effective level to level
-   integer,allocatable :: il0rz(:,:)              !< Effective zero separation level
-   integer,allocatable :: nc3(:)                !< Maximum class
-   logical,allocatable :: auto_block(:)           !< Autocovariance block
-   logical,allocatable :: diag_block(:)           !< HDIAG block
-   logical,allocatable :: avg_block(:)            !< Averaging block
-   logical,allocatable :: fit_block(:)            !< Fit block
-   logical,allocatable :: B_block(:)              !< B-involved block
-   logical,allocatable :: nicas_block(:)          !< NICAS block
-   logical,allocatable :: cv_block(:)             !< Control variable block
-   character(len=11),allocatable :: blockname(:)  !< Block name
+   integer :: nb                                 !< Number of blocks
+   integer,allocatable :: nl0r(:)                !< Effective number of levels
+   integer,allocatable :: l0rl0b_to_l0(:,:,:)    !< Effective level to level
+   integer,allocatable :: il0rz(:,:)             !< Effective zero separation level
+   integer,allocatable :: nc3(:)                 !< Maximum class
+   logical,allocatable :: auto_block(:)          !< Autocovariance block
+   logical,allocatable :: diag_block(:)          !< HDIAG block
+   logical,allocatable :: avg_block(:)           !< Averaging block
+   logical,allocatable :: fit_block(:)           !< Fit block
+   logical,allocatable :: B_block(:)             !< B-involved block
+   logical,allocatable :: nicas_block(:)         !< NICAS block
+   logical,allocatable :: cv_block(:)            !< Control variable block
+   character(len=11),allocatable :: blockname(:) !< Block name
    integer,allocatable :: b_to_v1(:)             !< Block to first variable
    integer,allocatable :: b_to_v2(:)             !< Block to second variable
    integer,allocatable :: b_to_ts1(:)            !< Block to first timeslot
@@ -72,7 +72,7 @@ end if
 ! Allocation
 allocate(bpar%l0rl0b_to_l0(nam%nl0r,geom%nl0,bpar%nb+1))
 allocate(bpar%il0rz(geom%nl0,bpar%nb+1))
-allocate(bpar%nl0(bpar%nb+1))
+allocate(bpar%nl0r(bpar%nb+1))
 allocate(bpar%nc3(bpar%nb+1))
 allocate(bpar%auto_block(bpar%nb+1))
 allocate(bpar%diag_block(bpar%nb+1))
@@ -97,9 +97,9 @@ if (nam%new_lct) then
    do iv=1,nam%nv
       do its=1,nam%nts
          ! Classes and levels
-         bpar%nl0(ib) = nam%nl0r
+         bpar%nl0r(ib) = nam%nl0r
          do jl0=1,geom%nl0
-            il0off = jl0-(bpar%nl0(ib)-1)/2-1
+            il0off = jl0-(bpar%nl0r(ib)-1)/2-1
             if (il0off<1) il0off = 0
             if (il0off+nam%nl0r>geom%nl0) il0off = geom%nl0-nam%nl0r
             do il0r=1,nam%nl0r
@@ -135,7 +135,7 @@ if (nam%new_lct) then
    ! Classes and levels
    bpar%l0rl0b_to_l0(:,:,ib) = 0
    bpar%il0rz(:,ib) = 0
-   bpar%nl0(ib) = 0
+   bpar%nl0r(ib) = 0
    bpar%nc3(ib) = 0
    bpar%auto_block(ib) = .false.
    bpar%diag_block(ib) = .false.
@@ -156,9 +156,9 @@ else
             do jts=1,nam%nts
                ! Classes and levels
                if ((iv==jv).and.(its==jts)) then
-                  bpar%nl0(ib) = nam%nl0r
+                  bpar%nl0r(ib) = nam%nl0r
                   do jl0=1,geom%nl0
-                     il0off = jl0-(bpar%nl0(ib)-1)/2-1
+                     il0off = jl0-(bpar%nl0r(ib)-1)/2-1
                      if (il0off<1) il0off = 0
                      if (il0off+nam%nl0r>geom%nl0) il0off = geom%nl0-nam%nl0r
                      do il0r=1,nam%nl0r
@@ -172,7 +172,7 @@ else
                      bpar%l0rl0b_to_l0(:,jl0,ib) = jl0
                   end do
                   bpar%il0rz(:,ib) = 1
-                  bpar%nl0(ib) = 1
+                  bpar%nl0r(ib) = 1
                   bpar%nc3(ib) = 1
                end if
 
@@ -198,11 +198,11 @@ else
                   bpar%nicas_block(ib) = (iv==jv).and.(its==1).and.(jts==1)
                   bpar%cv_block(ib) = .false.
                case ('common_weighted')
-                  bpar%diag_block(ib) = (its==1).and.(jts==1)
-                  bpar%avg_block(ib) = (iv==jv).and.(its==1).and.(jts==1)
-                  bpar%B_block(ib) = (its==1)
+                  bpar%diag_block(ib) = .true.
+                  bpar%avg_block(ib) = (iv==jv).and.(its==jts)
+                  bpar%B_block(ib) = .true.
                   bpar%nicas_block(ib) = .false.
-                  bpar%cv_block(ib) = (iv==jv).and.(its==1).and.(jts==1)
+                  bpar%cv_block(ib) = (iv==jv).and.(its==jts)
                end select
                bpar%fit_block(ib) = bpar%diag_block(ib).and.(iv==jv).and.(its==jts).and.(trim(nam%fit_type)/='none')
                if (nam%local_diag) bpar%fit_block(ib) = bpar%fit_block(ib).and.bpar%nicas_block(ib)
@@ -225,9 +225,9 @@ else
    ib = bpar%nb+1
 
    ! Classes and levels
-   bpar%nl0(ib) = nam%nl0r
+   bpar%nl0r(ib) = nam%nl0r
    do jl0=1,geom%nl0
-      il0off = jl0-(bpar%nl0(ib)-1)/2-1
+      il0off = jl0-(bpar%nl0r(ib)-1)/2-1
       if (il0off<1) il0off = 0
       if (il0off+nam%nl0r>geom%nl0) il0off = geom%nl0-nam%nl0r
       do il0r=1,nam%nl0r

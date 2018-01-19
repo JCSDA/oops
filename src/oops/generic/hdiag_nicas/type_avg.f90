@@ -21,7 +21,7 @@ type avgtype
    integer :: ne                                     !< Ensemble size
    integer :: nsub                                   !< Sub-ensembles number
    integer :: npack                                  !< Pack format size
-   real(kind_real),allocatable :: nc1a(:,:,:)        !< 
+   real(kind_real),allocatable :: nc1a(:,:,:)        !< Number of points in subset Sc1 on halo A
    real(kind_real),allocatable :: m11(:,:,:)         !< Covariance average
    real(kind_real),allocatable :: m11m11(:,:,:,:,:)  !< Product of covariances average
    real(kind_real),allocatable :: m2m2(:,:,:,:,:)    !< Product of variances average
@@ -61,29 +61,29 @@ associate(nam=>hdata%nam,geom=>hdata%geom,bpar=>hdata%bpar)
 
 ! Allocation
 if (.not.allocated(avg%nc1a)) then
-   allocate(avg%nc1a(bpar%nc3(ib),bpar%nl0(ib),geom%nl0))
-   allocate(avg%m11(bpar%nc3(ib),bpar%nl0(ib),geom%nl0))
-   allocate(avg%m11m11(bpar%nc3(ib),bpar%nl0(ib),geom%nl0,avg%nsub,avg%nsub))
-   allocate(avg%m2m2(bpar%nc3(ib),bpar%nl0(ib),geom%nl0,avg%nsub,avg%nsub))
-   if (.not.nam%gau_approx) allocate(avg%m22(bpar%nc3(ib),bpar%nl0(ib),geom%nl0,avg%nsub))
-   allocate(avg%cor(bpar%nc3(ib),bpar%nl0(ib),geom%nl0))
-   allocate(avg%m11asysq(bpar%nc3(ib),bpar%nl0(ib),geom%nl0))
-   allocate(avg%m2m2asy(bpar%nc3(ib),bpar%nl0(ib),geom%nl0))
-   if (.not.nam%gau_approx) allocate(avg%m22asy(bpar%nc3(ib),bpar%nl0(ib),geom%nl0))
-   allocate(avg%m11sq(bpar%nc3(ib),bpar%nl0(ib),geom%nl0))
+   allocate(avg%nc1a(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
+   allocate(avg%m11(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
+   allocate(avg%m11m11(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,avg%nsub,avg%nsub))
+   allocate(avg%m2m2(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,avg%nsub,avg%nsub))
+   if (.not.nam%gau_approx) allocate(avg%m22(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,avg%nsub))
+   allocate(avg%cor(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
+   allocate(avg%m11asysq(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
+   allocate(avg%m2m2asy(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
+   if (.not.nam%gau_approx) allocate(avg%m22asy(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
+   allocate(avg%m11sq(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
    select case (trim(nam%method))
    case ('hyb-avg','hyb-rnd')
-      allocate(avg%m11sta(bpar%nc3(ib),bpar%nl0(ib),geom%nl0))
-      allocate(avg%stasq(bpar%nc3(ib),bpar%nl0(ib),geom%nl0))
+      allocate(avg%m11sta(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
+      allocate(avg%stasq(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
    case ('dual-ens')
-      allocate(avg%m11lrm11(bpar%nc3(ib),bpar%nl0(ib),geom%nl0))
-      allocate(avg%m11lrm11asy(bpar%nc3(ib),bpar%nl0(ib),geom%nl0))
+      allocate(avg%m11lrm11(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
+      allocate(avg%m11lrm11asy(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
    end select
 end if
 
 ! Initialization
-avg%npack = (3+2*avg%nsub**2)*bpar%nc3(ib)*bpar%nl0(ib)*geom%nl0
-if (.not.nam%gau_approx) avg%npack = avg%npack+avg%nsub*bpar%nc3(ib)*bpar%nl0(ib)*geom%nl0
+avg%npack = (3+2*avg%nsub**2)*bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0
+if (.not.nam%gau_approx) avg%npack = avg%npack+avg%nsub*bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0
 call msr(avg%nc1a)
 call msr(avg%m11)
 call msr(avg%m11m11)
@@ -220,19 +220,19 @@ associate(nam=>hdata%nam,geom=>hdata%geom,bpar=>hdata%bpar)
 
 ! Pack
 offset = 0
-buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0(ib)*geom%nl0) = pack(avg%nc1a,.true.)
-offset = offset+bpar%nc3(ib)*bpar%nl0(ib)*geom%nl0
-buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0(ib)*geom%nl0) = pack(avg%m11,.true.)
-offset = offset+bpar%nc3(ib)*bpar%nl0(ib)*geom%nl0
-buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0(ib)*geom%nl0*avg%nsub**2) = pack(avg%m11m11,.true.)
-offset = offset+bpar%nc3(ib)*bpar%nl0(ib)*geom%nl0*avg%nsub**2
-buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0(ib)*geom%nl0*avg%nsub**2) = pack(avg%m2m2,.true.)
-offset = offset+bpar%nc3(ib)*bpar%nl0(ib)*geom%nl0*avg%nsub**2
+buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0) = pack(avg%nc1a,.true.)
+offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0
+buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0) = pack(avg%m11,.true.)
+offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0
+buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg%nsub**2) = pack(avg%m11m11,.true.)
+offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg%nsub**2
+buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg%nsub**2) = pack(avg%m2m2,.true.)
+offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg%nsub**2
 if (.not.nam%gau_approx) then
-   buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0(ib)*geom%nl0*avg%nsub) = pack(avg%m22,.true.)
-   offset = offset+bpar%nc3(ib)*bpar%nl0(ib)*geom%nl0*avg%nsub
+   buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg%nsub) = pack(avg%m22,.true.)
+   offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg%nsub
 end if
-buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0(ib)*geom%nl0) = pack(avg%cor,.true.)
+buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0) = pack(avg%cor,.true.)
 
 ! End associate
 end associate
@@ -261,28 +261,28 @@ logical,allocatable :: mask_0(:,:,:),mask_1(:,:,:,:),mask_2(:,:,:,:,:)
 associate(nam=>hdata%nam,geom=>hdata%geom,bpar=>hdata%bpar)
 
 ! Allocation
-allocate(mask_0(bpar%nc3(ib),bpar%nl0(ib),geom%nl0))
-if (.not.nam%gau_approx) allocate(mask_1(bpar%nc3(ib),bpar%nl0(ib),geom%nl0,avg%nsub))
-allocate(mask_2(bpar%nc3(ib),bpar%nl0(ib),geom%nl0,avg%nsub,avg%nsub))
+allocate(mask_0(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
+if (.not.nam%gau_approx) allocate(mask_1(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,avg%nsub))
+allocate(mask_2(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,avg%nsub,avg%nsub))
 mask_0 = .true.
 if (.not.nam%gau_approx) mask_1 = .true.
 mask_2 = .true.
 
 ! Unpack
 offset = 0
-avg%nc1a = unpack(buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0(ib)*geom%nl0),mask_0,avg%m11)
-offset = offset+bpar%nc3(ib)*bpar%nl0(ib)*geom%nl0
-avg%m11 = unpack(buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0(ib)*geom%nl0),mask_0,avg%m11)
-offset = offset+bpar%nc3(ib)*bpar%nl0(ib)*geom%nl0
-avg%m11m11 = unpack(buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0(ib)*geom%nl0*avg%nsub**2),mask_2,avg%m11m11)
-offset = offset+bpar%nc3(ib)*bpar%nl0(ib)*geom%nl0*avg%nsub**2
-avg%m2m2 = unpack(buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0(ib)*geom%nl0*avg%nsub**2),mask_2,avg%m2m2)
-offset = offset+bpar%nc3(ib)*bpar%nl0(ib)*geom%nl0*avg%nsub**2
+avg%nc1a = unpack(buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0),mask_0,avg%m11)
+offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0
+avg%m11 = unpack(buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0),mask_0,avg%m11)
+offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0
+avg%m11m11 = unpack(buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg%nsub**2),mask_2,avg%m11m11)
+offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg%nsub**2
+avg%m2m2 = unpack(buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg%nsub**2),mask_2,avg%m2m2)
+offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg%nsub**2
 if (.not.nam%gau_approx) then
-   avg%m22 = unpack(buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0(ib)*geom%nl0*avg%nsub),mask_1,avg%m22)
-   offset = offset+bpar%nc3(ib)*bpar%nl0(ib)*geom%nl0*avg%nsub
+   avg%m22 = unpack(buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg%nsub),mask_1,avg%m22)
+   offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg%nsub
 end if
-avg%cor = unpack(buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0(ib)*geom%nl0),mask_0,avg%cor)
+avg%cor = unpack(buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0),mask_0,avg%cor)
 
 ! End associate
 end associate

@@ -52,74 +52,60 @@ type ndatatype
    logical,allocatable :: llev(:)               !< Level selection
 
    ! Parameters/normalization conversion
-   integer,allocatable :: s_to_c1(:)          !< Subgrid to subset Sc1
-   integer,allocatable :: s_to_l1(:)          !< Subgrid to subset Sl1
-   integer,allocatable :: s_to_c2(:)          !< Subgrid to subset sc2
-   integer,allocatable :: c1_to_c0(:)         !< Subset Sc1 to subset Sc0
-   integer,allocatable :: l1_to_l0(:)         !< Subset Sl1 to subset Sl0
-   integer,allocatable :: c2l1_to_c0(:,:)    !< Grid Gs to subset Sc0
-   integer,allocatable :: c0_to_c1(:)         !< Subset Sc0 to subset Sc1
-   integer,allocatable :: l0_to_l1(:)         !< Subset Sl0 to subset Sl1
-   integer,allocatable :: c0l0_to_s(:,:)     !< Grid Gf to subgrid
-   integer,allocatable :: c2l1_to_s(:,:)     !< Grid Gs to subgrid
-   integer,allocatable :: c2l1_to_c1(:,:)    !< Grid Gs to subset Sc1
-   integer,allocatable :: c1l1_to_s(:,:)     !< Grid Gv to subgrid
+   integer,allocatable :: s_to_c1(:)            !< Subgrid to subset Sc1
+   integer,allocatable :: s_to_l1(:)            !< Subgrid to subset Sl1
+   integer,allocatable :: c1_to_c0(:)           !< Subset Sc1 to subset Sc0
+   integer,allocatable :: l1_to_l0(:)           !< Subset Sl1 to subset Sl0
+   integer,allocatable :: c0_to_c1(:)           !< Subset Sc0 to subset Sc1
+   integer,allocatable :: l0_to_l1(:)           !< Subset Sl0 to subset Sl1
+   logical,allocatable :: c2mask(:,:)           !< Mask from G1 to subgrid
+   integer,allocatable :: c1l1_to_s(:,:)        !< Grid Gv to subgrid
 
    ! MPI distribution
    integer :: nc1a                              !< Number of points in subset Sc1 on halo A
-   logical,allocatable :: lcheck_c1a(:)        !<
-   logical,allocatable :: lcheck_c1b(:)        !<
-   logical,allocatable :: lcheck_c1bb(:)        !<
-   logical,allocatable :: lcheck_c2b(:,:)      !<
-   logical,allocatable :: lcheck_sa(:)         !<
-   logical,allocatable :: lcheck_sb(:)         !<
-   logical,allocatable :: lcheck_sc(:)         !<
-   logical,allocatable :: lcheck_sc_nor(:)         !<
-   logical,allocatable :: lcheck_h(:,:)         !<
-   logical,allocatable :: lcheck_s(:,:)         !<
-   integer,allocatable :: c1a_to_c1(:)        !<
-   integer,allocatable :: c1_to_c1a(:)        !<
-   integer,allocatable :: c1b_to_c1(:)        !<
-   integer,allocatable :: c1_to_c1b(:)        !<
-   integer,allocatable :: c1bb_to_c1(:)       !<
-   integer,allocatable :: c1_to_c1bb(:)       !<
-   integer,allocatable :: c2l1_to_c2b(:,:)   !<
-   integer,allocatable :: c2bl1_to_sb(:,:)   !<
-   integer,allocatable :: interph_lg(:,:)   !<
-   integer,allocatable :: interps_lg(:,:)   !<
-   integer,allocatable :: sc_to_sb(:)         !< Subgrid, halo C to halo B
-   integer,allocatable :: sa_to_s(:)          !<
-   integer,allocatable :: s_to_sa(:)          !<
-   integer,allocatable :: sb_to_s(:)          !<
-   integer,allocatable :: s_to_sb(:)          !<
-   integer,allocatable :: sc_to_s(:)          !<
-   integer,allocatable :: s_to_sc(:)          !<
+   logical,allocatable :: lcheck_c1a(:)         !< Detection of halo A on subset Sc1
+   logical,allocatable :: lcheck_c1b(:)         !< Detection of halo B on subset Sc1
+   logical,allocatable :: lcheck_sa(:)          !< Detection of halo A on subgrid
+   logical,allocatable :: lcheck_sb(:)          !< Detection of halo B on subgrid
+   logical,allocatable :: lcheck_sc(:)          !< Detection of halo C on subgrid
+   logical,allocatable :: lcheck_sc_nor(:)      !< Detection of halo A on subgrid
+   logical,allocatable :: lcheck_h(:,:)         !< Detection of horizontal interpolation coefficients
+   logical,allocatable :: lcheck_s(:,:)         !< Detection of subsampling interpolation coefficients
+   integer,allocatable :: c1a_to_c1(:)          !< Subset Sc1, halo A to global
+   integer,allocatable :: c1_to_c1a(:)          !< Subset Sc1, global to halo A
+   integer,allocatable :: c1b_to_c1(:)          !< Subset Sc1, halo B to global
+   integer,allocatable :: c1_to_c1b(:)          !< Subset Sc1, global to halo B
+   integer,allocatable :: c1bl1_to_sb(:,:)      !< Halo B, subset Sc1 to subgrid
+   integer,allocatable :: interph_lg(:,:)       !< Local to global for horizontal interpolation
+   integer,allocatable :: interps_lg(:,:)       !< Local to global for subsampling interpolation
+   integer,allocatable :: sc_to_sb(:)           !< Subgrid, halo C to halo B
+   integer,allocatable :: sa_to_s(:)            !< Subgrid, halo A to global
+   integer,allocatable :: s_to_sa(:)            !< Subgrid, global to halo A
+   integer,allocatable :: sb_to_s(:)            !< Subgrid, halo B to global
+   integer,allocatable :: s_to_sb(:)            !< Subgrid, global to halo B
+   integer,allocatable :: sc_to_s(:)            !< Subgrid, halo C to global
+   integer,allocatable :: s_to_sc(:)            !< Subgrid, global to halo C
 
-   ! Specific for normalization computation
-   integer :: nsc_nor                           !< Number of subgrid nodes on halo C
-   integer,allocatable :: sc_nor_to_s(:)          !<
-   integer,allocatable :: s_to_sc_nor(:)          !<
-   integer,allocatable :: sb_to_sc_nor(:)         !<
-   type(linoptype) :: c_nor                     !< Convolution (with more coefficients to compute the normalization)
-
-   ! Illustration
-   integer,allocatable :: halo(:)               !< Halo points for illustration
+   ! Extended data for normalization computation
+   integer :: nsc_nor                           !< Number of subgrid nodes on halo C (extended for normalization)
+   integer,allocatable :: sc_nor_to_s(:)        !< Subgrid, halo C to global (extended for normalization)
+   integer,allocatable :: s_to_sc_nor(:)        !< Subgrid, global to halo C (extended for normalization)
+   integer,allocatable :: sb_to_sc_nor(:)       !< Subgrid, halo B to halo C (extended for normalization)
+   type(linoptype) :: c_nor                     !< Convolution (extended for normalization)
 
    ! Required data to apply a localization
 
    ! Number of points
    integer :: nc1b                              !< Number of points in subset Sc1 on halo B
-   integer :: nc1bb                             !< Number of points in subset Sc1 on halo B, extended for subgrid nodes on halo B
    integer :: nl1                               !< Number of levels in subset Sl1
-   integer,allocatable :: nc2b(:)               !< Number of points in subset Sc2 on halo B
    integer :: nsa                               !< Number of subgrid nodes on halo A
    integer :: nsb                               !< Number of subgrid nodes on halo B
    integer :: nsc                               !< Number of subgrid nodes on halo C
 
    ! Inter-halo conversions
-   integer,allocatable :: sa_to_sb(:)         !< Subgrid, halo A to halo B
-   integer,allocatable :: sa_to_sc(:)         !< Subgrid, halo A to halo C
-   integer,allocatable :: sb_to_sc(:)         !< Subgrid, halo B to halo C
+   integer,allocatable :: sa_to_sb(:)           !< Subgrid, halo A to halo B
+   integer,allocatable :: sa_to_sc(:)           !< Subgrid, halo A to halo C
+   integer,allocatable :: sb_to_sc(:)           !< Subgrid, halo B to halo C
 
    ! Linear operators
    type(linoptype) :: c                         !< Convolution
@@ -128,8 +114,8 @@ type ndatatype
    type(linoptype),allocatable :: s(:)          !< Subsample interpolation
 
    ! Copy conversions
-   integer,allocatable :: sb_to_c2b(:)        !< Subgrid to subset Sc2 on halo B
-   integer,allocatable :: sb_to_l1(:)         !< Subgrid to subset Sl1 on halo B
+   integer,allocatable :: sb_to_c1b(:)          !< Subgrid to subset Sc1 on halo B
+   integer,allocatable :: sb_to_l1(:)           !< Subgrid to subset Sl1 on halo B
 
    ! Normalization
    real(kind_real),allocatable :: norm(:,:)     !< Normalization factor
@@ -192,17 +178,11 @@ if (nicas_block) then
    deallocate(ndata%norm)
    deallocate(ndata%s_to_c1)
    deallocate(ndata%s_to_l1)
-   deallocate(ndata%s_to_c2)
    deallocate(ndata%c1_to_c0)
    deallocate(ndata%l1_to_l0)
-   deallocate(ndata%c2l1_to_c0)
    deallocate(ndata%c0_to_c1)
    deallocate(ndata%l0_to_l1)
-   deallocate(ndata%c0l0_to_s)
-   deallocate(ndata%c2l1_to_s)
-   deallocate(ndata%c2l1_to_c1)
    deallocate(ndata%c1l1_to_s)
-   if (allocated(ndata%halo)) deallocate(ndata%halo)
 end if
 end if
 
@@ -229,7 +209,7 @@ logical,intent(in) :: auto_block             !< Autocovariance block key
 ! Local variables
 integer :: ncid,info
 integer :: nc0a_id,nc1b_id,nl1_id,nsa_id,nsb_id
-integer :: nc2b_id,sb_to_c2b_id,sb_to_l1_id
+integer :: sb_to_c1b_id,sb_to_l1_id
 integer :: sa_to_sb_id,sa_to_sc_id,sb_to_sc_id
 integer :: norm_id,coef_ens_id,trans_id,transinv_id
 character(len=1024) :: filename
@@ -270,8 +250,7 @@ if (nicas_block) then
    call ncerr(subr,nf90_get_att(ncid,nf90_global,'mpicom',ndata%mpicom))
 
    ! Allocation
-   allocate(ndata%nc2b(ndata%nl1))
-   if (ndata%nsb>0) allocate(ndata%sb_to_c2b(ndata%nsb))
+   if (ndata%nsb>0) allocate(ndata%sb_to_c1b(ndata%nsb))
    if (ndata%nsb>0) allocate(ndata%sb_to_l1(ndata%nsb))
    if (ndata%nsa>0) allocate(ndata%sa_to_sb(ndata%nsa))
    if (ndata%nsa>0) allocate(ndata%sa_to_sc(ndata%nsa))
@@ -280,8 +259,7 @@ if (nicas_block) then
    allocate(ndata%coef_ens(geom%nc0a,geom%nl0))
 
    ! Get variable id
-   call ncerr(subr,nf90_inq_varid(ncid,'nc2b',nc2b_id))
-   if (ndata%nsb>0) call ncerr(subr,nf90_inq_varid(ncid,'sb_to_c2b',sb_to_c2b_id))
+   if (ndata%nsb>0) call ncerr(subr,nf90_inq_varid(ncid,'sb_to_c1b',sb_to_c1b_id))
    if (ndata%nsb>0) call ncerr(subr,nf90_inq_varid(ncid,'sb_to_l1',sb_to_l1_id))
    if (ndata%nsa>0) call ncerr(subr,nf90_inq_varid(ncid,'sa_to_sb',sa_to_sb_id))
    if (ndata%nsa>0) call ncerr(subr,nf90_inq_varid(ncid,'sa_to_sc',sa_to_sc_id))
@@ -290,8 +268,7 @@ if (nicas_block) then
    call ncerr(subr,nf90_inq_varid(ncid,'coef_ens',coef_ens_id))
 
    ! Read data
-   call ncerr(subr,nf90_get_var(ncid,nc2b_id,ndata%nc2b))
-   if (ndata%nsb>0) call ncerr(subr,nf90_get_var(ncid,sb_to_c2b_id,ndata%sb_to_c2b))
+   if (ndata%nsb>0) call ncerr(subr,nf90_get_var(ncid,sb_to_c1b_id,ndata%sb_to_c1b))
    if (ndata%nsb>0) call ncerr(subr,nf90_get_var(ncid,sb_to_l1_id,ndata%sb_to_l1))
    if (ndata%nsa>0) call ncerr(subr,nf90_get_var(ncid,sa_to_sb_id,ndata%sa_to_sb))
    if (ndata%nsa>0) call ncerr(subr,nf90_get_var(ncid,sa_to_sc_id,ndata%sa_to_sc))
@@ -347,7 +324,7 @@ logical,intent(in) :: auto_block          !< Autocovariance block key
 ! Local variables
 integer :: ncid
 integer :: nc0a_id,nl0_id,nc1b_id,nl1_id,nsa_id,nsb_id,nl0_2_id
-integer :: nc2b_id,sb_to_c2b_id,sb_to_l1_id
+integer :: sb_to_c1b_id,sb_to_l1_id
 integer :: sa_to_sb_id,sa_to_sc_id,sb_to_sc_id
 integer :: norm_id,coef_ens_id,trans_id,transinv_id
 character(len=1024) :: filename
@@ -379,8 +356,7 @@ call ncerr(subr,nf90_put_att(ncid,nf90_global,'wgt',ndata%wgt))
 
 ! Define variables
 if (nicas_block) then
-   call ncerr(subr,nf90_def_var(ncid,'nc2b',nf90_int,(/nl1_id/),nc2b_id))
-   if (ndata%nsb>0) call ncerr(subr,nf90_def_var(ncid,'sb_to_c2b',nf90_int,(/nsb_id/),sb_to_c2b_id))
+   if (ndata%nsb>0) call ncerr(subr,nf90_def_var(ncid,'sb_to_c1b',nf90_int,(/nsb_id/),sb_to_c1b_id))
    if (ndata%nsb>0) call ncerr(subr,nf90_def_var(ncid,'sb_to_l1',nf90_int,(/nsb_id/),sb_to_l1_id))
    if (ndata%nsa>0) call ncerr(subr,nf90_def_var(ncid,'sa_to_sb',nf90_int,(/nsa_id/),sa_to_sb_id))
    if (ndata%nsa>0) call ncerr(subr,nf90_def_var(ncid,'sa_to_sc',nf90_int,(/nsa_id/),sa_to_sc_id))
@@ -406,8 +382,7 @@ call ncerr(subr,nf90_enddef(ncid))
 
 ! Write variables
 if (nicas_block) then
-   call ncerr(subr,nf90_put_var(ncid,nc2b_id,ndata%nc2b))
-   if (ndata%nsb>0) call ncerr(subr,nf90_put_var(ncid,sb_to_c2b_id,ndata%sb_to_c2b))
+   if (ndata%nsb>0) call ncerr(subr,nf90_put_var(ncid,sb_to_c1b_id,ndata%sb_to_c1b))
    if (ndata%nsb>0) call ncerr(subr,nf90_put_var(ncid,sb_to_l1_id,ndata%sb_to_l1))
    if (ndata%nsa>0) call ncerr(subr,nf90_put_var(ncid,sa_to_sb_id,ndata%sa_to_sb))
    if (ndata%nsa>0) call ncerr(subr,nf90_put_var(ncid,sa_to_sc_id,ndata%sa_to_sc))
@@ -447,17 +422,15 @@ implicit none
 type(ndatatype),intent(in) :: ndata !< NICAS data
 
 ! Local variables
-integer :: ncid
-integer :: nc0_id
-integer :: lon_id,lat_id,c0_to_proc_id,halo_id
+integer :: ncid,nc0_id,nc1_id,nl1_id
+integer :: lon_id,lat_id,c0_to_proc_id,c1_to_c0_id,l1_to_l0_id,lcheck_id
+integer :: is,ic1,il1
+real(kind_real) :: lcheck(ndata%nc1,ndata%nl1)
 character(len=1024) :: filename
 character(len=1024) :: subr = 'ndata_write_mpi_summary'
 
 ! Associate
 associate(nam=>ndata%nam,geom=>ndata%geom)
-
-! Processor verification
-if (.not.mpl%main) call msgerror('only I/O proc should enter '//trim(subr))
 
 ! Create summary file
 filename = trim(nam%prefix)//'_'//trim(ndata%cname)//'_summary.nc'
@@ -468,12 +441,16 @@ call namncwrite(nam,ncid)
 
 ! Define dimensions
 call ncerr(subr,nf90_def_dim(ncid,'nc0',geom%nc0,nc0_id))
+call ncerr(subr,nf90_def_dim(ncid,'nc1',ndata%nc1,nc1_id))
+call ncerr(subr,nf90_def_dim(ncid,'nl1',ndata%nl1,nl1_id))
 
 ! Define variables
 call ncerr(subr,nf90_def_var(ncid,'lon',ncfloat,(/nc0_id/),lon_id))
 call ncerr(subr,nf90_def_var(ncid,'lat',ncfloat,(/nc0_id/),lat_id))
 call ncerr(subr,nf90_def_var(ncid,'c0_to_proc',nf90_int,(/nc0_id/),c0_to_proc_id))
-call ncerr(subr,nf90_def_var(ncid,'halo',nf90_int,(/nc0_id/),halo_id))
+call ncerr(subr,nf90_def_var(ncid,'c1_to_c0',nf90_int,(/nc1_id/),c1_to_c0_id))
+call ncerr(subr,nf90_def_var(ncid,'l1_to_l0',nf90_int,(/nl1_id/),l1_to_l0_id))
+call ncerr(subr,nf90_def_var(ncid,'lcheck',ncfloat,(/nc1_id,nl1_id/),lcheck_id))
 
 ! End definition mode
 call ncerr(subr,nf90_enddef(ncid))
@@ -482,7 +459,23 @@ call ncerr(subr,nf90_enddef(ncid))
 call ncerr(subr,nf90_put_var(ncid,lon_id,ndata%geom%lon*rad2deg))
 call ncerr(subr,nf90_put_var(ncid,lat_id,ndata%geom%lat*rad2deg))
 call ncerr(subr,nf90_put_var(ncid,c0_to_proc_id,ndata%geom%c0_to_proc))
-call ncerr(subr,nf90_put_var(ncid,halo_id,ndata%halo))
+call ncerr(subr,nf90_put_var(ncid,c1_to_c0_id,ndata%c1_to_c0))
+call ncerr(subr,nf90_put_var(ncid,l1_to_l0_id,ndata%l1_to_l0))
+call msr(lcheck)
+do is=1,ndata%ns
+   ic1 = ndata%s_to_c1(is)
+   il1 = ndata%s_to_l1(is)
+   if (ndata%lcheck_sa(is)) then
+      lcheck(ic1,il1) = 1.0
+   elseif (ndata%lcheck_sb(is)) then
+      lcheck(ic1,il1) = 2.0
+   elseif (ndata%lcheck_sc(is)) then
+      lcheck(ic1,il1) = 3.0
+   else
+      lcheck(ic1,il1) = 4.0
+   end if
+end do
+call ncerr(subr,nf90_put_var(ncid,lcheck_id,lcheck))
 
 ! Close summary file
 call ncerr(subr,nf90_close(ncid))
