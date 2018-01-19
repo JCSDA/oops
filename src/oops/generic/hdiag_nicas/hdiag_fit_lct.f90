@@ -20,7 +20,7 @@ use tools_missing, only: msr,isnotmsr
 use type_hdata, only: hdatatype
 use type_lct, only: lcttype,lct_alloc,lct_pack,lct_unpack
 use type_mdata, only: mdatatype
-use type_mpl, only: mpl,mpl_allgatherv,mpl_split
+use type_mpl, only: mpl,mpl_send,mpl_recv,mpl_bcast,mpl_split
 
 implicit none
 
@@ -228,7 +228,7 @@ integer,intent(in) :: ib                                         !< Block index
 type(lcttype),intent(inout) :: lct(hdata%nam%nc1,hdata%geom%nl0) !< LCT
 
 ! Local variables
-integer :: il0,jl0r,jl0,ic1,jc3,npack,progint
+integer :: il0,jl0r,jl0,ic1,jc3,npack,progint,iproc
 integer :: ic1_s(mpl%nproc),ic1_e(mpl%nproc),nc1_loc(mpl%nproc),ic1_loc
 real(kind_real),allocatable :: dx(:,:),dy(:,:),dz(:)
 real(kind_real),allocatable :: rbuf(:),sbuf(:)
@@ -290,7 +290,28 @@ do il0=1,geom%nl0
    end do
 
    ! Communication
-   call mpl_allgatherv(nc1_loc(mpl%myproc)*npack,sbuf,nam%nc1*npack,rbuf,nc1_loc*npack)
+   if (mpl%main) then
+      do iproc=1,mpl%nproc
+         if (nc1_loc(iproc)*npack>0) then
+            if (iproc==mpl%ioproc) then
+               ! Copy data
+               rbuf(ic1_s(iproc)*npack:ic1_e(iproc)*npack) = sbuf
+            else
+               ! Receive data on ioproc
+               call mpl_recv(nc1_loc(iproc)*npack,rbuf(ic1_s(iproc)*npack:ic1_e(iproc)*npack),iproc,mpl%tag)
+            end if
+         end if
+      end do
+   else
+      if (nc1_loc(mpl%myproc)*npack>0) then
+         ! Send data to ioproc
+         call mpl_send(nc1_loc(mpl%myproc)*npack,sbuf,mpl%ioproc,mpl%tag)
+      end if
+   end if
+   mpl%tag = mpl%tag+1
+
+   ! Broadcast data
+   call mpl_bcast(rbuf,mpl%ioproc)
 
    ! Format data
    do ic1=1,nam%nc1

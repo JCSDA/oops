@@ -16,7 +16,7 @@ use tools_display, only: msgerror,prog_init,prog_print
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsi,isnotmsr,isallnotmsr
 use tools_stripack, only: addnod,areas,crlist,trans,trfind,trmesh
-use type_mpl, only: mpl,mpl_allgatherv,mpl_bcast,mpl_split
+use type_mpl, only: mpl,mpl_send,mpl_recv,mpl_bcast,mpl_split
 use type_randgen, only: rand_integer
 
 implicit none
@@ -59,7 +59,7 @@ logical,intent(in) :: lred            !< Redundant points check
 type(meshtype),intent(inout) :: mesh  !< Mesh
 
 ! Local variables
-integer :: i,j,k,info
+integer :: i,j,k,info,iproc
 integer :: i_s(mpl%nproc),i_e(mpl%nproc),n_loc(mpl%nproc),i_loc,progint
 integer,allocatable :: jtab(:),near(:),next(:),sbuf(:)
 real(kind_real),allocatable :: dist(:)
@@ -99,7 +99,28 @@ if (lred.and..false.) then
    write(mpl%unit,'(a)') '100%'
 
    ! Communication
-   call mpl_allgatherv(n_loc(mpl%myproc),sbuf,mesh%n,mesh%redundant,n_loc)
+   if (mpl%main) then
+      do iproc=1,mpl%nproc
+         if (n_loc(iproc)>0) then
+            if (iproc==mpl%ioproc) then
+               ! Copy data
+               mesh%redundant(i_s(iproc):i_e(iproc)) = sbuf
+            else
+               ! Receive data on ioproc
+               call mpl_recv(n_loc(iproc),mesh%redundant(i_s(iproc):i_e(iproc)),iproc,mpl%tag)
+            end if
+         end if
+      end do
+   else
+      if (n_loc(mpl%myproc)>0) then
+         ! Send data to ioproc
+         call mpl_send(n_loc(mpl%myproc),sbuf,mpl%ioproc,mpl%tag)
+      end if
+   end if
+   mpl%tag = mpl%tag+1
+
+   ! Broadcast data
+   call mpl_bcast(mesh%redundant,mpl%ioproc)
 
    ! Check for successive redundant points
    do i=1,mesh%n
