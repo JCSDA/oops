@@ -99,6 +99,7 @@ end subroutine create_hdiag_nicas_c
 subroutine delete_hdiag_nicas_c(key) bind(c, name='delete_hdiag_nicas_f90')
 implicit none
 integer(c_int), intent(inout) :: key
+
 type(hdiag_nicas), pointer :: self
 
 call hdiag_nicas_registry%get(key,self)
@@ -113,8 +114,9 @@ subroutine hdiag_nicas_multiply_c(key, idx) bind(c, name='hdiag_nicas_multiply_f
 implicit none
 integer(c_int), intent(in) :: key
 integer(c_int), intent(in) :: idx
+
 type(hdiag_nicas), pointer :: self
-type(unstructured_grid), pointer :: udx
+type(unstructured_grid), pointer :: ug
 
 call hdiag_nicas_registry%get(key,self)
 call unstructured_grid_registry%get(idx, ug)

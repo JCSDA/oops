@@ -71,6 +71,7 @@ end subroutine
 subroutine delete_ug_c(key) bind(c, name='delete_ug_f90')
 implicit none
 integer(c_int), intent(inout) :: key
+
 type(unstructured_grid), pointer :: self
 
 call unstructured_grid_registry%get(key,self)
@@ -84,27 +85,11 @@ end subroutine
 subroutine get_size_c(key, ind, isize) bind(c, name='get_size_f90')
 implicit none
 integer(c_int), intent(inout) :: key
-<<<<<<< HEAD
-integer,intent(out) :: nlevs
-type(unstructured_grid), pointer :: self
-call unstructured_grid_registry%get(key,self)
-nlevs = self%nlevs
-end subroutine get_nlevs_c
-
-! ------------------------------------------------------------------------------
-
-subroutine get_ncols_c(key, ncols) bind(c, name='get_ncols_f90')
-implicit none
-integer(c_int), intent(inout) :: key
-integer,intent(out) :: ncols
-type(unstructured_grid), pointer :: self
-=======
 integer(c_int), intent(in) :: ind
 integer,intent(out) :: isize
 
-class(unstructured_grid), pointer :: self
+type(unstructured_grid), pointer :: self
 
->>>>>>> feature/nicas_latest
 call unstructured_grid_registry%get(key,self)
 select case (ind)
 case (1)
@@ -130,18 +115,10 @@ end subroutine get_size_c
 subroutine get_lon_c(key, nc0a, lon) bind(c, name='get_lon_f90')
 implicit none
 integer(c_int), intent(inout) :: key
-<<<<<<< HEAD
-integer(c_int), intent(in) :: ncols
-real(kind=kind_real),intent(out) :: lats(ncols)
-integer :: icols
-type(column_element), pointer :: current
-type(unstructured_grid), pointer :: self
-=======
 integer(c_int), intent(in) :: nc0a
 real(kind=kind_real),intent(out) :: lon(nc0a)
 
-class(unstructured_grid), pointer :: self
->>>>>>> feature/nicas_latest
+type(unstructured_grid), pointer :: self
 
 call unstructured_grid_registry%get(key,self)
 lon = self%lon
@@ -153,18 +130,10 @@ end subroutine get_lon_c
 subroutine get_lat_c(key, nc0a, lat) bind(c, name='get_lat_f90')
 implicit none
 integer(c_int), intent(inout) :: key
-<<<<<<< HEAD
-integer(c_int), intent(in) :: ncols
-real(kind=kind_real),intent(out) :: lons(ncols)
-integer :: icols
-type(column_element), pointer :: current
-type(unstructured_grid), pointer :: self
-=======
 integer(c_int), intent(in) :: nc0a
 real(kind=kind_real),intent(out) :: lat(nc0a)
 
-class(unstructured_grid), pointer :: self
->>>>>>> feature/nicas_latest
+type(unstructured_grid), pointer :: self
 
 call unstructured_grid_registry%get(key,self)
 lat = self%lat
@@ -176,18 +145,10 @@ end subroutine get_lat_c
 subroutine get_area_c(key, nc0a, area) bind(c, name='get_area_f90')
 implicit none
 integer(c_int), intent(inout) :: key
-<<<<<<< HEAD
-integer(c_int), intent(in) :: ncols
-real(kind=kind_real),intent(out) :: areas(ncols)
-integer :: icols
-type(column_element), pointer :: current
-type(unstructured_grid), pointer :: self
-=======
 integer(c_int), intent(in) :: nc0a
 real(kind=kind_real),intent(out) :: area(nc0a)
 
-class(unstructured_grid), pointer :: self
->>>>>>> feature/nicas_latest
+type(unstructured_grid), pointer :: self
 
 call unstructured_grid_registry%get(key,self)
 area = self%area
@@ -199,16 +160,10 @@ end subroutine get_area_c
 subroutine get_vunit_c(key, nl0, vunit) bind(c, name='get_vunit_f90')
 implicit none
 integer(c_int), intent(inout) :: key
-<<<<<<< HEAD
-integer(c_int), intent(in) :: nlevs
-real(kind=kind_real),intent(out) :: vunit(nlevs)
-type(unstructured_grid), pointer :: self
-=======
 integer(c_int), intent(in) :: nl0
 real(kind=kind_real),intent(out) :: vunit(nl0)
 
-class(unstructured_grid), pointer :: self
->>>>>>> feature/nicas_latest
+type(unstructured_grid), pointer :: self
 
 call unstructured_grid_registry%get(key,self)
 vunit = self%vunit
@@ -217,64 +172,6 @@ end subroutine get_vunit_c
 
 !-------------------------------------------------------------------------------
 
-<<<<<<< HEAD
-subroutine get_mask_c(key, ncols, ilev, mask) bind(c, name='get_mask_f90')
-implicit none
-integer(c_int), intent(inout) :: key
-integer,intent(in) :: ncols
-integer,intent(in) :: ilev
-integer,intent(out) :: mask(ncols)
-integer :: icols
-type(column_element), pointer :: current
-type(unstructured_grid), pointer :: self
-
-! Get self
-call unstructured_grid_registry%get(key,self)
-
-! Get mask
-icols = 0
-current => self%head
-do while (associated(current))
-   icols = icols+1
-   mask(icols) = current%column%mask(ilev+1) ! +1 for arrays offset from C++ to Fortran
-   current => current%next
-end do
-
-end subroutine get_mask_c
-
-!-------------------------------------------------------------------------------
-
-subroutine get_glbind_c(key, ncols, glbind) bind(c, name='get_glbind_f90')
-implicit none
-integer(c_int), intent(inout) :: key
-integer,intent(in) :: ncols
-integer,intent(out) :: glbind(ncols)
-integer :: icols
-type(column_element), pointer :: current
-type(unstructured_grid), pointer :: self
-
-! Get self
-call unstructured_grid_registry%get(key,self)
-
-! Get global index
-icols = 0
-current => self%head
-do while (associated(current))
-   icols = icols+1
-   glbind(icols) = current%column%glbind
-   current => current%next
-end do
-
-end subroutine get_glbind_c
-
-!-------------------------------------------------------------------------------
-
-subroutine get_nvar_c(key, nvar) bind(c, name='get_nvar_f90')
-implicit none
-integer(c_int), intent(inout) :: key
-integer,intent(out) :: nvar
-type(unstructured_grid), pointer :: self
-=======
 subroutine get_imask_c(key, nc0a, nl0, imask) bind(c, name='get_imask_f90')
 implicit none
 integer(c_int), intent(inout) :: key
@@ -282,8 +179,7 @@ integer,intent(in) :: nc0a
 integer,intent(in) :: nl0
 integer,intent(out) :: imask(nc0a*nl0)
 
-class(unstructured_grid), pointer :: self
->>>>>>> feature/nicas_latest
+type(unstructured_grid), pointer :: self
 
 call unstructured_grid_registry%get(key,self)
 imask = pack(self%imask,mask=.true.)
@@ -297,14 +193,8 @@ implicit none
 integer(c_int), intent(inout) :: key
 integer(c_int), intent(in) :: ntot
 real(kind=kind_real),intent(out) :: fld(ntot)
-<<<<<<< HEAD
-integer :: offset,ivar
-type(column_element), pointer :: current
-type(unstructured_grid), pointer :: self
-=======
 
-class(unstructured_grid), pointer :: self
->>>>>>> feature/nicas_latest
+type(unstructured_grid), pointer :: self
 
 call unstructured_grid_registry%get(key,self)
 fld = pack(self%fld,mask=.true.)
@@ -315,19 +205,7 @@ end subroutine get_data_c
 
 subroutine create_unstructured_grid(self, nc0a, nl0, nv, nts, lon, lat, area, vunit, imask)
 implicit none
-<<<<<<< HEAD
 type(unstructured_grid), intent(inout) :: self
-integer, intent(in) :: nlevs
-real(kind=kind_real), intent(in) :: vunit(nlevs)
-
-self%ncols = 0
-self%nlevs = nlevs
-allocate(self%vunit(self%nlevs))
-self%vunit(:) = vunit(:)
-self%head => null()
-self%last => null()
-=======
-class(unstructured_grid), intent(inout) :: self
 integer, intent(in) :: nc0a
 integer, intent(in) :: nl0
 integer, intent(in) :: nv
@@ -359,7 +237,6 @@ self%lat = lat
 self%area = area
 self%vunit = vunit
 self%imask = imask
->>>>>>> feature/nicas_latest
 
 end subroutine create_unstructured_grid
 
@@ -367,21 +244,7 @@ end subroutine create_unstructured_grid
 
 subroutine delete_unstructured_grid(self)
 implicit none
-<<<<<<< HEAD
 type(unstructured_grid), intent(inout) :: self
-type(column_element), pointer :: current, prev
-
-do while (associated(self%head))
-  call delete_column_data(self%head%column)
-  prev => self%head
-  self%head => self%head%next
-  deallocate(prev)
-enddo
-self%head => null()
-self%last => null()
-=======
-class(unstructured_grid), intent(inout) :: self
->>>>>>> feature/nicas_latest
 
 ! Release memory 
 deallocate(self%lon)
@@ -395,40 +258,4 @@ end subroutine delete_unstructured_grid
 
 !-------------------------------------------------------------------------------
 
-<<<<<<< HEAD
-subroutine add_column(self, plat, plon, parea, klevs, kvar, kmask, kglbind)
-implicit none
-type(unstructured_grid), intent(inout) :: self
-real(kind=kind_real), intent(in) :: plat
-real(kind=kind_real), intent(in) :: plon
-real(kind=kind_real), intent(in) :: parea
-integer, intent(in) :: klevs
-integer, intent(in) :: kvar
-integer, intent(in) :: kmask(klevs)
-integer, optional, intent(in) :: kglbind
-integer :: glbind
-
-! Update pointer
-if (associated(self%last)) then
-  allocate(self%last%next)
-  self%last => self%last%next
-else
-  allocate(self%head)
-  self%last => self%head
-endif
-
-! Global index
-glbind = -1
-if (present(kglbind)) glbind = kglbind
-
-! Create column
-call create_column_data(self%last%column, plat, plon, parea, klevs, kvar, kmask, glbind)
-self%ncols = self%ncols+1
-
-end subroutine add_column
-
-!-------------------------------------------------------------------------------
-
-=======
->>>>>>> feature/nicas_latest
 end module unstructured_grid_mod
