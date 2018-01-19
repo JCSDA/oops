@@ -73,7 +73,7 @@ LocalizationHDIAG_NICAS<MODEL>::LocalizationHDIAG_NICAS(const Geometry_ & resol,
 
 // Convert to unstructured grid
   UnstructuredGrid ug;
-  dx.define(ug);
+//  dx.define(ug);
 
 // Get sizes and coordinates from the unstructured grid
   int nc0a = ug.getSize(1);
@@ -135,7 +135,7 @@ void LocalizationHDIAG_NICAS<MODEL>::multiply(Increment_ & dx) const {
 
   MPI_Barrier(MPI_COMM_WORLD);
   boost::posix_time::ptime ti0 = boost::posix_time::microsec_clock::local_time();
-  dx.define(ug);
+//  dx.define(ug);
   boost::posix_time::ptime t0 = boost::posix_time::microsec_clock::local_time();
   boost::posix_time::time_duration diff0 = t0 - ti0;
   Log::info() << "define time: " << diff0.total_nanoseconds()/1000 << " microseconds" << std::endl;
