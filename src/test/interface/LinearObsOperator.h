@@ -60,8 +60,11 @@ template <typename MODEL> void testAdjoint() {
   
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     LinearObsOperator_ hop(Test_::obspace()[jj]);
+    oops::Variables vars = hop.variables();
 
-    const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
+    eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
+    gconf.set("Variables", vars.asConfig());
+
     const GeoVaLs_ gval(gconf);
 
     const eckit::LocalConfiguration biasconf(conf[jj], "ObsBias");
@@ -82,7 +85,7 @@ template <typename MODEL> void testAdjoint() {
     BOOST_CHECK(dot_product(dy1, dy1) > zero);
 
     dy2.random();
-    BOOST_REQUIRE(dot_product(dy2, dy2) > zero);;
+    BOOST_REQUIRE(dot_product(dy2, dy2) > zero);
     hop.obsEquivAD(gv2, dy2, ybinc);
     BOOST_CHECK(dot_product(gv2, gv2) > zero);
 
