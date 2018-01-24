@@ -19,6 +19,8 @@
 
 #include "oops/runs/Test.h"
 #include "oops/interface/LinearObsOperator.h"
+#include "oops/interface/ObsAuxControl.h"
+#include "oops/interface/ObsAuxIncrement.h"
 #include "test/TestEnvironment.h"
 #include "test/interface/ObsTestsFixture.h"
 #include "util/dot_product.h"
