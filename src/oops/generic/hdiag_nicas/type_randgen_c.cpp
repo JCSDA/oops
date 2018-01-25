@@ -11,6 +11,7 @@
 #include <ostream>
 #include <iomanip>
 #include <cmath>
+#include <climits>
 #if __cplusplus > 199711L
 #include <random>
 #endif
@@ -18,7 +19,7 @@
 using namespace std;
 
 // Constructor
-randGen::randGen(int default_seed) {
+randGen::randGen(unsigned long int default_seed) {
     // Initialize random number generator
     if (default_seed==0) {
 #if __cplusplus > 199711L
@@ -26,12 +27,12 @@ randGen::randGen(int default_seed) {
         gen_ = new std::mt19937(rd());
         version_ = 1;
 #else
-        seed_ = clock();
+        seed_ = (unsigned long int)clock();
         version_ = 0;
 #endif
     }
     else {
-        seed_ = -abs(default_seed);
+        seed_ = default_seed;
         version_ = 0;
     }
 }
@@ -40,11 +41,11 @@ randGen::randGen(int default_seed) {
 randGen::~randGen(){}
 
 // Reseed generator
-void randGen::reseed_randgen(int seed) {
+void randGen::reseed_randgen(unsigned long int seed) {
 #if __cplusplus > 199711L
-    gen_ = new std::mt19937(abs(seed));
+    gen_ = new std::mt19937(seed);
 #endif
-    seed_ = -abs(seed);
+    seed_ = seed;
     return;
 }
 
@@ -63,7 +64,7 @@ void randGen::rand_integer(int binf, int bsup, int *ir) {
         // Generate random integer
         int range=bsup-binf+1;
         double r;
-        r = ran3();
+        r = xorshift32();
         r *= range;
         *ir=binf+(int)r;
     }
@@ -83,7 +84,7 @@ void randGen::rand_real(double binf, double bsup, double *rr) {
     }
     else {
        // Generate random real
-       *rr=binf+ran3()*(bsup-binf);
+       *rr=binf+xorshift32()*(bsup-binf);
     }
     return;
 }
@@ -217,48 +218,10 @@ void randGen::initialize_sampling(int n, double lon[], double lat[], int mask[],
     return;
 }
 
-// ran3 generator
-#define MBIG 1000000000
-#define MSEED 161803398
-#define MZ 0
-#define FAC (1.0/MBIG)
-double randGen::ran3() {
-    static int inext,inextp;
-    static long ma[56];
-    static int iff=0;
-    long mj,mk;
-    int i,ii,k;
-
-    if (seed_ < 0 || iff == 0) {
-        iff=1;
-        mj=MSEED-(seed_ < 0 ? -seed_ : seed_);
-        mj %= MBIG;
-        ma[55]=mj;
-        mk=1;
-        for (i=1;i<=54;i++) {
-            ii=(21*i) % 55;
-            ma[ii]=mk;
-            mk=mj-mk;
-            if (mk < MZ) mk += MBIG;
-            mj=ma[ii];
-        }
-        for (k=1;k<=4;k++)
-            for (i=1;i<=55;i++) {
-                ma[i] -= ma[1+(i+30) % 55];
-                if (ma[i] < MZ) ma[i] += MBIG;
-            }
-        inext=0;
-        inextp=31;
-        seed_=1;
-    }
-    if (++inext == 56) inext=1;
-    if (++inextp == 56) inextp=1;
-    mj=ma[inext]-ma[inextp];
-    if (mj < MZ) mj += MBIG;
-    ma[inext]=mj;
-    return (double)mj*FAC;
+double randGen::xorshift32() {
+    seed_ ^= seed_ << 13;
+    seed_ ^= seed_ >> 17;
+    seed_ ^= seed_ << 5;
+    double x=abs((double)seed_/(double)ULONG_MAX);
+    return x;
 }
-#undef MBIG
-#undef MSEED
-#undef MZ
-#undef FAC

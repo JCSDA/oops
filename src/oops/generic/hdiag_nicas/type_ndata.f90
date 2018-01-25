@@ -142,49 +142,98 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: ndata_dealloc
-!> Purpose: deallocate ndata object
+!> Purpose: ndata object deallocation
 !----------------------------------------------------------------------
-subroutine ndata_dealloc(ndata,nicas_block)
+subroutine ndata_dealloc(ndata)
 
 implicit none
 
 ! Passed variables
 type(ndatatype),intent(inout) :: ndata !< NICAS data
-logical,intent(in) :: nicas_block      !< NICAS block key
 
 ! Local variables
-integer :: il0i,il1
+integer :: il0,il1
 
 ! Associate
 associate(nam=>ndata%nam,geom=>ndata%geom)
 
-! TODO : partial deallocation
-
-if (.false.) then
 ! Release memory
-deallocate(ndata%coef_ens)
-if (nicas_block) then
-   deallocate(ndata%vbot)
-   deallocate(ndata%vtop)
-   do il0i=1,geom%nl0i
-      call linop_dealloc(ndata%h(il0i))
+if (allocated(ndata%vbot)) deallocate(ndata%vbot)
+if (allocated(ndata%vtop)) deallocate(ndata%vtop)
+if (allocated(ndata%nc2)) deallocate(ndata%nc2)
+if (allocated(ndata%hfull)) then
+   do il0=1,geom%nl0
+      call linop_dealloc(ndata%hfull(il0))
+   end do
+   deallocate(ndata%hfull)
+end if
+if (allocated(ndata%sfull)) then
+   do il1=1,ndata%nl1
+      call linop_dealloc(ndata%sfull(il1))
+   end do
+   deallocate(ndata%sfull)
+end if
+if (allocated(ndata%llev)) deallocate(ndata%llev)
+if (allocated(ndata%s_to_c1)) deallocate(ndata%s_to_c1)
+if (allocated(ndata%s_to_l1)) deallocate(ndata%s_to_l1)
+if (allocated(ndata%c1_to_c0)) deallocate(ndata%c1_to_c0)
+if (allocated(ndata%l1_to_l0)) deallocate(ndata%l1_to_l0)
+if (allocated(ndata%c0_to_c1)) deallocate(ndata%c0_to_c1)
+if (allocated(ndata%l0_to_l1)) deallocate(ndata%l0_to_l1)
+if (allocated(ndata%c2mask)) deallocate(ndata%c2mask)
+if (allocated(ndata%c1l1_to_s)) deallocate(ndata%c1l1_to_s)
+if (allocated(ndata%lcheck_c1a)) deallocate(ndata%lcheck_c1a)
+if (allocated(ndata%lcheck_c1b)) deallocate(ndata%lcheck_c1b)
+if (allocated(ndata%lcheck_sa)) deallocate(ndata%lcheck_sa)
+if (allocated(ndata%lcheck_sb)) deallocate(ndata%lcheck_sb)
+if (allocated(ndata%lcheck_sc)) deallocate(ndata%lcheck_sc)
+if (allocated(ndata%lcheck_sc_nor)) deallocate(ndata%lcheck_sc_nor)
+if (allocated(ndata%lcheck_h)) deallocate(ndata%lcheck_h)
+if (allocated(ndata%lcheck_s)) deallocate(ndata%lcheck_s)
+if (allocated(ndata%c1a_to_c1)) deallocate(ndata%c1a_to_c1)
+if (allocated(ndata%c1_to_c1a)) deallocate(ndata%c1_to_c1a)
+if (allocated(ndata%c1b_to_c1)) deallocate(ndata%c1b_to_c1)
+if (allocated(ndata%c1_to_c1b)) deallocate(ndata%c1_to_c1b)
+if (allocated(ndata%c1bl1_to_sb)) deallocate(ndata%c1bl1_to_sb)
+if (allocated(ndata%interph_lg)) deallocate(ndata%interph_lg)
+if (allocated(ndata%interps_lg)) deallocate(ndata%interps_lg)
+if (allocated(ndata%sc_to_sb)) deallocate(ndata%sc_to_sb)
+if (allocated(ndata%sa_to_s)) deallocate(ndata%sa_to_s)
+if (allocated(ndata%s_to_sa)) deallocate(ndata%s_to_sa)
+if (allocated(ndata%sb_to_s)) deallocate(ndata%sb_to_s)
+if (allocated(ndata%s_to_sb)) deallocate(ndata%s_to_sb)
+if (allocated(ndata%sc_to_s)) deallocate(ndata%sc_to_s)
+if (allocated(ndata%s_to_sc)) deallocate(ndata%s_to_sc)
+if (allocated(ndata%sc_nor_to_s)) deallocate(ndata%sc_nor_to_s)
+if (allocated(ndata%s_to_sc_nor)) deallocate(ndata%s_to_sc_nor)
+if (allocated(ndata%sb_to_sc_nor)) deallocate(ndata%sb_to_sc_nor)
+call linop_dealloc(ndata%c_nor)
+if (allocated(ndata%sa_to_sb)) deallocate(ndata%sa_to_sb)
+if (allocated(ndata%sa_to_sc)) deallocate(ndata%sa_to_sc)
+if (allocated(ndata%sb_to_sc)) deallocate(ndata%sb_to_sc)
+call linop_dealloc(ndata%c)
+if (allocated(ndata%h)) then
+   do il0=1,geom%nl0
+      call linop_dealloc(ndata%h(il0))
    end do
    deallocate(ndata%h)
-   call linop_dealloc(ndata%v)
+end if
+call linop_dealloc(ndata%v)
+if (allocated(ndata%s)) then
    do il1=1,ndata%nl1
       call linop_dealloc(ndata%s(il1))
    end do
    deallocate(ndata%s)
-   deallocate(ndata%norm)
-   deallocate(ndata%s_to_c1)
-   deallocate(ndata%s_to_l1)
-   deallocate(ndata%c1_to_c0)
-   deallocate(ndata%l1_to_l0)
-   deallocate(ndata%c0_to_c1)
-   deallocate(ndata%l0_to_l1)
-   deallocate(ndata%c1l1_to_s)
 end if
-end if
+if (allocated(ndata%sb_to_c1b)) deallocate(ndata%sb_to_c1b)
+if (allocated(ndata%sb_to_l1)) deallocate(ndata%sb_to_l1)
+if (allocated(ndata%norm)) deallocate(ndata%norm)
+if (allocated(ndata%coef_ens)) deallocate(ndata%coef_ens)
+if (allocated(ndata%trans)) deallocate(ndata%trans)
+call com_dealloc(ndata%AB)
+call com_dealloc(ndata%AC)
+if (allocated(ndata%transinv)) deallocate(ndata%transinv)
+if (allocated(ndata%sb_to_c1b)) deallocate(ndata%sb_to_c1b)
 
 ! End associate
 end associate

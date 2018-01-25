@@ -221,7 +221,7 @@ end do
 call run_hdiag(self%nam,self%geom,self%bpar,self%bdata,ens1)
 
 ! Call NICAS driver
-call run_nicas(self%nam,self%geom,self%bpar,self%bdata,self%ndata,ens1)
+call run_nicas(self%nam,self%geom,self%bpar,self%bdata,self%ndata)
 
 ! Close listing files
 write(mpl%unit,*) 'HDIAG_NICAS setup done'
@@ -254,8 +254,8 @@ nam%check_adjoints = .false.
 nam%check_pos_def = .false.
 nam%check_sqrt = .false.
 nam%check_dirac = .false.
-nam%check_perf = .false.
-nam%check_hdiag = .false.
+nam%check_consistency = .false.
+nam%check_optimality = .false.
 nam%new_lct = .false.
 nam%new_obsop = .false.
 
@@ -340,7 +340,8 @@ nam%check_adjoints = integer_to_logical(config_get_int(c_conf,"check_adjoints"))
 nam%check_pos_def = integer_to_logical(config_get_int(c_conf,"check_pos_def"))
 nam%check_sqrt = integer_to_logical(config_get_int(c_conf,"check_sqrt"))
 nam%check_dirac = integer_to_logical(config_get_int(c_conf,"check_dirac"))
-nam%check_hdiag = integer_to_logical(config_get_int(c_conf,"check_hdiag"))
+nam%check_consistency = integer_to_logical(config_get_int(c_conf,"check_consistency"))
+nam%check_optimality = integer_to_logical(config_get_int(c_conf,"check_optimality"))
 nam%new_lct = integer_to_logical(config_get_int(c_conf,"new_lct"))
 nam%new_obsop = integer_to_logical(config_get_int(c_conf,"new_obsop"))
 

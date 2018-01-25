@@ -101,7 +101,7 @@ do il0=1,geom%nl0
       if (hdata%c1l0_log(ic1,il0)) then
          lon_c2_ori(ic2,il0) = geom%lon(ic0)
          lat_c2_ori(ic2,il0) = geom%lat(ic0)
-      end if   
+      end if
    end do
 end do
 
@@ -170,7 +170,7 @@ do isub=1,nsub
       end do
 
       do its=2,nam%nts
-         do iv=1,nam%nv  
+         do iv=1,nam%nv
             !$omp parallel do schedule(static) private(il0,ic2a,ic2,ic1,jc1,ic0,jc0,ic0a,jc0d,fld_1,fld_2)
             do il0=1,geom%nl0
                do ic2a=1,hdata%nc2a
@@ -211,7 +211,7 @@ do isub=1,nsub
                   end if
                end do
             end do
-            !$omp end parallel do   
+            !$omp end parallel do
          end do
       end do
    end do
@@ -428,7 +428,7 @@ do its=2,nam%nts
             if (dichotomy) drhflt = 0.5*drhflt
          end do
 
-         ! Copy  
+         ! Copy
          displ%lon_flt(:,il0,its) = lon_c2
          displ%lat_flt(:,il0,its) = lat_c2
          displ%dist_flt(:,il0,its) = dist_c2

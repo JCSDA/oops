@@ -39,7 +39,7 @@ type bdatatype
 
    ! Data
    real(kind_real),allocatable :: coef_ens(:,:) !< Ensemble coefficient
-   real(kind_real),allocatable :: coef_sta(:,:) !< Static coefficient 
+   real(kind_real),allocatable :: coef_sta(:,:) !< Static coefficient
    real(kind_real),allocatable :: rh0(:,:)      !< Fit support radius
    real(kind_real),allocatable :: rv0(:,:)      !< Fit support radius
    real(kind_real),allocatable :: rh0s(:,:)     !< Fit support radius  for sampling
@@ -58,7 +58,7 @@ end interface
 
 private
 public :: bdatatype
-public :: bdata_alloc,bdata_dealloc,diag_to_bdata,bdata_read,bdata_write
+public :: bdata_alloc,bdata_dealloc,diag_to_bdata,bdata_mult,bdata_read,bdata_write
 
 contains
 
@@ -71,7 +71,7 @@ subroutine bdata_alloc(bdata,auto_block)
 implicit none
 
 ! Passed variables
-type(bdatatype),intent(inout) :: bdata !< Sampling data
+type(bdatatype),intent(inout) :: bdata !< B data
 logical,intent(in) :: auto_block       !< Autocovariance block key
 
 ! Associate
@@ -115,30 +115,25 @@ end subroutine bdata_alloc
 ! Subroutine: bdata_dealloc
 !> Purpose: bdata object deallocation
 !----------------------------------------------------------------------
-subroutine bdata_dealloc(bdata,auto_block)
+subroutine bdata_dealloc(bdata)
 
 implicit none
 
 ! Passed variables
-type(bdatatype),intent(inout) :: bdata !< Sampling data
-logical,intent(in) :: auto_block       !< Autocovariance block key
+type(bdatatype),intent(inout) :: bdata !< B data
 
 ! Associate
 associate(nam=>bdata%nam)
 
 ! Release memory
-deallocate(bdata%coef_ens)
-deallocate(bdata%coef_sta)
-deallocate(bdata%rh0)
-deallocate(bdata%rv0)
-if (trim(nam%strategy)=='specific_multivariate') then
-   deallocate(bdata%rh0s)
-   deallocate(bdata%rv0s)
-end if
-if (nam%transform.and.auto_block) then
-   deallocate(bdata%trans)
-   deallocate(bdata%transinv)
-end if
+if (allocated(bdata%coef_ens)) deallocate(bdata%coef_ens)
+if (allocated(bdata%coef_sta)) deallocate(bdata%coef_sta)
+if (allocated(bdata%rh0)) deallocate(bdata%rh0)
+if (allocated(bdata%rv0)) deallocate(bdata%rv0)
+if (allocated(bdata%rh0s)) deallocate(bdata%rh0s)
+if (allocated(bdata%rv0s)) deallocate(bdata%rv0s)
+if (allocated(bdata%trans)) deallocate(bdata%trans)
+if (allocated(bdata%transinv)) deallocate(bdata%transinv)
 
 ! End associate
 end associate
@@ -181,7 +176,7 @@ if (trim(nam%strategy)=='specific_multivariate') then
       end if
    end do
 
-   ! Copy 
+   ! Copy
    do ib=1,bpar%nb+1
       if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
          do il0=1,geom%nl0
@@ -250,7 +245,7 @@ if (trim(nam%strategy)=='specific_multivariate') then
    ! Allocation
    allocate(rh0s(geom%nc0,geom%nl0))
    allocate(rv0s(geom%nc0,geom%nl0))
-   
+
    ! Initialization
    rh0s = huge(1.0)
    rv0s = huge(1.0)
@@ -303,7 +298,7 @@ if (trim(nam%strategy)=='specific_multivariate') then
       end if
    end do
 
-   ! Copy 
+   ! Copy
    do ib=1,bpar%nb+1
       if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
          bdata(ib)%rh0s = rh0s
@@ -403,6 +398,45 @@ end do
 end associate
 
 end subroutine diag_c2a_to_bdata
+
+!----------------------------------------------------------------------
+! Subroutine: bdata_mult
+!> Purpose: bdata object multiplication
+!----------------------------------------------------------------------
+subroutine bdata_mult(bdata_in,fac,auto_block,bdata_out)
+
+implicit none
+
+! Passed variables
+type(bdatatype),intent(in) :: bdata_in     !< Input B data
+real(kind_real),intent(in) :: fac          !< Length-scale factor
+logical,intent(in) :: auto_block           !< Autocovariance block key
+type(bdatatype),intent(inout) :: bdata_out !< Output B data
+
+! Associate
+associate(nam=>bdata_in%nam)
+
+! Allocate
+call bdata_alloc(bdata_out,auto_block)
+
+! Copy data
+bdata_out%coef_ens = bdata_in%coef_ens
+bdata_out%coef_sta = bdata_in%coef_sta
+bdata_out%rh0 = fac*bdata_in%rh0
+bdata_out%rv0 = fac*bdata_in%rv0
+if (trim(nam%strategy)=='specific_multivariate') then
+   bdata_out%rh0s = fac*bdata_in%rh0s
+   bdata_out%rv0s = fac*bdata_in%rv0s
+end if
+if (nam%transform.and.auto_block) then
+   bdata_out%trans = bdata_in%trans
+   bdata_out%transinv = bdata_in%transinv
+end if
+
+! End associate
+end associate
+
+end subroutine bdata_mult
 
 !----------------------------------------------------------------------
 ! Subroutine: bdata_read

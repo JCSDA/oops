@@ -10,13 +10,13 @@ extern "C"
     typedef randGen RANDGEN;
 
     // Constructor
-    RANDGEN* create_randgen(int default_seed);
+    RANDGEN* create_randgen(unsigned long int default_seed);
 
     // Destructor
     void delete_randgen(RANDGEN* randgen);
 
     // Reseed generator
-    void reseed_randgen(RANDGEN* randgen, int seed);
+    void reseed_randgen(RANDGEN* randgen, unsigned long int seed);
 
     // Get version
     void get_version(const RANDGEN* randgen, int *version);

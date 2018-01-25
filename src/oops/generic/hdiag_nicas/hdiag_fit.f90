@@ -325,12 +325,12 @@ do il0=1,nl0
                if (rhsq>0.0) then
                   distnorm = distnorm+(disth(kc3)-disth(jc3))**2/rhsq
                elseif (kc3/=jc3) then
-                  distnorm = huge(1.0)
+                  distnorm = distnorm+0.5*huge(1.0)
                end if
                if (rvsq>0.0) then
                   distnorm = distnorm+distvr(kl0r,jl0)**2/rvsq
                elseif (kl0r/=jl0r) then
-                  distnorm = huge(1.0)
+                  distnorm = distnorm+0.5*huge(1.0)
                end if
                disttest = dist(jc3,jl0r)+sqrt(distnorm)
                if (disttest<1.0) then

@@ -212,7 +212,7 @@ do il1=1,ndata%nl1
       ndata%c2mask(:,il1) = .false.
       do ic2=1,ndata%nc2(il1)
          ic1 = c2_to_c1(ic2)
-         ndata%c2mask(ic1,il1) = .true. 
+         ndata%c2mask(ic1,il1) = .true.
       end do
 
       ! Release memory

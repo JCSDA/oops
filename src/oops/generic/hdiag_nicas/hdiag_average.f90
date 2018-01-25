@@ -79,9 +79,9 @@ do il0=1,geom%nl0
          nc1amax = hdata%nc1a
       end if
       allocate(list_m11(nc1amax))
-      allocate(list_m11m11(nc1amax,mom%nsub,mom%nsub))
-      allocate(list_m2m2(nc1amax,mom%nsub,mom%nsub))
-      allocate(list_m22(nc1amax,mom%nsub))
+      allocate(list_m11m11(nc1amax,avg%nsub,avg%nsub))
+      allocate(list_m2m2(nc1amax,avg%nsub,avg%nsub))
+      allocate(list_m22(nc1amax,avg%nsub))
       allocate(list_cor(nc1amax))
 
       do jc3=1,bpar%nc3(ib)
@@ -110,7 +110,7 @@ do il0=1,geom%nl0
                end do
 
                ! Correlation
-               m2m2 = sum(mom%m2_1(ic1a,jc3,jl0r,il0,:))*sum(mom%m2_2(ic1a,jc3,jl0r,il0,:))/float(mom%nsub**2)
+               m2m2 = sum(mom%m2_1(ic1a,jc3,jl0r,il0,:))*sum(mom%m2_2(ic1a,jc3,jl0r,il0,:))/float(avg%nsub**2)
                if (m2m2>0.0) then
                   list_cor(nc1a) = list_m11(nc1a)/sqrt(m2m2)
                else
@@ -158,6 +158,7 @@ if (ic2a==0) then
 end if
 
 ! Normalize
+!$omp parallel do schedule(static) private(il0,jl0r,jc3,isub,jsub)
 do il0=1,geom%nl0
    do jl0r=1,bpar%nl0r(ib)
       do jc3=1,bpar%nc3(ib)
@@ -175,6 +176,7 @@ do il0=1,geom%nl0
       end do
    end do
 end do
+!$omp end parallel do
 
 ! End associate
 end associate
@@ -185,7 +187,7 @@ end subroutine compute_avg
 ! Subroutine: compute_avg_lr
 !> Purpose: compute averaged statistics via spatial-angular erogodicity assumption, for LR covariance/HR covariance and LR covariance/HR asymptotic covariance products
 !----------------------------------------------------------------------
-subroutine compute_avg_lr(hdata,ib,mom,mom_lr,avg,avg_lr)
+subroutine compute_avg_lr(hdata,ib,mom,mom_lr,ic2a,avg,avg_lr)
 
 implicit none
 
@@ -194,30 +196,125 @@ type(hdatatype),intent(in) :: hdata   !< HDIAG data
 integer,intent(in) :: ib              !< Block index
 type(momtype),intent(in) :: mom       !< Moments
 type(momtype),intent(in) :: mom_lr    !< Low-resolution moments
+integer,intent(in) :: ic2a            !< Subgrid index
 type(avgtype),intent(inout) :: avg    !< Averaged statistics
 type(avgtype),intent(inout) :: avg_lr !< Low-resolution averaged statistics
 
 ! Local variables
-integer :: il0,jl0,jl0r,jc3
+integer :: il0,jl0,jl0r,ic2,jc3,isub,jsub,ic1a,ic1,nc1amax,nc1a
+real(kind_real),allocatable :: m11lrm11(:,:,:,:,:),list_m11lrm11(:,:,:),sbuf(:),rbuf(:)
+logical :: valid
+logical,allocatable :: mask_unpack(:,:,:,:,:)
 
 ! Associate
 associate(nam=>hdata%nam,geom=>hdata%geom,bpar=>hdata%bpar)
 
+! Global index
+if (ic2a==0) then
+   ic2 = 0
+else
+   ic2 = hdata%c2a_to_c2(ic2a)
+end if
+
+! Allocation
+allocate(m11lrm11(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,avg_lr%nsub,avg%nsub))
+
 ! Average
-!$omp parallel do schedule(static) private(il0,jl0r,jl0,jc3)
+!$omp parallel do schedule(static) private(il0,jl0r,jl0,nc1amax,list_m11lrm11,jc3,nc1a,ic1a,ic1,valid,isub,jsub)
 do il0=1,geom%nl0
    do jl0r=1,bpar%nl0r(ib)
       jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
-      do jc3=1,bpar%nc3(ib)
-         ! LR covariance/HR covariance product average TODO: revisit...
-         avg_lr%m11lrm11(jc3,jl0r,il0) = sum(sum(mom_lr%m11(:,jc3,jl0r,il0,:),dim=2) &
-                                       & *sum(mom%m11(:,jc3,jl0r,il0,:),dim=2), &
-                                       & mask=hdata%c1l0_log(hdata%c1a_to_c1,il0) &
-                                       & .and.hdata%c1c3l0_log(hdata%c1a_to_c1,jc3,jl0)) &
-                                       & /float(avg%nsub*avg_lr%nsub)
 
-         ! LR covariance/HR asymptotic covariance product average
-         avg_lr%m11lrm11asy(jc3,jl0r,il0) = avg_lr%m11lrm11(jc3,jl0r,il0)
+      ! Allocation
+      if (ic2>0) then
+         nc1amax = count(hdata%local_mask(hdata%c1a_to_c1,ic2,min(jl0,geom%nl0i)))
+      else
+         nc1amax = hdata%nc1a
+      end if
+      allocate(list_m11lrm11(nc1amax,avg_lr%nsub,avg%nsub))
+
+      do jc3=1,bpar%nc3(ib)
+         ! Fill lists
+         nc1a = 0
+         do ic1a=1,hdata%nc1a
+            ! Index
+            ic1 = hdata%c1a_to_c1(ic1a)
+
+            ! Check validity
+            valid = hdata%c1l0_log(ic1,il0).and.hdata%c1c3l0_log(ic1,jc3,jl0)
+            if (ic2>0) valid = valid.and.hdata%local_mask(ic1,ic2,min(jl0,geom%nl0i))
+
+            if (valid) then
+               ! Update
+               nc1a = nc1a+1
+
+               ! Averages for diagnostics
+               do isub=1,avg%nsub
+                  do jsub=1,avg_lr%nsub
+                     list_m11lrm11(nc1a,jsub,isub) = mom%m11(ic1a,jc3,jl0r,il0,isub)*mom_lr%m11(ic1a,jc3,jl0r,il0,jsub)
+                  end do
+               end do
+            end if
+         end do
+
+         ! Average
+         avg%nc1a(jc3,jl0r,il0) = float(nc1a)
+         do isub=1,avg%nsub
+            do jsub=1,avg_lr%nsub
+               m11lrm11(jc3,jl0r,il0,jsub,isub) = sum(list_m11lrm11(1:nc1a,jsub,isub))
+            end do
+         end do
+      end do
+
+      ! Release memory
+      deallocate(list_m11lrm11)
+   end do
+end do
+!$omp end parallel do
+
+if (ic2a==0) then
+   ! Allocation
+   allocate(sbuf(bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg_lr%nsub*avg%nsub))
+   allocate(rbuf(bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg_lr%nsub*avg%nsub))
+   allocate(mask_unpack(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,avg_lr%nsub,avg%nsub))
+
+   ! Pack data
+   sbuf = pack(m11lrm11,mask=.true.)
+
+   ! Allreduce
+   call mpl_allreduce_sum(sbuf,rbuf)
+
+   ! Unpack data
+   mask_unpack = .true.
+   m11lrm11 = unpack(rbuf,mask_unpack,m11lrm11)
+end if
+
+! Normalize
+!$omp parallel do schedule(static) private(il0,jl0r,jc3,isub,jsub)
+do il0=1,geom%nl0
+   do jl0r=1,bpar%nl0r(ib)
+      do jc3=1,bpar%nc3(ib)
+         if (avg%nc1a(jc3,jl0r,il0)>0.0) then
+            do isub=1,avg%nsub
+               do jsub=1,avg_lr%nsub
+                  m11lrm11(jc3,jl0r,il0,jsub,isub) = m11lrm11(jc3,jl0r,il0,jsub,isub)/avg%nc1a(jc3,jl0r,il0)
+               end do
+            end do
+         end if
+      end do
+   end do
+end do
+!$omp end parallel do
+
+! Average over sub-ensembles
+!$omp parallel do schedule(static) private(il0,jl0r,jc3)
+do il0=1,geom%nl0
+   do jl0r=1,bpar%nl0r(ib)
+      do jc3=1,bpar%nc3(ib)
+         if (isanynotmsr(m11lrm11(jc3,jl0r,il0,:,:))) then
+            avg_lr%m11lrm11(jc3,jl0r,il0) = sum(m11lrm11(jc3,jl0r,il0,:,:),mask=isnotmsr(m11lrm11(jc3,jl0r,il0,:,:))) &
+                                          & /float(count(isnotmsr(m11lrm11(jc3,jl0r,il0,:,:))))
+         end if
       end do
    end do
 end do
@@ -280,7 +377,7 @@ do il0=1,geom%nl0
             allocate(m11asysq(avg%nsub,avg%nsub))
             allocate(m2m2asy(avg%nsub,avg%nsub))
             allocate(m22asy(avg%nsub))
-   
+
             ! Asymptotic statistics
             do isub=1,avg%nsub
                do jsub=1,avg%nsub
@@ -306,19 +403,19 @@ do il0=1,geom%nl0
                   end if
                end do
             end do
-   
+
             ! Sum
             avg%m11asysq(jc3,jl0r,il0) = sum(m11asysq)/float(avg%nsub**2)
             avg%m2m2asy(jc3,jl0r,il0) = sum(m2m2asy)/float(avg%nsub**2)
             if (.not.nam%gau_approx) avg%m22asy(jc3,jl0r,il0) = sum(m22asy)/float(avg%nsub)
-   
+
             ! Check positivity
             if (.not.(avg%m11asysq(jc3,jl0r,il0)>0.0)) call msr(avg%m11asysq(jc3,jl0r,il0))
             if (.not.(avg%m2m2asy(jc3,jl0r,il0)>0.0)) call msr(avg%m2m2asy(jc3,jl0r,il0))
             if (.not.nam%gau_approx) then
                if (.not.(avg%m22asy(jc3,jl0r,il0)>0.0)) call msr(avg%m22asy(jc3,jl0r,il0))
             end if
-   
+
             ! Squared covariance average
             if (nam%gau_approx) then
                ! Gaussian approximation
@@ -331,13 +428,13 @@ do il0=1,geom%nl0
              & avg%m11sq(jc3,jl0r,il0) = P1*avg%m22asy(jc3,jl0r,il0)+P14*avg%m11asysq(jc3,jl0r,il0) &
                                       & +P3*avg%m2m2asy(jc3,jl0r,il0)
             end if
-   
+
             ! Check value
             if (.not.isnotmsr(avg%m11sq(jc3,jl0r,il0))) then
                if (avg%m11sq(jc3,jl0r,il0)<avg%m11asysq(jc3,jl0r,il0)) call msr(avg%m11sq(jc3,jl0r,il0))
                if (avg%m11sq(jc3,jl0r,il0)<avg%m11(jc3,jl0r,il0)**2) call msr(avg%m11sq(jc3,jl0r,il0))
             end if
-   
+
             ! Allocation
             deallocate(m11asysq)
             deallocate(m2m2asy)
@@ -428,8 +525,8 @@ do ib=1,bpar%nb
             else
                bwgtsq = 0.0
             end if
- 
-            ! Compute sum                 
+
+            ! Compute sum
             do jc3=1,nam%nc3
                call add(avg(ib)%cor(jc3,jl0r,il0),avg(bpar%nb+1)%cor(jc3,jl0r,il0),cor(jc3,jl0r,il0))
                call add(avg(ib)%m11asysq(jc3,jl0r,il0),avg(bpar%nb+1)%m11asysq(jc3,jl0r,il0),m11asysq(jc3,jl0r,il0),bwgtsq)

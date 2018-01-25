@@ -111,7 +111,7 @@ if (mpl%main) then
             call mpl_recv(proc_to_nc0a(iproc),geom%mask(offset+1:offset+proc_to_nc0a(iproc),il0),iproc,mpl%tag+1+il0)
          end do
       end if
-    
+
       !  Update offset
       offset = offset+proc_to_nc0a(iproc)
    end do

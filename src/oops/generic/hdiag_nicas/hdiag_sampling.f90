@@ -215,7 +215,7 @@ if (nam%local_diag.or.nam%displ_diag) then
          hdata%c2a_to_c2(ic2a) = ic2
       end if
    end do
-   
+
    if (mpl%main) then
       do iproc=1,mpl%nproc
          ! Allocation

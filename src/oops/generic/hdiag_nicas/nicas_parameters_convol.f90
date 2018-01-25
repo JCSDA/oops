@@ -48,83 +48,103 @@ type(bdatatype),intent(in) :: bdata    !< B data
 type(ndatatype),intent(inout) :: ndata !< NICAS data
 
 ! Local variables
-integer :: n_s_max,progint,ithread,is,ic1,jl1,np,np_new,i,ip,jc0,jc1,il0,jl0,il1,kc0,kc1,kl0,kl1,jp,j,js,isb,offset
+integer :: n_s_max,progint,ithread,is,ic1,ic0,jl0,jl1,np,np_new,i,j,k,ip,jc0,jc1,il0,djl0,il1,kc0,dkl0,kl0,jp,js,isb,offset
 integer :: c_n_s(mpl%nthread),c_nor_n_s(mpl%nthread)
 integer,allocatable :: net_nnb(:),net_inb(:,:),plist(:,:),plist_new(:,:)
 real(kind_real) :: dnb,disthsq,distvsq,rhsq,rvsq,distnorm,disttest,S_test
-real(kind_real),allocatable :: net_dnb(:,:,:),dist(:,:)
+real(kind_real),allocatable :: net_dnb(:,:,:,:),dist(:,:)
 logical :: init,add_to_front,valid_arc
 logical,allocatable :: done(:),valid(:,:)
 type(linoptype) :: c(mpl%nthread),c_nor(mpl%nthread)
-type(meshtype) :: mesh
 
 ! Associate
 associate(nam=>ndata%nam,geom=>ndata%geom)
 
-! Create mesh
-call create_mesh(ndata%nc1,geom%lon(ndata%c1_to_c0),geom%lat(ndata%c1_to_c0),.false.,mesh)
-
 ! Allocation
-allocate(net_nnb(ndata%nc1))
+allocate(net_nnb(geom%nc0))
 
 ! Count neighbors
 net_nnb = 0
-do ic1=1,ndata%nc1
-   i = mesh%lend(ic1)
+do ic0=1,geom%nc0
+   i = geom%mesh%lend(ic0)
    init = .true.
-   do while ((i/=mesh%lend(ic1)).or.init)
-      jc1 = mesh%order(ic1)
-      net_nnb(jc1) = net_nnb(jc1)+1
-      i = mesh%lptr(i)
+   do while ((i/=geom%mesh%lend(ic0)).or.init)
+      jc0 = geom%mesh%order(ic0)
+      net_nnb(jc0) = net_nnb(jc0)+1
+      i = geom%mesh%lptr(i)
       init = .false.
    end do
 end do
 
 ! Allocation
-allocate(net_inb(maxval(net_nnb),ndata%nc1))
-allocate(net_dnb(maxval(net_nnb),ndata%nc1,ndata%nl1))
+allocate(net_inb(maxval(net_nnb),geom%nc0))
+allocate(net_dnb(maxval(net_nnb),-1:1,geom%nc0,geom%nl0))
 
 ! Find neighbors
 net_nnb = 0
-do ic1=1,ndata%nc1
-   i = mesh%lend(ic1)
+do ic0=1,geom%nc0
+   i = geom%mesh%lend(ic0)
    init = .true.
-   do while ((i/=mesh%lend(ic1)).or.init)
-      jc1 = mesh%order(ic1)
-      net_nnb(jc1) = net_nnb(jc1)+1
-      net_inb(net_nnb(jc1),jc1) = mesh%order(abs(mesh%list(i)))
-      i = mesh%lptr(i)
+   do while ((i/=geom%mesh%lend(ic0)).or.init)
+      jc0 = geom%mesh%order(ic0)
+      net_nnb(jc0) = net_nnb(jc0)+1
+      net_inb(net_nnb(jc0),jc0) = geom%mesh%order(abs(geom%mesh%list(i)))
+      i = geom%mesh%lptr(i)
       init = .false.
    end do
 end do
 
 ! Compute distances
-do ic1=1,ndata%nc1
-   do i=1,net_nnb(ic1)
-      ! True distance 
-      call sphere_dist(geom%lon(ndata%c1_to_c0(ic1)),geom%lat(ndata%c1_to_c0(ic1)), &
-    & geom%lon(ndata%c1_to_c0(net_inb(i,ic1))),geom%lat(ndata%c1_to_c0(net_inb(i,ic1))),dnb)
+net_dnb = huge(1.0)
+!$omp parallel do schedule(static) private(ic0,j,jc0,dnb,il0,valid_arc,djl0,jl0,disthsq,distvsq,rhsq,rvsq,distnorm)
+do ic0=1,geom%nc0
+   do j=1,net_nnb(ic0)
+      ! Index
+      jc0 = net_inb(j,ic0)
 
-      if (nam%mask_check) then
-         do il1=1,ndata%nl1
+      if (any(geom%mask(jc0,:))) then
+         ! True distance
+         call sphere_dist(geom%lon(ic0),geom%lat(ic0),geom%lon(jc0),geom%lat(jc0),dnb)
+
+         do il0=1,geom%nl0
             ! Check mask bounds
-            il0 = ndata%l1_to_l0(il1)
-            call check_arc(geom,il0,geom%lon(ndata%c1_to_c0(ic1)),geom%lat(ndata%c1_to_c0(ic1)), &
-          & geom%lon(ndata%c1_to_c0(net_inb(i,ic1))),geom%lat(ndata%c1_to_c0(net_inb(i,ic1))),valid_arc)
+            valid_arc = .true.
+            if (nam%mask_check) call check_arc(geom,il0,geom%lon(ic0),geom%lat(ic0),geom%lon(jc0),geom%lat(jc0),valid_arc)
+
             if (valid_arc) then
-               net_dnb(i,ic1,il1) = dnb
-            else
-               net_dnb(i,ic1,il1) = huge(1.0)
+               do djl0=-1,1
+                  ! Index
+                  jl0 = max(1,min(il0+djl0,geom%nl0))
+
+                  if (geom%mask(ic0,il0).and.geom%mask(jc0,jl0)) then
+                     ! Squared support radii
+                     disthsq = dnb**2
+                     distvsq = geom%distv(il0,jl0)**2
+                     rhsq = 0.5*(bdata%rh0(ic0,il0)**2+bdata%rh0(jc0,jl0)**2)
+                     rvsq = 0.5*(bdata%rv0(ic0,il0)**2+bdata%rv0(jc0,jl0)**2)
+                     distnorm = 0.0
+                     if (rhsq>0.0) then
+                        distnorm = distnorm+disthsq/rhsq
+                     elseif (disthsq>0.0) then
+                        distnorm = distnorm+0.5*huge(0.0)
+                     end if
+                     if (rvsq>0.0) then
+                        distnorm = distnorm+distvsq/rvsq
+                     elseif (distvsq>0.0) then
+                        distnorm = distnorm+0.5*huge(0.0)
+                     end if
+                     net_dnb(j,djl0,ic0,il0) = sqrt(distnorm)
+                  end if
+               end do
             end if
          end do
-      else
-         net_dnb(i,ic1,:) = dnb
       end if
    end do
 end do
+!$omp end parallel do
 
 ! Allocation
-n_s_max = 100*nint(float(ndata%nc1*ndata%nl1)/float(mpl%nthread*mpl%nproc))
+n_s_max = 100*nint(float(geom%nc0*geom%nl0)/float(mpl%nthread*mpl%nproc))
 do ithread=1,mpl%nthread
    c(ithread)%n_s = n_s_max
    c_nor(ithread)%n_s = n_s_max
@@ -138,29 +158,31 @@ write(mpl%unit,'(a10,a)',advance='no') '','Compute weights: '
 call prog_init(progint,done)
 c_n_s = 0
 c_nor_n_s = 0
-!$omp parallel do schedule(static) private(isb,is,ithread,ic1,il1,plist,plist_new,dist,valid,np,np_new,ip,jc1,jl1,jc0,jl0), &
-!$omp&                             private(j,kc1,kl1,kc0,kl0,disthsq,distvsq,rhsq,rvsq,distnorm,disttest,add_to_front,jp,js)
+!$omp parallel do schedule(static) private(isb,is,ithread,ic1,il1,ic0,il0,plist,plist_new,dist,valid,np,np_new,ip,jc0,jl0), &
+!$omp&                             private(k,kc0,kl0,disttest,add_to_front,jp,js,jc1,jl1,distnorm,S_test)
 do isb=1,ndata%nsb
    ! Indices
    is = ndata%sb_to_s(isb)
    ithread = omp_get_thread_num()+1
    ic1 = ndata%s_to_c1(is)
    il1 = ndata%s_to_l1(is)
+   ic0 = ndata%c1_to_c0(ic1)
+   il0 = ndata%l1_to_l0(il1)
 
    ! Allocation
-   allocate(plist(ndata%nc1*ndata%nl1,2))
-   allocate(plist_new(ndata%nc1*ndata%nl1,2))
-   allocate(dist(ndata%nc1,ndata%nl1))
-   allocate(valid(ndata%nc1,ndata%nl1))
+   allocate(plist(geom%nc0*geom%nl0,2))
+   allocate(plist_new(geom%nc0*geom%nl0,2))
+   allocate(dist(geom%nc0,geom%nl0))
+   allocate(valid(geom%nc0,geom%nl0))
 
    ! Initialize the front
    np = 1
-   plist(1,1) = ic1
-   plist(1,2) = il1
+   plist(1,1) = ic0
+   plist(1,2) = il0
    dist = 1.0
-   dist(ic1,il1) = 0.0
+   dist(ic0,il0) = 0.0
    valid = .false.
-   valid(ic1,il1) = .true.
+   valid(ic0,il0) = .true.
 
    do while (np>0)
       ! Propagate the front
@@ -168,48 +190,36 @@ do isb=1,ndata%nsb
 
       do ip=1,np
          ! Indices of the central point
-         jc1 = plist(ip,1)
-         jl1 = plist(ip,2)
-         jc0 = ndata%c1_to_c0(jc1)
-         jl0 = ndata%l1_to_l0(jl1)
+         jc0 = plist(ip,1)
+         jl0 = plist(ip,2)
 
          ! Loop over neighbors
-         do j=1,net_nnb(jc1)
-            kc1 = net_inb(j,jc1)
-            kc0 = ndata%c1_to_c0(kc1)
-            do kl1=max(jl1-1,1),min(jl1+1,ndata%nl1)
-               kl0 = ndata%l1_to_l0(kl1) 
-               if (geom%mask(kc0,kl0)) then
-                  disthsq = net_dnb(j,jc1,il1)**2
-                  distvsq = geom%distv(jl0,kl0)**2
-                  rhsq = 0.5*(bdata%rh0(jc0,jl0)**2+bdata%rh0(kc0,kl0)**2)
-                  rvsq = 0.5*(bdata%rv0(jc0,jl0)**2+bdata%rv0(kc0,kl0)**2)
-                  distnorm = 0.0
-                  if (rhsq>0.0) distnorm = distnorm+disthsq/rhsq
-                  if (rvsq>0.0) distnorm = distnorm+distvsq/rvsq
-                  disttest = dist(jc1,jl1)+sqrt(distnorm)
-                  if (disttest<1.0) then
-                     ! Point is inside the support
-                     if (disttest<dist(kc1,kl1)) then
-                        ! Update distance
-                        dist(kc1,kl1) = disttest
-                        valid(kc1,kl1) = isnotmsi(ndata%c1l1_to_s(kc1,kl1))
+         do k=1,net_nnb(jc0)
+            kc0 = net_inb(k,jc0)
+            do dkl0=-1,1
+               kl0 = max(1,min(jl0+dkl0,geom%nl0))
+               disttest = dist(jc0,jl0)+net_dnb(k,dkl0,jc0,jl0)
+               if (disttest<1.0) then
+                  ! Point is inside the support
+                  if (disttest<dist(kc0,kl0)) then
+                     ! Update distance
+                     dist(kc0,kl0) = disttest
+                     valid(kc0,kl0) = .true.
 
-                        ! Check if the point should be added to the front (avoid duplicates)
-                        add_to_front = .true.
-                        do jp=1,np_new
-                           if ((plist_new(jp,1)==kc1).and.(plist_new(jp,2)==kl1)) then
-                              add_to_front = .false.
-                              exit
-                           end if
-                        end do
-
-                        if (add_to_front) then
-                           ! Add point to the front
-                           np_new = np_new+1
-                           plist_new(np_new,1) = kc1
-                           plist_new(np_new,2) = kl1
+                     ! Check if the point should be added to the front (avoid duplicates)
+                     add_to_front = .true.
+                     do jp=1,np_new
+                        if ((plist_new(jp,1)==kc0).and.(plist_new(jp,2)==kl0)) then
+                           add_to_front = .false.
+                           exit
                         end if
+                     end do
+
+                     if (add_to_front) then
+                        ! Add point to the front
+                        np_new = np_new+1
+                        plist_new(np_new,1) = kc0
+                        plist_new(np_new,2) = kl0
                      end if
                   end if
                end if
@@ -223,43 +233,45 @@ do isb=1,ndata%nsb
    end do
 
    ! Count convolution operations
-   do jl1=1,ndata%nl1
-      do ic1=1,ndata%nc1
-         if (valid(ic1,jl1)) then
-            js = ndata%c1l1_to_s(ic1,jl1)
+   do js=1,ndata%ns
+      ! Indices
+      jc1 = ndata%s_to_c1(js)
+      jl1 = ndata%s_to_l1(js)
+      jc0 = ndata%c1_to_c0(jc1)
+      jl0 = ndata%l1_to_l0(jl1)
 
-            ! Normalized distance
-            distnorm = dist(ic1,jl1)
+      if (valid(jc0,jl0)) then
+         ! Normalized distance
+         distnorm = dist(jc0,jl0)
 
-            if (distnorm<1.0) then
-               ! Distance deformation
-               distnorm = distnorm+deform*sin(pi*distnorm)
+         if (distnorm<1.0) then
+            ! Distance deformation
+            distnorm = distnorm+deform*sin(pi*distnorm)
 
-               ! Square-root
-               if (nam%lsqrt) distnorm = distnorm/sqrt_fac
+            ! Square-root
+            if (nam%lsqrt) distnorm = distnorm/sqrt_fac
 
-               ! Gaspari-Cohn (1999) function
-               S_test = gc99(distnorm)
+            ! Gaspari-Cohn (1999) function
+            S_test = gc99(distnorm)
 
-               ! Store coefficient for convolution
-               if (nam%mpicom==1) then
-                  if ((ndata%lcheck_sb(js).and.(is<js)).or.(.not.ndata%lcheck_sb(js))) &
-                & call check_convol(is,js,S_test,c_n_s(ithread),c(ithread))
-               elseif (nam%mpicom==2) then
-                  if (ndata%lcheck_sa(is).and.((ndata%lcheck_sa(js).and.(is<js)).or.(.not.ndata%lcheck_sa(js)))) &
-                & call check_convol(is,js,S_test,c_n_s(ithread),c(ithread))
-               end if
+            ! Store coefficient for convolution
+            if (nam%mpicom==1) then
+               if ((ndata%lcheck_sb(js).and.(is<js)).or.(.not.ndata%lcheck_sb(js))) &
+             & call check_convol(is,js,S_test,c_n_s(ithread),c(ithread))
+            elseif (nam%mpicom==2) then
+               if (ndata%lcheck_sa(is).and.((ndata%lcheck_sa(js).and.(is<js)).or.(.not.ndata%lcheck_sa(js)))) &
+             & call check_convol(is,js,S_test,c_n_s(ithread),c(ithread))
+            end if
 
-               ! Store coefficient for normalization
-               if (nam%lsqrt) then
-                  if ((ndata%lcheck_sb(js).and.(is<js)).or.(.not.ndata%lcheck_sb(js))) &
-               &  call check_convol(is,js,S_test,c_nor_n_s(ithread),c_nor(ithread))
-               else
-                  if (ndata%lcheck_sb(js).and.(is<js)) call check_convol(is,js,S_test,c_nor_n_s(ithread),c_nor(ithread))
-               end if
+            ! Store coefficient for normalization
+            if (nam%lsqrt) then
+               if ((ndata%lcheck_sb(js).and.(is<js)).or.(.not.ndata%lcheck_sb(js))) &
+            &  call check_convol(is,js,S_test,c_nor_n_s(ithread),c_nor(ithread))
+            else
+               if (ndata%lcheck_sb(js).and.(is<js)) call check_convol(is,js,S_test,c_nor_n_s(ithread),c_nor(ithread))
             end if
          end if
-      end do
+      end if
    end do
 
    ! Print progression
@@ -328,7 +340,7 @@ type(ndatatype),intent(inout) :: ndata !< NICAS data
 integer :: ms,n_s_max,progint,ithread,is,ic1,jl0,jc1,il1,jl1,il0,j,js,isb,ic1b,offset
 integer :: c_n_s(mpl%nthread),c_nor_n_s(mpl%nthread)
 integer,allocatable :: nn_index(:,:)
-real(kind_real) :: rhssq,rvssq,distnorm,S_test
+real(kind_real) :: disthsq,distvsq,rhsq,rvsq,distnorm,S_test
 real(kind_real),allocatable :: nn_dist(:,:)
 logical :: force,test,valid,submask(ndata%nc1,ndata%nl1)
 logical,allocatable :: mask_ctree(:),done(:)
@@ -365,10 +377,10 @@ valid = .false.
 do while (.not.valid)
    ! Check number of neighbors
    force = ms>ndata%nc1
-   ms = min(ms,ndata%nc1)
+   ms = max(1,min(ms,ndata%nc1))
    write(mpl%unit,'(a10,a,i8,a,f5.1,a)') '','Try with ',ms,' neighbors (',float(ms)/float(ndata%nc1)*100.0,'%)'
 
-   ! Allocation 
+   ! Allocation
    if (allocated(nn_index)) deallocate(nn_index)
    if (allocated(nn_dist)) deallocate(nn_dist)
    allocate(nn_index(ms,ndata%nc1b))
@@ -380,7 +392,7 @@ do while (.not.valid)
    do while ((test.or.force).and.(ic1b<=ndata%nc1b))
       ic1 = ndata%c1b_to_c1(ic1b)
 
-      ! Compute nearest neighbors 
+      ! Compute nearest neighbors
       call find_nearest_neighbors(ctree,dble(geom%lon(ndata%c1_to_c0(ic1))), &
     & dble(geom%lat(ndata%c1_to_c0(ic1))),ms,nn_index(:,ic1b),nn_dist(:,ic1b))
 
@@ -388,9 +400,9 @@ do while (.not.valid)
       jc1 = nn_index(ms,ic1b)
       il1 = 1
       do while ((test.or.force).and.(il1<=ndata%nl1))
-         rhssq = 0.5*(bdata%rh0(ndata%c1_to_c0(ic1),ndata%l1_to_l0(il1))**2+ &
+         rhsq = 0.5*(bdata%rh0(ndata%c1_to_c0(ic1),ndata%l1_to_l0(il1))**2+ &
                & bdata%rh0(ndata%c1_to_c0(jc1),ndata%l1_to_l0(il1))**2)
-         distnorm = nn_dist(ms,ic1b)**2/rhssq
+         distnorm = nn_dist(ms,ic1b)**2/rhsq
          if ((distnorm<1.0).and.(.not.force)) then
             ms = 2*ms
             test = .false.
@@ -417,7 +429,8 @@ write(mpl%unit,'(a10,a)',advance='no') '','Compute weights: '
 call prog_init(progint,done)
 c_n_s = 0
 c_nor_n_s = 0
-!$omp parallel do schedule(static) private(isb,is,ithread,ic1,ic1b,il1,il0,j,jc1,jl1,jl0,js,rhssq,rvssq,distnorm,S_test)
+!$omp parallel do schedule(static) private(isb,is,ithread,ic1,ic1b,il1,il0,j,jc1,jl1,jl0,js,disthsq,distvsq,rhsq,rvsq), &
+!$omp&                             private(distnorm,S_test)
 do isb=1,ndata%nsb
    ! Indices
    is = ndata%sb_to_s(isb)
@@ -436,13 +449,23 @@ do isb=1,ndata%nsb
             js = ndata%c1l1_to_s(jc1,jl1)
 
             ! Normalized distance
-            rhssq = 0.5*(bdata%rh0(ndata%c1_to_c0(ndata%s_to_c1(is)),ndata%l1_to_l0(ndata%s_to_l1(is)))**2+ &
-                  & bdata%rh0(ndata%c1_to_c0(ndata%s_to_c1(js)),ndata%l1_to_l0(ndata%s_to_l1(js)))**2)
-            rvssq = 0.5*(bdata%rv0(ndata%c1_to_c0(ndata%s_to_c1(is)),ndata%l1_to_l0(ndata%s_to_l1(is)))**2+ &
-                  & bdata%rv0(ndata%c1_to_c0(ndata%s_to_c1(js)),ndata%l1_to_l0(ndata%s_to_l1(js)))**2)
+            disthsq = nn_dist(j,ic1b)**2
+            distvsq = geom%distv(il0,jl0)**2
+            rhsq = 0.5*(bdata%rh0(ndata%c1_to_c0(ndata%s_to_c1(is)),ndata%l1_to_l0(ndata%s_to_l1(is)))**2+ &
+                 & bdata%rh0(ndata%c1_to_c0(ndata%s_to_c1(js)),ndata%l1_to_l0(ndata%s_to_l1(js)))**2)
+            rvsq = 0.5*(bdata%rv0(ndata%c1_to_c0(ndata%s_to_c1(is)),ndata%l1_to_l0(ndata%s_to_l1(is)))**2+ &
+                 & bdata%rv0(ndata%c1_to_c0(ndata%s_to_c1(js)),ndata%l1_to_l0(ndata%s_to_l1(js)))**2)
             distnorm = 0.0
-            if (rhssq>0.0) distnorm = distnorm+nn_dist(j,ic1b)**2/rhssq
-            if (rvssq>0.0) distnorm = distnorm+geom%distv(il0,jl0)**2/rvssq
+            if (rhsq>0.0) then
+               distnorm = distnorm+disthsq/rhsq
+            elseif (disthsq>0.0) then
+               distnorm = distnorm+0.5*huge(0.0)
+            end if
+            if (rvsq>0.0) then
+               distnorm = distnorm+distvsq/rvsq
+            elseif (distvsq>0.0) then
+               distnorm = distnorm+0.5*huge(0.0)
+            end if
             distnorm = sqrt(distnorm)
 
             if (distnorm<1.0) then

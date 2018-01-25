@@ -77,7 +77,7 @@ do is=1,ndata%ns
    if (geom%c0_to_proc(ic0)==mpl%myproc) then
       ndata%lcheck_c1a(ic1) = .true.
       ndata%lcheck_sa(is) = .true.
-   end if  
+   end if
 end do
 
 ! Halo B

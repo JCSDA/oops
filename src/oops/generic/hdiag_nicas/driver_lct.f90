@@ -15,7 +15,6 @@ use hdiag_sampling, only: setup_sampling
 use hdiag_lct, only: compute_lct
 use tools_kinds, only: kind_real
 use type_bpar, only: bpartype
-use type_displ, only: displtype
 use type_geom, only: geomtype
 use type_hdata, only: hdatatype
 use type_lct, only: lcttype,lct_write
@@ -47,7 +46,6 @@ real(kind_real),intent(in),optional :: ens1(geom%nc0a,geom%nl0,nam%nv,nam%nts,na
 ! Local variables
 type(hdatatype) :: hdata
 type(momtype) :: mom(bpar%nb)
-type(displtype) :: displ
 type(lcttype) :: lct(nam%nc1,geom%nl0,bpar%nb)
 
 if (nam%new_lct) then
@@ -71,9 +69,9 @@ if (nam%new_lct) then
    write(mpl%unit,'(a)') '--- Compute sample moments'
 
    if (present(ens1)) then
-      call compute_moments(hdata,'ens1',displ,mom,ens1)
+      call compute_moments(hdata,'ens1',mom,ens1)
    else
-      call compute_moments(hdata,'ens1',displ,mom)
+      call compute_moments(hdata,'ens1',mom)
    end if
 
    ! Compute LCT

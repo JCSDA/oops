@@ -64,12 +64,14 @@ do il0=1,geom%nl0
    deallocate(slab)
 end do
 
-! Horizontal interpolation
-!$omp parallel do schedule(static) private(il0)
-do il0=1,geom%nl0
-   call apply_linop(odata%h,fld_ext(:,il0),obs(:,il0))
-end do
-!$omp end parallel do
+if (odata%nobsa>0) then
+   ! Horizontal interpolation
+   !$omp parallel do schedule(static) private(il0)
+   do il0=1,geom%nl0
+      call apply_linop(odata%h,fld_ext(:,il0),obs(:,il0))
+   end do
+   !$omp end parallel do
+end if
 
 end subroutine apply_obsop
 
@@ -92,12 +94,14 @@ integer :: il0
 real(kind_real) :: fld_ext(odata%nc0b,geom%nl0)
 real(kind_real),allocatable :: slab(:)
 
-! Horizontal interpolation
-!$omp parallel do schedule(static) private(il0)
-do il0=1,geom%nl0
-   call apply_linop_ad(odata%h,obs(:,il0),fld_ext(:,il0))
-end do
-!$omp end parallel do
+if (odata%nobsa>0) then
+   ! Horizontal interpolation
+   !$omp parallel do schedule(static) private(il0)
+   do il0=1,geom%nl0
+      call apply_linop_ad(odata%h,obs(:,il0),fld_ext(:,il0))
+   end do
+   !$omp end parallel do
+end if
 
 ! Halo reduction
 do il0=1,geom%nl0

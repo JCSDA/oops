@@ -16,7 +16,6 @@ use tools_display, only: msgerror
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsr
 use type_com, only: com_ext
-use type_displ, only: displtype
 use type_geom, only: fld_com_gl
 use type_linop, only: apply_linop
 use type_mom, only: momtype
@@ -33,14 +32,13 @@ contains
 ! Subroutine: compute_moments
 !> Purpose: compute centered moments (iterative formulae)
 !----------------------------------------------------------------------
-subroutine compute_moments(hdata,filename,displ,mom,ens1)
+subroutine compute_moments(hdata,filename,mom,ens1)
 
 implicit none
 
 ! Passed variables
 type(hdatatype),intent(in) :: hdata                                                                                      !< HDIAG data
 character(len=*),intent(in) :: filename                                                                                  !< File name
-type(displtype),intent(in) :: displ                                                                                      !< Displacement
 type(momtype),intent(inout) :: mom(hdata%bpar%nb)                                                                        !< Moments
 real(kind_real),intent(in),optional :: ens1(hdata%geom%nc0a,hdata%geom%nl0,hdata%nam%nv,hdata%nam%nts,hdata%nam%ens1_ne) !< Ensemble 1
 

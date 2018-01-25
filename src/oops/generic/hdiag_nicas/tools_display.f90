@@ -54,7 +54,7 @@ implicit none
 integer :: lun
 logical :: lopened
 
-! Initialize  
+! Initialize
 call msi(newunit)
 
 ! Loop over possible units
