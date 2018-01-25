@@ -4,7 +4,7 @@
 !> <br>
 !> Author: Benjamin Menetrier
 !> <br>
-!> Licensing: this code is distributed under the CeCILL-C license
+!> Licensing: this code is distributed under the CeCILL-C licensea
 !> <br>
 !> Copyright © 2017 METEO-FRANCE
 !----------------------------------------------------------------------
@@ -61,10 +61,10 @@ associate(geom=>odata%geom,nam=>odata%nam)
 llocal = .false.
 if (present(local)) llocal = local
 
-if (llocal) then
-   ! Allocation
-   allocate(odata%proc_to_nobsa(mpl%nproc))
+! Allocation
+allocate(odata%proc_to_nobsa(mpl%nproc))
 
+if (llocal) then
    ! Get global number of observations
    call mpl_allgather(1,(/odata%nobsa/),odata%proc_to_nobsa)
    odata%nobs = sum(odata%proc_to_nobsa)
@@ -116,6 +116,8 @@ end if
 
 ! Allocation
 allocate(maskobs(odata%nobs))
+allocate(nop(odata%nobs))
+allocate(iop(odata%nobs))
 allocate(odata%obs_to_proc(odata%nobs))
 allocate(odata%obs_to_obsa(odata%nobs))
 
@@ -125,6 +127,30 @@ write(mpl%unit,'(a7,a)') '','Single level:'
 maskobs = .true.
 call compute_interp(geom%mesh,geom%ctree,geom%nc0,any(geom%mask,dim=2),odata%nobs,lonobs,latobs, &
  & maskobs,nam%obsop_interp,odata%hfull)
+
+! Count interpolation points
+nop = 0
+do i_s=1,odata%hfull%n_s
+   iobs = odata%hfull%row(i_s)
+   nop(iobs) = nop(iobs)+1
+end do
+
+! Allocation
+allocate(srcproc(maxval(nop),odata%nobs))
+allocate(srcic0(maxval(nop),odata%nobs))
+
+! Find grid points origin
+iop = 0
+call msi(srcproc)
+call msi(srcic0)
+do i_s=1,odata%hfull%n_s
+   ic0 = odata%hfull%col(i_s)
+   iproc = geom%c0_to_proc(ic0)
+   iobs = odata%hfull%row(i_s)
+   iop(iobs) = iop(iobs)+1
+   srcproc(iop(iobs),iobs) = iproc
+   srcic0(iop(iobs),iobs) = ic0
+end do
 
 if (llocal) then
    ! Fill obs_to_proc and obs_to_obsa
@@ -136,34 +162,7 @@ if (llocal) then
          odata%obs_to_obsa(iobs) = iobsa
       end do
    end do
-else
-   ! Split observations between processors
-
-   ! Allocation
-   allocate(nop(odata%nobs))
-   allocate(iop(odata%nobs))
-   allocate(odata%proc_to_nobsa(mpl%nproc))
-   nop = 0
-   do i_s=1,odata%hfull%n_s
-      iobs = odata%hfull%row(i_s)
-      nop(iobs) = nop(iobs)+1
-   end do
-   allocate(srcproc(maxval(nop),odata%nobs))
-   allocate(srcic0(maxval(nop),odata%nobs))
-   
-   ! Find grid points origin
-   iop = 0
-   call msi(srcproc)
-   call msi(srcic0)
-   do i_s=1,odata%hfull%n_s
-      ic0 = odata%hfull%col(i_s)
-      iproc = geom%c0_to_proc(ic0)
-      iobs = odata%hfull%row(i_s)
-      iop(iobs) = iop(iobs)+1
-      srcproc(iop(iobs),iobs) = iproc
-      srcic0(iop(iobs),iobs) = ic0
-   end do
-   
+else 
    ! Generate observation distribution on processors
    if (nam%obsdis<0.0) then
       ! Allocation
@@ -455,7 +454,7 @@ if (mpl%main) then
    lunit = newunit()
    open(unit=lunit,file=trim(nam%datadir)//'/'//trim(nam%prefix)//'_obs_out.dat',status='replace')
    do iobs=1,odata%nobs
-      write(lunit,*) odata%lonobs(iobs)*rad2deg,odata%latobs(iobs)*rad2deg
+      write(lunit,*) lonobs(iobs)*rad2deg,latobs(iobs)*rad2deg
    end do
    close(unit=lunit)
 
@@ -503,3 +502,4 @@ end associate
 end subroutine compute_parameters
 
 end module obsop_parameters
+
