@@ -11,13 +11,13 @@
 class randGen {
     public:
         // Constructor
-        randGen(int default_seed);
+        randGen(unsigned long int default_seed);
 
         // Destructor
         ~randGen();
 
         // Reseed generator
-        void reseed_randgen(int seed);
+        void reseed_randgen(unsigned long int seed);
 
         // Get version
         void get_version(int *version) const {*version=version_;};
@@ -39,7 +39,7 @@ class randGen {
         std::mt19937 *gen_;
 #endif
 
-        // ran3 generator
-        int seed_;
-        double ran3();
+        // xorshift32 generator
+        unsigned long int seed_;
+        double xorshift32();
 };

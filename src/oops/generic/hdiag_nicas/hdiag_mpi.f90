@@ -247,7 +247,7 @@ if (mpl%main) then
 
    ! Communication setup
    call com_setup(comAD)
- 
+
    ! Release memory
    deallocate(c0_to_c0a)
 else
@@ -499,7 +499,7 @@ if (mpl%main) then
 
    ! Communication setup
    call com_setup(comAC)
- 
+
    ! Release memory
    deallocate(c0_to_c0a)
 else

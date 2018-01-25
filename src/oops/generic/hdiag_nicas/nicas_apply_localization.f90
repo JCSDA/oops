@@ -25,6 +25,8 @@ use yomhook, only: lhook,dr_hook
 
 implicit none
 
+logical :: lcoef_ens = .false. !< Apply ensemble coefficient (will reduce variance)
+
 private
 public :: apply_localization,apply_localization_sqrt,apply_localization_sqrt_ad,apply_localization_from_sqrt
 public :: randomize_localization
@@ -60,11 +62,11 @@ case ('common')
    allocate(fld_3d(geom%nc0a,geom%nl0))
 
    ! Adjoint displacement
-!   if (nam%displ_diag) then
-!      do its=2,nam%nts
-!         
-!      end do
-!   end if
+   if (nam%displ_diag) then
+      do its=2,nam%nts
+
+      end do
+   end if
 
    ! Sum product over variables and timeslots
    fld_3d = 0.0
@@ -80,26 +82,30 @@ case ('common')
    end do
    !$omp end parallel do
 
-   ! Apply common ensemble coefficient square-root
-!   !$omp parallel do schedule(static) private(il0,ic0a)
-!   do il0=1,geom%nl0
-!      do ic0a=1,geom%nc0a
-!         fld_3d(ic0a,il0) = fld_3d(ic0a,il0)*sqrt(ndata(bpar%nb+1)%coef_ens(ic0a,il0))
-!      end do
-!   end do
-!   !$omp end parallel do
+   if (lcoef_ens) then
+      ! Apply common ensemble coefficient square-root
+      !$omp parallel do schedule(static) private(il0,ic0a)
+      do il0=1,geom%nl0
+         do ic0a=1,geom%nc0a
+            fld_3d(ic0a,il0) = fld_3d(ic0a,il0)*sqrt(ndata(bpar%nb+1)%coef_ens(ic0a,il0))
+         end do
+      end do
+      !$omp end parallel do
+   end if
 
    ! Apply common localization
    call apply_nicas(geom,ndata(bpar%nb+1),fld_3d)
 
-   ! Apply common ensemble coefficient square-root
-!   !$omp parallel do schedule(static) private(il0,ic0a)
-!   do il0=1,geom%nl0
-!      do ic0a=1,geom%nc0a
-!         fld_3d(ic0a,il0) = fld_3d(ic0a,il0)*sqrt(ndata(bpar%nb+1)%coef_ens(ic0a,il0))
-!      end do
-!   end do
-!   !$omp end parallel do
+   if (lcoef_ens) then
+      ! Apply common ensemble coefficient square-root
+      !$omp parallel do schedule(static) private(il0,ic0a)
+      do il0=1,geom%nl0
+         do ic0a=1,geom%nc0a
+            fld_3d(ic0a,il0) = fld_3d(ic0a,il0)*sqrt(ndata(bpar%nb+1)%coef_ens(ic0a,il0))
+         end do
+      end do
+      !$omp end parallel do
+   end if
 
    ! Build final vector
    !$omp parallel do schedule(static) private(il0,ic0a,its,iv)
@@ -115,11 +121,11 @@ case ('common')
    !$omp end parallel do
 
    ! Displacement
-!   if (nam%displ_diag) then
-!      do its=2,nam%nts
-!         
-!      end do
-!   end if
+   if (nam%displ_diag) then
+      do its=2,nam%nts
+
+      end do
+   end if
 case ('specific_univariate')
    ! Allocation
    allocate(fld_4d(geom%nc0a,geom%nl0,nam%nv))
@@ -136,13 +142,13 @@ case ('specific_univariate')
          iv = bpar%b_to_v1(ib)
 
          ! Apply common ensemble coefficient square-root
-         fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(ndata(ib)%coef_ens)
+         if (lcoef_ens) fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(ndata(ib)%coef_ens)
 
          ! Apply specific localization (same for all timeslots)
          call apply_nicas(geom,ndata(ib),fld_4d(:,:,iv))
 
          ! Apply common ensemble coefficient square-root
-         fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(ndata(ib)%coef_ens)
+         if (lcoef_ens) fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(ndata(ib)%coef_ens)
       end if
    end do
 
@@ -189,13 +195,13 @@ case ('common_weighted')
 
    do iv=1,nam%nv
       ! Apply common ensemble coefficient square-root
-      fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(ndata(bpar%nb+1)%coef_ens)
+      if (lcoef_ens) fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(ndata(bpar%nb+1)%coef_ens)
 
       ! Apply common localization
       call apply_nicas(geom,ndata(bpar%nb+1),fld_4d(:,:,iv))
 
       ! Apply common ensemble coefficient square-root
-      fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(ndata(bpar%nb+1)%coef_ens)
+      if (lcoef_ens) fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(ndata(bpar%nb+1)%coef_ens)
    end do
 
    ! Apply weights
@@ -249,7 +255,7 @@ case ('common')
    call apply_nicas_sqrt(geom,ndata(bpar%nb+1),cv(bpar%nb+1)%alpha,fld_3d)
 
    ! Apply common ensemble coefficient square-root
-   fld_3d = fld_3d*sqrt(ndata(bpar%nb+1)%coef_ens)
+   if (lcoef_ens) fld_3d = fld_3d*sqrt(ndata(bpar%nb+1)%coef_ens)
 
    ! Build final vector
    do its=1,nam%nts
@@ -270,7 +276,7 @@ case ('specific_univariate')
          call apply_nicas_sqrt(geom,ndata(ib),cv(ib)%alpha,fld_4d(:,:,iv))
 
          ! Apply common ensemble coefficient square-root
-         fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(ndata(ib)%coef_ens)
+         if (lcoef_ens) fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(ndata(ib)%coef_ens)
       end if
    end do
 
@@ -291,7 +297,7 @@ case ('specific_multivariate')
          call apply_nicas_sqrt(geom,ndata(ib),cv(bpar%nb+1)%alpha,fld_4d(:,:,iv))
 
          ! Apply common ensemble coefficient square-root
-         fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(ndata(ib)%coef_ens)
+         if (lcoef_ens) fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(ndata(ib)%coef_ens)
       end if
    end do
 
@@ -358,7 +364,7 @@ case ('common_weighted')
          call apply_nicas_sqrt(geom,ndata(bpar%nb+1),cv(ib)%alpha,fld_4d(:,:,iv))
 
          ! Apply common ensemble coefficient square-root
-         fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(ndata(bpar%nb+1)%coef_ens)
+         if (lcoef_ens) fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(ndata(bpar%nb+1)%coef_ens)
       end if
    end do
 
@@ -422,7 +428,7 @@ case ('common')
    end do
 
    ! Apply common ensemble coefficient square-root
-   fld_3d = fld_3d*sqrt(ndata(bpar%nb+1)%coef_ens)
+   if (lcoef_ens) fld_3d = fld_3d*sqrt(ndata(bpar%nb+1)%coef_ens)
 
    ! Apply common localization
    call apply_nicas_sqrt_ad(geom,ndata(bpar%nb+1),fld_3d,cv(bpar%nb+1)%alpha)
@@ -442,7 +448,7 @@ case ('specific_univariate')
          iv = bpar%b_to_v1(ib)
 
          ! Apply common ensemble coefficient square-root
-         fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(ndata(ib)%coef_ens)
+         if (lcoef_ens) fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(ndata(ib)%coef_ens)
 
          ! Apply specific localization (same for all timeslots)
          call apply_nicas_sqrt_ad(geom,ndata(ib),fld_4d(:,:,iv),cv(ib)%alpha)
@@ -468,7 +474,7 @@ case ('specific_multivariate')
          iv = bpar%b_to_v1(ib)
 
          ! Apply common ensemble coefficient square-root
-         fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(ndata(ib)%coef_ens)
+         if (lcoef_ens) fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(ndata(ib)%coef_ens)
 
          ! Apply specific localization (same for all timeslots)
          call apply_nicas_sqrt_ad(geom,ndata(ib),fld_4d(:,:,iv),cv_tmp(bpar%nb+1)%alpha)
@@ -547,7 +553,7 @@ case ('common_weighted')
          iv = bpar%b_to_v1(ib)
 
          ! Apply common ensemble coefficient square-root
-         fld_4d_tmp(:,:,iv) = fld_4d_tmp(:,:,iv)*sqrt(ndata(bpar%nb+1)%coef_ens)
+         if (lcoef_ens) fld_4d_tmp(:,:,iv) = fld_4d_tmp(:,:,iv)*sqrt(ndata(bpar%nb+1)%coef_ens)
 
          ! Apply specific localization (same for all timeslots)
          call apply_nicas_sqrt_ad(geom,ndata(bpar%nb+1),fld_4d_tmp(:,:,iv),cv(ib)%alpha)

@@ -10,7 +10,7 @@
 !----------------------------------------------------------------------
 module type_randgen
 
-use iso_c_binding, only: c_ptr,c_int,c_double
+use iso_c_binding, only: c_ptr,c_int,c_long,c_double
 use tools_kinds, only: kind_real
 use tools_missing, only: msi
 use type_mpl, only: mpl
@@ -30,7 +30,7 @@ interface
    use iso_c_binding
    implicit none
    type(c_ptr) :: create_randgen_c
-   integer(c_int),value :: default_seed
+   integer(c_long),value :: default_seed
    end function create_randgen_c
 end interface
 interface
@@ -45,7 +45,7 @@ interface
    use iso_c_binding
    implicit none
    type(c_ptr),value :: randgen
-   integer(c_int) :: seed
+   integer(c_long) :: seed
    end subroutine reseed_randgen_c
 end interface
 interface
@@ -104,6 +104,7 @@ interface rand_real
   module procedure rand_real_2d
   module procedure rand_real_3d
   module procedure rand_real_4d
+  module procedure rand_real_5d
 end interface
 
 interface rand_gau
@@ -111,7 +112,7 @@ interface rand_gau
 end interface
 
 ! Default seed
-integer,parameter :: seed = 14051987
+integer(kind=8),parameter :: seed = 14051987
 
 private
 public :: create_randgen,delete_randgen,reseed_randgen,rand_integer,rand_real,rand_gau,initialize_sampling
@@ -130,7 +131,8 @@ implicit none
 type(namtype),intent(in) :: nam !< Namelist variables
 
 ! Local variable
-integer :: default_seed,version
+integer(kind=8) :: default_seed
+integer :: version
 
 ! Set default seed key to integer
 if (nam%default_seed) then
@@ -144,15 +146,15 @@ rng%ptr = create_randgen_c(default_seed)
 
 ! Print result
 if (nam%default_seed) then
-   write(mpl%unit,'(a7,a)') '','Generator ran3 initialized with a default seed'
+   write(mpl%unit,'(a7,a)') '','Linear congruential generator initialized with a default seed'
 else
    ! Get version
    call get_version_c(rng%ptr,version)
 
    if (version==1) then
-      write(mpl%unit,'(a7,a)') '','Generator Mersenne Twister 19937 initialized'
+      write(mpl%unit,'(a7,a)') '','Mersenne Twister 19937 generator initialized'
    else
-      write(mpl%unit,'(a7,a)') '','Generator ran3 initialized'
+      write(mpl%unit,'(a7,a)') '','Linear congruential generator initialized'
    end if
 end if
 
@@ -178,6 +180,12 @@ end subroutine delete_randgen
 subroutine reseed_randgen()
 
 implicit none
+
+! Local variable
+integer(kind=8) :: default_seed
+
+! Default seed
+default_seed = seed+mpl%myproc
 
 ! Call C++ function
 call reseed_randgen_c(rng%ptr,seed+mpl%myproc)
@@ -347,6 +355,38 @@ end do
 
 
 end subroutine rand_real_4d
+
+!----------------------------------------------------------------------
+! Subroutine: rand_real_5d
+!> Purpose: generate a random real, 5d
+!----------------------------------------------------------------------
+subroutine rand_real_5d(binf,bsup,rr)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: binf           !< Lower bound
+real(kind_real),intent(in) :: bsup           !< Upper bound
+real(kind_real),intent(out) :: rr(:,:,:,:,:) !< Random integer
+
+! Local variables
+integer :: i,j,k,l,m
+
+do i=1,size(rr,1)
+   do j=1,size(rr,2)
+      do k=1,size(rr,3)
+         do l=1,size(rr,4)
+            do m=1,size(rr,5)
+               ! Call C++ function
+               call rand_real_c(rng%ptr,binf,bsup,rr(i,j,k,l,m))
+            end do
+         end do
+      end do
+   end do
+end do
+
+
+end subroutine rand_real_5d
 
 !----------------------------------------------------------------------
 ! Subroutine: rand_gau_1d

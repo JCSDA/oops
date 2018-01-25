@@ -173,7 +173,7 @@ do il1=1,ndata%nl1
       mask_src = ndata%c2mask(:,il1)
       mask_dst = .true.
 
-      ! Compute interpolation     
+      ! Compute interpolation
       call compute_interp(ndata%nc1,geom%lon(ndata%c1_to_c0),geom%lat(ndata%c1_to_c0),mask_src, &
     & ndata%nc1,geom%lon(ndata%c1_to_c0),geom%lat(ndata%c1_to_c0),mask_dst,nam%nicas_interp,stmp)
 

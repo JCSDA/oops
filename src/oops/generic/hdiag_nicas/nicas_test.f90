@@ -18,12 +18,13 @@ use nicas_apply_interp, only: apply_interp,apply_interp_s,apply_interp_v,apply_i
                             & apply_interp_ad,apply_interp_h_ad,apply_interp_v_ad,apply_interp_s_ad
 use nicas_apply_localization, only: apply_localization,apply_localization_from_sqrt,randomize_localization
 use nicas_apply_nicas, only: apply_nicas,apply_nicas_sqrt,apply_nicas_sqrt_ad,apply_nicas_from_sqrt
+use nicas_parameters, only: compute_parameters
 use omp_lib
-use tools_const, only: deg2rad,rad2deg,sphere_dist
-use tools_display, only: msgerror
+use tools_const, only: deg2rad,rad2deg,sphere_dist,reqkm
+use tools_display, only: msgerror,vunitchar
 use tools_kinds,only: kind_real
 use tools_missing, only: msi,msr,isnotmsi,isnotmsr
-use type_bdata, only: bdatatype
+use type_bdata, only: bdatatype,bdata_dealloc,bdata_mult
 use type_bpar, only: bpartype
 use type_com, only: com_ext,com_red
 use type_ctree, only: find_nearest_neighbors
@@ -31,26 +32,30 @@ use type_geom, only: geomtype,fld_com_gl,fld_com_lg
 use type_linop, only: apply_linop,apply_linop_ad
 use type_mpl, only: mpl,mpl_dot_prod
 use type_nam, only: namtype
-use type_ndata, only: ndatatype
+use type_ndata, only: ndatatype,ndata_dealloc
 use type_randgen, only: rand_real
 use type_timer, only: timertype,timer_start,timer_end
 
 implicit none
 
 real(kind_real),parameter :: tol = 1.0e-3 !< Positive-definiteness test tolerance
-integer,parameter :: nitermax = 50        !< Nunmber of iterations for the positive-definiteness test
+integer,parameter :: nitermax = 50        !< Number of iterations for the positive-definiteness test
+integer,parameter :: ne = 150             !< Ensemble size for randomization
+integer,parameter :: nfac = 20            !< Number of length-scale factors
+integer,parameter :: ntest = 1           !< Number of tests
 
 private
-public :: test_nicas_adjoints,test_nicas_pos_def,test_nicas_sqrt,test_nicas_dirac,test_nicas_perf
-public :: test_loc_adjoint,test_loc_dirac,test_loc_ens_dirac,test_hdiag
+public :: test_nicas_adjoint,test_nicas_pos_def,test_nicas_sqrt,test_nicas_dirac
+public :: test_loc_adjoint,test_loc_sqrt,test_loc_dirac
+public :: test_randomization,test_consistency,test_optimality
 
 contains
 
 !----------------------------------------------------------------------
-! Subroutine: test_nicas_adjoints
-!> Purpose: test adjoints accuracy
+! Subroutine: test_nicas_adjoint
+!> Purpose: test NICAS adjoint accuracy
 !----------------------------------------------------------------------
-subroutine test_nicas_adjoints(ndata)
+subroutine test_nicas_adjoint(ndata)
 
 implicit none
 
@@ -89,7 +94,7 @@ call apply_interp_s_ad(ndata,gamma_save,alpha)
 ! Print result
 call mpl_dot_prod(alpha,alpha_save,sum1)
 call mpl_dot_prod(gamma,gamma_save,sum2)
-write(mpl%unit,'(a7,a42,e15.8,a,e15.8,a,e15.8)') '','Interpolation adjoint test (subsampling): ', &
+write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Interpolation adjoint test (subsampling): ', &
  & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
 
 ! Interpolation (vertical)
@@ -105,7 +110,7 @@ call apply_interp_v_ad(geom,ndata,delta_save,gamma)
 ! Print result
 call mpl_dot_prod(gamma,gamma_save,sum1)
 call mpl_dot_prod(delta,delta_save,sum2)
-write(mpl%unit,'(a7,a42,e15.8,a,e15.8,a,e15.8)') '','Interpolation adjoint test (vertical): ', &
+write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Interpolation adjoint test (vertical):    ', &
  & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
 
 ! Interpolation (horizontal)
@@ -121,7 +126,7 @@ call apply_interp_h_ad(geom,ndata,fld_save,delta)
 ! Print result
 call mpl_dot_prod(delta,delta_save,sum1)
 call mpl_dot_prod(fld,fld_save,sum2)
-write(mpl%unit,'(a7,a42,e15.8,a,e15.8,a,e15.8)') '','Interpolation adjoint test (horizontal): ', &
+write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Interpolation adjoint test (horizontal):  ', &
  & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
 
 ! Interpolation (total)
@@ -137,7 +142,7 @@ call apply_interp_ad(geom,ndata,fld_save,alpha)
 ! Print result
 call mpl_dot_prod(alpha,alpha_save,sum1)
 call mpl_dot_prod(fld,fld_save,sum2)
-write(mpl%unit,'(a7,a42,e15.8,a,e15.8,a,e15.8)') '','Interpolation adjoint test (total): ', &
+write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Interpolation adjoint test (total):       ', &
  & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
 
 ! Allocation
@@ -159,7 +164,7 @@ call apply_convol(ndata,alpha2)
 ! Print result
 call mpl_dot_prod(alpha1,alpha2_save,sum1)
 call mpl_dot_prod(alpha2,alpha1_save,sum2)
-write(mpl%unit,'(a7,a42,e15.8,a,e15.8,a,e15.8)') '','Convolution adjoint test: ', &
+write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Convolution adjoint test:                 ', &
  & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
 
 ! Allocation
@@ -185,7 +190,7 @@ call com_ext(ndata%AB,alpha2)
 ! Print result
 call mpl_dot_prod(alpha1,alpha2_save,sum1)
 call mpl_dot_prod(alpha2,alpha1_save,sum2)
-write(mpl%unit,'(a7,a42,e15.8,a,e15.8,a,e15.8)') '','Communication AB adjoint test: ', &
+write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Communication AB adjoint test:            ', &
  & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
 
 ! Allocation
@@ -211,7 +216,7 @@ call com_ext(ndata%AC,alpha2)
 ! Print result
 call mpl_dot_prod(alpha1,alpha2_save,sum1)
 call mpl_dot_prod(alpha2,alpha1_save,sum2)
-write(mpl%unit,'(a7,a42,e15.8,a,e15.8,a,e15.8)') '','Communication AC adjoint test: ', &
+write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Communication AC adjoint test:            ', &
  & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
 
 ! Allocation
@@ -238,13 +243,13 @@ end if
 ! Print result
 call mpl_dot_prod(fld1,fld2_save,sum1)
 call mpl_dot_prod(fld2,fld1_save,sum2)
-write(mpl%unit,'(a7,a42,e15.8,a,e15.8,a,e15.8)') '','NICAS adjoint test: ', &
+write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','NICAS adjoint test:                       ', &
  & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
 
 ! End associate
 end associate
 
-end subroutine test_nicas_adjoints
+end subroutine test_nicas_adjoint
 
 !----------------------------------------------------------------------
 ! Subroutine: test_nicas_pos_def
@@ -353,13 +358,14 @@ end subroutine test_nicas_pos_def
 ! Subroutine: test_nicas_sqrt
 !> Purpose: test full/square-root equivalence
 !----------------------------------------------------------------------
-subroutine test_nicas_sqrt(bdata,ndata)
+subroutine test_nicas_sqrt(blockname,bdata,ndata)
 
 implicit none
 
 ! Passed variables
-type(bdatatype),intent(in) :: bdata !< B data
-type(ndatatype),intent(in) :: ndata !< NICAS data
+character(len=*),intent(in) :: blockname !< Block name
+type(bdatatype),intent(in) :: bdata      !< B data
+type(ndatatype),intent(in) :: ndata      !< NICAS data
 
 ! Local variables
 real(kind_real) :: fld(ndata%geom%nc0a,ndata%geom%nl0),fld_sqrt(ndata%geom%nc0a,ndata%geom%nl0)
@@ -368,11 +374,43 @@ type(ndatatype) :: ndata_other
 ! Associate
 associate(nam=>ndata%nam,geom=>ndata%geom)
 
-! TODO
-call msgerror('not implemented yet')
+! Set namelist and geometry
+ndata_other%nam => ndata%nam
+ndata_other%geom => ndata%geom
+
+! Generate random field
+call rand_real(-1.0_kind_real,1.0_kind_real,fld)
+fld_sqrt = fld
+
+! Apply NICAS, initial version
+if (nam%lsqrt) then
+   call apply_nicas_from_sqrt(geom,ndata,fld_sqrt)
+else
+   call apply_nicas(geom,ndata,fld)
+end if
+
+! Switch lsqrt
+nam%lsqrt = .not.nam%lsqrt
+
+! Compute NICAS parameters
+call compute_parameters(bdata,ndata_other)
+
+! Apply NICAS, other version
+if (nam%lsqrt) then
+   call apply_nicas_from_sqrt(geom,ndata_other,fld_sqrt)
+else
+   ! Apply NICAS
+   call apply_nicas(geom,ndata_other,fld)
+end if
+
+! Compute dirac
+if (nam%check_dirac) call test_nicas_dirac(trim(blockname)//'_sqrt',ndata_other)
+
+! Reset lsqrt value
+nam%lsqrt = .not.nam%lsqrt
 
 ! Print difference
-write(mpl%unit,'(a7,a,f6.1,a)') '','Full / square-root error:',sqrt(sum((fld_sqrt-fld)**2)/sum(fld**2))*100.0,'%'
+write(mpl%unit,'(a7,a,f6.1,a)') '','NICAS full / square-root error:',sqrt(sum((fld_sqrt-fld)**2)/sum(fld**2))*100.0,'%'
 
 ! End associate
 end associate
@@ -383,21 +421,22 @@ end subroutine test_nicas_sqrt
 ! Subroutine: test_nicas_dirac
 !> Purpose: apply NICAS to diracs
 !----------------------------------------------------------------------
-subroutine test_nicas_dirac(nam,geom,blockname,ndata)
+subroutine test_nicas_dirac(blockname,ndata)
 
 implicit none
 
 ! Passed variables
-type(namtype),intent(in) :: nam          !< Namelist
-type(geomtype),intent(in) :: geom        !< Geometry
 character(len=*),intent(in) :: blockname !< Block name
 type(ndatatype),intent(in) :: ndata      !< NICAS data
 
 ! Local variables
 integer :: ic0,ic1,il0,il1,is
-integer :: il0dir(nam%ndir),ic0dir(nam%ndir),idir
+integer :: il0dir(ndata%nam%ndir),ic0dir(ndata%nam%ndir),idir
 real(kind_real) :: dum(1)
 real(kind_real),allocatable :: fld(:,:),fld_c1(:,:),fld_s(:,:)
+
+! Associate
+associate(nam=>ndata%nam,geom=>ndata%geom)
 
 if (mpl%main) then
    ! Allocation
@@ -437,11 +476,15 @@ if (mpl%main) then
    call model_write(nam,geom,trim(nam%prefix)//'_dirac.nc',trim(blockname)//'_dirac',fld)
 
    ! Print results
+   write(mpl%unit,'(a7,a)') '','Values at dirac points:'
    do idir=1,nam%ndir
       write(mpl%unit,'(a10,f6.1,a,f6.1,a,f10.7)') '',nam%londir(idir),' / ',nam%latdir(idir),': ',fld(ic0dir(idir),il0dir(idir))
    end do
-   write(mpl%unit,'(a7,a,f10.7,a,f10.7)') '','Min - max: ', &
- & minval(fld(:,il0dir),mask=geom%mask(:,il0dir)),' - ',maxval(fld(:,il0dir),mask=geom%mask(:,il0dir))
+   write(mpl%unit,'(a7,a)') '','Min - max: '
+   do il0=1,geom%nl0
+      write(mpl%unit,'(a10,a,i3,a,f10.7,a,f10.7)') '','Level ',nam%levs(il0),': ', &
+    & minval(fld(:,il0),mask=geom%mask(:,il0)),' - ',maxval(fld(:,il0),mask=geom%mask(:,il0))
+   end do
 
    if (nam%new_param) then
       ! Write field at interpolation points
@@ -467,139 +510,30 @@ if (mpl%main) then
    end if
 end if
 
+! End associate
+end associate
+
 end subroutine test_nicas_dirac
-
-!----------------------------------------------------------------------
-! Subroutine: test_nicas_perf
-!> Purpose: test NICAS performance
-!----------------------------------------------------------------------
-subroutine test_nicas_perf(geom,ndata)
-
-implicit none
-
-! Passed variables
-type(geomtype),intent(in) :: geom   !< Geometry
-type(ndatatype),intent(in) :: ndata !< NICAS data
-
-! Local variables
-real(kind_real),allocatable :: fld(:,:),alpha(:),alpha_tmp(:)
-type(timertype) :: timer_interp_ad,timer_com_1,timer_convol,timer_com_2,timer_interp
-
-! Allocation
-allocate(alpha(ndata%nsb))
-
-if (mpl%main) then
-   ! Allocation
-   allocate(fld(geom%nc0,geom%nl0))
-
-   ! Generate random field
-   call rand_real(0.0_kind_real,1.0_kind_real,fld)
-end if
-
-! Global to local
-call fld_com_gl(geom,fld)
-
-! Adjoint interpolation
-if (mpl%main) call timer_start(timer_interp_ad)
-call apply_interp_ad(geom,ndata,fld,alpha)
-if (mpl%main) call timer_end(timer_interp_ad)
-
-! Communication
-if (mpl%main) call timer_start(timer_com_1)
-if (ndata%mpicom==1) then
-   ! Allocation
-   allocate(alpha_tmp(ndata%nsb))
-
-   ! Copy zone B
-   alpha_tmp = alpha
-
-   ! Reallocation
-   deallocate(alpha)
-   allocate(alpha(ndata%nsc))
-
-   ! Initialize
-   alpha = 0.0
-
-   ! Copy zone B into zone C
-   alpha(ndata%sb_to_sc) = alpha_tmp
-
-   ! Release memory
-   deallocate(alpha_tmp)
-elseif (ndata%mpicom==2) then
-   ! Halo reduction from zone B to zone A
-   call com_red(ndata%AB,alpha)
-
-   ! Allocation
-   allocate(alpha_tmp(ndata%nsb))
-
-   ! Copy zone A
-   alpha_tmp = alpha
-
-   ! Reallocation
-   deallocate(alpha)
-   allocate(alpha(ndata%nsc))
-
-   ! Initialize
-   alpha = 0.0
-
-   ! Copy zone A into zone C
-   alpha(ndata%sa_to_sc) = alpha_tmp
-
-   ! Release memory
-   deallocate(alpha_tmp)
-end if
-if (mpl%main) call timer_end(timer_com_1)
-
-! Convolution
-if (mpl%main) call timer_start(timer_convol)
-call apply_convol(ndata,alpha)
-if (mpl%main) call timer_start(timer_convol)
-
-if (mpl%main) call timer_start(timer_com_2)
-! Halo reduction from zone C to zone A
-call com_red(ndata%AC,alpha)
-
-! Halo extension from zone A to zone B
-call com_ext(ndata%AB,alpha)
-if (mpl%main) call timer_end(timer_com_2)
-
-! Interpolation
-if (mpl%main) call timer_start(timer_interp)
-call apply_interp(geom,ndata,alpha,fld)
-if (mpl%main) call timer_end(timer_interp)
-
-! Release memory
-deallocate(alpha)
-
-! Print results
-if (mpl%main) then
-   write(mpl%unit,'(a10,a,f6.1,a)') '','Adjoint interpolation: ',timer_interp_ad%elapsed,' s'
-   write(mpl%unit,'(a10,a,f6.1,a)') '','Communication - 1    : ',timer_com_1%elapsed,' s'
-   write(mpl%unit,'(a10,a,f6.1,a)') '','Convolution          : ',timer_convol%elapsed,' s'
-   write(mpl%unit,'(a10,a,f6.1,a)') '','Communication - 2    : ',timer_com_2%elapsed,' s'
-   write(mpl%unit,'(a10,a,f6.1,a)') '','Interpolation        : ',timer_interp%elapsed,' s'
-end if
-
-end subroutine test_nicas_perf
 
 !----------------------------------------------------------------------
 ! Subroutine: test_loc_adjoint
 !> Purpose: test localization adjoint
 !----------------------------------------------------------------------
-subroutine test_loc_adjoint(nam,geom,bpar,ndata)
+subroutine test_loc_adjoint(nam,geom,bpar,ndata,ens1)
 
 implicit none
 
 ! Passed variables
-type(namtype),intent(in) :: nam                !< Namelist
-type(geomtype),intent(in) :: geom              !< Geometry
-type(bpartype),intent(in) :: bpar              !< Block parameters
-type(ndatatype),intent(in) :: ndata(bpar%nb+1) !< NICAS data
+type(namtype),intent(in) :: nam                                                            !< Namelist
+type(geomtype),intent(in) :: geom                                                          !< Geometry
+type(bpartype),intent(in) :: bpar                                                          !< Block parameters
+type(ndatatype),intent(in) :: ndata(bpar%nb+1)                                             !< NICAS data
+real(kind_real),intent(in),optional :: ens1(geom%nc0a,geom%nl0,nam%nv,nam%nts,nam%ens1_ne) !< Ensemble 1
 
 ! Local variables
 real(kind_real) :: sum1,sum2
-real(kind_real),allocatable :: fld1(:,:,:,:),fld1_save(:,:,:,:)
-real(kind_real),allocatable :: fld2(:,:,:,:),fld2_save(:,:,:,:)
+real(kind_real),allocatable :: fld1_loc(:,:,:,:),fld1_bens(:,:,:,:),fld1_save(:,:,:,:)
+real(kind_real),allocatable :: fld2_loc(:,:,:,:),fld2_bens(:,:,:,:),fld2_save(:,:,:,:)
 
 if (mpl%main) then
    ! Allocation
@@ -616,46 +550,180 @@ call fld_com_gl(nam,geom,fld1_save)
 call fld_com_gl(nam,geom,fld2_save)
 
 ! Allocation
-allocate(fld1(geom%nc0a,geom%nl0,nam%nv,nam%nts))
-allocate(fld2(geom%nc0a,geom%nl0,nam%nv,nam%nts))
+allocate(fld1_loc(geom%nc0a,geom%nl0,nam%nv,nam%nts))
+allocate(fld2_loc(geom%nc0a,geom%nl0,nam%nv,nam%nts))
+if (present(ens1)) then
+   allocate(fld1_bens(geom%nc0a,geom%nl0,nam%nv,nam%nts))
+   allocate(fld2_bens(geom%nc0a,geom%nl0,nam%nv,nam%nts))
+end if
 
 ! Adjoint test
-fld1 = fld1_save
-fld2 = fld2_save
+fld1_loc = fld1_save
+fld2_loc = fld2_save
 if (nam%lsqrt) then
-   call apply_localization_from_sqrt(nam,geom,bpar,ndata,fld1)
-   call apply_localization_from_sqrt(nam,geom,bpar,ndata,fld2)
+   call apply_localization_from_sqrt(nam,geom,bpar,ndata,fld1_loc)
+   call apply_localization_from_sqrt(nam,geom,bpar,ndata,fld2_loc)
 else
-   call apply_localization(nam,geom,bpar,ndata,fld1)
-   call apply_localization(nam,geom,bpar,ndata,fld2)
+   call apply_localization(nam,geom,bpar,ndata,fld1_loc)
+   call apply_localization(nam,geom,bpar,ndata,fld2_loc)
+end if
+if (present(ens1)) then
+   call apply_bens(nam,geom,bpar,ndata,ens1,fld1_bens)
+   call apply_bens(nam,geom,bpar,ndata,ens1,fld2_bens)
 end if
 
 ! Print result
-call mpl_dot_prod(fld1,fld2_save,sum1)
-call mpl_dot_prod(fld2,fld1_save,sum2)
+call mpl_dot_prod(fld1_loc,fld2_save,sum1)
+call mpl_dot_prod(fld2_loc,fld1_save,sum2)
 write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Localization adjoint test: ', &
  & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
+if (present(ens1)) then
+   call mpl_dot_prod(fld1_bens,fld2_save,sum1)
+   call mpl_dot_prod(fld2_bens,fld1_save,sum2)
+   write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Ensemble B adjoint test:   ', &
+    & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
+end if
 
 end subroutine test_loc_adjoint
+
+!----------------------------------------------------------------------
+! Subroutine: test_loc_sqrt
+!> Purpose: test full/square-root equivalence
+!----------------------------------------------------------------------
+subroutine test_loc_sqrt(nam,geom,bpar,bdata,ndata,ens1)
+
+implicit none
+
+! Passed variables
+type(namtype),intent(inout),target :: nam                                                  !< Namelist
+type(geomtype),intent(in),target :: geom                                                   !< Geometry
+type(bpartype),intent(in) :: bpar                                                          !< Block parameters
+type(bdatatype),intent(in) :: bdata(bpar%nb+1)                                             !< B data
+type(ndatatype),intent(in) :: ndata(bpar%nb+1)                                             !< NICAS data
+real(kind_real),intent(in),optional :: ens1(geom%nc0a,geom%nl0,nam%nv,nam%nts,nam%ens1_ne) !< Ensemble 1
+
+! Local variables
+integer :: ib,ic0,ic0a,iv
+real(kind_real),allocatable :: fld_loc(:,:,:,:),fld_loc_sqrt(:,:,:,:)
+real(kind_real),allocatable :: fld_bens(:,:,:,:),fld_bens_sqrt(:,:,:,:)
+character(len=1024) :: varname(nam%nv)
+type(ndatatype) :: ndata_other(bpar%nb+1)
+
+! Allocation
+allocate(fld_loc(geom%nc0a,geom%nl0,nam%nv,nam%nts))
+allocate(fld_loc_sqrt(geom%nc0a,geom%nl0,nam%nv,nam%nts))
+if (present(ens1)) then
+   allocate(fld_bens(geom%nc0a,geom%nl0,nam%nv,nam%nts))
+   allocate(fld_bens_sqrt(geom%nc0a,geom%nl0,nam%nv,nam%nts))
+end if
+
+! Generate random field
+call rand_real(-1.0_kind_real,1.0_kind_real,fld_loc)
+fld_loc_sqrt = fld_loc
+if (present(ens1)) then
+   call rand_real(-1.0_kind_real,1.0_kind_real,fld_bens)
+   fld_bens_sqrt = fld_bens
+end if
+
+! Apply localization, initial version
+if (nam%lsqrt) then
+   call apply_localization_from_sqrt(nam,geom,bpar,ndata,fld_loc_sqrt)
+else
+   call apply_localization(nam,geom,bpar,ndata,fld_loc)
+end if
+if (present(ens1)) then
+   if (nam%lsqrt) then
+      call apply_bens(nam,geom,bpar,ndata,ens1,fld_bens_sqrt)
+   else
+      call apply_bens(nam,geom,bpar,ndata,ens1,fld_bens)
+   end if
+end if
+
+! Switch lsqrt
+nam%lsqrt = .not.nam%lsqrt
+
+! Prepare ndata, other version
+do ib=1,bpar%nb+1
+   if (bpar%B_block(ib)) then
+      ! Set name, namelist and geometry
+      ndata_other(ib)%nam => nam
+      ndata_other(ib)%geom => geom
+   end if
+
+   if (bpar%nicas_block(ib)) then
+      ! Compute NICAS parameters
+      call compute_parameters(bdata(ib),ndata_other(ib))
+   end if
+
+   if (bpar%B_block(ib)) then
+      ! Copy weights
+      ndata_other(ib)%wgt = bdata(ib)%wgt
+      if (bpar%nicas_block(ib)) then
+         allocate(ndata_other(ib)%coef_ens(geom%nc0a,geom%nl0))
+         do ic0=1,geom%nc0
+            if (geom%c0_to_proc(ic0)==mpl%myproc) then
+               ic0a = geom%c0_to_c0a(ic0)
+               ndata_other(ib)%coef_ens(ic0a,:) = bdata(ib)%coef_ens(ic0,:)
+            end if
+         end do
+      end if
+   end if
+end do
+
+! Apply localization, other version
+if (nam%lsqrt) then
+   call apply_localization_from_sqrt(nam,geom,bpar,ndata_other,fld_loc_sqrt)
+else
+   call apply_localization(nam,geom,bpar,ndata_other,fld_loc)
+end if
+if (present(ens1)) then
+   if (nam%lsqrt) then
+      call apply_bens(nam,geom,bpar,ndata_other,ens1,fld_bens_sqrt)
+   else
+      call apply_bens(nam,geom,bpar,ndata_other,ens1,fld_bens)
+   end if
+end if
+
+! Compute dirac
+do iv=1,nam%nv
+   varname(iv) = nam%varname(iv)
+   nam%varname(iv) = trim(varname(iv))//'_sqrt'
+end do
+if (nam%check_dirac) call test_loc_dirac(nam,geom,bpar,ndata_other,ens1)
+do iv=1,nam%nv
+   nam%varname(iv) = varname(iv)
+end do
+
+! Reset lsqrt value
+nam%lsqrt = .not.nam%lsqrt
+
+! Print difference
+write(mpl%unit,'(a7,a,f6.1,a)') '','Localization full / square-root error : ', &
+ & sqrt(sum((fld_loc_sqrt-fld_loc)**2)/sum(fld_loc**2))*100.0,'%'
+if (present(ens1)) write(mpl%unit,'(a7,a,f6.1,a)') '','Ensemble B full / square-root error:  ', &
+ & sqrt(sum((fld_bens_sqrt-fld_bens)**2)/sum(fld_bens**2))*100.0,'%'
+
+end subroutine test_loc_sqrt
 
 !----------------------------------------------------------------------
 ! Subroutine: test_loc_dirac
 !> Purpose: apply localization to diracs
 !----------------------------------------------------------------------
-subroutine test_loc_dirac(nam,geom,bpar,ndata)
+subroutine test_loc_dirac(nam,geom,bpar,ndata,ens1)
 
 implicit none
 
 ! Passed variables
-type(namtype),intent(in) :: nam                !< Namelist
-type(geomtype),intent(in) :: geom              !< Geometry
-type(bpartype),intent(in) :: bpar              !< Block parameters
-type(ndatatype),intent(in) :: ndata(bpar%nb+1) !< NICAS data
+type(namtype),intent(in) :: nam                                                            !< Namelist
+type(geomtype),intent(in) :: geom                                                          !< Geometry
+type(bpartype),intent(in) :: bpar                                                          !< Block parameters
+type(ndatatype),intent(in) :: ndata(bpar%nb+1)                                             !< NICAS data
+real(kind_real),intent(in),optional :: ens1(geom%nc0a,geom%nl0,nam%nv,nam%nts,nam%ens1_ne) !< Ensemble 1
 
 ! Local variables
 integer :: il0,il0dir(nam%ndir),ic0dir(nam%ndir),idir,iv,its
 real(kind_real) :: dum(1)
-real(kind_real),allocatable :: dirac(:,:,:,:)
+real(kind_real),allocatable :: dirac(:,:,:,:),fld_loc(:,:,:,:),fld_bens(:,:,:,:)
 character(len=2) :: itschar
 
 if (mpl%main) then
@@ -681,22 +749,36 @@ end if
 ! Global to local
 call fld_com_gl(nam,geom,dirac)
 
+! Allocation
+allocate(fld_loc(geom%nc0a,geom%nl0,nam%nv,nam%nts))
+if (present(ens1)) allocate(fld_bens(geom%nc0a,geom%nl0,nam%nv,nam%nts))
+
 ! Apply localization to dirac
+fld_loc = dirac
 if (nam%lsqrt) then
-   call apply_localization_from_sqrt(nam,geom,bpar,ndata,dirac)
+   call apply_localization_from_sqrt(nam,geom,bpar,ndata,fld_loc)
 else
-   call apply_localization(nam,geom,bpar,ndata,dirac)
+   call apply_localization(nam,geom,bpar,ndata,fld_loc)
+end if
+
+if (present(ens1)) then
+   ! Apply localized ensemble covariance
+   fld_bens = dirac
+   call apply_bens(nam,geom,bpar,ndata,ens1,fld_bens)
 end if
 
 ! Local to global
-call fld_com_lg(nam,geom,dirac)
+call fld_com_lg(nam,geom,fld_loc)
+if (present(ens1)) call fld_com_lg(nam,geom,fld_bens) 
 
 if (mpl%main) then
    ! Write field
    do its=1,nam%nts
       write(itschar,'(i2.2)') its
       do iv=1,nam%nv
-         call model_write(nam,geom,trim(nam%prefix)//'_dirac.nc',trim(nam%varname(iv))//'_'//itschar,dirac(:,:,iv,its))
+         call model_write(nam,geom,trim(nam%prefix)//'_dirac.nc',trim(nam%varname(iv))//'_'//itschar,fld_loc(:,:,iv,its))
+         if (present(ens1)) call model_write(nam,geom,trim(nam%prefix)//'_dirac.nc',trim(nam%varname(iv))//'_'//itschar//'_Bens', &
+       & fld_bens(:,:,iv,its))
       end do
    end do
 end if
@@ -704,72 +786,94 @@ end if
 end subroutine test_loc_dirac
 
 !----------------------------------------------------------------------
-! Subroutine: test_loc_ens_dirac
-!> Purpose: apply localized ensemble to diracs
+! Subroutine: test_randomization
+!> Purpose: test the randomization method
 !----------------------------------------------------------------------
-subroutine test_loc_ens_dirac(nam,geom,bpar,ndata,ens1)
+subroutine test_randomization(nam,geom,bpar,ndata)
 
 implicit none
 
 ! Passed variables
-type(namtype),intent(in) :: nam                                                   !< Namelist
-type(geomtype),intent(in) :: geom                                                 !< Geometry
-type(bpartype),intent(in) :: bpar                                                 !< Block parameters
-type(ndatatype),intent(in) :: ndata(bpar%nb+1)                                    !< NICAS data
-real(kind_real),intent(in) :: ens1(geom%nc0a,geom%nl0,nam%nv,nam%nts,nam%ens1_ne) !< Ensemble 1
+type(namtype),intent(inout),target :: nam      !< Namelist variables
+type(geomtype),intent(in),target :: geom       !< Geometry
+type(bpartype),intent(in) :: bpar              !< Block parameters
+type(ndatatype),intent(in) :: ndata(bpar%nb+1) !< NICAS data
 
 ! Local variables
-integer :: il0,il0dir(nam%ndir),ic0dir(nam%ndir),idir,iv,its
-real(kind_real) :: dum(1)
-real(kind_real),allocatable :: dirac(:,:,:,:)
-character(len=2) :: itschar
+integer :: ib,ic0,ic0a,il0,ifac,itest,nefac(nfac),ens1_ne
+real(kind_real),allocatable :: ens1(:,:,:,:,:)
+real(kind_real) :: fld_ref(geom%nc0a,geom%nl0,nam%nv,nam%nts,ntest),fld_save(geom%nc0a,geom%nl0,nam%nv,nam%nts,ntest)
+real(kind_real) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts),mse(ntest,nfac)
+character(len=1024) :: prefix,method
+type(bdatatype),allocatable :: bdata_save(:),bdata_test(:)
+type(ndatatype),allocatable :: ndata_test(:)
 
-if (mpl%main) then
+! Define reference
+call rand_real(0.0_kind_real,1.0_kind_real,fld_save)
+fld_ref = fld_save
+do itest=1,ntest
+   call apply_localization_from_sqrt(nam,geom,bpar,ndata,fld_ref(:,:,:,:,itest))
+end do
+
+! Save namelist variables
+ens1_ne = nam%ens1_ne
+
+do ifac=1,nfac
+   ! Ensemble size
+   nefac(ifac) = max(int(5.0*float(ifac)/float(nfac)*float(ne)),3)
+   nam%ens1_ne = nefac(ifac)
+
    ! Allocation
-   allocate(dirac(geom%nc0,geom%nl0,nam%nv,nam%nts))
+   allocate(ens1(geom%nc0a,geom%nl0,nam%nv,nam%nts,nefac(ifac)))
 
-   ! Generate diracs field
-   dirac = 0.0
-   do idir=1,nam%ndir
-      ! Find level index
-      do il0=1,geom%nl0
-          if (nam%levs(il0)==nam%levdir(idir)) il0dir(idir) = il0
-      end do
+   ! Randomize ensemble
+   call randomize_localization(nam,geom,bpar,ndata,nefac(ifac),ens1)
 
-      ! Find nearest neighbor
-      call find_nearest_neighbors(geom%ctree,dble(nam%londir(idir)*deg2rad),dble(nam%latdir(idir)*deg2rad),1,ic0dir(idir:idir),dum)
+   do itest=1,ntest
+      ! Test localization
+      fld = fld_save(:,:,:,:,itest)
+      call apply_bens(nam,geom,bpar,ndata_test,ens1,fld)
 
-      ! Dirac value
-      dirac(ic0dir(idir),il0dir(idir),nam%ivdir(idir),nam%itsdir(idir)) = 1.0
+      ! RMSE
+      mse(itest,ifac) = sum((fld-fld_ref(:,:,:,:,itest))**2)
    end do
-end if
 
-! Global to local
-call fld_com_gl(nam,geom,dirac)
+   ! Print scores
+   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(mpl%unit,'(a,i4,a,e15.8)') '--- Randomization results for an ensemble size ',nefac(ifac),', MSE: ', &
+ & sum(mse(:,ifac))/float(ntest)
 
-! Apply localized ensemble covariance
-call apply_bens(nam,geom,bpar,ndata,ens1,dirac)
+   ! Normalize ensemble
+   ! TODO
 
-! Local to global
-call fld_com_lg(nam,geom,dirac)
+!   do itest=1,ntest
+!      ! Test localization
+!      fld = fld_save(:,:,:,:,itest)
+!      call apply_bens(nam,geom,bpar,ndata_test,ens1,fld)
+!
+!      ! RMSE
+!      mse(itest,ifac) = sum((fld-fld_ref(:,:,:,:,itest))**2)
+!   end do
+end do
+  
+! Print scores
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a)') '--- Randomization results summary'
 
-if (mpl%main) then
-   ! Write field
-   do its=1,nam%nts
-      write(itschar,'(i2.2)') its
-      do iv=1,nam%nv
-         call model_write(nam,geom,trim(nam%prefix)//'_dirac.nc',trim(nam%varname(iv))//'_'//itschar//'_Bens',dirac(:,:,iv,its))
-      end do
-   end do
-end if
+do ifac=1,nfac
+   write(mpl%unit,'(a7,a,i4,a,e15.8)') '','Ensemble size ',nefac(ifac),', MSE: ',sum(mse(:,ifac))/float(ntest)
+end do
 
-end subroutine test_loc_ens_dirac
+! Reset namelist variables
+nam%ens1_ne = ens1_ne
+
+end subroutine test_randomization
 
 !----------------------------------------------------------------------
-! Subroutine: test_hdiag
-!> Purpose: test hdiag with a randomization method
+! Subroutine: test_consistency
+!> Purpose: test hdiag_nicas consistency with a randomization method
 !----------------------------------------------------------------------
-subroutine test_hdiag(nam,geom,bpar,bdata,ndata)
+subroutine test_consistency(nam,geom,bpar,bdata,ndata)
 
 implicit none
 
@@ -781,10 +885,9 @@ type(bdatatype),intent(in) :: bdata(bpar%nb+1) !< B data
 type(ndatatype),intent(in) :: ndata(bpar%nb+1) !< NICAS data
 
 ! Local variables
-integer,parameter :: ne = 150
 integer :: ens1_ne,ens1_ne_offset,ens1_nsub,ib,il0
 real(kind_real) :: ens1(geom%nc0a,geom%nl0,nam%nv,nam%nts,ne)
-logical :: new_hdiag,displ_diag,gau_approx,full_var
+logical :: new_hdiag
 character(len=1024) :: prefix,method
 type(bdatatype),allocatable :: bdata_test(:)
 
@@ -795,26 +898,18 @@ call randomize_localization(nam,geom,bpar,ndata,ne,ens1)
 
 ! Copy sampling
 call system('cp -f '//trim(nam%datadir)//'/'//trim(nam%prefix)//'_sampling.nc ' &
- & //trim(nam%datadir)//'/'//trim(nam%prefix)//'_hdiag-test_sampling.nc')
+ & //trim(nam%datadir)//'/'//trim(nam%prefix)//'_consistency-test_sampling.nc')
 
 ! Save namelist variables
 prefix = nam%prefix
 method = nam%method
-new_hdiag = nam%new_hdiag
-displ_diag = nam%displ_diag
-gau_approx = nam%gau_approx
-full_var = nam%full_var
 ens1_ne = nam%ens1_ne
 ens1_ne_offset = nam%ens1_ne_offset
 ens1_nsub = nam%ens1_nsub
 
 ! Set namelist variables
-nam%prefix = trim(nam%prefix)//'_hdiag-test'
+nam%prefix = trim(nam%prefix)//'_consistency-test'
 nam%method = 'cor'
-nam%new_hdiag = .true.
-nam%displ_diag = .false.
-nam%gau_approx = .true.
-nam%full_var = .false.
 nam%ens1_ne = ne
 nam%ens1_ne_offset = 0
 nam%ens1_nsub = 1
@@ -824,18 +919,16 @@ call run_hdiag(nam,geom,bpar,bdata_test,ens1)
 
 ! Print scores
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- hdiag consistency results'
+write(mpl%unit,'(a)') '--- hdiag_nicas consistency results'
 do ib=1,bpar%nb+1
    if (bpar%nicas_block(ib)) then
       write(mpl%unit,'(a7,a,a)') '','Block: ',trim(bpar%blockname(ib))
       do il0=1,geom%nl0
-         write(mpl%unit,'(a10,a7,i3,a4,a25,f6.1,a)') '','Level: ',nam%levs(il0),' ~> ','ensemble coefficient: ', &
-       & sqrt(sum((bdata_test(ib)%coef_ens(:,il0)-bdata(ib)%coef_ens(:,il0))**2)/sum(bdata(ib)%coef_ens(:,il0)**2))*100.0,'%'
-         write(mpl%unit,'(a49,f6.1,a)') 'horizontal length-scale: ', &
-       & sqrt(sum((bdata_test(ib)%rh0(:,il0)-bdata(ib)%rh0(:,il0))**2)/sum(bdata(ib)%rh0(:,il0)**2))*100.0,'%'
+         write(mpl%unit,'(a10,a7,i3,a4,a25,f6.1,a)') '','Level: ',nam%levs(il0),' ~> ','horizontal length-scale: ', &
+       & sum(bdata_test(ib)%rh0(:,il0)-bdata(ib)%rh0(:,il0))/float(geom%nc0)*reqkm,' km'
          if (any(abs(bdata(ib)%rv0(:,il0))>0.0)) then
             write(mpl%unit,'(a49,f6.1,a)') 'vertical length-scale: ', &
-          & sqrt(sum((bdata_test(ib)%rv0(:,il0)-bdata(ib)%rv0(:,il0))**2)/sum(bdata(ib)%rv0(:,il0)**2))*100.0,'%'
+          & sum(bdata_test(ib)%rv0(:,il0)-bdata(ib)%rv0(:,il0))/float(geom%nc0),' '//trim(vunitchar)
          end if
       end do
    end if
@@ -844,14 +937,138 @@ end do
 ! Reset namelist variables
 nam%prefix = prefix
 nam%method = method
-nam%new_hdiag = new_hdiag
-nam%displ_diag = displ_diag
-nam%gau_approx = gau_approx
-nam%full_var = full_var
 nam%ens1_ne = ens1_ne
 nam%ens1_ne_offset = ens1_ne_offset
 nam%ens1_nsub = ens1_nsub
 
-end subroutine test_hdiag
+end subroutine test_consistency
+
+!----------------------------------------------------------------------
+! Subroutine: test_optimality
+!> Purpose: test localization optimality with a randomization method
+!----------------------------------------------------------------------
+subroutine test_optimality(nam,geom,bpar,ndata)
+
+implicit none
+
+! Passed variables
+type(namtype),intent(inout),target :: nam      !< Namelist variables
+type(geomtype),intent(in),target :: geom       !< Geometry
+type(bpartype),intent(in) :: bpar              !< Block parameters
+type(ndatatype),intent(in) :: ndata(bpar%nb+1) !< NICAS data
+
+! Local variables
+integer :: ib,ic0,ic0a,il0,ifac,itest
+real(kind_real) :: fld_ref(geom%nc0a,geom%nl0,nam%nv,nam%nts,ntest),fld_save(geom%nc0a,geom%nl0,nam%nv,nam%nts,ntest)
+real(kind_real) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts),fac(nfac),mse(ntest,nfac)
+real(kind_real) :: ens1(geom%nc0a,geom%nl0,nam%nv,nam%nts,nam%ens1_ne)
+character(len=1024) :: prefix,method
+type(bdatatype),allocatable :: bdata_save(:),bdata_test(:)
+type(ndatatype),allocatable :: ndata_test(:)
+
+! Define reference
+call rand_real(0.0_kind_real,1.0_kind_real,fld_save)
+fld_ref = fld_save
+do itest=1,ntest
+   call apply_localization_from_sqrt(nam,geom,bpar,ndata,fld_ref(:,:,:,:,itest))
+end do
+
+! Randomize ensemble
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a)') '--- Randomize ensemble'
+call randomize_localization(nam,geom,bpar,ndata,nam%ens1_ne,ens1)
+
+! Normalize ensemble
+
+
+! Copy sampling
+call system('cp -f '//trim(nam%datadir)//'/'//trim(nam%prefix)//'_sampling.nc ' &
+ & //trim(nam%datadir)//'/'//trim(nam%prefix)//'_optimality-test_sampling.nc')
+
+! Save namelist variables
+prefix = nam%prefix
+method = nam%method
+
+! Set namelist variables
+nam%prefix = trim(nam%prefix)//'_optimality-test'
+nam%method = 'loc'
+
+! Call hdiag driver
+call run_hdiag(nam,geom,bpar,bdata_save,ens1)
+
+! Allocation
+allocate(ndata_test(bpar%nb+1))
+allocate(bdata_test(bpar%nb+1))
+
+do ifac=1,nfac
+   ! Multiplication factor
+   fac(ifac) = 2.0*float(ifac)/float(nfac)
+
+   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(mpl%unit,'(a,f4.2,a)') '--- Apply a multiplicative factor ',fac(ifac),' to length-scales'
+
+   do ib=1,bpar%nb+1
+      if (bpar%B_block(ib)) then
+         ! Set name, namelist and geometry
+         bdata_test(ib)%nam => nam
+         bdata_test(ib)%geom => geom
+         ndata_test(ib)%nam => nam
+         ndata_test(ib)%geom => geom
+      end if
+
+      if (bpar%nicas_block(ib)) then
+         ! Release memory
+         call bdata_dealloc(bdata_test(ib))
+         call ndata_dealloc(ndata_test(ib))
+
+         ! Length-scales multiplication
+         call bdata_mult(bdata_save(ib),fac(ifac),bpar%auto_block(ib),bdata_test(ib))
+
+         ! Compute NICAS parameters
+         call compute_parameters(bdata_test(ib),ndata_test(ib))
+      end if
+
+      if (bpar%B_block(ib)) then
+         ! Copy weights
+         ndata_test(ib)%wgt = bdata_test(ib)%wgt
+         if (bpar%nicas_block(ib)) then
+            allocate(ndata_test(ib)%coef_ens(geom%nc0a,geom%nl0))
+            do ic0=1,geom%nc0
+               if (geom%c0_to_proc(ic0)==mpl%myproc) then
+                  ic0a = geom%c0_to_c0a(ic0)
+                  ndata_test(ib)%coef_ens(ic0a,:) = bdata_test(ib)%coef_ens(ic0,:)
+               end if
+            end do
+         end if
+      end if
+   end do
+
+   do itest=1,ntest
+      ! Test localization
+      fld = fld_save(:,:,:,:,itest)
+      call apply_bens(nam,geom,bpar,ndata_test,ens1,fld)
+
+      ! RMSE
+      mse(itest,ifac) = sum((fld-fld_ref(:,:,:,:,itest))**2)
+   end do
+
+   ! Print scores
+   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(mpl%unit,'(a,f4.2,a,e15.8)') '--- Optimality results for a factor ',fac(ifac),', MSE: ',sum(mse(:,ifac))/float(ntest)
+end do
+  
+! Print scores
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a)') '--- Optimality results summary'
+
+do ifac=1,nfac
+   write(mpl%unit,'(a7,a,f4.2,a,e15.8)') '','Factor ',fac(ifac),', MSE: ',sum(mse(:,ifac))/float(ntest)
+end do
+
+! Reset namelist variables
+nam%prefix = prefix
+nam%method = method
+
+end subroutine test_optimality
 
 end module nicas_test

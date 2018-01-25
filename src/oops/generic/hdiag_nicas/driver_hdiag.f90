@@ -140,15 +140,15 @@ if (nam%new_hdiag) then
    ! Compute ensemble 1 sample moments
    write(mpl%unit,'(a7,a)') '','Ensemble 1:'
    if (present(ens1)) then
-      call compute_moments(hdata,'ens1',displ,mom_1,ens1)
+      call compute_moments(hdata,'ens1',mom_1,ens1)
    else
-      call compute_moments(hdata,'ens1',displ,mom_1)
+      call compute_moments(hdata,'ens1',mom_1)
    end if
 
    if ((trim(nam%method)=='hyb-rnd').or.(trim(nam%method)=='dual-ens')) then
       ! Compute randomized sample moments
       write(mpl%unit,'(a7,a)') '','Ensemble 2:'
-      call compute_moments(hdata,'ens2',displ,mom_2)
+      call compute_moments(hdata,'ens2',mom_2)
    end if
    call flush(mpl%unit)
 
@@ -182,9 +182,9 @@ if (nam%new_hdiag) then
 
       write(mpl%unit,'(a7,a)') '','Ensemble 1:'
       if (present(ens1)) then
-         call compute_moments(hdata,'ens1',displ,mom_1,ens1)
+         call compute_moments(hdata,'ens1',mom_1,ens1)
       else
-         call compute_moments(hdata,'ens1',displ,mom_1)
+         call compute_moments(hdata,'ens1',mom_1)
       end if
    end if
    call flush(mpl%unit)
@@ -246,7 +246,7 @@ if (nam%new_hdiag) then
             call compute_avg_asy(hdata,ib,nam%ens2_ne,avg_2(ib))
 
             ! LR covariance/HR covariance product average
-            call compute_avg_lr(hdata,ib,mom_1(ib),mom_2(ib),avg_1(ib),avg_2(ib))
+            call compute_avg_lr(hdata,ib,mom_1(ib),mom_2(ib),0,avg_1(ib),avg_2(ib))
          end if
 
          ! Print results
@@ -562,7 +562,7 @@ if (nam%new_hdiag) then
    if (mpl%main) then
       ! Displacement
       if (nam%displ_diag) call displ_write(hdata,trim(nam%prefix)//'_displ_diag.nc',displ)
-  
+
       ! Full variances
       if (nam%full_var) then
          filename = trim(nam%prefix)//'_full_var.nc'
@@ -590,7 +590,7 @@ if (nam%new_hdiag) then
       ! Local diagnostics
       do ildw=1,nam%nldwv
          if (isnotmsi(hdata%nn_ldwv_index(ildw))) then
-            if (hdata%c2_to_proc(hdata%nn_ldwv_index(ildw))==mpl%myproc) then 
+            if (hdata%c2_to_proc(hdata%nn_ldwv_index(ildw))==mpl%myproc) then
                write(lonchar,'(f7.2)') nam%lon_ldwv(ildw)
                write(latchar,'(f7.2)') nam%lat_ldwv(ildw)
                 ic2a = hdata%c2_to_c2a(hdata%nn_ldwv_index(ildw))

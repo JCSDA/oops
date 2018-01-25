@@ -205,10 +205,10 @@ do i_dst_loc=1,n_dst_loc(mpl%myproc)
 
                   ! Copy mesh
                   call copy_mesh(mesh,meshnew)
-         
+
                   ! Add a node
                   call addnode(lon_dst(i_dst),lat_dst(i_dst),meshnew)
-         
+
                   ! Find natural neighbors
                   i_src = meshnew%lend(meshnew%nnr)
                   loop = .true.
@@ -223,10 +223,10 @@ do i_dst_loc=1,n_dst_loc(mpl%myproc)
                   if (all(mask_src(natis(1:nnat)))) then
                      ! Compute natural neighbors polygons areas
                      call polygon(meshnew,nnat,natis(1:nnat),area_polygon_new(1:nnat))
-         
+
                      ! Compute weight
                      natwgt(1:nnat) = area_polygon(natis(1:nnat))-area_polygon_new(1:nnat)
-         
+
                      ! Add interpolation elements
                      do inat=1,nnat
                         n_s = n_s+1

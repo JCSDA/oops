@@ -85,28 +85,28 @@ call compute_normalization(ndata)
 
 ! Print results
 write(mpl%unit,'(a7,a,i4)') '','Parameters for processor #',mpl%myproc
-write(mpl%unit,'(a10,a,i8)') '','nc0 =       ',geom%nc0
-write(mpl%unit,'(a10,a,i8)') '','nc0a =      ',geom%nc0a
-write(mpl%unit,'(a10,a,i8)') '','nl0 =       ',geom%nl0
-write(mpl%unit,'(a10,a,i8)') '','nc1 =       ',ndata%nc1
-write(mpl%unit,'(a10,a,i8)') '','nc1a =      ',ndata%nc1a
-write(mpl%unit,'(a10,a,i8)') '','nc1b =      ',ndata%nc1b
-write(mpl%unit,'(a10,a,i8)') '','nl1 =       ',ndata%nl1
+write(mpl%unit,'(a10,a,i8)') '','nc0 =        ',geom%nc0
+write(mpl%unit,'(a10,a,i8)') '','nc0a =       ',geom%nc0a
+write(mpl%unit,'(a10,a,i8)') '','nl0 =        ',geom%nl0
+write(mpl%unit,'(a10,a,i8)') '','nc1 =        ',ndata%nc1
+write(mpl%unit,'(a10,a,i8)') '','nc1a =       ',ndata%nc1a
+write(mpl%unit,'(a10,a,i8)') '','nc1b =       ',ndata%nc1b
+write(mpl%unit,'(a10,a,i8)') '','nl1 =        ',ndata%nl1
 do il1=1,ndata%nl1
    write(mpl%unit,'(a10,a,i3,a,i8)') '','nc2(',il1,') =   ',ndata%nc2(il1)
 end do
-write(mpl%unit,'(a10,a,i8)') '','ns =        ',ndata%ns
-write(mpl%unit,'(a10,a,i8)') '','nsa =       ',ndata%nsa
-write(mpl%unit,'(a10,a,i8)') '','nsb =       ',ndata%nsb
-write(mpl%unit,'(a10,a,i8)') '','nsc =       ',ndata%nsc
+write(mpl%unit,'(a10,a,i8)') '','ns =         ',ndata%ns
+write(mpl%unit,'(a10,a,i8)') '','nsa =        ',ndata%nsa
+write(mpl%unit,'(a10,a,i8)') '','nsb =        ',ndata%nsb
+write(mpl%unit,'(a10,a,i8)') '','nsc =        ',ndata%nsc
 do il0i=1,geom%nl0i
    write(mpl%unit,'(a10,a,i3,a,i8)') '','h(',il0i,')%n_s = ',ndata%h(il0i)%n_s
 end do
-write(mpl%unit,'(a10,a,i8)') '','v%n_s =     ',ndata%v%n_s
+write(mpl%unit,'(a10,a,i8)') '','v%n_s =      ',ndata%v%n_s
 do il1=1,ndata%nl1
    write(mpl%unit,'(a10,a,i3,a,i8)') '','s(',il1,')%n_s = ',ndata%s(il1)%n_s
 end do
-write(mpl%unit,'(a10,a,i8)') '','c%n_s =     ',ndata%c%n_s
+write(mpl%unit,'(a10,a,i8)') '','c%n_s =      ',ndata%c%n_s
 
 ! End associate
 end associate

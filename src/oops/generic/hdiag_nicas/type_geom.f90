@@ -137,7 +137,8 @@ call define_mask(nam,geom)
 
 ! Create mesh
 if ((.not.all(geom%area>0.0)).or.(nam%new_hdiag.and.nam%displ_diag).or.((nam%new_param.or.nam%new_lct) &
- & .and.nam%mask_check).or.nam%new_obsop) call create_mesh(geom%nc0,geom%lon,geom%lat,.true.,geom%mesh)
+ & .and.nam%mask_check).or.(nam%new_param.and.nam%network).or.nam%new_obsop) &
+ & call create_mesh(geom%nc0,geom%lon,geom%lat,.true.,geom%mesh)
 
 ! Compute area
 if ((.not.all(geom%area>0.0))) call compute_area(geom)
@@ -162,7 +163,7 @@ write(mpl%unit,'(a7,a,i3)') '','Number of independent levels: ',geom%nl0i
 
 ! Create cover tree
 ctree_mask = .true.
-if (nam%new_hdiag.or.nam%check_dirac.or.nam%new_lct.or.nam%new_obsop) & 
+if (nam%new_hdiag.or.nam%check_dirac.or.nam%new_lct.or.nam%new_obsop) &
  & geom%ctree = create_ctree(geom%nc0,geom%lon,geom%lat,ctree_mask)
 
 ! Vertical distance
@@ -404,10 +405,10 @@ if (mpl%main) then
    filename = trim(nam%prefix)//'_metis'
    lunit = newunit()
    open(unit=lunit,file=trim(nam%datadir)//'/'//trim(filename),status='replace')
-   
+
    ! Write header
    write(lunit,*) geom%mesh%nnr,na
-   
+
    ! Write connectivity
    do ic0=1,geom%mesh%n
       i = geom%mesh%lend(ic0)

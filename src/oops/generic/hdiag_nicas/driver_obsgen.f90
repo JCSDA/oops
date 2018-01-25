@@ -51,14 +51,14 @@ if (nam%new_obsop) then
    if (readobs) then
       ! Read observation network
       odata%nobs = 0
-      open(unit=100,file=trim(nam%datadir)//'/'//trim(nam%prefix)//'_observations_in.dat',status='old')
+      open(unit=100,file=trim(nam%datadir)//'/'//trim(nam%prefix)//'_obs_in.dat',status='old')
       do
          read(100,*,iostat=info) lat,lon,active
          if (info/=0) exit
          if (allobs.or.(active==1)) odata%nobs = odata%nobs+1
       end do
       close(unit=100)
-      odata%nobs = min(odata%nobs,nam%nobs) 
+      odata%nobs = min(odata%nobs,nam%nobs)
       if (odata%nobs<1) call msgerror('no active observation in the file provided')
    else
       ! Generate random observation network
@@ -73,7 +73,7 @@ if (nam%new_obsop) then
    if (mpl%main) then
       if (readobs) then
          ! Read observation network
-         open(unit=100,file=trim(nam%datadir)//'/'//trim(nam%prefix)//'_observations_in.dat',status='old')
+         open(unit=100,file=trim(nam%datadir)//'/'//trim(nam%prefix)//'_obs_in.dat',status='old')
          iobs = 0
          do while (iobs<odata%nobs)
             read(100,*) lat,lon,active
