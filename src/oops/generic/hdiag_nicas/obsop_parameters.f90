@@ -63,7 +63,7 @@ if (present(local)) llocal = local
 
 if (llocal) then
    ! Allocation
-   allocate(odata%proc_to_nobsa(mpl%myproc))
+   allocate(odata%proc_to_nobsa(mpl%nproc))
 
    ! Get global number of observations
    call mpl_allgather(1,(/odata%nobsa/),odata%proc_to_nobsa)
