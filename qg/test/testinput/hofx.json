@@ -20,75 +20,42 @@
   "Observations": {
     "ObsTypes": [{
       "ObsType": "Stream",
-      "ObsData": {
-        "ObsDataOut": {
-          "obsfile": "Data/qg.truth4d.obt"
-        },
-        "obserror": "ObsErr"
+        "ObsData": {
+          "ObsDataIn": {
+            "obsfile": "Data/qg.truth4d12h.obt"
+          },
+          "ObsDataOut": {
+            "obsfile": "Data/qg.hofx.obt"
+          },
+          "obsvalue": "ObsVal"
+        }
       },
-      "Generate": {
-        "begin": "PT3H",
-        "obs_period": "PT3H",
-        "obs_density": "100",
-        "nx": "40",
-        "ny": "20",
-        "nval": "1",
-        "obs_error": "0.4"
-      }
-    },
-    {
+      {
       "ObsType": "Wind",
-      "ObsData": {
-        "ObsDataOut": {
-          "obsfile": "Data/qg.truth4d.obt"
-        },
-        "obserror": "ObsErr"
+        "ObsData": {
+          "ObsDataIn": {
+            "obsfile": "Data/qg.truth4d12h.obt"
+          },
+          "ObsDataOut": {
+            "obsfile": "Data/qg.hofx.obt"
+          },
+          "obsvalue": "ObsVal"
+        }
       },
-      "Generate": {
-        "begin": "PT6H",
-        "obs_period": "PT6H",
-        "obs_density": "100",
-        "nx": "40",
-        "ny": "20",
-        "nval": "2",
-        "obs_error": "0.6"
-      }
-    },
-    {
+      {
       "ObsType": "WSpeed",
-      "ObsData": {
-        "ObsDataOut": {
-          "obsfile": "Data/qg.truth4d.obt"
-        },
-        "obserror": "ObsErr"
-      },
-      "Generate": {
-        "begin": "PT3H",
-        "obs_period": "PT6H",
-        "obs_density": "100",
-        "nx": "40",
-        "ny": "20",
-        "nval": "1",
-        "obs_error": "1.2"
+        "ObsData": {
+          "ObsDataIn": {
+            "obsfile": "Data/qg.truth4d12h.obt"
+          },
+          "ObsDataOut": {
+            "obsfile": "Data/qg.hofx.obt"
+          },
+          "obsvalue": "ObsVal"
+        }
       }
-    }
-  ],
-  "ObsFilters": [
-    {
-      "ObsType": "Stream",
-      "Filter": "GOMsaver",
-      "filename": "Data/qg.stream.gom"
-    },
-    {
-      "ObsType": "Wind",
-      "Filter": "GOMsaver",
-      "filename": "Data/qg.wind.gom"
-    },
-    {
-      "ObsType": "WSpeed",
-      "Filter": "GOMsaver",
-      "filename": "Data/qg.wspeed.gom"
-    }]
+    ],
+    "ObsFilters": []
   },
   "Prints": {
     "frequency": "PT3H"
