@@ -51,39 +51,14 @@ find_package( Boost ${Boost_MINIMUM_VERSION} REQUIRED
 include_directories( ${Boost_INCLUDE_DIR} )
 
 # LAPACK
-if( NOT ( BUILD_SITE MATCHES "cc[abt].*" ) )  # Should depend on toolchain, not machine
-  ecbuild_find_package( NAME LAPACK REQUIRED )
-#  set( LAPACK_LIBRARIES lapack blas )
-  include_directories( ${LAPACK_INCLUDE_DIR} )
-endif()
-# MPI
-#ecbuild_add_option( FEATURE MPI DEFAULT ON
-#                    DESCRIPTION "Support for MPI distributed parallelism"
-#                    REQUIRED_PACKAGES "MPI COMPONENTS CXX Fortran" )
-ecbuild_find_mpi( COMPONENTS CXX Fortran REQUIRED )
-ecbuild_include_mpi()
-link_libraries(${MPI_CXX_LIBRARIES} ${MPI_Fortran_LIBRARIES})
-
-# OpenMP
-ecbuild_add_option( FEATURE OMP
-                    DESCRIPTION "Support for OpenMP threaded parallelism"
-                    REQUIRED_PACKAGES "OMP COMPONENTS CXX Fortran" )
-
-if( HAVE_OMP )
-  ecbuild_enable_omp()
-else()
-  ecbuild_enable_ompstubs()
+ecbuild_add_option( FEATURE LAPACK
+                    DESCRIPTION "Linear Algebra PACKage"
+                    REQUIRED_PACKAGES "LAPACK REQUIRED" )
+if(NOT HAVE_LAPACK)
+  ecbuild_error("LAPACK_LIBRARIES not defined")
 endif()
 
-# NetCDF
-set( NETCDF_F90 ON CACHE BOOL "Compile with Fortran NetCDF" )
-find_package( NetCDF REQUIRED )
-include_directories( ${NETCDF_INCLUDE_DIR} )
-
 # MPI
-ecbuild_add_option( FEATURE MPI DEFAULT ON
-                    DESCRIPTION "Support for MPI distributed parallelism"
-                    REQUIRED_PACKAGES "MPI COMPONENTS CXX Fortran" )
 ecbuild_find_mpi( COMPONENTS CXX Fortran REQUIRED )
 ecbuild_include_mpi()
 link_libraries(${MPI_CXX_LIBRARIES} ${MPI_Fortran_LIBRARIES})
