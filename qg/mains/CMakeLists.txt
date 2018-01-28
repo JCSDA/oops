@@ -18,6 +18,11 @@ ecbuild_add_executable( TARGET  qg_4dvar.x
                         LIBS    qg
                       )
 
+ecbuild_add_executable( TARGET  qg_hofx.x
+                        SOURCES qgHofX.cc
+                        LIBS    qg
+                      )
+
 ecbuild_add_executable( TARGET  qg_makeobs.x
                         SOURCES qgMakeObs.cc
                         LIBS    qg
