@@ -60,12 +60,8 @@ template <typename MODEL> void testEquiv() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     ObsOperator_ hop(Test_::obspace()[jj]);
-    oops::Variables vars = hop.variables();
-
     eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    gconf.set("Variables", vars.asConfig());
-
-    const GeoVaLs_ gval(gconf);
+    const GeoVaLs_ gval(gconf, hop.variables());
 
     eckit::LocalConfiguration biasConf;
     conf[jj].get("ObsBias", biasConf);

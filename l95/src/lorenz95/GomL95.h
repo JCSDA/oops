@@ -35,7 +35,7 @@ class GomL95 : public util::Printable,
   static const std::string classname() {return "lorenz95::GomL95";}
 
   GomL95(const LocsL95 &, const oops::Variables &);
-  explicit GomL95(const eckit::Configuration &);
+  GomL95(const eckit::Configuration &, const oops::Variables &);
   ~GomL95();
 
   void zero();

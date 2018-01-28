@@ -18,7 +18,6 @@ use qg_goms_mod
 use netcdf
 use tools_nc, only: ncerr
 use kinds
-use type_mpl, only: mpl,mpl_recv,mpl_send,mpl_bcast
 
 implicit none
 private
@@ -540,106 +539,96 @@ else
   WRITE(buf,*) 'qg_field:read_file: opening '//filename
   call fckit_log%info(buf)
 
-  if (mpl%main) then
-    ! Read data
-    if (netcdfio) then
+  ! Read data
+  if (netcdfio) then
   
-      call ncerr(subr,nf90_open(trim(filename)//'.nc',nf90_nowrite,ncid))
-      call ncerr(subr,nf90_inq_dimid(ncid,'nx',nx_id))
-      call ncerr(subr,nf90_inq_dimid(ncid,'ny',ny_id))
-      call ncerr(subr,nf90_inq_dimid(ncid,'nl',nl_id))
-      call ncerr(subr,nf90_inq_dimid(ncid,'nc',nc_id))
-      call ncerr(subr,nf90_inquire_dimension(ncid,nx_id,len=ix))
-      call ncerr(subr,nf90_inquire_dimension(ncid,ny_id,len=iy))
-      call ncerr(subr,nf90_inquire_dimension(ncid,nl_id,len=il))
-      call ncerr(subr,nf90_inquire_dimension(ncid,nl_id,len=ic))
-      if (ix /= fld%geom%nx .or. iy /= fld%geom%ny .or. il /= fld%nl) then
-        write (record,*) "qg_fields:read_file: ", &
-                       & "input fields have wrong dimensions: ",ix,iy,il
-        call fckit_log%error(record)
-        write (record,*) "qg_fields:read_file: expected: ",fld%geom%nx,fld%geom%ny,fld%nl
-        call fckit_log%error(record)
-        call abor1_ftn("qg_fields:read_file: input fields have wrong dimensions")
-      endif
-      call ncerr(subr,nf90_get_att(ncid,nf90_global,'lbc',is))
-    
-      call ncerr(subr,nf90_get_att(ncid,nf90_global,'sdate',sdate))
-      WRITE(buf,*) 'validity date is: '//sdate
-      call fckit_log%info(buf)
-    
-      nf = min(fld%nf, ic)
-      call ncerr(subr,nf90_inq_varid(ncid,'gfld3d',gfld3d_id))
-      do jf=1,il*nf
-        call ncerr(subr,nf90_get_var(ncid,gfld3d_id,fld%gfld3d(:,:,jf),(/1,1,jf/),(/ix,iy,1/)))
-      enddo
-    
-      if (fld%lbc) then
-        call ncerr(subr,nf90_inq_varid(ncid,'xbound',xbound_id))
-        call ncerr(subr,nf90_get_var(ncid,xbound_id,fld%xbound))
-        call ncerr(subr,nf90_inq_varid(ncid,'qbound',qbound_id))
-        call ncerr(subr,nf90_get_var(ncid,qbound_id,fld%qbound))
-      endif
-    
-      call ncerr(subr,nf90_close(ncid))
-  
-    else
-  
-      open(unit=iunit, file=trim(filename), form='formatted', action='read')
-    
-      read(iunit,*) ix, iy, il, ic, is
-      if (ix /= fld%geom%nx .or. iy /= fld%geom%ny .or. il /= fld%nl) then
-        write (record,*) "qg_fields:read_file: ", &
-                       & "input fields have wrong dimensions: ",ix,iy,il
-        call fckit_log%error(record)
-        write (record,*) "qg_fields:read_file: expected: ",fld%geom%nx,fld%geom%ny,fld%nl
-        call fckit_log%error(record)
-        call abor1_ftn("qg_fields:read_file: input fields have wrong dimensions")
-      endif
-    
-      read(iunit,*) sdate
-      WRITE(buf,*) 'validity date is: '//sdate
-      call fckit_log%info(buf)
-      call datetime_set(sdate, vdate)
-    
-      if (fld%geom%nx>9999)  call abor1_ftn("Format too small")
-      write(cnx,'(I4)')fld%geom%nx
-      fmtn='('//trim(cnx)//fmt1//')'
-    
-      nf = min(fld%nf, ic)
-      do jf=1,il*nf
-        do jy=1,fld%geom%ny
-          read(iunit,fmtn) (fld%gfld3d(jx,jy,jf), jx=1,fld%geom%nx)
-        enddo
-      enddo
-! Skip un-necessary data from file if any
-      allocate(zz(fld%geom%nx))
-      do jf=nf*il+1, ic*il
-        do jy=1,fld%geom%ny
-          read(iunit,fmtn) (zz(jx), jx=1,fld%geom%nx)
-        enddo
-      enddo
-      deallocate(zz)
-    
-      if (fld%lbc) then
-        do jf=1,4
-          read(iunit,fmt1) fld%xbound(jf)
-        enddo
-        do jf=1,4
-          read(iunit,fmtn) (fld%qbound(jx,jf), jx=1,fld%geom%nx)
-        enddo
-      endif
-    
-      close(iunit)
-  
+    call ncerr(subr,nf90_open(trim(filename)//'.nc',nf90_nowrite,ncid))
+    call ncerr(subr,nf90_inq_dimid(ncid,'nx',nx_id))
+    call ncerr(subr,nf90_inq_dimid(ncid,'ny',ny_id))
+    call ncerr(subr,nf90_inq_dimid(ncid,'nl',nl_id))
+    call ncerr(subr,nf90_inq_dimid(ncid,'nc',nc_id))
+    call ncerr(subr,nf90_inquire_dimension(ncid,nx_id,len=ix))
+    call ncerr(subr,nf90_inquire_dimension(ncid,ny_id,len=iy))
+    call ncerr(subr,nf90_inquire_dimension(ncid,nl_id,len=il))
+    call ncerr(subr,nf90_inquire_dimension(ncid,nl_id,len=ic))
+    if (ix /= fld%geom%nx .or. iy /= fld%geom%ny .or. il /= fld%nl) then
+      write (record,*) "qg_fields:read_file: ", &
+                     & "input fields have wrong dimensions: ",ix,iy,il
+      call fckit_log%error(record)
+      write (record,*) "qg_fields:read_file: expected: ",fld%geom%nx,fld%geom%ny,fld%nl
+      call fckit_log%error(record)
+      call abor1_ftn("qg_fields:read_file: input fields have wrong dimensions")
     endif
-  endif
-
-  ! Broadcast data
-  call mpl_bcast(sdate,mpl%ioproc)
-  call mpl_bcast(fld%gfld3d,mpl%ioproc)
-  if (fld%lbc) then
-    call mpl_bcast(fld%xbound,mpl%ioproc)
-    call mpl_bcast(fld%qbound,mpl%ioproc)
+    call ncerr(subr,nf90_get_att(ncid,nf90_global,'lbc',is))
+  
+    call ncerr(subr,nf90_get_att(ncid,nf90_global,'sdate',sdate))
+    WRITE(buf,*) 'validity date is: '//sdate
+    call fckit_log%info(buf)
+  
+    nf = min(fld%nf, ic)
+    call ncerr(subr,nf90_inq_varid(ncid,'gfld3d',gfld3d_id))
+    do jf=1,il*nf
+      call ncerr(subr,nf90_get_var(ncid,gfld3d_id,fld%gfld3d(:,:,jf),(/1,1,jf/),(/ix,iy,1/)))
+    enddo
+  
+    if (fld%lbc) then
+      call ncerr(subr,nf90_inq_varid(ncid,'xbound',xbound_id))
+      call ncerr(subr,nf90_get_var(ncid,xbound_id,fld%xbound))
+      call ncerr(subr,nf90_inq_varid(ncid,'qbound',qbound_id))
+      call ncerr(subr,nf90_get_var(ncid,qbound_id,fld%qbound))
+    endif
+  
+    call ncerr(subr,nf90_close(ncid))
+  
+  else
+  
+    open(unit=iunit, file=trim(filename), form='formatted', action='read')
+  
+    read(iunit,*) ix, iy, il, ic, is
+    if (ix /= fld%geom%nx .or. iy /= fld%geom%ny .or. il /= fld%nl) then
+      write (record,*) "qg_fields:read_file: ", &
+                     & "input fields have wrong dimensions: ",ix,iy,il
+      call fckit_log%error(record)
+      write (record,*) "qg_fields:read_file: expected: ",fld%geom%nx,fld%geom%ny,fld%nl
+      call fckit_log%error(record)
+      call abor1_ftn("qg_fields:read_file: input fields have wrong dimensions")
+    endif
+  
+    read(iunit,*) sdate
+    WRITE(buf,*) 'validity date is: '//sdate
+    call fckit_log%info(buf)
+    call datetime_set(sdate, vdate)
+  
+    if (fld%geom%nx>9999)  call abor1_ftn("Format too small")
+    write(cnx,'(I4)')fld%geom%nx
+    fmtn='('//trim(cnx)//fmt1//')'
+  
+    nf = min(fld%nf, ic)
+    do jf=1,il*nf
+      do jy=1,fld%geom%ny
+        read(iunit,fmtn) (fld%gfld3d(jx,jy,jf), jx=1,fld%geom%nx)
+      enddo
+    enddo
+!   Skip un-necessary data from file if any
+    allocate(zz(fld%geom%nx))
+    do jf=nf*il+1, ic*il
+      do jy=1,fld%geom%ny
+        read(iunit,fmtn) (zz(jx), jx=1,fld%geom%nx)
+      enddo
+    enddo
+    deallocate(zz)
+  
+    if (fld%lbc) then
+      do jf=1,4
+        read(iunit,fmt1) fld%xbound(jf)
+      enddo
+      do jf=1,4
+        read(iunit,fmtn) (fld%qbound(jx,jf), jx=1,fld%geom%nx)
+      enddo
+    endif
+  
+    close(iunit)
+  
   endif
 
   ! Set date
@@ -685,65 +674,63 @@ is=0
 if (fld%lbc) is=1
 call datetime_to_string(vdate, sdate)
 
-if (mpl%main) then
-  if (netcdfio) then
-    
-    call ncerr(subr,nf90_create(trim(filename)//'.nc',or(nf90_clobber,nf90_64bit_offset),ncid))
-    call ncerr(subr,nf90_def_dim(ncid,'nx',fld%geom%nx,nx_id))
-    call ncerr(subr,nf90_def_dim(ncid,'ny',fld%geom%ny,ny_id))
-    call ncerr(subr,nf90_def_dim(ncid,'nl',fld%nl,nl_id))
-    call ncerr(subr,nf90_def_dim(ncid,'nc',fld%nf,nc_id))
-    call ncerr(subr,nf90_def_dim(ncid,'ntot',fld%nl*fld%nf,ntot_id))
-    call ncerr(subr,nf90_def_dim(ncid,'four',4,four_id))
-    call ncerr(subr,nf90_put_att(ncid,nf90_global,'lbc',is))
-    
-    call ncerr(subr,nf90_put_att(ncid,nf90_global,'sdate',sdate))
-    call ncerr(subr,nf90_def_var(ncid,'gfld3d',nf90_double,(/nx_id,ny_id,ntot_id/),gfld3d_id))
-    
-    if (fld%lbc) then
-      call ncerr(subr,nf90_def_var(ncid,'xbound',nf90_double,(/four_id/),xbound_id))
-      call ncerr(subr,nf90_def_var(ncid,'qbound',nf90_double,(/nx_id,four_id/),qbound_id))
-    end if
-    
-    call ncerr(subr,nf90_enddef(ncid))
-    
-    call ncerr(subr,nf90_put_var(ncid,gfld3d_id,fld%gfld3d))
-    
-    if (fld%lbc) then
-      call ncerr(subr,nf90_put_var(ncid,xbound_id,fld%xbound))
-      call ncerr(subr,nf90_put_var(ncid,qbound_id,fld%qbound))
-    end if
-    
-    call ncerr(subr,nf90_close(ncid))
+if (netcdfio) then
   
-  else
+  call ncerr(subr,nf90_create(trim(filename)//'.nc',or(nf90_clobber,nf90_64bit_offset),ncid))
+  call ncerr(subr,nf90_def_dim(ncid,'nx',fld%geom%nx,nx_id))
+  call ncerr(subr,nf90_def_dim(ncid,'ny',fld%geom%ny,ny_id))
+  call ncerr(subr,nf90_def_dim(ncid,'nl',fld%nl,nl_id))
+  call ncerr(subr,nf90_def_dim(ncid,'nc',fld%nf,nc_id))
+  call ncerr(subr,nf90_def_dim(ncid,'ntot',fld%nl*fld%nf,ntot_id))
+  call ncerr(subr,nf90_def_dim(ncid,'four',4,four_id))
+  call ncerr(subr,nf90_put_att(ncid,nf90_global,'lbc',is))
   
-    open(unit=iunit, file=trim(filename), form='formatted', action='write')
-    
-    write(iunit,*) fld%geom%nx, fld%geom%ny, fld%nl, fld%nf, is
-    write(iunit,*) sdate
-    
-    if (fld%geom%nx>9999)  call abor1_ftn("Format too small")
-    write(cnx,'(I4)')fld%geom%nx
-    fmtn='('//trim(cnx)//fmt1//')'
-    
-    do jf=1,fld%nl*fld%nf
-      do jy=1,fld%geom%ny
-        write(iunit,fmtn) (fld%gfld3d(jx,jy,jf), jx=1,fld%geom%nx)
-      enddo
+  call ncerr(subr,nf90_put_att(ncid,nf90_global,'sdate',sdate))
+  call ncerr(subr,nf90_def_var(ncid,'gfld3d',nf90_double,(/nx_id,ny_id,ntot_id/),gfld3d_id))
+  
+  if (fld%lbc) then
+    call ncerr(subr,nf90_def_var(ncid,'xbound',nf90_double,(/four_id/),xbound_id))
+    call ncerr(subr,nf90_def_var(ncid,'qbound',nf90_double,(/nx_id,four_id/),qbound_id))
+  end if
+  
+  call ncerr(subr,nf90_enddef(ncid))
+  
+  call ncerr(subr,nf90_put_var(ncid,gfld3d_id,fld%gfld3d))
+  
+  if (fld%lbc) then
+    call ncerr(subr,nf90_put_var(ncid,xbound_id,fld%xbound))
+    call ncerr(subr,nf90_put_var(ncid,qbound_id,fld%qbound))
+  end if
+  
+  call ncerr(subr,nf90_close(ncid))
+
+else
+
+  open(unit=iunit, file=trim(filename), form='formatted', action='write')
+  
+  write(iunit,*) fld%geom%nx, fld%geom%ny, fld%nl, fld%nf, is
+  write(iunit,*) sdate
+  
+  if (fld%geom%nx>9999)  call abor1_ftn("Format too small")
+  write(cnx,'(I4)')fld%geom%nx
+  fmtn='('//trim(cnx)//fmt1//')'
+  
+  do jf=1,fld%nl*fld%nf
+    do jy=1,fld%geom%ny
+      write(iunit,fmtn) (fld%gfld3d(jx,jy,jf), jx=1,fld%geom%nx)
     enddo
-    
-    if (fld%lbc) then
-      do jf=1,4
-        write(iunit,fmt1) fld%xbound(jf)
-      enddo
-      do jf=1,4
-        write(iunit,fmtn) (fld%qbound(jx,jf), jx=1,fld%geom%nx)
-      enddo
-    endif
-    
-    close(iunit) 
-   endif
+  enddo
+  
+  if (fld%lbc) then
+    do jf=1,4
+      write(iunit,fmt1) fld%xbound(jf)
+    enddo
+    do jf=1,4
+      write(iunit,fmtn) (fld%qbound(jx,jf), jx=1,fld%geom%nx)
+    enddo
+  endif
+  
+  close(iunit) 
 endif
 
 return
@@ -1038,33 +1025,24 @@ type(unstructured_grid), intent(inout) :: ug
 
 integer,allocatable :: imask(:,:)
 real(kind=kind_real),allocatable :: lon(:),lat(:),area(:),vunit(:)
-integer :: nc0a,ic0a,jx,jy,jl,jf,joff
-
-! Define local index
-nc0a = 0
-do jy=1,self%geom%ny
-  do jx=1,self%geom%nx
-    if (self%geom%iproc(jx,jy)==mpl%myproc) nc0a = nc0a+1
-  enddo
-enddo
+integer :: jx,jy,jl,nn,ii
 
 ! Allocation
-allocate(lon(nc0a))
-allocate(lat(nc0a))
-allocate(area(nc0a))
+nn=self%geom%nx*self%geom%ny
+allocate(lon(nn))
+allocate(lat(nn))
+allocate(area(nn))
 allocate(vunit(self%nl))
-allocate(imask(nc0a,self%nl))
+allocate(imask(nn,self%nl))
 
 ! Copy coordinates
-ic0a = 0
+ii = 0
 do jy=1,self%geom%ny
   do jx=1,self%geom%nx
-    if (self%geom%iproc(jx,jy)==mpl%myproc) then
-      ic0a = ic0a+1
-      lon(ic0a) = self%geom%lon(jx)
-      lat(ic0a) = self%geom%lat(jy)
-      area(ic0a) = self%geom%area(jx,jy)
-    endif
+    ii = ii+1
+    lon(ii) = self%geom%lon(jx)
+    lat(ii) = self%geom%lat(jy)
+    area(ii) = self%geom%area(jx,jy)
   enddo
 enddo
 imask = 1
@@ -1075,7 +1053,7 @@ do jl=1,self%nl
 enddo
 
 ! Create unstructured grid
-call create_unstructured_grid(ug, nc0a, self%nl, self%nf, 1, lon, lat, area, vunit, imask)
+call create_unstructured_grid(ug, nn, self%nl, self%nf, 1, lon, lat, area, vunit, imask)
 
 end subroutine define_ug
 
@@ -1087,21 +1065,19 @@ implicit none
 type(qg_field), intent(in) :: self
 type(unstructured_grid), intent(inout) :: ug
 
-integer :: ic0a,jx,jy,jl,jf,joff
+integer :: jx,jy,jl,jf,joff,ii
 
 ! Copy field
-ic0a = 0
+ii = 0
 do jy=1,self%geom%ny
   do jx=1,self%geom%nx
-    if (self%geom%iproc(jx,jy)==mpl%myproc) then
-      ic0a = ic0a+1
-      do jf=1,self%nf
-        joff = (jf-1)*self%nl
-        do jl=1,self%nl
-          ug%fld(ic0a,jl,jf,1) = self%gfld3d(jx,jy,joff+jl)
-        enddo
+    ii = ii+1
+    do jf=1,self%nf
+      joff = (jf-1)*self%nl
+      do jl=1,self%nl
+        ug%fld(ii,jl,jf,1) = self%gfld3d(jx,jy,joff+jl)
       enddo
-    endif
+    enddo
   enddo
 enddo
 
@@ -1115,87 +1091,21 @@ implicit none
 type(qg_field), intent(inout) :: self
 type(unstructured_grid), intent(in) :: ug
 
-integer :: ic0a,jx,jy,jl,jf,joff,nbuf,jbuf,iproc
-real(kind=kind_real),allocatable :: rbuf(:),sbuf(:)
+integer :: ii,jx,jy,jl,jf,joff
 
 ! Copy field
-ic0a = 0
+ii = 0
 do jy=1,self%geom%ny
   do jx=1,self%geom%nx
-    if (self%geom%iproc(jx,jy)==mpl%myproc) then
-      ic0a = ic0a+1
-      do jf=1,self%nf
-        joff = (jf-1)*self%nl
-        do jl=1,self%nl
-          self%gfld3d(jx,jy,joff+jl) = ug%fld(ic0a,jl,jf,1)
-        enddo
+    ii = ii+1
+    do jf=1,self%nf
+      joff = (jf-1)*self%nl
+      do jl=1,self%nl
+        self%gfld3d(jx,jy,joff+jl) = ug%fld(ii,jl,jf,1)
       enddo
-    endif
+    enddo
   enddo
 enddo
-
-! Communication
-if (mpl%main) then
-   do iproc=1,mpl%nproc
-      if (iproc/=mpl%ioproc) then
-         ! Allocation
-         nbuf = count(self%geom%iproc==iproc)*self%nl*self%nf
-         allocate(rbuf(nbuf))
-
-         ! Receive data on ioproc
-         call mpl_recv(nbuf,rbuf,iproc,mpl%tag)
-
-         ! Format data
-         jbuf = 0
-         do jy=1,self%geom%ny
-           do jx=1,self%geom%nx
-             if (self%geom%iproc(jx,jy)==iproc) then
-               do jf=1,self%nf
-                 joff = (jf-1)*self%nl
-                 do jl=1,self%nl
-                   jbuf = jbuf+1
-                   self%gfld3d(jx,jy,joff+jl) = rbuf(jbuf)
-                 enddo
-               enddo
-             endif
-           enddo
-         enddo
-
-         ! Release memory
-         deallocate(rbuf)
-      end if
-   end do
-else
-   ! Allocation
-   nbuf = count(self%geom%iproc==mpl%myproc)*self%nf*self%nl
-   allocate(sbuf(nbuf))
-
-   ! Format data
-   jbuf = 0
-   do jy=1,self%geom%ny
-     do jx=1,self%geom%nx
-       if (self%geom%iproc(jx,jy)==mpl%myproc) then
-         do jf=1,self%nf
-           joff = (jf-1)*self%nl
-           do jl=1,self%nl
-             jbuf = jbuf+1
-             sbuf(jbuf) = self%gfld3d(jx,jy,joff+jl)
-           enddo
-         enddo
-       endif
-     enddo
-   enddo
-
-   ! Send data to ioproc
-   call mpl_send(nbuf,sbuf,mpl%ioproc,mpl%tag)
-
-   ! Release memory
-   deallocate(sbuf)
-end if
-mpl%tag = mpl%tag+1
-
-! Broadcast
-call mpl_bcast(self%gfld3d,mpl%ioproc)
 
 end subroutine convert_from_ug
 

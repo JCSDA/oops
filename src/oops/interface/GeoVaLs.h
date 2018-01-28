@@ -38,7 +38,7 @@ class GeoVaLs : public util::Printable,
   static const std::string classname() {return "oops::GeoVaLs";}
 
   GeoVaLs(const Locations_ &, const Variables &);
-  explicit GeoVaLs(const eckit::Configuration &);
+  GeoVaLs(const eckit::Configuration &, const Variables &);
   ~GeoVaLs();
 
 /// Interfacing
@@ -71,10 +71,10 @@ GeoVaLs<MODEL>::GeoVaLs(const Locations_ & locs, const Variables & vars) : gvals
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-GeoVaLs<MODEL>::GeoVaLs(const eckit::Configuration & conf) : gvals_() {
+GeoVaLs<MODEL>::GeoVaLs(const eckit::Configuration & conf, const Variables & vars) : gvals_() {
   Log::trace() << "GeoVaLs<MODEL>::GeoVaLs read starting" << std::endl;
   util::Timer timer(classname(), "GeoVaLs");
-  gvals_.reset(new GeoVaLs_(conf));
+  gvals_.reset(new GeoVaLs_(conf, vars));
   Log::trace() << "GeoVaLs<MODEL>::GeoVaLs read done" << std::endl;
 }
 

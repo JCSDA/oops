@@ -64,7 +64,7 @@ template <typename MODEL> void testLinearity() {
     LinearObsOperator_ hop(Test_::obspace()[jj]);
 
     const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    const GeoVaLs_ gval(gconf);
+    const GeoVaLs_ gval(gconf, hop.variables());
 
     eckit::LocalConfiguration biasConf;
     conf[jj].get("ObsBias", biasConf);
@@ -73,7 +73,7 @@ template <typename MODEL> void testLinearity() {
 
     const ObsAuxIncr_ ybinc(biasConf);
     ObsVector_ dy1(Test_::obspace()[jj]);
-    GeoVaLs_ gv(gconf);
+    GeoVaLs_ gv(gconf, hop.variables());
 
     gv.zero();
     hop.obsEquivTL(gv, dy1, ybinc);
@@ -113,23 +113,21 @@ template <typename MODEL> void testAdjoint() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     LinearObsOperator_ hop(Test_::obspace()[jj]);
-    oops::Variables vars = hop.variables();
-
     eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    gconf.set("Variables", vars.asConfig());
-    const GeoVaLs_ gval(gconf);
+    const GeoVaLs_ gval(gconf, hop.variables());
 
-    const eckit::LocalConfiguration biasconf(conf[jj], "ObsBias");
-    const ObsAuxCtrl_ ybias(biasconf);
+    eckit::LocalConfiguration biasConf;
+    conf[jj].get("ObsBias", biasConf);
+    const ObsAuxCtrl_ ybias(biasConf);
 
     hop.setTrajectory(gval, ybias);
 
-    ObsAuxIncr_ ybinc(biasconf);
+    ObsAuxIncr_ ybinc(biasConf);
 
     ObsVector_ dy1(Test_::obspace()[jj]);
     ObsVector_ dy2(Test_::obspace()[jj]);
-    GeoVaLs_ gv1(gconf);
-    GeoVaLs_ gv2(gconf);
+    GeoVaLs_ gv1(gconf, hop.variables());
+    GeoVaLs_ gv2(gconf, hop.variables());
 
     gv1.random();
     BOOST_REQUIRE(dot_product(gv1, gv1) > zero);

@@ -33,7 +33,7 @@ class GomQG : public util::Printable,
   static const std::string classname() {return "qg::GomQG";}
 
   GomQG(const LocationsQG &, const oops::Variables &);
-  GomQG(const eckit::Configuration &);
+  GomQG(const eckit::Configuration &, const oops::Variables &);
 
   explicit GomQG(): keyGom_(0) {}
   explicit GomQG(int & fgom): keyGom_(fgom) {}
