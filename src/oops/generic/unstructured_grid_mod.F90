@@ -72,7 +72,7 @@ subroutine delete_ug_c(key) bind(c, name='delete_ug_f90')
 implicit none
 integer(c_int), intent(inout) :: key
 
-class(unstructured_grid), pointer :: self
+type(unstructured_grid), pointer :: self
 
 call unstructured_grid_registry%get(key,self)
 call delete_unstructured_grid(self)
@@ -88,7 +88,7 @@ integer(c_int), intent(inout) :: key
 integer(c_int), intent(in) :: ind
 integer,intent(out) :: isize
 
-class(unstructured_grid), pointer :: self
+type(unstructured_grid), pointer :: self
 
 call unstructured_grid_registry%get(key,self)
 select case (ind)
@@ -118,7 +118,7 @@ integer(c_int), intent(inout) :: key
 integer(c_int), intent(in) :: nc0a
 real(kind=kind_real),intent(out) :: lon(nc0a)
 
-class(unstructured_grid), pointer :: self
+type(unstructured_grid), pointer :: self
 
 call unstructured_grid_registry%get(key,self)
 lon = self%lon
@@ -133,7 +133,7 @@ integer(c_int), intent(inout) :: key
 integer(c_int), intent(in) :: nc0a
 real(kind=kind_real),intent(out) :: lat(nc0a)
 
-class(unstructured_grid), pointer :: self
+type(unstructured_grid), pointer :: self
 
 call unstructured_grid_registry%get(key,self)
 lat = self%lat
@@ -148,7 +148,7 @@ integer(c_int), intent(inout) :: key
 integer(c_int), intent(in) :: nc0a
 real(kind=kind_real),intent(out) :: area(nc0a)
 
-class(unstructured_grid), pointer :: self
+type(unstructured_grid), pointer :: self
 
 call unstructured_grid_registry%get(key,self)
 area = self%area
@@ -163,7 +163,7 @@ integer(c_int), intent(inout) :: key
 integer(c_int), intent(in) :: nl0
 real(kind=kind_real),intent(out) :: vunit(nl0)
 
-class(unstructured_grid), pointer :: self
+type(unstructured_grid), pointer :: self
 
 call unstructured_grid_registry%get(key,self)
 vunit = self%vunit
@@ -179,7 +179,7 @@ integer,intent(in) :: nc0a
 integer,intent(in) :: nl0
 integer,intent(out) :: imask(nc0a*nl0)
 
-class(unstructured_grid), pointer :: self
+type(unstructured_grid), pointer :: self
 
 call unstructured_grid_registry%get(key,self)
 imask = pack(self%imask,mask=.true.)
@@ -194,7 +194,7 @@ integer(c_int), intent(inout) :: key
 integer(c_int), intent(in) :: ntot
 real(kind=kind_real),intent(out) :: fld(ntot)
 
-class(unstructured_grid), pointer :: self
+type(unstructured_grid), pointer :: self
 
 call unstructured_grid_registry%get(key,self)
 fld = pack(self%fld,mask=.true.)
@@ -205,7 +205,7 @@ end subroutine get_data_c
 
 subroutine create_unstructured_grid(self, nc0a, nl0, nv, nts, lon, lat, area, vunit, imask)
 implicit none
-class(unstructured_grid), intent(inout) :: self
+type(unstructured_grid), intent(inout) :: self
 integer, intent(in) :: nc0a
 integer, intent(in) :: nl0
 integer, intent(in) :: nv
@@ -244,7 +244,7 @@ end subroutine create_unstructured_grid
 
 subroutine delete_unstructured_grid(self)
 implicit none
-class(unstructured_grid), intent(inout) :: self
+type(unstructured_grid), intent(inout) :: self
 
 ! Release memory 
 deallocate(self%lon)

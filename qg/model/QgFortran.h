@@ -111,7 +111,6 @@ extern "C" {
   void qg_field_interp_f90(const F90flds &, const F90locs &, const F90vars *, const F90goms &);
   void qg_field_interp_tl_f90(const F90flds &, const F90locs &, const F90vars *, const F90goms &);
   void qg_field_interp_ad_f90(const F90flds &, const F90locs &, const F90vars *, const F90goms &);
-  void qg_field_define_f90(const F90flds &, const int &);
   void qg_field_convert_to_f90(const F90flds &, const int &);
   void qg_field_convert_from_f90(const F90flds &, const int &);
 
@@ -143,6 +142,7 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Locations
 // -----------------------------------------------------------------------------
+  void qg_loc_create_f90(F90locs &);
   void qg_loc_delete_f90(F90locs &);
   void qg_loc_nobs_f90(const F90locs &, int &);
 

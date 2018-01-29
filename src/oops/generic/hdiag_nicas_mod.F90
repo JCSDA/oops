@@ -82,7 +82,7 @@ real(c_double), intent(in) :: vunit(nl0)
 integer(c_int), intent(in) :: imask(nc0a*nl0)
 real(c_double), intent(in) :: ens1(nc0a*nl0*nv*nts*ens1_ne)
 
-class(hdiag_nicas), pointer :: self
+type(hdiag_nicas), pointer :: self
 
 ! Initialize hdiag_nicas registry
 call hdiag_nicas_registry%init()
@@ -100,7 +100,7 @@ subroutine delete_hdiag_nicas_c(key) bind(c, name='delete_hdiag_nicas_f90')
 implicit none
 integer(c_int), intent(inout) :: key
 
-class(hdiag_nicas), pointer :: self
+type(hdiag_nicas), pointer :: self
 
 call hdiag_nicas_registry%get(key,self)
 call delete_hdiag_nicas(self)
@@ -115,8 +115,8 @@ implicit none
 integer(c_int), intent(in) :: key
 integer(c_int), intent(in) :: idx
 
-class(hdiag_nicas), pointer :: self
-class(unstructured_grid), pointer :: ug
+type(hdiag_nicas), pointer :: self
+type(unstructured_grid), pointer :: ug
 
 call hdiag_nicas_registry%get(key,self)
 call unstructured_grid_registry%get(idx, ug)
@@ -254,6 +254,7 @@ nam%check_adjoints = .false.
 nam%check_pos_def = .false.
 nam%check_sqrt = .false.
 nam%check_dirac = .false.
+nam%check_randomization = .false.
 nam%check_consistency = .false.
 nam%check_optimality = .false.
 nam%new_lct = .false.
@@ -340,6 +341,7 @@ nam%check_adjoints = integer_to_logical(config_get_int(c_conf,"check_adjoints"))
 nam%check_pos_def = integer_to_logical(config_get_int(c_conf,"check_pos_def"))
 nam%check_sqrt = integer_to_logical(config_get_int(c_conf,"check_sqrt"))
 nam%check_dirac = integer_to_logical(config_get_int(c_conf,"check_dirac"))
+nam%check_randomization = integer_to_logical(config_get_int(c_conf,"check_randomization"))
 nam%check_consistency = integer_to_logical(config_get_int(c_conf,"check_consistency"))
 nam%check_optimality = integer_to_logical(config_get_int(c_conf,"check_optimality"))
 nam%new_lct = integer_to_logical(config_get_int(c_conf,"new_lct"))

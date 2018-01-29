@@ -27,7 +27,12 @@ class LocationsQG : public util::Printable,
  public:
   static const std::string classname() {return "qg::LocationsQG";}
 
+
   explicit LocationsQG(const F90locs key) : keyLoc_(key) {}
+
+  explicit LocationsQG(const eckit::Configuration &) {
+    qg_loc_create_f90(keyLoc_);
+  }
 
   ~LocationsQG() {qg_loc_delete_f90(keyLoc_);}
 

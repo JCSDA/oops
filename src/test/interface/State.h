@@ -31,10 +31,12 @@
 #include "test/TestEnvironment.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "util/DateTime.h"
+#include "util/Logger.h"
+#include "util/dot_product.h"
 
 namespace test {
 
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 template <typename MODEL> class StateFixture : private boost::noncopyable {
   typedef oops::Geometry<MODEL>       Geometry_;
@@ -42,10 +44,7 @@ template <typename MODEL> class StateFixture : private boost::noncopyable {
 
  public:
   static const eckit::Configuration & test()  {return *getInstance().test_;}
-  static const Geometry_       & resol() {return *getInstance().resol_;}
-  static const oops::Variables & vars()  {return *getInstance().vars_;}
-  static const State_          & xref()  {return *getInstance().xref_;}
-  static const double          & norm()  {return getInstance().refnorm_;}
+  static const Geometry_    & resol() {return *getInstance().resol_;}
 
  private:
   static StateFixture<MODEL>& getInstance() {
@@ -58,69 +57,82 @@ template <typename MODEL> class StateFixture : private boost::noncopyable {
 
     const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "Geometry");
     resol_.reset(new Geometry_(resolConfig));
-
-    const eckit::LocalConfiguration varConfig(TestEnvironment::config(), "Variables");
-    vars_.reset(new oops::Variables(varConfig));
-
-    const eckit::LocalConfiguration conf(TestEnvironment::config(), "State");
-    xref_.reset(new State_(*resol_, conf));
-    refnorm_ = xref_->norm();
   }
 
   ~StateFixture<MODEL>() {}
 
   boost::scoped_ptr<const eckit::LocalConfiguration>  test_;
-  boost::scoped_ptr<Geometry_>       resol_;
-  boost::scoped_ptr<oops::Variables> vars_;
-  boost::scoped_ptr<State_>          xref_;
-  double                             refnorm_;
+  boost::scoped_ptr<Geometry_>     resol_;
 };
 
-// =============================================================================
-
-// template <typename MODEL> void testStateConstructor() {
-//   typedef StateFixture<MODEL>   Test_;
-//   typedef oops::State<MODEL>    State_;
-//   const util::DateTime tt(Test_::test().getString("date"));
-//   State_ xx(Test_::resol(), Test_::vars(), tt);
-// }
-
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testStateConstructor() {
-  typedef StateFixture<MODEL>   Test_;
-
-  BOOST_CHECK_EQUAL(Test_::xref().norm(), Test_::norm());
-
-  double norm = Test_::test().getDouble("norm");
-  double tol = Test_::test().getDouble("tolerance");
-  BOOST_CHECK_CLOSE(Test_::xref().norm(), norm, tol);
-
-  const util::DateTime vt(Test_::test().getString("date"));
-  BOOST_CHECK_EQUAL(Test_::xref().validTime(), vt);
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL> void testStateCopyConstructor() {
+template <typename MODEL> void testStateConstructors() {
   typedef StateFixture<MODEL>   Test_;
   typedef oops::State<MODEL>    State_;
 
-  boost::scoped_ptr<State_> xx(new State_(Test_::xref()));
-  BOOST_CHECK(xx.get());
-  BOOST_CHECK_EQUAL(xx->norm(), Test_::norm());
-
+  const double norm = Test_::test().getDouble("norm-file");
+  const double tol = Test_::test().getDouble("tolerance");
   const util::DateTime vt(Test_::test().getString("date"));
-  BOOST_CHECK_EQUAL(xx->validTime(), vt);
 
-  xx.reset();
-  BOOST_CHECK(!xx.get());
+// Test main constructor
+  const eckit::LocalConfiguration conf(Test_::test(), "StateFile");
+  boost::scoped_ptr<State_> xx1(new State_(Test_::resol(), conf));
 
-// Recomputing initial norm to make sure nothing bad happened
-  BOOST_CHECK_EQUAL(Test_::xref().norm(), Test_::norm());
+  BOOST_CHECK(xx1.get());
+  const double norm1 = xx1->norm();
+  BOOST_CHECK_CLOSE(norm1, norm, tol);
+  BOOST_CHECK_EQUAL(xx1->validTime(), vt);
+
+// Test copy constructor
+  boost::scoped_ptr<State_> xx2(new State_(*xx1));
+  BOOST_CHECK(xx2.get());
+  BOOST_CHECK_CLOSE(xx2->norm(), norm, tol);
+  BOOST_CHECK_EQUAL(xx2->validTime(), vt);
+
+// Destruct copy
+  xx2.reset();
+  BOOST_CHECK(!xx2.get());
+
+// Recompute initial norm to make sure nothing bad happened
+  const double norm2 = xx1->norm();
+  BOOST_CHECK_EQUAL(norm1, norm2);
 }
 
-// =============================================================================
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testStateInterpolation() {
+  typedef StateFixture<MODEL>     Test_;
+  typedef oops::State<MODEL>      State_;
+  typedef oops::Locations<MODEL>  Locations_;
+  typedef oops::GeoVaLs<MODEL>    GeoVaLs_;
+
+  const eckit::LocalConfiguration confs(Test_::test(), "StateGenerate");
+  const State_ xx(Test_::resol(), confs);
+  const double norm = Test_::test().getDouble("norm-gen");
+  const double tol = Test_::test().getDouble("tolerance");
+  BOOST_CHECK_CLOSE(xx.norm(), norm, tol);
+
+  const eckit::LocalConfiguration confl(Test_::test(), "Locations");
+  const Locations_ locs(confl);
+
+  const eckit::LocalConfiguration confv(Test_::test(), "Variables");
+  const oops::Variables vars(confv);
+
+  GeoVaLs_ gval(locs, vars);
+
+  xx.interpolate(locs, vars, gval);
+
+  std::vector<double> values;
+  Test_::test().get("values", values);
+  if (values.size() > 0) {
+    const double zz = std::sqrt(dot_product(gval, gval));
+    const double ref = values[0];
+    BOOST_CHECK_CLOSE(zz, ref, 0.5);
+  }
+}
+
+// -----------------------------------------------------------------------------
 
 template <typename MODEL> class State : public oops::Test {
  public:
@@ -132,14 +144,14 @@ template <typename MODEL> class State : public oops::Test {
   void register_tests() const {
     boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/State");
 
-    ts->add(BOOST_TEST_CASE(&testStateConstructor<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testStateCopyConstructor<MODEL>));
+    ts->add(BOOST_TEST_CASE(&testStateConstructors<MODEL>));
+    ts->add(BOOST_TEST_CASE(&testStateInterpolation<MODEL>));
 
     boost::unit_test::framework::master_test_suite().add(ts);
   }
 };
 
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 }  // namespace test
 

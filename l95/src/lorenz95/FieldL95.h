@@ -17,6 +17,10 @@
 
 #include "util/Printable.h"
 
+namespace eckit {
+  class Configuration;
+}
+
 // Forward declarations
 namespace eckit {
   class Configuration;
@@ -55,6 +59,7 @@ class FieldL95 : public util::Printable {
   double dot_product_with(const FieldL95 &) const;
   void schur(const FieldL95 &);
   void random();
+  void generate(const eckit::Configuration &);
 
 /// Utilities
   void read(std::ifstream &);
@@ -72,8 +77,7 @@ class FieldL95 : public util::Printable {
   void interp(const LocsL95 &, GomL95 &) const;
   void interpAD(const LocsL95 &, const GomL95 &);
 
-/// Define and convert to/from generic unstructured grid
-  void define(oops::UnstructuredGrid &) const;
+/// Convert to/from generic unstructured grid
   void convert_to(oops::UnstructuredGrid &) const;
   void convert_from(const oops::UnstructuredGrid &);
 

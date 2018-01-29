@@ -18,6 +18,10 @@
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 
+namespace eckit {
+  class Configuration;
+}
+
 namespace lorenz95 {
 
 /// LocsL95 class to handle locations for L95 model.
@@ -27,6 +31,7 @@ class LocsL95 : public util::Printable,
   static const std::string classname() {return "lorenz95::LocsL95";}
 
   LocsL95(const std::vector<int> &, const std::vector<double> &);
+  explicit LocsL95(const eckit::Configuration &);
   ~LocsL95() {}
 
   size_t size() const {return locs_.size();}

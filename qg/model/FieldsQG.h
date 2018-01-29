@@ -74,8 +74,7 @@ class FieldsQG : public util::Printable,
   void add(const FieldsQG &);
   void diff(const FieldsQG &, const FieldsQG &);
 
-// Define and convert to/from unstructured grid
-  void define(oops::UnstructuredGrid &) const;
+// Convert to/from unstructured grid
   void convert_to(oops::UnstructuredGrid &) const;
   void convert_from(const oops::UnstructuredGrid &);
 

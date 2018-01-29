@@ -1,7 +1,10 @@
 {
   "test_framework_runtime_config": "--log_level=test_suite",
   "Geometry": {
-    "resol": "40"
+    "resol": 40
+  },
+  "Locations": {
+    "positions": [0.717]
   },
   "Variables": null,
   "TestDate": "2010-01-01T03:00:00Z",
@@ -10,57 +13,72 @@
     "date": "2010-01-01T03:00:00Z"
   },
   "StateTest": {
+    "StateFile": {
+      "filename": "Data/truth.fc.2010-01-01T00:00:00Z.PT3H",
+      "date": "2010-01-01T03:00:00Z"
+    },
     "date": "2010-01-01T03:00:00Z",
-    "norm": "8.026",
-    "tolerance": "0.005"
+    "norm-file": 8.02582642225,
+    "StateGenerate" : {
+      "date": "2010-01-01T03:00:00Z",
+      "mean": 8.0,
+      "sinus": 2.0
+    },
+    "norm-gen":  8.12403840464,
+    "tolerance": 1.0e-10,
+    "Locations": {
+      "positions": [0.717]
+    },
+    "Variables": null,
+    "values": [6.042838]
   },
   "ModelBias": {
-    "bias": "0.2"
+    "bias": 0.2
   },
   "Model": {
     "tstep": "PT1H30M",
-    "f": "8.0"
+    "f": 8.0
   },
   "ModelTest": {
     "fclength": "PT48H",
-    "finalnorm": "7.938",
-    "tolerance": "0.005"
+    "finalnorm": 7.938,
+    "tolerance": 0.005
   },
   "Covariance": {
     "covariance": "L95Error",
-    "standard_deviation": "0.6",
-    "length_scale": "1.0",
+    "standard_deviation": 0.6,
+    "length_scale": 1.0,
     "date": "2010-01-01T03:00:00Z"
   },
   "CovarianceTest": {
-    "tolerance": "1.0e-8"
+    "tolerance": 1.0e-8
   },
   "Localization": {
     "localization": "L95",
-    "length_scale": "1.0"
+    "length_scale": 1.0
   },
   "ModelBiasCovariance": {
-    "standard_deviation": "1.0"
+    "standard_deviation": 1.0
   },
   "LinearModel": {
     "version": "L95TLM",
     "tstep": "PT1H30M",
     "trajectory": {
       "tstep": "PT1H30M",
-      "f": "8.0"
+      "f": 8.0
     }
   },
   "LinearModelTest": {
     "fclength": "PT48H",
-    "testiterTL": "12",
-    "toleranceTL": "1.0e-7",
-    "toleranceAD": "1.0e-12"
+    "testiterTL": 12,
+    "toleranceTL": 1.0e-7,
+    "toleranceAD": 1.0e-12
   },
   "ObsBias": {
-    "bias": "0.3"
+    "bias": 0.3
   },
   "ObsBiasCovariance": {
-    "standard_deviation": "0.5"
+    "standard_deviation": 0.5
   },
   "window_begin": "2010-01-01T03:00:00Z",
   "window_end": "2010-01-02T03:00:00Z",
@@ -79,14 +97,14 @@
       },
       "GeoVaLs": {
         "filename": "Data/l95.gom",
-        "norm": "101.4587929124312"
+        "norm": 101.4587929124312
       },
       "Covariance": {
         "covariance": "diagonal",
         "obserror": "ObsErr"
       },
-      "rmsequiv": "8.02102185636578",
-      "tolerance": "1.0e-8"
+      "rmsequiv": 8.02102185636578,
+      "tolerance": 1.0e-8
     }
   ]}
 }

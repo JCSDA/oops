@@ -49,7 +49,7 @@ GomL95::GomL95(const eckit::Configuration & conf)
 GomL95::~GomL95() {}
 // -----------------------------------------------------------------------------
 GomL95 & GomL95::operator*=(const double & zz) {
-  for (int jj = 0; jj < size_; ++jj) locval_[jj] *= zz;
+  for (size_t jj = 0; jj < size_; ++jj) locval_[jj] *= zz;
   return *this;
 }
 // -----------------------------------------------------------------------------

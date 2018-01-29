@@ -614,6 +614,7 @@ real(kind_real),intent(out) :: ens(geom%nc0a,geom%nl0,nam%nv,nam%nts,ne) !< Ense
 
 ! Local variable
 integer :: ie
+real(kind_real) :: mean(geom%nc0a,geom%nl0,nam%nv,nam%nts),std(geom%nc0a,geom%nl0,nam%nv,nam%nts)
 real(kind_real) :: zhook_handle
 type(cvtype) :: cv(bpar%nb+1,ne)
 
@@ -625,6 +626,16 @@ call cv_random(bpar,ndata,ne,cv)
 do ie=1,ne
    ! Apply square-root
    call apply_localization_sqrt(nam,geom,bpar,ndata,cv(:,ie),ens(:,:,:,:,ie))
+end do
+
+! Normalize ensemble
+mean = sum(ens,dim=5)/float(ne)
+do ie=1,ne
+   ens(:,:,:,:,ie) = ens(:,:,:,:,ie)-mean
+end do
+std = sqrt(sum(ens**2,dim=5)/float(ne-1))
+do ie=1,ne
+   ens(:,:,:,:,ie) = ens(:,:,:,:,ie)/std
 end do
 
 if (lhook) call dr_hook('randomize_localization',1,zhook_handle)

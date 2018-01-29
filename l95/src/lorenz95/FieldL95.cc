@@ -16,6 +16,9 @@
 #include <random>
 #include <string>
 
+#include "eckit/config/Configuration.h"
+#include "util/Logger.h"
+
 #include "lorenz95/GomL95.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/Resolution.h"
@@ -68,6 +71,25 @@ void FieldL95::dirac(const eckit::Configuration & config) {
 // Setup Dirac
   for (int jj = 0; jj < resol_; ++jj) x_[jj] = 0.0;
   for (unsigned int jj = 0; jj < ixdir.size(); ++jj) x_[ixdir[jj]] = 1.0;
+}
+// -----------------------------------------------------------------------------
+void FieldL95::generate(const eckit::Configuration & conf) {
+  for (int jj = 0; jj < resol_; ++jj) x_[jj] = 0.0;
+  if (conf.has("mean")) {
+    const double zz = conf.getDouble("mean");
+    for (int jj = 0; jj < resol_; ++jj) x_[jj] = zz;
+  }
+  if (conf.has("sinus")) {
+    const double zz = conf.getDouble("sinus");
+    const double pi = std::acos(-1.0);
+    const double dx = 2.0 * pi / static_cast<double>(resol_);
+    for (int jj = 0; jj < resol_; ++jj) x_[jj] += zz * std::sin(static_cast<double>(jj) * dx);
+  }
+  if (conf.has("dirac")) {
+    const int ii = conf.getInt("dirac");
+    x_[ii] += 1.0;
+  }
+  oops::Log::trace() << "FieldL95::generate " << x_[28] << ", " << x_[29] << std::endl;
 }
 // -----------------------------------------------------------------------------
 FieldL95 & FieldL95::operator=(const FieldL95 & rhs) {
@@ -145,10 +167,6 @@ void FieldL95::interpAD(const LocsL95 & locs, const GomL95 & gom) {
     if (ii == resol_) ii = 0;
     x_[ii] += gom[gom.current()+jobs];
   }
-}
-// -----------------------------------------------------------------------------
-void FieldL95::define(oops::UnstructuredGrid & ug) const {
-  ABORT("FieldL95 unstructured grid definition not implemented.");
 }
 // -----------------------------------------------------------------------------
 void FieldL95::convert_to(oops::UnstructuredGrid & ug) const {

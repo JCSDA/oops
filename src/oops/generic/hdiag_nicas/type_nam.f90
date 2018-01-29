@@ -49,6 +49,7 @@ type namtype
    logical :: check_pos_def                         !< Test positive definiteness
    logical :: check_sqrt                            !< Test full/square-root equivalence
    logical :: check_dirac                           !< Test NICAS application on diracs
+   logical :: check_randomization                   !< Test NICAS randomization
    logical :: check_consistency                     !< Test HDIAG_NICAS consistency
    logical :: check_optimality                      !< Test HDIAG optimality
    logical :: new_lct                               !< Compute new LCT
@@ -166,9 +167,9 @@ integer :: nl,levs(nlmax),nv,nts,timeslot(ntsmax),ens1_ne,ens1_ne_offset,ens1_ns
 integer :: nc1,ntry,nrep,nc3,nl0r,ne,displ_niter,lct_nscales,nldwh,il_ldwh(nlmax*nc3max),ic_ldwh(nlmax*nc3max),nldwv
 integer :: mpicom,ndir,levdir(ndirmax),ivdir(ndirmax),itsdir(ndirmax),nobs
 logical :: colorlog,default_seed,load_ensemble
-logical :: new_hdiag,new_param,check_adjoints,check_pos_def,check_sqrt,check_dirac,check_consistency,check_optimality,new_lct
-logical :: new_obsop,logpres,transform,sam_write,sam_read,mask_check,gau_approx,full_var,local_diag,displ_diag
-logical :: fit_wgt,lhomh,lhomv,lct_diag(nscalesmax),lsqrt,network
+logical :: new_hdiag,new_param,check_adjoints,check_pos_def,check_sqrt,check_dirac,check_randomization,check_consistency
+logical :: check_optimality,new_lct,new_obsop,logpres,transform,sam_write,sam_read,mask_check,gau_approx,full_var,local_diag
+logical :: displ_diag,fit_wgt,lhomh,lhomv,lct_diag(nscalesmax),lsqrt,network
 real(kind_real) :: mask_th,dc,local_rad,displ_rad,displ_rhflt,displ_tol,rvflt,lon_ldwv(nldwvmax),lat_ldwv(nldwvmax),diag_rhflt
 real(kind_real) :: rh(nlmax),rv(nlmax),resol,londir(ndirmax),latdir(ndirmax),obsdis
 character(len=1024) :: datadir,prefix,model,strategy,method,mask_type,fit_type,flt_type,diag_interp,nicas_interp,obsop_interp
@@ -177,7 +178,7 @@ character(len=1024),dimension(nvmax) :: varname,addvar2d
 ! Namelist blocks
 namelist/general_param/datadir,prefix,model,colorlog,default_seed,load_ensemble
 namelist/driver_param/method,strategy,new_hdiag,new_param,check_adjoints,check_pos_def,check_sqrt,check_dirac, &
-                    & check_consistency,check_optimality,new_lct,new_obsop
+                    & check_randomization,check_consistency,check_optimality,new_lct,new_obsop
 namelist/model_param/nl,levs,logpres,nv,varname,addvar2d,nts,timeslot,transform
 namelist/ens1_param/ens1_ne,ens1_ne_offset,ens1_nsub
 namelist/ens2_param/ens2_ne,ens2_ne_offset,ens2_nsub
@@ -207,6 +208,7 @@ check_adjoints = .false.
 check_pos_def = .false.
 check_sqrt = .false.
 check_dirac = .false.
+check_randomization = .false.
 check_consistency = .false.
 check_optimality = .false.
 new_lct = .false.
@@ -321,6 +323,7 @@ if (mpl%main) then
    nam%check_pos_def = check_pos_def
    nam%check_sqrt = check_sqrt
    nam%check_dirac = check_dirac
+   nam%check_randomization = check_randomization
    nam%check_consistency = check_consistency
    nam%check_optimality = check_optimality
    nam%new_lct = new_lct
@@ -441,6 +444,7 @@ call mpl_bcast(nam%check_adjoints,mpl%ioproc)
 call mpl_bcast(nam%check_pos_def,mpl%ioproc)
 call mpl_bcast(nam%check_sqrt,mpl%ioproc)
 call mpl_bcast(nam%check_dirac,mpl%ioproc)
+call mpl_bcast(nam%check_randomization,mpl%ioproc)
 call mpl_bcast(nam%check_consistency,mpl%ioproc)
 call mpl_bcast(nam%check_optimality,mpl%ioproc)
 call mpl_bcast(nam%new_lct,mpl%ioproc)
@@ -572,6 +576,9 @@ case default
    call msgerror('wrong strategy')
 end select
 if (nam%check_sqrt.and.(.not.nam%new_param)) call msgerror('square-root check requires new parameters calculation')
+if (nam%check_randomization) then
+   if (.not.nam%lsqrt) call msgerror('lsqrt required for check_randomization')
+end if
 if (nam%check_consistency) then
    if (.not.nam%new_hdiag) call msgerror('new_hdiag required for check_consistency')
    if (.not.nam%new_param) call msgerror('new_param required for check_consistency')
@@ -583,8 +590,8 @@ if (nam%check_optimality) then
    if (.not.nam%lsqrt) call msgerror('lsqrt required for check_optimality')
 end if
 if (nam%new_lct) then
-   if (nam%new_hdiag.or.nam%new_param.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_sqrt.or. &
- & nam%check_dirac.or.nam%check_consistency.or.nam%check_optimality) call msgerror('new_lct should be executed alone')
+   if (nam%new_hdiag.or.nam%new_param.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_sqrt.or.nam%check_dirac.or. &
+ & nam%check_randomization.or.nam%check_consistency.or.nam%check_optimality) call msgerror('new_lct should be executed alone')
    if (.not.nam%local_diag) then
       call msgwarning('new_lct requires local_diag, resetting local_diag to .true.')
       nam%local_diag = .true.
@@ -726,7 +733,7 @@ if (nam%new_param) then
    if (.not.(nam%resol>0.0)) call msgerror('resol should be positive')
 end if
 if (nam%new_param.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_sqrt.or.nam%check_dirac.or. &
- & nam%check_consistency.or.nam%check_optimality) then
+ & nam%check_randomization.or.nam%check_consistency.or.nam%check_optimality) then
    if ((nam%mpicom/=1).and.(nam%mpicom/=2)) call msgerror('mpicom should be 1 or 2')
 end if
 if (nam%check_dirac) then
@@ -791,6 +798,7 @@ call put_att(ncid,'check_adjoints',nam%check_adjoints)
 call put_att(ncid,'check_pos_def',nam%check_pos_def)
 call put_att(ncid,'check_sqrt',nam%check_sqrt)
 call put_att(ncid,'check_dirac',nam%check_dirac)
+call put_att(ncid,'check_randomization',nam%check_randomization)
 call put_att(ncid,'check_consistency',nam%check_consistency)
 call put_att(ncid,'check_optimality',nam%check_optimality)
 call put_att(ncid,'new_lct',nam%new_lct)

@@ -44,6 +44,18 @@ contains
 
 ! ------------------------------------------------------------------------------
 
+subroutine c_qg_loc_create(c_key_locs) bind(c,name='qg_loc_create_f90')
+
+implicit none
+integer(c_int), intent(inout) :: c_key_locs
+
+call qg_locs_registry%init()
+call qg_locs_registry%add(c_key_locs)
+
+end subroutine c_qg_loc_create
+
+! ------------------------------------------------------------------------------
+
 subroutine qg_loc_setup(self, lvec, kobs)
 implicit none
 type(qg_locs), intent(inout) :: self
@@ -72,7 +84,7 @@ integer(c_int), intent(inout) :: key
 type(qg_locs), pointer :: self
 
 call qg_locs_registry%get(key,self)
-deallocate(self%xyz)
+if (allocated(self%xyz)) deallocate(self%xyz)
 call qg_locs_registry%remove(key)
 
 end subroutine c_qg_loc_delete

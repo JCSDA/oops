@@ -109,6 +109,7 @@ end interface
 
 interface rand_gau
   module procedure rand_gau_1d
+  module procedure rand_gau_5d
 end interface
 
 ! Default seed
@@ -290,10 +291,10 @@ real(kind_real),intent(out) :: rr(:,:) !< Random integer
 ! Local variables
 integer :: i,j
 
-do i=1,size(rr,1)
-   do j=1,size(rr,2)
+do i=1,size(rr,2)
+   do j=1,size(rr,1)
       ! Call C++ function
-      call rand_real_c(rng%ptr,binf,bsup,rr(i,j))
+      call rand_real_c(rng%ptr,binf,bsup,rr(j,i))
    end do
 end do
 
@@ -315,11 +316,11 @@ real(kind_real),intent(out) :: rr(:,:,:) !< Random integer
 ! Local variables
 integer :: i,j,k
 
-do i=1,size(rr,1)
+do i=1,size(rr,3)
    do j=1,size(rr,2)
-      do k=1,size(rr,3)
+      do k=1,size(rr,1)
          ! Call C++ function
-         call rand_real_c(rng%ptr,binf,bsup,rr(i,j,k))
+         call rand_real_c(rng%ptr,binf,bsup,rr(k,j,i))
       end do
    end do
 end do
@@ -342,17 +343,16 @@ real(kind_real),intent(out) :: rr(:,:,:,:) !< Random integer
 ! Local variables
 integer :: i,j,k,l
 
-do i=1,size(rr,1)
-   do j=1,size(rr,2)
-      do k=1,size(rr,3)
-         do l=1,size(rr,4)
+do i=1,size(rr,4)
+   do j=1,size(rr,3)
+      do k=1,size(rr,2)
+         do l=1,size(rr,1)
             ! Call C++ function
-            call rand_real_c(rng%ptr,binf,bsup,rr(i,j,k,l))
+            call rand_real_c(rng%ptr,binf,bsup,rr(l,k,j,i))
          end do
       end do
    end do
 end do
-
 
 end subroutine rand_real_4d
 
@@ -372,19 +372,18 @@ real(kind_real),intent(out) :: rr(:,:,:,:,:) !< Random integer
 ! Local variables
 integer :: i,j,k,l,m
 
-do i=1,size(rr,1)
-   do j=1,size(rr,2)
+do i=1,size(rr,5)
+   do j=1,size(rr,4)
       do k=1,size(rr,3)
-         do l=1,size(rr,4)
-            do m=1,size(rr,5)
+         do l=1,size(rr,3)
+            do m=1,size(rr,1)
                ! Call C++ function
-               call rand_real_c(rng%ptr,binf,bsup,rr(i,j,k,l,m))
+               call rand_real_c(rng%ptr,binf,bsup,rr(m,l,k,j,i))
             end do
          end do
       end do
    end do
 end do
-
 
 end subroutine rand_real_5d
 
@@ -427,6 +426,32 @@ do i=1,size(rr,1)
 end do
 
 end subroutine rand_gau_1d
+
+!----------------------------------------------------------------------
+! Subroutine: rand_gau_5d
+!> Purpose: generate random Gaussian deviates, 5d
+!----------------------------------------------------------------------
+subroutine rand_gau_5d(rr)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(out) :: rr(:,:,:,:,:) !< Random integer
+
+! Local variables
+integer :: i,j,k,l
+
+do i=1,size(rr,5)
+   do j=1,size(rr,4)
+      do k=1,size(rr,3)
+         do l=1,size(rr,2)
+            call rand_gau_1d(rr(:,l,k,j,i))
+         end do
+      end do
+   end do
+end do
+
+end subroutine rand_gau_5d
 
 !----------------------------------------------------------------------
 ! Subroutine: initialize_sampling
