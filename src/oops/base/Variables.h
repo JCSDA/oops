@@ -26,14 +26,14 @@ class Variables : public util::Printable {
   static const std::string classname() {return "oops::Variables";}
 
   explicit Variables(const eckit::Configuration &);
-  Variables(const std::vector<std::string> &, const std::string & conv = "");
+  explicit Variables(const std::vector<std::string> &, const std::string & conv = "");
 
   ~Variables();
 
   Variables(const Variables &);
 
   const std::vector<std::string> & variables() const {return vars_;}
-  const eckit::Configuration & asConfig() const {return conf_;}
+  const eckit::Configuration & toFortran() const {return fconf_;}
 
  private:
   void print(std::ostream &) const;
@@ -41,6 +41,7 @@ class Variables : public util::Printable {
   std::string convention_;
   std::vector<std::string> vars_;
   eckit::LocalConfiguration conf_;
+  eckit::LocalConfiguration fconf_;  // Until we can read vector of strings from fortran
 };
 
 // -----------------------------------------------------------------------------

@@ -35,11 +35,12 @@ class GomL95 : public util::Printable,
   static const std::string classname() {return "lorenz95::GomL95";}
 
   GomL95(const LocsL95 &, const oops::Variables &);
-  explicit GomL95(const eckit::Configuration &);
+  GomL95(const eckit::Configuration &, const oops::Variables &);
   ~GomL95();
 
   void zero();
   void random();
+  GomL95 & operator*=(const double &);
   double dot_product_with(const GomL95 &) const;
   void read(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;

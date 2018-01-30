@@ -20,35 +20,42 @@ namespace oops {
 // -----------------------------------------------------------------------------
 
 Variables::Variables(const eckit::Configuration & conf)
- : convention_(""), vars_(0), conf_(conf)
+ : convention_(""), vars_(0), conf_(), fconf_()
 {
-  std::string vars, s;
-  conf.get("variables", vars);
+  conf.get("variables", vars_);
+  conf_.set("nvars", vars_.size());
+  conf_.get("variables", vars_);
 
-  std::istringstream svars(vars);
-  while (std::getline(svars, s, ',' ))
-    vars_.push_back(s);
-}
-
-// -----------------------------------------------------------------------------
-
-Variables::Variables(const std::vector<std::string> & vars, const std::string & conv)
- : convention_(conv), vars_(vars), conf_()
-{
   std::string svars = "";
   for (size_t jj = 0; jj < vars_.size(); ++jj) {
     if (jj > 0) svars += ", ";
     svars += vars_[jj];
   }
-  eckit::LocalConfiguration conf;
+  fconf_.set("nvars", vars_.size());
+  fconf_.set("variables", svars);
+}
+
+// -----------------------------------------------------------------------------
+
+Variables::Variables(const std::vector<std::string> & vars, const std::string & conv)
+ : convention_(conv), vars_(vars), conf_(), fconf_()
+{
   conf_.set("nvars", vars_.size());
-  conf_.set("variables", svars);
+  conf_.set("variables", vars_);
+
+  std::string svars = "";
+  for (size_t jj = 0; jj < vars_.size(); ++jj) {
+    if (jj > 0) svars += ", ";
+    svars += vars_[jj];
+  }
+  fconf_.set("nvars", vars_.size());
+  fconf_.set("variables", svars);
 }
 
 // -----------------------------------------------------------------------------
 
 Variables::Variables(const Variables & other)
- : convention_(other.convention_), vars_(other.vars_), conf_(other.conf_)
+ : convention_(other.convention_), vars_(other.vars_), conf_(other.conf_), fconf_(other.fconf_)
 {}
 
 // -----------------------------------------------------------------------------

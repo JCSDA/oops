@@ -65,7 +65,7 @@ template <typename MODEL> void testObsCheck() {
     oops::Variables vars = hop.variables();
 
     eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    gconf.set("Variables", vars.asConfig());
+    gconf.set("Variables", vars.toFortran());
 
     const GeoVaLs_ gval(gconf);
 

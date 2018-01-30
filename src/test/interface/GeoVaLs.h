@@ -21,7 +21,6 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "oops/base/ObsSpaces.h"
-#include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Locations.h"
 #include "oops/interface/ObsOperator.h"
@@ -122,12 +121,10 @@ template <typename MODEL> void testRead() {
   const double tol = 1.0e-8;
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     ObsOperator_ hop(Test_::obspace()[jj]);
-    oops::Variables vars = hop.variables();
 
     eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    gconf.set("Variables", vars.asConfig());
 
-    GeoVaLs_ gval(gconf);
+    GeoVaLs_ gval(gconf, hop.variables());
 
     const double xx = gconf.getDouble("norm");
     const double zz = sqrt(dot_product(gval, gval));

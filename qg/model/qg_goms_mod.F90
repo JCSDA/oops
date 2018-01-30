@@ -150,6 +150,24 @@ end subroutine c_qg_gom_random
 
 ! ------------------------------------------------------------------------------
 
+subroutine c_qg_gom_mult(c_key_self, zz) bind(c,name='qg_gom_mult_f90')
+implicit none
+integer(c_int), intent(in) :: c_key_self
+real(c_double), intent(in) :: zz
+type(qg_goms), pointer :: self
+integer :: jo, jv
+
+call qg_goms_registry%get(c_key_self, self)
+do jo=1,self%nobs
+  do jv=1,self%nvar
+    self%values(jv,jo) = zz * self%values(jv,jo)
+  enddo
+enddo
+
+end subroutine c_qg_gom_mult
+
+! ------------------------------------------------------------------------------
+
 subroutine c_qg_gom_dotprod(c_key_self, c_key_other, prod) bind(c,name='qg_gom_dotprod_f90')
 implicit none
 integer(c_int), intent(in) :: c_key_self, c_key_other

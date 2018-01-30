@@ -139,6 +139,7 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Locations
 // -----------------------------------------------------------------------------
+  void qg_loc_create_f90(F90locs &);
   void qg_loc_delete_f90(F90locs &);
   void qg_loc_nobs_f90(const F90locs &, int &);
 
@@ -150,6 +151,7 @@ extern "C" {
   void qg_gom_delete_f90(F90goms &);
   void qg_gom_zero_f90(const F90goms &);
   void qg_gom_random_f90(const F90goms &);
+  void qg_gom_mult_f90(const F90goms &, const double &);
   void qg_gom_dotprod_f90(const F90goms &, const F90goms &, double &);
   void qg_gom_minmaxavg_f90(const F90goms &, int &, double &, double &, double &);
   void qg_gom_read_file_f90(const F90goms &, const eckit::Configuration * const *);

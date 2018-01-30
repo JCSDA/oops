@@ -38,7 +38,7 @@ class GeoVaLs : public util::Printable,
   static const std::string classname() {return "oops::GeoVaLs";}
 
   GeoVaLs(const Locations_ &, const Variables &);
-  explicit GeoVaLs(const eckit::Configuration &);
+  GeoVaLs(const eckit::Configuration &, const Variables &);
   ~GeoVaLs();
 
 /// Interfacing
@@ -48,6 +48,7 @@ class GeoVaLs : public util::Printable,
 /// Linear algebra and utilities, mostly for writing tests
   void zero();
   void random();
+  GeoVaLs & operator*=(const double &);
   double dot_product_with(const GeoVaLs &) const;
   void read(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;
@@ -70,10 +71,10 @@ GeoVaLs<MODEL>::GeoVaLs(const Locations_ & locs, const Variables & vars) : gvals
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-GeoVaLs<MODEL>::GeoVaLs(const eckit::Configuration & conf) : gvals_() {
+GeoVaLs<MODEL>::GeoVaLs(const eckit::Configuration & conf, const Variables & vars) : gvals_() {
   Log::trace() << "GeoVaLs<MODEL>::GeoVaLs read starting" << std::endl;
   util::Timer timer(classname(), "GeoVaLs");
-  gvals_.reset(new GeoVaLs_(conf));
+  gvals_.reset(new GeoVaLs_(conf, vars));
   Log::trace() << "GeoVaLs<MODEL>::GeoVaLs read done" << std::endl;
 }
 
@@ -96,6 +97,17 @@ double GeoVaLs<MODEL>::dot_product_with(const GeoVaLs & other) const {
   double zz = gvals_->dot_product_with(*other.gvals_);
   Log::trace() << "GeoVaLs<MODEL>::dot_product_with done" << std::endl;
   return zz;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+GeoVaLs<MODEL> & GeoVaLs<MODEL>::operator*=(const double & zz) {
+  Log::trace() << "GeoVaLs<MODEL>::operator*= starting" << std::endl;
+  util::Timer timer(classname(), "operator*=");
+  *gvals_ *= zz;
+  Log::trace() << "GeoVaLs<MODEL>::operator*= done" << std::endl;
+  return *this;
 }
 
 // -----------------------------------------------------------------------------
