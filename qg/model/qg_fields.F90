@@ -628,6 +628,7 @@ else
     endif
   
     close(iunit)
+
   endif
 
   ! Set date
@@ -1041,15 +1042,14 @@ real(kind=kind_real),allocatable :: lon(:),lat(:),area(:),vunit(:)
 nc0a = self%geom%nx*self%geom%ny
 
 ! Allocation
-nn=self%geom%nx*self%geom%ny
-allocate(lon(nn))
-allocate(lat(nn))
-allocate(area(nn))
+allocate(lon(nc0a))
+allocate(lat(nc0a))
+allocate(area(nc0a))
 allocate(vunit(self%nl))
-allocate(imask(nn,self%nl))
+allocate(imask(nc0a,self%nl))
 
 ! Copy coordinates
-ii = 0
+ic0a = 0
 do jy=1,self%geom%ny
   do jx=1,self%geom%nx
     ic0a = ic0a+1
@@ -1066,10 +1066,10 @@ do jl=1,self%nl
 enddo
 
 ! Create unstructured grid
-call create_unstructured_grid(ug, nn, self%nl, self%nf, 1, lon, lat, area, vunit, imask)
+call create_unstructured_grid(ug, nc0a, self%nl, self%nf, 1, lon, lat, area, vunit, imask)
 
 ! Copy field
-ii = 0
+ic0a = 0
 do jy=1,self%geom%ny
   do jx=1,self%geom%nx
     ic0a = ic0a+1
@@ -1095,7 +1095,7 @@ type(unstructured_grid), intent(in) :: ug
 integer :: ic0a,jx,jy,jl,jf,joff
 
 ! Copy field
-ii = 0
+ic0a = 0
 do jy=1,self%geom%ny
   do jx=1,self%geom%nx
     ic0a = ic0a+1

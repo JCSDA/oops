@@ -13,6 +13,7 @@ module qg_geom_mod
 use iso_c_binding
 use config_mod
 use kinds
+use type_mpl, only: mpl
 
 implicit none
 private
