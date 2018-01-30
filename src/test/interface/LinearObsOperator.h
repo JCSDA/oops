@@ -1,8 +1,8 @@
 /*
  * (C) Copyright 2017 UCAR
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
 #ifndef TEST_INTERFACE_LINEAROBSOPERATOR_H_
@@ -19,6 +19,8 @@
 
 #include "oops/runs/Test.h"
 #include "oops/interface/LinearObsOperator.h"
+#include "oops/interface/ObsAuxControl.h"
+#include "oops/interface/ObsAuxIncrement.h"
 #include "test/TestEnvironment.h"
 #include "test/interface/ObsTestsFixture.h"
 #include "util/dot_product.h"
@@ -62,7 +64,7 @@ template <typename MODEL> void testLinearity() {
     LinearObsOperator_ hop(Test_::obspace()[jj]);
 
     const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    const GeoVaLs_ gval(gconf);
+    const GeoVaLs_ gval(gconf, hop.variables());
 
     eckit::LocalConfiguration biasConf;
     conf[jj].get("ObsBias", biasConf);
@@ -71,7 +73,7 @@ template <typename MODEL> void testLinearity() {
 
     const ObsAuxIncr_ ybinc(biasConf);
     ObsVector_ dy1(Test_::obspace()[jj]);
-    GeoVaLs_ gv(gconf);
+    GeoVaLs_ gv(gconf, hop.variables());
 
     gv.zero();
     hop.obsEquivTL(gv, dy1, ybinc);
@@ -101,7 +103,6 @@ template <typename MODEL> void testAdjoint() {
   typedef oops::LinearObsOperator<MODEL> LinearObsOperator_;
   typedef oops::ObsAuxControl<MODEL>     ObsAuxCtrl_;
   typedef oops::ObsAuxIncrement<MODEL>   ObsAuxIncr_;
-  typedef oops::LinearObsOperator<MODEL> LinearObsOperator_;
   typedef oops::ObsVector<MODEL>         ObsVector_;
 
   const double zero = 0.0;
@@ -112,21 +113,21 @@ template <typename MODEL> void testAdjoint() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     LinearObsOperator_ hop(Test_::obspace()[jj]);
-
-    const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    const GeoVaLs_ gval(gconf);
+    eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
+    const GeoVaLs_ gval(gconf, hop.variables());
 
     eckit::LocalConfiguration biasConf;
     conf[jj].get("ObsBias", biasConf);
     const ObsAuxCtrl_ ybias(biasConf);
+
     hop.setTrajectory(gval, ybias);
 
     ObsAuxIncr_ ybinc(biasConf);
 
     ObsVector_ dy1(Test_::obspace()[jj]);
     ObsVector_ dy2(Test_::obspace()[jj]);
-    GeoVaLs_ gv1(gconf);
-    GeoVaLs_ gv2(gconf);
+    GeoVaLs_ gv1(gconf, hop.variables());
+    GeoVaLs_ gv2(gconf, hop.variables());
 
     gv1.random();
     BOOST_REQUIRE(dot_product(gv1, gv1) > zero);
@@ -134,7 +135,7 @@ template <typename MODEL> void testAdjoint() {
     BOOST_CHECK(dot_product(dy1, dy1) > zero);
 
     dy2.random();
-    BOOST_REQUIRE(dot_product(dy2, dy2) > zero);;
+    BOOST_REQUIRE(dot_product(dy2, dy2) > zero);
     hop.obsEquivAD(gv2, dy2, ybinc);
     BOOST_CHECK(dot_product(gv2, gv2) > zero);
 
@@ -161,7 +162,6 @@ template <typename MODEL> class LinearObsOperator : public oops::Test {
     ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
     ts->add(BOOST_TEST_CASE(&testLinearity<MODEL>));
     ts->add(BOOST_TEST_CASE(&testAdjoint<MODEL>));
-
     boost::unit_test::framework::master_test_suite().add(ts);
   }
 };

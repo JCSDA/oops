@@ -20,26 +20,42 @@ namespace oops {
 // -----------------------------------------------------------------------------
 
 Variables::Variables(const eckit::Configuration & conf)
- : convention_(""), vars_(0), conf_()
+ : convention_(""), vars_(0), conf_(), fconf_()
 {
   conf.get("variables", vars_);
   conf_.set("nvars", vars_.size());
-  conf_.set("variables", vars_);
+  conf_.get("variables", vars_);
+
+  std::string svars = "";
+  for (size_t jj = 0; jj < vars_.size(); ++jj) {
+    if (jj > 0) svars += ", ";
+    svars += vars_[jj];
+  }
+  fconf_.set("nvars", vars_.size());
+  fconf_.set("variables", svars);
 }
 
 // -----------------------------------------------------------------------------
 
 Variables::Variables(const std::vector<std::string> & vars, const std::string & conv)
- : convention_(conv), vars_(vars), conf_()
+ : convention_(conv), vars_(vars), conf_(), fconf_()
 {
   conf_.set("nvars", vars_.size());
   conf_.set("variables", vars_);
+
+  std::string svars = "";
+  for (size_t jj = 0; jj < vars_.size(); ++jj) {
+    if (jj > 0) svars += ", ";
+    svars += vars_[jj];
+  }
+  fconf_.set("nvars", vars_.size());
+  fconf_.set("variables", svars);
 }
 
 // -----------------------------------------------------------------------------
 
 Variables::Variables(const Variables & other)
- : convention_(other.convention_), vars_(other.vars_)
+ : convention_(other.convention_), vars_(other.vars_), conf_(other.conf_), fconf_(other.fconf_)
 {}
 
 // -----------------------------------------------------------------------------
@@ -49,6 +65,7 @@ Variables::~Variables() {}
 // -----------------------------------------------------------------------------
 
 void Variables::print(std::ostream & os) const {
+  os << vars_.size() << " variables: ";
   for (size_t jj = 0; jj < vars_.size(); ++jj) {
     if (jj > 0) os << ", ";
     os << vars_[jj];

@@ -25,7 +25,7 @@ GomQG::GomQG(const LocationsQG & locs, const oops::Variables & var) {
   qg_gom_setup_f90(keyGom_, locs.toFortran(), varqg.toFortran());
 }
 // -----------------------------------------------------------------------------
-GomQG::GomQG(const eckit::Configuration & config) {
+GomQG::GomQG(const eckit::Configuration & config, const oops::Variables &) {
   qg_gom_create_f90(keyGom_);
   const eckit::Configuration * conf = &config;
   qg_gom_read_file_f90(keyGom_, &conf);

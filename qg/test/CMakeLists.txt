@@ -17,6 +17,7 @@ list( APPEND qg_test_input
   testinput/dirac.nicas.json
   testinput/forecast.json
   testinput/genenspert.json
+  testinput/hofx.json
   testinput/interfaces.json
   testinput/makeobs3d.json
   testinput/makeobs4d.json
@@ -47,6 +48,7 @@ list( APPEND qg_testoutput
   testoutput/dirac.nicas.test
   testoutput/forecast.test
   testoutput/genenspert.test
+  testoutput/hofx.test
   testoutput/makeobs3d.test
   testoutput/makeobs4d.test
   testoutput/makeobs4d12h.test
@@ -255,6 +257,13 @@ ecbuild_add_test( TARGET  test_qg_localization
 #                  LIBS    qg )
 
 # Test oops applications with QG
+
+ecbuild_add_test( TARGET test_qg_hofx
+                  TYPE SCRIPT
+                  COMMAND "compare.sh"
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_hofx.x testinput/hofx.json"
+                       testoutput/hofx.test
+                  DEPENDS qg_hofx.x )
 
 ecbuild_add_test( TARGET test_qg_3dvar
                   TYPE SCRIPT

@@ -21,9 +21,9 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "oops/base/ObsSpaces.h"
-#include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Locations.h"
+#include "oops/interface/ObsOperator.h"
 #include "oops/runs/Test.h"
 #include "test/TestEnvironment.h"
 #include "eckit/config/LocalConfiguration.h"
@@ -41,7 +41,6 @@ class GeoVaLsFixture : private boost::noncopyable {
   static const util::DateTime  & tbgn() {return *getInstance().tbgn_;}
   static const util::DateTime  & tend() {return *getInstance().tend_;}
   static ObsSpaces_         & obspace() {return *getInstance().ospaces_;}
-  static const oops::Variables & vars() {return *getInstance().vars_;}
 
  private:
   static GeoVaLsFixture<MODEL>& getInstance() {
@@ -55,9 +54,6 @@ class GeoVaLsFixture : private boost::noncopyable {
 
     const eckit::LocalConfiguration conf(TestEnvironment::config(), "Observations");
     ospaces_.reset(new ObsSpaces_(conf, *tbgn_, *tend_));
-
-    const eckit::LocalConfiguration varConfig(TestEnvironment::config(), "Variables");
-    vars_.reset(new oops::Variables(varConfig));
   }
 
   ~GeoVaLsFixture() {}
@@ -65,7 +61,6 @@ class GeoVaLsFixture : private boost::noncopyable {
   boost::scoped_ptr<const util::DateTime> tbgn_;
   boost::scoped_ptr<const util::DateTime> tend_;
   boost::scoped_ptr<ObsSpaces_> ospaces_;
-  boost::scoped_ptr<const oops::Variables> vars_;
 };
 
 // -----------------------------------------------------------------------------
@@ -74,10 +69,13 @@ template <typename MODEL> void testConstructor() {
   typedef GeoVaLsFixture<MODEL> Test_;
   typedef oops::GeoVaLs<MODEL>    GeoVaLs_;
   typedef oops::Locations<MODEL>  Locations_;
+  typedef oops::ObsOperator<MODEL> ObsOperator_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    ObsOperator_ hop(Test_::obspace()[jj]); 
+
     Locations_ locs(Test_::obspace()[jj].locations(Test_::tbgn(), Test_::tend()));
-    boost::scoped_ptr<GeoVaLs_> ov(new GeoVaLs_(locs, Test_::vars()));
+    boost::scoped_ptr<GeoVaLs_> ov(new GeoVaLs_(locs, hop.variables()));
     BOOST_CHECK(ov.get());
 
     ov.reset();
@@ -91,10 +89,13 @@ template <typename MODEL> void testUtils() {
   typedef GeoVaLsFixture<MODEL> Test_;
   typedef oops::GeoVaLs<MODEL>    GeoVaLs_;
   typedef oops::Locations<MODEL>  Locations_;
+  typedef oops::ObsOperator<MODEL> ObsOperator_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    ObsOperator_ hop(Test_::obspace()[jj]);
+
     Locations_ locs(Test_::obspace()[jj].locations(Test_::tbgn(), Test_::tend()));
-    GeoVaLs_ gval(locs, Test_::vars());
+    GeoVaLs_ gval(locs, hop.variables());
 
     gval.random();
     const double zz1 = dot_product(gval, gval);
@@ -109,16 +110,22 @@ template <typename MODEL> void testUtils() {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL> void testRead() {
+  typedef GeoVaLsFixture<MODEL> Test_;
   typedef oops::GeoVaLs<MODEL>  GeoVaLs_;
+  typedef oops::ObsOperator<MODEL> ObsOperator_;
 
   const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
   std::vector<eckit::LocalConfiguration> conf;
   obsconf.get("ObsTypes", conf);
 
   const double tol = 1.0e-8;
-  for (std::size_t jj = 0; jj < conf.size(); ++jj) {
-    const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    GeoVaLs_ gval(gconf);
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    ObsOperator_ hop(Test_::obspace()[jj]);
+
+    eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
+
+    GeoVaLs_ gval(gconf, hop.variables());
+
     const double xx = gconf.getDouble("norm");
     const double zz = sqrt(dot_product(gval, gval));
     BOOST_CHECK_CLOSE(xx, zz, tol);
