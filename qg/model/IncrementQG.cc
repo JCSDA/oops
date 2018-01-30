@@ -165,11 +165,7 @@ void IncrementQG::interpolateAD(const LocationsQG & locs, const oops::Variables 
   fields_->interpolateAD(locs, vars, cols);
 }
 // -----------------------------------------------------------------------------
-/// Define and convert to/from unstructured grid
-// -----------------------------------------------------------------------------
-void IncrementQG::define(oops::UnstructuredGrid & ug) const {
-  fields_->define(ug);
-}
+/// Convert to/from unstructured grid
 // -----------------------------------------------------------------------------
 void IncrementQG::convert_to(oops::UnstructuredGrid & ug) const {
   fields_->convert_to(ug);

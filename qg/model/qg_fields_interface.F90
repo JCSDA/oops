@@ -288,25 +288,6 @@ end subroutine qg_field_change_resol_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine qg_field_define_c(c_key_fld, c_key_ug) bind (c,name='qg_field_define_f90')
-use iso_c_binding
-use qg_fields
-use unstructured_grid_mod
-implicit none
-integer(c_int), intent(in) :: c_key_fld
-integer(c_int), intent(in) :: c_key_ug
-type(qg_field), pointer :: fld
-type(unstructured_grid), pointer :: ug
-
-call qg_field_registry%get(c_key_fld,fld)
-call unstructured_grid_registry%get(c_key_ug,ug)
-
-call define_ug(fld, ug)
-
-end subroutine qg_field_define_c
-
-! ------------------------------------------------------------------------------
-
 subroutine qg_field_convert_to_c(c_key_fld, c_key_ug) bind (c,name='qg_field_convert_to_f90')
 use iso_c_binding
 use qg_fields

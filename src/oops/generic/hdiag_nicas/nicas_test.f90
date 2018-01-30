@@ -12,7 +12,7 @@ module nicas_test
 
 use driver_hdiag, only: run_hdiag
 use model_interface, only: model_write
-use nicas_apply_bens, only: apply_bens
+use nicas_apply_bens, only: apply_bens,apply_bens_noloc
 use nicas_apply_convol, only: apply_convol
 use nicas_apply_interp, only: apply_interp,apply_interp_s,apply_interp_v,apply_interp_h, &
                             & apply_interp_ad,apply_interp_h_ad,apply_interp_v_ad,apply_interp_s_ad
@@ -30,10 +30,10 @@ use type_com, only: com_ext,com_red
 use type_ctree, only: find_nearest_neighbors
 use type_geom, only: geomtype,fld_com_gl,fld_com_lg
 use type_linop, only: apply_linop,apply_linop_ad
-use type_mpl, only: mpl,mpl_dot_prod
+use type_mpl, only: mpl,mpl_dot_prod,mpl_bcast
 use type_nam, only: namtype
 use type_ndata, only: ndatatype,ndata_dealloc
-use type_randgen, only: rand_real
+use type_randgen, only: rand_real,rand_integer
 use type_timer, only: timertype,timer_start,timer_end
 
 implicit none
@@ -41,8 +41,8 @@ implicit none
 real(kind_real),parameter :: tol = 1.0e-3 !< Positive-definiteness test tolerance
 integer,parameter :: nitermax = 50        !< Number of iterations for the positive-definiteness test
 integer,parameter :: ne = 150             !< Ensemble size for randomization
-integer,parameter :: nfac = 20            !< Number of length-scale factors
-integer,parameter :: ntest = 1           !< Number of tests
+integer,parameter :: nfac = 10            !< Number of length-scale factors
+integer,parameter :: ntest = 100          !< Number of tests
 
 private
 public :: test_nicas_adjoint,test_nicas_pos_def,test_nicas_sqrt,test_nicas_dirac
@@ -432,7 +432,6 @@ type(ndatatype),intent(in) :: ndata      !< NICAS data
 ! Local variables
 integer :: ic0,ic1,il0,il1,is
 integer :: il0dir(ndata%nam%ndir),ic0dir(ndata%nam%ndir),idir
-real(kind_real) :: dum(1)
 real(kind_real),allocatable :: fld(:,:),fld_c1(:,:),fld_s(:,:)
 
 ! Associate
@@ -442,18 +441,12 @@ if (mpl%main) then
    ! Allocation
    allocate(fld(geom%nc0,geom%nl0))
 
-   ! Generate diracs field
+   ! Find gridpoint and level indices
+   call define_dirac(nam,geom,ic0dir,il0dir)
+
+   ! Generate dirac field
    fld = 0.0
    do idir=1,nam%ndir
-      ! Find level index
-      do il0=1,geom%nl0
-          if (nam%levs(il0)==nam%levdir(idir)) il0dir(idir) = il0
-      end do
-
-      ! Find nearest neighbor
-      call find_nearest_neighbors(geom%ctree,dble(nam%londir(idir)*deg2rad),dble(nam%latdir(idir)*deg2rad),1,ic0dir(idir:idir),dum)
-
-      ! Dirac value
       fld(ic0dir(idir),il0dir(idir)) = 1.0
    end do
 end if
@@ -722,39 +715,32 @@ real(kind_real),intent(in),optional :: ens1(geom%nc0a,geom%nl0,nam%nv,nam%nts,na
 
 ! Local variables
 integer :: il0,il0dir(nam%ndir),ic0dir(nam%ndir),idir,iv,its
-real(kind_real) :: dum(1)
-real(kind_real),allocatable :: dirac(:,:,:,:),fld_loc(:,:,:,:),fld_bens(:,:,:,:)
+real(kind_real),allocatable :: fld(:,:,:,:),fld_loc(:,:,:,:),fld_bens(:,:,:,:)
 character(len=2) :: itschar
 
 if (mpl%main) then
    ! Allocation
-   allocate(dirac(geom%nc0,geom%nl0,nam%nv,nam%nts))
+   allocate(fld(geom%nc0,geom%nl0,nam%nv,nam%nts))
 
-   ! Generate diracs field
-   dirac = 0.0
+   ! Find gridpoint and level indices
+   call define_dirac(nam,geom,ic0dir,il0dir)
+
+   ! Generate dirac field
+   fld = 0.0
    do idir=1,nam%ndir
-      ! Find level index
-      do il0=1,geom%nl0
-          if (nam%levs(il0)==nam%levdir(idir)) il0dir(idir) = il0
-      end do
-
-      ! Find nearest neighbor
-      call find_nearest_neighbors(geom%ctree,dble(nam%londir(idir)*deg2rad),dble(nam%latdir(idir)*deg2rad),1,ic0dir(idir:idir),dum)
-
-      ! Dirac value
-      dirac(ic0dir(idir),il0dir(idir),nam%ivdir(idir),nam%itsdir(idir)) = 1.0
+      fld(ic0dir(idir),il0dir(idir),nam%ivdir(idir),nam%itsdir(idir)) = 1.0
    end do
 end if
 
 ! Global to local
-call fld_com_gl(nam,geom,dirac)
+call fld_com_gl(nam,geom,fld)
 
 ! Allocation
 allocate(fld_loc(geom%nc0a,geom%nl0,nam%nv,nam%nts))
 if (present(ens1)) allocate(fld_bens(geom%nc0a,geom%nl0,nam%nv,nam%nts))
 
 ! Apply localization to dirac
-fld_loc = dirac
+fld_loc = fld
 if (nam%lsqrt) then
    call apply_localization_from_sqrt(nam,geom,bpar,ndata,fld_loc)
 else
@@ -763,7 +749,7 @@ end if
 
 if (present(ens1)) then
    ! Apply localized ensemble covariance
-   fld_bens = dirac
+   fld_bens = fld
    call apply_bens(nam,geom,bpar,ndata,ens1,fld_bens)
 end if
 
@@ -787,7 +773,7 @@ end subroutine test_loc_dirac
 
 !----------------------------------------------------------------------
 ! Subroutine: test_randomization
-!> Purpose: test the randomization method
+!> Purpose: test NICAS randomization method with respect to theoretical error statistics
 !----------------------------------------------------------------------
 subroutine test_randomization(nam,geom,bpar,ndata)
 
@@ -800,28 +786,62 @@ type(bpartype),intent(in) :: bpar              !< Block parameters
 type(ndatatype),intent(in) :: ndata(bpar%nb+1) !< NICAS data
 
 ! Local variables
-integer :: ib,ic0,ic0a,il0,ifac,itest,nefac(nfac),ens1_ne
-real(kind_real),allocatable :: ens1(:,:,:,:,:)
+integer :: ib,ic0,ic0a,il0,ifac,itest,nefac(nfac),ens1_ne,ie,iv,its,iproc
 real(kind_real) :: fld_ref(geom%nc0a,geom%nl0,nam%nv,nam%nts,ntest),fld_save(geom%nc0a,geom%nl0,nam%nv,nam%nts,ntest)
-real(kind_real) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts),mse(ntest,nfac)
+real(kind_real) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts),mse(ntest,nfac),mse_th(ntest,nfac)
+real(kind_real),allocatable :: ens1(:,:,:,:,:),fld_tmp(:,:,:,:)
+character(len=2) :: itschar
+character(len=4) :: nechar,itestchar
 character(len=1024) :: prefix,method
 type(bdatatype),allocatable :: bdata_save(:),bdata_test(:)
-type(ndatatype),allocatable :: ndata_test(:)
 
-! Define reference
-call rand_real(0.0_kind_real,1.0_kind_real,fld_save)
+! Define test vectors
+write(mpl%unit,'(a4,a)') '','Define test vectors'
+call define_test_vectors(nam,geom,fld_save)
+
+! Apply localization to test vectors
+write(mpl%unit,'(a4,a)') '','Apply localization to test vectors'
 fld_ref = fld_save
 do itest=1,ntest
    call apply_localization_from_sqrt(nam,geom,bpar,ndata,fld_ref(:,:,:,:,itest))
 end do
 
+! Write first 10 test vectors
+do itest=1,min(ntest,10)
+   ! Allocation
+   allocate(fld_tmp(geom%nc0a,geom%nl0,nam%nv,nam%nts))
+
+   ! Copy
+   fld_tmp = fld_ref(:,:,:,:,itest)
+
+   ! Local to global
+   call fld_com_lg(nam,geom,fld_tmp)
+   
+   if (mpl%main) then
+      ! Write field
+      write(itestchar,'(i4.4)') itest
+      do its=1,nam%nts
+         write(itschar,'(i2.2)') its
+         do iv=1,nam%nv
+            call model_write(nam,geom,trim(nam%prefix)//'_randomize_'//itestchar//'.nc',trim(nam%varname(iv))//'_ref_'//itschar, & 
+          & fld_tmp(:,:,iv,its))
+         end do
+      end do
+   end if
+
+   ! Release memory
+   if (mpl%main) deallocate(fld_tmp)
+end do
+
 ! Save namelist variables
 ens1_ne = nam%ens1_ne
 
+write(mpl%unit,'(a4,a)') '','Test randomization for various ensemble sizes:'
 do ifac=1,nfac
    ! Ensemble size
    nefac(ifac) = max(int(5.0*float(ifac)/float(nfac)*float(ne)),3)
    nam%ens1_ne = nefac(ifac)
+   write(nechar,'(i4.4)') nefac(ifac)
 
    ! Allocation
    allocate(ens1(geom%nc0a,geom%nl0,nam%nv,nam%nts,nefac(ifac)))
@@ -832,38 +852,48 @@ do ifac=1,nfac
    do itest=1,ntest
       ! Test localization
       fld = fld_save(:,:,:,:,itest)
-      call apply_bens(nam,geom,bpar,ndata_test,ens1,fld)
+      call apply_bens_noloc(nam,geom,bpar,ens1,fld)
 
       ! RMSE
       mse(itest,ifac) = sum((fld-fld_ref(:,:,:,:,itest))**2)
+      mse_th(itest,ifac) = 1.0/float(nam%ens1_ne-1)*sum(1+fld_ref(:,:,:,:,itest)**2)
+
+      ! Write first 10 test vectors
+      if (itest<=min(ntest,10)) then
+         ! Allocation
+         allocate(fld_tmp(geom%nc0a,geom%nl0,nam%nv,nam%nts))
+
+         ! Copy
+         fld_tmp = fld
+
+         ! Local to global
+         call fld_com_lg(nam,geom,fld_tmp)
+   
+         if (mpl%main) then
+            ! Write field
+            write(itestchar,'(i4.4)') itest
+            do its=1,nam%nts
+               write(itschar,'(i2.2)') its
+               do iv=1,nam%nv
+                  call model_write(nam,geom,trim(nam%prefix)//'_randomize_'//itestchar//'.nc',trim(nam%varname(iv))//'_rand_' &
+                & //nechar//'_'//itschar,fld_tmp(:,:,iv,its))
+               end do
+            end do
+         end if
+
+         ! Release memory
+         if (mpl%main) deallocate(fld_tmp)
+      end if
    end do
 
    ! Print scores
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a,i4,a,e15.8)') '--- Randomization results for an ensemble size ',nefac(ifac),', MSE: ', &
- & sum(mse(:,ifac))/float(ntest)
+   write(mpl%unit,'(a7,a,i4,a,e15.8,a,e15.8)') '','Ensemble size ',nefac(ifac),', MSE (exp. / th.): ', &
+ & sum(mse(:,ifac))/float(ntest),' / ',sum(mse_th(:,ifac))/float(ntest)
 
-   ! Normalize ensemble
-   ! TODO
-
-!   do itest=1,ntest
-!      ! Test localization
-!      fld = fld_save(:,:,:,:,itest)
-!      call apply_bens(nam,geom,bpar,ndata_test,ens1,fld)
-!
-!      ! RMSE
-!      mse(itest,ifac) = sum((fld-fld_ref(:,:,:,:,itest))**2)
-!   end do
+   ! Release memory
+   deallocate(ens1)
 end do
   
-! Print scores
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Randomization results summary'
-
-do ifac=1,nfac
-   write(mpl%unit,'(a7,a,i4,a,e15.8)') '','Ensemble size ',nefac(ifac),', MSE: ',sum(mse(:,ifac))/float(ntest)
-end do
-
 ! Reset namelist variables
 nam%ens1_ne = ens1_ne
 
@@ -871,7 +901,7 @@ end subroutine test_randomization
 
 !----------------------------------------------------------------------
 ! Subroutine: test_consistency
-!> Purpose: test hdiag_nicas consistency with a randomization method
+!> Purpose: test HDIAG_NICAS consistency with a randomization method
 !----------------------------------------------------------------------
 subroutine test_consistency(nam,geom,bpar,bdata,ndata)
 
@@ -945,7 +975,7 @@ end subroutine test_consistency
 
 !----------------------------------------------------------------------
 ! Subroutine: test_optimality
-!> Purpose: test localization optimality with a randomization method
+!> Purpose: test HDIAG localization optimality with a randomization method
 !----------------------------------------------------------------------
 subroutine test_optimality(nam,geom,bpar,ndata)
 
@@ -966,8 +996,12 @@ character(len=1024) :: prefix,method
 type(bdatatype),allocatable :: bdata_save(:),bdata_test(:)
 type(ndatatype),allocatable :: ndata_test(:)
 
-! Define reference
-call rand_real(0.0_kind_real,1.0_kind_real,fld_save)
+! Define test vectors
+write(mpl%unit,'(a4,a)') '','Define test vectors'
+call define_test_vectors(nam,geom,fld_save)
+
+! Apply localization to test vectors
+write(mpl%unit,'(a4,a)') '','Apply localization to test vectors'
 fld_ref = fld_save
 do itest=1,ntest
    call apply_localization_from_sqrt(nam,geom,bpar,ndata,fld_ref(:,:,:,:,itest))
@@ -977,9 +1011,6 @@ end do
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Randomize ensemble'
 call randomize_localization(nam,geom,bpar,ndata,nam%ens1_ne,ens1)
-
-! Normalize ensemble
-
 
 ! Copy sampling
 call system('cp -f '//trim(nam%datadir)//'/'//trim(nam%prefix)//'_sampling.nc ' &
@@ -1057,10 +1088,9 @@ do ifac=1,nfac
    write(mpl%unit,'(a,f4.2,a,e15.8)') '--- Optimality results for a factor ',fac(ifac),', MSE: ',sum(mse(:,ifac))/float(ntest)
 end do
   
-! Print scores
+! Print scores summary
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Optimality results summary'
-
 do ifac=1,nfac
    write(mpl%unit,'(a7,a,f4.2,a,e15.8)') '','Factor ',fac(ifac),', MSE: ',sum(mse(:,ifac))/float(ntest)
 end do
@@ -1070,5 +1100,74 @@ nam%prefix = prefix
 nam%method = method
 
 end subroutine test_optimality
+
+!----------------------------------------------------------------------
+! Subroutine: define_dirac
+!> Purpose: define dirac indices
+!----------------------------------------------------------------------
+subroutine define_dirac(nam,geom,ic0dir,il0dir)
+
+implicit none
+
+! Passed variables
+type(namtype),intent(in) :: nam         !< Namelist
+type(geomtype),intent(in) :: geom       !< Geometry
+integer,intent(out) :: ic0dir(nam%ndir) !< Dirac gridpoint indice
+integer,intent(out) :: il0dir(nam%ndir) !< Dirac level indice
+
+! Local variables
+integer :: idir,il0,nn_index(1)
+real(kind_real) :: nn_dist(1)
+
+do idir=1,nam%ndir
+   ! Find nearest neighbor
+   call find_nearest_neighbors(geom%ctree,dble(nam%londir(idir)*deg2rad),dble(nam%latdir(idir)*deg2rad),1,nn_index,nn_dist)
+   ic0dir(idir) = nn_dist(1)
+
+   ! Find level index
+   do il0=1,geom%nl0
+      if (nam%levs(il0)==nam%levdir(idir)) il0dir(idir) = il0
+   end do
+end do
+
+end subroutine define_dirac
+
+!----------------------------------------------------------------------
+! Subroutine: define_test_vectors
+!> Purpose: define test vectors
+!----------------------------------------------------------------------
+subroutine define_test_vectors(nam,geom,fld)
+
+! Passed variables
+type(namtype),intent(in) :: nam                                             !< Namelist
+type(geomtype),intent(in) :: geom                                           !< Geometry
+real(kind_real),intent(out) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts,ntest) !< Field
+
+! Local variables
+integer :: ic0dir(ntest),il0dir(ntest),ivdir(ntest),itsdir(ntest)
+integer :: itest,ic0,iproc,ic0a
+
+! Define dirac locations
+if (mpl%main) then
+   call rand_integer(1,geom%nc0,ic0dir)
+   call rand_integer(1,geom%nl0,il0dir)
+end if
+call mpl_bcast(ic0dir,mpl%ioproc)
+call mpl_bcast(il0dir,mpl%ioproc)
+ivdir = 1
+itsdir = 1
+
+! Define test vectors
+do itest=1,ntest
+   fld(:,:,:,:,itest) = 0.0
+   ic0 = ic0dir(itest)
+   iproc = geom%c0_to_proc(ic0)
+   if (iproc==mpl%myproc) then
+      ic0a = geom%c0_to_c0a(ic0)
+      fld(ic0a,il0dir(itest),ivdir(itest),itsdir(itest),itest) = 1.0
+   end if
+end do
+
+end subroutine define_test_vectors
 
 end module nicas_test

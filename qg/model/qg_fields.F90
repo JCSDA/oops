@@ -27,7 +27,7 @@ public :: qg_field, &
         & self_add, self_schur, self_sub, self_mul, axpy, &
         & dot_prod, add_incr, diff_incr, &
         & read_file, write_file, gpnorm, fldrms, &
-        & change_resol, interp_tl, interp_ad, define_ug, convert_to_ug, convert_from_ug
+        & change_resol, interp_tl, interp_ad, convert_to_ug, convert_from_ug
 
 ! ------------------------------------------------------------------------------
 
@@ -541,7 +541,7 @@ else
 
   ! Read data
   if (netcdfio) then
-  
+
     call ncerr(subr,nf90_open(trim(filename)//'.nc',nf90_nowrite,ncid))
     call ncerr(subr,nf90_inq_dimid(ncid,'nx',nx_id))
     call ncerr(subr,nf90_inq_dimid(ncid,'ny',ny_id))
@@ -579,9 +579,9 @@ else
     endif
   
     call ncerr(subr,nf90_close(ncid))
-  
+
   else
-  
+
     open(unit=iunit, file=trim(filename), form='formatted', action='read')
   
     read(iunit,*) ix, iy, il, ic, is
@@ -609,7 +609,7 @@ else
         read(iunit,fmtn) (fld%gfld3d(jx,jy,jf), jx=1,fld%geom%nx)
       enddo
     enddo
-!   Skip un-necessary data from file if any
+! Skip un-necessary data from file if any
     allocate(zz(fld%geom%nx))
     do jf=nf*il+1, ic*il
       do jy=1,fld%geom%ny
@@ -628,7 +628,6 @@ else
     endif
   
     close(iunit)
-  
   endif
 
   ! Set date
@@ -1023,9 +1022,23 @@ implicit none
 type(qg_field), intent(in) :: self
 type(unstructured_grid), intent(inout) :: ug
 
+
+end subroutine define_ug
+
+! ------------------------------------------------------------------------------
+
+subroutine convert_to_ug(self, ug)
+use unstructured_grid_mod
+implicit none
+type(qg_field), intent(in) :: self
+type(unstructured_grid), intent(inout) :: ug
+
+integer :: nc0a,ic0a,jx,jy,jl,jf,joff
 integer,allocatable :: imask(:,:)
 real(kind=kind_real),allocatable :: lon(:),lat(:),area(:),vunit(:)
-integer :: jx,jy,jl,nn,ii
+
+! Define local number of gridpoints (equal to global here since QG works on a single proc)
+nc0a = self%geom%nx*self%geom%ny
 
 ! Allocation
 nn=self%geom%nx*self%geom%ny
@@ -1039,10 +1052,10 @@ allocate(imask(nn,self%nl))
 ii = 0
 do jy=1,self%geom%ny
   do jx=1,self%geom%nx
-    ii = ii+1
-    lon(ii) = self%geom%lon(jx)
-    lat(ii) = self%geom%lat(jy)
-    area(ii) = self%geom%area(jx,jy)
+    ic0a = ic0a+1
+    lon(ic0a) = self%geom%lon(jx)
+    lat(ic0a) = self%geom%lat(jy)
+    area(ic0a) = self%geom%area(jx,jy)
   enddo
 enddo
 imask = 1
@@ -1055,27 +1068,15 @@ enddo
 ! Create unstructured grid
 call create_unstructured_grid(ug, nn, self%nl, self%nf, 1, lon, lat, area, vunit, imask)
 
-end subroutine define_ug
-
-! ------------------------------------------------------------------------------
-
-subroutine convert_to_ug(self, ug)
-use unstructured_grid_mod
-implicit none
-type(qg_field), intent(in) :: self
-type(unstructured_grid), intent(inout) :: ug
-
-integer :: jx,jy,jl,jf,joff,ii
-
 ! Copy field
 ii = 0
 do jy=1,self%geom%ny
   do jx=1,self%geom%nx
-    ii = ii+1
+    ic0a = ic0a+1
     do jf=1,self%nf
       joff = (jf-1)*self%nl
       do jl=1,self%nl
-        ug%fld(ii,jl,jf,1) = self%gfld3d(jx,jy,joff+jl)
+        ug%fld(ic0a,jl,jf,1) = self%gfld3d(jx,jy,joff+jl)
       enddo
     enddo
   enddo
@@ -1091,17 +1092,17 @@ implicit none
 type(qg_field), intent(inout) :: self
 type(unstructured_grid), intent(in) :: ug
 
-integer :: ii,jx,jy,jl,jf,joff
+integer :: ic0a,jx,jy,jl,jf,joff
 
 ! Copy field
 ii = 0
 do jy=1,self%geom%ny
   do jx=1,self%geom%nx
-    ii = ii+1
+    ic0a = ic0a+1
     do jf=1,self%nf
       joff = (jf-1)*self%nl
       do jl=1,self%nl
-        self%gfld3d(jx,jy,joff+jl) = ug%fld(ii,jl,jf,1)
+        self%gfld3d(jx,jy,joff+jl) = ug%fld(ic0a,jl,jf,1)
       enddo
     enddo
   enddo

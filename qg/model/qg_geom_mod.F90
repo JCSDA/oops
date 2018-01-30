@@ -51,7 +51,7 @@ implicit none
 integer(c_int), intent(inout) :: c_key_self
 type(c_ptr), intent(in)    :: c_conf
 
-integer :: ix,iy
+integer :: ix,iy,nx_loc,ix_loc
 real(kind=kind_real) :: dx,dytot,dy
 real(kind=kind_real),parameter :: pi = acos(-1.0), req = 6371229.0
 type(qg_geom), pointer :: self

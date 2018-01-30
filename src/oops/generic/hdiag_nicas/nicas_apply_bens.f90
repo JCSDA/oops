@@ -16,14 +16,14 @@ use tools_kinds, only: kind_real
 use tools_missing, only: msr,isnotmsr
 use type_bpar, only: bpartype
 use type_geom, only: geomtype
-use type_mpl, only: mpl
+use type_mpl, only: mpl,mpl_dot_prod
 use type_nam, only: namtype
 use type_ndata, only: ndatatype
 
 implicit none
 
 private
-public :: apply_bens
+public :: apply_bens,apply_bens_noloc
 
 contains
 
@@ -111,5 +111,47 @@ if (nam%transform) then
 end if
 
 end subroutine apply_bens
+
+!----------------------------------------------------------------------
+! Subroutine: apply_bens_noloc
+!> Purpose: apply ensemble covariance, without localization
+!----------------------------------------------------------------------
+subroutine apply_bens_noloc(nam,geom,bpar,ens1,fld)
+
+implicit none
+
+! Passed variables
+type(namtype),target,intent(in) :: nam                                            !< Namelist
+type(geomtype),target,intent(in) :: geom                                          !< Geometry
+type(bpartype),target,intent(in) :: bpar                                          !< Blocal parameters
+real(kind_real),intent(in) :: ens1(geom%nc0a,geom%nl0,nam%nv,nam%nts,nam%ens1_ne) !< Ensemble 1
+real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts)           !< Field
+
+! Local variable
+integer :: ie
+real(kind_real) :: alpha
+real(kind_real) :: fld_copy(geom%nc0a,geom%nl0,nam%nv,nam%nts)
+real(kind_real) :: mean(geom%nc0a,geom%nl0,nam%nv,nam%nts),pert(geom%nc0a,geom%nl0,nam%nv,nam%nts)
+
+! Compute mean
+mean = sum(ens1,dim=5)/float(nam%ens1_ne)
+
+! Initialization
+fld_copy = fld
+
+! Apply localized ensemble covariance formula
+fld = 0.0
+do ie=1,nam%ens1_ne
+   ! Compute perturbation
+   pert = (ens1(:,:,:,:,ie)-mean)/sqrt(float(nam%ens1_ne-1))
+
+   ! Dot product
+   call mpl_dot_prod(pert,fld_copy,alpha)
+
+   ! Schur product
+   fld = fld+alpha*pert
+end do
+
+end subroutine apply_bens_noloc
 
 end module nicas_apply_bens

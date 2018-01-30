@@ -71,9 +71,9 @@ LocalizationHDIAG_NICAS<MODEL>::LocalizationHDIAG_NICAS(const Geometry_ & resol,
 // Setup dummy increment
   Increment_ dx(resol, vars, date);
 
-// Convert to unstructured grid
+// Unstructured grid
   UnstructuredGrid ug;
-  //dx.define(ug);
+  dx.convert_to(ug);
 
 // Get sizes and coordinates from the unstructured grid
   int nc0a = ug.getSize(1);
@@ -94,20 +94,20 @@ LocalizationHDIAG_NICAS<MODEL>::LocalizationHDIAG_NICAS(const Geometry_ & resol,
     conf.get("hdiag_ensemble", confs);
     ens1_ne = confs.size();
     Log::info() << "HDIAG ensemble: " << ens1_ne << " members" << std::endl;
-    ASSERT(confs.size()==ens1_ne*nts);
-    for (unsigned int ie = 0; ie < ens1_ne; ++ie) {
+    for (int ie = 0; ie < ens1_ne; ++ie) {
       Log::info() << "Read member " << ie+1 << std::endl;
       State_ xmem(resol,confs[ie]);
       Log::info() << "Convert member to unstructured grid" << std::endl;
-      xmem.convert_to(ug);
-      std::vector<double> tmp = ug.getData();
+      UnstructuredGrid ugmem;
+      xmem.convert_to(ugmem);
+      std::vector<double> tmp = ugmem.getData();
       ens1.insert(ens1.end(), tmp.begin(), tmp.end());
     }
   }
   else
   {
     ens1_ne = 4;
-    for (unsigned int ie = 0; ie < ens1_ne; ++ie) {
+    for (int ie = 0; ie < ens1_ne; ++ie) {
       std::vector<double> tmp(nc0a*nl0*nv*nts);
       std::fill(tmp.begin(),tmp.end(),-999.0);
       ens1.insert(ens1.end(), tmp.begin(), tmp.end());
@@ -132,13 +132,6 @@ void LocalizationHDIAG_NICAS<MODEL>::multiply(Increment_ & dx) const {
   Log::trace() << "LocalizationHDIAG_NICAS:multiply starting" << std::endl;
 
   UnstructuredGrid ug;
-
-  MPI_Barrier(MPI_COMM_WORLD);
-  boost::posix_time::ptime ti0 = boost::posix_time::microsec_clock::local_time();
-  //dx.define(ug);
-  boost::posix_time::ptime t0 = boost::posix_time::microsec_clock::local_time();
-  boost::posix_time::time_duration diff0 = t0 - ti0;
-  Log::info() << "define time: " << diff0.total_nanoseconds()/1000 << " microseconds" << std::endl;
 
   MPI_Barrier(MPI_COMM_WORLD);
   boost::posix_time::ptime ti1 = boost::posix_time::microsec_clock::local_time();

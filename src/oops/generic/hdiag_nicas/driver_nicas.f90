@@ -1,4 +1,4 @@
-!---------------------------------------------------------------------
+!----------------------------------------------------------------------
 ! Module: driver_nicas
 !> Purpose: nicas driver
 !> <br>
@@ -97,7 +97,7 @@ do ib=1,bpar%nb+1
          call ndata_write_mpi_summary(ndata(ib))
       end if
    elseif (nam%new_param.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_sqrt.or.nam%check_dirac.or. &
- & nam%check_consistency.or.nam%check_optimality) then
+ & nam%check_randomization.or.nam%check_consistency.or.nam%check_optimality) then
       if (bpar%B_block(ib)) then
          ! Read NICAS parameters
          write(mpl%unit,'(a)') '-------------------------------------------------------------------'
@@ -189,10 +189,10 @@ if (nam%check_dirac) then
    call flush(mpl%unit)
 end if
 
-if (nam%check_consistency.or.nam%check_optimality) then
-   ! Test randomization
+if (nam%check_randomization) then
+   ! Test NICAS randomization
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Test randomization'
+   write(mpl%unit,'(a)') '--- Test NICAS randomization'
    call test_randomization(nam,geom,bpar,ndata)
    call flush(mpl%unit)
 end if

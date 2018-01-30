@@ -169,10 +169,6 @@ void FieldL95::interpAD(const LocsL95 & locs, const GomL95 & gom) {
   }
 }
 // -----------------------------------------------------------------------------
-void FieldL95::define(oops::UnstructuredGrid & ug) const {
-  ABORT("FieldL95 unstructured grid definition not implemented.");
-}
-// -----------------------------------------------------------------------------
 void FieldL95::convert_to(oops::UnstructuredGrid & ug) const {
   ABORT("FieldL95 conversion to unstructured grid not implemented.");
 }

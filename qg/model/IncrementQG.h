@@ -90,8 +90,7 @@ class IncrementQG : public oops::GeneralizedDepartures,
   util::DateTime & validTime() {return fields_->time();}
   void updateTime(const util::Duration & dt) {fields_->time() += dt;}
 
-/// Define and convert to/from unstructured grid
-  void define(oops::UnstructuredGrid &) const;
+/// Convert to/from unstructured grid
   void convert_to(oops::UnstructuredGrid &) const;
   void convert_from(const oops::UnstructuredGrid &);
 
