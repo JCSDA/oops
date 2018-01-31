@@ -43,35 +43,24 @@ contains
 ! Subroutine: mom_dealloc
 !> Purpose: moments object deallocation
 !----------------------------------------------------------------------
-subroutine mom_dealloc(hdata,mom)
+subroutine mom_dealloc(mom)
 
 implicit none
 
 ! Passed variables
-type(hdatatype),intent(in) :: hdata !< HDIAG data
 type(momtype),intent(inout) :: mom  !< Moments
 
-! Associate
-associate(nam=>hdata%nam)
-
 ! Release memory
-deallocate(mom%m1_1)
-deallocate(mom%m2_1)
-deallocate(mom%m1_2)
-deallocate(mom%m2_2)
-deallocate(mom%m11)
-if (.not.nam%gau_approx) then
-   deallocate(mom%m12)
-   deallocate(mom%m21)
-   deallocate(mom%m22)
-end if
-if (nam%full_var) then
-   deallocate(mom%m1full)
-   deallocate(mom%m2full)
-end if
-
-! End associate
-end associate
+if (allocated(mom%m1_1)) deallocate(mom%m1_1)
+if (allocated(mom%m2_1)) deallocate(mom%m2_1)
+if (allocated(mom%m1_2)) deallocate(mom%m1_2)
+if (allocated(mom%m2_2)) deallocate(mom%m2_2)
+if (allocated(mom%m11)) deallocate(mom%m11)
+if (allocated(mom%m12)) deallocate(mom%m12)
+if (allocated(mom%m21)) deallocate(mom%m21)
+if (allocated(mom%m22)) deallocate(mom%m22)
+if (allocated(mom%m1full)) deallocate(mom%m1full)
+if (allocated(mom%m2full)) deallocate(mom%m2full)
 
 end subroutine mom_dealloc
 

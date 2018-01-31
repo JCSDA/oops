@@ -48,6 +48,11 @@ interface com_ext
   module procedure com_ext_2d
 end interface
 
+interface com_red
+  module procedure com_red_1d
+  module procedure com_red_2d
+end interface
+
 private
 public :: comtype
 public :: com_dealloc,com_bcast,com_setup,com_ext,com_red,com_read,com_write
@@ -386,10 +391,10 @@ if (lhook) call dr_hook('com_ext_2d',1,zhook_handle)
 end subroutine com_ext_2d
 
 !----------------------------------------------------------------------
-! Subroutine: com_red
+! Subroutine: com_red_1d
 !> Purpose: communicate vector from halo (reduction)
 !----------------------------------------------------------------------
-subroutine com_red(com,vec)
+subroutine com_red_1d(com,vec)
 
 implicit none
 
@@ -402,10 +407,10 @@ integer :: ihalo,ired,iexcl,ithread
 real(kind_real) :: sbuf(com%nhalo),rbuf(com%nexcl),vec_tmp(com%next),vec_arr(com%nred,mpl%nthread)
 real(kind_real) :: zhook_handle
 
-if (lhook) call dr_hook('com_red',0,zhook_handle)
+if (lhook) call dr_hook('com_red_1d',0,zhook_handle)
 
 ! Check input vector size
-if (size(vec)/=com%next) call msgerror('vector size inconsistent in com_red')
+if (size(vec)/=com%next) call msgerror('vector size inconsistent in com_red_1d')
 
 ! Prepare buffers to send
 !$omp parallel do schedule(static) private(ihalo)
@@ -445,9 +450,88 @@ do ithread=1,mpl%nthread
    vec = vec+vec_arr(:,ithread)
 end do
 
-if (lhook) call dr_hook('com_red',1,zhook_handle)
+if (lhook) call dr_hook('com_red_1d',1,zhook_handle)
 
-end subroutine com_red
+end subroutine com_red_1d
+
+!----------------------------------------------------------------------
+! Subroutine: com_red_2d
+!> Purpose: communicate vector from halo (reduction)
+!----------------------------------------------------------------------
+subroutine com_red_2d(com,vec)
+
+implicit none
+
+! Passed variables
+type(comtype),intent(in) :: com                       !< Communication data
+real(kind_real),allocatable,intent(inout) :: vec(:,:) !< Vector
+
+! Local variables
+integer :: nl,il,ihalo,ired,iexcl,ithread
+real(kind_real),allocatable :: sbuf(:),rbuf(:),vec_tmp(:,:),vec_arr(:,:,:)
+real(kind_real) :: zhook_handle
+
+if (lhook) call dr_hook('com_red_2d',0,zhook_handle)
+
+! Check input vector size
+if (size(vec,1)/=com%next) call msgerror('vector size inconsistent in com_red_2d')
+
+! Second dimension
+nl = size(vec,2)
+
+! Allocation
+allocate(sbuf(com%nhalo*nl))
+allocate(rbuf(com%nexcl*nl))
+allocate(vec_tmp(com%next,nl))
+allocate(vec_arr(com%nred,nl,mpl%nthread))
+
+! Prepare buffers to send
+!$omp parallel do schedule(static) private(il,ihalo)
+do il=1,nl
+   do ihalo=1,com%nhalo
+      sbuf((ihalo-1)*nl+il) = vec(com%halo(ihalo),il)
+   end do
+end do
+!$omp end parallel do
+
+! Communication
+call mpl_alltoallv(com%nhalo*nl,sbuf,com%jhalocounts*nl,com%jhalodispl*nl,com%nexcl*nl,rbuf,com%jexclcounts*nl,com%jexcldispl*nl)
+
+! Copy
+vec_tmp = vec
+
+! Reallocation
+deallocate(vec)
+allocate(vec(com%nred,nl))
+
+! Copy interior
+!$omp parallel do schedule(static) private(il,ired)
+do il=1,nl
+   do ired=1,com%nred
+      vec(ired,il) = vec_tmp(com%red_to_ext(ired),il)
+   end do
+end do
+!$omp end parallel do
+
+! Copy halo
+vec_arr = 0.0
+!$omp parallel do schedule(static) private(il,iexcl,ithread)
+do il=1,nl
+   do iexcl=1,com%nexcl
+      ithread = omp_get_thread_num()+1
+      vec_arr(com%excl(iexcl),il,ithread) = vec_arr(com%excl(iexcl),il,ithread)+rbuf((iexcl-1)*nl+il)
+   end do
+end do
+!$omp end parallel do
+
+! Sum over threads
+do ithread=1,mpl%nthread
+   vec = vec+vec_arr(:,:,ithread)
+end do
+
+if (lhook) call dr_hook('com_red_2d',1,zhook_handle)
+
+end subroutine com_red_2d
 
 !----------------------------------------------------------------------
 ! Subroutine: com_read

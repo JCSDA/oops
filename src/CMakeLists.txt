@@ -200,11 +200,13 @@ oops/generic/hdiag_nicas/model_mpas.f90
 oops/generic/hdiag_nicas/model_nemo.f90
 oops/generic/hdiag_nicas/model_oops.f90
 oops/generic/hdiag_nicas/model_wrf.f90
+oops/generic/hdiag_nicas/nicas_apply_adv.f90
 oops/generic/hdiag_nicas/nicas_apply_bens.f90
 oops/generic/hdiag_nicas/nicas_apply_convol.f90
 oops/generic/hdiag_nicas/nicas_apply_interp.f90
 oops/generic/hdiag_nicas/nicas_apply_localization.f90
 oops/generic/hdiag_nicas/nicas_apply_nicas.f90
+oops/generic/hdiag_nicas/nicas_parameters_adv.f90
 oops/generic/hdiag_nicas/nicas_parameters_convol.f90
 oops/generic/hdiag_nicas/nicas_parameters.f90
 oops/generic/hdiag_nicas/nicas_parameters_interp.f90

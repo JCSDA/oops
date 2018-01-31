@@ -10,7 +10,6 @@
 !----------------------------------------------------------------------
 module nicas_parameters
 
-use model_interface,only: model_write
 use nicas_parameters_convol, only: compute_convol_network,compute_convol_distance
 use nicas_parameters_interp, only: compute_interp_h,compute_interp_v,compute_interp_s
 use nicas_parameters_mpi, only: compute_mpi_ab,compute_mpi_c

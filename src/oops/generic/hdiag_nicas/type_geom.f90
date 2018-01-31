@@ -11,11 +11,11 @@
 module type_geom
 
 use netcdf
-use tools_const, only: req,deg2rad,lonlatmod,sphere_dist,vector_product
+use tools_const, only: req,deg2rad,rad2deg,lonlatmod,sphere_dist,vector_product
 use tools_display, only: msgerror,newunit
 use tools_kinds, only: kind_real
-use tools_missing, only: msr,isnotmsi
-use tools_nc, only: ncerr
+use tools_missing, only: msr,isnotmsi,msvalr,isanynotmsr
+use tools_nc, only: ncerr,ncfloat
 use tools_stripack, only: areas,trans,trlist
 use type_ctree, only: ctreetype,create_ctree,find_nearest_neighbors
 use type_mesh, only: meshtype,create_mesh
@@ -79,7 +79,7 @@ end interface
 
 private
 public :: geomtype
-public :: geom_alloc,compute_grid_mesh,fld_com_gl,fld_com_lg
+public :: geom_alloc,compute_grid_mesh,fld_com_gl,fld_com_lg,fld_write
 
 contains
 
@@ -874,5 +874,99 @@ end if
 mpl%tag = mpl%tag+1
 
 end subroutine fld_com_lg_multi
+
+!----------------------------------------------------------------------
+! Subroutine: fld_write
+!> Purpose: write field
+!----------------------------------------------------------------------
+subroutine fld_write(nam,geom,filename,varname,fld)
+
+implicit none
+
+! Passed variables
+type(namtype),intent(in) :: nam                      !< Namelist
+type(geomtype),intent(in) :: geom                    !< Sampling data
+character(len=*),intent(in) :: filename              !< File name
+character(len=*),intent(in) :: varname               !< Variable name
+real(kind_real),intent(in) :: fld(geom%nc0,geom%nl0) !< Written field
+
+! Local variables
+integer :: ic0,il0,ierr
+integer :: ncid,nc0_id,nlev_id,fld_id,lon_id,lat_id
+real(kind_real) :: fld_loc(geom%nc0,geom%nl0)
+character(len=1024) :: subr = 'fld_write'
+
+! Processor verification
+if (.not.mpl%main) call msgerror('only I/O proc should enter '//trim(subr))
+
+! Apply mask
+do il0=1,geom%nl0
+   do ic0=1,geom%nc0
+      if (geom%mask(ic0,il0)) then
+         fld_loc(ic0,il0) = fld(ic0,il0)
+      else
+         call msr(fld_loc(ic0,il0))
+      end if
+   end do
+end do
+
+if (allocated(geom%mesh%redundant)) then
+   ! Copy redundant points
+   do ic0=1,geom%nc0
+      if (isnotmsi(geom%mesh%redundant(ic0))) fld_loc(ic0,:) = fld_loc(geom%mesh%redundant(ic0),:)
+   end do
+end if
+
+! Check if the file exists
+ierr = nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_noclobber,nf90_64bit_offset),ncid)
+if (ierr/=nf90_noerr) then
+   call ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_write,ncid))
+   call ncerr(subr,nf90_redef(ncid))
+   call ncerr(subr,nf90_put_att(ncid,nf90_global,'_FillValue',msvalr))
+   call namncwrite(nam,ncid)
+end if
+call ncerr(subr,nf90_enddef(ncid))
+
+! Get variable id
+ierr = nf90_inq_varid(ncid,trim(varname),fld_id)
+
+! Define dimensions and variable if necessary
+if (ierr/=nf90_noerr) then
+   call ncerr(subr,nf90_redef(ncid))
+   ierr = nf90_inq_dimid(ncid,'nc0',nc0_id)
+   if (ierr/=nf90_noerr) call ncerr(subr,nf90_def_dim(ncid,'nc0',geom%nc0,nc0_id))
+   ierr = nf90_inq_dimid(ncid,'nlev',nlev_id)
+   if (ierr/=nf90_noerr) call ncerr(subr,nf90_def_dim(ncid,'nlev',geom%nl0,nlev_id))
+   call ncerr(subr,nf90_def_var(ncid,trim(varname),ncfloat,(/nlev_id,nc0_id/),fld_id))
+   call ncerr(subr,nf90_put_att(ncid,fld_id,'_FillValue',msvalr))
+   call ncerr(subr,nf90_enddef(ncid))
+end if
+
+! Write data
+do il0=1,geom%nl0
+   if (isanynotmsr(fld_loc(:,il0))) then
+      call ncerr(subr,nf90_put_var(ncid,fld_id,fld_loc(:,il0),(/il0,1/),(/1,geom%nc0/)))
+   end if
+end do
+
+! Write coordinates
+ierr = nf90_inq_varid(ncid,'lon',lon_id)
+if (ierr/=nf90_noerr) then
+   call ncerr(subr,nf90_redef(ncid))
+   call ncerr(subr,nf90_def_var(ncid,'lon',ncfloat,(/nc0_id/),lon_id))
+   call ncerr(subr,nf90_put_att(ncid,lon_id,'_FillValue',msvalr))
+   call ncerr(subr,nf90_put_att(ncid,lon_id,'unit','degrees_north'))
+   call ncerr(subr,nf90_def_var(ncid,'lat',ncfloat,(/nc0_id/),lat_id))
+   call ncerr(subr,nf90_put_att(ncid,lat_id,'_FillValue',msvalr))
+   call ncerr(subr,nf90_put_att(ncid,lat_id,'unit','degrees_east'))
+   call ncerr(subr,nf90_enddef(ncid))
+   call ncerr(subr,nf90_put_var(ncid,lon_id,geom%lon*rad2deg))
+   call ncerr(subr,nf90_put_var(ncid,lat_id,geom%lat*rad2deg))
+end if
+
+! Close file
+call ncerr(subr,nf90_close(ncid))
+
+end subroutine fld_write
 
 end module type_geom

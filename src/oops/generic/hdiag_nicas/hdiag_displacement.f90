@@ -16,7 +16,6 @@ use tools_const, only: req,reqkm,rad2deg,deg2rad,lonlatmod,sphere_dist,reduce_ar
 use hdiag_tools, only: diag_filter,diag_com_lg
 use tools_display, only: msgerror,prog_init,prog_print
 use tools_kinds, only: kind_real
-use tools_interp, only: compute_interp
 use tools_missing, only: msr,isnotmsr,isallnotmsr,isanynotmsr
 use tools_qsort, only: qsort
 use tools_stripack, only: trans,scoord
@@ -30,7 +29,6 @@ use type_hdata, only: hdatatype
 implicit none
 
 real(kind_real),parameter :: cor_th = 0.2     !< Correlation threshold
-logical,parameter :: common_sampling = .true. !< Common sampling for all variables
 
 private
 public :: compute_displacement
@@ -66,7 +64,6 @@ real(kind_real) :: x_ori(hdata%nc2),y_ori(hdata%nc2),z_ori(hdata%nc2)
 real(kind_real) :: dx_ini(hdata%nc2),dy_ini(hdata%nc2),dz_ini(hdata%nc2)
 real(kind_real) :: dx(hdata%nc2),dy(hdata%nc2),dz(hdata%nc2)
 real(kind_real) :: dlon_c0(hdata%geom%nc0),dlat_c0(hdata%geom%nc0)
-real(kind_real) :: lon_c1(hdata%nam%nc1),lat_c1(hdata%nam%nc1)
 logical :: dichotomy,convergence
 
 ! Associate
@@ -106,8 +103,8 @@ do il0=1,geom%nl0
 end do
 
 ! Copy
-displ%lon = lon_c2_ori
-displ%lat = lat_c2_ori
+displ%lon_c2 = lon_c2_ori
+displ%lat_c2 = lat_c2_ori
 
 ! Compute moments
 write(mpl%unit,'(a7,a)') '','Compute moments'
@@ -324,9 +321,9 @@ do its=2,nam%nts
       displ%rhflt(0,il0,its) = 0.0
 
       ! Copy
-      displ%lon_raw(:,il0,its) = lon_c2
-      displ%lat_raw(:,il0,its) = lat_c2
-      displ%dist_raw(:,il0,its) = dist_c2
+      displ%lon_c2_raw(:,il0,its) = lon_c2
+      displ%lat_c2_raw(:,il0,its) = lat_c2
+      displ%dist_c2_raw(:,il0,its) = dist_c2
 
       if (nam%displ_niter>0) then
          ! Filter displacement
@@ -429,9 +426,9 @@ do its=2,nam%nts
          end do
 
          ! Copy
-         displ%lon_flt(:,il0,its) = lon_c2
-         displ%lat_flt(:,il0,its) = lat_c2
-         displ%dist_flt(:,il0,its) = dist_c2
+         displ%lon_c2_flt(:,il0,its) = lon_c2
+         displ%lat_c2_flt(:,il0,its) = lat_c2
+         displ%dist_c2_flt(:,il0,its) = dist_c2
 
          ! Check convergence
          if (.not.convergence) call msgerror('iterative filtering failed')
@@ -442,23 +439,19 @@ do its=2,nam%nts
        & displ%dist(0,il0,its)*reqkm,' km'
       end if
 
-      ! Filtered displacement interpolation
+      ! Displacement interpolation
+      do ic2=1,hdata%nc2
+         call lonlatmod(dlon_c2(ic2),dlat_c2(ic2))
+      end do
       call apply_linop(hdata%h(min(il0,geom%nl0i)),dlon_c2,dlon_c0)
       call apply_linop(hdata%h(min(il0,geom%nl0i)),dlat_c2,dlat_c0)
 
-      ! Initialize sampling interpolation
-      displ%dfull(il0,its)%prefix = 'd'
-      displ%dfull(il0,its)%n_src = geom%nc0
-      displ%dfull(il0,its)%n_dst = nam%nc1
-
-      ! Compute sampling interpolation
-      do ic1=1,nam%nc1
-         lon_c1(ic1) = geom%lon(hdata%c1_to_c0(ic1))+dlon_c0(hdata%c1_to_c0(ic1))
-         lat_c1(ic1) = geom%lat(hdata%c1_to_c0(ic1))+dlat_c0(hdata%c1_to_c0(ic1))
-         call lonlatmod(lon_c1(ic1),lat_c1(ic1))
+      ! Displaced grid
+      displ%lon_c0_flt(:,il0,its) = geom%lon+dlon_c0
+      displ%lat_c0_flt(:,il0,its) = geom%lat+dlat_c0
+      do ic0=1,geom%nc0
+         call lonlatmod(displ%lon_c0_flt(ic0,il0,its),displ%lat_c0_flt(ic0,il0,its))
       end do
-      call compute_interp(geom%mesh,geom%ctree,geom%nc0,geom%mask(:,il0), &
-    & nam%nc1,lon_c1,lat_c1,hdata%c1l0_log(:,il0),nam%diag_interp,displ%dfull(il0,its))
 
       ! Release memory
       deallocate(dlon_c2)
@@ -467,28 +460,11 @@ do its=2,nam%nts
    end do
 end do
 
-! Compute dummy sampling interpolation (timeslot 1)
+! Displaced grid for timeslot 1
 do il0=1,geom%nl0
-   ! Initialize interpolation
-   displ%dfull(il0,1)%prefix = 'd'
-   displ%dfull(il0,1)%n_src = geom%nc0
-   displ%dfull(il0,1)%n_dst = nam%nc1
-
-   ! Compute interpolation
-   call compute_interp(geom%mesh,geom%ctree,geom%nc0,geom%mask(:,il0),nam%nc1,geom%lon(hdata%c1_to_c0), &
- & geom%lat(hdata%c1_to_c0),hdata%c1l0_log(:,il0),nam%diag_interp,displ%dfull(il0,1))
+   displ%lon_c0_flt(:,il0,1) = geom%lon
+   displ%lat_c0_flt(:,il0,1) = geom%lat
 end do
-
-! Output units
-displ%lon = displ%lon*rad2deg
-displ%lat = displ%lat*rad2deg
-displ%lon_raw = displ%lon_raw*rad2deg
-displ%lat_raw = displ%lat_raw*rad2deg
-displ%dist_raw = displ%dist_raw*reqkm
-displ%lon_flt = displ%lon_flt*rad2deg
-displ%lat_flt = displ%lat_flt*rad2deg
-displ%dist_flt = displ%dist_flt*reqkm
-displ%rhflt = displ%rhflt*reqkm
 
 ! End associate
 end associate

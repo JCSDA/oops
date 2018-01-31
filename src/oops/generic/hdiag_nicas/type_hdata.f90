@@ -175,38 +175,32 @@ type(hdatatype),intent(inout) :: hdata !< HDIAG data
 ! Local variables
 integer :: il0
 
-! Associate
-associate(nam=>hdata%nam,geom=>hdata%geom)
-
 ! Release memory
-deallocate(hdata%c1_to_c0)
-deallocate(hdata%c1l0_log)
-deallocate(hdata%c1c3_to_c0)
-deallocate(hdata%c1c3l0_log)
-if (nam%local_diag.or.nam%displ_diag) then
-   deallocate(hdata%c2_to_c1)
-   deallocate(hdata%c2_to_c0)
-   deallocate(hdata%c2a_to_c2)
-   deallocate(hdata%c2_to_c2a)
-   deallocate(hdata%local_mask)
-   deallocate(hdata%displ_mask)
-   if (trim(nam%flt_type)/='none') then
-      deallocate(hdata%nn_c2_index)
-      deallocate(hdata%nn_c2_dist)
-   end if
-end if
-if (nam%local_diag.or.nam%displ_diag) then
-   do il0=1,geom%nl0
+if (allocated(hdata%c1_to_c0)) deallocate(hdata%c1_to_c0)
+if (allocated(hdata%c1l0_log)) deallocate(hdata%c1l0_log)
+if (allocated(hdata%c1c3_to_c0)) deallocate(hdata%c1c3_to_c0)
+if (allocated(hdata%c1c3l0_log)) deallocate(hdata%c1c3l0_log)
+if (allocated(hdata%c2_to_c1)) deallocate(hdata%c2_to_c1)
+if (allocated(hdata%c2_to_c0)) deallocate(hdata%c2_to_c0)
+if (allocated(hdata%c2a_to_c2)) deallocate(hdata%c2a_to_c2)
+if (allocated(hdata%c2_to_c2a)) deallocate(hdata%c2_to_c2a)
+if (allocated(hdata%local_mask)) deallocate(hdata%local_mask)
+if (allocated(hdata%displ_mask)) deallocate(hdata%displ_mask)
+if (allocated(hdata%nn_c2_index)) deallocate(hdata%nn_c2_index)
+if (allocated(hdata%nn_c2_dist)) deallocate(hdata%nn_c2_dist)
+if (allocated(hdata%h)) then
+   do il0=1,hdata%geom%nl0
       call linop_dealloc(hdata%h(il0))
-      call linop_dealloc(hdata%s(il0))
    end do
    deallocate(hdata%h)
+end if
+if (allocated(hdata%s)) then
+   do il0=1,hdata%geom%nl0
+      call linop_dealloc(hdata%s(il0))
+   end do
    deallocate(hdata%s)
 end if
-if (nam%local_diag.and.(nam%nldwv>0)) deallocate(hdata%nn_ldwv_index)
-
-! End associate
-end associate
+if (allocated(hdata%nn_ldwv_index)) deallocate(hdata%nn_ldwv_index)
 
 end subroutine hdata_dealloc
 

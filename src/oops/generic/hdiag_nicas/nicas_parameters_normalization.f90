@@ -10,7 +10,6 @@
 !----------------------------------------------------------------------
 module nicas_parameters_normalization
 
-use model_interface, only: model_write
 use omp_lib
 use tools_display, only: msgerror,prog_init,prog_print
 use tools_kinds,only: kind_real

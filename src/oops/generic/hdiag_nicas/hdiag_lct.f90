@@ -10,7 +10,6 @@
 !----------------------------------------------------------------------
 module hdiag_lct
 
-use model_interface, only: model_write
 use hdiag_fit_lct, only: compute_fit_lct
 use omp_lib
 use tools_display, only: msgerror

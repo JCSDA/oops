@@ -190,15 +190,15 @@ implicit none
 type(meshtype),intent(inout) :: mesh !< Mesh
 
 ! Release memory
-deallocate(mesh%redundant)
-deallocate(mesh%x)
-deallocate(mesh%y)
-deallocate(mesh%z)
-deallocate(mesh%list)
-deallocate(mesh%lptr)
-deallocate(mesh%lend)
-deallocate(mesh%order)
-deallocate(mesh%order_inv)
+if (allocated(mesh%redundant)) deallocate(mesh%redundant)
+if (allocated(mesh%x)) deallocate(mesh%x)
+if (allocated(mesh%y)) deallocate(mesh%y)
+if (allocated(mesh%z)) deallocate(mesh%z)
+if (allocated(mesh%list)) deallocate(mesh%list)
+if (allocated(mesh%lptr)) deallocate(mesh%lptr)
+if (allocated(mesh%lend)) deallocate(mesh%lend)
+if (allocated(mesh%order)) deallocate(mesh%order)
+if (allocated(mesh%order_inv)) deallocate(mesh%order_inv)
 
 end subroutine mesh_dealloc
 

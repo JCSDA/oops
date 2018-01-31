@@ -30,8 +30,8 @@ use tools_nc, only: ncerr,ncfloat
 use type_avg, only: avgtype,avg_dealloc,avg_copy
 use type_bdata, only: bdatatype,bdata_alloc,diag_to_bdata,bdata_read,bdata_write
 use type_bpar, only: bpartype
-use type_curve, only: curvetype,curve_alloc,curve_dealloc,curve_normalization,curve_write,curve_write_all,curve_write_local
-use type_displ, only: displtype,displ_alloc,displ_dealloc,displ_write
+use type_curve, only: curvetype,curve_alloc,curve_normalization,curve_write,curve_write_all,curve_write_local
+use type_displ, only: displtype,displ_alloc,displ_write
 use type_geom, only: geomtype
 use type_hdata, only: hdatatype
 use type_mom, only: momtype,mom_dealloc
@@ -75,19 +75,11 @@ type(displtype) :: displ
 type(hdatatype) :: hdata
 type(momtype) :: mom_1(bpar%nb),mom_2(bpar%nb)
 
-! Allocate B data
-allocate(bdata(bpar%nb+1))
-do ib=1,bpar%nb+1
-   if (bpar%diag_block(ib)) then
-      bdata(ib)%nam => nam
-      bdata(ib)%geom => geom
-      bdata(ib)%cname = 'bdata_'//trim(bpar%blockname(ib))
-      call bdata_alloc(bdata(ib),bpar%auto_block(ib))
-   end if
-end do
+! Allocation
+call bdata_alloc(nam,geom,bpar,bdata)
 
 if (nam%new_hdiag) then
-   ! Set pointers
+   ! Set namelist, geometry and block parameters
    hdata%nam => nam
    hdata%geom => geom
    hdata%bpar => bpar
@@ -171,8 +163,8 @@ if (nam%new_hdiag) then
       ! Deallocation
       do ib=1,bpar%nb
          if (bpar%auto_block(ib)) then
-            call mom_dealloc(hdata,mom_1(ib))
-            call avg_dealloc(hdata,avg_1(ib))
+            call mom_dealloc(mom_1(ib))
+            call avg_dealloc(avg_1(ib))
          end if
       end do
 
@@ -535,6 +527,12 @@ if (nam%new_hdiag) then
          call msgerror('bdata not implemented yet for this method')
       end select
 
+      ! Copy displacement
+      if (nam%displ_diag) then
+         bdata(bpar%nb+1)%lon_c0_flt = displ%lon_c0_flt(:,:,2:nam%nts)
+         bdata(bpar%nb+1)%lat_c0_flt = displ%lat_c0_flt(:,:,2:nam%nts)
+      end if
+
       ! Copy transforms
       do ib=1,bpar%nb
          if (nam%transform.and.bpar%auto_block(ib)) then
@@ -548,9 +546,7 @@ if (nam%new_hdiag) then
          write(mpl%unit,'(a)') '-------------------------------------------------------------------'
          write(mpl%unit,'(a,i5,a)') '--- Write B data'
 
-         do ib=1,bpar%nb+1
-            if (bpar%B_block(ib)) call bdata_write(bdata(ib),bpar%auto_block(ib),bpar%nicas_block(ib))
-         end do
+         call bdata_write(nam,geom,bpar,bdata)
       end if
    end if
    call flush(mpl%unit)
@@ -565,7 +561,7 @@ if (nam%new_hdiag) then
 
       ! Full variances
       if (nam%full_var) then
-         filename = trim(nam%prefix)//'_full_var.nc'
+         filename = trim(nam%prefix)//'_full_var_gridded.nc'
          do ib=1,bpar%nb
             if (bpar%diag_block(ib)) call model_write(nam,geom,filename,trim(bpar%blockname(ib))//'_var', &
           & sum(mom_1(ib)%m2full,dim=3)/float(mom_1(ib)%nsub))
@@ -579,11 +575,11 @@ if (nam%new_hdiag) then
    if (nam%local_diag) then
       ! Fit support radii maps
       if (any(bpar%fit_block)) then
-         call curve_write_local(hdata,trim(nam%prefix)//'_local_diag_cor.nc',cor_1_c2a)
+         call curve_write_local(hdata,trim(nam%prefix)//'_local_diag_cor_gridded.nc',cor_1_c2a)
 
          select case (trim(nam%method))
          case ('loc','hyb-avg','hyb-rnd','dual-ens')
-            call curve_write_local(hdata,trim(nam%prefix)//'_local_diag_loc.nc',loc_1_c2a)
+            call curve_write_local(hdata,trim(nam%prefix)//'_local_diag_loc_gridded.nc',loc_1_c2a)
          end select
       end if
 
@@ -608,9 +604,7 @@ elseif (nam%new_param) then
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a,i5,a)') '--- Read B data'
 
-   do ib=1,bpar%nb+1
-      if (bpar%B_block(ib)) call bdata_read(bdata(ib),bpar%auto_block(ib),bpar%nicas_block(ib))
-   end do
+   call bdata_read(nam,geom,bpar,bdata)
    call flush(mpl%unit)
 end if
 

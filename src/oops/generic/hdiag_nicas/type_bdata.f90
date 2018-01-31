@@ -10,7 +10,6 @@
 !----------------------------------------------------------------------
 module type_bdata
 
-use model_interface, only: model_write
 use netcdf
 use hdiag_tools, only: diag_filter,diag_interpolation,diag_com_lg
 use tools_const, only: rad2deg
@@ -18,6 +17,7 @@ use tools_display, only: msgwarning,msgerror,prog_init,prog_print
 use tools_kinds, only: kind_real
 use tools_missing, only: msvalr,msr,isnotmsr,isallnotmsr,isanynotmsr
 use tools_nc, only: ncerr,ncfloat
+use type_bpar, only: bpartype
 use type_curve, only: curvetype
 use type_geom, only: geomtype
 use type_hdata, only: hdatatype
@@ -29,26 +29,20 @@ implicit none
 ! B data derived type
 type bdatatype
    ! Block name
-   character(len=1024) :: cname                 !< Block name
-
-   ! Namelist
-   type(namtype),pointer :: nam                 !< Namelist
-
-   ! Geometry
-   type(geomtype),pointer :: geom               !< Geometry
+   character(len=1024) :: cname                     !< Block name
 
    ! Data
-   real(kind_real),allocatable :: coef_ens(:,:) !< Ensemble coefficient
-   real(kind_real),allocatable :: coef_sta(:,:) !< Static coefficient
-   real(kind_real),allocatable :: rh0(:,:)      !< Fit support radius
-   real(kind_real),allocatable :: rv0(:,:)      !< Fit support radius
-   real(kind_real),allocatable :: rh0s(:,:)     !< Fit support radius  for sampling
-   real(kind_real),allocatable :: rv0s(:,:)     !< Fit support radius, for sampling
-   real(kind_real) :: wgt                       !< Block weight
-
-   ! Transforms
-   real(kind_real),allocatable :: trans(:,:)    !< Direct transform
-   real(kind_real),allocatable :: transinv(:,:) !< Inverse transform
+   real(kind_real),allocatable :: coef_ens(:,:)     !< Ensemble coefficient
+   real(kind_real),allocatable :: coef_sta(:,:)     !< Static coefficient
+   real(kind_real),allocatable :: rh0(:,:)          !< Fit support radius
+   real(kind_real),allocatable :: rv0(:,:)          !< Fit support radius
+   real(kind_real),allocatable :: rh0s(:,:)         !< Fit support radius  for sampling
+   real(kind_real),allocatable :: rv0s(:,:)         !< Fit support radius, for sampling
+   real(kind_real) :: wgt                           !< Block weight
+   real(kind_real),allocatable :: lon_c0_flt(:,:,:) !< Displaced longitude
+   real(kind_real),allocatable :: lat_c0_flt(:,:,:) !< Displaced latitude
+   real(kind_real),allocatable :: trans(:,:)        !< Direct transform
+   real(kind_real),allocatable :: transinv(:,:)     !< Inverse transform
 end type bdatatype
 
 interface diag_to_bdata
@@ -58,7 +52,7 @@ end interface
 
 private
 public :: bdatatype
-public :: bdata_alloc,bdata_dealloc,diag_to_bdata,bdata_mult,bdata_read,bdata_write
+public :: bdata_alloc,bdata_copy,diag_to_bdata,bdata_read,bdata_write
 
 contains
 
@@ -66,79 +60,103 @@ contains
 ! Subroutine: bdata_alloc
 !> Purpose: bdata object allocation
 !----------------------------------------------------------------------
-subroutine bdata_alloc(bdata,auto_block)
+subroutine bdata_alloc(nam,geom,bpar,bdata)
 
 implicit none
 
 ! Passed variables
-type(bdatatype),intent(inout) :: bdata !< B data
-logical,intent(in) :: auto_block       !< Autocovariance block key
+type(namtype),target,intent(in) :: nam              !< Namelist
+type(geomtype),target,intent(in) :: geom            !< Geometry
+type(bpartype),intent(in) :: bpar                   !< Block parameters
+type(bdatatype),allocatable,intent(out) :: bdata(:) !< B data
 
-! Associate
-associate(nam=>bdata%nam,geom=>bdata%geom)
+! Local variables
+integer :: ib
 
 ! Allocation
-allocate(bdata%coef_ens(geom%nc0,geom%nl0))
-allocate(bdata%coef_sta(geom%nc0,geom%nl0))
-allocate(bdata%rh0(geom%nc0,geom%nl0))
-allocate(bdata%rv0(geom%nc0,geom%nl0))
-if (trim(nam%strategy)=='specific_multivariate') then
-   allocate(bdata%rh0s(geom%nc0,geom%nl0))
-   allocate(bdata%rv0s(geom%nc0,geom%nl0))
-end if
-if (nam%transform.and.auto_block) then
-   allocate(bdata%trans(geom%nl0,geom%nl0))
-   allocate(bdata%transinv(geom%nl0,geom%nl0))
-end if
+allocate(bdata(bpar%nb+1))
 
-! Initialization
-call msr(bdata%coef_ens)
-call msr(bdata%coef_sta)
-call msr(bdata%rh0)
-call msr(bdata%rv0)
-if (trim(nam%strategy)=='specific_multivariate') then
-   call msr(bdata%rh0s)
-   call msr(bdata%rv0s)
-end if
-call msr(bdata%wgt)
-if (nam%transform.and.auto_block) then
-   call msr(bdata%trans)
-   call msr(bdata%transinv)
-end if
+do ib=1,bpar%nb+1
+   ! Set name
+   bdata(ib)%cname = 'bdata_'//trim(bpar%blockname(ib))
 
-! End associate
-end associate
+   if (bpar%diag_block(ib)) then
+      ! Allocation
+      allocate(bdata(ib)%coef_ens(geom%nc0,geom%nl0))
+      allocate(bdata(ib)%coef_sta(geom%nc0,geom%nl0))
+      allocate(bdata(ib)%rh0(geom%nc0,geom%nl0))
+      allocate(bdata(ib)%rv0(geom%nc0,geom%nl0))
+      if (trim(nam%strategy)=='specific_multivariate') then
+         allocate(bdata(ib)%rh0s(geom%nc0,geom%nl0))
+         allocate(bdata(ib)%rv0s(geom%nc0,geom%nl0))
+      end if
+      if (nam%transform.and.bpar%auto_block(ib)) then
+         allocate(bdata(ib)%trans(geom%nl0,geom%nl0))
+         allocate(bdata(ib)%transinv(geom%nl0,geom%nl0))
+      end if
+
+      ! Initialization
+      call msr(bdata(ib)%coef_ens)
+      call msr(bdata(ib)%coef_sta)
+      call msr(bdata(ib)%rh0)
+      call msr(bdata(ib)%rv0)
+      if (trim(nam%strategy)=='specific_multivariate') then
+         call msr(bdata(ib)%rh0s)
+         call msr(bdata(ib)%rv0s)
+      end if
+      call msr(bdata(ib)%wgt)
+      if (nam%transform.and.bpar%auto_block(ib)) then
+         call msr(bdata(ib)%trans)
+         call msr(bdata(ib)%transinv)
+      end if
+   end if
+
+   if ((ib==bpar%nb+1).and.nam%displ_diag) then
+      ! Allocation
+      allocate(bdata(ib)%lon_c0_flt(geom%nc0,geom%nl0,2:nam%nts))
+      allocate(bdata(ib)%lat_c0_flt(geom%nc0,geom%nl0,2:nam%nts))
+
+      ! Initialization
+      if (nam%displ_diag) then
+         call msr(bdata(ib)%lon_c0_flt)
+         call msr(bdata(ib)%lat_c0_flt)
+      end if
+   end if
+end do
 
 end subroutine bdata_alloc
 
 !----------------------------------------------------------------------
-! Subroutine: bdata_dealloc
-!> Purpose: bdata object deallocation
+! Subroutine: bdata_copy
+!> Purpose: bdata object copy
 !----------------------------------------------------------------------
-subroutine bdata_dealloc(bdata)
+subroutine bdata_copy(bpar,bdata_in,bdata_out)
 
 implicit none
 
 ! Passed variables
-type(bdatatype),intent(inout) :: bdata !< B data
+type(bpartype),intent(in) :: bpar                     !< Block parameter
+type(bdatatype),intent(in) :: bdata_in(bpar%nb+1)     !< Input B data
+type(bdatatype),intent(inout) :: bdata_out(bpar%nb+1) !< Output B data
 
-! Associate
-associate(nam=>bdata%nam)
+! Local variables
+integer :: ib
 
-! Release memory
-if (allocated(bdata%coef_ens)) deallocate(bdata%coef_ens)
-if (allocated(bdata%coef_sta)) deallocate(bdata%coef_sta)
-if (allocated(bdata%rh0)) deallocate(bdata%rh0)
-if (allocated(bdata%rv0)) deallocate(bdata%rv0)
-if (allocated(bdata%rh0s)) deallocate(bdata%rh0s)
-if (allocated(bdata%rv0s)) deallocate(bdata%rv0s)
-if (allocated(bdata%trans)) deallocate(bdata%trans)
-if (allocated(bdata%transinv)) deallocate(bdata%transinv)
+! Copy data
+do ib=1,bpar%nb+1
+   if (allocated(bdata_in(ib)%coef_ens)) bdata_out(ib)%coef_ens = bdata_in(ib)%coef_ens
+   if (allocated(bdata_in(ib)%coef_sta)) bdata_out(ib)%coef_sta = bdata_in(ib)%coef_sta
+   if (allocated(bdata_in(ib)%rh0)) bdata_out(ib)%rh0 = bdata_in(ib)%rh0
+   if (allocated(bdata_in(ib)%rv0)) bdata_out(ib)%rv0 = bdata_in(ib)%rv0
+   if (allocated(bdata_in(ib)%rh0s)) bdata_out(ib)%rh0s = bdata_in(ib)%rh0s
+   if (allocated(bdata_in(ib)%rv0s)) bdata_out(ib)%rv0s = bdata_in(ib)%rv0s
+   if (allocated(bdata_in(ib)%lon_c0_flt)) bdata_out(ib)%lon_c0_flt = bdata_in(ib)%lon_c0_flt
+   if (allocated(bdata_in(ib)%lat_c0_flt)) bdata_out(ib)%lat_c0_flt = bdata_in(ib)%lat_c0_flt
+   if (allocated(bdata_in(ib)%trans)) bdata_out(ib)%trans = bdata_in(ib)%trans
+   if (allocated(bdata_in(ib)%transinv)) bdata_out(ib)%transinv = bdata_in(ib)%transinv
+end do
 
-! End associate
-end associate
-
-end subroutine bdata_dealloc
+end subroutine bdata_copy
 
 !----------------------------------------------------------------------
 ! Subroutine: diag_to_bdata
@@ -400,152 +418,137 @@ end associate
 end subroutine diag_c2a_to_bdata
 
 !----------------------------------------------------------------------
-! Subroutine: bdata_mult
-!> Purpose: bdata object multiplication
-!----------------------------------------------------------------------
-subroutine bdata_mult(bdata_in,fac,auto_block,bdata_out)
-
-implicit none
-
-! Passed variables
-type(bdatatype),intent(in) :: bdata_in     !< Input B data
-real(kind_real),intent(in) :: fac          !< Length-scale factor
-logical,intent(in) :: auto_block           !< Autocovariance block key
-type(bdatatype),intent(inout) :: bdata_out !< Output B data
-
-! Associate
-associate(nam=>bdata_in%nam)
-
-! Allocate
-call bdata_alloc(bdata_out,auto_block)
-
-! Copy data
-bdata_out%coef_ens = bdata_in%coef_ens
-bdata_out%coef_sta = bdata_in%coef_sta
-bdata_out%rh0 = fac*bdata_in%rh0
-bdata_out%rv0 = fac*bdata_in%rv0
-if (trim(nam%strategy)=='specific_multivariate') then
-   bdata_out%rh0s = fac*bdata_in%rh0s
-   bdata_out%rv0s = fac*bdata_in%rv0s
-end if
-if (nam%transform.and.auto_block) then
-   bdata_out%trans = bdata_in%trans
-   bdata_out%transinv = bdata_in%transinv
-end if
-
-! End associate
-end associate
-
-end subroutine bdata_mult
-
-!----------------------------------------------------------------------
 ! Subroutine: bdata_read
 !> Purpose: read bdata object
 !----------------------------------------------------------------------
-subroutine bdata_read(bdata,auto_block,nicas_block)
+subroutine bdata_read(nam,geom,bpar,bdata)
 
 implicit none
 
 ! Passed variables
-type(bdatatype),intent(inout) :: bdata !< B data
-logical,intent(in) :: auto_block       !< Autocovariance block key
-logical,intent(in) :: nicas_block      !< NICAS block key
+type(namtype),intent(in) :: nam                   !< Namelist
+type(geomtype),intent(in) :: geom                 !< Geometry
+type(bpartype),intent(in) :: bpar                 !< Block parameters
+type(bdatatype),intent(inout) :: bdata(bpar%nb+1) !< B data
 
 ! Local variables
-integer :: nc0_test,nl0_1_test,nl0_2_test,il0
-integer :: info,ncid,nc0_id,nl0_1_id,nl0_2_id
-integer :: coef_ens_id,coef_sta_id,rh0_id,rv0_id,rh0s_id,rv0s_id,trans_id,transinv_id
+integer :: ib,il0,its
+integer :: nc0_test,nl0_1_test,nts_test,nl0_2_test
+integer :: info,ncid,nc0_id,nl0_1_id,nts_id,nl0_2_id
+integer :: coef_ens_id,coef_sta_id,rh0_id,rv0_id,rh0s_id,rv0s_id,lon_c0_flt_id,lat_c0_flt_id,trans_id,transinv_id
 character(len=1024) :: subr = 'bdata_read'
 
-! Associate
-associate(nam=>bdata%nam,geom=>bdata%geom)
-
-! Open file
-info = nf90_open(trim(nam%datadir)//'/'//trim(nam%prefix)//'_'//trim(bdata%cname)//'.nc',nf90_nowrite,ncid)
-if (info==nf90_noerr) then
-   if (nicas_block) then
-      ! Check dimensions
-      call ncerr(subr,nf90_inq_dimid(ncid,'nc0',nc0_id))
-      call ncerr(subr,nf90_inquire_dimension(ncid,nc0_id,len=nc0_test))
-      call ncerr(subr,nf90_inq_dimid(ncid,'nl0_1',nl0_1_id))
-      call ncerr(subr,nf90_inquire_dimension(ncid,nl0_1_id,len=nl0_1_test))
-      if (nam%transform.and.auto_block) then
-         call ncerr(subr,nf90_inq_dimid(ncid,'nl0_2',nl0_2_id))
-         call ncerr(subr,nf90_inquire_dimension(ncid,nl0_2_id,len=nl0_2_test))
-      end if
-      if ((geom%nc0/=nc0_test).or.(geom%nl0/=nl0_1_test)) call msgerror('wrong dimension when reading B')
-      if (nam%transform.and.auto_block) then
-         if (geom%nl0/=nl0_2_test) call msgerror('wrong dimension when reading B')
-      end if
-
-      ! Get arrays ID
-      call ncerr(subr,nf90_inq_varid(ncid,'coef_ens',coef_ens_id))
-      call ncerr(subr,nf90_inq_varid(ncid,'coef_sta',coef_sta_id))
-      call ncerr(subr,nf90_inq_varid(ncid,'rh0',rh0_id))
-      call ncerr(subr,nf90_inq_varid(ncid,'rv0',rv0_id))
-      if (trim(nam%strategy)=='specific_multivariate') then
-         call ncerr(subr,nf90_inq_varid(ncid,'rh0s',rh0s_id))
-         call ncerr(subr,nf90_inq_varid(ncid,'rv0s',rv0s_id))
-      end if
-      if (nam%transform.and.auto_block) then
-         call ncerr(subr,nf90_inq_varid(ncid,'trans',trans_id))
-         call ncerr(subr,nf90_inq_varid(ncid,'transinv',transinv_id))
-      end if
-
-      ! Read arrays
-      call ncerr(subr,nf90_get_var(ncid,coef_ens_id,bdata%coef_ens))
-      call ncerr(subr,nf90_get_var(ncid,coef_sta_id,bdata%coef_sta))
-      call ncerr(subr,nf90_get_var(ncid,rh0_id,bdata%rh0))
-      call ncerr(subr,nf90_get_var(ncid,rv0_id,bdata%rv0))
-      if (trim(nam%strategy)=='specific_multivariate') then
-         call ncerr(subr,nf90_get_var(ncid,rh0s_id,bdata%rh0s))
-         call ncerr(subr,nf90_get_var(ncid,rv0s_id,bdata%rv0s))
-      end if
-      if (nam%transform.and.auto_block) then
-         call ncerr(subr,nf90_get_var(ncid,trans_id,bdata%trans))
-         call ncerr(subr,nf90_get_var(ncid,transinv_id,bdata%transinv))
-      end if
-   end if
-
-   ! Get main weight
-   call ncerr(subr,nf90_get_att(ncid,nf90_global,'wgt',bdata%wgt))
-
-   ! Close file
-   call ncerr(subr,nf90_close(ncid))
-else
-   call msgwarning('cannot find B data to read, use namelist values')
-   if (nicas_block) then
-      bdata%coef_ens = 1.0
-      bdata%coef_sta = 0.0
-      do il0=1,geom%nl0
-         bdata%rh0(:,il0) = nam%rh(il0)
-         bdata%rv0(:,il0) = nam%rv(il0)
-         if (trim(nam%strategy)=='specific_multivariate') then
-            bdata%rh0s(:,il0) = nam%rh(il0)
-            bdata%rv0s(:,il0) = nam%rv(il0)
+do ib=1,bpar%nb+1
+   if (bpar%B_block(ib)) then
+      ! Open file
+      info = nf90_open(trim(nam%datadir)//'/'//trim(nam%prefix)//'_'//trim(bdata(ib)%cname)//'.nc',nf90_nowrite,ncid)
+      if (info==nf90_noerr) then
+         ! Check dimensions
+         call ncerr(subr,nf90_inq_dimid(ncid,'nc0',nc0_id))
+         call ncerr(subr,nf90_inquire_dimension(ncid,nc0_id,len=nc0_test))
+         call ncerr(subr,nf90_inq_dimid(ncid,'nl0_1',nl0_1_id))
+         call ncerr(subr,nf90_inquire_dimension(ncid,nl0_1_id,len=nl0_1_test))
+         if ((geom%nc0/=nc0_test).or.(geom%nl0/=nl0_1_test)) call msgerror('wrong dimension when reading B')
+         if ((ib==bpar%nb+1).and.nam%displ_diag) then
+            call ncerr(subr,nf90_inq_dimid(ncid,'nts',nts_id))
+            call ncerr(subr,nf90_inquire_dimension(ncid,nts_id,len=nts_test))
+            if (nam%nts-1/=nts_test) call msgerror('wrong dimension when reading B')
          end if
-      end do
-      if (nam%transform.and.auto_block) then
-         bdata%trans = 0.0
-         do il0=1,geom%nl0
-            bdata%trans(il0,il0) = 1.0
-         end do
-         bdata%transinv = bdata%trans
+         if (nam%transform.and.bpar%auto_block(ib)) then
+            call ncerr(subr,nf90_inq_dimid(ncid,'nl0_2',nl0_2_id))
+            call ncerr(subr,nf90_inquire_dimension(ncid,nl0_2_id,len=nl0_2_test))
+            if (geom%nl0/=nl0_2_test) call msgerror('wrong dimension when reading B')
+         end if
+
+         ! Get arrays ID
+         if (bpar%nicas_block(ib)) then
+            call ncerr(subr,nf90_inq_varid(ncid,'coef_ens',coef_ens_id))
+            call ncerr(subr,nf90_inq_varid(ncid,'coef_sta',coef_sta_id))
+            call ncerr(subr,nf90_inq_varid(ncid,'rh0',rh0_id))
+            call ncerr(subr,nf90_inq_varid(ncid,'rv0',rv0_id))
+            if (trim(nam%strategy)=='specific_multivariate') then
+               call ncerr(subr,nf90_inq_varid(ncid,'rh0s',rh0s_id))
+               call ncerr(subr,nf90_inq_varid(ncid,'rv0s',rv0s_id))
+            end if
+         end if
+         if ((ib==bpar%nb+1).and.nam%displ_diag) then
+            call ncerr(subr,nf90_inq_varid(ncid,'lon_c0_flt',lon_c0_flt_id))
+            call ncerr(subr,nf90_inq_varid(ncid,'lat_c0_flt',lat_c0_flt_id))
+         end if
+         if (nam%transform.and.bpar%auto_block(ib)) then
+            call ncerr(subr,nf90_inq_varid(ncid,'trans',trans_id))
+            call ncerr(subr,nf90_inq_varid(ncid,'transinv',transinv_id))
+         end if
+
+         ! Read arrays
+         if (bpar%nicas_block(ib)) then
+            call ncerr(subr,nf90_get_var(ncid,coef_ens_id,bdata(ib)%coef_ens))
+            call ncerr(subr,nf90_get_var(ncid,coef_sta_id,bdata(ib)%coef_sta))
+            call ncerr(subr,nf90_get_var(ncid,rh0_id,bdata(ib)%rh0))
+            call ncerr(subr,nf90_get_var(ncid,rv0_id,bdata(ib)%rv0))
+            if (trim(nam%strategy)=='specific_multivariate') then
+               call ncerr(subr,nf90_get_var(ncid,rh0s_id,bdata(ib)%rh0s))
+               call ncerr(subr,nf90_get_var(ncid,rv0s_id,bdata(ib)%rv0s))
+            end if
+         end if
+         if ((ib==bpar%nb+1).and.nam%displ_diag) then
+            call ncerr(subr,nf90_get_var(ncid,lon_c0_flt_id,bdata(ib)%lon_c0_flt))
+            call ncerr(subr,nf90_get_var(ncid,lat_c0_flt_id,bdata(ib)%lat_c0_flt))
+         end if
+         if (nam%transform.and.bpar%auto_block(ib)) then
+            call ncerr(subr,nf90_get_var(ncid,trans_id,bdata(ib)%trans))
+            call ncerr(subr,nf90_get_var(ncid,transinv_id,bdata(ib)%transinv))
+         end if
+
+         ! Get main weight
+         call ncerr(subr,nf90_get_att(ncid,nf90_global,'wgt',bdata(ib)%wgt))
+
+         ! Close file
+         call ncerr(subr,nf90_close(ncid))
+      else
+         ! Use namelist/default values
+         call msgwarning('cannot find B data to read, use namelist values')
+         if (bpar%nicas_block(ib)) then
+            bdata(ib)%coef_ens = 1.0
+            bdata(ib)%coef_sta = 0.0
+            do il0=1,geom%nl0
+               bdata(ib)%rh0(:,il0) = nam%rh(il0)
+               bdata(ib)%rv0(:,il0) = nam%rv(il0)
+               if (trim(nam%strategy)=='specific_multivariate') then
+                  bdata(ib)%rh0s(:,il0) = nam%rh(il0)
+                  bdata(ib)%rv0s(:,il0) = nam%rv(il0)
+               end if
+            end do
+         end if
+         if ((ib==bpar%nb+1).and.nam%displ_diag) then
+            do its=2,nam%nts
+               do il0=1,geom%nl0
+                  bdata(ib)%lon_c0_flt(:,il0,its) = geom%lon
+                  bdata(ib)%lat_c0_flt(:,il0,its) = geom%lat
+               end do
+            end do
+         end if
+         if (nam%transform.and.bpar%auto_block(ib)) then
+            bdata(ib)%trans = 0.0
+            do il0=1,geom%nl0
+               bdata(ib)%trans(il0,il0) = 1.0
+            end do
+            bdata(ib)%transinv = bdata(ib)%trans
+         end if
+         bdata(ib)%wgt = 1.0
+      end if
+
+      ! Check
+      if (bpar%nicas_block(ib)) then
+         if (any((bdata(ib)%rh0<0.0).and.isnotmsr(bdata(ib)%rh0))) call msgerror('rh0 should be positive')
+         if (any((bdata(ib)%rv0<0.0).and.isnotmsr(bdata(ib)%rv0))) call msgerror('rv0 should be positive')
+         if (trim(nam%strategy)=='specific_multivariate') then
+            if (any((bdata(ib)%rh0s<0.0).and.isnotmsr(bdata(ib)%rh0s))) call msgerror('rh0s should be positive')
+            if (any((bdata(ib)%rv0s<0.0).and.isnotmsr(bdata(ib)%rv0s))) call msgerror('rv0s should be positive')
+         end if
       end if
    end if
-   bdata%wgt = 1.0
-end if
-
-! Check
-if (any((bdata%rh0<0.0).and.isnotmsr(bdata%rh0))) call msgerror('rh0 should be positive')
-if (any((bdata%rv0<0.0).and.isnotmsr(bdata%rv0))) call msgerror('rv0 should be positive')
-if (trim(nam%strategy)=='specific_multivariate') then
-   if (any((bdata%rh0s<0.0).and.isnotmsr(bdata%rh0s))) call msgerror('rh0s should be positive')
-   if (any((bdata%rv0s<0.0).and.isnotmsr(bdata%rv0s))) call msgerror('rv0s should be positive')
-end if
-
-! End associate
-end associate
+end do
 
 end subroutine bdata_read
 
@@ -553,94 +556,104 @@ end subroutine bdata_read
 ! Subroutine: bdata_write
 !> Purpose: write bdata object
 !----------------------------------------------------------------------
-subroutine bdata_write(bdata,auto_block,nicas_block)
+subroutine bdata_write(nam,geom,bpar,bdata)
 
 implicit none
 
 ! Passed variables
-type(bdatatype),intent(in) :: bdata !< B data
-logical,intent(in) :: auto_block    !< Autocovariance block key
-logical,intent(in) :: nicas_block   !< NICAS block key
+type(namtype),intent(in) :: nam                !< Namelist
+type(geomtype),intent(in) :: geom              !< Geometry
+type(bpartype),intent(in) :: bpar              !< Block parameters
+type(bdatatype),intent(in) :: bdata(bpar%nb+1) !< B data
 
 ! Local variables
-integer :: ncid,nc0_id,nl0_1_id,nl0_2_id
-integer :: lon_id,lat_id,coef_ens_id,coef_sta_id,rh0_id,rv0_id,rh0s_id,rv0s_id,trans_id,transinv_id
+integer :: ib
+integer :: ncid,nc0_id,nl0_1_id,nl0_2_id,nts_id
+integer :: lon_id,lat_id,coef_ens_id,coef_sta_id,rh0_id,rv0_id,rh0s_id,rv0s_id,trans_id,transinv_id,lon_c0_flt_id,lat_c0_flt_id
 character(len=1024) :: subr = 'bdata_write'
 
-! Associate
-associate(nam=>bdata%nam,geom=>bdata%geom)
+do ib=1,bpar%nb+1
+   if (bpar%B_block(ib)) then
+      ! Processor verification
+      if (.not.mpl%main) call msgerror('only I/O proc should enter '//trim(subr))
 
-! Processor verification
-if (.not.mpl%main) call msgerror('only I/O proc should enter '//trim(subr))
+      ! Create file
+      call ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(nam%prefix)//'_'//trim(bdata(ib)%cname)//'.nc', &
+       & or(nf90_clobber,nf90_64bit_offset),ncid))
+      call namncwrite(nam,ncid)
 
-! Create file
-call ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(nam%prefix)//'_'//trim(bdata%cname)//'.nc', &
- & or(nf90_clobber,nf90_64bit_offset),ncid))
-call namncwrite(nam,ncid)
+      ! Define dimensions
+      call ncerr(subr,nf90_def_dim(ncid,'nc0',geom%nc0,nc0_id))
+      call ncerr(subr,nf90_def_dim(ncid,'nl0_1',geom%nl0,nl0_1_id))
+      if (nam%transform.and.bpar%auto_block(ib)) call ncerr(subr,nf90_def_dim(ncid,'nl0_2',geom%nl0,nl0_2_id))
+      if ((ib==bpar%nb+1).and.nam%displ_diag) call ncerr(subr,nf90_def_dim(ncid,'nts',nam%nts-1,nts_id))
 
-if (nicas_block) then
-   ! Define dimensions
-   call ncerr(subr,nf90_def_dim(ncid,'nc0',geom%nc0,nc0_id))
-   call ncerr(subr,nf90_def_dim(ncid,'nl0_1',geom%nl0,nl0_1_id))
-   if (nam%transform.and.auto_block) call ncerr(subr,nf90_def_dim(ncid,'nl0_2',geom%nl0,nl0_2_id))
+      ! Define arrays
+      if (bpar%nicas_block(ib)) then
+         call ncerr(subr,nf90_def_var(ncid,'lon',ncfloat,(/nc0_id/),lon_id))
+         call ncerr(subr,nf90_put_att(ncid,lon_id,'_FillValue',msvalr))
+         call ncerr(subr,nf90_def_var(ncid,'lat',ncfloat,(/nc0_id/),lat_id))
+         call ncerr(subr,nf90_put_att(ncid,lat_id,'_FillValue',msvalr))
+         call ncerr(subr,nf90_def_var(ncid,'coef_ens',ncfloat,(/nc0_id,nl0_1_id/),coef_ens_id))
+         call ncerr(subr,nf90_put_att(ncid,coef_ens_id,'_FillValue',msvalr))
+         call ncerr(subr,nf90_def_var(ncid,'coef_sta',ncfloat,(/nc0_id,nl0_1_id/),coef_sta_id))
+         call ncerr(subr,nf90_put_att(ncid,coef_sta_id,'_FillValue',msvalr))
+         call ncerr(subr,nf90_def_var(ncid,'rh0',ncfloat,(/nc0_id,nl0_1_id/),rh0_id))
+         call ncerr(subr,nf90_put_att(ncid,rh0_id,'_FillValue',msvalr))
+         call ncerr(subr,nf90_def_var(ncid,'rv0',ncfloat,(/nc0_id,nl0_1_id/),rv0_id))
+         call ncerr(subr,nf90_put_att(ncid,rv0_id,'_FillValue',msvalr))
+         if (trim(nam%strategy)=='specific_multivariate') then
+            call ncerr(subr,nf90_def_var(ncid,'rh0s',ncfloat,(/nc0_id,nl0_1_id/),rh0s_id))
+            call ncerr(subr,nf90_put_att(ncid,rh0s_id,'_FillValue',msvalr))
+            call ncerr(subr,nf90_def_var(ncid,'rv0s',ncfloat,(/nc0_id,nl0_1_id/),rv0s_id))
+            call ncerr(subr,nf90_put_att(ncid,rv0s_id,'_FillValue',msvalr))
+         end if
+      end if
+      if ((ib==bpar%nb+1).and.nam%displ_diag) then
+         call ncerr(subr,nf90_def_var(ncid,'lon_c0_flt',ncfloat,(/nc0_id,nl0_1_id,nts_id/),lon_c0_flt_id))
+         call ncerr(subr,nf90_put_att(ncid,lon_c0_flt_id,'_FillValue',msvalr))
+         call ncerr(subr,nf90_def_var(ncid,'lat_c0_flt',ncfloat,(/nc0_id,nl0_1_id,nts_id/),lat_c0_flt_id))
+         call ncerr(subr,nf90_put_att(ncid,lat_c0_flt_id,'_FillValue',msvalr))
+      end if
+      if (nam%transform.and.bpar%auto_block(ib)) then
+         call ncerr(subr,nf90_def_var(ncid,'trans',ncfloat,(/nl0_1_id,nl0_2_id/),trans_id))
+         call ncerr(subr,nf90_put_att(ncid,trans_id,'_FillValue',msvalr))
+         call ncerr(subr,nf90_def_var(ncid,'transinv',ncfloat,(/nl0_1_id,nl0_2_id/),transinv_id))
+         call ncerr(subr,nf90_put_att(ncid,transinv_id,'_FillValue',msvalr))
+      end if
 
-   ! Define arrays
-   call ncerr(subr,nf90_def_var(ncid,'lon',ncfloat,(/nc0_id/),lon_id))
-   call ncerr(subr,nf90_put_att(ncid,lon_id,'_FillValue',msvalr))
-   call ncerr(subr,nf90_def_var(ncid,'lat',ncfloat,(/nc0_id/),lat_id))
-   call ncerr(subr,nf90_put_att(ncid,lat_id,'_FillValue',msvalr))
-   call ncerr(subr,nf90_def_var(ncid,'coef_ens',ncfloat,(/nc0_id,nl0_1_id/),coef_ens_id))
-   call ncerr(subr,nf90_put_att(ncid,coef_ens_id,'_FillValue',msvalr))
-   call ncerr(subr,nf90_def_var(ncid,'coef_sta',ncfloat,(/nc0_id,nl0_1_id/),coef_sta_id))
-   call ncerr(subr,nf90_put_att(ncid,coef_sta_id,'_FillValue',msvalr))
-   call ncerr(subr,nf90_def_var(ncid,'rh0',ncfloat,(/nc0_id,nl0_1_id/),rh0_id))
-   call ncerr(subr,nf90_put_att(ncid,rh0_id,'_FillValue',msvalr))
-   call ncerr(subr,nf90_def_var(ncid,'rv0',ncfloat,(/nc0_id,nl0_1_id/),rv0_id))
-   call ncerr(subr,nf90_put_att(ncid,rv0_id,'_FillValue',msvalr))
-   if (trim(nam%strategy)=='specific_multivariate') then
-      call ncerr(subr,nf90_def_var(ncid,'rh0s',ncfloat,(/nc0_id,nl0_1_id/),rh0s_id))
-      call ncerr(subr,nf90_put_att(ncid,rh0s_id,'_FillValue',msvalr))
-      call ncerr(subr,nf90_def_var(ncid,'rv0s',ncfloat,(/nc0_id,nl0_1_id/),rv0s_id))
-      call ncerr(subr,nf90_put_att(ncid,rv0s_id,'_FillValue',msvalr))
+      ! Write main weight
+      call ncerr(subr,nf90_put_att(ncid,nf90_global,'wgt',bdata(ib)%wgt))
+
+      ! End definition mode
+      call ncerr(subr,nf90_enddef(ncid))
+
+      ! Write arrays
+      if (bpar%nicas_block(ib)) then
+         call ncerr(subr,nf90_put_var(ncid,lon_id,geom%lon*rad2deg))
+         call ncerr(subr,nf90_put_var(ncid,lat_id,geom%lat*rad2deg))
+         call ncerr(subr,nf90_put_var(ncid,coef_ens_id,bdata(ib)%coef_ens))
+         call ncerr(subr,nf90_put_var(ncid,coef_sta_id,bdata(ib)%coef_sta))
+         call ncerr(subr,nf90_put_var(ncid,rh0_id,bdata(ib)%rh0))
+         call ncerr(subr,nf90_put_var(ncid,rv0_id,bdata(ib)%rv0))
+         if (trim(nam%strategy)=='specific_multivariate') then
+            call ncerr(subr,nf90_put_var(ncid,rh0s_id,bdata(ib)%rh0s))
+            call ncerr(subr,nf90_put_var(ncid,rv0s_id,bdata(ib)%rv0s))
+         end if
+      end if
+      if ((ib==bpar%nb+1).and.nam%displ_diag) then
+         call ncerr(subr,nf90_put_var(ncid,lon_c0_flt_id,bdata(ib)%lon_c0_flt))
+         call ncerr(subr,nf90_put_var(ncid,lat_c0_flt_id,bdata(ib)%lat_c0_flt))
+      end if
+      if (nam%transform.and.bpar%auto_block(ib)) then
+         call ncerr(subr,nf90_put_var(ncid,trans_id,bdata(ib)%trans))
+         call ncerr(subr,nf90_put_var(ncid,transinv_id,bdata(ib)%transinv))
+      end if
+
+      ! Close file
+      call ncerr(subr,nf90_close(ncid))
    end if
-
-   if (nam%transform.and.auto_block) then
-      call ncerr(subr,nf90_def_var(ncid,'trans',ncfloat,(/nl0_1_id,nl0_2_id/),trans_id))
-      call ncerr(subr,nf90_put_att(ncid,trans_id,'_FillValue',msvalr))
-      call ncerr(subr,nf90_def_var(ncid,'transinv',ncfloat,(/nl0_1_id,nl0_2_id/),transinv_id))
-      call ncerr(subr,nf90_put_att(ncid,transinv_id,'_FillValue',msvalr))
-   end if
-end if
-
-! Write main weight
-call ncerr(subr,nf90_put_att(ncid,nf90_global,'wgt',bdata%wgt))
-
-! End definition mode
-call ncerr(subr,nf90_enddef(ncid))
-
-! Write arrays
-if (nicas_block) then
-   call ncerr(subr,nf90_put_var(ncid,lon_id,geom%lon*rad2deg))
-   call ncerr(subr,nf90_put_var(ncid,lat_id,geom%lat*rad2deg))
-   call ncerr(subr,nf90_put_var(ncid,coef_ens_id,bdata%coef_ens))
-   call ncerr(subr,nf90_put_var(ncid,coef_sta_id,bdata%coef_sta))
-   call ncerr(subr,nf90_put_var(ncid,rh0_id,bdata%rh0))
-   call ncerr(subr,nf90_put_var(ncid,rv0_id,bdata%rv0))
-   if (trim(nam%strategy)=='specific_multivariate') then
-      call ncerr(subr,nf90_put_var(ncid,rh0s_id,bdata%rh0s))
-      call ncerr(subr,nf90_put_var(ncid,rv0s_id,bdata%rv0s))
-   end if
-   if (nam%transform.and.auto_block) then
-      call ncerr(subr,nf90_put_var(ncid,trans_id,bdata%trans))
-      call ncerr(subr,nf90_put_var(ncid,transinv_id,bdata%transinv))
-   end if
-end if
-
-! Close file
-call ncerr(subr,nf90_close(ncid))
-
-! End associate
-end associate
+end do
 
 end subroutine bdata_write
 

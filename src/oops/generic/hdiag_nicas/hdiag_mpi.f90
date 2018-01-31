@@ -11,11 +11,13 @@
 module hdiag_mpi
 
 use tools_display, only: msgerror,prog_init,prog_print
+use tools_interp, only: compute_interp
+use tools_kinds, only: kind_real
 use tools_missing, only: msvali,msvalr,msi,msr,isnotmsr,isnotmsi
 use type_com, only: comtype,com_dealloc,com_setup,com_bcast
 use type_displ, only: displtype
 use type_hdata, only: hdatatype
-use type_linop, only: linop_alloc,linop_copy,linop_reorder
+use type_linop, only: linoptype,linop_alloc,linop_copy,linop_reorder
 use type_mpl, only: mpl,mpl_send,mpl_recv
 use type_nam, only: namtype
 
@@ -290,17 +292,42 @@ type(displtype),intent(in) :: displ    !< Displacement
 integer :: iproc,jc3,ic0,ic0a,ic0c,ic1,ic1a,its,il0,d_n_s_max,d_n_s_max_loc,i_s,i_s_loc
 integer :: nc0a,nc0c
 integer,allocatable :: interpd_lg(:,:,:),c0_to_c0a(:),c0a_to_c0(:),c0c_to_c0(:),c0a_to_c0c(:)
+real(kind_real),allocatable :: lon_c1(:),lat_c1(:)
 type(comtype) :: comAC(mpl%nproc)
+type(linoptype),allocatable :: dfull(:,:)
 
 ! Associate
 associate(nam=>hdata%nam,geom=>hdata%geom)
+
+if (nam%displ_diag) then
+   ! Allocation
+   allocate(dfull(geom%nl0,nam%nts))
+   allocate(lon_c1(nam%nc1))
+   allocate(lat_c1(nam%nc1))
+
+   ! Prepare displacement interpolation
+   do its=1,nam%nts
+      do il0=1,geom%nl0
+         ! Copy Sc1 points
+         do ic1=1,nam%nc1
+            ic0 = hdata%c1_to_c0(ic1)
+            lon_c1(ic1) = displ%lon_c0_flt(ic0,il0,its)
+            lat_c1(ic1) = displ%lat_c0_flt(ic0,il0,its)
+         end do
+
+         ! Compute interpolation
+         call compute_interp(geom%mesh,geom%ctree,geom%nc0,geom%mask(:,il0),nam%nc1,lon_c1,lat_c1,hdata%c1l0_log(:,il0), &
+       & nam%diag_interp,dfull(il0,its))
+      end do
+   end do
+end if
 
 ! Allocation
 if (nam%displ_diag) then
    d_n_s_max = 0
    do its=1,nam%nts
       do il0=1,geom%nl0
-         d_n_s_max = max(d_n_s_max,displ%dfull(il0,its)%n_s)
+         d_n_s_max = max(d_n_s_max,dfull(il0,its)%n_s)
       end do
    end do
    allocate(hdata%lcheck_d(d_n_s_max,geom%nl0,nam%nts))
@@ -323,9 +350,9 @@ if (nam%displ_diag) then
    hdata%lcheck_d = .false.
    do its=1,nam%nts
       do il0=1,geom%nl0
-         do i_s=1,displ%dfull(il0,its)%n_s
-            ic0 = displ%dfull(il0,its)%col(i_s)
-            ic1 = displ%dfull(il0,its)%row(i_s)
+         do i_s=1,dfull(il0,its)%n_s
+            ic0 = dfull(il0,its)%col(i_s)
+            ic1 = dfull(il0,its)%row(i_s)
             if (hdata%lcheck_c1a(ic1)) then
                hdata%lcheck_c0c(ic0) = .true.
                hdata%lcheck_d(i_s,il0,its) = .true.
@@ -378,7 +405,7 @@ if (nam%displ_diag) then
    do its=1,nam%nts
       do il0=1,geom%nl0
          i_s_loc = 0
-         do i_s=1,displ%dfull(il0,its)%n_s
+         do i_s=1,dfull(il0,its)%n_s
             if (hdata%lcheck_d(i_s,il0,its)) then
                i_s_loc = i_s_loc+1
                interpd_lg(i_s_loc,il0,its) = i_s
@@ -390,15 +417,15 @@ if (nam%displ_diag) then
    ! Local data
    do its=1,nam%nts
       do il0=1,geom%nl0
-         hdata%d(il0,its)%prefix = 'h'
+         hdata%d(il0,its)%prefix = 'd'
          hdata%d(il0,its)%n_src = hdata%nc0c
          hdata%d(il0,its)%n_dst = hdata%nc1a
          call linop_alloc(hdata%d(il0,its))
          do i_s_loc=1,hdata%d(il0,its)%n_s
             i_s = interpd_lg(i_s_loc,il0,its)
-            hdata%d(il0,its)%row(i_s_loc) = hdata%c1_to_c1a(displ%dfull(il0,its)%row(i_s))
-            hdata%d(il0,its)%col(i_s_loc) = hdata%c0_to_c0c(displ%dfull(il0,its)%col(i_s))
-            hdata%d(il0,its)%S(i_s_loc) = displ%dfull(il0,its)%S(i_s)
+            hdata%d(il0,its)%row(i_s_loc) = hdata%c1_to_c1a(dfull(il0,its)%row(i_s))
+            hdata%d(il0,its)%col(i_s_loc) = hdata%c0_to_c0c(dfull(il0,its)%col(i_s))
+            hdata%d(il0,its)%S(i_s_loc) = dfull(il0,its)%S(i_s)
          end do
          call linop_reorder(hdata%d(il0,its))
       end do
