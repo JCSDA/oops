@@ -33,7 +33,7 @@ class Variables : public util::Printable {
   Variables(const Variables &);
 
   const std::vector<std::string> & variables() const {return vars_;}
-  const eckit::Configuration & toFortran() const {return fconf_;}
+  const eckit::Configuration & asConfig() const {return fconf_;}
 
  private:
   void print(std::ostream &) const;
