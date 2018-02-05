@@ -138,11 +138,11 @@ implicit none
 type(lcttype),intent(inout) :: lct !< LCT
 
 ! Release memory
-deallocate(lct%H)
-deallocate(lct%coef)
-deallocate(lct%raw)
-deallocate(lct%norm)
-deallocate(lct%fit)
+if (allocated(lct%H)) deallocate(lct%H)
+if (allocated(lct%coef)) deallocate(lct%coef)
+if (allocated(lct%raw)) deallocate(lct%raw)
+if (allocated(lct%norm)) deallocate(lct%norm)
+if (allocated(lct%fit)) deallocate(lct%fit)
 
 end subroutine lct_dealloc
 
@@ -313,17 +313,17 @@ do ib=1,bpar%nb
          write(mpl%unit,'(a10,a)') '','Write LCT'
          iv = bpar%b_to_v2(ib)
          write(iscaleschar,'(i1)') iscales
-         call model_write(nam,geom,trim(nam%prefix)//'_lct.nc',trim(nam%varname(iv))//'_H11_'//iscaleschar, &
+         call model_write(nam,geom,trim(nam%prefix)//'_lct_gridded.nc',trim(nam%varname(iv))//'_H11_'//iscaleschar, &
        & fld(:,:,1)/req**2)
-         call model_write(nam,geom,trim(nam%prefix)//'_lct.nc',trim(nam%varname(iv))//'_H22_'//iscaleschar, &
+         call model_write(nam,geom,trim(nam%prefix)//'_lct_gridded.nc',trim(nam%varname(iv))//'_H22_'//iscaleschar, &
        & fld(:,:,2)/req**2)
-         call model_write(nam,geom,trim(nam%prefix)//'_lct.nc',trim(nam%varname(iv))//'_H33_'//iscaleschar, &
+         call model_write(nam,geom,trim(nam%prefix)//'_lct_gridded.nc',trim(nam%varname(iv))//'_H33_'//iscaleschar, &
        & fld(:,:,3))
-         if (lct(1,1,ib)%ncomp(iscales)==4) call model_write(nam,geom,trim(nam%prefix)//'_lct.nc', &
+         if (lct(1,1,ib)%ncomp(iscales)==4) call model_write(nam,geom,trim(nam%prefix)//'_lct_gridded.nc', &
        & trim(nam%varname(iv))//'_Hc12_'//iscaleschar,fld(:,:,4))
-         call model_write(nam,geom,trim(nam%prefix)//'_lct.nc',trim(nam%varname(iv))//'_coef_'//iscaleschar, &
+         call model_write(nam,geom,trim(nam%prefix)//'_lct_gridded.nc',trim(nam%varname(iv))//'_coef_'//iscaleschar, &
        & fld(:,:,lct(1,1,ib)%ncomp(iscales)+1))
-         call model_write(nam,geom,trim(nam%prefix)//'_lct.nc',trim(nam%varname(iv))//'_Lh_'//iscaleschar, &
+         call model_write(nam,geom,trim(nam%prefix)//'_lct_gridded.nc',trim(nam%varname(iv))//'_Lh_'//iscaleschar, &
        & fld(:,:,lct(1,1,ib)%ncomp(iscales)+2)*reqkm)
       end if
 
@@ -386,8 +386,8 @@ do ib=1,bpar%nb
          end if
       end do
       iv = bpar%b_to_v2(ib)
-      call model_write(nam,geom,trim(nam%prefix)//'_lct.nc',trim(nam%varname(iv))//'_raw',fld(:,:,1))
-      call model_write(nam,geom,trim(nam%prefix)//'_lct.nc',trim(nam%varname(iv))//'_fit',fld(:,:,2))
+      call model_write(nam,geom,trim(nam%prefix)//'_lct_gridded.nc',trim(nam%varname(iv))//'_raw',fld(:,:,1))
+      call model_write(nam,geom,trim(nam%prefix)//'_lct_gridded.nc',trim(nam%varname(iv))//'_fit',fld(:,:,2))
 
       ! Release memory
       deallocate(fld)

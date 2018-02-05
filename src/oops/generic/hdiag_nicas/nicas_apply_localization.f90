@@ -11,6 +11,7 @@
 module nicas_apply_localization
 
 use nicas_apply_nicas, only: apply_nicas,apply_nicas_sqrt,apply_nicas_sqrt_ad
+use nicas_apply_adv, only: apply_adv,apply_adv_ad
 use tools_asa007, only: cholesky
 use tools_display, only: msgerror
 use tools_kinds, only: kind_real
@@ -62,11 +63,7 @@ case ('common')
    allocate(fld_3d(geom%nc0a,geom%nl0))
 
    ! Adjoint displacement
-   if (nam%displ_diag) then
-      do its=2,nam%nts
-
-      end do
-   end if
+   if (nam%displ_diag) call apply_adv_ad(nam,geom,ndata(bpar%nb+1),fld)
 
    ! Sum product over variables and timeslots
    fld_3d = 0.0
@@ -121,11 +118,7 @@ case ('common')
    !$omp end parallel do
 
    ! Displacement
-   if (nam%displ_diag) then
-      do its=2,nam%nts
-
-      end do
-   end if
+   if (nam%displ_diag) call apply_adv(nam,geom,ndata(bpar%nb+1),fld)
 case ('specific_univariate')
    ! Allocation
    allocate(fld_4d(geom%nc0a,geom%nl0,nam%nv))

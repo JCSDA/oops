@@ -19,23 +19,23 @@ implicit none
 
 type bpartype
    ! Block parameters
-   integer :: nb                                 !< Number of blocks
-   integer,allocatable :: nl0r(:)                !< Effective number of levels
-   integer,allocatable :: l0rl0b_to_l0(:,:,:)    !< Effective level to level
-   integer,allocatable :: il0rz(:,:)             !< Effective zero separation level
-   integer,allocatable :: nc3(:)                 !< Maximum class
-   logical,allocatable :: auto_block(:)          !< Autocovariance block
-   logical,allocatable :: diag_block(:)          !< HDIAG block
-   logical,allocatable :: avg_block(:)           !< Averaging block
-   logical,allocatable :: fit_block(:)           !< Fit block
-   logical,allocatable :: B_block(:)             !< B-involved block
-   logical,allocatable :: nicas_block(:)         !< NICAS block
-   logical,allocatable :: cv_block(:)            !< Control variable block
-   character(len=11),allocatable :: blockname(:) !< Block name
-   integer,allocatable :: b_to_v1(:)             !< Block to first variable
-   integer,allocatable :: b_to_v2(:)             !< Block to second variable
-   integer,allocatable :: b_to_ts1(:)            !< Block to first timeslot
-   integer,allocatable :: b_to_ts2(:)            !< Block to second timeslot
+   integer :: nb                                   !< Number of blocks
+   integer,allocatable :: nl0r(:)                  !< Effective number of levels
+   integer,allocatable :: l0rl0b_to_l0(:,:,:)      !< Effective level to level
+   integer,allocatable :: il0rz(:,:)               !< Effective zero separation level
+   integer,allocatable :: nc3(:)                   !< Maximum class
+   logical,allocatable :: auto_block(:)            !< Autocovariance block
+   logical,allocatable :: diag_block(:)            !< HDIAG block
+   logical,allocatable :: avg_block(:)             !< Averaging block
+   logical,allocatable :: fit_block(:)             !< Fit block
+   logical,allocatable :: B_block(:)               !< B-involved block
+   logical,allocatable :: nicas_block(:)           !< NICAS block
+   logical,allocatable :: cv_block(:)              !< Control variable block
+   character(len=11),allocatable :: blockname(:)   !< Block name
+   integer,allocatable :: b_to_v1(:)               !< Block to first variable
+   integer,allocatable :: b_to_v2(:)               !< Block to second variable
+   integer,allocatable :: b_to_ts1(:)              !< Block to first timeslot
+   integer,allocatable :: b_to_ts2(:)              !< Block to second timeslot
 end type bpartype
 
 private

@@ -24,11 +24,11 @@ use tools_const, only: deg2rad,rad2deg,sphere_dist,reqkm
 use tools_display, only: msgerror,vunitchar
 use tools_kinds,only: kind_real
 use tools_missing, only: msi,msr,isnotmsi,isnotmsr
-use type_bdata, only: bdatatype,bdata_dealloc,bdata_mult
+use type_bdata, only: bdatatype,bdata_alloc,bdata_copy
 use type_bpar, only: bpartype
 use type_com, only: com_ext,com_red
 use type_ctree, only: find_nearest_neighbors
-use type_geom, only: geomtype,fld_com_gl,fld_com_lg
+use type_geom, only: geomtype,fld_com_gl,fld_com_lg,fld_write
 use type_linop, only: apply_linop,apply_linop_ad
 use type_mpl, only: mpl,mpl_dot_prod,mpl_bcast
 use type_nam, only: namtype
@@ -466,7 +466,8 @@ call fld_com_lg(geom,fld)
 
 if (mpl%main) then
    ! Write field
-   call model_write(nam,geom,trim(nam%prefix)//'_dirac.nc',trim(blockname)//'_dirac',fld)
+   call model_write(nam,geom,trim(nam%prefix)//'_dirac_gridded.nc',trim(blockname)//'_dirac',fld)
+   call fld_write(nam,geom,trim(nam%prefix)//'_dirac.nc',trim(blockname)//'_dirac',fld)
 
    ! Print results
    write(mpl%unit,'(a7,a)') '','Values at dirac points:'
@@ -487,7 +488,8 @@ if (mpl%main) then
          ic0 = ndata%c1_to_c0(ic1)
          fld_c1(ic0,:) = fld(ic0,:)
       end do
-      call model_write(nam,geom,trim(nam%prefix)//'_dirac.nc',trim(blockname)//'_dirac_c1',fld_c1)
+      call model_write(nam,geom,trim(nam%prefix)//'_dirac_gridded.nc',trim(blockname)//'_dirac_c1',fld_c1)
+      call fld_write(nam,geom,trim(nam%prefix)//'_dirac.nc',trim(blockname)//'_dirac_c1',fld_c1)
 
       ! Write field at subgrid points
       allocate(fld_s(geom%nc0,geom%nl0))
@@ -499,7 +501,8 @@ if (mpl%main) then
          il0 = ndata%l1_to_l0(il1)
          fld_s(ic0,il0) = fld(ic0,il0)
       end do
-      call model_write(nam,geom,trim(nam%prefix)//'_dirac.nc',trim(blockname)//'_dirac_s',fld_s)
+      call model_write(nam,geom,trim(nam%prefix)//'_dirac_gridded.nc',trim(blockname)//'_dirac_s',fld_s)
+      call fld_write(nam,geom,trim(nam%prefix)//'_dirac.nc',trim(blockname)//'_dirac_s',fld_s)
    end if
 end if
 
@@ -528,27 +531,19 @@ real(kind_real) :: sum1,sum2
 real(kind_real),allocatable :: fld1_loc(:,:,:,:),fld1_bens(:,:,:,:),fld1_save(:,:,:,:)
 real(kind_real),allocatable :: fld2_loc(:,:,:,:),fld2_bens(:,:,:,:),fld2_save(:,:,:,:)
 
-if (mpl%main) then
-   ! Allocation
-   allocate(fld1_save(geom%nc0,geom%nl0,nam%nv,nam%nts))
-   allocate(fld2_save(geom%nc0,geom%nl0,nam%nv,nam%nts))
-
-   ! Generate random field
-   call rand_real(0.0_kind_real,1.0_kind_real,fld1_save)
-   call rand_real(0.0_kind_real,1.0_kind_real,fld2_save)
-end if
-
-! Global to local
-call fld_com_gl(nam,geom,fld1_save)
-call fld_com_gl(nam,geom,fld2_save)
-
 ! Allocation
+allocate(fld1_save(geom%nc0a,geom%nl0,nam%nv,nam%nts))
+allocate(fld2_save(geom%nc0a,geom%nl0,nam%nv,nam%nts))
 allocate(fld1_loc(geom%nc0a,geom%nl0,nam%nv,nam%nts))
 allocate(fld2_loc(geom%nc0a,geom%nl0,nam%nv,nam%nts))
 if (present(ens1)) then
    allocate(fld1_bens(geom%nc0a,geom%nl0,nam%nv,nam%nts))
    allocate(fld2_bens(geom%nc0a,geom%nl0,nam%nv,nam%nts))
 end if
+
+! Generate random field
+call rand_real(0.0_kind_real,1.0_kind_real,fld1_save)
+call rand_real(0.0_kind_real,1.0_kind_real,fld2_save)
 
 ! Adjoint test
 fld1_loc = fld1_save
@@ -561,6 +556,8 @@ else
    call apply_localization(nam,geom,bpar,ndata,fld2_loc)
 end if
 if (present(ens1)) then
+   fld1_bens = fld1_save
+   fld2_bens = fld2_save
    call apply_bens(nam,geom,bpar,ndata,ens1,fld1_bens)
    call apply_bens(nam,geom,bpar,ndata,ens1,fld2_bens)
 end if
@@ -714,7 +711,7 @@ type(ndatatype),intent(in) :: ndata(bpar%nb+1)                                  
 real(kind_real),intent(in),optional :: ens1(geom%nc0a,geom%nl0,nam%nv,nam%nts,nam%ens1_ne) !< Ensemble 1
 
 ! Local variables
-integer :: il0,il0dir(nam%ndir),ic0dir(nam%ndir),idir,iv,its
+integer :: il0dir(nam%ndir),ic0dir(nam%ndir),idir,iv,its
 real(kind_real),allocatable :: fld(:,:,:,:),fld_loc(:,:,:,:),fld_bens(:,:,:,:)
 character(len=2) :: itschar
 
@@ -755,16 +752,21 @@ end if
 
 ! Local to global
 call fld_com_lg(nam,geom,fld_loc)
-if (present(ens1)) call fld_com_lg(nam,geom,fld_bens) 
+if (present(ens1)) call fld_com_lg(nam,geom,fld_bens)
 
 if (mpl%main) then
    ! Write field
    do its=1,nam%nts
       write(itschar,'(i2.2)') its
       do iv=1,nam%nv
-         call model_write(nam,geom,trim(nam%prefix)//'_dirac.nc',trim(nam%varname(iv))//'_'//itschar,fld_loc(:,:,iv,its))
-         if (present(ens1)) call model_write(nam,geom,trim(nam%prefix)//'_dirac.nc',trim(nam%varname(iv))//'_'//itschar//'_Bens', &
-       & fld_bens(:,:,iv,its))
+         call model_write(nam,geom,trim(nam%prefix)//'_dirac_gridded.nc',trim(nam%varname(iv))//'_'//itschar,fld_loc(:,:,iv,its))
+         call fld_write(nam,geom,trim(nam%prefix)//'_dirac.nc',trim(nam%varname(iv))//'_'//itschar,fld_loc(:,:,iv,its))
+         if (present(ens1)) then
+            call model_write(nam,geom,trim(nam%prefix)//'_dirac_gridded.nc',trim(nam%varname(iv))//'_'//itschar//'_Bens', &
+          & fld_bens(:,:,iv,its))
+            call fld_write(nam,geom,trim(nam%prefix)//'_dirac.nc',trim(nam%varname(iv))//'_'//itschar//'_Bens', &
+          & fld_bens(:,:,iv,its))
+         end if
       end do
    end do
 end if
@@ -786,14 +788,12 @@ type(bpartype),intent(in) :: bpar              !< Block parameters
 type(ndatatype),intent(in) :: ndata(bpar%nb+1) !< NICAS data
 
 ! Local variables
-integer :: ib,ic0,ic0a,il0,ifac,itest,nefac(nfac),ens1_ne,ie,iv,its,iproc
+integer :: ifac,itest,nefac(nfac),ens1_ne,iv,its
 real(kind_real) :: fld_ref(geom%nc0a,geom%nl0,nam%nv,nam%nts,ntest),fld_save(geom%nc0a,geom%nl0,nam%nv,nam%nts,ntest)
 real(kind_real) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts),mse(ntest,nfac),mse_th(ntest,nfac)
 real(kind_real),allocatable :: ens1(:,:,:,:,:),fld_tmp(:,:,:,:)
 character(len=2) :: itschar
 character(len=4) :: nechar,itestchar
-character(len=1024) :: prefix,method
-type(bdatatype),allocatable :: bdata_save(:),bdata_test(:)
 
 ! Define test vectors
 write(mpl%unit,'(a4,a)') '','Define test vectors'
@@ -816,15 +816,15 @@ do itest=1,min(ntest,10)
 
    ! Local to global
    call fld_com_lg(nam,geom,fld_tmp)
-   
+
    if (mpl%main) then
       ! Write field
       write(itestchar,'(i4.4)') itest
       do its=1,nam%nts
          write(itschar,'(i2.2)') its
          do iv=1,nam%nv
-            call model_write(nam,geom,trim(nam%prefix)//'_randomize_'//itestchar//'.nc',trim(nam%varname(iv))//'_ref_'//itschar, & 
-          & fld_tmp(:,:,iv,its))
+            call model_write(nam,geom,trim(nam%prefix)//'_randomize_'//itestchar//'_gridded.nc', &
+          & trim(nam%varname(iv))//'_ref_'//itschar,fld_tmp(:,:,iv,its))
          end do
       end do
    end if
@@ -868,15 +868,15 @@ do ifac=1,nfac
 
          ! Local to global
          call fld_com_lg(nam,geom,fld_tmp)
-   
+
          if (mpl%main) then
             ! Write field
             write(itestchar,'(i4.4)') itest
             do its=1,nam%nts
                write(itschar,'(i2.2)') its
                do iv=1,nam%nv
-                  call model_write(nam,geom,trim(nam%prefix)//'_randomize_'//itestchar//'.nc',trim(nam%varname(iv))//'_rand_' &
-                & //nechar//'_'//itschar,fld_tmp(:,:,iv,its))
+                  call model_write(nam,geom,trim(nam%prefix)//'_randomize_'//itestchar//'_gridded.nc', &
+                & trim(nam%varname(iv))//'_rand_'//nechar//'_'//itschar,fld_tmp(:,:,iv,its))
                end do
             end do
          end if
@@ -893,7 +893,7 @@ do ifac=1,nfac
    ! Release memory
    deallocate(ens1)
 end do
-  
+
 ! Reset namelist variables
 nam%ens1_ne = ens1_ne
 
@@ -917,7 +917,6 @@ type(ndatatype),intent(in) :: ndata(bpar%nb+1) !< NICAS data
 ! Local variables
 integer :: ens1_ne,ens1_ne_offset,ens1_nsub,ib,il0
 real(kind_real) :: ens1(geom%nc0a,geom%nl0,nam%nv,nam%nts,ne)
-logical :: new_hdiag
 character(len=1024) :: prefix,method
 type(bdatatype),allocatable :: bdata_test(:)
 
@@ -988,7 +987,7 @@ type(bpartype),intent(in) :: bpar              !< Block parameters
 type(ndatatype),intent(in) :: ndata(bpar%nb+1) !< NICAS data
 
 ! Local variables
-integer :: ib,ic0,ic0a,il0,ifac,itest
+integer :: ib,ic0,ic0a,ifac,itest
 real(kind_real) :: fld_ref(geom%nc0a,geom%nl0,nam%nv,nam%nts,ntest),fld_save(geom%nc0a,geom%nl0,nam%nv,nam%nts,ntest)
 real(kind_real) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts),fac(nfac),mse(ntest,nfac)
 real(kind_real) :: ens1(geom%nc0a,geom%nl0,nam%nv,nam%nts,nam%ens1_ne)
@@ -1028,8 +1027,11 @@ nam%method = 'loc'
 call run_hdiag(nam,geom,bpar,bdata_save,ens1)
 
 ! Allocation
+call bdata_alloc(nam,geom,bpar,bdata_test)
 allocate(ndata_test(bpar%nb+1))
-allocate(bdata_test(bpar%nb+1))
+
+! Copy bdata
+call bdata_copy(bpar,bdata_save,bdata_test)
 
 do ifac=1,nfac
    ! Multiplication factor
@@ -1039,21 +1041,18 @@ do ifac=1,nfac
    write(mpl%unit,'(a,f4.2,a)') '--- Apply a multiplicative factor ',fac(ifac),' to length-scales'
 
    do ib=1,bpar%nb+1
-      if (bpar%B_block(ib)) then
-         ! Set name, namelist and geometry
-         bdata_test(ib)%nam => nam
-         bdata_test(ib)%geom => geom
-         ndata_test(ib)%nam => nam
-         ndata_test(ib)%geom => geom
-      end if
+      ! Set namelist and geometry
+      ndata_test(ib)%nam => nam
+      ndata_test(ib)%geom => geom
 
       if (bpar%nicas_block(ib)) then
-         ! Release memory
-         call bdata_dealloc(bdata_test(ib))
-         call ndata_dealloc(ndata_test(ib))
-
          ! Length-scales multiplication
-         call bdata_mult(bdata_save(ib),fac(ifac),bpar%auto_block(ib),bdata_test(ib))
+         bdata_test(ib)%rh0 = fac(ifac)*bdata_save(ib)%rh0
+         bdata_test(ib)%rv0 = fac(ifac)*bdata_save(ib)%rv0
+         if (trim(nam%strategy)=='specific_multivariate') then
+            bdata_test(ib)%rh0s = fac(ifac)*bdata_save(ib)%rh0s
+            bdata_test(ib)%rv0s = fac(ifac)*bdata_save(ib)%rv0s
+         end if
 
          ! Compute NICAS parameters
          call compute_parameters(bdata_test(ib),ndata_test(ib))
@@ -1083,11 +1082,17 @@ do ifac=1,nfac
       mse(itest,ifac) = sum((fld-fld_ref(:,:,:,:,itest))**2)
    end do
 
+
+   ! Release memory
+   do ib=1,bpar%nb+1
+      if (bpar%nicas_block(ib)) call ndata_dealloc(ndata_test(ib))
+   end do
+
    ! Print scores
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a,f4.2,a,e15.8)') '--- Optimality results for a factor ',fac(ifac),', MSE: ',sum(mse(:,ifac))/float(ntest)
 end do
-  
+
 ! Print scores summary
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Optimality results summary'
@@ -1122,7 +1127,7 @@ real(kind_real) :: nn_dist(1)
 do idir=1,nam%ndir
    ! Find nearest neighbor
    call find_nearest_neighbors(geom%ctree,dble(nam%londir(idir)*deg2rad),dble(nam%latdir(idir)*deg2rad),1,nn_index,nn_dist)
-   ic0dir(idir) = nn_dist(1)
+   ic0dir(idir) = nn_index(1)
 
    ! Find level index
    do il0=1,geom%nl0

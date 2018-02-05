@@ -97,29 +97,20 @@ end subroutine curve_alloc
 ! Subroutine: curve_dealloc
 !> Purpose: curve object deallocation
 !----------------------------------------------------------------------
-subroutine curve_dealloc(hdata,curve)
+subroutine curve_dealloc(curve)
 
 implicit none
 
 ! Passed variables
-type(hdatatype),intent(in) :: hdata    !< HDIAG data
 type(curvetype),intent(inout) :: curve !< Curve
 
-! Associate
-associate(nam=>hdata%nam)
-
 ! Deallocation
-deallocate(curve%raw)
-deallocate(curve%raw_coef_ens)
-if (trim(nam%fit_type)/='none') then
-   deallocate(curve%fit_wgt)
-   deallocate(curve%fit)
-   deallocate(curve%fit_rh)
-   deallocate(curve%fit_rv)
-end if
-
-! End associate
-end associate
+if (allocated(curve%raw)) deallocate(curve%raw)
+if (allocated(curve%raw_coef_ens)) deallocate(curve%raw_coef_ens)
+if (allocated(curve%fit_wgt)) deallocate(curve%fit_wgt)
+if (allocated(curve%fit)) deallocate(curve%fit)
+if (allocated(curve%fit_rh)) deallocate(curve%fit_rh)
+if (allocated(curve%fit_rv)) deallocate(curve%fit_rv)
 
 end subroutine curve_dealloc
 

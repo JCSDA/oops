@@ -33,12 +33,14 @@ type linoptype
 end type linoptype
 
 interface linop_read
-  module procedure linop_read_single
-  module procedure linop_read_array
+  module procedure linop_read_0d
+  module procedure linop_read_1d
+  module procedure linop_read_2d
 end interface
 interface linop_write
-  module procedure linop_write_single
-  module procedure linop_write_array
+  module procedure linop_write_0d
+  module procedure linop_write_1d
+  module procedure linop_write_2d
 end interface
 
 logical :: check_data = .false. !< Activate data check for all linear operations
@@ -314,10 +316,10 @@ end if
 end subroutine apply_linop_sym
 
 !----------------------------------------------------------------------
-! Subroutine: linop_read_single
+! Subroutine: linop_read_0d
 !> Purpose: read single linear operator from a NetCDF file
 !----------------------------------------------------------------------
-subroutine linop_read_single(ncid,prefix,linop)
+subroutine linop_read_0d(ncid,prefix,linop)
 
 implicit none
 
@@ -329,7 +331,7 @@ type(linoptype),intent(inout) :: linop !< Linear operator
 ! Local variables
 integer :: info
 integer :: n_s_id,row_id,col_id,S_id
-character(len=1024) :: subr = 'linop_read_single'
+character(len=1024) :: subr = 'linop_read_0d'
 
 ! Copy prefix
 linop%prefix = trim(prefix)
@@ -361,13 +363,13 @@ if (linop%n_s>0) then
    call ncerr(subr,nf90_get_var(ncid,S_id,linop%S))
 end if
 
-end subroutine linop_read_single
+end subroutine linop_read_0d
 
 !----------------------------------------------------------------------
-! Subroutine: linop_read_array
-!> Purpose: read array of linear operators from a NetCDF file
+! Subroutine: linop_read_1d
+!> Purpose: read array of linear operators from a NetCDF file, 1D
 !----------------------------------------------------------------------
-subroutine linop_read_array(ncid,prefix,linop)
+subroutine linop_read_1d(ncid,prefix,linop)
 
 implicit none
 
@@ -377,9 +379,9 @@ character(len=*),intent(in) :: prefix                 !< Linear operator prefix
 type(linoptype),allocatable,intent(inout) :: linop(:) !< Linear operators
 
 ! Local variables
-integer :: info,narr,n_s_max,iarr
-integer :: n_s_max_id,narr_id,n_s_id,n_src_id,n_dst_id,row_id,col_id,S_id
-character(len=1024) :: subr = 'linop_read_array'
+integer :: info,n1,n_s_max,i1
+integer :: n_s_max_id,n1_id,n_s_id,n_src_id,n_dst_id,row_id,col_id,S_id
+character(len=1024) :: subr = 'linop_read_1d'
 
 ! Get maximum operator size
 info = nf90_inq_dimid(ncid,trim(prefix)//'_n_s_max',n_s_max_id)
@@ -390,16 +392,16 @@ else
 end if
 
 ! Get array size
-info = nf90_inq_dimid(ncid,trim(prefix)//'_narr',narr_id)
+info = nf90_inq_dimid(ncid,trim(prefix)//'_n1',n1_id)
 if (info==nf90_noerr) then
-   call ncerr(subr,nf90_inquire_dimension(ncid,narr_id,len=narr))
+   call ncerr(subr,nf90_inquire_dimension(ncid,n1_id,len=n1))
 else
-   narr = 0
+   n1 = 0
 end if
 
-if ((narr>0).and.(n_s_max>0)) then
+if ((n1>0).and.(n_s_max>0)) then
    ! Allocation
-   allocate(linop(narr))
+   allocate(linop(n1))
 
    ! Get variables id
    call ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_n_s',n_s_id))
@@ -409,34 +411,111 @@ if ((narr>0).and.(n_s_max>0)) then
    call ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_col',col_id))
    call ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_S',S_id))
 
-   do iarr=1,narr
+   do i1=1,n1
       ! Copy prefix
-      linop(iarr)%prefix = trim(prefix)
+      linop(i1)%prefix = trim(prefix)
 
       ! Get operator size
-      call ncerr(subr,nf90_get_var(ncid,n_s_id,linop(iarr)%n_s,(/iarr/)))
-      call ncerr(subr,nf90_get_var(ncid,n_src_id,linop(iarr)%n_src,(/iarr/)))
-      call ncerr(subr,nf90_get_var(ncid,n_dst_id,linop(iarr)%n_dst,(/iarr/)))
+      call ncerr(subr,nf90_get_var(ncid,n_s_id,linop(i1)%n_s,(/i1/)))
+      call ncerr(subr,nf90_get_var(ncid,n_src_id,linop(i1)%n_src,(/i1/)))
+      call ncerr(subr,nf90_get_var(ncid,n_dst_id,linop(i1)%n_dst,(/i1/)))
 
-      if (linop(iarr)%n_s>0) then
+      if (linop(i1)%n_s>0) then
          ! Allocation
-         call linop_alloc(linop(iarr))
+         call linop_alloc(linop(i1))
 
          ! Get variables
-         call ncerr(subr,nf90_get_var(ncid,row_id,linop(iarr)%row,(/1,iarr/),(/linop(iarr)%n_s,1/)))
-         call ncerr(subr,nf90_get_var(ncid,col_id,linop(iarr)%col,(/1,iarr/),(/linop(iarr)%n_s,1/)))
-         call ncerr(subr,nf90_get_var(ncid,S_id,linop(iarr)%S,(/1,iarr/),(/linop(iarr)%n_s,1/)))
+         call ncerr(subr,nf90_get_var(ncid,row_id,linop(i1)%row,(/1,i1/),(/linop(i1)%n_s,1/)))
+         call ncerr(subr,nf90_get_var(ncid,col_id,linop(i1)%col,(/1,i1/),(/linop(i1)%n_s,1/)))
+         call ncerr(subr,nf90_get_var(ncid,S_id,linop(i1)%S,(/1,i1/),(/linop(i1)%n_s,1/)))
       end if
    end do
 end if
 
-end subroutine linop_read_array
+end subroutine linop_read_1d
 
 !----------------------------------------------------------------------
-! Subroutine: linop_write_single
+! Subroutine: linop_read_2d
+!> Purpose: read array of linear operators from a NetCDF file, 2D
+!----------------------------------------------------------------------
+subroutine linop_read_2d(ncid,prefix,linop)
+
+implicit none
+
+! Passed variables
+integer,intent(in) :: ncid                              !< NetCDF file id
+character(len=*),intent(in) :: prefix                   !< Linear operator prefix
+type(linoptype),allocatable,intent(inout) :: linop(:,:) !< Linear operators
+
+! Local variables
+integer :: info,n1,n2,n_s_max,i1,i2
+integer :: n_s_max_id,n1_id,n2_id,n_s_id,n_src_id,n_dst_id,row_id,col_id,S_id
+character(len=1024) :: subr = 'linop_read_2d'
+
+! Get maximum operator size
+info = nf90_inq_dimid(ncid,trim(prefix)//'_n_s_max',n_s_max_id)
+if (info==nf90_noerr) then
+   call ncerr(subr,nf90_inquire_dimension(ncid,n_s_max_id,len=n_s_max))
+else
+   n_s_max = 0
+end if
+
+! Get array size
+info = nf90_inq_dimid(ncid,trim(prefix)//'_n1',n1_id)
+if (info==nf90_noerr) then
+   call ncerr(subr,nf90_inquire_dimension(ncid,n1_id,len=n1))
+else
+   n1 = 0
+end if
+info = nf90_inq_dimid(ncid,trim(prefix)//'_n2',n2_id)
+if (info==nf90_noerr) then
+   call ncerr(subr,nf90_inquire_dimension(ncid,n2_id,len=n2))
+else
+   n2 = 0
+end if
+
+if ((n1>0).and.(n2>0).and.(n_s_max>0)) then
+   ! Allocation
+   allocate(linop(n1,n2))
+
+   ! Get variables id
+   call ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_n_s',n_s_id))
+   call ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_n_src',n_src_id))
+   call ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_n_dst',n_dst_id))
+   call ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_row',row_id))
+   call ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_col',col_id))
+   call ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_S',S_id))
+
+   do i2=1,n2
+      do i1=1,n1
+         ! Copy prefix
+         linop(i1,i2)%prefix = trim(prefix)
+
+         ! Get operator size
+         call ncerr(subr,nf90_get_var(ncid,n_s_id,linop(i1,i2)%n_s,(/i1,i2/)))
+         call ncerr(subr,nf90_get_var(ncid,n_src_id,linop(i1,i2)%n_src,(/i1,i2/)))
+         call ncerr(subr,nf90_get_var(ncid,n_dst_id,linop(i1,i2)%n_dst,(/i1,i2/)))
+
+         if (linop(i1,i2)%n_s>0) then
+            ! Allocation
+            call linop_alloc(linop(i1,i2))
+
+            ! Get variables
+            call ncerr(subr,nf90_get_var(ncid,row_id,linop(i1,i2)%row,(/1,i1,i2/),(/linop(i1,i2)%n_s,1,1/)))
+            call ncerr(subr,nf90_get_var(ncid,col_id,linop(i1,i2)%col,(/1,i1,i2/),(/linop(i1,i2)%n_s,1,1/)))
+            call ncerr(subr,nf90_get_var(ncid,S_id,linop(i1,i2)%S,(/1,i1,i2/),(/linop(i1,i2)%n_s,1,1/)))
+         end if
+      end do
+   end do
+end if
+
+end subroutine linop_read_2d
+
+!----------------------------------------------------------------------
+! Subroutine: linop_write_0d
 !> Purpose: write single linear operator to a NetCDF file
 !----------------------------------------------------------------------
-subroutine linop_write_single(ncid,linop)
+subroutine linop_write_0d(ncid,linop)
 
 implicit none
 
@@ -446,7 +525,7 @@ type(linoptype),intent(in) :: linop !< Linear operator
 
 ! Local variables
 integer :: n_s_id,row_id,col_id,S_id
-character(len=1024) :: subr = 'linop_write_single'
+character(len=1024) :: subr = 'linop_write_0d'
 
 if (linop%n_s>0) then
    ! Start definition mode
@@ -473,13 +552,13 @@ if (linop%n_s>0) then
    call ncerr(subr,nf90_put_var(ncid,S_id,linop%S))
 end if
 
-end subroutine linop_write_single
+end subroutine linop_write_0d
 
 !----------------------------------------------------------------------
-! Subroutine: linop_write_array
-!> Purpose: write array of linear operators to a NetCDF file
+! Subroutine: linop_write_1d
+!> Purpose: write array of linear operators to a NetCDF file, 1D
 !----------------------------------------------------------------------
-subroutine linop_write_array(ncid,linop)
+subroutine linop_write_1d(ncid,linop)
 
 implicit none
 
@@ -488,49 +567,113 @@ integer,intent(in) :: ncid             !< NetCDF file id
 type(linoptype),intent(in) :: linop(:) !< Linear operator
 
 ! Local variables
-integer :: narr,iarr,n_s_max
-integer :: n_s_max_id,narr_id,n_s_id,n_src_id,n_dst_id,row_id,col_id,S_id
-character(len=1024) :: subr = 'linop_write_array'
+integer :: n1,i1,n_s_max
+integer :: n_s_max_id,n1_id,n_s_id,n_src_id,n_dst_id,row_id,col_id,S_id
+character(len=1024) :: subr = 'linop_write_1d'
 
 ! Array size
-narr = size(linop)
+n1 = size(linop)
 
 ! Maximum operator size
 n_s_max = 0
-do iarr=1,narr
-   n_s_max = max(n_s_max,linop(iarr)%n_s)
+do i1=1,n1
+   n_s_max = max(n_s_max,linop(i1)%n_s)
 end do
 
-if ((narr>0).and.(n_s_max>0)) then
+if ((n1>0).and.(n_s_max>0)) then
    ! Start definition mode
    call ncerr(subr,nf90_redef(ncid))
 
    ! Define dimension
    call ncerr(subr,nf90_def_dim(ncid,trim(linop(1)%prefix)//'_n_s_max',n_s_max,n_s_max_id))
-   call ncerr(subr,nf90_def_dim(ncid,trim(linop(1)%prefix)//'_narr',narr,narr_id))
+   call ncerr(subr,nf90_def_dim(ncid,trim(linop(1)%prefix)//'_n1',n1,n1_id))
 
    ! Define variables
-   call ncerr(subr,nf90_def_var(ncid,trim(linop(1)%prefix)//'_n_s',nf90_int,(/narr_id/),n_s_id))
-   call ncerr(subr,nf90_def_var(ncid,trim(linop(1)%prefix)//'_n_src',nf90_int,(/narr_id/),n_src_id))
-   call ncerr(subr,nf90_def_var(ncid,trim(linop(1)%prefix)//'_n_dst',nf90_int,(/narr_id/),n_dst_id))
-   call ncerr(subr,nf90_def_var(ncid,trim(linop(1)%prefix)//'_row',nf90_int,(/n_s_max_id,narr_id/),row_id))
-   call ncerr(subr,nf90_def_var(ncid,trim(linop(1)%prefix)//'_col',nf90_int,(/n_s_max_id,narr_id/),col_id))
-   call ncerr(subr,nf90_def_var(ncid,trim(linop(1)%prefix)//'_S',ncfloat,(/n_s_max_id,narr_id/),S_id))
+   call ncerr(subr,nf90_def_var(ncid,trim(linop(1)%prefix)//'_n_s',nf90_int,(/n1_id/),n_s_id))
+   call ncerr(subr,nf90_def_var(ncid,trim(linop(1)%prefix)//'_n_src',nf90_int,(/n1_id/),n_src_id))
+   call ncerr(subr,nf90_def_var(ncid,trim(linop(1)%prefix)//'_n_dst',nf90_int,(/n1_id/),n_dst_id))
+   call ncerr(subr,nf90_def_var(ncid,trim(linop(1)%prefix)//'_row',nf90_int,(/n_s_max_id,n1_id/),row_id))
+   call ncerr(subr,nf90_def_var(ncid,trim(linop(1)%prefix)//'_col',nf90_int,(/n_s_max_id,n1_id/),col_id))
+   call ncerr(subr,nf90_def_var(ncid,trim(linop(1)%prefix)//'_S',ncfloat,(/n_s_max_id,n1_id/),S_id))
 
    ! End definition mode
    call ncerr(subr,nf90_enddef(ncid))
 
-   do iarr=1,narr
+   do i1=1,n1
       ! Put variables
-      call ncerr(subr,nf90_put_var(ncid,n_s_id,linop(iarr)%n_s,(/iarr/)))
-      call ncerr(subr,nf90_put_var(ncid,n_src_id,linop(iarr)%n_src,(/iarr/)))
-      call ncerr(subr,nf90_put_var(ncid,n_dst_id,linop(iarr)%n_dst,(/iarr/)))
-      call ncerr(subr,nf90_put_var(ncid,row_id,linop(iarr)%row,(/1,iarr/),(/linop(iarr)%n_s,1/)))
-      call ncerr(subr,nf90_put_var(ncid,col_id,linop(iarr)%col,(/1,iarr/),(/linop(iarr)%n_s,1/)))
-      call ncerr(subr,nf90_put_var(ncid,S_id,linop(iarr)%S,(/1,iarr/),(/linop(iarr)%n_s,1/)))
+      call ncerr(subr,nf90_put_var(ncid,n_s_id,linop(i1)%n_s,(/i1/)))
+      call ncerr(subr,nf90_put_var(ncid,n_src_id,linop(i1)%n_src,(/i1/)))
+      call ncerr(subr,nf90_put_var(ncid,n_dst_id,linop(i1)%n_dst,(/i1/)))
+      call ncerr(subr,nf90_put_var(ncid,row_id,linop(i1)%row,(/1,i1/),(/linop(i1)%n_s,1/)))
+      call ncerr(subr,nf90_put_var(ncid,col_id,linop(i1)%col,(/1,i1/),(/linop(i1)%n_s,1/)))
+      call ncerr(subr,nf90_put_var(ncid,S_id,linop(i1)%S,(/1,i1/),(/linop(i1)%n_s,1/)))
    end do
 end if
 
-end subroutine linop_write_array
+end subroutine linop_write_1d
+
+!----------------------------------------------------------------------
+! Subroutine: linop_write_2d
+!> Purpose: write array of linear operators to a NetCDF file, 2D
+!----------------------------------------------------------------------
+subroutine linop_write_2d(ncid,linop)
+
+implicit none
+
+! Passed variables
+integer,intent(in) :: ncid               !< NetCDF file id
+type(linoptype),intent(in) :: linop(:,:) !< Linear operator
+
+! Local variables
+integer :: n1,n2,i1,i2,n_s_max
+integer :: n_s_max_id,n1_id,n2_id,n_s_id,n_src_id,n_dst_id,row_id,col_id,S_id
+character(len=1024) :: subr = 'linop_write_2d'
+
+! Array size
+n1 = size(linop,1)
+n2 = size(linop,2)
+
+! Maximum operator size
+n_s_max = 0
+do i2=1,n2
+   do i1=1,n1
+      n_s_max = max(n_s_max,linop(i1,i2)%n_s)
+   end do
+end do
+
+if ((n1>0).and.(n2>0).and.(n_s_max>0)) then
+   ! Start definition mode
+   call ncerr(subr,nf90_redef(ncid))
+
+   ! Define dimension
+   call ncerr(subr,nf90_def_dim(ncid,trim(linop(1,1)%prefix)//'_n_s_max',n_s_max,n_s_max_id))
+   call ncerr(subr,nf90_def_dim(ncid,trim(linop(1,1)%prefix)//'_n1',n1,n1_id))
+   call ncerr(subr,nf90_def_dim(ncid,trim(linop(1,1)%prefix)//'_n2',n2,n2_id))
+
+   ! Define variables
+   call ncerr(subr,nf90_def_var(ncid,trim(linop(1,1)%prefix)//'_n_s',nf90_int,(/n1_id,n2_id/),n_s_id))
+   call ncerr(subr,nf90_def_var(ncid,trim(linop(1,1)%prefix)//'_n_src',nf90_int,(/n1_id,n2_id/),n_src_id))
+   call ncerr(subr,nf90_def_var(ncid,trim(linop(1,1)%prefix)//'_n_dst',nf90_int,(/n1_id,n2_id/),n_dst_id))
+   call ncerr(subr,nf90_def_var(ncid,trim(linop(1,1)%prefix)//'_row',nf90_int,(/n_s_max_id,n1_id,n2_id/),row_id))
+   call ncerr(subr,nf90_def_var(ncid,trim(linop(1,1)%prefix)//'_col',nf90_int,(/n_s_max_id,n1_id,n2_id/),col_id))
+   call ncerr(subr,nf90_def_var(ncid,trim(linop(1,1)%prefix)//'_S',ncfloat,(/n_s_max_id,n1_id,n2_id/),S_id))
+
+   ! End definition mode
+   call ncerr(subr,nf90_enddef(ncid))
+
+   do i2=1,n2
+      do i1=1,n1
+         ! Put variables
+         call ncerr(subr,nf90_put_var(ncid,n_s_id,linop(i1,i2)%n_s,(/i1,i2/)))
+         call ncerr(subr,nf90_put_var(ncid,n_src_id,linop(i1,i2)%n_src,(/i1,i2/)))
+         call ncerr(subr,nf90_put_var(ncid,n_dst_id,linop(i1,i2)%n_dst,(/i1,i2/)))
+         call ncerr(subr,nf90_put_var(ncid,row_id,linop(i1,i2)%row,(/1,i1,i2/),(/linop(i1,i2)%n_s,1,1/)))
+         call ncerr(subr,nf90_put_var(ncid,col_id,linop(i1,i2)%col,(/1,i1,i2/),(/linop(i1,i2)%n_s,1,1/)))
+         call ncerr(subr,nf90_put_var(ncid,S_id,linop(i1,i2)%S,(/1,i1,i2/),(/linop(i1,i2)%n_s,1,1/)))
+      end do
+   end do
+end if
+
+end subroutine linop_write_2d
 
 end module type_linop

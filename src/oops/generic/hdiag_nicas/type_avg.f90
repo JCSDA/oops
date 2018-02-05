@@ -112,39 +112,26 @@ end subroutine avg_alloc
 ! Subroutine: avg_dealloc
 !> Purpose: averaged statistics object deallocation
 !----------------------------------------------------------------------
-subroutine avg_dealloc(hdata,avg)
+subroutine avg_dealloc(avg)
 
 implicit none
 
 ! Passed variables
-type(hdatatype),intent(in) :: hdata !< HDIAG data
 type(avgtype),intent(inout) :: avg  !< Averaged statistics
 
-! Associate
-associate(nam=>hdata%nam)
-
 ! Allocation
-deallocate(avg%nc1a)
-deallocate(avg%m11)
-deallocate(avg%m11m11)
-deallocate(avg%m2m2)
-if (.not.nam%gau_approx) deallocate(avg%m22)
-deallocate(avg%cor)
-deallocate(avg%m11asysq)
-deallocate(avg%m2m2asy)
-if (.not.nam%gau_approx) deallocate(avg%m22asy)
-deallocate(avg%m11sq)
-select case (trim(nam%method))
-case ('hyb-avg','hyb-rnd')
-   deallocate(avg%m11sta)
-   deallocate(avg%stasq)
-case ('dual-ens')
-   deallocate(avg%m11lrm11)
-   deallocate(avg%m11lrm11asy)
-end select
-
-! End associate
-end associate
+if (allocated(avg%nc1a)) deallocate(avg%nc1a)
+if (allocated(avg%m11)) deallocate(avg%m11)
+if (allocated(avg%m11m11)) deallocate(avg%m11m11)
+if (allocated(avg%m2m2)) deallocate(avg%m2m2)
+if (allocated(avg%cor)) deallocate(avg%cor)
+if (allocated(avg%m11asysq)) deallocate(avg%m11asysq)
+if (allocated(avg%m2m2asy)) deallocate(avg%m2m2asy)
+if (allocated(avg%m11sq)) deallocate(avg%m11sq)
+if (allocated(avg%m11sta)) deallocate(avg%m11sta)
+if (allocated(avg%stasq)) deallocate(avg%stasq)
+if (allocated(avg%m11lrm11)) deallocate(avg%m11lrm11)
+if (allocated(avg%m11lrm11asy)) deallocate(avg%m11lrm11asy)
 
 end subroutine avg_dealloc
 

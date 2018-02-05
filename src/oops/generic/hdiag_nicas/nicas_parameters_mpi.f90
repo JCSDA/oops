@@ -16,8 +16,8 @@ use tools_const, only: pi,rad2deg,req,sphere_dist
 use tools_display, only: msgerror,prog_init,prog_print
 use tools_missing, only: msvali,msvalr,msi,msr,isnotmsr,isnotmsi
 use tools_nc, only: ncfloat,ncerr
-use type_com, only: comtype,com_dealloc,com_setup,com_bcast
-use type_linop, only: linop_alloc,linop_copy,linop_reorder
+use type_com, only: comtype,com_setup,com_bcast
+use type_linop, only: linop_alloc,linop_reorder
 use type_mpl, only: mpl,mpl_send,mpl_recv
 use type_nam, only: namtype
 use type_ndata, only: ndatatype

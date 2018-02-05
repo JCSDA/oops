@@ -27,7 +27,7 @@ use tools_missing, only: msvalr,msr,isnotmsi
 use tools_nc, only: ncfloat,ncerr
 use type_geom, only: geomtype,fld_com_gl
 use type_mpl, only: mpl
-use type_nam, only: namtype
+use type_nam, only: namtype,namncwrite
 
 implicit none
 
@@ -203,10 +203,10 @@ subroutine model_write(nam,geom,filename,varname,fld)
 implicit none
 
 ! Passed variables
-type(namtype),intent(in) :: nam                                      !< Namelist
-type(geomtype),intent(in) :: geom                     !< Sampling data
-character(len=*),intent(in) :: filename                 !< File name
-character(len=*),intent(in) :: varname                  !< Variable name
+type(namtype),intent(in) :: nam                      !< Namelist
+type(geomtype),intent(in) :: geom                    !< Sampling data
+character(len=*),intent(in) :: filename              !< File name
+character(len=*),intent(in) :: varname               !< Variable name
 real(kind_real),intent(in) :: fld(geom%nc0,geom%nl0) !< Written field
 
 ! Local variables
@@ -242,6 +242,7 @@ if (ierr/=nf90_noerr) then
    call ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_write,ncid))
    call ncerr(subr,nf90_redef(ncid))
    call ncerr(subr,nf90_put_att(ncid,nf90_global,'_FillValue',msvalr))
+   call namncwrite(nam,ncid)
 end if
 call ncerr(subr,nf90_enddef(ncid))
 
