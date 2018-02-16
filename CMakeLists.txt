@@ -54,7 +54,7 @@ include_directories( ${Boost_INCLUDE_DIR} )
 ecbuild_add_option( FEATURE LAPACK
                     DESCRIPTION "Linear Algebra PACKage"
                     REQUIRED_PACKAGES "LAPACK REQUIRED" )
-if(NOT HAVE_LAPACK)
+if (NOT HAVE_LAPACK)
   ecbuild_error("LAPACK_LIBRARIES not defined")
 endif()
 
