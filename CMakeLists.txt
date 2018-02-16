@@ -64,10 +64,9 @@ ecbuild_include_mpi()
 link_libraries(${MPI_CXX_LIBRARIES} ${MPI_Fortran_LIBRARIES})
 
 # OpenMP
-# ecbuild_add_option( FEATURE OMP
-#                     DESCRIPTION "Support for OpenMP threaded parallelism"
-#                     REQUIRED_PACKAGES "OMP COMPONENTS CXX Fortran" )
-
+ecbuild_add_option( FEATURE OMP
+                    DESCRIPTION "Support for OpenMP threaded parallelism"
+                    REQUIRED_PACKAGES "OMP COMPONENTS CXX Fortran" )
 if( HAVE_OMP )
   ecbuild_enable_omp()
 else()
