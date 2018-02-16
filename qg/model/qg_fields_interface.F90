@@ -68,6 +68,21 @@ end subroutine qg_field_zero_c
 
 ! ------------------------------------------------------------------------------
 
+subroutine qg_field_dirac_c(c_key_self,c_conf) bind(c,name='qg_field_dirac_f90')
+use iso_c_binding
+use qg_fields
+implicit none
+integer(c_int), intent(in) :: c_key_self
+type(c_ptr), intent(in)    :: c_conf !< Configuration
+type(qg_field), pointer :: self
+
+call qg_field_registry%get(c_key_self,self)
+call dirac(self,c_conf)
+
+end subroutine qg_field_dirac_c
+
+! ------------------------------------------------------------------------------
+
 subroutine qg_field_random_c(c_key_self) bind(c,name='qg_field_random_f90')
 use iso_c_binding
 use qg_fields
@@ -273,6 +288,44 @@ end subroutine qg_field_change_resol_c
 
 ! ------------------------------------------------------------------------------
 
+subroutine qg_field_convert_to_c(c_key_fld, c_key_ug) bind (c,name='qg_field_convert_to_f90')
+use iso_c_binding
+use qg_fields
+use unstructured_grid_mod
+implicit none
+integer(c_int), intent(in) :: c_key_fld
+integer(c_int), intent(in) :: c_key_ug
+type(qg_field), pointer :: fld
+type(unstructured_grid), pointer :: ug
+
+call qg_field_registry%get(c_key_fld,fld)
+call unstructured_grid_registry%get(c_key_ug,ug)
+
+call convert_to_ug(fld, ug)
+
+end subroutine qg_field_convert_to_c
+
+! ------------------------------------------------------------------------------
+
+subroutine qg_field_convert_from_c(c_key_fld, c_key_ug) bind (c,name='qg_field_convert_from_f90')
+use iso_c_binding
+use qg_fields
+use unstructured_grid_mod
+implicit none
+integer(c_int), intent(in) :: c_key_fld
+integer(c_int), intent(in) :: c_key_ug
+type(qg_field), pointer :: fld
+type(unstructured_grid), pointer :: ug
+
+call qg_field_registry%get(c_key_fld,fld)
+call unstructured_grid_registry%get(c_key_ug,ug)
+
+call convert_from_ug(fld, ug)
+
+end subroutine qg_field_convert_from_c
+
+! ------------------------------------------------------------------------------
+
 subroutine qg_field_read_file_c(c_key_fld, c_conf, c_dt) bind(c,name='qg_field_read_file_f90')
 use iso_c_binding
 use qg_fields
@@ -428,8 +481,8 @@ type(qg_field), pointer :: fld
 
 call qg_field_registry%get(c_key_fld,fld)
 
-nx = fld%nx
-ny = fld%ny
+nx = fld%geom%nx
+ny = fld%geom%ny
 nf = fld%nf
 nb =0
 if (fld%lbc) nb = 2

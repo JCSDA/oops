@@ -15,28 +15,32 @@ use qg_geom_mod
 use qg_locs_mod
 use qg_vars_mod
 use qg_goms_mod
+use netcdf
+use tools_nc, only: ncerr
 use kinds
 
 implicit none
 private
 
 public :: qg_field, &
-        & create, delete, zeros, random, copy, &
+        & create, delete, zeros, dirac, random, copy, &
         & self_add, self_schur, self_sub, self_mul, axpy, &
         & dot_prod, add_incr, diff_incr, &
         & read_file, write_file, gpnorm, fldrms, &
-        & change_resol, interp_tl, interp_ad
+        & change_resol, interp_tl, interp_ad, convert_to_ug, convert_from_ug
+
+! ------------------------------------------------------------------------------
+
 public :: qg_field_registry
 
 ! ------------------------------------------------------------------------------
 
 !> Fortran derived type to hold QG fields
 type :: qg_field
-  integer :: nx                     !< Zonal grid dimension
-  integer :: ny                     !< Meridional grid dimension
-  integer :: nl                     !< Number of levels
-  integer :: nf                     !< Number of fields
-  logical :: lbc                    !< North-South boundary is present
+  type(qg_geom), pointer :: geom                    !< Geometry
+  integer :: nl                                     !< Number of levels
+  integer :: nf                                     !< Number of fields
+  logical :: lbc                                    !< North-South boundary is present
   real(kind=kind_real), pointer :: gfld3d(:,:,:)    !< 3D fields
   real(kind=kind_real), pointer :: x(:,:,:)         !< Stream function
   real(kind=kind_real), pointer :: q(:,:,:)         !< Potential vorticity
@@ -48,39 +52,43 @@ type :: qg_field
   real(kind=kind_real), pointer :: qbound(:,:)      !< PV on walls
   real(kind=kind_real), pointer :: q_north(:,:)     !< PV on northern wall
   real(kind=kind_real), pointer :: q_south(:,:)     !< PV on southern wall
-  character(len=1), allocatable :: fldnames(:) !< Variable identifiers
+  character(len=1), allocatable :: fldnames(:)      !< Variable identifiers
 end type qg_field
 
 #define LISTED_TYPE qg_field
 
 !> Linked list interface - defines registry_t type
-#include "linkedList_i.f"
+#include "util/linkedList_i.f"
 
 !> Global registry
 type(registry_t) :: qg_field_registry
 
 ! ------------------------------------------------------------------------------
+
+logical :: netcdfio = .true.
+
+! ------------------------------------------------------------------------------
+
 contains
 ! ------------------------------------------------------------------------------
 !> Linked list implementation
-#include "linkedList_c.f"
+#include "util/linkedList_c.f"
 
 ! ------------------------------------------------------------------------------
 
 subroutine create(self, geom, vars)
 implicit none
 type(qg_field), intent(inout) :: self
-type(qg_geom),  intent(in)    :: geom
+type(qg_geom), pointer,  intent(in)    :: geom
 type(qg_vars),  intent(in)    :: vars
 integer :: ioff
 
-self%nx = geom%nx
-self%ny = geom%ny
+self%geom => geom
 self%nl = 2
 self%nf = vars%nv
 self%lbc = vars%lbc
 
-allocate(self%gfld3d(self%nx,self%ny,self%nl*self%nf))
+allocate(self%gfld3d(self%geom%nx,self%geom%ny,self%nl*self%nf))
 self%gfld3d(:,:,:)=0.0_kind_real
 
 ioff=0
@@ -108,7 +116,7 @@ if (self%lbc) then
   allocate(self%xbound(4))
   self%x_north => self%xbound(1:2)
   self%x_south => self%xbound(3:4)
-  allocate(self%qbound(self%nx,4))
+  allocate(self%qbound(self%geom%nx,4))
   self%q_north => self%qbound(:,1:2)
   self%q_south => self%qbound(:,3:4)
 else
@@ -154,6 +162,47 @@ if (self%lbc) then
 endif
 
 end subroutine zeros
+
+! ------------------------------------------------------------------------------
+
+subroutine dirac(self, c_conf)
+use iso_c_binding
+implicit none
+type(qg_field), intent(inout) :: self
+type(c_ptr), intent(in)       :: c_conf   !< Configuration
+integer :: ndir,idir,ildir,ifdir,ioff
+integer,allocatable :: ixdir(:),iydir(:)
+character(len=3) :: idirchar
+
+call check(self)
+
+! Get Diracs positions
+ndir = config_get_int(c_conf,"ndir")
+allocate(ixdir(ndir))
+allocate(iydir(ndir))
+do idir=1,ndir
+   write(idirchar,'(i3)') idir
+   ixdir(idir) = config_get_int(c_conf,"ixdir("//trim(adjustl(idirchar))//")")
+   iydir(idir) = config_get_int(c_conf,"iydir("//trim(adjustl(idirchar))//")")
+end do
+ildir = config_get_int(c_conf,"ildir")
+ifdir = config_get_int(c_conf,"ifdir")
+
+! Check
+if (ndir<1) call abor1_ftn("qg_fields:dirac non-positive ndir")
+if (any(ixdir<1).or.any(ixdir>self%geom%nx)) call abor1_ftn("qg_fields:dirac invalid ixdir")
+if (any(iydir<1).or.any(iydir>self%geom%ny)) call abor1_ftn("qg_fields:dirac invalid iydir")
+if ((ildir<1).or.(ildir>self%nl)) call abor1_ftn("qg_fields:dirac invalid ildir")
+if ((ifdir<1).or.(ifdir>self%nf)) call abor1_ftn("qg_fields:dirac invalid ifdir")
+
+! Setup Diracs
+call zeros(self)
+ioff = (ifdir-1)*self%nl
+do idir=1,ndir
+   self%gfld3d(ixdir(idir),iydir(idir),ioff+ildir) = 1.0
+end do
+
+end subroutine dirac
 
 ! ------------------------------------------------------------------------------
 
@@ -322,8 +371,8 @@ endif
 
 allocate(zz(fld1%nl*fld1%nf))
 zz(:)=0.0_kind_real
-do jy=1,fld1%ny
-do jx=1,fld1%nx
+do jy=1,fld1%geom%ny
+do jx=1,fld1%geom%nx
 do jz=1,fld1%nl*fld1%nf
   zz(jz) = zz(jz) + fld1%gfld3d(jx,jy,jz) * fld2%gfld3d(jx,jy,jz)
 enddo
@@ -349,7 +398,7 @@ type(qg_field), intent(in)    :: rhs
 call check(self)
 call check(rhs)
 
-if (self%nx==rhs%nx .and. self%ny==rhs%ny) then
+if (self%geom%nx==rhs%geom%nx .and. self%geom%ny==rhs%geom%ny) then
   self%x(:,:,:) = self%x(:,:,:) + rhs%x(:,:,:)
 else
   call abor1_ftn("qg_fields:add_incr: not coded for low res increment yet")
@@ -373,8 +422,8 @@ call check(x1)
 call check(x2)
 
 call zeros(lhs)
-if (x1%nx==x2%nx .and. x1%ny==x2%ny) then
-  if (lhs%nx==x1%nx .and. lhs%ny==x1%ny) then
+if (x1%geom%nx==x2%geom%nx .and. x1%geom%ny==x2%geom%ny) then
+  if (lhs%geom%nx==x1%geom%nx .and. lhs%geom%ny==x1%geom%ny) then
     lhs%x(:,:,:) = x1%x(:,:,:) - x2%x(:,:,:)
   else
     call abor1_ftn("qg_fields:diff_incr: not coded for low res increment yet")
@@ -399,42 +448,42 @@ integer :: jx, jy, jf, iy, ia, ib
 call check(fld)
 call check(rhs)
 
-if (fld%nx==rhs%nx .and. fld%ny==rhs%ny) then
+if (fld%geom%nx==rhs%geom%nx .and. fld%geom%ny==rhs%geom%ny) then
   call copy(fld, rhs)
 else
   call abor1_ftn("qg_fields:field_resol: untested code")
 
-allocate(ztmp(rhs%nx,rhs%nl*rhs%nf))
-dy1=1.0_kind_real/real(fld%ny,kind_real)
-dy2=1.0_kind_real/real(rhs%ny,kind_real)
-dx1=1.0_kind_real/real(fld%nx,kind_real)
-dx2=1.0_kind_real/real(rhs%nx,kind_real)
-do jy=1,fld%ny
+allocate(ztmp(rhs%geom%nx,rhs%nl*rhs%nf))
+dy1=1.0_kind_real/real(fld%geom%ny,kind_real)
+dy2=1.0_kind_real/real(rhs%geom%ny,kind_real)
+dx1=1.0_kind_real/real(fld%geom%nx,kind_real)
+dx2=1.0_kind_real/real(rhs%geom%nx,kind_real)
+do jy=1,fld%geom%ny
 ! North-south interpolation
-  if (jy==1 .or. jy==fld%ny) then
+  if (jy==1 .or. jy==fld%geom%ny) then
     if (jy==1) then
       iy=1
     else
-      iy=rhs%ny
+      iy=rhs%geom%ny
     endif
-    do jx=1,rhs%nx
+    do jx=1,rhs%geom%nx
       do jf=1,rhs%nl*rhs%nf
         ztmp(jx,jf)=rhs%gfld3d(jx,iy,jf)
       enddo
     enddo
   else
     call lin_weights(jy,dy1,dy2,ia,ib,ya,yb)
-    if (ib>rhs%ny) call abor1_ftn("qg_fields:field_resol: ib too large")
-    do jx=1,rhs%nx
+    if (ib>rhs%geom%ny) call abor1_ftn("qg_fields:field_resol: ib too large")
+    do jx=1,rhs%geom%nx
       do jf=1,rhs%nl*rhs%nf
         ztmp(jx,jf)=ya*rhs%gfld3d(jx,ia,jf)+yb*rhs%gfld3d(jx,ib,jf)
       enddo
     enddo
   endif
 ! East-west interpolation (periodic)
-  do jx=1,fld%nx
+  do jx=1,fld%geom%nx
     call lin_weights(jx,dx1,dx2,ia,ib,xa,xb)
-    if (ib>rhs%nx) ib=ib-rhs%nx
+    if (ib>rhs%geom%nx) ib=ib-rhs%geom%nx
     do jf=1,fld%nl*rhs%nf
       fld%gfld3d(jx,jy,jf)=xa*ztmp(jx,jf)+xb*ztmp(jx+1,jf)
     enddo
@@ -469,7 +518,9 @@ character(len=4)  :: cnx
 character(len=11) :: fmt1='(X,ES24.16)'
 character(len=1024)  :: buf
 integer :: ic, iy, il, ix, is, jx, jy, jf, iread, nf
+integer :: ncid, nx_id, ny_id, nl_id, nc_id, gfld3d_id, xbound_id, qbound_id
 real(kind=kind_real), allocatable :: zz(:)
+character(len=1024) :: subr='read_file'
 
 iread = 1
 if (config_element_exists(c_conf,"read_from_file")) then
@@ -487,52 +538,101 @@ else
   filename = config_get_string(c_conf,len(filename),"filename")
   WRITE(buf,*) 'qg_field:read_file: opening '//filename
   call fckit_log%info(buf)
-  open(unit=iunit, file=trim(filename), form='formatted', action='read')
 
-  read(iunit,*) ix, iy, il, ic, is
-  if (ix /= fld%nx .or. iy /= fld%ny .or. il /= fld%nl) then
-    write (record,*) "qg_fields:read_file: ", &
-                   & "input fields have wrong dimensions: ",ix,iy,il
-    call fckit_log%error(record)
-    write (record,*) "qg_fields:read_file: expected: ",fld%nx,fld%ny,fld%nl
-    call fckit_log%error(record)
-    call abor1_ftn("qg_fields:read_file: input fields have wrong dimensions")
-  endif
+  ! Read data
+  if (netcdfio) then
 
-  read(iunit,*) sdate
-  WRITE(buf,*) 'validity date is: '//sdate
-  call fckit_log%info(buf)
-  call datetime_set(sdate, vdate)
-
-  if (fld%nx>9999)  call abor1_ftn("Format too small")
-  write(cnx,'(I4)')fld%nx
-  fmtn='('//trim(cnx)//fmt1//')'
-
-  nf = min(fld%nf, ic)
-  do jf=1,il*nf
-    do jy=1,fld%ny
-      read(iunit,fmtn) (fld%gfld3d(jx,jy,jf), jx=1,fld%nx)
+    call ncerr(subr,nf90_open(trim(filename)//'.nc',nf90_nowrite,ncid))
+    call ncerr(subr,nf90_inq_dimid(ncid,'nx',nx_id))
+    call ncerr(subr,nf90_inq_dimid(ncid,'ny',ny_id))
+    call ncerr(subr,nf90_inq_dimid(ncid,'nl',nl_id))
+    call ncerr(subr,nf90_inq_dimid(ncid,'nc',nc_id))
+    call ncerr(subr,nf90_inquire_dimension(ncid,nx_id,len=ix))
+    call ncerr(subr,nf90_inquire_dimension(ncid,ny_id,len=iy))
+    call ncerr(subr,nf90_inquire_dimension(ncid,nl_id,len=il))
+    call ncerr(subr,nf90_inquire_dimension(ncid,nl_id,len=ic))
+    if (ix /= fld%geom%nx .or. iy /= fld%geom%ny .or. il /= fld%nl) then
+      write (record,*) "qg_fields:read_file: ", &
+                     & "input fields have wrong dimensions: ",ix,iy,il
+      call fckit_log%error(record)
+      write (record,*) "qg_fields:read_file: expected: ",fld%geom%nx,fld%geom%ny,fld%nl
+      call fckit_log%error(record)
+      call abor1_ftn("qg_fields:read_file: input fields have wrong dimensions")
+    endif
+    call ncerr(subr,nf90_get_att(ncid,nf90_global,'lbc',is))
+  
+    call ncerr(subr,nf90_get_att(ncid,nf90_global,'sdate',sdate))
+    WRITE(buf,*) 'validity date is: '//sdate
+    call fckit_log%info(buf)
+  
+    nf = min(fld%nf, ic)
+    call ncerr(subr,nf90_inq_varid(ncid,'gfld3d',gfld3d_id))
+    do jf=1,il*nf
+      call ncerr(subr,nf90_get_var(ncid,gfld3d_id,fld%gfld3d(:,:,jf),(/1,1,jf/),(/ix,iy,1/)))
     enddo
-  enddo
+  
+    if (fld%lbc) then
+      call ncerr(subr,nf90_inq_varid(ncid,'xbound',xbound_id))
+      call ncerr(subr,nf90_get_var(ncid,xbound_id,fld%xbound))
+      call ncerr(subr,nf90_inq_varid(ncid,'qbound',qbound_id))
+      call ncerr(subr,nf90_get_var(ncid,qbound_id,fld%qbound))
+    endif
+  
+    call ncerr(subr,nf90_close(ncid))
+
+  else
+
+    open(unit=iunit, file=trim(filename), form='formatted', action='read')
+  
+    read(iunit,*) ix, iy, il, ic, is
+    if (ix /= fld%geom%nx .or. iy /= fld%geom%ny .or. il /= fld%nl) then
+      write (record,*) "qg_fields:read_file: ", &
+                     & "input fields have wrong dimensions: ",ix,iy,il
+      call fckit_log%error(record)
+      write (record,*) "qg_fields:read_file: expected: ",fld%geom%nx,fld%geom%ny,fld%nl
+      call fckit_log%error(record)
+      call abor1_ftn("qg_fields:read_file: input fields have wrong dimensions")
+    endif
+  
+    read(iunit,*) sdate
+    WRITE(buf,*) 'validity date is: '//sdate
+    call fckit_log%info(buf)
+    call datetime_set(sdate, vdate)
+  
+    if (fld%geom%nx>9999)  call abor1_ftn("Format too small")
+    write(cnx,'(I4)')fld%geom%nx
+    fmtn='('//trim(cnx)//fmt1//')'
+  
+    nf = min(fld%nf, ic)
+    do jf=1,il*nf
+      do jy=1,fld%geom%ny
+        read(iunit,fmtn) (fld%gfld3d(jx,jy,jf), jx=1,fld%geom%nx)
+      enddo
+    enddo
 ! Skip un-necessary data from file if any
-  allocate(zz(fld%nx))
-  do jf=nf*il+1, ic*il
-    do jy=1,fld%ny
-      read(iunit,fmtn) (zz(jx), jx=1,fld%nx)
+    allocate(zz(fld%geom%nx))
+    do jf=nf*il+1, ic*il
+      do jy=1,fld%geom%ny
+        read(iunit,fmtn) (zz(jx), jx=1,fld%geom%nx)
+      enddo
     enddo
-  enddo
-  deallocate(zz)
+    deallocate(zz)
+  
+    if (fld%lbc) then
+      do jf=1,4
+        read(iunit,fmt1) fld%xbound(jf)
+      enddo
+      do jf=1,4
+        read(iunit,fmtn) (fld%qbound(jx,jf), jx=1,fld%geom%nx)
+      enddo
+    endif
+  
+    close(iunit)
 
-  if (fld%lbc) then
-    do jf=1,4
-      read(iunit,fmt1) fld%xbound(jf)
-    enddo
-    do jf=1,4
-      read(iunit,fmtn) (fld%qbound(jx,jf), jx=1,fld%nx)
-    enddo
   endif
 
-  close(iunit)
+  ! Set date
+  call datetime_set(sdate, vdate)
 endif
 
 call check(fld)
@@ -554,6 +654,7 @@ type(datetime), intent(in) :: vdate  !< DateTime
 
 integer, parameter :: iunit=11
 integer, parameter :: max_string_length=800 ! Yuk!
+integer :: ncid, nx_id, ny_id, nl_id, nc_id, ntot_id, four_id, gfld3d_id, xbound_id, qbound_id
 character(len=max_string_length+50) :: record
 character(len=max_string_length) :: filename
 character(len=20) :: sdate, fmtn
@@ -561,42 +662,76 @@ character(len=4)  :: cnx
 character(len=11) :: fmt1='(X,ES24.16)'
 character(len=1024):: buf
 integer :: jf, jy, jx, is
+character(len=1024) :: subr='write_file'
 
 call check(fld)
 
 filename = genfilename(c_conf,max_string_length,vdate)
 WRITE(buf,*) 'qg_field:write_file: writing '//filename
 call fckit_log%info(buf)
-open(unit=iunit, file=trim(filename), form='formatted', action='write')
 
 is=0
 if (fld%lbc) is=1
-
-write(iunit,*) fld%nx, fld%ny, fld%nl, fld%nf, is
-
 call datetime_to_string(vdate, sdate)
-write(iunit,*) sdate
 
-if (fld%nx>9999)  call abor1_ftn("Format too small")
-write(cnx,'(I4)')fld%nx
-fmtn='('//trim(cnx)//fmt1//')'
+if (netcdfio) then
+  
+  call ncerr(subr,nf90_create(trim(filename)//'.nc',or(nf90_clobber,nf90_64bit_offset),ncid))
+  call ncerr(subr,nf90_def_dim(ncid,'nx',fld%geom%nx,nx_id))
+  call ncerr(subr,nf90_def_dim(ncid,'ny',fld%geom%ny,ny_id))
+  call ncerr(subr,nf90_def_dim(ncid,'nl',fld%nl,nl_id))
+  call ncerr(subr,nf90_def_dim(ncid,'nc',fld%nf,nc_id))
+  call ncerr(subr,nf90_def_dim(ncid,'ntot',fld%nl*fld%nf,ntot_id))
+  call ncerr(subr,nf90_def_dim(ncid,'four',4,four_id))
+  call ncerr(subr,nf90_put_att(ncid,nf90_global,'lbc',is))
+  
+  call ncerr(subr,nf90_put_att(ncid,nf90_global,'sdate',sdate))
+  call ncerr(subr,nf90_def_var(ncid,'gfld3d',nf90_double,(/nx_id,ny_id,ntot_id/),gfld3d_id))
+  
+  if (fld%lbc) then
+    call ncerr(subr,nf90_def_var(ncid,'xbound',nf90_double,(/four_id/),xbound_id))
+    call ncerr(subr,nf90_def_var(ncid,'qbound',nf90_double,(/nx_id,four_id/),qbound_id))
+  end if
+  
+  call ncerr(subr,nf90_enddef(ncid))
+  
+  call ncerr(subr,nf90_put_var(ncid,gfld3d_id,fld%gfld3d))
+  
+  if (fld%lbc) then
+    call ncerr(subr,nf90_put_var(ncid,xbound_id,fld%xbound))
+    call ncerr(subr,nf90_put_var(ncid,qbound_id,fld%qbound))
+  end if
+  
+  call ncerr(subr,nf90_close(ncid))
 
-do jf=1,fld%nl*fld%nf
-  do jy=1,fld%ny
-    write(iunit,fmtn) (fld%gfld3d(jx,jy,jf), jx=1,fld%nx)
-  enddo
-enddo
+else
 
-if (fld%lbc) then
-  do jf=1,4
-    write(iunit,fmt1) fld%xbound(jf)
+  open(unit=iunit, file=trim(filename), form='formatted', action='write')
+  
+  write(iunit,*) fld%geom%nx, fld%geom%ny, fld%nl, fld%nf, is
+  write(iunit,*) sdate
+  
+  if (fld%geom%nx>9999)  call abor1_ftn("Format too small")
+  write(cnx,'(I4)')fld%geom%nx
+  fmtn='('//trim(cnx)//fmt1//')'
+  
+  do jf=1,fld%nl*fld%nf
+    do jy=1,fld%geom%ny
+      write(iunit,fmtn) (fld%gfld3d(jx,jy,jf), jx=1,fld%geom%nx)
+    enddo
   enddo
-  do jf=1,4
-    write(iunit,fmtn) (fld%qbound(jx,jf), jx=1,fld%nx)
-  enddo
+  
+  if (fld%lbc) then
+    do jf=1,4
+      write(iunit,fmt1) fld%xbound(jf)
+    enddo
+    do jf=1,4
+      write(iunit,fmtn) (fld%qbound(jx,jf), jx=1,fld%geom%nx)
+    enddo
+  endif
+  
+  close(iunit) 
 endif
-
-close(iunit)
 
 return
 end subroutine write_file
@@ -617,7 +752,7 @@ do jj=1,fld%nf
   pstat(1,jj)=minval(fld%gfld3d(:,:,joff+1:joff+fld%nl))
   pstat(2,jj)=maxval(fld%gfld3d(:,:,joff+1:joff+fld%nl))
   pstat(3,jj)=sqrt(sum(fld%gfld3d(:,:,joff+1:joff+fld%nl)**2) &
-               & /real(fld%nl*fld%nx*fld%ny,kind_real))
+               & /real(fld%nl*fld%geom%nx*fld%geom%ny,kind_real))
 enddo
 jj=jj-1
 
@@ -630,7 +765,7 @@ if (fld%lbc) then
   jj=jj+1
   pstat(1,jj)=minval(fld%qbound(:,:))
   pstat(2,jj)=maxval(fld%qbound(:,:))
-  pstat(3,jj)=sqrt(sum(fld%qbound(:,:)**2)/real(4*fld%nx,kind_real))
+  pstat(3,jj)=sqrt(sum(fld%qbound(:,:)**2)/real(4*fld%geom%nx,kind_real))
 endif
 
 if (jj /= nf) call abor1_ftn("qg_fields_gpnorm: error number of fields")
@@ -652,14 +787,14 @@ call check(fld)
 zz = 0.0
 
 do jf=1,fld%nl*fld%nf
-  do jy=1,fld%ny
-    do jx=1,fld%nx
+  do jy=1,fld%geom%ny
+    do jx=1,fld%geom%nx
       zz = zz + fld%gfld3d(jx,jy,jf)*fld%gfld3d(jx,jy,jf)
     enddo
   enddo
 enddo
 
-ii = fld%nl*fld%nf*fld%ny*fld%nx
+ii = fld%nl*fld%nf*fld%geom%ny*fld%geom%nx
 
 if (fld%lbc) then
   do jf=1,4
@@ -667,11 +802,11 @@ if (fld%lbc) then
   enddo
   ii = ii + 4
   do jf=1,4
-    do jx=1,fld%nx
+    do jx=1,fld%geom%nx
      zz = zz + fld%qbound(jx,jf)*fld%qbound(jx,jf)
     enddo
   enddo
-  ii = ii + 4*fld%nx
+  ii = ii + 4*fld%geom%nx
 endif
 
 prms = sqrt(zz/real(ii,kind_real))
@@ -694,19 +829,19 @@ call check(fld)
 
 do jloc=1,locs%nloc
 ! Convert horizontal coordinate stored in ODB to grid locations
-  di=locs%xyz(1,jloc)*real(fld%nx,kind_real)
+  di=locs%xyz(1,jloc)*real(fld%geom%nx,kind_real)
   ii=int(di)
   ai=di-real(ii,kind_real);
   ii=ii+1
-  if (ii<1.or.ii>fld%nx) call abor1_ftn("qg_fields_interp_tl: error ii")
+  if (ii<1.or.ii>fld%geom%nx) call abor1_ftn("qg_fields_interp_tl: error ii")
   iright=ii+1
-  if (iright==fld%nx+1) iright=1
+  if (iright==fld%geom%nx+1) iright=1
 
-  dj=locs%xyz(2,jloc)*real(fld%ny,kind_real)
+  dj=locs%xyz(2,jloc)*real(fld%geom%ny,kind_real)
   jj=int(dj)
   aj=dj-real(jj,kind_real);
   jj=jj+1
-  if (jj<1.or.jj>fld%ny) call abor1_ftn("qg_fields_interp_tl: error jj")
+  if (jj<1.or.jj>fld%geom%ny) call abor1_ftn("qg_fields_interp_tl: error jj")
 
   kk=nint(locs%xyz(3,jloc))
 
@@ -740,7 +875,7 @@ do jloc=1,locs%nloc
       end select
     endif
 
-    if (jj<fld%ny) then
+    if (jj<fld%geom%ny) then
       valt=(1.0_kind_real-ai)*fld%gfld3d(ii    ,jj+1,joff+kk) &
                        & +ai *fld%gfld3d(iright,jj+1,joff+kk)
     else
@@ -748,10 +883,10 @@ do jloc=1,locs%nloc
       case ("x")
         valt = 0.0_kind_real
       case ("u")
-        valt=2.0_kind_real*( (1.0_kind_real-ai)*fld%gfld3d(ii,fld%ny,joff+kk) &
-             &                             +ai *fld%gfld3d(iright,fld%ny,joff+kk) ) &
-             & -           ( (1.0_kind_real-ai)*fld%gfld3d(ii,fld%ny-1,joff+kk) &
-             &                             +ai *fld%gfld3d(iright,fld%ny-1,joff+kk) )
+        valt=2.0_kind_real*( (1.0_kind_real-ai)*fld%gfld3d(ii,fld%geom%ny,joff+kk) &
+             &                             +ai *fld%gfld3d(iright,fld%geom%ny,joff+kk) ) &
+             & -           ( (1.0_kind_real-ai)*fld%gfld3d(ii,fld%geom%ny-1,joff+kk) &
+             &                             +ai *fld%gfld3d(iright,fld%geom%ny-1,joff+kk) )
       case ("v")
         valt = 0.0_kind_real
       end select
@@ -781,19 +916,19 @@ call check(fld)
 
 do jloc=locs%nloc,1,-1
 ! Convert horizontal coordinate stored in ODB to grid locations
-  di=locs%xyz(1,jloc)*real(fld%nx,kind_real)
+  di=locs%xyz(1,jloc)*real(fld%geom%nx,kind_real)
   ii=int(di)
   ai=di-real(ii,kind_real);
   ii=ii+1
-  if (ii<1.or.ii>fld%nx) call abor1_ftn("qg_fields_interp_ad: error ii")
+  if (ii<1.or.ii>fld%geom%nx) call abor1_ftn("qg_fields_interp_ad: error ii")
   iright=ii+1
-  if (iright==fld%nx+1) iright=1
+  if (iright==fld%geom%nx+1) iright=1
 
-  dj=locs%xyz(2,jloc)*real(fld%ny,kind_real)
+  dj=locs%xyz(2,jloc)*real(fld%geom%ny,kind_real)
   jj=int(dj)
   aj=dj-real(jj,kind_real);
   jj=jj+1
-  if (jj<1.or.jj>fld%ny) call abor1_ftn("qg_fields_interp_ad: error jj")
+  if (jj<1.or.jj>fld%geom%ny) call abor1_ftn("qg_fields_interp_ad: error jj")
 
   kk=nint(locs%xyz(3,jloc))
 
@@ -833,7 +968,7 @@ do jloc=locs%nloc,1,-1
       end select
     endif
 
-    if (jj<fld%ny) then
+    if (jj<fld%geom%ny) then
       fld%gfld3d(ii    ,jj+1,joff+kk) = &
              & fld%gfld3d(ii    ,jj+1,joff+kk)+(1.0_kind_real-ai)*valt
       fld%gfld3d(iright,jj+1,joff+kk) = &
@@ -841,14 +976,14 @@ do jloc=locs%nloc,1,-1
     else
       select case (cvar)
       case ("u")
-        fld%gfld3d(ii,fld%ny,joff+kk) = &
-             & fld%gfld3d(ii,fld%ny,joff+kk)+2.0_kind_real*(1.0_kind_real-ai)*valt
-        fld%gfld3d(iright,fld%ny,joff+kk) = &
-             & fld%gfld3d(iright,fld%ny,joff+kk)+2.0_kind_real*ai*valt
-        fld%gfld3d(ii,fld%ny-1,joff+kk) = &
-             & fld%gfld3d(ii,fld%ny-1,joff+kk)-(1.0_kind_real-ai)*valt
-        fld%gfld3d(iright,fld%ny-1,joff+kk)= &
-             & fld%gfld3d(iright,fld%ny-1,joff+kk)-ai*valt
+        fld%gfld3d(ii,fld%geom%ny,joff+kk) = &
+             & fld%gfld3d(ii,fld%geom%ny,joff+kk)+2.0_kind_real*(1.0_kind_real-ai)*valt
+        fld%gfld3d(iright,fld%geom%ny,joff+kk) = &
+             & fld%gfld3d(iright,fld%geom%ny,joff+kk)+2.0_kind_real*ai*valt
+        fld%gfld3d(ii,fld%geom%ny-1,joff+kk) = &
+             & fld%gfld3d(ii,fld%geom%ny-1,joff+kk)-(1.0_kind_real-ai)*valt
+        fld%gfld3d(iright,fld%geom%ny-1,joff+kk)= &
+             & fld%gfld3d(iright,fld%geom%ny-1,joff+kk)-ai*valt
       end select
     endif
   enddo
@@ -879,6 +1014,101 @@ k2=ii+2
 
 return
 end subroutine lin_weights
+
+! ------------------------------------------------------------------------------
+
+subroutine define_ug(self, ug)
+use unstructured_grid_mod
+implicit none
+type(qg_field), intent(in) :: self
+type(unstructured_grid), intent(inout) :: ug
+
+
+end subroutine define_ug
+
+! ------------------------------------------------------------------------------
+
+subroutine convert_to_ug(self, ug)
+use unstructured_grid_mod
+implicit none
+type(qg_field), intent(in) :: self
+type(unstructured_grid), intent(inout) :: ug
+
+integer :: nc0a,ic0a,jx,jy,jl,jf,joff
+integer,allocatable :: imask(:,:)
+real(kind=kind_real),allocatable :: lon(:),lat(:),area(:),vunit(:)
+
+! Define local number of gridpoints (equal to global here since QG works on a single proc)
+nc0a = self%geom%nx*self%geom%ny
+
+! Allocation
+allocate(lon(nc0a))
+allocate(lat(nc0a))
+allocate(area(nc0a))
+allocate(vunit(self%nl))
+allocate(imask(nc0a,self%nl))
+
+! Copy coordinates
+ic0a = 0
+do jy=1,self%geom%ny
+  do jx=1,self%geom%nx
+    ic0a = ic0a+1
+    lon(ic0a) = self%geom%lon(jx)
+    lat(ic0a) = self%geom%lat(jy)
+    area(ic0a) = self%geom%area(jx,jy)
+  enddo
+enddo
+imask = 1
+
+! Define vertical unit
+do jl=1,self%nl
+  vunit(jl) = real(jl,kind=kind_real)
+enddo
+
+! Create unstructured grid
+call create_unstructured_grid(ug, nc0a, self%nl, self%nf, 1, lon, lat, area, vunit, imask)
+
+! Copy field
+ic0a = 0
+do jy=1,self%geom%ny
+  do jx=1,self%geom%nx
+    ic0a = ic0a+1
+    do jf=1,self%nf
+      joff = (jf-1)*self%nl
+      do jl=1,self%nl
+        ug%fld(ic0a,jl,jf,1) = self%gfld3d(jx,jy,joff+jl)
+      enddo
+    enddo
+  enddo
+enddo
+
+end subroutine convert_to_ug
+
+! ------------------------------------------------------------------------------
+
+subroutine convert_from_ug(self, ug)
+use unstructured_grid_mod
+implicit none
+type(qg_field), intent(inout) :: self
+type(unstructured_grid), intent(in) :: ug
+
+integer :: ic0a,jx,jy,jl,jf,joff
+
+! Copy field
+ic0a = 0
+do jy=1,self%geom%ny
+  do jx=1,self%geom%nx
+    ic0a = ic0a+1
+    do jf=1,self%nf
+      joff = (jf-1)*self%nl
+      do jl=1,self%nl
+        self%gfld3d(jx,jy,joff+jl) = ug%fld(ic0a,jl,jf,1)
+      enddo
+    enddo
+  enddo
+enddo
+
+end subroutine convert_from_ug
 
 ! ------------------------------------------------------------------------------
 
@@ -964,7 +1194,7 @@ subroutine check_resolution(x1, x2)
 implicit none
 type(qg_field), intent(in) :: x1, x2
 
-if (x1%nx /= x2%nx .or.  x1%ny /= x2%ny .or.  x1%nl /= x2%nl) then
+if (x1%geom%nx /= x2%geom%nx .or.  x1%geom%ny /= x2%geom%ny .or.  x1%nl /= x2%nl) then
   call abor1_ftn ("qg_fields: resolution error")
 endif
 call check(x1)
@@ -981,8 +1211,8 @@ logical :: bad
 
 bad = .not.associated(self%gfld3d)
 
-bad = bad .or. (size(self%gfld3d, 1) /= self%nx)
-bad = bad .or. (size(self%gfld3d, 2) /= self%ny)
+bad = bad .or. (size(self%gfld3d, 1) /= self%geom%nx)
+bad = bad .or. (size(self%gfld3d, 2) /= self%geom%ny)
 bad = bad .or. (size(self%gfld3d, 3) /= self%nl*self%nf)
 
 bad = bad .or. .not.associated(self%x)
@@ -1004,7 +1234,7 @@ if (self%lbc) then
   bad = bad .or. (size(self%xbound) /= 4)
 
   bad = bad .or. .not.associated(self%qbound)
-  bad = bad .or. (size(self%qbound, 1) /= self%nx)
+  bad = bad .or. (size(self%qbound, 1) /= self%geom%nx)
   bad = bad .or. (size(self%qbound, 2) /= 4)
 else
   bad = bad .or. associated(self%xbound)
@@ -1012,7 +1242,7 @@ else
 endif
 
 if (bad) then
-  write(0,*)'nx, ny, nf, nl, lbc = ',self%nx,self%ny,self%nf,self%nl,self%lbc
+  write(0,*)'nx, ny, nf, nl, lbc = ',self%geom%nx,self%geom%ny,self%nf,self%nl,self%lbc
   if (associated(self%gfld3d)) write(0,*)'shape(gfld3d) = ',shape(self%gfld3d)
   if (associated(self%xbound)) write(0,*)'shape(xbound) = ',shape(self%xbound)
   if (associated(self%qbound)) write(0,*)'shape(qbound) = ',shape(self%qbound)

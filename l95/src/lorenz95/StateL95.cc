@@ -13,8 +13,9 @@
 #include <fstream>
 #include <string>
 
-#include "util/Logger.h"
 #include "eckit/config/Configuration.h"
+#include "oops/generic/UnstructuredGrid.h"
+#include "util/Logger.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
 #include "util/abor1_cpp.h"
@@ -44,10 +45,15 @@ StateL95::StateL95(const Resolution & resol, const oops::Variables &,
   oops::Log::trace() << "StateL95::StateL95 created" << std::endl;
 }
 // -----------------------------------------------------------------------------
-StateL95::StateL95(const Resolution & resol, const eckit::Configuration & file)
-  : fld_(resol), time_(util::DateTime())
+StateL95::StateL95(const Resolution & resol, const eckit::Configuration & conf)
+  : fld_(resol), time_(conf.getString("date"))
 {
-  this->read(file);
+  oops::Log::trace() << "StateL95::StateL95 conf " << conf << std::endl;
+  if (conf.has("filename")) {
+    this->read(conf);
+  } else {
+    fld_.generate(conf);
+  }
   oops::Log::trace() << "StateL95::StateL95 created and read in." << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -90,6 +96,16 @@ StateL95 & StateL95::operator+=(const IncrementL95 & dx) {
   return *this;
 }
 // -----------------------------------------------------------------------------
+/// Convert to/from unstructured grid
+// -----------------------------------------------------------------------------
+void StateL95::convert_to(oops::UnstructuredGrid & ug) const {
+  fld_.convert_to(ug);
+}
+// -----------------------------------------------------------------------------
+void StateL95::convert_from(const oops::UnstructuredGrid & ug) {
+  fld_.convert_from(ug);
+}
+// -----------------------------------------------------------------------------
 /// Utilities
 // -----------------------------------------------------------------------------
 void StateL95::read(const eckit::Configuration & config) {
@@ -105,11 +121,9 @@ void StateL95::read(const eckit::Configuration & config) {
   std::string stime;
   fin >> stime;
   const util::DateTime tt(stime);
-  const util::DateTime tc(config.getString("date"));
-  if (tc != tt) {
+  if (time_ != tt) {
     ABORT("StateL95::read: date and data file inconsistent.");
   }
-  time_ = tt;
 
   fld_.read(fin);
 

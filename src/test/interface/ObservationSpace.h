@@ -21,6 +21,8 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
+#include "eckit/config/LocalConfiguration.h"
+
 #include "oops/runs/Test.h"
 #include "oops/interface/ObservationSpace.h"
 #include "test/TestEnvironment.h"
@@ -31,7 +33,20 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testConstructor() {
+template <typename MODEL> void testConstructor1() {
+  typedef oops::Locations<MODEL>        Locations_;
+
+  const eckit::LocalConfiguration conf(TestEnvironment::config(), "Locations");
+  boost::scoped_ptr<Locations_> locs(new Locations_(conf));
+  BOOST_CHECK(locs.get());
+
+  locs.reset();
+  BOOST_CHECK(!locs.get());
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testConstructor2() {
   typedef ObsTestsFixture<MODEL> Test_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
@@ -52,7 +67,8 @@ template <typename MODEL> class ObservationSpace : public oops::Test {
   void register_tests() const {
     boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/ObservationSpace");
 
-    ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
+    ts->add(BOOST_TEST_CASE(&testConstructor1<MODEL>));
+    ts->add(BOOST_TEST_CASE(&testConstructor2<MODEL>));
 
     boost::unit_test::framework::master_test_suite().add(ts);
   }

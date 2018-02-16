@@ -13,6 +13,7 @@
 #include <fstream>
 #include <string>
 
+#include "oops/generic/UnstructuredGrid.h"
 #include "util/Logger.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
@@ -98,6 +99,10 @@ void IncrementL95::zero() {
 void IncrementL95::zero(const util::DateTime & vt) {
   fld_.zero();
   time_ = vt;
+}
+// -----------------------------------------------------------------------------
+void IncrementL95::dirac(const eckit::Configuration & config) {
+  fld_.dirac(config);
 }
 // -----------------------------------------------------------------------------
 void IncrementL95::axpy(const double & zz, const IncrementL95 & rhs,
@@ -187,6 +192,16 @@ void IncrementL95::interpolateTL(const LocsL95 & locs, const oops::Variables &, 
 // -----------------------------------------------------------------------------
 void IncrementL95::interpolateAD(const LocsL95 & locs, const oops::Variables &, const GomL95 & vals) {
   fld_.interpAD(locs, vals);
+}
+// -----------------------------------------------------------------------------
+/// Convert to/from unstructured grid
+// -----------------------------------------------------------------------------
+void IncrementL95::convert_to(oops::UnstructuredGrid & ug) const {
+  fld_.convert_to(ug);
+}
+// -----------------------------------------------------------------------------
+void IncrementL95::convert_from(const oops::UnstructuredGrid & ug) {
+  fld_.convert_from(ug);
 }
 // -----------------------------------------------------------------------------
 

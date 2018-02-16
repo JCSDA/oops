@@ -13,6 +13,7 @@
 
 #include <ostream>
 #include <string>
+#include <vector>
 
 #include "model/QgFortran.h"
 #include "util/ObjectCounter.h"

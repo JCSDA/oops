@@ -23,6 +23,8 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/test/unit_test.hpp>
 
+#include "oops/runs/Test.h"
+#include "oops/generic/instantiateLocalizationFactory.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -34,7 +36,7 @@
 
 namespace test {
 
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 template <typename MODEL> class LocalizationFixture : private boost::noncopyable {
   typedef oops::Localization<MODEL>   Localization_;
@@ -62,6 +64,7 @@ template <typename MODEL> class LocalizationFixture : private boost::noncopyable
     time_.reset(new util::DateTime(TestEnvironment::config().getString("TestDate")));
 
 //  Setup the localization matrix
+    oops::instantiateLocalizationFactory<MODEL>();
     const eckit::LocalConfiguration conf(TestEnvironment::config(), "Localization");
     local_.reset(new Localization_(*resol_, conf));
   }
@@ -74,7 +77,7 @@ template <typename MODEL> class LocalizationFixture : private boost::noncopyable
   boost::scoped_ptr<Localization_>         local_;
 };
 
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 template <typename MODEL> void testLocalizationZero() {
   typedef LocalizationFixture<MODEL> Test_;
@@ -100,7 +103,8 @@ template <typename MODEL> void testLocalizationMultiply() {
   Test_::localization().multiply(dx);
   BOOST_CHECK(dx.norm() > 0.0);
 }
-// =============================================================================
+
+// -----------------------------------------------------------------------------
 
 template <typename MODEL> class Localization : public oops::Test {
  public:
@@ -119,7 +123,7 @@ template <typename MODEL> class Localization : public oops::Test {
   }
 };
 
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 }  // namespace test
 

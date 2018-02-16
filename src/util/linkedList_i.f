@@ -1,8 +1,8 @@
 ! (C) Copyright 2009-2016 ECMWF.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
-! In applying this licence, ECMWF does not waive the privileges and immunities 
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
@@ -10,11 +10,11 @@
 
 !> Node of a linked list
 type :: node_t
-  integer           :: key
+integer           :: key
   type(LISTED_TYPE) :: element
 
   type(node_t), pointer  :: next => NULL()
-end type
+end type node_t
 
 !> Registry type
 type :: registry_t
@@ -28,4 +28,4 @@ contains
   procedure :: add => add_
   procedure :: get => get_
   procedure :: remove => remove_
-end type
+end type registry_t

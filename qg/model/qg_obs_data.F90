@@ -43,7 +43,7 @@ end type obs_data
 #define LISTED_TYPE obs_data
 
 !> Linked list interface - defines registry_t type
-#include "linkedList_i.f"
+#include "util/linkedList_i.f"
 
 !> Global registry
 type(registry_t) :: obs_data_registry
@@ -81,7 +81,7 @@ end interface obs_count
 contains
 ! ------------------------------------------------------------------------------
 !> Linked list implementation
-#include "linkedList_c.f"
+#include "util/linkedList_c.f"
 
 ! ------------------------------------------------------------------------------
 
@@ -243,7 +243,7 @@ integer(c_int), intent(in) :: c_key_self
 integer(c_int), intent(in) :: lreq
 character(kind=c_char,len=1), intent(in) :: c_req(lreq+1)
 type(c_ptr), intent(in) :: c_t1, c_t2
-integer(c_int), intent(inout) :: c_key_locs
+integer(c_int), intent(in) :: c_key_locs
 
 type(obs_data), pointer :: self
 character(len=lreq) :: req

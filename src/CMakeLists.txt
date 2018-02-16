@@ -160,8 +160,113 @@ oops/base/WeightingFct.cc
 oops/base/instantiateCovarFactory.h
 oops/base/instantiateFilterFactory.h
 
+oops/generic/LocalizationHDIAG_NICAS.h
 oops/generic/ObsErrorDiag.h
+oops/generic/UnstructuredGrid.cc
+oops/generic/UnstructuredGrid.h
+oops/generic/instantiateLocalizationFactory.h
 oops/generic/instantiateObsErrorFactory.h
+oops/generic/hdiag_nicas_f.h
+oops/generic/hdiag_nicas_mod.F90
+oops/generic/unstructured_grid_f.h
+oops/generic/unstructured_grid_mod.F90
+
+oops/generic/hdiag_nicas/driver_hdiag.f90
+oops/generic/hdiag_nicas/driver_lct.f90
+oops/generic/hdiag_nicas/driver_nicas.f90
+oops/generic/hdiag_nicas/driver_obsgen.f90
+oops/generic/hdiag_nicas/driver_obsop.f90
+oops/generic/hdiag_nicas/hdiag_average.f90
+oops/generic/hdiag_nicas/hdiag_displacement.f90
+oops/generic/hdiag_nicas/hdiag_dualens.f90
+oops/generic/hdiag_nicas/hdiag_fit.f90
+oops/generic/hdiag_nicas/hdiag_fit_lct.f90
+oops/generic/hdiag_nicas/hdiag_hybridization.f90
+oops/generic/hdiag_nicas/hdiag_lct.f90
+oops/generic/hdiag_nicas/hdiag_localization.f90
+oops/generic/hdiag_nicas/hdiag_moments.f90
+oops/generic/hdiag_nicas/hdiag_mpi.f90
+oops/generic/hdiag_nicas/hdiag_sampling.f90
+oops/generic/hdiag_nicas/hdiag_tools.f90
+oops/generic/hdiag_nicas/hdiag_transform.f90
+oops/generic/hdiag_nicas/model_aro.f90
+oops/generic/hdiag_nicas/model_arp.f90
+oops/generic/hdiag_nicas/model_gem.f90
+oops/generic/hdiag_nicas/model_geos.f90
+oops/generic/hdiag_nicas/model_gfs.f90
+oops/generic/hdiag_nicas/model_ifs.f90
+oops/generic/hdiag_nicas/model_interface.f90
+oops/generic/hdiag_nicas/model_mpas.f90
+oops/generic/hdiag_nicas/model_nemo.f90
+oops/generic/hdiag_nicas/model_oops.f90
+oops/generic/hdiag_nicas/model_wrf.f90
+oops/generic/hdiag_nicas/nicas_apply_adv.f90
+oops/generic/hdiag_nicas/nicas_apply_bens.f90
+oops/generic/hdiag_nicas/nicas_apply_convol.f90
+oops/generic/hdiag_nicas/nicas_apply_interp.f90
+oops/generic/hdiag_nicas/nicas_apply_localization.f90
+oops/generic/hdiag_nicas/nicas_apply_nicas.f90
+oops/generic/hdiag_nicas/nicas_parameters_adv.f90
+oops/generic/hdiag_nicas/nicas_parameters_convol.f90
+oops/generic/hdiag_nicas/nicas_parameters.f90
+oops/generic/hdiag_nicas/nicas_parameters_interp.f90
+oops/generic/hdiag_nicas/nicas_parameters_mpi.f90
+oops/generic/hdiag_nicas/nicas_parameters_normalization.f90
+oops/generic/hdiag_nicas/nicas_parameters_sampling.f90
+oops/generic/hdiag_nicas/nicas_test.f90
+oops/generic/hdiag_nicas/obsop_apply.f90
+oops/generic/hdiag_nicas/obsop_parameters.f90
+oops/generic/hdiag_nicas/obsop_test.f90
+oops/generic/hdiag_nicas/tools_const.f90
+oops/generic/hdiag_nicas/tools_diffusion.f90
+oops/generic/hdiag_nicas/tools_display.f90
+oops/generic/hdiag_nicas/tools_fit.f90
+oops/generic/hdiag_nicas/tools_interp.f90
+oops/generic/hdiag_nicas/tools_kinds.f90
+oops/generic/hdiag_nicas/tools_minim.f90
+oops/generic/hdiag_nicas/tools_missing.f90
+oops/generic/hdiag_nicas/tools_nc.f90
+oops/generic/hdiag_nicas/type_avg.f90
+oops/generic/hdiag_nicas/type_bdata.f90
+oops/generic/hdiag_nicas/type_bpar.f90
+oops/generic/hdiag_nicas/type_com.f90
+oops/generic/hdiag_nicas/type_ctree_api.cpp
+oops/generic/hdiag_nicas/type_ctree_c.cpp
+oops/generic/hdiag_nicas/type_ctree.f90
+oops/generic/hdiag_nicas/type_ctree.h
+oops/generic/hdiag_nicas/type_ctree.hpp
+oops/generic/hdiag_nicas/type_curve.f90
+oops/generic/hdiag_nicas/type_cv.f90
+oops/generic/hdiag_nicas/type_displ.f90
+oops/generic/hdiag_nicas/type_geom.f90
+oops/generic/hdiag_nicas/type_hdata.f90
+oops/generic/hdiag_nicas/type_lct.f90
+oops/generic/hdiag_nicas/type_linop.f90
+oops/generic/hdiag_nicas/type_mdata.f90
+oops/generic/hdiag_nicas/type_mesh.f90
+oops/generic/hdiag_nicas/type_mom.f90
+oops/generic/hdiag_nicas/type_mpl.f90
+oops/generic/hdiag_nicas/type_nam.f90
+oops/generic/hdiag_nicas/type_ndata.f90
+oops/generic/hdiag_nicas/type_odata.f90
+oops/generic/hdiag_nicas/type_randgen_api.cpp
+oops/generic/hdiag_nicas/type_randgen_c.cpp
+oops/generic/hdiag_nicas/type_randgen.f90
+oops/generic/hdiag_nicas/type_randgen.h
+oops/generic/hdiag_nicas/type_randgen.hpp
+oops/generic/hdiag_nicas/type_timer.f90
+oops/generic/hdiag_nicas/yomhook.f90
+oops/generic/hdiag_nicas/external/Cover_Tree.h
+oops/generic/hdiag_nicas/external/Cover_Tree_Point.cpp
+oops/generic/hdiag_nicas/external/Cover_Tree_Point.h
+oops/generic/hdiag_nicas/external/fgetpid.c
+oops/generic/hdiag_nicas/external/tools_asa007.f90
+oops/generic/hdiag_nicas/external/tools_asa047.f90
+oops/generic/hdiag_nicas/external/tools_compass_search.f90
+oops/generic/hdiag_nicas/external/tools_jacobi_eigenvalue.f90
+oops/generic/hdiag_nicas/external/tools_praxis.f90
+oops/generic/hdiag_nicas/external/tools_qsort.f90
+oops/generic/hdiag_nicas/external/tools_stripack.f90
 
 oops/interface/ErrorCovariance.h
 oops/interface/Geometry.h
@@ -171,6 +276,7 @@ oops/interface/LinearModel.h
 oops/interface/LinearObsOperBase.h
 oops/interface/LinearObsOperator.h
 oops/interface/Localization.h
+oops/interface/LocalizationBase.h
 oops/interface/Locations.h
 oops/interface/Model.h
 oops/interface/ModelAuxControl.h
@@ -189,6 +295,7 @@ oops/interface/ObservationSpace.h
 oops/interface/State.h
 
 oops/runs/Application.h
+oops/runs/Dirac.h
 oops/runs/EnsForecasts.h
 oops/runs/ExternalDFI.h
 oops/runs/Forecast.h
@@ -235,7 +342,7 @@ ecbuild_add_library( TARGET     oops
                      SOURCES    
                                 ${FORTRAN_BINDINGS}
                                 ${oops_src_files}
-                     LIBS       ${LAPACK_LIBRARIES} fckit eckit_mpi eckit
+                     LIBS       ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES} ${NETCDF_LIBRARIES} fckit eckit_mpi eckit
                      INSTALL_HEADERS LISTED
                      LINKER_LANGUAGE ${OOPS_LINKER_LANGUAGE}
                    )
@@ -264,4 +371,3 @@ add_fctest( TARGET  test_util_duration_intfb.x
             CONDITION HAVE_FCTEST
             LIBS    oops )
 endif()
-

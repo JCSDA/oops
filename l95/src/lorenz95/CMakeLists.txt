@@ -8,6 +8,7 @@ ecbuild_add_library( TARGET lorenz95
                          GomL95.h
                          IncrementL95.cc
                          IncrementL95.h
+                         instantiateLocalizationFactory.h
                          L95Traits.h
                          LocsL95.cc
                          LocsL95.h
@@ -35,6 +36,7 @@ ecbuild_add_library( TARGET lorenz95
                          ObservationL95.h
                          ObservationTLAD.cc
                          ObservationTLAD.h
+                         Resolution.cc
                          Resolution.h
                          StateL95.cc
                          StateL95.h

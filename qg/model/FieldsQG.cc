@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
+#include "oops/generic/UnstructuredGrid.h"
 #include "oops/base/Variables.h"
 #include "util/DateTime.h"
 #include "util/Logger.h"
@@ -119,6 +120,11 @@ void FieldsQG::random() {
   qg_field_random_f90(keyFlds_);
 }
 // -----------------------------------------------------------------------------
+void FieldsQG::dirac(const eckit::Configuration & config) {
+  const eckit::Configuration * conf = &config;
+  qg_field_dirac_f90(keyFlds_, &conf);
+}
+// -----------------------------------------------------------------------------
 void FieldsQG::interpolate(const LocationsQG & locs, const oops::Variables & vars,
                            GomQG & gom) const {
   const VariablesQG varqg(vars);
@@ -147,6 +153,14 @@ void FieldsQG::add(const FieldsQG & rhs) {
 // -----------------------------------------------------------------------------
 void FieldsQG::diff(const FieldsQG & x1, const FieldsQG & x2) {
   qg_field_diff_incr_f90(keyFlds_, x1.keyFlds_, x2.keyFlds_);
+}
+// -----------------------------------------------------------------------------
+void FieldsQG::convert_to(oops::UnstructuredGrid & ug) const {
+  qg_field_convert_to_f90(keyFlds_, ug.toFortran());
+}
+// -----------------------------------------------------------------------------
+void FieldsQG::convert_from(const oops::UnstructuredGrid & ug) {
+  qg_field_convert_from_f90(keyFlds_, ug.toFortran());
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::read(const eckit::Configuration & config) {

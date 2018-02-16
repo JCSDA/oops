@@ -14,8 +14,10 @@ list( APPEND qg_test_input
   testinput/4dvar.obsbias.json
   testinput/4dvar.rpcg.json
   testinput/dfi.json
+  testinput/dirac.nicas.json
   testinput/forecast.json
   testinput/genenspert.json
+  testinput/hofx.json
   testinput/interfaces.json
   testinput/makeobs3d.json
   testinput/makeobs4d.json
@@ -43,8 +45,10 @@ list( APPEND qg_testoutput
   testoutput/4dvar.obsbias.test
   testoutput/4dvar.rpcg.test
   testoutput/dfi.test
+  testoutput/dirac.nicas.test
   testoutput/forecast.test
   testoutput/genenspert.test
+  testoutput/hofx.test
   testoutput/makeobs3d.test
   testoutput/makeobs4d.test
   testoutput/makeobs4d12h.test
@@ -254,6 +258,13 @@ ecbuild_add_test( TARGET  test_qg_localization
 
 # Test oops applications with QG
 
+ecbuild_add_test( TARGET test_qg_hofx
+                  TYPE SCRIPT
+                  COMMAND "compare.sh"
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_hofx.x testinput/hofx.json"
+                       testoutput/hofx.test
+                  DEPENDS qg_hofx.x )
+
 ecbuild_add_test( TARGET test_qg_3dvar
                   TYPE SCRIPT
                   COMMAND "compare.sh"
@@ -361,6 +372,13 @@ ecbuild_add_test( TARGET test_qg_alpha
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/4dvar.alpha.json"
                        testoutput/4dvar.alpha.test
                   DEPENDS qg_4dvar.x )
+
+ecbuild_add_test( TARGET test_qg_dirac_nicas
+                  TYPE SCRIPT
+                  COMMAND "compare.sh"
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_dirac.x testinput/dirac.nicas.json"
+                       testoutput/dirac.nicas.test
+                  DEPENDS qg_dirac.x )
 endif()
 
 ecbuild_add_test( TARGET test_qg_dfi
@@ -369,4 +387,3 @@ ecbuild_add_test( TARGET test_qg_dfi
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_dfi.x testinput/dfi.json"
                        testoutput/dfi.test
                   DEPENDS qg_dfi.x )
-

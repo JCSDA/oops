@@ -9,8 +9,11 @@
  */
 
 #include "lorenz95/LocsL95.h"
+
+#include "eckit/config/LocalConfiguration.h"
 #include "lorenz95/ObsTable.h"
 #include "util/DateTime.h"
+#include "util/Logger.h"
 
 namespace lorenz95 {
 
@@ -20,6 +23,16 @@ LocsL95::LocsL95(const std::vector<int> & indx, const std::vector<double> & locs
  : indx_(indx), locs_(locs)
 {
   ASSERT(indx_.size() == locs_.size());
+}
+
+// -----------------------------------------------------------------------------
+
+LocsL95::LocsL95(const eckit::Configuration & conf) : indx_(), locs_() {
+  conf.get("positions", locs_);
+  for (size_t jj = 0; jj < locs_.size(); ++jj) {
+    ASSERT(locs_.at(jj) >= 0.0 && locs_.at(jj) <= 1.0);
+    indx_.push_back(jj + 1);
+  }
 }
 
 // -----------------------------------------------------------------------------

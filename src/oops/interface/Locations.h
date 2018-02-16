@@ -20,6 +20,10 @@
 #include "util/Printable.h"
 #include "util/Timer.h"
 
+namespace eckit {
+  class Configuration;
+}
+
 namespace oops {
 
 // -----------------------------------------------------------------------------
@@ -33,6 +37,7 @@ class Locations : public util::Printable,
   static const std::string classname() {return "oops::Locations";}
 
   explicit Locations(const Locations_ *);
+  explicit Locations(const eckit::Configuration &);
   Locations(const Locations &);
   ~Locations();
 
@@ -47,10 +52,19 @@ class Locations : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-Locations<MODEL>::Locations(const Locations_ * locs)
-  : locs_(locs)
+Locations<MODEL>::Locations(const Locations_ * locs) : locs_(locs)
 {
   Log::trace() << "Locations<MODEL>::Locations constructed" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+Locations<MODEL>::Locations(const eckit::Configuration & conf) {
+  Log::trace() << "Locations<MODEL>::Locations starting" << std::endl;
+  util::Timer timer(classname(), "Locations");
+  locs_.reset(new Locations_(conf));
+  Log::trace() << "Locations<MODEL>::Locations done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

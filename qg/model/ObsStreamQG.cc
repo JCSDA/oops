@@ -24,7 +24,7 @@ namespace qg {
 static oops::ObsOperatorMaker<QgTraits, ObsStreamQG> makerStream_("Stream");
 // -----------------------------------------------------------------------------
 
-ObsStreamQG::ObsStreamQG(const ObsSpaceQG & odb, const eckit::Configuration & config)
+ObsStreamQG::ObsStreamQG(const ObsSpaceQG &, const eckit::Configuration & config)
   : keyOperStrm_(0), varin_(std::vector<std::string>{"x"})
 {
   const eckit::Configuration * configc = &config;

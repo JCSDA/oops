@@ -29,6 +29,7 @@
         },
         "date": "2010-01-01T00:00:00Z",
         "localization": {
+          "localization": "QG",
           "standard_deviation": "1.0",
           "vertical_correlation": "0.4",
           "horizontal_length_scale": "2e6",

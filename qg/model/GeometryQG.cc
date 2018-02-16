@@ -12,6 +12,7 @@
 #include "model/GeometryQG.h"
 #include "model/QgFortran.h"
 #include "eckit/config/Configuration.h"
+#include <math.h>
 
 // -----------------------------------------------------------------------------
 namespace qg {
@@ -37,4 +38,4 @@ void GeometryQG::print(std::ostream & os) const {
   os << "nx = " << nx << ", ny = " << ny;
 }
 // -----------------------------------------------------------------------------
-}  // namespace qg
+}  // namespace qg 

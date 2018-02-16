@@ -26,8 +26,20 @@ type :: qg_vars
   logical :: lbc
 end type qg_vars
 
+#define LISTED_TYPE qg_vars
+
+!> Linked list interface - defines registry_t type
+#include "util/linkedList_i.f"
+
+!> Global registry
+type(registry_t) :: qg_vars_registry
+
 ! ------------------------------------------------------------------------------
 contains
+! ------------------------------------------------------------------------------
+!> Linked list implementation
+#include "util/linkedList_c.f"
+
 ! ------------------------------------------------------------------------------
 
 subroutine qg_vars_create(self, kvars)

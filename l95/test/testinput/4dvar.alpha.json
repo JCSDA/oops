@@ -23,6 +23,7 @@
         "members": "10",
         "variables": null,
         "localization": {
+          "localization": "L95",
           "length_scale": "1.0"
         },
         "state": [

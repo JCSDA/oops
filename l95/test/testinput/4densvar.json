@@ -54,7 +54,7 @@
       },
       "Covariance": {
         "static": {
-          "covariance": "static",
+          "covariance": "L95Error",
           "standard_deviation": "0.6",
           "length_scale": "1.0",
           "date": "2010-01-01T03:00:00Z"
@@ -66,6 +66,7 @@
             "variables": null,
             "date": "2010-01-01T03:00:00Z",
             "localization": {
+              "localization": "L95",
               "length_scale": "1.0"
             },
             "state": [
@@ -117,6 +118,7 @@
             "variables": null,
             "date": "2010-01-01T04:30:00Z",
             "localization": {
+              "localization": "L95",
               "length_scale": "1.0"
             },
             "state": [
@@ -168,6 +170,7 @@
             "variables": null,
             "date": "2010-01-01T06:00:00Z",
             "localization": {
+              "localization": "L95",
               "length_scale": "1.0"
             },
             "state": [
@@ -219,6 +222,7 @@
             "variables": null,
             "date": "2010-01-01T07:30:00Z",
             "localization": {
+              "localization": "L95",
               "length_scale": "1.0"
             },
             "state": [
@@ -270,6 +274,7 @@
             "variables": null,
             "date": "2010-01-01T09:00:00Z",
             "localization": {
+              "localization": "L95",
               "length_scale": "1.0"
             },
             "state": [
@@ -321,6 +326,7 @@
             "variables": null,
             "date": "2010-01-01T10:30:00Z",
             "localization": {
+              "localization": "L95",
               "length_scale": "1.0"
             },
             "state": [
@@ -372,6 +378,7 @@
             "variables": null,
             "date": "2010-01-01T12:00:00Z",
             "localization": {
+              "localization": "L95",
               "length_scale": "1.0"
             },
             "state": [
@@ -423,6 +430,7 @@
             "variables": null,
             "date": "2010-01-01T13:30:00Z",
             "localization": {
+              "localization": "L95",
               "length_scale": "1.0"
             },
             "state": [
@@ -474,6 +482,7 @@
             "variables": null,
             "date": "2010-01-01T15:00:00Z",
             "localization": {
+              "localization": "L95",
               "length_scale": "1.0"
             },
             "state": [

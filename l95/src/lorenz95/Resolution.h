@@ -28,6 +28,11 @@ class Resolution : public util::Printable {
   Resolution(const Resolution & other): resol_(other.resol_) {}
   ~Resolution() {}
 
+  std::vector<double> getLats() const;
+  std::vector<double> getLons() const;
+  std::vector<double> getLevs() const;
+  std::vector<int> getMask(const int &) const;
+
   int npoints() const {return resol_;}
 
  private:
