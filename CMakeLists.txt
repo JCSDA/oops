@@ -51,9 +51,11 @@ find_package( Boost ${Boost_MINIMUM_VERSION} REQUIRED
 include_directories( ${Boost_INCLUDE_DIR} )
 
 # LAPACK
-if( NOT ( BUILD_SITE MATCHES "cc[abt].*" ) )  # Should depend on toolchain, not machine
-  ecbuild_find_package( NAME LAPACK REQUIRED )
-  include_directories( ${LAPACK_INCLUDE_DIR} )
+ecbuild_add_option( FEATURE LAPACK
+                    DESCRIPTION "Linear Algebra PACKage"
+                    REQUIRED_PACKAGES "LAPACK REQUIRED" )
+if (NOT HAVE_LAPACK)
+  ecbuild_error("LAPACK_LIBRARIES not defined")
 endif()
 
 # eckit
