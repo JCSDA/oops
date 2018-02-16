@@ -49,7 +49,8 @@ BOOST_FIXTURE_TEST_SUITE(test_LocsL95, LocsTestFixture)
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_LocsL95_nobs) {
     boost::scoped_ptr<lorenz95::LocsL95> locs(ot_->locations(*t1_, *t2_));
-    BOOST_CHECK_EQUAL(locs->size(), 80);
+    size_t ref = 80;
+    BOOST_CHECK_EQUAL(locs->size(), ref);
   }
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_LocsL95_operator) {

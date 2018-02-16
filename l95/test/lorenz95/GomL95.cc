@@ -55,7 +55,8 @@ BOOST_FIXTURE_TEST_SUITE(test_GomL95, GomTestFixture)
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_GomL95_nobs) {
     boost::scoped_ptr<lorenz95::GomL95> gom(new lorenz95::GomL95(*locs_, *novar_));
-    BOOST_CHECK_EQUAL(gom->size(), 160);
+    size_t ref = 160;
+    BOOST_CHECK_EQUAL(gom->size(), ref);
   }
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_gomL95_classname) {
