@@ -84,7 +84,7 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Fields
 // -----------------------------------------------------------------------------
-  void qg_field_create_f90(F90flds &, const F90geom &, const F90vars &);
+  void qg_field_create_f90(F90flds &, const F90geom &, const F90vars *);
   void qg_field_delete_f90(F90flds &);
 
   void qg_field_copy_f90(const F90flds &, const F90flds &);
@@ -107,9 +107,9 @@ extern "C" {
   void qg_field_write_file_f90(const F90flds &, const eckit::Configuration * const *,
                                const util::DateTime * const *);
 
-  void qg_field_interp_f90(const F90flds &, const F90locs &, const F90vars &, const F90goms &);
-  void qg_field_interp_tl_f90(const F90flds &, const F90locs &, const F90vars &, const F90goms &);
-  void qg_field_interp_ad_f90(const F90flds &, const F90locs &, const F90vars &, const F90goms &);
+  void qg_field_interp_f90(const F90flds &, const F90locs &, const F90vars *, const F90goms &);
+  void qg_field_interp_tl_f90(const F90flds &, const F90locs &, const F90vars *, const F90goms &);
+  void qg_field_interp_ad_f90(const F90flds &, const F90locs &, const F90vars *, const F90goms &);
 
   void qg_field_gpnorm_f90(const F90flds &, const int &, double &);
   void qg_field_sizes_f90(const F90flds &, int &, int &, int &, int &);
@@ -137,26 +137,21 @@ extern "C" {
   void qg_localization_mult_f90(const F90lclz &, const F90flds &);
 
 // -----------------------------------------------------------------------------
-//  Variables
-// -----------------------------------------------------------------------------
-  void qg_var_create_f90(F90vars &, const eckit::Configuration * const *);
-  void qg_var_clone_f90(const F90vars &, F90vars &);
-  void qg_var_info_f90(const F90vars &, int &, int &);
-  void qg_var_delete_f90(F90vars &);
-
-// -----------------------------------------------------------------------------
 //  Locations
 // -----------------------------------------------------------------------------
+  void qg_loc_create_f90(F90locs &);
   void qg_loc_delete_f90(F90locs &);
   void qg_loc_nobs_f90(const F90locs &, int &);
 
 // -----------------------------------------------------------------------------
 //  Local Values (GOM)
 // -----------------------------------------------------------------------------
+  void qg_gom_setup_f90(F90goms &, const F90locs &, const F90vars *);
   void qg_gom_create_f90(F90goms &);
   void qg_gom_delete_f90(F90goms &);
   void qg_gom_zero_f90(const F90goms &);
   void qg_gom_random_f90(const F90goms &);
+  void qg_gom_mult_f90(const F90goms &, const double &);
   void qg_gom_dotprod_f90(const F90goms &, const F90goms &, double &);
   void qg_gom_minmaxavg_f90(const F90goms &, int &, double &, double &, double &);
   void qg_gom_read_file_f90(const F90goms &, const eckit::Configuration * const *);
@@ -192,7 +187,7 @@ extern "C" {
   void qg_wspeed_equiv_tl_f90(const F90goms &, const F90ovec &, const F90goms &, const double &);
   void qg_wspeed_equiv_ad_f90(const F90goms &, const F90ovec &, const F90goms &, double &);
 
-  void qg_wspeed_gettraj_f90(const F90hop &, const int &, F90goms &);
+  void qg_wspeed_gettraj_f90(const F90hop &, const int &, const int *, F90goms &);
   void qg_wspeed_settraj_f90(const F90goms &, const F90goms &);
 
 // -----------------------------------------------------------------------------
@@ -228,14 +223,11 @@ extern "C" {
   void qg_obsdb_locations_f90(const F90odb &, const int &, const char *,
                               const util::DateTime * const *, const util::DateTime * const *,
                               F90locs &);
-  void qg_obsdb_getgom_f90(const F90odb &, const int &, const char *, const F90vars &,
-                           const util::DateTime * const *, const util::DateTime * const *,
-                           F90goms &);
   void qg_obsdb_generate_f90(const F90odb &, const int &, const char *,
                              const eckit::Configuration * const *, const util::DateTime * const *,
                              const util::Duration * const *, const int &, int &);
   void qg_obsdb_nobs_f90(const F90odb &, const int &, const char *, int &);
-  void qg_obsoper_inputs_f90(const F90hop &, F90vars &);
+  void qg_obsoper_inputs_f90(const F90hop &, F90vars *);
 }
 
 // -----------------------------------------------------------------------------

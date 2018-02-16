@@ -18,10 +18,10 @@
 
 #include "util/Logger.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
-#include "oops/interface/Variables.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 #include "util/Timer.h"
@@ -52,12 +52,11 @@ class ErrorCovariance : public oops::ModelSpaceCovarianceBase<MODEL>,
   typedef Geometry<MODEL>            Geometry_;
   typedef Increment<MODEL>           Increment_;
   typedef State<MODEL>               State_;
-  typedef Variables<MODEL>           Variables_;
 
  public:
   static const std::string classname() {return "oops::ErrorCovariance";}
 
-  ErrorCovariance(const Geometry_ &, const Variables_ &, const eckit::Configuration &, const State_ &);
+  ErrorCovariance(const Geometry_ &, const Variables &, const eckit::Configuration &, const State_ &);
   virtual ~ErrorCovariance();
 
   void linearize(const State_ &, const Geometry_ &) override;
@@ -73,13 +72,13 @@ class ErrorCovariance : public oops::ModelSpaceCovarianceBase<MODEL>,
 // =============================================================================
 
 template<typename MODEL>
-ErrorCovariance<MODEL>::ErrorCovariance(const Geometry_ & resol, const Variables_ & vars,
+ErrorCovariance<MODEL>::ErrorCovariance(const Geometry_ & resol, const Variables & vars,
                                         const eckit::Configuration & conf, const State_ & xb)
   : covariance_()
 {
   Log::trace() << "ErrorCovariance<MODEL>::ErrorCovariance starting" << std::endl;
   util::Timer timer(classname(), "ErrorCovariance");
-  covariance_.reset(new Covariance_(resol.geometry(), vars.variables(), conf, xb.state()));
+  covariance_.reset(new Covariance_(resol.geometry(), vars, conf, xb.state()));
   Log::trace() << "ErrorCovariance<MODEL>::ErrorCovariance done" << std::endl;
 }
 

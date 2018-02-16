@@ -18,6 +18,7 @@
 #include "test/TestEnvironment.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "util/DateTime.h"
+#include "util/Logger.h"
 
 namespace test {
 
@@ -32,7 +33,7 @@ class ObsTestsFixture : private boost::noncopyable {
   static const util::DateTime & tend() {return *getInstance().tend_;}
   static ObsSpaces_ & obspace()        {return *getInstance().ospaces_;}
 
- protected:
+ private:
   ObsTestsFixture(): tbgn_(), tend_(), ospaces_() {
     tbgn_.reset(new util::DateTime(TestEnvironment::config().getString("window_begin")));
     tend_.reset(new util::DateTime(TestEnvironment::config().getString("window_end")));
@@ -41,9 +42,8 @@ class ObsTestsFixture : private boost::noncopyable {
     ospaces_.reset(new ObsSpaces_(conf, *tbgn_, *tend_));
   }
 
-  virtual ~ObsTestsFixture() {}
+  ~ObsTestsFixture() {}
 
- private:
   static ObsTestsFixture<MODEL>& getInstance() {
     static ObsTestsFixture<MODEL> theObsTestsFixture;
     return theObsTestsFixture;

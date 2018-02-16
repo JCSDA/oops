@@ -28,12 +28,16 @@
 #include "lorenz95/ModelTrajectory.h"
 #include "lorenz95/Resolution.h"
 
+namespace oops {
+  class Variables;
+}
+
 namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
 /// Constructor, destructor
 // -----------------------------------------------------------------------------
-StateL95::StateL95(const Resolution & resol, const NoVariables &,
+StateL95::StateL95(const Resolution & resol, const oops::Variables &,
                    const util::DateTime & vt)
   : fld_(resol), time_(vt)
 {
@@ -74,7 +78,7 @@ StateL95 & StateL95::operator=(const StateL95 & rhs) {
 // -----------------------------------------------------------------------------
 /// Interpolate to observation location
 // -----------------------------------------------------------------------------
-void StateL95::interpolate(const LocsL95 & locs, const NoVariables &, GomL95 & vals) const {
+void StateL95::interpolate(const LocsL95 & locs, const oops::Variables &, GomL95 & vals) const {
   fld_.interp(locs, vals);
 }
 // -----------------------------------------------------------------------------

@@ -51,7 +51,6 @@ integer(c_int), intent(inout) :: c_key_self
 
 type(qg_obsoper), pointer :: self
 call qg_obsoper_registry%get(c_key_self, self)
-deallocate(self%varin%fldnames)
 call qg_obsoper_registry%remove(c_key_self)
 
 end subroutine c_qg_wind_delete

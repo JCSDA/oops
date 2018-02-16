@@ -16,10 +16,10 @@
 #include <string>
 
 #include "util/Logger.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
-#include "oops/interface/Variables.h"
 #include "eckit/config/Configuration.h"
 #include "util/abor1_cpp.h"
 
@@ -39,7 +39,6 @@ class ModelSpaceCovarianceBase {
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
   typedef Increment<MODEL>           Increment_;
-  typedef Variables<MODEL>           Variables_;
 
  public:
   virtual ~ModelSpaceCovarianceBase() {}
@@ -57,17 +56,16 @@ template <typename MODEL>
 class CovarianceFactory {
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
-  typedef Variables<MODEL>           Variables_;
 
  public:
   static ModelSpaceCovarianceBase<MODEL> * create(const eckit::Configuration &, const Geometry_ &,
-                                                  const Variables_ &, const State_ &);
+                                                  const Variables &, const State_ &);
   virtual ~CovarianceFactory() { makers_.clear(); }
  protected:
   explicit CovarianceFactory(const std::string &);
  private:
   virtual ModelSpaceCovarianceBase<MODEL> * make(const eckit::Configuration &, const Geometry_ &,
-                                                 const Variables_ &, const State_ &) =0;
+                                                 const Variables &, const State_ &) =0;
   static std::map < std::string, CovarianceFactory<MODEL> * > makers_;
 };
 
@@ -77,11 +75,10 @@ template<class MODEL, class COVAR>
 class CovarMaker : public CovarianceFactory<MODEL> {
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
-  typedef Variables<MODEL>           Variables_;
 
   virtual ModelSpaceCovarianceBase<MODEL> * make(const eckit::Configuration & conf,
                                                  const Geometry_ & resol,
-                                                 const Variables_ & vars,
+                                                 const Variables & vars,
                                                  const State_ & xb) {
     return new COVAR(resol, vars, conf, xb);
   }
@@ -111,7 +108,7 @@ template <typename MODEL>
 ModelSpaceCovarianceBase<MODEL>* CovarianceFactory<MODEL>::create(
                                                          const eckit::Configuration & conf,
                                                          const Geometry_ & resol,
-                                                         const Variables_ & vars,
+                                                         const Variables & vars,
                                                          const State_ & xb) {
   const std::string id = conf.getString("covariance");
   Log::trace() << "ModelSpaceCovarianceBase type = " << id << std::endl;

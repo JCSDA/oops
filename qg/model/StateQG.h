@@ -25,12 +25,15 @@ namespace eckit {
   class Configuration;
 }
 
+namespace oops {
+  class Variables;
+}
+
 namespace qg {
   class GomQG;
   class LocationsQG;
   class GeometryQG;
   class IncrementQG;
-  class VariablesQG;
 
 /// QG model state
 /*!
@@ -45,7 +48,7 @@ class StateQG : public util::Printable,
   static const std::string classname() {return "qg::StateQG";}
 
 /// Constructor, destructor
-  StateQG(const GeometryQG &, const VariablesQG &, const util::DateTime &);  // Is it used?
+  StateQG(const GeometryQG &, const oops::Variables &, const util::DateTime &);  // Is it used?
   StateQG(const GeometryQG &, const eckit::Configuration &);
   StateQG(const GeometryQG &, const StateQG &);
   StateQG(const StateQG &);
@@ -53,7 +56,7 @@ class StateQG : public util::Printable,
   StateQG & operator=(const StateQG &);
 
 /// Interpolate to observation location
-  void interpolate(const LocationsQG &, const VariablesQG &, GomQG &) const;
+  void interpolate(const LocationsQG &, const oops::Variables &, GomQG &) const;
 
 /// Interpolate full fields
   void changeResolution(const StateQG & xx);

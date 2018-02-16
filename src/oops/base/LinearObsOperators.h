@@ -17,11 +17,11 @@
 #include <boost/shared_ptr.hpp>
 
 #include "oops/base/ObsSpaces.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/LinearObsOperator.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/ObsVector.h"
-#include "oops/interface/Variables.h"
 #include "util/DateTime.h"
 #include "util/Logger.h"
 #include "util/Printable.h"
@@ -38,7 +38,6 @@ class LinearObsOperators : public util::Printable,
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncrement_;
   typedef ObsSpaces<MODEL>           ObsSpace_;
   typedef ObsVector<MODEL>           ObsVector_;
-  typedef Variables<MODEL>           Variables_;
 
  public:
   static const std::string classname() {return "oops::LinearObsOperators";}
@@ -50,7 +49,7 @@ class LinearObsOperators : public util::Printable,
   std::size_t size() const {return ops_.size();}
   LinearObsOperator_ & operator[](const std::size_t ii) {return *ops_.at(ii);}
   const LinearObsOperator_ & operator[](const std::size_t ii) const {return *ops_.at(ii);}
-  Variables_ variables(const std::size_t) const;
+  const Variables & variables(const std::size_t) const;
 
  private:
   void print(std::ostream &) const;
@@ -75,9 +74,8 @@ LinearObsOperators<MODEL>::~LinearObsOperators() {}
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-Variables<MODEL> LinearObsOperators<MODEL>::variables(const std::size_t jobs) const {
-  Variables<MODEL> var(ops_.at(jobs)->variables());
-  return var;
+const Variables & LinearObsOperators<MODEL>::variables(const std::size_t jobs) const {
+  return ops_.at(jobs)->variables();
 }
 
 // -----------------------------------------------------------------------------

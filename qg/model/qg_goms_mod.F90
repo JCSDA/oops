@@ -11,6 +11,7 @@
 module qg_goms_mod
 
 use iso_c_binding
+use qg_locs_mod
 use qg_vars_mod
 use kinds
 
@@ -48,8 +49,29 @@ contains
 
 ! ------------------------------------------------------------------------------
 
-subroutine c_qg_gom_create(c_key_self) bind(c,name='qg_gom_create_f90')
+subroutine c_qg_gom_setup(c_key_self, c_key_locs, c_vars) bind(c,name='qg_gom_setup_f90')
+implicit none
+integer(c_int), intent(inout) :: c_key_self
+integer(c_int), intent(inout) :: c_key_locs
+integer(c_int), dimension(*), intent(in) :: c_vars     !< List of variables
 
+type(qg_goms), pointer :: self
+type(qg_locs), pointer :: locs
+type(qg_vars) :: vars
+
+call qg_goms_registry%init()
+call qg_goms_registry%add(c_key_self)
+call qg_goms_registry%get(c_key_self, self)
+call qg_locs_registry%get(c_key_locs, locs)
+call qg_vars_create(vars, c_vars)
+
+call gom_setup(self, vars, locs%indx)
+
+end subroutine c_qg_gom_setup
+
+! ------------------------------------------------------------------------------
+
+subroutine c_qg_gom_create(c_key_self) bind(c,name='qg_gom_create_f90')
 implicit none
 integer(c_int), intent(inout) :: c_key_self
 
@@ -125,6 +147,24 @@ type(qg_goms), pointer :: self
 call qg_goms_registry%get(c_key_self, self)
 call random_vector(self%values(:,:))
 end subroutine c_qg_gom_random
+
+! ------------------------------------------------------------------------------
+
+subroutine c_qg_gom_mult(c_key_self, zz) bind(c,name='qg_gom_mult_f90')
+implicit none
+integer(c_int), intent(in) :: c_key_self
+real(c_double), intent(in) :: zz
+type(qg_goms), pointer :: self
+integer :: jo, jv
+
+call qg_goms_registry%get(c_key_self, self)
+do jo=1,self%nobs
+  do jv=1,self%nvar
+    self%values(jv,jo) = zz * self%values(jv,jo)
+  enddo
+enddo
+
+end subroutine c_qg_gom_mult
 
 ! ------------------------------------------------------------------------------
 

@@ -26,6 +26,10 @@ namespace eckit {
   class Configuration;
 }
 
+namespace oops {
+  class Variables;
+}
+
 namespace lorenz95 {
   class GomL95;
   class IncrementL95;
@@ -33,7 +37,6 @@ namespace lorenz95 {
   class ModelBias;
   class ModelL95;
   class ModelTrajectory;
-  class NoVariables;
 
 /// L95 model state
 /*!
@@ -48,7 +51,7 @@ class StateL95 : public util::Printable,
   static const std::string classname() {return "lorenz95::StateL95";}
 
 /// Constructor, destructor
-  StateL95(const Resolution &, const NoVariables &, const util::DateTime &);
+  StateL95(const Resolution &, const oops::Variables &, const util::DateTime &);
   StateL95(const Resolution &, const eckit::Configuration &);
   StateL95(const Resolution &, const StateL95 &);
   StateL95(const StateL95 &);
@@ -56,7 +59,7 @@ class StateL95 : public util::Printable,
   StateL95 & operator=(const StateL95 &);
 
 /// Interpolate to observation location
-  void interpolate(const LocsL95 &, const NoVariables &, GomL95 &) const;
+  void interpolate(const LocsL95 &, const oops::Variables &, GomL95 &) const;
 
 /// Interactions with increments
   StateL95 & operator+=(const IncrementL95 &);

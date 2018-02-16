@@ -32,6 +32,7 @@
 #include "oops/base/instantiateCovarFactory.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/TrajectorySaver.h"
+#include "oops/base/Variables.h"
 #include "oops/generic/instantiateTlmFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -40,7 +41,6 @@
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/ModelAuxIncrement.h"
 #include "oops/interface/State.h"
-#include "oops/interface/Variables.h"
 #include "test/TestEnvironment.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "util/DateTime.h"
@@ -59,13 +59,12 @@ template <typename MODEL> class LinearModelFixture : private boost::noncopyable 
   typedef oops::ModelAuxControl<MODEL>   ModelAux_;
   typedef oops::ModelAuxIncrement<MODEL> ModelAuxIncr_;
   typedef oops::State<MODEL>             State_;
-  typedef oops::Variables<MODEL>         Variables_;
   typedef oops::ModelSpaceCovarianceBase<MODEL> Covariance_;
 
  public:
   static const eckit::Configuration & test()   {return *getInstance().test_;}
   static const Geometry_        & resol()      {return *getInstance().resol_;}
-  static const Variables_       & ctlvars()    {return *getInstance().ctlvars_;}
+  static const oops::Variables  & ctlvars()    {return *getInstance().ctlvars_;}
   static const util::DateTime   & time()       {return *getInstance().time_;}
   static const Covariance_      & covariance() {return *getInstance().B_;}
   static const Model_           & model()      {return *getInstance().model_;}
@@ -88,7 +87,7 @@ template <typename MODEL> class LinearModelFixture : private boost::noncopyable 
     resol_.reset(new Geometry_(resolConfig));
 
     const eckit::LocalConfiguration varConfig(TestEnvironment::config(), "Variables");
-    ctlvars_.reset(new Variables_(varConfig));
+    ctlvars_.reset(new oops::Variables(varConfig));
 
     const eckit::LocalConfiguration iniConf(TestEnvironment::config(), "State");
     xref_.reset(new State_(*resol_, iniConf));
@@ -125,15 +124,15 @@ template <typename MODEL> class LinearModelFixture : private boost::noncopyable 
 
   boost::scoped_ptr<const eckit::LocalConfiguration>   test_;
   boost::scoped_ptr<const eckit::LocalConfiguration>   tlConf_;
-  boost::scoped_ptr<const Geometry_>      resol_;
-  boost::scoped_ptr<const util::DateTime> time_;
-  boost::scoped_ptr<const Variables_>     ctlvars_;
-  boost::scoped_ptr<const State_>         xref_;
-  boost::scoped_ptr<const Model_>         model_;
-  boost::scoped_ptr<const ModelAux_>      bias_;
-  boost::scoped_ptr<const ModelAuxIncr_>  dbias_;
-  boost::scoped_ptr<const Covariance_>    B_;
-  boost::scoped_ptr<const LinearModel_>   tlm_;
+  boost::scoped_ptr<const Geometry_>       resol_;
+  boost::scoped_ptr<const util::DateTime>  time_;
+  boost::scoped_ptr<const oops::Variables> ctlvars_;
+  boost::scoped_ptr<const State_>          xref_;
+  boost::scoped_ptr<const Model_>          model_;
+  boost::scoped_ptr<const ModelAux_>       bias_;
+  boost::scoped_ptr<const ModelAuxIncr_>   dbias_;
+  boost::scoped_ptr<const Covariance_>     B_;
+  boost::scoped_ptr<const LinearModel_>    tlm_;
 };
 
 // =============================================================================

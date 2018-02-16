@@ -25,6 +25,7 @@ public :: qg_locs_registry
 type :: qg_locs
   integer :: nloc
   real(kind=kind_real), allocatable :: xyz(:,:)
+  integer, allocatable :: indx(:)
 end type qg_locs
 
 #define LISTED_TYPE qg_locs
@@ -43,13 +44,16 @@ contains
 
 ! ------------------------------------------------------------------------------
 
-subroutine qg_loc_setup(self, lvec)
+subroutine qg_loc_setup(self, lvec, kobs)
 implicit none
 type(qg_locs), intent(inout) :: self
 type(obs_vect), intent(in) :: lvec
+integer, intent(in) :: kobs(:)
 integer :: jc, jo
 
 self%nloc=lvec%nobs
+allocate(self%indx(self%nloc))
+self%indx(:) = kobs(:)
 allocate(self%xyz(3,self%nloc))
 do jo=1,self%nloc
   do jc=1,3

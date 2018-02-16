@@ -14,6 +14,7 @@
 #include <string>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/base/Variables.h"
 #include "util/Logger.h"
 #include "model/GomQG.h"
 #include "model/LocationsQG.h"
@@ -22,7 +23,6 @@
 #include "model/GeometryQG.h"
 #include "model/IncrementQG.h"
 #include "model/ModelQG.h"
-#include "model/VariablesQG.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
 
@@ -33,7 +33,7 @@ namespace qg {
 // -----------------------------------------------------------------------------
 /// Constructor, destructor
 // -----------------------------------------------------------------------------
-StateQG::StateQG(const GeometryQG & resol, const VariablesQG & vars,
+StateQG::StateQG(const GeometryQG & resol, const oops::Variables & vars,
                  const util::DateTime & vt)
   : fields_(new FieldsQG(resol, vars, vt)), stash_()
 {
@@ -44,10 +44,8 @@ StateQG::StateQG(const GeometryQG & resol, const eckit::Configuration & file)
   : fields_(), stash_()
 {
 // Should get variables from file. YT
-  eckit::LocalConfiguration modelvars;
-  modelvars.set("variables", "cv");
-  VariablesQG vars(modelvars);
-// Should get variables from file. YT
+  const std::vector<std::string> vv{"x","bc"};
+  oops::Variables vars(vv);
   fields_.reset(new FieldsQG(resol, vars, util::DateTime()));
   fields_->read(file);
 
@@ -75,10 +73,8 @@ StateQG::~StateQG() {
 // -----------------------------------------------------------------------------
 void StateQG::activateModel() {
 // Should get variables from model. YT
-  eckit::LocalConfiguration modelvars;
-  modelvars.set("variables", "nl");
-  VariablesQG vars(modelvars);
-// Should get variables from model. YT
+  const std::vector<std::string> vv{"x","q","u","v","bc"};
+  oops::Variables vars(vv);
   stash_.reset(new FieldsQG(*fields_, vars));
   swap(fields_, stash_);
   ASSERT(fields_);
@@ -105,7 +101,8 @@ StateQG & StateQG::operator=(const StateQG & rhs) {
 // -----------------------------------------------------------------------------
 /// Interpolate to observation location
 // -----------------------------------------------------------------------------
-void StateQG::interpolate(const LocationsQG & locs, const VariablesQG & vars, GomQG & cols) const {
+void StateQG::interpolate(const LocationsQG & locs, const oops::Variables & vars,
+                          GomQG & cols) const {
   fields_->interpolate(locs, vars, cols);
 }
 // -----------------------------------------------------------------------------

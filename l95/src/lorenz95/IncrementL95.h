@@ -28,12 +28,15 @@ namespace eckit {
   class Configuration;
 }
 
+namespace oops {
+  class Variables;
+}
+
 namespace lorenz95 {
   class GomL95;
   class LocsL95;
   class ModelBiasCorrection;
   class StateL95;
-  class NoVariables;
 
 /// Increment Class: Difference between two states
 /*!
@@ -50,7 +53,7 @@ class IncrementL95 : public util::Printable,
   static const std::string classname() {return "lorenz95::IncrementL95";}
 
 /// Constructor, destructor
-  IncrementL95(const Resolution &, const NoVariables &, const util::DateTime &);
+  IncrementL95(const Resolution &, const oops::Variables &, const util::DateTime &);
   IncrementL95(const Resolution &, const IncrementL95 &);
   IncrementL95(const IncrementL95 &, const bool);
   virtual ~IncrementL95();
@@ -69,8 +72,8 @@ class IncrementL95 : public util::Printable,
   void random();
 
 /// Interpolate to observation location
-  void interpolateTL(const LocsL95 &, const NoVariables &, GomL95 &) const;
-  void interpolateAD(const LocsL95 &, const NoVariables &, const GomL95 &);
+  void interpolateTL(const LocsL95 &, const oops::Variables &, GomL95 &) const;
+  void interpolateAD(const LocsL95 &, const oops::Variables &, const GomL95 &);
 
 // Utilities
   void read(const eckit::Configuration &);

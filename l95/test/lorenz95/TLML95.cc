@@ -62,7 +62,7 @@ BOOST_FIXTURE_TEST_SUITE(test_tlmL95, TlmTestFixture)
     // construct a StateL95 object
     std::string date_string("2014-09-12T09:35:00Z");
     util::DateTime dt(date_string);
-    oops::Variables vars(util::emptyConfig());
+    oops::Variables vars();
     boost::scoped_ptr<lorenz95::StateL95> stateL95(new lorenz95::StateL95(*resol_, vars, dt));
 
     // construct a ModelBias object

@@ -11,6 +11,7 @@
 #include "model/ObsWSpeedTLAD.h"
 
 #include "eckit/config/Configuration.h"
+#include "oops/base/Variables.h"
 #include "model/GomQG.h"
 #include "model/ObsBias.h"
 #include "model/ObsBiasIncrement.h"
@@ -27,14 +28,12 @@ static oops::LinearObsOpMaker<QgTraits, ObsWSpeedTLAD> makerWSpeedTL_("WSpeed");
 // -----------------------------------------------------------------------------
 
 ObsWSpeedTLAD::ObsWSpeedTLAD(const ObsSpaceQG & odb, const eckit::Configuration & config)
-  : keyOperWspeed_(0), traj_(), varin_()
+  : keyOperWspeed_(0), traj_(), varin_(std::vector<std::string>{"u","v"})
 {
   const eckit::Configuration * configc = &config;
   qg_wspeed_setup_f90(keyOperWspeed_, &configc);
-  int keyVarin;
-  qg_obsoper_inputs_f90(keyOperWspeed_, keyVarin);
-  varin_.reset(new VariablesQG(keyVarin));
-  qg_wspeed_gettraj_f90(keyOperWspeed_, odb.nobs(), traj_.toFortran());
+  const VariablesQG varqg(varin_);
+  qg_wspeed_gettraj_f90(keyOperWspeed_, odb.nobs(), varqg.toFortran(), traj_.toFortran());
   oops::Log::trace() << "ObsWSpeedTLAD created" << std::endl;
 }
 

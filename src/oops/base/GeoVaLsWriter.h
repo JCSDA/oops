@@ -30,6 +30,7 @@ class GeoVaLsWriter : public FilterBase<MODEL> {
   GeoVaLsWriter(const eckit::Configuration & conf) : conf_(conf) {}
   ~GeoVaLsWriter() {}
 
+  void priorFilter(const ObsSpace_ &) const override {}
   void postFilter(const GeoVaLs_ & gv, const ObsVector_ &, const ObsSpace_ &) const override {
     const double zz = sqrt(dot_product(gv, gv));
     Log::debug() << "GeoVaLsWriter norm = " << zz << std::endl;

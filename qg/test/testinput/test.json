@@ -11,7 +11,7 @@
     "bc": "1"
   },
   "variables": {
-    "variables": "ci"
+    "variables": ["x"]
   },
   "Covariance": {
     "covariance": "static",

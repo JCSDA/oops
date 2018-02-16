@@ -17,10 +17,10 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/PostProcessor.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Locations.h"
-#include "oops/interface/Variables.h"
 #include "util/DateTime.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
@@ -39,7 +39,6 @@ class State : public util::Printable,
   typedef Geometry<MODEL>            Geometry_;
   typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef Locations<MODEL>           Locations_;
-  typedef Variables<MODEL>           Variables_;
 
  public:
   static const std::string classname() {return "oops::State";}
@@ -56,7 +55,7 @@ class State : public util::Printable,
   const State_ & state() const {return *state_;}
 
 /// Interpolate to observation location
-  void interpolate(const Locations_ &, const Variables_ &, GeoVaLs_ &) const;
+  void interpolate(const Locations_ &, const Variables &, GeoVaLs_ &) const;
 
 /// Time
   const util::DateTime validTime() const {return state_->validTime();}
@@ -69,7 +68,7 @@ class State : public util::Printable,
 
  protected:
 /// Protected methods are for Accumulator. Could we find a better design?
-  State(const Geometry_ &, const Variables_ &, const util::DateTime &);
+  State(const Geometry_ &, const Variables &, const util::DateTime &);
   void zero();
   void accumul(const double &, const State &);
 
@@ -81,12 +80,12 @@ class State : public util::Printable,
 // =============================================================================
 
 template<typename MODEL>
-State<MODEL>::State(const Geometry_ & resol, const Variables_ & vars,
+State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
                     const util::DateTime & time) : state_()
 {
   Log::trace() << "State<MODEL>::State starting" << std::endl;
   util::Timer timer(classname(), "State");
-  state_.reset(new State_(resol.geometry(), vars.variables(), time));
+  state_.reset(new State_(resol.geometry(), vars, time));
   Log::trace() << "State<MODEL>::State done" << std::endl;
 }
 
@@ -147,11 +146,11 @@ State<MODEL> & State<MODEL>::operator=(const State & rhs) {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void State<MODEL>::interpolate(const Locations_ & locs, const Variables_ & vars,
+void State<MODEL>::interpolate(const Locations_ & locs, const Variables & vars,
                                GeoVaLs_ & gvals) const {
   Log::trace() << "State<MODEL>::interpolate starting" << std::endl;
   util::Timer timer(classname(), "interpolate");
-  state_->interpolate(locs.locations(), vars.variables(), gvals.geovals());
+  state_->interpolate(locs.locations(), vars, gvals.geovals());
   Log::trace() << "State<MODEL>::interpolate done" << std::endl;
 }
 

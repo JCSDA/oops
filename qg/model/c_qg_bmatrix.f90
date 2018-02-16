@@ -8,19 +8,46 @@
 
 ! ------------------------------------------------------------------------------
 
+!> Setup for the QG model's background error covariance matrix
+
+subroutine c_qg_b_setup(c_key_self, c_conf, c_key_geom) &
+          & bind (c,name='qg_b_setup_f90')
+
+use iso_c_binding
+use qg_covariance_mod
+use qg_geom_mod
+
+implicit none
+integer(c_int), intent(inout) :: c_key_self   !< The background covariance structure
+type(c_ptr), intent(in)    :: c_conf     !< The configuration
+integer(c_int), intent(in) :: c_key_geom !< Geometry
+type(qg_3d_covar_config), pointer :: self
+type(qg_geom),  pointer :: geom
+
+call qg_geom_registry%get(c_key_geom, geom)
+call qg_3d_cov_registry%init()
+call qg_3d_cov_registry%add(c_key_self)
+call qg_3d_cov_registry%get(c_key_self, self)
+
+call qg_3d_covar_setup(c_conf, geom, self)
+
+end subroutine c_qg_b_setup
+
+! ------------------------------------------------------------------------------
 !> Delete for the QG model's background error covariance matrix
 
-subroutine c_qg_b_delete(c_conf) bind (c,name='qg_b_delete_f90')
+subroutine c_qg_b_delete(c_key_self) bind (c,name='qg_b_delete_f90')
 
 use iso_c_binding
 use qg_covariance_mod
 
 implicit none
-type(c_ptr), value :: c_conf !< The background covariance structure
-integer(c_int), pointer :: f_conf
+integer(c_int), intent(inout) :: c_key_self  !< The background covariance structure
+type(qg_3d_covar_config), pointer :: self
 
-call c_f_pointer(c_conf,f_conf)
-call qg_3d_covar_delete(f_conf)
+call qg_3d_cov_registry%get(c_key_self,self)
+call qg_3d_covar_delete(self)
+call qg_3d_cov_registry%remove(c_key_self)
 
 end subroutine c_qg_b_delete
 
@@ -125,32 +152,5 @@ call qg_3d_covar_sqrt_mult(conf%nx,conf%ny,xout,xctl,conf)
 deallocate(xctl)
 
 end subroutine c_qg_b_randomize
-
-! ------------------------------------------------------------------------------
-
-!> Setup for the QG model's background error covariance matrix
-
-subroutine c_qg_b_setup(c_key_conf, c_model, c_key_geom) &
-          & bind (c,name='qg_b_setup_f90')
-
-use iso_c_binding
-use qg_covariance_mod
-use qg_geom_mod
-
-implicit none
-integer(c_int), intent(inout) :: c_key_conf   !< The background covariance structure
-type(c_ptr), intent(in)    :: c_model  !< The configuration
-integer(c_int), intent(in) :: c_key_geom !< Geometry
-type(qg_3d_covar_config), pointer :: conf
-type(qg_geom),  pointer :: geom
-
-call qg_geom_registry%get(c_key_geom, geom)
-call qg_3d_cov_registry%init()
-call qg_3d_cov_registry%add(c_key_conf)
-call qg_3d_cov_registry%get(c_key_conf, conf)
-
-call qg_3d_covar_setup(c_model, geom, conf)
-
-end subroutine c_qg_b_setup
 
 ! ------------------------------------------------------------------------------

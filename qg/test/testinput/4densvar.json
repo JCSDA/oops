@@ -14,7 +14,7 @@
     "window_begin": "2010-01-01T00:00:00Z",
     "window_length": "PT12H",
     "window_sub": "PT1H",
-    "variables": "ci",
+    "variables": ["x"],
     "Jb": {
       "Background": {
         "state": [
@@ -86,7 +86,7 @@
             "covariance": "ensemble",
             "members": "5",
             "variables": {
-              "variables": "ci"
+              "variables": ["x"]
             },
             "date": "2010-01-01T00:00:00Z",
             "localization": {
@@ -122,7 +122,7 @@
             "covariance": "ensemble",
             "members": "5",
             "variables": {
-              "variables": "ci"
+              "variables": ["x"]
             },
             "date": "2010-01-01T01:00:00Z",
             "localization": {
@@ -158,7 +158,7 @@
             "covariance": "ensemble",
             "members": "5",
             "variables": {
-              "variables": "ci"
+              "variables": ["x"]
             },
             "date": "2010-01-01T02:00:00Z",
             "localization": {
@@ -194,7 +194,7 @@
             "covariance": "ensemble",
             "members": "5",
             "variables": {
-              "variables": "ci"
+              "variables": ["x"]
             },
             "date": "2010-01-01T03:00:00Z",
             "localization": {
@@ -230,7 +230,7 @@
             "covariance": "ensemble",
             "members": "5",
             "variables": {
-              "variables": "ci"
+              "variables": ["x"]
             },
             "date": "2010-01-01T04:00:00Z",
             "localization": {
@@ -266,7 +266,7 @@
             "covariance": "ensemble",
             "members": "5",
             "variables": {
-              "variables": "ci"
+              "variables": ["x"]
             },
             "date": "2010-01-01T05:00:00Z",
             "localization": {
@@ -302,7 +302,7 @@
             "covariance": "ensemble",
             "members": "5",
             "variables": {
-              "variables": "ci"
+              "variables": ["x"]
             },
             "date": "2010-01-01T06:00:00Z",
             "localization": {
@@ -338,7 +338,7 @@
             "covariance": "ensemble",
             "members": "5",
             "variables": {
-              "variables": "ci"
+              "variables": ["x"]
             },
             "date": "2010-01-01T07:00:00Z",
             "localization": {
@@ -374,7 +374,7 @@
             "covariance": "ensemble",
             "members": "5",
             "variables": {
-              "variables": "ci"
+              "variables": ["x"]
             },
             "date": "2010-01-01T08:00:00Z",
             "localization": {
@@ -410,7 +410,7 @@
             "covariance": "ensemble",
             "members": "5",
             "variables": {
-              "variables": "ci"
+              "variables": ["x"]
             },
             "date": "2010-01-01T09:00:00Z",
             "localization": {
@@ -446,7 +446,7 @@
             "covariance": "ensemble",
             "members": "5",
             "variables": {
-              "variables": "ci"
+              "variables": ["x"]
             },
             "date": "2010-01-01T10:00:00Z",
             "localization": {
@@ -482,7 +482,7 @@
             "covariance": "ensemble",
             "members": "5",
             "variables": {
-              "variables": "ci"
+              "variables": ["x"]
             },
             "date": "2010-01-01T11:00:00Z",
             "localization": {
@@ -518,7 +518,7 @@
             "covariance": "ensemble",
             "members": "5",
             "variables": {
-              "variables": "ci"
+              "variables": ["x"]
             },
             "date": "2010-01-01T12:00:00Z",
             "localization": {
@@ -608,7 +608,7 @@
     "Jc": [{
       "jcdfi": {
         "type": "DolphChebyshev",
-        "variables": "nl",
+        "variables": ["x","q","u","v","bc"],
         "cutoff": "PT3H",
         "alpha": "0.1"
       }

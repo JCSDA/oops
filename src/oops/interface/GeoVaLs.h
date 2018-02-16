@@ -17,9 +17,8 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
-#include "oops/interface/ObservationSpace.h"
-#include "oops/interface/Variables.h"
-#include "util/DateTime.h"
+#include "oops/base/Variables.h"
+#include "oops/interface/Locations.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 #include "util/Timer.h"
@@ -33,15 +32,13 @@ class GeoVaLs : public util::Printable,
                 private boost::noncopyable,
                 private util::ObjectCounter<GeoVaLs<MODEL> > {
   typedef typename MODEL::GeoVaLs          GeoVaLs_;
-  typedef ObservationSpace<MODEL>          ObsSpace_;
-  typedef Variables<MODEL>                 Variables_;
+  typedef Locations<MODEL>                 Locations_;
 
  public:
   static const std::string classname() {return "oops::GeoVaLs";}
 
-  GeoVaLs(const ObsSpace_ &, const Variables_ &,
-          const util::DateTime &, const util::DateTime &);
-  explicit GeoVaLs(const eckit::Configuration &);
+  GeoVaLs(const Locations_ &, const Variables &);
+  GeoVaLs(const eckit::Configuration &, const Variables &);
   ~GeoVaLs();
 
 /// Interfacing
@@ -51,6 +48,7 @@ class GeoVaLs : public util::Printable,
 /// Linear algebra and utilities, mostly for writing tests
   void zero();
   void random();
+  GeoVaLs & operator*=(const double &);
   double dot_product_with(const GeoVaLs &) const;
   void read(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;
@@ -63,21 +61,20 @@ class GeoVaLs : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-GeoVaLs<MODEL>::GeoVaLs(const ObsSpace_ & os, const Variables_ & var,
-                        const util::DateTime & t1, const util::DateTime & t2) : gvals_() {
+GeoVaLs<MODEL>::GeoVaLs(const Locations_ & locs, const Variables & vars) : gvals_() {
   Log::trace() << "GeoVaLs<MODEL>::GeoVaLs starting" << std::endl;
   util::Timer timer(classname(), "GeoVaLs");
-  gvals_.reset(new GeoVaLs_(os.observationspace(), var.variables(), t1, t2));
+  gvals_.reset(new GeoVaLs_(locs.locations(), vars));
   Log::trace() << "GeoVaLs<MODEL>::GeoVaLs done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-GeoVaLs<MODEL>::GeoVaLs(const eckit::Configuration & conf) : gvals_() {
+GeoVaLs<MODEL>::GeoVaLs(const eckit::Configuration & conf, const Variables & vars) : gvals_() {
   Log::trace() << "GeoVaLs<MODEL>::GeoVaLs read starting" << std::endl;
   util::Timer timer(classname(), "GeoVaLs");
-  gvals_.reset(new GeoVaLs_(conf));
+  gvals_.reset(new GeoVaLs_(conf, vars));
   Log::trace() << "GeoVaLs<MODEL>::GeoVaLs read done" << std::endl;
 }
 
@@ -100,6 +97,17 @@ double GeoVaLs<MODEL>::dot_product_with(const GeoVaLs & other) const {
   double zz = gvals_->dot_product_with(*other.gvals_);
   Log::trace() << "GeoVaLs<MODEL>::dot_product_with done" << std::endl;
   return zz;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+GeoVaLs<MODEL> & GeoVaLs<MODEL>::operator*=(const double & zz) {
+  Log::trace() << "GeoVaLs<MODEL>::operator*= starting" << std::endl;
+  util::Timer timer(classname(), "operator*=");
+  *gvals_ *= zz;
+  Log::trace() << "GeoVaLs<MODEL>::operator*= done" << std::endl;
+  return *this;
 }
 
 // -----------------------------------------------------------------------------

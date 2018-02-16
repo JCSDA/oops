@@ -15,7 +15,7 @@
     "window_length": "P1D",
     "window_sub": "PT12H",
     "tlforcing": "on",
-    "variables": "ci",
+    "variables": ["x"],
     "Jb": {
       "Background": {
         "state": [
@@ -103,7 +103,7 @@
     "Jc": [{
       "jcdfi": {
         "type": "DolphChebyshev",
-        "variables": "x",
+        "variables": ["x"],
         "cutoff": "PT3H",
         "alpha": "1.0"
       }

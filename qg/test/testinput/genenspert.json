@@ -5,7 +5,7 @@
     "bc": "1"
   },
   "variables": {
-    "variables": "ci"
+    "variables": ["x"]
   },
   "model": {
     "tstep": "PT1H",
