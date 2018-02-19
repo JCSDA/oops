@@ -126,7 +126,7 @@ template <typename MODEL> void testIncrementTriangle() {
   double dot3 = dx2.norm();
   BOOST_CHECK(dot3 > 0.0);
 
-  BOOST_CHECK(dot3 < dot1 + dot2);
+  BOOST_CHECK(dot3 <= dot1 + dot2);
 }
 
 // -----------------------------------------------------------------------------
