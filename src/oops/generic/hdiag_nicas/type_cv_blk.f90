@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! Module: type_cv
+! Module: type_cv_blk
 !> Purpose: control vector derived type
 !> <br>
 !> Author: Benjamin Menetrier
@@ -8,19 +8,18 @@
 !> <br>
 !> Copyright © 2017 METEO-FRANCE
 !----------------------------------------------------------------------
-module type_cv
+module type_cv_blk
 
 use tools_kinds, only: kind_real
-use type_cv_blk, only: cv_blk_type
 
 implicit none
 
-! Control vector derived type
-type cv_type
-   type(cv_blk_type),allocatable :: blk(:) !< Control variable blocks
-end type cv_type
+! Control vector block derived type
+type cv_blk_type
+   real(kind_real),allocatable :: alpha(:) !< Control vector field
+end type cv_blk_type
 
 private
-public :: cv_type
+public :: cv_blk_type
 
-end module type_cv
+end module type_cv_blk

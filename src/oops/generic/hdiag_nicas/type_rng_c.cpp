@@ -4,93 +4,57 @@
 /// Licensing: this code is distributed under the CeCILL-C license
 /// Copyright © 2017 METEO-FRANCE
 // ----------------------------------------------------------------------
-#include "type_randgen.h"
-#include "type_randgen.hpp"
+#include "type_rng.h"
+#include "type_rng.hpp"
 #include "external/Cover_Tree.h"
 #include "external/Cover_Tree_Point.h"
 #include <ostream>
 #include <iomanip>
 #include <cmath>
 #include <climits>
-#if __cplusplus > 199711L
-#include <random>
-#endif
 
 using namespace std;
 
 // Constructor
-randGen::randGen(unsigned long int default_seed) {
+rng::rng(unsigned long int default_seed) {
     // Initialize random number generator
     if (default_seed==0) {
-#if __cplusplus > 199711L
-        std::random_device rd;
-        gen_ = new std::mt19937(rd());
-        version_ = 1;
-#else
         seed_ = (unsigned long int)clock();
-        version_ = 0;
-#endif
     }
     else {
         seed_ = default_seed;
-        version_ = 0;
     }
 }
 
 // Destructor
-randGen::~randGen(){}
+rng::~rng(){}
 
 // Reseed generator
-void randGen::reseed_randgen(unsigned long int seed) {
-#if __cplusplus > 199711L
-    gen_ = new std::mt19937(seed);
-#endif
+void rng::rng_reseed(unsigned long int seed) {
     seed_ = seed;
     return;
 }
 
 // Random integer generator
-void randGen::rand_integer(int binf, int bsup, int *ir) {
-    if (version_==1) {
-#if __cplusplus > 199711L
-        // Initialize uniform distribution
-        std::uniform_int_distribution<int> dis(binf,bsup);
-
-        // Generate random integer
-        *ir=dis(*gen_);
-#endif
-    }
-    else {
-        // Generate random integer
-        int range=bsup-binf+1;
-        double r;
-        r = xorshift32();
-        r *= range;
-        *ir=binf+(int)r;
-    }
+void rng::rand_integer(int binf, int bsup, int *ir) {
+    // Generate random integer
+    int range=bsup-binf+1;
+    double r;
+    r = lcg();
+    r *= range;
+    *ir=binf+(int)r;
     return;
 }
 
 // Random real generator
-void randGen::rand_real(double binf, double bsup, double *rr) {
-    if (version_==1) {
-#if __cplusplus > 199711L
-        // Initialize uniform distribution
-        std::uniform_real_distribution<double> dis(binf,bsup);
-
-        // Generate random real
-        *rr=dis(*gen_);
-#endif
-    }
-    else {
-       // Generate random real
-       *rr=binf+xorshift32()*(bsup-binf);
-    }
+void rng::rand_real(double binf, double bsup, double *rr) {
+   // Generate random real
+   *rr=binf+lcg()*(bsup-binf);
     return;
 }
 
 // Sampling initialization
-void randGen::initialize_sampling(int n, double lon[], double lat[], int mask[], double rh[], int ntry, int nrep, int ns, int ihor[]) {
+void rng::initialize_sampling(int n, double lon[], double lat[], int mask[], double rh[], int ntry, int nrep, int ns, int ihor[]) {
     // Declaration
     int ir;
 
@@ -218,10 +182,8 @@ void randGen::initialize_sampling(int n, double lon[], double lat[], int mask[],
     return;
 }
 
-double randGen::xorshift32() {
-    seed_ ^= seed_ << 13;
-    seed_ ^= seed_ >> 17;
-    seed_ ^= seed_ << 5;
-    double x=abs((double)seed_/(double)ULONG_MAX);
+double rng::lcg() {
+    seed_ = (a_*seed_+c_)%m_;
+    double x=(double)seed_/(double)(m_-1);
     return x;
 }

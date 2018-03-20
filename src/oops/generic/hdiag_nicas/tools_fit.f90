@@ -10,11 +10,12 @@
 !----------------------------------------------------------------------
 module tools_fit
 
-use tools_const, only:  gc99
 use tools_display, only: msgerror,msgwarning
+use tools_func, only:  gc99
 use tools_kinds, only: kind_real
 use tools_missing, only: msr,isnotmsr,isanynotmsr
 use type_mpl, only: mpl
+
 implicit none
 
 integer,parameter :: niter = 50 !< Maximum number of iterations for the threshold definition

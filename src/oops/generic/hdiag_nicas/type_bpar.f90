@@ -12,12 +12,12 @@ module type_bpar
 
 use tools_kinds,only: kind_real
 use tools_missing, only: msi,msr
-use type_geom, only: geomtype
-use type_nam, only: namtype
+use type_geom, only: geom_type
+use type_nam, only: nam_type
 
 implicit none
 
-type bpartype
+type bpar_type
    ! Block parameters
    integer :: nb                                   !< Number of blocks
    integer,allocatable :: nl0r(:)                  !< Effective number of levels
@@ -36,11 +36,12 @@ type bpartype
    integer,allocatable :: b_to_v2(:)               !< Block to second variable
    integer,allocatable :: b_to_ts1(:)              !< Block to first timeslot
    integer,allocatable :: b_to_ts2(:)              !< Block to second timeslot
-end type bpartype
+contains
+   procedure :: alloc => bpar_alloc
+end type bpar_type
 
 private
-public :: bpartype
-public :: bpar_alloc
+public :: bpar_type
 
 contains
 
@@ -48,14 +49,14 @@ contains
 ! Subroutine: bpar_alloc
 !> Purpose: allocate general parameters
 !----------------------------------------------------------------------
-subroutine bpar_alloc(nam,geom,bpar)
+subroutine bpar_alloc(bpar,nam,geom)
 
 implicit none
 
 ! Passed variable
-type(namtype),intent(in) :: nam      !< Namelist
-type(geomtype),intent(in) :: geom    !< Geometry
-type(bpartype),intent(inout) :: bpar !< Block parameters
+class(bpar_type),intent(inout) :: bpar !< Block parameters
+type(nam_type),intent(in) :: nam       !< Namelist
+type(geom_type),intent(in) :: geom     !< Geometry
 
 ! Local variables
 integer :: ib,iv,jv,its,jts,il0r,jl0,il0off
@@ -204,7 +205,7 @@ else
                   bpar%nicas_block(ib) = .false.
                   bpar%cv_block(ib) = (iv==jv).and.(its==jts)
                end select
-               bpar%fit_block(ib) = bpar%diag_block(ib).and.(iv==jv).and.(its==jts).and.(trim(nam%fit_type)/='none')
+               bpar%fit_block(ib) = bpar%diag_block(ib).and.(iv==jv).and.(its==jts).and.(trim(nam%minim_algo)/='none')
                if (nam%local_diag) bpar%fit_block(ib) = bpar%fit_block(ib).and.bpar%nicas_block(ib)
 
                ! Blocks information
@@ -265,7 +266,7 @@ else
       bpar%nicas_block(ib) = .true.
       bpar%cv_block(ib) = .false.
    end select
-   bpar%fit_block(ib) = bpar%diag_block(ib).and.(trim(nam%fit_type)/='none')
+   bpar%fit_block(ib) = bpar%diag_block(ib).and.(trim(nam%minim_algo)/='none')
    if (nam%local_diag) bpar%fit_block(ib) = bpar%fit_block(ib).and.bpar%nicas_block(ib)
 
    ! Blocks information

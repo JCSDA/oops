@@ -14,17 +14,16 @@ use unstructured_grid_mod
 use driver_hdiag, only: run_hdiag
 use driver_nicas, only: run_nicas
 use model_oops, only: model_oops_coord
-use nicas_apply_localization, only: apply_localization
 use tools_const, only: req
 use tools_display, only: listing_setup,msgerror
 use tools_missing, only: msi,msr
-use type_bdata, only: bdatatype
-use type_bpar, only: bpartype,bpar_alloc
-use type_geom, only: geomtype,compute_grid_mesh
+use type_bpar, only: bpar_type
+use type_cmat, only: cmat_type
+use type_geom, only: geom_type
 use type_mpl, only: mpl,mpl_start
-use type_nam, only: namtype,namcheck
-use type_ndata, only: ndatatype
-use type_randgen, only: create_randgen
+use type_nam, only: nam_type
+use type_nicas, only: nicas_type
+use type_rng, only: rng
 
 implicit none
 private
@@ -35,11 +34,11 @@ public hdiag_nicas, create_hdiag_nicas, delete_hdiag_nicas, hdiag_nicas_multiply
 !>  Derived type containing the data
 
 type hdiag_nicas
-  type(namtype) :: nam
-  type(geomtype) :: geom
-  type(bpartype) :: bpar
-  type(bdatatype),allocatable :: bdata(:)
-  type(ndatatype),allocatable :: ndata(:)
+  type(nam_type) :: nam
+  type(geom_type) :: geom
+  type(bpar_type) :: bpar
+  type(cmat_type) :: cmat
+  type(nicas_type) :: nicas
 end type hdiag_nicas
 
 ! ------------------------------------------------------------------------------
@@ -159,6 +158,7 @@ self%geom%nlev = nl0
 self%nam%nl = nl0
 self%nam%nv = nv
 self%nam%nts = nts
+self%nam%timeslot = 0
 self%nam%ens1_ne = ens1_ne
 
 ! Force other namelist variables
@@ -182,7 +182,7 @@ call hdiag_nicas_read_conf(c_conf,self%nam)
 call listing_setup(self%nam%colorlog,self%nam%logpres)
 
 ! Check namelist parameters
-call namcheck(self%nam)
+call self%nam%check
 
 ! Write parallel setup
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
@@ -191,7 +191,7 @@ write(mpl%unit,'(a,i3,a,i2,a)') '--- Parallelization with ',mpl%nproc,' MPI task
 ! Initialize random number generator
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Initialize random number generator'
-call create_randgen(self%nam)
+call rng%create(self%nam)
 
 ! Initialize coordinates
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
@@ -199,12 +199,12 @@ write(mpl%unit,'(a)') '--- Initialize geometry'
 call model_oops_coord(self%geom,lon,lat,area,vunit,imask)
 
 ! Initialize block parameters
-call bpar_alloc(self%nam,self%geom,self%bpar)
+call self%bpar%alloc(self%nam,self%geom)
 
 ! Compute grid mesh
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Compute grid mesh'
-call compute_grid_mesh(self%nam,self%geom)
+call self%geom%compute_grid_mesh(self%nam)
 
 ! Transform ensemble data from vector to array
 allocate(ens1(self%geom%nc0a,self%geom%nl0,self%nam%nv,self%nam%nts,self%nam%ens1_ne))
@@ -218,10 +218,10 @@ do ie=1,self%nam%ens1_ne
 end do
 
 ! Call hybrid_diag driver
-call run_hdiag(self%nam,self%geom,self%bpar,self%bdata,ens1)
+call run_hdiag(self%nam,self%geom,self%bpar,self%cmat,ens1)
 
 ! Call NICAS driver
-call run_nicas(self%nam,self%geom,self%bpar,self%bdata,self%ndata)
+call run_nicas(self%nam,self%geom,self%bpar,self%cmat,self%nicas)
 
 ! Close listing files
 write(mpl%unit,*) 'HDIAG_NICAS setup done'
@@ -234,7 +234,7 @@ end subroutine create_hdiag_nicas
 subroutine hdiag_nicas_read_conf(c_conf,nam)
 implicit none
 type(c_ptr), intent(in) :: c_conf
-type(namtype), intent(inout) :: nam
+type(nam_type), intent(inout) :: nam
 integer :: il,its,ildwh,ildwv,idir
 character(len=3) :: ilchar,itschar,ildwhchar,ildwvchar,idirchar
 
@@ -244,6 +244,7 @@ character(len=3) :: ilchar,itschar,ildwhchar,ildwvchar,idirchar
 nam%prefix = ''
 nam%default_seed = .false.
 nam%load_ensemble = .true.
+nam%use_metis = .false.
 
 ! driver_param default
 nam%method = ''
@@ -262,7 +263,6 @@ nam%new_obsop = .false.
 
 ! model_param default
 nam%logpres = .false.
-nam%transform = .false.
 
 ! sampling_param default
 nam%sam_write = .true.
@@ -289,8 +289,7 @@ call msr(nam%displ_rhflt)
 call msr(nam%displ_tol)
 
 ! fit_param default
-nam%fit_type = ''
-nam%fit_wgt = .false.
+nam%minim_algo = ''
 nam%lhomh = .false.
 nam%lhomv = .false.
 call msr(nam%rvflt)
@@ -304,7 +303,6 @@ call msi(nam%ic_ldwh)
 call msi(nam%nldwv)
 call msr(nam%lon_ldwv)
 call msr(nam%lat_ldwv)
-nam%flt_type = ''
 call msr(nam%diag_rhflt)
 nam%diag_interp = ''
 
@@ -314,6 +312,7 @@ call msr(nam%resol)
 nam%nicas_interp = ''
 nam%network = .false.
 call msi(nam%mpicom)
+call msi(nam%advmode)
 call msi(nam%ndir)
 call msr(nam%londir)
 call msr(nam%latdir)
@@ -349,8 +348,6 @@ nam%new_obsop = integer_to_logical(config_get_int(c_conf,"new_obsop"))
 
 ! model_param
 nam%logpres = integer_to_logical(config_get_int(c_conf,"logpres"))
-nam%transform = integer_to_logical(config_get_int(c_conf,"transform"))
-nam%timeslot = config_get_int(c_conf,"timeslot")
 
 ! sampling_param
 nam%mask_type = config_get_string(c_conf,1024,"mask_type")
@@ -376,8 +373,7 @@ nam%displ_rhflt = config_get_real(c_conf,"displ_rhflt")/req
 nam%displ_tol = config_get_real(c_conf,"displ_tol")
 
 ! fit_param
-nam%fit_type = config_get_string(c_conf,1024,"fit_type")
-nam%fit_wgt = integer_to_logical(config_get_int(c_conf,"fit_wgt"))
+nam%minim_algo = config_get_string(c_conf,1024,"minim_algo")
 nam%lhomh = integer_to_logical(config_get_int(c_conf,"lhomh"))
 nam%lhomv = integer_to_logical(config_get_int(c_conf,"lhomv"))
 nam%rvflt = config_get_real(c_conf,"rvflt")
@@ -395,7 +391,6 @@ do ildwv=1,nam%nldwv
    nam%lon_ldwv(ildwv) = config_get_real(c_conf,"lon_ldwv("//trim(adjustl(ildwvchar))//")")
    nam%lat_ldwv(ildwv) = config_get_real(c_conf,"lat_ldwv("//trim(adjustl(ildwvchar))//")")
 end do
-nam%flt_type = config_get_string(c_conf,1024,"flt_type")
 nam%diag_rhflt = config_get_real(c_conf,"diag_rhflt")/req
 nam%diag_interp = config_get_string(c_conf,1024,"diag_interp")
 
@@ -405,6 +400,7 @@ nam%resol = config_get_real(c_conf,"resol")
 nam%nicas_interp = config_get_string(c_conf,1024,"nicas_interp")
 nam%network = integer_to_logical(config_get_int(c_conf,"network"))
 nam%mpicom = config_get_int(c_conf,"mpicom")
+nam%advmode = config_get_int(c_conf,"advmode")
 nam%ndir = config_get_int(c_conf,"ndir")
 do idir=1,nam%ndir
    write(idirchar,'(i3)') idir
@@ -454,7 +450,7 @@ type(hdiag_nicas), intent(inout) :: self
 type(unstructured_grid), intent(inout) :: ug
 
 ! Apply localization
-call apply_localization(self%nam,self%geom,self%bpar,self%ndata,ug%fld)
+call self%nicas%apply(self%nam,self%geom,self%bpar,ug%fld)
 
 end subroutine hdiag_nicas_multiply
 

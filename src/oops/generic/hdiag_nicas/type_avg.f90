@@ -1,6 +1,6 @@
 !----------------------------------------------------------------------
-! Module: type_avg
-!> Purpose: averaged statistics derived type
+! Module: type_avg.f90
+!> Purpose: average routines
 !> <br>
 !> Author: Benjamin Menetrier
 !> <br>
@@ -10,270 +10,359 @@
 !----------------------------------------------------------------------
 module type_avg
 
+use omp_lib
+use tools_display, only: prog_init,prog_print,peach,black
+use tools_func, only: add,divide
 use tools_kinds, only: kind_real
-use tools_missing, only: msr
-use type_hdata, only: hdatatype
+use tools_missing, only: msr,isnotmsr,isallnotmsr,isanynotmsr
+use tools_qsort, only: qsort
+use type_avg_blk, only: avg_blk_type
+use type_bpar, only: bpar_type
+use type_geom, only: geom_type
+use type_hdata, only: hdata_type
+use type_mom, only: mom_type
 use type_mpl, only: mpl
+use type_nam, only: nam_type
+
 implicit none
 
 ! Averaged statistics derived type
-type avgtype
-   integer :: ne                                     !< Ensemble size
-   integer :: nsub                                   !< Sub-ensembles number
-   integer :: npack                                  !< Pack format size
-   real(kind_real),allocatable :: nc1a(:,:,:)        !< Number of points in subset Sc1 on halo A
-   real(kind_real),allocatable :: m11(:,:,:)         !< Covariance average
-   real(kind_real),allocatable :: m11m11(:,:,:,:,:)  !< Product of covariances average
-   real(kind_real),allocatable :: m2m2(:,:,:,:,:)    !< Product of variances average
-   real(kind_real),allocatable :: m22(:,:,:,:)       !< Fourth-order centered moment average
-   real(kind_real),allocatable :: cor(:,:,:)         !< Correlation average
-   real(kind_real),allocatable :: m11asysq(:,:,:)    !< Squared asymptotic covariance average
-   real(kind_real),allocatable :: m2m2asy(:,:,:)     !< Product of asymptotic variances average
-   real(kind_real),allocatable :: m22asy(:,:,:)      !< Asymptotic fourth-order centered moment average
-   real(kind_real),allocatable :: m11sq(:,:,:)       !< Squared covariance average for several ensemble sizes
-   real(kind_real),allocatable :: m11sta(:,:,:)      !< Ensemble covariance/static covariance product
-   real(kind_real),allocatable :: stasq(:,:,:)       !< Squared static covariance
-   real(kind_real),allocatable :: m11lrm11(:,:,:)    !< LR covariance/HR covariance product average
-   real(kind_real),allocatable :: m11lrm11asy(:,:,:) !< LR covariance/HR asymptotic covariance product average
-end type avgtype
+type avg_type
+   integer :: nc2a                            !< Number of local points
+   integer :: ne                              !< Ensemble size
+   integer :: nsub                            !< Number of sub-ensembles
+   type(avg_blk_type),allocatable :: blk(:,:) !< Averaged statistics blocks
+contains
+   procedure :: alloc => avg_alloc
+   procedure :: compute => avg_compute
+   procedure :: compute_hyb => avg_compute_hyb
+   procedure :: copy_wgt => avg_copy_wgt
+   procedure :: compute_bwavg => avg_compute_bwavg
+end type avg_type
 
 private
-public :: avgtype
-public :: avg_alloc,avg_dealloc,avg_copy,avg_pack,avg_unpack
+public :: avg_type
 
 contains
 
 !----------------------------------------------------------------------
 ! Subroutine: avg_alloc
-!> Purpose: averaged statistics object allocation
+!> Purpose: allocation
 !----------------------------------------------------------------------
-subroutine avg_alloc(hdata,ib,avg)
+subroutine avg_alloc(avg,nam,geom,bpar,hdata,ne,nsub)
 
 implicit none
 
 ! Passed variables
-type(hdatatype),intent(in) :: hdata !< HDIAG data
-integer,intent(in) :: ib            !< Block index
-type(avgtype),intent(inout) :: avg  !< Averaged statistics
+class(avg_type),intent(inout) :: avg !< Averaged statistics
+type(nam_type),intent(in) :: nam     !< Namelist
+type(geom_type),intent(in) :: geom   !< Geometry
+type(bpar_type),intent(in) :: bpar   !< Block parameters
+type(hdata_type),intent(in) :: hdata !< HDIAG data
+integer,intent(in) :: ne !<
+integer,intent(in) :: nsub !<
 
-! Associate
-associate(nam=>hdata%nam,geom=>hdata%geom,bpar=>hdata%bpar)
+! Local variables
+integer :: ib,ic2a
+
+! Set attributes
+if (nam%local_diag) then
+   avg%nc2a = hdata%nc2a
+else
+   avg%nc2a = 0
+end if
+avg%ne = ne
+avg%nsub = nsub
 
 ! Allocation
-if (.not.allocated(avg%nc1a)) then
-   allocate(avg%nc1a(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
-   allocate(avg%m11(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
-   allocate(avg%m11m11(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,avg%nsub,avg%nsub))
-   allocate(avg%m2m2(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,avg%nsub,avg%nsub))
-   if (.not.nam%gau_approx) allocate(avg%m22(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,avg%nsub))
-   allocate(avg%cor(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
-   allocate(avg%m11asysq(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
-   allocate(avg%m2m2asy(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
-   if (.not.nam%gau_approx) allocate(avg%m22asy(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
-   allocate(avg%m11sq(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
-   select case (trim(nam%method))
-   case ('hyb-avg','hyb-rnd')
-      allocate(avg%m11sta(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
-      allocate(avg%stasq(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
-   case ('dual-ens')
-      allocate(avg%m11lrm11(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
-      allocate(avg%m11lrm11asy(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
-   end select
-end if
-
-! Initialization
-avg%npack = (3+2*avg%nsub**2)*bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0
-if (.not.nam%gau_approx) avg%npack = avg%npack+avg%nsub*bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0
-call msr(avg%nc1a)
-call msr(avg%m11)
-call msr(avg%m11m11)
-call msr(avg%m2m2)
-if (.not.nam%gau_approx) call msr(avg%m22)
-call msr(avg%cor)
-call msr(avg%m11asysq)
-call msr(avg%m2m2asy)
-if (.not.nam%gau_approx) call msr(avg%m22asy)
-call msr(avg%m11sq)
-select case (trim(nam%method))
-case ('hyb-avg','hyb-rnd')
-   call msr(avg%m11sta)
-   call msr(avg%stasq)
-case ('dual-ens')
-   call msr(avg%m11lrm11)
-   call msr(avg%m11lrm11asy)
-end select
-
-! End associate
-end associate
+allocate(avg%blk(0:avg%nc2a,bpar%nb+1))
+do ib=1,bpar%nb+1
+   if (bpar%diag_block(ib)) then
+      do ic2a=0,avg%nc2a
+         call avg%blk(ic2a,ib)%alloc(nam,geom,bpar,hdata,ic2a,ib,ne,nsub)
+      end do
+   end if
+end do
 
 end subroutine avg_alloc
 
 !----------------------------------------------------------------------
-! Subroutine: avg_dealloc
-!> Purpose: averaged statistics object deallocation
+! Subroutine: avg_compute
+!> Purpose: compute averaged statistics
 !----------------------------------------------------------------------
-subroutine avg_dealloc(avg)
+subroutine avg_compute(avg,nam,geom,bpar,hdata,mom,ne)
 
 implicit none
 
 ! Passed variables
-type(avgtype),intent(inout) :: avg  !< Averaged statistics
+class(avg_type),intent(inout) :: avg !< Averaged statistics
+type(nam_type),intent(in) :: nam     !< Namelist
+type(geom_type),intent(in) :: geom   !< Geometry
+type(bpar_type),intent(in) :: bpar   !< Block parameters
+type(hdata_type),intent(in) :: hdata !< HDIAG data
+type(mom_type),intent(in) :: mom     !< Moments
+integer,intent(in) :: ne             !< Ensemble size
+
+! Local variables
+integer :: ib,ic2a,progint,il0
+logical,allocatable :: done(:)
 
 ! Allocation
-if (allocated(avg%nc1a)) deallocate(avg%nc1a)
-if (allocated(avg%m11)) deallocate(avg%m11)
-if (allocated(avg%m11m11)) deallocate(avg%m11m11)
-if (allocated(avg%m2m2)) deallocate(avg%m2m2)
-if (allocated(avg%cor)) deallocate(avg%cor)
-if (allocated(avg%m11asysq)) deallocate(avg%m11asysq)
-if (allocated(avg%m2m2asy)) deallocate(avg%m2m2asy)
-if (allocated(avg%m11sq)) deallocate(avg%m11sq)
-if (allocated(avg%m11sta)) deallocate(avg%m11sta)
-if (allocated(avg%stasq)) deallocate(avg%stasq)
-if (allocated(avg%m11lrm11)) deallocate(avg%m11lrm11)
-if (allocated(avg%m11lrm11asy)) deallocate(avg%m11lrm11asy)
+call avg%alloc(nam,geom,bpar,hdata,mom%ne,mom%nsub)
+allocate(done(0:avg%nc2a))
 
-end subroutine avg_dealloc
+do ib=1,bpar%nb
+   if (bpar%diag_block(ib)) then
+      write(mpl%unit,'(a10,a,a,a)',advance='no') '','Block ',trim(bpar%blockname(ib)),':'
+
+      ! Initialization
+      call prog_init(progint,done)
+
+      do ic2a=0,avg%nc2a
+         ! Compute averaged statistics
+         call avg%blk(ic2a,ib)%compute(nam,geom,bpar,hdata,mom%blk(ib),ne)
+
+         ! Update
+         done(ic2a) = .true.
+         call prog_print(progint,done)
+      end do
+      write(mpl%unit,'(a)') '100%'
+
+      ! Print global results
+      do il0=1,geom%nl0
+         if (isnotmsr(avg%blk(0,ib)%cor(1,bpar%il0rz(il0,ib),il0))) write(mpl%unit,'(a13,a,i3,a4,a21,a,e9.2,a,a,a,f8.2,a)') '', &
+       & 'Level: ',nam%levs(il0),' ~> ','raw cov. / cor. (1): ',trim(peach),avg%blk(0,ib)%m11(1,bpar%il0rz(il0,ib),il0), &
+       & trim(black),' / ',trim(peach),avg%blk(0,ib)%cor(1,bpar%il0rz(il0,ib),il0),trim(black)
+      end do
+   end if
+end do
+
+end subroutine avg_compute
 
 !----------------------------------------------------------------------
-! Subroutine: avg_copy
-!> Purpose: averaged statistics object copy
+! Subroutine: avg_compute_hyb
+!> Purpose: compute hybrid averaged statistics
 !----------------------------------------------------------------------
-subroutine avg_copy(hdata,ib,avg_in,avg_out)
+subroutine avg_compute_hyb(avg_2,nam,geom,bpar,hdata,mom_1,mom_2,avg_1)
 
 implicit none
 
 ! Passed variables
-type(hdatatype),intent(in) :: hdata    !< HDIAG data
-integer,intent(in) :: ib               !< Block index
-type(avgtype),intent(in) :: avg_in     !< Averaged statistics, input
-type(avgtype),intent(inout) :: avg_out !< Averaged statistics, output
+class(avg_type),intent(inout) :: avg_2 !< Ensemble 2 averaged statistics
+type(nam_type),intent(in) :: nam       !< Namelist
+type(geom_type),intent(in) :: geom     !< Geometry
+type(bpar_type),intent(in) :: bpar     !< Block parameters
+type(hdata_type),intent(in) :: hdata   !< HDIAG data
+type(mom_type),intent(in) :: mom_1     !< Ensemble 2 moments
+type(mom_type),intent(in) :: mom_2     !< Ensemble 1 moments
+class(avg_type),intent(inout) :: avg_1 !< Ensemble 1 averaged statistics
 
-! Associate
-associate(nam=>hdata%nam)
-
-! Initialization
-avg_out%ne = avg_in%ne
-avg_out%nsub = avg_in%nsub
+! Local variables
+integer :: ib,ic2a,progint
+logical,allocatable :: done(:)
 
 ! Allocation
-call avg_alloc(hdata,ib,avg_out)
+if (.not.allocated(avg_2%blk)) call avg_2%alloc(nam,geom,bpar,hdata,avg_1%ne,avg_1%nsub)
+allocate(done(0:avg_2%nc2a))
 
-! Copy
-avg_out%npack = avg_in%npack
-avg_out%nc1a = avg_in%nc1a
-avg_out%m11 = avg_in%m11
-avg_out%m11m11 = avg_in%m11m11
-avg_out%m2m2 = avg_in%m2m2
-if (.not.nam%gau_approx) avg_out%m22 = avg_in%m22
-avg_out%cor = avg_in%cor
-avg_out%m11asysq = avg_in%m11asysq
-avg_out%m2m2asy = avg_in%m2m2asy
-if (.not.nam%gau_approx) avg_out%m22asy = avg_in%m22asy
-avg_out%m11sq = avg_in%m11sq
+do ib=1,bpar%nb
+   if (bpar%diag_block(ib)) then
+      write(mpl%unit,'(a10,a,a,a)',advance='no') '','Block ',trim(bpar%blockname(ib)),':'
+
+      ! Initialization
+      call prog_init(progint,done)
+
+      do ic2a=0,avg_2%nc2a
+         select case (trim(nam%method))
+         case ('hyb-avg')
+            ! Static covariance = ensemble covariance
+            avg_2%blk(ic2a,ib)%m11sta = avg_1%blk(ic2a,ib)%m11*avg_1%blk(ic2a,ib)%m11
+            avg_2%blk(ic2a,ib)%stasq = avg_1%blk(ic2a,ib)%m11**2
+         case ('hyb-rnd')
+            ! Static covariance = randomized covariance
+            avg_2%blk(ic2a,ib)%m11sta = avg_1%blk(ic2a,ib)%m11*avg_2%blk(ic2a,ib)%m11
+            avg_2%blk(ic2a,ib)%stasq = avg_2%blk(ic2a,ib)%m11**2
+         case ('dual-ens')
+            ! LR covariance/HR covariance product average
+            call avg_2%blk(ic2a,ib)%compute_lr(geom,bpar,hdata,mom_1%blk(ib),mom_2%blk(ib),avg_1%blk(ic2a,ib))
+         end select
+
+         ! Update
+         done(ic2a) = .true.
+         call prog_print(progint,done)
+      end do
+      write(mpl%unit,'(a)') '100%'
+   end if
+end do
+
+end subroutine avg_compute_hyb
+
+!----------------------------------------------------------------------
+! Function: avg_copy_wgt
+!> Purpose: averaged statistics object copy for weight definition
+!----------------------------------------------------------------------
+type(avg_type) function avg_copy_wgt(avg,geom,bpar)
+
+implicit none
+
+! Passed variables
+type(geom_type),intent(in) :: geom   !< Geometry
+type(bpar_type),intent(in) :: bpar   !< Block parameters
+class(avg_type),intent(inout) :: avg !< Averaged statistics
+
+! Local variables
+integer :: ib
+
+if (bpar%diag_block(bpar%nb+1)) then
+   ! Allocation
+   allocate(avg_copy_wgt%blk(0:0,bpar%nb))
+
+   do ib=1,bpar%nb
+      if (bpar%diag_block(ib)) then
+         ! Restricted allocation
+         allocate(avg_copy_wgt%blk(0,ib)%m2m2asy(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
+
+         ! Restricted copy
+         avg_copy_wgt%blk(0,ib)%m2m2asy = avg%blk(0,ib)%m2m2asy
+      end if
+   end do
+end if
+
+end function avg_copy_wgt
+
+!----------------------------------------------------------------------
+! Subroutine: avg_compute_bwavg
+!> Purpose: compute block-averaged statistics
+!----------------------------------------------------------------------
+subroutine avg_compute_bwavg(avg,nam,geom,bpar,avg_wgt)
+
+implicit none
+
+! Passed variables
+class(avg_type),intent(inout) :: avg !< Averaged statistics
+type(nam_type),intent(in) :: nam     !< Namelist
+type(geom_type),intent(in) :: geom   !< Geometry
+type(bpar_type),intent(in) :: bpar   !< Block parameters
+type(avg_type),intent(in) :: avg_wgt !< Averaged statistics for weights
+
+! Local variables
+integer :: ib,ic2a,il0,jl0r,jc3,progint
+real(kind_real) :: bwgtsq
+real(kind_real),allocatable :: cor(:,:,:),m11asysq(:,:,:),m11sq(:,:,:)
+real(kind_real),allocatable :: m11sta(:,:,:),stasq(:,:,:)
+real(kind_real),allocatable :: m11lrm11(:,:,:),m11lrm11asy(:,:,:)
+logical,allocatable :: done(:)
+
+! Allocation
+allocate(cor(nam%nc3,nam%nl0r,geom%nl0))
+allocate(m11asysq(nam%nc3,nam%nl0r,geom%nl0))
+allocate(m11sq(nam%nc3,nam%nl0r,geom%nl0))
 select case (trim(nam%method))
 case ('hyb-avg','hyb-rnd')
-   avg_out%m11sta = avg_in%m11sta
-   avg_out%stasq = avg_in%stasq
+   allocate(m11sta(nam%nc3,nam%nl0r,geom%nl0))
+   allocate(stasq(nam%nc3,nam%nl0r,geom%nl0))
 case ('dual-ens')
-   avg_out%m11lrm11 = avg_in%m11lrm11
-   avg_out%m11lrm11asy = avg_in%m11lrm11asy
+   allocate(m11lrm11(nam%nc3,nam%nl0r,geom%nl0))
+   allocate(m11lrm11asy(nam%nc3,nam%nl0r,geom%nl0))
 end select
+allocate(done(0:avg%nc2a))
 
-! End associate
-end associate
+write(mpl%unit,'(a10,a,a,a)',advance='no') '','Block ',trim(bpar%blockname(bpar%nb+1)),':'
 
-end subroutine avg_copy
+! Initialization
+call prog_init(progint,done)
 
-!----------------------------------------------------------------------
-! Subroutine: avg_pack
-!> Purpose: averaged statistics object packing
-!----------------------------------------------------------------------
-subroutine avg_pack(hdata,ib,avg,buf)
+do ic2a=0,avg%nc2a
+   ! Copy ensemble size
+   avg%blk(ic2a,bpar%nb+1)%ne = avg%blk(ic2a,1)%ne
+   avg%blk(ic2a,bpar%nb+1)%nsub = avg%blk(ic2a,1)%nsub
 
-implicit none
+   ! Initialization
+   avg%blk(ic2a,bpar%nb+1)%cor = 0.0
+   cor = 0.0
+   avg%blk(ic2a,bpar%nb+1)%m11asysq = 0.0
+   m11asysq = 0.0
+   avg%blk(ic2a,bpar%nb+1)%m11sq = 0.0
+   m11sq = 0.0
+   select case (trim(nam%method))
+   case ('hyb-avg','hyb-rnd')
+      avg%blk(ic2a,bpar%nb+1)%m11sta = 0.0
+      m11sta = 0.0
+      avg%blk(ic2a,bpar%nb+1)%stasq = 0.0
+      stasq = 0.0
+   case ('dual-ens')
+      avg%blk(ic2a,bpar%nb+1)%m11lrm11 = 0.0
+      m11lrm11 = 0.0
+      avg%blk(ic2a,bpar%nb+1)%m11lrm11asy = 0.0
+      m11lrm11asy = 0.0
+   end select
 
-! Passed variables
-type(hdatatype),intent(in) :: hdata           !< HDIAG data
-integer,intent(in) :: ib                      !< Block index
-type(avgtype),intent(in) :: avg               !< Averaged statistics
-real(kind_real),intent(out) :: buf(avg%npack) !< Buffer
+   ! Block averages
+   do ib=1,bpar%nb
+      if (bpar%avg_block(ib)) then
+         !$omp parallel do schedule(static) private(il0,jl0r,bwgtsq,jc3)
+         do il0=1,geom%nl0
+            do jl0r=1,nam%nl0r
+               ! Weight
+               if (avg_wgt%blk(0,ib)%m2m2asy(1,jl0r,il0)>0.0) then
+                  bwgtsq = 1.0/avg_wgt%blk(0,ib)%m2m2asy(1,jl0r,il0)
+               else
+                  bwgtsq = 0.0
+               end if
 
-! Local variables
-integer :: offset
+               ! Compute sum
+               do jc3=1,nam%nc3
+                  call add(avg%blk(ic2a,ib)%cor(jc3,jl0r,il0),avg%blk(ic2a,bpar%nb+1)%cor(jc3,jl0r,il0),cor(jc3,jl0r,il0))
+                  call add(avg%blk(ic2a,ib)%m11asysq(jc3,jl0r,il0),avg%blk(ic2a,bpar%nb+1)%m11asysq(jc3,jl0r,il0), &
+                & m11asysq(jc3,jl0r,il0),bwgtsq)
+                  call add(avg%blk(ic2a,ib)%m11sq(jc3,jl0r,il0),avg%blk(ic2a,bpar%nb+1)%m11sq(jc3,jl0r,il0), &
+                & m11sq(jc3,jl0r,il0),bwgtsq)
+                  select case (trim(nam%method))
+                  case ('hyb-avg','hyb-rnd')
+                     call add(avg%blk(ic2a,ib)%m11sta(jc3,jl0r,il0),avg%blk(ic2a,bpar%nb+1)%m11sta(jc3,jl0r,il0), &
+                   & m11sta(jc3,jl0r,il0),bwgtsq)
+                     call add(avg%blk(ic2a,ib)%stasq(jc3,jl0r,il0),avg%blk(ic2a,bpar%nb+1)%stasq(jc3,jl0r,il0), &
+                   & stasq(jc3,jl0r,il0),bwgtsq)
+                  case ('dual-ens')
+                     call add(avg%blk(ic2a,ib)%m11lrm11(jc3,jl0r,il0),avg%blk(ic2a,bpar%nb+1)%m11lrm11(jc3,jl0r,il0), &
+                   & m11lrm11(jc3,jl0r,il0),bwgtsq)
+                     call add(avg%blk(ic2a,ib)%m11lrm11asy(jc3,jl0r,il0),avg%blk(ic2a,bpar%nb+1)%m11lrm11asy(jc3,jl0r,il0), &
+                   & m11lrm11asy(jc3,jl0r,il0),bwgtsq)
+                  end select
+               end do
+            end do
+         end do
+         !$omp end parallel do
+      end if
+   end do
 
-! Associate
-associate(nam=>hdata%nam,geom=>hdata%geom,bpar=>hdata%bpar)
+   ! Normalization
+   !$omp parallel do schedule(static) private(il0,jl0r,jc3)
+   do il0=1,geom%nl0
+      do jl0r=1,nam%nl0r
+         do jc3=1,nam%nc3
+            call divide(avg%blk(ic2a,bpar%nb+1)%cor(jc3,jl0r,il0),cor(jc3,jl0r,il0))
+            call divide(avg%blk(ic2a,bpar%nb+1)%m11asysq(jc3,jl0r,il0),m11asysq(jc3,jl0r,il0))
+            call divide(avg%blk(ic2a,bpar%nb+1)%m11sq(jc3,jl0r,il0),m11sq(jc3,jl0r,il0))
+            select case (trim(nam%method))
+            case ('hyb-avg','hyb-rnd')
+               call divide(avg%blk(ic2a,bpar%nb+1)%m11sta(jc3,jl0r,il0),m11sta(jc3,jl0r,il0))
+               call divide(avg%blk(ic2a,bpar%nb+1)%stasq(jc3,jl0r,il0),stasq(jc3,jl0r,il0))
+            case ('dual-ens')
+               call divide(avg%blk(ic2a,bpar%nb+1)%m11lrm11(jc3,jl0r,il0),m11lrm11(jc3,jl0r,il0))
+               call divide(avg%blk(ic2a,bpar%nb+1)%m11lrm11asy(jc3,jl0r,il0),m11lrm11asy(jc3,jl0r,il0))
+            end select
+         end do
+      end do
+   end do
+   !$omp end parallel do
 
-! Pack
-offset = 0
-buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0) = pack(avg%nc1a,.true.)
-offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0
-buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0) = pack(avg%m11,.true.)
-offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0
-buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg%nsub**2) = pack(avg%m11m11,.true.)
-offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg%nsub**2
-buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg%nsub**2) = pack(avg%m2m2,.true.)
-offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg%nsub**2
-if (.not.nam%gau_approx) then
-   buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg%nsub) = pack(avg%m22,.true.)
-   offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg%nsub
-end if
-buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0) = pack(avg%cor,.true.)
+   ! Update
+   done(ic2a) = .true.
+   call prog_print(progint,done)
+end do
+write(mpl%unit,'(a)') '100%'
 
-! End associate
-end associate
-
-end subroutine avg_pack
-
-!----------------------------------------------------------------------
-! Subroutine: avg_unpack
-!> Purpose: averaged statistics object unpacking
-!----------------------------------------------------------------------
-subroutine avg_unpack(hdata,ib,avg,buf)
-
-implicit none
-
-! Passed variables
-type(hdatatype),intent(in) :: hdata          !< HDIAG data
-integer,intent(in) :: ib                     !< Block index
-type(avgtype),intent(inout) :: avg           !< Averaged statistics
-real(kind_real),intent(in) :: buf(avg%npack) !< Buffer
-
-! Local variables
-integer :: offset
-logical,allocatable :: mask_0(:,:,:),mask_1(:,:,:,:),mask_2(:,:,:,:,:)
-
-! Associate
-associate(nam=>hdata%nam,geom=>hdata%geom,bpar=>hdata%bpar)
-
-! Allocation
-allocate(mask_0(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
-if (.not.nam%gau_approx) allocate(mask_1(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,avg%nsub))
-allocate(mask_2(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,avg%nsub,avg%nsub))
-mask_0 = .true.
-if (.not.nam%gau_approx) mask_1 = .true.
-mask_2 = .true.
-
-! Unpack
-offset = 0
-avg%nc1a = unpack(buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0),mask_0,avg%m11)
-offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0
-avg%m11 = unpack(buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0),mask_0,avg%m11)
-offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0
-avg%m11m11 = unpack(buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg%nsub**2),mask_2,avg%m11m11)
-offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg%nsub**2
-avg%m2m2 = unpack(buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg%nsub**2),mask_2,avg%m2m2)
-offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg%nsub**2
-if (.not.nam%gau_approx) then
-   avg%m22 = unpack(buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg%nsub),mask_1,avg%m22)
-   offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg%nsub
-end if
-avg%cor = unpack(buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0),mask_0,avg%cor)
-
-! End associate
-end associate
-
-end subroutine avg_unpack
+end subroutine avg_compute_bwavg
 
 end module type_avg

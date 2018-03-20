@@ -13,7 +13,7 @@ module tools_display
 use iso_c_binding
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,isnotmsi
-use type_mpl, only: mpl,mpl_abort,mpl_barrier
+use type_mpl, only: mpl
 
 implicit none
 
@@ -132,7 +132,7 @@ do iproc=1,mpl%nproc
    end if
 
    ! Wait
-   call mpl_barrier()
+   call mpl%barrier()
 end do
 
 
@@ -150,7 +150,7 @@ implicit none
 character(len=*),intent(in) :: message !< Message
 
 ! Clean MPL abort
-call mpl_abort(trim(err)//'!!! Error: '//trim(message)//trim(black))
+call mpl%abort(trim(err)//'!!! Error: '//trim(message)//trim(black))
 
 end subroutine msgerror
 

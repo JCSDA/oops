@@ -23,11 +23,11 @@ use model_wrf, only: model_wrf_coord,model_wrf_read,model_wrf_write
 use netcdf
 use tools_display, only: msgerror
 use tools_kinds,only: kind_real
-use tools_missing, only: msvalr,msr,isnotmsi
+use tools_missing, only: msvalr,msi,msr,isnotmsi
 use tools_nc, only: ncfloat,ncerr
-use type_geom, only: geomtype,fld_com_gl
+use type_geom, only: geom_type
 use type_mpl, only: mpl
-use type_nam, only: namtype,namncwrite
+use type_nam, only: nam_type
 
 implicit none
 
@@ -45,8 +45,8 @@ subroutine model_coord(nam,geom)
 implicit none
 
 ! Passed variables
-type(namtype),intent(in) :: nam !< Namelist variables
-type(geomtype),intent(inout) :: geom !< Sampling data
+type(nam_type),intent(in) :: nam      !< Namelist variables
+type(geom_type),intent(inout) :: geom !< Geometry
 
 ! Local variables
 integer :: iv
@@ -80,12 +80,12 @@ subroutine model_read(nam,geom,filename,ie,jsub,fld)
 implicit none
 
 ! Passed variables
-type(namtype),intent(in) :: nam                                      !< Namelist
-type(geomtype),intent(in) :: geom                                    !< Sampling data
-character(len=*),intent(in) :: filename                              !< File name
-integer,intent(in) :: ie                                             !< Ensemble member index
-integer,intent(in) :: jsub                                           !< Sub-ensemble index
-real(kind_real),intent(out) :: fld(geom%nc0,geom%nl0,nam%nv,nam%nts) !< Read field
+type(nam_type),intent(in) :: nam                                      !< Namelist
+type(geom_type),intent(in) :: geom                                    !< Geometry
+character(len=*),intent(in) :: filename                               !< File name
+integer,intent(in) :: ie                                              !< Ensemble member index
+integer,intent(in) :: jsub                                            !< Sub-ensemble index
+real(kind_real),intent(out) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) !< Field
 
 ! Local variables
 integer :: its,ncid
@@ -115,7 +115,11 @@ do its=1,nam%nts
    end select
 
    ! Open file
-   call ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(fullname),nf90_nowrite,ncid))
+   if (mpl%main) then
+      call ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(fullname),nf90_nowrite,ncid))
+   else
+      call msi(ncid)
+   end if
 
    ! Select model
    if (trim(nam%model)=='aro') call model_aro_read(nam,geom,ncid,its,fld(:,:,:,its))
@@ -129,7 +133,7 @@ do its=1,nam%nts
    if (trim(nam%model)=='wrf') call model_wrf_read(nam,geom,ncid,its,fld(:,:,:,its))
 
    ! Close file
-   call ncerr(subr,nf90_close(ncid))
+   if (mpl%main) call ncerr(subr,nf90_close(ncid))
 end do
 
 end subroutine model_read
@@ -143,16 +147,13 @@ subroutine load_ensemble(nam,geom,ens1)
 implicit none
 
 ! Passed variables
-type(namtype),intent(in) :: nam                            !< Namelist
-type(geomtype),intent(in) :: geom                          !< Sampling data
-real(kind_real),allocatable,intent(out) :: ens1(:,:,:,:,:) !< Ensemble 1
+type(nam_type),intent(in) :: nam                                                   !< Namelist
+type(geom_type),intent(in) :: geom                                                 !< Geometry
+real(kind_real),intent(out) :: ens1(geom%nc0a,geom%nl0,nam%nv,nam%nts,nam%ens1_ne) !< Ensemble 1
 
 ! Local variables
 integer :: isub,jsub,ie,ietot
 real(kind_real),allocatable :: fld(:,:,:,:)
-
-! Allocation
-allocate(ens1(geom%nc0a,geom%nl0,nam%nv,nam%nts,nam%ens1_ne))
 
 ! Initialization
 ietot = 0
@@ -169,18 +170,13 @@ do isub=1,nam%ens1_nsub
       write(mpl%unit,'(i4)',advance='no') nam%ens1_ne_offset+ie
 
       ! Read member
-      if (mpl%main) then
-         allocate(fld(geom%nc0,geom%nl0,nam%nv,nam%nts))
-         if (nam%ens1_nsub==1) then
-            jsub = 0
-         else
-            jsub = isub
-         end if
-         call model_read(nam,geom,'ens1',nam%ens1_ne_offset+ie,jsub,fld)
+      allocate(fld(geom%nc0a,geom%nl0,nam%nv,nam%nts))
+      if (nam%ens1_nsub==1) then
+         jsub = 0
+      else
+         jsub = isub
       end if
-
-      ! Split over processors
-      call fld_com_gl(nam,geom,fld)
+      call model_read(nam,geom,'ens1',nam%ens1_ne_offset+ie,jsub,fld)
 
       ! Copy
       ietot = ietot+1
@@ -203,48 +199,55 @@ subroutine model_write(nam,geom,filename,varname,fld)
 implicit none
 
 ! Passed variables
-type(namtype),intent(in) :: nam                      !< Namelist
-type(geomtype),intent(in) :: geom                    !< Sampling data
-character(len=*),intent(in) :: filename              !< File name
-character(len=*),intent(in) :: varname               !< Variable name
-real(kind_real),intent(in) :: fld(geom%nc0,geom%nl0) !< Written field
+type(nam_type),intent(in) :: nam                      !< Namelist
+type(geom_type),intent(in) :: geom                    !< Geometry
+character(len=*),intent(in) :: filename               !< File name
+character(len=*),intent(in) :: varname                !< Variable name
+real(kind_real),intent(in) :: fld(geom%nc0a,geom%nl0) !< Field
 
 ! Local variables
-integer :: ic0,il0,ierr
+integer :: ic0a,ic0,jc0a,jc0,il0,info
 integer :: ncid
-real(kind_real) :: fld_loc(geom%nc0,geom%nl0)
+real(kind_real) :: fld_loc(geom%nc0a,geom%nl0)
 character(len=1024) :: subr = 'model_write'
-
-! Processor verification
-if (.not.mpl%main) call msgerror('only I/O proc should enter '//trim(subr))
 
 ! Apply mask
 do il0=1,geom%nl0
-   do ic0=1,geom%nc0
+   do ic0a=1,geom%nc0a
+      ic0 = geom%c0a_to_c0(ic0a)
       if (geom%mask(ic0,il0)) then
-         fld_loc(ic0,il0) = fld(ic0,il0)
+         fld_loc(ic0a,il0) = fld(ic0a,il0)
       else
-         call msr(fld_loc(ic0,il0))
+         call msr(fld_loc(ic0a,il0))
       end if
    end do
 end do
 
 if (allocated(geom%mesh%redundant)) then
    ! Copy redundant points
-   do ic0=1,geom%nc0
-      if (isnotmsi(geom%mesh%redundant(ic0))) fld_loc(ic0,:) = fld_loc(geom%mesh%redundant(ic0),:)
+   do ic0a=1,geom%nc0a
+      ic0 = geom%c0a_to_c0(ic0a)
+      jc0 = geom%mesh%redundant(ic0)
+      if (isnotmsi(jc0)) then
+         jc0a = geom%c0_to_c0a(jc0)
+         fld_loc(ic0a,:) = fld_loc(jc0a,:)
+      end if
    end do
 end if
 
-! Check if the file exists
-ierr = nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_noclobber,nf90_64bit_offset),ncid)
-if (ierr/=nf90_noerr) then
-   call ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_write,ncid))
-   call ncerr(subr,nf90_redef(ncid))
-   call ncerr(subr,nf90_put_att(ncid,nf90_global,'_FillValue',msvalr))
-   call namncwrite(nam,ncid)
+if (mpl%main) then
+   ! Check if the file exists
+   info = nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_noclobber,nf90_64bit_offset),ncid)
+   if (info==nf90_noerr) then
+      call ncerr(subr,nf90_put_att(ncid,nf90_global,'_FillValue',msvalr))
+      call nam%ncwrite(ncid)
+      call ncerr(subr,nf90_enddef(ncid))
+   else
+      call ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_write,ncid))
+   end if
+else
+   call msi(ncid)
 end if
-call ncerr(subr,nf90_enddef(ncid))
 
 ! Select model
 if (trim(nam%model)=='aro') call model_aro_write(geom,ncid,varname,fld_loc)
@@ -259,7 +262,7 @@ if (trim(nam%model)=='oops') call model_oops_write(geom,ncid,varname,fld_loc)
 if (trim(nam%model)=='wrf') call model_wrf_write(geom,ncid,varname,fld_loc)
 
 ! Close file
-call ncerr(subr,nf90_close(ncid))
+if (mpl%main) call ncerr(subr,nf90_close(ncid))
 
 end subroutine model_write
 

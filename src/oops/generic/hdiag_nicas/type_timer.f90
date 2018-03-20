@@ -17,7 +17,7 @@ use type_mpl, only: mpl
 implicit none
 
 ! Timer data derived type
-type timertype
+type timer_type
    real(kind_real) :: cpu_time_start  !< CPU time start
    real(kind_real) :: cpu_time_end    !< CPU time end
    integer :: count_rate              !< Count rate
@@ -30,10 +30,14 @@ type timertype
    character(len=10) :: VmHWM         !< Peak resident set size
    character(len=10) :: rchar         !< Read data volume
    character(len=10) :: wchar         !< Written data volume
-end type timertype
+contains
+   procedure :: start => timer_start
+   procedure :: end => timer_end
+   procedure :: display => timer_display
+end type timer_type
 
 private
-public :: timertype,timer_start,timer_end,timer_display
+public :: timer_type
 
 contains
 
@@ -46,7 +50,7 @@ subroutine timer_start(timer)
 implicit none
 
 ! Passed variables
-type(timertype),intent(inout) :: timer !< Timer data
+class(timer_type),intent(inout) :: timer !< Timer data
 
 ! Execution times  initialization
 call system_clock(count_rate=timer%count_rate,count_max=timer%count_max)
@@ -64,7 +68,7 @@ subroutine timer_end(timer)
 implicit none
 
 ! Passed variables
-type(timertype),intent(inout) :: timer !< Timer data
+class(timer_type),intent(inout) :: timer !< Timer data
 
 ! Execution times calculation
 call system_clock(count=timer%system_clock_end)
@@ -87,17 +91,17 @@ subroutine timer_display(timer)
 implicit none
 
 ! Passed variables
-type(timertype),intent(inout) :: timer !< Timer data
+class(timer_type),intent(inout) :: timer !< Timer data
 
 ! Local variables
-integer :: ierr,get_pid,lunit
+integer :: info,get_pid,lunit
 real(kind_real) :: VmPeak,VmHWM,rchar,wchar
 logical :: isfile
 character(len=8) :: pidchar
 character(len=1024) :: filename,line
 
 ! Execution times calculation
-call timer_end(timer)
+call timer%end
 
 ! Maximum memory usage
 timer%VmPeak = 'unknown'
@@ -110,10 +114,10 @@ if (isfile) then
    lunit = newunit()
    open(unit=lunit,file=filename,action='read')
    do
-      read(lunit,'(a)',iostat=ierr) line
-      if (ierr>0) then
+      read(lunit,'(a)',iostat=info) line
+      if (info>0) then
          call msgerror('cannot read /proc/pid/status')
-      elseif (ierr<0) then
+      elseif (info<0) then
          exit
       else
          if (line(1:7)=='VmPeak:') then
@@ -161,14 +165,15 @@ timer%wchar = 'unknown'
 call fgetpid(get_pid)
 write(pidchar,'(i8)') get_pid
 filename = '/proc/'//trim(adjustl(pidchar))//'/io'
+inquire(file=filename,exist=isfile)
 if (isfile) then
    lunit = newunit()
    open(unit=lunit,file=filename,action='read')
    do
-      read(lunit,'(a)',iostat=ierr) line
-      if (ierr>0) then
+      read(lunit,'(a)',iostat=info) line
+      if (info>0) then
          call msgerror('cannot read /proc/pid/io')
-      elseif (ierr<0) then
+      elseif (info<0) then
          exit
       else
          if (line(1:6)=='rchar:') then

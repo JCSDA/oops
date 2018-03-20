@@ -4,7 +4,7 @@
 !> <br>
 !> Author: Benjamin Menetrier
 !> <br>
-!> Licensing: this code is distributed under the CeCILL-C license
+!> Licensing: ctree code is distributed under the CeCILL-C license
 !> <br>
 !> Copyright © 2017 METEO-FRANCE
 !----------------------------------------------------------------------
@@ -13,12 +13,19 @@ module type_ctree
 use iso_c_binding, only: c_ptr,c_int,c_double
 use tools_display, only: msgerror
 use tools_kinds, only: kind_real
+use tools_qsort, only: qsort
 
 implicit none
 
-type ctreetype
+type ctree_type
     type(c_ptr) :: ptr !< Pointer to the C++ class
-end type ctreetype
+contains
+    procedure :: create => ctree_create
+    procedure :: delete => ctree_delete
+    procedure :: find_nearest_neighbors
+end type ctree_type
+
+real(kind_real),parameter :: rth = 1.0e-12 !< Reproducibility threshold
 
 ! C++ interface
 interface
@@ -53,20 +60,20 @@ interface
 end interface
 
 private
-public :: ctreetype,create_ctree,delete_ctree,find_nearest_neighbors
+public :: ctree_type
 
 contains
 
 !----------------------------------------------------------------------
-! Subroutine: create_ctree
+! Subroutine: ctree_create
 !> Purpose: create a cover tree
 !----------------------------------------------------------------------
-function create_ctree(n,lon,lat,mask)
+subroutine ctree_create(ctree,n,lon,lat,mask)
 
 implicit none
 
 ! Passed variables
-type(ctreetype) :: create_ctree      !< Cover tree object
+class(ctree_type) :: ctree           !< Cover tree object
 integer,intent(in) :: n              !< Number of points
 real(kind_real),intent(in) :: lon(n) !< Points longitudes
 real(kind_real),intent(in) :: lat(n) !< Points latitudes
@@ -88,44 +95,71 @@ do i=1,n
 end do
 
 ! Call C++ function
-create_ctree%ptr = create_ctree_c(n,lon,lat,imask)
+ctree%ptr = create_ctree_c(n,lon,lat,imask)
 
-end function create_ctree
+end subroutine ctree_create
 
 !----------------------------------------------------------------------
-! Subroutine: delete_ctree
+! Subroutine: ctree_delete
 !> Purpose: delete a cover tree
 !----------------------------------------------------------------------
-subroutine delete_ctree(this)
+subroutine ctree_delete(ctree)
 
 implicit none
 
 ! Passed variables
-type(ctreetype),intent(inout) :: this !< Cover tree object
+class(ctree_type),intent(inout) :: ctree !< Cover tree object
 
 ! Call C++ function
-call delete_ctree_c(this%ptr)
+call delete_ctree_c(ctree%ptr)
 
-end subroutine delete_ctree
+end subroutine ctree_delete
 
 !----------------------------------------------------------------------
 ! Subroutine: find_nearest_neighbors
 !> Purpose: find nearest neighbors using a cover tree
 !----------------------------------------------------------------------
-subroutine find_nearest_neighbors(this,lon,lat,nn,nn_index,nn_dist)
+subroutine find_nearest_neighbors(ctree,lon,lat,nn,nn_index,nn_dist)
 
 implicit none
 
 ! Passed variables
-class(ctreetype),intent(in) :: this        !< Cover tree object
+class(ctree_type),intent(in) :: ctree      !< Cover tree object
 real(kind_real),intent(in) :: lon          !< Point longitude
 real(kind_real),intent(in) :: lat          !< Point latitude
 integer,intent(in) :: nn                   !< Number of nearest neighbors to find
 integer,intent(out) :: nn_index(nn)        !< Neareast neighbors index
 real(kind_real),intent(out) :: nn_dist(nn) !< Neareast neighbors distance
 
+! Local variables
+integer :: i,j,nid
+integer,allocatable :: order(:)
+
 ! Call C++ function
-call find_nearest_neighbors_c(this%ptr,lon,lat,nn,nn_index,nn_dist)
+call find_nearest_neighbors_c(ctree%ptr,lon,lat,nn,nn_index,nn_dist)
+
+! Indistinguishability threshold for cross-plateform reproducibility
+i = 1
+do while (i<nn)
+   ! Count indistinguishable neighbors
+   nid = 1
+   do j=i+1,nn
+      if (abs(nn_dist(i)-nn_dist(j))<rth*nn_dist(i)) nid = nid+1
+   end do
+
+   ! Reorder
+   if (nid>1) then
+      allocate(order(nid))
+      call qsort(nid,nn_index(i:i+nid-1),order)
+      do j=1,nid
+         nn_dist(i+j-1) = nn_dist(i+order(j)-1)
+      end do
+      deallocate(order)
+   end if
+
+   ! Update
+   i = i+nid
+end do
 
 end subroutine find_nearest_neighbors
 
