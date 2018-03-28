@@ -11,11 +11,11 @@
 #include "model/ObsStreamQG.h"
 
 #include "eckit/config/Configuration.h"
+#include "oops/base/Variables.h"
 #include "model/GomQG.h"
 #include "model/ObsBias.h"
 #include "model/ObsSpaceQG.h"
 #include "model/ObsVecQG.h"
-#include "model/VariablesQG.h"
 #include "util/Logger.h"
 
 // -----------------------------------------------------------------------------
@@ -25,13 +25,10 @@ static oops::ObsOperatorMaker<QgTraits, ObsStreamQG> makerStream_("Stream");
 // -----------------------------------------------------------------------------
 
 ObsStreamQG::ObsStreamQG(const ObsSpaceQG &, const eckit::Configuration & config)
-  : keyOperStrm_(0), varin_()
+  : keyOperStrm_(0), varin_(std::vector<std::string>{"x"})
 {
   const eckit::Configuration * configc = &config;
   qg_stream_setup_f90(keyOperStrm_, &configc);
-  int keyVarin;
-  qg_obsoper_inputs_f90(keyOperStrm_, keyVarin);
-  varin_.reset(new VariablesQG(keyVarin));
   oops::Log::trace() << "ObsStreamQG created." << std::endl;
 }
 

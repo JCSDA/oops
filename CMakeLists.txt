@@ -1,21 +1,20 @@
+# (C) Copyright 2009-2016 ECMWF.
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+# In applying this licence, ECMWF does not waive the privileges and immunities
+# granted to it by virtue of its status as an intergovernmental organisation nor
+# does it submit to any jurisdiction.
+
 ################################################################################
-# cmake options:
-#
-#       -DCMAKE_BUILD_TYPE=Debug|RelWithDebInfo|Release|Production
-#       -DCMAKE_INSTALL_PREFIX=/path/to/install
-#
-#       -DCMAKE_C_COMPILER=gcc
-#       -DCMAKE_CXX_COMPILER=g++
-#
-#       -DCMAKE_PREFIX_PATH=/path/to/jasper:/path/to/any/package/out/of/place
-#       -DBUILD_SHARED_LIBS=OFF
+# OOPS
 ################################################################################
 
-cmake_minimum_required( VERSION 2.8.4 FATAL_ERROR )
+cmake_minimum_required( VERSION 3.3.2 FATAL_ERROR )
 
-project( oops C CXX Fortran)
+project( oops C CXX Fortran )
 
-set( CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../ecbuild/cmake")
+set( CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH} )
 
 set( ECBUILD_DEFAULT_BUILD_TYPE Release )
 set( ENABLE_OS_TESTS           OFF CACHE BOOL "Disable OS tests" FORCE )
@@ -23,33 +22,16 @@ set( ENABLE_LARGE_FILE_SUPPORT OFF CACHE BOOL "Disable testing of large file sup
 
 include( ecbuild_system NO_POLICY_SCOPE )
 
-ecbuild_requires_macro_version( 2.5 )
+ecbuild_requires_macro_version( 2.7 )
 
 ################################################################################
-# OOPS project
+# Project
 ################################################################################
 
 ecbuild_declare_project()
 
 ecbuild_enable_fortran( REQUIRED )
-
-# eckit
-ecbuild_use_package( PROJECT eckit VERSION 0.16.0 REQUIRED )
-#yt include_directories( ${ECKIT_INCLUDE_DIRS} )
-
-# options & dependencies
 ecbuild_add_cxx11_flags()
-
-# fckit (optional for now)
-ecbuild_use_package( PROJECT fckit VERSION 0.2.0 REQUIRED )
-ecbuild_add_option( FEATURE FCTEST
-                    DEFAULT ${ENABLE_TESTS}
-                    DESCRIPTION "Fortran Unit Testing Framework"
-                    REQUIRED_PACKAGES "PROJECT fckit" )
-#yt include_directories( ${FCKIT_INCLUDE_DIRS} )
-
-
-list( APPEND OOPS_TPLS eckit fckit )
 
 set( OOPS_LINKER_LANGUAGE CXX )
 
@@ -69,33 +51,22 @@ find_package( Boost ${Boost_MINIMUM_VERSION} REQUIRED
 include_directories( ${Boost_INCLUDE_DIR} )
 
 # LAPACK
-if( NOT ( BUILD_SITE MATCHES "cc[abt].*" ) )  # Should depend on toolchain, not machine
-  ecbuild_find_package( NAME LAPACK REQUIRED )
-  include_directories( ${LAPACK_INCLUDE_DIR} )
+ecbuild_add_option( FEATURE LAPACK
+                    DESCRIPTION "Linear Algebra PACKage"
+                    REQUIRED_PACKAGES "LAPACK REQUIRED" )
+if (NOT HAVE_LAPACK)
+  ecbuild_error("LAPACK_LIBRARIES not defined")
 endif()
-
-ecbuild_add_cxx11_flags()
 
 # MPI
-ecbuild_add_option( FEATURE MPI DEFAULT ON
-                    DESCRIPTION "Support for MPI distributed parallelism"
-                    REQUIRED_PACKAGES "MPI COMPONENTS CXX Fortran" )
-
-if ( NOT ECKIT_HAVE_MPI )
-  ecbuild_error("OOPS requested to build with MPI but eckit wasn't built with MPI: ECKIT_HAVE_MPI = ${ECKIT_HAVE_MPI}")
-endif()
-
-#if( HAVE_MPI )
-  set( OOPS_MPI_C_LIBRARIES            ${MPI_CXX_LIBRARIES} )
-  ecbuild_include_mpi()
-  link_libraries(${MPI_CXX_LIBRARIES} ${MPI_Fortran_LIBRARIES})
-#endif()
+ecbuild_find_mpi( COMPONENTS CXX Fortran REQUIRED )
+ecbuild_include_mpi()
+link_libraries(${MPI_CXX_LIBRARIES} ${MPI_Fortran_LIBRARIES})
 
 # OpenMP
 ecbuild_add_option( FEATURE OMP
                     DESCRIPTION "Support for OpenMP threaded parallelism"
                     REQUIRED_PACKAGES "OMP COMPONENTS CXX Fortran" )
-
 if( HAVE_OMP )
   ecbuild_enable_omp()
 else()
@@ -107,11 +78,23 @@ set( NETCDF_F90 ON CACHE BOOL "Compile with Fortran NetCDF" )
 find_package( NetCDF REQUIRED )
 include_directories( ${NETCDF_INCLUDE_DIR} )
 
+# eckit
+ecbuild_use_package( PROJECT eckit VERSION 0.18.0 REQUIRED )
+include_directories( ${ECKIT_INCLUDE_DIRS} )
+
+if ( NOT ECKIT_HAVE_MPI )
+  ecbuild_error("OOPS requested to build with MPI but eckit wasn't built with MPI: ECKIT_HAVE_MPI = ${ECKIT_HAVE_MPI}")
+endif()
+
+# fckit
+ecbuild_use_package( PROJECT fckit VERSION 0.4.1 REQUIRED )
+include_directories( ${FCKIT_INCLUDE_DIRS} )
+
 ################################################################################
 # Export package info
 ################################################################################
 
-list( APPEND OOPS_TPLS LAPACK MPI NetCDF )
+list( APPEND OOPS_TPLS LAPACK MPI NetCDF eckit fckit )
 
 set( OOPS_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/src
                        ${CMAKE_Fortran_MODULE_DIRECTORY} )
@@ -140,8 +123,7 @@ add_subdirectory( src )
 add_subdirectory( l95 )
 add_subdirectory( qg )
 
-ecbuild_dont_pack ( FILES .pydevproject .project .cproject oops.sublime-project )
-ecbuild_dont_pack ( FILES .settings tools l95/tools qg/scripts )
+ecbuild_dont_pack ( FILES .pydevproject .project .cproject oops.sublime-project .settings )
 
 ################################################################################
 # Finalise configuration

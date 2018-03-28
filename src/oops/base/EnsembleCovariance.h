@@ -18,11 +18,11 @@
 #include "oops/base/EnsemblesCollection.h"
 #include "oops/base/IdentityMatrix.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/Localization.h"
 #include "oops/interface/State.h"
-#include "oops/interface/Variables.h"
 #include "util/DateTime.h"
 #include "util/abor1_cpp.h"
 
@@ -40,10 +40,9 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL> {
   typedef Increment<MODEL>           Increment_;
   typedef Localization<MODEL>        Localization_;
   typedef State<MODEL>               State_;
-  typedef Variables<MODEL>           Variables_;
 
  public:
-  EnsembleCovariance(const Geometry_ &, const Variables_ &, const eckit::Configuration &, const State_ &);
+  EnsembleCovariance(const Geometry_ &, const Variables &, const eckit::Configuration &, const State_ &);
   ~EnsembleCovariance();
 
   void linearize(const State_ &, const Geometry_ &) override;
@@ -64,7 +63,7 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL> {
 /// Constructor, destructor
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ &, const Variables_ &,
+EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ &, const Variables &,
                                               const eckit::Configuration & config, const State_ &)
   : config_(config), time_(config_.getString("date")), loc_()
 {
@@ -86,7 +85,7 @@ void EnsembleCovariance<MODEL>::linearize(const State_ & xb,
   EnsemblesCollection_::getInstance().put(xb.validTime(), ens_k);
 
   const eckit::LocalConfiguration conf(config_, "localization");
-  loc_.reset(new Localization_(xb, conf));
+  loc_.reset(new Localization_(resol, conf));
   Log::trace() << "EnsembleCovariance linearized." << std::endl;
 }
 // -----------------------------------------------------------------------------

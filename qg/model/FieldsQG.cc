@@ -16,29 +16,30 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
+#include "oops/generic/UnstructuredGrid.h"
+#include "oops/base/Variables.h"
+#include "util/DateTime.h"
+#include "util/Logger.h"
 #include "model/GomQG.h"
 #include "model/LocationsQG.h"
 #include "model/QgFortran.h"
 #include "model/GeometryQG.h"
 #include "model/VariablesQG.h"
-#include "oops/generic/UnstructuredGrid.h"
-#include "util/DateTime.h"
-#include "util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-FieldsQG::FieldsQG(const GeometryQG & geom, const VariablesQG & vars,
+FieldsQG::FieldsQG(const GeometryQG & geom, const oops::Variables & vars,
                    const util::DateTime & time):
-  geom_(new GeometryQG(geom)), vars_(new VariablesQG(vars)), time_(time)
+  geom_(new GeometryQG(geom)), vars_(vars), time_(time)
 {
-  qg_field_create_f90(keyFlds_, geom_->toFortran(), vars_->toFortran());
+  qg_field_create_f90(keyFlds_, geom_->toFortran(), vars_.toFortran());
 }
 // -----------------------------------------------------------------------------
 FieldsQG::FieldsQG(const FieldsQG & other, const bool copy)
   : geom_(other.geom_), vars_(other.vars_), time_(other.time_)
 {
-  qg_field_create_f90(keyFlds_, geom_->toFortran(), vars_->toFortran());
+  qg_field_create_f90(keyFlds_, geom_->toFortran(), vars_.toFortran());
   if (copy) {
     qg_field_copy_f90(keyFlds_, other.keyFlds_);
   } else {
@@ -49,21 +50,21 @@ FieldsQG::FieldsQG(const FieldsQG & other, const bool copy)
 FieldsQG::FieldsQG(const FieldsQG & other)
   : geom_(other.geom_), vars_(other.vars_), time_(other.time_)
 {
-  qg_field_create_f90(keyFlds_, geom_->toFortran(), vars_->toFortran());
+  qg_field_create_f90(keyFlds_, geom_->toFortran(), vars_.toFortran());
   qg_field_copy_f90(keyFlds_, other.keyFlds_);
 }
 // -----------------------------------------------------------------------------
 FieldsQG::FieldsQG(const FieldsQG & other, const GeometryQG & geom)
   : geom_(new GeometryQG(geom)), vars_(other.vars_), time_(other.time_)
 {
-  qg_field_create_f90(keyFlds_, geom_->toFortran(), vars_->toFortran());
+  qg_field_create_f90(keyFlds_, geom_->toFortran(), vars_.toFortran());
   qg_field_change_resol_f90(keyFlds_, other.keyFlds_);
 }
 // -----------------------------------------------------------------------------
-FieldsQG::FieldsQG(const FieldsQG & other, const VariablesQG & vars)
-  : geom_(other.geom_), vars_(new VariablesQG(vars)), time_(other.time_)
+FieldsQG::FieldsQG(const FieldsQG & other, const oops::Variables & vars)
+  : geom_(other.geom_), vars_(vars), time_(other.time_)
 {
-  qg_field_create_f90(keyFlds_, geom_->toFortran(), vars_->toFortran());
+  qg_field_create_f90(keyFlds_, geom_->toFortran(), vars_.toFortran());
   qg_field_copy_f90(keyFlds_, other.keyFlds_);
 }
 // -----------------------------------------------------------------------------
@@ -124,16 +125,22 @@ void FieldsQG::dirac(const eckit::Configuration & config) {
   qg_field_dirac_f90(keyFlds_, &conf);
 }
 // -----------------------------------------------------------------------------
-void FieldsQG::interpolate(const LocationsQG & locs, const VariablesQG & vars, GomQG & gom) const {
-  qg_field_interp_tl_f90(keyFlds_, locs.toFortran(), vars.toFortran(), gom.toFortran());
+void FieldsQG::interpolate(const LocationsQG & locs, const oops::Variables & vars,
+                           GomQG & gom) const {
+  const VariablesQG varqg(vars);
+  qg_field_interp_tl_f90(keyFlds_, locs.toFortran(), varqg.toFortran(), gom.toFortran());
 }
 // -----------------------------------------------------------------------------
-void FieldsQG::interpolateTL(const LocationsQG & locs, const VariablesQG & vars, GomQG & gom) const {
-  qg_field_interp_tl_f90(keyFlds_, locs.toFortran(), vars.toFortran(), gom.toFortran());
+void FieldsQG::interpolateTL(const LocationsQG & locs, const oops::Variables & vars,
+                             GomQG & gom) const {
+  const VariablesQG varqg(vars);
+  qg_field_interp_tl_f90(keyFlds_, locs.toFortran(), varqg.toFortran(), gom.toFortran());
 }
 // -----------------------------------------------------------------------------
-void FieldsQG::interpolateAD(const LocationsQG & locs, const VariablesQG & vars, const GomQG & gom) {
-  qg_field_interp_ad_f90(keyFlds_, locs.toFortran(), vars.toFortran(), gom.toFortran());
+void FieldsQG::interpolateAD(const LocationsQG & locs, const oops::Variables & vars,
+                             const GomQG & gom) {
+  const VariablesQG varqg(vars);
+  qg_field_interp_ad_f90(keyFlds_, locs.toFortran(), varqg.toFortran(), gom.toFortran());
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::changeResolution(const FieldsQG & other) {

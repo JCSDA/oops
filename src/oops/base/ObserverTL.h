@@ -21,7 +21,6 @@
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBaseTL.h"
 #include "oops/interface/GeoVaLs.h"
-#include "oops/interface/Locations.h"
 #include "oops/interface/ObsAuxIncrement.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
@@ -34,7 +33,6 @@ template <typename MODEL, typename INCR> class ObserverTL : public PostBaseTL<IN
   typedef Departures<MODEL>          Departures_;
   typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef LinearObsOperators<MODEL>  LinearObsOperator_;
-  typedef Locations<MODEL>           Locations_;
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
   typedef ObsSpaces<MODEL>           ObsSpace_;
 
@@ -102,7 +100,7 @@ void ObserverTL<MODEL, INCR>::doInitializeTL(const INCR & dx,
 
   for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
     boost::shared_ptr<GeoVaLs_>
-      gom(new GeoVaLs_(obspace_[jj], hoptlad_.variables(jj), bgn_, end_));
+      gom(new GeoVaLs_(obspace_[jj].locations(bgn_, end_), hoptlad_.variables(jj)));
     gvals_.push_back(gom);
   }
 }
@@ -114,12 +112,9 @@ void ObserverTL<MODEL, INCR>::doProcessingTL(const INCR & dx) {
   if (t1 < bgn_) t1 = bgn_;
   if (t2 > end_) t2 = end_;
 
+// Interpolate state variables to obs locations
   for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
-//  Get locations info for interpolator
-    Locations_ locs(obspace_[jj], t1, t2);
-
-//  Interpolate state variables to obs locations
-    dx.interpolateTL(locs, hoptlad_.variables(jj), *gvals_.at(jj));
+    dx.interpolateTL(obspace_[jj].locations(t1, t2), hoptlad_.variables(jj), *gvals_.at(jj));
   }
 }
 // -----------------------------------------------------------------------------

@@ -28,13 +28,13 @@ class UnstructuredGrid : public util::Printable,
   ~UnstructuredGrid();
 
 // Get local geometry
-  std::vector<double> getLats();
-  std::vector<double> getLons();
-  std::vector<double> getAreas();
-  std::vector<double> getLevs();
-  std::vector<int> getMask3d(const int &);
-  std::vector<int> getMask2d();
-  std::vector<int> getGlbInd();
+  int getSize(const int &);
+  std::vector<double> getLon();
+  std::vector<double> getLat();
+  std::vector<double> getArea();
+  std::vector<double> getVunit();
+  std::vector<int> getImask();
+  std::vector<double> getData();
 
 // Will be useful for tests
   void zero();

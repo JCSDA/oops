@@ -11,12 +11,12 @@
 #include "model/ObsWindQG.h"
 
 #include "eckit/config/Configuration.h"
+#include "oops/base/Variables.h"
 #include "model/GomQG.h"
 #include "model/ObsBias.h"
 #include "model/ObsSpaceQG.h"
 #include "model/ObsVecQG.h"
 #include "model/QgFortran.h"
-#include "model/VariablesQG.h"
 #include "util/Logger.h"
 
 // -----------------------------------------------------------------------------
@@ -26,13 +26,10 @@ static oops::ObsOperatorMaker<QgTraits, ObsWindQG>   makerWind_("Wind");
 // -----------------------------------------------------------------------------
 
 ObsWindQG::ObsWindQG(const ObsSpaceQG &, const eckit::Configuration & config)
-  : keyOperWind_(0), varin_()
+  : keyOperWind_(0), varin_(std::vector<std::string>{"u","v"})
 {
   const eckit::Configuration * configc = &config;
   qg_wind_setup_f90(keyOperWind_, &configc);
-  int keyVarin;
-  qg_obsoper_inputs_f90(keyOperWind_, keyVarin);
-  varin_.reset(new VariablesQG(keyVarin));
   oops::Log::trace() << "ObsWindQG created." << std::endl;
 }
 

@@ -15,13 +15,15 @@
 #include <string>
 
 #include "model/QgFortran.h"
-#include "util/DateTime.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 
+namespace oops {
+  class Variables;
+}
+
 namespace qg {
-  class ObsSpaceQG;
-  class VariablesQG;
+  class LocationsQG;
 
 /// GomQG class to handle local model values for QG model.
 
@@ -30,10 +32,10 @@ class GomQG : public util::Printable,
  public:
   static const std::string classname() {return "qg::GomQG";}
 
-  GomQG(const ObsSpaceQG &, const VariablesQG &,
-        const util::DateTime &, const util::DateTime &);
-  GomQG(const eckit::Configuration &);
+  GomQG(const LocationsQG &, const oops::Variables &);
+  GomQG(const eckit::Configuration &, const oops::Variables &);
   GomQG(const GomQG &);
+
   explicit GomQG(): keyGom_(0) {}
   explicit GomQG(int & fgom): keyGom_(fgom) {}
 

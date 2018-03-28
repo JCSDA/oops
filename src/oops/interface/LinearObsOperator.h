@@ -17,13 +17,13 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "util/Logger.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/LinearObsOperBase.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsVector.h"
-#include "oops/interface/Variables.h"
 #include "util/DateTime.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
@@ -43,7 +43,6 @@ class LinearObsOperator : public util::Printable,
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncrement_;
   typedef ObservationSpace<MODEL>    ObsSpace_;
   typedef ObsVector<MODEL>           ObsVector_;
-  typedef Variables<MODEL>           Variables_;
 
  public:
   static const std::string classname() {return "oops::LinearObsOperator";}
@@ -60,7 +59,7 @@ class LinearObsOperator : public util::Printable,
   void obsEquivAD(GeoVaLs_ &, const ObsVector_ &, ObsAuxIncrement_ &) const;
 
 /// Other
-  Variables_ variables() const;  // Required inputs variables from LinearModel
+  const Variables & variables() const;  // Required inputs variables from LinearModel
 
  private:
   void print(std::ostream &) const;
@@ -122,12 +121,10 @@ void LinearObsOperator<MODEL>::obsEquivAD(GeoVaLs_ & gvals, const ObsVector_ & y
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-Variables<MODEL> LinearObsOperator<MODEL>::variables() const {
+const Variables & LinearObsOperator<MODEL>::variables() const {
   Log::trace() << "LinearObsOperator<MODEL>::variables starting" << std::endl;
   util::Timer timer(classname(), "variables");
-  Variables_ inputs(oper_->variables());
-  Log::trace() << "LinearObsOperator<MODEL>::variables done" << std::endl;
-  return inputs;
+  return oper_->variables();
 }
 
 // -----------------------------------------------------------------------------

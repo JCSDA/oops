@@ -15,6 +15,7 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include "oops/base/Variables.h"
 #include "oops/interface/LinearObsOperBase.h"
 #include "util/ObjectCounter.h"
 #include "model/QgTraits.h"
@@ -48,7 +49,7 @@ class ObsWSpeedTLAD : public oops::LinearObsOperBase<QgTraits>,
   void obsEquivAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &) const override;
 
 // Other
-  boost::shared_ptr<const VariablesQG> variables() const override {return varin_;}
+  const oops::Variables & variables() const override {return varin_;}
 
   int & toFortran() {return keyOperWspeed_;}
   const int & toFortran() const {return keyOperWspeed_;}
@@ -57,7 +58,7 @@ class ObsWSpeedTLAD : public oops::LinearObsOperBase<QgTraits>,
   void print(std::ostream &) const override;
   F90hop keyOperWspeed_;
   GomQG traj_;
-  boost::shared_ptr<const VariablesQG> varin_;
+  const oops::Variables varin_;
 };
 // -----------------------------------------------------------------------------
 

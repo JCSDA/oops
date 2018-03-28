@@ -26,10 +26,9 @@ public :: qg_geom_registry
 type :: qg_geom
   integer :: nx
   integer :: ny
-  real(kind=kind_real),allocatable :: lats(:)
-  real(kind=kind_real),allocatable :: lons(:)
-  real(kind=kind_real),allocatable :: areas(:,:)
-  integer,allocatable :: iproc(:,:)
+  real(kind=kind_real),allocatable :: lat(:)
+  real(kind=kind_real),allocatable :: lon(:)
+  real(kind=kind_real),allocatable :: area(:,:)
 end type qg_geom
 
 #define LISTED_TYPE qg_geom
@@ -53,8 +52,9 @@ implicit none
 integer(c_int), intent(inout) :: c_key_self
 type(c_ptr), intent(in)    :: c_conf
 
-integer :: ix,iy,nx_loc,ix_loc,iproc
+integer :: ix,iy,nx_loc,ix_loc
 real(kind=kind_real) :: dx,dytot,dy
+real(kind=kind_real),parameter :: pi = acos(-1.0), req = 6371229.0
 type(qg_geom), pointer :: self
 
 call qg_geom_registry%init()
@@ -64,36 +64,21 @@ call qg_geom_registry%get(c_key_self,self)
 self%nx = config_get_int(c_conf, "nx")
 self%ny = config_get_int(c_conf, "ny")
 
-allocate(self%lons(self%nx))
-allocate(self%lats(self%ny))
-allocate(self%areas(self%nx,self%ny))
-allocate(self%iproc(self%nx,self%ny))
+allocate(self%lon(self%nx))
+allocate(self%lat(self%ny))
+allocate(self%area(self%nx,self%ny))
 
-dx = 360.0 / real(self%nx,kind=kind_real);
-dytot = 360.0 * real(self%ny,kind=kind_real) / real(self%nx,kind=kind_real);
+dx = 2.0 * pi / real(self%nx,kind=kind_real);
+dytot = 2.0 * pi * real(self%ny,kind=kind_real) / real(self%nx,kind=kind_real);
 dy = dytot / real(self%ny,kind=kind_real);
 do ix=1,self%nx
-   self%lons(ix) = -180.0+(real(ix,kind=kind_real)-0.5)*dx
+   self%lon(ix) = -pi+(real(ix,kind=kind_real)-0.5)*dx
 end do
 do iy=1,self%ny
-   self%lats(iy) = -0.5*dytot+(real(iy,kind=kind_real)-0.5)*dy;
+   self%lat(iy) = -0.5*dytot+(real(iy,kind=kind_real)-0.5)*dy;
 end do
 do iy=1,self%ny
-   self%areas(:,iy) = 6.371e6**2*cos(self%lats(iy)*acos(-1.0)/180.0)*dx*dy
-end do
-
-! Artificial grid distribution for tests
-nx_loc = self%nx/mpl%nproc
-if (nx_loc*mpl%nproc<self%nx) nx_loc = nx_loc+1
-ix_loc = 1
-iproc = 1
-do ix=1,self%nx
-   self%iproc(ix,:) = iproc
-   ix_loc = ix_loc+1
-   if (ix_loc>nx_loc) then
-      ix_loc = 1
-      iproc = iproc+1
-   end if
+   self%area(:,iy) = 6.371e6**2*cos(self%lat(iy))*dx*dy
 end do
 
 end subroutine c_qg_geo_setup
@@ -112,14 +97,12 @@ call qg_geom_registry%get(c_key_other, other)
 call qg_geom_registry%get(c_key_self , self )
 other%nx = self%nx
 other%ny = self%ny
-allocate(other%lons(other%nx))
-allocate(other%lats(other%ny))
-allocate(other%areas(other%nx,other%ny))
-allocate(other%iproc(other%nx,other%ny))
-other%lons = self%lons
-other%lats = self%lats
-other%areas = self%areas
-other%iproc = self%iproc
+allocate(other%lon(other%nx))
+allocate(other%lat(other%ny))
+allocate(other%area(other%nx,other%ny))
+other%lon = self%lon
+other%lat = self%lat
+other%area = self%area
 
 end subroutine c_qg_geo_clone
 

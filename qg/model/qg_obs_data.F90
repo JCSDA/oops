@@ -243,7 +243,7 @@ integer(c_int), intent(in) :: c_key_self
 integer(c_int), intent(in) :: lreq
 character(kind=c_char,len=1), intent(in) :: c_req(lreq+1)
 type(c_ptr), intent(in) :: c_t1, c_t2
-integer(c_int), intent(inout) :: c_key_locs
+integer(c_int), intent(in) :: c_key_locs
 
 type(obs_data), pointer :: self
 character(len=lreq) :: req
@@ -251,64 +251,29 @@ type(datetime) :: t1, t2
 type(qg_locs), pointer :: locs
 type(obs_vect) :: ovec
 character(len=8) :: col="Location"
-
-call obs_data_registry%get(c_key_self, self)
-call c_f_string(c_req, req)
-call c_f_datetime(c_t1, t1)
-call c_f_datetime(c_t2, t2)
-
-call obs_time_get(self, req, col, t1, t2, ovec)
-
-call qg_locs_registry%init()
-call qg_locs_registry%add(c_key_locs)
-call qg_locs_registry%get(c_key_locs,locs)
-     
-call qg_loc_setup(locs, ovec)
-
-deallocate(ovec%values)
-
-end subroutine obs_locations
-
-! ------------------------------------------------------------------------------
-
-subroutine obs_getgom(c_key_self, lreq, c_req, c_key_vars, c_t1, c_t2, c_key_gom) bind(c,name='qg_obsdb_getgom_f90')
-implicit none
-integer(c_int), intent(in) :: c_key_self
-integer(c_int), intent(in) :: lreq
-character(kind=c_char,len=1), intent(in) :: c_req(lreq+1)
-integer(c_int), intent(in) :: c_key_vars
-type(c_ptr), intent(in) :: c_t1, c_t2
-integer(c_int), intent(inout) :: c_key_gom
-
-type(obs_data), pointer :: self
-character(len=lreq) :: req
-type(qg_vars), pointer :: vars
-type(datetime) :: t1, t2
-type(qg_goms), pointer :: gom
-
 integer :: nobs
 integer, allocatable :: mobs(:)
 
 call obs_data_registry%get(c_key_self, self)
 call c_f_string(c_req, req)
-call qg_vars_registry%get(c_key_vars, vars)
 call c_f_datetime(c_t1, t1)
 call c_f_datetime(c_t2, t2)
 
 call obs_count(self, req, t1, t2, nobs)
 allocate(mobs(nobs))
 call obs_count(self, req, t1, t2, mobs)
+call obs_time_get(self, req, col, t1, t2, ovec)
 
-allocate(gom)
-call qg_goms_registry%init()
-call qg_goms_registry%add(c_key_gom)
-call qg_goms_registry%get(c_key_gom,gom)
+call qg_locs_registry%init()
+call qg_locs_registry%add(c_key_locs)
+call qg_locs_registry%get(c_key_locs,locs)
 
-call gom_setup(gom, vars, mobs)
+call qg_loc_setup(locs, ovec, mobs)
 
+deallocate(ovec%values)
 deallocate(mobs)
 
-end subroutine obs_getgom
+end subroutine obs_locations
 
 ! ------------------------------------------------------------------------------
 

@@ -14,15 +14,13 @@ namespace oops {
 extern "C" {
   void create_ug_f90(int &);
   void delete_ug_f90(int &);
-  void get_nlevs_f90(int &, int &);
-  void get_ncols_f90(int &, int &);
-  void get_lats_f90(int &, const int &, double *);
-  void get_lons_f90(int &, const int &, double *);
-  void get_areas_f90(int &, const int &, double *);
-  void get_levs_f90(int &, const int &, double *);
-  void get_mask3d_f90(int &, const int &, const int &, int *);
-  void get_mask2d_f90(int &, const int &, int *);
-  void get_glbind_f90(int &, const int &, int *);
+  void get_size_f90(int &, const int &, int &);
+  void get_lon_f90(int &, const int &, double *);
+  void get_lat_f90(int &, const int &, double *);
+  void get_area_f90(int &, const int &, double *);
+  void get_vunit_f90(int &, const int &, double *);
+  void get_imask_f90(int &, const int &, const int &, int *);
+  void get_data_f90(int &, const int &, double *);
 }
 }  // namespace oops
 

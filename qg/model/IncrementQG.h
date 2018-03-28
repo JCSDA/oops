@@ -32,6 +32,7 @@ namespace eckit {
 
 namespace oops {
   class UnstructuredGrid;
+  class Variables;
 }
 
 namespace qg {
@@ -40,7 +41,6 @@ namespace qg {
   class ModelBiasIncrement;
   class ErrorCovarianceQG;
   class StateQG;
-  class VariablesQG;
 
 /// Increment Class: Difference between two states
 /*!
@@ -58,7 +58,7 @@ class IncrementQG : public oops::GeneralizedDepartures,
   static const std::string classname() {return "qg::IncrementQG";}
 
 /// Constructor, destructor
-  IncrementQG(const GeometryQG &, const VariablesQG &, const util::DateTime &);
+  IncrementQG(const GeometryQG &, const oops::Variables &, const util::DateTime &);
   IncrementQG(const GeometryQG &, const IncrementQG &);
   IncrementQG(const IncrementQG &, const bool);
   IncrementQG(const IncrementQG &);
@@ -79,8 +79,8 @@ class IncrementQG : public oops::GeneralizedDepartures,
   void dirac(const eckit::Configuration &);
 
 /// Interpolate to observation location
-  void interpolateTL(const LocationsQG &, const VariablesQG &, GomQG &) const;
-  void interpolateAD(const LocationsQG &, const VariablesQG &, const GomQG &);
+  void interpolateTL(const LocationsQG &, const oops::Variables &, GomQG &) const;
+  void interpolateAD(const LocationsQG &, const oops::Variables &, const GomQG &);
 
 /// I/O and diagnostics
   void read(const eckit::Configuration &);

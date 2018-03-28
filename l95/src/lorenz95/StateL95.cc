@@ -29,22 +29,31 @@
 #include "lorenz95/ModelTrajectory.h"
 #include "lorenz95/Resolution.h"
 
+namespace oops {
+  class Variables;
+}
+
 namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
 /// Constructor, destructor
 // -----------------------------------------------------------------------------
-StateL95::StateL95(const Resolution & resol, const NoVariables &,
+StateL95::StateL95(const Resolution & resol, const oops::Variables &,
                    const util::DateTime & vt)
   : fld_(resol), time_(vt)
 {
   oops::Log::trace() << "StateL95::StateL95 created" << std::endl;
 }
 // -----------------------------------------------------------------------------
-StateL95::StateL95(const Resolution & resol, const eckit::Configuration & file)
-  : fld_(resol), time_(util::DateTime())
+StateL95::StateL95(const Resolution & resol, const eckit::Configuration & conf)
+  : fld_(resol), time_(conf.getString("date"))
 {
-  this->read(file);
+  oops::Log::trace() << "StateL95::StateL95 conf " << conf << std::endl;
+  if (conf.has("filename")) {
+    this->read(conf);
+  } else {
+    fld_.generate(conf);
+  }
   oops::Log::trace() << "StateL95::StateL95 created and read in." << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -75,7 +84,7 @@ StateL95 & StateL95::operator=(const StateL95 & rhs) {
 // -----------------------------------------------------------------------------
 /// Interpolate to observation location
 // -----------------------------------------------------------------------------
-void StateL95::interpolate(const LocsL95 & locs, const NoVariables &, GomL95 & vals) const {
+void StateL95::interpolate(const LocsL95 & locs, const oops::Variables &, GomL95 & vals) const {
   fld_.interp(locs, vals);
 }
 // -----------------------------------------------------------------------------
@@ -112,11 +121,9 @@ void StateL95::read(const eckit::Configuration & config) {
   std::string stime;
   fin >> stime;
   const util::DateTime tt(stime);
-  const util::DateTime tc(config.getString("date"));
-  if (tc != tt) {
+  if (time_ != tt) {
     ABORT("StateL95::read: date and data file inconsistent.");
   }
-  time_ = tt;
 
   fld_.read(fin);
 

@@ -20,13 +20,13 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/StateWriter.h"
+#include "oops/base/Variables.h"
 #include "oops/base/instantiateCovarFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/Model.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
-#include "oops/interface/Variables.h"
 #include "oops/generic/UnstructuredGrid.h"
 #include "oops/runs/Application.h"
 #include "eckit/config/Configuration.h"
@@ -41,7 +41,6 @@ template <typename MODEL> class Dirac : public Application {
   typedef ModelAuxControl<MODEL>      ModelAux_;
   typedef Increment<MODEL>           Increment_;
   typedef State<MODEL>               State_;
-  typedef Variables<MODEL>           Variables_;
   typedef Localization<MODEL>        Localization_;
 
  public:
@@ -61,7 +60,7 @@ template <typename MODEL> class Dirac : public Application {
 
 //  Setup variables
     const eckit::LocalConfiguration varConfig(fullConfig, "variables");
-    const Variables_ vars(varConfig);
+    const Variables vars(varConfig);
     Log::info() << "Setup variables OK" << std::endl;
 
 //  Setup initial state
@@ -69,7 +68,7 @@ template <typename MODEL> class Dirac : public Application {
     const State_ xx(resol, initialConfig);
     Log::info() << "Setup initial state OK" << std::endl;
 
-//  Setup times
+//  Setup time
     const util::DateTime bgndate(xx.validTime());
     Log::info() << "Setup times OK" << std::endl;
 
@@ -85,7 +84,7 @@ template <typename MODEL> class Dirac : public Application {
     const eckit::LocalConfiguration covarConfig(fullConfig, "Covariance");
     const eckit::LocalConfiguration locConfig(covarConfig, "localization");
     boost::scoped_ptr<Localization_> loc_;
-    loc_.reset(new Localization_(xx, locConfig));
+    loc_.reset(new Localization_(resol, locConfig));
     Log::info() << "Setup localization OK" << std::endl;
 
 //  Apply NICAS
@@ -117,6 +116,21 @@ template <typename MODEL> class Dirac : public Application {
     dxdirout.write(output_Bens);
     Log::info() << "Write increment OK" << std::endl;
     Log::test() << "Increment norm: " << dxrndout.norm() << std::endl;
+
+//  Test NICAS adjoint
+    Increment_ x1(dxdir);
+    Increment_ x2(dxdir);
+    Increment_ x1save(dxdir);
+    Increment_ x2save(dxdir);
+    x1.random();
+    x2.random();
+    x1save = x1;
+    x2save = x2;
+    loc_->multiply(x1);
+    loc_->multiply(x2);
+    double p1 = x1.dot_product_with(x2save);
+    double p2 = x2.dot_product_with(x1save);
+    Log::test() << "Adjoint test: " << p1 << " / " << p2 << std::endl;
 
     return 0;
   }

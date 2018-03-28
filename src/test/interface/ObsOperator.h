@@ -60,9 +60,8 @@ template <typename MODEL> void testEquiv() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     ObsOperator_ hop(Test_::obspace()[jj]);
-
-    const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    const GeoVaLs_ gval(gconf);
+    eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
+    const GeoVaLs_ gval(gconf, hop.variables());
 
     eckit::LocalConfiguration biasConf;
     conf[jj].get("ObsBias", biasConf);
@@ -72,9 +71,9 @@ template <typename MODEL> void testEquiv() {
 
     hop.obsEquiv(gval, ovec, ybias);
 
-    const double tol = 1.0e-8;
     const double zz = ovec.rms();
     const double xx = conf[jj].getDouble("rmsequiv");
+    const double tol = conf[jj].getDouble("tolerance");
     BOOST_CHECK_CLOSE(xx, zz, tol);
   }
 }

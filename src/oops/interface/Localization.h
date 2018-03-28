@@ -19,7 +19,7 @@
 #include "util/Logger.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/LocalizationBase.h"
-#include "oops/interface/State.h"
+#include "oops/interface/Geometry.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 #include "util/Timer.h"
@@ -38,12 +38,12 @@ class Localization : public util::Printable,
                      private util::ObjectCounter<Localization<MODEL> > {
   typedef LocalizationBase<MODEL>    LocalizationBase_;
   typedef Increment<MODEL>           Increment_;
-  typedef State<MODEL>               State_;
+  typedef Geometry<MODEL>               Geometry_;
 
  public:
   static const std::string classname() {return "oops::Localization";}
 
-  Localization(const State_ &, const eckit::Configuration &);
+  Localization(const Geometry_ &, const eckit::Configuration &);
   virtual ~Localization();
 
   void multiply(Increment_ &) const;
@@ -56,12 +56,12 @@ class Localization : public util::Printable,
 // =============================================================================
 
 template<typename MODEL>
-Localization<MODEL>::Localization(const State_ & xx,
+Localization<MODEL>::Localization(const Geometry_ & resol,
                                   const eckit::Configuration & conf) : local_()
 {
   Log::trace() << "Localization<MODEL>::Localization starting" << std::endl;
   util::Timer timer(classname(), "Localization");
-  local_.reset(LocalizationFactory<MODEL>::create(xx, conf));
+  local_.reset(LocalizationFactory<MODEL>::create(resol, conf));
   Log::trace() << "Localization<MODEL>::Localization done" << std::endl;
 }
 

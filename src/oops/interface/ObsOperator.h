@@ -17,12 +17,12 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "util/Logger.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsOperatorBase.h"
 #include "oops/interface/ObsVector.h"
-#include "oops/interface/Variables.h"
 #include "util/DateTime.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
@@ -41,7 +41,6 @@ class ObsOperator : public util::Printable,
   typedef ObsAuxControl<MODEL>       ObsAuxControl_;
   typedef ObsVector<MODEL>           ObsVector_;
   typedef ObservationSpace<MODEL>    ObsSpace_;
-  typedef Variables<MODEL>           Variables_;
 
  public:
   static const std::string classname() {return "oops::ObsOperator";}
@@ -56,7 +55,7 @@ class ObsOperator : public util::Printable,
   const ObsOperatorBase_ & obsoperator() const {return *oper_;}
 
 /// Other
-  Variables_ variables() const;  // Required inputs variables from Model
+  const Variables & variables() const;  // Required inputs variables from Model
 
  private:
   void print(std::ostream &) const;
@@ -97,12 +96,10 @@ void ObsOperator<MODEL>::obsEquiv(const GeoVaLs_ & gvals, ObsVector_ & yy,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-Variables<MODEL> ObsOperator<MODEL>::variables() const {
+const Variables & ObsOperator<MODEL>::variables() const {
   Log::trace() << "ObsOperator<MODEL>::variables starting" << std::endl;
   util::Timer timer(classname(), "variables");
-  Variables<MODEL> var(oper_->variables());
-  Log::trace() << "ObsOperator<MODEL>::variables done" << std::endl;
-  return var;
+  return oper_->variables();
 }
 
 // -----------------------------------------------------------------------------

@@ -1,11 +1,8 @@
 /*
- * (C) Copyright 2009-2016 ECMWF.
- * 
+ * (C) Copyright 2017 UCAR
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
- * granted to it by virtue of its status as an intergovernmental organisation nor
- * does it submit to any jurisdiction.
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
 #ifndef QG_MODEL_VARIABLESQG_H_
@@ -13,41 +10,41 @@
 
 #include <ostream>
 #include <string>
+#include <vector>
 
-#include "util/Logger.h"
-#include "model/QgFortran.h"
-#include "eckit/config/Configuration.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
+
+namespace eckit {
+  class Configuration;
+}
+
+namespace oops {
+  class Variables;
+}
 
 namespace qg {
 
 // -----------------------------------------------------------------------------
-/// VariablesQG class to handle variables for QG model.
 
 class VariablesQG : public util::Printable,
-              private util::ObjectCounter<VariablesQG> {
+                    private util::ObjectCounter<VariablesQG> {
  public:
   static const std::string classname() {return "qg::VariablesQG";}
 
-  explicit VariablesQG(const eckit::Configuration & config) {
-    using oops::Log;
-    Log::debug() << "VariablesQG config:" << config << std::endl;
-    const eckit::Configuration * conf = &config;
-    qg_var_create_f90(keyVar_, &conf);
-  }
-  explicit VariablesQG(const int keyVar): keyVar_(keyVar) {}
+  explicit VariablesQG(const oops::Variables &);
+  explicit VariablesQG(const eckit::Configuration &);
 
-  ~VariablesQG() {qg_var_delete_f90(keyVar_);}
+  ~VariablesQG();
 
-  VariablesQG(const VariablesQG & other) {qg_var_clone_f90(other.keyVar_, keyVar_);}
+  VariablesQG(const VariablesQG &);
 
-  int& toFortran() {return keyVar_;}
-  const int& toFortran() const {return keyVar_;}
+  const int * toFortran() const {return &fvars_[0];}
 
  private:
   void print(std::ostream &) const;
-  F90vars keyVar_;
+  void setF90(const std::vector<std::string>);
+  std::vector<int> fvars_;
 };
 
 // -----------------------------------------------------------------------------

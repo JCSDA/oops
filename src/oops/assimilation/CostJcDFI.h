@@ -24,6 +24,7 @@
 #include "oops/base/PostBase.h"
 #include "oops/base/PostBaseTL.h"
 #include "oops/base/PostBaseAD.h"
+#include "oops/base/Variables.h"
 #include "oops/base/WeightedDiff.h"
 #include "oops/base/WeightedDiffTL.h"
 #include "oops/base/WeightedDiffAD.h"
@@ -31,7 +32,6 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
-#include "oops/interface/Variables.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
 
@@ -50,7 +50,6 @@ template<typename MODEL> class CostJcDFI : public CostTermBase<MODEL> {
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
   typedef Increment<MODEL>           Increment_;
-  typedef Variables<MODEL>           Variables_;
 
  public:
 /// Construct \f$ J_c\f$.
@@ -178,7 +177,7 @@ double CostJcDFI<MODEL>::finalizeTraj(const eckit::Configuration &) {
 
 template<typename MODEL>
 Increment<MODEL> * CostJcDFI<MODEL>::newDualVector() const {
-  Variables_ vars(conf_);
+  const Variables vars(conf_);
   Increment_ * dx = new Increment_(*tlres_, vars, vt_);
   return dx;
 }

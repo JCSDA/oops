@@ -10,25 +10,26 @@
 
 ! ------------------------------------------------------------------------------
 
-subroutine qg_field_create_c(c_key_self, c_key_geom, c_key_vars) bind(c,name='qg_field_create_f90')
+subroutine qg_field_create_c(c_key_self, c_key_geom, c_vars) bind(c,name='qg_field_create_f90')
 use iso_c_binding
 use qg_fields
 use qg_geom_mod
 use qg_vars_mod
 implicit none
 integer(c_int), intent(inout) :: c_key_self
-integer(c_int), intent(in) :: c_key_geom !< Geometry
-integer(c_int), intent(in) :: c_key_vars !< List of variables
+integer(c_int), intent(in)    :: c_key_geom !< Geometry
+integer(c_int), dimension(*), intent(in) :: c_vars     !< List of variables
 
 type(qg_field), pointer :: self
 type(qg_geom),  pointer :: geom
-type(qg_vars),  pointer :: vars
+type(qg_vars) :: vars
 
 call qg_geom_registry%get(c_key_geom, geom)
-call qg_vars_registry%get(c_key_vars, vars)
 call qg_field_registry%init()
 call qg_field_registry%add(c_key_self)
 call qg_field_registry%get(c_key_self,self)
+
+call qg_vars_create(vars, c_vars)
 
 call create(self, geom, vars)
 
@@ -286,6 +287,7 @@ call change_resol(fld,rhs)
 end subroutine qg_field_change_resol_c
 
 ! ------------------------------------------------------------------------------
+
 subroutine qg_field_convert_to_c(c_key_fld, c_key_ug) bind (c,name='qg_field_convert_to_f90')
 use iso_c_binding
 use qg_fields
@@ -302,7 +304,9 @@ call unstructured_grid_registry%get(c_key_ug,ug)
 call convert_to_ug(fld, ug)
 
 end subroutine qg_field_convert_to_c
+
 ! ------------------------------------------------------------------------------
+
 subroutine qg_field_convert_from_c(c_key_fld, c_key_ug) bind (c,name='qg_field_convert_from_f90')
 use iso_c_binding
 use qg_fields
@@ -319,6 +323,7 @@ call unstructured_grid_registry%get(c_key_ug,ug)
 call convert_from_ug(fld, ug)
 
 end subroutine qg_field_convert_from_c
+
 ! ------------------------------------------------------------------------------
 
 subroutine qg_field_read_file_c(c_key_fld, c_conf, c_dt) bind(c,name='qg_field_read_file_f90')
@@ -412,7 +417,7 @@ end subroutine qg_field_rms_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine qg_field_interp_tl_c(c_key_fld,c_key_loc,c_key_var,c_key_gom) bind(c,name='qg_field_interp_tl_f90')
+subroutine qg_field_interp_tl_c(c_key_fld,c_key_loc,c_vars,c_key_gom) bind(c,name='qg_field_interp_tl_f90')
 use iso_c_binding
 use qg_fields
 use qg_locs_mod
@@ -421,17 +426,17 @@ use qg_goms_mod
 implicit none
 integer(c_int), intent(in) :: c_key_fld  !< Fields to be interpolated
 integer(c_int), intent(in) :: c_key_loc  !< List of requested locations
-integer(c_int), intent(in) :: c_key_var  !< List of requested variables
+integer(c_int), dimension(*), intent(in) :: c_vars     !< List of variables
 integer(c_int), intent(in) :: c_key_gom  !< Interpolated values
 type(qg_field), pointer :: fld
 type(qg_locs),  pointer :: locs
-type(qg_vars),  pointer :: vars
 type(qg_goms),  pointer :: gom
+type(qg_vars) :: vars
 
 call qg_field_registry%get(c_key_fld, fld)
 call qg_locs_registry%get(c_key_loc, locs)
-call qg_vars_registry%get(c_key_var, vars)
 call qg_goms_registry%get(c_key_gom, gom)
+call qg_vars_create(vars, c_vars)
 
 call interp_tl(fld, locs, vars, gom)
 
@@ -439,7 +444,7 @@ end subroutine qg_field_interp_tl_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine qg_field_interp_ad_c(c_key_fld,c_key_loc,c_key_var,c_key_gom) bind(c,name='qg_field_interp_ad_f90')
+subroutine qg_field_interp_ad_c(c_key_fld,c_key_loc,c_vars,c_key_gom) bind(c,name='qg_field_interp_ad_f90')
 use iso_c_binding
 use qg_fields
 use qg_locs_mod
@@ -448,17 +453,17 @@ use qg_goms_mod
 implicit none
 integer(c_int), intent(in) :: c_key_fld  !< Fields to be interpolated
 integer(c_int), intent(in) :: c_key_loc  !< List of requested locations
-integer(c_int), intent(in) :: c_key_var  !< List of requested variables
+integer(c_int), dimension(*), intent(in) :: c_vars     !< List of variables
 integer(c_int), intent(in) :: c_key_gom  !< Interpolated values
 type(qg_field), pointer :: fld
 type(qg_locs),  pointer :: locs
-type(qg_vars),  pointer :: vars
 type(qg_goms),  pointer :: gom
+type(qg_vars) :: vars
 
 call qg_field_registry%get(c_key_fld, fld)
 call qg_locs_registry%get(c_key_loc, locs)
-call qg_vars_registry%get(c_key_var, vars)
 call qg_goms_registry%get(c_key_gom, gom)
+call qg_vars_create(vars, c_vars)
 
 call interp_ad(fld, locs, vars, gom)
 

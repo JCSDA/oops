@@ -25,11 +25,11 @@
 
 #include "oops/runs/Test.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
+#include "oops/base/Variables.h"
 #include "oops/base/instantiateCovarFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
-#include "oops/interface/Variables.h"
 #include "test/TestEnvironment.h"
 #include "eckit/config/Configuration.h"
 #include "util/DateTime.h"
@@ -42,14 +42,13 @@ namespace test {
 template <typename MODEL> class ErrorCovarianceFixture : private boost::noncopyable {
   typedef oops::ModelSpaceCovarianceBase<MODEL> Covariance_;
   typedef oops::Geometry<MODEL>       Geometry_;
-  typedef oops::Variables<MODEL>      Variables_;
 
  public:
   static const eckit::Configuration   & test()       {return *getInstance().test_;}
-  static const Geometry_      & resol()      {return *getInstance().resol_;}
-  static const Variables_     & ctlvars()    {return *getInstance().ctlvars_;}
-  static const util::DateTime & time()       {return *getInstance().time_;}
-  static const Covariance_    & covariance() {return *getInstance().B_;}
+  static const Geometry_       & resol()      {return *getInstance().resol_;}
+  static const oops::Variables & ctlvars()    {return *getInstance().ctlvars_;}
+  static const util::DateTime  & time()       {return *getInstance().time_;}
+  static const Covariance_     & covariance() {return *getInstance().B_;}
 
  private:
   static ErrorCovarianceFixture<MODEL>& getInstance() {
@@ -66,7 +65,7 @@ template <typename MODEL> class ErrorCovarianceFixture : private boost::noncopya
     resol_.reset(new Geometry_(resolConfig));
 
     const eckit::LocalConfiguration varConfig(TestEnvironment::config(), "Variables");
-    ctlvars_.reset(new Variables_(varConfig));
+    ctlvars_.reset(new oops::Variables(varConfig));
 
     const eckit::LocalConfiguration fgconf(TestEnvironment::config(), "State");
     oops::State<MODEL> xx(*resol_, fgconf);
@@ -82,10 +81,10 @@ template <typename MODEL> class ErrorCovarianceFixture : private boost::noncopya
   ~ErrorCovarianceFixture<MODEL>() {}
 
   boost::scoped_ptr<const eckit::LocalConfiguration>   test_;
-  boost::scoped_ptr<const Geometry_>      resol_;
-  boost::scoped_ptr<const Variables_>     ctlvars_;
-  boost::scoped_ptr<const util::DateTime> time_;
-  boost::scoped_ptr<Covariance_>          B_;
+  boost::scoped_ptr<const Geometry_>       resol_;
+  boost::scoped_ptr<const oops::Variables> ctlvars_;
+  boost::scoped_ptr<const util::DateTime>  time_;
+  boost::scoped_ptr<Covariance_>           B_;
 };
 
 // =============================================================================

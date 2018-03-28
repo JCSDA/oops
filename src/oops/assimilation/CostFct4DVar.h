@@ -22,11 +22,11 @@
 #include "oops/base/PostProcessorTL.h"
 #include "oops/base/PostProcessorAD.h"
 #include "oops/base/StateInfo.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/Model.h"
 #include "oops/interface/State.h"
-#include "oops/interface/Variables.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
 
@@ -49,7 +49,6 @@ template<typename MODEL> class CostFct4DVar : public CostFunction<MODEL> {
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
   typedef Model<MODEL>               Model_;
-  typedef Variables<MODEL>           Variables_;
 
  public:
   CostFct4DVar(const eckit::Configuration &, const Geometry_ &, const Model_ &);
@@ -76,7 +75,7 @@ template<typename MODEL> class CostFct4DVar : public CostFunction<MODEL> {
   util::Duration windowLength_;
   util::DateTime windowBegin_;
   util::DateTime windowEnd_;
-  const Variables_ ctlvars_;
+  const Variables ctlvars_;
 };
 
 // =============================================================================

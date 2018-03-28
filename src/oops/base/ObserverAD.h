@@ -21,7 +21,6 @@
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBaseAD.h"
 #include "oops/interface/GeoVaLs.h"
-#include "oops/interface/Locations.h"
 #include "oops/interface/ObsAuxIncrement.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
@@ -34,7 +33,6 @@ template <typename MODEL, typename INCR> class ObserverAD : public PostBaseAD<IN
   typedef Departures<MODEL>          Departures_;
   typedef LinearObsOperators<MODEL>  LinearObsOperator_;
   typedef GeoVaLs<MODEL>             GeoVaLs_;
-  typedef Locations<MODEL>           Locations_;
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
   typedef ObsSpaces<MODEL>           ObsSpace_;
 
@@ -102,7 +100,7 @@ void ObserverAD<MODEL, INCR>::doFirstAD(INCR & dx, const util::DateTime & bgn,
 
   for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
     boost::shared_ptr<GeoVaLs_>
-      gom(new GeoVaLs_(obspace_[jj], hoptlad_.variables(jj), bgn_, end_));
+      gom(new GeoVaLs_(obspace_[jj].locations(bgn_, end_), hoptlad_.variables(jj)));
     hoptlad_[jj].obsEquivAD(*gom, (*ydep_)[jj], ybias_);
     gvals_.push_back(gom);
   }
@@ -115,12 +113,9 @@ void ObserverAD<MODEL, INCR>::doProcessingAD(INCR & dx) {
   if (t1 < bgn_) t1 = bgn_;
   if (t2 > end_) t2 = end_;
 
+// Adjoint of interpolate state variables to obs locations
   for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
-//  Get locations info for interpolator
-    Locations_ locs(obspace_[jj], t1, t2);
-
-//  Interpolate state variables to obs locations
-    dx.interpolateAD(locs, hoptlad_.variables(jj), *gvals_.at(jj));
+    dx.interpolateAD(obspace_[jj].locations(t1, t2), hoptlad_.variables(jj), *gvals_.at(jj));
   }
 }
 // -----------------------------------------------------------------------------

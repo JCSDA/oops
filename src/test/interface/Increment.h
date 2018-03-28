@@ -25,11 +25,10 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/runs/Test.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
-#include "oops/interface/State.h"
-#include "oops/interface/Variables.h"
+#include "oops/runs/Test.h"
 #include "test/TestEnvironment.h"
 #include "util/DateTime.h"
 #include "util/dot_product.h"
@@ -40,13 +39,11 @@ namespace test {
 
 template <typename MODEL> class IncrementFixture : private boost::noncopyable {
   typedef oops::Geometry<MODEL>       Geometry_;
-  typedef oops::State<MODEL>          State_;
-  typedef oops::Variables<MODEL>      Variables_;
 
  public:
-  static const Geometry_      & resol()      {return *getInstance().resol_;}
-  static const Variables_     & ctlvars()    {return *getInstance().ctlvars_;}
-  static const util::DateTime & time()       {return *getInstance().time_;}
+  static const Geometry_       & resol()   {return *getInstance().resol_;}
+  static const oops::Variables & ctlvars() {return *getInstance().ctlvars_;}
+  static const util::DateTime  & time()    {return *getInstance().time_;}
 
  private:
   static IncrementFixture<MODEL>& getInstance() {
@@ -60,20 +57,16 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
     resol_.reset(new Geometry_(resolConfig));
 
     const eckit::LocalConfiguration varConfig(TestEnvironment::config(), "Variables");
-    ctlvars_.reset(new Variables_(varConfig));
+    ctlvars_.reset(new oops::Variables(varConfig));
 
-//  Setup reference state
-    const eckit::LocalConfiguration fgconf(TestEnvironment::config(), "State");
-    State_ xx(*resol_, fgconf);
-
-    time_.reset(new util::DateTime(xx.validTime()));
+    time_.reset(new util::DateTime(TestEnvironment::config().getString("TestDate")));
   }
 
   ~IncrementFixture<MODEL>() {}
 
-  boost::scoped_ptr<Geometry_>      resol_;
-  boost::scoped_ptr<Variables_>     ctlvars_;
-  boost::scoped_ptr<util::DateTime> time_;
+  boost::scoped_ptr<Geometry_>       resol_;
+  boost::scoped_ptr<oops::Variables> ctlvars_;
+  boost::scoped_ptr<util::DateTime>  time_;
 };
 
 // =============================================================================

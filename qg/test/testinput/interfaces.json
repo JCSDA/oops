@@ -6,17 +6,36 @@
     "bc": "1"
   },
   "Variables": {
-    "variables": "ci"
+    "variables": ["x"]
   },
+  "Locations": {},
   "TestDate": "2009-12-31T00:00:00Z",
   "State": {
     "filename": "Data/truth.fc.2009-12-15T00:00:00Z.P16D",
     "date": "2009-12-31T00:00:00Z"
   },
   "StateTest": {
+    "StateFile": {
+      "filename": "Data/truth.fc.2009-12-15T00:00:00Z.P16D",
+      "date": "2009-12-31T00:00:00Z"
+    },
     "date": "2009-12-31T00:00:00Z",
-    "norm": "15.010",
-    "tolerance": "0.005"
+    "norm-file": "15.010355026",
+    "StateGenerate" : {
+      "filename": "Data/truth.fc.2009-12-15T00:00:00Z.P16D",
+      "date": "2009-12-31T00:00:00Z",
+      "mean": 8.0,
+      "sinus": 2.0
+    },
+    "norm-gen": "15.010355026",
+    "tolerance": 1.0e-8,
+    "Locations": {
+      "positions": [0.717]
+    },
+    "Variables": {
+      "variables": ["x"]
+    },
+    "values": [6.042838]
   },
   "LinObsOpTest": {
     "tlm_tol": "1e-8"
@@ -100,7 +119,8 @@
         "covariance": "diagonal",
         "obserror": "ObsErr"
       },
-      "rmsequiv": "12.62135549999"
+      "rmsequiv": "12.62135549999",
+      "tolerance": "1.0e-8"
     },
     {
       "ObsType": "Wind",
@@ -122,7 +142,8 @@
         "covariance": "diagonal",
         "obserror": "ObsErr"
       },
-      "rmsequiv": "4.2635108047106"
+      "rmsequiv": "4.2635108047106",
+      "tolerance": "1.0e-8"
     },
     {
       "ObsType": "WSpeed",
@@ -144,7 +165,8 @@
         "covariance": "diagonal",
         "obserror": "ObsErr"
       },
-      "rmsequiv": "6.12677564645768"
+      "rmsequiv": "6.12677564645768",
+      "tolerance": "1.0e-8"
     }
   ]}
 }
