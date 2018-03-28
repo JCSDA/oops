@@ -40,6 +40,7 @@ type mesh_type
    integer,allocatable :: lend(:)          !< Stripack list end
    integer :: lnew                         !< Stripack pointer to the first empty location in list
    integer :: nb                           !< Number of boundary nodes
+   integer,allocatable :: bnd(:)           !< Boundary nodes
 
    ! Triangles data
    integer :: nt                           !< Number of triangles
@@ -54,6 +55,7 @@ contains
    procedure :: trans => mesh_trans
    procedure :: trlist => mesh_trlist
    procedure :: bnodes => mesh_bnodes
+   procedure :: barcs => mesh_barcs
    procedure :: check => mesh_check
    procedure :: barycentric
    procedure :: addnode
@@ -388,25 +390,41 @@ implicit none
 ! Passed variables
 class(mesh_type),intent(inout) :: mesh !< Mesh
 
+! Allocation
+allocate(mesh%bnd(mesh%nnr))
+
+! Find boundary nodes
+call msi(mesh%bnd)
+call bnodes(mesh%nnr,mesh%list,mesh%lptr,mesh%lend,mesh%bnd,mesh%nb,mesh%na,mesh%nt)
+
+end subroutine mesh_bnodes
+
+!----------------------------------------------------------------------
+! Subroutine: mesh_barcs
+!> Purpose: find boundary arcs
+!----------------------------------------------------------------------
+subroutine mesh_barcs(mesh)
+
+implicit none
+
+! Passed variables
+class(mesh_type),intent(inout) :: mesh !< Mesh
+
 ! Local variables
 integer :: inr
-integer,allocatable :: nodes(:),larcb(:,:)
+integer,allocatable :: larcb(:,:)
 integer :: ia,nab,iab
 real(kind_real) :: dist_12,v1(3),v2(3),vp(3),v(3),vf(3),vt(3),tlat,tlon,trad,dist_t1,dist_t2
 
 ! Allocation
-allocate(nodes(mesh%nnr))
 allocate(larcb(2,3*(mesh%nnr-2)))
 allocate(mesh%bdist(mesh%nnr))
 
-! Find boundary nodes
-call msi(nodes)
-call bnodes(mesh%nnr,mesh%list,mesh%lptr,mesh%lend,nodes,mesh%nb,mesh%na,mesh%nt)
 if (mesh%nb>0) then
    ! Find boundary arcs
    nab = 0
    do ia=1,mesh%na
-      if (any(nodes(1:mesh%nb)==mesh%larc(1,ia)).and.any(nodes(1:mesh%nb)==mesh%larc(2,ia))) then
+      if (any(mesh%bnd(1:mesh%nb)==mesh%larc(1,ia)).and.any(mesh%bnd(1:mesh%nb)==mesh%larc(2,ia))) then
          nab = nab+1
          larcb(:,nab) = mesh%larc(:,ia)
       end if
@@ -458,7 +476,7 @@ else
    mesh%bdist = huge(1.0)
 end if
 
-end subroutine mesh_bnodes
+end subroutine mesh_barcs
 
 !----------------------------------------------------------------------
 ! Subroutine: mesh_check

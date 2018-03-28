@@ -270,12 +270,14 @@ if (allocated(nicas_blk%s)) then
    deallocate(nicas_blk%s)
 end if
 if (allocated(nicas_blk%d)) then
-   do its=1,nam%nts-1
+   do its=2,nam%nts
       do il0=1,geom%nl0
         call nicas_blk%d(il0,its)%dealloc
+        call nicas_blk%dinv(il0,its)%dealloc
       end do
    end do
    deallocate(nicas_blk%d)
+   deallocate(nicas_blk%dinv)
 end if
 if (allocated(nicas_blk%sb_to_c1b)) deallocate(nicas_blk%sb_to_c1b)
 if (allocated(nicas_blk%sb_to_l1)) deallocate(nicas_blk%sb_to_l1)
@@ -2122,12 +2124,8 @@ type(com_type) :: com_ADinv(mpl%nproc)
 write(mpl%unit,'(a7,a)') '','Compute advection'
 
 ! Allocation
-allocate(dfull(geom%nl0,nam%nts-1))
-allocate(dinvfull(geom%nl0,nam%nts-1))
-allocate(nicas_blk%d(geom%nl0,nam%nts-1))
-allocate(nicas_blk%dinv(geom%nl0,nam%nts-1))
-allocate(lcheck_c0d(geom%nc0))
-allocate(lcheck_c0dinv(geom%nc0))
+allocate(dfull(geom%nl0,2:nam%nts))
+allocate(dinvfull(geom%nl0,2:nam%nts))
 
 ! Initialization
 mask_c0 = .true.
@@ -2135,11 +2133,11 @@ mask_c0 = .true.
 do its=2,nam%nts
    do il0=1,geom%nl0
       ! Compute direct interpolation
-      call dfull(il0,its-1)%interp(geom%nc0,cmat_blk%displ_lon(:,il0,its),cmat_blk%displ_lat(:,il0,its),mask_c0,geom%nc0, &
+      call dfull(il0,its)%interp(geom%nc0,cmat_blk%displ_lon(:,il0,its),cmat_blk%displ_lat(:,il0,its),mask_c0,geom%nc0, &
     & geom%lon,geom%lat,mask_c0,nam%diag_interp)
 
       ! Compute inverse interpolation
-      call dinvfull(il0,its-1)%interp(geom%nc0,geom%lon,geom%lat,mask_c0,geom%nc0,cmat_blk%displ_lon(:,il0,its), &
+      call dinvfull(il0,its)%interp(geom%nc0,geom%lon,geom%lat,mask_c0,geom%nc0,cmat_blk%displ_lon(:,il0,its), &
     & cmat_blk%displ_lat(:,il0,its),mask_c0,nam%diag_interp)
    end do
 end do
@@ -2149,12 +2147,16 @@ d_n_s_max = 0
 dinv_n_s_max = 0
 do its=2,nam%nts
    do il0=1,geom%nl0
-      d_n_s_max = max(d_n_s_max,dfull(il0,its-1)%n_s)
-      dinv_n_s_max = max(dinv_n_s_max,dinvfull(il0,its-1)%n_s)
+      d_n_s_max = max(d_n_s_max,dfull(il0,its)%n_s)
+      dinv_n_s_max = max(dinv_n_s_max,dinvfull(il0,its)%n_s)
    end do
 end do
+allocate(lcheck_c0d(geom%nc0))
+allocate(lcheck_c0dinv(geom%nc0))
 allocate(lcheck_d(d_n_s_max,geom%nl0,2:nam%nts))
 allocate(lcheck_dinv(dinv_n_s_max,geom%nl0,2:nam%nts))
+allocate(nicas_blk%d(geom%nl0,2:nam%nts))
+allocate(nicas_blk%dinv(geom%nl0,2:nam%nts))
 
 ! Halo definitions
 
@@ -2172,20 +2174,20 @@ lcheck_d = .false.
 lcheck_dinv = .false.
 do its=2,nam%nts
    do il0=1,geom%nl0
-      do i_s=1,dfull(il0,its-1)%n_s
-         ic0 = dfull(il0,its-1)%row(i_s)
+      do i_s=1,dfull(il0,its)%n_s
+         ic0 = dfull(il0,its)%row(i_s)
          iproc = geom%c0_to_proc(ic0)
          if (iproc==mpl%myproc) then
-            jc0 = dfull(il0,its-1)%col(i_s)
+            jc0 = dfull(il0,its)%col(i_s)
             lcheck_d(i_s,il0,its) = .true.
             lcheck_c0d(jc0) = .true.
          end if
       end do
-      do i_s=1,dinvfull(il0,its-1)%n_s
-         ic0 = dinvfull(il0,its-1)%row(i_s)
+      do i_s=1,dinvfull(il0,its)%n_s
+         ic0 = dinvfull(il0,its)%row(i_s)
          iproc = geom%c0_to_proc(ic0)
          if (iproc==mpl%myproc) then
-            jc0 = dinvfull(il0,its-1)%col(i_s)
+            jc0 = dinvfull(il0,its)%col(i_s)
             lcheck_dinv(i_s,il0,its) = .true.
             lcheck_c0dinv(jc0) = .true.
          end if
@@ -2196,8 +2198,8 @@ end do
 ! Halo sizes
 do its=2,nam%nts
    do il0=1,geom%nl0
-      nicas_blk%d(il0,its-1)%n_s = count(lcheck_d(:,il0,its))
-      nicas_blk%dinv(il0,its-1)%n_s = count(lcheck_dinv(:,il0,its))
+      nicas_blk%d(il0,its)%n_s = count(lcheck_d(:,il0,its))
+      nicas_blk%dinv(il0,its)%n_s = count(lcheck_dinv(:,il0,its))
    end do
 end do
 nicas_blk%nc0d = count(lcheck_c0d)
@@ -2241,8 +2243,8 @@ d_n_s_max_loc = 0
 dinv_n_s_max_loc = 0
 do its=2,nam%nts
    do il0=1,geom%nl0
-      d_n_s_max_loc = max(d_n_s_max_loc,nicas_blk%d(il0,its-1)%n_s)
-      dinv_n_s_max_loc = max(dinv_n_s_max_loc,nicas_blk%dinv(il0,its-1)%n_s)
+      d_n_s_max_loc = max(d_n_s_max_loc,nicas_blk%d(il0,its)%n_s)
+      dinv_n_s_max_loc = max(dinv_n_s_max_loc,nicas_blk%dinv(il0,its)%n_s)
    end do
 end do
 allocate(interpd_lg(d_n_s_max_loc,geom%nl0,2:nam%nts))
@@ -2250,14 +2252,14 @@ allocate(interpdinv_lg(dinv_n_s_max_loc,geom%nl0,2:nam%nts))
 do its=2,nam%nts
    do il0=1,geom%nl0
       i_s_loc = 0
-      do i_s=1,dfull(il0,its-1)%n_s
+      do i_s=1,dfull(il0,its)%n_s
          if (lcheck_d(i_s,il0,its)) then
             i_s_loc = i_s_loc+1
             interpd_lg(i_s_loc,il0,its) = i_s
          end if
       end do
       i_s_loc = 0
-      do i_s=1,dinvfull(il0,its-1)%n_s
+      do i_s=1,dinvfull(il0,its)%n_s
          if (lcheck_dinv(i_s,il0,its)) then
             i_s_loc = i_s_loc+1
             interpdinv_lg(i_s_loc,il0,its) = i_s
@@ -2269,28 +2271,28 @@ end do
 ! Local data
 do its=2,nam%nts
    do il0=1,geom%nl0
-      write(nicas_blk%d(il0,its-1)%prefix,'(a,i3.3,a,i2.2)') 'd_',il0,'_',its-1
-      write(nicas_blk%dinv(il0,its-1)%prefix,'(a,i3.3,a,i2.2)') 'dinv_',il0,'_',its-1
-      nicas_blk%d(il0,its-1)%n_src = nicas_blk%nc0d
-      nicas_blk%dinv(il0,its-1)%n_src = nicas_blk%nc0dinv
-      nicas_blk%d(il0,its-1)%n_dst = geom%nc0a
-      nicas_blk%dinv(il0,its-1)%n_dst = geom%nc0a
-      call nicas_blk%d(il0,its-1)%alloc
-      call nicas_blk%dinv(il0,its-1)%alloc
-      do i_s_loc=1,nicas_blk%d(il0,its-1)%n_s
+      write(nicas_blk%d(il0,its)%prefix,'(a,i3.3,a,i2.2)') 'd_',il0,'_',its
+      write(nicas_blk%dinv(il0,its)%prefix,'(a,i3.3,a,i2.2)') 'dinv_',il0,'_',its
+      nicas_blk%d(il0,its)%n_src = nicas_blk%nc0d
+      nicas_blk%dinv(il0,its)%n_src = nicas_blk%nc0dinv
+      nicas_blk%d(il0,its)%n_dst = geom%nc0a
+      nicas_blk%dinv(il0,its)%n_dst = geom%nc0a
+      call nicas_blk%d(il0,its)%alloc
+      call nicas_blk%dinv(il0,its)%alloc
+      do i_s_loc=1,nicas_blk%d(il0,its)%n_s
          i_s = interpd_lg(i_s_loc,il0,its)
-         nicas_blk%d(il0,its-1)%row(i_s_loc) = geom%c0_to_c0a(dfull(il0,its-1)%row(i_s))
-         nicas_blk%d(il0,its-1)%col(i_s_loc) = c0_to_c0d(dfull(il0,its-1)%col(i_s))
-         nicas_blk%d(il0,its-1)%S(i_s_loc) = dfull(il0,its-1)%S(i_s)
+         nicas_blk%d(il0,its)%row(i_s_loc) = geom%c0_to_c0a(dfull(il0,its)%row(i_s))
+         nicas_blk%d(il0,its)%col(i_s_loc) = c0_to_c0d(dfull(il0,its)%col(i_s))
+         nicas_blk%d(il0,its)%S(i_s_loc) = dfull(il0,its)%S(i_s)
       end do
-      do i_s_loc=1,nicas_blk%dinv(il0,its-1)%n_s
+      do i_s_loc=1,nicas_blk%dinv(il0,its)%n_s
          i_s = interpdinv_lg(i_s_loc,il0,its)
-         nicas_blk%dinv(il0,its-1)%row(i_s_loc) = geom%c0_to_c0a(dinvfull(il0,its-1)%row(i_s))
-         nicas_blk%dinv(il0,its-1)%col(i_s_loc) = c0_to_c0dinv(dinvfull(il0,its-1)%col(i_s))
-         nicas_blk%dinv(il0,its-1)%S(i_s_loc) = dinvfull(il0,its-1)%S(i_s)
+         nicas_blk%dinv(il0,its)%row(i_s_loc) = geom%c0_to_c0a(dinvfull(il0,its)%row(i_s))
+         nicas_blk%dinv(il0,its)%col(i_s_loc) = c0_to_c0dinv(dinvfull(il0,its)%col(i_s))
+         nicas_blk%dinv(il0,its)%S(i_s_loc) = dinvfull(il0,its)%S(i_s)
       end do
-      call nicas_blk%d(il0,its-1)%reorder
-      call nicas_blk%dinv(il0,its-1)%reorder
+      call nicas_blk%d(il0,its)%reorder
+      call nicas_blk%dinv(il0,its)%reorder
    end do
 end do
 
@@ -2389,8 +2391,8 @@ write(mpl%unit,'(a10,a,i8)') '','nc0d =       ',nicas_blk%nc0d
 write(mpl%unit,'(a10,a,i8)') '','nc0dinv =    ',nicas_blk%nc0dinv
 do its=2,nam%nts
    do il0=1,geom%nl0
-      write(mpl%unit,'(a10,a,i3,a,i2,a,i8)') '','d(',il0,',',its,')%n_s =    ',nicas_blk%d(il0,its-1)%n_s
-      write(mpl%unit,'(a10,a,i3,a,i2,a,i8)') '','dinv(',il0,',',its,')%n_s = ',nicas_blk%dinv(il0,its-1)%n_s
+      write(mpl%unit,'(a10,a,i3,a,i2,a,i8)') '','d(',il0,',',its,')%n_s =    ',nicas_blk%d(il0,its)%n_s
+      write(mpl%unit,'(a10,a,i3,a,i2,a,i8)') '','dinv(',il0,',',its,')%n_s = ',nicas_blk%dinv(il0,its)%n_s
    end do
 end do
 
@@ -2895,7 +2897,7 @@ do its=2,nam%nts
       ! Interpolation
       !$omp parallel do schedule(static) private(il0)
       do il0=1,geom%nl0
-         call nicas_blk%d(il0,its-1)%apply(fld_d(:,il0),fld(:,il0,iv,its))
+         call nicas_blk%d(il0,its)%apply(fld_d(:,il0),fld(:,il0,iv,its))
       end do
       !$omp end parallel do
    end do
@@ -2931,7 +2933,7 @@ do its=2,nam%nts
       ! Adjoint interpolation
       !$omp parallel do schedule(static) private(il0)
       do il0=1,geom%nl0
-         call nicas_blk%d(il0,its-1)%apply_ad(fld(:,il0,iv,its),fld_d(:,il0))
+         call nicas_blk%d(il0,its)%apply_ad(fld(:,il0,iv,its),fld_d(:,il0))
       end do
       !$omp end parallel do
 
@@ -2960,7 +2962,7 @@ real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) !< Field
 
 ! Local variables
 integer :: its,iv,il0
-real(kind_real) :: fld_dinv(nicas_blk%nc0d,geom%nl0)
+real(kind_real) :: fld_dinv(nicas_blk%nc0dinv,geom%nl0)
 real(kind_real) :: zhook_handle
 
 if (lhook) call dr_hook('nicas_blk_apply_adv_inv',0,zhook_handle)
@@ -2973,7 +2975,7 @@ do its=2,nam%nts
       ! Interpolation
       !$omp parallel do schedule(static) private(il0)
       do il0=1,geom%nl0
-         call nicas_blk%dinv(il0,its-1)%apply(fld_dinv(:,il0),fld(:,il0,iv,its))
+         call nicas_blk%dinv(il0,its)%apply(fld_dinv(:,il0),fld(:,il0,iv,its))
       end do
       !$omp end parallel do
    end do

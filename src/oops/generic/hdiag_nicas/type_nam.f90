@@ -43,7 +43,7 @@ type nam_type
 
    ! driver_param
    character(len=1024) :: method                    !< Localization/hybridization to compute ('cor', 'loc', 'hyb-avg', 'hyb-rnd' or 'dual-ens')
-   character(len=1024) :: strategy                  !< Localization strategy ('common', 'specific_univariate', 'specific_multivariate' or 'common_weighted')
+   character(len=1024) :: strategy                  !< Localization strategy ('diag_all', 'common', 'specific_univariate', 'specific_multivariate' or 'common_weighted')
    logical :: new_hdiag                             !< Compute new HDIAG diagnostics (if false, read file)
    logical :: new_param                             !< Compute new NICAS parameters (if false, read file)
    logical :: check_adjoints                        !< Test adjoints
@@ -82,6 +82,7 @@ type nam_type
    character(len=1024) :: mask_type                 !< Mask restriction type
    real(kind_real) ::  mask_th                      !< Mask threshold
    logical :: mask_check                            !< Check that sampling couples and interpolations do not cross mask boundaries
+   character(len=1024) :: draw_type                 !< Sampling draw type ('random_uniform','random_coast' or 'icosahedron')
    integer :: nc1                                   !< Number of sampling points
    integer :: ntry                                  !< Number of tries to get the most separated point for the zero-separation sampling
    integer :: nrep                                  !< Number of replacement to improve homogeneity of the zero-separation sampling
@@ -174,7 +175,7 @@ logical :: check_optimality,new_lct,new_obsop,logpres,sam_write,sam_read,mask_ch
 logical :: displ_diag,lhomh,lhomv,lct_diag(nscalesmax),lsqrt,network
 real(kind_real) :: mask_th,dc,local_rad,displ_rad,displ_rhflt,displ_tol,rvflt,lon_ldwv(nldwvmax),lat_ldwv(nldwvmax),diag_rhflt
 real(kind_real) :: rh(nlmax),rv(nlmax),resol,londir(ndirmax),latdir(ndirmax),obsdis
-character(len=1024) :: datadir,prefix,model,strategy,method,mask_type,minim_algo,diag_interp,nicas_interp,obsop_interp
+character(len=1024) :: datadir,prefix,model,strategy,method,mask_type,draw_type,minim_algo,diag_interp,nicas_interp,obsop_interp
 character(len=1024),dimension(nvmax) :: varname,addvar2d
 
 ! Namelist blocks
@@ -184,7 +185,7 @@ namelist/driver_param/method,strategy,new_hdiag,new_param,check_adjoints,check_p
 namelist/model_param/nl,levs,logpres,nv,varname,addvar2d,nts,timeslot
 namelist/ens1_param/ens1_ne,ens1_ne_offset,ens1_nsub
 namelist/ens2_param/ens2_ne,ens2_ne_offset,ens2_nsub
-namelist/sampling_param/sam_write,sam_read,mask_type,mask_th,mask_check,nc1,ntry,nrep,nc3,dc,nl0r
+namelist/sampling_param/sam_write,sam_read,mask_type,mask_th,mask_check,draw_type,nc1,ntry,nrep,nc3,dc,nl0r
 namelist/diag_param/ne,gau_approx,full_var,local_diag,local_rad,displ_diag,displ_rad,displ_niter,displ_rhflt,displ_tol
 namelist/fit_param/minim_algo,lhomh,lhomv,rvflt,lct_nscales,lct_diag
 namelist/output_param/nldwh,il_ldwh,ic_ldwh,nldwv,lon_ldwv,lat_ldwv,diag_rhflt,diag_interp
@@ -245,6 +246,7 @@ sam_read = .false.
 mask_type = ''
 call msr(mask_th)
 mask_check = .false.
+draw_type = ''
 call msi(nc1)
 call msi(ntry)
 call msi(nrep)
@@ -362,6 +364,7 @@ if (mpl%main) then
    nam%mask_type = mask_type
    nam%mask_th = mask_th
    nam%mask_check = mask_check
+   nam%draw_type = draw_type
    nam%nc1 = nc1
    nam%ntry = ntry
    nam%nrep = nrep
@@ -478,6 +481,7 @@ call mpl%bcast(nam%sam_read,mpl%ioproc)
 call mpl%bcast(nam%mask_type,mpl%ioproc)
 call mpl%bcast(nam%mask_th,mpl%ioproc)
 call mpl%bcast(nam%mask_check,mpl%ioproc)
+call mpl%bcast(nam%draw_type,mpl%ioproc)
 call mpl%bcast(nam%nc1,mpl%ioproc)
 call mpl%bcast(nam%ntry,mpl%ioproc)
 call mpl%bcast(nam%nrep,mpl%ioproc)
@@ -572,7 +576,7 @@ case default
    call msgerror('wrong method')
 end select
 select case (trim(nam%strategy))
-case ('common','specific_univariate','common_weighted')
+case ('diag_all','common','specific_univariate','common_weighted')
 case ('specific_multivariate')
    if (.not.nam%lsqrt) call msgerror('specific multivariate strategy requires a square-root formulation')
 case default
@@ -647,6 +651,11 @@ if (nam%new_hdiag.or.nam%new_lct) then
 
    ! Check sampling_param
    if (nam%sam_write.and.nam%sam_read) call msgerror('sam_write and sam_read are both true')
+   select case (trim(nam%draw_type))
+   case ('random_uniform','random_coast','icosahedron')
+   case default
+      call msgerror('wrong draw_type')
+   end select
    if (nam%nc1<=0) call msgerror('nc1 should be positive')
    if (nam%ntry<=0) call msgerror('ntry should be positive')
    if (nam%nrep<0) call msgerror('nrep should be non-negative')
@@ -801,6 +810,8 @@ if (mpl%main) then
 
    ! LCT
    if (nam%new_lct) then
+      filename = trim(nam%prefix)//'_lct.nc'
+      call system('rm -f '//trim(nam%datadir)//'/'//trim(filename))
       filename = trim(nam%prefix)//'_lct_gridded.nc'
       call system('rm -f '//trim(nam%datadir)//'/'//trim(filename))
    end if
@@ -869,6 +880,7 @@ call put_att(ncid,'sam_read',nam%sam_read)
 call put_att(ncid,'mask_type',nam%mask_type)
 call put_att(ncid,'mask_th',nam%mask_th)
 call put_att(ncid,'mask_check',nam%mask_check)
+call put_att(ncid,'draw_type',nam%draw_type)
 call put_att(ncid,'nc1',nam%nc1)
 call put_att(ncid,'ntry',nam%ntry)
 call put_att(ncid,'nrep',nam%nrep)

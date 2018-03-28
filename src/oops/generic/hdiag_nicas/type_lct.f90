@@ -372,15 +372,16 @@ do ib=1,bpar%nb
 
       ! Write gridded LCT
       write(mpl%unit,'(a10,a)') '','Write gridded LCT'
-      filename = trim(nam%prefix)//'_lct_gridded.nc'
+      filename = trim(nam%prefix)//'_lct.nc'
       iv = bpar%b_to_v2(ib)
       write(iscaleschar,'(i1)') iscales
-      call model_write(nam,geom,filename,trim(nam%varname(iv))//'_H11_'//iscaleschar,fld(:,:,1)/req**2)
-      call model_write(nam,geom,filename,trim(nam%varname(iv))//'_H22_'//iscaleschar,fld(:,:,2)/req**2)
-      call model_write(nam,geom,filename,trim(nam%varname(iv))//'_H33_'//iscaleschar,fld(:,:,3))
-      if (lct%ncomp(iscales)==4) call model_write(nam,geom,filename,trim(nam%varname(iv))//'_Hc12_'//iscaleschar,fld(:,:,4))
-      call model_write(nam,geom,filename,trim(nam%varname(iv))//'_coef_'//iscaleschar,fld(:,:,lct%ncomp(iscales)+1))
-      call model_write(nam,geom,filename,trim(nam%varname(iv))//'_Lh_'//iscaleschar,fld(:,:,lct%ncomp(iscales)+2)*reqkm)
+      call geom%fld_write(nam,filename,trim(nam%varname(iv))//'_H11_'//iscaleschar,fld(:,:,1)/req**2)
+      call geom%fld_write(nam,filename,trim(nam%varname(iv))//'_H11_'//iscaleschar,fld)
+      call geom%fld_write(nam,filename,trim(nam%varname(iv))//'_H22_'//iscaleschar,fld(:,:,2)/req**2)
+      call geom%fld_write(nam,filename,trim(nam%varname(iv))//'_H33_'//iscaleschar,fld(:,:,3))
+      if (lct%ncomp(iscales)==4) call geom%fld_write(nam,filename,trim(nam%varname(iv))//'_Hc12_'//iscaleschar,fld(:,:,4))
+      call geom%fld_write(nam,filename,trim(nam%varname(iv))//'_coef_'//iscaleschar,fld(:,:,lct%ncomp(iscales)+1))
+      call geom%fld_write(nam,filename,trim(nam%varname(iv))//'_Lh_'//iscaleschar,fld(:,:,lct%ncomp(iscales)+2)*reqkm)
 
       ! Release memory
       deallocate(fld_c1a)
@@ -407,7 +408,7 @@ type(bpar_type),intent(in) :: bpar      !< Block parameters
 type(hdata_type),intent(inout) :: hdata !< HDIAG data
 
 ! Local variables
-integer :: ib,iv,il0,jl0r,jl0,ic1a,ic1,jc3,i,iproc,jproc,ic0
+integer :: ib,iv,il0,jl0r,jl0,ic1a,ic1,jc3,i,iproc,ic0
 real(kind_real) :: fld_glb(geom%nc0,geom%nl0,2),fld(geom%nc0a,geom%nl0,2)
 real(kind_real),allocatable :: sbuf(:),rbuf(:)
 logical :: valid
@@ -507,6 +508,11 @@ do ib=1,bpar%nb
 
    ! Write LCT diagnostics
    write(mpl%unit,'(a10,a)') '','Write LCT diagnostics'
+   filename = trim(nam%prefix)//'_lct.nc'
+   iv = bpar%b_to_v2(ib)
+   call geom%fld_write(nam,filename,trim(nam%varname(iv))//'_raw',fld(:,:,1))
+   call geom%fld_write(nam,filename,trim(nam%varname(iv))//'_fit',fld(:,:,2))
+
    filename = trim(nam%prefix)//'_lct_gridded.nc'
    iv = bpar%b_to_v2(ib)
    call model_write(nam,geom,filename,trim(nam%varname(iv))//'_raw',fld(:,:,1))

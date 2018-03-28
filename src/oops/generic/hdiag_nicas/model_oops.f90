@@ -138,6 +138,9 @@ end do
 ! Vertical unit
 geom%vunit = vunit
 
+! Redundant grid (unknown, so .true. for safety)
+geom%redgrid = .true.
+
 end subroutine model_oops_coord
 
 !----------------------------------------------------------------------
@@ -166,7 +169,7 @@ call geom%fld_com_lg(fld,fld_glb)
 if (mpl%main) then
    ! Get variable id
    info = nf90_inq_varid(ncid,trim(varname),fld_id)
-   
+
    ! Define dimensions and variable if necessary
    if (info/=nf90_noerr) then
       call ncerr(subr,nf90_redef(ncid))
@@ -178,14 +181,14 @@ if (mpl%main) then
       call ncerr(subr,nf90_put_att(ncid,fld_id,'_FillValue',msvalr))
       call ncerr(subr,nf90_enddef(ncid))
    end if
-   
+
    ! Write data
    do il0=1,geom%nl0
       if (isanynotmsr(fld_glb(:,il0))) then
          call ncerr(subr,nf90_put_var(ncid,fld_id,fld_glb(:,il0),(/il0,1/),(/1,geom%nc0/)))
       end if
    end do
-   
+
    ! Write coordinates
    info = nf90_inq_varid(ncid,'lon',lon_id)
    if (info/=nf90_noerr) then

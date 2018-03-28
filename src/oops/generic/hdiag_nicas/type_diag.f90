@@ -35,6 +35,7 @@ type diag_type
 contains
    procedure :: alloc => diag_alloc
    procedure :: write => diag_write
+   procedure :: covariance => diag_covariance
    procedure :: correlation => diag_correlation
    procedure :: localization => diag_localization
    procedure :: hybridization => diag_hybridization
@@ -112,7 +113,7 @@ if (mpl%main) then
    filename = trim(nam%prefix)//'_diag.nc'
    do ib=1,bpar%nb+1
       if (bpar%diag_block(ib)) then
-        call diag%blk(0,ib)%write(nam,geom,filename)
+        call diag%blk(0,ib)%write(nam,geom,bpar,filename)
       end if
    end do
 end if
@@ -165,7 +166,7 @@ do ildw=1,nam%nldwv
          ! Find diagnostic point task
          ic2a = hdata%c2_to_c2a(ic2)
          do ib=1,bpar%nb+1
-            if (bpar%diag_block(ib)) call diag%blk(ic2a,ib)%write(nam,geom,filename)
+            if (bpar%diag_block(ib)) call diag%blk(ic2a,ib)%write(nam,geom,bpar,filename)
          end do
       end if
    else
@@ -174,6 +175,53 @@ do ildw=1,nam%nldwv
 end do
 
 end subroutine diag_write
+
+!----------------------------------------------------------------------
+! Subroutine: diag_covariance
+!> Purpose: compute covariance
+!----------------------------------------------------------------------
+subroutine diag_covariance(diag,nam,geom,bpar,hdata,avg,prefix)
+
+implicit none
+
+! Passed variables
+class(diag_type),intent(inout) :: diag !< Diagnostic
+type(nam_type),intent(in) :: nam       !< Namelist
+type(geom_type),intent(in) :: geom     !< Geometry
+type(bpar_type),intent(in) :: bpar     !< Block parameters
+type(hdata_type),intent(in) :: hdata   !< HDIAG data
+type(avg_type),intent(in) :: avg       !< Averaged statistics
+character(len=*),intent(in) :: prefix  !< Diagnostic prefix
+
+! Local variables
+integer :: ib,ic2a,il0
+logical,allocatable :: done(:)
+
+! Allocation
+call diag%alloc(nam,geom,bpar,hdata,prefix)
+allocate(done(0:diag%nc2a))
+
+do ib=1,bpar%nb+1
+   if (bpar%diag_block(ib)) then
+      write(mpl%unit,'(a10,a,a,a)') '','Block ',trim(bpar%blockname(ib))
+
+      do ic2a=0,diag%nc2a
+         ! Copy
+         diag%blk(ic2a,ib)%raw = avg%blk(ic2a,ib)%m11
+      end do
+
+      ! Print results
+      do il0=1,geom%nl0
+         if (isnotmsr(diag%blk(0,ib)%raw(1,bpar%il0rz(il0,ib),il0))) write(mpl%unit,'(a13,a,i3,a4,a21,a,e9.2,a)') '', &
+       & 'Level: ',nam%levs(il0),' ~> ','amplitude: ',trim(peach),diag%blk(0,ib)%raw(1,bpar%il0rz(il0,ib),il0),trim(black)
+      end do
+   end if
+end do
+
+! Write
+call diag%write(nam,geom,bpar,hdata)
+
+end subroutine diag_covariance
 
 !----------------------------------------------------------------------
 ! Subroutine: diag_correlation
@@ -211,9 +259,6 @@ do ib=1,bpar%nb+1
          ! Copy
          diag%blk(ic2a,ib)%raw = avg%blk(ic2a,ib)%cor
 
-         ! Normalization
-         call diag%blk(ic2a,ib)%normalization(geom,bpar)
-
          ! Fitting
          if (bpar%fit_block(ib)) call diag%blk(ic2a,ib)%fitting(nam,geom,bpar)
 
@@ -223,11 +268,14 @@ do ib=1,bpar%nb+1
       end do
       write(mpl%unit,'(a)') '100%'
 
+
       ! Print results
       do il0=1,geom%nl0
+         if (isnotmsr(avg%blk(0,ib)%cor(1,bpar%il0rz(il0,ib),il0))) write(mpl%unit,'(a13,a,i3,a4,a21,a,e9.2,a)') '', &
+       & 'Level: ',nam%levs(il0),' ~> ','amplitude: ',trim(peach),avg%blk(0,ib)%cor(1,bpar%il0rz(il0,ib),il0),trim(black)
          if (bpar%fit_block(ib)) then
-            if (isnotmsr(diag%blk(0,ib)%raw_coef_ens(il0))) write(mpl%unit,'(a13,a,i3,a4,a21,a,f8.2,a,f8.2,a)') '','Level: ', &
-          & nam%levs(il0),' ~> ','loc. support radii: ',trim(aqua),diag%blk(0,ib)%fit_rh(il0)*reqkm, &
+            if (isnotmsr(diag%blk(0,ib)%fit_rh(il0))) write(mpl%unit,'(a13,a,i3,a4,a21,a,f8.2,a,f8.2,a)') '','Level: ', &
+          & nam%levs(il0),' ~> ','loc. support radii:  ',trim(aqua),diag%blk(0,ib)%fit_rh(il0)*reqkm, &
           & trim(black)//' km  / '//trim(aqua),diag%blk(0,ib)%fit_rv(il0),trim(black)//' '//trim(vunitchar)
          end if
       end do

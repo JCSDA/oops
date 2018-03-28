@@ -32,6 +32,7 @@ type avg_blk_type
    real(kind_real),allocatable :: m11m11(:,:,:,:,:)  !< Product of covariances average
    real(kind_real),allocatable :: m2m2(:,:,:,:,:)    !< Product of variances average
    real(kind_real),allocatable :: m22(:,:,:,:)       !< Fourth-order centered moment average
+   real(kind_real),allocatable :: nc1a_cor(:,:,:)    !< Number of points in subset Sc1 on halo A with valid correlations
    real(kind_real),allocatable :: cor(:,:,:)         !< Correlation average
    real(kind_real),allocatable :: m11asysq(:,:,:)    !< Squared asymptotic covariance average
    real(kind_real),allocatable :: m2m2asy(:,:,:)     !< Product of asymptotic variances average
@@ -52,6 +53,8 @@ end type avg_blk_type
 
 private
 public :: avg_blk_type
+
+real(kind_real),parameter :: var_min = 1.0e-24
 
 contains
 
@@ -83,7 +86,8 @@ end if
 avg_blk%ib = ib
 avg_blk%ne = ne
 avg_blk%nsub = nsub
-avg_blk%npack = (3+2*avg_blk%nsub**2)*bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0
+avg_blk%npack = (4+2*avg_blk%nsub**2)*bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0
+if (.not.nam%gau_approx) avg_blk%npack = avg_blk%npack+avg_blk%nsub*bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0
 
 ! Allocation
 if (.not.allocated(avg_blk%nc1a)) then
@@ -92,6 +96,7 @@ if (.not.allocated(avg_blk%nc1a)) then
    allocate(avg_blk%m11m11(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,avg_blk%nsub,avg_blk%nsub))
    allocate(avg_blk%m2m2(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,avg_blk%nsub,avg_blk%nsub))
    if (.not.nam%gau_approx) allocate(avg_blk%m22(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,avg_blk%nsub))
+   allocate(avg_blk%nc1a_cor(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
    allocate(avg_blk%cor(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
    allocate(avg_blk%m11asysq(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
    allocate(avg_blk%m2m2asy(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
@@ -108,13 +113,12 @@ if (.not.allocated(avg_blk%nc1a)) then
 end if
 
 ! Initialization
-
-if (.not.nam%gau_approx) avg_blk%npack = avg_blk%npack+avg_blk%nsub*bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0
 call msr(avg_blk%nc1a)
 call msr(avg_blk%m11)
 call msr(avg_blk%m11m11)
 call msr(avg_blk%m2m2)
 if (.not.nam%gau_approx) call msr(avg_blk%m22)
+call msr(avg_blk%nc1a_cor)
 call msr(avg_blk%cor)
 call msr(avg_blk%m11asysq)
 call msr(avg_blk%m2m2asy)
@@ -147,6 +151,7 @@ if (allocated(avg_blk%nc1a)) deallocate(avg_blk%nc1a)
 if (allocated(avg_blk%m11)) deallocate(avg_blk%m11)
 if (allocated(avg_blk%m11m11)) deallocate(avg_blk%m11m11)
 if (allocated(avg_blk%m2m2)) deallocate(avg_blk%m2m2)
+if (allocated(avg_blk%nc1a_cor)) deallocate(avg_blk%nc1a_cor)
 if (allocated(avg_blk%cor)) deallocate(avg_blk%cor)
 if (allocated(avg_blk%m11asysq)) deallocate(avg_blk%m11asysq)
 if (allocated(avg_blk%m2m2asy)) deallocate(avg_blk%m2m2asy)
@@ -193,6 +198,8 @@ if (.not.nam%gau_approx) then
    buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg_blk%nsub) = pack(avg_blk%m22,.true.)
    offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg_blk%nsub
 end if
+buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0) = pack(avg_blk%nc1a_cor,.true.)
+offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0
 buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0) = pack(avg_blk%cor,.true.)
 
 ! End associate
@@ -244,6 +251,8 @@ if (.not.nam%gau_approx) then
    avg_blk%m22 = unpack(buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg_blk%nsub),mask_1,avg_blk%m22)
    offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg_blk%nsub
 end if
+avg_blk%nc1a_cor = unpack(buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0),mask_0,avg_blk%nc1a_cor)
+offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0
 avg_blk%cor = unpack(buf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0),mask_0,avg_blk%cor)
 
 ! End associate
@@ -325,8 +334,9 @@ do il0=1,geom%nl0
 
                ! Correlation
                m2m2 = sum(mom_blk%m2_1(ic1a,jc3,jl0r,il0,:))*sum(mom_blk%m2_2(ic1a,jc3,jl0r,il0,:))/float(avg_blk%nsub**2)
-               if (m2m2>0.0) then
+               if (m2m2>var_min) then
                   list_cor(nc1a) = list_m11(nc1a)/sqrt(m2m2)
+                  if (abs(list_cor(nc1a))>1.0) call msr(list_cor(nc1a))
                else
                   call msr(list_cor(nc1a))
                end if
@@ -343,7 +353,12 @@ do il0=1,geom%nl0
             end do
             if (.not.nam%gau_approx) avg_blk%m22(jc3,jl0r,il0,isub) = sum(list_m22(1:nc1a,isub))
          end do
-         avg_blk%cor(jc3,jl0r,il0) = sum(list_cor(1:nc1a))
+         avg_blk%nc1a_cor(jc3,jl0r,il0) = float(count(isnotmsr(list_cor(1:nc1a))))
+         if (avg_blk%nc1a_cor(jc3,jl0r,il0)>0.0) then
+            avg_blk%cor(jc3,jl0r,il0) = sum(list_cor(1:nc1a),mask=isnotmsr(list_cor(1:nc1a)))
+         else
+            call msr(avg_blk%cor(jc3,jl0r,il0))
+         end if
       end do
 
       ! Release memory
@@ -385,7 +400,11 @@ do il0=1,geom%nl0
                end do
                if (.not.nam%gau_approx) avg_blk%m22(jc3,jl0r,il0,isub) = avg_blk%m22(jc3,jl0r,il0,isub)/avg_blk%nc1a(jc3,jl0r,il0)
             end do
-            avg_blk%cor(jc3,jl0r,il0) = avg_blk%cor(jc3,jl0r,il0)/avg_blk%nc1a(jc3,jl0r,il0)
+         end if
+         if (avg_blk%nc1a_cor(jc3,jl0r,il0)>0.0) then
+            avg_blk%cor(jc3,jl0r,il0) = avg_blk%cor(jc3,jl0r,il0)/avg_blk%nc1a_cor(jc3,jl0r,il0)
+         else
+            call msr(avg_blk%cor(jc3,jl0r,il0))
          end if
       end do
    end do

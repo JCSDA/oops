@@ -105,6 +105,9 @@ else
    geom%vunit = float(nam%levs(1:geom%nl0))
 end if
 
+! Not redundant grid
+geom%redgrid = .false.
+
 ! Release memory
 deallocate(lon)
 deallocate(lat)

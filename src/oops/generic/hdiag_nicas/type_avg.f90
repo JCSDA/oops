@@ -104,7 +104,7 @@ type(mom_type),intent(in) :: mom     !< Moments
 integer,intent(in) :: ne             !< Ensemble size
 
 ! Local variables
-integer :: ib,ic2a,progint,il0
+integer :: ib,ic2a,progint
 logical,allocatable :: done(:)
 
 ! Allocation
@@ -127,13 +127,6 @@ do ib=1,bpar%nb
          call prog_print(progint,done)
       end do
       write(mpl%unit,'(a)') '100%'
-
-      ! Print global results
-      do il0=1,geom%nl0
-         if (isnotmsr(avg%blk(0,ib)%cor(1,bpar%il0rz(il0,ib),il0))) write(mpl%unit,'(a13,a,i3,a4,a21,a,e9.2,a,a,a,f8.2,a)') '', &
-       & 'Level: ',nam%levs(il0),' ~> ','raw cov. / cor. (1): ',trim(peach),avg%blk(0,ib)%m11(1,bpar%il0rz(il0,ib),il0), &
-       & trim(black),' / ',trim(peach),avg%blk(0,ib)%cor(1,bpar%il0rz(il0,ib),il0),trim(black)
-      end do
    end if
 end do
 

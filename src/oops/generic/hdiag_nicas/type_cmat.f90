@@ -415,6 +415,8 @@ do ib=1,bpar%nb+1
       ! Create file
       call ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(nam%prefix)//'_'//trim(cmat%blk(ib)%name)//'.nc', &
        & or(nf90_clobber,nf90_64bit_offset),ncid))
+
+      ! Write namelist parameters
       call nam%ncwrite(ncid)
 
       ! Define dimensions

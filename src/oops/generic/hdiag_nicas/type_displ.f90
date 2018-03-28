@@ -33,10 +33,10 @@ implicit none
 
 ! Displacement data derived type
 type displ_type
-   integer :: niter                                  !< Number of stored iterations
-   real(kind_real),allocatable :: dist(:,:,:)        !< Displacement distance
-   real(kind_real),allocatable :: valid(:,:,:)       !< Displacement validity
-   real(kind_real),allocatable :: rhflt(:,:,:)       !< Displacement filtering support radius
+   integer :: niter                                   !< Number of stored iterations
+   real(kind_real),allocatable :: dist(:,:,:)         !< Displacement distance
+   real(kind_real),allocatable :: valid(:,:,:)        !< Displacement validity
+   real(kind_real),allocatable :: rhflt(:,:,:)        !< Displacement filtering support radius
 
    real(kind_real),allocatable :: lon_c2a(:,:)        !< Longitude origin
    real(kind_real),allocatable :: lat_c2a(:,:)        !< Latitude origin
@@ -571,12 +571,18 @@ character(len=*),intent(in) :: filename !< File name
 ! Local variables
 integer :: ncid,nc2_id,nl0_id,nts_id,displ_niter_id,vunit_id,valid_id,dist_id,rhflt_id
 integer :: lon_c2_id,lat_c2_id,lon_c2_raw_id,lat_c2_raw_id,dist_c2_raw_id,lon_c2_flt_id,lat_c2_flt_id,dist_c2_flt_id
-real(kind_real) :: diag_c2(hdata%nc2,geom%nl0)
+integer :: its
+real(kind_real) :: lon_c2(hdata%nc2,geom%nl0),lat_c2(hdata%nc2,geom%nl0)
+real(kind_real) :: lon_c2_raw(hdata%nc2,geom%nl0,2:nam%nts),lon_c2_flt(hdata%nc2,geom%nl0,2:nam%nts)
+real(kind_real) :: lat_c2_raw(hdata%nc2,geom%nl0,2:nam%nts),lat_c2_flt(hdata%nc2,geom%nl0,2:nam%nts)
+real(kind_real) :: dist_c2_raw(hdata%nc2,geom%nl0,2:nam%nts),dist_c2_flt(hdata%nc2,geom%nl0,2:nam%nts)
 character(len=1024) :: subr = 'displ_write'
 
 if (mpl%main) then
    ! Create file
    call ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_clobber,nf90_64bit_offset),ncid))
+
+   ! Write namelist parameters
    call nam%ncwrite(ncid)
 
    ! Define dimensions
@@ -620,23 +626,29 @@ if (mpl%main) then
    call ncerr(subr,nf90_put_var(ncid,rhflt_id,displ%rhflt*reqkm))
 end if
 
+! Local to global
+call hdata%diag_com_lg(geom%nl0,displ%lon_c2a,lon_c2)
+call hdata%diag_com_lg(geom%nl0,displ%lat_c2a,lat_c2)
+do its=2,nam%nts
+   call hdata%diag_com_lg(geom%nl0,displ%lon_c2a_raw(:,:,its),lon_c2_raw(:,:,its))
+   call hdata%diag_com_lg(geom%nl0,displ%lat_c2a_raw(:,:,its),lat_c2_raw(:,:,its))
+   call hdata%diag_com_lg(geom%nl0,displ%dist_c2a_raw(:,:,its),dist_c2_raw(:,:,its))
+   call hdata%diag_com_lg(geom%nl0,displ%lon_c2a_flt(:,:,its),lon_c2_flt(:,:,its))
+   call hdata%diag_com_lg(geom%nl0,displ%lat_c2a_flt(:,:,its),lat_c2_flt(:,:,its))
+   call hdata%diag_com_lg(geom%nl0,displ%dist_c2a_flt(:,:,its),dist_c2_flt(:,:,its))
+end do
+
 ! Write local arrays
-call hdata%diag_com_lg(geom%nl0,displ%lon_c2a*rad2deg,diag_c2)
-if (mpl%main) call ncerr(subr,nf90_put_var(ncid,lon_c2_id,diag_c2))
-call hdata%diag_com_lg(geom%nl0,displ%lat_c2a*rad2deg,diag_c2)
-if (mpl%main) call ncerr(subr,nf90_put_var(ncid,lat_c2_id,diag_c2))
-call hdata%diag_com_lg(geom%nl0,displ%lon_c2a_raw(:,:,2:nam%nts)*rad2deg,diag_c2)
-if (mpl%main) call ncerr(subr,nf90_put_var(ncid,lon_c2_raw_id,diag_c2))
-call hdata%diag_com_lg(geom%nl0,displ%lat_c2a_raw(:,:,2:nam%nts)*rad2deg,diag_c2)
-if (mpl%main) call ncerr(subr,nf90_put_var(ncid,lat_c2_raw_id,diag_c2))
-call hdata%diag_com_lg(geom%nl0,displ%dist_c2a_raw(:,:,2:nam%nts),diag_c2)
-if (mpl%main) call ncerr(subr,nf90_put_var(ncid,dist_c2_raw_id,diag_c2))
-call hdata%diag_com_lg(geom%nl0,displ%lon_c2a_flt(:,:,2:nam%nts)*rad2deg,diag_c2)
-if (mpl%main) call ncerr(subr,nf90_put_var(ncid,lon_c2_flt_id,diag_c2))
-call hdata%diag_com_lg(geom%nl0,displ%lat_c2a_flt(:,:,2:nam%nts)*rad2deg,diag_c2)
-if (mpl%main) call ncerr(subr,nf90_put_var(ncid,lat_c2_flt_id,diag_c2))
-call hdata%diag_com_lg(geom%nl0,displ%dist_c2a_flt(:,:,2:nam%nts),diag_c2)
-if (mpl%main) call ncerr(subr,nf90_put_var(ncid,dist_c2_flt_id,diag_c2))
+if (mpl%main) then
+   call ncerr(subr,nf90_put_var(ncid,lon_c2_id,lon_c2*rad2deg))
+   call ncerr(subr,nf90_put_var(ncid,lat_c2_id,lat_c2*rad2deg))
+   call ncerr(subr,nf90_put_var(ncid,lon_c2_raw_id,lon_c2_raw*rad2deg))
+   call ncerr(subr,nf90_put_var(ncid,lat_c2_raw_id,lat_c2_raw*rad2deg))
+   call ncerr(subr,nf90_put_var(ncid,dist_c2_raw_id,dist_c2_raw*reqkm))
+   call ncerr(subr,nf90_put_var(ncid,lon_c2_flt_id,lon_c2_flt*rad2deg))
+   call ncerr(subr,nf90_put_var(ncid,lat_c2_flt_id,lat_c2_flt*rad2deg))
+   call ncerr(subr,nf90_put_var(ncid,dist_c2_flt_id,dist_c2_flt*reqkm))
+end if
 
 ! Close file
 if (mpl%main) call ncerr(subr,nf90_close(ncid))

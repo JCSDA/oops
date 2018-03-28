@@ -161,7 +161,7 @@ do ib=1,bpar%nb+1
          call ncerr(subr,nf90_get_att(ncid,nf90_global,'nsc',nicas%blk(ib)%nsc))
          call ncerr(subr,nf90_get_att(ncid,nf90_global,'mpicom',nicas%blk(ib)%mpicom))
       end if
-      if ((ib==bpar%nb+1).and.nam%displ_diag) then
+      if ((ib==bpar%nb+1).and.(abs(nam%advmode)==1)) then
          call ncerr(subr,nf90_inq_dimid(ncid,'nc0d',nc0d_id))
          call ncerr(subr,nf90_inquire_dimension(ncid,nc0d_id,len=nicas%blk(ib)%nc0d))
          call ncerr(subr,nf90_inq_dimid(ncid,'nc0dinv',nc0dinv_id))
@@ -179,9 +179,9 @@ do ib=1,bpar%nb+1
          allocate(nicas%blk(ib)%h(geom%nl0i))
          allocate(nicas%blk(ib)%s(nicas%blk(ib)%nl1))
       end if
-      if ((ib==bpar%nb+1).and.nam%displ_diag) then
-         allocate(nicas%blk(ib)%d(geom%nl0,nam%nts-1))
-         allocate(nicas%blk(ib)%dinv(geom%nl0,nam%nts-1))
+      if ((ib==bpar%nb+1).and.(abs(nam%advmode)==1)) then
+         allocate(nicas%blk(ib)%d(geom%nl0,2:nam%nts))
+         allocate(nicas%blk(ib)%dinv(geom%nl0,2:nam%nts))
       end if
 
       ! Get variable id
@@ -217,15 +217,15 @@ do ib=1,bpar%nb+1
             call nicas%blk(ib)%s(il1)%read(ncid)
          end do
       end if
-      if ((ib==bpar%nb+1).and.nam%displ_diag) then
+      if ((ib==bpar%nb+1).and.(abs(nam%advmode)==1)) then
          call nicas%blk(ib)%com_AD%read(ncid,'com_AD')
          call nicas%blk(ib)%com_ADinv%read(ncid,'com_ADinv')
          do its=2,nam%nts
             do il0=1,geom%nl0
-               write(nicas%blk(ib)%d(il0,its-1)%prefix,'(a,i3.3,a,i2.2)') 'd_',il0,'_',its-1
-               call nicas%blk(ib)%d(il0,its-1)%read(ncid)
-               write(nicas%blk(ib)%dinv(il0,its-1)%prefix,'(a,i3.3,a,i2.2)') 'dinv_',il0,'_',its-1
-               call nicas%blk(ib)%dinv(il0,its-1)%read(ncid)
+               write(nicas%blk(ib)%d(il0,its)%prefix,'(a,i3.3,a,i2.2)') 'd_',il0,'_',its
+               call nicas%blk(ib)%d(il0,its)%read(ncid)
+               write(nicas%blk(ib)%dinv(il0,its)%prefix,'(a,i3.3,a,i2.2)') 'dinv_',il0,'_',its
+               call nicas%blk(ib)%dinv(il0,its)%read(ncid)
             end do
          end do
       end if
@@ -334,8 +334,8 @@ do ib=1,bpar%nb+1
          call nicas%blk(ib)%com_ADinv%write(ncid)
          do its=2,nam%nts
             do il0=1,geom%nl0
-               call nicas%blk(ib)%d(il0,its-1)%write(ncid)
-               call nicas%blk(ib)%dinv(il0,its-1)%write(ncid)
+               call nicas%blk(ib)%d(il0,its)%write(ncid)
+               call nicas%blk(ib)%dinv(il0,its)%write(ncid)
             end do
          end do
       end if

@@ -19,23 +19,22 @@ implicit none
 
 type bpar_type
    ! Block parameters
-   integer :: nb                                   !< Number of blocks
-   integer,allocatable :: nl0r(:)                  !< Effective number of levels
-   integer,allocatable :: l0rl0b_to_l0(:,:,:)      !< Effective level to level
-   integer,allocatable :: il0rz(:,:)               !< Effective zero separation level
-   integer,allocatable :: nc3(:)                   !< Maximum class
-   logical,allocatable :: auto_block(:)            !< Autocovariance block
-   logical,allocatable :: diag_block(:)            !< HDIAG block
-   logical,allocatable :: avg_block(:)             !< Averaging block
-   logical,allocatable :: fit_block(:)             !< Fit block
-   logical,allocatable :: B_block(:)               !< B-involved block
-   logical,allocatable :: nicas_block(:)           !< NICAS block
-   logical,allocatable :: cv_block(:)              !< Control variable block
-   character(len=11),allocatable :: blockname(:)   !< Block name
-   integer,allocatable :: b_to_v1(:)               !< Block to first variable
-   integer,allocatable :: b_to_v2(:)               !< Block to second variable
-   integer,allocatable :: b_to_ts1(:)              !< Block to first timeslot
-   integer,allocatable :: b_to_ts2(:)              !< Block to second timeslot
+   integer :: nb                                 !< Number of blocks
+   integer,allocatable :: nl0r(:)                !< Effective number of levels
+   integer,allocatable :: l0rl0b_to_l0(:,:,:)    !< Effective level to level
+   integer,allocatable :: il0rz(:,:)             !< Effective zero separation level
+   integer,allocatable :: nc3(:)                 !< Maximum class
+   logical,allocatable :: diag_block(:)          !< HDIAG block
+   logical,allocatable :: avg_block(:)           !< Averaging block
+   logical,allocatable :: fit_block(:)           !< Fit block
+   logical,allocatable :: B_block(:)             !< B-involved block
+   logical,allocatable :: nicas_block(:)         !< NICAS block
+   logical,allocatable :: cv_block(:)            !< Control variable block
+   character(len=11),allocatable :: blockname(:) !< Block name
+   integer,allocatable :: b_to_v1(:)             !< Block to first variable
+   integer,allocatable :: b_to_v2(:)             !< Block to second variable
+   integer,allocatable :: b_to_ts1(:)            !< Block to first timeslot
+   integer,allocatable :: b_to_ts2(:)            !< Block to second timeslot
 contains
    procedure :: alloc => bpar_alloc
 end type bpar_type
@@ -75,7 +74,6 @@ allocate(bpar%l0rl0b_to_l0(nam%nl0r,geom%nl0,bpar%nb+1))
 allocate(bpar%il0rz(geom%nl0,bpar%nb+1))
 allocate(bpar%nl0r(bpar%nb+1))
 allocate(bpar%nc3(bpar%nb+1))
-allocate(bpar%auto_block(bpar%nb+1))
 allocate(bpar%diag_block(bpar%nb+1))
 allocate(bpar%avg_block(bpar%nb+1))
 allocate(bpar%fit_block(bpar%nb+1))
@@ -110,7 +108,6 @@ if (nam%new_lct) then
          end do
          bpar%nc3(ib) = nam%nc3
          bpar%nc3(ib) = nam%nc3
-         bpar%auto_block(ib) = .true.
          bpar%diag_block(ib) = .true.
          bpar%avg_block(ib) = .false.
          bpar%fit_block(ib) = .false.
@@ -138,7 +135,6 @@ if (nam%new_lct) then
    bpar%il0rz(:,ib) = 0
    bpar%nl0r(ib) = 0
    bpar%nc3(ib) = 0
-   bpar%auto_block(ib) = .false.
    bpar%diag_block(ib) = .false.
    bpar%avg_block(ib) = .false.
    bpar%fit_block(ib) = .false.
@@ -156,7 +152,7 @@ else
          do its=1,nam%nts
             do jts=1,nam%nts
                ! Classes and levels
-               if ((iv==jv).and.(its==jts)) then
+               if ((trim(nam%strategy)=='diag_all').or.((iv==jv).and.(its==jts))) then
                   bpar%nl0r(ib) = nam%nl0r
                   do jl0=1,geom%nl0
                      il0off = jl0-(bpar%nl0r(ib)-1)/2-1
@@ -178,8 +174,13 @@ else
                end if
 
                ! Select blocks
-               bpar%auto_block(ib) = (iv==jv).and.(its==jts)
                select case (nam%strategy)
+               case ('diag_all')
+                  bpar%diag_block(ib) = .true.
+                  bpar%avg_block(ib) = .true.
+                  bpar%B_block(ib) = .false.
+                  bpar%nicas_block(ib) = .false.
+                  bpar%cv_block(ib) = .false.
                case ('common')
                   bpar%diag_block(ib) = (iv==jv).and.(its==1).and.(jts==1)
                   bpar%avg_block(ib) = (iv==jv).and.(its==1).and.(jts==1)
@@ -239,8 +240,13 @@ else
    bpar%nc3(ib) = nam%nc3
 
    ! Select blocks
-   bpar%auto_block(ib) = .false.
    select case (nam%strategy)
+   case ('diag_all')
+      bpar%diag_block(ib) = .true.
+      bpar%avg_block(ib) = .false.
+      bpar%B_block(ib) = .false.
+      bpar%nicas_block(ib) = .false.
+      bpar%cv_block(ib) = .false.
    case ('common')
       bpar%diag_block(ib) = .true.
       bpar%avg_block(ib) = .false.

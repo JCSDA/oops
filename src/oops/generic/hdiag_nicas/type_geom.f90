@@ -46,6 +46,7 @@ type geom_type
    real(kind_real),allocatable :: vunit(:)    !< Vertical unit
    real(kind_real),allocatable :: disth(:)    !< Horizontal distance
    real(kind_real),allocatable :: distv(:,:)  !< Vertical distance
+   logical :: redgrid                         !< Redundant grid
 
    ! Mesh
    type(mesh_type) :: mesh                    !< Mesh
@@ -110,6 +111,7 @@ call msr(geom%lat)
 geom%mask = .false.
 call msr(geom%vunit)
 call msr(geom%distv)
+geom%redgrid = .true.
 
 end subroutine geom_alloc
 
@@ -140,7 +142,7 @@ call geom%define_mask(nam)
 ! Create mesh
 if ((.not.all(geom%area>0.0)).or.(nam%new_hdiag.and.nam%displ_diag).or.((nam%new_param.or.nam%new_lct) &
  & .and.nam%mask_check).or.(nam%new_param.and.nam%network).or.nam%new_obsop) &
- & call geom%mesh%create(geom%nc0,geom%lon,geom%lat,.true.)
+ & call geom%mesh%create(geom%nc0,geom%lon,geom%lat,geom%redgrid)
 
 ! Compute area
 if ((.not.all(geom%area>0.0))) call geom%compute_area
@@ -199,14 +201,13 @@ class(geom_type),intent(inout) :: geom !< Geometry
 type(nam_type),intent(in) :: nam       !< Namelist
 
 ! Local variables
-integer :: latmin,latmax,il0,ic0,nn_index(1),ildw
+integer :: latmin,latmax,il0,ic0,ildw
 integer :: ncid,nlon_id,nlon_test,nlat_id,nlat_test,mask_id
-real(kind_real) :: nn_dist(1),dist
+real(kind_real) :: dist
 real(kind_real),allocatable :: hydmask(:,:)
 logical :: mask_test
 character(len=3) :: il0char
 character(len=1024) :: subr = 'define_mask'
-type(ctree_type) :: ctree
 
 ! Mask restriction
 if (nam%mask_type(1:3)=='lat') then
@@ -249,17 +250,6 @@ elseif (trim(nam%mask_type)=='ldwv') then
             if (geom%mask(ic0,il0)) geom%mask(ic0,:) = mask_test
          end do
       end if
-   end do
-elseif (trim(nam%mask_type)=='coast') then
-   ! Compute distance to the coast
-   do il0=1,geom%nl0
-      call ctree%create(geom%nc0,geom%lon,geom%lat,.not.geom%mask(:,il0))
-      do ic0=1,geom%nc0
-         if (geom%mask(ic0,il0)) then
-            call ctree%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0),1,nn_index,nn_dist)
-            if (nn_dist(1)<nam%mask_th/req) geom%mask(ic0,il0) = .false.
-         end if
-      end do
    end do
 end if
 
@@ -432,7 +422,7 @@ type(nam_type),intent(in) :: nam       !< Namelist
 
 ! Local variables
 integer :: ic0,inr,info,iproc,ic0a,nc0amax,lunit
-integer :: ncid,c0_to_proc_id,c0_to_c0a_id,nc0_id
+integer :: ncid,nc0_id,c0_to_proc_id,c0_to_c0a_id,lon_id,lat_id
 integer,allocatable :: nr_to_proc(:),ic0a_arr(:)
 logical :: ismetis
 character(len=4) :: nprocchar
@@ -452,17 +442,23 @@ if (.not.allocated(geom%c0_to_proc)) then
       end do
    elseif (mpl%nproc>1) then
       ! Open file
-      write(mpl%unit,'(a7,a,i4,a)') '','Try to read local distribution for ',mpl%nproc,' MPI tasks'
       write(nprocchar,'(i4.4)') mpl%nproc
       filename_nc = trim(nam%prefix)//'_distribution_'//nprocchar//'.nc'
       info = nf90_open(trim(nam%datadir)//'/'//trim(filename_nc),nf90_nowrite,ncid)
 
       if (info==nf90_noerr) then
-         ! Read data and close file
+         ! Read local distribution
+         write(mpl%unit,'(a7,a,i4,a)') '','Read local distribution for ',mpl%nproc,' MPI tasks'
+
+         ! Get variables ID
          call ncerr(subr,nf90_inq_varid(ncid,'c0_to_proc',c0_to_proc_id))
          call ncerr(subr,nf90_inq_varid(ncid,'c0_to_c0a',c0_to_c0a_id))
+
+         ! Read varaibles
          call ncerr(subr,nf90_get_var(ncid,c0_to_proc_id,geom%c0_to_proc))
          call ncerr(subr,nf90_get_var(ncid,c0_to_c0a_id,geom%c0_to_c0a))
+
+         ! Close file
          call ncerr(subr,nf90_close(ncid))
 
          ! Check
@@ -475,11 +471,20 @@ if (.not.allocated(geom%c0_to_proc)) then
          if (mpl%main) then
             if (nam%use_metis) then
                ! Try to use METIS
+               write(mpl%unit,'(a7,a,i4,a)') '','Try to use METIS for ',mpl%nproc,' MPI tasks'
+
+               ! Compute graph
                call geom%compute_metis_graph(nam)
+
+               ! Write graph
                filename_metis = trim(nam%prefix)//'_metis'
                write(nprocchar,'(i4)') mpl%nproc
+
+               ! Call METIS
                call system('gpmetis '//trim(nam%datadir)//'/'//trim(filename_metis)//' '//adjustl(nprocchar)//' > '// &
              & trim(nam%datadir)//'/'//trim(filename_metis)//'.out')
+
+               ! Check for METIS output
                inquire(file=trim(nam%datadir)//'/'//trim(filename_metis)//'.part.'//adjustl(nprocchar),exist=ismetis)
                if (.not.ismetis) call msgwarning('METIS not available to generate the local distribution')
             else
@@ -540,16 +545,33 @@ if (.not.allocated(geom%c0_to_proc)) then
          call mpl%bcast(geom%c0_to_proc,mpl%ioproc)
          call mpl%bcast(geom%c0_to_c0a,mpl%ioproc)
 
+         ! Write distribution
          if (mpl%main) then
-            ! Write distribution
+            ! Create file
             call ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename_nc),or(nf90_clobber,nf90_64bit_offset),ncid))
+
+            ! Write namelist parameters
             call nam%ncwrite(ncid)
+
+            ! Define dimension
             call ncerr(subr,nf90_def_dim(ncid,'nc0',geom%nc0,nc0_id))
+
+            ! Define variables
+            call ncerr(subr,nf90_def_var(ncid,'lon',ncfloat,(/nc0_id/),lon_id))
+            call ncerr(subr,nf90_def_var(ncid,'lat',ncfloat,(/nc0_id/),lat_id))
             call ncerr(subr,nf90_def_var(ncid,'c0_to_proc',nf90_int,(/nc0_id/),c0_to_proc_id))
             call ncerr(subr,nf90_def_var(ncid,'c0_to_c0a',nf90_int,(/nc0_id/),c0_to_c0a_id))
+
+            ! End definition mode
             call ncerr(subr,nf90_enddef(ncid))
+
+            ! Write variables
+            call ncerr(subr,nf90_put_var(ncid,lon_id,geom%lon*rad2deg))
+            call ncerr(subr,nf90_put_var(ncid,lat_id,geom%lat*rad2deg))
             call ncerr(subr,nf90_put_var(ncid,c0_to_proc_id,geom%c0_to_proc))
             call ncerr(subr,nf90_put_var(ncid,c0_to_c0a_id,geom%c0_to_c0a))
+
+            ! Close file
             call ncerr(subr,nf90_close(ncid))
          end if
       end if
@@ -818,10 +840,16 @@ if (mpl%main) then
    ! Check if the file exists
    info = nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_noclobber,nf90_64bit_offset),ncid)
    if (info==nf90_noerr) then
-      call ncerr(subr,nf90_put_att(ncid,nf90_global,'_FillValue',msvalr))
+      ! Write namelist parameters
       call nam%ncwrite(ncid)
+
+      ! Define attribute
+      call ncerr(subr,nf90_put_att(ncid,nf90_global,'_FillValue',msvalr))
+
+      ! End definition mode
       call ncerr(subr,nf90_enddef(ncid))
    else
+      ! Open file
       call ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_write,ncid))
    end if
 

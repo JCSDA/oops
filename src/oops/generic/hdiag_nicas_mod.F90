@@ -270,6 +270,7 @@ nam%sam_read = .false.
 nam%mask_type = ''
 call msr(nam%mask_th)
 nam%mask_check = .false.
+nam%draw_type = ''
 call msi(nam%nc1)
 call msi(nam%ntry)
 call msi(nam%nrep)
@@ -353,6 +354,7 @@ nam%logpres = integer_to_logical(config_get_int(c_conf,"logpres"))
 nam%mask_type = config_get_string(c_conf,1024,"mask_type")
 nam%mask_th = config_get_real(c_conf,"mask_th")
 nam%mask_check = integer_to_logical(config_get_int(c_conf,"mask_check"))
+nam%draw_type = config_get_string(c_conf,1024,"draw_type")
 nam%nc1 = config_get_int(c_conf,"nc1")
 nam%ntry = config_get_int(c_conf,"ntry")
 nam%nrep = config_get_int(c_conf,"nrep")

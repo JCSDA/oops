@@ -545,13 +545,13 @@ logical,intent(in) :: mask_dst(n_dst)         !< Destination mask
 character(len=1024),intent(in) :: interp_type !< Interpolation type
 
 ! Local variables
-integer :: i,i_src,i_dst,nn_index(1),n_s,progint,ib(3),nnat,inat,np,iproc,offset
+integer :: i,i_src,i_dst,nn_index(1),n_s,progint,ib(3),nnat,inat,np,iproc,offset,i_s
 integer :: i_dst_s(mpl%nproc),i_dst_e(mpl%nproc),n_dst_loc(mpl%nproc),i_dst_loc,proc_to_n_s(mpl%nproc)
 integer,allocatable :: natis(:),row(:),col(:)
 real(kind_real) :: nn_dist(1),b(3)
 real(kind_real),allocatable :: area_polygon(:),area_polygon_new(:),natwgt(:),S(:)
 logical :: loop
-logical,allocatable :: done(:)
+logical,allocatable :: done(:),check_dst(:)
 type(mesh_type) :: meshnew
 
 ! MPI splitting
@@ -607,7 +607,7 @@ do i_dst_loc=1,n_dst_loc(mpl%myproc)
          end do
          if (sum(b)>0.0) b = b/sum(b)
 
-         if (all(ib>0).and.all(b>0.0)) then
+         if (all(ib>0)) then
             if (all(mask_src(mesh%order(ib)))) then
                ! Valid interpolation
                if (trim(interp_type)=='bilin') then
@@ -725,6 +725,17 @@ call mpl%bcast(interp%row,mpl%ioproc)
 call mpl%bcast(interp%col,mpl%ioproc)
 call mpl%bcast(interp%S,mpl%ioproc)
 
+! Deal with missing points
+call interp%interp_missing(n_dst,lon_dst,lat_dst,mask_dst,interp_type)
+
+! Check interpolation
+allocate(check_dst(n_dst))
+check_dst = .true.
+do i_s=1,interp%n_s
+   check_dst(interp%row(i_s)) = .false.
+end do
+if (any(check_dst)) call msgerror('missing destination points in interp_from_mesh_ctree')
+
 end subroutine linop_interp_from_mesh_ctree
 
 !----------------------------------------------------------------------
@@ -751,7 +762,7 @@ type(linop_type),intent(inout) :: interp_base !< Linear operator (base interpola
 integer :: ic0,ic1,i_s
 real(kind_real) :: renorm(geom%nc0)
 logical :: test_c0(geom%nc0)
-logical,allocatable :: mask_extra(:),valid(:),missing(:),test_c1(:)
+logical,allocatable :: mask_extra(:),valid(:)
 
 if (.not.allocated(interp_base%row)) then
    ! Compute base interpolation
@@ -762,7 +773,6 @@ end if
 ! Allocation
 allocate(valid(interp_base%n_s))
 allocate(mask_extra(nc1))
-allocate(test_c1(nc1))
 
 ! Initialization
 valid = .true.
@@ -819,26 +829,19 @@ end do
 ! Release memory
 call interp_base%dealloc
 
-! Allocation
-allocate(missing(geom%nc0))
-
-! Count points that are not interpolated
+! Deal with missing points
 call interp%interp_missing(geom%nc0,geom%lon,geom%lat,geom%mask(:,il0i),interp_type)
 
-! Test interpolation
+! Check interpolation
 test_c0 = geom%mask(:,min(il0i,geom%nl0i))
-test_c1 = .true.
 do i_s=1,interp%n_s
    test_c0(interp%row(i_s)) = .false.
-   test_c1(interp%col(i_s)) = .false.
 end do
 if (any(test_c0)) call msgerror('error with the grid interpolation row')
-if (any(test_c1)) call msgerror('error with the grid interpolation col')
 
 ! Release memory
 deallocate(valid)
 deallocate(mask_extra)
-deallocate(test_c1)
 
 end subroutine linop_interp_grid
 
@@ -854,13 +857,13 @@ implicit none
 class(linop_type),intent(inout) :: interp               !< Linear operator (interpolation)
 type(geom_type),intent(in) :: geom                      !< Geometry
 logical,intent(inout) :: valid(interp%n_s)              !< Valid points
-integer,intent(in) :: il0                               !< Level index
 integer,intent(in),optional :: row_to_ic0(interp%n_dst) !< Conversion from row to ic0 (identity if missing)
 integer,intent(in),optional :: col_to_ic0(interp%n_src) !< Conversion from col to ic0 (identity if missing)
 
 ! Local variables
-integer :: ic0,i_s,jc0,jc1,progint,iproc
+integer :: ic0,i_s,jc0,jc1,progint,il0,iproc
 integer :: i_s_s(mpl%nproc),i_s_e(mpl%nproc),n_s_loc(mpl%nproc),i_s_loc
+real(kind_real),allocatable :: x(:),y(:),z(:),v1(:),v2(:),va(:),vp(:),t(:)
 logical,allocatable :: done(:)
 
 ! MPI splitting
@@ -871,7 +874,7 @@ allocate(done(n_s_loc(mpl%myproc)))
 
 ! Check that interpolations are not crossing mask boundaries
 call prog_init(progint,done)
-!$omp parallel do schedule(static) private(i_s_loc,i_s,ic0,jc0)
+!$omp parallel do schedule(static) private(i_s_loc,i_s,x,y,z,v1,v2,va,vp,t,ic0,jc1,jc0)
 do i_s_loc=1,n_s_loc(mpl%myproc)
    ! Indices
    i_s = i_s_s(mpl%myproc)+i_s_loc-1

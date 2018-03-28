@@ -454,11 +454,11 @@ do iscales=1,nscales
          if (dmask(jc3,jl0)) then
             ! Initialization
             if (iscales==1) fit(jc3,jl0) = 0.0
-  
+
             ! Squared distance
             rsq = H11*dx(jc3,jl0)**2+H22*dy(jc3,jl0)**2+H33*dz(jl0)**2
             if (ncomp(iscales)==4) rsq = rsq+2.0*sqrt(H11*H22)*Hc12*dx(jc3,jl0)*dy(jc3,jl0)
-   
+
             if (M==0) then
                ! Gaussian function
                fit(jc3,jl0) = fit(jc3,jl0)+coef(iscales)*exp(-0.5*rsq)

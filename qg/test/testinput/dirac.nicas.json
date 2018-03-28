@@ -74,6 +74,7 @@
       "mask_type": "none",
       "mask_th": 0,
       "mask_check": 0,
+      "draw_type": "random_uniform",
       "nc1": 400,
       "ntry": 3,
       "nrep": 2,

@@ -233,8 +233,8 @@ integer,intent(out) :: ios               !< Status flag
 
 ! Local variables
 integer :: il0,il0i,ic1,jc3,ic2
-integer :: nl0_test,nl0r_test,nc_test,nc1_test,nc2_test
-integer :: info,ncid,nl0_id,nc_id,nc1_id,nc2_id
+integer :: nl0_test,nl0r_test,nc_test,nc1_test,nc2_test,nc2_1_test,nc2_2_test
+integer :: info,ncid,nl0_id,nc3_id,nc1_id,nc2_id,nc2_1_id,nc2_2_id
 integer :: c1_to_c0_id,c1l0_log_id,c1c3_to_c0_id,c1c3l0_log_id
 integer :: c2_to_c1_id,c2_to_c0_id,local_mask_id,displ_mask_id,nn_c2_index_id,nn_c2_dist_id
 integer :: c1l0_logint(nam%nc1,geom%nl0),c1c3l0_logint(nam%nc1,nam%nc3,geom%nl0)
@@ -258,12 +258,12 @@ end if
 call ncerr(subr,nf90_inq_dimid(ncid,'nl0',nl0_id))
 call ncerr(subr,nf90_inquire_dimension(ncid,nl0_id,len=nl0_test))
 call ncerr(subr,nf90_get_att(ncid,nf90_global,'nl0r',nl0r_test))
-call ncerr(subr,nf90_inq_dimid(ncid,'nc',nc_id))
-call ncerr(subr,nf90_inquire_dimension(ncid,nc_id,len=nc_test))
+call ncerr(subr,nf90_inq_dimid(ncid,'nc3',nc3_id))
+call ncerr(subr,nf90_inquire_dimension(ncid,nc3_id,len=nc_test))
 call ncerr(subr,nf90_inq_dimid(ncid,'nc1',nc1_id))
 call ncerr(subr,nf90_inquire_dimension(ncid,nc1_id,len=nc1_test))
 if (nam%local_diag.or.nam%displ_diag) then
-   info = nf90_inq_dimid(ncid,'nc2_1',nc2_id)
+   info = nf90_inq_dimid(ncid,'nc2',nc2_id)
    if (info==nf90_noerr) then
       call ncerr(subr,nf90_inquire_dimension(ncid,nc2_id,len=nc2_test))
    else
@@ -339,6 +339,7 @@ if ((ios==0).and.(nam%local_diag.or.nam%displ_diag)) then
    allocate(displ_maskint(nam%nc1,hdata%nc2))
 
    do il0i=1,geom%nl0i
+      ! Open file
       write(il0ichar,'(i3.3)') il0i
       info = nf90_open(trim(nam%datadir)//'/'//trim(nam%prefix)//'_sampling_'//il0ichar//'.nc',nf90_nowrite,ncid)
       if (info/=nf90_noerr) then
@@ -346,6 +347,19 @@ if ((ios==0).and.(nam%local_diag.or.nam%displ_diag)) then
          nam%sam_write = .true.
          ios = 3
          return
+      end if
+
+      ! Check dimensions
+      call ncerr(subr,nf90_inq_dimid(ncid,'nc1',nc1_id))
+      call ncerr(subr,nf90_inquire_dimension(ncid,nc1_id,len=nc1_test))
+      call ncerr(subr,nf90_inq_dimid(ncid,'nc2_1',nc2_1_id))
+      call ncerr(subr,nf90_inquire_dimension(ncid,nc2_1_id,len=nc2_1_test))
+      call ncerr(subr,nf90_inq_dimid(ncid,'nc2_2',nc2_2_id))
+      call ncerr(subr,nf90_inquire_dimension(ncid,nc2_2_id,len=nc2_2_test))
+      if ((nam%nc1/=nc1_test).or.(hdata%nc2/=nc2_1_test).or.(hdata%nc2/=nc2_2_test)) then
+         call msgwarning('wrong dimension when reading HDIAG sampling, recomputing HDIAG sampling')
+         nam%sam_write = .true.
+         ios = 2
       end if
       call ncerr(subr,nf90_inq_varid(ncid,'local_mask',local_mask_id))
       call ncerr(subr,nf90_inq_varid(ncid,'displ_mask',displ_mask_id))
@@ -406,7 +420,7 @@ type(geom_type),intent(in) :: geom    !< Geometry
 
 ! Local variables
 integer :: il0,il0i,ic1,jc3,ic2
-integer :: ncid,nl0_id,nc1_id,nc2_1_id,nc2_2_id,nc_id
+integer :: ncid,nl0_id,nc1_id,nc2_id,nc2_1_id,nc2_2_id,nc3_id
 integer :: lat_id,lon_id,smax_id,c1_to_c0_id,c1l0_log_id,c1c3_to_c0_id,c1c3l0_log_id
 integer :: c2_to_c1_id,c2_to_c0_id,local_mask_id,displ_mask_id,nn_c2_index_id,nn_c2_dist_id
 integer :: c1l0_logint(nam%nc1,geom%nl0),c1c3l0_logint(nam%nc1,nam%nc3,geom%nl0)
@@ -422,39 +436,42 @@ if (.not.mpl%main) call msgerror('only I/O proc should enter '//trim(subr))
 write(mpl%unit,'(a7,a)') '','Write HDIAG sampling'
 call ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(nam%prefix)//'_sampling.nc',or(nf90_clobber,nf90_64bit_offset),ncid))
 
+! Write namelist parameters
+call nam%ncwrite(ncid)
+
 ! Define dimensions
 call ncerr(subr,nf90_def_dim(ncid,'nl0',geom%nl0,nl0_id))
 call ncerr(subr,nf90_put_att(ncid,nf90_global,'nl0r',nam%nl0r))
-call ncerr(subr,nf90_def_dim(ncid,'nc',nam%nc3,nc_id))
+call ncerr(subr,nf90_def_dim(ncid,'nc3',nam%nc3,nc3_id))
 call ncerr(subr,nf90_def_dim(ncid,'nc1',nam%nc1,nc1_id))
-if (nam%local_diag.or.nam%displ_diag) call ncerr(subr,nf90_def_dim(ncid,'nc2_1',hdata%nc2,nc2_1_id))
+if (nam%local_diag.or.nam%displ_diag) call ncerr(subr,nf90_def_dim(ncid,'nc2',hdata%nc2,nc2_id))
 
-! Define arrays
-call ncerr(subr,nf90_def_var(ncid,'lat',ncfloat,(/nc1_id,nc_id,nl0_id/),lat_id))
+! Define variables
+call ncerr(subr,nf90_def_var(ncid,'lat',ncfloat,(/nc1_id,nc3_id,nl0_id/),lat_id))
 call ncerr(subr,nf90_put_att(ncid,lat_id,'_FillValue',msvalr))
-call ncerr(subr,nf90_def_var(ncid,'lon',ncfloat,(/nc1_id,nc_id,nl0_id/),lon_id))
+call ncerr(subr,nf90_def_var(ncid,'lon',ncfloat,(/nc1_id,nc3_id,nl0_id/),lon_id))
 call ncerr(subr,nf90_put_att(ncid,lon_id,'_FillValue',msvalr))
-call ncerr(subr,nf90_def_var(ncid,'smax',ncfloat,(/nc_id,nl0_id/),smax_id))
+call ncerr(subr,nf90_def_var(ncid,'smax',ncfloat,(/nc3_id,nl0_id/),smax_id))
 call ncerr(subr,nf90_put_att(ncid,smax_id,'_FillValue',msvalr))
 call ncerr(subr,nf90_def_var(ncid,'c1_to_c0',nf90_int,(/nc1_id/),c1_to_c0_id))
 call ncerr(subr,nf90_put_att(ncid,c1_to_c0_id,'_FillValue',msvali))
 call ncerr(subr,nf90_def_var(ncid,'c1l0_log',nf90_int,(/nc1_id,nl0_id/),c1l0_log_id))
 call ncerr(subr,nf90_put_att(ncid,c1l0_log_id,'_FillValue',msvali))
-call ncerr(subr,nf90_def_var(ncid,'c1c3_to_c0',nf90_int,(/nc1_id,nc_id/),c1c3_to_c0_id))
+call ncerr(subr,nf90_def_var(ncid,'c1c3_to_c0',nf90_int,(/nc1_id,nc3_id/),c1c3_to_c0_id))
 call ncerr(subr,nf90_put_att(ncid,c1c3_to_c0_id,'_FillValue',msvali))
-call ncerr(subr,nf90_def_var(ncid,'c1c3l0_log',nf90_int,(/nc1_id,nc_id,nl0_id/),c1c3l0_log_id))
+call ncerr(subr,nf90_def_var(ncid,'c1c3l0_log',nf90_int,(/nc1_id,nc3_id,nl0_id/),c1c3l0_log_id))
 call ncerr(subr,nf90_put_att(ncid,c1c3l0_log_id,'_FillValue',msvali))
 if (nam%local_diag.or.nam%displ_diag) then
-   call ncerr(subr,nf90_def_var(ncid,'c2_to_c1',nf90_int,(/nc2_1_id/),c2_to_c1_id))
+   call ncerr(subr,nf90_def_var(ncid,'c2_to_c1',nf90_int,(/nc2_id/),c2_to_c1_id))
    call ncerr(subr,nf90_put_att(ncid,c2_to_c1_id,'_FillValue',msvali))
-   call ncerr(subr,nf90_def_var(ncid,'c2_to_c0',nf90_int,(/nc2_1_id/),c2_to_c0_id))
+   call ncerr(subr,nf90_def_var(ncid,'c2_to_c0',nf90_int,(/nc2_id/),c2_to_c0_id))
    call ncerr(subr,nf90_put_att(ncid,c2_to_c0_id,'_FillValue',msvali))
 end if
 
 ! End definition mode
 call ncerr(subr,nf90_enddef(ncid))
 
-! Write arrays
+! Convert data
 call msr(lon)
 call msr(lat)
 do il0=1,geom%nl0
@@ -463,15 +480,12 @@ do il0=1,geom%nl0
          if (hdata%c1c3l0_log(ic1,jc3,il0)) then
             lon(ic1,jc3,il0) = geom%lon(hdata%c1c3_to_c0(ic1,jc3))*rad2deg
             lat(ic1,jc3,il0) = geom%lat(hdata%c1c3_to_c0(ic1,jc3))*rad2deg
+            c1c3l0_logint(ic1,jc3,il0) = 1
+         else
+            c1c3l0_logint(ic1,jc3,il0) = 0
          end if
       end do
    end do
-end do
-call ncerr(subr,nf90_put_var(ncid,lon_id,lon))
-call ncerr(subr,nf90_put_var(ncid,lat_id,lat))
-call ncerr(subr,nf90_put_var(ncid,smax_id,float(count(hdata%c1c3l0_log,dim=1))))
-call ncerr(subr,nf90_put_var(ncid,c1_to_c0_id,hdata%c1_to_c0))
-do il0=1,geom%nl0
    do ic1=1,nam%nc1
       if (hdata%c1l0_log(ic1,il0)) then
          c1l0_logint(ic1,il0) = 1
@@ -480,19 +494,14 @@ do il0=1,geom%nl0
       end if
    end do
 end do
+
+! Write variables
+call ncerr(subr,nf90_put_var(ncid,lon_id,lon))
+call ncerr(subr,nf90_put_var(ncid,lat_id,lat))
+call ncerr(subr,nf90_put_var(ncid,smax_id,float(count(hdata%c1c3l0_log,dim=1))))
+call ncerr(subr,nf90_put_var(ncid,c1_to_c0_id,hdata%c1_to_c0))
 call ncerr(subr,nf90_put_var(ncid,c1l0_log_id,c1l0_logint))
 call ncerr(subr,nf90_put_var(ncid,c1c3_to_c0_id,hdata%c1c3_to_c0))
-do il0=1,geom%nl0
-   do jc3=1,nam%nc3
-      do ic1=1,nam%nc1
-         if (hdata%c1c3l0_log(ic1,jc3,il0)) then
-            c1c3l0_logint(ic1,jc3,il0) = 1
-         else
-            c1c3l0_logint(ic1,jc3,il0) = 0
-         end if
-      end do
-   end do
-end do
 call ncerr(subr,nf90_put_var(ncid,c1c3l0_log_id,c1c3l0_logint))
 if (nam%local_diag.or.nam%displ_diag) then
    call ncerr(subr,nf90_put_var(ncid,c2_to_c1_id,hdata%c2_to_c1))
@@ -510,20 +519,32 @@ if (nam%local_diag.or.nam%displ_diag) then
 
    do il0i=1,geom%nl0i
       write(il0ichar,'(i3.3)') il0i
+      ! Create file
       call ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(nam%prefix)//'_sampling_'//il0ichar//'.nc', &
     & or(nf90_clobber,nf90_64bit_offset),ncid))
+
+      ! Write namelist parameters
+      call nam%ncwrite(ncid)
+
+      ! Define dimensions
       call ncerr(subr,nf90_def_dim(ncid,'nc1',nam%nc1,nc1_id))
       call ncerr(subr,nf90_def_dim(ncid,'nc2_1',hdata%nc2,nc2_1_id))
-      call ncerr(subr,nf90_def_var(ncid,'local_mask',nf90_int,(/nc1_id,nc2_1_id/),local_mask_id))
-      call ncerr(subr,nf90_def_var(ncid,'displ_mask',nf90_int,(/nc1_id,nc2_1_id/),displ_mask_id))
-      call ncerr(subr,nf90_put_att(ncid,local_mask_id,'_FillValue',msvali))
-      call ncerr(subr,nf90_put_att(ncid,displ_mask_id,'_FillValue',msvali))
       call ncerr(subr,nf90_def_dim(ncid,'nc2_2',hdata%nc2,nc2_2_id))
+
+      ! Define variables
+      call ncerr(subr,nf90_def_var(ncid,'local_mask',nf90_int,(/nc1_id,nc2_1_id/),local_mask_id))
+      call ncerr(subr,nf90_put_att(ncid,local_mask_id,'_FillValue',msvali))
+      call ncerr(subr,nf90_def_var(ncid,'displ_mask',nf90_int,(/nc1_id,nc2_1_id/),displ_mask_id))
+      call ncerr(subr,nf90_put_att(ncid,displ_mask_id,'_FillValue',msvali))
       call ncerr(subr,nf90_def_var(ncid,'nn_c2_index',nf90_int,(/nc2_1_id,nc2_2_id/),nn_c2_index_id))
       call ncerr(subr,nf90_put_att(ncid,nn_c2_index_id,'_FillValue',msvali))
       call ncerr(subr,nf90_def_var(ncid,'nn_c2_dist',ncfloat,(/nc2_1_id,nc2_2_id/),nn_c2_dist_id))
       call ncerr(subr,nf90_put_att(ncid,nn_c2_dist_id,'_FillValue',msvalr))
+
+      ! End definition mode
       call ncerr(subr,nf90_enddef(ncid))
+
+      ! Convert data
       do ic2=1,hdata%nc2
          do ic1=1,nam%nc1
             if (hdata%local_mask(ic1,ic2,il0i)) then
@@ -538,11 +559,15 @@ if (nam%local_diag.or.nam%displ_diag) then
             end if
          end do
       end do
+
+      ! Write variables
       call ncerr(subr,nf90_put_var(ncid,local_mask_id,local_maskint))
       call ncerr(subr,nf90_put_var(ncid,displ_mask_id,displ_maskint))
       call ncerr(subr,nf90_put_var(ncid,nn_c2_index_id,hdata%nn_c2_index(:,:,il0i)))
       call ncerr(subr,nf90_put_var(ncid,nn_c2_dist_id,hdata%nn_c2_dist(:,:,il0i)))
       call hdata%hfull(il0i)%write(ncid)
+
+      ! Close file
       call ncerr(subr,nf90_close(ncid))
    end do
 
@@ -570,9 +595,9 @@ type(geom_type),intent(in) :: geom       !< Geometry
 integer :: info,ic0,il0,ic1,ic2,ildw,jc3,il0i,jc1,kc1
 integer :: mask_ind(nam%nc1)
 integer,allocatable :: vbot(:),vtop(:),nn_c1_index(:)
-real(kind_real) :: rh0(geom%nc0,geom%nl0),dum(1)
+real(kind_real) :: rh0(geom%nc0,geom%nl0),nn_dist(1)
 real(kind_real),allocatable :: nn_c1_dist(:)
-type(ctree_type) :: ctree_diag
+type(ctree_type) :: ctree
 type(linop_type) :: hbase
 
 ! Check subsampling size
@@ -619,10 +644,12 @@ if (nam%local_diag.or.nam%displ_diag) then
    if ((info==1).or.(info==2)) then
       ! Define subsampling
       write(mpl%unit,'(a7,a)') '','Define subsampling'
-      mask_ind = 1
-      rh0 = 1.0
-      if (mpl%main) call rng%initialize_sampling(nam%nc1,dble(geom%lon(hdata%c1_to_c0)),dble(geom%lat(hdata%c1_to_c0)),mask_ind, &
-    & rh0,nam%ntry,nam%nrep,hdata%nc2,hdata%c2_to_c1)
+      if (mpl%main) then
+         mask_ind = 1
+         rh0 = 1.0
+         call rng%initialize_sampling(nam%nc1,dble(geom%lon(hdata%c1_to_c0)),dble(geom%lat(hdata%c1_to_c0)),mask_ind, &
+       & rh0,nam%ntry,nam%nrep,hdata%nc2,hdata%c2_to_c1)
+      end if
       call mpl%bcast(hdata%c2_to_c1,mpl%ioproc)
       hdata%c2_to_c0 = hdata%c1_to_c0(hdata%c2_to_c1)
    end if
@@ -633,14 +660,14 @@ if (nam%local_diag.or.nam%displ_diag) then
       do il0=1,geom%nl0
          if ((il0==1).or.(geom%nl0i>1)) then
             write(mpl%unit,'(a10,a,i3)') '','Level ',nam%levs(il0)
-            call ctree_diag%create(hdata%nc2,geom%lon(hdata%c2_to_c0),geom%lat(hdata%c2_to_c0),hdata%c1l0_log(hdata%c2_to_c1,il0))
+            call ctree%create(hdata%nc2,geom%lon(hdata%c2_to_c0),geom%lat(hdata%c2_to_c0),hdata%c1l0_log(hdata%c2_to_c1,il0))
             do ic2=1,hdata%nc2
                ic1 = hdata%c2_to_c1(ic2)
                ic0 = hdata%c2_to_c0(ic2)
-               if (hdata%c1l0_log(ic1,il0)) call ctree_diag%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0), &
+               if (hdata%c1l0_log(ic1,il0)) call ctree%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0), &
                 & hdata%nc2,hdata%nn_c2_index(:,ic2,il0),hdata%nn_c2_dist(:,ic2,il0))
             end do
-            call ctree_diag%delete
+            call ctree%delete
          end if
       end do
    end if
@@ -657,6 +684,10 @@ if (nam%local_diag.or.nam%displ_diag) then
    write(mpl%unit,'(a7,a)') '','Find boundary nodes'
    call hdata%mesh%bnodes
 
+   ! Find boundary arcs
+   write(mpl%unit,'(a7,a)') '','Find boundary arcs'
+   call hdata%mesh%barcs
+
    if ((info==1).or.(info==2).or.(info==3)) then
       ! Allocation
       allocate(nn_c1_index(nam%nc1))
@@ -668,13 +699,13 @@ if (nam%local_diag.or.nam%displ_diag) then
       write(mpl%unit,'(a7,a)') '','Compute nearest neighbors'
       do il0i=1,geom%nl0i
          write(mpl%unit,'(a10,a,i3)') '','Independent level ',il0i
-         call ctree_diag%create(nam%nc1,geom%lon(hdata%c1_to_c0),geom%lat(hdata%c1_to_c0),hdata%c1l0_log(:,il0i))
+         call ctree%create(nam%nc1,geom%lon(hdata%c1_to_c0),geom%lat(hdata%c1_to_c0),hdata%c1l0_log(:,il0i))
          do ic2=1,hdata%nc2
             ic1 = hdata%c2_to_c1(ic2)
             ic0 = hdata%c2_to_c0(ic2)
             if (hdata%c1l0_log(ic1,il0i)) then
                ! Find nearest neighbors
-               call ctree_diag%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0),nam%nc1,nn_c1_index,nn_c1_dist)
+               call ctree%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0),nam%nc1,nn_c1_index,nn_c1_dist)
 
                do jc1=1,nam%nc1
                   kc1 = nn_c1_index(jc1)
@@ -683,7 +714,7 @@ if (nam%local_diag.or.nam%displ_diag) then
                end do
             end if
          end do
-         call ctree_diag%delete
+         call ctree%delete
       end do
 
       ! Initialize vbot and vtop
@@ -711,13 +742,13 @@ if (nam%sam_write.and.mpl%main) call hdata%write(nam,geom)
 if (nam%local_diag.and.(nam%nldwv>0)) then
    write(mpl%unit,'(a7,a)') '','Compute nearest neighbors for local diagnostics output'
    allocate(hdata%nn_ldwv_index(nam%nldwv))
-   call ctree_diag%create(hdata%nc2,geom%lon(hdata%c2_to_c0), &
+   call ctree%create(hdata%nc2,geom%lon(hdata%c2_to_c0), &
                 geom%lat(hdata%c2_to_c0),hdata%c1l0_log(hdata%c2_to_c1,1))
    do ildw=1,nam%nldwv
-      call ctree_diag%find_nearest_neighbors(nam%lon_ldwv(ildw)*deg2rad,nam%lat_ldwv(ildw)*deg2rad, &
-    & 1,hdata%nn_ldwv_index(ildw:ildw),dum)
+      call ctree%find_nearest_neighbors(nam%lon_ldwv(ildw)*deg2rad,nam%lat_ldwv(ildw)*deg2rad, &
+    & 1,hdata%nn_ldwv_index(ildw:ildw),nn_dist)
    end do
-   call ctree_diag%delete
+   call ctree%delete
 end if
 
 ! Print results
@@ -755,11 +786,12 @@ type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 
 ! Local variables
-integer :: ic0,ic1,fac,np,ip
+integer :: ic0,ic1,il0,fac,np,ip
 integer :: mask_ind_col(geom%nc0),nn_index(1)
-real(kind_real) :: rh0(geom%nc0),dum(1)
+real(kind_real) :: rh0(geom%nc0),nn_dist(1),Lcoast,rcoast
 real(kind_real),allocatable :: lon(:),lat(:)
 character(len=5) :: ic1char
+type(ctree_type) :: ctree
 
 ! Initialize mask
 mask_ind_col = 0
@@ -767,18 +799,38 @@ do ic0=1,geom%nc0
    if (any(geom%mask(ic0,:))) mask_ind_col(ic0) = 1
 end do
 
-! Initialize support radius to 1.0
-rh0 = 1.0
-
 ! Compute subset
 write(mpl%unit,'(a7,a)') '','Compute horizontal subset C1'
 if (nam%nc1<maxval(count(geom%mask,dim=1))) then
    if (mpl%main) then
-      if (.true.) then
-         ! Random draw
+      select case (trim(nam%draw_type))
+      case ('random_uniform','random_coast')
+         if (trim(nam%draw_type)=='random_uniform') then
+            ! Random draw
+            rh0 = 1.0
+         elseif (trim(nam%draw_type)=='random_coast') then
+            ! More points around coasts
+            Lcoast = 1000.0e3/req
+            rcoast = 0.1
+            rh0 = 0.0
+            do il0=1,geom%nl0
+               call ctree%create(geom%nc0,geom%lon,geom%lat,.not.geom%mask(:,il0))
+               do ic0=1,geom%nc0
+                  if (geom%mask(ic0,il0)) then
+                     call ctree%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0),1,nn_index,nn_dist)
+                     rh0(ic0) = rh0(ic0)+exp(-nn_dist(1)/Lcoast)
+                  else
+                      rh0(ic0) = rh0(ic0)+1.0
+                  end if
+               end do
+            end do
+            rh0 = rh0/float(geom%nl0)
+            rh0 = rcoast+(1.0-rh0)*(1.0-rcoast)
+            write(mpl%unit,*) 'RH0 min max',minval(rh0),maxval(rh0)
+         end if
          call rng%initialize_sampling(geom%nc0,dble(geom%lon),dble(geom%lat),mask_ind_col,rh0,nam%ntry,nam%nrep, &
        & nam%nc1,hdata%c1_to_c0)
-      else
+      case ('icosahedron')
          ! Compute icosahedron size
          call closest_icos(nam%nc1,fac,np)
 
@@ -793,7 +845,7 @@ if (nam%nc1<maxval(count(geom%mask,dim=1))) then
          ic1 = 0
          do ip=1,np
             ! Find nearest neighbor
-            call geom%ctree%find_nearest_neighbors(lon(ip),lat(ip),1,nn_index,dum)
+            call geom%ctree%find_nearest_neighbors(lon(ip),lat(ip),1,nn_index,nn_dist)
             ic0 = nn_index(1)
 
             ! Check mask
@@ -816,7 +868,7 @@ if (nam%nc1<maxval(count(geom%mask,dim=1))) then
          ! Release memory
          deallocate(lon)
          deallocate(lat)
-      end if
+      end select
    end if
    call mpl%bcast(hdata%c1_to_c0,mpl%ioproc)
 else
@@ -975,10 +1027,10 @@ type(geom_type),intent(in) :: geom       !< Geometry
 
 ! Local variables
 integer :: i,il0,ic1,ic0,jc0,ibnd,ic3,progint
-integer :: nn(nam%nc3)
+integer :: nn_index(nam%nc3)
 integer :: iproc,ic1_s(mpl%nproc),ic1_e(mpl%nproc),nc1_loc(mpl%nproc),ic1_loc
 integer,allocatable :: sbufi(:),rbufi(:)
-real(kind_real) :: dum(nam%nc3)
+real(kind_real) :: nn_dist(nam%nc3)
 real(kind_real),allocatable :: x(:),y(:),z(:),v1(:),v2(:),va(:),vp(:),t(:)
 logical,allocatable :: sbufl(:),rbufl(:),done(:)
 
@@ -1001,12 +1053,12 @@ do ic1_loc=1,nc1_loc(mpl%myproc)
    if (isnotmsi(hdata%c1_to_c0(ic1))) then
       ! Find neighbors
       call geom%ctree%find_nearest_neighbors(dble(geom%lon(hdata%c1_to_c0(ic1))),dble(geom%lat(hdata%c1_to_c0(ic1))), &
-    & nam%nc3,nn,dum)
+    & nam%nc3,nn_index,nn_dist)
 
       ! Copy neighbor index
       do ic3=1,nam%nc3
-         jc0 = nn(ic3)
-         hdata%c1c3_to_c0(ic1,ic3) = nn(ic3)
+         jc0 = nn_index(ic3)
+         hdata%c1c3_to_c0(ic1,ic3) = nn_index(ic3)
          do il0=1,geom%nl0
             hdata%c1c3l0_log(ic1,ic3,il0) = geom%mask(jc0,il0)
          end do

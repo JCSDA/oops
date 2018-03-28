@@ -191,14 +191,14 @@ do isub=1,nsub
       mask_unpack = .true.
 
       do ib=1,bpar%nb
-         if (bpar%auto_block(ib)) then
-            ! Indices
-            iv = bpar%b_to_v1(ib)
-            its = bpar%b_to_ts1(ib)
+         ! Indices
+         iv = bpar%b_to_v1(ib)
+         jv = bpar%b_to_v2(ib)
+         its = bpar%b_to_ts1(ib)
+         jts = bpar%b_to_ts2(ib)
 
-            ! Halo extension
-            call hdata%com_AC%ext(geom%nl0,fld(:,:,iv,its),fld_ext(:,:,iv,its))
-         end if
+         ! Halo extension
+         if ((iv==jv).and.(its==jts)) call hdata%com_AC%ext(geom%nl0,fld(:,:,iv,its),fld_ext(:,:,iv,its))
       end do
 
       do ib=1,bpar%nb
@@ -216,7 +216,15 @@ do isub=1,nsub
             ! Copy valid field points
             call msr(fld_1)
             call msr(fld_2)
-            if (bpar%auto_block(ib)) then
+            if ((iv/=jv).and.(its/=jts).and.nam%displ_diag) then
+               ! Interpolate zero separation points
+               !$omp parallel do schedule(static) private(il0)
+               do il0=1,geom%nl0
+                  call hdata%d(il0,its)%apply(fld_ext(:,il0,iv,its),fld_1(:,1,1,il0))
+                  call hdata%d(il0,jts)%apply(fld_ext(:,il0,jv,jts),fld_2(:,1,1,il0))
+               end do
+               !$omp end parallel do
+            else
                ! Copy all separations points
                !$omp parallel do schedule(static) private(il0,jl0r,jl0,jc3,ic1a,ic1,ic0,jc0,ic0c,jc0c)
                do il0=1,geom%nl0
@@ -244,34 +252,6 @@ do isub=1,nsub
                   end do
                end do
                !$omp end parallel do
-            else
-               if (nam%displ_diag) then
-                  ! Interpolate zero separation points
-                  !$omp parallel do schedule(static) private(il0)
-                  do il0=1,geom%nl0
-                     call hdata%d(il0,its)%apply(fld_ext(:,il0,iv,its),fld_1(:,1,1,il0))
-                     call hdata%d(il0,jts)%apply(fld_ext(:,il0,jv,jts),fld_2(:,1,1,il0))
-                  end do
-                  !$omp end parallel do
-               else
-                  ! Copy zero separation points
-                  !$omp parallel do schedule(static) private(il0,ic1a,ic1,ic0,ic0c)
-                  do il0=1,geom%nl0
-                     do ic1a=1,hdata%nc1a
-                        ic1 = hdata%c1a_to_c1(ic1a)
-                        if (hdata%c1l0_log(ic1,il0)) then
-                           ! Indices
-                           ic0 = hdata%c1_to_c0(ic1)
-                           ic0c = hdata%c0_to_c0c(ic0)
-
-                           ! Copy points
-                           fld_1(ic1a,1,1,il0) = fld_ext(ic0c,il0,iv,its)
-                           fld_2(ic1a,1,1,il0) = fld_ext(ic0c,il0,jv,jts)
-                        end if
-                     end do
-                  end do
-                  !$omp end parallel do
-               end if
             end if
 
             !$omp parallel do schedule(static) private(il0)

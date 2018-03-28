@@ -105,6 +105,9 @@ else
    geom%vunit = float(nam%levs(1:geom%nl0))
 end if
 
+! Not redundant grid
+geom%redgrid = .false.
+
 ! Release memory
 deallocate(lon)
 deallocate(lat)
@@ -141,22 +144,22 @@ call msr(fld)
 do iv=1,nam%nv
    if (mpl%main) then
       ! 3d variable
-   
+
       ! Get variable id
       call ncerr(subr,nf90_inq_varid(ncid,trim(nam%varname(iv)),fld_id))
-   
+
       ! 3d variable
       do il0=1,nam%nl
          call ncerr(subr,nf90_get_var(ncid,fld_id,fld_loc,(/1,1,nam%levs(il0)/),(/geom%nlon,geom%nlat,1/)))
          fld_glb(:,il0) = pack(real(fld_loc,kind_real),mask=.true.)
       end do
-   
+
       if (trim(nam%addvar2d(iv))/='') then
          ! 2d variable
-   
+
          ! Get id
          call ncerr(subr,nf90_inq_varid(ncid,trim(nam%addvar2d(iv)),fld_id))
-   
+
          ! Read data
          call ncerr(subr,nf90_get_var(ncid,fld_id,fld_loc,(/1,1/),(/geom%nlon,geom%nlat/)))
          fld_glb(:,geom%nl0) = pack(real(fld_loc,kind_real),.true.)
@@ -195,10 +198,10 @@ character(len=1024) :: subr = 'model_gfs_write'
 ! Local to global
 call geom%fld_com_lg(fld,fld_glb)
 
-if (mpl%main) then   
+if (mpl%main) then
    ! Get variable id
    info = nf90_inq_varid(ncid,trim(varname),fld_id)
-   
+
    ! Define dimensions and variable if necessary
    if (info/=nf90_noerr) then
       call ncerr(subr,nf90_redef(ncid))
@@ -212,7 +215,7 @@ if (mpl%main) then
       call ncerr(subr,nf90_put_att(ncid,fld_id,'_FillValue',msvalr))
       call ncerr(subr,nf90_enddef(ncid))
    end if
-   
+
    ! Write data
    do il0=1,geom%nl0
       if (isanynotmsr(fld_glb(:,il0))) then

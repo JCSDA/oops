@@ -54,7 +54,7 @@ real(kind_real),intent(in),optional :: ens1(geom%nc0a,geom%nl0,nam%nv,nam%nts,na
 integer :: ib
 character(len=1024) :: filename
 type(avg_type) :: avg_1,avg_2,avg_wgt
-type(diag_type) :: cor_1,cor_2,loc_1,loc_2,loc_3
+type(diag_type) :: cov_1,cov_2,cor_1,cor_2,loc_1,loc_2,loc_3
 type(displ_type) :: displ
 type(hdata_type) :: hdata
 type(mom_type) :: mom_1,mom_2
@@ -165,6 +165,26 @@ if (nam%new_hdiag) then
    end if
 
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(mpl%unit,'(a)') '--- Compute covariance'
+
+   ! Compute ensemble 1 covariance
+   write(mpl%unit,'(a7,a)') '','Ensemble 1:'
+   call cov_1%covariance(nam,geom,bpar,hdata,avg_1,'cov')
+
+   select case (trim(nam%method))
+   case ('hyb-avg','hyb-rnd','dual-ens')
+      ! Compute ensemble 2 covariance
+      write(mpl%unit,'(a7,a)') '','Ensemble 2:'
+      select case (trim(nam%method))
+      case ('hyb-avg','hyb-rnd')
+         call cov_2%covariance(nam,geom,bpar,hdata,avg_2,'cov_sta')
+      case ('dual-ens')
+         call cov_2%covariance(nam,geom,bpar,hdata,avg_2,'cov_lr')
+      end select
+      call flush(mpl%unit)
+   end select
+
+   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Compute correlation'
 
    ! Compute ensemble 1 correlation
@@ -173,7 +193,7 @@ if (nam%new_hdiag) then
 
    select case (trim(nam%method))
    case ('hyb-avg','hyb-rnd','dual-ens')
-      ! Compute ensemble 2 correlation fit
+      ! Compute ensemble 2 correlation
       write(mpl%unit,'(a7,a)') '','Ensemble 2:'
       select case (trim(nam%method))
       case ('hyb-avg','hyb-rnd')
@@ -186,9 +206,9 @@ if (nam%new_hdiag) then
 
    select case (trim(nam%method))
    case ('loc','hyb-avg','hyb-rnd','dual-ens')
-      ! Compute localization diagnostic and fit
+      ! Compute localization
       write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-      write(mpl%unit,'(a)') '--- Compute localization diagnostic'
+      write(mpl%unit,'(a)') '--- Compute localization'
       write(mpl%unit,'(a7,a)') '','Ensemble 1:'
       call loc_1%localization(nam,geom,bpar,hdata,avg_1,'loc')
    end select
@@ -196,9 +216,9 @@ if (nam%new_hdiag) then
 
    select case (trim(nam%method))
    case ('hyb-avg','hyb-rnd')
-      ! Compute static hybridization diagnostic and fit
+      ! Compute static hybridization
       write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-      write(mpl%unit,'(a)') '--- Compute static hybridization diagnostic and fit'
+      write(mpl%unit,'(a)') '--- Compute static hybridization'
       write(mpl%unit,'(a7,a)') '','Ensemble 1 and 2:'
       call loc_2%hybridization(nam,geom,bpar,hdata,avg_1,avg_2,'loc_hyb')
    end select
@@ -207,7 +227,7 @@ if (nam%new_hdiag) then
    if (trim(nam%method)=='dual-ens') then
       ! Compute dual-ensemble hybridization diagnostic and fit
       write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-      write(mpl%unit,'(a)') '--- Compute dual-ensemble hybridization diagnostic and fit'
+      write(mpl%unit,'(a)') '--- Compute dual-ensemble hybridization'
       write(mpl%unit,'(a7,a)') '','Ensembles 1 and 2:'
       call loc_2%dualens(nam,geom,bpar,hdata,avg_1,avg_2,loc_3,'loc_deh','loc_deh_lr')
    end if

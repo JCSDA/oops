@@ -16,7 +16,7 @@ use tools_display, only: msgerror
 use tools_fit, only: fast_fit,ver_smooth
 use tools_func, only: fit_diag
 use tools_kinds, only: kind_real
-use tools_missing, only: msvalr,msi,msr,isnotmsr,isallnotmsr
+use tools_missing, only: msvali,msvalr,msi,msr,isnotmsr,isallnotmsr,isanynotmsr
 use tools_nc, only: ncerr,ncfloat
 use type_avg_blk, only: avg_blk_type
 use type_bpar, only: bpar_type
@@ -129,7 +129,7 @@ end subroutine diag_blk_dealloc
 ! Subroutine: diag_blk_write
 !> Purpose: write a diagnostic
 !----------------------------------------------------------------------
-subroutine diag_blk_write(diag_blk,nam,geom,filename)
+subroutine diag_blk_write(diag_blk,nam,geom,bpar,filename)
 
 implicit none
 
@@ -137,23 +137,27 @@ implicit none
 class(diag_blk_type),intent(inout) :: diag_blk !< Diagnostic block
 type(nam_type),intent(in) :: nam               !< Namelist
 type(geom_type),intent(in) :: geom             !< Geometry
+type(bpar_type),intent(in) :: bpar             !< Block parameters
 character(len=*),intent(in) :: filename        !< File name
 
 ! Local variables
 integer :: info,ncid,one_id,nc_id,nl0r_id,nl0_id,disth_id,vunit_id
-integer :: raw_id,raw_coef_ens_id,raw_coef_sta_id
+integer :: raw_id,raw_coef_ens_id,raw_coef_sta_id,l0rl0_to_l0_id
 integer :: fit_id,fit_rh_id,fit_rv_id
 character(len=1024) :: subr = 'diag_blk_write'
+
+! Associate
+associate(ib=>diag_blk%ib)
 
 ! Check if the file exists
 info = nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_noclobber,nf90_64bit_offset),ncid)
 if (info==nf90_noerr) then
-   ! Add namelist
+   ! Write namelist parameters
    call nam%ncwrite(ncid)
 
    ! Define dimensions
    call ncerr(subr,nf90_def_dim(ncid,'one',1,one_id))
-   call ncerr(subr,nf90_def_dim(ncid,'nc',nam%nc3,nc_id))
+   call ncerr(subr,nf90_def_dim(ncid,'nc3',nam%nc3,nc_id))
    call ncerr(subr,nf90_def_dim(ncid,'nl0r',nam%nl0r,nl0r_id))
    call ncerr(subr,nf90_def_dim(ncid,'nl0',geom%nl0,nl0_id))
 
@@ -166,7 +170,7 @@ else
 
    ! Get dimensions ID
    call ncerr(subr,nf90_inq_dimid(ncid,'one',one_id))
-   call ncerr(subr,nf90_inq_dimid(ncid,'nc',nc_id))
+   call ncerr(subr,nf90_inq_dimid(ncid,'nc3',nc_id))
    call ncerr(subr,nf90_inq_dimid(ncid,'nl0r',nl0r_id))
    call ncerr(subr,nf90_inq_dimid(ncid,'nl0',nl0_id))
 
@@ -183,7 +187,7 @@ if (isnotmsr(diag_blk%raw_coef_sta)) then
    call ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw_coef_sta',ncfloat,(/one_id/),raw_coef_sta_id))
    call ncerr(subr,nf90_put_att(ncid,raw_coef_sta_id,'_FillValue',msvalr))
 end if
-if (trim(nam%minim_algo)/='none') then
+if ((trim(nam%minim_algo)/='none').and.(isanynotmsr(diag_blk%fit))) then
    call ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit',ncfloat,(/nc_id,nl0r_id,nl0_id/),fit_id))
    call ncerr(subr,nf90_put_att(ncid,fit_id,'_FillValue',msvalr))
    call ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rh',ncfloat,(/nl0_id/),fit_rh_id))
@@ -191,6 +195,8 @@ if (trim(nam%minim_algo)/='none') then
    call ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rv',ncfloat,(/nl0_id/),fit_rv_id))
    call ncerr(subr,nf90_put_att(ncid,fit_rv_id,'_FillValue',msvalr))
 end if
+call ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_l0rl0_to_l0',nf90_int,(/nl0r_id,nl0_id/),l0rl0_to_l0_id))
+call ncerr(subr,nf90_put_att(ncid,l0rl0_to_l0_id,'_FillValue',msvali))
 
 ! End definition mode
 call ncerr(subr,nf90_enddef(ncid))
@@ -203,14 +209,18 @@ end if
 call ncerr(subr,nf90_put_var(ncid,raw_id,diag_blk%raw))
 call ncerr(subr,nf90_put_var(ncid,raw_coef_ens_id,diag_blk%raw_coef_ens))
 if (isnotmsr(diag_blk%raw_coef_sta)) call ncerr(subr,nf90_put_var(ncid,raw_coef_sta_id,diag_blk%raw_coef_sta))
-if (trim(nam%minim_algo)/='none') then
+if ((trim(nam%minim_algo)/='none').and.(isanynotmsr(diag_blk%fit))) then
    call ncerr(subr,nf90_put_var(ncid,fit_id,diag_blk%fit))
    call ncerr(subr,nf90_put_var(ncid,fit_rh_id,diag_blk%fit_rh))
    call ncerr(subr,nf90_put_var(ncid,fit_rv_id,diag_blk%fit_rv))
 end if
+call ncerr(subr,nf90_put_var(ncid,l0rl0_to_l0_id,bpar%l0rl0b_to_l0(:,:,ib)))
 
 ! Close file
 call ncerr(subr,nf90_close(ncid))
+
+! End associate
+end associate
 
 end subroutine diag_blk_write
 

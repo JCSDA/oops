@@ -239,10 +239,16 @@ if (mpl%main) then
    ! Check if the file exists
    info = nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_noclobber,nf90_64bit_offset),ncid)
    if (info==nf90_noerr) then
-      call ncerr(subr,nf90_put_att(ncid,nf90_global,'_FillValue',msvalr))
+      ! Write namelist parameters
       call nam%ncwrite(ncid)
+
+      ! Define attribute
+      call ncerr(subr,nf90_put_att(ncid,nf90_global,'_FillValue',msvalr))
+
+      ! End definition mode
       call ncerr(subr,nf90_enddef(ncid))
    else
+      ! Open file
       call ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_write,ncid))
    end if
 else

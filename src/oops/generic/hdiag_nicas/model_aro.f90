@@ -25,6 +25,8 @@ implicit none
 private
 public :: model_aro_coord,model_aro_read,model_aro_write
 
+character(len=1024) :: zone = 'C+I' !< Computation zone ('C', 'C+I' or 'C+I+E')
+
 contains
 
 !----------------------------------------------------------------------
@@ -41,8 +43,10 @@ type(geom_type),intent(inout) :: geom !< Geometry
 
 ! Local variables
 integer :: ncid,nlon_id,nlat_id,nlev_id,pp_id,lon_id,lat_id,cmask_id,a_id,b_id
+integer :: il0
 real(kind_real) :: dx,dy
 real(kind=8),allocatable :: lon(:,:),lat(:,:),cmask(:,:),a(:),b(:)
+logical,allocatable :: cmask_pack(:)
 character(len=1024) :: subr = 'model_aro_coord'
 
 ! Open file and get dimensions
@@ -60,6 +64,7 @@ allocate(lon(geom%nlon,geom%nlat))
 allocate(lat(geom%nlon,geom%nlat))
 allocate(geom%rgmask(geom%nlon,geom%nlat))
 allocate(cmask(geom%nlon,geom%nlat))
+allocate(cmask_pack(geom%nc0))
 allocate(a(geom%nlev+1))
 allocate(b(geom%nlev+1))
 
@@ -90,10 +95,22 @@ lat = lat*real(deg2rad,kind=8)
 call geom%alloc
 geom%lon = pack(real(lon,kind_real),mask=.true.)
 geom%lat = pack(real(lat,kind_real),mask=.true.)
-geom%mask = .true.
+select case (trim(zone))
+case ('C')
+   cmask_pack = pack(cmask>0.75,mask=.true.)
+case ('C+I')
+   cmask_pack = pack(cmask>0.25,mask=.true.)
+case ('C+I+E')
+   cmask_pack = .true.
+case default
+   call msgerror('wrong AROME zone')
+end select
+do il0=1,geom%nl0
+   geom%mask(:,il0) = cmask_pack
+end do
 
 ! Compute normalized area
-geom%area = float(geom%nlon*geom%nlat)*dx*dy/req**2
+geom%area = float(count(cmask_pack))*dx*dy/req**2
 
 ! Vertical unit
 if (nam%logpres) then
@@ -102,6 +119,9 @@ if (nam%logpres) then
 else
    geom%vunit = float(nam%levs(1:geom%nl0))
 end if
+
+! Not redundant grid
+geom%redgrid = .false.
 
 ! Release memory
 deallocate(lon)
@@ -144,22 +164,22 @@ do iv=1,nam%nv
          ! Get id
          write(ilchar,'(i3.3)') nam%levs(il0)
          call ncerr(subr,nf90_inq_varid(ncid,'S'//ilchar//trim(nam%varname(iv)),fld_id))
-   
+
          ! Read data
          call ncerr(subr,nf90_get_var(ncid,fld_id,fld_loc))
          fld_glb(:,il0) = pack(real(fld_loc,kind_real),mask=.true.)
       end do
-   
+
       if (trim(nam%addvar2d(iv))/='') then
          ! 2d variable
-   
+
          ! Get id
          call ncerr(subr,nf90_inq_varid(ncid,trim(nam%addvar2d(iv)),fld_id))
-   
+
          ! Read data
          call ncerr(subr,nf90_get_var(ncid,fld_id,fld_loc))
          fld_glb(:,geom%nl0) = pack(real(fld_loc,kind_real),mask=.true.)
-   
+
          ! Variable change for surface pressure
          if (trim(nam%addvar2d(iv))=='SURFPRESSION') fld(:,geom%nl0,iv) = exp(fld(:,geom%nl0,iv))
       end if
@@ -200,7 +220,7 @@ call geom%fld_com_lg(fld,fld_glb)
 if (mpl%main) then
    ! Get variable id
    info = nf90_inq_varid(ncid,trim(varname),fld_id)
-   
+
    ! Define dimensions and variable if necessary
    if (info/=nf90_noerr) then
       call ncerr(subr,nf90_redef(ncid))
@@ -214,7 +234,7 @@ if (mpl%main) then
       call ncerr(subr,nf90_put_att(ncid,fld_id,'_FillValue',msvalr))
       call ncerr(subr,nf90_enddef(ncid))
    end if
-   
+
    ! Write data
    do il0=1,geom%nl0
       if (isanynotmsr(fld_glb(:,il0))) then
@@ -223,7 +243,7 @@ if (mpl%main) then
          call ncerr(subr,nf90_put_var(ncid,fld_id,fld_loc,(/1,1,il0/),(/geom%nlon,geom%nlat,1/)))
       end if
    end do
-   
+
    ! Write coordinates
    info = nf90_inq_varid(ncid,'longitude',lon_id)
    if (info/=nf90_noerr) then
