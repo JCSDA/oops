@@ -29,7 +29,6 @@ namespace oops {
 
 template <typename MODEL>
 class GeoVaLs : public util::Printable,
-                private boost::noncopyable,
                 private util::ObjectCounter<GeoVaLs<MODEL> > {
   typedef typename MODEL::GeoVaLs          GeoVaLs_;
   typedef Locations<MODEL>                 Locations_;
@@ -39,6 +38,8 @@ class GeoVaLs : public util::Printable,
 
   GeoVaLs(const Locations_ &, const Variables &);
   GeoVaLs(const eckit::Configuration &, const Variables &);
+  GeoVaLs(const GeoVaLs &);
+
   ~GeoVaLs();
 
 /// Interfacing
@@ -48,7 +49,9 @@ class GeoVaLs : public util::Printable,
 /// Linear algebra and utilities, mostly for writing tests
   void zero();
   void random();
-  GeoVaLs & operator*=(const double &);
+  GeoVaLs & operator = (const GeoVaLs &);
+  GeoVaLs & operator *= (const double &);
+  GeoVaLs & operator += (const GeoVaLs &);
   double dot_product_with(const GeoVaLs &) const;
   void read(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;
@@ -57,6 +60,18 @@ class GeoVaLs : public util::Printable,
   void print(std::ostream &) const;
   boost::scoped_ptr<GeoVaLs_> gvals_;
 };
+
+// -----------------------------------------------------------------------------
+//copy constructor
+template <typename MODEL>
+GeoVaLs<MODEL>::GeoVaLs(const GeoVaLs & other): gvals_() {
+  Log::trace() << "GeoVaLs<MODEL>::GeoVaLs starting" << std::endl;
+  util::Timer timer(classname(), "GeoVaLs");
+
+  gvals_.reset(new GeoVaLs_(*other.gvals_));
+
+  Log::trace() << "ObsVector<MODEL>::ObsVector done" << std::endl;
+}
 
 // -----------------------------------------------------------------------------
 
@@ -97,6 +112,32 @@ double GeoVaLs<MODEL>::dot_product_with(const GeoVaLs & other) const {
   double zz = gvals_->dot_product_with(*other.gvals_);
   Log::trace() << "GeoVaLs<MODEL>::dot_product_with done" << std::endl;
   return zz;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+GeoVaLs<MODEL> & GeoVaLs<MODEL>::operator=(const GeoVaLs & rhs) {
+  Log::trace() << "GeoVaLs<MODEL>::operator= starting" << std::endl;
+  util::Timer timer(classname(), "operator=");
+
+  *gvals_ = *rhs.gvals_;
+
+  Log::trace() << "GeovaLs<MODEL>::operator= done" << std::endl;
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+GeoVaLs<MODEL> & GeoVaLs<MODEL>::operator+=(const GeoVaLs & rhs) {
+  Log::trace() << "GeoVaLs<MODEL>::+=(GeoVaLs, GeoVaLs) starting" << std::endl;
+  util::Timer timer(classname(), "operator+=");
+
+  *gvals_ += *rhs.gvals_;
+
+  Log::trace() << "GeoVaLs<MODEL>::+= done" << std::endl;
+  return *this;
 }
 
 // -----------------------------------------------------------------------------

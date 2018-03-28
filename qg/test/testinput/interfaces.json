@@ -37,6 +37,9 @@
     },
     "values": [6.042838]
   },
+  "LinObsOpTest": {
+    "tlm_tol": "1e-8"
+  },    
   "ModelBias": null,
   "Model": {
     "tstep": "PT1H",

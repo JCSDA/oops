@@ -106,5 +106,8 @@
       "rmsequiv": 8.02102185636578,
       "tolerance": 1.0e-8
     }
-  ]}
+  ]},
+  "LinObsOpTest": {
+    "tlm_tol": "1e-8"
+  }
 }

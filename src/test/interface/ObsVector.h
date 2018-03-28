@@ -25,6 +25,7 @@
 #include "oops/interface/ObsVector.h"
 #include "test/TestEnvironment.h"
 #include "test/interface/ObsTestsFixture.h"
+#include "util/dot_product.h"
 
 namespace test {
 
@@ -51,7 +52,7 @@ template <typename MODEL> void testCopyConstructor() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     boost::scoped_ptr<ObsVector_> ov(new ObsVector_(Test_::obspace()[jj]));
-
+    
     boost::scoped_ptr<ObsVector_> other(new ObsVector_(*ov));
     BOOST_CHECK(other.get());
 
@@ -59,6 +60,23 @@ template <typename MODEL> void testCopyConstructor() {
     BOOST_CHECK(!other.get());
 
     BOOST_CHECK(ov.get());
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testNotZero() {
+  typedef ObsTestsFixture<MODEL>  Test_;
+  typedef oops::ObsVector<MODEL>  ObsVector_;
+  const double zero = 0.0;
+  
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    ObsVector_ ov(Test_::obspace()[jj]);
+
+    ov.random();
+    
+    const double ovov2 = dot_product(ov, ov);
+    BOOST_CHECK( ovov2 > zero);          
   }
 }
 
@@ -76,7 +94,8 @@ template <typename MODEL> class ObsVector : public oops::Test {
 
     ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
     ts->add(BOOST_TEST_CASE(&testCopyConstructor<MODEL>));
-
+    ts->add(BOOST_TEST_CASE(&testNotZero<MODEL>));
+    
     boost::unit_test::framework::master_test_suite().add(ts);
   }
 };

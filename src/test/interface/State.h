@@ -50,6 +50,7 @@ template <typename MODEL> class StateFixture : private boost::noncopyable {
   static StateFixture<MODEL>& getInstance() {
     static StateFixture<MODEL> theStateFixture;
     return theStateFixture;
+
   }
 
   StateFixture<MODEL>() {

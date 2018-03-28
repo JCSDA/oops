@@ -17,8 +17,10 @@
 
 #include <boost/scoped_ptr.hpp>
 
+#include "util/Logger.h"
 #include "oops/runs/Test.h"
 #include "oops/interface/LinearObsOperator.h"
+#include "oops/interface/ObsOperator.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxIncrement.h"
 #include "test/TestEnvironment.h"
@@ -45,7 +47,7 @@ template <typename MODEL> void testConstructor() {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL> void testLinearity() {
-  typedef ObsTestsFixture<MODEL> Test_;
+  typedef ObsTestsFixture<MODEL>         Test_;
   typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
   typedef oops::LinearObsOperator<MODEL> LinearObsOperator_;
   typedef oops::ObsAuxControl<MODEL>     ObsAuxCtrl_;
@@ -110,7 +112,7 @@ template <typename MODEL> void testAdjoint() {
   const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
   std::vector<eckit::LocalConfiguration> conf;
   obsconf.get("ObsTypes", conf);
-
+  
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     LinearObsOperator_ hop(Test_::obspace()[jj]);
     eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
@@ -149,6 +151,77 @@ template <typename MODEL> void testAdjoint() {
 
 // -----------------------------------------------------------------------------
 
+template <typename MODEL> void testTangentLinear() {
+  // Test  ||(nlhop(x+alpha*dx)-nlhop(x)) - hop(alpha*dx)|| < tol
+  typedef ObsTestsFixture<MODEL>         Test_;
+  typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
+  typedef oops::LinearObsOperator<MODEL> LinearObsOperator_;
+  typedef oops::ObsAuxControl<MODEL>     ObsAuxCtrl_;
+  typedef oops::ObsAuxIncrement<MODEL>   ObsAuxIncr_;
+  typedef oops::LinearObsOperator<MODEL> LinearObsOperator_;
+  typedef oops::ObsOperator<MODEL>       ObsOperator_;
+  typedef oops::ObsVector<MODEL>         ObsVector_;
+
+  const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
+  std::vector<eckit::LocalConfiguration> conf;
+  obsconf.get("ObsTypes", conf);
+
+  const eckit::LocalConfiguration lobsopconf(TestEnvironment::config(), "LinObsOpTest"); 
+  double tol = lobsopconf.getDouble("tlm_tol");
+  
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    LinearObsOperator_ hop(Test_::obspace()[jj]);
+    ObsOperator_ nlhop(Test_::obspace()[jj]);
+
+    const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
+    const GeoVaLs_ gval(gconf, nlhop.variables());
+    
+    eckit::LocalConfiguration biasConf;
+    conf[jj].get("ObsBias", biasConf);
+    const ObsAuxCtrl_ ybias(biasConf);
+
+    hop.setTrajectory(gval, ybias);
+    
+    const ObsAuxIncr_ ybinc(biasConf);
+
+    ObsVector_ y1(Test_::obspace()[jj]);   // y1 = nlhop(x)
+    ObsVector_ y2(Test_::obspace()[jj]);   // y2 = nlhop(x+alpha*dx)
+    ObsVector_ y3(Test_::obspace()[jj]);   // y3 = hop(alpha*dx)    
+
+    GeoVaLs_ gv(gconf, nlhop.variables()); // Background
+    gv.random();
+ 
+    nlhop.obsEquiv(gv, y1, ybias); 
+    
+    GeoVaLs_ dgv(gconf, hop.variables());
+    dgv.random();
+
+    GeoVaLs_ gv0(gconf, nlhop.variables());
+    gv0 = gv;
+    ObsVector_ y3_init(Test_::obspace()[jj]);
+    y3_init = y3;
+    const int max_iter=10;
+    double alpha = 0.1;
+    for ( int iter = 0; iter < max_iter; ++iter ) {
+      gv = gv0;
+      dgv *= alpha;
+      gv += dgv;
+      
+      nlhop.obsEquiv(gv, y2, ybias);
+      y2 -= y1;
+      hop.obsEquivTL(dgv, y3, ybinc);
+      y2 -= y3;
+      double test_norm=y2.rms();
+      y3 = y3_init;
+      oops::Log::debug() << "Iter:" << iter << " ||(h(x+alpha*dx)-h(x))/h'(alpha*dx)||="
+                         << test_norm << std::endl;          
+    }
+    BOOST_CHECK(y2.rms() < tol);
+ }
+}
+
+// -----------------------------------------------------------------------------
+
 template <typename MODEL> class LinearObsOperator : public oops::Test {
  public:
   LinearObsOperator() {}
@@ -161,6 +234,7 @@ template <typename MODEL> class LinearObsOperator : public oops::Test {
 
     ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
     ts->add(BOOST_TEST_CASE(&testLinearity<MODEL>));
+    ts->add(BOOST_TEST_CASE(&testTangentLinear<MODEL>));    
     ts->add(BOOST_TEST_CASE(&testAdjoint<MODEL>));
     boost::unit_test::framework::master_test_suite().add(ts);
   }
