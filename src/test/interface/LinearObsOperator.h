@@ -174,14 +174,13 @@ template <typename MODEL> void testTangentLinear() {
     ObsOperator_ nlhop(Test_::obspace()[jj]);
 
     const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    const GeoVaLs_ gval(gconf);
+    const GeoVaLs_ gval(gconf, nlhop.variables());
     
     eckit::LocalConfiguration biasConf;
     conf[jj].get("ObsBias", biasConf);
     const ObsAuxCtrl_ ybias(biasConf);
 
     hop.setTrajectory(gval, ybias);
-
     
     const ObsAuxIncr_ ybinc(biasConf);
 
@@ -189,16 +188,15 @@ template <typename MODEL> void testTangentLinear() {
     ObsVector_ y2(Test_::obspace()[jj]);   // y2 = nlhop(x+alpha*dx)
     ObsVector_ y3(Test_::obspace()[jj]);   // y3 = hop(alpha*dx)    
 
-    GeoVaLs_ gv(gconf);                    //Background
+    GeoVaLs_ gv(gconf, nlhop.variables()); // Background
     gv.random();
-    
+ 
     nlhop.obsEquiv(gv, y1, ybias); 
     
-    GeoVaLs_ dgv(gconf);
+    GeoVaLs_ dgv(gconf, hop.variables());
     dgv.random();
-    dgv *= 1e-0;
 
-    GeoVaLs_ gv0(gconf);
+    GeoVaLs_ gv0(gconf, nlhop.variables());
     gv0 = gv;
     ObsVector_ y3_init(Test_::obspace()[jj]);
     y3_init = y3;
@@ -212,10 +210,11 @@ template <typename MODEL> void testTangentLinear() {
       nlhop.obsEquiv(gv, y2, ybias);
       y2 -= y1;
       hop.obsEquivTL(dgv, y3, ybinc);
-            y2 -= y3;
+      y2 -= y3;
       double test_norm=y2.rms();
       y3 = y3_init;
-      oops::Log::trace() << "Iter:" << iter << " ||(h(x+alpha*dx)-h(x))/h'(alpha*dx)||=" << test_norm << std::endl;          
+      oops::Log::debug() << "Iter:" << iter << " ||(h(x+alpha*dx)-h(x))/h'(alpha*dx)||="
+                         << test_norm << std::endl;          
     }
     BOOST_CHECK(y2.rms() < tol);
  }
