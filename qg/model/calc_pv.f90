@@ -15,7 +15,7 @@
 !! \f}
 
 
-subroutine calc_pv(kx,ky,pv,x,x_north,x_south,f1,f2,deltax,deltay,bet,rs)
+subroutine calc_pv(kx,ky,pv,x,x_north,x_south,f1,f2,deltax,deltay,bet,rs,lbc)
 
 !--- calculate potential vorticity from streamfunction
 
@@ -34,9 +34,17 @@ real(kind=kind_real), intent(in)    :: deltax       !< Zonal grid spacing (non-d
 real(kind=kind_real), intent(in)    :: deltay       !< Meridional grid spacing (non-dimensional)
 real(kind=kind_real), intent(in)    :: bet          !< NS Gradient of Coriolis parameter
 real(kind=kind_real), intent(in)    :: rs(kx,ky)    !< Orography
+logical, optional   , intent(in)    :: lbc          !< Latitudinal boundaries?
 
 integer :: jj
 real(kind=kind_real) :: y
+logical :: bc
+
+if (present(lbc)) then
+   bc = lbc
+else
+   bc = .true.
+endIf
 
 !--- apply the linear operator
 
@@ -44,10 +52,12 @@ call pv_operator(x,pv,kx,ky,f1,f2,deltax,deltay)
 
 !--- add the contribution from the boundaries
 
-pv(:,1 ,1) = pv(:,1 ,1) + (1.0_kind_real/(deltay*deltay))*x_south(1)
-pv(:,1 ,2) = pv(:,1 ,2) + (1.0_kind_real/(deltay*deltay))*x_south(2)
-pv(:,ky,1) = pv(:,ky,1) + (1.0_kind_real/(deltay*deltay))*x_north(1)
-pv(:,ky,2) = pv(:,ky,2) + (1.0_kind_real/(deltay*deltay))*x_north(2)
+if (bc) then
+   pv(:,1 ,1) = pv(:,1 ,1) + (1.0_kind_real/(deltay*deltay))*x_south(1)
+   pv(:,1 ,2) = pv(:,1 ,2) + (1.0_kind_real/(deltay*deltay))*x_south(2)
+   pv(:,ky,1) = pv(:,ky,1) + (1.0_kind_real/(deltay*deltay))*x_north(1)
+   pv(:,ky,2) = pv(:,ky,2) + (1.0_kind_real/(deltay*deltay))*x_north(2)
+endif
 
 !--- add the beta term
 

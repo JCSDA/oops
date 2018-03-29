@@ -24,6 +24,8 @@ list( APPEND qg_test_input
   testinput/test.json
   testinput/truth.json
   testinput/test_op_obs.json
+  testinput/analytic_init.json
+  testinput/analytic_init_fc.json
   compare.sh
 )
 
@@ -50,6 +52,7 @@ list( APPEND qg_testoutput
   testoutput/makeobs4d12h.test
   testoutput/makeobsbias.test
   testoutput/truth.test
+  testoutput/analytic_init_fc.test
 )
 
 # This line copies all files to binary dir
@@ -87,6 +90,13 @@ ecbuild_add_test( TARGET test_qg_truth
                   COMMAND "compare.sh"
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_forecast.x testinput/truth.json"
                        testoutput/truth.test
+                  DEPENDS qg_forecast.x )
+
+ecbuild_add_test( TARGET test_qg_aninit_fc
+                  TYPE SCRIPT
+                  COMMAND "compare.sh"
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_forecast.x testinput/analytic_init_fc.json"
+                       testoutput/analytic_init_fc.test
                   DEPENDS qg_forecast.x )
 
 ecbuild_add_test( TARGET test_qg_forecast
@@ -146,6 +156,12 @@ ecbuild_add_test( TARGET  test_qg_state
                   BOOST
                   SOURCES executables/TestState.cc
                   ARGS    "testinput/interfaces.json"
+                  LIBS    qg )
+
+ecbuild_add_test( TARGET  test_qg_analytic_init
+                  BOOST
+                  SOURCES executables/TestState.cc
+                  ARGS    "testinput/analytic_init.json"
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_modelaux

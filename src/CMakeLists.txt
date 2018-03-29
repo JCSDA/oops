@@ -199,6 +199,8 @@ oops/runs/Run.h
 oops/runs/Run.cc
 oops/runs/Test.h
 oops/runs/Variational.h
+
+test/Analytic_IC/dcmip_initial_conditions_test_1_2_3_v5.f90
 )
 
 function(generate_fortran_bindings output filename)

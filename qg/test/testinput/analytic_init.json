@@ -1,0 +1,26 @@
+{
+  "test_framework_runtime_config": "--log_level=test_suite",
+  "Geometry": {
+    "nx": "40",
+    "ny": "20",
+    "bc": "0"
+  },
+  "Variables": {
+      "variables": ["x","q","u","v"]
+  },
+  "TestDate": "2009-12-31T00:00:00Z",
+  "State": {
+    "analytic_init": "dcmip-test-1-1",
+    "variables": ["x","q","u","v"],
+    "date": "2009-12-31T00:00:00Z",
+    "top_layer_depth": "5500.0",
+    "bottom_layer_depth": "4500.0"
+  },
+  "StateTest": {
+    "date": "2009-12-31T00:00:00Z",
+    "norm": "4.663",
+    "tolerance": "0.005"
+  },
+  "Observations": {
+  }
+}

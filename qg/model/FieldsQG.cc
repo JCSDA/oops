@@ -155,6 +155,13 @@ void FieldsQG::read(const eckit::Configuration & config) {
   qg_field_read_file_f90(keyFlds_, &conf, &dtp);
 }
 // -----------------------------------------------------------------------------
+void FieldsQG::analytic_init(const eckit::Configuration & config,
+			     const GeometryQG & geom) {
+  const eckit::Configuration * conf = &config;
+  util::DateTime * dtp = &time_;
+  qg_field_analytic_init_f90(keyFlds_, geom.toFortran(), &conf, &dtp);
+}
+// -----------------------------------------------------------------------------
 void FieldsQG::write(const eckit::Configuration & config) const {
   const eckit::Configuration * conf = &config;
   const util::DateTime * dtp = &time_;

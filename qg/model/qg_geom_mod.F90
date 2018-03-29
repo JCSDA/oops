@@ -12,6 +12,7 @@ module qg_geom_mod
 
 use iso_c_binding
 use config_mod
+use kinds
 
 implicit none
 private
@@ -24,6 +25,8 @@ public :: qg_geom_registry
 type :: qg_geom
   integer :: nx
   integer :: ny
+  real(kind=kind_real),allocatable :: lat(:)
+  real(kind=kind_real),allocatable :: lon(:)
 end type qg_geom
 
 #define LISTED_TYPE qg_geom
@@ -47,6 +50,9 @@ implicit none
 integer(c_int), intent(inout) :: c_key_self
 type(c_ptr), intent(in)    :: c_conf
 
+integer :: ix,iy,nx_loc,ix_loc
+real(kind=kind_real) :: dx,dytot,dy
+real(kind=kind_real),parameter :: pi = acos(-1.0)
 type(qg_geom), pointer :: self
 
 call qg_geom_registry%init()
@@ -55,6 +61,19 @@ call qg_geom_registry%get(c_key_self,self)
 
 self%nx = config_get_int(c_conf, "nx")
 self%ny = config_get_int(c_conf, "ny")
+
+allocate(self%lon(self%nx))
+allocate(self%lat(self%ny))
+
+dx = 2.0 * pi / real(self%nx,kind=kind_real);
+dytot = 2.0 * pi * real(self%ny,kind=kind_real) / real(self%nx,kind=kind_real);
+dy = dytot / real(self%ny,kind=kind_real);
+do ix=1,self%nx
+   self%lon(ix) = -pi+(real(ix,kind=kind_real)-0.5)*dx
+end do
+do iy=1,self%ny
+   self%lat(iy) = -0.5*dytot+(real(iy,kind=kind_real)-0.5)*dy;
+end do
 
 end subroutine c_qg_geo_setup
 
