@@ -174,14 +174,11 @@ template <typename MODEL> void testTangentLinear() {
     ObsOperator_ nlhop(Test_::obspace()[jj]);
 
     const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    const GeoVaLs_ gval(gconf, nlhop.variables());
     
     eckit::LocalConfiguration biasConf;
     conf[jj].get("ObsBias", biasConf);
     const ObsAuxCtrl_ ybias(biasConf);
-
-    hop.setTrajectory(gval, ybias);
-    
+ 
     const ObsAuxIncr_ ybinc(biasConf);
 
     ObsVector_ y1(Test_::obspace()[jj]);   // y1 = nlhop(x)
@@ -189,7 +186,8 @@ template <typename MODEL> void testTangentLinear() {
     ObsVector_ y3(Test_::obspace()[jj]);   // y3 = hop(alpha*dx)    
 
     GeoVaLs_ gv(gconf, nlhop.variables()); // Background
-    gv.random();
+
+    hop.setTrajectory(gv, ybias);
  
     nlhop.obsEquiv(gv, y1, ybias); 
     
