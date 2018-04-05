@@ -60,10 +60,11 @@ contains
    procedure :: test_optimality => nicas_test_optimality
 end type nicas_type
 
-logical :: lcoef_ens = .false.     !< Apply ensemble coefficient (will reduce variance)
-integer,parameter :: ne_rand = 150 !< Ensemble size for randomization
-integer,parameter :: nfac = 10     !< Number of length-scale factors
-integer,parameter :: ntest = 100   !< Number of tests
+logical,parameter :: lcoef_ens = .false.   !< Apply ensemble coefficient (will reduce variance)
+integer,parameter :: ne_rand = 150         !< Ensemble size for randomization
+integer,parameter :: nfac = 10             !< Number of length-scale factors
+integer,parameter :: ntest = 100           !< Number of tests
+logical,parameter :: pos_def_test = .true. !< Positive-definiteness test
 
 private
 public :: nicas_blk_type,nicas_type
@@ -445,6 +446,9 @@ type(cv_type),intent(inout) :: cv     !< Control vector
 ! Local variables
 integer :: ib
 
+! Allocation
+allocate(cv%blk(bpar%nb+1))
+
 do ib=1,bpar%nb+1
    if (bpar%cv_block(ib)) then
       ! Allocation
@@ -504,11 +508,19 @@ real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) !< Field
 
 ! Local variable
 integer :: ib,its,iv,jv,il0,ic0a
+real(kind_real) :: prod,prod_tot
 real(kind_real) :: zhook_handle
 real(kind_real),allocatable :: fld_3d(:,:),fld_4d(:,:,:),fld_4d_tmp(:,:,:)
 real(kind_real),allocatable :: wgt(:,:),wgt_diag(:)
+real(kind_real),allocatable :: fld_save(:,:,:,:)
 
 if (lhook) call dr_hook('nicas_apply',0,zhook_handle)
+
+if (pos_def_test) then
+   ! Save field for positive-definiteness test
+   allocate(fld_save(geom%nc0a,geom%nl0,nam%nv,nam%nts))
+   fld_save = fld
+end if
 
 select case (nam%strategy)
 case ('common')
@@ -664,6 +676,13 @@ case ('common_weighted')
    end do
 end select
 
+if (pos_def_test) then
+   ! Positive-definiteness test
+   prod = sum(fld_save*fld)
+   call mpl%allreduce_sum(prod,prod_tot)
+   if (prod_tot<0.0) call msgerror('negative result in nicas_apply')
+end if
+
 if (lhook) call dr_hook('nicas_apply',1,zhook_handle)
 
 end subroutine nicas_apply
@@ -684,16 +703,31 @@ type(bpar_type),target,intent(in) :: bpar                               !< Block
 real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) !< Field
 
 ! Local variable
+real(kind_real) :: prod,prod_tot
 real(kind_real) :: zhook_handle
+real(kind_real),allocatable :: fld_save(:,:,:,:)
 type(cv_type) :: cv
 
 if (lhook) call dr_hook('nicas_apply_from_sqrt',0,zhook_handle)
+
+if (pos_def_test) then
+   ! Save field for positivity test
+   allocate(fld_save(geom%nc0a,geom%nl0,nam%nv,nam%nts))
+   fld_save = fld
+end if
 
 ! Apply square-root adjoint
 call nicas%apply_sqrt_ad(nam,geom,bpar,fld,cv)
 
 ! Apply square-root
 call nicas%apply_sqrt(nam,geom,bpar,cv,fld)
+
+if (pos_def_test) then
+   ! Positivity test
+   prod = sum(fld_save*fld)
+   call mpl%allreduce_sum(prod,prod_tot)
+   if (prod_tot<0.0) call msgerror('negative result in nicas_apply')
+end if
 
 if (lhook) call dr_hook('nicas_apply_from_sqrt',1,zhook_handle)
 

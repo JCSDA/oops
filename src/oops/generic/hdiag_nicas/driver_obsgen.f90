@@ -21,9 +21,6 @@ use type_rng, only: rng
 
 implicit none
 
-logical,parameter :: readobs = .false. !< Read observations
-logical,parameter :: allobs = .true.   !< All observation are used
-
 private
 public :: run_obsgen
 
@@ -43,23 +40,27 @@ type(geom_type),intent(in) :: geom      !< Geometry
 type(obsop_type),intent(inout) :: obsop !< Observation operator data
 
 ! Local variables
-integer :: info,iobs,active
+integer :: info,iobs
 real(kind_real) :: lat,lon
+logical :: readobs
+character(len=1024) :: filename
 
 if (nam%new_obsop) then
    ! Define number of observations
+   filename = trim(nam%datadir)//'/'//trim(nam%prefix)//'_obs_in.dat'
+   inquire(file=trim(filename),exist=readobs)
    if (readobs) then
       ! Read observation network
       obsop%nobs = 0
-      open(unit=100,file=trim(nam%datadir)//'/'//trim(nam%prefix)//'_obs_in.dat',status='old')
+      open(unit=100,file=trim(filename),status='old')
       do
-         read(100,*,iostat=info) lat,lon,active
+         read(100,*,iostat=info) lat,lon
          if (info/=0) exit
-         if (allobs.or.(active==1)) obsop%nobs = obsop%nobs+1
+         obsop%nobs = obsop%nobs+1
       end do
       close(unit=100)
       obsop%nobs = min(obsop%nobs,nam%nobs)
-      if (obsop%nobs<1) call msgerror('no active observation in the file provided')
+      if (obsop%nobs<1) call msgerror('no observation in the file provided')
    else
       ! Generate random observation network
       obsop%nobs = nam%nobs
@@ -76,17 +77,15 @@ if (nam%new_obsop) then
          open(unit=100,file=trim(nam%datadir)//'/'//trim(nam%prefix)//'_obs_in.dat',status='old')
          iobs = 0
          do while (iobs<obsop%nobs)
-            read(100,*) lat,lon,active
-            if (allobs.or.(active==1)) then
-               iobs = iobs+1
-               obsop%lonobs(iobs) = lon
-               obsop%latobs(iobs) = lat
-            end if
+            read(100,*) lat,lon
+            iobs = iobs+1
+            obsop%lonobs(iobs) = lon
+            obsop%latobs(iobs) = lat
          end do
          close(unit=100)
       else
          ! Generate random observation network
-         if (.true.) then
+         if (abs(maxval(geom%area)-4.0*pi)<1.0e-1) then
             ! Limited-area domain
             call rng%rand_real(minval(geom%lon),maxval(geom%lon),obsop%lonobs)
             call rng%rand_real(minval(geom%lat),maxval(geom%lat),obsop%latobs)

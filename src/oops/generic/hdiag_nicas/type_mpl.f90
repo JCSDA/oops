@@ -14,6 +14,7 @@ use iso_c_binding
 use mpi
 use omp_lib
 use tools_kinds, only: kind_real
+use tools_missing, only: isnotmsi,isnotmsr
 
 implicit none
 
@@ -997,8 +998,14 @@ integer,intent(out) :: var_out !< Output integer
 integer :: info
 integer :: sbuf(1),rbuf(1)
 
+! Check for missing values
+if (isnotmsi(var_in)) then
+   sbuf(1) = var_in
+else
+   sbuf(1) = 0
+end if
+
 ! Allreduce
-sbuf(1) = var_in
 call mpi_allreduce(sbuf,rbuf,1,mpi_integer,mpi_sum,mpi_comm_world,info)
 var_out = rbuf(1)
 
@@ -1024,8 +1031,14 @@ real(kind_real),intent(out) :: var_out !< Output real
 integer :: info
 real(kind_real) :: sbuf(1),rbuf(1)
 
+! Check for missing values
+if (isnotmsr(var_in)) then
+   sbuf(1) = var_in
+else
+   sbuf(1) = 0.0
+end if
+
 ! Allreduce
-sbuf(1) = var_in
 call mpi_allreduce(sbuf,rbuf,1,mpl%rtype,mpi_sum,mpi_comm_world,info)
 var_out = rbuf(1)
 
@@ -1048,11 +1061,19 @@ real(kind_real),intent(in) :: var_in(:)   !< Input real
 real(kind_real),intent(out) :: var_out(:) !< Output real
 
 ! Local variable
-integer :: info
+integer :: i,info
 real(kind_real) :: sbuf(size(var_in)),rbuf(size(var_in))
 
+! Check for missing values
+do i=1,size(var_in)
+   if (isnotmsr(var_in(i))) then
+      sbuf(i) = var_in(i)
+   else
+      sbuf(i) = 0.0
+   end if
+end do
+
 ! Allreduce
-sbuf = var_in
 call mpi_allreduce(sbuf,rbuf,size(var_in),mpl%rtype,mpi_sum,mpi_comm_world,info)
 var_out = rbuf
 
@@ -1078,8 +1099,14 @@ real(kind_real),intent(out) :: var_out !< Output real
 integer :: info
 real(kind_real) :: sbuf(1),rbuf(1)
 
+! Check for missing values
+if (isnotmsr(var_in)) then
+   sbuf(1) = var_in
+else
+   sbuf(1) = huge(1.0)
+end if
+
 ! Allreduce
-sbuf(1) = var_in
 call mpi_allreduce(sbuf,rbuf,1,mpl%rtype,mpi_min,mpi_comm_world,info)
 var_out = rbuf(1)
 
@@ -1105,8 +1132,14 @@ real(kind_real),intent(out) :: var_out !< Output real
 integer :: info
 real(kind_real) :: sbuf(1),rbuf(1)
 
+! Check for missing values
+if (isnotmsr(var_in)) then
+   sbuf(1) = var_in
+else
+   sbuf(1) = -huge(1.0)
+end if
+
 ! Allreduce
-sbuf(1) = var_in
 call mpi_allreduce(sbuf,rbuf,1,mpl%rtype,mpi_max,mpi_comm_world,info)
 var_out = rbuf(1)
 

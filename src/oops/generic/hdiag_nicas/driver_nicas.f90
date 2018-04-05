@@ -91,7 +91,7 @@ if (nam%new_param) then
    write(mpl%unit,'(a)') '--- Write NICAS MPI summary'
    call nicas%write_mpi_summary(nam,geom,bpar)
 elseif (nam%new_param.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_sqrt.or.nam%check_dirac.or. &
- & nam%check_randomization.or.nam%check_consistency.or.nam%check_optimality) then
+ & nam%check_randomization.or.nam%check_consistency.or.nam%check_optimality.or.(trim(nam%model)=='oops')) then
    ! Read NICAS parameters
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Read NICAS parameters'

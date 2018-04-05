@@ -279,7 +279,7 @@ integer,intent(in) :: ne                     !< Ensemble size
 
 ! Local variables
 integer :: il0,jl0,jl0r,jc3,isub,jsub,ic1a,ic1,nc1amax,nc1a,n
-real(kind_real) :: m2m2
+real(kind_real) :: m2_1,m2_2
 real(kind_real) :: P1,P3,P4,P7,P8,P9,P10,P11,P12,P13,P14,P15,P16,P17
 real(kind_real),allocatable :: list_m11(:),list_m11m11(:,:,:),list_m2m2(:,:,:),list_m22(:,:),list_cor(:),sbuf(:),rbuf(:)
 real(kind_real),allocatable :: m11asysq(:,:),m2m2asy(:,:),m22asy(:)
@@ -289,7 +289,7 @@ logical :: valid
 associate(ic2=>avg_blk%ic2,ib=>avg_blk%ib)
 
 ! Average
-!$omp parallel do schedule(static) private(il0,jl0r,jl0,nc1amax,jc3,nc1a,ic1a,ic1,valid,m2m2,isub,jsub), &
+!$omp parallel do schedule(static) private(il0,jl0r,jl0,nc1amax,jc3,nc1a,ic1a,ic1,valid,m2_1,m2_2,isub,jsub), &
 !$omp&                             firstprivate(list_m11,list_m11m11,list_m2m2,list_m22,list_cor)
 do il0=1,geom%nl0
    do jl0r=1,bpar%nl0r(ib)
@@ -333,9 +333,10 @@ do il0=1,geom%nl0
                end do
 
                ! Correlation
-               m2m2 = sum(mom_blk%m2_1(ic1a,jc3,jl0r,il0,:))*sum(mom_blk%m2_2(ic1a,jc3,jl0r,il0,:))/float(avg_blk%nsub**2)
-               if (m2m2>var_min) then
-                  list_cor(nc1a) = list_m11(nc1a)/sqrt(m2m2)
+               m2_1 = sum(mom_blk%m2_1(ic1a,jc3,jl0r,il0,:))/float(avg_blk%nsub)
+               m2_2 = sum(mom_blk%m2_2(ic1a,jc3,jl0r,il0,:))/float(avg_blk%nsub)
+               if ((m2_1>var_min).and.(m2_2>var_min)) then
+                  list_cor(nc1a) = list_m11(nc1a)/sqrt(m2_1*m2_2)
                   if (abs(list_cor(nc1a))>1.0) call msr(list_cor(nc1a))
                else
                   call msr(list_cor(nc1a))

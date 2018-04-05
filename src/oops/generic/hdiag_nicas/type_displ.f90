@@ -478,7 +478,7 @@ do its=2,nam%nts
             displ%dist(iter,il0,its) = distsum_tot/norm_tot
 
             ! Print results
-            write(mpl%unit,'(a13,a,i2,a,f8.2,a,f6.2,a,f6.2,a,f7.2,a)') '','Iteration ',iter,': rhflt = ', &
+            write(mpl%unit,'(a13,a,i2,a,f10.2,a,f6.2,a,f6.2,a,f7.2,a)') '','Iteration ',iter,': rhflt = ', &
           & displ%rhflt(iter,il0,its)*reqkm,' km, valid points: ',100.0*displ%valid(0,il0,its),'% ~> ', &
           & 100.0*displ%valid(iter,il0,its),'%, average displacement = ',displ%dist(iter,il0,its)*reqkm,' km'
 
@@ -517,7 +517,7 @@ do its=2,nam%nts
          if (.not.convergence) call msgerror('iterative filtering failed')
       else
          ! Print results
-         write(mpl%unit,'(a10,a22,f8.2,a,f6.2,a,f7.2,a)') '','Raw displacement: rhflt = ', &
+         write(mpl%unit,'(a10,a22,f10.2,a,f6.2,a,f7.2,a)') '','Raw displacement: rhflt = ', &
        & displ%rhflt(0,il0,its)*reqkm,' km, valid points: ',100.0*displ%valid(0,il0,its),'%, average displacement = ', &
        & displ%dist(0,il0,its)*reqkm,' km'
       end if

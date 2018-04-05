@@ -138,7 +138,7 @@ type nam_type
 
    ! obsop_param
    integer :: nobs                                  !< Number of observations
-   real(kind_real) :: obsdis                        !< Observation distribution parameter
+   character(len=1024) :: obsdis                    !< Observation distribution parameter
    character(len=1024) :: obsop_interp              !< Observation operator interpolation type
 contains
    procedure :: read => nam_read
@@ -174,8 +174,9 @@ logical :: new_hdiag,new_param,check_adjoints,check_pos_def,check_sqrt,check_dir
 logical :: check_optimality,new_lct,new_obsop,logpres,sam_write,sam_read,mask_check,gau_approx,full_var,local_diag
 logical :: displ_diag,lhomh,lhomv,lct_diag(nscalesmax),lsqrt,network
 real(kind_real) :: mask_th,dc,local_rad,displ_rad,displ_rhflt,displ_tol,rvflt,lon_ldwv(nldwvmax),lat_ldwv(nldwvmax),diag_rhflt
-real(kind_real) :: rh(nlmax),rv(nlmax),resol,londir(ndirmax),latdir(ndirmax),obsdis
-character(len=1024) :: datadir,prefix,model,strategy,method,mask_type,draw_type,minim_algo,diag_interp,nicas_interp,obsop_interp
+real(kind_real) :: rh(nlmax),rv(nlmax),resol,londir(ndirmax),latdir(ndirmax)
+character(len=1024) :: datadir,prefix,model,strategy,method,mask_type,draw_type,minim_algo,diag_interp,nicas_interp
+character(len=1024) :: obsdis,obsop_interp
 character(len=1024),dimension(nvmax) :: varname,addvar2d
 
 ! Namelist blocks
@@ -302,7 +303,7 @@ call msi(itsdir)
 
 ! obsop_param default
 call msi(nobs)
-call msr(obsdis)
+obsdis = ''
 obsop_interp = ''
 
 if (mpl%main) then
@@ -763,7 +764,11 @@ end select
 ! Check obsop_param
 if (nam%new_obsop) then
    if (nam%nobs<1) call msgerror('nobs should be positive')
-   if (nam%obsdis>1.0) call msgerror('obsdis should be lower than 1')
+   select case (trim(nam%obsdis))
+   case ('random','local','adjusted')
+   case default
+      call msgerror('wrong obsdis')
+   end select
    select case (trim(nam%diag_interp))
    case ('bilin','natural')
    case default

@@ -10,6 +10,7 @@
 !----------------------------------------------------------------------
 module type_hdata
 
+use model_interface, only: model_write
 use netcdf
 use omp_lib
 use tools_const, only: pi,req,deg2rad,rad2deg
@@ -35,6 +36,7 @@ implicit none
 ! HDIAG data derived type
 type hdata_type
    ! Sampling
+   real(kind_real),allocatable :: rh0(:,:)          !< Sampling radius
    integer,allocatable :: c1_to_c0(:)               !< First sampling index
    logical,allocatable :: c1l0_log(:,:)             !< Log for the first sampling index
    integer,allocatable :: c1c3_to_c0(:,:)           !< Second horizontal sampling index
@@ -112,7 +114,9 @@ contains
    procedure :: diag_com_lg => hdata_diag_com_lg
 end type hdata_type
 
-integer,parameter :: irmax = 10000 !< Maximum number of random number draws
+integer,parameter :: irmax = 10000                 !< Maximum number of random number draws
+real(kind_real),parameter :: Lcoast = 1000.0e3/req !< Length-scale to increase sampling density along coasts
+real(kind_real),parameter :: rcoast = 0.2          !< Minimum value to increase sampling density along coasts
 
 private
 public :: hdata_type
@@ -133,6 +137,7 @@ type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 
 ! Allocation
+allocate(hdata%rh0(geom%nc0,geom%nl0))
 allocate(hdata%c1_to_c0(nam%nc1))
 allocate(hdata%c1l0_log(nam%nc1,geom%nl0))
 allocate(hdata%c1c3_to_c0(nam%nc1,nam%nc3))
@@ -152,6 +157,7 @@ if (nam%displ_diag) then
 end if
 
 ! Initialization
+call msr(hdata%rh0)
 call msi(hdata%c1_to_c0)
 hdata%c1l0_log = .false.
 call msi(hdata%c1c3_to_c0)
@@ -187,6 +193,7 @@ type(geom_type),intent(in) :: geom       !< Geometry
 integer :: il0
 
 ! Release memory
+if (allocated(hdata%rh0)) deallocate(hdata%rh0)
 if (allocated(hdata%c1_to_c0)) deallocate(hdata%c1_to_c0)
 if (allocated(hdata%c1l0_log)) deallocate(hdata%c1l0_log)
 if (allocated(hdata%c1c3_to_c0)) deallocate(hdata%c1c3_to_c0)
@@ -595,7 +602,7 @@ type(geom_type),intent(in) :: geom       !< Geometry
 integer :: info,ic0,il0,ic1,ic2,ildw,jc3,il0i,jc1,kc1
 integer :: mask_ind(nam%nc1)
 integer,allocatable :: vbot(:),vtop(:),nn_c1_index(:)
-real(kind_real) :: rh0(geom%nc0,geom%nl0),nn_dist(1)
+real(kind_real) :: rh0(geom%nc0),nn_dist(1),rh0_loc(geom%nc0a,geom%nl0)
 real(kind_real),allocatable :: nn_c1_dist(:)
 type(ctree_type) :: ctree
 type(linop_type) :: hbase
@@ -736,7 +743,15 @@ if (nam%local_diag.or.nam%displ_diag) then
 end if
 
 ! Write sampling data
-if (nam%sam_write.and.mpl%main) call hdata%write(nam,geom)
+if (nam%sam_write) then
+   if (mpl%main) call hdata%write(nam,geom)
+
+   ! Write rh0
+   if (trim(nam%draw_type)=='random_coast') then
+      call geom%fld_com_gl(hdata%rh0,rh0_loc)
+      call model_write(nam,geom,trim(nam%prefix)//'_sampling_rh0.nc','rh0',rh0_loc)
+   end if
+end if
 
 ! Compute nearest neighbors for local diagnostics output
 if (nam%local_diag.and.(nam%nldwv>0)) then
@@ -788,7 +803,7 @@ type(geom_type),intent(in) :: geom       !< Geometry
 ! Local variables
 integer :: ic0,ic1,il0,fac,np,ip
 integer :: mask_ind_col(geom%nc0),nn_index(1)
-real(kind_real) :: rh0(geom%nc0),nn_dist(1),Lcoast,rcoast
+real(kind_real) :: nn_dist(1)
 real(kind_real),allocatable :: lon(:),lat(:)
 character(len=5) :: ic1char
 type(ctree_type) :: ctree
@@ -807,28 +822,28 @@ if (nam%nc1<maxval(count(geom%mask,dim=1))) then
       case ('random_uniform','random_coast')
          if (trim(nam%draw_type)=='random_uniform') then
             ! Random draw
-            rh0 = 1.0
+            do ic0=1,geom%nc0
+               if (any(geom%mask(ic0,:))) hdata%rh0(ic0,1) = 1.0
+            end do
          elseif (trim(nam%draw_type)=='random_coast') then
             ! More points around coasts
-            Lcoast = 1000.0e3/req
-            rcoast = 0.1
-            rh0 = 0.0
+            do ic0=1,geom%nc0
+               if (any(geom%mask(ic0,:))) hdata%rh0(ic0,1) = 0.0
+            end do
             do il0=1,geom%nl0
                call ctree%create(geom%nc0,geom%lon,geom%lat,.not.geom%mask(:,il0))
                do ic0=1,geom%nc0
                   if (geom%mask(ic0,il0)) then
                      call ctree%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0),1,nn_index,nn_dist)
-                     rh0(ic0) = rh0(ic0)+exp(-nn_dist(1)/Lcoast)
+                     hdata%rh0(ic0,1) = hdata%rh0(ic0,1)+exp(-nn_dist(1)/Lcoast)
                   else
-                      rh0(ic0) = rh0(ic0)+1.0
+                     hdata%rh0(ic0,1) = hdata%rh0(ic0,1)+1.0
                   end if
                end do
             end do
-            rh0 = rh0/float(geom%nl0)
-            rh0 = rcoast+(1.0-rh0)*(1.0-rcoast)
-            write(mpl%unit,*) 'RH0 min max',minval(rh0),maxval(rh0)
+            hdata%rh0(:,1) = rcoast+(1.0-rcoast)*(1.0-hdata%rh0(:,1)/float(geom%nl0))
          end if
-         call rng%initialize_sampling(geom%nc0,dble(geom%lon),dble(geom%lat),mask_ind_col,rh0,nam%ntry,nam%nrep, &
+         call rng%initialize_sampling(geom%nc0,dble(geom%lon),dble(geom%lat),mask_ind_col,dble(hdata%rh0(:,1)),nam%ntry,nam%nrep, &
        & nam%nc1,hdata%c1_to_c0)
       case ('icosahedron')
          ! Compute icosahedron size

@@ -108,7 +108,7 @@
       "advmode": 0,
       "ndir": 0,
       "nobs": 200,
-      "obsdis": 1.0,
+      "obsdis": "adjusted",
       "obsop_interp": "bilin"
     },
     "state": [

@@ -243,7 +243,7 @@ do jl0r=1,bpar%nl0r(ib)
          dx(jc3,jl0r) = geom%lon(hdata%c1c3_to_c0(ic1,jc3))-geom%lon(hdata%c1c3_to_c0(ic1,1))
          dy(jc3,jl0r) = geom%lat(hdata%c1c3_to_c0(ic1,jc3))-geom%lat(hdata%c1c3_to_c0(ic1,1))
          call lonlatmod(dx(jc3,jl0r),dy(jc3,jl0r))
-         dx(jc3,jl0r) = dx(jc3,jl0r)/cos(geom%lat(hdata%c1c3_to_c0(ic1,1)))
+         dx(jc3,jl0r) = dx(jc3,jl0r)*cos(geom%lat(hdata%c1c3_to_c0(ic1,1)))
       end if
    end do
    dz(jl0r) = float(nam%levs(jl0)-nam%levs(il0))

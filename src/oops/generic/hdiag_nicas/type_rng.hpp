@@ -26,9 +26,9 @@ class rng {
         void initialize_sampling(int n, double lon[], double lat[], int mask[], double rh[], int ntry, int nrep, int ns, int ihor[]);
     private:
         // Linear congruential generator
-        unsigned long int a_=1103515245;
-        unsigned long int c_=12345;
-        unsigned long int m_=2147483648;
+        unsigned long int a_;
+        unsigned long int c_;
+        unsigned long int m_;
         unsigned long int seed_;
         double lcg();
 };

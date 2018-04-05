@@ -87,8 +87,10 @@ logical,intent(in),optional :: local     !< Local input data (default = .false.)
 
 ! Local variables
 integer :: offset,iobs,jobs,iobsa,iproc,jproc,nobsa,i_s,ic0,ic0b,i,ic0a,nc0a,nc0b,nhalo,delta,nres,ind(1),lunit
-integer,allocatable :: nop(:),iop(:),srcproc(:,:),srcic0(:,:),order(:),nobsa_to_move(:)
+integer :: imin(1),imax(1),nmoves,imoves
+integer,allocatable :: nop(:),iop(:),srcproc(:,:),srcic0(:,:),order(:),nobs_to_move(:),nobs_to_move_tmp(:),obs_moved(:,:)
 integer,allocatable :: c0_to_c0a(:),c0a_to_c0(:),c0b_to_c0(:),c0a_to_c0b(:)
+real(kind_real) :: N_max,C_max
 real(kind_real),allocatable :: lonobs(:),latobs(:),list(:)
 logical :: llocal
 logical,allocatable :: maskobs(:),lcheck_nc0b(:)
@@ -199,7 +201,8 @@ if (llocal) then
    end do
 else
    ! Generate observation distribution on processors
-   if (nam%obsdis<0.0) then
+   select case (trim(nam%obsdis))
+   case('random')
       ! Allocation
       allocate(list(obsop%nobs))
       allocate(order(obsop%nobs))
@@ -225,7 +228,7 @@ else
       ! Release memory
       deallocate(list)
       deallocate(order)
-   else
+   case ('local','adjusted')
       ! Source grid-based repartition
       do iobs=1,obsop%nobs
          ! Set observation proc
@@ -238,56 +241,70 @@ else
          end if
       end do
 
-      obsop%proc_to_nobsa = 0
-      do iobs=1,obsop%nobs
-         ! Concerned proc
-         iproc = obsop%obs_to_proc(iobs)
+      if (trim(nam%obsdis)=='adjusted') then
+         ! Allocation
+         allocate(nobs_to_move(mpl%nproc))
 
-         ! Number of observations per proc
-         obsop%proc_to_nobsa(iproc) = obsop%proc_to_nobsa(iproc)+1
-      end do
+         ! Proc to nobsa
+         obsop%proc_to_nobsa = 0
+         do iobs=1,obsop%nobs
+            ! Concerned proc
+            iproc = obsop%obs_to_proc(iobs)
 
-      ! Allocation
-      allocate(nobsa_to_move(mpl%nproc))
+            ! Number of observations per proc
+            obsop%proc_to_nobsa(iproc) = obsop%proc_to_nobsa(iproc)+1
+         end do
 
-      ! Target nobsa, nobsa to move
-      nres = obsop%nobs
-      do iproc=1,mpl%nproc
-         delta = obsop%nobs/mpl%nproc
-         if (nres>(mpl%nproc-iproc+1)*delta) delta = delta+1
-         nobsa_to_move(iproc) = delta
-         nres = nres-delta
-      end do
-      nobsa_to_move = int(nam%obsdis*float(obsop%proc_to_nobsa-nobsa_to_move))
-      if (sum(nobsa_to_move)>0) then
-         ind = maxloc(nobsa_to_move)
-      elseif (sum(nobsa_to_move)<0) then
-         ind = minloc(nobsa_to_move)
-      else
-         ind = 1
-      end if
-      nobsa_to_move(ind(1)) = nobsa_to_move(ind(1))-sum(nobsa_to_move)
-
-      ! Move observations between processors
-      do iobs=1,obsop%nobs
-         iproc = obsop%obs_to_proc(iobs)
-         if (nobsa_to_move(iproc)>0) then
-            ! Move this observation from iproc
-            do jproc=1,mpl%nproc
-               if (nobsa_to_move(jproc)<0) then
-                  ! Move this observation to jproc
-                  obsop%obs_to_proc(iobs) = jproc
-                  nobsa_to_move(iproc) = nobsa_to_move(iproc)-1
-                  nobsa_to_move(jproc) = nobsa_to_move(jproc)+1
-                  exit
-               end if
-            end do
+         ! Target nobsa, nobsa to move
+         nres = obsop%nobs
+         do iproc=1,mpl%nproc
+            delta = obsop%nobs/mpl%nproc
+            if (nres>(mpl%nproc-iproc+1)*delta) delta = delta+1
+            nobs_to_move(iproc) = delta
+            nres = nres-delta
+         end do
+         nobs_to_move = int(float(obsop%proc_to_nobsa-nobs_to_move))
+         if (sum(nobs_to_move)>0) then
+            ind = maxloc(nobs_to_move)
+         elseif (sum(nobs_to_move)<0) then
+            ind = minloc(nobs_to_move)
+         else
+            ind = 1
          end if
-      end do
+         nobs_to_move(ind(1)) = nobs_to_move(ind(1))-sum(nobs_to_move)
 
-      ! Release memory
-      deallocate(nobsa_to_move)
-   end if
+         ! Select observations to move
+         allocate(nobs_to_move_tmp(mpl%nproc))
+         allocate(obs_moved(maxval(abs(nobs_to_move)),mpl%nproc))
+         call msi(obs_moved)
+         nobs_to_move_tmp = nobs_to_move
+         do iobs=1,obsop%nobs
+            iproc = obsop%obs_to_proc(iobs)
+            if (nobs_to_move_tmp(iproc)>0) then
+               ! Move this observation from iproc
+               obs_moved(nobs_to_move_tmp(iproc),iproc) = iobs
+               nobs_to_move_tmp(iproc) = nobs_to_move_tmp(iproc)-1
+            end if
+         end do
+
+         ! Select destination proc
+         do while (any(nobs_to_move<0))
+            imin = minloc(nobs_to_move)
+            imax = maxloc(nobs_to_move)
+            nmoves = min(nobs_to_move(imax(1)),-nobs_to_move(imin(1)))
+            do imoves=1,nmoves
+               iobs = obs_moved(nobs_to_move(imax(1)),imax(1))
+               call msi(obs_moved(nobs_to_move(imax(1)),imax(1)))
+               obsop%obs_to_proc(iobs) = imin(1)
+               nobs_to_move(imax(1)) = nobs_to_move(imax(1))-1
+               nobs_to_move(imin(1)) = nobs_to_move(imin(1))+1
+            end do
+         end do
+
+         ! Release memory
+         deallocate(nobs_to_move)
+      end if
+   end select
 
    ! Local number of observations
    obsop%proc_to_nobsa = 0
@@ -495,28 +512,14 @@ end if
 mpl%tag = mpl%tag+4
 call obsop%com%setup(com,'com')
 
-! Write data
+! Compute scores
 if (mpl%main) then
-   lunit = newunit()
-   open(unit=lunit,file=trim(nam%datadir)//'/'//trim(nam%prefix)//'_obs_out.dat',status='replace')
-   do iobs=1,obsop%nobs
-      write(lunit,*) lonobs(iobs)*rad2deg,latobs(iobs)*rad2deg
-   end do
-   close(unit=lunit)
-
-   if (mpl%nproc>1) then
-      lunit = newunit()
-      open(unit=lunit,file=trim(nam%datadir)//'/'//trim(nam%prefix)//'_obs_com.dat',status='replace')
-      do iproc=1,mpl%nproc
-         write(lunit,*) obsop%proc_to_nobsa(iproc),com(iproc)%nhalo,com(iproc)%nexcl
-      end do
-      close(unit=lunit)
-   end if
-end if
-if (mpl%main) then
+   N_max = float(maxval(obsop%proc_to_nobsa))/(float(obsop%nobs)/float(mpl%nproc))
+   C_max = 0.0
    do iproc=1,mpl%nproc
-      call com(iproc)%dealloc
+      C_max = max(C_max,float(com(iproc)%nhalo))
    end do
+   C_max = C_max/(3.0*float(obsop%nobs)/float(mpl%nproc))
 end if
 
 ! Print results
@@ -532,14 +535,34 @@ if (mpl%main) then
       write(mpl%unit,'(a10,a,i3,a,i8,a,i8,a,i8)') '','Task ',iproc,': ', &
     & com(iproc)%nred,' / ',com(iproc)%next,' / ',com(iproc)%nhalo
    end do
-   nhalo = 0
-   do iproc=1,mpl%nproc
-      nhalo = nhalo+com(iproc)%nhalo
-   end do
-   write(mpl%unit,'(a7,a,f5.1,a)') '','Ratio between communications and observations: ',100.0*float(nhalo)/float(obsop%nobs),' %'
 else
    write(mpl%unit,'(a10,a,i3,a,i8,a,i8,a,i8)') '','Task ',mpl%myproc,': ', &
  & obsop%com%nred,' / ',obsop%com%next,' / ',obsop%com%nhalo
+end if
+if (mpl%main) write(mpl%unit,'(a7,a,f10.2,a,f10.2)') '','Scores (N_max / C_max):',N_max,' / ',C_max
+
+if (mpl%main) then
+   lunit = newunit()
+
+   ! Write observations
+   open(unit=lunit,file=trim(nam%datadir)//'/'//trim(nam%prefix)//'_obs_out.dat',status='replace')
+   do iobs=1,obsop%nobs
+      write(lunit,*) lonobs(iobs)*rad2deg,latobs(iobs)*rad2deg
+   end do
+   close(unit=lunit)
+
+   ! Write scores
+   if (mpl%nproc>1) then
+      lunit = newunit()
+      open(unit=lunit,file=trim(nam%datadir)//'/'//trim(nam%prefix)//'_obs_scores_'//trim(nam%obsdis)//'.dat',status='replace')
+      write(lunit,*) N_max,C_max
+      close(unit=lunit)
+   end if
+end if
+if (mpl%main) then
+   do iproc=1,mpl%nproc
+      call com(iproc)%dealloc
+   end do
 end if
 
 end subroutine obsop_parameters
@@ -723,12 +746,12 @@ call mpl%bcast(ylatmax,iprocmax(1))
 
 ! Print results
 if (norm_tot>0.0) then
-   write(mpl%unit,'(a7,a,f8.2,a,f8.2,a,f8.2,a)') '','Interpolation error (min/mean/max): ',distmin_tot, &
+   write(mpl%unit,'(a7,a,f10.2,a,f10.2,a,f10.2,a)') '','Interpolation error (min/mean/max): ',distmin_tot, &
  & ' km / ',distsum_tot/norm_tot,' km / ',maxval(proc_to_distmax),' km'
    write(mpl%unit,'(a7,a)') '','Max. interpolation error location (lon/lat): '
-   write(mpl%unit,'(a10,a14,f8.2,a,f8.2,a)') '','Observation:  ',obsop%lonobs(iobsmax(1))*rad2deg, &
+   write(mpl%unit,'(a10,a14,f10.2,a,f10.2,a)') '','Observation:  ',obsop%lonobs(iobsmax(1))*rad2deg, &
  & ' deg. / ' ,obsop%latobs(iobsmax(1))*rad2deg,' deg.'
-   write(mpl%unit,'(a10,a14,f8.2,a,f8.2,a)') '','Interpolation:',ylonmax*rad2deg, &
+   write(mpl%unit,'(a10,a14,f10.2,a,f10.2,a)') '','Interpolation:',ylonmax*rad2deg, &
  & ' deg. / ' ,ylatmax*rad2deg,' deg.'
 else
    call msgerror('all observations are out of the test windows')

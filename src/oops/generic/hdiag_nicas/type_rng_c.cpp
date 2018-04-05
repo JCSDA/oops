@@ -18,6 +18,9 @@ using namespace std;
 // Constructor
 rng::rng(unsigned long int default_seed) {
     // Initialize random number generator
+    a_=1103515245;
+    c_=12345;
+    m_=2147483648;
     if (default_seed==0) {
         seed_ = (unsigned long int)clock();
     }
@@ -75,15 +78,15 @@ void rng::initialize_sampling(int n, double lon[], double lat[], int mask[], dou
         int irmax=-1;
         int itry=0;
         while(itry<ntry) {
-            // Generate random real
+            // Generate random integer
             rand_integer(0,n-1,&ir);
             if(mask_copy[ir]==1) {
                 if(is>0) {
                     // Find nearest neighbor
-                    vector<CoverTreePoint> neighbors(cTree.kNearestNeighbors(CoverTreePoint(-999,lon[ir],lat[ir]),1));
+                    vector<CoverTreePoint> neighbors(cTree.kNearestNeighbors(CoverTreePoint(ir,lon[ir],lat[ir]),1));
 
                     // Check distance
-                    double dist=neighbors[0].getDist()/sqrt(0.5*(pow(rh[neighbors[0].getIndex()],2.0)+pow(rh[ir],2.0)));
+                    double dist=neighbors[0].getDist()/sqrt(0.5*(pow(rh[ihor[neighbors[0].getIndex()]-1],2.0)+pow(rh[ir],2.0)));
                     if(dist>distmax) {
                         distmax=dist;
                         irmax=ir;
@@ -109,7 +112,7 @@ void rng::initialize_sampling(int n, double lon[], double lat[], int mask[], dou
     double distmininit=HUGE_VAL;
     for(int is=0;is<ns;is++) {
         vector<CoverTreePoint> neighbors(cTree.kNearestNeighbors(CoverTreePoint(is,lon[ihor[is]-1],lat[ihor[is]-1]),2));
-        double dist=neighbors[1].getDist()/sqrt(0.5*(pow(rh[neighbors[1].getIndex()],2.0)+pow(rh[ihor[is]-1],2.0)));
+        double dist=neighbors[1].getDist()/sqrt(0.5*(pow(rh[ihor[neighbors[1].getIndex()]-1],2.0)+pow(rh[ihor[is]-1],2.0)));
         if(dist<distmininit) {
             distmininit=dist;
         }
@@ -124,7 +127,7 @@ void rng::initialize_sampling(int n, double lon[], double lat[], int mask[], dou
             int ismin=0;
             for(int is=0;is<ns;is++) {
                 vector<CoverTreePoint> neighbors(cTree.kNearestNeighbors(CoverTreePoint(is,lon[ihor[is]-1],lat[ihor[is]-1]),2));
-                double dist=neighbors[1].getDist()/sqrt(0.5*(pow(rh[neighbors[1].getIndex()],2.0)+pow(rh[ihor[is]-1],2.0)));
+                double dist=neighbors[1].getDist()/sqrt(0.5*(pow(rh[ihor[neighbors[1].getIndex()]-1],2.0)+pow(rh[ihor[is]-1],2.0)));
                 if(dist<distmin) {
                     distmin=dist;
                     ismin=is;
@@ -146,7 +149,7 @@ void rng::initialize_sampling(int n, double lon[], double lat[], int mask[], dou
                     vector<CoverTreePoint> neighbors(cTree.kNearestNeighbors(CoverTreePoint(-999,lon[ir],lat[ir]),1));
 
                     // Check distance
-                    double dist=neighbors[0].getDist()/sqrt(0.5*(pow(rh[neighbors[0].getIndex()],2.0)+pow(rh[ir],2.0)));
+                    double dist=neighbors[0].getDist()/sqrt(0.5*(pow(rh[ihor[neighbors[0].getIndex()]-1],2.0)+pow(rh[ir],2.0)));
                     if((dist>distmax) && (dist>distmininit)) {
                         distmax=dist;
                         irmax=ir;
@@ -173,7 +176,7 @@ void rng::initialize_sampling(int n, double lon[], double lat[], int mask[], dou
         double distmin=HUGE_VAL;
         for(int is=0;is<ns;is++) {
             vector<CoverTreePoint> neighbors(cTree.kNearestNeighbors(CoverTreePoint(is,lon[ihor[is]-1],lat[ihor[is]-1]),2));
-            double dist=neighbors[1].getDist()/sqrt(0.5*(pow(rh[neighbors[1].getIndex()],2.0)+pow(rh[ihor[is]-1],2.0)));
+            double dist=neighbors[1].getDist()/sqrt(0.5*(pow(rh[ihor[neighbors[1].getIndex()]-1],2.0)+pow(rh[ihor[is]-1],2.0)));
             if(dist<distmin) {
                 distmin=dist;
             }

@@ -277,6 +277,8 @@ logical :: add_to_front
 ! Initialization
 fit = 0.0
 
+!$omp parallel do schedule(static) private(il0,np,jl0r,np_new,ip,jc3,jl0,kc3,kl0r,kl0,rhsq,rvsq,distnorm,disttest,add_to_front), &
+!$omp&                             firstprivate(plist,plist_new,dist)
 do il0=1,nl0
    ! Allocation
    allocate(plist(nc3*nl0r,2))
@@ -374,6 +376,7 @@ do il0=1,nl0
    deallocate(plist_new)
    deallocate(dist)
 end do
+!$omp end parallel do
 
 end subroutine fit_diag
 
@@ -449,6 +452,7 @@ do iscales=1,nscales
    if (ncomp(iscales)==4) Hc12 = max(-1.0_kind_real+Hmin,min(H(offset+4),1.0_kind_real-Hmin))
 
    ! Homogeneous anisotropic approximation
+   !$omp parallel do schedule(static) private(jl0,jc3,rsq)
    do jl0=1,nl0
       do jc3=1,nc
          if (dmask(jc3,jl0)) then
@@ -469,6 +473,7 @@ do iscales=1,nscales
          end if
       end do
    end do
+   !$omp end parallel do
 
    ! Update offset
    offset = offset+ncomp(iscales)

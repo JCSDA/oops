@@ -551,7 +551,7 @@ integer,allocatable :: natis(:),row(:),col(:)
 real(kind_real) :: nn_dist(1),b(3)
 real(kind_real),allocatable :: area_polygon(:),area_polygon_new(:),natwgt(:),S(:)
 logical :: loop
-logical,allocatable :: done(:),check_dst(:)
+logical,allocatable :: done(:),missing(:)
 type(mesh_type) :: meshnew
 
 ! MPI splitting
@@ -729,12 +729,15 @@ call mpl%bcast(interp%S,mpl%ioproc)
 call interp%interp_missing(n_dst,lon_dst,lat_dst,mask_dst,interp_type)
 
 ! Check interpolation
-allocate(check_dst(n_dst))
-check_dst = .true.
-do i_s=1,interp%n_s
-   check_dst(interp%row(i_s)) = .false.
+allocate(missing(n_dst))
+missing = .false.
+do i_dst=1,n_dst
+   if (mask_dst(i_dst)) missing(i_dst) = .true.
 end do
-if (any(check_dst)) call msgerror('missing destination points in interp_from_mesh_ctree')
+do i_s=1,interp%n_s
+   missing(interp%row(i_s)) = .false.
+end do
+if (any(missing)) call msgerror('missing destination points in interp_from_mesh_ctree')
 
 end subroutine linop_interp_from_mesh_ctree
 

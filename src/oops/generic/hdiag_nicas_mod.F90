@@ -323,7 +323,7 @@ call msi(nam%itsdir)
 
 ! obsop_param default
 call msi(nam%nobs)
-call msr(nam%obsdis)
+nam%obsdis = ''
 nam%obsop_interp = ''
 
 ! Setup from configuration
@@ -415,7 +415,7 @@ end do
 
 ! obsop_param
 nam%nobs = config_get_int(c_conf,"nobs")
-nam%obsdis = config_get_real(c_conf,"obsdis")
+nam%obsdis = config_get_string(c_conf,1024,"obsdis")
 nam%obsop_interp = config_get_string(c_conf,1024,"obsop_interp")
 
 end subroutine hdiag_nicas_read_conf
@@ -452,7 +452,11 @@ type(hdiag_nicas), intent(inout) :: self
 type(unstructured_grid), intent(inout) :: ug
 
 ! Apply localization
-call self%nicas%apply(self%nam,self%geom,self%bpar,ug%fld)
+if (self%nam%lsqrt) then
+   call self%nicas%apply_from_sqrt(self%nam,self%geom,self%bpar,ug%fld)
+else
+   call self%nicas%apply(self%nam,self%geom,self%bpar,ug%fld)
+end if
 
 end subroutine hdiag_nicas_multiply
 
