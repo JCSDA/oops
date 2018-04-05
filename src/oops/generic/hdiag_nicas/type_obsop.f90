@@ -86,7 +86,7 @@ type(geom_type),intent(in) :: geom       !< Geometry
 logical,intent(in),optional :: local     !< Local input data (default = .false.)
 
 ! Local variables
-integer :: offset,iobs,jobs,iobsa,iproc,jproc,nobsa,i_s,ic0,ic0b,i,ic0a,nc0a,nc0b,nhalo,delta,nres,ind(1),lunit
+integer :: offset,iobs,jobs,iobsa,iproc,nobsa,i_s,ic0,ic0b,i,ic0a,nc0a,nc0b,delta,nres,ind(1),lunit
 integer :: imin(1),imax(1),nmoves,imoves
 integer,allocatable :: nop(:),iop(:),srcproc(:,:),srcic0(:,:),order(:),nobs_to_move(:),nobs_to_move_tmp(:),obs_moved(:,:)
 integer,allocatable :: c0_to_c0a(:),c0a_to_c0(:),c0b_to_c0(:),c0a_to_c0b(:)
@@ -517,7 +517,7 @@ if (mpl%main) then
    N_max = float(maxval(obsop%proc_to_nobsa))/(float(obsop%nobs)/float(mpl%nproc))
    C_max = 0.0
    do iproc=1,mpl%nproc
-      C_max = max(C_max,float(com(iproc)%nhalo))
+      C_max = max(C_max,real(com(iproc)%nhalo,kind_real))
    end do
    C_max = C_max/(3.0*float(obsop%nobs)/float(mpl%nproc))
 end if
