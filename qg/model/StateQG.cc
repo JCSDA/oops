@@ -14,8 +14,8 @@
 #include <string>
 
 #include "eckit/config/LocalConfiguration.h"
+
 #include "oops/base/Variables.h"
-#include "util/Logger.h"
 #include "model/GomQG.h"
 #include "model/LocationsQG.h"
 #include "model/ModelBias.h"
@@ -25,8 +25,7 @@
 #include "model/ModelQG.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
-
-using oops::Log;
+#include "util/Logger.h"
 
 namespace qg {
 
@@ -37,7 +36,7 @@ StateQG::StateQG(const GeometryQG & resol, const oops::Variables & vars,
                  const util::DateTime & vt)
   : fields_(new FieldsQG(resol, vars, vt)), stash_()
 {
-  Log::trace() << "StateQG::StateQG created." << std::endl;
+  oops::Log::trace() << "StateQG::StateQG created." << std::endl;
 }
 // -----------------------------------------------------------------------------
 StateQG::StateQG(const GeometryQG & resol, const eckit::Configuration & file)
@@ -64,25 +63,25 @@ StateQG::StateQG(const GeometryQG & resol, const eckit::Configuration & file)
     fields_->read(file);
 
   ASSERT(fields_);
-  Log::trace() << "StateQG::StateQG created and read in." << std::endl;
+  oops::Log::trace() << "StateQG::StateQG created and read in." << std::endl;
 }
 // -----------------------------------------------------------------------------
 StateQG::StateQG(const GeometryQG & resol, const StateQG & other)
   : fields_(new FieldsQG(*other.fields_, resol)), stash_()
 {
   ASSERT(fields_);
-  Log::trace() << "StateQG::StateQG created by interpolation." << std::endl;
+  oops::Log::trace() << "StateQG::StateQG created by interpolation." << std::endl;
 }
 // -----------------------------------------------------------------------------
 StateQG::StateQG(const StateQG & other)
   : fields_(new FieldsQG(*other.fields_)), stash_()
 {
   ASSERT(fields_);
-  Log::trace() << "StateQG::StateQG copied." << std::endl;
+  oops::Log::trace() << "StateQG::StateQG copied." << std::endl;
 }
 // -----------------------------------------------------------------------------
 StateQG::~StateQG() {
-  Log::trace() << "StateQG::StateQG destructed." << std::endl;
+  oops::Log::trace() << "StateQG::StateQG destructed." << std::endl;
 }
 // -----------------------------------------------------------------------------
 void StateQG::activateModel() {
@@ -93,7 +92,7 @@ void StateQG::activateModel() {
   swap(fields_, stash_);
   ASSERT(fields_);
   ASSERT(stash_);
-  Log::trace() << "StateQG activated for Model" << std::endl;
+  oops::Log::trace() << "StateQG activated for Model" << std::endl;
 }
 // -----------------------------------------------------------------------------
 void StateQG::deactivateModel() {
@@ -102,7 +101,7 @@ void StateQG::deactivateModel() {
   stash_.reset();
   ASSERT(fields_);
   ASSERT(!stash_);
-  Log::trace() << "StateQG deactivated for Model" << std::endl;
+  oops::Log::trace() << "StateQG deactivated for Model" << std::endl;
 }
 // -----------------------------------------------------------------------------
 /// Basic operators
@@ -124,7 +123,7 @@ void StateQG::interpolate(const LocationsQG & locs, const oops::Variables & vars
 // -----------------------------------------------------------------------------
 void StateQG::changeResolution(const StateQG & other) {
   fields_->changeResolution(*other.fields_);
-  Log::trace() << "StateQG interpolated" << std::endl;
+  oops::Log::trace() << "StateQG interpolated" << std::endl;
 }
 // -----------------------------------------------------------------------------
 /// Interactions with Increments

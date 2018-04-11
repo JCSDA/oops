@@ -18,6 +18,10 @@
 #include "util/Printable.h"
 
 // Forward declarations
+namespace eckit {
+  class Configuration;
+}
+
 namespace lorenz95 {
   class LocsL95;
   class GomL95;
@@ -29,13 +33,13 @@ class FieldL95 : public util::Printable {
  public:
   static const std::string classname() {return "lorenz95::FieldL95";}
 
-// Constructors and basic operators
+/// Constructors and basic operators
   explicit FieldL95(const Resolution &);
   FieldL95(const FieldL95 &, const Resolution &);
   explicit FieldL95(const FieldL95 &, const bool copy = true);
   ~FieldL95() {}
 
-// Linear algebra
+/// Linear algebra
   void zero();
   FieldL95 & operator=(const FieldL95 &);
   FieldL95 & operator+=(const FieldL95 &);
@@ -46,20 +50,21 @@ class FieldL95 : public util::Printable {
   double dot_product_with(const FieldL95 &) const;
   void schur(const FieldL95 &);
   void random();
+  void generate(const eckit::Configuration &);
 
-// Utilities
+/// Utilities
   void read(std::ifstream &);
   void write(std::ofstream &) const;
   double rms() const;
 
-//// Set and get
+/// Set and get
   const int & resol() const {return resol_;}
   double & operator[](const int ii) {return x_[ii];}
   const double & operator[](const int ii) const {return x_[ii];}
   std::vector<double> & asVector() {return x_;}
   const std::vector<double> & asVector() const {return x_;}
 
-// Interpolate to given location
+/// Interpolate to given location
   void interp(const LocsL95 &, GomL95 &) const;
   void interpAD(const LocsL95 &, const GomL95 &);
 

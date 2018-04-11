@@ -31,7 +31,7 @@ end type qg_locs
 #define LISTED_TYPE qg_locs
 
 !> Linked list interface - defines registry_t type
-#include "linkedList_i.f"
+#include "util/linkedList_i.f"
 
 !> Global registry
 type(registry_t) :: qg_locs_registry
@@ -40,7 +40,19 @@ type(registry_t) :: qg_locs_registry
 contains
 ! ------------------------------------------------------------------------------
 !> Linked list implementation
-#include "linkedList_c.f"
+#include "util/linkedList_c.f"
+
+! ------------------------------------------------------------------------------
+
+subroutine c_qg_loc_create(c_key_locs) bind(c,name='qg_loc_create_f90')
+
+implicit none
+integer(c_int), intent(inout) :: c_key_locs
+
+call qg_locs_registry%init()
+call qg_locs_registry%add(c_key_locs)
+
+end subroutine c_qg_loc_create
 
 ! ------------------------------------------------------------------------------
 
@@ -72,7 +84,7 @@ integer(c_int), intent(inout) :: key
 type(qg_locs), pointer :: self
 
 call qg_locs_registry%get(key,self)
-deallocate(self%xyz)
+if (allocated(self%xyz)) deallocate(self%xyz)
 call qg_locs_registry%remove(key)
 
 end subroutine c_qg_loc_delete

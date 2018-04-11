@@ -64,6 +64,7 @@ fft_f.cc
 fft_f.h
 fft_mod.F90
 generate_locations.f90
+instantiateQgLocalizationFactory.h
 invent_state.f90
 invert_pv.f90
 invert_pv_ad.f90
@@ -100,6 +101,7 @@ solve_helmholz.f90
 zonal_wind.f90
 zonal_wind_ad.f90
 zonal_wind_tl.f90
+tools_nc.f90
 )
 
 ecbuild_add_library( TARGET   qg

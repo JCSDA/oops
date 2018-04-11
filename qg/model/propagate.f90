@@ -36,25 +36,25 @@ real(kind=kind_real), allocatable :: qnew(:,:,:)
 
 ! ------------------------------------------------------------------------------
 
-allocate(qnew(flds%nx,flds%ny,2))
+allocate(qnew(flds%geom%nx,flds%geom%ny,2))
 
 !--- advect the potential vorticity
 
 call advect_pv(qnew,flds%q,flds%q_north,flds%q_south,flds%u,flds%v, &
-             & flds%nx,flds%ny,config%deltax,config%deltay,config%dt)
+             & flds%geom%nx,flds%geom%ny,config%deltax,config%deltay,config%dt)
 
 !--- invert the potential vorticity to determine streamfunction
 
 call invert_pv(flds%x,qnew,flds%x_north,flds%x_south,config%rs, &
-             & flds%nx,flds%ny,config%deltax,config%deltay, &
+             & flds%geom%nx,flds%geom%ny,config%deltax,config%deltay, &
              & config%f1,config%f2,bet)
 
 ! -- calculate potential vorticity and wind components
 
 flds%q(:,:,:) = qnew(:,:,:)
 call zonal_wind(flds%u,flds%x,flds%x_north,flds%x_south, &
-              & flds%nx,flds%ny,config%deltay)
-call meridional_wind(flds%v,flds%x, flds%nx,flds%ny,config%deltax)
+              & flds%geom%nx,flds%geom%ny,config%deltay)
+call meridional_wind(flds%v,flds%x, flds%geom%nx,flds%geom%ny,config%deltax)
 
 deallocate(qnew)
 ! ------------------------------------------------------------------------------

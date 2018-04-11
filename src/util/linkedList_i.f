@@ -14,7 +14,7 @@ type :: node_t
   type(LISTED_TYPE) :: element
 
   type(node_t), pointer  :: next => NULL()
-end type
+end type node_t
 
 !> Registry type
 type :: registry_t
@@ -28,4 +28,4 @@ contains
   procedure :: add => add_
   procedure :: get => get_
   procedure :: remove => remove_
-end type
+end type registry_t

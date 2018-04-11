@@ -15,7 +15,6 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Variables.h"
-#include "util/Logger.h"
 #include "model/GomQG.h"
 #include "model/LocationsQG.h"
 #include "model/ModelBiasIncrement.h"
@@ -25,6 +24,7 @@
 #include "model/StateQG.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
+#include "util/Logger.h"
 
 namespace qg {
 

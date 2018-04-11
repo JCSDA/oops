@@ -19,8 +19,8 @@
 
 namespace test {
 
+// -----------------------------------------------------------------------------
 BOOST_FIXTURE_TEST_SUITE(test_localizationMatrixL95, TestFixture)
-
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_localizationMatrixL95_constructor) {
     eckit::LocalConfiguration resolCfg(TestConfig::config(), "resolution");

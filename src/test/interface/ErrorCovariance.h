@@ -132,6 +132,28 @@ template <typename MODEL> void testErrorCovarianceInverse() {
   BOOST_CHECK_SMALL(dx3.norm(), tol);
 }
 
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testErrorCovarianceSym() {
+  typedef ErrorCovarianceFixture<MODEL>   Test_;
+  typedef oops::Increment<MODEL>    Increment_;
+
+  Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
+  Increment_ Bdx(Test_::resol(), Test_::ctlvars(), Test_::time());
+  Increment_ dy(Test_::resol(), Test_::ctlvars(), Test_::time());
+  Increment_ Bdy(Test_::resol(), Test_::ctlvars(), Test_::time());  
+
+  dx.random();
+  dy.random();
+
+  Test_::covariance().multiply(dx, Bdx);
+  Test_::covariance().multiply(dy, Bdy);
+  const double zz1 = dot_product(dx, Bdy);
+  const double zz2 = dot_product(Bdx, dy);
+  const double tol = 1.0e-8;
+  BOOST_CHECK_CLOSE( zz1, zz2, tol);
+  
+}
 // =============================================================================
 
 template <typename MODEL> class ErrorCovariance : public oops::Test {
@@ -146,7 +168,8 @@ template <typename MODEL> class ErrorCovariance : public oops::Test {
 
     ts->add(BOOST_TEST_CASE(&testErrorCovarianceZero<MODEL>));
     ts->add(BOOST_TEST_CASE(&testErrorCovarianceInverse<MODEL>));
-
+    ts->add(BOOST_TEST_CASE(&testErrorCovarianceSym<MODEL>));
+    
     boost::unit_test::framework::master_test_suite().add(ts);
   }
 };

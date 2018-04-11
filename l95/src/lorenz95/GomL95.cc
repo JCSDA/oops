@@ -46,10 +46,22 @@ GomL95::GomL95(const eckit::Configuration & conf, const oops::Variables &)
   this->read(conf);
 }
 // -----------------------------------------------------------------------------
+GomL95::GomL95(const GomL95 & other)
+  : size_(other.size_), iobs_(other.iobs_), locval_(other.locval_), current_(0)
+{
+  oops::Log::trace() << "GomL95::GomL95 copied" << std::endl;
+}
+// -----------------------------------------------------------------------------
 GomL95::~GomL95() {}
 // -----------------------------------------------------------------------------
 GomL95 & GomL95::operator*=(const double & zz) {
   for (size_t jj = 0; jj < size_; ++jj) locval_[jj] *= zz;
+  return *this;
+}
+// -----------------------------------------------------------------------------
+GomL95 & GomL95::operator+=(const GomL95 & rhs)
+{
+  for (size_t jj = 0; jj < size_; ++jj) locval_[jj] += rhs.locval_[jj];
   return *this;
 }
 // -----------------------------------------------------------------------------

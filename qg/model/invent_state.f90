@@ -47,24 +47,24 @@ d2  = config_get_real(config,"bottom_layer_depth")
 f1 = f0*f0*scale_length*scale_length/(g*dlogtheta*d1)
 f2 = f0*f0*scale_length*scale_length/(g*dlogtheta*d2)
 rsmax = horog/(rossby_number*d2)
-deltax0 = domain_zonal/real(flds%nx,kind_real)
-deltay0 = domain_meridional/real(flds%ny+1,kind_real)
+deltax0 = domain_zonal/real(flds%geom%nx,kind_real)
+deltay0 = domain_meridional/real(flds%geom%ny+1,kind_real)
 deltax = deltax0/scale_length
 deltay = deltay0/scale_length
 
-allocate(pv(flds%nx,flds%ny,2))
-allocate(rs(flds%nx,flds%ny))
+allocate(pv(flds%geom%nx,flds%geom%ny,2))
+allocate(rs(flds%geom%nx,flds%geom%ny))
 
 !--- Uniform wind in each layer. A vertical shear outside the range
 !--- -bet/F1 to bet/F2 should produce baroclinic instability.
 
 flds%x_south(1) = 0.0_kind_real
 flds%x_south(2) = 0.0_kind_real
-flds%x_north(1) = -real(flds%ny+1,kind_real)*deltay*u1
-flds%x_north(2) = -real(flds%ny+1,kind_real)*deltay*u2
+flds%x_north(1) = -real(flds%geom%ny+1,kind_real)*deltay*u1
+flds%x_north(2) = -real(flds%geom%ny+1,kind_real)*deltay*u2
 
-do jy=1,flds%ny
-do jx=1,flds%nx
+do jy=1,flds%geom%ny
+do jx=1,flds%geom%nx
   flds%x(jx,jy,1) = -real(jy,kind_real)*deltay*u1
   flds%x(jx,jy,2) = -real(jy,kind_real)*deltay*u2
 enddo
@@ -75,34 +75,34 @@ if (ipert/=0) then
   write(record,*)"qg_invent_state_f90: Perturbing invented state by ",ipert,"%."
   call fckit_log%info(record)
   zz=real(ipert,kind_real)/100.0_kind_real
-  do jy=1,flds%ny
-  do jx=1,flds%nx
+  do jy=1,flds%geom%ny
+  do jx=1,flds%geom%nx
     flds%x(jx,jy,1) = (1.0_kind_real+zz)*flds%x(jx,jy,1)
     flds%x(jx,jy,2) = (1.0_kind_real-zz)*flds%x(jx,jy,2)
   enddo
   enddo
 endif
 
-icentre=flds%nx/4
-jcentre=3*flds%ny/4
-do jj=1,flds%ny
-  do ii=1,flds%nx
-    distx = real(min(icentre-ii,flds%nx-(icentre-ii)),kind_real) * deltax0
+icentre=flds%geom%nx/4
+jcentre=3*flds%geom%ny/4
+do jj=1,flds%geom%ny
+  do ii=1,flds%geom%nx
+    distx = real(min(icentre-ii,flds%geom%nx-(icentre-ii)),kind_real) * deltax0
     disty = real(abs(jj-jcentre),kind_real) * deltay0
     rs(ii,jj) = rsmax*exp(-(distx*distx+disty*disty)/(worog*worog))
   enddo
 enddo
 
-call calc_pv(flds%nx,flds%ny,pv,flds%x,flds%x_north,flds%x_south, &
+call calc_pv(flds%geom%nx,flds%geom%ny,pv,flds%x,flds%x_north,flds%x_south, &
            & f1,f2,deltax,deltay,bet,rs)
 
-do jx=1,flds%nx
+do jx=1,flds%geom%nx
   flds%q_south(jx,1) = 2.0_kind_real*pv(jx,1,1)-pv(jx,2,1)
   flds%q_south(jx,2) = 2.0_kind_real*pv(jx,1,2)-pv(jx,2,2)
 enddo
-do jx=1,flds%nx
-  flds%q_north(jx,1) = 2.0_kind_real*pv(jx,flds%ny,1)-pv(jx,flds%ny-1,1)
-  flds%q_north(jx,2) = 2.0_kind_real*pv(jx,flds%ny,2)-pv(jx,flds%ny-1,2)
+do jx=1,flds%geom%nx
+  flds%q_north(jx,1) = 2.0_kind_real*pv(jx,flds%geom%ny,1)-pv(jx,flds%geom%ny-1,1)
+  flds%q_north(jx,2) = 2.0_kind_real*pv(jx,flds%geom%ny,2)-pv(jx,flds%geom%ny-1,2)
 enddo
 
 deallocate(pv,rs)

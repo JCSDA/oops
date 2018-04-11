@@ -28,7 +28,6 @@
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
-#include "oops/interface/State.h"
 #include "oops/runs/Test.h"
 #include "test/TestEnvironment.h"
 #include "util/DateTime.h"
@@ -40,7 +39,6 @@ namespace test {
 
 template <typename MODEL> class IncrementFixture : private boost::noncopyable {
   typedef oops::Geometry<MODEL>       Geometry_;
-  typedef oops::State<MODEL>          State_;
 
  public:
   static const Geometry_       & resol()   {return *getInstance().resol_;}
@@ -61,11 +59,7 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
     const eckit::LocalConfiguration varConfig(TestEnvironment::config(), "Variables");
     ctlvars_.reset(new oops::Variables(varConfig));
 
-//  Setup reference state
-    const eckit::LocalConfiguration fgconf(TestEnvironment::config(), "State");
-    State_ xx(*resol_, fgconf);
-
-    time_.reset(new util::DateTime(xx.validTime()));
+    time_.reset(new util::DateTime(TestEnvironment::config().getString("TestDate")));
   }
 
   ~IncrementFixture<MODEL>() {}

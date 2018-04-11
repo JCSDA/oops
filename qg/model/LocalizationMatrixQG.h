@@ -13,15 +13,13 @@
 
 #include <ostream>
 #include <string>
-#include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
-#include "util/DateTime.h"
+#include "oops/interface/LocalizationBase.h"
 #include "util/ObjectCounter.h"
-#include "util/Printable.h"
 
 #include "model/QgFortran.h"
+#include "model/Qgtraits.h"
 
 // Forward declarations
 namespace qg {
@@ -31,19 +29,19 @@ namespace qg {
 /// Localization matrix for QG model.
 
 // -----------------------------------------------------------------------------
-class LocalizationMatrixQG: public util::Printable,
-                            private boost::noncopyable,
+class LocalizationMatrixQG: public oops::LocalizationBase<QgTraits>,
                             private util::ObjectCounter<LocalizationMatrixQG> {
  public:
   static const std::string classname() {return "qg::LocalizationMatrixQG";}
 
   LocalizationMatrixQG(const GeometryQG &, const eckit::Configuration &);
   ~LocalizationMatrixQG();
+
   void multiply(IncrementQG &) const;
 
  private:
   void print(std::ostream &) const;
-  F90lclz keyFtnConfig_;
+  F90lclz keyLocal_;
 };
 // -----------------------------------------------------------------------------
 

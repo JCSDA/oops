@@ -47,7 +47,7 @@ Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(
 // -----------------------------------------------------------------------------
 
 Run::~Run() {
-    LibOOPS::instance().finalise();
+  LibOOPS::instance().finalise();
 }
 
 // -----------------------------------------------------------------------------

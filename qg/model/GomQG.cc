@@ -31,6 +31,11 @@ GomQG::GomQG(const eckit::Configuration & config, const oops::Variables &) {
   qg_gom_read_file_f90(keyGom_, &conf);
 }
 // -----------------------------------------------------------------------------
+//Copy constructor
+GomQG::GomQG(const GomQG & other) {
+    //qg_gom_assign(keyGom_, other.keyGom_)
+}
+// -----------------------------------------------------------------------------
 GomQG::~GomQG() {
   qg_gom_delete_f90(keyGom_);
 }
@@ -43,11 +48,22 @@ void GomQG::zero() {
    qg_gom_random_f90(keyGom_);
  }
 // -----------------------------------------------------------------------------
+GomQG & GomQG::operator=(const GomQG & rhs) {
+  const int keyGomRhs = rhs.keyGom_;
+  qg_gom_assign_f90(keyGom_, keyGomRhs);
+  return *this;
+}
+// -----------------------------------------------------------------------------
 GomQG & GomQG::operator*=(const double & zz) {
   qg_gom_mult_f90(keyGom_, zz);
   return *this;
 }
 // -----------------------------------------------------------------------------
+GomQG & GomQG::operator+=(const GomQG & other) {
+  qg_gom_add_f90(keyGom_, other.keyGom_);
+  return *this;
+}
+// -----------------------------------------------------------------------------  
 double GomQG::dot_product_with(const GomQG & other) const {
   double zz;
   qg_gom_dotprod_f90(keyGom_, other.keyGom_, zz);

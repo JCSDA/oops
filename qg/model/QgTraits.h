@@ -17,7 +17,6 @@
 #include "model/GeometryQG.h"
 #include "model/GomQG.h"
 #include "model/IncrementQG.h"
-#include "model/LocalizationMatrixQG.h"
 #include "model/LocationsQG.h"
 #include "model/ModelQG.h"
 #include "model/ModelBias.h"
@@ -34,6 +33,7 @@ namespace qg {
 
 struct QgTraits {
   static std::string name() {return "QG";}
+  static std::string nameCovar() {return "QgError";}
 
   typedef qg::GeometryQG            Geometry;
 
@@ -55,8 +55,6 @@ struct QgTraits {
 
   typedef qg::GomQG                 GeoVaLs;
   typedef qg::LocationsQG           Locations;
-
-  typedef qg::LocalizationMatrixQG  LocalizationMatrix;
 };
 
 }  // namespace qg

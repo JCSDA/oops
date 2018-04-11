@@ -23,7 +23,7 @@
         }
       },
       "Covariance": {
-        "covariance": "static",
+        "covariance": "QgError",
         "standard_deviation": "0.8",
         "vertical_correlation": "0.2",
         "horizontal_length_scale": "1e6",

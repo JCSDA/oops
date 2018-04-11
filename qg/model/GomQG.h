@@ -34,6 +34,7 @@ class GomQG : public util::Printable,
 
   GomQG(const LocationsQG &, const oops::Variables &);
   GomQG(const eckit::Configuration &, const oops::Variables &);
+  GomQG(const GomQG &);
 
   explicit GomQG(): keyGom_(0) {}
   explicit GomQG(int & fgom): keyGom_(fgom) {}
@@ -42,7 +43,9 @@ class GomQG : public util::Printable,
 
   void zero();
   void random();
+  GomQG & operator=(const GomQG &);  
   GomQG & operator*=(const double &);
+  GomQG & operator+=(const GomQG &);  
   double dot_product_with(const GomQG &) const;
   void read(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;

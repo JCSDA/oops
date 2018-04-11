@@ -22,7 +22,7 @@ set( ENABLE_LARGE_FILE_SUPPORT OFF CACHE BOOL "Disable testing of large file sup
 
 include( ecbuild_system NO_POLICY_SCOPE )
 
-ecbuild_requires_macro_version( 2.5 )
+ecbuild_requires_macro_version( 2.7 )
 
 ################################################################################
 # Project
@@ -58,23 +58,24 @@ if (NOT HAVE_LAPACK)
   ecbuild_error("LAPACK_LIBRARIES not defined")
 endif()
 
+# NetCDF
+set( NETCDF_F90 ON CACHE BOOL "Compile with Fortran NetCDF" )
+find_package( NetCDF REQUIRED )
+include_directories( ${NETCDF_INCLUDE_DIR} )
+
 # eckit
 ecbuild_use_package( PROJECT eckit VERSION 0.18.0 REQUIRED )
 include_directories( ${ECKIT_INCLUDE_DIRS} )
 
-# fckit (optional for now)
+# fckit
 ecbuild_use_package( PROJECT fckit VERSION 0.4.1 REQUIRED )
-ecbuild_add_option( FEATURE FCTEST
-                    DEFAULT ${ENABLE_TESTS}
-                    DESCRIPTION "Fortran Unit Testing Framework"
-                    REQUIRED_PACKAGES "PROJECT fckit" )
 include_directories( ${FCKIT_INCLUDE_DIRS} )
 
 ################################################################################
 # Export package info
 ################################################################################
 
-list( APPEND OOPS_TPLS LAPACK eckit )
+list( APPEND OOPS_TPLS LAPACK NetCDF eckit fckit )
 
 set( OOPS_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/src
                        ${CMAKE_Fortran_MODULE_DIRECTORY} )
@@ -92,10 +93,6 @@ endforeach()
 ################################################################################
 # Sources
 ################################################################################
-
-if ( HAVE_MPI AND NOT ECKIT_HAVE_MPI )
-  ecbuild_error("OOPS was requested to build with MPI but eckit wasn't built with MPI: ECKIT_HAVE_MPI = ${ECKIT_HAVE_MPI}")
-endif()
 
 include( oops_compiler_flags )
 include_directories( ${OOPS_INCLUDE_DIRS} ${OOPS_EXTRA_INCLUDE_DIRS} )
@@ -118,4 +115,3 @@ ecbuild_install_project( NAME oops )
 
 # print the summary of the configuration
 ecbuild_print_summary()
-

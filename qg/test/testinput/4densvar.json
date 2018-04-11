@@ -74,7 +74,7 @@
       },
       "Covariance": {
         "static": {
-          "covariance": "static",
+          "covariance": "QgError",
           "standard_deviation": "0.8",
           "vertical_correlation": "0.2",
           "horizontal_length_scale": "1e6",
@@ -90,6 +90,7 @@
             },
             "date": "2010-01-01T00:00:00Z",
             "localization": {
+              "localization": "QG",
               "standard_deviation": "1.0",
               "vertical_correlation": "0.4",
               "horizontal_length_scale": "2e6",
@@ -126,6 +127,7 @@
             },
             "date": "2010-01-01T01:00:00Z",
             "localization": {
+              "localization": "QG",
               "standard_deviation": "1.0",
               "vertical_correlation": "0.4",
               "horizontal_length_scale": "2e6",
@@ -162,6 +164,7 @@
             },
             "date": "2010-01-01T02:00:00Z",
             "localization": {
+              "localization": "QG",
               "standard_deviation": "1.0",
               "vertical_correlation": "0.4",
               "horizontal_length_scale": "2e6",
@@ -198,6 +201,7 @@
             },
             "date": "2010-01-01T03:00:00Z",
             "localization": {
+              "localization": "QG",
               "standard_deviation": "1.0",
               "vertical_correlation": "0.4",
               "horizontal_length_scale": "2e6",
@@ -234,6 +238,7 @@
             },
             "date": "2010-01-01T04:00:00Z",
             "localization": {
+              "localization": "QG",
               "standard_deviation": "1.0",
               "vertical_correlation": "0.4",
               "horizontal_length_scale": "2e6",
@@ -270,6 +275,7 @@
             },
             "date": "2010-01-01T05:00:00Z",
             "localization": {
+              "localization": "QG",
               "standard_deviation": "1.0",
               "vertical_correlation": "0.4",
               "horizontal_length_scale": "2e6",
@@ -306,6 +312,7 @@
             },
             "date": "2010-01-01T06:00:00Z",
             "localization": {
+              "localization": "QG",
               "standard_deviation": "1.0",
               "vertical_correlation": "0.4",
               "horizontal_length_scale": "2e6",
@@ -342,6 +349,7 @@
             },
             "date": "2010-01-01T07:00:00Z",
             "localization": {
+              "localization": "QG",
               "standard_deviation": "1.0",
               "vertical_correlation": "0.4",
               "horizontal_length_scale": "2e6",
@@ -378,6 +386,7 @@
             },
             "date": "2010-01-01T08:00:00Z",
             "localization": {
+              "localization": "QG",
               "standard_deviation": "1.0",
               "vertical_correlation": "0.4",
               "horizontal_length_scale": "2e6",
@@ -414,6 +423,7 @@
             },
             "date": "2010-01-01T09:00:00Z",
             "localization": {
+              "localization": "QG",
               "standard_deviation": "1.0",
               "vertical_correlation": "0.4",
               "horizontal_length_scale": "2e6",
@@ -450,6 +460,7 @@
             },
             "date": "2010-01-01T10:00:00Z",
             "localization": {
+              "localization": "QG",
               "standard_deviation": "1.0",
               "vertical_correlation": "0.4",
               "horizontal_length_scale": "2e6",
@@ -486,6 +497,7 @@
             },
             "date": "2010-01-01T11:00:00Z",
             "localization": {
+              "localization": "QG",
               "standard_deviation": "1.0",
               "vertical_correlation": "0.4",
               "horizontal_length_scale": "2e6",
@@ -522,6 +534,7 @@
             },
             "date": "2010-01-01T12:00:00Z",
             "localization": {
+              "localization": "QG",
               "standard_deviation": "1.0",
               "vertical_correlation": "0.4",
               "horizontal_length_scale": "2e6",

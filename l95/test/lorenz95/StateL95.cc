@@ -41,7 +41,7 @@ class StateTestFixture : TestFixture {
     file_.reset(new eckit::LocalConfiguration(TestConfig::config(), "state"));
     eckit::LocalConfiguration res(TestConfig::config(), "resolution");
     resol_.reset(new lorenz95::Resolution(res));
-    date_str_ = "2014-09-12T09:35:00Z";
+    date_str_ = file_->getString("date");
     time_.reset(new util::DateTime(date_str_));
     vars_.reset(new oops::Variables(TestConfig::config()));
   }
@@ -62,7 +62,6 @@ BOOST_FIXTURE_TEST_SUITE(test_StateL95, StateTestFixture)
     BOOST_CHECK(xx.get() != NULL);
   }
 // -----------------------------------------------------------------------------
-
   BOOST_AUTO_TEST_CASE(test_stateL95_readin_constructor) {
     boost::scoped_ptr<lorenz95::StateL95> xx(new lorenz95::StateL95(*resol_, *file_));
     BOOST_CHECK(xx.get() != NULL);
@@ -200,17 +199,6 @@ BOOST_FIXTURE_TEST_SUITE(test_StateL95, StateTestFixture)
     for (int i = 0; i < resol_->npoints(); ++i) {
       BOOST_CHECK_EQUAL((xx.getField())[i], doubleVec[i]);
     }
-  }
-// -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_stateL95_timeUpdate) {
-    lorenz95::StateL95 xx(*resol_, *vars_, *time_);
-
-    util::Duration dur(10);
-    std::string updated_date_string("2014-09-12T09:35:10Z");
-
-    xx.validTime() += dur;
-
-    BOOST_CHECK_EQUAL(xx.validTime().toString(), updated_date_string);
   }
 // -----------------------------------------------------------------------------
 /*

@@ -8,16 +8,40 @@
   "Variables": {
     "variables": ["x"]
   },
+  "Locations": {},
   "TestDate": "2009-12-31T00:00:00Z",
   "State": {
     "filename": "Data/truth.fc.2009-12-15T00:00:00Z.P16D",
     "date": "2009-12-31T00:00:00Z"
   },
   "StateTest": {
+    "StateFile": {
+      "filename": "Data/truth.fc.2009-12-15T00:00:00Z.P16D",
+      "date": "2009-12-31T00:00:00Z"
+    },
     "date": "2009-12-31T00:00:00Z",
-    "norm": "15.010",
-    "tolerance": "0.005"
+    "norm-file": "15.010355026",
+    "StateGenerate" : {
+      "filename": "Data/truth.fc.2009-12-15T00:00:00Z.P16D",
+      "date": "2009-12-31T00:00:00Z",
+      "mean": 8.0,
+      "sinus": 2.0
+    },
+    "norm-gen": "15.010355026",
+    "tolerance": 1.0e-8,
+    "Locations": {
+      "positions": [0.717]
+    },
+    "Variables": {
+      "variables": ["x"]
+    },
+    "values": [6.042838]
   },
+  "LinearObsOpTest": {
+    "testiterTL": "10",
+    "toleranceTL": "1.0e-8",
+    "toleranceAD": "1.0e-10"
+  },    
   "ModelBias": null,
   "Model": {
     "tstep": "PT1H",
@@ -30,7 +54,7 @@
     "tolerance": "0.005"
   },
   "Covariance": {
-    "covariance": "static",
+    "covariance": "QgError",
     "standard_deviation": "0.8",
     "vertical_correlation": "0.2",
     "horizontal_length_scale": "1e6",
@@ -41,6 +65,7 @@
     "tolerance": "0.01"
   },
   "Localization": {
+    "localization": "QG",
     "standard_deviation": "1.0",
     "vertical_correlation": "0.4",
     "horizontal_length_scale": "2e6",

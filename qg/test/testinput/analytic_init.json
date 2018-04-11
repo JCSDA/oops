@@ -5,22 +5,21 @@
     "ny": "20",
     "bc": "0"
   },
-  "Variables": {
-      "variables": ["x","q","u","v"]
-  },
-  "TestDate": "2009-12-31T00:00:00Z",
-  "State": {
-    "analytic_init": "dcmip-test-1-1",
-    "variables": ["x","q","u","v"],
-    "date": "2009-12-31T00:00:00Z",
-    "top_layer_depth": "5500.0",
-    "bottom_layer_depth": "4500.0"
-  },
   "StateTest": {
+    "StateFile": {
+      "filename": "Data/truth.fc.2009-12-15T00:00:00Z.P16D",
+      "date": "2009-12-31T00:00:00Z"
+    },
     "date": "2009-12-31T00:00:00Z",
-    "norm": "4.663",
-    "tolerance": "0.005"
-  },
-  "Observations": {
+    "norm-file": "15.010355026",
+    "StateGenerate" : {
+      "analytic_init": "dcmip-test-1-1",
+      "variables": ["x","q","u","v"],
+      "date": "2009-12-31T00:00:00Z",
+      "top_layer_depth": "5500.0",
+      "bottom_layer_depth": "4500.0"
+    },
+    "norm-gen": "4.66316168196",
+    "tolerance": 1.0e-8
   }
 }

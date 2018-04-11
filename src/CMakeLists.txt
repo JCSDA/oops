@@ -171,6 +171,7 @@ oops/interface/LinearModel.h
 oops/interface/LinearObsOperBase.h
 oops/interface/LinearObsOperator.h
 oops/interface/Localization.h
+oops/interface/LocalizationBase.h
 oops/interface/Locations.h
 oops/interface/Model.h
 oops/interface/ModelAuxControl.h
@@ -237,7 +238,7 @@ ecbuild_add_library( TARGET     oops
                      SOURCES    
                                 ${FORTRAN_BINDINGS}
                                 ${oops_src_files}
-                     LIBS       ${LAPACK_LIBRARIES} fckit eckit_mpi eckit
+                     LIBS       ${LAPACK_LIBRARIES} ${NETCDF_LIBRARIES} fckit eckit_mpi eckit
                      INSTALL_HEADERS LISTED
                      LINKER_LANGUAGE ${OOPS_LINKER_LANGUAGE}
                    )
@@ -266,4 +267,3 @@ add_fctest( TARGET  test_util_duration_intfb.x
             CONDITION HAVE_FCTEST
             LIBS    oops )
 endif()
-

@@ -9,14 +9,12 @@
  */
 
 #include "model/QgTraits.h"
-#include "model/instantiateQgLocalizationFactory.h"
-#include "oops/runs/Variational.h"
+#include "oops/runs/HofX.h"
 #include "oops/runs/Run.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  qg::instantiateQgLocalizationFactory();
-  oops::Variational<qg::QgTraits> var;
-  run.execute(var);
+  oops::HofX<qg::QgTraits> hofx;
+  run.execute(hofx);
   return 0;
 };

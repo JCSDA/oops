@@ -9,7 +9,7 @@
     "resol": "40"
   },
   "Covariance": {
-    "covariance": "static",
+    "covariance": "L95Error",
     "standard_deviation": "0.6",
     "length_scale": "1.0",
     "date": "2010-01-01T03:00:00Z"
