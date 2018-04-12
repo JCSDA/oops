@@ -10,10 +10,9 @@
 
 #include "lorenz95/LocsL95.h"
 
-#include "eckit/config/LocalConfiguration.h"
+#include "eckit/config/Configuration.h"
 #include "lorenz95/ObsTable.h"
 #include "util/DateTime.h"
-#include "util/Logger.h"
 
 namespace lorenz95 {
 

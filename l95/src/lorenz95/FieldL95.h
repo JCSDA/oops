@@ -17,10 +17,6 @@
 
 #include "util/Printable.h"
 
-namespace eckit {
-  class Configuration;
-}
-
 // Forward declarations
 namespace eckit {
   class Configuration;

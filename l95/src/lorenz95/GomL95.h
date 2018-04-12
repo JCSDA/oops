@@ -39,10 +39,10 @@ class GomL95 : public util::Printable,
   explicit GomL95(const GomL95 &);
   ~GomL95();
 
-  GomL95 & operator*=(const double &);
-  GomL95 & operator+=(const GomL95 &);
   void zero();
   void random();
+  GomL95 & operator*=(const double &);
+  GomL95 & operator+=(const GomL95 &);
   double dot_product_with(const GomL95 &) const;
   void read(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;

@@ -56,9 +56,9 @@ Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(
 
 Run::~Run() {
 // Finalize MPI for NICAS
-    mpl_end_f90();
+  mpl_end_f90();
 
-    LibOOPS::instance().finalise();
+  LibOOPS::instance().finalise();
 }
 
 // -----------------------------------------------------------------------------

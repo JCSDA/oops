@@ -15,9 +15,9 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/generic/UnstructuredGrid.h"
-#include "util/Logger.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
+#include "util/Logger.h"
 #include "util/abor1_cpp.h"
 
 #include "lorenz95/FieldL95.h"

@@ -107,7 +107,9 @@
       "tolerance": 1.0e-8
     }
   ]},
-  "LinObsOpTest": {
-    "tlm_tol": "1e-8"
+  "LinearObsOpTest": {
+    "testiterTL": "10",
+    "toleranceTL": "1.0e-14",
+    "toleranceAD": "1.0e-14"
   }
 }

@@ -346,6 +346,32 @@ call read_file(fld, c_conf, fdate)
 end subroutine qg_field_read_file_c
 
 ! ------------------------------------------------------------------------------
+subroutine qg_field_analytic_init_c(c_key_fld, c_key_geom, c_conf, c_dt) bind(c,name='qg_field_analytic_init_f90')
+    
+  use iso_c_binding
+  use qg_fields
+  use qg_geom_mod
+  use datetime_mod
+
+  implicit none
+  integer(c_int), intent(in) :: c_key_fld  !< Fields
+  integer(c_int), intent(in) :: c_key_geom  !< Grid information
+  type(c_ptr), intent(in)    :: c_conf !< Configuration
+  type(c_ptr), intent(inout) :: c_dt   !< DateTime
+  
+  type(qg_field), pointer :: fld
+  type(qg_geom), pointer :: geom
+  type(datetime) :: fdate
+
+  call qg_field_registry%get(c_key_fld,fld)
+  call qg_geom_registry%get(c_key_geom,geom)
+  call c_f_datetime(c_dt, fdate)
+
+  call analytic_init(fld,geom,c_conf,fdate)
+  
+end subroutine qg_field_analytic_init_c
+
+! ------------------------------------------------------------------------------
 
 subroutine qg_field_write_file_c(c_key_fld, c_conf, c_dt) bind(c,name='qg_field_write_file_f90')
 use iso_c_binding

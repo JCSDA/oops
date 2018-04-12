@@ -44,10 +44,24 @@ StateQG::StateQG(const GeometryQG & resol, const eckit::Configuration & file)
   : fields_(), stash_()
 {
 // Should get variables from file. YT
-  const std::vector<std::string> vv{"x","bc"};
-  oops::Variables vars(vv);
+  const std::vector<std::string> *vv;
+  
+  if (file.has("variables"))
+    vv = new std::vector<std::string>(file.getStringVector("variables"));          
+  else
+    vv = new std::vector<std::string>({"x","bc"});    
+
+  oops::Variables vars(*vv);
   fields_.reset(new FieldsQG(resol, vars, util::DateTime()));
-  fields_->read(file);
+
+  if (file.has("analytic_init"))
+    fields_->analytic_init(file,resol);
+  else if (file.has("read_from_file"))
+    // read_from_file included for backwards compatability
+    (file.getInt("read_from_file") == 1) ?
+      fields_->read(file) : fields_->analytic_init(file,resol);
+  else
+    fields_->read(file);
 
   ASSERT(fields_);
   oops::Log::trace() << "StateQG::StateQG created and read in." << std::endl;

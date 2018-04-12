@@ -27,9 +27,8 @@ public :: qg_field, &
         & self_add, self_schur, self_sub, self_mul, axpy, &
         & dot_prod, add_incr, diff_incr, &
         & read_file, write_file, gpnorm, fldrms, &
-        & change_resol, interp_tl, interp_ad, convert_to_ug, convert_from_ug
-
-! ------------------------------------------------------------------------------
+        & change_resol, interp_tl, interp_ad, convert_to_ug, convert_from_ug, &
+        & analytic_init
 
 public :: qg_field_registry
 
@@ -55,6 +54,8 @@ type :: qg_field
   character(len=1), allocatable :: fldnames(:)      !< Variable identifiers
 end type qg_field
 
+logical :: netcdfio = .true.
+
 #define LISTED_TYPE qg_field
 
 !> Linked list interface - defines registry_t type
@@ -64,11 +65,6 @@ end type qg_field
 type(registry_t) :: qg_field_registry
 
 ! ------------------------------------------------------------------------------
-
-logical :: netcdfio = .true.
-
-! ------------------------------------------------------------------------------
-
 contains
 ! ------------------------------------------------------------------------------
 !> Linked list implementation
@@ -79,7 +75,7 @@ contains
 subroutine create(self, geom, vars)
 implicit none
 type(qg_field), intent(inout) :: self
-type(qg_geom), pointer,  intent(in)    :: geom
+type(qg_geom), target, intent(in) :: geom
 type(qg_vars),  intent(in)    :: vars
 integer :: ioff
 
@@ -639,6 +635,264 @@ call check(fld)
 
 return
 end subroutine read_file
+
+! ------------------------------------------------------------------------------
+!> Analytic Initialization for the QG model
+!!
+!! \details **analytic_init()** initializes the qg field using one of several alternative idealized analytic models.
+!! This is intended to faciltitate testing by eliminating the need to read in the initial state
+!! from a file and by providing exact expressions to test interpolations.
+!! This function is activated by setting the initial.analytic_init field in the configuration file.
+!!
+!! Initialization options that begin with "dcmip" refer to tests defined by the multi-institutional
+!! 2012 [Dynamical Core Intercomparison Project](https://earthsystealcmcog.org/projects/dcmip-2012)
+!! and the associated Summer School, sponsored by NOAA, NSF, DOE, NCAR, and the University of Michigan.
+!!
+!! Currently implemented options for analytic_init include:
+!! * baroclinic-instability: A two-layer flow that is baroclinically unstable in the presence of non-zero orography
+!! * dcmip-test-1-1: 3D deformational flow
+!! * dcmip-test-1-2: 3D Hadley-like meridional circulation
+!!
+!! \author M. Miesch (JCSDA, adapted from a pre-existing call to invent_state)
+!! \date March 7, 2018: Created
+!!
+!! \warning If you use the dcmip routines, be sure to include u and v in the variables list.
+!!
+!! \warning For dcmip initial conditions, this routine computes the streamfunction x and the potential
+!! vorticity q from the horizontal winds u and v.  Since q (or alternatively x) is the state variable
+!! for the evolution of the QG model, only the non-divergent (vortical) component of the horizontal
+!! flow is captured.  In other words, u and v are projected onto a flow field with zero horizontal
+!! divergence.  Furthermore, this projection neglects geometric curvature factors.
+!!
+!! \warning For all but the baroclinic-instability option, the PV here is computed assuming zero
+!! orography.  For particular model configurations, the orography is defined in c_qg_setup()
+!! [c_qg_model.F90] and the PV is recalculated in c_qg_prepare_integration() [c_qg_model.F90]
+!! before the integration of the model commences.
+!!
+
+subroutine analytic_init(fld, geom, config, vdate)
+
+  use iso_c_binding
+  use datetime_mod
+  use fckit_log_module, only : fckit_log
+  use dcmip_initial_conditions_test_1_2_3, only : test1_advection_deformation, test1_advection_hadley
+  use qg_constants
+
+  implicit none
+  type(qg_field), intent(inout) :: fld      !< Fields
+  type(qg_geom), intent(inout)  :: geom     !< Grid information
+  type(c_ptr), intent(in)       :: config   !< Configuration
+  type(datetime), intent(inout) :: vdate    !< DateTime
+
+  character(len=30) ::ic
+  character(len=20) :: sdate
+  character(len=1024)  :: buf
+  real(kind=kind_real) :: d1, d2, height(2), z, f1, f2
+  real(kind=kind_real) :: deltax,deltay
+  real(kind=kind_real) :: p0,u0,v0,w0,t0,phis0,ps0,rho0,hum0,q1,q2,q3,q4
+  real(kind=kind_real), allocatable :: rs(:,:)
+  Integer :: ix, iy, il
+
+  if (config_element_exists(config,"analytic_init")) then
+     ic = Trim(config_get_string(config,len(ic),"analytic_init"))
+  else
+     ! this is mainly for backward compatibility
+     ic = "baroclinic-instability"
+  endif
+
+  call fckit_log%warning("qg_fields:analytic_init: "//IC)
+  sdate = config_get_string(config,len(sdate),"date")
+  write(buf,*) 'validity date is: '//sdate
+  call fckit_log%info(buf)
+  call datetime_set(sdate,vdate)
+    
+  ! To use the DCMIP routines we need a vertical coordinate
+  ! assume 2 levels for now but easily to generalize as needed
+  d1  = config_get_real(config,"top_layer_depth")
+  d2  = config_get_real(config,"bottom_layer_depth")
+
+  height(1) = 0.5d0*d2
+  height(2) = d2 + 0.5d0*d1
+
+  deltax = domain_zonal/(scale_length*real(geom%nx,kind_real))
+  deltay = domain_meridional/(scale_length*real(geom%ny,kind_real))
+
+  f1 = f0*f0*scale_length*scale_length/(g*dlogtheta*d1)
+  f2 = f0*f0*scale_length*scale_length/(g*dlogtheta*d2)
+
+  allocate(rs(geom%nx,geom%ny))
+  rs = 0.0_kind_real
+  
+  !--------------------------------------
+  init_option: select case (ic)
+
+     case ("baroclinic-instability")
+        call invent_state(fld,config)   
+
+     case ("dcmip-test-1-1")
+
+        do il = 1, fld%nl
+           z = height(il)
+           do iy = 1,fld%geom%ny ; do ix = 1, fld%geom%nx 
+
+              call test1_advection_deformation(geom%lon(ix),geom%lat(iy),p0,z,1,&
+                   u0,v0,w0,t0,phis0,ps0,rho0,hum0,q1,q2,q3,q4)
+              
+              fld%u(ix,iy,il) = u0 / ubar
+              fld%v(ix,iy,il) = v0 / ubar
+              
+           enddo; enddo
+        enddo
+
+        call calc_streamfunction(geom%nx,geom%ny,fld%x,fld%u,fld%v,deltax,deltay)
+
+        call calc_pv(geom%nx,geom%ny,fld%q,fld%x,fld%x_north,fld%x_south,&
+             f1,f2,deltax,deltay,bet,rs,fld%lbc)
+             
+     case ("dcmip-test-1-2")
+
+        do il = 1, fld%nl
+           z = height(il)
+           do iy = 1,fld%geom%ny ; do ix = 1, fld%geom%nx 
+
+              call test1_advection_hadley(geom%lon(ix),geom%lat(iy),p0,z,1,&
+                   u0,v0,w0,t0,phis0,ps0,rho0,hum0,q1)
+           
+              fld%u(ix,iy,il) = u0 / ubar
+              fld%v(ix,iy,il) = v0 / ubar
+              
+           enddo; enddo
+        enddo
+
+        call calc_streamfunction(geom%nx,geom%ny,fld%x,fld%u,fld%v,deltax,deltay)
+
+        call calc_pv(geom%nx,geom%ny,fld%q,fld%x,fld%x_north,fld%x_south,&
+             f1,f2,deltax,deltay,bet,rs,fld%lbc)
+
+     case Default
+
+        call abor1_ftn ("qg_fields:analytic_init not properly defined")
+        
+  end select init_option
+  
+  !--------------------------------------
+
+  call check(fld)
+
+  return
+  
+end subroutine analytic_init
+
+! ------------------------------------------------------------------------------
+!> Calculate Streamfunction from u and v
+!!
+!! \details **calc_streamfunction()** computes the streamfunction x from the velocities u and v.
+!! It was originally developed to support the dcmip initial conditions in analytic_init()
+!! but is potentially of broader applicability.
+!! The algorithm first computes the vertical vorticity and then inverts the
+!! resulting Laplacian for x.
+!!
+!! \author M. Miesch 
+!! \date March 7, 2018: Created
+!!
+!! \warning This routine currently does not take into account latitudinal boundary conditions on x.  
+
+subroutine calc_streamfunction(kx,ky,x,u,v,dx,dy)
+
+  integer, intent(in) :: kx           !< Zonal grid dimension
+  integer, intent(in) :: ky           !< Meridional grid dimension
+  real(kind=kind_real), intent(out)   :: x(kx,ky,2)   !< Streamfunction
+  real(kind=kind_real), intent(in)    :: u(kx,ky,2)   !< zonal velocity (non-dimensional)
+  real(kind=kind_real), intent(in)    :: v(kx,ky,2)   !< meridional velocity (non-dimensional)
+  real(kind=kind_real), intent(in)    :: dx           !< Zonal grid spacing (non-dimensional)
+  real(kind=kind_real), intent(in)    :: dy           !< Meridional grid spacing (non-dimensional)
+  
+  real(kind=kind_real), allocatable :: vort(:,:), psi(:,:)
+  real(kind=kind_real), allocatable :: dudy(:), dvdx(:)
+  integer :: ix, iy, il
+
+  allocate(vort(kx,ky),psi(kx,ky))
+  allocate(dudy(ky),dvdx(kx))
+
+  ! assume two levels - easy to generalize if needed
+  do il = 1, 2
+
+     ! compute vertical vorticity from u and v
+     do iy=1,ky
+        call deriv_1D(dvdx,v(:,iy,il),kx,dx,periodic=.true.)
+        vort(:,iy) = dvdx
+     enddo
+
+     do ix=1,kx
+        call deriv_1D(dudy,u(ix,:,il),ky,dy)
+        vort(ix,:) = vort(ix,:) - dudy
+     enddo
+        
+     ! invert the Laplacian to get the streamfunction
+     call solve_helmholz(psi,vort,0.0_kind_real,kx,ky,dx,dy)
+     x(:,:,il) = psi
+        
+  enddo
+
+  deallocate(vort,psi,dudy,dvdx)
+
+end subroutine calc_streamfunction
+
+! ------------------------------------------------------------------------------
+!> Finite Difference Derivative
+!!
+!! \details **deriv()** computes the first derivative of a function using a simple
+!! fourth-order, central-difference scheme
+!!
+!! \author M. Miesch 
+!! \date March 7, 2018: Created
+
+subroutine deriv_1d(df,f,n,delta,periodic)
+  
+  real(kind=kind_real), intent(In) :: f(:)     !< 1D function
+  real(kind=kind_real), intent(In) :: delta    !< grid spacing (assumed uniform)
+  Integer, intent(In) :: n                     !< Number of grid points
+  real(kind=kind_real), intent(InOut) :: df(:) !< result
+  logical, optional, intent(In) :: periodic    !< Set to true if the domain is periodic
+  
+  integer :: i
+  real(kind=kind_real) :: ho2, ho12
+  logical :: wrap
+
+  if (present(periodic)) then
+     wrap=Periodic
+  else
+     wrap=.false.
+  endIf
+  
+  ho2 = 1.0_kind_real/(2.0_kind_real*delta)
+  ho12 = 1.0_kind_real/(12.0_kind_real*delta)
+
+  ! interior points
+  do i=3,n-2 
+     df(i) = ho12*(f(i-2)-8.d0*f(i-1)+8.d0*f(i+1)-f(i+2))
+  enddo
+
+  if (wrap) then
+
+     df(1) = ho12*(f(n-1)-8.d0*f(n)+8.d0*f(2)-f(3))
+     df(2) = ho12*(f(n)-8.d0*f(1)+8.d0*f(3)-f(4))
+     df(N-1) = ho12*(f(n-3)-8.d0*f(n-2)+8.d0*f(n)-f(1))
+     df(N) = ho12*(f(n-2)-8.d0*f(n-1)+8.d0*f(1)-f(2))
+
+  else
+
+     ! left edge (lower order)
+     df(1) = ho2*(-3.d0*f(1)+4.d0*f(2)-f(3))
+     df(2) = ho12*(-3.d0*f(1)-10.d0*f(2)+18.d0*f(3)-6.d0*f(4)+f(5))                 
+
+     ! right edge (lower order)
+     df(n-1) = ho12*(3.d0*f(n)+10.d0*f(n-1)-18.d0*f(n-2)+6.d0*f(n-3)-f(n-4))                 
+     df(n) = ho2*(3.d0*f(n)-4.d0*f(n-1)+f(n-2))
+
+  endIf
+     
+end subroutine deriv_1d
 
 ! ------------------------------------------------------------------------------
 

@@ -17,9 +17,9 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "util/Logger.h"
+#include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/LocalizationBase.h"
-#include "oops/interface/Geometry.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 #include "util/Timer.h"
@@ -37,8 +37,8 @@ class Localization : public util::Printable,
                      private boost::noncopyable,
                      private util::ObjectCounter<Localization<MODEL> > {
   typedef LocalizationBase<MODEL>    LocalizationBase_;
+  typedef Geometry<MODEL>            Geometry_;
   typedef Increment<MODEL>           Increment_;
-  typedef Geometry<MODEL>               Geometry_;
 
  public:
   static const std::string classname() {return "oops::Localization";}

@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"

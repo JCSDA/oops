@@ -60,6 +60,7 @@ real(kind=kind_real) :: distx, disty
 type(duration) :: dtstep
 character(len=20) :: ststep
 character(len=160) :: record
+character(len=30) :: otype
 
 ! ------------------------------------------------------------------------------
 
@@ -93,22 +94,41 @@ config%deltay0 = domain_meridional/real(config%ny+1,kind_real)
 config%deltax = config%deltax0/scale_length
 config%deltay = config%deltay0/scale_length
 
-!--- Orography = Gaussian hill centred on (icentre,jcentre)
+!--- Orography 
 
 allocate(config%rs(config%nx,config%ny))
 
-icentre=config%nx/4
-jcentre=3*config%ny/4
-do jj=1,config%ny
-  do ii=1,config%nx
-    distx = real(min(icentre-ii,config%nx-(icentre-ii)),kind_real) &
-         & *config%deltax0
-    disty = real(abs(jj-jcentre),kind_real) * config%deltay0
-    config%rs(ii,jj) = config%rsmax &
-                    & *exp(-(distx*distx+disty*disty)/(worog*worog))
-  enddo
-enddo
+if (config_element_exists(c_confspec,"orography")) then
+   otype = trim(config_get_string(c_confspec,len(otype),"orography"))
+else
+   ! This default value is for backward compatibility
+   otype = "bump"
+endif
 
+write(record,*)"qg_geom_mod: orography = "//otype
+call fckit_log%info(record)
+
+if (otype == "flat") then
+
+   config%rs=0.0_kind_real
+
+else ! we could add other options in the future 
+
+   !--- Gaussian hill centred on (icentre,jcentre)
+   icentre=config%nx/4
+   jcentre=3*config%ny/4
+   do jj=1,config%ny
+      do ii=1,config%nx
+         distx = real(min(icentre-ii,config%nx-(icentre-ii)),kind_real) &
+              & *config%deltax0
+         disty = real(abs(jj-jcentre),kind_real) * config%deltay0
+         config%rs(ii,jj) = config%rsmax &
+              & *exp(-(distx*distx+disty*disty)/(worog*worog))
+      enddo
+   enddo
+
+endif
+   
 return
 end subroutine c_qg_setup
 

@@ -50,7 +50,6 @@ template <typename MODEL> class StateFixture : private boost::noncopyable {
   static StateFixture<MODEL>& getInstance() {
     static StateFixture<MODEL> theStateFixture;
     return theStateFixture;
-
   }
 
   StateFixture<MODEL>() {
@@ -122,15 +121,15 @@ template <typename MODEL> void testStateInterpolation() {
 
   GeoVaLs_ gval(locs, vars);
 
-  xx.interpolate(locs, vars, gval);
-
-  std::vector<double> values;
-  Test_::test().get("values", values);
-  if (values.size() > 0) {
-    const double zz = std::sqrt(dot_product(gval, gval));
-    const double ref = values[0];
-    BOOST_CHECK_CLOSE(zz, ref, 0.5);
-  }
+//  xx.interpolate(locs, vars, gval);
+//
+//  std::vector<double> values;
+//  Test_::test().get("values", values);
+//  if (values.size() > 0) {
+//    const double zz = std::sqrt(dot_product(gval, gval));
+//    const double ref = values[0];
+//    BOOST_CHECK_CLOSE(zz, ref, 0.5);
+//  }
 }
 
 // -----------------------------------------------------------------------------

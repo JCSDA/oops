@@ -13,19 +13,18 @@
 
 #include <ostream>
 #include <string>
-#include <boost/scoped_ptr.hpp>
 
 #include "model/GeometryQG.h"
 #include "eckit/config/Configuration.h"
 #include "oops/interface/LocalizationBase.h"
-#include "util/DateTime.h"
 #include "util/ObjectCounter.h"
 
 #include "model/QgFortran.h"
-#include "model/QgTraits.h"
+#include "model/Qgtraits.h"
 
 // Forward declarations
 namespace qg {
+  class GeometryQG;
   class IncrementQG;
 
 /// Localization matrix for QG model.
@@ -38,11 +37,12 @@ class LocalizationMatrixQG: public oops::LocalizationBase<QgTraits>,
 
   LocalizationMatrixQG(const GeometryQG &, const eckit::Configuration &);
   ~LocalizationMatrixQG();
+
   void multiply(IncrementQG &) const;
 
  private:
   void print(std::ostream &) const;
-  int keyFtnConfig_;
+  F90lclz keyLocal_;
 };
 // -----------------------------------------------------------------------------
 

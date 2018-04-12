@@ -18,7 +18,6 @@
 #include <string>
 #include <mpi.h>
 
-#include "boost/date_time/posix_time/posix_time.hpp"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "eckit/config/Configuration.h"
@@ -110,12 +109,7 @@ LocalizationBase<MODEL>* LocalizationFactory<MODEL>::create(const Geometry_ & re
 template <typename MODEL>
 void LocalizationBase<MODEL>::multiply(Increment_ & dx) const {
   Log::trace() << "LocalizationBase<MODEL>::multiply starting" << std::endl;
-  MPI_Barrier(MPI_COMM_WORLD);
-  boost::posix_time::ptime ti = boost::posix_time::microsec_clock::local_time();
   this->multiply(dx.increment());
-  boost::posix_time::ptime t = boost::posix_time::microsec_clock::local_time();
-  boost::posix_time::time_duration diff = t - ti;
-  Log::info() << "Localization time: " << diff.total_nanoseconds()/1000 << " microseconds" << std::endl;
   Log::trace() << "LocalizationBase<MODEL>::multiply done" << std::endl;
 }
 

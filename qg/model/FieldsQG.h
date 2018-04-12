@@ -80,6 +80,7 @@ class FieldsQG : public util::Printable,
 
 // Utilities
   void read(const eckit::Configuration &);
+  void analytic_init(const eckit::Configuration &, const GeometryQG &);
   void write(const eckit::Configuration &) const;
   double norm() const;
   boost::shared_ptr<const GeometryQG> geometry() const {return geom_;}

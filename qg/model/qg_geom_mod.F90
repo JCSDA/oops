@@ -42,6 +42,7 @@ type(registry_t) :: qg_geom_registry
 ! ------------------------------------------------------------------------------
 contains
 ! ------------------------------------------------------------------------------
+
 !> Linked list implementation
 #include "util/linkedList_c.f"
 
@@ -54,7 +55,7 @@ type(c_ptr), intent(in)    :: c_conf
 
 integer :: ix,iy,nx_loc,ix_loc
 real(kind=kind_real) :: dx,dytot,dy
-real(kind=kind_real),parameter :: pi = acos(-1.0), req = 6371229.0
+real(kind=kind_real),parameter :: pi = acos(-1.0)
 type(qg_geom), pointer :: self
 
 call qg_geom_registry%init()

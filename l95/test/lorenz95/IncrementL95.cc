@@ -35,7 +35,7 @@ class IncrementTestFixture : TestFixture {
     file_.reset(new eckit::LocalConfiguration(TestConfig::config(), "state"));
     eckit::LocalConfiguration res(TestConfig::config(), "resolution");
     resol_.reset(new lorenz95::Resolution(res));
-    date_str_ = "2010-01-01T09:00:00Z";
+    date_str_ = file_->getString("date");
     time_.reset(new util::DateTime(date_str_));
     vars_.reset(new oops::Variables(TestConfig::config()));
   }
@@ -404,17 +404,6 @@ BOOST_FIXTURE_TEST_SUITE(test_IncrementL95, IncrementTestFixture)
   BOOST_AUTO_TEST_CASE(test_incrementL95_validTime) {
     lorenz95::IncrementL95 dx(*resol_, *vars_, *time_);
     BOOST_CHECK_EQUAL(dx.validTime().toString(), date_str_);
-  }
-// -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_incrementL95_timeUpdate) {
-    util::Duration dur("PT1H30M10S");
-    std::string updated_date_string("2010-01-01T10:30:10Z");
-
-    lorenz95::IncrementL95 dx(*resol_, *vars_, *time_);
-
-    dx.validTime() += dur;
-
-    BOOST_CHECK_EQUAL(dx.validTime().toString(), updated_date_string);
   }
 // -----------------------------------------------------------------------------
 /*

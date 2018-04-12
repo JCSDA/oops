@@ -57,39 +57,39 @@ template <typename MODEL> void testLinearity() {
 
   const double zero = 0.0;
   const double coef = 3.14;
-  const double tol = 1.0e-12;
+  const double tol = TestEnvironment::config().getDouble("LinearObsOpTest.toleranceAD");
   const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
   std::vector<eckit::LocalConfiguration> conf;
   obsconf.get("ObsTypes", conf);
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    LinearObsOperator_ hop(Test_::obspace()[jj]);
+    LinearObsOperator_ hoptl(Test_::obspace()[jj]);
 
     const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    const GeoVaLs_ gval(gconf, hop.variables());
+    const GeoVaLs_ gval(gconf, hoptl.variables());
 
     eckit::LocalConfiguration biasConf;
     conf[jj].get("ObsBias", biasConf);
     const ObsAuxCtrl_ ybias(biasConf);
-    hop.setTrajectory(gval, ybias);
+    hoptl.setTrajectory(gval, ybias);
 
     const ObsAuxIncr_ ybinc(biasConf);
     ObsVector_ dy1(Test_::obspace()[jj]);
-    GeoVaLs_ gv(gconf, hop.variables());
+    GeoVaLs_ gv(gconf, hoptl.variables());
 
     gv.zero();
-    hop.obsEquivTL(gv, dy1, ybinc);
+    hoptl.obsEquivTL(gv, dy1, ybinc);
 
     BOOST_CHECK_EQUAL(dy1.rms(), zero);
 
     gv.random();
-    hop.obsEquivTL(gv, dy1, ybinc);
+    hoptl.obsEquivTL(gv, dy1, ybinc);
     dy1 *= coef;
     BOOST_CHECK(dy1.rms() > zero);
 
     gv *= coef;
     ObsVector_ dy2(Test_::obspace()[jj]);
-    hop.obsEquivTL(gv, dy2, ybinc);
+    hoptl.obsEquivTL(gv, dy2, ybinc);
 
     dy1 -= dy2;
 
@@ -108,37 +108,37 @@ template <typename MODEL> void testAdjoint() {
   typedef oops::ObsVector<MODEL>         ObsVector_;
 
   const double zero = 0.0;
-  const double tol = 1.0e-12;
+  const double tol = TestEnvironment::config().getDouble("LinearObsOpTest.toleranceAD");
   const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
   std::vector<eckit::LocalConfiguration> conf;
   obsconf.get("ObsTypes", conf);
   
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    LinearObsOperator_ hop(Test_::obspace()[jj]);
+    LinearObsOperator_ hoptl(Test_::obspace()[jj]);
     eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    const GeoVaLs_ gval(gconf, hop.variables());
+    const GeoVaLs_ gval(gconf, hoptl.variables());
 
     eckit::LocalConfiguration biasConf;
     conf[jj].get("ObsBias", biasConf);
     const ObsAuxCtrl_ ybias(biasConf);
 
-    hop.setTrajectory(gval, ybias);
+    hoptl.setTrajectory(gval, ybias);
 
     ObsAuxIncr_ ybinc(biasConf);
 
     ObsVector_ dy1(Test_::obspace()[jj]);
     ObsVector_ dy2(Test_::obspace()[jj]);
-    GeoVaLs_ gv1(gconf, hop.variables());
-    GeoVaLs_ gv2(gconf, hop.variables());
+    GeoVaLs_ gv1(gconf, hoptl.variables());
+    GeoVaLs_ gv2(gconf, hoptl.variables());
 
     gv1.random();
     BOOST_REQUIRE(dot_product(gv1, gv1) > zero);
-    hop.obsEquivTL(gv1, dy1, ybinc);
+    hoptl.obsEquivTL(gv1, dy1, ybinc);
     BOOST_CHECK(dot_product(dy1, dy1) > zero);
 
     dy2.random();
     BOOST_REQUIRE(dot_product(dy2, dy2) > zero);
-    hop.obsEquivAD(gv2, dy2, ybinc);
+    hoptl.obsEquivAD(gv2, dy2, ybinc);
     BOOST_CHECK(dot_product(gv2, gv2) > zero);
 
     const double zz1 = dot_product(gv1, gv2);
@@ -152,7 +152,7 @@ template <typename MODEL> void testAdjoint() {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL> void testTangentLinear() {
-  // Test  ||(nlhop(x+alpha*dx)-nlhop(x)) - hop(alpha*dx)|| < tol
+  // Test  ||(hop(x+alpha*dx)-hop(x)) - hoptl(alpha*dx)|| < tol
   typedef ObsTestsFixture<MODEL>         Test_;
   typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
   typedef oops::LinearObsOperator<MODEL> LinearObsOperator_;
@@ -166,12 +166,12 @@ template <typename MODEL> void testTangentLinear() {
   std::vector<eckit::LocalConfiguration> conf;
   obsconf.get("ObsTypes", conf);
 
-  const eckit::LocalConfiguration lobsopconf(TestEnvironment::config(), "LinObsOpTest"); 
-  double tol = lobsopconf.getDouble("tlm_tol");
+  const double tol = TestEnvironment::config().getDouble("LinearObsOpTest.toleranceTL");
+  const int iter = TestEnvironment::config().getDouble("LinearObsOpTest.testiterTL");
   
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    LinearObsOperator_ hop(Test_::obspace()[jj]);
-    ObsOperator_ nlhop(Test_::obspace()[jj]);
+    LinearObsOperator_ hoptl(Test_::obspace()[jj]);
+    ObsOperator_ hop(Test_::obspace()[jj]);
 
     const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
     
@@ -181,37 +181,36 @@ template <typename MODEL> void testTangentLinear() {
  
     const ObsAuxIncr_ ybinc(biasConf);
 
-    ObsVector_ y1(Test_::obspace()[jj]);   // y1 = nlhop(x)
-    ObsVector_ y2(Test_::obspace()[jj]);   // y2 = nlhop(x+alpha*dx)
-    ObsVector_ y3(Test_::obspace()[jj]);   // y3 = hop(alpha*dx)    
+    ObsVector_ y1(Test_::obspace()[jj]);   // y1 = hop(x)
+    ObsVector_ y2(Test_::obspace()[jj]);   // y2 = hop(x+alpha*dx)
+    ObsVector_ y3(Test_::obspace()[jj]);   // y3 = hoptl(alpha*dx)    
 
-    GeoVaLs_ gv(gconf, nlhop.variables()); // Background
+    GeoVaLs_ gv(gconf, hop.variables()); // Background
 
-    hop.setTrajectory(gv, ybias);
+    hoptl.setTrajectory(gv, ybias);
  
-    nlhop.obsEquiv(gv, y1, ybias); 
+    hop.obsEquiv(gv, y1, ybias); 
     
-    GeoVaLs_ dgv(gconf, hop.variables());
+    GeoVaLs_ dgv(gconf, hoptl.variables());
     dgv.random();
 
-    GeoVaLs_ gv0(gconf, nlhop.variables());
+    GeoVaLs_ gv0(gconf, hop.variables());
     gv0 = gv;
     ObsVector_ y3_init(Test_::obspace()[jj]);
     y3_init = y3;
-    const int max_iter=10;
     double alpha = 0.1;
-    for ( int iter = 0; iter < max_iter; ++iter ) {
+    for (int jter = 0; jter < iter; ++jter) {
       gv = gv0;
       dgv *= alpha;
       gv += dgv;
       
-      nlhop.obsEquiv(gv, y2, ybias);
+      hop.obsEquiv(gv, y2, ybias);
       y2 -= y1;
-      hop.obsEquivTL(dgv, y3, ybinc);
+      hoptl.obsEquivTL(dgv, y3, ybinc);
       y2 -= y3;
       double test_norm=y2.rms();
       y3 = y3_init;
-      oops::Log::debug() << "Iter:" << iter << " ||(h(x+alpha*dx)-h(x))/h'(alpha*dx)||="
+      oops::Log::debug() << "Iter:" << jter << " ||(h(x+alpha*dx)-h(x))/h'(alpha*dx)||="
                          << test_norm << std::endl;          
     }
     BOOST_CHECK(y2.rms() < tol);

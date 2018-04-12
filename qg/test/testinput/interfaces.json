@@ -37,8 +37,10 @@
     },
     "values": [6.042838]
   },
-  "LinObsOpTest": {
-    "tlm_tol": "1e-8"
+  "LinearObsOpTest": {
+    "testiterTL": "10",
+    "toleranceTL": "1.0e-8",
+    "toleranceAD": "1.0e-10"
   },    
   "ModelBias": null,
   "Model": {
