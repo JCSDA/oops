@@ -29,7 +29,6 @@ public :: qg_field, &
         & read_file, write_file, gpnorm, fldrms, &
         & change_resol, interp_tl, interp_ad, convert_to_ug, convert_from_ug, &
         & analytic_init
-
 public :: qg_field_registry
 
 ! ------------------------------------------------------------------------------

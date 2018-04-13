@@ -20,7 +20,7 @@
 #include "util/ObjectCounter.h"
 
 #include "model/QgFortran.h"
-#include "model/Qgtraits.h"
+#include "model/QgTraits.h"
 
 // Forward declarations
 namespace qg {

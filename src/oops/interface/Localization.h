@@ -37,8 +37,8 @@ class Localization : public util::Printable,
                      private boost::noncopyable,
                      private util::ObjectCounter<Localization<MODEL> > {
   typedef LocalizationBase<MODEL>    LocalizationBase_;
-  typedef Geometry<MODEL>            Geometry_;
   typedef Increment<MODEL>           Increment_;
+  typedef Geometry<MODEL>            Geometry_;
 
  public:
   static const std::string classname() {return "oops::Localization";}
