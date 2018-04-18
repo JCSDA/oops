@@ -6,6 +6,9 @@
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
+module calculate_pv
+
+Contains  
 !> Calculate potential vorticity from streamfunction
 
 !> Potential vorticity is defined as
@@ -13,7 +16,6 @@
 !! q_1 &=& \nabla^2 \psi_1 - F_1 (\psi_1 -\psi_2 ) + \beta y \\\\
 !! q_2 &=& \nabla^2 \psi_2 - F_2 (\psi_2 -\psi_1 ) + \beta y + R_s
 !! \f}
-
 
 subroutine calc_pv(kx,ky,pv,x,x_north,x_south,f1,f2,deltax,deltay,bet,rs,lbc)
 
@@ -71,3 +73,5 @@ enddo
 pv(:,:,2) = pv(:,:,2) + rs(:,:)
 
 end subroutine calc_pv
+
+end module calculate_pv

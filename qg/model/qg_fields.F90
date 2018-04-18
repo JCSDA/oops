@@ -15,6 +15,7 @@ use qg_geom_mod
 use qg_locs_mod
 use qg_vars_mod
 use qg_goms_mod
+use calculate_pv, only : calc_pv
 use netcdf
 use tools_nc, only: ncerr
 use kinds
