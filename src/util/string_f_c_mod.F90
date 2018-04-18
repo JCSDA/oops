@@ -29,10 +29,10 @@ integer :: jj
 if (allocated(cstring)) deallocate(cstring)
 allocate(cstring(len(trim(fstring))+1))
 
-do jj=1,len(fstring)
-  cstring(jj) = fstring(jj:jj)
+do jj=1,len(trim(fstring))
+  cstring(jj) = trim(fstring(jj:jj))
 enddo
-cstring(len(fstring)+1) = c_null_char
+cstring(len(trim(fstring))+1) = c_null_char
 
 end subroutine f_c_string
 
