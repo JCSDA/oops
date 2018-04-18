@@ -167,6 +167,7 @@ use iso_c_binding
 use qg_fields
 use qg_configs
 use qg_constants, only: bet
+use calculate_pv, only : calc_pv
 
 implicit none
 integer(c_int), intent(in) :: c_key_conf  !< Configuration structure
@@ -287,6 +288,7 @@ use qg_fields
 use qg_trajectories
 use qg_configs
 use qg_constants, only: bet
+use calculate_pv, only : calc_pv
 use kinds
 
 implicit none
@@ -365,6 +367,7 @@ use qg_fields
 use qg_trajectories
 use qg_configs
 use qg_constants, only: bet
+use calculate_pv, only : calc_pv
 use kinds
 
 implicit none
