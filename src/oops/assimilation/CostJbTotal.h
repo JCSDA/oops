@@ -26,8 +26,7 @@
 
 namespace oops {
   template<typename MODEL> class JqTerm;
-  template<typename MODEL> class JqTermTL;
-  template<typename MODEL> class JqTermAD;
+  template<typename MODEL> class JqTermTLAD;
 
 // -----------------------------------------------------------------------------
 
@@ -38,8 +37,7 @@ template<typename MODEL> class CostJbTotal {
   typedef ControlVariable<MODEL>     CtrlVar_;
   typedef CostJbState<MODEL>         JbState_;
   typedef JqTerm<MODEL>              JqTerm_;
-  typedef JqTermAD<MODEL>            JqTermAD_;
-  typedef JqTermTL<MODEL>            JqTermTL_;
+  typedef JqTermTLAD<MODEL>          JqTermTLAD_;
   typedef Geometry<MODEL>            Geometry_;
   typedef ModelAuxCovariance<MODEL>  ModelAuxCovar_;
   typedef ObsAuxCovariance<MODEL>    ObsAuxCovar_;
@@ -60,12 +58,12 @@ template<typename MODEL> class CostJbTotal {
   double finalizeTraj(JqTerm_ *);
 
 /// Initialize before starting the TL run.
-  JqTermTL_ * initializeTL() const;
-  void finalizeTL(JqTermTL_ *, const CtrlInc_ &, CtrlInc_ &) const;
+  JqTermTLAD_ * initializeTL() const;
+  void finalizeTL(JqTermTLAD_ *, const CtrlInc_ &, CtrlInc_ &) const;
 
 /// Initialize before starting the AD run.
-  JqTermAD_ * initializeAD(CtrlInc_ &, const CtrlInc_ &) const;
-  void finalizeAD(JqTermAD_ *) const;
+  JqTermTLAD_ * initializeAD(CtrlInc_ &, const CtrlInc_ &) const;
+  void finalizeAD(JqTermTLAD_ *) const;
 
 /// Multiply by covariance matrix and its inverse.
   void multiplyB(const CtrlInc_ &, CtrlInc_ &) const;
@@ -248,15 +246,15 @@ void CostJbTotal<MODEL>::addGradientFG(CtrlInc_ & grad, CtrlInc_ & gradJb) const
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-JqTermTL<MODEL> * CostJbTotal<MODEL>::initializeTL() const {
-  JqTermTL_ * jqtl = jb_->initializeJqTL();
+JqTermTLAD<MODEL> * CostJbTotal<MODEL>::initializeTL() const {
+  JqTermTLAD_ * jqtl = jb_->initializeJqTL();
   return jqtl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void CostJbTotal<MODEL>::finalizeTL(JqTermTL_ * jqtl, const CtrlInc_ & bgns,
+void CostJbTotal<MODEL>::finalizeTL(JqTermTLAD_ * jqtl, const CtrlInc_ & bgns,
                                     CtrlInc_ & dx) const {
   dx = bgns;
   if (jqtl) jqtl->computeModelErrorTL(dx.state());
@@ -265,9 +263,9 @@ void CostJbTotal<MODEL>::finalizeTL(JqTermTL_ * jqtl, const CtrlInc_ & bgns,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-JqTermAD<MODEL> * CostJbTotal<MODEL>::initializeAD(CtrlInc_ & bgns,
+JqTermTLAD<MODEL> * CostJbTotal<MODEL>::initializeAD(CtrlInc_ & bgns,
                                                    const CtrlInc_ & dx) const {
-  JqTermAD_ * jqad = jb_->initializeJqAD(dx.state());
+  JqTermTLAD_ * jqad = jb_->initializeJqAD(dx.state());
   bgns += dx;
   return jqad;
 }
@@ -275,7 +273,7 @@ JqTermAD<MODEL> * CostJbTotal<MODEL>::initializeAD(CtrlInc_ & bgns,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void CostJbTotal<MODEL>::finalizeAD(JqTermAD_ * jqad) const {
+void CostJbTotal<MODEL>::finalizeAD(JqTermTLAD_ * jqad) const {
   if (jqad) jqad->clear();
 }
 

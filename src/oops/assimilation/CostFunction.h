@@ -28,8 +28,7 @@
 #include "oops/assimilation/CostTermBase.h"
 #include "oops/assimilation/DualVector.h"
 #include "oops/base/PostProcessor.h"
-#include "oops/base/PostProcessorAD.h"
-#include "oops/base/PostProcessorTL.h"
+#include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/TrajectorySaver.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -75,10 +74,10 @@ template<typename MODEL> class CostFunction : private boost::noncopyable {
   double linearize(const CtrlVar_ &, const eckit::Configuration &,
                    PostProcessor<State_> post = PostProcessor<State_>() );
 
-  virtual void runTLM(CtrlInc_ &, PostProcessorTL<Increment_> &,
+  virtual void runTLM(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
                       PostProcessor<Increment_> post = PostProcessor<Increment_>(),
                       const bool idModel = false) const = 0;
-  virtual void runADJ(CtrlInc_ &, PostProcessorAD<Increment_> &,
+  virtual void runADJ(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
                       PostProcessor<Increment_> post = PostProcessor<Increment_>(),
                       const bool idModel = false) const = 0;
   virtual void zeroAD(CtrlInc_ &) const = 0;
@@ -285,9 +284,9 @@ double CostFunction<MODEL>::linearize(const CtrlVar_ & fguess,
   }
 
 // Setup linear model (and trajectory)
-  tlm_.clear();
-  pp.enrollProcessor(
-    new TrajectorySaver<MODEL>(fguess.state()[0], tlmConf, lowres, fguess.modVar(), tlm_));
+  tlm_.clear();   // YT: Should release at the end and should be inside quadratic J object
+// YT: TrajectorySaver should be QuadraticCostFunction
+  pp.enrollProcessor(new TrajectorySaver<MODEL>(tlmConf, lowres, fguess.modVar(), tlm_));
 
 // Run NL model
   CtrlVar_ mfguess(fguess);
@@ -309,7 +308,7 @@ double CostFunction<MODEL>::linearize(const CtrlVar_ & fguess,
 template<typename MODEL>
 void CostFunction<MODEL>::computeGradientFG(CtrlInc_ & grad) const {
   PostProcessor<Increment_> pp;
-  PostProcessorAD<Increment_> costad;
+  PostProcessorTLAD<MODEL> costad;
   this->zeroAD(grad);
 
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {

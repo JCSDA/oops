@@ -17,7 +17,7 @@
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/DualVector.h"
 #include "oops/base/PostProcessor.h"
-#include "oops/base/PostProcessorTL.h"
+#include "oops/base/PostProcessorTLAD.h"
 #include "oops/interface/Increment.h"
 
 namespace oops {
@@ -41,7 +41,7 @@ template<typename MODEL> class HMatrix : private boost::noncopyable {
   void multiply(CtrlInc_ & dx, DualVector<MODEL> & dy,
                 const bool idModel = false) const {
     PostProcessor<Increment_> post;
-    PostProcessorTL<Increment_> cost;
+    PostProcessorTLAD<MODEL> cost;
 
     for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
       cost.enrollProcessor(j_.jterm(jj).setupTL(dx));

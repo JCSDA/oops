@@ -21,12 +21,10 @@
 #include "oops/assimilation/CostTermBase.h"
 #include "oops/base/DolphChebyshev.h"
 #include "oops/base/PostBase.h"
-#include "oops/base/PostBaseAD.h"
-#include "oops/base/PostBaseTL.h"
+#include "oops/base/PostBaseTLAD.h"
 #include "oops/base/Variables.h"
 #include "oops/base/WeightedDiff.h"
-#include "oops/base/WeightedDiffAD.h"
-#include "oops/base/WeightedDiffTL.h"
+#include "oops/base/WeightedDiffTLAD.h"
 #include "oops/base/WeightingFct.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -48,8 +46,9 @@ template<typename MODEL> class CostJcDFI : public CostTermBase<MODEL> {
   typedef ControlIncrement<MODEL>    CtrlInc_;
   typedef ControlVariable<MODEL>     CtrlVar_;
   typedef Geometry<MODEL>            Geometry_;
-  typedef State<MODEL>               State_;
   typedef Increment<MODEL>           Increment_;
+  typedef PostBaseTLAD<MODEL>        PostBaseTLAD_;
+  typedef State<MODEL>               State_;
 
  public:
 /// Construct \f$ J_c\f$.
@@ -70,10 +69,10 @@ template<typename MODEL> class CostJcDFI : public CostTermBase<MODEL> {
   double finalizeTraj(const eckit::Configuration &) override;
 
 /// Initialize \f$ J_c\f$ before starting the TL run.
-  boost::shared_ptr<PostBaseTL<Increment_> > setupTL(const CtrlInc_ &) const override;
+  boost::shared_ptr<PostBaseTLAD_> setupTL(const CtrlInc_ &) const override;
 
 /// Initialize \f$ J_c\f$ before starting the AD run.
-  boost::shared_ptr<PostBaseAD<Increment_> > setupAD(
+  boost::shared_ptr<PostBaseTLAD_> setupAD(
            boost::shared_ptr<const GeneralizedDepartures>, CtrlInc_ &) const override;
 
 /// Multiply by \f$ C\f$ and \f$ C^{-1}\f$.
@@ -185,23 +184,23 @@ Increment<MODEL> * CostJcDFI<MODEL>::newDualVector() const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-boost::shared_ptr<PostBaseTL<Increment<MODEL> > >
+boost::shared_ptr<PostBaseTLAD<MODEL> >
 CostJcDFI<MODEL>::setupTL(const CtrlInc_ &) const {
-  boost::shared_ptr<WeightedDiffTL<MODEL, Increment_> > filterTL(
-    new WeightedDiffTL<MODEL, Increment_>(vt_, span_, *tlres_, conf_, tlstep_, *wfct_));
+  boost::shared_ptr<WeightedDiffTLAD<MODEL> > filterTL(
+    new WeightedDiffTLAD<MODEL>(vt_, span_, *tlres_, conf_, tlstep_, *wfct_));
   return filterTL;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-boost::shared_ptr<PostBaseAD<Increment<MODEL> > >
+boost::shared_ptr<PostBaseTLAD<MODEL> >
 CostJcDFI<MODEL>::setupAD(boost::shared_ptr<const GeneralizedDepartures> pv,
                           CtrlInc_ &) const {
   boost::shared_ptr<const Increment_>
     dx = boost::dynamic_pointer_cast<const Increment_>(pv);
-  boost::shared_ptr<WeightedDiffAD<Increment_> > filterAD(
-    new WeightedDiffAD<Increment_>(vt_, span_, tlstep_, *wfct_, dx));
+  boost::shared_ptr<WeightedDiffTLAD<MODEL> > filterAD(
+    new WeightedDiffTLAD<MODEL>(vt_, span_, tlstep_, *wfct_, dx));
   return filterAD;
 }
 

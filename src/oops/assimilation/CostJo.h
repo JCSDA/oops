@@ -26,14 +26,12 @@
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
-#include "oops/base/ObserverAD.h"
-#include "oops/base/ObserverTL.h"
+#include "oops/base/ObserverTLAD.h"
 #include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
-#include "oops/base/PostBaseAD.h"
-#include "oops/base/PostBaseTL.h"
+#include "oops/base/PostBaseTLAD.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/ObsAuxIncrement.h"
@@ -66,6 +64,7 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsOperators<MODEL>        ObsOperator_;
   typedef ObsSpaces<MODEL>           ObsSpace_;
+  typedef PostBaseTLAD<MODEL>        PostBaseTLAD_;
   typedef LinearObsOperators<MODEL>  LinearObsOperator_;
 
  public:
@@ -86,10 +85,10 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   double finalizeTraj(const eckit::Configuration &) override;
 
   /// Initialize \f$ J_o\f$ before starting the TL run.
-  boost::shared_ptr<PostBaseTL<Increment_> > setupTL(const CtrlInc_ &) const override;
+  boost::shared_ptr<PostBaseTLAD_> setupTL(const CtrlInc_ &) const override;
 
   /// Initialize \f$ J_o\f$ before starting the AD run.
-  boost::shared_ptr<PostBaseAD<Increment_> > setupAD(
+  boost::shared_ptr<PostBaseTLAD_> setupAD(
            boost::shared_ptr<const GeneralizedDepartures>, CtrlInc_ &) const override;
 
   /// Multiply by \f$ R\f$ and \f$ R^{-1}\f$.
@@ -134,10 +133,10 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
 template<typename MODEL>
 CostJo<MODEL>::CostJo(const eckit::Configuration & joConf,
                       const util::DateTime & winbgn, const util::DateTime & winend,
-                      const util::Duration & ts, const bool subwindows)
+                      const util::Duration & tslot, const bool subwindows)
   : obspace_(joConf, winbgn, winend),
     hop_(obspace_), yobs_(obspace_), R_(obspace_),
-    gradFG_(), pobs_(), tslot_(ts),
+    gradFG_(), pobs_(), tslot_(tslot),
     hoptlad_(), subwindows_(subwindows), ltraj_(false)
 {
   Log::debug() << "CostJo:setup tslot_ = " << tslot_ << std::endl;
@@ -228,26 +227,25 @@ double CostJo<MODEL>::finalizeTraj(const eckit::Configuration & conf) {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-boost::shared_ptr<PostBaseTL<Increment<MODEL> > > CostJo<MODEL>::setupTL(
-                               const CtrlInc_ & dx) const {
+boost::shared_ptr<PostBaseTLAD<MODEL> > CostJo<MODEL>::setupTL(const CtrlInc_ & dx) const {
   ASSERT(hoptlad_);
-  boost::shared_ptr<PostBaseTL<Increment_> > spobs;
-  spobs.reset(new ObserverTL<MODEL, Increment_>(obspace_, *hoptlad_, dx.obsVar(),
-                                                tslot_, subwindows_));
+  boost::shared_ptr<PostBaseTLAD_> spobs;
+  spobs.reset(new ObserverTLAD<MODEL>(obspace_, *hoptlad_, dx.obsVar(),
+                                      tslot_, subwindows_));
   return spobs;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-boost::shared_ptr<PostBaseAD<Increment<MODEL> > > CostJo<MODEL>::setupAD(
+boost::shared_ptr<PostBaseTLAD<MODEL> > CostJo<MODEL>::setupAD(
                                boost::shared_ptr<const GeneralizedDepartures> pv,
                                CtrlInc_ & dx) const {
   ASSERT(hoptlad_);
   boost::shared_ptr<const Departures_> dy = boost::dynamic_pointer_cast<const Departures_>(pv);
-  boost::shared_ptr<PostBaseAD<Increment_> > spobs;
-  spobs.reset(new ObserverAD<MODEL, Increment_>(obspace_, *hoptlad_, dy, dx.obsVar(),
-                                                tslot_, subwindows_));
+  boost::shared_ptr<PostBaseTLAD_> spobs;
+  spobs.reset(new ObserverTLAD<MODEL>(obspace_, *hoptlad_, dy, dx.obsVar(),
+                                      tslot_, subwindows_));
   return spobs;
 }
 

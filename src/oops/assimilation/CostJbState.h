@@ -28,8 +28,7 @@ namespace oops {
   template<typename MODEL> class Increment4D;
   template<typename MODEL> class State4D;
   template<typename MODEL> class JqTerm;
-  template<typename MODEL> class JqTermTL;
-  template<typename MODEL> class JqTermAD;
+  template<typename MODEL> class JqTermTLAD;
 
 // -----------------------------------------------------------------------------
 
@@ -67,10 +66,10 @@ template<typename MODEL> class CostJbState : private boost::noncopyable {
   virtual void addGradient(const Increment4D_ &, Increment4D_ &, Increment4D_ &) const = 0;
 
 /// Finalize \f$ J_b\f$ after the TL run.
-  virtual JqTermTL<MODEL> * initializeJqTL() const = 0;
+  virtual JqTermTLAD<MODEL> * initializeJqTL() const = 0;
 
 /// Initialize \f$ J_b\f$ before the AD run.
-  virtual JqTermAD<MODEL> * initializeJqAD(const Increment4D_ &) const = 0;
+  virtual JqTermTLAD<MODEL> * initializeJqAD(const Increment4D_ &) const = 0;
 
 /// Multiply by \f$ B\f$ and \f$ B^{-1}\f$.
   virtual void Bmult(const Increment4D_ &, Increment4D_ &) const = 0;

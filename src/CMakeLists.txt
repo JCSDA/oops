@@ -45,8 +45,7 @@ oops/assimilation/IPCGMinimizer.h
 oops/assimilation/Increment4D.h
 oops/assimilation/IncrementalAssimilation.h
 oops/assimilation/JqTerm.h
-oops/assimilation/JqTermAD.h
-oops/assimilation/JqTermTL.h
+oops/assimilation/JqTermTLAD.h
 oops/assimilation/MINRES.h
 oops/assimilation/MINRESMinimizer.h
 oops/assimilation/Minimizer.h
@@ -95,14 +94,11 @@ oops/base/ObsOperators.h
 oops/base/ObsSpaces.h
 oops/base/Observations.h
 oops/base/Observer.h
-oops/base/ObserverTL.h
-oops/base/ObserverAD.h
+oops/base/ObserverTLAD.h
 oops/base/PostBase.h
-oops/base/PostBaseTL.h
-oops/base/PostBaseAD.h
+oops/base/PostBaseTLAD.h
 oops/base/PostProcessor.h
-oops/base/PostProcessorTL.h
-oops/base/PostProcessorAD.h
+oops/base/PostProcessorTLAD.h
 oops/base/PostTimer.h
 oops/base/PostTimer.cc
 oops/base/StateInfo.h
@@ -111,8 +107,7 @@ oops/base/TrajectorySaver.h
 oops/base/Variables.h
 oops/base/Variables.cc
 oops/base/WeightedDiff.h
-oops/base/WeightedDiffTL.h
-oops/base/WeightedDiffAD.h
+oops/base/WeightedDiffTLAD.h
 oops/base/WeightedMean.h
 oops/base/WeightingFct.h
 oops/base/WeightingFct.cc

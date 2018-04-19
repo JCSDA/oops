@@ -14,8 +14,6 @@
 #include <string>
 
 #include "oops/base/GeneralizedDepartures.h"
-#include "oops/base/PostProcessorAD.h"
-#include "oops/base/PostProcessorTL.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeoVaLs.h"

@@ -114,8 +114,7 @@ template <typename MODEL> class LinearModelFixture : private boost::noncopyable 
     oops::instantiateTlmFactory<MODEL>();
     boost::ptr_vector<LinearModel_> tlmvec;
     oops::PostProcessor<State_> post;
-    post.enrollProcessor(new oops::TrajectorySaver<MODEL>(*xref_, *tlConf_, *resol_,
-                                                          *bias_, tlmvec));
+    post.enrollProcessor(new oops::TrajectorySaver<MODEL>(*tlConf_, *resol_, *bias_, tlmvec));
     State_ xx(*xref_);
     model_->forecast(xx, *bias_, len, post);
     tlm_.reset(tlmvec.release(tlmvec.begin()).release());

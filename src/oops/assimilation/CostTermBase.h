@@ -16,8 +16,7 @@
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/ControlVariable.h"
 #include "oops/base/PostBase.h"
-#include "oops/base/PostBaseAD.h"
-#include "oops/base/PostBaseTL.h"
+#include "oops/base/PostBaseTLAD.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
@@ -39,9 +38,8 @@ template<typename MODEL> class CostTermBase {
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
   typedef Increment<MODEL>           Increment_;
-  typedef boost::shared_ptr<PostBase<State_> >        PostPtr_;
-  typedef boost::shared_ptr<PostBaseTL<Increment_> >  PostTLPtr_;
-  typedef boost::shared_ptr<PostBaseAD<Increment_> >  PostADPtr_;
+  typedef boost::shared_ptr<PostBase<State_> >    PostPtr_;
+  typedef boost::shared_ptr<PostBaseTLAD<MODEL> > PostLinPtr_;
 
  public:
 /// Destructor
@@ -57,11 +55,11 @@ template<typename MODEL> class CostTermBase {
   virtual double finalizeTraj(const eckit::Configuration &) = 0;
 
 /// Initialize before starting the TL run.
-  virtual PostTLPtr_ setupTL(const ControlIncrement<MODEL> &) const = 0;
+  virtual PostLinPtr_ setupTL(const ControlIncrement<MODEL> &) const = 0;
 
 /// Initialize before starting the AD run.
-  virtual PostADPtr_ setupAD(boost::shared_ptr<const GeneralizedDepartures>,
-                             ControlIncrement<MODEL> &) const = 0;
+  virtual PostLinPtr_ setupAD(boost::shared_ptr<const GeneralizedDepartures>,
+                              ControlIncrement<MODEL> &) const = 0;
 
 /// Multiply by covariance (or weight) matrix and its inverse.
   virtual GeneralizedDepartures * multiplyCovar(const GeneralizedDepartures &) const = 0;

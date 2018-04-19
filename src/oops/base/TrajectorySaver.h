@@ -34,9 +34,8 @@ class TrajectorySaver : public PostBase<State<MODEL> > {
   typedef State<MODEL>           State_;
 
  public:
-  TrajectorySaver(const State_ &, const eckit::Configuration &,
-                  const Geometry_ &, const ModelAux_ &,
-                  boost::ptr_vector<LinearModel_> &);
+  TrajectorySaver(const eckit::Configuration &, const Geometry_ &,
+                  const ModelAux_ &, boost::ptr_vector<LinearModel_> &);
   ~TrajectorySaver() {}
 
  private:
@@ -45,7 +44,7 @@ class TrajectorySaver : public PostBase<State<MODEL> > {
   const ModelAux_    lrBias_;
   boost::ptr_vector<LinearModel_> & tlm_;
   LinearModel_ *     subtlm_;
-  State_             xlr_;
+  boost::scoped_ptr<State_> xlr_;
 
   void doInitialize(const State_ &, const util::DateTime &, const util::Duration &) override;
   void doProcessing(const State_ &) override;
@@ -55,26 +54,26 @@ class TrajectorySaver : public PostBase<State<MODEL> > {
 // ====================================================================================
 
 template <typename MODEL>
-TrajectorySaver<MODEL>::TrajectorySaver(const State_ & xx,
-                                        const eckit::Configuration & conf,
+TrajectorySaver<MODEL>::TrajectorySaver(const eckit::Configuration & conf,
                                         const Geometry_ & resol,
                                         const ModelAux_ & bias,
                                         boost::ptr_vector<LinearModel_> & tlm):
   PostBase<State_>(conf),
   resol_(resol), tlConf_(conf), lrBias_(resol, bias),
-  tlm_(tlm), subtlm_(0), xlr_(resol, xx)
+  tlm_(tlm), subtlm_(0), xlr_()
 {}
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-void TrajectorySaver<MODEL>::doInitialize(const State_ &,
+void TrajectorySaver<MODEL>::doInitialize(const State_ & x0,
                                           const util::DateTime &, const util::Duration &) {
   subtlm_ = new LinearModel_(resol_, tlConf_);
+  xlr_.reset(new State_(resol_, x0));
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 void TrajectorySaver<MODEL>::doProcessing(const State_ & xx) {
   ASSERT(subtlm_ != 0);
-  subtlm_->setTrajectory(xx, xlr_, lrBias_);
+  subtlm_->setTrajectory(xx, *xlr_, lrBias_);
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>

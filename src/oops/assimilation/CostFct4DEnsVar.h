@@ -20,8 +20,7 @@
 #include "oops/assimilation/CostJo.h"
 #include "oops/assimilation/CostTermBase.h"
 #include "oops/base/PostProcessor.h"
-#include "oops/base/PostProcessorAD.h"
-#include "oops/base/PostProcessorTL.h"
+#include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/StateInfo.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
@@ -58,10 +57,10 @@ template<typename MODEL> class CostFct4DEnsVar : public CostFunction<MODEL> {
   CostFct4DEnsVar(const eckit::Configuration &, const Geometry_ &, const Model_ &);
   ~CostFct4DEnsVar() {}
 
-  void runTLM(CtrlInc_ &, PostProcessorTL<Increment_> &,
+  void runTLM(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
               PostProcessor<Increment_>,
               const bool idModel = false) const override;
-  void runADJ(CtrlInc_ &, PostProcessorAD<Increment_> &,
+  void runADJ(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
               PostProcessor<Increment_>,
               const bool idModel = false) const override;
   void zeroAD(CtrlInc_ &) const override;
@@ -148,7 +147,7 @@ void CostFct4DEnsVar<MODEL>::runNL(CtrlVar_ & xx,
 
 template <typename MODEL>
 void CostFct4DEnsVar<MODEL>::runTLM(CtrlInc_ & dx,
-                                    PostProcessorTL<Increment_> & cost,
+                                    PostProcessorTLAD<MODEL> & cost,
                                     PostProcessor<Increment_> post,
                                     const bool idModel) const {
   for (unsigned int jsub = 0; jsub <= ncontrol_; ++jsub) {
@@ -177,7 +176,7 @@ void CostFct4DEnsVar<MODEL>::zeroAD(CtrlInc_ & dx) const {
 
 template <typename MODEL>
 void CostFct4DEnsVar<MODEL>::runADJ(CtrlInc_ & dx,
-                                    PostProcessorAD<Increment_> & cost,
+                                    PostProcessorTLAD<MODEL> & cost,
                                     PostProcessor<Increment_> post,
                                     const bool idModel) const {
   for (int jsub = ncontrol_; jsub >= 0; --jsub) {

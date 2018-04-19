@@ -20,8 +20,7 @@
 #include "oops/assimilation/CostJo.h"
 #include "oops/assimilation/CostTermBase.h"
 #include "oops/base/PostProcessor.h"
-#include "oops/base/PostProcessorAD.h"
-#include "oops/base/PostProcessorTL.h"
+#include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/StateInfo.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
@@ -54,10 +53,10 @@ template<typename MODEL> class CostFctWeak : public CostFunction<MODEL> {
   CostFctWeak(const eckit::Configuration &, const Geometry_ &, const Model_ &);
   ~CostFctWeak() {}
 
-  void runTLM(CtrlInc_ &, PostProcessorTL<Increment_> &,
+  void runTLM(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
               PostProcessor<Increment_>,
               const bool idModel = false) const override;
-  void runADJ(CtrlInc_ &, PostProcessorAD<Increment_> &,
+  void runADJ(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
               PostProcessor<Increment_>,
               const bool idModel = false) const override;
   void zeroAD(CtrlInc_ &) const override;
@@ -152,7 +151,7 @@ void CostFctWeak<MODEL>::runNL(CtrlVar_ & xx,
 
 template <typename MODEL>
 void CostFctWeak<MODEL>::runTLM(CtrlInc_ & dx,
-                                PostProcessorTL<Increment_> & cost,
+                                PostProcessorTLAD<MODEL> & cost,
                                 PostProcessor<Increment_> post,
                                 const bool idModel) const {
   for (int jsub = dx.state().first(); jsub <= dx.state().last(); ++jsub) {
@@ -172,7 +171,7 @@ void CostFctWeak<MODEL>::runTLM(CtrlInc_ & dx,
 template <typename MODEL>
 void CostFctWeak<MODEL>::runTLM(CtrlInc_ & dx, const bool idModel) const {
   PostProcessor<Increment_> post;
-  PostProcessorTL<Increment_> cost;
+  PostProcessorTLAD<MODEL> cost;
   ASSERT(!tlforcing_);
 
   for (int jsub = dx.state().first(); jsub <= dx.state().last(); ++jsub) {
@@ -208,7 +207,7 @@ void CostFctWeak<MODEL>::zeroAD(CtrlInc_ & dx) const {
 
 template <typename MODEL>
 void CostFctWeak<MODEL>::runADJ(CtrlInc_ & dx,
-                                PostProcessorAD<Increment_> & cost,
+                                PostProcessorTLAD<MODEL> & cost,
                                 PostProcessor<Increment_> post,
                                 const bool idModel) const {
   for (int jsub = dx.state().last(); jsub >= dx.state().first(); --jsub) {
@@ -228,7 +227,7 @@ void CostFctWeak<MODEL>::runADJ(CtrlInc_ & dx,
 template <typename MODEL>
 void CostFctWeak<MODEL>::runADJ(CtrlInc_ & dx, const bool idModel) const {
   PostProcessor<Increment_> post;
-  PostProcessorAD<Increment_> cost;
+  PostProcessorTLAD<MODEL> cost;
   ASSERT(!tlforcing_);
 
   dx.state().shift_backward();
