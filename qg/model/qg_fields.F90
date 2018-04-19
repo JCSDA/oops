@@ -746,8 +746,14 @@ subroutine analytic_init(fld, geom, config, vdate)
 
         call calc_streamfunction(geom%nx,geom%ny,fld%x,fld%u,fld%v,deltax,deltay)
 
-        call calc_pv(geom%nx,geom%ny,fld%q,fld%x,fld%x_north,fld%x_south,&
-             f1,f2,deltax,deltay,bet,rs,fld%lbc)
+        ! Some compilers don't tolerate passing a null pointer
+        if (fld%lbc) then
+           call calc_pv(geom%nx,geom%ny,fld%q,fld%x,fld%x_north,fld%x_south,&
+                f1,f2,deltax,deltay,bet,rs,fld%lbc)
+        else
+           call calc_pv(geom%nx,geom%ny,fld%q,fld%x,[0.0,0.0],[0.0,0.0],&
+                f1,f2,deltax,deltay,bet,rs,fld%lbc)
+        endif
              
      case ("dcmip-test-1-2")
 
@@ -766,8 +772,14 @@ subroutine analytic_init(fld, geom, config, vdate)
 
         call calc_streamfunction(geom%nx,geom%ny,fld%x,fld%u,fld%v,deltax,deltay)
 
-        call calc_pv(geom%nx,geom%ny,fld%q,fld%x,fld%x_north,fld%x_south,&
-             f1,f2,deltax,deltay,bet,rs,fld%lbc)
+        ! Some compilers don't tolerate passing a null pointer
+        if (fld%lbc) then
+           call calc_pv(geom%nx,geom%ny,fld%q,fld%x,fld%x_north,fld%x_south,&
+                f1,f2,deltax,deltay,bet,rs,fld%lbc)
+        else
+           call calc_pv(geom%nx,geom%ny,fld%q,fld%x,[0.0,0.0],[0.0,0.0],&
+                f1,f2,deltax,deltay,bet,rs,fld%lbc)
+        endif
 
      case Default
 
