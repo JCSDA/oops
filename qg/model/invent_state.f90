@@ -27,6 +27,7 @@ use config_mod
 use fckit_log_module, only : fckit_log
 use qg_constants, only: u1,u2,bet,worog, domain_zonal, domain_meridional, &
                       & dlogtheta,f0,g,horog,scale_length,rossby_number
+use calculate_pv, only : calc_pv
 use kinds
 
 implicit none
