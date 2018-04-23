@@ -710,7 +710,7 @@ subroutine analytic_init(fld, geom, config, vdate)
            call calc_pv(geom%nx,geom%ny,fld%q,fld%x,fld%x_north,fld%x_south,&
                 f1,f2,deltax,deltay,bet,rs,fld%lbc)
         else
-           call calc_pv(geom%nx,geom%ny,fld%q,fld%x,[0.0,0.0],[0.0,0.0],&
+           call calc_pv(geom%nx,geom%ny,fld%q,fld%x,[0.0_kind_real,0.0_kind_real],[0.0_kind_real,0.0_kind_real],&
                 f1,f2,deltax,deltay,bet,rs,fld%lbc)
         endif
              
@@ -736,7 +736,7 @@ subroutine analytic_init(fld, geom, config, vdate)
            call calc_pv(geom%nx,geom%ny,fld%q,fld%x,fld%x_north,fld%x_south,&
                 f1,f2,deltax,deltay,bet,rs,fld%lbc)
         else
-           call calc_pv(geom%nx,geom%ny,fld%q,fld%x,[0.0,0.0],[0.0,0.0],&
+           call calc_pv(geom%nx,geom%ny,fld%q,fld%x,[0.0_kind_real,0.0_kind_real],[0.0_kind_real,0.0_kind_real],&
                 f1,f2,deltax,deltay,bet,rs,fld%lbc)
         endif
 
