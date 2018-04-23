@@ -485,13 +485,13 @@ if (iread==0) then
   call fckit_log%warning("qg_fields:read_file: Inventing State")
   call invent_state(fld,c_conf)
   sdate = config_get_string(c_conf,len(sdate),"date")
-  WRITE(buf,*) 'validity date is: '//sdate
+  write(buf,*) 'validity date is: '//sdate
   call fckit_log%info(buf)
   call datetime_set(sdate, vdate)
 else
   call zeros(fld)
   filename = config_get_string(c_conf,len(filename),"filename")
-  WRITE(buf,*) 'qg_field:read_file: opening '//filename
+  write(buf,*) 'qg_field:read_file: opening '//filename
   call fckit_log%info(buf)
 
   ! Read data
@@ -517,7 +517,7 @@ else
     call ncerr(subr,nf90_get_att(ncid,nf90_global,'lbc',is))
   
     call ncerr(subr,nf90_get_att(ncid,nf90_global,'sdate',sdate))
-    WRITE(buf,*) 'validity date is: '//sdate
+    write(buf,*) 'validity date is: '//sdate
     call fckit_log%info(buf)
   
     nf = min(fld%nf, ic)
@@ -550,7 +550,7 @@ else
     endif
   
     read(iunit,*) sdate
-    WRITE(buf,*) 'validity date is: '//sdate
+    write(buf,*) 'validity date is: '//sdate
     call fckit_log%info(buf)
     call datetime_set(sdate, vdate)
   
@@ -646,11 +646,11 @@ subroutine analytic_init(fld, geom, config, vdate)
   character(len=30) ::ic
   character(len=20) :: sdate
   character(len=1024)  :: buf
-  real(kind=kind_real) :: d1, d2, height(2), z, f1, f2
+  real(kind=kind_real) :: d1, d2, height(2), z, f1, f2, xdum(2)
   real(kind=kind_real) :: deltax,deltay
   real(kind=kind_real) :: p0,u0,v0,w0,t0,phis0,ps0,rho0,hum0,q1,q2,q3,q4
   real(kind=kind_real), allocatable :: rs(:,:)
-  Integer :: ix, iy, il
+  integer :: ix, iy, il
 
   if (config_element_exists(config,"analytic_init")) then
      ic = Trim(config_get_string(config,len(ic),"analytic_init"))
@@ -670,8 +670,9 @@ subroutine analytic_init(fld, geom, config, vdate)
   d1  = config_get_real(config,"top_layer_depth")
   d2  = config_get_real(config,"bottom_layer_depth")
 
-  height(1) = 0.5d0*d2
-  height(2) = d2 + 0.5d0*d1
+  height(1) = 0.5_kind_real*d2
+  height(2) = d2 + 0.5_kind_real*d1
+  xdum(:) = 0.0_kind_real
 
   deltax = domain_zonal/(scale_length*real(geom%nx,kind_real))
   deltay = domain_meridional/(scale_length*real(geom%ny,kind_real))
@@ -708,10 +709,10 @@ subroutine analytic_init(fld, geom, config, vdate)
         ! Some compilers don't tolerate passing a null pointer
         if (fld%lbc) then
            call calc_pv(geom%nx,geom%ny,fld%q,fld%x,fld%x_north,fld%x_south,&
-                f1,f2,deltax,deltay,bet,rs,fld%lbc)
+                        f1,f2,deltax,deltay,bet,rs,fld%lbc)
         else
-           call calc_pv(geom%nx,geom%ny,fld%q,fld%x,[0.0_kind_real,0.0_kind_real],[0.0_kind_real,0.0_kind_real],&
-                f1,f2,deltax,deltay,bet,rs,fld%lbc)
+           call calc_pv(geom%nx,geom%ny,fld%q,fld%x,xdum,xdum,&
+                        f1,f2,deltax,deltay,bet,rs,fld%lbc)
         endif
              
      case ("dcmip-test-1-2")
@@ -734,13 +735,13 @@ subroutine analytic_init(fld, geom, config, vdate)
         ! Some compilers don't tolerate passing a null pointer
         if (fld%lbc) then
            call calc_pv(geom%nx,geom%ny,fld%q,fld%x,fld%x_north,fld%x_south,&
-                f1,f2,deltax,deltay,bet,rs,fld%lbc)
+                        f1,f2,deltax,deltay,bet,rs,fld%lbc)
         else
-           call calc_pv(geom%nx,geom%ny,fld%q,fld%x,[0.0_kind_real,0.0_kind_real],[0.0_kind_real,0.0_kind_real],&
-                f1,f2,deltax,deltay,bet,rs,fld%lbc)
+           call calc_pv(geom%nx,geom%ny,fld%q,fld%x,xdum,xdum,&
+                        f1,f2,deltax,deltay,bet,rs,fld%lbc)
         endif
 
-     case Default
+     case default
 
         call abor1_ftn ("qg_fields:analytic_init not properly defined")
         
@@ -841,25 +842,25 @@ subroutine deriv_1d(df,f,n,delta,periodic)
 
   ! interior points
   do i=3,n-2 
-     df(i) = ho12*(f(i-2)-8.d0*f(i-1)+8.d0*f(i+1)-f(i+2))
+     df(i) = ho12*(f(i-2)-8.0_kind_real*f(i-1)+8.0_kind_real*f(i+1)-f(i+2))
   enddo
 
   if (wrap) then
 
-     df(1) = ho12*(f(n-1)-8.d0*f(n)+8.d0*f(2)-f(3))
-     df(2) = ho12*(f(n)-8.d0*f(1)+8.d0*f(3)-f(4))
-     df(N-1) = ho12*(f(n-3)-8.d0*f(n-2)+8.d0*f(n)-f(1))
-     df(N) = ho12*(f(n-2)-8.d0*f(n-1)+8.d0*f(1)-f(2))
+     df(1) = ho12*(f(n-1)-8.0_kind_real*f(n)+8.0_kind_real*f(2)-f(3))
+     df(2) = ho12*(f(n)-8.0_kind_real*f(1)+8.0_kind_real*f(3)-f(4))
+     df(N-1) = ho12*(f(n-3)-8.0_kind_real*f(n-2)+8.0_kind_real*f(n)-f(1))
+     df(N) = ho12*(f(n-2)-8.0_kind_real*f(n-1)+8.0_kind_real*f(1)-f(2))
 
   else
 
      ! left edge (lower order)
-     df(1) = ho2*(-3.d0*f(1)+4.d0*f(2)-f(3))
-     df(2) = ho12*(-3.d0*f(1)-10.d0*f(2)+18.d0*f(3)-6.d0*f(4)+f(5))                 
+     df(1) = ho2*(-3.0_kind_real*f(1)+4.0_kind_real*f(2)-f(3))
+     df(2) = ho12*(-3.0_kind_real*f(1)-10.0_kind_real*f(2)+18.0_kind_real*f(3)-6.0_kind_real*f(4)+f(5))                 
 
      ! right edge (lower order)
-     df(n-1) = ho12*(3.d0*f(n)+10.d0*f(n-1)-18.d0*f(n-2)+6.d0*f(n-3)-f(n-4))                 
-     df(n) = ho2*(3.d0*f(n)-4.d0*f(n-1)+f(n-2))
+     df(n-1) = ho12*(3.0_kind_real*f(n)+10.0_kind_real*f(n-1)-18.0_kind_real*f(n-2)+6.0_kind_real*f(n-3)-f(n-4))                 
+     df(n) = ho2*(3.0_kind_real*f(n)-4.0_kind_real*f(n-1)+f(n-2))
 
   endIf
      
