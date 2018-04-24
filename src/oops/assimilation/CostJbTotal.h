@@ -51,11 +51,11 @@ template<typename MODEL> class CostJbTotal {
 
 /// Initialize before nonlinear model integration.
   JqTerm_ * initialize(const CtrlVar_ &) const;
-  JqTerm_ * initializeTraj(const CtrlVar_ &, const Geometry_ &);
+  JqTermTLAD_ * initializeTraj(const CtrlVar_ &, const Geometry_ &);
 
 /// Finalize computation after nonlinear model integration.
   double finalize(JqTerm_ *) const;
-  double finalizeTraj(JqTerm_ *);
+  void finalizeTraj(JqTermTLAD_ *);
 
 /// Initialize before starting the TL run.
   JqTermTLAD_ * initializeTL() const;
@@ -116,7 +116,6 @@ CostJbTotal<MODEL>::CostJbTotal(const CtrlVar_ & xb, JbState_ * jb,
     dxFG_(0), resol_(0)
 {
   Log::trace() << "CostJbTotal contructed." << std::endl;
-  Log::debug() << "CostJbTotal background is:" << xb_ << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -124,7 +123,6 @@ CostJbTotal<MODEL>::CostJbTotal(const CtrlVar_ & xb, JbState_ * jb,
 template<typename MODEL>
 JqTerm<MODEL> * CostJbTotal<MODEL>::initialize(const CtrlVar_ & fg) const {
   fg_ = &fg;
-  Log::debug() << "CostJbTotal first guess is:" << *fg_ << std::endl;
   JqTerm_ * jqnl = jb_->initializeJq();
   return jqnl;
 }
@@ -133,9 +131,8 @@ JqTerm<MODEL> * CostJbTotal<MODEL>::initialize(const CtrlVar_ & fg) const {
 
 template<typename MODEL>
 double CostJbTotal<MODEL>::finalize(JqTerm_ * jqnl) const {
+  ASSERT(fg_);
   CtrlInc_ dx(*this);
-  Log::debug() << "CostJbTotal:finalize background is:" << xb_ << std::endl;
-  Log::debug() << "CostJbTotal:finalize first guess is:" << *fg_ << std::endl;
 
 // Compute x_0 - x_b for Jb
   jb_->computeIncrement(xb_.state(), fg_->state(), dx.state());
@@ -147,8 +144,6 @@ double CostJbTotal<MODEL>::finalize(JqTerm_ * jqnl) const {
   if (jqnl) jqnl->computeModelError(fg_->state(), dx.state());
   Log::info() << "CostJb: FG-BG" << dx << std::endl;
 
-  fg_ = NULL;
-
 // Compute Jb value
   double zjb = this->evaluate(dx);
   return zjb;
@@ -157,28 +152,27 @@ double CostJbTotal<MODEL>::finalize(JqTerm_ * jqnl) const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-JqTerm<MODEL> * CostJbTotal<MODEL>::initializeTraj(const CtrlVar_ & fg,
-                                                   const Geometry_ & resol) {
+JqTermTLAD<MODEL> * CostJbTotal<MODEL>::initializeTraj(const CtrlVar_ & fg,
+                                                       const Geometry_ & resol) {
+  fg_ = &fg;
   resol_.reset(new Geometry_(resol));
 // Linearize terms
   jb_->linearize(fg.state(), *resol_);
   jbModBias_.linearize(fg.modVar(), *resol_);
   jbObsBias_.linearize(fg.obsVar());
 
-  JqTerm_ * jqnl = this->initialize(fg);
-  if (jqnl) jqnl->linearize();
-  return jqnl;
+  JqTermTLAD_ * jqlin = jb_->initializeJqTLAD();
+
+  return jqlin;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-double CostJbTotal<MODEL>::finalizeTraj(JqTerm_ * jqnl) {
+void CostJbTotal<MODEL>::finalizeTraj(JqTermTLAD_ * jqlin) {
+  ASSERT(fg_);
 // Compute and save first guess increment.
   dxFG_.reset(new CtrlInc_(*this));
-
-  Log::debug() << "CostJbTotal:finalizeTraj background is:" << xb_ << std::endl;
-  Log::debug() << "CostJbTotal:finalizeTraj first guess is:" << *fg_ << std::endl;
 
 // Compute x_0 - x_b for Jb
   jb_->computeIncrement(xb_.state(), fg_->state(), dxFG_->state());
@@ -187,14 +181,8 @@ double CostJbTotal<MODEL>::finalizeTraj(JqTerm_ * jqnl) {
   dxFG_->modVar().diff(fg_->modVar(), xb_.modVar());
   dxFG_->obsVar().diff(fg_->obsVar(), xb_.obsVar());
 
-  if (jqnl) jqnl->computeModelError(fg_->state(), dxFG_->state());
+  if (jqlin) jqlin->computeModelErrorTraj(fg_->state(), dxFG_->state());
   Log::info() << "CostJb: FG-BG" << *dxFG_ << std::endl;
-
-  fg_ = NULL;
-
-// Return Jb value
-  double zjb = this->evaluate(*dxFG_);
-  return zjb;
 }
 
 // -----------------------------------------------------------------------------
@@ -301,6 +289,8 @@ template<typename MODEL>
 void CostJbTotal<MODEL>::randomize(CtrlInc_ & dx) const {
   jb_->randomize(dx.state());
 }
+
+// -----------------------------------------------------------------------------
 
 }  // namespace oops
 

@@ -52,7 +52,6 @@ class PostBaseTLAD : private boost::noncopyable {
                       const util::Duration & step) {
     timer_.initialize(xx.validTime(), end, step);
     this->doInitializeTraj(xx, end, step);
-    if (timer_.itIsTime(xx.validTime())) this->doProcessingTraj(xx);
   }
 
   void processTraj(const State_ & xx) {

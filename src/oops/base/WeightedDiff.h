@@ -23,6 +23,8 @@
 #include "oops/interface/Geometry.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
+#include "oops/util/printStackTrace.h"
 
 namespace oops {
 
@@ -40,9 +42,8 @@ class WeightedDiff : public PostBase<FLDS> {
   typedef Geometry<MODEL>            Geometry_;
 
  public:
-  WeightedDiff(const util::DateTime &, const util::Duration &,
-               const Geometry_ &, const eckit::Configuration &,
-               const util::Duration &, WeightingFct &);
+  WeightedDiff(const eckit::Configuration &, const util::DateTime &, const util::Duration &,
+               const util::Duration &, const Geometry_ &, WeightingFct &);
   virtual ~WeightedDiff() {}
 
   INCR * releaseDiff();
@@ -53,7 +54,6 @@ class WeightedDiff : public PostBase<FLDS> {
 
   WeightingFct & wfct_;
   std::map< util::DateTime, double > weights_;
-//  std::unique_ptr< Accumulator<MODEL, INCR, FLDS> > avg_;
   Accumulator<MODEL, INCR, FLDS> * avg_;
   double sum_;
   bool linit_;
@@ -63,21 +63,22 @@ class WeightedDiff : public PostBase<FLDS> {
   util::Duration tstep_;
   util::DateTime bgnleg_;
   util::DateTime endleg_;
+  util::DateTime current_;
 };
 
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 template <typename MODEL, typename INCR, typename FLDS>
-WeightedDiff<MODEL, INCR, FLDS>::WeightedDiff(const util::DateTime & vt,
+WeightedDiff<MODEL, INCR, FLDS>::WeightedDiff(const eckit::Configuration & config,
+                                              const util::DateTime & vt,
                                               const util::Duration & span,
-                                              const Geometry_ & resol,
-                                              const eckit::Configuration & config,
                                               const util::Duration & tstep,
+                                              const Geometry_ & resol,
                                               WeightingFct & wfct)
   : PostBase<FLDS>(vt-span/2, vt+span/2),
     wfct_(wfct), weights_(), avg_(0), sum_(0.0), linit_(false),
     vtime_(vt), bgn_(vt-span/2), end_(vt+span/2), tstep_(tstep),
-    bgnleg_(), endleg_()
+    bgnleg_(), endleg_(), current_()
 {
   const Variables vars(config);
   avg_ = new Accumulator<MODEL, INCR, FLDS>(resol, vars, vtime_);
@@ -112,6 +113,7 @@ void WeightedDiff<MODEL, INCR, FLDS>::doInitialize(const FLDS & xx,
   }
   bgnleg_ = bgn;
   endleg_ = end;
+  current_ = bgn-tstep;
   Log::debug() << "WeightedDiff: initialized"
                << " bgnleg_ = " << bgnleg_ << ", endleg_ = " << endleg_
                << ", bgn_ = " << bgn_ << ", end_ = " << end_ << std::endl;
@@ -122,6 +124,8 @@ void WeightedDiff<MODEL, INCR, FLDS>::doInitialize(const FLDS & xx,
 template <typename MODEL, typename INCR, typename FLDS>
 void WeightedDiff<MODEL, INCR, FLDS>::doProcessing(const FLDS & xx) {
   const util::DateTime now(xx.validTime());
+  printStackTrace();
+  ASSERT(now > current_);
   if (((bgnleg_ < end_ && endleg_ > bgn_) || bgnleg_ == endleg_) &&
       (now != endleg_ || now == end_ || now == bgnleg_)) {
     ASSERT(weights_.find(now) != weights_.end());
@@ -131,6 +135,7 @@ void WeightedDiff<MODEL, INCR, FLDS>::doProcessing(const FLDS & xx) {
     Log::debug() << "WeightedDiff: time = " << now
                  << ", weight = " << zz << ", sum = " << sum_ << std::endl;
   }
+  current_ = now;
 }
 
 // -----------------------------------------------------------------------------

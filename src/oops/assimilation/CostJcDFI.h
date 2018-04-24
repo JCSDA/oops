@@ -60,13 +60,13 @@ template<typename MODEL> class CostJcDFI : public CostTermBase<MODEL> {
 
 /// Initialize before nonlinear model integration.
   boost::shared_ptr<PostBase<State_> > initialize(const CtrlVar_ &) const override;
-  boost::shared_ptr<PostBase<State_> > initializeTraj(const CtrlVar_ &,
-                                                      const Geometry_ &,
-                                                      const eckit::Configuration &) override;
+  boost::shared_ptr<PostBaseTLAD<MODEL> > initializeTraj(const CtrlVar_ &,
+                                                         const Geometry_ &,
+                                                         const eckit::Configuration &) override;
 
 /// Finalize computation after nonlinear model integration.
   double finalize(const eckit::Configuration &) const override;
-  double finalizeTraj(const eckit::Configuration &) override;
+  void finalizeTraj() override;
 
 /// Initialize \f$ J_c\f$ before starting the TL run.
   boost::shared_ptr<PostBaseTLAD_> setupTL(const CtrlInc_ &) const override;
@@ -100,7 +100,7 @@ template<typename MODEL> class CostJcDFI : public CostTermBase<MODEL> {
   boost::scoped_ptr<Geometry_> tlres_;
   util::Duration tlstep_;
   mutable boost::shared_ptr<WeightedDiff<MODEL, Increment_, State_> > filter_;
-  bool ltraj_;
+  mutable boost::shared_ptr<WeightedDiffTLAD<MODEL> > ftlad_;
 };
 
 // =============================================================================
@@ -110,7 +110,7 @@ CostJcDFI<MODEL>::CostJcDFI(const eckit::Configuration & conf, const Geometry_ &
                             const util::DateTime & vt, const util::Duration & span,
                             const util::Duration & tstep)
   : conf_(conf), vt_(vt), span_(span), alpha_(0), wfct_(), gradFG_(),
-    resol_(resol), tstep_(tstep), tlres_(), tlstep_(), filter_(), ltraj_(false)
+    resol_(resol), tstep_(tstep), tlres_(), tlstep_(), filter_()
 {
   alpha_ = conf.getDouble("alpha");
   if (conf.has("ftime")) vt_ = util::DateTime(conf.getString("ftime"));
@@ -126,9 +126,8 @@ CostJcDFI<MODEL>::CostJcDFI(const eckit::Configuration & conf, const Geometry_ &
 template<typename MODEL>
 boost::shared_ptr<PostBase<State<MODEL> > >
 CostJcDFI<MODEL>::initialize(const CtrlVar_ &) const {
-  ASSERT(ltraj_ == false);
-  filter_.reset(new WeightedDiff<MODEL, Increment_, State_>(vt_, span_, resol_,
-                                                            conf_, tstep_, *wfct_));
+  filter_.reset(new WeightedDiff<MODEL, Increment_, State_>(conf_, vt_, span_,
+                                                            tstep_, resol_, *wfct_));
   return filter_;
 }
 
@@ -136,7 +135,6 @@ CostJcDFI<MODEL>::initialize(const CtrlVar_ &) const {
 
 template<typename MODEL>
 double CostJcDFI<MODEL>::finalize(const eckit::Configuration &) const {
-  ASSERT(ltraj_ == false);
   double zz = 0.5 * alpha_;
   boost::scoped_ptr<Increment_> dx(filter_->releaseDiff());
   zz *= dot_product(*dx, *dx);
@@ -147,29 +145,21 @@ double CostJcDFI<MODEL>::finalize(const eckit::Configuration &) const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-boost::shared_ptr<PostBase<State<MODEL> > >
+boost::shared_ptr<PostBaseTLAD<MODEL> >
 CostJcDFI<MODEL>::initializeTraj(const CtrlVar_ &, const Geometry_ & tlres,
                                  const eckit::Configuration & innerConf) {
-  ltraj_ = true;
   tlres_.reset(new Geometry_(tlres));
   tlstep_ = util::Duration(innerConf.getString("linearmodel.tstep"));
-  filter_.reset(new WeightedDiff<MODEL, Increment_, State_>(vt_, span_, resol_,
-                                                            conf_, tstep_, *wfct_));
-  return filter_;
+  ftlad_.reset(new WeightedDiffTLAD<MODEL>(conf_, vt_, span_, tstep_, *tlres_, *wfct_));
+  return ftlad_;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-double CostJcDFI<MODEL>::finalizeTraj(const eckit::Configuration &) {
-  ASSERT(ltraj_ == true);
-  double zz = 0.5 * alpha_;
-  gradFG_.reset(filter_->releaseDiff());
-  zz *= dot_product(*gradFG_, *gradFG_);
+void CostJcDFI<MODEL>::finalizeTraj() {
+  gradFG_.reset(ftlad_->releaseDiff());
   *gradFG_ *= alpha_;
-  ltraj_ = false;
-  Log::test() << "CostJcDFI: Nonlinear Jc = " << zz << std::endl;
-  return zz;
 }
 
 // -----------------------------------------------------------------------------
@@ -186,9 +176,8 @@ Increment<MODEL> * CostJcDFI<MODEL>::newDualVector() const {
 template<typename MODEL>
 boost::shared_ptr<PostBaseTLAD<MODEL> >
 CostJcDFI<MODEL>::setupTL(const CtrlInc_ &) const {
-  boost::shared_ptr<WeightedDiffTLAD<MODEL> > filterTL(
-    new WeightedDiffTLAD<MODEL>(vt_, span_, *tlres_, conf_, tlstep_, *wfct_));
-  return filterTL;
+  ftlad_->setupTL(*tlres_);
+  return ftlad_;
 }
 
 // -----------------------------------------------------------------------------
@@ -199,9 +188,8 @@ CostJcDFI<MODEL>::setupAD(boost::shared_ptr<const GeneralizedDepartures> pv,
                           CtrlInc_ &) const {
   boost::shared_ptr<const Increment_>
     dx = boost::dynamic_pointer_cast<const Increment_>(pv);
-  boost::shared_ptr<WeightedDiffTLAD<MODEL> > filterAD(
-    new WeightedDiffTLAD<MODEL>(vt_, span_, tlstep_, *wfct_, dx));
-  return filterAD;
+  ftlad_->setupAD(dx);
+  return ftlad_;
 }
 
 // -----------------------------------------------------------------------------
@@ -230,6 +218,7 @@ Increment<MODEL> * CostJcDFI<MODEL>::multiplyCoInv(const GeneralizedDepartures &
 template<typename MODEL>
 void CostJcDFI<MODEL>::resetLinearization() {
   gradFG_.reset();
+  ftlad_.reset();
 }
 
 // -----------------------------------------------------------------------------

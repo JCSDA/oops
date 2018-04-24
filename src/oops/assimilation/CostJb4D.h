@@ -59,6 +59,7 @@ template<typename MODEL> class CostJb4D : public CostJbState<MODEL> {
 
 /// Empty Jq observer.
   JqTerm<MODEL> * initializeJq() const override {return 0;}
+  JqTermTLAD<MODEL> * initializeJqTLAD() const override {return 0;}
 
 /// Get increment from state (usually first guess).
   void computeIncrement(const State4D_ &, const State4D_ &, Increment4D_ &) const override;

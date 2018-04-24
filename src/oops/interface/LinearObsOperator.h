@@ -90,10 +90,10 @@ LinearObsOperator<MODEL>::~LinearObsOperator() {
 
 template <typename MODEL>
 void LinearObsOperator<MODEL>::setTrajectory(const GeoVaLs_ & gvals, const ObsAuxControl_ & aux) {
-  Log::trace() << "LinearObsOperator<MODEL>::obsEquiv starting" << std::endl;
+  Log::trace() << "LinearObsOperator<MODEL>::setTrajectory starting" << std::endl;
   util::Timer timer(classname(), "ObsEquiv");
   oper_->setTrajectory(gvals.geovals(), aux.obsauxcontrol());
-  Log::trace() << "LinearObsOperator<MODEL>::obsEquiv done" << std::endl;
+  Log::trace() << "LinearObsOperator<MODEL>::setTrajectory done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

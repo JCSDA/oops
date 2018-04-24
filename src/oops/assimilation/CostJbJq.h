@@ -59,6 +59,7 @@ template<typename MODEL> class CostJbJq : public CostJbState<MODEL> {
 
 /// Finalize \f$ J_q\f$ after the model run.
   JqTerm<MODEL> * initializeJq() const override;
+  JqTermTLAD<MODEL> * initializeJqTLAD() const override;
 
 /// Get increment from state (usually first guess).
   void computeIncrement(const State4D_ &, const State4D_ &, Increment4D_ &) const override;
@@ -164,6 +165,13 @@ JqTerm<MODEL> * CostJbJq<MODEL>::initializeJq() const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
+JqTermTLAD<MODEL> * CostJbJq<MODEL>::initializeJqTLAD() const {
+  return new JqTermTLAD<MODEL>(B_.size());
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
 JqTermTLAD<MODEL> * CostJbJq<MODEL>::initializeJqTL() const {
   JqTermTLAD<MODEL> * jqtl = 0;
   if (!forcing_) jqtl = new JqTermTLAD<MODEL>(B_.size());
@@ -175,7 +183,10 @@ JqTermTLAD<MODEL> * CostJbJq<MODEL>::initializeJqTL() const {
 template<typename MODEL>
 JqTermTLAD<MODEL> * CostJbJq<MODEL>::initializeJqAD(const Increment4D_ & dx) const {
   JqTermTLAD<MODEL> * jqad = 0;
-  if (!forcing_) jqad = new JqTermTLAD<MODEL>(B_.size(), dx);
+  if (!forcing_) {
+    jqad = new JqTermTLAD<MODEL>(B_.size());
+    jqad->setupAD(dx);
+  }
   return jqad;
 }
 
@@ -191,7 +202,7 @@ void CostJbJq<MODEL>::Bmult(const Increment4D_ & dxin, Increment4D_ & dxout) con
                    << 0.5 * dot_product(dxin[0], dxout[0]) << std::endl;
     } else {
       Log::debug() << "CostJbJq:multiply Jq(" << jsub << ") is "
-                   << 0.5 * dot_product(dxin[jsub], dxout[jsub]);
+                   << 0.5 * dot_product(dxin[jsub], dxout[jsub]) << std::endl;
     }
   }
 }
@@ -218,7 +229,7 @@ void CostJbJq<MODEL>::Bminv(const Increment4D_ & dxin, Increment4D_ & dxout) con
                    << 0.5 * dot_product(dxin[0], dxout[0]) << std::endl;
     } else {
       Log::debug() << "CostJbJq:inverseMultiply Jq(" << jsub << ") is "
-                   << 0.5 * dot_product(dxin[jsub], dxout[jsub]);
+                   << 0.5 * dot_product(dxin[jsub], dxout[jsub]) << std::endl;
     }
   }
   Log::warning() << "*** B inverse might not always exist ***" << std::endl;

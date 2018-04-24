@@ -26,16 +26,19 @@ namespace oops {
 
 /// Save trajectory during forecast run.
 
+// -----------------------------------------------------------------------------
+
 template <typename MODEL>
 class TrajectorySaver : public PostBase<State<MODEL> > {
-  typedef Geometry<MODEL>        Geometry_;
-  typedef LinearModel<MODEL>     LinearModel_;
-  typedef ModelAuxControl<MODEL> ModelAux_;
-  typedef State<MODEL>           State_;
+  typedef Geometry<MODEL>          Geometry_;
+  typedef LinearModel<MODEL>       LinearModel_;
+  typedef ModelAuxControl<MODEL>   ModelAux_;
+  typedef PostProcessorTLAD<MODEL> PPTLAD_;
+  typedef State<MODEL>             State_;
 
  public:
   TrajectorySaver(const eckit::Configuration &, const Geometry_ &,
-                  const ModelAux_ &, boost::ptr_vector<LinearModel_> &);
+                  const ModelAux_ &, boost::ptr_vector<LinearModel_> &, PPTLAD_);
   ~TrajectorySaver() {}
 
  private:
@@ -44,42 +47,57 @@ class TrajectorySaver : public PostBase<State<MODEL> > {
   const ModelAux_    lrBias_;
   boost::ptr_vector<LinearModel_> & tlm_;
   LinearModel_ *     subtlm_;
-  boost::scoped_ptr<State_> xlr_;
+  PPTLAD_ pptraj_;
 
   void doInitialize(const State_ &, const util::DateTime &, const util::Duration &) override;
   void doProcessing(const State_ &) override;
   void doFinalize(const State_ &) override;
 };
 
-// ====================================================================================
+// -----------------------------------------------------------------------------
 
 template <typename MODEL>
 TrajectorySaver<MODEL>::TrajectorySaver(const eckit::Configuration & conf,
                                         const Geometry_ & resol,
                                         const ModelAux_ & bias,
-                                        boost::ptr_vector<LinearModel_> & tlm):
+                                        boost::ptr_vector<LinearModel_> & tlm,
+                                        PPTLAD_ pptraj):
   PostBase<State_>(conf),
   resol_(resol), tlConf_(conf), lrBias_(resol, bias),
-  tlm_(tlm), subtlm_(0), xlr_()
-{}
+  tlm_(tlm), subtlm_(0), pptraj_(pptraj)
+{
+  Log::trace() << "TrajectorySaver::TrajectorySaver" << std::endl;
+}
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 void TrajectorySaver<MODEL>::doInitialize(const State_ & x0,
-                                          const util::DateTime &, const util::Duration &) {
+                                          const util::DateTime & end,
+                                          const util::Duration & step) {
+  Log::trace() << "TrajectorySaver::doInitialize start" << std::endl;
   subtlm_ = new LinearModel_(resol_, tlConf_);
-  xlr_.reset(new State_(resol_, x0));
+  State_ xlr(resol_, x0);
+  pptraj_.initializeTraj(xlr, end, step);
+  Log::trace() << "TrajectorySaver::doInitialize done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 void TrajectorySaver<MODEL>::doProcessing(const State_ & xx) {
+  Log::trace() << "TrajectorySaver::doProcessing start" << std::endl;
   ASSERT(subtlm_ != 0);
-  subtlm_->setTrajectory(xx, *xlr_, lrBias_);
+  State_ xlr(resol_, xx);
+  subtlm_->setTrajectory(xx, xlr, lrBias_);
+  pptraj_.processTraj(xlr);
+  Log::trace() << "TrajectorySaver::doProcessing done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-void TrajectorySaver<MODEL>::doFinalize(const State_ &) {
+void TrajectorySaver<MODEL>::doFinalize(const State_ & xx) {
+  Log::trace() << "TrajectorySaver::doFinalize start" << std::endl;
+  State_ xlr(resol_, xx);
   tlm_.push_back(subtlm_);
+  pptraj_.finalizeTraj(xlr);
   subtlm_ = 0;
+  Log::trace() << "TrajectorySaver::doFinalize done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 

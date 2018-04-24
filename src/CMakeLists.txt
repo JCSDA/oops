@@ -182,11 +182,13 @@ oops/util/formats.h
 oops/util/kinds.F90
 oops/util/LibOOPS.h
 oops/util/LibOOPS.cc
+oops/util/Logger.h
 oops/util/ObjectCounter.h
 oops/util/ObjectCountHelper.h
 oops/util/ObjectCountHelper.cc
 oops/util/Printable.h
 oops/util/PrintAdjTest.h
+oops/util/printStackTrace.h
 oops/util/set_err_trap.F90
 oops/util/signal_trap.c
 oops/util/string_f_c_mod.F90
@@ -195,7 +197,6 @@ oops/util/Timer.cc
 oops/util/TimerHelper.h
 oops/util/TimerHelper.cc
 oops/util/utilNamespaceDoc.h
-oops/util/Logger.h
 
 )
 

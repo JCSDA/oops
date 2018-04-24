@@ -54,6 +54,7 @@ template<typename MODEL> class CostJbState : private boost::noncopyable {
 
 /// Initialize Jq computations if needed.
   virtual JqTerm<MODEL> * initializeJq() const = 0;
+  virtual JqTermTLAD<MODEL> * initializeJqTLAD() const = 0;
 
 /// Get increment from state (usually first guess).
   virtual void computeIncrement(const State4D_ &, const State4D_ &,
