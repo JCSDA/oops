@@ -86,16 +86,16 @@ template <typename MODEL> class Dirac : public Application {
     loc_.reset(new Localization_(resol, locConfig));
     Log::info() << "Setup localization OK" << std::endl;
 
-//  Apply NICAS
+//  Apply BUMP
     Increment_ dxdirout(dxdir);
     loc_->multiply(dxdirout);
     Increment_ dxrndout(dxrnd);
     loc_->multiply(dxrndout);
-    Log::info() << "Apply NICAS OK" << std::endl;
+    Log::info() << "Apply BUMP OK" << std::endl;
 
 //  Write increment
-    const eckit::LocalConfiguration output_nicas(fullConfig, "output_nicas");
-    dxdirout.write(output_nicas);
+    const eckit::LocalConfiguration output_bump(fullConfig, "output_bump");
+    dxdirout.write(output_bump);
     Log::info() << "Write increment OK" << std::endl;
     Log::test() << "Increment norm: " << dxrndout.norm() << std::endl;
 
@@ -116,7 +116,7 @@ template <typename MODEL> class Dirac : public Application {
     Log::info() << "Write increment OK" << std::endl;
     Log::test() << "Increment norm: " << dxrndout.norm() << std::endl;
 
-//  Test NICAS adjoint
+//  Test BUMP adjoint
     Increment_ x1(dxdir);
     Increment_ x2(dxdir);
     Increment_ x1save(dxdir);

@@ -14,7 +14,7 @@ list( APPEND qg_test_input
   testinput/4dvar.obsbias.json
   testinput/4dvar.rpcg.json
   testinput/dfi.json
-  testinput/dirac.nicas.json
+  testinput/dirac.bump.json
   testinput/forecast.json
   testinput/genenspert.json
   testinput/hofx.json
@@ -46,7 +46,7 @@ list( APPEND qg_testoutput
   testoutput/4dvar.obsbias.test
   testoutput/4dvar.rpcg.test
   testoutput/dfi.test
-  testoutput/dirac.nicas.test
+  testoutput/dirac.bump.test
   testoutput/forecast.test
   testoutput/genenspert.test
   testoutput/hofx.test
@@ -389,11 +389,11 @@ ecbuild_add_test( TARGET test_qg_alpha
                        testoutput/4dvar.alpha.test
                   DEPENDS qg_4dvar.x )
 
-ecbuild_add_test( TARGET test_qg_dirac_nicas
+ecbuild_add_test( TARGET test_qg_dirac_bump
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_dirac.x testinput/dirac.nicas.json"
-                       testoutput/dirac.nicas.test
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_dirac.x testinput/dirac.bump.json"
+                       testoutput/dirac.bump.test
                   DEPENDS qg_dirac.x )
 endif()
 
