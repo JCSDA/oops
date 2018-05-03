@@ -51,10 +51,12 @@ std::vector<double> UnstructuredGrid::getArea() {
 }
 // -----------------------------------------------------------------------------
 std::vector<double> UnstructuredGrid::getVunit() {
+  int nc0a;
+  get_size_f90(keyUGrid_, 1, nc0a);
   int nl0;
   get_size_f90(keyUGrid_, 2, nl0);
-  std::vector<double> vunit(nl0);
-  get_vunit_f90(keyUGrid_, nl0, &vunit[0]);
+  std::vector<double> vunit(nc0a*nl0);
+  get_vunit_f90(keyUGrid_, nc0a*nl0, &vunit[0]);
   return vunit;
 }
 // -----------------------------------------------------------------------------
@@ -64,7 +66,7 @@ std::vector<int> UnstructuredGrid::getImask() {
   int nl0;
   get_size_f90(keyUGrid_, 2, nl0);
   std::vector<int> imask(nc0a*nl0);
-  get_imask_f90(keyUGrid_, nc0a, nl0, &imask[0]);
+  get_imask_f90(keyUGrid_, nc0a*nl0, &imask[0]);
   return imask;
 }
 // -----------------------------------------------------------------------------

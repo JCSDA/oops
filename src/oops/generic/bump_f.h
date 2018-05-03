@@ -15,7 +15,7 @@ namespace eckit {
 
 namespace oops {
 extern "C" {
-  void create_bump_f90(int &, const eckit::Configuration * const *, const int &, const int &, const int &, const int &, const int &, const double *, const double *, const double *, const double *, const int *, const double *);
+  void create_bump_f90(int &, const eckit::Configuration * const *, const int &, const int &, const int &, const int &, const double *, const double *, const double *, const double *, const int *, const int &, const double *);
   void delete_bump_f90(const int &);
   void bump_multiply_f90(const int &, const int &);
 }

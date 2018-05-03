@@ -11,10 +11,10 @@
 module type_linop
 
 use netcdf
-use omp_lib
+!$ use omp_lib
 use tools_display, only: msgerror,msgwarning,prog_init,prog_print
 use tools_kinds, only: kind_real
-use tools_missing, only: msi,msr,isnotmsr
+use tools_missing, only: msi,msr,isnotmsr,isnotmsi
 use tools_nc, only: ncfloat,ncerr
 use tools_qsort, only: qsort
 use type_ctree, only: ctree_type
@@ -26,13 +26,15 @@ implicit none
 
 ! Linear operator derived type
 type linop_type
-   character(len=1024) :: prefix       !< Operator prefix (for I/O)
-   integer :: n_src                    !< Source vector size
-   integer :: n_dst                    !< Destination vector size
-   integer :: n_s                      !< Operator size
-   integer,allocatable :: row(:)       !< Output indices
-   integer,allocatable :: col(:)       !< Input indices
-   real(kind_real),allocatable :: S(:) !< Coefficients
+   character(len=1024) :: prefix            !< Operator prefix (for I/O)
+   integer :: n_src                         !< Source vector size
+   integer :: n_dst                         !< Destination vector size
+   integer :: n_s                           !< Operator size
+   integer,allocatable :: row(:)            !< Output indices
+   integer,allocatable :: col(:)            !< Input indices
+   real(kind_real),allocatable :: S(:)      !< Coefficients
+   integer :: nvec                          !< Size of the vector of linear operators with similar row and col
+   real(kind_real),allocatable :: Svec(:,:) !< Coefficients of the vector of linear operators with similar row and col
 contains
    procedure :: alloc => linop_alloc
    procedure :: dealloc => linop_dealloc
@@ -65,22 +67,33 @@ contains
 ! Subroutine: linop_alloc
 !> Purpose: linear operator object allocation
 !----------------------------------------------------------------------
-subroutine linop_alloc(linop)
+subroutine linop_alloc(linop,nvec)
 
 implicit none
 
 ! Passed variables
 class(linop_type),intent(inout) :: linop !< Linear operator
+integer,intent(in),optional :: nvec      !< Size of the vector of linear operators with similar row and col
 
 ! Allocation
 allocate(linop%row(linop%n_s))
 allocate(linop%col(linop%n_s))
-allocate(linop%S(linop%n_s))
+if (present(nvec)) then
+   linop%nvec = nvec
+   allocate(linop%Svec(linop%n_s,linop%nvec))
+else
+   allocate(linop%S(linop%n_s))
+end if
 
 ! Initialization
 call msi(linop%row)
 call msi(linop%col)
-call msr(linop%S)
+if (present(nvec)) then
+   call msr(linop%Svec)
+else
+   call msi(linop%nvec)
+   call msr(linop%S)
+end if
 
 end subroutine linop_alloc
 
@@ -99,6 +112,7 @@ class(linop_type),intent(inout) :: linop !< Linear operator
 if (allocated(linop%row)) deallocate(linop%row)
 if (allocated(linop%col)) deallocate(linop%col)
 if (allocated(linop%S)) deallocate(linop%S)
+if (allocated(linop%Svec)) deallocate(linop%Svec)
 
 end subroutine linop_dealloc
 
@@ -123,12 +137,20 @@ linop_copy%n_s = linop%n_s
 call linop_copy%dealloc
 
 ! Allocation
-call linop_copy%alloc
+if (isnotmsi(linop%nvec)) then
+   call linop_copy%alloc(linop%nvec)
+else
+   call linop_copy%alloc
+end if
 
 ! Copy data
 linop_copy%row = linop%row
 linop_copy%col = linop%col
-linop_copy%S = linop%S
+if (isnotmsi(linop_copy%nvec)) then
+   linop_copy%Svec = linop%Svec
+else
+   linop_copy%S = linop%S
+end if
 
 end function linop_copy
 
@@ -154,7 +176,11 @@ if (linop%n_s<1000000) then
 
    ! Sort col and S
    linop%col = linop%col(order)
-   linop%S = linop%S(order)
+   if (isnotmsi(linop%nvec)) then
+      linop%Svec = linop%Svec(order,:)
+   else
+      linop%S = linop%S(order)
+   end if
    deallocate(order)
 
    ! Sort with respect to col for each row
@@ -169,7 +195,11 @@ if (linop%n_s<1000000) then
          allocate(order(n_s))
          call qsort(n_s,linop%col(i_s_s:i_s_e),order)
          order = order+i_s_s-1
-         linop%S(i_s_s:i_s_e) = linop%S(order)
+         if (isnotmsi(linop%nvec)) then
+            linop%Svec(i_s_s:i_s_e,:) = linop%Svec(order,:)
+         else
+            linop%S(i_s_s:i_s_e) = linop%S(order)
+         end if
          deallocate(order)
          i_s_s = i_s+1
          row = linop%row(i_s)
@@ -195,7 +225,7 @@ class(linop_type),intent(inout) :: linop !< Linear operator
 integer,intent(in) :: ncid               !< NetCDF file ID
 
 ! Local variables
-integer :: info
+integer :: info,nvec
 integer :: n_s_id,row_id,col_id,S_id
 character(len=1024) :: subr = 'linop_read'
 
@@ -208,22 +238,31 @@ else
 end if
 
 if (linop%n_s>0) then
+   ! Get source/destination dimensions
+   call ncerr(subr,nf90_get_att(ncid,nf90_global,trim(linop%prefix)//'_n_src',linop%n_src))
+   call ncerr(subr,nf90_get_att(ncid,nf90_global,trim(linop%prefix)//'_n_dst',linop%n_dst))
+   call ncerr(subr,nf90_get_att(ncid,nf90_global,trim(linop%prefix)//'_nvec',nvec))
+
    ! Allocation
-   call linop_alloc(linop)
+   if (isnotmsi(nvec)) then
+      call linop%alloc(nvec)
+   else
+      call linop%alloc
+   end if
 
    ! Get variables id
    call ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_row',row_id))
    call ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_col',col_id))
    call ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_S',S_id))
 
-   ! Get source/destination dimensions
-   call ncerr(subr,nf90_get_att(ncid,nf90_global,trim(linop%prefix)//'_n_src',linop%n_src))
-   call ncerr(subr,nf90_get_att(ncid,nf90_global,trim(linop%prefix)//'_n_dst',linop%n_dst))
-
    ! Get variables
    call ncerr(subr,nf90_get_var(ncid,row_id,linop%row))
    call ncerr(subr,nf90_get_var(ncid,col_id,linop%col))
-   call ncerr(subr,nf90_get_var(ncid,S_id,linop%S))
+   if (isnotmsi(linop%nvec)) then
+      call ncerr(subr,nf90_get_var(ncid,S_id,linop%Svec))
+   else
+      call ncerr(subr,nf90_get_var(ncid,S_id,linop%S))
+   end if
 end if
 
 end subroutine linop_read
@@ -241,24 +280,30 @@ class(linop_type),intent(in) :: linop !< Linear operator
 integer,intent(in) :: ncid            !< NetCDF file ID
 
 ! Local variables
-integer :: n_s_id,row_id,col_id,S_id
+integer :: n_s_id,nvec_id,row_id,col_id,S_id
 character(len=1024) :: subr = 'linop_write'
 
 if (linop%n_s>0) then
    ! Start definition mode
    call ncerr(subr,nf90_redef(ncid))
 
+   ! Write source/destination dimensions
+   call ncerr(subr,nf90_put_att(ncid,nf90_global,trim(linop%prefix)//'_n_src',linop%n_src))
+   call ncerr(subr,nf90_put_att(ncid,nf90_global,trim(linop%prefix)//'_n_dst',linop%n_dst))
+   call ncerr(subr,nf90_put_att(ncid,nf90_global,trim(linop%prefix)//'_nvec',linop%nvec))
+
    ! Define dimensions
    call ncerr(subr,nf90_def_dim(ncid,trim(linop%prefix)//'_n_s',linop%n_s,n_s_id))
+   if (isnotmsi(linop%nvec)) call ncerr(subr,nf90_def_dim(ncid,trim(linop%prefix)//'_nvec',linop%nvec,nvec_id))
 
    ! Define variables
    call ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_row',nf90_int,(/n_s_id/),row_id))
    call ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_col',nf90_int,(/n_s_id/),col_id))
-   call ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_S',ncfloat,(/n_s_id/),S_id))
-
-   ! Write source/destination dimensions
-   call ncerr(subr,nf90_put_att(ncid,nf90_global,trim(linop%prefix)//'_n_src',linop%n_src))
-   call ncerr(subr,nf90_put_att(ncid,nf90_global,trim(linop%prefix)//'_n_dst',linop%n_dst))
+   if (isnotmsi(linop%nvec)) then
+      call ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_S',ncfloat,(/n_s_id,nvec_id/),S_id))
+   else
+      call ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_S',ncfloat,(/n_s_id/),S_id))
+   end if
 
    ! End definition mode
    call ncerr(subr,nf90_enddef(ncid))
@@ -266,7 +311,11 @@ if (linop%n_s>0) then
    ! Put variables
    call ncerr(subr,nf90_put_var(ncid,row_id,linop%row))
    call ncerr(subr,nf90_put_var(ncid,col_id,linop%col))
-   call ncerr(subr,nf90_put_var(ncid,S_id,linop%S))
+   if (isnotmsi(linop%nvec)) then
+      call ncerr(subr,nf90_put_var(ncid,S_id,linop%Svec))
+   else
+      call ncerr(subr,nf90_put_var(ncid,S_id,linop%S))
+   end if
 end if
 
 end subroutine linop_write
@@ -275,7 +324,7 @@ end subroutine linop_write
 ! Subroutine: linop_apply
 !> Purpose: apply linear operator
 !----------------------------------------------------------------------
-subroutine linop_apply(linop,fld_src,fld_dst)
+subroutine linop_apply(linop,fld_src,fld_dst,ivec)
 
 implicit none
 
@@ -283,6 +332,7 @@ implicit none
 class(linop_type),intent(in) :: linop               !< Linear operator
 real(kind_real),intent(in) :: fld_src(linop%n_src)  !< Source vector
 real(kind_real),intent(out) :: fld_dst(linop%n_dst) !< Destination vector
+integer,intent(in),optional :: ivec                 !< Index of the vector of linear operators with similar row and col
 
 ! Local variables
 integer :: i_s,i_dst
@@ -294,7 +344,11 @@ if (check_data) then
    if (maxval(linop%col)>linop%n_src) call msgerror('col>n_src for linear operation '//trim(linop%prefix))
    if (minval(linop%row)<1) call msgerror('row<1 for linear operation '//trim(linop%prefix))
    if (maxval(linop%row)>linop%n_dst) call msgerror('row>n_dst for linear operation '//trim(linop%prefix))
-   if (any(isnan(linop%S))) call msgerror('NaN in S for linear operation '//trim(linop%prefix))
+   if (present(ivec)) then
+      if (any(isnan(linop%Svec))) call msgerror('NaN in Svec for linear operation '//trim(linop%prefix))
+   else
+      if (any(isnan(linop%S))) call msgerror('NaN in S for linear operation '//trim(linop%prefix))
+   end if
 
    ! Check input
    if (any(fld_src>huge(1.0))) call msgerror('Overflowing number in fld_src for linear operation '//trim(linop%prefix))
@@ -308,7 +362,11 @@ missing = .true.
 
 ! Apply weights
 do i_s=1,linop%n_s
-   fld_dst(linop%row(i_s)) = fld_dst(linop%row(i_s))+linop%S(i_s)*fld_src(linop%col(i_s))
+   if (present(ivec)) then
+      fld_dst(linop%row(i_s)) = fld_dst(linop%row(i_s))+linop%Svec(i_s,ivec)*fld_src(linop%col(i_s))
+   else
+      fld_dst(linop%row(i_s)) = fld_dst(linop%row(i_s))+linop%S(i_s)*fld_src(linop%col(i_s))
+   end if
    missing(linop%row(i_s)) = .false.
 end do
 
@@ -328,7 +386,7 @@ end subroutine linop_apply
 ! Subroutine: linop_apply_ad
 !> Purpose: apply linear operator, adjoint
 !----------------------------------------------------------------------
-subroutine linop_apply_ad(linop,fld_dst,fld_src)
+subroutine linop_apply_ad(linop,fld_dst,fld_src,ivec)
 
 implicit none
 
@@ -336,6 +394,7 @@ implicit none
 class(linop_type),intent(in) :: linop               !< Linear operator
 real(kind_real),intent(in) :: fld_dst(linop%n_dst)  !< Destination vector
 real(kind_real),intent(out) :: fld_src(linop%n_src) !< Source vector
+integer,intent(in),optional :: ivec                 !< Index of the vector of linear operators with similar row and col
 
 ! Local variables
 integer :: i_s
@@ -346,7 +405,11 @@ if (check_data) then
    if (maxval(linop%col)>linop%n_src) call msgerror('col>n_src for adjoint linear operation '//trim(linop%prefix))
    if (minval(linop%row)<1) call msgerror('row<1 for adjoint linear operation '//trim(linop%prefix))
    if (maxval(linop%row)>linop%n_dst) call msgerror('row>n_dst for adjoint linear operation '//trim(linop%prefix))
-   if (any(isnan(linop%S))) call msgerror('NaN in S for adjoint linear operation '//trim(linop%prefix))
+   if (present(ivec)) then
+      if (any(isnan(linop%Svec))) call msgerror('NaN in Svec for adjoint linear operation '//trim(linop%prefix))
+   else
+      if (any(isnan(linop%S))) call msgerror('NaN in S for adjoint linear operation '//trim(linop%prefix))
+   end if
 
    ! Check input
    if (any(fld_dst>huge(1.0))) call msgerror('Overflowing number in fld_dst for adjoint linear operation '//trim(linop%prefix))
@@ -359,7 +422,11 @@ fld_src = 0.0
 
 ! Apply weights
 do i_s=1,linop%n_s
-   fld_src(linop%col(i_s)) = fld_src(linop%col(i_s))+linop%S(i_s)*fld_dst(linop%row(i_s))
+   if (present(ivec)) then
+      fld_src(linop%col(i_s)) = fld_src(linop%col(i_s))+linop%Svec(i_s,ivec)*fld_dst(linop%row(i_s))
+   else
+      fld_src(linop%col(i_s)) = fld_src(linop%col(i_s))+linop%S(i_s)*fld_dst(linop%row(i_s))
+   end if
 end do
 
 if (check_data) then
@@ -373,13 +440,14 @@ end subroutine linop_apply_ad
 ! Subroutine: linop_apply_sym
 !> Purpose: apply linear operator, symmetric
 !----------------------------------------------------------------------
-subroutine linop_apply_sym(linop,fld)
+subroutine linop_apply_sym(linop,fld,ivec)
 
 implicit none
 
 ! Passed variables
 class(linop_type),intent(in) :: linop             !< Linear operator
 real(kind_real),intent(inout) :: fld(linop%n_src) !< Source/destination vector
+integer,intent(in),optional :: ivec                 !< Index of the vector of linear operators with similar row and col
 
 ! Local variables
 integer :: i_s,ithread
@@ -391,7 +459,11 @@ if (check_data) then
    if (maxval(linop%col)>linop%n_src) call msgerror('col>n_src for symmetric linear operation '//trim(linop%prefix))
    if (minval(linop%row)<1) call msgerror('row<1 for symmetric linear operation '//trim(linop%prefix))
    if (maxval(linop%row)>linop%n_src) call msgerror('row>n_dst for symmetric linear operation '//trim(linop%prefix))
-   if (any(isnan(linop%S))) call msgerror('NaN in S for symmetric linear operation '//trim(linop%prefix))
+   if (present(ivec)) then
+      if (any(isnan(linop%Svec))) call msgerror('NaN in Svec for symmetric linear operation '//trim(linop%prefix))
+   else
+      if (any(isnan(linop%S))) call msgerror('NaN in S for symmetric linear operation '//trim(linop%prefix))
+   end if
 
    ! Check input
    if (any(fld>huge(1.0))) call msgerror('Overflowing number in fld for symmetric linear operation '//trim(linop%prefix))
@@ -404,8 +476,13 @@ fld_arr = 0.0
 !$omp parallel do schedule(static) private(i_s,ithread)
 do i_s=1,linop%n_s
    ithread = omp_get_thread_num()+1
-   fld_arr(linop%row(i_s),ithread) = fld_arr(linop%row(i_s),ithread)+linop%S(i_s)*fld(linop%col(i_s))
-   fld_arr(linop%col(i_s),ithread) = fld_arr(linop%col(i_s),ithread)+linop%S(i_s)*fld(linop%row(i_s))
+   if (present(ivec)) then
+      fld_arr(linop%row(i_s),ithread) = fld_arr(linop%row(i_s),ithread)+linop%Svec(i_s,ivec)*fld(linop%col(i_s))
+      fld_arr(linop%col(i_s),ithread) = fld_arr(linop%col(i_s),ithread)+linop%Svec(i_s,ivec)*fld(linop%row(i_s))
+   else
+      fld_arr(linop%row(i_s),ithread) = fld_arr(linop%row(i_s),ithread)+linop%S(i_s)*fld(linop%col(i_s))
+      fld_arr(linop%col(i_s),ithread) = fld_arr(linop%col(i_s),ithread)+linop%S(i_s)*fld(linop%row(i_s))
+   end if
 end do
 !$omp end parallel do
 
@@ -515,7 +592,7 @@ call mesh%create(n_src_eff,lon_src(src_eff_to_src),lat_src(src_eff_to_src))
 ! Compute cover tree
 allocate(mask_ctree(n_src_eff))
 mask_ctree = .true.
-call ctree%create(n_src_eff,dble(lon_src(src_eff_to_src)),dble(lat_src(src_eff_to_src)),mask_ctree)
+call ctree%create(n_src_eff,lon_src(src_eff_to_src),lat_src(src_eff_to_src),mask_ctree)
 deallocate(mask_ctree)
 
 ! Compute interpolation
@@ -604,8 +681,7 @@ do i_dst_loc=1,n_dst_loc(mpl%myproc)
 
    if (mask_dst(i_dst)) then
       ! Find nearest neighbor
-      call ctree%find_nearest_neighbors(dble(lon_dst(i_dst)), &
-    & dble(lat_dst(i_dst)),1,nn_index,nn_dist)
+      call ctree%find_nearest_neighbors(lon_dst(i_dst),lat_dst(i_dst),1,nn_index,nn_dist)
 
       if (abs(nn_dist(1))>0.0) then
          ! Compute barycentric coordinates
@@ -1004,12 +1080,12 @@ if (count(missing)>0) then
    lmask = mask_dst.and.(.not.missing)
 
    ! Compute cover tree
-   call ctree%create(n_dst,dble(lon_dst),dble(lat_dst),lmask)
+   call ctree%create(n_dst,lon_dst,lat_dst,lmask)
 
    do i_dst=1,n_dst
       if (missing(i_dst)) then
          ! Compute nearest neighbor
-         call ctree%find_nearest_neighbors(dble(lon_dst(i_dst)),dble(lat_dst(i_dst)),1,nn,dum)
+         call ctree%find_nearest_neighbors(lon_dst(i_dst),lat_dst(i_dst),1,nn,dum)
 
          ! Copy data
          found = .false.

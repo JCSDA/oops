@@ -6,7 +6,7 @@
 !> <br>
 !> Licensing: this code is distributed under the CeCILL-C license
 !> <br>
-!> Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE
+!> Copyrimght © 2015-... UCAR, CERFACS and METEO-FRANCE
 !----------------------------------------------------------------------
 module model_nemo
 
@@ -42,7 +42,7 @@ type(nam_type),intent(in) :: nam      !< Namelist
 type(geom_type),intent(inout) :: geom !< Geometry
 
 ! Local variables
-integer :: il0,ig,ilat,ilon
+integer :: il0,img,ilat,ilon,ic0
 integer :: ncid,nlon_id,nlat_id,nlev_id,lon_id,lat_id,tmask_id,e1t_id,e2t_id
 integer,allocatable :: g_to_lon(:),g_to_lat(:)
 integer(kind=1),allocatable :: tmask(:,:,:)
@@ -94,17 +94,17 @@ lon = lon*real(deg2rad,kind=4)
 lat = lat*real(deg2rad,kind=4)
 
 ! Redundant grid
-ig = 0
+img = 0
 do ilon=1,geom%nlon
    do ilat=1,geom%nlat
-      ig = ig+1
-      g_to_lon(ig) = ilon
-      g_to_lat(ig) = ilat
-      lon_g(ig) = real(lon(ilon,ilat),kind_real)
-      lat_g(ig) = real(lat(ilon,ilat),kind_real)
-      area_g(ig) = real(e1t(ilon,ilat,1)*e2t(ilon,ilat,1),kind_real)/req**2
+      img = img+1
+      g_to_lon(img) = ilon
+      g_to_lat(img) = ilat
+      lon_g(img) = real(lon(ilon,ilat),kind_real)
+      lat_g(img) = real(lat(ilon,ilat),kind_real)
+      area_g(img) = real(e1t(ilon,ilat,1)*e2t(ilon,ilat,1),kind_real)/req**2
       do il0=1,geom%nl0
-        lmask_g(ig,il0) = (tmask(ilon,ilat,il0)>0)
+        lmask_g(img,il0) = (tmask(ilon,ilat,il0)>0)
       end do
    end do
 end do
@@ -112,17 +112,19 @@ call geom%find_redundant(lon_g,lat_g)
 
 ! Pack
 call geom%alloc
-geom%c0_to_lon = g_to_lon(geom%c0_to_g)
-geom%c0_to_lat = g_to_lat(geom%c0_to_g)
-geom%lon = lon_g(geom%c0_to_g)
-geom%lat = lat_g(geom%c0_to_g)
+geom%c0_to_lon = g_to_lon(geom%c0_to_mg)
+geom%c0_to_lat = g_to_lat(geom%c0_to_mg)
+geom%lon = lon_g(geom%c0_to_mg)
+geom%lat = lat_g(geom%c0_to_mg)
 do il0=1,geom%nl0
-   geom%mask(:,il0) = lmask_g(geom%c0_to_g,il0)
-   geom%area(il0) = sum(area_g(geom%c0_to_g),geom%mask(:,il0))/req**2
+   geom%mask(:,il0) = lmask_g(geom%c0_to_mg,il0)
+   geom%area(il0) = sum(area_g(geom%c0_to_mg),geom%mask(:,il0))/req**2
 end do
 
 ! Vertical unit
-geom%vunit = float(nam%levs(1:geom%nl0))
+do ic0=1,geom%nc0
+   geom%vunit(ic0,:) = real(nam%levs(1:geom%nl0),kind_real)
+end do
 
 ! Release memory
 deallocate(lon)
@@ -159,13 +161,13 @@ do iproc=1,mpl%nproc
    if (mpl%myproc==iproc) then
       ! Open file
       call ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_nowrite,ncid))
-   
+
       do iv=1,nam%nv
          ! 3d variable
-   
+
          ! Get variable id
          call ncerr(subr,nf90_inq_varid(ncid,trim(nam%varname(iv)),fld_id))
-   
+
          do il0=1,nam%nl
             do ic0a=1,geom%nc0a
                ic0 = geom%c0a_to_c0(ic0a)
@@ -194,13 +196,13 @@ do iproc=1,mpl%nproc
                end select
             end do
          end do
-   
+
          if (trim(nam%addvar2d(iv))/='') then
             ! 2d variable
-   
+
             ! Get id
             call ncerr(subr,nf90_inq_varid(ncid,trim(nam%addvar2d(iv)),fld_id))
-   
+
             ! Read data
             do ic0a=1,geom%nc0a
                ic0 = geom%c0a_to_c0(ic0a)
@@ -211,7 +213,7 @@ do iproc=1,mpl%nproc
             end do
          end if
       end do
-   
+
       ! Close file
       call ncerr(subr,nf90_close(ncid))
    end if

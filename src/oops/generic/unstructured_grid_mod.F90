@@ -29,7 +29,7 @@ type unstructured_grid
   real(kind=kind_real),allocatable :: lon(:)       !> Longitude
   real(kind=kind_real),allocatable :: lat(:)       !> Latitude
   real(kind=kind_real),allocatable :: area(:)      !> Area
-  real(kind=kind_real), allocatable :: vunit(:)    !> Vertical unit
+  real(kind=kind_real), allocatable :: vunit(:,:)  !> Vertical unit
   integer,allocatable :: imask(:,:)                !> Mask
   real(kind=kind_real),allocatable :: fld(:,:,:,:) !> Data
 end type unstructured_grid
@@ -112,11 +112,11 @@ end subroutine get_size_c
 
 !-------------------------------------------------------------------------------
 
-subroutine get_lon_c(key, nc0a, lon) bind(c, name='get_lon_f90')
+subroutine get_lon_c(key, n, lon) bind(c, name='get_lon_f90')
 implicit none
 integer(c_int), intent(inout) :: key
-integer(c_int), intent(in) :: nc0a
-real(kind=kind_real),intent(out) :: lon(nc0a)
+integer(c_int), intent(in) :: n
+real(kind=kind_real),intent(out) :: lon(n)
 
 type(unstructured_grid), pointer :: self
 
@@ -127,11 +127,11 @@ end subroutine get_lon_c
 
 !-------------------------------------------------------------------------------
 
-subroutine get_lat_c(key, nc0a, lat) bind(c, name='get_lat_f90')
+subroutine get_lat_c(key, n, lat) bind(c, name='get_lat_f90')
 implicit none
 integer(c_int), intent(inout) :: key
-integer(c_int), intent(in) :: nc0a
-real(kind=kind_real),intent(out) :: lat(nc0a)
+integer(c_int), intent(in) :: n
+real(kind=kind_real),intent(out) :: lat(n)
 
 type(unstructured_grid), pointer :: self
 
@@ -142,11 +142,11 @@ end subroutine get_lat_c
 
 !-------------------------------------------------------------------------------
 
-subroutine get_area_c(key, nc0a, area) bind(c, name='get_area_f90')
+subroutine get_area_c(key, n, area) bind(c, name='get_area_f90')
 implicit none
 integer(c_int), intent(inout) :: key
-integer(c_int), intent(in) :: nc0a
-real(kind=kind_real),intent(out) :: area(nc0a)
+integer(c_int), intent(in) :: n
+real(kind=kind_real),intent(out) :: area(n)
 
 type(unstructured_grid), pointer :: self
 
@@ -157,27 +157,26 @@ end subroutine get_area_c
 
 !-------------------------------------------------------------------------------
 
-subroutine get_vunit_c(key, nl0, vunit) bind(c, name='get_vunit_f90')
+subroutine get_vunit_c(key, n, vunit) bind(c, name='get_vunit_f90')
 implicit none
 integer(c_int), intent(inout) :: key
-integer(c_int), intent(in) :: nl0
-real(kind=kind_real),intent(out) :: vunit(nl0)
+integer(c_int), intent(in) :: n
+real(kind=kind_real),intent(out) :: vunit(n)
 
 type(unstructured_grid), pointer :: self
 
 call unstructured_grid_registry%get(key,self)
-vunit = self%vunit
+vunit = pack(self%vunit,mask=.true.)
 
 end subroutine get_vunit_c
 
 !-------------------------------------------------------------------------------
 
-subroutine get_imask_c(key, nc0a, nl0, imask) bind(c, name='get_imask_f90')
+subroutine get_imask_c(key, n, imask) bind(c, name='get_imask_f90')
 implicit none
 integer(c_int), intent(inout) :: key
-integer,intent(in) :: nc0a
-integer,intent(in) :: nl0
-integer,intent(out) :: imask(nc0a*nl0)
+integer,intent(in) :: n
+integer,intent(out) :: imask(n)
 
 type(unstructured_grid), pointer :: self
 
@@ -188,11 +187,11 @@ end subroutine get_imask_c
 
 !-------------------------------------------------------------------------------
 
-subroutine get_data_c(key, ntot, fld) bind(c, name='get_data_f90')
+subroutine get_data_c(key, n, fld) bind(c, name='get_data_f90')
 implicit none
 integer(c_int), intent(inout) :: key
-integer(c_int), intent(in) :: ntot
-real(kind=kind_real),intent(out) :: fld(ntot)
+integer(c_int), intent(in) :: n
+real(kind=kind_real),intent(out) :: fld(n)
 
 type(unstructured_grid), pointer :: self
 
@@ -213,7 +212,7 @@ integer, intent(in) :: nts
 real(kind=kind_real), intent(in) :: lon(nc0a)
 real(kind=kind_real), intent(in) :: lat(nc0a)
 real(kind=kind_real), intent(in) :: area(nc0a)
-real(kind=kind_real), intent(in) :: vunit(nl0)
+real(kind=kind_real), intent(in) :: vunit(nc0a,nl0)
 integer, intent(in) :: imask(nc0a,nl0)
 
 ! Copy sizes
@@ -227,7 +226,7 @@ if (nts>1) call msgerror('not ready yet for nts>1')
 allocate(self%lon(nc0a))
 allocate(self%lat(nc0a))
 allocate(self%area(nc0a))
-allocate(self%vunit(nl0))
+allocate(self%vunit(nc0a,nl0))
 allocate(self%imask(nc0a,nl0))
 allocate(self%fld(nc0a,nl0,nv,nts))
 

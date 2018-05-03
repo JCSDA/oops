@@ -11,7 +11,7 @@
 module type_displ
 
 use netcdf
-use omp_lib
+!$ use omp_lib
 use tools_const, only: req,reqkm,rad2deg,deg2rad
 use tools_display, only: msgerror,prog_init,prog_print
 use tools_func, only: lonlatmod,sphere_dist,reduce_arc,vector_product
@@ -223,8 +223,8 @@ do isub=1,ens%nsub
       ie = ie_sub+(isub-1)*ens%ne/ens%nsub
 
       ! Computation factors
-      fac4 = 1.0/float(ie_sub)
-      fac6 = float(ie_sub-1)/float(ie_sub)
+      fac4 = 1.0/real(ie_sub,kind_real)
+      fac6 = real(ie_sub-1,kind_real)/real(ie_sub,kind_real)
 
       do its=2,nam%nts
          do iv=1,nam%nv
@@ -293,7 +293,7 @@ do its=2,nam%nts
       call flush(mpl%unit)
 
       ! Number of points
-      norm = float(count(mask_c2a(:,il0)))
+      norm = real(count(mask_c2a(:,il0)),kind_real)
       call mpl%allreduce_sum(norm,norm_tot)
 
       !$omp parallel do schedule(static) private(ic2a,ic2,jc1,jc0,iv,m11_avg,m2m2_avg) firstprivate(cor,cor_avg,order)
@@ -313,8 +313,8 @@ do its=2,nam%nts
                   ! Compute correlation for each variable
                   do iv=1,nam%nv
                      ! Correlation
-                     m11_avg = sum(m11(jc1,ic2a,il0,iv,its,:))/float(ens%nsub)
-                     m2m2_avg = sum(m2_1(jc1,ic2a,il0,iv,its,:))*sum(m2_2(jc1,ic2a,il0,iv,its,:))/float(ens%nsub**2)
+                     m11_avg = sum(m11(jc1,ic2a,il0,iv,its,:))/real(ens%nsub,kind_real)
+                     m2m2_avg = sum(m2_1(jc1,ic2a,il0,iv,its,:))*sum(m2_2(jc1,ic2a,il0,iv,its,:))/real(ens%nsub**2,kind_real)
                      if (m2m2_avg>0.0) then
                         cor(iv) = m11_avg/sqrt(m2m2_avg)
                      else
@@ -324,7 +324,7 @@ do its=2,nam%nts
 
                   ! Average correlations
                   if (isanynotmsr(cor)) then
-                     cor_avg(jc1) = sum(cor,mask=isnotmsr(cor))/float(count(isnotmsr(cor)))
+                     cor_avg(jc1) = sum(cor,mask=isnotmsr(cor))/real(count(isnotmsr(cor)),kind_real)
                   else
                      call msgerror('average correlation contains missing values only')
                   end if
@@ -369,7 +369,7 @@ do its=2,nam%nts
       call mpl%gatherv(hdata%nc2a,lat_c2a,hdata%proc_to_nc2a,hdata%nc2,lat_c2)
       call mesh%trans(lon_c2,lat_c2)
       call mesh%check(valid_c2)
-      displ%valid(0,il0,its) = sum(valid_c2,mask=mask_c2(:,il0))/float(count((mask_c2(:,il0))))
+      displ%valid(0,il0,its) = sum(valid_c2,mask=mask_c2(:,il0))/real(count((mask_c2(:,il0))),kind_real)
       displ%rhflt(0,il0,its) = 0.0
 
       ! Average distance
@@ -448,7 +448,7 @@ do its=2,nam%nts
             call mpl%gatherv(hdata%nc2a,lat_c2a,hdata%proc_to_nc2a,hdata%nc2,lat_c2)
             call mesh%trans(lon_c2,lat_c2)
             call mesh%check(valid_c2)
-            displ%valid(iter,il0,its) = sum(valid_c2,mask=mask_c2(:,il0))/float(count((mask_c2(:,il0))))
+            displ%valid(iter,il0,its) = sum(valid_c2,mask=mask_c2(:,il0))/real(count((mask_c2(:,il0))),kind_real)
             call mpl%bcast(displ%valid(iter,il0,its))
 
             ! Compute distances
@@ -559,10 +559,6 @@ character(len=*),intent(in) :: filename !< File name
 integer :: ncid,nc2_id,nl0_id,nts_id,displ_niter_id,vunit_id,valid_id,dist_id,rhflt_id
 integer :: lon_c2_id,lat_c2_id,lon_c2_raw_id,lat_c2_raw_id,dist_c2_raw_id,lon_c2_flt_id,lat_c2_flt_id,dist_c2_flt_id
 integer :: iproc,its,il0,ic2a,ic2
-real(kind_real) :: lon_c2(hdata%nc2,geom%nl0),lat_c2(hdata%nc2,geom%nl0)
-real(kind_real) :: lon_c2_raw(hdata%nc2,geom%nl0,2:nam%nts),lon_c2_flt(hdata%nc2,geom%nl0,2:nam%nts)
-real(kind_real) :: lat_c2_raw(hdata%nc2,geom%nl0,2:nam%nts),lat_c2_flt(hdata%nc2,geom%nl0,2:nam%nts)
-real(kind_real) :: dist_c2_raw(hdata%nc2,geom%nl0,2:nam%nts),dist_c2_flt(hdata%nc2,geom%nl0,2:nam%nts)
 character(len=1024) :: subr = 'displ_write'
 
 if (mpl%main) then
@@ -579,7 +575,7 @@ if (mpl%main) then
    call ncerr(subr,nf90_def_dim(ncid,'niter',nam%displ_niter+1,displ_niter_id))
 
    ! Define variables
-   call ncerr(subr,nf90_def_var(ncid,'vunit',ncfloat,(/nl0_id/),vunit_id))
+   call ncerr(subr,nf90_def_var(ncid,'vunit',ncfloat,(/nc2_id,nl0_id/),vunit_id))
    call ncerr(subr,nf90_def_var(ncid,'valid',ncfloat,(/displ_niter_id,nl0_id,nts_id/),valid_id))
    call ncerr(subr,nf90_put_att(ncid,valid_id,'_FillValue',msvalr))
    call ncerr(subr,nf90_def_var(ncid,'dist',ncfloat,(/displ_niter_id,nl0_id,nts_id/),dist_id))
@@ -607,7 +603,7 @@ if (mpl%main) then
    call ncerr(subr,nf90_enddef(ncid))
 
    ! Write global variables
-   call ncerr(subr,nf90_put_var(ncid,vunit_id,geom%vunit))
+   call ncerr(subr,nf90_put_var(ncid,vunit_id,geom%vunit(hdata%c2_to_c0,:)))
    call ncerr(subr,nf90_put_var(ncid,valid_id,displ%valid))
    call ncerr(subr,nf90_put_var(ncid,dist_id,displ%dist*reqkm))
    call ncerr(subr,nf90_put_var(ncid,rhflt_id,displ%rhflt*reqkm))
@@ -635,8 +631,8 @@ do iproc=1,mpl%nproc
       do il0=1,geom%nl0
          do ic2a=1,hdata%nc2a
             ic2 = hdata%c2a_to_c2(ic2a)
-            call ncerr(subr,nf90_put_var(ncid,lon_c2_id,lon_c2(ic2,il0)*rad2deg))
-            call ncerr(subr,nf90_put_var(ncid,lat_c2_id,lat_c2(ic2,il0)*rad2deg))
+            call ncerr(subr,nf90_put_var(ncid,lon_c2_id,displ%lon_c2a(ic2a,il0)*rad2deg))
+            call ncerr(subr,nf90_put_var(ncid,lat_c2_id,displ%lat_c2a(ic2a,il0)*rad2deg))
          end do
       end do
       do its=2,nam%nts

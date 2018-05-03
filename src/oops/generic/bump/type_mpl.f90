@@ -12,7 +12,7 @@ module type_mpl
 
 use iso_c_binding
 use mpi
-use omp_lib
+!$ use omp_lib
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,isnotmsi,isnotmsr
 
@@ -169,13 +169,14 @@ end subroutine mpl_check
 ! Subroutine: mpl_init
 !> Purpose: start MPI
 !----------------------------------------------------------------------
-subroutine mpl_init(mpl,mpi_comm)
+subroutine mpl_init(mpl,mpi_comm,listing)
 
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl         !< MPL object
-integer,intent(in) :: mpi_comm !< MPI communicator
+class(mpl_type) :: mpl                 !< MPL object
+integer,intent(in) :: mpi_comm         !< MPI communicator
+integer,intent(in),optional :: listing !< Main listing unit
 
 ! Local variables
 integer :: info,iproc
@@ -214,14 +215,19 @@ call omp_set_num_threads(mpl%nthread)
 
 ! Define unit and open file
 do iproc=1,mpl%nproc
-   ! Deal with each proc sequentially
-   if (iproc==mpl%myproc) then
-      ! Find a free unit
-      call mpl%newunit(mpl%unit)
+   if (mpl%main.and.present(listing)) then
+      ! Specific listing unit
+      mpl%unit = listing
+   else
+      ! Deal with each proc sequentially
+      if (iproc==mpl%myproc) then
+         ! Find a free unit
+         call mpl%newunit(mpl%unit)
 
-      ! Open listing file
-      write(myprocchar,'(i4.4)') mpl%myproc-1
-      open(unit=mpl%unit,file='bump.out.'//myprocchar,action='write',status='replace')
+         ! Open listing file
+         write(myprocchar,'(i4.4)') mpl%myproc-1
+         open(unit=mpl%unit,file='bump.out.'//myprocchar,action='write',status='replace')
+      end if
    end if
 
    ! Wait

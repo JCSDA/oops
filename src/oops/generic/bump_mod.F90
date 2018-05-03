@@ -43,7 +43,7 @@ contains
 !  C++ interfaces
 ! ------------------------------------------------------------------------------
 
-subroutine create_bump_c(key, c_conf, nmga, nl0, nv, nts, ens1_ne, lon, lat, area, vunit, imask, ens1) &
+subroutine create_bump_c(key, c_conf, nmga, nl0, nv, nts, lon, lat, area, vunit, imask, ens1_ne, ens1) &
  & bind(c, name='create_bump_f90')
 implicit none
 integer(c_int), intent(inout) :: key
@@ -52,12 +52,12 @@ integer(c_int), intent(in) :: nmga
 integer(c_int), intent(in) :: nl0
 integer(c_int), intent(in) :: nv
 integer(c_int), intent(in) :: nts
-integer(c_int), intent(in) :: ens1_ne
 real(c_double), intent(in) :: lon(nmga)
 real(c_double), intent(in) :: lat(nmga)
 real(c_double), intent(in) :: area(nmga)
-real(c_double), intent(in) :: vunit(nl0)
+real(c_double), intent(in) :: vunit(nmga*nl0)
 integer(c_int), intent(in) :: imask(nmga*nl0)
+integer(c_int), intent(in) :: ens1_ne
 real(c_double), intent(in) :: ens1(nmga*nl0*nv*nts*ens1_ne)
 
 type(bump_type), pointer :: self
@@ -68,7 +68,7 @@ call bump_registry%add(key)
 call bump_registry%get(key,self)
 
 ! Create bump object
-call create_bump(self, c_conf, nmga, nl0, nv, nts, ens1_ne, lon, lat, area, vunit, imask, ens1)
+call create_bump(self, c_conf, nmga, nl0, nv, nts, lon, lat, area, vunit, imask, ens1_ne, ens1)
 
 end subroutine create_bump_c
 
@@ -106,7 +106,7 @@ end subroutine bump_multiply_c
 !  End C++ interfaces
 ! ------------------------------------------------------------------------------
 
-subroutine create_bump(self, c_conf, nmga, nl0, nv, nts, ens1_ne, lon, lat, area, vunit, imask, ens1_vec)
+subroutine create_bump(self, c_conf, nmga, nl0, nv, nts, lon, lat, area, vunit, imask, ens1_ne, ens1)
 
 implicit none
 type(bump_type), intent(inout) :: self
@@ -115,42 +115,13 @@ integer, intent(in) :: nmga
 integer, intent(in) :: nl0
 integer, intent(in) :: nv
 integer, intent(in) :: nts
-integer, intent(in) :: ens1_ne
 real(kind=kind_real), intent(in) :: lon(nmga)
 real(kind=kind_real), intent(in) :: lat(nmga)
 real(kind=kind_real), intent(in) :: area(nmga)
-real(kind=kind_real), intent(in) :: vunit(nl0)
+real(kind=kind_real), intent(in) :: vunit(nmga*nl0)
 integer, intent(in) :: imask(nmga*nl0)
-real(kind=kind_real), intent(in) :: ens1_vec(nmga*nl0*nv*nts*ens1_ne)
-
-integer :: imga,il0,iv,il,ie,offset
-real(kind=kind_real), allocatable :: ens1(:,:,:,:,:)
-logical,allocatable :: mask_unpack(:,:,:,:),lmask(:,:)
-
-! Allocation
-allocate(ens1(nmga,nl0,nv,nts,ens1_ne))
-allocate(mask_unpack(nmga,nl0,nv,nts))
-allocate(lmask(nmga,nl0))
-
-! Transform ensemble data from vector to array
-mask_unpack = .true.
-offset = 0
-do ie=1,ens1_ne
-   ens1(:,:,:,:,ie) = unpack(ens1_vec(offset+1:offset+nmga*nl0*nv*nts),mask_unpack,ens1(:,:,:,:,ie))
-   offset = offset+nmga*nl0*nv*nts
-end do
-
-! Convert mask
-do il0=1,nl0
-   offset = (il0-1)*nmga
-   do imga=1,nmga
-      if (imask(offset+imga)==0) then
-         lmask(imga,il0) = .false.
-      elseif (imask(offset+imga)==1) then
-         lmask(imga,il0) = .true.
-      end if
-   end do
-end do
+integer, intent(in) :: ens1_ne
+real(kind=kind_real), intent(in) :: ens1(nmga*nl0*nv*nts*ens1_ne)
 
 ! Initialize namelist
 call self%nam%init
@@ -159,7 +130,7 @@ call self%nam%init
 call bump_read_conf(c_conf,self)
 
 ! Online setup
-call self%setup_online(mpi_comm_world,nmga,nl0,nv,nts,lon,lat,area,vunit,lmask,ens1_ne,ens1)
+call self%setup_online(mpi_comm_world,nmga,nl0,nv,nts,lon,lat,area,vunit,imask,ens1_ne,ens1)
 
 end subroutine create_bump
 
@@ -170,7 +141,7 @@ implicit none
 type(c_ptr), intent(in) :: c_conf
 type(bump_type), intent(inout) :: bump
 integer :: il,its,iscales,ildwh,ildwv,idir
-character(len=3) :: ilchar,itschar,iscaleschar,ildwhchar,ildwvchar,idirchar
+character(len=3) :: ilchar,itschar,ildwhchar,ildwvchar,idirchar
 
 ! Setup from configuration
 
@@ -212,23 +183,20 @@ bump%nam%ne = config_get_int(c_conf,"ne")
 bump%nam%gau_approx = integer_to_logical(config_get_int(c_conf,"gau_approx"))
 bump%nam%full_var = integer_to_logical(config_get_int(c_conf,"full_var"))
 bump%nam%local_diag = integer_to_logical(config_get_int(c_conf,"local_diag"))
-bump%nam%local_rad = config_get_real(c_conf,"local_rad")/req
+if (bump%nam%local_diag) bump%nam%local_rad = config_get_real(c_conf,"local_rad")/req
 bump%nam%displ_diag = integer_to_logical(config_get_int(c_conf,"displ_diag"))
-bump%nam%displ_rad = config_get_real(c_conf,"displ_rad")/req
-bump%nam%displ_niter = config_get_int(c_conf,"displ_niter")
-bump%nam%displ_rhflt = config_get_real(c_conf,"displ_rhflt")/req
-bump%nam%displ_tol = config_get_real(c_conf,"displ_tol")
+if (bump%nam%local_diag) then
+   bump%nam%displ_rad = config_get_real(c_conf,"displ_rad")/req
+   bump%nam%displ_niter = config_get_int(c_conf,"displ_niter")
+   bump%nam%displ_rhflt = config_get_real(c_conf,"displ_rhflt")/req
+   bump%nam%displ_tol = config_get_real(c_conf,"displ_tol")
+end if
 
 ! fit_param
 bump%nam%minim_algo = config_get_string(c_conf,1024,"minim_algo")
 bump%nam%lhomh = integer_to_logical(config_get_int(c_conf,"lhomh"))
 bump%nam%lhomv = integer_to_logical(config_get_int(c_conf,"lhomv"))
 bump%nam%rvflt = config_get_real(c_conf,"rvflt")
-bump%nam%lct_nscales = config_get_int(c_conf,"lct_nscales")
-do iscales=1,bump%nam%lct_nscales
-   write(iscaleschar,'(i3)') iscales
-   bump%nam%lct_diag(iscales) = integer_to_logical(config_get_int(c_conf,"lct_diag("//trim(adjustl(iscaleschar))//")"))
-end do
 
 ! nicas_param
 bump%nam%lsqrt = integer_to_logical(config_get_int(c_conf,"lsqrt"))
@@ -247,11 +215,6 @@ do idir=1,bump%nam%ndir
    bump%nam%itsdir(idir) = config_get_int(c_conf,"itsdir("//trim(adjustl(idirchar))//")")
 end do
 
-! obsop_param
-bump%nam%nobs = config_get_int(c_conf,"nobs")
-bump%nam%obsdis = config_get_string(c_conf,1024,"obsdis")
-bump%nam%obsop_interp = config_get_string(c_conf,1024,"obsop_interp")
-
 ! output_param
 bump%nam%nldwh = config_get_int(c_conf,"nldwh")
 do ildwh=1,bump%nam%nldwh
@@ -268,8 +231,10 @@ end do
 bump%nam%diag_rhflt = config_get_real(c_conf,"diag_rhflt")/req
 bump%nam%diag_interp = config_get_string(c_conf,1024,"diag_interp")
 bump%nam%grid_output = integer_to_logical(config_get_int(c_conf,"grid_output"))
-bump%nam%grid_resol = config_get_real(c_conf,"grid_resol")
-bump%nam%grid_interp = config_get_string(c_conf,1024,"grid_interp")
+if (bump%nam%grid_output) then
+   bump%nam%grid_resol = config_get_real(c_conf,"grid_resol")
+   bump%nam%grid_interp = config_get_string(c_conf,1024,"grid_interp")
+end if
 
 end subroutine bump_read_conf
 

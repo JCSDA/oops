@@ -11,7 +11,6 @@
 module type_ens
 
 use model_interface, only: model_read
-use omp_lib
 use tools_display, only: msgwarning,msgerror
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr
@@ -33,8 +32,10 @@ contains
    procedure :: alloc => ens_alloc
    procedure :: dealloc => ens_dealloc
    procedure :: load => ens_load
-   procedure :: from_xyz => ens_from_xyz
-   procedure :: from_xz => ens_from_xz
+   procedure :: ens_from
+   procedure :: ens_from_oops
+   procedure :: ens_from_nemovar
+   generic :: from => ens_from,ens_from_oops,ens_from_nemovar
 end type ens_type
 
 private
@@ -160,83 +161,139 @@ end do
 end subroutine ens_load
 
 !----------------------------------------------------------------------
-! Subroutine: ens_from_xyz
-!> Purpose: copy xyz ensemble into ensemble object
+! Subroutine: ens_from
+!> Purpose: copy ensemble into ensemble object
 !----------------------------------------------------------------------
-subroutine ens_from_xyz(ens,nam,geom,nx,ny,ne,ens_ga)
+subroutine ens_from(ens,nam,geom,ne,ens_mga)
 
 implicit none
 
 ! Passed variables
-class(ens_type),intent(inout) :: ens                                   !< Ensemble
-type(nam_type),intent(in) :: nam                                       !< Namelist
-type(geom_type),intent(in) :: geom                                     !< Geometry
-integer,intent(in) :: nx                                               !< X-axis size
-integer,intent(in) :: ny                                               !< Y-axis size
-integer,intent(in) :: ne                                               !< Ensemble size
-real(kind_real),intent(in) :: ens_ga(nx,ny,geom%nl0,nam%nv,nam%nts,ne) !< Ensemble on model grid, halo A
+class(ens_type),intent(inout) :: ens                                        !< Ensemble
+type(nam_type),intent(in) :: nam                                            !< Namelist
+type(geom_type),intent(in) :: geom                                          !< Geometry
+integer,intent(in) :: ne                                                    !< Ensemble size
+real(kind_real),intent(in) :: ens_mga(geom%nmga,geom%nl0,nam%nv,nam%nts,ne) !< Ensemble on model grid, halo A
 
 ! Local variables
 integer :: ie,its,iv,il0
-real(kind_real),allocatable :: tmp(:)
 
 ! Allocation
 call ens%alloc(nam,geom,ne,1)
 
 ! Copy
-!$omp parallel do schedule(static) private(ie,its,iv,il0) firstprivate(tmp)
 do ie=1,ens%ne
    do its=1,nam%nts
       do iv=1,nam%nv
          do il0=1,geom%nl0
-            ! Allocation
-            allocate(tmp(geom%nmga))
+            ens%fld(:,il0,iv,its,ie) = ens_mga(geom%c0a_to_mga,il0,iv,its,ie)
+         end do
+      end do
+   end do
+end do
 
+end subroutine ens_from
+
+!----------------------------------------------------------------------
+! Subroutine: ens_from_oops
+!> Purpose: copy OOPS ensemble into ensemble object
+!----------------------------------------------------------------------
+subroutine ens_from_oops(ens,nam,geom,ne,ens_mga)
+
+implicit none
+
+! Passed variables
+class(ens_type),intent(inout) :: ens                                        !< Ensemble
+type(nam_type),intent(in) :: nam                                            !< Namelist
+type(geom_type),intent(in) :: geom                                          !< Geometry
+integer,intent(in) :: ne                                                    !< Ensemble size
+real(kind_real),intent(in) :: ens_mga(geom%nmga*geom%nl0*nam%nv*nam%nts*ne) !< Ensemble on model grid, halo A
+
+! Local variables
+integer :: ie,its,iv,il0,offset,n
+real(kind_real) :: fld(geom%nmga,geom%nl0,nam%nv,nam%nts)
+logical :: mask_unpack(geom%nmga,geom%nl0,nam%nv,nam%nts)
+
+! Allocation
+call ens%alloc(nam,geom,ne,1)
+
+! Initialization
+mask_unpack = .true.
+offset = 0
+n = geom%nmga*geom%nl0*nam%nv*nam%nts
+
+do ie=1,ne
+   ! Unpack
+   call msr(fld)
+   fld = unpack(ens_mga(offset+1:offset+n),mask_unpack,fld)
+
+   ! Copy
+   do its=1,nam%nts
+      do iv=1,nam%nv
+         do il0=1,geom%nl0
+            ens%fld(:,il0,iv,its,ie) = fld(geom%c0a_to_mga,il0,iv,its)
+         end do
+      end do
+   end do
+
+   ! Update
+   offset = offset+n
+end do
+
+end subroutine ens_from_oops
+
+!----------------------------------------------------------------------
+! Subroutine: ens_from_nemovar
+!> Purpose: copy 2d NEMOVAR ensemble into ensemble object
+!----------------------------------------------------------------------
+subroutine ens_from_nemovar(ens,nam,geom,nx,ny,nens,ncyc,ens_2d,ens_3d)
+
+implicit none
+
+! Passed variables
+class(ens_type),intent(inout) :: ens                                    !< Ensemble
+type(nam_type),intent(in) :: nam                                        !< Namelist
+type(geom_type),intent(in) :: geom                                      !< Geometry
+integer,intent(in) :: nx                                                !< X-axis size
+integer,intent(in) :: ny                                                !< Y-axis size
+integer,intent(in) :: nens                                              !< Ensemble size at each cycle
+integer,intent(in) :: ncyc                                              !< Number of cycles
+real(kind_real),intent(in),optional :: ens_2d(nx,ny,nens,ncyc)          !< Ensemble on model grid, halo A
+real(kind_real),intent(in),optional :: ens_3d(nx,ny,geom%nl0,nens,ncyc) !< Ensemble on model grid, halo A
+
+! Local variables
+integer :: ie,iens,icyc,its,iv,il0
+real(kind_real) :: tmp(geom%nmga)
+
+! Allocation
+call ens%alloc(nam,geom,nens*ncyc,ncyc)
+
+! Copy
+iv = 1
+its = 1
+ie = 1
+do iens=1,nens
+   do icyc=1,ncyc
+      ! Pack and copy
+      if (present(ens_2d)) then
+         il0 = 1
+         tmp = pack(ens_2d(:,:,iens,icyc),.true.)
+         ens%fld(:,il0,iv,its,ie) = tmp(geom%c0a_to_mga)
+      elseif (present(ens_3d)) then
+         do il0=1,geom%nl0
             ! Pack and copy
-            tmp = pack(ens_ga(:,:,il0,iv,its,ie),.true.)
-            ens%fld(:,il0,iv,its,ie) = tmp(geom%c0a_to_ga)
+            tmp = pack(ens_3d(:,:,il0,iens,icyc),.true.)
+            ens%fld(:,il0,iv,its,ie) = tmp(geom%c0a_to_mga)
          end do
-      end do
+      else
+         call msgerror('ens_2d or ens_3d should be provided in ens_from_nemovar')
+      end if
+
+      ! Update
+      ie = ie+1
    end do
 end do
-!$omp end parallel do
 
-end subroutine ens_from_xyz
-
-!----------------------------------------------------------------------
-! Subroutine: ens_from_xz
-!> Purpose: copy xz ensemble into ensemble object
-!----------------------------------------------------------------------
-subroutine ens_from_xz(ens,nam,geom,ne,ens_ga)
-
-implicit none
-
-! Passed variables
-class(ens_type),intent(inout) :: ens                                       !< Ensemble
-type(nam_type),intent(in) :: nam                                           !< Namelist
-type(geom_type),intent(in) :: geom                                         !< Geometry
-integer,intent(in) :: ne                                                   !< Ensemble size
-real(kind_real),intent(in) :: ens_ga(geom%nmga,geom%nl0,nam%nv,nam%nts,ne) !< Ensemble on model grid, halo A
-
-! Local variables
-integer :: ie,its,iv,il0
-
-! Allocation
-call ens%alloc(nam,geom,ne,1)
-
-! Copy
-!$omp parallel do schedule(static) private(ie,its,iv,il0)
-do ie=1,ens%ne
-   do its=1,nam%nts
-      do iv=1,nam%nv
-         do il0=1,geom%nl0
-            ens%fld(:,il0,iv,its,ie) = ens_ga(geom%c0a_to_ga,il0,iv,its,ie)
-         end do
-      end do
-   end do
-end do
-!$omp end parallel do
-
-end subroutine ens_from_xz
+end subroutine ens_from_nemovar
 
 end module type_ens

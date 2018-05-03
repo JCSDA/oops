@@ -11,7 +11,7 @@
 module type_diag_blk
 
 use netcdf
-use omp_lib
+!$ use omp_lib
 use tools_display, only: msgerror
 use tools_fit, only: fast_fit,ver_smooth
 use tools_func, only: fit_diag
@@ -21,6 +21,7 @@ use tools_nc, only: ncerr,ncfloat
 use type_avg_blk, only: avg_blk_type
 use type_bpar, only: bpar_type
 use type_geom, only: geom_type
+use type_hdata, only: hdata_type
 use type_minim, only: minim_type
 use type_mpl, only: mpl
 use type_nam, only: nam_type
@@ -45,7 +46,7 @@ contains
    procedure :: dealloc => diag_blk_dealloc
    procedure :: write => diag_blk_write
    procedure :: normalization => diag_blk_normalization
-   procedure :: fitting => diag_blk_fit
+   procedure :: fitting => diag_blk_fitting
    procedure :: localization => diag_blk_localization
    procedure :: hybridization => diag_blk_hybridization
    procedure :: dualens => diag_blk_dualens
@@ -141,7 +142,7 @@ type(bpar_type),intent(in) :: bpar             !< Block parameters
 character(len=*),intent(in) :: filename        !< File name
 
 ! Local variables
-integer :: info,ncid,one_id,nc_id,nl0r_id,nl0_id,disth_id,vunit_id
+integer :: info,ncid,one_id,nc3_id,nl0r_id,nl0_id,disth_id,vunit_id
 integer :: raw_id,raw_coef_ens_id,raw_coef_sta_id,l0rl0_to_l0_id
 integer :: fit_id,fit_rh_id,fit_rv_id
 character(len=1024) :: subr = 'diag_blk_write'
@@ -157,12 +158,12 @@ if (info==nf90_noerr) then
 
    ! Define dimensions
    call ncerr(subr,nf90_def_dim(ncid,'one',1,one_id))
-   call ncerr(subr,nf90_def_dim(ncid,'nc3',nam%nc3,nc_id))
+   call ncerr(subr,nf90_def_dim(ncid,'nc3',nam%nc3,nc3_id))
    call ncerr(subr,nf90_def_dim(ncid,'nl0r',nam%nl0r,nl0r_id))
    call ncerr(subr,nf90_def_dim(ncid,'nl0',geom%nl0,nl0_id))
 
    ! Define variables
-   call ncerr(subr,nf90_def_var(ncid,'disth',ncfloat,(/nc_id/),disth_id))
+   call ncerr(subr,nf90_def_var(ncid,'disth',ncfloat,(/nc3_id/),disth_id))
    call ncerr(subr,nf90_def_var(ncid,'vunit',ncfloat,(/nl0_id/),vunit_id))
 else
    ! Open file
@@ -170,7 +171,7 @@ else
 
    ! Get dimensions ID
    call ncerr(subr,nf90_inq_dimid(ncid,'one',one_id))
-   call ncerr(subr,nf90_inq_dimid(ncid,'nc3',nc_id))
+   call ncerr(subr,nf90_inq_dimid(ncid,'nc3',nc3_id))
    call ncerr(subr,nf90_inq_dimid(ncid,'nl0r',nl0r_id))
    call ncerr(subr,nf90_inq_dimid(ncid,'nl0',nl0_id))
 
@@ -179,7 +180,7 @@ else
 end if
 
 ! Define variables
-call ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw',ncfloat,(/nc_id,nl0r_id,nl0_id/),raw_id))
+call ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw',ncfloat,(/nc3_id,nl0r_id,nl0_id/),raw_id))
 call ncerr(subr,nf90_put_att(ncid,raw_id,'_FillValue',msvalr))
 call ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw_coef_ens',ncfloat,(/nl0_id/),raw_coef_ens_id))
 call ncerr(subr,nf90_put_att(ncid,raw_coef_ens_id,'_FillValue',msvalr))
@@ -188,7 +189,7 @@ if (isnotmsr(diag_blk%raw_coef_sta)) then
    call ncerr(subr,nf90_put_att(ncid,raw_coef_sta_id,'_FillValue',msvalr))
 end if
 if ((trim(nam%minim_algo)/='none').and.(isanynotmsr(diag_blk%fit))) then
-   call ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit',ncfloat,(/nc_id,nl0r_id,nl0_id/),fit_id))
+   call ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit',ncfloat,(/nc3_id,nl0r_id,nl0_id/),fit_id))
    call ncerr(subr,nf90_put_att(ncid,fit_id,'_FillValue',msvalr))
    call ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rh',ncfloat,(/nl0_id/),fit_rh_id))
    call ncerr(subr,nf90_put_att(ncid,fit_rh_id,'_FillValue',msvalr))
@@ -204,7 +205,7 @@ call ncerr(subr,nf90_enddef(ncid))
 ! Write variables
 if (info==nf90_noerr) then
    call ncerr(subr,nf90_put_var(ncid,disth_id,geom%disth(1:nam%nc3)))
-   call ncerr(subr,nf90_put_var(ncid,vunit_id,geom%vunit))
+   call ncerr(subr,nf90_put_var(ncid,vunit_id,sum(geom%vunit,mask=geom%mask,dim=1)/real(count(geom%mask,dim=1),kind_real)))
 end if
 call ncerr(subr,nf90_put_var(ncid,raw_id,diag_blk%raw))
 call ncerr(subr,nf90_put_var(ncid,raw_coef_ens_id,diag_blk%raw_coef_ens))
@@ -267,10 +268,10 @@ end associate
 end subroutine diag_blk_normalization
 
 !----------------------------------------------------------------------
-! Subroutine: diag_blk_fit
+! Subroutine: diag_blk_fitting
 !> Purpose: compute a semi-positive definite fit of a raw function
 !----------------------------------------------------------------------
-subroutine diag_blk_fit(diag_blk,nam,geom,bpar)
+subroutine diag_blk_fitting(diag_blk,nam,geom,bpar,hdata)
 
 implicit none
 
@@ -279,16 +280,16 @@ class(diag_blk_type),intent(inout) :: diag_blk !< Diagnostic block
 type(nam_type),intent(in) :: nam               !< Namelist
 type(geom_type),intent(in) :: geom             !< Geometry
 type(bpar_type),intent(in) :: bpar             !< Block parameters
-
+type(hdata_type),intent(in) :: hdata           !< HDIAG data
 ! Local variables
-integer :: il0,jl0r,jl0,offset,isc
+integer :: ic2,ic0,il0,jl0r,jl0,offset,isc
 real(kind_real) :: distvr(nam%nl0r,geom%nl0),rawv(nam%nl0r)
 real(kind_real) :: alpha,alpha_opt,mse,mse_opt
 real(kind_real) :: fit_rh(geom%nl0),fit_rv(geom%nl0),fit(nam%nc3,nam%nl0r,geom%nl0)
 type(minim_type) :: minim
 
 ! Associate
-associate(ib=>diag_blk%ib)
+associate(ic2a=>diag_blk%ic2a,ib=>diag_blk%ib)
 
 ! Check
 if (trim(nam%minim_algo)=='none') call msgerror('cannot compute fit if minim_algo = none')
@@ -303,7 +304,13 @@ call msr(distvr)
 do il0=1,geom%nl0
    do jl0r=1,nam%nl0r
       jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
-      distvr(jl0r,il0) = geom%distv(jl0,il0)
+      if (ic2a==0) then
+         distvr(jl0,il0) = abs(geom%vunitavg(il0)-geom%vunitavg(jl0))
+      else
+         ic2 = hdata%c2a_to_c2(ic2a)
+         ic0 = hdata%c2_to_c0(ic2)
+         distvr(jl0,il0) = abs(geom%vunit(ic0,il0)-geom%vunit(ic0,jl0))
+      end if
    end do
 end do
 
@@ -319,15 +326,17 @@ do il0=1,geom%nl0
    rawv = diag_blk%raw(1,:,il0)
    call fast_fit(nam%nl0r,jl0r,distvr(:,il0),rawv,diag_blk%fit_rv(il0))
 end do
-if (nam%lhomh) diag_blk%fit_rh = sum(diag_blk%fit_rh,mask=isnotmsr(diag_blk%fit_rh))/float(count(isnotmsr(diag_blk%fit_rh)))
-if (nam%lhomv) diag_blk%fit_rv = sum(diag_blk%fit_rv,mask=isnotmsr(diag_blk%fit_rv))/float(count(isnotmsr(diag_blk%fit_rv)))
+if (nam%lhomh) diag_blk%fit_rh = sum(diag_blk%fit_rh,mask=isnotmsr(diag_blk%fit_rh)) &
+ & /real(count(isnotmsr(diag_blk%fit_rh)),kind_real)
+if (nam%lhomv) diag_blk%fit_rv = sum(diag_blk%fit_rv,mask=isnotmsr(diag_blk%fit_rv)) &
+ & /real(count(isnotmsr(diag_blk%fit_rv)),kind_real)
 
 ! Scaling optimization (brute-force)
 mse_opt = huge(1.0)
 alpha_opt = 1.0
 do isc=1,nsc
    ! Scaling factor
-   alpha = 0.5+float(isc-1)/float(nsc-1)*(2.0-0.5)
+   alpha = 0.5+real(isc-1,kind_real)/real(nsc-1,kind_real)*(2.0-0.5)
 
    ! Scaled radii
    fit_rh = alpha*diag_blk%fit_rh
@@ -439,8 +448,8 @@ case ('hooke')
 end select
 
 ! Smooth vertically
-call ver_smooth(geom%nl0,geom%vunit,nam%rvflt,diag_blk%fit_rh)
-call ver_smooth(geom%nl0,geom%vunit,nam%rvflt,diag_blk%fit_rv)
+call ver_smooth(geom%nl0,geom%vunitavg,nam%rvflt,diag_blk%fit_rh)
+call ver_smooth(geom%nl0,geom%vunitavg,nam%rvflt,diag_blk%fit_rv)
 
 ! Rebuild fit
 call fit_diag(nam%nc3,nam%nl0r,geom%nl0,bpar%l0rl0b_to_l0(:,:,ib),geom%disth,distvr,diag_blk%fit_rh,diag_blk%fit_rv,diag_blk%fit)
@@ -448,7 +457,7 @@ call fit_diag(nam%nc3,nam%nl0r,geom%nl0,bpar%l0rl0b_to_l0(:,:,ib),geom%disth,dis
 ! End associate
 end associate
 
-end subroutine diag_blk_fit
+end subroutine diag_blk_fitting
 
 !----------------------------------------------------------------------
 ! Subroutine: diag_blk_localization

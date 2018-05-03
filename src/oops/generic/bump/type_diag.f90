@@ -262,7 +262,7 @@ do ib=1,bpar%nb+1
          diag%blk(ic2a,ib)%raw = avg%blk(ic2a,ib)%cor
 
          ! Fitting
-         if (bpar%fit_block(ib)) call diag%blk(ic2a,ib)%fitting(nam,geom,bpar)
+         if (bpar%fit_block(ib)) call diag%blk(ic2a,ib)%fitting(nam,geom,bpar,hdata)
 
          ! Update
          done(ic2a) = .true.
@@ -337,7 +337,7 @@ do ib=1,bpar%nb+1
          call diag%blk(ic2a,ib)%normalization(geom,bpar)
 
          ! Fitting
-         if (bpar%fit_block(ib)) call diag%blk(ic2a,ib)%fitting(nam,geom,bpar)
+         if (bpar%fit_block(ib)) call diag%blk(ic2a,ib)%fitting(nam,geom,bpar,hdata)
 
          ! Update
          done(ic2a) = .true.
@@ -411,7 +411,7 @@ do ib=1,bpar%nb+1
          call diag%blk(ic2a,ib)%normalization(geom,bpar)
 
          ! Fitting
-         if (bpar%fit_block(ib)) call diag%blk(ic2a,ib)%fitting(nam,geom,bpar)
+         if (bpar%fit_block(ib)) call diag%blk(ic2a,ib)%fitting(nam,geom,bpar,hdata)
 
          ! Update
          done(ic2a) = .true.
@@ -492,8 +492,8 @@ do ib=1,bpar%nb+1
 
          ! Fitting
          if (bpar%fit_block(ib)) then
-            call diag%blk(ic2a,ib)%fitting(nam,geom,bpar)
-            call diag_lr%blk(ic2a,ib)%fitting(nam,geom,bpar)
+            call diag%blk(ic2a,ib)%fitting(nam,geom,bpar,hdata)
+            call diag_lr%blk(ic2a,ib)%fitting(nam,geom,bpar,hdata)
          end if
 
          ! Update

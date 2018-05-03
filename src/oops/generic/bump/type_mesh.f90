@@ -10,7 +10,7 @@
 !----------------------------------------------------------------------
 module type_mesh
 
-use omp_lib
+!$ use omp_lib
 use tools_const, only: req
 use tools_display, only: msgerror,msgwarning
 use tools_func, only: sphere_dist,vector_product
@@ -516,7 +516,7 @@ call trans(1,lat,lon,p(1),p(2),p(3))
 ! Compute barycentric coordinates
 b = 0.0
 ib = 0
-call trfind(istart,dble(p),mesh%n,mesh%x,mesh%y,mesh%z,mesh%list,mesh%lptr,mesh%lend,b(1),b(2),b(3),ib(1),ib(2),ib(3))
+call trfind(istart,p,mesh%n,mesh%x,mesh%y,mesh%z,mesh%list,mesh%lptr,mesh%lend,b(1),b(2),b(3),ib(1),ib(2),ib(3))
 
 end subroutine barycentric
 

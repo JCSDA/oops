@@ -77,7 +77,7 @@ LocalizationBUMP<MODEL>::LocalizationBUMP(const Geometry_ & resol, const eckit::
   dx.convert_to(ug);
 
 // Get sizes and coordinates from the unstructured grid
-  int nc0a = ug.getSize(1);
+  int nmga = ug.getSize(1);
   int nl0 = ug.getSize(2);
   int nv = ug.getSize(3);
   int nts = 1; //ug.getSize(4); not read yet for 4D
@@ -109,12 +109,12 @@ LocalizationBUMP<MODEL>::LocalizationBUMP(const Geometry_ & resol, const eckit::
   {
     ens1_ne = 4;
     for (int ie = 0; ie < ens1_ne; ++ie) {
-      std::vector<double> tmp(nc0a*nl0*nv*nts);
+      std::vector<double> tmp(nmga*nl0*nv*nts);
       std::fill(tmp.begin(),tmp.end(),-999.0);
       ens1.insert(ens1.end(), tmp.begin(), tmp.end());
     }
   }
-  create_bump_f90(keybump_, &fconf, nc0a, nl0, nv, nts, ens1_ne, &lon[0], &lat[0], &area[0], &vunit[0], &imask[0], &ens1[0]);
+  create_bump_f90(keybump_, &fconf, nmga, nl0, nv, nts, &lon[0], &lat[0], &area[0], &vunit[0], &imask[0], ens1_ne, &ens1[0]);
   Log::trace() << "LocalizationBUMP:LocalizationBUMP constructed" << std::endl;
 }
 

@@ -10,7 +10,7 @@
 !----------------------------------------------------------------------
 module type_mom
 
-use omp_lib
+!$ use omp_lib
 use tools_display, only: msgerror
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsr
@@ -151,12 +151,12 @@ do isub=1,ens%nsub
       ie = ie_sub+(isub-1)*ens%ne/ens%nsub
 
       ! Computation factors
-      fac1 = 2.0/float(ie_sub)
-      fac2 = 1.0/float(ie_sub**2)
-      fac3 = float((ie_sub-1)*(ie_sub**2-3*ie_sub+3))/float(ie_sub**3)
-      fac4 = 1.0/float(ie_sub)
-      fac5 = float((ie_sub-1)*(ie_sub-2))/float(ie_sub**2)
-      fac6 = float(ie_sub-1)/float(ie_sub)
+      fac1 = 2.0/real(ie_sub,kind_real)
+      fac2 = 1.0/real(ie_sub**2,kind_real)
+      fac3 = real((ie_sub-1)*(ie_sub**2-3*ie_sub+3),kind_real)/real(ie_sub**3,kind_real)
+      fac4 = 1.0/real(ie_sub,kind_real)
+      fac5 = real((ie_sub-1)*(ie_sub-2),kind_real)/real(ie_sub**2,kind_real)
+      fac6 = real(ie_sub-1,kind_real)/real(ie_sub,kind_real)
 
       ! Allocation
       allocate(fld_ext(hdata%nc0c,geom%nl0,nam%nv,nam%nts))
@@ -297,15 +297,15 @@ do isub=1,ens%nsub
       if (bpar%diag_block(ib)) then
          !$omp parallel do schedule(static) private(il0)
          do il0=1,geom%nl0
-            mom%blk(ib)%m2_1(:,:,:,il0,isub) = mom%blk(ib)%m2_1(:,:,:,il0,isub)/float(mom%ne/mom%nsub-1)
-            mom%blk(ib)%m2_2(:,:,:,il0,isub) = mom%blk(ib)%m2_2(:,:,:,il0,isub)/float(mom%ne/mom%nsub-1)
-            mom%blk(ib)%m11(:,:,:,il0,isub) = mom%blk(ib)%m11(:,:,:,il0,isub)/float(mom%ne/mom%nsub-1)
+            mom%blk(ib)%m2_1(:,:,:,il0,isub) = mom%blk(ib)%m2_1(:,:,:,il0,isub)/real(mom%ne/mom%nsub-1,kind_real)
+            mom%blk(ib)%m2_2(:,:,:,il0,isub) = mom%blk(ib)%m2_2(:,:,:,il0,isub)/real(mom%ne/mom%nsub-1,kind_real)
+            mom%blk(ib)%m11(:,:,:,il0,isub) = mom%blk(ib)%m11(:,:,:,il0,isub)/real(mom%ne/mom%nsub-1,kind_real)
             if (.not.nam%gau_approx) then
-               mom%blk(ib)%m12(:,:,:,il0,isub) = mom%blk(ib)%m12(:,:,:,il0,isub)/float(mom%ne/mom%nsub)
-               mom%blk(ib)%m21(:,:,:,il0,isub) = mom%blk(ib)%m21(:,:,:,il0,isub)/float(mom%ne/mom%nsub)
-               mom%blk(ib)%m22(:,:,:,il0,isub) = mom%blk(ib)%m22(:,:,:,il0,isub)/float(mom%ne/mom%nsub)
+               mom%blk(ib)%m12(:,:,:,il0,isub) = mom%blk(ib)%m12(:,:,:,il0,isub)/real(mom%ne/mom%nsub,kind_real)
+               mom%blk(ib)%m21(:,:,:,il0,isub) = mom%blk(ib)%m21(:,:,:,il0,isub)/real(mom%ne/mom%nsub,kind_real)
+               mom%blk(ib)%m22(:,:,:,il0,isub) = mom%blk(ib)%m22(:,:,:,il0,isub)/real(mom%ne/mom%nsub,kind_real)
             end if
-            if (nam%full_var) mom%blk(ib)%m2full(:,il0,isub) = mom%blk(ib)%m2full(:,il0,isub)/float(mom%ne/mom%nsub-1)
+            if (nam%full_var) mom%blk(ib)%m2full(:,il0,isub) = mom%blk(ib)%m2full(:,il0,isub)/real(mom%ne/mom%nsub-1,kind_real)
          end do
          !$omp end parallel do
       end if

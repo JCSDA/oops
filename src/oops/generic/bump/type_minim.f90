@@ -89,6 +89,10 @@ logical,intent(in) :: lprt               !< Print key
 integer :: ix
 real(kind_real) :: guess(minim%nx)
 
+! Check
+if (minim%nx<=0) call msgerror('nx should be positive to minimize')
+if (minim%ny<=0) call msgerror('nx should be positive to minimize')
+
 ! Initialization
 do ix=1,minim%nx
    if (abs(minim%norm(ix))>0.0) then

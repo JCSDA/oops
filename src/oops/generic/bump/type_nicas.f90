@@ -451,7 +451,7 @@ type(bpar_type),intent(in) :: bpar        !< Block parameters
 type(cmat_type),intent(in) :: cmat        !< C matrix data
 
 ! Local variables
-integer :: ib,ic0,ic0a
+integer :: ib
 
 ! Allocation
 call nicas%alloc(nam,bpar,'nicas')
@@ -1327,11 +1327,11 @@ do ie=1,ne
 end do
 
 ! Normalize ensemble
-mean = sum(ens%fld,dim=5)/float(ne)
+mean = sum(ens%fld,dim=5)/real(ne,kind_real)
 do ie=1,ne
    ens%fld(:,:,:,:,ie) = ens%fld(:,:,:,:,ie)-mean
 end do
-std = sqrt(sum(ens%fld**2,dim=5)/float(ne-1))
+std = sqrt(sum(ens%fld**2,dim=5)/real(ne-1,kind_real))
 do ie=1,ne
    ens%fld(:,:,:,:,ie) = ens%fld(:,:,:,:,ie)/std
 end do
@@ -1362,7 +1362,7 @@ real(kind_real) :: fld_copy(geom%nc0a,geom%nl0,nam%nv,nam%nts),fld_tmp(geom%nc0a
 real(kind_real) :: mean(geom%nc0a,geom%nl0,nam%nv,nam%nts),pert(geom%nc0a,geom%nl0,nam%nv,nam%nts)
 
 ! Compute mean
-mean = sum(ens%fld,dim=5)/float(nam%ens1_ne)
+mean = sum(ens%fld,dim=5)/real(nam%ens1_ne,kind_real)
 
 ! Copy field
 fld_copy = fld
@@ -1374,7 +1374,7 @@ if (nam%advmode==-1) call nicas%blk(bpar%nb+1)%apply_adv_ad(nam,geom,fld_copy)
 fld = 0.0
 do ie=1,nam%ens1_ne
    ! Compute perturbation
-   pert = (ens%fld(:,:,:,:,ie)-mean)/sqrt(float(nam%ens1_ne-1))
+   pert = (ens%fld(:,:,:,:,ie)-mean)/sqrt(real(nam%ens1_ne-1,kind_real))
 
    ! Inverse advection
    if (nam%advmode==-1) call nicas%blk(bpar%nb+1)%apply_adv_inv(nam,geom,pert)
@@ -1421,7 +1421,7 @@ real(kind_real) :: mean(geom%nc0a,geom%nl0,nam%nv,nam%nts),pert(geom%nc0a,geom%n
 character(len=1024) :: dum
 
 ! Compute mean
-mean = sum(ens%fld,dim=5)/float(nam%ens1_ne)
+mean = sum(ens%fld,dim=5)/real(nam%ens1_ne,kind_real)
 
 ! Initialization
 fld_copy = fld
@@ -1430,7 +1430,7 @@ fld_copy = fld
 fld = 0.0
 do ie=1,nam%ens1_ne
    ! Compute perturbation
-   pert = (ens%fld(:,:,:,:,ie)-mean)/sqrt(float(nam%ens1_ne-1))
+   pert = (ens%fld(:,:,:,:,ie)-mean)/sqrt(real(nam%ens1_ne-1,kind_real))
 
    ! Dot product
    call mpl%dot_prod(pert,fld_copy,alpha)
@@ -1541,7 +1541,7 @@ type(cmat_type),intent(in) :: cmat         !< C matrix data
 type(ens_type),intent(in),optional :: ens  !< Ensemble
 
 ! Local variables
-integer :: ib,ic0,ic0a,iv
+integer :: ib,iv
 real(kind_real),allocatable :: fld_loc(:,:,:,:),fld_loc_sqrt(:,:,:,:)
 real(kind_real),allocatable :: fld_bens(:,:,:,:),fld_bens_sqrt(:,:,:,:)
 character(len=1024) :: varname(nam%nv)
@@ -1756,7 +1756,7 @@ write(mpl%unit,'(a4,a)') '','Test randomization for various ensemble sizes:'
 call flush(mpl%unit)
 do ifac=1,nfac
    ! Ensemble size
-   nefac(ifac) = max(int(5.0*float(ifac)/float(nfac)*float(ne_rand)),3)
+   nefac(ifac) = max(int(5.0*real(ifac,kind_real)/real(nfac,kind_real)*real(ne_rand,kind_real)),3)
    nam%ens1_ne = nefac(ifac)
    write(nechar,'(i4.4)') nefac(ifac)
 
@@ -1770,7 +1770,7 @@ do ifac=1,nfac
 
       ! RMSE
       mse(itest,ifac) = sum((fld-fld_ref(:,:,:,:,itest))**2)
-      mse_th(itest,ifac) = 1.0/float(nam%ens1_ne-1)*sum(1+fld_ref(:,:,:,:,itest)**2)
+      mse_th(itest,ifac) = 1.0/real(nam%ens1_ne-1,kind_real)*sum(1+fld_ref(:,:,:,:,itest)**2)
 
       ! Write first 10 test vectors
       if (itest<=min(ntest,10)) then
@@ -1788,7 +1788,7 @@ do ifac=1,nfac
 
    ! Print scores
    write(mpl%unit,'(a7,a,i4,a,e15.8,a,e15.8)') '','Ensemble size ',nefac(ifac),', MSE (exp. / th.): ', &
- & sum(mse(:,ifac))/float(ntest),' / ',sum(mse_th(:,ifac))/float(ntest)
+ & sum(mse(:,ifac))/real(ntest,kind_real),' / ',sum(mse_th(:,ifac))/real(ntest,kind_real)
    call flush(mpl%unit)
 
    ! Release memory
@@ -1817,6 +1817,7 @@ type(cmat_type),intent(in) :: cmat    !< C matrix data
 
 ! Local variables
 integer :: ens1_ne,ens1_ne_offset,ens1_nsub,ib,il0
+real(kind_real) :: rh0sum,rv0sum,norm
 character(len=1024) :: prefix,method
 type(cmat_type) :: cmat_test
 type(ens_type) :: ens
@@ -1855,12 +1856,13 @@ do ib=1,bpar%nb+1
    if (bpar%nicas_block(ib)) then
       write(mpl%unit,'(a7,a,a)') '','Block: ',trim(bpar%blockname(ib))
       do il0=1,geom%nl0
-! TODO allreduce
+         call mpl%allreduce_sum(sum(cmat_test%blk(ib)%rh0(:,il0)-cmat%blk(ib)%rh0(:,il0),geom%mask(geom%c0a_to_c0,il0)),rh0sum)
+         call mpl%allreduce_sum(sum(cmat_test%blk(ib)%rv0(:,il0)-cmat%blk(ib)%rv0(:,il0),geom%mask(geom%c0a_to_c0,il0)),rv0sum)
+         call mpl%allreduce_sum(real(count(geom%mask(geom%c0a_to_c0,il0)),kind_real),norm)
          write(mpl%unit,'(a10,a7,i3,a4,a25,f6.1,a)') '','Level: ',nam%levs(il0),' ~> ','horizontal length-scale: ', &
-       & sum(cmat_test%blk(ib)%rh0(:,il0)-cmat%blk(ib)%rh0(:,il0))/float(geom%nc0)*reqkm,' km'
+       & rh0sum/norm*reqkm,' km'
          if (any(abs(cmat%blk(ib)%rv0(:,il0))>0.0)) then
-            write(mpl%unit,'(a49,f6.1,a)') 'vertical length-scale: ', &
-          & sum(cmat_test%blk(ib)%rv0(:,il0)-cmat%blk(ib)%rv0(:,il0))/float(geom%nc0),' '//trim(vunitchar)
+            write(mpl%unit,'(a49,f6.1,a)') 'vertical length-scale: ',rh0sum/norm,' '//trim(vunitchar)
          end if
       end do
    end if
@@ -1891,7 +1893,7 @@ type(geom_type),intent(in) :: geom    !< Geometry
 type(bpar_type),intent(in) :: bpar    !< Block parameters
 
 ! Local variables
-integer :: ib,ic0,ic0a,ifac,itest
+integer :: ib,ifac,itest
 real(kind_real) :: fld_ref(geom%nc0a,geom%nl0,nam%nv,nam%nts,ntest),fld_save(geom%nc0a,geom%nl0,nam%nv,nam%nts,ntest)
 real(kind_real) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts),fac(nfac),mse(ntest,nfac)
 character(len=1024) :: prefix,method
@@ -1942,7 +1944,7 @@ cmat_test = cmat_save%copy(nam,geom,bpar)
 
 do ifac=1,nfac
    ! Multiplication factor
-   fac(ifac) = 2.0*float(ifac)/float(nfac)
+   fac(ifac) = 2.0*real(ifac,kind_real)/real(nfac,kind_real)
 
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a,f4.2,a)') '--- Apply a multiplicative factor ',fac(ifac),' to length-scales'
@@ -1983,7 +1985,8 @@ do ifac=1,nfac
 
    ! Print scores
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a,f4.2,a,e15.8)') '--- Optimality results for a factor ',fac(ifac),', MSE: ',sum(mse(:,ifac))/float(ntest)
+   write(mpl%unit,'(a,f4.2,a,e15.8)') '--- Optimality results for a factor ',fac(ifac),', MSE: ', &
+ & sum(mse(:,ifac))/real(ntest,kind_real)
    call flush(mpl%unit)
 end do
 
@@ -1991,7 +1994,7 @@ end do
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Optimality results summary'
 do ifac=1,nfac
-   write(mpl%unit,'(a7,a,f4.2,a,e15.8)') '','Factor ',fac(ifac),', MSE: ',sum(mse(:,ifac))/float(ntest)
+   write(mpl%unit,'(a7,a,f4.2,a,e15.8)') '','Factor ',fac(ifac),', MSE: ',sum(mse(:,ifac))/real(ntest,kind_real)
 end do
 call flush(mpl%unit)
 

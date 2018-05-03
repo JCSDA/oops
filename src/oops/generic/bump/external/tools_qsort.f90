@@ -99,7 +99,7 @@ end subroutine reorder_vec_real
 ! Brainerd, W.S., Goldberg, C.H. & Adams, J.C. (1990) "Programmer's Guide to Fortran 90", McGraw-Hill  ISBN 0-07-000248-7, pages 149-150.
 ! Modified by Alan Miller to include an associated integer array which gives the positions of the elements in the original order.
 ! Source: http://jblevins.org/mirror/amiller/qsort.f90
-! Modified by Benjamin Menetrier for nicas
+! Modified by Benjamin Menetrier for BUMP
 !----------------------------------------------------------------------
 recursive subroutine qsort_integer(n,list,order)
 
@@ -126,7 +126,7 @@ end subroutine qsort_integer
 ! Brainerd, W.S., Goldberg, C.H. & Adams, J.C. (1990) "Programmer's Guide to Fortran 90", McGraw-Hill  ISBN 0-07-000248-7, pages 149-150.
 ! Modified by Alan Miller to include an associated integer array which gives the positions of the elements in the original order.
 ! Source: http://jblevins.org/mirror/amiller/qsort.f90
-! Modified by Benjamin Menetrier for hybrid_diag
+! Modified by Benjamin Menetrier for BUMP
 !----------------------------------------------------------------------
 recursive subroutine qsort_real(n,list,order)
 

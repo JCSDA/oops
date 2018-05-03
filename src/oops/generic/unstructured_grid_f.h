@@ -19,7 +19,7 @@ extern "C" {
   void get_lat_f90(int &, const int &, double *);
   void get_area_f90(int &, const int &, double *);
   void get_vunit_f90(int &, const int &, double *);
-  void get_imask_f90(int &, const int &, const int &, int *);
+  void get_imask_f90(int &, const int &, int *);
   void get_data_f90(int &, const int &, double *);
 }
 }  // namespace oops

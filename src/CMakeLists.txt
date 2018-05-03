@@ -190,10 +190,8 @@ oops/generic/bump/external/Cover_Tree.h
 oops/generic/bump/external/Cover_Tree_Point.cpp
 oops/generic/bump/external/Cover_Tree_Point.h
 oops/generic/bump/external/fgetpid.c
-oops/generic/bump/external/kdtree2.f90
 oops/generic/bump/external/tools_qsort.f90
 oops/generic/bump/external/tools_stripack.f90
-
 
 oops/interface/ErrorCovariance.h
 oops/interface/Geometry.h

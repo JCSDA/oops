@@ -1315,7 +1315,7 @@ type(unstructured_grid), intent(inout) :: ug
 
 integer :: nc0a,ic0a,jx,jy,jl,jf,joff
 integer,allocatable :: imask(:,:)
-real(kind=kind_real),allocatable :: lon(:),lat(:),area(:),vunit(:)
+real(kind=kind_real),allocatable :: lon(:),lat(:),area(:),vunit(:,:)
 
 ! Define local number of gridpoints (equal to global here since QG works on a single proc)
 nc0a = self%geom%nx*self%geom%ny
@@ -1324,7 +1324,7 @@ nc0a = self%geom%nx*self%geom%ny
 allocate(lon(nc0a))
 allocate(lat(nc0a))
 allocate(area(nc0a))
-allocate(vunit(self%nl))
+allocate(vunit(nc0a,self%nl))
 allocate(imask(nc0a,self%nl))
 
 ! Copy coordinates
@@ -1341,7 +1341,7 @@ imask = 1
 
 ! Define vertical unit
 do jl=1,self%nl
-  vunit(jl) = real(jl,kind=kind_real)
+  vunit(:,jl) = real(jl,kind=kind_real)
 enddo
 
 ! Create unstructured grid

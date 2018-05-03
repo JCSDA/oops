@@ -42,18 +42,22 @@ type bump_type
   type(obsop_type) :: obsop
   type(ens_type) :: ens1
   type(ens_type) :: ens2
-  real(kind_real),allocatable :: rh0(:,:,:,:)
-  real(kind_real),allocatable :: rv0(:,:,:,:)
+  real(kind_real),allocatable :: rh(:,:,:,:)
+  real(kind_real),allocatable :: rv(:,:,:,:)
+  integer :: nx
+  integer :: ny
 contains
    procedure :: setup_offline => bump_setup_offline
-   procedure :: bump_setup_online_xyz
-   procedure :: bump_setup_online_xz
-   generic :: setup_online => bump_setup_online_xyz,bump_setup_online_xz
+   procedure :: bump_setup_online
+   procedure :: bump_setup_online_oops
+   procedure :: bump_setup_online_nemovar
+   generic :: setup_online => bump_setup_online,bump_setup_online_oops,bump_setup_online_nemovar
    procedure :: setup_generic => bump_setup_generic
    procedure :: run_drivers => bump_run_drivers
    procedure :: apply_nicas => bump_apply_nicas
    procedure :: apply_obsop => bump_apply_obsop
    procedure :: apply_obsop_ad => bump_apply_obsop_ad
+   procedure :: back_to => bump_back_to
 end type bump_type
 
 logical,parameter :: write_online = .false. !< Write online data for tests
@@ -157,171 +161,11 @@ close(unit=mpl%unit)
 end subroutine bump_setup_offline
 
 !----------------------------------------------------------------------
-! Subroutine: bump_setup_online_xyz
-!> Purpose: online setup, xyz grid
+! Subroutine: bump_setup_online
+!> Purpose: online setup
 !----------------------------------------------------------------------
-subroutine bump_setup_online_xyz(bump,mpi_comm,nx,ny,nl0,nv,nts,lon,lat,area,vunit,lmask,ens1_ne,ens1,ens2_ne,ens2,rh0,rv0, &
-                              & nobs,lonobs,latobs)
-
-implicit none
-
-! Passed variables
-class(bump_type),intent(inout) :: bump                   !< BUMP
-integer,intent(in) :: mpi_comm                           !< MPI communicator
-integer,intent(in) :: nx                                 !< X-axis size
-integer,intent(in) :: ny                                 !< Y-axis size
-integer,intent(in) :: nl0                                !< Number of levels
-integer,intent(in) :: nv                                 !< Number of variables
-integer,intent(in) :: nts                                !< Number of time slots
-real(kind_real),intent(in) :: lon(nx,ny)                 !< Longitude
-real(kind_real),intent(in) :: lat(nx,ny)                 !< Latitude
-real(kind_real),intent(in) :: area(nx,ny)                !< Area
-real(kind_real),intent(in) :: vunit(nl0)                 !< Vertical unit
-logical,intent(in) :: lmask(nx,ny,nl0)                   !< Mask
-integer,intent(in),optional :: ens1_ne                   !< Ensemble 1 size
-real(kind_real),intent(in),optional :: ens1(:,:,:,:,:,:) !< Ensemble 1
-integer,intent(in),optional :: ens2_ne                   !< Ensemble 2 size
-real(kind_real),intent(in),optional :: ens2(:,:,:,:,:,:) !< Ensemble 2
-real(kind_real),intent(in),optional :: rh0(:,:,:,:,:)    !< Horizontal support radius for covariance
-real(kind_real),intent(in),optional :: rv0(:,:,:,:,:)    !< Vertical support radius for covariance
-integer,intent(in),optional :: nobs                      !< Number of observations
-real(kind_real),intent(in),optional :: lonobs(:)         !< Observations longitudes
-real(kind_real),intent(in),optional :: latobs(:)         !< Observations latitudes
-
-! Local variables
-integer :: nmga,il0
-real(kind_real),allocatable :: lon_ga(:),lat_ga(:),area_ga(:)
-logical :: test(3)
-logical,allocatable :: lmask_ga(:,:)
-
-! Initialize MPL
-call mpl%init(mpi_comm)
-
-! Set internal namelist parameters
-if (present(ens1_ne).and.present(ens2_ne)) then
-   call bump%nam%setup_internal(nl0,nv,nts,ens1_ne,ens2_ne)
-elseif (present(ens1_ne)) then
-   call bump%nam%setup_internal(nl0,nv,nts,ens1_ne)
-else
-   call bump%nam%setup_internal(nl0,nv,nts)
-end if
-
-! Generic setup
-call bump%setup_generic
-
-! Check arguments consistency
-test(1:2) = (/present(ens1_ne),present(ens1)/)
-if (.not.(all(test(1:2)).or.all(.not.test(1:2)))) call msgerror('ens1_ne and ens1 should be present together')
-test(1:2) = (/present(ens2_ne),present(ens2)/)
-if (.not.(all(test(1:2)).or.all(.not.test(1:2)))) call msgerror('ens2_ne and ens2 should be present together')
-test(1:2) = (/present(rh0),present(rv0)/)
-if (.not.(all(test(1:2)).or.all(.not.test(1:2)))) call msgerror('rh0 and rv0 should be present together')
-test(1:3) = (/present(nobs),present(lonobs),present(latobs)/)
-if (.not.(all(test(1:3)).or.all(.not.test(1:3)))) call msgerror('nobs, lonobs and latobs should be present together')
-
-! Check sizes consistency
-nmga = nx*ny
-if (present(ens1_ne).and.present(ens1)) then
-   if (size(ens1)/=nmga*nl0*nv*nts*ens1_ne) call msgerror('wrong size for ens1')
-end if
-if (present(ens2_ne).and.present(ens2)) then
-   if (size(ens2)/=nmga*nl0*nv*nts*ens2_ne) call msgerror('wrong size for ens2')
-end if
-if (present(rh0).and.present(rv0)) then
-   if (size(rh0)/=nmga*nl0*nv*nts) call msgerror('wrong size for rh0')
-   if (size(rv0)/=nmga*nl0*nv*nts) call msgerror('wrong size for rv0')
-end if
-if (present(nobs).and.present(lonobs).and.present(latobs)) then
-   if (size(lonobs)/=nobs) call msgerror('wrong size for lonobs')
-   if (size(latobs)/=nobs) call msgerror('wrong size for latobs')
-end if
-
-! Allocation
-allocate(lon_ga(nmga))
-allocate(lat_ga(nmga))
-allocate(area_ga(nmga))
-allocate(lmask_ga(nmga,nl0))
-
-! Pack
-lon_ga = pack(lon,.true.)
-lat_ga = pack(lat,.true.)
-area_ga = pack(area,.true.)
-do il0=1,nl0
-   lmask_ga(:,il0) = pack(lmask(:,:,il0),.true.)
-end do
-
-! Initialize geometry
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Initialize geometry'
-call flush(mpl%unit)
-call bump%geom%setup_online(nmga,nl0,lon,lat,area,vunit,lmask)
-call bump%geom%init(bump%nam)
-
-if (bump%nam%grid_output) then
-   ! Initialize fields regridding
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Initialize fields regridding'
-   call flush(mpl%unit)
-   call io%grid_init(bump%nam,bump%geom)
-end if
-
-! Initialize block parameters
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Initialize block parameters'
-call bump%bpar%alloc(bump%nam,bump%geom)
-
-if (present(ens1_ne).and.present(ens1)) then
-   ! Initialize ensemble 1
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Initialize ensemble 1'
-   call flush(mpl%unit)
-   call bump%ens1%from_xyz(bump%nam,bump%geom,nx,ny,ens1_ne,ens1)
-end if
-
-if (present(ens2_ne).and.present(ens2)) then
-   ! Initialize ensemble 2
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Initialize ensemble 2'
-   call flush(mpl%unit)
-   call bump%ens2%from_xyz(bump%nam,bump%geom,nx,ny,ens2_ne,ens2)
-end if
-
-if (present(rh0).and.present(rv0)) then
-   ! Initialize C matrix from support radii
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Initialize C matrix from support radii'
-   call flush(mpl%unit)
-   call bump%cmat%from_xyz(bump%nam,bump%geom,bump%bpar,nx,ny,rh0,rv0)
-end if
-
-if (present(nobs).and.present(lonobs).and.present(latobs)) then
-   ! Initialize observations locations
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Initialize observations locations'
-   call flush(mpl%unit)
-   call bump%obsop%from_lonlat(nobs,lonobs,latobs)
-end if
-
-! Run drivers
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Run drivers'
-call flush(mpl%unit)
-call bump%run_drivers
-
-! Close listings
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Close listings'
-call flush(mpl%unit)
-close(unit=mpl%unit)
-
-end subroutine bump_setup_online_xyz
-
-!----------------------------------------------------------------------
-! Subroutine: bump_setup_online_xz
-!> Purpose: online setup, xz grid
-!----------------------------------------------------------------------
-subroutine bump_setup_online_xz(bump,mpi_comm,nmga,nl0,nv,nts,lon,lat,area,vunit,lmask,ens1_ne,ens1,ens2_ne,ens2,rh0,rv0, &
-                             & nobs,lonobs,latobs)
+subroutine bump_setup_online(bump,mpi_comm,nmga,nl0,nv,nts,lon,lat,area,vunit,lmask,ens1_ne,ens1,ens2_ne,ens2,rh,rv, &
+                                & nobs,lonobs,latobs)
 
 implicit none
 
@@ -335,14 +179,14 @@ integer,intent(in) :: nts                              !< Number of time slots
 real(kind_real),intent(in) :: lon(nmga)                !< Longitude
 real(kind_real),intent(in) :: lat(nmga)                !< Latitude
 real(kind_real),intent(in) :: area(nmga)               !< Area
-real(kind_real),intent(in) :: vunit(nl0)               !< Vertical unit
+real(kind_real),intent(in) :: vunit(nmga,nl0)          !< Vertical unit
 logical,intent(in) :: lmask(nmga,nl0)                  !< Mask
 integer,intent(in),optional :: ens1_ne                 !< Ensemble 1 size
 real(kind_real),intent(in),optional :: ens1(:,:,:,:,:) !< Ensemble 1
 integer,intent(in),optional :: ens2_ne                 !< Ensemble 2 size
 real(kind_real),intent(in),optional :: ens2(:,:,:,:,:) !< Ensemble 2
-real(kind_real),intent(in),optional :: rh0(:,:,:,:)    !< Horizontal support radius for covariance
-real(kind_real),intent(in),optional :: rv0(:,:,:,:)    !< Vertical support radius for covariance
+real(kind_real),intent(in),optional :: rh(:,:,:,:)     !< Horizontal support radius for covariance
+real(kind_real),intent(in),optional :: rv(:,:,:,:)     !< Vertical support radius for covariance
 integer,intent(in),optional :: nobs                    !< Number of observations
 real(kind_real),intent(in),optional :: lonobs(:)       !< Observations longitudes
 real(kind_real),intent(in),optional :: latobs(:)       !< Observations latitudes
@@ -370,8 +214,8 @@ test(1:2) = (/present(ens1_ne),present(ens1)/)
 if (.not.(all(test(1:2)).or.all(.not.test(1:2)))) call msgerror('ens1_ne and ens1 should be present together')
 test(1:2) = (/present(ens2_ne),present(ens2)/)
 if (.not.(all(test(1:2)).or.all(.not.test(1:2)))) call msgerror('ens2_ne and ens2 should be present together')
-test(1:2) = (/present(rh0),present(rv0)/)
-if (.not.(all(test(1:2)).or.all(.not.test(1:2)))) call msgerror('rh0 and rv0 should be present together')
+test(1:2) = (/present(rh),present(rv)/)
+if (.not.(all(test(1:2)).or.all(.not.test(1:2)))) call msgerror('rh and rv should be present together')
 test(1:3) = (/present(nobs),present(lonobs),present(latobs)/)
 if (.not.(all(test(1:3)).or.all(.not.test(1:3)))) call msgerror('nobs, lonobs and latobs should be present together')
 
@@ -382,9 +226,9 @@ end if
 if (present(ens2_ne).and.present(ens2)) then
    if (size(ens2)/=nmga*nl0*nv*nts*ens2_ne) call msgerror('wrong size for ens2')
 end if
-if (present(rh0).and.present(rv0)) then
-   if (size(rh0)/=nmga*nl0*nv*nts) call msgerror('wrong size for rh0')
-   if (size(rv0)/=nmga*nl0*nv*nts) call msgerror('wrong size for rv0')
+if (present(rh).and.present(rv)) then
+   if (size(rh)/=nmga*nl0*nv*nts) call msgerror('wrong size for rh')
+   if (size(rv)/=nmga*nl0*nv*nts) call msgerror('wrong size for rv')
 end if
 if (present(nobs).and.present(lonobs).and.present(latobs)) then
    if (size(lonobs)/=nobs) call msgerror('wrong size for lonobs')
@@ -416,7 +260,7 @@ if (present(ens1_ne).and.present(ens1)) then
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Initialize ensemble 1'
    call flush(mpl%unit)
-   call bump%ens1%from_xz(bump%nam,bump%geom,ens1_ne,ens1)
+   call bump%ens1%from(bump%nam,bump%geom,ens1_ne,ens1)
 end if
 
 if (present(ens2_ne).and.present(ens2)) then
@@ -424,15 +268,15 @@ if (present(ens2_ne).and.present(ens2)) then
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Initialize ensemble 2'
    call flush(mpl%unit)
-   call bump%ens2%from_xz(bump%nam,bump%geom,ens2_ne,ens2)
+   call bump%ens2%from(bump%nam,bump%geom,ens2_ne,ens2)
 end if
 
-if (present(rh0).and.present(rv0)) then
+if (present(rh).and.present(rv)) then
    ! Initialize C matrix from support radii
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Initialize C matrix from support radii'
    call flush(mpl%unit)
-   call bump%cmat%from_xz(bump%nam,bump%geom,bump%bpar,rh0,rv0)
+   call bump%cmat%from(bump%nam,bump%geom,bump%bpar,rh,rv)
 end if
 
 if (present(nobs).and.present(lonobs).and.present(latobs)) then
@@ -440,7 +284,7 @@ if (present(nobs).and.present(lonobs).and.present(latobs)) then
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Initialize observations locations'
    call flush(mpl%unit)
-   call bump%obsop%from_lonlat(nobs,lonobs,latobs)
+   call bump%obsop%from(nobs,lonobs,latobs)
 end if
 
 ! Run drivers
@@ -455,7 +299,206 @@ write(mpl%unit,'(a)') '--- Close listings'
 call flush(mpl%unit)
 close(unit=mpl%unit)
 
-end subroutine bump_setup_online_xz
+end subroutine bump_setup_online
+
+!----------------------------------------------------------------------
+! Subroutine: bump_setup_online_oops
+!> Purpose: online setup for OOPS
+!----------------------------------------------------------------------
+subroutine bump_setup_online_oops(bump,mpi_comm,nmga,nl0,nv,nts,lon,lat,area,vunit_vec,imask_vec,ens1_ne,ens1_vec)
+
+implicit none
+
+! Passed variables
+class(bump_type),intent(inout) :: bump                          !< BUMP
+integer,intent(in) :: mpi_comm                                  !< MPI communicator
+integer,intent(in) :: nmga                                      !< Halo A size
+integer,intent(in) :: nl0                                       !< Number of levels in subset Sl0
+integer,intent(in) :: nv                                        !< Number of variables
+integer,intent(in) :: nts                                       !< Number of time slots
+real(kind_real),intent(in) :: lon(nmga)                         !< Longitude
+real(kind_real),intent(in) :: lat(nmga)                         !< Latitude
+real(kind_real),intent(in) :: area(nmga)                        !< Area
+real(kind_real),intent(in) :: vunit_vec(nmga*nl0)               !< Vertical unit
+integer,intent(in) :: imask_vec(nmga*nl0)                       !< Mask
+integer,intent(in) :: ens1_ne                                   !< Ensemble 1 size
+real(kind_real),intent(in) :: ens1_vec(nmga*nl0*nv*nts*ens1_ne) !< Ensemble 1
+
+! Local variables
+integer :: il0,imga,offset
+real(kind_real) :: vunit(nmga,nl0)
+logical :: lmask(nmga,nl0)
+
+! Initialize MPL
+call mpl%init(mpi_comm)
+
+! Set internal namelist parameters
+call bump%nam%setup_internal(nl0,nv,nts,ens1_ne)
+
+! Generic setup
+call bump%setup_generic
+
+! Convert vunit and mask
+do il0=1,nl0
+   offset = (il0-1)*nmga
+   do imga=1,nmga
+      vunit(imga,il0) = vunit_vec(offset+imga)
+      if (imask_vec(offset+imga)==0) then
+         lmask(imga,il0) = .false.
+      elseif (imask_vec(offset+imga)==1) then
+         lmask(imga,il0) = .true.
+      end if
+   end do
+end do
+
+! Initialize geometry
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a)') '--- Initialize geometry'
+call flush(mpl%unit)
+call bump%geom%setup_online(nmga,nl0,lon,lat,area,vunit,lmask)
+call bump%geom%init(bump%nam)
+
+if (bump%nam%grid_output) then
+   ! Initialize fields regridding
+   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(mpl%unit,'(a)') '--- Initialize fields regridding'
+   call flush(mpl%unit)
+   call io%grid_init(bump%nam,bump%geom)
+end if
+
+! Initialize block parameters
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a)') '--- Initialize block parameters'
+call bump%bpar%alloc(bump%nam,bump%geom)
+
+! Initialize ensemble 1
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a)') '--- Initialize ensemble 1'
+call flush(mpl%unit)
+call bump%ens1%from(bump%nam,bump%geom,ens1_ne,ens1_vec)
+
+! Run drivers
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a)') '--- Run drivers'
+call flush(mpl%unit)
+call bump%run_drivers
+
+! Close listings
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a)') '--- Close listings'
+call flush(mpl%unit)
+close(unit=mpl%unit)
+
+end subroutine bump_setup_online_oops
+
+!----------------------------------------------------------------------
+! Subroutine: bump_setup_online_nemovar
+!> Purpose: online setup for NEMOVAR
+!----------------------------------------------------------------------
+subroutine bump_setup_online_nemovar(bump,mpi_comm,listing,nx,ny,nl0,lon,lat,area,vunit,lmask,nens,ncyc,ens1_2d,ens1_3d)
+
+implicit none
+
+! Passed variables
+class(bump_type),intent(inout) :: bump                    !< BUMP
+integer,intent(in) :: mpi_comm                            !< MPI communicator
+integer,intent(in) :: listing                             !< Main listing unit
+integer,intent(in) :: nx                                  !< X-axis size
+integer,intent(in) :: ny                                  !< Y-axis size
+integer,intent(in) :: nl0                                 !< Number of levels
+real(kind_real),intent(in) :: lon(nx,ny)                  !< Longitude
+real(kind_real),intent(in) :: lat(nx,ny)                  !< Latitude
+real(kind_real),intent(in) :: area(nx,ny)                 !< Area
+real(kind_real),intent(in) :: vunit(nx,ny,nl0)            !< Vertical unit
+logical,intent(in) :: lmask(nx,ny,nl0)                    !< Mask
+integer,intent(in) :: nens                                !< Number of members
+integer,intent(in) :: ncyc                                !< Number of cycles
+real(kind_real),intent(in),optional :: ens1_2d(:,:,:,:)   !< Ensemble 1, 2d
+real(kind_real),intent(in),optional :: ens1_3d(:,:,:,:,:) !< Ensemble 1, 3d
+
+! Local variables
+integer :: nmga,nts,nv,ens1_ne,il0
+real(kind_real),allocatable :: lon_mga(:),lat_mga(:),area_mga(:),vunit_mga(:,:)
+logical,allocatable :: lmask_mga(:,:)
+
+! Initialize MPL
+call mpl%init(mpi_comm,listing)
+
+! Copy sizes
+bump%nx = nx
+bump%ny = ny
+
+! Sizes
+nmga = nx*ny
+nv = 1
+nts = 1
+ens1_ne = nens*ncyc
+
+! Set internal namelist parameters
+call bump%nam%setup_internal(nl0,nv,nts,ens1_ne)
+
+! Generic setup
+call bump%setup_generic
+
+! Allocation
+allocate(lon_mga(nmga))
+allocate(lat_mga(nmga))
+allocate(area_mga(nmga))
+allocate(vunit_mga(nmga,nl0))
+allocate(lmask_mga(nmga,nl0))
+
+! Pack
+lon_mga = pack(lon,.true.)
+lat_mga = pack(lat,.true.)
+area_mga = pack(area,.true.)
+do il0=1,nl0
+   vunit_mga(:,il0) = pack(vunit(:,:,il0),.true.)
+   lmask_mga(:,il0) = pack(lmask(:,:,il0),.true.)
+end do
+
+! Initialize geometry
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a)') '--- Initialize geometry'
+call flush(mpl%unit)
+call bump%geom%setup_online(nmga,nl0,lon_mga,lat_mga,area_mga,vunit_mga,lmask_mga)
+call bump%geom%init(bump%nam)
+
+if (bump%nam%grid_output) then
+   ! Initialize fields regridding
+   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(mpl%unit,'(a)') '--- Initialize fields regridding'
+   call flush(mpl%unit)
+   call io%grid_init(bump%nam,bump%geom)
+end if
+
+! Initialize block parameters
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a)') '--- Initialize block parameters'
+call bump%bpar%alloc(bump%nam,bump%geom)
+
+! Initialize ensemble 1
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a)') '--- Initialize ensemble 1'
+call flush(mpl%unit)
+if (present(ens1_2d)) then
+   call bump%ens1%from(bump%nam,bump%geom,nx,ny,nens,ncyc,ens_2d=ens1_2d)
+elseif (present(ens1_3d)) then
+   call bump%ens1%from(bump%nam,bump%geom,nx,ny,nens,ncyc,ens_3d=ens1_3d)
+end if
+
+! Run drivers
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a)') '--- Run drivers'
+call flush(mpl%unit)
+call bump%run_drivers
+
+! Close listings
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a)') '--- Close listings'
+call flush(mpl%unit)
+close(unit=mpl%unit)
+
+end subroutine bump_setup_online_nemovar
 
 !----------------------------------------------------------------------
 ! Subroutine: bump_setup_generic
@@ -516,8 +559,8 @@ class(bump_type),intent(inout) :: bump !< BUMP
 if (bump%nam%new_hdiag.and.(.not.allocated(bump%ens1%fld))) call msgerror('new_hdiag requires ensemble 1')
 if (bump%nam%new_hdiag.and.(trim(bump%nam%method)=='hyb-rnd').or.(trim(bump%nam%method)=='dual-ens') &
  & .and.(.not.allocated(bump%ens2%fld))) call msgerror('new_hdiag requires ensemble 1')
-if (bump%nam%new_hdiag.and.(allocated(bump%rh0).and.allocated(bump%rv0))) &
- & call msgerror('rh0 and rv0 should not be provided if new_hdiag is active')
+if (bump%nam%new_hdiag.and.(allocated(bump%rh).and.allocated(bump%rv))) &
+ & call msgerror('rh and rv should not be provided if new_hdiag is active')
 
 if (bump%nam%new_hdiag) then
    ! Call HDIAG driver
@@ -529,7 +572,7 @@ if (bump%nam%new_hdiag) then
    else
       call bump%cmat%run_hdiag(bump%nam,bump%geom,bump%bpar,bump%ens1)
    end if
-elseif (bump%nam%new_param.and..not.(allocated(bump%rh0).and.allocated(bump%rv0))) then
+elseif (bump%nam%new_param.and..not.(allocated(bump%rh).and.allocated(bump%rv))) then
    ! Read C matrix data
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Read C matrix data'
@@ -640,5 +683,31 @@ real(kind_real),intent(out) :: fld(bump%geom%nc0a,bump%geom%nl0)  !< Field
 call bump%obsop%apply_ad(bump%geom,obs,fld)
 
 end subroutine bump_apply_obsop_ad
+
+!----------------------------------------------------------------------
+! Subroutine: bump_back_to
+!> Purpose: conversion from subset Sc0 to XY model grid, halo A
+!----------------------------------------------------------------------
+subroutine bump_back_to(bump,fld_c0a,fld_xya)
+
+implicit none
+
+! Passed variables
+class(bump_type),intent(in) :: bump                     !< BUMP
+real(kind_real),intent(in) :: fld_c0a(bump%geom%nc0a)   !< Field on subset Sc0, halo A
+real(kind_real),intent(out) :: fld_xya(bump%nx,bump%ny) !< Field on XY model grid, halo A
+
+! Local variables
+real(kind_real) :: fld_mga(bump%geom%nmga)
+logical :: mask_unpack(bump%nx,bump%ny)
+
+! Halo extension from subset Sc0 to model grid, halo A
+call bump%geom%com_mg%ext(fld_c0a,fld_mga)
+
+! Unpack to XY grid
+mask_unpack = .true.
+fld_xya = unpack(fld_mga,mask_unpack,fld_xya)
+
+end subroutine bump_back_to
 
 end module type_bump

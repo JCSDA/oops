@@ -11,7 +11,7 @@
 module type_com
 
 use netcdf
-use omp_lib
+!$ use omp_lib
 use tools_display, only: msgerror
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr

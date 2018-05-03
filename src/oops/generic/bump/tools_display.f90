@@ -155,7 +155,7 @@ logical,dimension(:),intent(in) :: done !< Progression logical array
 real(kind_real) :: prog
 
 ! Print message
-prog = 100.0*float(count(done))/float(size(done))
+prog = 100.0*real(count(done),kind_real)/real(size(done),kind_real)
 if (int(prog)>progint) then
    if (progint<100) then
       write(mpl%unit,'(i3,a)',advance='no') progint,'% '

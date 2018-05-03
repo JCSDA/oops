@@ -41,9 +41,9 @@ contains
    procedure :: read => cmat_read
    procedure :: write => cmat_write
    procedure :: run_hdiag => cmat_run_hdiag
-   procedure :: from_xyz => cmat_from_xyz
-   procedure :: from_xz => cmat_from_xz
-   procedure :: from_diag => cmat_from_diag
+   procedure :: cmat_from_fields
+   procedure :: cmat_from_diag
+   generic :: from => cmat_from_fields,cmat_from_diag
 end type cmat_type
 
 private
@@ -432,9 +432,9 @@ if (trim(nam%minim_algo)/='none') then
    call flush(mpl%unit)
    select case (trim(nam%method))
    case ('cor')
-      call cmat%from_diag(nam,geom,bpar,hdata,cor_1)
+      call cmat%from(nam,geom,bpar,hdata,cor_1)
    case ('loc')
-      call cmat%from_diag(nam,geom,bpar,hdata,loc_1)
+      call cmat%from(nam,geom,bpar,hdata,loc_1)
    case default
       call msgerror('cmat not implemented yet for this method')
    end select
@@ -459,102 +459,17 @@ if (nam%full_var) then
    filename = trim(nam%prefix)//'_full_var.nc'
    do ib=1,bpar%nb
       if (bpar%diag_block(ib)) call io%fld_write(nam,geom,filename,trim(bpar%blockname(ib))//'_var', &
-    & sum(mom_1%blk(ib)%m2full,dim=3)/float(mom_1%blk(ib)%nsub))
+    & sum(mom_1%blk(ib)%m2full,dim=3)/real(mom_1%blk(ib)%nsub,kind_real))
    end do
 end if
 
 end subroutine cmat_run_hdiag
 
 !----------------------------------------------------------------------
-! Subroutine: cmat_from_xyz
-!> Purpose: copy xyz radii into cmat object
+! Subroutine: cmat_from_fields
+!> Purpose: copy radii into cmat object
 !----------------------------------------------------------------------
-subroutine cmat_from_xyz(cmat,nam,geom,bpar,nx,ny,rh0,rv0)
-
-implicit none
-
-! Passed variables
-class(cmat_type),intent(inout) :: cmat                           !< C matrix data
-type(nam_type),intent(in) :: nam                                 !< Namelist
-type(geom_type),intent(in) :: geom                               !< Geometry
-type(bpar_type),intent(in) :: bpar                               !< Block parameters
-integer,intent(in) :: nx                                         !< X-axis size
-integer,intent(in) :: ny                                         !< Y-axis size
-real(kind_real),intent(in) :: rh0(nx,ny,geom%nl0,nam%nv,nam%nts) !< Horizontal support radius on model grid, halo A
-real(kind_real),intent(in) :: rv0(nx,ny,geom%nl0,nam%nv,nam%nts) !< Vertical support radius on model grid, halo A
-
-! Local variables
-integer :: ib,iv,jv,its,jts,il0,ic0
-real(kind_real) :: tmp(geom%nmga)
-
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Copy radii into C matrix'
-call flush(mpl%unit)
-
-! Allocation
-call cmat%alloc(nam,geom,bpar,'cmat')
-
-! Convolution parameters
-do ib=1,bpar%nb+1
-   if (bpar%B_block(ib)) then
-      if (bpar%nicas_block(ib)) then
-         ! Indices
-         iv = bpar%b_to_v1(ib)
-         jv = bpar%b_to_v2(ib)
-         its = bpar%b_to_ts1(ib)
-         jts = bpar%b_to_ts2(ib)
-         if ((iv/=jv).or.(its/=jts)) call msgerror('only diagonal blocks for cmat_from_radii')
-
-         ! Copy support radii
-         do il0=1,geom%nl0
-            tmp = pack(rh0(:,:,il0,iv,its),.true.)
-            cmat%blk(ib)%rh0(:,il0) = tmp(geom%c0a_to_ga)
-            tmp = pack(rv0(:,:,il0,iv,its),.true.)
-            cmat%blk(ib)%rv0(:,il0) = tmp(geom%c0a_to_ga)
-         end do
-
-         ! Set coefficients
-         cmat%blk(ib)%coef_ens = 1.0
-         cmat%blk(ib)%coef_sta = 0.0
-         cmat%blk(ib)%wgt = 1.0
-      end if
-   end if
-end do
-
-! Sampling parameters
-if (trim(nam%strategy)=='specific_multivariate') then
-   ! Initialization
-   cmat%blk(ib)%rh0s = huge(1.0)
-   cmat%blk(ib)%rv0s = huge(1.0)
-
-   ! Get minimum
-   do ib=1,bpar%nb+1
-      if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
-         do il0=1,geom%nl0
-            do ic0=1,geom%nc0
-               cmat%blk(ib)%rh0s(ic0,il0) = min(cmat%blk(ib)%rh0s(ic0,il0),cmat%blk(ib)%rh0(ic0,il0))
-               cmat%blk(ib)%rv0s(ic0,il0) = min(cmat%blk(ib)%rv0s(ic0,il0),cmat%blk(ib)%rv0(ic0,il0))
-            end do
-         end do
-      end if
-   end do
-else
-   ! Copy
-   do ib=1,bpar%nb+1
-      if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
-         cmat%blk(ib)%rh0s = cmat%blk(ib)%rh0
-         cmat%blk(ib)%rv0s = cmat%blk(ib)%rv0
-      end if
-   end do
-end if
-
-end subroutine cmat_from_xyz
-
-!----------------------------------------------------------------------
-! Subroutine: cmat_from_xz
-!> Purpose: copy xz radii into cmat object
-!----------------------------------------------------------------------
-subroutine cmat_from_xz(cmat,nam,geom,bpar,rh0,rv0)
+subroutine cmat_from_fields(cmat,nam,geom,bpar,rh0,rv0)
 
 implicit none
 
@@ -568,7 +483,6 @@ real(kind_real),intent(in) :: rv0(geom%nmga,geom%nl0,nam%nv,nam%nts) !< Vertical
 
 ! Local variables
 integer :: ib,iv,jv,its,jts,il0,ic0
-real(kind_real) :: rh0_c0a(geom%nc0a,geom%nl0),rv0_c0a(geom%nc0a,geom%nl0)
 
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Copy radii into C matrix'
@@ -590,8 +504,8 @@ do ib=1,bpar%nb+1
 
          ! Copy support radii
          do il0=1,geom%nl0
-            cmat%blk(ib)%rh0(:,il0) = rh0(geom%c0a_to_ga,il0,iv,its)
-            cmat%blk(ib)%rv0(:,il0) = rv0(geom%c0a_to_ga,il0,iv,its)
+            cmat%blk(ib)%rh0(:,il0) = rh0(geom%c0a_to_mga,il0,iv,its)
+            cmat%blk(ib)%rv0(:,il0) = rv0(geom%c0a_to_mga,il0,iv,its)
          end do
 
          ! Set coefficients
@@ -629,7 +543,7 @@ else
    end do
 end if
 
-end subroutine cmat_from_xz
+end subroutine cmat_from_fields
 
 !----------------------------------------------------------------------
 ! Subroutine: cmat_from_diag
@@ -695,7 +609,7 @@ do ib=1,bpar%nb+1
                if (i==1) then
                   cmat%blk(ib)%coef_ens = fld_c0a
                   call mpl%allreduce_sum(sum(cmat%blk(ib)%coef_ens,mask=geom%mask(geom%c0a_to_c0,:)),cmat%blk(ib)%wgt)
-                  cmat%blk(ib)%wgt = cmat%blk(ib)%wgt/float(count(geom%mask))
+                  cmat%blk(ib)%wgt = cmat%blk(ib)%wgt/real(count(geom%mask),kind_real)
                elseif (i==2) then
                   cmat%blk(ib)%coef_sta = fld_c0a
                elseif (i==3) then
@@ -718,10 +632,10 @@ do ib=1,bpar%nb+1
                   call msgerror('dual-ens not ready yet for C matrix data')
                end select
             end do
-            cmat%blk(ib)%wgt = sum(diag%blk(0,ib)%raw_coef_ens)/float(geom%nl0)
+            cmat%blk(ib)%wgt = sum(diag%blk(0,ib)%raw_coef_ens)/real(geom%nl0,kind_real)
          end if
       else
-         cmat%blk(ib)%wgt = sum(diag%blk(0,ib)%raw_coef_ens)/float(geom%nl0)
+         cmat%blk(ib)%wgt = sum(diag%blk(0,ib)%raw_coef_ens)/real(geom%nl0,kind_real)
       end if
    end if
 end do

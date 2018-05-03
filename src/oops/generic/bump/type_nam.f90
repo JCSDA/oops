@@ -12,7 +12,7 @@ module type_nam
 
 use iso_c_binding
 use netcdf, only: nf90_put_att,nf90_global
-use omp_lib, only: omp_get_num_procs
+!$ use omp_lib, only: omp_get_num_procs
 use tools_const, only: req,deg2rad
 use tools_display, only: msgerror,msgwarning
 use tools_kinds,only: kind_real
@@ -660,18 +660,23 @@ case default
 end select
 
 ! Check driver_param
-select case (trim(nam%method))
-case ('cor','loc','hyb-avg','hyb-rnd','dual-ens')
-case default
-   call msgerror('wrong method')
-end select
-select case (trim(nam%strategy))
-case ('diag_all','common','specific_univariate','common_weighted')
-case ('specific_multivariate')
-   if (.not.nam%lsqrt) call msgerror('specific multivariate strategy requires a square-root formulation')
-case default
-   call msgerror('wrong strategy')
-end select
+if (nam%new_hdiag.or.nam%check_consistency.or.nam%check_optimality) then
+   select case (trim(nam%method))
+   case ('cor','loc','hyb-avg','hyb-rnd','dual-ens')
+   case default
+      call msgerror('wrong method')
+   end select
+end if
+if (nam%new_hdiag.or.nam%new_param.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_sqrt.or.nam%check_dirac &
+ & .or.nam%check_randomization.or.nam%check_consistency.or.nam%check_optimality) then
+   select case (trim(nam%strategy))
+   case ('diag_all','common','specific_univariate','common_weighted')
+   case ('specific_multivariate')
+      if (.not.nam%lsqrt) call msgerror('specific multivariate strategy requires a square-root formulation')
+   case default
+      call msgerror('wrong strategy')
+   end select
+end if
 if (nam%check_sqrt.and.(.not.nam%new_param)) call msgerror('square-root check requires new parameters calculation')
 if (nam%check_randomization) then
    if (.not.nam%lsqrt) call msgerror('lsqrt required for check_randomization')
@@ -709,28 +714,31 @@ if (nam%logpres) then
       nam%logpres = .false.
    end select
 end if
-if (nam%nv<=0) call msgerror('nv should be positive')
-do iv=1,nam%nv
-   write(ivchar,'(i2.2)') iv
-   if (trim(nam%varname(iv))=='') call msgerror('varname not specified for variable '//ivchar)
-end do
-do its=1,nam%nts
-   if (nam%timeslot(its)<0) call msgerror('timeslot should be non-negative')
-end do
+if (nam%new_hdiag.or.nam%new_param.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_sqrt.or.nam%check_dirac &
+ & .or.nam%check_randomization.or.nam%check_consistency.or.nam%check_optimality.or.nam%new_lct) then
+   if (nam%nv<=0) call msgerror('nv should be positive')
+   do iv=1,nam%nv
+      write(ivchar,'(i2.2)') iv
+      if (trim(nam%varname(iv))=='') call msgerror('varname not specified for variable '//ivchar)
+   end do
+   do its=1,nam%nts
+      if (nam%timeslot(its)<0) call msgerror('timeslot should be non-negative')
+   end do
+   do iv=1,nam%nv
+      if (trim(nam%addvar2d(iv))/='') nam%levs(nam%nl+1) = maxval(nam%levs(1:nam%nl))+1
+   end do
+end if
 
-! Surface level
-do iv=1,nam%nv
-   if (trim(nam%addvar2d(iv))/='') nam%levs(nam%nl+1) = maxval(nam%levs(1:nam%nl))+1
-end do
-
-if (nam%new_hdiag.or.nam%new_lct) then
-   ! Check ens1_param
+! Check ens1_param
+if (nam%load_ensemble.or.nam%new_hdiag.or.nam%new_lct) then
    if (nam%ens1_ne_offset<0) call msgerror('ens1_ne_offset should be non-negative')
    if (nam%ens1_nsub<1) call msgerror('ens1_nsub should be positive')
    if (mod(nam%ens1_ne,nam%ens1_nsub)/=0) call msgerror('ens1_nsub should be a divider of ens1_ne')
    if (nam%ens1_ne/nam%ens1_nsub<=3) call msgerror('ens1_ne/ens1_nsub should be larger than 3')
+end if
 
-   ! Check ens2_param
+! Check ens2_param
+if (nam%load_ensemble.or.nam%new_hdiag.or.nam%new_lct) then
    select case (trim(nam%method))
    case ('hyb-rnd','dual-ens')
       if (nam%ens2_ne_offset<0) call msgerror('ens2_ne_offset should be non-negative')
@@ -738,8 +746,10 @@ if (nam%new_hdiag.or.nam%new_lct) then
       if (mod(nam%ens2_ne,nam%ens2_nsub)/=0) call msgerror('ens2_nsub should be a divider of ens2_ne')
       if (nam%ens2_ne/nam%ens2_nsub<=3) call msgerror('ens2_ne/ens2_nsub should be larger than 3')
    end select
+end if
 
-   ! Check sampling_param
+! Check sampling_param
+if (nam%new_hdiag.or.nam%new_lct) then
    if (nam%sam_write.and.nam%sam_read) call msgerror('sam_write and sam_read are both true')
    select case (trim(nam%draw_type))
    case ('random_uniform','random_coast','icosahedron')
@@ -750,7 +760,6 @@ if (nam%new_hdiag.or.nam%new_lct) then
    if (nam%ntry<=0) call msgerror('ntry should be positive')
    if (nam%nrep<0) call msgerror('nrep should be non-negative')
    if (nam%nc3<=0) call msgerror('nc3 should be positive')
-   if (nam%dc<0.0) call msgerror('dc should be positive')
    if (nam%nl0r<1) call msgerror ('nl0r should be positive')
    if (any(nam%addvar2d(1:nam%nv)/='')) then
       if (nam%nl0r>nam%nl+1) then
@@ -766,20 +775,27 @@ if (nam%new_hdiag.or.nam%new_lct) then
       end if
    end if
    if (mod(nam%nl0r,2)<1) call msgerror ('nl0r should be odd')
+end if
+if (nam%new_hdiag) then
+   if (nam%dc<0.0) call msgerror('dc should be positive')
+end if
 
-   ! Check diag_param
+! Check diag_param
+if (nam%new_hdiag) then
    if (nam%ne<=3) call msgerror('ne should be larger than 3')
-   if (nam%local_diag.or.nam%displ_diag) then
-      if (nam%displ_rad<0.0) call msgerror('displ_rad should be non-negative')
+   if (nam%local_diag) then
+      if (nam%local_rad<0.0) call msgerror('displ_rad should be non-negative')
    end if
    if (nam%displ_diag) then
-      if (nam%local_rad<0.0) call msgerror('local_rad should be non-negative')
+      if (nam%displ_rad<0.0) call msgerror('local_rad should be non-negative')
       if (nam%displ_niter<0) call msgerror('displ_niter should be positive')
       if (nam%displ_rhflt<0.0) call msgerror('displ_rhflt should be non-negative')
       if (nam%displ_tol<0.0) call msgerror('displ_tol should be non-negative')
    end if
+end if
 
-   ! Check fit_param
+! Check fit_param
+if (nam%new_hdiag.or.nam%new_lct) then
    select case (trim(nam%minim_algo))
    case ('none','fast','hooke')
    case default
@@ -787,11 +803,13 @@ if (nam%new_hdiag.or.nam%new_lct) then
    end select
    if (nam%new_lct.and.((trim(nam%minim_algo)=='none').or.(trim(nam%minim_algo)=='fast'))) call msgerror('wrong minim_algo for LCT')
    if (nam%rvflt<0) call msgerror('rvflt should be non-negative')
-   if (nam%new_lct) then
-      if (nam%lct_nscales<0) call msgerror('lct_nscales should be non-negative')
-   end if
+end if
+if (nam%new_lct) then
+   if (nam%lct_nscales<0) call msgerror('lct_nscales should be non-negative')
+end if
 
-   ! Check ensemble sizes
+! Check ensemble sizes
+if (nam%new_hdiag) then
    if (trim(nam%method)/='cor') then
       if (nam%ne>nam%ens1_ne) call msgwarning('ensemble size larger than ens1_ne (might enhance sampling noise)')
       select case (trim(nam%method))
@@ -802,33 +820,36 @@ if (nam%new_hdiag.or.nam%new_lct) then
 end if
 
 ! Check nicas_param
-if (nam%lsqrt) then
-   if (nam%mpicom==1) call msgerror('mpicom should be 2 for square-root application')
+if (nam%new_param.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_sqrt.or.nam%check_dirac.or.nam%check_randomization &
+ & .or.nam%check_consistency.or.nam%check_optimality) then
+   if (nam%lsqrt) then
+      if (nam%mpicom==1) call msgerror('mpicom should be 2 for square-root application')
+   end if
+   if (nam%new_param) then
+      if (.not.(nam%resol>0.0)) call msgerror('resol should be positive')
+   end if
+   if (nam%new_param.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_sqrt.or.nam%check_dirac.or. &
+    & nam%check_randomization.or.nam%check_consistency.or.nam%check_optimality) then
+      if ((nam%mpicom/=1).and.(nam%mpicom/=2)) call msgerror('mpicom should be 1 or 2')
+   end if
+   if (abs(nam%advmode)>1) call msgerror('nam%advmode should be -1, 0 or 1')
+   if (nam%check_dirac) then
+      if (nam%ndir<1) call msgerror('ndir should be positive')
+      do idir=1,nam%ndir
+         if ((nam%londir(idir)<-180.0).or.(nam%londir(idir)>180.0)) call msgerror('Dirac longitude should lie between -180 and 180')
+         if ((nam%latdir(idir)<-90.0).or.(nam%latdir(idir)>90.0)) call msgerror('Dirac latitude should lie between -90 and 90')
+         if (.not.(any(nam%levs(1:nam%nl)==nam%levdir(idir)).or.(any(nam%addvar2d(1:nam%nv)/='') &
+       & .and.(nam%levs(nam%nl+1)==nam%levdir(idir))))) call msgerror('wrong level for a Dirac')
+         if ((nam%ivdir(idir)<1).or.(nam%ivdir(idir)>nam%nv)) call msgerror('wrong variable for a Dirac')
+         if ((nam%itsdir(idir)<1).or.(nam%itsdir(idir)>nam%nts)) call msgerror('wrong timeslot for a Dirac')
+      end do
+   end if
+   select case (trim(nam%diag_interp))
+   case ('bilin','natural')
+   case default
+      call msgerror('wrong interpolation for NICAS')
+   end select
 end if
-if (nam%new_param) then
-   if (.not.(nam%resol>0.0)) call msgerror('resol should be positive')
-end if
-if (nam%new_param.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_sqrt.or.nam%check_dirac.or. &
- & nam%check_randomization.or.nam%check_consistency.or.nam%check_optimality) then
-   if ((nam%mpicom/=1).and.(nam%mpicom/=2)) call msgerror('mpicom should be 1 or 2')
-end if
-if (abs(nam%advmode)>1) call msgerror('nam%advmode should be -1, 0 or 1')
-if (nam%check_dirac) then
-   if (nam%ndir<1) call msgerror('ndir should be positive')
-   do idir=1,nam%ndir
-      if ((nam%londir(idir)<-180.0).or.(nam%londir(idir)>180.0)) call msgerror('Dirac longitude should lie between -180 and 180')
-      if ((nam%latdir(idir)<-90.0).or.(nam%latdir(idir)>90.0)) call msgerror('Dirac latitude should lie between -90 and 90')
-      if (.not.(any(nam%levs(1:nam%nl)==nam%levdir(idir)).or.(any(nam%addvar2d(1:nam%nv)/='') &
-    & .and.(nam%levs(nam%nl+1)==nam%levdir(idir))))) call msgerror('wrong level for a Dirac')
-      if ((nam%ivdir(idir)<1).or.(nam%ivdir(idir)>nam%nv)) call msgerror('wrong variable for a Dirac')
-      if ((nam%itsdir(idir)<1).or.(nam%itsdir(idir)>nam%nts)) call msgerror('wrong timeslot for a Dirac')
-   end do
-end if
-select case (trim(nam%diag_interp))
-case ('bilin','natural')
-case default
-   call msgerror('wrong interpolation for NICAS')
-end select
 
 ! Check obsop_param
 if (nam%new_obsop) then
@@ -866,13 +887,16 @@ if (nam%new_hdiag) then
       call msgerror('wrong interpolation for diagnostics')
    end select
 end if
-if (nam%grid_output) then
-   if (.not.(nam%grid_resol>0.0)) call msgerror('grid_resol should be positive')
-   select case (trim(nam%grid_interp))
-   case ('bilin','natural')
-   case default
-      call msgerror('wrong interpolation for fields regridding')
-   end select
+if (nam%new_hdiag.or.nam%new_param.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_sqrt.or.nam%check_dirac &
+ & .or.nam%check_randomization.or.nam%check_consistency.or.nam%check_optimality.or.nam%new_lct) then
+   if (nam%grid_output) then
+      if (.not.(nam%grid_resol>0.0)) call msgerror('grid_resol should be positive')
+      select case (trim(nam%grid_interp))
+      case ('bilin','natural')
+      case default
+         call msgerror('wrong interpolation for fields regridding')
+      end select
+   end if
 end if
 
 ! Clean files

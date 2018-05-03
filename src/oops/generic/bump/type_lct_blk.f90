@@ -10,7 +10,7 @@
 !----------------------------------------------------------------------
 module type_lct_blk
 
-use omp_lib
+!$ use omp_lib
 use tools_display, only: prog_init,prog_print
 use tools_func, only: lonlatmod,fit_lct
 use tools_kinds, only: kind_real
@@ -283,7 +283,7 @@ do il0=1,geom%nl0
                   dx(jc3,jl0r) = dx(jc3,jl0r)*cos(geom%lat(hdata%c1c3_to_c0(ic1,1)))
                end if
             end do
-            dz(jl0r) = float(nam%levs(jl0)-nam%levs(il0))
+            dz(jl0r) = real(nam%levs(jl0)-nam%levs(il0),kind_real)
          end do
 
          ! Approximate homogeneous horizontal length-scale
@@ -300,7 +300,7 @@ do il0=1,geom%nl0
             end if
          end do
          if (count(isnotmsr(Hh))>0) then
-            Hhbar = sum(Hh,mask=isnotmsr(Hh))/float(count(isnotmsr(Hh)))
+            Hhbar = sum(Hh,mask=isnotmsr(Hh))/real(count(isnotmsr(Hh)),kind_real)
          else
             return
          end if
@@ -317,7 +317,7 @@ do il0=1,geom%nl0
             Hvbar = 1.0
          else
             if (count(isnotmsr(Hv))>0) then
-               Hvbar = sum(Hv,mask=isnotmsr(Hv))/float(count(isnotmsr(Hv)))
+               Hvbar = sum(Hv,mask=isnotmsr(Hv))/real(count(isnotmsr(Hv)),kind_real)
             else
               return
             end if
@@ -341,8 +341,8 @@ do il0=1,geom%nl0
                offset = offset+1
             end if
             if (lct_blk%nscales>1) then
-               minim%guess(offset+1) = 1.0/float(lct_blk%nscales)
-               minim%norm(offset+1) = 1.0/float(lct_blk%nscales)
+               minim%guess(offset+1) = 1.0/real(lct_blk%nscales,kind_real)
+               minim%norm(offset+1) = 1.0/real(lct_blk%nscales,kind_real)
                minim%binf(offset+1) = 0.0
                minim%bsup(offset+1) = 1.0
                offset = offset+1

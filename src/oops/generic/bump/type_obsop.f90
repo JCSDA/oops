@@ -59,7 +59,7 @@ type obsop_type
    type(com_type) :: com                    !< Communication data
 contains
    procedure :: generate => obsop_generate
-   procedure :: from_lonlat => obsop_from_lonlat
+   procedure :: from => obsop_from
    procedure :: run_obsop => obsop_run_obsop
    procedure :: parameters => obsop_parameters
    procedure :: apply => obsop_apply
@@ -155,10 +155,10 @@ call flush(mpl%unit)
 end subroutine obsop_generate
 
 !----------------------------------------------------------------------
-! Subroutine: obsop_run_obsop
-!> Purpose: observation operator driver
+! Subroutine: obsop_from
+!> Purpose: copy observation operator data
 !----------------------------------------------------------------------
-subroutine obsop_from_lonlat(obsop,nobs,lonobs,latobs)
+subroutine obsop_from(obsop,nobs,lonobs,latobs)
 
 implicit none
 
@@ -179,7 +179,7 @@ allocate(obsop%latobs(obsop%nobs))
 obsop%lonobs = lonobs
 obsop%latobs = latobs
 
-end subroutine obsop_from_lonlat
+end subroutine obsop_from
 
 !----------------------------------------------------------------------
 ! Subroutine: obsop_run_obsop
@@ -418,7 +418,7 @@ if (global) then
             nobs_to_move(iproc) = delta
             nres = nres-delta
          end do
-         nobs_to_move = int(float(obsop%proc_to_nobsa-nobs_to_move))
+         nobs_to_move = int(real(obsop%proc_to_nobsa-nobs_to_move,kind_real))
          if (sum(nobs_to_move)>0) then
             ind = maxloc(nobs_to_move)
          elseif (sum(nobs_to_move)<0) then
@@ -677,12 +677,12 @@ call obsop%com%setup(com,'com')
 
 ! Compute scores
 if (mpl%main) then
-   N_max = float(maxval(obsop%proc_to_nobsa))/(float(obsop%nobs)/float(mpl%nproc))
+   N_max = real(maxval(obsop%proc_to_nobsa),kind_real)/(real(obsop%nobs,kind_real)/real(mpl%nproc,kind_real))
    C_max = 0.0
    do iproc=1,mpl%nproc
       C_max = max(C_max,real(com(iproc)%nhalo,kind_real))
    end do
-   C_max = C_max/(3.0*float(obsop%nobs)/float(mpl%nproc))
+   C_max = C_max/(3.0*real(obsop%nobs,kind_real)/real(mpl%nproc,kind_real))
 end if
 
 ! Print results
@@ -690,8 +690,8 @@ write(mpl%unit,'(a7,a)') '','Number of observations per MPI task:'
 do iproc=1,mpl%nproc
    write(mpl%unit,'(a10,a,i3,a,i8)') '','Task ',iproc,': ',obsop%proc_to_nobsa(iproc)
 end do
-write(mpl%unit,'(a7,a,f5.1,a)') '','Observation repartition imbalance: ', &
- & 100.0*float(maxval(obsop%proc_to_nobsa)-minval(obsop%proc_to_nobsa))/(float(sum(obsop%proc_to_nobsa))/float(mpl%nproc)),' %'
+write(mpl%unit,'(a7,a,f5.1,a)') '','Observation repartition imbalance: ',100.0*real(maxval(obsop%proc_to_nobsa) &
+ & -minval(obsop%proc_to_nobsa),kind_real)/(real(sum(obsop%proc_to_nobsa),kind_real)/real(mpl%nproc,kind_real)),' %'
 write(mpl%unit,'(a7,a)') '','Number of grid points, halo size and number of received values per MPI task:'
 if (mpl%main) then
    do iproc=1,mpl%nproc
@@ -878,7 +878,7 @@ do iobsa=1,obsop%nobsa
       dist(iobsa) = dist(iobsa)*reqkm
    end if
 end do
-norm = float(count(isnotmsr(dist)))
+norm = real(count(isnotmsr(dist)),kind_real)
 if (norm>0) then
    distmin = minval(dist,mask=isnotmsr(dist))
    distmax = maxval(dist,mask=isnotmsr(dist))

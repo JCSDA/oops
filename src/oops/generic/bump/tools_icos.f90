@@ -94,7 +94,7 @@ do e=1,30
    b = edge_point(2,e)
    do f=1,fac-1
       i = i+1
-      node_xyz(:,i) = (float(fac-f)*point_coord(:,a)+float(f)*point_coord(:,b))/float(fac)
+      node_xyz(:,i) = (real(fac-f,kind_real)*point_coord(:,a)+real(f,kind_real)*point_coord(:,b))/real(fac,kind_real)
       node_xyz(:,i) = node_xyz(:,i)/sqrt(sum(node_xyz(:,i)**2))
    end do
 end do
@@ -105,7 +105,8 @@ do f=1,20
    do f1=1,fac-1
       do f2=1,fac-f1-1
          i = i+1
-         node_xyz(:,i) = (float(fac-f1-f2)*point_coord(:,a)+float(f1)*point_coord(:,b)+float(f2)*point_coord(:,c))/float(fac)
+         node_xyz(:,i) = (real(fac-f1-f2,kind_real)*point_coord(:,a)+real(f1,kind_real)*point_coord(:,b) &
+                       & +real(f2,kind_real)*point_coord(:,c))/real(fac,kind_real)
          node_xyz(:,i) = node_xyz(:,i)/sqrt(sum(node_xyz(:,i)**2))
       end do
    end do

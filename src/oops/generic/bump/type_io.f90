@@ -43,7 +43,7 @@ type io_type
    integer,allocatable :: c0b_to_c0(:)    !< Subset Sc0, halo B to global
    integer,allocatable :: c0_to_c0b(:)    !< Subset Sc0, global to halo B
    integer,allocatable :: c0a_to_c0b(:)   !< Subset Sc0, halo A to halo B
-   type(linop_type) :: g                  !< Subset Sc0 to grid interpolation
+   type(linop_type) :: og             !< Subset Sc0 to grid interpolation
    type(com_type) :: com_AB               !< Communication between halos A and B
 contains
    procedure :: fld_read => io_fld_read
@@ -120,7 +120,7 @@ real(kind_real),intent(in) :: fld(geom%nc0a,geom%nl0) !< Field
 ! Local variables
 integer :: ic0a,ic0,il0,info,iproc
 integer :: ncid,nc0_id,nl0_id,fld_id,lon_id,lat_id
-real(kind_real) :: fld_loc(geom%nc0a,geom%nl0),fld_glb(geom%nc0,geom%nl0)
+real(kind_real) :: fld_loc(geom%nc0a,geom%nl0)
 character(len=1024) :: subr = 'fld_write'
 
 ! Apply mask
@@ -240,15 +240,15 @@ integer,allocatable :: order(:),order_inv(:),interpg_lg(:),c0b_to_c0(:),c0a_to_c
 real(kind_real) :: dlon,dlat
 real(kind_real),allocatable :: lon_og(:),lat_og(:)
 logical :: mask_c0(geom%nc0)
-logical,allocatable :: mask_lonlat(:,:),mask_og(:),lcheck_g(:),lcheck_c0b(:)
+logical,allocatable :: mask_lonlat(:,:),mask_og(:),lcheck_og(:),lcheck_c0b(:)
 type(com_type) :: com_AB(mpl%nproc)
-type(linop_type) :: gfull
+type(linop_type) :: ogfull
 
 ! Grid size
 io%nlat = nint(pi/nam%grid_resol)
 io%nlon = 2*io%nlat
-dlon = 2.0*pi/float(io%nlon)
-dlat = pi/float(io%nlat)
+dlon = 2.0*pi/real(io%nlon,kind_real)
+dlat = pi/real(io%nlat,kind_real)
 
 ! Allocation
 allocate(io%lon(io%nlon))
@@ -258,8 +258,8 @@ allocate(mask_lonlat(io%nlon,io%nlat))
 ! Setup output grid
 do ilat=1,io%nlat
    do ilon=1,io%nlon
-      io%lon(ilon) = (-pi+dlon/2)+float(ilon-1)*dlon
-      io%lat(ilat) = (-pi/2+dlat/2)+float(ilat-1)*dlat
+      io%lon(ilon) = (-pi+dlon/2)+real(ilon-1,kind_real)*dlon
+      io%lat(ilat) = (-pi/2+dlat/2)+real(ilat-1,kind_real)*dlat
       call geom%mesh%inside(io%lon(ilon),io%lat(ilat),mask_lonlat(ilon,ilat))
    end do
 end do
@@ -301,14 +301,14 @@ mask_og = .true.
 
 ! Interpolation setup
 mask_c0 = any(geom%mask,dim=2)
-call gfull%interp(geom%nc0,geom%lon,geom%lat,mask_c0,io%nog,lon_og,lat_og,mask_og,nam%grid_interp)
+call ogfull%interp(geom%nc0,geom%lon,geom%lat,mask_c0,io%nog,lon_og,lat_og,mask_og,nam%grid_interp)
 
 ! Define a processor for each output grid point
 call msi(io%og_to_proc)
-do i_s=1,gfull%n_s
-   ic0 = gfull%col(i_s)
+do i_s=1,ogfull%n_s
+   ic0 = ogfull%col(i_s)
    iproc = geom%c0_to_proc(ic0)
-   iog = gfull%row(i_s)
+   iog = ogfull%row(i_s)
    io%og_to_proc(iog) = iproc
 end do
 if (.not.isallnotmsi(io%og_to_proc)) call msgerror('some output grid points are not interpolated')
@@ -324,8 +324,8 @@ do iog=1,io%nog
 end do
 io%og_to_lon = io%og_to_lon(order)
 io%og_to_lat = io%og_to_lat(order)
-do i_s=1,gfull%n_s
-   gfull%row(i_s) = order_inv(gfull%row(i_s))
+do i_s=1,ogfull%n_s
+   ogfull%row(i_s) = order_inv(ogfull%row(i_s))
 end do
 
 ! Conversions
@@ -340,31 +340,31 @@ do iproc=1,mpl%nproc
 end do
 
 ! Allocation
-allocate(lcheck_g(gfull%n_s))
+allocate(lcheck_og(ogfull%n_s))
 allocate(lcheck_c0b(geom%nc0))
 
 ! Halo definitions
 
 ! Halo B
-lcheck_g = .false.
+lcheck_og = .false.
 lcheck_c0b = .false.
 do ic0a=1,geom%nc0a
    ic0 = geom%c0a_to_c0(ic0a)
    lcheck_c0b(ic0) = .true.
 end do
-do i_s=1,gfull%n_s
-   iog = gfull%row(i_s)
+do i_s=1,ogfull%n_s
+   iog = ogfull%row(i_s)
    iproc = io%og_to_proc(iog)
    if (iproc==mpl%myproc) then
-      ic0 = gfull%col(i_s)
-      lcheck_g(i_s) = .true.
+      ic0 = ogfull%col(i_s)
+      lcheck_og(i_s) = .true.
       lcheck_c0b(ic0) = .true.
    end if
 end do
 
 ! Halo sizes
 io%nc0b = count(lcheck_c0b)
-io%g%n_s = count(lcheck_g)
+io%og%n_s = count(lcheck_og)
 
 ! Halo B
 allocate(io%c0b_to_c0(io%nc0b))
@@ -387,10 +387,10 @@ do ic0a=1,geom%nc0a
 end do
 
 ! Global <-> local conversions for data
-allocate(interpg_lg(io%g%n_s))
+allocate(interpg_lg(io%og%n_s))
 i_s_loc = 0
-do i_s=1,gfull%n_s
-   if (lcheck_g(i_s)) then
+do i_s=1,ogfull%n_s
+   if (lcheck_og(i_s)) then
       i_s_loc = i_s_loc+1
       interpg_lg(i_s_loc) = i_s
    end if
@@ -399,17 +399,17 @@ end do
 ! Local data
 
 ! Horizontal interpolation
-write(io%g%prefix,'(a,i3.3)') 'g'
-io%g%n_src = io%nc0b
-io%g%n_dst = io%noga
-call io%g%alloc
-do i_s_loc=1,io%g%n_s
+write(io%og%prefix,'(a,i3.3)') 'og'
+io%og%n_src = io%nc0b
+io%og%n_dst = io%noga
+call io%og%alloc
+do i_s_loc=1,io%og%n_s
    i_s = interpg_lg(i_s_loc)
-   io%g%row(i_s_loc) = io%og_to_oga(gfull%row(i_s))
-   io%g%col(i_s_loc) = io%c0_to_c0b(gfull%col(i_s))
-   io%g%S(i_s_loc) = gfull%S(i_s)
+   io%og%row(i_s_loc) = io%og_to_oga(ogfull%row(i_s))
+   io%og%col(i_s_loc) = io%c0_to_c0b(ogfull%col(i_s))
+   io%og%S(i_s_loc) = ogfull%S(i_s)
 end do
-call io%g%reorder
+call io%og%reorder
 
 ! Setup communications
 if (mpl%main) then
@@ -474,10 +474,10 @@ call io%com_AB%setup(com_AB,'com_AB')
 
 ! Print results
 write(mpl%unit,'(a7,a,i4)') '','Parameters for processor #',mpl%myproc
-write(mpl%unit,'(a10,a,i8)') '','nc0 =   ',geom%nc0
-write(mpl%unit,'(a10,a,i8)') '','nc0a =  ',geom%nc0a
-write(mpl%unit,'(a10,a,i8)') '','nc0b =  ',io%nc0b
-write(mpl%unit,'(a10,a,i8)') '','g%n_s = ',io%g%n_s
+write(mpl%unit,'(a10,a,i8)') '','nc0 =    ',geom%nc0
+write(mpl%unit,'(a10,a,i8)') '','nc0a =   ',geom%nc0a
+write(mpl%unit,'(a10,a,i8)') '','nc0b =   ',io%nc0b
+write(mpl%unit,'(a10,a,i8)') '','og%n_s = ',io%og%n_s
 call flush(mpl%unit)
 
 end subroutine io_grid_init
@@ -520,8 +520,7 @@ end do
 ! Halo extension and interpolation
 call io%com_AB%ext(geom%nl0,fld_c0a,fld_c0b)
 do il0=1,geom%nl0
-!   write(mpl%unit,*) io%g%n_src,;call flush(mpl%unit)
-   call io%g%apply(fld_c0b(:,il0),fld_oga(:,il0))
+   call io%og%apply(fld_c0b(:,il0),fld_oga(:,il0))
 end do
 
 if (mpl%main) then
@@ -575,7 +574,7 @@ if (mpl%main) then
       call ncerr(subr,nf90_put_var(ncid,lon_id,io%lon*rad2deg))
       call ncerr(subr,nf90_put_var(ncid,lat_id,io%lat*rad2deg))
       do il0=1,geom%nl0
-         call ncerr(subr,nf90_put_var(ncid,lev_id,float(il0),(/il0/)))
+         call ncerr(subr,nf90_put_var(ncid,lev_id,real(il0,kind_real),(/il0/)))
       end do
    end if
 

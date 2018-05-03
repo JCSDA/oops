@@ -11,7 +11,7 @@
 module type_hdata
 
 use netcdf
-use omp_lib
+!$ use omp_lib
 use tools_const, only: pi,req,deg2rad,rad2deg
 use tools_display, only: prog_init,prog_print,msgerror,msgwarning,black,green,peach
 use tools_func, only: gc99,sphere_dist,vector_product,vector_triple_product
@@ -506,7 +506,7 @@ end do
 ! Write variables
 call ncerr(subr,nf90_put_var(ncid,lon_id,lon))
 call ncerr(subr,nf90_put_var(ncid,lat_id,lat))
-call ncerr(subr,nf90_put_var(ncid,smax_id,float(count(hdata%c1c3l0_log,dim=1))))
+call ncerr(subr,nf90_put_var(ncid,smax_id,real(count(hdata%c1c3l0_log,dim=1),kind_real)))
 call ncerr(subr,nf90_put_var(ncid,c1_to_c0_id,hdata%c1_to_c0))
 call ncerr(subr,nf90_put_var(ncid,c1l0_log_id,c1l0_logint))
 call ncerr(subr,nf90_put_var(ncid,c1c3_to_c0_id,hdata%c1c3_to_c0))
@@ -660,7 +660,7 @@ if (nam%local_diag.or.nam%displ_diag) then
          ! Initialize sampling
          mask_ind = 1
          rh0 = 1.0
-         call rng%initialize_sampling(nam%nc1,dble(geom%lon(hdata%c1_to_c0)),dble(geom%lat(hdata%c1_to_c0)),mask_ind, &
+         call rng%initialize_sampling(nam%nc1,geom%lon(hdata%c1_to_c0),geom%lat(hdata%c1_to_c0),mask_ind, &
        & rh0,nam%ntry,nam%nrep,hdata%nc2,hdata%c2_to_c1)
 
          ! Reorder sampling
@@ -804,11 +804,11 @@ do il0=1,geom%nl0
       if (count(hdata%c1c3l0_log(:,jc3,il0))>=nam%nc1/2) then
          ! Sucessful sampling
          write(mpl%unit,'(a,i3,a)',advance='no') trim(green), &
-       & int(100.0*float(count(hdata%c1c3l0_log(:,jc3,il0)))/float(nam%nc1)),trim(black)
+       & int(100.0*real(count(hdata%c1c3l0_log(:,jc3,il0)),kind_real)/real(nam%nc1,kind_real)),trim(black)
       else
          ! Insufficient sampling
          write(mpl%unit,'(a,i3,a)',advance='no') trim(peach), &
-       & int(100.0*float(count(hdata%c1c3l0_log(:,jc3,il0)))/float(nam%nc1)),trim(black)
+       & int(100.0*real(count(hdata%c1c3l0_log(:,jc3,il0)),kind_real)/real(nam%nc1,kind_real)),trim(black)
       end if
       if (jc3<nam%nc3) write(mpl%unit,'(a)',advance='no') '-'
    end do
@@ -874,11 +874,11 @@ if (nam%nc1<maxval(count(geom%mask,dim=1))) then
                   end if
                end do
             end do
-            hdata%rh0(:,1) = rcoast+(1.0-rcoast)*(1.0-hdata%rh0(:,1)/float(geom%nl0))
+            hdata%rh0(:,1) = rcoast+(1.0-rcoast)*(1.0-hdata%rh0(:,1)/real(geom%nl0,kind_real))
          end if
 
          ! Initialize sampling
-         call rng%initialize_sampling(geom%nc0,dble(geom%lon),dble(geom%lat),mask_ind_col,dble(hdata%rh0(:,1)),nam%ntry,nam%nrep, &
+         call rng%initialize_sampling(geom%nc0,geom%lon,geom%lat,mask_ind_col,hdata%rh0(:,1),nam%ntry,nam%nrep, &
        & nam%nc1,hdata%c1_to_c0)
       case ('icosahedron')
          ! Compute icosahedron size
@@ -1010,7 +1010,7 @@ if (nam%nc3>1) then
             call sphere_dist(geom%lon(ic0),geom%lat(ic0),geom%lon(jc0),geom%lat(jc0),d)
 
             ! Find the class (dichotomy method)
-            if ((d>0.0).and.(d<(float(nam%nc3)-0.5)*nam%dc)) then
+            if ((d>0.0).and.(d<(real(nam%nc3,kind_real)-0.5)*nam%dc)) then
                jc3 = 1
                icinf = 1
                icsup = nam%nc3
@@ -1020,12 +1020,12 @@ if (nam%nc3>1) then
                   ictest = (icsup+icinf)/2
 
                   ! Update
-                  if (d<(float(ictest)-0.5)*nam%dc) icsup = ictest
-                  if (d>(float(ictest)-0.5)*nam%dc) icinf = ictest
+                  if (d<(real(ictest,kind_real)-0.5)*nam%dc) icsup = ictest
+                  if (d>(real(ictest,kind_real)-0.5)*nam%dc) icinf = ictest
 
                   ! Exit test
                   if (icsup==icinf+1) then
-                     if (abs((float(icinf)-0.5)*nam%dc-d)<abs((float(icsup)-0.5)*nam%dc-d)) then
+                     if (abs((real(icinf,kind_real)-0.5)*nam%dc-d)<abs((real(icsup,kind_real)-0.5)*nam%dc-d)) then
                         jc3 = icinf
                      else
                         jc3 = icsup
@@ -1109,7 +1109,7 @@ do ic1_loc=1,nc1_loc(mpl%myproc)
    ! Check location validity
    if (isnotmsi(hdata%c1_to_c0(ic1))) then
       ! Find neighbors
-      call geom%ctree%find_nearest_neighbors(dble(geom%lon(hdata%c1_to_c0(ic1))),dble(geom%lat(hdata%c1_to_c0(ic1))), &
+      call geom%ctree%find_nearest_neighbors(geom%lon(hdata%c1_to_c0(ic1)),geom%lat(hdata%c1_to_c0(ic1)), &
     & nam%nc3,nn_index,nn_dist)
 
       ! Copy neighbor index
@@ -2029,7 +2029,7 @@ do ic2a=1,hdata%nc2a
          select case (trim(filter_type))
          case ('average')
             ! Compute average
-            diag(ic2a) = sum(diag_eff(1:nc2eff))/float(nc2eff)
+            diag(ic2a) = sum(diag_eff(1:nc2eff))/real(nc2eff,kind_real)
          case ('fill')
             ! Fill with closest non-missing value
             call msr(diag(ic2a))

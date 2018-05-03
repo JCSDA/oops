@@ -323,7 +323,7 @@ do il0=1,geom%nl0
                nc1a = nc1a+1
 
                ! Averages for diagnostics
-               list_m11(nc1a) = sum(mom_blk%m11(ic1a,jc3,jl0r,il0,:))/float(avg_blk%nsub)
+               list_m11(nc1a) = sum(mom_blk%m11(ic1a,jc3,jl0r,il0,:))/real(avg_blk%nsub,kind_real)
                do isub=1,avg_blk%nsub
                   do jsub=1,avg_blk%nsub
                      list_m11m11(nc1a,jsub,isub) = mom_blk%m11(ic1a,jc3,jl0r,il0,isub)*mom_blk%m11(ic1a,jc3,jl0r,il0,jsub)
@@ -333,8 +333,8 @@ do il0=1,geom%nl0
                end do
 
                ! Correlation
-               m2_1 = sum(mom_blk%m2_1(ic1a,jc3,jl0r,il0,:))/float(avg_blk%nsub)
-               m2_2 = sum(mom_blk%m2_2(ic1a,jc3,jl0r,il0,:))/float(avg_blk%nsub)
+               m2_1 = sum(mom_blk%m2_1(ic1a,jc3,jl0r,il0,:))/real(avg_blk%nsub,kind_real)
+               m2_2 = sum(mom_blk%m2_2(ic1a,jc3,jl0r,il0,:))/real(avg_blk%nsub,kind_real)
                if ((m2_1>var_min).and.(m2_2>var_min)) then
                   list_cor(nc1a) = list_m11(nc1a)/sqrt(m2_1*m2_2)
                   if (abs(list_cor(nc1a))>1.0) call msr(list_cor(nc1a))
@@ -345,7 +345,7 @@ do il0=1,geom%nl0
          end do
 
          ! Average
-         avg_blk%nc1a(jc3,jl0r,il0) = float(nc1a)
+         avg_blk%nc1a(jc3,jl0r,il0) = real(nc1a,kind_real)
          avg_blk%m11(jc3,jl0r,il0) = sum(list_m11(1:nc1a))
          do isub=1,avg_blk%nsub
             do jsub=1,avg_blk%nsub
@@ -354,7 +354,7 @@ do il0=1,geom%nl0
             end do
             if (.not.nam%gau_approx) avg_blk%m22(jc3,jl0r,il0,isub) = sum(list_m22(1:nc1a,isub))
          end do
-         avg_blk%nc1a_cor(jc3,jl0r,il0) = float(count(isnotmsr(list_cor(1:nc1a))))
+         avg_blk%nc1a_cor(jc3,jl0r,il0) = real(count(isnotmsr(list_cor(1:nc1a))),kind_real)
          if (avg_blk%nc1a_cor(jc3,jl0r,il0)>0.0) then
             avg_blk%cor(jc3,jl0r,il0) = sum(list_cor(1:nc1a),mask=isnotmsr(list_cor(1:nc1a)))
          else
@@ -414,23 +414,23 @@ end do
 
 ! Ensemble size-dependent coefficients
 n = ne
-P1 = 1.0/float(n)
-P3 = 1.0/float(n*(n-1))
-P4 = 1.0/float(n-1)
-P14 = float(n**2-2*n+2)/float(n*(n-1))
-P16 = float(n)/float(n-1)
+P1 = 1.0/real(n,kind_real)
+P3 = 1.0/real(n*(n-1),kind_real)
+P4 = 1.0/real(n-1,kind_real)
+P14 = real(n**2-2*n+2,kind_real)/real(n*(n-1),kind_real)
+P16 = real(n,kind_real)/real(n-1,kind_real)
 
 ! Ensemble/sub-ensemble size-dependent coefficients
 n = avg_blk%ne/avg_blk%nsub
-P7 = float((n-1)*(n**2-3*n+1))/float(n*(n-2)*(n-3))
-P8 = float(n-1)/float(n*(n-2)*(n-3))
-P9 = -float(n)/float((n-2)*(n-3))
-P10 = -float((n-1)*(2*n-3))/float(n*(n-2)*(n-3))
-P11 = float(n*(n**2-2*n+3))/float((n-1)*(n-2)*(n-3))
-P12 = float(n*(n-1))/float((n-2)*(n+1))
-P13 = -float(n-1)/float((n-2)*(n+1))
-P15 = float((n-1)**2)/float(n*(n-3))
-P17 = float((n-1)**2)/float((n-2)*(n+1))
+P7 = real((n-1)*(n**2-3*n+1),kind_real)/real(n*(n-2)*(n-3),kind_real)
+P8 = real(n-1,kind_real)/real(n*(n-2)*(n-3),kind_real)
+P9 = -real(n,kind_real)/real((n-2)*(n-3),kind_real)
+P10 = -real((n-1)*(2*n-3),kind_real)/real(n*(n-2)*(n-3),kind_real)
+P11 = real(n*(n**2-2*n+3),kind_real)/real((n-1)*(n-2)*(n-3),kind_real)
+P12 = real(n*(n-1),kind_real)/real((n-2)*(n+1),kind_real)
+P13 = -real(n-1,kind_real)/real((n-2)*(n+1),kind_real)
+P15 = real((n-1)**2,kind_real)/real(n*(n-3),kind_real)
+P17 = real((n-1)**2,kind_real)/real((n-2)*(n+1),kind_real)
 
 ! Asymptotic statistics
 !$omp parallel do schedule(static) private(il0,jl0r,jc3,isub,jsub) firstprivate(m11asysq,m2m2asy,m22asy)
@@ -470,9 +470,9 @@ do il0=1,geom%nl0
             end do
 
             ! Sum
-            avg_blk%m11asysq(jc3,jl0r,il0) = sum(m11asysq)/float(avg_blk%nsub**2)
-            avg_blk%m2m2asy(jc3,jl0r,il0) = sum(m2m2asy)/float(avg_blk%nsub**2)
-            if (.not.nam%gau_approx) avg_blk%m22asy(jc3,jl0r,il0) = sum(m22asy)/float(avg_blk%nsub)
+            avg_blk%m11asysq(jc3,jl0r,il0) = sum(m11asysq)/real(avg_blk%nsub**2,kind_real)
+            avg_blk%m2m2asy(jc3,jl0r,il0) = sum(m2m2asy)/real(avg_blk%nsub**2,kind_real)
+            if (.not.nam%gau_approx) avg_blk%m22asy(jc3,jl0r,il0) = sum(m22asy)/real(avg_blk%nsub,kind_real)
 
             ! Check positivity
             if (.not.(avg_blk%m11asysq(jc3,jl0r,il0)>0.0)) call msr(avg_blk%m11asysq(jc3,jl0r,il0))
@@ -583,7 +583,7 @@ do il0=1,geom%nl0
          end do
 
          ! Average
-         avg_blk%nc1a(jc3,jl0r,il0) = float(nc1a)
+         avg_blk%nc1a(jc3,jl0r,il0) = real(nc1a,kind_real)
          do isub=1,avg_blk%nsub
             do jsub=1,avg_blk_lr%nsub
                m11lrm11(jc3,jl0r,il0,jsub,isub) = sum(list_m11lrm11(1:nc1a,jsub,isub))
@@ -638,7 +638,7 @@ do il0=1,geom%nl0
       do jc3=1,bpar%nc3(ib)
          if (isanynotmsr(m11lrm11(jc3,jl0r,il0,:,:))) then
             avg_blk_lr%m11lrm11(jc3,jl0r,il0) = sum(m11lrm11(jc3,jl0r,il0,:,:),mask=isnotmsr(m11lrm11(jc3,jl0r,il0,:,:))) &
-                                          & /float(count(isnotmsr(m11lrm11(jc3,jl0r,il0,:,:))))
+                                          & /real(count(isnotmsr(m11lrm11(jc3,jl0r,il0,:,:))),kind_real)
          end if
       end do
    end do

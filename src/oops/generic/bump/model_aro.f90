@@ -115,17 +115,19 @@ end do
 
 ! Compute normalized area
 do il0=1,geom%nl0
-   geom%area(il0) = float(count(geom%mask(:,il0)))*dx*dy/req**2
+   geom%area(il0) = real(count(geom%mask(:,il0)),kind_real)*dx*dy/req**2
 end do
 
 ! Vertical unit
-if (nam%logpres) then
-   geom%vunit(1:nam%nl) = log(0.5*(a(nam%levs(1:nam%nl))+a(nam%levs(1:nam%nl)+1)) &
-                        & +0.5*(b(nam%levs(1:nam%nl))+b(nam%levs(1:nam%nl)+1))*ps)
-   if (geom%nl0>nam%nl) geom%vunit(geom%nl0) = log(ps)
-else
-   geom%vunit = float(nam%levs(1:geom%nl0))
-end if
+do ic0=1,geom%nc0
+   if (nam%logpres) then
+      geom%vunit(ic0,1:nam%nl) = log(0.5*(a(nam%levs(1:nam%nl))+a(nam%levs(1:nam%nl)+1)) &
+                           & +0.5*(b(nam%levs(1:nam%nl))+b(nam%levs(1:nam%nl)+1))*ps)
+      if (geom%nl0>nam%nl) geom%vunit(ic0,geom%nl0) = log(ps)
+   else
+      geom%vunit(ic0,:) = real(nam%levs(1:geom%nl0),kind_real)
+   end if
+end do
 
 ! Release memory
 deallocate(lon)
@@ -164,14 +166,14 @@ do iproc=1,mpl%nproc
    if (mpl%myproc==iproc) then
       ! Open file
       call ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_nowrite,ncid))
-   
+
       do iv=1,nam%nv
          ! 3d variable
          do il0=1,nam%nl
             ! Get id
             write(ilchar,'(i3.3)') nam%levs(il0)
             call ncerr(subr,nf90_inq_varid(ncid,'S'//ilchar//trim(nam%varname(iv)),fld_id))
-   
+
             ! Read data
             do ic0a=1,geom%nc0a
                ic0 = geom%c0a_to_c0(ic0a)
@@ -180,13 +182,13 @@ do iproc=1,mpl%nproc
                call ncerr(subr,nf90_get_var(ncid,fld_id,fld_loc,(/ilon,ilat/)))
                fld(ic0a,il0,iv) = real(fld_loc,kind_real)
             end do
-   
+
             if (trim(nam%addvar2d(iv))/='') then
                ! 2d variable
-   
+
                ! Get id
                call ncerr(subr,nf90_inq_varid(ncid,trim(nam%addvar2d(iv)),fld_id))
-   
+
                ! Read data
                do ic0a=1,geom%nc0a
                   ic0 = geom%c0a_to_c0(ic0a)
@@ -195,7 +197,7 @@ do iproc=1,mpl%nproc
                   call ncerr(subr,nf90_get_var(ncid,fld_id,fld_loc,(/ilon,ilat/)))
                   fld(ic0a,geom%nl0,iv) = real(fld_loc,kind_real)
                end do
-   
+
                ! Variable change for surface pressure
               if (trim(nam%addvar2d(iv))=='SURFPRESSION') fld(:,geom%nl0,iv) = exp(fld(:,geom%nl0,iv))
             end if

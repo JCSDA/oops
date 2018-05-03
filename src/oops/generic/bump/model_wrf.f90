@@ -95,16 +95,18 @@ end do
 
 ! Compute normalized area
 do il0=1,geom%nl0
-   geom%area(il0) = float(count(geom%mask(:,il0)))*dx*dy/req**2
+   geom%area(il0) = real(count(geom%mask(:,il0)),kind_real)*dx*dy/req**2
 end do
 
 ! Vertical unit
-if (nam%logpres) then
-   geom%vunit(1:nam%nl) = log(pres(nam%levs(1:nam%nl)))
-   if (geom%nl0>nam%nl) geom%vunit(geom%nl0) = log(ps)
-else
-   geom%vunit = float(nam%levs(1:geom%nl0))
-end if
+do ic0=1,geom%nc0
+   if (nam%logpres) then
+      geom%vunit(ic0,1:nam%nl) = log(pres(nam%levs(1:nam%nl)))
+      if (geom%nl0>nam%nl) geom%vunit(ic0,geom%nl0) = log(ps)
+   else
+      geom%vunit(ic0,:) = real(nam%levs(1:geom%nl0),kind_real)
+   end if
+end do
 
 ! Release memory
 deallocate(lon)
@@ -141,13 +143,13 @@ do iproc=1,mpl%nproc
    if (mpl%myproc==iproc) then
       ! Open file
       call ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_nowrite,ncid))
-   
+
       do iv=1,nam%nv
          ! 3d variable
-   
+
          ! Get variable id
          call ncerr(subr,nf90_inq_varid(ncid,trim(nam%varname(iv)),fld_id))
-     
+
          ! 3d variable
          do il0=1,nam%nl
             do ic0a=1,geom%nc0a
@@ -169,13 +171,13 @@ do iproc=1,mpl%nproc
                end select
             end do
          end do
-   
+
          if (trim(nam%addvar2d(iv))/='') then
             ! 2d variable
-   
+
             ! Get id
             call ncerr(subr,nf90_inq_varid(ncid,trim(nam%addvar2d(iv)),fld_id))
-   
+
             ! Read data
             do ic0a=1,geom%nc0a
                ic0 = geom%c0a_to_c0(ic0a)
