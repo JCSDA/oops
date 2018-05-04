@@ -18,7 +18,7 @@ use type_bpar, only: bpar_type
 use type_ens, only: ens_type
 use type_geom, only: geom_type
 use type_hdata, only: hdata_type
-use type_io, only: io
+use type_io, only: io_type
 use type_lct_blk, only: lct_blk_type
 use type_mom, only: mom_type
 use type_mpl, only: mpl
@@ -92,7 +92,7 @@ end subroutine lct_alloc
 ! Subroutine: lct_run_lct
 !> Purpose: LCT driver
 !----------------------------------------------------------------------
-subroutine lct_run_lct(lct,nam,geom,bpar,ens)
+subroutine lct_run_lct(lct,nam,geom,bpar,io,ens)
 
 implicit none
 
@@ -101,6 +101,7 @@ class(lct_type),intent(inout) :: lct !< LCT
 type(nam_type),intent(inout) :: nam  !< Namelist
 type(geom_type),intent(in) :: geom   !< Geometry
 type(bpar_type),intent(in) :: bpar   !< Block parameters
+type(io_type),intent(in) :: io       !< I/O
 type(ens_type),intent(in) :: ens     !< Ensemble
 
 ! Local variables
@@ -116,7 +117,7 @@ call flush(mpl%unit)
 nam%local_rad = 1.0e-12
 
 ! Setup sampling
-call hdata%setup_sampling(nam,geom)
+call hdata%setup_sampling(nam,geom,io)
 
 ! Compute MPI distribution, halo A
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
@@ -164,14 +165,14 @@ call lct%rmse(nam,geom,bpar,hdata)
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Write LCT'
 call flush(mpl%unit)
-call lct%write(nam,geom,bpar,hdata)
+call lct%write(nam,geom,bpar,io,hdata)
 
 if (write_cor) then
    ! Write correlation and LCT fit
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Write correlation and LCT fit'
    call flush(mpl%unit)
-   call lct%write_cor(nam,geom,bpar,hdata)
+   call lct%write_cor(nam,geom,bpar,io,hdata)
 end if
 
 end subroutine lct_run_lct
@@ -339,7 +340,7 @@ end subroutine lct_rmse
 ! Subroutine: lct_write
 !> Purpose: interpolate and write LCT
 !----------------------------------------------------------------------
-subroutine lct_write(lct,nam,geom,bpar,hdata)
+subroutine lct_write(lct,nam,geom,bpar,io,hdata)
 
 implicit none
 
@@ -348,6 +349,7 @@ class(lct_type),intent(inout) :: lct    !< LCT
 type(nam_type),intent(in) :: nam        !< Namelist
 type(geom_type),intent(in) :: geom      !< Geometry
 type(bpar_type),intent(in) :: bpar      !< Block parameters
+type(io_type),intent(in) :: io          !< I/O
 type(hdata_type),intent(inout) :: hdata !< HDIAG data
 
 ! Local variables
@@ -483,7 +485,7 @@ end subroutine lct_write
 ! Subroutine: lct_write_cor
 !> Purpose: write correlation and LCT fit
 !----------------------------------------------------------------------
-subroutine lct_write_cor(lct,nam,geom,bpar,hdata)
+subroutine lct_write_cor(lct,nam,geom,bpar,io,hdata)
 
 implicit none
 
@@ -492,6 +494,7 @@ class(lct_type),intent(in) :: lct       !< LCT
 type(nam_type),intent(in) :: nam        !< Namelist
 type(geom_type),intent(in) :: geom      !< Geometry
 type(bpar_type),intent(in) :: bpar      !< Block parameters
+type(io_type),intent(in) :: io          !< I/O
 type(hdata_type),intent(inout) :: hdata !< HDIAG data
 
 ! Local variables

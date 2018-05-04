@@ -33,6 +33,7 @@ contains
    procedure :: newunit => mpl_newunit
    procedure :: check => mpl_check
    procedure :: init => mpl_init
+   procedure :: init_listing => mpl_init_listing
    procedure :: abort => mpl_abort
    procedure :: barrier => mpl_barrier
    procedure :: mpl_bcast_integer
@@ -169,21 +170,19 @@ end subroutine mpl_check
 ! Subroutine: mpl_init
 !> Purpose: start MPI
 !----------------------------------------------------------------------
-subroutine mpl_init(mpl,mpi_comm,listing)
+subroutine mpl_init(mpl,mpi_comm)
 
 implicit none
 
 ! Passed variables
 class(mpl_type) :: mpl                 !< MPL object
 integer,intent(in) :: mpi_comm         !< MPI communicator
-integer,intent(in),optional :: listing !< Main listing unit
 
 ! Local variables
-integer :: info,iproc
-character(len=4) :: myprocchar
+integer :: info
 
 ! Copy MPI communicator
-mpl%mpi_comm =mpi_comm
+mpl%mpi_comm = mpi_comm
 
 ! Get MPI size
 call mpi_comm_size(mpl%mpi_comm,mpl%nproc,info)
@@ -213,6 +212,25 @@ mpl%tag = 4321
 mpl%nthread = omp_get_max_threads()
 call omp_set_num_threads(mpl%nthread)
 
+end subroutine mpl_init
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_init_listing
+!> Purpose: start MPI
+!----------------------------------------------------------------------
+subroutine mpl_init_listing(mpl,prefix,listing)
+
+implicit none
+
+! Passed variables
+class(mpl_type) :: mpl                 !< MPL object
+character(len=*),intent(in) :: prefix  !< Output prefix
+integer,intent(in),optional :: listing !< Main listing unit
+
+! Local variables
+integer :: iproc
+character(len=4) :: myprocchar
+
 ! Define unit and open file
 do iproc=1,mpl%nproc
    if (mpl%main.and.present(listing)) then
@@ -226,7 +244,7 @@ do iproc=1,mpl%nproc
 
          ! Open listing file
          write(myprocchar,'(i4.4)') mpl%myproc-1
-         open(unit=mpl%unit,file='bump.out.'//myprocchar,action='write',status='replace')
+         open(unit=mpl%unit,file=trim(prefix)//'.out.'//myprocchar,action='write',status='replace')
       end if
    end if
 
@@ -234,7 +252,7 @@ do iproc=1,mpl%nproc
    call mpl%barrier()
 end do
 
-end subroutine mpl_init
+end subroutine mpl_init_listing
 
 !----------------------------------------------------------------------
 ! Subroutine: mpl_abort

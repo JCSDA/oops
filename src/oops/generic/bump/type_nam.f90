@@ -13,7 +13,7 @@ module type_nam
 use iso_c_binding
 use netcdf, only: nf90_put_att,nf90_global
 !$ use omp_lib, only: omp_get_num_procs
-use tools_const, only: req,deg2rad
+use tools_const, only: req,deg2rad,rad2deg
 use tools_display, only: msgerror,msgwarning
 use tools_kinds,only: kind_real
 use tools_missing, only: msi,msr
@@ -118,8 +118,8 @@ type nam_type
    integer :: mpicom                                !< Number of communication steps
    integer :: advmode                               !< Advection mode (1: direct, -1: direct and inverse)
    integer :: ndir                                  !< Number of Diracs
-   real(kind_real) :: londir(ndirmax)               !< Diracs longitudes
-   real(kind_real) :: latdir(ndirmax)               !< Diracs latitudes
+   real(kind_real) :: londir(ndirmax)               !< Diracs longitudes (in degrees)
+   real(kind_real) :: latdir(ndirmax)               !< Diracs latitudes (in degrees)
    integer :: levdir(ndirmax)                       !< Diracs level
    integer :: ivdir(ndirmax)                        !< Diracs variable
    integer :: itsdir(ndirmax)                       !< Diracs timeslot
@@ -390,7 +390,7 @@ if (mpl%main) then
    nam%ntry = ntry
    nam%nrep = nrep
    nam%nc3 = nc3
-   nam%dc = dc/req
+   nam%dc = dc
    nam%nl0r = nl0r
 
    ! diag_param
@@ -399,11 +399,11 @@ if (mpl%main) then
    nam%gau_approx = gau_approx
    nam%full_var = full_var
    nam%local_diag = local_diag
-   nam%local_rad = local_rad/req
+   nam%local_rad = local_rad
    nam%displ_diag = displ_diag
-   nam%displ_rad = displ_rad/req
+   nam%displ_rad = displ_rad
    nam%displ_niter = displ_niter
-   nam%displ_rhflt = displ_rhflt/req
+   nam%displ_rhflt = displ_rhflt
    nam%displ_tol = displ_tol
 
    ! fit_param
@@ -444,10 +444,10 @@ if (mpl%main) then
    nam%nldwv = nldwv
    nam%lon_ldwv = lon_ldwv
    nam%lat_ldwv = lat_ldwv
-   nam%diag_rhflt = diag_rhflt/req
+   nam%diag_rhflt = diag_rhflt
    nam%diag_interp = diag_interp
    nam%grid_output = grid_output
-   nam%grid_resol = grid_resol/req
+   nam%grid_resol = grid_resol
    nam%grid_interp = grid_interp
 
    ! Close namelist
@@ -650,6 +650,18 @@ character(len=4) :: itestchar
 character(len=7) :: lonchar,latchar
 character(len=1024) :: filename
 
+! Namelist parameters normalization (meters to radians and degrees to radians)
+nam%dc = nam%dc/req
+nam%local_rad = nam%local_rad/req
+nam%displ_rad = nam%displ_rad/req
+nam%displ_rhflt = nam%displ_rhflt/req
+nam%londir = nam%londir*deg2rad
+nam%latdir = nam%latdir*deg2rad
+nam%lon_ldwv = nam%lon_ldwv*deg2rad
+nam%lat_ldwv = nam%lat_ldwv*deg2rad
+nam%diag_rhflt = nam%diag_rhflt/req
+nam%grid_resol = nam%grid_resol/req
+
 ! Check general_param
 if (trim(nam%datadir)=='') call msgerror('datadir not specified')
 if (trim(nam%prefix)=='') call msgerror('prefix not specified')
@@ -844,7 +856,7 @@ if (nam%new_param.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_sqrt.o
          if ((nam%itsdir(idir)<1).or.(nam%itsdir(idir)>nam%nts)) call msgerror('wrong timeslot for a Dirac')
       end do
    end if
-   select case (trim(nam%diag_interp))
+   select case (trim(nam%nicas_interp))
    case ('bilin','natural')
    case default
       call msgerror('wrong interpolation for NICAS')
@@ -859,7 +871,7 @@ if (nam%new_obsop) then
    case default
       call msgerror('wrong obsdis')
    end select
-   select case (trim(nam%diag_interp))
+   select case (trim(nam%obsop_interp))
    case ('bilin','natural')
    case default
       call msgerror('wrong interpolation for observation operator')
@@ -881,6 +893,8 @@ if (nam%new_hdiag) then
    if (nam%local_diag.or.nam%displ_diag) then
       if (nam%diag_rhflt<0.0) call msgerror('diag_rhflt should be non-negative')
    end if
+end if
+if (nam%new_hdiag.or.nam%new_lct) then
    select case (trim(nam%diag_interp))
    case ('bilin','natural')
    case default
@@ -1045,7 +1059,7 @@ call put_att(ncid,'nc1',nam%nc1)
 call put_att(ncid,'ntry',nam%ntry)
 call put_att(ncid,'nrep',nam%nrep)
 call put_att(ncid,'nc3',nam%nc3)
-call put_att(ncid,'dc',nam%dc)
+call put_att(ncid,'dc',nam%dc*req)
 call put_att(ncid,'nl0r',nam%nl0r)
 
 ! diag_param
@@ -1053,11 +1067,11 @@ call put_att(ncid,'ne',nam%ne)
 call put_att(ncid,'gau_approx',nam%gau_approx)
 call put_att(ncid,'full_var',nam%full_var)
 call put_att(ncid,'local_diag',nam%local_diag)
-call put_att(ncid,'local_rad',nam%local_rad)
+call put_att(ncid,'local_rad',nam%local_rad*req)
 call put_att(ncid,'displ_diag',nam%displ_diag)
-call put_att(ncid,'displ_rad',nam%displ_rad)
+call put_att(ncid,'displ_rad',nam%displ_rad*req)
 call put_att(ncid,'displ_niter',nam%displ_niter)
-call put_att(ncid,'displ_rhflt',nam%displ_rhflt)
+call put_att(ncid,'displ_rhflt',nam%displ_rhflt*req)
 call put_att(ncid,'displ_tol',nam%displ_tol)
 
 ! fit_param
@@ -1076,8 +1090,8 @@ call put_att(ncid,'network',nam%network)
 call put_att(ncid,'mpicom',nam%mpicom)
 call put_att(ncid,'advmode',nam%advmode)
 call put_att(ncid,'ndir',nam%ndir)
-call put_att(ncid,'londir',nam%ndir,nam%londir(1:nam%ndir))
-call put_att(ncid,'latdir',nam%ndir,nam%latdir(1:nam%ndir))
+call put_att(ncid,'londir',nam%ndir,nam%londir(1:nam%ndir)*rad2deg)
+call put_att(ncid,'latdir',nam%ndir,nam%latdir(1:nam%ndir)*rad2deg)
 call put_att(ncid,'levdir',nam%ndir,nam%levdir(1:nam%ndir))
 call put_att(ncid,'ivdir',nam%ndir,nam%ivdir(1:nam%ndir))
 call put_att(ncid,'itsdir',nam%ndir,nam%itsdir(1:nam%ndir))
@@ -1092,12 +1106,12 @@ call put_att(ncid,'nldwh',nam%nldwh)
 call put_att(ncid,'il_ldwh',nam%nldwh,nam%il_ldwh(1:nam%nldwh))
 call put_att(ncid,'ic_ldwh',nam%nldwh,nam%ic_ldwh(1:nam%nldwh))
 call put_att(ncid,'nldwv',nam%nldwv)
-call put_att(ncid,'lon_ldwv',nam%nldwv,nam%lon_ldwv(1:nam%nldwv))
-call put_att(ncid,'lat_ldwv',nam%nldwv,nam%lat_ldwv(1:nam%nldwv))
-call put_att(ncid,'diag_rhflt',nam%diag_rhflt)
+call put_att(ncid,'lon_ldwv',nam%nldwv,nam%lon_ldwv(1:nam%nldwv)*rad2deg)
+call put_att(ncid,'lat_ldwv',nam%nldwv,nam%lat_ldwv(1:nam%nldwv)*rad2deg)
+call put_att(ncid,'diag_rhflt',nam%diag_rhflt*req)
 call put_att(ncid,'diag_interp',nam%diag_interp)
 call put_att(ncid,'grid_output',nam%grid_output)
-call put_att(ncid,'grid_resol',nam%grid_resol)
+call put_att(ncid,'grid_resol',nam%grid_resol*req)
 call put_att(ncid,'grid_interp',nam%grid_interp)
 
 end subroutine nam_ncwrite

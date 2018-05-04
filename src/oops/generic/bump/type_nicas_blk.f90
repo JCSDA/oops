@@ -24,7 +24,7 @@ use type_cmat_blk, only: cmat_blk_type
 use type_com, only: com_type
 use type_ctree, only: ctree_type
 use type_geom, only: geom_type
-use type_io, only: io
+use type_io, only: io_type
 use type_linop, only: linop_type
 use type_mpl, only: mpl
 use type_nam, only: nam_type
@@ -2884,7 +2884,7 @@ do ic1b=1,nicas_blk%nc1b
    gamma_tmp = gamma(ic1b,:)
 
    ! Apply interpolation
-   call nicas_blk%v%apply(gamma_tmp,delta_tmp,ic1b)
+   call nicas_blk%v%apply(gamma_tmp,delta_tmp,ivec=ic1b)
 
    ! Copy data
    delta(ic1b,:) = delta_tmp
@@ -2926,7 +2926,7 @@ do ic1b=1,nicas_blk%nc1b
    delta_tmp = delta(ic1b,:)
 
    ! Apply interpolation
-   call nicas_blk%v%apply_ad(delta_tmp,gamma_tmp,ic1b)
+   call nicas_blk%v%apply_ad(delta_tmp,gamma_tmp,ivec=ic1b)
 
    ! Copy data
    gamma(ic1b,:) = gamma_tmp
@@ -3454,7 +3454,7 @@ end subroutine nicas_blk_test_pos_def
 ! Subroutine: nicas_blk_test_sqrt
 !> Purpose: test full/square-root equivalence
 !----------------------------------------------------------------------
-subroutine nicas_blk_test_sqrt(nicas_blk,nam,geom,bpar,cmat_blk)
+subroutine nicas_blk_test_sqrt(nicas_blk,nam,geom,bpar,io,cmat_blk)
 
 implicit none
 
@@ -3463,6 +3463,7 @@ class(nicas_blk_type),intent(in) :: nicas_blk !< NICAS data block
 type(nam_type),intent(inout) :: nam           !< Namelist
 type(geom_type),intent(in) :: geom            !< Geometry
 type(bpar_type),intent(in) :: bpar            !< Block parameters
+type(io_type),intent(in) :: io                !< I/O
 type(cmat_blk_type),intent(in) :: cmat_blk    !< C matrix data block
 
 ! Local variables
@@ -3498,7 +3499,7 @@ else
 end if
 
 ! Compute dirac
-if (nam%check_dirac) call nicas_blk_other%test_dirac(nam,geom,bpar)
+if (nam%check_dirac) call nicas_blk_other%test_dirac(nam,geom,bpar,io)
 
 ! Reset lsqrt value
 nam%lsqrt = .not.nam%lsqrt
@@ -3516,7 +3517,7 @@ end subroutine nicas_blk_test_sqrt
 ! Subroutine: nicas_blk_test_dirac
 !> Purpose: apply NICAS to diracs
 !----------------------------------------------------------------------
-subroutine nicas_blk_test_dirac(nicas_blk,nam,geom,bpar)
+subroutine nicas_blk_test_dirac(nicas_blk,nam,geom,bpar,io)
 
 implicit none
 
@@ -3525,6 +3526,7 @@ class(nicas_blk_type),intent(in) :: nicas_blk !< NICAS data block
 type(nam_type),intent(in) :: nam              !< Namelist
 type(geom_type),intent(in) :: geom            !< Geometry
 type(bpar_type),intent(in) :: bpar            !< Block parameters
+type(io_type),intent(in) :: io                !< I/O
 
 ! Local variables
 integer :: il0
@@ -3568,7 +3570,7 @@ call flush(mpl%unit)
 do idir=1,nam%ndir
    if (iprocdir(idir)==mpl%myproc) val = fld(ic0adir(idir),il0dir(idir))
    call mpl%bcast(val,iprocdir(idir))
-   write(mpl%unit,'(a10,f6.1,a,f6.1,a,f10.7)') '',nam%londir(idir),' / ',nam%latdir(idir),': ',val
+   write(mpl%unit,'(a10,f6.1,a,f6.1,a,f10.7)') '',nam%londir(idir)*rad2deg,' / ',nam%latdir(idir)*rad2deg,': ',val
    call flush(mpl%unit)
 end do
 write(mpl%unit,'(a7,a)') '','Min - max: '

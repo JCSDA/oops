@@ -11,7 +11,7 @@
 module type_diag
 
 use netcdf
-use tools_const, only: reqkm
+use tools_const, only: reqkm,rad2deg
 use tools_display, only: vunitchar,msgerror,msgwarning,prog_init,prog_print,aqua,peach,purple,black
 use tools_kinds, only: kind_real
 use tools_missing, only: msvalr,msr,isnotmsr,isallnotmsr,isnotmsi
@@ -21,7 +21,7 @@ use type_bpar, only: bpar_type
 use type_diag_blk, only: diag_blk_type
 use type_geom, only: geom_type
 use type_hdata, only: hdata_type
-use type_io, only: io
+use type_io, only: io_type
 use type_mpl, only: mpl
 use type_nam, only: nam_type
 
@@ -92,7 +92,7 @@ end subroutine diag_alloc
 ! Subroutine: diag_write
 !> Purpose: write all diagnostics
 !----------------------------------------------------------------------
-subroutine diag_write(diag,nam,geom,bpar,hdata)
+subroutine diag_write(diag,nam,geom,bpar,io,hdata)
 
 implicit none
 
@@ -101,6 +101,7 @@ class(diag_type),intent(inout) :: diag !< Diagnostic
 type(nam_type),intent(in) :: nam       !< Namelist
 type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
+type(io_type),intent(in) :: io         !< I/O
 type(hdata_type),intent(in) :: hdata   !< HDIAG data
 
 ! Local variables
@@ -156,8 +157,8 @@ do ildw=1,nam%nldwv
       iproc = hdata%c2_to_proc(ic2)
       if (mpl%myproc==iproc) then
          ! Build file name
-         write(lonchar,'(f7.2)') nam%lon_ldwv(ildw)
-         write(latchar,'(f7.2)') nam%lat_ldwv(ildw)
+         write(lonchar,'(f7.2)') nam%lon_ldwv(ildw)*rad2deg
+         write(latchar,'(f7.2)') nam%lat_ldwv(ildw)*rad2deg
          filename = trim(nam%prefix)//'_diag_'//trim(adjustl(lonchar))//'-'//trim(adjustl(latchar))//'.nc'
 
          ! Find diagnostic point task
@@ -177,7 +178,7 @@ end subroutine diag_write
 ! Subroutine: diag_covariance
 !> Purpose: compute covariance
 !----------------------------------------------------------------------
-subroutine diag_covariance(diag,nam,geom,bpar,hdata,avg,prefix)
+subroutine diag_covariance(diag,nam,geom,bpar,io,hdata,avg,prefix)
 
 implicit none
 
@@ -186,6 +187,7 @@ class(diag_type),intent(inout) :: diag !< Diagnostic
 type(nam_type),intent(in) :: nam       !< Namelist
 type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
+type(io_type),intent(in) :: io         !< I/O
 type(hdata_type),intent(in) :: hdata   !< HDIAG data
 type(avg_type),intent(in) :: avg       !< Averaged statistics
 character(len=*),intent(in) :: prefix  !< Diagnostic prefix
@@ -218,7 +220,7 @@ do ib=1,bpar%nb+1
 end do
 
 ! Write
-call diag%write(nam,geom,bpar,hdata)
+call diag%write(nam,geom,bpar,io,hdata)
 
 end subroutine diag_covariance
 
@@ -226,7 +228,7 @@ end subroutine diag_covariance
 ! Subroutine: diag_correlation
 !> Purpose: compute correlation
 !----------------------------------------------------------------------
-subroutine diag_correlation(diag,nam,geom,bpar,hdata,avg,prefix)
+subroutine diag_correlation(diag,nam,geom,bpar,io,hdata,avg,prefix)
 
 implicit none
 
@@ -235,6 +237,7 @@ class(diag_type),intent(inout) :: diag !< Diagnostic
 type(nam_type),intent(in) :: nam       !< Namelist
 type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
+type(io_type),intent(in) :: io         !< I/O
 type(hdata_type),intent(in) :: hdata   !< HDIAG data
 type(avg_type),intent(in) :: avg       !< Averaged statistics
 character(len=*),intent(in) :: prefix  !< Diagnostic prefix
@@ -291,8 +294,8 @@ do ib=1,bpar%nb+1
 end do
 
 ! Write
-call diag%write(nam,geom,bpar,hdata)
-call ndiag%write(nam,geom,bpar,hdata)
+call diag%write(nam,geom,bpar,io,hdata)
+call ndiag%write(nam,geom,bpar,io,hdata)
 
 end subroutine diag_correlation
 
@@ -300,7 +303,7 @@ end subroutine diag_correlation
 ! Subroutine: diag_localization
 !> Purpose: compute diagnostic _localization
 !----------------------------------------------------------------------
-subroutine diag_localization(diag,nam,geom,bpar,hdata,avg,prefix)
+subroutine diag_localization(diag,nam,geom,bpar,io,hdata,avg,prefix)
 
 implicit none
 
@@ -309,6 +312,7 @@ class(diag_type),intent(inout) :: diag !< Diagnostic
 type(nam_type),intent(in) :: nam       !< Namelist
 type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
+type(io_type),intent(in) :: io         !< I/O
 type(hdata_type),intent(in) :: hdata   !< HDIAG data
 type(avg_type),intent(in) :: avg       !< Averaged statistics
 character(len=*),intent(in) :: prefix  !< Block prefix
@@ -365,7 +369,7 @@ do ib=1,bpar%nb+1
 end do
 
 ! Write
-call diag%write(nam,geom,bpar,hdata)
+call diag%write(nam,geom,bpar,io,hdata)
 
 end subroutine diag_localization
 
@@ -373,7 +377,7 @@ end subroutine diag_localization
 ! Subroutine: diag_hybridization
 !> Purpose: compute diagnostic _hybridization
 !----------------------------------------------------------------------
-subroutine diag_hybridization(diag,nam,geom,bpar,hdata,avg,avg_sta,prefix)
+subroutine diag_hybridization(diag,nam,geom,bpar,io,hdata,avg,avg_sta,prefix)
 
 implicit none
 
@@ -382,6 +386,7 @@ class(diag_type),intent(inout) :: diag !< Diagnostic (localization)
 type(nam_type),intent(in) :: nam       !< Namelist
 type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
+type(io_type),intent(in) :: io         !< I/O
 type(hdata_type),intent(in) :: hdata   !< HDIAG data
 type(avg_type),intent(in) :: avg       !< Averaged statistics
 type(avg_type),intent(in) :: avg_sta   !< Static averaged statistics
@@ -441,7 +446,7 @@ do ib=1,bpar%nb+1
 end do
 
 ! Write
-call diag%write(nam,geom,bpar,hdata)
+call diag%write(nam,geom,bpar,io,hdata)
 
 end subroutine diag_hybridization
 
@@ -449,7 +454,7 @@ end subroutine diag_hybridization
 ! Subroutine: diag_dualens
 !> Purpose: compute diagnostic _dualens
 !----------------------------------------------------------------------
-subroutine diag_dualens(diag,nam,geom,bpar,hdata,avg,avg_lr,diag_lr,prefix,prefix_lr)
+subroutine diag_dualens(diag,nam,geom,bpar,io,hdata,avg,avg_lr,diag_lr,prefix,prefix_lr)
 
 implicit none
 
@@ -458,6 +463,7 @@ class(diag_type),intent(inout) :: diag   !< Diagnostic (localization)
 type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 type(bpar_type),intent(in) :: bpar       !< Block parameters
+type(io_type),intent(in) :: io         !< I/O
 type(hdata_type),intent(in) :: hdata     !< HDIAG data
 type(avg_type),intent(in) :: avg         !< Averaged statistics
 type(avg_type),intent(in) :: avg_lr      !< LR averaged statistics
@@ -533,7 +539,7 @@ do ib=1,bpar%nb+1
 end do
 
 ! Write
-call diag%write(nam,geom,bpar,hdata)
+call diag%write(nam,geom,bpar,io,hdata)
 
 end subroutine diag_dualens
 

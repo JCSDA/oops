@@ -43,8 +43,9 @@ type io_type
    integer,allocatable :: c0b_to_c0(:)    !< Subset Sc0, halo B to global
    integer,allocatable :: c0_to_c0b(:)    !< Subset Sc0, global to halo B
    integer,allocatable :: c0a_to_c0b(:)   !< Subset Sc0, halo A to halo B
-   type(linop_type) :: og             !< Subset Sc0 to grid interpolation
+   type(linop_type) :: og                 !< Subset Sc0 to grid interpolation
    type(com_type) :: com_AB               !< Communication between halos A and B
+   logical,allocatable :: mask(:,:)       !< Mask on output grid
 contains
    procedure :: fld_read => io_fld_read
    procedure :: fld_write => io_fld_write
@@ -52,10 +53,8 @@ contains
    procedure :: grid_write => io_grid_write
 end type io_type
 
-type(io_type) :: io
-
 private
-public :: io_type,io
+public :: io_type
 
 contains
 
@@ -235,7 +234,7 @@ type(nam_type),intent(in) :: nam    !< Namelist
 type(geom_type),intent(in) :: geom  !< Geometry
 
 ! Local variables
-integer ::ilon,ilat,i_s,i_s_loc,nc0a,nc0b,iog,iproc,ic0,ic0a,ic0b,ioga
+integer ::ilon,ilat,i_s,i_s_loc,nc0a,nc0b,iog,iproc,ic0,ic0a,ic0b,ioga,il0
 integer,allocatable :: order(:),order_inv(:),interpg_lg(:),c0b_to_c0(:),c0a_to_c0b(:)
 real(kind_real) :: dlon,dlat
 real(kind_real),allocatable :: lon_og(:),lat_og(:)
@@ -270,7 +269,6 @@ write(mpl%unit,'(a7,a)') '','Output grid:'
 write(mpl%unit,'(a10,a,f7.2,a,f5.2,a)') '','Effective resolution: ',0.5*(dlon+dlat)*reqkm,' km (', &
  & 0.5*(dlon+dlat)*rad2deg,' deg.)'
 write(mpl%unit,'(a10,a,i4,a,i4)') '',      'Size (nlon x nlat):   ',io%nlon,' x ',io%nlat
-write(mpl%unit,'(a10,a,i4,a,i4)') '',      'Final size (nog)  :   ',io%nog
 
 ! Allocation
 allocate(io%og_to_lon(io%nog))
@@ -300,7 +298,7 @@ end do
 mask_og = .true.
 
 ! Interpolation setup
-mask_c0 = any(geom%mask,dim=2)
+mask_c0 = .true.
 call ogfull%interp(geom%nc0,geom%lon,geom%lat,mask_c0,io%nog,lon_og,lat_og,mask_og,nam%grid_interp)
 
 ! Define a processor for each output grid point
@@ -472,11 +470,25 @@ end if
 mpl%tag = mpl%tag+4
 call io%com_AB%setup(com_AB,'com_AB')
 
+! Compute output grid mask
+allocate(io%mask(io%noga,geom%nl0))
+io%mask = .true.
+do i_s=1,io%og%n_s
+   ic0b = io%og%col(i_s)
+   ioga = io%og%row(i_s)
+   ic0 = io%c0b_to_c0(ic0b)
+   do il0=1,geom%nl0
+      if (.not.geom%mask(ic0,il0)) io%mask(ioga,il0) = .false.
+   end do
+end do
+
 ! Print results
 write(mpl%unit,'(a7,a,i4)') '','Parameters for processor #',mpl%myproc
 write(mpl%unit,'(a10,a,i8)') '','nc0 =    ',geom%nc0
 write(mpl%unit,'(a10,a,i8)') '','nc0a =   ',geom%nc0a
 write(mpl%unit,'(a10,a,i8)') '','nc0b =   ',io%nc0b
+write(mpl%unit,'(a10,a,i8)') '','nog =    ',io%nog
+write(mpl%unit,'(a10,a,i8)') '','noga =   ',io%noga
 write(mpl%unit,'(a10,a,i8)') '','og%n_s = ',io%og%n_s
 call flush(mpl%unit)
 
@@ -520,7 +532,7 @@ end do
 ! Halo extension and interpolation
 call io%com_AB%ext(geom%nl0,fld_c0a,fld_c0b)
 do il0=1,geom%nl0
-   call io%og%apply(fld_c0b(:,il0),fld_oga(:,il0))
+   call io%og%apply(fld_c0b(:,il0),fld_oga(:,il0),mssrc=.true.)
 end do
 
 if (mpl%main) then
@@ -601,7 +613,11 @@ do iproc=1,mpl%nproc
                iog = io%oga_to_og(ioga)
                ilon = io%og_to_lon(iog)
                ilat = io%og_to_lat(iog)
-               call ncerr(subr,nf90_put_var(ncid,fld_id,fld_oga(ioga,il0),(/ilon,ilat,il0/)))
+               if (io%mask(ioga,il0)) then
+                  call ncerr(subr,nf90_put_var(ncid,fld_id,fld_oga(ioga,il0),(/ilon,ilat,il0/)))
+               else
+                  call ncerr(subr,nf90_put_var(ncid,fld_id,msvalr,(/ilon,ilat,il0/)))
+               end if
             end do
          end if
       end do

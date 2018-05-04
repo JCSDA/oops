@@ -394,11 +394,11 @@ do its=2,nam%nts
 
          ! Iterative filtering
          convergence = .true.
-         drhflt = 0.0
          dichotomy = .false.
 
          ! Dichotomy initialization
          displ%rhflt(1,il0,its) = nam%displ_rhflt
+         drhflt = displ%rhflt(1,il0,its)
 
          do iter=1,nam%displ_niter
             ! Copy increment
@@ -472,26 +472,27 @@ do its=2,nam%nts
             if (displ%valid(iter,il0,its)<1.0-nam%displ_tol) then
                ! Increase filtering support radius
                if (dichotomy) then
+                   drhflt = 0.5*drhflt
                   if (iter<nam%displ_niter) displ%rhflt(iter+1,il0,its) = displ%rhflt(iter,il0,its)+drhflt
                else
-                  ! No convergence
                   convergence = .false.
-                  if (iter<nam%displ_niter) displ%rhflt(iter+1,il0,its) = 2.0*displ%rhflt(iter,il0,its)
+                  if (iter<nam%displ_niter) displ%rhflt(iter+1,il0,its) = displ%rhflt(iter,il0,its)+drhflt
+                  drhflt = 2.0*drhflt
                end if
             else
                ! Convergence
                convergence = .true.
 
-               ! Check dichotomy status
+               ! Change dichotomy status
                if (.not.dichotomy) then
                   dichotomy = .true.
-                  drhflt = 0.5*displ%rhflt(iter,il0,its)
+                  drhflt = 0.5*drhflt
                end if
 
                ! Decrease filtering support radius
+               drhflt = 0.5*drhflt
                if (iter<nam%displ_niter) displ%rhflt(iter+1,il0,its) = displ%rhflt(iter,il0,its)-drhflt
             end if
-            if (dichotomy) drhflt = 0.5*drhflt
          end do
 
          ! Copy
@@ -631,20 +632,20 @@ do iproc=1,mpl%nproc
       do il0=1,geom%nl0
          do ic2a=1,hdata%nc2a
             ic2 = hdata%c2a_to_c2(ic2a)
-            call ncerr(subr,nf90_put_var(ncid,lon_c2_id,displ%lon_c2a(ic2a,il0)*rad2deg))
-            call ncerr(subr,nf90_put_var(ncid,lat_c2_id,displ%lat_c2a(ic2a,il0)*rad2deg))
+            call ncerr(subr,nf90_put_var(ncid,lon_c2_id,displ%lon_c2a(ic2a,il0)*rad2deg,(/ic2,il0/)))
+            call ncerr(subr,nf90_put_var(ncid,lat_c2_id,displ%lat_c2a(ic2a,il0)*rad2deg,(/ic2,il0/)))
          end do
       end do
       do its=2,nam%nts
          do il0=1,geom%nl0
             do ic2a=1,hdata%nc2a
                ic2 = hdata%c2a_to_c2(ic2a)
-               call ncerr(subr,nf90_put_var(ncid,lon_c2_raw_id,displ%lon_c2a_raw(ic2a,il0,its)*rad2deg))
-               call ncerr(subr,nf90_put_var(ncid,lat_c2_raw_id,displ%lat_c2a_raw(ic2a,il0,its)*rad2deg))
-               call ncerr(subr,nf90_put_var(ncid,dist_c2_raw_id,displ%dist_c2a_raw(ic2a,il0,its)*reqkm))
-               call ncerr(subr,nf90_put_var(ncid,lon_c2_flt_id,displ%lon_c2a_flt(ic2,il0,its)*rad2deg))
-               call ncerr(subr,nf90_put_var(ncid,lat_c2_flt_id,displ%lat_c2a_flt(ic2,il0,its)*rad2deg))
-               call ncerr(subr,nf90_put_var(ncid,dist_c2_flt_id,displ%dist_c2a_flt(ic2,il0,its)*reqkm))
+               call ncerr(subr,nf90_put_var(ncid,lon_c2_raw_id,displ%lon_c2a_raw(ic2a,il0,its)*rad2deg,(/ic2,il0,its-1/)))
+               call ncerr(subr,nf90_put_var(ncid,lat_c2_raw_id,displ%lat_c2a_raw(ic2a,il0,its)*rad2deg,(/ic2,il0,its-1/)))
+               call ncerr(subr,nf90_put_var(ncid,dist_c2_raw_id,displ%dist_c2a_raw(ic2a,il0,its)*reqkm,(/ic2,il0,its-1/)))
+               call ncerr(subr,nf90_put_var(ncid,lon_c2_flt_id,displ%lon_c2a_flt(ic2a,il0,its)*rad2deg,(/ic2,il0,its-1/)))
+               call ncerr(subr,nf90_put_var(ncid,lat_c2_flt_id,displ%lat_c2a_flt(ic2a,il0,its)*rad2deg,(/ic2,il0,its-1/)))
+               call ncerr(subr,nf90_put_var(ncid,dist_c2_flt_id,displ%dist_c2a_flt(ic2a,il0,its)*reqkm,(/ic2,il0,its-1/)))
             end do
          end do
       end do
@@ -656,8 +657,6 @@ do iproc=1,mpl%nproc
    ! Wait
    call mpl%barrier
 end do
-
-
 
 end subroutine displ_write
 

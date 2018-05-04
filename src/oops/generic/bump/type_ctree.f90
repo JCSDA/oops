@@ -19,7 +19,6 @@ implicit none
 
 type ctree_type
     type(c_ptr) :: ptr           !< Pointer to the C++ class
-    logical :: created = .false. !< Creation flag
 contains
     procedure :: create => ctree_create
     procedure :: find_redundant => ctree_find_redundant
@@ -110,9 +109,6 @@ end do
 ! Call C++ function
 ctree%ptr = create_ctree_c(n,lon,lat,imask)
 
-! Update flag
-ctree%created = .true.
-
 end subroutine ctree_create
 
 !----------------------------------------------------------------------
@@ -151,9 +147,6 @@ ctree%ptr = create_ctree_c(1,lon(1),lat(1),(/1/))
 
 ! Call C++ function
 call find_redundant_c(ctree%ptr,n,lon,lat,redundant)
-
-! Update flag
-ctree%created = .true.
 
 end subroutine ctree_find_redundant
 

@@ -44,11 +44,11 @@ type(geom_type),intent(inout) :: geom !< Geometry
 ! Local variables
 integer :: il0,img,ilat,ilon,ic0
 integer :: ncid,nlon_id,nlat_id,nlev_id,lon_id,lat_id,tmask_id,e1t_id,e2t_id
-integer,allocatable :: g_to_lon(:),g_to_lat(:)
+integer,allocatable :: mg_to_lon(:),mg_to_lat(:)
 integer(kind=1),allocatable :: tmask(:,:,:)
 real(kind=4),allocatable :: lon(:,:),lat(:,:),e1t(:,:,:),e2t(:,:,:)
-real(kind_real),allocatable :: lon_g(:),lat_g(:),area_g(:)
-logical,allocatable :: lmask_g(:,:)
+real(kind_real),allocatable :: lon_mg(:),lat_mg(:),area_mg(:)
+logical,allocatable :: lmask_mg(:,:)
 character(len=1024) :: subr = 'model_nemo_coord'
 
 ! Open file and get dimensions
@@ -67,12 +67,12 @@ allocate(lat(geom%nlon,geom%nlat))
 allocate(tmask(geom%nlon,geom%nlat,geom%nl0))
 allocate(e1t(geom%nlon,geom%nlat,geom%nl0))
 allocate(e2t(geom%nlon,geom%nlat,geom%nl0))
-allocate(g_to_lon(geom%nmg))
-allocate(g_to_lat(geom%nmg))
-allocate(lon_g(geom%nmg))
-allocate(lat_g(geom%nmg))
-allocate(area_g(geom%nmg))
-allocate(lmask_g(geom%nmg,geom%nl0))
+allocate(mg_to_lon(geom%nmg))
+allocate(mg_to_lat(geom%nmg))
+allocate(lon_mg(geom%nmg))
+allocate(lat_mg(geom%nmg))
+allocate(area_mg(geom%nmg))
+allocate(lmask_mg(geom%nmg,geom%nl0))
 
 ! Read data and close file
 call ncerr(subr,nf90_inq_varid(ncid,'nav_lon',lon_id))
@@ -80,8 +80,8 @@ call ncerr(subr,nf90_inq_varid(ncid,'nav_lat',lat_id))
 call ncerr(subr,nf90_inq_varid(ncid,'tmask',tmask_id))
 call ncerr(subr,nf90_inq_varid(ncid,'e1t',e1t_id))
 call ncerr(subr,nf90_inq_varid(ncid,'e2t',e2t_id))
-call ncerr(subr,nf90_get_var(ncid,lon_id,lon,(/1,1/),(/geom%nlon,geom%nlat/)))
-call ncerr(subr,nf90_get_var(ncid,lat_id,lat,(/1,1/),(/geom%nlon,geom%nlat/)))
+call ncerr(subr,nf90_get_var(ncid,lon_id,lon))
+call ncerr(subr,nf90_get_var(ncid,lat_id,lat))
 do il0=1,geom%nl0
    call ncerr(subr,nf90_get_var(ncid,tmask_id,tmask(:,:,il0),(/1,1,nam%levs(il0),1/),(/geom%nlon,geom%nlat,1,1/)))
    call ncerr(subr,nf90_get_var(ncid,e1t_id,e1t(:,:,il0),(/1,1,1/),(/geom%nlon,geom%nlat,1/)))
@@ -98,27 +98,27 @@ img = 0
 do ilon=1,geom%nlon
    do ilat=1,geom%nlat
       img = img+1
-      g_to_lon(img) = ilon
-      g_to_lat(img) = ilat
-      lon_g(img) = real(lon(ilon,ilat),kind_real)
-      lat_g(img) = real(lat(ilon,ilat),kind_real)
-      area_g(img) = real(e1t(ilon,ilat,1)*e2t(ilon,ilat,1),kind_real)/req**2
+      mg_to_lon(img) = ilon
+      mg_to_lat(img) = ilat
+      lon_mg(img) = real(lon(ilon,ilat),kind_real)
+      lat_mg(img) = real(lat(ilon,ilat),kind_real)
+      area_mg(img) = real(e1t(ilon,ilat,1)*e2t(ilon,ilat,1),kind_real)/req**2
       do il0=1,geom%nl0
-        lmask_g(img,il0) = (tmask(ilon,ilat,il0)>0)
+         lmask_mg(img,il0) = (tmask(ilon,ilat,il0)>0)
       end do
    end do
 end do
-call geom%find_redundant(lon_g,lat_g)
+call geom%find_redundant(lon_mg,lat_mg)
 
 ! Pack
 call geom%alloc
-geom%c0_to_lon = g_to_lon(geom%c0_to_mg)
-geom%c0_to_lat = g_to_lat(geom%c0_to_mg)
-geom%lon = lon_g(geom%c0_to_mg)
-geom%lat = lat_g(geom%c0_to_mg)
+geom%c0_to_lon = mg_to_lon(geom%c0_to_mg)
+geom%c0_to_lat = mg_to_lat(geom%c0_to_mg)
+geom%lon = lon_mg(geom%c0_to_mg)
+geom%lat = lat_mg(geom%c0_to_mg)
 do il0=1,geom%nl0
-   geom%mask(:,il0) = lmask_g(geom%c0_to_mg,il0)
-   geom%area(il0) = sum(area_g(geom%c0_to_mg),geom%mask(:,il0))/req**2
+   geom%mask(:,il0) = lmask_mg(geom%c0_to_mg,il0)
+   geom%area(il0) = sum(area_mg(geom%c0_to_mg),geom%mask(:,il0))/req**2
 end do
 
 ! Vertical unit

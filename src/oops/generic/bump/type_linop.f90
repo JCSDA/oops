@@ -324,7 +324,7 @@ end subroutine linop_write
 ! Subroutine: linop_apply
 !> Purpose: apply linear operator
 !----------------------------------------------------------------------
-subroutine linop_apply(linop,fld_src,fld_dst,ivec)
+subroutine linop_apply(linop,fld_src,fld_dst,ivec,mssrc)
 
 implicit none
 
@@ -333,10 +333,11 @@ class(linop_type),intent(in) :: linop               !< Linear operator
 real(kind_real),intent(in) :: fld_src(linop%n_src)  !< Source vector
 real(kind_real),intent(out) :: fld_dst(linop%n_dst) !< Destination vector
 integer,intent(in),optional :: ivec                 !< Index of the vector of linear operators with similar row and col
+logical,intent(in),optional :: mssrc                !< Check for missing source
 
 ! Local variables
 integer :: i_s,i_dst
-logical :: missing(linop%n_dst)
+logical :: missing(linop%n_dst),lmssrc,valid
 
 if (check_data) then
    ! Check linear operation
@@ -359,15 +360,29 @@ end if
 ! Initialization
 fld_dst = 0.0
 missing = .true.
+lmssrc = .false.
+if (present(mssrc)) lmssrc = mssrc
 
 ! Apply weights
 do i_s=1,linop%n_s
-   if (present(ivec)) then
-      fld_dst(linop%row(i_s)) = fld_dst(linop%row(i_s))+linop%Svec(i_s,ivec)*fld_src(linop%col(i_s))
+   if (lmssrc) then 
+      ! Check for missing source (WARNING: source-dependent => no adjoint)
+      valid = isnotmsr(fld_src(linop%col(i_s)))
    else
-      fld_dst(linop%row(i_s)) = fld_dst(linop%row(i_s))+linop%S(i_s)*fld_src(linop%col(i_s))
+      ! Source independent
+      valid = .true.
    end if
-   missing(linop%row(i_s)) = .false.
+
+   if (valid) then
+      if (present(ivec)) then
+         fld_dst(linop%row(i_s)) = fld_dst(linop%row(i_s))+linop%Svec(i_s,ivec)*fld_src(linop%col(i_s))
+      else
+         fld_dst(linop%row(i_s)) = fld_dst(linop%row(i_s))+linop%S(i_s)*fld_src(linop%col(i_s))
+      end if
+
+      ! Check for missing destination
+      missing(linop%row(i_s)) = .false.
+   end if
 end do
 
 ! Missing destination values

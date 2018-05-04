@@ -24,7 +24,7 @@ use tools_stripack, only: trans
 use type_com, only: com_type
 use type_ctree, only: ctree_type
 use type_geom, only: geom_type
-use type_io, only: io
+use type_io, only: io_type
 use type_linop, only: linop_type
 use type_mesh, only: mesh_type
 use type_mpl, only: mpl
@@ -151,8 +151,8 @@ if (nam%local_diag.or.nam%displ_diag) then
    allocate(hdata%hfull(geom%nl0i))
 end if
 if (nam%displ_diag) then
-   allocate(hdata%displ_lon(geom%nc0,geom%nl0,nam%nts))
-   allocate(hdata%displ_lat(geom%nc0,geom%nl0,nam%nts))
+   allocate(hdata%displ_lon(geom%nc0a,geom%nl0,nam%nts))
+   allocate(hdata%displ_lat(geom%nc0a,geom%nl0,nam%nts))
 end if
 
 ! Initialization
@@ -590,7 +590,7 @@ end subroutine hdata_write
 ! Subroutine: hdata_setup_sampling
 !> Purpose: setup sampling
 !----------------------------------------------------------------------
-subroutine hdata_setup_sampling(hdata,nam,geom)
+subroutine hdata_setup_sampling(hdata,nam,geom,io)
 
 implicit none
 
@@ -598,6 +598,7 @@ implicit none
 class(hdata_type),intent(inout) :: hdata !< HDIAG data
 type(nam_type),intent(inout) :: nam      !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
+type(io_type),intent(in) :: io           !< I/O
 
 ! Local variables
 integer :: info,ic0,il0,ic1,ic2,ildw,jc3,il0i,jc1,kc1,nc1_eff,nc2_eff
@@ -790,8 +791,7 @@ if (nam%local_diag.and.(nam%nldwv>0)) then
    call ctree%create(hdata%nc2,geom%lon(hdata%c2_to_c0), &
                 geom%lat(hdata%c2_to_c0),hdata%c1l0_log(hdata%c2_to_c1,1))
    do ildw=1,nam%nldwv
-      call ctree%find_nearest_neighbors(nam%lon_ldwv(ildw)*deg2rad,nam%lat_ldwv(ildw)*deg2rad, &
-    & 1,hdata%nn_ldwv_index(ildw:ildw),nn_dist)
+      call ctree%find_nearest_neighbors(nam%lon_ldwv(ildw),nam%lat_ldwv(ildw),1,hdata%nn_ldwv_index(ildw:ildw),nn_dist)
    end do
    call ctree%delete
 end if
@@ -1771,24 +1771,30 @@ type(geom_type),intent(in) :: geom       !< Geometry
 integer :: iproc,jc3,ic0,ic0a,ic0c,ic1,ic1a,its,il0,d_n_s_max,d_n_s_max_loc,i_s,i_s_loc
 integer :: nc0a,nc0c
 integer,allocatable :: interpd_lg(:,:,:),c0c_to_c0(:),c0a_to_c0c(:)
-real(kind_real),allocatable :: lon_c1(:),lat_c1(:)
+real(kind_real),allocatable :: displ_lon(:),displ_lat(:),lon_c1(:),lat_c1(:)
 type(com_type) :: com_AC(mpl%nproc)
 type(linop_type),allocatable :: dfull(:,:)
 
 if (nam%displ_diag) then
    ! Allocation
    allocate(dfull(geom%nl0,nam%nts))
+   allocate(displ_lon(geom%nc0))
+   allocate(displ_lat(geom%nc0))
    allocate(lon_c1(nam%nc1))
    allocate(lat_c1(nam%nc1))
 
    ! Prepare displacement interpolation
    do its=1,nam%nts
       do il0=1,geom%nl0
+         ! Local to global
+         call mpl%allgatherv(geom%nc0a,hdata%displ_lon(:,il0,its),geom%proc_to_nc0a,geom%nc0,displ_lon)
+         call mpl%allgatherv(geom%nc0a,hdata%displ_lat(:,il0,its),geom%proc_to_nc0a,geom%nc0,displ_lat)
+
          ! Copy Sc1 points
          do ic1=1,nam%nc1
             ic0 = hdata%c1_to_c0(ic1)
-            lon_c1(ic1) = hdata%displ_lon(ic0,il0,its)
-            lat_c1(ic1) = hdata%displ_lat(ic0,il0,its)
+            lon_c1(ic1) = displ_lon(ic0)
+            lat_c1(ic1) = displ_lat(ic0)
          end do
 
          ! Compute interpolation

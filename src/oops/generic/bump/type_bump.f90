@@ -20,12 +20,12 @@ use type_bpar, only: bpar_type
 use type_cmat, only: cmat_type
 use type_ens, only: ens_type
 use type_geom, only: geom_type
+use type_io, only: io_type
 use type_lct, only: lct_type
 use type_mpl, only: mpl
 use type_nam, only: nam_type
 use type_nicas, only: nicas_type
 use type_obsop, only: obsop_type
-use type_io, only: io
 use type_rng, only: rng
 use type_timer, only: timer_type
 
@@ -33,15 +33,16 @@ implicit none
 
 ! BUMP derived type
 type bump_type
-  type(nam_type) :: nam
-  type(geom_type) :: geom
   type(bpar_type) :: bpar
   type(cmat_type) :: cmat
-  type(nicas_type) :: nicas
-  type(lct_type) :: lct
-  type(obsop_type) :: obsop
   type(ens_type) :: ens1
   type(ens_type) :: ens2
+  type(geom_type) :: geom
+  type(io_type) :: io
+  type(lct_type) :: lct
+  type(nam_type) :: nam
+  type(nicas_type) :: nicas
+  type(obsop_type) :: obsop
   real(kind_real),allocatable :: rh(:,:,:,:)
   real(kind_real),allocatable :: rv(:,:,:,:)
   integer :: nx
@@ -94,6 +95,9 @@ call bump%nam%init
 call bump%nam%read(namelname)
 call bump%nam%bcast
 
+! Initialize listing
+call mpl%init_listing(bump%nam%prefix)
+
 ! Generic setup, first step
 call bump%setup_generic
 
@@ -109,7 +113,7 @@ if (bump%nam%grid_output) then
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Initialize fields regridding'
    call flush(mpl%unit)
-   call io%grid_init(bump%nam,bump%geom)
+   call bump%io%grid_init(bump%nam,bump%geom)
 end if
 
 ! Initialize block parameters
@@ -206,6 +210,9 @@ else
    call bump%nam%setup_internal(nl0,nv,nts)
 end if
 
+! Initialize listing
+call mpl%init_listing(bump%nam%prefix)
+
 ! Generic setup
 call bump%setup_generic
 
@@ -247,7 +254,7 @@ if (bump%nam%grid_output) then
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Initialize fields regridding'
    call flush(mpl%unit)
-   call io%grid_init(bump%nam,bump%geom)
+   call bump%io%grid_init(bump%nam,bump%geom)
 end if
 
 ! Initialize block parameters
@@ -335,6 +342,9 @@ call mpl%init(mpi_comm)
 ! Set internal namelist parameters
 call bump%nam%setup_internal(nl0,nv,nts,ens1_ne)
 
+! Initialize listing
+call mpl%init_listing(bump%nam%prefix)
+
 ! Generic setup
 call bump%setup_generic
 
@@ -363,7 +373,7 @@ if (bump%nam%grid_output) then
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Initialize fields regridding'
    call flush(mpl%unit)
-   call io%grid_init(bump%nam,bump%geom)
+   call bump%io%grid_init(bump%nam,bump%geom)
 end if
 
 ! Initialize block parameters
@@ -422,7 +432,7 @@ real(kind_real),allocatable :: lon_mga(:),lat_mga(:),area_mga(:),vunit_mga(:,:)
 logical,allocatable :: lmask_mga(:,:)
 
 ! Initialize MPL
-call mpl%init(mpi_comm,listing)
+call mpl%init(mpi_comm)
 
 ! Copy sizes
 bump%nx = nx
@@ -436,6 +446,9 @@ ens1_ne = nens*ncyc
 
 ! Set internal namelist parameters
 call bump%nam%setup_internal(nl0,nv,nts,ens1_ne)
+
+! Initialize listing
+call mpl%init_listing(bump%nam%prefix,listing)
 
 ! Generic setup
 call bump%setup_generic
@@ -468,7 +481,7 @@ if (bump%nam%grid_output) then
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Initialize fields regridding'
    call flush(mpl%unit)
-   call io%grid_init(bump%nam,bump%geom)
+   call bump%io%grid_init(bump%nam,bump%geom)
 end if
 
 ! Initialize block parameters
@@ -568,16 +581,16 @@ if (bump%nam%new_hdiag) then
    write(mpl%unit,'(a)') '--- Run HDIAG driver'
    call flush(mpl%unit)
    if ((trim(bump%nam%method)=='hyb-rnd').or.(trim(bump%nam%method)=='dual-ens')) then
-      call bump%cmat%run_hdiag(bump%nam,bump%geom,bump%bpar,bump%ens1,bump%ens2)
+      call bump%cmat%run_hdiag(bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1,bump%ens2)
    else
-      call bump%cmat%run_hdiag(bump%nam,bump%geom,bump%bpar,bump%ens1)
+      call bump%cmat%run_hdiag(bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1)
    end if
 elseif (bump%nam%new_param.and..not.(allocated(bump%rh).and.allocated(bump%rv))) then
    ! Read C matrix data
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Read C matrix data'
    call flush(mpl%unit)
-   call bump%cmat%read(bump%nam,bump%geom,bump%bpar)
+   call bump%cmat%read(bump%nam,bump%geom,bump%bpar,bump%io)
 end if
 
 if (bump%nam%new_param) then
@@ -602,9 +615,9 @@ if (bump%nam%check_adjoints.or.bump%nam%check_pos_def.or.bump%nam%check_sqrt.or.
    write(mpl%unit,'(a)') '--- Call NICAS tests driver'
    call flush(mpl%unit)
    if (allocated(bump%ens1%fld)) then
-      call bump%nicas%run_nicas_tests(bump%nam,bump%geom,bump%bpar,bump%cmat,bump%ens1)
+      call bump%nicas%run_nicas_tests(bump%nam,bump%geom,bump%bpar,bump%io,bump%cmat,bump%ens1)
    else
-      call bump%nicas%run_nicas_tests(bump%nam,bump%geom,bump%bpar,bump%cmat)
+      call bump%nicas%run_nicas_tests(bump%nam,bump%geom,bump%bpar,bump%io,bump%cmat)
    end if
 end if
 
@@ -613,7 +626,7 @@ if (bump%nam%new_lct) then
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Call LCT driver'
    call flush(mpl%unit)
-   call bump%lct%run_lct(bump%nam,bump%geom,bump%bpar,bump%ens1)
+   call bump%lct%run_lct(bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1)
 end if
 
 if (bump%nam%new_obsop) then

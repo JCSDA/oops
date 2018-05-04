@@ -27,7 +27,7 @@ cTree::cTree(int n, double lon[], double lat[], int mask[]) {
             } else {
                 // Find the nearest neighbor
                 vector<CoverTreePoint> neighbors(tree->kNearestNeighbors(CoverTreePoint(-999,lon[i],lat[i]),1));
-                if(neighbors[0].getDist()>0.0) {
+                if(neighbors[0].getDist()>1.0e-12) {
                    // Insert point
                    tree->insert(CoverTreePoint(i,lon[i],lat[i]));
                    j++;
@@ -48,7 +48,7 @@ void cTree::find_redundant(int n, double lon[], double lat[], int redundant[]) {
     for(int i=1;i<n;i++) {
        // Find the nearest neighbor
        vector<CoverTreePoint> neighbors(tree->kNearestNeighbors(CoverTreePoint(-999,lon[i],lat[i]),1));
-       if(neighbors[0].getDist()>0.0) {
+       if(neighbors[0].getDist()>1.0e-12) {
           // Insert point
           tree->insert(CoverTreePoint(j,lon[i],lat[i]));
           j++;

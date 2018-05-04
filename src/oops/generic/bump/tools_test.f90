@@ -47,7 +47,7 @@ real(kind_real) :: nn_dist(1)
 
 do idir=1,nam%ndir
    ! Find nearest neighbor
-   call geom%ctree%find_nearest_neighbors(nam%londir(idir)*deg2rad,nam%latdir(idir)*deg2rad,1,nn_index,nn_dist)
+   call geom%ctree%find_nearest_neighbors(nam%londir(idir),nam%latdir(idir),1,nn_index,nn_dist)
    ic0dir = nn_index(1)
    iprocdir(idir) = geom%c0_to_proc(ic0dir)
    ic0adir(idir) = geom%c0_to_c0a(ic0dir)

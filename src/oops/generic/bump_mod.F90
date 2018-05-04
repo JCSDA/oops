@@ -12,7 +12,6 @@ use kinds
 use config_mod
 use unstructured_grid_mod
 use mpi
-use tools_const, only: req
 use tools_missing, only: msi,msr
 use type_bump, only: bump_type
 
@@ -175,7 +174,7 @@ bump%nam%nc1 = config_get_int(c_conf,"nc1")
 bump%nam%ntry = config_get_int(c_conf,"ntry")
 bump%nam%nrep = config_get_int(c_conf,"nrep")
 bump%nam%nc3 = config_get_int(c_conf,"nc3")
-bump%nam%dc = config_get_real(c_conf,"dc")/req
+bump%nam%dc = config_get_real(c_conf,"dc")
 bump%nam%nl0r = config_get_int(c_conf,"nl0r")
 
 ! diag_param
@@ -183,12 +182,12 @@ bump%nam%ne = config_get_int(c_conf,"ne")
 bump%nam%gau_approx = integer_to_logical(config_get_int(c_conf,"gau_approx"))
 bump%nam%full_var = integer_to_logical(config_get_int(c_conf,"full_var"))
 bump%nam%local_diag = integer_to_logical(config_get_int(c_conf,"local_diag"))
-if (bump%nam%local_diag) bump%nam%local_rad = config_get_real(c_conf,"local_rad")/req
+if (bump%nam%local_diag) bump%nam%local_rad = config_get_real(c_conf,"local_rad")
 bump%nam%displ_diag = integer_to_logical(config_get_int(c_conf,"displ_diag"))
 if (bump%nam%local_diag) then
-   bump%nam%displ_rad = config_get_real(c_conf,"displ_rad")/req
+   bump%nam%displ_rad = config_get_real(c_conf,"displ_rad")
    bump%nam%displ_niter = config_get_int(c_conf,"displ_niter")
-   bump%nam%displ_rhflt = config_get_real(c_conf,"displ_rhflt")/req
+   bump%nam%displ_rhflt = config_get_real(c_conf,"displ_rhflt")
    bump%nam%displ_tol = config_get_real(c_conf,"displ_tol")
 end if
 
@@ -228,7 +227,7 @@ do ildwv=1,bump%nam%nldwv
    bump%nam%lon_ldwv(ildwv) = config_get_real(c_conf,"lon_ldwv("//trim(adjustl(ildwvchar))//")")
    bump%nam%lat_ldwv(ildwv) = config_get_real(c_conf,"lat_ldwv("//trim(adjustl(ildwvchar))//")")
 end do
-bump%nam%diag_rhflt = config_get_real(c_conf,"diag_rhflt")/req
+bump%nam%diag_rhflt = config_get_real(c_conf,"diag_rhflt")
 bump%nam%diag_interp = config_get_string(c_conf,1024,"diag_interp")
 bump%nam%grid_output = integer_to_logical(config_get_int(c_conf,"grid_output"))
 if (bump%nam%grid_output) then

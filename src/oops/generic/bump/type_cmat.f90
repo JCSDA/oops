@@ -15,7 +15,6 @@ use tools_const, only: rad2deg,reqkm
 use tools_display, only: msgwarning,msgerror,prog_init,prog_print
 use tools_kinds, only: kind_real
 use tools_missing, only: msvali,msvalr,msr,isnotmsi,isnotmsr,isallnotmsr,isanynotmsr
-use tools_nc, only: ncerr,ncfloat
 use type_avg, only: avg_type
 use type_bpar, only: bpar_type
 use type_cmat_blk, only: cmat_blk_type
@@ -24,7 +23,7 @@ use type_displ, only: displ_type
 use type_ens, only: ens_type
 use type_geom, only: geom_type
 use type_hdata, only: hdata_type
-use type_io, only: io
+use type_io, only: io_type
 use type_mom, only: mom_type
 use type_mpl, only: mpl
 use type_nam, only: nam_type
@@ -100,8 +99,8 @@ do ib=1,bpar%nb+1
 
    if ((ib==bpar%nb+1).and.nam%displ_diag) then
       ! Allocation
-      allocate(cmat%blk(ib)%displ_lon(geom%nc0,geom%nl0,2:nam%nts))
-      allocate(cmat%blk(ib)%displ_lat(geom%nc0,geom%nl0,2:nam%nts))
+      allocate(cmat%blk(ib)%displ_lon(geom%nc0a,geom%nl0,2:nam%nts))
+      allocate(cmat%blk(ib)%displ_lat(geom%nc0a,geom%nl0,2:nam%nts))
 
       ! Initialization
       if (nam%displ_diag) then
@@ -151,7 +150,7 @@ end function cmat_copy
 ! Subroutine: cmat_read
 !> Purpose: read cmat object
 !----------------------------------------------------------------------
-subroutine cmat_read(cmat,nam,geom,bpar)
+subroutine cmat_read(cmat,nam,geom,bpar,io)
 
 implicit none
 
@@ -160,6 +159,7 @@ class(cmat_type),intent(inout) :: cmat !< C matrix data
 type(nam_type),intent(in) :: nam       !< Namelist
 type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
+type(io_type),intent(in) :: io         !< I/O
 
 ! Local variables
 integer :: ib
@@ -200,7 +200,7 @@ end subroutine cmat_read
 ! Subroutine: cmat_write
 !> Purpose: write cmat object
 !----------------------------------------------------------------------
-subroutine cmat_write(cmat,nam,geom,bpar)
+subroutine cmat_write(cmat,nam,geom,bpar,io)
 
 implicit none
 
@@ -209,6 +209,7 @@ class(cmat_type),intent(in) :: cmat !< C matrix data
 type(nam_type),intent(in) :: nam    !< Namelist
 type(geom_type),intent(in) :: geom  !< Geometry
 type(bpar_type),intent(in) :: bpar  !< Block parameters
+type(io_type),intent(in) :: io      !< I/O
 
 ! Local variables
 integer :: ib
@@ -238,7 +239,7 @@ end subroutine cmat_write
 ! Subroutine: cmat_run_hdiag
 !> Purpose: HDIAG driver
 !----------------------------------------------------------------------
-subroutine cmat_run_hdiag(cmat,nam,geom,bpar,ens1,ens2)
+subroutine cmat_run_hdiag(cmat,nam,geom,bpar,io,ens1,ens2)
 
 implicit none
 
@@ -247,6 +248,7 @@ class(cmat_type),intent(inout) :: cmat     !< C matrix data
 type(nam_type),intent(inout) :: nam        !< Namelist
 type(geom_type),intent(in) :: geom         !< Geometry
 type(bpar_type),intent(in) :: bpar         !< Block parameters
+type(io_type),intent(in) :: io             !< I/O
 type(ens_type),intent(in) :: ens1          !< Ensemble 1
 type(ens_type),intent(in),optional :: ens2 !< Ensemble 2
 
@@ -263,7 +265,7 @@ type(mom_type) :: mom_1,mom_2
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a,i5,a)') '--- Setup sampling (nc1 = ',nam%nc1,')'
 call flush(mpl%unit)
-call hdata%setup_sampling(nam,geom)
+call hdata%setup_sampling(nam,geom,io)
 
 ! Compute MPI distribution, halo A
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
@@ -359,7 +361,7 @@ call flush(mpl%unit)
 ! Compute ensemble 1 covariance
 write(mpl%unit,'(a7,a)') '','Ensemble 1:'
 call flush(mpl%unit)
-call cov_1%covariance(nam,geom,bpar,hdata,avg_1,'cov')
+call cov_1%covariance(nam,geom,bpar,io,hdata,avg_1,'cov')
 
 select case (trim(nam%method))
 case ('hyb-avg','hyb-rnd','dual-ens')
@@ -368,9 +370,9 @@ case ('hyb-avg','hyb-rnd','dual-ens')
    call flush(mpl%unit)
    select case (trim(nam%method))
    case ('hyb-avg','hyb-rnd')
-      call cov_2%covariance(nam,geom,bpar,hdata,avg_2,'cov_sta')
+      call cov_2%covariance(nam,geom,bpar,io,hdata,avg_2,'cov_sta')
    case ('dual-ens')
-      call cov_2%covariance(nam,geom,bpar,hdata,avg_2,'cov_lr')
+      call cov_2%covariance(nam,geom,bpar,io,hdata,avg_2,'cov_lr')
    end select
 end select
 
@@ -381,7 +383,7 @@ call flush(mpl%unit)
 ! Compute ensemble 1 correlation
 write(mpl%unit,'(a7,a)') '','Ensemble 1:'
 call flush(mpl%unit)
-call cor_1%correlation(nam,geom,bpar,hdata,avg_1,'cor')
+call cor_1%correlation(nam,geom,bpar,io,hdata,avg_1,'cor')
 
 select case (trim(nam%method))
 case ('hyb-avg','hyb-rnd','dual-ens')
@@ -390,9 +392,9 @@ case ('hyb-avg','hyb-rnd','dual-ens')
    call flush(mpl%unit)
    select case (trim(nam%method))
    case ('hyb-avg','hyb-rnd')
-      call cor_2%correlation(nam,geom,bpar,hdata,avg_2,'cor_sta')
+      call cor_2%correlation(nam,geom,bpar,io,hdata,avg_2,'cor_sta')
    case ('dual-ens')
-      call cor_2%correlation(nam,geom,bpar,hdata,avg_2,'cor_lr')
+      call cor_2%correlation(nam,geom,bpar,io,hdata,avg_2,'cor_lr')
    end select
 end select
 
@@ -403,7 +405,7 @@ case ('loc','hyb-avg','hyb-rnd','dual-ens')
    write(mpl%unit,'(a)') '--- Compute localization'
    write(mpl%unit,'(a7,a)') '','Ensemble 1:'
    call flush(mpl%unit)
-   call loc_1%localization(nam,geom,bpar,hdata,avg_1,'loc')
+   call loc_1%localization(nam,geom,bpar,io,hdata,avg_1,'loc')
 end select
 
 select case (trim(nam%method))
@@ -413,7 +415,7 @@ case ('hyb-avg','hyb-rnd')
    write(mpl%unit,'(a)') '--- Compute static hybridization'
    write(mpl%unit,'(a7,a)') '','Ensemble 1 and 2:'
    call flush(mpl%unit)
-   call loc_2%hybridization(nam,geom,bpar,hdata,avg_1,avg_2,'loc_hyb')
+   call loc_2%hybridization(nam,geom,bpar,io,hdata,avg_1,avg_2,'loc_hyb')
 end select
 
 if (trim(nam%method)=='dual-ens') then
@@ -422,7 +424,7 @@ if (trim(nam%method)=='dual-ens') then
    write(mpl%unit,'(a)') '--- Compute dual-ensemble hybridization'
    write(mpl%unit,'(a7,a)') '','Ensembles 1 and 2:'
    call flush(mpl%unit)
-   call loc_2%dualens(nam,geom,bpar,hdata,avg_1,avg_2,loc_3,'loc_deh','loc_deh_lr')
+   call loc_2%dualens(nam,geom,bpar,io,hdata,avg_1,avg_2,loc_3,'loc_deh','loc_deh_lr')
 end if
 
 if (trim(nam%minim_algo)/='none') then
@@ -443,7 +445,7 @@ if (trim(nam%minim_algo)/='none') then
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Write C matrix data'
    call flush(mpl%unit)
-   call cmat%write(nam,geom,bpar)
+   call cmat%write(nam,geom,bpar,io)
 end if
 
 ! Write data

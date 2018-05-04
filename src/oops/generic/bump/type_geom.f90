@@ -81,7 +81,7 @@ type geom_type
    integer,allocatable :: c0a_to_c0(:)        !< Subset Sc0, halo A to global
    integer,allocatable :: proc_to_nc0a(:)     !< Halo A size for each proc
    integer,allocatable :: c0a_to_mga(:)       !< Subset Sc0 to model grid, halo A
-   type(com_type) :: com_mg                    !< Communication between subset Sc0 and model grid
+   type(com_type) :: com_mg                   !< Communication between subset Sc0 and model grid
 contains
    procedure :: alloc => geom_alloc
    procedure :: setup_online => geom_setup_online
@@ -183,7 +183,7 @@ allocate(geom%mg_to_proc(geom%nmg))
 allocate(geom%mg_to_mga(geom%nmg))
 allocate(geom%mga_to_mg(geom%nmga))
 
-! Communication and reordering of model grid points
+! Communication of model grid points
 if (mpl%main) then
    ! Allocation
    offset = 0
@@ -417,13 +417,14 @@ real(kind_real),intent(in),optional :: lat(geom%nmg) !< Latitudes
 
 ! Local variables
 integer :: img,ic0
+type(ctree_type) :: ctree
 
 ! Allocation
 allocate(geom%redundant(geom%nmg))
 call msi(geom%redundant)
 
 ! Look for redundant points
-if (present(lon).and.present(lat)) call geom%ctree%find_redundant(geom%nmg,lon,lat,geom%redundant)
+if (present(lon).and.present(lat)) call ctree%find_redundant(geom%nmg,lon,lat,geom%redundant)
 geom%nc0 = count(.not.isnotmsi(geom%redundant))
 write(mpl%unit,'(a7,a,i8)') '','Model grid size:         ',geom%nmg
 write(mpl%unit,'(a7,a,i8)') '','Subset Sc0 size:         ',geom%nc0
@@ -508,10 +509,8 @@ write(mpl%unit,'(a7,a,i3)') '','Number of independent levels: ',geom%nl0i
 call flush(mpl%unit)
 
 ! Create cover tree
-if (.not.geom%ctree%created) then
-   ctree_mask = .true.
-   call geom%ctree%create(geom%nc0,geom%lon,geom%lat,ctree_mask)
-end if
+ctree_mask = .true.
+call geom%ctree%create(geom%nc0,geom%lon,geom%lat,ctree_mask)
 
 ! Horizontal distance
 allocate(geom%disth(nam%nc3))
@@ -577,7 +576,7 @@ elseif (trim(nam%mask_type)=='ldwv') then
       if (any(geom%mask(ic0,:))) then
          mask_test = .false.
          do ildw=1,nam%nldwv
-            call sphere_dist(nam%lon_ldwv(ildw)*deg2rad,nam%lat_ldwv(ildw)*deg2rad,geom%lon(ic0),geom%lat(ic0),dist)
+            call sphere_dist(nam%lon_ldwv(ildw),nam%lat_ldwv(ildw),geom%lon(ic0),geom%lat(ic0),dist)
             mask_test = mask_test.or.(dist<1.1*nam%local_rad)
          end do
          do il0=1,geom%nl0
@@ -923,9 +922,12 @@ do ic0=1,geom%nc0
       c0_reorder(ic0) = sum(geom%proc_to_nc0a(1:iproc-1))+ic0a
    end if
 end do
+geom%c0_to_lon(c0_reorder) = geom%c0_to_lon
+geom%c0_to_lat(c0_reorder) = geom%c0_to_lat
 geom%lon(c0_reorder) = geom%lon
 geom%lat(c0_reorder) = geom%lat
 do il0=1,geom%nl0
+   geom%vunit(c0_reorder,il0) = geom%vunit(:,il0)
    geom%mask(c0_reorder,il0) = geom%mask(:,il0)
 end do
 geom%c0_to_proc(c0_reorder) = geom%c0_to_proc

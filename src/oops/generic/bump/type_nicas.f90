@@ -24,7 +24,7 @@ use type_com, only: com_type
 use type_cv, only: cv_type
 use type_ens, only: ens_type
 use type_geom, only: geom_type
-use type_io, only: io
+use type_io, only: io_type
 use type_linop, only: linop_type
 use type_nicas_blk, only: nicas_blk_type
 use type_mpl, only: mpl
@@ -502,7 +502,7 @@ end subroutine nicas_run_nicas
 ! Subroutine: nicas_run_nicas_tests
 !> Purpose: NICAS tests driver
 !----------------------------------------------------------------------
-subroutine nicas_run_nicas_tests(nicas,nam,geom,bpar,cmat,ens)
+subroutine nicas_run_nicas_tests(nicas,nam,geom,bpar,io,cmat,ens)
 
 implicit none
 
@@ -511,6 +511,7 @@ class(nicas_type),intent(inout) :: nicas  !< NICAS data
 type(nam_type),intent(inout) :: nam       !< Namelist
 type(geom_type),intent(inout) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar        !< Block parameters
+type(io_type),intent(in) :: io            !< I/O
 type(cmat_type),intent(in) :: cmat        !< C matrix data
 type(ens_type),intent(in),optional :: ens !< Ensemble
 
@@ -570,7 +571,7 @@ if (nam%check_sqrt) then
          write(mpl%unit,'(a)') '-------------------------------------------------------------------'
          write(mpl%unit,'(a)') '--- Block: '//trim(bpar%blockname(ib))
          call flush(mpl%unit)
-         call nicas%blk(ib)%test_sqrt(nam,geom,bpar,cmat%blk(ib))
+         call nicas%blk(ib)%test_sqrt(nam,geom,bpar,io,cmat%blk(ib))
       end if
    end do
 
@@ -579,9 +580,9 @@ if (nam%check_sqrt) then
    write(mpl%unit,'(a)') '--- Test localization full/square-root equivalence'
    call flush(mpl%unit)
    if (present(ens)) then
-      call nicas%test_sqrt(nam,geom,bpar,cmat,ens)
+      call nicas%test_sqrt(nam,geom,bpar,io,cmat,ens)
    else
-      call nicas%test_sqrt(nam,geom,bpar,cmat)
+      call nicas%test_sqrt(nam,geom,bpar,io,cmat)
    end if
 end if
 
@@ -596,7 +597,7 @@ if (nam%check_dirac) then
          write(mpl%unit,'(a)') '-------------------------------------------------------------------'
          write(mpl%unit,'(a)') '--- Block: '//trim(bpar%blockname(ib))
          call flush(mpl%unit)
-         call nicas%blk(ib)%test_dirac(nam,geom,bpar)
+         call nicas%blk(ib)%test_dirac(nam,geom,bpar,io)
       end if
    end do
 
@@ -605,9 +606,9 @@ if (nam%check_dirac) then
    write(mpl%unit,'(a)') '--- Apply localization to diracs'
    call flush(mpl%unit)
    if (present(ens)) then
-      call nicas%test_dirac(nam,geom,bpar,ens)
+      call nicas%test_dirac(nam,geom,bpar,io,ens)
    else
-      call nicas%test_dirac(nam,geom,bpar)
+      call nicas%test_dirac(nam,geom,bpar,io)
    end if
 end if
 
@@ -616,7 +617,7 @@ if (nam%check_randomization) then
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Test NICAS randomization'
    call flush(mpl%unit)
-   call nicas%test_randomization(nam,geom,bpar)
+   call nicas%test_randomization(nam,geom,bpar,io)
 end if
 
 if (nam%check_consistency) then
@@ -624,7 +625,7 @@ if (nam%check_consistency) then
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Test HDIAG-NICAS consistency'
    call flush(mpl%unit)
-   call nicas%test_consistency(nam,geom,bpar,cmat)
+   call nicas%test_consistency(nam,geom,bpar,io,cmat)
 end if
 
 if (nam%check_optimality) then
@@ -632,7 +633,7 @@ if (nam%check_optimality) then
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Test HDIAG optimality'
    call flush(mpl%unit)
-   call nicas%test_optimality(nam,geom,bpar)
+   call nicas%test_optimality(nam,geom,bpar,io)
 end if
 
 end subroutine nicas_run_nicas_tests
@@ -1528,7 +1529,7 @@ end subroutine nicas_test_adjoint
 ! Subroutine: nicas_test_sqrt
 !> Purpose: test full/square-root equivalence
 !----------------------------------------------------------------------
-subroutine nicas_test_sqrt(nicas,nam,geom,bpar,cmat,ens)
+subroutine nicas_test_sqrt(nicas,nam,geom,bpar,io,cmat,ens)
 
 implicit none
 
@@ -1537,6 +1538,7 @@ class(nicas_type),intent(in) :: nicas      !< NICAS data
 type(nam_type),intent(inout),target :: nam !< Namelist
 type(geom_type),intent(in),target :: geom  !< Geometry
 type(bpar_type),intent(in) :: bpar         !< Block parameters
+type(io_type),intent(in) :: io             !< I/O
 type(cmat_type),intent(in) :: cmat         !< C matrix data
 type(ens_type),intent(in),optional :: ens  !< Ensemble
 
@@ -1619,7 +1621,7 @@ do iv=1,nam%nv
    varname(iv) = nam%varname(iv)
    nam%varname(iv) = trim(varname(iv))//'_sqrt'
 end do
-if (nam%check_dirac) call nicas_other%test_dirac(nam,geom,bpar,ens)
+if (nam%check_dirac) call nicas_other%test_dirac(nam,geom,bpar,io,ens)
 do iv=1,nam%nv
    nam%varname(iv) = varname(iv)
 end do
@@ -1640,7 +1642,7 @@ end subroutine nicas_test_sqrt
 ! Subroutine: nicas_test_dirac
 !> Purpose: apply localization to diracs
 !----------------------------------------------------------------------
-subroutine nicas_test_dirac(nicas,nam,geom,bpar,ens)
+subroutine nicas_test_dirac(nicas,nam,geom,bpar,io,ens)
 
 implicit none
 
@@ -1649,6 +1651,7 @@ class(nicas_type),intent(in) :: nicas     !< NICAS data
 type(nam_type),intent(in) :: nam          !< Namelist
 type(geom_type),intent(in) :: geom        !< Geometry
 type(bpar_type),intent(in) :: bpar        !< Block parameters
+type(io_type),intent(in) :: io            !< I/O
 type(ens_type),intent(in),optional :: ens !< Ensemble
 
 ! Local variables
@@ -1704,7 +1707,7 @@ end subroutine nicas_test_dirac
 ! Subroutine: nicas_test_randomization
 !> Purpose: test NICAS randomization method with respect to theoretical error statistics
 !----------------------------------------------------------------------
-subroutine nicas_test_randomization(nicas,nam,geom,bpar)
+subroutine nicas_test_randomization(nicas,nam,geom,bpar,io)
 
 implicit none
 
@@ -1713,6 +1716,7 @@ class(nicas_type),intent(in) :: nicas !< NICAS data
 type(nam_type),intent(inout) :: nam   !< Namelist variables
 type(geom_type),intent(in) :: geom    !< Geometry
 type(bpar_type),intent(in) :: bpar    !< Block parameters
+type(io_type),intent(in) :: io        !< I/O
 
 ! Local variables
 integer :: ifac,itest,nefac(nfac),ens1_ne,iv,its
@@ -1804,7 +1808,7 @@ end subroutine nicas_test_randomization
 ! Subroutine: nicas_test_consistency
 !> Purpose: test HDIAG-NICAS consistency with a randomization method
 !----------------------------------------------------------------------
-subroutine nicas_test_consistency(nicas,nam,geom,bpar,cmat)
+subroutine nicas_test_consistency(nicas,nam,geom,bpar,io,cmat)
 
 implicit none
 
@@ -1813,6 +1817,7 @@ class(nicas_type),intent(in) :: nicas !< NICAS data
 type(nam_type),intent(inout) :: nam   !< Namelist variables
 type(geom_type),intent(in) :: geom    !< Geometry
 type(bpar_type),intent(in) :: bpar    !< Block parameters
+type(io_type),intent(in) :: io        !< I/O
 type(cmat_type),intent(in) :: cmat    !< C matrix data
 
 ! Local variables
@@ -1847,7 +1852,7 @@ nam%ens1_ne_offset = 0
 nam%ens1_nsub = 1
 
 ! Call hdiag driver
-call cmat_test%run_hdiag(nam,geom,bpar,ens)
+call cmat_test%run_hdiag(nam,geom,bpar,io,ens)
 
 ! Print scores
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
@@ -1882,7 +1887,7 @@ end subroutine nicas_test_consistency
 ! Subroutine: nicas_test_optimality
 !> Purpose: test HDIAG localization optimality with a randomization method
 !----------------------------------------------------------------------
-subroutine nicas_test_optimality(nicas,nam,geom,bpar)
+subroutine nicas_test_optimality(nicas,nam,geom,bpar,io)
 
 implicit none
 
@@ -1891,6 +1896,7 @@ class(nicas_type),intent(in) :: nicas !< NICAS data
 type(nam_type),intent(inout) :: nam   !< Namelist variables
 type(geom_type),intent(in) :: geom    !< Geometry
 type(bpar_type),intent(in) :: bpar    !< Block parameters
+type(io_type),intent(in) :: io        !< I/O
 
 ! Local variables
 integer :: ib,ifac,itest
@@ -1937,7 +1943,7 @@ call nicas_test%alloc(nam,bpar,'nicas_test')
 call cmat_save%alloc(nam,geom,bpar,'cmat_save')
 
 ! Call hdiag driver
-call cmat_save%run_hdiag(nam,geom,bpar,ens)
+call cmat_save%run_hdiag(nam,geom,bpar,io,ens)
 
 ! Copy cmat
 cmat_test = cmat_save%copy(nam,geom,bpar)
