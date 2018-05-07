@@ -23,16 +23,15 @@ contains
 
 subroutine f_c_string(fstring, cstring)
 character(len=*), intent(in)               :: fstring
-character(kind=c_char, len=1), allocatable, intent(inout) :: cstring(:)
+character(kind=c_char, len=1), allocatable, intent(out) :: cstring(:)
 integer :: jj
 
-if (allocated(cstring)) deallocate(cstring)
-allocate(cstring(len(trim(fstring))+1))
+allocate(cstring(len_trim(fstring)+1))
 
-do jj=1,len(fstring)
+do jj=1,len_trim(fstring)
   cstring(jj) = fstring(jj:jj)
 enddo
-cstring(len(fstring)+1) = c_null_char
+cstring(len_trim(fstring)+1) = c_null_char
 
 end subroutine f_c_string
 
