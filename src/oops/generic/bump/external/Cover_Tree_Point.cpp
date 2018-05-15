@@ -15,6 +15,9 @@ double CoverTreePoint::distance(const CoverTreePoint& p) const {
 
     // Great-circle distance using Vincenty formula on the sphere
     double dist = atan2(sqrt(pow(coslat*sin(lon-_lon),2)+pow(_coslat*sinlat-_sinlat*coslat*cos(lon-_lon),2)),_sinlat*sinlat+_coslat*coslat*cos(lon-_lon));
+
+    // Truncate to 6 signficant digits for reproducibility
+    dist = (double)((unsigned long int)(1.0e6*dist))*1.0e-6;
     return dist;
 }
 

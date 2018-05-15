@@ -11,10 +11,10 @@
 module type_io
 
 use netcdf
-use tools_const, only: pi,deg2rad,rad2deg,reqkm
+use tools_const, only: pi,deg2rad,rad2deg,reqkm,msvalr
 use tools_display, only: msgerror
 use tools_kinds, only: kind_real
-use tools_missing, only: msvalr,msi,msr,isanynotmsr,isallnotmsi
+use tools_missing, only: msi,msr,isanynotmsr,isallnotmsi
 use tools_nc, only: ncerr,ncfloat
 use tools_qsort, only: qsort
 use type_com, only: com_type

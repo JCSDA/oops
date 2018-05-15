@@ -13,8 +13,8 @@ module type_mpl
 use iso_c_binding
 use mpi
 !$ use omp_lib
+use tools_const, only: msvali,msvalr
 use tools_kinds, only: kind_real
-use tools_missing, only: msi,isnotmsi,isnotmsr
 
 implicit none
 
@@ -98,7 +98,6 @@ end type mpl_type
 
 type(mpl_type) :: mpl
 
-! Fortran units
 integer,parameter :: lunit_min=10   !< Minimum unit number
 integer,parameter :: lunit_max=1000 !< Maximum unit number
 
@@ -120,11 +119,8 @@ class(mpl_type) :: mpl       !< MPL object
 integer,intent(out) :: lunit !< New unit
 
 ! Local variables
-integer :: lun,dum
+integer :: lun
 logical :: lopened
-
-! Initialize
-call msi(lunit)
 
 ! Loop over possible units
 do lun=lunit_min,lunit_max
@@ -135,8 +131,8 @@ do lun=lunit_min,lunit_max
    end if
 end do
 
-! To avoid compilation warnings
-dum = mpl%ioproc
+! Check
+if (lopened) call mpl%abort('cannot find a free unit')
 
 end subroutine mpl_newunit
 
@@ -209,8 +205,9 @@ end if
 mpl%tag = 4321
 
 ! Set max number of OpenMP threads
-mpl%nthread = omp_get_max_threads()
-call omp_set_num_threads(mpl%nthread)
+mpl%nthread = 1
+!$ mpl%nthread = omp_get_max_threads()
+!$ call omp_set_num_threads(mpl%nthread)
 
 end subroutine mpl_init
 
@@ -1286,7 +1283,7 @@ integer :: info
 integer :: sbuf(1),rbuf(1)
 
 ! Check for missing values
-if (isnotmsi(var_in)) then
+if (abs(var_in-msvali)>0) then
    sbuf(1) = var_in
 else
    sbuf(1) = 0
@@ -1319,7 +1316,7 @@ integer :: info
 real(kind_real) :: sbuf(1),rbuf(1)
 
 ! Check for missing values
-if (isnotmsr(var_in)) then
+if (abs(var_in-msvalr)>0.0) then
    sbuf(1) = var_in
 else
    sbuf(1) = 0.0
@@ -1353,7 +1350,7 @@ real(kind_real) :: sbuf(size(var_in)),rbuf(size(var_in))
 
 ! Check for missing values
 do i=1,size(var_in)
-   if (isnotmsr(var_in(i))) then
+   if (abs(var_in(i)-msvalr)>0.0) then
       sbuf(i) = var_in(i)
    else
       sbuf(i) = 0.0
@@ -1387,7 +1384,7 @@ integer :: info
 real(kind_real) :: sbuf(1),rbuf(1)
 
 ! Check for missing values
-if (isnotmsr(var_in)) then
+if (abs(var_in-msvalr)>0.0) then
    sbuf(1) = var_in
 else
    sbuf(1) = huge(1.0)
@@ -1421,7 +1418,7 @@ real(kind_real) :: sbuf(size(var_in)),rbuf(size(var_in))
 
 ! Check for missing values
 do i=1,size(var_in)
-   if (isnotmsr(var_in(i))) then
+   if (abs(var_in(i)-msvalr)>0.0) then
       sbuf(i) = var_in(i)
    else
       sbuf(i) = 0.0
@@ -1455,7 +1452,7 @@ integer :: info
 real(kind_real) :: sbuf(1),rbuf(1)
 
 ! Check for missing values
-if (isnotmsr(var_in)) then
+if (abs(var_in-msvalr)>0.0) then
    sbuf(1) = var_in
 else
    sbuf(1) = -huge(1.0)
@@ -1489,7 +1486,7 @@ real(kind_real) :: sbuf(size(var_in)),rbuf(size(var_in))
 
 ! Check for missing values
 do i=1,size(var_in)
-   if (isnotmsr(var_in(i))) then
+   if (abs(var_in(i)-msvalr)>0.0) then
       sbuf(i) = var_in(i)
    else
       sbuf(i) = 0.0

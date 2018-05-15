@@ -10,13 +10,11 @@
 !----------------------------------------------------------------------
 module tools_missing
 
+use tools_const, only: msvali,msvalr
+use tools_display, only: msgerror
 use tools_kinds,only: kind_real
 
 implicit none
-
-! Constants
-integer,parameter :: msvali = -999            !< Integer missing value
-real(kind_real),parameter :: msvalr = -999.0  !< Real missing value
 
 interface msi
   module procedure msi_0d
@@ -82,7 +80,6 @@ interface isallnotmsr
 end interface
 
 private
-public :: msvali,msvalr
 public :: msi,msr,isnotmsi,isnotmsr,isanynotmsi,isanynotmsr,isallnotmsi,isallnotmsr
 
 contains
@@ -327,9 +324,13 @@ implicit none
 integer,intent(in) :: i(:) !< Integer
 
 ! Returned value
-logical :: isnotmsi_1d(size(i))
+logical :: isnotmsi_1d(max(size(i),1))
 
-isnotmsi_1d = abs(i-msvali)>0
+if (size(i)>0) then
+   isnotmsi_1d = abs(i-msvali)>0
+else
+   call msgerror('size zero for isnotmsi_1d')
+end if
 
 end function isnotmsi_1d
 
@@ -345,9 +346,13 @@ implicit none
 integer,intent(in) :: i(:,:) !< Integer
 
 ! Returned value
-logical :: isnotmsi_2d(size(i,1),size(i,2))
+logical :: isnotmsi_2d(max(size(i,1),1),max(size(i,2),1))
 
-isnotmsi_2d = abs(i-msvali)>0
+if (size(i)>0) then
+   isnotmsi_2d = abs(i-msvali)>0
+else
+   call msgerror('size zero for isnotmsi_2d')
+end if
 
 end function isnotmsi_2d
 
@@ -363,9 +368,13 @@ implicit none
 integer,intent(in) :: i(:,:,:) !< Integer
 
 ! Returned value
-logical :: isnotmsi_3d(size(i,1),size(i,2),size(i,3))
+logical :: isnotmsi_3d(max(size(i,1),1),max(size(i,2),1),max(size(i,3),1))
 
-isnotmsi_3d = abs(i-msvali)>0
+if (size(i)>0) then
+   isnotmsi_3d = abs(i-msvali)>0
+else
+   call msgerror('size zero for isnotmsi_3d')
+end if
 
 end function isnotmsi_3d
 
@@ -381,9 +390,13 @@ implicit none
 integer,intent(in) :: i(:,:,:,:) !< Integer
 
 ! Returned value
-logical :: isnotmsi_4d(size(i,1),size(i,2),size(i,3),size(i,4))
+logical :: isnotmsi_4d(max(size(i,1),1),max(size(i,2),1),max(size(i,3),1),max(size(i,4),1))
 
-isnotmsi_4d = abs(i-msvali)>0
+if (size(i)>0) then
+   isnotmsi_4d = abs(i-msvali)>0
+else
+   call msgerror('size zero for isnotmsi_4d')
+end if
 
 end function isnotmsi_4d
 
@@ -399,9 +412,13 @@ implicit none
 integer,intent(in) :: i(:,:,:,:,:) !< Integer
 
 ! Returned value
-logical :: isnotmsi_5d(size(i,1),size(i,2),size(i,3),size(i,4),size(i,5))
+logical :: isnotmsi_5d(max(size(i,1),1),max(size(i,2),1),max(size(i,3),1),max(size(i,4),1),max(size(i,5),1))
 
-isnotmsi_5d = abs(i-msvali)>0
+if (size(i)>0) then
+   isnotmsi_5d = abs(i-msvali)>0
+else
+   call msgerror('size zero for isnotmsi_5d')
+end if
 
 end function isnotmsi_5d
 
@@ -437,7 +454,11 @@ real(kind_real),intent(in) :: r(:) !< Real number
 ! Returned value
 logical :: isnotmsr_1d(size(r))
 
-isnotmsr_1d = abs(r-msvalr)>0.0
+if (size(r)>0) then
+   isnotmsr_1d = abs(r-msvalr)>0.0
+else
+   call msgerror('size zero for isnotmsr_1d')
+end if
 
 end function isnotmsr_1d
 
@@ -453,9 +474,13 @@ implicit none
 real(kind_real),intent(in) :: r(:,:) !< Real number
 
 ! Returned value
-logical :: isnotmsr_2d(size(r,1),size(r,2))
+logical :: isnotmsr_2d(max(size(r,1),1),max(size(r,2),1))
 
-isnotmsr_2d = abs(r-msvalr)>0.0
+if (size(r)>0) then
+   isnotmsr_2d = abs(r-msvalr)>0.0
+else
+   call msgerror('size zero for isnotmsr_2d')
+end if
 
 end function isnotmsr_2d
 
@@ -471,9 +496,13 @@ implicit none
 real(kind_real),intent(in) :: r(:,:,:) !< Real number
 
 ! Returned value
-logical :: isnotmsr_3d(size(r,1),size(r,2),size(r,3))
+logical :: isnotmsr_3d(max(size(r,1),1),max(size(r,2),1),max(size(r,3),1))
 
-isnotmsr_3d = abs(r-msvalr)>0.0
+if (size(r)>0) then
+   isnotmsr_3d = abs(r-msvalr)>0.0
+else
+   call msgerror('size zero for isnotmsr_3d')
+end if
 
 end function isnotmsr_3d
 
@@ -489,9 +518,13 @@ implicit none
 real(kind_real),intent(in) :: r(:,:,:,:) !< Real number
 
 ! Returned value
-logical :: isnotmsr_4d(size(r,1),size(r,2),size(r,3),size(r,4))
+logical :: isnotmsr_4d(max(size(r,1),1),max(size(r,2),1),max(size(r,3),1),max(size(r,4),1))
 
-isnotmsr_4d = abs(r-msvalr)>0.0
+if (size(r)>0) then
+   isnotmsr_4d = abs(r-msvalr)>0.0
+else
+   call msgerror('size zero for isnotmsr_4d')
+end if
 
 end function isnotmsr_4d
 
@@ -507,9 +540,13 @@ implicit none
 real(kind_real),intent(in) :: r(:,:,:,:,:) !< Real number
 
 ! Returned value
-logical :: isnotmsr_5d(size(r,1),size(r,2),size(r,3),size(r,4),size(r,5))
+logical :: isnotmsr_5d(max(size(r,1),1),max(size(r,2),1),max(size(r,3),1),max(size(r,4),1),max(size(r,5),1))
 
-isnotmsr_5d = abs(r-msvalr)>0.0
+if (size(r)>0) then
+   isnotmsr_5d = abs(r-msvalr)>0.0
+else
+   call msgerror('size zero for isnotmsr_5d')
+end if
 
 end function isnotmsr_5d
 

@@ -11,8 +11,8 @@
 module type_geom
 
 use netcdf
-use tools_const, only: pi,req,deg2rad,rad2deg
-use tools_display, only: msgerror,msgwarning,prog_init,prog_print
+use tools_const, only: pi,req,deg2rad,rad2deg,reqkm
+use tools_display, only: msgerror,msgwarning,prog_init,prog_print,vunitchar
 use tools_func, only: lonlatmod,sphere_dist,vector_product,vector_triple_product
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsi
@@ -94,7 +94,7 @@ contains
    procedure :: check_arc => geom_check_arc
 end type geom_type
 
-real(kind_real),parameter :: rth = 1.0e-12 !< Reproducibility threshold
+real(kind_real),parameter :: rth = 1.0e-12_kind_real !< Reproducibility threshold
 
 private
 public :: geom_type
@@ -223,6 +223,10 @@ else
    end do
 end if
 mpl%tag = mpl%tag+3+2*geom%nl0
+
+! Convert to radians
+lon_mg = lon_mg*deg2rad
+lat_mg = lat_mg*deg2rad
 
 ! Broadcast data
 call mpl%bcast(lon_mg)
@@ -376,14 +380,6 @@ end if
 mpl%tag = mpl%tag+4
 call geom%com_mg%setup(com_mg,'com_mg')
 
-! Print summary
-write(mpl%unit,'(a7,a)') '','Distribution summary:'
-do iproc=1,mpl%nproc
-   write(mpl%unit,'(a10,a,i3,a,i8,a)') '','Proc #',iproc,': ',geom%proc_to_nc0a(iproc),' grid-points'
-end do
-write(mpl%unit,'(a10,a,i8,a)') '','Total: ',geom%nc0,' grid-points'
-call flush(mpl%unit)
-
 ! Deal with mask on redundant points
 do il0=1,geom%nl0
    do img=1,geom%nmg
@@ -462,7 +458,7 @@ class(geom_type),intent(inout) :: geom !< Geometry
 type(nam_type),intent(in) :: nam       !< Namelist
 
 ! Local variables
-integer :: ic0,il0,jc3
+integer :: ic0,il0,jc3,iproc
 logical :: same_mask,ctree_mask(geom%nc0)
 
 ! Set longitude and latitude bounds
@@ -517,6 +513,20 @@ allocate(geom%disth(nam%nc3))
 do jc3=1,nam%nc3
    geom%disth(jc3) = real(jc3-1,kind_real)*nam%dc
 end do
+
+! Print summary
+write(mpl%unit,'(a10,a,f7.1,a,f7.1)') '','Min. / max. longitudes:',minval(geom%lon)*rad2deg,' / ',maxval(geom%lon)*rad2deg
+write(mpl%unit,'(a10,a,f7.1,a,f7.1)') '','Min. / max. latitudes: ',minval(geom%lat)*rad2deg,' / ',maxval(geom%lat)*rad2deg
+write(mpl%unit,'(a10,a)') '','Averaged area / vunit / mask size:'
+do il0=1,geom%nl0
+   write(mpl%unit,'(a13,a,i3,a,e9.2,a,f9.1,a,i8,a)') '','Level ',nam%levs(il0),' ~> ',geom%area(il0)*reqkm**2,' km^2 / ', &
+ & sum(geom%vunit(:,il0)),' '//trim(vunitchar)//' / ',count(geom%mask(:,il0)),' points'
+end do
+write(mpl%unit,'(a7,a)') '','Distribution summary:'
+do iproc=1,mpl%nproc
+   write(mpl%unit,'(a10,a,i3,a,i8,a)') '','Proc #',iproc,': ',geom%proc_to_nc0a(iproc),' grid-points'
+end do
+call flush(mpl%unit)
 
 end subroutine geom_init
 

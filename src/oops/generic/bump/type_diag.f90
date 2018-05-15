@@ -14,7 +14,7 @@ use netcdf
 use tools_const, only: reqkm,rad2deg
 use tools_display, only: vunitchar,msgerror,msgwarning,prog_init,prog_print,aqua,peach,purple,black
 use tools_kinds, only: kind_real
-use tools_missing, only: msvalr,msr,isnotmsr,isallnotmsr,isnotmsi
+use tools_missing, only: msr,isnotmsr,isallnotmsr,isnotmsi
 use tools_nc, only: ncerr,ncfloat
 use type_avg, only: avg_type
 use type_bpar, only: bpar_type

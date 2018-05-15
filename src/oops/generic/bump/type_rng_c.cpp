@@ -16,7 +16,7 @@
 using namespace std;
 
 // Constructor
-rng::rng(unsigned long int default_seed) {
+rng::rng(int default_seed) {
     // Initialize random number generator
     a_=1103515245;
     c_=12345;
@@ -25,7 +25,7 @@ rng::rng(unsigned long int default_seed) {
         seed_ = (unsigned long int)clock();
     }
     else {
-        seed_ = default_seed;
+        seed_ = (unsigned long int)default_seed;
     }
 }
 
@@ -33,8 +33,8 @@ rng::rng(unsigned long int default_seed) {
 rng::~rng(){}
 
 // Reseed generator
-void rng::rng_reseed(unsigned long int seed) {
-    seed_ = seed;
+void rng::rng_reseed(int default_seed) {
+    seed_ = (unsigned long int)default_seed;
     return;
 }
 

@@ -54,9 +54,9 @@ contains
    procedure :: interp_missing => linop_interp_missing
 end type linop_type
 
-logical :: check_data = .false.   !< Activate data check for all linear operations
-integer,parameter :: nnatmax = 40 !< Maximum number of natural neighbors
-real,parameter :: S_inf = 1.0e-2  !< Minimum interpolation coefficient
+logical,parameter :: check_data = .false.             !< Activate data check for all linear operations
+integer,parameter :: nnatmax = 40                     !< Maximum number of natural neighbors
+real(kind_real),parameter :: S_inf = 1.0e-2_kind_real !< Minimum interpolation coefficient
 
 private
 public :: linop_type
@@ -365,7 +365,7 @@ if (present(mssrc)) lmssrc = mssrc
 
 ! Apply weights
 do i_s=1,linop%n_s
-   if (lmssrc) then 
+   if (lmssrc) then
       ! Check for missing source (WARNING: source-dependent => no adjoint)
       valid = isnotmsr(fld_src(linop%col(i_s)))
    else
@@ -490,7 +490,8 @@ end if
 fld_arr = 0.0
 !$omp parallel do schedule(static) private(i_s,ithread)
 do i_s=1,linop%n_s
-   ithread = omp_get_thread_num()+1
+   ithread = 1
+!$ ithread = omp_get_thread_num()+1
    if (present(ivec)) then
       fld_arr(linop%row(i_s),ithread) = fld_arr(linop%row(i_s),ithread)+linop%Svec(i_s,ivec)*fld(linop%col(i_s))
       fld_arr(linop%col(i_s),ithread) = fld_arr(linop%col(i_s),ithread)+linop%Svec(i_s,ivec)*fld(linop%row(i_s))

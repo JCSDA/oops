@@ -54,7 +54,7 @@ end type avg_blk_type
 private
 public :: avg_blk_type
 
-real(kind_real),parameter :: var_min = 1.0e-24
+real(kind_real),parameter :: var_min = 1.0e-24_kind_real
 
 contains
 
@@ -344,20 +344,33 @@ do il0=1,geom%nl0
             end if
          end do
 
-         ! Average
+          ! Average
          avg_blk%nc1a(jc3,jl0r,il0) = real(nc1a,kind_real)
-         avg_blk%m11(jc3,jl0r,il0) = sum(list_m11(1:nc1a))
-         do isub=1,avg_blk%nsub
-            do jsub=1,avg_blk%nsub
-               avg_blk%m11m11(jc3,jl0r,il0,jsub,isub) = sum(list_m11m11(1:nc1a,jsub,isub))
-               avg_blk%m2m2(jc3,jl0r,il0,jsub,isub) = sum(list_m2m2(1:nc1a,jsub,isub))
+         if (nc1a>0) then
+            avg_blk%m11(jc3,jl0r,il0) = sum(list_m11(1:nc1a))
+            do isub=1,avg_blk%nsub
+               do jsub=1,avg_blk%nsub
+                  avg_blk%m11m11(jc3,jl0r,il0,jsub,isub) = sum(list_m11m11(1:nc1a,jsub,isub))
+                  avg_blk%m2m2(jc3,jl0r,il0,jsub,isub) = sum(list_m2m2(1:nc1a,jsub,isub))
+               end do
+               if (.not.nam%gau_approx) avg_blk%m22(jc3,jl0r,il0,isub) = sum(list_m22(1:nc1a,isub))
             end do
-            if (.not.nam%gau_approx) avg_blk%m22(jc3,jl0r,il0,isub) = sum(list_m22(1:nc1a,isub))
-         end do
-         avg_blk%nc1a_cor(jc3,jl0r,il0) = real(count(isnotmsr(list_cor(1:nc1a))),kind_real)
-         if (avg_blk%nc1a_cor(jc3,jl0r,il0)>0.0) then
-            avg_blk%cor(jc3,jl0r,il0) = sum(list_cor(1:nc1a),mask=isnotmsr(list_cor(1:nc1a)))
+            if (avg_blk%nc1a_cor(jc3,jl0r,il0)>0.0) then
+               avg_blk%cor(jc3,jl0r,il0) = sum(list_cor(1:nc1a),mask=isnotmsr(list_cor(1:nc1a)))
+            else
+               call msr(avg_blk%cor(jc3,jl0r,il0))
+            end if
          else
+            ! Average
+            call msr(avg_blk%m11(jc3,jl0r,il0))
+            do isub=1,avg_blk%nsub
+               do jsub=1,avg_blk%nsub
+                  call msr(avg_blk%m11m11(jc3,jl0r,il0,jsub,isub))
+                  call msr(avg_blk%m2m2(jc3,jl0r,il0,jsub,isub))
+               end do
+               if (.not.nam%gau_approx) call msr(avg_blk%m22(jc3,jl0r,il0,isub))
+            end do
+            avg_blk%nc1a_cor(jc3,jl0r,il0) = 0.0
             call msr(avg_blk%cor(jc3,jl0r,il0))
          end if
       end do

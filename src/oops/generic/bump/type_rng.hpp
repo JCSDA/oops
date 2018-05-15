@@ -8,13 +8,13 @@
 class rng {
     public:
         // Constructor
-        rng(unsigned long int default_seed);
+        rng(int default_seed);
 
         // Destructor
         ~rng();
 
         // Reseed generator
-        void rng_reseed(unsigned long int seed);
+        void rng_reseed(int default_seed);
 
         // Random integer generator
         void rand_integer(int binf, int bsup, int *ir);

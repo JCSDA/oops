@@ -11,10 +11,10 @@
 module type_cmat
 
 use netcdf
-use tools_const, only: rad2deg,reqkm
+use tools_const, only: rad2deg,reqkm,req
 use tools_display, only: msgwarning,msgerror,prog_init,prog_print
 use tools_kinds, only: kind_real
-use tools_missing, only: msvali,msvalr,msr,isnotmsi,isnotmsr,isallnotmsr,isanynotmsr
+use tools_missing, only: msr,isnotmsi,isnotmsr,isallnotmsr,isanynotmsr
 use type_avg, only: avg_type
 use type_bpar, only: bpar_type
 use type_cmat_blk, only: cmat_blk_type
@@ -480,7 +480,7 @@ class(cmat_type),intent(inout) :: cmat                               !< C matrix
 type(nam_type),intent(in) :: nam                                     !< Namelist
 type(geom_type),intent(in) :: geom                                   !< Geometry
 type(bpar_type),intent(in) :: bpar                                   !< Block parameters
-real(kind_real),intent(in) :: rh0(geom%nmga,geom%nl0,nam%nv,nam%nts) !< Horizontal support radius on model grid, halo A
+real(kind_real),intent(in) :: rh0(geom%nmga,geom%nl0,nam%nv,nam%nts) !< Horizontal support radius on model grid, halo A  (in m)
 real(kind_real),intent(in) :: rv0(geom%nmga,geom%nl0,nam%nv,nam%nts) !< Vertical support radius on model grid, halo A
 
 ! Local variables
@@ -506,7 +506,7 @@ do ib=1,bpar%nb+1
 
          ! Copy support radii
          do il0=1,geom%nl0
-            cmat%blk(ib)%rh0(:,il0) = rh0(geom%c0a_to_mga,il0,iv,its)
+            cmat%blk(ib)%rh0(:,il0) = rh0(geom%c0a_to_mga,il0,iv,its)/req
             cmat%blk(ib)%rv0(:,il0) = rv0(geom%c0a_to_mga,il0,iv,its)
          end do
 

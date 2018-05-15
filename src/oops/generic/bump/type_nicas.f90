@@ -11,11 +11,11 @@
 module type_nicas
 
 use netcdf
-use tools_const, only: rad2deg,reqkm,pi
+use tools_const, only: rad2deg,reqkm,pi,msvali,msvalr
 use tools_display, only: msgerror,vunitchar
 use tools_func, only: cholesky
 use tools_kinds, only: kind_real
-use tools_missing, only: msvali,msvalr,msi,msr,isnotmsr
+use tools_missing, only: msi,msr,isnotmsr
 use tools_nc, only: ncerr,ncfloat
 use tools_test, only: define_dirac,define_test_vectors
 use type_bpar, only: bpar_type

@@ -12,12 +12,12 @@ module type_hdata
 
 use netcdf
 !$ use omp_lib
-use tools_const, only: pi,req,deg2rad,rad2deg
+use tools_const, only: pi,req,deg2rad,rad2deg,msvali,msvalr
 use tools_display, only: prog_init,prog_print,msgerror,msgwarning,black,green,peach
 use tools_func, only: gc99,sphere_dist,vector_product,vector_triple_product
 use tools_icos, only: closest_icos,build_icos
 use tools_kinds, only: kind_real
-use tools_missing, only: msvali,msvalr,msi,msr,isnotmsi,isnotmsr,isanynotmsr,isallnotmsr
+use tools_missing, only: msi,msr,isnotmsi,isnotmsr,isanynotmsr,isallnotmsr
 use tools_nc, only: ncerr,ncfloat
 use tools_qsort, only: reorder_vec,qsort
 use tools_stripack, only: trans
@@ -113,9 +113,9 @@ contains
    procedure :: diag_filter => hdata_diag_filter
 end type hdata_type
 
-integer,parameter :: irmax = 10000                 !< Maximum number of random number draws
-real(kind_real),parameter :: Lcoast = 1000.0e3/req !< Length-scale to increase sampling density along coasts
-real(kind_real),parameter :: rcoast = 0.2          !< Minimum value to increase sampling density along coasts
+integer,parameter :: irmax = 10000                           !< Maximum number of random number draws
+real(kind_real),parameter :: Lcoast = 1000.0e3_kind_real/req !< Length-scale to increase sampling density along coasts
+real(kind_real),parameter :: rcoast = 0.2_kind_real          !< Minimum value to increase sampling density along coasts
 
 private
 public :: hdata_type

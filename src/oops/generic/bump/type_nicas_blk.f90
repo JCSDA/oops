@@ -16,7 +16,7 @@ use tools_const, only: pi,req,reqkm,deg2rad,rad2deg
 use tools_display, only: prog_init,prog_print,msgerror,msgwarning,aqua,black,vunitchar
 use tools_func, only: sphere_dist,vector_product,vector_triple_product,gc99
 use tools_kinds, only: kind_real
-use tools_missing, only: msvali,msvalr,msi,msr,isnotmsr,isnotmsi
+use tools_missing, only: msi,msr,isnotmsr,isnotmsi
 use tools_qsort, only: reorder_vec,qsort
 use tools_test, only: define_dirac
 use type_bpar, only: bpar_type
@@ -179,12 +179,12 @@ contains
    procedure :: test_dirac => nicas_blk_test_dirac
 end type nicas_blk_type
 
-integer,parameter :: nc1max = 15000           !< Maximum size of the Sc1 subset
-real(kind_real),parameter :: sqrt_fac = 0.721 !< Square-root factor (empirical)
-real(kind_real),parameter :: S_inf = 1.0e-2   !< Minimum value for the convolution coefficients
-real(kind_real),parameter :: deform = 0.0     !< Deformation coefficient (maximum absolute value: -0.318)
-real(kind_real),parameter :: tol = 1.0e-3     !< Positive-definiteness test tolerance
-integer,parameter :: nitermax = 50            !< Number of iterations for the positive-definiteness test
+integer,parameter :: nc1max = 15000                     !< Maximum size of the Sc1 subset
+real(kind_real),parameter :: sqrt_fac = 0.721_kind_real !< Square-root factor (empirical)
+real(kind_real),parameter :: S_inf = 1.0e-2_kind_real   !< Minimum value for the convolution coefficients
+real(kind_real),parameter :: deform = 0.0_kind_real     !< Deformation coefficient (maximum absolute value: -0.318)
+real(kind_real),parameter :: tol = 1.0e-3_kind_real     !< Positive-definiteness test tolerance
+integer,parameter :: nitermax = 50                      !< Number of iterations for the positive-definiteness test
 
 private
 public :: nicas_blk_type
@@ -1364,7 +1364,8 @@ c_nor_n_s = 0
 do isb=1,nicas_blk%nsb
    ! Indices
    is = nicas_blk%sb_to_s(isb)
-   ithread = omp_get_thread_num()+1
+   ithread = 1
+!$ ithread = omp_get_thread_num()+1
    ic1 = nicas_blk%s_to_c1(is)
    il1 = nicas_blk%s_to_l1(is)
    ic0 = nicas_blk%c1_to_c0(ic1)
@@ -1664,7 +1665,8 @@ c_nor_n_s = 0
 do isb=1,nicas_blk%nsb
    ! Indices
    is = nicas_blk%sb_to_s(isb)
-   ithread = omp_get_thread_num()+1
+   ithread = 1
+!$ ithread = omp_get_thread_num()+1
    ic1 = nicas_blk%s_to_c1(is)
    ic1b = nicas_blk%c1_to_c1b(ic1)
    ic0 = nicas_blk%c1_to_c0(ic1)

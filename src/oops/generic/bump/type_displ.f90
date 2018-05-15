@@ -12,11 +12,11 @@ module type_displ
 
 use netcdf
 !$ use omp_lib
-use tools_const, only: req,reqkm,rad2deg,deg2rad
+use tools_const, only: req,reqkm,rad2deg,deg2rad,msvalr
 use tools_display, only: msgerror,prog_init,prog_print
 use tools_func, only: lonlatmod,sphere_dist,reduce_arc,vector_product
 use tools_kinds, only: kind_real
-use tools_missing, only: msvali,msvalr,msi,msr,isnotmsr,isallnotmsr,isanynotmsr
+use tools_missing, only: msi,msr,isnotmsr,isallnotmsr,isanynotmsr
 use tools_nc, only: ncfloat,ncerr
 use tools_qsort, only: qsort
 use tools_stripack, only: trans,scoord
@@ -53,7 +53,7 @@ contains
    procedure :: write => displ_write
 end type displ_type
 
-real(kind_real),parameter :: cor_th = 0.2 !< Correlation threshold
+real(kind_real),parameter :: cor_th = 0.2_kind_real !< Correlation threshold
 
 private
 public :: displ_type

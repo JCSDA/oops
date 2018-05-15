@@ -17,9 +17,9 @@ use tools_missing, only: msi,msr,isnotmsr
 
 implicit none
 
-real(kind_real),parameter :: Hmin = 1.0e-12 !< Minimum tensor diagonal value
-integer,parameter :: M = 0                  !< Number of implicit itteration for the Matern function (Gaussian function if M = 0)
-real(kind_real),parameter :: eta = 1.0e-9   !< Small parameter for the Cholesky decomposition
+real(kind_real),parameter :: Hmin = 1.0e-12_kind_real !< Minimum tensor diagonal value
+integer,parameter :: M = 0                            !< Number of implicit itteration for the Matern function (Gaussian function if M = 0)
+real(kind_real),parameter :: eta = 1.0e-9_kind_real   !< Small parameter for the Cholesky decomposition
 
 private
 public :: lonlatmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,add,divide,fac,fit_diag,gc99,fit_lct,cholesky

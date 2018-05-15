@@ -10,7 +10,7 @@
 !----------------------------------------------------------------------
 module type_obsop
 
-use tools_const, only: pi,rad2deg,reqkm
+use tools_const, only: pi,deg2rad,rad2deg,reqkm
 use tools_display, only: msgerror
 use tools_func, only: sphere_dist
 use tools_kinds, only: kind_real
@@ -165,8 +165,8 @@ implicit none
 ! Passed variables
 class(obsop_type),intent(inout) :: obsop   !< Observation operator data
 integer,intent(in) :: nobs                 !< Number of observations
-real(kind_real),intent(in) :: lonobs(nobs) !< Observations longitudes
-real(kind_real),intent(in) :: latobs(nobs) !< Observations latitudes
+real(kind_real),intent(in) :: lonobs(nobs) !< Observations longitudes (in degrees)
+real(kind_real),intent(in) :: latobs(nobs) !< Observations latitudes (in degrees)
 
 ! Get size
 obsop%nobs = nobs
@@ -176,8 +176,8 @@ allocate(obsop%lonobs(obsop%nobs))
 allocate(obsop%latobs(obsop%nobs))
 
 ! Copy
-obsop%lonobs = lonobs
-obsop%latobs = latobs
+obsop%lonobs = lonobs*deg2rad
+obsop%latobs = latobs*deg2rad
 
 end subroutine obsop_from
 
@@ -258,12 +258,17 @@ if (global) then
       call mpl%allgather(1,(/obsop%latobs(iobs)/),proc_to_latobs)
 
       ! Check
-      global = all(.not.abs(proc_to_lonobs-proc_to_lonobs(mpl%ioproc))<0.0) &
-             & .and.all(.not.abs(proc_to_latobs-proc_to_latobs(mpl%ioproc))<0.0)
+      global = all(.not.abs(proc_to_lonobs-proc_to_lonobs(mpl%ioproc))>0.0) &
+             & .and.all(.not.abs(proc_to_latobs-proc_to_latobs(mpl%ioproc))>0.0)
 
       ! Update
       iobs = iobs+1
    end do
+end if
+if (global) then
+   write(mpl%unit,'(a7,a)') '','Observations are provided globally'
+else
+   write(mpl%unit,'(a7,a)') '','Observations are provided locally'
 end if
 
 if (global) then
@@ -314,6 +319,16 @@ else
    ! Broadcast data
    call mpl%bcast(lonobs)
    call mpl%bcast(latobs)
+
+   ! Reallocation
+   deallocate(obsop%lonobs)
+   deallocate(obsop%latobs)
+   allocate(obsop%lonobs(obsop%nobs))
+   allocate(obsop%latobs(obsop%nobs))
+
+   ! Copy
+   obsop%lonobs = lonobs
+   obsop%latobs = latobs
 end if
 
 ! Allocation

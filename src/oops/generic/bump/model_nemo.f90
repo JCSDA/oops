@@ -15,7 +15,7 @@ use tools_const, only: req,deg2rad,rad2deg
 use tools_display, only: msgerror
 use tools_func, only: sphere_dist
 use tools_kinds,only: kind_real
-use tools_missing, only: msvalr,msr,isanynotmsr,isnotmsi
+use tools_missing, only: msr,isanynotmsr,isnotmsi
 use tools_nc, only: ncerr,ncfloat
 use tools_qsort, only: qsort
 use type_geom, only: geom_type

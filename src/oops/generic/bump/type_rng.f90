@@ -10,7 +10,7 @@
 !----------------------------------------------------------------------
 module type_rng
 
-use iso_c_binding, only: c_ptr,c_int,c_long,c_double
+use iso_c_binding, only: c_ptr,c_int,c_double
 use tools_display, only: msgerror
 use tools_kinds, only: kind_real
 use tools_missing, only: msi
@@ -49,7 +49,7 @@ interface
    use iso_c_binding
    implicit none
    type(c_ptr) :: rng_create_c
-   integer(c_long),value :: default_seed
+   integer(c_int),value :: default_seed
    end function rng_create_c
 end interface
 interface
@@ -60,11 +60,11 @@ interface
    end subroutine rng_delete_c
 end interface
 interface
-   subroutine rng_reseed_c(rng,seed) bind(C,name='rng_reseed')
+   subroutine rng_reseed_c(rng,default_seed) bind(C,name='rng_reseed')
    use iso_c_binding
    implicit none
    type(c_ptr),value :: rng
-   integer(c_long) :: seed
+   integer(c_int),value :: default_seed
    end subroutine rng_reseed_c
 end interface
 interface
@@ -104,8 +104,7 @@ interface
    end subroutine initialize_sampling_c
 end interface
 
-! Default seed
-integer(kind=8),parameter :: seed = 14051987
+integer(c_int),parameter :: seed = 140587 !< Default seed
 
 private
 public :: rng
@@ -125,7 +124,7 @@ class(rng_type),intent(inout) :: rng !< Random number generator
 type(nam_type),intent(in) :: nam     !< Namelist variables
 
 ! Local variable
-integer(kind=8) :: default_seed
+integer :: default_seed
 
 ! Set default seed key to integer
 if (nam%default_seed) then
@@ -175,13 +174,13 @@ implicit none
 class(rng_type),intent(inout) :: rng !< Random number generator
 
 ! Local variable
-integer(kind=8) :: default_seed
+integer :: default_seed
 
 ! Default seed
 default_seed = seed+mpl%myproc
 
 ! Call C++ function
-call rng_reseed_c(rng%ptr,seed+mpl%myproc)
+call rng_reseed_c(rng%ptr,default_seed)
 
 end subroutine rng_reseed
 

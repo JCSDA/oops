@@ -62,11 +62,10 @@ contains
    procedure :: best_nearby => minim_best_nearby
 end type minim_type
 
-! Minimization parameters
-real(kind_real) :: rho = 0.5               !< Convergence parameter for the Hooke algorithm
-real(kind_real) :: tol = 1.0e-6            !< Tolerance for the Hooke algorithm
-integer :: itermax = 10                    !< Maximum number of iteration for the Hook algorithm
-real(kind_real),parameter :: rth = 1.0e-12 !< Reproducibility threshold
+real(kind_real),parameter :: rho = 0.5_kind_real     !< Convergence parameter for the Hooke algorithm
+real(kind_real),parameter :: tol = 1.0e-6_kind_real  !< Tolerance for the Hooke algorithm
+integer,parameter :: itermax = 10                    !< Maximum number of iteration for the Hook algorithm
+real(kind_real),parameter :: rth = 1.0e-12_kind_real !< Reproducibility threshold
 
 private
 public :: minim_type

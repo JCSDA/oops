@@ -144,6 +144,9 @@ if (bump%nam%new_obsop) then
 end if
 
 ! Run drivers
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a)') '--- Run drivers'
+call flush(mpl%unit)
 call bump%run_drivers
 
 ! Execution stats
@@ -151,15 +154,13 @@ if (mpl%main) then
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Execution stats'
    call timer%display
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-else
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Done ----------------------------------------------------------'
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 end if
 call flush(mpl%unit)
 
 ! Close listings
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a)') '--- Close listings'
+call flush(mpl%unit)
 close(unit=mpl%unit)
 
 end subroutine bump_setup_offline
@@ -180,20 +181,20 @@ integer,intent(in) :: nmga                             !< Halo A size
 integer,intent(in) :: nl0                              !< Number of levels in subset Sl0
 integer,intent(in) :: nv                               !< Number of variables
 integer,intent(in) :: nts                              !< Number of time slots
-real(kind_real),intent(in) :: lon(nmga)                !< Longitude
-real(kind_real),intent(in) :: lat(nmga)                !< Latitude
-real(kind_real),intent(in) :: area(nmga)               !< Area
+real(kind_real),intent(in) :: lon(nmga)                !< Longitude (in degrees)
+real(kind_real),intent(in) :: lat(nmga)                !< Latitude (in degrees)
+real(kind_real),intent(in) :: area(nmga)               !< Area (in m^2)
 real(kind_real),intent(in) :: vunit(nmga,nl0)          !< Vertical unit
 logical,intent(in) :: lmask(nmga,nl0)                  !< Mask
 integer,intent(in),optional :: ens1_ne                 !< Ensemble 1 size
 real(kind_real),intent(in),optional :: ens1(:,:,:,:,:) !< Ensemble 1
 integer,intent(in),optional :: ens2_ne                 !< Ensemble 2 size
 real(kind_real),intent(in),optional :: ens2(:,:,:,:,:) !< Ensemble 2
-real(kind_real),intent(in),optional :: rh(:,:,:,:)     !< Horizontal support radius for covariance
+real(kind_real),intent(in),optional :: rh(:,:,:,:)     !< Horizontal support radius for covariance (in m)
 real(kind_real),intent(in),optional :: rv(:,:,:,:)     !< Vertical support radius for covariance
 integer,intent(in),optional :: nobs                    !< Number of observations
-real(kind_real),intent(in),optional :: lonobs(:)       !< Observations longitudes
-real(kind_real),intent(in),optional :: latobs(:)       !< Observations latitudes
+real(kind_real),intent(in),optional :: lonobs(:)       !< Observations longitudes (in degrees)
+real(kind_real),intent(in),optional :: latobs(:)       !< Observations latitudes (in degrees)
 
 ! Local variables
 logical :: test(3)
@@ -323,9 +324,9 @@ integer,intent(in) :: nmga                                      !< Halo A size
 integer,intent(in) :: nl0                                       !< Number of levels in subset Sl0
 integer,intent(in) :: nv                                        !< Number of variables
 integer,intent(in) :: nts                                       !< Number of time slots
-real(kind_real),intent(in) :: lon(nmga)                         !< Longitude
-real(kind_real),intent(in) :: lat(nmga)                         !< Latitude
-real(kind_real),intent(in) :: area(nmga)                        !< Area
+real(kind_real),intent(in) :: lon(nmga)                         !< Longitude (in degrees)
+real(kind_real),intent(in) :: lat(nmga)                         !< Latitude (in degrees)
+real(kind_real),intent(in) :: area(nmga)                        !< Area (in m^2)
 real(kind_real),intent(in) :: vunit_vec(nmga*nl0)               !< Vertical unit
 integer,intent(in) :: imask_vec(nmga*nl0)                       !< Mask
 integer,intent(in) :: ens1_ne                                   !< Ensemble 1 size
@@ -416,9 +417,9 @@ integer,intent(in) :: listing                             !< Main listing unit
 integer,intent(in) :: nx                                  !< X-axis size
 integer,intent(in) :: ny                                  !< Y-axis size
 integer,intent(in) :: nl0                                 !< Number of levels
-real(kind_real),intent(in) :: lon(nx,ny)                  !< Longitude
-real(kind_real),intent(in) :: lat(nx,ny)                  !< Latitude
-real(kind_real),intent(in) :: area(nx,ny)                 !< Area
+real(kind_real),intent(in) :: lon(nx,ny)                  !< Longitude (in degrees)
+real(kind_real),intent(in) :: lat(nx,ny)                  !< Latitude (in degrees)
+real(kind_real),intent(in) :: area(nx,ny)                 !< Area (in m^2)
 real(kind_real),intent(in) :: vunit(nx,ny,nl0)            !< Vertical unit
 logical,intent(in) :: lmask(nx,ny,nl0)                    !< Mask
 integer,intent(in) :: nens                                !< Number of members
@@ -505,11 +506,13 @@ write(mpl%unit,'(a)') '--- Run drivers'
 call flush(mpl%unit)
 call bump%run_drivers
 
-! Close listings
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Close listings'
-call flush(mpl%unit)
-close(unit=mpl%unit)
+if (.not.mpl%main) then
+   ! Close listings
+   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(mpl%unit,'(a)') '--- Close listings'
+   call flush(mpl%unit)
+   close(unit=mpl%unit)
+end if
 
 end subroutine bump_setup_online_nemovar
 
@@ -567,6 +570,9 @@ implicit none
 
 ! Passed variables
 class(bump_type),intent(inout) :: bump !< BUMP
+
+! Reset seed
+if (bump%nam%default_seed) call rng%reseed
 
 ! Check inconsistencies
 if (bump%nam%new_hdiag.and.(.not.allocated(bump%ens1%fld))) call msgerror('new_hdiag requires ensemble 1')

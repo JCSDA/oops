@@ -10,13 +10,13 @@ extern "C"
     typedef rng RNG;
 
     // Constructor
-    RNG* rng_create(unsigned long int default_seed);
+    RNG* rng_create(int default_seed);
 
     // Destructor
     void rng_delete(RNG* rng);
 
     // Reseed generator
-    void rng_reseed(RNG* rng, unsigned long int seed);
+    void rng_reseed(RNG* rng, int default_seed);
 
     // Random integer generator
     void rand_integer(RNG* rng, int binf, int bsup, int *ir);

@@ -10,7 +10,7 @@
 using namespace std;
 
 // Constructor
-RNG* rng_create(unsigned long int default_seed){
+RNG* rng_create(int default_seed){
     return new rng(default_seed);
 }
 
@@ -20,8 +20,8 @@ void rng_delete(RNG* rng){
 }
 
 // Reseed generator
-void rng_reseed(RNG* rng, unsigned long int seed) {
-    rng->rng_reseed(seed);
+void rng_reseed(RNG* rng, int default_seed) {
+    rng->rng_reseed(default_seed);
 }
 
 // Random integer generator

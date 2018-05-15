@@ -12,7 +12,6 @@ module tools_display
 
 use iso_c_binding
 use tools_kinds, only: kind_real
-use tools_missing, only: msi,isnotmsi
 use type_mpl, only: mpl
 
 implicit none

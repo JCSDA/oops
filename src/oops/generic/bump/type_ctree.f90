@@ -26,7 +26,7 @@ contains
     procedure :: find_nearest_neighbors => ctree_find_nearest_neighbors
 end type ctree_type
 
-real(kind_real),parameter :: rth = 1.0e-12 !< Reproducibility threshold
+real(kind_real),parameter :: rth = 1.0e-12_kind_real !< Reproducibility threshold
 
 ! C++ interface
 interface

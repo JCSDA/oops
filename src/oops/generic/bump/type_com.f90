@@ -225,7 +225,8 @@ end do
 vec_red_arr = 0.0
 !$omp parallel do schedule(static) private(iexcl,ithread)
 do iexcl=1,com%nexcl
-   ithread = omp_get_thread_num()+1
+   ithread = 1
+!$ ithread = omp_get_thread_num()+1
    vec_red_arr(com%excl(iexcl),ithread) = vec_red_arr(com%excl(iexcl),ithread)+rbuf(iexcl)
 end do
 !$omp end parallel do
@@ -286,7 +287,8 @@ vec_red_arr = 0.0
 !$omp parallel do schedule(static) private(il,iexcl,ithread)
 do il=1,nl
    do iexcl=1,com%nexcl
-      ithread = omp_get_thread_num()+1
+      ithread = 1
+!$    ithread = omp_get_thread_num()+1
       vec_red_arr(com%excl(iexcl),il,ithread) = vec_red_arr(com%excl(iexcl),il,ithread)+rbuf((iexcl-1)*nl+il)
    end do
 end do

@@ -22,7 +22,7 @@ use model_wrf, only: model_wrf_coord,model_wrf_read
 use netcdf
 use tools_display, only: msgerror
 use tools_kinds,only: kind_real
-use tools_missing, only: msvalr,msi,msr,isnotmsi
+use tools_missing, only: msi,msr,isnotmsi
 use tools_nc, only: ncerr
 use type_geom, only: geom_type
 use type_mpl, only: mpl

@@ -52,8 +52,8 @@ contains
    procedure :: fitting => lct_blk_fitting
 end type lct_blk_type
 
-real(kind_real),parameter :: Hscale = 10.0  !< Typical factor between LCT scales
-logical :: lprt = .false.                   !< Optimization print
+real(kind_real),parameter :: Hscale = 10.0_kind_real !< Typical factor between LCT scales
+logical,parameter :: lprt = .false.                  !< Optimization print
 
 private
 public :: lct_blk_type
