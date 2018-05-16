@@ -350,6 +350,7 @@ nam%new_obsop = integer_to_logical(config_get_int(c_conf,"new_obsop"))
 ! model_param
 nam%logpres = integer_to_logical(config_get_int(c_conf,"logpres"))
 nam%transform = integer_to_logical(config_get_int(c_conf,"transform"))
+nam%timeslot = config_get_int(c_conf,"timeslot")
 
 ! sampling_param
 nam%mask_type = config_get_string(c_conf,1024,"mask_type")
