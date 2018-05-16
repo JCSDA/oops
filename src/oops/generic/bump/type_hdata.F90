@@ -22,9 +22,9 @@ use tools_nc, only: ncerr,ncfloat
 use tools_qsort, only: reorder_vec,qsort
 use tools_stripack, only: trans
 use type_com, only: com_type
-use type_ctree, only: ctree_type
 use type_geom, only: geom_type
 use type_io, only: io_type
+use type_kdtree, only: kdtree_type
 use type_linop, only: linop_type
 use type_mesh, only: mesh_type
 use type_mpl, only: mpl
@@ -45,7 +45,7 @@ type hdata_type
    integer,allocatable :: c2_to_c1(:)               !< Subgrid to diagnostic points
    integer,allocatable :: c2_to_c0(:)               !< Subgrid to grid
 
-   ! Cover tree and nearest neighbors
+   ! Local data
    logical,allocatable ::  local_mask(:,:,:)        !< Local mask
    logical,allocatable ::  displ_mask(:,:,:)        !< Displacement mask
    integer,allocatable :: nn_c2_index(:,:,:)        !< Nearest diagnostic neighbors from diagnostic points
@@ -602,12 +602,12 @@ type(io_type),intent(in) :: io           !< I/O
 
 ! Local variables
 integer :: info,ic0,il0,ic1,ic2,ildw,jc3,il0i,jc1,kc1,nc1_eff,nc2_eff
-integer :: mask_ind(nam%nc1)
 integer,allocatable :: vbot(:),vtop(:),nn_c1_index(:),c2_to_proc(:)
 real(kind_real) :: rh0(geom%nc0),nn_dist(1),rh0_loc(geom%nc0a,geom%nl0)
 real(kind_real),allocatable :: nn_c1_dist(:)
+logical :: mask_c1(nam%nc1)
 character(len=1024) :: filename
-type(ctree_type) :: ctree
+type(kdtree_type) :: kdtree
 type(linop_type) :: hbase
 
 ! Check subsampling size
@@ -659,9 +659,9 @@ if (nam%local_diag.or.nam%displ_diag) then
       call flush(mpl%unit)
       if (mpl%main) then
          ! Initialize sampling
-         mask_ind = 1
+         mask_c1 = .true.
          rh0 = 1.0
-         call rng%initialize_sampling(nam%nc1,geom%lon(hdata%c1_to_c0),geom%lat(hdata%c1_to_c0),mask_ind, &
+         call rng%initialize_sampling(nam%nc1,geom%lon(hdata%c1_to_c0),geom%lat(hdata%c1_to_c0),mask_c1, &
        & rh0,nam%ntry,nam%nrep,hdata%nc2,hdata%c2_to_c1)
 
          ! Reorder sampling
@@ -674,23 +674,23 @@ if (nam%local_diag.or.nam%displ_diag) then
    end if
 
    if ((info==1).or.(info==2).or.(info==3).or.(info==4)) then
-      ! Create cover trees
-      write(mpl%unit,'(a7,a)') '','Create cover trees'
+      ! Find nearest neighbors
+      write(mpl%unit,'(a7,a)') '','Find nearest neighbors'
       call flush(mpl%unit)
       do il0=1,geom%nl0
          if ((il0==1).or.(geom%nl0i>1)) then
             write(mpl%unit,'(a10,a,i3)') '','Level ',nam%levs(il0)
             call flush(mpl%unit)
             if (any(hdata%c1l0_log(hdata%c2_to_c1,il0))) then
-               call ctree%create(hdata%nc2,geom%lon(hdata%c2_to_c0),geom%lat(hdata%c2_to_c0),hdata%c1l0_log(hdata%c2_to_c1,il0))
+               call kdtree%create(hdata%nc2,geom%lon(hdata%c2_to_c0),geom%lat(hdata%c2_to_c0),hdata%c1l0_log(hdata%c2_to_c1,il0))
                do ic2=1,hdata%nc2
                   ic1 = hdata%c2_to_c1(ic2)
                   ic0 = hdata%c2_to_c0(ic2)
                   nc2_eff = min(hdata%nc2,count(hdata%c1l0_log(hdata%c2_to_c1,il0)))
-                  if (hdata%c1l0_log(ic1,il0)) call ctree%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0), &
+                  if (hdata%c1l0_log(ic1,il0)) call kdtree%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0), &
                    & nc2_eff,hdata%nn_c2_index(1:nc2_eff,ic2,il0),hdata%nn_c2_dist(1:nc2_eff,ic2,il0))
                end do
-               call ctree%delete
+               call kdtree%delete
             end if
          end if
       end do
@@ -730,14 +730,14 @@ if (nam%local_diag.or.nam%displ_diag) then
          write(mpl%unit,'(a10,a,i3)') '','Independent level ',il0i
          call flush(mpl%unit)
          if (any(hdata%c1l0_log(:,il0i))) then
-            call ctree%create(nam%nc1,geom%lon(hdata%c1_to_c0),geom%lat(hdata%c1_to_c0),hdata%c1l0_log(:,il0i))
+            call kdtree%create(nam%nc1,geom%lon(hdata%c1_to_c0),geom%lat(hdata%c1_to_c0),hdata%c1l0_log(:,il0i))
             do ic2=1,hdata%nc2
                ic1 = hdata%c2_to_c1(ic2)
                ic0 = hdata%c2_to_c0(ic2)
                if (hdata%c1l0_log(ic1,il0i)) then
                   ! Find nearest neighbors
                   nc1_eff = min(nam%nc1,count(hdata%c1l0_log(:,il0i)))
-                  call ctree%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0),nc1_eff,nn_c1_index(1:nc1_eff), &
+                  call kdtree%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0),nc1_eff,nn_c1_index(1:nc1_eff), &
                 & nn_c1_dist(1:nc1_eff))
 
                   do jc1=1,nc1_eff
@@ -747,7 +747,7 @@ if (nam%local_diag.or.nam%displ_diag) then
                   end do
                end if
             end do
-            call ctree%delete
+            call kdtree%delete
          end if
       end do
 
@@ -788,12 +788,12 @@ if (nam%local_diag.and.(nam%nldwv>0)) then
    write(mpl%unit,'(a7,a)') '','Compute nearest neighbors for local diagnostics output'
    call flush(mpl%unit)
    allocate(hdata%nn_ldwv_index(nam%nldwv))
-   call ctree%create(hdata%nc2,geom%lon(hdata%c2_to_c0), &
+   call kdtree%create(hdata%nc2,geom%lon(hdata%c2_to_c0), &
                 geom%lat(hdata%c2_to_c0),hdata%c1l0_log(hdata%c2_to_c1,1))
    do ildw=1,nam%nldwv
-      call ctree%find_nearest_neighbors(nam%lon_ldwv(ildw),nam%lat_ldwv(ildw),1,hdata%nn_ldwv_index(ildw:ildw),nn_dist)
+      call kdtree%find_nearest_neighbors(nam%lon_ldwv(ildw),nam%lat_ldwv(ildw),1,hdata%nn_ldwv_index(ildw:ildw),nn_dist)
    end do
-   call ctree%delete
+   call kdtree%delete
 end if
 
 ! Print results
@@ -833,18 +833,16 @@ type(geom_type),intent(in) :: geom       !< Geometry
 
 ! Local variables
 integer :: ic0,ic1,il0,fac,np,ip
-integer :: mask_ind_col(geom%nc0),nn_index(1)
+integer :: nn_index(1)
 integer :: c1_to_proc(nam%nc1)
 real(kind_real) :: nn_dist(1)
 real(kind_real),allocatable :: lon(:),lat(:)
+logical :: mask_c0(geom%nc0)
 character(len=5) :: ic1char
-type(ctree_type) :: ctree
+type(kdtree_type) :: kdtree
 
 ! Initialize mask
-mask_ind_col = 0
-do ic0=1,geom%nc0
-   if (any(geom%mask(ic0,:))) mask_ind_col(ic0) = 1
-end do
+mask_c0 = any(geom%mask,dim=2)
 
 ! Compute subset
 write(mpl%unit,'(a7,a)') '','Compute horizontal subset C1'
@@ -864,21 +862,22 @@ if (nam%nc1<maxval(count(geom%mask,dim=1))) then
                if (any(geom%mask(ic0,:))) hdata%rh0(ic0,1) = 0.0
             end do
             do il0=1,geom%nl0
-               call ctree%create(geom%nc0,geom%lon,geom%lat,.not.geom%mask(:,il0))
+               call kdtree%create(geom%nc0,geom%lon,geom%lat,.not.geom%mask(:,il0))
                do ic0=1,geom%nc0
                   if (geom%mask(ic0,il0)) then
-                     call ctree%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0),1,nn_index,nn_dist)
+                     call kdtree%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0),1,nn_index,nn_dist)
                      hdata%rh0(ic0,1) = hdata%rh0(ic0,1)+exp(-nn_dist(1)/Lcoast)
                   else
                      hdata%rh0(ic0,1) = hdata%rh0(ic0,1)+1.0
                   end if
                end do
+               call kdtree%delete
             end do
             hdata%rh0(:,1) = rcoast+(1.0-rcoast)*(1.0-hdata%rh0(:,1)/real(geom%nl0,kind_real))
          end if
 
          ! Initialize sampling
-         call rng%initialize_sampling(geom%nc0,geom%lon,geom%lat,mask_ind_col,hdata%rh0(:,1),nam%ntry,nam%nrep, &
+         call rng%initialize_sampling(geom%nc0,geom%lon,geom%lat,mask_c0,hdata%rh0(:,1),nam%ntry,nam%nrep, &
        & nam%nc1,hdata%c1_to_c0)
       case ('icosahedron')
          ! Compute icosahedron size
@@ -895,11 +894,11 @@ if (nam%nc1<maxval(count(geom%mask,dim=1))) then
          ic1 = 0
          do ip=1,np
             ! Find nearest neighbor
-            call geom%ctree%find_nearest_neighbors(lon(ip),lat(ip),1,nn_index,nn_dist)
+            call geom%kdtree%find_nearest_neighbors(lon(ip),lat(ip),1,nn_index,nn_dist)
             ic0 = nn_index(1)
 
             ! Check mask
-            if (mask_ind_col(ic0)==1) then
+            if (mask_c0(ic0)) then
                ic1 = ic1+1
                if (ic1<=nam%nc1) hdata%c1_to_c0(ic1) = ic0
             end if
@@ -1109,7 +1108,7 @@ do ic1_loc=1,nc1_loc(mpl%myproc)
    ! Check location validity
    if (isnotmsi(hdata%c1_to_c0(ic1))) then
       ! Find neighbors
-      call geom%ctree%find_nearest_neighbors(geom%lon(hdata%c1_to_c0(ic1)),geom%lat(hdata%c1_to_c0(ic1)), &
+      call geom%kdtree%find_nearest_neighbors(geom%lon(hdata%c1_to_c0(ic1)),geom%lat(hdata%c1_to_c0(ic1)), &
     & nam%nc3,nn_index,nn_dist)
 
       ! Copy neighbor index
@@ -1798,7 +1797,7 @@ if (nam%displ_diag) then
          end do
 
          ! Compute interpolation
-         call dfull(il0,its)%interp(geom%mesh,geom%ctree,geom%nc0,geom%mask(:,il0),nam%nc1,lon_c1,lat_c1,hdata%c1l0_log(:,il0), &
+         call dfull(il0,its)%interp(geom%mesh,geom%kdtree,geom%nc0,geom%mask(:,il0),nam%nc1,lon_c1,lat_c1,hdata%c1l0_log(:,il0), &
        & nam%diag_interp)
       end do
    end do

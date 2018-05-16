@@ -22,9 +22,9 @@ use tools_test, only: define_dirac
 use type_bpar, only: bpar_type
 use type_cmat_blk, only: cmat_blk_type
 use type_com, only: com_type
-use type_ctree, only: ctree_type
 use type_geom, only: geom_type
 use type_io, only: io_type
+use type_kdtree, only: kdtree_type
 use type_linop, only: linop_type
 use type_mpl, only: mpl
 use type_nam, only: nam_type
@@ -401,10 +401,11 @@ type(cmat_blk_type),intent(in) :: cmat_blk       !< C matrix data block
 
 ! Local variables
 integer :: il0,il0_prev,il1,ic0,ic1,ic2,is,ic0a
-integer,allocatable :: mask_c0(:),mask_c1(:),c1_to_proc(:),c2_to_c1(:),s_to_proc(:)
+integer,allocatable :: c1_to_proc(:),c2_to_c1(:),s_to_proc(:)
 real(kind_real) :: rh0savg(geom%nl0),rv0savg(geom%nl0),rh0sminavg,distnorm(geom%nc0a),distnormmin,rv
 real(kind_real),allocatable :: rh0smin(:),rh0smin_glb(:),rh0s_glb(:),rh1s(:)
 logical :: inside
+logical,allocatable :: mask_c0(:),mask_c1(:)
 
 ! Allocation
 allocate(rh0smin(geom%nc0a))
@@ -428,10 +429,7 @@ end do
 call flush(mpl%unit)
 
 ! Subset Sc0 mask
-mask_c0 = 0
-do ic0=1,geom%nc0
-   if (any(geom%mask(ic0,:))) mask_c0(ic0) = 1
-end do
+mask_c0 = any(geom%mask,dim=2)
 
 ! Basic horizontal mesh defined with the minimum support radius
 rh0smin = huge(1.0)
@@ -443,8 +441,8 @@ do ic0a=1,geom%nc0a
       end if
    end do
 end do
-call mpl%allreduce_sum(sum(rh0smin,mask=mask_c0(geom%c0a_to_c0)==1),rh0sminavg)
-rh0sminavg = rh0sminavg/real(sum(mask_c0),kind_real)
+call mpl%allreduce_sum(sum(rh0smin,mask=mask_c0(geom%c0a_to_c0)),rh0sminavg)
+rh0sminavg = rh0sminavg/real(count(mask_c0),kind_real)
 if (rh0sminavg>0.0) then
    nicas_blk%nc1 = floor(2.0*maxval(geom%area)*nam%resol**2/(sqrt(3.0)*rh0sminavg**2))
 else
@@ -583,11 +581,7 @@ do il1=1,nicas_blk%nl1
       allocate(c2_to_c1(nicas_blk%nc2(il1)))
 
       ! Mask
-      mask_c1 = 0
-      do ic1=1,nicas_blk%nc1
-         ic0 = nicas_blk%c1_to_c0(ic1)
-         if (geom%mask(ic0,il0)) mask_c1(ic1) = 1
-      end do
+      mask_c1 = geom%mask(nicas_blk%c1_to_c0,il0)
 
       ! Compute subset
       call mpl%gatherv(geom%nc0a,cmat_blk%rh0s(:,il0),geom%proc_to_nc0a,geom%nc0,rh0s_glb)
@@ -1547,8 +1541,8 @@ integer,allocatable :: nn_index(:,:)
 real(kind_real) :: rh0avg,disthsq,distvsq,rhsq,rvsq,distnorm,S_test
 real(kind_real),allocatable :: nn_dist(:,:),rh_c1a(:),rh_c1(:,:),rh_sa(:),rv_sa(:),rh_s(:),rv_s(:)
 logical :: force,test,valid,submask(nicas_blk%nc1,nicas_blk%nl1)
-logical,allocatable :: mask_ctree(:),done(:)
-type(ctree_type) :: ctree
+logical,allocatable :: done(:)
+type(kdtree_type) :: kdtree
 type(linop_type) :: c(mpl%nthread),c_nor(mpl%nthread)
 
 ! Define submask
@@ -1559,13 +1553,10 @@ do is=1,nicas_blk%ns
    submask(ic1,il1) = .true.
 end do
 
-! Compute cover tree
-write(mpl%unit,'(a10,a)') '','Compute cover tree'
+! Compute KD-tree
+write(mpl%unit,'(a10,a)') '','Compute KD-tree'
 call flush(mpl%unit)
-allocate(mask_ctree(nicas_blk%nc1))
-mask_ctree = .true.
-call ctree%create(nicas_blk%nc1,geom%lon(nicas_blk%c1_to_c0),geom%lat(nicas_blk%c1_to_c0),mask_ctree)
-deallocate(mask_ctree)
+call kdtree%create(nicas_blk%nc1,geom%lon(nicas_blk%c1_to_c0),geom%lat(nicas_blk%c1_to_c0))
 
 ! Theoretical number of neighbors
 ms = 0
@@ -1623,7 +1614,7 @@ do while (.not.valid)
       ic1 = nicas_blk%c1b_to_c1(ic1b)
 
       ! Compute nearest neighbors
-      call ctree%find_nearest_neighbors(geom%lon(nicas_blk%c1_to_c0(ic1)), &
+      call kdtree%find_nearest_neighbors(geom%lon(nicas_blk%c1_to_c0(ic1)), &
     & geom%lat(nicas_blk%c1_to_c0(ic1)),ms,nn_index(:,ic1b),nn_dist(:,ic1b))
 
       ! Loop over levels

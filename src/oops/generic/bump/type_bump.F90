@@ -14,6 +14,7 @@ use netcdf
 use model_interface, only: model_coord
 use tools_const, only: req,deg2rad
 use tools_display, only: listing_setup,msgerror
+use tools_func, only: sphere_dist
 use tools_kinds,only: kind_real
 use tools_nc, only: ncfloat,ncerr
 use type_bpar, only: bpar_type
@@ -556,7 +557,7 @@ call flush(mpl%unit)
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Initialize random number generator'
 call flush(mpl%unit)
-call rng%create(bump%nam)
+call rng%init(bump%nam)
 
 end subroutine bump_setup_generic
 

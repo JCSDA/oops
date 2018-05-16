@@ -17,8 +17,8 @@ use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsr,isnotmsi
 use tools_nc, only: ncfloat,ncerr
 use tools_qsort, only: qsort
-use type_ctree, only: ctree_type
 use type_geom, only: geom_type
+use type_kdtree, only: kdtree_type
 use type_mesh, only: mesh_type
 use type_mpl, only: mpl
 
@@ -47,9 +47,9 @@ contains
    procedure :: apply_sym => linop_apply_sym
    procedure :: add_op => linop_add_op
    procedure :: linop_interp_from_lat_lon
-   procedure :: linop_interp_from_mesh_ctree
+   procedure :: linop_interp_from_mesh_kdtree
    procedure :: linop_interp_grid
-   generic :: interp => linop_interp_from_lat_lon,linop_interp_from_mesh_ctree,linop_interp_grid
+   generic :: interp => linop_interp_from_lat_lon,linop_interp_from_mesh_kdtree,linop_interp_grid
    procedure :: interp_check_mask => linop_interp_check_mask
    procedure :: interp_missing => linop_interp_missing
 end type linop_type
@@ -462,7 +462,7 @@ implicit none
 ! Passed variables
 class(linop_type),intent(in) :: linop             !< Linear operator
 real(kind_real),intent(inout) :: fld(linop%n_src) !< Source/destination vector
-integer,intent(in),optional :: ivec                 !< Index of the vector of linear operators with similar row and col
+integer,intent(in),optional :: ivec               !< Index of the vector of linear operators with similar row and col
 
 ! Local variables
 integer :: i_s,ithread
@@ -582,8 +582,8 @@ character(len=*),intent(in) :: interp_type   !< Interpolation type
 ! Local variables
 integer :: n_src_eff,i_src,i_src_eff
 integer,allocatable :: src_eff_to_src(:)
-logical,allocatable :: mask_ctree(:),mask_src_eff(:)
-type(ctree_type) :: ctree
+logical,allocatable :: mask_src_eff(:)
+type(kdtree_type) :: kdtree
 type(mesh_type) :: mesh
 
 ! Count non-missing source points
@@ -605,38 +605,31 @@ end do
 ! Create mesh
 call mesh%create(n_src_eff,lon_src(src_eff_to_src),lat_src(src_eff_to_src))
 
-! Compute cover tree
-allocate(mask_ctree(n_src_eff))
-mask_ctree = .true.
-call ctree%create(n_src_eff,lon_src(src_eff_to_src),lat_src(src_eff_to_src),mask_ctree)
-deallocate(mask_ctree)
+! Compute KD-tree
+call kdtree%create(n_src_eff,lon_src(src_eff_to_src),lat_src(src_eff_to_src))
 
 ! Compute interpolation
 mask_src_eff = .true.
-call linop%interp(mesh,ctree,n_src_eff,mask_src_eff,n_dst,lon_dst,lat_dst,mask_dst,interp_type)
+call linop%interp(mesh,kdtree,n_src_eff,mask_src_eff,n_dst,lon_dst,lat_dst,mask_dst,interp_type)
 
 ! Effective points conversion
 linop%n_src = n_src
 linop%col = src_eff_to_src(linop%col)
 
-! Release memory
-call ctree%delete
-call mesh%dealloc
-
 end subroutine linop_interp_from_lat_lon
 
 !----------------------------------------------------------------------
-! Subroutine: linop_interp_from_mesh_ctree
-!> Purpose: compute horizontal interpolation from source mesh and ctree
+! Subroutine: linop_interp_from_mesh_kdtree
+!> Purpose: compute horizontal interpolation from source mesh and kdtree
 !----------------------------------------------------------------------
-subroutine linop_interp_from_mesh_ctree(linop,mesh,ctree,n_src,mask_src,n_dst,lon_dst,lat_dst,mask_dst,interp_type)
+subroutine linop_interp_from_mesh_kdtree(linop,mesh,kdtree,n_src,mask_src,n_dst,lon_dst,lat_dst,mask_dst,interp_type)
 
 implicit none
 
 ! Passed variables
 class(linop_type),intent(inout) :: linop     !< Linear operator
 type(mesh_type),intent(in) :: mesh           !< Mesh
-type(ctree_type),intent(in) :: ctree         !< Cover tree
+type(kdtree_type),intent(in) :: kdtree       !< KD-tree
 integer,intent(in) :: n_src                  !< Source size
 logical,intent(in) :: mask_src(n_src)        !< Source mask
 integer,intent(in) :: n_dst                  !< Destination size
@@ -697,7 +690,7 @@ do i_dst_loc=1,n_dst_loc(mpl%myproc)
 
    if (mask_dst(i_dst)) then
       ! Find nearest neighbor
-      call ctree%find_nearest_neighbors(lon_dst(i_dst),lat_dst(i_dst),1,nn_index,nn_dist)
+      call kdtree%find_nearest_neighbors(lon_dst(i_dst),lat_dst(i_dst),1,nn_index,nn_dist)
 
       if (abs(nn_dist(1))>0.0) then
          ! Compute barycentric coordinates
@@ -839,9 +832,9 @@ end do
 do i_s=1,linop%n_s
    missing(linop%row(i_s)) = .false.
 end do
-if (any(missing)) call msgerror('missing destination points in interp_from_mesh_ctree')
+if (any(missing)) call msgerror('missing destination points in interp_from_mesh_kdtree')
 
-end subroutine linop_interp_from_mesh_ctree
+end subroutine linop_interp_from_mesh_kdtree
 
 !----------------------------------------------------------------------
 ! Subroutine: linop_interp_grid
@@ -1062,7 +1055,7 @@ integer :: nn(1)
 real(kind_real) :: dum(1)
 logical :: missing(n_dst),lmask(n_dst),found
 type(linop_type) :: interp_tmp
-type(ctree_type) :: ctree
+type(kdtree_type) :: kdtree
 
 ! Find missing points
 missing = .false.
@@ -1095,13 +1088,13 @@ if (count(missing)>0) then
    ! Mask
    lmask = mask_dst.and.(.not.missing)
 
-   ! Compute cover tree
-   call ctree%create(n_dst,lon_dst,lat_dst,lmask)
+   ! Compute KD-tree
+   call kdtree%create(n_dst,lon_dst,lat_dst,lmask)
 
    do i_dst=1,n_dst
       if (missing(i_dst)) then
          ! Compute nearest neighbor
-         call ctree%find_nearest_neighbors(lon_dst(i_dst),lat_dst(i_dst),1,nn,dum)
+         call kdtree%find_nearest_neighbors(lon_dst(i_dst),lat_dst(i_dst),1,nn,dum)
 
          ! Copy data
          found = .false.
@@ -1130,7 +1123,6 @@ if (count(missing)>0) then
 
    ! Release memory
    call interp_tmp%dealloc
-   call ctree%delete
 end if
 
 end subroutine linop_interp_missing

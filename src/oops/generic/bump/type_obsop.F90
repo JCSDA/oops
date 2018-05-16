@@ -343,7 +343,7 @@ obsop%hfull%prefix = 'o'
 write(mpl%unit,'(a7,a)') '','Single level:'
 call flush(mpl%unit)
 maskobs = .true.
-call obsop%hfull%interp(geom%mesh,geom%ctree,geom%nc0,any(geom%mask,dim=2),obsop%nobs,lonobs,latobs,maskobs,nam%obsop_interp)
+call obsop%hfull%interp(geom%mesh,geom%kdtree,geom%nc0,any(geom%mask,dim=2),obsop%nobs,lonobs,latobs,maskobs,nam%obsop_interp)
 
 ! Count interpolation points
 nop = 0

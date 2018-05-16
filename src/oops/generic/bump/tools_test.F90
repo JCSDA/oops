@@ -13,8 +13,8 @@ module tools_test
 use tools_const, only: deg2rad
 use tools_kinds,only: kind_real
 use type_bpar, only: bpar_type
-use type_ctree, only: ctree_type
 use type_geom, only: geom_type
+use type_kdtree, only: kdtree_type
 use type_mpl, only: mpl
 use type_nam, only: nam_type
 use type_rng, only: rng
@@ -47,7 +47,7 @@ real(kind_real) :: nn_dist(1)
 
 do idir=1,nam%ndir
    ! Find nearest neighbor
-   call geom%ctree%find_nearest_neighbors(nam%londir(idir),nam%latdir(idir),1,nn_index,nn_dist)
+   call geom%kdtree%find_nearest_neighbors(nam%londir(idir),nam%latdir(idir),1,nn_index,nn_dist)
    ic0dir = nn_index(1)
    iprocdir(idir) = geom%c0_to_proc(ic0dir)
    ic0adir(idir) = geom%c0_to_c0a(ic0dir)

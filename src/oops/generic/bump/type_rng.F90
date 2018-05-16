@@ -10,21 +10,23 @@
 !----------------------------------------------------------------------
 module type_rng
 
-use iso_c_binding, only: c_ptr,c_int,c_double
+use iso_fortran_env
 use tools_display, only: msgerror
+use tools_func, only: sphere_dist
 use tools_kinds, only: kind_real
-use tools_missing, only: msi
+use tools_missing, only: msi,isnotmsi
+use type_kdtree, only: kdtree_type
 use type_mpl, only: mpl
 use type_nam, only: nam_type
 
 implicit none
 
 type rng_type
-   type(c_ptr) :: ptr !< Pointer to the C++ class
+   integer(kind=int64) :: seed
 contains
-   procedure :: create => rng_create
-   procedure :: delete => rng_delete
+   procedure :: init => rng_init
    procedure :: reseed => rng_reseed
+   procedure :: lcg => rng_lcg
    procedure :: rand_integer_0d
    procedure :: rand_integer_1d
    generic :: rand_integer => rand_integer_0d,rand_integer_1d
@@ -43,68 +45,10 @@ end type rng_type
 
 type(rng_type) :: rng !< Random number generator
 
-! C++ interface
-interface
-   function rng_create_c(default_seed) bind(C,name='rng_create')
-   use iso_c_binding
-   implicit none
-   type(c_ptr) :: rng_create_c
-   integer(c_int),value :: default_seed
-   end function rng_create_c
-end interface
-interface
-   subroutine rng_delete_c(rng) bind(C,name='rng_delete')
-   use iso_c_binding
-   implicit none
-   type(c_ptr),value :: rng
-   end subroutine rng_delete_c
-end interface
-interface
-   subroutine rng_reseed_c(rng,default_seed) bind(C,name='rng_reseed')
-   use iso_c_binding
-   implicit none
-   type(c_ptr),value :: rng
-   integer(c_int),value :: default_seed
-   end subroutine rng_reseed_c
-end interface
-interface
-   subroutine rand_integer_c(rng,binf,bsup,ir) bind(C,name='rand_integer')
-   use iso_c_binding
-   implicit none
-   type(c_ptr),value :: rng
-   integer(c_int),value :: binf
-   integer(c_int),value :: bsup
-   integer(c_int) :: ir
-   end subroutine rand_integer_c
-end interface
-interface
-   subroutine rand_real_c(rng,binf,bsup,rr) bind(C,name='rand_real')
-   use iso_c_binding
-   implicit none
-   type(c_ptr),value :: rng
-   real(c_double),value :: binf
-   real(c_double),value :: bsup
-   real(c_double) :: rr
-   end subroutine rand_real_c
-end interface
-interface
-   subroutine initialize_sampling_c(rng,n,lon,lat,mask,rh,ntry,nrep,ns,ihor) bind(C,name='initialize_sampling')
-   use iso_c_binding
-   implicit none
-   type(c_ptr),value :: rng
-   integer(c_int),value :: n
-   real(c_double) :: lon(*)
-   real(c_double) :: lat(*)
-   integer(c_int) :: mask(*)
-   real(c_double) :: rh(*)
-   integer(c_int),value :: ntry
-   integer(c_int),value :: nrep
-   integer(c_int),value :: ns
-   integer(c_int) :: ihor(*)
-   end subroutine initialize_sampling_c
-end interface
-
-integer(c_int),parameter :: seed = 140587 !< Default seed
+integer,parameter :: default_seed = 140587            !< Default seed
+integer(kind=int64),parameter :: a = 1103515245_int64 !< Linear congruential multiplier
+integer(kind=int64),parameter :: c = 12345_int64      !< Linear congruential offset
+integer(kind=int64),parameter :: m = 2147483648_int64 !< Linear congruential modulo
 
 private
 public :: rng
@@ -112,10 +56,10 @@ public :: rng
 contains
 
 !----------------------------------------------------------------------
-! Subroutine: rng_create
-!> Purpose: create the random number generator
+! Subroutine: rng_init
+!> Purpose: initialize the random number generator
 !----------------------------------------------------------------------
-subroutine rng_create(rng,nam)
+subroutine rng_init(rng,nam)
 
 implicit none
 
@@ -124,17 +68,22 @@ class(rng_type),intent(inout) :: rng !< Random number generator
 type(nam_type),intent(in) :: nam     !< Namelist variables
 
 ! Local variable
-integer :: default_seed
+integer :: seed
 
-! Set default seed key to integer
+! Set seed
 if (nam%default_seed) then
-   default_seed = seed+mpl%myproc
+   ! Default seed
+   seed = default_seed
 else
-   default_seed = 0
+   ! Time-based seed
+   call system_clock(count=seed)
 end if
 
-! Call C++ function
-rng%ptr = rng_create_c(default_seed)
+! Different seed for each task
+seed = seed+mpl%myproc
+
+! Long integer
+rng%seed = int(seed,kind=int64)
 
 ! Print result
 if (nam%default_seed) then
@@ -144,23 +93,7 @@ else
 end if
 call flush(mpl%unit)
 
-end subroutine rng_create
-
-!----------------------------------------------------------------------
-! Subroutine: rng_delete
-!> Purpose: delete the random number generator
-!----------------------------------------------------------------------
-subroutine rng_delete(rng)
-
-implicit none
-
-! Passed variable
-class(rng_type),intent(inout) :: rng !< Random number generator
-
-! Call C++ function
-call rng_delete_c(rng%ptr)
-
-end subroutine rng_delete
+end subroutine rng_init
 
 !----------------------------------------------------------------------
 ! Subroutine: rng_reseed
@@ -174,15 +107,38 @@ implicit none
 class(rng_type),intent(inout) :: rng !< Random number generator
 
 ! Local variable
-integer :: default_seed
+integer :: seed
 
 ! Default seed
-default_seed = seed+mpl%myproc
+seed = default_seed
 
-! Call C++ function
-call rng_reseed_c(rng%ptr,default_seed)
+! Different seed for each task
+seed = seed+mpl%myproc
+
+! Long integer
+rng%seed = int(seed,kind=int64)
 
 end subroutine rng_reseed
+
+!----------------------------------------------------------------------
+! Subroutine: rng_lcg
+!> Purpose: linear congruential generator
+!----------------------------------------------------------------------
+subroutine rng_lcg(rng,x)
+
+implicit none
+
+! Passed variable
+class(rng_type),intent(inout) :: rng !< Random number generator
+real(kind_real),intent(out) :: x             !< Random number between 0 and 1
+
+! Update seed
+rng%seed = mod(a*rng%seed+c,m)
+
+! Random number
+x = real(rng%seed,kind_real)/real(m-1,kind_real)
+
+end subroutine rng_lcg
 
 !----------------------------------------------------------------------
 ! Subroutine: rand_integer_0d
@@ -198,8 +154,17 @@ integer,intent(in) :: binf           !< Lower bound
 integer,intent(in) :: bsup           !< Upper bound
 integer,intent(out) :: ir            !< Random integer
 
-! Call C++ function
-call rand_integer_c(rng%ptr,binf,bsup,ir)
+! Local variables
+real(kind_real) :: x
+
+! Generate random number between 0 and 1
+call rng%lcg(x)
+
+! Adapt range
+x = x*real(bsup-binf+1,kind_real)
+
+! Add offset
+ir = binf+int(x)
 
 end subroutine rand_integer_0d
 
@@ -221,8 +186,7 @@ integer,intent(out) :: ir(:)         !< Random integer
 integer :: i
 
 do i=1,size(ir)
-   ! Call C++ function
-   call rand_integer_c(rng%ptr,binf,bsup,ir(i))
+   call rng%rand_integer(binf,bsup,ir(i))
 end do
 
 end subroutine rand_integer_1d
@@ -241,8 +205,17 @@ real(kind_real),intent(in) :: binf   !< Lower bound
 real(kind_real),intent(in) :: bsup   !< Upper bound
 real(kind_real),intent(out) :: rr    !< Random integer
 
-! Call C++ function
-call rand_real_c(rng%ptr,binf,bsup,rr)
+! Local variables
+real(kind_real) :: x
+
+! Generate random number between 0 and 1
+call rng%lcg(x)
+
+! Adapt range
+x = x*(bsup-binf)
+
+! Add offset
+rr = binf+x
 
 end subroutine rand_real_0d
 
@@ -264,8 +237,7 @@ real(kind_real),intent(out) :: rr(:) !< Random integer
 integer :: i
 
 do i=1,size(rr)
-   ! Call C++ function
-   call rand_real_c(rng%ptr,binf,bsup,rr(i))
+   call rng%rand_real(binf,bsup,rr(i))
 end do
 
 end subroutine rand_real_1d
@@ -289,8 +261,7 @@ integer :: i,j
 
 do i=1,size(rr,2)
    do j=1,size(rr,1)
-      ! Call C++ function
-      call rand_real_c(rng%ptr,binf,bsup,rr(j,i))
+   call rng%rand_real(binf,bsup,rr(j,i))
    end do
 end do
 
@@ -316,8 +287,7 @@ integer :: i,j,k
 do i=1,size(rr,3)
    do j=1,size(rr,2)
       do k=1,size(rr,1)
-         ! Call C++ function
-         call rand_real_c(rng%ptr,binf,bsup,rr(k,j,i))
+         call rng%rand_real(binf,bsup,rr(k,j,i))
       end do
    end do
 end do
@@ -345,8 +315,7 @@ do i=1,size(rr,4)
    do j=1,size(rr,3)
       do k=1,size(rr,2)
          do l=1,size(rr,1)
-            ! Call C++ function
-            call rand_real_c(rng%ptr,binf,bsup,rr(l,k,j,i))
+            call rng%rand_real(binf,bsup,rr(l,k,j,i))
          end do
       end do
    end do
@@ -376,8 +345,7 @@ do i=1,size(rr,5)
       do k=1,size(rr,3)
          do l=1,size(rr,3)
             do m=1,size(rr,1)
-               ! Call C++ function
-               call rand_real_c(rng%ptr,binf,bsup,rr(m,l,k,j,i))
+               call rng%rand_real(binf,bsup,rr(m,l,k,j,i))
             end do
          end do
       end do
@@ -408,9 +376,9 @@ do i=1,size(rr,1)
    if( iset==0) then
       rsq = 0.0
       do while((rsq>=1.0).or.(rsq<=0.0))
-         call rand_real_c(rng%ptr,0.0_kind_real,1.0_kind_real,v1)
+         call rng%rand_real(0.0_kind_real,1.0_kind_real,v1)
          v1 = 2.0*v1-1.0
-         call rand_real_c(rng%ptr,0.0_kind_real,1.0_kind_real,v2)
+         call rng%rand_real(0.0_kind_real,1.0_kind_real,v2)
          v2 = 2.0*v2-1.0
          rsq = v1**2+v2**2
       end do
@@ -467,7 +435,7 @@ class(rng_type),intent(inout) :: rng !< Random number generator
 integer,intent(in) :: n              !< Number of points
 real(kind_real),intent(in) :: lon(n) !< Longitudes
 real(kind_real),intent(in) :: lat(n) !< Latitudes
-integer,intent(in) :: mask(n)        !< Mask
+logical,intent(in) :: mask(n)        !< Mask
 real(kind_real),intent(in) :: rh(n)  !< Horizontal support radius
 integer,intent(in) :: ntry           !< Number of tries
 integer,intent(in) :: nrep           !< Number of replacements
@@ -475,21 +443,121 @@ integer,intent(in) :: ns             !< Number of samplings points
 integer,intent(out) :: ihor(ns)      !< Horizontal sampling index
 
 ! Local variables
-integer :: i,is
+integer :: is,js,i,irep,irmax,itry,ir,nn_index(2),ismin(1)
+real(kind_real) :: distmax,d,dist(ns),nn_dist(2)
+logical :: lmask(n),smask(n)
+type(kdtree_type) :: kdtree
 
-! Call C++ function
-if (ns>sum(mask)) then
+if (ns>count(mask)) then
    call msgerror('ns greater that mask size in initialize_sampling')
-elseif (ns==sum(mask)) then
+elseif (ns==count(mask)) then
    is = 0
    do i=1,n
-      if (mask(i)==1) then
+      if (mask(i)) then
          is = is+1
          ihor(is) = i
       end if
    end do
 else
-   call initialize_sampling_c(rng%ptr,n,lon,lat,mask,rh,ntry,nrep,ns,ihor)
+   ! Initialization
+   call msi(ihor)
+   lmask = mask
+   smask = .false.
+   is = 1
+   irep = 1
+   
+   ! Define sampling
+   do while (is<=ns)
+      ! Create KD-tree (unsorted)
+      if (is>2) call kdtree%create(n,lon,lat,mask=smask,sort=.false.)
+   
+      ! Initialization
+      distmax = 0.0
+      irmax = 0
+      itry = 1
+   
+      ! Find a new point
+      do while (itry<=ntry)
+         ! Generate a random index
+         call rng%rand_integer(1,n,ir)
+   
+         ! Check point validity
+         if (lmask(ir)) then
+            if (is==1) then
+               ! Accept point
+               irmax = ir
+            else
+               if (is==2) then
+                  ! Compute distance
+                  call sphere_dist(lon(ir),lat(ir),lon(ihor(1)),lat(ihor(1)),d)
+               else
+                  ! Find nearest neighbor distance
+                  call kdtree%find_nearest_neighbors(lon(ir),lat(ir),1,nn_index(1:1),nn_dist(1:1))
+                  d = nn_dist(1)**2/(rh(ir)**2+rh(nn_index(1))**2)
+               end if
+   
+               ! Check distance
+               if (d>distmax) then
+                  distmax = d
+                  irmax = ir
+               end if
+            end if
+         end if
+   
+         ! Update itry
+         itry = itry+1
+      end do
+   
+      ! Delete kdtree
+      if (is>2) call kdtree%delete
+
+      ! Add point to sampling
+      if (irmax>0) then
+         ihor(is) = irmax
+         lmask(irmax) = .false.
+         smask(irmax) = .true.
+         is = is+1
+      end if
+
+      if (is==ns+1) then
+         ! Try replacement
+         if (irep<=nrep) then
+            ! Create KD-tree (unsorted)
+            call kdtree%create(n,lon,lat,mask=smask,sort=.false.)
+
+            ! Get minimum distance
+            do js=1,ns
+               ! Find nearest neighbor distance
+               call kdtree%find_nearest_neighbors(lon(ihor(js)),lat(ihor(js)),2,nn_index,nn_dist)
+               if (nn_index(1)==ihor(js)) then
+                  dist(js) = nn_dist(2)
+               elseif (nn_index(2)==ihor(js)) then
+                  dist(js) = nn_dist(1)
+               else
+                  call msgerror('wrong index in replacement')
+               end if
+               dist(js) = dist(js)**2/(rh(nn_index(1))**2+rh(nn_index(2))**2)
+            end do
+
+            ! Delete kdtree
+            call kdtree%delete
+
+            ! Remove worst point
+            ismin = minloc(dist)
+            smask(ihor(ismin(1))) = .false.
+            call msi(ihor(ismin(1)))
+
+            ! Shift sampling
+            if (ismin(1)<ns) ihor(ismin(1):ns-1) = ihor(ismin(1)+1:ns)
+   
+            ! Reset is to ns and try again!
+            is = ns
+         end if
+   
+         ! Update irep
+         irep = irep+1
+      end if
+   end do
 end if
 
 end subroutine initialize_sampling

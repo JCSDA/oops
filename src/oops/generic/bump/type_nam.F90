@@ -27,8 +27,8 @@ integer,parameter :: ntsmax = 20    !< Maximum number of time slots
 integer,parameter :: nlmax = 200    !< Maximum number of levels
 integer,parameter :: nc3max = 1000  !< Maximum number of classes
 integer,parameter :: nscalesmax = 5 !< Maximum number of variables
-integer,parameter :: nldwvmax = 100 !< Maximum number of local diagnostic profiles
 integer,parameter :: ndirmax = 100  !< Maximum number of diracs
+integer,parameter :: nldwvmax = 100 !< Maximum number of local diagnostic profiles
 
 type nam_type
    ! general_param
@@ -356,14 +356,17 @@ if (mpl%main) then
 
    ! model_param
    read(lunit,nml=model_param)
+   if (nl>nlmax) call msgerror('nl is too large')
+   if (nv>nvmax) call msgerror('nv is too large')
+   if (nts>ntsmax) call msgerror('nts is too large')
    nam%nl = nl
-   nam%levs = levs
+   if (nl>0) nam%levs(1:nl) = levs(1:nl)
    nam%logpres = logpres
    nam%nv = nv
-   nam%varname = varname
-   nam%addvar2d = addvar2d
+   if (nv>0) nam%varname(1:nv) = varname(1:nv)
+   if (nv>0) nam%addvar2d(1:nv) = addvar2d(1:nv)
    nam%nts = nts
-   nam%timeslot = timeslot
+   if (nts>0) nam%timeslot(1:nts) = timeslot(1:nts)
 
    ! ens1_param
    read(lunit,nml=ens1_param)
@@ -379,6 +382,7 @@ if (mpl%main) then
 
    ! sampling_param
    read(lunit,nml=sampling_param)
+   if (nc3>nc3max) call msgerror('nc3 is too large')
    nam%sam_write = sam_write
    nam%sam_read = sam_read
    nam%mask_type = mask_type
@@ -407,15 +411,17 @@ if (mpl%main) then
 
    ! fit_param
    read(lunit,nml=fit_param)
+   if (lct_nscales>nscalesmax) call msgerror('lct_nscales is too large')
    nam%minim_algo = minim_algo
    nam%lhomh = lhomh
    nam%lhomv = lhomv
    nam%rvflt = rvflt
    nam%lct_nscales = lct_nscales
-   nam%lct_diag = lct_diag
+   if (lct_nscales>0) nam%lct_diag(1:lct_nscales) = lct_diag(1:lct_nscales)
 
    ! nicas_param
    read(lunit,nml=nicas_param)
+   if (ndir>ndirmax) call msgerror('ndir is too large')
    nam%lsqrt = lsqrt
    nam%resol = resol
    nam%nicas_interp = nicas_interp
@@ -423,11 +429,11 @@ if (mpl%main) then
    nam%mpicom = mpicom
    nam%advmode = advmode
    nam%ndir = ndir
-   nam%londir = londir
-   nam%latdir = latdir
-   nam%levdir = levdir
-   nam%ivdir = ivdir
-   nam%itsdir = itsdir
+   if (ndir>0) nam%londir(1:ndir) = londir(1:ndir)
+   if (ndir>0) nam%latdir(1:ndir) = latdir(1:ndir)
+   if (ndir>0) nam%levdir(1:ndir) = levdir(1:ndir)
+   if (ndir>0) nam%ivdir(1:ndir) = ivdir(1:ndir)
+   if (ndir>0) nam%itsdir(1:ndir) = itsdir(1:ndir)
 
    ! obsop_param
    read(lunit,nml=obsop_param)
@@ -437,12 +443,14 @@ if (mpl%main) then
 
    ! output_param
    read(lunit,nml=output_param)
+   if (nldwh>nlmax*nc3max) call msgerror('nldwh is too large')
+   if (nldwv>nldwvmax) call msgerror('nldwv is too large')
    nam%nldwh = nldwh
-   nam%il_ldwh = il_ldwh
-   nam%ic_ldwh = ic_ldwh
+   if (nldwh>0) nam%il_ldwh(1:nldwh) = il_ldwh(1:nldwh)
+   if (nldwh>0) nam%ic_ldwh(1:nldwh) = ic_ldwh(1:nldwh)
    nam%nldwv = nldwv
-   nam%lon_ldwv = lon_ldwv
-   nam%lat_ldwv = lat_ldwv
+   if (nldwv>0) nam%lon_ldwv(1:nldwv) = lon_ldwv(1:nldwv)
+   if (nldwv>0) nam%lat_ldwv(1:nldwv) = lat_ldwv(1:nldwv)
    nam%diag_rhflt = diag_rhflt
    nam%diag_interp = diag_interp
    nam%grid_output = grid_output
@@ -649,15 +657,25 @@ character(len=4) :: itestchar
 character(len=7) :: lonchar,latchar
 character(len=1024) :: filename
 
+! Check maximum sizes
+if (nam%nl>nlmax) call msgerror('nl is too large')
+if (nam%nv>nvmax) call msgerror('nv is too large')
+if (nam%nts>ntsmax) call msgerror('nts is too large')
+if (nam%nc3>nc3max) call msgerror('nc3 is too large')
+if (nam%lct_nscales>nscalesmax) call msgerror('lct_nscales is too large')
+if (nam%ndir>ndirmax) call msgerror('ndir is too large')
+if (nam%nldwh>nlmax*nc3max) call msgerror('nldwh is too large')
+if (nam%nldwv>nldwvmax) call msgerror('nldwv is too large')
+
 ! Namelist parameters normalization (meters to radians and degrees to radians)
 nam%dc = nam%dc/req
 nam%local_rad = nam%local_rad/req
 nam%displ_rad = nam%displ_rad/req
 nam%displ_rhflt = nam%displ_rhflt/req
-nam%londir = nam%londir*deg2rad
-nam%latdir = nam%latdir*deg2rad
-nam%lon_ldwv = nam%lon_ldwv*deg2rad
-nam%lat_ldwv = nam%lat_ldwv*deg2rad
+if (nam%ndir>0) nam%londir(1:nam%ndir) = nam%londir(1:nam%ndir)*deg2rad
+if (nam%ndir>0) nam%latdir(1:nam%ndir) = nam%latdir(1:nam%ndir)*deg2rad
+if (nam%nldwv>0) nam%lon_ldwv(1:nam%nldwv) = nam%lon_ldwv(1:nam%nldwv)*deg2rad
+if (nam%nldwv>0) nam%lat_ldwv(1:nam%nldwv) = nam%lat_ldwv(1:nam%nldwv)*deg2rad
 nam%diag_rhflt = nam%diag_rhflt/req
 nam%grid_resol = nam%grid_resol/req
 
@@ -732,6 +750,7 @@ if (nam%new_hdiag.or.nam%new_param.or.nam%check_adjoints.or.nam%check_pos_def.or
       write(ivchar,'(i2.2)') iv
       if (trim(nam%varname(iv))=='') call msgerror('varname not specified for variable '//ivchar)
    end do
+   if (nam%nts<=0) call msgerror('nts should be positive')
    do its=1,nam%nts
       if (nam%timeslot(its)<0) call msgerror('timeslot should be non-negative')
    end do
@@ -816,7 +835,7 @@ if (nam%new_hdiag.or.nam%new_lct) then
    if (nam%rvflt<0) call msgerror('rvflt should be non-negative')
 end if
 if (nam%new_lct) then
-   if (nam%lct_nscales<0) call msgerror('lct_nscales should be non-negative')
+   if (nam%lct_nscales<=0) call msgerror('lct_nscales should be postive')
 end if
 
 ! Check ensemble sizes
@@ -881,13 +900,17 @@ end if
 if (nam%new_hdiag) then
    if (nam%local_diag) then
       if (nam%nldwh<0) call msgerror('nldwh should be non-negative')
-      if (any(nam%il_ldwh(1:nam%nldwh)<0)) call msgerror('il_ldwh should be non-negative')
-      if (any(nam%il_ldwh(1:nam%nldwh)>nam%nl)) call msgerror('il_ldwh should be lower than nl')
-      if (any(nam%ic_ldwh(1:nam%nldwh)<0)) call msgerror('ic_ldwh should be non-negative')
-      if (any(nam%ic_ldwh(1:nam%nldwh)>nam%nc3)) call msgerror('ic_ldwh should be lower than nc3')
+      if (nam%nldwh>0) then
+         if (any(nam%il_ldwh(1:nam%nldwh)<0)) call msgerror('il_ldwh should be non-negative')
+         if (any(nam%il_ldwh(1:nam%nldwh)>nam%nl)) call msgerror('il_ldwh should be lower than nl')
+         if (any(nam%ic_ldwh(1:nam%nldwh)<0)) call msgerror('ic_ldwh should be non-negative')
+         if (any(nam%ic_ldwh(1:nam%nldwh)>nam%nc3)) call msgerror('ic_ldwh should be lower than nc3')
+      end if
       if (nam%nldwv<0) call msgerror('nldwv should be non-negative')
-      if (any(nam%lon_ldwv(1:nam%nldwv)<-180.0).or.any(nam%lon_ldwv(1:nam%nldwv)>180.0)) call msgerror('wrong lon_ldwv')
-      if (any(nam%lat_ldwv(1:nam%nldwv)<-90.0).or.any(nam%lat_ldwv(1:nam%nldwv)>90.0)) call msgerror('wrong lat_ldwv')
+      if (nam%nldwv>0) then
+         if (any(nam%lon_ldwv(1:nam%nldwv)<-180.0).or.any(nam%lon_ldwv(1:nam%nldwv)>180.0)) call msgerror('wrong lon_ldwv')
+         if (any(nam%lat_ldwv(1:nam%nldwv)<-90.0).or.any(nam%lat_ldwv(1:nam%nldwv)>90.0)) call msgerror('wrong lat_ldwv')
+      end if
    end if
    if (nam%local_diag.or.nam%displ_diag) then
       if (nam%diag_rhflt<0.0) call msgerror('diag_rhflt should be non-negative')

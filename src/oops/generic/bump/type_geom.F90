@@ -20,7 +20,7 @@ use tools_nc, only: ncerr,ncfloat
 use tools_qsort, only: qsort
 use tools_stripack, only: areas,trans
 use type_com, only: com_type
-use type_ctree, only: ctree_type
+use type_kdtree, only: kdtree_type
 use type_mesh, only: mesh_type
 use type_mpl, only: mpl
 use type_nam, only: nam_type
@@ -54,8 +54,8 @@ type geom_type
    ! Mesh
    type(mesh_type) :: mesh                    !< Mesh
 
-   ! Cover tree
-   type(ctree_type) :: ctree                  !< Cover tree
+   ! KD-tree
+   type(kdtree_type) :: kdtree                !< KD-tree
 
    ! Boundary nodes
    integer,allocatable :: nbnd(:)             !< Number of boundary nodes
@@ -413,14 +413,14 @@ real(kind_real),intent(in),optional :: lat(geom%nmg) !< Latitudes
 
 ! Local variables
 integer :: img,ic0
-type(ctree_type) :: ctree
+type(kdtree_type) :: kdtree
 
 ! Allocation
 allocate(geom%redundant(geom%nmg))
 call msi(geom%redundant)
 
 ! Look for redundant points
-if (present(lon).and.present(lat)) call ctree%find_redundant(geom%nmg,lon,lat,geom%redundant)
+if (present(lon).and.present(lat)) call kdtree%find_redundant(geom%nmg,lon,lat,geom%redundant)
 geom%nc0 = count(.not.isnotmsi(geom%redundant))
 write(mpl%unit,'(a7,a,i8)') '','Model grid size:         ',geom%nmg
 write(mpl%unit,'(a7,a,i8)') '','Subset Sc0 size:         ',geom%nc0
@@ -459,7 +459,7 @@ type(nam_type),intent(in) :: nam       !< Namelist
 
 ! Local variables
 integer :: ic0,il0,jc3,iproc
-logical :: same_mask,ctree_mask(geom%nc0)
+logical :: same_mask
 
 ! Set longitude and latitude bounds
 do ic0=1,geom%nc0
@@ -504,9 +504,8 @@ end if
 write(mpl%unit,'(a7,a,i3)') '','Number of independent levels: ',geom%nl0i
 call flush(mpl%unit)
 
-! Create cover tree
-ctree_mask = .true.
-call geom%ctree%create(geom%nc0,geom%lon,geom%lat,ctree_mask)
+! Create KD-tree
+call geom%kdtree%create(geom%nc0,geom%lon,geom%lat)
 
 ! Horizontal distance
 allocate(geom%disth(nam%nc3))
