@@ -9,6 +9,7 @@ GomQG.cc
 GomQG.h
 IncrementQG.cc
 IncrementQG.h
+LocationsQG.cc
 LocationsQG.h
 LocalizationMatrixQG.cc
 LocalizationMatrixQG.h

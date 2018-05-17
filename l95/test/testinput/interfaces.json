@@ -18,7 +18,7 @@
       "date": "2010-01-01T03:00:00Z"
     },
     "date": "2010-01-01T03:00:00Z",
-    "norm-file": 8.02582642225,
+    "norm-file": 8.0258264222507467,
     "StateGenerate" : {
       "date": "2010-01-01T03:00:00Z",
       "mean": 8.0,
@@ -26,6 +26,7 @@
     },
     "norm-gen":  8.12403840464,
     "tolerance": 1.0e-10,
+    "interp_tolerance": 0.004,
     "Locations": {
       "positions": [0.717]
     },

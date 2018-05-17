@@ -36,16 +36,22 @@ class GomL95 : public util::Printable,
 
   GomL95(const LocsL95 &, const oops::Variables &);
   GomL95(const eckit::Configuration &, const oops::Variables &);
+  GomL95(const LocsL95 &, const oops::Variables &, const eckit::Configuration &);
   explicit GomL95(const GomL95 &);
   ~GomL95();
 
+  void abs();
   void zero();
   void random();
+  double norm() const;
   GomL95 & operator*=(const double &);
   GomL95 & operator+=(const GomL95 &);
+  GomL95 & operator-=(const GomL95 &);
+  GomL95 & operator/=(const GomL95 &);
   double dot_product_with(const GomL95 &) const;
   void read(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;
+  void print(std::ostream &) const;
 
   size_t size() const {return size_;}
   const double & operator[](const int ii) const {return locval_[ii];}
@@ -54,7 +60,6 @@ class GomL95 : public util::Printable,
   int & current() const {return current_;}
 
  private:
-  void print(std::ostream &) const;
   size_t size_;
   std::vector<int> iobs_;
   std::vector<double> locval_;

@@ -65,14 +65,14 @@ self%ny = config_get_int(c_conf, "ny")
 allocate(self%lon(self%nx))
 allocate(self%lat(self%ny))
 
-dx = 2.0 * pi / real(self%nx,kind=kind_real);
-dytot = 2.0 * pi * real(self%ny,kind=kind_real) / real(self%nx,kind=kind_real);
-dy = dytot / real(self%ny,kind=kind_real);
+dx = 2.0_kind_real * pi / real(self%nx,kind=kind_real);
+dy = pi / real(self%ny,kind=kind_real);
 do ix=1,self%nx
-   self%lon(ix) = -pi+(real(ix,kind=kind_real)-0.5)*dx
+   self%lon(ix) = -pi+(real(ix,kind=kind_real)-1.0_kind_real)*dx
 end do
 do iy=1,self%ny
-   self%lat(iy) = -0.5*dytot+(real(iy,kind=kind_real)-0.5)*dy;
+   !self%lat(iy) = -0.5_kind_real*pi+(real(iy,kind=kind_real)-0.5_kind_real)*dy;
+   self%lat(iy) = -0.5_kind_real*pi+(real(iy,kind=kind_real)-1.0_kind_real)*dy;
 end do
 
 end subroutine c_qg_geo_setup

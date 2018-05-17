@@ -20,21 +20,27 @@
       "date": "2009-12-31T00:00:00Z"
     },
     "date": "2009-12-31T00:00:00Z",
-    "norm-file": "15.010355026",
     "StateGenerate" : {
-      "filename": "Data/truth.fc.2009-12-15T00:00:00Z.P16D",
+      "analytic_init": "dcmip-test-1-1",
+      "variables": ["x","q","u","v"],
       "date": "2009-12-31T00:00:00Z",
-      "mean": 8.0,
-      "sinus": 2.0
+      "top_layer_depth": "5500.0",
+      "bottom_layer_depth": "4500.0"
     },
-    "norm-gen": "15.010355026",
-    "tolerance": 1.0e-8,
     "Locations": {
-      "positions": [0.717]
+       "lats": ["55.0","-45.0"],
+       "lons": ["10.0","-77.0"],
+       "heights": ["0.25","0.75"],
+       "Nrandom": "8",
+       "random_seed": "560921"
     },
     "Variables": {
       "variables": ["x"]
     },
+    "norm-file": "15.010355026",
+    "norm-gen": "4.6713973501015831",
+    "tolerance": 1.0e-8,
+    "interp_tolerance": "0.01",
     "values": [6.042838]
   },
   "LinearObsOpTest": {

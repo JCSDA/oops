@@ -14,7 +14,7 @@
 #include <limits>
 #include <fstream>
 #include <random>
-#include <vector>
+#include <cmath>
 
 #include "eckit/config/Configuration.h"
 #include "lorenz95/LocsL95.h"
@@ -40,10 +40,47 @@ GomL95::GomL95(const LocsL95 & locs, const oops::Variables &)
   for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = locs[jj];
 }
 // -----------------------------------------------------------------------------
+// We may phase out this one eventually
 GomL95::GomL95(const eckit::Configuration & conf, const oops::Variables &)
   : size_(0), iobs_(), locval_(), current_(0)
 {
   this->read(conf);
+}
+// -----------------------------------------------------------------------------
+/*! Constructor with Configuration
+ *
+ * This constructor can be used to create a L95 GeoVaLs object based either
+ * on data read from a file or on an analytic initial condition.  The latter
+ * is used in the TestStateInterpolation() test.
+ *
+ */
+GomL95::GomL95(const LocsL95 & locs, const oops::Variables &,
+	       const eckit::Configuration & conf)
+  : size_(0), iobs_(), locval_(), current_(0)
+{
+  if (conf.has("filename")) {
+
+    this->read(conf);
+
+  } else { // analytic init for testing interpolation
+    oops::Log::trace() << "GomL95::GomL95 analytic init " << std::endl;
+    size_ = locs.size();
+    iobs_.resize(size_);
+    locval_.resize(size_);
+    for (size_t jj = 0; jj < size_; ++jj) iobs_[jj] = locs.globalIndex(jj);
+
+    for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = 0.0;
+    if (conf.has("mean")) {
+      const double zz = conf.getDouble("mean");
+      for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = zz;
+    }
+    if (conf.has("sinus")) {
+      const double zz = conf.getDouble("sinus");
+      const double pi = std::acos(-1.0);
+      for (size_t jj = 0; jj < size_; ++jj) 
+	locval_[jj] += zz * std::sin(2.0*pi*locs[jj]);
+    }
+  }
 }
 // -----------------------------------------------------------------------------
 GomL95::GomL95(const GomL95 & other)
@@ -65,8 +102,33 @@ GomL95 & GomL95::operator+=(const GomL95 & rhs)
   return *this;
 }
 // -----------------------------------------------------------------------------
+GomL95 & GomL95::operator-=(const GomL95 & rhs)
+{
+  for (size_t jj = 0; jj < size_; ++jj) locval_[jj] -= rhs.locval_[jj];
+  return *this;
+}
+// -----------------------------------------------------------------------------
+GomL95 & GomL95::operator/=(const GomL95 & rhs)
+{
+  double xnorm(0.0);
+  for (size_t jj = 0; jj < rhs.size_; ++jj) xnorm += std::pow(rhs.locval_[jj],2);
+  xnorm = sqrt(xnorm/static_cast<double>(rhs.size_));
+  for (size_t jj = 0; jj < size_; ++jj) locval_[jj] /= xnorm;
+  return *this;
+}
+// -----------------------------------------------------------------------------
+void GomL95::abs() {
+  for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = std::abs(locval_[jj]);
+}
+// -----------------------------------------------------------------------------
 void GomL95::zero() {
   for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = 0.0;
+}
+// -----------------------------------------------------------------------------
+double GomL95::norm() const {
+  double xnorm(0.0);
+  for (size_t jj = 0; jj < size_; ++jj) xnorm += std::pow(locval_[jj],2);
+  return sqrt(xnorm/static_cast<double>(size_));
 }
 // -----------------------------------------------------------------------------
 void GomL95::random() {
@@ -123,15 +185,28 @@ void GomL95::write(const eckit::Configuration & conf) const {
 void GomL95::print(std::ostream & os) const {
   double zmin = locval_[0];
   double zmax = locval_[0];
+  size_t jmax = 0;
   double zavg = 0.0;
   for (size_t jj = 0; jj < size_; ++jj) {
     if (locval_[jj] < zmin) zmin = locval_[jj];
-    if (locval_[jj] > zmax) zmax = locval_[jj];
+    if (locval_[jj] > zmax) {
+      zmax = locval_[jj];
+      jmax = jj;
+    }
     zavg += locval_[jj];
   }
   zavg /= size_;
   os << size_ << "values,  Min=" << zmin << ", Max=" << zmax << ", Average=" << zavg;
+
+  // If the min value across all variables is positive, then this may be an
+  // error measurement.  If so, print the location where the maximum occurs
+  // to the debug stream, for use in debugging
+  
+  if (zmin >= 0.0)
+    oops::Log::debug() << std::endl << "GomL95: Maximum Value = " << std::setprecision(4)
+		       << zmax << " at location = " << jmax << std::endl;              
+  
+
 }
-// -----------------------------------------------------------------------------
 
 }  // namespace lorenz95

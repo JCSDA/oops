@@ -612,6 +612,13 @@ end subroutine read_file
 !! * dcmip-test-1-1: 3D deformational flow
 !! * dcmip-test-1-2: 3D Hadley-like meridional circulation
 !!
+!! Relevant parameters specified in the **State.StateGenerate** section of the config file include:
+!! * **analytic_init** the type of initialization as described in analytic_init())
+!! * **variables** currently must be set to ["x","q","u","v"]
+!! * **date** a reference date and time for the state
+!! * **top_layer_depth**, **bottom_layer_depth** are needed in order to convert the normalized height
+!!     coordinate into meters so it can be used in the analytic formulae
+!! 
 !! \author M. Miesch (JCSDA, adapted from a pre-existing call to invent_state)
 !! \date March 7, 2018: Created
 !!
@@ -621,7 +628,12 @@ end subroutine read_file
 !! vorticity q from the horizontal winds u and v.  Since q (or alternatively x) is the state variable
 !! for the evolution of the QG model, only the non-divergent (vortical) component of the horizontal
 !! flow is captured.  In other words, u and v are projected onto a flow field with zero horizontal
-!! divergence.  Furthermore, this projection neglects geometric curvature factors.
+!! divergence.  Furthermore, this projection neglects geometric curvature factors.  This projection
+!! is used to calculate the streamfunction X and the potential vorticity q.  However, on exiting this
+!! function, the u and v components of the qg_field structure are still set to their original
+!! (non-projected) values.  This is for use with the State interpolation test.  The winds u and v
+!! are re-calculated from X before doing a forecast by the routine c_qg_prepare_integration() in
+!! c_qg_model.F90.
 !!
 !! \warning For all but the baroclinic-instability option, the PV here is computed assuming zero
 !! orography.  For particular model configurations, the orography is defined in c_qg_setup()
@@ -643,7 +655,7 @@ subroutine analytic_init(fld, geom, config, vdate)
   type(c_ptr), intent(in)       :: config   !< Configuration
   type(datetime), intent(inout) :: vdate    !< DateTime
 
-  character(len=30) ::ic
+  character(len=30) :: ic
   character(len=20) :: sdate
   character(len=1024)  :: buf
   real(kind=kind_real) :: d1, d2, height(2), z, f1, f2, xdum(2)
@@ -653,7 +665,7 @@ subroutine analytic_init(fld, geom, config, vdate)
   integer :: ix, iy, il
 
   if (config_element_exists(config,"analytic_init")) then
-     ic = Trim(config_get_string(config,len(ic),"analytic_init"))
+     ic = trim(config_get_string(config,len(ic),"analytic_init"))
   else
      ! this is mainly for backward compatibility
      ic = "baroclinic-instability"
@@ -670,8 +682,8 @@ subroutine analytic_init(fld, geom, config, vdate)
   d1  = config_get_real(config,"top_layer_depth")
   d2  = config_get_real(config,"bottom_layer_depth")
 
-  height(1) = 0.5_kind_real*d2
-  height(2) = d2 + 0.5_kind_real*d1
+  height(2) = 0.5_kind_real*d2
+  height(1) = d2 + 0.5_kind_real*d1
   xdum(:) = 0.0_kind_real
 
   deltax = domain_zonal/(scale_length*real(geom%nx,kind_real))
@@ -1055,7 +1067,7 @@ call check(fld)
 
 do jloc=1,locs%nloc
 ! Convert horizontal coordinate stored in ODB to grid locations
-  di=locs%xyz(1,jloc)*real(fld%geom%nx,kind_real)
+  di=locs%xyz(1,jloc)*real(fld%geom%nx,kind_real) 
   ii=int(di)
   ai=di-real(ii,kind_real);
   ii=ii+1
@@ -1063,7 +1075,7 @@ do jloc=1,locs%nloc
   iright=ii+1
   if (iright==fld%geom%nx+1) iright=1
 
-  dj=locs%xyz(2,jloc)*real(fld%geom%ny,kind_real)
+  dj=locs%xyz(2,jloc)*real(fld%geom%ny,kind_real) 
   jj=int(dj)
   aj=dj-real(jj,kind_real);
   jj=jj+1

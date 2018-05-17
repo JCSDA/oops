@@ -143,8 +143,11 @@ extern "C" {
 //  Locations
 // -----------------------------------------------------------------------------
   void qg_loc_create_f90(F90locs &);
+  void qg_loc_test_f90(const F90locs &, const eckit::Configuration * const *,
+		       const int &, const double *, const double *, const double*);
   void qg_loc_delete_f90(F90locs &);
   void qg_loc_nobs_f90(const F90locs &, int &);
+  void qg_loc_element_f90(const F90locs &, const int &, double *);
 
 // -----------------------------------------------------------------------------
 //  Local Values (GOM)
@@ -152,14 +155,21 @@ extern "C" {
   void qg_gom_setup_f90(F90goms &, const F90locs &, const F90vars *);
   void qg_gom_create_f90(F90goms &);
   void qg_gom_delete_f90(F90goms &);
+  void qg_gom_abs_f90(const F90goms &);
+  void qg_gom_rms_f90(const F90goms &, double &);
   void qg_gom_zero_f90(const F90goms &);
   void qg_gom_assign_f90(const F90goms &, const F90goms &);
   void qg_gom_random_f90(const F90goms &);
   void qg_gom_mult_f90(const F90goms &, const double &);
   void qg_gom_add_f90(const F90goms &, const F90goms &);
+  void qg_gom_diff_f90(const F90goms &, const F90goms &);
+  void qg_gom_normalize_f90(const F90goms &, const F90goms &);
   void qg_gom_dotprod_f90(const F90goms &, const F90goms &, double &);
   void qg_gom_minmaxavg_f90(const F90goms &, int &, double &, double &, double &);
+  void qg_gom_maxloc_f90(const F90goms &, double &, int &, int &);
   void qg_gom_read_file_f90(const F90goms &, const eckit::Configuration * const *);
+  void qg_gom_analytic_init_f90(const F90goms &, const F90locs &, const F90vars *,
+				const eckit::Configuration * const *);
   void qg_gom_write_file_f90(const F90goms &, const eckit::Configuration * const *);
 
 // -----------------------------------------------------------------------------
@@ -233,6 +243,7 @@ extern "C" {
                              const util::Duration * const *, const int &, int &);
   void qg_obsdb_nobs_f90(const F90odb &, const int &, const char *, int &);
   void qg_obsoper_inputs_f90(const F90hop &, F90vars *);
+
 }
 
 // -----------------------------------------------------------------------------

@@ -38,7 +38,7 @@ LocsL95::LocsL95(const eckit::Configuration & conf) : indx_(), locs_() {
 
 void LocsL95::print(std::ostream & os) const {
   os << locs_.size();
-  if (locs_.size() > 0) os << " " << locs_.at(1);
+  if (locs_.size() > 0) os << " " << locs_.at(0);
   if (locs_.size() > 1) os << " " << locs_.at(locs_.size() - 1);
 }
 
