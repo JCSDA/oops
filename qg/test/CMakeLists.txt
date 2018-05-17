@@ -208,6 +208,12 @@ ecbuild_add_test( TARGET  test_qg_linearmodel
                   ARGS    "testinput/interfaces.json"
                   LIBS    qg )
 
+ecbuild_add_test( TARGET test_qg_locations
+                  BOOST
+                  SOURCES executables/TestLocations.cc
+                  ARGS "testinput/interfaces.json"
+                  LIBS    qg )
+
 ecbuild_add_test( TARGET test_qg_observationspace
                   BOOST
                   SOURCES executables/TestObservationSpace.cc
