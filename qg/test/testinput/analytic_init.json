@@ -11,21 +11,23 @@
       "date": "2009-12-31T00:00:00Z"
     },
     "date": "2009-12-31T00:00:00Z",
-    "norm-file": "15.010355026",
+    "tolerance": 1.0e-8,
     "StateGenerate" : {
       "analytic_init": "dcmip-test-1-1",
       "variables": ["x","q","u","v"],
       "date": "2009-12-31T00:00:00Z",
-      "top_layer_depth": "5500.0",
-      "bottom_layer_depth": "4500.0"
+      "top_layer_depth": "6000.0",
+      "bottom_layer_depth": "6000.0"
     },
     "Locations": {
-      "positions": [0.717]
+       "lats": ["55.0","-45.0"],
+       "lons": ["10.0","-77.0"],
+       "heights": ["0.25","0.75"],
+       "Nrandom": "8",
+       "random_seed": "560921"
     },
-    "Variables": {
-      "variables": ["x"]
-    },
-    "norm-gen": "4.66316168196",
-    "tolerance": 1.0e-8
+    "norm-file": "15.010355026",
+    "norm-gen": "4.6830400766117606",
+    "interp_tolerance": "0.01"
   }
 }

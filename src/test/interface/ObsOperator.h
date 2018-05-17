@@ -21,6 +21,7 @@
 
 #include "oops/runs/Test.h"
 #include "oops/interface/GeoVaLs.h"
+#include "oops/interface/Locations.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsOperator.h"
 #include "oops/interface/ObsVector.h"
@@ -50,6 +51,7 @@ template <typename MODEL> void testConstructor() {
 template <typename MODEL> void testEquiv() {
   typedef ObsTestsFixture<MODEL> Test_;
   typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
+  typedef oops::Locations<MODEL>         Locations_;
   typedef oops::ObsAuxControl<MODEL>     ObsAuxCtrl_;
   typedef oops::ObsOperator<MODEL>       ObsOperator_;
   typedef oops::ObsVector<MODEL>         ObsVector_;
@@ -61,7 +63,8 @@ template <typename MODEL> void testEquiv() {
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     ObsOperator_ hop(Test_::obspace()[jj]);
     eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    const GeoVaLs_ gval(gconf, hop.variables());
+    Locations_ locs(Test_::obspace()[jj].locations(Test_::tbgn(), Test_::tend()));
+    const GeoVaLs_ gval(locs, hop.variables(), gconf);
 
     eckit::LocalConfiguration biasConf;
     conf[jj].get("ObsBias", biasConf);

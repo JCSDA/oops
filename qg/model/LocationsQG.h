@@ -30,9 +30,7 @@ class LocationsQG : public util::Printable,
 
   explicit LocationsQG(const F90locs key) : keyLoc_(key) {}
 
-  explicit LocationsQG(const eckit::Configuration &) {
-    qg_loc_create_f90(keyLoc_);
-  }
+  explicit LocationsQG(const eckit::Configuration &);
 
   ~LocationsQG() {qg_loc_delete_f90(keyLoc_);}
 
@@ -45,7 +43,16 @@ class LocationsQG : public util::Printable,
   int toFortran() const {return keyLoc_;}
  private:
   void print(std::ostream & os) const {
-    os << "LocationsQG::print not implemented";
+    int nobs;
+    qg_loc_nobs_f90(keyLoc_, nobs);
+
+    std::vector<double> xyz(3);
+
+    for (size_t i=0; i < static_cast<size_t>(nobs); ++i) {
+      qg_loc_element_f90(keyLoc_,i,&xyz[0]);
+      os << "loc " << i << std::setprecision(2) << ": x = " << xyz[0]
+	 << ", y = " << xyz[1] << ", z = " << xyz[2] << std::endl;
+    }
   }
   F90locs keyLoc_;
 };

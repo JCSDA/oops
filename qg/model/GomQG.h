@@ -13,6 +13,7 @@
 
 #include <ostream>
 #include <string>
+#include <vector>
 
 #include "model/QgFortran.h"
 #include "util/ObjectCounter.h"
@@ -34,6 +35,8 @@ class GomQG : public util::Printable,
 
   GomQG(const LocationsQG &, const oops::Variables &);
   GomQG(const eckit::Configuration &, const oops::Variables &);
+  GomQG(const LocationsQG &, const oops::Variables &,
+	const eckit::Configuration &);
   GomQG(const GomQG &);
 
   explicit GomQG(): keyGom_(0) {}
@@ -41,11 +44,15 @@ class GomQG : public util::Printable,
 
   ~GomQG();
 
+  void abs();
   void zero();
   void random();
+  double norm() const;
   GomQG & operator=(const GomQG &);  
   GomQG & operator*=(const double &);
   GomQG & operator+=(const GomQG &);  
+  GomQG & operator-=(const GomQG &);  
+  GomQG & operator/=(const GomQG &);  
   double dot_product_with(const GomQG &) const;
   void read(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;

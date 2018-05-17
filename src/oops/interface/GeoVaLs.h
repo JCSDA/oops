@@ -26,7 +26,6 @@
 namespace oops {
 
 // -----------------------------------------------------------------------------
-
 template <typename MODEL>
 class GeoVaLs : public util::Printable,
                 private util::ObjectCounter<GeoVaLs<MODEL> > {
@@ -38,6 +37,7 @@ class GeoVaLs : public util::Printable,
 
   GeoVaLs(const Locations_ &, const Variables &);
   GeoVaLs(const eckit::Configuration &, const Variables &);
+  GeoVaLs(const Locations_ &, const Variables &, const eckit::Configuration &);
   GeoVaLs(const GeoVaLs &);
 
   ~GeoVaLs();
@@ -47,15 +47,19 @@ class GeoVaLs : public util::Printable,
   GeoVaLs_ & geovals() {return *gvals_;}
 
 /// Linear algebra and utilities, mostly for writing tests
+  void abs();
   void zero();
   void random();
+  double norm() const;
   GeoVaLs & operator=(const GeoVaLs &);
   GeoVaLs & operator*=(const double &);
   GeoVaLs & operator+=(const GeoVaLs &);
+  GeoVaLs & operator-=(const GeoVaLs &);
+  GeoVaLs & operator/=(const GeoVaLs &);
   double dot_product_with(const GeoVaLs &) const;
   void read(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;
-
+  
  private:
   void print(std::ostream &) const;
   boost::scoped_ptr<GeoVaLs_> gvals_;
@@ -72,12 +76,25 @@ GeoVaLs<MODEL>::GeoVaLs(const Locations_ & locs, const Variables & vars) : gvals
 }
 
 // -----------------------------------------------------------------------------
+// We may want to eliminate this constructor eventually in favor of the
+// following one
 
 template <typename MODEL>
 GeoVaLs<MODEL>::GeoVaLs(const eckit::Configuration & conf, const Variables & vars) : gvals_() {
   Log::trace() << "GeoVaLs<MODEL>::GeoVaLs read starting" << std::endl;
   util::Timer timer(classname(), "GeoVaLs");
   gvals_.reset(new GeoVaLs_(conf, vars));
+  Log::trace() << "GeoVaLs<MODEL>::GeoVaLs read done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+  GeoVaLs<MODEL>::GeoVaLs(const Locations_ & locs, const Variables & vars,
+			  const eckit::Configuration & conf) : gvals_() {
+  Log::trace() << "GeoVaLs<MODEL>::GeoVaLs read starting" << std::endl;
+  util::Timer timer(classname(), "GeoVaLs");
+  gvals_.reset(new GeoVaLs_(locs.locations(), vars, conf));
   Log::trace() << "GeoVaLs<MODEL>::GeoVaLs read done" << std::endl;
 }
 
@@ -136,6 +153,35 @@ GeoVaLs<MODEL> & GeoVaLs<MODEL>::operator+=(const GeoVaLs & rhs) {
 
 // -----------------------------------------------------------------------------
 
+template <typename MODEL>
+GeoVaLs<MODEL> & GeoVaLs<MODEL>::operator-=(const GeoVaLs & rhs) {
+  Log::trace() << "GeoVaLs<MODEL>::-=(GeoVaLs, GeoVaLs) starting" << std::endl;
+  util::Timer timer(classname(), "operator-=");
+  *gvals_ -= *rhs.gvals_;
+  Log::trace() << "GeoVaLs<MODEL>::+= done" << std::endl;
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+/*! GeoVaLs Normalization Operator
+ *
+ * This is a normalization operator that first computes the normalization 
+ * factor for each variable based on the rms amplitude of that variable across 
+ * all locations in the reference GeoVaLs object (rhs).  Then each element of 
+ * the input GeoVals object (*this) is divided by these normalization factors.
+ */
+
+template <typename MODEL>
+GeoVaLs<MODEL> & GeoVaLs<MODEL>::operator/=(const GeoVaLs & rhs) {
+  Log::trace() << "GeoVaLs<MODEL>::/=(GeoVaLs, GeoVaLs) starting" << std::endl;
+  util::Timer timer(classname(), "operator/=");
+  *gvals_ /= *rhs.gvals_;
+  Log::trace() << "GeoVaLs<MODEL>::+= done" << std::endl;
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
 template<typename MODEL>
 GeoVaLs<MODEL> & GeoVaLs<MODEL>::operator*=(const double & zz) {
   Log::trace() << "GeoVaLs<MODEL>::operator*= starting" << std::endl;
@@ -148,11 +194,31 @@ GeoVaLs<MODEL> & GeoVaLs<MODEL>::operator*=(const double & zz) {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
+void GeoVaLs<MODEL>::abs() {
+  Log::trace() << "GeoVaLs<MODEL>::abs starting" << std::endl;
+  util::Timer timer(classname(), "abs");
+  gvals_->abs();
+  Log::trace() << "GeoVaLs<MODEL>::abs done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
 void GeoVaLs<MODEL>::zero() {
   Log::trace() << "GeoVaLs<MODEL>::zero starting" << std::endl;
   util::Timer timer(classname(), "zero");
   gvals_->zero();
   Log::trace() << "GeoVaLs<MODEL>::zero done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+double GeoVaLs<MODEL>::norm() const {
+  Log::trace() << "GeoVaLs<MODEL>::norm starting" << std::endl;
+  util::Timer timer(classname(), "norm");
+  double zz = gvals_->norm();
+  Log::trace() << "GeoVaLs<MODEL>::norm done" << std::endl;
+  return zz;
 }
 
 // -----------------------------------------------------------------------------
