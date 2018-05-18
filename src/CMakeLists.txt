@@ -294,6 +294,12 @@ oops/interface/ObsVector.h
 oops/interface/ObservationSpace.h
 oops/interface/State.h
 
+test/interface/Locations.h
+test/interface/ObsTestsFixture.h
+test/interface/ObsVector.h
+test/interface/ObservationSpace.h
+test/TestEnvironment.h
+
 oops/runs/Application.h
 oops/runs/Dirac.h
 oops/runs/EnsForecasts.h
