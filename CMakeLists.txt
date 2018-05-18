@@ -106,6 +106,10 @@ add_subdirectory( qg )
 
 ecbuild_dont_pack ( FILES .pydevproject .project .cproject oops.sublime-project .settings )
 
+if(ECBUILD_INSTALL_FORTRAN_MODULES)
+  install(DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY}/${CMAKE_CFG_INTDIR} DESTINATION ${INSTALL_INCLUDE_DIR} )
+endif()
+
 ################################################################################
 # Finalise configuration
 ################################################################################
