@@ -15,8 +15,8 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/PostBase.h"
-#include "util/DateTime.h"
-#include "util/Logger.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 

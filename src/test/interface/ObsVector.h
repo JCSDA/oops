@@ -23,9 +23,9 @@
 
 #include "oops/interface/ObsVector.h"
 #include "oops/runs/Test.h"
+#include "oops/util/dot_product.h"
 #include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"
-#include "util/dot_product.h"
 
 namespace test {
 

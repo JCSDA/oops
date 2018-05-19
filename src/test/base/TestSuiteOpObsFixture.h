@@ -43,9 +43,9 @@
 #include "oops/base/PostProcessorTL.h"
 #include "oops/base/StateInfo.h"
 #include "oops/interface/ObsErrorCovariance.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
-#include "util/Logger.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
 
 namespace test {
 

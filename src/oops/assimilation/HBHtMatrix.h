@@ -19,7 +19,7 @@
 #include "oops/base/PostProcessorAD.h"
 #include "oops/base/PostProcessorTL.h"
 #include "oops/interface/Increment.h"
-#include "util/PrintAdjTest.h"
+#include "oops/util/PrintAdjTest.h"
 
 namespace oops {
 

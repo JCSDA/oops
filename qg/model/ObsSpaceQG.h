@@ -16,8 +16,8 @@
 #include <string>
 
 #include "oops/interface/ObsSpaceBase.h"
-#include "util/DateTime.h"
-#include "util/Printable.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Printable.h"
 
 #include "model/LocationsQG.h"
 #include "model/ObsHelpQG.h"

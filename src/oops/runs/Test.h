@@ -20,8 +20,8 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/runs/Application.h"
+#include "oops/util/Logger.h"
 #include "test/TestEnvironment.h"
-#include "util/Logger.h"
 
 namespace oops {
 

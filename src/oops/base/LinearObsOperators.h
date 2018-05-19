@@ -23,9 +23,9 @@
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/ObsVector.h"
-#include "util/DateTime.h"
-#include "util/Logger.h"
-#include "util/Printable.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Logger.h"
+#include "oops/util/Printable.h"
 
 namespace oops {
 

@@ -18,10 +18,10 @@
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/runs/Application.h"
-#include "util/LibOOPS.h"
-#include "util/Logger.h"
-#include "util/ObjectCountHelper.h"
-#include "util/TimerHelper.h"
+#include "oops/util/LibOOPS.h"
+#include "oops/util/Logger.h"
+#include "oops/util/ObjectCountHelper.h"
+#include "oops/util/TimerHelper.h"
 
 namespace oops {
 

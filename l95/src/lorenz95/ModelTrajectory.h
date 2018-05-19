@@ -15,7 +15,7 @@
 
 #include <boost/ptr_container/ptr_vector.hpp>
 
-#include "util/ObjectCounter.h"
+#include "oops/util/ObjectCounter.h"
 
 namespace lorenz95 {
   class FieldL95;

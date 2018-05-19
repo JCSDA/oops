@@ -17,15 +17,13 @@
 
 #include "eckit/config/Configuration.h"
 #include "model/ObsBiasIncrement.h"
-#include "util/Logger.h"
-
-using oops::Log;
+#include "oops/util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
 ObsBias::ObsBias(const eckit::Configuration & conf) : bias_(ntypes, 0.0), active_(false) {
-  Log::info() << "ObsBias: conf = " << conf << std::endl;
+  oops::Log::info() << "ObsBias: conf = " << conf << std::endl;
   active_ = conf.has("stream") || conf.has("uwind") || conf.has("vwind") || conf.has("wspeed");
   if (active_) {
     if (conf.has("stream")) bias_[0] = conf.getDouble("stream");
@@ -39,7 +37,7 @@ ObsBias::ObsBias(const eckit::Configuration & conf) : bias_(ntypes, 0.0), active
       strs << bias_[jj];
       strn += strs.str();
     }
-    Log::info() << "ObsBias::ObsBias created, bias = " << strn << std::endl;
+    oops::Log::info() << "ObsBias::ObsBias created, bias = " << strn << std::endl;
   }
 }
 // -----------------------------------------------------------------------------

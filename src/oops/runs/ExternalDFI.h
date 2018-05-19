@@ -26,10 +26,10 @@
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
 #include "oops/runs/Application.h"
-#include "util/abor1_cpp.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
-#include "util/Logger.h"
+#include "oops/util/abor1_cpp.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 

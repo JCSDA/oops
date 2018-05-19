@@ -19,7 +19,7 @@
 #include "oops/base/Departures.h"
 #include "oops/base/GeneralizedDepartures.h"
 #include "oops/interface/Increment.h"
-#include "util/dot_product.h"
+#include "oops/util/dot_product.h"
 
 namespace oops {
 

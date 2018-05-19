@@ -2,47 +2,6 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
 list( APPEND oops_src_files
 
-util/abor1_cpp.h
-util/abor1_cpp.cc
-util/abor1_ftn.F90
-util/config.intfb.h
-util/config_f.h
-util/config_f.cc
-util/config_mod.F90
-util/dateFunctions.h
-util/dateFunctions.cc
-util/DateTime.h
-util/DateTime.cc
-util/datetime_f.h
-util/datetime_f.cc
-util/datetime.intfb.h
-util/datetime_mod.F90
-util/dot_product.h
-util/Duration.h
-util/Duration.cc
-util/duration.intfb.h
-util/duration_f.h
-util/duration_f.cc
-util/duration_mod.F90
-util/formats.h
-util/kinds.F90
-util/LibOOPS.h
-util/LibOOPS.cc
-util/ObjectCounter.h
-util/ObjectCountHelper.h
-util/ObjectCountHelper.cc
-util/Printable.h
-util/PrintAdjTest.h
-util/set_err_trap.F90
-util/signal_trap.c
-util/string_f_c_mod.F90
-util/Timer.h
-util/Timer.cc
-util/TimerHelper.h
-util/TimerHelper.cc
-util/utilNamespaceDoc.h
-util/Logger.h
-
 oops/assimilation/BMatrix.h
 oops/assimilation/ControlIncrement.h
 oops/assimilation/ControlVariable.h
@@ -160,6 +119,7 @@ oops/base/WeightingFct.cc
 oops/base/instantiateCovarFactory.h
 oops/base/instantiateFilterFactory.h
 
+oops/generic/dcmip_initial_conditions_test_1_2_3_v5.f90
 oops/generic/ObsErrorDiag.h
 oops/generic/instantiateObsErrorFactory.h
 
@@ -189,12 +149,6 @@ oops/interface/ObsVector.h
 oops/interface/ObservationSpace.h
 oops/interface/State.h
 
-test/interface/Locations.h
-test/interface/ObsTestsFixture.h
-test/interface/ObsVector.h
-test/interface/ObservationSpace.h
-test/TestEnvironment.h
-
 oops/runs/Application.h
 oops/runs/EnsForecasts.h
 oops/runs/ExternalDFI.h
@@ -207,7 +161,47 @@ oops/runs/Run.cc
 oops/runs/Test.h
 oops/runs/Variational.h
 
-test/Analytic_IC/dcmip_initial_conditions_test_1_2_3_v5.f90
+oops/util/abor1_cpp.h
+oops/util/abor1_cpp.cc
+oops/util/abor1_ftn.F90
+oops/util/config.intfb.h
+oops/util/config_f.h
+oops/util/config_f.cc
+oops/util/config_mod.F90
+oops/util/dateFunctions.h
+oops/util/dateFunctions.cc
+oops/util/DateTime.h
+oops/util/DateTime.cc
+oops/util/datetime_f.h
+oops/util/datetime_f.cc
+oops/util/datetime.intfb.h
+oops/util/datetime_mod.F90
+oops/util/dot_product.h
+oops/util/Duration.h
+oops/util/Duration.cc
+oops/util/duration.intfb.h
+oops/util/duration_f.h
+oops/util/duration_f.cc
+oops/util/duration_mod.F90
+oops/util/formats.h
+oops/util/kinds.F90
+oops/util/LibOOPS.h
+oops/util/LibOOPS.cc
+oops/util/ObjectCounter.h
+oops/util/ObjectCountHelper.h
+oops/util/ObjectCountHelper.cc
+oops/util/Printable.h
+oops/util/PrintAdjTest.h
+oops/util/set_err_trap.F90
+oops/util/signal_trap.c
+oops/util/string_f_c_mod.F90
+oops/util/Timer.h
+oops/util/Timer.cc
+oops/util/TimerHelper.h
+oops/util/TimerHelper.cc
+oops/util/utilNamespaceDoc.h
+oops/util/Logger.h
+
 )
 
 function(generate_fortran_bindings output filename)
@@ -255,26 +249,3 @@ ecbuild_add_test( TARGET oops_coding_norms
                   ARGS --quiet --recursive ${CMAKE_CURRENT_SOURCE_DIR}
                   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
 
-ecbuild_add_test( TARGET  test_util.x
-                  BOOST
-                  SOURCES util/test/DateTime.cc
-                          util/test/Duration.cc
-                          util/test/test_main.cc
-                  LIBS    oops )
-
-if( HAVE_FCTEST )
-add_fctest( TARGET  test_util_config_intfb.x
-            SOURCES util/test/config.F90
-            CONDITION HAVE_FCTEST
-            LIBS    oops )
-
-add_fctest( TARGET  test_util_datetime_intfb.x
-            SOURCES util/test/datetime.F90
-            CONDITION HAVE_FCTEST
-            LIBS    oops )
-
-add_fctest( TARGET  test_util_duration_intfb.x
-            SOURCES util/test/duration.F90
-            CONDITION HAVE_FCTEST
-            LIBS    oops )
-endif()

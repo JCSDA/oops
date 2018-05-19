@@ -20,10 +20,10 @@
 #include "eckit/config/Configuration.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxIncrement.h"
-#include "util/Logger.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
-#include "util/Timer.h"
+#include "oops/util/Logger.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
+#include "oops/util/Timer.h"
 
 namespace oops {
 

@@ -16,8 +16,8 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
 
 namespace oops {
   class Variables;

@@ -18,9 +18,9 @@
 #include "eckit/config/Configuration.h"
 
 #include "oops/interface/ObservationSpace.h"
-#include "util/abor1_cpp.h"
-#include "util/Logger.h"
-#include "util/Printable.h"
+#include "oops/util/abor1_cpp.h"
+#include "oops/util/Logger.h"
+#include "oops/util/Printable.h"
 
 namespace oops {
 

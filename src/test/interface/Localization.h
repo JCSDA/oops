@@ -29,8 +29,8 @@
 #include "oops/interface/Increment.h"
 #include "oops/interface/Localization.h"
 #include "oops/runs/Test.h"
+#include "oops/util/DateTime.h"
 #include "test/TestEnvironment.h"
-#include "util/DateTime.h"
 
 namespace test {
 

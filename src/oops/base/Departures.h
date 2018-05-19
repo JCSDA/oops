@@ -25,11 +25,11 @@
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/ObsErrorBase.h"
 #include "oops/interface/ObsVector.h"
-#include "util/DateTime.h"
-#include "util/dot_product.h"
-#include "util/Duration.h"
-#include "util/Logger.h"
-#include "util/Printable.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
+#include "oops/util/Printable.h"
 
 namespace oops {
 

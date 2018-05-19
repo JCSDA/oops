@@ -14,7 +14,7 @@
 #pragma once
 
 #include "eckit/testing/Setup.h"
-#include "util/LibOOPS.h"
+#include "oops/util/LibOOPS.h"
 
 namespace test {
 

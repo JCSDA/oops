@@ -13,11 +13,11 @@
 #include <fstream>
 #include <string>
 
-#include "util/abor1_cpp.h"
-#include "util/DateTime.h"
-#include "util/dot_product.h"
-#include "util/Duration.h"
-#include "util/Logger.h"
+#include "oops/util/abor1_cpp.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
 
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/GomL95.h"

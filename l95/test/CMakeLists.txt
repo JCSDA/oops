@@ -32,7 +32,6 @@ list( APPEND l95_test_input
   testinput/test.json
   testinput/truth.json
   testinput/test_op_obs.json
-  compare.sh
 )
 
 list( APPEND l95_test_data
@@ -111,42 +110,42 @@ ecbuild_add_resources( TARGET   l95_test_scripts
 
 ecbuild_add_test( TARGET test_l95_truth
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_forecast.x testinput/truth.json"
                        testoutput/truth.test
                   DEPENDS l95_forecast.x )
 
 ecbuild_add_test( TARGET test_l95_forecast
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_forecast.x testinput/forecast.json"
                         testoutput/forecast.test
                   DEPENDS l95_forecast.x )
 
 ecbuild_add_test( TARGET test_l95_makeobs3d
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_makeobs.x testinput/makeobs3d.json"
                        testoutput/makeobs3d.test
                   DEPENDS l95_makeobs.x )
 
 ecbuild_add_test( TARGET test_l95_makeobs4d
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_makeobs.x testinput/makeobs4d.json"
                        testoutput/makeobs4d.test
                   DEPENDS l95_makeobs.x )
 
 ecbuild_add_test( TARGET test_l95_makeobsbias
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_makeobs.x testinput/makeobsbias.json"
                        testoutput/makeobsbias.test
                   DEPENDS l95_makeobs.x )
 
 ecbuild_add_test( TARGET test_l95_makeobs4d12h
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_makeobs.x testinput/makeobs4d12h.json"
                        testoutput/makeobs4d12h.test
                   DEPENDS l95_makeobs.x )
@@ -383,140 +382,140 @@ ecbuild_add_test( TARGET test_l95_localization
 
 ecbuild_add_test( TARGET test_l95_hofx
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_hofx.x testinput/hofx.json"
                        testoutput/hofx.test
                   DEPENDS l95_hofx.x )
 
 ecbuild_add_test( TARGET test_l95_3dvar
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/3dvar.json"
                        testoutput/3dvar.test
                   DEPENDS l95_4dvar.x )
 
 ecbuild_add_test( TARGET test_l95_4dvar_drgmresr
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.drgmresr.json"
                        testoutput/4dvar.drgmresr.test
                   DEPENDS l95_4dvar.x )
 
 ecbuild_add_test( TARGET test_l95_4dvar_dripcg
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.dripcg.json"
                        testoutput/4dvar.dripcg.test
                   DEPENDS l95_4dvar.x )
 
 ecbuild_add_test( TARGET test_l95_4dvar_dripcgqn
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.dripcgqn.json"
                        testoutput/4dvar.dripcgqn.test
                   DEPENDS l95_4dvar.x )
 
 ecbuild_add_test( TARGET test_l95_4dvar_drpcg
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.drpcg.json"
                        testoutput/4dvar.drpcg.test
                   DEPENDS l95_4dvar.x )
 
 ecbuild_add_test( TARGET test_l95_4dvar_drpcgqn
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.drpcgqn.json"
                        testoutput/4dvar.drpcgqn.test
                   DEPENDS l95_4dvar.x )
 
 ecbuild_add_test( TARGET test_l95_4dvar_drplanczos
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.drplanczos.json"
                        testoutput/4dvar.drplanczos.test
                   DEPENDS l95_4dvar.x )
 
 ecbuild_add_test( TARGET test_l95_4dvar_drplanclmp
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.drplanclmp.json"
                        testoutput/4dvar.drplanclmp.test
                   DEPENDS l95_4dvar.x )
 
 ecbuild_add_test( TARGET test_l95_4dvar_gmresr
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.gmresr.json"
                        testoutput/4dvar.gmresr.test
                   DEPENDS l95_4dvar.x )
 
 ecbuild_add_test( TARGET test_l95_4dvar_ipcg
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.ipcg.json"
                        testoutput/4dvar.ipcg.test
                   DEPENDS l95_4dvar.x )
 
 ecbuild_add_test( TARGET test_l95_4dvar_pcg
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.pcg.json"
                        testoutput/4dvar.pcg.test
                   DEPENDS l95_4dvar.x )
 
 ecbuild_add_test( TARGET test_l95_4dvar_planczos
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.planczos.json"
                        testoutput/4dvar.planczos.test
                   DEPENDS l95_4dvar.x )
 
 ecbuild_add_test( TARGET test_l95_4dvar_rpcg
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.rpcg.json"
                        testoutput/4dvar.rpcg.test
                   DEPENDS l95_4dvar.x )
 
 ecbuild_add_test( TARGET test_l95_4dvar_rplanczos
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.rplanczos.json"
                        testoutput/4dvar.rplanczos.test
                   DEPENDS l95_4dvar.x )
 
 ecbuild_add_test( TARGET test_l95_4dvar_modbias
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.modbias.json"
                        testoutput/4dvar.modbias.test
                   DEPENDS l95_4dvar.x )
 
 ecbuild_add_test( TARGET test_l95_4dvar_forcing
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dforcing.json"
                        testoutput/4dforcing.test
                   DEPENDS l95_4dvar.x )
 
 ecbuild_add_test( TARGET test_l95_4dvar_saddlepoint
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dsaddlepoint.json"
                        testoutput/4dsaddlepoint.test
                   DEPENDS l95_4dvar.x )
 
 ecbuild_add_test( TARGET test_l95_4dvar_obsbias
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.obsbias.json"
                        testoutput/4dvar.obsbias.test
                   DEPENDS l95_4dvar.x )
 
 ecbuild_add_test( TARGET test_l95_3dfgat
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/3dfgat.json"
                        testoutput/3dfgat.test
                   DEPENDS l95_4dvar.x )
@@ -524,28 +523,28 @@ ecbuild_add_test( TARGET test_l95_3dfgat
 if( ${OOPS_SENSITIVE_TESTS} )
 ecbuild_add_test( TARGET test_l95_genenspert
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_genpert.x testinput/genenspert.json"
                        testoutput/genenspert.test
                   DEPENDS l95_genpert.x )
 
 ecbuild_add_test( TARGET test_l95_alpha
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.alpha.json"
                        testoutput/4dvar.alpha.test
                   DEPENDS l95_4dvar.x )
 
 ecbuild_add_test( TARGET test_l95_4dvar_hybrid
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dhybrid.json"
                        testoutput/4dhybrid.test
                   DEPENDS l95_4dvar.x )
 
 ecbuild_add_test( TARGET test_l95_4densvar
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4densvar.json"
                        testoutput/4densvar.test
                   DEPENDS l95_4dvar.x )

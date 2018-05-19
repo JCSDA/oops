@@ -16,9 +16,9 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/runs/Test.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Logger.h"
 #include "test/TestEnvironment.h"
-#include "util/DateTime.h"
-#include "util/Logger.h"
 
 namespace test {
 

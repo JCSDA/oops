@@ -29,8 +29,8 @@
 #include "lorenz95/Resolution.h"
 #include "lorenz95/StateL95.h"
 #include "oops/base/Variables.h"
+#include "oops/util/DateTime.h"
 #include "test/TestFixture.h"
-#include "util/DateTime.h"
 
 namespace test {
 

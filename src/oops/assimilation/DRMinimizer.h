@@ -23,9 +23,9 @@
 #include "oops/assimilation/HtRinvHMatrix.h"
 #include "oops/assimilation/Minimizer.h"
 
-#include "util/dot_product.h"
-#include "util/formats.h"
-#include "util/Logger.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/formats.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 

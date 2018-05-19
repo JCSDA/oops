@@ -17,7 +17,7 @@
 #include "oops/base/FilterBase.h"
 #include "oops/base/ObsFilter.h"
 #include "oops/base/ObsSpaces.h"
-#include "util/Printable.h"
+#include "oops/util/Printable.h"
 
 namespace oops {
 

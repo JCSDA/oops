@@ -21,10 +21,6 @@
 #include "eckit/exception/Exceptions.h"
 #include "eckit/runtime/Main.h"
 
-#include "util/Logger.h"
-
-using oops::Log;
-
 namespace test {
 
 // -----------------------------------------------------------------------------

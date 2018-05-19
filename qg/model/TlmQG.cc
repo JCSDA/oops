@@ -20,11 +20,9 @@
 #include "model/QgFortran.h"
 #include "model/QgTraits.h"
 #include "model/StateQG.h"
-#include "util/abor1_cpp.h"
-#include "util/DateTime.h"
-#include "util/Logger.h"
-
-using oops::Log;
+#include "oops/util/abor1_cpp.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Logger.h"
 
 namespace qg {
 // -----------------------------------------------------------------------------
@@ -39,7 +37,7 @@ TlmQG::TlmQG(const GeometryQG & resol, const eckit::Configuration & tlConf)
   const eckit::Configuration * configc = &tlConf;
   qg_setup_f90(&configc, resol_.toFortran(), keyConfig_);
 
-  Log::trace() << "TlmQG created" << std::endl;
+  oops::Log::trace() << "TlmQG created" << std::endl;
 }
 // -----------------------------------------------------------------------------
 TlmQG::~TlmQG() {
@@ -47,7 +45,7 @@ TlmQG::~TlmQG() {
   for (trajIter jtra = traj_.begin(); jtra != traj_.end(); ++jtra) {
     qg_wipe_traj_f90(jtra->second);
   }
-  Log::trace() << "TlmQG destructed" << std::endl;
+  oops::Log::trace() << "TlmQG destructed" << std::endl;
 }
 // -----------------------------------------------------------------------------
 void TlmQG::setTrajectory(const StateQG & xx, StateQG & xlr, const ModelBias & bias) {
@@ -59,10 +57,10 @@ void TlmQG::setTrajectory(const StateQG & xx, StateQG & xlr, const ModelBias & b
 // should be in print method
   std::vector<double> zstat(15);
   qg_traj_minmaxrms_f90(ftraj, zstat[0]);
-  Log::debug() << "TlmQG trajectory at time " << xx.validTime() << std::endl;
+  oops::Log::debug() << "TlmQG trajectory at time " << xx.validTime() << std::endl;
   for (unsigned int jj = 0; jj < 5; ++jj) {
-    Log::debug() << "  Min=" << zstat[3*jj] << ", Max=" << zstat[3*jj+1]
-                 << ", RMS=" << zstat[3*jj+2] << std::endl;
+    oops::Log::debug() << "  Min=" << zstat[3*jj] << ", Max=" << zstat[3*jj+1]
+                       << ", RMS=" << zstat[3*jj+2] << std::endl;
   }
 // should be in print method
 }
@@ -71,50 +69,50 @@ void TlmQG::initializeTL(IncrementQG & dx) const {
   dx.activateModel();
   ASSERT(dx.fields().isForModel(false));
   qg_prepare_integration_tl_f90(keyConfig_, dx.fields().toFortran());
-  Log::debug() << "TlmQG::initializeTL" << dx.fields() << std::endl;
+  oops::Log::debug() << "TlmQG::initializeTL" << dx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------
 void TlmQG::stepTL(IncrementQG & dx, const ModelBiasIncrement &) const {
   trajICst itra = traj_.find(dx.validTime());
   if (itra == traj_.end()) {
-    Log::error() << "TlmQG: trajectory not available at time " << dx.validTime() << std::endl;
+    oops::Log::error() << "TlmQG: trajectory not available at time " << dx.validTime() << std::endl;
     ABORT("TlmQG: trajectory not available");
   }
   ASSERT(dx.fields().isForModel(false));
-  Log::debug() << "TlmQG::stepTL fields in" << dx.fields() << std::endl;
+  oops::Log::debug() << "TlmQG::stepTL fields in" << dx.fields() << std::endl;
   qg_propagate_tl_f90(keyConfig_, dx.fields().toFortran(), itra->second);
-  Log::debug() << "TlmQG::stepTL fields out" << dx.fields() << std::endl;
+  oops::Log::debug() << "TlmQG::stepTL fields out" << dx.fields() << std::endl;
   dx.validTime() += tstep_;
 }
 // -----------------------------------------------------------------------------
 void TlmQG::finalizeTL(IncrementQG & dx) const {
   dx.deactivateModel();
-  Log::debug() << "TlmQG::finalizeTL" << dx.fields() << std::endl;
+  oops::Log::debug() << "TlmQG::finalizeTL" << dx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------
 void TlmQG::initializeAD(IncrementQG & dx) const {
   dx.activateModel();
   ASSERT(dx.fields().isForModel(false));
-  Log::debug() << "TlmQG::initializeAD" << dx.fields() << std::endl;
+  oops::Log::debug() << "TlmQG::initializeAD" << dx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------
 void TlmQG::stepAD(IncrementQG & dx, ModelBiasIncrement &) const {
   dx.validTime() -= tstep_;
   trajICst itra = traj_.find(dx.validTime());
   if (itra == traj_.end()) {
-    Log::error() << "TlmQG: trajectory not available at time " << dx.validTime() << std::endl;
+    oops::Log::error() << "TlmQG: trajectory not available at time " << dx.validTime() << std::endl;
     ABORT("TlmQG: trajectory not available");
   }
   ASSERT(dx.fields().isForModel(false));
-  Log::debug() << "TlmQG::stepAD fields in" << dx.fields() << std::endl;
+  oops::Log::debug() << "TlmQG::stepAD fields in" << dx.fields() << std::endl;
   qg_propagate_ad_f90(keyConfig_, dx.fields().toFortran(), itra->second);
-  Log::debug() << "TlmQG::stepAD fields out" << dx.fields() << std::endl;
+  oops::Log::debug() << "TlmQG::stepAD fields out" << dx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------
 void TlmQG::finalizeAD(IncrementQG & dx) const {
   qg_prepare_integration_ad_f90(keyConfig_, dx.fields().toFortran());
   dx.deactivateModel();
-  Log::debug() << "TlmQG::finalizeAD" << dx.fields() << std::endl;
+  oops::Log::debug() << "TlmQG::finalizeAD" << dx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------
 void TlmQG::print(std::ostream & os) const {

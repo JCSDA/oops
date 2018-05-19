@@ -21,8 +21,8 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/TriDiagSpectrum.h"
-#include "util/dot_product.h"
-#include "util/Logger.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 

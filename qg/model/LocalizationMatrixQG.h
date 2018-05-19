@@ -16,7 +16,7 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/interface/LocalizationBase.h"
-#include "util/ObjectCounter.h"
+#include "oops/util/ObjectCounter.h"
 
 #include "model/QgFortran.h"
 #include "model/QgTraits.h"

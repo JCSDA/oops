@@ -19,9 +19,9 @@
 #include "eckit/config/Configuration.h"
 #include "model/GeometryQG.h"
 #include "model/QgFortran.h"
-#include "util/DateTime.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
 
 // Forward declarations
 namespace oops {

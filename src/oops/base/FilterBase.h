@@ -16,8 +16,8 @@
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsVector.h"
-#include "util/abor1_cpp.h"
-#include "util/Printable.h"
+#include "oops/util/abor1_cpp.h"
+#include "oops/util/Printable.h"
 
 namespace oops {
 

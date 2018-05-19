@@ -29,9 +29,9 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/runs/Test.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/dot_product.h"
 #include "test/TestEnvironment.h"
-#include "util/DateTime.h"
-#include "util/dot_product.h"
 
 namespace test {
 

@@ -22,11 +22,11 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/interface/ObservationSpace.h"
-#include "util/DateTime.h"
-#include "util/Logger.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
-#include "util/Timer.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Logger.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
+#include "oops/util/Timer.h"
 
 namespace oops {
   template <typename T>

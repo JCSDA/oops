@@ -21,10 +21,10 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Locations.h"
-#include "util/DateTime.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
-#include "util/Timer.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
+#include "oops/util/Timer.h"
 
 namespace oops {
 

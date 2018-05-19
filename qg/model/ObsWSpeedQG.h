@@ -20,7 +20,7 @@
 #include "model/QgTraits.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/ObsOperatorBase.h"
-#include "util/ObjectCounter.h"
+#include "oops/util/ObjectCounter.h"
 
 // Forward declarations
 namespace eckit {

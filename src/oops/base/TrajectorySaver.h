@@ -19,8 +19,8 @@
 #include "oops/interface/LinearModel.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
 
 namespace oops {
 

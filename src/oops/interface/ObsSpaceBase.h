@@ -14,8 +14,8 @@
 #include <boost/noncopyable.hpp>
 #include "eckit/config/LocalConfiguration.h"
 
-#include "util/DateTime.h"
-#include "util/Printable.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Printable.h"
 
 namespace oops {
 

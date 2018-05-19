@@ -20,8 +20,8 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
-#include "util/abor1_cpp.h"
-#include "util/Logger.h"
+#include "oops/util/abor1_cpp.h"
+#include "oops/util/Logger.h"
 
 namespace util {
   class DateTime;

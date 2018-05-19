@@ -14,7 +14,7 @@
 #include <map>
 #include <string>
 
-#include "util/DateTime.h"
+#include "oops/util/DateTime.h"
 
 namespace eckit {
   class Configuration;

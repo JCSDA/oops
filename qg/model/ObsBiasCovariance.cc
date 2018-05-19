@@ -20,9 +20,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "model/ObsBias.h"
 #include "model/ObsBiasIncrement.h"
-#include "util/Logger.h"
-
-using oops::Log;
+#include "oops/util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {
@@ -50,7 +48,7 @@ ObsBiasCovariance::ObsBiasCovariance(const eckit::Configuration & conf)
         strn += "0.0";
       }
     }
-    Log::info() << "ObsBiasCovariance created, variances = " << strn << std::endl;
+    oops::Log::info() << "ObsBiasCovariance created, variances = " << strn << std::endl;
 //  }
 }
 // -----------------------------------------------------------------------------

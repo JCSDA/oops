@@ -16,8 +16,8 @@
 #include "lorenz95/ModelTrajectory.h"
 #include "lorenz95/Resolution.h"
 #include "lorenz95/StateL95.h"
-#include "util/Duration.h"
-#include "util/Logger.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
 
 namespace lorenz95 {
 

@@ -19,10 +19,10 @@
 #include "lorenz95/Resolution.h"
 
 #include "oops/base/GeneralizedDepartures.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
 
 namespace eckit {
   class Configuration;

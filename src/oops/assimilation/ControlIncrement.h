@@ -20,10 +20,10 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxIncrement.h"
 #include "oops/interface/ObsAuxIncrement.h"
-#include "util/dot_product.h"
-#include "util/Logger.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/Logger.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
 
 namespace oops {
 

@@ -17,8 +17,8 @@
 #include "oops/assimilation/State4D.h"
 #include "oops/base/PostBase.h"
 #include "oops/interface/State.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
 
 namespace oops {
 

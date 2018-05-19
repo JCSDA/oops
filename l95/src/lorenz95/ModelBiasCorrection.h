@@ -14,7 +14,7 @@
 #include <cmath>
 #include <iostream>
 
-#include "util/Printable.h"
+#include "oops/util/Printable.h"
 
 namespace eckit {
   class Configuration;

@@ -14,9 +14,9 @@
 #include <cmath>
 #include <vector>
 
-#include "util/dot_product.h"
-#include "util/formats.h"
-#include "util/Logger.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/formats.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 

@@ -25,12 +25,11 @@
 #include "oops/assimilation/Minimizer.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
-
-#include "util/abor1_cpp.h"
-#include "util/dot_product.h"
-#include "util/formats.h"
-#include "util/Logger.h"
-#include "util/PrintAdjTest.h"
+#include "oops/util/abor1_cpp.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/formats.h"
+#include "oops/util/Logger.h"
+#include "oops/util/PrintAdjTest.h"
 
 namespace oops {
 

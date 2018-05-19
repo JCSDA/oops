@@ -27,7 +27,6 @@ list( APPEND qg_test_input
   testinput/test_op_obs.json
   testinput/analytic_init.json
   testinput/analytic_init_fc.json
-  compare.sh
 )
 
 list( APPEND qg_testoutput
@@ -89,49 +88,49 @@ file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Data)
 
 ecbuild_add_test( TARGET test_qg_truth
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_forecast.x testinput/truth.json"
                        testoutput/truth.test
                   DEPENDS qg_forecast.x )
 
 ecbuild_add_test( TARGET test_qg_aninit_fc
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_forecast.x testinput/analytic_init_fc.json"
                        testoutput/analytic_init_fc.test
                   DEPENDS qg_forecast.x )
 
 ecbuild_add_test( TARGET test_qg_forecast
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_forecast.x testinput/forecast.json"
                        testoutput/forecast.test
                   DEPENDS qg_forecast.x )
 
 ecbuild_add_test( TARGET test_qg_makeobs3d
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_makeobs.x testinput/makeobs3d.json"
                        testoutput/makeobs3d.test
                   DEPENDS qg_makeobs.x )
 
 ecbuild_add_test( TARGET test_qg_makeobs4d
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_makeobs.x testinput/makeobs4d.json"
                        testoutput/makeobs4d.test
                   DEPENDS qg_makeobs.x )
 
 ecbuild_add_test( TARGET test_qg_makeobs4d12h
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_makeobs.x testinput/makeobs4d12h.json"
                        testoutput/makeobs4d12h.test
                   DEPENDS qg_makeobs.x )
 
 ecbuild_add_test( TARGET test_qg_makeobsbias
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_makeobs.x testinput/makeobsbias.json"
                        testoutput/makeobsbias.test
                   DEPENDS qg_makeobs.x )
@@ -280,49 +279,49 @@ ecbuild_add_test( TARGET  test_qg_localization
 
 ecbuild_add_test( TARGET test_qg_hofx
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_hofx.x testinput/hofx.json"
                        testoutput/hofx.test
                   DEPENDS qg_hofx.x )
 
 ecbuild_add_test( TARGET test_qg_3dvar
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/3dvar.json"
                        testoutput/3dvar.test
                   DEPENDS qg_4dvar.x )
 
 ecbuild_add_test( TARGET test_qg_3dfgat
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/3dfgat.json"
                        testoutput/3dfgat.test
                   DEPENDS qg_4dvar.x )
 
 ecbuild_add_test( TARGET test_qg_4dvar_drpcglmp
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/4dvar.drpcglmp.json"
                        testoutput/4dvar.drpcglmp.test
                   DEPENDS qg_4dvar.x )
 
 ecbuild_add_test( TARGET test_qg_4dvar_drpfom
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/4dvar.drpfom.json"
                        testoutput/4dvar.drpfom.test
                   DEPENDS qg_4dvar.x )
 
 ecbuild_add_test( TARGET test_qg_4dvar_drplanczos
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/4dvar.drplanczos.json"
                        testoutput/4dvar.drplanczos.test
                   DEPENDS qg_4dvar.x )
 
 ecbuild_add_test( TARGET test_qg_4dvar_dripcg
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/4dvar.dripcg.json"
                        testoutput/4dvar.dripcg.test
                   DEPENDS qg_4dvar.x )
@@ -330,7 +329,7 @@ ecbuild_add_test( TARGET test_qg_4dvar_dripcg
 if( ${OOPS_SENSITIVE_TESTS} )
 ecbuild_add_test( TARGET test_qg_4dvar_ipcg
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/4dvar.ipcg.json"
                        testoutput/4dvar.ipcg.test
                   DEPENDS qg_4dvar.x )
@@ -338,28 +337,28 @@ endif()
 
 ecbuild_add_test( TARGET test_qg_4dvar_rpcg
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/4dvar.rpcg.json"
                        testoutput/4dvar.rpcg.test
                   DEPENDS qg_4dvar.x )
 
 ecbuild_add_test( TARGET test_qg_4dvar_obsbias
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/4dvar.obsbias.json"
                        testoutput/4dvar.obsbias.test
                   DEPENDS qg_4dvar.x )
 
 ecbuild_add_test( TARGET test_qg_4dvar_forcing
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/4dforcing.json"
                        testoutput/4dforcing.test
                   DEPENDS qg_4dvar.x )
 
 ecbuild_add_test( TARGET test_qg_4dvar_saddlepoint
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/4dsaddlepoint.json"
                        testoutput/4dsaddlepoint.test
                   DEPENDS qg_4dvar.x )
@@ -367,28 +366,28 @@ ecbuild_add_test( TARGET test_qg_4dvar_saddlepoint
 if( ${OOPS_SENSITIVE_TESTS} )
 ecbuild_add_test( TARGET test_qg_genenspert
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_genpert.x testinput/genenspert.json"
                        testoutput/genenspert.test
                   DEPENDS qg_genpert.x )
 
 ecbuild_add_test( TARGET test_qg_4dvar_hybrid
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/4dhybrid.json"
                        testoutput/4dhybrid.test
                   DEPENDS qg_4dvar.x )
 
 ecbuild_add_test( TARGET test_qg_4densvar
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/4densvar.json"
                        testoutput/4densvar.test
                   DEPENDS qg_4dvar.x )
 
 ecbuild_add_test( TARGET test_qg_alpha
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/4dvar.alpha.json"
                        testoutput/4dvar.alpha.test
                   DEPENDS qg_4dvar.x )
@@ -396,7 +395,7 @@ endif()
 
 ecbuild_add_test( TARGET test_qg_dfi
                   TYPE SCRIPT
-                  COMMAND "compare.sh"
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_dfi.x testinput/dfi.json"
                        testoutput/dfi.test
                   DEPENDS qg_dfi.x )

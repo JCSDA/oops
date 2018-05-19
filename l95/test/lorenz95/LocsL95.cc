@@ -15,8 +15,8 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ObsTable.h"
+#include "oops/util/DateTime.h"
 #include "test/TestFixture.h"
-#include "util/DateTime.h"
 
 namespace test {
 

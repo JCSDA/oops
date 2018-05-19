@@ -21,8 +21,8 @@
 #include "eckit/config/Configuration.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
-#include "util/abor1_cpp.h"
-#include "util/Printable.h"
+#include "oops/util/abor1_cpp.h"
+#include "oops/util/Printable.h"
 
 namespace oops {
 

@@ -15,7 +15,7 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Printable.h"
+#include "oops/util/Printable.h"
 
 namespace oops {
 

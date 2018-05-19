@@ -17,11 +17,9 @@
 #include "model/QgFortran.h"
 #include "model/QgTraits.h"
 #include "model/StateQG.h"
-#include "util/abor1_cpp.h"
-#include "util/DateTime.h"
-#include "util/Logger.h"
-
-using oops::Log;
+#include "oops/util/abor1_cpp.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Logger.h"
 
 namespace qg {
 // -----------------------------------------------------------------------------
@@ -35,12 +33,12 @@ TlmIdQG::TlmIdQG(const GeometryQG & resol, const eckit::Configuration & tlConf)
   const eckit::Configuration * configc = &tlConf;
   qg_setup_f90(&configc, resol_.toFortran(), keyConfig_);
 
-  Log::trace() << "TlmIdQG created" << std::endl;
+  oops::Log::trace() << "TlmIdQG created" << std::endl;
 }
 // -----------------------------------------------------------------------------
 TlmIdQG::~TlmIdQG() {
   qg_delete_f90(keyConfig_);
-  Log::trace() << "TlmIdQG destructed" << std::endl;
+  oops::Log::trace() << "TlmIdQG destructed" << std::endl;
 }
 // -----------------------------------------------------------------------------
 void TlmIdQG::setTrajectory(const StateQG &, StateQG &, const ModelBias &) {}
@@ -49,7 +47,7 @@ void TlmIdQG::initializeTL(IncrementQG & dx) const {
   dx.activateModel();
   ASSERT(dx.fields().isForModel(false));
   qg_prepare_integration_tl_f90(keyConfig_, dx.fields().toFortran());
-  Log::debug() << "TlmIdQG::initializeTL" << dx.fields() << std::endl;
+  oops::Log::debug() << "TlmIdQG::initializeTL" << dx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------
 void TlmIdQG::stepTL(IncrementQG & dx, const ModelBiasIncrement &) const {
@@ -58,13 +56,13 @@ void TlmIdQG::stepTL(IncrementQG & dx, const ModelBiasIncrement &) const {
 // -----------------------------------------------------------------------------
 void TlmIdQG::finalizeTL(IncrementQG & dx) const {
   dx.deactivateModel();
-  Log::debug() << "TlmIdQG::finalizeTL" << dx.fields() << std::endl;
+  oops::Log::debug() << "TlmIdQG::finalizeTL" << dx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------
 void TlmIdQG::initializeAD(IncrementQG & dx) const {
   dx.activateModel();
   ASSERT(dx.fields().isForModel(false));
-  Log::debug() << "TlmIdQG::initializeAD" << dx.fields() << std::endl;
+  oops::Log::debug() << "TlmIdQG::initializeAD" << dx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------
 void TlmIdQG::stepAD(IncrementQG & dx, ModelBiasIncrement &) const {
@@ -74,7 +72,7 @@ void TlmIdQG::stepAD(IncrementQG & dx, ModelBiasIncrement &) const {
 void TlmIdQG::finalizeAD(IncrementQG & dx) const {
   qg_prepare_integration_ad_f90(keyConfig_, dx.fields().toFortran());
   dx.deactivateModel();
-  Log::debug() << "TlmIdQG::finalizeAD" << dx.fields() << std::endl;
+  oops::Log::debug() << "TlmIdQG::finalizeAD" << dx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------
 void TlmIdQG::print(std::ostream & os) const {

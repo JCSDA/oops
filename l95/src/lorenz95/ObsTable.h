@@ -18,8 +18,8 @@
 #include <vector>
 
 #include "oops/interface/ObsSpaceBase.h"
-#include "util/DateTime.h"
-#include "util/ObjectCounter.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/ObjectCounter.h"
 
 namespace eckit {
   class Configuration;

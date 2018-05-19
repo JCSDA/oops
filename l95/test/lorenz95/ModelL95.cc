@@ -20,9 +20,9 @@
 #include "lorenz95/ModelL95.h"
 #include "lorenz95/ModelTrajectory.h"
 #include "lorenz95/Resolution.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
 #include "test/TestFixture.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
 
 namespace test {
 

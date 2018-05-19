@@ -18,8 +18,8 @@
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsVector.h"
-#include "util/dot_product.h"
-#include "util/Logger.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 

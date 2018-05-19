@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-#include "util/Printable.h"
+#include "oops/util/Printable.h"
 
 // Forward declarations
 namespace eckit {

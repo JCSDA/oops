@@ -24,10 +24,10 @@
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
-#include "util/DateTime.h"
-#include "util/dot_product.h"
-#include "util/Duration.h"
-#include "util/Logger.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
   template<typename MODEL> class ControlIncrement;

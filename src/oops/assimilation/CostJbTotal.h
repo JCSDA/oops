@@ -22,7 +22,7 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxCovariance.h"
 #include "oops/interface/ObsAuxCovariance.h"
-#include "util/Logger.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
   template<typename MODEL> class JqTerm;

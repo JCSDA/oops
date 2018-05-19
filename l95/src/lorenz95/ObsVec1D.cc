@@ -19,9 +19,9 @@
 #include "eckit/exception/Exceptions.h"
 #include "lorenz95/GomL95.h"
 #include "lorenz95/ObsTable.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
-#include "util/Logger.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
 
 namespace lorenz95 {
 // -----------------------------------------------------------------------------

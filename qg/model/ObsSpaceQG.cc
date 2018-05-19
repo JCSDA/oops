@@ -15,8 +15,8 @@
 
 #include "eckit/config/Configuration.h"
 
-#include "util/abor1_cpp.h"
-#include "util/Logger.h"
+#include "oops/util/abor1_cpp.h"
+#include "oops/util/Logger.h"
 
 #include "model/ObsVecQG.h"
 

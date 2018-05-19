@@ -14,11 +14,9 @@
 
 #include "eckit/config/Configuration.h"
 #include "model/QgFortran.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
-#include "util/Logger.h"
-
-using oops::Log;
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
 
 namespace qg {
 
@@ -27,27 +25,27 @@ namespace qg {
 ObsHelpQG::ObsHelpQG(const eckit::Configuration & config) {
   const eckit::Configuration * configc = &config;
   qg_obsdb_setup_f90(keyHelp_, &configc);
-  Log::trace() << "ObsHelpQG constructed" << std::endl;
+  oops::Log::trace() << "ObsHelpQG constructed" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 ObsHelpQG::~ObsHelpQG() {
   qg_obsdb_delete_f90(keyHelp_);
-  Log::trace() << "ObsHelpQG destructed" << std::endl;
+  oops::Log::trace() << "ObsHelpQG destructed" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsHelpQG::putdb(const std::string & obsname, const std::string & col, const int & keyFvec) {
-  Log::trace() << "ObsHelpQG:putdb obsname = " << obsname << ", col = " << col << std::endl;
+  oops::Log::trace() << "ObsHelpQG:putdb obsname = " << obsname << ", col = " << col << std::endl;
   qg_obsdb_put_f90(keyHelp_, obsname.size(), obsname.c_str(), col.size(), col.c_str(), keyFvec);
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsHelpQG::getdb(const std::string & obsname, const std::string & col, int & keyFvec) const {
-  Log::trace() << "ObsHelpQG:getdb obsname = " << obsname << ", col = " << col << std::endl;
+  oops::Log::trace() << "ObsHelpQG:getdb obsname = " << obsname << ", col = " << col << std::endl;
   qg_obsdb_get_f90(keyHelp_, obsname.size(), obsname.c_str(), col.size(), col.c_str(), keyFvec);
 }
 

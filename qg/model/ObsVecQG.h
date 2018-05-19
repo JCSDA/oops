@@ -15,8 +15,8 @@
 #include <string>
 
 #include "model/QgFortran.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
 
 namespace qg {
   class ObsSpaceQG;

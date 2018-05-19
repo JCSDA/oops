@@ -22,10 +22,10 @@
 #include "lorenz95/ModelL95.h"
 #include "lorenz95/ModelTrajectory.h"
 #include "lorenz95/Resolution.h"
-#include "util/abor1_cpp.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
-#include "util/Logger.h"
+#include "oops/util/abor1_cpp.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 class Variables;

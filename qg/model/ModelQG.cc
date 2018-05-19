@@ -16,55 +16,53 @@
 #include "model/ModelBias.h"
 #include "model/QgFortran.h"
 #include "model/StateQG.h"
-#include "util/DateTime.h"
-#include "util/Logger.h"
-
-using oops::Log;
+#include "oops/util/DateTime.h"
+#include "oops/util/Logger.h"
 
 namespace qg {
 // -----------------------------------------------------------------------------
 ModelQG::ModelQG(const GeometryQG & resol, const eckit::Configuration & model)
   : keyConfig_(0), tstep_(0), geom_(resol)
 {
-  Log::trace() << "ModelQG::ModelQG" << std::endl;
+  oops::Log::trace() << "ModelQG::ModelQG" << std::endl;
   tstep_ = util::Duration(model.getString("tstep"));
   const eckit::Configuration * configc = &model;
   qg_setup_f90(&configc, geom_.toFortran(), keyConfig_);
-  Log::trace() << "ModelQG created" << std::endl;
+  oops::Log::trace() << "ModelQG created" << std::endl;
 }
 // -----------------------------------------------------------------------------
 ModelQG::~ModelQG() {
   qg_delete_f90(keyConfig_);
-  Log::trace() << "ModelQG destructed" << std::endl;
+  oops::Log::trace() << "ModelQG destructed" << std::endl;
 }
 // -----------------------------------------------------------------------------
 void ModelQG::initialize(StateQG & xx) const {
   xx.activateModel();
   ASSERT(xx.fields().isForModel(true));
   qg_prepare_integration_f90(keyConfig_, xx.fields().toFortran());
-  Log::debug() << "ModelQG::initialize" << xx.fields() << std::endl;
+  oops::Log::debug() << "ModelQG::initialize" << xx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------
 void ModelQG::step(StateQG & xx, const ModelBias &) const {
   ASSERT(xx.fields().isForModel(true));
-  Log::debug() << "ModelQG::step fields in" << xx.fields() << std::endl;
+  oops::Log::debug() << "ModelQG::step fields in" << xx.fields() << std::endl;
   qg_propagate_f90(keyConfig_, xx.fields().toFortran());
   xx.validTime() += tstep_;
-  Log::debug() << "ModelQG::step fields out" << xx.fields() << std::endl;
+  oops::Log::debug() << "ModelQG::step fields out" << xx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------
 void ModelQG::finalize(StateQG & xx) const {
   xx.deactivateModel();
-  Log::debug() << "ModelQG::finalize" << xx.fields() << std::endl;
+  oops::Log::debug() << "ModelQG::finalize" << xx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------
 int ModelQG::saveTrajectory(StateQG & xx, const ModelBias &) const {
 // ASSERT(xx.fields().isForModel(true));
   int ftraj = 0;
-  Log::debug() << "ModelQG::saveTrajectory fields in" << xx.fields() << std::endl;
+  oops::Log::debug() << "ModelQG::saveTrajectory fields in" << xx.fields() << std::endl;
   qg_prop_traj_f90(keyConfig_, xx.fields().toFortran(), ftraj);
   ASSERT(ftraj != 0);
-  Log::debug() << "ModelQG::saveTrajectory fields out" << xx.fields() << std::endl;
+  oops::Log::debug() << "ModelQG::saveTrajectory fields out" << xx.fields() << std::endl;
   return ftraj;
 }
 // -----------------------------------------------------------------------------

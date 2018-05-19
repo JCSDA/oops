@@ -16,7 +16,7 @@
 #include <boost/noncopyable.hpp>
 
 #include "model/QgFortran.h"
-#include "util/ObjectCounter.h"
+#include "oops/util/ObjectCounter.h"
 
 // Forward declarations
 namespace eckit {

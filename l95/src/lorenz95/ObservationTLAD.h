@@ -17,7 +17,7 @@
 #include "lorenz95/L95Traits.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/LinearObsOperBase.h"
-#include "util/ObjectCounter.h"
+#include "oops/util/ObjectCounter.h"
 
 // Forward declarations
 namespace eckit {

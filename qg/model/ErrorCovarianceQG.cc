@@ -19,7 +19,7 @@
 #include "model/QgFortran.h"
 #include "model/StateQG.h"
 #include "oops/base/Variables.h"
-#include "util/Logger.h"
+#include "oops/util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {

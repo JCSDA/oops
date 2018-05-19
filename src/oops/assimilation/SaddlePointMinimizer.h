@@ -29,7 +29,7 @@
 #include "oops/assimilation/SaddlePointPrecondMatrix.h"
 #include "oops/assimilation/SaddlePointVector.h"
 
-#include "util/Logger.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 

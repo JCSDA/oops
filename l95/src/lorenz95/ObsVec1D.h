@@ -17,8 +17,8 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
 
 namespace lorenz95 {
   class ObsTable;

@@ -19,7 +19,7 @@
 #include "model/ObsVecQG.h"
 #include "model/QgFortran.h"
 #include "oops/base/Variables.h"
-#include "util/Logger.h"
+#include "oops/util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {

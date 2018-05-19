@@ -17,7 +17,7 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "oops/interface/ObsErrorBase.h"
-#include "util/Logger.h"
+#include "oops/util/Logger.h"
 
 namespace eckit {
   class Configuration;

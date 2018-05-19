@@ -15,7 +15,7 @@
 
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/DualVector.h"
-#include "util/dot_product.h"
+#include "oops/util/dot_product.h"
 
 namespace oops {
 

@@ -59,7 +59,7 @@ logical :: netcdfio = .true.
 #define LISTED_TYPE qg_field
 
 !> Linked list interface - defines registry_t type
-#include "util/linkedList_i.f"
+#include "oops/util/linkedList_i.f"
 
 !> Global registry
 type(registry_t) :: qg_field_registry
@@ -68,7 +68,7 @@ type(registry_t) :: qg_field_registry
 contains
 ! ------------------------------------------------------------------------------
 !> Linked list implementation
-#include "util/linkedList_c.f"
+#include "oops/util/linkedList_c.f"
 
 ! ------------------------------------------------------------------------------
 

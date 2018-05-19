@@ -221,7 +221,6 @@ compile time.
 - Do not <tt>use</tt> an entire namespace (i.e. using directive).
 - By preference, use explicit namespace qualifications
   (e.g. <tt>std::string</tt>).
-  However, <tt>using std::string</tt> etc. is acceptable.
 - <tt>using</tt> statements must never be used at global scope in a header file.
 - Use anonymous namespaces to restrict classes (e.g. Factories) to file scope.
 

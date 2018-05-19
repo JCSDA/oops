@@ -22,8 +22,8 @@
 #include "oops/base/Variables.h"
 #include "oops/base/WeightingFct.h"
 #include "oops/interface/Geometry.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
 
 namespace oops {
 

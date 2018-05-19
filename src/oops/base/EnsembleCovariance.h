@@ -22,9 +22,9 @@
 #include "oops/interface/Increment.h"
 #include "oops/interface/Localization.h"
 #include "oops/interface/State.h"
-#include "util/abor1_cpp.h"
-#include "util/DateTime.h"
-#include "util/Logger.h"
+#include "oops/util/abor1_cpp.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 

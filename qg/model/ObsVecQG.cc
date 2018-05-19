@@ -10,7 +10,7 @@
 
 #include <math.h>
 
-#include "util/Logger.h"
+#include "oops/util/Logger.h"
 
 #include "model/ObsSpaceQG.h"
 #include "model/ObsVecQG.h"

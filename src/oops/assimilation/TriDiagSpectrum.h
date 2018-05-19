@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "util/Logger.h"
+#include "oops/util/Logger.h"
 
 extern "C" {
   void FtnTriDiagSpectrum(const int &, const double *, const double *,

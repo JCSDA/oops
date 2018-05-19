@@ -21,8 +21,8 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/State.h"
-#include "util/Logger.h"
-#include "util/Printable.h"
+#include "oops/util/Logger.h"
+#include "oops/util/Printable.h"
 
 namespace oops {
 

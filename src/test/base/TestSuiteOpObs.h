@@ -15,8 +15,8 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include "util/dot_product.h"
-#include "util/Duration.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/Duration.h"
 
 namespace test {
 

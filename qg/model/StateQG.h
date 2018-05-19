@@ -17,9 +17,9 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "model/FieldsQG.h"
-#include "util/DateTime.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
 
 namespace eckit {
   class Configuration;

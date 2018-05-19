@@ -12,7 +12,7 @@
 
 #include "eckit/config/Configuration.h"
 #include "lorenz95/ObsTable.h"
-#include "util/DateTime.h"
+#include "oops/util/DateTime.h"
 
 namespace lorenz95 {
 

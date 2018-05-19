@@ -1,4 +1,0 @@
-
-cd $1
-cpplint.py --quiet  $(find . -name "*.cc")
-

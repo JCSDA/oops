@@ -19,8 +19,8 @@
 #include "lorenz95/ObsBias.h"
 #include "lorenz95/ObsVec1D.h"
 #include "oops/base/Variables.h"
-#include "util/DateTime.h"
-#include "util/Logger.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {

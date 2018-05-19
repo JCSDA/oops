@@ -22,7 +22,7 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
 #include "oops/interface/State.h"
-#include "util/Logger.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 

@@ -21,7 +21,7 @@
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/LBHessianMatrix.h"
 #include "oops/assimilation/Minimizer.h"
-#include "util/Logger.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 

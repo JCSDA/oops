@@ -16,10 +16,10 @@
 #include <boost/tokenizer.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/abor1_cpp.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
-#include "util/Logger.h"
+#include "oops/util/abor1_cpp.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 // -----------------------------------------------------------------------------

@@ -14,7 +14,7 @@
 #include <iostream>
 
 #include "eckit/config/Configuration.h"
-#include "util/Printable.h"
+#include "oops/util/Printable.h"
 
 namespace lorenz95 {
 

@@ -16,7 +16,7 @@
 #include "eckit/config/Configuration.h"
 #include "lorenz95/ObsBias.h"
 #include "lorenz95/ObsBiasCovariance.h"
-#include "util/Logger.h"
+#include "oops/util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {

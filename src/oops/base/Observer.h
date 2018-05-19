@@ -24,10 +24,10 @@
 #include "oops/base/PostBase.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
-#include "util/Logger.h"
-#include "util/Printable.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
+#include "oops/util/Printable.h"
 
 namespace oops {
 

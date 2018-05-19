@@ -22,8 +22,8 @@
 #include "oops/base/PostBaseAD.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxIncrement.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
 
 namespace oops {
 

@@ -3,7 +3,6 @@
 list( APPEND test_files
   compare.sh
   cpplint.py
-  oopslint
 )
 
 foreach(FILENAME ${test_files})

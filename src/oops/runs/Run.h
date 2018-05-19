@@ -15,7 +15,7 @@
 
 #include "eckit/config/YAMLConfiguration.h"
 #include "eckit/runtime/Main.h"
-#include "util/Timer.h"
+#include "oops/util/Timer.h"
 
 namespace oops {
   class Application;

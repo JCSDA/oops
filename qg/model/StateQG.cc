@@ -25,9 +25,9 @@
 #include "model/ModelBias.h"
 #include "model/ModelQG.h"
 #include "oops/base/Variables.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
-#include "util/Logger.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
 
 namespace qg {
 

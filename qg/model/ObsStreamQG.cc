@@ -18,7 +18,7 @@
 #include "model/ObsSpaceQG.h"
 #include "model/ObsVecQG.h"
 #include "oops/base/Variables.h"
-#include "util/Logger.h"
+#include "oops/util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {

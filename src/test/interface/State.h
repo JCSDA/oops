@@ -31,10 +31,10 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/State.h"
 #include "oops/runs/Test.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/Logger.h"
 #include "test/TestEnvironment.h"
-#include "util/DateTime.h"
-#include "util/dot_product.h"
-#include "util/Logger.h"
 
 namespace test {
 

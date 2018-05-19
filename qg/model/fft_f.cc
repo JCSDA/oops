@@ -11,7 +11,7 @@
 #include <cmath>
 #include <vector>
 
-#include "util/Logger.h"
+#include "oops/util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {

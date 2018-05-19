@@ -31,7 +31,7 @@ end type obs_vect
 #define LISTED_TYPE obs_vect
 
 !> Linked list interface - defines registry_t type
-#include "util/linkedList_i.f"
+#include "oops/util/linkedList_i.f"
 
 !> Global registry
 type(registry_t) :: qg_obs_vect_registry
@@ -40,7 +40,7 @@ type(registry_t) :: qg_obs_vect_registry
 contains
 ! ------------------------------------------------------------------------------
 !> Linked list implementation
-#include "util/linkedList_c.f"
+#include "oops/util/linkedList_c.f"
 
 ! ------------------------------------------------------------------------------
 

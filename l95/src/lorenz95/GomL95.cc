@@ -19,8 +19,8 @@
 #include "eckit/config/Configuration.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ObsTable.h"
-#include "util/abor1_cpp.h"
-#include "util/Logger.h"
+#include "oops/util/abor1_cpp.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 class Variables;

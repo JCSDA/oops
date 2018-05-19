@@ -13,7 +13,7 @@
 
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
-#include "util/DateTime.h"
+#include "oops/util/DateTime.h"
 
 namespace oops {
 
