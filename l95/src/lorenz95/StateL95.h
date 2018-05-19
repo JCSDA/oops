@@ -37,6 +37,7 @@ namespace lorenz95 {
   class ModelBias;
   class ModelL95;
   class ModelTrajectory;
+  class Nothing;
 
 /// L95 model state
 /*!
@@ -60,6 +61,7 @@ class StateL95 : public util::Printable,
 
 /// Interpolate to observation location
   void interpolate(const LocsL95 &, const oops::Variables &, GomL95 &) const;
+  void interpolate(const LocsL95 &, const oops::Variables &, GomL95 &, Nothing &) const;
 
 /// Interactions with increments
   StateL95 & operator+=(const IncrementL95 &);

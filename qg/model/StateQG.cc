@@ -24,6 +24,7 @@
 #include "model/LocationsQG.h"
 #include "model/ModelBias.h"
 #include "model/ModelQG.h"
+#include "model/Nothing.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -120,6 +121,11 @@ StateQG & StateQG::operator=(const StateQG & rhs) {
 // -----------------------------------------------------------------------------
 void StateQG::interpolate(const LocationsQG & locs, const oops::Variables & vars,
                           GomQG & cols) const {
+  fields_->interpolate(locs, vars, cols);
+}
+// -----------------------------------------------------------------------------
+void StateQG::interpolate(const LocationsQG & locs, const oops::Variables & vars,
+                          GomQG & cols, Nothing &) const {
   fields_->interpolate(locs, vars, cols);
 }
 // -----------------------------------------------------------------------------

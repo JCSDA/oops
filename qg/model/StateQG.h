@@ -34,6 +34,7 @@ namespace qg {
   class LocationsQG;
   class GeometryQG;
   class IncrementQG;
+  class Nothing;
 
 /// QG model state
 /*!
@@ -57,6 +58,7 @@ class StateQG : public util::Printable,
 
 /// Interpolate to observation location
   void interpolate(const LocationsQG &, const oops::Variables &, GomQG &) const;
+  void interpolate(const LocationsQG &, const oops::Variables &, GomQG &, Nothing &) const;
 
 /// Interpolate full fields
   void changeResolution(const StateQG & xx);

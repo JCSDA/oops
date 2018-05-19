@@ -21,6 +21,7 @@
 #include "lorenz95/ModelBiasCorrection.h"
 #include "lorenz95/ModelBiasCovariance.h"
 #include "lorenz95/ModelL95.h"
+#include "lorenz95/Nothing.h"
 #include "lorenz95/ObsBias.h"
 #include "lorenz95/ObsBiasCorrection.h"
 #include "lorenz95/ObsBiasCovariance.h"
@@ -41,6 +42,7 @@ struct L95Traits {
   typedef lorenz95::ModelL95               Model;
   typedef lorenz95::IncrementL95           Increment;
   typedef lorenz95::ErrorCovarianceL95     Covariance;
+  typedef lorenz95::Nothing                InterpolatorTraj;
 
   typedef lorenz95::ModelBias              ModelAuxControl;
   typedef lorenz95::ModelBiasCorrection    ModelAuxIncrement;

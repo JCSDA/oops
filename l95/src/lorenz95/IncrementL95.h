@@ -37,6 +37,7 @@ namespace lorenz95 {
   class LocsL95;
   class ModelBiasCorrection;
   class StateL95;
+  class Nothing;
 
 /// Increment Class: Difference between two states
 /*!
@@ -72,8 +73,10 @@ class IncrementL95 : public util::Printable,
   void random();
 
 /// Interpolate to observation location
-  void interpolateTL(const LocsL95 &, const oops::Variables &, GomL95 &) const;
-  void interpolateAD(const LocsL95 &, const oops::Variables &, const GomL95 &);
+  void interpolateTL(const LocsL95 &, const oops::Variables &,
+                     GomL95 &, const Nothing &) const;
+  void interpolateAD(const LocsL95 &, const oops::Variables &,
+                     const GomL95 &, const Nothing &);
 
 // Utilities
   void read(const eckit::Configuration &);

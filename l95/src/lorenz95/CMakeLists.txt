@@ -22,6 +22,7 @@ ecbuild_add_library( TARGET lorenz95
                          ModelL95.cc
                          ModelTrajectory.cc
                          ModelTrajectory.h
+                         Nothing.h
                          ObsBias.cc
                          ObsBias.h
                          ObsBiasCorrection.cc

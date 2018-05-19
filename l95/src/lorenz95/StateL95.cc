@@ -21,6 +21,7 @@
 #include "lorenz95/ModelBias.h"
 #include "lorenz95/ModelL95.h"
 #include "lorenz95/ModelTrajectory.h"
+#include "lorenz95/Nothing.h"
 #include "lorenz95/Resolution.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
@@ -83,6 +84,11 @@ StateL95 & StateL95::operator=(const StateL95 & rhs) {
 /// Interpolate to observation location
 // -----------------------------------------------------------------------------
 void StateL95::interpolate(const LocsL95 & locs, const oops::Variables &, GomL95 & vals) const {
+  fld_.interp(locs, vals);
+}
+// -----------------------------------------------------------------------------
+void StateL95::interpolate(const LocsL95 & locs, const oops::Variables &, GomL95 & vals,
+                           Nothing &) const {
   fld_.interp(locs, vals);
 }
 // -----------------------------------------------------------------------------

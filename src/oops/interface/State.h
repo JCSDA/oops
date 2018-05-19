@@ -20,6 +20,7 @@
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeoVaLs.h"
+#include "oops/interface/InterpolatorTraj.h"
 #include "oops/interface/Locations.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
@@ -38,6 +39,7 @@ class State : public util::Printable,
   typedef typename MODEL::State      State_;
   typedef Geometry<MODEL>            Geometry_;
   typedef GeoVaLs<MODEL>             GeoVaLs_;
+  typedef InterpolatorTraj<MODEL>    InterpolatorTraj_;
   typedef Locations<MODEL>           Locations_;
 
  public:
@@ -56,6 +58,7 @@ class State : public util::Printable,
 
 /// Interpolate to observation location
   void interpolate(const Locations_ &, const Variables &, GeoVaLs_ &) const;
+  void interpolate(const Locations_ &, const Variables &, GeoVaLs_ &, InterpolatorTraj_ &) const;
 
 /// Time
   const util::DateTime validTime() const {return state_->validTime();}
@@ -152,6 +155,17 @@ void State<MODEL>::interpolate(const Locations_ & locs, const Variables & vars,
   util::Timer timer(classname(), "interpolate");
   state_->interpolate(locs.locations(), vars, gvals.geovals());
   Log::trace() << "State<MODEL>::interpolate done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void State<MODEL>::interpolate(const Locations_ & locs, const Variables & vars,
+                               GeoVaLs_ & gvals, InterpolatorTraj_ & traj) const {
+  Log::trace() << "State<MODEL>::interpolate traj starting" << std::endl;
+  util::Timer timer(classname(), "interpolate");
+  state_->interpolate(locs.locations(), vars, gvals.geovals(), traj.interpolatortraj());
+  Log::trace() << "State<MODEL>::interpolate traj done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

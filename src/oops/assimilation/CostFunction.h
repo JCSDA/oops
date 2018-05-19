@@ -274,7 +274,7 @@ double CostFunction<MODEL>::linearize(const CtrlVar_ & fguess,
   const eckit::LocalConfiguration resConf(innerConf, "resolution");
   const Geometry_ lowres(resConf);
 
-// Setup terms of cost function
+// Setup trajectory for terms of cost function
   PostProcessorTLAD<MODEL> pptraj;
   JqTermTLAD_ * jq = jb_->initializeTraj(fguess, lowres);
   pptraj.enrollProcessor(jq);
@@ -287,13 +287,12 @@ double CostFunction<MODEL>::linearize(const CtrlVar_ & fguess,
   const eckit::LocalConfiguration tlmConf(innerConf, "linearmodel");
   tlm_.clear();   // YT: Should release at the end and should be inside quadratic J object
   PostProcessor<State_> pp(post);
-  pp.enrollProcessor(new TrajectorySaver<MODEL>(tlmConf, lowres, fguess.modVar(), tlm_,
-                                                pptraj));
+  pp.enrollProcessor(new TrajectorySaver<MODEL>(tlmConf, lowres, fguess.modVar(), tlm_, pptraj));
 
 // Run NL model
   double zzz = this->evaluate(fguess, innerConf, pp);
 
-// Cost function value
+// Finalize trajectory setup
   jb_->finalizeTraj(jq);
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
     jterms_[jj].finalizeTraj();

@@ -40,6 +40,7 @@ namespace qg {
   class ModelBiasIncrement;
   class ErrorCovarianceQG;
   class StateQG;
+  class Nothing;
 
 /// Increment Class: Difference between two states
 /*!
@@ -77,8 +78,10 @@ class IncrementQG : public oops::GeneralizedDepartures,
   void random();
 
 /// Interpolate to observation location
-  void interpolateTL(const LocationsQG &, const oops::Variables &, GomQG &) const;
-  void interpolateAD(const LocationsQG &, const oops::Variables &, const GomQG &);
+  void interpolateTL(const LocationsQG &, const oops::Variables &,
+                     GomQG &, const Nothing &) const;
+  void interpolateAD(const LocationsQG &, const oops::Variables &,
+                     const GomQG &, const Nothing &);
 
 /// I/O and diagnostics
   void read(const eckit::Configuration &);

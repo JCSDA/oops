@@ -85,6 +85,7 @@ oops/base/GeneralizedDepartures.h
 oops/base/GeoVaLsWriter.h
 oops/base/HybridCovariance.h
 oops/base/IdentityMatrix.h
+oops/base/InterpolatorTLAD.h
 oops/base/LinearObsOperators.h
 oops/base/ModelSpaceCovarianceBase.h
 oops/base/ObsErrors.h
@@ -122,6 +123,7 @@ oops/interface/ErrorCovariance.h
 oops/interface/Geometry.h
 oops/interface/GeoVaLs.h
 oops/interface/Increment.h
+oops/interface/InterpolatorTraj.h
 oops/interface/LinearModel.h
 oops/interface/LinearObsOperBase.h
 oops/interface/LinearObsOperator.h

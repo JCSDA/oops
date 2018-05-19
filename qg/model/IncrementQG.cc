@@ -22,6 +22,7 @@
 #include "model/GomQG.h"
 #include "model/LocationsQG.h"
 #include "model/ModelBiasIncrement.h"
+#include "model/Nothing.h"
 #include "model/StateQG.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
@@ -149,14 +150,14 @@ void IncrementQG::random() {
 /// Interpolate to observation location
 // -----------------------------------------------------------------------------
 void IncrementQG::interpolateTL(const LocationsQG & locs, const oops::Variables & vars,
-                                GomQG & cols) const {
+                                GomQG & cols, const Nothing &) const {
   oops::Log::debug() << "IncrementQG::interpolateTL fields in" << *fields_ << std::endl;
   fields_->interpolateTL(locs, vars, cols);
   oops::Log::debug() << "IncrementQG::interpolateTL gom " << cols << std::endl;
 }
 // -----------------------------------------------------------------------------
 void IncrementQG::interpolateAD(const LocationsQG & locs, const oops::Variables & vars,
-                                const GomQG & cols) {
+                                const GomQG & cols, const Nothing &) {
   oops::Log::debug() << "IncrementQG::interpolateAD gom " << cols << std::endl;
   oops::Log::debug() << "IncrementQG::interpolateAD fields in" << *fields_ << std::endl;
   fields_->interpolateAD(locs, vars, cols);

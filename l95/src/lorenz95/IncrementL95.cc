@@ -23,6 +23,7 @@
 #include "lorenz95/GomL95.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ModelBiasCorrection.h"
+#include "lorenz95/Nothing.h"
 #include "lorenz95/Resolution.h"
 #include "lorenz95/StateL95.h"
 
@@ -181,13 +182,13 @@ void IncrementL95::print(std::ostream & os) const {
 // -----------------------------------------------------------------------------
 /// Interpolate to observation location
 // -----------------------------------------------------------------------------
-void IncrementL95::interpolateTL(const LocsL95 & locs, const oops::Variables &, GomL95 & vals) const
-{
+void IncrementL95::interpolateTL(const LocsL95 & locs, const oops::Variables &,
+                                 GomL95 & vals, const Nothing &) const {
   fld_.interp(locs, vals);
 }
 // -----------------------------------------------------------------------------
-void IncrementL95::interpolateAD(const LocsL95 & locs, const oops::Variables &, const GomL95 & vals)
-{
+void IncrementL95::interpolateAD(const LocsL95 & locs, const oops::Variables &,
+                                 const GomL95 & vals, const Nothing &) {
   fld_.interpAD(locs, vals);
 }
 // -----------------------------------------------------------------------------

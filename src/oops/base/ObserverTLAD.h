@@ -18,6 +18,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "oops/base/Departures.h"
+#include "oops/base/InterpolatorTLAD.h"
 #include "oops/base/LinearObsOperators.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObsFilters.h"
@@ -29,8 +30,8 @@
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/State.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
 
 namespace oops {
 
@@ -41,6 +42,7 @@ class ObserverTLAD : public PostBaseTLAD<MODEL> {
   typedef Departures<MODEL>          Departures_;
   typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef Increment<MODEL>           Increment_;
+  typedef InterpolatorTLAD<MODEL>    InterpolatorTLAD_;
   typedef LinearObsOperators<MODEL>  LinearObsOperators_;
   typedef Observations<MODEL>        Observations_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
@@ -78,7 +80,7 @@ class ObserverTLAD : public PostBaseTLAD<MODEL> {
 
 // Obs operator
   const ObsSpace_ & obspace_;
-  boost::shared_ptr<LinearObsOperators_> hoptlad_;  // remove ptr once moved out of observer
+  LinearObsOperators_ hoptlad_;
   Observer<MODEL, State_> observer_;
 
 // Data
@@ -86,6 +88,7 @@ class ObserverTLAD : public PostBaseTLAD<MODEL> {
   const ObsAuxIncr_ * ybiastl_;
   boost::shared_ptr<const Departures_> ydepad_;
   ObsAuxIncr_ * ybiasad_;
+  InterpolatorTLAD_ interptlad_;
 
   util::DateTime winbgn_;   //!< Begining of assimilation window
   util::DateTime winend_;   //!< End of assimilation window
@@ -105,9 +108,9 @@ ObserverTLAD<MODEL>::ObserverTLAD(const ObsSpace_ & obsdb,
                                   const ObsFilters_ & filters,
                                   const util::Duration & tslot, const bool subwin)
   : PostBaseTLAD<MODEL>(obsdb.windowStart(), obsdb.windowEnd()),
-    obspace_(obsdb), hoptlad_(new LinearObsOperators_(obspace_)),
-    observer_(obspace_, hop, ybias, filters, tslot, subwin, hoptlad_),
-    ydeptl_(), ybiastl_(), ydepad_(), ybiasad_(),
+    obspace_(obsdb), hoptlad_(obspace_),
+    observer_(obspace_, hop, ybias, filters, tslot, subwin),
+    ydeptl_(), ybiastl_(), ydepad_(), ybiasad_(), interptlad_(obspace_.size()),
     winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
     bgn_(winbgn_), end_(winend_), hslot_(tslot/2), subwindows_(subwin)
 {
@@ -125,14 +128,14 @@ void ObserverTLAD<MODEL>::doInitializeTraj(const State_ & xx,
 template <typename MODEL>
 void ObserverTLAD<MODEL>::doProcessingTraj(const State_ & xx) {
   Log::trace() << "ObserverTLAD::doProcessingTraj start" << std::endl;
-  observer_.process(xx);
+  observer_.processTraj(xx, interptlad_);
   Log::trace() << "ObserverTLAD::doProcessingTraj done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 void ObserverTLAD<MODEL>::doFinalizeTraj(const State_ & xx) {
   Log::trace() << "ObserverTLAD::doFinalizeTraj start" << std::endl;
-  observer_.finalize(xx);
+  observer_.finalizeTraj(xx, hoptlad_);
   Log::trace() << "ObserverTLAD::doFinalizeTraj done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -164,7 +167,7 @@ void ObserverTLAD<MODEL>::doInitializeTL(const Increment_ & dx,
 
   for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
     boost::shared_ptr<GeoVaLs_>
-      gom(new GeoVaLs_(obspace_[jj].locations(bgn_, end_), hoptlad_->variables(jj)));
+      gom(new GeoVaLs_(obspace_[jj].locations(bgn_, end_), hoptlad_.variables(jj)));
     gvals_.push_back(gom);
   }
   Log::trace() << "ObserverTLAD::doInitializeTL done" << std::endl;
@@ -180,7 +183,8 @@ void ObserverTLAD<MODEL>::doProcessingTL(const Increment_ & dx) {
 
 // Interpolate state variables to obs locations
   for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
-    dx.interpolateTL(obspace_[jj].locations(t1, t2), hoptlad_->variables(jj), *gvals_.at(jj));
+    dx.interpolateTL(obspace_[jj].locations(t1, t2), hoptlad_.variables(jj),
+                     *gvals_.at(jj), interptlad_[jj]);
   }
   Log::trace() << "ObserverTLAD::doProcessingTL done" << std::endl;
 }
@@ -189,7 +193,7 @@ template <typename MODEL>
 void ObserverTLAD<MODEL>::doFinalizeTL(const Increment_ &) {
   Log::trace() << "ObserverTLAD::doFinalizeTL start" << std::endl;
   for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
-    (*hoptlad_)[jj].obsEquivTL(*gvals_.at(jj), (*ydeptl_)[jj], *ybiastl_);
+    hoptlad_[jj].obsEquivTL(*gvals_.at(jj), (*ydeptl_)[jj], *ybiastl_);
   }
   gvals_.clear();
   Log::trace() << "ObserverTLAD::doFinalizeTL done" << std::endl;
@@ -224,8 +228,8 @@ void ObserverTLAD<MODEL>::doFirstAD(Increment_ & dx, const util::DateTime & bgn,
 
   for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
     boost::shared_ptr<GeoVaLs_>
-      gom(new GeoVaLs_(obspace_[jj].locations(bgn_, end_), hoptlad_->variables(jj)));
-    (*hoptlad_)[jj].obsEquivAD(*gom, (*ydepad_)[jj], *ybiasad_);
+      gom(new GeoVaLs_(obspace_[jj].locations(bgn_, end_), hoptlad_.variables(jj)));
+    hoptlad_[jj].obsEquivAD(*gom, (*ydepad_)[jj], *ybiasad_);
     gvals_.push_back(gom);
   }
   Log::trace() << "ObserverTLAD::doFirstAD done" << std::endl;
@@ -241,7 +245,8 @@ void ObserverTLAD<MODEL>::doProcessingAD(Increment_ & dx) {
 
 // Adjoint of interpolate state variables to obs locations
   for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
-    dx.interpolateAD(obspace_[jj].locations(t1, t2), hoptlad_->variables(jj), *gvals_.at(jj));
+    dx.interpolateAD(obspace_[jj].locations(t1, t2), hoptlad_.variables(jj),
+                     *gvals_.at(jj), interptlad_[jj]);
   }
   Log::trace() << "ObserverTLAD::doProcessingAD done" << std::endl;
 }
