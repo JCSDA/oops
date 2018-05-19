@@ -17,7 +17,6 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Logger.h"
 #include "oops/assimilation/CostJbState.h"
 #include "oops/assimilation/Increment4D.h"
 #include "oops/assimilation/State4D.h"
@@ -26,8 +25,9 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "util/DateTime.h"
-#include "util/Duration.h"
 #include "util/dot_product.h"
+#include "util/Duration.h"
+#include "util/Logger.h"
 
 namespace oops {
   template<typename MODEL> class ControlIncrement;

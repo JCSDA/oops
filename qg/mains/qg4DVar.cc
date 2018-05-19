@@ -8,10 +8,10 @@
  * does it submit to any jurisdiction.
  */
 
-#include "model/QgTraits.h"
 #include "model/instantiateQgLocalizationFactory.h"
-#include "oops/runs/Variational.h"
+#include "model/QgTraits.h"
 #include "oops/runs/Run.h"
+#include "oops/runs/Variational.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
@@ -19,4 +19,4 @@ int main(int argc,  char ** argv) {
   oops::Variational<qg::QgTraits> var;
   run.execute(var);
   return 0;
-};
+}

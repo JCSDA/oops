@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2017 UCAR
+ * (C) Copyright 2017-2018 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -9,6 +9,7 @@
 #define TEST_INTERFACE_LINEAROBSOPERATOR_H_
 
 #include <string>
+#include <vector>
 
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API
@@ -17,15 +18,15 @@
 
 #include <boost/scoped_ptr.hpp>
 
-#include "util/Logger.h"
-#include "oops/runs/Test.h"
 #include "oops/interface/LinearObsOperator.h"
-#include "oops/interface/ObsOperator.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxIncrement.h"
-#include "test/TestEnvironment.h"
+#include "oops/interface/ObsOperator.h"
+#include "oops/runs/Test.h"
 #include "test/interface/ObsTestsFixture.h"
+#include "test/TestEnvironment.h"
 #include "util/dot_product.h"
+#include "util/Logger.h"
 
 namespace test {
 
@@ -115,7 +116,7 @@ template <typename MODEL> void testAdjoint() {
   const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
   std::vector<eckit::LocalConfiguration> conf;
   obsconf.get("ObsTypes", conf);
-  
+
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     LinearObsOperator_ hoptl(Test_::obspace()[jj]);
     eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
@@ -173,30 +174,30 @@ template <typename MODEL> void testTangentLinear() {
 
   const double tol = TestEnvironment::config().getDouble("LinearObsOpTest.toleranceTL");
   const int iter = TestEnvironment::config().getDouble("LinearObsOpTest.testiterTL");
-  
+
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     LinearObsOperator_ hoptl(Test_::obspace()[jj]);
     ObsOperator_ hop(Test_::obspace()[jj]);
 
     const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
     Locations_ locs(Test_::obspace()[jj].locations(Test_::tbgn(), Test_::tend()));
-    
+
     eckit::LocalConfiguration biasConf;
     conf[jj].get("ObsBias", biasConf);
     const ObsAuxCtrl_ ybias(biasConf);
- 
+
     const ObsAuxIncr_ ybinc(biasConf);
 
     ObsVector_ y1(Test_::obspace()[jj]);   // y1 = hop(x)
     ObsVector_ y2(Test_::obspace()[jj]);   // y2 = hop(x+alpha*dx)
-    ObsVector_ y3(Test_::obspace()[jj]);   // y3 = hoptl(alpha*dx)    
+    ObsVector_ y3(Test_::obspace()[jj]);   // y3 = hoptl(alpha*dx)
 
-    GeoVaLs_ gv(locs, hop.variables(), gconf); // Background
+    GeoVaLs_ gv(locs, hop.variables(), gconf);  // Background
 
     hoptl.setTrajectory(gv, ybias);
- 
-    hop.obsEquiv(gv, y1, ybias); 
-    
+
+    hop.obsEquiv(gv, y1, ybias);
+
     GeoVaLs_ dgv(locs, hoptl.variables(), gconf);
     dgv.random();
 
@@ -209,18 +210,18 @@ template <typename MODEL> void testTangentLinear() {
       gv = gv0;
       dgv *= alpha;
       gv += dgv;
-      
+
       hop.obsEquiv(gv, y2, ybias);
       y2 -= y1;
       hoptl.obsEquivTL(dgv, y3, ybinc);
       y2 -= y3;
-      double test_norm=y2.rms();
+      double test_norm = y2.rms();
       y3 = y3_init;
       oops::Log::debug() << "Iter:" << jter << " ||(h(x+alpha*dx)-h(x))/h'(alpha*dx)||="
-                         << test_norm << std::endl;          
+                         << test_norm << std::endl;
     }
     BOOST_CHECK(y2.rms() < tol);
- }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -237,7 +238,7 @@ template <typename MODEL> class LinearObsOperator : public oops::Test {
 
     ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
     ts->add(BOOST_TEST_CASE(&testLinearity<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testTangentLinear<MODEL>));    
+    ts->add(BOOST_TEST_CASE(&testTangentLinear<MODEL>));
     ts->add(BOOST_TEST_CASE(&testAdjoint<MODEL>));
     boost::unit_test::framework::master_test_suite().add(ts);
   }

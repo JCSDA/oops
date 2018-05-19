@@ -15,15 +15,15 @@
 #include <sstream>
 #include <string>
 
-#include "util/Logger.h"
+#include "eckit/config/Configuration.h"
 #include "oops/assimilation/Increment4D.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxIncrement.h"
 #include "oops/interface/ObsAuxIncrement.h"
-#include "eckit/config/Configuration.h"
+#include "util/dot_product.h"
+#include "util/Logger.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
-#include "util/dot_product.h"
 
 namespace oops {
 

@@ -12,16 +12,18 @@
 
 #include <algorithm>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/base/Variables.h"
-#include "model/GomQG.h"
-#include "model/LocationsQG.h"
-#include "model/ModelBiasIncrement.h"
 #include "model/ErrorCovarianceQG.h"
 #include "model/FieldsQG.h"
 #include "model/GeometryQG.h"
+#include "model/GomQG.h"
+#include "model/LocationsQG.h"
+#include "model/ModelBiasIncrement.h"
 #include "model/StateQG.h"
+#include "oops/base/Variables.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
 #include "util/Logger.h"
@@ -63,7 +65,7 @@ IncrementQG::~IncrementQG() {
 // -----------------------------------------------------------------------------
 void IncrementQG::activateModel() {
 // Should get variables from linear model. YT
-  const std::vector<std::string> vv{"x","q","u","v"};
+  const std::vector<std::string> vv{"x", "q", "u", "v"};
   oops::Variables vars(vv);
   stash_.reset(new FieldsQG(*fields_, vars));
   swap(fields_, stash_);

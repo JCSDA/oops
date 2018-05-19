@@ -13,13 +13,13 @@
 #include <cmath>
 
 #include "eckit/config/Configuration.h"
-#include "oops/base/Variables.h"
-#include "util/Logger.h"
 #include "model/FieldsQG.h"
-#include "model/QgFortran.h"
 #include "model/GeometryQG.h"
 #include "model/IncrementQG.h"
+#include "model/QgFortran.h"
 #include "model/StateQG.h"
+#include "oops/base/Variables.h"
+#include "util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {

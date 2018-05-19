@@ -10,20 +10,20 @@
 
 #include "lorenz95/TLML95.h"
 
+#include "eckit/config/LocalConfiguration.h"
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/IncrementL95.h"
-#include "lorenz95/ModelL95.h"
+#include "lorenz95/L95Traits.h"
 #include "lorenz95/ModelBias.h"
 #include "lorenz95/ModelBiasCorrection.h"
+#include "lorenz95/ModelL95.h"
 #include "lorenz95/ModelTrajectory.h"
 #include "lorenz95/Resolution.h"
 #include "lorenz95/StateL95.h"
-#include "lorenz95/L95Traits.h"
-#include "eckit/config/LocalConfiguration.h"
+#include "util/abor1_cpp.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
 #include "util/Logger.h"
-#include "util/abor1_cpp.h"
 
 namespace lorenz95 {
 // -----------------------------------------------------------------------------

@@ -21,10 +21,10 @@
 #include "model/GeometryQG.h"
 #include "oops/base/GeneralizedDepartures.h"
 #include "util/DateTime.h"
+#include "util/dot_product.h"
 #include "util/Duration.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
-#include "util/dot_product.h"
 
 namespace eckit {
   class Configuration;

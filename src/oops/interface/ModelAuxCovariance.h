@@ -17,11 +17,11 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
-#include "util/Logger.h"
+#include "eckit/config/Configuration.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/ModelAuxIncrement.h"
-#include "eckit/config/Configuration.h"
+#include "util/Logger.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 #include "util/Timer.h"

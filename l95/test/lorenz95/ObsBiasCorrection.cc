@@ -16,9 +16,9 @@
 #include <boost/test/unit_test.hpp>
 
 #include "./TestConfig.h"
+#include "eckit/config/LocalConfiguration.h"
 #include "lorenz95/ObsBias.h"
 #include "lorenz95/ObsBiasCorrection.h"
-#include "eckit/config/LocalConfiguration.h"
 #include "test/TestFixture.h"
 
 namespace test {

@@ -24,7 +24,6 @@ namespace oops {
 
 class LibOOPS : public eckit::system::Library {
  public:
-
   LibOOPS();
 
   ~LibOOPS();
@@ -40,7 +39,6 @@ class LibOOPS : public eckit::system::Library {
   void finalise();
 
  protected:
-
   const void* addr() const;
 
   virtual std::string version() const;

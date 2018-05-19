@@ -11,9 +11,9 @@
 #ifndef OOPS_BASE_WEIGHTEDMEAN_H_
 #define OOPS_BASE_WEIGHTEDMEAN_H_
 
-#include <boost/scoped_ptr.hpp>
 #include <cmath>
 #include <map>
+#include <boost/scoped_ptr.hpp>
 
 #include "oops/base/Accumulator.h"
 #include "oops/base/DolphChebyshev.h"

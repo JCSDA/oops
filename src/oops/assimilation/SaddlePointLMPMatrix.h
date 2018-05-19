@@ -11,6 +11,10 @@
 #ifndef OOPS_ASSIMILATION_SADDLEPOINTLMPMATRIX_H_
 #define OOPS_ASSIMILATION_SADDLEPOINTLMPMATRIX_H_
 
+#include <Eigen/Dense>
+#include <iostream>
+#include <vector>
+
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
@@ -22,10 +26,6 @@
 #include "oops/assimilation/SaddlePointVector.h"
 #include "oops/base/IdentityMatrix.h"
 #include "oops/interface/Increment.h"
-
-#include <Eigen/Dense>
-#include <iostream>
-#include <vector>
 
 namespace oops {
 
@@ -71,7 +71,6 @@ class SaddlePointLMPMatrix : private boost::noncopyable {
   void multiply(const SPVector_ &, SPVector_ &) const;
 
  private:
-
   void Pinitmultiply(const SPVector_ &, SPVector_ &) const;
 
   void Gmultiply(const SPVector_ &, Eigen::VectorXd &) const;

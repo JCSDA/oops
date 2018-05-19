@@ -13,9 +13,9 @@
 #include <iostream>
 #include <string>
 
-#include "util/Logger.h"
-#include "lorenz95/ModelBiasCorrection.h"
 #include "eckit/config/Configuration.h"
+#include "lorenz95/ModelBiasCorrection.h"
+#include "util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {

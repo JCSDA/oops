@@ -1,8 +1,8 @@
 /*
- * (C) Copyright 2017 UCAR
- * 
+ * (C) Copyright 2017-2018 UCAR
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
 #ifndef TEST_INTERFACE_GEOVALS_H_
@@ -20,13 +20,13 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
+#include "eckit/config/LocalConfiguration.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Locations.h"
 #include "oops/interface/ObsOperator.h"
 #include "oops/runs/Test.h"
 #include "test/TestEnvironment.h"
-#include "eckit/config/LocalConfiguration.h"
 #include "util/dot_product.h"
 
 namespace test {
@@ -72,7 +72,7 @@ template <typename MODEL> void testConstructor() {
   typedef oops::ObsOperator<MODEL> ObsOperator_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    ObsOperator_ hop(Test_::obspace()[jj]); 
+    ObsOperator_ hop(Test_::obspace()[jj]);
 
     Locations_ locs(Test_::obspace()[jj].locations(Test_::tbgn(), Test_::tend()));
     boost::scoped_ptr<GeoVaLs_> ov(new GeoVaLs_(locs, hop.variables()));

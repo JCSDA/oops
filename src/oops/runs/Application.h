@@ -28,10 +28,10 @@ class Application : public util::Printable {
  public:
   Application() {}
   virtual ~Application() {}
-  virtual int execute(const eckit::Configuration &) const =0;
+  virtual int execute(const eckit::Configuration &) const = 0;
 
  private:
-  virtual std::string appname() const =0;
+  virtual std::string appname() const = 0;
   virtual void print(std::ostream & os) const {os << appname();}
 };
 

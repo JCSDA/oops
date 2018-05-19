@@ -14,15 +14,14 @@
 #include <map>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Logger.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/CostJbJq.h"
 #include "oops/assimilation/CostJcDFI.h"
 #include "oops/assimilation/CostJo.h"
 #include "oops/assimilation/CostTermBase.h"
 #include "oops/base/PostProcessor.h"
-#include "oops/base/PostProcessorTL.h"
 #include "oops/base/PostProcessorAD.h"
+#include "oops/base/PostProcessorTL.h"
 #include "oops/base/StateInfo.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
@@ -31,6 +30,7 @@
 #include "oops/interface/State.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
+#include "util/Logger.h"
 
 namespace oops {
 
@@ -69,7 +69,8 @@ template<typename MODEL> class CostFctWeak : public CostFunction<MODEL> {
  private:
   void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_> &) const override;
 
-  CostJbJq<MODEL>     * newJb(const eckit::Configuration &, const Geometry_ &, const CtrlVar_ &) const override;
+  CostJbJq<MODEL>     * newJb(const eckit::Configuration &, const Geometry_ &,
+                              const CtrlVar_ &) const override;
   CostJo<MODEL>       * newJo(const eckit::Configuration &) const override;
   CostTermBase<MODEL> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
 
@@ -160,7 +161,8 @@ void CostFctWeak<MODEL>::runTLM(CtrlInc_ & dx,
 
     ASSERT(dx.state()[jsub].validTime() == bgn);
     if (tlforcing_ && jsub > 0) dx.state()[jsub] += dx.state()[jsub-1];
-    CostFct_::getTLM(jsub).forecastTL(dx.state()[jsub], dx.modVar(), windowSub_, post, cost, idModel);
+    CostFct_::getTLM(jsub).forecastTL(dx.state()[jsub], dx.modVar(), windowSub_, post, cost,
+                                      idModel);
     ASSERT(dx.state()[jsub].validTime() == end);
   }
 }
@@ -214,7 +216,8 @@ void CostFctWeak<MODEL>::runADJ(CtrlInc_ & dx,
     util::DateTime end(bgn + windowSub_);
 
     ASSERT(dx.state()[jsub].validTime() == end);
-    CostFct_::getTLM(jsub).forecastAD(dx.state()[jsub], dx.modVar(), windowSub_, post, cost, idModel);
+    CostFct_::getTLM(jsub).forecastAD(dx.state()[jsub], dx.modVar(), windowSub_, post, cost,
+                                      idModel);
     if (tlforcing_ && jsub > 0) dx.state()[jsub-1] += dx.state()[jsub];
     ASSERT(dx.state()[jsub].validTime() == bgn);
   }

@@ -15,11 +15,11 @@
 
 #include <boost/noncopyable.hpp>
 
-#include "util/Logger.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
 #include "util/Duration.h"
+#include "util/Logger.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 #include "util/Timer.h"

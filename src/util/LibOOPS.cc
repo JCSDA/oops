@@ -15,8 +15,8 @@
 #include <algorithm>
 #include <string>
 
-#include "eckit/log/PrefixTarget.h"
 #include "eckit/log/OStreamTarget.h"
+#include "eckit/log/PrefixTarget.h"
 #include "eckit/utils/Translator.h"
 
 #include "util/LibOOPS.h"
@@ -37,8 +37,7 @@ LibOOPS::LibOOPS() : Library("oops") {
 LibOOPS::~LibOOPS() {
 }
 
-LibOOPS& LibOOPS::instance()
-{
+LibOOPS& LibOOPS::instance() {
   return liboops;
 }
 
@@ -65,8 +64,7 @@ std::string LibOOPS::gitsha1(unsigned int count) const {
   return sha1.substr(0, std::min(count, 40u));
 }
 
-eckit::Channel& LibOOPS::traceChannel() const
-{
+eckit::Channel& LibOOPS::traceChannel() const {
   if (traceChannel_) { return *traceChannel_; }
   if (trace_) {
     traceChannel_.reset(new eckit::Channel(
@@ -77,16 +75,14 @@ eckit::Channel& LibOOPS::traceChannel() const
   return *traceChannel_;
 }
 
-eckit::Channel& LibOOPS::statsChannel() const
-{
+eckit::Channel& LibOOPS::statsChannel() const {
   if (statsChannel_) { return *statsChannel_; }
   statsChannel_.reset(new eckit::Channel(
     new eckit::PrefixTarget("OOPS_STATS", new eckit::OStreamTarget(eckit::Log::info()))));
   return *statsChannel_;
 }
 
-eckit::Channel& LibOOPS::testChannel() const
-{
+eckit::Channel& LibOOPS::testChannel() const {
   if (testChannel_) { return *testChannel_; }
   testChannel_.reset(new eckit::Channel(
     new eckit::PrefixTarget("Test     :", new eckit::OStreamTarget(eckit::Log::info()))));

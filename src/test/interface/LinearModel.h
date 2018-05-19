@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -12,11 +12,11 @@
 #define TEST_INTERFACE_LINEARMODEL_H_
 
 #include <algorithm>
-#include <iostream>
+#include <cmath>
 #include <iomanip>
+#include <iostream>
 #include <limits>
 #include <string>
-#include <cmath>
 #include <vector>
 
 #define BOOST_TEST_NO_MAIN
@@ -27,9 +27,9 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include "oops/runs/Test.h"
-#include "oops/base/ModelSpaceCovarianceBase.h"
+#include "eckit/config/LocalConfiguration.h"
 #include "oops/base/instantiateCovarFactory.h"
+#include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/TrajectorySaver.h"
 #include "oops/base/Variables.h"
@@ -41,11 +41,11 @@
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/ModelAuxIncrement.h"
 #include "oops/interface/State.h"
+#include "oops/runs/Test.h"
 #include "test/TestEnvironment.h"
-#include "eckit/config/LocalConfiguration.h"
 #include "util/DateTime.h"
-#include "util/Duration.h"
 #include "util/dot_product.h"
+#include "util/Duration.h"
 
 namespace test {
 
@@ -114,7 +114,8 @@ template <typename MODEL> class LinearModelFixture : private boost::noncopyable 
     oops::instantiateTlmFactory<MODEL>();
     boost::ptr_vector<LinearModel_> tlmvec;
     oops::PostProcessor<State_> post;
-    post.enrollProcessor(new oops::TrajectorySaver<MODEL>(*xref_, *tlConf_, *resol_, *bias_, tlmvec));
+    post.enrollProcessor(new oops::TrajectorySaver<MODEL>(*xref_, *tlConf_, *resol_,
+                                                          *bias_, tlmvec));
     State_ xx(*xref_);
     model_->forecast(xx, *bias_, len, post);
     tlm_.reset(tlmvec.release(tlmvec.begin()).release());

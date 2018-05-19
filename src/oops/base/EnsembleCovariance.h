@@ -12,7 +12,6 @@
 #define OOPS_BASE_ENSEMBLECOVARIANCE_H_
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Logger.h"
 #include "oops/assimilation/GMRESR.h"
 #include "oops/base/Ensemble.h"
 #include "oops/base/EnsemblesCollection.h"
@@ -23,8 +22,9 @@
 #include "oops/interface/Increment.h"
 #include "oops/interface/Localization.h"
 #include "oops/interface/State.h"
-#include "util/DateTime.h"
 #include "util/abor1_cpp.h"
+#include "util/DateTime.h"
+#include "util/Logger.h"
 
 namespace oops {
 
@@ -42,7 +42,8 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL> {
   typedef State<MODEL>               State_;
 
  public:
-  EnsembleCovariance(const Geometry_ &, const Variables &, const eckit::Configuration &, const State_ &);
+  EnsembleCovariance(const Geometry_ &, const Variables &,
+                     const eckit::Configuration &, const State_ &);
   ~EnsembleCovariance();
 
   void linearize(const State_ &, const Geometry_ &) override;

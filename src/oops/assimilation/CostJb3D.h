@@ -15,7 +15,6 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Logger.h"
 #include "oops/assimilation/CostJbState.h"
 #include "oops/assimilation/Increment4D.h"
 #include "oops/assimilation/State4D.h"
@@ -25,8 +24,9 @@
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
 #include "util/DateTime.h"
-#include "util/Duration.h"
 #include "util/dot_product.h"
+#include "util/Duration.h"
+#include "util/Logger.h"
 
 namespace oops {
   template<typename MODEL> class ControlIncrement;
@@ -161,7 +161,7 @@ void CostJb3D<MODEL>::Bminv(const Increment4D_ & dxin, Increment4D_ & dxout) con
 
 template<typename MODEL>
 void CostJb3D<MODEL>::randomize(Increment4D_ & dx) const {
-   B_->randomize(dx[0]);
+  B_->randomize(dx[0]);
 }
 
 // -----------------------------------------------------------------------------

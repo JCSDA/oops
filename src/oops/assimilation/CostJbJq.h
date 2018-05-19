@@ -18,19 +18,19 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Logger.h"
 #include "oops/assimilation/CostJbState.h"
 #include "oops/assimilation/Increment4D.h"
 #include "oops/assimilation/JqTerm.h"
-#include "oops/assimilation/JqTermTL.h"
 #include "oops/assimilation/JqTermAD.h"
+#include "oops/assimilation/JqTermTL.h"
 #include "oops/assimilation/State4D.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
-#include "util/Duration.h"
 #include "util/dot_product.h"
+#include "util/Duration.h"
+#include "util/Logger.h"
 
 namespace oops {
   template<typename MODEL> class ControlIncrement;
@@ -188,10 +188,11 @@ void CostJbJq<MODEL>::Bmult(const Increment4D_ & dxin, Increment4D_ & dxout) con
     B_[jsub].multiply(dxin[jsub], dxout[jsub]);
 
     if (jsub == 0) {
-      Log::debug() << "CostJbJq:multiply Jb is " << 0.5 * dot_product(dxin[0], dxout[0]) << std::endl;
+      Log::debug() << "CostJbJq:multiply Jb is "
+                   << 0.5 * dot_product(dxin[0], dxout[0]) << std::endl;
     } else {
       Log::debug() << "CostJbJq:multiply Jq(" << jsub << ") is "
-                 << 0.5 * dot_product(dxin[jsub], dxout[jsub]);
+                   << 0.5 * dot_product(dxin[jsub], dxout[jsub]);
     }
   }
 }
@@ -214,10 +215,11 @@ void CostJbJq<MODEL>::Bminv(const Increment4D_ & dxin, Increment4D_ & dxout) con
     B_[jsub].inverseMultiply(dxin[jsub], dxout[jsub]);
 
     if (jsub == 0) {
-      Log::debug() << "CostJbJq:inverseMultiply Jb is " << 0.5 * dot_product(dxin[0], dxout[0]) << std::endl;
+      Log::debug() << "CostJbJq:inverseMultiply Jb is "
+                   << 0.5 * dot_product(dxin[0], dxout[0]) << std::endl;
     } else {
       Log::debug() << "CostJbJq:inverseMultiply Jq(" << jsub << ") is "
-                 << 0.5 * dot_product(dxin[jsub], dxout[jsub]);
+                   << 0.5 * dot_product(dxin[jsub], dxout[jsub]);
     }
   }
   Log::warning() << "*** B inverse might not always exist ***" << std::endl;

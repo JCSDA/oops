@@ -14,15 +14,14 @@
 #include <map>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Logger.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/CostJb4D.h"
 #include "oops/assimilation/CostJcDFI.h"
 #include "oops/assimilation/CostJo.h"
 #include "oops/assimilation/CostTermBase.h"
 #include "oops/base/PostProcessor.h"
-#include "oops/base/PostProcessorTL.h"
 #include "oops/base/PostProcessorAD.h"
+#include "oops/base/PostProcessorTL.h"
 #include "oops/base/StateInfo.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
@@ -31,6 +30,7 @@
 #include "oops/interface/State.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
+#include "util/Logger.h"
 
 namespace oops {
 
@@ -67,6 +67,7 @@ template<typename MODEL> class CostFct4DEnsVar : public CostFunction<MODEL> {
   void zeroAD(CtrlInc_ &) const override;
 
   void runNL(CtrlVar_ &, PostProcessor<State_>&) const override;
+
  private:
   void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_>&) const override;
 

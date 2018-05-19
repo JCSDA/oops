@@ -16,8 +16,8 @@
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/ControlVariable.h"
 #include "oops/base/PostBase.h"
-#include "oops/base/PostBaseTL.h"
 #include "oops/base/PostBaseAD.h"
+#include "oops/base/PostBaseTL.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
@@ -48,33 +48,33 @@ template<typename MODEL> class CostTermBase {
   virtual ~CostTermBase() {}
 
 /// Initialize before nonlinear model integration.
-  virtual PostPtr_ initialize(const ControlVariable<MODEL> &) const =0;
+  virtual PostPtr_ initialize(const ControlVariable<MODEL> &) const = 0;
   virtual PostPtr_ initializeTraj(const ControlVariable<MODEL> &,
-                                  const Geometry_ &, const eckit::Configuration &) =0;
+                                  const Geometry_ &, const eckit::Configuration &) = 0;
 
 /// Finalize computation after nonlinear model integration.
-  virtual double finalize(const eckit::Configuration &) const =0;
-  virtual double finalizeTraj(const eckit::Configuration &) =0;
+  virtual double finalize(const eckit::Configuration &) const = 0;
+  virtual double finalizeTraj(const eckit::Configuration &) = 0;
 
 /// Initialize before starting the TL run.
-  virtual PostTLPtr_ setupTL(const ControlIncrement<MODEL> &) const =0;
+  virtual PostTLPtr_ setupTL(const ControlIncrement<MODEL> &) const = 0;
 
 /// Initialize before starting the AD run.
   virtual PostADPtr_ setupAD(boost::shared_ptr<const GeneralizedDepartures>,
-                             ControlIncrement<MODEL> &) const =0;
+                             ControlIncrement<MODEL> &) const = 0;
 
 /// Multiply by covariance (or weight) matrix and its inverse.
-  virtual GeneralizedDepartures * multiplyCovar(const GeneralizedDepartures &) const =0;
-  virtual GeneralizedDepartures * multiplyCoInv(const GeneralizedDepartures &) const =0;
+  virtual GeneralizedDepartures * multiplyCovar(const GeneralizedDepartures &) const = 0;
+  virtual GeneralizedDepartures * multiplyCoInv(const GeneralizedDepartures &) const = 0;
 
 /// Provide new dual space vector (for example a Departure for Jo).
-  virtual GeneralizedDepartures * newDualVector() const =0;
+  virtual GeneralizedDepartures * newDualVector() const = 0;
 
 /// Gradient at first guess.
-  virtual GeneralizedDepartures * newGradientFG() const =0;
+  virtual GeneralizedDepartures * newGradientFG() const = 0;
 
 /// Reset trajectory.
-  virtual void resetLinearization() =0;
+  virtual void resetLinearization() = 0;
 };
 
 // -----------------------------------------------------------------------------

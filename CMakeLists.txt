@@ -97,6 +97,7 @@ endforeach()
 include( oops_compiler_flags )
 include_directories( ${OOPS_INCLUDE_DIRS} ${OOPS_EXTRA_INCLUDE_DIRS} )
 add_subdirectory( src )
+add_subdirectory( tools )
 
 # Build plugins: The idea is that these become separate builds,
 # which find OOPS as an installed package or subproject

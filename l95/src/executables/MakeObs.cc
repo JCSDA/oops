@@ -8,13 +8,13 @@
  * does it submit to any jurisdiction.
  */
 
+#include "lorenz95/L95Traits.h"
 #include "oops/runs/MakeObs.h"
 #include "oops/runs/Run.h"
-#include "lorenz95/L95Traits.h"
 
 int main(int argc, char ** argv) {
   oops::Run run(argc, argv);
   oops::MakeObs<lorenz95::L95Traits> mkobs;
   run.execute(mkobs);
   return 0;
-};
+}

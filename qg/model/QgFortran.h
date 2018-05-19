@@ -105,8 +105,8 @@ extern "C" {
   void qg_field_read_file_f90(const F90flds &, const eckit::Configuration * const *,
                               util::DateTime * const *);
   void qg_field_analytic_init_f90(const F90flds &, const F90geom &,
-				  const eckit::Configuration * const *,
-				  util::DateTime * const *);
+                                  const eckit::Configuration * const *,
+                                  util::DateTime * const *);
   void qg_field_write_file_f90(const F90flds &, const eckit::Configuration * const *,
                                const util::DateTime * const *);
 
@@ -144,7 +144,7 @@ extern "C" {
 // -----------------------------------------------------------------------------
   void qg_loc_create_f90(F90locs &);
   void qg_loc_test_f90(const F90locs &, const eckit::Configuration * const *,
-		       const int &, const double *, const double *, const double*);
+                       const int &, const double *, const double *, const double*);
   void qg_loc_delete_f90(F90locs &);
   void qg_loc_nobs_f90(const F90locs &, int &);
   void qg_loc_element_f90(const F90locs &, const int &, double *);
@@ -169,7 +169,7 @@ extern "C" {
   void qg_gom_maxloc_f90(const F90goms &, double &, int &, int &);
   void qg_gom_read_file_f90(const F90goms &, const eckit::Configuration * const *);
   void qg_gom_analytic_init_f90(const F90goms &, const F90locs &, const F90vars *,
-				const eckit::Configuration * const *);
+                                const eckit::Configuration * const *);
   void qg_gom_write_file_f90(const F90goms &, const eckit::Configuration * const *);
 
 // -----------------------------------------------------------------------------

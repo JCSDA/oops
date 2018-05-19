@@ -16,9 +16,9 @@
 
 #include <boost/scoped_ptr.hpp>
 
-#include "util/Logger.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
+#include "util/Logger.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 #include "util/Timer.h"

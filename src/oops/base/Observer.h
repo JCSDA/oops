@@ -49,8 +49,7 @@ class Observer : public util::Printable, public PostBase<STATE> {
  public:
   Observer(const ObsSpace_ &, const ObsOperator_ &, const ObsAuxCtrl_ &, const ObsFilters_ &,
            const util::Duration & tslot = util::Duration(0), const bool subwin = false,
-           boost::shared_ptr<LinearObsOperator_> htlad = boost::shared_ptr<LinearObsOperator_>()
-           );
+           boost::shared_ptr<LinearObsOperator_> htlad = boost::shared_ptr<LinearObsOperator_>());
   ~Observer() {}
 
   Observations_ * release() {return yobs_.release();}
@@ -120,7 +119,8 @@ void Observer<MODEL, STATE>::doInitialize(const STATE & xx,
   if (end_ > winend_) end_ = winend_;
 
   for (size_t jj = 0; jj < obspace_.size(); ++jj) {
-    boost::shared_ptr<GeoVaLs_> tmp(new GeoVaLs_(obspace_[jj].locations(bgn_, end_), hop_.variables(jj)));
+    boost::shared_ptr<GeoVaLs_> tmp(new GeoVaLs_(obspace_[jj].locations(bgn_, end_),
+                                                 hop_.variables(jj)));
     gvals_.push_back(tmp);
   }
 }

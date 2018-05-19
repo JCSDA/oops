@@ -9,15 +9,14 @@
  */
 
 #include "util/dateFunctions.h"
+
+#include <stdint.h>
+#include <limits>
+
 #include "util/abor1_cpp.h"
 #include "util/Logger.h"
 
-#include <limits>
-#include <stdint.h>
-
 /// Non-member functions for manipulating date and time
-
-using oops::Log;
 
 namespace util {
 namespace datefunctions {
@@ -33,7 +32,7 @@ uint64_t dateToJulian(const int year, const int month, const int day) {
 //                     d - 32075
 
   if (!util::datefunctions::validYYYYMMDD(year, month, day)) {
-    Log::error() << "year=" << year << " month=" << month << " day=" << day << std::endl;
+    oops::Log::error() << "year=" << year << " month=" << month << " day=" << day << std::endl;
     ABORT("Not a valid date");
   }
 
@@ -73,7 +72,7 @@ void julianToDate(const uint64_t julian, int & yy, int & mm, int & dd) {
     mm = static_cast<int>(month);
     yy = static_cast<int>(year);
   } else {
-    Log::error() << "year=" << year << std::endl;
+    oops::Log::error() << "year=" << year << std::endl;
     ABORT("year out of range");
   }
 }
@@ -82,7 +81,7 @@ void julianToDate(const uint64_t julian, int & yy, int & mm, int & dd) {
 
 int hmsToSeconds(const int hour, const int minute, const int second) {
   if (!util::datefunctions::validHhmmss(hour, minute, second)) {
-    Log::error() << "hour=" << hour << " minute=" << minute <<
+    oops::Log::error() << "hour=" << hour << " minute=" << minute <<
                " second=" << second << std::endl;
     ABORT("Not a valid time");
   }
@@ -102,7 +101,7 @@ void secondToHms(const int seconds, int & hh, int & mm, int & ss) {
     local_sec %= 60;
     ss = local_sec;
   } else {
-    Log::error() << "seconds=" << seconds << std::endl;
+    oops::Log::error() << "seconds=" << seconds << std::endl;
     ABORT("seconds out of range");
   }
 }

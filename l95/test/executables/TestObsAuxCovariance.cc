@@ -17,5 +17,5 @@ int main(int argc,  char ** argv) {
   test::ObsAuxCovariance<lorenz95::L95Traits> tests;
   run.execute(tests);
   return 0;
-};
+}
 

@@ -11,10 +11,10 @@
 #ifndef OOPS_BASE_WEIGHTEDDIFFTL_H_
 #define OOPS_BASE_WEIGHTEDDIFFTL_H_
 
-#include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
 #include <cmath>
 #include <map>
+#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include "oops/base/Accumulator.h"
 #include "oops/base/DolphChebyshev.h"
@@ -53,7 +53,6 @@ class WeightedDiffTL : public PostBaseTL<INCR> {
   INCR * releaseOutputFromTL() override;
 
  private:
-
   void doInitializeTL(const INCR &, const util::DateTime &, const util::Duration &) override;
   void doProcessingTL(const INCR &) override;
   void doFinalizeTL(const INCR &) override {}

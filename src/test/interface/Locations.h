@@ -22,11 +22,9 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-
-#include "oops/runs/Test.h"
 #include "oops/interface/Locations.h"
+#include "oops/runs/Test.h"
 #include "test/TestEnvironment.h"
-#include "eckit/config/LocalConfiguration.h"
 
 namespace test {
 

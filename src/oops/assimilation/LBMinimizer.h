@@ -15,13 +15,13 @@
 
 #include <boost/scoped_ptr.hpp>
 
-#include "util/Logger.h"
+#include "eckit/config/Configuration.h"
 #include "oops/assimilation/BMatrix.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/LBHessianMatrix.h"
 #include "oops/assimilation/Minimizer.h"
-#include "eckit/config/Configuration.h"
+#include "util/Logger.h"
 
 namespace oops {
 
@@ -43,15 +43,14 @@ template<typename MODEL> class LBMinimizer : public Minimizer<MODEL> {
   typedef Minimizer<MODEL>        Minimizer_;
 
  public:
-  explicit LBMinimizer(const CostFct_ & J)
-   : Minimizer_(J), J_(J), gradJb_(0) {}
+  explicit LBMinimizer(const CostFct_ & J): Minimizer_(J), J_(J), gradJb_(0) {}
   ~LBMinimizer() {}
-  virtual const std::string classname() const override =0;
+  const std::string classname() const override = 0;
 
  private:
   CtrlInc_ * doMinimize(const eckit::Configuration &) override;
   virtual void solve(CtrlInc_ &, CtrlInc_ &,
-                     const LBHessianMatrix_ &, const int, const double) =0;
+                     const LBHessianMatrix_ &, const int, const double) = 0;
 
   const CostFct_ & J_;
   boost::scoped_ptr<CtrlInc_> gradJb_;
@@ -71,7 +70,7 @@ ControlIncrement<MODEL> * LBMinimizer<MODEL>::doMinimize(const eckit::Configurat
   }
 
   Log::info() << std::endl;
-  Log::info() << classname() << ": max iter = " << ninner 
+  Log::info() << classname() << ": max iter = " << ninner
               << ", requested norm reduction = " << gnreduc << std::endl;
 
 // Define the matrices

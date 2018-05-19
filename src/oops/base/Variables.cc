@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2017 UCAR
+ * (C) Copyright 2017-2018 UCAR
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -12,16 +12,15 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
-#include "util/Logger.h"
 #include "util/abor1_cpp.h"
+#include "util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace oops {
 // -----------------------------------------------------------------------------
 
 Variables::Variables(const eckit::Configuration & conf)
- : convention_(""), vars_(0), conf_(), fconf_()
-{
+  : convention_(""), vars_(0), conf_(), fconf_() {
   conf.get("variables", vars_);
   conf_.set("nvars", vars_.size());
   conf_.get("variables", vars_);
@@ -38,8 +37,7 @@ Variables::Variables(const eckit::Configuration & conf)
 // -----------------------------------------------------------------------------
 
 Variables::Variables(const std::vector<std::string> & vars, const std::string & conv)
- : convention_(conv), vars_(vars), conf_(), fconf_()
-{
+  : convention_(conv), vars_(vars), conf_(), fconf_() {
   conf_.set("nvars", vars_.size());
   conf_.set("variables", vars_);
 
@@ -55,7 +53,7 @@ Variables::Variables(const std::vector<std::string> & vars, const std::string & 
 // -----------------------------------------------------------------------------
 
 Variables::Variables(const Variables & other)
- : convention_(other.convention_), vars_(other.vars_), conf_(other.conf_), fconf_(other.fconf_)
+  : convention_(other.convention_), vars_(other.vars_), conf_(other.conf_), fconf_(other.fconf_)
 {}
 
 // -----------------------------------------------------------------------------

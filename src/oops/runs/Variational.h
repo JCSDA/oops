@@ -16,17 +16,16 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Logger.h"
 #include "oops/assimilation/ControlVariable.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/IncrementalAssimilation.h"
 #include "oops/assimilation/instantiateCostFactory.h"
 #include "oops/assimilation/instantiateMinFactory.h"
+#include "oops/base/instantiateCovarFactory.h"
 #include "oops/base/Observations.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
 #include "oops/base/StateWriter.h"
-#include "oops/base/instantiateCovarFactory.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/generic/instantiateTlmFactory.h"
 #include "oops/interface/Geometry.h"
@@ -35,6 +34,7 @@
 #include "oops/runs/Application.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
+#include "util/Logger.h"
 
 namespace oops {
 

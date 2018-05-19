@@ -16,7 +16,6 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
-#include "util/Logger.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/LinearModelBase.h"
@@ -24,6 +23,7 @@
 #include "oops/interface/ModelAuxIncrement.h"
 #include "oops/interface/State.h"
 #include "util/Duration.h"
+#include "util/Logger.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 #include "util/Timer.h"
@@ -79,7 +79,6 @@ class LinearModel : public util::Printable,
   const util::Duration & timeResolution() const {return tlm_->timeResolution();}
 
  protected:
-
 // Run the TL forecast
   void initializeTL(Increment_ &) const;
   void stepTL(Increment_ &, const ModelAuxIncr_ &) const;

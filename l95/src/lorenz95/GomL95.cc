@@ -10,11 +10,11 @@
 
 #include "lorenz95/GomL95.h"
 
-#include <cstdlib>
-#include <limits>
-#include <fstream>
-#include <random>
 #include <cmath>
+#include <cstdlib>
+#include <fstream>
+#include <limits>
+#include <random>
 
 #include "eckit/config/Configuration.h"
 #include "lorenz95/LocsL95.h"
@@ -23,7 +23,7 @@
 #include "util/Logger.h"
 
 namespace oops {
-  class Variables;
+class Variables;
 }
 
 namespace lorenz95 {
@@ -55,14 +55,12 @@ GomL95::GomL95(const eckit::Configuration & conf, const oops::Variables &)
  *
  */
 GomL95::GomL95(const LocsL95 & locs, const oops::Variables &,
-	       const eckit::Configuration & conf)
+               const eckit::Configuration & conf)
   : size_(0), iobs_(), locval_(), current_(0)
 {
   if (conf.has("filename")) {
-
     this->read(conf);
-
-  } else { // analytic init for testing interpolation
+  } else {  // analytic init for testing interpolation
     oops::Log::trace() << "GomL95::GomL95 analytic init " << std::endl;
     size_ = locs.size();
     iobs_.resize(size_);
@@ -77,8 +75,9 @@ GomL95::GomL95(const LocsL95 & locs, const oops::Variables &,
     if (conf.has("sinus")) {
       const double zz = conf.getDouble("sinus");
       const double pi = std::acos(-1.0);
-      for (size_t jj = 0; jj < size_; ++jj) 
-	locval_[jj] += zz * std::sin(2.0*pi*locs[jj]);
+      for (size_t jj = 0; jj < size_; ++jj) {
+        locval_[jj] += zz * std::sin(2.0*pi*locs[jj]);
+      }
     }
   }
 }
@@ -110,10 +109,7 @@ GomL95 & GomL95::operator-=(const GomL95 & rhs)
 // -----------------------------------------------------------------------------
 GomL95 & GomL95::operator/=(const GomL95 & rhs)
 {
-  double xnorm(0.0);
-  for (size_t jj = 0; jj < rhs.size_; ++jj) xnorm += std::pow(rhs.locval_[jj],2);
-  xnorm = sqrt(xnorm/static_cast<double>(rhs.size_));
-  for (size_t jj = 0; jj < size_; ++jj) locval_[jj] /= xnorm;
+  for (size_t jj = 0; jj < size_; ++jj) locval_[jj] /= rhs.locval_[jj];
   return *this;
 }
 // -----------------------------------------------------------------------------
@@ -127,7 +123,7 @@ void GomL95::zero() {
 // -----------------------------------------------------------------------------
 double GomL95::norm() const {
   double xnorm(0.0);
-  for (size_t jj = 0; jj < size_; ++jj) xnorm += std::pow(locval_[jj],2);
+  for (size_t jj = 0; jj < size_; ++jj) xnorm += locval_[jj] * locval_[jj];
   return sqrt(xnorm/static_cast<double>(size_));
 }
 // -----------------------------------------------------------------------------
@@ -201,12 +197,10 @@ void GomL95::print(std::ostream & os) const {
   // If the min value across all variables is positive, then this may be an
   // error measurement.  If so, print the location where the maximum occurs
   // to the debug stream, for use in debugging
-  
+
   if (zmin >= 0.0)
     oops::Log::debug() << std::endl << "GomL95: Maximum Value = " << std::setprecision(4)
-		       << zmax << " at location = " << jmax << std::endl;              
-  
-
+                       << zmax << " at location = " << jmax << std::endl;
 }
 
 }  // namespace lorenz95

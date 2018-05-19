@@ -15,7 +15,6 @@
 #include <string>
 #include <vector>
 
-#include "util/Logger.h"
 #include "oops/assimilation/BMatrix.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
@@ -24,6 +23,7 @@
 #include "oops/assimilation/QNewtonLMP.h"
 #include "util/dot_product.h"
 #include "util/formats.h"
+#include "util/Logger.h"
 
 namespace oops {
 

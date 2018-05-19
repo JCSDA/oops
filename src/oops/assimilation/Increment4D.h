@@ -20,15 +20,15 @@
 #include <boost/ptr_container/ptr_map.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Logger.h"
-#include "oops/assimilation/State4D.h"
 #include "oops/assimilation/CostJbState.h"
+#include "oops/assimilation/State4D.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "util/DateTime.h"
-#include "util/Duration.h"
-#include "util/Printable.h"
 #include "util/dot_product.h"
+#include "util/Duration.h"
+#include "util/Logger.h"
+#include "util/Printable.h"
 
 namespace oops {
 

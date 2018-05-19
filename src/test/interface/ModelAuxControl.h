@@ -21,11 +21,11 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
-#include "oops/runs/Test.h"
+#include "eckit/config/LocalConfiguration.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
+#include "oops/runs/Test.h"
 #include "test/TestEnvironment.h"
-#include "eckit/config/LocalConfiguration.h"
 
 namespace test {
 

@@ -55,7 +55,6 @@ namespace util {
   friend std::istream& operator>>(std::istream&, Duration&);
 
    public:
-
   // -- Constructors
     Duration();
 
@@ -94,7 +93,6 @@ namespace util {
     void operator/=(const int);
 
    private:
-
   // -- Copy allowed
   //  Example(const Example&); -- default shallow copy is OK
   //  Example& operator=(const Example&); -- default shallow copy is OK

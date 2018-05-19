@@ -12,14 +12,13 @@
 #define OOPS_ASSIMILATION_COSTFCT3DVAR_H_
 
 #include "eckit/config/Configuration.h"
-#include "util/Logger.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/CostJb3D.h"
 #include "oops/assimilation/CostJo.h"
 #include "oops/assimilation/CostTermBase.h"
 #include "oops/base/PostProcessor.h"
-#include "oops/base/PostProcessorTL.h"
 #include "oops/base/PostProcessorAD.h"
+#include "oops/base/PostProcessorTL.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -27,6 +26,7 @@
 #include "oops/interface/State.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
+#include "util/Logger.h"
 
 namespace oops {
 
@@ -53,7 +53,7 @@ template<typename MODEL> class CostFct3DVar : public CostFunction<MODEL> {
   ~CostFct3DVar() {}
 
   void runTLM(CtrlInc_ &, PostProcessorTL<Increment_> &,
-              PostProcessor<Increment_>, 
+              PostProcessor<Increment_>,
               const bool idModel = false) const override;
   void runADJ(CtrlInc_ &, PostProcessorAD<Increment_> &,
               PostProcessor<Increment_>,

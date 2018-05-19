@@ -20,16 +20,16 @@
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
-#include "util/Logger.h"
 #include "oops/base/Departures.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsOperator.h"
 #include "oops/interface/ObsVector.h"
-#include "util/DateTime.h"
-#include "util/Printable.h"
 #include "util/abor1_cpp.h"
+#include "util/DateTime.h"
+#include "util/Logger.h"
+#include "util/Printable.h"
 
 namespace oops {
 
@@ -58,8 +58,8 @@ template <typename MODEL> class Observations : public util::Printable {
 
 /// Access
   std::size_t size() const {return obs_.size();}
-  ObsVector_ & operator[](const std::size_t ii) {return obs_.at(ii);} 
-  const ObsVector_ & operator[](const std::size_t ii) const {return obs_.at(ii);} 
+  ObsVector_ & operator[](const std::size_t ii) {return obs_.at(ii);}
+  const ObsVector_ & operator[](const std::size_t ii) const {return obs_.at(ii);}
 
 /// Interactions with Departures
   std::vector<boost::shared_ptr<ObsVector_> > operator-(const Observations & other) const;

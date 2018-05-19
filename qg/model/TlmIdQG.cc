@@ -11,15 +11,15 @@
 #include "model/TlmIdQG.h"
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Logger.h"
-#include "model/ModelBiasIncrement.h"
-#include "model/QgFortran.h"
 #include "model/GeometryQG.h"
 #include "model/IncrementQG.h"
-#include "model/StateQG.h"
+#include "model/ModelBiasIncrement.h"
+#include "model/QgFortran.h"
 #include "model/QgTraits.h"
-#include "util/DateTime.h"
+#include "model/StateQG.h"
 #include "util/abor1_cpp.h"
+#include "util/DateTime.h"
+#include "util/Logger.h"
 
 using oops::Log;
 

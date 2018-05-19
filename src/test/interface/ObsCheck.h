@@ -1,8 +1,8 @@
 /*
- * (C) Copyright 2017 UCAR
- * 
+ * (C) Copyright 2017-2018 UCAR
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
 #ifndef TEST_INTERFACE_OBSCHECK_H_
@@ -19,15 +19,15 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
-#include "oops/runs/Test.h"
+#include "eckit/config/LocalConfiguration.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsCheck.h"
 #include "oops/interface/ObsOperator.h"
 #include "oops/interface/ObsVector.h"
-#include "test/TestEnvironment.h"
+#include "oops/runs/Test.h"
 #include "test/interface/ObsTestsFixture.h"
-#include "eckit/config/LocalConfiguration.h"
+#include "test/TestEnvironment.h"
 
 namespace test {
 
@@ -77,12 +77,12 @@ template <typename MODEL> void testObsCheck() {
 
     hop.obsEquiv(gval, ovec, ybias);
 
-    ocheck.postFilter(gval,ovec,Test_::obspace()[jj]);
+    ocheck.postFilter(gval, ovec, Test_::obspace()[jj]);
 
     const double tol = 1.0e-8;
     const double zz = ovec.rms();
     const double xx = conf[jj].getDouble("rmsequiv");
-    
+
     oops::Log::trace() << "ObsCheck check filter zz = " << zz << " and xx " <<std::endl;
 //    BOOST_CHECK_CLOSE(xx, zz, tol);
   }

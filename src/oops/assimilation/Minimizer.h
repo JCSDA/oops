@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -11,9 +11,9 @@
 #ifndef OOPS_ASSIMILATION_MINIMIZER_H_
 #define OOPS_ASSIMILATION_MINIMIZER_H_
 
-#include <boost/noncopyable.hpp>
 #include <map>
 #include <string>
+#include <boost/noncopyable.hpp>
 
 #include "eckit/config/Configuration.h"
 #include "oops/assimilation/ControlIncrement.h"
@@ -46,13 +46,13 @@ template<typename MODEL> class Minimizer : private boost::noncopyable {
   typedef State<MODEL>             State_;
 
  public:
-  explicit Minimizer(const CostFct_ & J): J_(J), outerIteration_(0) {};
+  explicit Minimizer(const CostFct_ & J): J_(J), outerIteration_(0) {}
   virtual ~Minimizer() {}
   ControlIncrement<MODEL> * minimize(const eckit::Configuration &);
-  virtual const std::string classname() const =0;
+  virtual const std::string classname() const = 0;
 
  private:
-  virtual ControlIncrement<MODEL> * doMinimize(const eckit::Configuration &) =0;
+  virtual ControlIncrement<MODEL> * doMinimize(const eckit::Configuration &) = 0;
 
   void adjTests(const eckit::Configuration &);
   void adjModelTest(const Ht_ &, const H_ &);
@@ -73,7 +73,7 @@ template<typename MODEL> class Minimizer : private boost::noncopyable {
 template<typename MODEL>
 ControlIncrement<MODEL> * Minimizer<MODEL>::minimize(const eckit::Configuration & config) {
   // TLM tests
-  this->tlmTests(config);  
+  this->tlmTests(config);
 
   // ADJ tests
   this->adjTests(config);
@@ -82,10 +82,10 @@ ControlIncrement<MODEL> * Minimizer<MODEL>::minimize(const eckit::Configuration 
   ControlIncrement<MODEL> * dx = this->doMinimize(config);
 
   // TLM propagation test
-  this->tlmPropagTest(config, *dx);  
+  this->tlmPropagTest(config, *dx);
 
   // Update outer loop counter
-  outerIteration_++; 
+  outerIteration_++;
 
   return dx;
 }
@@ -103,11 +103,11 @@ void Minimizer<MODEL>::tlmTests(const eckit::Configuration & config) {
 
     const H_  H(J_);
     const Ht_ Ht(J_);
-  
+
     // Online tests
     // TLM linear approximation test
     if (outerIteration_ == 0 && runTlmApproxTest) this->tlmApproxTest(H);
-  
+
     // TLM Taylor test
     if (outerIteration_ == 0 && runTlmTaylorTest) this->tlmTaylorTest(H);
   }
@@ -126,11 +126,11 @@ void Minimizer<MODEL>::adjTests(const eckit::Configuration & config) {
 
     const H_  H(J_);
     const Ht_ Ht(J_);
-  
+
     // Online tests
     // Model adjoint test
     if (runAdjTlmTest) this->adjModelTest(Ht, H);
-  
+
     // Obs adjoint test
     if (runAdjObsTest) this->adjObsTest(Ht, H);
   }
@@ -143,8 +143,8 @@ void Minimizer<MODEL>::tlmApproxTest(const H_ & H) {
 /* TL approx test:
    calculate and store:
      M(x + dx), M(x), M'(dx)
-   where dx is initialized using randomization 
-   
+   where dx is initialized using randomization
+
    TO DO:
      write to file depending on requriements */
 
@@ -174,21 +174,19 @@ void Minimizer<MODEL>::tlmApproxTest(const H_ & H) {
   H.multiply(mdx, dummy);
 
 // print log
-  Log::info() << std::endl
-              << "TLM Linear Approximation Test: done." 
-              << std::endl;
+  Log::info() << std::endl << "TLM Linear Approximation Test: done." << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void Minimizer<MODEL>::tlmPropagTest(const eckit::Configuration & config, 
+void Minimizer<MODEL>::tlmPropagTest(const eckit::Configuration & config,
                                      const CtrlInc_ & dx) {
 /* TL propagation test:
    calculate and store:
      M'(dx)
-   where dx comes from minimization stopped at requested iteration 
-   
+   where dx comes from minimization stopped at requested iteration
+
    TO DO:
      write to file depending on requriements */
 
@@ -200,19 +198,17 @@ void Minimizer<MODEL>::tlmPropagTest(const eckit::Configuration & config,
       // print log
       Log::info() << "TLM Propagation Test - starting: " << outerIteration_
                   << std::endl << std::endl;
-    
+
       // construct propagation matrix
       const H_ H(J_);
-    
+
       // run TL for the input perturbation: M'(dx)
       Dual_ dummy;
       CtrlInc_ mdx(dx);
       H.multiply(mdx, dummy);
-    
+
       // print log
-      Log::info() << std::endl
-                  << "TLM Propagation Test: done." 
-                  << std::endl;
+      Log::info() << std::endl << "TLM Propagation Test: done." << std::endl;
     }
   }
 }
@@ -247,16 +243,16 @@ void Minimizer<MODEL>::tlmTaylorTest(const H_ & H) {
   H.multiply(mdx, dummy);
 
 // loop over decreasing increments
-  for (unsigned int i = 0; i < 14; ++i) {
+  for (unsigned int jj = 0; jj < 14; ++jj) {
      // ||p M'(dx)||
      CtrlInc_ pmdx(mdx);
-     pmdx *= 1./pow(10.0,i);
+     pmdx *= 1./pow(10.0, jj);
      double denom = sqrt(dot_product(pmdx, pmdx));
 
      // run perturbed NL: M(x+pdx)
      ControlVariable<MODEL> mpertxx(J_.jb().getBackground());
      CtrlInc_ pdx(dx);
-     pdx *= 1./pow(10.0,i);
+     pdx *= 1./pow(10.0, jj);
      J_.addIncrement(mpertxx, pdx);
      J_.runNL(mpertxx, pp);
 
@@ -267,10 +263,10 @@ void Minimizer<MODEL>::tlmTaylorTest(const H_ & H) {
 
      // print results
      Log::info() << std::endl
-                 << "TLM Taylor test:  p = " << std::setw(8) << 1./pow(10.0,i)
+                 << "TLM Taylor test:  p = " << std::setw(8) << 1./pow(10.0, jj)
                  << ", ||M(x) - M(x+p dx)|| / ||p M'(dx)|| = "
                  << util::full_precision(1.+std::abs(1.-nom/denom))
-                 << std::endl << std::endl;
+                 << std::endl;
   }
   Log::info() << std::endl;
 }
@@ -298,7 +294,7 @@ void Minimizer<MODEL>::adjModelTest(const Ht_ & Ht,
   H.multiply(mdx1, dummy, false);
 
 // run ADJ
-  dummy.zero(); 
+  dummy.zero();
   CtrlInc_ mtdx2(dx2);
   mtdx2.state()[0].updateTime(mdx1.state()[0].validTime() - dx1.state()[0].validTime());
   Ht.multiply(dummy, mtdx2, false);
@@ -370,7 +366,7 @@ class MinFactory {
  protected:
   explicit MinFactory(const std::string &);
  private:
-  virtual Minimizer<MODEL> * make(const eckit::Configuration &, const CostFct_ &) =0;
+  virtual Minimizer<MODEL> * make(const eckit::Configuration &, const CostFct_ &) = 0;
   static std::map < std::string, MinFactory<MODEL> * > & getMakers() {
     static std::map < std::string, MinFactory<MODEL> * > makers_;
     return makers_;

@@ -13,11 +13,11 @@
 
 #include <boost/noncopyable.hpp>
 
-#include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/ControlIncrement.h"
+#include "oops/assimilation/CostFunction.h"
 #include "oops/base/GeneralizedDepartures.h"
-#include "oops/base/PostProcessorTL.h"
 #include "oops/base/PostProcessorAD.h"
+#include "oops/base/PostProcessorTL.h"
 #include "oops/interface/Increment.h"
 
 namespace oops {

@@ -13,8 +13,8 @@
 
 #include <boost/scoped_ptr.hpp>
 
-#include "eckit/runtime/Main.h"
 #include "eckit/config/YAMLConfiguration.h"
+#include "eckit/runtime/Main.h"
 #include "util/Timer.h"
 
 namespace oops {

@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -16,8 +16,8 @@
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/DualVector.h"
-#include "oops/base/PostProcessorTL.h"
 #include "oops/base/PostProcessorAD.h"
+#include "oops/base/PostProcessorTL.h"
 #include "oops/interface/Increment.h"
 #include "util/PrintAdjTest.h"
 
@@ -60,8 +60,7 @@ HBHtMatrix<MODEL>::HBHtMatrix(const CostFct_ & j,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void HBHtMatrix<MODEL>::multiply(const Dual_ & dy, 
-                                 Dual_ & dz) const {
+void HBHtMatrix<MODEL>::multiply(const Dual_ & dy, Dual_ & dz) const {
 // Increment counter
   iter_++;
 

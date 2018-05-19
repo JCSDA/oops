@@ -11,18 +11,17 @@
 #include "oops/runs/Run.h"
 
 #include <string>
-
 #include <boost/scoped_ptr.hpp>
 
-#include "eckit/config/YAMLConfiguration.h"
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/config/YAMLConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/runs/Application.h"
+#include "util/LibOOPS.h"
+#include "util/Logger.h"
 #include "util/ObjectCountHelper.h"
 #include "util/TimerHelper.h"
-#include "util/Logger.h"
-#include "util/LibOOPS.h"
 
 namespace oops {
 

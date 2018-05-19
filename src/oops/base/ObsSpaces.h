@@ -12,8 +12,8 @@
 #define OOPS_BASE_OBSSPACES_H_
 
 #include <cstddef>
-#include <ostream>
 #include <map>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -49,7 +49,7 @@ class ObsSpaces : public util::Printable,
 
 /// Access
   std::size_t size() const {return spaces_.size();}
-  const ObsSpace_ & operator[](const std::size_t ii) const {return *spaces_.at(ii);} 
+  const ObsSpace_ & operator[](const std::size_t ii) const {return *spaces_.at(ii);}
   std::size_t itype(const std::string & type) const {return types_.at(type);}
 
 /// Assimilation window
@@ -72,7 +72,7 @@ class ObsSpaces : public util::Printable,
 template <typename MODEL>
 ObsSpaces<MODEL>::ObsSpaces(const eckit::Configuration & conf,
                             const util::DateTime & bgn, const util::DateTime & end)
- : spaces_(0), types_(), wbgn_(bgn), wend_(end)
+  : spaces_(0), types_(), wbgn_(bgn), wend_(end)
 {
   std::vector<eckit::LocalConfiguration> obsconf;
   conf.get("ObsTypes", obsconf);

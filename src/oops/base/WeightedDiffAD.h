@@ -11,10 +11,10 @@
 #ifndef OOPS_BASE_WEIGHTEDDIFFAD_H_
 #define OOPS_BASE_WEIGHTEDDIFFAD_H_
 
-#include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
 #include <cmath>
 #include <map>
+#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include "oops/base/DolphChebyshev.h"
 #include "oops/base/PostBaseAD.h"
@@ -46,7 +46,6 @@ class WeightedDiffAD : public PostBaseAD<INCR> {
   virtual ~WeightedDiffAD() {}
 
  private:
-
   void doFirstAD(INCR &, const util::DateTime &, const util::Duration &) override;
   void doProcessingAD(INCR &) override;
   void doLastAD(INCR &) override {}

@@ -14,9 +14,9 @@
 #include <string>
 
 #include "eckit/exception/Exceptions.h"
+#include "util/dateFunctions.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
-#include "util/dateFunctions.h"
 #include "util/Logger.h"
 
 using oops::Log;

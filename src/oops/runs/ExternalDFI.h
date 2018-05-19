@@ -17,7 +17,6 @@
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Logger.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
 #include "oops/base/StateWriter.h"
@@ -27,9 +26,10 @@
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
 #include "oops/runs/Application.h"
+#include "util/abor1_cpp.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
-#include "util/abor1_cpp.h"
+#include "util/Logger.h"
 
 namespace oops {
 
@@ -38,6 +38,7 @@ template <typename MODEL> class ExternalDFI : public Application {
   typedef Model<MODEL>               Model_;
   typedef ModelAuxControl<MODEL>     ModelAux_;
   typedef State<MODEL>               State_;
+
  public:
 // -----------------------------------------------------------------------------
   ExternalDFI() {}

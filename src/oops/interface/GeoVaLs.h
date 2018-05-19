@@ -59,7 +59,7 @@ class GeoVaLs : public util::Printable,
   double dot_product_with(const GeoVaLs &) const;
   void read(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;
-  
+
  private:
   void print(std::ostream &) const;
   boost::scoped_ptr<GeoVaLs_> gvals_;
@@ -91,7 +91,7 @@ GeoVaLs<MODEL>::GeoVaLs(const eckit::Configuration & conf, const Variables & var
 
 template <typename MODEL>
   GeoVaLs<MODEL>::GeoVaLs(const Locations_ & locs, const Variables & vars,
-			  const eckit::Configuration & conf) : gvals_() {
+                          const eckit::Configuration & conf) : gvals_() {
   Log::trace() << "GeoVaLs<MODEL>::GeoVaLs read starting" << std::endl;
   util::Timer timer(classname(), "GeoVaLs");
   gvals_.reset(new GeoVaLs_(locs.locations(), vars, conf));

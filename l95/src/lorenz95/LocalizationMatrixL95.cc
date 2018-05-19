@@ -10,14 +10,13 @@
 
 #include "lorenz95/LocalizationMatrixL95.h"
 
+#include <unsupported/Eigen/FFT>
 #include <algorithm>
 #include <cmath>
 
-#include <unsupported/Eigen/FFT>
-
+#include "eckit/config/Configuration.h"
 #include "lorenz95/IncrementL95.h"
 #include "lorenz95/Resolution.h"
-#include "eckit/config/Configuration.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {

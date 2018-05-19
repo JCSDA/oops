@@ -13,9 +13,9 @@
 
 #include <boost/noncopyable.hpp>
 
+#include "eckit/config/Configuration.h"
 #include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/PostTimer.h"
-#include "eckit/config/Configuration.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
 
@@ -55,14 +55,14 @@ template <typename INCR> class PostBaseTL : private boost::noncopyable {
   }
 
 /// Return TL dual space output
-  virtual GeneralizedDepartures * releaseOutputFromTL() =0;
+  virtual GeneralizedDepartures * releaseOutputFromTL() = 0;
 
  private:
   PostTimer timer_;
   virtual void doInitializeTL(const INCR &, const util::DateTime &,
-                              const util::Duration &) =0;
-  virtual void doProcessingTL(const INCR &) =0;
-  virtual void doFinalizeTL(const INCR &) =0;
+                              const util::Duration &) = 0;
+  virtual void doProcessingTL(const INCR &) = 0;
+  virtual void doFinalizeTL(const INCR &) = 0;
 };
 
 // -----------------------------------------------------------------------------

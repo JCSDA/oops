@@ -17,4 +17,4 @@ int main(int argc,  char ** argv) {
   oops::ExternalDFI<qg::QgTraits> dfi;
   run.execute(dfi);
   return 0;
-};
+}

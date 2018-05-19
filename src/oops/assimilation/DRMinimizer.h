@@ -49,17 +49,16 @@ template<typename MODEL> class DRMinimizer : public Minimizer<MODEL> {
   typedef Minimizer<MODEL>           Minimizer_;
 
  public:
-  explicit DRMinimizer(const CostFct_ & J)
-   : Minimizer_(J), J_(J), gradJb_(0), costJ0Jb_(0) {}
+  explicit DRMinimizer(const CostFct_ & J): Minimizer_(J), J_(J), gradJb_(0), costJ0Jb_(0) {}
   ~DRMinimizer() {}
-  virtual const std::string classname() const override =0;
+  const std::string classname() const override = 0;
 
  private:
   CtrlInc_ * doMinimize(const eckit::Configuration &) override;
   virtual double solve(CtrlInc_ &, CtrlInc_ &, CtrlInc_ &,
                        const Bmat_ &, const HtRinvH_ &,
-                       const double, const double, 
-                       const int, const double) =0;
+                       const double, const double,
+                       const int, const double) = 0;
 
   const CostFct_ & J_;
   boost::scoped_ptr<CtrlInc_> gradJb_;
@@ -87,7 +86,7 @@ ControlIncrement<MODEL> * DRMinimizer<MODEL>::doMinimize(const eckit::Configurat
   }
 
   Log::info() << std::endl;
-  Log::info() << classname() << ": max iter = " << ninner 
+  Log::info() << classname() << ": max iter = " << ninner
               <<  ", requested norm reduction = " << gnreduc << std::endl;
 
 // Define the matrices

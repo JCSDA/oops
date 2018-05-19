@@ -18,28 +18,29 @@
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Logger.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/ControlVariable.h"
+#include "oops/assimilation/CostTermBase.h"
 #include "oops/base/Departures.h"
 #include "oops/base/LinearObsOperators.h"
+#include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
-#include "oops/base/ObserverTL.h"
 #include "oops/base/ObserverAD.h"
-#include "oops/base/ObsErrors.h"
+#include "oops/base/ObserverTL.h"
 #include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
-#include "oops/base/PostBaseTL.h"
 #include "oops/base/PostBaseAD.h"
+#include "oops/base/PostBaseTL.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/State.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
+#include "util/Logger.h"
 
 namespace oops {
 

@@ -13,9 +13,9 @@
 
 #include <map>
 
+#include "oops/base/WeightingFct.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
-#include "oops/base/WeightingFct.h"
 
 namespace eckit {
   class Configuration;

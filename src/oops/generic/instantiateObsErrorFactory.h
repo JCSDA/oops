@@ -11,8 +11,8 @@
 #ifndef OOPS_GENERIC_INSTANTIATEOBSERRORFACTORY_H_
 #define OOPS_GENERIC_INSTANTIATEOBSERRORFACTORY_H_
 
-#include "oops/interface/ObsErrorBase.h"
 #include "oops/generic/ObsErrorDiag.h"
+#include "oops/interface/ObsErrorBase.h"
 
 namespace oops {
 

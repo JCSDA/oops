@@ -8,13 +8,13 @@
  * does it submit to any jurisdiction.
  */
 
-#include <sstream>
 #include "util/DateTime.h"
-#include "util/Duration.h"
 
+#include <sstream>
 #include <string>
-
 #include <boost/test/unit_test.hpp>
+
+#include "util/Duration.h"
 
 namespace {
 

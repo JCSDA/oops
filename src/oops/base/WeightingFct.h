@@ -39,7 +39,7 @@ class WeightingFct {
 
   virtual std::map< util::DateTime, double > setWeights(const util::DateTime &,
                                                         const util::DateTime &,
-                                                        const util::Duration &) =0;
+                                                        const util::Duration &) = 0;
 };
 
 // -----------------------------------------------------------------------------
@@ -53,7 +53,7 @@ class WeightFactory {
  protected:
   explicit WeightFactory(const std::string &);
  private:
-  virtual WeightingFct * make(const eckit::Configuration &) =0;
+  virtual WeightingFct * make(const eckit::Configuration &) = 0;
   static std::map < std::string, WeightFactory * > * makers_;
 };
 

@@ -13,14 +13,14 @@
 #ifndef OOPS_INTERFACE_LOCALIZATIONBASE_H_
 #define OOPS_INTERFACE_LOCALIZATIONBASE_H_
 
-#include <boost/noncopyable.hpp>
+#include <mpi.h>
 #include <map>
 #include <string>
-#include <mpi.h>
+#include <boost/noncopyable.hpp>
 
+#include "eckit/config/Configuration.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
-#include "eckit/config/Configuration.h"
 #include "util/abor1_cpp.h"
 #include "util/Printable.h"
 
@@ -41,8 +41,8 @@ class LocalizationBase : public util::Printable,
   void multiply(Increment_ &) const;
 
  private:
-  virtual void multiply(typename MODEL::Increment &) const =0;
-  virtual void print(std::ostream &) const =0;
+  virtual void multiply(typename MODEL::Increment &) const = 0;
+  virtual void print(std::ostream &) const = 0;
 };
 
 // =============================================================================
@@ -57,7 +57,7 @@ class LocalizationFactory {
  protected:
   explicit LocalizationFactory(const std::string &);
  private:
-  virtual LocalizationBase<MODEL> * make(const Geometry_ &, const eckit::Configuration &) =0;
+  virtual LocalizationBase<MODEL> * make(const Geometry_ &, const eckit::Configuration &) = 0;
   static std::map < std::string, LocalizationFactory<MODEL> * > & getMakers() {
     static std::map < std::string, LocalizationFactory<MODEL> * > makers_;
     return makers_;

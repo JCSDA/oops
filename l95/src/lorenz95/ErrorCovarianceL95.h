@@ -11,12 +11,12 @@
 #ifndef LORENZ95_ERRORCOVARIANCEL95_H_
 #define LORENZ95_ERRORCOVARIANCEL95_H_
 
+#include <unsupported/Eigen/FFT>
 #include <ostream>
 #include <string>
 #include <vector>
-#include <boost/noncopyable.hpp>
 
-#include <unsupported/Eigen/FFT>
+#include <boost/noncopyable.hpp>
 
 #include "eckit/config/Configuration.h"
 #include "util/DateTime.h"

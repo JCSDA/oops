@@ -13,16 +13,16 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include "eckit/config/LocalConfiguration.h"
 #include "./TestConfig.h"
+#include "eckit/config/LocalConfiguration.h"
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/ModelBias.h"
 #include "lorenz95/ModelL95.h"
 #include "lorenz95/ModelTrajectory.h"
 #include "lorenz95/Resolution.h"
+#include "test/TestFixture.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
-#include "test/TestFixture.h"
 
 namespace test {
 

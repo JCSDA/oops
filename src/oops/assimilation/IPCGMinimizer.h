@@ -54,7 +54,7 @@ double IPCGMinimizer<MODEL>::solve(CtrlInc_ & dx, const CtrlInc_ & rhs,
                                    const int ninner, const double gnreduc) {
 // Solve the linear system
   double reduc = IPCG(dx, rhs, hessian, B, ninner, gnreduc);
-  reduc = round(100000.0 * reduc)/100000.0;  // Reducing precision for test, should find a better way
+  reduc = round(100000.0 * reduc)/100000.0;  // Reducing precision for test, NOT GOOD!!!
   return reduc;
 }
 

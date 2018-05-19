@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -12,17 +12,19 @@
 
 #include <algorithm>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
 
-#include "oops/base/Variables.h"
-#include "model/GomQG.h"
-#include "model/LocationsQG.h"
-#include "model/ModelBias.h"
 #include "model/FieldsQG.h"
 #include "model/GeometryQG.h"
+#include "model/GomQG.h"
 #include "model/IncrementQG.h"
+#include "model/LocationsQG.h"
+#include "model/ModelBias.h"
 #include "model/ModelQG.h"
+#include "oops/base/Variables.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
 #include "util/Logger.h"
@@ -44,23 +46,25 @@ StateQG::StateQG(const GeometryQG & resol, const eckit::Configuration & file)
 {
 // Should get variables from file. YT
   const std::vector<std::string> *vv;
-  
-  if (file.has("variables"))
-    vv = new std::vector<std::string>(file.getStringVector("variables"));          
-  else
-    vv = new std::vector<std::string>({"x","bc"});    
+
+  if (file.has("variables")) {
+    vv = new std::vector<std::string>(file.getStringVector("variables"));
+  } else {
+    vv = new std::vector<std::string>({"x", "bc"});
+  }
 
   oops::Variables vars(*vv);
   fields_.reset(new FieldsQG(resol, vars, util::DateTime()));
 
-  if (file.has("analytic_init"))
-    fields_->analytic_init(file,resol);
-  else if (file.has("read_from_file"))
+  if (file.has("analytic_init")) {
+    fields_->analytic_init(file, resol);
+  } else if (file.has("read_from_file")) {
     // read_from_file included for backwards compatability
     (file.getInt("read_from_file") == 1) ?
-      fields_->read(file) : fields_->analytic_init(file,resol);
-  else
+      fields_->read(file) : fields_->analytic_init(file, resol);
+  } else {
     fields_->read(file);
+  }
 
   ASSERT(fields_);
   oops::Log::trace() << "StateQG::StateQG created and read in." << std::endl;
@@ -86,7 +90,7 @@ StateQG::~StateQG() {
 // -----------------------------------------------------------------------------
 void StateQG::activateModel() {
 // Should get variables from model. YT
-  const std::vector<std::string> vv{"x","q","u","v","bc"};
+  const std::vector<std::string> vv{"x", "q", "u", "v", "bc"};
   oops::Variables vars(vv);
   stash_.reset(new FieldsQG(*fields_, vars));
   swap(fields_, stash_);

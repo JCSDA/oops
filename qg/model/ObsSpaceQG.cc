@@ -51,8 +51,8 @@ ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config,
     // Open new file
     oops::Log::trace() << "ObsSpaceQG::getHelper: " << "Opening " << ref_ << std::endl;
     helper_ = new ObsHelpQG(config);
-    theObsFileCount_[ref_]=1;
-    theObsFileRegister_[ref_]=helper_;
+    theObsFileCount_[ref_] = 1;
+    theObsFileRegister_[ref_] = helper_;
     oops::Log::trace() << "ObsSpaceQG created, count=" << theObsFileCount_[ref_] << std::endl;
     ASSERT(theObsFileCount_[ref_] == 1);
   } else {
@@ -90,7 +90,7 @@ void ObsSpaceQG::printJo(const ObsVecQG & dy, const ObsVecQG & grad) {
 
 ObsSpaceQG::~ObsSpaceQG() {
   ASSERT(theObsFileCount_[ref_] > 0);
-  theObsFileCount_[ref_]-=1;
+  theObsFileCount_[ref_] -= 1;
   oops::Log::trace() << "ObsSpaceQG cleared, count=" << theObsFileCount_[ref_] << std::endl;
   if (theObsFileCount_[ref_] == 0) {
     delete helper_;

@@ -8,10 +8,10 @@
  * does it submit to any jurisdiction.
  */
 
-#include "oops/runs/Variational.h"
-#include "oops/runs/Run.h"
-#include "lorenz95/L95Traits.h"
 #include "lorenz95/instantiateLocalizationFactory.h"
+#include "lorenz95/L95Traits.h"
+#include "oops/runs/Run.h"
+#include "oops/runs/Variational.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
@@ -19,4 +19,4 @@ int main(int argc,  char ** argv) {
   oops::Variational<lorenz95::L95Traits> var;
   run.execute(var);
   return 0;
-};
+}

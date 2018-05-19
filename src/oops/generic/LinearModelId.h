@@ -13,7 +13,6 @@
 
 #include <string>
 
-#include "util/Logger.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/LinearModelBase.h"
@@ -21,6 +20,7 @@
 #include "oops/interface/ModelAuxIncrement.h"
 #include "oops/interface/State.h"
 #include "util/Duration.h"
+#include "util/Logger.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 #include "util/Timer.h"
@@ -95,7 +95,7 @@ LinearModelId<MODEL>::~LinearModelId() {
 template<typename MODEL>
 void LinearModelId<MODEL>::setTrajectory(const State_ & xx, State_ & xlr,
                                          const ModelAux_ & maux) {
-  Log::trace() << "LinearModelId<MODEL>::setTrajectory not activated for identity model" << std::endl;
+  Log::trace() << "LinearModelId<MODEL>::setTrajectory not set for identity model" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

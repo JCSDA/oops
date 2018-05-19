@@ -15,11 +15,11 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include "eckit/config/LocalConfiguration.h"
 #include "./TestConfig.h"
-#include "lorenz95/Resolution.h"
+#include "eckit/config/LocalConfiguration.h"
 #include "lorenz95/ModelBias.h"
 #include "lorenz95/ModelBiasCorrection.h"
+#include "lorenz95/Resolution.h"
 #include "test/TestFixture.h"
 
 namespace test {

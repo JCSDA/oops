@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -13,11 +13,11 @@
 
 #include <boost/noncopyable.hpp>
 
-#include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/ControlIncrement.h"
+#include "oops/assimilation/CostFunction.h"
 #include "oops/base/GeneralizedDepartures.h"
-#include "oops/base/PostProcessorTL.h"
 #include "oops/base/PostProcessorAD.h"
+#include "oops/base/PostProcessorTL.h"
 #include "oops/interface/Increment.h"
 #include "util/PrintAdjTest.h"
 
@@ -53,17 +53,15 @@ template<typename MODEL> class HessianMatrix : private boost::noncopyable {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> 
-HessianMatrix<MODEL>::HessianMatrix(const CostFct_ & j,
-                                    const bool test) 
+template<typename MODEL>
+HessianMatrix<MODEL>::HessianMatrix(const CostFct_ & j, const bool test)
   : j_(j), test_(test), iter_(0)
 {}
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> 
-void HessianMatrix<MODEL>::multiply(const CtrlInc_ & dx, 
-                                    CtrlInc_ & dz) const {
+template<typename MODEL>
+void HessianMatrix<MODEL>::multiply(const CtrlInc_ & dx, CtrlInc_ & dz) const {
 // Increment counter
   iter_++;
 
@@ -121,7 +119,6 @@ void HessianMatrix<MODEL>::multiply(const CtrlInc_ & dx,
      Log::info() << "Online adjoint test, iteration: " << iter_ << std::endl
                  << util::PrintAdjTest(adj_tst_fwd, adj_tst_bwd, "G")
                  << std::endl;
-
   }
 }
 

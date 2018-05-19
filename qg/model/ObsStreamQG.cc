@@ -10,12 +10,14 @@
 
 #include "model/ObsStreamQG.h"
 
+#include <vector>
+
 #include "eckit/config/Configuration.h"
-#include "oops/base/Variables.h"
 #include "model/GomQG.h"
 #include "model/ObsBias.h"
 #include "model/ObsSpaceQG.h"
 #include "model/ObsVecQG.h"
+#include "oops/base/Variables.h"
 #include "util/Logger.h"
 
 // -----------------------------------------------------------------------------

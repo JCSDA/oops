@@ -13,12 +13,12 @@
 
 #include <string>
 
-#include "util/Logger.h"
+#include "eckit/config/Configuration.h"
 #include "oops/assimilation/BMatrix.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/Minimizer.h"
-#include "eckit/config/Configuration.h"
+#include "util/Logger.h"
 
 namespace oops {
 
@@ -38,16 +38,15 @@ template<typename MODEL> class PrimalMinimizer : public Minimizer<MODEL> {
   typedef Minimizer<MODEL>           Minimizer_;
 
  public:
-  explicit PrimalMinimizer(const CostFct_ & J)
-   : Minimizer_(J), J_(J) {}
+  explicit PrimalMinimizer(const CostFct_ & J): Minimizer_(J), J_(J) {}
   ~PrimalMinimizer() {}
-  virtual const std::string classname() const override =0;
+  const std::string classname() const override = 0;
 
  private:
   CtrlInc_ * doMinimize(const eckit::Configuration &) override;
   virtual double solve(CtrlInc_ &, const CtrlInc_ &,
                        const Hessian_ &, const Bmat_ &,
-                       const int, const double) =0;
+                       const int, const double) = 0;
 
   const CostFct_ & J_;
 };

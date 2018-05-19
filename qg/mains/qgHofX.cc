@@ -17,4 +17,4 @@ int main(int argc,  char ** argv) {
   oops::HofX<qg::QgTraits> hofx;
   run.execute(hofx);
   return 0;
-};
+}

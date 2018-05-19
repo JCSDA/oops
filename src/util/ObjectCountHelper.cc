@@ -23,7 +23,7 @@ namespace util {
 
 // -----------------------------------------------------------------------------
 
-std::map < std::string, boost::shared_ptr<ObjectCountHelper> > * ObjectCountHelper::counters_ = 0;
+std::map<std::string, boost::shared_ptr<ObjectCountHelper> > * ObjectCountHelper::counters_ = 0;
 
 // -----------------------------------------------------------------------------
 
@@ -40,13 +40,18 @@ void ObjectCountHelper::stop() {
   ASSERT(counters_);
   typedef std::map<std::string, boost::shared_ptr<ObjectCountHelper> >::iterator it;
   Log::stats() << " " << std::endl;
-  Log::stats() << "----------------------------------------------------------------------" << std::endl;
-  Log::stats() << "--------------------------- Object counts ----------------------------" << std::endl;
-  Log::stats() << "----------------------------------------------------------------------" << std::endl;
+  Log::stats() << "----------------------------------------------------------------------"
+               << std::endl;
+  Log::stats() << "--------------------------- Object counts ----------------------------"
+               << std::endl;
+  Log::stats() << "----------------------------------------------------------------------"
+               << std::endl;
   for (it jc = counters_->begin(); jc != counters_->end(); ++jc) {
-    Log::stats() << std::setw(32) << std::left << jc->first << ": " << *(jc->second) << std::endl;
+    Log::stats() << std::setw(32) << std::left << jc->first
+                 << ": " << *(jc->second) << std::endl;
   }
-  Log::stats() << "----------------------------- Object counts --------------------------" << std::endl;
+  Log::stats() << "----------------------------- Object counts --------------------------"
+               << std::endl;
   counters_->clear();
 }
 

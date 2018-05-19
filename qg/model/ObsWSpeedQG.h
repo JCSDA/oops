@@ -16,10 +16,10 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "oops/base/Variables.h"
-#include "oops/interface/ObsOperatorBase.h"
 #include "model/ObsSpaceQG.h"
 #include "model/QgTraits.h"
+#include "oops/base/Variables.h"
+#include "oops/interface/ObsOperatorBase.h"
 #include "util/ObjectCounter.h"
 
 // Forward declarations

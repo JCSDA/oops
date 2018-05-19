@@ -8,10 +8,10 @@
  * does it submit to any jurisdiction.
  */
 
-#include "util/Logger.h"
+#include "eckit/config/Configuration.h"
 #include "model/GeometryQG.h"
 #include "model/QgFortran.h"
-#include "eckit/config/Configuration.h"
+#include "util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {

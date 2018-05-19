@@ -18,18 +18,18 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "util/Logger.h"
 #include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/interface/GeoVaLs.h"
+#include "oops/interface/LinearObsOperator.h"
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/ObsErrorBase.h"
-#include "oops/interface/LinearObsOperator.h"
 #include "oops/interface/ObsVector.h"
 #include "util/DateTime.h"
-#include "util/Duration.h"
-#include "util/Printable.h"
 #include "util/dot_product.h"
+#include "util/Duration.h"
+#include "util/Logger.h"
+#include "util/Printable.h"
 
 namespace oops {
 
@@ -64,8 +64,8 @@ class Departures : public util::Printable,
 
 /// Access
   std::size_t size() const {return dep_.size();}
-  ObsVector_ & operator[](const std::size_t ii) {return *dep_.at(ii);} 
-  const ObsVector_ & operator[](const std::size_t ii) const {return *dep_.at(ii);} 
+  ObsVector_ & operator[](const std::size_t ii) {return *dep_.at(ii);}
+  const ObsVector_ & operator[](const std::size_t ii) const {return *dep_.at(ii);}
 
 // Linear algebra operators
   Departures & operator=(const Departures &);
@@ -102,7 +102,7 @@ Departures<MODEL>::Departures(const ObsSpace_ & obsgeom): dep_(0)
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 Departures<MODEL>::Departures(std::vector<boost::shared_ptr<ObsVector_> > val)
- : dep_(val)
+  : dep_(val)
 {
   Log::trace() << "Departures created" << std::endl;
 }

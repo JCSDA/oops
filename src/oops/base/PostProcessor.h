@@ -30,6 +30,7 @@ namespace oops {
 template<typename FLDS>
 class PostProcessor {
   typedef PostBase<FLDS> PostBase_;
+
  public:
   PostProcessor() {}
   PostProcessor(const PostProcessor & pp): processors_(pp.processors_) {}

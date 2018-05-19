@@ -8,21 +8,21 @@
  * does it submit to any jurisdiction.
  */
 
-#include <vector>
-
 #include "model/TlmQG.h"
 
+#include <vector>
+
 #include "eckit/config/LocalConfiguration.h"
-#include "model/ModelBiasIncrement.h"
-#include "model/QgFortran.h"
 #include "model/GeometryQG.h"
 #include "model/IncrementQG.h"
+#include "model/ModelBiasIncrement.h"
 #include "model/ModelQG.h"
-#include "model/StateQG.h"
+#include "model/QgFortran.h"
 #include "model/QgTraits.h"
+#include "model/StateQG.h"
+#include "util/abor1_cpp.h"
 #include "util/DateTime.h"
 #include "util/Logger.h"
-#include "util/abor1_cpp.h"
 
 using oops::Log;
 

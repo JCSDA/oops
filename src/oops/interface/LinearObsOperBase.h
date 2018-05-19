@@ -41,15 +41,15 @@ class LinearObsOperBase : public util::Printable,
   virtual ~LinearObsOperBase() {}
 
 /// Obs Operators
-  virtual void setTrajectory(const GeoVaLs_ &, const ObsAuxControl_ &) =0;
-  virtual void obsEquivTL(const GeoVaLs_ &, ObsVector_ &, const ObsAuxIncrement_ &) const =0;
-  virtual void obsEquivAD(GeoVaLs_ &, const ObsVector_ &, ObsAuxIncrement_ &) const =0;
+  virtual void setTrajectory(const GeoVaLs_ &, const ObsAuxControl_ &) = 0;
+  virtual void obsEquivTL(const GeoVaLs_ &, ObsVector_ &, const ObsAuxIncrement_ &) const = 0;
+  virtual void obsEquivAD(GeoVaLs_ &, const ObsVector_ &, ObsAuxIncrement_ &) const = 0;
 
 /// Other
-  virtual const Variables & variables() const =0;  // Required from Model
+  virtual const Variables & variables() const = 0;  // Required from Model
 
  private:
-  virtual void print(std::ostream &) const =0;
+  virtual void print(std::ostream &) const = 0;
 };
 
 // =============================================================================
@@ -64,7 +64,7 @@ class LinearObsOperFactory {
  protected:
   explicit LinearObsOperFactory(const std::string &);
  private:
-  virtual LinearObsOperBase<MODEL> * make(const ObsSpace_ &, const eckit::Configuration &) =0;
+  virtual LinearObsOperBase<MODEL> * make(const ObsSpace_ &, const eckit::Configuration &) = 0;
   static std::map < std::string, LinearObsOperFactory<MODEL> * > & getMakers() {
     static std::map < std::string, LinearObsOperFactory<MODEL> * > makers_;
     return makers_;

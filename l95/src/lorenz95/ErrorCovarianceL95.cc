@@ -20,7 +20,7 @@
 #include "util/Logger.h"
 
 namespace oops {
-  class Variables;
+class Variables;
 }
 
 // -----------------------------------------------------------------------------

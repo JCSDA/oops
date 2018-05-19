@@ -18,15 +18,15 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Logger.h"
 #include "oops/base/Accumulator.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
 #include "util/DateTime.h"
-#include "util/Duration.h"
 #include "util/dot_product.h"
+#include "util/Duration.h"
+#include "util/Logger.h"
 
 namespace oops {
 

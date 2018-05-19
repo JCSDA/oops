@@ -12,15 +12,14 @@
 #define OOPS_ASSIMILATION_COSTFCT4DVAR_H_
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Logger.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/CostJb3D.h"
 #include "oops/assimilation/CostJcDFI.h"
 #include "oops/assimilation/CostJo.h"
 #include "oops/assimilation/CostTermBase.h"
 #include "oops/base/PostProcessor.h"
-#include "oops/base/PostProcessorTL.h"
 #include "oops/base/PostProcessorAD.h"
+#include "oops/base/PostProcessorTL.h"
 #include "oops/base/StateInfo.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
@@ -29,6 +28,7 @@
 #include "oops/interface/State.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
+#include "util/Logger.h"
 
 namespace oops {
 
@@ -139,7 +139,7 @@ void CostFct4DVar<MODEL>::runTLM(CtrlInc_ & dx,
                                  PostProcessor<Increment_> post,
                                  const bool idModel) const {
   ASSERT(dx.state()[0].validTime() == windowBegin_);
-  CostFct_::getTLM().forecastTL(dx.state()[0], dx.modVar(), windowLength_, 
+  CostFct_::getTLM().forecastTL(dx.state()[0], dx.modVar(), windowLength_,
                                 post, cost, idModel);
   ASSERT(dx.state()[0].validTime() == windowEnd_);
 }
@@ -161,7 +161,7 @@ void CostFct4DVar<MODEL>::runADJ(CtrlInc_ & dx,
                                  PostProcessor<Increment_> post,
                                  const bool idModel) const {
   ASSERT(dx.state()[0].validTime() == windowEnd_);
-  CostFct_::getTLM().forecastAD(dx.state()[0], dx.modVar(), windowLength_, 
+  CostFct_::getTLM().forecastAD(dx.state()[0], dx.modVar(), windowLength_,
                                 post, cost, idModel);
   ASSERT(dx.state()[0].validTime() == windowBegin_);
 }

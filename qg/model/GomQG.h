@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -35,11 +35,10 @@ class GomQG : public util::Printable,
 
   GomQG(const LocationsQG &, const oops::Variables &);
   GomQG(const eckit::Configuration &, const oops::Variables &);
-  GomQG(const LocationsQG &, const oops::Variables &,
-	const eckit::Configuration &);
-  GomQG(const GomQG &);
+  GomQG(const LocationsQG &, const oops::Variables &, const eckit::Configuration &);
+  explicit GomQG(const GomQG &);
 
-  explicit GomQG(): keyGom_(0) {}
+  GomQG(): keyGom_(0) {}
   explicit GomQG(int & fgom): keyGom_(fgom) {}
 
   ~GomQG();
@@ -48,11 +47,11 @@ class GomQG : public util::Printable,
   void zero();
   void random();
   double norm() const;
-  GomQG & operator=(const GomQG &);  
+  GomQG & operator=(const GomQG &);
   GomQG & operator*=(const double &);
-  GomQG & operator+=(const GomQG &);  
-  GomQG & operator-=(const GomQG &);  
-  GomQG & operator/=(const GomQG &);  
+  GomQG & operator+=(const GomQG &);
+  GomQG & operator-=(const GomQG &);
+  GomQG & operator/=(const GomQG &);
   double dot_product_with(const GomQG &) const;
   void read(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;

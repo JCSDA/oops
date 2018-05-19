@@ -16,8 +16,8 @@
 #include "oops/assimilation/BMatrix.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
-#include "oops/assimilation/HessianMatrix.h"
 #include "oops/assimilation/FGMRES.h"
+#include "oops/assimilation/HessianMatrix.h"
 #include "oops/assimilation/PrimalMinimizer.h"
 
 namespace oops {

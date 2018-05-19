@@ -17,4 +17,4 @@ int main(int argc,  char ** argv) {
   oops::Forecast<qg::QgTraits> fc;
   run.execute(fc);
   return 0;
-};
+}

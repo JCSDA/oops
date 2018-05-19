@@ -11,9 +11,9 @@
 #ifndef OOPS_ASSIMILATION_DUALVECTOR_H_
 #define OOPS_ASSIMILATION_DUALVECTOR_H_
 
+#include <vector>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
-#include <vector>
 
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/base/Departures.h"

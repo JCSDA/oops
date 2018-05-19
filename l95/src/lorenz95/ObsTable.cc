@@ -16,17 +16,16 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
-
+#include "lorenz95/LocsL95.h"
+#include "lorenz95/ObsVec1D.h"
 #include "util/abor1_cpp.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
 #include "util/Logger.h"
-
-#include "lorenz95/LocsL95.h"
-#include "lorenz95/ObsVec1D.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {

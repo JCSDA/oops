@@ -10,14 +10,14 @@
 
 #include "model/ModelQG.h"
 
-#include "util/Logger.h"
-#include "model/ModelBias.h"
-#include "model/FieldsQG.h"
-#include "model/QgFortran.h"
-#include "model/GeometryQG.h"
-#include "model/StateQG.h"
 #include "eckit/config/Configuration.h"
+#include "model/FieldsQG.h"
+#include "model/GeometryQG.h"
+#include "model/ModelBias.h"
+#include "model/QgFortran.h"
+#include "model/StateQG.h"
 #include "util/DateTime.h"
+#include "util/Logger.h"
 
 using oops::Log;
 

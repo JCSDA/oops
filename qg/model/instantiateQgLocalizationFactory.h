@@ -11,9 +11,9 @@
 #ifndef QG_MODEL_INSTANTIATEQGLOCALIZATIONFACTORY_H_
 #define QG_MODEL_INSTANTIATEQGLOCALIZATIONFACTORY_H_
 
-#include "oops/interface/LocalizationBase.h"
 #include "model/LocalizationMatrixQG.h"
 #include "model/QgTraits.h"
+#include "oops/interface/LocalizationBase.h"
 
 namespace qg {
 

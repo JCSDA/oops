@@ -15,9 +15,9 @@
 #include <random>
 #include <string>
 
-#include "util/Logger.h"
-#include "lorenz95/ObsBiasCorrection.h"
 #include "eckit/config/Configuration.h"
+#include "lorenz95/ObsBiasCorrection.h"
+#include "util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {

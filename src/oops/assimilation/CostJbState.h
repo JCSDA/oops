@@ -54,34 +54,34 @@ template<typename MODEL> class CostJbState : private boost::noncopyable {
   virtual ~CostJbState() {}
 
 /// Initialize Jq computations if needed.
-  virtual JqTerm<MODEL> * initializeJq() const =0;
+  virtual JqTerm<MODEL> * initializeJq() const = 0;
 
 /// Get increment from state (usually first guess).
   virtual void computeIncrement(const State4D_ &, const State4D_ &,
-                                Increment4D_ &) const =0;
+                                Increment4D_ &) const = 0;
 
 /// Linearize before the linear computations.
-  virtual void linearize(const State4D_ &, const Geometry_ &) =0;
+  virtual void linearize(const State4D_ &, const Geometry_ &) = 0;
 
 /// Add Jb gradient.
-  virtual void addGradient(const Increment4D_ &, Increment4D_ &, Increment4D_ &) const =0;
+  virtual void addGradient(const Increment4D_ &, Increment4D_ &, Increment4D_ &) const = 0;
 
 /// Finalize \f$ J_b\f$ after the TL run.
-  virtual JqTermTL<MODEL> * initializeJqTL() const =0;
+  virtual JqTermTL<MODEL> * initializeJqTL() const = 0;
 
 /// Initialize \f$ J_b\f$ before the AD run.
-  virtual JqTermAD<MODEL> * initializeJqAD(const Increment4D_ &) const =0;
+  virtual JqTermAD<MODEL> * initializeJqAD(const Increment4D_ &) const = 0;
 
 /// Multiply by \f$ B\f$ and \f$ B^{-1}\f$.
-  virtual void Bmult(const Increment4D_ &, Increment4D_ &) const =0;
-  virtual void Bminv(const Increment4D_ &, Increment4D_ &) const =0;
+  virtual void Bmult(const Increment4D_ &, Increment4D_ &) const = 0;
+  virtual void Bminv(const Increment4D_ &, Increment4D_ &) const = 0;
 
 /// Randomize
-  virtual void randomize(Increment4D_ &) const =0;
+  virtual void randomize(Increment4D_ &) const = 0;
 
 /// Create new increment (set to 0).
-  virtual unsigned int nstates() const =0;
-  virtual Increment_ * newStateIncrement(const unsigned int) const =0;
+  virtual unsigned int nstates() const = 0;
+  virtual Increment_ * newStateIncrement(const unsigned int) const = 0;
 };
 
 // -----------------------------------------------------------------------------

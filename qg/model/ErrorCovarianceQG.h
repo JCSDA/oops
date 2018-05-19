@@ -16,9 +16,9 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
-#include "model/QgFortran.h"
-#include "model/GeometryQG.h"
 #include "eckit/config/Configuration.h"
+#include "model/GeometryQG.h"
+#include "model/QgFortran.h"
 #include "util/DateTime.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
@@ -41,7 +41,8 @@ class ErrorCovarianceQG : public util::Printable,
  public:
   static const std::string classname() {return "qg::ErrorCovarianceQG";}
 
-  ErrorCovarianceQG(const GeometryQG &, const oops::Variables &, const eckit::Configuration &, const StateQG &);
+  ErrorCovarianceQG(const GeometryQG &, const oops::Variables &,
+                    const eckit::Configuration &, const StateQG &);
   ~ErrorCovarianceQG();
 
   void linearize(const StateQG &, const GeometryQG &);

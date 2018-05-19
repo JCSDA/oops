@@ -15,14 +15,13 @@
 
 #include <boost/foreach.hpp>
 
+#include "eckit/config/Configuration.h"
 #include "eckit/exception/Exceptions.h"
-
 #include "lorenz95/GomL95.h"
 #include "lorenz95/ObsTable.h"
-#include "util/Logger.h"
-#include "eckit/config/Configuration.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
+#include "util/Logger.h"
 
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
@@ -118,7 +117,7 @@ void ObsVec1D::save(const std::string & name) const {
 }
 // -----------------------------------------------------------------------------
 void ObsVec1D::print(std::ostream & os) const {
-  ASSERT(data_.size()>0);
+  ASSERT(data_.size() > 0);
   double zmin = data_[0];
   double zmax = data_[0];
   double zavg = 0.0;
@@ -128,7 +127,8 @@ void ObsVec1D::print(std::ostream & os) const {
     zavg += val;
   }
   zavg /= data_.size();
-  os << "Lorenz 95 nobs= " << data_.size() << " Min=" << zmin << ", Max=" << zmax << ", Average=" << zavg;
+  os << "Lorenz 95 nobs= " << data_.size() << " Min=" << zmin << ", Max=" << zmax
+     << ", Average=" << zavg;
 }
 // -----------------------------------------------------------------------------
 }  // namespace lorenz95

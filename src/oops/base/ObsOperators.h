@@ -12,6 +12,7 @@
 #define OOPS_BASE_OBSOPERATORS_H_
 
 #include <string>
+#include <vector>
 
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>

@@ -17,4 +17,4 @@ int main(int argc,  char ** argv) {
   oops::MakeObs<qg::QgTraits> mkobs;
   run.execute(mkobs);
   return 0;
-};
+}

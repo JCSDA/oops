@@ -16,8 +16,8 @@
 
 #include <boost/scoped_ptr.hpp>
 
-#include "util/Logger.h"
 #include "oops/interface/ObsAuxControl.h"
+#include "util/Logger.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 #include "util/Timer.h"

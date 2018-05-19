@@ -15,7 +15,6 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
-#include "util/Logger.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/ControlVariable.h"
 #include "oops/assimilation/CostFunction.h"
@@ -23,6 +22,7 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
 #include "oops/interface/State.h"
+#include "util/Logger.h"
 
 namespace oops {
 
@@ -36,13 +36,13 @@ void IncrementalAssimilation(ControlVariable<MODEL> & xx, CostFunction<MODEL> & 
 // Setup outer loop
   std::vector<eckit::LocalConfiguration> iterconfs;
   config.get("variational.iteration", iterconfs);
-  unsigned int nouter = iterconfs.size();
-  Log::info() << "Running incremental assimilation with " << nouter << " outer iterations." << std::endl;
+  const unsigned int nouter = iterconfs.size();
+  Log::info() << "Running incremental assimilation with " << nouter
+              << " outer iterations." << std::endl;
 
 // Setup minimizer
   eckit::LocalConfiguration minConf(config, "minimizer");
-  const long nnout = nouter;
-  minConf.set("nouter", nnout);
+  minConf.set("nouter", static_cast<const int>(nouter));
   boost::scoped_ptr<Minimizer_> minim(MinFactory<MODEL>::create(minConf, J));
 
   for (unsigned jouter = 0; jouter < nouter; ++jouter) {

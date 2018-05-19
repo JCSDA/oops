@@ -15,7 +15,7 @@
 
 #include <boost/scoped_ptr.hpp>
 
-#include "util/Logger.h"
+#include "eckit/config/Configuration.h"
 #include "oops/assimilation/BMatrix.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
@@ -25,8 +25,8 @@
 #include "oops/assimilation/HtMatrix.h"
 #include "oops/assimilation/Minimizer.h"
 #include "oops/assimilation/RinvMatrix.h"
-#include "eckit/config/Configuration.h"
 #include "util/dot_product.h"
+#include "util/Logger.h"
 
 namespace oops {
 
@@ -47,15 +47,14 @@ template<typename MODEL> class DualMinimizer : public Minimizer<MODEL> {
   typedef RinvMatrix<MODEL>          Rinv_;
 
  public:
-  explicit DualMinimizer(const CostFct_ & J)
-   : Minimizer_(J), J_(J), gradJb_(0) {}
+  explicit DualMinimizer(const CostFct_ & J): Minimizer_(J), J_(J), gradJb_(0) {}
   ~DualMinimizer() {}
-  virtual const std::string classname() const override =0;
+  const std::string classname() const override = 0;
 
  private:
   CtrlInc_ * doMinimize(const eckit::Configuration &) override;
   virtual double solve(Dual_ &, double &, Dual_ &, const HBHt_ &, const Rinv_ &,
-                       const int &, const double &, Dual_ &, const double &) =0;
+                       const int &, const double &, Dual_ &, const double &) = 0;
 
   const CostFct_ & J_;
   boost::scoped_ptr<CtrlInc_> gradJb_;
@@ -134,7 +133,8 @@ ControlIncrement<MODEL> * DualMinimizer<MODEL>::doMinimize(const eckit::Configur
   CtrlInc_ * dx = new CtrlInc_(J_.jb());
   B.multiply(dh, *dx);    // BHtaug vvaug
 
-  Log::info() << classname() << ": Estimated Final Jb = " << 0.5 * dot_product(*dx, dh) << std::endl;
+  Log::info() << classname() << ": Estimated Final Jb = "
+              << 0.5 * dot_product(*dx, dh) << std::endl;
   Log::info() << classname() << " output" << *dx << std::endl;
 
 // Update gradient Jb

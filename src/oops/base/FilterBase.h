@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2017 UCAR
+ * (C) Copyright 2017-2018 UCAR
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -8,11 +8,15 @@
 #ifndef OOPS_BASE_FILTERBASE_H_
 #define OOPS_BASE_FILTERBASE_H_
 
+#include <map>
+#include <string>
+
 #include <boost/noncopyable.hpp>
 
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsVector.h"
+#include "util/abor1_cpp.h"
 #include "util/Printable.h"
 
 namespace oops {
@@ -32,11 +36,11 @@ class FilterBase : public util::Printable,
   FilterBase() {}
   virtual ~FilterBase() {}
 
-  virtual void priorFilter(const ObsSpace_ &) const =0;
-  virtual void postFilter(const GeoVaLs_ &, const ObsVector_ &, const ObsSpace_ &) const =0;
+  virtual void priorFilter(const ObsSpace_ &) const = 0;
+  virtual void postFilter(const GeoVaLs_ &, const ObsVector_ &, const ObsSpace_ &) const = 0;
 
  private:
-  virtual void print(std::ostream &) const =0;
+  virtual void print(std::ostream &) const = 0;
 };
 
 // =============================================================================
@@ -50,7 +54,7 @@ class FilterFactory {
  protected:
   explicit FilterFactory(const std::string &);
  private:
-  virtual FilterBase<MODEL> * make(const eckit::Configuration &) =0;
+  virtual FilterBase<MODEL> * make(const eckit::Configuration &) = 0;
   static std::map < std::string, FilterFactory<MODEL> * > & getMakers() {
     static std::map < std::string, FilterFactory<MODEL> * > makers_;
     return makers_;

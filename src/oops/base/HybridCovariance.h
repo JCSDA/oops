@@ -14,7 +14,6 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Logger.h"
 #include "oops/assimilation/GMRESR.h"
 #include "oops/base/EnsembleCovariance.h"
 #include "oops/base/IdentityMatrix.h"
@@ -23,8 +22,9 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
-#include "util/DateTime.h"
 #include "util/abor1_cpp.h"
+#include "util/DateTime.h"
+#include "util/Logger.h"
 
 namespace oops {
 
@@ -38,7 +38,8 @@ class HybridCovariance : public ModelSpaceCovarianceBase<MODEL> {
   typedef State<MODEL>               State_;
 
  public:
-  HybridCovariance(const Geometry_ &, const Variables &, const eckit::Configuration &, const State_ &);
+  HybridCovariance(const Geometry_ &, const Variables &,
+                   const eckit::Configuration &, const State_ &);
   ~HybridCovariance();
 
   void linearize(const State_ &, const Geometry_ &) override;
@@ -61,7 +62,8 @@ class HybridCovariance : public ModelSpaceCovarianceBase<MODEL> {
 template<typename MODEL>
 HybridCovariance<MODEL>::HybridCovariance(const Geometry_ & resol, const Variables & vars,
                                           const eckit::Configuration & config, const State_ & xb)
-  : static_(CovarianceFactory<MODEL>::create(eckit::LocalConfiguration(config, "static"), resol, vars, xb))
+  : static_(CovarianceFactory<MODEL>::create(
+              eckit::LocalConfiguration(config, "static"), resol, vars, xb))
 {
   const eckit::LocalConfiguration ensConf(config, "ensemble");
   ensemble_.reset(new EnsembleCovariance<MODEL>(resol,  vars, ensConf, xb));

@@ -16,14 +16,14 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
-#include "oops/base/Variables.h"
-#include "util/DateTime.h"
-#include "util/Logger.h"
+#include "model/GeometryQG.h"
 #include "model/GomQG.h"
 #include "model/LocationsQG.h"
 #include "model/QgFortran.h"
-#include "model/GeometryQG.h"
 #include "model/VariablesQG.h"
+#include "oops/base/Variables.h"
+#include "util/DateTime.h"
+#include "util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {
@@ -156,7 +156,7 @@ void FieldsQG::read(const eckit::Configuration & config) {
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::analytic_init(const eckit::Configuration & config,
-			     const GeometryQG & geom) {
+                             const GeometryQG & geom) {
   const eckit::Configuration * conf = &config;
   util::DateTime * dtp = &time_;
   qg_field_analytic_init_f90(keyFlds_, geom.toFortran(), &conf, &dtp);

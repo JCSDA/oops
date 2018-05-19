@@ -77,7 +77,8 @@ void TimerHelper::print(std::ostream & os) const {
     int icount = counts_.at(jt->first);
     os << std::setw(52) << std::left << jt->first
        << ": " << std::setw(12) << std::right << jt->second << " ms"
-       << "  " << std::setw(6) << icount << "   " << std::setw(12) << std::right << jt->second/icount << " ms/call"
+       << "  " << std::setw(6) << icount
+       << "   " << std::setw(12) << std::right << jt->second/icount << " ms/call"
        << std::endl;
   }
   os << "------------------------- Timing Statistics -------------------------" << std::endl;

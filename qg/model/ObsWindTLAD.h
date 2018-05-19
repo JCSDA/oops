@@ -15,10 +15,10 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include "model/QgTraits.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/LinearObsOperBase.h"
 #include "util/ObjectCounter.h"
-#include "model/QgTraits.h"
 
 // Forward declarations
 namespace eckit {

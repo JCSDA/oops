@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2017 UCAR
+ * (C) Copyright 2017-2018 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -41,11 +41,11 @@ class ObsOperatorBase : public util::Printable,
   void calcObsEquiv(const GeoVaLs_ &, ObsVector_ &, const ObsAuxControl_ &) const;
 
 /// Other
-  virtual const Variables & variables() const =0;  // Required from Model
+  virtual const Variables & variables() const = 0;  // Required from Model
 
  private:
-  virtual void obsEquiv(const GeoVaLs_ &, ObsVector_ &, const ObsAuxControl_ &) const =0;
-  virtual void print(std::ostream &) const =0;
+  virtual void obsEquiv(const GeoVaLs_ &, ObsVector_ &, const ObsAuxControl_ &) const = 0;
+  virtual void print(std::ostream &) const = 0;
 };
 
 // -----------------------------------------------------------------------------
@@ -68,7 +68,7 @@ class ObsOperatorFactory {
  protected:
   explicit ObsOperatorFactory(const std::string &);
  private:
-  virtual ObsOperatorBase<MODEL> * make(const ObsSpace_ &, const eckit::Configuration &) =0;
+  virtual ObsOperatorBase<MODEL> * make(const ObsSpace_ &, const eckit::Configuration &) = 0;
   static std::map < std::string, ObsOperatorFactory<MODEL> * > & getMakers() {
     static std::map < std::string, ObsOperatorFactory<MODEL> * > makers_;
     return makers_;

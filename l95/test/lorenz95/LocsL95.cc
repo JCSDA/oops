@@ -11,12 +11,12 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include "eckit/config/LocalConfiguration.h"
 #include "./TestConfig.h"
+#include "eckit/config/LocalConfiguration.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ObsTable.h"
-#include "util/DateTime.h"
 #include "test/TestFixture.h"
+#include "util/DateTime.h"
 
 namespace test {
 

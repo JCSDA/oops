@@ -17,5 +17,5 @@ int main(int argc,  char ** argv) {
   test::ObsErrorCovariance<qg::QgTraits> tests;
   run.execute(tests);
   return 0;
-};
+}
 

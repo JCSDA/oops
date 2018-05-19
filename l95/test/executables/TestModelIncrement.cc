@@ -17,5 +17,5 @@ int main(const int argc, const char ** argv) {
   test::ModelIncrement<lorenz95::L95Traits> tests;
   run.execute(tests);
   return 0;
-};
+}
 

@@ -17,5 +17,5 @@ int main(int argc,  char ** argv) {
   test::ObsAuxCovariance<qg::QgTraits> tests;
   run.execute(tests);
   return 0;
-};
+}
 

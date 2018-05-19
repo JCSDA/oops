@@ -11,8 +11,8 @@
 #ifndef OOPS_ASSIMILATION_STATE4D_H_
 #define OOPS_ASSIMILATION_STATE4D_H_
 
-#include <ostream>
 #include <cmath>
+#include <ostream>
 #include <string>
 #include <vector>
 #include <boost/foreach.hpp>

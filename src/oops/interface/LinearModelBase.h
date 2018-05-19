@@ -74,14 +74,14 @@ class LinearModelBase : public util::Printable,
   virtual const util::Duration & timeResolution() const = 0;
 
  protected:
-
 // Set the linearization trajectory
   virtual void setTrajectory(const typename MODEL::State &, typename MODEL::State &,
                              const typename MODEL::ModelAuxControl &) = 0;
 
 // Run the TL forecast
   virtual void initializeTL(typename MODEL::Increment &) const = 0;
-  virtual void stepTL(typename MODEL::Increment &, const typename MODEL::ModelAuxIncrement &) const = 0;
+  virtual void stepTL(typename MODEL::Increment &,
+                      const typename MODEL::ModelAuxIncrement &) const = 0;
   virtual void finalizeTL(typename MODEL::Increment &) const = 0;
 
 // Run the AD forecast
@@ -105,7 +105,7 @@ class LinearModelFactory {
  protected:
   explicit LinearModelFactory(const std::string &);
  private:
-  virtual LinearModelBase<MODEL> * make(const Geometry_ &, const eckit::Configuration &) =0;
+  virtual LinearModelBase<MODEL> * make(const Geometry_ &, const eckit::Configuration &) = 0;
   static std::map < std::string, LinearModelFactory<MODEL> * > & getMakers() {
     static std::map < std::string, LinearModelFactory<MODEL> * > makers_;
     return makers_;

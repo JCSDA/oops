@@ -13,7 +13,7 @@
 
 #include <string>
 
-#include "util/Logger.h"
+#include "eckit/config/Configuration.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
 #include "oops/base/StateWriter.h"
@@ -22,9 +22,9 @@
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
 #include "oops/runs/Application.h"
-#include "eckit/config/Configuration.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
+#include "util/Logger.h"
 
 namespace oops {
 
@@ -63,7 +63,8 @@ template <typename MODEL> class EnsForecast : public Application {
       const util::Duration fclength(fullConfig.getString("forecast_length"));
       const util::DateTime bgndate(xx.validTime());
       const util::DateTime enddate(bgndate + fclength);
-      Log::info() << "Running forecast " << jj << " from " << bgndate << " to " << enddate << std::endl;
+      Log::info() << "Running forecast " << jj << " from " << bgndate
+                  << " to " << enddate << std::endl;
 
 //    Setup forecast outputs
       PostProcessor<State_> post;

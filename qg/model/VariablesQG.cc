@@ -1,16 +1,16 @@
 /*
- * (C) Copyright 2017 UCAR
+ * (C) Copyright 2017-2018 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "VariablesQG.h"
+#include "model/VariablesQG.h"
 
 #include<vector>
 
-#include "oops/base/Variables.h"
 #include "eckit/config/Configuration.h"
+#include "oops/base/Variables.h"
 #include "util/Logger.h"
 
 namespace qg {
@@ -42,11 +42,11 @@ void VariablesQG::setF90(const std::vector<std::string> vars) {
   fvars_[0] = nv;
   for (size_t jj = 0; jj < nv; ++jj) {
      int ii = 0;
-     if (vars[jj]=="x") ii = 1;
-     if (vars[jj]=="q") ii = 2;
-     if (vars[jj]=="u") ii = 3;
-     if (vars[jj]=="v") ii = 4;
-     if (vars[jj]=="bc") ii = 5;
+     if (vars[jj] == "x") ii = 1;
+     if (vars[jj] == "q") ii = 2;
+     if (vars[jj] == "u") ii = 3;
+     if (vars[jj] == "v") ii = 4;
+     if (vars[jj] == "bc") ii = 5;
      ASSERT(ii > 0);
      fvars_[jj+1] = ii;
   }

@@ -16,21 +16,21 @@
 
 #include <boost/scoped_ptr.hpp>
 
-#include "util/Logger.h"
-#include "oops/base/PostProcessor.h"
+#include "eckit/config/Configuration.h"
+#include "oops/base/instantiateCovarFactory.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
+#include "oops/base/PostProcessor.h"
 #include "oops/base/StateWriter.h"
 #include "oops/base/Variables.h"
-#include "oops/base/instantiateCovarFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/Model.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
 #include "oops/runs/Application.h"
-#include "eckit/config/Configuration.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
+#include "util/Logger.h"
 
 namespace oops {
 
@@ -97,7 +97,7 @@ template <typename MODEL> class GenEnsPertB : public Application {
       PostProcessor<State_> post;
 
       eckit::LocalConfiguration outConfig(fullConfig, "output");
-      outConfig.set("member", long(jm+1));
+      outConfig.set("member", jm+1);
 
       post.enrollProcessor(new StateWriter<State_>(bgndate, outConfig));
 

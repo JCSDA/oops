@@ -11,9 +11,9 @@
 #include "model/LocalizationMatrixQG.h"
 
 #include "eckit/config/Configuration.h"
-#include "model/QgFortran.h"
 #include "model/GeometryQG.h"
 #include "model/IncrementQG.h"
+#include "model/QgFortran.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {

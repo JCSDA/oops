@@ -139,7 +139,7 @@ void Duration::set(const string & str) {
 // -----------------------------------------------------------------------------
 
 void Duration::failBadFormat(const std::string& str) const {
-  string message="Badly formed duration string: ";
+  string message = "Badly formed duration string: ";
   message.append(str);
   ABORT(message);
 }

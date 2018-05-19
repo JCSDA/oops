@@ -11,8 +11,8 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include "eckit/config/LocalConfiguration.h"
 #include "./TestConfig.h"
+#include "eckit/config/LocalConfiguration.h"
 #include "lorenz95/ObservationL95.h"
 #include "lorenz95/ObsTable.h"
 #include "test/TestFixture.h"
@@ -38,12 +38,14 @@ class ObsTestFixture : TestFixture {
 BOOST_FIXTURE_TEST_SUITE(test_ObsL95, ObsTestFixture)
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_ObsL95_constructor) {
-    boost::scoped_ptr<lorenz95::ObservationL95> obs(new lorenz95::ObservationL95(*ot_, TestConfig::config()));
+    boost::scoped_ptr<lorenz95::ObservationL95>
+      obs(new lorenz95::ObservationL95(*ot_, TestConfig::config()));
     BOOST_CHECK(obs.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_observationL95_classname) {
-    boost::scoped_ptr<lorenz95::ObservationL95> obs(new lorenz95::ObservationL95(*ot_, TestConfig::config()));
+    boost::scoped_ptr<lorenz95::ObservationL95>
+      obs(new lorenz95::ObservationL95(*ot_, TestConfig::config()));
     BOOST_CHECK_EQUAL(obs->classname(), "lorenz95::ObservationL95");
   }
 // -----------------------------------------------------------------------------

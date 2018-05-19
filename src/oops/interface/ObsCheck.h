@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2017 UCAR
+ * (C) Copyright 2017-2018 UCAR
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -35,8 +35,8 @@ class ObsCheck : public FilterBase<MODEL> {
  public:
   static const std::string classname() {return "oops::ObsCheck";}
 
-  ObsCheck(const ObsSpace_ &);
-  ObsCheck(const eckit::Configuration & conf);
+  explicit ObsCheck(const ObsSpace_ &);
+  explicit ObsCheck(const eckit::Configuration & conf);
   ~ObsCheck();
 
 /// Interfacing
@@ -84,7 +84,8 @@ ObsCheck<MODEL>::~ObsCheck() {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void ObsCheck<MODEL>::postFilter(const GeoVaLs_ & gv, const ObsVector_ & ov, const ObsSpace_ & os) const {
+void ObsCheck<MODEL>::postFilter(const GeoVaLs_ & gv, const ObsVector_ & ov,
+                                 const ObsSpace_ & os) const {
   Log::trace() << "ObsCheck<MODEL>::postFilter starting" << std::endl;
   util::Timer timer(classname(), "ObsCheck");
     obsc_->postFilter(gv.geovals(), ov.obsvector(), os.observationspace());
@@ -105,7 +106,7 @@ void ObsCheck<MODEL>::priorFilter(const ObsSpace_ & os) const {
 
 template <typename MODEL>
 void ObsCheck<MODEL>::print(std::ostream & os) const {
-  os << "ObsCheck " << conf_ ;
+  os << "ObsCheck " << conf_;
 }
 
 // -----------------------------------------------------------------------------

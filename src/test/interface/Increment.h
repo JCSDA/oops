@@ -11,9 +11,9 @@
 #ifndef TEST_INTERFACE_INCREMENT_H_
 #define TEST_INTERFACE_INCREMENT_H_
 
+#include <cmath>
 #include <iostream>
 #include <string>
-#include <cmath>
 
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API

@@ -20,13 +20,13 @@
 #include "oops/assimilation/GMRESRMinimizer.h"
 #include "oops/assimilation/IPCGMinimizer.h"
 #include "oops/assimilation/LBGMRESRMinimizer.h"
+#include "oops/assimilation/Minimizer.h"
 #include "oops/assimilation/MINRESMinimizer.h"
-#include "oops/assimilation/RPCGMinimizer.h"
 #include "oops/assimilation/PCGMinimizer.h"
 #include "oops/assimilation/PLanczosMinimizer.h"
+#include "oops/assimilation/RPCGMinimizer.h"
 #include "oops/assimilation/RPLanczosMinimizer.h"
 #include "oops/assimilation/SaddlePointMinimizer.h"
-#include "oops/assimilation/Minimizer.h"
 
 
 namespace oops {

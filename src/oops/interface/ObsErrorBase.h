@@ -45,17 +45,17 @@ class ObsErrorBase : public util::Printable,
   virtual ~ObsErrorBase() {}
 
 /// Linearize and reset for inner loop if needed
-  virtual void linearize(const ObsVector_ &) =0;
+  virtual void linearize(const ObsVector_ &) = 0;
 
 /// Multiply a Departure by \f$R\f$ and \f$R^{-1}\f$
-  virtual ObsVector_ * multiply(const ObsVector_ &) const =0;
-  virtual ObsVector_ * inverseMultiply(const ObsVector_ &) const =0;
+  virtual ObsVector_ * multiply(const ObsVector_ &) const = 0;
+  virtual ObsVector_ * inverseMultiply(const ObsVector_ &) const = 0;
 
 /// Generate random perturbation
-  virtual void randomize(ObsVector_ &) const =0;
+  virtual void randomize(ObsVector_ &) const = 0;
 
 /// Get mean error for Jo table
-  virtual double getRMSE() const =0;
+  virtual double getRMSE() const = 0;
 };
 
 // =============================================================================
@@ -70,7 +70,7 @@ class ObsErrorFactory {
  protected:
   explicit ObsErrorFactory(const std::string &);
  private:
-  virtual ObsErrorBase<MODEL> * make(const ObsSpace_ &, const eckit::Configuration &) =0;
+  virtual ObsErrorBase<MODEL> * make(const ObsSpace_ &, const eckit::Configuration &) = 0;
   static std::map < std::string, ObsErrorFactory<MODEL> * > & getMakers() {
     static std::map < std::string, ObsErrorFactory<MODEL> * > makers_;
     return makers_;

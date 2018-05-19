@@ -65,6 +65,6 @@ class ModelBias : public util::Printable,
 
 // -----------------------------------------------------------------------------
 
-}  // namespace l95
+}  // namespace lorenz95
 
 #endif  // LORENZ95_MODELBIAS_H_

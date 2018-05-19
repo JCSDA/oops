@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -11,9 +11,9 @@
 #ifndef TEST_INTERFACE_ERRORCOVARIANCE_H_
 #define TEST_INTERFACE_ERRORCOVARIANCE_H_
 
+#include <cmath>
 #include <iostream>
 #include <string>
-#include <cmath>
 
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API
@@ -23,15 +23,15 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include "oops/runs/Test.h"
+#include "eckit/config/Configuration.h"
+#include "oops/base/instantiateCovarFactory.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/Variables.h"
-#include "oops/base/instantiateCovarFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
+#include "oops/runs/Test.h"
 #include "test/TestEnvironment.h"
-#include "eckit/config/Configuration.h"
 #include "util/DateTime.h"
 #include "util/dot_product.h"
 
@@ -141,7 +141,7 @@ template <typename MODEL> void testErrorCovarianceSym() {
   Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
   Increment_ Bdx(Test_::resol(), Test_::ctlvars(), Test_::time());
   Increment_ dy(Test_::resol(), Test_::ctlvars(), Test_::time());
-  Increment_ Bdy(Test_::resol(), Test_::ctlvars(), Test_::time());  
+  Increment_ Bdy(Test_::resol(), Test_::ctlvars(), Test_::time());
 
   dx.random();
   dy.random();
@@ -151,9 +151,9 @@ template <typename MODEL> void testErrorCovarianceSym() {
   const double zz1 = dot_product(dx, Bdy);
   const double zz2 = dot_product(Bdx, dy);
   const double tol = 1.0e-8;
-  BOOST_CHECK_CLOSE( zz1, zz2, tol);
-  
+  BOOST_CHECK_CLOSE(zz1, zz2, tol);
 }
+
 // =============================================================================
 
 template <typename MODEL> class ErrorCovariance : public oops::Test {
@@ -169,7 +169,7 @@ template <typename MODEL> class ErrorCovariance : public oops::Test {
     ts->add(BOOST_TEST_CASE(&testErrorCovarianceZero<MODEL>));
     ts->add(BOOST_TEST_CASE(&testErrorCovarianceInverse<MODEL>));
     ts->add(BOOST_TEST_CASE(&testErrorCovarianceSym<MODEL>));
-    
+
     boost::unit_test::framework::master_test_suite().add(ts);
   }
 };

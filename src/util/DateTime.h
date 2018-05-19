@@ -11,10 +11,9 @@
 #ifndef UTIL_DATETIME_H_
 #define UTIL_DATETIME_H_
 
+#include <stdint.h>
 #include <iostream>
 #include <string>
-
-#include <stdint.h>
 
 // Forward declarations
 namespace util {
@@ -37,7 +36,6 @@ class DateTime {
   friend std::ostream& operator<<(std::ostream&, const DateTime&);
 
  public:
-
 // -- Constructors
   /// Create a DateTime initialised to an invalid value.
   DateTime();
@@ -78,7 +76,6 @@ class DateTime {
   std::size_t timestamp() const;
 
  private:
-
 // -- Copy allowed
 // DateTime(const DateTime&); -- default shallow copy is OK
 // DateTime& operator=(const DateTime&); -- default assignment is OK

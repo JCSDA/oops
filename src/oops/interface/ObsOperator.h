@@ -16,7 +16,6 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
-#include "util/Logger.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
@@ -24,6 +23,7 @@
 #include "oops/interface/ObsOperatorBase.h"
 #include "oops/interface/ObsVector.h"
 #include "util/DateTime.h"
+#include "util/Logger.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 #include "util/Timer.h"

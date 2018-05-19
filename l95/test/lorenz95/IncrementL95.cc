@@ -8,23 +8,23 @@
  * does it submit to any jurisdiction.
  */
 
+#include <cmath>
 #include <fstream>
 #include <iostream>
-#include <cmath>
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include "eckit/config/LocalConfiguration.h"
-#include "oops/base/Variables.h"
 #include "./TestConfig.h"
+#include "eckit/config/LocalConfiguration.h"
 #include "lorenz95/GomL95.h"
 #include "lorenz95/IncrementL95.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/Resolution.h"
 #include "lorenz95/StateL95.h"
-#include "util/DateTime.h"
+#include "oops/base/Variables.h"
 #include "test/TestFixture.h"
+#include "util/DateTime.h"
 
 namespace test {
 
@@ -53,18 +53,22 @@ BOOST_FIXTURE_TEST_SUITE(test_IncrementL95, IncrementTestFixture)
 
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_incrementL95_constructor) {
-    boost::scoped_ptr<lorenz95::IncrementL95> dx(new lorenz95::IncrementL95(*resol_, *vars_, *time_));
+    boost::scoped_ptr<lorenz95::IncrementL95>
+      dx(new lorenz95::IncrementL95(*resol_, *vars_, *time_));
     BOOST_CHECK(dx.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_incrementL95_interpolation_constructor) {
-    boost::scoped_ptr<lorenz95::IncrementL95> dx1(new lorenz95::IncrementL95(*resol_, *vars_, *time_));
-    boost::scoped_ptr<lorenz95::IncrementL95> dx2(new lorenz95::IncrementL95(*resol_, *dx1));
+    boost::scoped_ptr<lorenz95::IncrementL95>
+      dx1(new lorenz95::IncrementL95(*resol_, *vars_, *time_));
+    boost::scoped_ptr<lorenz95::IncrementL95>
+      dx2(new lorenz95::IncrementL95(*resol_, *dx1));
     BOOST_CHECK(dx2.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_incrementL95_copy_constructor) {
-    boost::scoped_ptr<lorenz95::IncrementL95> dx1(new lorenz95::IncrementL95(*resol_, *vars_, *time_));
+    boost::scoped_ptr<lorenz95::IncrementL95>
+      dx1(new lorenz95::IncrementL95(*resol_, *vars_, *time_));
     boost::scoped_ptr<lorenz95::IncrementL95> dx2(new lorenz95::IncrementL95(*dx1));
     BOOST_CHECK(dx2.get() != NULL);
   }

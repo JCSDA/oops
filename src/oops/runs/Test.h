@@ -18,10 +18,10 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/tokenizer.hpp>
 
-#include "util/Logger.h"
+#include "eckit/config/Configuration.h"
 #include "oops/runs/Application.h"
 #include "test/TestEnvironment.h"
-#include "eckit/config/Configuration.h"
+#include "util/Logger.h"
 
 namespace oops {
 
@@ -33,8 +33,8 @@ class Test : public Application {
   virtual ~Test() {}
   int execute(const eckit::Configuration & config) const;
  private:
-  virtual void register_tests() const =0;
-  virtual std::string testid() const =0;
+  virtual void register_tests() const = 0;
+  virtual std::string testid() const = 0;
   static bool init_unit_test() {return true;}
   std::string appname() const {return "oops::Test running " + testid();}
 };

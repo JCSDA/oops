@@ -12,11 +12,11 @@
 
 #include <string>
 
-#include "util/Logger.h"
-#include "model/QgFortran.h"
 #include "eckit/config/Configuration.h"
+#include "model/QgFortran.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
+#include "util/Logger.h"
 
 using oops::Log;
 
@@ -64,7 +64,8 @@ F90locs ObsHelpQG::locations(const std::string & obsname,
 
 // -----------------------------------------------------------------------------
 
-void ObsHelpQG::generateDistribution(const eckit::Configuration & config, const std::string & obsname,
+void ObsHelpQG::generateDistribution(const eckit::Configuration & config,
+                                     const std::string & obsname,
                                      const util::DateTime & t1, const util::DateTime & t2,
                                      unsigned int & nobs) {
   const eckit::Configuration * configc = &config;

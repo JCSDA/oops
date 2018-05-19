@@ -13,8 +13,8 @@
 
 #include <boost/noncopyable.hpp>
 
-#include "oops/base/PostTimer.h"
 #include "eckit/config/Configuration.h"
+#include "oops/base/PostTimer.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
 
@@ -66,7 +66,7 @@ template <typename FLDS> class PostBase : private boost::noncopyable {
   PostTimer timer_;
 
 /// Actual processing
-  virtual void doProcessing(const FLDS &) =0;
+  virtual void doProcessing(const FLDS &) = 0;
   virtual void doInitialize(const FLDS &, const util::DateTime &,
                             const util::Duration &) {}
   virtual void doFinalize(const FLDS &) {}

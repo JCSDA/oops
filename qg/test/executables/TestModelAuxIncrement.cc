@@ -17,5 +17,5 @@ int main(const int argc, const char ** argv) {
   test::ModelAuxIncrement<qg::QgTraits> tests;
   run.execute(tests);
   return 0;
-};
+}
 

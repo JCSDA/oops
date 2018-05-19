@@ -13,9 +13,9 @@
 #include <map>
 #include <string>
 
-#include "util/Logger.h"
-#include "util/abor1_cpp.h"
 #include "eckit/config/Configuration.h"
+#include "util/abor1_cpp.h"
+#include "util/Logger.h"
 
 namespace oops {
 

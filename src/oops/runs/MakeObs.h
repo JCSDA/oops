@@ -17,17 +17,16 @@
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Logger.h"
 #include "oops/base/Departures.h"
+#include "oops/base/instantiateFilterFactory.h"
+#include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
-#include "oops/base/ObsErrors.h"
 #include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
-#include "oops/base/instantiateFilterFactory.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Model.h"
@@ -37,6 +36,7 @@
 #include "oops/runs/Application.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
+#include "util/Logger.h"
 
 namespace oops {
 

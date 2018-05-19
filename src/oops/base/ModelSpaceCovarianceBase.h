@@ -11,17 +11,17 @@
 #ifndef OOPS_BASE_MODELSPACECOVARIANCEBASE_H_
 #define OOPS_BASE_MODELSPACECOVARIANCEBASE_H_
 
-#include <boost/noncopyable.hpp>
 #include <map>
 #include <string>
+#include <boost/noncopyable.hpp>
 
-#include "util/Logger.h"
+#include "eckit/config/Configuration.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
-#include "eckit/config/Configuration.h"
 #include "util/abor1_cpp.h"
+#include "util/Logger.h"
 
 namespace util {
   class DateTime;
@@ -43,10 +43,10 @@ class ModelSpaceCovarianceBase {
  public:
   virtual ~ModelSpaceCovarianceBase() {}
 
-  virtual void linearize(const State_ &, const Geometry_ &) =0;
-  virtual void multiply(const Increment_ &, Increment_ &) const =0;
-  virtual void inverseMultiply(const Increment_ &, Increment_ &) const =0;
-  virtual void randomize(Increment_ &) const =0;
+  virtual void linearize(const State_ &, const Geometry_ &) = 0;
+  virtual void multiply(const Increment_ &, Increment_ &) const = 0;
+  virtual void inverseMultiply(const Increment_ &, Increment_ &) const = 0;
+  virtual void randomize(Increment_ &) const = 0;
 };
 
 // -----------------------------------------------------------------------------
@@ -65,7 +65,7 @@ class CovarianceFactory {
   explicit CovarianceFactory(const std::string &);
  private:
   virtual ModelSpaceCovarianceBase<MODEL> * make(const eckit::Configuration &, const Geometry_ &,
-                                                 const Variables &, const State_ &) =0;
+                                                 const Variables &, const State_ &) = 0;
   static std::map < std::string, CovarianceFactory<MODEL> * > makers_;
 };
 

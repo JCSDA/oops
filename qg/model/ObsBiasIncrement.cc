@@ -15,10 +15,10 @@
 #include <sstream>
 #include <string>
 
-#include "util/Logger.h"
+#include "eckit/config/Configuration.h"
 #include "model/ObsBias.h"
 #include "model/ObsBiasCovariance.h"
-#include "eckit/config/Configuration.h"
+#include "util/Logger.h"
 
 using oops::Log;
 
@@ -128,7 +128,7 @@ double ObsBiasIncrement::norm() const {
       ++ii;
     }
   }
-  if (ii>0) zz = std::sqrt(zz/ii);
+  if (ii > 0) zz = std::sqrt(zz/ii);
   return zz;
 }
 // -----------------------------------------------------------------------------

@@ -20,9 +20,9 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Logger.h"
 #include "oops/assimilation/TriDiagSpectrum.h"
 #include "util/dot_product.h"
+#include "util/Logger.h"
 
 namespace oops {
 
@@ -186,11 +186,11 @@ void SpectralLMP<VECTOR>::update(boost::ptr_vector<VECTOR> & Zv,
       counter += usedpairIndx_[kiter];
     }
     ASSERT(counter <=  maxpairs_);
-    Log::info() << "SpectralLMP: Number of inner iterations       : " << Zl.size()-1 << std::endl;
-    Log::info() << "SpectralLMP: Number of maximum pairs          : " << maxpairs_ << std::endl;
-    Log::info() << "SpectralLMP: Number of used total pairs       : " << counter << std::endl;
-    Log::info() << "SpectralLMP: Number of new converged pairs    : " << convIndx.size() << std::endl;
-    Log::info() << "SpectralLMP: Number of removed old pairs      : " << oldpairIndx << std::endl;
+    Log::info() << "SpectralLMP: Number of inner iterations    : " << Zl.size()-1 << std::endl;
+    Log::info() << "SpectralLMP: Number of maximum pairs       : " << maxpairs_ << std::endl;
+    Log::info() << "SpectralLMP: Number of used total pairs    : " << counter << std::endl;
+    Log::info() << "SpectralLMP: Number of new converged pairs : " << convIndx.size() << std::endl;
+    Log::info() << "SpectralLMP: Number of removed old pairs   : " << oldpairIndx << std::endl;
     for (unsigned kiter = 0; kiter < usedpairIndx_.size(); ++kiter) {
       Log::info() << "SpectralLMP: Number of used pairs from outer loop " << kiter + 1
                 << " : " << usedpairIndx_[kiter] << std::endl;

@@ -13,10 +13,10 @@
 #include <iostream>
 #include <string>
 
-#include "util/Logger.h"
+#include "eckit/config/Configuration.h"
 #include "lorenz95/ObsBias.h"
 #include "lorenz95/ObsBiasCovariance.h"
-#include "eckit/config/Configuration.h"
+#include "util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {

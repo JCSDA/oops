@@ -12,8 +12,8 @@
 #define OOPS_ASSIMILATION_INSTANTIATECOSTFACTORY_H_
 
 #include "oops/assimilation/CostFct3DVar.h"
-#include "oops/assimilation/CostFct4DVar.h"
 #include "oops/assimilation/CostFct4DEnsVar.h"
+#include "oops/assimilation/CostFct4DVar.h"
 #include "oops/assimilation/CostFctWeak.h"
 #include "oops/assimilation/CostFunction.h"
 

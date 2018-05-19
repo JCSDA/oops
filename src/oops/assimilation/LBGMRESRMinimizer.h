@@ -16,17 +16,16 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
-#include "util/Logger.h"
-#include "oops/base/IdentityMatrix.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
+#include "oops/assimilation/GMRESR.h"
 #include "oops/assimilation/LBHessianMatrix.h"
 #include "oops/assimilation/LBMinimizer.h"
 #include "oops/assimilation/QNewtonLMP.h"
-#include "oops/assimilation/GMRESR.h"
-
+#include "oops/base/IdentityMatrix.h"
 #include "util/dot_product.h"
 #include "util/formats.h"
+#include "util/Logger.h"
 
 namespace oops {
 
@@ -62,14 +61,14 @@ template<typename MODEL> class LBGMRESRMinimizer : public LBMinimizer<MODEL> {
   ~LBGMRESRMinimizer() {}
 
  private:
-  void solve(CtrlInc_ &, CtrlInc_ &, const LBHessianMatrix_ &, 
+  void solve(CtrlInc_ &, CtrlInc_ &, const LBHessianMatrix_ &,
              const int, const double) override;
 };
 
 // =============================================================================
 
 template<typename MODEL>
-LBGMRESRMinimizer<MODEL>::LBGMRESRMinimizer(const eckit::Configuration & conf, 
+LBGMRESRMinimizer<MODEL>::LBGMRESRMinimizer(const eckit::Configuration & conf,
                                             const CostFct_ & J)
   : LBMinimizer<MODEL>(J)
 {}

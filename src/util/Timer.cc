@@ -10,10 +10,9 @@
 
 #include "util/Timer.h"
 
+#include <sys/time.h>
 // #include <chrono>
 #include <string>
-#include <sys/time.h>
-
 #include <boost/noncopyable.hpp>
 
 #include "util/TimerHelper.h"
@@ -33,7 +32,6 @@ Timer::Timer(const std::string & cl, const std::string & met)
 Timer::~Timer() {
 //  end = std::chrono::high_resolution_clock::now();
 //  std::chrono::duration<double> dt(end-start_);
-//  timers_.addTime(class_, method_, dt);
   struct timeval end;
   gettimeofday(&end, NULL);
 
@@ -43,7 +41,7 @@ Timer::~Timer() {
   std::string name = class_ + "::" + method_;
 
   TimerHelper::add(name, dt);
-};
+}
 
 // -----------------------------------------------------------------------------
 

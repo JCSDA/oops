@@ -11,9 +11,9 @@
 #ifndef TEST_INTERFACE_MODELAUXINCREMENT_H_
 #define TEST_INTERFACE_MODELAUXINCREMENT_H_
 
+#include <cmath>
 #include <iostream>
 #include <string>
-#include <cmath>
 
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API
@@ -24,13 +24,13 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
-#include "oops/runs/Test.h"
+#include "eckit/config/LocalConfiguration.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/ModelAuxCovariance.h"
 #include "oops/interface/ModelAuxIncrement.h"
+#include "oops/runs/Test.h"
 #include "test/TestEnvironment.h"
-#include "eckit/config/LocalConfiguration.h"
 #include "util/DateTime.h"
 #include "util/dot_product.h"
 

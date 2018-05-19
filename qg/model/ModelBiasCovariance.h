@@ -38,8 +38,8 @@ class ModelBiasCovariance : public util::Printable,
 
 /// Linear algebra operators
   void linearize(const ModelBias &, const GeometryQG &) {}
-  void multiply(const ModelBiasIncrement &, ModelBiasIncrement) const {}
-  void inverseMultiply(const ModelBiasIncrement &, ModelBiasIncrement) const {}
+  void multiply(const ModelBiasIncrement &, ModelBiasIncrement &) const {}
+  void inverseMultiply(const ModelBiasIncrement &, ModelBiasIncrement &) const {}
   void randomize(ModelBiasIncrement &) const {}
 
   const eckit::Configuration & config() const {return conf_;}

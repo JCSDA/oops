@@ -17,10 +17,10 @@
 #include <string>
 #include <vector>
 
-#include "util/Logger.h"
+#include "eckit/config/LocalConfiguration.h"
 #include "model/ObsBias.h"
 #include "model/ObsBiasIncrement.h"
-#include "eckit/config/LocalConfiguration.h"
+#include "util/Logger.h"
 
 using oops::Log;
 

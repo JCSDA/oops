@@ -20,27 +20,27 @@
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Logger.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/ControlVariable.h"
 #include "oops/assimilation/CostJbState.h"
 #include "oops/assimilation/CostJbTotal.h"
-#include "oops/assimilation/CostTermBase.h"
 #include "oops/assimilation/CostJo.h"
+#include "oops/assimilation/CostTermBase.h"
 #include "oops/assimilation/DualVector.h"
 #include "oops/base/PostProcessor.h"
-#include "oops/base/PostProcessorTL.h"
 #include "oops/base/PostProcessorAD.h"
+#include "oops/base/PostProcessorTL.h"
 #include "oops/base/TrajectorySaver.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/LinearModel.h"
 #include "oops/interface/Model.h"
 #include "oops/interface/State.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
 #include "util/abor1_cpp.h"
+#include "util/DateTime.h"
 #include "util/dot_product.h"
+#include "util/Duration.h"
+#include "util/Logger.h"
 
 namespace oops {
   template<typename MODEL> class JqTerm;
@@ -77,13 +77,13 @@ template<typename MODEL> class CostFunction : private boost::noncopyable {
 
   virtual void runTLM(CtrlInc_ &, PostProcessorTL<Increment_> &,
                       PostProcessor<Increment_> post = PostProcessor<Increment_>(),
-                      const bool idModel = false) const =0;
+                      const bool idModel = false) const = 0;
   virtual void runADJ(CtrlInc_ &, PostProcessorAD<Increment_> &,
                       PostProcessor<Increment_> post = PostProcessor<Increment_>(),
-                      const bool idModel = false) const =0;
-  virtual void zeroAD(CtrlInc_ &) const =0;
+                      const bool idModel = false) const = 0;
+  virtual void zeroAD(CtrlInc_ &) const = 0;
 
-  virtual void runNL(CtrlVar_ &, PostProcessor<State_>&) const =0;
+  virtual void runNL(CtrlVar_ &, PostProcessor<State_>&) const = 0;
 
   void addIncrement(CtrlVar_ &, const CtrlInc_ &,
                     PostProcessor<Increment_> post = PostProcessor<Increment_>() ) const;
@@ -107,11 +107,12 @@ template<typename MODEL> class CostFunction : private boost::noncopyable {
 
  private:
   virtual void addIncr(CtrlVar_ &, const CtrlInc_ &,
-                       PostProcessor<Increment_>&) const =0;
+                       PostProcessor<Increment_>&) const = 0;
 
-  virtual CostJbState<MODEL>  * newJb(const eckit::Configuration &, const Geometry_ &, const CtrlVar_ &) const =0;
-  virtual CostJo<MODEL>       * newJo(const eckit::Configuration &) const =0;
-  virtual CostTermBase<MODEL> * newJc(const eckit::Configuration &, const Geometry_ &) const =0;
+  virtual CostJbState<MODEL>  * newJb(const eckit::Configuration &, const Geometry_ &,
+                                      const CtrlVar_ &) const = 0;
+  virtual CostJo<MODEL>       * newJo(const eckit::Configuration &) const = 0;
+  virtual CostTermBase<MODEL> * newJc(const eckit::Configuration &, const Geometry_ &) const = 0;
 
 // Data members
   const Geometry_ & resol_;
@@ -141,7 +142,7 @@ class CostFactory {
   explicit CostFactory(const std::string &);
  private:
   virtual CostFunction<MODEL> * make(const eckit::Configuration &,
-                                     const Geometry_ &, const Model_ &) =0;
+                                     const Geometry_ &, const Model_ &) = 0;
   static std::map < std::string, CostFactory<MODEL> * > & getMakers() {
     static std::map < std::string, CostFactory<MODEL> * > makers_;
     return makers_;
@@ -285,7 +286,8 @@ double CostFunction<MODEL>::linearize(const CtrlVar_ & fguess,
 
 // Setup linear model (and trajectory)
   tlm_.clear();
-  pp.enrollProcessor(new TrajectorySaver<MODEL>(fguess.state()[0], tlmConf, lowres, fguess.modVar(), tlm_));
+  pp.enrollProcessor(
+    new TrajectorySaver<MODEL>(fguess.state()[0], tlmConf, lowres, fguess.modVar(), tlm_));
 
 // Run NL model
   CtrlVar_ mfguess(fguess);

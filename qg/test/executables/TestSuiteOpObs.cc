@@ -11,16 +11,16 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE QG_TEST_OP_OBS
 
-#include <iostream>
-#include <iomanip>
 #include <cmath>
+#include <iomanip>
+#include <iostream>
 
 #include <boost/test/unit_test.hpp>
-#include "oops/runs/Run.h"
-#include "model/QgTraits.h"
+
 #include "model/instantiateCovarFactory.h"
 #include "model/instantiateQgObsFactory.h"
-
+#include "model/QgTraits.h"
+#include "oops/runs/Run.h"
 #include "test/base/TestSuiteOpObsFixture.h"
 
 namespace qg {
@@ -29,27 +29,27 @@ namespace qg {
  *  TestEnv initializes the test suite for the QG model as an OOPS application
  */
 class TestEnv: public oops::Run {
-  public:
-    TestEnv() :
-        oops::Run(
-            (const int) boost::unit_test::framework::master_test_suite().argc,
-            (const char**) boost::unit_test::framework::master_test_suite().argv) {
-      setup(config());
-    }
+ public:
+  TestEnv() :
+      oops::Run(
+          (const int) boost::unit_test::framework::master_test_suite().argc,
+          (const char**) boost::unit_test::framework::master_test_suite().argv) {
+    setup(config());
+  }
 
-    virtual ~TestEnv() {
-    }
+  virtual ~TestEnv() {
+  }
 
-  private:
-    // Initialize datas for the whole test suite
-    void setup(const eckit::Configuration & fullConfig) {
-      instantiateQgObsFactory();
-      instantiateCovarFactory();
-      test::TestSuiteOpObsFixture<qg::QgTraits>::getInstance().setup(
-          fullConfig);
-    }
+ private:
+  // Initialize datas for the whole test suite
+  void setup(const eckit::Configuration & fullConfig) {
+    instantiateQgObsFactory();
+    instantiateCovarFactory();
+    test::TestSuiteOpObsFixture<qg::QgTraits>::getInstance().setup(
+        fullConfig);
+  }
 };
-}
+}  // namespace qg
 
 // -----------------------------------------------------------------------------
 typedef qg::TestEnv TestEnv_;

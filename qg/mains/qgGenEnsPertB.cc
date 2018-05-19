@@ -17,4 +17,4 @@ int main(int argc,  char ** argv) {
   oops::GenEnsPertB<qg::QgTraits> ensgen;
   run.execute(ensgen);
   return 0;
-};
+}

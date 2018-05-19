@@ -16,8 +16,8 @@
 #include <boost/foreach.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include "oops/base/PostBaseAD.h"
 #include "oops/base/GeneralizedDepartures.h"
+#include "oops/base/PostBaseAD.h"
 
 namespace oops {
 

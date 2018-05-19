@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2017 UCAR
+ * (C) Copyright 2017-2018 UCAR
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -19,15 +19,15 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
-#include "oops/runs/Test.h"
+#include "eckit/config/LocalConfiguration.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Locations.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsOperator.h"
 #include "oops/interface/ObsVector.h"
-#include "test/TestEnvironment.h"
+#include "oops/runs/Test.h"
 #include "test/interface/ObsTestsFixture.h"
-#include "eckit/config/LocalConfiguration.h"
+#include "test/TestEnvironment.h"
 
 namespace test {
 

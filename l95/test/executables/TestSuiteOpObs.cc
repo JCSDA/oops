@@ -11,15 +11,15 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE L95_TEST_OP_OBS
 
-#include <iostream>
-#include <iomanip>
 #include <cmath>
+#include <iomanip>
+#include <iostream>
 
 #include <boost/test/unit_test.hpp>
-#include "oops/runs/Run.h"
-#include "lorenz95/L95Traits.h"
-#include "lorenz95/instantiateCovarFactory.h"
 
+#include "lorenz95/instantiateCovarFactory.h"
+#include "lorenz95/L95Traits.h"
+#include "oops/runs/Run.h"
 #include "test/base/TestSuiteOpObsFixture.h"
 
 namespace lorenz95 {
@@ -28,7 +28,7 @@ namespace lorenz95 {
  *  TestEnv initializes the test suite for the QG model as an OOPS application
  */
 class TestEnv: public oops::Run {
-  public:
+ public:
     TestEnv() :
         oops::Run(
             (const int) boost::unit_test::framework::master_test_suite().argc,
@@ -39,7 +39,7 @@ class TestEnv: public oops::Run {
     virtual ~TestEnv() {
     }
 
-  private:
+ private:
     // Initialize datas for the whole test suite
     void setup(const eckit::Configuration & fullConfig) {
       instantiateCovarFactory();

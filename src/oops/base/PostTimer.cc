@@ -13,13 +13,13 @@
 #include <algorithm>
 #include <string>
 #include <vector>
-
 #include <boost/tokenizer.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Logger.h"
+#include "util/abor1_cpp.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
+#include "util/Logger.h"
 
 namespace oops {
 // -----------------------------------------------------------------------------
@@ -80,7 +80,7 @@ bool PostTimer::itIsTime(const util::DateTime & now) {
   bool doit = false;
   if (now >= bgn_ && now <= end_) {
     doit = (freq_.toSeconds() == 0 && pptimes_.empty());
-    if (!doit && freq_.toSeconds()>0) {
+    if (!doit && freq_.toSeconds() > 0) {
       const util::Duration dt = now - bgn_;
       doit = (dt >= util::Duration(0) && dt % freq_ == 0);
     }

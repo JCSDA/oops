@@ -16,13 +16,13 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Logger.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/ControlVariable.h"
 #include "oops/assimilation/CostJbState.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxCovariance.h"
 #include "oops/interface/ObsAuxCovariance.h"
+#include "util/Logger.h"
 
 namespace oops {
   template<typename MODEL> class JqTerm;

@@ -9,14 +9,13 @@
  */
 
 #include <string>
-
 #include <boost/scoped_ptr.hpp>
 #include <boost/test/unit_test.hpp>
 
+#include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Variables.h"
 #include "test/TestEnvironment.h"
 #include "test/TestFixture.h"
-#include "eckit/config/LocalConfiguration.h"
 
 namespace test {
 

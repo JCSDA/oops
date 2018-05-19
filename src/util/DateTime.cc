@@ -19,9 +19,9 @@
 #include <sstream>
 #include <string>
 
+#include "util/abor1_cpp.h"
 #include "util/dateFunctions.h"
 #include "util/Duration.h"
-#include "util/abor1_cpp.h"
 
 using std::string;
 using std::istringstream;
@@ -128,7 +128,7 @@ int DateTime::eatChars(istream & is, int nchars) const {
 // -----------------------------------------------------------------------------
 
 void DateTime::failBadFormat(const string& str) const {
-  string message="Badly formatted date: ";
+  string message = "Badly formatted date: ";
   message.append(str);
   ABORT(message);
 }

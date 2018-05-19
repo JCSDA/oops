@@ -1,8 +1,8 @@
 /*
- * (C) Copyright 2017 UCAR
- * 
+ * (C) Copyright 2017-2018 UCAR
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
 #ifndef OOPS_BASE_OBSFILTERS_H_
@@ -14,8 +14,8 @@
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/base/ObsFilter.h"
 #include "oops/base/FilterBase.h"
+#include "oops/base/ObsFilter.h"
 #include "oops/base/ObsSpaces.h"
 #include "util/Printable.h"
 
@@ -33,7 +33,7 @@ class ObsFilters : public util::Printable {
   ObsFilters(const ObsSpace_ &, const eckit::Configuration &);
   ~ObsFilters();
 
-  const ObsFilter_ & operator[](const std::size_t ii) const {return *filters_.at(ii);} 
+  const ObsFilter_ & operator[](const std::size_t ii) const {return *filters_.at(ii);}
 
  private:
   void print(std::ostream &) const;
@@ -44,7 +44,7 @@ class ObsFilters : public util::Printable {
 
 template <typename MODEL>
 ObsFilters<MODEL>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration & conf)
- : filters_(os.size())
+  : filters_(os.size())
 {
   for (std::size_t jj = 0; jj < os.size(); ++jj) {
     boost::shared_ptr<ObsFilter_> tmp(new ObsFilter_);

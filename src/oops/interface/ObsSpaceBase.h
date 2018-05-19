@@ -36,7 +36,7 @@ class ObsSpaceBase : public util::Printable,
   const util::DateTime & windowEnd() const {return winend_;}
 
 /// Pure virtual methods
-  virtual void generateDistribution(const eckit::Configuration &) =0;
+  virtual void generateDistribution(const eckit::Configuration &) = 0;
 
  private:
   const eckit::LocalConfiguration conf_;

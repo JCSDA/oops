@@ -15,9 +15,9 @@
 #include <sstream>
 #include <string>
 
-#include "util/Logger.h"
-#include "model/ObsBiasIncrement.h"
 #include "eckit/config/Configuration.h"
+#include "model/ObsBiasIncrement.h"
+#include "util/Logger.h"
 
 using oops::Log;
 

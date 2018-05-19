@@ -62,6 +62,6 @@ class ModelL95 : public util::Printable,
 
 // -----------------------------------------------------------------------------
 
-}  // namespace l95
+}  // namespace lorenz95
 
 #endif  // LORENZ95_MODELL95_H_

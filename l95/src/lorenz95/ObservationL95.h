@@ -14,11 +14,11 @@
 #include <ostream>
 #include <string>
 
+#include "lorenz95/L95Traits.h"
+#include "lorenz95/ObservationTLAD.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/ObsOperatorBase.h"
 #include "util/ObjectCounter.h"
-#include "lorenz95/ObservationTLAD.h"
-#include "lorenz95/L95Traits.h"
 
 // Forward declarations
 namespace eckit {

@@ -5,3 +5,9 @@ add_subdirectory( model )
 add_subdirectory( mains )
 add_subdirectory( test )
 
+ecbuild_add_test( TARGET qg_coding_norms
+                  TYPE SCRIPT
+                  COMMAND cpplint.py
+                  ARGS --quiet --recursive ${CMAKE_CURRENT_SOURCE_DIR}
+                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
+

@@ -249,13 +249,18 @@ ecbuild_add_library( TARGET     oops
                      LINKER_LANGUAGE ${OOPS_LINKER_LANGUAGE}
                    )
 
+ecbuild_add_test( TARGET oops_coding_norms
+                  TYPE SCRIPT
+                  COMMAND cpplint.py
+                  ARGS --quiet --recursive ${CMAKE_CURRENT_SOURCE_DIR}
+                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
+
 ecbuild_add_test( TARGET  test_util.x
                   BOOST
                   SOURCES util/test/DateTime.cc
                           util/test/Duration.cc
                           util/test/test_main.cc
                   LIBS    oops )
-#                          test/base/Variables.cc
 
 if( HAVE_FCTEST )
 add_fctest( TARGET  test_util_config_intfb.x

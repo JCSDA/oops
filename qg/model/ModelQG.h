@@ -16,8 +16,8 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
-#include "model/QgFortran.h"
 #include "model/GeometryQG.h"
+#include "model/QgFortran.h"
 #include "util/Duration.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"

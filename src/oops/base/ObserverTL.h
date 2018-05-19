@@ -120,7 +120,7 @@ void ObserverTL<MODEL, INCR>::doProcessingTL(const INCR & dx) {
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename INCR>
 void ObserverTL<MODEL, INCR>::doFinalizeTL(const INCR &) {
-  for (std::size_t jj = 0; jj < obspace_.size(); ++jj) { 
+  for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
     hoptlad_[jj].obsEquivTL(*gvals_.at(jj), (*ydep_)[jj], ybias_);
   }
   gvals_.clear();

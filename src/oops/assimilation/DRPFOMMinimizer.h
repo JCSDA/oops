@@ -17,7 +17,6 @@
 
 #include <boost/ptr_container/ptr_vector.hpp>
 
-#include "util/Logger.h"
 #include "oops/assimilation/BMatrix.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
@@ -27,6 +26,7 @@
 #include "oops/assimilation/UpHessSolve.h"
 #include "util/dot_product.h"
 #include "util/formats.h"
+#include "util/Logger.h"
 
 namespace oops {
 
@@ -104,7 +104,6 @@ double DRPFOMMinimizer<MODEL>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_ & r
                                      const Bmat_ & B, const HtRinvH_ & HtRinvH,
                                      const double costJ0Jb, const double costJ0JoJc,
                                      const int maxiter, const double tolerance) {
-
   // dx   increment
   // dxh  B^{-1} dx
   // rr   (sum B^{-1} dx_i^{b} +) G^T R^{-1} d
@@ -121,7 +120,7 @@ double DRPFOMMinimizer<MODEL>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_ & r
   // J0
   const double costJ0 = costJ0Jb + costJ0JoJc;
 
-  //lmp_.update(vvecs_, hvecs_, zvecs_, alphas_, betas_);
+  // lmp_.update(vvecs_, hvecs_, zvecs_, alphas_, betas_);
   hvecs_.clear();
   zvecs_.clear();
   vvecs_.clear();

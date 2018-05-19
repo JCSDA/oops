@@ -21,12 +21,12 @@
 
 #include <boost/scoped_ptr.hpp>
 
-#include "oops/runs/Test.h"
+#include "eckit/config/LocalConfiguration.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/interface/ObsErrorCovariance.h"
-#include "test/TestEnvironment.h"
+#include "oops/runs/Test.h"
 #include "test/interface/ObsTestsFixture.h"
-#include "eckit/config/LocalConfiguration.h"
+#include "test/TestEnvironment.h"
 
 namespace test {
 

@@ -28,7 +28,7 @@ namespace lorenz95 {
 class ObsBiasCorrection : public util::Printable {
  public:
 /// Constructor, destructor
-  explicit ObsBiasCorrection();
+  ObsBiasCorrection();
   explicit ObsBiasCorrection(const eckit::Configuration &);
   ObsBiasCorrection(const ObsBiasCorrection &, const bool copy = true);
   ObsBiasCorrection(const ObsBiasCorrection &, const eckit::Configuration &);

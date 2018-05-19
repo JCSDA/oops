@@ -10,14 +10,14 @@
 
 #include "lorenz95/ModelL95.h"
 
-#include "util/Logger.h"
+#include "eckit/config/Configuration.h"
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/ModelBias.h"
 #include "lorenz95/ModelTrajectory.h"
 #include "lorenz95/Resolution.h"
 #include "lorenz95/StateL95.h"
-#include "eckit/config/Configuration.h"
 #include "util/Duration.h"
+#include "util/Logger.h"
 
 namespace lorenz95 {
 
@@ -106,4 +106,4 @@ void ModelL95::print(std::ostream & os) const {
 
 // -----------------------------------------------------------------------------
 
-}  // namespace l95
+}  // namespace lorenz95

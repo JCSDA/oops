@@ -8,18 +8,18 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef _LORENZ95_TESTCONFIG_H_
-#define _LORENZ95_TESTCONFIG_H_
+#ifndef LORENZ95_TESTCONFIG_H_
+#define LORENZ95_TESTCONFIG_H_
 
 #include <string>
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include "eckit/runtime/Main.h"
-#include "eckit/config/YAMLConfiguration.h"
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/config/YAMLConfiguration.h"
 #include "eckit/exception/Exceptions.h"
+#include "eckit/runtime/Main.h"
 
 #include "util/Logger.h"
 
@@ -55,4 +55,4 @@ class TestConfig {
 
 }  // namespace test
 
-#endif  // _LORENZ95_TESTCONFIG_H_
+#endif  // LORENZ95_TESTCONFIG_H_

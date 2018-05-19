@@ -15,9 +15,9 @@
 #include <string>
 #include <boost/noncopyable.hpp>
 
+#include "eckit/config/LocalConfiguration.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
-#include "eckit/config/LocalConfiguration.h"
 
 namespace eckit {
   class Configuration;

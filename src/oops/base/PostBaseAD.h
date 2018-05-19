@@ -13,8 +13,8 @@
 
 #include <boost/noncopyable.hpp>
 
-#include "oops/base/PostTimer.h"
 #include "eckit/config/Configuration.h"
+#include "oops/base/PostTimer.h"
 #include "util/DateTime.h"
 #include "util/Duration.h"
 
@@ -56,9 +56,9 @@ template <typename INCR> class PostBaseAD : private boost::noncopyable {
 
  private:
   PostTimer timer_;
-  virtual void doFirstAD(INCR &, const util::DateTime &, const util::Duration &) =0;
-  virtual void doProcessingAD(INCR &) =0;
-  virtual void doLastAD(INCR &) =0;
+  virtual void doFirstAD(INCR &, const util::DateTime &, const util::Duration &) = 0;
+  virtual void doProcessingAD(INCR &) = 0;
+  virtual void doLastAD(INCR &) = 0;
 };
 
 // -----------------------------------------------------------------------------

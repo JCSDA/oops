@@ -17,5 +17,5 @@ int main(int argc,  char ** argv) {
   test::ModelAuxControl<qg::QgTraits> tests;
   run.execute(tests);
   return 0;
-};
+}
 

@@ -9,17 +9,16 @@
  */
 
 #include <algorithm>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include "eckit/config/LocalConfiguration.h"
-#include "oops/base/Variables.h"
 #include "./TestConfig.h"
+#include "eckit/config/LocalConfiguration.h"
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/GomL95.h"
 #include "lorenz95/IncrementL95.h"
@@ -29,8 +28,9 @@
 #include "lorenz95/ModelTrajectory.h"
 #include "lorenz95/Resolution.h"
 #include "lorenz95/StateL95.h"
-#include "util/DateTime.h"
+#include "oops/base/Variables.h"
 #include "test/TestFixture.h"
+#include "util/DateTime.h"
 
 namespace test {
 

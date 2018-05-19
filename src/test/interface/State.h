@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -11,30 +11,30 @@
 #ifndef TEST_INTERFACE_STATE_H_
 #define TEST_INTERFACE_STATE_H_
 
+#include <cmath>
 #include <iostream>
 #include <string>
-#include <cmath>
 #include <vector>
 
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API
 #define BOOST_TEST_DYN_LINK
 
-#include <boost/test/unit_test.hpp>
 #include <boost/test/data/monomorphic.hpp>
+#include <boost/test/unit_test.hpp>
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
+#include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/State.h"
 #include "oops/runs/Test.h"
 #include "test/TestEnvironment.h"
-#include "eckit/config/LocalConfiguration.h"
 #include "util/DateTime.h"
-#include "util/Logger.h"
 #include "util/dot_product.h"
+#include "util/Logger.h"
 
 namespace test {
 
@@ -102,102 +102,101 @@ template <typename MODEL> void testStateConstructors() {
 }
 
 // -----------------------------------------------------------------------------
-/*! \brief Interpolation test 
- * 
- * \details **testStateInterpolation()** tests the interpolation for a given 
+/*! \brief Interpolation test
+ *
+ * \details **testStateInterpolation()** tests the interpolation for a given
  * model.  The conceptual steps are as follows:
  * 1. Initialize the JEDI State object based on idealized analytic formulae
- * 2. Interpolate the State variables onto selected "observation" locations 
+ * 2. Interpolate the State variables onto selected "observation" locations
  *    using the .interpolate() method of the State object.  The result is
  *    placed in a JEDI GeoVaLs object
  * 3. Compute the correct solution by applying the analytic formulae directly
  *    at the observation locations.
  * 4. Assess the accuracy of the interpolation by comparing the interpolated
- *    values from Step 2 with the exact values from Step 3  
+ *    values from Step 2 with the exact values from Step 3
  *
- * The interpolated state values are compared to the analytic solution for 
- * a series of **locations** which includes values optionally specified by the 
- * user in the "StateTest" section of the config file in addition to a 
- * randomly-generated list of **Nrandom** random locations.  Nrandom is also 
- * specified by the user in the "StateTest" section of the config file, as is the 
- * (nondimensional) tolerence level (**interp_tolerance**) to be used for the tests.  
- * 
+ * The interpolated state values are compared to the analytic solution for
+ * a series of **locations** which includes values optionally specified by the
+ * user in the "StateTest" section of the config file in addition to a
+ * randomly-generated list of **Nrandom** random locations.  Nrandom is also
+ * specified by the user in the "StateTest" section of the config file, as is the
+ * (nondimensional) tolerence level (**interp_tolerance**) to be used for the tests.
+ *
  * Relevant parameters in the **State* section of the config file include
- * 
+ *
  * * **norm-gen** Normalization test for the generated State
  * * **interp_tolerance** tolerance for the interpolation test
-.*
- * \date April, 2018: M. Miesch (JCSDA) adapted a preliminary version in the 
+ *
+ * \date April, 2018: M. Miesch (JCSDA) adapted a preliminary version in the
  * feature/interp branch
- * 
- * \warning Since this model compares the interpolated state values to an exact analytic 
+ *
+ * \warning Since this model compares the interpolated state values to an exact analytic
  * solution, it requires that the "analytic_init" option be implemented in the model and
  * selected in the "State.StateGenerate" section of the config file.
- * 
  */
- template <typename MODEL> void testStateInterpolation() {
-   typedef StateFixture<MODEL>    Test_;
-   typedef oops::State<MODEL>     State_;
-   typedef oops::Locations<MODEL> Locations_;
-   typedef oops::GeoVaLs<MODEL>   GeoVaLs_;
 
-   // This creates a State object called xx based on information
-   // from the "Geometry" and "StateTest.StateGenerate" sections of
-   // the config file and checks its norm
+template <typename MODEL> void testStateInterpolation() {
+  typedef StateFixture<MODEL>    Test_;
+  typedef oops::State<MODEL>     State_;
+  typedef oops::Locations<MODEL> Locations_;
+  typedef oops::GeoVaLs<MODEL>   GeoVaLs_;
 
-   const eckit::LocalConfiguration confgen(Test_::test(), "StateGenerate");
-   const State_ xx(Test_::resol(), confgen);
-   const double norm = Test_::test().getDouble("norm-gen");
-   const double tol = Test_::test().getDouble("tolerance");
-   BOOST_CHECK_CLOSE(xx.norm(), norm, tol);
+  // This creates a State object called xx based on information
+  // from the "Geometry" and "StateTest.StateGenerate" sections of
+  // the config file and checks its norm
 
-   // Now extract the user-defined locations from the "StateTest.Locations"
-   // section of the config file and use it to define a Locations object
-   // The user can optionally also request Nrandom random locations
-   const eckit::LocalConfiguration confloc(Test_::test(), "Locations");
-   const Locations_ locs(confloc);
+  const eckit::LocalConfiguration confgen(Test_::test(), "StateGenerate");
+  const State_ xx(Test_::resol(), confgen);
+  const double norm = Test_::test().getDouble("norm-gen");
+  const double tol = Test_::test().getDouble("tolerance");
+  BOOST_CHECK_CLOSE(xx.norm(), norm, tol);
 
-   // Extract the user-defined list of variables to interpolate,
-   // also from the "StateGenerate" section of the config file, and
-   // use this to define a Variables object
-   const oops::Variables vars(confgen);
+  // Now extract the user-defined locations from the "StateTest.Locations"
+  // section of the config file and use it to define a Locations object
+  // The user can optionally also request Nrandom random locations
+  const eckit::LocalConfiguration confloc(Test_::test(), "Locations");
+  const Locations_ locs(confloc);
 
-   // Now create a GeoVaLs object from locs and vars
-   GeoVaLs_ gval(locs, vars);
+  // Extract the user-defined list of variables to interpolate,
+  // also from the "StateGenerate" section of the config file, and
+  // use this to define a Variables object
+  const oops::Variables vars(confgen);
 
-   // ...and execute the interpolation
-   xx.interpolate(locs, vars, gval);
+  // Now create a GeoVaLs object from locs and vars
+  GeoVaLs_ gval(locs, vars);
 
-   // Now create another GeoVaLs object that contains the exact
-   // analytic solutions
-   GeoVaLs_ ref(locs, vars, confgen);
+  // ...and execute the interpolation
+  xx.interpolate(locs, vars, gval);
 
-   // Compute the difference between the interpolated and exact values
-   gval -= ref;
-   
-   // Compute the normalized error
-   gval.abs();
-   gval /= ref;
+  // Now create another GeoVaLs object that contains the exact
+  // analytic solutions
+  GeoVaLs_ ref(locs, vars, confgen);
 
-   // And check to see if the errors are within specified tolerance
-   double interp_tol = Test_::test().getDouble("interp_tolerance");
-   BOOST_CHECK_SMALL(gval.norm(), interp_tol);
+  // Compute the difference between the interpolated and exact values
+  gval -= ref;
 
-   // Each MODEL should define an appropriate GeoVaLs print() method that
-   // writes information about the GeoVaLs object to the oops::Log::debug()
-   // output stream in order to help with debugging in the event that the
-   // interpolation test does not pass.  It is helpful if this print()
-   // method at least prints out the location and variable where the
-   // error is largest.
-   
-   oops::Log::debug() << "TestStateInterpolation() Normalized Error: "
-		      << std::endl << gval << std::endl;
+  // Compute the normalized error
+  gval.abs();
+  gval /= ref;
 
-   // Also write the locations used for the test to the debug output stream
-   oops::Log::debug() << "TestStateInterpolation() Locations: "
-                      << std::endl << locs << std::endl;
-   
- }
+  // And check to see if the errors are within specified tolerance
+  double interp_tol = Test_::test().getDouble("interp_tolerance");
+  BOOST_CHECK_SMALL(gval.norm(), interp_tol);
+
+  // Each MODEL should define an appropriate GeoVaLs print() method that
+  // writes information about the GeoVaLs object to the oops::Log::debug()
+  // output stream in order to help with debugging in the event that the
+  // interpolation test does not pass.  It is helpful if this print()
+  // method at least prints out the location and variable where the
+  // error is largest.
+
+  oops::Log::debug() << "TestStateInterpolation() Normalized Error: "
+                     << std::endl << gval << std::endl;
+
+  // Also write the locations used for the test to the debug output stream
+  oops::Log::debug() << "TestStateInterpolation() Locations: "
+                     << std::endl << locs << std::endl;
+}
 // =============================================================================
 
 template <typename MODEL> class State : public oops::Test {

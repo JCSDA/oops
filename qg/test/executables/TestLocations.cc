@@ -14,5 +14,5 @@ int main(int argc,  char ** argv) {
   test::Locations<qg::QgTraits> tests;
   run.execute(tests);
   return 0;
-};
+}
 

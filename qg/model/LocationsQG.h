@@ -13,6 +13,7 @@
 
 #include <ostream>
 #include <string>
+#include <vector>
 
 #include "model/QgFortran.h"
 #include "util/ObjectCounter.h"
@@ -26,7 +27,6 @@ class LocationsQG : public util::Printable,
                     private util::ObjectCounter<LocationsQG> {
  public:
   static const std::string classname() {return "qg::LocationsQG";}
-
 
   explicit LocationsQG(const F90locs key) : keyLoc_(key) {}
 
@@ -48,10 +48,10 @@ class LocationsQG : public util::Printable,
 
     std::vector<double> xyz(3);
 
-    for (size_t i=0; i < static_cast<size_t>(nobs); ++i) {
-      qg_loc_element_f90(keyLoc_,i,&xyz[0]);
-      os << "loc " << i << std::setprecision(2) << ": x = " << xyz[0]
-	 << ", y = " << xyz[1] << ", z = " << xyz[2] << std::endl;
+    for (size_t jj=0; jj < static_cast<size_t>(nobs); ++jj) {
+      qg_loc_element_f90(keyLoc_, jj, &xyz[0]);
+      os << "loc " << jj << std::setprecision(2) << ": x = " << xyz[0]
+         << ", y = " << xyz[1] << ", z = " << xyz[2] << std::endl;
     }
   }
   F90locs keyLoc_;

@@ -9,9 +9,10 @@
  */
 
 #include "util/Duration.h"
-#include "util/DateTime.h"
 
 #include <boost/test/unit_test.hpp>
+
+#include "util/DateTime.h"
 
 namespace {
 

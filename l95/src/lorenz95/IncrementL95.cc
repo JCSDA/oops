@@ -13,11 +13,11 @@
 #include <fstream>
 #include <string>
 
-#include "util/Logger.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
 #include "util/abor1_cpp.h"
+#include "util/DateTime.h"
 #include "util/dot_product.h"
+#include "util/Duration.h"
+#include "util/Logger.h"
 
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/GomL95.h"
@@ -27,7 +27,7 @@
 #include "lorenz95/StateL95.h"
 
 namespace oops {
-  class Variables;
+class Variables;
 }
 
 namespace lorenz95 {
@@ -181,11 +181,13 @@ void IncrementL95::print(std::ostream & os) const {
 // -----------------------------------------------------------------------------
 /// Interpolate to observation location
 // -----------------------------------------------------------------------------
-void IncrementL95::interpolateTL(const LocsL95 & locs, const oops::Variables &, GomL95 & vals) const {
+void IncrementL95::interpolateTL(const LocsL95 & locs, const oops::Variables &, GomL95 & vals) const
+{
   fld_.interp(locs, vals);
 }
 // -----------------------------------------------------------------------------
-void IncrementL95::interpolateAD(const LocsL95 & locs, const oops::Variables &, const GomL95 & vals) {
+void IncrementL95::interpolateAD(const LocsL95 & locs, const oops::Variables &, const GomL95 & vals)
+{
   fld_.interpAD(locs, vals);
 }
 // -----------------------------------------------------------------------------

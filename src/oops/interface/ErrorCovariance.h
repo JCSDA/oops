@@ -16,12 +16,12 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
-#include "util/Logger.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
+#include "util/Logger.h"
 #include "util/ObjectCounter.h"
 #include "util/Printable.h"
 #include "util/Timer.h"
@@ -56,7 +56,8 @@ class ErrorCovariance : public oops::ModelSpaceCovarianceBase<MODEL>,
  public:
   static const std::string classname() {return "oops::ErrorCovariance";}
 
-  ErrorCovariance(const Geometry_ &, const Variables &, const eckit::Configuration &, const State_ &);
+  ErrorCovariance(const Geometry_ &, const Variables &, const eckit::Configuration &,
+                  const State_ &);
   virtual ~ErrorCovariance();
 
   void linearize(const State_ &, const Geometry_ &) override;

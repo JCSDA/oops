@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -21,10 +21,10 @@
 
 #include <boost/scoped_ptr.hpp>
 
-#include "oops/runs/Test.h"
 #include "oops/interface/ObsVector.h"
-#include "test/TestEnvironment.h"
+#include "oops/runs/Test.h"
 #include "test/interface/ObsTestsFixture.h"
+#include "test/TestEnvironment.h"
 #include "util/dot_product.h"
 
 namespace test {
@@ -52,7 +52,7 @@ template <typename MODEL> void testCopyConstructor() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     boost::scoped_ptr<ObsVector_> ov(new ObsVector_(Test_::obspace()[jj]));
-    
+
     boost::scoped_ptr<ObsVector_> other(new ObsVector_(*ov));
     BOOST_CHECK(other.get());
 
@@ -69,14 +69,14 @@ template <typename MODEL> void testNotZero() {
   typedef ObsTestsFixture<MODEL>  Test_;
   typedef oops::ObsVector<MODEL>  ObsVector_;
   const double zero = 0.0;
-  
+
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     ObsVector_ ov(Test_::obspace()[jj]);
 
     ov.random();
-    
+
     const double ovov2 = dot_product(ov, ov);
-    BOOST_CHECK( ovov2 > zero);          
+    BOOST_CHECK(ovov2 > zero);
   }
 }
 
@@ -95,7 +95,7 @@ template <typename MODEL> class ObsVector : public oops::Test {
     ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
     ts->add(BOOST_TEST_CASE(&testCopyConstructor<MODEL>));
     ts->add(BOOST_TEST_CASE(&testNotZero<MODEL>));
-    
+
     boost::unit_test::framework::master_test_suite().add(ts);
   }
 };

@@ -13,10 +13,10 @@
 #include <iostream>
 #include <string>
 
-#include "util/Logger.h"
+#include "eckit/config/Configuration.h"
 #include "lorenz95/ModelBias.h"
 #include "lorenz95/ModelBiasCovariance.h"
-#include "eckit/config/Configuration.h"
+#include "util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
@@ -24,7 +24,9 @@ namespace lorenz95 {
 ModelBiasCorrection::ModelBiasCorrection(const Resolution &, const eckit::Configuration & conf)
   : bias_(0.0), active_(conf.has("standard_deviation"))
 {
-  if (active_) {oops::Log::trace() << "ModelBiasCorrection::ModelBiasCorrection created." << std::endl; }
+  if (active_) {
+    oops::Log::trace() << "ModelBiasCorrection::ModelBiasCorrection created." << std::endl;
+  }
 }
 // -----------------------------------------------------------------------------
 ModelBiasCorrection::ModelBiasCorrection(const ModelBiasCorrection & other,

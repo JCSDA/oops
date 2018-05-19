@@ -8,18 +8,18 @@
  * does it submit to any jurisdiction.
  */
 
+#include "util/config_f.h"
+
 #include <cstring>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <limits>
 #include <sstream>
 #include <string>
-
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "util/Logger.h"
-#include "util/config_f.h"
 
 using oops::Log;
 
@@ -45,11 +45,11 @@ class ConfigTestData {
 
     conf_->set("grandparent.son.granddaughter", 3.14159);
     conf_->set("grandparent.son.gerbil", "");
-    conf_->set("grandparent.son.maxint", long(imax));
-    conf_->set("grandparent.son.minint", long(imin));
+    conf_->set("grandparent.son.maxint", imax);
+    conf_->set("grandparent.son.minint", imin);
     conf_->set("grandparent.son.maxdouble", dmax);
     conf_->set("grandparent.son.mindouble", dmin);
-    conf_->set("grandparent.daughter.grandson", long(21));
+    conf_->set("grandparent.daughter.grandson", 21);
     conf_->set("grandparent.daughter.hamster", "Errol");
   }
 

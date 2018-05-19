@@ -19,7 +19,7 @@ namespace lorenz95 {
 // -----------------------------------------------------------------------------
 
 LocsL95::LocsL95(const std::vector<int> & indx, const std::vector<double> & locs)
- : indx_(indx), locs_(locs)
+  : indx_(indx), locs_(locs)
 {
   ASSERT(indx_.size() == locs_.size());
 }

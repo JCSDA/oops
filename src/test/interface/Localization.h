@@ -11,9 +11,9 @@
 #ifndef TEST_INTERFACE_LOCALIZATION_H_
 #define TEST_INTERFACE_LOCALIZATION_H_
 
+#include <cmath>
 #include <iostream>
 #include <string>
-#include <cmath>
 
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API
@@ -23,14 +23,13 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include "oops/runs/Test.h"
+#include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/Localization.h"
 #include "oops/runs/Test.h"
 #include "test/TestEnvironment.h"
-#include "eckit/config/LocalConfiguration.h"
 #include "util/DateTime.h"
 
 namespace test {
