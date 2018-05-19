@@ -13,6 +13,7 @@ module qg_geom_mod
 use iso_c_binding
 use config_mod
 use kinds
+use type_mpl, only: mpl
 
 implicit none
 private
@@ -27,6 +28,7 @@ type :: qg_geom
   integer :: ny
   real(kind=kind_real),allocatable :: lat(:)
   real(kind=kind_real),allocatable :: lon(:)
+  real(kind=kind_real),allocatable :: area(:,:)
 end type qg_geom
 
 #define LISTED_TYPE qg_geom
@@ -40,6 +42,7 @@ type(registry_t) :: qg_geom_registry
 ! ------------------------------------------------------------------------------
 contains
 ! ------------------------------------------------------------------------------
+
 !> Linked list implementation
 #include "oops/util/linkedList_c.f"
 
@@ -64,6 +67,7 @@ self%ny = config_get_int(c_conf, "ny")
 
 allocate(self%lon(self%nx))
 allocate(self%lat(self%ny))
+allocate(self%area(self%nx,self%ny))
 
 dx = 2.0_kind_real * pi / real(self%nx,kind=kind_real);
 dy = pi / real(self%ny,kind=kind_real);
@@ -73,6 +77,9 @@ end do
 do iy=1,self%ny
    !self%lat(iy) = -0.5_kind_real*pi+(real(iy,kind=kind_real)-0.5_kind_real)*dy;
    self%lat(iy) = -0.5_kind_real*pi+(real(iy,kind=kind_real)-1.0_kind_real)*dy;
+end do
+do iy=1,self%ny
+   self%area(:,iy) = 6.371e6**2*cos(self%lat(iy))*dx*dy
 end do
 
 end subroutine c_qg_geo_setup
@@ -93,8 +100,10 @@ other%nx = self%nx
 other%ny = self%ny
 allocate(other%lon(other%nx))
 allocate(other%lat(other%ny))
+allocate(other%area(other%nx,other%ny))
 other%lon = self%lon
 other%lat = self%lat
+other%area = self%area
 
 end subroutine c_qg_geo_clone
 

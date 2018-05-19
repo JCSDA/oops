@@ -23,11 +23,19 @@
 #include "oops/util/ObjectCountHelper.h"
 #include "oops/util/TimerHelper.h"
 
+extern "C" {
+    void mpl_start_f90();
+    void mpl_end_f90();
+}
+
 namespace oops {
 
 // -----------------------------------------------------------------------------
 
 Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(), timer_() {
+// Start MPI for NICAS
+  mpl_start_f90();
+
 // Get configuration file from command line
   ASSERT(argc >= 2);
   eckit::PathName configfile = argv[argc - 1];
@@ -46,6 +54,9 @@ Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(
 // -----------------------------------------------------------------------------
 
 Run::~Run() {
+// Finalize MPI for NICAS
+  mpl_end_f90();
+
   LibOOPS::instance().finalise();
 }
 

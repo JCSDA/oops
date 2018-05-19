@@ -11,7 +11,8 @@
 module tools_nc
 
 use netcdf
-use kinds
+use tools_display, only: msgerror
+use tools_kinds, only: kind_real
 
 implicit none
 
@@ -47,7 +48,7 @@ character(len=*),intent(in) :: subr !< Calling subroutine
 integer,intent(in) :: info          !< Info index
 
 ! Check status
-if (info/=nf90_noerr) call abor1_ftn('in '//trim(subr)//': '//trim(nf90_strerror(info)))
+if (info/=nf90_noerr) call msgerror('in '//trim(subr)//': '//trim(nf90_strerror(info)))
 
 end subroutine ncerr
 

@@ -197,7 +197,8 @@ template <typename MODEL> void testStateInterpolation() {
   oops::Log::debug() << "TestStateInterpolation() Locations: "
                      << std::endl << locs << std::endl;
 }
-// =============================================================================
+
+// -----------------------------------------------------------------------------
 
 template <typename MODEL> class State : public oops::Test {
  public:

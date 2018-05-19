@@ -102,7 +102,6 @@ solve_helmholz.f90
 zonal_wind.f90
 zonal_wind_ad.f90
 zonal_wind_tl.f90
-tools_nc.f90
 )
 
 ecbuild_add_library( TARGET   qg

@@ -22,6 +22,10 @@ namespace eckit {
   class Configuration;
 }
 
+namespace oops {
+  class UnstructuredGrid;
+}
+
 namespace lorenz95 {
   class LocsL95;
   class GomL95;
@@ -41,6 +45,7 @@ class FieldL95 : public util::Printable {
 
 /// Linear algebra
   void zero();
+  void dirac(const eckit::Configuration &);
   FieldL95 & operator=(const FieldL95 &);
   FieldL95 & operator+=(const FieldL95 &);
   FieldL95 & operator-=(const FieldL95 &);
@@ -67,6 +72,10 @@ class FieldL95 : public util::Printable {
 /// Interpolate to given location
   void interp(const LocsL95 &, GomL95 &) const;
   void interpAD(const LocsL95 &, const GomL95 &);
+
+/// Convert to/from generic unstructured grid
+  void convert_to(oops::UnstructuredGrid &) const;
+  void convert_from(const oops::UnstructuredGrid &);
 
  private:
   void print(std::ostream &) const;

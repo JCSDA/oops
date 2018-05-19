@@ -36,6 +36,7 @@ ecbuild_add_library( TARGET lorenz95
                          ObservationL95.h
                          ObservationTLAD.cc
                          ObservationTLAD.h
+                         Resolution.cc
                          Resolution.h
                          StateL95.cc
                          StateL95.h

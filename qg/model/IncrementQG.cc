@@ -24,6 +24,7 @@
 #include "model/ModelBiasIncrement.h"
 #include "model/StateQG.h"
 #include "oops/base/Variables.h"
+#include "oops/generic/UnstructuredGrid.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -146,6 +147,10 @@ void IncrementQG::random() {
   fields_->random();
 }
 // -----------------------------------------------------------------------------
+void IncrementQG::dirac(const eckit::Configuration & config) {
+  fields_->dirac(config);
+}
+// -----------------------------------------------------------------------------
 /// Interpolate to observation location
 // -----------------------------------------------------------------------------
 void IncrementQG::interpolateTL(const LocationsQG & locs, const oops::Variables & vars,
@@ -160,6 +165,16 @@ void IncrementQG::interpolateAD(const LocationsQG & locs, const oops::Variables 
   oops::Log::debug() << "IncrementQG::interpolateAD gom " << cols << std::endl;
   oops::Log::debug() << "IncrementQG::interpolateAD fields in" << *fields_ << std::endl;
   fields_->interpolateAD(locs, vars, cols);
+}
+// -----------------------------------------------------------------------------
+/// Convert to/from unstructured grid
+// -----------------------------------------------------------------------------
+void IncrementQG::convert_to(oops::UnstructuredGrid & ug) const {
+  fields_->convert_to(ug);
+}
+// -----------------------------------------------------------------------------
+void IncrementQG::convert_from(const oops::UnstructuredGrid & ug) {
+  fields_->convert_from(ug);
 }
 // -----------------------------------------------------------------------------
 /// I/O and diagnostics

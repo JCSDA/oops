@@ -24,11 +24,11 @@ implicit none
 private
 
 public :: qg_field, &
-        & create, delete, zeros, random, copy, &
+        & create, delete, zeros, dirac, random, copy, &
         & self_add, self_schur, self_sub, self_mul, axpy, &
         & dot_prod, add_incr, diff_incr, &
         & read_file, write_file, gpnorm, fldrms, &
-        & change_resol, interp_tl, interp_ad, &
+        & change_resol, interp_tl, interp_ad, convert_to_ug, convert_from_ug, &
         & analytic_init
 public :: qg_field_registry
 
@@ -158,6 +158,47 @@ if (self%lbc) then
 endif
 
 end subroutine zeros
+
+! ------------------------------------------------------------------------------
+
+subroutine dirac(self, c_conf)
+use iso_c_binding
+implicit none
+type(qg_field), intent(inout) :: self
+type(c_ptr), intent(in)       :: c_conf   !< Configuration
+integer :: ndir,idir,ildir,ifdir,ioff
+integer,allocatable :: ixdir(:),iydir(:)
+character(len=3) :: idirchar
+
+call check(self)
+
+! Get Diracs positions
+ndir = config_get_int(c_conf,"ndir")
+allocate(ixdir(ndir))
+allocate(iydir(ndir))
+do idir=1,ndir
+   write(idirchar,'(i3)') idir
+   ixdir(idir) = config_get_int(c_conf,"ixdir("//trim(adjustl(idirchar))//")")
+   iydir(idir) = config_get_int(c_conf,"iydir("//trim(adjustl(idirchar))//")")
+end do
+ildir = config_get_int(c_conf,"ildir")
+ifdir = config_get_int(c_conf,"ifdir")
+
+! Check
+if (ndir<1) call abor1_ftn("qg_fields:dirac non-positive ndir")
+if (any(ixdir<1).or.any(ixdir>self%geom%nx)) call abor1_ftn("qg_fields:dirac invalid ixdir")
+if (any(iydir<1).or.any(iydir>self%geom%ny)) call abor1_ftn("qg_fields:dirac invalid iydir")
+if ((ildir<1).or.(ildir>self%nl)) call abor1_ftn("qg_fields:dirac invalid ildir")
+if ((ifdir<1).or.(ifdir>self%nf)) call abor1_ftn("qg_fields:dirac invalid ifdir")
+
+! Setup Diracs
+call zeros(self)
+ioff = (ifdir-1)*self%nl
+do idir=1,ndir
+   self%gfld3d(ixdir(idir),iydir(idir),ioff+ildir) = 1.0
+end do
+
+end subroutine dirac
 
 ! ------------------------------------------------------------------------------
 
@@ -1252,6 +1293,101 @@ k2=ii+2
 
 return
 end subroutine lin_weights
+
+! ------------------------------------------------------------------------------
+
+subroutine define_ug(self, ug)
+use unstructured_grid_mod
+implicit none
+type(qg_field), intent(in) :: self
+type(unstructured_grid), intent(inout) :: ug
+
+
+end subroutine define_ug
+
+! ------------------------------------------------------------------------------
+
+subroutine convert_to_ug(self, ug)
+use unstructured_grid_mod
+implicit none
+type(qg_field), intent(in) :: self
+type(unstructured_grid), intent(inout) :: ug
+
+integer :: nc0a,ic0a,jx,jy,jl,jf,joff
+integer,allocatable :: imask(:,:)
+real(kind=kind_real),allocatable :: lon(:),lat(:),area(:),vunit(:)
+
+! Define local number of gridpoints (equal to global here since QG works on a single proc)
+nc0a = self%geom%nx*self%geom%ny
+
+! Allocation
+allocate(lon(nc0a))
+allocate(lat(nc0a))
+allocate(area(nc0a))
+allocate(vunit(self%nl))
+allocate(imask(nc0a,self%nl))
+
+! Copy coordinates
+ic0a = 0
+do jy=1,self%geom%ny
+  do jx=1,self%geom%nx
+    ic0a = ic0a+1
+    lon(ic0a) = self%geom%lon(jx)
+    lat(ic0a) = self%geom%lat(jy)
+    area(ic0a) = self%geom%area(jx,jy)
+  enddo
+enddo
+imask = 1
+
+! Define vertical unit
+do jl=1,self%nl
+  vunit(jl) = real(jl,kind=kind_real)
+enddo
+
+! Create unstructured grid
+call create_unstructured_grid(ug, nc0a, self%nl, self%nf, 1, lon, lat, area, vunit, imask)
+
+! Copy field
+ic0a = 0
+do jy=1,self%geom%ny
+  do jx=1,self%geom%nx
+    ic0a = ic0a+1
+    do jf=1,self%nf
+      joff = (jf-1)*self%nl
+      do jl=1,self%nl
+        ug%fld(ic0a,jl,jf,1) = self%gfld3d(jx,jy,joff+jl)
+      enddo
+    enddo
+  enddo
+enddo
+
+end subroutine convert_to_ug
+
+! ------------------------------------------------------------------------------
+
+subroutine convert_from_ug(self, ug)
+use unstructured_grid_mod
+implicit none
+type(qg_field), intent(inout) :: self
+type(unstructured_grid), intent(in) :: ug
+
+integer :: ic0a,jx,jy,jl,jf,joff
+
+! Copy field
+ic0a = 0
+do jy=1,self%geom%ny
+  do jx=1,self%geom%nx
+    ic0a = ic0a+1
+    do jf=1,self%nf
+      joff = (jf-1)*self%nl
+      do jl=1,self%nl
+        self%gfld3d(jx,jy,joff+jl) = ug%fld(ic0a,jl,jf,1)
+      enddo
+    enddo
+  enddo
+enddo
+
+end subroutine convert_from_ug
 
 ! ------------------------------------------------------------------------------
 
