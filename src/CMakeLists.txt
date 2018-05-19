@@ -45,8 +45,7 @@ oops/assimilation/IPCGMinimizer.h
 oops/assimilation/Increment4D.h
 oops/assimilation/IncrementalAssimilation.h
 oops/assimilation/JqTerm.h
-oops/assimilation/JqTermAD.h
-oops/assimilation/JqTermTL.h
+oops/assimilation/JqTermTLAD.h
 oops/assimilation/MINRES.h
 oops/assimilation/MINRESMinimizer.h
 oops/assimilation/Minimizer.h
@@ -86,6 +85,7 @@ oops/base/GeneralizedDepartures.h
 oops/base/GeoVaLsWriter.h
 oops/base/HybridCovariance.h
 oops/base/IdentityMatrix.h
+oops/base/InterpolatorTLAD.h
 oops/base/LinearObsOperators.h
 oops/base/ModelSpaceCovarianceBase.h
 oops/base/ObsErrors.h
@@ -95,14 +95,11 @@ oops/base/ObsOperators.h
 oops/base/ObsSpaces.h
 oops/base/Observations.h
 oops/base/Observer.h
-oops/base/ObserverTL.h
-oops/base/ObserverAD.h
+oops/base/ObserverTLAD.h
 oops/base/PostBase.h
-oops/base/PostBaseTL.h
-oops/base/PostBaseAD.h
+oops/base/PostBaseTLAD.h
 oops/base/PostProcessor.h
-oops/base/PostProcessorTL.h
-oops/base/PostProcessorAD.h
+oops/base/PostProcessorTLAD.h
 oops/base/PostTimer.h
 oops/base/PostTimer.cc
 oops/base/StateInfo.h
@@ -111,8 +108,7 @@ oops/base/TrajectorySaver.h
 oops/base/Variables.h
 oops/base/Variables.cc
 oops/base/WeightedDiff.h
-oops/base/WeightedDiffTL.h
-oops/base/WeightedDiffAD.h
+oops/base/WeightedDiffTLAD.h
 oops/base/WeightedMean.h
 oops/base/WeightingFct.h
 oops/base/WeightingFct.cc
@@ -232,6 +228,7 @@ oops/interface/ErrorCovariance.h
 oops/interface/Geometry.h
 oops/interface/GeoVaLs.h
 oops/interface/Increment.h
+oops/interface/InterpolatorTraj.h
 oops/interface/LinearModel.h
 oops/interface/LinearObsOperBase.h
 oops/interface/LinearObsOperator.h
@@ -293,11 +290,13 @@ oops/util/formats.h
 oops/util/kinds.F90
 oops/util/LibOOPS.h
 oops/util/LibOOPS.cc
+oops/util/Logger.h
 oops/util/ObjectCounter.h
 oops/util/ObjectCountHelper.h
 oops/util/ObjectCountHelper.cc
 oops/util/Printable.h
 oops/util/PrintAdjTest.h
+oops/util/printStackTrace.h
 oops/util/set_err_trap.F90
 oops/util/signal_trap.c
 oops/util/string_f_c_mod.F90
@@ -306,7 +305,6 @@ oops/util/Timer.cc
 oops/util/TimerHelper.h
 oops/util/TimerHelper.cc
 oops/util/utilNamespaceDoc.h
-oops/util/Logger.h
 
 )
 

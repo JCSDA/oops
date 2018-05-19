@@ -16,8 +16,7 @@
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/DualVector.h"
-#include "oops/base/PostProcessorAD.h"
-#include "oops/base/PostProcessorTL.h"
+#include "oops/base/PostProcessorTLAD.h"
 #include "oops/interface/Increment.h"
 #include "oops/util/PrintAdjTest.h"
 
@@ -67,7 +66,7 @@ void HBHtMatrix<MODEL>::multiply(const Dual_ & dy, Dual_ & dz) const {
 // Run ADJ
   CtrlInc_ ww(j_.jb());
   j_.zeroAD(ww);
-  PostProcessorAD<Increment_> costad;
+  PostProcessorTLAD<MODEL> costad;
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
     costad.enrollProcessor(j_.jterm(jj).setupAD(dy.getv(jj), ww));
   }
@@ -78,7 +77,7 @@ void HBHtMatrix<MODEL>::multiply(const Dual_ & dy, Dual_ & dz) const {
   j_.jb().multiplyB(ww, zz);
 
 // Run TLM
-  PostProcessorTL<Increment_> costtl;
+  PostProcessorTLAD<MODEL> costtl;
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
     costtl.enrollProcessor(j_.jterm(jj).setupTL(zz));
   }

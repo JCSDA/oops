@@ -16,6 +16,8 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
+#include "oops/base/PostProcessor.h"
+#include "oops/base/PostProcessorTLAD.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/LinearModelBase.h"
@@ -63,13 +65,13 @@ class LinearModel : public util::Printable,
 /// Run the tangent linear forecast
   void forecastTL(Increment_ &, const ModelAuxIncr_ &, const util::Duration &,
                   PostProcessor<Increment_> post = PostProcessor<Increment_>(),
-                  PostProcessorTL<Increment_> cost = PostProcessorTL<Increment_>(),
+                  PostProcessorTLAD<MODEL> cost = PostProcessorTLAD<MODEL>(),
                   const bool idmodel = false) const;
 
 /// Run the adjoint forecast
   void forecastAD(Increment_ &, ModelAuxIncr_ &, const util::Duration &,
                   PostProcessor<Increment_> post = PostProcessor<Increment_>(),
-                  PostProcessorAD<Increment_> cost = PostProcessorAD<Increment_>(),
+                  PostProcessorTLAD<MODEL> cost = PostProcessorTLAD<MODEL>(),
                   const bool idmodel = false) const;
 
 // Set the linearization trajectory
@@ -129,7 +131,7 @@ template<typename MODEL>
 void LinearModel<MODEL>::forecastTL(Increment_ & dx, const ModelAuxIncr_ & mctl,
                                     const util::Duration & len,
                                     PostProcessor<Increment_> post,
-                                    PostProcessorTL<Increment_> cost,
+                                    PostProcessorTLAD<MODEL> cost,
                                     const bool idmodel) const {
   Log::trace() << "LinearModel<MODEL>::forecastTL starting" << std::endl;
   util::Timer timer(classname(), "forecastTL");
@@ -168,7 +170,7 @@ template<typename MODEL>
 void LinearModel<MODEL>::forecastAD(Increment_ & dx, ModelAuxIncr_ & mctl,
                                     const util::Duration & len,
                                     PostProcessor<Increment_> post,
-                                    PostProcessorAD<Increment_> cost,
+                                    PostProcessorTLAD<MODEL> cost,
                                     const bool idmodel) const {
   Log::trace() << "LinearModel<MODEL>::forecastAD starting" << std::endl;
   util::Timer timer(classname(), "forecastAD");

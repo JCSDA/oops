@@ -17,8 +17,7 @@
 #include "oops/assimilation/CostJo.h"
 #include "oops/assimilation/CostTermBase.h"
 #include "oops/base/PostProcessor.h"
-#include "oops/base/PostProcessorAD.h"
-#include "oops/base/PostProcessorTL.h"
+#include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -52,10 +51,10 @@ template<typename MODEL> class CostFct3DVar : public CostFunction<MODEL> {
   CostFct3DVar(const eckit::Configuration &, const Geometry_ &, const Model_ &);
   ~CostFct3DVar() {}
 
-  void runTLM(CtrlInc_ &, PostProcessorTL<Increment_> &,
+  void runTLM(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
               PostProcessor<Increment_>,
               const bool idModel = false) const override;
-  void runADJ(CtrlInc_ &, PostProcessorAD<Increment_> &,
+  void runADJ(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
               PostProcessor<Increment_>,
               const bool idModel = false) const override;
   void zeroAD(CtrlInc_ &) const override;
@@ -86,12 +85,13 @@ CostFct3DVar<MODEL>::CostFct3DVar(const eckit::Configuration & config,
   : CostFunction<MODEL>::CostFunction(resol, model),
     windowLength_(), windowHalf_(), zero_(0), ctlvars_(config)
 {
+  Log::trace() << "CostFct3DVar::CostFct3DVar start" << std::endl;
   windowLength_ = util::Duration(config.getString("window_length"));
   windowBegin_ = util::DateTime(config.getString("window_begin"));
   windowEnd_ = windowBegin_ + windowLength_;
   windowHalf_ = windowBegin_ + windowLength_/2;
   this->setupTerms(config);
-  Log::trace() << "CostFct3DVar constructed" << std::endl;
+  Log::trace() << "CostFct3DVar::CostFct3DVar done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -100,6 +100,7 @@ template <typename MODEL>
 CostJb3D<MODEL> * CostFct3DVar<MODEL>::newJb(const eckit::Configuration & jbConf,
                                              const Geometry_ & resol,
                                              const CtrlVar_ & xb) const {
+  Log::trace() << "CostFct3DVar::newJb" << std::endl;
   ASSERT(xb.state().checkStatesNumber(1));
   return new CostJb3D<MODEL>(jbConf, resol, ctlvars_, zero_, xb.state()[0]);
 }
@@ -108,6 +109,7 @@ CostJb3D<MODEL> * CostFct3DVar<MODEL>::newJb(const eckit::Configuration & jbConf
 
 template <typename MODEL>
 CostJo<MODEL> * CostFct3DVar<MODEL>::newJo(const eckit::Configuration & joConf) const {
+  Log::trace() << "CostFct3DVar::newJo" << std::endl;
   return new CostJo<MODEL>(joConf, windowBegin_, windowEnd_, windowLength_);
 }
 
@@ -116,6 +118,7 @@ CostJo<MODEL> * CostFct3DVar<MODEL>::newJo(const eckit::Configuration & joConf) 
 template <typename MODEL>
 CostTermBase<MODEL> * CostFct3DVar<MODEL>::newJc(const eckit::Configuration & jcConf,
                                                  const Geometry_ &) const {
+  Log::trace() << "CostFct3DVar::newJc" << std::endl;
 // For now there is no Jc that can work with 3D-Var
   CostTermBase<MODEL> * pjc = 0;
   return pjc;
@@ -126,42 +129,50 @@ CostTermBase<MODEL> * CostFct3DVar<MODEL>::newJc(const eckit::Configuration & jc
 template <typename MODEL>
 void CostFct3DVar<MODEL>::runNL(CtrlVar_ & xx,
                                 PostProcessor<State_> & post) const {
+  Log::trace() << "CostFct3DVar::runNL start" << std::endl;
   ASSERT(xx.state().checkStatesNumber(1));
   ASSERT(xx.state()[0].validTime() == windowHalf_);
   CostFct_::getModel().forecast(xx.state()[0], xx.modVar(), util::Duration(0), post);
+  Log::trace() << "CostFct3DVar::runNL done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
 void CostFct3DVar<MODEL>::runTLM(CtrlInc_ & dx,
-                                 PostProcessorTL<Increment_> & cost,
+                                 PostProcessorTLAD<MODEL> & cost,
                                  PostProcessor<Increment_> post,
                                  const bool idModel) const {
+  Log::trace() << "CostFct3DVar::runTLM start" << std::endl;
   ASSERT(dx.state()[0].validTime() == windowHalf_);
   CostFct_::getTLM().forecastTL(dx.state()[0], dx.modVar(), util::Duration(0), post, cost);
   ASSERT(dx.state()[0].validTime() == windowHalf_);
+  Log::trace() << "CostFct3DVar::runTLM done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
 void CostFct3DVar<MODEL>::zeroAD(CtrlInc_ & dx) const {
+  Log::trace() << "CostFct3DVar::zeroAD start" << std::endl;
   dx.state()[0].zero(windowHalf_);
   dx.modVar().zero();
   dx.obsVar().zero();
+  Log::trace() << "CostFct3DVar::zeroAD done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
 void CostFct3DVar<MODEL>::runADJ(CtrlInc_ & dx,
-                                 PostProcessorAD<Increment_> & cost,
+                                 PostProcessorTLAD<MODEL> & cost,
                                  PostProcessor<Increment_> post,
                                  const bool idModel) const {
+  Log::trace() << "CostFct3DVar::runADJ start" << std::endl;
   ASSERT(dx.state()[0].validTime() == windowHalf_);
   CostFct_::getTLM().forecastAD(dx.state()[0], dx.modVar(), util::Duration(0), post, cost);
   ASSERT(dx.state()[0].validTime() == windowHalf_);
+  Log::trace() << "CostFct3DVar::runADJ done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -169,10 +180,12 @@ void CostFct3DVar<MODEL>::runADJ(CtrlInc_ & dx,
 template<typename MODEL>
 void CostFct3DVar<MODEL>::addIncr(CtrlVar_ & xx, const CtrlInc_ & dx,
                                   PostProcessor<Increment_> &) const {
+  Log::trace() << "CostFct3DVar::addIncr start" << std::endl;
   ASSERT(xx.state().checkStatesNumber(1));
   ASSERT(xx.state()[0].validTime() == windowHalf_);
   ASSERT(dx.state()[0].validTime() == windowHalf_);
   xx.state()[0] += dx.state()[0];
+  Log::trace() << "CostFct3DVar::addIncr done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

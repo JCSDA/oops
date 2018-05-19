@@ -100,6 +100,7 @@ void Model<MODEL>::forecast(State_ & xx, const ModelAux_ & maux,
   Log::info() << "Model:forecast: forecast starting: " << xx << std::endl;
   this->initialize(xx);
   post.initialize(xx, end, model_->timeResolution());
+  post.process(xx);
   while (xx.validTime() < end) {
     this->step(xx, maux);
     post.process(xx);

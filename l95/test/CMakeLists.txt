@@ -370,14 +370,6 @@ ecbuild_add_test( TARGET test_l95_localization
                   ARGS "testinput/interfaces.json"
                   LIBS    lorenz95 )
 
-# Test oops classes with lorenz95
-
-#ecbuild_add_test( TARGET test_l95_op_obs.x
-#                  BOOST
-#                  SOURCES executables/TestSuiteOpObs.cc
-#                  ARGS "testinput/test_op_obs.json"
-#                  LIBS    lorenz95 )
-
 # Test oops applications with lorenz95
 
 ecbuild_add_test( TARGET test_l95_hofx

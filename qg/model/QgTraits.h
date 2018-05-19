@@ -22,6 +22,7 @@
 #include "model/ModelBiasCovariance.h"
 #include "model/ModelBiasIncrement.h"
 #include "model/ModelQG.h"
+#include "model/Nothing.h"
 #include "model/ObsBias.h"
 #include "model/ObsBiasCovariance.h"
 #include "model/ObsBiasIncrement.h"
@@ -41,6 +42,7 @@ struct QgTraits {
   typedef qg::ModelQG               Model;
   typedef qg::IncrementQG           Increment;
   typedef qg::ErrorCovarianceQG     Covariance;
+  typedef qg::Nothing               InterpolatorTraj;
 
   typedef qg::ModelBias             ModelAuxControl;
   typedef qg::ModelBiasIncrement    ModelAuxIncrement;

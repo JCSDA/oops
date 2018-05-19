@@ -32,8 +32,7 @@
 namespace oops {
   template<typename MODEL> class ControlIncrement;
   template<typename MODEL> class JqTerm;
-  template<typename MODEL> class JqTermTL;
-  template<typename MODEL> class JqTermAD;
+  template<typename MODEL> class JqTermTLAD;
 
 // -----------------------------------------------------------------------------
 
@@ -60,6 +59,7 @@ template<typename MODEL> class CostJb4D : public CostJbState<MODEL> {
 
 /// Empty Jq observer.
   JqTerm<MODEL> * initializeJq() const override {return 0;}
+  JqTermTLAD<MODEL> * initializeJqTLAD() const override {return 0;}
 
 /// Get increment from state (usually first guess).
   void computeIncrement(const State4D_ &, const State4D_ &, Increment4D_ &) const override;
@@ -71,10 +71,10 @@ template<typename MODEL> class CostJb4D : public CostJbState<MODEL> {
   void addGradient(const Increment4D_ &, Increment4D_ &, Increment4D_ &) const override;
 
 /// Empty TL Jq observer.
-  JqTermTL<MODEL> * initializeJqTL() const override {return 0;}
+  JqTermTLAD<MODEL> * initializeJqTL() const override {return 0;}
 
 /// Empty AD Jq observer.
-  JqTermAD<MODEL> * initializeJqAD(const Increment4D_ &) const override {return 0;}
+  JqTermTLAD<MODEL> * initializeJqAD(const Increment4D_ &) const override {return 0;}
 
 /// Multiply by \f$ B\f$ and \f$ B^{-1}\f$.
   void Bmult(const Increment4D_ &, Increment4D_ &) const override;

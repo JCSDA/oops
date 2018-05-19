@@ -18,8 +18,7 @@
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/DualVector.h"
-#include "oops/base/PostProcessorAD.h"
-#include "oops/base/PostProcessorTL.h"
+#include "oops/base/PostProcessorTLAD.h"
 #include "oops/interface/Increment.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/formats.h"
@@ -67,7 +66,7 @@ void HtRinvHMatrix<MODEL>::multiply(const CtrlInc_ & dx, CtrlInc_ & dz) const {
   iter_++;
 
 // Setup TL terms of cost function
-  PostProcessorTL<Increment_> costtl;
+  PostProcessorTLAD<MODEL> costtl;
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
     costtl.enrollProcessor(j_.jterm(jj).setupTL(dx));
   }
@@ -78,7 +77,7 @@ void HtRinvHMatrix<MODEL>::multiply(const CtrlInc_ & dx, CtrlInc_ & dz) const {
 
 // Get TLM outputs, multiply by covariance inverses, and setup ADJ forcing terms
   j_.zeroAD(dz);
-  PostProcessorAD<Increment_> costad;
+  PostProcessorTLAD<MODEL> costad;
 
   DualVector<MODEL> ww;
   DualVector<MODEL> zz;

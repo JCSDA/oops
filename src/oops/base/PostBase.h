@@ -49,7 +49,6 @@ template <typename FLDS> class PostBase : private boost::noncopyable {
                   const util::Duration & tstep) {
     timer_.initialize(xx.validTime(), end, tstep);
     this->doInitialize(xx, end, tstep);
-    if (timer_.itIsTime(xx.validTime())) this->doProcessing(xx);
   }
 
 /// Process state or increment

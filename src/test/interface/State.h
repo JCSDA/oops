@@ -108,7 +108,7 @@ template <typename MODEL> void testStateConstructors() {
  * model.  The conceptual steps are as follows:
  * 1. Initialize the JEDI State object based on idealized analytic formulae
  * 2. Interpolate the State variables onto selected "observation" locations
- *    using the .interpolate() method of the State object.  The result is
+ *    using the getValues() method of the State object.  The result is
  *    placed in a JEDI GeoVaLs object
  * 3. Compute the correct solution by applying the analytic formulae directly
  *    at the observation locations.
@@ -166,7 +166,7 @@ template <typename MODEL> void testStateInterpolation() {
   GeoVaLs_ gval(locs, vars);
 
   // ...and execute the interpolation
-  xx.interpolate(locs, vars, gval);
+  xx.getValues(locs, vars, gval);
 
   // Now create another GeoVaLs object that contains the exact
   // analytic solutions

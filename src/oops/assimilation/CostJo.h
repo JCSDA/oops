@@ -26,14 +26,12 @@
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
-#include "oops/base/ObserverAD.h"
-#include "oops/base/ObserverTL.h"
+#include "oops/base/ObserverTLAD.h"
 #include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
-#include "oops/base/PostBaseAD.h"
-#include "oops/base/PostBaseTL.h"
+#include "oops/base/PostBaseTLAD.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/ObsAuxIncrement.h"
@@ -66,6 +64,8 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsOperators<MODEL>        ObsOperator_;
   typedef ObsSpaces<MODEL>           ObsSpace_;
+  typedef ObserverTLAD<MODEL>        ObserverTLAD_;
+  typedef PostBaseTLAD<MODEL>        PostBaseTLAD_;
   typedef LinearObsOperators<MODEL>  LinearObsOperator_;
 
  public:
@@ -78,18 +78,18 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
 
   /// Initialize \f$ J_o\f$ before starting the integration of the model.
   boost::shared_ptr<PostBase<State_> > initialize(const CtrlVar_ &) const override;
-  boost::shared_ptr<PostBase<State_> > initializeTraj(const CtrlVar_ &,
-                                                      const Geometry_ &,
-                                                      const eckit::Configuration &) override;
+  boost::shared_ptr<PostBaseTLAD_> initializeTraj(const CtrlVar_ &,
+                                                  const Geometry_ &,
+                                                  const eckit::Configuration &) override;
   /// Finalize \f$ J_o\f$ after the integration of the model.
   double finalize(const eckit::Configuration &) const override;
-  double finalizeTraj(const eckit::Configuration &) override;
+  void finalizeTraj() override;
 
   /// Initialize \f$ J_o\f$ before starting the TL run.
-  boost::shared_ptr<PostBaseTL<Increment_> > setupTL(const CtrlInc_ &) const override;
+  boost::shared_ptr<PostBaseTLAD_> setupTL(const CtrlInc_ &) const override;
 
   /// Initialize \f$ J_o\f$ before starting the AD run.
-  boost::shared_ptr<PostBaseAD<Increment_> > setupAD(
+  boost::shared_ptr<PostBaseTLAD_> setupAD(
            boost::shared_ptr<const GeneralizedDepartures>, CtrlInc_ &) const override;
 
   /// Multiply by \f$ R\f$ and \f$ R^{-1}\f$.
@@ -124,9 +124,8 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   const util::Duration tslot_;
 
   /// Linearized observation operators.
-  boost::shared_ptr<LinearObsOperator_> hoptlad_;
+  boost::shared_ptr<ObserverTLAD_> pobstlad_;
   const bool subwindows_;
-  bool ltraj_;
 };
 
 // =============================================================================
@@ -134,15 +133,16 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
 template<typename MODEL>
 CostJo<MODEL>::CostJo(const eckit::Configuration & joConf,
                       const util::DateTime & winbgn, const util::DateTime & winend,
-                      const util::Duration & ts, const bool subwindows)
+                      const util::Duration & tslot, const bool subwindows)
   : obspace_(joConf, winbgn, winend),
     hop_(obspace_), yobs_(obspace_), R_(obspace_),
-    gradFG_(), pobs_(), tslot_(ts),
-    hoptlad_(), subwindows_(subwindows), ltraj_(false)
+    gradFG_(), pobs_(), tslot_(tslot),
+    pobstlad_(), subwindows_(subwindows)
 {
+  Log::trace() << "CostJo::CostJo start" << std::endl;
   Log::debug() << "CostJo:setup tslot_ = " << tslot_ << std::endl;
   yobs_.read(joConf);
-  Log::trace() << "CostJo:CostJo done" << std::endl;
+  Log::trace() << "CostJo::CostJo done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -150,11 +150,12 @@ CostJo<MODEL>::CostJo(const eckit::Configuration & joConf,
 template<typename MODEL>
 boost::shared_ptr<PostBase<State<MODEL> > >
 CostJo<MODEL>::initialize(const CtrlVar_ & xx) const {
-  ASSERT(ltraj_ == false);
+  Log::trace() << "CostJo::initialize start" << std::endl;
   const eckit::LocalConfiguration conf;
   ObsFilters_ filter(obspace_, conf);
   pobs_.reset(new Observer<MODEL, State_>(obspace_, hop_, xx.obsVar(), filter,
                                           tslot_, subwindows_));
+  Log::trace() << "CostJo::initialize done" << std::endl;
   return pobs_;
 }
 
@@ -162,8 +163,7 @@ CostJo<MODEL>::initialize(const CtrlVar_ & xx) const {
 
 template<typename MODEL>
 double CostJo<MODEL>::finalize(const eckit::Configuration & conf) const {
-  ASSERT(ltraj_ == false);
-
+  Log::trace() << "CostJo::finalize start" << std::endl;
   boost::scoped_ptr<Observations_> yeqv(pobs_->release());
   Log::info() << "Jo Observation Equivalent:" << *yeqv << std::endl;
 
@@ -180,81 +180,70 @@ double CostJo<MODEL>::finalize(const eckit::Configuration & conf) const {
   }
 
   pobs_.reset();
+  Log::trace() << "CostJo::finalize done" << std::endl;
   return zjo;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-boost::shared_ptr<PostBase<State<MODEL> > >
+boost::shared_ptr<PostBaseTLAD<MODEL> >
 CostJo<MODEL>::initializeTraj(const CtrlVar_ & xx, const Geometry_ &,
                               const eckit::Configuration & conf) {
-  ltraj_ = true;
-  hoptlad_.reset(new LinearObsOperator_(obspace_));
+  Log::trace() << "CostJo::initializeTraj start" << std::endl;
   ObsFilters_ filter(obspace_, conf);
-  pobs_.reset(new Observer<MODEL, State_>(obspace_, hop_, xx.obsVar(), filter,
-                                          tslot_, subwindows_, hoptlad_));
-  return pobs_;
+  pobstlad_.reset(new ObserverTLAD_(obspace_, hop_, xx.obsVar(), filter,
+                                    tslot_, subwindows_));
+  Log::trace() << "CostJo::initializeTraj done" << std::endl;
+  return pobstlad_;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-double CostJo<MODEL>::finalizeTraj(const eckit::Configuration & conf) {
-  ASSERT(ltraj_);
-
-  boost::scoped_ptr<Observations_> yeqv(pobs_->release());
-  Log::info() << "Jo Observation Equivalent:" << *yeqv << std::endl;
+void CostJo<MODEL>::finalizeTraj() {
+  Log::trace() << "CostJo::finalizeTraj start" << std::endl;
+  boost::scoped_ptr<Observations_> yeqv(pobstlad_->release());
+  Log::info() << "Jo Traj Observation Equivalent:" << *yeqv << std::endl;
   R_.linearize(*yeqv);
 
   Departures_ ydep(*yeqv - yobs_);
-  Log::info() << "Jo Departures:" << ydep << std::endl;
+  Log::info() << "Jo Traj Departures:" << ydep << std::endl;
 
   gradFG_.reset(R_.inverseMultiply(ydep));
-
-  double zjo = this->printJo(ydep, *gradFG_);
-
-  if (conf.has("departures")) {
-    const std::string depname = conf.getString("departures");
-    ydep.save(depname);
-  }
-
-  ltraj_ = false;
-
-  pobs_.reset();
-  return zjo;
+  Log::trace() << "CostJo::finalizeTraj done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-boost::shared_ptr<PostBaseTL<Increment<MODEL> > > CostJo<MODEL>::setupTL(
-                               const CtrlInc_ & dx) const {
-  ASSERT(hoptlad_);
-  boost::shared_ptr<PostBaseTL<Increment_> > spobs;
-  spobs.reset(new ObserverTL<MODEL, Increment_>(obspace_, *hoptlad_, dx.obsVar(),
-                                                tslot_, subwindows_));
-  return spobs;
+boost::shared_ptr<PostBaseTLAD<MODEL> > CostJo<MODEL>::setupTL(const CtrlInc_ & dx) const {
+  Log::trace() << "CostJo::setupTL start" << std::endl;
+  ASSERT(pobstlad_);
+  pobstlad_->setupTL(dx.obsVar());
+  Log::trace() << "CostJo::setupTL done" << std::endl;
+  return pobstlad_;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-boost::shared_ptr<PostBaseAD<Increment<MODEL> > > CostJo<MODEL>::setupAD(
+boost::shared_ptr<PostBaseTLAD<MODEL> > CostJo<MODEL>::setupAD(
                                boost::shared_ptr<const GeneralizedDepartures> pv,
                                CtrlInc_ & dx) const {
-  ASSERT(hoptlad_);
+  Log::trace() << "CostJo::setupAD start" << std::endl;
+  ASSERT(pobstlad_);
   boost::shared_ptr<const Departures_> dy = boost::dynamic_pointer_cast<const Departures_>(pv);
-  boost::shared_ptr<PostBaseAD<Increment_> > spobs;
-  spobs.reset(new ObserverAD<MODEL, Increment_>(obspace_, *hoptlad_, dy, dx.obsVar(),
-                                                tslot_, subwindows_));
-  return spobs;
+  pobstlad_->setupAD(dy, dx.obsVar());
+  Log::trace() << "CostJo::setupAD done" << std::endl;
+  return pobstlad_;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 Departures<MODEL> * CostJo<MODEL>::multiplyCovar(const GeneralizedDepartures & v1) const {
+  Log::trace() << "CostJo::multiplyCovar start" << std::endl;
   const Departures_ & y1 = dynamic_cast<const Departures_ &>(v1);
   return R_.multiply(y1);
 }
@@ -263,6 +252,7 @@ Departures<MODEL> * CostJo<MODEL>::multiplyCovar(const GeneralizedDepartures & v
 
 template<typename MODEL>
 Departures<MODEL> * CostJo<MODEL>::multiplyCoInv(const GeneralizedDepartures & v1) const {
+  Log::trace() << "CostJo::multiplyCoInv start" << std::endl;
   const Departures_ & y1 = dynamic_cast<const Departures_ &>(v1);
   return R_.inverseMultiply(y1);
 }
@@ -271,8 +261,10 @@ Departures<MODEL> * CostJo<MODEL>::multiplyCoInv(const GeneralizedDepartures & v
 
 template<typename MODEL>
 Departures<MODEL> * CostJo<MODEL>::newDualVector() const {
+  Log::trace() << "CostJo::newDualVector start" << std::endl;
   Departures_ * ydep = new Departures_(obspace_);
   ydep->zero();
+  Log::trace() << "CostJo::newDualVector done" << std::endl;
   return ydep;
 }
 
@@ -280,13 +272,16 @@ Departures<MODEL> * CostJo<MODEL>::newDualVector() const {
 
 template<typename MODEL>
 void CostJo<MODEL>::resetLinearization() {
-  hoptlad_.reset();
+  Log::trace() << "CostJo::resetLinearization start" << std::endl;
+  pobstlad_.reset();
+  Log::trace() << "CostJo::resetLinearization done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 double CostJo<MODEL>::printJo(const Departures_ & dy, const Departures_ & grad) const {
+  Log::trace() << "CostJo::printJo start" << std::endl;
   obspace_.printJo(dy, grad);
 
   double zjo = 0.0;
@@ -304,6 +299,7 @@ double CostJo<MODEL>::printJo(const Departures_ & dy, const Departures_ & grad) 
     zjo += zz;
   }
 
+  Log::trace() << "CostJo::printJo done" << std::endl;
   return zjo;
 }
 

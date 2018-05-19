@@ -31,6 +31,7 @@
 #include "oops/base/instantiateCovarFactory.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/PostProcessor.h"
+#include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/TrajectorySaver.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/instantiateTlmFactory.h"
@@ -114,8 +115,9 @@ template <typename MODEL> class LinearModelFixture : private boost::noncopyable 
     oops::instantiateTlmFactory<MODEL>();
     boost::ptr_vector<LinearModel_> tlmvec;
     oops::PostProcessor<State_> post;
-    post.enrollProcessor(new oops::TrajectorySaver<MODEL>(*xref_, *tlConf_, *resol_,
-                                                          *bias_, tlmvec));
+    oops::PostProcessorTLAD<MODEL> pptraj;
+    post.enrollProcessor(new oops::TrajectorySaver<MODEL>(*tlConf_, *resol_, *bias_, tlmvec,
+                                                          pptraj));
     State_ xx(*xref_);
     model_->forecast(xx, *bias_, len, post);
     tlm_.reset(tlmvec.release(tlmvec.begin()).release());

@@ -21,8 +21,7 @@
 #include "oops/assimilation/CostJbState.h"
 #include "oops/assimilation/Increment4D.h"
 #include "oops/assimilation/JqTerm.h"
-#include "oops/assimilation/JqTermAD.h"
-#include "oops/assimilation/JqTermTL.h"
+#include "oops/assimilation/JqTermTLAD.h"
 #include "oops/assimilation/State4D.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/Variables.h"
@@ -60,6 +59,7 @@ template<typename MODEL> class CostJbJq : public CostJbState<MODEL> {
 
 /// Finalize \f$ J_q\f$ after the model run.
   JqTerm<MODEL> * initializeJq() const override;
+  JqTermTLAD<MODEL> * initializeJqTLAD() const override;
 
 /// Get increment from state (usually first guess).
   void computeIncrement(const State4D_ &, const State4D_ &, Increment4D_ &) const override;
@@ -71,10 +71,10 @@ template<typename MODEL> class CostJbJq : public CostJbState<MODEL> {
   void addGradient(const Increment4D_ &, Increment4D_ &, Increment4D_ &) const override;
 
 /// Finalize \f$ J_q\f$ after the TL run.
-  JqTermTL<MODEL> * initializeJqTL() const override;
+  JqTermTLAD<MODEL> * initializeJqTL() const override;
 
 /// Initialize \f$ J_q\f$ forcing before the AD run.
-  JqTermAD<MODEL> * initializeJqAD(const Increment4D_ &) const override;
+  JqTermTLAD<MODEL> * initializeJqAD(const Increment4D_ &) const override;
 
 /// Multiply by \f$ B\f$ and \f$ B^{-1}\f$.
   void Bmult(const Increment4D_ &, Increment4D_ &) const override;
@@ -165,18 +165,28 @@ JqTerm<MODEL> * CostJbJq<MODEL>::initializeJq() const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-JqTermTL<MODEL> * CostJbJq<MODEL>::initializeJqTL() const {
-  JqTermTL<MODEL> * jqtl = 0;
-  if (!forcing_) jqtl = new JqTermTL<MODEL>(B_.size());
+JqTermTLAD<MODEL> * CostJbJq<MODEL>::initializeJqTLAD() const {
+  return new JqTermTLAD<MODEL>(B_.size());
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+JqTermTLAD<MODEL> * CostJbJq<MODEL>::initializeJqTL() const {
+  JqTermTLAD<MODEL> * jqtl = 0;
+  if (!forcing_) jqtl = new JqTermTLAD<MODEL>(B_.size());
   return jqtl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-JqTermAD<MODEL> * CostJbJq<MODEL>::initializeJqAD(const Increment4D_ & dx) const {
-  JqTermAD<MODEL> * jqad = 0;
-  if (!forcing_) jqad = new JqTermAD<MODEL>(B_.size(), dx);
+JqTermTLAD<MODEL> * CostJbJq<MODEL>::initializeJqAD(const Increment4D_ & dx) const {
+  JqTermTLAD<MODEL> * jqad = 0;
+  if (!forcing_) {
+    jqad = new JqTermTLAD<MODEL>(B_.size());
+    jqad->setupAD(dx);
+  }
   return jqad;
 }
 
@@ -192,7 +202,7 @@ void CostJbJq<MODEL>::Bmult(const Increment4D_ & dxin, Increment4D_ & dxout) con
                    << 0.5 * dot_product(dxin[0], dxout[0]) << std::endl;
     } else {
       Log::debug() << "CostJbJq:multiply Jq(" << jsub << ") is "
-                   << 0.5 * dot_product(dxin[jsub], dxout[jsub]);
+                   << 0.5 * dot_product(dxin[jsub], dxout[jsub]) << std::endl;
     }
   }
 }
@@ -219,7 +229,7 @@ void CostJbJq<MODEL>::Bminv(const Increment4D_ & dxin, Increment4D_ & dxout) con
                    << 0.5 * dot_product(dxin[0], dxout[0]) << std::endl;
     } else {
       Log::debug() << "CostJbJq:inverseMultiply Jq(" << jsub << ") is "
-                   << 0.5 * dot_product(dxin[jsub], dxout[jsub]);
+                   << 0.5 * dot_product(dxin[jsub], dxout[jsub]) << std::endl;
     }
   }
   Log::warning() << "*** B inverse might not always exist ***" << std::endl;

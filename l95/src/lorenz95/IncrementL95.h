@@ -38,6 +38,7 @@ namespace lorenz95 {
   class LocsL95;
   class ModelBiasCorrection;
   class StateL95;
+  class Nothing;
 
 /// Increment Class: Difference between two states
 /*!
@@ -73,9 +74,11 @@ class IncrementL95 : public util::Printable,
   void schur_product_with(const IncrementL95 &);
   void random();
 
-/// Interpolate to observation location
-  void interpolateTL(const LocsL95 &, const oops::Variables &, GomL95 &) const;
-  void interpolateAD(const LocsL95 &, const oops::Variables &, const GomL95 &);
+/// Get increment values at obs locations
+  void getValuesTL(const LocsL95 &, const oops::Variables &,
+                   GomL95 &, const Nothing &) const;
+  void getValuesAD(const LocsL95 &, const oops::Variables &,
+                   const GomL95 &, const Nothing &);
 
 /// Define and convert to/from generic unstructured grid
   void define(oops::UnstructuredGrid &) const;

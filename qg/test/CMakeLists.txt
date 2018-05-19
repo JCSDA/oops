@@ -271,11 +271,6 @@ ecbuild_add_test( TARGET  test_qg_localization
 
 # Test oops classes with QG
 
-#ecbuild_add_test( TARGET test_qg_op_obs.x
-#                  BOOST
-#                  SOURCES executables/TestSuiteOpObs.cc
-#                  ARGS "testinput/test_op_obs.json"
-#                  LIBS    qg )
 
 # Test oops applications with QG
 

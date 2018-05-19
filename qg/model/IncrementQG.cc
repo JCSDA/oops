@@ -22,6 +22,7 @@
 #include "model/GomQG.h"
 #include "model/LocationsQG.h"
 #include "model/ModelBiasIncrement.h"
+#include "model/Nothing.h"
 #include "model/StateQG.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/UnstructuredGrid.h"
@@ -151,20 +152,16 @@ void IncrementQG::dirac(const eckit::Configuration & config) {
   fields_->dirac(config);
 }
 // -----------------------------------------------------------------------------
-/// Interpolate to observation location
+/// Get increment values at observation locations
 // -----------------------------------------------------------------------------
-void IncrementQG::interpolateTL(const LocationsQG & locs, const oops::Variables & vars,
-                                GomQG & cols) const {
-  oops::Log::debug() << "IncrementQG::interpolateTL fields in" << *fields_ << std::endl;
-  fields_->interpolateTL(locs, vars, cols);
-  oops::Log::debug() << "IncrementQG::interpolateTL gom " << cols << std::endl;
+void IncrementQG::getValuesTL(const LocationsQG & locs, const oops::Variables & vars,
+                              GomQG & cols, const Nothing &) const {
+  fields_->getValuesTL(locs, vars, cols);
 }
 // -----------------------------------------------------------------------------
-void IncrementQG::interpolateAD(const LocationsQG & locs, const oops::Variables & vars,
-                                const GomQG & cols) {
-  oops::Log::debug() << "IncrementQG::interpolateAD gom " << cols << std::endl;
-  oops::Log::debug() << "IncrementQG::interpolateAD fields in" << *fields_ << std::endl;
-  fields_->interpolateAD(locs, vars, cols);
+void IncrementQG::getValuesAD(const LocationsQG & locs, const oops::Variables & vars,
+                              const GomQG & cols, const Nothing &) {
+  fields_->getValuesAD(locs, vars, cols);
 }
 // -----------------------------------------------------------------------------
 /// Convert to/from unstructured grid

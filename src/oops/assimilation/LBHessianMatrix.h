@@ -16,13 +16,11 @@
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/base/GeneralizedDepartures.h"
-#include "oops/base/PostProcessorAD.h"
-#include "oops/base/PostProcessorTL.h"
+#include "oops/base/PostProcessorTLAD.h"
 #include "oops/interface/Increment.h"
 
 namespace oops {
-  template<typename MODEL> class JqTermTL;
-  template<typename MODEL> class JqTermAD;
+  template<typename MODEL> class JqTermTLAD;
 
 /// The Hessian matrix: \f$ I  + B H^T R^{-1} H \f$.
 /*!
@@ -35,16 +33,15 @@ template<typename MODEL> class LBHessianMatrix : private boost::noncopyable {
   typedef Increment<MODEL>           Increment_;
   typedef ControlIncrement<MODEL>    CtrlInc_;
   typedef CostFunction<MODEL>        CostFct_;
-  typedef JqTermAD<MODEL>            JqTermAD_;
-  typedef JqTermTL<MODEL>            JqTermTL_;
+  typedef JqTermTLAD<MODEL>          JqTermTLAD_;
 
  public:
   explicit LBHessianMatrix(const CostFct_ & j): j_(j) {}
 
   void multiply(const CtrlInc_ & dx, CtrlInc_ & dz) const {
 //  Setup TL terms of cost function
-    PostProcessorTL<Increment_> costtl;
-    JqTermTL_ * jqtl = j_.jb().initializeTL();
+    PostProcessorTLAD<MODEL> costtl;
+    JqTermTLAD_ * jqtl = j_.jb().initializeTL();
     costtl.enrollProcessor(jqtl);
     unsigned iq = 0;
     if (jqtl) iq = 1;
@@ -59,7 +56,7 @@ template<typename MODEL> class LBHessianMatrix : private boost::noncopyable {
 //  Finalize Jb+Jq
 
 //  Get TLM outputs, multiply by covariance inverses and setup ADJ forcing terms
-    PostProcessorAD<Increment_> costad;
+    PostProcessorTLAD<MODEL> costad;
     dz.zero();
     CtrlInc_ dw(j_.jb());
 
@@ -67,7 +64,7 @@ template<typename MODEL> class LBHessianMatrix : private boost::noncopyable {
     CtrlInc_ tmp(j_.jb());
     j_.jb().finalizeTL(jqtl, dx, dw);
     tmp = dw;
-    JqTermAD_ * jqad = j_.jb().initializeAD(dz, tmp);
+    JqTermTLAD_ * jqad = j_.jb().initializeAD(dz, tmp);
     costad.enrollProcessor(jqad);
 
     j_.zeroAD(dw);

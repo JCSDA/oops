@@ -27,9 +27,10 @@
 #include "oops/assimilation/CostJo.h"
 #include "oops/assimilation/CostTermBase.h"
 #include "oops/assimilation/DualVector.h"
+#include "oops/assimilation/JqTerm.h"
+#include "oops/assimilation/JqTermTLAD.h"
 #include "oops/base/PostProcessor.h"
-#include "oops/base/PostProcessorAD.h"
-#include "oops/base/PostProcessorTL.h"
+#include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/TrajectorySaver.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -43,7 +44,6 @@
 #include "oops/util/Logger.h"
 
 namespace oops {
-  template<typename MODEL> class JqTerm;
 
 // -----------------------------------------------------------------------------
 
@@ -59,6 +59,7 @@ template<typename MODEL> class CostFunction : private boost::noncopyable {
   typedef CostJbTotal<MODEL>         JbTotal_;
   typedef CostTermBase<MODEL>        CostBase_;
   typedef JqTerm<MODEL>              JqTerm_;
+  typedef JqTermTLAD<MODEL>          JqTermTLAD_;
   typedef Geometry<MODEL>            Geometry_;
   typedef Model<MODEL>               Model_;
   typedef LinearModel<MODEL>         LinearModel_;
@@ -75,10 +76,10 @@ template<typename MODEL> class CostFunction : private boost::noncopyable {
   double linearize(const CtrlVar_ &, const eckit::Configuration &,
                    PostProcessor<State_> post = PostProcessor<State_>() );
 
-  virtual void runTLM(CtrlInc_ &, PostProcessorTL<Increment_> &,
+  virtual void runTLM(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
                       PostProcessor<Increment_> post = PostProcessor<Increment_>(),
                       const bool idModel = false) const = 0;
-  virtual void runADJ(CtrlInc_ &, PostProcessorAD<Increment_> &,
+  virtual void runADJ(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
                       PostProcessor<Increment_> post = PostProcessor<Increment_>(),
                       const bool idModel = false) const = 0;
   virtual void zeroAD(CtrlInc_ &) const = 0;
@@ -205,19 +206,19 @@ CostFunction<MODEL>::CostFunction(const Geometry_ & resol, const Model_ & model)
 
 template<typename MODEL>
 void CostFunction<MODEL>::setupTerms(const eckit::Configuration & config) {
-  Log::trace() << "CostFunction: setupTerms starting" << std::endl;
+  Log::trace() << "CostFunction::setupTerms start" << std::endl;
 
 // Jo
   eckit::LocalConfiguration joconf(config, "Jo");
   CostJo<MODEL> * jo = this->newJo(joconf);
   jterms_.push_back(jo);
-  Log::trace() << "CostFunction: setupTerms Jo added" << std::endl;
+  Log::trace() << "CostFunction::setupTerms Jo added" << std::endl;
 
 // Jb
   const eckit::LocalConfiguration jbConf(config, "Jb");
   xb_.reset(new CtrlVar_(eckit::LocalConfiguration(jbConf, "Background"), resol_));
   jb_.reset(new JbTotal_(*xb_, this->newJb(jbConf, resol_, *xb_), jbConf, resol_));
-  Log::trace() << "CostFunction: setupTerms Jb added" << std::endl;
+  Log::trace() << "CostFunction::setupTerms Jb added" << std::endl;
 
 // Other constraints
   std::vector<eckit::LocalConfiguration> jcs;
@@ -226,8 +227,7 @@ void CostFunction<MODEL>::setupTerms(const eckit::Configuration & config) {
     CostTermBase<MODEL> * jc = this->newJc(jcs[jj], resol_);
     jterms_.push_back(jc);
   }
-  Log::trace() << "CostFunction: setupTerms Jc added" << std::endl;
-  Log::trace() << "CostFunction: setupTerms done" << std::endl;
+  Log::trace() << "CostFunction::setupTerms done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -236,6 +236,7 @@ template<typename MODEL>
 double CostFunction<MODEL>::evaluate(const CtrlVar_ & fguess,
                                      const eckit::Configuration & config,
                                      PostProcessor<State_> post) const {
+  Log::trace() << "CostFunction::evaluate start" << std::endl;
 // Setup terms of cost function
   PostProcessor<State_> pp(post);
   JqTerm_ * jq = jb_->initialize(fguess);
@@ -258,6 +259,7 @@ double CostFunction<MODEL>::evaluate(const CtrlVar_ & fguess,
     zzz += jterms_[jj].finalize(diagnostic);
   }
   Log::test() << "CostFunction: Nonlinear J = " << zzz << std::endl;
+  Log::trace() << "CostFunction::evaluate done" << std::endl;
   return zzz;
 }
 
@@ -267,49 +269,45 @@ template<typename MODEL>
 double CostFunction<MODEL>::linearize(const CtrlVar_ & fguess,
                                       const eckit::Configuration & innerConf,
                                       PostProcessor<State_> post) {
-// Read inner loop configuration
+  Log::trace() << "CostFunction::linearize start" << std::endl;
+// Inner loop resolution
   const eckit::LocalConfiguration resConf(innerConf, "resolution");
-  const eckit::LocalConfiguration tlmConf(innerConf, "linearmodel");
-  eckit::LocalConfiguration diagnostic;
-  if (innerConf.has("diagnostics")) {
-    diagnostic = eckit::LocalConfiguration(innerConf, "diagnostics");
-  }
   const Geometry_ lowres(resConf);
 
-// Setup terms of cost function
-  PostProcessor<State_> pp(post);
-  JqTerm_ * jq = jb_->initializeTraj(fguess, lowres);
-  pp.enrollProcessor(jq);
+// Setup trajectory for terms of cost function
+  PostProcessorTLAD<MODEL> pptraj;
+  JqTermTLAD_ * jq = jb_->initializeTraj(fguess, lowres);
+  pptraj.enrollProcessor(jq);
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
-    pp.enrollProcessor(jterms_[jj].initializeTraj(fguess, lowres, innerConf));
+    pptraj.enrollProcessor(jterms_[jj].initializeTraj(fguess, lowres, innerConf));
   }
 
 // Setup linear model (and trajectory)
-  tlm_.clear();
-  pp.enrollProcessor(
-    new TrajectorySaver<MODEL>(fguess.state()[0], tlmConf, lowres, fguess.modVar(), tlm_));
+// YT: TrajectorySaver should be QuadraticCostFunction
+  const eckit::LocalConfiguration tlmConf(innerConf, "linearmodel");
+  tlm_.clear();   // YT: Should release at the end and should be inside quadratic J object
+  PostProcessor<State_> pp(post);
+  pp.enrollProcessor(new TrajectorySaver<MODEL>(tlmConf, lowres, fguess.modVar(), tlm_, pptraj));
 
 // Run NL model
-  CtrlVar_ mfguess(fguess);
-  this->runNL(mfguess, pp);
+  double zzz = this->evaluate(fguess, innerConf, pp);
 
-// Cost function value
-  costJb_ = jb_->finalizeTraj(jq);
-  costJoJc_ = 0.0;
+// Finalize trajectory setup
+  jb_->finalizeTraj(jq);
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
-    costJoJc_ += jterms_[jj].finalizeTraj(diagnostic);
+    jterms_[jj].finalizeTraj();
   }
-  double costJ = costJb_ + costJoJc_;
-  Log::test() << "CostFunction: Nonlinear J = " << costJ << std::endl;
-  return costJ;
+  Log::trace() << "CostFunction::linearize done" << std::endl;
+  return zzz;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 void CostFunction<MODEL>::computeGradientFG(CtrlInc_ & grad) const {
+  Log::trace() << "CostFunction::computeGradientFG start" << std::endl;
   PostProcessor<Increment_> pp;
-  PostProcessorAD<Increment_> costad;
+  PostProcessorTLAD<MODEL> costad;
   this->zeroAD(grad);
 
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
@@ -318,6 +316,7 @@ void CostFunction<MODEL>::computeGradientFG(CtrlInc_ & grad) const {
   }
 
   this->runADJ(grad, costad, pp);
+  Log::trace() << "CostFunction::computeGradientFG done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -325,7 +324,7 @@ void CostFunction<MODEL>::computeGradientFG(CtrlInc_ & grad) const {
 template<typename MODEL>
 void CostFunction<MODEL>::addIncrement(CtrlVar_ & xx, const CtrlInc_ & dx,
                                        PostProcessor<Increment_> post) const {
-  Log::info() << std::endl;
+  Log::trace() << "CostFunction::addIncrement start" << std::endl;
   Log::info() << "CostFunction::addIncrement: First guess:" << xx << std::endl;
   Log::info() << "CostFunction::addIncrement: Increment:" << dx << std::endl;
 
@@ -335,17 +334,19 @@ void CostFunction<MODEL>::addIncrement(CtrlVar_ & xx, const CtrlInc_ & dx,
 
   Log::info() << "CostFunction::addIncrement: Analysis:" << xx << std::endl;
   Log::test() << "CostFunction::addIncrement: Analysis norm: " << xx.norm() << std::endl;
-  Log::info() << std::endl;
+  Log::trace() << "CostFunction::addIncrement done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 void CostFunction<MODEL>::resetLinearization() {
+  Log::trace() << "CostFunction::resetLinearization start" << std::endl;
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
     jterms_[jj].resetLinearization();
   }
   tlm_.clear();
+  Log::trace() << "CostFunction::resetLinearization done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
