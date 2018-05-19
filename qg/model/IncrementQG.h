@@ -77,11 +77,11 @@ class IncrementQG : public oops::GeneralizedDepartures,
   void schur_product_with(const IncrementQG &);
   void random();
 
-/// Interpolate to observation location
-  void interpolateTL(const LocationsQG &, const oops::Variables &,
-                     GomQG &, const Nothing &) const;
-  void interpolateAD(const LocationsQG &, const oops::Variables &,
-                     const GomQG &, const Nothing &);
+/// Get increment values at observation locations
+  void getValuesTL(const LocationsQG &, const oops::Variables &,
+                   GomQG &, const Nothing &) const;
+  void getValuesAD(const LocationsQG &, const oops::Variables &,
+                   const GomQG &, const Nothing &);
 
 /// I/O and diagnostics
   void read(const eckit::Configuration &);

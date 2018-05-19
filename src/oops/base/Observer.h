@@ -139,9 +139,9 @@ void Observer<MODEL, STATE>::doProcessing(const STATE & xx) {
   if (t1 < bgn_) t1 = bgn_;
   if (t2 > end_) t2 = end_;
 
-// Interpolate state variables to obs locations
+// Get state variables at obs locations
   for (size_t jj = 0; jj < obspace_.size(); ++jj) {
-    xx.interpolate(obspace_[jj].locations(t1, t2), hop_.variables(jj), *gvals_.at(jj));
+    xx.getValues(obspace_[jj].locations(t1, t2), hop_.variables(jj), *gvals_.at(jj));
   }
   Log::trace() << "Observer::doProcessing done" << std::endl;
 }
@@ -154,10 +154,9 @@ void Observer<MODEL, STATE>::processTraj(const STATE & xx, InterpolatorTLAD_ & t
   if (t1 < bgn_) t1 = bgn_;
   if (t2 > end_) t2 = end_;
 
-// Interpolate state variables to obs locations
+// Get state variables at obs locations and trajectory
   for (size_t jj = 0; jj < obspace_.size(); ++jj) {
-    xx.interpolate(obspace_[jj].locations(t1, t2), hop_.variables(jj),
-                   *gvals_.at(jj), traj[jj]);
+    xx.getValues(obspace_[jj].locations(t1, t2), hop_.variables(jj), *gvals_.at(jj), traj[jj]);
   }
   Log::trace() << "Observer::processTraj done" << std::endl;
 }

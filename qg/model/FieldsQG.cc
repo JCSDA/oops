@@ -119,20 +119,20 @@ void FieldsQG::random() {
   qg_field_random_f90(keyFlds_);
 }
 // -----------------------------------------------------------------------------
-void FieldsQG::interpolate(const LocationsQG & locs, const oops::Variables & vars,
+void FieldsQG::getValues(const LocationsQG & locs, const oops::Variables & vars,
+                         GomQG & gom) const {
+  const VariablesQG varqg(vars);
+  qg_field_interp_tl_f90(keyFlds_, locs.toFortran(), varqg.toFortran(), gom.toFortran());
+}
+// -----------------------------------------------------------------------------
+void FieldsQG::getValuesTL(const LocationsQG & locs, const oops::Variables & vars,
                            GomQG & gom) const {
   const VariablesQG varqg(vars);
   qg_field_interp_tl_f90(keyFlds_, locs.toFortran(), varqg.toFortran(), gom.toFortran());
 }
 // -----------------------------------------------------------------------------
-void FieldsQG::interpolateTL(const LocationsQG & locs, const oops::Variables & vars,
-                             GomQG & gom) const {
-  const VariablesQG varqg(vars);
-  qg_field_interp_tl_f90(keyFlds_, locs.toFortran(), varqg.toFortran(), gom.toFortran());
-}
-// -----------------------------------------------------------------------------
-void FieldsQG::interpolateAD(const LocationsQG & locs, const oops::Variables & vars,
-                             const GomQG & gom) {
+void FieldsQG::getValuesAD(const LocationsQG & locs, const oops::Variables & vars,
+                           const GomQG & gom) {
   const VariablesQG varqg(vars);
   qg_field_interp_ad_f90(keyFlds_, locs.toFortran(), varqg.toFortran(), gom.toFortran());
 }

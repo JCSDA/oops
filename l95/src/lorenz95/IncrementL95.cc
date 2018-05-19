@@ -180,15 +180,15 @@ void IncrementL95::print(std::ostream & os) const {
   os << std::endl << fld_;
 }
 // -----------------------------------------------------------------------------
-/// Interpolate to observation location
+/// Get increment values at obs locations
 // -----------------------------------------------------------------------------
-void IncrementL95::interpolateTL(const LocsL95 & locs, const oops::Variables &,
-                                 GomL95 & vals, const Nothing &) const {
+void IncrementL95::getValuesTL(const LocsL95 & locs, const oops::Variables &,
+                               GomL95 & vals, const Nothing &) const {
   fld_.interp(locs, vals);
 }
 // -----------------------------------------------------------------------------
-void IncrementL95::interpolateAD(const LocsL95 & locs, const oops::Variables &,
-                                 const GomL95 & vals, const Nothing &) {
+void IncrementL95::getValuesAD(const LocsL95 & locs, const oops::Variables &,
+                               const GomL95 & vals, const Nothing &) {
   fld_.interpAD(locs, vals);
 }
 // -----------------------------------------------------------------------------

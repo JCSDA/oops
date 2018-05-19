@@ -181,10 +181,10 @@ void ObserverTLAD<MODEL>::doProcessingTL(const Increment_ & dx) {
   if (t1 < bgn_) t1 = bgn_;
   if (t2 > end_) t2 = end_;
 
-// Interpolate state variables to obs locations
+// Get increment variables at obs locations
   for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
-    dx.interpolateTL(obspace_[jj].locations(t1, t2), hoptlad_.variables(jj),
-                     *gvals_.at(jj), interptlad_[jj]);
+    dx.getValuesTL(obspace_[jj].locations(t1, t2), hoptlad_.variables(jj),
+                   *gvals_.at(jj), interptlad_[jj]);
   }
   Log::trace() << "ObserverTLAD::doProcessingTL done" << std::endl;
 }
@@ -243,10 +243,10 @@ void ObserverTLAD<MODEL>::doProcessingAD(Increment_ & dx) {
   if (t1 < bgn_) t1 = bgn_;
   if (t2 > end_) t2 = end_;
 
-// Adjoint of interpolate state variables to obs locations
+// Adjoint of get increment variables at obs locations
   for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
-    dx.interpolateAD(obspace_[jj].locations(t1, t2), hoptlad_.variables(jj),
-                     *gvals_.at(jj), interptlad_[jj]);
+    dx.getValuesAD(obspace_[jj].locations(t1, t2), hoptlad_.variables(jj),
+                   *gvals_.at(jj), interptlad_[jj]);
   }
   Log::trace() << "ObserverTLAD::doProcessingAD done" << std::endl;
 }

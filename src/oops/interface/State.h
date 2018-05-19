@@ -56,9 +56,9 @@ class State : public util::Printable,
   State_ & state() {return *state_;}
   const State_ & state() const {return *state_;}
 
-/// Interpolate to observation location
-  void interpolate(const Locations_ &, const Variables &, GeoVaLs_ &) const;
-  void interpolate(const Locations_ &, const Variables &, GeoVaLs_ &, InterpolatorTraj_ &) const;
+/// Get state values at observation locations
+  void getValues(const Locations_ &, const Variables &, GeoVaLs_ &) const;
+  void getValues(const Locations_ &, const Variables &, GeoVaLs_ &, InterpolatorTraj_ &) const;
 
 /// Time
   const util::DateTime validTime() const {return state_->validTime();}
@@ -149,23 +149,23 @@ State<MODEL> & State<MODEL>::operator=(const State & rhs) {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void State<MODEL>::interpolate(const Locations_ & locs, const Variables & vars,
-                               GeoVaLs_ & gvals) const {
-  Log::trace() << "State<MODEL>::interpolate starting" << std::endl;
-  util::Timer timer(classname(), "interpolate");
-  state_->interpolate(locs.locations(), vars, gvals.geovals());
-  Log::trace() << "State<MODEL>::interpolate done" << std::endl;
+void State<MODEL>::getValues(const Locations_ & locs, const Variables & vars,
+                             GeoVaLs_ & gvals) const {
+  Log::trace() << "State<MODEL>::getValues starting" << std::endl;
+  util::Timer timer(classname(), "getValues");
+  state_->getValues(locs.locations(), vars, gvals.geovals());
+  Log::trace() << "State<MODEL>::getValues done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void State<MODEL>::interpolate(const Locations_ & locs, const Variables & vars,
-                               GeoVaLs_ & gvals, InterpolatorTraj_ & traj) const {
-  Log::trace() << "State<MODEL>::interpolate traj starting" << std::endl;
-  util::Timer timer(classname(), "interpolate");
-  state_->interpolate(locs.locations(), vars, gvals.geovals(), traj.interpolatortraj());
-  Log::trace() << "State<MODEL>::interpolate traj done" << std::endl;
+void State<MODEL>::getValues(const Locations_ & locs, const Variables & vars,
+                             GeoVaLs_ & gvals, InterpolatorTraj_ & traj) const {
+  Log::trace() << "State<MODEL>::getValues traj starting" << std::endl;
+  util::Timer timer(classname(), "getValues");
+  state_->getValues(locs.locations(), vars, gvals.geovals(), traj.interpolatortraj());
+  Log::trace() << "State<MODEL>::getValues traj done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

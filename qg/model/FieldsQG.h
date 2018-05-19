@@ -62,10 +62,10 @@ class FieldsQG : public util::Printable,
   void schur_product_with(const FieldsQG &);
   void random();
 
-// Interpolate to given location
-  void interpolate(const LocationsQG &, const oops::Variables &, GomQG &) const;
-  void interpolateTL(const LocationsQG &, const oops::Variables &, GomQG &) const;
-  void interpolateAD(const LocationsQG &, const oops::Variables &, const GomQG &);
+// Get fields values at given location
+  void getValues(const LocationsQG &, const oops::Variables &, GomQG &) const;
+  void getValuesTL(const LocationsQG &, const oops::Variables &, GomQG &) const;
+  void getValuesAD(const LocationsQG &, const oops::Variables &, const GomQG &);
 
 // Interpolate full fields
   void changeResolution(const FieldsQG &);

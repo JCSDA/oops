@@ -81,13 +81,13 @@ StateL95 & StateL95::operator=(const StateL95 & rhs) {
   return *this;
 }
 // -----------------------------------------------------------------------------
-/// Interpolate to observation location
+/// Get state values at obs locations
 // -----------------------------------------------------------------------------
-void StateL95::interpolate(const LocsL95 & locs, const oops::Variables &, GomL95 & vals) const {
+void StateL95::getValues(const LocsL95 & locs, const oops::Variables &, GomL95 & vals) const {
   fld_.interp(locs, vals);
 }
 // -----------------------------------------------------------------------------
-void StateL95::interpolate(const LocsL95 & locs, const oops::Variables &, GomL95 & vals,
+void StateL95::getValues(const LocsL95 & locs, const oops::Variables &, GomL95 & vals,
                            Nothing &) const {
   fld_.interp(locs, vals);
 }

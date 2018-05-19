@@ -117,16 +117,16 @@ StateQG & StateQG::operator=(const StateQG & rhs) {
   return *this;
 }
 // -----------------------------------------------------------------------------
-/// Interpolate to observation location
+/// Get state values at observation locations
 // -----------------------------------------------------------------------------
-void StateQG::interpolate(const LocationsQG & locs, const oops::Variables & vars,
-                          GomQG & cols) const {
-  fields_->interpolate(locs, vars, cols);
+void StateQG::getValues(const LocationsQG & locs, const oops::Variables & vars,
+                        GomQG & cols) const {
+  fields_->getValues(locs, vars, cols);
 }
 // -----------------------------------------------------------------------------
-void StateQG::interpolate(const LocationsQG & locs, const oops::Variables & vars,
-                          GomQG & cols, Nothing &) const {
-  fields_->interpolate(locs, vars, cols);
+void StateQG::getValues(const LocationsQG & locs, const oops::Variables & vars,
+                        GomQG & cols, Nothing &) const {
+  fields_->getValues(locs, vars, cols);
 }
 // -----------------------------------------------------------------------------
 /// Interpolate full fields

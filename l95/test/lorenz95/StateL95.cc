@@ -117,44 +117,6 @@ BOOST_FIXTURE_TEST_SUITE(test_StateL95, StateTestFixture)
     }
   }
 // -----------------------------------------------------------------------------
-  /*
-  BOOST_AUTO_TEST_CASE(test_stateL95_interpolate) {
-    lorenz95::StateL95 xx(*resol_, *vars_, *time_);
-
-    int maxVecSize = 5;
-
-    // construct the LocsL95 object
-    std::vector<double> doubleVec(maxVecSize);
-    // populate the vector with values from 0.1 to 0.5
-    for(int i = 0; i < maxVecSize; ++i) {
-      doubleVec[i] = ((i + 1) * 0.1);
-    }
-    lorenz95::LocsL95 locsL95(doubleVec);
-
-    // construct the GomL95 object
-    std::vector<int> intVec(maxVecSize);
-    lorenz95::GomL95 gomL95(intVec);
-    // populate the locval_ vector with values from 1.1 to 0.5
-    for(int i = 0; i < intVec.size(); ++i) {
-      gomL95[i] = ((i + 1) * 0.1);
-    }
-
-    int origCurrent = gomL95.current();
-
-    xx.interpolate(locsL95, gomL95);
-
-    for(int i = 0; i < locsL95->nobs(); ++i) {
-      std::cout << "PMC: gomL95   " << gomL95[origCurrent + i] << std::endl;
-      std::cout << "PMC: xx " << xx.getField()[i] << std::endl;
-      BOOST_CHECK_EQUAL(gomL95[origCurrent + i], xx.getField()[i]);
-    }
-    BOOST_CHECK_EQUAL(gomL95.current(), (origCurrent + locsL95.nobs()));
-    std::cout << "PMC: current()   " << gomL95.current() << std::endl;
-    std::cout << "PMC: origCurrent " << origCurrent << std::endl;
-    std::cout << "PMC: locs-nobs() " << locsL95.nobs() << std::endl;
-  }
-  */
-// -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_stateL95_compound_assignment) {
     lorenz95::StateL95 xx(*resol_, *vars_, *time_);
     xx.read(*file_);

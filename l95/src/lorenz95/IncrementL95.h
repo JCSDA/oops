@@ -72,11 +72,11 @@ class IncrementL95 : public util::Printable,
   void schur_product_with(const IncrementL95 &);
   void random();
 
-/// Interpolate to observation location
-  void interpolateTL(const LocsL95 &, const oops::Variables &,
-                     GomL95 &, const Nothing &) const;
-  void interpolateAD(const LocsL95 &, const oops::Variables &,
-                     const GomL95 &, const Nothing &);
+/// Get increment values at obs locations
+  void getValuesTL(const LocsL95 &, const oops::Variables &,
+                   GomL95 &, const Nothing &) const;
+  void getValuesAD(const LocsL95 &, const oops::Variables &,
+                   const GomL95 &, const Nothing &);
 
 // Utilities
   void read(const eckit::Configuration &);
