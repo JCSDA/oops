@@ -10,6 +10,7 @@
 
 #include "oops/runs/Run.h"
 
+#include <mpi.h>
 #include <string>
 #include <boost/scoped_ptr.hpp>
 
@@ -22,8 +23,6 @@
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCountHelper.h"
 #include "oops/util/TimerHelper.h"
-
-# include <mpi.h>
 
 namespace oops {
 

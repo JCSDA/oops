@@ -59,7 +59,8 @@ class LocalizationBUMP : public LocalizationBase<MODEL> {
 // =============================================================================
 
 template<typename MODEL>
-LocalizationBUMP<MODEL>::LocalizationBUMP(const Geometry_ & resol, const eckit::Configuration & conf) {
+LocalizationBUMP<MODEL>::LocalizationBUMP(const Geometry_ & resol,
+                                          const eckit::Configuration & conf) {
   const eckit::Configuration * fconf = &conf;
 
 // Setup variables
@@ -80,7 +81,7 @@ LocalizationBUMP<MODEL>::LocalizationBUMP(const Geometry_ & resol, const eckit::
   int nmga = ug.getSize(1);
   int nl0 = ug.getSize(2);
   int nv = ug.getSize(3);
-  int nts = 1; //ug.getSize(4); not read yet for 4D
+  int nts = 1;  // ug.getSize(4); not read yet for 4D
   std::vector<double> lon = ug.getLon();
   std::vector<double> lat = ug.getLat();
   std::vector<double> area = ug.getArea();
@@ -90,31 +91,30 @@ LocalizationBUMP<MODEL>::LocalizationBUMP(const Geometry_ & resol, const eckit::
   int ens1_ne;
   std::vector<double> ens1;
   int new_hdiag = conf.getInt("new_hdiag");
-  if (new_hdiag==1) {
+  if (new_hdiag == 1) {
     std::vector<eckit::LocalConfiguration> confs;
     conf.get("bump_ensemble", confs);
     ens1_ne = confs.size();
     Log::info() << "BUMP ensemble: " << ens1_ne << " members" << std::endl;
     for (int ie = 0; ie < ens1_ne; ++ie) {
       Log::info() << "Read member " << ie+1 << std::endl;
-      State_ xmem(resol,confs[ie]);
+      State_ xmem(resol, confs[ie]);
       Log::info() << "Convert member to unstructured grid" << std::endl;
       UnstructuredGrid ugmem;
       xmem.convert_to(ugmem);
       std::vector<double> tmp = ugmem.getData();
       ens1.insert(ens1.end(), tmp.begin(), tmp.end());
     }
-  }
-  else
-  {
+  } else {
     ens1_ne = 4;
     for (int ie = 0; ie < ens1_ne; ++ie) {
       std::vector<double> tmp(nmga*nl0*nv*nts);
-      std::fill(tmp.begin(),tmp.end(),-999.0);
+      std::fill(tmp.begin(), tmp.end(), -999.0);
       ens1.insert(ens1.end(), tmp.begin(), tmp.end());
     }
   }
-  create_bump_f90(keybump_, &fconf, nmga, nl0, nv, nts, &lon[0], &lat[0], &area[0], &vunit[0], &imask[0], ens1_ne, &ens1[0]);
+  create_bump_f90(keybump_, &fconf, nmga, nl0, nv, nts, &lon[0], &lat[0], &area[0],
+                  &vunit[0], &imask[0], ens1_ne, &ens1[0]);
   Log::trace() << "LocalizationBUMP:LocalizationBUMP constructed" << std::endl;
 }
 
@@ -139,21 +139,24 @@ void LocalizationBUMP<MODEL>::multiply(Increment_ & dx) const {
   dx.convert_to(ug);
   boost::posix_time::ptime t1 = boost::posix_time::microsec_clock::local_time();
   boost::posix_time::time_duration diff1 = t1 - ti1;
-  Log::info() << "convert_to time: " << diff1.total_nanoseconds()/1000 << " microseconds" << std::endl;
+  Log::info() << "convert_to time: " << diff1.total_nanoseconds()/1000
+              << " microseconds" << std::endl;
 
   MPI_Barrier(MPI_COMM_WORLD);
   boost::posix_time::ptime ti2 = boost::posix_time::microsec_clock::local_time();
   bump_multiply_f90(keybump_, ug.toFortran());
   boost::posix_time::ptime t2 = boost::posix_time::microsec_clock::local_time();
   boost::posix_time::time_duration diff2 = t2 - ti2;
-  Log::info() << "multiply time: " << diff2.total_nanoseconds()/1000 << " microseconds" << std::endl;
+  Log::info() << "multiply time: " << diff2.total_nanoseconds()/1000
+              << " microseconds" << std::endl;
 
   MPI_Barrier(MPI_COMM_WORLD);
   boost::posix_time::ptime ti3 = boost::posix_time::microsec_clock::local_time();
   dx.convert_from(ug);
   boost::posix_time::ptime t3 = boost::posix_time::microsec_clock::local_time();
   boost::posix_time::time_duration diff3 = t3 - ti3;
-  Log::info() << "convert_from time: " << diff3.total_nanoseconds()/1000 << " microseconds" << std::endl;
+  Log::info() << "convert_from time: " << diff3.total_nanoseconds()/1000
+              << " microseconds" << std::endl;
 
   Log::trace() << "LocalizationBUMP:multiply done" << std::endl;
 }
