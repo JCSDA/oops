@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! Module: model_interface.f90
+! Module: model_interface
 !> Purpose: model routines
 !> <br>
 !> Author: Benjamin Menetrier

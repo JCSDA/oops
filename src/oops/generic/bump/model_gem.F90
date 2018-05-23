@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! Module: module_gem.f90
+! Module: module_gem
 !> Purpose: GEM model routines
 !> <br>
 !> Author: Benjamin Menetrier

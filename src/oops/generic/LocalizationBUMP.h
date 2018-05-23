@@ -53,7 +53,7 @@ class LocalizationBUMP : public LocalizationBase<MODEL> {
  private:
   void print(std::ostream &) const;
 
-  int keybump_;
+  int keyBUMP_;
 };
 
 // =============================================================================
@@ -113,7 +113,7 @@ LocalizationBUMP<MODEL>::LocalizationBUMP(const Geometry_ & resol,
       ens1.insert(ens1.end(), tmp.begin(), tmp.end());
     }
   }
-  create_bump_f90(keybump_, &fconf, nmga, nl0, nv, nts, &lon[0], &lat[0], &area[0],
+  create_bump_f90(keyBUMP_, &fconf, nmga, nl0, nv, nts, &lon[0], &lat[0], &area[0],
                   &vunit[0], &imask[0], ens1_ne, &ens1[0]);
   Log::trace() << "LocalizationBUMP:LocalizationBUMP constructed" << std::endl;
 }
@@ -122,7 +122,7 @@ LocalizationBUMP<MODEL>::LocalizationBUMP(const Geometry_ & resol,
 
 template<typename MODEL>
 LocalizationBUMP<MODEL>::~LocalizationBUMP() {
-  delete_bump_f90(keybump_);
+  delete_bump_f90(keyBUMP_);
   Log::trace() << "LocalizationBUMP:~LocalizationBUMP destructed" << std::endl;
 }
 
@@ -144,7 +144,7 @@ void LocalizationBUMP<MODEL>::multiply(Increment_ & dx) const {
 
   MPI_Barrier(MPI_COMM_WORLD);
   boost::posix_time::ptime ti2 = boost::posix_time::microsec_clock::local_time();
-  bump_multiply_f90(keybump_, ug.toFortran());
+  bump_multiply_f90(keyBUMP_, ug.toFortran());
   boost::posix_time::ptime t2 = boost::posix_time::microsec_clock::local_time();
   boost::posix_time::time_duration diff2 = t2 - ti2;
   Log::info() << "multiply time: " << diff2.total_nanoseconds()/1000

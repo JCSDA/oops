@@ -25,7 +25,6 @@ public create_bump, delete_bump, bump_multiply
 
 !> Linked list interface - defines registry_t type
 #include "oops/util/linkedList_i.f"
-!#include "linkedList.intf.h"
 
 !> Global registry
 type(registry_t) :: bump_registry
@@ -36,7 +35,6 @@ contains
 
 !> Linked list implementation
 #include "oops/util/linkedList_c.f"
-!#include "linkedList.h"
 
 ! ------------------------------------------------------------------------------
 !  C++ interfaces

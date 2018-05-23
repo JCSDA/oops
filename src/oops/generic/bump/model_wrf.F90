@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! Module: module_wrf.f90
+! Module: module_wrf
 !> Purpose: WRF model routines
 !> <br>
 !> Author: Benjamin Menetrier

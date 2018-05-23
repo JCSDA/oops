@@ -95,6 +95,7 @@ contains
 end type geom_type
 
 real(kind_real),parameter :: rth = 1.0e-12_kind_real !< Reproducibility threshold
+integer :: nredmax = 10                              !< Maximum number of similar redundant points
 
 private
 public :: geom_type
@@ -224,9 +225,11 @@ else
 end if
 mpl%tag = mpl%tag+3+2*geom%nl0
 
-! Convert to radians
-lon_mg = lon_mg*deg2rad
-lat_mg = lat_mg*deg2rad
+if (mpl%main) then
+   ! Convert to radians
+   lon_mg = lon_mg*deg2rad
+   lat_mg = lat_mg*deg2rad
+end if
 
 ! Broadcast data
 call mpl%bcast(lon_mg)
@@ -412,7 +415,8 @@ real(kind_real),intent(in),optional :: lon(geom%nmg) !< Longitudes
 real(kind_real),intent(in),optional :: lat(geom%nmg) !< Latitudes
 
 ! Local variables
-integer :: img,ic0
+integer :: img,ic0,ired,nn_index(nredmax)
+real(kind_real) :: nn_dist(nredmax)
 type(kdtree_type) :: kdtree
 
 ! Allocation
@@ -420,7 +424,37 @@ allocate(geom%redundant(geom%nmg))
 call msi(geom%redundant)
 
 ! Look for redundant points
-if (present(lon).and.present(lat)) call kdtree%find_redundant(geom%nmg,lon,lat,geom%redundant)
+if (present(lon).and.present(lat)) then
+   write(mpl%unit,'(a7,a)') '','Look for redundant points in the model grid'
+
+   ! Create KD-tree
+   call kdtree%create(geom%nmg,lon,lat)
+
+   ! Find redundant points
+   do img=1,geom%nmg
+      ! Find nearest neighbors
+      call kdtree%find_nearest_neighbors(lon(img),lat(img),nredmax,nn_index,nn_dist)
+
+      ! Count redundant points
+      do ired=1,nredmax
+         if ((nn_dist(ired)>rth).or.(nn_index(ired)>=img)) nn_index(ired) = geom%nmg+1
+      end do
+
+      if (any(nn_index<=geom%nmg)) then
+         ! Redundant point
+         geom%redundant(img) = minval(nn_index)
+      end if
+   end do
+
+   ! Check for successive redundant points
+   do img=1,geom%nmg
+      if (isnotmsi(geom%redundant(img))) then
+         do while (isnotmsi(geom%redundant(geom%redundant(img))))
+            geom%redundant(img) = geom%redundant(geom%redundant(img))
+         end do
+      end if
+   end do
+end if
 geom%nc0 = count(.not.isnotmsi(geom%redundant))
 write(mpl%unit,'(a7,a,i8)') '','Model grid size:         ',geom%nmg
 write(mpl%unit,'(a7,a,i8)') '','Subset Sc0 size:         ',geom%nc0
@@ -518,7 +552,7 @@ write(mpl%unit,'(a10,a,f7.1,a,f7.1)') '','Min. / max. longitudes:',minval(geom%l
 write(mpl%unit,'(a10,a,f7.1,a,f7.1)') '','Min. / max. latitudes: ',minval(geom%lat)*rad2deg,' / ',maxval(geom%lat)*rad2deg
 write(mpl%unit,'(a10,a)') '','Averaged area / vunit / mask size:'
 do il0=1,geom%nl0
-   write(mpl%unit,'(a13,a,i3,a,e9.2,a,f9.1,a,i8,a)') '','Level ',nam%levs(il0),' ~> ',geom%area(il0)*reqkm**2,' km^2 / ', &
+   write(mpl%unit,'(a13,a,i3,a,e9.2,a,f12.1,a,i8,a)') '','Level ',nam%levs(il0),' ~> ',geom%area(il0)*reqkm**2,' km^2 / ', &
  & sum(geom%vunit(:,il0)),' '//trim(vunitchar)//' / ',count(geom%mask(:,il0)),' points'
 end do
 write(mpl%unit,'(a7,a)') '','Distribution summary:'

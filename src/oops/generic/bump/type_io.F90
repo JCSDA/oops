@@ -75,7 +75,7 @@ character(len=*),intent(in) :: varname                 !< Variable name
 real(kind_real),intent(out) :: fld(geom%nc0a,geom%nl0) !< Field
 
 ! Local variables
-integer :: ncid,fld_id,il0
+integer :: ncid,fld_id,il0,dum
 real(kind_real) :: fld_glb(geom%nc0,geom%nl0)
 character(len=1024) :: subr = 'fld_read'
 
@@ -97,6 +97,9 @@ end if
 do il0=1,geom%nl0
    call mpl%scatterv(geom%proc_to_nc0a,geom%nc0,fld_glb(:,il0),geom%nc0a,fld(:,il0))
 end do
+
+! Dummy call to avoid compilation warnings
+dum = io%nog
 
 end subroutine io_fld_read
 

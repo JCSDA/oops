@@ -381,6 +381,10 @@ do ib=1,bpar%nb
       allocate(fld_c1b(hdata%nc2b,geom%nl0))
       allocate(fld(geom%nc0a,geom%nl0,lct%ncomp(iscales)+2))
 
+      ! Initialization
+      call msr(fld_c1a)
+      call msr(fld)
+
       ! Invert LCT to get DT
       write(mpl%unit,'(a10,a)') '','Invert LCT to get DT '
       call flush(mpl%unit)
@@ -455,7 +459,6 @@ do ib=1,bpar%nb
       iv = bpar%b_to_v2(ib)
       write(iscaleschar,'(i1)') iscales
       call io%fld_write(nam,geom,filename,trim(nam%varname(iv))//'_D11_'//iscaleschar,fld(:,:,1)/req**2)
-      call io%fld_write(nam,geom,filename,trim(nam%varname(iv))//'_D11_'//iscaleschar,fld)
       call io%fld_write(nam,geom,filename,trim(nam%varname(iv))//'_D22_'//iscaleschar,fld(:,:,2)/req**2)
       call io%fld_write(nam,geom,filename,trim(nam%varname(iv))//'_D33_'//iscaleschar,fld(:,:,3))
       if (lct%ncomp(iscales)==4) call io%fld_write(nam,geom,filename,trim(nam%varname(iv))//'_Hc12_'//iscaleschar,fld(:,:,4))

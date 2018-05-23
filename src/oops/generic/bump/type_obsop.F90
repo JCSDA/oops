@@ -500,7 +500,7 @@ else
 end if
 
 ! Allocation
-allocate(obsop%obsa_to_obs(obsop%nobsa))
+if (obsop%nobsa>0) allocate(obsop%obsa_to_obs(obsop%nobsa))
 
 ! Fill obs_to_obsa and obsa_to_obs
 obsop%proc_to_nobsa = 0
@@ -764,10 +764,10 @@ real(kind_real),intent(out) :: obs(obsop%nobsa,geom%nl0) !< Observations columns
 integer :: il0
 real(kind_real) :: fld_ext(obsop%nc0b,geom%nl0)
 
-! Halo extension
-call obsop%com%ext(geom%nl0,fld,fld_ext)
-
 if (obsop%nobsa>0) then
+   ! Halo extension
+   call obsop%com%ext(geom%nl0,fld,fld_ext)
+
    ! Horizontal interpolation
    !$omp parallel do schedule(static) private(il0)
    do il0=1,geom%nl0
@@ -803,10 +803,13 @@ if (obsop%nobsa>0) then
       call obsop%h%apply_ad(obs(:,il0),fld_ext(:,il0))
    end do
    !$omp end parallel do
-end if
 
-! Halo reduction
-call obsop%com%red(geom%nl0,fld_ext,fld)
+   ! Halo reduction
+   call obsop%com%red(geom%nl0,fld_ext,fld)
+else
+   ! No observation on this task
+   fld = 0.0
+end if
 
 end subroutine obsop_apply_ad
 
@@ -823,21 +826,39 @@ class(obsop_type),intent(inout) :: obsop !< Observation operator data
 type(geom_type),intent(in) :: geom       !< Geometry
 
 ! Local variables
-real(kind_real) :: sum1,sum2
+real(kind_real) :: sum1,sum2_loc,sum2
 real(kind_real) :: fld(geom%nc0a,geom%nl0),fld_save(geom%nc0a,geom%nl0)
-real(kind_real) :: yobs(obsop%nobsa,geom%nl0),yobs_save(obsop%nobsa,geom%nl0)
+real(kind_real),allocatable :: yobs(:,:),yobs_save(:,:)
+
+if (obsop%nobsa>0) then
+   ! Allocation
+   allocate(yobs(obsop%nobsa,geom%nl0))
+   allocate(yobs_save(obsop%nobsa,geom%nl0))
+end if
 
 ! Generate random fields
 call rng%rand_real(0.0_kind_real,1.0_kind_real,fld_save)
-call rng%rand_real(0.0_kind_real,1.0_kind_real,yobs_save)
+if (obsop%nobsa>0) call rng%rand_real(0.0_kind_real,1.0_kind_real,yobs_save)
 
-! Apply direct and adjoint obsservation operators
-call obsop%apply(geom,fld_save,yobs)
-call obsop%apply_ad(geom,yobs_save,fld)
+if (obsop%nobsa>0) then
+   ! Apply direct and adjoint obsservation operators
+   call obsop%apply(geom,fld_save,yobs)
+   call obsop%apply_ad(geom,yobs_save,fld)
+else
+   ! No observation on this task
+   fld = 0.0
+end if
 
 ! Compute adjoint test
 call mpl%dot_prod(fld,fld_save,sum1)
-call mpl%dot_prod(yobs,yobs_save,sum2)
+if (obsop%nobsa>0) then
+   sum2_loc = sum(yobs*yobs_save)
+else
+   sum2_loc = 0.0
+end if
+call mpl%allreduce_sum(sum2_loc,sum2)
+
+! Print results
 write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Observation operator adjoint test: ', &
  & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
 call flush(mpl%unit)
@@ -867,11 +888,13 @@ real(kind_real),allocatable :: ylon(:,:),ylat(:,:)
 real(kind_real),allocatable :: dist(:)
 
 ! Allocation
-allocate(ylon(obsop%nobsa,geom%nl0))
-allocate(ylat(obsop%nobsa,geom%nl0))
 allocate(lon(geom%nc0a,geom%nl0))
 allocate(lat(geom%nc0a,geom%nl0))
-allocate(dist(obsop%nobsa))
+if (obsop%nobsa>0) then
+   allocate(ylon(obsop%nobsa,geom%nl0))
+   allocate(ylat(obsop%nobsa,geom%nl0))
+   allocate(dist(obsop%nobsa))
+end if
 
 ! Initialization
 do ic0a=1,geom%nc0a
@@ -880,29 +903,38 @@ do ic0a=1,geom%nc0a
    lat(ic0a,:) = geom%lat(ic0)
 end do
 
-! Apply obsop
-call obsop%apply(geom,lon,ylon)
-call obsop%apply(geom,lat,ylat)
+if (obsop%nobsa>0) then
+   ! Apply obsop
+   call obsop%apply(geom,lon,ylon)
+   call obsop%apply(geom,lat,ylat)
 
-! Remove points close to the longitude discontinuity and to the poles
-call msr(dist)
-do iobsa=1,obsop%nobsa
-   iobs = obsop%obsa_to_obs(iobsa)
-   if ((abs(obsop%lonobs(iobs))<0.8*pi).and.(abs(obsop%latobs(iobs))<0.4*pi)) then
-      call sphere_dist(ylon(iobsa,1),ylat(iobsa,1),obsop%lonobs(iobs),obsop%latobs(iobs),dist(iobsa))
-      dist(iobsa) = dist(iobsa)*reqkm
+   ! Remove points close to the longitude discontinuity and to the poles
+   call msr(dist)
+   do iobsa=1,obsop%nobsa
+      iobs = obsop%obsa_to_obs(iobsa)
+      if ((abs(obsop%lonobs(iobs))<0.8*pi).and.(abs(obsop%latobs(iobs))<0.4*pi)) then
+         call sphere_dist(ylon(iobsa,1),ylat(iobsa,1),obsop%lonobs(iobs),obsop%latobs(iobs),dist(iobsa))
+         dist(iobsa) = dist(iobsa)*reqkm
+      end if
+   end do
+   norm = real(count(isnotmsr(dist)),kind_real)
+   if (norm>0) then
+      distmin = minval(dist,mask=isnotmsr(dist))
+      distmax = maxval(dist,mask=isnotmsr(dist))
+      distsum = sum(dist,mask=isnotmsr(dist))
+   else
+      distmin = huge(1.0)
+      distmax = tiny(1.0)
+      distsum = 0.0
    end if
-end do
-norm = real(count(isnotmsr(dist)),kind_real)
-if (norm>0) then
-   distmin = minval(dist,mask=isnotmsr(dist))
-   distmax = maxval(dist,mask=isnotmsr(dist))
-   distsum = sum(dist,mask=isnotmsr(dist))
 else
+   ! No observation on this task
+   norm = 0
    distmin = huge(1.0)
    distmax = tiny(1.0)
    distsum = 0.0
 end if
+
 
 ! Gather results
 call mpl%allreduce_sum(norm,norm_tot)

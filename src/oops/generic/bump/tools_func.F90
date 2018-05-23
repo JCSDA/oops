@@ -441,7 +441,10 @@ real(kind_real),intent(out) :: fit(nc,nl0)  !< Fit
 integer :: jl0,jc3,iscales,offset
 real(kind_real) :: H11,H22,H33,Hc12,rsq
 
+! Initialization
 offset = 0
+call msr(fit)
+        
 do iscales=1,nscales
    ! Ensure positive-definiteness
    H11 = max(Hmin,H(offset+1))

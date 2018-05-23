@@ -681,7 +681,7 @@ real(kind_real),intent(in) :: fld(bump%geom%nc0a,bump%geom%nl0)    !< Field
 real(kind_real),intent(out) :: obs(bump%obsop%nobsa,bump%geom%nl0) !< Observations columns
 
 ! Apply observation operator
-call bump%obsop%apply(bump%geom,fld,obs)
+if (bump%obsop%nobsa>0) call bump%obsop%apply(bump%geom,fld,obs)
 
 end subroutine bump_apply_obsop
 
@@ -698,9 +698,12 @@ class(bump_type),intent(in) :: bump                               !< BUMP
 real(kind_real),intent(in) :: obs(bump%obsop%nobsa,bump%geom%nl0) !< Observations columns
 real(kind_real),intent(out) :: fld(bump%geom%nc0a,bump%geom%nl0)  !< Field
 
-
-! Apply observation operator
-call bump%obsop%apply_ad(bump%geom,obs,fld)
+! Apply observation operator adjoint
+if (bump%obsop%nobsa>0) then
+   call bump%obsop%apply_ad(bump%geom,obs,fld)
+else
+   fld = 0.0
+end if
 
 end subroutine bump_apply_obsop_ad
 

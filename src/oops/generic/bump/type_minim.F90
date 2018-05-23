@@ -196,7 +196,7 @@ call fit_diag(minim%nc3,minim%nl0r,minim%nl0,minim%l0rl0_to_l0,minim%disth,minim
 fit_pack = pack(fit,mask=.true.)
 
 ! Cost
-f = sum((minim%obs-fit_pack)**2,mask=isnotmsr(minim%obs))
+f = sum((minim%obs-fit_pack)**2,mask=isnotmsr(minim%obs).and.isnotmsr(fit_pack))
 
 ! Bound penalty
 do ix=1,minim%nx
@@ -247,7 +247,7 @@ call fit_lct(minim%nc3,minim%nl0,minim%dx,minim%dy,minim%dz,minim%dmask,minim%ns
 fit_pack = pack(fit,mask=.true.)
 
 ! Cost
-f = sum((minim%obs-fit_pack)**2,mask=isnotmsr(fit_pack))
+f = sum((minim%obs-fit_pack)**2,mask=isnotmsr(minim%obs).and.isnotmsr(fit_pack))
 
 ! Bound penalty
 do ix=1,minim%nx

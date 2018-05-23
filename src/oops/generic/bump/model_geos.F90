@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! Module: module_geos.f90
+! Module: module_geos
 !> Purpose: GEOS model routines
 !> <br>
 !> Author: Benjamin Menetrier

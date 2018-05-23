@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! Module: module_nemo.f90
+! Module: module_nemo
 !> Purpose: NEMO model routines
 !> <br>
 !> Author: Benjamin Menetrier

@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! Module: tools_icos.f90
+! Module: tools_icos
 !> Purpose: icosahedron routines
 !> <br>
 !> Author: Benjamin Menetrier

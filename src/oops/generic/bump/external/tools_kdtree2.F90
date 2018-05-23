@@ -11,7 +11,7 @@ module tools_kdtree2
   use tools_stripack, only: scoord
   ! K-D tree routines in Fortran 90 by Matt Kennel.
   ! Original program was written in Sather by Steve Omohundro and
-  ! Matt Kennel.  Only the Euclidean metric is supported. 
+  ! Matt Kennel.  Only the Euclidean metric is supported.
   !
   !
   ! This module is identical to 'kd_tree', except that the order
@@ -21,7 +21,7 @@ module tools_kdtree2
   ! because Fortran lays out columns first,
   !
   ! whereas conventionally (C-style) it is data(1:N,1:D)
-  ! as in the original kd_tree module. 
+  ! as in the original kd_tree module.
   !
   !-------------DATA TYPE, CREATION, DELETION---------------------
   public :: kdtree2, kdtree2_result, tree_node, kdtree2_create, kdtree2_destroy
@@ -45,13 +45,13 @@ module tools_kdtree2
       ! the dimension to cut
       real(kind_real) :: cut_val
       ! where to cut the dimension
-      real(kind_real) :: cut_val_left, cut_val_right  
+      real(kind_real) :: cut_val_left, cut_val_right
       ! improved cutoffs knowing the spread in child boxes.
       integer :: l, u
       type (tree_node), pointer :: left, right
       type(interval), pointer :: box(:) => null()
       ! child pointers
-      ! Points included in this node are indexes[k] with k \in [l,u] 
+      ! Points included in this node are indexes[k] with k \in [l,u]
   end type tree_node
 
   type :: kdtree2
@@ -59,8 +59,8 @@ module tools_kdtree2
       integer :: n=0
       ! total # of points
       real(kind_real), pointer :: the_data(:,:) => null()
-      ! pointer to the actual data array 
-      ! 
+      ! pointer to the actual data array
+      !
       !  IMPORTANT NOTE:  IT IS DIMENSIONED   the_data(1:d,1:N)
       !  which may be opposite of what may be conventional.
       !  This is, because in Fortran, the memory layout is such that
@@ -69,8 +69,8 @@ module tools_kdtree2
       !  memory locations.  The search time is dominated by the
       !  evaluation of distances in the terminal nodes.  Putting all
       !  vector components in consecutive memory location improves
-      !  memory cache locality, and hence search speed, and may enable 
-      !  vectorization on some processors and compilers. 
+      !  memory cache locality, and hence search speed, and may enable
+      !  vectorization on some processors and compilers.
 
       integer, pointer :: ind(:) => null()
       ! permuted index into the data, so that indexes[l..u] of some
@@ -78,7 +78,7 @@ module tools_kdtree2
       ! bucket.
       logical       :: sort = .false.
       ! do we always sort output results?
-      logical       :: rearrange = .false. 
+      logical       :: rearrange = .false.
       real(kind_real), pointer :: rearranged_data(:,:) => null()
       ! if (rearrange .eqv. .true.) then rearranged_data has been
       ! created so that rearranged_data(:,i) = the_data(:,ind(i)),
@@ -94,7 +94,7 @@ module tools_kdtree2
       ! One of these is created for each search.
       !
       private
-      ! 
+      !
       ! Many fields are copied from the tree structure, in order to
       ! speed up the search.
       !
@@ -103,7 +103,7 @@ module tools_kdtree2
       integer           :: centeridx=999, correltime=9999
       ! exclude points within 'correltime' of 'centeridx', iff centeridx >= 0
       integer           :: nalloc  ! how much allocated for results(:)?
-      logical           :: rearrange  ! are the data rearranged or original? 
+      logical           :: rearrange  ! are the data rearranged or original?
       ! did the # of points found overflow the storage provided?
       logical           :: overflow
       real(kind_real), pointer :: qv(:)  ! query vector
@@ -133,10 +133,10 @@ contains
     ! Optional arguments:  if sort .eqv. .true. then output results
     !                      will be sorted by increasing distance.
     !                      default=.false., as it is faster to not sort.
-    !                      
+    !
     !                      if rearrange .eqv. .true. then an internal
     !                      copy of the data, rearranged by terminal node,
-    !                      will be made for cache friendliness. 
+    !                      will be made for cache friendliness.
     !                      default=.true., as it speeds searches, but
     !                      building takes longer, and extra memory is used.
     !
@@ -211,7 +211,7 @@ contains
       logical :: recompute
       real(kind_real)    :: average
 
-!!$      If (.False.) Then 
+!!$      If (.False.) Then
 !!$         If ((l .Lt. 1) .Or. (l .Gt. tp%n)) Then
 !!$            Stop 'illegal L value in build_tree_for_range'
 !!$         End If
@@ -222,7 +222,7 @@ contains
 !!$            Stop 'U is less than L, thats illegal.'
 !!$         End If
 !!$      Endif
-!!$      
+!!$
       ! first compute min and max
       allocate (res)
       allocate(res%box(3))
@@ -246,11 +246,11 @@ contains
          res%l = l
          res%u = u
          res%left =>null()
-         res%right => null() 
+         res%right => null()
       else
-         ! 
+         !
          ! modify approximate bounding box.  This will be an
-         ! overestimate of the true bounding box, as we are only recomputing 
+         ! overestimate of the true bounding box, as we are only recomputing
          ! the bounding box for the dimension that the parent split on.
          !
          ! Going to a true bounding box computation would significantly
@@ -271,13 +271,13 @@ contains
                res%box(i) = parent%box(i)
             endif
          end do
-         
+
 
          c = maxloc(res%box%upper-res%box%lower,1)
          !
          ! c is the identity of which coordinate has the greatest spread.
          !
-         
+
          if (.false.) then
             ! select exact median to have fully balanced tree.
             m = (l+u)/2
@@ -285,8 +285,8 @@ contains
          else
             !
             ! select point halfway between min and max, as per A. Moore,
-            ! who says this helps in some degenerate cases, or 
-            ! actual arithmetic average. 
+            ! who says this helps in some degenerate cases, or
+            ! actual arithmetic average.
             !
             if (.true.) then
                ! actually compute average
@@ -294,11 +294,11 @@ contains
             else
                average = (res%box(c)%upper + res%box(c)%lower)/2.0
             endif
-               
+
             res%cut_val = average
             m = select_on_coordinate_value(tp%the_data,tp%ind,c,average,l,u)
          endif
-            
+
          ! moves indexes around
          res%cut_dim = c
          res%l = l
@@ -322,12 +322,12 @@ contains
             res%cut_val = (res%cut_val_left + res%cut_val_right)/2
 
 
-            ! now remake the true bounding box for self.  
+            ! now remake the true bounding box for self.
             ! Since we are taking unions (in effect) of a tree structure,
             ! this is much faster than doing an exhaustive
             ! search over all points
             res%box%upper = max(res%left%box%upper,res%right%box%upper)
-            res%box%lower = min(res%left%box%lower,res%right%box%lower) 
+            res%box%lower = min(res%left%box%lower,res%right%box%lower)
          endif
       end if
     end function build_tree_for_range
@@ -336,10 +336,10 @@ contains
      result(res)
       ! Move elts of ind around between l and u, so that all points
       ! <= than alpha (in c cooordinate) are first, and then
-      ! all points > alpha are second. 
+      ! all points > alpha are second.
 
       !
-      ! Algorithm (matt kennel). 
+      ! Algorithm (matt kennel).
       !
       ! Consider the list as having three parts: on the left,
       ! the points known to be <= alpha.  On the right, the points
@@ -347,8 +347,8 @@ contains
       ! points.   The algorithm is to scan the unknown points, starting
       ! from the left, and swapping them so that they are added to
       ! the left stack or the right stack, as appropriate.
-      ! 
-      ! The algorithm finishes when the unknown stack is empty. 
+      !
+      ! The algorithm finishes when the unknown stack is empty.
       !
       ! .. Scalar Arguments ..
       integer, intent (In) :: c, li, ui
@@ -356,7 +356,7 @@ contains
       ! ..
       real(kind_real) :: v(1:,1:)
       integer :: ind(1:)
-      integer :: tmp  
+      integer :: tmp
       ! ..
       integer :: lb, rb
       !
@@ -364,13 +364,13 @@ contains
       ! [l,lb-1]
       !
       ! The points known to be > alpha are in
-      ! [rb+1,u].  
+      ! [rb+1,u].
       !
       ! Therefore we add new points into lb or
       ! rb as appropriate.  When lb=rb
       ! we are done.  We return the location of the last point <= alpha.
       !
-      ! 
+      !
       lb = li; rb = ui
 
       do while (lb < rb)
@@ -383,14 +383,14 @@ contains
             rb = rb-1
          endif
       end do
-      
-      ! now lb .eq. ub 
+
+      ! now lb .eq. ub
       if (v(c,ind(lb)) <= alpha) then
          res = lb
       else
          res = lb-1
       endif
-      
+
     end function select_on_coordinate_value
 
     subroutine select_on_coordinate(v,ind,c,k,li,ui)
@@ -426,10 +426,10 @@ contains
       end do
     end subroutine select_on_coordinate
 
-   subroutine spread_in_coordinate(tp,c,l,u,interv) 
-      ! the spread in coordinate 'c', between l and u. 
+   subroutine spread_in_coordinate(tp,c,l,u,interv)
+      ! the spread in coordinate 'c', between l and u.
       !
-      ! Return lower bound in 'smin', and upper in 'smax', 
+      ! Return lower bound in 'smin', and upper in 'smax',
       ! ..
       ! .. Structure Arguments ..
       type (kdtree2), pointer :: tp
@@ -513,7 +513,7 @@ contains
       if (associated(np%box)) deallocate(np%box)
       deallocate(np)
       return
-      
+
     end subroutine destroy_node
 
   end subroutine kdtree2_destroy
@@ -534,7 +534,7 @@ contains
     sr%nfound = 0
     sr%centeridx = -1
     sr%correltime = 0
-    sr%overflow = .false. 
+    sr%overflow = .false.
 
     sr%results => results
 
@@ -548,7 +548,7 @@ contains
        sr%Data => tp%the_data
     endif
 
-    call validate_query_storage(nn) 
+    call validate_query_storage(nn)
     sr%pq = pq_create(results)
 
     call search(tp%root)
@@ -576,7 +576,7 @@ contains
   end subroutine validate_query_storage
 
   function square_distance(iv, qv) result (res)
-    ! distance between iv[1:n] and qv[1:n] 
+    ! distance between iv[1:n] and qv[1:n]
     ! .. Function Return Value ..
     ! re-implemented to improve vectorization.
     real(kind_real) :: res
@@ -593,7 +593,7 @@ contains
   end function square_distance
 
   function sdistance(iv, qv) result (res)
-    ! spherical distance between iv[1:n] and qv[1:n] 
+    ! spherical distance between iv[1:n] and qv[1:n]
     ! .. Function Return Value ..
     ! re-implemented to improve vectorization.
     real(kind_real) :: res, ilat, ilon, ir, qlat, qlon, qr
@@ -610,11 +610,11 @@ contains
     call sphere_dist(ilon,ilat,qlon,qlat,res)
 
   end function sdistance
-  
+
   recursive subroutine search(node)
     !
     ! This is the innermost core routine of the kd-tree search.  Along
-    ! with "process_terminal_node", it is the performance bottleneck. 
+    ! with "process_terminal_node", it is the performance bottleneck.
     !
     ! This version uses a logically complete secondary search of
     ! "box in bounds", whether the sear
@@ -628,7 +628,7 @@ contains
     real(kind_real)                               :: qval, dis
     real(kind_real)                               :: ballsize
     real(kind_real), pointer           :: qv(:)
-    type(interval), pointer :: box(:) 
+    type(interval), pointer :: box(:)
 
     if ((associated(node%left) .and. associated(node%right)) .eqv. .false.) then
        ! we are on a terminal node
@@ -657,7 +657,7 @@ contains
 
        if (associated(ncloser)) call search(ncloser)
 
-       ! we may need to search the second node. 
+       ! we may need to search the second node.
        if (associated(nfarther)) then
           ballsize = sr%ballsize
 !          dis=extra**2
@@ -666,7 +666,7 @@ contains
              ! we do this separately as going on the first cut dimen is often
              ! a good idea.
              ! note that if extra**2 < sr%ballsize, then the next
-             ! check will also be false. 
+             ! check will also be false.
              !
              box => node%box(1:)
              do i=1,3
@@ -677,7 +677,7 @@ contains
                    endif
                 endif
              end do
-             
+
              !
              ! if we are still here then we need to search mroe.
              !
@@ -719,7 +719,7 @@ contains
     integer                :: i, indexofi, centeridx, correltime
     real(kind_real)        :: ballsize, sd, ssd, newpri
     logical                :: rearrange
-    type(pq), pointer      :: pqp 
+    type(pq), pointer      :: pqp
     !
     ! copy values from sr to local variables
     !
@@ -727,16 +727,16 @@ contains
     ! Notice, making local pointers with an EXPLICIT lower bound
     ! seems to generate faster code.
     ! why?  I don't know.
-    qv => sr%qv(1:) 
+    qv => sr%qv(1:)
     pqp => sr%pq
-    ballsize = sr%ballsize 
+    ballsize = sr%ballsize
     rearrange = sr%rearrange
     ind => sr%ind(1:)
-    data => sr%Data(1:,1:)     
+    data => sr%Data(1:,1:)
     centeridx = sr%centeridx
     correltime = sr%correltime
 
-    !    doing_correl = (centeridx >= 0)  ! Do we have a decorrelation window? 
+    !    doing_correl = (centeridx >= 0)  ! Do we have a decorrelation window?
     !    include_point = .true.    ! by default include all points
     ! search through terminal bucket.
 
@@ -757,41 +757,41 @@ contains
        endif
 
 
-       ! 
+       !
        ! two choices for any point.  The list so far is either undersized,
        ! or it is not.
        !
        ! If it is undersized, then add the point and its distance
        ! unconditionally.  If the point added fills up the working
        ! list then set the sr%ballsize, maximum distance bound (largest distance on
-       ! list) to be that distance, instead of the initialized +infinity. 
+       ! list) to be that distance, instead of the initialized +infinity.
        !
        ! If the running list is full size, then compute the
        ! distance but break out immediately if it is larger
        ! than sr%ballsize, "best squared distance" (of the largest element),
-       ! as it cannot be a good neighbor. 
+       ! as it cannot be a good neighbor.
        !
        ! Once computed, compare to best_square distance.
        ! if it is smaller, then delete the previous largest
-       ! element and add the new one. 
+       ! element and add the new one.
 
        if (sr%nfound .lt. sr%nn) then
           !
           ! add this point unconditionally to fill list.
           !
-          sr%nfound = sr%nfound +1 
+          sr%nfound = sr%nfound +1
           newpri = pq_insert(pqp,sd,ssd,indexofi)
           if (sr%nfound .eq. sr%nn) ballsize = newpri
           ! we have just filled the working list.
           ! put the best square distance to the maximum value
-          ! on the list, which is extractable from the PQ. 
+          ! on the list, which is extractable from the PQ.
 
        else
           !
           ! now, if we get here,
           ! we know that the current node has a squared
           ! distance smaller than the largest one on the list, and
-          ! belongs on the list. 
+          ! belongs on the list.
           ! Hence we replace that with the current one.
           !
           ballsize = pq_replace_max(pqp,sd,ssd,indexofi)
@@ -800,7 +800,7 @@ contains
     !
     ! Reset sr variables which may have changed during loop
     !
-    sr%ballsize = ballsize 
+    sr%ballsize = ballsize
 
   end subroutine process_terminal_node
 
@@ -826,7 +826,7 @@ contains
     ! copy values from sr to local variables
     !
     qv => sr%qv(1:)
-    ballsize = sr%ballsize 
+    ballsize = sr%ballsize
     rearrange = sr%rearrange
     ind => sr%ind(1:)
     data => sr%Data(1:,1:)
@@ -838,25 +838,25 @@ contains
     ! search through terminal bucket.
     mainloop: do i = node%l, node%u
 
-       ! 
+       !
        ! two choices for any point.  The list so far is either undersized,
        ! or it is not.
        !
        ! If it is undersized, then add the point and its distance
        ! unconditionally.  If the point added fills up the working
        ! list then set the sr%ballsize, maximum distance bound (largest distance on
-       ! list) to be that distance, instead of the initialized +infinity. 
+       ! list) to be that distance, instead of the initialized +infinity.
        !
        ! If the running list is full size, then compute the
        ! distance but break out immediately if it is larger
        ! than sr%ballsize, "best squared distance" (of the largest element),
-       ! as it cannot be a good neighbor. 
+       ! as it cannot be a good neighbor.
        !
        ! Once computed, compare to best_square distance.
        ! if it is smaller, then delete the previous largest
-       ! element and add the new one. 
+       ! element and add the new one.
 
-       ! which index to the point do we use? 
+       ! which index to the point do we use?
 
        if (rearrange) then
           sd = square_distance(data(:,i), qv)
@@ -891,10 +891,10 @@ contains
   end subroutine process_terminal_node_fixedball
 
   subroutine kdtree2_sort_results(nfound,results)
-    !  Use after search to sort results(1:nfound) in order of increasing 
+    !  Use after search to sort results(1:nfound) in order of increasing
     !  distance.
     integer, intent(in)          :: nfound
-    type(kdtree2_result), target :: results(:) 
+    type(kdtree2_result), target :: results(:)
     !
     !
 
@@ -909,7 +909,7 @@ contains
   subroutine heapsort_struct(a,n)
     !
     ! Sort a(1:n) in ascending order
-    ! 
+    !
     !
     integer,intent(in)                 :: n
     type(kdtree2_result),intent(inout) :: a(:)
@@ -929,9 +929,9 @@ contains
     ! Generate initial idum array
     !    end do
 
-    if(n.eq.1) return                  
+    if(n.eq.1) return
 
-    do 
+    do
        if(ileft > 1)then
           ileft=ileft-1
           value=a(ileft)
@@ -946,12 +946,12 @@ contains
        endif
        i=ileft
        j=2*ileft
-       do while (j <= iright) 
+       do while (j <= iright)
           if(j < iright) then
              if(a(j)%dis < a(j+1)%dis) j=j+1
           endif
           if(value%dis < a(j)%dis) then
-             a(i)=a(j); 
+             a(i)=a(j);
              i=j
              j=j+j
           else

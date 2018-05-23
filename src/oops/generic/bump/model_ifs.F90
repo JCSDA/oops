@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! Module: module_ifs.f90
+! Module: module_ifs
 !> Purpose: IFS model routines
 !> <br>
 !> Author: Benjamin Menetrier

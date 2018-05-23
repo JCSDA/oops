@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! Module: module_arp.f90
+! Module: module_arp
 !> Purpose: ARPEGE model routines
 !> <br>
 !> Author: Benjamin Menetrier

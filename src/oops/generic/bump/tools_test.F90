@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! Module: tools_test.f90
+! Module: tools_test
 !> Purpose: test tools
 !> <br>
 !> Author: Benjamin Menetrier

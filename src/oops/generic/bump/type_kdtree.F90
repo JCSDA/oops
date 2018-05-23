@@ -26,11 +26,9 @@ type kdtree_type
 contains
     procedure :: create => kdtree_create
     procedure :: delete => kdtree_delete
-    procedure :: find_redundant => kdtree_find_redundant
     procedure :: find_nearest_neighbors => kdtree_find_nearest_neighbors
 end type kdtree_type
 
-integer :: nredmax = 10                              !< Maximum number of similar redundant points
 real(kind_real),parameter :: rth = 1.0e-12_kind_real !< Reproducibility threshold
 
 private
@@ -122,66 +120,6 @@ if (allocated(kdtree%from_eff)) deallocate(kdtree%from_eff)
 end subroutine kdtree_delete
 
 !----------------------------------------------------------------------
-! Subroutine: kdtree_find_redundant
-!> Purpose: find redundant points
-!----------------------------------------------------------------------
-subroutine kdtree_find_redundant(kdtree,n,lon,lat,redundant)
-
-implicit none
-
-! Passed variables
-class(kdtree_type),intent(inout) :: kdtree !< KD-tree object
-integer,intent(in) :: n                    !< Number of points
-real(kind_real),intent(in) :: lon(n)       !< Points longitudes
-real(kind_real),intent(in) :: lat(n)       !< Points latitudes
-integer,intent(inout) :: redundant(n)      !< Redundant points
-
-! Local variables
-integer :: i,indred(nredmax),ired
-real(kind_real) :: input_data(3,n),qv(3)
-type(kdtree2),pointer :: tp
-type(kdtree2_result) :: results(nredmax)
-
-write(mpl%unit,'(a7,a)') '','Look for redundant points in the model grid'
-
-! Transform to cartesian coordinates
-do i=1,n
-   call trans(1,lat(i),lon(i),input_data(1,i),input_data(2,i),input_data(3,i))
-end do
-
-! Create KD-tree
-tp => kdtree2_create(input_data)
-
-! Find redundant points
-call msi(redundant)
-do i=1,n
-   ! Find nearest neighbors
-   call kdtree2_n_nearest(tp,input_data(:,i),nredmax,results)
-
-   ! Count redundant points
-   indred = n+1
-   do ired=1,nredmax
-      if ((results(ired)%sdis<rth).and.(results(ired)%idx<i)) indred(ired) = results(ired)%idx
-   end do
-
-   if (any(indred<=n)) then
-      ! Redundant point
-      redundant(i) = minval(indred)
-   end if
-end do
-
-! Check for successive redundant points
-do i=1,n
-   if (isnotmsi(redundant(i))) then
-      do while (isnotmsi(redundant(redundant(i))))
-         redundant(i) = redundant(redundant(i))
-      end do
-   end if
-end do
-
-end subroutine kdtree_find_redundant
-
-!----------------------------------------------------------------------
 ! Subroutine: kdtree_find_nearest_neighbors
 !> Purpose: kdtree_find nearest neighbors using a KD-tree
 !----------------------------------------------------------------------
@@ -201,7 +139,7 @@ real(kind_real),intent(out) :: nn_dist(nn) !< Neareast neighbors distance
 integer :: i,j,nid
 integer,allocatable :: order(:)
 real(kind_real) :: qv(3)
-type(kdtree2_result) :: results(nn) 
+type(kdtree2_result) :: results(nn)
 
 ! Transform to cartesian coordinates
 call trans(1,lat,lon,qv(1),qv(2),qv(3))

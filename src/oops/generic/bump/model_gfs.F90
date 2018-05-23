@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! Module: module_gfs.f90
+! Module: module_gfs
 !> Purpose: GFS model routines
 !> <br>
 !> Author: Benjamin Menetrier

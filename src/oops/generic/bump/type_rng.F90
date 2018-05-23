@@ -10,7 +10,7 @@
 !----------------------------------------------------------------------
 module type_rng
 
-use iso_fortran_env
+use iso_fortran_env, only: int64
 use tools_display, only: msgerror
 use tools_func, only: sphere_dist
 use tools_kinds, only: kind_real
@@ -465,22 +465,22 @@ else
    smask = .false.
    is = 1
    irep = 1
-   
+
    ! Define sampling
    do while (is<=ns)
       ! Create KD-tree (unsorted)
       if (is>2) call kdtree%create(n,lon,lat,mask=smask,sort=.false.)
-   
+
       ! Initialization
       distmax = 0.0
       irmax = 0
       itry = 1
-   
+
       ! Find a new point
       do while (itry<=ntry)
          ! Generate a random index
          call rng%rand_integer(1,n,ir)
-   
+
          ! Check point validity
          if (lmask(ir)) then
             if (is==1) then
@@ -495,7 +495,7 @@ else
                   call kdtree%find_nearest_neighbors(lon(ir),lat(ir),1,nn_index(1:1),nn_dist(1:1))
                   d = nn_dist(1)**2/(rh(ir)**2+rh(nn_index(1))**2)
                end if
-   
+
                ! Check distance
                if (d>distmax) then
                   distmax = d
@@ -503,11 +503,11 @@ else
                end if
             end if
          end if
-   
+
          ! Update itry
          itry = itry+1
       end do
-   
+
       ! Delete kdtree
       if (is>2) call kdtree%delete
 
@@ -549,11 +549,11 @@ else
 
             ! Shift sampling
             if (ismin(1)<ns) ihor(ismin(1):ns-1) = ihor(ismin(1)+1:ns)
-   
+
             ! Reset is to ns and try again!
             is = ns
          end if
-   
+
          ! Update irep
          irep = irep+1
       end if

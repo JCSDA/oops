@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! Module: module_aro.f90
+! Module: module_aro
 !> Purpose: AROME model routines
 !> <br>
 !> Author: Benjamin Menetrier

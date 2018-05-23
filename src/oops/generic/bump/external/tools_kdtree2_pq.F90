@@ -7,7 +7,7 @@
 module tools_kdtree2_pq
   use tools_kinds, only: kind_real
   !
-  ! maintain a priority queue (PQ) of data, pairs of 'priority/payload', 
+  ! maintain a priority queue (PQ) of data, pairs of 'priority/payload',
   ! implemented with a binary heap.  This is the type, and the 'dis' field
   ! is the priority.
   !
@@ -21,13 +21,13 @@ module tools_kdtree2_pq
   ! A heap-based priority queue lets one efficiently implement the following
   ! operations, each in log(N) time, as opposed to linear time.
   !
-  ! 1)  add a datum (push a datum onto the queue, increasing its length) 
-  ! 2)  return the priority value of the maximum priority element 
+  ! 1)  add a datum (push a datum onto the queue, increasing its length)
+  ! 2)  return the priority value of the maximum priority element
   ! 3)  pop-off (and delete) the element with the maximum priority, decreasing
-  !     the size of the queue. 
+  !     the size of the queue.
   ! 4)  replace the datum with the maximum priority with a supplied datum
   !     (of either higher or lower priority), maintaining the size of the
-  !     queue. 
+  !     queue.
   !
   !
   ! In the k-d tree case, the 'priority' is the square distance of a point in
@@ -55,11 +55,11 @@ module tools_kdtree2_pq
       ! The priority queue consists of elements
       ! priority(1:heap_size), with associated payload(:).
       !
-      ! There are heap_size active elements. 
+      ! There are heap_size active elements.
       ! Assumes the allocation is always sufficient.  Will NOT increase it
       ! to match.
       integer :: heap_size = 0
-      type(kdtree2_result), pointer :: elems(:) 
+      type(kdtree2_result), pointer :: elems(:)
   end type pq
 
   public :: kdtree2_result
@@ -80,14 +80,14 @@ contains
     ! add any alements to the heap, i.e. any existing
     ! data in the input arrays will NOT be used and may
     ! be overwritten.
-    ! 
+    !
     ! usage:
     !    real(kind_real), pointer :: x(:)
     !    integer, pointer :: k(:)
     !    allocate(x(1000),k(1000))
     !    pq => pq_create(x,k)
     !
-    type(kdtree2_result), target:: results_in(:) 
+    type(kdtree2_result), target:: results_in(:)
     type(pq) :: res
     !
     !
@@ -109,7 +109,7 @@ contains
 
 !
 ! These are written inline for speed.
-!    
+!
 !  integer function parent(i)
 !    integer, intent(in) :: i
 !    parent = (i/2)
@@ -138,7 +138,7 @@ contains
   subroutine heapify(a,i_in)
     !
     ! take a heap rooted at 'i' and force it to be in the
-    ! heap canonical form.   This is performance critical 
+    ! heap canonical form.   This is performance critical
     ! and has been tweaked a little to reflect this.
     !
     type(pq),pointer   :: a
@@ -156,7 +156,7 @@ contains
 bigloop:  do
        l = 2*i ! left(i)
        r = l+1 ! right(i)
-       ! 
+       !
        ! set 'largest' to the index of either i, l, r
        ! depending on whose priority is largest.
        !
@@ -164,13 +164,13 @@ bigloop:  do
        ! in which case they do not count.
 
 
-       ! does left child have higher priority? 
+       ! does left child have higher priority?
        if (l .gt. a%heap_size) then
           ! we know that i is the largest as both l and r are invalid.
-          exit 
+          exit
        else
           pri_i = a%elems(i)%dis
-          pri_l = a%elems(l)%dis 
+          pri_l = a%elems(l)%dis
           if (pri_l .gt. pri_i) then
              largest = l
              pri_largest = pri_l
@@ -196,15 +196,15 @@ bigloop:  do
 
           temp = a%elems(i)
           a%elems(i) = a%elems(largest)
-          a%elems(largest) = temp 
-          ! 
-          ! Canonical heapify() algorithm has tail-ecursive call: 
+          a%elems(largest) = temp
           !
-          !        call heapify(a,largest)   
+          ! Canonical heapify() algorithm has tail-ecursive call:
+          !
+          !        call heapify(a,largest)
           ! we will simulate with cycle
           !
           i = largest
-          cycle bigloop ! continue the loop 
+          cycle bigloop ! continue the loop
        else
           return   ! break from the loop
        end if
@@ -212,24 +212,24 @@ bigloop:  do
     return
   end subroutine heapify
 
-  subroutine pq_max(a,e) 
+  subroutine pq_max(a,e)
     !
     ! return the priority and its payload of the maximum priority element
-    ! on the queue, which should be the first one, if it is 
+    ! on the queue, which should be the first one, if it is
     ! in heapified form.
     !
     type(pq),pointer :: a
     type(kdtree2_result),intent(out)  :: e
 
     if (a%heap_size .gt. 0) then
-       e = a%elems(1) 
+       e = a%elems(1)
     else
        write (*,*) 'PQ_MAX: ERROR, heap_size < 1'
        stop
     endif
     return
   end subroutine pq_max
-  
+
   real(kind_real) function pq_maxpri(a)
     type(pq), pointer :: a
 
@@ -250,17 +250,17 @@ bigloop:  do
     !
     type(pq),pointer :: a
     type(kdtree2_result), intent(out) :: e
-    
+
     if (a%heap_size .ge. 1) then
        !
        ! return max as first element
        !
-       e = a%elems(1) 
-       
+       e = a%elems(1)
+
        !
        ! move last element to first
        !
-       a%elems(1) = a%elems(a%heap_size) 
+       a%elems(1) = a%elems(a%heap_size)
        a%heap_size = a%heap_size-1
        call heapify(a,1)
        return
@@ -268,11 +268,11 @@ bigloop:  do
        write (*,*) 'PQ_EXTRACT_MAX: error, attempted to pop non-positive PQ'
        stop
     end if
-    
+
   end subroutine pq_extract_max
 
 
-  real(kind_real) function pq_insert(a,dis,sdis,idx) 
+  real(kind_real) function pq_insert(a,dis,sdis,idx)
     !
     ! Insert a new element and return the new maximum priority,
     ! which may or may not be the same as the old maximum priority.
@@ -314,13 +314,13 @@ bigloop:  do
     a%elems(i)%sdis = sdis
     a%elems(i)%idx = idx
 
-    pq_insert = a%elems(1)%dis 
+    pq_insert = a%elems(1)%dis
     return
     !    end if
 
-  end function pq_insert    
+  end function pq_insert
 
-  real(kind_real) function pq_replace_max(a,dis,sdis,idx) 
+  real(kind_real) function pq_replace_max(a,dis,sdis,idx)
     !
     ! Replace the extant maximum priority element
     ! in the PQ with (dis,sdis,idx).  Return
@@ -338,7 +338,7 @@ bigloop:  do
     real(kind_real)    :: prichild, prichildp1
 
     type(kdtree2_result) :: etmp
-    
+
     if (.true.) then
        N=a%heap_size
        if (N .ge. 1) then
@@ -362,12 +362,12 @@ bigloop:  do
              endif
 
              if (dis .ge. prichild) then
-                exit loop  
-                ! we have a proper place for our new element, 
+                exit loop
+                ! we have a proper place for our new element,
                 ! bigger than either children's priority.
              else
                 ! move child into parent.
-                a%elems(parent) = a%elems(child) 
+                a%elems(parent) = a%elems(child)
                 parent = child
                 child = 2*parent
              end if
@@ -386,7 +386,7 @@ bigloop:  do
        !
        ! slower version using elementary pop and push operations.
        !
-       call pq_extract_max(a,etmp) 
+       call pq_extract_max(a,etmp)
        etmp%dis = dis
        etmp%sdis = sdis
        etmp%idx = idx
@@ -396,7 +396,7 @@ bigloop:  do
   end function pq_replace_max
 
   subroutine pq_delete(a,i)
-    ! 
+    !
     ! delete item with index 'i'
     !
     type(pq),pointer :: a
@@ -409,7 +409,7 @@ bigloop:  do
 
     ! swap the item to be deleted with the last element
     ! and shorten heap by one.
-    a%elems(i) = a%elems(a%heap_size) 
+    a%elems(i) = a%elems(a%heap_size)
     a%heap_size = a%heap_size - 1
 
     call heapify(a,i)

@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! Module: module_mpas.f90
+! Module: module_mpas
 !> Purpose: MPAS model routines
 !> <br>
 !> Author: Benjamin Menetrier

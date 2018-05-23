@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! Module: type_avg.f90
+! Module: type_avg
 !> Purpose: average routines
 !> <br>
 !> Author: Benjamin Menetrier
