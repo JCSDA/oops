@@ -122,7 +122,7 @@ end if
 if (nam%local_diag) then
    do ib=1,bpar%nb+1
       if (bpar%fit_block(ib)) then
-         filename = trim(nam%prefix)//'_local_diag_'//trim(diag%prefix)//'.nc'
+         filename = trim(nam%prefix)//'_local_diag_'//trim(diag%prefix)
          do i=1,2
             ! Copy data
             do ic2a=1,hdata%nc2a

@@ -3554,8 +3554,8 @@ else
 end if
 
 ! Write field
-filename = trim(nam%prefix)//'_dirac.nc'
-call io%fld_write(nam,geom,trim(nam%prefix)//'_dirac.nc',trim(bpar%blockname(ib))//'_dirac'//trim(suffix),fld)
+filename = trim(nam%prefix)//'_dirac'
+call io%fld_write(nam,geom,filename,trim(bpar%blockname(ib))//'_dirac'//trim(suffix),fld)
 
 ! Print results
 write(mpl%unit,'(a7,a)') '','Values at dirac points:'

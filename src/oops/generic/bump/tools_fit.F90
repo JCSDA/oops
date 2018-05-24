@@ -46,6 +46,8 @@ real(kind_real) :: th,thinv,dthinv,thtest
 real(kind_real) :: fit_rm,fit_rp
 logical :: valid
 
+if (any(dist<0.0)) call msgerror('negative distance in fast_fit')
+
 if (raw(iz)>0.0) then
    ! At least one positive point is needed
    valid = .false.

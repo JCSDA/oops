@@ -149,7 +149,7 @@ do isub=1,ens%nsub
       else
          jsub = isub
       end if
-      call model_read(nam,geom,trim(filename),ne_offset+ie,jsub,ens%fld(:,:,:,:,ietot))
+      call model_read(nam,geom,filename,ne_offset+ie,jsub,ens%fld(:,:,:,:,ietot))
 
       ! Update
       ietot = ietot+1

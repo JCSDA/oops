@@ -1691,12 +1691,12 @@ if (present(ens)) then
 end if
 
 ! Write field
-filename = trim(nam%prefix)//'_dirac.nc'
+filename = trim(nam%prefix)//'_dirac'
 do its=1,nam%nts
    write(itschar,'(i2.2)') its
    do iv=1,nam%nv
-      call io%fld_write(nam,geom,trim(nam%prefix)//'_dirac.nc',trim(nam%varname(iv))//'_'//itschar,fld_loc(:,:,iv,its))
-      if (present(ens)) call io%fld_write(nam,geom,trim(nam%prefix)//'_dirac.nc',trim(nam%varname(iv))//'_'//itschar//'_Bens', &
+      call io%fld_write(nam,geom,filename,trim(nam%varname(iv))//'_'//itschar,fld_loc(:,:,iv,its))
+      if (present(ens)) call io%fld_write(nam,geom,filename,trim(nam%varname(iv))//'_'//itschar//'_Bens', &
        & fld_bens(:,:,iv,its))
    end do
 end do
@@ -1744,7 +1744,7 @@ end do
 do itest=1,min(ntest,10)
    ! Write field
    write(itestchar,'(i4.4)') itest
-   filename = trim(nam%prefix)//'_randomize_'//itestchar//'.nc'
+   filename = trim(nam%prefix)//'_randomize_'//itestchar
    do its=1,nam%nts
       write(itschar,'(i2.2)') its
       do iv=1,nam%nv
@@ -1780,7 +1780,7 @@ do ifac=1,nfac
       if (itest<=min(ntest,10)) then
          ! Write field
          write(itestchar,'(i4.4)') itest
-         filename = trim(nam%prefix)//'_randomize_'//itestchar//'.nc'
+         filename = trim(nam%prefix)//'_randomize_'//itestchar
          do its=1,nam%nts
             write(itschar,'(i2.2)') its
             do iv=1,nam%nv

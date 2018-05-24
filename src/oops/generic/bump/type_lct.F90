@@ -455,7 +455,7 @@ do ib=1,bpar%nb
       ! Write LCT
       write(mpl%unit,'(a10,a)') '','Write LCT'
       call flush(mpl%unit)
-      filename = trim(nam%prefix)//'_lct.nc'
+      filename = trim(nam%prefix)//'_lct'
       iv = bpar%b_to_v2(ib)
       write(iscaleschar,'(i1)') iscales
       call io%fld_write(nam,geom,filename,trim(nam%varname(iv))//'_D11_'//iscaleschar,fld(:,:,1)/req**2)
@@ -605,7 +605,7 @@ do ib=1,bpar%nb
    ! Write LCT diagnostics
    write(mpl%unit,'(a10,a)') '','Write LCT diagnostics'
    call flush(mpl%unit)
-   filename = trim(nam%prefix)//'_lct.nc'
+   filename = trim(nam%prefix)//'_lct'
    iv = bpar%b_to_v2(ib)
    call io%fld_write(nam,geom,filename,trim(nam%varname(iv))//'_raw',fld(:,:,1))
    call io%fld_write(nam,geom,filename,trim(nam%varname(iv))//'_fit',fld(:,:,2))

@@ -170,7 +170,7 @@ call cmat%alloc(nam,geom,bpar,'cmat')
 
 do ib=1,bpar%nb+1
    if (bpar%B_block(ib)) then
-      filename = trim(nam%prefix)//'_'//trim(cmat%blk(ib)%name)//'.nc'
+      filename = trim(nam%prefix)//'_'//trim(cmat%blk(ib)%name)
       if (bpar%nicas_block(ib)) then
          call io%fld_read(nam,geom,filename,'coef_ens',cmat%blk(ib)%coef_ens)
          call io%fld_read(nam,geom,filename,'coef_sta',cmat%blk(ib)%coef_sta)
@@ -217,7 +217,7 @@ character(len=1024) :: filename
 
 do ib=1,bpar%nb+1
    if (bpar%B_block(ib)) then
-      filename = trim(nam%prefix)//'_'//trim(cmat%blk(ib)%name)//'.nc'
+      filename = trim(nam%prefix)//'_'//trim(cmat%blk(ib)%name)
       if (bpar%nicas_block(ib)) then
          call io%fld_write(nam,geom,filename,'coef_ens',cmat%blk(ib)%coef_ens)
          call io%fld_write(nam,geom,filename,'coef_sta',cmat%blk(ib)%coef_sta)
@@ -458,7 +458,7 @@ if (nam%displ_diag) call displ%write(nam,geom,hdata,trim(nam%prefix)//'_displ_di
 
 ! Full variances
 if (nam%full_var) then
-   filename = trim(nam%prefix)//'_full_var.nc'
+   filename = trim(nam%prefix)//'_full_var'
    do ib=1,bpar%nb
       if (bpar%diag_block(ib)) call io%fld_write(nam,geom,filename,trim(bpar%blockname(ib))//'_var', &
     & sum(mom_1%blk(ib)%m2full,dim=3)/real(mom_1%blk(ib)%nsub,kind_real))

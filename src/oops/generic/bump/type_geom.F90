@@ -508,7 +508,7 @@ do il0=1,geom%nl0
    if (any(geom%mask(:,il0))) then
       geom%vunitavg(il0) = sum(geom%vunit(:,il0),geom%mask(:,il0))/real(count(geom%mask(:,il0)),kind_real)
    else
-      geom%vunitavg(il0) = sum(geom%vunit(:,il0))/real(geom%nc0,kind_real)
+      geom%vunitavg(il0) = 0.0
    end if
 end do
 
@@ -553,7 +553,7 @@ write(mpl%unit,'(a10,a,f7.1,a,f7.1)') '','Min. / max. latitudes: ',minval(geom%l
 write(mpl%unit,'(a10,a)') '','Averaged area / vunit / mask size:'
 do il0=1,geom%nl0
    write(mpl%unit,'(a13,a,i3,a,e9.2,a,f12.1,a,i8,a)') '','Level ',nam%levs(il0),' ~> ',geom%area(il0)*reqkm**2,' km^2 / ', &
- & sum(geom%vunit(:,il0)),' '//trim(vunitchar)//' / ',count(geom%mask(:,il0)),' points'
+ & geom%vunitavg(il0),' '//trim(vunitchar)//' / ',count(geom%mask(:,il0)),' points'
 end do
 write(mpl%unit,'(a7,a)') '','Distribution summary:'
 do iproc=1,mpl%nproc

@@ -778,7 +778,7 @@ if (nam%sam_write) then
       do il0=1,geom%nl0
          call mpl%scatterv(geom%proc_to_nc0a,geom%nc0,hdata%rh0(:,il0),geom%nc0a,rh0_loc(:,il0))
       end do
-      filename = trim(nam%prefix)//'_sampling_rh0.nc'
+      filename = trim(nam%prefix)//'_sampling_rh0'
       call io%fld_write(nam,geom,filename,'rh0',rh0_loc)
    end if
 end if

@@ -306,11 +306,11 @@ do il0=1,geom%nl0
    do jl0r=1,nam%nl0r
       jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
       if (ic2a==0) then
-         distvr(jl0,il0) = abs(geom%vunitavg(il0)-geom%vunitavg(jl0))
+         distvr(jl0r,il0) = abs(geom%vunitavg(il0)-geom%vunitavg(jl0))
       else
          ic2 = hdata%c2a_to_c2(ic2a)
          ic0 = hdata%c2_to_c0(ic2)
-         distvr(jl0,il0) = abs(geom%vunit(ic0,il0)-geom%vunit(ic0,jl0))
+         distvr(jl0r,il0) = abs(geom%vunit(ic0,il0)-geom%vunit(ic0,jl0))
       end if
    end do
 end do

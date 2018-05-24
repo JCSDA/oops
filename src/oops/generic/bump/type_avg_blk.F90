@@ -54,7 +54,8 @@ end type avg_blk_type
 private
 public :: avg_blk_type
 
-real(kind_real),parameter :: var_min = 1.0e-24_kind_real
+real(kind_real),parameter :: rth = 1.0e-12_kind_real     !< Reproducibility threshold
+real(kind_real),parameter :: var_min = 1.0e-24_kind_real !< Minimum variance for correlation computation
 
 contains
 
@@ -337,7 +338,7 @@ do il0=1,geom%nl0
                m2_2 = sum(mom_blk%m2_2(ic1a,jc3,jl0r,il0,:))/real(avg_blk%nsub,kind_real)
                if ((m2_1>var_min).and.(m2_2>var_min)) then
                   list_cor(nc1a) = list_m11(nc1a)/sqrt(m2_1*m2_2)
-                  if (abs(list_cor(nc1a))>1.0) call msr(list_cor(nc1a))
+                  if (abs(list_cor(nc1a))>1.0+rth) call msr(list_cor(nc1a))
                else
                   call msr(list_cor(nc1a))
                end if
@@ -355,6 +356,7 @@ do il0=1,geom%nl0
                end do
                if (.not.nam%gau_approx) avg_blk%m22(jc3,jl0r,il0,isub) = sum(list_m22(1:nc1a,isub))
             end do
+            avg_blk%nc1a_cor(jc3,jl0r,il0) = real(count(isnotmsr(list_cor(1:nc1a))),kind_real)
             if (avg_blk%nc1a_cor(jc3,jl0r,il0)>0.0) then
                avg_blk%cor(jc3,jl0r,il0) = sum(list_cor(1:nc1a),mask=isnotmsr(list_cor(1:nc1a)))
             else
