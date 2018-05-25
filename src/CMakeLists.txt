@@ -200,6 +200,12 @@ oops/util/TimerHelper.h
 oops/util/TimerHelper.cc
 oops/util/utilNamespaceDoc.h
 
+test/interface/Locations.h
+test/interface/ObservationSpace.h
+test/interface/ObsTestsFixture.h
+test/interface/ObsVector.h
+test/TestEnvironment.h
+
 )
 
 function(generate_fortran_bindings output filename)
