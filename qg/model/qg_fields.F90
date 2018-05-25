@@ -699,8 +699,9 @@ subroutine analytic_init(fld, geom, config, vdate)
   character(len=30) :: ic
   character(len=20) :: sdate
   character(len=1024)  :: buf
+  real(kind=kind_real),parameter :: pi = acos(-1.0)
   real(kind=kind_real) :: d1, d2, height(2), z, f1, f2, xdum(2)
-  real(kind=kind_real) :: deltax,deltay
+  real(kind=kind_real) :: deltax,deltay,deg_to_rad,rlat,rlon
   real(kind=kind_real) :: p0,u0,v0,w0,t0,phis0,ps0,rho0,hum0,q1,q2,q3,q4
   real(kind=kind_real), allocatable :: rs(:,:)
   integer :: ix, iy, il
@@ -735,7 +736,10 @@ subroutine analytic_init(fld, geom, config, vdate)
 
   allocate(rs(geom%nx,geom%ny))
   rs = 0.0_kind_real
-  
+
+  deg_to_rad = pi/180.0_kind_real
+
+  write(*,*) "MSM: NEW GEOMETRY DEFINED"
   !--------------------------------------
   init_option: select case (ic)
 
@@ -748,7 +752,11 @@ subroutine analytic_init(fld, geom, config, vdate)
            z = height(il)
            do iy = 1,fld%geom%ny ; do ix = 1, fld%geom%nx 
 
-              call test1_advection_deformation(geom%lon(ix),geom%lat(iy),p0,z,1,&
+              ! convert lat and lon to radians
+              rlat = deg_to_rad * geom%lat(iy)
+              rlon = deg_to_rad*modulo(geom%lon(ix)+180.0_kind_real,360.0_kind_real) - pi
+               
+              call test1_advection_deformation(rlon,rlat,p0,z,1,&
                    u0,v0,w0,t0,phis0,ps0,rho0,hum0,q1,q2,q3,q4)
               
               fld%u(ix,iy,il) = u0 / ubar
@@ -774,7 +782,11 @@ subroutine analytic_init(fld, geom, config, vdate)
            z = height(il)
            do iy = 1,fld%geom%ny ; do ix = 1, fld%geom%nx 
 
-              call test1_advection_hadley(geom%lon(ix),geom%lat(iy),p0,z,1,&
+              ! convert lat and lon to radians
+              rlat = deg_to_rad * geom%lat(iy)
+              rlon = deg_to_rad*modulo(geom%lon(ix)+180.0_kind_real,360.0_kind_real) - pi
+
+              call test1_advection_hadley(rlon,rlat,p0,z,1,&
                    u0,v0,w0,t0,phis0,ps0,rho0,hum0,q1)
            
               fld%u(ix,iy,il) = u0 / ubar

@@ -74,11 +74,10 @@ dx = 360.0_kind_real / real(self%nx,kind=kind_real);
 dytot = 360.0_kind_real * real(self%ny,kind=kind_real) / real(self%nx,kind=kind_real);
 dy = dytot / real(self%ny,kind=kind_real);
 do ix=1,self%nx
-   self%lon(ix) = -180.0_kind_real+(real(ix,kind=kind_real)-0.5_kind_real)*dx
+   self%lon(ix) = -180.0_kind_real+(real(ix,kind=kind_real)-1.0_kind_real)*dx
 end do
 do iy=1,self%ny
-   !self%lat(iy) = -0.5_kind_real*pi+(real(iy,kind=kind_real)-0.5_kind_real)*dy;
-   self%lat(iy) = -0.5_kind_real*pi+(real(iy,kind=kind_real)-1.0_kind_real)*dy;
+   self%lat(iy) = -90.0_kind_real+(real(iy,kind=kind_real)-1.0_kind_real)*dy;
 end do
 do iy=1,self%ny
    self%area(:,iy) = 6.371e6**2*cos(self%lat(iy))*dx*dy
