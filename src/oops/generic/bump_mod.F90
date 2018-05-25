@@ -182,7 +182,7 @@ bump%nam%full_var = integer_to_logical(config_get_int(c_conf,"full_var"))
 bump%nam%local_diag = integer_to_logical(config_get_int(c_conf,"local_diag"))
 if (bump%nam%local_diag) bump%nam%local_rad = config_get_real(c_conf,"local_rad")
 bump%nam%displ_diag = integer_to_logical(config_get_int(c_conf,"displ_diag"))
-if (bump%nam%local_diag) then
+if (bump%nam%displ_diag) then
    bump%nam%displ_rad = config_get_real(c_conf,"displ_rad")
    bump%nam%displ_niter = config_get_int(c_conf,"displ_niter")
    bump%nam%displ_rhflt = config_get_real(c_conf,"displ_rhflt")

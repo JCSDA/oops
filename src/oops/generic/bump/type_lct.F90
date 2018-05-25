@@ -258,6 +258,7 @@ do ib=1,bpar%nb
          offset = 0
          do iscales=1,lct%nscales
             do icomp=1,lct%ncomp(iscales)+1
+
                ! Copy
                if (icomp<=lct%ncomp(iscales)) then
                   fld_c1a = lct%blk(ib)%H(offset+icomp,:,il0)
@@ -354,7 +355,7 @@ type(hdata_type),intent(inout) :: hdata !< HDIAG data
 
 ! Local variables
 integer :: ib,iv,il0,il0i,ic1a,ic1,icomp,ic0a,ic0,iscales,offset
-real(kind_real) :: det
+real(kind_real) :: det,Lavg,Lavg_tot,norm,norm_tot
 real(kind_real),allocatable :: fld_c1a(:,:,:),fld_c1b(:,:),fld(:,:,:)
 logical :: mask_c1a(hdata%nc1a,geom%nl0)
 character(len=1) :: iscaleschar
@@ -422,12 +423,12 @@ do ib=1,bpar%nb
          call hdata%com_AB%ext(geom%nl0,fld_c1a(:,:,icomp),fld_c1b)
          do il0=1,geom%nl0
             il0i = min(il0,geom%nl0i)
-            call hdata%h(il0i)%apply(fld_c1b,fld(:,il0,icomp))
+            call hdata%h(il0i)%apply(fld_c1b(:,il0),fld(:,il0,icomp))
          end do
       end do
 
       ! Compute horizontal length-scale
-      write(mpl%unit,'(a10,a)') '','Compute horizontal length-scale'
+      write(mpl%unit,'(a10,a)') '','Compute horizontal length-scale:'
       call flush(mpl%unit)
       do il0=1,geom%nl0
          do ic0a=1,geom%nc0a
@@ -450,6 +451,11 @@ do ib=1,bpar%nb
                end if
             end if
          end do
+         Lavg = sum(fld(:,il0,lct%ncomp(iscales)+2),isnotmsr(fld(:,il0,lct%ncomp(iscales)+2)))
+         norm = real(count(isnotmsr(fld(:,il0,lct%ncomp(iscales)+2))),kind_real)
+         call mpl%allreduce_sum(Lavg,Lavg_tot)
+         call mpl%allreduce_sum(norm,norm_tot)
+         if (norm_tot>0.0) write(mpl%unit,'(a13,a,i3,a,f10.2,a)') '','Level',nam%levs(il0),' ~> ',Lavg_tot/norm_tot*reqkm,' km'
       end do
 
       ! Write LCT
@@ -458,8 +464,8 @@ do ib=1,bpar%nb
       filename = trim(nam%prefix)//'_lct'
       iv = bpar%b_to_v2(ib)
       write(iscaleschar,'(i1)') iscales
-      call io%fld_write(nam,geom,filename,trim(nam%varname(iv))//'_D11_'//iscaleschar,fld(:,:,1)/req**2)
-      call io%fld_write(nam,geom,filename,trim(nam%varname(iv))//'_D22_'//iscaleschar,fld(:,:,2)/req**2)
+      call io%fld_write(nam,geom,filename,trim(nam%varname(iv))//'_D11_'//iscaleschar,fld(:,:,1)*req**2)
+      call io%fld_write(nam,geom,filename,trim(nam%varname(iv))//'_D22_'//iscaleschar,fld(:,:,2)*req**2)
       call io%fld_write(nam,geom,filename,trim(nam%varname(iv))//'_D33_'//iscaleschar,fld(:,:,3))
       if (lct%ncomp(iscales)==4) call io%fld_write(nam,geom,filename,trim(nam%varname(iv))//'_Hc12_'//iscaleschar,fld(:,:,4))
       call io%fld_write(nam,geom,filename,trim(nam%varname(iv))//'_coef_'//iscaleschar,fld(:,:,lct%ncomp(iscales)+1))

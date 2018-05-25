@@ -507,7 +507,10 @@ write(mpl%unit,'(a)') '--- Run drivers'
 call flush(mpl%unit)
 call bump%run_drivers
 
-if (.not.mpl%main) then
+if (mpl%main) then
+   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(mpl%unit,'(a)') '--- BUMP done'
+else
    ! Close listings
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Close listings'
@@ -539,7 +542,6 @@ write(mpl%unit,'(a)') '---------------------------------------------------------
 write(mpl%unit,'(a)') '--- You are running bump ------------------------------------------'
 write(mpl%unit,'(a)') '--- Author: Benjamin Menetrier ------------------------------------'
 write(mpl%unit,'(a)') '--- Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE -----------'
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 call flush(mpl%unit)
 
 ! Check namelist parameters

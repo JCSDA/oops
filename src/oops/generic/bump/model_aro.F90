@@ -50,7 +50,7 @@ logical,allocatable :: cmask_pack(:)
 character(len=1024) :: subr = 'model_aro_coord'
 
 ! Open file and get dimensions
-call ncerr(subr,nf90_open(trim(nam%datadir)//'/grid.nc',nf90_nowrite,ncid))
+call ncerr(subr,nf90_open(trim(nam%datadir)//'/grid.nc',nf90_share,ncid))
 call ncerr(subr,nf90_inq_dimid(ncid,'X',nlon_id))
 call ncerr(subr,nf90_inq_dimid(ncid,'Y',nlat_id))
 call ncerr(subr,nf90_inquire_dimension(ncid,nlon_id,len=geom%nlon))
@@ -153,64 +153,73 @@ character(len=*),intent(in) :: filename                       !< File name
 real(kind_real),intent(out) :: fld(geom%nc0a,geom%nl0,nam%nv) !< Field
 
 ! Local variables
-integer :: iproc,iv,il0,ic0a,ic0,ilon,ilat
+integer :: iv,il0,ic0,ilon,ilat
 integer :: ncid,fld_id
-real(kind_real) :: fld_loc
+real(kind_real) :: fld_tmp(geom%nlon,geom%nlat)
+real(kind_real),allocatable :: fld_c0(:,:)
 character(len=3) :: ilchar
 character(len=1024) :: subr = 'model_aro_read'
 
-! Initialize field
-call msr(fld)
+if (mpl%main) then
+   ! Allocation
+   allocate(fld_c0(geom%nc0,geom%nl0))
 
-do iproc=1,mpl%nproc
-   if (mpl%myproc==iproc) then
-      ! Open file
-      call ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_nowrite,ncid))
+   ! Initialization
+   call msr(fld_c0)
 
-      do iv=1,nam%nv
-         ! 3d variable
-         do il0=1,nam%nl
-            ! Get id
-            write(ilchar,'(i3.3)') nam%levs(il0)
-            call ncerr(subr,nf90_inq_varid(ncid,'S'//ilchar//trim(nam%varname(iv)),fld_id))
+   ! Open file
+   call ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_nowrite,ncid))
+end if
 
-            ! Read data
-            do ic0a=1,geom%nc0a
-               ic0 = geom%c0a_to_c0(ic0a)
-               ilon = geom%c0_to_lon(ic0)
-               ilat = geom%c0_to_lat(ic0)
-               call ncerr(subr,nf90_get_var(ncid,fld_id,fld_loc,(/ilon,ilat/)))
-               fld(ic0a,il0,iv) = real(fld_loc,kind_real)
-            end do
+do iv=1,nam%nv
+   if (mpl%main) then
+      ! 3d variable
+      do il0=1,nam%nl
+         ! Get id
+         write(ilchar,'(i3.3)') nam%levs(il0)
+         call ncerr(subr,nf90_inq_varid(ncid,'S'//ilchar//trim(nam%varname(iv)),fld_id))
+
+         ! Read data
+         call ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp))
+         do ic0=1,geom%nc0
+            ilon = geom%c0_to_lon(ic0)
+            ilat = geom%c0_to_lat(ic0)
+            fld_c0(ic0,il0) = real(fld_tmp(ilon,ilat),kind_real)
          end do
+      end do
 
-         if (trim(nam%addvar2d(iv))/='') then
-            ! 2d variable
-
+      if (trim(nam%addvar2d(iv))/='') then
+         ! 2d variable
+         if (mpl%main) then
             ! Get id
             call ncerr(subr,nf90_inq_varid(ncid,trim(nam%addvar2d(iv)),fld_id))
 
             ! Read data
-            do ic0a=1,geom%nc0a
-               ic0 = geom%c0a_to_c0(ic0a)
+            call ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp))
+            do ic0=1,geom%nc0
                ilon = geom%c0_to_lon(ic0)
                ilat = geom%c0_to_lat(ic0)
-               call ncerr(subr,nf90_get_var(ncid,fld_id,fld_loc,(/ilon,ilat/)))
-               fld(ic0a,geom%nl0,iv) = real(fld_loc,kind_real)
+               fld_c0(ic0,geom%nl0) = real(fld_tmp(ilon,ilat),kind_real)
             end do
 
             ! Variable change for surface pressure
-            if (trim(nam%addvar2d(iv))=='SURFPRESSION') fld(:,geom%nl0,iv) = exp(fld(:,geom%nl0,iv))
+            if (trim(nam%addvar2d(iv))=='SURFPRESSION') fld_c0(ic0,geom%nl0) = exp(fld_c0(ic0,geom%nl0))
          end if
-      end do
-
-      ! Close file
-      call ncerr(subr,nf90_close(ncid))
+      end if
    end if
 
-   ! Wait
-   call mpl%barrier
+   ! Global to local
+   do il0=1,geom%nl0
+      call mpl%scatterv(geom%proc_to_nc0a,geom%nc0,fld_c0(:,il0),geom%nc0a,fld(:,il0,iv))
+   end do
 end do
+
+if (mpl%main) then
+   ! Close file
+   call ncerr(subr,nf90_close(ncid))
+   ! Release memory
+   deallocate(fld_c0)
+end if
 
 end subroutine model_aro_read
 

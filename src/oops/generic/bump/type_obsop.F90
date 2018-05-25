@@ -764,10 +764,10 @@ real(kind_real),intent(out) :: obs(obsop%nobsa,geom%nl0) !< Observations columns
 integer :: il0
 real(kind_real) :: fld_ext(obsop%nc0b,geom%nl0)
 
-if (obsop%nobsa>0) then
-   ! Halo extension
-   call obsop%com%ext(geom%nl0,fld,fld_ext)
+! Halo extension
+call obsop%com%ext(geom%nl0,fld,fld_ext)
 
+if (obsop%nobsa>0) then
    ! Horizontal interpolation
    !$omp parallel do schedule(static) private(il0)
    do il0=1,geom%nl0
@@ -803,13 +803,13 @@ if (obsop%nobsa>0) then
       call obsop%h%apply_ad(obs(:,il0),fld_ext(:,il0))
    end do
    !$omp end parallel do
-
-   ! Halo reduction
-   call obsop%com%red(geom%nl0,fld_ext,fld)
 else
    ! No observation on this task
-   fld = 0.0
+   fld_ext = 0.0
 end if
+
+! Halo reduction
+call obsop%com%red(geom%nl0,fld_ext,fld)
 
 end subroutine obsop_apply_ad
 

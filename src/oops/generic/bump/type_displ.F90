@@ -53,7 +53,8 @@ contains
    procedure :: write => displ_write
 end type displ_type
 
-real(kind_real),parameter :: cor_th = 0.2_kind_real !< Correlation threshold
+character(len=1024) :: displ_method = 'cor_center_mass' !< Displacement computation method
+real(kind_real),parameter :: cor_th = 0.2_kind_real     !< Correlation threshold
 
 private
 public :: displ_type
@@ -145,14 +146,16 @@ type(ens_type), intent(in) :: ens        !< Ensemble
 
 ! Local variables
 integer :: ic0,ic1,ic2,ic2a,jc0,jc1,il0,il0i,isub,iv,its,ie,ie_sub,iter,ic0a,jc0d
-integer,allocatable :: order(:)
+integer,allocatable :: ind(:)
 real(kind_real) :: fac4,fac6,m11_avg,m2m2_avg,fld_1,fld_2,drhflt,dum,distsum,norm
+real(kind_real) :: lon_target,lat_target,rad_target,x_cm,y_cm,z_cm,n_cm
 real(kind_real) :: norm_tot,distsum_tot
 real(kind_real),allocatable :: fld_ext(:,:,:,:)
 real(kind_real),allocatable :: m1_1(:,:,:,:,:,:),m2_1(:,:,:,:,:,:)
 real(kind_real),allocatable :: m1_2(:,:,:,:,:,:),m2_2(:,:,:,:,:,:)
 real(kind_real),allocatable :: m11(:,:,:,:,:,:)
 real(kind_real),allocatable :: cor(:),cor_avg(:)
+real(kind_real),allocatable :: x(:),y(:),z(:)
 real(kind_real) :: dlon_c0a(geom%nc0a),dlat_c0a(geom%nc0a)
 real(kind_real) :: dlon_c2a(hdata%nc2a),dlat_c2a(hdata%nc2a),dist_c2a(hdata%nc2a)
 real(kind_real) :: dlon_c2b(hdata%nc2b),dlat_c2b(hdata%nc2b)
@@ -283,8 +286,8 @@ do isub=1,ens%nsub
    call flush(mpl%unit)
 end do
 
-! Find correlation maximum propagation
-write(mpl%unit,'(a7,a)') '','Find correlation maximum propagation'
+! Find correlation propagation
+write(mpl%unit,'(a7,a)') '','Find correlation propagation'
 call flush(mpl%unit)
 
 do its=2,nam%nts
@@ -296,14 +299,14 @@ do its=2,nam%nts
       norm = real(count(mask_c2a(:,il0)),kind_real)
       call mpl%allreduce_sum(norm,norm_tot)
 
-      !$omp parallel do schedule(static) private(ic2a,ic2,jc1,jc0,iv,m11_avg,m2m2_avg) firstprivate(cor,cor_avg,order)
+      !$omp parallel do schedule(static) private(ic2a,ic2,jc1,jc0,iv,m11_avg,m2m2_avg,lon_target,lat_target,rad_target), &
+      !$omp&                             private(x_cm,y_cm,z_cm,n_cm) firstprivate(cor,cor_avg,ind,x,y,z)
       do ic2a=1,hdata%nc2a
          ic2 = hdata%c2a_to_c2(ic2a)
          if (mask_c2a(ic2a,il0)) then
             ! Allocation
             allocate(cor(nam%nv))
             allocate(cor_avg(nam%nc1))
-            allocate(order(nam%nc1))
 
             do jc1=1,nam%nc1
                ! Initialization
@@ -331,27 +334,83 @@ do its=2,nam%nts
                end if
             end do
 
-            ! Sort correlations
-            call qsort(nam%nc1,cor_avg,order)
+            select case (trim(displ_method))
+            case ('cor_max')
+               ! Locate the maximum correlation, with a correlation threshold
 
-            ! Locate the maximum correlation, with a correlation threshold
-            if (cor_avg(nam%nc1)>cor_th) then
-               jc1 = order(nam%nc1)
-               jc0 = hdata%c1_to_c0(jc1)
-               dlon_c2a(ic2a) = geom%lon(jc0)-lon_c2a_ori(ic2a,il0)
-               dlat_c2a(ic2a) = geom%lat(jc0)-lat_c2a_ori(ic2a,il0)
-               call lonlatmod(dlon_c2a(ic2a),dlat_c2a(ic2a))
-               call sphere_dist(lon_c2a_ori(ic2a,il0),lat_c2a_ori(ic2a,il0),geom%lon(jc0),geom%lat(jc0),dist_c2a(ic2a))
-            else
-               dlon_c2a(ic2a) = 0.0
-               dlat_c2a(ic2a) = 0.0
-               dist_c2a(ic2a) = 0.0
-            end if
+               ! Allocation
+               allocate(ind(1))
+
+               if (maxval(cor_avg)>cor_th) then
+                  ! Find maximum
+                  ind = maxloc(cor_avg)
+                  jc1 = ind(1)
+                  jc0 = hdata%c1_to_c0(jc1)
+                  lon_target = geom%lon(jc0)
+                  lat_target = geom%lon(jc0)
+               else
+                  lon_target = 0.0
+                  lat_target = 0.0
+               end if
+
+               ! Release memory
+               deallocate(ind)
+            case ('cor_center_mass')
+               ! Locate the correlation center of mass, with a correlation threshold
+
+               ! Allocation
+               allocate(x(1))
+               allocate(y(1))
+               allocate(z(1))
+
+               ! Initialization
+               x_cm = 0.0
+               y_cm = 0.0
+               z_cm = 0.0
+               n_cm = 0.0
+
+               do jc1=1,nam%nc1
+                  if (cor_avg(jc1)>max(cor_th,0.5*maxval(cor_avg))) then
+                     ! Compute cartesian coordinates
+                     jc0 = hdata%c1_to_c0(jc1)
+                     call trans(1,geom%lat(jc0),geom%lon(jc0),x,y,z)
+
+                     ! Update center of mass
+                     x_cm = x_cm+cor_avg(jc1)*x(1)
+                     y_cm = y_cm+cor_avg(jc1)*y(1)
+                     z_cm = z_cm+cor_avg(jc1)*z(1)
+                     n_cm = n_cm+cor_avg(jc1)
+                  end if
+               end do
+
+               if (n_cm>0.0) then
+                  ! Final center of mass
+                  x_cm = x_cm/n_cm
+                  y_cm = y_cm/n_cm
+                  z_cm = z_cm/n_cm
+
+                  ! Back to spherical coordinates
+                  call scoord(x_cm,y_cm,z_cm,lat_target,lon_target,rad_target)
+               else
+                  lon_target = 0.0
+                  lat_target = 0.0
+               end if
+
+               ! Release memory
+               deallocate(x)
+               deallocate(y)
+               deallocate(z)
+            end select
+
+            ! Compute displacement and distance
+            dlon_c2a(ic2a) = lon_target-lon_c2a_ori(ic2a,il0)
+            dlat_c2a(ic2a) = lat_target-lat_c2a_ori(ic2a,il0)
+            call lonlatmod(dlon_c2a(ic2a),dlat_c2a(ic2a))
+            call sphere_dist(lon_c2a_ori(ic2a,il0),lat_c2a_ori(ic2a,il0),lon_target,lat_target,dist_c2a(ic2a))
 
             ! Release memory
             deallocate(cor)
             deallocate(cor_avg)
-            deallocate(order)
          end if
       end do
       !$omp end parallel do
@@ -364,12 +423,15 @@ do its=2,nam%nts
       end do
 
       ! Check raw mesh
-      mesh = hdata%mesh%copy()
       call mpl%gatherv(hdata%nc2a,lon_c2a,hdata%proc_to_nc2a,hdata%nc2,lon_c2)
       call mpl%gatherv(hdata%nc2a,lat_c2a,hdata%proc_to_nc2a,hdata%nc2,lat_c2)
-      call mesh%trans(lon_c2,lat_c2)
-      call mesh%check(valid_c2)
-      displ%valid(0,il0,its) = sum(valid_c2,mask=mask_c2(:,il0))/real(count((mask_c2(:,il0))),kind_real)
+      if (mpl%main) then
+         mesh = hdata%mesh%copy()
+         call mesh%trans(lon_c2,lat_c2)
+         call mesh%check(valid_c2)
+         displ%valid(0,il0,its) = sum(valid_c2,mask=mask_c2(:,il0))/real(count((mask_c2(:,il0))),kind_real)
+      end if
+      call mpl%bcast(displ%valid(0,il0,its))
       displ%rhflt(0,il0,its) = 0.0
 
       ! Average distance
@@ -443,12 +505,14 @@ do its=2,nam%nts
             end do
 
             ! Check mesh
-            mesh = hdata%mesh%copy()
             call mpl%gatherv(hdata%nc2a,lon_c2a,hdata%proc_to_nc2a,hdata%nc2,lon_c2)
             call mpl%gatherv(hdata%nc2a,lat_c2a,hdata%proc_to_nc2a,hdata%nc2,lat_c2)
-            call mesh%trans(lon_c2,lat_c2)
-            call mesh%check(valid_c2)
-            displ%valid(iter,il0,its) = sum(valid_c2,mask=mask_c2(:,il0))/real(count((mask_c2(:,il0))),kind_real)
+            if (mpl%main) then
+               mesh = hdata%mesh%copy()
+               call mesh%trans(lon_c2,lat_c2)
+               call mesh%check(valid_c2)
+               displ%valid(iter,il0,its) = sum(valid_c2,mask=mask_c2(:,il0))/real(count((mask_c2(:,il0))),kind_real)
+            end if
             call mpl%bcast(displ%valid(iter,il0,its))
 
             ! Compute distances
@@ -559,8 +623,106 @@ character(len=*),intent(in) :: filename !< File name
 ! Local variables
 integer :: ncid,nc2_id,nl0_id,nts_id,displ_niter_id,vunit_id,valid_id,dist_id,rhflt_id
 integer :: lon_c2_id,lat_c2_id,lon_c2_raw_id,lat_c2_raw_id,dist_c2_raw_id,lon_c2_flt_id,lat_c2_flt_id,dist_c2_flt_id
-integer :: iproc,its,il0,ic2a,ic2
+integer :: iproc,its,il0,ic2a,ic2,i
+integer,allocatable :: c2a_to_c2(:)
+real(kind_real),allocatable :: sbuf(:),rbuf(:),lon_c2(:,:),lat_c2(:,:)
+real(kind_real),allocatable :: lon_c2_raw(:,:,:),lat_c2_raw(:,:,:),dist_c2_raw(:,:,:)
+real(kind_real),allocatable :: lon_c2_flt(:,:,:),lat_c2_flt(:,:,:),dist_c2_flt(:,:,:)
 character(len=1024) :: subr = 'displ_write'
+
+! Allocation
+allocate(sbuf(hdata%nc2a*geom%nl0*(2+(nam%nts-1)*6)))
+
+! Prepare buffer
+i = 1
+do il0=1,geom%nl0
+   do ic2a=1,hdata%nc2a
+      sbuf(i) = displ%lon_c2a(ic2a,il0)*rad2deg
+      i = i+1
+      sbuf(i) = displ%lat_c2a(ic2a,il0)*rad2deg
+      i = i+1
+      do its=2,nam%nts
+         sbuf(i) = displ%lon_c2a_raw(ic2a,il0,its)*rad2deg
+         i = i+1
+         sbuf(i) = displ%lat_c2a_raw(ic2a,il0,its)*rad2deg
+         i = i+1
+         sbuf(i) = displ%dist_c2a_raw(ic2a,il0,its)*reqkm
+         i = i+1
+         sbuf(i) = displ%lon_c2a_flt(ic2a,il0,its)*rad2deg
+         i = i+1
+         sbuf(i) = displ%lat_c2a_flt(ic2a,il0,its)*rad2deg
+         i = i+1
+         sbuf(i) = displ%dist_c2a_flt(ic2a,il0,its)*reqkm
+         i = i+1
+      end do
+   end do
+end do
+
+if (mpl%main) then
+   ! Allocation
+   allocate(lon_c2(hdata%nc2,geom%nl0))
+   allocate(lat_c2(hdata%nc2,geom%nl0))
+   allocate(lon_c2_raw(hdata%nc2,geom%nl0,nam%nts-1))
+   allocate(lat_c2_raw(hdata%nc2,geom%nl0,nam%nts-1))
+   allocate(dist_c2_raw(hdata%nc2,geom%nl0,nam%nts-1))
+   allocate(lon_c2_flt(hdata%nc2,geom%nl0,nam%nts-1))
+   allocate(lat_c2_flt(hdata%nc2,geom%nl0,nam%nts-1))
+   allocate(dist_c2_flt(hdata%nc2,geom%nl0,nam%nts-1))
+
+   do iproc=1,mpl%nproc
+      ! Allocation
+      allocate(c2a_to_c2(hdata%proc_to_nc2a(iproc)))
+      allocate(rbuf(hdata%proc_to_nc2a(iproc)*geom%nl0*(2+(nam%nts-1)*6)))
+
+      if (iproc==mpl%ioproc) then
+         ! Copy buffer
+         c2a_to_c2 = hdata%c2a_to_c2
+         rbuf = sbuf
+      else
+         ! Receive data on ioproc
+         call mpl%recv(hdata%proc_to_nc2a(iproc),c2a_to_c2,iproc,mpl%tag)
+         call mpl%recv(hdata%proc_to_nc2a(iproc)*geom%nl0*(2+(nam%nts-1)*6),rbuf,iproc,mpl%tag+1)
+      end if
+
+      ! Write data
+      i = 1
+      do il0=1,geom%nl0
+         do ic2a=1,hdata%proc_to_nc2a(iproc)
+            ic2 = c2a_to_c2(ic2a)
+            lon_c2(ic2,il0) = rbuf(i)
+            i = i+1
+            lat_c2(ic2,il0) = rbuf(i)
+            i = i+1
+            do its=2,nam%nts
+               lon_c2_raw(ic2,il0,its-1) = rbuf(i)
+               i = i+1
+               lat_c2_raw(ic2,il0,its-1) = rbuf(i)
+               i = i+1
+               dist_c2_raw(ic2,il0,its-1) = rbuf(i)
+               i = i+1
+               lon_c2_flt(ic2,il0,its-1) = rbuf(i)
+               i = i+1
+               lat_c2_flt(ic2,il0,its-1) = rbuf(i)
+               i = i+1
+               dist_c2_flt(ic2,il0,its-1) = rbuf(i)
+               i = i+1
+            end do
+         end do
+      end do
+
+      ! Release memory
+      deallocate(c2a_to_c2)
+      deallocate(rbuf)
+   end do
+else
+   ! Send data to ioproc
+   call mpl%send(hdata%nc2a,hdata%c2a_to_c2,mpl%ioproc,mpl%tag)
+   call mpl%send(hdata%nc2a*geom%nl0*(2+(nam%nts-1)*6),sbuf,mpl%ioproc,mpl%tag+1)
+end if
+mpl%tag = mpl%tag+2
+
+! Release memory
+deallocate(sbuf)
 
 if (mpl%main) then
    ! Create file
@@ -603,60 +765,33 @@ if (mpl%main) then
    ! End definition mode
    call ncerr(subr,nf90_enddef(ncid))
 
-   ! Write global variables
+   ! Write data
    call ncerr(subr,nf90_put_var(ncid,vunit_id,geom%vunit(hdata%c2_to_c0,:)))
    call ncerr(subr,nf90_put_var(ncid,valid_id,displ%valid))
    call ncerr(subr,nf90_put_var(ncid,dist_id,displ%dist*reqkm))
    call ncerr(subr,nf90_put_var(ncid,rhflt_id,displ%rhflt*reqkm))
+   call ncerr(subr,nf90_put_var(ncid,lon_c2_id,lon_c2))
+   call ncerr(subr,nf90_put_var(ncid,lat_c2_id,lat_c2))
+   call ncerr(subr,nf90_put_var(ncid,lon_c2_raw_id,lon_c2_raw))
+   call ncerr(subr,nf90_put_var(ncid,lat_c2_raw_id,lat_c2_raw))
+   call ncerr(subr,nf90_put_var(ncid,dist_c2_raw_id,dist_c2_raw))
+   call ncerr(subr,nf90_put_var(ncid,lon_c2_flt_id,lon_c2_flt))
+   call ncerr(subr,nf90_put_var(ncid,lat_c2_flt_id,lat_c2_flt))
+   call ncerr(subr,nf90_put_var(ncid,dist_c2_flt_id,dist_c2_flt))
 
    ! Close file
    call ncerr(subr,nf90_close(ncid))
+
+   ! Release memory
+   deallocate(lon_c2)
+   deallocate(lat_c2)
+   deallocate(lon_c2_raw)
+   deallocate(lat_c2_raw)
+   deallocate(dist_c2_raw)
+   deallocate(lon_c2_flt)
+   deallocate(lat_c2_flt)
+   deallocate(dist_c2_flt)
 end if
-
-do iproc=1,mpl%nproc
-   if (mpl%myproc==iproc) then
-      ! Open file
-      call ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_write,ncid))
-
-      ! Get variable id
-      call ncerr(subr,nf90_inq_varid(ncid,'lon_c2',lon_c2_id))
-      call ncerr(subr,nf90_inq_varid(ncid,'lat_c2',lat_c2_id))
-      call ncerr(subr,nf90_inq_varid(ncid,'lon_c2_raw',lon_c2_raw_id))
-      call ncerr(subr,nf90_inq_varid(ncid,'lat_c2_raw',lat_c2_raw_id))
-      call ncerr(subr,nf90_inq_varid(ncid,'dist_c2_raw',dist_c2_raw_id))
-      call ncerr(subr,nf90_inq_varid(ncid,'lon_c2_flt',lon_c2_flt_id))
-      call ncerr(subr,nf90_inq_varid(ncid,'lat_c2_flt',lat_c2_flt_id))
-      call ncerr(subr,nf90_inq_varid(ncid,'dist_c2_flt',dist_c2_flt_id))
-
-      ! Write variable
-      do il0=1,geom%nl0
-         do ic2a=1,hdata%nc2a
-            ic2 = hdata%c2a_to_c2(ic2a)
-            call ncerr(subr,nf90_put_var(ncid,lon_c2_id,displ%lon_c2a(ic2a,il0)*rad2deg,(/ic2,il0/)))
-            call ncerr(subr,nf90_put_var(ncid,lat_c2_id,displ%lat_c2a(ic2a,il0)*rad2deg,(/ic2,il0/)))
-         end do
-      end do
-      do its=2,nam%nts
-         do il0=1,geom%nl0
-            do ic2a=1,hdata%nc2a
-               ic2 = hdata%c2a_to_c2(ic2a)
-               call ncerr(subr,nf90_put_var(ncid,lon_c2_raw_id,displ%lon_c2a_raw(ic2a,il0,its)*rad2deg,(/ic2,il0,its-1/)))
-               call ncerr(subr,nf90_put_var(ncid,lat_c2_raw_id,displ%lat_c2a_raw(ic2a,il0,its)*rad2deg,(/ic2,il0,its-1/)))
-               call ncerr(subr,nf90_put_var(ncid,dist_c2_raw_id,displ%dist_c2a_raw(ic2a,il0,its)*reqkm,(/ic2,il0,its-1/)))
-               call ncerr(subr,nf90_put_var(ncid,lon_c2_flt_id,displ%lon_c2a_flt(ic2a,il0,its)*rad2deg,(/ic2,il0,its-1/)))
-               call ncerr(subr,nf90_put_var(ncid,lat_c2_flt_id,displ%lat_c2a_flt(ic2a,il0,its)*rad2deg,(/ic2,il0,its-1/)))
-               call ncerr(subr,nf90_put_var(ncid,dist_c2_flt_id,displ%dist_c2a_flt(ic2a,il0,its)*reqkm,(/ic2,il0,its-1/)))
-            end do
-         end do
-      end do
-
-      ! Close file
-      call ncerr(subr,nf90_close(ncid))
-   end if
-
-   ! Wait
-   call mpl%barrier
-end do
 
 end subroutine displ_write
 

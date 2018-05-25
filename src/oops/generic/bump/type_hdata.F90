@@ -1985,7 +1985,7 @@ end subroutine hdata_compute_mpi_c
 ! Subroutine: hdata_diag_filter
 !> Purpose: filter diagnostics
 !----------------------------------------------------------------------
-subroutine hdata_diag_filter(hdata,geom,il0,filter_type,r,diag)
+subroutine hdata_diag_filter(hdata,geom,il0,filter_type,rflt,diag)
 
 implicit none
 
@@ -1994,7 +1994,7 @@ class(hdata_type),intent(in) :: hdata             !< HDIAG data
 type(geom_type),intent(in) :: geom                !< Geometry
 integer,intent(in) :: il0                         !< Level
 character(len=*),intent(in) :: filter_type        !< Filter type
-real(kind_real),intent(in) :: r                   !< Filter support radius
+real(kind_real),intent(in) :: rflt                !< Filter support radius
 real(kind_real),intent(inout) :: diag(hdata%nc2a) !< Filtered diagnostic
 
 ! Local variables
@@ -2003,81 +2003,83 @@ integer,allocatable :: order(:)
 real(kind_real) :: diag_glb(hdata%nc2),distnorm,norm,wgt
 real(kind_real),allocatable :: diag_eff(:),diag_eff_dist(:)
 
-! Local to global
-call mpl%allgatherv(hdata%nc2a,diag,hdata%proc_to_nc2a,hdata%nc2,diag_glb)
+if (rflt>0.0) then
+   ! Local to global
+   call mpl%allgatherv(hdata%nc2a,diag,hdata%proc_to_nc2a,hdata%nc2,diag_glb)
 
-!$omp parallel do schedule(static) private(ic2a,ic2,ic1,nc2eff,jc2,distnorm,norm,wgt) firstprivate(diag_eff,diag_eff_dist,order)
-do ic2a=1,hdata%nc2a
-   ic2 = hdata%c2a_to_c2(ic2a)
-   ic1 = hdata%c2_to_c1(ic2)
-   if (hdata%c1l0_log(ic1,il0)) then
-      ! Allocation
-      allocate(diag_eff(hdata%nc2))
-      allocate(diag_eff_dist(hdata%nc2))
+   !$omp parallel do schedule(static) private(ic2a,ic2,ic1,nc2eff,jc2,distnorm,norm,wgt) firstprivate(diag_eff,diag_eff_dist,order)
+   do ic2a=1,hdata%nc2a
+      ic2 = hdata%c2a_to_c2(ic2a)
+      ic1 = hdata%c2_to_c1(ic2)
+      if (hdata%c1l0_log(ic1,il0)) then
+         ! Allocation
+         allocate(diag_eff(hdata%nc2))
+         allocate(diag_eff_dist(hdata%nc2))
 
-      ! Build diag_eff of valid points
-      nc2eff = 0
-      jc2 = 1
-      do while (isnotmsi(hdata%nn_c2_index(jc2,ic2,min(il0,geom%nl0i))).and.(hdata%nn_c2_dist(jc2,ic2,min(il0,geom%nl0i))<r))
-         ! Check the point validity
-         if (isnotmsr(diag_glb(hdata%nn_c2_index(jc2,ic2,min(il0,geom%nl0i))))) then
-            nc2eff = nc2eff+1
-            diag_eff(nc2eff) = diag_glb(hdata%nn_c2_index(jc2,ic2,min(il0,geom%nl0i)))
-            diag_eff_dist(nc2eff) = hdata%nn_c2_dist(jc2,ic2,min(il0,geom%nl0i))
-         end if
-         jc2 = jc2+1
-         if (jc2>hdata%nc2) exit
-      end do
-
-      ! Apply filter
-      if (nc2eff>0) then
-         select case (trim(filter_type))
-         case ('average')
-            ! Compute average
-            diag(ic2a) = sum(diag_eff(1:nc2eff))/real(nc2eff,kind_real)
-         case ('fill')
-            ! Fill with closest non-missing value
-            call msr(diag(ic2a))
-            jc2 = 1
-            do while ((.not.isnotmsr(diag(ic2a))).and.(jc2<=nc2eff))
-               diag(ic2a) = diag_eff(jc2)
-               jc2 = jc2+1
-            end do
-         case ('gc99')
-            ! Gaspari-Cohn (1999) kernel
-            diag(ic2a) = 0.0
-            norm = 0.0
-            do jc2=1,nc2eff
-               distnorm = diag_eff_dist(jc2)/r
-               wgt = gc99(distnorm)
-               diag(ic2a) = diag(ic2a)+wgt*diag_eff(jc2)
-               norm = norm+wgt
-            end do
-            diag(ic2a) = diag(ic2a)/norm
-         case ('median')
-            ! Compute median
-            allocate(order(nc2eff))
-            call qsort(nc2eff,diag_eff(1:nc2eff),order)
-            if (mod(nc2eff,2)==0) then
-               diag(ic2a) = 0.5*(diag_eff(nc2eff/2)+diag_eff(nc2eff/2+1))
-            else
-               diag(ic2a) = diag_eff((nc2eff+1)/2)
+         ! Build diag_eff of valid points
+         nc2eff = 0
+         jc2 = 1
+         do while (isnotmsi(hdata%nn_c2_index(jc2,ic2,min(il0,geom%nl0i))).and.(hdata%nn_c2_dist(jc2,ic2,min(il0,geom%nl0i))<rflt))
+            ! Check the point validity
+            if (isnotmsr(diag_glb(hdata%nn_c2_index(jc2,ic2,min(il0,geom%nl0i))))) then
+               nc2eff = nc2eff+1
+               diag_eff(nc2eff) = diag_glb(hdata%nn_c2_index(jc2,ic2,min(il0,geom%nl0i)))
+               diag_eff_dist(nc2eff) = hdata%nn_c2_dist(jc2,ic2,min(il0,geom%nl0i))
             end if
-            deallocate(order)
-         case default
-            ! Wrong filter
-            call msgerror('wrong filter type')
-         end select
-      else
-         call msr(diag(ic2a))
-      end if
+            jc2 = jc2+1
+            if (jc2>hdata%nc2) exit
+         end do
 
-      ! Release memory
-      deallocate(diag_eff)
-      deallocate(diag_eff_dist)
-   end if
-end do
-!$omp end parallel do
+         ! Apply filter
+         if (nc2eff>0) then
+            select case (trim(filter_type))
+            case ('average')
+               ! Compute average
+               diag(ic2a) = sum(diag_eff(1:nc2eff))/real(nc2eff,kind_real)
+            case ('fill')
+               ! Fill with closest non-missing value
+               call msr(diag(ic2a))
+               jc2 = 1
+               do while ((.not.isnotmsr(diag(ic2a))).and.(jc2<=nc2eff))
+                  diag(ic2a) = diag_eff(jc2)
+                  jc2 = jc2+1
+               end do
+            case ('gc99')
+               ! Gaspari-Cohn (1999) kernel
+               diag(ic2a) = 0.0
+               norm = 0.0
+               do jc2=1,nc2eff
+                  distnorm = diag_eff_dist(jc2)/rflt
+                  wgt = gc99(distnorm)
+                  diag(ic2a) = diag(ic2a)+wgt*diag_eff(jc2)
+                  norm = norm+wgt
+               end do
+               diag(ic2a) = diag(ic2a)/norm
+            case ('median')
+               ! Compute median
+               allocate(order(nc2eff))
+               call qsort(nc2eff,diag_eff(1:nc2eff),order)
+               if (mod(nc2eff,2)==0) then
+                  diag(ic2a) = 0.5*(diag_eff(nc2eff/2)+diag_eff(nc2eff/2+1))
+               else
+                  diag(ic2a) = diag_eff((nc2eff+1)/2)
+               end if
+               deallocate(order)
+            case default
+               ! Wrong filter
+               call msgerror('wrong filter type')
+            end select
+         else
+            call msr(diag(ic2a))
+         end if
+
+         ! Release memory
+         deallocate(diag_eff)
+         deallocate(diag_eff_dist)
+      end if
+   end do
+   !$omp end parallel do
+end if
 
 end subroutine hdata_diag_filter
 

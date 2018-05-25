@@ -35,7 +35,6 @@ contains
    procedure :: init => mpl_init
    procedure :: init_listing => mpl_init_listing
    procedure :: abort => mpl_abort
-   procedure :: barrier => mpl_barrier
    procedure :: mpl_bcast_integer
    procedure :: mpl_bcast_integer_array_1d
    procedure :: mpl_bcast_integer_array_2d
@@ -225,7 +224,7 @@ character(len=*),intent(in) :: prefix  !< Output prefix
 integer,intent(in),optional :: listing !< Main listing unit
 
 ! Local variables
-integer :: iproc
+integer :: iproc,info
 character(len=4) :: myprocchar
 
 ! Define unit and open file
@@ -246,7 +245,10 @@ do iproc=1,mpl%nproc
    end if
 
    ! Wait
-   call mpl%barrier()
+   call mpi_barrier(mpl%mpi_comm,info)
+
+   ! Check
+   call mpl%check(info)
 end do
 
 end subroutine mpl_init_listing
@@ -280,28 +282,6 @@ stop
 end subroutine mpl_abort
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_barrier
-!> Purpose: MPI barrier
-!----------------------------------------------------------------------
-subroutine mpl_barrier(mpl)
-
-implicit none
-
-! Passed variable
-class(mpl_type) :: mpl!< MPL object
-
-! Local variable
-integer :: info
-
-! Wait
-call mpi_barrier(mpl%mpi_comm,info)
-
-! Check
-call mpl%check(info)
-
-end subroutine mpl_barrier
-
-!----------------------------------------------------------------------
 ! Subroutine: mpl_bcast_integer
 !> Purpose: broadcast integer
 !----------------------------------------------------------------------
@@ -329,9 +309,6 @@ call mpi_bcast(var,1,mpi_integer,mpi_root,mpl%mpi_comm,info)
 
 ! Check
 call mpl%check(info)
-
-! Wait
-call mpl%barrier
 
 end subroutine mpl_bcast_integer
 
@@ -364,9 +341,6 @@ call mpi_bcast(var,size(var),mpi_integer,mpi_root,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-! Wait
-call mpl%barrier
-
 end subroutine mpl_bcast_integer_array_1d
 
 !----------------------------------------------------------------------
@@ -397,9 +371,6 @@ call mpi_bcast(var,size(var),mpi_integer,mpi_root,mpl%mpi_comm,info)
 
 ! Check
 call mpl%check(info)
-
-! Wait
-call mpl%barrier
 
 end subroutine mpl_bcast_integer_array_2d
 
@@ -432,9 +403,6 @@ call mpi_bcast(var,1,mpl%rtype,mpi_root,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-! Wait
-call mpl%barrier
-
 end subroutine mpl_bcast_real
 
 !----------------------------------------------------------------------
@@ -465,9 +433,6 @@ call mpi_bcast(var,size(var),mpl%rtype,mpi_root,mpl%mpi_comm,info)
 
 ! Check
 call mpl%check(info)
-
-! Wait
-call mpl%barrier
 
 end subroutine mpl_bcast_real_array_1d
 
@@ -500,9 +465,6 @@ call mpi_bcast(var,size(var),mpl%rtype,mpi_root,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-! Wait
-call mpl%barrier
-
 end subroutine mpl_bcast_real_array_2d
 
 !----------------------------------------------------------------------
@@ -533,9 +495,6 @@ call mpi_bcast(var,size(var),mpl%rtype,mpi_root,mpl%mpi_comm,info)
 
 ! Check
 call mpl%check(info)
-
-! Wait
-call mpl%barrier
 
 end subroutine mpl_bcast_real_array_3d
 
@@ -568,9 +527,6 @@ call mpi_bcast(var,size(var),mpl%rtype,mpi_root,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-! Wait
-call mpl%barrier
-
 end subroutine mpl_bcast_real_array_4d
 
 !----------------------------------------------------------------------
@@ -601,9 +557,6 @@ call mpi_bcast(var,size(var),mpl%rtype,mpi_root,mpl%mpi_comm,info)
 
 ! Check
 call mpl%check(info)
-
-! Wait
-call mpl%barrier
 
 end subroutine mpl_bcast_real_array_5d
 
@@ -636,9 +589,6 @@ call mpi_bcast(var,size(var),mpl%rtype,mpi_root,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-! Wait
-call mpl%barrier
-
 end subroutine mpl_bcast_real_array_6d
 
 !----------------------------------------------------------------------
@@ -669,9 +619,6 @@ call mpi_bcast(var,1,mpi_logical,mpi_root,mpl%mpi_comm,info)
 
 ! Check
 call mpl%check(info)
-
-! Wait
-call mpl%barrier
 
 end subroutine mpl_bcast_logical
 
@@ -704,9 +651,6 @@ call mpi_bcast(var,size(var),mpi_logical,mpi_root,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-! Wait
-call mpl%barrier
-
 end subroutine mpl_bcast_logical_array_1d
 
 !----------------------------------------------------------------------
@@ -737,9 +681,6 @@ call mpi_bcast(var,size(var),mpi_logical,mpi_root,mpl%mpi_comm,info)
 
 ! Check
 call mpl%check(info)
-
-! Wait
-call mpl%barrier
 
 end subroutine mpl_bcast_logical_array_2d
 
@@ -772,9 +713,6 @@ call mpi_bcast(var,size(var),mpi_logical,mpi_root,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-! Wait
-call mpl%barrier
-
 end subroutine mpl_bcast_logical_array_3d
 
 !----------------------------------------------------------------------
@@ -806,9 +744,6 @@ call mpi_bcast(var,len(var),mpi_character,mpi_root,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-! Wait
-call mpl%barrier
-
 end subroutine mpl_bcast_string
 
 !----------------------------------------------------------------------
@@ -835,9 +770,6 @@ do i=1,size(var)
       call mpl%bcast(var(i))
    end if
 end do
-
-! Wait
-call mpl%barrier
 
 end subroutine mpl_bcast_string_array_1d
 
