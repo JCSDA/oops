@@ -36,6 +36,7 @@ class GomQG : public util::Printable,
   GomQG(const LocationsQG &, const oops::Variables &);
   GomQG(const eckit::Configuration &, const oops::Variables &);
   GomQG(const LocationsQG &, const oops::Variables &, const eckit::Configuration &);
+  GomQG(const GomQG &, const LocationsQG &, const eckit::Configuration &);
   explicit GomQG(const GomQG &);
 
   GomQG(): keyGom_(0) {}

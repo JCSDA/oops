@@ -37,6 +37,7 @@ class GomL95 : public util::Printable,
   GomL95(const LocsL95 &, const oops::Variables &);
   GomL95(const eckit::Configuration &, const oops::Variables &);
   GomL95(const LocsL95 &, const oops::Variables &, const eckit::Configuration &);
+  GomL95(const GomL95 &, const LocsL95 &, const eckit::Configuration &);
   explicit GomL95(const GomL95 &);
   ~GomL95();
 

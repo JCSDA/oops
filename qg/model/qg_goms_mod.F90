@@ -139,11 +139,21 @@ integer :: jo, jv
 
 call qg_goms_registry%get(c_key_self, self)
 call qg_goms_registry%get(c_key_other, other)
-do jo=1,self%nobs
-   do jv=1,self%nvar
-    self%values(jv,jo) = other%values(jv,jo)
-  enddo
-enddo
+
+self%nobs = other%nobs
+self%nvar = other%nvar
+
+if (.not. self%lalloc) then
+   allocate(self%variables(self%nvar))
+   allocate(self%values(self%nvar,self%nobs))
+   allocate(self%indx(self%nobs))
+   self%lalloc = .true.
+endif
+   
+self%variables = other%variables
+self%values = other%values
+self%indx = other%indx
+self%used = other%used
 
 end subroutine c_qg_gom_assign
 
@@ -475,7 +485,7 @@ end subroutine qg_gom_write_file_c
 !!
 !! \sa qg::GomQG analytic_init()
 !!
-subroutine qg_gom_analytic_init_c(c_key_self, c_key_locs, c_vars, c_conf) bind(c,name='qg_gom_analytic_init_f90')
+subroutine qg_gom_analytic_init_c(c_key_self, c_key_locs, c_conf) bind(c,name='qg_gom_analytic_init_f90')
 use config_mod
 use dcmip_initial_conditions_test_1_2_3, only : test1_advection_deformation, test1_advection_hadley  
 use qg_constants, only : ubar 
@@ -484,12 +494,10 @@ use fckit_log_module, only : fckit_log
 implicit none
 integer(c_int), intent(in) :: c_key_self           !< key to GeoVaLs object we are creating
 integer(c_int), intent(in) :: c_key_locs           !< key to the F90 Locations object
-integer(c_int), dimension(*), intent(in) :: c_vars !< List of variables
 type(c_ptr), intent(in)    :: c_conf               !< "StateGenerate" configuration
 
 type(qg_goms), pointer :: self  ! GeoVals object we are creating         
 type(qg_locs), pointer :: locs
-type(qg_vars) :: vars
 
 character(len=30) :: ic
 character(len=1024) :: buf
@@ -501,24 +509,16 @@ integer :: iloc, ivar
 ! Get F90 Locations object
 call qg_locs_registry%get(c_key_locs, locs)
 
-! Create F90 vars object based on C++ object
-call qg_vars_create(vars,c_vars)
+! The GeoVaLs object should already be allocated and defined.
+! We just have to replace the values with the appropriate analytic values
 
-! Now define F90 GeoVaLs object, which should be already registered but not
-! yet allocated or defined
 call qg_goms_registry%get(c_key_self, self)
-if (self%lalloc) call abor1_ftn("qg_gom_read_file gom alredy allocated")
-self%nobs=locs%nloc
-self%nvar=vars%nv
-self%used=0
-allocate(self%indx(self%nobs))
-self%indx(:) = 1
-allocate(self%variables(self%nvar))
-self%variables(:)=vars%fldnames(:)
-allocate(self%values(self%nvar,self%nobs))
+
+if (.not. self%lalloc) &
+   call abor1_ftn("qg_gom_analytic init: gom not allocated")
 
 ic = config_get_string(c_conf,len(ic),"analytic_init")
-write(buf,*)'qg_gom_analytic_init: opening '//trim(ic)
+write(buf,*)'qg_gom_analytic_init: ic '//trim(ic)
 call fckit_log%info(buf)
 
 ! The height is stored in the locations object as the layer number because

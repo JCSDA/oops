@@ -171,7 +171,7 @@ extern "C" {
   void qg_gom_minmaxavg_f90(const F90goms &, int &, double &, double &, double &);
   void qg_gom_maxloc_f90(const F90goms &, double &, int &, int &);
   void qg_gom_read_file_f90(const F90goms &, const eckit::Configuration * const *);
-  void qg_gom_analytic_init_f90(const F90goms &, const F90locs &, const F90vars *,
+  void qg_gom_analytic_init_f90(const F90goms &, const F90locs &,
                                 const eckit::Configuration * const *);
   void qg_gom_write_file_f90(const F90goms &, const eckit::Configuration * const *);
 

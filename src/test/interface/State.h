@@ -151,6 +151,13 @@ template <typename MODEL> void testStateInterpolation() {
   const double tol = Test_::test().getDouble("tolerance");
   BOOST_CHECK_CLOSE(xx.norm(), norm, tol);
 
+  // If the analytic initial conditions are not yet implemented
+  // in the model, then bypass the interpolation test for now
+  if (!confgen.has("analytic_init")) {
+      oops::Log::warning() << "Bypassing Interpolation Test";
+      return;
+    }
+
   // Now extract the user-defined locations from the "StateTest.Locations"
   // section of the config file and use it to define a Locations object
   // The user can optionally also request Nrandom random locations
@@ -169,8 +176,10 @@ template <typename MODEL> void testStateInterpolation() {
   xx.getValues(locs, vars, gval);
 
   // Now create another GeoVaLs object that contains the exact
-  // analytic solutions
-  GeoVaLs_ ref(locs, vars, confgen);
+  // analytic solutions.
+
+  GeoVaLs_ ref(gval, locs, confgen);
+
 
   // Compute the difference between the interpolated and exact values
   gval -= ref;
