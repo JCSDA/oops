@@ -308,7 +308,6 @@ ecbuild_add_library( TARGET     oops
 
 ecbuild_add_test( TARGET oops_coding_norms
                   TYPE SCRIPT
-                  COMMAND cpplint.py
-                  ARGS --quiet --recursive ${CMAKE_CURRENT_SOURCE_DIR}
-                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/cpplint.py
+                  ARGS --quiet --recursive ${CMAKE_CURRENT_SOURCE_DIR} )
 
