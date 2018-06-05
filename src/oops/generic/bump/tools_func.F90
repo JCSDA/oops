@@ -17,7 +17,7 @@ use tools_missing, only: msi,msr,isnotmsr
 
 implicit none
 
-real(kind_real),parameter :: Hmin = 1.0e-12_kind_real !< Minimum tensor diagonal value
+real(kind_real),parameter :: Dmin = 1.0e-12_kind_real !< Minimum tensor diagonal value
 integer,parameter :: M = 0                            !< Number of implicit itteration for the Matern function (Gaussian function if M = 0)
 real(kind_real),parameter :: eta = 1.0e-9_kind_real   !< Small parameter for the Cholesky decomposition
 
@@ -420,7 +420,7 @@ end function gc99
 ! Subroutine: fit_lct
 !> Purpose: LCT fit
 !----------------------------------------------------------------------
-subroutine fit_lct(nc,nl0,dx,dy,dz,dmask,nscales,ncomp,H,coef,fit)
+subroutine fit_lct(nc,nl0,dx,dy,dz,dmask,nscales,ncomp,D,coef,fit)
 
 implicit none
 
@@ -433,25 +433,43 @@ real(kind_real),intent(in) :: dz(nl0)       !< Vertical separation
 logical,intent(in) :: dmask(nc,nl0)         !< Mask
 integer,intent(in) :: nscales               !< Number of LCT scales
 integer,intent(in) :: ncomp(nscales)        !< Number of LCT components
-real(kind_real),intent(in) :: H(sum(ncomp)) !< LCT components
+real(kind_real),intent(in) :: D(sum(ncomp)) !< LCT components
 real(kind_real),intent(in) :: coef(nscales) !< LCT coefficients
 real(kind_real),intent(out) :: fit(nc,nl0)  !< Fit
 
 ! Local variables
 integer :: jl0,jc3,iscales,offset
-real(kind_real) :: H11,H22,H33,Hc12,rsq
+real(kind_real) :: Hcoef(nscales),D11,D22,D33,D12,H11,H22,H33,H12,rsq,det
 
 ! Initialization
 offset = 0
 call msr(fit)
 
+! Coefficients
+Hcoef = max(Dmin,min(coef,1.0))
+Hcoef = Hcoef/sum(Hcoef)
+
 do iscales=1,nscales
-   ! Ensure positive-definiteness
-   H11 = max(Hmin,H(offset+1))
-   H22 = max(Hmin,H(offset+2))
-   H33 = max(Hmin,H(offset+3))
-   call msr(Hc12)
-   if (ncomp(iscales)==4) Hc12 = max(-1.0_kind_real+Hmin,min(H(offset+4),1.0_kind_real-Hmin))
+   ! Ensure positive-definiteness of D
+   D11 = max(Dmin,D(offset+1))
+   D22 = max(Dmin,D(offset+2))
+   call msr(D33)
+   if (nl0>1) D33 = max(Dmin,D(offset+3))
+   call msr(D12)
+   if (ncomp(iscales)==4) D12 = sqrt(D11*D22)*max(-1.0_kind_real+Dmin,min(D(offset+4),1.0_kind_real-Dmin))
+
+   ! Inverse D to get H
+   if (ncomp(iscales)==3) then
+      det = D11*D22
+   else
+      det = D11*D22-D12**2
+   end if
+   H11 = D22/det
+   H22 = D11/det
+   call msr(H33)
+   if (nl0>1) H33 = 1.0/D33
+   call msr(H12)
+   if (ncomp(iscales)==4) H12 = -D12/det
 
    ! Homogeneous anisotropic approximation
    !$omp parallel do schedule(static) private(jl0,jc3,rsq)
@@ -462,15 +480,16 @@ do iscales=1,nscales
             if (iscales==1) fit(jc3,jl0) = 0.0
 
             ! Squared distance
-            rsq = H11*dx(jc3,jl0)**2+H22*dy(jc3,jl0)**2+H33*dz(jl0)**2
-            if (ncomp(iscales)==4) rsq = rsq+2.0*sqrt(H11*H22)*Hc12*dx(jc3,jl0)*dy(jc3,jl0)
+            rsq = H11*dx(jc3,jl0)**2+H22*dy(jc3,jl0)**2
+            if (nl0>1) rsq = rsq+H33*dz(jl0)**2
+            if (ncomp(iscales)==4) rsq = rsq+2.0*H12*dx(jc3,jl0)*dy(jc3,jl0)
 
             if (M==0) then
                ! Gaussian function
-               fit(jc3,jl0) = fit(jc3,jl0)+coef(iscales)*exp(-0.5*rsq)
+               if (rsq<40.0) fit(jc3,jl0) = fit(jc3,jl0)+Hcoef(iscales)*exp(-0.5*rsq)
             else
                ! Matern function
-               fit(jc3,jl0) = fit(jc3,jl0)+coef(iscales)*matern(M,sqrt(rsq))
+               fit(jc3,jl0) = fit(jc3,jl0)+Hcoef(iscales)*matern(M,sqrt(rsq))
             end if
          end if
       end do

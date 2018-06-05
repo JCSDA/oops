@@ -161,6 +161,7 @@ call flush(mpl%unit)
 ! Close listings
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Close listings'
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 call flush(mpl%unit)
 close(unit=mpl%unit)
 
@@ -305,6 +306,7 @@ call bump%run_drivers
 ! Close listings
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Close listings'
+   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 call flush(mpl%unit)
 close(unit=mpl%unit)
 
@@ -398,6 +400,7 @@ call bump%run_drivers
 ! Close listings
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Close listings'
+   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 call flush(mpl%unit)
 close(unit=mpl%unit)
 
@@ -510,10 +513,12 @@ call bump%run_drivers
 if (mpl%main) then
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- BUMP done'
+   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 else
    ! Close listings
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Close listings'
+   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    call flush(mpl%unit)
    close(unit=mpl%unit)
 end if

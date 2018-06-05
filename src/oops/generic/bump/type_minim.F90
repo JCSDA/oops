@@ -234,11 +234,11 @@ real(kind_real) :: xtmp(minim%nx),fit_pack(minim%ny),xx,coef(minim%nscales)
 xtmp = x*minim%norm
 
 ! Compute function
-if (minim%nscales==1) then
-   coef = 1.0
-else
+if (minim%nscales>1) then
    coef(1:minim%nscales-1) = xtmp(sum(minim%ncomp)+1:sum(minim%ncomp)+minim%nscales-1)
    coef(minim%nscales) = 1.0-sum(coef(1:minim%nscales-1))
+else
+   coef(1) = 1.0
 end if
 call fit_lct(minim%nc3,minim%nl0,minim%dx,minim%dy,minim%dz,minim%dmask,minim%nscales,minim%ncomp, &
  & xtmp(1:sum(minim%ncomp)),coef,fit)
@@ -251,11 +251,13 @@ f = sum((minim%obs-fit_pack)**2,mask=isnotmsr(minim%obs).and.isnotmsr(fit_pack))
 
 ! Bound penalty
 do ix=1,minim%nx
-   xx = (xtmp(ix)-minim%binf(ix))/(minim%bsup(ix)-minim%binf(ix))
-   if (xx<0.0) then
-      f = f+minim%f_guess*xx**2
-   elseif (xx>1.0) then
-      f = f+minim%f_guess*(xx-1.0)**2
+   if (minim%bsup(ix)>minim%binf(ix)) then
+      xx = (xtmp(ix)-minim%binf(ix))/(minim%bsup(ix)-minim%binf(ix))
+      if (xx<0.0) then
+         f = f+minim%f_guess*xx**2
+      elseif (xx>1.0) then
+         f = f+minim%f_guess*(xx-1.0)**2
+      end if
    end if
 end do
 

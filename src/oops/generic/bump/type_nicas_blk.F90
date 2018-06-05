@@ -26,6 +26,7 @@ use type_geom, only: geom_type
 use type_io, only: io_type
 use type_kdtree, only: kdtree_type
 use type_linop, only: linop_type
+use type_mesh, only: mesh_type
 use type_mpl, only: mpl
 use type_nam, only: nam_type
 use type_rng, only: rng
@@ -63,11 +64,14 @@ type nicas_blk_type
    integer,allocatable :: l1_to_l0(:)           !< Subset Sl1 to subset Sl0
    integer,allocatable :: c0_to_c1(:)           !< Subset Sc0 to subset Sc1
    integer,allocatable :: l0_to_l1(:)           !< Subset Sl0 to subset Sl1
-   logical,allocatable :: c2mask(:,:)           !< Mask from G1 to subgrid
+   logical,allocatable :: mask_c1(:,:)          !< Mask from subset C1 to subgrid
+   logical,allocatable :: mask_c2(:,:)          !< Mask from subset C2 to subgrid
    integer,allocatable :: c1l1_to_s(:,:)        !< Grid Gv to subgrid
 
    ! MPI distribution
    integer :: nc1a                              !< Number of points in subset Sc1 on halo A
+   integer :: nc1bb                             !< Number of points in subset Sc1 on halo B (extended)
+   integer :: nsbb                              !< Number of points in subgrid on halo B (extended)
    integer,allocatable :: proc_to_nc1a(:)       !< Halo A size for each proc
    integer,allocatable :: proc_to_nsa(:)        !< Halo A size for each proc
    logical,allocatable :: lcheck_c1a(:)         !< Detection of halo A on subset Sc1
@@ -96,6 +100,9 @@ type nicas_blk_type
    integer,allocatable :: s_to_sb(:)            !< Subgrid, global to halo B
    integer,allocatable :: sc_to_s(:)            !< Subgrid, halo C to global
    integer,allocatable :: s_to_sc(:)            !< Subgrid, global to halo C
+   integer,allocatable :: sbb_to_s(:)           !< Subgrid, halo B (extended) to global
+   integer,allocatable :: c1_to_c1bb(:)         !< Subset Sc1, global to halo B (extended)
+   integer,allocatable :: c1bb_to_c1(:)         !< Subset Sc1, halo B (extended) to global
 
    ! Extended data for normalization computation
    integer :: nsc_nor                           !< Number of subgrid nodes on halo C (extended for normalization)
@@ -103,6 +110,9 @@ type nicas_blk_type
    integer,allocatable :: s_to_sc_nor(:)        !< Subgrid, global to halo C (extended for normalization)
    integer,allocatable :: sb_to_sc_nor(:)       !< Subgrid, halo B to halo C (extended for normalization)
    type(linop_type) :: c_nor                    !< Convolution (extended for normalization)
+
+   ! KD-tree
+   type(kdtree_type) :: kdtree                  !< KD-tree
 
    ! Required data to apply a localization
 
@@ -143,7 +153,6 @@ type nicas_blk_type
    type(com_type) :: com_AC                     !< Communication between halos A and C
    type(com_type) :: com_AD                     !< Communication between halos A and D
    type(com_type) :: com_ADinv                  !< Communication between halos A and Dinv
-   integer :: mpicom                            !< Number of communication steps
 contains
    procedure :: dealloc => nicas_blk_dealloc
    procedure :: compute_parameters => nicas_blk_compute_parameters
@@ -152,6 +161,7 @@ contains
    procedure :: compute_interp_v => nicas_blk_compute_interp_v
    procedure :: compute_interp_s => nicas_blk_compute_interp_s
    procedure :: compute_mpi_ab => nicas_blk_compute_mpi_ab
+   procedure :: compute_convol => nicas_blk_compute_convol
    procedure :: compute_convol_network => nicas_blk_compute_convol_network
    procedure :: compute_convol_distance => nicas_blk_compute_convol_distance
    procedure :: compute_mpi_c => nicas_blk_compute_mpi_c
@@ -181,6 +191,7 @@ end type nicas_blk_type
 
 integer,parameter :: nc1max = 15000                     !< Maximum size of the Sc1 subset
 real(kind_real),parameter :: sqrt_fac = 0.721_kind_real !< Square-root factor (empirical)
+real(kind_real),parameter :: margin = 1.2_kind_real     !< Security margin for nearest neighbors research
 real(kind_real),parameter :: S_inf = 1.0e-2_kind_real   !< Minimum value for the convolution coefficients
 real(kind_real),parameter :: deform = 0.0_kind_real     !< Deformation coefficient (maximum absolute value: -0.318)
 real(kind_real),parameter :: tol = 1.0e-3_kind_real     !< Positive-definiteness test tolerance
@@ -231,7 +242,8 @@ if (allocated(nicas_blk%c1_to_c0)) deallocate(nicas_blk%c1_to_c0)
 if (allocated(nicas_blk%l1_to_l0)) deallocate(nicas_blk%l1_to_l0)
 if (allocated(nicas_blk%c0_to_c1)) deallocate(nicas_blk%c0_to_c1)
 if (allocated(nicas_blk%l0_to_l1)) deallocate(nicas_blk%l0_to_l1)
-if (allocated(nicas_blk%c2mask)) deallocate(nicas_blk%c2mask)
+if (allocated(nicas_blk%mask_c1)) deallocate(nicas_blk%mask_c1)
+if (allocated(nicas_blk%mask_c2)) deallocate(nicas_blk%mask_c2)
 if (allocated(nicas_blk%c1l1_to_s)) deallocate(nicas_blk%c1l1_to_s)
 if (allocated(nicas_blk%lcheck_c1a)) deallocate(nicas_blk%lcheck_c1a)
 if (allocated(nicas_blk%lcheck_c1b)) deallocate(nicas_blk%lcheck_c1b)
@@ -256,6 +268,9 @@ if (allocated(nicas_blk%sb_to_s)) deallocate(nicas_blk%sb_to_s)
 if (allocated(nicas_blk%s_to_sb)) deallocate(nicas_blk%s_to_sb)
 if (allocated(nicas_blk%sc_to_s)) deallocate(nicas_blk%sc_to_s)
 if (allocated(nicas_blk%s_to_sc)) deallocate(nicas_blk%s_to_sc)
+if (allocated(nicas_blk%sbb_to_s)) deallocate(nicas_blk%sbb_to_s)
+if (allocated(nicas_blk%c1_to_c1bb)) deallocate(nicas_blk%c1_to_c1bb)
+if (allocated(nicas_blk%c1bb_to_c1)) deallocate(nicas_blk%c1bb_to_c1)
 if (allocated(nicas_blk%sc_nor_to_s)) deallocate(nicas_blk%sc_nor_to_s)
 if (allocated(nicas_blk%s_to_sc_nor)) deallocate(nicas_blk%s_to_sc_nor)
 if (allocated(nicas_blk%sb_to_sc_nor)) deallocate(nicas_blk%sb_to_sc_nor)
@@ -341,16 +356,12 @@ call nicas_blk%compute_mpi_ab(geom)
 ! Compute convolution data
 write(mpl%unit,'(a7,a)') '','Compute convolution data'
 call flush(mpl%unit)
-if (nam%network) then
-   call nicas_blk%compute_convol_network(nam,geom,cmat_blk)
-else
-   call nicas_blk%compute_convol_distance(nam,geom,cmat_blk)
-end if
+call nicas_blk%compute_convol(nam,geom,cmat_blk)
 
 ! Compute MPI distribution, halo C
 write(mpl%unit,'(a7,a)') '','Compute MPI distribution, halo C'
 call flush(mpl%unit)
-call nicas_blk%compute_mpi_c(nam,geom)
+call nicas_blk%compute_mpi_c(geom)
 
 ! Compute normalization
 write(mpl%unit,'(a7,a)') '','Compute normalization'
@@ -381,6 +392,7 @@ do il1=1,nicas_blk%nl1
    write(mpl%unit,'(a10,a,i3,a,i8)') '','s(',il1,')%n_s = ',nicas_blk%s(il1)%n_s
 end do
 write(mpl%unit,'(a10,a,i8)') '','c%n_s =      ',nicas_blk%c%n_s
+write(mpl%unit,'(a10,a,i8)') '','c_nor%n_s =  ',nicas_blk%c_nor%n_s
 call flush(mpl%unit)
 
 end subroutine nicas_blk_compute_parameters
@@ -561,9 +573,9 @@ end do
 
 ! Allocation
 allocate(nicas_blk%nc2(nicas_blk%nl1))
-allocate(nicas_blk%c2mask(nicas_blk%nc1,nicas_blk%nl1))
+allocate(nicas_blk%mask_c2(nicas_blk%nc1,nicas_blk%nl1))
 allocate(rh0s_glb(geom%nc0))
-allocate(rh1s(nicas_blk%nc1))
+if (mpl%main) allocate(rh1s(nicas_blk%nc1))
 allocate(mask_c1(nicas_blk%nc1))
 
 ! Horizontal subsampling
@@ -585,23 +597,25 @@ do il1=1,nicas_blk%nl1
 
       ! Compute subset
       call mpl%gatherv(geom%nc0a,cmat_blk%rh0s(:,il0),geom%proc_to_nc0a,geom%nc0,rh0s_glb)
-      rh1s = rh0s_glb(nicas_blk%c1_to_c0)
-      if (mpl%main) call rng%initialize_sampling(nicas_blk%nc1,geom%lon(nicas_blk%c1_to_c0), &
-    & geom%lat(nicas_blk%c1_to_c0),mask_c1,rh1s,nam%ntry,nam%nrep,nicas_blk%nc2(il1),c2_to_c1)
+      if (mpl%main) then
+         rh1s = rh0s_glb(nicas_blk%c1_to_c0)
+         call rng%initialize_sampling(nicas_blk%nc1,geom%lon(nicas_blk%c1_to_c0), &
+       & geom%lat(nicas_blk%c1_to_c0),mask_c1,rh1s,nam%ntry,nam%nrep,nicas_blk%nc2(il1),c2_to_c1)
+      end if
       call mpl%bcast(c2_to_c1)
 
       ! Fill C2 mask
-      nicas_blk%c2mask(:,il1) = .false.
+      nicas_blk%mask_c2(:,il1) = .false.
       do ic2=1,nicas_blk%nc2(il1)
          ic1 = c2_to_c1(ic2)
-         nicas_blk%c2mask(ic1,il1) = .true.
+         nicas_blk%mask_c2(ic1,il1) = .true.
       end do
 
       ! Release memory
       deallocate(c2_to_c1)
    else
       ! Fill C2 mask
-      nicas_blk%c2mask(:,il1) = .true.
+      nicas_blk%mask_c2(:,il1) = .true.
    end if
 end do
 
@@ -614,7 +628,7 @@ allocate(nicas_blk%s_to_l1(nicas_blk%ns))
 is = 0
 do il1=1,nicas_blk%nl1
    do ic1=1,nicas_blk%nc1
-      if (nicas_blk%c2mask(ic1,il1)) then
+      if (nicas_blk%mask_c2(ic1,il1)) then
          is = is+1
          nicas_blk%s_to_c1(is) = ic1
          nicas_blk%s_to_l1(is) = il1
@@ -625,8 +639,7 @@ end do
 ! Reorder sampling
 allocate(s_to_proc(nicas_blk%ns))
 s_to_proc = geom%c0_to_proc(nicas_blk%c1_to_c0(nicas_blk%s_to_c1))
-call reorder_vec(nicas_blk%ns,s_to_proc,nicas_blk%s_to_c1)
-call reorder_vec(nicas_blk%ns,s_to_proc,nicas_blk%s_to_l1)
+call reorder_vec(nicas_blk%ns,s_to_proc,nicas_blk%s_to_c1,nicas_blk%s_to_l1)
 
 ! Conversions
 allocate(nicas_blk%c1l1_to_s(nicas_blk%nc1,nicas_blk%nl1))
@@ -786,7 +799,7 @@ do il1=1,nicas_blk%nl1
       end do
    else
       ! Mask
-      mask_src = nicas_blk%c2mask(:,il1)
+      mask_src = nicas_blk%mask_c2(:,il1)
       mask_dst = .true.
 
       ! Compute interpolation
@@ -1224,10 +1237,10 @@ call nicas_blk%com_AB%setup(com_AB,'com_AB')
 end subroutine nicas_blk_compute_mpi_ab
 
 !----------------------------------------------------------------------
-! Subroutine: nicas_blk_compute_convol_network
-!> Purpose: compute convolution with a network approach
+! Subroutine: nicas_blk_compute_convol
+!> Purpose: compute convolution
 !----------------------------------------------------------------------
-subroutine nicas_blk_compute_convol_network(nicas_blk,nam,geom,cmat_blk)
+subroutine nicas_blk_compute_convol(nicas_blk,nam,geom,cmat_blk)
 
 implicit none
 
@@ -1238,84 +1251,386 @@ type(geom_type),intent(in) :: geom               !< Geometry
 type(cmat_blk_type),intent(in) :: cmat_blk       !< C matrix data block
 
 ! Local variables
-integer :: n_s_max,progint,ithread,is,ic1,ic0,inr,jl0,jl1,np,np_new,i,j,k,ip,jc0,jc1,il0,djl0,il1,kc0,dkl0,kl0,jp,js,isb,offset
+integer :: n_s_max,progint,ithread,is,ic1,jc1,il1,il0,j,js,isb,ic1b,ic0,ic0a,isa,ic1a,i_s,jc,kc,ks
+integer :: ic1bb,isbb
+integer :: c_n_s(mpl%nthread)
+integer,allocatable :: nn(:),nn_index(:),inec(:),c_ind(:,:)
+real(kind_real) :: rh0max,S_test
+real(kind_real),allocatable :: nn_dist(:),rh_c1a(:),rv_c1a(:),rh_c1(:,:),rv_c1(:,:),rh_sa(:),rv_sa(:),rh_s(:),rv_s(:)
+real(kind_real),allocatable :: c_S(:,:),c_S_conv(:)
+logical :: add_op
+logical,allocatable :: done(:),lcheck_c1bb(:)
+type(linop_type) :: c(mpl%nthread),ctmp
+
+! Compute KD-tree
+write(mpl%unit,'(a10,a)') '','Compute KD-tree'
+call flush(mpl%unit)
+call nicas_blk%kdtree%create(nicas_blk%nc1,geom%lon(nicas_blk%c1_to_c0),geom%lat(nicas_blk%c1_to_c0))
+
+! Communication
+write(mpl%unit,'(a10,a)') '','Communication'
+call flush(mpl%unit)
+allocate(rh_c1a(nicas_blk%nc1a))
+allocate(rv_c1a(nicas_blk%nc1a))
+allocate(rh_c1(nicas_blk%nc1,nicas_blk%nl1))
+allocate(rv_c1(nicas_blk%nc1,nicas_blk%nl1))
+do il1=1,nicas_blk%nl1
+   do ic1a=1,nicas_blk%nc1a
+      ic0a = nicas_blk%c1a_to_c0a(ic1a)
+      il0 = nicas_blk%l1_to_l0(il1)
+      rh_c1a(ic1a) = cmat_blk%rh0(ic0a,il0)
+      rv_c1a(ic1a) = cmat_blk%rv0(ic0a,il0)
+   end do
+   call mpl%allgatherv(nicas_blk%nc1a,rh_c1a,nicas_blk%proc_to_nc1a,nicas_blk%nc1,rh_c1(:,il1))
+   call mpl%allgatherv(nicas_blk%nc1a,rv_c1a,nicas_blk%proc_to_nc1a,nicas_blk%nc1,rv_c1(:,il1))
+end do
+allocate(rh_sa(nicas_blk%nsa))
+allocate(rv_sa(nicas_blk%nsa))
+allocate(rh_s(nicas_blk%ns))
+allocate(rv_s(nicas_blk%ns))
+do isa=1,nicas_blk%nsa
+   ic0a = nicas_blk%sa_to_c0a(isa)
+   il0 = nicas_blk%sa_to_l0(isa)
+   rh_sa(isa) = cmat_blk%rh0(ic0a,il0)
+   rv_sa(isa) = cmat_blk%rv0(ic0a,il0)
+end do
+call mpl%allgatherv(nicas_blk%nsa,rh_sa,nicas_blk%proc_to_nsa,nicas_blk%ns,rh_s)
+call mpl%allgatherv(nicas_blk%nsa,rv_sa,nicas_blk%proc_to_nsa,nicas_blk%ns,rv_s)
+
+! Allocation
+allocate(nicas_blk%mask_c1(nicas_blk%nc1,nicas_blk%nl1))
+allocate(lcheck_c1bb(nicas_blk%nc1))
+
+! Define mask on subset C1
+nicas_blk%mask_c1 = .false.
+do is=1,nicas_blk%ns
+   ic1 = nicas_blk%s_to_c1(is)
+   il1 = nicas_blk%s_to_l1(is)
+   nicas_blk%mask_c1(ic1,il1) = .true.
+end do
+
+! Find largest possible radius
+call mpl%allreduce_max(maxval(cmat_blk%rh0),rh0max)
+rh0max = rh0max*sqrt_fac
+
+if (nam%lsqrt) then
+   ! Copy
+   nicas_blk%nc1bb = nicas_blk%nc1b
+else
+   write(mpl%unit,'(a10,a)',advance='no') '','Define extended halo: '
+   call flush(mpl%unit)
+
+   ! Allocation
+   allocate(nn(nicas_blk%nc1b))
+
+   do ic1b=1,nicas_blk%nc1b
+      ! Indices
+      ic1 = nicas_blk%c1b_to_c1(ic1b)
+      ic0 = nicas_blk%c1_to_c0(ic1)
+
+      ! Count nearest neighbors
+      call nicas_blk%kdtree%count_nearest_neighbors(geom%lon(ic0),geom%lat(ic0),rh0max,nn(ic1b))
+   end do
+
+   ! Allocation
+   allocate(done(nicas_blk%nc1b))
+
+   ! Initialization
+   call prog_init(progint,done)
+   lcheck_c1bb = .false.
+
+   do ic1b=1,nicas_blk%nc1b
+      ! Indices
+      ic1 = nicas_blk%c1b_to_c1(ic1b)
+      ic0 = nicas_blk%c1_to_c0(ic1)
+
+      ! Allocation
+      allocate(nn_index(nn(ic1b)))
+      allocate(nn_dist(nn(ic1b)))
+
+      ! Find nearest neighbors
+      call nicas_blk%kdtree%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0),nn(ic1b),nn_index,nn_dist)
+
+      ! Fill mask
+      do j=1,nn(ic1b)
+         jc1 = nn_index(j)
+         lcheck_c1bb(jc1) = .true.
+      end do
+
+      ! Release memory
+      deallocate(nn_index)
+      deallocate(nn_dist)
+
+      ! Print progression
+      done(ic1b) = .true.
+      call prog_print(progint,done)
+   end do
+   write(mpl%unit,'(a)') '100%'
+   call flush(mpl%unit)
+
+   ! Halo size
+   nicas_blk%nc1bb = count(lcheck_c1bb)
+   write(mpl%unit,'(a10,a,i6,a,i6)') '','Halo sizes nc1b / nc1bb: ',nicas_blk%nc1b,' / ',nicas_blk%nc1bb
+
+   ! Release memory
+   deallocate(done)
+end if
+
+! Allocation
+allocate(nicas_blk%c1bb_to_c1(nicas_blk%nc1bb))
+allocate(nicas_blk%c1_to_c1bb(nicas_blk%nc1))
+
+if (nam%lsqrt) then
+   ! Copy
+   nicas_blk%c1bb_to_c1 = nicas_blk%c1b_to_c1
+   nicas_blk%c1_to_c1bb = nicas_blk%c1_to_c1b
+   nicas_blk%nsbb = nicas_blk%nsb
+else
+   ! Global <-> local conversions for fields
+   call msi(nicas_blk%c1_to_c1bb)
+   ic1bb = 0
+   do ic1=1,nicas_blk%nc1
+      if (lcheck_c1bb(ic1)) then
+         ic1bb = ic1bb+1
+         nicas_blk%c1bb_to_c1(ic1bb) = ic1
+         nicas_blk%c1_to_c1bb(ic1) = ic1bb
+      end if
+   end do
+
+   ! Count points in extended halo
+   nicas_blk%nsbb = 0
+   do is=1,nicas_blk%ns
+      ic1 = nicas_blk%s_to_c1(is)
+      if (lcheck_c1bb(ic1)) nicas_blk%nsbb = nicas_blk%nsbb+1
+   end do
+   write(mpl%unit,'(a10,a,i6,a,i6)') '','Halo sizes nsb / nsbb:   ',nicas_blk%nsb,' / ',nicas_blk%nsbb
+end if
+
+! Allocation
+allocate(nicas_blk%sbb_to_s(nicas_blk%nsbb))
+
+if (nam%lsqrt) then
+   ! Copy
+   nicas_blk%sbb_to_s = nicas_blk%sb_to_s
+else
+   ! Global <-> local conversions for fields
+   isbb = 0
+   do is=1,nicas_blk%ns
+      ic1 = nicas_blk%s_to_c1(is)
+      if (lcheck_c1bb(ic1)) then
+         isbb = isbb+1
+         nicas_blk%sbb_to_s(isbb) = is
+      end if
+   end do
+end if
+
+! Compute weights
+if (nam%network) then
+   call nicas_blk%compute_convol_network(nam,geom,rh_c1,rv_c1,ctmp)
+else
+   call nicas_blk%compute_convol_distance(nam,geom,rh0max,rh_s,rv_s,ctmp)
+end if
+
+if (nam%lsqrt) then
+   ! Copy
+   nicas_blk%c = ctmp%copy()
+else
+   ! Compute convolution inverse mapping
+   allocate(inec(nicas_blk%ns))
+   inec = 0
+   do i_s=1,ctmp%n_s
+      is = ctmp%col(i_s)
+      inec(is) = inec(is)+1
+   end do
+   allocate(c_ind(maxval(inec),nicas_blk%ns))
+   allocate(c_S(maxval(inec),nicas_blk%ns))
+   call msi(c_ind)
+   call msr(c_S)
+   inec = 0
+   do i_s=1,ctmp%n_s
+      is = ctmp%col(i_s)
+      js = ctmp%row(i_s)
+      inec(is) = inec(is)+1
+      c_ind(inec(is),is) = js
+      c_S(inec(is),is) = ctmp%S(i_s)
+   end do
+
+   ! Allocation
+   allocate(done(nicas_blk%nsb))
+
+   ! Initialization
+   write(mpl%unit,'(a10,a)',advance='no') '','Second pass:     '
+   call flush(mpl%unit)
+   call prog_init(progint,done)
+   n_s_max = 100*nint(real(geom%nc0*geom%nl0)/real(mpl%nthread*mpl%nproc))
+   c_n_s = 0
+   do ithread=1,mpl%nthread
+      c(ithread)%n_s = n_s_max
+      call c(ithread)%alloc
+      call msi(c(ithread)%row)
+      call msi(c(ithread)%col)
+      call msr(c(ithread)%S)
+   end do
+
+   ! Apply convolution
+   !$omp parallel do schedule(static) private(isb,is,ithread,jc,js,kc,ks,S_test,add_op) firstprivate(c_S_conv)
+   do isb=1,nicas_blk%nsb
+      ! Indices
+      is = nicas_blk%sb_to_s(isb)
+      ithread = 1
+!$    ithread = omp_get_thread_num()+1
+
+      ! Allocation
+      allocate(c_S_conv(nicas_blk%ns))
+
+      ! Initialization
+      c_S_conv = 0.0
+
+      ! Loop twice over points
+      do jc=1,inec(is)
+         js = c_ind(jc,is)
+         do kc=1,inec(js)
+            ks = c_ind(kc,js)
+            c_S_conv(ks) = c_S_conv(ks)+c_S(jc,is)*c_S(kc,js)
+         end do
+      end do
+
+      do js=1,nicas_blk%ns
+         if (c_S_conv(js)>S_inf) then
+            ! Store coefficient for convolution
+            add_op = .false.
+            if (nam%mpicom==1) then
+               add_op = (nicas_blk%lcheck_sb(js).and.(is<=js)).or.(.not.nicas_blk%lcheck_sb(js))
+            elseif (nam%mpicom==2) then
+               add_op = nicas_blk%lcheck_sa(is).and.((nicas_blk%lcheck_sa(js).and.(is<=js)) &
+                     & .or.(.not.nicas_blk%lcheck_sa(js)))
+            end if
+            if (add_op) call c(ithread)%add_op(c_n_s(ithread),is,js,c_S_conv(js))
+         end if
+      end do
+
+      ! Release memory
+      deallocate(c_S_conv)
+
+      ! Print progression
+      done(isb) = .true.
+      call prog_print(progint,done)
+   end do
+   !$omp end parallel do
+   write(mpl%unit,'(a)') '100%'
+   call flush(mpl%unit)
+
+   ! Gather data from threads
+   call nicas_blk%c%gather(c_n_s,c)
+
+   ! Release memory
+   do ithread=1,mpl%nthread
+      call c(ithread)%dealloc
+   end do
+end if
+
+! Set prefix
+nicas_blk%c%prefix = 'c'
+nicas_blk%c_nor%prefix = 'c_nor'
+
+end subroutine nicas_blk_compute_convol
+
+!----------------------------------------------------------------------
+! Subroutine: nicas_blk_compute_convol_network
+!> Purpose: compute convolution with a network approach
+!----------------------------------------------------------------------
+subroutine nicas_blk_compute_convol_network(nicas_blk,nam,geom,rh_c1,rv_c1,ctmp)
+
+implicit none
+
+! Passed variables
+class(nicas_blk_type),intent(inout) :: nicas_blk                 !< NICAS data block
+type(nam_type),intent(in) :: nam                                 !< Namelist
+type(geom_type),intent(in) :: geom                               !< Geometry
+real(kind_real),intent(in) :: rh_c1(nicas_blk%nc1,nicas_blk%nl1) !< TODO
+real(kind_real),intent(in) :: rv_c1(nicas_blk%nc1,nicas_blk%nl1) !< TODO
+type(linop_type),intent(out) :: ctmp                             !< Convolution
+
+! Local variables
+integer :: n_s_max,progint,ithread,is,ic0,ic1,inr,il0,jl1,jl0,np,np_new,i,j,k,ip,kc1,jc1,jc0,djl1,il1,dkl1,kl1,jp,js,isbb
 integer :: c_n_s(mpl%nthread),c_nor_n_s(mpl%nthread)
 integer,allocatable :: net_nnb(:),net_inb(:,:),plist(:,:),plist_new(:,:)
 real(kind_real) :: dnb,disthsq,distvsq,rhsq,rvsq,distnorm,disttest,S_test
-real(kind_real) :: rh0(geom%nc0,geom%nl0),rv0(geom%nc0,geom%nl0)
 real(kind_real),allocatable :: net_dnb(:,:,:,:),dist(:,:)
-logical :: init,add_to_front,valid_arc
+logical :: init,add_to_front,valid_arc,add_op
 logical,allocatable :: done(:),valid(:,:)
 type(linop_type) :: c(mpl%nthread),c_nor(mpl%nthread)
+type(mesh_type) :: mesh
 
 ! Allocation
-allocate(net_nnb(geom%nc0))
+allocate(net_nnb(nicas_blk%nc1))
+
+! Create mesh
+call mesh%create(nicas_blk%nc1,geom%lon(nicas_blk%c1_to_c0),geom%lat(nicas_blk%c1_to_c0))
 
 ! Count neighbors
 net_nnb = 0
-do ic0=1,geom%nc0
-   inr = geom%mesh%order_inv(ic0)
-   i = geom%mesh%lend(inr)
+do ic1=1,nicas_blk%nc1
+   inr = mesh%order_inv(ic1)
+   i = mesh%lend(inr)
    init = .true.
-   do while ((i/=geom%mesh%lend(inr)).or.init)
-      net_nnb(ic0) = net_nnb(ic0)+1
-      i = geom%mesh%lptr(i)
+   do while ((i/=mesh%lend(inr)).or.init)
+      net_nnb(ic1) = net_nnb(ic1)+1
+      i = mesh%lptr(i)
       init = .false.
    end do
 end do
 
 ! Allocation
-allocate(net_inb(maxval(net_nnb),geom%nc0))
-allocate(net_dnb(maxval(net_nnb),-1:1,geom%nc0,geom%nl0))
+allocate(net_inb(maxval(net_nnb),nicas_blk%nc1))
+allocate(net_dnb(maxval(net_nnb),-1:1,nicas_blk%nc1,nicas_blk%nl1))
 
-! Find neighbors
+! Find mesh neighbors
 net_nnb = 0
-do ic0=1,geom%nc0
-   inr = geom%mesh%order_inv(ic0)
-   i = geom%mesh%lend(inr)
+do ic1=1,nicas_blk%nc1
+   inr = mesh%order_inv(ic1)
+   i = mesh%lend(inr)
    init = .true.
-   do while ((i/=geom%mesh%lend(inr)).or.init)
-      net_nnb(ic0) = net_nnb(ic0)+1
-      net_inb(net_nnb(ic0),ic0) = geom%mesh%order(abs(geom%mesh%list(i)))
-      i = geom%mesh%lptr(i)
+   do while ((i/=mesh%lend(inr)).or.init)
+      net_nnb(ic1) = net_nnb(ic1)+1
+      net_inb(net_nnb(ic1),ic1) = mesh%order(abs(mesh%list(i)))
+      i = mesh%lptr(i)
       init = .false.
    end do
-end do
-
-! Local to global
-do il0=1,geom%nl0
-   call mpl%allgatherv(geom%nc0a,cmat_blk%rh0(:,il0),geom%proc_to_nc0a,geom%nc0,rh0(:,il0))
-   call mpl%allgatherv(geom%nc0a,cmat_blk%rv0(:,il0),geom%proc_to_nc0a,geom%nc0,rv0(:,il0))
 end do
 
 ! Compute distances
 net_dnb = huge(1.0)
-!$omp parallel do schedule(static) private(ic0,j,jc0,dnb,il0,valid_arc,djl0,jl0,disthsq,distvsq,rhsq,rvsq,distnorm)
-do ic0=1,geom%nc0
-   do j=1,net_nnb(ic0)
-      ! Index
-      jc0 = net_inb(j,ic0)
+!$omp parallel do schedule(static) private(ic1,j,ic0,jc1,dnb,il1,il0,valid_arc,djl1,jl1,jl0,disthsq,distvsq,rhsq,rvsq,distnorm)
+do ic1=1,nicas_blk%nc1
+   do j=1,net_nnb(ic1)
+      ! Indices
+      ic0 = nicas_blk%c1_to_c0(ic1)
+      jc1 = net_inb(j,ic1)
+      jc0 = nicas_blk%c1_to_c0(jc1)
 
       if (any(geom%mask(jc0,:))) then
          ! True distance
          call sphere_dist(geom%lon(ic0),geom%lat(ic0),geom%lon(jc0),geom%lat(jc0),dnb)
 
-         do il0=1,geom%nl0
+         do il1=1,nicas_blk%nl1
             ! Check mask bounds
+            il0 = nicas_blk%l1_to_l0(il1)
             valid_arc = .true.
             if (nam%mask_check) call geom%check_arc(il0,geom%lon(ic0),geom%lat(ic0),geom%lon(jc0),geom%lat(jc0),valid_arc)
 
             if (valid_arc) then
-               do djl0=-1,1
+               do djl1=-1,1
                   ! Index
-                  jl0 = max(1,min(il0+djl0,geom%nl0))
+                  jl1 = max(1,min(il1+djl1,nicas_blk%nl1))
+                  jl0 = nicas_blk%l1_to_l0(jl1)
 
                   if (geom%mask(ic0,il0).and.geom%mask(jc0,jl0)) then
                      ! Squared support radii
                      disthsq = dnb**2
                      distvsq = (geom%vunit(ic0,il0)-geom%vunit(jc0,jl0))**2
-                     rhsq = 0.5*(rh0(ic0,il0)**2+rh0(jc0,jl0)**2)
-                     rvsq = 0.5*(rv0(ic0,il0)**2+rv0(jc0,jl0)**2)
+                     rhsq = 0.5*(rh_c1(ic1,il1)**2+rh_c1(jc1,jl1)**2)
+                     rvsq = 0.5*(rv_c1(ic1,il1)**2+rv_c1(jc1,jl1)**2)
                      distnorm = 0.0
                      if (rhsq>0.0) then
                         distnorm = distnorm+disthsq/rhsq
@@ -1327,7 +1642,7 @@ do ic0=1,geom%nc0
                      elseif (distvsq>0.0) then
                         distnorm = distnorm+0.5*huge(0.0)
                      end if
-                     net_dnb(j,djl0,ic0,il0) = sqrt(distnorm)
+                     net_dnb(j,djl1,ic1,il1) = sqrt(distnorm)
                   end if
                end do
             end if
@@ -1341,44 +1656,44 @@ end do
 n_s_max = 100*nint(real(geom%nc0*geom%nl0,kind_real)/real(mpl%nthread*mpl%nproc,kind_real))
 do ithread=1,mpl%nthread
    c(ithread)%n_s = n_s_max
-   c_nor(ithread)%n_s = n_s_max
    call c(ithread)%alloc
+   c_nor(ithread)%n_s = n_s_max
    call c_nor(ithread)%alloc
 end do
-allocate(done(nicas_blk%nsb))
+allocate(done(nicas_blk%nsbb))
 
-! Compute weights
+! Initialization
 write(mpl%unit,'(a10,a)',advance='no') '','Compute weights: '
 call flush(mpl%unit)
 call prog_init(progint,done)
 c_n_s = 0
 c_nor_n_s = 0
-!$omp parallel do schedule(static) private(isb,is,ithread,ic1,il1,ic0,il0,np,np_new,ip,jc0,jl0,k,kc0,kl0,disttest,add_to_front), &
-!$omp&                             private(jp,js,jc1,jl1,distnorm,S_test) firstprivate(plist,plist_new,dist,valid)
-do isb=1,nicas_blk%nsb
+
+! Compute weights
+!$omp parallel do schedule(static) private(isbb,is,ithread,ic1,il1,np,np_new,ip,jc1,jl1,k,kc1,dkl1,kl1,disttest,add_to_front), &
+!$omp&                             private(jp,js,distnorm,S_test,add_op) firstprivate(plist,plist_new,dist,valid)
+do isbb=1,nicas_blk%nsbb
    ! Indices
-   is = nicas_blk%sb_to_s(isb)
+   is = nicas_blk%sbb_to_s(isbb)
    ithread = 1
 !$ ithread = omp_get_thread_num()+1
    ic1 = nicas_blk%s_to_c1(is)
    il1 = nicas_blk%s_to_l1(is)
-   ic0 = nicas_blk%c1_to_c0(ic1)
-   il0 = nicas_blk%l1_to_l0(il1)
 
    ! Allocation
-   allocate(plist(geom%nc0*geom%nl0,2))
-   allocate(plist_new(geom%nc0*geom%nl0,2))
-   allocate(dist(geom%nc0,geom%nl0))
-   allocate(valid(geom%nc0,geom%nl0))
+   allocate(plist(nicas_blk%nc1*nicas_blk%nl1,2))
+   allocate(plist_new(nicas_blk%nc1*nicas_blk%nl1,2))
+   allocate(dist(nicas_blk%nc1,nicas_blk%nl1))
+   allocate(valid(nicas_blk%nc1,nicas_blk%nl1))
 
    ! Initialize the front
    np = 1
-   plist(1,1) = ic0
-   plist(1,2) = il0
+   plist(1,1) = ic1
+   plist(1,2) = il1
    dist = 1.0
-   dist(ic0,il0) = 0.0
+   dist(ic1,il1) = 0.0
    valid = .false.
-   valid(ic0,il0) = .true.
+   valid(ic1,il1) = .true.
 
    do while (np>0)
       ! Propagate the front
@@ -1386,36 +1701,38 @@ do isb=1,nicas_blk%nsb
 
       do ip=1,np
          ! Indices of the central point
-         jc0 = plist(ip,1)
-         jl0 = plist(ip,2)
+         jc1 = plist(ip,1)
+         jl1 = plist(ip,2)
 
          ! Loop over neighbors
-         do k=1,net_nnb(jc0)
-            kc0 = net_inb(k,jc0)
-            do dkl0=-1,1
-               kl0 = max(1,min(jl0+dkl0,geom%nl0))
-               disttest = dist(jc0,jl0)+net_dnb(k,dkl0,jc0,jl0)
-               if (disttest<1.0) then
-                  ! Point is inside the support
-                  if (disttest<dist(kc0,kl0)) then
-                     ! Update distance
-                     dist(kc0,kl0) = disttest
-                     valid(kc0,kl0) = .true.
+         do k=1,net_nnb(jc1)
+            kc1 = net_inb(k,jc1)
+            do dkl1=-1,1
+               kl1 = max(1,min(jl1+dkl1,nicas_blk%nl1))
+               if (nicas_blk%mask_c1(kc1,kl1)) then
+                  disttest = dist(jc1,jl1)+net_dnb(k,dkl1,jc1,jl1)
+                  if (disttest<1.0) then
+                     ! Point is inside the support
+                     if (disttest<dist(kc1,kl1)) then
+                        ! Update distance
+                        dist(kc1,kl1) = disttest
+                        valid(kc1,kl1) = .true.
 
-                     ! Check if the point should be added to the front (avoid duplicates)
-                     add_to_front = .true.
-                     do jp=1,np_new
-                        if ((plist_new(jp,1)==kc0).and.(plist_new(jp,2)==kl0)) then
-                           add_to_front = .false.
-                           exit
+                        ! Check if the point should be added to the front (avoid duplicates)
+                        add_to_front = .true.
+                        do jp=1,np_new
+                           if ((plist_new(jp,1)==kc1).and.(plist_new(jp,2)==kl1)) then
+                              add_to_front = .false.
+                              exit
+                           end if
+                        end do
+
+                        if (add_to_front) then
+                           ! Add point to the front
+                           np_new = np_new+1
+                           plist_new(np_new,1) = kc1
+                           plist_new(np_new,2) = kl1
                         end if
-                     end do
-
-                     if (add_to_front) then
-                        ! Add point to the front
-                        np_new = np_new+1
-                        plist_new(np_new,1) = kc0
-                        plist_new(np_new,2) = kl0
                      end if
                   end if
                end if
@@ -1433,47 +1750,46 @@ do isb=1,nicas_blk%nsb
       ! Indices
       jc1 = nicas_blk%s_to_c1(js)
       jl1 = nicas_blk%s_to_l1(js)
-      jc0 = nicas_blk%c1_to_c0(jc1)
-      jl0 = nicas_blk%l1_to_l0(jl1)
 
-      if (valid(jc0,jl0)) then
+      if (valid(jc1,jl1)) then
          ! Normalized distance
-         distnorm = dist(jc0,jl0)
+         distnorm = dist(jc1,jl1)
 
          if (distnorm<1.0) then
             ! Distance deformation
             distnorm = distnorm+deform*sin(pi*distnorm)
 
             ! Square-root
-            if (nam%lsqrt) distnorm = distnorm/sqrt_fac
+            distnorm = distnorm/sqrt_fac
 
             ! Gaspari-Cohn (1999) function
             S_test = gc99(distnorm)
 
             if (S_test>S_inf) then
                ! Store coefficient for convolution
-               if (nam%mpicom==1) then
-                  if ((nicas_blk%lcheck_sb(js).and.(is<js)).or.(.not.nicas_blk%lcheck_sb(js))) &
-                & call c(ithread)%add_op(c_n_s(ithread),is,js,S_test)
-               elseif (nam%mpicom==2) then
-                  if (nicas_blk%lcheck_sa(is).and.((nicas_blk%lcheck_sa(js).and.(is<js)).or.(.not.nicas_blk%lcheck_sa(js)))) &
-                & call c(ithread)%add_op(c_n_s(ithread),is,js,S_test)
+               if (nam%lsqrt) then
+                  add_op = .false.
+                  if (nam%mpicom==1) then
+                     add_op = (nicas_blk%lcheck_sb(js).and.(is<=js)).or.(.not.nicas_blk%lcheck_sb(js))
+                  elseif (nam%mpicom==2) then
+                     add_op = nicas_blk%lcheck_sa(is).and.((nicas_blk%lcheck_sa(js).and.(is<=js)) &
+                           & .or.(.not.nicas_blk%lcheck_sa(js)))
+                  end if
+               else
+                  add_op = .true.
                end if
+               if (add_op) call c(ithread)%add_op(c_n_s(ithread),is,js,S_test)
 
                ! Store coefficient for normalization
-               if (nam%lsqrt) then
-                  if ((nicas_blk%lcheck_sb(js).and.(is<js)).or.(.not.nicas_blk%lcheck_sb(js))) &
-               &  call c_nor(ithread)%add_op(c_nor_n_s(ithread),is,js,S_test)
-               else
-                  if (nicas_blk%lcheck_sb(js).and.(is<js)) call c_nor(ithread)%add_op(c_nor_n_s(ithread),is,js,S_test)
-               end if
+               add_op = nicas_blk%lcheck_sb(is).and.((nicas_blk%lcheck_sb(js).and.(is<=js)).or.(.not.nicas_blk%lcheck_sb(js)))
+               if (add_op) call c_nor(ithread)%add_op(c_nor_n_s(ithread),is,js,S_test)
             end if
          end if
       end if
    end do
 
    ! Print progression
-   done(isb) = .true.
+   done(isbb) = .true.
    call prog_print(progint,done)
 
    ! Release memory
@@ -1486,45 +1802,24 @@ end do
 write(mpl%unit,'(a)') '100%'
 call flush(mpl%unit)
 
-! Initialize object
-nicas_blk%c%prefix = 'c'
-nicas_blk%c_nor%prefix = 'c_nor'
-
-! Gather data
-nicas_blk%c%n_s = sum(c_n_s)
-nicas_blk%c_nor%n_s = sum(c_nor_n_s)
-call nicas_blk%c%alloc
-call nicas_blk%c_nor%alloc
-
-! Gather convolution data from OpenMP threads
-offset = 0
-do ithread=1,mpl%nthread
-   nicas_blk%c%row(offset+1:offset+c_n_s(ithread)) = c(ithread)%row(1:c_n_s(ithread))
-   nicas_blk%c%col(offset+1:offset+c_n_s(ithread)) = c(ithread)%col(1:c_n_s(ithread))
-   nicas_blk%c%S(offset+1:offset+c_n_s(ithread)) = c(ithread)%S(1:c_n_s(ithread))
-   offset = offset+c_n_s(ithread)
-end do
-offset = 0
-do ithread=1,mpl%nthread
-   nicas_blk%c_nor%row(offset+1:offset+c_nor_n_s(ithread)) = c_nor(ithread)%row(1:c_nor_n_s(ithread))
-   nicas_blk%c_nor%col(offset+1:offset+c_nor_n_s(ithread)) = c_nor(ithread)%col(1:c_nor_n_s(ithread))
-   nicas_blk%c_nor%S(offset+1:offset+c_nor_n_s(ithread)) = c_nor(ithread)%S(1:c_nor_n_s(ithread))
-   offset = offset+c_nor_n_s(ithread)
-end do
+! Gather data from threads
+call ctmp%gather(c_n_s,c)
+call nicas_blk%c_nor%gather(c_nor_n_s,c_nor)
 
 ! Release memory
 do ithread=1,mpl%nthread
    call c(ithread)%dealloc
    call c_nor(ithread)%dealloc
 end do
+deallocate(done)
 
 end subroutine nicas_blk_compute_convol_network
 
 !----------------------------------------------------------------------
 ! Subroutine: nicas_blk_compute_convol_distance
-!> Purpose: compute convolution with a distance approach
+!> Purpose: compute convolution weights, distance method
 !----------------------------------------------------------------------
-subroutine nicas_blk_compute_convol_distance(nicas_blk,nam,geom,cmat_blk)
+subroutine nicas_blk_compute_convol_distance(nicas_blk,nam,geom,rh0max,rh_s,rv_s,ctmp)
 
 implicit none
 
@@ -1532,150 +1827,107 @@ implicit none
 class(nicas_blk_type),intent(inout) :: nicas_blk !< NICAS data block
 type(nam_type),intent(in) :: nam                 !< Namelist
 type(geom_type),intent(in) :: geom               !< Geometry
-type(cmat_blk_type),intent(in) :: cmat_blk       !< C matrix data block
+real(kind_real),intent(in) :: rh0max             !<
+real(kind_real),intent(in) :: rh_s(nicas_blk%ns) !<
+real(kind_real),intent(in) :: rv_s(nicas_blk%ns) !<
+type(linop_type),intent(inout) :: ctmp           !< Convolution operator
 
 ! Local variables
-integer :: ms,n_s_max,progint,ithread,is,ic1,jl0,jc1,jc0,il1,jl1,il0,j,js,isb,ic1b,offset,ic0,ic0a,isa,ic1a
+integer :: nnmax,n_s_max,progint,ithread,is,ic1,jl0,jc1,jc0,il1,jl1,il0,j,js,ic0,ic1bb,isbb
 integer :: c_n_s(mpl%nthread),c_nor_n_s(mpl%nthread)
-integer,allocatable :: nn_index(:,:)
-real(kind_real) :: rh0avg,disthsq,distvsq,rhsq,rvsq,distnorm,S_test
-real(kind_real),allocatable :: nn_dist(:,:),rh_c1a(:),rh_c1(:,:),rh_sa(:),rv_sa(:),rh_s(:),rv_s(:)
-logical :: force,test,valid,submask(nicas_blk%nc1,nicas_blk%nl1)
+integer,allocatable :: nn(:),nn_index(:,:)
+real(kind_real) :: disthsq,distvsq,rhsq,rvsq,distnorm,S_test
+real(kind_real),allocatable :: nn_dist(:,:)
+logical :: valid
 logical,allocatable :: done(:)
-type(kdtree_type) :: kdtree
 type(linop_type) :: c(mpl%nthread),c_nor(mpl%nthread)
 
-! Define submask
-submask = .false.
-do is=1,nicas_blk%ns
-   ic1 = nicas_blk%s_to_c1(is)
-   il1 = nicas_blk%s_to_l1(is)
-   submask(ic1,il1) = .true.
+! Allocation
+allocate(nn(nicas_blk%nc1bb))
+
+do ic1bb=1,nicas_blk%nc1bb
+   ! Indices
+   ic1 = nicas_blk%c1bb_to_c1(ic1bb)
+   ic0 = nicas_blk%c1_to_c0(ic1)
+
+   ! Count nearest neighbors
+   call nicas_blk%kdtree%count_nearest_neighbors(geom%lon(ic0),geom%lat(ic0),rh0max,nn(ic1bb))
 end do
 
-! Compute KD-tree
-write(mpl%unit,'(a10,a)') '','Compute KD-tree'
+! Allocation
+nnmax = maxval(nn)
+write(mpl%unit,'(a10,a,i6,a,f5.1,a)') '','Number of neighbors to find: ',nnmax,' (', &
+& real(nnmax,kind_real)/real(nicas_blk%nc1,kind_real)*100.0,'%)'
+allocate(nn_index(nnmax,nicas_blk%nc1bb))
+allocate(nn_dist(nnmax,nicas_blk%nc1bb))
+allocate(done(nicas_blk%nc1bb))
+
+! Initialization
+write(mpl%unit,'(a10,a)',advance='no') '','Find nearest neighbors: '
 call flush(mpl%unit)
-call kdtree%create(nicas_blk%nc1,geom%lon(nicas_blk%c1_to_c0),geom%lat(nicas_blk%c1_to_c0))
+call prog_init(progint,done)
 
-! Theoretical number of neighbors
-ms = 0
-do il1=1,nicas_blk%nl1
-   il0 = nicas_blk%l1_to_l0(il1)
-   call mpl%allreduce_sum(sum(cmat_blk%rh0(:,il0)),rh0avg)
-   rh0avg = rh0avg/real(geom%nc0,kind_real)
-   ms = max(ms,floor(0.25*real(nicas_blk%nc1,kind_real)*rh0avg**2))
+do ic1bb=1,nicas_blk%nc1bb
+   ! Indices
+   ic1 = nicas_blk%c1bb_to_c1(ic1bb)
+   ic0 = nicas_blk%c1_to_c0(ic1)
+
+   ! Find nearest neighbors
+   call nicas_blk%kdtree%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0), &
+ & nn(ic1bb),nn_index(1:nn(ic1bb),ic1bb),nn_dist(1:nn(ic1bb),ic1bb))
+
+   ! Print progression
+   done(ic1bb) = .true.
+   call prog_print(progint,done)
 end do
+write(mpl%unit,'(a)') '100%'
+call flush(mpl%unit)
 
-! Communication
-allocate(rh_c1a(nicas_blk%nc1a))
-allocate(rh_c1(nicas_blk%nc1,nicas_blk%nl1))
-do il1=1,nicas_blk%nl1
-   do ic1a=1,nicas_blk%nc1a
-      ic0a = nicas_blk%c1a_to_c0a(ic1a)
-      il0 = nicas_blk%l1_to_l0(il1)
-      rh_c1a(ic1a) = cmat_blk%rh0(ic0a,il0)
-   end do
-   call mpl%allgatherv(nicas_blk%nc1a,rh_c1a,nicas_blk%proc_to_nc1a,nicas_blk%nc1,rh_c1(:,il1))
-end do
-allocate(rh_sa(nicas_blk%nsa))
-allocate(rv_sa(nicas_blk%nsa))
-allocate(rh_s(nicas_blk%ns))
-allocate(rv_s(nicas_blk%ns))
-do isa=1,nicas_blk%nsa
-   ic0a = nicas_blk%sa_to_c0a(isa)
-   il0 = nicas_blk%sa_to_l0(isa)
-   rh_sa(isa) = cmat_blk%rh0(ic0a,il0)
-   rv_sa(isa) = cmat_blk%rv0(ic0a,il0)
-end do
-call mpl%allgatherv(nicas_blk%nsa,rh_sa,nicas_blk%proc_to_nsa,nicas_blk%ns,rh_s)
-call mpl%allgatherv(nicas_blk%nsa,rv_sa,nicas_blk%proc_to_nsa,nicas_blk%ns,rv_s)
-
-! Find all necessary neighbors
-valid = .false.
-do while (.not.valid)
-   ! Check number of neighbors
-   force = ms>nicas_blk%nc1
-   ms = max(1,min(ms,nicas_blk%nc1))
-   write(mpl%unit,'(a10,a,i8,a,f5.1,a)') '','Try with ',ms,' neighbors (', &
- & real(ms,kind_real)/real(nicas_blk%nc1,kind_real)*100.0,'%)'
-   call flush(mpl%unit)
-
-   ! Allocation
-   if (allocated(nn_index)) deallocate(nn_index)
-   if (allocated(nn_dist)) deallocate(nn_dist)
-   allocate(nn_index(ms,nicas_blk%nc1b))
-   allocate(nn_dist(ms,nicas_blk%nc1b))
-
-   ! Loop over points
-   test = .true.
-   ic1b = 1
-   do while ((test.or.force).and.(ic1b<=nicas_blk%nc1b))
-      ic1 = nicas_blk%c1b_to_c1(ic1b)
-
-      ! Compute nearest neighbors
-      call kdtree%find_nearest_neighbors(geom%lon(nicas_blk%c1_to_c0(ic1)), &
-    & geom%lat(nicas_blk%c1_to_c0(ic1)),ms,nn_index(:,ic1b),nn_dist(:,ic1b))
-
-      ! Loop over levels
-      jc1 = nn_index(ms,ic1b)
-      il1 = 1
-      do while ((test.or.force).and.(il1<=nicas_blk%nl1))
-         rhsq = 0.5*(rh_c1(ic1,il1)**2+rh_c1(jc1,il1)**2)
-
-         distnorm = nn_dist(ms,ic1b)**2/rhsq
-         if ((distnorm<1.0).and.(.not.force)) then
-            ms = 2*ms
-            test = .false.
-         end if
-         il1 = il1+1
-      end do
-      ic1b = ic1b+1
-   end do
-   if ((ic1b>nicas_blk%nc1b).or.force) valid = .true.
-end do
+! Release memory
+deallocate(done)
 
 ! Allocation
 n_s_max = 100*nint(real(geom%nc0*geom%nl0)/real(mpl%nthread*mpl%nproc))
 do ithread=1,mpl%nthread
    c(ithread)%n_s = n_s_max
-   c_nor(ithread)%n_s = n_s_max
    call c(ithread)%alloc
+   c_nor(ithread)%n_s = n_s_max
    call c_nor(ithread)%alloc
 end do
-allocate(done(nicas_blk%nsb))
+allocate(done(nicas_blk%nsbb))
 
-! Compute weights
+! Initialization
 write(mpl%unit,'(a10,a)',advance='no') '','Compute weights: '
 call flush(mpl%unit)
 call prog_init(progint,done)
 c_n_s = 0
 c_nor_n_s = 0
-!$omp parallel do schedule(static) private(isb,is,ithread,ic1,ic1b,ic0,il1,il0,j,jl1,jl0,js,jc1,jc0), &
-!$omp&                             private(disthsq,distvsq,rhsq,rvsq,distnorm,S_test)
-do isb=1,nicas_blk%nsb
+
+! Compute weights
+!$omp parallel do schedule(static) private(isbb,is,ithread,ic1,ic1bb,ic0,il1,il0,j,jl1,jl0,js,jc1,jc0), &
+!$omp&                             private(disthsq,distvsq,rhsq,rvsq,distnorm,S_test,valid)
+do isbb=1,nicas_blk%nsbb
    ! Indices
-   is = nicas_blk%sb_to_s(isb)
+   is = nicas_blk%sbb_to_s(isbb)
    ithread = 1
 !$ ithread = omp_get_thread_num()+1
    ic1 = nicas_blk%s_to_c1(is)
-   ic1b = nicas_blk%c1_to_c1b(ic1)
+   ic1bb = nicas_blk%c1_to_c1bb(ic1)
    ic0 = nicas_blk%c1_to_c0(ic1)
    il1 = nicas_blk%s_to_l1(is)
    il0 = nicas_blk%l1_to_l0(il1)
 
    ! Loop on nearest neighbors
-   do j=1,ms
-      jc1 = nn_index(j,ic1b)
+   do j=1,nn(ic1bb)
+      jc1 = nn_index(j,ic1bb)
       do jl1=1,nicas_blk%nl1
-         if (submask(jc1,jl1)) then
+         if (nicas_blk%mask_c1(jc1,jl1)) then
+            jc0 = nicas_blk%c1_to_c0(jc1)
             jl0 = nicas_blk%l1_to_l0(jl1)
             js = nicas_blk%c1l1_to_s(jc1,jl1)
-            jc1 = nicas_blk%s_to_c1(js)
-            jc0 = nicas_blk%c1_to_c0(jc1)
 
             ! Normalized distance
-            disthsq = nn_dist(j,ic1b)**2
+            disthsq = nn_dist(j,ic1bb)**2
             distvsq = (geom%vunit(ic0,il0)-geom%vunit(jc0,jl0))**2
             rhsq = 0.5*(rh_s(is)**2+rh_s(js)**2)
             rvsq = 0.5*(rv_s(is)**2+rv_s(js)**2)
@@ -1697,28 +1949,29 @@ do isb=1,nicas_blk%nsb
                distnorm = distnorm+deform*sin(pi*distnorm)
 
                ! Square-root
-               if (nam%lsqrt) distnorm = distnorm/sqrt_fac
+               distnorm = distnorm/sqrt_fac
 
                ! Gaspari-Cohn (1999) function
                S_test = gc99(distnorm)
 
                if (S_test>S_inf) then
                   ! Store coefficient for convolution
-                  if (nam%mpicom==1) then
-                     if ((nicas_blk%lcheck_sb(js).and.(is<js)).or.(.not.nicas_blk%lcheck_sb(js))) &
-                   & call c(ithread)%add_op(c_n_s(ithread),is,js,S_test)
-                  elseif (nam%mpicom==2) then
-                     if (nicas_blk%lcheck_sa(is).and.((nicas_blk%lcheck_sa(js).and.(is<js)).or.(.not.nicas_blk%lcheck_sa(js)))) &
-                   & call c(ithread)%add_op(c_n_s(ithread),is,js,S_test)
+                  if (nam%lsqrt) then
+                     valid = .false.
+                     if (nam%mpicom==1) then
+                        valid = (nicas_blk%lcheck_sb(js).and.(is<=js)).or.(.not.nicas_blk%lcheck_sb(js))
+                     elseif (nam%mpicom==2) then
+                        valid = nicas_blk%lcheck_sa(is).and.((nicas_blk%lcheck_sa(js).and.(is<=js)) &
+                              & .or.(.not.nicas_blk%lcheck_sa(js)))
+                     end if
+                  else
+                     valid = .true.
                   end if
+                  if (valid) call c(ithread)%add_op(c_n_s(ithread),is,js,S_test)
 
                   ! Store coefficient for normalization
-                  if (nam%lsqrt) then
-                     if ((nicas_blk%lcheck_sb(js).and.(is<js)).or.(.not.nicas_blk%lcheck_sb(js))) &
-                  &  call c_nor(ithread)%add_op(c_nor_n_s(ithread),is,js,S_test)
-                  else
-                     if (nicas_blk%lcheck_sb(js).and.(is<js)) call c_nor(ithread)%add_op(c_nor_n_s(ithread),is,js,S_test)
-                  end if
+                  valid = nicas_blk%lcheck_sb(is).and.((nicas_blk%lcheck_sb(js).and.(is<=js)).or.(.not.nicas_blk%lcheck_sb(js)))
+                  if (valid) call c_nor(ithread)%add_op(c_nor_n_s(ithread),is,js,S_test)
                end if
             end if
          end if
@@ -1726,44 +1979,23 @@ do isb=1,nicas_blk%nsb
    end do
 
    ! Print progression
-   done(isb) = .true.
+   done(isbb) = .true.
    call prog_print(progint,done)
 end do
 !$omp end parallel do
 write(mpl%unit,'(a)') '100%'
 call flush(mpl%unit)
 
-! Initialize object
-nicas_blk%c%prefix = 'c'
-nicas_blk%c_nor%prefix = 'c_nor'
-
-! Gather data
-nicas_blk%c%n_s = sum(c_n_s)
-nicas_blk%c_nor%n_s = sum(c_nor_n_s)
-call nicas_blk%c%alloc
-call nicas_blk%c_nor%alloc
-
-! Gather convolution data from OpenMP threads
-offset = 0
-do ithread=1,mpl%nthread
-   nicas_blk%c%row(offset+1:offset+c_n_s(ithread)) = c(ithread)%row(1:c_n_s(ithread))
-   nicas_blk%c%col(offset+1:offset+c_n_s(ithread)) = c(ithread)%col(1:c_n_s(ithread))
-   nicas_blk%c%S(offset+1:offset+c_n_s(ithread)) = c(ithread)%S(1:c_n_s(ithread))
-   offset = offset+c_n_s(ithread)
-end do
-offset = 0
-do ithread=1,mpl%nthread
-   nicas_blk%c_nor%row(offset+1:offset+c_nor_n_s(ithread)) = c_nor(ithread)%row(1:c_nor_n_s(ithread))
-   nicas_blk%c_nor%col(offset+1:offset+c_nor_n_s(ithread)) = c_nor(ithread)%col(1:c_nor_n_s(ithread))
-   nicas_blk%c_nor%S(offset+1:offset+c_nor_n_s(ithread)) = c_nor(ithread)%S(1:c_nor_n_s(ithread))
-   offset = offset+c_nor_n_s(ithread)
-end do
+! Gather data from threads
+call ctmp%gather(c_n_s,c)
+call nicas_blk%c_nor%gather(c_nor_n_s,c_nor)
 
 ! Release memory
 do ithread=1,mpl%nthread
    call c(ithread)%dealloc
    call c_nor(ithread)%dealloc
 end do
+deallocate(done)
 
 end subroutine nicas_blk_compute_convol_distance
 
@@ -1771,13 +2003,12 @@ end subroutine nicas_blk_compute_convol_distance
 ! Subroutine: nicas_blk_compute_mpi_c
 !> Purpose: compute NICAS MPI distribution, halo C
 !----------------------------------------------------------------------
-subroutine nicas_blk_compute_mpi_c(nicas_blk,nam,geom)
+subroutine nicas_blk_compute_mpi_c(nicas_blk,geom)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(inout) :: nicas_blk !< NICAS data block
-type(nam_type),intent(in) :: nam                 !< Namelist
 type(geom_type),intent(in) :: geom               !< Geometry
 
 ! Local variables
@@ -1792,25 +2023,13 @@ allocate(nicas_blk%lcheck_sc_nor(nicas_blk%ns))
 ! Halo definitions
 
 ! Halo C
-if (nam%mpicom==1) then
-   ! 1 communication step
-   nicas_blk%lcheck_sc = nicas_blk%lcheck_sb
-   do i_s=1,nicas_blk%c%n_s
-      is = nicas_blk%c%row(i_s)
-      js = nicas_blk%c%col(i_s)
-      nicas_blk%lcheck_sc(is) = .true.
-      nicas_blk%lcheck_sc(js) = .true.
-   end do
-elseif (nam%mpicom==2) then
-   ! 2 communication steps
-   nicas_blk%lcheck_sc = nicas_blk%lcheck_sb
-   do i_s=1,nicas_blk%c%n_s
-      is = nicas_blk%c%row(i_s)
-      js = nicas_blk%c%col(i_s)
-      nicas_blk%lcheck_sc(is) = .true.
-      nicas_blk%lcheck_sc(js) = .true.
-   end do
-end if
+nicas_blk%lcheck_sc = nicas_blk%lcheck_sb
+do i_s=1,nicas_blk%c%n_s
+   is = nicas_blk%c%row(i_s)
+   js = nicas_blk%c%col(i_s)
+   nicas_blk%lcheck_sc(is) = .true.
+   nicas_blk%lcheck_sc(js) = .true.
+end do
 nicas_blk%nsc = count(nicas_blk%lcheck_sc)
 nicas_blk%lcheck_sc_nor = nicas_blk%lcheck_sb
 do i_s=1,nicas_blk%c_nor%n_s
@@ -1957,9 +2176,6 @@ end if
 mpl%tag = mpl%tag+4
 call nicas_blk%com_AC%setup(com_AC,'com_AC')
 
-! Copy mpicom
-nicas_blk%mpicom = nam%mpicom
-
 end subroutine nicas_blk_compute_mpi_c
 
 !----------------------------------------------------------------------
@@ -2061,10 +2277,12 @@ inec = 0
 do i_s=1,nicas_blk%c_nor%n_s
    isc = nicas_blk%c_nor%col(i_s)
    jsc = nicas_blk%c_nor%row(i_s)
-   is = nicas_blk%sc_nor_to_s(isc)
-   js = nicas_blk%sc_nor_to_s(jsc)
-   inec(isc) = inec(isc)+1
-   inec(jsc) = inec(jsc)+1
+   if (jsc/=isc) then
+      is = nicas_blk%sc_nor_to_s(isc)
+      inec(isc) = inec(isc)+1
+      js = nicas_blk%sc_nor_to_s(jsc)
+      inec(jsc) = inec(jsc)+1
+   end if
 end do
 allocate(c_ind(maxval(inec),nicas_blk%nsc_nor))
 allocate(c_S(maxval(inec),nicas_blk%nsc_nor))
@@ -2074,14 +2292,16 @@ inec = 0
 do i_s=1,nicas_blk%c_nor%n_s
    isc = nicas_blk%c_nor%col(i_s)
    jsc = nicas_blk%c_nor%row(i_s)
-   is = nicas_blk%sc_nor_to_s(isc)
-   js = nicas_blk%sc_nor_to_s(jsc)
-   inec(isc) = inec(isc)+1
-   c_ind(inec(isc),isc) = jsc
-   c_S(inec(isc),isc) = nicas_blk%c_nor%S(i_s)
-   inec(jsc) = inec(jsc)+1
-   c_ind(inec(jsc),jsc) = isc
-   c_S(inec(jsc),jsc) = nicas_blk%c_nor%S(i_s)
+   if (jsc/=isc) then
+      is = nicas_blk%sc_nor_to_s(isc)
+      inec(isc) = inec(isc)+1
+      c_ind(inec(isc),isc) = jsc
+      c_S(inec(isc),isc) = nicas_blk%c_nor%S(i_s)
+      js = nicas_blk%sc_nor_to_s(jsc)
+      inec(jsc) = inec(jsc)+1
+      c_ind(inec(jsc),jsc) = isc
+      c_S(inec(jsc),jsc) = nicas_blk%c_nor%S(i_s)
+   end if
 end do
 
 ! Re-order indices
@@ -2127,12 +2347,7 @@ do il0=1,geom%nl0
          ! Allocation
          allocate(isc_list(ineh(ic0a,il0i)*inev(il0)*maxval(ines)))
          allocate(S_list(ineh(ic0a,il0i)*inev(il0)*maxval(ines)))
-         if (nam%lsqrt) then
-            allocate(S_list_tmp(nicas_blk%nsc_nor))
-         else
-            allocate(order2(ineh(ic0a,il0i)*inev(il0)*maxval(ines)))
-            allocate(S_list_tmp(ineh(ic0a,il0i)*inev(il0)*maxval(ines)))
-         end if
+         allocate(S_list_tmp(nicas_blk%nsc_nor))
 
          ! Initialization
          isc_list = 0
@@ -2165,62 +2380,27 @@ do il0=1,geom%nl0
             end do
          end do
 
-         if (nam%lsqrt) then
-            ! Initialization
-            S_list_tmp = 0.0
-            do ilr=1,nlr
-               isc = isc_list(ilr)
-               S_list_tmp(isc) = S_list(ilr)
+         ! Initialization
+         S_list_tmp = 0.0
+         do ilr=1,nlr
+            isc = isc_list(ilr)
+            S_list_tmp(isc) = S_list(ilr)
+         end do
+
+         ! Convolution
+         do ilr=1,nlr
+            isc = isc_list(ilr)
+            do ic=1,inec(isc)
+               jsc = c_ind(ic,isc)
+               S_list_tmp(jsc) = S_list_tmp(jsc)+c_S(ic,isc)*S_list(ilr)
             end do
+         end do
 
-            ! Convolution
-            do ilr=1,nlr
-               isc = isc_list(ilr)
-               do ic=1,inec(isc)
-                  jsc = c_ind(ic,isc)
-                  S_list_tmp(jsc) = S_list_tmp(jsc)+c_S(ic,isc)*S_list(ilr)
-               end do
-            end do
+         ! Sum of squared values
+         nicas_blk%norm(ic0a,il0) = sum(S_list_tmp**2)
 
-            ! Sum of squared values
-            nicas_blk%norm(ic0a,il0) = sum(S_list_tmp**2)
-
-            ! Normalization factor
-            nicas_blk%norm(ic0a,il0) = 1.0/sqrt(nicas_blk%norm(ic0a,il0))
-         else
-            ! Sort arrays
-            call qsort(nlr,isc_list(1:nlr),order2(1:nlr))
-            S_list(1:nlr) = S_list(order2(1:nlr))
-
-            ! Convolution
-            S_list_tmp(1:nlr) = S_list(1:nlr)
-            do ilr=1,nlr
-               isc = isc_list(ilr)
-               conv = .true.
-               ic = 1
-               do jlr=ilr+1,nlr
-                  jsc = isc_list(jlr)
-                  if (ic<=inec(isc)) then
-                     do while (c_ind(ic,isc)/=jsc)
-                        ic = ic+1
-                        if (ic>inec(isc)) then
-                           conv = .false.
-                           exit
-                        end if
-                     end do
-                  else
-                     conv = .false.
-                  end if
-                  if (conv) then
-                     S_list(ilr) = S_list(ilr)+c_S(ic,isc)*S_list_tmp(jlr)
-                     S_list(jlr) = S_list(jlr)+c_S(ic,isc)*S_list_tmp(ilr)
-                  end if
-               end do
-            end do
-
-            ! Normalization factor
-            if (nlr>0) nicas_blk%norm(ic0a,il0) = 1.0/sqrt(sum(S_list(1:nlr)*S_list_tmp(1:nlr)))
-         end if
+         ! Normalization factor
+         nicas_blk%norm(ic0a,il0) = 1.0/sqrt(nicas_blk%norm(ic0a,il0))
 
          ! Print progression
          done(ic0a) = .true.
@@ -2228,7 +2408,6 @@ do il0=1,geom%nl0
 
           ! Release memory
          deallocate(isc_list)
-         if (.not.nam%lsqrt) deallocate(order2)
          deallocate(S_list)
          deallocate(S_list_tmp)
       end if
@@ -2559,12 +2738,13 @@ end subroutine nicas_blk_compute_adv
 ! Subroutine: nicas_blk_apply
 !> Purpose: apply NICAS method
 !----------------------------------------------------------------------
-subroutine nicas_blk_apply(nicas_blk,geom,fld)
+subroutine nicas_blk_apply(nicas_blk,nam,geom,fld)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(in) :: nicas_blk            !< NICAS data block
+type(nam_type),intent(in) :: nam                         !< Namelist
 type(geom_type),intent(in) :: geom                       !< Geometry
 real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0) !< Field
 
@@ -2578,13 +2758,13 @@ if (lhook) call dr_hook('nicas_blk_apply',0,zhook_handle)
 call nicas_blk%apply_interp_ad(geom,fld,alpha_b)
 
 ! Communication
-if (nicas_blk%mpicom==1) then
+if (nam%mpicom==1) then
    ! Initialization
    alpha_c = 0.0
 
    ! Copy zone B into zone C
    alpha_c(nicas_blk%sb_to_sc) = alpha_b
-elseif (nicas_blk%mpicom==2) then
+elseif (nam%mpicom==2) then
    ! Halo reduction from zone B to zone A
    call nicas_blk%com_AB%red(alpha_b,alpha_a)
 
@@ -2817,7 +2997,7 @@ integer :: il0
 ! Horizontal interpolation
 !$omp parallel do schedule(static) private(il0)
 do il0=1,geom%nl0
-   call nicas_blk%h(min(il0,geom%nl0i))%apply(delta(:,il0),fld(:,il0))
+   call nicas_blk%h(min(il0,geom%nl0i))%apply(delta(:,il0),fld(:,il0),msdst=.false.)
 end do
 !$omp end parallel do
 
@@ -2877,7 +3057,7 @@ do ic1b=1,nicas_blk%nc1b
    gamma_tmp = gamma(ic1b,:)
 
    ! Apply interpolation
-   call nicas_blk%v%apply(gamma_tmp,delta_tmp,ivec=ic1b)
+   call nicas_blk%v%apply(gamma_tmp,delta_tmp,ivec=ic1b,msdst=.false.)
 
    ! Copy data
    delta(ic1b,:) = delta_tmp
@@ -2962,7 +3142,7 @@ end do
 ! Subsampling horizontal interpolation
 !$omp parallel do schedule(static) private(il1)
 do il1=1,nicas_blk%nl1
-   call nicas_blk%s(il1)%apply(beta(:,il1),gamma(:,il1))
+   call nicas_blk%s(il1)%apply(beta(:,il1),gamma(:,il1),msdst=.false.)
 end do
 !$omp end parallel do
 
@@ -3054,7 +3234,7 @@ do its=2,nam%nts
       ! Interpolation
       !$omp parallel do schedule(static) private(il0)
       do il0=1,geom%nl0
-         call nicas_blk%d(il0,its)%apply(fld_d(:,il0),fld(:,il0,iv,its))
+         call nicas_blk%d(il0,its)%apply(fld_d(:,il0),fld(:,il0,iv,its),msdst=.false.)
       end do
       !$omp end parallel do
    end do
@@ -3132,7 +3312,7 @@ do its=2,nam%nts
       ! Interpolation
       !$omp parallel do schedule(static) private(il0)
       do il0=1,geom%nl0
-         call nicas_blk%dinv(il0,its)%apply(fld_dinv(:,il0),fld(:,il0,iv,its))
+         call nicas_blk%dinv(il0,its)%apply(fld_dinv(:,il0),fld(:,il0,iv,its),msdst=.false.)
       end do
       !$omp end parallel do
    end do
@@ -3156,6 +3336,7 @@ type(nam_type),intent(in) :: nam              !< Namelist
 type(geom_type),intent(in) :: geom            !< Geometry
 
 ! Local variables
+integer :: isb
 real(kind_real) :: sum1,sum2
 real(kind_real),allocatable :: alpha(:),alpha_save(:),alpha1(:),alpha1_save(:),alpha2(:),alpha2_save(:)
 real(kind_real),allocatable :: gamma(:,:),gamma_save(:,:),delta(:,:),delta_save(:,:)
@@ -3175,7 +3356,10 @@ allocate(fld_save(geom%nc0a,geom%nl0))
 
 ! Initialization
 call rng%rand_real(0.0_kind_real,1.0_kind_real,alpha_save)
-call rng%rand_real(0.0_kind_real,1.0_kind_real,gamma_save)
+gamma_save = 0
+do isb=1,nicas_blk%nsb
+   call rng%rand_real(0.0_kind_real,1.0_kind_real,gamma_save(nicas_blk%sb_to_c1b(isb),nicas_blk%sb_to_l1(isb)))
+end do
 
 ! Adjoint test
 call nicas_blk%apply_interp_s(alpha_save,gamma)
@@ -3329,8 +3513,8 @@ if (nam%lsqrt) then
    call nicas_blk%apply_from_sqrt(geom,fld1)
    call nicas_blk%apply_from_sqrt(geom,fld2)
 else
-   call nicas_blk%apply(geom,fld1)
-   call nicas_blk%apply(geom,fld2)
+   call nicas_blk%apply(nam,geom,fld1)
+   call nicas_blk%apply(nam,geom,fld2)
 end if
 
 ! Print result
@@ -3374,7 +3558,7 @@ do while (iter<=nitermax)
    if (nam%lsqrt) then
       call nicas_blk%apply_from_sqrt(geom,fld)
    else
-      call nicas_blk%apply(geom,fld)
+      call nicas_blk%apply(nam,geom,fld)
    end if
 
    ! Compute Rayleigh quotient
@@ -3410,7 +3594,7 @@ do while (iter<=nitermax)
    if (nam%lsqrt) then
       call nicas_blk%apply_from_sqrt(geom,fld)
    else
-      call nicas_blk%apply(geom,fld)
+      call nicas_blk%apply(nam,geom,fld)
    end if
    fld = fld-egvmax*fld_prev
 
@@ -3474,7 +3658,7 @@ fld_sqrt = fld
 if (nam%lsqrt) then
    call nicas_blk%apply_from_sqrt(geom,fld_sqrt)
 else
-   call nicas_blk%apply(geom,fld)
+   call nicas_blk%apply(nam,geom,fld)
 end if
 
 ! Switch lsqrt
@@ -3488,7 +3672,7 @@ if (nam%lsqrt) then
    call nicas_blk_other%apply_from_sqrt(geom,fld_sqrt)
 else
    ! Apply NICAS
-   call nicas_blk_other%apply(geom,fld)
+   call nicas_blk_other%apply(nam,geom,fld)
 end if
 
 ! Compute dirac
@@ -3544,7 +3728,7 @@ end do
 if (nam%lsqrt) then
    call nicas_blk%apply_from_sqrt(geom,fld)
 else
-   call nicas_blk%apply(geom,fld)
+   call nicas_blk%apply(nam,geom,fld)
 end if
 
 if (nam%lsqrt) then

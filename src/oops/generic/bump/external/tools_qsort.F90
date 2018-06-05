@@ -11,6 +11,7 @@
 module tools_qsort
 
 use tools_kinds, only: kind_real
+use type_mpl, only: mpl
 
 implicit none
 
@@ -43,26 +44,60 @@ contains
 ! Subroutine: reorder_vec_integer
 !> Purpose: reorder integer vector according to list
 !----------------------------------------------------------------------
-subroutine reorder_vec_integer(n,list,vec)
+subroutine reorder_vec_integer(n,list,vec,vec2)
 
 implicit none
 
 ! Passed variables
-integer,intent(in) :: n             !< Sampling size
-integer,intent(in) :: list(n)       !< Processor
-integer,intent(inout) :: vec(n)     !< Vector to reorder
+integer,intent(in) :: n                   !< Sampling size
+integer,intent(in) :: list(n)             !< Processor
+integer,intent(inout) :: vec(n)           !< Vector to reorder
+integer,intent(inout),optional :: vec2(n) !< Second vector to reorder
 
 ! Local variables
-integer :: list_loc(n),order(n)
+integer :: i,i_s,i_e
+integer :: order(n),list_loc(n),list_current
 
 ! Copy list
 list_loc = list
 
 ! Order list
-call qsort_integer(n,list_loc,order)
+call qsort(n,list_loc,order)
 
 ! Reorder sampling
 vec = vec(order)
+if (present(vec2)) vec2 = vec2(order)
+
+! Initialization
+i_s = 1
+list_current = list_loc(1)
+
+! Order subectors
+do i=2,n
+   if ((list_loc(i)>list_current).or.(i==n)) then
+      ! End index of subvector
+      if (i<n) then
+         i_e = i-1
+      else
+         i_e = i
+      end if
+
+      ! Order subector
+      call qsort(i_e-i_s+1,vec(i_s:i_e),order(i_s:i_e))
+      if (present(vec2)) then
+         order(i_s:i_e) = order(i_s:i_e)+i_s-1
+         vec2(i_s:i_e) = vec2(order(i_s:i_e))
+      end if
+
+      if (i<n) then
+         ! First index of next subvector
+         i_s = i
+
+         ! Update list_current
+         list_current = list_loc(i)
+      end if
+   end if
+end do
 
 end subroutine reorder_vec_integer
 
@@ -70,27 +105,61 @@ end subroutine reorder_vec_integer
 ! Subroutine: reorder_vec_real
 !> Purpose: reorder real vector according to list
 !----------------------------------------------------------------------
-subroutine reorder_vec_real(n,list,vec)
+subroutine reorder_vec_real(n,list,vec,vec2)
 
 implicit none
 
 ! Passed variables
-integer,intent(in) :: n                 !< Sampling size
-real(kind_real),intent(in) :: list(n)   !< Processor
-real(kind_real),intent(inout) :: vec(n) !< Vector to reorder
+integer,intent(in) :: n                           !< Sampling size
+real(kind_real),intent(in) :: list(n)             !< Processor
+real(kind_real),intent(inout) :: vec(n)           !< Vector to reorder
+real(kind_real),intent(inout),optional :: vec2(n) !< Vector to reorder
 
 ! Local variables
+integer :: i,i_s,i_e
 integer :: order(n)
-real(kind_real) :: list_loc(n)
+real(kind_real) :: list_loc(n),list_current
 
 ! Copy list
 list_loc = list
 
 ! Order list
-call qsort_real(n,list_loc,order)
+call qsort(n,list_loc,order)
 
 ! Reorder sampling
 vec = vec(order)
+if (present(vec2)) vec2 = vec2(order)
+
+! Initialization
+i_s = 1
+list_current = list_loc(1)
+
+! Order subectors
+do i=2,n
+   if ((list_loc(i)>list_current).or.(i==n)) then
+      ! End index of subvector
+      if (i<n) then
+         i_e = i-1
+      else
+         i_e = i
+      end if
+
+      ! Order subector
+      call qsort(i_e-i_s+1,vec(i_s:i_e),order(i_s:i_e))
+      if (present(vec2)) then
+         order(i_s:i_e) = order(i_s:i_e)+i_s-1
+         vec2(i_s:i_e) = vec2(order(i_s:i_e))
+      end if
+
+      if (i<n) then
+         ! First index of next subvector
+         i_s = i
+
+         ! Update list_current
+         list_current = list_loc(i)
+      end if
+   end if
+end do
 
 end subroutine reorder_vec_real
 

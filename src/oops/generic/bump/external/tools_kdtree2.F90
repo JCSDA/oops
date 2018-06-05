@@ -24,11 +24,15 @@ module tools_kdtree2
   ! as in the original kd_tree module.
   !
   !-------------DATA TYPE, CREATION, DELETION---------------------
-  public :: kdtree2, kdtree2_result, tree_node, kdtree2_create, kdtree2_destroy
+  private
+  public :: kdtree2, kdtree2_result, kdtree2_create, kdtree2_destroy
   !---------------------------------------------------------------
   !-------------------SEARCH ROUTINES-----------------------------
   public :: kdtree2_n_nearest
   ! Return fixed number of nearest neighbors around arbitrary vector
+  !
+  public :: kdtree2_r_count
+  ! Count points within a fixed ball of arb vector
   !----------------------------------------------------------------
 
   integer, parameter :: bucket_size = 12
@@ -114,9 +118,6 @@ module tools_kdtree2
   end type tree_search_record
 
   real(kind_real),parameter :: rth = 1.0e-8 !< Reproducibility threshold
-
-  private
-  ! everything else is private.
 
   type(tree_search_record), save, target :: sr   ! A GLOBAL VARIABLE for search
 
@@ -522,10 +523,10 @@ contains
     ! Find the 'nn' vectors in the tree nearest to 'qv' in euclidean norm
     ! returning their indexes and distances in 'indexes' and 'distances'
     ! arrays already allocated passed to this subroutine.
-    type (kdtree2), pointer      :: tp
-    real(kind_real), target, intent (In)    :: qv(:)
-    integer, intent (In)         :: nn
-    type(kdtree2_result), target :: results(:)
+    type (kdtree2), pointer              :: tp
+    real(kind_real), target, intent (In) :: qv(:)
+    integer, intent (In)                 :: nn
+    type(kdtree2_result), target         :: results(:)
 
 
     sr%ballsize = huge(1.0)
@@ -559,6 +560,49 @@ contains
 !    deallocate(sr%pqp)
     return
   end subroutine kdtree2_n_nearest
+
+  function kdtree2_r_count(tp,qv,r2) result(nfound)
+    ! Count the number of neighbors within square distance 'r2'.
+    type (kdtree2), pointer   :: tp
+    real(kind_real), target, intent (In) :: qv(:)
+    real(kind_real), intent(in)          :: r2
+    integer                   :: nfound
+    ! ..
+    ! .. Intrinsic Functions ..
+    intrinsic HUGE
+    ! ..
+    sr%qv => qv
+    sr%ballsize = r2
+
+    sr%nn = 0       ! flag for fixed r search
+    sr%nfound = 0
+    sr%centeridx = -1
+    sr%correltime = 0
+
+    nullify(sr%results) ! for some reason, FTN 95 chokes on '=> null()'
+
+    sr%nalloc = 0            ! we do not allocate any storage but that's OK
+                             ! for counting.
+    sr%ind => tp%ind
+    sr%rearrange = tp%rearrange
+    if (tp%rearrange) then
+       sr%Data => tp%rearranged_data
+    else
+       sr%Data => tp%the_data
+    endif
+
+    !
+    !sr%dsl = Huge(sr%dsl)    ! set to huge positive values
+    !sr%il = -1               ! set to invalid indexes
+    !
+    sr%overflow = .false.
+
+    call search(tp%root)
+
+    nfound = sr%nfound
+
+    return
+  end function kdtree2_r_count
 
   subroutine validate_query_storage(n)
     !

@@ -11,7 +11,7 @@
 module type_lct_blk
 
 !$ use omp_lib
-use tools_display, only: prog_init,prog_print
+use tools_display, only: msgerror,prog_init,prog_print
 use tools_func, only: lonlatmod,fit_lct
 use tools_kinds, only: kind_real
 use tools_missing, only: msr,isnotmsr
@@ -32,19 +32,20 @@ type lct_blk_type
    integer :: nscales                           !< Number of LCT scales
    integer,allocatable :: ncomp(:)              !< Number of LCT components
 
-   ! LCT data
-   real(kind_real),allocatable :: H(:,:,:)      !< LCT components
-   real(kind_real),allocatable :: coef(:,:,:)   !< LCT coefficients
+   ! Diffusion data
+   real(kind_real),allocatable :: D(:,:,:)      !< Diffusion components
+   real(kind_real),allocatable :: coef(:,:,:)   !< Multi-scale coefficients
    real(kind_real),allocatable :: raw(:,:,:,:)  !< Raw correlations
    real(kind_real),allocatable :: norm(:,:,:,:) !< Norm to take nsub into account
    real(kind_real),allocatable :: fit(:,:,:,:)  !< Fitted correlations
 
-   ! DT data
-   real(kind_real),allocatable :: Dcoef(:,:,:)
+   ! Output data
    real(kind_real),allocatable :: D11(:,:,:)
    real(kind_real),allocatable :: D22(:,:,:)
    real(kind_real),allocatable :: D33(:,:,:)
    real(kind_real),allocatable :: D12(:,:,:)
+   real(kind_real),allocatable :: Dcoef(:,:,:)
+   real(kind_real),allocatable :: DLh(:,:,:)
 contains
    procedure :: alloc => lct_blk_alloc
    procedure :: dealloc => lct_blk_dealloc
@@ -52,7 +53,8 @@ contains
    procedure :: fitting => lct_blk_fitting
 end type lct_blk_type
 
-real(kind_real),parameter :: Hscale = 10.0_kind_real !< Typical factor between LCT scales
+real(kind_real),parameter :: cor_min = 0.5_kind_real !< Minimum relevant correlation for first guess
+real(kind_real),parameter :: Dscale = 10.0_kind_real !< Typical factor between diffusion scales
 logical,parameter :: lprt = .false.                  !< Optimization print
 
 private
@@ -92,28 +94,30 @@ do iscales=1,lct_blk%nscales
 end do
 
 ! Allocation
-allocate(lct_blk%H(sum(lct_blk%ncomp),hdata%nc1a,geom%nl0))
+allocate(lct_blk%D(sum(lct_blk%ncomp),hdata%nc1a,geom%nl0))
 allocate(lct_blk%coef(lct_blk%nscales,hdata%nc1a,geom%nl0))
 allocate(lct_blk%raw(nam%nc3,bpar%nl0r(ib),hdata%nc1a,geom%nl0))
 allocate(lct_blk%norm(nam%nc3,bpar%nl0r(ib),hdata%nc1a,geom%nl0))
 allocate(lct_blk%fit(nam%nc3,bpar%nl0r(ib),hdata%nc1a,geom%nl0))
-allocate(lct_blk%Dcoef(geom%nc0a,geom%nl0,lct_blk%nscales))
 allocate(lct_blk%D11(geom%nc0a,geom%nl0,lct_blk%nscales))
 allocate(lct_blk%D22(geom%nc0a,geom%nl0,lct_blk%nscales))
 allocate(lct_blk%D33(geom%nc0a,geom%nl0,lct_blk%nscales))
 allocate(lct_blk%D12(geom%nc0a,geom%nl0,lct_blk%nscales))
+allocate(lct_blk%Dcoef(geom%nc0a,geom%nl0,lct_blk%nscales))
+allocate(lct_blk%DLh(geom%nc0a,geom%nl0,lct_blk%nscales))
 
 ! Initialization
-call msr(lct_blk%H)
+call msr(lct_blk%D)
 call msr(lct_blk%coef)
 call msr(lct_blk%raw)
 call msr(lct_blk%norm)
 call msr(lct_blk%fit)
-call msr(lct_blk%Dcoef)
 call msr(lct_blk%D11)
 call msr(lct_blk%D22)
 call msr(lct_blk%D33)
 call msr(lct_blk%D12)
+call msr(lct_blk%Dcoef)
+call msr(lct_blk%DLh)
 
 end subroutine lct_blk_alloc
 
@@ -130,16 +134,17 @@ class(lct_blk_type),intent(inout) :: lct_blk !< LCT block
 
 ! Release memory
 if (allocated(lct_blk%ncomp)) deallocate(lct_blk%ncomp)
-if (allocated(lct_blk%H)) deallocate(lct_blk%H)
+if (allocated(lct_blk%D)) deallocate(lct_blk%D)
 if (allocated(lct_blk%coef)) deallocate(lct_blk%coef)
 if (allocated(lct_blk%raw)) deallocate(lct_blk%raw)
 if (allocated(lct_blk%norm)) deallocate(lct_blk%norm)
 if (allocated(lct_blk%fit)) deallocate(lct_blk%fit)
-if (allocated(lct_blk%Dcoef)) deallocate(lct_blk%Dcoef)
 if (allocated(lct_blk%D11)) deallocate(lct_blk%D11)
 if (allocated(lct_blk%D22)) deallocate(lct_blk%D22)
 if (allocated(lct_blk%D33)) deallocate(lct_blk%D33)
 if (allocated(lct_blk%D12)) deallocate(lct_blk%D12)
+if (allocated(lct_blk%Dcoef)) deallocate(lct_blk%Dcoef)
+if (allocated(lct_blk%DLh)) deallocate(lct_blk%DLh)
 
 end subroutine lct_blk_dealloc
 
@@ -226,9 +231,9 @@ type(bpar_type),intent(in) :: bpar           !< Block parameters
 type(hdata_type),intent(in) :: hdata         !< HDIAG data
 
 ! Local variables
-integer :: il0,jl0r,jl0,ic1a,ic1,jc3,iscales,offset,progint
-real(kind_real) :: distsq,Hhbar,Hvbar
-real(kind_real),allocatable :: Hh(:),Hv(:),dx(:,:),dy(:,:),dz(:)
+integer :: il0,jl0r,jl0,ic1a,ic1,ic0,jc3,iscales,offset,progint
+real(kind_real) :: distsq,Dhbar,Dvbar
+real(kind_real),allocatable :: Dh(:),Dv(:),dx(:,:),dy(:,:),dz(:)
 logical :: spd
 logical,allocatable :: dmask(:,:),done(:)
 type(minim_type) :: minim
@@ -237,8 +242,8 @@ type(minim_type) :: minim
 associate(ib=>lct_blk%ib)
 
 ! Allocation
-allocate(Hh(nam%nc3))
-allocate(Hv(bpar%nl0r(ib)))
+allocate(Dh(nam%nc3))
+allocate(Dv(bpar%nl0r(ib)))
 allocate(dx(nam%nc3,bpar%nl0r(ib)))
 allocate(dy(nam%nc3,bpar%nl0r(ib)))
 allocate(dz(bpar%nl0r(ib)))
@@ -269,6 +274,7 @@ do il0=1,geom%nl0
    do ic1a=1,hdata%nc1a
       ! Global index
       ic1 = hdata%c1a_to_c1(ic1a)
+      ic0 = hdata%c1_to_c0(ic1)
 
       if (hdata%c1l0_log(ic1,il0)) then
          ! Prepare vectors
@@ -283,55 +289,61 @@ do il0=1,geom%nl0
                   dx(jc3,jl0r) = dx(jc3,jl0r)*cos(geom%lat(hdata%c1c3_to_c0(ic1,1)))
                end if
             end do
-            dz(jl0r) = real(nam%levs(jl0)-nam%levs(il0),kind_real)
+            dz(jl0r) = real(geom%vunit(ic0,jl0)-geom%vunit(ic0,il0),kind_real)
          end do
 
          ! Approximate homogeneous horizontal length-scale
-         call msr(Hh)
+         call msr(Dh)
          do jl0r=1,bpar%nl0r(ib)
-            if (.not.(abs(dz(jl0r))>0.0)) then
+            jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
+            if (il0==jl0) then
                do jc3=1,nam%nc3
                   if (dmask(jc3,jl0r)) then
                      distsq = dx(jc3,jl0r)**2+dy(jc3,jl0r)**2
-                     if ((lct_blk%raw(jc3,jl0r,ic1a,il0)>0.0).and.(distsq>0.0)) Hh(jc3) = -2.0*log(lct_blk%raw(jc3,jl0r,ic1a,il0)) &
-                   & /distsq
+                     if ((lct_blk%raw(jc3,jl0r,ic1a,il0)>cor_min).and.(distsq>0.0))  &
+                   & Dh(jc3) = -distsq/(2.0*log(lct_blk%raw(jc3,jl0r,ic1a,il0)))
                   end if
                end do
             end if
          end do
-         if (count(isnotmsr(Hh))>0) then
-            Hhbar = sum(Hh,mask=isnotmsr(Hh))/real(count(isnotmsr(Hh)),kind_real)
+         call msr(Dhbar)
+         if (count(isnotmsr(Dh))>0) then
+            Dhbar = sum(Dh,mask=isnotmsr(Dh))/real(count(isnotmsr(Dh)),kind_real)
          else
-            return
+            exit
          end if
-         if (lct_blk%nscales>1) Hhbar = Hhbar*Hscale
 
          ! Approximate homogeneous vertical length-scale
-         call msr(Hv)
+         call msr(Dv)
          jc3 = 1
          do jl0r=1,bpar%nl0r(ib)
             distsq = dz(jl0r)**2
-            if ((lct_blk%raw(jc3,jl0r,ic1a,il0)>0.0).and.(distsq>0.0)) Hv(jl0r) = -2.0*log(lct_blk%raw(jc3,jl0r,ic1a,il0))/distsq
+            if ((lct_blk%raw(jc3,jl0r,ic1a,il0)>cor_min).and.(distsq>0.0)) &
+          & Dv(jl0r) = -distsq/(2.0*log(lct_blk%raw(jc3,jl0r,ic1a,il0)))
          end do
-         if (bpar%nl0r(ib)>0) then
-            Hvbar = 1.0
-         else
-            if (count(isnotmsr(Hv))>0) then
-               Hvbar = sum(Hv,mask=isnotmsr(Hv))/real(count(isnotmsr(Hv)),kind_real)
+         if (bpar%nl0r(ib)>1) then
+            if (count(isnotmsr(Dv))>0) then
+               Dvbar = sum(Dv,mask=isnotmsr(Dv))/real(count(isnotmsr(Dv)),kind_real)
             else
-              return
+               exit
             end if
+         else
+             Dvbar = 0.0
          end if
-         if (lct_blk%nscales>1) Hvbar = Hvbar*Hscale
 
          ! Define norm and bounds
          offset = 0
          do iscales=1,lct_blk%nscales
-            minim%guess(offset+1:offset+3) = (/Hhbar,Hhbar,Hvbar/)/Hscale**(iscales-1)
-            minim%norm(offset+1:offset+3) = (/Hhbar,Hhbar,Hvbar/)/Hscale**(iscales-1)
-            minim%binf(offset+1:offset+3) = (/1.0/sqrt(Hscale),1.0/sqrt(Hscale),1.0/sqrt(Hscale)/)*minim%guess(1:3) &
-                                          & /Hscale**(iscales-1)
-            minim%bsup(offset+1:offset+3) = (/sqrt(Hscale),sqrt(Hscale),sqrt(Hscale)/)*minim%guess(1:3)/Hscale**(iscales-1)
+            minim%guess(offset+1:offset+3) = (/Dhbar,Dhbar,Dvbar/)*Dscale**(iscales-1)
+            minim%norm(offset+1:offset+3) = (/Dhbar,Dhbar,Dvbar/)*Dscale**(iscales-1)
+            if (lct_blk%nscales==1) then
+               minim%binf(offset+1:offset+3) = (/1.0/Dscale,1.0/Dscale,1.0/Dscale/)*minim%guess(1:3)
+               minim%bsup(offset+1:offset+3) = (/Dscale,Dscale,Dscale/)*minim%guess(1:3)
+            else
+               minim%binf(offset+1:offset+3) = (/1.0/sqrt(Dscale),1.0/sqrt(Dscale),1.0/sqrt(Dscale)/)*minim%guess(1:3) &
+                                              & *Dscale**(iscales-1)
+               minim%bsup(offset+1:offset+3) = (/sqrt(Dscale),sqrt(Dscale),sqrt(Dscale)/)*minim%guess(1:3)*Dscale**(iscales-1)
+            end if
             offset = offset+3
             if (lct_blk%ncomp(iscales)==4) then
                minim%guess(offset+1) = 0.0
@@ -340,13 +352,13 @@ do il0=1,geom%nl0
                minim%bsup(offset+1) = 1.0
                offset = offset+1
             end if
-            if (lct_blk%nscales>1) then
-               minim%guess(offset+1) = 1.0/real(lct_blk%nscales,kind_real)
-               minim%norm(offset+1) = 1.0/real(lct_blk%nscales,kind_real)
-               minim%binf(offset+1) = 0.0
-               minim%bsup(offset+1) = 1.0
-               offset = offset+1
-            end if
+         end do
+         do iscales=1,lct_blk%nscales-1
+            minim%guess(offset+1) = 1.0/real(lct_blk%nscales,kind_real)
+            minim%norm(offset+1) = 1.0/real(lct_blk%nscales,kind_real)
+            minim%binf(offset+1) = 0.1
+            minim%bsup(offset+1) = 1.0
+            offset = offset+1
          end do
 
          ! Fill minim
@@ -367,7 +379,7 @@ do il0=1,geom%nl0
          call minim%compute(lprt)
 
          ! Copy parameters
-         lct_blk%H(:,ic1a,il0) = minim%x(1:sum(lct_blk%ncomp))
+         lct_blk%D(:,ic1a,il0) = minim%x(1:sum(lct_blk%ncomp))
          if (lct_blk%nscales>1) then
             lct_blk%coef(1:lct_blk%nscales-1,ic1a,il0) = minim%x(sum(lct_blk%ncomp)+1:sum(lct_blk%ncomp)+lct_blk%nscales-1)
             lct_blk%coef(lct_blk%nscales,ic1a,il0) = 1.0-sum(lct_blk%coef(1:lct_blk%nscales-1,ic1a,il0))
@@ -379,28 +391,28 @@ do il0=1,geom%nl0
          if (bpar%nl0r(ib)==1) then
             offset = 0
             do iscales=1,lct_blk%nscales
-               lct_blk%H(offset+3,ic1a,il0) = 1.0
+               lct_blk%D(offset+3,ic1a,il0) = 0.0
                offset = offset+lct_blk%ncomp(iscales)
             end do
          end if
 
-         ! Check positive-definiteness
+         ! Check positive-definiteness and coefficients values
          spd = .true.
          offset = 0
          do iscales=1,lct_blk%nscales
-            spd = spd.and.(lct_blk%H(offset+1,ic1a,il0)>0.0).and.(lct_blk%H(offset+2,ic1a,il0)>0.0) &
-                & .and.(lct_blk%H(offset+3,ic1a,il0)>0.0)
-            if (lct_blk%ncomp(iscales)==4) spd = spd.and.(lct_blk%H(offset+4,ic1a,il0)>-1.0).and.(lct_blk%H(offset+4,ic1a,il0)<1.0)
-            if (iscales<lct_blk%nscales) spd = spd.and.(lct_blk%coef(iscales,ic1a,il0)>0.0)
+            spd = spd.and.(lct_blk%D(offset+1,ic1a,il0)>0.0).and.(lct_blk%D(offset+2,ic1a,il0)>0.0)
+            if (bpar%nl0r(ib)>1) spd = spd.and.(lct_blk%D(offset+3,ic1a,il0)>0.0)
+            if (lct_blk%ncomp(iscales)==4) spd = spd.and.(lct_blk%D(offset+4,ic1a,il0)>-1.0).and.(lct_blk%D(offset+4,ic1a,il0)<1.0)
+            spd = spd.and.(lct_blk%coef(iscales,ic1a,il0)>0.0)
             offset = offset+lct_blk%ncomp(iscales)
          end do
          if (spd) then
             ! Rebuild fit
-            call fit_lct(nam%nc3,bpar%nl0r(ib),dx,dy,dz,dmask,lct_blk%nscales,lct_blk%ncomp,lct_blk%H(:,ic1a,il0), &
+            call fit_lct(nam%nc3,bpar%nl0r(ib),dx,dy,dz,dmask,lct_blk%nscales,lct_blk%ncomp,lct_blk%D(:,ic1a,il0), &
           & lct_blk%coef(:,ic1a,il0),lct_blk%fit(:,:,ic1a,il0))
          else
             ! Missing values
-            call msr(lct_blk%H(:,ic1a,il0))
+            call msr(lct_blk%D(:,ic1a,il0))
             call msr(lct_blk%coef(:,ic1a,il0))
             call msr(lct_blk%fit(:,:,ic1a,il0))
          end if

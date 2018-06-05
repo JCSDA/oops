@@ -46,6 +46,7 @@ contains
    procedure :: apply_ad => linop_apply_ad
    procedure :: apply_sym => linop_apply_sym
    procedure :: add_op => linop_add_op
+   procedure :: gather => linop_gather
    procedure :: linop_interp_from_lat_lon
    procedure :: linop_interp_from_mesh_kdtree
    procedure :: linop_interp_grid
@@ -54,7 +55,7 @@ contains
    procedure :: interp_missing => linop_interp_missing
 end type linop_type
 
-logical,parameter :: check_data = .false.             !< Activate data check for all linear operations
+logical,parameter :: check_data = .true.             !< Activate data check for all linear operations
 integer,parameter :: nnatmax = 40                     !< Maximum number of natural neighbors
 real(kind_real),parameter :: S_inf = 1.0e-2_kind_real !< Minimum interpolation coefficient
 
@@ -211,7 +212,6 @@ end if
 
 end subroutine linop_reorder
 
-
 !----------------------------------------------------------------------
 ! Subroutine: linop_read
 !> Purpose: read linear operator from a NetCDF file
@@ -324,7 +324,7 @@ end subroutine linop_write
 ! Subroutine: linop_apply
 !> Purpose: apply linear operator
 !----------------------------------------------------------------------
-subroutine linop_apply(linop,fld_src,fld_dst,ivec,mssrc)
+subroutine linop_apply(linop,fld_src,fld_dst,ivec,mssrc,msdst)
 
 implicit none
 
@@ -334,10 +334,12 @@ real(kind_real),intent(in) :: fld_src(linop%n_src)  !< Source vector
 real(kind_real),intent(out) :: fld_dst(linop%n_dst) !< Destination vector
 integer,intent(in),optional :: ivec                 !< Index of the vector of linear operators with similar row and col
 logical,intent(in),optional :: mssrc                !< Check for missing source
+logical,intent(in),optional :: msdst                !< Check for missing destination
 
 ! Local variables
 integer :: i_s,i_dst
-logical :: missing(linop%n_dst),lmssrc,valid
+logical :: lmssrc,lmsdst,valid
+logical,allocatable :: missing(:)
 
 if (check_data) then
    ! Check linear operation
@@ -354,14 +356,18 @@ if (check_data) then
    ! Check input
    if (any(fld_src>huge(1.0))) call msgerror('Overflowing number in fld_src for linear operation '//trim(linop%prefix))
    if (any(isnan(fld_src))) call msgerror('NaN in fld_src for linear operation '//trim(linop%prefix))
-   if (any(.not.isnotmsr(fld_src))) call msgerror('Missing value in fld_src for linear operation '//trim(linop%prefix))
 end if
 
 ! Initialization
 fld_dst = 0.0
-missing = .true.
 lmssrc = .false.
 if (present(mssrc)) lmssrc = mssrc
+lmsdst = .true.
+if (present(msdst)) lmsdst = msdst
+if (lmsdst) then
+   allocate(missing(linop%n_dst))
+   missing = .true.
+end if
 
 ! Apply weights
 do i_s=1,linop%n_s
@@ -381,14 +387,16 @@ do i_s=1,linop%n_s
       end if
 
       ! Check for missing destination
-      missing(linop%row(i_s)) = .false.
+      if (lmsdst) missing(linop%row(i_s)) = .false.
    end if
 end do
 
-! Missing destination values
-do i_dst=1,linop%n_dst
-   if (missing(i_dst)) call msr(fld_dst(i_dst))
-end do
+if (lmsdst) then
+   ! Missing destination values
+   do i_dst=1,linop%n_dst
+      if (missing(i_dst)) call msr(fld_dst(i_dst))
+   end do
+end if
 
 if (check_data) then
    ! Check output
@@ -429,7 +437,6 @@ if (check_data) then
    ! Check input
    if (any(fld_dst>huge(1.0))) call msgerror('Overflowing number in fld_dst for adjoint linear operation '//trim(linop%prefix))
    if (any(isnan(fld_dst))) call msgerror('NaN in fld_dst for adjoint linear operation '//trim(linop%prefix))
-   if (any(.not.isnotmsr(fld_dst))) call msgerror('Missing value in fld_dst for adjoint linear operation '//trim(linop%prefix))
 end if
 
 ! Initialization
@@ -483,7 +490,6 @@ if (check_data) then
    ! Check input
    if (any(fld>huge(1.0))) call msgerror('Overflowing number in fld for symmetric linear operation '//trim(linop%prefix))
    if (any(isnan(fld))) call msgerror('NaN in fld for symmetric linear operation '//trim(linop%prefix))
-   if (any(.not.isnotmsr(fld))) call msgerror('Missing value in fld for symmetric linear operation '//trim(linop%prefix))
 end if
 
 ! Apply weights
@@ -494,15 +500,18 @@ do i_s=1,linop%n_s
 !$ ithread = omp_get_thread_num()+1
    if (present(ivec)) then
       fld_arr(linop%row(i_s),ithread) = fld_arr(linop%row(i_s),ithread)+linop%Svec(i_s,ivec)*fld(linop%col(i_s))
-      fld_arr(linop%col(i_s),ithread) = fld_arr(linop%col(i_s),ithread)+linop%Svec(i_s,ivec)*fld(linop%row(i_s))
+      if (linop%col(i_s)/=linop%row(i_s)) fld_arr(linop%col(i_s),ithread) = fld_arr(linop%col(i_s),ithread) &
+                                                                          & +linop%Svec(i_s,ivec)*fld(linop%row(i_s))
    else
       fld_arr(linop%row(i_s),ithread) = fld_arr(linop%row(i_s),ithread)+linop%S(i_s)*fld(linop%col(i_s))
-      fld_arr(linop%col(i_s),ithread) = fld_arr(linop%col(i_s),ithread)+linop%S(i_s)*fld(linop%row(i_s))
+      if (linop%col(i_s)/=linop%row(i_s)) fld_arr(linop%col(i_s),ithread) = fld_arr(linop%col(i_s),ithread) &
+                                                                          & +linop%S(i_s)*fld(linop%row(i_s))
    end if
 end do
 !$omp end parallel do
 
 ! Sum over threads
+fld = 0.0
 do ithread=1,mpl%nthread
    fld = fld+fld_arr(:,ithread)
 end do
@@ -558,6 +567,39 @@ linop%col(n_s) = col
 linop%S(n_s) = S
 
 end subroutine linop_add_op
+
+!----------------------------------------------------------------------
+! Subroutine: linop_gather
+!> Purpose: gather data from OpenMP threads
+!----------------------------------------------------------------------
+subroutine linop_gather(linop,n_s_arr,linop_arr)
+
+implicit none
+
+! Passed variables
+class(linop_type),intent(inout) :: linop              !< Linear operator
+integer,intent(in) :: n_s_arr(mpl%nthread)            !< Number of operations
+type(linop_type),intent(in) :: linop_arr(mpl%nthread) !< Linear operator array
+
+! Local variables
+integer :: ithread,offset
+
+! Total number of operations
+linop%n_s = sum(n_s_arr)
+
+! Allocation
+call linop%alloc
+
+! Gather data
+offset = 0
+do ithread=1,mpl%nthread
+   linop%row(offset+1:offset+n_s_arr(ithread)) = linop_arr(ithread)%row(1:n_s_arr(ithread))
+   linop%col(offset+1:offset+n_s_arr(ithread)) = linop_arr(ithread)%col(1:n_s_arr(ithread))
+   linop%S(offset+1:offset+n_s_arr(ithread)) = linop_arr(ithread)%S(1:n_s_arr(ithread))
+   offset = offset+n_s_arr(ithread)
+end do
+
+end subroutine linop_gather
 
 !----------------------------------------------------------------------
 ! Subroutine: linop_interp_from_lat_lon
@@ -857,14 +899,14 @@ character(len=*),intent(in) :: interp_type    !< Interpolation type
 type(linop_type),intent(inout) :: interp_base !< Linear operator (base interpolation)
 
 ! Local variables
-integer :: ic0,ic1,i_s
+integer :: ic0,ic1,jc0,jc1,i_s
 real(kind_real) :: renorm(geom%nc0)
 logical :: test_c0(geom%nc0)
 logical,allocatable :: mask_extra(:),valid(:)
 
 if (.not.allocated(interp_base%row)) then
    ! Compute base interpolation
-   call interp_base%interp(nc1,geom%lon(c1_to_c0),geom%lat(c1_to_c0), any(geom%mask(c1_to_c0,:),dim=2), &
+   call interp_base%interp(nc1,geom%lon(c1_to_c0),geom%lat(c1_to_c0),any(geom%mask(c1_to_c0,:),dim=2), &
  & geom%nc0,geom%lon,geom%lat,any(geom%mask,dim=2),interp_type)
 end if
 
@@ -872,17 +914,19 @@ end if
 allocate(valid(interp_base%n_s))
 allocate(mask_extra(nc1))
 
-! Initialization
-valid = .true.
+! Check mask
+do i_s=1,interp_base%n_s
+   ic0 = interp_base%row(i_s)
+   jc1 = interp_base%col(i_s)
+   jc0 = c1_to_c0(jc1)
+   valid(i_s) = geom%mask(ic0,il0i).and.geom%mask(jc0,il0i)
+end do
 
 ! Check mask boundaries
 if (mask_check) then
    write(mpl%unit,'(a10,a,i3,a)',advance='no') '','Sublevel ',il0i,': '
    call flush(mpl%unit)
    call interp_base%interp_check_mask(geom,valid,il0i,col_to_ic0=c1_to_c0)
-else
-   write(mpl%unit,'(a10,a,i3)') '','Sublevel ',il0i
-   call flush(mpl%unit)
 end if
 
 if (geom%nl0i>1) then
@@ -936,7 +980,7 @@ call interp_base%dealloc
 call linop%interp_missing(geom%nc0,geom%lon,geom%lat,geom%mask(:,il0i),interp_type)
 
 ! Check interpolation
-test_c0 = geom%mask(:,min(il0i,geom%nl0i))
+test_c0 = geom%mask(:,il0i)
 do i_s=1,linop%n_s
    test_c0(linop%row(i_s)) = .false.
 end do
@@ -1067,6 +1111,8 @@ do i_s=1,linop%n_s
 end do
 
 if (count(missing)>0) then
+   write(mpl%unit,'(a10,a,i6,a)') '','Deal with ',count(missing),' missing interpolation points'
+
    ! Allocate temporary interpolation
    if (trim(interp_type)=='bilin') then
       interp_tmp%n_s = linop%n_s+3*count(missing)

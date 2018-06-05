@@ -123,79 +123,97 @@ subroutine model_gem_read(nam,geom,filename,fld)
 implicit none
 
 ! Passed variables
-type(nam_type),intent(in) :: nam                             !< Namelist
-type(geom_type),intent(in) :: geom                           !< Geometry
+type(nam_type),intent(in) :: nam                              !< Namelist
+type(geom_type),intent(in) :: geom                            !< Geometry
 character(len=*),intent(in) :: filename                       !< File name
 real(kind_real),intent(out) :: fld(geom%nc0a,geom%nl0,nam%nv) !< Field
 
 ! Local variables
-integer :: iv,il0,xt,ic0a,ic0,ilon,ilat
+integer :: iv,il0,xt,ic0,ilon,ilat
 integer :: ncid,fld_id
-integer :: fld_int
+integer,allocatable :: fld_tmp_int(:,:)
 real(kind_real) :: add_offset,scale_factor
+real(kind=8),allocatable :: fld_tmp(:,:,:)
+real(kind_real) :: fld_c0(geom%nc0)
 character(len=1024) :: subr = 'model_gem_read'
 
-! Initialize field
-call msr(fld)
+if (mpl%main) then
+   ! Allocation
+   allocate(fld_tmp_int(geom%nlon,geom%nlat))
+   allocate(fld_tmp(geom%nlon,geom%nlat,geom%nl0))
 
-! Open file
-call ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_share,ncid))
+   ! Open file
+   call ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_nowrite,ncid))
+end if
 
 do iv=1,nam%nv
-   ! 3d variable
+   if (mpl%main) then
+      ! 3d variable
 
-   ! Get variable id
-   call ncerr(subr,nf90_inq_varid(ncid,trim(nam%varname(iv)),fld_id))
+      ! Get variable id
+      call ncerr(subr,nf90_inq_varid(ncid,trim(nam%varname(iv)),fld_id))
 
-   ! Check variable type
-   call ncerr(subr,nf90_inquire_variable(ncid,fld_id,xtype=xt))
-   select case (xt)
-   case (nf90_short)
-      call ncerr(subr,nf90_get_att(ncid,fld_id,'add_offset',add_offset))
-      call ncerr(subr,nf90_get_att(ncid,fld_id,'scale_factor',scale_factor))
-   case (nf90_double)
-   case default
-      call msgerror('wrong variable type')
-   end select
+      ! Check variable type and read data
+      call ncerr(subr,nf90_inquire_variable(ncid,fld_id,xtype=xt))
+      select case (xt)
+      case (nf90_short)
+         call ncerr(subr,nf90_get_att(ncid,fld_id,'add_offset',add_offset))
+         call ncerr(subr,nf90_get_att(ncid,fld_id,'scale_factor',scale_factor))
+         do il0=1,nam%nl
+            call ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp_int,(/1,1,nam%levs(il0)/),(/geom%nlon,geom%nlat,1/)))
+            fld_tmp(:,:,il0) = add_offset+scale_factor*real(fld_tmp_int,kind=8)
+         end do
+      case (nf90_double)
+         do il0=1,nam%nl
+            call ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp(:,:,il0),(/1,1,nam%levs(il0)/),(/geom%nlon,geom%nlat,1/)))
+         end do
+      case default
+         call msgerror('wrong variable type')
+      end select
 
-   ! 3d variable
-   do il0=1,nam%nl
-      do ic0a=1,geom%nc0a
-         ic0 = geom%c0a_to_c0(ic0a)
-         ilon = geom%c0_to_lon(ic0)
-         ilat = geom%c0_to_lat(ic0)
-         if (xt==nf90_short) then
-            call ncerr(subr,nf90_get_var(ncid,fld_id,fld_int,(/ilon,ilat,nam%levs(il0)/)))
-            fld(ic0a,il0,iv) = add_offset+scale_factor*real(fld_int,kind_real)
-         elseif (xt==nf90_double) then
-            call ncerr(subr,nf90_get_var(ncid,fld_id,fld(ic0a,il0,iv),(/ilon,ilat,nam%levs(il0)/)))
-         end if
-      end do
-   end do
+      if (trim(nam%addvar2d(iv))/='') then
+         ! 2d variable
 
-   if (trim(nam%addvar2d(iv))/='') then
-      ! 2d variable
+         ! Get id
+         call ncerr(subr,nf90_inq_varid(ncid,trim(nam%addvar2d(iv)),fld_id))
 
-      ! Get id
-      call ncerr(subr,nf90_inq_varid(ncid,trim(nam%addvar2d(iv)),fld_id))
-
-      ! Read data
-      do ic0a=1,geom%nc0a
-         ic0 = geom%c0a_to_c0(ic0a)
-         ilon = geom%c0_to_lon(ic0)
-         ilat = geom%c0_to_lat(ic0)
-         if (xt==nf90_short) then
-            call ncerr(subr,nf90_get_var(ncid,fld_id,fld_int,(/ilon,ilat/)))
-            fld(ic0a,geom%nl0,iv) = add_offset+scale_factor*real(fld_int,kind_real)
-         elseif (xt==nf90_double) then
-            call ncerr(subr,nf90_get_var(ncid,fld_id,fld(ic0a,geom%nl0,iv),(/ilon,ilat/)))
-         end if
-      end do
+         ! Check variable type and read data
+         call ncerr(subr,nf90_inquire_variable(ncid,fld_id,xtype=xt))
+         select case (xt)
+         case (nf90_short)
+            call ncerr(subr,nf90_get_att(ncid,fld_id,'add_offset',add_offset))
+            call ncerr(subr,nf90_get_att(ncid,fld_id,'scale_factor',scale_factor))
+            call ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp_int))
+            fld_tmp(:,:,geom%nl0) = add_offset+scale_factor*real(fld_tmp_int,kind=8)
+         case (nf90_double)
+            call ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp(:,:,geom%nl0)))
+         case default
+            call msgerror('wrong variable type')
+         end select
+      end if
    end if
+
+   ! Global to local
+   do il0=1,geom%nl0
+      if (mpl%main) then
+         do ic0=1,geom%nc0
+            ilon = geom%c0_to_lon(ic0)
+            ilat = geom%c0_to_lat(ic0)
+            fld_c0(ic0) = real(fld_tmp(ilon,ilat,il0),kind_real)
+         end do
+      end if
+      call mpl%scatterv(geom%proc_to_nc0a,geom%nc0,fld_c0,geom%nc0a,fld(:,il0,iv))
+   end do
 end do
 
-! Close file
-call ncerr(subr,nf90_close(ncid))
+if (mpl%main) then
+   ! Close file
+   call ncerr(subr,nf90_close(ncid))
+
+   ! Release memory
+   deallocate(fld_tmp_int)
+   deallocate(fld_tmp)
+end if
 
 end subroutine model_gem_read
 

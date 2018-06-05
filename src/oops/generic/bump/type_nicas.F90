@@ -97,8 +97,13 @@ allocate(nicas%blk(bpar%nb+1))
 ! Set name
 do ib=1,bpar%nb+1
    nicas%blk(ib)%ib = ib
-   write(nicas%blk(ib)%name,'(a,i1,a,i4.4,a,i4.4,a,a)') trim(prefix)//'_',nam%mpicom,'_',mpl%nproc,'-',mpl%myproc, &
- & '_',trim(bpar%blockname(ib))
+   if (nam%lsqrt) then
+      write(nicas%blk(ib)%name,'(a,i1,a,i4.4,a,i4.4,a,a)') trim(prefix)//'-',nam%mpicom,'-sqrt_',mpl%nproc,'-',mpl%myproc, &
+    & '_',trim(bpar%blockname(ib))
+   else
+      write(nicas%blk(ib)%name,'(a,i1,a,i4.4,a,i4.4,a,a)') trim(prefix)//'-',nam%mpicom,'_',mpl%nproc,'-',mpl%myproc, &
+    & '_',trim(bpar%blockname(ib))
+   end if
 end do
 
 end subroutine nicas_alloc
@@ -165,7 +170,6 @@ do ib=1,bpar%nb+1
             nicas%blk(ib)%nsb = 0
          end if
          call ncerr(subr,nf90_get_att(ncid,nf90_global,'nsc',nicas%blk(ib)%nsc))
-         call ncerr(subr,nf90_get_att(ncid,nf90_global,'mpicom',nicas%blk(ib)%mpicom))
       end if
       if ((ib==bpar%nb+1).and.(abs(nam%advmode)==1)) then
          call ncerr(subr,nf90_inq_dimid(ncid,'nc0d',nc0d_id))
@@ -288,7 +292,6 @@ do ib=1,bpar%nb+1
          if (nicas%blk(ib)%nsa>0) call ncerr(subr,nf90_def_dim(ncid,'nsa',nicas%blk(ib)%nsa,nsa_id))
          if (nicas%blk(ib)%nsb>0) call ncerr(subr,nf90_def_dim(ncid,'nsb',nicas%blk(ib)%nsb,nsb_id))
          call ncerr(subr,nf90_put_att(ncid,nf90_global,'nsc',nicas%blk(ib)%nsc))
-         call ncerr(subr,nf90_put_att(ncid,nf90_global,'mpicom',nicas%blk(ib)%mpicom))
       end if
       if ((ib==bpar%nb+1).and.nam%displ_diag) then
          call ncerr(subr,nf90_def_dim(ncid,'nc0d',nicas%blk(ib)%nc0d,nc0d_id))
@@ -764,7 +767,7 @@ case ('common')
    end if
 
    ! Apply common localization
-   call nicas%blk(bpar%nb+1)%apply(geom,fld_3d)
+   call nicas%blk(bpar%nb+1)%apply(nam,geom,fld_3d)
 
    if (lcoef_ens) then
       ! Apply common ensemble coefficient square-root
@@ -808,7 +811,7 @@ case ('specific_univariate')
          if (lcoef_ens) fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(ib)%coef_ens)
 
          ! Apply specific localization (same for all timeslots)
-         call nicas%blk(ib)%apply(geom,fld_4d(:,:,iv))
+         call nicas%blk(ib)%apply(nam,geom,fld_4d(:,:,iv))
 
          ! Apply common ensemble coefficient square-root
          if (lcoef_ens) fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(ib)%coef_ens)
@@ -861,7 +864,7 @@ case ('common_weighted')
       if (lcoef_ens) fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(bpar%nb+1)%coef_ens)
 
       ! Apply common localization
-      call nicas%blk(bpar%nb+1)%apply(geom,fld_4d(:,:,iv))
+      call nicas%blk(bpar%nb+1)%apply(nam,geom,fld_4d(:,:,iv))
 
       ! Apply common ensemble coefficient square-root
       if (lcoef_ens) fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(bpar%nb+1)%coef_ens)

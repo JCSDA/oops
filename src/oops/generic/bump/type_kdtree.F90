@@ -11,7 +11,8 @@
 module type_kdtree
 
 use tools_display, only: msgerror
-use tools_kdtree2, only: kdtree2,kdtree2_result,kdtree2_create,kdtree2_destroy,kdtree2_n_nearest
+use tools_kdtree2, only: kdtree2,kdtree2_result,kdtree2_create,kdtree2_destroy, &
+                       & kdtree2_n_nearest,kdtree2_r_count
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,isnotmsi
 use tools_qsort, only: qsort
@@ -27,6 +28,7 @@ contains
     procedure :: create => kdtree_create
     procedure :: delete => kdtree_delete
     procedure :: find_nearest_neighbors => kdtree_find_nearest_neighbors
+    procedure :: count_nearest_neighbors => kdtree_count_nearest_neighbors
 end type kdtree_type
 
 real(kind_real),parameter :: rth = 1.0e-12_kind_real !< Reproducibility threshold
@@ -121,7 +123,7 @@ end subroutine kdtree_delete
 
 !----------------------------------------------------------------------
 ! Subroutine: kdtree_find_nearest_neighbors
-!> Purpose: kdtree_find nearest neighbors using a KD-tree
+!> Purpose: find nearest neighbors using a KD-tree
 !----------------------------------------------------------------------
 subroutine kdtree_find_nearest_neighbors(kdtree,lon,lat,nn,nn_index,nn_dist)
 
@@ -175,5 +177,34 @@ do while (i<nn)
 end do
 
 end subroutine kdtree_find_nearest_neighbors
+
+!----------------------------------------------------------------------
+! Subroutine: kdtree_count_nearest_neighbors
+!> Purpose: count nearest neighbors using a KD-tree
+!----------------------------------------------------------------------
+subroutine kdtree_count_nearest_neighbors(kdtree,lon,lat,sr,nn)
+
+implicit none
+
+! Passed variables
+class(kdtree_type),intent(in) :: kdtree !< KD-tree object
+real(kind_real),intent(in) :: lon(1)    !< Point longitude
+real(kind_real),intent(in) :: lat(1)    !< Point latitude
+real(kind_real),intent(in) :: sr        !< Spherical radius
+integer,intent(out) :: nn               !< Number of nearest neighbors found
+
+! Local variables
+real(kind_real) :: qv(3),brsq
+
+! Transform to cartesian coordinates
+call trans(1,lat,lon,qv(1),qv(2),qv(3))
+
+! Convert spherical radius to squared ball radius
+brsq = (1.0-cos(sr))**2+sin(sr)**2
+
+! Count nearest neighbors
+nn = kdtree2_r_count(kdtree%tp,qv,brsq)
+
+end subroutine kdtree_count_nearest_neighbors
 
 end module type_kdtree

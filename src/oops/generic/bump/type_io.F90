@@ -78,7 +78,7 @@ real(kind_real),intent(out) :: fld(geom%nc0a,geom%nl0) !< Field
 
 ! Local variables
 integer :: ncid,fld_id,il0,dum
-real(kind_real),allocatable :: fld_c0(:,:)
+real(kind_real) :: fld_c0(geom%nc0,geom%nl0)
 character(len=1024) :: filename_proc
 character(len=1024) :: subr = 'fld_read'
 
@@ -97,8 +97,6 @@ if (split_io.and.(mpl%nproc>1)) then
    call ncerr(subr,nf90_close(ncid))
 else
    if (mpl%main) then
-      ! Allocation
-      allocate(fld_c0(geom%nc0,geom%nl0))
 
       ! Open file
       call ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename)//'.nc',nf90_nowrite,ncid))
@@ -117,9 +115,6 @@ else
    do il0=1,geom%nl0
       call mpl%scatterv(geom%proc_to_nc0a,geom%nc0,fld_c0(:,il0),geom%nc0a,fld(:,il0))
    end do
-
-   ! Release memory
-   if (mpl%main) deallocate(fld_c0)
 end if
 
 ! Dummy call to avoid compilation warnings
@@ -147,7 +142,7 @@ real(kind_real),intent(in) :: fld(geom%nc0a,geom%nl0) !< Field
 integer :: ic0a,ic0,il0,info
 integer :: ncid,nc0a_id,nc0_id,nl0_id,fld_id,lon_id,lat_id
 real(kind_real) :: fld_c0a(geom%nc0a,geom%nl0)
-real(kind_real),allocatable :: fld_c0(:,:)
+real(kind_real) :: fld_c0(geom%nc0,geom%nl0)
 character(len=1024) :: filename_proc
 character(len=1024) :: subr = 'fld_write'
 
@@ -217,9 +212,6 @@ if (split_io.and.(mpl%nproc>1)) then
    ! Close file
    call ncerr(subr,nf90_close(ncid))
 else
-   ! Allocation
-   if (mpl%main) allocate(fld_c0(geom%nc0,geom%nl0))
-
    ! Local to global
    do il0=1,geom%nl0
       call mpl%gatherv(geom%nc0a,fld_c0a(:,il0),geom%proc_to_nc0a,geom%nc0,fld_c0(:,il0))
@@ -278,9 +270,6 @@ else
       ! Close file
       call ncerr(subr,nf90_close(ncid))
    end if
-
-   ! Release memory
-   if (mpl%main) deallocate(fld_c0)
 end if
 
 ! Regridded field output
