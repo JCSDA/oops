@@ -446,7 +446,7 @@ offset = 0
 call msr(fit)
 
 ! Coefficients
-Hcoef = max(Dmin,min(coef,1.0))
+Hcoef = max(Dmin,min(coef,1.0_kind_real))
 Hcoef = Hcoef/sum(Hcoef)
 
 do iscales=1,nscales

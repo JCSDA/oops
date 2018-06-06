@@ -57,6 +57,9 @@ type obsop_type
 
    ! Communication data
    type(com_type) :: com                    !< Communication data
+
+   ! Allocation flag
+   logical :: allocated                     !< Allocation flag
 contains
    procedure :: generate => obsop_generate
    procedure :: from => obsop_from
@@ -743,6 +746,9 @@ if (mpl%main) then
       call com(iproc)%dealloc
    end do
 end if
+
+! Update allocation flag
+obsop%allocated = .true.
 
 end subroutine obsop_parameters
 

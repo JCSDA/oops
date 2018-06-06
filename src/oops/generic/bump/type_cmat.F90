@@ -34,6 +34,7 @@ implicit none
 type cmat_type
    character(len=1024) :: prefix             !< Prefix
    type(cmat_blk_type),allocatable :: blk(:) !< C matrix blocks
+   logical :: allocated                      !< Allocation flag
 contains
    procedure :: alloc => cmat_alloc
    procedure :: copy => cmat_copy
@@ -109,6 +110,9 @@ do ib=1,bpar%nb+1
       end if
    end if
 end do
+
+! Update allocation flag
+cmat%allocated = .true.
 
 end subroutine cmat_alloc
 

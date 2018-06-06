@@ -28,8 +28,8 @@ implicit none
 
 ! LCT data derived type
 type lct_type
-   ! Data
    type(lct_blk_type),allocatable :: blk(:) !< LCT blocks
+   logical :: allocated                     !< Allocation flag
 contains
    procedure :: alloc => lct_alloc
    procedure :: run_lct => lct_run_lct
@@ -71,6 +71,9 @@ allocate(lct%blk(bpar%nb))
 do ib=1,bpar%nb
    call lct%blk(ib)%alloc(nam,geom,bpar,hdata,ib)
 end do
+
+! Update allocation flag
+lct%allocated = .true.
 
 end subroutine lct_alloc
 
@@ -218,7 +221,7 @@ type(bpar_type),intent(in) :: bpar      !< Block parameters
 type(hdata_type),intent(inout) :: hdata !< HDIAG data
 
 ! Local variables
-integer :: ib,il0,ic1a,ic1,icomp,iscales,offset,nmsr,nmsr_tot,ic0
+integer :: ib,il0,ic1a,ic1,icomp,iscales,offset,nmsr,nmsr_tot
 real(kind_real) :: fld_c1a(hdata%nc1a)
 logical :: mask_c1a(hdata%nc1a,geom%nl0)
 

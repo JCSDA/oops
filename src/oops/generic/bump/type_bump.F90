@@ -566,6 +566,12 @@ write(mpl%unit,'(a)') '--- Initialize random number generator'
 call flush(mpl%unit)
 call rng%init(bump%nam)
 
+! Initialize allocation flags
+bump%cmat%allocated = .false.
+bump%lct%allocated = .false.
+bump%nicas%allocated = .false.
+bump%obsop%allocated = .false.
+
 end subroutine bump_setup_generic
 
 !----------------------------------------------------------------------
@@ -589,37 +595,41 @@ if (bump%nam%new_hdiag.and.(trim(bump%nam%method)=='hyb-rnd').or.(trim(bump%nam%
 if (bump%nam%new_hdiag.and.(allocated(bump%rh).and.allocated(bump%rv))) &
  & call msgerror('rh and rv should not be provided if new_hdiag is active')
 
-if (bump%nam%new_hdiag) then
-   ! Call HDIAG driver
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Run HDIAG driver'
-   call flush(mpl%unit)
-   if ((trim(bump%nam%method)=='hyb-rnd').or.(trim(bump%nam%method)=='dual-ens')) then
-      call bump%cmat%run_hdiag(bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1,bump%ens2)
-   else
-      call bump%cmat%run_hdiag(bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1)
+if (.not.bump%cmat%allocated) then
+   if (bump%nam%new_hdiag) then
+      ! Call HDIAG driver
+      write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+      write(mpl%unit,'(a)') '--- Run HDIAG driver'
+      call flush(mpl%unit)
+      if ((trim(bump%nam%method)=='hyb-rnd').or.(trim(bump%nam%method)=='dual-ens')) then
+         call bump%cmat%run_hdiag(bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1,bump%ens2)
+      else
+         call bump%cmat%run_hdiag(bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1)
+      end if
+   elseif (bump%nam%new_param.and..not.(allocated(bump%rh).and.allocated(bump%rv))) then
+      ! Read C matrix data
+      write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+      write(mpl%unit,'(a)') '--- Read C matrix data'
+      call flush(mpl%unit)
+      call bump%cmat%read(bump%nam,bump%geom,bump%bpar,bump%io)
    end if
-elseif (bump%nam%new_param.and..not.(allocated(bump%rh).and.allocated(bump%rv))) then
-   ! Read C matrix data
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Read C matrix data'
-   call flush(mpl%unit)
-   call bump%cmat%read(bump%nam,bump%geom,bump%bpar,bump%io)
 end if
 
-if (bump%nam%new_param) then
-   ! Call NICAS driver
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Call NICAS driver'
-   call flush(mpl%unit)
-   call bump%nicas%run_nicas(bump%nam,bump%geom,bump%bpar,bump%cmat)
-elseif (bump%nam%check_adjoints.or.bump%nam%check_pos_def.or.bump%nam%check_sqrt.or.bump%nam%check_dirac.or. &
- & bump%nam%check_randomization.or.bump%nam%check_consistency.or.bump%nam%check_optimality) then
-   ! Read NICAS parameters
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Read NICAS parameters'
-   call flush(mpl%unit)
-   call bump%nicas%read(bump%nam,bump%geom,bump%bpar)
+if (.not.bump%nicas%allocated) then
+   if (bump%nam%new_param) then
+      ! Call NICAS driver
+      write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+      write(mpl%unit,'(a)') '--- Call NICAS driver'
+      call flush(mpl%unit)
+      call bump%nicas%run_nicas(bump%nam,bump%geom,bump%bpar,bump%cmat)
+   elseif (bump%nam%check_adjoints.or.bump%nam%check_pos_def.or.bump%nam%check_sqrt.or.bump%nam%check_dirac.or. &
+    & bump%nam%check_randomization.or.bump%nam%check_consistency.or.bump%nam%check_optimality) then
+      ! Read NICAS parameters
+      write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+      write(mpl%unit,'(a)') '--- Read NICAS parameters'
+      call flush(mpl%unit)
+      call bump%nicas%read(bump%nam,bump%geom,bump%bpar)
+   end if
 end if
 
 if (bump%nam%check_adjoints.or.bump%nam%check_pos_def.or.bump%nam%check_sqrt.or.bump%nam%check_dirac.or. &
@@ -635,20 +645,24 @@ if (bump%nam%check_adjoints.or.bump%nam%check_pos_def.or.bump%nam%check_sqrt.or.
    end if
 end if
 
-if (bump%nam%new_lct) then
-   ! Call LCT driver
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Call LCT driver'
-   call flush(mpl%unit)
-   call bump%lct%run_lct(bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1)
+if (.not.bump%lct%allocated) then
+   if (bump%nam%new_lct) then
+      ! Call LCT driver
+      write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+      write(mpl%unit,'(a)') '--- Call LCT driver'
+      call flush(mpl%unit)
+      call bump%lct%run_lct(bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1)
+   end if
 end if
 
-if (bump%nam%new_obsop) then
-   ! Call observation operator driver
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Call observation operator driver'
-   call flush(mpl%unit)
-   call bump%obsop%run_obsop(bump%nam,bump%geom)
+if (.not.bump%obsop%allocated) then
+   if (bump%nam%new_obsop) then
+      ! Call observation operator driver
+      write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+      write(mpl%unit,'(a)') '--- Call observation operator driver'
+      call flush(mpl%unit)
+      call bump%obsop%run_obsop(bump%nam,bump%geom)
+   end if
 end if
 
 end subroutine bump_run_drivers

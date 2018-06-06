@@ -812,7 +812,10 @@ end if
 
 ! Check diag_param
 if (nam%new_hdiag) then
-   if (nam%ne<=3) call msgerror('ne should be larger than 3')
+   select case (trim(nam%method))
+   case ('loc','hyb-avg','hyb-rnd','dual-ens')
+      if (nam%ne<=3) call msgerror('ne should be larger than 3')
+   end select
    if (nam%local_diag) then
       if (nam%local_rad<0.0) call msgerror('displ_rad should be non-negative')
    end if

@@ -38,6 +38,7 @@ implicit none
 type nicas_type
    character(len=1024) :: prefix              !< Prefix
    type(nicas_blk_type),allocatable :: blk(:) !< NICAS data blocks
+   logical :: allocated                       !< Allocation flag
 contains
    procedure :: alloc => nicas_alloc
    procedure :: read => nicas_read
@@ -105,6 +106,9 @@ do ib=1,bpar%nb+1
     & '_',trim(bpar%blockname(ib))
    end if
 end do
+
+! Update allocation flag
+nicas%allocated = .true.
 
 end subroutine nicas_alloc
 
