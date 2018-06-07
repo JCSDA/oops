@@ -143,6 +143,7 @@ template <typename MODEL> void testAdjoint() {
 
     dy2.random();
     BOOST_REQUIRE(dot_product(dy2, dy2) > zero);
+    gv2.zero();
     hoptl.obsEquivAD(gv2, dy2, ybinc);
     BOOST_CHECK(dot_product(gv2, gv2) > zero);
 
