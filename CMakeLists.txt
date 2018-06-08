@@ -118,6 +118,9 @@ include_directories( ${OOPS_INCLUDE_DIRS} ${OOPS_EXTRA_INCLUDE_DIRS} )
 add_subdirectory( src )
 add_subdirectory( tools )
 
+# Build Doxygen documentation
+add_subdirectory( Documents )
+
 # Build example applications: these show how to use OOPS but are not part of OOPS
 
 add_subdirectory( l95 )
