@@ -82,6 +82,33 @@ GomL95::GomL95(const LocsL95 & locs, const oops::Variables &,
   }
 }
 // -----------------------------------------------------------------------------
+/*! GomL95 copy constructor with locs and config
+ *
+ * \details This qg::GomQG constructor was introduced in May, 2018 for use with
+ * the interpolation test. 
+ * 
+ */
+GomL95::GomL95(const GomL95 & other, const LocsL95 & locs,
+               const eckit::Configuration & conf)
+  : size_(other.size_), iobs_(other.iobs_), locval_(other.locval_), current_(0)
+{
+  oops::Log::trace() << "GomL95::GomL95 analytic init " << std::endl;
+
+  // analytic init for testing interpolation
+  for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = 0.0;
+  if (conf.has("mean")) {
+    const double zz = conf.getDouble("mean");
+    for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = zz;
+  }
+  if (conf.has("sinus")) {
+    const double zz = conf.getDouble("sinus");
+    const double pi = std::acos(-1.0);
+    for (size_t jj = 0; jj < size_; ++jj)
+      locval_[jj] += zz * std::sin(2.0*pi*locs[jj]);
+  }
+  oops::Log::trace() << "GomL95::GomL95 analytic init finished" << std::endl;
+}
+// -----------------------------------------------------------------------------
 GomL95::GomL95(const GomL95 & other)
   : size_(other.size_), iobs_(other.iobs_), locval_(other.locval_), current_(0)
 {

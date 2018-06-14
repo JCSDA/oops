@@ -170,7 +170,7 @@ template <typename MODEL> void testStateInterpolation() {
 
   // Now create another GeoVaLs object that contains the exact
   // analytic solutions
-  GeoVaLs_ ref(locs, vars, confgen);
+  GeoVaLs_ ref(gval, locs, confgen);
 
   // Compute the difference between the interpolated and exact values
   gval -= ref;

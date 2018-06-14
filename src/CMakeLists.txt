@@ -116,6 +116,7 @@ oops/base/instantiateCovarFactory.h
 oops/base/instantiateFilterFactory.h
 
 oops/generic/dcmip_initial_conditions_test_1_2_3_v5.f90
+oops/generic/dcmip_initial_conditions_test_4_v3.f90
 oops/generic/ObsErrorDiag.h
 oops/generic/instantiateObsErrorFactory.h
 

@@ -49,18 +49,31 @@ GomQG::GomQG(const LocationsQG & locs, const oops::Variables & var,
 
   // Pass F90 routines a pointer to the configuration object
   const eckit::Configuration * conp = &config;
+  qg_gom_read_file_f90(keyGom_, &conp);
+}
+// -----------------------------------------------------------------------------
+/*! \brief GomQG Copy constructor with locs and config
+ *
+ * \details This qg::GomQG constructor was introduced in May, 2018 for use with
+ * the interpolation test. 
+ *
+ */
+GomQG::GomQG(const GomQG & other, const LocationsQG & locs,
+             const eckit::Configuration & config) {
+  // first copy the existing object
+  qg_gom_create_f90(keyGom_);
+  qg_gom_assign_f90(keyGom_, other.keyGom_);
 
-  if (config.has("analytic_init")) {
-    const VariablesQG varqg(var);
-    qg_gom_analytic_init_f90(keyGom_, locs.toFortran(), varqg.toFortran(), &conp);
-  } else {
-    qg_gom_read_file_f90(keyGom_, &conp);
-  }
+  // Then optionally replace values with analytic init
+  const eckit::Configuration * conp = &config;
+  if (config.has("analytic_init"))
+    qg_gom_analytic_init_f90(keyGom_, locs.toFortran(), &conp);
 }
 // -----------------------------------------------------------------------------
 // Copy constructor
 GomQG::GomQG(const GomQG & other) {
-  // qg_gom_assign(keyGom_, other.keyGom_)
+  qg_gom_create_f90(keyGom_);
+  qg_gom_assign_f90(keyGom_, other.keyGom_);
 }
 // -----------------------------------------------------------------------------
 GomQG::~GomQG() {
