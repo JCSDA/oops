@@ -120,6 +120,7 @@ oops/generic/ObsErrorDiag.h
 oops/generic/UnstructuredGrid.cc
 oops/generic/UnstructuredGrid.h
 oops/generic/dcmip_initial_conditions_test_1_2_3_v5.f90
+oops/generic/dcmip_initial_conditions_test_4_v3.f90
 oops/generic/instantiateLocalizationFactory.h
 oops/generic/instantiateObsErrorFactory.h
 oops/generic/bump_f.h
