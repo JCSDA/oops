@@ -65,9 +65,6 @@ template <typename MODEL> class Observations : public util::Printable {
   std::vector<boost::shared_ptr<ObsVector_> > operator-(const Observations & other) const;
   Observations & operator+=(const Departures_ &);
 
-/// Get observations values
-  const ObsVector_ & obsvalues() const {return obs_;}
-
 /// Save observations values
   void save(const std::string &) const;
   void read(const eckit::Configuration &);
