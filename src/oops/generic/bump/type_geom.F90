@@ -84,6 +84,7 @@ type geom_type
    type(com_type) :: com_mg                   !< Communication between subset Sc0 and model grid
 contains
    procedure :: alloc => geom_alloc
+   procedure :: dealloc => geom_dealloc
    procedure :: setup_online => geom_setup_online
    procedure :: find_redundant => geom_find_redundant
    procedure :: init => geom_init
@@ -134,6 +135,50 @@ call msr(geom%vunitavg)
 geom%mask = .false.
 
 end subroutine geom_alloc
+
+!----------------------------------------------------------------------
+! Subroutine: geom_dealloc
+!> Purpose: geom object deallocation
+!----------------------------------------------------------------------
+subroutine geom_dealloc(geom)
+
+implicit none
+
+! Passed variables
+class(geom_type),intent(inout) :: geom !< Geometry
+
+! Release memory
+if (allocated(geom%c0_to_lon)) deallocate(geom%c0_to_lon)
+if (allocated(geom%c0_to_lat)) deallocate(geom%c0_to_lat)
+if (allocated(geom%lon)) deallocate(geom%lon)
+if (allocated(geom%lat)) deallocate(geom%lat)
+if (allocated(geom%mask)) deallocate(geom%mask)
+if (allocated(geom%area)) deallocate(geom%area)
+if (allocated(geom%vunit)) deallocate(geom%vunit)
+if (allocated(geom%vunitavg)) deallocate(geom%vunitavg)
+if (allocated(geom%disth)) deallocate(geom%disth)
+call geom%mesh%dealloc
+call geom%kdtree%dealloc
+if (allocated(geom%nbnd)) deallocate(geom%nbnd)
+if (allocated(geom%xbnd)) deallocate(geom%xbnd)
+if (allocated(geom%ybnd)) deallocate(geom%ybnd)
+if (allocated(geom%zbnd)) deallocate(geom%zbnd)
+if (allocated(geom%vbnd)) deallocate(geom%vbnd)
+if (allocated(geom%redundant)) deallocate(geom%redundant)
+if (allocated(geom%c0_to_mg)) deallocate(geom%c0_to_mg)
+if (allocated(geom%mg_to_c0)) deallocate(geom%mg_to_c0)
+if (allocated(geom%mg_to_proc)) deallocate(geom%mg_to_proc)
+if (allocated(geom%mg_to_mga)) deallocate(geom%mg_to_mga)
+if (allocated(geom%mga_to_mg)) deallocate(geom%mga_to_mg)
+if (allocated(geom%proc_to_nmga)) deallocate(geom%proc_to_nmga)
+if (allocated(geom%c0_to_proc)) deallocate(geom%c0_to_proc)
+if (allocated(geom%c0_to_c0a)) deallocate(geom%c0_to_c0a)
+if (allocated(geom%c0a_to_c0)) deallocate(geom%c0a_to_c0)
+if (allocated(geom%proc_to_nc0a)) deallocate(geom%proc_to_nc0a)
+if (allocated(geom%c0a_to_mga)) deallocate(geom%c0a_to_mga)
+call geom%com_mg%dealloc
+
+end subroutine geom_dealloc
 
 !----------------------------------------------------------------------
 ! Subroutine: geom_setup_online

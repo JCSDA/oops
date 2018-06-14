@@ -32,6 +32,7 @@ type lct_type
    logical :: allocated                     !< Allocation flag
 contains
    procedure :: alloc => lct_alloc
+   procedure :: dealloc => lct_dealloc
    procedure :: run_lct => lct_run_lct
    procedure :: compute => lct_compute
    procedure :: filter => lct_filter
@@ -76,6 +77,34 @@ end do
 lct%allocated = .true.
 
 end subroutine lct_alloc
+
+!----------------------------------------------------------------------
+! Subroutine: lct_dealloc
+!> Purpose: lct object deallocation
+!----------------------------------------------------------------------
+subroutine lct_dealloc(lct,bpar)
+
+implicit none
+
+! Passed variables
+class(lct_type),intent(inout) :: lct !< LCT
+type(bpar_type),intent(in) :: bpar   !< Block parameters
+
+! Local variables
+integer :: ib
+
+! Release memory
+if (allocated(lct%blk)) then
+   do ib=1,bpar%nb
+      call lct%blk(ib)%dealloc
+   end do
+   deallocate(lct%blk)
+end if
+
+! Update allocation flag
+lct%allocated = .false.
+
+end subroutine lct_dealloc
 
 !----------------------------------------------------------------------
 ! Subroutine: lct_run_lct

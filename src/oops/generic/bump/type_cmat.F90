@@ -37,6 +37,7 @@ type cmat_type
    logical :: allocated                      !< Allocation flag
 contains
    procedure :: alloc => cmat_alloc
+   procedure :: dealloc => cmat_dealloc
    procedure :: copy => cmat_copy
    procedure :: read => cmat_read
    procedure :: write => cmat_write
@@ -74,47 +75,43 @@ cmat%prefix = prefix
 
 ! Allocation
 allocate(cmat%blk(bpar%nb+1))
-
 do ib=1,bpar%nb+1
-   ! Set block name
-   cmat%blk(ib)%name = trim(prefix)//'_'//trim(bpar%blockname(ib))
-
-   if (bpar%diag_block(ib)) then
-      ! Allocation
-      allocate(cmat%blk(ib)%coef_ens(geom%nc0a,geom%nl0))
-      allocate(cmat%blk(ib)%coef_sta(geom%nc0a,geom%nl0))
-      allocate(cmat%blk(ib)%rh0(geom%nc0a,geom%nl0))
-      allocate(cmat%blk(ib)%rv0(geom%nc0a,geom%nl0))
-      allocate(cmat%blk(ib)%rh0s(geom%nc0a,geom%nl0))
-      allocate(cmat%blk(ib)%rv0s(geom%nc0a,geom%nl0))
-
-      ! Initialization
-      call msr(cmat%blk(ib)%coef_ens)
-      call msr(cmat%blk(ib)%coef_sta)
-      call msr(cmat%blk(ib)%rh0)
-      call msr(cmat%blk(ib)%rv0)
-      call msr(cmat%blk(ib)%rh0s)
-      call msr(cmat%blk(ib)%rv0s)
-      call msr(cmat%blk(ib)%wgt)
-   end if
-
-   if ((ib==bpar%nb+1).and.nam%displ_diag) then
-      ! Allocation
-      allocate(cmat%blk(ib)%displ_lon(geom%nc0a,geom%nl0,2:nam%nts))
-      allocate(cmat%blk(ib)%displ_lat(geom%nc0a,geom%nl0,2:nam%nts))
-
-      ! Initialization
-      if (nam%displ_diag) then
-         call msr(cmat%blk(ib)%displ_lon)
-         call msr(cmat%blk(ib)%displ_lat)
-      end if
-   end if
+   cmat%blk(ib)%ib = ib
+   call cmat%blk(ib)%alloc(nam,geom,bpar,prefix)
 end do
 
 ! Update allocation flag
 cmat%allocated = .true.
 
 end subroutine cmat_alloc
+
+!----------------------------------------------------------------------
+! Subroutine: cmat_dealloc
+!> Purpose: cmat object allocation
+!----------------------------------------------------------------------
+subroutine cmat_dealloc(cmat,bpar)
+
+implicit none
+
+! Passed variables
+class(cmat_type),intent(inout) :: cmat    !< C matrix data
+type(bpar_type),intent(in) :: bpar        !< Block parameters
+
+! Local variables
+integer :: ib
+
+! Release memory
+if (allocated(cmat%blk)) then
+   do ib=1,bpar%nb+1
+      call cmat%blk(ib)%dealloc
+   end do
+   deallocate(cmat%blk)
+end if
+
+! Update allocation flag
+cmat%allocated = .false.
+
+end subroutine cmat_dealloc
 
 !----------------------------------------------------------------------
 ! Subroutine: cmat_copy
@@ -600,11 +597,6 @@ do ib=1,bpar%nb+1
                   end if
                end do
 
-               ! Median filter
-               do il0=1,geom%nl0
-                  call hdata%diag_filter(geom,il0,'median',nam%diag_rhflt,fld_c2a(:,il0))
-               end do
-
                ! Interpolate
                call hdata%com_AB%ext(geom%nl0,fld_c2a,fld_c2b)
                do il0=1,geom%nl0
@@ -612,6 +604,7 @@ do ib=1,bpar%nb+1
                   call hdata%h(il0i)%apply(fld_c2b(:,il0),fld_c0a(:,il0))
                end do
 
+               ! Copy to C matrix
                if (i==1) then
                   cmat%blk(ib)%coef_ens = fld_c0a
                   call mpl%allreduce_sum(sum(cmat%blk(ib)%coef_ens,mask=geom%mask(geom%c0a_to_c0,:)),cmat%blk(ib)%wgt)
@@ -625,6 +618,7 @@ do ib=1,bpar%nb+1
                end if
             end do
          else
+            ! Copy to C matrix
             do il0=1,geom%nl0
                cmat%blk(ib)%coef_ens(:,il0) = diag%blk(0,ib)%raw_coef_ens(il0)
                cmat%blk(ib)%rh0(:,il0) = diag%blk(0,ib)%fit_rh(il0)

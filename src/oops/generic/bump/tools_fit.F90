@@ -120,6 +120,9 @@ if (raw(iz)>0.0) then
       ! Normalize
       if (isnotmsr(fit_r)) fit_r = fit_r/thinv
    end if
+
+   ! Check
+   if (fit_r<0.0) call msgerror('negative fit_r in fast_fit')
 else
    call msr(fit_r)
 end if

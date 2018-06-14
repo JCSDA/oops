@@ -1,6 +1,6 @@
 !----------------------------------------------------------------------
-! Module: type_nicas
-!> Purpose: NICAS data derived type
+! Module: type_nicas_blk
+!> Purpose: NICAS data block derived type
 !> <br>
 !> Author: Benjamin Menetrier
 !> <br>
@@ -12,11 +12,12 @@ module type_nicas_blk
 
 use netcdf
 !$ use omp_lib
-use tools_const, only: pi,req,reqkm,deg2rad,rad2deg
+use tools_const, only: pi,req,reqkm,deg2rad,rad2deg,msvalr
 use tools_display, only: prog_init,prog_print,msgerror,msgwarning,aqua,black,vunitchar
 use tools_func, only: sphere_dist,vector_product,vector_triple_product,gc99
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsr,isnotmsi
+use tools_nc, only: ncerr,ncfloat
 use tools_qsort, only: reorder_vec,qsort
 use tools_test, only: define_dirac
 use type_bpar, only: bpar_type
@@ -190,8 +191,8 @@ contains
 end type nicas_blk_type
 
 integer,parameter :: nc1max = 15000                     !< Maximum size of the Sc1 subset
+logical,parameter :: write_grids = .true.               !< Write Sc1 and Sc2 subsets lon/lat
 real(kind_real),parameter :: sqrt_fac = 0.721_kind_real !< Square-root factor (empirical)
-real(kind_real),parameter :: margin = 1.2_kind_real     !< Security margin for nearest neighbors research
 real(kind_real),parameter :: S_inf = 1.0e-2_kind_real   !< Minimum value for the convolution coefficients
 real(kind_real),parameter :: deform = 0.0_kind_real     !< Deformation coefficient (maximum absolute value: -0.318)
 real(kind_real),parameter :: tol = 1.0e-3_kind_real     !< Positive-definiteness test tolerance
@@ -223,7 +224,7 @@ if (allocated(nicas_blk%vbot)) deallocate(nicas_blk%vbot)
 if (allocated(nicas_blk%vtop)) deallocate(nicas_blk%vtop)
 if (allocated(nicas_blk%nc2)) deallocate(nicas_blk%nc2)
 if (allocated(nicas_blk%hfull)) then
-   do il0=1,geom%nl0
+   do il0=1,geom%nl0i
       call nicas_blk%hfull(il0)%dealloc
    end do
    deallocate(nicas_blk%hfull)
@@ -279,7 +280,7 @@ if (allocated(nicas_blk%sa_to_sc)) deallocate(nicas_blk%sa_to_sc)
 if (allocated(nicas_blk%sb_to_sc)) deallocate(nicas_blk%sb_to_sc)
 call nicas_blk%c%dealloc
 if (allocated(nicas_blk%h)) then
-   do il0=1,geom%nl0
+   do il0=1,geom%nl0i
       call nicas_blk%h(il0)%dealloc
    end do
    deallocate(nicas_blk%h)
@@ -287,7 +288,7 @@ end if
 call nicas_blk%v%dealloc
 if (allocated(nicas_blk%s)) then
    do il1=1,nicas_blk%nl1
-      call nicas_blk%s(il1)%dealloc
+     call nicas_blk%s(il1)%dealloc
    end do
    deallocate(nicas_blk%s)
 end if
@@ -413,11 +414,15 @@ type(cmat_blk_type),intent(in) :: cmat_blk       !< C matrix data block
 
 ! Local variables
 integer :: il0,il0_prev,il1,ic0,ic1,ic2,is,ic0a
+integer :: ncid,nc1_id,nl1_id,lon_c1_id,lat_c1_id,mask_c2_id
 integer,allocatable :: c1_to_proc(:),c2_to_c1(:),s_to_proc(:)
 real(kind_real) :: rh0savg(geom%nl0),rv0savg(geom%nl0),rh0sminavg,distnorm(geom%nc0a),distnormmin,rv
 real(kind_real),allocatable :: rh0smin(:),rh0smin_glb(:),rh0s_glb(:),rh1s(:)
+real(kind_real),allocatable :: lon_c1(:),lat_c1(:),mask_c2_real(:,:)
 logical :: inside
 logical,allocatable :: mask_c0(:),mask_c1(:)
+character(len=1024) :: filename
+character(len=1024) :: subr = 'nicas_blk_compute_sampling'
 
 ! Allocation
 allocate(rh0smin(geom%nc0a))
@@ -586,7 +591,7 @@ do il1=1,nicas_blk%nl1
    ! Compute nc2
    il0 = nicas_blk%l1_to_l0(il1)
    nicas_blk%nc2(il1) = floor(2.0*geom%area(il0)*nam%resol**2/(sqrt(3.0)*rh0savg(il0)**2))
-   nicas_blk%nc2(il1) = max(nicas_blk%nc1/4,min(nicas_blk%nc2(il1),nicas_blk%nc1))
+   nicas_blk%nc2(il1) = min(nicas_blk%nc2(il1),nicas_blk%nc1)
 
    if (nicas_blk%nc2(il1)<nicas_blk%nc1) then
       ! Allocation
@@ -649,6 +654,54 @@ do is=1,nicas_blk%ns
    il1 = nicas_blk%s_to_l1(is)
    nicas_blk%c1l1_to_s(ic1,il1) = is
 end do
+
+! Write grids
+if (mpl%main.and.write_grids) then
+   ! Allocation
+   allocate(lon_c1(nicas_blk%nc1))
+   allocate(lat_c1(nicas_blk%nc1))
+   allocate(mask_c2_real(nicas_blk%nc1,nicas_blk%nl1))
+
+   ! Copy data
+   lon_c1 = geom%lon(nicas_blk%c1_to_c0)*rad2deg
+   lat_c1 = geom%lat(nicas_blk%c1_to_c0)*rad2deg
+   call msr(mask_c2_real)
+   do il1=1,nicas_blk%nl1
+      do ic1=1,nicas_blk%nc1
+         if (nicas_blk%mask_c2(ic1,il1)) mask_c2_real(ic1,il1) = 1.0
+      end do
+   end do
+
+   ! Create file
+   filename = trim(nam%prefix)//'_'//trim(nicas_blk%name)//'_grids.nc'
+   call ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_clobber,nf90_64bit_offset),ncid))
+
+   ! Define dimensions
+   call ncerr(subr,nf90_def_dim(ncid,'nc1',nicas_blk%nc1,nc1_id))
+   call ncerr(subr,nf90_def_dim(ncid,'nl1',nicas_blk%nl1,nl1_id))
+
+   ! Define variables
+   call ncerr(subr,nf90_def_var(ncid,'lon_c1',ncfloat,(/nc1_id/),lon_c1_id))
+   call ncerr(subr,nf90_def_var(ncid,'lat_c1',ncfloat,(/nc1_id/),lat_c1_id))
+   call ncerr(subr,nf90_def_var(ncid,'mask_c2',ncfloat,(/nc1_id,nl1_id/),mask_c2_id))
+   call ncerr(subr,nf90_put_att(ncid,mask_c2_id,'_FillValue',msvalr))
+
+   ! End definition mode
+   call ncerr(subr,nf90_enddef(ncid))
+
+   ! Write variables
+   call ncerr(subr,nf90_put_var(ncid,lon_c1_id,lon_c1))
+   call ncerr(subr,nf90_put_var(ncid,lat_c1_id,lat_c1))
+   call ncerr(subr,nf90_put_var(ncid,mask_c2_id,mask_c2_real))
+
+   ! Close file
+   call ncerr(subr,nf90_close(ncid))
+
+   ! Release memory
+   deallocate(lon_c1)
+   deallocate(lat_c1)
+   deallocate(mask_c2_real)
+end if
 
 end subroutine nicas_blk_compute_sampling
 
@@ -1495,18 +1548,16 @@ else
          end do
       end do
 
+      ! Store coefficient for convolution
       do js=1,nicas_blk%ns
-         if (c_S_conv(js)>S_inf) then
-            ! Store coefficient for convolution
-            add_op = .false.
-            if (nam%mpicom==1) then
-               add_op = (nicas_blk%lcheck_sb(js).and.(is<=js)).or.(.not.nicas_blk%lcheck_sb(js))
-            elseif (nam%mpicom==2) then
-               add_op = nicas_blk%lcheck_sa(is).and.((nicas_blk%lcheck_sa(js).and.(is<=js)) &
-                     & .or.(.not.nicas_blk%lcheck_sa(js)))
-            end if
-            if (add_op) call c(ithread)%add_op(c_n_s(ithread),is,js,c_S_conv(js))
+         add_op = .false.
+         if (nam%mpicom==1) then
+            add_op = (nicas_blk%lcheck_sb(js).and.(is<=js)).or.(.not.nicas_blk%lcheck_sb(js))
+         elseif (nam%mpicom==2) then
+            add_op = nicas_blk%lcheck_sa(is).and.((nicas_blk%lcheck_sa(js).and.(is<=js)) &
+                   & .or.(.not.nicas_blk%lcheck_sa(js)))
          end if
+         if (add_op) call c(ithread)%add_op(c_n_s(ithread),is,js,c_S_conv(js))
       end do
 
       ! Release memory

@@ -71,6 +71,8 @@ implicit none
 class(com_type),intent(inout) :: com !< Communication data
 
 ! Release memory
+if (allocated(com%ext_to_proc)) deallocate(com%ext_to_proc)
+if (allocated(com%ext_to_red)) deallocate(com%ext_to_red)
 if (allocated(com%red_to_ext)) deallocate(com%red_to_ext)
 if (allocated(com%jhalocounts)) deallocate(com%jhalocounts)
 if (allocated(com%jexclcounts)) deallocate(com%jexclcounts)

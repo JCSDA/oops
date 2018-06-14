@@ -690,7 +690,7 @@ if (nam%local_diag.or.nam%displ_diag) then
                   if (hdata%c1l0_log(ic1,il0)) call kdtree%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0), &
                    & nc2_eff,hdata%nn_c2_index(1:nc2_eff,ic2,il0),hdata%nn_c2_dist(1:nc2_eff,ic2,il0))
                end do
-               call kdtree%delete
+               call kdtree%dealloc
             end if
          end if
       end do
@@ -747,7 +747,7 @@ if (nam%local_diag.or.nam%displ_diag) then
                   end do
                end if
             end do
-            call kdtree%delete
+            call kdtree%dealloc
          end if
       end do
 
@@ -793,7 +793,7 @@ if (nam%local_diag.and.(nam%nldwv>0)) then
    do ildw=1,nam%nldwv
       call kdtree%find_nearest_neighbors(nam%lon_ldwv(ildw),nam%lat_ldwv(ildw),1,hdata%nn_ldwv_index(ildw:ildw),nn_dist)
    end do
-   call kdtree%delete
+   call kdtree%dealloc
 end if
 
 ! Print results
@@ -871,7 +871,7 @@ if (nam%nc1<maxval(count(geom%mask,dim=1))) then
                      hdata%rh0(ic0,1) = hdata%rh0(ic0,1)+1.0
                   end if
                end do
-               call kdtree%delete
+               call kdtree%dealloc
             end do
             hdata%rh0(:,1) = rcoast+(1.0-rcoast)*(1.0-hdata%rh0(:,1)/real(geom%nl0,kind_real))
          end if

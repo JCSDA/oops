@@ -79,12 +79,8 @@ implicit none
 ! Passed variables
 class(ens_type),intent(inout) :: ens !< Ensemble
 
-! Allocate
-deallocate(ens%fld)
-
-! Initialization
-call msi(ens%ne)
-call msi(ens%nsub)
+! Release memory
+if (allocated(ens%fld)) deallocate(ens%fld)
 
 end subroutine ens_dealloc
 

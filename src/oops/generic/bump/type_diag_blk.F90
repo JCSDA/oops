@@ -14,7 +14,7 @@ use netcdf
 !$ use omp_lib
 use tools_const, only: msvali,msvalr
 use tools_display, only: msgerror
-use tools_fit, only: fast_fit,ver_smooth
+use tools_fit, only: fast_fit
 use tools_func, only: fit_diag
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsr,isallnotmsr,isanynotmsr
@@ -53,8 +53,8 @@ contains
    procedure :: dualens => diag_blk_dualens
 end type diag_blk_type
 
-integer,parameter :: nsc = 50 !< Scaling optimization parameter
-logical :: lprt = .false.     !< Optimization print
+integer,parameter :: nsc = 50                      !< Scaling optimization parameter
+logical :: lprt = .false.                          !< Optimization print
 
 private
 public :: diag_blk_type
@@ -118,7 +118,7 @@ implicit none
 ! Passed variables
 class(diag_blk_type),intent(inout) :: diag_blk !< Diagnostic block
 
-! Deallocation
+! Release memory
 if (allocated(diag_blk%raw)) deallocate(diag_blk%raw)
 if (allocated(diag_blk%raw_coef_ens)) deallocate(diag_blk%raw_coef_ens)
 if (allocated(diag_blk%fit)) deallocate(diag_blk%fit)
@@ -333,34 +333,35 @@ if (nam%lhomv) diag_blk%fit_rv = sum(diag_blk%fit_rv,mask=isnotmsr(diag_blk%fit_
  & /real(count(isnotmsr(diag_blk%fit_rv)),kind_real)
 
 ! Scaling optimization (brute-force)
-mse_opt = huge(1.0)
-alpha_opt = 1.0
-do isc=1,nsc
-   ! Scaling factor
-   alpha = 0.5+real(isc-1,kind_real)/real(nsc-1,kind_real)*(2.0-0.5)
+if (all(isnotmsr(diag_blk%fit_rh)).and.all(isnotmsr(diag_blk%fit_rv))) then
+   mse_opt = huge(1.0)
+   alpha_opt = 1.0
+   do isc=1,nsc
+      ! Scaling factor
+      alpha = 0.5+real(isc-1,kind_real)/real(nsc-1,kind_real)*(2.0-0.5)
 
-   ! Scaled radii
-   fit_rh = alpha*diag_blk%fit_rh
-   fit_rv = alpha*diag_blk%fit_rv
+      ! Scaled radii
+      fit_rh = alpha*diag_blk%fit_rh
+      fit_rv = alpha*diag_blk%fit_rv
 
-   ! Define fit
-   call fit_diag(nam%nc3,nam%nl0r,geom%nl0,bpar%l0rl0b_to_l0(:,:,ib),geom%disth,distvr,fit_rh,fit_rv,fit)
+      ! Define fit
+      call fit_diag(nam%nc3,nam%nl0r,geom%nl0,bpar%l0rl0b_to_l0(:,:,ib),geom%disth,distvr,fit_rh,fit_rv,fit)
 
-   ! MSE
-   mse = sum((fit-diag_blk%raw)**2,mask=isnotmsr(diag_blk%raw))
-   if (mse<mse_opt) then
-      mse_opt = mse
-      alpha_opt = alpha
+      ! MSE
+      mse = sum((fit-diag_blk%raw)**2,mask=isnotmsr(diag_blk%raw))
+      if (mse<mse_opt) then
+         mse_opt = mse
+         alpha_opt = alpha
+      end if
+   end do
+   diag_blk%fit_rh = alpha_opt*diag_blk%fit_rh
+   diag_blk%fit_rv = alpha_opt*diag_blk%fit_rv
+
+   if (lprt) then
+      write(mpl%unit,'(a)') ''
+      write(mpl%unit,'(a13,a,f6.1,a)') '','Scaling optimization, cost function decrease:',abs(mse_opt-mse)/mse*100.0,'%'
+      call flush(mpl%unit)
    end if
-end do
-do il0=1,geom%nl0
-   if (isnotmsr(diag_blk%fit_rh(il0))) diag_blk%fit_rh(il0) = alpha_opt*diag_blk%fit_rh(il0)
-   if (isnotmsr(diag_blk%fit_rv(il0))) diag_blk%fit_rv(il0) = alpha_opt*diag_blk%fit_rv(il0)
-end do
-if (lprt) then
-   write(mpl%unit,'(a)') ''
-   write(mpl%unit,'(a13,a,f6.1,a)') '','Scaling optimization, cost function decrease:',abs(mse_opt-mse)/mse*100.0,'%'
-   call flush(mpl%unit)
 end if
 
 select case (trim(nam%minim_algo))
@@ -447,10 +448,6 @@ case ('hooke')
       offset = offset+geom%nl0
    end if
 end select
-
-! Smooth vertically
-call ver_smooth(geom%nl0,geom%vunitavg,nam%rvflt,diag_blk%fit_rh)
-call ver_smooth(geom%nl0,geom%vunitavg,nam%rvflt,diag_blk%fit_rv)
 
 ! Rebuild fit
 call fit_diag(nam%nc3,nam%nl0r,geom%nl0,bpar%l0rl0b_to_l0(:,:,ib),geom%disth,distvr,diag_blk%fit_rh,diag_blk%fit_rv,diag_blk%fit)

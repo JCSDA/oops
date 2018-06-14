@@ -509,7 +509,7 @@ else
       end do
 
       ! Delete kdtree
-      if (is>2) call kdtree%delete
+      if (is>2) call kdtree%dealloc
 
       ! Add point to sampling
       if (irmax>0) then
@@ -540,7 +540,7 @@ else
             end do
 
             ! Delete kdtree
-            call kdtree%delete
+            call kdtree%dealloc
 
             ! Remove worst point
             ismin = minloc(dist)

@@ -257,6 +257,8 @@ subroutine delete_bump(self)
 implicit none
 type(bump_type), intent(inout) :: self
 
+call self%dealloc
+
 end subroutine delete_bump
 
 !-------------------------------------------------------------------------------

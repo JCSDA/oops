@@ -60,6 +60,7 @@ contains
    procedure :: apply_obsop => bump_apply_obsop
    procedure :: apply_obsop_ad => bump_apply_obsop_ad
    procedure :: back_to => bump_back_to
+   procedure :: dealloc => bump_dealloc
 end type bump_type
 
 logical,parameter :: write_online = .false. !< Write online data for tests
@@ -183,8 +184,8 @@ integer,intent(in) :: nmga                             !< Halo A size
 integer,intent(in) :: nl0                              !< Number of levels in subset Sl0
 integer,intent(in) :: nv                               !< Number of variables
 integer,intent(in) :: nts                              !< Number of time slots
-real(kind_real),intent(in) :: lon(nmga)                !< Longitude (in degrees)
-real(kind_real),intent(in) :: lat(nmga)                !< Latitude (in degrees)
+real(kind_real),intent(in) :: lon(nmga)                !< Longitude (in degrees: -180 to 180)
+real(kind_real),intent(in) :: lat(nmga)                !< Latitude (in degrees: -90 to 90)
 real(kind_real),intent(in) :: area(nmga)               !< Area (in m^2)
 real(kind_real),intent(in) :: vunit(nmga,nl0)          !< Vertical unit
 logical,intent(in) :: lmask(nmga,nl0)                  !< Mask
@@ -195,8 +196,8 @@ real(kind_real),intent(in),optional :: ens2(:,:,:,:,:) !< Ensemble 2
 real(kind_real),intent(in),optional :: rh(:,:,:,:)     !< Horizontal support radius for covariance (in m)
 real(kind_real),intent(in),optional :: rv(:,:,:,:)     !< Vertical support radius for covariance
 integer,intent(in),optional :: nobs                    !< Number of observations
-real(kind_real),intent(in),optional :: lonobs(:)       !< Observations longitudes (in degrees)
-real(kind_real),intent(in),optional :: latobs(:)       !< Observations latitudes (in degrees)
+real(kind_real),intent(in),optional :: lonobs(:)       !< Observations longitude (in degrees: -180 to 180)
+real(kind_real),intent(in),optional :: latobs(:)       !< Observations latitude (in degrees: -90 to 90)
 
 ! Local variables
 logical :: test(3)
@@ -327,8 +328,8 @@ integer,intent(in) :: nmga                                      !< Halo A size
 integer,intent(in) :: nl0                                       !< Number of levels in subset Sl0
 integer,intent(in) :: nv                                        !< Number of variables
 integer,intent(in) :: nts                                       !< Number of time slots
-real(kind_real),intent(in) :: lon(nmga)                         !< Longitude (in degrees)
-real(kind_real),intent(in) :: lat(nmga)                         !< Latitude (in degrees)
+real(kind_real),intent(in) :: lon(nmga)                         !< Longitude (in degrees: -180 to 180)
+real(kind_real),intent(in) :: lat(nmga)                         !< Latitude (in degrees: -90 to 90)
 real(kind_real),intent(in) :: area(nmga)                        !< Area (in m^2)
 real(kind_real),intent(in) :: vunit_vec(nmga*nl0)               !< Vertical unit
 integer,intent(in) :: imask_vec(nmga*nl0)                       !< Mask
@@ -421,8 +422,8 @@ integer,intent(in) :: listing                             !< Main listing unit
 integer,intent(in) :: nx                                  !< X-axis size
 integer,intent(in) :: ny                                  !< Y-axis size
 integer,intent(in) :: nl0                                 !< Number of levels
-real(kind_real),intent(in) :: lon(nx,ny)                  !< Longitude (in degrees)
-real(kind_real),intent(in) :: lat(nx,ny)                  !< Latitude (in degrees)
+real(kind_real),intent(in) :: lon(nx,ny)                  !< Longitude (in degrees: -180 to 180)
+real(kind_real),intent(in) :: lat(nx,ny)                  !< Latitude (in degrees: -90 to 90)
 real(kind_real),intent(in) :: area(nx,ny)                 !< Area (in m^2)
 real(kind_real),intent(in) :: vunit(nx,ny,nl0)            !< Vertical unit
 logical,intent(in) :: lmask(nx,ny,nl0)                    !< Mask
@@ -753,5 +754,31 @@ mask_unpack = .true.
 fld_xya = unpack(fld_mga,mask_unpack,fld_xya)
 
 end subroutine bump_back_to
+
+!----------------------------------------------------------------------
+! Subroutine: bump_dealloc
+!> Purpose: deallocation of BUMP fields
+!----------------------------------------------------------------------
+subroutine bump_dealloc(bump)
+
+implicit none
+
+! Passed variables
+class(bump_type),intent(inout) :: bump !< BUMP
+
+! Release memory
+call bump%bpar%dealloc
+call bump%cmat%dealloc(bump%bpar)
+call bump%ens1%dealloc
+call bump%ens2%dealloc
+call bump%geom%dealloc
+call bump%io%dealloc
+call bump%lct%dealloc(bump%bpar)
+call bump%nicas%dealloc(bump%nam,bump%geom,bump%bpar)
+call bump%obsop%dealloc
+if (allocated(bump%rh)) deallocate(bump%rh)
+if (allocated(bump%rv)) deallocate(bump%rv)
+
+end subroutine bump_dealloc
 
 end module type_bump

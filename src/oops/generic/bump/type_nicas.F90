@@ -41,6 +41,7 @@ type nicas_type
    logical :: allocated                       !< Allocation flag
 contains
    procedure :: alloc => nicas_alloc
+   procedure :: dealloc => nicas_dealloc
    procedure :: read => nicas_read
    procedure :: write => nicas_write
    procedure :: write_mpi_summary => nicas_write_mpi_summary
@@ -81,10 +82,10 @@ contains
 subroutine nicas_alloc(nicas,nam,bpar,prefix)
 
 ! Passed variables
-class(nicas_type),intent(out) :: nicas !< NICAS data
-type(nam_type),intent(in) :: nam       !< Namelist
-type(bpar_type),intent(in) :: bpar     !< Block parameters
-character(len=*),intent(in) :: prefix  !< Prefix
+class(nicas_type),intent(inout) :: nicas !< NICAS data
+type(nam_type),intent(in) :: nam         !< Namelist
+type(bpar_type),intent(in) :: bpar       !< Block parameters
+character(len=*),intent(in) :: prefix    !< Prefix
 
 ! Local variable
 integer :: ib
@@ -111,6 +112,34 @@ end do
 nicas%allocated = .true.
 
 end subroutine nicas_alloc
+
+!----------------------------------------------------------------------
+! Subroutine: nicas_dealloc
+!> Purpose: nicas object deallocation
+!----------------------------------------------------------------------
+subroutine nicas_dealloc(nicas,nam,geom,bpar)
+
+! Passed variables
+class(nicas_type),intent(inout) :: nicas !< NICAS data
+type(nam_type),intent(in) :: nam         !< Namelist
+type(geom_type),intent(in) :: geom       !< Geometry
+type(bpar_type),intent(in) :: bpar       !< Block parameters
+
+! Local variable
+integer :: ib
+
+! Release memory
+if (allocated(nicas%blk)) then
+   do ib=1,bpar%nb+1
+      call nicas%blk(ib)%dealloc(nam,geom)
+   end do
+   deallocate(nicas%blk)
+end if
+
+! Update allocation flag
+nicas%allocated = .false.
+
+end subroutine nicas_dealloc
 
 !----------------------------------------------------------------------
 ! Subroutine: nicas_read

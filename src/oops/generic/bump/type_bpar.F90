@@ -37,6 +37,7 @@ type bpar_type
    integer,allocatable :: b_to_ts2(:)            !< Block to second timeslot
 contains
    procedure :: alloc => bpar_alloc
+   procedure :: dealloc => bpar_dealloc
 end type bpar_type
 
 private
@@ -280,5 +281,35 @@ else
 end if
 
 end subroutine bpar_alloc
+
+!----------------------------------------------------------------------
+! Subroutine: bpar_dealloc
+!> Purpose: deallocate general parameters
+!----------------------------------------------------------------------
+subroutine bpar_dealloc(bpar)
+
+implicit none
+
+! Passed variable
+class(bpar_type),intent(inout) :: bpar !< Block parameters
+
+! Release memory
+if (allocated(bpar%nl0r)) deallocate(bpar%nl0r)
+if (allocated(bpar%l0rl0b_to_l0)) deallocate(bpar%l0rl0b_to_l0)
+if (allocated(bpar%il0rz)) deallocate(bpar%il0rz)
+if (allocated(bpar%nc3)) deallocate(bpar%nc3)
+if (allocated(bpar%diag_block)) deallocate(bpar%diag_block)
+if (allocated(bpar%avg_block)) deallocate(bpar%avg_block)
+if (allocated(bpar%fit_block)) deallocate(bpar%fit_block)
+if (allocated(bpar%B_block)) deallocate(bpar%B_block)
+if (allocated(bpar%nicas_block)) deallocate(bpar%nicas_block)
+if (allocated(bpar%cv_block)) deallocate(bpar%cv_block)
+if (allocated(bpar%blockname)) deallocate(bpar%blockname)
+if (allocated(bpar%b_to_v1)) deallocate(bpar%b_to_v1)
+if (allocated(bpar%b_to_v2)) deallocate(bpar%b_to_v2)
+if (allocated(bpar%b_to_ts1)) deallocate(bpar%b_to_ts1)
+if (allocated(bpar%b_to_ts2)) deallocate(bpar%b_to_ts2)
+
+end subroutine bpar_dealloc
 
 end module type_bpar

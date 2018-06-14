@@ -61,6 +61,7 @@ type obsop_type
    ! Allocation flag
    logical :: allocated                     !< Allocation flag
 contains
+   procedure :: dealloc => obsop_dealloc
    procedure :: generate => obsop_generate
    procedure :: from => obsop_from
    procedure :: run_obsop => obsop_run_obsop
@@ -75,6 +76,33 @@ private
 public :: obsop_type
 
 contains
+
+!----------------------------------------------------------------------
+! Subroutine: obsop_dealloc
+!> Purpose: observation operator deallocation
+!----------------------------------------------------------------------
+subroutine obsop_dealloc(obsop)
+
+implicit none
+
+! Passed variables
+class(obsop_type),intent(inout) :: obsop !< Observation operator data
+
+! Release memory
+if (allocated(obsop%lonobs)) deallocate(obsop%lonobs)
+if (allocated(obsop%latobs)) deallocate(obsop%latobs)
+call obsop%hfull%dealloc
+if (allocated(obsop%obs_to_proc)) deallocate(obsop%obs_to_proc)
+if (allocated(obsop%obs_to_obsa)) deallocate(obsop%obs_to_obsa)
+if (allocated(obsop%obsa_to_obs)) deallocate(obsop%obsa_to_obs)
+if (allocated(obsop%proc_to_nobsa)) deallocate(obsop%proc_to_nobsa)
+if (allocated(obsop%c0b_to_c0)) deallocate(obsop%c0b_to_c0)
+if (allocated(obsop%c0_to_c0b)) deallocate(obsop%c0_to_c0b)
+if (allocated(obsop%c0a_to_c0b)) deallocate(obsop%c0a_to_c0b)
+call obsop%h%dealloc
+call obsop%com%dealloc
+
+end subroutine obsop_dealloc
 
 !----------------------------------------------------------------------
 ! Subroutine: obsop_generate

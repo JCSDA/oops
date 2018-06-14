@@ -47,6 +47,7 @@ type io_type
    type(com_type) :: com_AB               !< Communication between halos A and B
    logical,allocatable :: mask(:,:)       !< Mask on output grid
 contains
+   procedure :: dealloc => io_dealloc
    procedure :: fld_read => io_fld_read
    procedure :: fld_write => io_fld_write
    procedure :: grid_init => io_grid_init
@@ -59,6 +60,35 @@ private
 public :: io_type
 
 contains
+
+!----------------------------------------------------------------------
+! Subroutine: io_dealloc
+!> Purpose: deallocate I/O
+!----------------------------------------------------------------------
+subroutine io_dealloc(io)
+
+implicit none
+
+! Passed variables
+class(io_type),intent(inout) :: io !< I/O
+
+! Release memory
+if (allocated(io%lon)) deallocate(io%lon)
+if (allocated(io%lat)) deallocate(io%lat)
+if (allocated(io%og_to_lon)) deallocate(io%og_to_lon)
+if (allocated(io%og_to_lat)) deallocate(io%og_to_lat)
+if (allocated(io%og_to_proc)) deallocate(io%og_to_proc)
+if (allocated(io%proc_to_noga)) deallocate(io%proc_to_noga)
+if (allocated(io%oga_to_og)) deallocate(io%oga_to_og)
+if (allocated(io%og_to_oga)) deallocate(io%og_to_oga)
+if (allocated(io%c0b_to_c0)) deallocate(io%c0b_to_c0)
+if (allocated(io%c0_to_c0b)) deallocate(io%c0_to_c0b)
+if (allocated(io%c0a_to_c0b)) deallocate(io%c0a_to_c0b)
+call io%og%dealloc
+call io%com_AB%dealloc
+if (allocated(io%mask)) deallocate(io%mask)
+
+end subroutine io_dealloc
 
 !----------------------------------------------------------------------
 ! Subroutine: io_fld_read

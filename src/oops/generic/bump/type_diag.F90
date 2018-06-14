@@ -11,8 +11,9 @@
 module type_diag
 
 use netcdf
-use tools_const, only: reqkm,rad2deg
+use tools_const, only: reqkm,rad2deg,pi
 use tools_display, only: vunitchar,msgerror,msgwarning,prog_init,prog_print,aqua,peach,purple,black
+use tools_fit, only: ver_smooth
 use tools_kinds, only: kind_real
 use tools_missing, only: msr,isnotmsr,isallnotmsr,isnotmsi
 use tools_nc, only: ncerr,ncfloat
@@ -34,6 +35,7 @@ type diag_type
    type(diag_blk_type),allocatable :: blk(:,:) !< Diagnostic blocks
 contains
    procedure :: alloc => diag_alloc
+   procedure :: fit_filter => diag_fit_filter
    procedure :: write => diag_write
    procedure :: covariance => diag_covariance
    procedure :: correlation => diag_correlation
@@ -41,6 +43,8 @@ contains
    procedure :: hybridization => diag_hybridization
    procedure :: dualens => diag_dualens
 end type diag_type
+
+real(kind_real),parameter :: bound = 5.0_kind_real !< Restriction bound
 
 private
 public :: diag_type
@@ -87,6 +91,83 @@ do ib=1,bpar%nb+1
 end do
 
 end subroutine diag_alloc
+
+!----------------------------------------------------------------------
+! Subroutine: diag_fit_filter
+!> Purpose: filter fit diagnostics
+!----------------------------------------------------------------------
+subroutine diag_fit_filter(diag,nam,geom,bpar,hdata)
+
+implicit none
+
+! Passed variables
+class(diag_type),intent(inout) :: diag !< Diagnostic
+type(nam_type),intent(in) :: nam       !< Namelist
+type(geom_type),intent(in) :: geom     !< Geometry
+type(bpar_type),intent(in) :: bpar     !< Block parameters
+type(hdata_type),intent(in) :: hdata   !< HDIAG data
+
+! Local variables
+integer :: ib,il0,ic2a
+real(kind_real),allocatable :: rh_c2a(:,:),rv_c2a(:,:)
+
+do ib=1,bpar%nb+1
+   if (bpar%fit_block(ib)) then
+      if (diag%nc2a>0) then
+         ! Allocation
+         allocate(rh_c2a(hdata%nc2a,geom%nl0))
+         allocate(rv_c2a(hdata%nc2a,geom%nl0))
+
+         ! Initialization
+         call msr(rh_c2a)
+         call msr(rv_c2a)
+
+         do il0=1,geom%nl0
+            do ic2a=1,hdata%nc2a
+               ! Copy data
+               rh_c2a(ic2a,il0) = diag%blk(ic2a,ib)%fit_rh(il0)
+               rv_c2a(ic2a,il0) = diag%blk(ic2a,ib)%fit_rv(il0)
+
+               ! Apply bounds
+               if (isnotmsr(rh_c2a(ic2a,il0)).and.isnotmsr(diag%blk(0,ib)%fit_rh(il0))) then
+                  if ((rh_c2a(ic2a,il0)<diag%blk(0,ib)%fit_rh(il0)/bound) &
+                & .or.(rh_c2a(ic2a,il0)>diag%blk(0,ib)%fit_rh(il0)*bound)) call msr(rh_c2a(ic2a,il0))
+               end if
+               if (isnotmsr(rv_c2a(ic2a,il0)).and.isnotmsr(diag%blk(0,ib)%fit_rv(il0))) then
+                  if ((rv_c2a(ic2a,il0)<diag%blk(0,ib)%fit_rv(il0)/bound) &
+                & .or.(rv_c2a(ic2a,il0)>diag%blk(0,ib)%fit_rv(il0)*bound)) call msr(rv_c2a(ic2a,il0))
+               end if
+            end do
+
+            ! Horizontal filters
+            call hdata%diag_filter(geom,il0,'median',nam%diag_rhflt,rh_c2a(:,il0))
+            call hdata%diag_filter(geom,il0,'median',nam%diag_rhflt,rv_c2a(:,il0))
+            call hdata%diag_filter(geom,il0,'average',nam%diag_rhflt,rh_c2a(:,il0))
+            call hdata%diag_filter(geom,il0,'average',nam%diag_rhflt,rv_c2a(:,il0))
+            call hdata%diag_filter(geom,il0,'fill',2.0*pi,rh_c2a(:,il0))
+            call hdata%diag_filter(geom,il0,'fill',2.0*pi,rv_c2a(:,il0))
+         end do
+
+         ! Copy data
+         do ic2a=1,hdata%nc2a
+            diag%blk(ic2a,ib)%fit_rh = rh_c2a(ic2a,:)
+            diag%blk(ic2a,ib)%fit_rv = rv_c2a(ic2a,:)
+         end do
+
+         ! Release memory
+         deallocate(rh_c2a)
+         deallocate(rv_c2a)
+      end if
+
+      ! Smooth vertically
+      do ic2a=0,diag%nc2a
+         call ver_smooth(geom%nl0,geom%vunitavg,nam%rvflt,diag%blk(ic2a,ib)%fit_rh)
+         call ver_smooth(geom%nl0,geom%vunitavg,nam%rvflt,diag%blk(ic2a,ib)%fit_rv)
+      end do
+   end if
+end do
+
+end subroutine diag_fit_filter
 
 !----------------------------------------------------------------------
 ! Subroutine: diag_write
@@ -293,6 +374,9 @@ do ib=1,bpar%nb+1
    end if
 end do
 
+! Filtering
+call diag%fit_filter(nam,geom,bpar,hdata)
+
 ! Write
 call diag%write(nam,geom,bpar,io,hdata)
 call ndiag%write(nam,geom,bpar,io,hdata)
@@ -367,6 +451,9 @@ do ib=1,bpar%nb+1
       end do
    end if
 end do
+
+! Filtering
+call diag%fit_filter(nam,geom,bpar,hdata)
 
 ! Write
 call diag%write(nam,geom,bpar,io,hdata)
@@ -445,6 +532,9 @@ do ib=1,bpar%nb+1
    end if
 end do
 
+! Filtering
+call diag%fit_filter(nam,geom,bpar,hdata)
+
 ! Write
 call diag%write(nam,geom,bpar,io,hdata)
 
@@ -463,7 +553,7 @@ class(diag_type),intent(inout) :: diag   !< Diagnostic (localization)
 type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 type(bpar_type),intent(in) :: bpar       !< Block parameters
-type(io_type),intent(in) :: io         !< I/O
+type(io_type),intent(in) :: io           !< I/O
 type(hdata_type),intent(in) :: hdata     !< HDIAG data
 type(avg_type),intent(in) :: avg         !< Averaged statistics
 type(avg_type),intent(in) :: avg_lr      !< LR averaged statistics
@@ -538,8 +628,13 @@ do ib=1,bpar%nb+1
    end if
 end do
 
+! Filtering
+call diag%fit_filter(nam,geom,bpar,hdata)
+call diag_lr%fit_filter(nam,geom,bpar,hdata)
+
 ! Write
 call diag%write(nam,geom,bpar,io,hdata)
+call diag_lr%write(nam,geom,bpar,io,hdata)
 
 end subroutine diag_dualens
 

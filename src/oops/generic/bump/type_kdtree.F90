@@ -26,7 +26,7 @@ type kdtree_type
     integer,allocatable :: from_eff(:) !< Effective index conversion
 contains
     procedure :: create => kdtree_create
-    procedure :: delete => kdtree_delete
+    procedure :: dealloc => kdtree_dealloc
     procedure :: find_nearest_neighbors => kdtree_find_nearest_neighbors
     procedure :: count_nearest_neighbors => kdtree_count_nearest_neighbors
 end type kdtree_type
@@ -103,10 +103,10 @@ kdtree%tp => kdtree2_create(input_data,sort=lsort)
 end subroutine kdtree_create
 
 !----------------------------------------------------------------------
-! Subroutine: kdtree_delete
-!> Purpose: delete a KD-tree
+! Subroutine: kdtree_dealloc
+!> Purpose: deallocate KD-tree
 !----------------------------------------------------------------------
-subroutine kdtree_delete(kdtree)
+subroutine kdtree_dealloc(kdtree)
 
 implicit none
 
@@ -119,7 +119,7 @@ call kdtree2_destroy(kdtree%tp)
 ! Deallocation
 if (allocated(kdtree%from_eff)) deallocate(kdtree%from_eff)
 
-end subroutine kdtree_delete
+end subroutine kdtree_dealloc
 
 !----------------------------------------------------------------------
 ! Subroutine: kdtree_find_nearest_neighbors

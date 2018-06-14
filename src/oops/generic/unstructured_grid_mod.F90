@@ -26,9 +26,9 @@ type unstructured_grid
   integer :: nl0                                   !> Number of levels
   integer :: nv                                    !> Number of variables
   integer :: nts                                   !> Number of timeslots
-  real(kind=kind_real),allocatable :: lon(:)       !> Longitude
-  real(kind=kind_real),allocatable :: lat(:)       !> Latitude
-  real(kind=kind_real),allocatable :: area(:)      !> Area
+  real(kind=kind_real),allocatable :: lon(:)       !> Longitude (in degrees: -180 to 180)
+  real(kind=kind_real),allocatable :: lat(:)       !> Latitude (in degrees: -90 to 90)
+  real(kind=kind_real),allocatable :: area(:)      !> Area (in m^2)
   real(kind=kind_real), allocatable :: vunit(:,:)  !> Vertical unit
   integer,allocatable :: imask(:,:)                !> Mask
   real(kind=kind_real),allocatable :: fld(:,:,:,:) !> Data
