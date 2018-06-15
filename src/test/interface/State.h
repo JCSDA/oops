@@ -180,7 +180,6 @@ template <typename MODEL> void testStateInterpolation() {
 
   GeoVaLs_ ref(gval, locs, confgen);
 
-
   // Compute the difference between the interpolated and exact values
   gval -= ref;
 
