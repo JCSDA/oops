@@ -190,7 +190,6 @@ oops/interface/GeoVaLs.h
 oops/interface/Increment.h
 oops/interface/InterpolatorTraj.h
 oops/interface/LinearModel.h
-oops/interface/LinearObsOperBase.h
 oops/interface/LinearObsOperator.h
 oops/interface/Localization.h
 oops/interface/LocalizationBase.h
@@ -205,7 +204,6 @@ oops/interface/ObsAuxIncrement.h
 oops/interface/ObsErrorBase.h
 oops/interface/ObsErrorCovariance.h
 oops/interface/ObsOperator.h
-oops/interface/ObsOperatorBase.h
 oops/interface/ObsSpaceBase.h
 oops/interface/ObsVector.h
 oops/interface/ObservationSpace.h

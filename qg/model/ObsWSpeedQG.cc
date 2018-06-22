@@ -24,7 +24,7 @@
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-static oops::ObsOperatorMaker<QgTraits, ObsWSpeedQG> makerWSpeed_("WSpeed");
+static ObsOpMaker<ObsWSpeedQG> makerWSpeed_("WSpeed");
 // -----------------------------------------------------------------------------
 
 ObsWSpeedQG::ObsWSpeedQG(const ObsSpaceQG &, const eckit::Configuration & config)
@@ -44,8 +44,8 @@ ObsWSpeedQG::~ObsWSpeedQG() {
 
 // -----------------------------------------------------------------------------
 
-void ObsWSpeedQG::obsEquiv(const GomQG & gom, ObsVecQG & ovec,
-                           const ObsBias & bias) const {
+void ObsWSpeedQG::simulateObs(const GomQG & gom, ObsVecQG & ovec,
+                              const ObsBias & bias) const {
   qg_wspeed_eqv_f90(gom.toFortran(), ovec.toFortran(), bias.wspd());
 }
 

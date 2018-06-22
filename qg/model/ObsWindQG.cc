@@ -24,7 +24,7 @@
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-static oops::ObsOperatorMaker<QgTraits, ObsWindQG>   makerWind_("Wind");
+static ObsOpMaker<ObsWindQG>   makerWind_("Wind");
 // -----------------------------------------------------------------------------
 
 ObsWindQG::ObsWindQG(const ObsSpaceQG &, const eckit::Configuration & config)
@@ -43,8 +43,8 @@ ObsWindQG::~ObsWindQG() {
 
 // -----------------------------------------------------------------------------
 
-void ObsWindQG::obsEquiv(const GomQG & gom, ObsVecQG & ovec,
-                         const ObsBias & bias) const {
+void ObsWindQG::simulateObs(const GomQG & gom, ObsVecQG & ovec,
+                            const ObsBias & bias) const {
   qg_wind_equiv_f90(gom.toFortran(), ovec.toFortran(), bias.wind());
 }
 

@@ -193,7 +193,7 @@ template <typename MODEL>
 void ObserverTLAD<MODEL>::doFinalizeTL(const Increment_ &) {
   Log::trace() << "ObserverTLAD::doFinalizeTL start" << std::endl;
   for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
-    hoptlad_[jj].obsEquivTL(*gvals_.at(jj), (*ydeptl_)[jj], *ybiastl_);
+    hoptlad_[jj].simulateObsTL(*gvals_.at(jj), (*ydeptl_)[jj], *ybiastl_);
   }
   gvals_.clear();
   Log::trace() << "ObserverTLAD::doFinalizeTL done" << std::endl;
@@ -229,7 +229,7 @@ void ObserverTLAD<MODEL>::doFirstAD(Increment_ & dx, const util::DateTime & bgn,
   for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
     boost::shared_ptr<GeoVaLs_>
       gom(new GeoVaLs_(obspace_[jj].locations(bgn_, end_), hoptlad_.variables(jj)));
-    hoptlad_[jj].obsEquivAD(*gom, (*ydepad_)[jj], *ybiasad_);
+    hoptlad_[jj].simulateObsAD(*gom, (*ydepad_)[jj], *ybiasad_);
     gvals_.push_back(gom);
   }
   Log::trace() << "ObserverTLAD::doFirstAD done" << std::endl;

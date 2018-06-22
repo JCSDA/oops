@@ -23,7 +23,7 @@
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-static oops::ObsOperatorMaker<QgTraits, ObsStreamQG> makerStream_("Stream");
+static ObsOpMaker<ObsStreamQG> makerStream_("Stream");
 // -----------------------------------------------------------------------------
 
 ObsStreamQG::ObsStreamQG(const ObsSpaceQG &, const eckit::Configuration & config)
@@ -43,8 +43,8 @@ ObsStreamQG::~ObsStreamQG() {
 
 // -----------------------------------------------------------------------------
 
-void ObsStreamQG::obsEquiv(const GomQG & gom, ObsVecQG & ovec,
-                           const ObsBias & bias) const {
+void ObsStreamQG::simulateObs(const GomQG & gom, ObsVecQG & ovec,
+                              const ObsBias & bias) const {
   qg_stream_equiv_f90(gom.toFortran(), ovec.toFortran(), bias.stream());
 }
 

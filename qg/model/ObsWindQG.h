@@ -16,10 +16,10 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include "model/ObsOpBaseQG.h"
 #include "model/ObsSpaceQG.h"
 #include "model/QgTraits.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/ObsOperatorBase.h"
 #include "oops/util/ObjectCounter.h"
 
 // Forward declarations
@@ -37,7 +37,7 @@ namespace qg {
 // -----------------------------------------------------------------------------
 /// Wind observation for QG model.
 
-class ObsWindQG : public oops::ObsOperatorBase<QgTraits>,
+class ObsWindQG : public ObsOpBaseQG,
                   private util::ObjectCounter<ObsWindQG> {
  public:
   static const std::string classname() {return "qg::ObsWindQG";}
@@ -46,7 +46,7 @@ class ObsWindQG : public oops::ObsOperatorBase<QgTraits>,
   virtual ~ObsWindQG();
 
 // Obs Operators
-  void obsEquiv(const GomQG &, ObsVecQG &, const ObsBias &) const;
+  void simulateObs(const GomQG &, ObsVecQG &, const ObsBias &) const;
 
 // Other
   const oops::Variables & variables() const override {return varin_;}
