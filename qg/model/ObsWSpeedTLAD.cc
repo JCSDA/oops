@@ -26,7 +26,7 @@
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-static oops::LinearObsOpMaker<QgTraits, ObsWSpeedTLAD> makerWSpeedTL_("WSpeed");
+static ObsOpTLADMaker<ObsWSpeedTLAD> makerWSpeedTL_("WSpeed");
 // -----------------------------------------------------------------------------
 
 ObsWSpeedTLAD::ObsWSpeedTLAD(const ObsSpaceQG & odb, const eckit::Configuration & config)
@@ -54,16 +54,16 @@ void ObsWSpeedTLAD::setTrajectory(const GomQG & gom, const ObsBias &) {
 
 // -----------------------------------------------------------------------------
 
-void ObsWSpeedTLAD::obsEquivTL(const GomQG & gom, ObsVecQG & ovec,
-                               const ObsBiasIncrement & bias) const {
+void ObsWSpeedTLAD::simulateObsTL(const GomQG & gom, ObsVecQG & ovec,
+                                  const ObsBiasIncrement & bias) const {
   qg_wspeed_equiv_tl_f90(gom.toFortran(), ovec.toFortran(),
                          traj_.toFortran(), bias.wspd());
 }
 
 // -----------------------------------------------------------------------------
 
-void ObsWSpeedTLAD::obsEquivAD(GomQG & gom, const ObsVecQG & ovec,
-                               ObsBiasIncrement & bias) const {
+void ObsWSpeedTLAD::simulateObsAD(GomQG & gom, const ObsVecQG & ovec,
+                                  ObsBiasIncrement & bias) const {
   qg_wspeed_equiv_ad_f90(gom.toFortran(), ovec.toFortran(),
                          traj_.toFortran(), bias.wspd());
 }

@@ -25,7 +25,7 @@
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-static oops::LinearObsOpMaker<QgTraits, ObsStreamTLAD> makerStreamTL_("Stream");
+static ObsOpTLADMaker<ObsStreamTLAD> makerStreamTL_("Stream");
 // -----------------------------------------------------------------------------
 
 ObsStreamTLAD::ObsStreamTLAD(const ObsSpaceQG &, const eckit::Configuration & config)
@@ -48,15 +48,15 @@ void ObsStreamTLAD::setTrajectory(const GomQG &, const ObsBias &) {}
 
 // -----------------------------------------------------------------------------
 
-void ObsStreamTLAD::obsEquivTL(const GomQG & gom, ObsVecQG & ovec,
-                               const ObsBiasIncrement & bias) const {
+void ObsStreamTLAD::simulateObsTL(const GomQG & gom, ObsVecQG & ovec,
+                                  const ObsBiasIncrement & bias) const {
   qg_stream_equiv_tl_f90(gom.toFortran(), ovec.toFortran(), bias.stream());
 }
 
 // -----------------------------------------------------------------------------
 
-void ObsStreamTLAD::obsEquivAD(GomQG & gom, const ObsVecQG & ovec,
-                               ObsBiasIncrement & bias) const {
+void ObsStreamTLAD::simulateObsAD(GomQG & gom, const ObsVecQG & ovec,
+                                  ObsBiasIncrement & bias) const {
   qg_stream_equiv_ad_f90(gom.toFortran(), ovec.toFortran(), bias.stream());
 }
 

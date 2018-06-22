@@ -25,6 +25,8 @@
 #include "lorenz95/ObsBias.h"
 #include "lorenz95/ObsBiasCorrection.h"
 #include "lorenz95/ObsBiasCovariance.h"
+#include "lorenz95/ObservationL95.h"
+#include "lorenz95/ObservationTLAD.h"
 #include "lorenz95/ObsTable.h"
 #include "lorenz95/ObsVec1D.h"
 #include "lorenz95/Resolution.h"
@@ -51,6 +53,8 @@ struct L95Traits {
   typedef lorenz95::ObsTable               ObsSpace;
   typedef lorenz95::ObsVec1D               ObsVector;
 
+  typedef lorenz95::ObservationL95         ObsOperator;
+  typedef lorenz95::ObservationTLAD        LinearObsOperator;
   typedef lorenz95::ObsBias                ObsAuxControl;
   typedef lorenz95::ObsBiasCorrection      ObsAuxIncrement;
   typedef lorenz95::ObsBiasCovariance      ObsAuxCovariance;

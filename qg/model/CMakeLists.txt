@@ -27,6 +27,14 @@ ObsBiasIncrement.cc
 ObsBiasIncrement.h
 ObsHelpQG.cc
 ObsHelpQG.h
+ObsOpBaseQG.cc
+ObsOpBaseQG.h
+ObsOpBaseTLAD.cc
+ObsOpBaseTLAD.h
+ObsOperatorQG.cc
+ObsOperatorQG.h
+ObsOperatorTLAD.cc
+ObsOperatorTLAD.h
 ObsSpaceQG.cc
 ObsSpaceQG.h
 ObsStreamQG.cc

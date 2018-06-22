@@ -14,10 +14,11 @@
 #include <ostream>
 #include <string>
 
-#include "lorenz95/L95Traits.h"
+#include <boost/noncopyable.hpp>
+
 #include "oops/base/Variables.h"
-#include "oops/interface/LinearObsOperBase.h"
 #include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
 
 // Forward declarations
 namespace eckit {
@@ -38,7 +39,8 @@ namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
 
-class ObservationTLAD : public oops::LinearObsOperBase<L95Traits>,
+class ObservationTLAD : public util::Printable,
+                        private boost::noncopyable,
                         private util::ObjectCounter<ObservationTLAD> {
  public:
   static const std::string classname() {return "lorenz95::ObservationTLAD";}
@@ -48,8 +50,8 @@ class ObservationTLAD : public oops::LinearObsOperBase<L95Traits>,
 
 // Obs Operators
   void setTrajectory(const GomL95 &, const ObsBias &);
-  void obsEquivTL(const GomL95 &, ObsVec1D &, const ObsBiasCorrection &) const;
-  void obsEquivAD(GomL95 &, const ObsVec1D &, ObsBiasCorrection &) const;
+  void simulateObsTL(const GomL95 &, ObsVec1D &, const ObsBiasCorrection &) const;
+  void simulateObsAD(GomL95 &, const ObsVec1D &, ObsBiasCorrection &) const;
 
 // Other
   const oops::Variables & variables() const {return inputs_;}

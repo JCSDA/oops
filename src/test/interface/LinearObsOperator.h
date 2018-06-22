@@ -81,18 +81,18 @@ template <typename MODEL> void testLinearity() {
     GeoVaLs_ gv(locs, hoptl.variables(), gconf);
 
     gv.zero();
-    hoptl.obsEquivTL(gv, dy1, ybinc);
+    hoptl.simulateObsTL(gv, dy1, ybinc);
 
     BOOST_CHECK_EQUAL(dy1.rms(), zero);
 
     gv.random();
-    hoptl.obsEquivTL(gv, dy1, ybinc);
+    hoptl.simulateObsTL(gv, dy1, ybinc);
     dy1 *= coef;
     BOOST_CHECK(dy1.rms() > zero);
 
     gv *= coef;
     ObsVector_ dy2(Test_::obspace()[jj]);
-    hoptl.obsEquivTL(gv, dy2, ybinc);
+    hoptl.simulateObsTL(gv, dy2, ybinc);
 
     dy1 -= dy2;
 
@@ -138,13 +138,13 @@ template <typename MODEL> void testAdjoint() {
 
     gv1.random();
     BOOST_REQUIRE(dot_product(gv1, gv1) > zero);
-    hoptl.obsEquivTL(gv1, dy1, ybinc);
+    hoptl.simulateObsTL(gv1, dy1, ybinc);
     BOOST_CHECK(dot_product(dy1, dy1) > zero);
 
     dy2.random();
     BOOST_REQUIRE(dot_product(dy2, dy2) > zero);
     gv2.zero();
-    hoptl.obsEquivAD(gv2, dy2, ybinc);
+    hoptl.simulateObsAD(gv2, dy2, ybinc);
     BOOST_CHECK(dot_product(gv2, gv2) > zero);
 
     const double zz1 = dot_product(gv1, gv2);
@@ -197,7 +197,7 @@ template <typename MODEL> void testTangentLinear() {
 
     hoptl.setTrajectory(gv, ybias);
 
-    hop.obsEquiv(gv, y1, ybias);
+    hop.simulateObs(gv, y1, ybias);
 
     GeoVaLs_ dgv(locs, hoptl.variables(), gconf);
     dgv.random();
@@ -212,9 +212,9 @@ template <typename MODEL> void testTangentLinear() {
       dgv *= alpha;
       gv += dgv;
 
-      hop.obsEquiv(gv, y2, ybias);
+      hop.simulateObs(gv, y2, ybias);
       y2 -= y1;
-      hoptl.obsEquivTL(dgv, y3, ybinc);
+      hoptl.simulateObsTL(dgv, y3, ybinc);
       y2 -= y3;
       double test_norm = y2.rms();
       y3 = y3_init;

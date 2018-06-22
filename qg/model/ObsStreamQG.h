@@ -16,10 +16,10 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include "model/ObsOpBaseQG.h"
 #include "model/ObsSpaceQG.h"
 #include "model/QgTraits.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/ObsOperatorBase.h"
 #include "oops/util/ObjectCounter.h"
 
 // Forward declarations
@@ -36,7 +36,7 @@ namespace qg {
 // -----------------------------------------------------------------------------
 /// Streamfunction observation for QG model.
 
-class ObsStreamQG : public oops::ObsOperatorBase<QgTraits>,
+class ObsStreamQG : public ObsOpBaseQG,
                     private util::ObjectCounter<ObsStreamQG> {
  public:
   static const std::string classname() {return "qg::ObsStreamQG";}
@@ -45,7 +45,7 @@ class ObsStreamQG : public oops::ObsOperatorBase<QgTraits>,
   virtual ~ObsStreamQG();
 
 // Obs Operator
-  void obsEquiv(const GomQG &, ObsVecQG &, const ObsBias &) const;
+  void simulateObs(const GomQG &, ObsVecQG &, const ObsBias &) const;
 
 // Other
   const oops::Variables & variables() const override {return varin_;}
