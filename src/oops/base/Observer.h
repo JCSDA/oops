@@ -175,7 +175,7 @@ template <typename MODEL, typename STATE>
 void Observer<MODEL, STATE>::doFinalize(const STATE &) {
   Log::trace() << "Observer::doFinalize start" << std::endl;
   for (size_t jj = 0; jj < obspace_.size(); ++jj) {
-    hop_[jj].obsEquiv(*gvals_.at(jj), (*yobs_)[jj], ybias_);
+    hop_[jj].simulateObs(*gvals_.at(jj), (*yobs_)[jj], ybias_);
     filters_[jj].postFilter(*gvals_.at(jj), (*yobs_)[jj], obspace_[jj]);
   }
   gvals_.clear();

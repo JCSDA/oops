@@ -20,7 +20,6 @@
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObservationSpace.h"
-#include "oops/interface/ObsOperatorBase.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
@@ -36,11 +35,11 @@ template <typename MODEL>
 class ObsOperator : public util::Printable,
                     private boost::noncopyable,
                     private util::ObjectCounter<ObsOperator<MODEL> > {
-  typedef GeoVaLs<MODEL>             GeoVaLs_;
-  typedef ObsOperatorBase<MODEL>     ObsOperatorBase_;
-  typedef ObsAuxControl<MODEL>       ObsAuxControl_;
-  typedef ObsVector<MODEL>           ObsVector_;
-  typedef ObservationSpace<MODEL>    ObsSpace_;
+  typedef typename MODEL::ObsOperator  ObsOperator_;
+  typedef GeoVaLs<MODEL>               GeoVaLs_;
+  typedef ObsAuxControl<MODEL>         ObsAuxControl_;
+  typedef ObsVector<MODEL>             ObsVector_;
+  typedef ObservationSpace<MODEL>      ObsSpace_;
 
  public:
   static const std::string classname() {return "oops::ObsOperator";}
@@ -49,17 +48,17 @@ class ObsOperator : public util::Printable,
   ~ObsOperator();
 
 /// Obs Operator
-  void obsEquiv(const GeoVaLs_ &, ObsVector_ &, const ObsAuxControl_ &) const;
+  void simulateObs(const GeoVaLs_ &, ObsVector_ &, const ObsAuxControl_ &) const;
 
 /// Interfacing
-  const ObsOperatorBase_ & obsoperator() const {return *oper_;}
+  const ObsOperator_ & obsoperator() const {return *oper_;}
 
 /// Other
   const Variables & variables() const;  // Required inputs variables from Model
 
  private:
   void print(std::ostream &) const;
-  boost::scoped_ptr<ObsOperatorBase_> oper_;
+  boost::scoped_ptr<ObsOperator_> oper_;
 };
 
 // -----------------------------------------------------------------------------
@@ -68,7 +67,7 @@ template <typename MODEL>
 ObsOperator<MODEL>::ObsOperator(const ObsSpace_ & os) : oper_() {
   Log::trace() << "ObsOperator<MODEL>::ObsOperator starting" << std::endl;
   util::Timer timer(classname(), "ObsOperator");
-  oper_.reset(ObsOperatorFactory<MODEL>::create(os.observationspace(), os.config()));
+  oper_.reset(new ObsOperator_(os.observationspace(), os.config()));
   Log::trace() << "ObsOperator<MODEL>::ObsOperator done" << std::endl;
 }
 
@@ -85,12 +84,12 @@ ObsOperator<MODEL>::~ObsOperator() {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void ObsOperator<MODEL>::obsEquiv(const GeoVaLs_ & gvals, ObsVector_ & yy,
-                                  const ObsAuxControl_ & aux) const {
-  Log::trace() << "ObsOperator<MODEL>::obsEquiv starting" << std::endl;
-  util::Timer timer(classname(), "ObsEquiv");
-  oper_->calcObsEquiv(gvals.geovals(), yy.obsvector(), aux.obsauxcontrol());
-  Log::trace() << "ObsOperator<MODEL>::obsEquiv done" << std::endl;
+void ObsOperator<MODEL>::simulateObs(const GeoVaLs_ & gvals, ObsVector_ & yy,
+                                     const ObsAuxControl_ & aux) const {
+  Log::trace() << "ObsOperator<MODEL>::simulateObs starting" << std::endl;
+  util::Timer timer(classname(), "simulateObs");
+  oper_->simulateObs(gvals.geovals(), yy.obsvector(), aux.obsauxcontrol());
+  Log::trace() << "ObsOperator<MODEL>::simulateObs done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

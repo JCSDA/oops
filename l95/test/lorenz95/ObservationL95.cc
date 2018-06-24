@@ -49,46 +49,6 @@ BOOST_FIXTURE_TEST_SUITE(test_ObsL95, ObsTestFixture)
     BOOST_CHECK_EQUAL(obs->classname(), "lorenz95::ObservationL95");
   }
 // -----------------------------------------------------------------------------
-//   BOOST_AUTO_TEST_CASE(test_observationL95_obsEquiv) {
-//     // create an ObservationL95 object
-//     boost::shared_ptr<const eckit::LocalConfiguration> fullFileCfg(
-//         new eckit::LocalConfiguration("test.xml", new util::XmlDom()));
-//     boost::scoped_ptr<const eckit::LocalConfiguration> cfg(
-//         new eckit::LocalConfiguration(TestConfig::config(),
-//                          "Observations/Observation",
-//                          true));
-//     boost::scoped_ptr<lorenz95::ObservationL95>
-//         observationL95(lorenz95::ObservationL95::create(*cfg));
-//
-//     // create a gomL95 object
-//     int vecSize = 5;
-//     std::vector<int> intVec;
-//     for(int i = 0; i < vecSize; ++i) {
-//       intVec.push_back(i);
-//     }
-//     boost::scoped_ptr<lorenz95::GomL95> gomL95(new lorenz95::GomL95(intVec));
-//     // populate the locval_ vector with values from 1.1 to 5.5
-//     for(int i = 0; i < vecSize; ++i){
-//       (*gomL95)[i] = ((i + 1) * 1.1);
-//     }
-//
-//     // create an ObsVec1D object
-//     boost::scoped_ptr<lorenz95::ObsVec1D> obsVec1D(
-//         new lorenz95::ObsVec1D(vecSize));
-//
-//     // create an ObsBias object
-//     boost::scoped_ptr<const eckit::LocalConfiguration> biasCfg(
-//         new eckit::LocalConfiguration(TestConfig::config(), "ObsBias", true));
-//     boost::scoped_ptr<lorenz95::ObsBias> obsBias(
-//         new lorenz95::ObsBias(*biasCfg));
-//
-//     observationL95->obsEquiv(*gomL95, *obsVec1D, *obsBias);
-//
-//     for(int i = 0; i < gomL95->nobs(); ++i) {
-//       BOOST_CHECK_EQUAL((*obsVec1D)(gomL95->getindx(i)), (*gomL95)[i] + obsBias->value());
-//     }
-//   }
-// -----------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE_END()
 // -----------------------------------------------------------------------------
 

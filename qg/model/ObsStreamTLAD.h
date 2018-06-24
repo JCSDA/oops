@@ -15,9 +15,8 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "model/QgTraits.h"
+#include "model/ObsOpBaseTLAD.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/LinearObsOperBase.h"
 #include "oops/util/ObjectCounter.h"
 
 // Forward declarations
@@ -35,7 +34,7 @@ namespace qg {
 // -----------------------------------------------------------------------------
 /// Streamfunction TL/AD observation operator for QG model.
 
-class ObsStreamTLAD : public oops::LinearObsOperBase<QgTraits>,
+class ObsStreamTLAD : public ObsOpBaseTLAD,
                       private util::ObjectCounter<ObsStreamTLAD> {
  public:
   static const std::string classname() {return "qg::ObsStreamTLAD";}
@@ -45,8 +44,8 @@ class ObsStreamTLAD : public oops::LinearObsOperBase<QgTraits>,
 
 // Obs Operators
   void setTrajectory(const GomQG &, const ObsBias &) override;
-  void obsEquivTL(const GomQG &, ObsVecQG &, const ObsBiasIncrement &) const override;
-  void obsEquivAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &) const override;
+  void simulateObsTL(const GomQG &, ObsVecQG &, const ObsBiasIncrement &) const override;
+  void simulateObsAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &) const override;
 
 // Other
   const oops::Variables & variables() const override {return varin_;}

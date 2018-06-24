@@ -72,7 +72,7 @@ template <typename MODEL> void testEquiv() {
 
     ObsVector_ ovec(Test_::obspace()[jj]);
 
-    hop.obsEquiv(gval, ovec, ybias);
+    hop.simulateObs(gval, ovec, ybias);
 
     const double zz = ovec.rms();
     const double xx = conf[jj].getDouble("rmsequiv");

@@ -75,7 +75,7 @@ template <typename MODEL> void testObsCheck() {
     ObsCheck_ ocheck(oconf);
     ocheck.priorFilter(Test_::obspace()[jj]);
 
-    hop.obsEquiv(gval, ovec, ybias);
+    hop.simulateObs(gval, ovec, ybias);
 
     ocheck.postFilter(gval, ovec, Test_::obspace()[jj]);
 

@@ -25,7 +25,7 @@
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-static oops::LinearObsOpMaker<QgTraits, ObsWindTLAD> makerWindTL_("Wind");
+static ObsOpTLADMaker<ObsWindTLAD> makerWindTL_("Wind");
 // -----------------------------------------------------------------------------
 
 ObsWindTLAD::ObsWindTLAD(const ObsSpaceQG &, const eckit::Configuration & config)
@@ -48,15 +48,15 @@ void ObsWindTLAD::setTrajectory(const GomQG &, const ObsBias &) {}
 
 // -----------------------------------------------------------------------------
 
-void ObsWindTLAD::obsEquivTL(const GomQG & gom, ObsVecQG & ovec,
-                             const ObsBiasIncrement & bias) const {
+void ObsWindTLAD::simulateObsTL(const GomQG & gom, ObsVecQG & ovec,
+                                const ObsBiasIncrement & bias) const {
   qg_wind_equiv_tl_f90(gom.toFortran(), ovec.toFortran(), bias.wind());
 }
 
 // -----------------------------------------------------------------------------
 
-void ObsWindTLAD::obsEquivAD(GomQG & gom, const ObsVecQG & ovec,
-                             ObsBiasIncrement & bias) const {
+void ObsWindTLAD::simulateObsAD(GomQG & gom, const ObsVecQG & ovec,
+                                ObsBiasIncrement & bias) const {
   qg_wind_equiv_ad_f90(gom.toFortran(), ovec.toFortran(), bias.wind());
 }
 

@@ -15,7 +15,6 @@
 
 #include "eckit/config/Configuration.h"
 #include "lorenz95/GomL95.h"
-#include "lorenz95/L95Traits.h"
 #include "lorenz95/ObsBias.h"
 #include "lorenz95/ObsVec1D.h"
 #include "oops/base/Variables.h"
@@ -24,8 +23,6 @@
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
-// -----------------------------------------------------------------------------
-static oops::ObsOperatorMaker<L95Traits, ObservationL95> makerObsL95_("Lorenz 95");
 // -----------------------------------------------------------------------------
 
 ObservationL95::ObservationL95(const ObsTable & ot, const eckit::Configuration & conf)
@@ -38,8 +35,8 @@ ObservationL95::~ObservationL95() {}
 
 // -----------------------------------------------------------------------------
 
-void ObservationL95::obsEquiv(const GomL95 & gom, ObsVec1D & ovec,
-                              const ObsBias & bias) const {
+void ObservationL95::simulateObs(const GomL95 & gom, ObsVec1D & ovec,
+                                 const ObsBias & bias) const {
   for (size_t jj = 0; jj < gom.size(); ++jj) {
     const int ii = gom.getindx(jj);
     ovec(ii) = gom[jj] + bias.value();

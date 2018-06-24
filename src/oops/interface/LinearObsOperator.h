@@ -18,7 +18,6 @@
 
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
-#include "oops/interface/LinearObsOperBase.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/ObservationSpace.h"
@@ -37,8 +36,8 @@ template <typename MODEL>
 class LinearObsOperator : public util::Printable,
                           private boost::noncopyable,
                           private util::ObjectCounter<LinearObsOperator<MODEL> > {
+  typedef typename MODEL::LinearObsOperator  LinearObsOper_;
   typedef GeoVaLs<MODEL>             GeoVaLs_;
-  typedef LinearObsOperBase<MODEL>   LinearObsOperBase_;
   typedef ObsAuxControl<MODEL>       ObsAuxControl_;
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncrement_;
   typedef ObservationSpace<MODEL>    ObsSpace_;
@@ -51,19 +50,19 @@ class LinearObsOperator : public util::Printable,
   ~LinearObsOperator();
 
 /// Interfacing
-  const LinearObsOperBase_ & linearobsoperator() const {return *oper_;}
+  const LinearObsOper_ & linearobsoperator() const {return *oper_;}
 
 /// Obs Operators
   void setTrajectory(const GeoVaLs_ &, const ObsAuxControl_ &);
-  void obsEquivTL(const GeoVaLs_ &, ObsVector_ &, const ObsAuxIncrement_ &) const;
-  void obsEquivAD(GeoVaLs_ &, const ObsVector_ &, ObsAuxIncrement_ &) const;
+  void simulateObsTL(const GeoVaLs_ &, ObsVector_ &, const ObsAuxIncrement_ &) const;
+  void simulateObsAD(GeoVaLs_ &, const ObsVector_ &, ObsAuxIncrement_ &) const;
 
 /// Other
   const Variables & variables() const;  // Required inputs variables from LinearModel
 
  private:
   void print(std::ostream &) const;
-  boost::scoped_ptr<LinearObsOperBase_> oper_;
+  boost::scoped_ptr<LinearObsOper_> oper_;
 };
 
 // -----------------------------------------------------------------------------
@@ -72,7 +71,7 @@ template <typename MODEL>
 LinearObsOperator<MODEL>::LinearObsOperator(const ObsSpace_ & os): oper_() {
   Log::trace() << "LinearObsOperator<MODEL>::LinearObsOperator starting" << std::endl;
   util::Timer timer(classname(), "LinearObsOperator");
-  oper_.reset(LinearObsOperFactory<MODEL>::create(os.observationspace(), os.config()));
+  oper_.reset(new LinearObsOper_(os.observationspace(), os.config()));
   Log::trace() << "LinearObsOperator<MODEL>::LinearObsOperator done" << std::endl;
 }
 
@@ -91,7 +90,7 @@ LinearObsOperator<MODEL>::~LinearObsOperator() {
 template <typename MODEL>
 void LinearObsOperator<MODEL>::setTrajectory(const GeoVaLs_ & gvals, const ObsAuxControl_ & aux) {
   Log::trace() << "LinearObsOperator<MODEL>::setTrajectory starting" << std::endl;
-  util::Timer timer(classname(), "ObsEquiv");
+  util::Timer timer(classname(), "setTrajectory");
   oper_->setTrajectory(gvals.geovals(), aux.obsauxcontrol());
   Log::trace() << "LinearObsOperator<MODEL>::setTrajectory done" << std::endl;
 }
@@ -99,23 +98,23 @@ void LinearObsOperator<MODEL>::setTrajectory(const GeoVaLs_ & gvals, const ObsAu
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void LinearObsOperator<MODEL>::obsEquivTL(const GeoVaLs_ & gvals, ObsVector_ & yy,
-                                          const ObsAuxIncrement_ & aux) const {
-  Log::trace() << "LinearObsOperator<MODEL>::obsEquivTL starting" << std::endl;
-  util::Timer timer(classname(), "ObsEquivTL");
-  oper_->obsEquivTL(gvals.geovals(), yy.obsvector(), aux.obsauxincrement());
-  Log::trace() << "LinearObsOperator<MODEL>::obsEquivTL done" << std::endl;
+void LinearObsOperator<MODEL>::simulateObsTL(const GeoVaLs_ & gvals, ObsVector_ & yy,
+                                             const ObsAuxIncrement_ & aux) const {
+  Log::trace() << "LinearObsOperator<MODEL>::simulateObsTL starting" << std::endl;
+  util::Timer timer(classname(), "simulateObsTL");
+  oper_->simulateObsTL(gvals.geovals(), yy.obsvector(), aux.obsauxincrement());
+  Log::trace() << "LinearObsOperator<MODEL>::simulateObsTL done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void LinearObsOperator<MODEL>::obsEquivAD(GeoVaLs_ & gvals, const ObsVector_ & yy,
-                                          ObsAuxIncrement_ & aux) const {
-  Log::trace() << "LinearObsOperator<MODEL>::obsEquivAD starting" << std::endl;
-  util::Timer timer(classname(), "ObsEquivAD");
-  oper_->obsEquivAD(gvals.geovals(), yy.obsvector(), aux.obsauxincrement());
-  Log::trace() << "LinearObsOperator<MODEL>::obsEquivAD done" << std::endl;
+void LinearObsOperator<MODEL>::simulateObsAD(GeoVaLs_ & gvals, const ObsVector_ & yy,
+                                             ObsAuxIncrement_ & aux) const {
+  Log::trace() << "LinearObsOperator<MODEL>::simulateObsAD starting" << std::endl;
+  util::Timer timer(classname(), "simulateObsAD");
+  oper_->simulateObsAD(gvals.geovals(), yy.obsvector(), aux.obsauxincrement());
+  Log::trace() << "LinearObsOperator<MODEL>::simulateObsAD done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
