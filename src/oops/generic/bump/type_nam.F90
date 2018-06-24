@@ -137,6 +137,8 @@ type nam_type
    real(kind_real) ::  lat_ldwv(nldwvmax)           !< Latitudes (in degrees) local diagnostics profiles to write (for local_diag = .true.)
    real(kind_real) ::  diag_rhflt                   !< Diagnostics filtering radius
    character(len=1024) :: diag_interp               !< Diagnostics interpolation type
+   logical :: field_io                              !< Field I/O
+   logical :: split_io                              !< Split I/O (each task read and write its own file)
    logical :: grid_output                           !< Write regridded fields
    real(kind_real) :: grid_resol                    !< Regridded fields resolution
    character(len=1024) :: grid_interp               !< Regridding interpolation type
@@ -276,6 +278,8 @@ call msr(nam%lon_ldwv)
 call msr(nam%lat_ldwv)
 call msr(nam%diag_rhflt)
 nam%diag_interp = ''
+nam%field_io = .true.
+nam%split_io = .false.
 nam%grid_output = .false.
 call msr(nam%grid_resol)
 nam%grid_interp = ''
@@ -302,7 +306,7 @@ integer :: nobs,nldwh,il_ldwh(nlmax*nc3max),ic_ldwh(nlmax*nc3max),nldwv
 logical :: colorlog,default_seed,load_ensemble,use_metis
 logical :: new_hdiag,new_param,check_adjoints,check_pos_def,check_sqrt,check_dirac,check_randomization,check_consistency
 logical :: check_optimality,new_lct,new_obsop,logpres,sam_write,sam_read,mask_check,gau_approx,full_var,local_diag
-logical :: displ_diag,lhomh,lhomv,lct_diag(nscalesmax),lsqrt,network,grid_output
+logical :: displ_diag,lhomh,lhomv,lct_diag(nscalesmax),lsqrt,network,field_io,split_io,grid_output
 real(kind_real) :: mask_th,dc,local_rad,displ_rad,displ_rhflt,displ_tol,rvflt,lon_ldwv(nldwvmax),lat_ldwv(nldwvmax),diag_rhflt
 real(kind_real) :: resol,londir(ndirmax),latdir(ndirmax),grid_resol
 character(len=1024) :: datadir,prefix,model,strategy,method,mask_type,draw_type,minim_algo,nicas_interp
@@ -321,7 +325,8 @@ namelist/diag_param/ne,gau_approx,full_var,local_diag,local_rad,displ_diag,displ
 namelist/fit_param/minim_algo,lhomh,lhomv,rvflt,lct_nscales,lct_diag
 namelist/nicas_param/lsqrt,resol,nicas_interp,network,mpicom,advmode,ndir,londir,latdir,levdir,ivdir,itsdir
 namelist/obsop_param/nobs,obsdis,obsop_interp
-namelist/output_param/nldwh,il_ldwh,ic_ldwh,nldwv,lon_ldwv,lat_ldwv,diag_rhflt,diag_interp,grid_output,grid_resol,grid_interp
+namelist/output_param/nldwh,il_ldwh,ic_ldwh,nldwv,lon_ldwv,lat_ldwv,diag_rhflt,diag_interp,field_io,split_io, &
+                    & grid_output,grid_resol,grid_interp
 
 if (mpl%main) then
    ! Open namelist
@@ -453,6 +458,8 @@ if (mpl%main) then
    if (nldwv>0) nam%lat_ldwv(1:nldwv) = lat_ldwv(1:nldwv)
    nam%diag_rhflt = diag_rhflt
    nam%diag_interp = diag_interp
+   nam%field_io = field_io
+   nam%split_io = split_io
    nam%grid_output = grid_output
    nam%grid_resol = grid_resol
    nam%grid_interp = grid_interp
@@ -580,6 +587,8 @@ call mpl%bcast(nam%lon_ldwv)
 call mpl%bcast(nam%lat_ldwv)
 call mpl%bcast(nam%diag_rhflt)
 call mpl%bcast(nam%diag_interp)
+call mpl%bcast(nam%field_io)
+call mpl%bcast(nam%split_io)
 call mpl%bcast(nam%grid_output)
 call mpl%bcast(nam%grid_resol)
 call mpl%bcast(nam%grid_interp)
@@ -786,7 +795,7 @@ if (nam%new_hdiag.or.nam%new_lct) then
    case default
       call msgerror('wrong draw_type')
    end select
-   if (nam%nc1<=0) call msgerror('nc1 should be positive')
+   if (nam%nc1<3) call msgerror('nc1 should be larger than 2')
    if (nam%ntry<=0) call msgerror('ntry should be positive')
    if (nam%nrep<0) call msgerror('nrep should be non-negative')
    if (nam%nc3<=0) call msgerror('nc3 should be positive')
@@ -1135,6 +1144,8 @@ call put_att(ncid,'lon_ldwv',nam%nldwv,nam%lon_ldwv(1:nam%nldwv)*rad2deg)
 call put_att(ncid,'lat_ldwv',nam%nldwv,nam%lat_ldwv(1:nam%nldwv)*rad2deg)
 call put_att(ncid,'diag_rhflt',nam%diag_rhflt*req)
 call put_att(ncid,'diag_interp',nam%diag_interp)
+call put_att(ncid,'field_io',nam%field_io)
+call put_att(ncid,'split_io',nam%split_io)
 call put_att(ncid,'grid_output',nam%grid_output)
 call put_att(ncid,'grid_resol',nam%grid_resol*req)
 call put_att(ncid,'grid_interp',nam%grid_interp)

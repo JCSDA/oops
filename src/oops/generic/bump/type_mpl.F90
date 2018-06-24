@@ -93,6 +93,7 @@ contains
    procedure :: mpl_dot_prod_4d
    generic :: dot_prod => mpl_dot_prod_1d,mpl_dot_prod_2d,mpl_dot_prod_3d,mpl_dot_prod_4d
    procedure :: split => mpl_split
+   procedure :: glb_to_loc => mpl_glb_to_loc
 end type mpl_type
 
 type(mpl_type) :: mpl
@@ -272,12 +273,8 @@ integer :: info
 write(mpl%unit,'(a)') trim(message)
 call flush(mpl%unit)
 
-! Finalize MPI
-call mpi_finalize(info)
-call mpl%check(info)
-
-! Stop
-stop
+! Abort MPI
+call mpi_abort(mpl%mpi_comm,1,info)
 
 end subroutine mpl_abort
 
@@ -1166,7 +1163,6 @@ call mpl%check(info)
 
 end subroutine mpl_allgatherv_real
 
-
 !----------------------------------------------------------------------
 ! Subroutine: mpl_alltoallv_real
 !> Purpose: alltoallv for a real array
@@ -1612,5 +1608,67 @@ do iproc=1,mpl%nproc
 end do
 
 end subroutine mpl_split
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_glb_to_loc
+!> Purpose: communicate global index to local index
+!----------------------------------------------------------------------
+subroutine mpl_glb_to_loc(mpl,n_loc,loc_to_glb,n_glb,glb_to_loc)
+
+implicit none
+
+! Passed variables
+class(mpl_type) :: mpl                   !< MPL object
+integer,intent(in) :: n_loc              !< Local dimension
+integer,intent(in) :: loc_to_glb(n_loc)  !< Local to global index
+integer,intent(in) :: n_glb              !< Global dimension
+integer,intent(out) :: glb_to_loc(n_glb) !< Global to local index
+
+! Local variables
+integer :: iproc,i_loc,n_loc_tmp
+integer,allocatable :: loc_to_glb_tmp(:)
+
+if (mpl%main) then
+   do iproc=1,mpl%nproc
+      if (iproc==mpl%ioproc) then
+         ! Copy dimension
+         n_loc_tmp = n_loc
+      else
+         ! Receive dimension on ioproc
+         call mpl%recv(n_loc_tmp,iproc,mpl%tag)
+      end if
+
+      ! Allocation
+      allocate(loc_to_glb_tmp(n_loc_tmp))
+
+      if (iproc==mpl%ioproc) then
+         ! Copy data
+         loc_to_glb_tmp = loc_to_glb
+      else
+         ! Receive data on ioproc
+         call mpl%recv(n_loc_tmp,loc_to_glb_tmp,iproc,mpl%tag+1)
+      end if
+
+      ! Fill c2_to_c2a
+      do i_loc=1,n_loc_tmp
+         glb_to_loc(loc_to_glb_tmp(i_loc)) = i_loc
+      end do
+
+      ! Release memory
+      deallocate(loc_to_glb_tmp)
+   end do
+else
+   ! Send dimensions to ioproc
+   call mpl%send(n_loc,mpl%ioproc,mpl%tag)
+
+   ! Send data to ioproc
+   call mpl%send(n_loc,loc_to_glb,mpl%ioproc,mpl%tag+1)
+end if
+mpl%tag = mpl%tag+2
+
+! Broadcast
+call mpl%bcast(glb_to_loc)
+
+end subroutine mpl_glb_to_loc
 
 end module type_mpl

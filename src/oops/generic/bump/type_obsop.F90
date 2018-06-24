@@ -261,15 +261,13 @@ type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 
 ! Local variables
-integer :: offset,iobs,jobs,iobsa,iproc,nobsa,i_s,ic0,ic0b,i,ic0a,nc0a,nc0b,delta,nres,ind(1),lunit
+integer :: offset,iobs,jobs,iobsa,iproc,nobsa,i_s,ic0,ic0b,i,ic0a,delta,nres,ind(1),lunit
 integer :: imin(1),imax(1),nmoves,imoves
 integer,allocatable :: nop(:),iop(:),srcproc(:,:),srcic0(:,:),order(:),nobs_to_move(:),nobs_to_move_tmp(:),obs_moved(:,:)
-integer,allocatable :: c0_to_c0a(:),c0a_to_c0(:),c0b_to_c0(:),c0a_to_c0b(:)
 real(kind_real) :: N_max,C_max
 real(kind_real),allocatable :: proc_to_lonobs(:),proc_to_latobs(:),lonobs(:),latobs(:),list(:)
 logical :: global
 logical,allocatable :: maskobs(:),lcheck_nc0b(:)
-type(com_type) :: com(mpl%nproc)
 
 ! Allocation
 allocate(obsop%proc_to_nobsa(mpl%nproc))
@@ -615,121 +613,13 @@ do ic0a=1,geom%nc0a
    obsop%c0a_to_c0b(ic0a) = ic0b
 end do
 
-! Get global distribution of the subgrid on ioproc
-if (mpl%main) then
-   ! Allocation
-   allocate(c0_to_c0a(geom%nc0))
-
-   do iproc=1,mpl%nproc
-      if (iproc==mpl%ioproc) then
-         ! Copy dimension
-         nc0a = geom%nc0a
-      else
-         ! Receive dimension on ioproc
-         call mpl%recv(nc0a,iproc,mpl%tag)
-      end if
-
-      ! Allocation
-      allocate(c0a_to_c0(nc0a))
-
-      if (iproc==mpl%ioproc) then
-         ! Copy data
-         c0a_to_c0 = geom%c0a_to_c0
-      else
-         ! Receive data on ioproc
-         call mpl%recv(nc0a,c0a_to_c0,iproc,mpl%tag+1)
-      end if
-
-      ! Fill c0_to_c0a
-      do ic0a=1,nc0a
-         c0_to_c0a(c0a_to_c0(ic0a)) = ic0a
-      end do
-
-      ! Release memory
-      deallocate(c0a_to_c0)
-   end do
-else
-   ! Send dimensions to ioproc
-   call mpl%send(geom%nc0a,mpl%ioproc,mpl%tag)
-
-   ! Send data to ioproc
-   call mpl%send(geom%nc0a,geom%c0a_to_c0,mpl%ioproc,mpl%tag+1)
-end if
-mpl%tag = mpl%tag+2
-
 ! Setup communications
-if (mpl%main) then
-   do iproc=1,mpl%nproc
-      ! Communicate dimensions
-      if (iproc==mpl%ioproc) then
-         ! Copy dimensions
-         nc0a = geom%nc0a
-         nc0b = obsop%nc0b
-      else
-         ! Receive dimensions on ioproc
-         call mpl%recv(nc0a,iproc,mpl%tag)
-         call mpl%recv(nc0b,iproc,mpl%tag+1)
-      end if
-
-      ! Allocation
-      allocate(c0b_to_c0(nc0b))
-      allocate(c0a_to_c0b(nc0a))
-
-      ! Communicate data
-      if (iproc==mpl%ioproc) then
-         ! Copy data
-         c0b_to_c0 = obsop%c0b_to_c0
-         c0a_to_c0b = obsop%c0a_to_c0b
-      else
-         ! Receive data on ioproc
-         call mpl%recv(nc0b,c0b_to_c0,iproc,mpl%tag+2)
-         call mpl%recv(nc0a,c0a_to_c0b,iproc,mpl%tag+3)
-      end if
-
-      ! Allocation
-      com(iproc)%nred = nc0a
-      com(iproc)%next = nc0b
-      allocate(com(iproc)%ext_to_proc(com(iproc)%next))
-      allocate(com(iproc)%ext_to_red(com(iproc)%next))
-      allocate(com(iproc)%red_to_ext(com(iproc)%nred))
-
-      ! Define halo origin
-      do ic0b=1,nc0b
-         ic0 = c0b_to_c0(ic0b)
-         com(iproc)%ext_to_proc(ic0b) = geom%c0_to_proc(ic0)
-         ic0a = c0_to_c0a(ic0)
-         com(iproc)%ext_to_red(ic0b) = ic0a
-      end do
-      com(iproc)%red_to_ext = c0a_to_c0b
-
-      ! Release memory
-      deallocate(c0b_to_c0)
-      deallocate(c0a_to_c0b)
-   end do
-
-   ! Release memory
-   deallocate(c0_to_c0a)
-else
-   ! Send dimensions to ioproc
-   call mpl%send(geom%nc0a,mpl%ioproc,mpl%tag)
-   call mpl%send(obsop%nc0b,mpl%ioproc,mpl%tag+1)
-
-   ! Send data to ioproc
-   call mpl%send(obsop%nc0b,obsop%c0b_to_c0,mpl%ioproc,mpl%tag+2)
-   call mpl%send(geom%nc0a,obsop%c0a_to_c0b,mpl%ioproc,mpl%tag+3)
-end if
-mpl%tag = mpl%tag+4
-call obsop%com%setup(com,'com')
+call obsop%com%setup('com',geom%nc0,geom%nc0a,obsop%nc0b,obsop%c0b_to_c0,obsop%c0a_to_c0b,geom%c0_to_proc,geom%c0_to_c0a)
 
 ! Compute scores
-if (mpl%main) then
-   N_max = real(maxval(obsop%proc_to_nobsa),kind_real)/(real(obsop%nobs,kind_real)/real(mpl%nproc,kind_real))
-   C_max = 0.0
-   do iproc=1,mpl%nproc
-      C_max = max(C_max,real(com(iproc)%nhalo,kind_real))
-   end do
-   C_max = C_max/(3.0*real(obsop%nobs,kind_real)/real(mpl%nproc,kind_real))
-end if
+call mpl%allreduce_max(real(obsop%com%nhalo,kind_real),C_max)
+C_max = C_max/(3.0*real(obsop%nobs,kind_real)/real(mpl%nproc,kind_real))
+N_max = real(maxval(obsop%proc_to_nobsa),kind_real)/(real(obsop%nobs,kind_real)/real(mpl%nproc,kind_real))
 
 ! Print results
 write(mpl%unit,'(a7,a)') '','Number of observations per MPI task:'
@@ -738,17 +628,9 @@ do iproc=1,mpl%nproc
 end do
 write(mpl%unit,'(a7,a,f5.1,a)') '','Observation repartition imbalance: ',100.0*real(maxval(obsop%proc_to_nobsa) &
  & -minval(obsop%proc_to_nobsa),kind_real)/(real(sum(obsop%proc_to_nobsa),kind_real)/real(mpl%nproc,kind_real)),' %'
-write(mpl%unit,'(a7,a)') '','Number of grid points, halo size and number of received values per MPI task:'
-if (mpl%main) then
-   do iproc=1,mpl%nproc
-      write(mpl%unit,'(a10,a,i3,a,i8,a,i8,a,i8)') '','Task ',iproc,': ', &
-    & com(iproc)%nred,' / ',com(iproc)%next,' / ',com(iproc)%nhalo
-   end do
-else
-   write(mpl%unit,'(a10,a,i3,a,i8,a,i8,a,i8)') '','Task ',mpl%myproc,': ', &
- & obsop%com%nred,' / ',obsop%com%next,' / ',obsop%com%nhalo
-end if
-if (mpl%main) write(mpl%unit,'(a7,a,f10.2,a,f10.2)') '','Scores (N_max / C_max):',N_max,' / ',C_max
+write(mpl%unit,'(a7,a,i3)') '','Number of grid points, halo size and number of received values for MPI task: ',mpl%myproc
+write(mpl%unit,'(a10,i8,a,i8,a,i8)') '',obsop%com%nred,' / ',obsop%com%next,' / ',obsop%com%nhalo
+write(mpl%unit,'(a7,a,f10.2,a,f10.2)') '','Scores (N_max / C_max):',N_max,' / ',C_max
 call flush(mpl%unit)
 
 if (mpl%main) then
@@ -768,11 +650,6 @@ if (mpl%main) then
       write(lunit,*) N_max,C_max
       close(unit=lunit)
    end if
-end if
-if (mpl%main) then
-   do iproc=1,mpl%nproc
-      call com(iproc)%dealloc
-   end do
 end if
 
 ! Update allocation flag

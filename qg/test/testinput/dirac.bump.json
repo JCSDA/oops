@@ -100,6 +100,8 @@
       "nldwv" : 0,
       "diag_rhflt" : 0.0,
       "diag_interp" : "bilin",
+      "field_io" : 1,
+      "split_io" : 1,
       "grid_output" : 0
     },
     "state": [

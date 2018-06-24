@@ -438,17 +438,84 @@ end subroutine com_write
 ! Subroutine: com_setup
 !> Purpose: setup communications
 !----------------------------------------------------------------------
-subroutine com_setup(com_out,com_in,prefix)
+subroutine com_setup(com_out,prefix,nglb,nred,next,ext_to_glb,red_to_ext,glb_to_proc,glb_to_red)
 
 implicit none
 
 ! Passed variables
-class(com_type),intent(inout) :: com_out          !< Communication data
-type(com_type),intent(inout) :: com_in(mpl%nproc) !< Communication data
-character(len=*),intent(in) :: prefix             !< Prefix
+class(com_type),intent(inout) :: com_out !< Communication data
+character(len=*),intent(in) :: prefix    !< Prefix
+integer,intent(in) :: nglb               !< Global size
+integer,intent(in) :: nred               !< Reduced halo size
+integer,intent(in) :: next               !< Extended halo size
+integer,intent(in) :: ext_to_glb(next)   !< Extended halo to global
+integer,intent(in) :: red_to_ext(nred)   !< Reduced halo to extended halo
+integer,intent(in) :: glb_to_proc(nglb)  !< Global to processor
+integer,intent(in) :: glb_to_red(nglb)   !< Global to reduced halo
 
 ! Local variables
-integer :: iproc,jproc,iext,icount
+integer :: iproc,jproc,iext,iglb,ired,icount,nred_tmp,next_tmp
+integer,allocatable :: ext_to_glb_tmp(:),red_to_ext_tmp(:)
+type(com_type) :: com_in(mpl%nproc)
+
+if (mpl%main) then
+   do iproc=1,mpl%nproc
+      ! Communicate dimensions
+      if (iproc==mpl%ioproc) then
+         ! Copy dimensions
+         nred_tmp = nred
+         next_tmp = next
+      else
+         ! Receive dimensions on ioproc
+         call mpl%recv(nred_tmp,iproc,mpl%tag)
+         call mpl%recv(next_tmp,iproc,mpl%tag+1)
+      end if
+
+      ! Allocation
+      allocate(ext_to_glb_tmp(next_tmp))
+      allocate(red_to_ext_tmp(nred_tmp))
+
+      ! Communicate data
+      if (iproc==mpl%ioproc) then
+         ! Copy data
+         ext_to_glb_tmp = ext_to_glb
+         red_to_ext_tmp = red_to_ext
+      else
+         ! Receive data on ioproc
+         call mpl%recv(next_tmp,ext_to_glb_tmp,iproc,mpl%tag+2)
+         call mpl%recv(nred_tmp,red_to_ext_tmp,iproc,mpl%tag+3)
+      end if
+
+      ! Allocation
+      com_in(iproc)%nred = nred_tmp
+      com_in(iproc)%next = next_tmp
+      allocate(com_in(iproc)%ext_to_proc(com_in(iproc)%next))
+      allocate(com_in(iproc)%ext_to_red(com_in(iproc)%next))
+      allocate(com_in(iproc)%red_to_ext(com_in(iproc)%nred))
+
+      ! Communication parameters
+      do iext=1,next_tmp
+         iglb = ext_to_glb_tmp(iext)
+         com_in(iproc)%ext_to_proc(iext) = glb_to_proc(iglb)
+         ired = glb_to_red(iglb)
+         com_in(iproc)%ext_to_red(iext) = ired
+      end do
+      com_in(iproc)%red_to_ext = red_to_ext_tmp
+
+      ! Release memory
+      deallocate(ext_to_glb_tmp)
+      deallocate(red_to_ext_tmp)
+   end do
+else
+   ! Send dimensions to ioproc
+   call mpl%send(nred,mpl%ioproc,mpl%tag)
+   call mpl%send(next,mpl%ioproc,mpl%tag+1)
+
+   ! Send data to ioproc
+   call mpl%send(next,ext_to_glb,mpl%ioproc,mpl%tag+2)
+   call mpl%send(nred,red_to_ext,mpl%ioproc,mpl%tag+3)
+end if
+mpl%tag = mpl%tag+4
 
 if (mpl%main) then
    ! Allocation

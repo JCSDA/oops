@@ -143,94 +143,110 @@ character(len=3) :: ilchar,itschar,ildwhchar,ildwvchar,idirchar
 ! Setup from configuration
 
 ! general_param
-bump%nam%prefix = config_get_string(c_conf,1024,"prefix")
-bump%nam%default_seed = integer_to_logical(config_get_int(c_conf,"default_seed"))
+if (config_element_exists(c_conf,"prefix")) bump%nam%prefix = config_get_string(c_conf,1024,"prefix")
+if (config_element_exists(c_conf,"default_seed")) bump%nam%default_seed = integer_to_logical(config_get_int(c_conf,"default_seed"))
 
 ! driver_param
-bump%nam%method = config_get_string(c_conf,1024,"method")
-bump%nam%strategy = config_get_string(c_conf,1024,"strategy")
-bump%nam%new_hdiag = integer_to_logical(config_get_int(c_conf,"new_hdiag"))
-bump%nam%new_param = integer_to_logical(config_get_int(c_conf,"new_param"))
-bump%nam%check_adjoints = integer_to_logical(config_get_int(c_conf,"check_adjoints"))
-bump%nam%check_pos_def = integer_to_logical(config_get_int(c_conf,"check_pos_def"))
-bump%nam%check_sqrt = integer_to_logical(config_get_int(c_conf,"check_sqrt"))
-bump%nam%check_dirac = integer_to_logical(config_get_int(c_conf,"check_dirac"))
-bump%nam%check_randomization = integer_to_logical(config_get_int(c_conf,"check_randomization"))
-bump%nam%check_consistency = integer_to_logical(config_get_int(c_conf,"check_consistency"))
-bump%nam%check_optimality = integer_to_logical(config_get_int(c_conf,"check_optimality"))
-bump%nam%new_lct = integer_to_logical(config_get_int(c_conf,"new_lct"))
-bump%nam%new_obsop = integer_to_logical(config_get_int(c_conf,"new_obsop"))
+if (config_element_exists(c_conf,"method")) bump%nam%method = config_get_string(c_conf,1024,"method")
+if (config_element_exists(c_conf,"strategy")) bump%nam%strategy = config_get_string(c_conf,1024,"strategy")
+if (config_element_exists(c_conf,"new_hdiag")) bump%nam%new_hdiag = integer_to_logical(config_get_int(c_conf,"new_hdiag"))
+if (config_element_exists(c_conf,"new_param")) bump%nam%new_param = integer_to_logical(config_get_int(c_conf,"new_param"))
+if (config_element_exists(c_conf,"check_adjoints")) &
+ & bump%nam%check_adjoints = integer_to_logical(config_get_int(c_conf,"check_adjoints"))
+if (config_element_exists(c_conf,"check_pos_def")) &
+ & bump%nam%check_pos_def = integer_to_logical(config_get_int(c_conf,"check_pos_def"))
+if (config_element_exists(c_conf,"check_sqrt")) bump%nam%check_sqrt = integer_to_logical(config_get_int(c_conf,"check_sqrt"))
+if (config_element_exists(c_conf,"check_dirac")) bump%nam%check_dirac = integer_to_logical(config_get_int(c_conf,"check_dirac"))
+if (config_element_exists(c_conf,"check_randomization")) & 
+ & bump%nam%check_randomization = integer_to_logical(config_get_int(c_conf,"check_randomization"))
+if (config_element_exists(c_conf,"check_consistency")) &
+ & bump%nam%check_consistency = integer_to_logical(config_get_int(c_conf,"check_consistency"))
+if (config_element_exists(c_conf,"check_optimality")) &
+ & bump%nam%check_optimality = integer_to_logical(config_get_int(c_conf,"check_optimality"))
+if (config_element_exists(c_conf,"new_lct")) bump%nam%new_lct = integer_to_logical(config_get_int(c_conf,"new_lct"))
+if (config_element_exists(c_conf,"new_obsop")) bump%nam%new_obsop = integer_to_logical(config_get_int(c_conf,"new_obsop"))
 
 ! sampling_param
-bump%nam%sam_read = integer_to_logical(config_get_int(c_conf,"sam_read"))
-bump%nam%sam_write = integer_to_logical(config_get_int(c_conf,"sam_write"))
-bump%nam%mask_type = config_get_string(c_conf,1024,"mask_type")
-bump%nam%mask_th = config_get_real(c_conf,"mask_th")
-bump%nam%mask_check = integer_to_logical(config_get_int(c_conf,"mask_check"))
-bump%nam%draw_type = config_get_string(c_conf,1024,"draw_type")
-bump%nam%nc1 = config_get_int(c_conf,"nc1")
-bump%nam%ntry = config_get_int(c_conf,"ntry")
-bump%nam%nrep = config_get_int(c_conf,"nrep")
-bump%nam%nc3 = config_get_int(c_conf,"nc3")
-bump%nam%dc = config_get_real(c_conf,"dc")
-bump%nam%nl0r = config_get_int(c_conf,"nl0r")
+if (config_element_exists(c_conf,"sam_read")) bump%nam%sam_read = integer_to_logical(config_get_int(c_conf,"sam_read"))
+if (config_element_exists(c_conf,"sam_write")) bump%nam%sam_write = integer_to_logical(config_get_int(c_conf,"sam_write"))
+if (config_element_exists(c_conf,"mask_type")) bump%nam%mask_type = config_get_string(c_conf,1024,"mask_type")
+if (config_element_exists(c_conf,"mask_th")) bump%nam%mask_th = config_get_real(c_conf,"mask_th")
+if (config_element_exists(c_conf,"mask_check")) bump%nam%mask_check = integer_to_logical(config_get_int(c_conf,"mask_check"))
+if (config_element_exists(c_conf,"draw_type")) bump%nam%draw_type = config_get_string(c_conf,1024,"draw_type")
+if (config_element_exists(c_conf,"nc1")) bump%nam%nc1 = config_get_int(c_conf,"nc1")
+if (config_element_exists(c_conf,"ntry")) bump%nam%ntry = config_get_int(c_conf,"ntry")
+if (config_element_exists(c_conf,"nrep")) bump%nam%nrep = config_get_int(c_conf,"nrep")
+if (config_element_exists(c_conf,"nc3")) bump%nam%nc3 = config_get_int(c_conf,"nc3")
+if (config_element_exists(c_conf,"dc")) bump%nam%dc = config_get_real(c_conf,"dc")
+if (config_element_exists(c_conf,"nl0r")) bump%nam%nl0r = config_get_int(c_conf,"nl0r")
 
 ! diag_param
-bump%nam%ne = config_get_int(c_conf,"ne")
-bump%nam%gau_approx = integer_to_logical(config_get_int(c_conf,"gau_approx"))
-bump%nam%full_var = integer_to_logical(config_get_int(c_conf,"full_var"))
-bump%nam%local_diag = integer_to_logical(config_get_int(c_conf,"local_diag"))
-if (bump%nam%local_diag) bump%nam%local_rad = config_get_real(c_conf,"local_rad")
-bump%nam%displ_diag = integer_to_logical(config_get_int(c_conf,"displ_diag"))
+if (config_element_exists(c_conf,"ne")) bump%nam%ne = config_get_int(c_conf,"ne")
+if (config_element_exists(c_conf,"gau_approx")) bump%nam%gau_approx = integer_to_logical(config_get_int(c_conf,"gau_approx"))
+if (config_element_exists(c_conf,"full_var")) bump%nam%full_var = integer_to_logical(config_get_int(c_conf,"full_var"))
+if (config_element_exists(c_conf,"local_diag")) bump%nam%local_diag = integer_to_logical(config_get_int(c_conf,"local_diag"))
+if (bump%nam%local_diag) then
+   if (config_element_exists(c_conf,"local_rad")) bump%nam%local_rad = config_get_real(c_conf,"local_rad")
+end if
+if (config_element_exists(c_conf,"displ_diag")) bump%nam%displ_diag = integer_to_logical(config_get_int(c_conf,"displ_diag"))
 if (bump%nam%displ_diag) then
-   bump%nam%displ_rad = config_get_real(c_conf,"displ_rad")
-   bump%nam%displ_niter = config_get_int(c_conf,"displ_niter")
-   bump%nam%displ_rhflt = config_get_real(c_conf,"displ_rhflt")
-   bump%nam%displ_tol = config_get_real(c_conf,"displ_tol")
+   if (config_element_exists(c_conf,"displ_rad")) bump%nam%displ_rad = config_get_real(c_conf,"displ_rad")
+   if (config_element_exists(c_conf,"displ_niter")) bump%nam%displ_niter = config_get_int(c_conf,"displ_niter")
+   if (config_element_exists(c_conf,"displ_rhflt")) bump%nam%displ_rhflt = config_get_real(c_conf,"displ_rhflt")
+   if (config_element_exists(c_conf,"displ_tol")) bump%nam%displ_tol = config_get_real(c_conf,"displ_tol")
 end if
 
 ! fit_param
-bump%nam%minim_algo = config_get_string(c_conf,1024,"minim_algo")
-bump%nam%lhomh = integer_to_logical(config_get_int(c_conf,"lhomh"))
-bump%nam%lhomv = integer_to_logical(config_get_int(c_conf,"lhomv"))
-bump%nam%rvflt = config_get_real(c_conf,"rvflt")
+if (config_element_exists(c_conf,"minim_algo")) bump%nam%minim_algo = config_get_string(c_conf,1024,"minim_algo")
+if (config_element_exists(c_conf,"lhomh")) bump%nam%lhomh = integer_to_logical(config_get_int(c_conf,"lhomh"))
+if (config_element_exists(c_conf,"lhomv")) bump%nam%lhomv = integer_to_logical(config_get_int(c_conf,"lhomv"))
+if (config_element_exists(c_conf,"rvflt")) bump%nam%rvflt = config_get_real(c_conf,"rvflt")
 
 ! nicas_param
-bump%nam%lsqrt = integer_to_logical(config_get_int(c_conf,"lsqrt"))
-bump%nam%resol = config_get_real(c_conf,"resol")
-bump%nam%nicas_interp = config_get_string(c_conf,1024,"nicas_interp")
-bump%nam%network = integer_to_logical(config_get_int(c_conf,"network"))
-bump%nam%mpicom = config_get_int(c_conf,"mpicom")
-bump%nam%advmode = config_get_int(c_conf,"advmode")
-bump%nam%ndir = config_get_int(c_conf,"ndir")
+if (config_element_exists(c_conf,"lsqrt")) bump%nam%lsqrt = integer_to_logical(config_get_int(c_conf,"lsqrt"))
+if (config_element_exists(c_conf,"resol")) bump%nam%resol = config_get_real(c_conf,"resol")
+if (config_element_exists(c_conf,"nicas_interp")) bump%nam%nicas_interp = config_get_string(c_conf,1024,"nicas_interp")
+if (config_element_exists(c_conf,"network")) bump%nam%network = integer_to_logical(config_get_int(c_conf,"network"))
+if (config_element_exists(c_conf,"mpicom")) bump%nam%mpicom = config_get_int(c_conf,"mpicom")
+if (config_element_exists(c_conf,"advmode")) bump%nam%advmode = config_get_int(c_conf,"advmode")
+if (config_element_exists(c_conf,"ndir")) bump%nam%ndir = config_get_int(c_conf,"ndir")
 do idir=1,bump%nam%ndir
    write(idirchar,'(i3)') idir
-   bump%nam%londir(idir) = config_get_real(c_conf,"londir("//trim(adjustl(idirchar))//")")
-   bump%nam%latdir(idir) = config_get_real(c_conf,"latdir("//trim(adjustl(idirchar))//")")
-   bump%nam%levdir(idir) = config_get_int(c_conf,"levdir("//trim(adjustl(idirchar))//")")
-   bump%nam%ivdir(idir) = config_get_int(c_conf,"ivdir("//trim(adjustl(idirchar))//")")
-   bump%nam%itsdir(idir) = config_get_int(c_conf,"itsdir("//trim(adjustl(idirchar))//")")
+   if (config_element_exists(c_conf,"londir("//trim(adjustl(idirchar))//")")) &
+ & bump%nam%londir(idir) = config_get_real(c_conf,"londir("//trim(adjustl(idirchar))//")")
+   if (config_element_exists(c_conf,"latdir("//trim(adjustl(idirchar))//")")) & 
+ & bump%nam%latdir(idir) = config_get_real(c_conf,"latdir("//trim(adjustl(idirchar))//")")
+   if (config_element_exists(c_conf,"levdir("//trim(adjustl(idirchar))//")")) &
+ & bump%nam%levdir(idir) = config_get_int(c_conf,"levdir("//trim(adjustl(idirchar))//")")
+   if (config_element_exists(c_conf,"ivdir("//trim(adjustl(idirchar))//")")) &
+ & bump%nam%ivdir(idir) = config_get_int(c_conf,"ivdir("//trim(adjustl(idirchar))//")")
+   if (config_element_exists(c_conf,"itsdir("//trim(adjustl(idirchar))//")")) &
+ & bump%nam%itsdir(idir) = config_get_int(c_conf,"itsdir("//trim(adjustl(idirchar))//")")
 end do
 
 ! output_param
-bump%nam%nldwh = config_get_int(c_conf,"nldwh")
+if (config_element_exists(c_conf,"nldwh")) bump%nam%nldwh = config_get_int(c_conf,"nldwh")
 do ildwh=1,bump%nam%nldwh
    write(ildwvchar,'(i3)') ildwh
-   bump%nam%il_ldwh(ildwh) = config_get_int(c_conf,"il_ldwh("//trim(adjustl(ildwhchar))//")")
-   bump%nam%ic_ldwh(ildwh) = config_get_int(c_conf,"ic_ldwh("//trim(adjustl(ildwhchar))//")")
+   if (config_element_exists(c_conf,"il_ldwh("//trim(adjustl(ildwhchar))//")")) &
+ & bump%nam%il_ldwh(ildwh) = config_get_int(c_conf,"il_ldwh("//trim(adjustl(ildwhchar))//")")
+   if (config_element_exists(c_conf,"ic_ldwh("//trim(adjustl(ildwhchar))//")")) &
+ & bump%nam%ic_ldwh(ildwh) = config_get_int(c_conf,"ic_ldwh("//trim(adjustl(ildwhchar))//")")
 end do
-bump%nam%nldwv = config_get_int(c_conf,"nldwv")
+if (config_element_exists(c_conf,"nldwv")) bump%nam%nldwv = config_get_int(c_conf,"nldwv")
 do ildwv=1,bump%nam%nldwv
    write(ildwvchar,'(i3)') ildwv
-   bump%nam%lon_ldwv(ildwv) = config_get_real(c_conf,"lon_ldwv("//trim(adjustl(ildwvchar))//")")
-   bump%nam%lat_ldwv(ildwv) = config_get_real(c_conf,"lat_ldwv("//trim(adjustl(ildwvchar))//")")
+   if (config_element_exists(c_conf,"lon_ldwv("//trim(adjustl(ildwvchar))//")")) &
+ & bump%nam%lon_ldwv(ildwv) = config_get_real(c_conf,"lon_ldwv("//trim(adjustl(ildwvchar))//")")
+   if (config_element_exists(c_conf,"lat_ldwv("//trim(adjustl(ildwvchar))//")")) &
+ & bump%nam%lat_ldwv(ildwv) = config_get_real(c_conf,"lat_ldwv("//trim(adjustl(ildwvchar))//")")
 end do
-bump%nam%diag_rhflt = config_get_real(c_conf,"diag_rhflt")
-bump%nam%diag_interp = config_get_string(c_conf,1024,"diag_interp")
-bump%nam%grid_output = integer_to_logical(config_get_int(c_conf,"grid_output"))
+if (config_element_exists(c_conf,"diag_rhflt")) bump%nam%diag_rhflt = config_get_real(c_conf,"diag_rhflt")
+if (config_element_exists(c_conf,"diag_interp")) bump%nam%diag_interp = config_get_string(c_conf,1024,"diag_interp")
+if (config_element_exists(c_conf,"grid_output")) bump%nam%grid_output = integer_to_logical(config_get_int(c_conf,"grid_output"))
 if (bump%nam%grid_output) then
-   bump%nam%grid_resol = config_get_real(c_conf,"grid_resol")
-   bump%nam%grid_interp = config_get_string(c_conf,1024,"grid_interp")
+   if (config_element_exists(c_conf,"grid_resol")) bump%nam%grid_resol = config_get_real(c_conf,"grid_resol")
+   if (config_element_exists(c_conf,"grid_interp")) bump%nam%grid_interp = config_get_string(c_conf,1024,"grid_interp")
 end if
 
 end subroutine bump_read_conf

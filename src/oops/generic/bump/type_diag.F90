@@ -109,55 +109,49 @@ type(hdata_type),intent(in) :: hdata   !< HDIAG data
 
 ! Local variables
 integer :: ib,il0,ic2a
-real(kind_real),allocatable :: rh_c2a(:,:),rv_c2a(:,:)
+real(kind_real) :: rh_c2a(hdata%nc2a,geom%nl0),rv_c2a(hdata%nc2a,geom%nl0)
 
 do ib=1,bpar%nb+1
    if (bpar%fit_block(ib)) then
-      if (diag%nc2a>0) then
-         ! Allocation
-         allocate(rh_c2a(hdata%nc2a,geom%nl0))
-         allocate(rv_c2a(hdata%nc2a,geom%nl0))
+      ! Initialization
+      call msr(rh_c2a)
+      call msr(rv_c2a)
 
-         ! Initialization
-         call msr(rh_c2a)
-         call msr(rv_c2a)
+      do il0=1,geom%nl0
+         do ic2a=1,hdata%nc2a
+            ! Copy data
+            rh_c2a(ic2a,il0) = diag%blk(ic2a,ib)%fit_rh(il0)
+            rv_c2a(ic2a,il0) = diag%blk(ic2a,ib)%fit_rv(il0)
 
-         do il0=1,geom%nl0
-            do ic2a=1,hdata%nc2a
-               ! Copy data
-               rh_c2a(ic2a,il0) = diag%blk(ic2a,ib)%fit_rh(il0)
-               rv_c2a(ic2a,il0) = diag%blk(ic2a,ib)%fit_rv(il0)
-
-               ! Apply bounds
-               if (isnotmsr(rh_c2a(ic2a,il0)).and.isnotmsr(diag%blk(0,ib)%fit_rh(il0))) then
-                  if ((rh_c2a(ic2a,il0)<diag%blk(0,ib)%fit_rh(il0)/bound) &
-                & .or.(rh_c2a(ic2a,il0)>diag%blk(0,ib)%fit_rh(il0)*bound)) call msr(rh_c2a(ic2a,il0))
-               end if
-               if (isnotmsr(rv_c2a(ic2a,il0)).and.isnotmsr(diag%blk(0,ib)%fit_rv(il0))) then
-                  if ((rv_c2a(ic2a,il0)<diag%blk(0,ib)%fit_rv(il0)/bound) &
-                & .or.(rv_c2a(ic2a,il0)>diag%blk(0,ib)%fit_rv(il0)*bound)) call msr(rv_c2a(ic2a,il0))
-               end if
-            end do
-
-            ! Horizontal filters
-            call hdata%diag_filter(geom,il0,'median',nam%diag_rhflt,rh_c2a(:,il0))
-            call hdata%diag_filter(geom,il0,'median',nam%diag_rhflt,rv_c2a(:,il0))
-            call hdata%diag_filter(geom,il0,'average',nam%diag_rhflt,rh_c2a(:,il0))
-            call hdata%diag_filter(geom,il0,'average',nam%diag_rhflt,rv_c2a(:,il0))
-            call hdata%diag_filter(geom,il0,'fill',2.0*pi,rh_c2a(:,il0))
-            call hdata%diag_filter(geom,il0,'fill',2.0*pi,rv_c2a(:,il0))
+            ! Apply bounds
+            if (isnotmsr(rh_c2a(ic2a,il0)).and.isnotmsr(diag%blk(0,ib)%fit_rh(il0))) then
+               if ((rh_c2a(ic2a,il0)<diag%blk(0,ib)%fit_rh(il0)/bound) &
+             & .or.(rh_c2a(ic2a,il0)>diag%blk(0,ib)%fit_rh(il0)*bound)) call msr(rh_c2a(ic2a,il0))
+            end if
+            if (isnotmsr(rv_c2a(ic2a,il0)).and.isnotmsr(diag%blk(0,ib)%fit_rv(il0))) then
+               if ((rv_c2a(ic2a,il0)<diag%blk(0,ib)%fit_rv(il0)/bound) &
+             & .or.(rv_c2a(ic2a,il0)>diag%blk(0,ib)%fit_rv(il0)*bound)) call msr(rv_c2a(ic2a,il0))
+            end if
          end do
+
+         ! Median filter to remove extreme values
+         call hdata%diag_filter(nam,geom,il0,'median',nam%diag_rhflt,rh_c2a(:,il0))
+         call hdata%diag_filter(nam,geom,il0,'median',nam%diag_rhflt,rv_c2a(:,il0))
+
+         ! Average filter to smooth support radii
+         call hdata%diag_filter(nam,geom,il0,'average',nam%diag_rhflt,rh_c2a(:,il0))
+         call hdata%diag_filter(nam,geom,il0,'average',nam%diag_rhflt,rv_c2a(:,il0))
+
+         ! Fill missing values
+         call hdata%diag_fill(geom,il0,rh_c2a(:,il0))
+         call hdata%diag_fill(geom,il0,rv_c2a(:,il0))
 
          ! Copy data
          do ic2a=1,hdata%nc2a
-            diag%blk(ic2a,ib)%fit_rh = rh_c2a(ic2a,:)
-            diag%blk(ic2a,ib)%fit_rv = rv_c2a(ic2a,:)
+            diag%blk(ic2a,ib)%fit_rh(il0) = rh_c2a(ic2a,il0)
+            diag%blk(ic2a,ib)%fit_rv(il0) = rv_c2a(ic2a,il0)
          end do
-
-         ! Release memory
-         deallocate(rh_c2a)
-         deallocate(rv_c2a)
-      end if
+      end do
 
       ! Smooth vertically
       do ic2a=0,diag%nc2a
@@ -375,7 +369,7 @@ do ib=1,bpar%nb+1
 end do
 
 ! Filtering
-call diag%fit_filter(nam,geom,bpar,hdata)
+if (nam%local_diag) call diag%fit_filter(nam,geom,bpar,hdata)
 
 ! Write
 call diag%write(nam,geom,bpar,io,hdata)
@@ -453,7 +447,7 @@ do ib=1,bpar%nb+1
 end do
 
 ! Filtering
-call diag%fit_filter(nam,geom,bpar,hdata)
+if (nam%local_diag) call diag%fit_filter(nam,geom,bpar,hdata)
 
 ! Write
 call diag%write(nam,geom,bpar,io,hdata)
@@ -533,7 +527,7 @@ do ib=1,bpar%nb+1
 end do
 
 ! Filtering
-call diag%fit_filter(nam,geom,bpar,hdata)
+if (nam%local_diag) call diag%fit_filter(nam,geom,bpar,hdata)
 
 ! Write
 call diag%write(nam,geom,bpar,io,hdata)
@@ -629,8 +623,10 @@ do ib=1,bpar%nb+1
 end do
 
 ! Filtering
-call diag%fit_filter(nam,geom,bpar,hdata)
-call diag_lr%fit_filter(nam,geom,bpar,hdata)
+if (nam%local_diag) then
+   call diag%fit_filter(nam,geom,bpar,hdata)
+   call diag_lr%fit_filter(nam,geom,bpar,hdata)
+end if
 
 ! Write
 call diag%write(nam,geom,bpar,io,hdata)

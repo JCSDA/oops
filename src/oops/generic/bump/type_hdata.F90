@@ -70,12 +70,14 @@ type hdata_type
    integer :: nc1a                                  !< Number of points in subset Sc1, halo A
    integer :: nc2a                                  !< Number of points in subset Sc2, halo A
    integer :: nc2b                                  !< Number of points in subset Sc2, halo B
+   integer :: nc2f                                  !< Number of points in subset Sc2, halo F
    logical,allocatable :: lcheck_c0a(:)             !< Detection of halo A on subset Sc0
    logical,allocatable :: lcheck_c0c(:)             !< Detection of halo C on subset Sc0
    logical,allocatable :: lcheck_c0d(:)             !< Detection of halo D on subset Sc0
    logical,allocatable :: lcheck_c1a(:)             !< Detection of halo A on subset Sc1
    logical,allocatable :: lcheck_c2a(:)             !< Detection of halo A on subset Sc2
    logical,allocatable :: lcheck_c2b(:)             !< Detection of halo B on subset Sc2
+   logical,allocatable :: lcheck_c2f(:)             !< Detection of halo F on subset Sc2
    logical,allocatable :: lcheck_h(:,:)             !< Detection of horizontal interpolation coefficients
    logical,allocatable :: lcheck_d(:,:,:)           !< Detection of displacement interpolation coefficients
    integer,allocatable :: c0c_to_c0(:)              !< Subset Sc0, halo C to global
@@ -91,11 +93,15 @@ type hdata_type
    integer,allocatable :: c2b_to_c2(:)              !< Subset Sc2, halo B to global
    integer,allocatable :: c2_to_c2b(:)              !< Subset Sc2, global to halo B
    integer,allocatable :: c2a_to_c2b(:)             !< Subset Sc2, halo A to halo B
+   integer,allocatable :: c2f_to_c2(:)              !< Subset Sc2, halo B to global
+   integer,allocatable :: c2_to_c2f(:)              !< Subset Sc2, global to halo B
+   integer,allocatable :: c2a_to_c2f(:)             !< Subset Sc2, halo A to halo B
    integer,allocatable :: c2_to_proc(:)             !< Subset Sc2, global to processor
    integer,allocatable :: proc_to_nc2a(:)           !< Number of points in subset Sc2, halo A, for each processor
    type(com_type) :: com_AC                         !< Communication between halos A and C
    type(com_type) :: com_AB                         !< Communication between halos A and B
    type(com_type) :: com_AD                         !< Communication between halos A and D
+   type(com_type) :: com_AF                         !< Communication between halos A and F (filtering)
 contains
    procedure :: alloc => hdata_alloc
    procedure :: dealloc => hdata_dealloc
@@ -110,7 +116,9 @@ contains
    procedure :: compute_mpi_ab => hdata_compute_mpi_ab
    procedure :: compute_mpi_d => hdata_compute_mpi_d
    procedure :: compute_mpi_c => hdata_compute_mpi_c
+   procedure :: compute_mpi_f => hdata_compute_mpi_f
    procedure :: diag_filter => hdata_diag_filter
+   procedure :: diag_fill => hdata_diag_fill
 end type hdata_type
 
 integer,parameter :: irmax = 10000                           !< Maximum number of random number draws
@@ -628,6 +636,9 @@ elseif (nam%local_diag) then
    call flush(mpl%unit)
 elseif (nam%displ_diag) then
    hdata%nc2 = nam%nc1
+end if
+if (nam%new_lct.or.nam%local_diag.or.nam%displ_diag) then
+   if (hdata%nc2<3) call msgerror('hdata%nc2 lower than 3')
 end if
 
 ! Allocation
@@ -1388,10 +1399,8 @@ class(hdata_type),intent(inout) :: hdata !< HDIAG data
 type(geom_type),intent(in) :: geom       !< Geometry
 
 ! Local variables
-integer :: iproc,ic0,ic2a,ic2b,ic2,jc2,i_s,i_s_loc,h_n_s_max,il0i,h_n_s_max_loc,nc2a,nc2b
+integer :: iproc,ic0,ic2a,ic2b,ic2,jc2,i_s,i_s_loc,h_n_s_max,il0i,h_n_s_max_loc
 integer,allocatable :: interph_lg(:,:)
-integer,allocatable :: c2a_to_c2(:),c2b_to_c2(:),c2a_to_c2b(:)
-type(com_type) :: com_AB(mpl%nproc)
 
 ! Allocation
 h_n_s_max = 0
@@ -1437,6 +1446,8 @@ end do
 hdata%nc2b = count(hdata%lcheck_c2b)
 
 ! Global <-> local conversions for fields
+
+! Halo A
 allocate(hdata%c2a_to_c2(hdata%nc2a))
 allocate(hdata%c2_to_c2a(hdata%nc2))
 ic2a = 0
@@ -1446,6 +1457,7 @@ do ic2=1,hdata%nc2
       hdata%c2a_to_c2(ic2a) = ic2
    end if
 end do
+call mpl%glb_to_loc(hdata%nc2a,hdata%c2a_to_c2,hdata%nc2,hdata%c2_to_c2a)
 
 ! Halo B
 allocate(hdata%c2b_to_c2(hdata%nc2b))
@@ -1500,107 +1512,6 @@ do il0i=1,geom%nl0i
    call hdata%h(il0i)%reorder
 end do
 
-! Get global distribution of the subgrid on ioproc
-if (mpl%main) then
-   do iproc=1,mpl%nproc
-      if (iproc==mpl%ioproc) then
-         ! Copy dimension
-         nc2a = hdata%nc2a
-      else
-         ! Receive dimension on ioproc
-         call mpl%recv(nc2a,iproc,mpl%tag)
-      end if
-
-      ! Allocation
-      allocate(c2a_to_c2(nc2a))
-
-      if (iproc==mpl%ioproc) then
-         ! Copy data
-         c2a_to_c2 = hdata%c2a_to_c2
-      else
-         ! Receive data on ioproc
-         call mpl%recv(nc2a,c2a_to_c2,iproc,mpl%tag+1)
-      end if
-
-      ! Fill c2_to_c2a
-      do ic2a=1,nc2a
-         hdata%c2_to_c2a(c2a_to_c2(ic2a)) = ic2a
-      end do
-
-      ! Release memory
-      deallocate(c2a_to_c2)
-   end do
-else
-   ! Send dimensions to ioproc
-   call mpl%send(hdata%nc2a,mpl%ioproc,mpl%tag)
-
-   ! Send data to ioproc
-   call mpl%send(hdata%nc2a,hdata%c2a_to_c2,mpl%ioproc,mpl%tag+1)
-end if
-mpl%tag = mpl%tag+2
-
-! Setup communications
-if (mpl%main) then
-   do iproc=1,mpl%nproc
-      ! Communicate dimensions
-      if (iproc==mpl%ioproc) then
-         ! Copy dimensions
-         nc2a = hdata%nc2a
-         nc2b = hdata%nc2b
-      else
-         ! Receive dimensions on ioproc
-         call mpl%recv(nc2a,iproc,mpl%tag)
-         call mpl%recv(nc2b,iproc,mpl%tag+1)
-      end if
-
-      ! Allocation
-      allocate(c2b_to_c2(nc2b))
-      allocate(c2a_to_c2b(nc2a))
-
-      ! Communicate data
-      if (iproc==mpl%ioproc) then
-         ! Copy data
-         c2b_to_c2 = hdata%c2b_to_c2
-         c2a_to_c2b = hdata%c2a_to_c2b
-      else
-         ! Receive data on ioproc
-         call mpl%recv(nc2b,c2b_to_c2,iproc,mpl%tag+2)
-         call mpl%recv(nc2a,c2a_to_c2b,iproc,mpl%tag+3)
-      end if
-
-      ! Allocation
-      com_AB(iproc)%nred = nc2a
-      com_AB(iproc)%next = nc2b
-      allocate(com_AB(iproc)%ext_to_proc(com_AB(iproc)%next))
-      allocate(com_AB(iproc)%ext_to_red(com_AB(iproc)%next))
-      allocate(com_AB(iproc)%red_to_ext(com_AB(iproc)%nred))
-
-      ! AB communication
-      do ic2b=1,nc2b
-         ic2 = c2b_to_c2(ic2b)
-         ic0 = hdata%c2_to_c0(ic2)
-         com_AB(iproc)%ext_to_proc(ic2b) = geom%c0_to_proc(ic0)
-         ic2a = hdata%c2_to_c2a(ic2)
-         com_AB(iproc)%ext_to_red(ic2b) = ic2a
-      end do
-      com_AB(iproc)%red_to_ext = c2a_to_c2b
-
-      ! Release memory
-      deallocate(c2b_to_c2)
-      deallocate(c2a_to_c2b)
-   end do
-else
-   ! Send dimensions to ioproc
-   call mpl%send(hdata%nc2a,mpl%ioproc,mpl%tag)
-   call mpl%send(hdata%nc2b,mpl%ioproc,mpl%tag+1)
-
-   ! Send data to ioproc
-   call mpl%send(hdata%nc2b,hdata%c2b_to_c2,mpl%ioproc,mpl%tag+2)
-   call mpl%send(hdata%nc2a,hdata%c2a_to_c2b,mpl%ioproc,mpl%tag+3)
-end if
-mpl%tag = mpl%tag+4
-call hdata%com_AB%setup(com_AB,'com_AB')
-
 ! MPI splitting
 do ic2=1,hdata%nc2
    ic0 = hdata%c2_to_c0(ic2)
@@ -1609,6 +1520,9 @@ end do
 do iproc=1,mpl%nproc
    hdata%proc_to_nc2a(iproc) = count(hdata%c2_to_proc==iproc)
 end do
+
+! Setup communications
+call hdata%com_AB%setup('com_AB',hdata%nc2,hdata%nc2a,hdata%nc2b,hdata%c2b_to_c2,hdata%c2a_to_c2b,hdata%c2_to_proc,hdata%c2_to_c2a)
 
 ! Print results
 write(mpl%unit,'(a7,a,i4)') '','Parameters for processor #',mpl%myproc
@@ -1636,10 +1550,7 @@ type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 
 ! Local variables
-integer :: iproc,ic0,ic0a,ic0d,ic1,ic2,ic2a,jc0,jc1
-integer :: nc0a,nc0d
-integer,allocatable :: c0d_to_c0(:),c0a_to_c0d(:)
-type(com_type) :: com_AD(mpl%nproc)
+integer :: ic0,ic0a,ic0d,ic1,ic2,ic2a,jc0,jc1
 
 ! Allocation
 allocate(hdata%lcheck_c0d(geom%nc0))
@@ -1686,65 +1597,7 @@ do ic0a=1,geom%nc0a
 end do
 
 ! Setup communications
-if (mpl%main) then
-   do iproc=1,mpl%nproc
-      ! Communicate dimensions
-      if (iproc==mpl%ioproc) then
-         ! Copy dimensions
-         nc0a = geom%nc0a
-         nc0d = hdata%nc0d
-      else
-         ! Receive dimensions on ioproc
-         call mpl%recv(nc0a,iproc,mpl%tag)
-         call mpl%recv(nc0d,iproc,mpl%tag+1)
-      end if
-
-      ! Allocation
-      allocate(c0d_to_c0(nc0d))
-      allocate(c0a_to_c0d(nc0a))
-
-      ! Communicate data
-      if (iproc==mpl%ioproc) then
-         ! Copy data
-         c0d_to_c0 = hdata%c0d_to_c0
-         c0a_to_c0d = hdata%c0a_to_c0d
-      else
-         ! Receive data on ioproc
-         call mpl%recv(nc0d,c0d_to_c0,iproc,mpl%tag+2)
-         call mpl%recv(nc0a,c0a_to_c0d,iproc,mpl%tag+3)
-      end if
-
-      ! Allocation
-      com_AD(iproc)%nred = nc0a
-      com_AD(iproc)%next = nc0d
-      allocate(com_AD(iproc)%ext_to_proc(com_AD(iproc)%next))
-      allocate(com_AD(iproc)%ext_to_red(com_AD(iproc)%next))
-      allocate(com_AD(iproc)%red_to_ext(com_AD(iproc)%nred))
-
-      ! AD communication
-      do ic0d=1,nc0d
-         ic0 = c0d_to_c0(ic0d)
-         com_AD(iproc)%ext_to_proc(ic0d) = geom%c0_to_proc(ic0)
-         ic0a = geom%c0_to_c0a(ic0)
-         com_AD(iproc)%ext_to_red(ic0d) = ic0a
-      end do
-      com_AD(iproc)%red_to_ext = c0a_to_c0d
-
-      ! Release memory
-      deallocate(c0d_to_c0)
-      deallocate(c0a_to_c0d)
-   end do
-else
-   ! Send dimensions to ioproc
-   call mpl%send(geom%nc0a,mpl%ioproc,mpl%tag)
-   call mpl%send(hdata%nc0d,mpl%ioproc,mpl%tag+1)
-
-   ! Send data to ioproc
-   call mpl%send(hdata%nc0d,hdata%c0d_to_c0,mpl%ioproc,mpl%tag+2)
-   call mpl%send(geom%nc0a,hdata%c0a_to_c0d,mpl%ioproc,mpl%tag+3)
-end if
-mpl%tag = mpl%tag+4
-call hdata%com_AD%setup(com_AD,'com_AD')
+call hdata%com_AD%setup('com_AD',geom%nc0,geom%nc0a,hdata%nc0d,hdata%c0d_to_c0,hdata%c0a_to_c0d,geom%c0_to_proc,geom%c0_to_c0a)
 
 ! Print results
 write(mpl%unit,'(a7,a,i4)') '','Parameters for processor #',mpl%myproc
@@ -1767,11 +1620,9 @@ type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 
 ! Local variables
-integer :: iproc,jc3,ic0,ic0a,ic0c,ic1,ic1a,its,il0,d_n_s_max,d_n_s_max_loc,i_s,i_s_loc
-integer :: nc0a,nc0c
-integer,allocatable :: interpd_lg(:,:,:),c0c_to_c0(:),c0a_to_c0c(:)
+integer :: jc3,ic0,ic0a,ic0c,ic1,ic1a,its,il0,d_n_s_max,d_n_s_max_loc,i_s,i_s_loc
+integer,allocatable :: interpd_lg(:,:,:)
 real(kind_real),allocatable :: displ_lon(:),displ_lat(:),lon_c1(:),lat_c1(:)
-type(com_type) :: com_AC(mpl%nproc)
 type(linop_type),allocatable :: dfull(:,:)
 
 if (nam%displ_diag) then
@@ -1914,65 +1765,7 @@ if (nam%displ_diag) then
 end if
 
 ! Setup communications
-if (mpl%main) then
-   do iproc=1,mpl%nproc
-      ! Communicate dimensions
-      if (iproc==mpl%ioproc) then
-         ! Copy dimensions
-         nc0a = geom%nc0a
-         nc0c = hdata%nc0c
-      else
-         ! Receive dimensions on ioproc
-         call mpl%recv(nc0a,iproc,mpl%tag)
-         call mpl%recv(nc0c,iproc,mpl%tag+1)
-      end if
-
-      ! Allocation
-      allocate(c0c_to_c0(nc0c))
-      allocate(c0a_to_c0c(nc0a))
-
-      ! Communicate data
-      if (iproc==mpl%ioproc) then
-         ! Copy data
-         c0c_to_c0 = hdata%c0c_to_c0
-         c0a_to_c0c = hdata%c0a_to_c0c
-      else
-         ! Receive data on ioproc
-         call mpl%recv(nc0c,c0c_to_c0,iproc,mpl%tag+2)
-         call mpl%recv(nc0a,c0a_to_c0c,iproc,mpl%tag+3)
-      end if
-
-      ! Allocation
-      com_AC(iproc)%nred = nc0a
-      com_AC(iproc)%next = nc0c
-      allocate(com_AC(iproc)%ext_to_proc(com_AC(iproc)%next))
-      allocate(com_AC(iproc)%ext_to_red(com_AC(iproc)%next))
-      allocate(com_AC(iproc)%red_to_ext(com_AC(iproc)%nred))
-
-      ! AC communication
-      do ic0c=1,nc0c
-         ic0 = c0c_to_c0(ic0c)
-         com_AC(iproc)%ext_to_proc(ic0c) = geom%c0_to_proc(ic0)
-         ic0a = geom%c0_to_c0a(ic0)
-         com_AC(iproc)%ext_to_red(ic0c) = ic0a
-      end do
-      com_AC(iproc)%red_to_ext = c0a_to_c0c
-
-      ! Release memory
-      deallocate(c0c_to_c0)
-      deallocate(c0a_to_c0c)
-   end do
-else
-   ! Send dimensions to ioproc
-   call mpl%send(geom%nc0a,mpl%ioproc,mpl%tag)
-   call mpl%send(hdata%nc0c,mpl%ioproc,mpl%tag+1)
-
-   ! Send data to ioproc
-   call mpl%send(hdata%nc0c,hdata%c0c_to_c0,mpl%ioproc,mpl%tag+2)
-   call mpl%send(geom%nc0a,hdata%c0a_to_c0c,mpl%ioproc,mpl%tag+3)
-end if
-mpl%tag = mpl%tag+4
-call hdata%com_AC%setup(com_AC,'com_AC')
+call hdata%com_AC%setup('com_AC',geom%nc0,geom%nc0a,hdata%nc0c,hdata%c0c_to_c0,hdata%c0a_to_c0c,geom%c0_to_proc,geom%c0_to_c0a)
 
 ! Print results
 write(mpl%unit,'(a7,a,i4)') '','Parameters for processor #',mpl%myproc
@@ -1982,15 +1775,88 @@ call flush(mpl%unit)
 end subroutine hdata_compute_mpi_c
 
 !----------------------------------------------------------------------
+! Subroutine: hdata_compute_mpi_f
+!> Purpose: compute HDIAG MPI distribution, halo F
+!----------------------------------------------------------------------
+subroutine hdata_compute_mpi_f(hdata,nam,geom)
+
+implicit none
+
+! Passed variables
+class(hdata_type),intent(inout) :: hdata !< HDIAG data
+type(nam_type),intent(in) :: nam         !< Namelist
+type(geom_type),intent(in) :: geom       !< Geometry
+
+! Local variables
+integer :: ic2,ic1,jc2,ic2a,ic2f,il0,kc2
+
+! Allocation
+allocate(hdata%lcheck_c2f(hdata%nc2))
+
+! Halo definitions
+
+! Halo D
+do il0=1,geom%nl0
+   hdata%lcheck_c2f = hdata%lcheck_c2a
+   do ic2a=1,hdata%nc2a
+      ic2 = hdata%c2a_to_c2(ic2a)
+      ic1 = hdata%c2_to_c1(ic2)
+      jc2 = 1
+      do while (isnotmsi(hdata%nn_c2_index(jc2,ic2,min(il0,geom%nl0i))) &
+    & .and.(hdata%nn_c2_dist(jc2,ic2,min(il0,geom%nl0i))<nam%diag_rhflt))
+          kc2 = hdata%nn_c2_index(jc2,ic2,min(il0,geom%nl0i))
+          hdata%lcheck_c2f(kc2) = .true.
+          jc2 = jc2+1
+          if (jc2>hdata%nc2) exit
+      end do
+   end do
+end do
+hdata%nc2f = count(hdata%lcheck_c2f)
+
+! Global <-> local conversions for fields
+
+! Halo F
+allocate(hdata%c2f_to_c2(hdata%nc2f))
+allocate(hdata%c2_to_c2f(hdata%nc2))
+call msi(hdata%c2_to_c2f)
+ic2f = 0
+do ic2=1,hdata%nc2
+   if (hdata%lcheck_c2f(ic2)) then
+      ic2f = ic2f+1
+      hdata%c2f_to_c2(ic2f) = ic2
+      hdata%c2_to_c2f(ic2) = ic2f
+   end if
+end do
+
+! Inter-halo conversions
+allocate(hdata%c2a_to_c2f(hdata%nc2a))
+do ic2a=1,hdata%nc2a
+   ic2 = hdata%c2a_to_c2(ic2a)
+   ic2f = hdata%c2_to_c2f(ic2)
+   hdata%c2a_to_c2f(ic2a) = ic2f
+end do
+
+! Setup communications
+call hdata%com_AF%setup('com_AF',hdata%nc2,hdata%nc2a,hdata%nc2f,hdata%c2f_to_c2,hdata%c2a_to_c2f,hdata%c2_to_proc,hdata%c2_to_c2a)
+
+! Print results
+write(mpl%unit,'(a7,a,i4)') '','Parameters for processor #',mpl%myproc
+write(mpl%unit,'(a10,a,i8)') '','nc2f =       ',hdata%nc2f
+call flush(mpl%unit)
+
+end subroutine hdata_compute_mpi_f
+
+!----------------------------------------------------------------------
 ! Subroutine: hdata_diag_filter
 !> Purpose: filter diagnostics
 !----------------------------------------------------------------------
-subroutine hdata_diag_filter(hdata,geom,il0,filter_type,rflt,diag)
+subroutine hdata_diag_filter(hdata,nam,geom,il0,filter_type,rflt,diag)
 
 implicit none
 
 ! Passed variables
 class(hdata_type),intent(in) :: hdata             !< HDIAG data
+type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom                !< Geometry
 integer,intent(in) :: il0                         !< Level
 character(len=*),intent(in) :: filter_type        !< Filter type
@@ -1998,14 +1864,29 @@ real(kind_real),intent(in) :: rflt                !< Filter support radius
 real(kind_real),intent(inout) :: diag(hdata%nc2a) !< Filtered diagnostic
 
 ! Local variables
-integer :: ic2a,ic2,ic1,jc2,nc2eff
+integer :: ic2a,ic2,ic1,jc2,nc2eff,kc2,kc2_glb
 integer,allocatable :: order(:)
-real(kind_real) :: diag_glb(hdata%nc2),distnorm,norm,wgt
-real(kind_real),allocatable :: diag_eff(:),diag_eff_dist(:)
+real(kind_real) :: distnorm,norm,wgt
+real(kind_real),allocatable :: diag_glb(:),diag_eff(:),diag_eff_dist(:)
+logical :: nam_rad
+
+! Check radius
+nam_rad = .not.(abs(rflt-nam%diag_rhflt)>0.0)
 
 if (rflt>0.0) then
-   ! Local to global
-   call mpl%allgatherv(hdata%nc2a,diag,hdata%proc_to_nc2a,hdata%nc2,diag_glb)
+   if (nam_rad) then
+      ! Allocation
+      allocate(diag_glb(hdata%nc2f))
+
+      ! Communication
+      call hdata%com_AF%ext(diag,diag_glb)
+   else
+      ! Allocation
+      allocate(diag_glb(hdata%nc2))
+
+      ! Local to global
+      call mpl%allgatherv(hdata%nc2a,diag,hdata%proc_to_nc2a,hdata%nc2,diag_glb)
+   end if
 
    !$omp parallel do schedule(static) private(ic2a,ic2,ic1,nc2eff,jc2,distnorm,norm,wgt) firstprivate(diag_eff,diag_eff_dist,order)
    do ic2a=1,hdata%nc2a
@@ -2021,9 +1902,15 @@ if (rflt>0.0) then
          jc2 = 1
          do while (isnotmsi(hdata%nn_c2_index(jc2,ic2,min(il0,geom%nl0i))).and.(hdata%nn_c2_dist(jc2,ic2,min(il0,geom%nl0i))<rflt))
             ! Check the point validity
-            if (isnotmsr(diag_glb(hdata%nn_c2_index(jc2,ic2,min(il0,geom%nl0i))))) then
+            kc2 = hdata%nn_c2_index(jc2,ic2,min(il0,geom%nl0i))
+            if (nam_rad) then
+               kc2_glb = hdata%c2_to_c2f(kc2)
+            else
+               kc2_glb = kc2
+            end if
+            if (isnotmsr(diag_glb(kc2_glb))) then
                nc2eff = nc2eff+1
-               diag_eff(nc2eff) = diag_glb(hdata%nn_c2_index(jc2,ic2,min(il0,geom%nl0i)))
+               diag_eff(nc2eff) = diag_glb(kc2_glb)
                diag_eff_dist(nc2eff) = hdata%nn_c2_dist(jc2,ic2,min(il0,geom%nl0i))
             end if
             jc2 = jc2+1
@@ -2036,14 +1923,6 @@ if (rflt>0.0) then
             case ('average')
                ! Compute average
                diag(ic2a) = sum(diag_eff(1:nc2eff))/real(nc2eff,kind_real)
-            case ('fill')
-               ! Fill with closest non-missing value
-               call msr(diag(ic2a))
-               jc2 = 1
-               do while ((.not.isnotmsr(diag(ic2a))).and.(jc2<=nc2eff))
-                  diag(ic2a) = diag_eff(jc2)
-                  jc2 = jc2+1
-               end do
             case ('gc99')
                ! Gaspari-Cohn (1999) kernel
                diag(ic2a) = 0.0
@@ -2082,5 +1961,56 @@ if (rflt>0.0) then
 end if
 
 end subroutine hdata_diag_filter
+
+!----------------------------------------------------------------------
+! Subroutine: hdata_diag_fill
+!> Purpose: fill diagnostics missing values
+!----------------------------------------------------------------------
+subroutine hdata_diag_fill(hdata,geom,il0,diag)
+
+implicit none
+
+! Passed variables
+class(hdata_type),intent(in) :: hdata             !< HDIAG data
+type(geom_type),intent(in) :: geom                !< Geometry
+integer,intent(in) :: il0                         !< Level
+real(kind_real),intent(inout) :: diag(hdata%nc2a) !< Filtered diagnostic
+
+! Local variables
+integer :: nmsr,nmsr_tot,ic2,jc2,kc2
+real(kind_real),allocatable :: diag_glb(:)
+
+! Count missing points
+if (hdata%nc2a>0) then
+   nmsr = count(.not.isnotmsr(diag))
+else
+   nmsr = 0
+end if
+call mpl%allreduce_sum(nmsr,nmsr_tot)
+
+if (nmsr_tot>0) then
+   ! Allocation
+   allocate(diag_glb(hdata%nc2))
+
+   ! Local to global
+   call mpl%gatherv(hdata%nc2a,diag,hdata%proc_to_nc2a,hdata%nc2,diag_glb)
+
+   if (mpl%main) then
+      do ic2=1,hdata%nc2
+         jc2 = 1
+         do while (.not.isnotmsr(diag_glb(ic2)))
+            kc2 = hdata%nn_c2_index(jc2,ic2,min(il0,geom%nl0i))
+            if (isnotmsr(diag_glb(kc2))) diag_glb(ic2) = diag_glb(kc2)
+            jc2 = jc2+1
+            if (jc2>hdata%nc2) exit
+         end do
+      end do
+   end if
+
+   ! Global to local
+   call mpl%scatterv(hdata%proc_to_nc2a,hdata%nc2,diag_glb,hdata%nc2a,diag)
+end if
+
+end subroutine hdata_diag_fill
 
 end module type_hdata

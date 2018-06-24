@@ -302,6 +302,14 @@ write(mpl%unit,'(a)') '--- Compute MPI distribution, halo C'
 call flush(mpl%unit)
 call hdata%compute_mpi_c(nam,geom)
 
+if (nam%diag_rhflt>0.0) then
+   ! Compute MPI distribution, halo F
+   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(mpl%unit,'(a)') '--- Compute MPI distribution, halo F'
+   call flush(mpl%unit)
+   call hdata%compute_mpi_f(nam,geom)
+end if
+
 ! Compute sample moments
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Compute sample moments'

@@ -53,8 +53,8 @@ implicit none
 integer(c_int), intent(inout) :: c_key_self
 type(c_ptr), intent(in)    :: c_conf
 
-integer :: ix,iy,nx_loc,ix_loc
-real(kind=kind_real) :: dx,dytot,dy
+integer :: ix,iy
+real(kind=kind_real) :: dx,dy
 real(kind=kind_real),parameter :: pi = acos(-1.0)
 real(kind=kind_real),parameter :: req = 6371229.0
 type(qg_geom), pointer :: self
@@ -70,18 +70,25 @@ allocate(self%lon(self%nx))
 allocate(self%lat(self%ny))
 allocate(self%area(self%nx,self%ny))
 
-dx = 360.0_kind_real / real(self%nx,kind=kind_real);
-dytot = 360.0_kind_real * real(self%ny,kind=kind_real) / real(self%nx,kind=kind_real);
-dy = dytot / real(self%ny,kind=kind_real);
+! Define longitude/latitude
+dx = 2.0*pi/real(self%nx,kind=kind_real)
+dy = pi/real(self%ny,kind=kind_real)
 do ix=1,self%nx
-   self%lon(ix) = -180.0_kind_real+(real(ix,kind=kind_real)-1.0_kind_real)*dx
+   self%lon(ix) = -pi+(real(ix,kind=kind_real)-0.5_kind_real)*dx
 end do
 do iy=1,self%ny
-   self%lat(iy) = -90.0_kind_real+(real(iy,kind=kind_real)-1.0_kind_real)*dy;
+   self%lat(iy) = -0.5*pi+(real(iy,kind=kind_real)-0.5_kind_real)*dy
 end do
+
+! Define area
 do iy=1,self%ny
-   self%area(:,iy) = 6.371e6**2*cos(self%lat(iy))*dx*dy
+   self%area(:,iy) = 2.0*pi*req**2*(sin((self%lat(iy)+0.5_kind_real*dy))-sin((self%lat(iy)-0.5_kind_real*dy))) &
+            & /real(self%nx,kind=kind_real)
 end do
+
+! Convert longitude/latitude to degrees
+self%lon = self%lon*180_kind_real/pi
+self%lat = self%lat*180_kind_real/pi
 
 end subroutine c_qg_geo_setup
 

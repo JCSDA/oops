@@ -22,7 +22,7 @@ public unstructured_grid, create_unstructured_grid, delete_unstructured_grid, &
 !>  Derived type containing the data
 
 type unstructured_grid
-  integer :: nc0a                                  !> Number of gridpoints (on a given MPI task)
+  integer :: nmga                                  !> Number of gridpoints (on a given MPI task)
   integer :: nl0                                   !> Number of levels
   integer :: nv                                    !> Number of variables
   integer :: nts                                   !> Number of timeslots
@@ -94,7 +94,7 @@ call unstructured_grid_registry%get(key,self)
 select case (ind)
 case (1)
    ! Number of gridpoints
-   isize = self%nc0a
+   isize = self%nmga
 case (2)
    ! Number of levels
    isize = self%nl0
@@ -202,33 +202,33 @@ end subroutine get_data_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine create_unstructured_grid(self, nc0a, nl0, nv, nts, lon, lat, area, vunit, imask)
+subroutine create_unstructured_grid(self, nmga, nl0, nv, nts, lon, lat, area, vunit, imask)
 implicit none
 type(unstructured_grid), intent(inout) :: self
-integer, intent(in) :: nc0a
+integer, intent(in) :: nmga
 integer, intent(in) :: nl0
 integer, intent(in) :: nv
 integer, intent(in) :: nts
-real(kind=kind_real), intent(in) :: lon(nc0a)
-real(kind=kind_real), intent(in) :: lat(nc0a)
-real(kind=kind_real), intent(in) :: area(nc0a)
-real(kind=kind_real), intent(in) :: vunit(nc0a,nl0)
-integer, intent(in) :: imask(nc0a,nl0)
+real(kind=kind_real), intent(in) :: lon(nmga)
+real(kind=kind_real), intent(in) :: lat(nmga)
+real(kind=kind_real), intent(in) :: area(nmga)
+real(kind=kind_real), intent(in) :: vunit(nmga,nl0)
+integer, intent(in) :: imask(nmga,nl0)
 
 ! Copy sizes
-self%nc0a = nc0a
+self%nmga = nmga
 self%nl0 = nl0
 self%nv = nv
 self%nts = nts
 if (nts>1) call msgerror('not ready yet for nts>1')
 
 ! Allocation
-allocate(self%lon(nc0a))
-allocate(self%lat(nc0a))
-allocate(self%area(nc0a))
-allocate(self%vunit(nc0a,nl0))
-allocate(self%imask(nc0a,nl0))
-allocate(self%fld(nc0a,nl0,nv,nts))
+allocate(self%lon(nmga))
+allocate(self%lat(nmga))
+allocate(self%area(nmga))
+allocate(self%vunit(nmga,nl0))
+allocate(self%imask(nmga,nl0))
+allocate(self%fld(nmga,nl0,nv,nts))
 
 ! Copy coordinates
 self%lon = lon

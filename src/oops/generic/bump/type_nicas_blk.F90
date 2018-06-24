@@ -475,6 +475,7 @@ if (nicas_blk%nc1>nc1max) then
  & /(2.0*maxval(geom%area)))
    call flush(mpl%unit)
 end if
+if (nicas_blk%nc1<3) call msgerror('nicas_blk%nc1 lower than 3')
 
 ! Allocation
 allocate(nicas_blk%c1_to_c0(nicas_blk%nc1))
@@ -592,6 +593,7 @@ do il1=1,nicas_blk%nl1
    il0 = nicas_blk%l1_to_l0(il1)
    nicas_blk%nc2(il1) = floor(2.0*geom%area(il0)*nam%resol**2/(sqrt(3.0)*rh0savg(il0)**2))
    nicas_blk%nc2(il1) = min(nicas_blk%nc2(il1),nicas_blk%nc1)
+   if (nicas_blk%nc2(il1)<3) call msgerror('nicas_blk%nc2 lower than 3')
 
    if (nicas_blk%nc2(il1)<nicas_blk%nc1) then
       ! Allocation
@@ -919,11 +921,8 @@ type(geom_type),intent(in) :: geom               !< Geometry
 
 ! Local variables
 integer :: il0i,ic0,ic0a,iproc,ic1,jc1,ic1a,ic1b,il0,il1,isa,isb,i_s,i_s_loc,is,js,h_n_s_max,s_n_s_max,h_n_s_max_loc,s_n_s_max_loc
-integer :: nsa,nsb
 integer,allocatable :: interph_lg(:,:),interps_lg(:,:)
 logical :: lcheck_c1b_h(nicas_blk%nc1)
-integer,allocatable :: sa_to_s(:),sb_to_s(:),sa_to_sb(:)
-type(com_type) :: com_AB(mpl%nproc)
 
 ! Allocation
 h_n_s_max = 0
@@ -1018,17 +1017,17 @@ end do
 ! Halo A
 allocate(nicas_blk%c1a_to_c1(nicas_blk%nc1a))
 allocate(nicas_blk%c1_to_c1a(nicas_blk%nc1))
-call msi(nicas_blk%c1_to_c1a)
 ic1a = 0
 do ic1=1,nicas_blk%nc1
    if (nicas_blk%lcheck_c1a(ic1)) then
       ic1a = ic1a+1
       nicas_blk%c1a_to_c1(ic1a) = ic1
-      nicas_blk%c1_to_c1a(ic1) = ic1a
    end if
 end do
+call mpl%glb_to_loc(nicas_blk%nc1a,nicas_blk%c1a_to_c1,nicas_blk%nc1,nicas_blk%c1_to_c1a)
 
 allocate(nicas_blk%sa_to_s(nicas_blk%nsa))
+allocate(nicas_blk%s_to_sa(nicas_blk%ns))
 isa = 0
 do is=1,nicas_blk%ns
    if (nicas_blk%lcheck_sa(is)) then
@@ -1036,6 +1035,7 @@ do is=1,nicas_blk%ns
       nicas_blk%sa_to_s(isa) = is
    end if
 end do
+call mpl%glb_to_loc(nicas_blk%nsa,nicas_blk%sa_to_s,nicas_blk%ns,nicas_blk%s_to_sa)
 
 ! Halo B
 allocate(nicas_blk%c1b_to_c1(nicas_blk%nc1b))
@@ -1182,110 +1182,9 @@ do isb=1,nicas_blk%nsb
    nicas_blk%c1bl1_to_sb(ic1b,il1) = isb
 end do
 
-! Get global distribution of the subgrid on ioproc
-if (mpl%main) then
-   ! Allocation
-   allocate(nicas_blk%s_to_sa(nicas_blk%ns))
-
-   do iproc=1,mpl%nproc
-      if (iproc==mpl%ioproc) then
-         ! Copy dimension
-         nsa = nicas_blk%nsa
-      else
-         ! Receive dimension on ioproc
-         call mpl%recv(nsa,iproc,mpl%tag)
-      end if
-
-      ! Allocation
-      allocate(sa_to_s(nsa))
-
-      if (iproc==mpl%ioproc) then
-         ! Copy data
-         sa_to_s = nicas_blk%sa_to_s
-      else
-         ! Receive data on ioproc
-         call mpl%recv(nsa,sa_to_s,iproc,mpl%tag+1)
-      end if
-
-      ! Fill s_to_sa
-      do isa=1,nsa
-         nicas_blk%s_to_sa(sa_to_s(isa)) = isa
-      end do
-
-      ! Release memory
-      deallocate(sa_to_s)
-   end do
-else
-   ! Send dimensions to ioproc
-   call mpl%send(nicas_blk%nsa,mpl%ioproc,mpl%tag)
-
-   ! Send data to ioproc
-   call mpl%send(nicas_blk%nsa,nicas_blk%sa_to_s,mpl%ioproc,mpl%tag+1)
-end if
-mpl%tag = mpl%tag+2
-
 ! Setup communications
-if (mpl%main) then
-   do iproc=1,mpl%nproc
-      ! Communicate dimensions
-      if (iproc==mpl%ioproc) then
-         ! Copy dimensions
-         nsa = nicas_blk%nsa
-         nsb = nicas_blk%nsb
-      else
-         ! Receive dimensions on ioproc
-         call mpl%recv(nsa,iproc,mpl%tag)
-         call mpl%recv(nsb,iproc,mpl%tag+1)
-      end if
-
-      ! Allocation
-      allocate(sb_to_s(nsb))
-      allocate(sa_to_sb(nsa))
-
-      ! Communicate data
-      if (iproc==mpl%ioproc) then
-         ! Copy data
-         sb_to_s = nicas_blk%sb_to_s
-         sa_to_sb = nicas_blk%sa_to_sb
-      else
-         ! Receive data on ioproc
-         call mpl%recv(nsb,sb_to_s,iproc,mpl%tag+2)
-         call mpl%recv(nsa,sa_to_sb,iproc,mpl%tag+3)
-      end if
-
-      ! Allocation
-      com_AB(iproc)%nred = nsa
-      com_AB(iproc)%next = nsb
-      allocate(com_AB(iproc)%ext_to_proc(com_AB(iproc)%next))
-      allocate(com_AB(iproc)%ext_to_red(com_AB(iproc)%next))
-      allocate(com_AB(iproc)%red_to_ext(com_AB(iproc)%nred))
-
-      ! AB communication
-      do isb=1,nsb
-         is = sb_to_s(isb)
-         ic1 = nicas_blk%s_to_c1(is)
-         ic0 = nicas_blk%c1_to_c0(ic1)
-         com_AB(iproc)%ext_to_proc(isb) = geom%c0_to_proc(ic0)
-         isa = nicas_blk%s_to_sa(is)
-         com_AB(iproc)%ext_to_red(isb) = isa
-      end do
-      com_AB(iproc)%red_to_ext = sa_to_sb
-
-      ! Release memory
-      deallocate(sb_to_s)
-      deallocate(sa_to_sb)
-   end do
-else
-   ! Send dimensions to ioproc
-   call mpl%send(nicas_blk%nsa,mpl%ioproc,mpl%tag)
-   call mpl%send(nicas_blk%nsb,mpl%ioproc,mpl%tag+1)
-
-   ! Send data to ioproc
-   call mpl%send(nicas_blk%nsb,nicas_blk%sb_to_s,mpl%ioproc,mpl%tag+2)
-   call mpl%send(nicas_blk%nsa,nicas_blk%sa_to_sb,mpl%ioproc,mpl%tag+3)
-end if
-mpl%tag = mpl%tag+4
-call nicas_blk%com_AB%setup(com_AB,'com_AB')
+call nicas_blk%com_AB%setup('com_AB',nicas_blk%ns,nicas_blk%nsa,nicas_blk%nsb,nicas_blk%sb_to_s,nicas_blk%sa_to_sb, &
+ & geom%c0_to_proc(nicas_blk%c1_to_c0(nicas_blk%s_to_c1)),nicas_blk%s_to_sa)
 
 end subroutine nicas_blk_compute_mpi_ab
 
@@ -2063,9 +1962,7 @@ class(nicas_blk_type),intent(inout) :: nicas_blk !< NICAS data block
 type(geom_type),intent(in) :: geom               !< Geometry
 
 ! Local variables
-integer :: iproc,ic0,ic1,isa,isb,isc,i_s,is,js,nsa,nsc
-integer,allocatable :: sc_to_s(:),sa_to_sc(:)
-type(com_type) :: com_AC(mpl%nproc)
+integer :: isa,isb,isc,i_s,is,js
 
 ! Allocation
 allocate(nicas_blk%lcheck_sc(nicas_blk%ns))
@@ -2165,67 +2062,8 @@ end do
 call nicas_blk%c_nor%reorder
 
 ! Setup communications
-if (mpl%main) then
-   do iproc=1,mpl%nproc
-      ! Communicate dimensions
-      if (iproc==mpl%ioproc) then
-         ! Copy dimensions
-         nsa = nicas_blk%nsa
-         nsc = nicas_blk%nsc
-      else
-         ! Receive dimensions on ioproc
-         call mpl%recv(nsa,iproc,mpl%tag)
-         call mpl%recv(nsc,iproc,mpl%tag+1)
-      end if
-
-      ! Allocation
-      allocate(sc_to_s(nsc))
-      allocate(sa_to_sc(nsa))
-
-      ! Communicate data
-      if (iproc==mpl%ioproc) then
-         ! Copy data
-         sc_to_s = nicas_blk%sc_to_s
-         sa_to_sc = nicas_blk%sa_to_sc
-      else
-         ! Receive data on ioproc
-         call mpl%recv(nsc,sc_to_s,iproc,mpl%tag+2)
-         call mpl%recv(nsa,sa_to_sc,iproc,mpl%tag+3)
-      end if
-
-      ! Allocation
-      com_AC(iproc)%nred = nsa
-      com_AC(iproc)%next = nsc
-      allocate(com_AC(iproc)%ext_to_proc(com_AC(iproc)%next))
-      allocate(com_AC(iproc)%ext_to_red(com_AC(iproc)%next))
-      allocate(com_AC(iproc)%red_to_ext(com_AC(iproc)%nred))
-
-      ! AC communication
-      do isc=1,nsc
-         is = sc_to_s(isc)
-         ic1 = nicas_blk%s_to_c1(is)
-         ic0 = nicas_blk%c1_to_c0(ic1)
-         com_AC(iproc)%ext_to_proc(isc) = geom%c0_to_proc(ic0)
-         isa = nicas_blk%s_to_sa(is)
-         com_AC(iproc)%ext_to_red(isc) = isa
-      end do
-      com_AC(iproc)%red_to_ext = sa_to_sc
-
-      ! Release memory
-      deallocate(sc_to_s)
-      deallocate(sa_to_sc)
-   end do
-else
-   ! Send dimensions to ioproc
-   call mpl%send(nicas_blk%nsa,mpl%ioproc,mpl%tag)
-   call mpl%send(nicas_blk%nsc,mpl%ioproc,mpl%tag+1)
-
-   ! Send data to ioproc
-   call mpl%send(nicas_blk%nsc,nicas_blk%sc_to_s,mpl%ioproc,mpl%tag+2)
-   call mpl%send(nicas_blk%nsa,nicas_blk%sa_to_sc,mpl%ioproc,mpl%tag+3)
-end if
-mpl%tag = mpl%tag+4
-call nicas_blk%com_AC%setup(com_AC,'com_AC')
+call nicas_blk%com_AC%setup('com_AC',nicas_blk%ns,nicas_blk%nsa,nicas_blk%nsc,nicas_blk%sc_to_s,nicas_blk%sa_to_sc, &
+ & geom%c0_to_proc(nicas_blk%c1_to_c0(nicas_blk%s_to_c1)),nicas_blk%s_to_sa)
 
 end subroutine nicas_blk_compute_mpi_c
 
@@ -2488,21 +2326,17 @@ type(geom_type),intent(in) :: geom               !< Geometry
 type(cmat_blk_type),intent(in) :: cmat_blk       !< C matrix data block
 
 ! Local variables
-integer :: its,il0,ic0,ic0a,nc0a,i_s,i_s_loc,iproc,jc0
-integer :: ic0d,nc0d,d_n_s_max,d_n_s_max_loc
-integer :: ic0dinv,nc0dinv,dinv_n_s_max,dinv_n_s_max_loc
+integer :: its,il0,ic0,ic0a,i_s,i_s_loc,iproc,jc0
+integer :: ic0d,d_n_s_max,d_n_s_max_loc
+integer :: ic0dinv,dinv_n_s_max,dinv_n_s_max_loc
 integer,allocatable :: c0d_to_c0(:),c0_to_c0d(:),c0a_to_c0d(:),interpd_lg(:,:,:)
 integer,allocatable :: c0dinv_to_c0(:),c0_to_c0dinv(:),c0a_to_c0dinv(:),interpdinv_lg(:,:,:)
-integer,allocatable :: c0d_to_c0_copy(:),c0a_to_c0d_copy(:)
-integer,allocatable :: c0dinv_to_c0_copy(:),c0a_to_c0dinv_copy(:)
 real(kind_real) :: displ_lon(geom%nc0),displ_lat(geom%nc0)
 logical :: mask_c0(geom%nc0)
 logical,allocatable :: lcheck_c0d(:),lcheck_d(:,:,:)
 logical,allocatable :: lcheck_c0dinv(:),lcheck_dinv(:,:,:)
 type(linop_type),allocatable :: dfull(:,:)
 type(linop_type),allocatable :: dinvfull(:,:)
-type(com_type) :: com_AD(mpl%nproc)
-type(com_type) :: com_ADinv(mpl%nproc)
 
 write(mpl%unit,'(a7,a)') '','Compute advection'
 call flush(mpl%unit)
@@ -2683,93 +2517,9 @@ do its=2,nam%nts
 end do
 
 ! Setup communications
-if (mpl%main) then
-   do iproc=1,mpl%nproc
-      ! Communicate dimensions
-      if (iproc==mpl%ioproc) then
-         ! Copy dimensions
-         nc0a = geom%nc0a
-         nc0d = nicas_blk%nc0d
-         nc0dinv = nicas_blk%nc0dinv
-      else
-         ! Receive dimensions on ioproc
-         call mpl%recv(nc0a,iproc,mpl%tag)
-         call mpl%recv(nc0d,iproc,mpl%tag+1)
-         call mpl%recv(nc0dinv,iproc,mpl%tag+2)
-      end if
-
-      ! Allocation
-      allocate(c0d_to_c0_copy(nc0d))
-      allocate(c0dinv_to_c0_copy(nc0dinv))
-      allocate(c0a_to_c0d_copy(nc0a))
-      allocate(c0a_to_c0dinv_copy(nc0a))
-
-      ! Communicate data
-      if (iproc==mpl%ioproc) then
-         ! Copy data
-         c0d_to_c0_copy = c0d_to_c0
-         c0dinv_to_c0_copy = c0dinv_to_c0
-         c0a_to_c0d_copy = c0a_to_c0d
-         c0a_to_c0dinv_copy = c0a_to_c0dinv
-      else
-         ! Receive data on ioproc
-         call mpl%recv(nc0d,c0d_to_c0_copy,iproc,mpl%tag+3)
-         call mpl%recv(nc0dinv,c0dinv_to_c0_copy,iproc,mpl%tag+4)
-         call mpl%recv(nc0a,c0a_to_c0d_copy,iproc,mpl%tag+5)
-         call mpl%recv(nc0a,c0a_to_c0dinv_copy,iproc,mpl%tag+6)
-      end if
-
-      ! Allocation
-      com_AD(iproc)%nred = nc0a
-      com_ADinv(iproc)%nred = nc0a
-      com_AD(iproc)%next = nc0d
-      com_ADinv(iproc)%next = nc0dinv
-      allocate(com_AD(iproc)%ext_to_proc(com_AD(iproc)%next))
-      allocate(com_ADinv(iproc)%ext_to_proc(com_ADinv(iproc)%next))
-      allocate(com_AD(iproc)%ext_to_red(com_AD(iproc)%next))
-      allocate(com_ADinv(iproc)%ext_to_red(com_ADinv(iproc)%next))
-      allocate(com_AD(iproc)%red_to_ext(com_AD(iproc)%nred))
-      allocate(com_ADinv(iproc)%red_to_ext(com_ADinv(iproc)%nred))
-
-      ! AD communication
-      do ic0d=1,nc0d
-         ic0 = c0d_to_c0_copy(ic0d)
-         com_AD(iproc)%ext_to_proc(ic0d) = geom%c0_to_proc(ic0)
-         ic0a = geom%c0_to_c0a(ic0)
-         com_AD(iproc)%ext_to_red(ic0d) = ic0a
-      end do
-      com_AD(iproc)%red_to_ext = c0a_to_c0d_copy
-
-      ! ADinv communication
-      do ic0dinv=1,nc0dinv
-         ic0 = c0dinv_to_c0_copy(ic0dinv)
-         com_ADinv(iproc)%ext_to_proc(ic0dinv) = geom%c0_to_proc(ic0)
-         ic0a = geom%c0_to_c0a(ic0)
-         com_ADinv(iproc)%ext_to_red(ic0dinv) = ic0a
-      end do
-      com_ADinv(iproc)%red_to_ext = c0a_to_c0dinv_copy
-
-      ! Release memory
-      deallocate(c0d_to_c0_copy)
-      deallocate(c0dinv_to_c0_copy)
-      deallocate(c0a_to_c0d_copy)
-      deallocate(c0a_to_c0dinv_copy)
-   end do
-else
-   ! Send dimensions to ioproc
-   call mpl%send(geom%nc0a,mpl%ioproc,mpl%tag)
-   call mpl%send(nicas_blk%nc0d,mpl%ioproc,mpl%tag+1)
-   call mpl%send(nicas_blk%nc0dinv,mpl%ioproc,mpl%tag+2)
-
-   ! Send data to ioproc
-   call mpl%send(nicas_blk%nc0d,c0d_to_c0,mpl%ioproc,mpl%tag+3)
-   call mpl%send(nicas_blk%nc0dinv,c0dinv_to_c0,mpl%ioproc,mpl%tag+4)
-   call mpl%send(geom%nc0a,c0a_to_c0d,mpl%ioproc,mpl%tag+5)
-   call mpl%send(geom%nc0a,c0a_to_c0dinv,mpl%ioproc,mpl%tag+6)
-end if
-mpl%tag = mpl%tag+7
-call nicas_blk%com_AD%setup(com_AD,'com_AD')
-call nicas_blk%com_ADinv%setup(com_ADinv,'com_ADinv')
+call nicas_blk%com_AD%setup('com_AD',geom%nc0,geom%nc0a,nicas_blk%nc0d,c0d_to_c0,c0a_to_c0d,geom%c0_to_proc,geom%c0_to_c0a)
+call nicas_blk%com_ADinv%setup('com_ADinv',geom%nc0,geom%nc0a,nicas_blk%nc0dinv,c0dinv_to_c0,c0a_to_c0dinv, &
+ & geom%c0_to_proc,geom%c0_to_c0a)
 
 ! Print results
 write(mpl%unit,'(a7,a,i4)') '','Parameters for processor #',mpl%myproc

@@ -469,14 +469,14 @@ do its=2,nam%nts
             dz = dz_ini
 
             ! Median filter to remove extreme values
-            call hdata%diag_filter(geom,il0,'median',displ%rhflt(iter,il0,its),dx)
-            call hdata%diag_filter(geom,il0,'median',displ%rhflt(iter,il0,its),dy)
-            call hdata%diag_filter(geom,il0,'median',displ%rhflt(iter,il0,its),dz)
+            call hdata%diag_filter(nam,geom,il0,'median',displ%rhflt(iter,il0,its),dx)
+            call hdata%diag_filter(nam,geom,il0,'median',displ%rhflt(iter,il0,its),dy)
+            call hdata%diag_filter(nam,geom,il0,'median',displ%rhflt(iter,il0,its),dz)
 
             ! Average filter to smooth displacement
-            call hdata%diag_filter(geom,il0,'gc99',displ%rhflt(iter,il0,its),dx)
-            call hdata%diag_filter(geom,il0,'gc99',displ%rhflt(iter,il0,its),dy)
-            call hdata%diag_filter(geom,il0,'gc99',displ%rhflt(iter,il0,its),dz)
+            call hdata%diag_filter(nam,geom,il0,'gc99',displ%rhflt(iter,il0,its),dx)
+            call hdata%diag_filter(nam,geom,il0,'gc99',displ%rhflt(iter,il0,its),dy)
+            call hdata%diag_filter(nam,geom,il0,'gc99',displ%rhflt(iter,il0,its),dz)
 
             ! Back to spherical coordinates
             dx = dx+x_ori

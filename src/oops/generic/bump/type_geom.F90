@@ -199,11 +199,9 @@ real(kind_real),intent(in) :: vunit(nmga,nl0) !< Vertical unit
 logical,intent(in) :: lmask(nmga,nl0)         !< Mask
 
 ! Local variables
-integer :: ic0,ic0a,il0,offset,iproc,img,imga,nc0a,nmga_loc
-integer,allocatable :: c0a_to_c0(:),mga_to_mg(:),c0a_to_mga(:)
+integer :: ic0,ic0a,il0,offset,iproc,img,imga
 real(kind_real),allocatable :: lon_mg(:),lat_mg(:),area_mg(:),vunit_mg(:,:)
 logical,allocatable :: lmask_mg(:,:)
-type(com_type) :: com_mg(mpl%nproc)
 
 ! Copy geometry variables
 geom%nmga = nmga
@@ -290,7 +288,6 @@ call geom%find_redundant(lon_mg,lat_mg)
 call geom%alloc
 allocate(geom%proc_to_nc0a(mpl%nproc))
 allocate(geom%c0_to_proc(geom%nc0))
-allocate(geom%c0_to_c0a(geom%nc0))
 
 ! Model grid conversions and Sc0 size on halo A
 img = 0
@@ -308,15 +305,16 @@ geom%nc0a = geom%proc_to_nc0a(mpl%myproc)
 
 ! Subset Sc0 conversions
 allocate(geom%c0a_to_c0(geom%nc0a))
+allocate(geom%c0_to_c0a(geom%nc0))
 ic0 = 0
 do iproc=1,mpl%nproc
    do ic0a=1,geom%proc_to_nc0a(iproc)
       ic0 = ic0+1
       geom%c0_to_proc(ic0) = iproc
-      geom%c0_to_c0a(ic0) = ic0a
       if (iproc==mpl%myproc) geom%c0a_to_c0(ic0a) = ic0
    end do
 end do
+call mpl%glb_to_loc(geom%nc0a,geom%c0a_to_c0,geom%nc0,geom%c0_to_c0a)
 
 ! Inter-halo conversions
 allocate(geom%c0a_to_mga(geom%nc0a))
@@ -327,106 +325,9 @@ do ic0a=1,geom%nc0a
    geom%c0a_to_mga(ic0a) = imga
 end do
 
-! Get global distribution of the subgrid on ioproc
-if (mpl%main) then
-   do iproc=1,mpl%nproc
-      if (iproc==mpl%ioproc) then
-         ! Copy dimension
-         nc0a = geom%nc0a
-      else
-         ! Receive dimension on ioproc
-         call mpl%recv(nc0a,iproc,mpl%tag)
-      end if
-
-      ! Allocation
-      allocate(c0a_to_c0(nc0a))
-
-      if (iproc==mpl%ioproc) then
-         ! Copy data
-         c0a_to_c0 = geom%c0a_to_c0
-      else
-         ! Receive data on ioproc
-         call mpl%recv(nc0a,c0a_to_c0,iproc,mpl%tag+1)
-      end if
-
-      ! Fill c0_to_c0a
-      do ic0a=1,nc0a
-         geom%c0_to_c0a(c0a_to_c0(ic0a)) = ic0a
-      end do
-
-      ! Release memory
-      deallocate(c0a_to_c0)
-   end do
-else
-   ! Send dimensions to ioproc
-   call mpl%send(geom%nc0a,mpl%ioproc,mpl%tag)
-
-   ! Send data to ioproc
-   call mpl%send(geom%nc0a,geom%c0a_to_c0,mpl%ioproc,mpl%tag+1)
-end if
-mpl%tag = mpl%tag+2
-
 ! Setup communications
-if (mpl%main) then
-   do iproc=1,mpl%nproc
-      ! Communicate dimensions
-      if (iproc==mpl%ioproc) then
-         ! Copy dimensions
-         nc0a = geom%nc0a
-         nmga_loc = geom%nmga
-      else
-         ! Receive dimensions on ioproc
-         call mpl%recv(nc0a,iproc,mpl%tag)
-         call mpl%recv(nmga_loc,iproc,mpl%tag+1)
-      end if
-
-      ! Allocation
-      allocate(mga_to_mg(nmga_loc))
-      allocate(c0a_to_mga(nc0a))
-
-      ! Communicate data
-      if (iproc==mpl%ioproc) then
-         ! Copy data
-         mga_to_mg = geom%mga_to_mg
-         c0a_to_mga = geom%c0a_to_mga
-      else
-         ! Receive data on ioproc
-         call mpl%recv(nmga_loc,mga_to_mg,iproc,mpl%tag+2)
-         call mpl%recv(nc0a,c0a_to_mga,iproc,mpl%tag+3)
-      end if
-
-      ! Allocation
-      com_mg(iproc)%nred = nc0a
-      com_mg(iproc)%next = nmga_loc
-      allocate(com_mg(iproc)%ext_to_proc(com_mg(iproc)%next))
-      allocate(com_mg(iproc)%ext_to_red(com_mg(iproc)%next))
-      allocate(com_mg(iproc)%red_to_ext(com_mg(iproc)%nred))
-
-      ! Communication
-      do imga=1,nmga_loc
-         img = mga_to_mg(imga)
-         ic0 = geom%mg_to_c0(img)
-         com_mg(iproc)%ext_to_proc(imga) = geom%c0_to_proc(ic0)
-         ic0a = geom%c0_to_c0a(ic0)
-         com_mg(iproc)%ext_to_red(imga) = ic0a
-      end do
-      com_mg(iproc)%red_to_ext = c0a_to_mga
-
-      ! Release memory
-      deallocate(mga_to_mg)
-      deallocate(c0a_to_mga)
-   end do
-else
-   ! Send dimensions to ioproc
-   call mpl%send(geom%nc0a,mpl%ioproc,mpl%tag)
-   call mpl%send(geom%nmga,mpl%ioproc,mpl%tag+1)
-
-   ! Send data to ioproc
-   call mpl%send(geom%nmga,geom%mga_to_mg,mpl%ioproc,mpl%tag+2)
-   call mpl%send(geom%nc0a,geom%c0a_to_mga,mpl%ioproc,mpl%tag+3)
-end if
-mpl%tag = mpl%tag+4
-call geom%com_mg%setup(com_mg,'com_mg')
+call geom%com_mg%setup('com_mg',geom%nmg,geom%nc0a,geom%nmga,geom%mga_to_mg,geom%c0a_to_mga, &
+ & geom%c0_to_proc(geom%mg_to_c0),geom%c0_to_c0a)
 
 ! Deal with mask on redundant points
 do il0=1,geom%nl0
@@ -595,10 +496,10 @@ end do
 ! Print summary
 write(mpl%unit,'(a10,a,f7.1,a,f7.1)') '','Min. / max. longitudes:',minval(geom%lon)*rad2deg,' / ',maxval(geom%lon)*rad2deg
 write(mpl%unit,'(a10,a,f7.1,a,f7.1)') '','Min. / max. latitudes: ',minval(geom%lat)*rad2deg,' / ',maxval(geom%lat)*rad2deg
-write(mpl%unit,'(a10,a)') '','Averaged area / vunit / mask size:'
+write(mpl%unit,'(a10,a)') '','Unmasked area (% of Earth area) / masked points / vertical unit:'
 do il0=1,geom%nl0
-   write(mpl%unit,'(a13,a,i3,a,e9.2,a,f12.1,a,i8,a)') '','Level ',nam%levs(il0),' ~> ',geom%area(il0)*reqkm**2,' km^2 / ', &
- & geom%vunitavg(il0),' '//trim(vunitchar)//' / ',count(geom%mask(:,il0)),' points'
+   write(mpl%unit,'(a13,a,i3,a,f5.1,a,f5.1,a,f12.1,a)') '','Level ',nam%levs(il0),' ~> ',geom%area(il0)/(4.0*pi)*100.0,'% / ', &
+ & real(count(.not.geom%mask(:,il0)),kind_real)/real(geom%nc0,kind_real)*100.0,'% / ',geom%vunitavg(il0),' '//trim(vunitchar)
 end do
 write(mpl%unit,'(a7,a)') '','Distribution summary:'
 do iproc=1,mpl%nproc

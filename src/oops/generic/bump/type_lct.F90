@@ -288,7 +288,7 @@ do ib=1,bpar%nb
                end if
 
                ! Fill missing values
-               call hdata%diag_filter(geom,il0,'fill',2.0*pi,fld_c1a)
+               call hdata%diag_fill(geom,il0,fld_c1a)
 
                ! Copy
                if (icomp<=lct%blk(ib)%ncomp(iscales)) then

@@ -64,7 +64,7 @@ end type minim_type
 
 real(kind_real),parameter :: rho = 0.5_kind_real     !< Convergence parameter for the Hooke algorithm
 real(kind_real),parameter :: tol = 1.0e-6_kind_real  !< Tolerance for the Hooke algorithm
-integer,parameter :: itermax = 10                    !< Maximum number of iteration for the Hook algorithm
+integer,parameter :: itermax = 10                    !< Maximum number of iteration for the Hooke algorithm
 real(kind_real),parameter :: rth = 1.0e-12_kind_real !< Reproducibility threshold
 
 private

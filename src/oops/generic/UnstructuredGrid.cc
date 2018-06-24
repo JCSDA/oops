@@ -27,60 +27,60 @@ int UnstructuredGrid::getSize(const int & ind) {
 }
 // -----------------------------------------------------------------------------
 std::vector<double> UnstructuredGrid::getLon() {
-  int nc0a;
-  get_size_f90(keyUGrid_, 1, nc0a);
-  std::vector<double> lon(nc0a);
-  get_lon_f90(keyUGrid_, nc0a, &lon[0]);
+  int nmga;
+  get_size_f90(keyUGrid_, 1, nmga);
+  std::vector<double> lon(nmga);
+  get_lon_f90(keyUGrid_, nmga, &lon[0]);
   return lon;
 }
 // -----------------------------------------------------------------------------
 std::vector<double> UnstructuredGrid::getLat() {
-  int nc0a;
-  get_size_f90(keyUGrid_, 1, nc0a);
-  std::vector<double> lat(nc0a);
-  get_lat_f90(keyUGrid_, nc0a, &lat[0]);
+  int nmga;
+  get_size_f90(keyUGrid_, 1, nmga);
+  std::vector<double> lat(nmga);
+  get_lat_f90(keyUGrid_, nmga, &lat[0]);
   return lat;
 }
 // -----------------------------------------------------------------------------
 std::vector<double> UnstructuredGrid::getArea() {
-  int nc0a;
-  get_size_f90(keyUGrid_, 1, nc0a);
-  std::vector<double> area(nc0a);
-  get_area_f90(keyUGrid_, nc0a, &area[0]);
+  int nmga;
+  get_size_f90(keyUGrid_, 1, nmga);
+  std::vector<double> area(nmga);
+  get_area_f90(keyUGrid_, nmga, &area[0]);
   return area;
 }
 // -----------------------------------------------------------------------------
 std::vector<double> UnstructuredGrid::getVunit() {
-  int nc0a;
-  get_size_f90(keyUGrid_, 1, nc0a);
+  int nmga;
+  get_size_f90(keyUGrid_, 1, nmga);
   int nl0;
   get_size_f90(keyUGrid_, 2, nl0);
-  std::vector<double> vunit(nc0a*nl0);
-  get_vunit_f90(keyUGrid_, nc0a*nl0, &vunit[0]);
+  std::vector<double> vunit(nmga*nl0);
+  get_vunit_f90(keyUGrid_, nmga*nl0, &vunit[0]);
   return vunit;
 }
 // -----------------------------------------------------------------------------
 std::vector<int> UnstructuredGrid::getImask() {
-  int nc0a;
-  get_size_f90(keyUGrid_, 1, nc0a);
+  int nmga;
+  get_size_f90(keyUGrid_, 1, nmga);
   int nl0;
   get_size_f90(keyUGrid_, 2, nl0);
-  std::vector<int> imask(nc0a*nl0);
-  get_imask_f90(keyUGrid_, nc0a*nl0, &imask[0]);
+  std::vector<int> imask(nmga*nl0);
+  get_imask_f90(keyUGrid_, nmga*nl0, &imask[0]);
   return imask;
 }
 // -----------------------------------------------------------------------------
 std::vector<double> UnstructuredGrid::getData() {
-  int nc0a;
-  get_size_f90(keyUGrid_, 1, nc0a);
+  int nmga;
+  get_size_f90(keyUGrid_, 1, nmga);
   int nl0;
   get_size_f90(keyUGrid_, 2, nl0);
   int nv;
   get_size_f90(keyUGrid_, 3, nv);
   int nts;
   get_size_f90(keyUGrid_, 4, nts);
-  std::vector<double> data(nc0a*nl0*nv*nts);
-  get_data_f90(keyUGrid_, nc0a*nl0*nv*nts, &data[0]);
+  std::vector<double> data(nmga*nl0*nv*nts);
+  get_data_f90(keyUGrid_, nmga*nl0*nv*nts, &data[0]);
   return data;
 }
 // -----------------------------------------------------------------------------
