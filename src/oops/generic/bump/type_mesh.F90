@@ -12,15 +12,16 @@ module type_mesh
 
 !$ use omp_lib
 use tools_const, only: req
-use tools_display, only: msgerror,msgwarning
 use tools_func, only: sphere_dist,vector_product
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsi,isnotmsr,isallnotmsr
 use tools_stripack, only: addnod,areas,bnodes,crlist,inside,scoord,trans,trfind,trlist,trmesh
-use type_mpl, only: mpl
-use type_rng, only: rng
+use type_mpl, only: mpl_type
+use type_rng, only: rng_type
 
 implicit none
+
+logical,parameter :: shuffle = .true. !< Shuffle mesh order (more efficient to compute the Delaunay triangulation)
 
 ! Mesh derived type
 type mesh_type
@@ -61,8 +62,6 @@ contains
    procedure :: polygon
 end type mesh_type
 
-logical,parameter :: shuffle = .true. !< Shuffle mesh order (more efficient to compute the Delaunay triangulation)
-
 private
 public :: mesh_type
 
@@ -72,12 +71,14 @@ contains
 ! Subroutine: mesh_create
 !> Purpose: create mesh
 !----------------------------------------------------------------------
-subroutine mesh_create(mesh,n,lon,lat)
+subroutine mesh_create(mesh,mpl,rng,n,lon,lat)
 
 implicit none
 
 ! Passed variables
 class(mesh_type),intent(inout) :: mesh !< Mesh
+type(mpl_type),intent(in) :: mpl       !< MPI data
+type(rng_type),intent(inout) :: rng    !< Random number generator
 integer,intent(in) :: n                !< Mesh size
 real(kind_real),intent(in) :: lon(n)   !< Longitudes
 real(kind_real),intent(in) :: lat(n)   !< Latitudes
@@ -133,7 +134,7 @@ call mesh%trans(lon,lat)
 
 ! Create mesh
 mesh%list = 0
-call trmesh(mesh%n,mesh%x,mesh%y,mesh%z,mesh%list,mesh%lptr,mesh%lend,mesh%lnew,near,next,dist,info)
+call trmesh(mpl,mesh%n,mesh%x,mesh%y,mesh%z,mesh%list,mesh%lptr,mesh%lend,mesh%lnew,near,next,dist,info)
 
 end subroutine mesh_create
 
@@ -525,12 +526,13 @@ end subroutine barycentric
 ! Subroutine: addnode
 !> Purpose: add node to a mesh
 !----------------------------------------------------------------------
-subroutine addnode(mesh,lonnew,latnew)
+subroutine addnode(mesh,mpl,lonnew,latnew)
 
 implicit none
 
 ! Passed variables
 class(mesh_type),intent(inout) :: mesh  !< Mesh
+type(mpl_type),intent(in) :: mpl        !< MPI data
 real(kind_real),intent(in) :: lonnew(1) !< Longitude
 real(kind_real),intent(in) :: latnew(1) !< Latitude
 
@@ -599,7 +601,7 @@ mesh%order(mesh%n) = mesh%n
 mesh%order_inv(mesh%n) = mesh%n
 mesh%lon(mesh%n) = lonnew(1)
 mesh%lat(mesh%n) = latnew(1)
-call addnod(1,mesh%n,mesh%x,mesh%y,mesh%z,mesh%list,mesh%lptr,mesh%lend,mesh%lnew,info)
+call addnod(mpl,1,mesh%n,mesh%x,mesh%y,mesh%z,mesh%list,mesh%lptr,mesh%lend,mesh%lnew,info)
 
 end subroutine addnode
 

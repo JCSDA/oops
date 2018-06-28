@@ -10,8 +10,7 @@
 !----------------------------------------------------------------------
 module type_lct
 
-use tools_const, only: req,reqkm,pi
-use tools_display, only: prog_init,prog_print,msgerror,msgwarning
+use tools_const, only: req,reqkm,pi,rth
 use tools_kinds, only: kind_real
 use tools_missing, only: msr,isnotmsr,isallnotmsr
 use type_bpar, only: bpar_type
@@ -21,10 +20,13 @@ use type_hdata, only: hdata_type
 use type_io, only: io_type
 use type_lct_blk, only: lct_blk_type
 use type_mom, only: mom_type
-use type_mpl, only: mpl
+use type_mpl, only: mpl_type
 use type_nam, only: nam_type
+use type_rng, only: rng_type
 
 implicit none
+
+logical,parameter :: write_cor = .true.              !< Write raw and fitted correlations
 
 ! LCT data derived type
 type lct_type
@@ -41,9 +43,6 @@ contains
    procedure :: write_cor => lct_write_cor
 end type lct_type
 
-real(kind_real),parameter :: rth = 1.0e-12_kind_real !< Reproducibility threshold
-logical,parameter :: write_cor = .true.              !< Write raw and fitted correlations
-
 private
 public :: lct_type
 
@@ -51,7 +50,7 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: lct_alloc
-!> Purpose: lct object allocation
+!> Purpose: LCT data allocation
 !----------------------------------------------------------------------
 subroutine lct_alloc(lct,nam,geom,bpar,hdata)
 
@@ -80,7 +79,7 @@ end subroutine lct_alloc
 
 !----------------------------------------------------------------------
 ! Subroutine: lct_dealloc
-!> Purpose: lct object deallocation
+!> Purpose: LCT data deallocation
 !----------------------------------------------------------------------
 subroutine lct_dealloc(lct,bpar)
 
@@ -110,12 +109,14 @@ end subroutine lct_dealloc
 ! Subroutine: lct_run_lct
 !> Purpose: LCT driver
 !----------------------------------------------------------------------
-subroutine lct_run_lct(lct,nam,geom,bpar,io,ens)
+subroutine lct_run_lct(lct,mpl,rng,nam,geom,bpar,io,ens)
 
 implicit none
 
 ! Passed variables
 class(lct_type),intent(inout) :: lct !< LCT
+type(mpl_type),intent(inout) :: mpl  !< MPI data
+type(rng_type),intent(inout) :: rng  !< Random number generator
 type(nam_type),intent(inout) :: nam  !< Namelist
 type(geom_type),intent(in) :: geom   !< Geometry
 type(bpar_type),intent(in) :: bpar   !< Block parameters
@@ -135,62 +136,62 @@ call flush(mpl%unit)
 nam%local_rad = 1.0e-12
 
 ! Setup sampling
-call hdata%setup_sampling(nam,geom,io)
+call hdata%setup_sampling(mpl,rng,nam,geom,io)
 
 ! Compute MPI distribution, halo A
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Compute MPI distribution, halos A'
 call flush(mpl%unit)
-call hdata%compute_mpi_a(nam,geom)
+call hdata%compute_mpi_a(mpl,nam,geom)
 
 ! Compute MPI distribution, halos A-B
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Compute MPI distribution, halos A-B'
 call flush(mpl%unit)
-call hdata%compute_mpi_ab(geom)
+call hdata%compute_mpi_ab(mpl,geom)
 
 ! Compute MPI distribution, halo C
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Compute MPI distribution, halo C'
 call flush(mpl%unit)
-call hdata%compute_mpi_c(nam,geom)
+call hdata%compute_mpi_c(mpl,nam,geom)
 
 ! Compute sample moments
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Compute sample moments'
 call flush(mpl%unit)
-call mom%compute(nam,geom,bpar,hdata,ens)
+call mom%compute(mpl,nam,geom,bpar,hdata,ens)
 
 ! Compute LCT
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Compute LCT'
 call flush(mpl%unit)
-call lct%compute(nam,geom,bpar,hdata,mom)
+call lct%compute(mpl,nam,geom,bpar,hdata,mom)
 
 ! Filter LCT
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Filter LCT'
 call flush(mpl%unit)
-call lct%filter(nam,geom,bpar,hdata)
+call lct%filter(mpl,nam,geom,bpar,hdata)
 
 ! LCT RMSE
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- LCT RMSE'
 call flush(mpl%unit)
-call lct%rmse(nam,geom,bpar,hdata)
+call lct%rmse(mpl,nam,geom,bpar,hdata)
 
 ! Write LCT
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Write LCT'
 call flush(mpl%unit)
-call lct%write(nam,geom,bpar,io,hdata)
+call lct%write(mpl,nam,geom,bpar,io,hdata)
 
 if (write_cor) then
    ! Write correlation and LCT fit
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Write correlation and LCT fit'
    call flush(mpl%unit)
-   call lct%write_cor(nam,geom,bpar,io,hdata)
+   call lct%write_cor(mpl,nam,geom,bpar,io,hdata)
 end if
 
 end subroutine lct_run_lct
@@ -199,12 +200,13 @@ end subroutine lct_run_lct
 ! Subroutine: lct_compute
 !> Purpose: compute LCT
 !----------------------------------------------------------------------
-subroutine lct_compute(lct,nam,geom,bpar,hdata,mom)
+subroutine lct_compute(lct,mpl,nam,geom,bpar,hdata,mom)
 
 implicit none
 
 ! Passed variables
 class(lct_type),intent(inout) :: lct !< LCT
+type(mpl_type),intent(in) :: mpl     !< MPI data
 type(nam_type),intent(in) :: nam     !< Namelist
 type(geom_type),intent(in) :: geom   !< Geometry
 type(bpar_type),intent(in) :: bpar   !< Block parameters
@@ -229,7 +231,7 @@ do ib=1,bpar%nb
    ! Compute LCT fit
    write(mpl%unit,'(a10,a)') '','Compute LCT fit'
    call flush(mpl%unit)
-   call lct%blk(ib)%fitting(nam,geom,bpar,hdata)
+   call lct%blk(ib)%fitting(mpl,nam,geom,bpar,hdata)
 end do
 
 end subroutine lct_compute
@@ -238,12 +240,13 @@ end subroutine lct_compute
 ! Subroutine: lct_filter
 !> Purpose: filter LCT
 !----------------------------------------------------------------------
-subroutine lct_filter(lct,nam,geom,bpar,hdata)
+subroutine lct_filter(lct,mpl,nam,geom,bpar,hdata)
 
 implicit none
 
 ! Passed variables
 class(lct_type),intent(inout) :: lct    !< LCT
+type(mpl_type),intent(in) :: mpl        !< MPI data
 type(nam_type),intent(in) :: nam        !< Namelist
 type(geom_type),intent(in) :: geom      !< Geometry
 type(bpar_type),intent(in) :: bpar      !< Block parameters
@@ -288,7 +291,7 @@ do ib=1,bpar%nb
                end if
 
                ! Fill missing values
-               call hdata%diag_fill(geom,il0,fld_c1a)
+               call hdata%diag_fill(mpl,geom,il0,fld_c1a)
 
                ! Copy
                if (icomp<=lct%blk(ib)%ncomp(iscales)) then
@@ -320,12 +323,13 @@ end subroutine lct_filter
 ! Subroutine: lct_rmse
 !> Purpose: compute LCT fit RMSE
 !----------------------------------------------------------------------
-subroutine lct_rmse(lct,nam,geom,bpar,hdata)
+subroutine lct_rmse(lct,mpl,nam,geom,bpar,hdata)
 
 implicit none
 
 ! Passed variables
 class(lct_type),intent(in) :: lct       !< LCT
+type(mpl_type),intent(in) :: mpl        !< MPI data
 type(nam_type),intent(in) :: nam        !< Namelist
 type(geom_type),intent(in) :: geom      !< Geometry
 type(bpar_type),intent(in) :: bpar      !< Block parameters
@@ -371,12 +375,13 @@ end subroutine lct_rmse
 ! Subroutine: lct_write
 !> Purpose: interpolate and write LCT
 !----------------------------------------------------------------------
-subroutine lct_write(lct,nam,geom,bpar,io,hdata)
+subroutine lct_write(lct,mpl,nam,geom,bpar,io,hdata)
 
 implicit none
 
 ! Passed variables
 class(lct_type),intent(inout) :: lct    !< LCT
+type(mpl_type),intent(inout) :: mpl     !< MPI data
 type(nam_type),intent(in) :: nam        !< Namelist
 type(geom_type),intent(in) :: geom      !< Geometry
 type(bpar_type),intent(in) :: bpar      !< Block parameters
@@ -452,7 +457,7 @@ do ib=1,bpar%nb
                   ! Copy coefficient
                   fld_c1a(ic1a,il0,lct%blk(ib)%ncomp(iscales)+1) = lct%blk(ib)%coef(iscales,ic1a,il0)
                else
-                  call msgerror('non-valid LCT, grid c1')
+                  call mpl%abort('non-valid LCT, grid c1')
                end if
             end if
          end do
@@ -462,10 +467,10 @@ do ib=1,bpar%nb
       write(mpl%unit,'(a13,a)') '','Interpolate DT'
       call flush(mpl%unit)
       do icomp=1,lct%blk(ib)%ncomp(iscales)+1
-         call hdata%com_AB%ext(geom%nl0,fld_c1a(:,:,icomp),fld_c1b)
+         call hdata%com_AB%ext(mpl,geom%nl0,fld_c1a(:,:,icomp),fld_c1b)
          do il0=1,geom%nl0
             il0i = min(il0,geom%nl0i)
-            call hdata%h(il0i)%apply(fld_c1b(:,il0),fld(:,il0,icomp))
+            call hdata%h(il0i)%apply(mpl,fld_c1b(:,il0),fld(:,il0,icomp))
          end do
       end do
 
@@ -486,13 +491,13 @@ do ib=1,bpar%nb
                   ! Length-scale = D determinant^{1/4}
                   fld(ic0a,il0,lct%blk(ib)%ncomp(iscales)+2) = sqrt(sqrt(det))
                else
-                  call msgerror('non-valid horizontal determinant in LCT, grid c0')
+                  call mpl%abort('non-valid horizontal determinant in LCT, grid c0')
                end if
 
                ! Check coefficient
                valid_coef = .not.((fld(ic0a,il0,lct%blk(ib)%ncomp(iscales)+1)<rth) &
                           & .or.(fld(ic0a,il0,lct%blk(ib)%ncomp(iscales)+1)>1.0+rth))
-               if (.not.valid_coef) call msgerror('non-valid coefficient in LCT, grid c0')
+               if (.not.valid_coef) call mpl%abort('non-valid coefficient in LCT, grid c0')
             end if
          end do
          Lavg = sum(fld(:,il0,lct%blk(ib)%ncomp(iscales)+2),isnotmsr(fld(:,il0,lct%blk(ib)%ncomp(iscales)+2)))
@@ -520,13 +525,13 @@ do ib=1,bpar%nb
       filename = trim(nam%prefix)//'_lct'
       iv = bpar%b_to_v2(ib)
       write(iscaleschar,'(i1)') iscales
-      call io%fld_write(nam,geom,filename,trim(nam%varname(iv))//'_D11_'//iscaleschar,lct%blk(ib)%D11(:,:,iscales))
-      call io%fld_write(nam,geom,filename,trim(nam%varname(iv))//'_D22_'//iscaleschar,lct%blk(ib)%D22(:,:,iscales))
-      call io%fld_write(nam,geom,filename,trim(nam%varname(iv))//'_D33_'//iscaleschar,lct%blk(ib)%D33(:,:,iscales))
-      if (lct%blk(ib)%ncomp(iscales)==4) call io%fld_write(nam,geom,filename, &
+      call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_D11_'//iscaleschar,lct%blk(ib)%D11(:,:,iscales))
+      call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_D22_'//iscaleschar,lct%blk(ib)%D22(:,:,iscales))
+      call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_D33_'//iscaleschar,lct%blk(ib)%D33(:,:,iscales))
+      if (lct%blk(ib)%ncomp(iscales)==4) call io%fld_write(mpl,nam,geom,filename, &
     & trim(nam%varname(iv))//'_D12_'//iscaleschar,fld(:,:,4)*req**2)
-      call io%fld_write(nam,geom,filename,trim(nam%varname(iv))//'_coef_'//iscaleschar,lct%blk(ib)%Dcoef(:,:,iscales))
-      call io%fld_write(nam,geom,filename,trim(nam%varname(iv))//'_Lh_'//iscaleschar,lct%blk(ib)%DLh(:,:,iscales))
+      call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_coef_'//iscaleschar,lct%blk(ib)%Dcoef(:,:,iscales))
+      call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_Lh_'//iscaleschar,lct%blk(ib)%DLh(:,:,iscales))
 
       ! Update offset
       offset = offset+lct%blk(ib)%ncomp(iscales)
@@ -544,12 +549,13 @@ end subroutine lct_write
 ! Subroutine: lct_write_cor
 !> Purpose: write correlation and LCT fit
 !----------------------------------------------------------------------
-subroutine lct_write_cor(lct,nam,geom,bpar,io,hdata)
+subroutine lct_write_cor(lct,mpl,nam,geom,bpar,io,hdata)
 
 implicit none
 
 ! Passed variables
 class(lct_type),intent(in) :: lct       !< LCT
+type(mpl_type),intent(inout) :: mpl     !< MPI data
 type(nam_type),intent(in) :: nam        !< Namelist
 type(geom_type),intent(in) :: geom      !< Geometry
 type(bpar_type),intent(in) :: bpar      !< Block parameters
@@ -663,8 +669,8 @@ do ib=1,bpar%nb
    call flush(mpl%unit)
    filename = trim(nam%prefix)//'_lct'
    iv = bpar%b_to_v2(ib)
-   call io%fld_write(nam,geom,filename,trim(nam%varname(iv))//'_raw',fld(:,:,1))
-   call io%fld_write(nam,geom,filename,trim(nam%varname(iv))//'_fit',fld(:,:,2))
+   call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_raw',fld(:,:,1))
+   call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_fit',fld(:,:,2))
 
    ! Release memory
    if (mpl%main) deallocate(rbuf)

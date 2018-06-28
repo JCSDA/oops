@@ -12,14 +12,13 @@ module model_nemo
 
 use netcdf
 use tools_const, only: req,deg2rad,rad2deg
-use tools_display, only: msgerror
 use tools_func, only: sphere_dist
 use tools_kinds,only: kind_real
 use tools_missing, only: msr,isanynotmsr,isnotmsi
-use tools_nc, only: ncerr,ncfloat
+use tools_nc, only: ncfloat
 use tools_qsort, only: qsort
 use type_geom, only: geom_type
-use type_mpl, only: mpl
+use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 
 implicit none
@@ -33,11 +32,12 @@ contains
 ! Subroutine: model_nemo_coord
 !> Purpose: get NEMO coordinates
 !----------------------------------------------------------------------
-subroutine model_nemo_coord(nam,geom)
+subroutine model_nemo_coord(mpl,nam,geom)
 
 implicit none
 
 ! Passed variables
+type(mpl_type),intent(in) :: mpl      !< MPI data
 type(nam_type),intent(in) :: nam      !< Namelist
 type(geom_type),intent(inout) :: geom !< Geometry
 
@@ -52,14 +52,14 @@ logical,allocatable :: lmask_mg(:,:)
 character(len=1024) :: subr = 'model_nemo_coord'
 
 ! Open file and get dimensions
-call ncerr(subr,nf90_open(trim(nam%datadir)//'/grid.nc',nf90_share,ncid))
-call ncerr(subr,nf90_inq_dimid(ncid,'x',nlon_id))
-call ncerr(subr,nf90_inq_dimid(ncid,'y',nlat_id))
-call ncerr(subr,nf90_inquire_dimension(ncid,nlon_id,len=geom%nlon))
-call ncerr(subr,nf90_inquire_dimension(ncid,nlat_id,len=geom%nlat))
+call mpl%ncerr(subr,nf90_open(trim(nam%datadir)//'/grid.nc',nf90_share,ncid))
+call mpl%ncerr(subr,nf90_inq_dimid(ncid,'x',nlon_id))
+call mpl%ncerr(subr,nf90_inq_dimid(ncid,'y',nlat_id))
+call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nlon_id,len=geom%nlon))
+call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nlat_id,len=geom%nlat))
 geom%nmg = geom%nlon*geom%nlat
-call ncerr(subr,nf90_inq_dimid(ncid,'z',nlev_id))
-call ncerr(subr,nf90_inquire_dimension(ncid,nlev_id,len=geom%nlev))
+call mpl%ncerr(subr,nf90_inq_dimid(ncid,'z',nlev_id))
+call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nlev_id,len=geom%nlev))
 
 ! Allocation
 allocate(lon(geom%nlon,geom%nlat))
@@ -75,19 +75,19 @@ allocate(area_mg(geom%nmg))
 allocate(lmask_mg(geom%nmg,geom%nl0))
 
 ! Read data and close file
-call ncerr(subr,nf90_inq_varid(ncid,'nav_lon',lon_id))
-call ncerr(subr,nf90_inq_varid(ncid,'nav_lat',lat_id))
-call ncerr(subr,nf90_inq_varid(ncid,'tmask',tmask_id))
-call ncerr(subr,nf90_inq_varid(ncid,'e1t',e1t_id))
-call ncerr(subr,nf90_inq_varid(ncid,'e2t',e2t_id))
-call ncerr(subr,nf90_get_var(ncid,lon_id,lon))
-call ncerr(subr,nf90_get_var(ncid,lat_id,lat))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,'nav_lon',lon_id))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,'nav_lat',lat_id))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,'tmask',tmask_id))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,'e1t',e1t_id))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,'e2t',e2t_id))
+call mpl%ncerr(subr,nf90_get_var(ncid,lon_id,lon))
+call mpl%ncerr(subr,nf90_get_var(ncid,lat_id,lat))
 do il0=1,geom%nl0
-   call ncerr(subr,nf90_get_var(ncid,tmask_id,tmask(:,:,il0),(/1,1,nam%levs(il0),1/),(/geom%nlon,geom%nlat,1,1/)))
-   call ncerr(subr,nf90_get_var(ncid,e1t_id,e1t(:,:,il0),(/1,1,1/),(/geom%nlon,geom%nlat,1/)))
-   call ncerr(subr,nf90_get_var(ncid,e2t_id,e2t(:,:,il0),(/1,1,1/),(/geom%nlon,geom%nlat,1/)))
+   call mpl%ncerr(subr,nf90_get_var(ncid,tmask_id,tmask(:,:,il0),(/1,1,nam%levs(il0),1/),(/geom%nlon,geom%nlat,1,1/)))
+   call mpl%ncerr(subr,nf90_get_var(ncid,e1t_id,e1t(:,:,il0),(/1,1,1/),(/geom%nlon,geom%nlat,1/)))
+   call mpl%ncerr(subr,nf90_get_var(ncid,e2t_id,e2t(:,:,il0),(/1,1,1/),(/geom%nlon,geom%nlat,1/)))
 end do
-call ncerr(subr,nf90_close(ncid))
+call mpl%ncerr(subr,nf90_close(ncid))
 
 ! Convert to radian
 lon = lon*real(deg2rad,kind=4)
@@ -108,7 +108,7 @@ do ilon=1,geom%nlon
       end do
    end do
 end do
-call geom%find_redundant(lon_mg,lat_mg)
+call geom%find_redundant(mpl,lon_mg,lat_mg)
 
 ! Pack
 call geom%alloc
@@ -137,11 +137,12 @@ end subroutine model_nemo_coord
 ! Subroutine: model_nemo_read
 !> Purpose: read NEMO field
 !----------------------------------------------------------------------
-subroutine model_nemo_read(nam,geom,filename,its,fld)
+subroutine model_nemo_read(mpl,nam,geom,filename,its,fld)
 
 implicit none
 
 ! Passed variables
+type(mpl_type),intent(in) :: mpl                              !< MPI data
 type(nam_type),intent(in) :: nam                              !< Namelist
 type(geom_type),intent(in) :: geom                            !< Geometry
 character(len=*),intent(in) :: filename                       !< File name
@@ -161,7 +162,7 @@ if (mpl%main) then
    allocate(fld_tmp(geom%nlon,geom%nlat,geom%nl0))
 
    ! Open file
-   call ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_nowrite,ncid))
+   call mpl%ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_nowrite,ncid))
 end if
 
 do iv=1,nam%nv
@@ -169,20 +170,20 @@ do iv=1,nam%nv
       ! 3d variable
 
       ! Get variable id
-      call ncerr(subr,nf90_inq_varid(ncid,trim(nam%varname(iv)),fld_id))
+      call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(nam%varname(iv)),fld_id))
 
       ! Read data
       do il0=1,nam%nl
-         call ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp(:,:,il0),(/1,1,nam%levs(il0),nam%timeslot(its)/), &
+         call mpl%ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp(:,:,il0),(/1,1,nam%levs(il0),nam%timeslot(its)/), &
        & (/geom%nlon,geom%nlat,1,1/)))
          select case (trim(nam%varname(iv)))
          case ('un')
             do ilat=1,geom%nlat
                do ilon=1,geom%nlon
                   if (ilon==1) then
-                     call ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp2,(/geom%nlon,ilat,nam%levs(il0),nam%timeslot(its)/)))
+                     call mpl%ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp2,(/geom%nlon,ilat,nam%levs(il0),nam%timeslot(its)/)))
                   else
-                     call ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp2,(/ilon-1,ilat,nam%levs(il0),nam%timeslot(its)/)))
+                     call mpl%ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp2,(/ilon-1,ilat,nam%levs(il0),nam%timeslot(its)/)))
                   end if
                   fld_tmp(ilon,ilat,il0) = 0.5*(fld_tmp(ilon,ilat,il0)+fld_tmp2)
                end do
@@ -191,9 +192,9 @@ do iv=1,nam%nv
             do ilat=1,geom%nlat
                do ilon=1,geom%nlon
                   if (ilat==1) then
-                     call ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp2,(/ilon,geom%nlat,nam%levs(il0),nam%timeslot(its)/)))
+                     call mpl%ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp2,(/ilon,geom%nlat,nam%levs(il0),nam%timeslot(its)/)))
                   else
-                     call ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp2,(/ilon,ilat-1,nam%levs(il0),nam%timeslot(its)/)))
+                     call mpl%ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp2,(/ilon,ilat-1,nam%levs(il0),nam%timeslot(its)/)))
                   end if
                   fld_tmp(ilon,ilat,il0) = 0.5*(fld_tmp(ilon,ilat,il0)+fld_tmp2)
                end do
@@ -205,10 +206,10 @@ do iv=1,nam%nv
          ! 2d variable
 
          ! Get id
-         call ncerr(subr,nf90_inq_varid(ncid,trim(nam%addvar2d(iv)),fld_id))
+         call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(nam%addvar2d(iv)),fld_id))
 
          ! Read data
-         call ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp(:,:,geom%nl0),(/1,1,nam%timeslot(its)/),(/geom%nlon,geom%nlat,1/)))
+         call mpl%ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp(:,:,geom%nl0),(/1,1,nam%timeslot(its)/),(/geom%nlon,geom%nlat,1/)))
       end if
    end if
 
@@ -227,7 +228,7 @@ end do
 
 if (mpl%main) then
    ! Close file
-   call ncerr(subr,nf90_close(ncid))
+   call mpl%ncerr(subr,nf90_close(ncid))
 
    ! Release memory
    deallocate(fld_tmp)

@@ -11,7 +11,6 @@
 module type_avg
 
 !$ use omp_lib
-use tools_display, only: prog_init,prog_print,peach,black
 use tools_func, only: add,divide
 use tools_kinds, only: kind_real
 use tools_missing, only: msr,isnotmsr,isallnotmsr,isanynotmsr
@@ -21,7 +20,7 @@ use type_bpar, only: bpar_type
 use type_geom, only: geom_type
 use type_hdata, only: hdata_type
 use type_mom, only: mom_type
-use type_mpl, only: mpl
+use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 
 implicit none
@@ -90,12 +89,13 @@ end subroutine avg_alloc
 ! Subroutine: avg_compute
 !> Purpose: compute averaged statistics
 !----------------------------------------------------------------------
-subroutine avg_compute(avg,nam,geom,bpar,hdata,mom,ne)
+subroutine avg_compute(avg,mpl,nam,geom,bpar,hdata,mom,ne)
 
 implicit none
 
 ! Passed variables
 class(avg_type),intent(inout) :: avg !< Averaged statistics
+type(mpl_type),intent(in) :: mpl     !< MPI data
 type(nam_type),intent(in) :: nam     !< Namelist
 type(geom_type),intent(in) :: geom   !< Geometry
 type(bpar_type),intent(in) :: bpar   !< Block parameters
@@ -117,15 +117,15 @@ do ib=1,bpar%nb
       call flush(mpl%unit)
 
       ! Initialization
-      call prog_init(progint,done)
+      call mpl%prog_init(progint,done)
 
       do ic2a=0,avg%nc2a
          ! Compute averaged statistics
-         call avg%blk(ic2a,ib)%compute(nam,geom,bpar,hdata,mom%blk(ib),ne)
+         call avg%blk(ic2a,ib)%compute(mpl,nam,geom,bpar,hdata,mom%blk(ib),ne)
 
          ! Update
          done(ic2a) = .true.
-         call prog_print(progint,done)
+         call mpl%prog_print(progint,done)
       end do
       write(mpl%unit,'(a)') '100%'
       call flush(mpl%unit)
@@ -138,12 +138,13 @@ end subroutine avg_compute
 ! Subroutine: avg_compute_hyb
 !> Purpose: compute hybrid averaged statistics
 !----------------------------------------------------------------------
-subroutine avg_compute_hyb(avg_2,nam,geom,bpar,hdata,mom_1,mom_2,avg_1)
+subroutine avg_compute_hyb(avg_2,mpl,nam,geom,bpar,hdata,mom_1,mom_2,avg_1)
 
 implicit none
 
 ! Passed variables
 class(avg_type),intent(inout) :: avg_2 !< Ensemble 2 averaged statistics
+type(mpl_type),intent(in) :: mpl       !< MPI data
 type(nam_type),intent(in) :: nam       !< Namelist
 type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
@@ -166,7 +167,7 @@ do ib=1,bpar%nb
       call flush(mpl%unit)
 
       ! Initialization
-      call prog_init(progint,done)
+      call mpl%prog_init(progint,done)
 
       do ic2a=0,avg_2%nc2a
          select case (trim(nam%method))
@@ -180,12 +181,12 @@ do ib=1,bpar%nb
             avg_2%blk(ic2a,ib)%stasq = avg_2%blk(ic2a,ib)%m11**2
          case ('dual-ens')
             ! LR covariance/HR covariance product average
-            call avg_2%blk(ic2a,ib)%compute_lr(geom,bpar,hdata,mom_1%blk(ib),mom_2%blk(ib),avg_1%blk(ic2a,ib))
+            call avg_2%blk(ic2a,ib)%compute_lr(mpl,geom,bpar,hdata,mom_1%blk(ib),mom_2%blk(ib),avg_1%blk(ic2a,ib))
          end select
 
          ! Update
          done(ic2a) = .true.
-         call prog_print(progint,done)
+         call mpl%prog_print(progint,done)
       end do
       write(mpl%unit,'(a)') '100%'
       call flush(mpl%unit)
@@ -196,7 +197,7 @@ end subroutine avg_compute_hyb
 
 !----------------------------------------------------------------------
 ! Function: avg_copy_wgt
-!> Purpose: averaged statistics object copy for weight definition
+!> Purpose: averaged statistics data copy for weight definition
 !----------------------------------------------------------------------
 type(avg_type) function avg_copy_wgt(avg,geom,bpar)
 
@@ -231,12 +232,13 @@ end function avg_copy_wgt
 ! Subroutine: avg_compute_bwavg
 !> Purpose: compute block-averaged statistics
 !----------------------------------------------------------------------
-subroutine avg_compute_bwavg(avg,nam,geom,bpar,avg_wgt)
+subroutine avg_compute_bwavg(avg,mpl,nam,geom,bpar,avg_wgt)
 
 implicit none
 
 ! Passed variables
 class(avg_type),intent(inout) :: avg !< Averaged statistics
+type(mpl_type),intent(in) :: mpl     !< MPI data
 type(nam_type),intent(in) :: nam     !< Namelist
 type(geom_type),intent(in) :: geom   !< Geometry
 type(bpar_type),intent(in) :: bpar   !< Block parameters
@@ -268,7 +270,7 @@ write(mpl%unit,'(a10,a,a,a)',advance='no') '','Block ',trim(bpar%blockname(bpar%
 call flush(mpl%unit)
 
 ! Initialization
-call prog_init(progint,done)
+call mpl%prog_init(progint,done)
 
 do ic2a=0,avg%nc2a
    ! Copy ensemble size
@@ -357,7 +359,7 @@ do ic2a=0,avg%nc2a
 
    ! Update
    done(ic2a) = .true.
-   call prog_print(progint,done)
+   call mpl%prog_print(progint,done)
 end do
 write(mpl%unit,'(a)') '100%'
 call flush(mpl%unit)

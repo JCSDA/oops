@@ -10,13 +10,17 @@
 !----------------------------------------------------------------------
 module type_minim
 
-use tools_display, only: msgwarning,msgerror
+use tools_const, only: rth
 use tools_func, only: fit_diag,fit_lct
 use tools_kinds, only: kind_real
 use tools_missing, only: isnotmsr
-use type_mpl, only: mpl
+use type_mpl, only: mpl_type
 
 implicit none
+
+real(kind_real),parameter :: rho = 0.5_kind_real    !< Convergence parameter for the Hooke algorithm
+real(kind_real),parameter :: tol = 1.0e-6_kind_real !< Tolerance for the Hooke algorithm
+integer,parameter :: itermax = 10                   !< Maximum number of iteration for the Hooke algorithm
 
 ! Minimization data derived type
 type minim_type
@@ -62,11 +66,6 @@ contains
    procedure :: best_nearby => minim_best_nearby
 end type minim_type
 
-real(kind_real),parameter :: rho = 0.5_kind_real     !< Convergence parameter for the Hooke algorithm
-real(kind_real),parameter :: tol = 1.0e-6_kind_real  !< Tolerance for the Hooke algorithm
-integer,parameter :: itermax = 10                    !< Maximum number of iteration for the Hooke algorithm
-real(kind_real),parameter :: rth = 1.0e-12_kind_real !< Reproducibility threshold
-
 private
 public :: minim_type
 
@@ -76,12 +75,13 @@ contains
 ! subroutine: minim_compute
 !> Purpose: minimize ensuring bounds constraints
 !----------------------------------------------------------------------
-subroutine minim_compute(minim,lprt)
+subroutine minim_compute(minim,mpl,lprt)
 
 implicit none
 
 ! Passed variables
 class(minim_type),intent(inout) :: minim !< Minimization data
+type(mpl_type),intent(in) :: mpl         !< MPI data
 logical,intent(in) :: lprt               !< Print key
 
 ! Local variables
@@ -89,8 +89,8 @@ integer :: ix
 real(kind_real) :: guess(minim%nx)
 
 ! Check
-if (minim%nx<=0) call msgerror('nx should be positive to minimize')
-if (minim%ny<=0) call msgerror('nx should be positive to minimize')
+if (minim%nx<=0) call mpl%abort('nx should be positive to minimize')
+if (minim%ny<=0) call mpl%abort('nx should be positive to minimize')
 
 ! Initialization
 do ix=1,minim%nx
@@ -102,16 +102,16 @@ do ix=1,minim%nx
 end do
 
 ! Initial cost
-call minim%cost(guess,minim%f_guess)
+call minim%cost(mpl,guess,minim%f_guess)
 
 select case (trim(minim%algo))
 case ('hooke')
    ! Hooke algorithm
-   call minim%hooke(guess)
+   call minim%hooke(mpl,guess)
 end select
 
 ! Final cost
-call minim%cost(minim%x,minim%f_min)
+call minim%cost(mpl,minim%x,minim%f_min)
 
 ! Test
 if (minim%f_min<minim%f_guess) then
@@ -123,7 +123,7 @@ if (minim%f_min<minim%f_guess) then
    end if
 else
    minim%x = minim%guess
-   if (lprt) call msgwarning('Minimizer '//trim(minim%algo)//' failed')
+   if (lprt) call mpl%warning('Minimizer '//trim(minim%algo)//' failed')
 end if
 
 end subroutine minim_compute
@@ -132,20 +132,21 @@ end subroutine minim_compute
 ! subroutine: minim_cost
 !> Purpose: compute cost function
 !----------------------------------------------------------------------
-subroutine minim_cost(minim,x,f)
+subroutine minim_cost(minim,mpl,x,f)
 
 implicit none
 
 ! Passed variables
 class(minim_type),intent(in) :: minim     !< Minimization data
+type(mpl_type),intent(in) :: mpl          !< MPI data
 real(kind_real),intent(in) :: x(minim%nx) !< Control vector
 real(kind_real),intent(out) :: f          !< Cost function value
 
 select case (minim%cost_function)
 case ('fit_diag')
-   call minim%cost_fit_diag(x,f)
+   call minim%cost_fit_diag(mpl,x,f)
 case ('fit_lct')
-   call minim%cost_fit_lct(x,f)
+   call minim%cost_fit_lct(mpl,x,f)
 end select
 
 end subroutine minim_cost
@@ -154,12 +155,13 @@ end subroutine minim_cost
 ! Function: minim_cost_fit_diag
 !> Purpose: diagnosic fit function cost
 !----------------------------------------------------------------------
-subroutine minim_cost_fit_diag(minim,x,f)
+subroutine minim_cost_fit_diag(minim,mpl,x,f)
 
 implicit none
 
 ! Passed variables
 class(minim_type),intent(in) :: minim     !< Minimization data
+type(mpl_type),intent(in) :: mpl          !< MPI data
 real(kind_real),intent(in) :: x(minim%nx) !< Control vector
 real(kind_real),intent(out) :: f          !< Cost function value
 
@@ -190,7 +192,7 @@ else
 end if
 
 ! Compute function
-call fit_diag(minim%nc3,minim%nl0r,minim%nl0,minim%l0rl0_to_l0,minim%disth,minim%distvr,fit_rh,fit_rv,fit)
+call fit_diag(mpl,minim%nc3,minim%nl0r,minim%nl0,minim%l0rl0_to_l0,minim%disth,minim%distvr,fit_rh,fit_rv,fit)
 
 ! Pack
 fit_pack = pack(fit,mask=.true.)
@@ -216,12 +218,13 @@ end subroutine minim_cost_fit_diag
 ! Function: minim_cost_fit_lct
 !> Purpose: LCT fit function cost
 !----------------------------------------------------------------------
-subroutine minim_cost_fit_lct(minim,x,f)
+subroutine minim_cost_fit_lct(minim,mpl,x,f)
 
 implicit none
 
 ! Passed variables
 class(minim_type),intent(in) :: minim     !< Minimization data
+type(mpl_type),intent(in) :: mpl          !< MPI data
 real(kind_real),intent(in) :: x(minim%nx) !< Control vector
 real(kind_real),intent(out) :: f          !< Cost function value
 
@@ -240,7 +243,7 @@ if (minim%nscales>1) then
 else
    coef(1) = 1.0
 end if
-call fit_lct(minim%nc3,minim%nl0,minim%dx,minim%dy,minim%dz,minim%dmask,minim%nscales,minim%ncomp, &
+call fit_lct(mpl,minim%nc3,minim%nl0,minim%dx,minim%dy,minim%dz,minim%dmask,minim%nscales,minim%ncomp, &
  & xtmp(1:sum(minim%ncomp)),coef,fit)
 
 ! Pack
@@ -268,12 +271,13 @@ end subroutine minim_cost_fit_lct
 !> Purpose: seeks a minimizer of a scalar function of several variables
 !> Author: ALGOL original by Arthur Kaupe, C version by Mark Johnson, FORTRAN90 version by John Burkardt
 !----------------------------------------------------------------------
-subroutine minim_hooke(minim,guess)
+subroutine minim_hooke(minim,mpl,guess)
 
 implicit none
 
 ! Passed variables
 class(minim_type),intent(inout) :: minim      !< Minimization data
+type(mpl_type),intent(in) :: mpl              !< MPI data
 real(kind_real),intent(in) :: guess(minim%nx) !< Guess
 
 ! Local variables
@@ -294,7 +298,7 @@ end do
 funevals = 0
 steplength = rho
 iters = 0
-call minim%cost(newx,fbefore)
+call minim%cost(mpl,newx,fbefore)
 funevals = funevals + 1
 newf = fbefore
 
@@ -305,7 +309,7 @@ do while ((iters<itermax).and.(abs(tol-steplength)>rth*abs(tol+steplength)).and.
 
    ! Find best new point, one coordinate at a time
    newx = minim%x
-   call minim%best_nearby(delta,newx,fbefore,funevals,newf)
+   call minim%best_nearby(mpl,delta,newx,fbefore,funevals,newf)
 
    ! If we made some improvements, pursue that direction
    keep = 1
@@ -327,7 +331,7 @@ do while ((iters<itermax).and.(abs(tol-steplength)>rth*abs(tol+steplength)).and.
 
       ! Update
       fbefore = newf
-      call minim%best_nearby(delta,newx,fbefore,funevals,newf)
+      call minim%best_nearby(mpl,delta,newx,fbefore,funevals,newf)
 
       ! If the further (optimistic) move was bad...
       if ((abs(newf-fbefore)>rth*abs(newf+fbefore)).and.(fbefore<newf)) exit
@@ -360,12 +364,13 @@ end subroutine minim_hooke
 !> Purpose: looks for a better nearby point, one coordinate at a time
 !> Author: ALGOL original by Arthur Kaupe, C version by Mark Johnson, FORTRAN90 version by John Burkardt
 !----------------------------------------------------------------------
-subroutine minim_best_nearby(minim,delta,point,prevbest,funevals,minf)
+subroutine minim_best_nearby(minim,mpl,delta,point,prevbest,funevals,minf)
 
 implicit none
 
 ! Passed variables
 class(minim_type),intent(inout) :: minim         !< Minimization data
+type(mpl_type),intent(in) :: mpl                 !< MPI data
 real(kind_real),intent(inout) :: delta(minim%nx) !< Step
 real(kind_real),intent(inout) :: point(minim%nx) !< Point
 real(kind_real),intent(in) :: prevbest           !< Best existing cost
@@ -383,14 +388,14 @@ z = point
 
 do i=1,minim%nx
    z(i) = point(i)+delta(i)
-   call minim%cost(z,ftmp)
+   call minim%cost(mpl,z,ftmp)
    funevals = funevals+1
    if ((abs(ftmp-minf)>rth*abs(ftmp+minf)).and.(ftmp<minf)) then
       minf = ftmp
    else
       delta(i) = -delta(i)
       z(i) = point(i)+delta(i)
-      call minim%cost(z,ftmp)
+      call minim%cost(mpl,z,ftmp)
       funevals = funevals+1
       if ((abs(ftmp-minf)>rth*abs(ftmp+minf)).and.(ftmp<minf)) then
          minf = ftmp

@@ -11,15 +11,19 @@
 module type_rng
 
 use iso_fortran_env, only: int64
-use tools_display, only: msgerror
 use tools_func, only: sphere_dist
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,isnotmsi
 use type_kdtree, only: kdtree_type
-use type_mpl, only: mpl
+use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 
 implicit none
+
+integer,parameter :: default_seed = 140587            !< Default seed
+integer(kind=int64),parameter :: a = 1103515245_int64 !< Linear congruential multiplier
+integer(kind=int64),parameter :: c = 12345_int64      !< Linear congruential offset
+integer(kind=int64),parameter :: m = 2147483648_int64 !< Linear congruential modulo
 
 type rng_type
    integer(kind=int64) :: seed
@@ -43,15 +47,8 @@ contains
    procedure :: initialize_sampling
 end type rng_type
 
-type(rng_type) :: rng !< Random number generator
-
-integer,parameter :: default_seed = 140587            !< Default seed
-integer(kind=int64),parameter :: a = 1103515245_int64 !< Linear congruential multiplier
-integer(kind=int64),parameter :: c = 12345_int64      !< Linear congruential offset
-integer(kind=int64),parameter :: m = 2147483648_int64 !< Linear congruential modulo
-
 private
-public :: rng
+public :: rng_type
 
 contains
 
@@ -59,12 +56,13 @@ contains
 ! Subroutine: rng_init
 !> Purpose: initialize the random number generator
 !----------------------------------------------------------------------
-subroutine rng_init(rng,nam)
+subroutine rng_init(rng,mpl,nam)
 
 implicit none
 
 ! Passed variables
 class(rng_type),intent(inout) :: rng !< Random number generator
+type(mpl_type),intent(in) :: mpl     !< MPI data
 type(nam_type),intent(in) :: nam     !< Namelist variables
 
 ! Local variable
@@ -99,12 +97,13 @@ end subroutine rng_init
 ! Subroutine: rng_reseed
 !> Purpose: re-seed the random number generator
 !----------------------------------------------------------------------
-subroutine rng_reseed(rng)
+subroutine rng_reseed(rng,mpl)
 
 implicit none
 
 ! Passed variable
 class(rng_type),intent(inout) :: rng !< Random number generator
+type(mpl_type),intent(in) :: mpl     !< MPI data
 
 ! Local variable
 integer :: seed
@@ -426,12 +425,13 @@ end subroutine rand_gau_5d
 ! Subroutine: initialize_sampling
 !> Purpose: intialize sampling
 !----------------------------------------------------------------------
-subroutine initialize_sampling(rng,n,lon,lat,mask,rh,ntry,nrep,ns,ihor)
+subroutine initialize_sampling(rng,mpl,n,lon,lat,mask,rh,ntry,nrep,ns,ihor)
 
 implicit none
 
 ! Passed variables
 class(rng_type),intent(inout) :: rng !< Random number generator
+type(mpl_type),intent(in) :: mpl     !< MPI data
 integer,intent(in) :: n              !< Number of points
 real(kind_real),intent(in) :: lon(n) !< Longitudes
 real(kind_real),intent(in) :: lat(n) !< Latitudes
@@ -449,7 +449,7 @@ logical :: lmask(n),smask(n)
 type(kdtree_type) :: kdtree
 
 if (ns>count(mask)) then
-   call msgerror('ns greater that mask size in initialize_sampling')
+   call mpl%abort('ns greater that mask size in initialize_sampling')
 elseif (ns==count(mask)) then
    is = 0
    do i=1,n
@@ -469,7 +469,7 @@ else
    ! Define sampling
    do while (is<=ns)
       ! Create KD-tree (unsorted)
-      if (is>2) call kdtree%create(n,lon,lat,mask=smask,sort=.false.)
+      if (is>2) call kdtree%create(mpl,n,lon,lat,mask=smask,sort=.false.)
 
       ! Initialization
       distmax = 0.0
@@ -523,7 +523,7 @@ else
          ! Try replacement
          if (irep<=nrep) then
             ! Create KD-tree (unsorted)
-            call kdtree%create(n,lon,lat,mask=smask,sort=.false.)
+            call kdtree%create(mpl,n,lon,lat,mask=smask,sort=.false.)
 
             ! Get minimum distance
             do js=1,ns
@@ -534,7 +534,7 @@ else
                elseif (nn_index(2)==ihor(js)) then
                   dist(js) = nn_dist(1)
                else
-                  call msgerror('wrong index in replacement')
+                  call mpl%abort('wrong index in replacement')
                end if
                dist(js) = dist(js)**2/(rh(nn_index(1))**2+rh(nn_index(2))**2)
             end do

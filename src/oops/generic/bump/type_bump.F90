@@ -13,24 +13,24 @@ module type_bump
 use netcdf
 use model_interface, only: model_coord
 use tools_const, only: req,deg2rad
-use tools_display, only: listing_setup,msgerror
 use tools_func, only: sphere_dist
 use tools_kinds,only: kind_real
-use tools_nc, only: ncfloat,ncerr
 use type_bpar, only: bpar_type
 use type_cmat, only: cmat_type
 use type_ens, only: ens_type
 use type_geom, only: geom_type
 use type_io, only: io_type
 use type_lct, only: lct_type
-use type_mpl, only: mpl
+use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 use type_nicas, only: nicas_type
 use type_obsop, only: obsop_type
-use type_rng, only: rng
+use type_rng, only: rng_type
 use type_timer, only: timer_type
 
 implicit none
+
+logical,parameter :: write_online = .false. !< Write online data for tests
 
 ! BUMP derived type
 type bump_type
@@ -41,9 +41,11 @@ type bump_type
   type(geom_type) :: geom
   type(io_type) :: io
   type(lct_type) :: lct
+  type(mpl_type) :: mpl
   type(nam_type) :: nam
   type(nicas_type) :: nicas
   type(obsop_type) :: obsop
+  type(rng_type) :: rng
   real(kind_real),allocatable :: rh(:,:,:,:)
   real(kind_real),allocatable :: rv(:,:,:,:)
   integer :: nx
@@ -62,8 +64,6 @@ contains
    procedure :: back_to => bump_back_to
    procedure :: dealloc => bump_dealloc
 end type bump_type
-
-logical,parameter :: write_online = .false. !< Write online data for tests
 
 private
 public :: bump_type
@@ -87,84 +87,84 @@ character(len=*),intent(in) :: namelname !< Namelist name
 type(timer_type) :: timer
 
 ! Initialize MPL
-call mpl%init(mpi_comm)
+call bump%mpl%init(mpi_comm)
 
 ! Initialize timer
-if (mpl%main) call timer%start
+if (bump%mpl%main) call timer%start
 
 ! Initialize, read and broadcast namelist
 call bump%nam%init
-call bump%nam%read(namelname)
-call bump%nam%bcast
+call bump%nam%read(bump%mpl,namelname)
+call bump%nam%bcast(bump%mpl)
 
 ! Initialize listing
-call mpl%init_listing(bump%nam%prefix)
+call bump%mpl%init_listing(bump%nam%prefix,bump%nam%model,bump%nam%colorlog,bump%nam%logpres)
 
 ! Generic setup, first step
 call bump%setup_generic
 
 ! Initialize geometry
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Initialize geometry'
-call flush(mpl%unit)
-call model_coord(bump%nam,bump%geom)
-call bump%geom%init(bump%nam)
+write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(bump%mpl%unit,'(a)') '--- Initialize geometry'
+call flush(bump%mpl%unit)
+call model_coord(bump%mpl,bump%rng,bump%nam,bump%geom)
+call bump%geom%init(bump%mpl,bump%rng,bump%nam)
 
 if (bump%nam%grid_output) then
    ! Initialize fields regridding
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Initialize fields regridding'
-   call flush(mpl%unit)
-   call bump%io%grid_init(bump%nam,bump%geom)
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Initialize fields regridding'
+   call flush(bump%mpl%unit)
+   call bump%io%grid_init(bump%mpl,bump%rng,bump%nam,bump%geom)
 end if
 
 ! Initialize block parameters
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Initialize block parameters'
+write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(bump%mpl%unit,'(a)') '--- Initialize block parameters'
 call bump%bpar%alloc(bump%nam,bump%geom)
 
 if (bump%nam%new_hdiag.or.bump%nam%new_lct.or.bump%nam%load_ensemble) then
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Load ensemble 1'
-   call flush(mpl%unit)
-   call bump%ens1%load(bump%nam,bump%geom,'ens1')
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Load ensemble 1'
+   call flush(bump%mpl%unit)
+   call bump%ens1%load(bump%mpl,bump%nam,bump%geom,'ens1')
 end if
 
 if (bump%nam%new_hdiag.and.((trim(bump%nam%method)=='hyb-rnd').or.(trim(bump%nam%method)=='dual-ens'))) then
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Load ensemble 2'
-   call flush(mpl%unit)
-   call bump%ens2%load(bump%nam,bump%geom,'ens2')
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Load ensemble 2'
+   call flush(bump%mpl%unit)
+   call bump%ens2%load(bump%mpl,bump%nam,bump%geom,'ens2')
 end if
 
 if (bump%nam%new_obsop) then
    ! Generate observations locations
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Generate observations locations'
-   call flush(mpl%unit)
-   call bump%obsop%generate(bump%nam,bump%geom)
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Generate observations locations'
+   call flush(bump%mpl%unit)
+   call bump%obsop%generate(bump%mpl,bump%rng,bump%nam,bump%geom)
 end if
 
 ! Run drivers
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Run drivers'
-call flush(mpl%unit)
+write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(bump%mpl%unit,'(a)') '--- Run drivers'
+call flush(bump%mpl%unit)
 call bump%run_drivers
 
 ! Execution stats
-if (mpl%main) then
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Execution stats'
-   call timer%display
+if (bump%mpl%main) then
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Execution stats'
+   call timer%display(bump%mpl)
 end if
-call flush(mpl%unit)
+call flush(bump%mpl%unit)
 
 ! Close listings
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Close listings'
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-call flush(mpl%unit)
-close(unit=mpl%unit)
+write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(bump%mpl%unit,'(a)') '--- Close listings'
+write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+call flush(bump%mpl%unit)
+close(unit=bump%mpl%unit)
 
 end subroutine bump_setup_offline
 
@@ -203,7 +203,7 @@ real(kind_real),intent(in),optional :: latobs(:)       !< Observations latitude 
 logical :: test(3)
 
 ! Initialize MPL
-call mpl%init(mpi_comm)
+call bump%mpl%init(mpi_comm)
 
 ! Set internal namelist parameters
 if (present(ens1_ne).and.present(ens2_ne)) then
@@ -215,101 +215,101 @@ else
 end if
 
 ! Initialize listing
-call mpl%init_listing(bump%nam%prefix)
+call bump%mpl%init_listing(bump%nam%prefix,bump%nam%model,bump%nam%colorlog,bump%nam%logpres)
 
 ! Generic setup
 call bump%setup_generic
 
 ! Check arguments consistency
 test(1:2) = (/present(ens1_ne),present(ens1)/)
-if (.not.(all(test(1:2)).or.all(.not.test(1:2)))) call msgerror('ens1_ne and ens1 should be present together')
+if (.not.(all(test(1:2)).or.all(.not.test(1:2)))) call bump%mpl%abort('ens1_ne and ens1 should be present together')
 test(1:2) = (/present(ens2_ne),present(ens2)/)
-if (.not.(all(test(1:2)).or.all(.not.test(1:2)))) call msgerror('ens2_ne and ens2 should be present together')
+if (.not.(all(test(1:2)).or.all(.not.test(1:2)))) call bump%mpl%abort('ens2_ne and ens2 should be present together')
 test(1:2) = (/present(rh),present(rv)/)
-if (.not.(all(test(1:2)).or.all(.not.test(1:2)))) call msgerror('rh and rv should be present together')
+if (.not.(all(test(1:2)).or.all(.not.test(1:2)))) call bump%mpl%abort('rh and rv should be present together')
 test(1:3) = (/present(nobs),present(lonobs),present(latobs)/)
-if (.not.(all(test(1:3)).or.all(.not.test(1:3)))) call msgerror('nobs, lonobs and latobs should be present together')
+if (.not.(all(test(1:3)).or.all(.not.test(1:3)))) call bump%mpl%abort('nobs, lonobs and latobs should be present together')
 
 ! Check sizes consistency
 if (present(ens1_ne).and.present(ens1)) then
-   if (size(ens1)/=nmga*nl0*nv*nts*ens1_ne) call msgerror('wrong size for ens1')
+   if (size(ens1)/=nmga*nl0*nv*nts*ens1_ne) call bump%mpl%abort('wrong size for ens1')
 end if
 if (present(ens2_ne).and.present(ens2)) then
-   if (size(ens2)/=nmga*nl0*nv*nts*ens2_ne) call msgerror('wrong size for ens2')
+   if (size(ens2)/=nmga*nl0*nv*nts*ens2_ne) call bump%mpl%abort('wrong size for ens2')
 end if
 if (present(rh).and.present(rv)) then
-   if (size(rh)/=nmga*nl0*nv*nts) call msgerror('wrong size for rh')
-   if (size(rv)/=nmga*nl0*nv*nts) call msgerror('wrong size for rv')
+   if (size(rh)/=nmga*nl0*nv*nts) call bump%mpl%abort('wrong size for rh')
+   if (size(rv)/=nmga*nl0*nv*nts) call bump%mpl%abort('wrong size for rv')
 end if
 if (present(nobs).and.present(lonobs).and.present(latobs)) then
-   if (size(lonobs)/=nobs) call msgerror('wrong size for lonobs')
-   if (size(latobs)/=nobs) call msgerror('wrong size for latobs')
+   if (size(lonobs)/=nobs) call bump%mpl%abort('wrong size for lonobs')
+   if (size(latobs)/=nobs) call bump%mpl%abort('wrong size for latobs')
 end if
 
 ! Initialize geometry
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Initialize geometry'
-call flush(mpl%unit)
-call bump%geom%setup_online(nmga,nl0,lon,lat,area,vunit,lmask)
-call bump%geom%init(bump%nam)
+write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(bump%mpl%unit,'(a)') '--- Initialize geometry'
+call flush(bump%mpl%unit)
+call bump%geom%setup_online(bump%mpl,nmga,nl0,lon,lat,area,vunit,lmask)
+call bump%geom%init(bump%mpl,bump%rng,bump%nam)
 
 if (bump%nam%grid_output) then
    ! Initialize fields regridding
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Initialize fields regridding'
-   call flush(mpl%unit)
-   call bump%io%grid_init(bump%nam,bump%geom)
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Initialize fields regridding'
+   call flush(bump%mpl%unit)
+   call bump%io%grid_init(bump%mpl,bump%rng,bump%nam,bump%geom)
 end if
 
 ! Initialize block parameters
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Initialize block parameters'
+write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(bump%mpl%unit,'(a)') '--- Initialize block parameters'
 call bump%bpar%alloc(bump%nam,bump%geom)
 
 if (present(ens1_ne).and.present(ens1)) then
    ! Initialize ensemble 1
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Initialize ensemble 1'
-   call flush(mpl%unit)
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Initialize ensemble 1'
+   call flush(bump%mpl%unit)
    call bump%ens1%from(bump%nam,bump%geom,ens1_ne,ens1)
 end if
 
 if (present(ens2_ne).and.present(ens2)) then
    ! Initialize ensemble 2
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Initialize ensemble 2'
-   call flush(mpl%unit)
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Initialize ensemble 2'
+   call flush(bump%mpl%unit)
    call bump%ens2%from(bump%nam,bump%geom,ens2_ne,ens2)
 end if
 
 if (present(rh).and.present(rv)) then
    ! Initialize C matrix from support radii
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Initialize C matrix from support radii'
-   call flush(mpl%unit)
-   call bump%cmat%from(bump%nam,bump%geom,bump%bpar,rh,rv)
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Initialize C matrix from support radii'
+   call flush(bump%mpl%unit)
+   call bump%cmat%from(bump%mpl,bump%nam,bump%geom,bump%bpar,rh,rv)
 end if
 
 if (present(nobs).and.present(lonobs).and.present(latobs)) then
    ! Initialize observations locations
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Initialize observations locations'
-   call flush(mpl%unit)
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Initialize observations locations'
+   call flush(bump%mpl%unit)
    call bump%obsop%from(nobs,lonobs,latobs)
 end if
 
 ! Run drivers
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Run drivers'
-call flush(mpl%unit)
+write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(bump%mpl%unit,'(a)') '--- Run drivers'
+call flush(bump%mpl%unit)
 call bump%run_drivers
 
 ! Close listings
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Close listings'
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-call flush(mpl%unit)
-close(unit=mpl%unit)
+write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(bump%mpl%unit,'(a)') '--- Close listings'
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+call flush(bump%mpl%unit)
+close(unit=bump%mpl%unit)
 
 end subroutine bump_setup_online
 
@@ -342,13 +342,13 @@ real(kind_real) :: vunit(nmga,nl0)
 logical :: lmask(nmga,nl0)
 
 ! Initialize MPL
-call mpl%init(mpi_comm)
+call bump%mpl%init(mpi_comm)
 
 ! Set internal namelist parameters
 call bump%nam%setup_internal(nl0,nv,nts,ens1_ne)
 
 ! Initialize listing
-call mpl%init_listing(bump%nam%prefix)
+call bump%mpl%init_listing(bump%nam%prefix,bump%nam%model,bump%nam%colorlog,bump%nam%logpres)
 
 ! Generic setup
 call bump%setup_generic
@@ -367,43 +367,43 @@ do il0=1,nl0
 end do
 
 ! Initialize geometry
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Initialize geometry'
-call flush(mpl%unit)
-call bump%geom%setup_online(nmga,nl0,lon,lat,area,vunit,lmask)
-call bump%geom%init(bump%nam)
+write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(bump%mpl%unit,'(a)') '--- Initialize geometry'
+call flush(bump%mpl%unit)
+call bump%geom%setup_online(bump%mpl,nmga,nl0,lon,lat,area,vunit,lmask)
+call bump%geom%init(bump%mpl,bump%rng,bump%nam)
 
 if (bump%nam%grid_output) then
    ! Initialize fields regridding
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Initialize fields regridding'
-   call flush(mpl%unit)
-   call bump%io%grid_init(bump%nam,bump%geom)
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Initialize fields regridding'
+   call flush(bump%mpl%unit)
+   call bump%io%grid_init(bump%mpl,bump%rng,bump%nam,bump%geom)
 end if
 
 ! Initialize block parameters
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Initialize block parameters'
+write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(bump%mpl%unit,'(a)') '--- Initialize block parameters'
 call bump%bpar%alloc(bump%nam,bump%geom)
 
 ! Initialize ensemble 1
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Initialize ensemble 1'
-call flush(mpl%unit)
+write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(bump%mpl%unit,'(a)') '--- Initialize ensemble 1'
+call flush(bump%mpl%unit)
 call bump%ens1%from(bump%nam,bump%geom,ens1_ne,ens1_vec)
 
 ! Run drivers
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Run drivers'
-call flush(mpl%unit)
+write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(bump%mpl%unit,'(a)') '--- Run drivers'
+call flush(bump%mpl%unit)
 call bump%run_drivers
 
 ! Close listings
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Close listings'
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-call flush(mpl%unit)
-close(unit=mpl%unit)
+write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(bump%mpl%unit,'(a)') '--- Close listings'
+write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+call flush(bump%mpl%unit)
+close(unit=bump%mpl%unit)
 
 end subroutine bump_setup_online_oops
 
@@ -411,14 +411,14 @@ end subroutine bump_setup_online_oops
 ! Subroutine: bump_setup_online_nemovar
 !> Purpose: online setup for NEMOVAR
 !----------------------------------------------------------------------
-subroutine bump_setup_online_nemovar(bump,mpi_comm,listing,nx,ny,nl0,lon,lat,area,vunit,lmask,nens,ncyc,ens1_2d,ens1_3d)
+subroutine bump_setup_online_nemovar(bump,mpi_comm,lunit,nx,ny,nl0,lon,lat,area,vunit,lmask,nens,ncyc,ens1_2d,ens1_3d)
 
 implicit none
 
 ! Passed variables
 class(bump_type),intent(inout) :: bump                    !< BUMP
 integer,intent(in) :: mpi_comm                            !< MPI communicator
-integer,intent(in) :: listing                             !< Main listing unit
+integer,intent(in) :: lunit                               !< Main listing unit
 integer,intent(in) :: nx                                  !< X-axis size
 integer,intent(in) :: ny                                  !< Y-axis size
 integer,intent(in) :: nl0                                 !< Number of levels
@@ -438,7 +438,7 @@ real(kind_real),allocatable :: lon_mga(:),lat_mga(:),area_mga(:),vunit_mga(:,:)
 logical,allocatable :: lmask_mga(:,:)
 
 ! Initialize MPL
-call mpl%init(mpi_comm)
+call bump%mpl%init(mpi_comm)
 
 ! Copy sizes
 bump%nx = nx
@@ -454,7 +454,7 @@ ens1_ne = nens*ncyc
 call bump%nam%setup_internal(nl0,nv,nts,ens1_ne)
 
 ! Initialize listing
-call mpl%init_listing(bump%nam%prefix,listing)
+call bump%mpl%init_listing(bump%nam%prefix,bump%nam%model,bump%nam%colorlog,bump%nam%logpres,lunit=lunit)
 
 ! Generic setup
 call bump%setup_generic
@@ -476,52 +476,52 @@ do il0=1,nl0
 end do
 
 ! Initialize geometry
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Initialize geometry'
-call flush(mpl%unit)
-call bump%geom%setup_online(nmga,nl0,lon_mga,lat_mga,area_mga,vunit_mga,lmask_mga)
-call bump%geom%init(bump%nam)
+write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(bump%mpl%unit,'(a)') '--- Initialize geometry'
+call flush(bump%mpl%unit)
+call bump%geom%setup_online(bump%mpl,nmga,nl0,lon_mga,lat_mga,area_mga,vunit_mga,lmask_mga)
+call bump%geom%init(bump%mpl,bump%rng,bump%nam)
 
 if (bump%nam%grid_output) then
    ! Initialize fields regridding
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Initialize fields regridding'
-   call flush(mpl%unit)
-   call bump%io%grid_init(bump%nam,bump%geom)
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Initialize fields regridding'
+   call flush(bump%mpl%unit)
+   call bump%io%grid_init(bump%mpl,bump%rng,bump%nam,bump%geom)
 end if
 
 ! Initialize block parameters
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Initialize block parameters'
+write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(bump%mpl%unit,'(a)') '--- Initialize block parameters'
 call bump%bpar%alloc(bump%nam,bump%geom)
 
 ! Initialize ensemble 1
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Initialize ensemble 1'
-call flush(mpl%unit)
+write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(bump%mpl%unit,'(a)') '--- Initialize ensemble 1'
+call flush(bump%mpl%unit)
 if (present(ens1_2d)) then
-   call bump%ens1%from(bump%nam,bump%geom,nx,ny,nens,ncyc,ens_2d=ens1_2d)
+   call bump%ens1%from(bump%mpl,bump%nam,bump%geom,nx,ny,nens,ncyc,ens_2d=ens1_2d)
 elseif (present(ens1_3d)) then
-   call bump%ens1%from(bump%nam,bump%geom,nx,ny,nens,ncyc,ens_3d=ens1_3d)
+   call bump%ens1%from(bump%mpl,bump%nam,bump%geom,nx,ny,nens,ncyc,ens_3d=ens1_3d)
 end if
 
 ! Run drivers
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Run drivers'
-call flush(mpl%unit)
+write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(bump%mpl%unit,'(a)') '--- Run drivers'
+call flush(bump%mpl%unit)
 call bump%run_drivers
 
-if (mpl%main) then
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- BUMP done'
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+if (bump%mpl%main) then
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- BUMP done'
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
 else
    ! Close listings
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Close listings'
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   call flush(mpl%unit)
-   close(unit=mpl%unit)
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Close listings'
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   call flush(bump%mpl%unit)
+   close(unit=bump%mpl%unit)
 end if
 
 end subroutine bump_setup_online_nemovar
@@ -537,35 +537,30 @@ implicit none
 ! Passed variables
 class(bump_type),intent(inout) :: bump !< BUMP
 
-! Setup display
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Setup display'
-call flush(mpl%unit)
-call listing_setup(bump%nam%model,bump%nam%colorlog,bump%nam%logpres)
-
 ! Header
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- You are running bump ------------------------------------------'
-write(mpl%unit,'(a)') '--- Author: Benjamin Menetrier ------------------------------------'
-write(mpl%unit,'(a)') '--- Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE -----------'
-call flush(mpl%unit)
+write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(bump%mpl%unit,'(a)') '--- You are running bump ------------------------------------------'
+write(bump%mpl%unit,'(a)') '--- Author: Benjamin Menetrier ------------------------------------'
+write(bump%mpl%unit,'(a)') '--- Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE -----------'
+call flush(bump%mpl%unit)
 
 ! Check namelist parameters
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Check namelist parameters'
-call flush(mpl%unit)
-call bump%nam%check
+write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(bump%mpl%unit,'(a)') '--- Check namelist parameters'
+call flush(bump%mpl%unit)
+call bump%nam%check(bump%mpl)
 
 ! Write parallel setup
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a,i3,a,i2,a)') '--- Parallelization with ',mpl%nproc,' MPI tasks and ',mpl%nthread,' OpenMP threads'
-call flush(mpl%unit)
+write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(bump%mpl%unit,'(a,i3,a,i2,a)') '--- Parallelization with ',bump%mpl%nproc,' MPI tasks and ', &
+ & bump%mpl%nthread,' OpenMP threads'
+call flush(bump%mpl%unit)
 
 ! Initialize random number generator
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Initialize random number generator'
-call flush(mpl%unit)
-call rng%init(bump%nam)
+write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(bump%mpl%unit,'(a)') '--- Initialize random number generator'
+call flush(bump%mpl%unit)
+call bump%rng%init(bump%mpl,bump%nam)
 
 ! Initialize allocation flags
 bump%cmat%allocated = .false.
@@ -587,82 +582,82 @@ implicit none
 class(bump_type),intent(inout) :: bump !< BUMP
 
 ! Reset seed
-if (bump%nam%default_seed) call rng%reseed
+if (bump%nam%default_seed) call bump%rng%reseed(bump%mpl)
 
 ! Check inconsistencies
-if (bump%nam%new_hdiag.and.(.not.allocated(bump%ens1%fld))) call msgerror('new_hdiag requires ensemble 1')
+if (bump%nam%new_hdiag.and.(.not.allocated(bump%ens1%fld))) call bump%mpl%abort('new_hdiag requires ensemble 1')
 if (bump%nam%new_hdiag.and.(trim(bump%nam%method)=='hyb-rnd').or.(trim(bump%nam%method)=='dual-ens') &
- & .and.(.not.allocated(bump%ens2%fld))) call msgerror('new_hdiag requires ensemble 1')
+ & .and.(.not.allocated(bump%ens2%fld))) call bump%mpl%abort('new_hdiag requires ensemble 1')
 if (bump%nam%new_hdiag.and.(allocated(bump%rh).and.allocated(bump%rv))) &
- & call msgerror('rh and rv should not be provided if new_hdiag is active')
+ & call bump%mpl%abort('rh and rv should not be provided if new_hdiag is active')
 
 if (.not.bump%cmat%allocated) then
    if (bump%nam%new_hdiag) then
       ! Call HDIAG driver
-      write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-      write(mpl%unit,'(a)') '--- Run HDIAG driver'
-      call flush(mpl%unit)
+      write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+      write(bump%mpl%unit,'(a)') '--- Run HDIAG driver'
+      call flush(bump%mpl%unit)
       if ((trim(bump%nam%method)=='hyb-rnd').or.(trim(bump%nam%method)=='dual-ens')) then
-         call bump%cmat%run_hdiag(bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1,bump%ens2)
+         call bump%cmat%run_hdiag(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1,bump%ens2)
       else
-         call bump%cmat%run_hdiag(bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1)
+         call bump%cmat%run_hdiag(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1)
       end if
    elseif (bump%nam%new_param.and..not.(allocated(bump%rh).and.allocated(bump%rv))) then
       ! Read C matrix data
-      write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-      write(mpl%unit,'(a)') '--- Read C matrix data'
-      call flush(mpl%unit)
-      call bump%cmat%read(bump%nam,bump%geom,bump%bpar,bump%io)
+      write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+      write(bump%mpl%unit,'(a)') '--- Read C matrix data'
+      call flush(bump%mpl%unit)
+      call bump%cmat%read(bump%mpl,bump%nam,bump%geom,bump%bpar,bump%io)
    end if
 end if
 
 if (.not.bump%nicas%allocated) then
    if (bump%nam%new_param) then
       ! Call NICAS driver
-      write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-      write(mpl%unit,'(a)') '--- Call NICAS driver'
-      call flush(mpl%unit)
-      call bump%nicas%run_nicas(bump%nam,bump%geom,bump%bpar,bump%cmat)
+      write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+      write(bump%mpl%unit,'(a)') '--- Call NICAS driver'
+      call flush(bump%mpl%unit)
+      call bump%nicas%run_nicas(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%cmat)
    elseif (bump%nam%check_adjoints.or.bump%nam%check_pos_def.or.bump%nam%check_sqrt.or.bump%nam%check_dirac.or. &
     & bump%nam%check_randomization.or.bump%nam%check_consistency.or.bump%nam%check_optimality) then
       ! Read NICAS parameters
-      write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-      write(mpl%unit,'(a)') '--- Read NICAS parameters'
-      call flush(mpl%unit)
-      call bump%nicas%read(bump%nam,bump%geom,bump%bpar)
+      write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+      write(bump%mpl%unit,'(a)') '--- Read NICAS parameters'
+      call flush(bump%mpl%unit)
+      call bump%nicas%read(bump%mpl,bump%nam,bump%geom,bump%bpar)
    end if
 end if
 
 if (bump%nam%check_adjoints.or.bump%nam%check_pos_def.or.bump%nam%check_sqrt.or.bump%nam%check_dirac.or. &
  & bump%nam%check_randomization.or.bump%nam%check_consistency.or.bump%nam%check_optimality) then
    ! Call NICAS tests driver
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Call NICAS tests driver'
-   call flush(mpl%unit)
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Call NICAS tests driver'
+   call flush(bump%mpl%unit)
    if (allocated(bump%ens1%fld)) then
-      call bump%nicas%run_nicas_tests(bump%nam,bump%geom,bump%bpar,bump%io,bump%cmat,bump%ens1)
+      call bump%nicas%run_nicas_tests(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%cmat,bump%ens1)
    else
-      call bump%nicas%run_nicas_tests(bump%nam,bump%geom,bump%bpar,bump%io,bump%cmat)
+      call bump%nicas%run_nicas_tests(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%cmat)
    end if
 end if
 
 if (.not.bump%lct%allocated) then
    if (bump%nam%new_lct) then
       ! Call LCT driver
-      write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-      write(mpl%unit,'(a)') '--- Call LCT driver'
-      call flush(mpl%unit)
-      call bump%lct%run_lct(bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1)
+      write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+      write(bump%mpl%unit,'(a)') '--- Call LCT driver'
+      call flush(bump%mpl%unit)
+      call bump%lct%run_lct(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1)
    end if
 end if
 
 if (.not.bump%obsop%allocated) then
    if (bump%nam%new_obsop) then
       ! Call observation operator driver
-      write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-      write(mpl%unit,'(a)') '--- Call observation operator driver'
-      call flush(mpl%unit)
-      call bump%obsop%run_obsop(bump%nam,bump%geom)
+      write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+      write(bump%mpl%unit,'(a)') '--- Call observation operator driver'
+      call flush(bump%mpl%unit)
+      call bump%obsop%run_obsop(bump%mpl,bump%rng,bump%nam,bump%geom)
    end if
 end if
 
@@ -682,9 +677,9 @@ real(kind_real),intent(inout) :: fld(bump%geom%nc0a,bump%geom%nl0,bump%nam%nv,bu
 
 ! Apply NICAS
 if (bump%nam%lsqrt) then
-   call bump%nicas%apply_from_sqrt(bump%nam,bump%geom,bump%bpar,fld)
+   call bump%nicas%apply_from_sqrt(bump%mpl,bump%nam,bump%geom,bump%bpar,fld)
 else
-   call bump%nicas%apply(bump%nam,bump%geom,bump%bpar,fld)
+   call bump%nicas%apply(bump%mpl,bump%nam,bump%geom,bump%bpar,fld)
 end if
 
 end subroutine bump_apply_nicas
@@ -703,7 +698,7 @@ real(kind_real),intent(in) :: fld(bump%geom%nc0a,bump%geom%nl0)    !< Field
 real(kind_real),intent(out) :: obs(bump%obsop%nobsa,bump%geom%nl0) !< Observations columns
 
 ! Apply observation operator
-if (bump%obsop%nobsa>0) call bump%obsop%apply(bump%geom,fld,obs)
+if (bump%obsop%nobsa>0) call bump%obsop%apply(bump%mpl,bump%geom,fld,obs)
 
 end subroutine bump_apply_obsop
 
@@ -722,7 +717,7 @@ real(kind_real),intent(out) :: fld(bump%geom%nc0a,bump%geom%nl0)  !< Field
 
 ! Apply observation operator adjoint
 if (bump%obsop%nobsa>0) then
-   call bump%obsop%apply_ad(bump%geom,obs,fld)
+   call bump%obsop%apply_ad(bump%mpl,bump%geom,obs,fld)
 else
    fld = 0.0
 end if
@@ -747,7 +742,7 @@ real(kind_real) :: fld_mga(bump%geom%nmga)
 logical :: mask_unpack(bump%nx,bump%ny)
 
 ! Halo extension from subset Sc0 to model grid, halo A
-call bump%geom%com_mg%ext(fld_c0a,fld_mga)
+call bump%geom%com_mg%ext(bump%mpl,fld_c0a,fld_mga)
 
 ! Unpack to XY grid
 mask_unpack = .true.

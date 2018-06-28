@@ -10,15 +10,18 @@
 !----------------------------------------------------------------------
 module type_avg_blk
 
+use tools_const, only: rth
 use tools_kinds, only: kind_real
-use tools_missing, only: msr,isanynotmsr,isnotmsr
+use tools_missing, only: msr,isanynotmsr,isnotmsr,ismsr
 use type_bpar, only: bpar_type
 use type_geom, only: geom_type
 use type_hdata, only: hdata_type
 use type_mom_blk, only: mom_blk_type
-use type_mpl, only: mpl
+use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 implicit none
+
+real(kind_real),parameter :: var_min = 1.0e-24_kind_real !< Minimum variance for correlation computation
 
 ! Averaged statistics block derived type
 type avg_blk_type
@@ -54,14 +57,11 @@ end type avg_blk_type
 private
 public :: avg_blk_type
 
-real(kind_real),parameter :: rth = 1.0e-12_kind_real     !< Reproducibility threshold
-real(kind_real),parameter :: var_min = 1.0e-24_kind_real !< Minimum variance for correlation computation
-
 contains
 
 !----------------------------------------------------------------------
 ! Subroutine: avg_blk_alloc
-!> Purpose: averaged statistics object allocation
+!> Purpose: averaged statistics block data allocation
 !----------------------------------------------------------------------
 subroutine avg_blk_alloc(avg_blk,nam,geom,bpar,hdata,ic2a,ib,ne,nsub)
 
@@ -138,7 +138,7 @@ end subroutine avg_blk_alloc
 
 !----------------------------------------------------------------------
 ! Subroutine: avg_blk_dealloc
-!> Purpose: averaged statistics object deallocation
+!> Purpose: averaged statistics block data deallocation
 !----------------------------------------------------------------------
 subroutine avg_blk_dealloc(avg_blk)
 
@@ -166,7 +166,7 @@ end subroutine avg_blk_dealloc
 
 !----------------------------------------------------------------------
 ! Subroutine: avg_blk_pack
-!> Purpose: averaged statistics object packing
+!> Purpose: averaged statistics block data packing
 !----------------------------------------------------------------------
 subroutine avg_blk_pack(avg_blk,nam,geom,bpar,buf)
 
@@ -210,7 +210,7 @@ end subroutine avg_blk_pack
 
 !----------------------------------------------------------------------
 ! Subroutine: avg_blk_unpack
-!> Purpose: averaged statistics object unpacking
+!> Purpose: averaged statistics block data unpacking
 !----------------------------------------------------------------------
 subroutine avg_blk_unpack(avg_blk,nam,geom,bpar,buf)
 
@@ -265,12 +265,13 @@ end subroutine avg_blk_unpack
 ! Subroutine: avg_blk_compute
 !> Purpose: compute averaged statistics via spatial-angular erogodicity assumption
 !----------------------------------------------------------------------
-subroutine avg_blk_compute(avg_blk,nam,geom,bpar,hdata,mom_blk,ne)
+subroutine avg_blk_compute(avg_blk,mpl,nam,geom,bpar,hdata,mom_blk,ne)
 
 implicit none
 
 ! Passed variables
 class(avg_blk_type),intent(inout) :: avg_blk !< Averaged statistics block
+type(mpl_type),intent(in) :: mpl             !< MPI data
 type(nam_type),intent(in) :: nam             !< Namelist
 type(geom_type),intent(in) :: geom           !< Geometry
 type(bpar_type),intent(in) :: bpar           !< Block parameters
@@ -510,7 +511,7 @@ do il0=1,geom%nl0
             end if
 
             ! Check value
-            if (.not.isnotmsr(avg_blk%m11sq(jc3,jl0r,il0))) then
+            if (ismsr(avg_blk%m11sq(jc3,jl0r,il0))) then
                if (avg_blk%m11sq(jc3,jl0r,il0)<avg_blk%m11asysq(jc3,jl0r,il0)) call msr(avg_blk%m11sq(jc3,jl0r,il0))
                if (avg_blk%m11sq(jc3,jl0r,il0)<avg_blk%m11(jc3,jl0r,il0)**2) call msr(avg_blk%m11sq(jc3,jl0r,il0))
             end if
@@ -534,12 +535,13 @@ end subroutine avg_blk_compute
 ! Subroutine: avg_blk_compute_lr
 !> Purpose: compute averaged statistics via spatial-angular erogodicity assumption, for LR covariance/HR covariance and LR covariance/HR asymptotic covariance products
 !----------------------------------------------------------------------
-subroutine avg_blk_compute_lr(avg_blk_lr,geom,bpar,hdata,mom_blk,mom_lr_blk,avg_blk)
+subroutine avg_blk_compute_lr(avg_blk_lr,mpl,geom,bpar,hdata,mom_blk,mom_lr_blk,avg_blk)
 
 implicit none
 
 ! Passed variables
 class(avg_blk_type),intent(inout) :: avg_blk_lr !< Low-resolution averaged statistics block
+type(mpl_type),intent(in) :: mpl                !< MPI data
 type(geom_type),intent(in) :: geom              !< Geometry
 type(bpar_type),intent(in) :: bpar              !< Block parameters
 type(hdata_type),intent(in) :: hdata            !< HDIAG data

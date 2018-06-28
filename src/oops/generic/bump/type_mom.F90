@@ -11,7 +11,6 @@
 module type_mom
 
 !$ use omp_lib
-use tools_display, only: msgerror
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsr
 use type_bpar, only: bpar_type
@@ -20,7 +19,7 @@ use type_ens, only: ens_type
 use type_geom, only: geom_type
 use type_linop, only: linop_type
 use type_mom_blk, only: mom_blk_type
-use type_mpl, only: mpl
+use type_mpl, only: mpl_type
 use type_hdata, only: hdata_type
 use type_nam, only: nam_type
 
@@ -112,12 +111,13 @@ end subroutine mom_alloc
 ! Subroutine: mom_compute
 !> Purpose: compute centered moments (iterative formulae)
 !----------------------------------------------------------------------
-subroutine mom_compute(mom,nam,geom,bpar,hdata,ens)
+subroutine mom_compute(mom,mpl,nam,geom,bpar,hdata,ens)
 
 implicit none
 
 ! Passed variables
 class(mom_type),intent(inout) :: mom !< Moments
+type(mpl_type),intent(in) :: mpl     !< MPI data
 type(nam_type),intent(in) :: nam     !< Namelist
 type(geom_type),intent(in) :: geom   !< Geometry
 type(bpar_type),intent(in) :: bpar   !< Block parameters
@@ -171,7 +171,7 @@ do isub=1,ens%nsub
          jts = bpar%b_to_ts2(ib)
 
          ! Halo extension
-         if ((iv==jv).and.(its==jts)) call hdata%com_AC%ext(geom%nl0,ens%fld(:,:,iv,its,ie),fld_ext(:,:,iv,its))
+         if ((iv==jv).and.(its==jts)) call hdata%com_AC%ext(mpl,geom%nl0,ens%fld(:,:,iv,its,ie),fld_ext(:,:,iv,its))
       end do
 
       do ib=1,bpar%nb
@@ -193,8 +193,8 @@ do isub=1,ens%nsub
                ! Interpolate zero separation points
                !$omp parallel do schedule(static) private(il0)
                do il0=1,geom%nl0
-                  call hdata%d(il0,its)%apply(fld_ext(:,il0,iv,its),fld_1(:,1,1,il0))
-                  call hdata%d(il0,jts)%apply(fld_ext(:,il0,jv,jts),fld_2(:,1,1,il0))
+                  call hdata%d(il0,its)%apply(mpl,fld_ext(:,il0,iv,its),fld_1(:,1,1,il0))
+                  call hdata%d(il0,jts)%apply(mpl,fld_ext(:,il0,jv,jts),fld_2(:,1,1,il0))
                end do
                !$omp end parallel do
             else

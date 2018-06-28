@@ -10,17 +10,18 @@
 !----------------------------------------------------------------------
 module type_kdtree
 
-use tools_display, only: msgerror
+use tools_const, only: rth
 use tools_kdtree2, only: kdtree2,kdtree2_result,kdtree2_create,kdtree2_destroy, &
                        & kdtree2_n_nearest,kdtree2_r_count
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,isnotmsi
 use tools_qsort, only: qsort
 use tools_stripack, only: trans,scoord
-use type_mpl, only: mpl
+use type_mpl, only: mpl_type
 
 implicit none
 
+! KD-tree derived type
 type kdtree_type
     type(kdtree2),pointer :: tp        !< KD-tree pointer
     integer,allocatable :: from_eff(:) !< Effective index conversion
@@ -31,8 +32,6 @@ contains
     procedure :: count_nearest_neighbors => kdtree_count_nearest_neighbors
 end type kdtree_type
 
-real(kind_real),parameter :: rth = 1.0e-12_kind_real !< Reproducibility threshold
-
 private
 public :: kdtree_type
 
@@ -42,12 +41,13 @@ contains
 ! Subroutine: kdtree_create
 !> Purpose: create a KD-tree
 !----------------------------------------------------------------------
-subroutine kdtree_create(kdtree,n,lon,lat,mask,sort)
+subroutine kdtree_create(kdtree,mpl,n,lon,lat,mask,sort)
 
 implicit none
 
 ! Passed variables
-class(kdtree_type),intent(inout) :: kdtree !< KD-tree object
+class(kdtree_type),intent(inout) :: kdtree !< KD-tree
+type(mpl_type),intent(in) :: mpl           !< MPI data
 integer,intent(in) :: n                    !< Number of points
 real(kind_real),intent(in) :: lon(n)       !< Points longitudes
 real(kind_real),intent(in) :: lat(n)       !< Points latitudes
@@ -77,7 +77,7 @@ end if
 neff = count(lmask)
 
 ! Check size
-if (neff<1) call msgerror('mask should have at least one valid point to create a kdtree')
+if (neff<1) call mpl%abort('mask should have at least one valid point to create a kdtree')
 
 ! Allocation
 allocate(input_data(3,neff))
@@ -111,7 +111,7 @@ subroutine kdtree_dealloc(kdtree)
 implicit none
 
 ! Passed variables
-class(kdtree_type),intent(inout) :: kdtree !< KD-tree object
+class(kdtree_type),intent(inout) :: kdtree !< KD-tree
 
 ! Delete KD-tree
 call kdtree2_destroy(kdtree%tp)
@@ -130,7 +130,7 @@ subroutine kdtree_find_nearest_neighbors(kdtree,lon,lat,nn,nn_index,nn_dist)
 implicit none
 
 ! Passed variables
-class(kdtree_type),intent(in) :: kdtree    !< KD-tree object
+class(kdtree_type),intent(in) :: kdtree    !< KD-tree
 real(kind_real),intent(in) :: lon(1)       !< Point longitude
 real(kind_real),intent(in) :: lat(1)       !< Point latitude
 integer,intent(in) :: nn                   !< Number of nearest neighbors to find
@@ -187,7 +187,7 @@ subroutine kdtree_count_nearest_neighbors(kdtree,lon,lat,sr,nn)
 implicit none
 
 ! Passed variables
-class(kdtree_type),intent(in) :: kdtree !< KD-tree object
+class(kdtree_type),intent(in) :: kdtree !< KD-tree
 real(kind_real),intent(in) :: lon(1)    !< Point longitude
 real(kind_real),intent(in) :: lat(1)    !< Point latitude
 real(kind_real),intent(in) :: sr        !< Spherical radius

@@ -11,7 +11,6 @@
 module type_obsop
 
 use tools_const, only: pi,deg2rad,rad2deg,reqkm
-use tools_display, only: msgerror
 use tools_func, only: sphere_dist
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsi,isnotmsr
@@ -19,9 +18,9 @@ use tools_qsort, only: qsort
 use type_com, only: com_type
 use type_geom, only: geom_type
 use type_linop, only: linop_type
-use type_mpl, only: mpl
+use type_mpl, only: mpl_type
 use type_nam, only: nam_type
-use type_rng, only: rng
+use type_rng, only: rng_type
 
 implicit none
 
@@ -108,12 +107,14 @@ end subroutine obsop_dealloc
 ! Subroutine: obsop_generate
 !> Purpose: generate observations locations
 !----------------------------------------------------------------------
-subroutine obsop_generate(obsop,nam,geom)
+subroutine obsop_generate(obsop,mpl,rng,nam,geom)
 
 implicit none
 
 ! Passed variables
 class(obsop_type),intent(inout) :: obsop !< Observation operator data
+type(mpl_type),intent(in) :: mpl         !< MPI data
+type(rng_type),intent(inout) :: rng      !< Random number generator
 type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 
@@ -137,7 +138,7 @@ if (readobs) then
    end do
    close(unit=100)
    obsop%nobs = min(obsop%nobs,nam%nobs)
-   if (obsop%nobs<1) call msgerror('no observation in the file provided')
+   if (obsop%nobs<1) call mpl%abort('no observation in the file provided')
 else
    ! Generate random observation network
    obsop%nobs = nam%nobs
@@ -216,12 +217,14 @@ end subroutine obsop_from
 ! Subroutine: obsop_run_obsop
 !> Purpose: observation operator driver
 !----------------------------------------------------------------------
-subroutine obsop_run_obsop(obsop,nam,geom)
+subroutine obsop_run_obsop(obsop,mpl,rng,nam,geom)
 
 implicit none
 
 ! Passed variables
 class(obsop_type),intent(inout) :: obsop !< Observation operator data
+type(mpl_type),intent(inout) :: mpl      !< MPI data
+type(rng_type),intent(inout) :: rng      !< Random number generator
 type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 
@@ -229,21 +232,21 @@ type(geom_type),intent(in) :: geom       !< Geometry
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Compute observation operator parameters'
 call flush(mpl%unit)
-call obsop%parameters(nam,geom)
+call obsop%parameters(mpl,rng,nam,geom)
 
 if (nam%check_adjoints) then
    ! Test adjoints
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Test observation operator adjoint'
    call flush(mpl%unit)
-   call obsop%test_adjoint(geom)
+   call obsop%test_adjoint(mpl,rng,geom)
 end if
 
 ! Test precision
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Test observation operator precision'
 call flush(mpl%unit)
-call obsop%test_accuracy(geom)
+call obsop%test_accuracy(mpl,geom)
 
 end subroutine obsop_run_obsop
 
@@ -251,12 +254,14 @@ end subroutine obsop_run_obsop
 ! Subroutine: obsop_parameters
 !> Purpose: compute observation operator interpolation parameters
 !----------------------------------------------------------------------
-subroutine obsop_parameters(obsop,nam,geom)
+subroutine obsop_parameters(obsop,mpl,rng,nam,geom)
 
 implicit none
 
 ! Passed variables
 class(obsop_type),intent(inout) :: obsop !< Observation operator data
+type(mpl_type),intent(inout) :: mpl      !< MPI data
+type(rng_type),intent(inout) :: rng      !< Random number generator
 type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 
@@ -372,7 +377,7 @@ obsop%hfull%prefix = 'o'
 write(mpl%unit,'(a7,a)') '','Single level:'
 call flush(mpl%unit)
 maskobs = .true.
-call obsop%hfull%interp(geom%mesh,geom%kdtree,geom%nc0,any(geom%mask,dim=2),obsop%nobs,lonobs,latobs,maskobs,nam%obsop_interp)
+call obsop%hfull%interp(mpl,geom%mesh,geom%kdtree,geom%nc0,any(geom%mask,dim=2),obsop%nobs,lonobs,latobs,maskobs,nam%obsop_interp)
 
 ! Count interpolation points
 nop = 0
@@ -614,7 +619,7 @@ do ic0a=1,geom%nc0a
 end do
 
 ! Setup communications
-call obsop%com%setup('com',geom%nc0,geom%nc0a,obsop%nc0b,obsop%c0b_to_c0,obsop%c0a_to_c0b,geom%c0_to_proc,geom%c0_to_c0a)
+call obsop%com%setup(mpl,'com',geom%nc0,geom%nc0a,obsop%nc0b,obsop%c0b_to_c0,obsop%c0a_to_c0b,geom%c0_to_proc,geom%c0_to_c0a)
 
 ! Compute scores
 call mpl%allreduce_max(real(obsop%com%nhalo,kind_real),C_max)
@@ -661,12 +666,13 @@ end subroutine obsop_parameters
 ! Subroutine: obsop_apply
 !> Purpose: observation operator interpolation
 !----------------------------------------------------------------------
-subroutine obsop_apply(obsop,geom,fld,obs)
+subroutine obsop_apply(obsop,mpl,geom,fld,obs)
 
 implicit none
 
 ! Passed variables
 class(obsop_type),intent(in) :: obsop                    !< Observation operator data
+type(mpl_type),intent(in) :: mpl                         !< MPI data
 type(geom_type),intent(in) :: geom                       !< Geometry
 real(kind_real),intent(in) :: fld(geom%nc0a,geom%nl0)    !< Field
 real(kind_real),intent(out) :: obs(obsop%nobsa,geom%nl0) !< Observations columns
@@ -676,13 +682,13 @@ integer :: il0
 real(kind_real) :: fld_ext(obsop%nc0b,geom%nl0)
 
 ! Halo extension
-call obsop%com%ext(geom%nl0,fld,fld_ext)
+call obsop%com%ext(mpl,geom%nl0,fld,fld_ext)
 
 if (obsop%nobsa>0) then
    ! Horizontal interpolation
    !$omp parallel do schedule(static) private(il0)
    do il0=1,geom%nl0
-      call obsop%h%apply(fld_ext(:,il0),obs(:,il0))
+      call obsop%h%apply(mpl,fld_ext(:,il0),obs(:,il0))
    end do
    !$omp end parallel do
 end if
@@ -693,12 +699,13 @@ end subroutine obsop_apply
 ! Subroutine: obsop_apply_ad
 !> Purpose: observation operator interpolation adjoint
 !----------------------------------------------------------------------
-subroutine obsop_apply_ad(obsop,geom,obs,fld)
+subroutine obsop_apply_ad(obsop,mpl,geom,obs,fld)
 
 implicit none
 
 ! Passed variables
 class(obsop_type),intent(in) :: obsop                   !< Observation operator data
+type(mpl_type),intent(in) :: mpl                        !< MPI data
 type(geom_type),intent(in) :: geom                      !< Geometry
 real(kind_real),intent(in) :: obs(obsop%nobsa,geom%nl0) !< Observations columns
 real(kind_real),intent(out) :: fld(geom%nc0a,geom%nl0)  !< Field
@@ -711,7 +718,7 @@ if (obsop%nobsa>0) then
    ! Horizontal interpolation
    !$omp parallel do schedule(static) private(il0)
    do il0=1,geom%nl0
-      call obsop%h%apply_ad(obs(:,il0),fld_ext(:,il0))
+      call obsop%h%apply_ad(mpl,obs(:,il0),fld_ext(:,il0))
    end do
    !$omp end parallel do
 else
@@ -720,7 +727,7 @@ else
 end if
 
 ! Halo reduction
-call obsop%com%red(geom%nl0,fld_ext,fld)
+call obsop%com%red(mpl,geom%nl0,fld_ext,fld)
 
 end subroutine obsop_apply_ad
 
@@ -728,12 +735,14 @@ end subroutine obsop_apply_ad
 ! Subroutine: obsop_test_adjoint
 !> Purpose: test observation operator adjoints accuracy
 !----------------------------------------------------------------------
-subroutine obsop_test_adjoint(obsop,geom)
+subroutine obsop_test_adjoint(obsop,mpl,rng,geom)
 
 implicit none
 
 ! Passed variables
 class(obsop_type),intent(inout) :: obsop !< Observation operator data
+type(mpl_type),intent(in) :: mpl         !< MPI data
+type(rng_type),intent(inout) :: rng      !< Random number generator
 type(geom_type),intent(in) :: geom       !< Geometry
 
 ! Local variables
@@ -753,8 +762,8 @@ if (obsop%nobsa>0) call rng%rand_real(0.0_kind_real,1.0_kind_real,yobs_save)
 
 if (obsop%nobsa>0) then
    ! Apply direct and adjoint obsservation operators
-   call obsop%apply(geom,fld_save,yobs)
-   call obsop%apply_ad(geom,yobs_save,fld)
+   call obsop%apply(mpl,geom,fld_save,yobs)
+   call obsop%apply_ad(mpl,geom,yobs_save,fld)
 else
    ! No observation on this task
    fld = 0.0
@@ -780,12 +789,13 @@ end subroutine obsop_test_adjoint
 ! Subroutine: obsop_test_accuracy
 !> Purpose: test observation operator accuracy
 !----------------------------------------------------------------------
-subroutine obsop_test_accuracy(obsop,geom)
+subroutine obsop_test_accuracy(obsop,mpl,geom)
 
 implicit none
 
 ! Passed variables
 class(obsop_type),intent(inout) :: obsop !< Observation operator data
+type(mpl_type),intent(in) :: mpl         !< MPI data
 type(geom_type),intent(in) :: geom       !< Geometry
 
 ! Local variables
@@ -816,8 +826,8 @@ end do
 
 if (obsop%nobsa>0) then
    ! Apply obsop
-   call obsop%apply(geom,lon,ylon)
-   call obsop%apply(geom,lat,ylat)
+   call obsop%apply(mpl,geom,lon,ylon)
+   call obsop%apply(mpl,geom,lat,ylat)
 
    ! Remove points close to the longitude discontinuity and to the poles
    call msr(dist)
@@ -878,7 +888,7 @@ if (norm_tot>0.0) then
  & ' deg. / ' ,ylatmax*rad2deg,' deg.'
    call flush(mpl%unit)
 else
-   call msgerror('all observations are out of the test windows')
+   call mpl%abort('all observations are out of the test windows')
 end if
 
 end subroutine obsop_test_accuracy

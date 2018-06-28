@@ -12,12 +12,11 @@ module model_aro
 
 use netcdf
 use tools_const, only: deg2rad,rad2deg,req,ps
-use tools_display, only: msgerror
 use tools_kinds,only: kind_real
 use tools_missing, only: msr,isanynotmsr
-use tools_nc, only: ncerr,ncfloat
+use tools_nc, only: ncfloat
 use type_geom, only: geom_type
-use type_mpl, only: mpl
+use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 
 implicit none
@@ -33,11 +32,12 @@ contains
 ! Subroutine: model_aro_coord
 !> Purpose: load AROME coordinates
 !----------------------------------------------------------------------
-subroutine model_aro_coord(nam,geom)
+subroutine model_aro_coord(mpl,nam,geom)
 
 implicit none
 
 ! Passed variables
+type(mpl_type),intent(in) :: mpl      !< MPI data
 type(nam_type),intent(in) :: nam      !< Namelist
 type(geom_type),intent(inout) :: geom !< Geometry
 
@@ -50,14 +50,14 @@ logical,allocatable :: cmask_pack(:)
 character(len=1024) :: subr = 'model_aro_coord'
 
 ! Open file and get dimensions
-call ncerr(subr,nf90_open(trim(nam%datadir)//'/grid.nc',nf90_share,ncid))
-call ncerr(subr,nf90_inq_dimid(ncid,'X',nlon_id))
-call ncerr(subr,nf90_inq_dimid(ncid,'Y',nlat_id))
-call ncerr(subr,nf90_inquire_dimension(ncid,nlon_id,len=geom%nlon))
-call ncerr(subr,nf90_inquire_dimension(ncid,nlat_id,len=geom%nlat))
+call mpl%ncerr(subr,nf90_open(trim(nam%datadir)//'/grid.nc',nf90_share,ncid))
+call mpl%ncerr(subr,nf90_inq_dimid(ncid,'X',nlon_id))
+call mpl%ncerr(subr,nf90_inq_dimid(ncid,'Y',nlat_id))
+call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nlon_id,len=geom%nlon))
+call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nlat_id,len=geom%nlat))
 geom%nmg = geom%nlon*geom%nlat
-call ncerr(subr,nf90_inq_dimid(ncid,'Z',nlev_id))
-call ncerr(subr,nf90_inquire_dimension(ncid,nlev_id,len=geom%nlev))
+call mpl%ncerr(subr,nf90_inq_dimid(ncid,'Z',nlev_id))
+call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nlev_id,len=geom%nlev))
 
 ! Allocation
 allocate(lon(geom%nlon,geom%nlat))
@@ -68,27 +68,27 @@ allocate(a(geom%nlev+1))
 allocate(b(geom%nlev+1))
 
 ! Read data and close file
-call ncerr(subr,nf90_inq_varid(ncid,'longitude',lon_id))
-call ncerr(subr,nf90_inq_varid(ncid,'latitude',lat_id))
-call ncerr(subr,nf90_inq_varid(ncid,'cmask',cmask_id))
-call ncerr(subr,nf90_inq_varid(ncid,'hybrid_coef_A',a_id))
-call ncerr(subr,nf90_inq_varid(ncid,'hybrid_coef_B',b_id))
-call ncerr(subr,nf90_inq_varid(ncid,'Projection_parameters',pp_id))
-call ncerr(subr,nf90_get_var(ncid,lon_id,lon))
-call ncerr(subr,nf90_get_var(ncid,lat_id,lat))
-call ncerr(subr,nf90_get_var(ncid,cmask_id,cmask))
-call ncerr(subr,nf90_get_var(ncid,a_id,a))
-call ncerr(subr,nf90_get_var(ncid,b_id,b))
-call ncerr(subr,nf90_get_att(ncid,pp_id,'x_resolution',dx))
-call ncerr(subr,nf90_get_att(ncid,pp_id,'y_resolution',dy))
-call ncerr(subr,nf90_close(ncid))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,'longitude',lon_id))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,'latitude',lat_id))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,'cmask',cmask_id))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,'hybrid_coef_A',a_id))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,'hybrid_coef_B',b_id))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,'Projection_parameters',pp_id))
+call mpl%ncerr(subr,nf90_get_var(ncid,lon_id,lon))
+call mpl%ncerr(subr,nf90_get_var(ncid,lat_id,lat))
+call mpl%ncerr(subr,nf90_get_var(ncid,cmask_id,cmask))
+call mpl%ncerr(subr,nf90_get_var(ncid,a_id,a))
+call mpl%ncerr(subr,nf90_get_var(ncid,b_id,b))
+call mpl%ncerr(subr,nf90_get_att(ncid,pp_id,'x_resolution',dx))
+call mpl%ncerr(subr,nf90_get_att(ncid,pp_id,'y_resolution',dy))
+call mpl%ncerr(subr,nf90_close(ncid))
 
 ! Convert to radian
 lon = lon*real(deg2rad,kind=8)
 lat = lat*real(deg2rad,kind=8)
 
 ! Not redundant grid
-call geom%find_redundant
+call geom%find_redundant(mpl)
 
 ! Pack
 call geom%alloc
@@ -108,7 +108,7 @@ do ilon=1,geom%nlon
       case ('C+I+E')
          geom%mask(ic0,:) = .true.
       case default
-         call msgerror('wrong AROME zone')
+         call mpl%abort('wrong AROME zone')
       end select
    end do
 end do
@@ -142,11 +142,12 @@ end subroutine model_aro_coord
 ! Subroutine: model_aro_read
 !> Purpose: read AROME field
 !----------------------------------------------------------------------
-subroutine model_aro_read(nam,geom,filename,fld)
+subroutine model_aro_read(mpl,nam,geom,filename,fld)
 
 implicit none
 
 ! Passed variables
+type(mpl_type),intent(in) :: mpl                              !< MPI data
 type(nam_type),intent(in) :: nam                              !< Namelist
 type(geom_type),intent(in) :: geom                            !< Geometry
 character(len=*),intent(in) :: filename                       !< File name
@@ -165,7 +166,7 @@ if (mpl%main) then
    allocate(fld_tmp(geom%nlon,geom%nlat,geom%nl0))
 
    ! Open file
-   call ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_nowrite,ncid))
+   call mpl%ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_nowrite,ncid))
 end if
 
 do iv=1,nam%nv
@@ -174,20 +175,20 @@ do iv=1,nam%nv
       do il0=1,nam%nl
          ! Get id
          write(ilchar,'(i3.3)') nam%levs(il0)
-         call ncerr(subr,nf90_inq_varid(ncid,'S'//ilchar//trim(nam%varname(iv)),fld_id))
+         call mpl%ncerr(subr,nf90_inq_varid(ncid,'S'//ilchar//trim(nam%varname(iv)),fld_id))
 
          ! Read data
-         call ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp(:,:,il0)))
+         call mpl%ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp(:,:,il0)))
       end do
 
       if (trim(nam%addvar2d(iv))/='') then
          ! 2d variable
 
          ! Get id
-         call ncerr(subr,nf90_inq_varid(ncid,trim(nam%addvar2d(iv)),fld_id))
+         call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(nam%addvar2d(iv)),fld_id))
 
          ! Read data
-         call ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp(:,:,geom%nl0)))
+         call mpl%ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp(:,:,geom%nl0)))
 
          ! Variable change for surface pressure
          if (trim(nam%addvar2d(iv))=='SURFPRESSION') fld_tmp(:,:,geom%nl0) = exp(fld_tmp(:,:,geom%nl0))
@@ -209,7 +210,7 @@ end do
 
 if (mpl%main) then
    ! Close file
-   call ncerr(subr,nf90_close(ncid))
+   call mpl%ncerr(subr,nf90_close(ncid))
 
    ! Release memory
    deallocate(fld_tmp)

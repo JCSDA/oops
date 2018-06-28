@@ -10,19 +10,18 @@
 !----------------------------------------------------------------------
 module tools_stripack
 
-use tools_display, only: msgerror
+use tools_const, only: rth
 use tools_kinds, only: kind_real
+use type_mpl, only: mpl_type
 
 implicit none
-
-real(kind_real),parameter :: rth = 1.0e-12 !< Reproducibility threshold
 
 private
 public :: addnod,areas,bnodes,crlist,inside,scoord,trans,trfind,trlist,trmesh
 
 contains
 
-subroutine addnod ( nst, k, x, y, z, list, lptr, lend, lnew, ier )
+subroutine addnod ( mpl, nst, k, x, y, z, list, lptr, lend, lnew, ier )
 
 !*****************************************************************************80
 !
@@ -105,6 +104,8 @@ subroutine addnod ( nst, k, x, y, z, list, lptr, lend, lnew, ier )
 !
   implicit none
 
+  type(mpl_type),intent(in) :: mpl !< MPI data
+
   integer k
 
   real ( kind_real ) b1
@@ -143,7 +144,7 @@ subroutine addnod ( nst, k, x, y, z, list, lptr, lend, lnew, ier )
     write ( *, '(a)' ) ' '
     write ( *, '(a)' ) 'ADDNOD - Fatal error!'
     write ( *, '(a)' ) '  K < 4.'
-    call msgerror('stop in stripack')
+    call mpl%abort('stop in stripack')
   end if
 !
 !  Initialization:
@@ -173,7 +174,7 @@ subroutine addnod ( nst, k, x, y, z, list, lptr, lend, lnew, ier )
     write ( *, '(a)' ) ' '
     write ( *, '(a)' ) 'ADDNOD - Fatal error!'
     write ( *, '(a)' ) '  The nodes are coplanar.'
-    call msgerror('stop in stripack')
+    call mpl%abort('stop in stripack')
   end if
 
   if ( i3 /= 0 ) then
@@ -185,7 +186,7 @@ subroutine addnod ( nst, k, x, y, z, list, lptr, lend, lnew, ier )
       write ( *, '(a)' ) ' '
       write ( *, '(a)' ) 'ADDNOD - Fatal error!'
       write ( *, '(a,i8,a,i8)' ) '  Node ', l, ' is equal to node ', k
-      call msgerror('stop in stripack')
+      call mpl%abort('stop in stripack')
     end if
 
     l = i2
@@ -195,7 +196,7 @@ subroutine addnod ( nst, k, x, y, z, list, lptr, lend, lnew, ier )
       write ( *, '(a)' ) ' '
       write ( *, '(a)' ) 'ADDNOD - Fatal error!'
       write ( *, '(a,i8,a,i8)' ) '  Node ', l, ' is equal to node ', k
-      call msgerror('stop in stripack')
+      call mpl%abort('stop in stripack')
     end if
 
     l = i3
@@ -204,7 +205,7 @@ subroutine addnod ( nst, k, x, y, z, list, lptr, lend, lnew, ier )
       write ( *, '(a)' ) ' '
       write ( *, '(a)' ) 'ADDNOD - Fatal error!'
       write ( *, '(a,i8,a,i8)' ) '  Node ', l, ' is equal to node ', k
-      call msgerror('stop in stripack')
+      call mpl%abort('stop in stripack')
     end if
 
     call intadd ( kk, i1, i2, i3, list, lptr, lend, lnew )
@@ -3982,7 +3983,7 @@ subroutine trlist ( n, list, lptr, lend, nrow, nt, ltri, ier )
 
   return
 end
-subroutine trmesh ( n, x, y, z, list, lptr, lend, lnew, near, next, dist, ier )
+subroutine trmesh ( mpl, n, x, y, z, list, lptr, lend, lnew, near, next, dist, ier )
 
 !*****************************************************************************80
 !
@@ -4163,6 +4164,8 @@ subroutine trmesh ( n, x, y, z, list, lptr, lend, lnew, near, next, dist, ier )
 !
   implicit none
 
+  type(mpl_type),intent(in) :: mpl !< MPI data
+
   integer n
 
   real ( kind_real ) d
@@ -4197,7 +4200,7 @@ subroutine trmesh ( n, x, y, z, list, lptr, lend, lnew, near, next, dist, ier )
     write ( *, '(a)' ) ' '
     write ( *, '(a)' ) 'TRMESH - Fatal error!'
     write ( *, '(a)' ) '  N < 3.'
-    call msgerror('stop in stripack')
+    call mpl%abort('stop in stripack')
   end if
 !
 !  Initialize
@@ -4265,7 +4268,7 @@ subroutine trmesh ( n, x, y, z, list, lptr, lend, lnew, near, next, dist, ier )
     write ( *, '(a)' ) 'TRMESH - Fatal error!'
     write ( *, '(a)' ) '  The first 3 nodes are collinear.'
     write ( *, '(a)' ) '  Try reordering the data.'
-    call msgerror('stop in stripack')
+    call mpl%abort('stop in stripack')
 
   end if
 !
@@ -4336,13 +4339,13 @@ subroutine trmesh ( n, x, y, z, list, lptr, lend, lnew, near, next, dist, ier )
 !
   do k = 4, nn
 
-    call addnod ( near(k), k, x, y, z, list, lptr, lend, lnew, ier )
+    call addnod ( mpl, near(k), k, x, y, z, list, lptr, lend, lnew, ier )
 
     if ( ier /= 0 ) then
       write ( *, '(a)' ) ' '
       write ( *, '(a)' ) 'TRMESH - Fatal error!'
       write ( *, '(a,i8)' ) '  ADDNOD returned error code IER = ', ier
-      call msgerror('stop in stripack')
+      call mpl%abort('stop in stripack')
     end if
 !
 !  Remove K from the set of unprocessed nodes associated with NEAR(K).

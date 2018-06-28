@@ -15,9 +15,9 @@ use tools_kinds,only: kind_real
 use type_bpar, only: bpar_type
 use type_geom, only: geom_type
 use type_kdtree, only: kdtree_type
-use type_mpl, only: mpl
+use type_mpl, only: mpl_type
 use type_nam, only: nam_type
-use type_rng, only: rng
+use type_rng, only: rng_type
 
 implicit none
 
@@ -64,9 +64,11 @@ end subroutine define_dirac
 ! Subroutine: define_test_vectors
 !> Purpose: define test vectors
 !----------------------------------------------------------------------
-subroutine define_test_vectors(nam,geom,ntest,fld)
+subroutine define_test_vectors(mpl,rng,nam,geom,ntest,fld)
 
 ! Passed variables
+type(mpl_type),intent(in) :: mpl                                            !< MPI data
+type(rng_type),intent(inout) :: rng                                         !< Random number generator
 type(nam_type),intent(in) :: nam                                            !< Namelist
 type(geom_type),intent(in) :: geom                                          !< Geometry
 integer,intent(in) :: ntest                                                 !< Number of vectors

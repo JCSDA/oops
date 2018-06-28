@@ -12,11 +12,10 @@ module type_com
 
 use netcdf
 !$ use omp_lib
-use tools_display, only: msgerror
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr
-use tools_nc, only: ncfloat,ncerr
-use type_mpl, only: mpl
+use tools_nc, only: ncfloat
+use type_mpl, only: mpl_type
 use yomhook, only: lhook,dr_hook
 
 implicit none
@@ -55,13 +54,12 @@ end type com_type
 
 private
 public :: com_type
-public :: com_setup
 
 contains
 
 !----------------------------------------------------------------------
 ! Subroutine: com_dealloc
-!> Purpose: communications object deallocation
+!> Purpose: communications data deallocation
 !----------------------------------------------------------------------
 subroutine com_dealloc(com)
 
@@ -87,12 +85,13 @@ end subroutine com_dealloc
 ! Subroutine: com_ext_1d
 !> Purpose: communicate field to halo (extension), 1d
 !----------------------------------------------------------------------
-subroutine com_ext_1d(com,vec_red,vec_ext)
+subroutine com_ext_1d(com,mpl,vec_red,vec_ext)
 
 implicit none
 
 ! Passed variables
 class(com_type),intent(in) :: com                !< Communication data
+type(mpl_type),intent(in) :: mpl                 !< MPI data
 real(kind_real),intent(in) :: vec_red(com%nred)  !< Reduced vector
 real(kind_real),intent(out) :: vec_ext(com%next) !< Extended vector
 
@@ -135,12 +134,13 @@ end subroutine com_ext_1d
 ! Subroutine: com_ext_2d
 !> Purpose: communicate field to halo (extension), 2d
 !----------------------------------------------------------------------
-subroutine com_ext_2d(com,nl,vec_red,vec_ext)
+subroutine com_ext_2d(com,mpl,nl,vec_red,vec_ext)
 
 implicit none
 
 ! Passed variables
 class(com_type),intent(in) :: com                   !< Communication data
+type(mpl_type),intent(in) :: mpl                    !< MPI data
 integer,intent(in) :: nl                            !< Number of levels
 real(kind_real),intent(in) :: vec_red(com%nred,nl)  !< Reduced vector
 real(kind_real),intent(out) :: vec_ext(com%next,nl) !< Extended vector
@@ -190,12 +190,13 @@ end subroutine com_ext_2d
 ! Subroutine: com_red_1d
 !> Purpose: communicate vector from halo (reduction)
 !----------------------------------------------------------------------
-subroutine com_red_1d(com,vec_ext,vec_red)
+subroutine com_red_1d(com,mpl,vec_ext,vec_red)
 
 implicit none
 
 ! Passed variables
 class(com_type),intent(in) :: com                !< Communication data
+type(mpl_type),intent(in) :: mpl                 !< MPI data
 real(kind_real),intent(in) :: vec_ext(com%next)  !< Extended vector
 real(kind_real),intent(out) :: vec_red(com%nred) !< Reduced vector
 
@@ -246,12 +247,13 @@ end subroutine com_red_1d
 ! Subroutine: com_red_2d
 !> Purpose: communicate vector from halo (reduction)
 !----------------------------------------------------------------------
-subroutine com_red_2d(com,nl,vec_ext,vec_red)
+subroutine com_red_2d(com,mpl,nl,vec_ext,vec_red)
 
 implicit none
 
 ! Passed variables
 class(com_type),intent(in) :: com                   !< Communication data
+type(mpl_type),intent(in) :: mpl                    !< MPI data
 integer,intent(in) :: nl                            !< Number of levels
 real(kind_real),intent(in) :: vec_ext(com%next,nl)  !< Extended vector
 real(kind_real),intent(out) :: vec_red(com%nred,nl) !< Reduced vector
@@ -309,12 +311,13 @@ end subroutine com_red_2d
 ! Subroutine: com_read
 !> Purpose: read communications from a NetCDF file
 !----------------------------------------------------------------------
-subroutine com_read(com,ncid,prefix)
+subroutine com_read(com,mpl,ncid,prefix)
 
 implicit none
 
 ! Passed variables
 class(com_type),intent(inout) :: com  !< Communication data
+type(mpl_type),intent(in) :: mpl      !< MPI data
 integer,intent(in) :: ncid            !< NetCDF file id
 character(len=*),intent(in) :: prefix !< Communication prefix
 
@@ -330,25 +333,25 @@ com%prefix = trim(prefix)
 ! Get dimensions
 info = nf90_inq_dimid(ncid,trim(prefix)//'_nred',nred_id)
 if (info==nf90_noerr) then
-   call ncerr(subr,nf90_inquire_dimension(ncid,nred_id,len=com%nred))
+   call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nred_id,len=com%nred))
 else
    com%nred = 0
 end if
 info = nf90_inq_dimid(ncid,trim(prefix)//'_next',next_id)
 if (info==nf90_noerr) then
-   call ncerr(subr,nf90_inquire_dimension(ncid,next_id,len=com%next))
+   call mpl%ncerr(subr,nf90_inquire_dimension(ncid,next_id,len=com%next))
 else
    com%next = 0
 end if
 info = nf90_inq_dimid(ncid,trim(prefix)//'_nhalo',nhalo_id)
 if (info==nf90_noerr) then
-   call ncerr(subr,nf90_inquire_dimension(ncid,nhalo_id,len=com%nhalo))
+   call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nhalo_id,len=com%nhalo))
 else
    com%nhalo = 0
 end if
 info = nf90_inq_dimid(ncid,trim(prefix)//'_nexcl',nexcl_id)
 if (info==nf90_noerr) then
-   call ncerr(subr,nf90_inquire_dimension(ncid,nexcl_id,len=com%nexcl))
+   call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nexcl_id,len=com%nexcl))
 else
    com%nexcl = 0
 end if
@@ -363,22 +366,22 @@ if (com%nhalo>0) allocate(com%halo(com%nhalo))
 if (com%nexcl>0) allocate(com%excl(com%nexcl))
 
 ! Get variables id
-call ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_red_to_ext',red_to_ext_id))
-call ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_jhalocounts',jhalocounts_id))
-call ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_jexclcounts',jexclcounts_id))
-call ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_jhalodispl',jhalodispl_id))
-call ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_jexcldispl',jexcldispl_id))
-if (com%nhalo>0) call ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_halo',halo_id))
-if (com%nexcl>0) call ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_excl',excl_id))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_red_to_ext',red_to_ext_id))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_jhalocounts',jhalocounts_id))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_jexclcounts',jexclcounts_id))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_jhalodispl',jhalodispl_id))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_jexcldispl',jexcldispl_id))
+if (com%nhalo>0) call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_halo',halo_id))
+if (com%nexcl>0) call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_excl',excl_id))
 
 ! Get variable
-call ncerr(subr,nf90_get_var(ncid,red_to_ext_id,com%red_to_ext))
-call ncerr(subr,nf90_get_var(ncid,jhalocounts_id,com%jhalocounts))
-call ncerr(subr,nf90_get_var(ncid,jexclcounts_id,com%jexclcounts))
-call ncerr(subr,nf90_get_var(ncid,jhalodispl_id,com%jhalodispl))
-call ncerr(subr,nf90_get_var(ncid,jexcldispl_id,com%jexcldispl))
-if (com%nhalo>0) call ncerr(subr,nf90_get_var(ncid,halo_id,com%halo))
-if (com%nexcl>0) call ncerr(subr,nf90_get_var(ncid,excl_id,com%excl))
+call mpl%ncerr(subr,nf90_get_var(ncid,red_to_ext_id,com%red_to_ext))
+call mpl%ncerr(subr,nf90_get_var(ncid,jhalocounts_id,com%jhalocounts))
+call mpl%ncerr(subr,nf90_get_var(ncid,jexclcounts_id,com%jexclcounts))
+call mpl%ncerr(subr,nf90_get_var(ncid,jhalodispl_id,com%jhalodispl))
+call mpl%ncerr(subr,nf90_get_var(ncid,jexcldispl_id,com%jexcldispl))
+if (com%nhalo>0) call mpl%ncerr(subr,nf90_get_var(ncid,halo_id,com%halo))
+if (com%nexcl>0) call mpl%ncerr(subr,nf90_get_var(ncid,excl_id,com%excl))
 
 end subroutine com_read
 
@@ -386,12 +389,13 @@ end subroutine com_read
 ! Subroutine: com_write
 !> Purpose: write communications to a NetCDF file
 !----------------------------------------------------------------------
-subroutine com_write(com,ncid)
+subroutine com_write(com,mpl,ncid)
 
 implicit none
 
 ! Passed variables
 class(com_type),intent(in) :: com !< Communication data
+type(mpl_type),intent(in) :: mpl  !< MPI data
 integer,intent(in) :: ncid        !< NetCDF file id
 
 ! Local variables
@@ -401,36 +405,36 @@ integer :: jhalocounts_id,jexclcounts_id,jhalodispl_id,jexcldispl_id,halo_id,exc
 character(len=1024) :: subr = 'com_write'
 
 ! Start definition mode
-call ncerr(subr,nf90_redef(ncid))
+call mpl%ncerr(subr,nf90_redef(ncid))
 
 ! Define dimensions
 info = nf90_inq_dimid(ncid,'nproc',nproc_id)
-if (info/=nf90_noerr) call ncerr(subr,nf90_def_dim(ncid,'nproc',mpl%nproc,nproc_id))
-call ncerr(subr,nf90_def_dim(ncid,trim(com%prefix)//'_nred',com%nred,nred_id))
-call ncerr(subr,nf90_def_dim(ncid,trim(com%prefix)//'_next',com%next,next_id))
-if (com%nhalo>0) call ncerr(subr,nf90_def_dim(ncid,trim(com%prefix)//'_nhalo',com%nhalo,nhalo_id))
-if (com%nexcl>0) call ncerr(subr,nf90_def_dim(ncid,trim(com%prefix)//'_nexcl',com%nexcl,nexcl_id))
+if (info/=nf90_noerr) call mpl%ncerr(subr,nf90_def_dim(ncid,'nproc',mpl%nproc,nproc_id))
+call mpl%ncerr(subr,nf90_def_dim(ncid,trim(com%prefix)//'_nred',com%nred,nred_id))
+call mpl%ncerr(subr,nf90_def_dim(ncid,trim(com%prefix)//'_next',com%next,next_id))
+if (com%nhalo>0) call mpl%ncerr(subr,nf90_def_dim(ncid,trim(com%prefix)//'_nhalo',com%nhalo,nhalo_id))
+if (com%nexcl>0) call mpl%ncerr(subr,nf90_def_dim(ncid,trim(com%prefix)//'_nexcl',com%nexcl,nexcl_id))
 
 ! Define variables
-call ncerr(subr,nf90_def_var(ncid,trim(com%prefix)//'_red_to_ext',nf90_int,(/nred_id/),red_to_ext_id))
-call ncerr(subr,nf90_def_var(ncid,trim(com%prefix)//'_jhalocounts',nf90_int,(/nproc_id/),jhalocounts_id))
-call ncerr(subr,nf90_def_var(ncid,trim(com%prefix)//'_jexclcounts',nf90_int,(/nproc_id/),jexclcounts_id))
-call ncerr(subr,nf90_def_var(ncid,trim(com%prefix)//'_jhalodispl',nf90_int,(/nproc_id/),jhalodispl_id))
-call ncerr(subr,nf90_def_var(ncid,trim(com%prefix)//'_jexcldispl',nf90_int,(/nproc_id/),jexcldispl_id))
-if (com%nhalo>0) call ncerr(subr,nf90_def_var(ncid,trim(com%prefix)//'_halo',nf90_int,(/nhalo_id/),halo_id))
-if (com%nexcl>0) call ncerr(subr,nf90_def_var(ncid,trim(com%prefix)//'_excl',nf90_int,(/nexcl_id/),excl_id))
+call mpl%ncerr(subr,nf90_def_var(ncid,trim(com%prefix)//'_red_to_ext',nf90_int,(/nred_id/),red_to_ext_id))
+call mpl%ncerr(subr,nf90_def_var(ncid,trim(com%prefix)//'_jhalocounts',nf90_int,(/nproc_id/),jhalocounts_id))
+call mpl%ncerr(subr,nf90_def_var(ncid,trim(com%prefix)//'_jexclcounts',nf90_int,(/nproc_id/),jexclcounts_id))
+call mpl%ncerr(subr,nf90_def_var(ncid,trim(com%prefix)//'_jhalodispl',nf90_int,(/nproc_id/),jhalodispl_id))
+call mpl%ncerr(subr,nf90_def_var(ncid,trim(com%prefix)//'_jexcldispl',nf90_int,(/nproc_id/),jexcldispl_id))
+if (com%nhalo>0) call mpl%ncerr(subr,nf90_def_var(ncid,trim(com%prefix)//'_halo',nf90_int,(/nhalo_id/),halo_id))
+if (com%nexcl>0) call mpl%ncerr(subr,nf90_def_var(ncid,trim(com%prefix)//'_excl',nf90_int,(/nexcl_id/),excl_id))
 
 ! End definition mode
-call ncerr(subr,nf90_enddef(ncid))
+call mpl%ncerr(subr,nf90_enddef(ncid))
 
 ! Put variables
-call ncerr(subr,nf90_put_var(ncid,red_to_ext_id,com%red_to_ext))
-call ncerr(subr,nf90_put_var(ncid,jhalocounts_id,com%jhalocounts))
-call ncerr(subr,nf90_put_var(ncid,jexclcounts_id,com%jexclcounts))
-call ncerr(subr,nf90_put_var(ncid,jhalodispl_id,com%jhalodispl))
-call ncerr(subr,nf90_put_var(ncid,jexcldispl_id,com%jexcldispl))
-if (com%nhalo>0) call ncerr(subr,nf90_put_var(ncid,halo_id,com%halo))
-if (com%nexcl>0) call ncerr(subr,nf90_put_var(ncid,excl_id,com%excl))
+call mpl%ncerr(subr,nf90_put_var(ncid,red_to_ext_id,com%red_to_ext))
+call mpl%ncerr(subr,nf90_put_var(ncid,jhalocounts_id,com%jhalocounts))
+call mpl%ncerr(subr,nf90_put_var(ncid,jexclcounts_id,com%jexclcounts))
+call mpl%ncerr(subr,nf90_put_var(ncid,jhalodispl_id,com%jhalodispl))
+call mpl%ncerr(subr,nf90_put_var(ncid,jexcldispl_id,com%jexcldispl))
+if (com%nhalo>0) call mpl%ncerr(subr,nf90_put_var(ncid,halo_id,com%halo))
+if (com%nexcl>0) call mpl%ncerr(subr,nf90_put_var(ncid,excl_id,com%excl))
 
 end subroutine com_write
 
@@ -438,12 +442,13 @@ end subroutine com_write
 ! Subroutine: com_setup
 !> Purpose: setup communications
 !----------------------------------------------------------------------
-subroutine com_setup(com_out,prefix,nglb,nred,next,ext_to_glb,red_to_ext,glb_to_proc,glb_to_red)
+subroutine com_setup(com_out,mpl,prefix,nglb,nred,next,ext_to_glb,red_to_ext,glb_to_proc,glb_to_red)
 
 implicit none
 
 ! Passed variables
 class(com_type),intent(inout) :: com_out !< Communication data
+type(mpl_type),intent(inout) :: mpl      !< MPI data
 character(len=*),intent(in) :: prefix    !< Prefix
 integer,intent(in) :: nglb               !< Global size
 integer,intent(in) :: nred               !< Reduced halo size

@@ -17,7 +17,6 @@ use qg_vars_mod
 use qg_goms_mod
 use calculate_pv, only : calc_pv
 use netcdf
-use tools_nc, only: ncerr
 use kinds
 
 implicit none
@@ -514,9 +513,8 @@ character(len=4)  :: cnx
 character(len=11) :: fmt1='(X,ES24.16)'
 character(len=1024)  :: buf
 integer :: ic, iy, il, ix, is, jx, jy, jf, iread, nf
-integer :: ncid, nx_id, ny_id, nl_id, nc_id, gfld3d_id, xbound_id, qbound_id
+integer :: info, ncid, nx_id, ny_id, nl_id, nc_id, gfld3d_id, xbound_id, qbound_id
 real(kind=kind_real), allocatable :: zz(:)
-character(len=1024) :: subr='read_file'
 
 iread = 1
 if (config_element_exists(c_conf,"read_from_file")) then
@@ -538,15 +536,15 @@ else
   ! Read data
   if (netcdfio) then
 
-    call ncerr(subr,nf90_open(trim(filename)//'.nc',nf90_nowrite,ncid))
-    call ncerr(subr,nf90_inq_dimid(ncid,'nx',nx_id))
-    call ncerr(subr,nf90_inq_dimid(ncid,'ny',ny_id))
-    call ncerr(subr,nf90_inq_dimid(ncid,'nl',nl_id))
-    call ncerr(subr,nf90_inq_dimid(ncid,'nc',nc_id))
-    call ncerr(subr,nf90_inquire_dimension(ncid,nx_id,len=ix))
-    call ncerr(subr,nf90_inquire_dimension(ncid,ny_id,len=iy))
-    call ncerr(subr,nf90_inquire_dimension(ncid,nl_id,len=il))
-    call ncerr(subr,nf90_inquire_dimension(ncid,nl_id,len=ic))
+    info = nf90_open(trim(filename)//'.nc',nf90_nowrite,ncid)
+    info = nf90_inq_dimid(ncid,'nx',nx_id)
+    info = nf90_inq_dimid(ncid,'ny',ny_id)
+    info = nf90_inq_dimid(ncid,'nl',nl_id)
+    info = nf90_inq_dimid(ncid,'nc',nc_id)
+    info = nf90_inquire_dimension(ncid,nx_id,len=ix)
+    info = nf90_inquire_dimension(ncid,ny_id,len=iy)
+    info = nf90_inquire_dimension(ncid,nl_id,len=il)
+    info = nf90_inquire_dimension(ncid,nl_id,len=ic)
     if (ix /= fld%geom%nx .or. iy /= fld%geom%ny .or. il /= fld%nl) then
       write (record,*) "qg_fields:read_file: ", &
                      & "input fields have wrong dimensions: ",ix,iy,il
@@ -555,26 +553,22 @@ else
       call fckit_log%error(record)
       call abor1_ftn("qg_fields:read_file: input fields have wrong dimensions")
     endif
-    call ncerr(subr,nf90_get_att(ncid,nf90_global,'lbc',is))
-  
-    call ncerr(subr,nf90_get_att(ncid,nf90_global,'sdate',sdate))
+    info = nf90_get_att(ncid,nf90_global,'lbc',is)
+      info = nf90_get_att(ncid,nf90_global,'sdate',sdate)
     write(buf,*) 'validity date is: '//sdate
     call fckit_log%info(buf)
-  
     nf = min(fld%nf, ic)
-    call ncerr(subr,nf90_inq_varid(ncid,'gfld3d',gfld3d_id))
+    info = nf90_inq_varid(ncid,'gfld3d',gfld3d_id)
     do jf=1,il*nf
-      call ncerr(subr,nf90_get_var(ncid,gfld3d_id,fld%gfld3d(:,:,jf),(/1,1,jf/),(/ix,iy,1/)))
+      info = nf90_get_var(ncid,gfld3d_id,fld%gfld3d(:,:,jf),(/1,1,jf/),(/ix,iy,1/))
     enddo
-  
     if (fld%lbc) then
-      call ncerr(subr,nf90_inq_varid(ncid,'xbound',xbound_id))
-      call ncerr(subr,nf90_get_var(ncid,xbound_id,fld%xbound))
-      call ncerr(subr,nf90_inq_varid(ncid,'qbound',qbound_id))
-      call ncerr(subr,nf90_get_var(ncid,qbound_id,fld%qbound))
+      info = nf90_inq_varid(ncid,'xbound',xbound_id)
+      info = nf90_get_var(ncid,xbound_id,fld%xbound)
+      info = nf90_inq_varid(ncid,'qbound',qbound_id)
+      info = nf90_get_var(ncid,qbound_id,fld%qbound)
     endif
-  
-    call ncerr(subr,nf90_close(ncid))
+    info = nf90_close(ncid)
 
   else
 
@@ -945,7 +939,7 @@ type(datetime), intent(in) :: vdate  !< DateTime
 
 integer, parameter :: iunit=11
 integer, parameter :: max_string_length=800 ! Yuk!
-integer :: ncid, nx_id, ny_id, nl_id, nc_id, ntot_id, four_id, gfld3d_id, xbound_id, qbound_id
+integer :: info, ncid, nx_id, ny_id, nl_id, nc_id, ntot_id, four_id, gfld3d_id, xbound_id, qbound_id
 character(len=max_string_length+50) :: record
 character(len=max_string_length) :: filename
 character(len=20) :: sdate, fmtn
@@ -953,7 +947,6 @@ character(len=4)  :: cnx
 character(len=11) :: fmt1='(X,ES24.16)'
 character(len=1024):: buf
 integer :: jf, jy, jx, is
-character(len=1024) :: subr='write_file'
 
 call check(fld)
 
@@ -967,33 +960,33 @@ call datetime_to_string(vdate, sdate)
 
 if (netcdfio) then
   
-  call ncerr(subr,nf90_create(trim(filename)//'.nc',or(nf90_clobber,nf90_64bit_offset),ncid))
-  call ncerr(subr,nf90_def_dim(ncid,'nx',fld%geom%nx,nx_id))
-  call ncerr(subr,nf90_def_dim(ncid,'ny',fld%geom%ny,ny_id))
-  call ncerr(subr,nf90_def_dim(ncid,'nl',fld%nl,nl_id))
-  call ncerr(subr,nf90_def_dim(ncid,'nc',fld%nf,nc_id))
-  call ncerr(subr,nf90_def_dim(ncid,'ntot',fld%nl*fld%nf,ntot_id))
-  call ncerr(subr,nf90_def_dim(ncid,'four',4,four_id))
-  call ncerr(subr,nf90_put_att(ncid,nf90_global,'lbc',is))
+  info = nf90_create(trim(filename)//'.nc',or(nf90_clobber,nf90_64bit_offset),ncid)
+  info = nf90_def_dim(ncid,'nx',fld%geom%nx,nx_id)
+  info = nf90_def_dim(ncid,'ny',fld%geom%ny,ny_id)
+  info = nf90_def_dim(ncid,'nl',fld%nl,nl_id)
+  info = nf90_def_dim(ncid,'nc',fld%nf,nc_id)
+  info = nf90_def_dim(ncid,'ntot',fld%nl*fld%nf,ntot_id)
+  info = nf90_def_dim(ncid,'four',4,four_id)
+  info = nf90_put_att(ncid,nf90_global,'lbc',is)
   
-  call ncerr(subr,nf90_put_att(ncid,nf90_global,'sdate',sdate))
-  call ncerr(subr,nf90_def_var(ncid,'gfld3d',nf90_double,(/nx_id,ny_id,ntot_id/),gfld3d_id))
-  
-  if (fld%lbc) then
-    call ncerr(subr,nf90_def_var(ncid,'xbound',nf90_double,(/four_id/),xbound_id))
-    call ncerr(subr,nf90_def_var(ncid,'qbound',nf90_double,(/nx_id,four_id/),qbound_id))
-  end if
-  
-  call ncerr(subr,nf90_enddef(ncid))
-  
-  call ncerr(subr,nf90_put_var(ncid,gfld3d_id,fld%gfld3d))
+  info = nf90_put_att(ncid,nf90_global,'sdate',sdate)
+  info = nf90_def_var(ncid,'gfld3d',nf90_double,(/nx_id,ny_id,ntot_id/),gfld3d_id)
   
   if (fld%lbc) then
-    call ncerr(subr,nf90_put_var(ncid,xbound_id,fld%xbound))
-    call ncerr(subr,nf90_put_var(ncid,qbound_id,fld%qbound))
+    info = nf90_def_var(ncid,'xbound',nf90_double,(/four_id/),xbound_id)
+    info = nf90_def_var(ncid,'qbound',nf90_double,(/nx_id,four_id/),qbound_id)
   end if
   
-  call ncerr(subr,nf90_close(ncid))
+  info = nf90_enddef(ncid)
+  
+  info = nf90_put_var(ncid,gfld3d_id,fld%gfld3d)
+  
+  if (fld%lbc) then
+    info = nf90_put_var(ncid,xbound_id,fld%xbound)
+    info = nf90_put_var(ncid,qbound_id,fld%qbound)
+  end if
+  
+  info = nf90_close(ncid)
 
 else
 

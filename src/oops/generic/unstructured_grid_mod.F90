@@ -10,7 +10,6 @@ module unstructured_grid_mod
 use iso_c_binding
 use config_mod
 use kinds
-use tools_display, only: msgerror
 
 implicit none
 private
@@ -40,7 +39,6 @@ end type unstructured_grid
 
 !> Linked list interface - defines registry_t type
 #include "oops/util/linkedList_i.f"
-!#include "linkedList.intf.h"
 
 !> Global registry
 type(registry_t) :: unstructured_grid_registry
@@ -51,7 +49,6 @@ contains
 
 !> Linked list implementation
 #include "oops/util/linkedList_c.f"
-!#include "linkedList.h"
 
 ! ------------------------------------------------------------------------------
 !  C++ interfaces
@@ -104,8 +101,6 @@ case (3)
 case (4)
    ! Number of timeslots
    isize= self%nts
-case default
-   call msgerror('wrong index in get_size_c')
 end select
 
 end subroutine get_size_c
@@ -220,7 +215,6 @@ self%nmga = nmga
 self%nl0 = nl0
 self%nv = nv
 self%nts = nts
-if (nts>1) call msgerror('not ready yet for nts>1')
 
 ! Allocation
 allocate(self%lon(nmga))

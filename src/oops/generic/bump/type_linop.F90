@@ -12,17 +12,21 @@ module type_linop
 
 use netcdf
 !$ use omp_lib
-use tools_display, only: msgerror,msgwarning,prog_init,prog_print
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsr,isnotmsi
-use tools_nc, only: ncfloat,ncerr
+use tools_nc, only: ncfloat
 use tools_qsort, only: qsort
 use type_geom, only: geom_type
 use type_kdtree, only: kdtree_type
 use type_mesh, only: mesh_type
-use type_mpl, only: mpl
+use type_mpl, only: mpl_type
+use type_rng, only: rng_type
 
 implicit none
+
+logical,parameter :: check_data = .false.             !< Activate data check for all linear operations
+integer,parameter :: nnatmax = 40                     !< Maximum number of natural neighbors
+real(kind_real),parameter :: S_inf = 1.0e-2_kind_real !< Minimum interpolation coefficient
 
 ! Linear operator derived type
 type linop_type
@@ -55,10 +59,6 @@ contains
    procedure :: interp_missing => linop_interp_missing
 end type linop_type
 
-logical,parameter :: check_data = .true.             !< Activate data check for all linear operations
-integer,parameter :: nnatmax = 40                     !< Maximum number of natural neighbors
-real(kind_real),parameter :: S_inf = 1.0e-2_kind_real !< Minimum interpolation coefficient
-
 private
 public :: linop_type
 
@@ -66,7 +66,7 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: linop_alloc
-!> Purpose: linear operator object allocation
+!> Purpose: linear operator allocation
 !----------------------------------------------------------------------
 subroutine linop_alloc(linop,nvec)
 
@@ -100,7 +100,7 @@ end subroutine linop_alloc
 
 !----------------------------------------------------------------------
 ! Subroutine: linop_dealloc
-!> Purpose: linear operator object deallocation
+!> Purpose: linear operator deallocation
 !----------------------------------------------------------------------
 subroutine linop_dealloc(linop)
 
@@ -119,7 +119,7 @@ end subroutine linop_dealloc
 
 !----------------------------------------------------------------------
 ! Function: linop_copy
-!> Purpose: linear operator object copy
+!> Purpose: linear operator copy
 !----------------------------------------------------------------------
 type(linop_type) function linop_copy(linop)
 
@@ -159,12 +159,13 @@ end function linop_copy
 ! Subroutine: linop_reorder
 !> Purpose: reorder linear operator
 !----------------------------------------------------------------------
-subroutine linop_reorder(linop)
+subroutine linop_reorder(linop,mpl)
 
 implicit none
 
 ! Passed variables
 class(linop_type),intent(inout) :: linop !< Linear operator
+type(mpl_type),intent(in) :: mpl         !< MPI data
 
 ! Local variables
 integer :: row,i_s_s,i_s_e,n_s,i_s
@@ -207,7 +208,7 @@ if (linop%n_s<1000000) then
       end if
    end do
 else
-   call msgwarning('linear operator is too big, impossible to reorder')
+   call mpl%warning('linear operator is too big, impossible to reorder')
 end if
 
 end subroutine linop_reorder
@@ -216,12 +217,13 @@ end subroutine linop_reorder
 ! Subroutine: linop_read
 !> Purpose: read linear operator from a NetCDF file
 !----------------------------------------------------------------------
-subroutine linop_read(linop,ncid)
+subroutine linop_read(linop,mpl,ncid)
 
 implicit none
 
 ! Passed variables
 class(linop_type),intent(inout) :: linop !< Linear operator
+type(mpl_type),intent(in) :: mpl         !< MPI data
 integer,intent(in) :: ncid               !< NetCDF file ID
 
 ! Local variables
@@ -232,16 +234,16 @@ character(len=1024) :: subr = 'linop_read'
 ! Get operator size
 info = nf90_inq_dimid(ncid,trim(linop%prefix)//'_n_s',n_s_id)
 if (info==nf90_noerr) then
-   call ncerr(subr,nf90_inquire_dimension(ncid,n_s_id,len=linop%n_s))
+   call mpl%ncerr(subr,nf90_inquire_dimension(ncid,n_s_id,len=linop%n_s))
 else
    linop%n_s = 0
 end if
 
 if (linop%n_s>0) then
    ! Get source/destination dimensions
-   call ncerr(subr,nf90_get_att(ncid,nf90_global,trim(linop%prefix)//'_n_src',linop%n_src))
-   call ncerr(subr,nf90_get_att(ncid,nf90_global,trim(linop%prefix)//'_n_dst',linop%n_dst))
-   call ncerr(subr,nf90_get_att(ncid,nf90_global,trim(linop%prefix)//'_nvec',nvec))
+   call mpl%ncerr(subr,nf90_get_att(ncid,nf90_global,trim(linop%prefix)//'_n_src',linop%n_src))
+   call mpl%ncerr(subr,nf90_get_att(ncid,nf90_global,trim(linop%prefix)//'_n_dst',linop%n_dst))
+   call mpl%ncerr(subr,nf90_get_att(ncid,nf90_global,trim(linop%prefix)//'_nvec',nvec))
 
    ! Allocation
    if (isnotmsi(nvec)) then
@@ -251,17 +253,17 @@ if (linop%n_s>0) then
    end if
 
    ! Get variables id
-   call ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_row',row_id))
-   call ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_col',col_id))
-   call ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_S',S_id))
+   call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_row',row_id))
+   call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_col',col_id))
+   call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_S',S_id))
 
    ! Get variables
-   call ncerr(subr,nf90_get_var(ncid,row_id,linop%row))
-   call ncerr(subr,nf90_get_var(ncid,col_id,linop%col))
+   call mpl%ncerr(subr,nf90_get_var(ncid,row_id,linop%row))
+   call mpl%ncerr(subr,nf90_get_var(ncid,col_id,linop%col))
    if (isnotmsi(linop%nvec)) then
-      call ncerr(subr,nf90_get_var(ncid,S_id,linop%Svec))
+      call mpl%ncerr(subr,nf90_get_var(ncid,S_id,linop%Svec))
    else
-      call ncerr(subr,nf90_get_var(ncid,S_id,linop%S))
+      call mpl%ncerr(subr,nf90_get_var(ncid,S_id,linop%S))
    end if
 end if
 
@@ -271,12 +273,13 @@ end subroutine linop_read
 ! Subroutine: linop_write
 !> Purpose: write linear operator to a NetCDF file
 !----------------------------------------------------------------------
-subroutine linop_write(linop,ncid)
+subroutine linop_write(linop,mpl,ncid)
 
 implicit none
 
 ! Passed variables
 class(linop_type),intent(in) :: linop !< Linear operator
+type(mpl_type),intent(in) :: mpl      !< MPI data
 integer,intent(in) :: ncid            !< NetCDF file ID
 
 ! Local variables
@@ -285,36 +288,36 @@ character(len=1024) :: subr = 'linop_write'
 
 if (linop%n_s>0) then
    ! Start definition mode
-   call ncerr(subr,nf90_redef(ncid))
+   call mpl%ncerr(subr,nf90_redef(ncid))
 
    ! Write source/destination dimensions
-   call ncerr(subr,nf90_put_att(ncid,nf90_global,trim(linop%prefix)//'_n_src',linop%n_src))
-   call ncerr(subr,nf90_put_att(ncid,nf90_global,trim(linop%prefix)//'_n_dst',linop%n_dst))
-   call ncerr(subr,nf90_put_att(ncid,nf90_global,trim(linop%prefix)//'_nvec',linop%nvec))
+   call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,trim(linop%prefix)//'_n_src',linop%n_src))
+   call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,trim(linop%prefix)//'_n_dst',linop%n_dst))
+   call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,trim(linop%prefix)//'_nvec',linop%nvec))
 
    ! Define dimensions
-   call ncerr(subr,nf90_def_dim(ncid,trim(linop%prefix)//'_n_s',linop%n_s,n_s_id))
-   if (isnotmsi(linop%nvec)) call ncerr(subr,nf90_def_dim(ncid,trim(linop%prefix)//'_nvec',linop%nvec,nvec_id))
+   call mpl%ncerr(subr,nf90_def_dim(ncid,trim(linop%prefix)//'_n_s',linop%n_s,n_s_id))
+   if (isnotmsi(linop%nvec)) call mpl%ncerr(subr,nf90_def_dim(ncid,trim(linop%prefix)//'_nvec',linop%nvec,nvec_id))
 
    ! Define variables
-   call ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_row',nf90_int,(/n_s_id/),row_id))
-   call ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_col',nf90_int,(/n_s_id/),col_id))
+   call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_row',nf90_int,(/n_s_id/),row_id))
+   call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_col',nf90_int,(/n_s_id/),col_id))
    if (isnotmsi(linop%nvec)) then
-      call ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_S',ncfloat,(/n_s_id,nvec_id/),S_id))
+      call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_S',ncfloat,(/n_s_id,nvec_id/),S_id))
    else
-      call ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_S',ncfloat,(/n_s_id/),S_id))
+      call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_S',ncfloat,(/n_s_id/),S_id))
    end if
 
    ! End definition mode
-   call ncerr(subr,nf90_enddef(ncid))
+   call mpl%ncerr(subr,nf90_enddef(ncid))
 
    ! Put variables
-   call ncerr(subr,nf90_put_var(ncid,row_id,linop%row))
-   call ncerr(subr,nf90_put_var(ncid,col_id,linop%col))
+   call mpl%ncerr(subr,nf90_put_var(ncid,row_id,linop%row))
+   call mpl%ncerr(subr,nf90_put_var(ncid,col_id,linop%col))
    if (isnotmsi(linop%nvec)) then
-      call ncerr(subr,nf90_put_var(ncid,S_id,linop%Svec))
+      call mpl%ncerr(subr,nf90_put_var(ncid,S_id,linop%Svec))
    else
-      call ncerr(subr,nf90_put_var(ncid,S_id,linop%S))
+      call mpl%ncerr(subr,nf90_put_var(ncid,S_id,linop%S))
    end if
 end if
 
@@ -324,12 +327,13 @@ end subroutine linop_write
 ! Subroutine: linop_apply
 !> Purpose: apply linear operator
 !----------------------------------------------------------------------
-subroutine linop_apply(linop,fld_src,fld_dst,ivec,mssrc,msdst)
+subroutine linop_apply(linop,mpl,fld_src,fld_dst,ivec,mssrc,msdst)
 
 implicit none
 
 ! Passed variables
 class(linop_type),intent(in) :: linop               !< Linear operator
+type(mpl_type),intent(in) :: mpl                    !< MPI data
 real(kind_real),intent(in) :: fld_src(linop%n_src)  !< Source vector
 real(kind_real),intent(out) :: fld_dst(linop%n_dst) !< Destination vector
 integer,intent(in),optional :: ivec                 !< Index of the vector of linear operators with similar row and col
@@ -343,19 +347,19 @@ logical,allocatable :: missing(:)
 
 if (check_data) then
    ! Check linear operation
-   if (minval(linop%col)<1) call msgerror('col<1 for linear operation '//trim(linop%prefix))
-   if (maxval(linop%col)>linop%n_src) call msgerror('col>n_src for linear operation '//trim(linop%prefix))
-   if (minval(linop%row)<1) call msgerror('row<1 for linear operation '//trim(linop%prefix))
-   if (maxval(linop%row)>linop%n_dst) call msgerror('row>n_dst for linear operation '//trim(linop%prefix))
+   if (minval(linop%col)<1) call mpl%abort('col<1 for linear operation '//trim(linop%prefix))
+   if (maxval(linop%col)>linop%n_src) call mpl%abort('col>n_src for linear operation '//trim(linop%prefix))
+   if (minval(linop%row)<1) call mpl%abort('row<1 for linear operation '//trim(linop%prefix))
+   if (maxval(linop%row)>linop%n_dst) call mpl%abort('row>n_dst for linear operation '//trim(linop%prefix))
    if (present(ivec)) then
-      if (any(isnan(linop%Svec))) call msgerror('NaN in Svec for linear operation '//trim(linop%prefix))
+      if (any(isnan(linop%Svec))) call mpl%abort('NaN in Svec for linear operation '//trim(linop%prefix))
    else
-      if (any(isnan(linop%S))) call msgerror('NaN in S for linear operation '//trim(linop%prefix))
+      if (any(isnan(linop%S))) call mpl%abort('NaN in S for linear operation '//trim(linop%prefix))
    end if
 
    ! Check input
-   if (any(fld_src>huge(1.0))) call msgerror('Overflowing number in fld_src for linear operation '//trim(linop%prefix))
-   if (any(isnan(fld_src))) call msgerror('NaN in fld_src for linear operation '//trim(linop%prefix))
+   if (any(fld_src>huge(1.0))) call mpl%abort('Overflowing number in fld_src for linear operation '//trim(linop%prefix))
+   if (any(isnan(fld_src))) call mpl%abort('NaN in fld_src for linear operation '//trim(linop%prefix))
 end if
 
 ! Initialization
@@ -400,7 +404,7 @@ end if
 
 if (check_data) then
    ! Check output
-   if (any(isnan(fld_dst))) call msgerror('NaN in fld_dst for linear operation '//trim(linop%prefix))
+   if (any(isnan(fld_dst))) call mpl%abort('NaN in fld_dst for linear operation '//trim(linop%prefix))
 end if
 
 end subroutine linop_apply
@@ -409,12 +413,13 @@ end subroutine linop_apply
 ! Subroutine: linop_apply_ad
 !> Purpose: apply linear operator, adjoint
 !----------------------------------------------------------------------
-subroutine linop_apply_ad(linop,fld_dst,fld_src,ivec)
+subroutine linop_apply_ad(linop,mpl,fld_dst,fld_src,ivec)
 
 implicit none
 
 ! Passed variables
 class(linop_type),intent(in) :: linop               !< Linear operator
+type(mpl_type),intent(in) :: mpl                    !< MPI data
 real(kind_real),intent(in) :: fld_dst(linop%n_dst)  !< Destination vector
 real(kind_real),intent(out) :: fld_src(linop%n_src) !< Source vector
 integer,intent(in),optional :: ivec                 !< Index of the vector of linear operators with similar row and col
@@ -424,19 +429,19 @@ integer :: i_s
 
 if (check_data) then
    ! Check linear operation
-   if (minval(linop%col)<1) call msgerror('col<1 for adjoint linear operation '//trim(linop%prefix))
-   if (maxval(linop%col)>linop%n_src) call msgerror('col>n_src for adjoint linear operation '//trim(linop%prefix))
-   if (minval(linop%row)<1) call msgerror('row<1 for adjoint linear operation '//trim(linop%prefix))
-   if (maxval(linop%row)>linop%n_dst) call msgerror('row>n_dst for adjoint linear operation '//trim(linop%prefix))
+   if (minval(linop%col)<1) call mpl%abort('col<1 for adjoint linear operation '//trim(linop%prefix))
+   if (maxval(linop%col)>linop%n_src) call mpl%abort('col>n_src for adjoint linear operation '//trim(linop%prefix))
+   if (minval(linop%row)<1) call mpl%abort('row<1 for adjoint linear operation '//trim(linop%prefix))
+   if (maxval(linop%row)>linop%n_dst) call mpl%abort('row>n_dst for adjoint linear operation '//trim(linop%prefix))
    if (present(ivec)) then
-      if (any(isnan(linop%Svec))) call msgerror('NaN in Svec for adjoint linear operation '//trim(linop%prefix))
+      if (any(isnan(linop%Svec))) call mpl%abort('NaN in Svec for adjoint linear operation '//trim(linop%prefix))
    else
-      if (any(isnan(linop%S))) call msgerror('NaN in S for adjoint linear operation '//trim(linop%prefix))
+      if (any(isnan(linop%S))) call mpl%abort('NaN in S for adjoint linear operation '//trim(linop%prefix))
    end if
 
    ! Check input
-   if (any(fld_dst>huge(1.0))) call msgerror('Overflowing number in fld_dst for adjoint linear operation '//trim(linop%prefix))
-   if (any(isnan(fld_dst))) call msgerror('NaN in fld_dst for adjoint linear operation '//trim(linop%prefix))
+   if (any(fld_dst>huge(1.0))) call mpl%abort('Overflowing number in fld_dst for adjoint linear operation '//trim(linop%prefix))
+   if (any(isnan(fld_dst))) call mpl%abort('NaN in fld_dst for adjoint linear operation '//trim(linop%prefix))
 end if
 
 ! Initialization
@@ -453,7 +458,7 @@ end do
 
 if (check_data) then
    ! Check output
-   if (any(isnan(fld_src))) call msgerror('NaN in fld_src for adjoint linear operation '//trim(linop%prefix))
+   if (any(isnan(fld_src))) call mpl%abort('NaN in fld_src for adjoint linear operation '//trim(linop%prefix))
 end if
 
 end subroutine linop_apply_ad
@@ -462,12 +467,13 @@ end subroutine linop_apply_ad
 ! Subroutine: linop_apply_sym
 !> Purpose: apply linear operator, symmetric
 !----------------------------------------------------------------------
-subroutine linop_apply_sym(linop,fld,ivec)
+subroutine linop_apply_sym(linop,mpl,fld,ivec)
 
 implicit none
 
 ! Passed variables
 class(linop_type),intent(in) :: linop             !< Linear operator
+type(mpl_type),intent(in) :: mpl                  !< MPI data
 real(kind_real),intent(inout) :: fld(linop%n_src) !< Source/destination vector
 integer,intent(in),optional :: ivec               !< Index of the vector of linear operators with similar row and col
 
@@ -477,19 +483,19 @@ real(kind_real) :: fld_arr(linop%n_dst,mpl%nthread)
 
 if (check_data) then
    ! Check linear operation
-   if (minval(linop%col)<1) call msgerror('col<1 for symmetric linear operation '//trim(linop%prefix))
-   if (maxval(linop%col)>linop%n_src) call msgerror('col>n_src for symmetric linear operation '//trim(linop%prefix))
-   if (minval(linop%row)<1) call msgerror('row<1 for symmetric linear operation '//trim(linop%prefix))
-   if (maxval(linop%row)>linop%n_src) call msgerror('row>n_dst for symmetric linear operation '//trim(linop%prefix))
+   if (minval(linop%col)<1) call mpl%abort('col<1 for symmetric linear operation '//trim(linop%prefix))
+   if (maxval(linop%col)>linop%n_src) call mpl%abort('col>n_src for symmetric linear operation '//trim(linop%prefix))
+   if (minval(linop%row)<1) call mpl%abort('row<1 for symmetric linear operation '//trim(linop%prefix))
+   if (maxval(linop%row)>linop%n_src) call mpl%abort('row>n_dst for symmetric linear operation '//trim(linop%prefix))
    if (present(ivec)) then
-      if (any(isnan(linop%Svec))) call msgerror('NaN in Svec for symmetric linear operation '//trim(linop%prefix))
+      if (any(isnan(linop%Svec))) call mpl%abort('NaN in Svec for symmetric linear operation '//trim(linop%prefix))
    else
-      if (any(isnan(linop%S))) call msgerror('NaN in S for symmetric linear operation '//trim(linop%prefix))
+      if (any(isnan(linop%S))) call mpl%abort('NaN in S for symmetric linear operation '//trim(linop%prefix))
    end if
 
    ! Check input
-   if (any(fld>huge(1.0))) call msgerror('Overflowing number in fld for symmetric linear operation '//trim(linop%prefix))
-   if (any(isnan(fld))) call msgerror('NaN in fld for symmetric linear operation '//trim(linop%prefix))
+   if (any(fld>huge(1.0))) call mpl%abort('Overflowing number in fld for symmetric linear operation '//trim(linop%prefix))
+   if (any(isnan(fld))) call mpl%abort('NaN in fld for symmetric linear operation '//trim(linop%prefix))
 end if
 
 ! Apply weights
@@ -518,7 +524,7 @@ end do
 
 if (check_data) then
    ! Check output
-   if (any(isnan(fld))) call msgerror('NaN in fld for symmetric linear operation '//trim(linop%prefix))
+   if (any(isnan(fld))) call mpl%abort('NaN in fld for symmetric linear operation '//trim(linop%prefix))
 end if
 
 end subroutine linop_apply_sym
@@ -572,12 +578,13 @@ end subroutine linop_add_op
 ! Subroutine: linop_gather
 !> Purpose: gather data from OpenMP threads
 !----------------------------------------------------------------------
-subroutine linop_gather(linop,n_s_arr,linop_arr)
+subroutine linop_gather(linop,mpl,n_s_arr,linop_arr)
 
 implicit none
 
 ! Passed variables
 class(linop_type),intent(inout) :: linop              !< Linear operator
+type(mpl_type),intent(in) :: mpl                      !< MPI data
 integer,intent(in) :: n_s_arr(mpl%nthread)            !< Number of operations
 type(linop_type),intent(in) :: linop_arr(mpl%nthread) !< Linear operator array
 
@@ -605,12 +612,14 @@ end subroutine linop_gather
 ! Subroutine: linop_interp_from_lat_lon
 !> Purpose: compute horizontal interpolation from source latitude/longitude
 !----------------------------------------------------------------------
-subroutine linop_interp_from_lat_lon(linop,n_src,lon_src,lat_src,mask_src,n_dst,lon_dst,lat_dst,mask_dst,interp_type)
+subroutine linop_interp_from_lat_lon(linop,mpl,rng,n_src,lon_src,lat_src,mask_src,n_dst,lon_dst,lat_dst,mask_dst,interp_type)
 
 implicit none
 
 ! Passed variables
 class(linop_type),intent(inout) :: linop     !< Linear operator
+type(mpl_type),intent(inout) :: mpl          !< MPI data
+type(rng_type),intent(inout) :: rng          !< Random number generator
 integer,intent(in) :: n_src                  !< Source size
 real(kind_real),intent(in) :: lon_src(n_src) !< Source longitudes
 real(kind_real),intent(in) :: lat_src(n_src) !< Source latitudes
@@ -645,14 +654,14 @@ do i_src=1,n_src
 end do
 
 ! Create mesh
-call mesh%create(n_src_eff,lon_src(src_eff_to_src),lat_src(src_eff_to_src))
+call mesh%create(mpl,rng,n_src_eff,lon_src(src_eff_to_src),lat_src(src_eff_to_src))
 
 ! Compute KD-tree
-call kdtree%create(n_src_eff,lon_src(src_eff_to_src),lat_src(src_eff_to_src))
+call kdtree%create(mpl,n_src_eff,lon_src(src_eff_to_src),lat_src(src_eff_to_src))
 
 ! Compute interpolation
 mask_src_eff = .true.
-call linop%interp(mesh,kdtree,n_src_eff,mask_src_eff,n_dst,lon_dst,lat_dst,mask_dst,interp_type)
+call linop%interp(mpl,mesh,kdtree,n_src_eff,mask_src_eff,n_dst,lon_dst,lat_dst,mask_dst,interp_type)
 
 ! Effective points conversion
 linop%n_src = n_src
@@ -664,12 +673,13 @@ end subroutine linop_interp_from_lat_lon
 ! Subroutine: linop_interp_from_mesh_kdtree
 !> Purpose: compute horizontal interpolation from source mesh and kdtree
 !----------------------------------------------------------------------
-subroutine linop_interp_from_mesh_kdtree(linop,mesh,kdtree,n_src,mask_src,n_dst,lon_dst,lat_dst,mask_dst,interp_type)
+subroutine linop_interp_from_mesh_kdtree(linop,mpl,mesh,kdtree,n_src,mask_src,n_dst,lon_dst,lat_dst,mask_dst,interp_type)
 
 implicit none
 
 ! Passed variables
 class(linop_type),intent(inout) :: linop     !< Linear operator
+type(mpl_type),intent(inout) :: mpl          !< MPI data
 type(mesh_type),intent(in) :: mesh           !< Mesh
 type(kdtree_type),intent(in) :: kdtree       !< KD-tree
 integer,intent(in) :: n_src                  !< Source size
@@ -706,7 +716,7 @@ elseif (trim(interp_type)=='natural') then
    allocate(natis(mesh%n))
    allocate(natwgt(nnatmax))
 else
-   call msgerror('wrong interpolation type')
+   call mpl%abort('wrong interpolation type')
 end if
 allocate(row(np*n_dst_loc(mpl%myproc)))
 allocate(col(np*n_dst_loc(mpl%myproc)))
@@ -724,7 +734,7 @@ end if
 ! Compute interpolation
 write(mpl%unit,'(a10,a)',advance='no') '','Compute interpolation: '
 call flush(mpl%unit)
-call prog_init(progint,done)
+call mpl%prog_init(progint,done)
 n_s = 0
 do i_dst_loc=1,n_dst_loc(mpl%myproc)
    ! Indices
@@ -763,7 +773,7 @@ do i_dst_loc=1,n_dst_loc(mpl%myproc)
                   meshnew = mesh%copy()
 
                   ! Add a node
-                  call meshnew%addnode(lon_dst(i_dst),lat_dst(i_dst))
+                  call meshnew%addnode(mpl,lon_dst(i_dst),lat_dst(i_dst))
 
                   ! Find natural neighbors
                   i_src = meshnew%lend(meshnew%n)
@@ -812,7 +822,7 @@ do i_dst_loc=1,n_dst_loc(mpl%myproc)
    end if
 
    done(i_dst_loc) = .true.
-   call prog_print(progint,done)
+   call mpl%prog_print(progint,done)
 end do
 write(mpl%unit,'(a)') '100%'
 call flush(mpl%unit)
@@ -863,7 +873,7 @@ call mpl%bcast(linop%col)
 call mpl%bcast(linop%S)
 
 ! Deal with missing points
-call linop%interp_missing(n_dst,lon_dst,lat_dst,mask_dst,interp_type)
+call linop%interp_missing(mpl,n_dst,lon_dst,lat_dst,mask_dst,interp_type)
 
 ! Check interpolation
 allocate(missing(n_dst))
@@ -874,7 +884,7 @@ end do
 do i_s=1,linop%n_s
    missing(linop%row(i_s)) = .false.
 end do
-if (any(missing)) call msgerror('missing destination points in interp_from_mesh_kdtree')
+if (any(missing)) call mpl%abort('missing destination points in interp_from_mesh_kdtree')
 
 end subroutine linop_interp_from_mesh_kdtree
 
@@ -882,12 +892,14 @@ end subroutine linop_interp_from_mesh_kdtree
 ! Subroutine: linop_interp_grid
 !> Purpose: compute horizontal grid interpolation
 !----------------------------------------------------------------------
-subroutine linop_interp_grid(linop,geom,il0i,nc1,c1_to_c0,mask_check,vbot,vtop,interp_type,interp_base)
+subroutine linop_interp_grid(linop,mpl,rng,geom,il0i,nc1,c1_to_c0,mask_check,vbot,vtop,interp_type,interp_base)
 
 implicit none
 
 ! Passed variables
 class(linop_type),intent(inout) :: linop      !< Linear operator
+type(mpl_type),intent(inout) :: mpl           !< MPI data
+type(rng_type),intent(inout) :: rng           !< Random number generator
 type(geom_type),intent(in) :: geom            !< Geometry
 integer,intent(in) :: il0i                    !< Level
 integer,intent(in) :: nc1                     !< Subset Sc1 size
@@ -906,7 +918,7 @@ logical,allocatable :: mask_extra(:),valid(:)
 
 if (.not.allocated(interp_base%row)) then
    ! Compute base interpolation
-   call interp_base%interp(nc1,geom%lon(c1_to_c0),geom%lat(c1_to_c0),any(geom%mask(c1_to_c0,:),dim=2), &
+   call interp_base%interp(mpl,rng,nc1,geom%lon(c1_to_c0),geom%lat(c1_to_c0),any(geom%mask(c1_to_c0,:),dim=2), &
  & geom%nc0,geom%lon,geom%lat,any(geom%mask,dim=2),interp_type)
 end if
 
@@ -926,7 +938,7 @@ end do
 if (mask_check) then
    write(mpl%unit,'(a10,a,i3,a)',advance='no') '','Sublevel ',il0i,': '
    call flush(mpl%unit)
-   call interp_base%interp_check_mask(geom,valid,il0i,col_to_ic0=c1_to_c0)
+   call interp_base%interp_check_mask(mpl,geom,valid,il0i,col_to_ic0=c1_to_c0)
 end if
 
 if (geom%nl0i>1) then
@@ -958,7 +970,7 @@ do i_s=1,interp_base%n_s
    if (valid(i_s)) renorm(interp_base%row(i_s)) = renorm(interp_base%row(i_s))+interp_base%S(i_s)
 end do
 
-! Initialize object
+! Initialize linear operator
 linop%n_src = nc1
 linop%n_dst = geom%nc0
 linop%n_s = count(valid)
@@ -977,14 +989,14 @@ end do
 call interp_base%dealloc
 
 ! Deal with missing points
-call linop%interp_missing(geom%nc0,geom%lon,geom%lat,geom%mask(:,il0i),interp_type)
+call linop%interp_missing(mpl,geom%nc0,geom%lon,geom%lat,geom%mask(:,il0i),interp_type)
 
 ! Check interpolation
 test_c0 = geom%mask(:,il0i)
 do i_s=1,linop%n_s
    test_c0(linop%row(i_s)) = .false.
 end do
-if (any(test_c0)) call msgerror('error with the grid interpolation row')
+if (any(test_c0)) call mpl%abort('error with the grid interpolation row')
 
 ! Release memory
 deallocate(valid)
@@ -996,12 +1008,13 @@ end subroutine linop_interp_grid
 ! Subroutine: interp_check_mask
 !> Purpose: check mask boundaries for interpolations
 !----------------------------------------------------------------------
-subroutine linop_interp_check_mask(linop,geom,valid,il0,row_to_ic0,col_to_ic0)
+subroutine linop_interp_check_mask(linop,mpl,geom,valid,il0,row_to_ic0,col_to_ic0)
 
 implicit none
 
 ! Passed variables
 class(linop_type),intent(inout) :: linop               !< Linear operator
+type(mpl_type),intent(inout) :: mpl                    !< MPI data
 type(geom_type),intent(in) :: geom                     !< Geometry
 logical,intent(inout) :: valid(linop%n_s)              !< Valid points
 integer,intent(in),optional :: row_to_ic0(linop%n_dst) !< Conversion from row to ic0 (identity if missing)
@@ -1020,7 +1033,7 @@ call mpl%split(linop%n_s,i_s_s,i_s_e,n_s_loc)
 allocate(done(n_s_loc(mpl%myproc)))
 
 ! Check that interpolations are not crossing mask boundaries
-call prog_init(progint,done)
+call mpl%prog_init(progint,done)
 !$omp parallel do schedule(static) private(i_s_loc,i_s,x,y,z,v1,v2,va,vp,t,ic0,jc1,jc0)
 do i_s_loc=1,n_s_loc(mpl%myproc)
    ! Indices
@@ -1045,7 +1058,7 @@ do i_s_loc=1,n_s_loc(mpl%myproc)
 
    ! Print progression
    done(i_s_loc) = .true.
-   call prog_print(progint,done)
+   call mpl%prog_print(progint,done)
 end do
 !$omp end parallel do
 write(mpl%unit,'(a)') '100%'
@@ -1081,12 +1094,13 @@ end subroutine linop_interp_check_mask
 ! Subroutine: linop_interp_missing
 !> Purpose: deal with missing interpolation points
 !----------------------------------------------------------------------
-subroutine linop_interp_missing(linop,n_dst,lon_dst,lat_dst,mask_dst,interp_type)
+subroutine linop_interp_missing(linop,mpl,n_dst,lon_dst,lat_dst,mask_dst,interp_type)
 
 implicit none
 
 ! Passed variables
 class(linop_type),intent(inout) :: linop     !< Linear operator (interpolation)
+type(mpl_type),intent(in) :: mpl             !< MPI data
 integer,intent(in) :: n_dst                  !< Destination size
 real(kind_real),intent(in) :: lon_dst(n_dst) !< Destination longitude
 real(kind_real),intent(in) :: lat_dst(n_dst) !< Destination latitude
@@ -1119,7 +1133,7 @@ if (count(missing)>0) then
    elseif (trim(interp_type)=='natural') then
       interp_tmp%n_s = linop%n_s+40*count(missing)
    else
-      call msgerror('wrong interpolation')
+      call mpl%abort('wrong interpolation')
    end if
    call interp_tmp%alloc
 
@@ -1135,7 +1149,7 @@ if (count(missing)>0) then
    lmask = mask_dst.and.(.not.missing)
 
    ! Compute KD-tree
-   call kdtree%create(n_dst,lon_dst,lat_dst,lmask)
+   call kdtree%create(mpl,n_dst,lon_dst,lat_dst,lmask)
 
    do i_dst=1,n_dst
       if (missing(i_dst)) then
@@ -1153,7 +1167,7 @@ if (count(missing)>0) then
                interp_tmp%S(interp_tmp%n_s) = linop%S(i_s)
             end if
          end do
-         if (.not.found) call msgerror('missing point not found')
+         if (.not.found) call mpl%abort('missing point not found')
       end if
    end do
 

@@ -13,11 +13,10 @@ module type_displ
 use netcdf
 !$ use omp_lib
 use tools_const, only: req,reqkm,rad2deg,deg2rad,msvalr
-use tools_display, only: msgerror,prog_init,prog_print
 use tools_func, only: lonlatmod,sphere_dist,reduce_arc,vector_product
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsr,isallnotmsr,isanynotmsr
-use tools_nc, only: ncfloat,ncerr
+use tools_nc, only: ncfloat
 use tools_qsort, only: qsort
 use tools_stripack, only: trans,scoord
 use type_com, only: com_type
@@ -26,10 +25,13 @@ use type_geom, only: geom_type
 use type_linop, only: linop_type
 use type_mesh, only: mesh_type
 use type_hdata, only: hdata_type
-use type_mpl, only: mpl
+use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 
 implicit none
+
+character(len=1024) :: displ_method = 'cor_max'         !< Displacement computation method
+real(kind_real),parameter :: cor_th = 0.2_kind_real     !< Correlation threshold
 
 ! Displacement data derived type
 type displ_type
@@ -52,9 +54,6 @@ contains
    procedure :: compute => displ_compute
    procedure :: write => displ_write
 end type displ_type
-
-character(len=1024) :: displ_method = 'cor_center_mass' !< Displacement computation method
-real(kind_real),parameter :: cor_th = 0.2_kind_real     !< Correlation threshold
 
 private
 public :: displ_type
@@ -133,12 +132,13 @@ end subroutine displ_dealloc
 ! Subroutine: displ_compute
 !> Purpose: compute correlation maximum displacement
 !----------------------------------------------------------------------
-subroutine displ_compute(displ,nam,geom,hdata,ens)
+subroutine displ_compute(displ,mpl,nam,geom,hdata,ens)
 
 implicit none
 
 ! Passed variables
 class(displ_type),intent(inout) :: displ !< Displacement data
+type(mpl_type),intent(in) :: mpl         !< MPI data
 type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 type(hdata_type),intent(inout) :: hdata  !< HDIAG data
@@ -232,7 +232,7 @@ do isub=1,ens%nsub
       do its=2,nam%nts
          do iv=1,nam%nv
             ! Halo extension
-            call hdata%com_AD%ext(geom%nl0,ens%fld(:,:,iv,its,ie),fld_ext(:,:,iv,its))
+            call hdata%com_AD%ext(mpl,geom%nl0,ens%fld(:,:,iv,its,ie),fld_ext(:,:,iv,its))
          end do
       end do
 
@@ -329,7 +329,7 @@ do its=2,nam%nts
                   if (isanynotmsr(cor)) then
                      cor_avg(jc1) = sum(cor,mask=isnotmsr(cor))/real(count(isnotmsr(cor)),kind_real)
                   else
-                     call msgerror('average correlation contains missing values only')
+                     call mpl%abort('average correlation contains missing values only')
                   end if
                end if
             end do
@@ -347,7 +347,7 @@ do its=2,nam%nts
                   jc1 = ind(1)
                   jc0 = hdata%c1_to_c0(jc1)
                   lon_target = geom%lon(jc0)
-                  lat_target = geom%lon(jc0)
+                  lat_target = geom%lat(jc0)
                else
                   lon_target = 0.0
                   lat_target = 0.0
@@ -469,14 +469,14 @@ do its=2,nam%nts
             dz = dz_ini
 
             ! Median filter to remove extreme values
-            call hdata%diag_filter(nam,geom,il0,'median',displ%rhflt(iter,il0,its),dx)
-            call hdata%diag_filter(nam,geom,il0,'median',displ%rhflt(iter,il0,its),dy)
-            call hdata%diag_filter(nam,geom,il0,'median',displ%rhflt(iter,il0,its),dz)
+            call hdata%diag_filter(mpl,nam,geom,il0,'median',displ%rhflt(iter,il0,its),dx)
+            call hdata%diag_filter(mpl,nam,geom,il0,'median',displ%rhflt(iter,il0,its),dy)
+            call hdata%diag_filter(mpl,nam,geom,il0,'median',displ%rhflt(iter,il0,its),dz)
 
             ! Average filter to smooth displacement
-            call hdata%diag_filter(nam,geom,il0,'gc99',displ%rhflt(iter,il0,its),dx)
-            call hdata%diag_filter(nam,geom,il0,'gc99',displ%rhflt(iter,il0,its),dy)
-            call hdata%diag_filter(nam,geom,il0,'gc99',displ%rhflt(iter,il0,its),dz)
+            call hdata%diag_filter(mpl,nam,geom,il0,'gc99',displ%rhflt(iter,il0,its),dx)
+            call hdata%diag_filter(mpl,nam,geom,il0,'gc99',displ%rhflt(iter,il0,its),dy)
+            call hdata%diag_filter(mpl,nam,geom,il0,'gc99',displ%rhflt(iter,il0,its),dz)
 
             ! Back to spherical coordinates
             dx = dx+x_ori
@@ -565,7 +565,7 @@ do its=2,nam%nts
          displ%dist_c2a_flt(:,il0,its) = dist_c2a
 
          ! Check convergence
-         if (.not.convergence) call msgerror('iterative filtering failed')
+         if (.not.convergence) call mpl%abort('iterative filtering failed')
       else
          ! Print results
          write(mpl%unit,'(a10,a22,f10.2,a,f6.2,a,f7.2,a)') '','Raw displacement: rhflt = ', &
@@ -579,10 +579,10 @@ do its=2,nam%nts
          call lonlatmod(dlon_c2a(ic2a),dlat_c2a(ic2a))
       end do
       il0i = min(il0,geom%nl0i)
-      call hdata%com_AB%ext(dlon_c2a,dlon_c2b)
-      call hdata%com_AB%ext(dlat_c2a,dlat_c2b)
-      call hdata%h(il0i)%apply(dlon_c2b,dlon_c0a)
-      call hdata%h(il0i)%apply(dlat_c2b,dlat_c0a)
+      call hdata%com_AB%ext(mpl,dlon_c2a,dlon_c2b)
+      call hdata%com_AB%ext(mpl,dlat_c2a,dlat_c2b)
+      call hdata%h(il0i)%apply(mpl,dlon_c2b,dlon_c0a)
+      call hdata%h(il0i)%apply(mpl,dlat_c2b,dlat_c0a)
 
       ! Displaced grid
       do ic0a=1,geom%nc0a
@@ -609,12 +609,13 @@ end subroutine displ_compute
 ! Subroutine: displ_write
 !> Purpose: write displacement data
 !----------------------------------------------------------------------
-subroutine displ_write(displ,nam,geom,hdata,filename)
+subroutine displ_write(displ,mpl,nam,geom,hdata,filename)
 
 implicit none
 
 ! Passed variables
 class(displ_type),intent(in) :: displ   !< Displacement data
+type(mpl_type),intent(inout) :: mpl     !< MPI data
 type(nam_type),intent(in) :: nam        !< Namelist
 type(geom_type),intent(in) :: geom      !< Geometry
 type(hdata_type),intent(in) :: hdata    !< HDIAG data
@@ -726,61 +727,61 @@ deallocate(sbuf)
 
 if (mpl%main) then
    ! Create file
-   call ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_clobber,nf90_64bit_offset),ncid))
+   call mpl%ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_clobber,nf90_64bit_offset),ncid))
 
    ! Write namelist parameters
-   call nam%ncwrite(ncid)
+   call nam%ncwrite(mpl,ncid)
 
    ! Define dimensions
-   call ncerr(subr,nf90_def_dim(ncid,'nc2',hdata%nc2,nc2_id))
-   call ncerr(subr,nf90_def_dim(ncid,'nl0',geom%nl0,nl0_id))
-   call ncerr(subr,nf90_def_dim(ncid,'nts',nam%nts-1,nts_id))
-   call ncerr(subr,nf90_def_dim(ncid,'niter',nam%displ_niter+1,displ_niter_id))
+   call mpl%ncerr(subr,nf90_def_dim(ncid,'nc2',hdata%nc2,nc2_id))
+   call mpl%ncerr(subr,nf90_def_dim(ncid,'nl0',geom%nl0,nl0_id))
+   call mpl%ncerr(subr,nf90_def_dim(ncid,'nts',nam%nts-1,nts_id))
+   call mpl%ncerr(subr,nf90_def_dim(ncid,'niter',nam%displ_niter+1,displ_niter_id))
 
    ! Define variables
-   call ncerr(subr,nf90_def_var(ncid,'vunit',ncfloat,(/nc2_id,nl0_id/),vunit_id))
-   call ncerr(subr,nf90_def_var(ncid,'valid',ncfloat,(/displ_niter_id,nl0_id,nts_id/),valid_id))
-   call ncerr(subr,nf90_put_att(ncid,valid_id,'_FillValue',msvalr))
-   call ncerr(subr,nf90_def_var(ncid,'dist',ncfloat,(/displ_niter_id,nl0_id,nts_id/),dist_id))
-   call ncerr(subr,nf90_put_att(ncid,dist_id,'_FillValue',msvalr))
-   call ncerr(subr,nf90_def_var(ncid,'rhflt',ncfloat,(/displ_niter_id,nl0_id,nts_id/),rhflt_id))
-   call ncerr(subr,nf90_put_att(ncid,rhflt_id,'_FillValue',msvalr))
-   call ncerr(subr,nf90_def_var(ncid,'lon_c2',ncfloat,(/nc2_id,nl0_id/),lon_c2_id))
-   call ncerr(subr,nf90_put_att(ncid,lon_c2_id,'_FillValue',msvalr))
-   call ncerr(subr,nf90_def_var(ncid,'lat_c2',ncfloat,(/nc2_id,nl0_id/),lat_c2_id))
-   call ncerr(subr,nf90_put_att(ncid,lat_c2_id,'_FillValue',msvalr))
-   call ncerr(subr,nf90_def_var(ncid,'lon_c2_raw',ncfloat,(/nc2_id,nl0_id,nts_id/),lon_c2_raw_id))
-   call ncerr(subr,nf90_put_att(ncid,lon_c2_raw_id,'_FillValue',msvalr))
-   call ncerr(subr,nf90_def_var(ncid,'lat_c2_raw',ncfloat,(/nc2_id,nl0_id,nts_id/),lat_c2_raw_id))
-   call ncerr(subr,nf90_put_att(ncid,lat_c2_raw_id,'_FillValue',msvalr))
-   call ncerr(subr,nf90_def_var(ncid,'dist_c2_raw',ncfloat,(/nc2_id,nl0_id,nts_id/),dist_c2_raw_id))
-   call ncerr(subr,nf90_put_att(ncid,dist_c2_raw_id,'_FillValue',msvalr))
-   call ncerr(subr,nf90_def_var(ncid,'lon_c2_flt',ncfloat,(/nc2_id,nl0_id,nts_id/),lon_c2_flt_id))
-   call ncerr(subr,nf90_put_att(ncid,lon_c2_flt_id,'_FillValue',msvalr))
-   call ncerr(subr,nf90_def_var(ncid,'lat_c2_flt',ncfloat,(/nc2_id,nl0_id,nts_id/),lat_c2_flt_id))
-   call ncerr(subr,nf90_put_att(ncid,lat_c2_flt_id,'_FillValue',msvalr))
-   call ncerr(subr,nf90_def_var(ncid,'dist_c2_flt',ncfloat,(/nc2_id,nl0_id,nts_id/),dist_c2_flt_id))
-   call ncerr(subr,nf90_put_att(ncid,dist_c2_flt_id,'_FillValue',msvalr))
+   call mpl%ncerr(subr,nf90_def_var(ncid,'vunit',ncfloat,(/nc2_id,nl0_id/),vunit_id))
+   call mpl%ncerr(subr,nf90_def_var(ncid,'valid',ncfloat,(/displ_niter_id,nl0_id,nts_id/),valid_id))
+   call mpl%ncerr(subr,nf90_put_att(ncid,valid_id,'_FillValue',msvalr))
+   call mpl%ncerr(subr,nf90_def_var(ncid,'dist',ncfloat,(/displ_niter_id,nl0_id,nts_id/),dist_id))
+   call mpl%ncerr(subr,nf90_put_att(ncid,dist_id,'_FillValue',msvalr))
+   call mpl%ncerr(subr,nf90_def_var(ncid,'rhflt',ncfloat,(/displ_niter_id,nl0_id,nts_id/),rhflt_id))
+   call mpl%ncerr(subr,nf90_put_att(ncid,rhflt_id,'_FillValue',msvalr))
+   call mpl%ncerr(subr,nf90_def_var(ncid,'lon_c2',ncfloat,(/nc2_id,nl0_id/),lon_c2_id))
+   call mpl%ncerr(subr,nf90_put_att(ncid,lon_c2_id,'_FillValue',msvalr))
+   call mpl%ncerr(subr,nf90_def_var(ncid,'lat_c2',ncfloat,(/nc2_id,nl0_id/),lat_c2_id))
+   call mpl%ncerr(subr,nf90_put_att(ncid,lat_c2_id,'_FillValue',msvalr))
+   call mpl%ncerr(subr,nf90_def_var(ncid,'lon_c2_raw',ncfloat,(/nc2_id,nl0_id,nts_id/),lon_c2_raw_id))
+   call mpl%ncerr(subr,nf90_put_att(ncid,lon_c2_raw_id,'_FillValue',msvalr))
+   call mpl%ncerr(subr,nf90_def_var(ncid,'lat_c2_raw',ncfloat,(/nc2_id,nl0_id,nts_id/),lat_c2_raw_id))
+   call mpl%ncerr(subr,nf90_put_att(ncid,lat_c2_raw_id,'_FillValue',msvalr))
+   call mpl%ncerr(subr,nf90_def_var(ncid,'dist_c2_raw',ncfloat,(/nc2_id,nl0_id,nts_id/),dist_c2_raw_id))
+   call mpl%ncerr(subr,nf90_put_att(ncid,dist_c2_raw_id,'_FillValue',msvalr))
+   call mpl%ncerr(subr,nf90_def_var(ncid,'lon_c2_flt',ncfloat,(/nc2_id,nl0_id,nts_id/),lon_c2_flt_id))
+   call mpl%ncerr(subr,nf90_put_att(ncid,lon_c2_flt_id,'_FillValue',msvalr))
+   call mpl%ncerr(subr,nf90_def_var(ncid,'lat_c2_flt',ncfloat,(/nc2_id,nl0_id,nts_id/),lat_c2_flt_id))
+   call mpl%ncerr(subr,nf90_put_att(ncid,lat_c2_flt_id,'_FillValue',msvalr))
+   call mpl%ncerr(subr,nf90_def_var(ncid,'dist_c2_flt',ncfloat,(/nc2_id,nl0_id,nts_id/),dist_c2_flt_id))
+   call mpl%ncerr(subr,nf90_put_att(ncid,dist_c2_flt_id,'_FillValue',msvalr))
 
    ! End definition mode
-   call ncerr(subr,nf90_enddef(ncid))
+   call mpl%ncerr(subr,nf90_enddef(ncid))
 
    ! Write data
-   call ncerr(subr,nf90_put_var(ncid,vunit_id,geom%vunit(hdata%c2_to_c0,:)))
-   call ncerr(subr,nf90_put_var(ncid,valid_id,displ%valid))
-   call ncerr(subr,nf90_put_var(ncid,dist_id,displ%dist*reqkm))
-   call ncerr(subr,nf90_put_var(ncid,rhflt_id,displ%rhflt*reqkm))
-   call ncerr(subr,nf90_put_var(ncid,lon_c2_id,lon_c2))
-   call ncerr(subr,nf90_put_var(ncid,lat_c2_id,lat_c2))
-   call ncerr(subr,nf90_put_var(ncid,lon_c2_raw_id,lon_c2_raw))
-   call ncerr(subr,nf90_put_var(ncid,lat_c2_raw_id,lat_c2_raw))
-   call ncerr(subr,nf90_put_var(ncid,dist_c2_raw_id,dist_c2_raw))
-   call ncerr(subr,nf90_put_var(ncid,lon_c2_flt_id,lon_c2_flt))
-   call ncerr(subr,nf90_put_var(ncid,lat_c2_flt_id,lat_c2_flt))
-   call ncerr(subr,nf90_put_var(ncid,dist_c2_flt_id,dist_c2_flt))
+   call mpl%ncerr(subr,nf90_put_var(ncid,vunit_id,geom%vunit(hdata%c2_to_c0,:)))
+   call mpl%ncerr(subr,nf90_put_var(ncid,valid_id,displ%valid))
+   call mpl%ncerr(subr,nf90_put_var(ncid,dist_id,displ%dist*reqkm))
+   call mpl%ncerr(subr,nf90_put_var(ncid,rhflt_id,displ%rhflt*reqkm))
+   call mpl%ncerr(subr,nf90_put_var(ncid,lon_c2_id,lon_c2))
+   call mpl%ncerr(subr,nf90_put_var(ncid,lat_c2_id,lat_c2))
+   call mpl%ncerr(subr,nf90_put_var(ncid,lon_c2_raw_id,lon_c2_raw))
+   call mpl%ncerr(subr,nf90_put_var(ncid,lat_c2_raw_id,lat_c2_raw))
+   call mpl%ncerr(subr,nf90_put_var(ncid,dist_c2_raw_id,dist_c2_raw))
+   call mpl%ncerr(subr,nf90_put_var(ncid,lon_c2_flt_id,lon_c2_flt))
+   call mpl%ncerr(subr,nf90_put_var(ncid,lat_c2_flt_id,lat_c2_flt))
+   call mpl%ncerr(subr,nf90_put_var(ncid,dist_c2_flt_id,dist_c2_flt))
 
    ! Close file
-   call ncerr(subr,nf90_close(ncid))
+   call mpl%ncerr(subr,nf90_close(ncid))
 
    ! Release memory
    deallocate(lon_c2)

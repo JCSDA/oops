@@ -10,9 +10,8 @@
 !----------------------------------------------------------------------
 module type_timer
 
-use tools_display, only: msgerror
 use tools_kinds, only: kind_real
-use type_mpl, only: mpl
+use type_mpl, only: mpl_type
 
 implicit none
 
@@ -84,12 +83,13 @@ end subroutine timer_end
 ! Subroutine: timer_display
 !> Purpose: display timer
 !----------------------------------------------------------------------
-subroutine timer_display(timer)
+subroutine timer_display(timer,mpl)
 
 implicit none
 
 ! Passed variables
 class(timer_type),intent(inout) :: timer !< Timer data
+type(mpl_type),intent(in) :: mpl         !< MPI data
 
 ! Execution times calculation
 call timer%end
