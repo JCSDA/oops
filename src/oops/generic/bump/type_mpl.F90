@@ -220,7 +220,8 @@ else
 end if
 
 ! Time-based tag
-call system_clock(count=mpl%tag)
+if (mpl%main) call system_clock(count=mpl%tag)
+call mpl%bcast(mpl%tag)
 
 ! Set max number of OpenMP threads
 mpl%nthread = 1
