@@ -126,7 +126,7 @@ template <typename MODEL> void testRead() {
     eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
     Locations_ locs(Test_::obspace()[jj].locations(Test_::tbgn(), Test_::tend()));
 
-    GeoVaLs_ gval(locs, hop.variables(), gconf);
+    GeoVaLs_ gval(gconf, hop.variables());
 
     const double xx = gconf.getDouble("norm");
     const double zz = sqrt(dot_product(gval, gval));
