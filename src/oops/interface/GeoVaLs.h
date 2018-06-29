@@ -37,8 +37,6 @@ class GeoVaLs : public util::Printable,
 
   GeoVaLs(const Locations_ &, const Variables &);
   GeoVaLs(const eckit::Configuration &, const Variables &);
-  GeoVaLs(const Locations_ &, const Variables &, const eckit::Configuration &);
-  GeoVaLs(const GeoVaLs &, const Locations_ &, const eckit::Configuration &);
   GeoVaLs(const GeoVaLs &);
 
   ~GeoVaLs();
@@ -59,6 +57,7 @@ class GeoVaLs : public util::Printable,
   GeoVaLs & operator/=(const GeoVaLs &);
   double dot_product_with(const GeoVaLs &) const;
   void read(const eckit::Configuration &);
+  void analytic_init(const Locations_ &, const eckit::Configuration &);
   void write(const eckit::Configuration &) const;
 
  private:
@@ -77,25 +76,13 @@ GeoVaLs<MODEL>::GeoVaLs(const Locations_ & locs, const Variables & vars) : gvals
 }
 
 // -----------------------------------------------------------------------------
-// We may want to eliminate this constructor eventually in favor of the
-// following one
 
 template <typename MODEL>
-GeoVaLs<MODEL>::GeoVaLs(const eckit::Configuration & conf, const Variables & vars) : gvals_() {
+  GeoVaLs<MODEL>::GeoVaLs(const eckit::Configuration & conf, const Variables & vars)
+  : gvals_() {
   Log::trace() << "GeoVaLs<MODEL>::GeoVaLs read starting" << std::endl;
   util::Timer timer(classname(), "GeoVaLs");
   gvals_.reset(new GeoVaLs_(conf, vars));
-  Log::trace() << "GeoVaLs<MODEL>::GeoVaLs read done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-  GeoVaLs<MODEL>::GeoVaLs(const Locations_ & locs, const Variables & vars,
-                          const eckit::Configuration & conf) : gvals_() {
-  Log::trace() << "GeoVaLs<MODEL>::GeoVaLs read starting" << std::endl;
-  util::Timer timer(classname(), "GeoVaLs");
-  gvals_.reset(new GeoVaLs_(locs.locations(), vars, conf));
   Log::trace() << "GeoVaLs<MODEL>::GeoVaLs read done" << std::endl;
 }
 
@@ -107,36 +94,6 @@ GeoVaLs<MODEL>::GeoVaLs(const GeoVaLs & other): gvals_() {
   util::Timer timer(classname(), "GeoVaLs");
   gvals_.reset(new GeoVaLs_(*other.gvals_));
   Log::trace() << "ObsVector<MODEL>::GeoVaLs done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-/*! \brief GeoVaLs Copy constructor with locs and config
- *
- * \details This oops::GeoVaLs constructor was introduced in May, 2018 
- * for use with the interpolation test.  The interpolation test requires an 
- * initialization of a GeoVaLs object based on the same analytic formulae
- * used for the State initialization (see test::TestStateInterpolation()
- * for further information).  This in turn requires information about the
- * vertical profile in addition to the latitude and longitude positional
- * information in the Locations object.  Currently, this information
- * about the vertical profile is obtained from an existing GeoVaLs object
- * (passed as *other*) that represents the output of the State::interpolate()   
- * method.  The State.StateGenerate section of the configuration file is
- * also passed to this constructor to provide further information required 
- * for the analytic initialization.
- *
- * \date May, 2018: created (M. Miesch, JCSDA)
- * 
- * \sa test::TestStateInterpolation()
- */
-
-template <typename MODEL>
-  GeoVaLs<MODEL>::GeoVaLs(const GeoVaLs & other, const Locations_ & locs,
-                          const eckit::Configuration & conf): gvals_() {
-  Log::trace() << "GeoVaLs<MODEL>::GeoVaLs starting" << std::endl;
-  util::Timer timer(classname(), "GeoVaLs");
-  gvals_.reset(new GeoVaLs_(*other.gvals_, locs.locations(), conf));
-  Log::trace() << "GeoVaLs<MODEL>::GeoVaLs done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -280,6 +237,37 @@ void GeoVaLs<MODEL>::write(const eckit::Configuration & conf) const {
   util::Timer timer(classname(), "write");
   gvals_->write(conf);
   Log::trace() << "GeoVaLs<MODEL>::write done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+/*! \brief GeoVaLs Analytic Initialization
+ *
+ * \details **analytic_init()** was introduced in May, 2018 (initially as a
+ * constructor) for use with the interpolation test.  The interpolation test 
+ * requires an initialization of a GeoVaLs object based on the same analytic 
+ * formulae used for the State initialization (see test::TestStateInterpolation()
+ * for further information).  This in turn requires information about the
+ * vertical profile in addition to the latitude and longitude positional
+ * information in the Locations object.  Currently, this information
+ * about the vertical profile is obtained from an existing GeoVaLs object
+ * (passed as *other*) that represents the output of the State::interpolate()   
+ * method.  The State.StateGenerate section of the configuration file is
+ * also passed to this constructor to provide further information required 
+ * for the analytic initialization.
+ *
+ * \date May, 2018: created as a constructor (M. Miesch, JCSDA) 
+ * \date June, 2018: moved to a method (M. Miesch, JCSDA)
+ *  
+ * \sa test::TestStateInterpolation()
+ */
+
+template <typename MODEL>
+  void GeoVaLs<MODEL>::analytic_init(const Locations_ & locs,
+                          const eckit::Configuration & conf) {
+  Log::trace() << "GeoVaLs<MODEL>::GeoVaLs analytic init starting" << std::endl;
+  util::Timer timer(classname(), "GeoVaLs");
+  gvals_->analytic_init(locs.locations(), conf);
+  Log::trace() << "GeoVaLs<MODEL>::GeoVaLs analytic init done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

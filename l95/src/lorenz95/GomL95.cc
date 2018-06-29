@@ -40,73 +40,11 @@ GomL95::GomL95(const LocsL95 & locs, const oops::Variables &)
   for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = locs[jj];
 }
 // -----------------------------------------------------------------------------
-// We may phase out this one eventually
+/*! Constructor with Configuration */
 GomL95::GomL95(const eckit::Configuration & conf, const oops::Variables &)
   : size_(0), iobs_(), locval_(), current_(0)
 {
-  this->read(conf);
-}
-// -----------------------------------------------------------------------------
-/*! Constructor with Configuration
- *
- * This constructor can be used to create a L95 GeoVaLs object based either
- * on data read from a file or on an analytic initial condition.  The latter
- * is used in the TestStateInterpolation() test.
- *
- */
-GomL95::GomL95(const LocsL95 & locs, const oops::Variables &,
-               const eckit::Configuration & conf)
-  : size_(0), iobs_(), locval_(), current_(0)
-{
-  if (conf.has("filename")) {
     this->read(conf);
-  } else {  // analytic init for testing interpolation
-    oops::Log::trace() << "GomL95::GomL95 analytic init " << std::endl;
-    size_ = locs.size();
-    iobs_.resize(size_);
-    locval_.resize(size_);
-    for (size_t jj = 0; jj < size_; ++jj) iobs_[jj] = locs.globalIndex(jj);
-
-    for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = 0.0;
-    if (conf.has("mean")) {
-      const double zz = conf.getDouble("mean");
-      for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = zz;
-    }
-    if (conf.has("sinus")) {
-      const double zz = conf.getDouble("sinus");
-      const double pi = std::acos(-1.0);
-      for (size_t jj = 0; jj < size_; ++jj) {
-        locval_[jj] += zz * std::sin(2.0*pi*locs[jj]);
-      }
-    }
-  }
-}
-// -----------------------------------------------------------------------------
-/*! GomL95 copy constructor with locs and config
- *
- * \details This qg::GomQG constructor was introduced in May, 2018 for use with
- * the interpolation test. 
- * 
- */
-GomL95::GomL95(const GomL95 & other, const LocsL95 & locs,
-               const eckit::Configuration & conf)
-  : size_(other.size_), iobs_(other.iobs_), locval_(other.locval_), current_(0)
-{
-  oops::Log::trace() << "GomL95::GomL95 analytic init " << std::endl;
-
-  // analytic init for testing interpolation
-  for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = 0.0;
-  if (conf.has("mean")) {
-    const double zz = conf.getDouble("mean");
-    for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = zz;
-  }
-  if (conf.has("sinus")) {
-    const double zz = conf.getDouble("sinus");
-    const double pi = std::acos(-1.0);
-    for (size_t jj = 0; jj < size_; ++jj)
-      locval_[jj] += zz * std::sin(2.0*pi*locs[jj]);
-  }
-  oops::Log::trace() << "GomL95::GomL95 analytic init finished" << std::endl;
 }
 // -----------------------------------------------------------------------------
 GomL95::GomL95(const GomL95 & other)
@@ -203,6 +141,27 @@ void GomL95::write(const eckit::Configuration & conf) const {
 
   fout.close();
   oops::Log::trace() << "GomL95::write file closed." << std::endl;
+}
+// -----------------------------------------------------------------------------
+/*! GomL95 analytic initialization */
+
+void GomL95::analytic_init(const LocsL95 & locs, const eckit::Configuration & conf)
+{
+  oops::Log::trace() << "GomL95::GomL95 analytic init " << std::endl;
+
+  // analytic init for testing interpolation
+  for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = 0.0;
+  if (conf.has("mean")) {
+    const double zz = conf.getDouble("mean");
+    for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = zz;
+  }
+  if (conf.has("sinus")) {
+    const double zz = conf.getDouble("sinus");
+    const double pi = std::acos(-1.0);
+    for (size_t jj = 0; jj < size_; ++jj)
+      locval_[jj] += zz * std::sin(2.0*pi*locs[jj]);
+  }
+  oops::Log::trace() << "GomL95::GomL95 analytic init finished" << std::endl;
 }
 // -----------------------------------------------------------------------------
 void GomL95::print(std::ostream & os) const {

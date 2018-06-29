@@ -28,46 +28,14 @@ GomQG::GomQG(const LocationsQG & locs, const oops::Variables & var) {
   qg_gom_setup_f90(keyGom_, locs.toFortran(), varqg.toFortran());
 }
 // -----------------------------------------------------------------------------
-GomQG::GomQG(const eckit::Configuration & config, const oops::Variables &) {
-  qg_gom_create_f90(keyGom_);
-  const eckit::Configuration * conf = &config;
-  qg_gom_read_file_f90(keyGom_, &conf);
-}
-// -----------------------------------------------------------------------------
-/*! QG GeoVaLs Constructor with Config
- *
- * \details This constructor can be used to create a GeoVaLs object either
- * by reading it from a file or by using one of several analytic
- * initialization procedures.
- *
- * \sa qg_gom_analytic_init_c() analytic_init()
- */
+/*! QG GeoVaLs Constructor with Config */
 
-GomQG::GomQG(const LocationsQG & locs, const oops::Variables & var,
-             const eckit::Configuration & config) {
+  GomQG::GomQG(const eckit::Configuration & config, const oops::Variables &)
+{
   qg_gom_create_f90(keyGom_);
 
-  // Pass F90 routines a pointer to the configuration object
   const eckit::Configuration * conp = &config;
   qg_gom_read_file_f90(keyGom_, &conp);
-}
-// -----------------------------------------------------------------------------
-/*! \brief GomQG Copy constructor with locs and config
- *
- * \details This qg::GomQG constructor was introduced in May, 2018 for use with
- * the interpolation test. 
- *
- */
-GomQG::GomQG(const GomQG & other, const LocationsQG & locs,
-             const eckit::Configuration & config) {
-  // first copy the existing object
-  qg_gom_create_f90(keyGom_);
-  qg_gom_assign_f90(keyGom_, other.keyGom_);
-
-  // Then optionally replace values with analytic init
-  const eckit::Configuration * conp = &config;
-  if (config.has("analytic_init"))
-    qg_gom_analytic_init_f90(keyGom_, locs.toFortran(), &conp);
 }
 // -----------------------------------------------------------------------------
 // Copy constructor
@@ -138,6 +106,20 @@ void GomQG::read(const eckit::Configuration & config) {
 void GomQG::write(const eckit::Configuration & config) const {
   const eckit::Configuration * conf = &config;
   qg_gom_write_file_f90(keyGom_, &conf);
+}
+// -----------------------------------------------------------------------------
+/*! \brief GomQG Analytic Initialization
+ *
+ * \details This qg::GomQG constructor was introduced in May, 2018 for use with
+ * the interpolation test. 
+ *
+ */
+void GomQG::analytic_init(const LocationsQG & locs,
+                          const eckit::Configuration & config) {
+  // Optionally replace values with analytic init
+  const eckit::Configuration * conp = &config;
+  if (config.has("analytic_init"))
+    qg_gom_analytic_init_f90(keyGom_, locs.toFortran(), &conp);
 }
 // -----------------------------------------------------------------------------
 void GomQG::print(std::ostream & os) const {

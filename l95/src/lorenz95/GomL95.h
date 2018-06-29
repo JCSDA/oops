@@ -36,8 +36,6 @@ class GomL95 : public util::Printable,
 
   GomL95(const LocsL95 &, const oops::Variables &);
   GomL95(const eckit::Configuration &, const oops::Variables &);
-  GomL95(const LocsL95 &, const oops::Variables &, const eckit::Configuration &);
-  GomL95(const GomL95 &, const LocsL95 &, const eckit::Configuration &);
   explicit GomL95(const GomL95 &);
   ~GomL95();
 
@@ -51,6 +49,7 @@ class GomL95 : public util::Printable,
   GomL95 & operator/=(const GomL95 &);
   double dot_product_with(const GomL95 &) const;
   void read(const eckit::Configuration &);
+  void analytic_init(const LocsL95 &, const eckit::Configuration &);
   void write(const eckit::Configuration &) const;
   void print(std::ostream &) const;
 
