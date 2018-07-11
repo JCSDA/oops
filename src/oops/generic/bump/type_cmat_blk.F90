@@ -46,7 +46,7 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: cmat_blk_alloc
-!> Purpose: cmat block object allocation
+!> Purpose: C matrix block data allocation
 !----------------------------------------------------------------------
 subroutine cmat_blk_alloc(cmat_blk,nam,geom,bpar,prefix)
 
@@ -103,7 +103,7 @@ end subroutine cmat_blk_alloc
 
 !----------------------------------------------------------------------
 ! Subroutine: cmat_blk_dealloc
-!> Purpose: cmat block object deallocation
+!> Purpose: C matrix block data deallocation
 !----------------------------------------------------------------------
 subroutine cmat_blk_dealloc(cmat_blk)
 

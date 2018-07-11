@@ -11,7 +11,6 @@
 module tools_qsort
 
 use tools_kinds, only: kind_real
-use type_mpl, only: mpl
 
 implicit none
 

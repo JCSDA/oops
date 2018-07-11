@@ -13,11 +13,10 @@ module type_nicas_blk
 use netcdf
 !$ use omp_lib
 use tools_const, only: pi,req,reqkm,deg2rad,rad2deg,msvalr
-use tools_display, only: prog_init,prog_print,msgerror,msgwarning,aqua,black,vunitchar
 use tools_func, only: sphere_dist,vector_product,vector_triple_product,gc99
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsr,isnotmsi
-use tools_nc, only: ncerr,ncfloat
+use tools_nc, only: ncfloat
 use tools_qsort, only: reorder_vec,qsort
 use tools_test, only: define_dirac
 use type_bpar, only: bpar_type
@@ -28,12 +27,20 @@ use type_io, only: io_type
 use type_kdtree, only: kdtree_type
 use type_linop, only: linop_type
 use type_mesh, only: mesh_type
-use type_mpl, only: mpl
+use type_mpl, only: mpl_type
 use type_nam, only: nam_type
-use type_rng, only: rng
+use type_rng, only: rng_type
 use yomhook, only: lhook,dr_hook
 
 implicit none
+
+integer,parameter :: nc1max = 15000                     !< Maximum size of the Sc1 subset
+logical,parameter :: write_grids = .true.               !< Write Sc1 and Sc2 subsets lon/lat
+real(kind_real),parameter :: sqrt_fac = 0.721_kind_real !< Square-root factor (empirical)
+real(kind_real),parameter :: S_inf = 1.0e-2_kind_real   !< Minimum value for the convolution coefficients
+real(kind_real),parameter :: deform = 0.0_kind_real     !< Deformation coefficient (maximum absolute value: -0.318)
+real(kind_real),parameter :: tol = 1.0e-3_kind_real     !< Positive-definiteness test tolerance
+integer,parameter :: nitermax = 50                      !< Number of iterations for the positive-definiteness test
 
 ! NICAS block derived type
 type nicas_blk_type
@@ -190,14 +197,6 @@ contains
    procedure :: test_dirac => nicas_blk_test_dirac
 end type nicas_blk_type
 
-integer,parameter :: nc1max = 15000                     !< Maximum size of the Sc1 subset
-logical,parameter :: write_grids = .true.               !< Write Sc1 and Sc2 subsets lon/lat
-real(kind_real),parameter :: sqrt_fac = 0.721_kind_real !< Square-root factor (empirical)
-real(kind_real),parameter :: S_inf = 1.0e-2_kind_real   !< Minimum value for the convolution coefficients
-real(kind_real),parameter :: deform = 0.0_kind_real     !< Deformation coefficient (maximum absolute value: -0.318)
-real(kind_real),parameter :: tol = 1.0e-3_kind_real     !< Positive-definiteness test tolerance
-integer,parameter :: nitermax = 50                      !< Number of iterations for the positive-definiteness test
-
 private
 public :: nicas_blk_type
 
@@ -205,7 +204,7 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: nicas_blk_dealloc
-!> Purpose: nicas_blk object deallocation
+!> Purpose: NICAS block data deallocation
 !----------------------------------------------------------------------
 subroutine nicas_blk_dealloc(nicas_blk,nam,geom)
 
@@ -316,12 +315,14 @@ end subroutine nicas_blk_dealloc
 ! Subroutine: nicas_blk_compute_parameters
 !> Purpose: compute NICAS parameters
 !----------------------------------------------------------------------
-subroutine nicas_blk_compute_parameters(nicas_blk,nam,geom,cmat_blk)
+subroutine nicas_blk_compute_parameters(nicas_blk,mpl,rng,nam,geom,cmat_blk)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(inout) :: nicas_blk !< NICAS data block
+type(mpl_type),intent(inout) :: mpl              !< MPI data
+type(rng_type),intent(inout) :: rng              !< Random number generator
 type(nam_type),intent(in) :: nam                 !< Namelist
 type(geom_type),intent(in) :: geom               !< Geometry
 type(cmat_blk_type),intent(in) :: cmat_blk       !< C matrix data block
@@ -332,12 +333,12 @@ integer :: il0i,il1
 ! Compute adaptive sampling
 write(mpl%unit,'(a7,a)') '','Compute adaptive sampling'
 call flush(mpl%unit)
-call nicas_blk%compute_sampling(nam,geom,cmat_blk)
+call nicas_blk%compute_sampling(mpl,rng,nam,geom,cmat_blk)
 
 ! Compute horizontal interpolation data
 write(mpl%unit,'(a7,a)') '','Compute horizontal interpolation data'
 call flush(mpl%unit)
-call nicas_blk%compute_interp_h(nam,geom)
+call nicas_blk%compute_interp_h(mpl,rng,nam,geom)
 
 ! Compute vertical interpolation data
 write(mpl%unit,'(a7,a)') '','Compute vertical interpolation data'
@@ -347,27 +348,27 @@ call nicas_blk%compute_interp_v(geom)
 ! Compute subsampling horizontal interpolation data
 write(mpl%unit,'(a7,a)') '','Compute subsampling horizontal interpolation data'
 call flush(mpl%unit)
-call nicas_blk%compute_interp_s(nam,geom)
+call nicas_blk%compute_interp_s(mpl,rng,nam,geom)
 
 ! Compute MPI distribution, halos A-B
 write(mpl%unit,'(a7,a)') '','Compute MPI distribution, halos A-B'
 call flush(mpl%unit)
-call nicas_blk%compute_mpi_ab(geom)
+call nicas_blk%compute_mpi_ab(mpl,geom)
 
 ! Compute convolution data
 write(mpl%unit,'(a7,a)') '','Compute convolution data'
 call flush(mpl%unit)
-call nicas_blk%compute_convol(nam,geom,cmat_blk)
+call nicas_blk%compute_convol(mpl,rng,nam,geom,cmat_blk)
 
 ! Compute MPI distribution, halo C
 write(mpl%unit,'(a7,a)') '','Compute MPI distribution, halo C'
 call flush(mpl%unit)
-call nicas_blk%compute_mpi_c(geom)
+call nicas_blk%compute_mpi_c(mpl,geom)
 
 ! Compute normalization
 write(mpl%unit,'(a7,a)') '','Compute normalization'
 call flush(mpl%unit)
-call nicas_blk%compute_normalization(nam,geom)
+call nicas_blk%compute_normalization(mpl,nam,geom)
 
 ! Print results
 write(mpl%unit,'(a7,a,i4)') '','Parameters for processor #',mpl%myproc
@@ -402,12 +403,14 @@ end subroutine nicas_blk_compute_parameters
 ! Subroutine: nicas_blk_compute_sampling
 !> Purpose: compute NICAS sampling
 !----------------------------------------------------------------------
-subroutine nicas_blk_compute_sampling(nicas_blk,nam,geom,cmat_blk)
+subroutine nicas_blk_compute_sampling(nicas_blk,mpl,rng,nam,geom,cmat_blk)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(inout) :: nicas_blk !< NICAS data block
+type(mpl_type),intent(inout) :: mpl              !< MPI data
+type(rng_type),intent(inout) :: rng              !< Random number generator
 type(nam_type),intent(in) :: nam                 !< Namelist
 type(geom_type),intent(in) :: geom               !< Geometry
 type(cmat_blk_type),intent(in) :: cmat_blk       !< C matrix data block
@@ -431,7 +434,7 @@ allocate(mask_c0(geom%nc0))
 allocate(nicas_blk%llev(geom%nl0))
 
 ! Reset random numbers seed
-if (trim(nam%strategy)=='specific_multivariate') call rng%reseed
+if (trim(nam%strategy)=='specific_multivariate') call rng%reseed(mpl)
 
 ! Compute support radii
 call mpl%allreduce_sum(sum(cmat_blk%rh0s,dim=1),rh0savg)
@@ -440,8 +443,8 @@ call mpl%allreduce_sum(sum(cmat_blk%rv0s,dim=1),rv0savg)
 rv0savg = rv0savg/real(geom%nc0,kind_real)
 write(mpl%unit,'(a10,a)') '','Average support radii (H/V): '
 do il0=1,geom%nl0
-   write(mpl%unit,'(a13,a,i3,a,f10.2,a,f10.2,a)') '','Level ',nam%levs(il0),': '//trim(aqua),rh0savg(il0)*reqkm, &
- & trim(black)//' km  / '//trim(aqua),rv0savg(il0),trim(black)//' '//trim(vunitchar)
+   write(mpl%unit,'(a13,a,i3,a,f10.2,a,f10.2,a)') '','Level ',nam%levs(il0),': '//trim(mpl%aqua),rh0savg(il0)*reqkm, &
+ & trim(mpl%black)//' km  / '//trim(mpl%aqua),rv0savg(il0),trim(mpl%black)//' '//trim(mpl%vunitchar)
 end do
 call flush(mpl%unit)
 
@@ -469,13 +472,13 @@ nicas_blk%nc1 = min(nicas_blk%nc1,geom%nc0)
 write(mpl%unit,'(a10,a,i8)') '','Estimated nc1 from horizontal support radius: ',nicas_blk%nc1
 call flush(mpl%unit)
 if (nicas_blk%nc1>nc1max) then
-   call msgwarning('required nc1 larger than nc1max, resetting to nc1max')
+   call mpl%warning('required nc1 larger than nc1max, resetting to nc1max')
    nicas_blk%nc1 = nc1max
    write(mpl%unit,'(a10,a,f5.2)') '','Effective resolution: ',sqrt(real(nicas_blk%nc1,kind_real)*sqrt(3.0)*rh0sminavg**2 &
  & /(2.0*maxval(geom%area)))
    call flush(mpl%unit)
 end if
-if (nicas_blk%nc1<3) call msgerror('nicas_blk%nc1 lower than 3')
+if (nicas_blk%nc1<3) call mpl%abort('nicas_blk%nc1 lower than 3')
 
 ! Allocation
 allocate(nicas_blk%c1_to_c0(nicas_blk%nc1))
@@ -486,7 +489,7 @@ call flush(mpl%unit)
 call mpl%gatherv(geom%nc0a,rh0smin,geom%proc_to_nc0a,geom%nc0,rh0smin_glb)
 if (mpl%main) then
    ! Initialize sampling
-   call rng%initialize_sampling(geom%nc0,geom%lon,geom%lat,mask_c0,rh0smin_glb,nam%ntry,nam%nrep, &
+   call rng%initialize_sampling(mpl,geom%nc0,geom%lon,geom%lat,mask_c0,rh0smin_glb,nam%ntry,nam%nrep, &
  & nicas_blk%nc1,nicas_blk%c1_to_c0)
 
    ! Reorder sampling
@@ -565,7 +568,7 @@ do ic1=1,nicas_blk%nc1
          inside = .false.
       end if
    end do
-   if (nicas_blk%vbot(ic1)>nicas_blk%vtop(ic1)) call msgerror('non contiguous mask')
+   if (nicas_blk%vbot(ic1)>nicas_blk%vtop(ic1)) call mpl%abort('non contiguous mask')
 end do
 !$omp end parallel do
 
@@ -593,7 +596,7 @@ do il1=1,nicas_blk%nl1
    il0 = nicas_blk%l1_to_l0(il1)
    nicas_blk%nc2(il1) = floor(2.0*geom%area(il0)*nam%resol**2/(sqrt(3.0)*rh0savg(il0)**2))
    nicas_blk%nc2(il1) = min(nicas_blk%nc2(il1),nicas_blk%nc1)
-   if (nicas_blk%nc2(il1)<3) call msgerror('nicas_blk%nc2 lower than 3')
+   if (nicas_blk%nc2(il1)<3) call mpl%abort('nicas_blk%nc2 lower than 3')
 
    if (nicas_blk%nc2(il1)<nicas_blk%nc1) then
       ! Allocation
@@ -606,7 +609,7 @@ do il1=1,nicas_blk%nl1
       call mpl%gatherv(geom%nc0a,cmat_blk%rh0s(:,il0),geom%proc_to_nc0a,geom%nc0,rh0s_glb)
       if (mpl%main) then
          rh1s = rh0s_glb(nicas_blk%c1_to_c0)
-         call rng%initialize_sampling(nicas_blk%nc1,geom%lon(nicas_blk%c1_to_c0), &
+         call rng%initialize_sampling(mpl,nicas_blk%nc1,geom%lon(nicas_blk%c1_to_c0), &
        & geom%lat(nicas_blk%c1_to_c0),mask_c1,rh1s,nam%ntry,nam%nrep,nicas_blk%nc2(il1),c2_to_c1)
       end if
       call mpl%bcast(c2_to_c1)
@@ -676,28 +679,28 @@ if (mpl%main.and.write_grids) then
 
    ! Create file
    filename = trim(nam%prefix)//'_'//trim(nicas_blk%name)//'_grids.nc'
-   call ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_clobber,nf90_64bit_offset),ncid))
+   call mpl%ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_clobber,nf90_64bit_offset),ncid))
 
    ! Define dimensions
-   call ncerr(subr,nf90_def_dim(ncid,'nc1',nicas_blk%nc1,nc1_id))
-   call ncerr(subr,nf90_def_dim(ncid,'nl1',nicas_blk%nl1,nl1_id))
+   call mpl%ncerr(subr,nf90_def_dim(ncid,'nc1',nicas_blk%nc1,nc1_id))
+   call mpl%ncerr(subr,nf90_def_dim(ncid,'nl1',nicas_blk%nl1,nl1_id))
 
    ! Define variables
-   call ncerr(subr,nf90_def_var(ncid,'lon_c1',ncfloat,(/nc1_id/),lon_c1_id))
-   call ncerr(subr,nf90_def_var(ncid,'lat_c1',ncfloat,(/nc1_id/),lat_c1_id))
-   call ncerr(subr,nf90_def_var(ncid,'mask_c2',ncfloat,(/nc1_id,nl1_id/),mask_c2_id))
-   call ncerr(subr,nf90_put_att(ncid,mask_c2_id,'_FillValue',msvalr))
+   call mpl%ncerr(subr,nf90_def_var(ncid,'lon_c1',ncfloat,(/nc1_id/),lon_c1_id))
+   call mpl%ncerr(subr,nf90_def_var(ncid,'lat_c1',ncfloat,(/nc1_id/),lat_c1_id))
+   call mpl%ncerr(subr,nf90_def_var(ncid,'mask_c2',ncfloat,(/nc1_id,nl1_id/),mask_c2_id))
+   call mpl%ncerr(subr,nf90_put_att(ncid,mask_c2_id,'_FillValue',msvalr))
 
    ! End definition mode
-   call ncerr(subr,nf90_enddef(ncid))
+   call mpl%ncerr(subr,nf90_enddef(ncid))
 
    ! Write variables
-   call ncerr(subr,nf90_put_var(ncid,lon_c1_id,lon_c1))
-   call ncerr(subr,nf90_put_var(ncid,lat_c1_id,lat_c1))
-   call ncerr(subr,nf90_put_var(ncid,mask_c2_id,mask_c2_real))
+   call mpl%ncerr(subr,nf90_put_var(ncid,lon_c1_id,lon_c1))
+   call mpl%ncerr(subr,nf90_put_var(ncid,lat_c1_id,lat_c1))
+   call mpl%ncerr(subr,nf90_put_var(ncid,mask_c2_id,mask_c2_real))
 
    ! Close file
-   call ncerr(subr,nf90_close(ncid))
+   call mpl%ncerr(subr,nf90_close(ncid))
 
    ! Release memory
    deallocate(lon_c1)
@@ -711,12 +714,14 @@ end subroutine nicas_blk_compute_sampling
 ! Subroutine: nicas_blk_compute_interp_h
 !> Purpose: compute basic horizontal interpolation
 !----------------------------------------------------------------------
-subroutine nicas_blk_compute_interp_h(nicas_blk,nam,geom)
+subroutine nicas_blk_compute_interp_h(nicas_blk,mpl,rng,nam,geom)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(inout) :: nicas_blk !< NICAS data block
+type(mpl_type),intent(inout) :: mpl              !< MPI data
+type(rng_type),intent(inout) :: rng              !< Random number generator
 type(nam_type),intent(in) :: nam                 !< Namelist
 type(geom_type),intent(in) :: geom               !< Geometry
 
@@ -729,7 +734,7 @@ allocate(nicas_blk%hfull(geom%nl0i))
 
 do il0i=1,geom%nl0i
    ! Compute grid interpolation
-   call nicas_blk%hfull(il0i)%interp(geom,il0i,nicas_blk%nc1,nicas_blk%c1_to_c0,nam%mask_check, &
+   call nicas_blk%hfull(il0i)%interp(mpl,rng,geom,il0i,nicas_blk%nc1,nicas_blk%c1_to_c0,nam%mask_check, &
  & nicas_blk%vbot,nicas_blk%vtop,nam%nicas_interp,hbase)
 end do
 
@@ -818,12 +823,14 @@ end subroutine nicas_blk_compute_interp_v
 ! Subroutine: nicas_blk_compute_interp_s
 !> Purpose: compute horizontal subsampling interpolation
 !----------------------------------------------------------------------
-subroutine nicas_blk_compute_interp_s(nicas_blk,nam,geom)
+subroutine nicas_blk_compute_interp_s(nicas_blk,mpl,rng,nam,geom)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(inout) :: nicas_blk !< NICAS data block
+type(mpl_type),intent(inout) :: mpl              !< MPI data
+type(rng_type),intent(inout) :: rng              !< Random number generator
 type(nam_type),intent(in) :: nam                 !< Namelist
 type(geom_type),intent(in) :: geom               !< Geometry
 
@@ -838,7 +845,7 @@ type(linop_type) :: stmp
 allocate(nicas_blk%sfull(nicas_blk%nl1))
 
 do il1=1,nicas_blk%nl1
-   ! Initialize object
+   ! Initialize NICAS block data
    write(nicas_blk%sfull(il1)%prefix,'(a,i3.3)') 's_',il1
    nicas_blk%sfull(il1)%n_src = nicas_blk%nc1
    nicas_blk%sfull(il1)%n_dst = nicas_blk%nc1
@@ -858,7 +865,7 @@ do il1=1,nicas_blk%nl1
       mask_dst = .true.
 
       ! Compute interpolation
-      call stmp%interp(nicas_blk%nc1,geom%lon(nicas_blk%c1_to_c0),geom%lat(nicas_blk%c1_to_c0),mask_src, &
+      call stmp%interp(mpl,rng,nicas_blk%nc1,geom%lon(nicas_blk%c1_to_c0),geom%lat(nicas_blk%c1_to_c0),mask_src, &
     & nicas_blk%nc1,geom%lon(nicas_blk%c1_to_c0),geom%lat(nicas_blk%c1_to_c0),mask_dst,nam%nicas_interp)
 
       ! Allocation
@@ -869,7 +876,7 @@ do il1=1,nicas_blk%nl1
       if (nam%mask_check) then
          write(mpl%unit,'(a10,a,i3,a)',advance='no') '','Sublevel ',il1,': '
          call flush(mpl%unit)
-         call stmp%interp_check_mask(geom,valid,nicas_blk%l1_to_l0(il1),row_to_ic0=nicas_blk%c1_to_c0, &
+         call stmp%interp_check_mask(mpl,geom,valid,nicas_blk%l1_to_l0(il1),row_to_ic0=nicas_blk%c1_to_c0, &
        & col_to_ic0=nicas_blk%c1_to_c0)
       else
          write(mpl%unit,'(a10,a,i3)') '','Sublevel ',il1
@@ -900,8 +907,8 @@ do il1=1,nicas_blk%nl1
       deallocate(valid)
 
       ! Count points that are not interpolated
-      call nicas_blk%sfull(il1)%interp_missing(nicas_blk%nc1,geom%lon(nicas_blk%c1_to_c0),geom%lat(nicas_blk%c1_to_c0),mask_dst, &
-    & nam%nicas_interp)
+      call nicas_blk%sfull(il1)%interp_missing(mpl,nicas_blk%nc1,geom%lon(nicas_blk%c1_to_c0),geom%lat(nicas_blk%c1_to_c0), &
+    & mask_dst,nam%nicas_interp)
    end if
 end do
 
@@ -911,12 +918,13 @@ end subroutine nicas_blk_compute_interp_s
 ! Subroutine: nicas_blk_compute_mpi_ab
 !> Purpose: compute NICAS MPI distribution, halos A-B
 !----------------------------------------------------------------------
-subroutine nicas_blk_compute_mpi_ab(nicas_blk,geom)
+subroutine nicas_blk_compute_mpi_ab(nicas_blk,mpl,geom)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(inout) :: nicas_blk !< NICAS data block
+type(mpl_type),intent(inout) :: mpl              !< MPI data
 type(geom_type),intent(in) :: geom               !< Geometry
 
 ! Local variables
@@ -995,7 +1003,7 @@ end do
 
 ! Check halos consistency
 do is=1,nicas_blk%ns
-   if (nicas_blk%lcheck_sa(is).and.(.not.nicas_blk%lcheck_sb(is))) call msgerror('point in halo A but not in halo B')
+   if (nicas_blk%lcheck_sa(is).and.(.not.nicas_blk%lcheck_sb(is))) call mpl%abort('point in halo A but not in halo B')
 end do
 
 ! Sizes
@@ -1114,7 +1122,7 @@ do il0i=1,geom%nl0i
       nicas_blk%h(il0i)%col(i_s_loc) = nicas_blk%c1_to_c1b(nicas_blk%hfull(il0i)%col(i_s))
       nicas_blk%h(il0i)%S(i_s_loc) = nicas_blk%hfull(il0i)%S(i_s)
    end do
-   call nicas_blk%h(il0i)%reorder
+   call nicas_blk%h(il0i)%reorder(mpl)
 end do
 
 ! Vertical interpolation
@@ -1131,7 +1139,7 @@ do i_s=1,nicas_blk%v%n_s
       nicas_blk%v%Svec(i_s,ic1b) = nicas_blk%vfull%Svec(i_s,ic1)
    end do
 end do
-call nicas_blk%v%reorder
+call nicas_blk%v%reorder(mpl)
 
 ! Subsampling horizontal interpolation
 do il1=1,nicas_blk%nl1
@@ -1145,7 +1153,7 @@ do il1=1,nicas_blk%nl1
       nicas_blk%s(il1)%col(i_s_loc) = nicas_blk%c1_to_c1b(nicas_blk%sfull(il1)%col(i_s))
       nicas_blk%s(il1)%S(i_s_loc) = nicas_blk%sfull(il1)%S(i_s)
    end do
-   call nicas_blk%s(il1)%reorder
+   call nicas_blk%s(il1)%reorder(mpl)
 end do
 
 ! Conversions
@@ -1183,7 +1191,7 @@ do isb=1,nicas_blk%nsb
 end do
 
 ! Setup communications
-call nicas_blk%com_AB%setup('com_AB',nicas_blk%ns,nicas_blk%nsa,nicas_blk%nsb,nicas_blk%sb_to_s,nicas_blk%sa_to_sb, &
+call nicas_blk%com_AB%setup(mpl,'com_AB',nicas_blk%ns,nicas_blk%nsa,nicas_blk%nsb,nicas_blk%sb_to_s,nicas_blk%sa_to_sb, &
  & geom%c0_to_proc(nicas_blk%c1_to_c0(nicas_blk%s_to_c1)),nicas_blk%s_to_sa)
 
 end subroutine nicas_blk_compute_mpi_ab
@@ -1192,12 +1200,14 @@ end subroutine nicas_blk_compute_mpi_ab
 ! Subroutine: nicas_blk_compute_convol
 !> Purpose: compute convolution
 !----------------------------------------------------------------------
-subroutine nicas_blk_compute_convol(nicas_blk,nam,geom,cmat_blk)
+subroutine nicas_blk_compute_convol(nicas_blk,mpl,rng,nam,geom,cmat_blk)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(inout) :: nicas_blk !< NICAS data block
+type(mpl_type),intent(in) :: mpl                 !< MPI data
+type(rng_type),intent(inout) :: rng              !< Random number generator
 type(nam_type),intent(in) :: nam                 !< Namelist
 type(geom_type),intent(in) :: geom               !< Geometry
 type(cmat_blk_type),intent(in) :: cmat_blk       !< C matrix data block
@@ -1217,7 +1227,7 @@ type(linop_type) :: c(mpl%nthread),ctmp
 ! Compute KD-tree
 write(mpl%unit,'(a10,a)') '','Compute KD-tree'
 call flush(mpl%unit)
-call nicas_blk%kdtree%create(nicas_blk%nc1,geom%lon(nicas_blk%c1_to_c0),geom%lat(nicas_blk%c1_to_c0))
+call nicas_blk%kdtree%create(mpl,nicas_blk%nc1,geom%lon(nicas_blk%c1_to_c0),geom%lat(nicas_blk%c1_to_c0))
 
 ! Communication
 write(mpl%unit,'(a10,a)') '','Communication'
@@ -1288,7 +1298,7 @@ else
    allocate(done(nicas_blk%nc1b))
 
    ! Initialization
-   call prog_init(progint,done)
+   call mpl%prog_init(progint,done)
    lcheck_c1bb = .false.
 
    do ic1b=1,nicas_blk%nc1b
@@ -1315,7 +1325,7 @@ else
 
       ! Print progression
       done(ic1b) = .true.
-      call prog_print(progint,done)
+      call mpl%prog_print(progint,done)
    end do
    write(mpl%unit,'(a)') '100%'
    call flush(mpl%unit)
@@ -1378,9 +1388,9 @@ end if
 
 ! Compute weights
 if (nam%network) then
-   call nicas_blk%compute_convol_network(nam,geom,rh_c1,rv_c1,ctmp)
+   call nicas_blk%compute_convol_network(mpl,rng,nam,geom,rh_c1,rv_c1,ctmp)
 else
-   call nicas_blk%compute_convol_distance(nam,geom,rh0max,rh_s,rv_s,ctmp)
+   call nicas_blk%compute_convol_distance(mpl,nam,geom,rh0max,rh_s,rv_s,ctmp)
 end if
 
 if (nam%lsqrt) then
@@ -1413,7 +1423,7 @@ else
    ! Initialization
    write(mpl%unit,'(a10,a)',advance='no') '','Second pass:     '
    call flush(mpl%unit)
-   call prog_init(progint,done)
+   call mpl%prog_init(progint,done)
    n_s_max = 100*nint(real(geom%nc0*geom%nl0)/real(mpl%nthread*mpl%nproc))
    c_n_s = 0
    do ithread=1,mpl%nthread
@@ -1464,14 +1474,14 @@ else
 
       ! Print progression
       done(isb) = .true.
-      call prog_print(progint,done)
+      call mpl%prog_print(progint,done)
    end do
    !$omp end parallel do
    write(mpl%unit,'(a)') '100%'
    call flush(mpl%unit)
 
    ! Gather data from threads
-   call nicas_blk%c%gather(c_n_s,c)
+   call nicas_blk%c%gather(mpl,c_n_s,c)
 
    ! Release memory
    do ithread=1,mpl%nthread
@@ -1489,12 +1499,14 @@ end subroutine nicas_blk_compute_convol
 ! Subroutine: nicas_blk_compute_convol_network
 !> Purpose: compute convolution with a network approach
 !----------------------------------------------------------------------
-subroutine nicas_blk_compute_convol_network(nicas_blk,nam,geom,rh_c1,rv_c1,ctmp)
+subroutine nicas_blk_compute_convol_network(nicas_blk,mpl,rng,nam,geom,rh_c1,rv_c1,ctmp)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(inout) :: nicas_blk                 !< NICAS data block
+type(mpl_type),intent(in) :: mpl                                 !< MPI data
+type(rng_type),intent(inout) :: rng                              !< Random number generator
 type(nam_type),intent(in) :: nam                                 !< Namelist
 type(geom_type),intent(in) :: geom                               !< Geometry
 real(kind_real),intent(in) :: rh_c1(nicas_blk%nc1,nicas_blk%nl1) !< TODO
@@ -1516,7 +1528,7 @@ type(mesh_type) :: mesh
 allocate(net_nnb(nicas_blk%nc1))
 
 ! Create mesh
-call mesh%create(nicas_blk%nc1,geom%lon(nicas_blk%c1_to_c0),geom%lat(nicas_blk%c1_to_c0))
+call mesh%create(mpl,rng,nicas_blk%nc1,geom%lon(nicas_blk%c1_to_c0),geom%lat(nicas_blk%c1_to_c0))
 
 ! Count neighbors
 net_nnb = 0
@@ -1615,7 +1627,7 @@ allocate(done(nicas_blk%nsbb))
 ! Initialization
 write(mpl%unit,'(a10,a)',advance='no') '','Compute weights: '
 call flush(mpl%unit)
-call prog_init(progint,done)
+call mpl%prog_init(progint,done)
 c_n_s = 0
 c_nor_n_s = 0
 
@@ -1713,7 +1725,7 @@ do isbb=1,nicas_blk%nsbb
             distnorm = distnorm/sqrt_fac
 
             ! Gaspari-Cohn (1999) function
-            S_test = gc99(distnorm)
+            S_test = gc99(mpl,distnorm)
 
             if (S_test>S_inf) then
                ! Store coefficient for convolution
@@ -1740,7 +1752,7 @@ do isbb=1,nicas_blk%nsbb
 
    ! Print progression
    done(isbb) = .true.
-   call prog_print(progint,done)
+   call mpl%prog_print(progint,done)
 
    ! Release memory
    deallocate(plist)
@@ -1753,8 +1765,8 @@ write(mpl%unit,'(a)') '100%'
 call flush(mpl%unit)
 
 ! Gather data from threads
-call ctmp%gather(c_n_s,c)
-call nicas_blk%c_nor%gather(c_nor_n_s,c_nor)
+call ctmp%gather(mpl,c_n_s,c)
+call nicas_blk%c_nor%gather(mpl,c_nor_n_s,c_nor)
 
 ! Release memory
 do ithread=1,mpl%nthread
@@ -1769,15 +1781,16 @@ end subroutine nicas_blk_compute_convol_network
 ! Subroutine: nicas_blk_compute_convol_distance
 !> Purpose: compute convolution weights, distance method
 !----------------------------------------------------------------------
-subroutine nicas_blk_compute_convol_distance(nicas_blk,nam,geom,rh0max,rh_s,rv_s,ctmp)
+subroutine nicas_blk_compute_convol_distance(nicas_blk,mpl,nam,geom,rh0max,rh_s,rv_s,ctmp)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(inout) :: nicas_blk !< NICAS data block
+type(mpl_type),intent(in) :: mpl                 !< MPI data
 type(nam_type),intent(in) :: nam                 !< Namelist
 type(geom_type),intent(in) :: geom               !< Geometry
-real(kind_real),intent(in) :: rh0max             !<
+real(kind_real),intent(in) :: rh0max             !< TODO
 real(kind_real),intent(in) :: rh_s(nicas_blk%ns) !<
 real(kind_real),intent(in) :: rv_s(nicas_blk%ns) !<
 type(linop_type),intent(inout) :: ctmp           !< Convolution operator
@@ -1815,7 +1828,7 @@ allocate(done(nicas_blk%nc1bb))
 ! Initialization
 write(mpl%unit,'(a10,a)',advance='no') '','Find nearest neighbors: '
 call flush(mpl%unit)
-call prog_init(progint,done)
+call mpl%prog_init(progint,done)
 
 do ic1bb=1,nicas_blk%nc1bb
    ! Indices
@@ -1828,7 +1841,7 @@ do ic1bb=1,nicas_blk%nc1bb
 
    ! Print progression
    done(ic1bb) = .true.
-   call prog_print(progint,done)
+   call mpl%prog_print(progint,done)
 end do
 write(mpl%unit,'(a)') '100%'
 call flush(mpl%unit)
@@ -1849,7 +1862,7 @@ allocate(done(nicas_blk%nsbb))
 ! Initialization
 write(mpl%unit,'(a10,a)',advance='no') '','Compute weights: '
 call flush(mpl%unit)
-call prog_init(progint,done)
+call mpl%prog_init(progint,done)
 c_n_s = 0
 c_nor_n_s = 0
 
@@ -1902,7 +1915,7 @@ do isbb=1,nicas_blk%nsbb
                distnorm = distnorm/sqrt_fac
 
                ! Gaspari-Cohn (1999) function
-               S_test = gc99(distnorm)
+               S_test = gc99(mpl,distnorm)
 
                if (S_test>S_inf) then
                   ! Store coefficient for convolution
@@ -1930,15 +1943,15 @@ do isbb=1,nicas_blk%nsbb
 
    ! Print progression
    done(isbb) = .true.
-   call prog_print(progint,done)
+   call mpl%prog_print(progint,done)
 end do
 !$omp end parallel do
 write(mpl%unit,'(a)') '100%'
 call flush(mpl%unit)
 
 ! Gather data from threads
-call ctmp%gather(c_n_s,c)
-call nicas_blk%c_nor%gather(c_nor_n_s,c_nor)
+call ctmp%gather(mpl,c_n_s,c)
+call nicas_blk%c_nor%gather(mpl,c_nor_n_s,c_nor)
 
 ! Release memory
 do ithread=1,mpl%nthread
@@ -1953,12 +1966,13 @@ end subroutine nicas_blk_compute_convol_distance
 ! Subroutine: nicas_blk_compute_mpi_c
 !> Purpose: compute NICAS MPI distribution, halo C
 !----------------------------------------------------------------------
-subroutine nicas_blk_compute_mpi_c(nicas_blk,geom)
+subroutine nicas_blk_compute_mpi_c(nicas_blk,mpl,geom)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(inout) :: nicas_blk !< NICAS data block
+type(mpl_type),intent(inout) :: mpl              !< MPI data
 type(geom_type),intent(in) :: geom               !< Geometry
 
 ! Local variables
@@ -1990,8 +2004,8 @@ nicas_blk%nsc_nor = count(nicas_blk%lcheck_sc_nor)
 
 ! Check halos consistency
 do is=1,nicas_blk%ns
-   if (nicas_blk%lcheck_sa(is).and.(.not.nicas_blk%lcheck_sc(is))) call msgerror('point in halo A but not in halo C')
-   if (nicas_blk%lcheck_sb(is).and.(.not.nicas_blk%lcheck_sc(is))) call msgerror('point in halo B but not in halo C')
+   if (nicas_blk%lcheck_sa(is).and.(.not.nicas_blk%lcheck_sc(is))) call mpl%abort('point in halo A but not in halo C')
+   if (nicas_blk%lcheck_sb(is).and.(.not.nicas_blk%lcheck_sc(is))) call mpl%abort('point in halo B but not in halo C')
 end do
 
 ! Global <-> local conversions for fields
@@ -2050,7 +2064,7 @@ do i_s=1,nicas_blk%c%n_s
    nicas_blk%c%row(i_s) = nicas_blk%s_to_sc(nicas_blk%c%row(i_s))
    nicas_blk%c%col(i_s) = nicas_blk%s_to_sc(nicas_blk%c%col(i_s))
 end do
-call nicas_blk%c%reorder
+call nicas_blk%c%reorder(mpl)
 
 ! Convolution for normalization
 nicas_blk%c_nor%n_src = nicas_blk%nsc
@@ -2059,10 +2073,10 @@ do i_s=1,nicas_blk%c_nor%n_s
    nicas_blk%c_nor%row(i_s) = nicas_blk%s_to_sc_nor(nicas_blk%c_nor%row(i_s))
    nicas_blk%c_nor%col(i_s) = nicas_blk%s_to_sc_nor(nicas_blk%c_nor%col(i_s))
 end do
-call nicas_blk%c_nor%reorder
+call nicas_blk%c_nor%reorder(mpl)
 
 ! Setup communications
-call nicas_blk%com_AC%setup('com_AC',nicas_blk%ns,nicas_blk%nsa,nicas_blk%nsc,nicas_blk%sc_to_s,nicas_blk%sa_to_sc, &
+call nicas_blk%com_AC%setup(mpl,'com_AC',nicas_blk%ns,nicas_blk%nsa,nicas_blk%nsc,nicas_blk%sc_to_s,nicas_blk%sa_to_sc, &
  & geom%c0_to_proc(nicas_blk%c1_to_c0(nicas_blk%s_to_c1)),nicas_blk%s_to_sa)
 
 end subroutine nicas_blk_compute_mpi_c
@@ -2071,12 +2085,13 @@ end subroutine nicas_blk_compute_mpi_c
 ! Subroutine: nicas_blk_compute_normalization
 !> Purpose: compute normalization
 !----------------------------------------------------------------------
-subroutine nicas_blk_compute_normalization(nicas_blk,nam,geom)
+subroutine nicas_blk_compute_normalization(nicas_blk,mpl,nam,geom)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(inout) :: nicas_blk !< NICAS data block
+type(mpl_type),intent(in) :: mpl                 !< MPI data
 type(nam_type),intent(in) :: nam                 !< Namelist
 type(geom_type),intent(in) :: geom               !< Geometry
 
@@ -2224,7 +2239,7 @@ do il0=1,geom%nl0
    il0i = min(il0,geom%nl0i)
    write(mpl%unit,'(a10,a,i3,a)',advance='no') '','Level ',nam%levs(il0),': '
    call flush(mpl%unit)
-   call prog_init(progint,done)
+   call mpl%prog_init(progint,done)
 
    !$omp parallel do schedule(static) private(ic0a,ic0,nlr,isc_add,S_add,ih,ic1b,ic1,jv,il1,is,ilr,conv,ic,jlr,isc,jsc), &
    !$omp&                             firstprivate(isc_list,order2,S_list,S_list_tmp)
@@ -2293,7 +2308,7 @@ do il0=1,geom%nl0
 
          ! Print progression
          done(ic0a) = .true.
-         call prog_print(progint,done)
+         call mpl%prog_print(progint,done)
 
           ! Release memory
          deallocate(isc_list)
@@ -2315,12 +2330,14 @@ end subroutine nicas_blk_compute_normalization
 ! Subroutine: nicas_blk_compute_adv
 !> Purpose: compute advection
 !----------------------------------------------------------------------
-subroutine nicas_blk_compute_adv(nicas_blk,nam,geom,cmat_blk)
+subroutine nicas_blk_compute_adv(nicas_blk,mpl,rng,nam,geom,cmat_blk)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(inout) :: nicas_blk !< NICAS data block
+type(mpl_type),intent(inout) :: mpl              !< MPI data
+type(rng_type),intent(inout) :: rng              !< Random number generator
 type(nam_type),intent(in) :: nam                 !< Namelist
 type(geom_type),intent(in) :: geom               !< Geometry
 type(cmat_blk_type),intent(in) :: cmat_blk       !< C matrix data block
@@ -2355,10 +2372,10 @@ do its=2,nam%nts
       call mpl%allgatherv(geom%nc0a,cmat_blk%displ_lat(:,il0,its),geom%proc_to_nc0a,geom%nc0,displ_lat)
 
       ! Compute direct interpolation
-      call dfull(il0,its)%interp(geom%nc0,displ_lon,displ_lat,mask_c0,geom%nc0,geom%lon,geom%lat,mask_c0,nam%diag_interp)
+      call dfull(il0,its)%interp(mpl,rng,geom%nc0,displ_lon,displ_lat,mask_c0,geom%nc0,geom%lon,geom%lat,mask_c0,nam%diag_interp)
 
       ! Compute inverse interpolation
-      call dinvfull(il0,its)%interp(geom%nc0,geom%lon,geom%lat,mask_c0,geom%nc0,displ_lon,displ_lat,mask_c0,nam%diag_interp)
+      call dinvfull(il0,its)%interp(mpl,rng,geom%nc0,geom%lon,geom%lat,mask_c0,geom%nc0,displ_lon,displ_lat,mask_c0,nam%diag_interp)
    end do
 end do
 
@@ -2511,14 +2528,14 @@ do its=2,nam%nts
          nicas_blk%dinv(il0,its)%col(i_s_loc) = c0_to_c0dinv(dinvfull(il0,its)%col(i_s))
          nicas_blk%dinv(il0,its)%S(i_s_loc) = dinvfull(il0,its)%S(i_s)
       end do
-      call nicas_blk%d(il0,its)%reorder
-      call nicas_blk%dinv(il0,its)%reorder
+      call nicas_blk%d(il0,its)%reorder(mpl)
+      call nicas_blk%dinv(il0,its)%reorder(mpl)
    end do
 end do
 
 ! Setup communications
-call nicas_blk%com_AD%setup('com_AD',geom%nc0,geom%nc0a,nicas_blk%nc0d,c0d_to_c0,c0a_to_c0d,geom%c0_to_proc,geom%c0_to_c0a)
-call nicas_blk%com_ADinv%setup('com_ADinv',geom%nc0,geom%nc0a,nicas_blk%nc0dinv,c0dinv_to_c0,c0a_to_c0dinv, &
+call nicas_blk%com_AD%setup(mpl,'com_AD',geom%nc0,geom%nc0a,nicas_blk%nc0d,c0d_to_c0,c0a_to_c0d,geom%c0_to_proc,geom%c0_to_c0a)
+call nicas_blk%com_ADinv%setup(mpl,'com_ADinv',geom%nc0,geom%nc0a,nicas_blk%nc0dinv,c0dinv_to_c0,c0a_to_c0dinv, &
  & geom%c0_to_proc,geom%c0_to_c0a)
 
 ! Print results
@@ -2539,12 +2556,13 @@ end subroutine nicas_blk_compute_adv
 ! Subroutine: nicas_blk_apply
 !> Purpose: apply NICAS method
 !----------------------------------------------------------------------
-subroutine nicas_blk_apply(nicas_blk,nam,geom,fld)
+subroutine nicas_blk_apply(nicas_blk,mpl,nam,geom,fld)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(in) :: nicas_blk            !< NICAS data block
+type(mpl_type),intent(in) :: mpl                         !< MPI data
 type(nam_type),intent(in) :: nam                         !< Namelist
 type(geom_type),intent(in) :: geom                       !< Geometry
 real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0) !< Field
@@ -2556,7 +2574,7 @@ real(kind_real) :: alpha_a(nicas_blk%nsa),alpha_b(nicas_blk%nsb),alpha_c(nicas_b
 if (lhook) call dr_hook('nicas_blk_apply',0,zhook_handle)
 
 ! Adjoint interpolation
-call nicas_blk%apply_interp_ad(geom,fld,alpha_b)
+call nicas_blk%apply_interp_ad(mpl,geom,fld,alpha_b)
 
 ! Communication
 if (nam%mpicom==1) then
@@ -2567,7 +2585,7 @@ if (nam%mpicom==1) then
    alpha_c(nicas_blk%sb_to_sc) = alpha_b
 elseif (nam%mpicom==2) then
    ! Halo reduction from zone B to zone A
-   call nicas_blk%com_AB%red(alpha_b,alpha_a)
+   call nicas_blk%com_AB%red(mpl,alpha_b,alpha_a)
 
    ! Initialization
    alpha_c = 0.0
@@ -2577,16 +2595,16 @@ elseif (nam%mpicom==2) then
 end if
 
 ! Convolution
-call nicas_blk%apply_convol(alpha_c)
+call nicas_blk%apply_convol(mpl,alpha_c)
 
 ! Halo reduction from zone C to zone A
-call nicas_blk%com_AC%red(alpha_c,alpha_a)
+call nicas_blk%com_AC%red(mpl,alpha_c,alpha_a)
 
 ! Halo extension from zone A to zone B
-call nicas_blk%com_AB%ext(alpha_a,alpha_b)
+call nicas_blk%com_AB%ext(mpl,alpha_a,alpha_b)
 
 ! Interpolation
-call nicas_blk%apply_interp(geom,alpha_b,fld)
+call nicas_blk%apply_interp(mpl,geom,alpha_b,fld)
 
 if (lhook) call dr_hook('nicas_blk_apply',1,zhook_handle)
 
@@ -2596,12 +2614,13 @@ end subroutine nicas_blk_apply
 ! Subroutine: nicas_blk_apply_from_sqrt
 !> Purpose: apply NICAS method from its square-root formulation
 !----------------------------------------------------------------------
-subroutine nicas_blk_apply_from_sqrt(nicas_blk,geom,fld)
+subroutine nicas_blk_apply_from_sqrt(nicas_blk,mpl,geom,fld)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(in) :: nicas_blk            !< NICAS data block
+type(mpl_type),intent(in) :: mpl                         !< MPI data
 type(geom_type),intent(in) :: geom                       !< Geometry
 real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0) !< Field
 
@@ -2612,10 +2631,10 @@ real(kind_real) :: alpha(nicas_blk%nsa)
 if (lhook) call dr_hook('nicas_blk_apply_from_sqrt',0,zhook_handle)
 
 ! Apply square-root adjoint
-call nicas_blk%apply_sqrt_ad(geom,fld,alpha)
+call nicas_blk%apply_sqrt_ad(mpl,geom,fld,alpha)
 
 ! Apply square-root
-call nicas_blk%apply_sqrt(geom,alpha,fld)
+call nicas_blk%apply_sqrt(mpl,geom,alpha,fld)
 
 if (lhook) call dr_hook('nicas_blk_apply_from_sqrt',1,zhook_handle)
 
@@ -2625,12 +2644,13 @@ end subroutine nicas_blk_apply_from_sqrt
 ! Subroutine: nicas_blk_apply_sqrt
 !> Purpose: apply NICAS method square-root
 !----------------------------------------------------------------------
-subroutine nicas_blk_apply_sqrt(nicas_blk,geom,alpha,fld)
+subroutine nicas_blk_apply_sqrt(nicas_blk,mpl,geom,alpha,fld)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(in) :: nicas_blk          !< NICAS data block
+type(mpl_type),intent(in) :: mpl                       !< MPI data
 type(geom_type),intent(in) :: geom                     !< Geometry
 real(kind_real),intent(in) :: alpha(nicas_blk%nsa)     !< Subgrid field
 real(kind_real),intent(out) :: fld(geom%nc0a,geom%nl0) !< Field
@@ -2648,16 +2668,16 @@ alpha_c = 0.0
 alpha_c(nicas_blk%sa_to_sc) = alpha
 
 ! Convolution
-call nicas_blk%apply_convol(alpha_c)
+call nicas_blk%apply_convol(mpl,alpha_c)
 
 ! Halo reduction from zone C to zone A
-call nicas_blk%com_AC%red(alpha_c,alpha_a)
+call nicas_blk%com_AC%red(mpl,alpha_c,alpha_a)
 
 ! Halo extension from zone A to zone B
-call nicas_blk%com_AB%ext(alpha_a,alpha_b)
+call nicas_blk%com_AB%ext(mpl,alpha_a,alpha_b)
 
 ! Interpolation
-call nicas_blk%apply_interp(geom,alpha_b,fld)
+call nicas_blk%apply_interp(mpl,geom,alpha_b,fld)
 
 if (lhook) call dr_hook('nicas_blk_apply_sqrt',1,zhook_handle)
 
@@ -2667,12 +2687,13 @@ end subroutine nicas_blk_apply_sqrt
 ! Subroutine: nicas_blk_apply_sqrt_ad
 !> Purpose: apply NICAS method square-root adjoint
 !----------------------------------------------------------------------
-subroutine nicas_blk_apply_sqrt_ad(nicas_blk,geom,fld,alpha)
+subroutine nicas_blk_apply_sqrt_ad(nicas_blk,mpl,geom,fld,alpha)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(in) :: nicas_blk         !< NICAS data block
+type(mpl_type),intent(in) :: mpl                      !< MPI data
 type(geom_type),intent(in) :: geom                    !< Geometry
 real(kind_real),intent(in) :: fld(geom%nc0a,geom%nl0) !< Field
 real(kind_real),intent(out) :: alpha(nicas_blk%nsa)   !< Subgrid field
@@ -2684,10 +2705,10 @@ real(kind_real) :: alpha_b(nicas_blk%nsb),alpha_c(nicas_blk%nsc)
 if (lhook) call dr_hook('nicas_blk_apply_sqrt_ad',0,zhook_handle)
 
 ! Adjoint interpolation
-call nicas_blk%apply_interp_ad(geom,fld,alpha_b)
+call nicas_blk%apply_interp_ad(mpl,geom,fld,alpha_b)
 
 ! Halo reduction from zone B to zone A
-call nicas_blk%com_AB%red(alpha_b,alpha)
+call nicas_blk%com_AB%red(mpl,alpha_b,alpha)
 
 ! Initialization
 alpha_c = 0.0
@@ -2696,10 +2717,10 @@ alpha_c = 0.0
 alpha_c(nicas_blk%sa_to_sc) = alpha
 
 ! Convolution
-call nicas_blk%apply_convol(alpha_c)
+call nicas_blk%apply_convol(mpl,alpha_c)
 
 ! Halo reduction from zone C to zone A
-call nicas_blk%com_AC%red(alpha_c,alpha)
+call nicas_blk%com_AC%red(mpl,alpha_c,alpha)
 
 if (lhook) call dr_hook('nicas_blk_apply_sqrt_ad',1,zhook_handle)
 
@@ -2709,12 +2730,13 @@ end subroutine nicas_blk_apply_sqrt_ad
 ! Subroutine: nicas_blk_apply_interp
 !> Purpose: apply interpolation
 !----------------------------------------------------------------------
-subroutine nicas_blk_apply_interp(nicas_blk,geom,alpha,fld)
+subroutine nicas_blk_apply_interp(nicas_blk,mpl,geom,alpha,fld)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(in) :: nicas_blk          !< NICAS data block
+type(mpl_type),intent(in) :: mpl                       !< MPI data
 type(geom_type),intent(in) :: geom                     !< Geometry
 real(kind_real),intent(in) :: alpha(nicas_blk%nsb)     !< Subgrid field
 real(kind_real),intent(out) :: fld(geom%nc0a,geom%nl0) !< Field
@@ -2726,13 +2748,13 @@ real(kind_real) :: zhook_handle
 if (lhook) call dr_hook('nicas_blk_apply_interp',0,zhook_handle)
 
 ! Subsampling horizontal interpolation
-call nicas_blk%apply_interp_s(alpha,gamma)
+call nicas_blk%apply_interp_s(mpl,alpha,gamma)
 
 ! Vertical interpolation
-call nicas_blk%apply_interp_v(geom,gamma,delta)
+call nicas_blk%apply_interp_v(mpl,geom,gamma,delta)
 
 ! Horizontal interpolation
-call nicas_blk%apply_interp_h(geom,delta,fld)
+call nicas_blk%apply_interp_h(mpl,geom,delta,fld)
 
 ! Normalization
 fld = fld*nicas_blk%norm
@@ -2745,12 +2767,13 @@ end subroutine nicas_blk_apply_interp
 ! Subroutine: nicas_blk_apply_interp_ad
 !> Purpose: apply interpolation adjoint
 !----------------------------------------------------------------------
-subroutine nicas_blk_apply_interp_ad(nicas_blk,geom,fld,alpha)
+subroutine nicas_blk_apply_interp_ad(nicas_blk,mpl,geom,fld,alpha)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(in) :: nicas_blk         !< NICAS data block
+type(mpl_type),intent(in) :: mpl                      !< MPI data
 type(geom_type),intent(in) :: geom                    !< Geometry
 real(kind_real),intent(in) :: fld(geom%nc0a,geom%nl0) !< Field
 real(kind_real),intent(out) :: alpha(nicas_blk%nsb)   !< Subgrid field
@@ -2766,13 +2789,13 @@ if (lhook) call dr_hook('nicas_blk_apply_interp_ad',0,zhook_handle)
 fld_tmp = fld*nicas_blk%norm
 
 ! Horizontal interpolation
-call nicas_blk%apply_interp_h_ad(geom,fld_tmp,delta)
+call nicas_blk%apply_interp_h_ad(mpl,geom,fld_tmp,delta)
 
 ! Vertical interpolation
-call nicas_blk%apply_interp_v_ad(geom,delta,gamma)
+call nicas_blk%apply_interp_v_ad(mpl,geom,delta,gamma)
 
 ! Subsampling horizontal interpolation
-call nicas_blk%apply_interp_s_ad(gamma,alpha)
+call nicas_blk%apply_interp_s_ad(mpl,gamma,alpha)
 
 if (lhook) call dr_hook('nicas_blk_apply_interp_ad',1,zhook_handle)
 
@@ -2782,12 +2805,13 @@ end subroutine nicas_blk_apply_interp_ad
 ! Subroutine: nicas_blk_apply_interp_h
 !> Purpose: apply horizontal interpolation
 !----------------------------------------------------------------------
-subroutine nicas_blk_apply_interp_h(nicas_blk,geom,delta,fld)
+subroutine nicas_blk_apply_interp_h(nicas_blk,mpl,geom,delta,fld)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(in) :: nicas_blk                !< NICAS data block
+type(mpl_type),intent(in) :: mpl                             !< MPI data
 type(geom_type),intent(in) :: geom                           !< Geometry
 real(kind_real),intent(in) :: delta(nicas_blk%nc1b,geom%nl0) !< Subset Sc1 field, full levels
 real(kind_real),intent(out) :: fld(geom%nc0a,geom%nl0)       !< Field
@@ -2798,7 +2822,7 @@ integer :: il0
 ! Horizontal interpolation
 !$omp parallel do schedule(static) private(il0)
 do il0=1,geom%nl0
-   call nicas_blk%h(min(il0,geom%nl0i))%apply(delta(:,il0),fld(:,il0),msdst=.false.)
+   call nicas_blk%h(min(il0,geom%nl0i))%apply(mpl,delta(:,il0),fld(:,il0),msdst=.false.)
 end do
 !$omp end parallel do
 
@@ -2808,12 +2832,13 @@ end subroutine nicas_blk_apply_interp_h
 ! Subroutine: nicas_blk_apply_interp_h_ad
 !> Purpose: apply horizontal interpolation adjoint
 !----------------------------------------------------------------------
-subroutine nicas_blk_apply_interp_h_ad(nicas_blk,geom,fld,delta)
+subroutine nicas_blk_apply_interp_h_ad(nicas_blk,mpl,geom,fld,delta)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(in) :: nicas_blk                 !< NICAS data block
+type(mpl_type),intent(in) :: mpl                              !< MPI data
 type(geom_type),intent(in) :: geom                            !< Geometry
 real(kind_real),intent(in) :: fld(geom%nc0a,geom%nl0)         !< Field
 real(kind_real),intent(out) :: delta(nicas_blk%nc1b,geom%nl0) !< Subset Sc1 field, full levels
@@ -2823,7 +2848,7 @@ integer :: il0
 
 !$omp parallel do schedule(static) private(il0)
 do il0=1,geom%nl0
-   call nicas_blk%h(min(il0,geom%nl0i))%apply_ad(fld(:,il0),delta(:,il0))
+   call nicas_blk%h(min(il0,geom%nl0i))%apply_ad(mpl,fld(:,il0),delta(:,il0))
 end do
 !$omp end parallel do
 
@@ -2833,12 +2858,13 @@ end subroutine nicas_blk_apply_interp_h_ad
 ! Subroutine: nicas_blk_apply_interp_v
 !> Purpose: apply vertical interpolation
 !----------------------------------------------------------------------
-subroutine nicas_blk_apply_interp_v(nicas_blk,geom,gamma,delta)
+subroutine nicas_blk_apply_interp_v(nicas_blk,mpl,geom,gamma,delta)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(in) :: nicas_blk                     !< NICAS data block
+type(mpl_type),intent(in) :: mpl                                  !< MPI data
 type(geom_type),intent(in) :: geom                                !< Geometry
 real(kind_real),intent(in) :: gamma(nicas_blk%nc1b,nicas_blk%nl1) !< Subset Sc1 field, limited levels
 real(kind_real),intent(out) :: delta(nicas_blk%nc1b,geom%nl0)     !< Subset Sc1 field, full levels
@@ -2858,7 +2884,7 @@ do ic1b=1,nicas_blk%nc1b
    gamma_tmp = gamma(ic1b,:)
 
    ! Apply interpolation
-   call nicas_blk%v%apply(gamma_tmp,delta_tmp,ivec=ic1b,msdst=.false.)
+   call nicas_blk%v%apply(mpl,gamma_tmp,delta_tmp,ivec=ic1b,msdst=.false.)
 
    ! Copy data
    delta(ic1b,:) = delta_tmp
@@ -2875,12 +2901,13 @@ end subroutine nicas_blk_apply_interp_v
 ! Subroutine: nicas_blk_apply_interp_v_ad
 !> Purpose: apply vertical interpolation adjoint
 !----------------------------------------------------------------------
-subroutine nicas_blk_apply_interp_v_ad(nicas_blk,geom,delta,gamma)
+subroutine nicas_blk_apply_interp_v_ad(nicas_blk,mpl,geom,delta,gamma)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(in) :: nicas_blk                      !< NICAS data block
+type(mpl_type),intent(in) :: mpl                                   !< MPI data
 type(geom_type),intent(in) :: geom                                 !< Geometry
 real(kind_real),intent(in) :: delta(nicas_blk%nc1b,geom%nl0)       !< Subset Sc1 field, full levels
 real(kind_real),intent(out) :: gamma(nicas_blk%nc1b,nicas_blk%nl1) !< Subset Sc1 field, limited levels
@@ -2900,7 +2927,7 @@ do ic1b=1,nicas_blk%nc1b
    delta_tmp = delta(ic1b,:)
 
    ! Apply interpolation
-   call nicas_blk%v%apply_ad(delta_tmp,gamma_tmp,ivec=ic1b)
+   call nicas_blk%v%apply_ad(mpl,delta_tmp,gamma_tmp,ivec=ic1b)
 
    ! Copy data
    gamma(ic1b,:) = gamma_tmp
@@ -2917,12 +2944,13 @@ end subroutine nicas_blk_apply_interp_v_ad
 ! Subroutine: nicas_blk_apply_interp_s
 !> Purpose: apply subsampling interpolation
 !----------------------------------------------------------------------
-subroutine nicas_blk_apply_interp_s(nicas_blk,alpha,gamma)
+subroutine nicas_blk_apply_interp_s(nicas_blk,mpl,alpha,gamma)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(in) :: nicas_blk                      !< NICAS data block
+type(mpl_type),intent(in) :: mpl                                   !< MPI data
 real(kind_real),intent(in) :: alpha(nicas_blk%nsb)                 !< Subgrid field
 real(kind_real),intent(out) :: gamma(nicas_blk%nc1b,nicas_blk%nl1) !< Subset Sc1 field, limited levels
 
@@ -2943,7 +2971,7 @@ end do
 ! Subsampling horizontal interpolation
 !$omp parallel do schedule(static) private(il1)
 do il1=1,nicas_blk%nl1
-   call nicas_blk%s(il1)%apply(beta(:,il1),gamma(:,il1),msdst=.false.)
+   call nicas_blk%s(il1)%apply(mpl,beta(:,il1),gamma(:,il1),msdst=.false.)
 end do
 !$omp end parallel do
 
@@ -2953,12 +2981,13 @@ end subroutine nicas_blk_apply_interp_s
 ! Subroutine: nicas_blk_apply_interp_s_ad
 !> Purpose: apply subsampling interpolation adjoint
 !----------------------------------------------------------------------
-subroutine nicas_blk_apply_interp_s_ad(nicas_blk,gamma,alpha)
+subroutine nicas_blk_apply_interp_s_ad(nicas_blk,mpl,gamma,alpha)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(in) :: nicas_blk                     !< NICAS data block
+type(mpl_type),intent(in) :: mpl                                  !< MPI data
 real(kind_real),intent(in) :: gamma(nicas_blk%nc1b,nicas_blk%nl1) !< Subset Sc1 field, limited levels
 real(kind_real),intent(out) :: alpha(nicas_blk%nsb)               !< Subgrid field
 
@@ -2969,7 +2998,7 @@ real(kind_real) :: beta(nicas_blk%nc1b,nicas_blk%nl1)
 ! Subsampling horizontal interpolation
 !$omp parallel do schedule(static) private(il1)
 do il1=1,nicas_blk%nl1
-   call nicas_blk%s(il1)%apply_ad(gamma(:,il1),beta(:,il1))
+   call nicas_blk%s(il1)%apply_ad(mpl,gamma(:,il1),beta(:,il1))
 end do
 !$omp end parallel do
 
@@ -2986,12 +3015,13 @@ end subroutine nicas_blk_apply_interp_s_ad
 ! Subroutine: nicas_blk_apply_convol
 !> Purpose: apply convolution
 !----------------------------------------------------------------------
-subroutine nicas_blk_apply_convol(nicas_blk,alpha)
+subroutine nicas_blk_apply_convol(nicas_blk,mpl,alpha)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(in) :: nicas_blk         !< NICAS data block
+type(mpl_type),intent(in) :: mpl                      !< MPI data
 real(kind_real),intent(inout) :: alpha(nicas_blk%nsc) !< Subgrid field
 
 ! Local variables
@@ -3000,7 +3030,7 @@ real(kind_real) :: zhook_handle
 if (lhook) call dr_hook('nicas_blk_apply_convol',0,zhook_handle)
 
 ! Apply linear operator, symmetric
-call nicas_blk%c%apply_sym(alpha)
+call nicas_blk%c%apply_sym(mpl,alpha)
 
 if (lhook) call dr_hook('nicas_blk_apply_convol',1,zhook_handle)
 
@@ -3010,12 +3040,13 @@ end subroutine nicas_blk_apply_convol
 ! Subroutine: nicas_blk_apply_adv
 !> Purpose: apply advection
 !----------------------------------------------------------------------
-subroutine nicas_blk_apply_adv(nicas_blk,nam,geom,fld)
+subroutine nicas_blk_apply_adv(nicas_blk,mpl,nam,geom,fld)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(in) :: nicas_blk                           !< NICAS data block
+type(mpl_type),intent(in) :: mpl                                        !< MPI data
 type(nam_type),target,intent(in) :: nam                                 !< Namelist
 type(geom_type),target,intent(in) :: geom                               !< Geometry
 real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) !< Field
@@ -3030,12 +3061,12 @@ if (lhook) call dr_hook('nicas_blk_apply_adv',0,zhook_handle)
 do its=2,nam%nts
    do iv=1,nam%nv
       ! Halo extension from zone A to zone D
-      call nicas_blk%com_AD%ext(geom%nl0,fld(:,:,iv,its),fld_d)
+      call nicas_blk%com_AD%ext(mpl,geom%nl0,fld(:,:,iv,its),fld_d)
 
       ! Interpolation
       !$omp parallel do schedule(static) private(il0)
       do il0=1,geom%nl0
-         call nicas_blk%d(il0,its)%apply(fld_d(:,il0),fld(:,il0,iv,its),msdst=.false.)
+         call nicas_blk%d(il0,its)%apply(mpl,fld_d(:,il0),fld(:,il0,iv,its),msdst=.false.)
       end do
       !$omp end parallel do
    end do
@@ -3049,12 +3080,13 @@ end subroutine nicas_blk_apply_adv
 ! Subroutine: nicas_blk_apply_adv_ad
 !> Purpose: apply advection
 !----------------------------------------------------------------------
-subroutine nicas_blk_apply_adv_ad(nicas_blk,nam,geom,fld)
+subroutine nicas_blk_apply_adv_ad(nicas_blk,mpl,nam,geom,fld)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(in) :: nicas_blk                           !< NICAS data block
+type(mpl_type),intent(in) :: mpl                                        !< MPI data
 type(nam_type),target,intent(in) :: nam                                 !< Namelist
 type(geom_type),target,intent(in) :: geom                               !< Geometry
 real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) !< Field
@@ -3071,12 +3103,12 @@ do its=2,nam%nts
       ! Adjoint interpolation
       !$omp parallel do schedule(static) private(il0)
       do il0=1,geom%nl0
-         call nicas_blk%d(il0,its)%apply_ad(fld(:,il0,iv,its),fld_d(:,il0))
+         call nicas_blk%d(il0,its)%apply_ad(mpl,fld(:,il0,iv,its),fld_d(:,il0))
       end do
       !$omp end parallel do
 
       ! Halo reduction from zone D to zone A
-      call nicas_blk%com_AD%red(geom%nl0,fld_d,fld(:,:,iv,its))
+      call nicas_blk%com_AD%red(mpl,geom%nl0,fld_d,fld(:,:,iv,its))
    end do
 end do
 
@@ -3088,12 +3120,13 @@ end subroutine nicas_blk_apply_adv_ad
 ! Subroutine: nicas_blk_apply_adv_inv
 !> Purpose: apply inverse advection
 !----------------------------------------------------------------------
-subroutine nicas_blk_apply_adv_inv(nicas_blk,nam,geom,fld)
+subroutine nicas_blk_apply_adv_inv(nicas_blk,mpl,nam,geom,fld)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(in) :: nicas_blk                           !< NICAS data block
+type(mpl_type),intent(in) :: mpl                                        !< MPI data
 type(nam_type),target,intent(in) :: nam                                 !< Namelist
 type(geom_type),target,intent(in) :: geom                               !< Geometry
 real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) !< Field
@@ -3108,12 +3141,12 @@ if (lhook) call dr_hook('nicas_blk_apply_adv_inv',0,zhook_handle)
 do its=2,nam%nts
    do iv=1,nam%nv
       ! Halo extension from zone A to zone Dinv
-      call nicas_blk%com_ADinv%ext(geom%nl0,fld(:,:,iv,its),fld_dinv)
+      call nicas_blk%com_ADinv%ext(mpl,geom%nl0,fld(:,:,iv,its),fld_dinv)
 
       ! Interpolation
       !$omp parallel do schedule(static) private(il0)
       do il0=1,geom%nl0
-         call nicas_blk%dinv(il0,its)%apply(fld_dinv(:,il0),fld(:,il0,iv,its),msdst=.false.)
+         call nicas_blk%dinv(il0,its)%apply(mpl,fld_dinv(:,il0),fld(:,il0,iv,its),msdst=.false.)
       end do
       !$omp end parallel do
    end do
@@ -3127,12 +3160,14 @@ end subroutine nicas_blk_apply_adv_inv
 ! Subroutine: nicas_blk_test_adjoint
 !> Purpose: test NICAS adjoint accuracy
 !----------------------------------------------------------------------
-subroutine nicas_blk_test_adjoint(nicas_blk,nam,geom)
+subroutine nicas_blk_test_adjoint(nicas_blk,mpl,rng,nam,geom)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(in) :: nicas_blk !< NICAS data block
+type(mpl_type),intent(inout) :: mpl           !< MPI data
+type(rng_type),intent(inout) :: rng           !< Random number generator
 type(nam_type),intent(in) :: nam              !< Namelist
 type(geom_type),intent(in) :: geom            !< Geometry
 
@@ -3163,8 +3198,8 @@ do isb=1,nicas_blk%nsb
 end do
 
 ! Adjoint test
-call nicas_blk%apply_interp_s(alpha_save,gamma)
-call nicas_blk%apply_interp_s_ad(gamma_save,alpha)
+call nicas_blk%apply_interp_s(mpl,alpha_save,gamma)
+call nicas_blk%apply_interp_s_ad(mpl,gamma_save,alpha)
 
 ! Print result
 call mpl%dot_prod(alpha,alpha_save,sum1)
@@ -3180,8 +3215,8 @@ call rng%rand_real(0.0_kind_real,1.0_kind_real,gamma_save)
 call rng%rand_real(0.0_kind_real,1.0_kind_real,delta_save)
 
 ! Adjoint test
-call nicas_blk%apply_interp_v(geom,gamma_save,delta)
-call nicas_blk%apply_interp_v_ad(geom,delta_save,gamma)
+call nicas_blk%apply_interp_v(mpl,geom,gamma_save,delta)
+call nicas_blk%apply_interp_v_ad(mpl,geom,delta_save,gamma)
 
 ! Print result
 call mpl%dot_prod(gamma,gamma_save,sum1)
@@ -3197,8 +3232,8 @@ call rng%rand_real(0.0_kind_real,1.0_kind_real,delta_save)
 call rng%rand_real(0.0_kind_real,1.0_kind_real,fld_save)
 
 ! Adjoint test
-call nicas_blk%apply_interp_h(geom,delta_save,fld)
-call nicas_blk%apply_interp_h_ad(geom,fld_save,delta)
+call nicas_blk%apply_interp_h(mpl,geom,delta_save,fld)
+call nicas_blk%apply_interp_h_ad(mpl,geom,fld_save,delta)
 
 ! Print result
 call mpl%dot_prod(delta,delta_save,sum1)
@@ -3214,8 +3249,8 @@ call rng%rand_real(0.0_kind_real,1.0_kind_real,alpha_save)
 call rng%rand_real(0.0_kind_real,1.0_kind_real,fld_save)
 
 ! Adjoint test
-call nicas_blk%apply_interp(geom,alpha_save,fld)
-call nicas_blk%apply_interp_ad(geom,fld_save,alpha)
+call nicas_blk%apply_interp(mpl,geom,alpha_save,fld)
+call nicas_blk%apply_interp_ad(mpl,geom,fld_save,alpha)
 
 ! Print result
 call mpl%dot_prod(alpha,alpha_save,sum1)
@@ -3237,8 +3272,8 @@ alpha1 = alpha1_save
 alpha2 = alpha2_save
 
 ! Adjoint test
-call nicas_blk%apply_convol(alpha1)
-call nicas_blk%apply_convol(alpha2)
+call nicas_blk%apply_convol(mpl,alpha1)
+call nicas_blk%apply_convol(mpl,alpha2)
 
 ! Print result
 call mpl%dot_prod(alpha1,alpha2_save,sum1)
@@ -3262,8 +3297,8 @@ call rng%rand_real(0.0_kind_real,1.0_kind_real,alpha1_save)
 call rng%rand_real(0.0_kind_real,1.0_kind_real,alpha2_save)
 
 ! Adjoint test
-call nicas_blk%com_AB%red(alpha1_save,alpha1)
-call nicas_blk%com_AB%ext(alpha2_save,alpha2)
+call nicas_blk%com_AB%red(mpl,alpha1_save,alpha1)
+call nicas_blk%com_AB%ext(mpl,alpha2_save,alpha2)
 
 ! Print result
 call mpl%dot_prod(alpha1,alpha2_save,sum1)
@@ -3287,8 +3322,8 @@ call rng%rand_real(0.0_kind_real,1.0_kind_real,alpha1_save)
 call rng%rand_real(0.0_kind_real,1.0_kind_real,alpha2_save)
 
 ! Adjoint test
-call nicas_blk%com_AC%red(alpha1_save,alpha1)
-call nicas_blk%com_AC%ext(alpha2_save,alpha2)
+call nicas_blk%com_AC%red(mpl,alpha1_save,alpha1)
+call nicas_blk%com_AC%ext(mpl,alpha2_save,alpha2)
 
 ! Print result
 call mpl%dot_prod(alpha1,alpha2_save,sum1)
@@ -3311,11 +3346,11 @@ fld2 = fld2_save
 
 ! Adjoint test
 if (nam%lsqrt) then
-   call nicas_blk%apply_from_sqrt(geom,fld1)
-   call nicas_blk%apply_from_sqrt(geom,fld2)
+   call nicas_blk%apply_from_sqrt(mpl,geom,fld1)
+   call nicas_blk%apply_from_sqrt(mpl,geom,fld2)
 else
-   call nicas_blk%apply(nam,geom,fld1)
-   call nicas_blk%apply(nam,geom,fld2)
+   call nicas_blk%apply(mpl,nam,geom,fld1)
+   call nicas_blk%apply(mpl,nam,geom,fld2)
 end if
 
 ! Print result
@@ -3331,12 +3366,14 @@ end subroutine nicas_blk_test_adjoint
 ! Subroutine: nicas_blk_test_pos_def
 !> Purpose: test positive_definiteness
 !----------------------------------------------------------------------
-subroutine nicas_blk_test_pos_def(nicas_blk,nam,geom)
+subroutine nicas_blk_test_pos_def(nicas_blk,mpl,rng,nam,geom)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(in) :: nicas_blk !< NICAS data block
+type(mpl_type),intent(in) :: mpl              !< MPI data
+type(rng_type),intent(inout) :: rng           !< Random number generator
 type(nam_type),intent(in) :: nam              !< Namelist
 type(geom_type),intent(in) :: geom            !< Geometry
 
@@ -3357,9 +3394,9 @@ do while (iter<=nitermax)
 
    ! Apply NICAS
    if (nam%lsqrt) then
-      call nicas_blk%apply_from_sqrt(geom,fld)
+      call nicas_blk%apply_from_sqrt(mpl,geom,fld)
    else
-      call nicas_blk%apply(nam,geom,fld)
+      call nicas_blk%apply(mpl,nam,geom,fld)
    end if
 
    ! Compute Rayleigh quotient
@@ -3393,9 +3430,9 @@ do while (iter<=nitermax)
 
    ! Apply C
    if (nam%lsqrt) then
-      call nicas_blk%apply_from_sqrt(geom,fld)
+      call nicas_blk%apply_from_sqrt(mpl,geom,fld)
    else
-      call nicas_blk%apply(nam,geom,fld)
+      call nicas_blk%apply(mpl,nam,geom,fld)
    end if
    fld = fld-egvmax*fld_prev
 
@@ -3432,12 +3469,14 @@ end subroutine nicas_blk_test_pos_def
 ! Subroutine: nicas_blk_test_sqrt
 !> Purpose: test full/square-root equivalence
 !----------------------------------------------------------------------
-subroutine nicas_blk_test_sqrt(nicas_blk,nam,geom,bpar,io,cmat_blk)
+subroutine nicas_blk_test_sqrt(nicas_blk,mpl,rng,nam,geom,bpar,io,cmat_blk)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(in) :: nicas_blk !< NICAS data block
+type(mpl_type),intent(inout) :: mpl           !< MPI data
+type(rng_type),intent(inout) :: rng           !< Random number generator
 type(nam_type),intent(inout) :: nam           !< Namelist
 type(geom_type),intent(in) :: geom            !< Geometry
 type(bpar_type),intent(in) :: bpar            !< Block parameters
@@ -3457,27 +3496,27 @@ fld_sqrt = fld
 
 ! Apply NICAS, initial version
 if (nam%lsqrt) then
-   call nicas_blk%apply_from_sqrt(geom,fld_sqrt)
+   call nicas_blk%apply_from_sqrt(mpl,geom,fld_sqrt)
 else
-   call nicas_blk%apply(nam,geom,fld)
+   call nicas_blk%apply(mpl,nam,geom,fld)
 end if
 
 ! Switch lsqrt
 nam%lsqrt = .not.nam%lsqrt
 
 ! Compute NICAS parameters
-call nicas_blk_other%compute_parameters(nam,geom,cmat_blk)
+call nicas_blk_other%compute_parameters(mpl,rng,nam,geom,cmat_blk)
 
 ! Apply NICAS, other version
 if (nam%lsqrt) then
-   call nicas_blk_other%apply_from_sqrt(geom,fld_sqrt)
+   call nicas_blk_other%apply_from_sqrt(mpl,geom,fld_sqrt)
 else
    ! Apply NICAS
-   call nicas_blk_other%apply(nam,geom,fld)
+   call nicas_blk_other%apply(mpl,nam,geom,fld)
 end if
 
 ! Compute dirac
-if (nam%check_dirac) call nicas_blk_other%test_dirac(nam,geom,bpar,io)
+if (nam%check_dirac) call nicas_blk_other%test_dirac(mpl,nam,geom,bpar,io)
 
 ! Reset lsqrt value
 nam%lsqrt = .not.nam%lsqrt
@@ -3495,12 +3534,13 @@ end subroutine nicas_blk_test_sqrt
 ! Subroutine: nicas_blk_test_dirac
 !> Purpose: apply NICAS to diracs
 !----------------------------------------------------------------------
-subroutine nicas_blk_test_dirac(nicas_blk,nam,geom,bpar,io)
+subroutine nicas_blk_test_dirac(nicas_blk,mpl,nam,geom,bpar,io)
 
 implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(in) :: nicas_blk !< NICAS data block
+type(mpl_type),intent(inout) :: mpl           !< MPI data
 type(nam_type),intent(in) :: nam              !< Namelist
 type(geom_type),intent(in) :: geom            !< Geometry
 type(bpar_type),intent(in) :: bpar            !< Block parameters
@@ -3527,9 +3567,9 @@ end do
 
 ! Apply NICAS method
 if (nam%lsqrt) then
-   call nicas_blk%apply_from_sqrt(geom,fld)
+   call nicas_blk%apply_from_sqrt(mpl,geom,fld)
 else
-   call nicas_blk%apply(nam,geom,fld)
+   call nicas_blk%apply(mpl,nam,geom,fld)
 end if
 
 if (nam%lsqrt) then
@@ -3540,7 +3580,7 @@ end if
 
 ! Write field
 filename = trim(nam%prefix)//'_dirac'
-call io%fld_write(nam,geom,filename,trim(bpar%blockname(ib))//'_dirac'//trim(suffix),fld)
+call io%fld_write(mpl,nam,geom,filename,trim(bpar%blockname(ib))//'_dirac'//trim(suffix),fld)
 
 ! Print results
 write(mpl%unit,'(a7,a)') '','Values at dirac points:'

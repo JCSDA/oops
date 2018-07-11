@@ -11,7 +11,6 @@
 module type_lct_blk
 
 !$ use omp_lib
-use tools_display, only: msgerror,prog_init,prog_print
 use tools_func, only: lonlatmod,fit_lct
 use tools_kinds, only: kind_real
 use tools_missing, only: msr,isnotmsr
@@ -20,10 +19,14 @@ use type_geom, only: geom_type
 use type_hdata, only: hdata_type
 use type_minim, only: minim_type
 use type_mom_blk, only: mom_blk_type
-use type_mpl, only: mpl
+use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 
 implicit none
+
+real(kind_real),parameter :: cor_min = 0.5_kind_real !< Minimum relevant correlation for first guess
+real(kind_real),parameter :: Dscale = 10.0_kind_real !< Typical factor between diffusion scales
+logical,parameter :: lprt = .false.                  !< Optimization print
 
 ! LCT block data derived type
 type lct_blk_type
@@ -53,10 +56,6 @@ contains
    procedure :: fitting => lct_blk_fitting
 end type lct_blk_type
 
-real(kind_real),parameter :: cor_min = 0.5_kind_real !< Minimum relevant correlation for first guess
-real(kind_real),parameter :: Dscale = 10.0_kind_real !< Typical factor between diffusion scales
-logical,parameter :: lprt = .false.                  !< Optimization print
-
 private
 public :: lct_blk_type
 
@@ -64,7 +63,7 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: lct_blk_alloc
-!> Purpose: lct_blk object block allocation
+!> Purpose: LCT block data allocation
 !----------------------------------------------------------------------
 subroutine lct_blk_alloc(lct_blk,nam,geom,bpar,hdata,ib)
 
@@ -123,7 +122,7 @@ end subroutine lct_blk_alloc
 
 !----------------------------------------------------------------------
 ! Subroutine: lct_blk_dealloc
-!> Purpose: lct_blk object deallocation
+!> Purpose: LCT block data deallocation
 !----------------------------------------------------------------------
 subroutine lct_blk_dealloc(lct_blk)
 
@@ -219,12 +218,13 @@ end subroutine lct_blk_correlation
 ! Subroutine: lct_blk_fitting
 !> Purpose: fitting LCT
 !----------------------------------------------------------------------
-subroutine lct_blk_fitting(lct_blk,nam,geom,bpar,hdata)
+subroutine lct_blk_fitting(lct_blk,mpl,nam,geom,bpar,hdata)
 
 implicit none
 
 ! Passed variables
 class(lct_blk_type),intent(inout) :: lct_blk !< LCT block
+type(mpl_type),intent(in) :: mpl             !< MPI data
 type(nam_type),intent(in) :: nam             !< Namelist
 type(geom_type),intent(in) :: geom           !< Geometry
 type(bpar_type),intent(in) :: bpar           !< Block parameters
@@ -269,7 +269,7 @@ do il0=1,geom%nl0
    call flush(mpl%unit)
 
    ! Initialization
-   call prog_init(progint,done)
+   call mpl%prog_init(progint,done)
 
    do ic1a=1,hdata%nc1a
       ! Global index
@@ -376,7 +376,7 @@ do il0=1,geom%nl0
 
          ! Compute fit
          minim%cost_function = 'fit_lct'
-         call minim%compute(lprt)
+         call minim%compute(mpl,lprt)
 
          ! Copy parameters
          lct_blk%D(:,ic1a,il0) = minim%x(1:sum(lct_blk%ncomp))
@@ -408,7 +408,7 @@ do il0=1,geom%nl0
          end do
          if (spd) then
             ! Rebuild fit
-            call fit_lct(nam%nc3,bpar%nl0r(ib),dx,dy,dz,dmask,lct_blk%nscales,lct_blk%ncomp,lct_blk%D(:,ic1a,il0), &
+            call fit_lct(mpl,nam%nc3,bpar%nl0r(ib),dx,dy,dz,dmask,lct_blk%nscales,lct_blk%ncomp,lct_blk%D(:,ic1a,il0), &
           & lct_blk%coef(:,ic1a,il0),lct_blk%fit(:,:,ic1a,il0))
          else
             ! Missing values
@@ -420,7 +420,7 @@ do il0=1,geom%nl0
 
       ! Update
       done(ic1a) = .true.
-      call prog_print(progint,done)
+      call mpl%prog_print(progint,done)
    end do
    write(mpl%unit,'(a)') '100%'
    call flush(mpl%unit)

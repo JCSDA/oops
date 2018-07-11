@@ -26,7 +26,10 @@ real(kind_real),parameter :: ps = 101325.0_kind_real      !< Reference surface p
 integer,parameter :: msvali = -999                        !< Integer missing value
 real(kind_real),parameter :: msvalr = -999.0_kind_real    !< Real missing value
 
+! Reproducibility threshold
+real(kind_real),parameter :: rth = 1.0e-12                !< Reproducibility threshold
+
 private
-public :: pi,deg2rad,rad2deg,req,reqkm,ps,msvali,msvalr
+public :: pi,deg2rad,rad2deg,req,reqkm,ps,msvali,msvalr,rth
 
 end module tools_const

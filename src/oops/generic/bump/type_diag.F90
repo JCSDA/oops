@@ -12,21 +12,22 @@ module type_diag
 
 use netcdf
 use tools_const, only: reqkm,rad2deg,pi
-use tools_display, only: vunitchar,msgerror,msgwarning,prog_init,prog_print,aqua,peach,purple,black
 use tools_fit, only: ver_smooth
 use tools_kinds, only: kind_real
 use tools_missing, only: msr,isnotmsr,isallnotmsr,isnotmsi
-use tools_nc, only: ncerr,ncfloat
+use tools_nc, only: ncfloat
 use type_avg, only: avg_type
 use type_bpar, only: bpar_type
 use type_diag_blk, only: diag_blk_type
 use type_geom, only: geom_type
 use type_hdata, only: hdata_type
 use type_io, only: io_type
-use type_mpl, only: mpl
+use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 
 implicit none
+
+real(kind_real),parameter :: bound = 5.0_kind_real !< Restriction bound
 
 ! Diagnostic derived type
 type diag_type
@@ -43,8 +44,6 @@ contains
    procedure :: hybridization => diag_hybridization
    procedure :: dualens => diag_dualens
 end type diag_type
-
-real(kind_real),parameter :: bound = 5.0_kind_real !< Restriction bound
 
 private
 public :: diag_type
@@ -96,12 +95,13 @@ end subroutine diag_alloc
 ! Subroutine: diag_fit_filter
 !> Purpose: filter fit diagnostics
 !----------------------------------------------------------------------
-subroutine diag_fit_filter(diag,nam,geom,bpar,hdata)
+subroutine diag_fit_filter(diag,mpl,nam,geom,bpar,hdata)
 
 implicit none
 
 ! Passed variables
 class(diag_type),intent(inout) :: diag !< Diagnostic
+type(mpl_type),intent(in) :: mpl       !< MPI data
 type(nam_type),intent(in) :: nam       !< Namelist
 type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
@@ -135,16 +135,16 @@ do ib=1,bpar%nb+1
          end do
 
          ! Median filter to remove extreme values
-         call hdata%diag_filter(nam,geom,il0,'median',nam%diag_rhflt,rh_c2a(:,il0))
-         call hdata%diag_filter(nam,geom,il0,'median',nam%diag_rhflt,rv_c2a(:,il0))
+         call hdata%diag_filter(mpl,nam,geom,il0,'median',nam%diag_rhflt,rh_c2a(:,il0))
+         call hdata%diag_filter(mpl,nam,geom,il0,'median',nam%diag_rhflt,rv_c2a(:,il0))
 
          ! Average filter to smooth support radii
-         call hdata%diag_filter(nam,geom,il0,'average',nam%diag_rhflt,rh_c2a(:,il0))
-         call hdata%diag_filter(nam,geom,il0,'average',nam%diag_rhflt,rv_c2a(:,il0))
+         call hdata%diag_filter(mpl,nam,geom,il0,'average',nam%diag_rhflt,rh_c2a(:,il0))
+         call hdata%diag_filter(mpl,nam,geom,il0,'average',nam%diag_rhflt,rv_c2a(:,il0))
 
          ! Fill missing values
-         call hdata%diag_fill(geom,il0,rh_c2a(:,il0))
-         call hdata%diag_fill(geom,il0,rv_c2a(:,il0))
+         call hdata%diag_fill(mpl,geom,il0,rh_c2a(:,il0))
+         call hdata%diag_fill(mpl,geom,il0,rv_c2a(:,il0))
 
          ! Copy data
          do ic2a=1,hdata%nc2a
@@ -155,8 +155,8 @@ do ib=1,bpar%nb+1
 
       ! Smooth vertically
       do ic2a=0,diag%nc2a
-         call ver_smooth(geom%nl0,geom%vunitavg,nam%rvflt,diag%blk(ic2a,ib)%fit_rh)
-         call ver_smooth(geom%nl0,geom%vunitavg,nam%rvflt,diag%blk(ic2a,ib)%fit_rv)
+         call ver_smooth(mpl,geom%nl0,geom%vunitavg,nam%rvflt,diag%blk(ic2a,ib)%fit_rh)
+         call ver_smooth(mpl,geom%nl0,geom%vunitavg,nam%rvflt,diag%blk(ic2a,ib)%fit_rv)
       end do
    end if
 end do
@@ -167,12 +167,13 @@ end subroutine diag_fit_filter
 ! Subroutine: diag_write
 !> Purpose: write all diagnostics
 !----------------------------------------------------------------------
-subroutine diag_write(diag,nam,geom,bpar,io,hdata)
+subroutine diag_write(diag,mpl,nam,geom,bpar,io,hdata)
 
 implicit none
 
 ! Passed variables
 class(diag_type),intent(inout) :: diag !< Diagnostic
+type(mpl_type),intent(inout) :: mpl    !< MPI data
 type(nam_type),intent(in) :: nam       !< Namelist
 type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
@@ -189,7 +190,7 @@ if (mpl%main) then
    filename = trim(nam%prefix)//'_diag.nc'
    do ib=1,bpar%nb+1
       if (bpar%diag_block(ib)) then
-        call diag%blk(0,ib)%write(nam,geom,bpar,filename)
+        call diag%blk(0,ib)%write(mpl,nam,geom,bpar,filename)
       end if
    end do
 end if
@@ -209,17 +210,17 @@ if (nam%local_diag) then
             end do
 
             ! Interpolation
-            call hdata%com_AB%ext(geom%nl0,fld_c2a,fld_c2b)
+            call hdata%com_AB%ext(mpl,geom%nl0,fld_c2a,fld_c2b)
             do il0=1,geom%nl0
                il0i = min(il0,geom%nl0i)
-               call hdata%h(il0i)%apply(fld_c2b(:,il0),fld_c0a(:,il0))
+               call hdata%h(il0i)%apply(mpl,fld_c2b(:,il0),fld_c0a(:,il0))
             end do
 
             ! Write fields
             if (i==1) then
-               call io%fld_write(nam,geom,filename,trim(bpar%blockname(ib))//'_fit_rh',fld_c0a)
+               call io%fld_write(mpl,nam,geom,filename,trim(bpar%blockname(ib))//'_fit_rh',fld_c0a)
             elseif (i==2) then
-               call io%fld_write(nam,geom,filename,trim(bpar%blockname(ib))//'_fit_rv',fld_c0a)
+               call io%fld_write(mpl,nam,geom,filename,trim(bpar%blockname(ib))//'_fit_rv',fld_c0a)
             end if
          end do
       end if
@@ -239,11 +240,11 @@ do ildw=1,nam%nldwv
          ! Find diagnostic point task
          ic2a = hdata%c2_to_c2a(ic2)
          do ib=1,bpar%nb+1
-            if (bpar%diag_block(ib)) call diag%blk(ic2a,ib)%write(nam,geom,bpar,filename)
+            if (bpar%diag_block(ib)) call diag%blk(ic2a,ib)%write(mpl,nam,geom,bpar,filename)
          end do
       end if
    else
-      call msgwarning('missing local profile')
+      call mpl%warning('missing local profile')
    end if
 end do
 
@@ -253,12 +254,13 @@ end subroutine diag_write
 ! Subroutine: diag_covariance
 !> Purpose: compute covariance
 !----------------------------------------------------------------------
-subroutine diag_covariance(diag,nam,geom,bpar,io,hdata,avg,prefix)
+subroutine diag_covariance(diag,mpl,nam,geom,bpar,io,hdata,avg,prefix)
 
 implicit none
 
 ! Passed variables
 class(diag_type),intent(inout) :: diag !< Diagnostic
+type(mpl_type),intent(inout) :: mpl    !< MPI data
 type(nam_type),intent(in) :: nam       !< Namelist
 type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
@@ -286,8 +288,8 @@ do ib=1,bpar%nb+1
       ! Print results
       do il0=1,geom%nl0
          if (isnotmsr(diag%blk(0,ib)%raw(1,bpar%il0rz(il0,ib),il0))) then
-            write(mpl%unit,'(a13,a,i3,a,a,e9.2,a)') '','Level: ',nam%levs(il0),' ~> cov. at class zero: ',trim(peach), &
-          & diag%blk(0,ib)%raw(1,bpar%il0rz(il0,ib),il0),trim(black)
+            write(mpl%unit,'(a13,a,i3,a,a,e9.2,a)') '','Level: ',nam%levs(il0),' ~> cov. at class zero: ',trim(mpl%peach), &
+          & diag%blk(0,ib)%raw(1,bpar%il0rz(il0,ib),il0),trim(mpl%black)
             call flush(mpl%unit)
          end if
       end do
@@ -295,7 +297,7 @@ do ib=1,bpar%nb+1
 end do
 
 ! Write
-call diag%write(nam,geom,bpar,io,hdata)
+call diag%write(mpl,nam,geom,bpar,io,hdata)
 
 end subroutine diag_covariance
 
@@ -303,12 +305,13 @@ end subroutine diag_covariance
 ! Subroutine: diag_correlation
 !> Purpose: compute correlation
 !----------------------------------------------------------------------
-subroutine diag_correlation(diag,nam,geom,bpar,io,hdata,avg,prefix)
+subroutine diag_correlation(diag,mpl,nam,geom,bpar,io,hdata,avg,prefix)
 
 implicit none
 
 ! Passed variables
 class(diag_type),intent(inout) :: diag !< Diagnostic
+type(mpl_type),intent(inout) :: mpl    !< MPI data
 type(nam_type),intent(in) :: nam       !< Namelist
 type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
@@ -333,18 +336,18 @@ do ib=1,bpar%nb+1
       call flush(mpl%unit)
 
       ! Initialization
-      call prog_init(progint,done)
+      call mpl%prog_init(progint,done)
 
       do ic2a=0,diag%nc2a
          ! Copy
          diag%blk(ic2a,ib)%raw = avg%blk(ic2a,ib)%cor
 
          ! Fitting
-         if (bpar%fit_block(ib)) call diag%blk(ic2a,ib)%fitting(nam,geom,bpar,hdata)
+         if (bpar%fit_block(ib)) call diag%blk(ic2a,ib)%fitting(mpl,nam,geom,bpar,hdata)
 
          ! Update
          done(ic2a) = .true.
-         call prog_print(progint,done)
+         call mpl%prog_print(progint,done)
       end do
       ndiag%blk(0,ib)%raw = avg%blk(0,ib)%nc1a_cor
       write(mpl%unit,'(a)') '100%'
@@ -353,14 +356,14 @@ do ib=1,bpar%nb+1
       ! Print results
       do il0=1,geom%nl0
          if (isnotmsr(avg%blk(0,ib)%cor(1,bpar%il0rz(il0,ib),il0))) then
-            write(mpl%unit,'(a13,a,i3,a4,a20,a,f10.2,a)') '','Level: ',nam%levs(il0),' ~> ','cor. at class zero: ',trim(peach), &
-          & avg%blk(0,ib)%cor(1,bpar%il0rz(il0,ib),il0),trim(black)
+            write(mpl%unit,'(a13,a,i3,a4,a20,a,f10.2,a)') '','Level: ',nam%levs(il0),' ~> ','cor. at class zero: ', &
+          & trim(mpl%peach),avg%blk(0,ib)%cor(1,bpar%il0rz(il0,ib),il0),trim(mpl%black)
             call flush(mpl%unit)
          end if
          if (bpar%fit_block(ib)) then
             if (isnotmsr(diag%blk(0,ib)%fit_rh(il0))) then
-               write(mpl%unit,'(a47,a,f10.2,a,f10.2,a)') 'cor. support radii: ',trim(aqua),diag%blk(0,ib)%fit_rh(il0)*reqkm, &
-             & trim(black)//' km  / '//trim(aqua),diag%blk(0,ib)%fit_rv(il0),trim(black)//' '//trim(vunitchar)
+               write(mpl%unit,'(a47,a,f10.2,a,f10.2,a)') 'cor. support radii: ',trim(mpl%aqua),diag%blk(0,ib)%fit_rh(il0)*reqkm, &
+             & trim(mpl%black)//' km  / '//trim(mpl%aqua),diag%blk(0,ib)%fit_rv(il0),trim(mpl%black)//' '//trim(mpl%vunitchar)
                call flush(mpl%unit)
             end if
          end if
@@ -369,11 +372,11 @@ do ib=1,bpar%nb+1
 end do
 
 ! Filtering
-if (nam%local_diag) call diag%fit_filter(nam,geom,bpar,hdata)
+if (nam%local_diag) call diag%fit_filter(mpl,nam,geom,bpar,hdata)
 
 ! Write
-call diag%write(nam,geom,bpar,io,hdata)
-call ndiag%write(nam,geom,bpar,io,hdata)
+call diag%write(mpl,nam,geom,bpar,io,hdata)
+call ndiag%write(mpl,nam,geom,bpar,io,hdata)
 
 end subroutine diag_correlation
 
@@ -381,12 +384,13 @@ end subroutine diag_correlation
 ! Subroutine: diag_localization
 !> Purpose: compute diagnostic _localization
 !----------------------------------------------------------------------
-subroutine diag_localization(diag,nam,geom,bpar,io,hdata,avg,prefix)
+subroutine diag_localization(diag,mpl,nam,geom,bpar,io,hdata,avg,prefix)
 
 implicit none
 
 ! Passed variables
 class(diag_type),intent(inout) :: diag !< Diagnostic
+type(mpl_type),intent(inout) :: mpl    !< MPI data
 type(nam_type),intent(in) :: nam       !< Namelist
 type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
@@ -409,7 +413,7 @@ do ib=1,bpar%nb+1
       call flush(mpl%unit)
 
       ! Initialization
-      call prog_init(progint,done)
+      call mpl%prog_init(progint,done)
 
       do ic2a=0,diag%nc2a
          ! Compute localization
@@ -419,11 +423,11 @@ do ib=1,bpar%nb+1
          call diag%blk(ic2a,ib)%normalization(geom,bpar)
 
          ! Fitting
-         if (bpar%fit_block(ib)) call diag%blk(ic2a,ib)%fitting(nam,geom,bpar,hdata)
+         if (bpar%fit_block(ib)) call diag%blk(ic2a,ib)%fitting(mpl,nam,geom,bpar,hdata)
 
          ! Update
          done(ic2a) = .true.
-         call prog_print(progint,done)
+         call mpl%prog_print(progint,done)
       end do
       write(mpl%unit,'(a)') '100%'
       call flush(mpl%unit)
@@ -431,14 +435,14 @@ do ib=1,bpar%nb+1
       ! Print results
       do il0=1,geom%nl0
          if (isnotmsr(diag%blk(0,ib)%raw_coef_ens(il0))) then
-            write(mpl%unit,'(a13,a,i3,a4,a20,a,f10.2,a)') '','Level: ',nam%levs(il0),' ~> ','loc. at class zero: ',trim(peach), &
-          & diag%blk(0,ib)%raw_coef_ens(il0),trim(black)
+            write(mpl%unit,'(a13,a,i3,a4,a20,a,f10.2,a)') '','Level: ',nam%levs(il0),' ~> ','loc. at class zero: ', &
+          & trim(mpl%peach),diag%blk(0,ib)%raw_coef_ens(il0),trim(mpl%black)
             call flush(mpl%unit)
          end if
          if (bpar%fit_block(ib)) then
             if (isnotmsr(diag%blk(0,ib)%fit_rh(il0))) then
-               write(mpl%unit,'(a47,a,f10.2,a,f10.2,a)') 'loc. support radii: ',trim(aqua),diag%blk(0,ib)%fit_rh(il0)*reqkm, &
-             & trim(black)//' km  / '//trim(aqua),diag%blk(0,ib)%fit_rv(il0),trim(black)//' '//trim(vunitchar)
+               write(mpl%unit,'(a47,a,f10.2,a,f10.2,a)') 'loc. support radii: ',trim(mpl%aqua),diag%blk(0,ib)%fit_rh(il0)*reqkm, &
+             & trim(mpl%black)//' km  / '//trim(mpl%aqua),diag%blk(0,ib)%fit_rv(il0),trim(mpl%black)//' '//trim(mpl%vunitchar)
                call flush(mpl%unit)
             end if
          end if
@@ -447,23 +451,24 @@ do ib=1,bpar%nb+1
 end do
 
 ! Filtering
-if (nam%local_diag) call diag%fit_filter(nam,geom,bpar,hdata)
+if (nam%local_diag) call diag%fit_filter(mpl,nam,geom,bpar,hdata)
 
 ! Write
-call diag%write(nam,geom,bpar,io,hdata)
+call diag%write(mpl,nam,geom,bpar,io,hdata)
 
 end subroutine diag_localization
 
 !----------------------------------------------------------------------
 ! Subroutine: diag_hybridization
-!> Purpose: compute diagnostic _hybridization
+!> Purpose: compute diagnostic hybridization
 !----------------------------------------------------------------------
-subroutine diag_hybridization(diag,nam,geom,bpar,io,hdata,avg,avg_sta,prefix)
+subroutine diag_hybridization(diag,mpl,nam,geom,bpar,io,hdata,avg,avg_sta,prefix)
 
 implicit none
 
 ! Passed variables
 class(diag_type),intent(inout) :: diag !< Diagnostic (localization)
+type(mpl_type),intent(inout) :: mpl    !< MPI data
 type(nam_type),intent(in) :: nam       !< Namelist
 type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
@@ -487,7 +492,7 @@ do ib=1,bpar%nb+1
       call flush(mpl%unit)
 
       ! Initialization
-      call prog_init(progint,done)
+      call mpl%prog_init(progint,done)
 
       do ic2a=0,diag%nc2a
          ! Compute hybridization
@@ -497,11 +502,11 @@ do ib=1,bpar%nb+1
          call diag%blk(ic2a,ib)%normalization(geom,bpar)
 
          ! Fitting
-         if (bpar%fit_block(ib)) call diag%blk(ic2a,ib)%fitting(nam,geom,bpar,hdata)
+         if (bpar%fit_block(ib)) call diag%blk(ic2a,ib)%fitting(mpl,nam,geom,bpar,hdata)
 
          ! Update
          done(ic2a) = .true.
-         call prog_print(progint,done)
+         call mpl%prog_print(progint,done)
       end do
       write(mpl%unit,'(a)') '100%'
       call flush(mpl%unit)
@@ -509,41 +514,42 @@ do ib=1,bpar%nb+1
       ! Print results
       do il0=1,geom%nl0
          if (isnotmsr(diag%blk(0,ib)%raw_coef_ens(il0))) then
-            write(mpl%unit,'(a13,a,i3,a4,a21,a,f10.2,a)') '','Level: ',nam%levs(il0),' ~> ','loc. at class zero: ',trim(peach), &
-          & diag%blk(0,ib)%raw_coef_ens(il0),trim(black)
+            write(mpl%unit,'(a13,a,i3,a4,a21,a,f10.2,a)') '','Level: ',nam%levs(il0),' ~> ','loc. at class zero: ', &
+          & trim(mpl%peach),diag%blk(0,ib)%raw_coef_ens(il0),trim(mpl%black)
             call flush(mpl%unit)
          end if
          if (bpar%fit_block(ib)) then
             if (isnotmsr(diag%blk(0,ib)%fit_rh(il0))) then
-               write(mpl%unit,'(a48,a,f10.2,a,f10.2,a)') 'loc. support radii: ',trim(aqua),diag%blk(0,ib)%fit_rh(il0)*reqkm, &
-             & trim(black)//' km  / '//trim(aqua),diag%blk(0,ib)%fit_rv(il0),trim(black)//' '//trim(vunitchar)
+               write(mpl%unit,'(a48,a,f10.2,a,f10.2,a)') 'loc. support radii: ',trim(mpl%aqua),diag%blk(0,ib)%fit_rh(il0)*reqkm, &
+             & trim(mpl%black)//' km  / '//trim(mpl%aqua),diag%blk(0,ib)%fit_rv(il0),trim(mpl%black)//' '//trim(mpl%vunitchar)
                call flush(mpl%unit)
             end if
          end if
       end do
-      write(mpl%unit,'(a13,a,f10.2,a)') '','Raw static coeff.: ',trim(purple),diag%blk(0,ib)%raw_coef_sta,trim(black)
+      write(mpl%unit,'(a13,a,f10.2,a)') '','Raw static coeff.: ',trim(mpl%purple),diag%blk(0,ib)%raw_coef_sta,trim(mpl%black)
       call flush(mpl%unit)
    end if
 end do
 
 ! Filtering
-if (nam%local_diag) call diag%fit_filter(nam,geom,bpar,hdata)
+if (nam%local_diag) call diag%fit_filter(mpl,nam,geom,bpar,hdata)
 
 ! Write
-call diag%write(nam,geom,bpar,io,hdata)
+call diag%write(mpl,nam,geom,bpar,io,hdata)
 
 end subroutine diag_hybridization
 
 !----------------------------------------------------------------------
 ! Subroutine: diag_dualens
-!> Purpose: compute diagnostic _dualens
+!> Purpose: compute diagnostic dualens
 !----------------------------------------------------------------------
-subroutine diag_dualens(diag,nam,geom,bpar,io,hdata,avg,avg_lr,diag_lr,prefix,prefix_lr)
+subroutine diag_dualens(diag,mpl,nam,geom,bpar,io,hdata,avg,avg_lr,diag_lr,prefix,prefix_lr)
 
 implicit none
 
 ! Passed variables
 class(diag_type),intent(inout) :: diag   !< Diagnostic (localization)
+type(mpl_type),intent(inout) :: mpl    !< MPI data
 type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 type(bpar_type),intent(in) :: bpar       !< Block parameters
@@ -570,7 +576,7 @@ do ib=1,bpar%nb+1
       call flush(mpl%unit)
 
       ! Initialization
-      call prog_init(progint,done)
+      call mpl%prog_init(progint,done)
 
       do ic2a=0,diag%nc2a
          ! Compute dualens
@@ -582,13 +588,13 @@ do ib=1,bpar%nb+1
 
          ! Fitting
          if (bpar%fit_block(ib)) then
-            call diag%blk(ic2a,ib)%fitting(nam,geom,bpar,hdata)
-            call diag_lr%blk(ic2a,ib)%fitting(nam,geom,bpar,hdata)
+            call diag%blk(ic2a,ib)%fitting(mpl,nam,geom,bpar,hdata)
+            call diag_lr%blk(ic2a,ib)%fitting(mpl,nam,geom,bpar,hdata)
          end if
 
          ! Update
          done(ic2a) = .true.
-         call prog_print(progint,done)
+         call mpl%prog_print(progint,done)
       end do
       write(mpl%unit,'(a)') '100%'
       call flush(mpl%unit)
@@ -597,24 +603,25 @@ do ib=1,bpar%nb+1
       do il0=1,geom%nl0
          if (isnotmsr(diag%blk(0,ib)%raw_coef_ens(il0))) then
             write(mpl%unit,'(a10,a,i3,a4,a21,a,f10.2,a)') '','Level: ',nam%levs(il0),' ~> ','loc. at class zero (HR): ', &
-          & trim(peach),diag%blk(0,ib)%raw_coef_ens(il0),trim(black)
+          & trim(mpl%peach),diag%blk(0,ib)%raw_coef_ens(il0),trim(mpl%black)
             call flush(mpl%unit)
          end if
          if (isnotmsr(diag%blk(0,ib)%raw_coef_ens(il0))) then
-            write(mpl%unit,'(a45,a,f10.2,a)') 'loc. at class zero (LR): ',trim(peach),diag_lr%blk(0,ib)%raw_coef_ens(il0), &
-          & trim(black)
+            write(mpl%unit,'(a45,a,f10.2,a)') 'loc. at class zero (LR): ',trim(mpl%peach),diag_lr%blk(0,ib)%raw_coef_ens(il0), &
+          & trim(mpl%black)
             call flush(mpl%unit)
          end if
          if (bpar%fit_block(ib)) then
             if (isnotmsr(diag%blk(0,ib)%fit_rh(il0))) then
-               write(mpl%unit,'(a45,a,f10.2,a,f10.2,a)') 'loc. support radii (HR): ',trim(aqua),diag%blk(0,ib)%fit_rh(il0)*reqkm, &
-             & trim(black)//' km  / '//trim(aqua),diag_lr%blk(0,ib)%fit_rv(il0),trim(black)//' '//trim(vunitchar)
+               write(mpl%unit,'(a45,a,f10.2,a,f10.2,a)') 'loc. support radii (HR): ',trim(mpl%aqua), &
+             & diag%blk(0,ib)%fit_rh(il0)*reqkm,trim(mpl%black)//' km  / '//trim(mpl%aqua),diag_lr%blk(0,ib)%fit_rv(il0), &
+             & trim(mpl%black)//' '//trim(mpl%vunitchar)
                call flush(mpl%unit)
             end if
             if (isnotmsr(diag_lr%blk(0,ib)%fit_rh(il0))) then
-               write(mpl%unit,'(a45,a,f10.2,a,f10.2,a)') 'loc. support radii (LR): ',trim(aqua), &
-             & diag_lr%blk(0,ib)%fit_rh(il0)*reqkm,trim(black)//' km  / '//trim(aqua),diag_lr%blk(0,ib)%fit_rv(il0), &
-             & trim(black)//' '//trim(vunitchar)
+               write(mpl%unit,'(a45,a,f10.2,a,f10.2,a)') 'loc. support radii (LR): ',trim(mpl%aqua), &
+             & diag_lr%blk(0,ib)%fit_rh(il0)*reqkm,trim(mpl%black)//' km  / '//trim(mpl%aqua),diag_lr%blk(0,ib)%fit_rv(il0), &
+             & trim(mpl%black)//' '//trim(mpl%vunitchar)
                call flush(mpl%unit)
             end if
          end if
@@ -624,13 +631,13 @@ end do
 
 ! Filtering
 if (nam%local_diag) then
-   call diag%fit_filter(nam,geom,bpar,hdata)
-   call diag_lr%fit_filter(nam,geom,bpar,hdata)
+   call diag%fit_filter(mpl,nam,geom,bpar,hdata)
+   call diag_lr%fit_filter(mpl,nam,geom,bpar,hdata)
 end if
 
 ! Write
-call diag%write(nam,geom,bpar,io,hdata)
-call diag_lr%write(nam,geom,bpar,io,hdata)
+call diag%write(mpl,nam,geom,bpar,io,hdata)
+call diag_lr%write(mpl,nam,geom,bpar,io,hdata)
 
 end subroutine diag_dualens
 

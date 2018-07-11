@@ -12,7 +12,6 @@ use kinds
 use config_mod
 use unstructured_grid_mod
 use mpi
-use tools_missing, only: msi,msr
 use type_bump, only: bump_type
 
 implicit none
@@ -64,7 +63,7 @@ call bump_registry%init()
 call bump_registry%add(key)
 call bump_registry%get(key,self)
 
-! Create bump object
+! Create bump
 call create_bump(self, c_conf, nmga, nl0, nv, nts, lon, lat, area, vunit, imask, ens1_ne, ens1)
 
 end subroutine create_bump_c
@@ -243,6 +242,8 @@ do ildwv=1,bump%nam%nldwv
 end do
 if (config_element_exists(c_conf,"diag_rhflt")) bump%nam%diag_rhflt = config_get_real(c_conf,"diag_rhflt")
 if (config_element_exists(c_conf,"diag_interp")) bump%nam%diag_interp = config_get_string(c_conf,1024,"diag_interp")
+if (config_element_exists(c_conf,"field_io")) bump%nam%field_io = integer_to_logical(config_get_int(c_conf,"field_io"))
+if (config_element_exists(c_conf,"split_io")) bump%nam%split_io = integer_to_logical(config_get_int(c_conf,"split_io"))
 if (config_element_exists(c_conf,"grid_output")) bump%nam%grid_output = integer_to_logical(config_get_int(c_conf,"grid_output"))
 if (bump%nam%grid_output) then
    if (config_element_exists(c_conf,"grid_resol")) bump%nam%grid_resol = config_get_real(c_conf,"grid_resol")
@@ -273,6 +274,7 @@ subroutine delete_bump(self)
 implicit none
 type(bump_type), intent(inout) :: self
 
+! Deallocate BUMP
 call self%dealloc
 
 end subroutine delete_bump

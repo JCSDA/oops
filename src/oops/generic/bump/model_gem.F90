@@ -12,12 +12,11 @@ module model_gem
 
 use netcdf
 use tools_const, only: pi,req,deg2rad,rad2deg,ps
-use tools_display, only: msgerror
 use tools_kinds, only: kind_real
 use tools_missing, only: msr,isanynotmsr
-use tools_nc, only: ncerr,ncfloat
+use tools_nc, only: ncfloat
 use type_geom, only: geom_type
-use type_mpl, only: mpl
+use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 
 implicit none
@@ -31,11 +30,12 @@ contains
 ! Subroutine: model_gem_coord
 !> Purpose: get GEM coordinates
 !----------------------------------------------------------------------
-subroutine model_gem_coord(nam,geom)
+subroutine model_gem_coord(mpl,nam,geom)
 
 implicit none
 
 ! Passed variables
+type(mpl_type),intent(in) :: mpl      !< MPI data
 type(nam_type),intent(in) :: nam      !< Namelist
 type(geom_type),intent(inout) :: geom !< Geometry
 
@@ -46,14 +46,14 @@ real(kind=8),allocatable :: lon(:),lat(:),a(:),b(:)
 character(len=1024) :: subr = 'model_gem_coord'
 
 ! Open file and get dimensions
-call ncerr(subr,nf90_open(trim(nam%datadir)//'/grid.nc',nf90_share,ncid))
-call ncerr(subr,nf90_inq_dimid(ncid,'lon',nlon_id))
-call ncerr(subr,nf90_inq_dimid(ncid,'lat',nlat_id))
-call ncerr(subr,nf90_inquire_dimension(ncid,nlon_id,len=geom%nlon))
-call ncerr(subr,nf90_inquire_dimension(ncid,nlat_id,len=geom%nlat))
+call mpl%ncerr(subr,nf90_open(trim(nam%datadir)//'/grid.nc',nf90_share,ncid))
+call mpl%ncerr(subr,nf90_inq_dimid(ncid,'lon',nlon_id))
+call mpl%ncerr(subr,nf90_inq_dimid(ncid,'lat',nlat_id))
+call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nlon_id,len=geom%nlon))
+call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nlat_id,len=geom%nlat))
 geom%nmg = geom%nlon*geom%nlat
-call ncerr(subr,nf90_inq_dimid(ncid,'lev',nlev_id))
-call ncerr(subr,nf90_inquire_dimension(ncid,nlev_id,len=geom%nlev))
+call mpl%ncerr(subr,nf90_inq_dimid(ncid,'lev',nlev_id))
+call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nlev_id,len=geom%nlev))
 
 ! Allocation
 allocate(lon(geom%nlon))
@@ -62,22 +62,22 @@ allocate(a(geom%nlev))
 allocate(b(geom%nlev))
 
 ! Read data and close file
-call ncerr(subr,nf90_inq_varid(ncid,'lon',lon_id))
-call ncerr(subr,nf90_inq_varid(ncid,'lat',lat_id))
-call ncerr(subr,nf90_inq_varid(ncid,'ap',a_id))
-call ncerr(subr,nf90_inq_varid(ncid,'b',b_id))
-call ncerr(subr,nf90_get_var(ncid,lon_id,lon))
-call ncerr(subr,nf90_get_var(ncid,lat_id,lat))
-call ncerr(subr,nf90_get_var(ncid,a_id,a))
-call ncerr(subr,nf90_get_var(ncid,b_id,b))
-call ncerr(subr,nf90_close(ncid))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,'lon',lon_id))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,'lat',lat_id))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,'ap',a_id))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,'b',b_id))
+call mpl%ncerr(subr,nf90_get_var(ncid,lon_id,lon))
+call mpl%ncerr(subr,nf90_get_var(ncid,lat_id,lat))
+call mpl%ncerr(subr,nf90_get_var(ncid,a_id,a))
+call mpl%ncerr(subr,nf90_get_var(ncid,b_id,b))
+call mpl%ncerr(subr,nf90_close(ncid))
 
 ! Convert to radian
 lon = lon*real(deg2rad,kind=8)
 lat = lat*real(deg2rad,kind=8)
 
 ! Not redundant grid
-call geom%find_redundant
+call geom%find_redundant(mpl)
 
 ! Pack
 call geom%alloc
@@ -118,11 +118,12 @@ end subroutine model_gem_coord
 ! Subroutine: model_gem_read
 !> Purpose: read GEM field
 !----------------------------------------------------------------------
-subroutine model_gem_read(nam,geom,filename,fld)
+subroutine model_gem_read(mpl,nam,geom,filename,fld)
 
 implicit none
 
 ! Passed variables
+type(mpl_type),intent(in) :: mpl                              !< MPI data
 type(nam_type),intent(in) :: nam                              !< Namelist
 type(geom_type),intent(in) :: geom                            !< Geometry
 character(len=*),intent(in) :: filename                       !< File name
@@ -143,7 +144,7 @@ if (mpl%main) then
    allocate(fld_tmp(geom%nlon,geom%nlat,geom%nl0))
 
    ! Open file
-   call ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_nowrite,ncid))
+   call mpl%ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_nowrite,ncid))
 end if
 
 do iv=1,nam%nv
@@ -151,44 +152,44 @@ do iv=1,nam%nv
       ! 3d variable
 
       ! Get variable id
-      call ncerr(subr,nf90_inq_varid(ncid,trim(nam%varname(iv)),fld_id))
+      call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(nam%varname(iv)),fld_id))
 
       ! Check variable type and read data
-      call ncerr(subr,nf90_inquire_variable(ncid,fld_id,xtype=xt))
+      call mpl%ncerr(subr,nf90_inquire_variable(ncid,fld_id,xtype=xt))
       select case (xt)
       case (nf90_short)
-         call ncerr(subr,nf90_get_att(ncid,fld_id,'add_offset',add_offset))
-         call ncerr(subr,nf90_get_att(ncid,fld_id,'scale_factor',scale_factor))
+         call mpl%ncerr(subr,nf90_get_att(ncid,fld_id,'add_offset',add_offset))
+         call mpl%ncerr(subr,nf90_get_att(ncid,fld_id,'scale_factor',scale_factor))
          do il0=1,nam%nl
-            call ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp_int,(/1,1,nam%levs(il0)/),(/geom%nlon,geom%nlat,1/)))
+            call mpl%ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp_int,(/1,1,nam%levs(il0)/),(/geom%nlon,geom%nlat,1/)))
             fld_tmp(:,:,il0) = add_offset+scale_factor*real(fld_tmp_int,kind=8)
          end do
       case (nf90_double)
          do il0=1,nam%nl
-            call ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp(:,:,il0),(/1,1,nam%levs(il0)/),(/geom%nlon,geom%nlat,1/)))
+            call mpl%ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp(:,:,il0),(/1,1,nam%levs(il0)/),(/geom%nlon,geom%nlat,1/)))
          end do
       case default
-         call msgerror('wrong variable type')
+         call mpl%abort('wrong variable type')
       end select
 
       if (trim(nam%addvar2d(iv))/='') then
          ! 2d variable
 
          ! Get id
-         call ncerr(subr,nf90_inq_varid(ncid,trim(nam%addvar2d(iv)),fld_id))
+         call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(nam%addvar2d(iv)),fld_id))
 
          ! Check variable type and read data
-         call ncerr(subr,nf90_inquire_variable(ncid,fld_id,xtype=xt))
+         call mpl%ncerr(subr,nf90_inquire_variable(ncid,fld_id,xtype=xt))
          select case (xt)
          case (nf90_short)
-            call ncerr(subr,nf90_get_att(ncid,fld_id,'add_offset',add_offset))
-            call ncerr(subr,nf90_get_att(ncid,fld_id,'scale_factor',scale_factor))
-            call ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp_int))
+            call mpl%ncerr(subr,nf90_get_att(ncid,fld_id,'add_offset',add_offset))
+            call mpl%ncerr(subr,nf90_get_att(ncid,fld_id,'scale_factor',scale_factor))
+            call mpl%ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp_int))
             fld_tmp(:,:,geom%nl0) = add_offset+scale_factor*real(fld_tmp_int,kind=8)
          case (nf90_double)
-            call ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp(:,:,geom%nl0)))
+            call mpl%ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp(:,:,geom%nl0)))
          case default
-            call msgerror('wrong variable type')
+            call mpl%abort('wrong variable type')
          end select
       end if
    end if
@@ -208,7 +209,7 @@ end do
 
 if (mpl%main) then
    ! Close file
-   call ncerr(subr,nf90_close(ncid))
+   call mpl%ncerr(subr,nf90_close(ncid))
 
    ! Release memory
    deallocate(fld_tmp_int)

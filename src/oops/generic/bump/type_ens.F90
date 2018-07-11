@@ -11,11 +11,10 @@
 module type_ens
 
 use model_interface, only: model_read
-use tools_display, only: msgwarning,msgerror
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr
 use type_geom, only: geom_type
-use type_mpl, only: mpl
+use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 
 implicit none
@@ -45,7 +44,7 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: ens_alloc
-!> Purpose: ensemble allocation
+!> Purpose: ensemble data allocation
 !----------------------------------------------------------------------
 subroutine ens_alloc(ens,nam,geom,ne,nsub)
 
@@ -70,7 +69,7 @@ end subroutine ens_alloc
 
 !----------------------------------------------------------------------
 ! Subroutine: ens_dealloc
-!> Purpose: ensemble deallocation
+!> Purpose: ensemble data deallocation
 !----------------------------------------------------------------------
 subroutine ens_dealloc(ens)
 
@@ -86,14 +85,15 @@ end subroutine ens_dealloc
 
 !----------------------------------------------------------------------
 ! Subroutine: ens_load
-!> Purpose: load ensemble
+!> Purpose: load ensemble data
 !----------------------------------------------------------------------
-subroutine ens_load(ens,nam,geom,filename)
+subroutine ens_load(ens,mpl,nam,geom,filename)
 
 implicit none
 
 ! Passed variables
 class(ens_type),intent(inout) :: ens    !< Ensemble
+type(mpl_type),intent(in) :: mpl        !< MPI data
 type(nam_type),intent(in) :: nam        !< Namelist
 type(geom_type),intent(in) :: geom      !< Geometry
 character(len=*),intent(in) :: filename !< Filename ('ens1' or 'ens2')
@@ -115,7 +115,7 @@ case default
    call msi(ne)
    call msi(ne_offset)
    call msi(nsub)
-   call msgerror('wrong filename in ens_load')
+   call mpl%abort('wrong filename in ens_load')
 end select
 
 ! Allocation
@@ -145,7 +145,7 @@ do isub=1,ens%nsub
       else
          jsub = isub
       end if
-      call model_read(nam,geom,filename,ne_offset+ie,jsub,ens%fld(:,:,:,:,ietot))
+      call model_read(mpl,nam,geom,filename,ne_offset+ie,jsub,ens%fld(:,:,:,:,ietot))
 
       ! Update
       ietot = ietot+1
@@ -158,7 +158,7 @@ end subroutine ens_load
 
 !----------------------------------------------------------------------
 ! Subroutine: ens_from
-!> Purpose: copy ensemble into ensemble object
+!> Purpose: copy ensemble array into ensemble data
 !----------------------------------------------------------------------
 subroutine ens_from(ens,nam,geom,ne,ens_mga)
 
@@ -192,7 +192,7 @@ end subroutine ens_from
 
 !----------------------------------------------------------------------
 ! Subroutine: ens_from_oops
-!> Purpose: copy OOPS ensemble into ensemble object
+!> Purpose: copy OOPS ensemble into ensemble data
 !----------------------------------------------------------------------
 subroutine ens_from_oops(ens,nam,geom,ne,ens_mga)
 
@@ -240,14 +240,15 @@ end subroutine ens_from_oops
 
 !----------------------------------------------------------------------
 ! Subroutine: ens_from_nemovar
-!> Purpose: copy 2d NEMOVAR ensemble into ensemble object
+!> Purpose: copy 2d NEMOVAR ensemble into ensemble data
 !----------------------------------------------------------------------
-subroutine ens_from_nemovar(ens,nam,geom,nx,ny,nens,ncyc,ens_2d,ens_3d)
+subroutine ens_from_nemovar(ens,mpl,nam,geom,nx,ny,nens,ncyc,ens_2d,ens_3d)
 
 implicit none
 
 ! Passed variables
 class(ens_type),intent(inout) :: ens                                    !< Ensemble
+type(mpl_type),intent(in) :: mpl                                        !< MPI data
 type(nam_type),intent(in) :: nam                                        !< Namelist
 type(geom_type),intent(in) :: geom                                      !< Geometry
 integer,intent(in) :: nx                                                !< X-axis size
@@ -282,7 +283,7 @@ do iens=1,nens
             ens%fld(:,il0,iv,its,ie) = tmp(geom%c0a_to_mga)
          end do
       else
-         call msgerror('ens_2d or ens_3d should be provided in ens_from_nemovar')
+         call mpl%abort('ens_2d or ens_3d should be provided in ens_from_nemovar')
       end if
 
       ! Update

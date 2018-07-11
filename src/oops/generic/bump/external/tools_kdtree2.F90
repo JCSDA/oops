@@ -117,8 +117,6 @@ module tools_kdtree2
       integer, pointer      :: ind(:)     ! temp pointer to indexes
   end type tree_search_record
 
-  real(kind_real),parameter :: rth = 1.0e-8 !< Reproducibility threshold
-
   type(tree_search_record), save, target :: sr   ! A GLOBAL VARIABLE for search
 
 contains
@@ -631,9 +629,6 @@ contains
     ! ..
     ! Quadratic norm
     res = sum( (iv-qv)**2 )
-
-    ! Truncation for reproducibility
-!    res = real(int(res/rth),kind_real)*rth
   end function square_distance
 
   function sdistance(iv, qv) result (res)

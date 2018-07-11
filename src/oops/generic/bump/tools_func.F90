@@ -11,9 +11,9 @@
 module tools_func
 
 use tools_const, only: pi
-use tools_display, only: msgerror
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsr
+use type_mpl, only: mpl_type
 
 implicit none
 
@@ -22,7 +22,7 @@ integer,parameter :: M = 0                            !< Number of implicit itte
 real(kind_real),parameter :: eta = 1.0e-9_kind_real   !< Small parameter for the Cholesky decomposition
 
 private
-public :: lonlatmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,add,divide,fac,fit_diag,gc99,fit_lct,cholesky
+public :: lonlatmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,add,divide,fit_diag,gc99,fit_lct,cholesky
 
 contains
 
@@ -225,37 +225,15 @@ end if
 end subroutine divide
 
 !----------------------------------------------------------------------
-! Function: fac
-!> Purpose: factorial
-!----------------------------------------------------------------------
-integer function fac(n)
-
-implicit none
-
-! Passed variables
-integer,intent(in) :: n !< Argument
-
-! Local variables
-integer :: j
-
-if (n<0) call msgerror('factorial requires a non-negative argument')
-
-fac = 1
-do j=2,n
-   fac = fac*j
-end do
-
-end function fac
-
-!----------------------------------------------------------------------
 ! Subroutine: fit_diag
 !> Purpose: diagnostic fit
 !----------------------------------------------------------------------
-subroutine fit_diag(nc3,nl0r,nl0,l0rl0_to_l0,disth,distvr,rh,rv,fit)
+subroutine fit_diag(mpl,nc3,nl0r,nl0,l0rl0_to_l0,disth,distvr,rh,rv,fit)
 
 implicit none
 
 ! Passed variables
+type(mpl_type),intent(in) :: mpl                 !< MPI data
 integer,intent(in) :: nc3                        !< Number of classes
 integer,intent(in) :: nl0r                       !< Reduced number of levels
 integer,intent(in) :: nl0                        !< Number of levels
@@ -366,7 +344,7 @@ do il0=1,nl0
       do jc3=1,nc3
          ! Gaspari-Cohn (1999) function
          distnorm = dist(jc3,jl0r)
-         if (distnorm<1.0) fit(jc3,jl0r,il0) = gc99(distnorm)
+         if (distnorm<1.0) fit(jc3,jl0r,il0) = gc99(mpl,distnorm)
       end do
    end do
 
@@ -383,16 +361,17 @@ end subroutine fit_diag
 ! Function: gc99
 !> Purpose: Gaspari and Cohn (1999) function, with the support radius as a parameter
 !----------------------------------------------------------------------
-function gc99(distnorm)
+function gc99(mpl,distnorm)
 
 ! Passed variables
+type(mpl_type),intent(in) :: mpl       !< MPI data
 real(kind_real),intent(in) :: distnorm !< Normalized distance
 
 ! Returned variable
 real(kind_real) :: gc99
 
 ! Distance check bound
-if (distnorm<0.0) call msgerror('negative normalized distance')
+if (distnorm<0.0) call mpl%abort('negative normalized distance')
 
 if (.true.) then
    ! Gaspari and Cohn (1999) function
@@ -420,11 +399,12 @@ end function gc99
 ! Subroutine: fit_lct
 !> Purpose: LCT fit
 !----------------------------------------------------------------------
-subroutine fit_lct(nc,nl0,dx,dy,dz,dmask,nscales,ncomp,D,coef,fit)
+subroutine fit_lct(mpl,nc,nl0,dx,dy,dz,dmask,nscales,ncomp,D,coef,fit)
 
 implicit none
 
 ! Passed variables
+type(mpl_type),intent(in) :: mpl            !< MPI data
 integer,intent(in) :: nc                    !< Number of classes
 integer,intent(in) :: nl0                   !< Number of levels
 real(kind_real),intent(in) :: dx(nc,nl0)    !< Zonal separation
@@ -489,7 +469,7 @@ do iscales=1,nscales
                if (rsq<40.0) fit(jc3,jl0) = fit(jc3,jl0)+Hcoef(iscales)*exp(-0.5*rsq)
             else
                ! Matern function
-               fit(jc3,jl0) = fit(jc3,jl0)+Hcoef(iscales)*matern(M,sqrt(rsq))
+               fit(jc3,jl0) = fit(jc3,jl0)+Hcoef(iscales)*matern(mpl,M,sqrt(rsq))
             end if
          end if
       end do
@@ -506,21 +486,22 @@ end subroutine fit_lct
 ! Function: matern
 !> Purpose: compute the normalized diffusion function from eq. (55) of Mirouze and Weaver (2013), for the 3d case (d = 3)
 !----------------------------------------------------------------------
-real(kind_real) function matern(M,x)
+real(kind_real) function matern(mpl,M,x)
 
 implicit none
 
 ! Passed variables
-integer,intent(in) :: M         !< Matern function order
-real(kind_real),intent(in) :: x !< Argument
+type(mpl_type),intent(in) :: mpl !< MPI data
+integer,intent(in) :: M          !< Matern function order
+real(kind_real),intent(in) :: x  !< Argument
 
 ! Local variables
 integer :: j
 real(kind_real) :: xtmp,beta
 
 ! Check
-if (M<2) call msgerror('M should be larger than 2')
-if (mod(M,2)>0) call msgerror('M should be even')
+if (M<2) call mpl%abort('M should be larger than 2')
+if (mod(M,2)>0) call mpl%abort('M should be even')
 
 ! Initialization
 matern = 0.0
@@ -548,11 +529,12 @@ end function matern
 !> Purpose: compute cholesky decomposition
 !> Author: Original FORTRAN77 version by Michael Healy, modifications by AJ Miller, FORTRAN90 version by John Burkardt.
 !----------------------------------------------------------------------
-subroutine cholesky(n,nn,a,u)
+subroutine cholesky(mpl,n,nn,a,u)
 
 implicit none
 
 ! Passed variables
+type(mpl_type),intent(in) :: mpl     !< MPI data
 integer,intent(in) :: n              !< Matrix rank
 integer,intent(in) :: nn             !< Half-matrix size (n*(n-1)/2)
 real(kind_real),intent(in) :: a(nn)  !< Matrix
@@ -567,7 +549,7 @@ ii = 0
 j = 1
 k = 0
 if (nn/=(n*(n+1))/2) then
-   call msgerror('wrong size in Cholesky decomposition')
+   call mpl%abort('wrong size in Cholesky decomposition')
 end if
 
 ! Factorize column by column, ICOL = column number
@@ -593,7 +575,7 @@ do icol=1,n
       if (abs(u(l))>0.0) then
          u(k) = w/u(l)
       else
-         if (abs(x*a(k))<w**2) call msgerror('A is not positive semi-definite')
+         if (abs(x*a(k))<w**2) call mpl%abort('A is not positive semi-definite')
       end if
    end do
 
@@ -601,7 +583,7 @@ do icol=1,n
    if (abs(w)<=abs(eta*a(k))) then
       u(k) = 0.0
    else
-      if (w<0.0) call msgerror('A is not positive semi-definite')
+      if (w<0.0) call mpl%abort('A is not positive semi-definite')
    end if
    j = j+icol
 end do

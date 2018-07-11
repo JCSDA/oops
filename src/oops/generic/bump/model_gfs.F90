@@ -12,12 +12,11 @@ module model_gfs
 
 use netcdf
 use tools_const, only: pi,deg2rad,rad2deg,ps
-use tools_display, only: msgerror
 use tools_kinds,only: kind_real
 use tools_missing, only: msr,isanynotmsr
-use tools_nc, only: ncerr,ncfloat
+use tools_nc, only: ncfloat
 use type_geom, only: geom_type
-use type_mpl, only: mpl
+use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 
 implicit none
@@ -31,11 +30,12 @@ contains
 ! Subroutine: model_gfs_coord
 !> Purpose: get GFS coordinates
 !----------------------------------------------------------------------
-subroutine model_gfs_coord(nam,geom)
+subroutine model_gfs_coord(mpl,nam,geom)
 
 implicit none
 
 ! Passed variables
+type(mpl_type),intent(in) :: mpl      !< MPI data
 type(nam_type),intent(in) :: nam      !< Namelist
 type(geom_type),intent(inout) :: geom !< Geometry
 
@@ -46,14 +46,14 @@ real(kind=4),allocatable :: lon(:),lat(:),a(:),b(:)
 character(len=1024) :: subr = 'model_gfs_coord'
 
 ! Open file and get dimensions
-call ncerr(subr,nf90_open(trim(nam%datadir)//'/grid.nc',nf90_share,ncid))
-call ncerr(subr,nf90_inq_dimid(ncid,'longitude',nlon_id))
-call ncerr(subr,nf90_inq_dimid(ncid,'latitude',nlat_id))
-call ncerr(subr,nf90_inquire_dimension(ncid,nlon_id,len=geom%nlon))
-call ncerr(subr,nf90_inquire_dimension(ncid,nlat_id,len=geom%nlat))
+call mpl%ncerr(subr,nf90_open(trim(nam%datadir)//'/grid.nc',nf90_share,ncid))
+call mpl%ncerr(subr,nf90_inq_dimid(ncid,'longitude',nlon_id))
+call mpl%ncerr(subr,nf90_inq_dimid(ncid,'latitude',nlat_id))
+call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nlon_id,len=geom%nlon))
+call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nlat_id,len=geom%nlat))
 geom%nmg = geom%nlon*geom%nlat
-call ncerr(subr,nf90_inq_dimid(ncid,'level',nlev_id))
-call ncerr(subr,nf90_inquire_dimension(ncid,nlev_id,len=geom%nlev))
+call mpl%ncerr(subr,nf90_inq_dimid(ncid,'level',nlev_id))
+call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nlev_id,len=geom%nlev))
 
 ! Allocation
 allocate(lon(geom%nlon))
@@ -62,22 +62,22 @@ allocate(a(geom%nlev+1))
 allocate(b(geom%nlev+1))
 
 ! Read data and close file
-call ncerr(subr,nf90_inq_varid(ncid,'longitude',lon_id))
-call ncerr(subr,nf90_inq_varid(ncid,'latitude',lat_id))
-call ncerr(subr,nf90_inq_varid(ncid,'ak',a_id))
-call ncerr(subr,nf90_inq_varid(ncid,'bk',b_id))
-call ncerr(subr,nf90_get_var(ncid,lon_id,lon))
-call ncerr(subr,nf90_get_var(ncid,lat_id,lat))
-call ncerr(subr,nf90_get_var(ncid,a_id,a))
-call ncerr(subr,nf90_get_var(ncid,b_id,b))
-call ncerr(subr,nf90_close(ncid))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,'longitude',lon_id))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,'latitude',lat_id))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,'ak',a_id))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,'bk',b_id))
+call mpl%ncerr(subr,nf90_get_var(ncid,lon_id,lon))
+call mpl%ncerr(subr,nf90_get_var(ncid,lat_id,lat))
+call mpl%ncerr(subr,nf90_get_var(ncid,a_id,a))
+call mpl%ncerr(subr,nf90_get_var(ncid,b_id,b))
+call mpl%ncerr(subr,nf90_close(ncid))
 
 ! Convert to radian
 lon = lon*real(deg2rad,kind=4)
 lat = lat*real(deg2rad,kind=4)
 
 ! Not redundant grid
-call geom%find_redundant
+call geom%find_redundant(mpl)
 
 ! Pack
 call geom%alloc
@@ -119,11 +119,12 @@ end subroutine model_gfs_coord
 ! Subroutine: model_gfs_read
 !> Purpose: read GFS field
 !----------------------------------------------------------------------
-subroutine model_gfs_read(nam,geom,filename,fld)
+subroutine model_gfs_read(mpl,nam,geom,filename,fld)
 
 implicit none
 
 ! Passed variables
+type(mpl_type),intent(in) :: mpl                              !< MPI data
 type(nam_type),intent(in) :: nam                              !< Namelist
 type(geom_type),intent(in) :: geom                            !< Geometry
 character(len=*),intent(in) :: filename                       !< File name
@@ -141,7 +142,7 @@ if (mpl%main) then
    allocate(fld_tmp(geom%nlon,geom%nlat,geom%nl0))
 
    ! Open file
-   call ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_nowrite,ncid))
+   call mpl%ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_nowrite,ncid))
 end if
 
 do iv=1,nam%nv
@@ -149,21 +150,21 @@ do iv=1,nam%nv
       ! 3d variable
 
       ! Get variable id
-      call ncerr(subr,nf90_inq_varid(ncid,trim(nam%varname(iv)),fld_id))
+      call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(nam%varname(iv)),fld_id))
 
       ! Read data
       do il0=1,nam%nl
-         call ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp(:,:,il0),(/1,1,nam%levs(il0)/),(/geom%nlon,geom%nlat,1/)))
+         call mpl%ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp(:,:,il0),(/1,1,nam%levs(il0)/),(/geom%nlon,geom%nlat,1/)))
       end do
 
       if (trim(nam%addvar2d(iv))/='') then
          ! 2d variable
 
          ! Get id
-         call ncerr(subr,nf90_inq_varid(ncid,trim(nam%addvar2d(iv)),fld_id))
+         call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(nam%addvar2d(iv)),fld_id))
 
          ! Read data
-         call ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp(:,:,geom%nl0)))
+         call mpl%ncerr(subr,nf90_get_var(ncid,fld_id,fld_tmp(:,:,geom%nl0)))
       end if
    end if
 
@@ -182,7 +183,7 @@ end do
 
 if (mpl%main) then
    ! Close file
-   call ncerr(subr,nf90_close(ncid))
+   call mpl%ncerr(subr,nf90_close(ncid))
 
    ! Release memory
    deallocate(fld_tmp)

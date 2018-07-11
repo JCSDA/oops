@@ -10,7 +10,6 @@
 !----------------------------------------------------------------------
 module tools_icos
 
-use tools_display, only: msgerror
 use tools_kinds, only: kind_real
 use tools_stripack, only: scoord
 

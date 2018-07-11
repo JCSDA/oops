@@ -139,7 +139,6 @@ oops/generic/bump/model_mpas.F90
 oops/generic/bump/model_nemo.F90
 oops/generic/bump/model_wrf.F90
 oops/generic/bump/tools_const.F90
-oops/generic/bump/tools_display.F90
 oops/generic/bump/tools_fit.F90
 oops/generic/bump/tools_func.F90
 oops/generic/bump/tools_icos.F90
