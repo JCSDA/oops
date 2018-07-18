@@ -42,9 +42,10 @@ contains
    procedure :: read => cmat_read
    procedure :: write => cmat_write
    procedure :: run_hdiag => cmat_run_hdiag
-   procedure :: cmat_from_fields
    procedure :: cmat_from_diag
-   generic :: from => cmat_from_fields,cmat_from_diag
+   procedure :: cmat_from_fields
+   procedure :: cmat_from_nam
+   generic :: from => cmat_from_diag,cmat_from_fields,cmat_from_nam
 end type cmat_type
 
 private
@@ -481,87 +482,6 @@ end if
 end subroutine cmat_run_hdiag
 
 !----------------------------------------------------------------------
-! Subroutine: cmat_from_fields
-!> Purpose: copy radii into C matrix data
-!----------------------------------------------------------------------
-subroutine cmat_from_fields(cmat,mpl,nam,geom,bpar,rh0,rv0)
-
-implicit none
-
-! Passed variables
-class(cmat_type),intent(inout) :: cmat                               !< C matrix data
-type(mpl_type),intent(in) :: mpl                                     !< MPI data
-type(nam_type),intent(in) :: nam                                     !< Namelist
-type(geom_type),intent(in) :: geom                                   !< Geometry
-type(bpar_type),intent(in) :: bpar                                   !< Block parameters
-real(kind_real),intent(in) :: rh0(geom%nmga,geom%nl0,nam%nv,nam%nts) !< Horizontal support radius on model grid, halo A  (in m)
-real(kind_real),intent(in) :: rv0(geom%nmga,geom%nl0,nam%nv,nam%nts) !< Vertical support radius on model grid, halo A
-
-! Local variables
-integer :: ib,iv,jv,its,jts,il0,ic0
-
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Copy radii into C matrix'
-call flush(mpl%unit)
-
-! Allocation
-call cmat%alloc(nam,geom,bpar,'cmat')
-
-! Convolution parameters
-do ib=1,bpar%nb+1
-   if (bpar%B_block(ib)) then
-      if (bpar%nicas_block(ib)) then
-         ! Indices
-         iv = bpar%b_to_v1(ib)
-         jv = bpar%b_to_v2(ib)
-         its = bpar%b_to_ts1(ib)
-         jts = bpar%b_to_ts2(ib)
-         if ((iv/=jv).or.(its/=jts)) call mpl%abort('only diagonal blocks for cmat_from_radii')
-
-         ! Copy support radii
-         do il0=1,geom%nl0
-            cmat%blk(ib)%rh0(:,il0) = rh0(geom%c0a_to_mga,il0,iv,its)/req
-            cmat%blk(ib)%rv0(:,il0) = rv0(geom%c0a_to_mga,il0,iv,its)
-         end do
-
-         ! Set coefficients
-         cmat%blk(ib)%coef_ens = 1.0
-         cmat%blk(ib)%coef_sta = 0.0
-         cmat%blk(ib)%wgt = 1.0
-      end if
-   end if
-end do
-
-! Sampling parameters
-if (trim(nam%strategy)=='specific_multivariate') then
-   ! Initialization
-   cmat%blk(ib)%rh0s = huge(1.0)
-   cmat%blk(ib)%rv0s = huge(1.0)
-
-   ! Get minimum
-   do ib=1,bpar%nb+1
-      if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
-         do il0=1,geom%nl0
-            do ic0=1,geom%nc0
-               cmat%blk(ib)%rh0s(ic0,il0) = min(cmat%blk(ib)%rh0s(ic0,il0),cmat%blk(ib)%rh0(ic0,il0))
-               cmat%blk(ib)%rv0s(ic0,il0) = min(cmat%blk(ib)%rv0s(ic0,il0),cmat%blk(ib)%rv0(ic0,il0))
-            end do
-         end do
-      end if
-   end do
-else
-   ! Copy
-   do ib=1,bpar%nb+1
-      if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
-         cmat%blk(ib)%rh0s = cmat%blk(ib)%rh0
-         cmat%blk(ib)%rv0s = cmat%blk(ib)%rv0
-      end if
-   end do
-end if
-
-end subroutine cmat_from_fields
-
-!----------------------------------------------------------------------
 ! Subroutine: cmat_from_diag
 !> Purpose: transform diagnostics into C matrix data
 !----------------------------------------------------------------------
@@ -690,5 +610,134 @@ if (nam%displ_diag) then
 end if
 
 end subroutine cmat_from_diag
+
+!----------------------------------------------------------------------
+! Subroutine: cmat_from_fields
+!> Purpose: copy radii into C matrix data
+!----------------------------------------------------------------------
+subroutine cmat_from_fields(cmat,mpl,nam,geom,bpar,rh0,rv0)
+
+implicit none
+
+! Passed variables
+class(cmat_type),intent(inout) :: cmat                               !< C matrix data
+type(mpl_type),intent(in) :: mpl                                     !< MPI data
+type(nam_type),intent(in) :: nam                                     !< Namelist
+type(geom_type),intent(in) :: geom                                   !< Geometry
+type(bpar_type),intent(in) :: bpar                                   !< Block parameters
+real(kind_real),intent(in) :: rh0(geom%nmga,geom%nl0,nam%nv,nam%nts) !< Horizontal support radius on model grid, halo A  (in m)
+real(kind_real),intent(in) :: rv0(geom%nmga,geom%nl0,nam%nv,nam%nts) !< Vertical support radius on model grid, halo A
+
+! Local variables
+integer :: ib,iv,jv,its,jts,il0,ic0
+
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a)') '--- Copy radii fields into C matrix'
+call flush(mpl%unit)
+
+! Allocation
+call cmat%alloc(nam,geom,bpar,'cmat')
+
+! Convolution parameters
+do ib=1,bpar%nb+1
+   if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
+      ! Indices
+      iv = bpar%b_to_v1(ib)
+      jv = bpar%b_to_v2(ib)
+      its = bpar%b_to_ts1(ib)
+      jts = bpar%b_to_ts2(ib)
+      if ((iv/=jv).or.(its/=jts)) call mpl%abort('only diagonal blocks for cmat_from_radii')
+
+      ! Copy support radii
+      do il0=1,geom%nl0
+         cmat%blk(ib)%rh0(:,il0) = rh0(geom%c0a_to_mga,il0,iv,its)/req
+         cmat%blk(ib)%rv0(:,il0) = rv0(geom%c0a_to_mga,il0,iv,its)
+      end do
+
+      ! Set coefficients
+      cmat%blk(ib)%coef_ens = 1.0
+      cmat%blk(ib)%coef_sta = 0.0
+      cmat%blk(ib)%wgt = 1.0
+   end if
+end do
+
+! Sampling parameters
+if (trim(nam%strategy)=='specific_multivariate') then
+   ! Initialization
+   cmat%blk(ib)%rh0s = huge(1.0)
+   cmat%blk(ib)%rv0s = huge(1.0)
+
+   ! Get minimum
+   do ib=1,bpar%nb+1
+      if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
+         do il0=1,geom%nl0
+            do ic0=1,geom%nc0
+               cmat%blk(ib)%rh0s(ic0,il0) = min(cmat%blk(ib)%rh0s(ic0,il0),cmat%blk(ib)%rh0(ic0,il0))
+               cmat%blk(ib)%rv0s(ic0,il0) = min(cmat%blk(ib)%rv0s(ic0,il0),cmat%blk(ib)%rv0(ic0,il0))
+            end do
+         end do
+      end if
+   end do
+else
+   ! Copy
+   do ib=1,bpar%nb+1
+      if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
+         cmat%blk(ib)%rh0s = cmat%blk(ib)%rh0
+         cmat%blk(ib)%rv0s = cmat%blk(ib)%rv0
+      end if
+   end do
+end if
+
+end subroutine cmat_from_fields
+
+!----------------------------------------------------------------------
+! Subroutine: cmat_from_nam
+!> Purpose: copy radii into C matrix data
+!----------------------------------------------------------------------
+subroutine cmat_from_nam(cmat,mpl,nam,geom,bpar)
+
+implicit none
+
+! Passed variables
+class(cmat_type),intent(inout) :: cmat                               !< C matrix data
+type(mpl_type),intent(in) :: mpl                                     !< MPI data
+type(nam_type),intent(in) :: nam                                     !< Namelist
+type(geom_type),intent(in) :: geom                                   !< Geometry
+type(bpar_type),intent(in) :: bpar                                   !< Block parameters
+
+! Local variables
+integer :: ib,iv,jv,its,jts
+
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a)') '--- Copy namemlist radii into C matrix'
+call flush(mpl%unit)
+
+! Allocation
+call cmat%alloc(nam,geom,bpar,'cmat')
+
+! Convolution parameters
+do ib=1,bpar%nb+1
+   if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
+      ! Indices
+      iv = bpar%b_to_v1(ib)
+      jv = bpar%b_to_v2(ib)
+      its = bpar%b_to_ts1(ib)
+      jts = bpar%b_to_ts2(ib)
+      if ((iv/=jv).or.(its/=jts)) call mpl%abort('only diagonal blocks for cmat_from_radii')
+
+      ! Copy support radii
+      cmat%blk(ib)%rh0 = nam%rh
+      cmat%blk(ib)%rh0s = nam%rh
+      cmat%blk(ib)%rv0 = nam%rv
+      cmat%blk(ib)%rv0s = nam%rv
+
+      ! Set coefficients
+      cmat%blk(ib)%coef_ens = 1.0
+      cmat%blk(ib)%coef_sta = 0.0
+      cmat%blk(ib)%wgt = 1.0
+   end if
+end do
+
+end subroutine cmat_from_nam
 
 end module type_cmat

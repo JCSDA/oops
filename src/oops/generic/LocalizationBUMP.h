@@ -106,12 +106,7 @@ LocalizationBUMP<MODEL>::LocalizationBUMP(const Geometry_ & resol,
       ens1.insert(ens1.end(), tmp.begin(), tmp.end());
     }
   } else {
-    ens1_ne = 4;
-    for (int ie = 0; ie < ens1_ne; ++ie) {
-      std::vector<double> tmp(nmga*nl0*nv*nts);
-      std::fill(tmp.begin(), tmp.end(), -999.0);
-      ens1.insert(ens1.end(), tmp.begin(), tmp.end());
-    }
+    ens1_ne = 0;
   }
   create_bump_f90(keyBUMP_, &fconf, nmga, nl0, nv, nts, &lon[0], &lat[0], &area[0],
                   &vunit[0], &imask[0], ens1_ne, &ens1[0]);

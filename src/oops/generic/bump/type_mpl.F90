@@ -1204,10 +1204,10 @@ subroutine mpl_allgather_integer(mpl,ns,sbuf,rbuf)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                     !< MPI data
-integer,intent(in) :: ns                   !< Sent buffer size
-integer,intent(in) :: sbuf(ns)             !< Sent buffer
-integer,intent(out) :: rbuf(mpl%myproc*ns) !< Received buffer
+class(mpl_type) :: mpl                    !< MPI data
+integer,intent(in) :: ns                  !< Sent buffer size
+integer,intent(in) :: sbuf(ns)            !< Sent buffer
+integer,intent(out) :: rbuf(mpl%nproc*ns) !< Received buffer
 
 ! Local variable
 integer :: info
@@ -1229,10 +1229,10 @@ subroutine mpl_allgather_real(mpl,ns,sbuf,rbuf)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                             !< MPI data
-integer,intent(in) :: ns                           !< Sent buffer size
-real(kind_real),intent(in) :: sbuf(ns)             !< Sent buffer
-real(kind_real),intent(out) :: rbuf(mpl%myproc*ns) !< Received buffer
+class(mpl_type) :: mpl                            !< MPI data
+integer,intent(in) :: ns                          !< Sent buffer size
+real(kind_real),intent(in) :: sbuf(ns)            !< Sent buffer
+real(kind_real),intent(out) :: rbuf(mpl%nproc*ns) !< Received buffer
 
 ! Local variable
 integer :: info
@@ -1254,10 +1254,10 @@ subroutine mpl_allgather_logical(mpl,ns,sbuf,rbuf)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                     !< MPI data
-integer,intent(in) :: ns                   !< Sent buffer size
-logical,intent(in) :: sbuf(ns)             !< Sent buffer
-logical,intent(out) :: rbuf(mpl%myproc*ns) !< Received buffer
+class(mpl_type) :: mpl                    !< MPI data
+integer,intent(in) :: ns                  !< Sent buffer size
+logical,intent(in) :: sbuf(ns)            !< Sent buffer
+logical,intent(out) :: rbuf(mpl%nproc*ns) !< Received buffer
 
 ! Local variable
 integer :: info

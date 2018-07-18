@@ -179,7 +179,7 @@ integer :: ncid,nc0a_id,nc0_id,nl0_id,fld_id,lon_id,lat_id
 real(kind_real) :: fld_c0a(geom%nc0a,geom%nl0)
 real(kind_real) :: fld_c0(geom%nc0,geom%nl0)
 character(len=1024) :: filename_proc
-character(len=1024) :: subr = 'fld_write'
+character(len=1024) :: subr = 'io_fld_write'
 
 if (nam%field_io) then
    ! Apply mask
