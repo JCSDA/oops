@@ -165,9 +165,10 @@ template <typename MODEL> void testStateInterpolation() {
   const Locations_ locs(confloc);
 
   // Extract the user-defined list of variables to interpolate,
-  // also from the "StateGenerate" section of the config file, and
+  // from the "StateTest.InterpTest" section of the config file, and
   // use this to define a Variables object
-  const oops::Variables vars(confgen);
+  const eckit::LocalConfiguration confvar(Test_::test(), "InterpTest");
+  const oops::Variables vars(confvar);
 
   // Now create a GeoVaLs object from locs and vars
   GeoVaLs_ gval(locs, vars);
