@@ -35,7 +35,10 @@
        "random_seed": "560921"
     },
     "Variables": {
-      "variables": ["x"]
+	"variables": ["x"]
+    },
+    "InterpTest": {
+	"variables": ["x","q","u","v"]
     },
     "norm-file": "15.010355026",
     "norm-gen": "4.6713973501015831",
