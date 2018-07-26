@@ -28,8 +28,9 @@ use type_nam, only: nam_type
 
 implicit none
 
-integer,parameter :: nsc = 50                      !< Scaling optimization parameter
-logical :: lprt = .false.                          !< Optimization print
+integer,parameter :: nsc = 50   !< Number of iterations for the scaling optimization
+integer,parameter :: nvnle = 10 !< Number of iterations for the vertical normalized Laplacian envelope
+logical :: lprt = .false.       !< Optimization print
 
 ! Diagnostic block derived type
 type diag_blk_type
@@ -44,6 +45,8 @@ type diag_blk_type
    real(kind_real),allocatable :: fit(:,:,:)      !< Fit
    real(kind_real),allocatable :: fit_rh(:)       !< Fit support radius
    real(kind_real),allocatable :: fit_rv(:)       !< Fit support radius
+   real(kind_real),allocatable :: fit_vnle(:)     !< Fit vertical normalized Laplacian envelope
+   real(kind_real),allocatable :: distvr(:,:)     !< Reduced vertical distance
 contains
    procedure :: alloc => diag_blk_alloc
    procedure :: dealloc => diag_blk_dealloc
@@ -97,11 +100,15 @@ if (trim(nam%minim_algo)/='none') then
    allocate(diag_blk%fit(nam%nc3,bpar%nl0r(ib),geom%nl0))
    allocate(diag_blk%fit_rh(geom%nl0))
    allocate(diag_blk%fit_rv(geom%nl0))
+   allocate(diag_blk%fit_vnle(geom%nl0))
+   allocate(diag_blk%distvr(nam%nl0r,geom%nl0))
 
    ! Initialization
    call msr(diag_blk%fit)
    call msr(diag_blk%fit_rh)
    call msr(diag_blk%fit_rv)
+   call msr(diag_blk%fit_vnle)
+   call msr(diag_blk%distvr)
 end if
 
 end subroutine diag_blk_alloc
@@ -123,6 +130,7 @@ if (allocated(diag_blk%raw_coef_ens)) deallocate(diag_blk%raw_coef_ens)
 if (allocated(diag_blk%fit)) deallocate(diag_blk%fit)
 if (allocated(diag_blk%fit_rh)) deallocate(diag_blk%fit_rh)
 if (allocated(diag_blk%fit_rv)) deallocate(diag_blk%fit_rv)
+if (allocated(diag_blk%distvr)) deallocate(diag_blk%distvr)
 
 end subroutine diag_blk_dealloc
 
@@ -283,11 +291,13 @@ type(nam_type),intent(in) :: nam               !< Namelist
 type(geom_type),intent(in) :: geom             !< Geometry
 type(bpar_type),intent(in) :: bpar             !< Block parameters
 type(hdata_type),intent(in) :: hdata           !< HDIAG data
+
 ! Local variables
 integer :: ic2,ic0,il0,jl0r,jl0,offset,isc
-real(kind_real) :: vunit(geom%nl0),distvr(nam%nl0r,geom%nl0),rawv(nam%nl0r)
+real(kind_real) :: vunit(geom%nl0),rawv(nam%nl0r)
 real(kind_real) :: alpha,alpha_opt,mse,mse_opt
-real(kind_real) :: fit_rh(geom%nl0),fit_rv(geom%nl0),fit(nam%nc3,nam%nl0r,geom%nl0)
+real(kind_real) :: fit_rh(geom%nl0),fit_rv(geom%nl0)
+real(kind_real) :: fit(nam%nc3,nam%nl0r,geom%nl0)
 type(minim_type) :: minim
 
 ! Associate
@@ -311,11 +321,11 @@ else
 end if
 
 ! Reduced vertical distance
-call msr(distvr)
+call msr(diag_blk%distvr)
 do il0=1,geom%nl0
    do jl0r=1,nam%nl0r
       jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
-      distvr(jl0r,il0) = abs(vunit(il0)-vunit(jl0))
+      diag_blk%distvr(jl0r,il0) = abs(vunit(il0)-vunit(jl0))
    end do
 end do
 
@@ -329,8 +339,11 @@ do il0=1,geom%nl0
 
    ! Vertical fast fit
    rawv = diag_blk%raw(1,:,il0)
-   call fast_fit(mpl,nam%nl0r,jl0r,distvr(:,il0),rawv,diag_blk%fit_rv(il0))
+   call fast_fit(mpl,nam%nl0r,jl0r,diag_blk%distvr(:,il0),rawv,diag_blk%fit_rv(il0))
 end do
+
+! Vertical normalized Laplacian envelope set at zero
+diag_blk%fit_vnle = 0.0
 
 if (any(isnotmsr(diag_blk%fit_rh)).and.any(isnotmsr(diag_blk%fit_rv))) then
    ! Fill missing values
@@ -343,7 +356,7 @@ if (any(isnotmsr(diag_blk%fit_rh)).and.any(isnotmsr(diag_blk%fit_rv))) then
    if (nam%lhomv) diag_blk%fit_rv = sum(diag_blk%fit_rv,mask=isnotmsr(diag_blk%fit_rv)) &
  & /real(count(isnotmsr(diag_blk%fit_rv)),kind_real)
 
-      ! Scaling optimization (brute-force)
+   ! Scaling optimization (brute-force)
    if (all(isnotmsr(diag_blk%fit_rh)).and.all(isnotmsr(diag_blk%fit_rv))) then
       mse_opt = huge(1.0)
       alpha_opt = 1.0
@@ -356,7 +369,8 @@ if (any(isnotmsr(diag_blk%fit_rh)).and.any(isnotmsr(diag_blk%fit_rv))) then
          fit_rv = alpha*diag_blk%fit_rv
 
          ! Define fit
-         call fit_diag(mpl,nam%nc3,nam%nl0r,geom%nl0,bpar%l0rl0b_to_l0(:,:,ib),geom%disth,distvr,fit_rh,fit_rv,fit)
+         call fit_diag(mpl,nam%nc3,nam%nl0r,geom%nl0,bpar%l0rl0b_to_l0(:,:,ib),geom%disth,diag_blk%distvr,fit_rh,fit_rv, &
+       & diag_blk%fit_vnle,fit)
 
          ! MSE
          mse = sum((fit-diag_blk%raw)**2,mask=isnotmsr(diag_blk%raw))
@@ -386,13 +400,14 @@ if (any(isnotmsr(diag_blk%fit_rh)).and.any(isnotmsr(diag_blk%fit_rv))) then
       end if
       if (nam%lhomv) then
          minim%nx = minim%nx+1
+         if (nam%vlap(bpar%b_to_v1(ib))) minim%nx = minim%nx+1
       else
          minim%nx = minim%nx+geom%nl0
+         if (nam%vlap(bpar%b_to_v1(ib))) minim%nx = minim%nx+geom%nl0
       end if
       minim%ny = nam%nc3*nam%nl0r*geom%nl0
       allocate(minim%x(minim%nx))
       allocate(minim%guess(minim%nx))
-      allocate(minim%norm(minim%nx))
       allocate(minim%binf(minim%nx))
       allocate(minim%bsup(minim%nx))
       allocate(minim%obs(minim%ny))
@@ -404,21 +419,38 @@ if (any(isnotmsr(diag_blk%fit_rh)).and.any(isnotmsr(diag_blk%fit_rv))) then
       offset = 0
       if (nam%lhomh) then
          minim%guess(offset+1) = diag_blk%fit_rh(1)
+         minim%binf(offset+1) = 0.5*minim%guess(offset+1)
+         minim%bsup(offset+1) = 1.5*minim%guess(offset+1)
          offset = offset+1
       else
          minim%guess(offset+1:offset+geom%nl0) = diag_blk%fit_rh
+         minim%binf(offset+1:offset+geom%nl0) = 0.5*minim%guess(offset+1:offset+geom%nl0)
+         minim%bsup(offset+1:offset+geom%nl0) = 1.5*minim%guess(offset+1:offset+geom%nl0)
          offset = offset+geom%nl0
       end if
       if (nam%lhomv) then
          minim%guess(offset+1) = diag_blk%fit_rv(1)
+         minim%binf(offset+1) = 0.5*minim%guess(offset+1)
+         minim%bsup(offset+1) = 1.5*minim%guess(offset+1)
          offset = offset+1
+         if (nam%vlap(bpar%b_to_v1(ib))) then
+            minim%guess(offset+1) = 0.5
+            minim%binf(offset+1) = 0.0
+            minim%bsup(offset+1) = 1.0
+            offset = offset+1
+         end if
       else
          minim%guess(offset+1:offset+geom%nl0) = diag_blk%fit_rv
+         minim%binf(offset+1:offset+geom%nl0) = 0.5*minim%guess(offset+1:offset+geom%nl0)
+         minim%bsup(offset+1:offset+geom%nl0) = 1.5*minim%guess(offset+1:offset+geom%nl0)
          offset = offset+geom%nl0
+         if (nam%vlap(bpar%b_to_v1(ib))) then
+            minim%guess(offset+1:offset+geom%nl0) = 0.5
+            minim%binf(offset+1:offset+geom%nl0) = 0.0
+            minim%bsup(offset+1:offset+geom%nl0) = 1.0
+            offset = offset+geom%nl0
+         end if
       end if
-      minim%norm = minim%guess
-      minim%binf = 0.5*minim%guess
-      minim%bsup = 1.5*minim%guess
       minim%obs = pack(diag_blk%raw,mask=.true.)
       minim%cost_function = 'fit_diag'
       minim%algo = nam%minim_algo
@@ -429,7 +461,7 @@ if (any(isnotmsr(diag_blk%fit_rh)).and.any(isnotmsr(diag_blk%fit_rv))) then
       minim%lhomv = nam%lhomv
       minim%l0rl0_to_l0 = bpar%l0rl0b_to_l0(:,:,ib)
       minim%disth = geom%disth
-      minim%distvr = distvr
+      minim%distvr = diag_blk%distvr
 
       ! Compute fit
       minim%cost_function = 'fit_diag'
@@ -444,25 +476,25 @@ if (any(isnotmsr(diag_blk%fit_rh)).and.any(isnotmsr(diag_blk%fit_rv))) then
          diag_blk%fit_rh = minim%x(offset+1)
          offset = offset+1
       else
-         do il0=1,geom%nl0
-            if (isnotmsr(diag_blk%fit_rh(il0))) diag_blk%fit_rh(il0) = minim%x(offset+il0)
-         end do
+         diag_blk%fit_rh = minim%x(offset+1:offset+geom%nl0)
          offset = offset+geom%nl0
       end if
       if (nam%lhomv) then
          diag_blk%fit_rv = minim%x(offset+1)
          offset = offset+1
+         if (nam%vlap(bpar%b_to_v1(ib))) then
+            diag_blk%fit_vnle = minim%x(offset+1)
+            offset = offset+1
+         end if
       else
-         do il0=1,geom%nl0
-            if (isnotmsr(diag_blk%fit_rv(il0))) diag_blk%fit_rv(il0) = minim%x(offset+il0)
-         end do
+         diag_blk%fit_rv = minim%x(offset+1:offset+geom%nl0)
          offset = offset+geom%nl0
+         if (nam%vlap(bpar%b_to_v1(ib))) then
+            diag_blk%fit_vnle = minim%x(offset+1:offset+geom%nl0)
+            offset = offset+geom%nl0
+         end if
       end if
    end select
-
-   ! Rebuild fit
-   call fit_diag(mpl,nam%nc3,nam%nl0r,geom%nl0,bpar%l0rl0b_to_l0(:,:,ib),geom%disth,distvr,diag_blk%fit_rh,diag_blk%fit_rv, &
- & diag_blk%fit)
 end if
 
 ! End associate

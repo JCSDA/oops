@@ -510,7 +510,7 @@ do ib=1,bpar%nb+1
    end if
 
    ! NICAS parameters
-   if (bpar%nicas_block(ib)) call nicas%blk(ib)%compute_parameters(mpl,rng,nam,geom,cmat%blk(ib))
+   if (bpar%nicas_block(ib)) call nicas%blk(ib)%compute_parameters(mpl,rng,nam,geom,bpar,cmat%blk(ib))
 
    ! Advection
    if ((ib==bpar%nb+1).and.nam%displ_diag) call nicas%blk(ib)%compute_adv(mpl,rng,nam,geom,cmat%blk(ib))
@@ -1645,7 +1645,7 @@ call nicas_other%alloc(mpl,nam,bpar,'nicas_other')
 do ib=1,bpar%nb+1
    if (bpar%nicas_block(ib)) then
       ! Compute NICAS parameters
-      call nicas_other%blk(ib)%compute_parameters(mpl,rng,nam,geom,cmat%blk(ib))
+      call nicas_other%blk(ib)%compute_parameters(mpl,rng,nam,geom,bpar,cmat%blk(ib))
    end if
 
    if (bpar%B_block(ib)) then
@@ -2030,7 +2030,7 @@ do ifac=1,nfac
          end if
 
          ! Compute NICAS parameters
-         call nicas_test%blk(ib)%compute_parameters(mpl,rng,nam,geom,cmat_test%blk(ib))
+         call nicas_test%blk(ib)%compute_parameters(mpl,rng,nam,geom,bpar,cmat_test%blk(ib))
       end if
 
       if (bpar%B_block(ib)) then

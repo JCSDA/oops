@@ -141,7 +141,7 @@ integer :: ncid,fld_id
 real(kind=8),allocatable :: fld_tmp(:,:,:)
 real(kind_real) :: fld_c0(geom%nc0)
 character(len=3) :: ilchar
-character(len=1024) :: subr = 'model_aro_read'
+character(len=1024) :: subr = 'model_arp_read'
 
 if (mpl%main) then
    ! Allocation

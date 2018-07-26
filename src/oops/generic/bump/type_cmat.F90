@@ -307,7 +307,7 @@ write(mpl%unit,'(a)') '--- Compute MPI distribution, halo C'
 call flush(mpl%unit)
 call hdata%compute_mpi_c(mpl,nam,geom)
 
-if (nam%diag_rhflt>0.0) then
+if ((nam%local_diag.or.nam%displ_diag).and.(nam%diag_rhflt>0.0)) then
    ! Compute MPI distribution, halo F
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Compute MPI distribution, halo F'

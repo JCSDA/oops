@@ -13,7 +13,7 @@ module type_nicas_blk
 use netcdf
 !$ use omp_lib
 use tools_const, only: pi,req,reqkm,deg2rad,rad2deg,msvalr
-use tools_func, only: sphere_dist,vector_product,vector_triple_product,gc99
+use tools_func, only: sphere_dist,vector_product,vector_triple_product,gc99,gc99lap
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsr,isnotmsi
 use tools_nc, only: ncfloat
@@ -315,7 +315,7 @@ end subroutine nicas_blk_dealloc
 ! Subroutine: nicas_blk_compute_parameters
 !> Purpose: compute NICAS parameters
 !----------------------------------------------------------------------
-subroutine nicas_blk_compute_parameters(nicas_blk,mpl,rng,nam,geom,cmat_blk)
+subroutine nicas_blk_compute_parameters(nicas_blk,mpl,rng,nam,geom,bpar,cmat_blk)
 
 implicit none
 
@@ -325,6 +325,7 @@ type(mpl_type),intent(inout) :: mpl              !< MPI data
 type(rng_type),intent(inout) :: rng              !< Random number generator
 type(nam_type),intent(in) :: nam                 !< Namelist
 type(geom_type),intent(in) :: geom               !< Geometry
+type(bpar_type),intent(in) :: bpar               !< Block parameters
 type(cmat_blk_type),intent(in) :: cmat_blk       !< C matrix data block
 
 ! Local variables
@@ -358,7 +359,7 @@ call nicas_blk%compute_mpi_ab(mpl,geom)
 ! Compute convolution data
 write(mpl%unit,'(a7,a)') '','Compute convolution data'
 call flush(mpl%unit)
-call nicas_blk%compute_convol(mpl,rng,nam,geom,cmat_blk)
+call nicas_blk%compute_convol(mpl,rng,nam,geom,bpar,cmat_blk)
 
 ! Compute MPI distribution, halo C
 write(mpl%unit,'(a7,a)') '','Compute MPI distribution, halo C'
@@ -435,6 +436,7 @@ allocate(nicas_blk%llev(geom%nl0))
 
 ! Reset random numbers seed
 if (trim(nam%strategy)=='specific_multivariate') call rng%reseed(mpl)
+call rng%reseed(mpl)
 
 ! Compute support radii
 call mpl%allreduce_sum(sum(cmat_blk%rh0s,dim=1),rh0savg)
@@ -1200,7 +1202,7 @@ end subroutine nicas_blk_compute_mpi_ab
 ! Subroutine: nicas_blk_compute_convol
 !> Purpose: compute convolution
 !----------------------------------------------------------------------
-subroutine nicas_blk_compute_convol(nicas_blk,mpl,rng,nam,geom,cmat_blk)
+subroutine nicas_blk_compute_convol(nicas_blk,mpl,rng,nam,geom,bpar,cmat_blk)
 
 implicit none
 
@@ -1210,6 +1212,7 @@ type(mpl_type),intent(in) :: mpl                 !< MPI data
 type(rng_type),intent(inout) :: rng              !< Random number generator
 type(nam_type),intent(in) :: nam                 !< Namelist
 type(geom_type),intent(in) :: geom               !< Geometry
+type(bpar_type),intent(in) :: bpar               !< Block parameters
 type(cmat_blk_type),intent(in) :: cmat_blk       !< C matrix data block
 
 ! Local variables
@@ -1220,9 +1223,12 @@ integer,allocatable :: nn(:),nn_index(:),inec(:),c_ind(:,:)
 real(kind_real) :: rh0max,S_test
 real(kind_real),allocatable :: nn_dist(:),rh_c1a(:),rv_c1a(:),rh_c1(:,:),rv_c1(:,:),rh_sa(:),rv_sa(:),rh_s(:),rv_s(:)
 real(kind_real),allocatable :: c_S(:,:),c_S_conv(:)
-logical :: add_op
+logical :: add_op,vlap
 logical,allocatable :: done(:),lcheck_c1bb(:)
 type(linop_type) :: c(mpl%nthread),ctmp
+
+! Associate
+associate(ib=>nicas_blk%ib)
 
 ! Compute KD-tree
 write(mpl%unit,'(a10,a)') '','Compute KD-tree'
@@ -1387,10 +1393,11 @@ else
 end if
 
 ! Compute weights
+vlap = nam%vlap(bpar%b_to_v1(ib))
 if (nam%network) then
-   call nicas_blk%compute_convol_network(mpl,rng,nam,geom,rh_c1,rv_c1,ctmp)
+   call nicas_blk%compute_convol_network(mpl,rng,nam,geom,rh_c1,rv_c1,vlap,ctmp)
 else
-   call nicas_blk%compute_convol_distance(mpl,nam,geom,rh0max,rh_s,rv_s,ctmp)
+   call nicas_blk%compute_convol_distance(mpl,nam,geom,rh0max,rh_s,rv_s,vlap,ctmp)
 end if
 
 if (nam%lsqrt) then
@@ -1493,13 +1500,16 @@ end if
 nicas_blk%c%prefix = 'c'
 nicas_blk%c_nor%prefix = 'c_nor'
 
+! End associate
+end associate
+
 end subroutine nicas_blk_compute_convol
 
 !----------------------------------------------------------------------
 ! Subroutine: nicas_blk_compute_convol_network
 !> Purpose: compute convolution with a network approach
 !----------------------------------------------------------------------
-subroutine nicas_blk_compute_convol_network(nicas_blk,mpl,rng,nam,geom,rh_c1,rv_c1,ctmp)
+subroutine nicas_blk_compute_convol_network(nicas_blk,mpl,rng,nam,geom,rh_c1,rv_c1,vlap,ctmp)
 
 implicit none
 
@@ -1509,16 +1519,17 @@ type(mpl_type),intent(in) :: mpl                                 !< MPI data
 type(rng_type),intent(inout) :: rng                              !< Random number generator
 type(nam_type),intent(in) :: nam                                 !< Namelist
 type(geom_type),intent(in) :: geom                               !< Geometry
-real(kind_real),intent(in) :: rh_c1(nicas_blk%nc1,nicas_blk%nl1) !< TODO
-real(kind_real),intent(in) :: rv_c1(nicas_blk%nc1,nicas_blk%nl1) !< TODO
+real(kind_real),intent(in) :: rh_c1(nicas_blk%nc1,nicas_blk%nl1) !< Horizontal support radius on subset Sc1
+real(kind_real),intent(in) :: rv_c1(nicas_blk%nc1,nicas_blk%nl1) !< Vertical support radius on subset Sc1
+logical,intent(in) :: vlap                                       !< Vertical envelope with a normalized laplacian
 type(linop_type),intent(out) :: ctmp                             !< Convolution
 
 ! Local variables
-integer :: n_s_max,progint,ithread,is,ic0,ic1,inr,il0,jl1,jl0,np,np_new,i,j,k,ip,kc1,jc1,jc0,djl1,il1,dkl1,kl1,jp,js,isbb
+integer :: n_s_max,progint,ithread,is,ic0,ic1,inr,il0,jl1,jl0,np,np_new,i,j,k,ip,kc1,jc1,jc0,djl1,il1,dkl1,kl1,jp,js,isbb,kc0,kl0
 integer :: c_n_s(mpl%nthread),c_nor_n_s(mpl%nthread)
 integer,allocatable :: net_nnb(:),net_inb(:,:),plist(:,:),plist_new(:,:)
 real(kind_real) :: dnb,disthsq,distvsq,rhsq,rvsq,distnorm,disttest,S_test
-real(kind_real),allocatable :: net_dnb(:,:,:,:),dist(:,:)
+real(kind_real),allocatable :: net_dnb(:,:,:,:),dist(:,:),distv(:,:)
 logical :: init,add_to_front,valid_arc,add_op
 logical,allocatable :: done(:),valid(:,:)
 type(linop_type) :: c(mpl%nthread),c_nor(mpl%nthread)
@@ -1633,7 +1644,8 @@ c_nor_n_s = 0
 
 ! Compute weights
 !$omp parallel do schedule(static) private(isbb,is,ithread,ic1,il1,np,np_new,ip,jc1,jl1,k,kc1,dkl1,kl1,disttest,add_to_front), &
-!$omp&                             private(jp,js,distnorm,S_test,add_op) firstprivate(plist,plist_new,dist,valid)
+!$omp&                             private(jp,js,distnorm,S_test,add_op,kc0,kl0,distvsq,rvsq), &
+!$omp&                             firstprivate(plist,plist_new,dist,distv,valid)
 do isbb=1,nicas_blk%nsbb
    ! Indices
    is = nicas_blk%sbb_to_s(isbb)
@@ -1646,6 +1658,7 @@ do isbb=1,nicas_blk%nsbb
    allocate(plist(nicas_blk%nc1*nicas_blk%nl1,2))
    allocate(plist_new(nicas_blk%nc1*nicas_blk%nl1,2))
    allocate(dist(nicas_blk%nc1,nicas_blk%nl1))
+   if (vlap) allocate(distv(nicas_blk%nc1,nicas_blk%nl1))
    allocate(valid(nicas_blk%nc1,nicas_blk%nl1))
 
    ! Initialize the front
@@ -1654,6 +1667,10 @@ do isbb=1,nicas_blk%nsbb
    plist(1,2) = il1
    dist = 1.0
    dist(ic1,il1) = 0.0
+   if (vlap) then
+      distv = 1.0
+      distv(ic1,il1) = 0.0
+   end if
    valid = .false.
    valid(ic1,il1) = .true.
 
@@ -1678,6 +1695,17 @@ do isbb=1,nicas_blk%nsbb
                      if (disttest<dist(kc1,kl1)) then
                         ! Update distance
                         dist(kc1,kl1) = disttest
+                        if (vlap) then
+                           kc0 = nicas_blk%c1_to_c0(kc1)
+                           kl0 = nicas_blk%l1_to_l0(kl1)
+                           distvsq = (geom%vunit(ic0,il0)-geom%vunit(kc0,kl0))**2
+                           rvsq = 0.5*(rv_c1(ic1,il1)**2+rv_c1(kc1,kl1)**2)
+                           if (rvsq>0.0) then
+                              distv(kc1,kl1) = sqrt(distvsq/rvsq)
+                           elseif (distvsq>0.0) then
+                              distv(kc1,kl1) = 0.5*huge(0.0)
+                           end if
+                        end if
                         valid(kc1,kl1) = .true.
 
                         ! Check if the point should be added to the front (avoid duplicates)
@@ -1727,7 +1755,10 @@ do isbb=1,nicas_blk%nsbb
             ! Gaspari-Cohn (1999) function
             S_test = gc99(mpl,distnorm)
 
-            if (S_test>S_inf) then
+            ! Vertical envelope with a normalized Laplacian of the Gaspari-Cohn (1999) function
+            if (vlap) S_test = S_test*gc99lap(mpl,distv(jc1,jl1))
+
+            if (abs(S_test)>abs(S_inf)) then
                ! Store coefficient for convolution
                if (nam%lsqrt) then
                   add_op = .false.
@@ -1781,7 +1812,7 @@ end subroutine nicas_blk_compute_convol_network
 ! Subroutine: nicas_blk_compute_convol_distance
 !> Purpose: compute convolution weights, distance method
 !----------------------------------------------------------------------
-subroutine nicas_blk_compute_convol_distance(nicas_blk,mpl,nam,geom,rh0max,rh_s,rv_s,ctmp)
+subroutine nicas_blk_compute_convol_distance(nicas_blk,mpl,nam,geom,rh0max,rh_s,rv_s,vlap,ctmp)
 
 implicit none
 
@@ -1790,9 +1821,10 @@ class(nicas_blk_type),intent(inout) :: nicas_blk !< NICAS data block
 type(mpl_type),intent(in) :: mpl                 !< MPI data
 type(nam_type),intent(in) :: nam                 !< Namelist
 type(geom_type),intent(in) :: geom               !< Geometry
-real(kind_real),intent(in) :: rh0max             !< TODO
-real(kind_real),intent(in) :: rh_s(nicas_blk%ns) !<
-real(kind_real),intent(in) :: rv_s(nicas_blk%ns) !<
+real(kind_real),intent(in) :: rh0max             !< Maximum horizontal support radius on subset Sc0
+real(kind_real),intent(in) :: rh_s(nicas_blk%ns) !< Horizontal support radius on subgrid
+real(kind_real),intent(in) :: rv_s(nicas_blk%ns) !< Vertical support radius on subgrid
+logical,intent(in) :: vlap                       !< Vertical envelope with a normalized laplacian
 type(linop_type),intent(inout) :: ctmp           !< Convolution operator
 
 ! Local variables
@@ -1917,7 +1949,15 @@ do isbb=1,nicas_blk%nsbb
                ! Gaspari-Cohn (1999) function
                S_test = gc99(mpl,distnorm)
 
-               if (S_test>S_inf) then
+               ! Vertical envelope with a normalized Laplacian of the Gaspari-Cohn (1999) function
+               if (vlap) then
+                  if (rvsq>0.0) then
+                     distnorm = sqrt(distvsq/rvsq)
+                     S_test = S_test*gc99lap(mpl,distnorm)
+                  end if
+               end if
+
+               if (abs(S_test)>abs(S_inf)) then
                   ! Store coefficient for convolution
                   if (nam%lsqrt) then
                      valid = .false.
@@ -3505,7 +3545,7 @@ end if
 nam%lsqrt = .not.nam%lsqrt
 
 ! Compute NICAS parameters
-call nicas_blk_other%compute_parameters(mpl,rng,nam,geom,cmat_blk)
+call nicas_blk_other%compute_parameters(mpl,rng,nam,geom,bpar,cmat_blk)
 
 ! Apply NICAS, other version
 if (nam%lsqrt) then

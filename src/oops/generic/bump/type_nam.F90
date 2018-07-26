@@ -102,6 +102,7 @@ type nam_type
 
    ! fit_param
    character(len=1024) :: minim_algo                !< Minimization algorithm ('none', 'fast' or 'hooke')
+   logical :: vlap(0:nvmax)                         !< Vertical envelope with a normalized Laplacian
    logical :: lhomh                                 !< Vertically homogenous horizontal support radius
    logical :: lhomv                                 !< Vertically homogenous vertical support radius
    real(kind_real) ::  rvflt                        !< Vertical smoother support radius
@@ -202,8 +203,8 @@ call msi(nam%levs)
 nam%logpres = .false.
 call msi(nam%nv)
 do iv=1,nvmax
-   nam%varname = ''
-   nam%addvar2d = ''
+   nam%varname(iv) = ''
+   nam%addvar2d(iv) = ''
 end do
 call msi(nam%nts)
 call msi(nam%timeslot)
@@ -246,6 +247,9 @@ call msr(nam%displ_tol)
 
 ! fit_param default
 nam%minim_algo = ''
+do iv=0,nvmax
+   nam%vlap(iv) = .false.
+end do
 nam%lhomh = .false.
 nam%lhomv = .false.
 call msr(nam%rvflt)
@@ -312,7 +316,7 @@ integer :: nobs,nldwh,il_ldwh(nlmax*nc3max),ic_ldwh(nlmax*nc3max),nldwv
 logical :: colorlog,default_seed,load_ensemble,use_metis
 logical :: new_hdiag,new_param,check_adjoints,check_pos_def,check_sqrt,check_dirac,check_randomization,check_consistency
 logical :: check_optimality,new_lct,new_obsop,logpres,sam_write,sam_read,mask_check,gau_approx,full_var,local_diag
-logical :: displ_diag,lhomh,lhomv,lct_diag(nscalesmax),lsqrt,network,forced_radii,field_io,split_io,grid_output
+logical :: displ_diag,vlap(nvmax),lhomh,lhomv,lct_diag(nscalesmax),lsqrt,network,forced_radii,field_io,split_io,grid_output
 real(kind_real) :: mask_th,dc,local_rad,displ_rad,displ_rhflt,displ_tol,rvflt,lon_ldwv(nldwvmax),lat_ldwv(nldwvmax),diag_rhflt
 real(kind_real) :: resol,rh,rv,londir(ndirmax),latdir(ndirmax),grid_resol
 character(len=1024) :: datadir,prefix,model,strategy,method,mask_type,draw_type,minim_algo,nicas_interp
@@ -328,7 +332,7 @@ namelist/ens1_param/ens1_ne,ens1_ne_offset,ens1_nsub
 namelist/ens2_param/ens2_ne,ens2_ne_offset,ens2_nsub
 namelist/sampling_param/sam_write,sam_read,mask_type,mask_th,mask_check,draw_type,nc1,ntry,nrep,nc3,dc,nl0r
 namelist/diag_param/ne,gau_approx,full_var,local_diag,local_rad,displ_diag,displ_rad,displ_niter,displ_rhflt,displ_tol
-namelist/fit_param/minim_algo,lhomh,lhomv,rvflt,lct_nscales,lct_diag
+namelist/fit_param/minim_algo,vlap,lhomh,lhomv,rvflt,lct_nscales,lct_diag
 namelist/nicas_param/lsqrt,resol,nicas_interp,network,mpicom,advmode,forced_radii,rh,rv,ndir,londir,latdir,levdir,ivdir,itsdir
 namelist/obsop_param/nobs,obsdis,obsop_interp
 namelist/output_param/nldwh,il_ldwh,ic_ldwh,nldwv,lon_ldwv,lat_ldwv,diag_rhflt,diag_interp,field_io,split_io, &
@@ -424,6 +428,7 @@ if (mpl%main) then
    read(lunit,nml=fit_param)
    if (lct_nscales>nscalesmax) call mpl%abort('lct_nscales is too large')
    nam%minim_algo = minim_algo
+   if (nv>0) nam%vlap(1:nv) = vlap(1:nv)
    nam%lhomh = lhomh
    nam%lhomv = lhomv
    nam%rvflt = rvflt
@@ -563,6 +568,7 @@ call mpl%bcast(nam%displ_tol)
 
 ! fit_param
 call mpl%bcast(nam%minim_algo)
+call mpl%bcast(nam%vlap)
 call mpl%bcast(nam%lhomh)
 call mpl%bcast(nam%lhomv)
 call mpl%bcast(nam%rvflt)
@@ -1128,6 +1134,7 @@ call put_att(mpl,ncid,'displ_tol',nam%displ_tol)
 
 ! fit_param
 call put_att(mpl,ncid,'minim_algo',nam%minim_algo)
+call put_att(mpl,ncid,'vlap',nam%nv+1,nam%vlap(0:nam%nv))
 call put_att(mpl,ncid,'lhomh',nam%lhomh)
 call put_att(mpl,ncid,'lhomv',nam%lhomv)
 call put_att(mpl,ncid,'rvflt',nam%rvflt)

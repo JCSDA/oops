@@ -254,7 +254,6 @@ if (lct_blk%nscales>1) minim%nx = minim%nx+lct_blk%nscales-1
 minim%ny = nam%nc3*bpar%nl0r(ib)
 allocate(minim%x(minim%nx))
 allocate(minim%guess(minim%nx))
-allocate(minim%norm(minim%nx))
 allocate(minim%binf(minim%nx))
 allocate(minim%bsup(minim%nx))
 allocate(minim%obs(minim%ny))
@@ -335,7 +334,6 @@ do il0=1,geom%nl0
          offset = 0
          do iscales=1,lct_blk%nscales
             minim%guess(offset+1:offset+3) = (/Dhbar,Dhbar,Dvbar/)*Dscale**(iscales-1)
-            minim%norm(offset+1:offset+3) = (/Dhbar,Dhbar,Dvbar/)*Dscale**(iscales-1)
             if (lct_blk%nscales==1) then
                minim%binf(offset+1:offset+3) = (/1.0/Dscale,1.0/Dscale,1.0/Dscale/)*minim%guess(1:3)
                minim%bsup(offset+1:offset+3) = (/Dscale,Dscale,Dscale/)*minim%guess(1:3)
@@ -347,7 +345,6 @@ do il0=1,geom%nl0
             offset = offset+3
             if (lct_blk%ncomp(iscales)==4) then
                minim%guess(offset+1) = 0.0
-               minim%norm(offset+1) = 1.0
                minim%binf(offset+1) = -1.0
                minim%bsup(offset+1) = 1.0
                offset = offset+1
@@ -355,7 +352,6 @@ do il0=1,geom%nl0
          end do
          do iscales=1,lct_blk%nscales-1
             minim%guess(offset+1) = 1.0/real(lct_blk%nscales,kind_real)
-            minim%norm(offset+1) = 1.0/real(lct_blk%nscales,kind_real)
             minim%binf(offset+1) = 0.1
             minim%bsup(offset+1) = 1.0
             offset = offset+1

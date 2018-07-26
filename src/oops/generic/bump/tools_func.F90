@@ -22,7 +22,7 @@ integer,parameter :: M = 0                            !< Number of implicit itte
 real(kind_real),parameter :: eta = 1.0e-9_kind_real   !< Small parameter for the Cholesky decomposition
 
 private
-public :: lonlatmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,add,divide,fit_diag,gc99,fit_lct,cholesky
+public :: lonlatmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,add,divide,fit_diag,gc99,gc99lap,fit_lct,cholesky
 
 contains
 
@@ -228,7 +228,7 @@ end subroutine divide
 ! Subroutine: fit_diag
 !> Purpose: diagnostic fit
 !----------------------------------------------------------------------
-subroutine fit_diag(mpl,nc3,nl0r,nl0,l0rl0_to_l0,disth,distvr,rh,rv,fit)
+subroutine fit_diag(mpl,nc3,nl0r,nl0,l0rl0_to_l0,disth,distvr,rh,rv,vnle,fit)
 
 implicit none
 
@@ -242,12 +242,13 @@ real(kind_real),intent(in) :: disth(nc3)         !< Horizontal distance
 real(kind_real),intent(in) :: distvr(nl0r,nl0)   !< Vertical distance
 real(kind_real),intent(in) :: rh(nl0)            !< Horizontal support radius
 real(kind_real),intent(in) :: rv(nl0)            !< Vertical support radius
+real(kind_real),intent(in) :: vnle(nl0)          !< Vertical normalized laplacian envelope
 real(kind_real),intent(out) :: fit(nc3,nl0r,nl0) !< Fit
 
 ! Local variables
 integer :: jl0r,jl0,il0,kl0r,kl0,jc3,kc3,ip,jp,np,np_new
 integer,allocatable :: plist(:,:),plist_new(:,:)
-real(kind_real) :: rhsq,rvsq,distnorm,disttest
+real(kind_real) :: rhsq,rvsq,distnorm,disttest,coef,distnormv,distnormh
 real(kind_real),allocatable :: dist(:,:)
 logical :: add_to_front
 
@@ -255,7 +256,7 @@ logical :: add_to_front
 fit = 0.0
 
 !$omp parallel do schedule(static) private(il0,np,jl0r,np_new,ip,jc3,jl0,kc3,kl0r,kl0,rhsq,rvsq,distnorm,disttest,add_to_front), &
-!$omp&                             firstprivate(plist,plist_new,dist)
+!$omp&                             private(coef,distnormv) firstprivate(plist,plist_new,dist)
 do il0=1,nl0
    ! Allocation
    allocate(plist(nc3*nl0r,2))
@@ -308,6 +309,7 @@ do il0=1,nl0
                   distnorm = distnorm+0.5*huge(1.0)
                end if
                disttest = dist(jc3,jl0r)+sqrt(distnorm)
+
                if (disttest<1.0) then
                   ! Point is inside the support
                   if (disttest<dist(kc3,kl0r)) then
@@ -341,10 +343,18 @@ do il0=1,nl0
    end do
 
    do jl0r=1,nl0r
+      jl0 = l0rl0_to_l0(jl0r,il0)
+      if ((abs(vnle(il0))<0.0).or.(abs(vnle(jl0))<0.0)) then
+          coef = 0.0
+      else
+          coef = sqrt(vnle(il0)*vnle(jl0))
+      end if
       do jc3=1,nc3
-         ! Gaspari-Cohn (1999) function
+         ! Gaspari-Cohn (1999) function, with a vertical normalized Laplacian envelope
          distnorm = dist(jc3,jl0r)
-         if (distnorm<1.0) fit(jc3,jl0r,il0) = gc99(mpl,distnorm)
+         distnormv = dist(1,jl0r)
+         distnormh = sqrt(distnorm**2-distnormv**2)
+         fit(jc3,jl0r,il0) = (1.0-coef)*gc99(mpl,distnorm)+coef*gc99(mpl,distnormh)*gc99lap(mpl,distnormv)
       end do
    end do
 
@@ -373,27 +383,47 @@ real(kind_real) :: gc99
 ! Distance check bound
 if (distnorm<0.0) call mpl%abort('negative normalized distance')
 
-if (.true.) then
-   ! Gaspari and Cohn (1999) function
-   if (distnorm<0.5) then
-      gc99 = 1.0-8.0*distnorm**5+8.0*distnorm**4+5.0*distnorm**3-20.0/3.0*distnorm**2
-   else if (distnorm<1.0) then
-      gc99 = 8.0/3.0*distnorm**5-8.0*distnorm**4+5.0*distnorm**3+20.0/3.0*distnorm**2-10.0*distnorm+4.0-1.0/(3.0*distnorm)
-   else
-      gc99 = 0.0
-   end if
+! Gaspari and Cohn (1999) function
+if (distnorm<0.5) then
+   gc99 = -8.0*distnorm**5+8.0*distnorm**4+5.0*distnorm**3-20.0/3.0*distnorm**2+1.0
+else if (distnorm<1.0) then
+   gc99 = 8.0/3.0*distnorm**5-8.0*distnorm**4+5.0*distnorm**3+20.0/3.0*distnorm**2-10.0*distnorm+4.0-1.0/(3.0*distnorm)
 else
-   ! Gaussian equivalent
-   if (distnorm<1.0) then
-      gc99 = exp(-0.5*(3.53*distnorm)**2)
-   else
-      gc99 = 0.0
-   end if
+   gc99 = 0.0
 end if
 
 return
 
 end function gc99
+
+!----------------------------------------------------------------------
+! Function: gc99lap
+!> Purpose: normalized Laplacian of the Gaspari and Cohn (1999) function, with the support radius as a parameter
+!----------------------------------------------------------------------
+function gc99lap(mpl,distnorm)
+
+! Passed variables
+type(mpl_type),intent(in) :: mpl       !< MPI data
+real(kind_real),intent(in) :: distnorm !< Normalized distance
+
+! Returned variable
+real(kind_real) :: gc99lap
+
+! Distance check bound
+if (distnorm<0.0) call mpl%abort('negative normalized distance')
+
+! Gaspari and Cohn (1999) function
+if (distnorm<0.5) then
+   gc99lap = 12.0*distnorm**3-36.0/5.0*distnorm**2-9.0/4.0*distnorm+1.0
+else if (distnorm<1.0) then
+   gc99lap = -4.0*distnorm**3+36.0/5.0*distnorm**2-9.0/4.0*distnorm-1.0+1.0/(20.0*distnorm**3)
+else
+   gc99lap = 0.0
+end if
+
+return
+
+end function gc99lap
 
 !----------------------------------------------------------------------
 ! Subroutine: fit_lct

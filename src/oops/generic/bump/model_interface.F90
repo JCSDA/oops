@@ -100,22 +100,11 @@ call msr(fld)
 
 do its=1,nam%nts
    ! Define filename
-   select case (trim(nam%model))
-   case ('aro','arp','gem','gfs')
-      if (jsub==0) then
-         write(fullname,'(a,a,i2.2,a,i4.4,a)') trim(filename),'_',nam%timeslot(its),'_',ie,'.nc'
-      else
-         write(fullname,'(a,a,i2.2,a,i4.4,a,i4.4,a)') trim(filename),'_',nam%timeslot(its),'_',jsub,'_',ie,'.nc'
-      end if
-   case ('geos','ifs','mpas','nemo','wrf')
-      if (jsub==0) then
-         write(fullname,'(a,a,i4.4,a)') trim(filename),'_',ie,'.nc'
-      else
-         write(fullname,'(a,a,i4.4,a,i4.4,a)') trim(filename),'_',jsub,'_',ie,'.nc'
-      end if
-   case ('online')
-      call mpl%abort('online model should not call model_read')
-   end select
+   if (jsub==0) then
+      write(fullname,'(a,a,i2.2,a,i4.4,a)') trim(filename),'_',nam%timeslot(its),'_',ie,'.nc'
+   else
+      write(fullname,'(a,a,i2.2,a,i4.4,a,i4.4,a)') trim(filename),'_',nam%timeslot(its),'_',jsub,'_',ie,'.nc'
+   end if
 
    ! Select model
    if (trim(nam%model)=='aro') call model_aro_read(mpl,nam,geom,fullname,fld(:,:,:,its))
