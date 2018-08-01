@@ -69,7 +69,7 @@ template <typename MODEL> void testLinearity() {
 
     const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
     Locations_ locs(Test_::obspace()[jj].locations(Test_::tbgn(), Test_::tend()));
-    const GeoVaLs_ gval(locs, hoptl.variables(), gconf);
+    const GeoVaLs_ gval(gconf, hoptl.variables());
 
     eckit::LocalConfiguration biasConf;
     conf[jj].get("ObsBias", biasConf);
@@ -78,7 +78,7 @@ template <typename MODEL> void testLinearity() {
 
     const ObsAuxIncr_ ybinc(biasConf);
     ObsVector_ dy1(Test_::obspace()[jj]);
-    GeoVaLs_ gv(locs, hoptl.variables(), gconf);
+    GeoVaLs_ gv(gconf, hoptl.variables());
 
     gv.zero();
     hoptl.simulateObsTL(gv, dy1, ybinc);
@@ -121,7 +121,7 @@ template <typename MODEL> void testAdjoint() {
     LinearObsOperator_ hoptl(Test_::obspace()[jj]);
     eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
     Locations_ locs(Test_::obspace()[jj].locations(Test_::tbgn(), Test_::tend()));
-    const GeoVaLs_ gval(locs, hoptl.variables(), gconf);
+    const GeoVaLs_ gval(gconf, hoptl.variables());
 
     eckit::LocalConfiguration biasConf;
     conf[jj].get("ObsBias", biasConf);
@@ -133,8 +133,8 @@ template <typename MODEL> void testAdjoint() {
 
     ObsVector_ dy1(Test_::obspace()[jj]);
     ObsVector_ dy2(Test_::obspace()[jj]);
-    GeoVaLs_ gv1(locs, hoptl.variables(), gconf);
-    GeoVaLs_ gv2(locs, hoptl.variables(), gconf);
+    GeoVaLs_ gv1(gconf, hoptl.variables());
+    GeoVaLs_ gv2(gconf, hoptl.variables());
 
     gv1.random();
     BOOST_REQUIRE(dot_product(gv1, gv1) > zero);
@@ -193,16 +193,16 @@ template <typename MODEL> void testTangentLinear() {
     ObsVector_ y2(Test_::obspace()[jj]);   // y2 = hop(x+alpha*dx)
     ObsVector_ y3(Test_::obspace()[jj]);   // y3 = hoptl(alpha*dx)
 
-    GeoVaLs_ gv(locs, hop.variables(), gconf);  // Background
+    GeoVaLs_ gv(gconf, hop.variables());  // Background
 
     hoptl.setTrajectory(gv, ybias);
 
     hop.simulateObs(gv, y1, ybias);
 
-    GeoVaLs_ dgv(locs, hoptl.variables(), gconf);
+    GeoVaLs_ dgv(gconf, hoptl.variables());
     dgv.random();
 
-    GeoVaLs_ gv0(locs, hop.variables(), gconf);
+    GeoVaLs_ gv0(gconf, hop.variables());
     gv0 = gv;
     ObsVector_ y3_init(Test_::obspace()[jj]);
     y3_init = y3;

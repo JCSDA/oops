@@ -19,6 +19,9 @@
       "top_layer_depth": "6000.0",
       "bottom_layer_depth": "6000.0"
     },
+    "InterpTest" : {
+      "variables": ["x","q","u","v"]
+    },
     "Locations": {
        "lats": ["55.0","-45.0"],
        "lons": ["10.0","-77.0"],

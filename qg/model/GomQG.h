@@ -35,8 +35,6 @@ class GomQG : public util::Printable,
 
   GomQG(const LocationsQG &, const oops::Variables &);
   GomQG(const eckit::Configuration &, const oops::Variables &);
-  GomQG(const LocationsQG &, const oops::Variables &, const eckit::Configuration &);
-  GomQG(const GomQG &, const LocationsQG &, const eckit::Configuration &);
   explicit GomQG(const GomQG &);
 
   GomQG(): keyGom_(0) {}
@@ -55,6 +53,7 @@ class GomQG : public util::Printable,
   GomQG & operator/=(const GomQG &);
   double dot_product_with(const GomQG &) const;
   void read(const eckit::Configuration &);
+  void analytic_init(const LocationsQG &, const eckit::Configuration &);
   void write(const eckit::Configuration &) const;
 
   int & toFortran() {return keyGom_;}
