@@ -166,7 +166,7 @@ extern "C" {
   void qg_gom_mult_f90(const F90goms &, const double &);
   void qg_gom_add_f90(const F90goms &, const F90goms &);
   void qg_gom_diff_f90(const F90goms &, const F90goms &);
-  void qg_gom_normalize_f90(const F90goms &, const F90goms &);
+  void qg_gom_divide_f90(const F90goms &, const F90goms &);
   void qg_gom_dotprod_f90(const F90goms &, const F90goms &, double &);
   void qg_gom_minmaxavg_f90(const F90goms &, int &, double &, double &, double &);
   void qg_gom_maxloc_f90(const F90goms &, double &, int &, int &);

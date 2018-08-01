@@ -30,7 +30,7 @@
        "random_seed": "560921"
     },
     "norm-file": "15.010355026",
-    "norm-gen": "4.6830400766117606",
-    "interp_tolerance": "0.01"
+    "norm-gen": "4.6748183345328786",
+    "interp_tolerance": "0.25"
   }
 }
