@@ -114,6 +114,8 @@ implicit none
 class(geom_type),intent(inout) :: geom !< Geometry
 
 ! Allocation
+allocate(geom%c0_to_proc(geom%nc0))
+allocate(geom%c0_to_c0a(geom%nc0))
 allocate(geom%c0_to_lon(geom%nc0))
 allocate(geom%c0_to_lat(geom%nc0))
 allocate(geom%lon(geom%nc0))
@@ -124,6 +126,8 @@ allocate(geom%vunitavg(geom%nl0))
 allocate(geom%mask(geom%nc0,geom%nl0))
 
 ! Initialization
+call msi(geom%c0_to_proc)
+call msi(geom%c0_to_c0a)
 call msi(geom%c0_to_lon)
 call msi(geom%c0_to_lat)
 call msr(geom%lon)
@@ -200,7 +204,8 @@ logical,intent(in) :: lmask(nmga,nl0)         !< Mask
 
 ! Local variables
 integer :: ic0,ic0a,il0,offset,iproc,img,imga
-real(kind_real),allocatable :: lon_mg(:),lat_mg(:),area_mg(:),vunit_mg(:,:)
+integer,allocatable :: order(:),order_inv(:)
+real(kind_real),allocatable :: lon_mg(:),lat_mg(:),area_mg(:),vunit_mg(:,:),list(:)
 logical,allocatable :: lmask_mg(:,:)
 
 ! Copy geometry variables
@@ -287,7 +292,10 @@ call geom%find_redundant(mpl,lon_mg,lat_mg)
 ! Allocation
 call geom%alloc
 allocate(geom%proc_to_nc0a(mpl%nproc))
-allocate(geom%c0_to_proc(geom%nc0))
+allocate(list(geom%nc0))
+allocate(order(geom%nc0))
+allocate(order_inv(geom%nc0))
+
 
 ! Model grid conversions and Sc0 size on halo A
 img = 0
@@ -305,7 +313,6 @@ geom%nc0a = geom%proc_to_nc0a(mpl%myproc)
 
 ! Subset Sc0 conversions
 allocate(geom%c0a_to_c0(geom%nc0a))
-allocate(geom%c0_to_c0a(geom%nc0))
 ic0 = 0
 do iproc=1,mpl%nproc
    do ic0a=1,geom%proc_to_nc0a(iproc)
@@ -314,7 +321,7 @@ do iproc=1,mpl%nproc
       if (iproc==mpl%myproc) geom%c0a_to_c0(ic0a) = ic0
    end do
 end do
-call mpl%glb_to_loc(geom%nc0a,geom%c0a_to_c0,geom%nc0,geom%c0_to_c0a)
+call mpl%glb_to_loc_index(geom%nc0a,geom%c0a_to_c0,geom%nc0,geom%c0_to_c0a)
 
 ! Inter-halo conversions
 allocate(geom%c0a_to_mga(geom%nc0a))
@@ -344,6 +351,28 @@ do il0=1,geom%nl0
    geom%vunit(:,il0) = vunit_mg(geom%c0_to_mg,il0)
    geom%mask(:,il0) = lmask_mg(geom%c0_to_mg,il0)
 end do
+
+! Reorder points based on lon/lat
+do ic0=1,geom%nc0
+   list(ic0) = aint(abs(geom%lon(ic0))*1.0e6)+abs(geom%lat(ic0))*1.0e-1
+   if (geom%lon(ic0)<0.0) list(ic0) = list(ic0)+2.0e7
+   if (geom%lat(ic0)<0.0) list(ic0) = list(ic0)+1.0e7
+end do
+call qsort(geom%nc0,list,order)
+do ic0=1,geom%nc0
+   order_inv(order(ic0)) = ic0
+end do
+geom%c0_to_proc = geom%c0_to_proc(order)
+geom%c0_to_c0a = geom%c0_to_c0a(order)
+geom%c0a_to_c0 = order_inv(geom%c0a_to_c0)
+geom%lon = geom%lon(order)
+geom%lat = geom%lat(order)
+do il0=1,geom%nl0
+   geom%vunit(:,il0) = geom%vunit(order,il0)
+   geom%mask(:,il0) = geom%mask(order,il0)
+end do
+geom%c0_to_mg = geom%c0_to_mg(order)
+geom%mg_to_c0 = order_inv(geom%mg_to_c0)
 
 end subroutine geom_setup_online
 
@@ -709,10 +738,6 @@ character(len=4) :: nprocchar
 character(len=1024) :: filename_nc,filename_metis
 character(len=1024) :: subr = 'geom_define_distribution'
 type(mesh_type) :: mesh
-
-! Allocation
-allocate(geom%c0_to_proc(geom%nc0))
-allocate(geom%c0_to_c0a(geom%nc0))
 
 if (mpl%nproc==1) then
    ! All points on a single processor

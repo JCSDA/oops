@@ -288,9 +288,11 @@ do ib=1,bpar%nb
       write(mpl%unit,'(a)') '100%'
       call flush(mpl%unit)
 
-      ! Gather statistics
-      write(mpl%unit,'(a13,a)',advance='no') '','Gather data'
-     call avg%gather(mpl,nam,geom,bpar)
+      if (mpl%nproc>1) then
+         ! Gather statistics
+         write(mpl%unit,'(a13,a)') '','Gather data'
+        call avg%gather(mpl,nam,geom,bpar)
+      end if
 
       ! Compute asymptotic statistics
       write(mpl%unit,'(a13,a)',advance='no') '','Compute asymptotic statistics:'

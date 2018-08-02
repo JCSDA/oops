@@ -22,7 +22,8 @@ integer,parameter :: M = 0                            !< Number of implicit itte
 real(kind_real),parameter :: eta = 1.0e-9_kind_real   !< Small parameter for the Cholesky decomposition
 
 private
-public :: lonlatmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,add,divide,fit_diag,gc99,gc99lap,fit_lct,cholesky
+public :: lonlatmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,add,divide, &
+        & fit_diag,fit_diag_dble,gc99,fit_lct,cholesky
 
 contains
 
@@ -228,7 +229,7 @@ end subroutine divide
 ! Subroutine: fit_diag
 !> Purpose: diagnostic fit
 !----------------------------------------------------------------------
-subroutine fit_diag(mpl,nc3,nl0r,nl0,l0rl0_to_l0,disth,distvr,rh,rv,vnle,fit)
+subroutine fit_diag(mpl,nc3,nl0r,nl0,l0rl0_to_l0,disth,distvr,rh,rv,fit)
 
 implicit none
 
@@ -242,13 +243,12 @@ real(kind_real),intent(in) :: disth(nc3)         !< Horizontal distance
 real(kind_real),intent(in) :: distvr(nl0r,nl0)   !< Vertical distance
 real(kind_real),intent(in) :: rh(nl0)            !< Horizontal support radius
 real(kind_real),intent(in) :: rv(nl0)            !< Vertical support radius
-real(kind_real),intent(in) :: vnle(nl0)          !< Vertical normalized laplacian envelope
 real(kind_real),intent(out) :: fit(nc3,nl0r,nl0) !< Fit
 
 ! Local variables
 integer :: jl0r,jl0,il0,kl0r,kl0,jc3,kc3,ip,jp,np,np_new
 integer,allocatable :: plist(:,:),plist_new(:,:)
-real(kind_real) :: rhsq,rvsq,distnorm,disttest,coef,distnormv,distnormh
+real(kind_real) :: rhsq,rvsq,distnorm,disttest
 real(kind_real),allocatable :: dist(:,:)
 logical :: add_to_front
 
@@ -256,7 +256,143 @@ logical :: add_to_front
 fit = 0.0
 
 !$omp parallel do schedule(static) private(il0,np,jl0r,np_new,ip,jc3,jl0,kc3,kl0r,kl0,rhsq,rvsq,distnorm,disttest,add_to_front), &
-!$omp&                             private(coef,distnormv) firstprivate(plist,plist_new,dist)
+!$omp&                             firstprivate(plist,plist_new,dist)
+do il0=1,nl0
+   ! Allocation
+   allocate(plist(nc3*nl0r,2))
+   allocate(plist_new(nc3*nl0r,2))
+   allocate(dist(nc3,nl0r))
+
+   ! Initialize the front
+   np = 1
+   call msi(plist)
+   plist(1,1) = 1
+   do jl0r=1,nl0r
+      if (l0rl0_to_l0(jl0r,il0)==il0) plist(1,2) = jl0r
+   end do
+   dist = 1.0
+   dist(plist(1,1),plist(1,2)) = 0.0
+
+   do while (np>0)
+      ! Propagate the front
+      np_new = 0
+
+      do ip=1,np
+         ! Indices of the central point
+         jc3 = plist(ip,1)
+         jl0r = plist(ip,2)
+         jl0 = l0rl0_to_l0(jl0r,il0)
+
+         ! Loop over neighbors
+         do kc3=max(jc3-1,1),min(jc3+1,nc3)
+            do kl0r=max(jl0r-1,1),min(jl0r+1,nl0r)
+               kl0 = l0rl0_to_l0(kl0r,il0)
+               if (isnotmsr(rh(jl0)).and.isnotmsr(rh(kl0))) then
+                  rhsq = 0.5*(rh(jl0)**2+rh(kl0)**2)
+               else
+                  rhsq = 0.0
+               end if
+               if (isnotmsr(rv(jl0)).and.isnotmsr(rv(kl0))) then
+                  rvsq = 0.5*(rv(jl0)**2+rv(kl0)**2)
+               else
+                  rvsq = 0.0
+               end if
+               distnorm = 0.0
+               if (rhsq>0.0) then
+                  distnorm = distnorm+(disth(kc3)-disth(jc3))**2/rhsq
+               elseif (kc3/=jc3) then
+                  distnorm = distnorm+0.5*huge(1.0)
+               end if
+               if (rvsq>0.0) then
+                  distnorm = distnorm+distvr(kl0r,jl0)**2/rvsq
+               elseif (kl0r/=jl0r) then
+                  distnorm = distnorm+0.5*huge(1.0)
+               end if
+               disttest = dist(jc3,jl0r)+sqrt(distnorm)
+
+               if (disttest<1.0) then
+                  ! Point is inside the support
+                  if (disttest<dist(kc3,kl0r)) then
+                     ! Update distance
+                     dist(kc3,kl0r) = disttest
+
+                     ! Check if the point should be added to the front (avoid duplicates)
+                     add_to_front = .true.
+                     do jp=1,np_new
+                        if ((plist_new(jp,1)==kc3).and.(plist_new(jp,2)==kl0r)) then
+                           add_to_front = .false.
+                           exit
+                        end if
+                     end do
+
+                     if (add_to_front) then
+                        ! Add point to the front
+                        np_new = np_new+1
+                        plist_new(np_new,1) = kc3
+                        plist_new(np_new,2) = kl0r
+                     end if
+                  end if
+               end if
+            end do
+         end do
+      end do
+
+      ! Copy new front
+      np = np_new
+      plist(1:np,:) = plist_new(1:np,:)
+   end do
+
+   do jl0r=1,nl0r
+      do jc3=1,nc3
+         ! Gaspari-Cohn (1999) function
+         distnorm = dist(jc3,jl0r)
+         fit(jc3,jl0r,il0) = gc99(mpl,distnorm)
+      end do
+   end do
+
+   ! Release memory
+   deallocate(plist)
+   deallocate(plist_new)
+   deallocate(dist)
+end do
+!$omp end parallel do
+
+end subroutine fit_diag
+
+!----------------------------------------------------------------------
+! Subroutine: fit_diag_dble
+!> Purpose: diagnostic fit, double-fit
+!----------------------------------------------------------------------
+subroutine fit_diag_dble(mpl,nc3,nl0r,nl0,l0rl0_to_l0,disth,distvr,rh,rv,rv_rfac,rv_coef,fit)
+
+implicit none
+
+! Passed variables
+type(mpl_type),intent(in) :: mpl                 !< MPI data
+integer,intent(in) :: nc3                        !< Number of classes
+integer,intent(in) :: nl0r                       !< Reduced number of levels
+integer,intent(in) :: nl0                        !< Number of levels
+integer,intent(in) :: l0rl0_to_l0(nl0r,nl0)      !< Reduced level to level
+real(kind_real),intent(in) :: disth(nc3)         !< Horizontal distance
+real(kind_real),intent(in) :: distvr(nl0r,nl0)   !< Vertical distance
+real(kind_real),intent(in) :: rh(nl0)            !< Horizontal support radius
+real(kind_real),intent(in) :: rv(nl0)            !< Vertical support radius
+real(kind_real),intent(in) :: rv_rfac(nl0)       !< Vertical fit support radius ratio for the positive component
+real(kind_real),intent(in) :: rv_coef(nl0)       !< Vertical fit coefficient
+real(kind_real),intent(out) :: fit(nc3,nl0r,nl0) !< Fit
+
+! Local variables
+integer :: jl0r,jl0,il0,kl0r,kl0,jc3,kc3,ip,jp,np,np_new
+integer,allocatable :: plist(:,:),plist_new(:,:)
+real(kind_real) :: rhsq,rvsq,distnorm,disttest,rfac,coef,distnormv,distnormh
+real(kind_real),allocatable :: dist(:,:)
+logical :: add_to_front
+
+! Initialization
+fit = 0.0
+
+!$omp parallel do schedule(static) private(il0,np,jl0r,np_new,ip,jc3,jl0,kc3,kl0r,kl0,rhsq,rvsq,distnorm,disttest,add_to_front), &
+!$omp&                             private(coef,distnormv,distnormh) firstprivate(plist,plist_new,dist)
 do il0=1,nl0
    ! Allocation
    allocate(plist(nc3*nl0r,2))
@@ -344,17 +480,22 @@ do il0=1,nl0
 
    do jl0r=1,nl0r
       jl0 = l0rl0_to_l0(jl0r,il0)
-      if ((abs(vnle(il0))<0.0).or.(abs(vnle(jl0))<0.0)) then
+      distnormv = dist(1,jl0r)
+      if ((abs(rv_rfac(il0))<0.0).or.(abs(rv_rfac(jl0))<0.0)) then
+          rfac = 0.0
+      else
+          rfac = sqrt(rv_rfac(il0)*rv_rfac(jl0))
+      end if
+      if ((abs(rv_coef(il0))<0.0).or.(abs(rv_coef(jl0))<0.0)) then
           coef = 0.0
       else
-          coef = sqrt(vnle(il0)*vnle(jl0))
+          coef = sqrt(rv_coef(il0)*rv_coef(jl0))
       end if
       do jc3=1,nc3
-         ! Gaspari-Cohn (1999) function, with a vertical normalized Laplacian envelope
+         ! Double Gaspari-Cohn (1999) function
          distnorm = dist(jc3,jl0r)
-         distnormv = dist(1,jl0r)
          distnormh = sqrt(distnorm**2-distnormv**2)
-         fit(jc3,jl0r,il0) = (1.0-coef)*gc99(mpl,distnorm)+coef*gc99(mpl,distnormh)*gc99lap(mpl,distnormv)
+         fit(jc3,jl0r,il0) = gc99(mpl,distnormh)*((1.0+coef)*gc99(mpl,distnormv/rfac)-coef*gc99(mpl,distnormv))
       end do
    end do
 
@@ -365,7 +506,7 @@ do il0=1,nl0
 end do
 !$omp end parallel do
 
-end subroutine fit_diag
+end subroutine fit_diag_dble
 
 !----------------------------------------------------------------------
 ! Function: gc99
@@ -395,35 +536,6 @@ end if
 return
 
 end function gc99
-
-!----------------------------------------------------------------------
-! Function: gc99lap
-!> Purpose: normalized Laplacian of the Gaspari and Cohn (1999) function, with the support radius as a parameter
-!----------------------------------------------------------------------
-function gc99lap(mpl,distnorm)
-
-! Passed variables
-type(mpl_type),intent(in) :: mpl       !< MPI data
-real(kind_real),intent(in) :: distnorm !< Normalized distance
-
-! Returned variable
-real(kind_real) :: gc99lap
-
-! Distance check bound
-if (distnorm<0.0) call mpl%abort('negative normalized distance')
-
-! Gaspari and Cohn (1999) function
-if (distnorm<0.5) then
-   gc99lap = 12.0*distnorm**3-36.0/5.0*distnorm**2-9.0/4.0*distnorm+1.0
-else if (distnorm<1.0) then
-   gc99lap = -4.0*distnorm**3+36.0/5.0*distnorm**2-9.0/4.0*distnorm-1.0+1.0/(20.0*distnorm**3)
-else
-   gc99lap = 0.0
-end if
-
-return
-
-end function gc99lap
 
 !----------------------------------------------------------------------
 ! Subroutine: fit_lct

@@ -18,6 +18,7 @@ use qg_goms_mod
 use calculate_pv, only : calc_pv
 use netcdf
 use kinds
+use mpi
 
 implicit none
 private
@@ -1318,12 +1319,16 @@ implicit none
 type(qg_field), intent(in) :: self
 type(unstructured_grid), intent(inout) :: ug
 
-integer :: nc0a,ic0a,jx,jy,jl,jf,joff
+integer :: myproc,info,nc0a,ic0a,jx,jy,jl,jf,joff
 integer,allocatable :: imask(:,:)
 real(kind=kind_real),allocatable :: lon(:),lat(:),area(:),vunit(:,:)
 
-! Define local number of gridpoints (equal to global here since QG works on a single proc)
-nc0a = self%geom%nx*self%geom%ny
+! Find rank
+call mpi_comm_rank(mpi_comm_world,myproc,info)
+myproc = myproc+1
+
+! Define local number of gridpoints
+nc0a = count(self%geom%myproc==myproc)
 
 ! Allocation
 allocate(lon(nc0a))
@@ -1336,10 +1341,12 @@ allocate(imask(nc0a,self%nl))
 ic0a = 0
 do jy=1,self%geom%ny
   do jx=1,self%geom%nx
-    ic0a = ic0a+1
-    lon(ic0a) = self%geom%lon(jx)
-    lat(ic0a) = self%geom%lat(jy)
-    area(ic0a) = self%geom%area(jx,jy)
+    if (self%geom%myproc(jx,jy)==myproc) then
+      ic0a = ic0a+1
+      lon(ic0a) = self%geom%lon(jx)
+      lat(ic0a) = self%geom%lat(jy)
+      area(ic0a) = self%geom%area(jx,jy)
+    endif
   enddo
 enddo
 imask = 1
@@ -1356,13 +1363,15 @@ call create_unstructured_grid(ug, nc0a, self%nl, self%nf, 1, lon, lat, area, vun
 ic0a = 0
 do jy=1,self%geom%ny
   do jx=1,self%geom%nx
-    ic0a = ic0a+1
-    do jf=1,self%nf
-      joff = (jf-1)*self%nl
-      do jl=1,self%nl
-        ug%fld(ic0a,jl,jf,1) = self%gfld3d(jx,jy,joff+jl)
+    if (self%geom%myproc(jx,jy)==myproc) then
+      ic0a = ic0a+1
+      do jf=1,self%nf
+        joff = (jf-1)*self%nl
+        do jl=1,self%nl
+          ug%fld(ic0a,jl,jf,1) = self%gfld3d(jx,jy,joff+jl)
+        enddo
       enddo
-    enddo
+    endif
   enddo
 enddo
 
@@ -1376,19 +1385,29 @@ implicit none
 type(qg_field), intent(inout) :: self
 type(unstructured_grid), intent(in) :: ug
 
-integer :: ic0a,jx,jy,jl,jf,joff
+integer :: myproc,info,ic0a,jx,jy,jl,jf,joff
+
+! Find rank
+call mpi_comm_rank(mpi_comm_world,myproc,info)
+myproc = myproc+1
 
 ! Copy field
 ic0a = 0
 do jy=1,self%geom%ny
   do jx=1,self%geom%nx
-    ic0a = ic0a+1
-    do jf=1,self%nf
-      joff = (jf-1)*self%nl
-      do jl=1,self%nl
-        self%gfld3d(jx,jy,joff+jl) = ug%fld(ic0a,jl,jf,1)
+    if (self%geom%myproc(jx,jy)==myproc) then
+      ! Copy local field
+      ic0a = ic0a+1
+      do jf=1,self%nf
+        joff = (jf-1)*self%nl
+        do jl=1,self%nl
+          self%gfld3d(jx,jy,joff+jl) = ug%fld(ic0a,jl,jf,1)
+        enddo
       enddo
-    enddo
+    endif
+
+    ! Broadcast
+    call mpi_bcast(self%gfld3d(jx,jy,:),self%nf*self%nl,mpi_double,self%geom%myproc(jx,jy)-1,mpi_comm_world,info)
   enddo
 enddo
 

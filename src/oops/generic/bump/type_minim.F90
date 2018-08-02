@@ -12,7 +12,7 @@ module type_minim
 
 use tools_const, only: rth
 use tools_fit, only: ver_smooth
-use tools_func, only: fit_diag,fit_lct
+use tools_func, only: fit_diag,fit_diag_dble,fit_lct
 use tools_kinds, only: kind_real
 use tools_missing, only: isnotmsr
 use type_mpl, only: mpl_type
@@ -49,7 +49,6 @@ type minim_type
    integer,allocatable :: l0rl0_to_l0(:,:)    !< Reduced level to level
    real(kind_real),allocatable :: disth(:)    !< Horizontal distance
    real(kind_real),allocatable :: distvr(:,:) !< Vertical distance
-   logical :: vlap                            !< Vertical envelope
 
    ! Specific data (LCT)
    integer :: nscales                         !< Number of LCT scales
@@ -62,6 +61,7 @@ contains
    procedure :: compute => minim_compute
    procedure :: cost => minim_cost
    procedure :: cost_fit_diag => minim_cost_fit_diag
+   procedure :: cost_fit_diag_dble => minim_cost_fit_diag_dble
    procedure :: cost_fit_lct => minim_cost_fit_lct
    procedure :: hooke => minim_hooke
    procedure :: best_nearby => minim_best_nearby
@@ -142,6 +142,8 @@ real(kind_real),intent(out) :: f          !< Cost function value
 select case (minim%cost_function)
 case ('fit_diag')
    call minim%cost_fit_diag(mpl,x,f)
+case ('fit_diag_dble')
+   call minim%cost_fit_diag_dble(mpl,x,f)
 case ('fit_lct')
    call minim%cost_fit_lct(mpl,x,f)
 end select
@@ -164,11 +166,10 @@ real(kind_real),intent(out) :: f          !< Cost function value
 
 ! Local variables
 integer :: offset,il0
-real(kind_real) :: fo,fh,fv,fe,norm,fit_rh_avg,fit_rv_avg,fit_vnle_avg
-real(kind_real) :: fit_rh(minim%nl0),fit_rv(minim%nl0),fit_vnle(minim%nl0)
+real(kind_real) :: fo,fh,fv,norm,fit_rh_avg,fit_rv_avg
+real(kind_real) :: fit_rh(minim%nl0),fit_rv(minim%nl0)
 real(kind_real) :: fit(minim%nc3,minim%nl0r,minim%nl0)
 real(kind_real) :: xtmp(minim%nx),fit_pack(minim%ny)
-logical :: vlap
 
 ! Check control vector size
 offset = 0
@@ -182,7 +183,6 @@ if (minim%lhomv) then
 else
    offset = offset+minim%nl0
 end if
-vlap = (minim%nx>offset)
 
 ! Renormalize
 xtmp = x
@@ -200,25 +200,13 @@ end if
 if (minim%lhomv) then
    fit_rv = xtmp(offset+1)
    offset = offset+1
-   if (vlap) then
-      fit_vnle = xtmp(offset+1)
-      offset = offset+1
-   else
-      fit_vnle = 0.0
-   end if
 else
    fit_rv = xtmp(offset+1:offset+minim%nl0)
    offset = offset+minim%nl0
-   if (vlap) then
-      fit_vnle = xtmp(offset+1:offset+minim%nl0)
-      offset = offset+minim%nl0
-   else
-      fit_vnle = 0.0
-   end if
 end if
 
 ! Compute function
-call fit_diag(mpl,minim%nc3,minim%nl0r,minim%nl0,minim%l0rl0_to_l0,minim%disth,minim%distvr,fit_rh,fit_rv,fit_vnle,fit)
+call fit_diag(mpl,minim%nc3,minim%nl0r,minim%nl0,minim%l0rl0_to_l0,minim%disth,minim%distvr,fit_rh,fit_rv,fit)
 
 ! Pack
 fit_pack = pack(fit,mask=.true.)
@@ -231,7 +219,6 @@ if (norm>0.0) fo = fo/norm
 ! Smoothing penalty
 fh = 0.0
 fv = 0.0
-fe = 0.0
 do il0=2,minim%nl0-1
    fit_rh_avg = 0.5*(fit_rh(il0-1)+fit_rh(il0+1))
    norm = fit_rh_avg**2
@@ -239,17 +226,99 @@ do il0=2,minim%nl0-1
    fit_rv_avg = 0.5*(fit_rv(il0-1)+fit_rv(il0+1))
    norm = fit_rv_avg**2
    if (norm>0.0) fv = fv+(fit_rv(il0)-fit_rv_avg)**2/norm
-   if (vlap) then
-      fit_vnle_avg = 0.5*(fit_vnle(il0-1)+fit_vnle(il0+1))
-      norm = fit_vnle_avg**2
-      if (norm>0.0) fe = fe+(fit_vnle(il0)-fit_vnle_avg)**2/norm
-   end if
 end do
 
 ! Full penalty function
-f = fo+fh+fv+fe
+f = fo+fh+fv
 
 end subroutine minim_cost_fit_diag
+
+!----------------------------------------------------------------------
+! Subroutine: minim_cost_fit_diag_dble
+!> Purpose: diagnosic fit function cost, double fit
+!----------------------------------------------------------------------
+subroutine minim_cost_fit_diag_dble(minim,mpl,x,f)
+
+implicit none
+
+! Passed variables
+class(minim_type),intent(in) :: minim     !< Minimization data
+type(mpl_type),intent(in) :: mpl          !< MPI data
+real(kind_real),intent(in) :: x(minim%nx) !< Control vector
+real(kind_real),intent(out) :: f          !< Cost function value
+
+! Local variables
+integer :: offset,il0
+real(kind_real) :: fo,fh,fv,fr,fc,norm,fit_rh_avg,fit_rv_avg,fit_rv_rfac_avg,fit_rv_coef_avg
+real(kind_real) :: fit_rh(minim%nl0),fit_rv(minim%nl0),fit_rv_rfac(minim%nl0),fit_rv_coef(minim%nl0)
+real(kind_real) :: fit(minim%nc3,minim%nl0r,minim%nl0)
+real(kind_real) :: xtmp(minim%nx),fit_pack(minim%ny)
+
+! Renormalize
+xtmp = x
+call minim%vt_dir(xtmp)
+
+! Get data
+offset = 0
+if (minim%lhomh) then
+   fit_rh = xtmp(offset+1)
+   offset = offset+1
+else
+   fit_rh = xtmp(offset+1:offset+minim%nl0)
+   offset = offset+minim%nl0
+end if
+if (minim%lhomv) then
+   fit_rv = xtmp(offset+1)
+   offset = offset+1
+   fit_rv_rfac = xtmp(offset+1)
+   offset = offset+1
+   fit_rv_coef = xtmp(offset+1)
+   offset = offset+1
+else
+   fit_rv = xtmp(offset+1:offset+minim%nl0)
+   offset = offset+minim%nl0
+   fit_rv_rfac = xtmp(offset+1:offset+minim%nl0)
+   offset = offset+minim%nl0
+   fit_rv_coef = xtmp(offset+1:offset+minim%nl0)
+   offset = offset+minim%nl0
+end if
+
+! Compute function
+call fit_diag_dble(mpl,minim%nc3,minim%nl0r,minim%nl0,minim%l0rl0_to_l0,minim%disth,minim%distvr,fit_rh,fit_rv, &
+ & fit_rv_rfac,fit_rv_coef,fit)
+
+! Pack
+fit_pack = pack(fit,mask=.true.)
+
+! Observations penalty
+fo = sum((fit_pack-minim%obs)**2,mask=isnotmsr(minim%obs).and.isnotmsr(fit_pack))
+norm = sum(minim%obs**2,mask=isnotmsr(minim%obs).and.isnotmsr(fit_pack))
+if (norm>0.0) fo = fo/norm
+
+! Smoothing penalty
+fh = 0.0
+fv = 0.0
+fr = 0.0
+fc = 0.0
+do il0=2,minim%nl0-1
+   fit_rh_avg = 0.5*(fit_rh(il0-1)+fit_rh(il0+1))
+   norm = fit_rh_avg**2
+   if (norm>0.0) fh = fh+(fit_rh(il0)-fit_rh_avg)**2/norm
+   fit_rv_avg = 0.5*(fit_rv(il0-1)+fit_rv(il0+1))
+   norm = fit_rv_avg**2
+   if (norm>0.0) fv = fv+(fit_rv(il0)-fit_rv_avg)**2/norm
+   fit_rv_rfac_avg = 0.5*(fit_rv_rfac(il0-1)+fit_rv_rfac(il0+1))
+   norm = fit_rv_rfac_avg**2
+   if (norm>0.0) fr = fr+(fit_rv_rfac(il0)-fit_rv_rfac_avg)**2/norm
+   fit_rv_coef_avg = 0.5*(fit_rv_coef(il0-1)+fit_rv_coef(il0+1))
+   norm = fit_rv_coef_avg**2
+   if (norm>0.0) fc = fc+(fit_rv_coef(il0)-fit_rv_coef_avg)**2/norm
+end do
+
+! Full penalty function
+f = fo+fh+fv+fr+fc
+
+end subroutine minim_cost_fit_diag_dble
 
 !----------------------------------------------------------------------
 ! Function: minim_cost_fit_lct

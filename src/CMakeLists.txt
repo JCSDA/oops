@@ -128,16 +128,6 @@ oops/generic/instantiateObsErrorFactory.h
 oops/generic/unstructured_grid_f.h
 oops/generic/unstructured_grid_mod.F90
 
-oops/generic/bump/model_aro.F90
-oops/generic/bump/model_arp.F90
-oops/generic/bump/model_gem.F90
-oops/generic/bump/model_geos.F90
-oops/generic/bump/model_gfs.F90
-oops/generic/bump/model_ifs.F90
-oops/generic/bump/model_interface.F90
-oops/generic/bump/model_mpas.F90
-oops/generic/bump/model_nemo.F90
-oops/generic/bump/model_wrf.F90
 oops/generic/bump/tools_const.F90
 oops/generic/bump/tools_fit.F90
 oops/generic/bump/tools_func.F90
@@ -177,7 +167,6 @@ oops/generic/bump/type_nicas.F90
 oops/generic/bump/type_obsop.F90
 oops/generic/bump/type_rng.F90
 oops/generic/bump/type_timer.F90
-oops/generic/bump/yomhook.F90
 oops/generic/bump/external/tools_kdtree2.F90
 oops/generic/bump/external/tools_kdtree2_pq.F90
 oops/generic/bump/external/tools_qsort.F90

@@ -138,10 +138,12 @@ call cmat_copy%alloc(nam,geom,bpar,trim(cmat%prefix))
 do ib=1,bpar%nb+1
    if (allocated(cmat%blk(ib)%coef_ens)) cmat_copy%blk(ib)%coef_ens = cmat%blk(ib)%coef_ens
    if (allocated(cmat%blk(ib)%coef_sta)) cmat_copy%blk(ib)%coef_sta = cmat%blk(ib)%coef_sta
-   if (allocated(cmat%blk(ib)%rh0)) cmat_copy%blk(ib)%rh0 = cmat%blk(ib)%rh0
-   if (allocated(cmat%blk(ib)%rv0)) cmat_copy%blk(ib)%rv0 = cmat%blk(ib)%rv0
-   if (allocated(cmat%blk(ib)%rh0s)) cmat_copy%blk(ib)%rh0s = cmat%blk(ib)%rh0s
-   if (allocated(cmat%blk(ib)%rv0s)) cmat_copy%blk(ib)%rv0s = cmat%blk(ib)%rv0s
+   if (allocated(cmat%blk(ib)%rh_c0)) cmat_copy%blk(ib)%rh_c0 = cmat%blk(ib)%rh_c0
+   if (allocated(cmat%blk(ib)%rv_c0)) cmat_copy%blk(ib)%rv_c0 = cmat%blk(ib)%rv_c0
+   if (allocated(cmat%blk(ib)%rv_rfac_c0)) cmat_copy%blk(ib)%rv_rfac_c0 = cmat%blk(ib)%rv_rfac_c0
+   if (allocated(cmat%blk(ib)%rv_coef_c0)) cmat_copy%blk(ib)%rv_coef_c0 = cmat%blk(ib)%rv_coef_c0
+   if (allocated(cmat%blk(ib)%rhs_c0)) cmat_copy%blk(ib)%rhs_c0 = cmat%blk(ib)%rhs_c0
+   if (allocated(cmat%blk(ib)%rvs_c0)) cmat_copy%blk(ib)%rvs_c0 = cmat%blk(ib)%rvs_c0
    if (allocated(cmat%blk(ib)%displ_lon)) cmat_copy%blk(ib)%displ_lon = cmat%blk(ib)%displ_lon
    if (allocated(cmat%blk(ib)%displ_lat)) cmat_copy%blk(ib)%displ_lat = cmat%blk(ib)%displ_lat
 end do
@@ -177,10 +179,14 @@ do ib=1,bpar%nb+1
       if (bpar%nicas_block(ib)) then
          call io%fld_read(mpl,nam,geom,filename,'coef_ens',cmat%blk(ib)%coef_ens)
          call io%fld_read(mpl,nam,geom,filename,'coef_sta',cmat%blk(ib)%coef_sta)
-         call io%fld_read(mpl,nam,geom,filename,'rh0',cmat%blk(ib)%rh0)
-         call io%fld_read(mpl,nam,geom,filename,'rv0',cmat%blk(ib)%rv0)
-         call io%fld_read(mpl,nam,geom,filename,'rh0s',cmat%blk(ib)%rh0s)
-         call io%fld_read(mpl,nam,geom,filename,'rv0s',cmat%blk(ib)%rv0s)
+         call io%fld_read(mpl,nam,geom,filename,'rh_c0',cmat%blk(ib)%rh_c0)
+         call io%fld_read(mpl,nam,geom,filename,'rv_c0',cmat%blk(ib)%rv_c0)
+         if (nam%vlap(bpar%b_to_v1(ib))) then
+            call io%fld_read(mpl,nam,geom,filename,'rv_rfac_c0',cmat%blk(ib)%rv_rfac_c0)
+            call io%fld_read(mpl,nam,geom,filename,'rv_coef_c0',cmat%blk(ib)%rv_coef_c0)
+         end if
+         call io%fld_read(mpl,nam,geom,filename,'rhs_c0',cmat%blk(ib)%rhs_c0)
+         call io%fld_read(mpl,nam,geom,filename,'rvs_c0',cmat%blk(ib)%rvs_c0)
       end if
       if ((ib==bpar%nb+1).and.nam%displ_diag) then
          call io%fld_read(mpl,nam,geom,filename,'displ_lon',cmat%blk(ib)%displ_lon)
@@ -189,10 +195,10 @@ do ib=1,bpar%nb+1
 
       ! Check
       if (bpar%nicas_block(ib)) then
-         if (any((cmat%blk(ib)%rh0<0.0).and.isnotmsr(cmat%blk(ib)%rh0))) call mpl%abort('rh0 should be positive')
-         if (any((cmat%blk(ib)%rv0<0.0).and.isnotmsr(cmat%blk(ib)%rv0))) call mpl%abort('rv0 should be positive')
-         if (any((cmat%blk(ib)%rh0s<0.0).and.isnotmsr(cmat%blk(ib)%rh0s))) call mpl%abort('rh0s should be positive')
-         if (any((cmat%blk(ib)%rv0s<0.0).and.isnotmsr(cmat%blk(ib)%rv0s))) call mpl%abort('rv0s should be positive')
+         if (any((cmat%blk(ib)%rh_c0<0.0).and.isnotmsr(cmat%blk(ib)%rh_c0))) call mpl%abort('rh_c0 should be positive')
+         if (any((cmat%blk(ib)%rv_c0<0.0).and.isnotmsr(cmat%blk(ib)%rv_c0))) call mpl%abort('rv_c0 should be positive')
+         if (any((cmat%blk(ib)%rhs_c0<0.0).and.isnotmsr(cmat%blk(ib)%rhs_c0))) call mpl%abort('rhs_c0 should be positive')
+         if (any((cmat%blk(ib)%rvs_c0<0.0).and.isnotmsr(cmat%blk(ib)%rvs_c0))) call mpl%abort('rvs_c0 should be positive')
       end if
    end if
 end do
@@ -225,10 +231,14 @@ do ib=1,bpar%nb+1
       if (bpar%nicas_block(ib)) then
          call io%fld_write(mpl,nam,geom,filename,'coef_ens',cmat%blk(ib)%coef_ens)
          call io%fld_write(mpl,nam,geom,filename,'coef_sta',cmat%blk(ib)%coef_sta)
-         call io%fld_write(mpl,nam,geom,filename,'rh0',cmat%blk(ib)%rh0)
-         call io%fld_write(mpl,nam,geom,filename,'rv0',cmat%blk(ib)%rv0)
-         call io%fld_write(mpl,nam,geom,filename,'rh0s',cmat%blk(ib)%rh0s)
-         call io%fld_write(mpl,nam,geom,filename,'rv0s',cmat%blk(ib)%rv0s)
+         call io%fld_write(mpl,nam,geom,filename,'rh_c0',cmat%blk(ib)%rh_c0)
+         call io%fld_write(mpl,nam,geom,filename,'rv_c0',cmat%blk(ib)%rv_c0)
+         if (nam%vlap(bpar%b_to_v1(ib))) then
+            call io%fld_write(mpl,nam,geom,filename,'rv_rfac_c0',cmat%blk(ib)%rv_rfac_c0)
+            call io%fld_write(mpl,nam,geom,filename,'rv_coef_c0',cmat%blk(ib)%rv_coef_c0)
+         end if
+         call io%fld_write(mpl,nam,geom,filename,'rhs_c0',cmat%blk(ib)%rhs_c0)
+         call io%fld_write(mpl,nam,geom,filename,'rvs_c0',cmat%blk(ib)%rvs_c0)
       end if
       if ((ib==bpar%nb+1).and.nam%displ_diag) then
          call io%fld_write(mpl,nam,geom,filename,'displ_lon',cmat%blk(ib)%displ_lon)
@@ -499,7 +509,7 @@ type(hdata_type),intent(in) :: hdata   !< HDIAG data
 type(diag_type),intent(in) :: diag     !< Diagnostics
 
 ! Local variables
-integer :: ib,i,ic0a,il0,il0i,ic2a,its
+integer :: ib,n,i,ic0a,il0,il0i,ic2a,its
 real(kind_real) :: fld_c2a(hdata%nc2a,geom%nl0),fld_c2b(hdata%nc2b,geom%nl0),fld_c0a(geom%nc0a,geom%nl0)
 
 ! Allocation
@@ -509,8 +519,13 @@ call cmat%alloc(nam,geom,bpar,'cmat')
 do ib=1,bpar%nb+1
    if (bpar%B_block(ib)) then
       if (bpar%nicas_block(ib)) then
+         ! Copy attribute
+         cmat%blk(ib)%double_fit = diag%blk(0,ib)%double_fit
+
          if (nam%local_diag) then
-            do i=1,4
+            n = 4
+            if (cmat%blk(ib)%double_fit) n = n+2
+            do i=1,n
                ! Copy data
                do ic2a=1,hdata%nc2a
                   if (i==1) then
@@ -528,6 +543,10 @@ do ib=1,bpar%nb+1
                      fld_c2a(ic2a,:) = diag%blk(ic2a,ib)%fit_rh
                   elseif (i==4) then
                      fld_c2a(ic2a,:) = diag%blk(ic2a,ib)%fit_rv
+                  elseif (i==5) then
+                     fld_c2a(ic2a,:) = diag%blk(ic2a,ib)%fit_rv_rfac
+                  elseif (i==6) then
+                     fld_c2a(ic2a,:) = diag%blk(ic2a,ib)%fit_rv_coef
                   end if
                end do
 
@@ -546,17 +565,25 @@ do ib=1,bpar%nb+1
                elseif (i==2) then
                   cmat%blk(ib)%coef_sta = fld_c0a
                elseif (i==3) then
-                  cmat%blk(ib)%rh0 = fld_c0a
+                  cmat%blk(ib)%rh_c0 = fld_c0a
                elseif (i==4) then
-                  cmat%blk(ib)%rv0 = fld_c0a
+                  cmat%blk(ib)%rv_c0 = fld_c0a
+               elseif (i==5) then
+                  cmat%blk(ib)%rv_rfac_c0 = fld_c0a
+               elseif (i==6) then
+                  cmat%blk(ib)%rv_coef_c0 = fld_c0a
                end if
             end do
          else
             ! Copy to C matrix
             do il0=1,geom%nl0
                cmat%blk(ib)%coef_ens(:,il0) = diag%blk(0,ib)%raw_coef_ens(il0)
-               cmat%blk(ib)%rh0(:,il0) = diag%blk(0,ib)%fit_rh(il0)
-               cmat%blk(ib)%rv0(:,il0) = diag%blk(0,ib)%fit_rv(il0)
+               cmat%blk(ib)%rh_c0(:,il0) = diag%blk(0,ib)%fit_rh(il0)
+               cmat%blk(ib)%rv_c0(:,il0) = diag%blk(0,ib)%fit_rv(il0)
+               if (cmat%blk(ib)%double_fit) then
+                  cmat%blk(ib)%rv_rfac_c0(:,il0) = diag%blk(0,ib)%fit_rv_rfac(il0)
+                  cmat%blk(ib)%rv_coef_c0(:,il0) = diag%blk(0,ib)%fit_rv_coef(il0)
+               end if
                select case (trim(nam%method))
                case ('cor','loc')
                   cmat%blk(ib)%coef_sta(:,il0) = 0.0
@@ -577,16 +604,16 @@ end do
 ! Sampling parameters
 if (trim(nam%strategy)=='specific_multivariate') then
    ! Initialization
-   cmat%blk(ib)%rh0s = huge(1.0)
-   cmat%blk(ib)%rv0s = huge(1.0)
+   cmat%blk(ib)%rhs_c0 = huge(1.0)
+   cmat%blk(ib)%rvs_c0 = huge(1.0)
 
    ! Get minimum
    do ib=1,bpar%nb+1
       if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
          do il0=1,geom%nl0
             do ic0a=1,geom%nc0a
-               cmat%blk(ib)%rh0s(ic0a,il0) = min(cmat%blk(ib)%rh0s(ic0a,il0),cmat%blk(ib)%rh0(ic0a,il0))
-               cmat%blk(ib)%rv0s(ic0a,il0) = min(cmat%blk(ib)%rv0s(ic0a,il0),cmat%blk(ib)%rv0(ic0a,il0))
+               cmat%blk(ib)%rhs_c0(ic0a,il0) = min(cmat%blk(ib)%rhs_c0(ic0a,il0),cmat%blk(ib)%rh_c0(ic0a,il0))
+               cmat%blk(ib)%rvs_c0(ic0a,il0) = min(cmat%blk(ib)%rvs_c0(ic0a,il0),cmat%blk(ib)%rv_c0(ic0a,il0))
             end do
          end do
       end if
@@ -595,8 +622,8 @@ else
    ! Copy
    do ib=1,bpar%nb+1
       if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
-         cmat%blk(ib)%rh0s = cmat%blk(ib)%rh0
-         cmat%blk(ib)%rv0s = cmat%blk(ib)%rv0
+         cmat%blk(ib)%rhs_c0 = cmat%blk(ib)%rh_c0
+         cmat%blk(ib)%rvs_c0 = cmat%blk(ib)%rv_c0
       end if
    end do
 end if
@@ -615,7 +642,7 @@ end subroutine cmat_from_diag
 ! Subroutine: cmat_from_fields
 !> Purpose: copy radii into C matrix data
 !----------------------------------------------------------------------
-subroutine cmat_from_fields(cmat,mpl,nam,geom,bpar,rh0,rv0)
+subroutine cmat_from_fields(cmat,mpl,nam,geom,bpar,rh_c0,rv_c0)
 
 implicit none
 
@@ -625,8 +652,8 @@ type(mpl_type),intent(in) :: mpl                                     !< MPI data
 type(nam_type),intent(in) :: nam                                     !< Namelist
 type(geom_type),intent(in) :: geom                                   !< Geometry
 type(bpar_type),intent(in) :: bpar                                   !< Block parameters
-real(kind_real),intent(in) :: rh0(geom%nmga,geom%nl0,nam%nv,nam%nts) !< Horizontal support radius on model grid, halo A  (in m)
-real(kind_real),intent(in) :: rv0(geom%nmga,geom%nl0,nam%nv,nam%nts) !< Vertical support radius on model grid, halo A
+real(kind_real),intent(in) :: rh_c0(geom%nmga,geom%nl0,nam%nv,nam%nts) !< Horizontal support radius on model grid, halo A  (in m)
+real(kind_real),intent(in) :: rv_c0(geom%nmga,geom%nl0,nam%nv,nam%nts) !< Vertical support radius on model grid, halo A
 
 ! Local variables
 integer :: ib,iv,jv,its,jts,il0,ic0
@@ -641,6 +668,9 @@ call cmat%alloc(nam,geom,bpar,'cmat')
 ! Convolution parameters
 do ib=1,bpar%nb+1
    if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
+      ! Copy attribute
+      cmat%blk(ib)%double_fit = .false.
+
       ! Indices
       iv = bpar%b_to_v1(ib)
       jv = bpar%b_to_v2(ib)
@@ -650,8 +680,8 @@ do ib=1,bpar%nb+1
 
       ! Copy support radii
       do il0=1,geom%nl0
-         cmat%blk(ib)%rh0(:,il0) = rh0(geom%c0a_to_mga,il0,iv,its)/req
-         cmat%blk(ib)%rv0(:,il0) = rv0(geom%c0a_to_mga,il0,iv,its)
+         cmat%blk(ib)%rh_c0(:,il0) = rh_c0(geom%c0a_to_mga,il0,iv,its)/req
+         cmat%blk(ib)%rv_c0(:,il0) = rv_c0(geom%c0a_to_mga,il0,iv,its)
       end do
 
       ! Set coefficients
@@ -664,16 +694,16 @@ end do
 ! Sampling parameters
 if (trim(nam%strategy)=='specific_multivariate') then
    ! Initialization
-   cmat%blk(ib)%rh0s = huge(1.0)
-   cmat%blk(ib)%rv0s = huge(1.0)
+   cmat%blk(ib)%rhs_c0 = huge(1.0)
+   cmat%blk(ib)%rvs_c0 = huge(1.0)
 
    ! Get minimum
    do ib=1,bpar%nb+1
       if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
          do il0=1,geom%nl0
             do ic0=1,geom%nc0
-               cmat%blk(ib)%rh0s(ic0,il0) = min(cmat%blk(ib)%rh0s(ic0,il0),cmat%blk(ib)%rh0(ic0,il0))
-               cmat%blk(ib)%rv0s(ic0,il0) = min(cmat%blk(ib)%rv0s(ic0,il0),cmat%blk(ib)%rv0(ic0,il0))
+               cmat%blk(ib)%rhs_c0(ic0,il0) = min(cmat%blk(ib)%rhs_c0(ic0,il0),cmat%blk(ib)%rh_c0(ic0,il0))
+               cmat%blk(ib)%rvs_c0(ic0,il0) = min(cmat%blk(ib)%rvs_c0(ic0,il0),cmat%blk(ib)%rv_c0(ic0,il0))
             end do
          end do
       end if
@@ -682,8 +712,8 @@ else
    ! Copy
    do ib=1,bpar%nb+1
       if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
-         cmat%blk(ib)%rh0s = cmat%blk(ib)%rh0
-         cmat%blk(ib)%rv0s = cmat%blk(ib)%rv0
+         cmat%blk(ib)%rhs_c0 = cmat%blk(ib)%rh_c0
+         cmat%blk(ib)%rvs_c0 = cmat%blk(ib)%rv_c0
       end if
    end do
 end if
@@ -718,6 +748,9 @@ call cmat%alloc(nam,geom,bpar,'cmat')
 ! Convolution parameters
 do ib=1,bpar%nb+1
    if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
+      ! Copy attribute
+      cmat%blk(ib)%double_fit = .false.
+
       ! Indices
       iv = bpar%b_to_v1(ib)
       jv = bpar%b_to_v2(ib)
@@ -726,10 +759,10 @@ do ib=1,bpar%nb+1
       if ((iv/=jv).or.(its/=jts)) call mpl%abort('only diagonal blocks for cmat_from_radii')
 
       ! Copy support radii
-      cmat%blk(ib)%rh0 = nam%rh
-      cmat%blk(ib)%rh0s = nam%rh
-      cmat%blk(ib)%rv0 = nam%rv
-      cmat%blk(ib)%rv0s = nam%rv
+      cmat%blk(ib)%rh_c0 = nam%rh
+      cmat%blk(ib)%rhs_c0 = nam%rh
+      cmat%blk(ib)%rv_c0 = nam%rv
+      cmat%blk(ib)%rvs_c0 = nam%rv
 
       ! Set coefficients
       cmat%blk(ib)%coef_ens = 1.0

@@ -18,7 +18,7 @@ use tools_icos, only: closest_icos,build_icos
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsi,isnotmsr,ismsi,ismsr
 use tools_nc, only: ncfloat
-use tools_qsort, only: reorder_vec,qsort
+use tools_qsort, only: qsort
 use tools_stripack, only: trans
 use type_com, only: com_type
 use type_geom, only: geom_type
@@ -677,11 +677,6 @@ if (nam%local_diag.or.nam%displ_diag) then
          rh0 = 1.0
          call rng%initialize_sampling(mpl,nam%nc1,geom%lon(hdata%c1_to_c0),geom%lat(hdata%c1_to_c0),mask_c1, &
        & rh0,nam%ntry,nam%nrep,hdata%nc2,hdata%c2_to_c1)
-
-         ! Reorder sampling
-         allocate(c2_to_proc(hdata%nc2))
-         c2_to_proc = geom%c0_to_proc(hdata%c1_to_c0(hdata%c2_to_c1))
-         call reorder_vec(hdata%nc2,c2_to_proc,hdata%c2_to_c1)
       end if
       call mpl%bcast(hdata%c2_to_c1)
       hdata%c2_to_c0 = hdata%c1_to_c0(hdata%c2_to_c1)
@@ -791,7 +786,7 @@ if (nam%sam_write) then
    ! Write rh0
    if (trim(nam%draw_type)=='random_coast') then
       do il0=1,geom%nl0
-         call mpl%scatterv(geom%proc_to_nc0a,geom%nc0,hdata%rh0(:,il0),geom%nc0a,rh0_loc(:,il0))
+         call mpl%glb_to_loc(geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,hdata%rh0(:,il0),geom%nc0a,rh0_loc(:,il0))
       end do
       filename = trim(nam%prefix)//'_sampling_rh0'
       call io%fld_write(mpl,nam,geom,filename,'rh0',rh0_loc)
@@ -851,7 +846,6 @@ type(geom_type),intent(in) :: geom       !< Geometry
 ! Local variables
 integer :: ic0,ic1,il0,fac,np,ip
 integer :: nn_index(1)
-integer :: c1_to_proc(nam%nc1)
 real(kind_real) :: nn_dist(1)
 real(kind_real),allocatable :: lon(:),lat(:)
 logical :: mask_c0(geom%nc0)
@@ -935,10 +929,6 @@ if (nam%nc1<maxval(count(geom%mask,dim=1))) then
          deallocate(lon)
          deallocate(lat)
       end select
-
-      ! Reorder sampling
-      c1_to_proc = geom%c0_to_proc(hdata%c1_to_c0)
-      call reorder_vec(nam%nc1,c1_to_proc,hdata%c1_to_c0)
    end if
    call mpl%bcast(hdata%c1_to_c0)
 else
@@ -1468,7 +1458,7 @@ do ic2=1,hdata%nc2
       hdata%c2a_to_c2(ic2a) = ic2
    end if
 end do
-call mpl%glb_to_loc(hdata%nc2a,hdata%c2a_to_c2,hdata%nc2,hdata%c2_to_c2a)
+call mpl%glb_to_loc_index(hdata%nc2a,hdata%c2a_to_c2,hdata%nc2,hdata%c2_to_c2a)
 
 ! Halo B
 allocate(hdata%c2b_to_c2(hdata%nc2b))
@@ -1651,8 +1641,8 @@ if (nam%displ_diag) then
    do its=1,nam%nts
       do il0=1,geom%nl0
          ! Local to global
-         call mpl%allgatherv(geom%nc0a,hdata%displ_lon(:,il0,its),geom%proc_to_nc0a,geom%nc0,displ_lon)
-         call mpl%allgatherv(geom%nc0a,hdata%displ_lat(:,il0,its),geom%proc_to_nc0a,geom%nc0,displ_lat)
+         call mpl%loc_to_glb(geom%nc0a,hdata%displ_lon(:,il0,its),geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,.true.,displ_lon)
+         call mpl%loc_to_glb(geom%nc0a,hdata%displ_lat(:,il0,its),geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,.true.,displ_lat)
 
          ! Copy Sc1 points
          do ic1=1,nam%nc1
@@ -1902,7 +1892,7 @@ if (rflt>0.0) then
       allocate(diag_glb(hdata%nc2))
 
       ! Local to global
-      call mpl%allgatherv(hdata%nc2a,diag,hdata%proc_to_nc2a,hdata%nc2,diag_glb)
+     call mpl%loc_to_glb(hdata%nc2a,diag,hdata%nc2,hdata%c2_to_proc,hdata%c2_to_c2a,.true.,diag_glb)
    end if
 
    !$omp parallel do schedule(static) private(ic2a,ic2,ic1,nc2eff,jc2,distnorm,norm,wgt) firstprivate(diag_eff,diag_eff_dist,order)
@@ -2011,7 +2001,7 @@ if (nmsr_tot>0) then
    allocate(diag_glb(hdata%nc2))
 
    ! Local to global
-   call mpl%gatherv(hdata%nc2a,diag,hdata%proc_to_nc2a,hdata%nc2,diag_glb)
+   call mpl%loc_to_glb(hdata%nc2a,diag,hdata%nc2,hdata%c2_to_proc,hdata%c2_to_c2a,.false.,diag_glb)
 
    if (mpl%main) then
       do ic2=1,hdata%nc2
@@ -2026,7 +2016,7 @@ if (nmsr_tot>0) then
    end if
 
    ! Global to local
-   call mpl%scatterv(hdata%proc_to_nc2a,hdata%nc2,diag_glb,hdata%nc2a,diag)
+   call mpl%glb_to_loc(hdata%nc2,hdata%c2_to_proc,hdata%c2_to_c2a,diag_glb,hdata%nc2a,diag)
 end if
 
 end subroutine hdata_diag_fill

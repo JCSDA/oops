@@ -29,7 +29,6 @@ use type_nicas_blk, only: nicas_blk_type
 use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 use type_rng, only: rng_type
-use yomhook, only: lhook,dr_hook
 
 implicit none
 
@@ -762,12 +761,9 @@ real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) !< Field
 ! Local variable
 integer :: ib,its,iv,jv,il0,ic0a
 real(kind_real) :: prod,prod_tot
-real(kind_real) :: zhook_handle
 real(kind_real),allocatable :: fld_3d(:,:),fld_4d(:,:,:),fld_4d_tmp(:,:,:)
 real(kind_real),allocatable :: wgt(:,:),wgt_diag(:)
 real(kind_real),allocatable :: fld_save(:,:,:,:)
-
-if (lhook) call dr_hook('nicas_apply',0,zhook_handle)
 
 if (pos_def_test) then
    ! Save field for positive-definiteness test
@@ -936,8 +932,6 @@ end if
 ! Advection
 if (nam%advmode==1) call nicas%blk(bpar%nb+1)%apply_adv(mpl,nam,geom,fld)
 
-if (lhook) call dr_hook('nicas_apply',1,zhook_handle)
-
 end subroutine nicas_apply
 
 !----------------------------------------------------------------------
@@ -958,11 +952,8 @@ real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) !< Field
 
 ! Local variable
 real(kind_real) :: prod,prod_tot
-real(kind_real) :: zhook_handle
 real(kind_real),allocatable :: fld_save(:,:,:,:)
 type(cv_type) :: cv
-
-if (lhook) call dr_hook('nicas_apply_from_sqrt',0,zhook_handle)
 
 if (pos_def_test) then
    ! Save field for positivity test
@@ -982,8 +973,6 @@ if (pos_def_test) then
    call mpl%allreduce_sum(prod,prod_tot)
    if (prod_tot<0.0) call mpl%abort('negative result in nicas_apply')
 end if
-
-if (lhook) call dr_hook('nicas_apply_from_sqrt',1,zhook_handle)
 
 end subroutine nicas_apply_from_sqrt
 
@@ -1006,11 +995,8 @@ real(kind_real),intent(out) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) !< Field
 
 ! Local variable
 integer :: ib,its,iv,jv,i
-real(kind_real) :: zhook_handle
 real(kind_real),allocatable :: fld_3d(:,:),fld_4d(:,:,:),fld_4d_tmp(:,:,:)
 real(kind_real),allocatable :: wgt(:,:),wgt_diag(:),a(:),u(:)
-
-if (lhook) call dr_hook('nicas_apply_sqrt',0,zhook_handle)
 
 select case (nam%strategy)
 case ('common')
@@ -1150,8 +1136,6 @@ end select
 ! Advection
 if (nam%advmode==1) call nicas%blk(bpar%nb+1)%apply_adv(mpl,nam,geom,fld)
 
-if (lhook) call dr_hook('nicas_apply_sqrt',1,zhook_handle)
-
 end subroutine nicas_apply_sqrt
 
 !----------------------------------------------------------------------
@@ -1173,12 +1157,9 @@ type(cv_type),intent(out) :: cv                                      !< Control 
 
 ! Local variable
 integer :: ib,its,iv,jv,i
-real(kind_real) :: zhook_handle
 real(kind_real),allocatable :: fld_3d(:,:),fld_4d(:,:,:),fld_4d_tmp(:,:,:),fld_5d(:,:,:,:)
 real(kind_real),allocatable :: wgt(:,:),wgt_diag(:),a(:),u(:)
 type(cv_type) :: cv_tmp
-
-if (lhook) call dr_hook('nicas_apply_sqrt_ad',0,zhook_handle)
 
 ! Allocation
 allocate(fld_5d(geom%nc0a,geom%nl0,nam%nv,nam%nts))
@@ -1336,8 +1317,6 @@ case ('common_weighted')
    end do
 end select
 
-if (lhook) call dr_hook('nicas_apply_sqrt_ad',1,zhook_handle)
-
 end subroutine nicas_apply_sqrt_ad
 
 !----------------------------------------------------------------------
@@ -1361,10 +1340,7 @@ type(ens_type),intent(out),optional :: ens !< Ensemble
 ! Local variable
 integer :: ie
 real(kind_real) :: mean(geom%nc0a,geom%nl0,nam%nv,nam%nts),std(geom%nc0a,geom%nl0,nam%nv,nam%nts)
-real(kind_real) :: zhook_handle
 type(cv_type) :: cv_ens(ne)
-
-if (lhook) call dr_hook('nicas_randomize',0,zhook_handle)
 
 ! Allocation
 call ens%alloc(nam,geom,ne,1)
@@ -1386,8 +1362,6 @@ std = sqrt(sum(ens%fld**2,dim=5)/real(ne-1,kind_real))
 do ie=1,ne
    ens%fld(:,:,:,:,ie) = ens%fld(:,:,:,:,ie)/std
 end do
-
-if (lhook) call dr_hook('nicas_randomize',1,zhook_handle)
 
 end subroutine nicas_randomize
 
@@ -1883,7 +1857,7 @@ type(cmat_type),intent(in) :: cmat    !< C matrix data
 
 ! Local variables
 integer :: ens1_ne,ens1_ne_offset,ens1_nsub,ib,il0
-real(kind_real) :: rh0sum,rv0sum,norm
+real(kind_real) :: rh_c0_sum,rv_c0_sum,norm
 character(len=1024) :: prefix,method
 type(cmat_type) :: cmat_test
 type(ens_type) :: ens
@@ -1922,13 +1896,15 @@ do ib=1,bpar%nb+1
    if (bpar%nicas_block(ib)) then
       write(mpl%unit,'(a7,a,a)') '','Block: ',trim(bpar%blockname(ib))
       do il0=1,geom%nl0
-         call mpl%allreduce_sum(sum(cmat_test%blk(ib)%rh0(:,il0)-cmat%blk(ib)%rh0(:,il0),geom%mask(geom%c0a_to_c0,il0)),rh0sum)
-         call mpl%allreduce_sum(sum(cmat_test%blk(ib)%rv0(:,il0)-cmat%blk(ib)%rv0(:,il0),geom%mask(geom%c0a_to_c0,il0)),rv0sum)
+         call mpl%allreduce_sum(sum(cmat_test%blk(ib)%rh_c0(:,il0)-cmat%blk(ib)%rh_c0(:,il0),geom%mask(geom%c0a_to_c0,il0)), &
+       & rh_c0_sum)
+         call mpl%allreduce_sum(sum(cmat_test%blk(ib)%rv_c0(:,il0)-cmat%blk(ib)%rv_c0(:,il0),geom%mask(geom%c0a_to_c0,il0)), &
+       & rv_c0_sum)
          call mpl%allreduce_sum(real(count(geom%mask(geom%c0a_to_c0,il0)),kind_real),norm)
          write(mpl%unit,'(a10,a7,i3,a4,a25,f6.1,a)') '','Level: ',nam%levs(il0),' ~> ','horizontal length-scale: ', &
-       & rh0sum/norm*reqkm,' km'
-         if (any(abs(cmat%blk(ib)%rv0(:,il0))>0.0)) then
-            write(mpl%unit,'(a49,f6.1,a)') 'vertical length-scale: ',rh0sum/norm,' '//trim(mpl%vunitchar)
+       & rh_c0_sum/norm*reqkm,' km'
+         if (any(abs(cmat%blk(ib)%rv_c0(:,il0))>0.0)) then
+            write(mpl%unit,'(a49,f6.1,a)') 'vertical length-scale: ',rh_c0_sum/norm,' '//trim(mpl%vunitchar)
          end if
       end do
    end if
@@ -2022,11 +1998,11 @@ do ifac=1,nfac
    do ib=1,bpar%nb+1
       if (bpar%nicas_block(ib)) then
          ! Length-scales multiplication
-         cmat_test%blk(ib)%rh0 = fac(ifac)*cmat_save%blk(ib)%rh0
-         cmat_test%blk(ib)%rv0 = fac(ifac)*cmat_save%blk(ib)%rv0
+         cmat_test%blk(ib)%rh_c0 = fac(ifac)*cmat_save%blk(ib)%rh_c0
+         cmat_test%blk(ib)%rv_c0 = fac(ifac)*cmat_save%blk(ib)%rv_c0
          if (trim(nam%strategy)=='specific_multivariate') then
-            cmat_test%blk(ib)%rh0s = fac(ifac)*cmat_save%blk(ib)%rh0s
-            cmat_test%blk(ib)%rv0s = fac(ifac)*cmat_save%blk(ib)%rv0s
+            cmat_test%blk(ib)%rhs_c0 = fac(ifac)*cmat_save%blk(ib)%rhs_c0
+            cmat_test%blk(ib)%rvs_c0 = fac(ifac)*cmat_save%blk(ib)%rvs_c0
          end if
 
          ! Compute NICAS parameters

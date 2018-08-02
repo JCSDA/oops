@@ -371,7 +371,6 @@ do il0=1,geom%nl0
          minim%ncomp = lct_blk%ncomp
 
          ! Compute fit
-         minim%cost_function = 'fit_lct'
          call minim%compute(mpl,lprt)
 
          ! Copy parameters
