@@ -143,7 +143,7 @@ if (nam%field_io) then
 
       ! Global to local
       do il0=1,geom%nl0
-         call mpl%scatterv(geom%proc_to_nc0a,geom%nc0,fld_c0(:,il0),geom%nc0a,fld(:,il0))
+         call mpl%glb_to_loc(geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,fld_c0(:,il0),geom%nc0a,fld(:,il0))
       end do
    end if
 else
@@ -179,7 +179,7 @@ integer :: ncid,nc0a_id,nc0_id,nl0_id,fld_id,lon_id,lat_id
 real(kind_real) :: fld_c0a(geom%nc0a,geom%nl0)
 real(kind_real) :: fld_c0(geom%nc0,geom%nl0)
 character(len=1024) :: filename_proc
-character(len=1024) :: subr = 'fld_write'
+character(len=1024) :: subr = 'io_fld_write'
 
 if (nam%field_io) then
    ! Apply mask
@@ -250,7 +250,7 @@ if (nam%field_io) then
    else
       ! Local to global
       do il0=1,geom%nl0
-         call mpl%gatherv(geom%nc0a,fld_c0a(:,il0),geom%proc_to_nc0a,geom%nc0,fld_c0(:,il0))
+         call mpl%loc_to_glb(geom%nc0a,fld_c0a(:,il0),geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,.false.,fld_c0(:,il0))
       end do
 
       if (mpl%main) then

@@ -82,10 +82,10 @@ allocate(bpar%B_block(bpar%nb+1))
 allocate(bpar%nicas_block(bpar%nb+1))
 allocate(bpar%cv_block(bpar%nb+1))
 allocate(bpar%blockname(bpar%nb+1))
-allocate(bpar%b_to_v1(bpar%nb))
-allocate(bpar%b_to_v2(bpar%nb))
-allocate(bpar%b_to_ts1(bpar%nb))
-allocate(bpar%b_to_ts2(bpar%nb))
+allocate(bpar%b_to_v1(bpar%nb+1))
+allocate(bpar%b_to_v2(bpar%nb+1))
+allocate(bpar%b_to_ts1(bpar%nb+1))
+allocate(bpar%b_to_ts2(bpar%nb+1))
 
 ! Initialization
 call msi(bpar%l0rl0b_to_l0)
@@ -145,6 +145,10 @@ if (nam%new_lct) then
 
    ! Blocks information
    bpar%blockname(ib) = 'common'
+   bpar%b_to_v1(ib) = 0
+   bpar%b_to_v2(ib) = 0
+   bpar%b_to_ts1(ib) = 0
+   bpar%b_to_ts2(ib) = 0
 else
    ! Individual blocks
    ib = 1
@@ -278,6 +282,10 @@ else
 
    ! Blocks information
    bpar%blockname(ib) = 'common'
+   bpar%b_to_v1(ib) = 0
+   bpar%b_to_v2(ib) = 0
+   bpar%b_to_ts1(ib) = 0
+   bpar%b_to_ts2(ib) = 0
 end if
 
 end subroutine bpar_alloc

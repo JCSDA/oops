@@ -102,6 +102,7 @@ type nam_type
 
    ! fit_param
    character(len=1024) :: minim_algo                !< Minimization algorithm ('none', 'fast' or 'hooke')
+   logical :: vlap(0:nvmax)                         !< Vertical envelope with a normalized Laplacian
    logical :: lhomh                                 !< Vertically homogenous horizontal support radius
    logical :: lhomv                                 !< Vertically homogenous vertical support radius
    real(kind_real) ::  rvflt                        !< Vertical smoother support radius
@@ -115,6 +116,9 @@ type nam_type
    logical :: network                               !< Network-base convolution calculation (distance-based if false)
    integer :: mpicom                                !< Number of communication steps
    integer :: advmode                               !< Advection mode (1: direct, -1: direct and inverse)
+   logical :: forced_radii                          !< Force specific support radii
+   real(kind_real) :: rh                            !< Forced horizontal support radius
+   real(kind_real) :: rv                            !< Forced vertical support radius
    integer :: ndir                                  !< Number of Diracs
    real(kind_real) :: londir(ndirmax)               !< Diracs longitudes (in degrees)
    real(kind_real) :: latdir(ndirmax)               !< Diracs latitudes (in degrees)
@@ -199,8 +203,8 @@ call msi(nam%levs)
 nam%logpres = .false.
 call msi(nam%nv)
 do iv=1,nvmax
-   nam%varname = ''
-   nam%addvar2d = ''
+   nam%varname(iv) = ''
+   nam%addvar2d(iv) = ''
 end do
 call msi(nam%nts)
 call msi(nam%timeslot)
@@ -243,6 +247,9 @@ call msr(nam%displ_tol)
 
 ! fit_param default
 nam%minim_algo = ''
+do iv=0,nvmax
+   nam%vlap(iv) = .false.
+end do
 nam%lhomh = .false.
 nam%lhomv = .false.
 call msr(nam%rvflt)
@@ -256,6 +263,9 @@ nam%nicas_interp = ''
 nam%network = .false.
 call msi(nam%mpicom)
 call msi(nam%advmode)
+nam%forced_radii = .false.
+call msr(nam%rh)
+call msr(nam%rv)
 call msi(nam%ndir)
 call msr(nam%londir)
 call msr(nam%latdir)
@@ -306,9 +316,9 @@ integer :: nobs,nldwh,il_ldwh(nlmax*nc3max),ic_ldwh(nlmax*nc3max),nldwv
 logical :: colorlog,default_seed,load_ensemble,use_metis
 logical :: new_hdiag,new_param,check_adjoints,check_pos_def,check_sqrt,check_dirac,check_randomization,check_consistency
 logical :: check_optimality,new_lct,new_obsop,logpres,sam_write,sam_read,mask_check,gau_approx,full_var,local_diag
-logical :: displ_diag,lhomh,lhomv,lct_diag(nscalesmax),lsqrt,network,field_io,split_io,grid_output
+logical :: displ_diag,vlap(nvmax),lhomh,lhomv,lct_diag(nscalesmax),lsqrt,network,forced_radii,field_io,split_io,grid_output
 real(kind_real) :: mask_th,dc,local_rad,displ_rad,displ_rhflt,displ_tol,rvflt,lon_ldwv(nldwvmax),lat_ldwv(nldwvmax),diag_rhflt
-real(kind_real) :: resol,londir(ndirmax),latdir(ndirmax),grid_resol
+real(kind_real) :: resol,rh,rv,londir(ndirmax),latdir(ndirmax),grid_resol
 character(len=1024) :: datadir,prefix,model,strategy,method,mask_type,draw_type,minim_algo,nicas_interp
 character(len=1024) :: obsdis,obsop_interp,diag_interp,grid_interp
 character(len=1024),dimension(nvmax) :: varname,addvar2d
@@ -322,8 +332,8 @@ namelist/ens1_param/ens1_ne,ens1_ne_offset,ens1_nsub
 namelist/ens2_param/ens2_ne,ens2_ne_offset,ens2_nsub
 namelist/sampling_param/sam_write,sam_read,mask_type,mask_th,mask_check,draw_type,nc1,ntry,nrep,nc3,dc,nl0r
 namelist/diag_param/ne,gau_approx,full_var,local_diag,local_rad,displ_diag,displ_rad,displ_niter,displ_rhflt,displ_tol
-namelist/fit_param/minim_algo,lhomh,lhomv,rvflt,lct_nscales,lct_diag
-namelist/nicas_param/lsqrt,resol,nicas_interp,network,mpicom,advmode,ndir,londir,latdir,levdir,ivdir,itsdir
+namelist/fit_param/minim_algo,vlap,lhomh,lhomv,rvflt,lct_nscales,lct_diag
+namelist/nicas_param/lsqrt,resol,nicas_interp,network,mpicom,advmode,forced_radii,rh,rv,ndir,londir,latdir,levdir,ivdir,itsdir
 namelist/obsop_param/nobs,obsdis,obsop_interp
 namelist/output_param/nldwh,il_ldwh,ic_ldwh,nldwv,lon_ldwv,lat_ldwv,diag_rhflt,diag_interp,field_io,split_io, &
                     & grid_output,grid_resol,grid_interp
@@ -418,6 +428,7 @@ if (mpl%main) then
    read(lunit,nml=fit_param)
    if (lct_nscales>nscalesmax) call mpl%abort('lct_nscales is too large')
    nam%minim_algo = minim_algo
+   if (nv>0) nam%vlap(1:nv) = vlap(1:nv)
    nam%lhomh = lhomh
    nam%lhomv = lhomv
    nam%rvflt = rvflt
@@ -433,6 +444,9 @@ if (mpl%main) then
    nam%network = network
    nam%mpicom = mpicom
    nam%advmode = advmode
+   nam%forced_radii = forced_radii
+   nam%rh = rh
+   nam%rv = rv
    nam%ndir = ndir
    if (ndir>0) nam%londir(1:ndir) = londir(1:ndir)
    if (ndir>0) nam%latdir(1:ndir) = latdir(1:ndir)
@@ -554,6 +568,7 @@ call mpl%bcast(nam%displ_tol)
 
 ! fit_param
 call mpl%bcast(nam%minim_algo)
+call mpl%bcast(nam%vlap)
 call mpl%bcast(nam%lhomh)
 call mpl%bcast(nam%lhomv)
 call mpl%bcast(nam%rvflt)
@@ -567,6 +582,9 @@ call mpl%bcast(nam%nicas_interp)
 call mpl%bcast(nam%network)
 call mpl%bcast(nam%mpicom)
 call mpl%bcast(nam%advmode)
+call mpl%bcast(nam%forced_radii)
+call mpl%bcast(nam%rh)
+call mpl%bcast(nam%rv)
 call mpl%bcast(nam%ndir)
 call mpl%bcast(nam%londir)
 call mpl%bcast(nam%latdir)
@@ -605,12 +623,12 @@ subroutine nam_setup_internal(nam,nl0,nv,nts,ens1_ne,ens2_ne)
 implicit none
 
 ! Passed variable
-class(nam_type),intent(inout) :: nam   !< Namelist
-integer,intent(in) :: nl0              !< Number of levels
-integer,intent(in) :: nv               !< Number of variables
-integer,intent(in) :: nts              !< Number of time-slots
-integer,intent(in),optional :: ens1_ne !< Ensemble 1 size
-integer,intent(in),optional :: ens2_ne !< Ensemble 2 size
+class(nam_type),intent(inout) :: nam      !< Namelist
+integer,intent(in) :: nl0                 !< Number of levels
+integer,intent(in) :: nv                  !< Number of variables
+integer,intent(in) :: nts                 !< Number of time-slots
+integer,intent(in),optional :: ens1_ne    !< Ensemble 1 size
+integer,intent(in),optional :: ens2_ne    !< Ensemble 2 size
 
 ! Local variables
 integer :: il,iv
@@ -683,6 +701,7 @@ nam%dc = nam%dc/req
 nam%local_rad = nam%local_rad/req
 nam%displ_rad = nam%displ_rad/req
 nam%displ_rhflt = nam%displ_rhflt/req
+nam%rh = nam%rh/req
 if (nam%ndir>0) nam%londir(1:nam%ndir) = nam%londir(1:nam%ndir)*deg2rad
 if (nam%ndir>0) nam%latdir(1:nam%ndir) = nam%latdir(1:nam%ndir)*deg2rad
 if (nam%nldwv>0) nam%lon_ldwv(1:nam%nldwv) = nam%lon_ldwv(1:nam%nldwv)*deg2rad
@@ -877,6 +896,11 @@ if (nam%new_param.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_sqrt.o
     & nam%check_randomization.or.nam%check_consistency.or.nam%check_optimality) then
       if ((nam%mpicom/=1).and.(nam%mpicom/=2)) call mpl%abort('mpicom should be 1 or 2')
    end if
+   if (nam%forced_radii) then
+      if (nam%new_hdiag) call mpl%abort('forced_radii should be inactive if new_hdiag is active')
+      if (nam%rh<0.0) call mpl%abort('rh should be non-negative')
+      if (nam%rv<0.0) call mpl%abort('rv should be non-negative')
+   end if
    if (abs(nam%advmode)>1) call mpl%abort('nam%advmode should be -1, 0 or 1')
    if (nam%check_dirac) then
       if (nam%ndir<1) call mpl%abort('ndir should be positive')
@@ -900,11 +924,6 @@ end if
 ! Check obsop_param
 if (nam%new_obsop) then
    if (nam%nobs<1) call mpl%abort('nobs should be positive')
-   select case (trim(nam%obsdis))
-   case ('random','local','adjusted')
-   case default
-      call mpl%abort('wrong obsdis')
-   end select
    select case (trim(nam%obsop_interp))
    case ('bilin','natural')
    case default
@@ -1115,6 +1134,7 @@ call put_att(mpl,ncid,'displ_tol',nam%displ_tol)
 
 ! fit_param
 call put_att(mpl,ncid,'minim_algo',nam%minim_algo)
+call put_att(mpl,ncid,'vlap',nam%nv+1,nam%vlap(0:nam%nv))
 call put_att(mpl,ncid,'lhomh',nam%lhomh)
 call put_att(mpl,ncid,'lhomv',nam%lhomv)
 call put_att(mpl,ncid,'rvflt',nam%rvflt)

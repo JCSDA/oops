@@ -178,7 +178,6 @@ template <typename MODEL> void testStateInterpolation() {
 
   // Now create another GeoVaLs object that contains the exact
   // analytic solutions.
-
   GeoVaLs_ ref(gval);
   ref.analytic_init(locs, confgen);
 

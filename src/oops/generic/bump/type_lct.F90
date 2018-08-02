@@ -660,8 +660,8 @@ do ib=1,bpar%nb
 
    ! Global to local
    do il0=1,geom%nl0
-      call mpl%scatterv(geom%proc_to_nc0a,geom%nc0,fld_glb(:,il0,1),geom%nc0a,fld(:,il0,1))
-      call mpl%scatterv(geom%proc_to_nc0a,geom%nc0,fld_glb(:,il0,2),geom%nc0a,fld(:,il0,2))
+      call mpl%glb_to_loc(geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,fld_glb(:,il0,1),geom%nc0a,fld(:,il0,1))
+      call mpl%glb_to_loc(geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,fld_glb(:,il0,2),geom%nc0a,fld(:,il0,2))
    end do
 
    ! Write LCT diagnostics

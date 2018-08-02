@@ -10,12 +10,12 @@
 !----------------------------------------------------------------------
 module tools_kinds
 
-use, intrinsic :: iso_c_binding
+use,intrinsic :: iso_c_binding
 
 implicit none
 
 ! Real kind
-integer, parameter :: kind_real = c_double !< Real kind
+integer,parameter :: kind_real = c_double !< Real kind
 
 private
 public kind_real

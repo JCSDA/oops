@@ -116,7 +116,9 @@ contains
    procedure :: mpl_dot_prod_4d
    generic :: dot_prod => mpl_dot_prod_1d,mpl_dot_prod_2d,mpl_dot_prod_3d,mpl_dot_prod_4d
    procedure :: split => mpl_split
-   procedure :: glb_to_loc => mpl_glb_to_loc
+   procedure :: glb_to_loc_index => mpl_glb_to_loc_index
+   procedure :: glb_to_loc => mpl_glb_to_loc_1d
+   procedure :: loc_to_glb => mpl_loc_to_glb_1d
 end type mpl_type
 
 private
@@ -1204,9 +1206,9 @@ subroutine mpl_allgather_integer(mpl,ns,sbuf,rbuf)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                     !< MPI data
-integer,intent(in) :: ns                   !< Sent buffer size
-integer,intent(in) :: sbuf(ns)             !< Sent buffer
+class(mpl_type) :: mpl                    !< MPI data
+integer,intent(in) :: ns                  !< Sent buffer size
+integer,intent(in) :: sbuf(ns)            !< Sent buffer
 integer,intent(out) :: rbuf(mpl%nproc*ns) !< Received buffer
 
 ! Local variable
@@ -1229,9 +1231,9 @@ subroutine mpl_allgather_real(mpl,ns,sbuf,rbuf)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                             !< MPI data
-integer,intent(in) :: ns                           !< Sent buffer size
-real(kind_real),intent(in) :: sbuf(ns)             !< Sent buffer
+class(mpl_type) :: mpl                            !< MPI data
+integer,intent(in) :: ns                          !< Sent buffer size
+real(kind_real),intent(in) :: sbuf(ns)            !< Sent buffer
 real(kind_real),intent(out) :: rbuf(mpl%nproc*ns) !< Received buffer
 
 ! Local variable
@@ -1254,9 +1256,9 @@ subroutine mpl_allgather_logical(mpl,ns,sbuf,rbuf)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                     !< MPI data
-integer,intent(in) :: ns                   !< Sent buffer size
-logical,intent(in) :: sbuf(ns)             !< Sent buffer
+class(mpl_type) :: mpl                    !< MPI data
+integer,intent(in) :: ns                  !< Sent buffer size
+logical,intent(in) :: sbuf(ns)            !< Sent buffer
 logical,intent(out) :: rbuf(mpl%nproc*ns) !< Received buffer
 
 ! Local variable
@@ -1753,10 +1755,10 @@ end do
 end subroutine mpl_split
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_glb_to_loc
+! Subroutine: mpl_glb_to_loc_index
 !> Purpose: communicate global index to local index
 !----------------------------------------------------------------------
-subroutine mpl_glb_to_loc(mpl,n_loc,loc_to_glb,n_glb,glb_to_loc)
+subroutine mpl_glb_to_loc_index(mpl,n_loc,loc_to_glb,n_glb,glb_to_loc)
 
 implicit none
 
@@ -1792,7 +1794,7 @@ if (mpl%main) then
          call mpl%recv(n_loc_tmp,loc_to_glb_tmp,iproc,mpl%tag+1)
       end if
 
-      ! Fill c2_to_c2a
+      ! Fill glb_to_loc
       do i_loc=1,n_loc_tmp
          glb_to_loc(loc_to_glb_tmp(i_loc)) = i_loc
       end do
@@ -1812,6 +1814,120 @@ mpl%tag = mpl%tag+2
 ! Broadcast
 call mpl%bcast(glb_to_loc)
 
-end subroutine mpl_glb_to_loc
+end subroutine mpl_glb_to_loc_index
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_glb_to_loc_1d
+!> Purpose: global to local, 1d array
+!----------------------------------------------------------------------
+subroutine mpl_glb_to_loc_1d(mpl,n_glb,glb_to_proc,glb_to_loc,glb,n_loc,loc)
+
+implicit none
+
+! Passed variables
+class(mpl_type) :: mpl                   !< MPI data
+integer,intent(in) :: n_glb
+integer,intent(in) :: glb_to_proc(n_glb)
+integer,intent(in) :: glb_to_loc(n_glb)
+real(kind_real),intent(in) :: glb(n_glb)
+integer,intent(in) :: n_loc              !< Local dimension
+real(kind_real),intent(out) :: loc(n_loc)
+
+! Local variables
+integer :: iproc,jproc,i_glb,i_loc,n_loc_tmp
+real(kind_real),allocatable :: sbuf(:)
+
+if (mpl%main) then
+   do iproc=1,mpl%nproc
+      ! Allocation
+      n_loc_tmp = count(glb_to_proc==iproc)
+      allocate(sbuf(n_loc_tmp))
+
+      ! Prepare buffers
+      do i_glb=1,n_glb
+         jproc = glb_to_proc(i_glb)
+         if (iproc==jproc) then
+            i_loc = glb_to_loc(i_glb)
+            sbuf(i_loc) = glb(i_glb)
+         end if
+      end do
+
+      if (iproc==mpl%ioproc) then
+         ! Copy data
+         loc = sbuf
+      else
+         ! Send data to iproc
+         call mpl%send(n_loc_tmp,sbuf,iproc,mpl%tag)
+      end if 
+
+      ! Release memory
+      deallocate(sbuf)     
+   end do
+else
+   ! Receive data from ioproc
+   call mpl%recv(n_loc,loc,mpl%ioproc,mpl%tag)
+end if
+mpl%tag = mpl%tag+1
+
+end subroutine mpl_glb_to_loc_1d
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_loc_to_glb_1d
+!> Purpose: local to global, 1d array
+!----------------------------------------------------------------------
+subroutine mpl_loc_to_glb_1d(mpl,n_loc,loc,n_glb,glb_to_proc,glb_to_loc,bcast,glb)
+
+implicit none
+
+! Passed variables
+class(mpl_type) :: mpl                   !< MPI data
+integer,intent(in) :: n_loc              !< Local dimension
+real(kind_real),intent(in) :: loc(n_loc)
+integer,intent(in) :: n_glb
+integer,intent(in) :: glb_to_proc(n_glb)
+integer,intent(in) :: glb_to_loc(n_glb)
+logical,intent(in) :: bcast
+real(kind_real),intent(out) :: glb(n_glb)
+
+! Local variables
+integer :: iproc,jproc,i_glb,i_loc,n_loc_tmp
+real(kind_real),allocatable :: rbuf(:)
+
+if (mpl%main) then
+   do iproc=1,mpl%nproc
+      ! Allocation
+      n_loc_tmp = count(glb_to_proc==iproc)
+      allocate(rbuf(n_loc_tmp))
+
+      if (iproc==mpl%ioproc) then
+          ! Copy data
+          rbuf = loc
+      else
+          ! Receive data from iproc
+          call mpl%recv(n_loc_tmp,rbuf,iproc,mpl%tag)
+      end if
+
+      ! Add data to glb
+      do i_glb=1,n_glb
+         jproc = glb_to_proc(i_glb)
+         if (iproc==jproc) then
+            i_loc = glb_to_loc(i_glb)
+            glb(i_glb) = rbuf(i_loc)
+         end if
+      end do
+
+      ! Release memory
+      deallocate(rbuf)     
+   end do
+else
+   ! Send data to ioproc
+   call mpl%send(n_loc,loc,mpl%ioproc,mpl%tag)
+end if
+mpl%tag = mpl%tag+1
+
+! Broadcast
+if (bcast) call mpl%bcast(glb)
+
+end subroutine mpl_loc_to_glb_1d
 
 end module type_mpl

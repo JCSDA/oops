@@ -16,7 +16,6 @@ use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr
 use tools_nc, only: ncfloat
 use type_mpl, only: mpl_type
-use yomhook, only: lhook,dr_hook
 
 implicit none
 
@@ -98,9 +97,6 @@ real(kind_real),intent(out) :: vec_ext(com%next) !< Extended vector
 ! Local variables
 integer :: iexcl,ired,ihalo
 real(kind_real) :: sbuf(com%nexcl),rbuf(com%nhalo)
-real(kind_real) :: zhook_handle
-
-if (lhook) call dr_hook('com_ext_1d',0,zhook_handle)
 
 ! Prepare buffers to send
 !$omp parallel do schedule(static) private(iexcl)
@@ -126,8 +122,6 @@ do ihalo=1,com%nhalo
 end do
 !$omp end parallel do
 
-if (lhook) call dr_hook('com_ext_1d',1,zhook_handle)
-
 end subroutine com_ext_1d
 
 !----------------------------------------------------------------------
@@ -148,9 +142,6 @@ real(kind_real),intent(out) :: vec_ext(com%next,nl) !< Extended vector
 ! Local variables
 integer :: il,iexcl,ired,ihalo
 real(kind_real) :: sbuf(com%nexcl*nl),rbuf(com%nhalo*nl)
-real(kind_real) :: zhook_handle
-
-if (lhook) call dr_hook('com_ext_2d',0,zhook_handle)
 
 ! Prepare buffers to send
 !$omp parallel do schedule(static) private(il,iexcl)
@@ -182,8 +173,6 @@ do il=1,nl
 end do
 !$omp end parallel do
 
-if (lhook) call dr_hook('com_ext_2d',1,zhook_handle)
-
 end subroutine com_ext_2d
 
 !----------------------------------------------------------------------
@@ -203,9 +192,6 @@ real(kind_real),intent(out) :: vec_red(com%nred) !< Reduced vector
 ! Local variables
 integer :: ihalo,ired,iexcl,ithread
 real(kind_real) :: sbuf(com%nhalo),rbuf(com%nexcl),vec_red_arr(com%nred,mpl%nthread)
-real(kind_real) :: zhook_handle
-
-if (lhook) call dr_hook('com_red_1d',0,zhook_handle)
 
 ! Prepare buffers to send
 !$omp parallel do schedule(static) private(ihalo)
@@ -239,8 +225,6 @@ do ithread=1,mpl%nthread
    vec_red = vec_red+vec_red_arr(:,ithread)
 end do
 
-if (lhook) call dr_hook('com_red_1d',1,zhook_handle)
-
 end subroutine com_red_1d
 
 !----------------------------------------------------------------------
@@ -261,9 +245,6 @@ real(kind_real),intent(out) :: vec_red(com%nred,nl) !< Reduced vector
 ! Local variables
 integer :: il,ihalo,ired,iexcl,ithread
 real(kind_real) :: sbuf(com%nhalo*nl),rbuf(com%nexcl*nl),vec_red_arr(com%nred,nl,mpl%nthread)
-real(kind_real) :: zhook_handle
-
-if (lhook) call dr_hook('com_red_2d',0,zhook_handle)
 
 ! Prepare buffers to send
 !$omp parallel do schedule(static) private(il,ihalo)
@@ -302,8 +283,6 @@ end do
 do ithread=1,mpl%nthread
    vec_red = vec_red+vec_red_arr(:,:,ithread)
 end do
-
-if (lhook) call dr_hook('com_red_2d',1,zhook_handle)
 
 end subroutine com_red_2d
 

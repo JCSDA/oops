@@ -462,6 +462,7 @@ else
    ! Initialization
    call msi(ihor)
    lmask = mask
+   if (count(lmask)==0) call mpl%abort('empty mask in initialize sampling')
    smask = .false.
    is = 1
    irep = 1

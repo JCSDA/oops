@@ -508,6 +508,8 @@ if (global) then
          ! Release memory
          deallocate(nobs_to_move)
       end if
+   case default
+      call mpl%abort('wrong obsdis')
    end select
 
    ! Local number of observations

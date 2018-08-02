@@ -64,7 +64,11 @@ call bump_registry%add(key)
 call bump_registry%get(key,self)
 
 ! Create bump
-call create_bump(self, c_conf, nmga, nl0, nv, nts, lon, lat, area, vunit, imask, ens1_ne, ens1)
+if (ens1_ne>0) then
+   call create_bump(self, c_conf, nmga, nl0, nv, nts, lon, lat, area, vunit, imask, ens1_ne, ens1)
+else
+   call create_bump(self, c_conf, nmga, nl0, nv, nts, lon, lat, area, vunit, imask)
+end if
 
 end subroutine create_bump_c
 
@@ -116,8 +120,8 @@ real(kind=kind_real), intent(in) :: lat(nmga)
 real(kind=kind_real), intent(in) :: area(nmga)
 real(kind=kind_real), intent(in) :: vunit(nmga*nl0)
 integer, intent(in) :: imask(nmga*nl0)
-integer, intent(in) :: ens1_ne
-real(kind=kind_real), intent(in) :: ens1(nmga*nl0*nv*nts*ens1_ne)
+integer, intent(in), optional :: ens1_ne
+real(kind=kind_real), intent(in), optional :: ens1(:)
 
 ! Initialize namelist
 call self%nam%init
@@ -126,7 +130,11 @@ call self%nam%init
 call bump_read_conf(c_conf,self)
 
 ! Online setup
-call self%setup_online(mpi_comm_world,nmga,nl0,nv,nts,lon,lat,area,vunit,imask,ens1_ne,ens1)
+if (present(ens1_ne).and.present(ens1)) then
+   call self%setup_online(mpi_comm_world,nmga,nl0,nv,nts,lon,lat,area,vunit,imask,ens1_ne,ens1)
+else
+   call self%setup_online(mpi_comm_world,nmga,nl0,nv,nts,lon,lat,area,vunit,imask)
+end if
 
 end subroutine create_bump
 
@@ -208,6 +216,9 @@ if (config_element_exists(c_conf,"nicas_interp")) bump%nam%nicas_interp = config
 if (config_element_exists(c_conf,"network")) bump%nam%network = integer_to_logical(config_get_int(c_conf,"network"))
 if (config_element_exists(c_conf,"mpicom")) bump%nam%mpicom = config_get_int(c_conf,"mpicom")
 if (config_element_exists(c_conf,"advmode")) bump%nam%advmode = config_get_int(c_conf,"advmode")
+if (config_element_exists(c_conf,"forced_radii")) bump%nam%forced_radii = integer_to_logical(config_get_int(c_conf,"forced_radii"))
+if (config_element_exists(c_conf,"rh")) bump%nam%rh = config_get_real(c_conf,"rh")
+if (config_element_exists(c_conf,"rv")) bump%nam%rv = config_get_real(c_conf,"rv")
 if (config_element_exists(c_conf,"ndir")) bump%nam%ndir = config_get_int(c_conf,"ndir")
 do idir=1,bump%nam%ndir
    write(idirchar,'(i3)') idir

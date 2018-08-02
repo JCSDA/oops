@@ -13,6 +13,7 @@ module qg_geom_mod
 use iso_c_binding
 use config_mod
 use kinds
+use mpi
 
 implicit none
 private
@@ -28,6 +29,7 @@ type :: qg_geom
   real(kind=kind_real),allocatable :: lat(:)
   real(kind=kind_real),allocatable :: lon(:)
   real(kind=kind_real),allocatable :: area(:,:)
+  integer,allocatable :: myproc(:,:)
 end type qg_geom
 
 #define LISTED_TYPE qg_geom
@@ -52,7 +54,7 @@ implicit none
 integer(c_int), intent(inout) :: c_key_self
 type(c_ptr), intent(in)    :: c_conf
 
-integer :: ix,iy
+integer :: ix,iy,nproc,info,myproc
 real(kind=kind_real) :: dx,dy
 real(kind=kind_real),parameter :: pi = acos(-1.0)
 real(kind=kind_real),parameter :: req = 6371229.0
@@ -65,9 +67,11 @@ call qg_geom_registry%get(c_key_self,self)
 self%nx = config_get_int(c_conf, "nx")
 self%ny = config_get_int(c_conf, "ny")
 
+! Allocate
 allocate(self%lon(self%nx))
 allocate(self%lat(self%ny))
 allocate(self%area(self%nx,self%ny))
+allocate(self%myproc(self%nx,self%ny))
 
 ! Define longitude/latitude
 dx = 2.0*pi/real(self%nx,kind=kind_real)
@@ -83,6 +87,14 @@ end do
 do iy=1,self%ny
    self%area(:,iy) = 2.0*pi*req**2*(sin((self%lat(iy)+0.5_kind_real*dy))-sin((self%lat(iy)-0.5_kind_real*dy))) &
             & /real(self%nx,kind=kind_real)
+end do
+
+! Define processor
+call mpi_comm_size(mpi_comm_world,nproc,info)
+myproc = 1
+do ix=1,self%nx
+   self%myproc(ix,:) = myproc
+   if (ix>myproc*self%nx/nproc) myproc = myproc+1
 end do
 
 ! Convert longitude/latitude to degrees
@@ -108,9 +120,11 @@ other%ny = self%ny
 allocate(other%lon(other%nx))
 allocate(other%lat(other%ny))
 allocate(other%area(other%nx,other%ny))
+allocate(other%myproc(other%nx,other%ny))
 other%lon = self%lon
 other%lat = self%lat
 other%area = self%area
+other%myproc = self%myproc
 
 end subroutine c_qg_geo_clone
 

@@ -423,8 +423,9 @@ do its=2,nam%nts
       end do
 
       ! Check raw mesh
-      call mpl%gatherv(hdata%nc2a,lon_c2a,hdata%proc_to_nc2a,hdata%nc2,lon_c2)
-      call mpl%gatherv(hdata%nc2a,lat_c2a,hdata%proc_to_nc2a,hdata%nc2,lat_c2)
+     call mpl%loc_to_glb(hdata%nc2a,lon_c2a,hdata%nc2,hdata%c2_to_proc,hdata%c2_to_c2a,.false.,lon_c2)
+     call mpl%loc_to_glb(hdata%nc2a,lat_c2a,hdata%nc2,hdata%c2_to_proc,hdata%c2_to_c2a,.false.,lat_c2)
+
       if (mpl%main) then
          mesh = hdata%mesh%copy()
          call mesh%trans(lon_c2,lat_c2)
@@ -505,8 +506,8 @@ do its=2,nam%nts
             end do
 
             ! Check mesh
-            call mpl%gatherv(hdata%nc2a,lon_c2a,hdata%proc_to_nc2a,hdata%nc2,lon_c2)
-            call mpl%gatherv(hdata%nc2a,lat_c2a,hdata%proc_to_nc2a,hdata%nc2,lat_c2)
+           call mpl%loc_to_glb(hdata%nc2a,lon_c2a,hdata%nc2,hdata%c2_to_proc,hdata%c2_to_c2a,.false.,lon_c2)
+           call mpl%loc_to_glb(hdata%nc2a,lat_c2a,hdata%nc2,hdata%c2_to_proc,hdata%c2_to_c2a,.false.,lat_c2)
             if (mpl%main) then
                mesh = hdata%mesh%copy()
                call mesh%trans(lon_c2,lat_c2)
