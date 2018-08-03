@@ -10,7 +10,7 @@
 !----------------------------------------------------------------------
 module tools_func
 
-use tools_const, only: pi
+use tools_const, only: pi,rth
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsr
 use type_mpl, only: mpl_type
@@ -22,10 +22,67 @@ integer,parameter :: M = 0                            !< Number of implicit itte
 real(kind_real),parameter :: eta = 1.0e-9_kind_real   !< Small parameter for the Cholesky decomposition
 
 private
-public :: lonlatmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,add,divide, &
+public :: eq,inf,sup,lonlatmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,add,divide, &
         & fit_diag,fit_diag_dble,gc99,fit_lct,cholesky
 
 contains
+
+!----------------------------------------------------------------------
+! Function: eq
+!> Purpose: equal test for reals
+!----------------------------------------------------------------------
+function eq(x,y)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: x !< First real
+real(kind_real),intent(in) :: y !< Second real
+
+! Returned variable
+logical :: eq
+
+eq = abs(x-y)<rth
+
+end function eq
+
+!----------------------------------------------------------------------
+! Function: inf
+!> Purpose: inferior test for reals
+!----------------------------------------------------------------------
+function inf(x,y)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: x !< First real
+real(kind_real),intent(in) :: y !< Second real
+
+! Returned variable
+logical :: inf
+
+inf = (abs(x-y)>rth*abs(x+y)).and.(x<y)
+
+end function inf
+
+!----------------------------------------------------------------------
+! Function: sup
+!> Purpose: sup test for reals
+!----------------------------------------------------------------------
+function sup(x,y)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: x !< First real
+real(kind_real),intent(in) :: y !< Second real
+
+! Returned variable
+logical :: sup
+
+sup = (abs(x-y)>rth*abs(x+y)).and.(x>y)
+
+end function sup
 
 !----------------------------------------------------------------------
 ! Subroutine: lonlatmod
@@ -58,7 +115,7 @@ end if
 end subroutine lonlatmod
 
 !----------------------------------------------------------------------
-! Function: sphere_dist
+! Subroutine: sphere_dist
 !> Purpose: compute the great-circle distance between two points
 !----------------------------------------------------------------------
 subroutine sphere_dist(lon_i,lat_i,lon_f,lat_f,dist)
@@ -533,8 +590,6 @@ else
    gc99 = 0.0
 end if
 
-return
-
 end function gc99
 
 !----------------------------------------------------------------------
@@ -667,7 +722,7 @@ matern = matern*exp(-xtmp)
 end function matern
 
 !----------------------------------------------------------------------
-! Function: cholesky
+! Subroutine: cholesky
 !> Purpose: compute cholesky decomposition
 !> Author: Original FORTRAN77 version by Michael Healy, modifications by AJ Miller, FORTRAN90 version by John Burkardt.
 !----------------------------------------------------------------------

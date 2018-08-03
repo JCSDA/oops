@@ -5,7 +5,7 @@
 ! with additional provisions found in that same file.
 !
 module tools_kdtree2
-  use tools_func, only: sphere_dist
+  use tools_func, only: inf,sup,sphere_dist
   use tools_kdtree2_pq
   use tools_kinds, only: kind_real
   use tools_stripack, only: scoord
@@ -373,7 +373,7 @@ contains
       lb = li; rb = ui
 
       do while (lb < rb)
-         if ( v(c,ind(lb)) <= alpha ) then
+         if ( inf(v(c,ind(lb)),alpha) ) then
             ! it is good where it is.
             lb = lb+1
          else
@@ -384,7 +384,7 @@ contains
       end do
 
       ! now lb .eq. ub
-      if (v(c,ind(lb)) <= alpha) then
+      if (inf(v(c,ind(lb)),alpha)) then
          res = lb
       else
          res = lb-1
@@ -410,7 +410,7 @@ contains
          t = ind(l)
          m = l
          do i = l + 1, u
-            if (v(c,ind(i))<v(c,t)) then
+            if (inf(v(c,ind(i)),v(c,t))) then
                m = m + 1
                s = ind(m)
                ind(m) = ind(i)
@@ -455,18 +455,18 @@ contains
       do i = l + 2, ulocal, 2
          lmin = v(c,ind(i-1))
          lmax = v(c,ind(i))
-         if (lmin>lmax) then
+         if (sup(lmin,lmax)) then
             t = lmin
             lmin = lmax
             lmax = t
          end if
-         if (smin>lmin) smin = lmin
-         if (smax<lmax) smax = lmax
+         if (sup(smin,lmin)) smin = lmin
+         if (inf(smax,lmax)) smax = lmax
       end do
       if (i==ulocal+1) then
          last = v(c,ind(ulocal))
-         if (smin>last) smin = last
-         if (smax<last) smax = last
+         if (sup(smin,last)) smin = last
+         if (inf(smax,last)) smax = last
       end if
 
       interv%lower = smin
@@ -682,7 +682,7 @@ contains
        cut_dim = node%cut_dim
        qval = qv(cut_dim)
 
-       if (qval < node%cut_val) then
+       if (inf(qval,node%cut_val)) then
           ncloser => node%left
           nfarther => node%right
           dis = (node%cut_val_right - qval)**2
@@ -700,7 +700,7 @@ contains
        if (associated(nfarther)) then
           ballsize = sr%ballsize
 !          dis=extra**2
-          if (dis <= ballsize) then
+          if (inf(dis,ballsize)) then
              !
              ! we do this separately as going on the first cut dimen is often
              ! a good idea.
@@ -711,7 +711,7 @@ contains
              do i=1,3
                 if (i .ne. cut_dim) then
                    dis = dis + dis2_from_bnd(qv(i),box(i)%lower,box(i)%upper)
-                   if (dis > ballsize) then
+                   if (sup(dis,ballsize)) then
                       return
                    endif
                 endif
@@ -729,11 +729,11 @@ contains
   real(kind_real) function dis2_from_bnd(x,amin,amax) result (res)
     real(kind_real), intent(in) :: x, amin,amax
 
-    if (x > amax) then
+    if (sup(x,amax)) then
        res = (x-amax)**2;
        return
     else
-       if (x < amin) then
+       if (inf(x,amin)) then
           res = (amin-x)**2;
           return
        else
@@ -789,9 +789,9 @@ contains
           sd = square_distance(data(:,indexofi), qv)
           ssd = sdistance(data(:,indexofi), qv)
        endif
-       if (sd>ballsize) cycle mainloop
+       if (sup(sd,ballsize)) cycle mainloop
 
-       if (centeridx > 0) then ! doing correlation interval?
+       if (centeridx>0) then ! doing correlation interval?
           if (abs(indexofi-centeridx) < correltime) cycle mainloop
        endif
 
@@ -906,7 +906,7 @@ contains
           sd = square_distance(data(:,indexofi), qv)
           ssd = sdistance(data(:,indexofi), qv)
        endif
-       if (sd>ballsize) cycle mainloop
+       if (sup(sd,ballsize)) cycle mainloop
 
        if (centeridx > 0) then ! doing correlation interval?
           if (abs(indexofi-centeridx)<correltime) cycle mainloop
@@ -987,9 +987,9 @@ contains
        j=2*ileft
        do while (j <= iright)
           if(j < iright) then
-             if(a(j)%dis < a(j+1)%dis) j=j+1
+             if(inf(a(j)%dis,a(j+1)%dis)) j=j+1
           endif
-          if(value%dis < a(j)%dis) then
+          if(inf(value%dis,a(j)%dis)) then
              a(i)=a(j);
              i=j
              j=j+j

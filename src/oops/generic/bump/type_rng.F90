@@ -11,7 +11,7 @@
 module type_rng
 
 use iso_fortran_env, only: int64
-use tools_func, only: sphere_dist
+use tools_func, only: sup,sphere_dist
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,isnotmsi
 use type_kdtree, only: kdtree_type
@@ -498,7 +498,7 @@ else
                end if
 
                ! Check distance
-               if (d>distmax) then
+               if (sup(d,distmax)) then
                   distmax = d
                   irmax = ir
                end if

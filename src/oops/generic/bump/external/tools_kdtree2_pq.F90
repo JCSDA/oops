@@ -5,6 +5,7 @@
 ! with additional provisions found in that same file.
 !
 module tools_kdtree2_pq
+  use tools_func, only: inf,sup
   use tools_kinds, only: kind_real
   !
   ! maintain a priority queue (PQ) of data, pairs of 'priority/payload',
@@ -171,7 +172,7 @@ bigloop:  do
        else
           pri_i = a%elems(i)%dis
           pri_l = a%elems(l)%dis
-          if (pri_l .gt. pri_i) then
+          if (sup(pri_l,pri_i)) then
              largest = l
              pri_largest = pri_l
           else
@@ -185,7 +186,7 @@ bigloop:  do
           !
           if (r .le. a%heap_size) then
              pri_r = a%elems(r)%dis
-             if (pri_r .gt. pri_largest) then
+             if (sup(pri_r,pri_largest)) then
                 largest = r
              endif
           endif
@@ -298,7 +299,7 @@ bigloop:  do
        isparent = int(i/2)
        parentdis = a%elems(isparent)%dis
        parentsdis = a%elems(isparent)%sdis
-       if (dis .gt. parentdis) then
+       if (sup(dis,parentdis)) then
           ! move what was in i's parent into i.
           a%elems(i)%dis = parentdis
           a%elems(i)%sdis = parentsdis
@@ -355,13 +356,13 @@ bigloop:  do
 
              if (child .lt. N) then
                 prichildp1 = a%elems(child+1)%dis
-                if (prichild .lt. prichildp1) then
+                if (inf(prichild,prichildp1)) then
                    child = child+1
                    prichild = prichildp1
                 endif
              endif
 
-             if (dis .ge. prichild) then
+             if (inf(dis,prichild)) then
                 exit loop
                 ! we have a proper place for our new element,
                 ! bigger than either children's priority.
