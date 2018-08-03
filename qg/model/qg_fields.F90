@@ -1319,16 +1319,17 @@ implicit none
 type(qg_field), intent(in) :: self
 type(unstructured_grid), intent(inout) :: ug
 
-integer :: myproc,info,nc0a,ic0a,jx,jy,jl,jf,joff
+integer :: nc0a,ic0a,jx,jy,jl,jf,joff!MPI: ,myproc,info
 integer,allocatable :: imask(:,:)
 real(kind=kind_real),allocatable :: lon(:),lat(:),area(:),vunit(:,:)
 
-! Find rank
-call mpi_comm_rank(mpi_comm_world,myproc,info)
-myproc = myproc+1
+!MPI: ! Find rank
+!MPI: call mpi_comm_rank(mpi_comm_world,myproc,info)
+!MPI: myproc = myproc+1
 
 ! Define local number of gridpoints
-nc0a = count(self%geom%myproc==myproc)
+nc0a = self%geom%nx*self%geom%ny
+!MPI: nc0a = count(self%geom%myproc==myproc)
 
 ! Allocation
 allocate(lon(nc0a))
@@ -1341,12 +1342,12 @@ allocate(imask(nc0a,self%nl))
 ic0a = 0
 do jy=1,self%geom%ny
   do jx=1,self%geom%nx
-    if (self%geom%myproc(jx,jy)==myproc) then
+!MPI:     if (self%geom%myproc(jx,jy)==myproc) then
       ic0a = ic0a+1
       lon(ic0a) = self%geom%lon(jx)
       lat(ic0a) = self%geom%lat(jy)
       area(ic0a) = self%geom%area(jx,jy)
-    endif
+!MPI:     endif
   enddo
 enddo
 imask = 1
@@ -1363,7 +1364,7 @@ call create_unstructured_grid(ug, nc0a, self%nl, self%nf, 1, lon, lat, area, vun
 ic0a = 0
 do jy=1,self%geom%ny
   do jx=1,self%geom%nx
-    if (self%geom%myproc(jx,jy)==myproc) then
+!MPI:     if (self%geom%myproc(jx,jy)==myproc) then
       ic0a = ic0a+1
       do jf=1,self%nf
         joff = (jf-1)*self%nl
@@ -1371,7 +1372,7 @@ do jy=1,self%geom%ny
           ug%fld(ic0a,jl,jf,1) = self%gfld3d(jx,jy,joff+jl)
         enddo
       enddo
-    endif
+!MPI:     endif
   enddo
 enddo
 
@@ -1385,17 +1386,17 @@ implicit none
 type(qg_field), intent(inout) :: self
 type(unstructured_grid), intent(in) :: ug
 
-integer :: myproc,info,ic0a,jx,jy,jl,jf,joff
+integer :: ic0a,jx,jy,jl,jf,joff!MPI: ,myproc,info
 
-! Find rank
-call mpi_comm_rank(mpi_comm_world,myproc,info)
-myproc = myproc+1
+!MPI: ! Find rank
+!MPI: call mpi_comm_rank(mpi_comm_world,myproc,info)
+!MPI: myproc = myproc+1
 
 ! Copy field
 ic0a = 0
 do jy=1,self%geom%ny
   do jx=1,self%geom%nx
-    if (self%geom%myproc(jx,jy)==myproc) then
+!MPI:     if (self%geom%myproc(jx,jy)==myproc) then
       ! Copy local field
       ic0a = ic0a+1
       do jf=1,self%nf
@@ -1404,10 +1405,10 @@ do jy=1,self%geom%ny
           self%gfld3d(jx,jy,joff+jl) = ug%fld(ic0a,jl,jf,1)
         enddo
       enddo
-    endif
+!MPI:     endif
 
-    ! Broadcast
-    call mpi_bcast(self%gfld3d(jx,jy,:),self%nf*self%nl,mpi_double,self%geom%myproc(jx,jy)-1,mpi_comm_world,info)
+!MPI:     ! Broadcast
+!MPI:     call mpi_bcast(self%gfld3d(jx,jy,:),self%nf*self%nl,mpi_double,self%geom%myproc(jx,jy)-1,mpi_comm_world,info)
   enddo
 enddo
 
