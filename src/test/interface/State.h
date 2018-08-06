@@ -20,7 +20,6 @@
 #define BOOST_TEST_ALTERNATIVE_INIT_API
 #define BOOST_TEST_DYN_LINK
 
-#include <boost/test/data/monomorphic.hpp>
 #include <boost/test/unit_test.hpp>
 
 #include <boost/noncopyable.hpp>
