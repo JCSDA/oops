@@ -10,6 +10,7 @@
 
 #include "oops/runs/Run.h"
 
+#include <mpi.h>
 #include <string>
 #include <boost/scoped_ptr.hpp>
 
@@ -28,6 +29,9 @@ namespace oops {
 // -----------------------------------------------------------------------------
 
 Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(), timer_() {
+// Start MPI
+  MPI_Init(&argc, &argv);
+
 // Get configuration file from command line
   ASSERT(argc >= 2);
   eckit::PathName configfile = argv[argc - 1];
@@ -46,6 +50,8 @@ Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(
 // -----------------------------------------------------------------------------
 
 Run::~Run() {
+// Finalize MPI
+  MPI_Finalize();
   LibOOPS::instance().finalise();
 }
 

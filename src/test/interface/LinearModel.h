@@ -263,6 +263,10 @@ template <typename MODEL> void testLinearApproximation() {
 
   const unsigned int ntest = Test_::test().getInt("testiterTL");
   double zz = 1.0;
+  if (Test_::test().has("firstmulTL")) {
+    zz = Test_::test().getDouble("firstmulTL");
+  }
+
   std::vector<double> errors;
   for (unsigned int jtest = 0; jtest < ntest; ++jtest) {
     State_ xx(Test_::xref());

@@ -16,7 +16,6 @@
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
-
 #include "model/FieldsQG.h"
 #include "model/GeometryQG.h"
 #include "model/GomQG.h"
@@ -26,6 +25,7 @@
 #include "model/ModelQG.h"
 #include "model/Nothing.h"
 #include "oops/base/Variables.h"
+#include "oops/generic/UnstructuredGrid.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -143,6 +143,16 @@ StateQG & StateQG::operator+=(const IncrementQG & dx) {
   ASSERT(fields_);
   fields_->add(dx.fields());
   return *this;
+}
+// -----------------------------------------------------------------------------
+/// Convert to/from unstructured grid
+// -----------------------------------------------------------------------------
+void StateQG::convert_to(oops::UnstructuredGrid & ug) const {
+  fields_->convert_to(ug);
+}
+// -----------------------------------------------------------------------------
+void StateQG::convert_from(const oops::UnstructuredGrid & ug) {
+  fields_->convert_from(ug);
 }
 // -----------------------------------------------------------------------------
 /// I/O and diagnostics

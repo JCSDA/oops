@@ -12,6 +12,7 @@
 #define LORENZ95_RESOLUTION_H_
 
 #include <iostream>
+#include <vector>
 
 #include "eckit/config/Configuration.h"
 #include "oops/util/Printable.h"
@@ -27,6 +28,11 @@ class Resolution : public util::Printable {
   explicit Resolution(const int resol): resol_(resol) {}
   Resolution(const Resolution & other): resol_(other.resol_) {}
   ~Resolution() {}
+
+  std::vector<double> getLats() const;
+  std::vector<double> getLons() const;
+  std::vector<double> getLevs() const;
+  std::vector<int> getMask(const int &) const;
 
   int npoints() const {return resol_;}
 

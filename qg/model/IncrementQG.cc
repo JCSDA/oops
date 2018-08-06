@@ -25,6 +25,7 @@
 #include "model/Nothing.h"
 #include "model/StateQG.h"
 #include "oops/base/Variables.h"
+#include "oops/generic/UnstructuredGrid.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -147,6 +148,10 @@ void IncrementQG::random() {
   fields_->random();
 }
 // -----------------------------------------------------------------------------
+void IncrementQG::dirac(const eckit::Configuration & config) {
+  fields_->dirac(config);
+}
+// -----------------------------------------------------------------------------
 /// Get increment values at observation locations
 // -----------------------------------------------------------------------------
 void IncrementQG::getValuesTL(const LocationsQG & locs, const oops::Variables & vars,
@@ -157,6 +162,16 @@ void IncrementQG::getValuesTL(const LocationsQG & locs, const oops::Variables & 
 void IncrementQG::getValuesAD(const LocationsQG & locs, const oops::Variables & vars,
                               const GomQG & cols, const Nothing &) {
   fields_->getValuesAD(locs, vars, cols);
+}
+// -----------------------------------------------------------------------------
+/// Convert to/from unstructured grid
+// -----------------------------------------------------------------------------
+void IncrementQG::convert_to(oops::UnstructuredGrid & ug) const {
+  fields_->convert_to(ug);
+}
+// -----------------------------------------------------------------------------
+void IncrementQG::convert_from(const oops::UnstructuredGrid & ug) {
+  fields_->convert_from(ug);
 }
 // -----------------------------------------------------------------------------
 /// I/O and diagnostics

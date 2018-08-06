@@ -58,6 +58,21 @@ if (NOT HAVE_LAPACK)
   ecbuild_error("LAPACK_LIBRARIES not defined")
 endif()
 
+# MPI
+ecbuild_find_mpi( COMPONENTS CXX Fortran REQUIRED )
+ecbuild_include_mpi()
+link_libraries(${MPI_CXX_LIBRARIES} ${MPI_Fortran_LIBRARIES})
+
+# OpenMP
+ecbuild_add_option( FEATURE OMP
+                    DESCRIPTION "Support for OpenMP threaded parallelism"
+                    REQUIRED_PACKAGES "OMP COMPONENTS CXX Fortran" )
+if( HAVE_OMP )
+  ecbuild_enable_omp()
+else()
+  ecbuild_enable_ompstubs()
+endif()
+
 # NetCDF
 set( NETCDF_F90 ON CACHE BOOL "Compile with Fortran NetCDF" )
 find_package( NetCDF REQUIRED )
@@ -67,6 +82,10 @@ include_directories( ${NETCDF_INCLUDE_DIR} )
 ecbuild_use_package( PROJECT eckit VERSION 0.18.0 REQUIRED )
 include_directories( ${ECKIT_INCLUDE_DIRS} )
 
+if ( NOT ECKIT_HAVE_MPI )
+  ecbuild_error("OOPS requested to build with MPI but eckit wasn't built with MPI: ECKIT_HAVE_MPI = ${ECKIT_HAVE_MPI}")
+endif()
+
 # fckit
 ecbuild_use_package( PROJECT fckit VERSION 0.4.1 REQUIRED )
 include_directories( ${FCKIT_INCLUDE_DIRS} )
@@ -75,7 +94,7 @@ include_directories( ${FCKIT_INCLUDE_DIRS} )
 # Export package info
 ################################################################################
 
-list( APPEND OOPS_TPLS LAPACK NetCDF eckit fckit )
+list( APPEND OOPS_TPLS LAPACK MPI NetCDF eckit fckit )
 
 set( OOPS_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/src
                        ${CMAKE_Fortran_MODULE_DIRECTORY} )

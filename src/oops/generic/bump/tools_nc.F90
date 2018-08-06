@@ -6,12 +6,13 @@
 !> <br>
 !> Licensing: this code is distributed under the CeCILL-C license
 !> <br>
-!> Copyright © 2017 METEO-FRANCE
+!> Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE
 !----------------------------------------------------------------------
 module tools_nc
 
 use netcdf
-use kinds
+use tools_kinds, only: kind_real
+use type_mpl, only: mpl_type
 
 implicit none
 
@@ -30,36 +31,20 @@ integer,parameter :: ncfloat = nf90_double !< NetCDF type for real
 
 private
 public :: ncfloat
-public :: ncerr,put_att
+public :: put_att
 
 contains
-
-!----------------------------------------------------------------------
-! Subroutine: ncerr
-!> Purpose: handle NetCDF error
-!----------------------------------------------------------------------
-subroutine ncerr(subr,info)
-
-implicit none
-
-! Passed variables
-character(len=*),intent(in) :: subr !< Calling subroutine
-integer,intent(in) :: info          !< Info index
-
-! Check status
-if (info/=nf90_noerr) call abor1_ftn('in '//trim(subr)//': '//trim(nf90_strerror(info)))
-
-end subroutine ncerr
 
 !----------------------------------------------------------------------
 ! Subroutine: put_att_integer
 !> Purpose: write namelist integer as NetCDF attribute
 !----------------------------------------------------------------------
-subroutine put_att_integer(ncid,varname,var)
+subroutine put_att_integer(mpl,ncid,varname,var)
 
 implicit none
 
 ! Passed variables
+type(mpl_type),intent(in) :: mpl       !< MPI data
 integer,intent(in) :: ncid             !< NetCDF file id
 character(len=*),intent(in) :: varname !< Variable name
 integer,intent(in) :: var              !< Integer
@@ -68,7 +53,7 @@ integer,intent(in) :: var              !< Integer
 character(len=1024) :: subr='put_att_integer'
 
 ! Write integer
-call ncerr(subr,nf90_put_att(ncid,nf90_global,trim(varname),var))
+call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,trim(varname),var))
 
 end subroutine put_att_integer
 
@@ -76,11 +61,12 @@ end subroutine put_att_integer
 ! Subroutine: put_att_integer_array
 !> Purpose: write namelist integer array as NetCDF attribute
 !----------------------------------------------------------------------
-subroutine put_att_integer_array(ncid,varname,n,var)
+subroutine put_att_integer_array(mpl,ncid,varname,n,var)
 
 implicit none
 
 ! Passed variables
+type(mpl_type),intent(in) :: mpl       !< MPI data
 integer,intent(in) :: ncid             !< NetCDF file id
 character(len=*),intent(in) :: varname !< Variable name
 integer,intent(in) :: n                !< Integer array size
@@ -98,7 +84,7 @@ if (n>0) then
       write(str,'(i3.3)') var(i)
       fullstr = trim(fullstr)//':'//trim(str)
    end do
-   call ncerr(subr,nf90_put_att(ncid,nf90_global,trim(varname),trim(fullstr)))
+   call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,trim(varname),trim(fullstr)))
 end if
 
 end subroutine put_att_integer_array
@@ -107,11 +93,12 @@ end subroutine put_att_integer_array
 ! Subroutine: put_att_real
 !> Purpose: write namelist real as NetCDF attribute
 !----------------------------------------------------------------------
-subroutine put_att_real(ncid,varname,var)
+subroutine put_att_real(mpl,ncid,varname,var)
 
 implicit none
 
 ! Passed variables
+type(mpl_type),intent(in) :: mpl       !< MPI data
 integer,intent(in) :: ncid             !< NetCDF file id
 character(len=*),intent(in) :: varname !< Variable name
 real(kind_real),intent(in) :: var      !< Real
@@ -120,7 +107,7 @@ real(kind_real),intent(in) :: var      !< Real
 character(len=1024) :: subr='put_att_real'
 
 ! Write real
-call ncerr(subr,nf90_put_att(ncid,nf90_global,trim(varname),var))
+call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,trim(varname),var))
 
 end subroutine put_att_real
 
@@ -128,11 +115,12 @@ end subroutine put_att_real
 ! Subroutine: put_att_real_array
 !> Purpose: write namelist real array as NetCDF attribute
 !----------------------------------------------------------------------
-subroutine put_att_real_array(ncid,varname,n,var)
+subroutine put_att_real_array(mpl,ncid,varname,n,var)
 
 implicit none
 
 ! Passed variables
+type(mpl_type),intent(in) :: mpl       !< MPI data
 integer,intent(in) :: ncid             !< NetCDF file id
 character(len=*),intent(in) :: varname !< Variable name
 integer,intent(in) :: n                !< Real array size
@@ -150,7 +138,7 @@ if (n>0) then
       write(str,'(e10.3)') var(i)
       fullstr = trim(fullstr)//':'//trim(str)
    end do
-   call ncerr(subr,nf90_put_att(ncid,nf90_global,trim(varname),trim(fullstr)))
+   call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,trim(varname),trim(fullstr)))
 end if
 
 end subroutine put_att_real_array
@@ -159,11 +147,12 @@ end subroutine put_att_real_array
 ! Subroutine: put_att_logical
 !> Purpose: write namelist logical as NetCDF attribute
 !----------------------------------------------------------------------
-subroutine put_att_logical(ncid,varname,var)
+subroutine put_att_logical(mpl,ncid,varname,var)
 
 implicit none
 
 ! Passed variables
+type(mpl_type),intent(in) :: mpl       !< MPI data
 integer,intent(in) :: ncid             !< NetCDF file id
 character(len=*),intent(in) :: varname !< Variable name
 logical,intent(in) :: var              !< Logical
@@ -173,9 +162,9 @@ character(len=1024) :: subr='put_att_logical'
 
 ! Write logical as a string
 if (var) then
-   call ncerr(subr,nf90_put_att(ncid,nf90_global,trim(varname),'.true.'))
+   call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,trim(varname),'.true.'))
 else
-   call ncerr(subr,nf90_put_att(ncid,nf90_global,trim(varname),'.false.'))
+   call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,trim(varname),'.false.'))
 end if
 
 end subroutine put_att_logical
@@ -184,11 +173,12 @@ end subroutine put_att_logical
 ! Subroutine: put_att_logical_array
 !> Purpose: write namelist logical array as NetCDF attribute
 !----------------------------------------------------------------------
-subroutine put_att_logical_array(ncid,varname,n,var)
+subroutine put_att_logical_array(mpl,ncid,varname,n,var)
 
 implicit none
 
 ! Passed variables
+type(mpl_type),intent(in) :: mpl       !< MPI data
 integer,intent(in) :: ncid             !< NetCDF file id
 character(len=*),intent(in) :: varname !< Variable name
 integer,intent(in) :: n                !< Real array size
@@ -214,7 +204,7 @@ if (n>0) then
       end if
       fullstr = trim(fullstr)//':'//trim(str)
    end do
-   call ncerr(subr,nf90_put_att(ncid,nf90_global,trim(varname),trim(fullstr)))
+   call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,trim(varname),trim(fullstr)))
 end if
 
 end subroutine put_att_logical_array
@@ -223,11 +213,12 @@ end subroutine put_att_logical_array
 ! Subroutine: put_att_string
 !> Purpose: write namelist string as NetCDF attribute
 !----------------------------------------------------------------------
-subroutine put_att_string(ncid,varname,var)
+subroutine put_att_string(mpl,ncid,varname,var)
 
 implicit none
 
 ! Passed variables
+type(mpl_type),intent(in) :: mpl       !< MPI data
 integer,intent(in) :: ncid             !< NetCDF file id
 character(len=*),intent(in) :: varname !< Variable name
 character(len=*),intent(in) :: var     !< String
@@ -236,7 +227,7 @@ character(len=*),intent(in) :: var     !< String
 character(len=1024) :: subr='put_att_string'
 
 ! Write string
-call ncerr(subr,nf90_put_att(ncid,nf90_global,trim(varname),trim(var)))
+call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,trim(varname),trim(var)))
 
 end subroutine put_att_string
 
@@ -244,11 +235,12 @@ end subroutine put_att_string
 ! Subroutine: put_att_string_array
 !> Purpose: write namelist string array as NetCDF attribute
 !----------------------------------------------------------------------
-subroutine put_att_string_array(ncid,varname,n,var)
+subroutine put_att_string_array(mpl,ncid,varname,n,var)
 
 implicit none
 
 ! Passed variables
+type(mpl_type),intent(in) :: mpl       !< MPI data
 integer,intent(in) :: ncid             !< NetCDF file id
 character(len=*),intent(in) :: varname !< Variable name
 integer,intent(in) :: n                !< String array size
@@ -265,7 +257,7 @@ if (n>0) then
    do i=2,n
       fullstr = trim(fullstr)//':'//trim(var(i))
    end do
-   call ncerr(subr,nf90_put_att(ncid,nf90_global,trim(varname),trim(fullstr)))
+   call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,trim(varname),trim(fullstr)))
 end if
 
 end subroutine put_att_string_array
