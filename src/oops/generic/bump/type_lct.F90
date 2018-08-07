@@ -10,7 +10,8 @@
 !----------------------------------------------------------------------
 module type_lct
 
-use tools_const, only: req,reqkm,pi,rth
+use tools_const, only: req,reqkm,pi
+use tools_func, only: pos
 use tools_kinds, only: kind_real
 use tools_missing, only: msr,isnotmsr,isallnotmsr
 use type_bpar, only: bpar_type
@@ -148,7 +149,7 @@ call hdata%compute_mpi_a(mpl,nam,geom)
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Compute MPI distribution, halos A-B'
 call flush(mpl%unit)
-call hdata%compute_mpi_ab(mpl,geom)
+call hdata%compute_mpi_ab(mpl,nam,geom)
 
 ! Compute MPI distribution, halo C
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
@@ -291,7 +292,7 @@ do ib=1,bpar%nb
                end if
 
                ! Fill missing values
-               call hdata%diag_fill(mpl,geom,il0,fld_c1a)
+               call hdata%diag_fill(mpl,nam,geom,il0,fld_c1a)
 
                ! Copy
                if (icomp<=lct%blk(ib)%ncomp(iscales)) then
@@ -441,7 +442,7 @@ do ib=1,bpar%nb
                end if
 
                ! Check coefficient
-               valid_coef = .not.((lct%blk(ib)%coef(iscales,ic1a,il0)<rth).or.(lct%blk(ib)%coef(iscales,ic1a,il0)>1.0+rth))
+               valid_coef = pos(lct%blk(ib)%coef(iscales,ic1a,il0)).and.pos(1.0-lct%blk(ib)%coef(iscales,ic1a,il0))
 
                if ((det>0.0).and.valid_coef) then
                   ! Copy diffusion tensor
@@ -495,8 +496,7 @@ do ib=1,bpar%nb
                end if
 
                ! Check coefficient
-               valid_coef = .not.((fld(ic0a,il0,lct%blk(ib)%ncomp(iscales)+1)<rth) &
-                          & .or.(fld(ic0a,il0,lct%blk(ib)%ncomp(iscales)+1)>1.0+rth))
+               valid_coef = pos(fld(ic0a,il0,lct%blk(ib)%ncomp(iscales)+1)).and.pos(1.0-fld(ic0a,il0,lct%blk(ib)%ncomp(iscales)+1))
                if (.not.valid_coef) call mpl%abort('non-valid coefficient in LCT, grid c0')
             end if
          end do

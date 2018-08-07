@@ -10,7 +10,7 @@
 !----------------------------------------------------------------------
 module tools_stripack
 
-use tools_const, only: rth
+use tools_func, only: eq,inf,sup,indist
 use tools_kinds, only: kind_real
 use type_mpl, only: mpl_type
 
@@ -181,7 +181,7 @@ subroutine addnod ( mpl, nst, k, x, y, z, list, lptr, lend, lnew, ier )
 
     l = i1
 
-    if ( (abs(p(1)-x(l))<rth) .and. (abs(p(2)-y(l))<rth)  .and. (abs(p(3)-z(l))<rth) ) then
+    if ( eq(p(1),x(l)) .and. eq(p(2),y(l))  .and. eq(p(3),z(l)) ) then
       ier = l
       write ( *, '(a)' ) ' '
       write ( *, '(a)' ) 'ADDNOD - Fatal error!'
@@ -191,7 +191,7 @@ subroutine addnod ( mpl, nst, k, x, y, z, list, lptr, lend, lnew, ier )
 
     l = i2
 
-    if ( (abs(p(1)-x(l))<rth) .and. (abs(p(2)-y(l))<rth)  .and. (abs(p(3)-z(l))<rth) ) then
+    if ( eq(p(1),x(l)) .and. eq(p(2),y(l))  .and. eq(p(3),z(l)) ) then
       ier = l
       write ( *, '(a)' ) ' '
       write ( *, '(a)' ) 'ADDNOD - Fatal error!'
@@ -200,7 +200,7 @@ subroutine addnod ( mpl, nst, k, x, y, z, list, lptr, lend, lnew, ier )
     end if
 
     l = i3
-    if ( (abs(p(1)-x(l))<rth) .and. (abs(p(2)-y(l))<rth)  .and. (abs(p(3)-z(l))<rth) ) then
+    if ( eq(p(1),x(l)) .and. eq(p(2),y(l))  .and. eq(p(3),z(l)) ) then
       ier = l
       write ( *, '(a)' ) ' '
       write ( *, '(a)' ) 'ADDNOD - Fatal error!'
@@ -939,7 +939,7 @@ subroutine det ( x1, y1, z1, x2, y2, z2, x0, y0, z0, output )
   output = t1 - t2 + t3
 
   ! Indistinguishability threshold for cross-plateform reproducibility
-  if ((abs(output)<rth*abs(t1)).or.(abs(output)<rth*abs(t2)).or.(abs(output)<rth*abs(t3))) output = 0.0
+  if (indist(output,t1).or.indist(output,t2).or.indist(output,t3)) output = 0.0
 end
 subroutine crlist ( n, ncol, x, y, z, list, lend, lptr, lnew, &
   ltri, listc, nb, xc, yc, zc, rc, ier )
@@ -4317,12 +4317,12 @@ subroutine trmesh ( mpl, n, x, y, z, list, lptr, lend, lnew, near, next, dist, i
     d2 = -( x(k) * x(2) + y(k) * y(2) + z(k) * z(2) )
     d3 = -( x(k) * x(3) + y(k) * y(3) + z(k) * z(3) )
 
-    if ( (abs(d1-d2)>rth*abs(d1+d2).and.(d1 < d2)) .and. (abs(d1-d3)>rth*abs(d1+d3).and.(d1 < d3)) ) then
+    if ( inf(d1,d2) .and. inf(d1,d3) ) then
       near(k) = 1
       dist(k) = d1
       next(k) = near(1)
       near(1) = k
-    else if ( (abs(d2-d1)>rth*abs(d2+d1).and.(d2 < d1)) .and. (abs(d2-d3)>rth*abs(d2+d3).and.(d2 < d3)) ) then
+    else if ( inf(d2,d1) .and. inf(d2,d3) ) then
       near(k) = 2
       dist(k) = d2
       next(k) = near(2)
@@ -4408,7 +4408,7 @@ subroutine trmesh ( mpl, n, x, y, z, list, lptr, lend, lnew, near, next, dist, i
 !  from I to J. Indistinguishability threshold for cross-plateform reproducibility
 !
       d = - ( x(i) * x(k) + y(i) * y(k) + z(i) * z(k) )
-      if ( abs(d-dist(i))>rth*abs(d+dist(i)) .and. d < dist(i)) then
+      if ( inf(d,dist(i)) ) then
 !
 !  Replace J by K as the nearest triangulation node to I:
 !  update NEAR(I) and DIST(I), and remove I from J's set

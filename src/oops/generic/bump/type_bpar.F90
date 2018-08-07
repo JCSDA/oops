@@ -20,6 +20,7 @@ implicit none
 type bpar_type
    ! Block parameters
    integer :: nb                                 !< Number of blocks
+   integer :: nbe                                !< Extended number of blocks
    integer,allocatable :: nl0r(:)                !< Effective number of levels
    integer,allocatable :: l0rl0b_to_l0(:,:,:)    !< Effective level to level
    integer,allocatable :: il0rz(:,:)             !< Effective zero separation level
@@ -65,27 +66,33 @@ integer :: ib,iv,jv,its,jts,il0r,jl0,il0off
 if (nam%new_lct) then
    ! Special case for tensors
    bpar%nb = nam%nv*nam%nts
+   bpar%nbe = bpar%nb
 else
    ! General case
    bpar%nb = nam%nv**2*nam%nts**2
+   if (bpar%nb==1) then
+      bpar%nbe = bpar%nb
+   else
+      bpar%nbe = bpar%nb+1
+   end if
 end if
 
 ! Allocation
-allocate(bpar%l0rl0b_to_l0(nam%nl0r,geom%nl0,bpar%nb+1))
-allocate(bpar%il0rz(geom%nl0,bpar%nb+1))
-allocate(bpar%nl0r(bpar%nb+1))
-allocate(bpar%nc3(bpar%nb+1))
-allocate(bpar%diag_block(bpar%nb+1))
-allocate(bpar%avg_block(bpar%nb+1))
-allocate(bpar%fit_block(bpar%nb+1))
-allocate(bpar%B_block(bpar%nb+1))
-allocate(bpar%nicas_block(bpar%nb+1))
-allocate(bpar%cv_block(bpar%nb+1))
-allocate(bpar%blockname(bpar%nb+1))
-allocate(bpar%b_to_v1(bpar%nb+1))
-allocate(bpar%b_to_v2(bpar%nb+1))
-allocate(bpar%b_to_ts1(bpar%nb+1))
-allocate(bpar%b_to_ts2(bpar%nb+1))
+allocate(bpar%l0rl0b_to_l0(nam%nl0r,geom%nl0,bpar%nbe))
+allocate(bpar%il0rz(geom%nl0,bpar%nbe))
+allocate(bpar%nl0r(bpar%nbe))
+allocate(bpar%nc3(bpar%nbe))
+allocate(bpar%diag_block(bpar%nbe))
+allocate(bpar%avg_block(bpar%nbe))
+allocate(bpar%fit_block(bpar%nbe))
+allocate(bpar%B_block(bpar%nbe))
+allocate(bpar%nicas_block(bpar%nbe))
+allocate(bpar%cv_block(bpar%nbe))
+allocate(bpar%blockname(bpar%nbe))
+allocate(bpar%b_to_v1(bpar%nbe))
+allocate(bpar%b_to_v2(bpar%nbe))
+allocate(bpar%b_to_ts1(bpar%nbe))
+allocate(bpar%b_to_ts2(bpar%nbe))
 
 ! Initialization
 call msi(bpar%l0rl0b_to_l0)
@@ -128,27 +135,29 @@ if (nam%new_lct) then
       end do
    end do
 
-   ! Common block
-   ib = bpar%nb+1
+   if (bpar%nbe>bpar%nb) then
+      ! Common block
+      ib = bpar%nbe
 
-   ! Classes and levels
-   bpar%l0rl0b_to_l0(:,:,ib) = 0
-   bpar%il0rz(:,ib) = 0
-   bpar%nl0r(ib) = 0
-   bpar%nc3(ib) = 0
-   bpar%diag_block(ib) = .false.
-   bpar%avg_block(ib) = .false.
-   bpar%fit_block(ib) = .false.
-   bpar%B_block(ib) = .false.
-   bpar%nicas_block(ib) = .false.
-   bpar%cv_block(ib) = .false.
+      ! Classes and levels
+      bpar%l0rl0b_to_l0(:,:,ib) = 0
+      bpar%il0rz(:,ib) = 0
+      bpar%nl0r(ib) = 0
+      bpar%nc3(ib) = 0
+      bpar%diag_block(ib) = .false.
+      bpar%avg_block(ib) = .false.
+      bpar%fit_block(ib) = .false.
+      bpar%B_block(ib) = .false.
+      bpar%nicas_block(ib) = .false.
+      bpar%cv_block(ib) = .false.
 
-   ! Blocks information
-   bpar%blockname(ib) = 'common'
-   bpar%b_to_v1(ib) = 0
-   bpar%b_to_v2(ib) = 0
-   bpar%b_to_ts1(ib) = 0
-   bpar%b_to_ts2(ib) = 0
+      ! Blocks information
+      bpar%blockname(ib) = 'common'
+      bpar%b_to_v1(ib) = 0
+      bpar%b_to_v2(ib) = 0
+      bpar%b_to_ts1(ib) = 0
+      bpar%b_to_ts2(ib) = 0
+   end if
 else
    ! Individual blocks
    ib = 1
@@ -189,9 +198,9 @@ else
                case ('common')
                   bpar%diag_block(ib) = (iv==jv).and.(its==1).and.(jts==1)
                   bpar%avg_block(ib) = (iv==jv).and.(its==1).and.(jts==1)
-                  bpar%B_block(ib) = .false.
-                  bpar%nicas_block(ib) = .false.
-                  bpar%cv_block(ib) = .false.
+                  bpar%B_block(ib) = (bpar%nbe==bpar%nb)
+                  bpar%nicas_block(ib) = (bpar%nbe==bpar%nb)
+                  bpar%cv_block(ib) = (bpar%nbe==bpar%nb)
                case ('specific_univariate')
                   bpar%diag_block(ib) = (iv==jv).and.(its==1).and.(jts==1)
                   bpar%avg_block(ib) = .false.
@@ -200,15 +209,15 @@ else
                   bpar%cv_block(ib) = (iv==jv).and.(its==1).and.(jts==1)
                case ('specific_multivariate')
                   bpar%diag_block(ib) = (iv==jv).and.(its==1).and.(jts==1)
-                  bpar%avg_block(ib) = .false.
+                  bpar%avg_block(ib) = (bpar%nbe==bpar%nb)
                   bpar%B_block(ib) = (iv==jv).and.(its==1).and.(jts==1)
                   bpar%nicas_block(ib) = (iv==jv).and.(its==1).and.(jts==1)
-                  bpar%cv_block(ib) = .false.
+                  bpar%cv_block(ib) = (bpar%nbe==bpar%nb)
                case ('common_weighted')
                   bpar%diag_block(ib) = .true.
                   bpar%avg_block(ib) = (iv==jv).and.(its==jts)
                   bpar%B_block(ib) = .true.
-                  bpar%nicas_block(ib) = .false.
+                  bpar%nicas_block(ib) = (bpar%nbe==bpar%nb)
                   bpar%cv_block(ib) = (iv==jv).and.(its==jts)
                end select
                bpar%fit_block(ib) = bpar%diag_block(ib).and.(iv==jv).and.(its==jts).and.(trim(nam%minim_algo)/='none')
@@ -228,64 +237,66 @@ else
       end do
    end do
 
-   ! Common block
-   ib = bpar%nb+1
+   if (bpar%nbe>bpar%nb) then
+      ! Common block
+      ib = bpar%nbe
 
-   ! Classes and levels
-   bpar%nl0r(ib) = nam%nl0r
-   do jl0=1,geom%nl0
-      il0off = jl0-(bpar%nl0r(ib)-1)/2-1
-      if (il0off<1) il0off = 0
-      if (il0off+nam%nl0r>geom%nl0) il0off = geom%nl0-nam%nl0r
-      do il0r=1,nam%nl0r
-         bpar%l0rl0b_to_l0(il0r,jl0,ib) = il0off+il0r
-         if (bpar%l0rl0b_to_l0(il0r,jl0,ib)==jl0) bpar%il0rz(jl0,ib) = il0r
+      ! Classes and levels
+      bpar%nl0r(ib) = nam%nl0r
+      do jl0=1,geom%nl0
+         il0off = jl0-(bpar%nl0r(ib)-1)/2-1
+         if (il0off<1) il0off = 0
+         if (il0off+nam%nl0r>geom%nl0) il0off = geom%nl0-nam%nl0r
+         do il0r=1,nam%nl0r
+            bpar%l0rl0b_to_l0(il0r,jl0,ib) = il0off+il0r
+            if (bpar%l0rl0b_to_l0(il0r,jl0,ib)==jl0) bpar%il0rz(jl0,ib) = il0r
+         end do
       end do
-   end do
-   bpar%nc3(ib) = nam%nc3
-
-   ! Select blocks
-   select case (nam%strategy)
-   case ('diag_all')
-      bpar%diag_block(ib) = .true.
-      bpar%avg_block(ib) = .false.
-      bpar%B_block(ib) = .false.
-      bpar%nicas_block(ib) = .false.
-      bpar%cv_block(ib) = .false.
-   case ('common')
-      bpar%diag_block(ib) = .true.
-      bpar%avg_block(ib) = .false.
-      bpar%B_block(ib) = .true.
-      bpar%nicas_block(ib) = .true.
-      bpar%cv_block(ib) = .true.
-   case ('specific_univariate')
-      bpar%diag_block(ib) = .false.
-      bpar%avg_block(ib) = .false.
-      bpar%B_block(ib) = .false.
-      bpar%nicas_block(ib) = .false.
-      bpar%cv_block(ib) = .false.
-   case ('specific_multivariate')
-      bpar%diag_block(ib) = .false.
-      bpar%avg_block(ib) = .false.
-      bpar%B_block(ib) = .false.
-      bpar%nicas_block(ib) = .false.
-      bpar%cv_block(ib) = .true.
-   case ('common_weighted')
-      bpar%diag_block(ib) = .true.
-      bpar%avg_block(ib) = .false.
-      bpar%B_block(ib) = .true.
-      bpar%nicas_block(ib) = .true.
-      bpar%cv_block(ib) = .false.
-   end select
-   bpar%fit_block(ib) = bpar%diag_block(ib).and.(trim(nam%minim_algo)/='none')
-   if (nam%local_diag) bpar%fit_block(ib) = bpar%fit_block(ib).and.bpar%nicas_block(ib)
-
-   ! Blocks information
-   bpar%blockname(ib) = 'common'
-   bpar%b_to_v1(ib) = 0
-   bpar%b_to_v2(ib) = 0
-   bpar%b_to_ts1(ib) = 0
-   bpar%b_to_ts2(ib) = 0
+      bpar%nc3(ib) = nam%nc3
+   
+      ! Select blocks
+      select case (nam%strategy)
+      case ('diag_all')
+         bpar%diag_block(ib) = .true.
+         bpar%avg_block(ib) = .false.
+         bpar%B_block(ib) = .false.
+         bpar%nicas_block(ib) = .false.
+         bpar%cv_block(ib) = .false.
+      case ('common')
+         bpar%diag_block(ib) = .true.
+         bpar%avg_block(ib) = .false.
+         bpar%B_block(ib) = .true.
+         bpar%nicas_block(ib) = .true.
+         bpar%cv_block(ib) = .true.
+      case ('specific_univariate')
+         bpar%diag_block(ib) = .false.
+         bpar%avg_block(ib) = .false.
+         bpar%B_block(ib) = .false.
+         bpar%nicas_block(ib) = .false.
+         bpar%cv_block(ib) = .false.
+      case ('specific_multivariate')
+         bpar%diag_block(ib) = .false.
+         bpar%avg_block(ib) = .false.
+         bpar%B_block(ib) = .false.
+         bpar%nicas_block(ib) = .false.
+         bpar%cv_block(ib) = .true.
+      case ('common_weighted')
+         bpar%diag_block(ib) = .true.
+         bpar%avg_block(ib) = .false.
+         bpar%B_block(ib) = .true.
+         bpar%nicas_block(ib) = .true.
+         bpar%cv_block(ib) = .false.
+      end select
+      bpar%fit_block(ib) = bpar%diag_block(ib).and.(trim(nam%minim_algo)/='none')
+      if (nam%local_diag) bpar%fit_block(ib) = bpar%fit_block(ib).and.bpar%nicas_block(ib)
+   
+      ! Blocks information
+      bpar%blockname(ib) = 'common'
+      bpar%b_to_v1(ib) = 0
+      bpar%b_to_v2(ib) = 0
+      bpar%b_to_ts1(ib) = 0
+      bpar%b_to_ts2(ib) = 0
+   end if
 end if
 
 end subroutine bpar_alloc

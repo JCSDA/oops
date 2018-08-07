@@ -5,7 +5,7 @@
 ! with additional provisions found in that same file.
 !
 module tools_kdtree2_pq
-  use tools_func, only: inf,sup
+  use tools_func, only: inf,sup,supeq
   use tools_kinds, only: kind_real
   !
   ! maintain a priority queue (PQ) of data, pairs of 'priority/payload',
@@ -362,7 +362,7 @@ bigloop:  do
                 endif
              endif
 
-             if (inf(dis,prichild)) then
+             if (supeq(dis,prichild)) then
                 exit loop
                 ! we have a proper place for our new element,
                 ! bigger than either children's priority.

@@ -22,7 +22,7 @@ integer,parameter :: M = 0                            !< Number of implicit itte
 real(kind_real),parameter :: eta = 1.0e-9_kind_real   !< Small parameter for the Cholesky decomposition
 
 private
-public :: eq,inf,sup,lonlatmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,add,divide, &
+public :: eq,inf,infeq,sup,supeq,indist,pos,lonlatmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,add,divide, &
         & fit_diag,fit_diag_dble,gc99,fit_lct,cholesky
 
 contains
@@ -66,8 +66,27 @@ inf = (abs(x-y)>rth*abs(x+y)).and.(x<y)
 end function inf
 
 !----------------------------------------------------------------------
+! Function: infeq
+!> Purpose: inferior or equal test for reals
+!----------------------------------------------------------------------
+function infeq(x,y)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: x !< First real
+real(kind_real),intent(in) :: y !< Second real
+
+! Returned variable
+logical :: infeq
+
+infeq = inf(x,y).or.eq(x,y)
+
+end function infeq
+
+!----------------------------------------------------------------------
 ! Function: sup
-!> Purpose: sup test for reals
+!> Purpose: superior test for reals
 !----------------------------------------------------------------------
 function sup(x,y)
 
@@ -83,6 +102,62 @@ logical :: sup
 sup = (abs(x-y)>rth*abs(x+y)).and.(x>y)
 
 end function sup
+
+!----------------------------------------------------------------------
+! Function: supeq
+!> Purpose: superior or equal test for reals
+!----------------------------------------------------------------------
+function supeq(x,y)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: x !< First real
+real(kind_real),intent(in) :: y !< Second real
+
+! Returned variable
+logical :: supeq
+
+supeq = sup(x,y).or.eq(x,y)
+
+end function supeq
+
+!----------------------------------------------------------------------
+! Function: indist
+!> Purpose: indistiguishability test
+!----------------------------------------------------------------------
+function indist(x,y)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: x !< First real
+real(kind_real),intent(in) :: y !< Second real
+
+! Returned variable
+logical :: indist
+
+indist = abs(x)<rth*abs(y)
+
+end function indist
+
+!----------------------------------------------------------------------
+! Function: pos
+!> Purpose: positivity test for reals
+!----------------------------------------------------------------------
+function pos(x)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: x !< Real
+
+! Returned variable
+logical :: pos
+
+pos = (x>rth)
+
+end function pos
 
 !----------------------------------------------------------------------
 ! Subroutine: lonlatmod
@@ -748,6 +823,7 @@ k = 0
 if (nn/=(n*(n+1))/2) then
    call mpl%abort('wrong size in Cholesky decomposition')
 end if
+w = 0.0
 
 ! Factorize column by column, ICOL = column number
 do icol=1,n

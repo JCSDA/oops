@@ -443,14 +443,15 @@ integer,intent(in) :: ns             !< Number of samplings points
 integer,intent(out) :: ihor(ns)      !< Horizontal sampling index
 
 ! Local variables
-integer :: is,js,i,irep,irmax,itry,ir,nn_index(2),ismin(1)
+integer :: is,js,i,irep,irmax,itry,ir,nn_index(2),ismin(1),progint
 real(kind_real) :: distmax,d,dist(ns),nn_dist(2)
-logical :: lmask(n),smask(n)
+logical :: lmask(n),smask(n),done(ns)
 type(kdtree_type) :: kdtree
 
 if (ns>count(mask)) then
    call mpl%abort('ns greater that mask size in initialize_sampling')
 elseif (ns==count(mask)) then
+   write(mpl%unit,'(a)') 'all points are used'
    is = 0
    do i=1,n
       if (mask(i)) then
@@ -466,6 +467,7 @@ else
    smask = .false.
    is = 1
    irep = 1
+   call mpl%prog_init(progint,done)
 
    ! Define sampling
    do while (is<=ns)
@@ -558,7 +560,13 @@ else
          ! Update irep
          irep = irep+1
       end if
+
+      ! Update
+      done(is) = .true.
+      call mpl%prog_print(progint,done)
    end do
+   write(mpl%unit,'(a)') '100%'
+   call flush(mpl%unit)
 end if
 
 end subroutine initialize_sampling

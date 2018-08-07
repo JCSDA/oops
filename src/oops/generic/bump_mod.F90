@@ -181,6 +181,7 @@ if (config_element_exists(c_conf,"mask_th")) bump%nam%mask_th = config_get_real(
 if (config_element_exists(c_conf,"mask_check")) bump%nam%mask_check = integer_to_logical(config_get_int(c_conf,"mask_check"))
 if (config_element_exists(c_conf,"draw_type")) bump%nam%draw_type = config_get_string(c_conf,1024,"draw_type")
 if (config_element_exists(c_conf,"nc1")) bump%nam%nc1 = config_get_int(c_conf,"nc1")
+if (config_element_exists(c_conf,"nc2")) bump%nam%nc1 = config_get_int(c_conf,"nc2")
 if (config_element_exists(c_conf,"ntry")) bump%nam%ntry = config_get_int(c_conf,"ntry")
 if (config_element_exists(c_conf,"nrep")) bump%nam%nrep = config_get_int(c_conf,"nrep")
 if (config_element_exists(c_conf,"nc3")) bump%nam%nc3 = config_get_int(c_conf,"nc3")
@@ -190,7 +191,11 @@ if (config_element_exists(c_conf,"nl0r")) bump%nam%nl0r = config_get_int(c_conf,
 ! diag_param
 if (config_element_exists(c_conf,"ne")) bump%nam%ne = config_get_int(c_conf,"ne")
 if (config_element_exists(c_conf,"gau_approx")) bump%nam%gau_approx = integer_to_logical(config_get_int(c_conf,"gau_approx"))
-if (config_element_exists(c_conf,"full_var")) bump%nam%full_var = integer_to_logical(config_get_int(c_conf,"full_var"))
+if (config_element_exists(c_conf,"var_diag")) bump%nam%var_diag = integer_to_logical(config_get_int(c_conf,"var_diag"))
+if (config_element_exists(c_conf,"var_filter")) bump%nam%var_filter = integer_to_logical(config_get_int(c_conf,"var_filter"))
+if (config_element_exists(c_conf,"var_full")) bump%nam%var_full = integer_to_logical(config_get_int(c_conf,"var_full"))
+if (config_element_exists(c_conf,"var_niter")) bump%nam%var_niter = config_get_int(c_conf,"var_niter")
+   if (config_element_exists(c_conf,"var_rhflt")) bump%nam%var_rhflt = config_get_real(c_conf,"var_rhflt")
 if (config_element_exists(c_conf,"local_diag")) bump%nam%local_diag = integer_to_logical(config_get_int(c_conf,"local_diag"))
 if (bump%nam%local_diag) then
    if (config_element_exists(c_conf,"local_rad")) bump%nam%local_rad = config_get_real(c_conf,"local_rad")
