@@ -10,6 +10,7 @@
 
 #include <boost/noncopyable.hpp>
 
+#include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
@@ -32,17 +33,27 @@ class VariableChangeBase : public util::Printable,
   typedef State<MODEL>               State_;
 
  public:
-  VariableChangeBase() {}
+  explicit VariableChangeBase(const eckit::Configuration &);
   virtual ~VariableChangeBase() {}
 
-  virtual void linearize(const State_ &) =0;
+  void setInputVariables(Variables);
+  void setOutputVariables(Variables);
+  virtual void linearize(const State_ &, const Geometry_ &) =0;
 
   virtual void transform(const Increment_ &, Increment_ &) const =0;
   virtual void transformInverse(const Increment_ &, Increment_ &) const =0;
   virtual void transformAdjoint(const Increment_ &, Increment_ &) const =0;
+  virtual void transformInverseAdjoint(const Increment_ &, Increment_ &) const =0;
+
+  Increment_ transform(const Increment_ &) const;
+  Increment_ transformInverse(const Increment_ &) const;
+  Increment_ transformAdjoint(const Increment_ &) const;
+  Increment_ transformInverseAdjoint(const Increment_ &) const;
 
  private:
   virtual void print(std::ostream &) const =0;
+  Variables varin_;
+  Variables varout_;
 };
 
 // -----------------------------------------------------------------------------
