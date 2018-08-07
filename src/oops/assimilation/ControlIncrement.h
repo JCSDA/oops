@@ -60,7 +60,6 @@ class ControlIncrement : public util::Printable,
   ControlIncrement(const ControlIncrement &, const bool copy = true);
   ControlIncrement(const ControlIncrement &, const eckit::Configuration &);
   ControlIncrement(const Geometry_ &, const ControlIncrement &);
-  ControlIncrement(const Increment4D_ &, const ModelAuxIncr_ &, const ObsAuxIncr_ &);
   ~ControlIncrement();
 
 /// Linear algebra operators
@@ -132,15 +131,6 @@ ControlIncrement<MODEL>::ControlIncrement(const Geometry_ & geom,
     obsbias_(other.obsbias_, true)
 {
   Log::trace() << "ControlIncrement:ControlIncrement copied." << std::endl;
-}
-// -----------------------------------------------------------------------------
-template<typename MODEL>
-ControlIncrement<MODEL>::ControlIncrement(const Increment4D_ & incrm4d,
-                                          const ModelAuxIncr_ & modbias,
-                                          const ObsAuxIncr_ & obsbias) 
-  : incrm4d_(incrm4d), modbias_(modbias), obsbias_(obsbias)
-{
-  Log::trace() << "ControlIncrement:ControlIncrement copy constructed." << std::endl;
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>

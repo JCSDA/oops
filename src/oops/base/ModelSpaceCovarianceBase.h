@@ -83,24 +83,6 @@ class ModelSpaceCovarianceBase {
     }
   }
 
-  Increment_ transform(const Increment_ & dxi) const {
-    if (balop_) {
-      return balop_->transform(dxi);
-    } else {
-      Increment_ dxo(dxi);
-      return dxo;
-    }
-  }
-
-  Increment_ transformAdjoint(const Increment_ & dxi) const {
-    if (balop_) {
-      return balop_->transformAdjoint(dxi);
-    } else {
-      Increment_ dxo(dxi);
-      return dxo;
-    }
-  }
-
   virtual void randomize(Increment_ &) const = 0;
 
  private:

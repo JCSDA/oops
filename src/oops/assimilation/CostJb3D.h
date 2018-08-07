@@ -84,10 +84,6 @@ template<typename MODEL> class CostJb3D : public CostJbState<MODEL> {
   void Bmult(const Increment4D_ &, Increment4D_ &) const override;
   void Bminv(const Increment4D_ &, Increment4D_ &) const override;
 
-/// Multiply by \f$ K\f$ and \f$ K^T\f$  
-  Incrment4D_ Kmult(const Increment4D_ &, Increment4D_ &) const override;
-  Incrment4D_ KmultAdjoint(const Increment4D_ &, Increment4D_ &) const override;
-
 /// Randomize
   void randomize(Increment4D_ &) const override;
 
@@ -159,24 +155,6 @@ void CostJb3D<MODEL>::Bminv(const Increment4D_ & dxin, Increment4D_ & dxout) con
   Log::warning() << "*** B inverse might not always exist ***" << std::endl;
   B_->inverseMultiply(dxin[0], dxout[0]);
   Log::warning() << "*** B inverse might not always exist ***" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-Increment4D_ CostJb3D<MODEL>::Kmult(const Increment4D_ & dxin) const {
-  Increment4D_ dxout;
-  dxout.push_back(B_->transfrom(dxin[0]));
-  return dxout;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-Increment4D_ CostJb3D<MODEL>::KmultAdjoint(const Increment4D_ & dxin) const {
-  Increment4D_ dxout;
-  dxout.push_back(B_->transfromAdjoint(dxin[0]));
-  return dxout;
 }
 
 // -----------------------------------------------------------------------------

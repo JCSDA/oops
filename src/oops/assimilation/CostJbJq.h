@@ -80,10 +80,6 @@ template<typename MODEL> class CostJbJq : public CostJbState<MODEL> {
   void Bmult(const Increment4D_ &, Increment4D_ &) const override;
   void Bminv(const Increment4D_ &, Increment4D_ &) const override;
 
-/// Multiply by \f$ K\f$ and \f$ K^T\f$  
-  Incrment4D_ Kmult(const Increment4D_ &, Increment4D_ &) const override;
-  Incrment4D_ KmultAdjoint(const Increment4D_ &, Increment4D_ &) const override;
-
 /// Randomize
   void randomize(Increment4D_ &) const override;
 
@@ -241,29 +237,6 @@ void CostJbJq<MODEL>::Bminv(const Increment4D_ & dxin, Increment4D_ & dxout) con
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-Incrment4D_ CostJb4D<MODEL>::Kmult(const Increment4D_ & dxin) const {
-  Incrment4D_ dxout;
-  for (unsigned jsub = 0; jsub < B_.size(); ++jsub) {
-    dxout.push_back(B_[jsub].transform(dxin[jsub]));
-  }
-  returnd dxout
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-Incrment4D_ CostJb4D<MODEL>::KmultAdjoint(const Increment4D_ & dxin) const {
-  Incrment4D_ dxout;
-  for (unsigned jsub = 0; jsub < B_.size(); ++jsub) {
-    dxout.push_back(B_[jsub].transformAdjoint(dxin[jsub]));
-  }
-  return dxout;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
 Increment<MODEL> *
 CostJbJq<MODEL>::newStateIncrement(const unsigned int isub) const {
   Increment_ * incr = new Increment_(*resol_, controlvars_, times_[isub]);

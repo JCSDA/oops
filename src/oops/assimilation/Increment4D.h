@@ -82,12 +82,6 @@ template<typename MODEL> class Increment4D : public util::Printable {
   void shift_forward();
   void shift_backward();
 
-  void push_back(Increment_ & dx) {
-    Increment_ * incr = new Increment_(dx);
-    incr4d_.insert(last_, incr);
-    ++last_;
-  }
-
  private:
   Increment_ & get(const int);
   const Increment_ & get(const int) const;
