@@ -562,7 +562,6 @@ else
       end if
 
       ! Update
-      write(mpl%unit,*) ns,is,nrep,irep,ns+nrep,is+irep-2
       done(is+irep-2) = .true.
       call mpl%prog_print(progint,done)
    end do
