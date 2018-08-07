@@ -77,8 +77,8 @@ template<typename MODEL> class CostJbState : private boost::noncopyable {
   virtual void Bminv(const Increment4D_ &, Increment4D_ &) const = 0;
 
 /// Multiply by \f$ K\f$ and \f$ K^T\f$  
-  virtual void Kmult(const Increment4D_ &, Increment4D_ &) const = 0;
-  virtual void KmultAdjoint(const Increment4D_ &, Increment4D_ &) const = 0;
+  virtual Increment4D_ Kmult(const Increment4D_ &) const = 0;
+  virtual Increment4D_ KmultAdjoint(const Increment4D_ &) const = 0;
 
 /// Randomize
   virtual void randomize(Increment4D_ &) const = 0;

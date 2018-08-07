@@ -53,7 +53,7 @@ class ModelSpaceCovarianceBase {
   virtual ~ModelSpaceCovarianceBase() {}
 
   const VariableChangeBase_ & getK() const {return *balop_;}
-  bool hasK() const {return (bolop_ == 0) ? false : true;}
+  bool hasK() const {return (balop_ == 0) ? false : true;}
 
   void linearize(const State_ & fg, const Geometry_ & geom) {
     if (balop_) balop_->doLinearize(fg, geom);
@@ -62,10 +62,10 @@ class ModelSpaceCovarianceBase {
 
   void multiply(const Increment_ & dxi, Increment_ & dxo) const {
     if (balop_) {
-      Increment_ tmp(dxi);
-      balop_->transformAdjoint(dxi, dxo);
-      this->doMultiply(dxo, tmp);
-      balop_->transform(tmp, dxo);
+      Increment_ tmpin = balop_->transformAdjoint(dxi);
+      Increment_ tmpout(tmpin);
+      this->doMultiply(tmpin, tmpout);
+      balop_->transform(tmpout, dxo);
     } else {
       this->doMultiply(dxi, dxo);
     }
@@ -74,27 +74,30 @@ class ModelSpaceCovarianceBase {
   void inverseMultiply(const Increment_ & dxi, Increment_ & dxo) const {
     if (balop_) {
       Increment_ tmp(dxi);
-      balop_->transformInverse(dxi, dxo);
-      this->doInverseMultiply(dxo, tmp);
-      balop_->transformAdjointInverse(tmp, dxo);
+      Increment_ tmpin = balop_->transformInverse(dxi);
+      Increment_ tmpout(tmpin);
+      this->doInverseMultiply(tmpin, tmpout);
+      balop_->transformAdjointInverse(tmpout, dxo);
     } else {
       this->doInverseMultiply(dxi, dxo);
     }
   }
 
-  void transform(const Increment_ & dxi, Increment_ & dxo) const {
+  Increment_ transform(const Increment_ & dxi) const {
     if (balop_) {
-      balop_->transform(dxi, dxo);
+      return balop_->transform(dxi);
     } else {
-      dxo = dxi;
+      Increment_ dxo(dxi);
+      return dxo;
     }
   }
 
-  void transformAdjoint(const Increment_ & dxi, Increment_ & dxo) const {
+  Increment_ transformAdjoint(const Increment_ & dxi) const {
     if (balop_) {
-      balop_->transformAdjoint(dxi, dxo);
+      return balop_->transformAdjoint(dxi);
     } else {
-      dxo = dxi;
+      Increment_ dxo(dxi);
+      return dxo;
     }
   }
 
