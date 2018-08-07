@@ -82,7 +82,7 @@ do ib=1,bpar%nb
          allocate(mom%blk(ib)%m21(hdata%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,mom%blk(ib)%nsub))
          allocate(mom%blk(ib)%m22(hdata%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,mom%blk(ib)%nsub))
       end if
-      if (nam%full_var) then
+      if (nam%var_full) then
          allocate(mom%blk(ib)%m1full(geom%nc0a,geom%nl0,mom%blk(ib)%nsub))
          allocate(mom%blk(ib)%m2full(geom%nc0a,geom%nl0,mom%blk(ib)%nsub))
       end if
@@ -98,7 +98,7 @@ do ib=1,bpar%nb
          mom%blk(ib)%m21 = 0.0
          mom%blk(ib)%m22 = 0.0
       end if
-      if (nam%full_var) then
+      if (nam%var_full) then
          mom%blk(ib)%m1full = 0.0
          mom%blk(ib)%m2full = 0.0
       end if
@@ -265,7 +265,7 @@ do isub=1,ens%nsub
                   mom%blk(ib)%m2_2(:,:,:,il0,isub) = mom%blk(ib)%m2_2(:,:,:,il0,isub)+fac6*fld_2(:,:,:,il0)**2
 
                   ! Full variance
-                  if (nam%full_var) mom%blk(ib)%m2full(:,il0,isub) = mom%blk(ib)%m2full(:,il0,isub) &
+                  if (nam%var_full) mom%blk(ib)%m2full(:,il0,isub) = mom%blk(ib)%m2full(:,il0,isub) &
                                   & +fac6*(ens%fld(:,il0,iv,its,ie)-mom%blk(ib)%m1full(:,il0,isub))**2
                end if
 
@@ -274,7 +274,7 @@ do isub=1,ens%nsub
                mom%blk(ib)%m1_2(:,:,:,il0,isub) = mom%blk(ib)%m1_2(:,:,:,il0,isub)+fac4*fld_2(:,:,:,il0)
 
                ! Full mean
-               if (nam%full_var) mom%blk(ib)%m1full(:,il0,isub) = mom%blk(ib)%m1full(:,il0,isub) &
+               if (nam%var_full) mom%blk(ib)%m1full(:,il0,isub) = mom%blk(ib)%m1full(:,il0,isub) &
                                & +fac4*(ens%fld(:,il0,iv,its,ie)-mom%blk(ib)%m1full(:,il0,isub))
             end do
             !$omp end parallel do
@@ -305,7 +305,7 @@ do isub=1,ens%nsub
                mom%blk(ib)%m21(:,:,:,il0,isub) = mom%blk(ib)%m21(:,:,:,il0,isub)/real(mom%ne/mom%nsub,kind_real)
                mom%blk(ib)%m22(:,:,:,il0,isub) = mom%blk(ib)%m22(:,:,:,il0,isub)/real(mom%ne/mom%nsub,kind_real)
             end if
-            if (nam%full_var) mom%blk(ib)%m2full(:,il0,isub) = mom%blk(ib)%m2full(:,il0,isub)/real(mom%ne/mom%nsub-1,kind_real)
+            if (nam%var_full) mom%blk(ib)%m2full(:,il0,isub) = mom%blk(ib)%m2full(:,il0,isub)/real(mom%ne/mom%nsub-1,kind_real)
          end do
          !$omp end parallel do
       end if

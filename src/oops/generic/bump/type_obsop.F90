@@ -847,14 +847,14 @@ if (obsop%nobsa>0) then
       distsum = sum(dist,mask=isnotmsr(dist))
    else
       distmin = huge(1.0)
-      distmax = tiny(1.0)
+      distmax = 0.0
       distsum = 0.0
    end if
 else
    ! No observation on this task
    norm = 0
    distmin = huge(1.0)
-   distmax = tiny(1.0)
+   distmax = 0.0
    distsum = 0.0
 end if
 

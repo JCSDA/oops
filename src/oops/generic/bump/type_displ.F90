@@ -161,12 +161,12 @@ real(kind_real) :: dlon_c2a(hdata%nc2a),dlat_c2a(hdata%nc2a),dist_c2a(hdata%nc2a
 real(kind_real) :: dlon_c2b(hdata%nc2b),dlat_c2b(hdata%nc2b)
 real(kind_real) :: lon_c2a_ori(hdata%nc2a,geom%nl0),lat_c2a_ori(hdata%nc2a,geom%nl0)
 real(kind_real) :: lon_c2a(hdata%nc2a),lat_c2a(hdata%nc2a)
-real(kind_real) :: lon_c2(hdata%nc2),lat_c2(hdata%nc2),valid_c2(hdata%nc2)
+real(kind_real) :: lon_c2(nam%nc2),lat_c2(nam%nc2),valid_c2(nam%nc2)
 real(kind_real) :: x_ori(hdata%nc2a),y_ori(hdata%nc2a),z_ori(hdata%nc2a)
 real(kind_real) :: dx_ini(hdata%nc2a),dy_ini(hdata%nc2a),dz_ini(hdata%nc2a)
 real(kind_real) :: dx(hdata%nc2a),dy(hdata%nc2a),dz(hdata%nc2a)
 logical :: dichotomy,convergence
-logical :: mask_c2a(hdata%nc2a,geom%nl0),mask_c2(hdata%nc2,geom%nl0)
+logical :: mask_c2a(hdata%nc2a,geom%nl0),mask_c2(nam%nc2,geom%nl0)
 type(mesh_type) :: mesh
 
 ! Allocation
@@ -187,7 +187,7 @@ m11 = 0.0
 
 ! Initialization
 do il0=1,geom%nl0
-   do ic2=1,hdata%nc2
+   do ic2=1,nam%nc2
       ic1 = hdata%c2_to_c1(ic2)
       mask_c2(ic2,il0) = hdata%c1l0_log(ic1,il0)
    end do
@@ -423,8 +423,8 @@ do its=2,nam%nts
       end do
 
       ! Check raw mesh
-     call mpl%loc_to_glb(hdata%nc2a,lon_c2a,hdata%nc2,hdata%c2_to_proc,hdata%c2_to_c2a,.false.,lon_c2)
-     call mpl%loc_to_glb(hdata%nc2a,lat_c2a,hdata%nc2,hdata%c2_to_proc,hdata%c2_to_c2a,.false.,lat_c2)
+     call mpl%loc_to_glb(hdata%nc2a,lon_c2a,nam%nc2,hdata%c2_to_proc,hdata%c2_to_c2a,.false.,lon_c2)
+     call mpl%loc_to_glb(hdata%nc2a,lat_c2a,nam%nc2,hdata%c2_to_proc,hdata%c2_to_c2a,.false.,lat_c2)
 
       if (mpl%main) then
          mesh = hdata%mesh%copy()
@@ -448,18 +448,16 @@ do its=2,nam%nts
       if (nam%displ_niter>0) then
          ! Filter displacement
 
-         ! Compute raw displacement in cartesian coordinates
+         ! Convert to cartesian coordinates
          call trans(hdata%nc2a,lat_c2a_ori(:,il0),lon_c2a_ori(:,il0),x_ori,y_ori,z_ori)
          call trans(hdata%nc2a,lat_c2a,lon_c2a,dx_ini,dy_ini,dz_ini)
+
+         ! Dichotomy initialization
          dx_ini = dx_ini-x_ori
          dy_ini = dy_ini-y_ori
          dz_ini = dz_ini-z_ori
-
-         ! Iterative filtering
          convergence = .true.
          dichotomy = .false.
-
-         ! Dichotomy initialization
          displ%rhflt(1,il0,its) = nam%displ_rhflt
          drhflt = displ%rhflt(1,il0,its)
 
@@ -506,8 +504,8 @@ do its=2,nam%nts
             end do
 
             ! Check mesh
-           call mpl%loc_to_glb(hdata%nc2a,lon_c2a,hdata%nc2,hdata%c2_to_proc,hdata%c2_to_c2a,.false.,lon_c2)
-           call mpl%loc_to_glb(hdata%nc2a,lat_c2a,hdata%nc2,hdata%c2_to_proc,hdata%c2_to_c2a,.false.,lat_c2)
+            call mpl%loc_to_glb(hdata%nc2a,lon_c2a,nam%nc2,hdata%c2_to_proc,hdata%c2_to_c2a,.false.,lon_c2)
+            call mpl%loc_to_glb(hdata%nc2a,lat_c2a,nam%nc2,hdata%c2_to_proc,hdata%c2_to_c2a,.false.,lat_c2)
             if (mpl%main) then
                mesh = hdata%mesh%copy()
                call mesh%trans(lon_c2,lat_c2)
@@ -537,7 +535,7 @@ do its=2,nam%nts
             if (displ%valid(iter,il0,its)<1.0-nam%displ_tol) then
                ! Increase filtering support radius
                if (dichotomy) then
-                   drhflt = 0.5*drhflt
+                  drhflt = 0.5*drhflt
                   if (iter<nam%displ_niter) displ%rhflt(iter+1,il0,its) = displ%rhflt(iter,il0,its)+drhflt
                else
                   convergence = .false.
@@ -662,14 +660,14 @@ end do
 
 if (mpl%main) then
    ! Allocation
-   allocate(lon_c2(hdata%nc2,geom%nl0))
-   allocate(lat_c2(hdata%nc2,geom%nl0))
-   allocate(lon_c2_raw(hdata%nc2,geom%nl0,nam%nts-1))
-   allocate(lat_c2_raw(hdata%nc2,geom%nl0,nam%nts-1))
-   allocate(dist_c2_raw(hdata%nc2,geom%nl0,nam%nts-1))
-   allocate(lon_c2_flt(hdata%nc2,geom%nl0,nam%nts-1))
-   allocate(lat_c2_flt(hdata%nc2,geom%nl0,nam%nts-1))
-   allocate(dist_c2_flt(hdata%nc2,geom%nl0,nam%nts-1))
+   allocate(lon_c2(nam%nc2,geom%nl0))
+   allocate(lat_c2(nam%nc2,geom%nl0))
+   allocate(lon_c2_raw(nam%nc2,geom%nl0,nam%nts-1))
+   allocate(lat_c2_raw(nam%nc2,geom%nl0,nam%nts-1))
+   allocate(dist_c2_raw(nam%nc2,geom%nl0,nam%nts-1))
+   allocate(lon_c2_flt(nam%nc2,geom%nl0,nam%nts-1))
+   allocate(lat_c2_flt(nam%nc2,geom%nl0,nam%nts-1))
+   allocate(dist_c2_flt(nam%nc2,geom%nl0,nam%nts-1))
 
    do iproc=1,mpl%nproc
       ! Allocation
@@ -734,7 +732,7 @@ if (mpl%main) then
    call nam%ncwrite(mpl,ncid)
 
    ! Define dimensions
-   call mpl%ncerr(subr,nf90_def_dim(ncid,'nc2',hdata%nc2,nc2_id))
+   call mpl%ncerr(subr,nf90_def_dim(ncid,'nc2',nam%nc2,nc2_id))
    call mpl%ncerr(subr,nf90_def_dim(ncid,'nl0',geom%nl0,nl0_id))
    call mpl%ncerr(subr,nf90_def_dim(ncid,'nts',nam%nts-1,nts_id))
    call mpl%ncerr(subr,nf90_def_dim(ncid,'niter',nam%displ_niter+1,displ_niter_id))

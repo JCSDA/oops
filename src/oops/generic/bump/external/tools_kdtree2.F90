@@ -5,7 +5,7 @@
 ! with additional provisions found in that same file.
 !
 module tools_kdtree2
-  use tools_func, only: inf,sup,sphere_dist
+  use tools_func, only: inf,infeq,sup,sphere_dist
   use tools_kdtree2_pq
   use tools_kinds, only: kind_real
   use tools_stripack, only: scoord
@@ -373,7 +373,7 @@ contains
       lb = li; rb = ui
 
       do while (lb < rb)
-         if ( inf(v(c,ind(lb)),alpha) ) then
+         if ( infeq(v(c,ind(lb)),alpha) ) then
             ! it is good where it is.
             lb = lb+1
          else
@@ -384,7 +384,7 @@ contains
       end do
 
       ! now lb .eq. ub
-      if (inf(v(c,ind(lb)),alpha)) then
+      if (infeq(v(c,ind(lb)),alpha)) then
          res = lb
       else
          res = lb-1
@@ -700,7 +700,7 @@ contains
        if (associated(nfarther)) then
           ballsize = sr%ballsize
 !          dis=extra**2
-          if (inf(dis,ballsize)) then
+          if (infeq(dis,ballsize)) then
              !
              ! we do this separately as going on the first cut dimen is often
              ! a good idea.
@@ -791,7 +791,7 @@ contains
        endif
        if (sup(sd,ballsize)) cycle mainloop
 
-       if (centeridx>0) then ! doing correlation interval?
+       if (centeridx > 0) then ! doing correlation interval?
           if (abs(indexofi-centeridx) < correltime) cycle mainloop
        endif
 

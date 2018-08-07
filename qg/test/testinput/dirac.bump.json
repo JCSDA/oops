@@ -55,7 +55,7 @@
       ],
       "prefix" : "bump",
       "default_seed" : 1,
-      "method" : "loc",
+      "method" : "loc_norm",
       "strategy" : "common",
       "new_hdiag" : 1,
       "new_param" : 1,

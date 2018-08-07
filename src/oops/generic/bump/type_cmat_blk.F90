@@ -95,7 +95,7 @@ if (bpar%diag_block(ib)) then
    call msr(cmat_blk%wgt)
 end if
 
-if ((ib==bpar%nb+1).and.nam%displ_diag) then
+if ((ib==bpar%nbe).and.nam%displ_diag) then
    ! Allocation
    allocate(cmat_blk%displ_lon(geom%nc0a,geom%nl0,2:nam%nts))
    allocate(cmat_blk%displ_lat(geom%nc0a,geom%nl0,2:nam%nts))
