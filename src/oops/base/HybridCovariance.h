@@ -39,7 +39,7 @@ class HybridCovariance : public ModelSpaceCovarianceBase<MODEL> {
 
  public:
   HybridCovariance(const Geometry_ &, const Variables &,
-                          const eckit::Configuration &, const State_ &);
+                   const eckit::Configuration &, const State_ &);
   ~HybridCovariance();
 
   void randomize(Increment_ &) const override;
@@ -60,9 +60,9 @@ class HybridCovariance : public ModelSpaceCovarianceBase<MODEL> {
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 HybridCovariance<MODEL>::HybridCovariance(const Geometry_ & resol, 
-                                                        const Variables & vars,
-                                                        const eckit::Configuration & config,
-                                                        const State_ & xb)
+                                          const Variables & vars,
+                                          const eckit::Configuration & config,
+                                          const State_ & xb)
   : ModelSpaceCovarianceBase(resol, vars, config, xb) 
 {
   const eckit::LocalConfiguration staticConf(config, "static");
@@ -84,7 +84,7 @@ HybridCovariance<MODEL>::~HybridCovariance() {
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 void HybridCovariance<MODEL>::doLinearize(const State_ & xb,
-                                                 const Geometry_ & resol) {
+                                          const Geometry_ & resol) {
   static_->linearize(xb, resol);
   ensemble_->linearize(xb, resol);
   Log::trace() << "HybridCovariance linearized." << std::endl;
@@ -92,7 +92,7 @@ void HybridCovariance<MODEL>::doLinearize(const State_ & xb,
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 void HybridCovariance<MODEL>::doMultiply(const Increment_ & dxi,
-                                                Increment_ & dxo) const {
+                                         Increment_ & dxo) const {
   static_->multiply(dxi, dxo);
   dxo *= (1.0-ensWeight_);
   Increment_ tmp(dxo);
@@ -102,7 +102,7 @@ void HybridCovariance<MODEL>::doMultiply(const Increment_ & dxi,
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 void HybridCovariance<MODEL>::doInverseMultiply(const Increment_ & dxi, 
-                                                       Increment_ & dxo) const {
+                                                Increment_ & dxo) const {
   IdentityMatrix<Increment_> Id;
   dxo.zero();
   GMRESR(dxo, dxi, *this, Id, 10, 1.0e-3);

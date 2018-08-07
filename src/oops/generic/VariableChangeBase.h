@@ -65,13 +65,12 @@ class VariableChangeFactory {
   typedef Geometry<MODEL>   Geometry_;
   typedef State<MODEL>      State_;
  public:
-  static VariableChangeBase<MODEL> * create(const Geometry_ &, const Variables &,
-                                            const eckit::Configuration &, const State_ &);
+  static VariableChangeBase<MODEL> * create(const eckit::Configuration &);
   virtual ~VariableChangeFactory() { getMakers().clear(); }
  protected:
   explicit VariableChangeFactory(const std::string &);
  private:
-  virtual VariableChangeBase<MODEL> * make(const Geometry_ &, const eckit::Configuration &) = 0;
+  virtual VariableChangeBase<MODEL> * make(const eckit::Configuration &) = 0;
   static std::map < std::string, VariableChangeFactory<MODEL> * > & getMakers() {
     static std::map < std::string, VariableChangeFactory<MODEL> * > makers_;
     return makers_;
@@ -83,9 +82,8 @@ class VariableChangeFactory {
 template<class MODEL, class T>
 class LinearModelMaker : public VariableChangeFactory<MODEL> {
   typedef Geometry<MODEL>   Geometry_;
-  virtual VariableChangeBase<MODEL> * make(const Geometry_ & resol, const Variables & vars,
-                                           const eckit::Configuration & conf, const State_ & xb)
-    { return new T(resol.geometry(), vars, conf, xb.state()); }
+  virtual VariableChangeBase<MODEL> * make(const eckit::Configuration & conf)
+    { return new T(conf); }
  public:
   explicit LinearModelMaker(const std::string & name) : VariableChangeFactory<MODEL>(name) {}
 };
@@ -104,8 +102,7 @@ VariableChangeFactory<MODEL>::VariableChangeFactory(const std::string & name) {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-VariableChangeBase<MODEL>* VariableChangeFactory<MODEL>::create(const Geometry_ & resol, const Variables & vars,
- 77                                            const eckit::Configuration & conf, const State_ & xb) {
+VariableChangeBase<MODEL>* VariableChangeFactory<MODEL>::create(const eckit::Configuration & conf) {
   Log::trace() << "VariableChangeBase<MODEL>::create starting" << std::endl;
   const std::string id = conf.getString("version");
   typename std::map<std::string, VariableChangeFactory<MODEL>*>::iterator
@@ -114,7 +111,7 @@ VariableChangeBase<MODEL>* VariableChangeFactory<MODEL>::create(const Geometry_ 
     Log::error() << id << " does not exist in the variable change factory factory." << std::endl;
     ABORT("Element does not exist in VariableChangeFactory.");
   }
-  VariableChangeBase<MODEL> * ptr = jerr->second->make(resol, vars, conf, xb);
+  VariableChangeBase<MODEL> * ptr = jerr->second->make(conf);
   Log::trace() << "VariableChangeBase<MODEL>::create done" << std::endl;
   return ptr;
 }
