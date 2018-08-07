@@ -445,7 +445,7 @@ integer,intent(out) :: ihor(ns)      !< Horizontal sampling index
 ! Local variables
 integer :: is,js,i,irep,irmax,itry,ir,nn_index(2),ismin(1),progint
 real(kind_real) :: distmax,d,dist(ns),nn_dist(2)
-logical :: lmask(n),smask(n),done(ns)
+logical :: lmask(n),smask(n),done(ns+nrep)
 type(kdtree_type) :: kdtree
 
 if (ns>count(mask)) then
@@ -555,14 +555,15 @@ else
 
             ! Reset is to ns and try again!
             is = ns
-         end if
 
-         ! Update irep
-         irep = irep+1
+            ! Update irep
+            irep = irep+1
+         end if
       end if
 
       ! Update
-      done(is) = .true.
+      write(mpl%unit,*) ns,is,nrep,irep,ns+nrep,is+irep-2
+      done(is+irep-2) = .true.
       call mpl%prog_print(progint,done)
    end do
    write(mpl%unit,'(a)') '100%'
