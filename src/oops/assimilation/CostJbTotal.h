@@ -69,6 +69,10 @@ template<typename MODEL> class CostJbTotal {
   void multiplyB(const CtrlInc_ &, CtrlInc_ &) const;
   void multiplyBinv(const CtrlInc_ &, CtrlInc_ &) const;
 
+/// Multiply by covariance matrix and its inverse.
+  void multiplyK(const CtrlInc_ &, CtrlInc_ &) const;
+  void multiplyKadjoint(const CtrlInc_ &, CtrlInc_ &) const;
+
 /// Randomize
   void randomize(CtrlInc_ &) const;
 
@@ -281,6 +285,20 @@ void CostJbTotal<MODEL>::multiplyBinv(const CtrlInc_ & dxin, CtrlInc_ & dxout) c
   jb_->Bminv(dxin.state(), dxout.state());
   jbModBias_.inverseMultiply(dxin.modVar(), dxout.modVar());
   jbObsBias_.inverseMultiply(dxin.obsVar(), dxout.obsVar());
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void CostJbTotal<MODEL>::multiplyK(const CtrlInc_ & dxin, CtrlInc_ & dxout) const {
+  jb_->Kmult(dxin.state(), dxout.state());
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void CostJbTotal<MODEL>::multiplyKadjoint(const CtrlInc_ & dxin, CtrlInc_ & dxout) const {
+  jb_->KmultAdjoint(dxin.state(), dxout.state());
 }
 
 // -----------------------------------------------------------------------------

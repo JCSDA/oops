@@ -48,7 +48,7 @@ class ErrorCovariance : public oops::ModelSpaceCovarianceBase<MODEL>,
                         public util::Printable,
                         private util::ObjectCounter<ErrorCovariance<MODEL> >,
                         private boost::noncopyable {
-  typedef typename MODEL::Covariance        Covariance_;
+  typedef typename MODEL::Covariance Covariance_;
   typedef Geometry<MODEL>            Geometry_;
   typedef Increment<MODEL>           Increment_;
   typedef State<MODEL>               State_;
@@ -60,13 +60,15 @@ class ErrorCovariance : public oops::ModelSpaceCovarianceBase<MODEL>,
                   const State_ &);
   virtual ~ErrorCovariance();
 
-  void linearize(const State_ &, const Geometry_ &) override;
-  void multiply(const Increment_ &, Increment_ &) const override;
-  void inverseMultiply(const Increment_ &, Increment_ &) const override;
   void randomize(Increment_ &) const override;
 
  private:
+  void doLinearize(const State_ &, const Geometry_ &) override;
+  void doMultiply(const Increment_ &, Increment_ &) const override;
+  void doInverseMultiply(const Increment_ &, Increment_ &) const override;
+ 
   void print(std::ostream &) const override;
+
   boost::scoped_ptr<Covariance_> covariance_;
 };
 
@@ -75,7 +77,7 @@ class ErrorCovariance : public oops::ModelSpaceCovarianceBase<MODEL>,
 template<typename MODEL>
 ErrorCovariance<MODEL>::ErrorCovariance(const Geometry_ & resol, const Variables & vars,
                                         const eckit::Configuration & conf, const State_ & xb)
-  : covariance_()
+  : ModelSpaceCovarianceBase<MODEL>(resol, vars, conf, xb), covariance_()
 {
   Log::trace() << "ErrorCovariance<MODEL>::ErrorCovariance starting" << std::endl;
   util::Timer timer(classname(), "ErrorCovariance");
@@ -96,31 +98,31 @@ ErrorCovariance<MODEL>::~ErrorCovariance() {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void ErrorCovariance<MODEL>::linearize(const State_ & xx, const Geometry_ & resol) {
-  Log::trace() << "ErrorCovariance<MODEL>::linearize starting" << std::endl;
-  util::Timer timer(classname(), "linearize");
+void ErrorCovariance<MODEL>::doLinearize(const State_ & xx, const Geometry_ & resol) {
+  Log::trace() << "ErrorCovariance<MODEL>::doLinearize starting" << std::endl;
+  util::Timer timer(classname(), "doLinearize");
   covariance_->linearize(xx.state(), resol.geometry());
-  Log::trace() << "ErrorCovariance<MODEL>::linearize done" << std::endl;
+  Log::trace() << "ErrorCovariance<MODEL>::doLinearize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void ErrorCovariance<MODEL>::multiply(const Increment_ & dx1, Increment_ & dx2) const {
-  Log::trace() << "ErrorCovariance<MODEL>::multiply starting" << std::endl;
-  util::Timer timer(classname(), "multiply");
+void ErrorCovariance<MODEL>::doMultiply(const Increment_ & dx1, Increment_ & dx2) const {
+  Log::trace() << "ErrorCovariance<MODEL>::doMultiply starting" << std::endl;
+  util::Timer timer(classname(), "doMultiply");
   covariance_->multiply(dx1.increment(), dx2.increment());
-  Log::trace() << "ErrorCovariance<MODEL>::multiply done" << std::endl;
+  Log::trace() << "ErrorCovariance<MODEL>::doMultiply done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void ErrorCovariance<MODEL>::inverseMultiply(const Increment_ & dx1, Increment_ & dx2) const {
-  Log::trace() << "ErrorCovariance<MODEL>::inverseMultiply starting" << std::endl;
-  util::Timer timer(classname(), "inverseMultiply");
+void ErrorCovariance<MODEL>::doInverseMultiply(const Increment_ & dx1, Increment_ & dx2) const {
+  Log::trace() << "ErrorCovariance<MODEL>::doInverseMultiply starting" << std::endl;
+  util::Timer timer(classname(), "doInverseMultiply");
   covariance_->inverseMultiply(dx1.increment(), dx2.increment());
-  Log::trace() << "ErrorCovariance<MODEL>::inverseMultiply done" << std::endl;
+  Log::trace() << "ErrorCovariance<MODEL>::doInverseMultiply done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

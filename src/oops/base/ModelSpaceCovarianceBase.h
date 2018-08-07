@@ -17,9 +17,11 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/Variables.h"
+#include "oops/generic/VariableChangeBase.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
+#include "oops/interface/Variables.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 
@@ -41,12 +43,69 @@ class ModelSpaceCovarianceBase {
   typedef Increment<MODEL>           Increment_;
 
  public:
+  ModelSpaceCovarianceBase(const Geometry_ & resol, const Variables & vars,
+                           const eckit::Configuration & conf, const State_ & xb) {
+    if (config.has("balance")) {
+      eckit::LocalConfiguration balConf("balance", config);
+      balop_.reset(VariableChangeFactory<MODEL>::create(resol, vars, balConf, xb));
+    }
+  }
   virtual ~ModelSpaceCovarianceBase() {}
 
-  virtual void linearize(const State_ &, const Geometry_ &) = 0;
-  virtual void multiply(const Increment_ &, Increment_ &) const = 0;
-  virtual void inverseMultiply(const Increment_ &, Increment_ &) const = 0;
+  const VariableChangeBase_ & getK() const {return *balop_;}
+  bool hasK() const {return (bolop_ == 0) ? false : true;}
+
+  void linearize(const State_ & fg, const Geometry_ & geom) {
+    if (balop_) balop_->doLinearize(fg, geom);
+    this->doLinearize(fg, geom);
+  }
+
+  void multiply(const Increment_ & dxi, Increment_ & dxo) const {
+    if (balop_) {
+      Increment_ tmp(dxi);
+      balop_->transformAdjoint(dxi, dxo);
+      this->doMultiply(dxo, tmp);
+      balop_->transform(tmp, dxo);
+    } else {
+      this->doMultiply(dxi, dxo);
+    }
+  }
+
+  void inverseMultiply(const Increment_ & dxi, Increment_ & dxo) const {
+    if (balop_) {
+      Increment_ tmp(dxi);
+      balop_->transformInverse(dxi, dxo);
+      this->doInverseMultiply(dxo, tmp);
+      balop_->transformAdjointInverse(tmp, dxo);
+    } else {
+      this->doInverseMultiply(dxi, dxo);
+    }
+  }
+
+  void transform(const Increment_ & dxi, Increment_ & dxo) const {
+    if (balop_) {
+      balop_->transform(dxi, dxo);
+    } else {
+      dxo = dxi;
+    }
+  }
+
+  void transformAdjoint(const Increment_ & dxi, Increment_ & dxo) const {
+    if (balop_) {
+      balop_->transformAdjoint(dxi, dxo);
+    } else {
+      dxo = dxi;
+    }
+  }
+
   virtual void randomize(Increment_ &) const = 0;
+
+ private:
+  virtual void doLinearize(const State_ &, const Geometry_ &) = 0;
+  virtual void doMultiply(const Increment_ &, Increment_ &) const = 0;
+  virtual void doInverseMultiply(const Increment_ &, Increment_ &) const = 0;
+
+  boost::scoped_ptr<VariableChangeBase_> balop_;
 };
 
 // -----------------------------------------------------------------------------
