@@ -16,7 +16,7 @@ use type_bump, only: bump_type
 
 implicit none
 private
-public create_bump, delete_bump, bump_multiply
+public create_bump, delete_bump, bump_multiply, bump_read_conf
 
 ! ------------------------------------------------------------------------------
 
