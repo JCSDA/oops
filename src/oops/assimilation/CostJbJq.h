@@ -237,6 +237,7 @@ void CostJbJq<MODEL>::Bminv(const Increment4D_ & dxin, Increment4D_ & dxout) con
 
 // -----------------------------------------------------------------------------
 
+template<typename MODEL>
 Increment<MODEL> *
 CostJbJq<MODEL>::newStateIncrement(const unsigned int isub) const {
   Increment_ * incr = new Increment_(*resol_, controlvars_, times_[isub]);

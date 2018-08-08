@@ -11,6 +11,8 @@
 #ifndef OOPS_BASE_ENSEMBLECOVARIANCE_H_
 #define OOPS_BASE_ENSEMBLECOVARIANCE_H_
 
+#include <boost/scoped_ptr.hpp>
+
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/GMRESR.h"
 #include "oops/base/Ensemble.h"
@@ -63,10 +65,10 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL> {
 /// Constructor, destructor
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & geom, const Variables & vars,
-                                              const eckit::Configuration & config, const State_ & xb)
-  : ModelSpaceCovarianceBase<MODEL>(geom, vars, config, xb),
-    config_(config), time_(config_.getString("date")), loc_()
+EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Variables & vars,
+                                              const eckit::Configuration & conf, const State_ & xb)
+  : ModelSpaceCovarianceBase<MODEL>(resol, vars, conf, xb),
+    config_(conf), time_(config_.getString("date")), loc_()
 {
   Log::trace() << "EnsembleCovariance created." << std::endl;
 }
@@ -82,13 +84,7 @@ void EnsembleCovariance<MODEL>::doLinearize(const State_ & xb,
   // Compute the ensemble of perturbations at time of xb.
   ASSERT(xb.validTime() == time_);
   EnsemblePtr_ ens_k(new Ensemble_(xb.validTime(), config_));
-  if (ModelSpaceCovarianceBase<MODEL>::hasK()) {
-    const VariableChangeBase_ & balop = ModelSpaceCovarianceBase<MODEL>::getK(); 
-    ens_k->linearize(xb, resol, balop);
-  } else {
-    ens_k->linearize(xb, resol);
-  }
-
+  ens_k->linearize(xb, resol);
   EnsemblesCollection_::getInstance().put(xb.validTime(), ens_k);
 
   const eckit::LocalConfiguration conf(config_, "localization");
@@ -98,7 +94,7 @@ void EnsembleCovariance<MODEL>::doLinearize(const State_ & xb,
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 void EnsembleCovariance<MODEL>::doMultiply(const Increment_ & dxi,
-                                         Increment_ & dxo) const {
+                                           Increment_ & dxo) const {
   EnsemblePtr_ e_k2 = EnsemblesCollection_::getInstance()[dxi.validTime()];
   EnsemblePtr_ e_k1 = EnsemblesCollection_::getInstance()[dxo.validTime()];
 
@@ -118,7 +114,7 @@ void EnsembleCovariance<MODEL>::doMultiply(const Increment_ & dxi,
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 void EnsembleCovariance<MODEL>::doInverseMultiply(const Increment_ & dxi,
-                                                Increment_ & dxo) const {
+                                                  Increment_ & dxo) const {
   IdentityMatrix<Increment_> Id;
   dxo.zero();
   GMRESR(dxo, dxi, *this, Id, 10, 1.0e-3);

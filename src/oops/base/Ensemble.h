@@ -35,10 +35,9 @@ namespace oops {
 /// Ensemble
 
 template<typename MODEL> class Ensemble {
-  typedef Increment<MODEL>           Increment_;
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
-  typedef VariableChangeBase<MODEL>  VariableChangeBase_;
+  typedef Increment<MODEL>           Increment_;
 
  public:
 /// Constructor
@@ -59,8 +58,6 @@ template<typename MODEL> class Ensemble {
   }
 
   void linearize(const State_ &, const Geometry_ &);
-  void linearize(const State_ &, const Geometry_ &, const VariableChangeBase_ &);
-
 
   const Variables & controlVariables() const {return vars_;}
 
@@ -124,47 +121,6 @@ void Ensemble<MODEL>::linearize(const State_ & xb, const Geometry_ & resol) {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void Ensemble<MODEL>::linearize(const State_ & xb, const Geometry_ & resol,
-                                const VariableChangeBase_ & balop) {
-  ASSERT(xb.validTime() == validTime_);
-  resol_.reset(new Geometry_(resol));
-  State_ xblr(*resol_, xb);
-  Accumulator<MODEL, Increment_, State_> bgmean(*resol_, vars_, validTime_);
-  const double rr = 1.0/static_cast<double>(rank_);
-
-  std::vector<eckit::LocalConfiguration> confs;
-  config_.get("state", confs);
-  ASSERT(confs.size() == rank_);
-
-  State_ xread(xblr);
-  std::vector<State_> ens_;
-  for (unsigned int jm = 0; jm < rank_; ++jm) {
-    xread.read(confs[jm]);
-    ASSERT(xread.validTime() == validTime_);
-    ens_.push_back(xread);
-
-//  Compute ensemble mean
-    bgmean.accumul(rr, xread);
-  }
-
-  const double rk = 1.0 / sqrt((static_cast<double>(rank_) - 1.0));
-  for (unsigned int jm = 0; jm < rank_; ++jm) {
-//  Ensemble will be centered around ensemble mean
-    Increment_ * dx = new Increment_(*resol_, vars_, validTime_);
-    dx->diff(ens_[jm], bgmean);
-
-//  Apply inverse of the linear balance operator  
-    Increment_ dxunbal = balop_->tranformInverse(*dx);
-    Increment_ * dxunbalptr = new Increment_(dxunbal);
-    ensemblePerturbs_.push_back(dxunbalptr);
-
-//  Rescale  
-    ensemblePerturbs_[jm] *= rk;
-  }
-}
-
-// -----------------------------------------------------------------------------
 }  // namespace oops
 
 #endif  // OOPS_BASE_ENSEMBLE_H_

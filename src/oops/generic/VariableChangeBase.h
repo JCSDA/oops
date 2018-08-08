@@ -14,6 +14,7 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
+#include "oops/util/abor1_cpp.h"
 #include "oops/util/Printable.h"
 
 namespace eckit {
@@ -39,17 +40,18 @@ class VariableChangeBase : public util::Printable,
 
   void setInputVariables(Variables & vars) { varin_.reset(new Variables(vars)); }
   void setOutputVariables(Variables & vars) { varout_.reset(new Variables(vars)); }
+
   virtual void linearize(const State_ &, const Geometry_ &) =0;
 
   virtual void transform(const Increment_ &, Increment_ &) const =0;
   virtual void transformInverse(const Increment_ &, Increment_ &) const =0;
-  virtual void transformAdjoint(const Increment_ &, Increment_ &) const =0;
-  virtual void transformInverseAdjoint(const Increment_ &, Increment_ &) const =0;
+  virtual void transformAD(const Increment_ &, Increment_ &) const =0;
+  virtual void transformInverseAD(const Increment_ &, Increment_ &) const =0;
 
-  Increment_ transform(const Increment_ &) const;
+  Increment<MODEL> transform(const Increment<MODEL> &) const;
   Increment_ transformInverse(const Increment_ &) const;
-  Increment_ transformAdjoint(const Increment_ &) const;
-  Increment_ transformInverseAdjoint(const Increment_ &) const;
+  Increment_ transformAD(const Increment_ &) const;
+  Increment_ transformInverseAD(const Increment_ &) const;
 
  private:
   virtual void print(std::ostream &) const =0;
@@ -80,12 +82,12 @@ class VariableChangeFactory {
 // -----------------------------------------------------------------------------
 
 template<class MODEL, class T>
-class LinearModelMaker : public VariableChangeFactory<MODEL> {
+class VariableChangeMaker : public VariableChangeFactory<MODEL> {
   typedef Geometry<MODEL>   Geometry_;
   virtual VariableChangeBase<MODEL> * make(const eckit::Configuration & conf)
     { return new T(conf); }
  public:
-  explicit LinearModelMaker(const std::string & name) : VariableChangeFactory<MODEL>(name) {}
+  explicit VariableChangeMaker(const std::string & name) : VariableChangeFactory<MODEL>(name) {}
 };
 
 // -----------------------------------------------------------------------------
@@ -97,7 +99,7 @@ VariableChangeFactory<MODEL>::VariableChangeFactory(const std::string & name) {
     ABORT("Element already registered in VariableChangeFactory.");
   }
   getMakers()[name] = this;
-}
+};
 
 // -----------------------------------------------------------------------------
 
@@ -114,49 +116,55 @@ VariableChangeBase<MODEL>* VariableChangeFactory<MODEL>::create(const eckit::Con
   VariableChangeBase<MODEL> * ptr = jerr->second->make(conf);
   Log::trace() << "VariableChangeBase<MODEL>::create done" << std::endl;
   return ptr;
-}
+};
 
 // =============================================================================
 
 template<typename MODEL>
 VariableChangeBase<MODEL>::VariableChangeBase(const eckit::Configuration & conf) 
-  : varin_(new Variables(conf.getSubconfiguration("varin")),
-    varout_(new Variables(conf.getSubconfiguration("varout"))
-{}
+  : varin_(), varout_()
+{
+  if (conf.has("inputVariables")) varin_.reset(new Variables(conf.getSubConfiguration("inputvariables")));
+  if (conf.has("outputVariables")) varout_.reset(new Variables(conf.getSubConfiguration("outputvariables")));
+}
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-Increment_ VariableChangeBase<MODEL>::transfrom(const Increment_ & dxin) {
-  Increment_ dxout(dxin.geometry(), varout_, dxin.validTime());
-  this->transfrom(dxin, dxout);
+Increment<MODEL> VariableChangeBase<MODEL>::transform(const Increment<MODEL> & dxin) const {
+  ASSERT(varout_);
+  Increment_ dxout(dxin.geometry(), *varout_, dxin.validTime());
+  this->transform(dxin, dxout);
   return dxout;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-Increment_ VariableChangeBase<MODEL>::transfromAdjoint(const Increment_ & dxin) {
-  Increment_ dxout(dxin.geometry(), varin_, dxin.validTime());
-  this->transfrom(dxin, dxout);
+Increment<MODEL> VariableChangeBase<MODEL>::transformAD(const Increment_ & dxin) const {
+  ASSERT(varin_);
+  Increment_ dxout(dxin.geometry(), *varin_, dxin.validTime());
+  this->transform(dxin, dxout);
   return dxout;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-Increment_ VariableChangeBase<MODEL>::transfromInverse(const Increment_ & dxin) {
-  Increment_ dxout(dxin.geometry(), varin_, dxin.validTime());
-  this->transfromInverse(dxin, dxout);
+Increment<MODEL> VariableChangeBase<MODEL>::transformInverse(const Increment_ & dxin) const {
+  ASSERT(varin_);
+  Increment_ dxout(dxin.geometry(), *varin_, dxin.validTime());
+  this->transformInverse(dxin, dxout);
   return dxout;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-Increment_ VariableChangeBase<MODEL>::transfromInverseAdjoint(const Increment_ & dxin) {
-  Increment_ dxout(dxin.geometry(), varout_, dxin.validTime());
-  this->transfromInverseAdjoint(dxin, dxout);
+Increment<MODEL> VariableChangeBase<MODEL>::transformInverseAD(const Increment_ & dxin) const {
+  ASSERT(varout_);
+  Increment_ dxout(dxin.geometry(), *varout_, dxin.validTime());
+  this->transformInverseAD(dxin, dxout);
   return dxout;
 }
 
