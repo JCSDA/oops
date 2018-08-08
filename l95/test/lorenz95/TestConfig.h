@@ -8,8 +8,8 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef LORENZ95_TESTCONFIG_H_
-#define LORENZ95_TESTCONFIG_H_
+#ifndef L95_TEST_LORENZ95_TESTCONFIG_H_
+#define L95_TEST_LORENZ95_TESTCONFIG_H_
 
 #include <string>
 
@@ -51,4 +51,4 @@ class TestConfig {
 
 }  // namespace test
 
-#endif  // LORENZ95_TESTCONFIG_H_
+#endif  // L95_TEST_LORENZ95_TESTCONFIG_H_
