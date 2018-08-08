@@ -11,13 +11,18 @@ use iso_c_binding
 use kinds
 use config_mod
 use unstructured_grid_mod
+#ifdef notdef_
 use mpi
+#endif
 use type_bump, only: bump_type
 
 implicit none
 private
 public create_bump, delete_bump, bump_multiply, bump_read_conf
 
+#ifndef notdef_
+  INCLUDE 'mpif.h'
+#endif  
 ! ------------------------------------------------------------------------------
 
 #define LISTED_TYPE bump_type

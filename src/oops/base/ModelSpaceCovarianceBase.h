@@ -15,7 +15,7 @@
 #include <string>
 #include <boost/noncopyable.hpp>
 
-#include "eckit/config/Configuration.h"
+#include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/VariableChangeBase.h"
 #include "oops/interface/Geometry.h"

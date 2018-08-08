@@ -48,7 +48,7 @@ class VariableChangeBase : public util::Printable,
   virtual void transformAD(const Increment_ &, Increment_ &) const =0;
   virtual void transformInverseAD(const Increment_ &, Increment_ &) const =0;
 
-  Increment<MODEL> transform(const Increment<MODEL> &) const;
+  Increment_ transform(const Increment_ &) const;
   Increment_ transformInverse(const Increment_ &) const;
   Increment_ transformAD(const Increment_ &) const;
   Increment_ transformInverseAD(const Increment_ &) const;

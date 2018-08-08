@@ -20,6 +20,7 @@
 #include "oops/base/IdentityMatrix.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/Variables.h"
+#include "oops/generic/VariableChangeBase.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/Localization.h"
@@ -42,6 +43,7 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL> {
   typedef Increment<MODEL>           Increment_;
   typedef Localization<MODEL>        Localization_;
   typedef State<MODEL>               State_;
+  typedef VariableChangeBase<MODEL>  VariableChangeBase_;
 
  public:
   EnsembleCovariance(const Geometry_ &, const Variables &,
