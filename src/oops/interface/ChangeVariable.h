@@ -13,7 +13,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
-#include "oops/base/VariableChangeBase.h"
+#include "oops/generic/VariableChangeBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
