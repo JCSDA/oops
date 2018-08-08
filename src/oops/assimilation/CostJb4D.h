@@ -178,7 +178,6 @@ void CostJb4D<MODEL>::Bminv(const Increment4D_ & dxin, Increment4D_ & dxout) con
   Log::warning() << "*** B inverse might not always exist ***" << std::endl;
 }
 
-
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
