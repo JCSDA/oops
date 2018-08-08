@@ -47,26 +47,10 @@ class VariableChangeBase : public util::Printable,
   virtual void transformAdjoint(const Increment_ &, Increment_ &) const =0;
   virtual void transformInverseAdjoint(const Increment_ &, Increment_ &) const =0;
 
-  Increment_ transform(const Increment_ & dxin) const {
-    Increment_ dxout(dxin.geometry(), *varout_, dxin.validTime());
-    //this->transfrom(dxin, dxout);
-    return dxout;
-  }
-  Increment_ transformInverse(const Increment_ & dxin) const {
-    Increment_ dxout(dxin.geometry(), *varin_, dxin.validTime());
-    //this->transfromInverse(dxin, dxout);
-    return dxout;
-  }
-  Increment_ transformAdjoint(const Increment_ & dxin) const {
-    Increment_ dxout(dxin.geometry(), *varin_, dxin.validTime());
-    //this->transfromAdjoint(dxin, dxout);
-    return dxout;
-  }
-  Increment_ transformInverseAdjoint(const Increment_ & dxin) const {
-    Increment_ dxout(dxin.geometry(), *varout_, dxin.validTime());
-    //this->transfromInverseAdjoint(dxin, dxout);
-    return dxout;
-  }
+  Increment_ transform(const Increment_ & dxin) const;
+  Increment_ transformInverse(const Increment_ & dxin) const;
+  Increment_ transformAdjoint(const Increment_ & dxin) const;
+  Increment_ transformInverseAdjoint(const Increment_ & dxin) const;
 
  private:
   virtual void print(std::ostream &) const =0;
@@ -143,39 +127,39 @@ VariableChangeBase<MODEL>::VariableChangeBase(const eckit::Configuration & conf)
 
 // -----------------------------------------------------------------------------
 
-//template<typename MODEL>
-//Increment<MODEL> VariableChangeBase<MODEL>::transfrom(const Increment<MODEL> & dxin) const {
-//  Increment_ dxout(dxin.geometry(), *varout_, dxin.validTime());
-//  this->transfrom(dxin, dxout);
-//  return dxout;
-//}
-//
-//// -----------------------------------------------------------------------------
-//
-//template<typename MODEL>
-//Increment<MODEL> VariableChangeBase<MODEL>::transfromAdjoint(const Increment<MODEL> & dxin) const {
-//  Increment_ dxout(dxin.geometry(), *varin_, dxin.validTime());
-//  this->transfromAdjoint(dxin, dxout);
-//  return dxout;
-//}
-//
-//// -----------------------------------------------------------------------------
-//
-//template<typename MODEL>
-//Increment<MODEL> VariableChangeBase<MODEL>::transfromInverse(const Increment<MODEL> & dxin) const {
-//  Increment_ dxout(dxin.geometry(), *varin_, dxin.validTime());
-//  this->transfromInverse(dxin, dxout);
-//  return dxout;
-//}
-//
-//// -----------------------------------------------------------------------------
-//
-//template<typename MODEL>
-//Increment<MODEL> VariableChangeBase<MODEL>::transfromInverseAdjoint(const Increment<MODEL> & dxin) const {
-//  Increment_ dxout(dxin.geometry(), *varout_, dxin.validTime());
-//  this->transfromInverseAdjoint(dxin, dxout);
-//  return dxout;
-//}
+template<typename MODEL>
+Increment<MODEL> VariableChangeBase<MODEL>::transform(const Increment<MODEL> & dxin) const {
+  Increment_ dxout(dxin.geometry(), *varout_, dxin.validTime());
+  this->transform(dxin, dxout);
+  return dxout;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+Increment<MODEL> VariableChangeBase<MODEL>::transformAdjoint(const Increment<MODEL> & dxin) const {
+  Increment_ dxout(dxin.geometry(), *varin_, dxin.validTime());
+  this->transformAdjoint(dxin, dxout);
+  return dxout;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+Increment<MODEL> VariableChangeBase<MODEL>::transformInverse(const Increment<MODEL> & dxin) const {
+  Increment_ dxout(dxin.geometry(), *varin_, dxin.validTime());
+  this->transformInverse(dxin, dxout);
+  return dxout;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+Increment<MODEL> VariableChangeBase<MODEL>::transformInverseAdjoint(const Increment<MODEL> & dxin) const {
+  Increment_ dxout(dxin.geometry(), *varout_, dxin.validTime());
+  this->transformInverseAdjoint(dxin, dxout);
+  return dxout;
+}
 
 // -----------------------------------------------------------------------------
 
