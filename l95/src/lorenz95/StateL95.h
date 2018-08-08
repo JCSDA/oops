@@ -85,6 +85,10 @@ class StateL95 : public util::Printable,
   const util::DateTime & validTime() const {return time_;}
   util::DateTime & validTime() {return time_;}
 
+// For accumulator
+  void zero();
+  void accumul(const double &, const StateL95 &);
+
  private:
   void print(std::ostream &) const;
   FieldL95 fld_;

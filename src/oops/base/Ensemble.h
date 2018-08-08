@@ -20,6 +20,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Accumulator.h"
 #include "oops/base/Variables.h"
+#include "oops/generic/VariableChangeBase.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
@@ -130,7 +131,7 @@ void Ensemble<MODEL>::linearize(const State_ & xb, const Geometry_ & resol,
   ASSERT(xb.validTime() == validTime_);
   resol_.reset(new Geometry_(resol));
   State_ xblr(*resol_, xb);
-  Accumulator<MODEL, Increment_, State_> bgmean(*resol_, vars_, validTime_);
+  Accumulator<MODEL, State_, State_> bgmean(*resol_, vars_, validTime_);
   const double rr = 1.0/static_cast<double>(rank_);
 
   std::vector<eckit::LocalConfiguration> confs;
@@ -155,7 +156,7 @@ void Ensemble<MODEL>::linearize(const State_ & xb, const Geometry_ & resol,
     dx->diff(ens_[jm], bgmean);
 
 //  Apply inverse of the linear balance operator  
-    Increment_ dxunbal = balop_->tranformInverse(*dx);
+    Increment_ dxunbal = balop.transformInverse(*dx);
     Increment_ * dxunbalptr = new Increment_(dxunbal);
     ensemblePerturbs_.push_back(dxunbalptr);
 

@@ -18,10 +18,16 @@ use qg_goms_mod
 use calculate_pv, only : calc_pv
 use netcdf
 use kinds
+#ifdef notdef_
 use mpi
+#endif
 
 implicit none
 private
+
+#ifndef notdef_
+  INCLUDE 'mpif.h'
+#endif  
 
 public :: qg_field, &
         & create, delete, zeros, dirac, random, copy, &

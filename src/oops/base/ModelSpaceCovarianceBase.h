@@ -15,13 +15,12 @@
 #include <string>
 #include <boost/noncopyable.hpp>
 
-#include "eckit/config/Configuration.h"
+#include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/VariableChangeBase.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
-#include "oops/interface/Variables.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 
@@ -41,13 +40,14 @@ class ModelSpaceCovarianceBase {
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
   typedef Increment<MODEL>           Increment_;
+  typedef VariableChangeBase<MODEL>  VariableChangeBase_;
 
  public:
   ModelSpaceCovarianceBase(const Geometry_ & resol, const Variables & vars,
                            const eckit::Configuration & conf, const State_ & xb) {
-    if (config.has("balance")) {
-      eckit::LocalConfiguration balConf("balance", config);
-      balop_.reset(VariableChangeFactory<MODEL>::create(resol, vars, balConf, xb));
+    if (conf.has("balance")) {
+      eckit::LocalConfiguration balConf(conf, "balance");
+      balop_.reset(VariableChangeFactory<MODEL>::create(balConf));
     }
   }
   virtual ~ModelSpaceCovarianceBase() {}
@@ -56,7 +56,7 @@ class ModelSpaceCovarianceBase {
   bool hasK() const {return (balop_ == 0) ? false : true;}
 
   void linearize(const State_ & fg, const Geometry_ & geom) {
-    if (balop_) balop_->doLinearize(fg, geom);
+    if (balop_) balop_->linearize(fg, geom);
     this->doLinearize(fg, geom);
   }
 
@@ -77,7 +77,7 @@ class ModelSpaceCovarianceBase {
       Increment_ tmpin = balop_->transformInverse(dxi);
       Increment_ tmpout(tmpin);
       this->doInverseMultiply(tmpin, tmpout);
-      balop_->transformAdjointInverse(tmpout, dxo);
+      balop_->transformInverseAdjoint(tmpout, dxo);
     } else {
       this->doInverseMultiply(dxi, dxo);
     }

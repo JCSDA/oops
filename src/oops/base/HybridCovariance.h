@@ -63,14 +63,13 @@ HybridCovariance<MODEL>::HybridCovariance(const Geometry_ & resol,
                                           const Variables & vars,
                                           const eckit::Configuration & config,
                                           const State_ & xb)
-  : ModelSpaceCovarianceBase(resol, vars, config, xb) 
+  : ModelSpaceCovarianceBase<MODEL>(resol, vars, config, xb) 
 {
   const eckit::LocalConfiguration staticConf(config, "static");
-  static_.reset(CovarianceFactory<MODEL>::create(saticConf, resol, vars, xb));
+  static_.reset(CovarianceFactory<MODEL>::create(staticConf, resol, vars, xb));
 
   const eckit::LocalConfiguration ensConf(config, "ensemble");
-  //ensemble_.reset(new EnsembleCovariance<MODEL>(resol, vars, ensConf, xb));
-  ensemble_.reset(CovarianceFactory<MODEL>::create(ensConf, resol, vars, xb));
+  ensemble_.reset(new EnsembleCovariance<MODEL>(resol, vars, ensConf, xb));
 
   ensWeight_ = config.getDouble("ensemble_weight");
   ASSERT(ensWeight_ > 0.0 && ensWeight_ <= 1.0);

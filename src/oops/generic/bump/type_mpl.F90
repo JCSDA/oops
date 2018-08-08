@@ -12,7 +12,9 @@ module type_mpl
 
 use iso_fortran_env, only : output_unit
 use iso_c_binding
-use mpi
+#ifdef notdef_
+  use mpi
+#endif
 use netcdf
 !$ use omp_lib
 use tools_const, only: msvali,msvalr
@@ -20,6 +22,10 @@ use tools_kinds, only: kind_real
 use tools_missing, only: msi,isnotmsi
 
 implicit none
+
+#ifndef notdef_
+  INCLUDE 'mpif.h'
+#endif  
 
 integer,parameter :: lunit_min=10   !< Minimum unit number
 integer,parameter :: lunit_max=1000 !< Maximum unit number
