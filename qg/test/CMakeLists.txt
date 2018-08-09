@@ -1,5 +1,6 @@
 list( APPEND qg_test_input
   testinput/3dvar.json
+  testinput/3dvar.chvar.json
   testinput/3dfgat.json
   testinput/4densvar.json
   testinput/4dvar.alpha.json
@@ -285,6 +286,13 @@ ecbuild_add_test( TARGET test_qg_3dvar
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/3dvar.json"
+                       testoutput/3dvar.test
+                  DEPENDS qg_4dvar.x )
+
+ecbuild_add_test( TARGET test_qg_3dvar_chvar
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/3dvar.chvar.json"
                        testoutput/3dvar.test
                   DEPENDS qg_4dvar.x )
 

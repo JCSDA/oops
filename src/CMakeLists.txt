@@ -125,9 +125,11 @@ oops/generic/dcmip_initial_conditions_test_1_2_3_v5.f90
 oops/generic/dcmip_initial_conditions_test_4_v3.f90
 oops/generic/instantiateLocalizationFactory.h
 oops/generic/instantiateObsErrorFactory.h
+oops/generic/instantiateVariableChangeFactory.h
 oops/generic/unstructured_grid_f.h
 oops/generic/unstructured_grid_mod.F90
 oops/generic/VariableChangeBase.h
+oops/generic/StatVariableChange.h
 
 oops/generic/bump/tools_const.F90
 oops/generic/bump/tools_fit.F90

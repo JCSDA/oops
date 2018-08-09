@@ -106,7 +106,7 @@ VariableChangeFactory<MODEL>::VariableChangeFactory(const std::string & name) {
 template <typename MODEL>
 VariableChangeBase<MODEL>* VariableChangeFactory<MODEL>::create(const eckit::Configuration & conf) {
   Log::trace() << "VariableChangeBase<MODEL>::create starting" << std::endl;
-  const std::string id = conf.getString("version");
+  const std::string id = conf.getString("varchange");
   typename std::map<std::string, VariableChangeFactory<MODEL>*>::iterator
     jerr = getMakers().find(id);
   if (jerr == getMakers().end()) {
@@ -124,8 +124,14 @@ template<typename MODEL>
 VariableChangeBase<MODEL>::VariableChangeBase(const eckit::Configuration & conf) 
   : varin_(), varout_()
 {
-  if (conf.has("inputVariables")) varin_.reset(new Variables(conf.getSubConfiguration("inputvariables")));
-  if (conf.has("outputVariables")) varout_.reset(new Variables(conf.getSubConfiguration("outputvariables")));
+  if (conf.has("inputVariables")) {
+    varin_.reset(new Variables(conf.getSubConfiguration("inputVariables")));
+    Log::trace() << "VariableChangeBase<MODEL>::VariableChangeBase inputvars: " << *varin_ << std::endl;
+  }
+  if (conf.has("outputVariables")) {
+    varout_.reset(new Variables(conf.getSubConfiguration("outputVariables")));
+    Log::trace() << "VariableChangeBase<MODEL>::VariableChangeBase outputvars: " << *varout_ << std::endl;
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -144,7 +150,7 @@ template<typename MODEL>
 Increment<MODEL> VariableChangeBase<MODEL>::transformAD(const Increment_ & dxin) const {
   ASSERT(varin_);
   Increment_ dxout(dxin.geometry(), *varin_, dxin.validTime());
-  this->transform(dxin, dxout);
+  this->transformAD(dxin, dxout);
   return dxout;
 }
 
