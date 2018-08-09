@@ -262,6 +262,7 @@ test/interface/ObservationSpace.h
 test/interface/ObsOperator.h
 test/interface/ObsTestsFixture.h
 test/interface/ObsVector.h
+test/interface/ChangeVariable.h
 test/TestEnvironment.h
 
 )

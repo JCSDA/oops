@@ -270,6 +270,12 @@ ecbuild_add_test( TARGET  test_qg_localization
                   ARGS    "testinput/interfaces.json"
                   LIBS    qg )
 
+ecbuild_add_test( TARGET  test_qg_changevariable
+                  BOOST
+                  SOURCES executables/TestChangeVariable.cc
+                  ARGS    "testinput/interfaces.json"
+                  LIBS    qg )
+
 # Test oops classes with QG
 
 
