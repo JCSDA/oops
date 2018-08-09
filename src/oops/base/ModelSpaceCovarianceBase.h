@@ -62,10 +62,10 @@ class ModelSpaceCovarianceBase {
 
   void multiply(const Increment_ & dxi, Increment_ & dxo) const {
     if (balop_) {
-      Increment_ tmpin = balop_->transformAD(dxi);
+      Increment_ tmpin = balop_->multiplyAD(dxi);
       Increment_ tmpout(tmpin);
       this->doMultiply(tmpin, tmpout);
-      balop_->transform(tmpout, dxo);
+      balop_->multiply(tmpout, dxo);
     } else {
       this->doMultiply(dxi, dxo);
     }
@@ -74,10 +74,10 @@ class ModelSpaceCovarianceBase {
   void inverseMultiply(const Increment_ & dxi, Increment_ & dxo) const {
     if (balop_) {
       Increment_ tmp(dxi);
-      Increment_ tmpin = balop_->transformInverse(dxi);
+      Increment_ tmpin = balop_->multiplyInverse(dxi);
       Increment_ tmpout(tmpin);
       this->doInverseMultiply(tmpin, tmpout);
-      balop_->transformInverseAD(tmpout, dxo);
+      balop_->multiplyInverseAD(tmpout, dxo);
     } else {
       this->doInverseMultiply(dxi, dxo);
     }

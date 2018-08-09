@@ -66,7 +66,7 @@ class ErrorCovariance : public oops::ModelSpaceCovarianceBase<MODEL>,
   void doLinearize(const State_ &, const Geometry_ &) override;
   void doMultiply(const Increment_ &, Increment_ &) const override;
   void doInverseMultiply(const Increment_ &, Increment_ &) const override;
- 
+
   void print(std::ostream &) const override;
 
   boost::scoped_ptr<Covariance_> covariance_;

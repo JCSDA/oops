@@ -13,8 +13,8 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
-#include "oops/generic/VariableChangeBase.h"
 #include "oops/base/Variables.h"
+#include "oops/generic/VariableChangeBase.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
@@ -48,11 +48,11 @@ class ChangeVariable : public oops::VariableChangeBase<MODEL>,
 
   void linearize(const State_ &, const Geometry_ &) override;
 
-  void transform(const Increment_ &, Increment_ &) const override;
-  void transformInverse(const Increment_ &, Increment_ &) const override;
-  void transformAD(const Increment_ &, Increment_ &) const override;
-  void transformInverseAD(const Increment_ &, Increment_ &) const override;
- 
+  void multiply(const Increment_ &, Increment_ &) const override;
+  void multiplyInverse(const Increment_ &, Increment_ &) const override;
+  void multiplyAD(const Increment_ &, Increment_ &) const override;
+  void multiplyInverseAD(const Increment_ &, Increment_ &) const override;
+
  private:
   void print(std::ostream &) const override;
 
@@ -94,41 +94,41 @@ void ChangeVariable<MODEL>::linearize(const State_ & xx, const Geometry_ & resol
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void ChangeVariable<MODEL>::transform(const Increment_ & dx1, Increment_ & dx2) const {
-  Log::trace() << "ChangeVariable<MODEL>::transform starting" << std::endl;
-  util::Timer timer(classname(), "transform");
-  chvar_->transform(dx1.increment(), dx2.increment());
-  Log::trace() << "ChangeVariable<MODEL>::transform done" << std::endl;
+void ChangeVariable<MODEL>::multiply(const Increment_ & dx1, Increment_ & dx2) const {
+  Log::trace() << "ChangeVariable<MODEL>::multiply starting" << std::endl;
+  util::Timer timer(classname(), "multiply");
+  chvar_->multiply(dx1.increment(), dx2.increment());
+  Log::trace() << "ChangeVariable<MODEL>::multiply done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void ChangeVariable<MODEL>::transformInverse(const Increment_ & dx1, Increment_ & dx2) const {
-  Log::trace() << "ChangeVariable<MODEL>::transformInverse starting" << std::endl;
-  util::Timer timer(classname(), "transformInverse");
-  chvar_->transformInverse(dx1.increment(), dx2.increment());
-  Log::trace() << "ChangeVariable<MODEL>::transformInverse done" << std::endl;
+void ChangeVariable<MODEL>::multiplyInverse(const Increment_ & dx1, Increment_ & dx2) const {
+  Log::trace() << "ChangeVariable<MODEL>::multiplyInverse starting" << std::endl;
+  util::Timer timer(classname(), "multiplyInverse");
+  chvar_->multiplyInverse(dx1.increment(), dx2.increment());
+  Log::trace() << "ChangeVariable<MODEL>::multiplyInverse done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void ChangeVariable<MODEL>::transformAD(const Increment_ & dx1, Increment_ & dx2) const {
-  Log::trace() << "ChangeVariable<MODEL>::transformAD starting" << std::endl;
-  util::Timer timer(classname(), "transformAD");
-  chvar_->transformAD(dx1.increment(), dx2.increment());
-  Log::trace() << "ChangeVariable<MODEL>::transformAD done" << std::endl;
+void ChangeVariable<MODEL>::multiplyAD(const Increment_ & dx1, Increment_ & dx2) const {
+  Log::trace() << "ChangeVariable<MODEL>::multiplyAD starting" << std::endl;
+  util::Timer timer(classname(), "multiplyAD");
+  chvar_->multiplyAD(dx1.increment(), dx2.increment());
+  Log::trace() << "ChangeVariable<MODEL>::multiplyAD done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void ChangeVariable<MODEL>::transformInverseAD(const Increment_ & dx1, Increment_ & dx2) const {
-  Log::trace() << "ChangeVariable<MODEL>::transformInverseAD starting" << std::endl;
-  util::Timer timer(classname(), "transformInverseAD");
-  chvar_->transformInverseAD(dx1.increment(), dx2.increment());
-  Log::trace() << "ChangeVariable<MODEL>::transformInverseAD done" << std::endl;
+void ChangeVariable<MODEL>::multiplyInverseAD(const Increment_ & dx1, Increment_ & dx2) const {
+  Log::trace() << "ChangeVariable<MODEL>::multiplyInverseAD starting" << std::endl;
+  util::Timer timer(classname(), "multiplyInverseAD");
+  chvar_->multiplyInverseAD(dx1.increment(), dx2.increment());
+  Log::trace() << "ChangeVariable<MODEL>::multiplyInverseAD done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

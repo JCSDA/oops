@@ -11,13 +11,14 @@
 #ifndef OOPS_GENERIC_INSTANTIATEVARIABLECHANGEFACTORY_H_
 #define OOPS_GENERIC_INSTANTIATEVARIABLECHANGEFACTORY_H_
 
+#include "oops/generic/StatsVariableChange.h"
 #include "oops/generic/VariableChangeBase.h"
-#include "oops/generic/StatVariableChange.h"
 
 namespace oops {
 
 template <typename MODEL> void instantiateVariableChangeFactory() {
-  static VariableChangeMaker<MODEL, StatVariableChange<MODEL> >  makerStatVarChange_("StatVariableChange");
+  static VariableChangeMaker<MODEL, StatsVariableChange<MODEL> >
+                        makerStatsVarChange_("StatsVariableChange");
 }
 
 }  // namespace oops

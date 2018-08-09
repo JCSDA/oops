@@ -5,9 +5,11 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef OOPS_BASE_VARIABLECHANGEBASE_H_
-#define OOPS_BASE_VARIABLECHANGEBASE_H_
+#ifndef OOPS_GENERIC_VARIABLECHANGEBASE_H_
+#define OOPS_GENERIC_VARIABLECHANGEBASE_H_
 
+#include <map>
+#include <string>
 #include <boost/noncopyable.hpp>
 
 #include "oops/base/Variables.h"
@@ -30,7 +32,7 @@ namespace oops {
 template <typename MODEL>
 class VariableChangeBase : public util::Printable,
                            private boost::noncopyable {
-  typedef Geometry<MODEL>            Geometry_;                           
+  typedef Geometry<MODEL>            Geometry_;
   typedef Increment<MODEL>           Increment_;
   typedef State<MODEL>               State_;
 
@@ -41,20 +43,20 @@ class VariableChangeBase : public util::Printable,
   void setInputVariables(Variables & vars) { varin_.reset(new Variables(vars)); }
   void setOutputVariables(Variables & vars) { varout_.reset(new Variables(vars)); }
 
-  virtual void linearize(const State_ &, const Geometry_ &) =0;
+  virtual void linearize(const State_ &, const Geometry_ &) = 0;
 
-  virtual void transform(const Increment_ &, Increment_ &) const =0;
-  virtual void transformInverse(const Increment_ &, Increment_ &) const =0;
-  virtual void transformAD(const Increment_ &, Increment_ &) const =0;
-  virtual void transformInverseAD(const Increment_ &, Increment_ &) const =0;
+  virtual void multiply(const Increment_ &, Increment_ &) const = 0;
+  virtual void multiplyInverse(const Increment_ &, Increment_ &) const = 0;
+  virtual void multiplyAD(const Increment_ &, Increment_ &) const = 0;
+  virtual void multiplyInverseAD(const Increment_ &, Increment_ &) const = 0;
 
-  Increment_ transform(const Increment_ &) const;
-  Increment_ transformInverse(const Increment_ &) const;
-  Increment_ transformAD(const Increment_ &) const;
-  Increment_ transformInverseAD(const Increment_ &) const;
+  Increment_ multiply(const Increment_ &) const;
+  Increment_ multiplyInverse(const Increment_ &) const;
+  Increment_ multiplyAD(const Increment_ &) const;
+  Increment_ multiplyInverseAD(const Increment_ &) const;
 
  private:
-  virtual void print(std::ostream &) const =0;
+  virtual void print(std::ostream &) const = 0;
   boost::scoped_ptr<Variables> varin_;
   boost::scoped_ptr<Variables> varout_;
 };
@@ -95,11 +97,11 @@ class VariableChangeMaker : public VariableChangeFactory<MODEL> {
 template <typename MODEL>
 VariableChangeFactory<MODEL>::VariableChangeFactory(const std::string & name) {
   if (getMakers().find(name) != getMakers().end()) {
-    Log::error() << name << " already registered in the variable change factory factory." << std::endl;
+    Log::error() << name << " already registered in the variable change factory."  << std::endl;
     ABORT("Element already registered in VariableChangeFactory.");
   }
   getMakers()[name] = this;
-};
+}
 
 // -----------------------------------------------------------------------------
 
@@ -116,12 +118,12 @@ VariableChangeBase<MODEL>* VariableChangeFactory<MODEL>::create(const eckit::Con
   VariableChangeBase<MODEL> * ptr = jerr->second->make(conf);
   Log::trace() << "VariableChangeBase<MODEL>::create done" << std::endl;
   return ptr;
-};
+}
 
 // =============================================================================
 
 template<typename MODEL>
-VariableChangeBase<MODEL>::VariableChangeBase(const eckit::Configuration & conf) 
+VariableChangeBase<MODEL>::VariableChangeBase(const eckit::Configuration & conf)
   : varin_(), varout_()
 {
   if (conf.has("inputVariables")) {
@@ -137,40 +139,40 @@ VariableChangeBase<MODEL>::VariableChangeBase(const eckit::Configuration & conf)
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-Increment<MODEL> VariableChangeBase<MODEL>::transform(const Increment<MODEL> & dxin) const {
+Increment<MODEL> VariableChangeBase<MODEL>::multiply(const Increment<MODEL> & dxin) const {
   ASSERT(varout_);
   Increment_ dxout(dxin.geometry(), *varout_, dxin.validTime());
-  this->transform(dxin, dxout);
+  this->multiply(dxin, dxout);
   return dxout;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-Increment<MODEL> VariableChangeBase<MODEL>::transformAD(const Increment_ & dxin) const {
+Increment<MODEL> VariableChangeBase<MODEL>::multiplyAD(const Increment_ & dxin) const {
   ASSERT(varin_);
   Increment_ dxout(dxin.geometry(), *varin_, dxin.validTime());
-  this->transformAD(dxin, dxout);
+  this->multiplyAD(dxin, dxout);
   return dxout;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-Increment<MODEL> VariableChangeBase<MODEL>::transformInverse(const Increment_ & dxin) const {
+Increment<MODEL> VariableChangeBase<MODEL>::multiplyInverse(const Increment_ & dxin) const {
   ASSERT(varin_);
   Increment_ dxout(dxin.geometry(), *varin_, dxin.validTime());
-  this->transformInverse(dxin, dxout);
+  this->multiplyInverse(dxin, dxout);
   return dxout;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-Increment<MODEL> VariableChangeBase<MODEL>::transformInverseAD(const Increment_ & dxin) const {
+Increment<MODEL> VariableChangeBase<MODEL>::multiplyInverseAD(const Increment_ & dxin) const {
   ASSERT(varout_);
   Increment_ dxout(dxin.geometry(), *varout_, dxin.validTime());
-  this->transformInverseAD(dxin, dxout);
+  this->multiplyInverseAD(dxin, dxout);
   return dxout;
 }
 
@@ -178,4 +180,4 @@ Increment<MODEL> VariableChangeBase<MODEL>::transformInverseAD(const Increment_ 
 
 }  // namespace oops
 
-#endif  // OOPS_BASE_VARIABLECHANGEBASE_H_
+#endif  // OOPS_GENERIC_VARIABLECHANGEBASE_H_

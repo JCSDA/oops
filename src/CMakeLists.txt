@@ -129,7 +129,7 @@ oops/generic/instantiateVariableChangeFactory.h
 oops/generic/unstructured_grid_f.h
 oops/generic/unstructured_grid_mod.F90
 oops/generic/VariableChangeBase.h
-oops/generic/StatVariableChange.h
+oops/generic/StatsVariableChange.h
 
 oops/generic/bump/tools_const.F90
 oops/generic/bump/tools_fit.F90

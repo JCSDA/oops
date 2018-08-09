@@ -37,10 +37,10 @@ class ChangeVar: public util::Printable {
   void linearize(const StateQG &, const GeometryQG &);
 
 /// Perform linear transforms
-  void transform(const IncrementQG &, IncrementQG &) const;
-  void transformInverse(const IncrementQG &, IncrementQG &) const;
-  void transformAdjoint(const IncrementQG &, IncrementQG &) const;
-  void transformInverseAdjoint(const IncrementQG &, IncrementQG &) const;
+  void multiply(const IncrementQG &, IncrementQG &) const;
+  void multiplyInverse(const IncrementQG &, IncrementQG &) const;
+  void multiplyAdjoint(const IncrementQG &, IncrementQG &) const;
+  void multiplyInverseAdjoint(const IncrementQG &, IncrementQG &) const;
 
  private:
   void print(std::ostream &) const override;

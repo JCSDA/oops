@@ -25,19 +25,19 @@ ChangeVar::~ChangeVar() {}
 // -----------------------------------------------------------------------------
 void ChangeVar::linearize(const StateQG &, const GeometryQG &) {}
 // -----------------------------------------------------------------------------
-void ChangeVar::transform(const IncrementQG & dxa, IncrementQG & dxm) const {
+void ChangeVar::multiply(const IncrementQG & dxa, IncrementQG & dxm) const {
   dxm = dxa;
 }
 // -----------------------------------------------------------------------------
-void ChangeVar::transformInverse(const IncrementQG & dxm, IncrementQG & dxa) const {
+void ChangeVar::multiplyInverse(const IncrementQG & dxm, IncrementQG & dxa) const {
   dxa = dxm;
 }
 // -----------------------------------------------------------------------------
-void ChangeVar::transformAdjoint(const IncrementQG & dxm, IncrementQG & dxa) const {
+void ChangeVar::multiplyAdjoint(const IncrementQG & dxm, IncrementQG & dxa) const {
   dxa = dxm;
 }
 // -----------------------------------------------------------------------------
-void ChangeVar::transformInverseAdjoint(const IncrementQG & dxa, IncrementQG & dxm) const {
+void ChangeVar::multiplyInverseAdjoint(const IncrementQG & dxa, IncrementQG & dxm) const {
   dxm = dxa;
 }
 // -----------------------------------------------------------------------------

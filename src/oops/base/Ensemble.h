@@ -39,7 +39,7 @@ template<typename MODEL> class Ensemble {
   typedef ChangeVariable<MODEL>      ChangeVariable_;
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
-  typedef Increment<MODEL>           Increment_; 
+  typedef Increment<MODEL>           Increment_;
 
  public:
 /// Constructor
@@ -154,12 +154,12 @@ void Ensemble<MODEL>::linearize(const State_ & xb, const Geometry_ & resol,
     Increment_ * dx = new Increment_(*resol_, vars_, validTime_);
     dx->diff(ens_[jm], bgmean);
 
-//  Apply inverse of the linear balance operator  
-    Increment_ dxunbal = balop.transformInverse(*dx);
+//  Apply inverse of the linear balance operator
+    Increment_ dxunbal = balop.multiplyInverse(*dx);
     Increment_ * dxunbalptr = new Increment_(dxunbal);
     ensemblePerturbs_.push_back(dxunbalptr);
 
-//  Rescale  
+//  Rescale
     ensemblePerturbs_[jm] *= rk;
   }
 }
