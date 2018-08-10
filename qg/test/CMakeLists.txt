@@ -274,9 +274,9 @@ ecbuild_add_test( TARGET  test_qg_localization
                   ARGS    "testinput/interfaces.json"
                   LIBS    qg )
 
-ecbuild_add_test( TARGET  test_qg_variablechange
+ecbuild_add_test( TARGET  test_qg_linearvariablechange
                   BOOST
-                  SOURCES executables/TestVariableChange.cc
+                  SOURCES executables/TestLinearVariableChange.cc
                   ARGS    "testinput/interfaces.json"
                   LIBS    qg )
 

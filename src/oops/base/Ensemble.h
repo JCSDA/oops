@@ -19,7 +19,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Accumulator.h"
-#include "oops/base/VariableChangeBase.h"
+#include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -36,7 +36,7 @@ namespace oops {
 /// Ensemble
 
 template<typename MODEL> class Ensemble {
-  typedef VariableChangeBase<MODEL>  VariableChangeBase_;
+  typedef LinearVariableChangeBase<MODEL>  LinearVariableChangeBase_;
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
   typedef Increment<MODEL>           Increment_;
@@ -60,7 +60,7 @@ template<typename MODEL> class Ensemble {
   }
 
   void linearize(const State_ &, const Geometry_ &);
-  void linearize(const State_ &, const Geometry_ &, const VariableChangeBase_ &);
+  void linearize(const State_ &, const Geometry_ &, const LinearVariableChangeBase_ &);
 
   const Variables & controlVariables() const {return vars_;}
 
@@ -126,7 +126,7 @@ void Ensemble<MODEL>::linearize(const State_ & xb, const Geometry_ & resol) {
 
 template<typename MODEL>
 void Ensemble<MODEL>::linearize(const State_ & xb, const Geometry_ & resol,
-                                const VariableChangeBase_ & balop) {
+                                const LinearVariableChangeBase_ & balop) {
   ASSERT(xb.validTime() == validTime_);
   resol_.reset(new Geometry_(resol));
   State_ xblr(*resol_, xb);

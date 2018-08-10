@@ -17,8 +17,6 @@
 
 namespace qg {
 // -----------------------------------------------------------------------------
-// static oops::VariableChangeMaker<QgTraits, ChangeVar> makerChVarQG("QgCV");
-// -----------------------------------------------------------------------------
 ChangeVar::ChangeVar(const eckit::Configuration &) {}
 // -----------------------------------------------------------------------------
 ChangeVar::~ChangeVar() {}

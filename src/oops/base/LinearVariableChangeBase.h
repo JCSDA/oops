@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef OOPS_BASE_VARIABLECHANGEBASE_H_
-#define OOPS_BASE_VARIABLECHANGEBASE_H_
+#ifndef OOPS_BASE_LINEARVARIABLECHANGEBASE_H_
+#define OOPS_BASE_LINEARVARIABLECHANGEBASE_H_
 
 #include <map>
 #include <string>
@@ -30,15 +30,15 @@ namespace oops {
 /// Base class for generic variable transform
 
 template <typename MODEL>
-class VariableChangeBase : public util::Printable,
+class LinearVariableChangeBase : public util::Printable,
                            private boost::noncopyable {
   typedef Geometry<MODEL>            Geometry_;
   typedef Increment<MODEL>           Increment_;
   typedef State<MODEL>               State_;
 
  public:
-  explicit VariableChangeBase(const eckit::Configuration &);
-  virtual ~VariableChangeBase() {}
+  explicit LinearVariableChangeBase(const eckit::Configuration &);
+  virtual ~LinearVariableChangeBase() {}
 
   void setInputVariables(Variables & vars) { varin_.reset(new Variables(vars)); }
   void setOutputVariables(Variables & vars) { varout_.reset(new Variables(vars)); }
@@ -63,20 +63,20 @@ class VariableChangeBase : public util::Printable,
 
 // -----------------------------------------------------------------------------
 
-/// VariableChangeFactory Factory
+/// LinearVariableChangeFactory Factory
 template <typename MODEL>
-class VariableChangeFactory {
+class LinearVariableChangeFactory {
   typedef Geometry<MODEL>   Geometry_;
   typedef State<MODEL>      State_;
  public:
-  static VariableChangeBase<MODEL> * create(const eckit::Configuration &);
-  virtual ~VariableChangeFactory() { getMakers().clear(); }
+  static LinearVariableChangeBase<MODEL> * create(const eckit::Configuration &);
+  virtual ~LinearVariableChangeFactory() { getMakers().clear(); }
  protected:
-  explicit VariableChangeFactory(const std::string &);
+  explicit LinearVariableChangeFactory(const std::string &);
  private:
-  virtual VariableChangeBase<MODEL> * make(const eckit::Configuration &) = 0;
-  static std::map < std::string, VariableChangeFactory<MODEL> * > & getMakers() {
-    static std::map < std::string, VariableChangeFactory<MODEL> * > makers_;
+  virtual LinearVariableChangeBase<MODEL> * make(const eckit::Configuration &) = 0;
+  static std::map < std::string, LinearVariableChangeFactory<MODEL> * > & getMakers() {
+    static std::map < std::string, LinearVariableChangeFactory<MODEL> * > makers_;
     return makers_;
   }
 };
@@ -84,21 +84,22 @@ class VariableChangeFactory {
 // -----------------------------------------------------------------------------
 
 template<class MODEL, class T>
-class VariableChangeMaker : public VariableChangeFactory<MODEL> {
+class LinearVariableChangeMaker : public LinearVariableChangeFactory<MODEL> {
   typedef Geometry<MODEL>   Geometry_;
-  virtual VariableChangeBase<MODEL> * make(const eckit::Configuration & conf)
+  virtual LinearVariableChangeBase<MODEL> * make(const eckit::Configuration & conf)
     { return new T(conf); }
  public:
-  explicit VariableChangeMaker(const std::string & name) : VariableChangeFactory<MODEL>(name) {}
+  explicit LinearVariableChangeMaker(const std::string & name)
+    : LinearVariableChangeFactory<MODEL>(name) {}
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-VariableChangeFactory<MODEL>::VariableChangeFactory(const std::string & name) {
+LinearVariableChangeFactory<MODEL>::LinearVariableChangeFactory(const std::string & name) {
   if (getMakers().find(name) != getMakers().end()) {
     Log::error() << name << " already registered in the variable change factory."  << std::endl;
-    ABORT("Element already registered in VariableChangeFactory.");
+    ABORT("Element already registered in LinearVariableChangeFactory.");
   }
   getMakers()[name] = this;
 }
@@ -106,34 +107,35 @@ VariableChangeFactory<MODEL>::VariableChangeFactory(const std::string & name) {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-VariableChangeBase<MODEL>* VariableChangeFactory<MODEL>::create(const eckit::Configuration & conf) {
-  Log::trace() << "VariableChangeBase<MODEL>::create starting" << std::endl;
+LinearVariableChangeBase<MODEL> * LinearVariableChangeFactory<MODEL>::create(
+                                           const eckit::Configuration & conf) {
+  Log::trace() << "LinearVariableChangeBase<MODEL>::create starting" << std::endl;
   const std::string id = conf.getString("varchange");
-  typename std::map<std::string, VariableChangeFactory<MODEL>*>::iterator
+  typename std::map<std::string, LinearVariableChangeFactory<MODEL>*>::iterator
     jerr = getMakers().find(id);
   if (jerr == getMakers().end()) {
     Log::error() << id << " does not exist in the variable change factory factory." << std::endl;
-    ABORT("Element does not exist in VariableChangeFactory.");
+    ABORT("Element does not exist in LinearVariableChangeFactory.");
   }
-  VariableChangeBase<MODEL> * ptr = jerr->second->make(conf);
-  Log::trace() << "VariableChangeBase<MODEL>::create done" << std::endl;
+  LinearVariableChangeBase<MODEL> * ptr = jerr->second->make(conf);
+  Log::trace() << "LinearVariableChangeBase<MODEL>::create done" << std::endl;
   return ptr;
 }
 
 // =============================================================================
 
 template<typename MODEL>
-VariableChangeBase<MODEL>::VariableChangeBase(const eckit::Configuration & conf)
+LinearVariableChangeBase<MODEL>::LinearVariableChangeBase(const eckit::Configuration & conf)
   : varin_(), varout_()
 {
   if (conf.has("inputVariables")) {
     varin_.reset(new Variables(conf.getSubConfiguration("inputVariables")));
-    Log::trace() << "VariableChangeBase<MODEL>::VariableChangeBase inputvars: "
+    Log::trace() << "LinearVariableChangeBase<MODEL>::LinearVariableChangeBase inputvars: "
                  << *varin_ << std::endl;
   }
   if (conf.has("outputVariables")) {
     varout_.reset(new Variables(conf.getSubConfiguration("outputVariables")));
-    Log::trace() << "VariableChangeBase<MODEL>::VariableChangeBase outputvars: "
+    Log::trace() << "LinearVariableChangeBase<MODEL>::LinearVariableChangeBase outputvars: "
                  << *varout_ << std::endl;
   }
 }
@@ -141,7 +143,7 @@ VariableChangeBase<MODEL>::VariableChangeBase(const eckit::Configuration & conf)
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-Increment<MODEL> VariableChangeBase<MODEL>::multiply(const Increment<MODEL> & dxin) const {
+Increment<MODEL> LinearVariableChangeBase<MODEL>::multiply(const Increment<MODEL> & dxin) const {
   ASSERT(varin_);
   Increment_ dxout(dxin.geometry(), *varin_, dxin.validTime());
   this->multiply(dxin, dxout);
@@ -151,7 +153,7 @@ Increment<MODEL> VariableChangeBase<MODEL>::multiply(const Increment<MODEL> & dx
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-Increment<MODEL> VariableChangeBase<MODEL>::multiplyAD(const Increment_ & dxin) const {
+Increment<MODEL> LinearVariableChangeBase<MODEL>::multiplyAD(const Increment_ & dxin) const {
   ASSERT(varout_);
   Increment_ dxout(dxin.geometry(), *varout_, dxin.validTime());
   this->multiplyAD(dxin, dxout);
@@ -161,7 +163,7 @@ Increment<MODEL> VariableChangeBase<MODEL>::multiplyAD(const Increment_ & dxin) 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-Increment<MODEL> VariableChangeBase<MODEL>::multiplyInverse(const Increment_ & dxin) const {
+Increment<MODEL> LinearVariableChangeBase<MODEL>::multiplyInverse(const Increment_ & dxin) const {
   ASSERT(varout_);
   Increment_ dxout(dxin.geometry(), *varout_, dxin.validTime());
   this->multiplyInverse(dxin, dxout);
@@ -171,7 +173,7 @@ Increment<MODEL> VariableChangeBase<MODEL>::multiplyInverse(const Increment_ & d
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-Increment<MODEL> VariableChangeBase<MODEL>::multiplyInverseAD(const Increment_ & dxin) const {
+Increment<MODEL> LinearVariableChangeBase<MODEL>::multiplyInverseAD(const Increment_ & dxin) const {
   ASSERT(varin_);
   Increment_ dxout(dxin.geometry(), *varin_, dxin.validTime());
   this->multiplyInverseAD(dxin, dxout);
@@ -182,4 +184,4 @@ Increment<MODEL> VariableChangeBase<MODEL>::multiplyInverseAD(const Increment_ &
 
 }  // namespace oops
 
-#endif  // OOPS_BASE_VARIABLECHANGEBASE_H_
+#endif  // OOPS_BASE_LINEARVARIABLECHANGEBASE_H_

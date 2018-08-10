@@ -10,11 +10,11 @@
 
 #include "model/QgTraits.h"
 #include "oops/runs/Run.h"
-#include "test/interface/VariableChange.h"
+#include "test/interface/LinearVariableChange.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  test::VariableChange<qg::QgTraits> tests;
+  test::LinearVariableChange<qg::QgTraits> tests;
   run.execute(tests);
   return 0;
 }

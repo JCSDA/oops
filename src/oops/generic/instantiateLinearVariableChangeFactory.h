@@ -8,19 +8,19 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef OOPS_GENERIC_INSTANTIATEVARIABLECHANGEFACTORY_H_
-#define OOPS_GENERIC_INSTANTIATEVARIABLECHANGEFACTORY_H_
+#ifndef OOPS_GENERIC_INSTANTIATELINEARVARIABLECHANGEFACTORY_H_
+#define OOPS_GENERIC_INSTANTIATELINEARVARIABLECHANGEFACTORY_H_
 
-#include "oops/base/VariableChangeBase.h"
+#include "oops/base/LinearVariableChangeBase.h"
 #include "oops/generic/StatsVariableChange.h"
 
 namespace oops {
 
-template <typename MODEL> void instantiateVariableChangeFactory() {
-  static VariableChangeMaker<MODEL, StatsVariableChange<MODEL> >
+template <typename MODEL> void instantiateLinearVariableChangeFactory() {
+  static LinearVariableChangeMaker<MODEL, StatsVariableChange<MODEL> >
                         makerStatsVarChange_("StatsVariableChange");
 }
 
 }  // namespace oops
 
-#endif  // OOPS_GENERIC_INSTANTIATEVARIABLECHANGEFACTORY_H_
+#endif  // OOPS_GENERIC_INSTANTIATELINEARVARIABLECHANGEFACTORY_H_

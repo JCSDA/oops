@@ -8,8 +8,8 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef TEST_INTERFACE_VARIABLECHANGE_H_
-#define TEST_INTERFACE_VARIABLECHANGE_H_
+#ifndef TEST_INTERFACE_LINEARVARIABLECHANGE_H_
+#define TEST_INTERFACE_LINEARVARIABLECHANGE_H_
 
 #include <cmath>
 #include <iostream>
@@ -24,8 +24,8 @@
 #include <boost/test/unit_test.hpp>
 
 #include "eckit/config/Configuration.h"
-#include "oops/base/VariableChangeBase.h"
-#include "oops/generic/instantiateVariableChangeFactory.h"
+#include "oops/base/LinearVariableChangeBase.h"
+#include "oops/generic/instantiateLinearVariableChangeFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
@@ -39,28 +39,29 @@ namespace test {
 
 // =============================================================================
 
-template <typename MODEL> class VariableChangeFixture : private boost::noncopyable {
-  typedef oops::VariableChangeBase<MODEL>  VariableChange_;
+template <typename MODEL> class LinearVariableChangeFixture : private boost::noncopyable {
+  typedef oops::LinearVariableChangeBase<MODEL>  LinearVariableChange_;
   typedef oops::Geometry<MODEL>            Geometry_;
 
  public:
-  static const eckit::Configuration & test()      {return *getInstance().test_;}
-  static const Geometry_            & resol()     {return *getInstance().resol_;}
-  static const oops::Variables      & varin()     {return *getInstance().varin_;}
-  static const oops::Variables      & varout()    {return *getInstance().varout_;}
-  static const util::DateTime       & time()      {return *getInstance().time_;}
-  static const VariableChange_      & changevar() {return *getInstance().K_;}
+  static const eckit::Configuration  & test()      {return *getInstance().test_;}
+  static const Geometry_             & resol()     {return *getInstance().resol_;}
+  static const oops::Variables       & varin()     {return *getInstance().varin_;}
+  static const oops::Variables       & varout()    {return *getInstance().varout_;}
+  static const util::DateTime        & time()      {return *getInstance().time_;}
+  static const LinearVariableChange_ & changevar() {return *getInstance().K_;}
 
  private:
-  static VariableChangeFixture<MODEL>& getInstance() {
-    static VariableChangeFixture<MODEL> theVariableChangeFixture;
-    return theVariableChangeFixture;
+  static LinearVariableChangeFixture<MODEL>& getInstance() {
+    static LinearVariableChangeFixture<MODEL> theLinearVariableChangeFixture;
+    return theLinearVariableChangeFixture;
   }
 
-  VariableChangeFixture<MODEL>() {
-    oops::instantiateVariableChangeFactory<MODEL>();
+  LinearVariableChangeFixture<MODEL>() {
+    oops::instantiateLinearVariableChangeFactory<MODEL>();
 
-    test_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "VariableChangeTest"));
+    test_.reset(new eckit::LocalConfiguration(TestEnvironment::config(),
+                                              "LinearVariableChangeTest"));
 
     const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "Geometry");
     resol_.reset(new Geometry_(resolConfig));
@@ -71,33 +72,30 @@ template <typename MODEL> class VariableChangeFixture : private boost::noncopyab
     time_.reset(new util::DateTime(xx.validTime()));
 
 //  Setup the change of variable
-    const eckit::LocalConfiguration changevarconf(TestEnvironment::config(), "VariableChangeTest");
-    const eckit::LocalConfiguration varinconf(TestEnvironment::config(),
-                                          "VariableChangeTest.inputVariables");
+    const eckit::LocalConfiguration varinconf(*test_, "inputVariables");
     varin_.reset(new oops::Variables(varinconf));
 
-    const eckit::LocalConfiguration varoutconf(TestEnvironment::config(),
-                                          "VariableChangeTest.outputVariables");
+    const eckit::LocalConfiguration varoutconf(*test_, "outputVariables");
     varout_.reset(new oops::Variables(varoutconf));
 
-    K_.reset(oops::VariableChangeFactory<MODEL>::create(changevarconf));
+    K_.reset(oops::LinearVariableChangeFactory<MODEL>::create(*test_));
     K_->linearize(xx, *resol_);
   }
 
-  ~VariableChangeFixture<MODEL>() {}
+  ~LinearVariableChangeFixture<MODEL>() {}
 
   boost::scoped_ptr<const eckit::LocalConfiguration> test_;
   boost::scoped_ptr<const Geometry_>                 resol_;
   boost::scoped_ptr<const oops::Variables>           varin_;
   boost::scoped_ptr<const oops::Variables>           varout_;
   boost::scoped_ptr<const util::DateTime>            time_;
-  boost::scoped_ptr<VariableChange_>                 K_;
+  boost::scoped_ptr<LinearVariableChange_>           K_;
 };
 
 // =============================================================================
 
-template <typename MODEL> void testVariableChangeZero() {
-  typedef VariableChangeFixture<MODEL>   Test_;
+template <typename MODEL> void testLinearVariableChangeZero() {
+  typedef LinearVariableChangeFixture<MODEL>   Test_;
   typedef oops::Increment<MODEL>    Increment_;
 
   Increment_ dxin(Test_::resol(), Test_::varin(), Test_::time());
@@ -119,13 +117,13 @@ template <typename MODEL> void testVariableChangeZero() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testVariableChangeInverse() {
+template <typename MODEL> void testLinearVariableChangeInverse() {
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testVariableChangeAdjoint() {
-  typedef VariableChangeFixture<MODEL>   Test_;
+template <typename MODEL> void testLinearVariableChangeAdjoint() {
+  typedef LinearVariableChangeFixture<MODEL>   Test_;
   typedef oops::Increment<MODEL>    Increment_;
 
   Increment_ dxin(Test_::resol(), Test_::varin(), Test_::time());
@@ -148,18 +146,18 @@ template <typename MODEL> void testVariableChangeAdjoint() {
 
 // =============================================================================
 
-template <typename MODEL> class VariableChange : public oops::Test {
+template <typename MODEL> class LinearVariableChange : public oops::Test {
  public:
-  VariableChange() {}
-  virtual ~VariableChange() {}
+  LinearVariableChange() {}
+  virtual ~LinearVariableChange() {}
  private:
-  std::string testid() const {return "test::VariableChange<" + MODEL::name() + ">";}
+  std::string testid() const {return "test::LinearVariableChange<" + MODEL::name() + ">";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/VariableChange");
+    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/LinearVariableChange");
 
-    ts->add(BOOST_TEST_CASE(&testVariableChangeZero<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testVariableChangeAdjoint<MODEL>));
+    ts->add(BOOST_TEST_CASE(&testLinearVariableChangeZero<MODEL>));
+    ts->add(BOOST_TEST_CASE(&testLinearVariableChangeAdjoint<MODEL>));
 
     boost::unit_test::framework::master_test_suite().add(ts);
   }
@@ -169,4 +167,4 @@ template <typename MODEL> class VariableChange : public oops::Test {
 
 }  // namespace test
 
-#endif  // TEST_INTERFACE_VARIABLECHANGE_H_
+#endif  // TEST_INTERFACE_LINEARVARIABLECHANGE_H_

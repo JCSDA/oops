@@ -62,7 +62,7 @@
     "finalnorm": "13.965",
     "tolerance": "0.005"
   },
-  "VariableChangeTest": {
+  "LinearVariableChangeTest": {
     "varchange": "StatsVariableChange",
     "inputVariables": {
       "variables": ["x"]

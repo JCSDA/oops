@@ -5,15 +5,15 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef OOPS_INTERFACE_VARIABLECHANGE_H_
-#define OOPS_INTERFACE_VARIABLECHANGE_H_
+#ifndef OOPS_INTERFACE_LINEARVARIABLECHANGE_H_
+#define OOPS_INTERFACE_LINEARVARIABLECHANGE_H_
 
 #include <string>
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
-#include "oops/base/VariableChangeBase.h"
+#include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -33,16 +33,16 @@ namespace oops {
 /// Wrapper for change of variable
 
 template <typename MODEL, typename CHVAR>
-class VariableChange : public oops::VariableChangeBase<MODEL> {
+class LinearVariableChange : public oops::LinearVariableChangeBase<MODEL> {
   typedef Geometry<MODEL>            Geometry_;
   typedef Increment<MODEL>           Increment_;
   typedef State<MODEL>               State_;
 
  public:
-  static const std::string classname() {return "oops::VariableChange";}
+  static const std::string classname() {return "oops::LinearVariableChange";}
 
-  explicit VariableChange(const eckit::Configuration &);
-  virtual ~VariableChange();
+  explicit LinearVariableChange(const eckit::Configuration &);
+  virtual ~LinearVariableChange();
 
   void linearize(const State_ &, const Geometry_ &) override;
 
@@ -60,88 +60,90 @@ class VariableChange : public oops::VariableChangeBase<MODEL> {
 // =============================================================================
 
 template<typename MODEL, typename CHVAR>
-VariableChange<MODEL, CHVAR>::VariableChange(const eckit::Configuration & conf)
-  : VariableChangeBase<MODEL>(conf), chvar_()
+LinearVariableChange<MODEL, CHVAR>::LinearVariableChange(const eckit::Configuration & conf)
+  : LinearVariableChangeBase<MODEL>(conf), chvar_()
 {
-  Log::trace() << "VariableChange<MODEL, CHVAR>::VariableChange starting" << std::endl;
-  util::Timer timer(classname(), "VariableChange");
+  Log::trace() << "LinearVariableChange<MODEL, CHVAR>::LinearVariableChange starting" << std::endl;
+  util::Timer timer(classname(), "LinearVariableChange");
   chvar_.reset(new CHVAR(conf));
-  Log::trace() << "VariableChange<MODEL, CHVAR>::VariableChange done" << std::endl;
+  Log::trace() << "LinearVariableChange<MODEL, CHVAR>::LinearVariableChange done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename CHVAR>
-VariableChange<MODEL, CHVAR>::~VariableChange() {
-  Log::trace() << "VariableChange<MODEL, CHVAR>::~VariableChange starting" << std::endl;
-  util::Timer timer(classname(), "~VariableChange");
+LinearVariableChange<MODEL, CHVAR>::~LinearVariableChange() {
+  Log::trace() << "LinearVariableChange<MODEL, CHVAR>::~LinearVariableChange starting" << std::endl;
+  util::Timer timer(classname(), "~LinearVariableChange");
   chvar_.reset();
-  Log::trace() << "VariableChange<MODEL, CHVAR>::~VariableChange done" << std::endl;
+  Log::trace() << "LinearVariableChange<MODEL, CHVAR>::~LinearVariableChange done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename CHVAR>
-void VariableChange<MODEL, CHVAR>::linearize(const State_ & xx, const Geometry_ & resol) {
-  Log::trace() << "VariableChange<MODEL, CHVAR>::linearize starting" << std::endl;
+void LinearVariableChange<MODEL, CHVAR>::linearize(const State_ & xx, const Geometry_ & resol) {
+  Log::trace() << "LinearVariableChange<MODEL, CHVAR>::linearize starting" << std::endl;
   util::Timer timer(classname(), "linearize");
   chvar_->linearize(xx.state(), resol.geometry());
-  Log::trace() << "VariableChange<MODEL, CHVAR>::linearize done" << std::endl;
+  Log::trace() << "LinearVariableChange<MODEL, CHVAR>::linearize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename CHVAR>
-void VariableChange<MODEL, CHVAR>::multiply(const Increment_ & dx1, Increment_ & dx2) const {
-  Log::trace() << "VariableChange<MODEL, CHVAR>::multiply starting" << std::endl;
+void LinearVariableChange<MODEL, CHVAR>::multiply(const Increment_ & dx1, Increment_ & dx2) const {
+  Log::trace() << "LinearVariableChange<MODEL, CHVAR>::multiply starting" << std::endl;
   util::Timer timer(classname(), "multiply");
   chvar_->multiply(dx1.increment(), dx2.increment());
-  Log::trace() << "VariableChange<MODEL, CHVAR>::multiply done" << std::endl;
+  Log::trace() << "LinearVariableChange<MODEL, CHVAR>::multiply done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename CHVAR>
-void VariableChange<MODEL, CHVAR>::multiplyInverse(const Increment_ & dx1, Increment_ & dx2) const {
-  Log::trace() << "VariableChange<MODEL, CHVAR>::multiplyInverse starting" << std::endl;
+void LinearVariableChange<MODEL, CHVAR>::multiplyInverse(const Increment_ & dx1,
+                                                         Increment_ & dx2) const {
+  Log::trace() << "LinearVariableChange<MODEL, CHVAR>::multiplyInverse starting" << std::endl;
   util::Timer timer(classname(), "multiplyInverse");
   chvar_->multiplyInverse(dx1.increment(), dx2.increment());
-  Log::trace() << "VariableChange<MODEL, CHVAR>::multiplyInverse done" << std::endl;
+  Log::trace() << "LinearVariableChange<MODEL, CHVAR>::multiplyInverse done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename CHVAR>
-void VariableChange<MODEL, CHVAR>::multiplyAD(const Increment_ & dx1, Increment_ & dx2) const {
-  Log::trace() << "VariableChange<MODEL, CHVAR>::multiplyAD starting" << std::endl;
+void LinearVariableChange<MODEL, CHVAR>::multiplyAD(const Increment_ & dx1,
+                                                    Increment_ & dx2) const {
+  Log::trace() << "LinearVariableChange<MODEL, CHVAR>::multiplyAD starting" << std::endl;
   util::Timer timer(classname(), "multiplyAD");
   chvar_->multiplyAD(dx1.increment(), dx2.increment());
-  Log::trace() << "VariableChange<MODEL, CHVAR>::multiplyAD done" << std::endl;
+  Log::trace() << "LinearVariableChange<MODEL, CHVAR>::multiplyAD done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename CHVAR>
-void VariableChange<MODEL, CHVAR>::multiplyInverseAD(const Increment_ & dx1,
-                                                     Increment_ & dx2) const {
-  Log::trace() << "VariableChange<MODEL, CHVAR>::multiplyInverseAD starting" << std::endl;
+void LinearVariableChange<MODEL, CHVAR>::multiplyInverseAD(const Increment_ & dx1,
+                                                           Increment_ & dx2) const {
+  Log::trace() << "LinearVariableChange<MODEL, CHVAR>::multiplyInverseAD starting" << std::endl;
   util::Timer timer(classname(), "multiplyInverseAD");
   chvar_->multiplyInverseAD(dx1.increment(), dx2.increment());
-  Log::trace() << "VariableChange<MODEL, CHVAR>::multiplyInverseAD done" << std::endl;
+  Log::trace() << "LinearVariableChange<MODEL, CHVAR>::multiplyInverseAD done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename CHVAR>
-void VariableChange<MODEL, CHVAR>::print(std::ostream & os) const {
-  Log::trace() << "VariableChange<MODEL, CHVAR>::print starting" << std::endl;
+void LinearVariableChange<MODEL, CHVAR>::print(std::ostream & os) const {
+  Log::trace() << "LinearVariableChange<MODEL, CHVAR>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
   os << *chvar_;
-  Log::trace() << "VariableChange<MODEL, CHVAR>::print done" << std::endl;
+  Log::trace() << "LinearVariableChange<MODEL, CHVAR>::print done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 }  // namespace oops
 
-#endif  // OOPS_INTERFACE_VARIABLECHANGE_H_
+#endif  // OOPS_INTERFACE_LINEARVARIABLECHANGE_H_

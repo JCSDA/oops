@@ -18,7 +18,7 @@
 #include <boost/ptr_container/ptr_vector.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/base/VariableChangeBase.h"
+#include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -42,8 +42,8 @@ class ModelSpaceCovarianceBase {
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
   typedef Increment<MODEL>           Increment_;
-  typedef VariableChangeBase<MODEL>  VariableChangeBase_;
-  typedef typename boost::ptr_vector<VariableChangeBase_> ChvarVec_;
+  typedef LinearVariableChangeBase<MODEL>  LinearVariableChangeBase_;
+  typedef typename boost::ptr_vector<LinearVariableChangeBase_> ChvarVec_;
   typedef typename ChvarVec_::iterator iter_;
   typedef typename ChvarVec_::const_iterator icst_;
   typedef typename ChvarVec_::const_reverse_iterator ircst_;
@@ -52,7 +52,7 @@ class ModelSpaceCovarianceBase {
   explicit ModelSpaceCovarianceBase(const eckit::Configuration & conf);
   virtual ~ModelSpaceCovarianceBase() {}
 
-  const VariableChangeBase_ & getK(const unsigned & ii) const {return *chvars_[ii];}
+  const LinearVariableChangeBase_ & getK(const unsigned & ii) const {return *chvars_[ii];}
   bool hasK() const { return (chvars_.size() == 0) ? false : true; }
 
   void linearize(const State_ &, const Geometry_ &);
@@ -154,7 +154,7 @@ ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(const eckit::Configura
     std::vector<eckit::LocalConfiguration> chvarconfs;
     conf.get("variable_changes", chvarconfs);
     for (const auto & config : chvarconfs)
-      chvars_.push_back(VariableChangeFactory<MODEL>::create(config));
+      chvars_.push_back(LinearVariableChangeFactory<MODEL>::create(config));
   }
 }
 

@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 #include <boost/noncopyable.hpp>
-#include "oops/base/VariableChangeBase.h"
+#include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -28,7 +28,7 @@ namespace oops {
 /// Derived class of generic variable transform for statistical
 
 template <typename MODEL>
-class StatsVariableChange : public VariableChangeBase<MODEL> {
+class StatsVariableChange : public LinearVariableChangeBase<MODEL> {
   typedef Geometry<MODEL>            Geometry_;
   typedef Increment<MODEL>           Increment_;
   typedef State<MODEL>               State_;
@@ -62,7 +62,7 @@ class StatsVariableChange : public VariableChangeBase<MODEL> {
 
 template<typename MODEL>
 StatsVariableChange<MODEL>::StatsVariableChange(const eckit::Configuration & conf)
-  : VariableChangeBase<MODEL>(conf)
+  : LinearVariableChangeBase<MODEL>(conf)
 {
   Log::trace() << "StatsVariableChange<MODEL>::StatsVariableChange starting" << std::endl;
   Log::trace() << "StatsVariableChange<MODEL>::StatsVariableChange done" << std::endl;

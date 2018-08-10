@@ -105,7 +105,7 @@ oops/base/PostTimer.cc
 oops/base/StateInfo.h
 oops/base/StateWriter.h
 oops/base/TrajectorySaver.h
-oops/base/VariableChangeBase.h
+oops/base/LinearVariableChangeBase.h
 oops/base/Variables.h
 oops/base/Variables.cc
 oops/base/WeightedDiff.h
@@ -127,7 +127,7 @@ oops/generic/dcmip_initial_conditions_test_1_2_3_v5.f90
 oops/generic/dcmip_initial_conditions_test_4_v3.f90
 oops/generic/instantiateLocalizationFactory.h
 oops/generic/instantiateObsErrorFactory.h
-oops/generic/instantiateVariableChangeFactory.h
+oops/generic/instantiateLinearVariableChangeFactory.h
 oops/generic/unstructured_grid_f.h
 oops/generic/unstructured_grid_mod.F90
 oops/generic/StatsVariableChange.h
@@ -200,7 +200,7 @@ oops/interface/ObsSpaceBase.h
 oops/interface/ObsVector.h
 oops/interface/ObservationSpace.h
 oops/interface/State.h
-oops/interface/VariableChange.h
+oops/interface/LinearVariableChange.h
 
 oops/runs/Application.h
 oops/runs/Dirac.h
@@ -264,7 +264,7 @@ test/interface/ObservationSpace.h
 test/interface/ObsOperator.h
 test/interface/ObsTestsFixture.h
 test/interface/ObsVector.h
-test/interface/VariableChange.h
+test/interface/LinearVariableChange.h
 test/TestEnvironment.h
 
 )

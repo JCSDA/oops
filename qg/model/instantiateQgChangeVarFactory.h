@@ -13,14 +13,14 @@
 
 #include "model/ChangeVar.h"
 #include "model/QgTraits.h"
-#include "oops/interface/VariableChange.h"
+#include "oops/interface/LinearVariableChange.h"
 
 namespace qg {
 
 void instantiateQgChangeVarFactory() {
-  static oops::VariableChangeMaker<qg::QgTraits,
-                                   oops::VariableChange<qg::QgTraits, qg::ChangeVar> >
-               makerChangeVarQG_("ChVarQG");
+  static oops::LinearVariableChangeMaker<qg::QgTraits,
+                                         oops::LinearVariableChange<qg::QgTraits, qg::ChangeVar> >
+    makerChangeVarQG_("ChVarQG");
 }
 
 }  // namespace qg

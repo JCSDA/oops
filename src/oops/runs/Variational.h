@@ -26,9 +26,9 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
 #include "oops/base/StateWriter.h"
+#include "oops/generic/instantiateLinearVariableChangeFactory.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/generic/instantiateTlmFactory.h"
-#include "oops/generic/instantiateVariableChangeFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Model.h"
 #include "oops/interface/State.h"
@@ -52,7 +52,7 @@ template <typename MODEL> class Variational : public Application {
     instantiateMinFactory<MODEL>();
     instantiateObsErrorFactory<MODEL>();
     instantiateTlmFactory<MODEL>();
-    instantiateVariableChangeFactory<MODEL>();
+    instantiateLinearVariableChangeFactory<MODEL>();
   }
 // -----------------------------------------------------------------------------
   virtual ~Variational() {}
