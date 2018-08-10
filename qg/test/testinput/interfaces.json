@@ -62,15 +62,26 @@
     "finalnorm": "13.965",
     "tolerance": "0.005"
   },
-  "LinearVariableChangeTest": {
-    "varchange": "StatsVariableChange",
-    "inputVariables": {
-      "variables": ["x"]
-    },
-    "outputVariables": {
-      "variables": ["x"]
-    }
-  },
+  "LinearVariableChangeTests": [
+      {
+          "varchange": "StatsVariableChange",
+          "inputVariables": {
+              "variables": ["x"]
+          },
+          "outputVariables": {
+              "variables": ["x"]
+          }
+      },
+      {
+          "varchange": "ChVarQG",
+          "inputVariables": {
+              "variables": ["x"]
+          },
+          "outputVariables": {
+              "variables": ["x"]
+          }
+      }
+  ],    
   "Covariance": {
     "covariance": "QgError",
     "standard_deviation": "0.8",

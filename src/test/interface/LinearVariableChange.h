@@ -40,16 +40,13 @@ namespace test {
 // =============================================================================
 
 template <typename MODEL> class LinearVariableChangeFixture : private boost::noncopyable {
-  typedef oops::LinearVariableChangeBase<MODEL>  LinearVariableChange_;
-  typedef oops::Geometry<MODEL>            Geometry_;
-
+  typedef oops::Geometry<MODEL>                  Geometry_;
+  
  public:
-  static const eckit::Configuration  & test()      {return *getInstance().test_;}
-  static const Geometry_             & resol()     {return *getInstance().resol_;}
-  static const oops::Variables       & varin()     {return *getInstance().varin_;}
-  static const oops::Variables       & varout()    {return *getInstance().varout_;}
-  static const util::DateTime        & time()      {return *getInstance().time_;}
-  static const LinearVariableChange_ & changevar() {return *getInstance().K_;}
+  static std::vector<eckit::LocalConfiguration>
+                                     & linvarchgconfs()      {return getInstance().linvarchgconfs_;}
+  static const Geometry_             & resol()               {return *getInstance().resol_;}
+  static const util::DateTime        & time()                {return *getInstance().time_;}
 
  private:
   static LinearVariableChangeFixture<MODEL>& getInstance() {
@@ -60,9 +57,6 @@ template <typename MODEL> class LinearVariableChangeFixture : private boost::non
   LinearVariableChangeFixture<MODEL>() {
     oops::instantiateLinearVariableChangeFactory<MODEL>();
 
-    test_.reset(new eckit::LocalConfiguration(TestEnvironment::config(),
-                                              "LinearVariableChangeTest"));
-
     const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "Geometry");
     resol_.reset(new Geometry_(resolConfig));
 
@@ -70,49 +64,48 @@ template <typename MODEL> class LinearVariableChangeFixture : private boost::non
     oops::State<MODEL> xx(*resol_, fgconf);
 
     time_.reset(new util::DateTime(xx.validTime()));
-
-//  Setup the change of variable
-    const eckit::LocalConfiguration varinconf(*test_, "inputVariables");
-    varin_.reset(new oops::Variables(varinconf));
-
-    const eckit::LocalConfiguration varoutconf(*test_, "outputVariables");
-    varout_.reset(new oops::Variables(varoutconf));
-
-    K_.reset(oops::LinearVariableChangeFactory<MODEL>::create(*test_));
-    K_->linearize(xx, *resol_);
+    
+    TestEnvironment::config().get("LinearVariableChangeTests", linvarchgconfs_);
   }
 
   ~LinearVariableChangeFixture<MODEL>() {}
 
-  boost::scoped_ptr<const eckit::LocalConfiguration> test_;
+  std::vector<eckit::LocalConfiguration>             linvarchgconfs_;
   boost::scoped_ptr<const Geometry_>                 resol_;
-  boost::scoped_ptr<const oops::Variables>           varin_;
-  boost::scoped_ptr<const oops::Variables>           varout_;
-  boost::scoped_ptr<const util::DateTime>            time_;
-  boost::scoped_ptr<LinearVariableChange_>           K_;
+  boost::scoped_ptr<const util::DateTime>            time_;  
 };
 
 // =============================================================================
 
 template <typename MODEL> void testLinearVariableChangeZero() {
-  typedef LinearVariableChangeFixture<MODEL>   Test_;
-  typedef oops::Increment<MODEL>    Increment_;
+  typedef LinearVariableChangeFixture<MODEL>       Test_;
+  typedef oops::Increment<MODEL>                   Increment_;
+  typedef oops::LinearVariableChangeBase<MODEL>    LinearVariableChange_;
+  typedef oops::LinearVariableChangeFactory<MODEL> LinearVariableChangeFactory_;
+  
+  for (std::size_t jj = 0; jj < Test_::linvarchgconfs().size(); ++jj) {
+    
+    eckit::LocalConfiguration varinconf(Test_::linvarchgconfs()[jj], "inputVariables");
+    eckit::LocalConfiguration varoutconf(Test_::linvarchgconfs()[jj], "outputVariables");    
+    oops::Variables varin(varinconf);
+    oops::Variables varout(varoutconf);
 
-  Increment_ dxin(Test_::resol(), Test_::varin(), Test_::time());
-  Increment_ dxout(Test_::resol(), Test_::varout(), Test_::time());
+    boost::scoped_ptr<LinearVariableChange_>
+      changevar(LinearVariableChangeFactory_::create(Test_::linvarchgconfs()[jj]));
 
-  // dxin = 0, check if K.dxin = 0
-  dxin.zero();
-  dxout.zero();
-  dxout = Test_::changevar().multiply(dxin);
-  BOOST_CHECK_EQUAL(dxout.norm(), 0.0);
+    Increment_ dxin(Test_::resol(), varin, Test_::time());
+    Increment_ dxout(Test_::resol(), varout, Test_::time());
+  
+    // dxout = 0, check if K.dxout = 0
+    dxout.zero();
+    dxin = changevar->multiply(dxout);
+    BOOST_CHECK_EQUAL(dxin.norm(), 0.0);
 
-  // dxout = 0
-  // test K^T.dxout = 0
-  dxin.zero();
-  dxout.zero();
-  dxin = Test_::changevar().multiplyAD(dxout);
-  BOOST_CHECK_EQUAL(dxin.norm(), 0.0);
+    // dxin = 0, check if K^T.dxin = 0  
+    dxin.zero();
+    dxout = changevar->multiplyAD(dxin);
+    BOOST_CHECK_EQUAL(dxout.norm(), 0.0);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -123,25 +116,43 @@ template <typename MODEL> void testLinearVariableChangeInverse() {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL> void testLinearVariableChangeAdjoint() {
-  typedef LinearVariableChangeFixture<MODEL>   Test_;
-  typedef oops::Increment<MODEL>    Increment_;
+  typedef LinearVariableChangeFixture<MODEL>       Test_;
+  typedef oops::Increment<MODEL>                   Increment_;
+  typedef oops::LinearVariableChangeBase<MODEL>    LinearVariableChange_;
+  typedef oops::LinearVariableChangeFactory<MODEL> LinearVariableChangeFactory_;
 
-  Increment_ dxin(Test_::resol(), Test_::varin(), Test_::time());
-  Increment_ Kdxin(Test_::resol(), Test_::varout(), Test_::time());
-  Increment_ dxout(Test_::resol(), Test_::varout(), Test_::time());
-  Increment_ KTdxout(Test_::resol(), Test_::varin(), Test_::time());
+  for (std::size_t jj = 0; jj < Test_::linvarchgconfs().size(); ++jj) {
+    
+    eckit::LocalConfiguration varinconf(Test_::linvarchgconfs()[jj], "inputVariables");
+    eckit::LocalConfiguration varoutconf(Test_::linvarchgconfs()[jj], "outputVariables");    
+    oops::Variables varin(varinconf);
+    oops::Variables varout(varoutconf);
 
-  dxin.random();
-  dxout.random();
+    boost::scoped_ptr<LinearVariableChange_>
+      changevar(LinearVariableChangeFactory_::create(Test_::linvarchgconfs()[jj]));
 
-  const double zz1 = dot_product(dxout, Test_::changevar().multiply(dxin));
-  const double zz2 = dot_product(Test_::changevar().multiply(dxout), dxin);
-  oops::Log::info() << "<dxout,Kdxin>-<KTdxout,dxin>/<dxout,Kdxin>="
-                    <<  (zz1-zz2)/zz1 << std::endl;
-  oops::Log::info() << "<dxout,Kdxin>-<KTdxout,dxin>/<KTdxout,dxin>="
-                    <<  (zz1-zz2)/zz2 << std::endl;
-  const double tol = 1e-8;
-  BOOST_CHECK_CLOSE(zz1, zz2, tol);
+    Increment_ dxin(Test_::resol(), varin, Test_::time());
+    Increment_ Kdxout(Test_::resol(), varin, Test_::time());    
+    Increment_ dxout(Test_::resol(), varout, Test_::time());
+    Increment_ KTdxin(Test_::resol(), varout, Test_::time());  
+
+    dxin.random();
+    dxout.random();
+
+    // zz1 = <Kdxout,dxin>
+    Kdxout = changevar->multiply(dxout);
+    const double zz1 = dot_product(Kdxout,dxin);
+
+    // zz2 = <dxout,KTdxin>
+    KTdxin = changevar->multiplyAD(dxin);
+    const double zz2 = dot_product(dxout, KTdxin);
+    oops::Log::info() << "<dxout,KTdxin>-<Kdxout,dxin>/<dxout,KTdxin>="
+		      <<  (zz1-zz2)/zz1 << std::endl;
+    oops::Log::info() << "<dxout,KTdxin>-<Kdxout,dxin>/<Kdxout,dxin>="
+		      <<  (zz1-zz2)/zz2 << std::endl;
+    const double tol = 1e-8;
+    BOOST_CHECK_CLOSE(zz1, zz2, tol);
+  }
 }
 
 // =============================================================================
