@@ -106,14 +106,14 @@ template <typename MODEL> void testChangeVariableZero() {
   // dxin = 0, check if K.dxin = 0
   dxin.zero();
   dxout.zero();
-  dxout = Test_::changevar().transform(dxin);
+  dxout = Test_::changevar().multiply(dxin);
   BOOST_CHECK_EQUAL(dxout.norm(), 0.0);
 
   // dxout = 0
   // test K^T.dxout = 0
   dxin.zero();
   dxout.zero();
-  dxin = Test_::changevar().transformAD(dxout);
+  dxin = Test_::changevar().multiplyAD(dxout);
   BOOST_CHECK_EQUAL(dxin.norm(), 0.0);
 }
 
@@ -138,8 +138,8 @@ template <typename MODEL> void testChangeVariableAdjoint() {
   dxin.random();
   dxout.random();
 
-  const double zz1 = dot_product(dxout, Test_::changevar().transform(dxin));
-  const double zz2 = dot_product(Test_::changevar().transform(dxout), dxin);
+  const double zz1 = dot_product(dxout, Test_::changevar().multiply(dxin));
+  const double zz2 = dot_product(Test_::changevar().multiply(dxout), dxin);
   oops::Log::info() << "<dxout,Kdxin>-<KTdxout,dxin>/<dxout,Kdxin>="
                     <<  (zz1-zz2)/zz1 << std::endl;
   oops::Log::info() << "<dxout,Kdxin>-<KTdxout,dxin>/<KTdxout,dxin>="

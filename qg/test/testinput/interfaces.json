@@ -63,7 +63,7 @@
     "tolerance": "0.005"
   },
   "ChangeVariableTest": {
-      "varchange": "StatVariableChange",
+      "varchange": "StatsVariableChange",
       "inputVariables": {
           "variables": ["x"]
       },
