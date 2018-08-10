@@ -14,6 +14,7 @@
 #include <cmath>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API
@@ -41,7 +42,7 @@ namespace test {
 
 template <typename MODEL> class LinearVariableChangeFixture : private boost::noncopyable {
   typedef oops::Geometry<MODEL>                  Geometry_;
-  
+
  public:
   static std::vector<eckit::LocalConfiguration>
                                      & linvarchgconfs()      {return getInstance().linvarchgconfs_;}
@@ -64,7 +65,7 @@ template <typename MODEL> class LinearVariableChangeFixture : private boost::non
     oops::State<MODEL> xx(*resol_, fgconf);
 
     time_.reset(new util::DateTime(xx.validTime()));
-    
+
     TestEnvironment::config().get("LinearVariableChangeTests", linvarchgconfs_);
   }
 
@@ -72,7 +73,7 @@ template <typename MODEL> class LinearVariableChangeFixture : private boost::non
 
   std::vector<eckit::LocalConfiguration>             linvarchgconfs_;
   boost::scoped_ptr<const Geometry_>                 resol_;
-  boost::scoped_ptr<const util::DateTime>            time_;  
+  boost::scoped_ptr<const util::DateTime>            time_;
 };
 
 // =============================================================================
@@ -82,11 +83,10 @@ template <typename MODEL> void testLinearVariableChangeZero() {
   typedef oops::Increment<MODEL>                   Increment_;
   typedef oops::LinearVariableChangeBase<MODEL>    LinearVariableChange_;
   typedef oops::LinearVariableChangeFactory<MODEL> LinearVariableChangeFactory_;
-  
+
   for (std::size_t jj = 0; jj < Test_::linvarchgconfs().size(); ++jj) {
-    
     eckit::LocalConfiguration varinconf(Test_::linvarchgconfs()[jj], "inputVariables");
-    eckit::LocalConfiguration varoutconf(Test_::linvarchgconfs()[jj], "outputVariables");    
+    eckit::LocalConfiguration varoutconf(Test_::linvarchgconfs()[jj], "outputVariables");
     oops::Variables varin(varinconf);
     oops::Variables varout(varoutconf);
 
@@ -95,13 +95,13 @@ template <typename MODEL> void testLinearVariableChangeZero() {
 
     Increment_ dxin(Test_::resol(), varin, Test_::time());
     Increment_ dxout(Test_::resol(), varout, Test_::time());
-  
+
     // dxout = 0, check if K.dxout = 0
     dxout.zero();
     dxin = changevar->multiply(dxout);
     BOOST_CHECK_EQUAL(dxin.norm(), 0.0);
 
-    // dxin = 0, check if K^T.dxin = 0  
+    // dxin = 0, check if K^T.dxin = 0
     dxin.zero();
     dxout = changevar->multiplyAD(dxin);
     BOOST_CHECK_EQUAL(dxout.norm(), 0.0);
@@ -122,9 +122,8 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
   typedef oops::LinearVariableChangeFactory<MODEL> LinearVariableChangeFactory_;
 
   for (std::size_t jj = 0; jj < Test_::linvarchgconfs().size(); ++jj) {
-    
     eckit::LocalConfiguration varinconf(Test_::linvarchgconfs()[jj], "inputVariables");
-    eckit::LocalConfiguration varoutconf(Test_::linvarchgconfs()[jj], "outputVariables");    
+    eckit::LocalConfiguration varoutconf(Test_::linvarchgconfs()[jj], "outputVariables");
     oops::Variables varin(varinconf);
     oops::Variables varout(varoutconf);
 
@@ -132,24 +131,24 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
       changevar(LinearVariableChangeFactory_::create(Test_::linvarchgconfs()[jj]));
 
     Increment_ dxin(Test_::resol(), varin, Test_::time());
-    Increment_ Kdxout(Test_::resol(), varin, Test_::time());    
+    Increment_ Kdxout(Test_::resol(), varin, Test_::time());
     Increment_ dxout(Test_::resol(), varout, Test_::time());
-    Increment_ KTdxin(Test_::resol(), varout, Test_::time());  
+    Increment_ KTdxin(Test_::resol(), varout, Test_::time());
 
     dxin.random();
     dxout.random();
 
     // zz1 = <Kdxout,dxin>
     Kdxout = changevar->multiply(dxout);
-    const double zz1 = dot_product(Kdxout,dxin);
+    const double zz1 = dot_product(Kdxout, dxin);
 
     // zz2 = <dxout,KTdxin>
     KTdxin = changevar->multiplyAD(dxin);
     const double zz2 = dot_product(dxout, KTdxin);
     oops::Log::info() << "<dxout,KTdxin>-<Kdxout,dxin>/<dxout,KTdxin>="
-		      <<  (zz1-zz2)/zz1 << std::endl;
+                      << (zz1-zz2)/zz1 << std::endl;
     oops::Log::info() << "<dxout,KTdxin>-<Kdxout,dxin>/<Kdxout,dxin>="
-		      <<  (zz1-zz2)/zz2 << std::endl;
+                      << (zz1-zz2)/zz2 << std::endl;
     const double tol = 1e-8;
     BOOST_CHECK_CLOSE(zz1, zz2, tol);
   }
