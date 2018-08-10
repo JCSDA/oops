@@ -45,7 +45,6 @@ struct QgTraits {
   typedef qg::ModelQG               Model;
   typedef qg::IncrementQG           Increment;
   typedef qg::ErrorCovarianceQG     Covariance;
-  typedef qg::ChangeVar             ChangeVar;
   typedef qg::Nothing               InterpolatorTraj;
 
   typedef qg::ModelBias             ModelAuxControl;

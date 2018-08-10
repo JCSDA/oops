@@ -13,8 +13,8 @@ use kinds
 
 implicit none
 private
-public unstructured_grid, create_unstructured_grid, delete_unstructured_grid, &
-     & unstructured_grid_registry
+public unstructured_grid, allocate_unstructured_grid_coord, allocate_unstructured_grid_field, &
+     & delete_unstructured_grid, unstructured_grid_registry
 
 ! ------------------------------------------------------------------------------
 
@@ -29,7 +29,7 @@ type unstructured_grid
   real(kind=kind_real),allocatable :: lat(:)       !> Latitude (in degrees: -90 to 90)
   real(kind=kind_real),allocatable :: area(:)      !> Area (in m^2)
   real(kind=kind_real), allocatable :: vunit(:,:)  !> Vertical unit
-  integer,allocatable :: imask(:,:)                !> Mask
+  logical,allocatable :: lmask(:,:)                !> Mask
   real(kind=kind_real),allocatable :: fld(:,:,:,:) !> Data
 end type unstructured_grid
 
@@ -79,159 +79,29 @@ end subroutine
 
 ! ------------------------------------------------------------------------------
 
-subroutine get_size_c(key, ind, isize) bind(c, name='get_size_f90')
+subroutine allocate_unstructured_grid_coord(self)
 implicit none
-integer(c_int), intent(inout) :: key
-integer(c_int), intent(in) :: ind
-integer,intent(out) :: isize
+type(unstructured_grid), intent(inout) :: self
 
-type(unstructured_grid), pointer :: self
+! Allocation
+if (.not.allocated(self%lon)) allocate(self%lon(self%nmga))
+if (.not.allocated(self%lat)) allocate(self%lat(self%nmga))
+if (.not.allocated(self%area)) allocate(self%area(self%nmga))
+if (.not.allocated(self%vunit)) allocate(self%vunit(self%nmga,self%nl0))
+if (.not.allocated(self%lmask)) allocate(self%lmask(self%nmga,self%nl0))
 
-call unstructured_grid_registry%get(key,self)
-select case (ind)
-case (1)
-   ! Number of gridpoints
-   isize = self%nmga
-case (2)
-   ! Number of levels
-   isize = self%nl0
-case (3)
-   ! Number of variables
-   isize = self%nv
-case (4)
-   ! Number of timeslots
-   isize= self%nts
-end select
-
-end subroutine get_size_c
-
-!-------------------------------------------------------------------------------
-
-subroutine get_lon_c(key, n, lon) bind(c, name='get_lon_f90')
-implicit none
-integer(c_int), intent(inout) :: key
-integer(c_int), intent(in) :: n
-real(kind=kind_real),intent(out) :: lon(n)
-
-type(unstructured_grid), pointer :: self
-
-call unstructured_grid_registry%get(key,self)
-lon = self%lon
-
-end subroutine get_lon_c
-
-!-------------------------------------------------------------------------------
-
-subroutine get_lat_c(key, n, lat) bind(c, name='get_lat_f90')
-implicit none
-integer(c_int), intent(inout) :: key
-integer(c_int), intent(in) :: n
-real(kind=kind_real),intent(out) :: lat(n)
-
-type(unstructured_grid), pointer :: self
-
-call unstructured_grid_registry%get(key,self)
-lat = self%lat
-
-end subroutine get_lat_c
-
-!-------------------------------------------------------------------------------
-
-subroutine get_area_c(key, n, area) bind(c, name='get_area_f90')
-implicit none
-integer(c_int), intent(inout) :: key
-integer(c_int), intent(in) :: n
-real(kind=kind_real),intent(out) :: area(n)
-
-type(unstructured_grid), pointer :: self
-
-call unstructured_grid_registry%get(key,self)
-area = self%area
-
-end subroutine get_area_c
-
-!-------------------------------------------------------------------------------
-
-subroutine get_vunit_c(key, n, vunit) bind(c, name='get_vunit_f90')
-implicit none
-integer(c_int), intent(inout) :: key
-integer(c_int), intent(in) :: n
-real(kind=kind_real),intent(out) :: vunit(n)
-
-type(unstructured_grid), pointer :: self
-
-call unstructured_grid_registry%get(key,self)
-vunit = pack(self%vunit,mask=.true.)
-
-end subroutine get_vunit_c
-
-!-------------------------------------------------------------------------------
-
-subroutine get_imask_c(key, n, imask) bind(c, name='get_imask_f90')
-implicit none
-integer(c_int), intent(inout) :: key
-integer,intent(in) :: n
-integer,intent(out) :: imask(n)
-
-type(unstructured_grid), pointer :: self
-
-call unstructured_grid_registry%get(key,self)
-imask = pack(self%imask,mask=.true.)
-
-end subroutine get_imask_c
-
-!-------------------------------------------------------------------------------
-
-subroutine get_data_c(key, n, fld) bind(c, name='get_data_f90')
-implicit none
-integer(c_int), intent(inout) :: key
-integer(c_int), intent(in) :: n
-real(kind=kind_real),intent(out) :: fld(n)
-
-type(unstructured_grid), pointer :: self
-
-call unstructured_grid_registry%get(key,self)
-fld = pack(self%fld,mask=.true.)
-
-end subroutine get_data_c
+end subroutine allocate_unstructured_grid_coord
 
 ! ------------------------------------------------------------------------------
 
-subroutine create_unstructured_grid(self, nmga, nl0, nv, nts, lon, lat, area, vunit, imask)
+subroutine allocate_unstructured_grid_field(self)
 implicit none
 type(unstructured_grid), intent(inout) :: self
-integer, intent(in) :: nmga
-integer, intent(in) :: nl0
-integer, intent(in) :: nv
-integer, intent(in) :: nts
-real(kind=kind_real), intent(in) :: lon(nmga)
-real(kind=kind_real), intent(in) :: lat(nmga)
-real(kind=kind_real), intent(in) :: area(nmga)
-real(kind=kind_real), intent(in) :: vunit(nmga,nl0)
-integer, intent(in) :: imask(nmga,nl0)
-
-! Copy sizes
-self%nmga = nmga
-self%nl0 = nl0
-self%nv = nv
-self%nts = nts
 
 ! Allocation
-allocate(self%lon(nmga))
-allocate(self%lat(nmga))
-allocate(self%area(nmga))
-allocate(self%vunit(nmga,nl0))
-allocate(self%imask(nmga,nl0))
-allocate(self%fld(nmga,nl0,nv,nts))
+if (.not.allocated(self%fld)) allocate(self%fld(self%nmga,self%nl0,self%nv,self%nts))
 
-! Copy coordinates
-self%lon = lon
-self%lat = lat
-self%area = area
-self%vunit = vunit
-self%imask = imask
-
-end subroutine create_unstructured_grid
+end subroutine allocate_unstructured_grid_field
 
 !-------------------------------------------------------------------------------
 
@@ -240,12 +110,12 @@ implicit none
 type(unstructured_grid), intent(inout) :: self
 
 ! Release memory 
-deallocate(self%lon)
-deallocate(self%lat)
-deallocate(self%area)
-deallocate(self%vunit)
-deallocate(self%imask)
-deallocate(self%fld)
+if (allocated(self%lon)) deallocate(self%lon)
+if (allocated(self%lat)) deallocate(self%lat)
+if (allocated(self%area)) deallocate(self%area)
+if (allocated(self%vunit)) deallocate(self%vunit)
+if (allocated(self%lmask)) deallocate(self%lmask)
+if (allocated(self%fld)) deallocate(self%fld)
 
 end subroutine delete_unstructured_grid
 

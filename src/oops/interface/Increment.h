@@ -95,9 +95,10 @@ class Increment : public oops::GeneralizedDepartures,
 /// Get geometry
   Geometry_ geometry() const;
 
-/// Convert to/from generic unstructured grid
-  void convert_to(UnstructuredGrid &) const;
-  void convert_from(const UnstructuredGrid &);
+/// Unstructured grid
+  void ug_coord(UnstructuredGrid &) const;
+  void field_to_ug(UnstructuredGrid &) const;
+  void field_from_ug(const UnstructuredGrid &);
 
  private:
   void print(std::ostream &) const;
@@ -364,21 +365,31 @@ Geometry<MODEL> Increment<MODEL>::geometry() const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void Increment<MODEL>::convert_to(UnstructuredGrid & ug) const {
-  Log::trace() << "Increment<MODEL>::convert_to starting" << std::endl;
-  util::Timer timer(classname(), "convert_to");
-  increment_->convert_to(ug);
-  Log::trace() << "Increment<MODEL>::convert_to done" << std::endl;
+void Increment<MODEL>::ug_coord(UnstructuredGrid & ug) const {
+  Log::trace() << "Increment<MODEL>::ug_coord starting" << std::endl;
+  util::Timer timer(classname(), "ug_coord");
+  increment_->ug_coord(ug);
+  Log::trace() << "Increment<MODEL>::ug_coord done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void Increment<MODEL>::convert_from(const UnstructuredGrid & ug) {
-  Log::trace() << "Increment<MODEL>::convert_from starting" << std::endl;
-  util::Timer timer(classname(), "convert_from");
-  increment_->convert_from(ug);
-  Log::trace() << "Increment<MODEL>::convert_from done" << std::endl;
+void Increment<MODEL>::field_to_ug(UnstructuredGrid & ug) const {
+  Log::trace() << "Increment<MODEL>::field_to_ug starting" << std::endl;
+  util::Timer timer(classname(), "field_to_ug");
+  increment_->field_to_ug(ug);
+  Log::trace() << "Increment<MODEL>::field_to_ug done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::field_from_ug(const UnstructuredGrid & ug) {
+  Log::trace() << "Increment<MODEL>::field_from_ug starting" << std::endl;
+  util::Timer timer(classname(), "field_from_ug");
+  increment_->field_from_ug(ug);
+  Log::trace() << "Increment<MODEL>::field_from_ug done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

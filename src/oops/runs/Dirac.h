@@ -79,8 +79,14 @@ template <typename MODEL> class Dirac : public Application {
     dxrnd.random();
     Log::info() << "Setup increments OK" << std::endl;
 
-//  Setup localization
+//  Setup full ensemble B matrix
     const eckit::LocalConfiguration covarConfig(fullConfig, "Covariance");
+    boost::scoped_ptr< ModelSpaceCovarianceBase<MODEL> >
+      Bens(CovarianceFactory<MODEL>::create(covarConfig, resol, vars, xx));
+    Bens->linearize(xx, resol);
+    Log::info() << "Setup full ensemble B matrix OK" << std::endl;
+
+//  Setup localization
     const eckit::LocalConfiguration locConfig(covarConfig, "localization");
     boost::scoped_ptr<Localization_> loc_;
     loc_.reset(new Localization_(resol, locConfig));
@@ -98,12 +104,6 @@ template <typename MODEL> class Dirac : public Application {
     dxdirout.write(output_bump);
     Log::info() << "Write increment OK" << std::endl;
     Log::test() << "Increment norm: " << dxrndout.norm() << std::endl;
-
-//  Setup full ensemble B matrix
-    boost::scoped_ptr< ModelSpaceCovarianceBase<MODEL> >
-      Bens(CovarianceFactory<MODEL>::create(covarConfig, resol, vars, xx));
-    Bens->linearize(xx, resol);
-    Log::info() << "Setup full ensemble B matrix OK" << std::endl;
 
 //  Apply full ensemble B matrix to Dirac increment
     Bens->multiply(dxdir, dxdirout);

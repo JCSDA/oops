@@ -77,7 +77,7 @@ class ErrorCovariance : public oops::ModelSpaceCovarianceBase<MODEL>,
 template<typename MODEL>
 ErrorCovariance<MODEL>::ErrorCovariance(const Geometry_ & resol, const Variables & vars,
                                         const eckit::Configuration & conf, const State_ & xb)
-  : ModelSpaceCovarianceBase<MODEL>(resol, vars, conf, xb), covariance_()
+  : ModelSpaceCovarianceBase<MODEL>(conf), covariance_()
 {
   Log::trace() << "ErrorCovariance<MODEL>::ErrorCovariance starting" << std::endl;
   util::Timer timer(classname(), "ErrorCovariance");

@@ -1,8 +1,8 @@
 /*
  * (C) Copyright 2017 UCAR
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
 #ifndef OOPS_GENERIC_UNSTRUCTUREDGRID_H_
@@ -29,15 +29,6 @@ class UnstructuredGrid : public util::Printable,
 
   UnstructuredGrid();
   ~UnstructuredGrid();
-
-// Get local geometry
-  int getSize(const int &);
-  std::vector<double> getLon();
-  std::vector<double> getLat();
-  std::vector<double> getArea();
-  std::vector<double> getVunit();
-  std::vector<int> getImask();
-  std::vector<double> getData();
 
 // Will be useful for tests
   void zero();

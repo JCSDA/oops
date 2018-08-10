@@ -19,8 +19,8 @@
 #include "oops/base/EnsemblesCollection.h"
 #include "oops/base/IdentityMatrix.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
+#include "oops/base/VariableChangeBase.h"
 #include "oops/base/Variables.h"
-#include "oops/generic/VariableChangeBase.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/Localization.h"
@@ -69,7 +69,7 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL> {
 template<typename MODEL>
 EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Variables & vars,
                                               const eckit::Configuration & conf, const State_ & xb)
-  : ModelSpaceCovarianceBase<MODEL>(resol, vars, conf, xb),
+  : ModelSpaceCovarianceBase<MODEL>(conf),
     config_(conf), time_(config_.getString("date")), loc_()
 {
   Log::trace() << "EnsembleCovariance created." << std::endl;

@@ -18,7 +18,7 @@ use type_bump, only: bump_type
 
 implicit none
 private
-public create_bump, delete_bump, bump_multiply, bump_read_conf
+public create_bump, delete_bump, add_bump_member, bump_multiply, run_bump_drivers, bump_read_conf
 
 #ifndef notdef_
   INCLUDE 'mpif.h'
@@ -44,36 +44,26 @@ contains
 !  C++ interfaces
 ! ------------------------------------------------------------------------------
 
-subroutine create_bump_c(key, c_conf, nmga, nl0, nv, nts, lon, lat, area, vunit, imask, ens1_ne, ens1) &
- & bind(c, name='create_bump_f90')
+subroutine create_bump_c(key, idx, c_conf, ens1_ne) bind(c, name='create_bump_f90')
 implicit none
 integer(c_int), intent(inout) :: key
+integer(c_int), intent(in) :: idx
 type(c_ptr), intent(in) :: c_conf
-integer(c_int), intent(in) :: nmga
-integer(c_int), intent(in) :: nl0
-integer(c_int), intent(in) :: nv
-integer(c_int), intent(in) :: nts
-real(c_double), intent(in) :: lon(nmga)
-real(c_double), intent(in) :: lat(nmga)
-real(c_double), intent(in) :: area(nmga)
-real(c_double), intent(in) :: vunit(nmga*nl0)
-integer(c_int), intent(in) :: imask(nmga*nl0)
-integer(c_int), intent(in) :: ens1_ne
-real(c_double), intent(in) :: ens1(nmga*nl0*nv*nts*ens1_ne)
+integer, intent(in) :: ens1_ne
 
 type(bump_type), pointer :: self
+type(unstructured_grid), pointer :: ug
 
-! Initialize bump registry
+! Initialize BUMP registry
 call bump_registry%init()
 call bump_registry%add(key)
 call bump_registry%get(key,self)
 
-! Create bump
-if (ens1_ne>0) then
-   call create_bump(self, c_conf, nmga, nl0, nv, nts, lon, lat, area, vunit, imask, ens1_ne, ens1)
-else
-   call create_bump(self, c_conf, nmga, nl0, nv, nts, lon, lat, area, vunit, imask)
-end if
+! Get unstrucutred grid
+call unstructured_grid_registry%get(idx, ug)
+
+! Create BUMP
+call create_bump(self, ug, c_conf, ens1_ne)
 
 end subroutine create_bump_c
 
@@ -85,11 +75,54 @@ integer(c_int), intent(inout) :: key
 
 type(bump_type), pointer :: self
 
+! Get BUMP
 call bump_registry%get(key,self)
+
+! Delete BUMP
 call delete_bump(self)
+
+! Delete registry key
 call bump_registry%remove(key)
 
 end subroutine delete_bump_c
+
+! ------------------------------------------------------------------------------
+
+subroutine add_bump_member_c(key, idx, ie) bind(c, name='add_bump_member_f90')
+implicit none
+integer(c_int), intent(in) :: key
+integer(c_int), intent(in) :: idx
+integer, intent(in) :: ie
+
+type(bump_type), pointer :: self
+type(unstructured_grid), pointer :: ug
+
+! Get BUMP
+call bump_registry%get(key,self)
+
+! Get unstrucutred grid
+call unstructured_grid_registry%get(idx, ug)
+
+! Add BUMP member
+call add_bump_member(self, ug, ie)
+
+end subroutine add_bump_member_c
+
+! ------------------------------------------------------------------------------
+
+subroutine run_bump_drivers_c(key) bind(c, name='run_bump_drivers_f90')
+implicit none
+integer(c_int), intent(in) :: key
+
+type(bump_type), pointer :: self
+
+! Get BUMP
+call bump_registry%get(key,self)
+
+! Run BUMP drivers
+call run_bump_drivers(self)
+
+end subroutine run_bump_drivers_c
 
 ! ------------------------------------------------------------------------------
 
@@ -101,8 +134,13 @@ integer(c_int), intent(in) :: idx
 type(bump_type), pointer :: self
 type(unstructured_grid), pointer :: ug
 
+! Get BUMP
 call bump_registry%get(key,self)
+
+! Get unstrucutred grid
 call unstructured_grid_registry%get(idx, ug)
+
+! Multiply
 call bump_multiply(self, ug)
 
 end subroutine bump_multiply_c
@@ -111,22 +149,13 @@ end subroutine bump_multiply_c
 !  End C++ interfaces
 ! ------------------------------------------------------------------------------
 
-subroutine create_bump(self, c_conf, nmga, nl0, nv, nts, lon, lat, area, vunit, imask, ens1_ne, ens1)
+subroutine create_bump(self, ug, c_conf, ens1_ne)
 
 implicit none
 type(bump_type), intent(inout) :: self
+type(unstructured_grid), intent(in) :: ug
 type(c_ptr), intent(in) :: c_conf
-integer, intent(in) :: nmga
-integer, intent(in) :: nl0
-integer, intent(in) :: nv
-integer, intent(in) :: nts
-real(kind=kind_real), intent(in) :: lon(nmga)
-real(kind=kind_real), intent(in) :: lat(nmga)
-real(kind=kind_real), intent(in) :: area(nmga)
-real(kind=kind_real), intent(in) :: vunit(nmga*nl0)
-integer, intent(in) :: imask(nmga*nl0)
-integer, intent(in), optional :: ens1_ne
-real(kind=kind_real), intent(in), optional :: ens1(:)
+integer, intent(in) :: ens1_ne
 
 ! Initialize namelist
 call self%nam%init
@@ -135,11 +164,7 @@ call self%nam%init
 call bump_read_conf(c_conf,self)
 
 ! Online setup
-if (present(ens1_ne).and.present(ens1)) then
-   call self%setup_online(mpi_comm_world,nmga,nl0,nv,nts,lon,lat,area,vunit,imask,ens1_ne,ens1)
-else
-   call self%setup_online(mpi_comm_world,nmga,nl0,nv,nts,lon,lat,area,vunit,imask)
-end if
+call self%setup_online_oops(mpi_comm_world,ug%nmga,ug%nl0,ug%nv,ug%nts,ug%lon,ug%lat,ug%area,ug%vunit,ug%lmask,ens1_ne)
 
 end subroutine create_bump
 
@@ -299,6 +324,30 @@ type(bump_type), intent(inout) :: self
 call self%dealloc
 
 end subroutine delete_bump
+
+!-------------------------------------------------------------------------------
+
+subroutine add_bump_member(self,ug,ie)
+implicit none
+type(bump_type), intent(inout) :: self
+type(unstructured_grid), intent(inout) :: ug
+integer, intent(in) :: ie
+
+! Apply localization
+call self%add_member(ug%fld,ie)
+
+end subroutine add_bump_member
+
+!-------------------------------------------------------------------------------
+
+subroutine run_bump_drivers(self)
+implicit none
+type(bump_type), intent(inout) :: self
+
+! Run BUMP drivers
+call self%run_drivers_oops
+
+end subroutine run_bump_drivers
 
 !-------------------------------------------------------------------------------
 

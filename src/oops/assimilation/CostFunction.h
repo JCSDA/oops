@@ -123,8 +123,8 @@ template<typename MODEL> class CostFunction : private boost::noncopyable {
   boost::ptr_vector<CostBase_> jterms_;
   boost::ptr_vector<LinearModel_> tlm_;
 
-  double costJb_;
-  double costJoJc_;
+  mutable double costJb_;
+  mutable double costJoJc_;
 };
 
 // -----------------------------------------------------------------------------
@@ -254,10 +254,14 @@ double CostFunction<MODEL>::evaluate(const CtrlVar_ & fguess,
   if (config.has("diagnostics")) {
     diagnostic = eckit::LocalConfiguration(config, "diagnostics");
   }
-  double zzz = jb_->finalize(jq);
+  double zzz = 0.0;
+  costJb_ = jb_->finalize(jq);
+  zzz += costJb_;
+  costJoJc_ = 0.0;
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
-    zzz += jterms_[jj].finalize(diagnostic);
+    costJoJc_ += jterms_[jj].finalize(diagnostic);
   }
+  zzz += costJoJc_;
   Log::test() << "CostFunction: Nonlinear J = " << zzz << std::endl;
   Log::trace() << "CostFunction::evaluate done" << std::endl;
   return zzz;

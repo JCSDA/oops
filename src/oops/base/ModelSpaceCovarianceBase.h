@@ -13,11 +13,13 @@
 
 #include <map>
 #include <string>
+#include <vector>
 #include <boost/noncopyable.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/base/VariableChangeBase.h"
 #include "oops/base/Variables.h"
-#include "oops/generic/VariableChangeBase.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
@@ -41,47 +43,21 @@ class ModelSpaceCovarianceBase {
   typedef State<MODEL>               State_;
   typedef Increment<MODEL>           Increment_;
   typedef VariableChangeBase<MODEL>  VariableChangeBase_;
+  typedef typename boost::ptr_vector<VariableChangeBase_> ChvarVec_;
+  typedef typename ChvarVec_::iterator iter_;
+  typedef typename ChvarVec_::const_iterator icst_;
+  typedef typename ChvarVec_::const_reverse_iterator ircst_;
 
  public:
-  ModelSpaceCovarianceBase(const Geometry_ & resol, const Variables & vars,
-                           const eckit::Configuration & conf, const State_ & xb) {
-    if (conf.has("balance")) {
-      eckit::LocalConfiguration balConf(conf, "balance");
-      balop_.reset(VariableChangeFactory<MODEL>::create(balConf));
-    }
-  }
+  explicit ModelSpaceCovarianceBase(const eckit::Configuration & conf);
   virtual ~ModelSpaceCovarianceBase() {}
 
-  const VariableChangeBase_ & getK() const {return *balop_;}
-  bool hasK() const {return (balop_ == 0) ? false : true;}
+  const VariableChangeBase_ & getK(const unsigned & ii) const {return *chvars_[ii];}
+  bool hasK() const { return (chvars_.size() == 0) ? false : true; }
 
-  void linearize(const State_ & fg, const Geometry_ & geom) {
-    if (balop_) balop_->linearize(fg, geom);
-    this->doLinearize(fg, geom);
-  }
-
-  void multiply(const Increment_ & dxi, Increment_ & dxo) const {
-    if (balop_) {
-      Increment_ tmpin = balop_->multiplyAD(dxi);
-      Increment_ tmpout(tmpin);
-      this->doMultiply(tmpin, tmpout);
-      balop_->multiply(tmpout, dxo);
-    } else {
-      this->doMultiply(dxi, dxo);
-    }
-  }
-
-  void inverseMultiply(const Increment_ & dxi, Increment_ & dxo) const {
-    if (balop_) {
-      Increment_ tmp(dxi);
-      Increment_ tmpin = balop_->multiplyInverse(dxi);
-      Increment_ tmpout(tmpin);
-      this->doInverseMultiply(tmpin, tmpout);
-      balop_->multiplyInverseAD(tmpout, dxo);
-    } else {
-      this->doInverseMultiply(dxi, dxo);
-    }
-  }
+  void linearize(const State_ &, const Geometry_ &);
+  void multiply(const Increment_ &, Increment_ &) const;
+  void inverseMultiply(const Increment_ &, Increment_ &) const;
 
   virtual void randomize(Increment_ &) const = 0;
 
@@ -90,7 +66,7 @@ class ModelSpaceCovarianceBase {
   virtual void doMultiply(const Increment_ &, Increment_ &) const = 0;
   virtual void doInverseMultiply(const Increment_ &, Increment_ &) const = 0;
 
-  boost::scoped_ptr<VariableChangeBase_> balop_;
+  ChvarVec_ chvars_;
 };
 
 // -----------------------------------------------------------------------------
@@ -168,6 +144,87 @@ ModelSpaceCovarianceBase<MODEL>* CovarianceFactory<MODEL>::create(
     ABORT("Element does not exist in CovarianceFactory.");
   }
   return (*j).second->make(conf, resol, vars, xb);
+}
+
+// =============================================================================
+
+template <typename MODEL>
+ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(const eckit::Configuration & conf) {
+  if (conf.has("variable_changes")) {
+    std::vector<eckit::LocalConfiguration> chvarconfs;
+    conf.get("variable_changes", chvarconfs);
+    for (const auto & config : chvarconfs)
+      chvars_.push_back(VariableChangeFactory<MODEL>::create(config));
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+void ModelSpaceCovarianceBase<MODEL>::linearize(const State_ & fg,
+                                                const Geometry_ & geom) {
+  if (chvars_.size()) {
+    for (iter_ it = chvars_.begin(); it != chvars_.end(); ++it)
+      it->linearize(fg, geom);
+  }
+
+  this->doLinearize(fg, geom);
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+void ModelSpaceCovarianceBase<MODEL>::multiply(const Increment_ & dxi,
+                                               Increment_ & dxo) const {
+  if (chvars_.size()) {
+    // K_1^T K_2^T .. K_N^T
+    boost::scoped_ptr<Increment_> dxchvarin(new Increment_(dxi));
+    for (ircst_ it = chvars_.rbegin(); it != chvars_.rend(); ++it) {
+      Increment_ dxchvarout = it->multiplyAD(*dxchvarin);
+      dxchvarin.reset(new Increment_(dxchvarout));
+    }
+    Increment_ dxchvarout(*dxchvarin, false);
+
+    this->doMultiply(*dxchvarin, dxchvarout);
+
+    // K_N K_N-1 ... K_1
+    dxchvarin.reset(new Increment_(dxchvarout));
+    for (icst_ it = chvars_.begin(); it != chvars_.end(); ++it) {
+      Increment_ dxchvarout = it->multiply(*dxchvarin);
+      dxchvarin.reset(new Increment_(dxchvarout));
+    }
+    dxo = dxchvarout;
+  } else {
+    this->doMultiply(dxi, dxo);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+void ModelSpaceCovarianceBase<MODEL>::inverseMultiply(const Increment_ & dxi,
+                                                      Increment_ & dxo) const {
+  if (chvars_.size()) {
+    // K_1^{-1} K_2^{-1} .. K_N^{-1}
+    boost::scoped_ptr<Increment_> dxchvarin(new Increment_(dxi));
+    for (ircst_ it = chvars_.rbegin(); it != chvars_.rend(); ++it) {
+      Increment_ dxchvarout = it->multiplyInverse(*dxchvarin);
+      dxchvarin.reset(new Increment_(dxchvarout));
+    }
+    Increment_ dxchvarout(*dxchvarin, false);
+
+    this->doInverseMultiply(*dxchvarin, dxchvarout);
+
+    // K_N^T^{-1} K_N-1^T^{-1} ... K_1^T^{-1}
+    dxchvarin.reset(new Increment_(dxchvarout));
+    for (icst_ it = chvars_.begin(); it != chvars_.end(); ++it) {
+      Increment_ dxchvarout = it->multiplyInverseAD(*dxchvarin);
+      dxchvarin.reset(new Increment_(dxchvarout));
+    }
+    dxo = dxchvarout;
+  } else {
+    this->doInverseMultiply(dxi, dxo);
+  }
 }
 
 // -----------------------------------------------------------------------------

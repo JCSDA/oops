@@ -34,7 +34,8 @@ public :: qg_field, &
         & self_add, self_schur, self_sub, self_mul, axpy, &
         & dot_prod, add_incr, diff_incr, &
         & read_file, write_file, gpnorm, fldrms, &
-        & change_resol, interp_tl, interp_ad, convert_to_ug, convert_from_ug, &
+        & change_resol, interp_tl, interp_ad, &
+        & ug_coord, field_to_ug, field_from_ug, &
         & analytic_init
 public :: qg_field_registry
 
@@ -1308,107 +1309,134 @@ end subroutine lin_weights
 
 ! ------------------------------------------------------------------------------
 
-subroutine define_ug(self, ug)
+subroutine ug_size(self, ug)
 use unstructured_grid_mod
 implicit none
 type(qg_field), intent(in) :: self
 type(unstructured_grid), intent(inout) :: ug
 
-
-end subroutine define_ug
-
-! ------------------------------------------------------------------------------
-
-subroutine convert_to_ug(self, ug)
-use unstructured_grid_mod
-implicit none
-type(qg_field), intent(in) :: self
-type(unstructured_grid), intent(inout) :: ug
-
-integer :: nc0a,ic0a,jx,jy,jl,jf,joff!MPI: ,myproc,info
-integer,allocatable :: imask(:,:)
-real(kind=kind_real),allocatable :: lon(:),lat(:),area(:),vunit(:,:)
+!MPI: integer :: myproc,info
 
 !MPI: ! Find rank
 !MPI: call mpi_comm_rank(mpi_comm_world,myproc,info)
 !MPI: myproc = myproc+1
 
-! Define local number of gridpoints
-nc0a = self%geom%nx*self%geom%ny
-!MPI: nc0a = count(self%geom%myproc==myproc)
+! Set local number of points
+ug%nmga = self%geom%nx*self%geom%ny
 
-! Allocation
-allocate(lon(nc0a))
-allocate(lat(nc0a))
-allocate(area(nc0a))
-allocate(vunit(nc0a,self%nl))
-allocate(imask(nc0a,self%nl))
+! Set number of levels
+ug%nl0 = self%nl
 
-! Copy coordinates
-ic0a = 0
+! Set number of variables
+ug%nv = self%nf
+
+! Set number of timeslots
+ug%nts = 1
+
+end subroutine ug_size
+
+! ------------------------------------------------------------------------------
+
+subroutine ug_coord(self, ug)
+use unstructured_grid_mod
+implicit none
+type(qg_field), intent(in) :: self
+type(unstructured_grid), intent(inout) :: ug
+
+integer :: imga,jx,jy,jl!MPI: ,myproc,info
+
+! Define size
+call ug_size(self, ug)
+
+!MPI: ! Find rank
+!MPI: call mpi_comm_rank(mpi_comm_world,myproc,info)
+!MPI: myproc = myproc+1
+
+! Allocate unstructured grid coordinates
+call allocate_unstructured_grid_coord(ug)
+
+! Define coordinates
+imga = 0
 do jy=1,self%geom%ny
   do jx=1,self%geom%nx
 !MPI:     if (self%geom%myproc(jx,jy)==myproc) then
-      ic0a = ic0a+1
-      lon(ic0a) = self%geom%lon(jx)
-      lat(ic0a) = self%geom%lat(jy)
-      area(ic0a) = self%geom%area(jx,jy)
+      imga = imga+1
+      ug%lon(imga) = self%geom%lon(jx)
+      ug%lat(imga) = self%geom%lat(jy)
+      ug%area(imga) = self%geom%area(jx,jy)
+      do jl=1,self%nl
+        ug%vunit(imga,jl) = real(jl,kind=kind_real)
+        ug%lmask(imga,jl) = .true.
+      enddo
 !MPI:     endif
   enddo
 enddo
-imask = 1
 
-! Define vertical unit
-do jl=1,self%nl
-  vunit(:,jl) = real(jl,kind=kind_real)
-enddo
+end subroutine ug_coord
 
-! Create unstructured grid
-call create_unstructured_grid(ug, nc0a, self%nl, self%nf, 1, lon, lat, area, vunit, imask)
+! ------------------------------------------------------------------------------
+
+subroutine field_to_ug(self, ug)
+use unstructured_grid_mod
+implicit none
+type(qg_field), intent(in) :: self
+type(unstructured_grid), intent(inout) :: ug
+
+integer :: imga,jx,jy,jl,jf,joff!MPI: ,myproc,info
+
+! Define size
+call ug_size(self, ug)
+
+!MPI: ! Find rank
+!MPI: call mpi_comm_rank(mpi_comm_world,myproc,info)
+!MPI: myproc = myproc+1
+
+! Allocate unstructured grid field
+call allocate_unstructured_grid_field(ug)
 
 ! Copy field
-ic0a = 0
+imga = 0
 do jy=1,self%geom%ny
   do jx=1,self%geom%nx
 !MPI:     if (self%geom%myproc(jx,jy)==myproc) then
-      ic0a = ic0a+1
+      imga = imga+1
       do jf=1,self%nf
         joff = (jf-1)*self%nl
         do jl=1,self%nl
-          ug%fld(ic0a,jl,jf,1) = self%gfld3d(jx,jy,joff+jl)
+          ug%fld(imga,jl,jf,1) = self%gfld3d(jx,jy,joff+jl)
         enddo
       enddo
 !MPI:     endif
   enddo
 enddo
 
-end subroutine convert_to_ug
+end subroutine field_to_ug
 
 ! ------------------------------------------------------------------------------
 
-subroutine convert_from_ug(self, ug)
+subroutine field_from_ug(self, ug)
 use unstructured_grid_mod
 implicit none
 type(qg_field), intent(inout) :: self
 type(unstructured_grid), intent(in) :: ug
 
-integer :: ic0a,jx,jy,jl,jf,joff!MPI: ,myproc,info
+integer :: imga,jx,jy,jl,jf,joff!MPI: ,myproc,info
 
 !MPI: ! Find rank
 !MPI: call mpi_comm_rank(mpi_comm_world,myproc,info)
 !MPI: myproc = myproc+1
 
 ! Copy field
-ic0a = 0
+imga = 0
 do jy=1,self%geom%ny
   do jx=1,self%geom%nx
 !MPI:     if (self%geom%myproc(jx,jy)==myproc) then
       ! Copy local field
-      ic0a = ic0a+1
+      imga = imga+1
       do jf=1,self%nf
         joff = (jf-1)*self%nl
         do jl=1,self%nl
-          self%gfld3d(jx,jy,joff+jl) = ug%fld(ic0a,jl,jf,1)
+          self%gfld3d(jx,jy,joff+jl) = ug%fld(imga,jl,jf,1)
         enddo
       enddo
 !MPI:     endif
@@ -1418,7 +1446,7 @@ do jy=1,self%geom%ny
   enddo
 enddo
 
-end subroutine convert_from_ug
+end subroutine field_from_ug
 
 ! ------------------------------------------------------------------------------
 

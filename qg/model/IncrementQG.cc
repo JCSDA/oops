@@ -164,14 +164,18 @@ void IncrementQG::getValuesAD(const LocationsQG & locs, const oops::Variables & 
   fields_->getValuesAD(locs, vars, cols);
 }
 // -----------------------------------------------------------------------------
-/// Convert to/from unstructured grid
+/// Unstructured grid
 // -----------------------------------------------------------------------------
-void IncrementQG::convert_to(oops::UnstructuredGrid & ug) const {
-  fields_->convert_to(ug);
+void IncrementQG::ug_coord(oops::UnstructuredGrid & ug) const {
+  fields_->ug_coord(ug);
 }
 // -----------------------------------------------------------------------------
-void IncrementQG::convert_from(const oops::UnstructuredGrid & ug) {
-  fields_->convert_from(ug);
+void IncrementQG::field_to_ug(oops::UnstructuredGrid & ug) const {
+  fields_->field_to_ug(ug);
+}
+// -----------------------------------------------------------------------------
+void IncrementQG::field_from_ug(const oops::UnstructuredGrid & ug) {
+  fields_->field_from_ug(ug);
 }
 // -----------------------------------------------------------------------------
 /// I/O and diagnostics

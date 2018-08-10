@@ -39,8 +39,8 @@ class ChangeVar: public util::Printable {
 /// Perform linear transforms
   void multiply(const IncrementQG &, IncrementQG &) const;
   void multiplyInverse(const IncrementQG &, IncrementQG &) const;
-  void multiplyAdjoint(const IncrementQG &, IncrementQG &) const;
-  void multiplyInverseAdjoint(const IncrementQG &, IncrementQG &) const;
+  void multiplyAD(const IncrementQG &, IncrementQG &) const;
+  void multiplyInverseAD(const IncrementQG &, IncrementQG &) const;
 
  private:
   void print(std::ostream &) const override;

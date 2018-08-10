@@ -33,11 +33,11 @@ void ChangeVar::multiplyInverse(const IncrementQG & dxm, IncrementQG & dxa) cons
   dxa = dxm;
 }
 // -----------------------------------------------------------------------------
-void ChangeVar::multiplyAdjoint(const IncrementQG & dxm, IncrementQG & dxa) const {
+void ChangeVar::multiplyAD(const IncrementQG & dxm, IncrementQG & dxa) const {
   dxa = dxm;
 }
 // -----------------------------------------------------------------------------
-void ChangeVar::multiplyInverseAdjoint(const IncrementQG & dxa, IncrementQG & dxm) const {
+void ChangeVar::multiplyInverseAD(const IncrementQG & dxa, IncrementQG & dxm) const {
   dxm = dxa;
 }
 // -----------------------------------------------------------------------------

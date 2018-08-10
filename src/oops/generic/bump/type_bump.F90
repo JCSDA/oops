@@ -50,10 +50,11 @@ type bump_type
   integer :: nx
   integer :: ny
 contains
-   procedure :: bump_setup_online
-   procedure :: bump_setup_online_oops
-   procedure :: bump_setup_online_nemovar
-   generic :: setup_online => bump_setup_online,bump_setup_online_oops,bump_setup_online_nemovar
+   procedure :: setup_online => bump_setup_online
+   procedure :: setup_online_oops => bump_setup_online_oops
+   procedure :: setup_online_nemovar => bump_setup_online_nemovar
+   procedure :: add_member => bump_add_member
+   procedure :: run_drivers_oops => bump_run_drivers_oops
    procedure :: setup_generic => bump_setup_generic
    procedure :: run_drivers => bump_run_drivers
    procedure :: apply_nicas => bump_apply_nicas
@@ -217,35 +218,32 @@ end subroutine bump_setup_online
 ! Subroutine: bump_setup_online_oops
 !> Purpose: online setup for OOPS
 !----------------------------------------------------------------------
-subroutine bump_setup_online_oops(bump,mpi_comm,nmga,nl0,nv,nts,lon,lat,area,vunit_vec,imask_vec,ens1_ne,ens1_vec)
+subroutine bump_setup_online_oops(bump,mpi_comm,nmga,nl0,nv,nts,lon,lat,area,vunit,lmask,ens1_ne)
 
 implicit none
 
 ! Passed variables
-class(bump_type),intent(inout) :: bump             !< BUMP
-integer,intent(in) :: mpi_comm                     !< MPI communicator
-integer,intent(in) :: nmga                         !< Halo A size
-integer,intent(in) :: nl0                          !< Number of levels in subset Sl0
-integer,intent(in) :: nv                           !< Number of variables
-integer,intent(in) :: nts                          !< Number of time slots
-real(kind_real),intent(in) :: lon(nmga)            !< Longitude (in degrees: -180 to 180)
-real(kind_real),intent(in) :: lat(nmga)            !< Latitude (in degrees: -90 to 90)
-real(kind_real),intent(in) :: area(nmga)           !< Area (in m^2)
-real(kind_real),intent(in) :: vunit_vec(nmga*nl0)  !< Vertical unit
-integer,intent(in) :: imask_vec(nmga*nl0)          !< Mask
-integer,intent(in),optional :: ens1_ne             !< Ensemble 1 size
-real(kind_real),intent(in),optional :: ens1_vec(:) !< Ensemble 1
+class(bump_type),intent(inout) :: bump         !< BUMP
+integer,intent(in) :: mpi_comm                 !< MPI communicator
+integer,intent(in) :: nmga                     !< Halo A size
+integer,intent(in) :: nl0                      !< Number of levels in subset Sl0
+integer,intent(in) :: nv                       !< Number of variables
+integer,intent(in) :: nts                      !< Number of time slots
+real(kind_real),intent(in) :: lon(nmga)        !< Longitude (in degrees: -180 to 180)
+real(kind_real),intent(in) :: lat(nmga)        !< Latitude (in degrees: -90 to 90)
+real(kind_real),intent(in) :: area(nmga)       !< Area (in m^2)
+real(kind_real),intent(in) :: vunit(nmga,nl0)  !< Vertical unit
+logical,intent(in) :: lmask(nmga,nl0)          !< Mask
+integer,intent(in) :: ens1_ne                  !< Ensemble 1 size
 
 ! Local variables
 integer :: il0,imga,offset
-real(kind_real) :: vunit(nmga,nl0)
-logical :: test(3),lmask(nmga,nl0)
 
 ! Initialize MPL
 call bump%mpl%init(mpi_comm)
 
 ! Set internal namelist parameters
-if (present(ens1_ne)) then
+if (ens1_ne>0) then
    call bump%nam%setup_internal(nl0,nv,nts,ens1_ne)
 else
    call bump%nam%setup_internal(nl0,nv,nts)
@@ -256,28 +254,6 @@ call bump%mpl%init_listing(bump%nam%prefix,bump%nam%model,bump%nam%colorlog,bump
 
 ! Generic setup
 call bump%setup_generic
-
-! Check arguments consistency
-test(1:2) = (/present(ens1_ne),present(ens1_vec)/)
-if (.not.(all(test(1:2)).or.all(.not.test(1:2)))) call bump%mpl%abort('ens1_ne and ens1 should be present together')
-
-! Check sizes consistency
-if (present(ens1_ne).and.present(ens1_vec)) then
-   if (size(ens1_vec)/=nmga*nl0*nv*nts*ens1_ne) call bump%mpl%abort('wrong size for ens1')
-end if
-
-! Convert vunit and mask
-do il0=1,nl0
-   offset = (il0-1)*nmga
-   do imga=1,nmga
-      vunit(imga,il0) = vunit_vec(offset+imga)
-      if (imask_vec(offset+imga)==0) then
-         lmask(imga,il0) = .false.
-      elseif (imask_vec(offset+imga)==1) then
-         lmask(imga,il0) = .true.
-      end if
-   end do
-end do
 
 ! Initialize geometry
 write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
@@ -299,12 +275,32 @@ write(bump%mpl%unit,'(a)') '----------------------------------------------------
 write(bump%mpl%unit,'(a)') '--- Initialize block parameters'
 call bump%bpar%alloc(bump%nam,bump%geom)
 
-if (present(ens1_ne).and.present(ens1_vec)) then
-   ! Initialize ensemble 1
+if (bump%nam%ens1_ne>0) then
+   ! Initialize ensemble 1 setup
    write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(bump%mpl%unit,'(a)') '--- Initialize ensemble 1'
+   write(bump%mpl%unit,'(a)') '--- Initialize ensemble 1 setup'
+   call bump%ens1%alloc(bump%nam,bump%geom,bump%nam%ens1_ne,1)
+end if
+
+end subroutine bump_setup_online_oops
+
+!----------------------------------------------------------------------
+! Subroutine: bump_run_drivers_oops
+!> Purpose: run drivers for OOPS
+!----------------------------------------------------------------------
+subroutine bump_run_drivers_oops(bump)
+
+implicit none
+
+! Passed variables
+class(bump_type),intent(inout) :: bump !< BUMP
+
+if (bump%nam%ens1_ne>0) then
+   ! Finalize ensemble 1 setup
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Finalize ensemble 1 setup'
    call flush(bump%mpl%unit)
-   call bump%ens1%from(bump%nam,bump%geom,ens1_ne,ens1_vec)
+   ! TODO: remove mean, remove ens_from_oops
 end if
 
 ! Run drivers
@@ -320,7 +316,7 @@ write(bump%mpl%unit,'(a)') '----------------------------------------------------
 call flush(bump%mpl%unit)
 close(unit=bump%mpl%unit)
 
-end subroutine bump_setup_online_oops
+end subroutine bump_run_drivers_oops
 
 !----------------------------------------------------------------------
 ! Subroutine: bump_setup_online_nemovar
@@ -582,6 +578,24 @@ if (.not.bump%obsop%allocated) then
 end if
 
 end subroutine bump_run_drivers
+
+!----------------------------------------------------------------------
+! Subroutine: bump_add_member
+!> Purpose: add member into bump%ens1
+!----------------------------------------------------------------------
+subroutine bump_add_member(bump,fld,ie)
+
+implicit none
+
+! Passed variables
+class(bump_type),intent(inout) :: bump                                                      !< BUMP
+real(kind_real),intent(inout) :: fld(bump%geom%nc0a,bump%geom%nl0,bump%nam%nv,bump%nam%nts) !< Field
+integer,intent(in) :: ie                                                                    !< Member index
+
+! Add member
+bump%ens1%fld(:,:,:,:,ie) = fld
+
+end subroutine bump_add_member
 
 !----------------------------------------------------------------------
 ! Subroutine: bump_apply_nicas

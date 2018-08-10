@@ -80,10 +80,10 @@ class IncrementL95 : public util::Printable,
   void getValuesAD(const LocsL95 &, const oops::Variables &,
                    const GomL95 &, const Nothing &);
 
-/// Define and convert to/from generic unstructured grid
-  void define(oops::UnstructuredGrid &) const;
-  void convert_to(oops::UnstructuredGrid &) const;
-  void convert_from(const oops::UnstructuredGrid &);
+/// Unstructured grid
+  void ug_coord(oops::UnstructuredGrid &) const;
+  void field_to_ug(oops::UnstructuredGrid &) const;
+  void field_from_ug(const oops::UnstructuredGrid &);
 
 // Utilities
   void read(const eckit::Configuration &);

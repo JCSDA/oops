@@ -4,8 +4,10 @@ list( APPEND qg_test_input
   testinput/3dfgat.json
   testinput/4densvar.json
   testinput/4dvar.alpha.json
+  testinput/4dvar.bumpcov.json
   testinput/4dforcing.json
   testinput/4dhybrid.json
+  testinput/4dhybridbump.json
   testinput/4dsaddlepoint.json
   testinput/4dvar.dripcg.json
   testinput/4dvar.drpcglmp.json
@@ -36,8 +38,10 @@ list( APPEND qg_testoutput
   testoutput/3dfgat.test
   testoutput/4densvar.test
   testoutput/4dvar.alpha.test
+  testoutput/4dvar.bumpcov.test
   testoutput/4dforcing.test
   testoutput/4dhybrid.test
+  testoutput/4dhybridbump.test
   testoutput/4dsaddlepoint.test
   testoutput/4dvar.dripcg.test
   testoutput/4dvar.drpcglmp.test
@@ -270,9 +274,9 @@ ecbuild_add_test( TARGET  test_qg_localization
                   ARGS    "testinput/interfaces.json"
                   LIBS    qg )
 
-ecbuild_add_test( TARGET  test_qg_changevariable
+ecbuild_add_test( TARGET  test_qg_variablechange
                   BOOST
-                  SOURCES executables/TestChangeVariable.cc
+                  SOURCES executables/TestVariableChange.cc
                   ARGS    "testinput/interfaces.json"
                   LIBS    qg )
 
@@ -307,6 +311,13 @@ ecbuild_add_test( TARGET test_qg_3dfgat
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/3dfgat.json"
                        testoutput/3dfgat.test
+                  DEPENDS qg_4dvar.x )
+
+ecbuild_add_test( TARGET test_qg_4dvar_bump_covariance
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/4dvar.bumpcov.json"
+                       testoutput/4dvar.bumpcov.test
                   DEPENDS qg_4dvar.x )
 
 ecbuild_add_test( TARGET test_qg_4dvar_drpcglmp
@@ -387,6 +398,13 @@ ecbuild_add_test( TARGET test_qg_4dvar_hybrid
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/4dhybrid.json"
                        testoutput/4dhybrid.test
+                  DEPENDS qg_4dvar.x )
+
+ecbuild_add_test( TARGET test_qg_4dvar_hybrid_bump
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/4dhybridbump.json"
+                       testoutput/4dhybridbump.test
                   DEPENDS qg_4dvar.x )
 
 ecbuild_add_test( TARGET test_qg_4densvar

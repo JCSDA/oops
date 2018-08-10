@@ -74,8 +74,9 @@ class FieldL95 : public util::Printable {
   void interpAD(const LocsL95 &, const GomL95 &);
 
 /// Convert to/from generic unstructured grid
-  void convert_to(oops::UnstructuredGrid &) const;
-  void convert_from(const oops::UnstructuredGrid &);
+  void ug_coord(oops::UnstructuredGrid &) const;
+  void field_to_ug(oops::UnstructuredGrid &) const;
+  void field_from_ug(const oops::UnstructuredGrid &);
 
  private:
   void print(std::ostream &) const;

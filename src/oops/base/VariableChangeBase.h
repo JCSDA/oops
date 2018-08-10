@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef OOPS_GENERIC_VARIABLECHANGEBASE_H_
-#define OOPS_GENERIC_VARIABLECHANGEBASE_H_
+#ifndef OOPS_BASE_VARIABLECHANGEBASE_H_
+#define OOPS_BASE_VARIABLECHANGEBASE_H_
 
 #include <map>
 #include <string>
@@ -128,11 +128,13 @@ VariableChangeBase<MODEL>::VariableChangeBase(const eckit::Configuration & conf)
 {
   if (conf.has("inputVariables")) {
     varin_.reset(new Variables(conf.getSubConfiguration("inputVariables")));
-    Log::trace() << "VariableChangeBase<MODEL>::VariableChangeBase inputvars: " << *varin_ << std::endl;
+    Log::trace() << "VariableChangeBase<MODEL>::VariableChangeBase inputvars: "
+                 << *varin_ << std::endl;
   }
   if (conf.has("outputVariables")) {
     varout_.reset(new Variables(conf.getSubConfiguration("outputVariables")));
-    Log::trace() << "VariableChangeBase<MODEL>::VariableChangeBase outputvars: " << *varout_ << std::endl;
+    Log::trace() << "VariableChangeBase<MODEL>::VariableChangeBase outputvars: "
+                 << *varout_ << std::endl;
   }
 }
 
@@ -140,8 +142,8 @@ VariableChangeBase<MODEL>::VariableChangeBase(const eckit::Configuration & conf)
 
 template<typename MODEL>
 Increment<MODEL> VariableChangeBase<MODEL>::multiply(const Increment<MODEL> & dxin) const {
-  ASSERT(varout_);
-  Increment_ dxout(dxin.geometry(), *varout_, dxin.validTime());
+  ASSERT(varin_);
+  Increment_ dxout(dxin.geometry(), *varin_, dxin.validTime());
   this->multiply(dxin, dxout);
   return dxout;
 }
@@ -150,8 +152,8 @@ Increment<MODEL> VariableChangeBase<MODEL>::multiply(const Increment<MODEL> & dx
 
 template<typename MODEL>
 Increment<MODEL> VariableChangeBase<MODEL>::multiplyAD(const Increment_ & dxin) const {
-  ASSERT(varin_);
-  Increment_ dxout(dxin.geometry(), *varin_, dxin.validTime());
+  ASSERT(varout_);
+  Increment_ dxout(dxin.geometry(), *varout_, dxin.validTime());
   this->multiplyAD(dxin, dxout);
   return dxout;
 }
@@ -160,8 +162,8 @@ Increment<MODEL> VariableChangeBase<MODEL>::multiplyAD(const Increment_ & dxin) 
 
 template<typename MODEL>
 Increment<MODEL> VariableChangeBase<MODEL>::multiplyInverse(const Increment_ & dxin) const {
-  ASSERT(varin_);
-  Increment_ dxout(dxin.geometry(), *varin_, dxin.validTime());
+  ASSERT(varout_);
+  Increment_ dxout(dxin.geometry(), *varout_, dxin.validTime());
   this->multiplyInverse(dxin, dxout);
   return dxout;
 }
@@ -170,8 +172,8 @@ Increment<MODEL> VariableChangeBase<MODEL>::multiplyInverse(const Increment_ & d
 
 template<typename MODEL>
 Increment<MODEL> VariableChangeBase<MODEL>::multiplyInverseAD(const Increment_ & dxin) const {
-  ASSERT(varout_);
-  Increment_ dxout(dxin.geometry(), *varout_, dxin.validTime());
+  ASSERT(varin_);
+  Increment_ dxout(dxin.geometry(), *varin_, dxin.validTime());
   this->multiplyInverseAD(dxin, dxout);
   return dxout;
 }
@@ -180,4 +182,4 @@ Increment<MODEL> VariableChangeBase<MODEL>::multiplyInverseAD(const Increment_ &
 
 }  // namespace oops
 
-#endif  // OOPS_GENERIC_VARIABLECHANGEBASE_H_
+#endif  // OOPS_BASE_VARIABLECHANGEBASE_H_

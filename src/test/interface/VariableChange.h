@@ -8,8 +8,8 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef TEST_INTERFACE_CHANGEVARIABLE_H_
-#define TEST_INTERFACE_CHANGEVARIABLE_H_
+#ifndef TEST_INTERFACE_VARIABLECHANGE_H_
+#define TEST_INTERFACE_VARIABLECHANGE_H_
 
 #include <cmath>
 #include <iostream>
@@ -24,8 +24,8 @@
 #include <boost/test/unit_test.hpp>
 
 #include "eckit/config/Configuration.h"
+#include "oops/base/VariableChangeBase.h"
 #include "oops/generic/instantiateVariableChangeFactory.h"
-#include "oops/generic/VariableChangeBase.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
@@ -39,8 +39,8 @@ namespace test {
 
 // =============================================================================
 
-template <typename MODEL> class ChangeVariableFixture : private boost::noncopyable {
-  typedef oops::VariableChangeBase<MODEL>  ChangeVariable_;
+template <typename MODEL> class VariableChangeFixture : private boost::noncopyable {
+  typedef oops::VariableChangeBase<MODEL>  VariableChange_;
   typedef oops::Geometry<MODEL>            Geometry_;
 
  public:
@@ -49,18 +49,18 @@ template <typename MODEL> class ChangeVariableFixture : private boost::noncopyab
   static const oops::Variables      & varin()     {return *getInstance().varin_;}
   static const oops::Variables      & varout()    {return *getInstance().varout_;}
   static const util::DateTime       & time()      {return *getInstance().time_;}
-  static const ChangeVariable_      & changevar() {return *getInstance().K_;}
+  static const VariableChange_      & changevar() {return *getInstance().K_;}
 
  private:
-  static ChangeVariableFixture<MODEL>& getInstance() {
-    static ChangeVariableFixture<MODEL> theChangeVariableFixture;
-    return theChangeVariableFixture;
+  static VariableChangeFixture<MODEL>& getInstance() {
+    static VariableChangeFixture<MODEL> theVariableChangeFixture;
+    return theVariableChangeFixture;
   }
 
-  ChangeVariableFixture<MODEL>() {
+  VariableChangeFixture<MODEL>() {
     oops::instantiateVariableChangeFactory<MODEL>();
 
-    test_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "ChangeVariableTest"));
+    test_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "VariableChangeTest"));
 
     const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "Geometry");
     resol_.reset(new Geometry_(resolConfig));
@@ -71,33 +71,33 @@ template <typename MODEL> class ChangeVariableFixture : private boost::noncopyab
     time_.reset(new util::DateTime(xx.validTime()));
 
 //  Setup the change of variable
-    const eckit::LocalConfiguration changevarconf(TestEnvironment::config(), "ChangeVariableTest");
+    const eckit::LocalConfiguration changevarconf(TestEnvironment::config(), "VariableChangeTest");
     const eckit::LocalConfiguration varinconf(TestEnvironment::config(),
-                                          "ChangeVariableTest.inputVariables");
+                                          "VariableChangeTest.inputVariables");
     varin_.reset(new oops::Variables(varinconf));
 
     const eckit::LocalConfiguration varoutconf(TestEnvironment::config(),
-                                          "ChangeVariableTest.outputVariables");
+                                          "VariableChangeTest.outputVariables");
     varout_.reset(new oops::Variables(varoutconf));
 
     K_.reset(oops::VariableChangeFactory<MODEL>::create(changevarconf));
     K_->linearize(xx, *resol_);
   }
 
-  ~ChangeVariableFixture<MODEL>() {}
+  ~VariableChangeFixture<MODEL>() {}
 
   boost::scoped_ptr<const eckit::LocalConfiguration> test_;
   boost::scoped_ptr<const Geometry_>                 resol_;
   boost::scoped_ptr<const oops::Variables>           varin_;
   boost::scoped_ptr<const oops::Variables>           varout_;
   boost::scoped_ptr<const util::DateTime>            time_;
-  boost::scoped_ptr<ChangeVariable_>                 K_;
+  boost::scoped_ptr<VariableChange_>                 K_;
 };
 
 // =============================================================================
 
-template <typename MODEL> void testChangeVariableZero() {
-  typedef ChangeVariableFixture<MODEL>   Test_;
+template <typename MODEL> void testVariableChangeZero() {
+  typedef VariableChangeFixture<MODEL>   Test_;
   typedef oops::Increment<MODEL>    Increment_;
 
   Increment_ dxin(Test_::resol(), Test_::varin(), Test_::time());
@@ -119,15 +119,13 @@ template <typename MODEL> void testChangeVariableZero() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testChangeVariableInverse() {
-  typedef ChangeVariableFixture<MODEL>   Test_;
-  typedef oops::Increment<MODEL>    Increment_;
+template <typename MODEL> void testVariableChangeInverse() {
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testChangeVariableAdjoint() {
-  typedef ChangeVariableFixture<MODEL>   Test_;
+template <typename MODEL> void testVariableChangeAdjoint() {
+  typedef VariableChangeFixture<MODEL>   Test_;
   typedef oops::Increment<MODEL>    Increment_;
 
   Increment_ dxin(Test_::resol(), Test_::varin(), Test_::time());
@@ -150,18 +148,18 @@ template <typename MODEL> void testChangeVariableAdjoint() {
 
 // =============================================================================
 
-template <typename MODEL> class ChangeVariable : public oops::Test {
+template <typename MODEL> class VariableChange : public oops::Test {
  public:
-  ChangeVariable() {}
-  virtual ~ChangeVariable() {}
+  VariableChange() {}
+  virtual ~VariableChange() {}
  private:
-  std::string testid() const {return "test::ChangeVariable<" + MODEL::name() + ">";}
+  std::string testid() const {return "test::VariableChange<" + MODEL::name() + ">";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/ChangeVariable");
+    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/VariableChange");
 
-    ts->add(BOOST_TEST_CASE(&testChangeVariableZero<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testChangeVariableAdjoint<MODEL>));
+    ts->add(BOOST_TEST_CASE(&testVariableChangeZero<MODEL>));
+    ts->add(BOOST_TEST_CASE(&testVariableChangeAdjoint<MODEL>));
 
     boost::unit_test::framework::master_test_suite().add(ts);
   }
@@ -171,4 +169,4 @@ template <typename MODEL> class ChangeVariable : public oops::Test {
 
 }  // namespace test
 
-#endif  // TEST_INTERFACE_CHANGEVARIABLE_H_
+#endif  // TEST_INTERFACE_VARIABLECHANGE_H_

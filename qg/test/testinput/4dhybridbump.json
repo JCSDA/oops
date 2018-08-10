@@ -1,0 +1,266 @@
+{
+  "resolution": {
+    "nx": "40",
+    "ny": "20",
+    "bc": "1"
+  },
+  "model": {
+    "tstep": "PT1H",
+    "top_layer_depth": "5500.0",
+    "bottom_layer_depth": "4500.0"
+  },
+  "cost_function": {
+    "cost_type": "4D-Var",
+    "window_begin": "2010-01-01T00:00:00Z",
+    "window_length": "P1D",
+    "variables": ["x"],
+    "Jb": {
+      "Background": {
+        "state": [{
+          "filename": "Data/example.fc.2009-12-31T00:00:00Z.P1D",
+          "date": "2010-01-01T00:00:00Z"
+        }]
+      },
+      "Covariance": {
+        "covariance": "hybrid",
+        "ensemble_weight": "0.3",
+        "static": {
+          "covariance": "QgError",
+          "standard_deviation": "0.8",
+          "vertical_correlation": "0.2",
+          "horizontal_length_scale": "1e6",
+          "maximum_condition_number": "1.0e6",
+          "date": "2010-01-01T00:00:00Z"
+        },
+        "ensemble": {
+          "members": "10",
+          "variables": {
+            "variables": ["x"]
+          },
+          "date": "2010-01-01T00:00:00Z",
+          "localization": {
+            "localization": "BUMP",
+            "date": "2010-01-01T00:00:00Z",
+            "variables": {
+              "variables": ["x"]
+            },
+            "prefix" : "bump",
+            "default_seed" : 1,
+            "method" : "loc_norm",
+            "strategy" : "common",
+            "new_hdiag" : 1,
+            "new_param" : 1,
+            "check_adjoints" : 1,
+            "check_pos_def" : 0,
+            "check_sqrt" : 0,
+            "check_dirac" : 0,
+            "check_randomization" : 0,
+            "check_consistency" : 0,
+            "check_optimality" : 0,
+            "new_lct" : 0,
+            "new_obsop" : 0,
+            "sam_write" : 0,
+            "sam_read" : 0,
+            "mask_type" : "none",
+            "mask_th" : 0,
+            "mask_check" : 0,
+            "draw_type" : "random_uniform",
+            "nc1" : 400,
+            "ntry" : 3,
+            "nrep" : 2,
+            "nc3" : 10,
+            "dc" : 1000.0e3,
+            "nl0r" : 1,
+            "ne" : 5,
+            "gau_approx" : 0,
+            "full_var" : 0,
+            "local_diag" : 0,
+            "displ_diag" : 0,
+            "minim_algo" : "hooke",
+            "lhomh" : 0,
+            "lhomv" : 0,
+            "rvflt" : 0.0,
+            "lsqrt" : 1,
+            "resol" : 10.0,
+            "nicas_interp" : "bilin",
+            "network" : 0,
+            "mpicom" : 2,
+            "advmode" : 0,
+            "forced_radii" : 0,
+            "rh" : 5000.0e3,
+            "rv" : 4.0,
+            "ndir" : 0,
+            "nldwh" : 0,
+            "nldwv" : 0,
+            "diag_rhflt" : 0.0,
+            "diag_interp" : "bilin",
+            "field_io" : 1,
+            "split_io" : 1,
+            "grid_output" : 0
+          },
+          "state": [
+            {
+              "filename": "Data/test.ens.1.2009-12-31T00:00:00Z.P1D",
+              "date": "2010-01-01T00:00:00Z"
+            },
+            {
+              "filename": "Data/test.ens.2.2009-12-31T00:00:00Z.P1D",
+              "date": "2010-01-01T00:00:00Z"
+            },
+            {
+              "filename": "Data/test.ens.3.2009-12-31T00:00:00Z.P1D",
+              "date": "2010-01-01T00:00:00Z"
+            },
+            {
+              "filename": "Data/test.ens.4.2009-12-31T00:00:00Z.P1D",
+              "date": "2010-01-01T00:00:00Z"
+            },
+            {
+              "filename": "Data/test.ens.5.2009-12-31T00:00:00Z.P1D",
+              "date": "2010-01-01T00:00:00Z"
+            },
+            {
+              "filename": "Data/test.ens.6.2009-12-31T00:00:00Z.P1D",
+              "date": "2010-01-01T00:00:00Z"
+            },
+            {
+              "filename": "Data/test.ens.7.2009-12-31T00:00:00Z.P1D",
+              "date": "2010-01-01T00:00:00Z"
+            },
+            {
+              "filename": "Data/test.ens.8.2009-12-31T00:00:00Z.P1D",
+              "date": "2010-01-01T00:00:00Z"
+            },
+            {
+              "filename": "Data/test.ens.9.2009-12-31T00:00:00Z.P1D",
+              "date": "2010-01-01T00:00:00Z"
+            },
+            {
+              "filename": "Data/test.ens.10.2009-12-31T00:00:00Z.P1D",
+              "date": "2010-01-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "Jo": {
+      "ObsTypes": [
+        {
+          "ObsType": "Stream",
+          "ObsData": {
+            "ObsDataIn": {
+              "obsfile": "Data/qg.truth4d.obt"
+            },
+            "ObsDataOut": {
+              "obsfile": "Data/qg.4dhybrid.obt"
+            },
+            "obsvalue": "ObsVal"
+          },
+          "Covariance": {
+            "covariance": "diagonal",
+            "obserror": "ObsErr"
+          }
+        },
+        {
+          "ObsType": "Wind",
+          "ObsData": {
+            "ObsDataIn": {
+              "obsfile": "Data/qg.truth4d.obt"
+            },
+            "ObsDataOut": {
+              "obsfile": "Data/qg.4dhybrid.obt"
+            },
+            "obsvalue": "ObsVal"
+          },
+          "Covariance": {
+            "covariance": "diagonal",
+            "obserror": "ObsErr"
+          }
+        },
+        {
+          "ObsType": "WSpeed",
+          "ObsData": {
+            "ObsDataIn": {
+              "obsfile": "Data/qg.truth4d.obt"
+            },
+            "ObsDataOut": {
+              "obsfile": "Data/qg.4dhybrid.obt"
+            },
+            "obsvalue": "ObsVal"
+          },
+          "Covariance": {
+            "covariance": "diagonal",
+            "obserror": "ObsErr"
+          }
+        }
+      ]
+    }
+  },
+  "minimizer": {
+    "algorithm": "DRPCG"
+  },
+  "output": {
+    "first": "PT0S",
+    "frequency": "PT06H",
+    "datadir": "Data",
+    "exp": "example",
+    "type": "an"
+  },
+  "variational": {
+    "iteration": [
+      {
+        "resolution": {
+          "nx": "40",
+          "ny": "20",
+          "bc": "1"
+        },
+        "linearmodel": {
+          "version": "QgTLM",
+          "tstep": "PT1H",
+          "top_layer_depth": "5500.0",
+          "bottom_layer_depth": "4500.0",
+          "trajectory": {
+            "tstep": "PT1H",
+            "top_layer_depth": "5500.0",
+            "bottom_layer_depth": "4500.0"
+          }
+        },
+        "ninner": "15",
+        "gradient_norm_reduction": "1e-10",
+        "test": "on",
+        "diagnostics": {
+          "departures": "ombg"
+        }
+      },
+      {
+        "resolution": {
+          "nx": "40",
+          "ny": "20",
+          "bc": "1"
+        },
+        "linearmodel": {
+          "version": "QgTLM",
+          "tstep": "PT1H",
+          "top_layer_depth": "5500.0",
+          "bottom_layer_depth": "4500.0",
+          "trajectory": {
+            "tstep": "PT1H",
+            "top_layer_depth": "5500.0",
+            "bottom_layer_depth": "4500.0"
+          }
+        },
+        "ninner": "10",
+        "gradient_norm_reduction": "1e-10",
+        "test": "on"
+      }
+    ]
+  },
+  "final": {
+    "diagnostics": {
+      "departures": "oman"
+    },
+    "prints": {
+      "frequency": "PT1H"
+    }
+  }
+}

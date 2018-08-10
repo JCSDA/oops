@@ -156,7 +156,7 @@ LinearModelBase<MODEL>* LinearModelFactory<MODEL>::create(const Geometry_ & geom
 
 template<typename MODEL>
 void LinearModelBase<MODEL>::setTrajectory(const State_ & xx, State_ & xlr,
-                                       const ModelAux_ & maux) {
+                                          const ModelAux_ & maux) {
   Log::trace() << "LinearModelBase<MODEL>::setTrajectory starting" << std::endl;
   util::Timer timer(classname(), "setTrajectory");
   this->setTrajectory(xx.state(), xlr.state(), maux.modelauxcontrol());

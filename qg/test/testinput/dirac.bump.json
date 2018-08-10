@@ -28,31 +28,10 @@
     "date": "2010-01-01T00:00:00Z",
     "localization": {
       "localization": "BUMP",
+      "date": "2010-01-01T00:00:00Z",
       "variables": {
         "variables": ["x"]
       },
-      "bump_ensemble": [
-      {
-        "filename": "Data/test.ens.1.2009-12-31T00:00:00Z.P1D",
-        "date": "2010-01-01T00:00:00Z"
-      },
-      {
-        "filename": "Data/test.ens.2.2009-12-31T00:00:00Z.P1D",
-        "date": "2010-01-01T00:00:00Z"
-      },
-      {
-        "filename": "Data/test.ens.3.2009-12-31T00:00:00Z.P1D",
-        "date": "2010-01-01T00:00:00Z"
-      },
-      {
-        "filename": "Data/test.ens.4.2009-12-31T00:00:00Z.P1D",
-        "date": "2010-01-01T00:00:00Z"
-      },
-      {
-        "filename": "Data/test.ens.5.2009-12-31T00:00:00Z.P1D",
-        "date": "2010-01-01T00:00:00Z"
-      }
-      ],
       "prefix" : "bump",
       "default_seed" : 1,
       "method" : "loc_norm",

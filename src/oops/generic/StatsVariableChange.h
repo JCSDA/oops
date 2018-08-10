@@ -5,13 +5,12 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef OOPS_GENERIC_STATVARIABLECHANGE_H_
-#define OOPS_GENERIC_STATVARIABLECHANGE_H_
+#ifndef OOPS_GENERIC_STATSVARIABLECHANGE_H_
+#define OOPS_GENERIC_STATSVARIABLECHANGE_H_
 
 #include <string>
-#include <boost/noncopyable.hpp>
 #include <vector>
-#include <string>
+#include <boost/noncopyable.hpp>
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -46,7 +45,7 @@ class StatsVariableChange : public VariableChangeBase<MODEL> {
   void multiplyAD(const Increment_ &, Increment_ &) const override;
   void multiplyInverseAD(const Increment_ &, Increment_ &) const override;
 
-private:
+ private:
   const std::vector<std::string> pathStrList;
 
   void print(std::ostream &) const override;
@@ -54,12 +53,11 @@ private:
   void ExtractModelVarForCalc(std::string const fileString,
                               std::string& modelVarToCalcString,
                               std::string& varRegrByString);
-  void VariableLists(const std::vector<std::string> pathStrList, 
-                     std::vector<std::string>& modelVarToCalcList, 
+  void VariableLists(const std::vector<std::string> pathStrList,
+                     std::vector<std::string>& modelVarToCalcList,
                      std::vector<std::string>& varRegrByList);
 
-  //StatsVarData populate(const varin_ , const varout_, const eckit::Configuration);
-  
+  // StatsVarData populate(const varin_ , const varout_, const eckit::Configuration);
 };
 
 template<typename MODEL>
@@ -87,8 +85,8 @@ void StatsVariableChange<MODEL>::multiply(const Increment_ & in, Increment_ & ou
   Log::trace() << "StatsVariableChange<MODEL>::multiply starting" << std::endl;
 
   UnstructuredGrid ug;
-  in.convert_to(ug);
-  out.convert_from(ug);
+  in.field_to_ug(ug);
+  out.field_from_ug(ug);
 
   Log::trace() << "StatsVariableChange<MODEL>::multiply done" << std::endl;
 }
@@ -98,8 +96,8 @@ void StatsVariableChange<MODEL>::multiplyInverse(const Increment_ & in, Incremen
   Log::trace() << "StatsVariableChange<MODEL>::multiplyInverse starting" << std::endl;
 
   UnstructuredGrid ug;
-  in.convert_to(ug);
-  out.convert_from(ug);
+  in.field_to_ug(ug);
+  out.field_from_ug(ug);
 
   Log::trace() << "StatsVariableChange<MODEL>::multiplyInverse done" << std::endl;
 }
@@ -109,8 +107,8 @@ void StatsVariableChange<MODEL>::multiplyAD(const Increment_ & in, Increment_ & 
   Log::trace() << "StatsVariableChange<MODEL>::multiplyAD starting" << std::endl;
 
   UnstructuredGrid ug;
-  in.convert_to(ug);
-  out.convert_from(ug);
+  in.field_to_ug(ug);
+  out.field_from_ug(ug);
 
   Log::trace() << "StatsVariableChange<MODEL>::multiplyAD done" << std::endl;
 }
@@ -120,8 +118,8 @@ void StatsVariableChange<MODEL>::multiplyInverseAD(const Increment_ & in, Increm
   Log::trace() << "StatsVariableChange<MODEL>::multiplyInverseAD starting" << std::endl;
 
   UnstructuredGrid ug;
-  in.convert_to(ug);
-  out.convert_from(ug);
+  in.field_to_ug(ug);
+  out.field_from_ug(ug);
 
   Log::trace() << "StatsVariableChange<MODEL>::multiplyInverseAD done" << std::endl;
 }
@@ -136,22 +134,22 @@ std::string StatsVariableChange<MODEL>::ExtractFilename(std::string const pathSt
     int tempIndex;
     for (int iCharIndex = pathString.length(); iCharIndex > 0; --iCharIndex)
     {
-        if (pathString.substr(iCharIndex - 1 ,1) == "/")
+        if (pathString.substr(iCharIndex - 1, 1) == "/")
         {
              return pathString.substr(iCharIndex, pathString.length() - iCharIndex);
         }
-        tempIndex = iCharIndex; 
+        tempIndex = iCharIndex;
     }
-    std::cout << "ExtractFileName: tempIndex = " << tempIndex << std::endl;  
+    std::cout << "ExtractFileName: tempIndex = " << tempIndex << std::endl;
     throw std::runtime_error("FileName not extracted from path " + pathString);
-} 
+}
 
 // extract {model_variable_to_be_calculated} string and {variable_regressed_by} string
 // from fileString
 
 template<typename MODEL>
-void StatsVariableChange<MODEL>::ExtractModelVarForCalc(std::string const fileString, 
-                                std::string& modelVarToCalcString, 
+void StatsVariableChange<MODEL>::ExtractModelVarForCalc(std::string const fileString,
+                                std::string& modelVarToCalcString,
                                 std::string& varRegrByString)
 {
 // FileName is of the form {modelVarToCalcString}__{varRegrByString}__reg.nc
@@ -170,37 +168,35 @@ void StatsVariableChange<MODEL>::ExtractModelVarForCalc(std::string const fileSt
         lastUnderscoreIndex = iCharIndex - 1;
         if (fileString.substr(iCharIndex-1, 2) == "__")
         {
-          break; 
+          break;
         }
     }
     modelVarToCalcString = fileString.substr(0, firstUnderscoreIndex);
-    varRegrByString = fileString.substr(firstUnderscoreIndex + 2, 
+    varRegrByString = fileString.substr(firstUnderscoreIndex + 2,
                                         lastUnderscoreIndex - firstUnderscoreIndex - 2);
-
 }
-
 
 // append the modelVarToCalcList and varRegrByList
 template<typename MODEL>
-void StatsVariableChange<MODEL>::VariableLists(const std::vector<std::string> pathStrList, 
+void StatsVariableChange<MODEL>::VariableLists(const std::vector<std::string> pathStrList,
                    std::vector<std::string>& modelVarToCalcList,
                    std::vector<std::string>& varRegrByList)
 {
-   std::string modelVarToCalcString;
-   std::string varRegrByString;
-   std::string filename;
-   for (auto pathString : pathStrList)
-   {
-      modelVarToCalcString.clear();
-      varRegrByString.clear();
-      filename = ExtractFilename(pathString);
-      ExtractModelVarForCalc(filename, modelVarToCalcString, varRegrByString);
-      modelVarToCalcList.push_back(modelVarToCalcString);
-      varRegrByList.push_back(varRegrByString);
-   }
+  std::string modelVarToCalcString;
+  std::string varRegrByString;
+  std::string filename;
+  for (auto pathString : pathStrList)
+  {
+     modelVarToCalcString.clear();
+     varRegrByString.clear();
+     filename = ExtractFilename(pathString);
+     ExtractModelVarForCalc(filename, modelVarToCalcString, varRegrByString);
+     modelVarToCalcList.push_back(modelVarToCalcString);
+     varRegrByList.push_back(varRegrByString);
+  }
 }
 
 
 }  // namespace oops
 
-#endif  // OOPS_GENERIC_STATVARIABLECHANGE_H_
+#endif  // OOPS_GENERIC_STATSVARIABLECHANGE_H_
