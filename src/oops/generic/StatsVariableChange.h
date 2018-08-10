@@ -11,11 +11,11 @@
 #include <string>
 #include <vector>
 #include <boost/noncopyable.hpp>
+#include "oops/base/VariableChangeBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
-#include "oops/generic/VariableChangeBase.h"
 
 namespace eckit {
   class Configuration;
