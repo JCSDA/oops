@@ -42,12 +42,15 @@ namespace test {
 
 template <typename MODEL> class LinearVariableChangeFixture : private boost::noncopyable {
   typedef oops::Geometry<MODEL>                  Geometry_;
+  typedef oops::State<MODEL>                     State_;
+  typedef util::DateTime                         DateTime_;
 
  public:
   static std::vector<eckit::LocalConfiguration>
                                      & linvarchgconfs()      {return getInstance().linvarchgconfs_;}
+  static const State_                & xx()                  {return *getInstance().xx_;}
   static const Geometry_             & resol()               {return *getInstance().resol_;}
-  static const util::DateTime        & time()                {return *getInstance().time_;}
+  static const DateTime_             & time()                {return *getInstance().time_;}
 
  private:
   static LinearVariableChangeFixture<MODEL>& getInstance() {
@@ -62,9 +65,9 @@ template <typename MODEL> class LinearVariableChangeFixture : private boost::non
     resol_.reset(new Geometry_(resolConfig));
 
     const eckit::LocalConfiguration fgconf(TestEnvironment::config(), "State");
-    oops::State<MODEL> xx(*resol_, fgconf);
+    xx_.reset(new State_(*resol_, fgconf));
 
-    time_.reset(new util::DateTime(xx.validTime()));
+    time_.reset(new util::DateTime(xx_->validTime()));
 
     TestEnvironment::config().get("LinearVariableChangeTests", linvarchgconfs_);
   }
@@ -72,6 +75,7 @@ template <typename MODEL> class LinearVariableChangeFixture : private boost::non
   ~LinearVariableChangeFixture<MODEL>() {}
 
   std::vector<eckit::LocalConfiguration>             linvarchgconfs_;
+  boost::scoped_ptr<const State_ >                   xx_;
   boost::scoped_ptr<const Geometry_>                 resol_;
   boost::scoped_ptr<const util::DateTime>            time_;
 };
@@ -93,18 +97,22 @@ template <typename MODEL> void testLinearVariableChangeZero() {
     boost::scoped_ptr<LinearVariableChange_>
       changevar(LinearVariableChangeFactory_::create(Test_::linvarchgconfs()[jj]));
 
-    Increment_ dxin(Test_::resol(), varin, Test_::time());
-    Increment_ dxout(Test_::resol(), varout, Test_::time());
+    changevar->linearize(Test_::xx(), Test_::resol());
+
+    Increment_   dxin(Test_::resol(), varin,  Test_::time());
+    Increment_ KTdxin(Test_::resol(), varout, Test_::time());
+    Increment_  dxout(Test_::resol(), varout, Test_::time());
+    Increment_ Kdxout(Test_::resol(), varin,  Test_::time());
 
     // dxout = 0, check if K.dxout = 0
     dxout.zero();
-    dxin = changevar->multiply(dxout);
-    BOOST_CHECK_EQUAL(dxin.norm(), 0.0);
+    changevar->multiply(dxout, Kdxout);
+    BOOST_CHECK_EQUAL(Kdxout.norm(), 0.0);
 
     // dxin = 0, check if K^T.dxin = 0
     dxin.zero();
-    dxout = changevar->multiplyAD(dxin);
-    BOOST_CHECK_EQUAL(dxout.norm(), 0.0);
+    changevar->multiplyAD(dxin, KTdxin);
+    BOOST_CHECK_EQUAL(KTdxin.norm(), 0.0);
   }
 }
 
@@ -130,21 +138,28 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
     boost::scoped_ptr<LinearVariableChange_>
       changevar(LinearVariableChangeFactory_::create(Test_::linvarchgconfs()[jj]));
 
-    Increment_ dxin(Test_::resol(), varin, Test_::time());
-    Increment_ Kdxout(Test_::resol(), varin, Test_::time());
-    Increment_ dxout(Test_::resol(), varout, Test_::time());
+    changevar->linearize(Test_::xx(), Test_::resol());
+
+    Increment_   dxin(Test_::resol(), varin,  Test_::time());
     Increment_ KTdxin(Test_::resol(), varout, Test_::time());
+    Increment_  dxout(Test_::resol(), varout, Test_::time());
+    Increment_ Kdxout(Test_::resol(), varin,  Test_::time());
 
     dxin.random();
     dxout.random();
 
-    // zz1 = <Kdxout,dxin>
-    Kdxout = changevar->multiply(dxout);
-    const double zz1 = dot_product(Kdxout, dxin);
+    Increment_  dxin0(dxin);
+    Increment_  dxout0(dxout);
 
+    changevar->multiply(dxout, Kdxout);
+    changevar->multiplyAD(dxin, KTdxin);
+
+    // zz1 = <Kdxout,dxin>
+    const double zz1 = dot_product(Kdxout, dxin0);
     // zz2 = <dxout,KTdxin>
-    KTdxin = changevar->multiplyAD(dxin);
-    const double zz2 = dot_product(dxout, KTdxin);
+    const double zz2 = dot_product(dxout0, KTdxin);
+
+    // Print
     oops::Log::info() << "<dxout,KTdxin>-<Kdxout,dxin>/<dxout,KTdxin>="
                       << (zz1-zz2)/zz1 << std::endl;
     oops::Log::info() << "<dxout,KTdxin>-<Kdxout,dxin>/<Kdxout,dxin>="
