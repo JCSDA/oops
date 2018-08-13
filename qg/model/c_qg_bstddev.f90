@@ -10,26 +10,21 @@
 
 !> Setup for the QG model's background error standard deviation matrix
 
-subroutine c_qg_bstddev_setup(c_key_self, c_conf, c_key_geom) &
-          & bind (c,name='qg_bstddev_setup_f90')
+subroutine c_qg_bstddev_setup(c_key_self, c_conf) bind (c,name='qg_bstddev_setup_f90')
 
 use iso_c_binding
 use qg_bstddev_mod
-use qg_geom_mod
 
 implicit none
 integer(c_int), intent(inout) :: c_key_self   !< The background std dev structure
 type(c_ptr), intent(in)    :: c_conf     !< The configuration
-integer(c_int), intent(in) :: c_key_geom !< Geometry
 type(qg_3d_bstddev_config), pointer :: self
-type(qg_geom),  pointer :: geom
 
-call qg_geom_registry%get(c_key_geom, geom)
 call qg_3d_bstddev_registry%init()
 call qg_3d_bstddev_registry%add(c_key_self)
 call qg_3d_bstddev_registry%get(c_key_self, self)
 
-call qg_3d_bstddev_setup(c_conf, geom, self)
+call qg_3d_bstddev_setup(c_conf, self)
 
 end subroutine c_qg_bstddev_setup
 
@@ -75,7 +70,7 @@ call qg_field_registry%get(c_key_in,xin)
 call qg_field_registry%get(c_key_out,xout)
 
 call zeros(xout)
-call qg_3d_bstddev_inv_mult(conf%nx,conf%ny,xin,xout,conf)
+call qg_3d_bstddev_inv_mult(xin,xout,conf)
 
 end subroutine c_qg_bstddev_inv_mult
 
@@ -103,7 +98,7 @@ call qg_field_registry%get(c_key_in,xin)
 call qg_field_registry%get(c_key_out,xout)
 
 call zeros(xout)
-call qg_3d_bstddev_mult(conf%nx,conf%ny,xin,xout,conf)
+call qg_3d_bstddev_mult(xin,xout,conf)
 
 end subroutine c_qg_bstddev_mult
 

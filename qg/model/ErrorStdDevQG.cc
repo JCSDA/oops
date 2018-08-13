@@ -21,21 +21,17 @@
 
 namespace qg {
 // -----------------------------------------------------------------------------
-ErrorStdDevQG::ErrorStdDevQG(const eckit::Configuration & conf)
-  : conf_(conf), keyFtnConfig_(0)
+ErrorStdDevQG::ErrorStdDevQG(const StateQG &, const StateQG &, const eckit::Configuration & conf)
+  : keyFtnConfig_(0)
 {
+  const eckit::Configuration * configc = &conf;
+  qg_bstddev_setup_f90(keyFtnConfig_, &configc);
   oops::Log::trace() << "ErrorStdDevQG created" << std::endl;
 }
 // -----------------------------------------------------------------------------
 ErrorStdDevQG::~ErrorStdDevQG() {
   qg_bstddev_delete_f90(keyFtnConfig_);
   oops::Log::trace() << "ErrorStdDevQG destructed" << std::endl;
-}
-// -----------------------------------------------------------------------------
-void ErrorStdDevQG::linearize(const StateQG &, const GeometryQG & resol) {
-  const eckit::Configuration * configc = &conf_;
-  if (keyFtnConfig_) qg_bstddev_delete_f90(keyFtnConfig_);
-  qg_bstddev_setup_f90(keyFtnConfig_, &configc, resol.toFortran());
 }
 // -----------------------------------------------------------------------------
 void ErrorStdDevQG::multiply(const IncrementQG & dxin, IncrementQG & dxout) const {

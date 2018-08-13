@@ -140,11 +140,8 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Background error standard deviations
 // -----------------------------------------------------------------------------
-  void qg_bstddev_setup_f90(F90bstddev &, const eckit::Configuration * const *, const F90geom &);
+  void qg_bstddev_setup_f90(F90bstddev &, const eckit::Configuration * const *);
   void qg_bstddev_delete_f90(F90bstddev &);
-
-  void qg_bstddev_linearize_f90(const F90bmat &, const eckit::Configuration * const *);
-
   void qg_bstddev_mult_f90(const F90bstddev &, const F90flds &, const F90flds &);
   void qg_bstddev_invmult_f90(const F90bstddev &, const F90flds &, const F90flds &);
 

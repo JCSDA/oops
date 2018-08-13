@@ -46,7 +46,7 @@ class ErrorCovarianceL95 : public util::Printable,
   static const std::string classname() {return "lorenz95::ErrorCovarianceL95";}
 
   ErrorCovarianceL95(const Resolution &, const oops::Variables &,
-                     const eckit::Configuration &, const StateL95 &);
+                     const eckit::Configuration &, const StateL95 &, const StateL95 &);
   ~ErrorCovarianceL95();
 
   void linearize(const StateL95 &, const Resolution &);

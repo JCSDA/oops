@@ -57,7 +57,7 @@ class ErrorCovariance : public oops::ModelSpaceCovarianceBase<MODEL>,
   static const std::string classname() {return "oops::ErrorCovariance";}
 
   ErrorCovariance(const Geometry_ &, const Variables &, const eckit::Configuration &,
-                  const State_ &);
+                  const State_ &, const State_ &);
   virtual ~ErrorCovariance();
 
   void randomize(Increment_ &) const override;
@@ -76,12 +76,13 @@ class ErrorCovariance : public oops::ModelSpaceCovarianceBase<MODEL>,
 
 template<typename MODEL>
 ErrorCovariance<MODEL>::ErrorCovariance(const Geometry_ & resol, const Variables & vars,
-                                        const eckit::Configuration & conf, const State_ & xb)
-  : ModelSpaceCovarianceBase<MODEL>(conf), covariance_()
+                                        const eckit::Configuration & conf,
+                                        const State_ & xb, const State_ & fg)
+  : ModelSpaceCovarianceBase<MODEL>(xb, fg, conf), covariance_()
 {
   Log::trace() << "ErrorCovariance<MODEL>::ErrorCovariance starting" << std::endl;
   util::Timer timer(classname(), "ErrorCovariance");
-  covariance_.reset(new Covariance_(resol.geometry(), vars, conf, xb.state()));
+  covariance_.reset(new Covariance_(resol.geometry(), vars, conf, xb.state(), fg.state()));
   Log::trace() << "ErrorCovariance<MODEL>::ErrorCovariance done" << std::endl;
 }
 

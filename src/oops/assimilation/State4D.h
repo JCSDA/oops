@@ -51,6 +51,7 @@ template<typename MODEL> class State4D : public util::Printable {
 
 /// Get model space control variable
   bool checkStatesNumber(const unsigned int nn) const {return state4d_.size() == nn;}
+  size_t size() const {return state4d_.size();}
   State_ & operator[](const int ii) {return state4d_[ii];}
   const State_ & operator[](const int ii) const {return state4d_[ii];}
 

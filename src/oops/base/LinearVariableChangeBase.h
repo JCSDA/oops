@@ -43,8 +43,6 @@ class LinearVariableChangeBase : public util::Printable,
   void setInputVariables(Variables & vars) { varin_.reset(new Variables(vars)); }
   void setOutputVariables(Variables & vars) { varout_.reset(new Variables(vars)); }
 
-  virtual void linearize(const State_ &, const Geometry_ &) = 0;
-
   virtual void multiply(const Increment_ &, Increment_ &) const = 0;
   virtual void multiplyInverse(const Increment_ &, Increment_ &) const = 0;
   virtual void multiplyAD(const Increment_ &, Increment_ &) const = 0;
@@ -69,12 +67,14 @@ class LinearVariableChangeFactory {
   typedef Geometry<MODEL>   Geometry_;
   typedef State<MODEL>      State_;
  public:
-  static LinearVariableChangeBase<MODEL> * create(const eckit::Configuration &);
+  static LinearVariableChangeBase<MODEL> * create(const State_ &, const State_ &,
+                                                  const eckit::Configuration &);
   virtual ~LinearVariableChangeFactory() { getMakers().clear(); }
  protected:
   explicit LinearVariableChangeFactory(const std::string &);
  private:
-  virtual LinearVariableChangeBase<MODEL> * make(const eckit::Configuration &) = 0;
+  virtual LinearVariableChangeBase<MODEL> * make(const State_ &, const State_ &,
+                                                 const eckit::Configuration &) = 0;
   static std::map < std::string, LinearVariableChangeFactory<MODEL> * > & getMakers() {
     static std::map < std::string, LinearVariableChangeFactory<MODEL> * > makers_;
     return makers_;
@@ -86,8 +86,10 @@ class LinearVariableChangeFactory {
 template<class MODEL, class T>
 class LinearVariableChangeMaker : public LinearVariableChangeFactory<MODEL> {
   typedef Geometry<MODEL>   Geometry_;
-  virtual LinearVariableChangeBase<MODEL> * make(const eckit::Configuration & conf)
-    { return new T(conf); }
+  typedef State<MODEL>      State_;
+  virtual LinearVariableChangeBase<MODEL> * make(const State_ & bg, const State_ & fg,
+                                                 const eckit::Configuration & conf)
+    { return new T(bg, fg, conf); }
  public:
   explicit LinearVariableChangeMaker(const std::string & name)
     : LinearVariableChangeFactory<MODEL>(name) {}
@@ -108,7 +110,7 @@ LinearVariableChangeFactory<MODEL>::LinearVariableChangeFactory(const std::strin
 
 template <typename MODEL>
 LinearVariableChangeBase<MODEL> * LinearVariableChangeFactory<MODEL>::create(
-                                           const eckit::Configuration & conf) {
+     const State_ & bg, const State_ & fg, const eckit::Configuration & conf) {
   Log::trace() << "LinearVariableChangeBase<MODEL>::create starting" << std::endl;
   const std::string id = conf.getString("varchange");
   typename std::map<std::string, LinearVariableChangeFactory<MODEL>*>::iterator
@@ -117,7 +119,7 @@ LinearVariableChangeBase<MODEL> * LinearVariableChangeFactory<MODEL>::create(
     Log::error() << id << " does not exist in the variable change factory factory." << std::endl;
     ABORT("Element does not exist in LinearVariableChangeFactory.");
   }
-  LinearVariableChangeBase<MODEL> * ptr = jerr->second->make(conf);
+  LinearVariableChangeBase<MODEL> * ptr = jerr->second->make(bg, fg, conf);
   Log::trace() << "LinearVariableChangeBase<MODEL>::create done" << std::endl;
   return ptr;
 }

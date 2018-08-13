@@ -104,7 +104,8 @@ template <typename MODEL> class LinearModelFixture : private boost::noncopyable 
 //  Create a covariance matrix
     oops::instantiateCovarFactory<MODEL>();
     const eckit::LocalConfiguration covar(TestEnvironment::config(), "Covariance");
-    Covariance_ * Bptr = oops::CovarianceFactory<MODEL>::create(covar, *resol_, *ctlvars_, *xref_);
+    Covariance_ * Bptr = oops::CovarianceFactory<MODEL>::create(covar, *resol_, *ctlvars_,
+                                                                *xref_, *xref_);
     Bptr->linearize(*xref_, *resol_);
     B_.reset(Bptr);
 

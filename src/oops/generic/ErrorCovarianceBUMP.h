@@ -52,7 +52,7 @@ class ErrorCovarianceBUMP : public oops::ModelSpaceCovarianceBase<MODEL>,
   static const std::string classname() {return "oops::ErrorCovarianceBUMP";}
 
   ErrorCovarianceBUMP(const Geometry_ &, const Variables &,
-                      const eckit::Configuration &, const State_ &);
+                      const eckit::Configuration &, const State_ &, const State_ &);
   virtual ~ErrorCovarianceBUMP();
 
   void randomize(Increment_ &) const override;
@@ -75,11 +75,9 @@ template<typename MODEL>
 ErrorCovarianceBUMP<MODEL>::ErrorCovarianceBUMP(const Geometry_ & resol,
                                                 const Variables & vars,
                                                 const eckit::Configuration & conf,
-                                                const State_ & xb)
-  : ModelSpaceCovarianceBase<MODEL>(conf), conf_(conf), vars_(vars), keyBUMP_(0)
+                                                const State_ & xb, const State_ & fg)
+  : ModelSpaceCovarianceBase<MODEL>(xb, fg, conf), conf_(conf), vars_(vars), keyBUMP_(0)
 {
-  Log::trace() << "ErrorCovarianceBUMP<MODEL>::ErrorCovarianceBUMP starting" << std::endl;
-  util::Timer timer(classname(), "ErrorCovarianceBUMP");
   Log::trace() << "ErrorCovarianceBUMP<MODEL>::ErrorCovarianceBUMP constructed" << std::endl;
 }
 

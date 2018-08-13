@@ -26,7 +26,8 @@ namespace qg {
 // -----------------------------------------------------------------------------
 
 ErrorCovarianceQG::ErrorCovarianceQG(const GeometryQG & resol, const oops::Variables &,
-                                     const eckit::Configuration & conf, const StateQG &) {
+                                     const eckit::Configuration & conf,
+                                     const StateQG &, const StateQG &) {
   time_ = util::DateTime(conf.getString("date"));
   const eckit::Configuration * configc = &conf;
   qg_b_setup_f90(keyFtnConfig_, &configc, resol.toFortran());

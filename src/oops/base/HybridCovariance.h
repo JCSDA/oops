@@ -39,7 +39,7 @@ class HybridCovariance : public ModelSpaceCovarianceBase<MODEL> {
 
  public:
   HybridCovariance(const Geometry_ &, const Variables &,
-                   const eckit::Configuration &, const State_ &);
+                   const eckit::Configuration &, const State_ &, const State_ &);
   ~HybridCovariance();
 
   void randomize(Increment_ &) const override;
@@ -60,13 +60,14 @@ class HybridCovariance : public ModelSpaceCovarianceBase<MODEL> {
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 HybridCovariance<MODEL>::HybridCovariance(const Geometry_ & resol, const Variables & vars,
-                                          const eckit::Configuration & config, const State_ & xb)
-  : ModelSpaceCovarianceBase<MODEL>(config),
+                                          const eckit::Configuration & config,
+                                          const State_ & xb, const State_ & fg)
+  : ModelSpaceCovarianceBase<MODEL>(xb, fg, config),
     static_(CovarianceFactory<MODEL>::create(
-              eckit::LocalConfiguration(config, "static"), resol, vars, xb))
+              eckit::LocalConfiguration(config, "static"), resol, vars, xb, fg))
 {
   const eckit::LocalConfiguration ensConf(config, "ensemble");
-  ensemble_.reset(new EnsembleCovariance<MODEL>(resol,  vars, ensConf, xb));
+  ensemble_.reset(new EnsembleCovariance<MODEL>(resol,  vars, ensConf, xb, fg));
 
   ensWeight_ = config.getDouble("ensemble_weight");
   ASSERT(ensWeight_ > 0.0 && ensWeight_ <= 1.0);

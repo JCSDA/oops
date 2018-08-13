@@ -45,7 +45,7 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL> {
 
  public:
   EnsembleCovariance(const Geometry_ &, const Variables &,
-                     const eckit::Configuration &, const State_ &);
+                     const eckit::Configuration &, const State_ &, const State_ &);
   ~EnsembleCovariance();
 
   void randomize(Increment_ &) const override;
@@ -65,9 +65,10 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL> {
 /// Constructor, destructor
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Variables & vars,
-                                              const eckit::Configuration & conf, const State_ & xb)
-  : ModelSpaceCovarianceBase<MODEL>(conf),
+EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ &, const Variables &,
+                                              const eckit::Configuration & conf,
+                                              const State_ & xb, const State_ & fg)
+  : ModelSpaceCovarianceBase<MODEL>(xb, fg, conf),
     config_(conf), time_(config_.getString("date")), loc_()
 {
   Log::trace() << "EnsembleCovariance created." << std::endl;

@@ -40,11 +40,8 @@ class ErrorStdDevQG: public util::Printable {
  public:
   static const std::string classname() {return "qg::ErrorStdDevQG";}
 
-  explicit ErrorStdDevQG(const eckit::Configuration &);
+  ErrorStdDevQG(const StateQG &, const StateQG &, const eckit::Configuration &);
   ~ErrorStdDevQG();
-
-/// Set linearisation state
-  void linearize(const StateQG &, const GeometryQG &);
 
 /// Perform linear transforms
   void multiply(const IncrementQG &, IncrementQG &) const;
@@ -55,7 +52,6 @@ class ErrorStdDevQG: public util::Printable {
  private:
   void print(std::ostream &) const override;
 
-  const eckit::LocalConfiguration conf_;
   F90bstddev keyFtnConfig_;
 };
 // -----------------------------------------------------------------------------

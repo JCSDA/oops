@@ -36,10 +36,9 @@ class StatsVariableChange : public LinearVariableChangeBase<MODEL> {
  public:
   static const std::string classname() {return "oops::StatsVariableChange";}
 
-  explicit StatsVariableChange(const eckit::Configuration &);
+  StatsVariableChange(const State_ &, const State_ &, const eckit::Configuration &);
   virtual ~StatsVariableChange();
 
-  void linearize(const State_ &,  const Geometry_ &) override;
   void multiply(const Increment_ &, Increment_ &) const override;
   void multiplyInverse(const Increment_ &, Increment_ &) const override;
   void multiplyAD(const Increment_ &, Increment_ &) const override;
@@ -61,7 +60,8 @@ class StatsVariableChange : public LinearVariableChangeBase<MODEL> {
 };
 
 template<typename MODEL>
-StatsVariableChange<MODEL>::StatsVariableChange(const eckit::Configuration & conf)
+StatsVariableChange<MODEL>::StatsVariableChange(const State_ &, const State_ &,
+                                                const eckit::Configuration & conf)
   : LinearVariableChangeBase<MODEL>(conf)
 {
   Log::trace() << "StatsVariableChange<MODEL>::StatsVariableChange starting" << std::endl;
@@ -72,12 +72,6 @@ template<typename MODEL>
 StatsVariableChange<MODEL>::~StatsVariableChange() {
   Log::trace() << "StatsVariableChange<MODEL>::~StatsVariableChange starting" << std::endl;
   Log::trace() << "StatsVariableChange<MODEL>::~StatsVariableChange done" << std::endl;
-}
-
-template<typename MODEL>
-void StatsVariableChange<MODEL>::linearize(const State_ & x,  const Geometry_ & resol) {
-  Log::trace() << "StatsVariableChange<MODEL>::linearize starting" << std::endl;
-  Log::trace() << "StatsVariableChange<MODEL>::linearize done" << std::endl;
 }
 
 template<typename MODEL>

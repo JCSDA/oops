@@ -42,7 +42,7 @@ class ErrorCovarianceQG : public util::Printable,
   static const std::string classname() {return "qg::ErrorCovarianceQG";}
 
   ErrorCovarianceQG(const GeometryQG &, const oops::Variables &,
-                    const eckit::Configuration &, const StateQG &);
+                    const eckit::Configuration &, const StateQG &, const StateQG &);
   ~ErrorCovarianceQG();
 
   void linearize(const StateQG &, const GeometryQG &);

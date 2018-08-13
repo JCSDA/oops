@@ -16,8 +16,6 @@ implicit none
 
 !> Fortran derived type to hold configuration data for the QG background/model std dev
 type :: qg_3d_bstddev_config
-  integer :: nx !< Zonal grid dimension
-  integer :: ny !< Meridional grid dimension
   real(kind=kind_real)    :: sigma        !< Standard deviation
 end type qg_3d_bstddev_config
 
@@ -44,7 +42,7 @@ contains
 !! std dev matrix, and stores the relevant values in the
 !! error std dev structure.
 
-subroutine qg_3d_bstddev_setup(c_model, geom, config)
+subroutine qg_3d_bstddev_setup(c_model, config)
 
 use qg_constants
 use qg_geom_mod
@@ -55,20 +53,9 @@ use fckit_log_module, only : fckit_log
 
 implicit none
 type(c_ptr), intent(in)   :: c_model  !< The configuration
-type(qg_geom), intent(in) :: geom     !< Geometry
 type(qg_3d_bstddev_config), intent(inout) :: config !< The std dev structure
 
-character(len=160) :: record
-
-config%nx         = geom%nx
-config%ny         = geom%ny
 config%sigma      = config_get_real(c_model,"standard_deviation")
-
-if (mod(config%nx,2)/=0) then
-  write(record,*) "c_qg_3d_bstddev_setup: number of zonal gridpoints nx=",config%nx
-  call fckit_log%error(record)
-  call abor1_ftn("c_qg_3d_bstddev_setup: odd number of zonal grid points")
-endif
 
 return
 end subroutine qg_3d_bstddev_setup
@@ -87,14 +74,12 @@ end subroutine qg_3d_bstddev_delete
 
 !> Multiply by inverse of std dev matrix
 
-subroutine qg_3d_bstddev_inv_mult(kx,ky,xin,xout,config)
+subroutine qg_3d_bstddev_inv_mult(xin,xout,config)
 use iso_c_binding
 use kinds
 use qg_fields
 
 implicit none
-integer(c_int), intent(in)    :: kx            !< Zonal grid dimension
-integer(c_int), intent(in)    :: ky            !< Meridional grid dimension
 type(qg_field), intent(in)    :: xin
 type(qg_field), intent(inout) :: xout
 type(qg_3d_bstddev_config), intent(in) :: config !< bstddev config structure
@@ -106,8 +91,8 @@ real(kind=kind_real) :: zc
 
 zc = 1.0_kind_real/config%sigma
 do k=1,2
-  do j=1,ky
-    do i=1,kx
+  do j=1,xout%geom%ny
+    do i=1,xout%geom%nx
       xout%x(i,j,k) = zc * xin%x(i,j,k)
     enddo
   enddo
@@ -119,14 +104,12 @@ end subroutine qg_3d_bstddev_inv_mult
 
 !> Multiply by std dev matrix
 
-subroutine qg_3d_bstddev_mult(kx,ky,xin,xout,config)
+subroutine qg_3d_bstddev_mult(xin,xout,config)
 use iso_c_binding
 use kinds
 use qg_fields
 
 implicit none
-integer(c_int), intent(in)    :: kx            !< Zonal grid dimension
-integer(c_int), intent(in)    :: ky            !< Meridional grid dimension
 type(qg_field), intent(in)    :: xin
 type(qg_field), intent(inout) :: xout
 type(qg_3d_bstddev_config), intent(in) :: config !< bstddev config structure
@@ -136,8 +119,8 @@ integer :: i, j, k
 !--- multiply by standard deviation
 
 do k=1,2
-  do j=1,ky
-    do i=1,kx
+  do j=1,xout%geom%ny
+    do i=1,xout%geom%nx
       xout%x(i,j,k) = config%sigma * xin%x(i,j,k)
     enddo
   enddo

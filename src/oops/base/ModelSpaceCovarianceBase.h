@@ -49,7 +49,7 @@ class ModelSpaceCovarianceBase {
   typedef typename ChvarVec_::const_reverse_iterator ircst_;
 
  public:
-  explicit ModelSpaceCovarianceBase(const eckit::Configuration & conf);
+  ModelSpaceCovarianceBase(const State_ &, const State_ &, const eckit::Configuration & conf);
   virtual ~ModelSpaceCovarianceBase() {}
 
   const LinearVariableChangeBase_ & getK(const unsigned & ii) const {return *chvars_[ii];}
@@ -78,14 +78,16 @@ class CovarianceFactory {
   typedef State<MODEL>               State_;
 
  public:
-  static ModelSpaceCovarianceBase<MODEL> * create(const eckit::Configuration &, const Geometry_ &,
-                                                  const Variables &, const State_ &);
+  static ModelSpaceCovarianceBase<MODEL> * create(const eckit::Configuration &,
+                                                  const Geometry_ &, const Variables &,
+                                                  const State_ &, const State_ &);
   virtual ~CovarianceFactory() { makers_.clear(); }
  protected:
   explicit CovarianceFactory(const std::string &);
  private:
-  virtual ModelSpaceCovarianceBase<MODEL> * make(const eckit::Configuration &, const Geometry_ &,
-                                                 const Variables &, const State_ &) = 0;
+  virtual ModelSpaceCovarianceBase<MODEL> * make(const eckit::Configuration &,
+                                                 const Geometry_ &, const Variables &,
+                                                 const State_ &, const State_ &) = 0;
   static std::map < std::string, CovarianceFactory<MODEL> * > makers_;
 };
 
@@ -99,8 +101,8 @@ class CovarMaker : public CovarianceFactory<MODEL> {
   virtual ModelSpaceCovarianceBase<MODEL> * make(const eckit::Configuration & conf,
                                                  const Geometry_ & resol,
                                                  const Variables & vars,
-                                                 const State_ & xb) {
-    return new COVAR(resol, vars, conf, xb);
+                                                 const State_ & xb, const State_ & fg) {
+    return new COVAR(resol, vars, conf, xb, fg);
   }
  public:
   explicit CovarMaker(const std::string & name) : CovarianceFactory<MODEL>(name) {}
@@ -129,7 +131,7 @@ ModelSpaceCovarianceBase<MODEL>* CovarianceFactory<MODEL>::create(
                                                          const eckit::Configuration & conf,
                                                          const Geometry_ & resol,
                                                          const Variables & vars,
-                                                         const State_ & xb) {
+                                                         const State_ & xb, const State_ & fg) {
   const std::string id = conf.getString("covariance");
   Log::trace() << "ModelSpaceCovarianceBase type = " << id << std::endl;
   typename std::map<std::string, CovarianceFactory<MODEL>*>::iterator
@@ -143,31 +145,27 @@ ModelSpaceCovarianceBase<MODEL>* CovarianceFactory<MODEL>::create(
     }
     ABORT("Element does not exist in CovarianceFactory.");
   }
-  return (*j).second->make(conf, resol, vars, xb);
+  return (*j).second->make(conf, resol, vars, xb, fg);
 }
 
 // =============================================================================
 
 template <typename MODEL>
-ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(const eckit::Configuration & conf) {
+ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(const State_ & bg, const State_ & fg,
+                                                          const eckit::Configuration & conf) {
   if (conf.has("variable_changes")) {
     std::vector<eckit::LocalConfiguration> chvarconfs;
     conf.get("variable_changes", chvarconfs);
-    for (const auto & config : chvarconfs)
-      chvars_.push_back(LinearVariableChangeFactory<MODEL>::create(config));
+    for (const auto & config : chvarconfs) {
+      chvars_.push_back(LinearVariableChangeFactory<MODEL>::create(bg, fg, config));
+    }
   }
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void ModelSpaceCovarianceBase<MODEL>::linearize(const State_ & fg,
-                                                const Geometry_ & geom) {
-  if (chvars_.size()) {
-    for (iter_ it = chvars_.begin(); it != chvars_.end(); ++it)
-      it->linearize(fg, geom);
-  }
-
+void ModelSpaceCovarianceBase<MODEL>::linearize(const State_ & fg, const Geometry_ & geom) {
   this->doLinearize(fg, geom);
 }
 

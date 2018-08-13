@@ -38,7 +38,7 @@
 
 namespace test {
 
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 template <typename MODEL> class LinearVariableChangeFixture : private boost::noncopyable {
   typedef oops::Geometry<MODEL>                  Geometry_;
@@ -80,7 +80,7 @@ template <typename MODEL> class LinearVariableChangeFixture : private boost::non
   boost::scoped_ptr<const util::DateTime>            time_;
 };
 
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 template <typename MODEL> void testLinearVariableChangeZero() {
   typedef LinearVariableChangeFixture<MODEL>       Test_;
@@ -94,10 +94,8 @@ template <typename MODEL> void testLinearVariableChangeZero() {
     oops::Variables varin(varinconf);
     oops::Variables varout(varoutconf);
 
-    boost::scoped_ptr<LinearVariableChange_>
-      changevar(LinearVariableChangeFactory_::create(Test_::linvarchgconfs()[jj]));
-
-    changevar->linearize(Test_::xx(), Test_::resol());
+    boost::scoped_ptr<LinearVariableChange_> changevar(LinearVariableChangeFactory_::create(
+                                      Test_::xx(), Test_::xx(), Test_::linvarchgconfs()[jj]));
 
     Increment_   dxin(Test_::resol(), varin,  Test_::time());
     Increment_ KTdxin(Test_::resol(), varout, Test_::time());
@@ -135,10 +133,8 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
     oops::Variables varin(varinconf);
     oops::Variables varout(varoutconf);
 
-    boost::scoped_ptr<LinearVariableChange_>
-      changevar(LinearVariableChangeFactory_::create(Test_::linvarchgconfs()[jj]));
-
-    changevar->linearize(Test_::xx(), Test_::resol());
+    boost::scoped_ptr<LinearVariableChange_> changevar(LinearVariableChangeFactory_::create(
+                                      Test_::xx(), Test_::xx(), Test_::linvarchgconfs()[jj]));
 
     Increment_   dxin(Test_::resol(), varin,  Test_::time());
     Increment_ KTdxin(Test_::resol(), varout, Test_::time());
@@ -169,7 +165,7 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
   }
 }
 
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 template <typename MODEL> class LinearVariableChange : public oops::Test {
  public:
@@ -188,7 +184,7 @@ template <typename MODEL> class LinearVariableChange : public oops::Test {
   }
 };
 
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 }  // namespace test
 

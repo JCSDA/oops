@@ -92,11 +92,13 @@ template<typename MODEL> class CostJb3D : public CostJbState<MODEL> {
   Increment_ * newStateIncrement(const unsigned int) const override;
 
  private:
+  const State_ & xb_;
   boost::scoped_ptr< ModelSpaceCovarianceBase<MODEL> > B_;
   const util::Duration winLength_;
   const Variables controlvars_;
   boost::scoped_ptr<const Geometry_> resol_;
   boost::scoped_ptr<const util::DateTime> time_;
+  const eckit::LocalConfiguration conf_;
 };
 
 // =============================================================================
@@ -105,12 +107,11 @@ template<typename MODEL> class CostJb3D : public CostJbState<MODEL> {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-CostJb3D<MODEL>::CostJb3D(const eckit::Configuration & config, const Geometry_ & resolouter,
+CostJb3D<MODEL>::CostJb3D(const eckit::Configuration & config, const Geometry_ &,
                           const Variables & ctlvars, const util::Duration & len,
                           const State_ & xb)
-  : B_(CovarianceFactory<MODEL>::create(eckit::LocalConfiguration(config, "Covariance"),
-                                        resolouter, ctlvars, xb)),
-    winLength_(len), controlvars_(ctlvars), resol_(), time_()
+  : xb_(xb), B_(), winLength_(len), controlvars_(ctlvars), resol_(), time_(),
+    conf_(config, "Covariance")
 {
   Log::trace() << "CostJb3D constructed." << std::endl;
 }
@@ -118,10 +119,11 @@ CostJb3D<MODEL>::CostJb3D(const eckit::Configuration & config, const Geometry_ &
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void CostJb3D<MODEL>::linearize(const State4D_ & fg, const Geometry_ & resolinner) {
+void CostJb3D<MODEL>::linearize(const State4D_ & fg, const Geometry_ & lowres) {
   ASSERT(fg.checkStatesNumber(1));
-  resol_.reset(new Geometry_(resolinner));
+  resol_.reset(new Geometry_(lowres));
   time_.reset(new util::DateTime(fg[0].validTime()));
+  B_.reset(CovarianceFactory<MODEL>::create(conf_, lowres, controlvars_, xb_, fg[0])),
   B_->linearize(fg[0], *resol_);
 }
 

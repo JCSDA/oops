@@ -17,11 +17,9 @@
 
 namespace qg {
 // -----------------------------------------------------------------------------
-ChangeVar::ChangeVar(const eckit::Configuration &) {}
+ChangeVar::ChangeVar(const StateQG &, const StateQG &, const eckit::Configuration &) {}
 // -----------------------------------------------------------------------------
 ChangeVar::~ChangeVar() {}
-// -----------------------------------------------------------------------------
-void ChangeVar::linearize(const StateQG &, const GeometryQG &) {}
 // -----------------------------------------------------------------------------
 void ChangeVar::multiply(const IncrementQG & dxa, IncrementQG & dxm) const {
   dxm = dxa;
