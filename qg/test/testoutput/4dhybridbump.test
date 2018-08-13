@@ -3,17 +3,17 @@ Test     : CostJo   : Nonlinear Jo = 18995.5, nobs = 800, Jo/n = 23.7443, err = 
 Test     : CostJo   : Nonlinear Jo = 2093.12, nobs = 800, Jo/n = 2.6164, err = 0.6
 Test     : CostJo   : Nonlinear Jo = 287.248, nobs = 400, Jo/n = 0.718119, err = 1.2
 Test     : CostFunction: Nonlinear J = 21375.8
-Test     : DRPCGMinimizer: reduction in residual norm = 0.00695645
-Test     : CostFunction::addIncrement: Analysis norm: 14.6667
-Test     : CostJb   : Nonlinear Jb = 96.946
-Test     : CostJo   : Nonlinear Jo = 1035.04, nobs = 800, Jo/n = 1.2938, err = 0.4
-Test     : CostJo   : Nonlinear Jo = 265.772, nobs = 800, Jo/n = 0.332215, err = 0.6
-Test     : CostJo   : Nonlinear Jo = 35.7723, nobs = 400, Jo/n = 0.0894307, err = 1.2
-Test     : CostFunction: Nonlinear J = 1433.53
-Test     : DRPCGMinimizer: reduction in residual norm = 0.0235008
-Test     : CostFunction::addIncrement: Analysis norm: 14.713
-Test     : CostJb   : Nonlinear Jb = 87.1761
-Test     : CostJo   : Nonlinear Jo = 129.13, nobs = 800, Jo/n = 0.161413, err = 0.4
-Test     : CostJo   : Nonlinear Jo = 55.9761, nobs = 800, Jo/n = 0.0699702, err = 0.6
-Test     : CostJo   : Nonlinear Jo = 9.41394, nobs = 400, Jo/n = 0.0235348, err = 1.2
-Test     : CostFunction: Nonlinear J = 281.697
+Test     : DRPCGMinimizer: reduction in residual norm = 0.00772057
+Test     : CostFunction::addIncrement: Analysis norm: 14.6234
+Test     : CostJb   : Nonlinear Jb = 127.634
+Test     : CostJo   : Nonlinear Jo = 903.131, nobs = 800, Jo/n = 1.12891, err = 0.4
+Test     : CostJo   : Nonlinear Jo = 251.153, nobs = 800, Jo/n = 0.313941, err = 0.6
+Test     : CostJo   : Nonlinear Jo = 35.2026, nobs = 400, Jo/n = 0.0880065, err = 1.2
+Test     : CostFunction: Nonlinear J = 1317.12
+Test     : DRPCGMinimizer: reduction in residual norm = 0.0357125
+Test     : CostFunction::addIncrement: Analysis norm: 14.6775
+Test     : CostJb   : Nonlinear Jb = 125.641
+Test     : CostJo   : Nonlinear Jo = 101.356, nobs = 800, Jo/n = 0.126695, err = 0.4
+Test     : CostJo   : Nonlinear Jo = 61.3342, nobs = 800, Jo/n = 0.0766678, err = 0.6
+Test     : CostJo   : Nonlinear Jo = 10.6828, nobs = 400, Jo/n = 0.026707, err = 1.2
+Test     : CostFunction: Nonlinear J = 299.014

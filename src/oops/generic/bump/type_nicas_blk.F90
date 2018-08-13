@@ -1296,7 +1296,6 @@ if (nam%network) then
          end if
 
          ! Square-root coefficient
-         rh_c1a(ic1a,il1) = rh_c1a(ic1a,il1)*sqrt_r
          if (nicas_blk%double_fit) then
             rv_c1a(ic1a,il1) = rv_c1a(ic1a,il1)*sqrt_r_dble
             rv_rfac_c1a(ic1a,il1) = rv_rfac_c1a(ic1a,il1)*sqrt_rfac
@@ -1315,13 +1314,12 @@ else
       rv_sa(isa) = cmat_blk%rv_c0(ic0a,il0)
 
       ! Square-root coefficient
-      rh_sa(isa) = rh_sa(isa)*sqrt_r
       if (nicas_blk%double_fit) then
          rv_sa(isa) = rv_sa(isa)*sqrt_r_dble
          rv_rfac_sa(isa) = rv_rfac_sa(isa)*sqrt_rfac
          rv_coef_sa(isa) = rv_coef_sa(isa)*sqrt_coef
       else
-         rv_sa(isa) = rh_sa(isa)*sqrt_r
+         rv_sa(isa) = rv_sa(isa)*sqrt_r
       end if
    end do
 end if

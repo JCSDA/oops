@@ -25,6 +25,7 @@ type bpar_type
    integer,allocatable :: l0rl0b_to_l0(:,:,:)    !< Effective level to level
    integer,allocatable :: il0rz(:,:)             !< Effective zero separation level
    integer,allocatable :: nc3(:)                 !< Maximum class
+   logical,allocatable :: vbal_block(:,:)        !< Vertical balance block
    logical,allocatable :: diag_block(:)          !< HDIAG block
    logical,allocatable :: avg_block(:)           !< Averaging block
    logical,allocatable :: fit_block(:)           !< Fit block
@@ -82,6 +83,7 @@ allocate(bpar%l0rl0b_to_l0(nam%nl0r,geom%nl0,bpar%nbe))
 allocate(bpar%il0rz(geom%nl0,bpar%nbe))
 allocate(bpar%nl0r(bpar%nbe))
 allocate(bpar%nc3(bpar%nbe))
+allocate(bpar%vbal_block(nam%nv,nam%nv))
 allocate(bpar%diag_block(bpar%nbe))
 allocate(bpar%avg_block(bpar%nbe))
 allocate(bpar%fit_block(bpar%nbe))
@@ -116,6 +118,7 @@ if (nam%new_lct) then
          end do
          bpar%nc3(ib) = nam%nc3
          bpar%nc3(ib) = nam%nc3
+         bpar%vbal_block(iv,jv) = .false.
          bpar%diag_block(ib) = .true.
          bpar%avg_block(ib) = .false.
          bpar%fit_block(ib) = .false.
@@ -188,6 +191,7 @@ else
                end if
 
                ! Select blocks
+               bpar%vbal_block(iv,jv) = (iv>=2).and.(jv<=iv-1).and..true. ! TODO: add namelist variable
                select case (nam%strategy)
                case ('diag_all')
                   bpar%diag_block(ib) = .true.
@@ -220,7 +224,8 @@ else
                   bpar%nicas_block(ib) = (bpar%nbe==bpar%nb)
                   bpar%cv_block(ib) = (iv==jv).and.(its==jts)
                end select
-               bpar%fit_block(ib) = bpar%diag_block(ib).and.(iv==jv).and.(its==jts).and.(trim(nam%minim_algo)/='none')
+               bpar%fit_block(ib) = (bpar%nb==1).or.(bpar%diag_block(ib).and.(iv==jv).and.(its==jts) &
+                                  & .and.(trim(nam%minim_algo)/='none'))
                if (nam%local_diag) bpar%fit_block(ib) = bpar%fit_block(ib).and.bpar%nicas_block(ib)
 
                ! Blocks information
@@ -317,6 +322,7 @@ if (allocated(bpar%nl0r)) deallocate(bpar%nl0r)
 if (allocated(bpar%l0rl0b_to_l0)) deallocate(bpar%l0rl0b_to_l0)
 if (allocated(bpar%il0rz)) deallocate(bpar%il0rz)
 if (allocated(bpar%nc3)) deallocate(bpar%nc3)
+if (allocated(bpar%vbal_block)) deallocate(bpar%vbal_block)
 if (allocated(bpar%diag_block)) deallocate(bpar%diag_block)
 if (allocated(bpar%avg_block)) deallocate(bpar%avg_block)
 if (allocated(bpar%fit_block)) deallocate(bpar%fit_block)

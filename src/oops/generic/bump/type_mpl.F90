@@ -61,6 +61,7 @@ contains
    procedure :: init_listing => mpl_init_listing
    procedure :: abort => mpl_abort
    procedure :: warning => mpl_warning
+   procedure :: barrier => mpl_barrier
    procedure :: prog_init => mpl_prog_init
    procedure :: prog_print => mpl_prog_print
    procedure :: ncerr => mpl_ncerr
@@ -255,7 +256,7 @@ logical,intent(in) :: logpres          !< Vertical unit flag
 integer,intent(in),optional :: lunit   !< Main listing unit
 
 ! Local variables
-integer :: iproc,info
+integer :: iproc
 character(len=1024) :: filename
 
 ! Setup display colors
@@ -306,10 +307,7 @@ do iproc=1,mpl%nproc
    end if
 
    ! Wait
-   call mpi_barrier(mpl%mpi_comm,info)
-
-   ! Check
-   call mpl%check(info)
+   call mpl%barrier
 end do
 
 end subroutine mpl_init_listing
@@ -341,6 +339,28 @@ call flush(output_unit)
 call mpi_abort(mpl%mpi_comm,1,info)
 
 end subroutine mpl_abort
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_barrier
+!> Purpose: MPI barrier
+!----------------------------------------------------------------------
+subroutine mpl_barrier(mpl)
+
+implicit none
+
+! Passed variable
+class(mpl_type) :: mpl !< MPI data
+
+! Local variables
+integer :: info
+
+! Wait
+call mpi_barrier(mpl%mpi_comm,info)
+
+! Check
+call mpl%check(info)
+
+end subroutine mpl_barrier
 
 !----------------------------------------------------------------------
 ! Subroutine: mpl_warning

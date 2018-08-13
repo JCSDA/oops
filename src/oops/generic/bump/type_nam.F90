@@ -36,7 +36,6 @@ type nam_type
    character(len=1024) :: model                     !< Model name ('aro', 'arp', 'gem', 'geos', 'gfs', 'ifs', 'mpas', 'nemo' or 'wrf')
    logical :: colorlog                              !< Add colors to the log (for display on terminal)
    logical :: default_seed                          !< Default seed for random numbers
-   logical :: load_ensemble                         !< Load ensemble before computations
    logical :: use_metis                             !< Use METIS to split the domain between processors
 
    ! driver_param
@@ -184,7 +183,6 @@ nam%prefix = ''
 nam%model = ''
 nam%colorlog = .false.
 nam%default_seed = .false.
-nam%load_ensemble = .false.
 nam%use_metis = .false.
 
 ! driver_param default
@@ -323,7 +321,7 @@ integer :: lunit
 integer :: nl,levs(nlmax),nv,nts,timeslot(ntsmax),ens1_ne,ens1_ne_offset,ens1_nsub,ens2_ne,ens2_ne_offset,ens2_nsub
 integer :: nc1,nc2,ntry,nrep,nc3,nl0r,ne,var_niter,displ_niter,lct_nscales,mpicom,advmode,ndir,levdir(ndirmax),ivdir(ndirmax)
 integer :: itsdir(ndirmax),nobs,nldwh,il_ldwh(nlmax*nc3max),ic_ldwh(nlmax*nc3max),nldwv
-logical :: colorlog,default_seed,load_ensemble,use_metis
+logical :: colorlog,default_seed,use_metis
 logical :: new_hdiag,new_param,check_adjoints,check_pos_def,check_sqrt,check_dirac,check_randomization,check_consistency
 logical :: check_optimality,new_lct,new_obsop,logpres,sam_write,sam_read,mask_check,var_diag,var_filter,var_full,gau_approx
 logical :: local_diag,displ_diag,double_fit(nvmax),lhomh,lhomv,lct_diag(nscalesmax),lsqrt,network,forced_radii,field_io,split_io
@@ -335,7 +333,7 @@ character(len=1024) :: obsdis,obsop_interp,diag_interp,grid_interp
 character(len=1024),dimension(nvmax) :: varname,addvar2d
 
 ! Namelist blocks
-namelist/general_param/datadir,prefix,model,colorlog,default_seed,load_ensemble,use_metis
+namelist/general_param/datadir,prefix,model,colorlog,default_seed,use_metis
 namelist/driver_param/method,strategy,new_hdiag,new_param,check_adjoints,check_pos_def,check_sqrt,check_dirac, &
                     & check_randomization,check_consistency,check_optimality,new_lct,new_obsop
 namelist/model_param/nl,levs,logpres,nv,varname,addvar2d,nts,timeslot
@@ -362,7 +360,6 @@ if (mpl%main) then
    nam%model = model
    nam%colorlog = colorlog
    nam%default_seed = default_seed
-   nam%load_ensemble = load_ensemble
    nam%use_metis = use_metis
 
    ! driver_param
@@ -519,7 +516,6 @@ call mpl%bcast(nam%prefix)
 call mpl%bcast(nam%model)
 call mpl%bcast(nam%colorlog)
 call mpl%bcast(nam%default_seed)
-call mpl%bcast(nam%load_ensemble)
 call mpl%bcast(nam%use_metis)
 
 ! driver_param
@@ -649,8 +645,8 @@ class(nam_type),intent(inout) :: nam      !< Namelist
 integer,intent(in) :: nl0                 !< Number of levels
 integer,intent(in) :: nv                  !< Number of variables
 integer,intent(in) :: nts                 !< Number of time-slots
-integer,intent(in),optional :: ens1_ne    !< Ensemble 1 size
-integer,intent(in),optional :: ens2_ne    !< Ensemble 2 size
+integer,intent(in) :: ens1_ne             !< Ensemble 1 size
+integer,intent(in) :: ens2_ne             !< Ensemble 2 size
 
 ! Local variables
 integer :: il,iv
@@ -658,7 +654,6 @@ integer :: il,iv
 nam%datadir = '.'
 nam%model = 'online'
 nam%colorlog = .false.
-nam%load_ensemble = .false.
 nam%use_metis = .false.
 nam%nl = nl0
 do il=1,nam%nl
@@ -672,18 +667,10 @@ do iv=1,nam%nv
 end do
 nam%nts = nts
 nam%timeslot = 0
-if (present(ens1_ne)) then
-   nam%ens1_ne = ens1_ne
-else
-   nam%ens1_ne = 4
-end if
+nam%ens1_ne = ens1_ne
 nam%ens1_ne_offset = 0
 nam%ens1_nsub = 1
-if (present(ens2_ne)) then
-   nam%ens2_ne = ens2_ne
-else
-   nam%ens2_ne = 4
-end if
+nam%ens2_ne = ens2_ne
 nam%ens2_ne_offset = 0
 nam%ens2_nsub = 1
 
@@ -736,7 +723,7 @@ nam%grid_resol = nam%grid_resol/req
 if (trim(nam%datadir)=='') call mpl%abort('datadir not specified')
 if (trim(nam%prefix)=='') call mpl%abort('prefix not specified')
 select case (trim(nam%model))
-case ('aro','arp','gem','geos','gfs','ifs','mpas','nemo','online','wrf')
+case ('aro','arp','fv3','gem','geos','gfs','ifs','mpas','nemo','online','wrf')
 case default
    call mpl%abort('wrong model')
 end select
@@ -808,7 +795,7 @@ if (nam%new_hdiag.or.nam%new_param.or.nam%check_adjoints.or.nam%check_pos_def.or
 end if
 
 ! Check ens1_param
-if (nam%load_ensemble.or.nam%new_hdiag.or.nam%new_lct) then
+if (nam%new_hdiag.or.nam%new_lct) then
    if (nam%ens1_ne_offset<0) call mpl%abort('ens1_ne_offset should be non-negative')
    if (nam%ens1_nsub<1) call mpl%abort('ens1_nsub should be positive')
    if (mod(nam%ens1_ne,nam%ens1_nsub)/=0) call mpl%abort('ens1_nsub should be a divider of ens1_ne')
@@ -816,7 +803,7 @@ if (nam%load_ensemble.or.nam%new_hdiag.or.nam%new_lct) then
 end if
 
 ! Check ens2_param
-if (nam%load_ensemble.or.nam%new_hdiag.or.nam%new_lct) then
+if (nam%new_hdiag) then
    select case (trim(nam%method))
    case ('hyb-rnd','dual-ens')
       if (nam%ens2_ne_offset<0) call mpl%abort('ens2_ne_offset should be non-negative')
@@ -1105,7 +1092,6 @@ call put_att(mpl,ncid,'prefix',trim(nam%prefix))
 call put_att(mpl,ncid,'model',trim(nam%model))
 call put_att(mpl,ncid,'colorlog',nam%colorlog)
 call put_att(mpl,ncid,'default_seed',nam%default_seed)
-call put_att(mpl,ncid,'load_ensemble',nam%load_ensemble)
 call put_att(mpl,ncid,'use_metis',nam%use_metis)
 
 ! driver_param

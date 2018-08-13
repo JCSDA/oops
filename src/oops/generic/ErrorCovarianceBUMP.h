@@ -142,7 +142,7 @@ void ErrorCovarianceBUMP<MODEL>::doInverseMultiply(const Increment_ & dx1,
                                                    Increment_ & dx2) const {
   Log::trace() << "ErrorCovarianceBUMP<MODEL>::doInverseMultiply starting" << std::endl;
   util::Timer timer(classname(), "doInverseMultiply");
-  dx2 = dx1;
+  dx2.zero();
   Log::info() << "ErrorCovarianceBUMP<MODEL>::doInverseMultiply not implemented" << std::endl;
   Log::trace() << "ErrorCovarianceBUMP<MODEL>::doInverseMultiply done" << std::endl;
 }

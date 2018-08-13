@@ -21,14 +21,17 @@ implicit none
 ! Ensemble derived type
 type ens_type
    ! Attributes
-   integer :: ne                                 !< Ensemble size
-   integer :: nsub                               !< Number of sub-ensembles
+   integer :: ne                                  !< Ensemble size
+   integer :: nsub                                !< Number of sub-ensembles
 
    ! Data
-   real(kind_real),allocatable :: fld(:,:,:,:,:) !< Ensemble fields
+   real(kind_real),allocatable :: fld(:,:,:,:,:)  !< Ensemble perturbation
+   real(kind_real),allocatable :: mean(:,:,:,:,:) !< Ensemble mean
 contains
    procedure :: alloc => ens_alloc
    procedure :: dealloc => ens_dealloc
+   procedure :: copy => ens_copy
+   procedure :: remove_mean => ens_remove_mean
    procedure :: ens_from
    procedure :: ens_from_oops
    procedure :: ens_from_nemovar
@@ -57,11 +60,13 @@ integer,intent(in) :: nsub           !< Number of sub-ensembles
 
 ! Allocate
 allocate(ens%fld(geom%nc0a,geom%nl0,nam%nv,nam%nts,ne))
+allocate(ens%mean(geom%nc0a,geom%nl0,nam%nv,nam%nts,nsub))
 
 ! Initialization
 ens%ne = ne
 ens%nsub = nsub
 call msr(ens%fld)
+call msr(ens%mean)
 
 end subroutine ens_alloc
 
@@ -80,6 +85,63 @@ class(ens_type),intent(inout) :: ens !< Ensemble
 if (allocated(ens%fld)) deallocate(ens%fld)
 
 end subroutine ens_dealloc
+
+!----------------------------------------------------------------------
+! Subroutine: ens_copy
+!> Purpose: ensemble data copy
+!----------------------------------------------------------------------
+subroutine ens_copy(ens_out,ens_in)
+
+implicit none
+
+! Passed variables
+class(ens_type),intent(inout) :: ens_out !< Ensemble
+type(ens_type),intent(in) :: ens_in      !< Ensemble
+
+! Allocate
+allocate(ens_out%fld(size(ens_in%fld,1),size(ens_in%fld,2),size(ens_in%fld,3),size(ens_in%fld,4),size(ens_in%fld,5)))
+allocate(ens_out%mean(size(ens_in%mean,1),size(ens_in%mean,2),size(ens_in%mean,3),size(ens_in%mean,4),size(ens_in%mean,5)))
+
+! Initialization
+ens_out%ne = ens_in%ne
+ens_out%nsub = ens_in%nsub
+ens_out%fld = ens_in%fld
+ens_out%mean = ens_in%mean
+
+end subroutine ens_copy
+
+!----------------------------------------------------------------------
+! Subroutine: ens_remove_mean
+!> Purpose: remove ensemble mean
+!----------------------------------------------------------------------
+subroutine ens_remove_mean(ens)
+
+implicit none
+
+! Passed variables
+class(ens_type),intent(inout) :: ens !< Ensemble
+
+! Local variables
+integer :: isub,ie_sub,ie
+
+! Loop over sub-ensembles
+do isub=1,ens%nsub
+   ! Compute mean
+   ens%mean(:,:,:,:,isub) = 0.0
+   do ie_sub=1,ens%ne/ens%nsub
+      ie = ie_sub+(isub-1)*ens%ne/ens%nsub
+      ens%mean(:,:,:,:,isub) = ens%mean(:,:,:,:,isub)+ens%fld(:,:,:,:,ie)
+   end do
+   ens%mean(:,:,:,:,isub) = ens%mean(:,:,:,:,isub)/(ens%ne/ens%nsub)
+
+   ! Remove mean
+   do ie_sub=1,ens%ne/ens%nsub
+      ie = ie_sub+(isub-1)*ens%ne/ens%nsub
+      ens%fld(:,:,:,:,ie) = ens%fld(:,:,:,:,ie)-ens%mean(:,:,:,:,isub)
+   end do
+end do
+
+end subroutine ens_remove_mean
 
 !----------------------------------------------------------------------
 ! Subroutine: ens_from
@@ -112,6 +174,9 @@ do ie=1,ens%ne
       end do
    end do
 end do
+
+! Remove mean
+call ens%remove_mean
 
 end subroutine ens_from
 
@@ -160,6 +225,9 @@ do ie=1,ne
    ! Update
    offset = offset+n
 end do
+
+! Remove mean
+call ens%remove_mean
 
 end subroutine ens_from_oops
 
@@ -215,6 +283,9 @@ do iens=1,nens
       ie = ie+1
    end do
 end do
+
+! Remove mean
+call ens%remove_mean
 
 end subroutine ens_from_nemovar
 

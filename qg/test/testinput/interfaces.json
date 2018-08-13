@@ -28,8 +28,8 @@
       "bottom_layer_depth": "4500.0"
     },
     "Locations": {
-       "lats": ["55.0","-45.0"],
-       "lons": ["10.0","-77.0"],
+       "lats": ["25.0","-13.0"],
+       "lons": ["10.0","77.0"],
        "heights": ["0.25","0.75"],
        "Nrandom": "8",
        "random_seed": "560921"
@@ -41,9 +41,9 @@
 	"variables": ["x","q","u","v"]
     },
     "norm-file": "15.010355026",
-    "norm-gen": "4.6631346036939672",
+    "norm-gen": "4.5095589941238243",
     "tolerance": 1.0e-8,
-    "interp_tolerance": "0.25",
+    "interp_tolerance": "3.0",
     "values": [6.042838]
   },
   "LinearObsOpTest": {

@@ -171,6 +171,8 @@ oops/generic/bump/type_nicas.F90
 oops/generic/bump/type_obsop.F90
 oops/generic/bump/type_rng.F90
 oops/generic/bump/type_timer.F90
+oops/generic/bump/type_vbal_blk.F90
+oops/generic/bump/type_vbal.F90
 oops/generic/bump/external/tools_kdtree2.F90
 oops/generic/bump/external/tools_kdtree2_pq.F90
 oops/generic/bump/external/tools_qsort.F90

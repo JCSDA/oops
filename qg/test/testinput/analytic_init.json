@@ -23,14 +23,14 @@
       "variables": ["x","q","u","v"]
     },
     "Locations": {
-       "lats": ["55.0","-45.0"],
-       "lons": ["10.0","-77.0"],
+       "lats": ["25.0","-13.0"],
+       "lons": ["10.0","77.0"],
        "heights": ["0.25","0.75"],
        "Nrandom": "8",
        "random_seed": "560921"
     },
     "norm-file": "15.010355026",
-    "norm-gen": "4.6748183345328786",
-    "interp_tolerance": "0.25"
+    "norm-gen": "4.5654911216431504",
+    "interp_tolerance": "3.0"
   }
 }

@@ -30,7 +30,7 @@
         "strategy" : "common",
         "new_hdiag" : 0,
         "new_param" : 1,
-        "check_adjoints" : 1,
+        "check_adjoints" : 0,
         "check_pos_def" : 0,
         "check_sqrt" : 0,
         "check_dirac" : 0,
@@ -67,8 +67,8 @@
         "mpicom" : 2,
         "advmode" : 0,
         "forced_radii" : 1,
-        "rh" : 1800.0e3,
-        "rv" : 0.36,
+        "rh" : 3600.0e3,
+        "rv" : 0.72,
         "ndir" : 0,
         "nldwh" : 0,
         "nldwv" : 0,
@@ -76,7 +76,19 @@
         "diag_interp" : "bilin",
         "field_io" : 1,
         "split_io" : 1,
-        "grid_output" : 0
+        "grid_output" : 0,
+        "variable_changes": [ 
+           {
+             "varchange": "ErrStdDevQG",
+             "inputVariables": {
+                "variables": ["x"]
+              },
+             "outputVariables": {
+                "variables": ["x"]
+             },
+             "standard_deviation": "0.8"
+           }
+        ]
       }
     },
     "Jo": {
@@ -88,7 +100,7 @@
               "obsfile": "Data/qg.truth4d.obt"
             },
             "ObsDataOut": {
-              "obsfile": "Data/qg.4dhybrid.obt"
+              "obsfile": "Data/qg.4dvar.drplanczos.obt"
             },
             "obsvalue": "ObsVal"
           },
@@ -104,7 +116,7 @@
               "obsfile": "Data/qg.truth4d.obt"
             },
             "ObsDataOut": {
-              "obsfile": "Data/qg.4dhybrid.obt"
+              "obsfile": "Data/qg.4dvar.drplanczos.obt"
             },
             "obsvalue": "ObsVal"
           },
@@ -120,7 +132,7 @@
               "obsfile": "Data/qg.truth4d.obt"
             },
             "ObsDataOut": {
-              "obsfile": "Data/qg.4dhybrid.obt"
+              "obsfile": "Data/qg.4dvar.drplanczos.obt"
             },
             "obsvalue": "ObsVal"
           },
@@ -130,10 +142,21 @@
           }
         }
       ]
-    }
+    },
+    "Jc": [{
+      "jcdfi": {
+        "type": "DolphChebyshev",
+        "variables": ["x"],
+        "cutoff": "PT3H",
+        "alpha": "10.0"
+      }
+    }]
   },
   "minimizer": {
-    "algorithm": "DRPCG"
+    "algorithm": "DRPLanczos",
+    "preconditioner": {
+      "maxpairs": "3"
+    }
   },
   "output": {
     "first": "PT0S",
@@ -161,7 +184,7 @@
             "bottom_layer_depth": "4500.0"
           }
         },
-        "ninner": "15",
+        "ninner": "10",
         "gradient_norm_reduction": "1e-10",
         "test": "on",
         "diagnostics": {
@@ -192,11 +215,11 @@
     ]
   },
   "final": {
-    "diagnostics": {
-      "departures": "oman"
-    },
     "prints": {
       "frequency": "PT1H"
+    },
+    "diagnostics": {
+      "departures": "oman"
     }
   }
 }

@@ -245,7 +245,7 @@ do isub=1,ens%nsub
                   ic1 = hdata%c2_to_c1(ic2)
                   if (hdata%c1l0_log(ic1,il0)) then
                      do jc1=1,nam%nc1
-                        if (hdata%displ_mask(jc1,ic2,min(il0,geom%nl0i))) then
+                        if (hdata%displ_mask(jc1,ic2)) then
                            ! Indices
                            ic0 = hdata%c2_to_c0(ic2)
                            jc0 = hdata%c1_to_c0(jc1)
@@ -312,7 +312,7 @@ do its=2,nam%nts
                ! Initialization
                call msr(cor_avg(jc1))
 
-               if (hdata%displ_mask(jc1,ic2,min(il0,geom%nl0i))) then
+               if (hdata%displ_mask(jc1,ic2)) then
                   ! Compute correlation for each variable
                   do iv=1,nam%nv
                      ! Correlation

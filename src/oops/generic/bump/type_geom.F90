@@ -37,6 +37,7 @@ type geom_type
    integer :: nlev                            !< Number of levels
    integer,allocatable :: c0_to_lon(:)        !< Subset Sc0 to longitude index
    integer,allocatable :: c0_to_lat(:)        !< Subset Sc0 to latgitude index
+   integer,allocatable :: c0_to_tile(:)        !< Subset Sc0 to tile index
 
    ! Number of points and levels
    integer :: nmg                             !< Number of model grid points
@@ -118,6 +119,7 @@ allocate(geom%c0_to_proc(geom%nc0))
 allocate(geom%c0_to_c0a(geom%nc0))
 allocate(geom%c0_to_lon(geom%nc0))
 allocate(geom%c0_to_lat(geom%nc0))
+allocate(geom%c0_to_tile(geom%nc0))
 allocate(geom%lon(geom%nc0))
 allocate(geom%lat(geom%nc0))
 allocate(geom%area(geom%nl0))
@@ -130,6 +132,7 @@ call msi(geom%c0_to_proc)
 call msi(geom%c0_to_c0a)
 call msi(geom%c0_to_lon)
 call msi(geom%c0_to_lat)
+call msi(geom%c0_to_tile)
 call msr(geom%lon)
 call msr(geom%lat)
 call msr(geom%area)
@@ -153,6 +156,7 @@ class(geom_type),intent(inout) :: geom !< Geometry
 ! Release memory
 if (allocated(geom%c0_to_lon)) deallocate(geom%c0_to_lon)
 if (allocated(geom%c0_to_lat)) deallocate(geom%c0_to_lat)
+if (allocated(geom%c0_to_tile)) deallocate(geom%c0_to_tile)
 if (allocated(geom%lon)) deallocate(geom%lon)
 if (allocated(geom%lat)) deallocate(geom%lat)
 if (allocated(geom%mask)) deallocate(geom%mask)
@@ -945,6 +949,7 @@ do ic0=1,geom%nc0
 end do
 geom%c0_to_lon(c0_reorder) = geom%c0_to_lon
 geom%c0_to_lat(c0_reorder) = geom%c0_to_lat
+geom%c0_to_tile(c0_reorder) = geom%c0_to_tile
 geom%lon(c0_reorder) = geom%lon
 geom%lat(c0_reorder) = geom%lat
 do il0=1,geom%nl0

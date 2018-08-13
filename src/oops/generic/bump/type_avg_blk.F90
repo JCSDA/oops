@@ -206,7 +206,7 @@ real(kind_real) :: m2_1,m2_2
 real(kind_real),allocatable :: list_m11(:),list_m11m11(:,:,:),list_m2m2(:,:,:),list_m22(:,:),list_cor(:)
 logical :: involved,valid
 
-! Associatem2_1
+! Associate
 associate(ic2=>avg_blk%ic2,ib=>avg_blk%ib)
 
 if ((ic2==0).or.(nam%var_diag)) then
@@ -215,9 +215,9 @@ if ((ic2==0).or.(nam%var_diag)) then
       do isub=1,avg_blk%nsub
          do il0=1,geom%nl0
             jl0r = bpar%il0rz(il0,ib)
-            avg_blk%m2(il0,isub) = sum(mom_blk%m2_1(:,1,jl0r,il0,isub))/real(hdata%nc1a,kind_real)
+            avg_blk%m2(il0,isub) = sum(mom_blk%m2_1(:,1,il0,isub))/real(hdata%nc1a,kind_real)
             if (nam%var_filter.and.(.not.nam%gau_approx)) avg_blk%m4(il0,isub) = sum(mom_blk%m22(:,1,jl0r,il0,isub)) &
-                                                                              & /real(hdata%nc1a,kind_real)
+                                                                               & /real(hdata%nc1a,kind_real)
          end do
       end do
    else
@@ -229,7 +229,7 @@ if ((ic2==0).or.(nam%var_diag)) then
             do isub=1,avg_blk%nsub
                do il0=1,geom%nl0
                   jl0r = bpar%il0rz(il0,ib)
-                  avg_blk%m2(il0,isub) = mom_blk%m2_1(ic1a,1,jl0r,il0,isub)
+                  avg_blk%m2(il0,isub) = mom_blk%m2_1(ic1a,1,il0,isub)
                   if (nam%var_filter.and.(.not.nam%gau_approx)) avg_blk%m4(il0,isub) = mom_blk%m22(ic1a,1,jl0r,il0,isub)
                end do
             end do
@@ -241,7 +241,7 @@ end if
 if ((ic2==0).or.(nam%local_diag)) then
    ! Check whether this task is involved
    if (ic2>0) then
-      involved = any(hdata%local_mask(hdata%c1a_to_c1,ic2,:))
+      involved = any(hdata%local_mask(hdata%c1a_to_c1,ic2))
    else
       involved = .true.
    end if
@@ -256,7 +256,7 @@ if ((ic2==0).or.(nam%local_diag)) then
       
             ! Allocation
             if (ic2>0) then
-               nc1amax = count(hdata%local_mask(hdata%c1a_to_c1,ic2,min(jl0,geom%nl0i)))
+               nc1amax = count(hdata%local_mask(hdata%c1a_to_c1,ic2))
             else
                nc1amax = hdata%nc1a
             end if
@@ -275,7 +275,7 @@ if ((ic2==0).or.(nam%local_diag)) then
       
                   ! Check validity
                   valid = hdata%c1l0_log(ic1,il0).and.hdata%c1c3l0_log(ic1,jc3,jl0)
-                  if (ic2>0) valid = valid.and.hdata%local_mask(ic1,ic2,min(jl0,geom%nl0i))
+                  if (ic2>0) valid = valid.and.hdata%local_mask(ic1,ic2)
       
                   if (valid) then
                      ! Update
@@ -286,14 +286,14 @@ if ((ic2==0).or.(nam%local_diag)) then
                      do isub=1,avg_blk%nsub
                         do jsub=1,avg_blk%nsub
                            list_m11m11(nc1a,jsub,isub) = mom_blk%m11(ic1a,jc3,jl0r,il0,isub)*mom_blk%m11(ic1a,jc3,jl0r,il0,jsub)
-                           list_m2m2(nc1a,jsub,isub) = mom_blk%m2_1(ic1a,jc3,jl0r,il0,isub)*mom_blk%m2_2(ic1a,jc3,jl0r,il0,jsub)
+                           list_m2m2(nc1a,jsub,isub) = mom_blk%m2_1(ic1a,jc3,il0,isub)*mom_blk%m2_2(ic1a,jc3,jl0,jsub)
                         end do
                         if (.not.nam%gau_approx) list_m22(nc1a,isub) = mom_blk%m22(ic1a,jc3,jl0r,il0,isub)
                      end do
       
                      ! Correlation
-                     m2_1 = sum(mom_blk%m2_1(ic1a,jc3,jl0r,il0,:))/real(avg_blk%nsub,kind_real)
-                     m2_2 = sum(mom_blk%m2_2(ic1a,jc3,jl0r,il0,:))/real(avg_blk%nsub,kind_real)
+                     m2_1 = sum(mom_blk%m2_1(ic1a,jc3,il0,:))/real(avg_blk%nsub,kind_real)
+                     m2_2 = sum(mom_blk%m2_2(ic1a,jc3,jl0,:))/real(avg_blk%nsub,kind_real)
                      if ((m2_1>var_min).and.(m2_2>var_min)) then
                         list_cor(nc1a) = list_m11(nc1a)/sqrt(m2_1*m2_2)
                         if (abs(list_cor(nc1a))>1.0+rth) call msr(list_cor(nc1a))
@@ -555,7 +555,7 @@ if ((ic2==0).or.(nam%local_diag)) then
    
          ! Allocation
          if (ic2>0) then
-            nc1amax = count(hdata%local_mask(hdata%c1a_to_c1,ic2,min(jl0,geom%nl0i)))
+            nc1amax = count(hdata%local_mask(hdata%c1a_to_c1,ic2))
          else
             nc1amax = hdata%nc1a
          end if
@@ -570,7 +570,7 @@ if ((ic2==0).or.(nam%local_diag)) then
    
                ! Check validity
                valid = hdata%c1l0_log(ic1,il0).and.hdata%c1c3l0_log(ic1,jc3,jl0)
-               if (ic2>0) valid = valid.and.hdata%local_mask(ic1,ic2,min(jl0,geom%nl0i))
+               if (ic2>0) valid = valid.and.hdata%local_mask(ic1,ic2)
    
                if (valid) then
                   ! Update

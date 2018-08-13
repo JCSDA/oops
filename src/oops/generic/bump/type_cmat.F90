@@ -27,6 +27,7 @@ use type_mom, only: mom_type
 use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 use type_rng, only: rng_type
+use type_vbal, only: vbal_type
 
 implicit none
 
@@ -276,6 +277,7 @@ type(diag_type) :: cov_1,cov_2,cor_1,cor_2,loc_1,loc_2,loc_3
 type(displ_type) :: displ
 type(hdata_type) :: hdata
 type(mom_type) :: mom_1,mom_2
+type(vbal_type) :: vbal
 
 ! Setup sampling
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
@@ -289,7 +291,7 @@ write(mpl%unit,'(a)') '--- Compute MPI distribution, halos A'
 call flush(mpl%unit)
 call hdata%compute_mpi_a(mpl,nam,geom)
 
-if (nam%var_diag.or.nam%local_diag.or.nam%displ_diag) then
+if (nam%new_lct.or.nam%var_diag.or.nam%local_diag.or.nam%displ_diag) then
    ! Compute MPI distribution, halos A-B
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Compute MPI distribution, halos A-B'
@@ -323,6 +325,16 @@ if ((nam%local_diag.or.nam%displ_diag).and.(nam%diag_rhflt>0.0)) then
    write(mpl%unit,'(a)') '--- Compute MPI distribution, halo F'
    call flush(mpl%unit)
    call hdata%compute_mpi_f(mpl,nam,geom)
+end if
+
+if (nam%local_diag.and..false.) then ! TODO
+   ! Compute vertical balance operator
+   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(mpl%unit,'(a)') '--- Compute vertical balance operator'
+   call flush(mpl%unit)
+   call vbal%compute(mpl,nam,geom,bpar,hdata,ens1)
+   call mpl%barrier
+   call mpl%abort('ok')
 end if
 
 ! Compute sample moments

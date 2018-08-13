@@ -164,7 +164,7 @@ type(hdata_type),intent(in) :: hdata         !< HDIAG data
 type(mom_blk_type),intent(in) :: mom_blk     !< Moments block
 
 ! Local variables
-integer :: jsub,il0,jl0r,jc3,ic1a,ic1
+integer :: jsub,il0,jl0r,jl0,jc3,ic1a,ic1
 real(kind_real) :: den
 
 ! Associate
@@ -178,11 +178,12 @@ lct_blk%norm = 0.0
 do jsub=1,mom_blk%nsub
    do il0=1,geom%nl0
       do jl0r=1,bpar%nl0r(ib)
+         jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
          do jc3=1,nam%nc3
             do ic1a=1,hdata%nc1a
                ic1 = hdata%c1a_to_c1(ic1a)
                if (hdata%c1l0_log(ic1,il0)) then
-                  den = mom_blk%m2_1(ic1a,jc3,jl0r,il0,jsub)*mom_blk%m2_2(ic1a,jc3,jl0r,il0,jsub)
+                  den = mom_blk%m2_1(ic1a,jc3,il0,jsub)*mom_blk%m2_2(ic1a,jc3,jl0,jsub)
                   if (den>0.0) then
                      lct_blk%raw(jc3,jl0r,ic1a,il0) = lct_blk%raw(jc3,jl0r,ic1a,il0)+mom_blk%m11(ic1a,jc3,jl0r,il0,jsub)/sqrt(den)
                      lct_blk%norm(jc3,jl0r,ic1a,il0) = lct_blk%norm(jc3,jl0r,ic1a,il0)+1.0

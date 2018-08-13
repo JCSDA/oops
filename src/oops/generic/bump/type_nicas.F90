@@ -555,7 +555,7 @@ type(geom_type),intent(inout) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar        !< Block parameters
 type(io_type),intent(in) :: io            !< I/O
 type(cmat_type),intent(in) :: cmat        !< C matrix data
-type(ens_type),intent(in),optional :: ens !< Ensemble
+type(ens_type),intent(in) :: ens          !< Ensemble
 
 ! Local variables
 integer :: ib
@@ -579,11 +579,7 @@ if (nam%check_adjoints) then
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Test localization adjoint'
    call flush(mpl%unit)
-   if (present(ens)) then
-      call nicas%test_adjoint(mpl,rng,nam,geom,bpar,ens)
-   else
-      call nicas%test_adjoint(mpl,rng,nam,geom,bpar)
-   end if
+   call nicas%test_adjoint(mpl,rng,nam,geom,bpar,ens)
 end if
 
 if (nam%check_pos_def) then
@@ -621,11 +617,7 @@ if (nam%check_sqrt) then
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Test localization full/square-root equivalence'
    call flush(mpl%unit)
-   if (present(ens)) then
-      call nicas%test_sqrt(mpl,rng,nam,geom,bpar,io,cmat,ens)
-   else
-      call nicas%test_sqrt(mpl,rng,nam,geom,bpar,io,cmat)
-   end if
+   call nicas%test_sqrt(mpl,rng,nam,geom,bpar,io,cmat,ens)
 end if
 
 if (nam%check_dirac) then
@@ -647,11 +639,7 @@ if (nam%check_dirac) then
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(mpl%unit,'(a)') '--- Apply localization to diracs'
    call flush(mpl%unit)
-   if (present(ens)) then
-      call nicas%test_dirac(mpl,nam,geom,bpar,io,ens)
-   else
-      call nicas%test_dirac(mpl,nam,geom,bpar,io)
-   end if
+   call nicas%test_dirac(mpl,nam,geom,bpar,io,ens)
 end if
 
 if (nam%check_randomization) then
@@ -1331,7 +1319,7 @@ type(nam_type),target,intent(in) :: nam    !< Namelist
 type(geom_type),target,intent(in) :: geom  !< Geometry
 type(bpar_type),target,intent(in) :: bpar  !< Blocal parameters
 integer,intent(in) :: ne                   !< Number of members
-type(ens_type),intent(out),optional :: ens !< Ensemble
+type(ens_type),intent(out) :: ens          !< Ensemble
 
 ! Local variable
 integer :: ie
@@ -1482,7 +1470,7 @@ type(rng_type),intent(inout) :: rng       !< Random number generator
 type(nam_type),intent(in) :: nam          !< Namelist
 type(geom_type),intent(in) :: geom        !< Geometry
 type(bpar_type),intent(in) :: bpar        !< Block parameters
-type(ens_type),intent(in),optional :: ens !< Ensemble
+type(ens_type),intent(in) :: ens          !< Ensemble
 
 ! Local variables
 real(kind_real) :: sum1,sum2
@@ -1494,7 +1482,7 @@ allocate(fld1_save(geom%nc0a,geom%nl0,nam%nv,nam%nts))
 allocate(fld2_save(geom%nc0a,geom%nl0,nam%nv,nam%nts))
 allocate(fld1_loc(geom%nc0a,geom%nl0,nam%nv,nam%nts))
 allocate(fld2_loc(geom%nc0a,geom%nl0,nam%nv,nam%nts))
-if (present(ens)) then
+if (ens%ne>0) then
    allocate(fld1_bens(geom%nc0a,geom%nl0,nam%nv,nam%nts))
    allocate(fld2_bens(geom%nc0a,geom%nl0,nam%nv,nam%nts))
 end if
@@ -1519,7 +1507,7 @@ if (abs(nam%advmode)==1) then
    call nicas%blk(bpar%nbe)%apply_adv(mpl,nam,geom,fld1_adv)
    call nicas%blk(bpar%nbe)%apply_adv_ad(mpl,nam,geom,fld2_adv)
 end if
-if (present(ens)) then
+if (ens%ne>0) then
    fld1_bens = fld1_save
    fld2_bens = fld2_save
    call nicas%apply_bens(mpl,nam,geom,bpar,ens,fld1_bens)
@@ -1539,7 +1527,7 @@ if (abs(nam%advmode)==1) then
  & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
    call flush(mpl%unit)
 end if
-if (present(ens)) then
+if (ens%ne>0) then
    call mpl%dot_prod(fld1_bens,fld2_save,sum1)
    call mpl%dot_prod(fld2_bens,fld1_save,sum2)
    write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Ensemble B adjoint test:   ', &
@@ -1566,7 +1554,7 @@ type(geom_type),intent(in),target :: geom  !< Geometry
 type(bpar_type),intent(in) :: bpar         !< Block parameters
 type(io_type),intent(in) :: io             !< I/O
 type(cmat_type),intent(in) :: cmat         !< C matrix data
-type(ens_type),intent(in),optional :: ens  !< Ensemble
+type(ens_type),intent(in) :: ens           !< Ensemble
 
 ! Local variables
 integer :: ib,iv
@@ -1578,7 +1566,7 @@ type(nicas_type) :: nicas_other
 ! Allocation
 allocate(fld_loc(geom%nc0a,geom%nl0,nam%nv,nam%nts))
 allocate(fld_loc_sqrt(geom%nc0a,geom%nl0,nam%nv,nam%nts))
-if (present(ens)) then
+if (ens%ne>0) then
    allocate(fld_bens(geom%nc0a,geom%nl0,nam%nv,nam%nts))
    allocate(fld_bens_sqrt(geom%nc0a,geom%nl0,nam%nv,nam%nts))
 end if
@@ -1586,7 +1574,7 @@ end if
 ! Generate random field
 call rng%rand_real(-1.0_kind_real,1.0_kind_real,fld_loc)
 fld_loc_sqrt = fld_loc
-if (present(ens)) then
+if (ens%ne>0) then
    call rng%rand_real(-1.0_kind_real,1.0_kind_real,fld_bens)
    fld_bens_sqrt = fld_bens
 end if
@@ -1597,7 +1585,7 @@ if (nam%lsqrt) then
 else
    call nicas%apply(mpl,nam,geom,bpar,fld_loc)
 end if
-if (present(ens)) then
+if (ens%ne>0) then
    if (nam%lsqrt) then
       call nicas%apply_bens(mpl,nam,geom,bpar,ens,fld_bens_sqrt)
    else
@@ -1634,7 +1622,7 @@ if (nam%lsqrt) then
 else
    call nicas_other%apply(mpl,nam,geom,bpar,fld_loc)
 end if
-if (present(ens)) then
+if (ens%ne>0) then
    if (nam%lsqrt) then
       call nicas_other%apply_bens(mpl,nam,geom,bpar,ens,fld_bens_sqrt)
    else
@@ -1658,7 +1646,7 @@ nam%lsqrt = .not.nam%lsqrt
 ! Print difference
 write(mpl%unit,'(a7,a,f6.1,a)') '','Localization full / square-root error : ', &
  & sqrt(sum((fld_loc_sqrt-fld_loc)**2)/sum(fld_loc**2))*100.0,'%'
-if (present(ens)) write(mpl%unit,'(a7,a,f6.1,a)') '','Ensemble B full / square-root error:  ', &
+if (ens%ne>0) write(mpl%unit,'(a7,a,f6.1,a)') '','Ensemble B full / square-root error:  ', &
  & sqrt(sum((fld_bens_sqrt-fld_bens)**2)/sum(fld_bens**2))*100.0,'%'
 call flush(mpl%unit)
 
@@ -1679,7 +1667,7 @@ type(nam_type),intent(in) :: nam          !< Namelist
 type(geom_type),intent(in) :: geom        !< Geometry
 type(bpar_type),intent(in) :: bpar        !< Block parameters
 type(io_type),intent(in) :: io            !< I/O
-type(ens_type),intent(in),optional :: ens !< Ensemble
+type(ens_type),intent(in) :: ens          !< Ensemble
 
 ! Local variables
 integer :: iprocdir(nam%ndir),ic0adir(nam%ndir),il0dir(nam%ndir),idir,iv,its
@@ -1701,7 +1689,7 @@ end do
 
 ! Allocation
 allocate(fld_loc(geom%nc0a,geom%nl0,nam%nv,nam%nts))
-if (present(ens)) allocate(fld_bens(geom%nc0a,geom%nl0,nam%nv,nam%nts))
+if (ens%ne>0) allocate(fld_bens(geom%nc0a,geom%nl0,nam%nv,nam%nts))
 
 ! Apply localization to dirac
 fld_loc = fld
@@ -1711,7 +1699,7 @@ else
    call nicas%apply(mpl,nam,geom,bpar,fld_loc)
 end if
 
-if (present(ens)) then
+if (ens%ne>0) then
    ! Apply localized ensemble covariance
    fld_bens = fld
    call nicas%apply_bens(mpl,nam,geom,bpar,ens,fld_bens)
@@ -1723,7 +1711,7 @@ do its=1,nam%nts
    write(itschar,'(i2.2)') its
    do iv=1,nam%nv
       call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_'//itschar,fld_loc(:,:,iv,its))
-      if (present(ens)) call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_'//itschar//'_Bens', &
+      if (ens%ne>0) call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_'//itschar//'_Bens', &
        & fld_bens(:,:,iv,its))
    end do
 end do

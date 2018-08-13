@@ -11,9 +11,10 @@
 module qg_geom_mod
 
 use iso_c_binding
+use qg_constants
 use config_mod
 use kinds
-!BM: use mpi
+!MPI: use mpi
 
 implicit none
 private
@@ -29,7 +30,7 @@ type :: qg_geom
   real(kind=kind_real),allocatable :: lat(:)
   real(kind=kind_real),allocatable :: lon(:)
   real(kind=kind_real),allocatable :: area(:,:)
-!BM:   integer,allocatable :: myproc(:,:)
+!MPI:   integer,allocatable :: myproc(:,:)
 end type qg_geom
 
 #define LISTED_TYPE qg_geom
@@ -55,9 +56,7 @@ integer(c_int), intent(inout) :: c_key_self
 type(c_ptr), intent(in)    :: c_conf
 
 integer :: ix,iy,nproc!MPI: ,myproc,info
-real(kind=kind_real) :: dx,dy
-real(kind=kind_real),parameter :: pi = acos(-1.0)
-real(kind=kind_real),parameter :: req = 6371229.0
+real(kind=kind_real) :: lat_center,lat_south, lat_north, lon_west, lon_east, full_area
 type(qg_geom), pointer :: self
 
 call qg_geom_registry%init()
@@ -71,35 +70,36 @@ self%ny = config_get_int(c_conf, "ny")
 allocate(self%lon(self%nx))
 allocate(self%lat(self%ny))
 allocate(self%area(self%nx,self%ny))
-!BM: allocate(self%myproc(self%nx,self%ny))
+!MPI: allocate(self%myproc(self%nx,self%ny))
 
 ! Define longitude/latitude
-dx = 2.0*pi/real(self%nx,kind=kind_real)
-dy = pi/real(self%ny,kind=kind_real)
+lat_center = 0.0! asin(f0/(2.0*omega))
+lat_south = lat_center-0.5*domain_meridional/req   ! 28 deg S
+lat_north = lat_center+0.5*domain_meridional/req   ! 28 deg N
+lon_west = 0.0                                          ! 0 deg
+lon_east = lon_west+domain_zonal/(req*cos(lat_center))  ! 107 deg E
 do ix=1,self%nx
-   self%lon(ix) = -pi+(real(ix,kind=kind_real)-0.5_kind_real)*dx
+   self%lon(ix) = lon_west+real(ix-1,kind=kind_real)/real(self%nx-1,kind=kind_real)*(lon_east-lon_west)
 end do
 do iy=1,self%ny
-   self%lat(iy) = -0.5*pi+(real(iy,kind=kind_real)-0.5_kind_real)*dy
+   self%lat(iy) = lat_south+real(iy-1,kind=kind_real)/real(self%ny-1,kind=kind_real)*(lat_north-lat_south)
 end do
-
-! Define area
-do iy=1,self%ny
-   self%area(:,iy) = 2.0*pi*req**2*(sin((self%lat(iy)+0.5_kind_real*dy))-sin((self%lat(iy)-0.5_kind_real*dy))) &
-            & /real(self%nx,kind=kind_real)
-end do
-
-! Define processor
-!BM: call mpi_comm_size(mpi_comm_world,nproc,info)
-!BM: myproc = 1
-!BM: do ix=1,self%nx
-!BM:    self%myproc(ix,:) = myproc
-!BM:    if (ix>myproc*self%nx/nproc) myproc = myproc+1
-!BM: end do
 
 ! Convert longitude/latitude to degrees
 self%lon = self%lon*180_kind_real/pi
 self%lat = self%lat*180_kind_real/pi
+
+! Define area (approximate)
+full_area = domain_meridional*domain_zonal
+self%area = full_area/real(self%nx*self%ny,kind=kind_real)
+
+! Define processor
+!MPI: call mpi_comm_size(mpi_comm_world,nproc,info)
+!MPI: myproc = 1
+!MPI: do ix=1,self%nx
+!MPI:    self%myproc(ix,:) = myproc
+!MPI:    if (ix>myproc*self%nx/nproc) myproc = myproc+1
+!MPI: end do1
 
 end subroutine c_qg_geo_setup
 

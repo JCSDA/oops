@@ -110,9 +110,9 @@ call bump%mpl%init(mpi_comm)
 if (present(ens1_ne).and.present(ens2_ne)) then
    call bump%nam%setup_internal(nl0,nv,nts,ens1_ne,ens2_ne)
 elseif (present(ens1_ne)) then
-   call bump%nam%setup_internal(nl0,nv,nts,ens1_ne)
+   call bump%nam%setup_internal(nl0,nv,nts,ens1_ne,0)
 else
-   call bump%nam%setup_internal(nl0,nv,nts)
+   call bump%nam%setup_internal(nl0,nv,nts,0,0)
 end if
 
 ! Initialize listing
@@ -243,11 +243,7 @@ integer :: il0,imga,offset
 call bump%mpl%init(mpi_comm)
 
 ! Set internal namelist parameters
-if (ens1_ne>0) then
-   call bump%nam%setup_internal(nl0,nv,nts,ens1_ne)
-else
-   call bump%nam%setup_internal(nl0,nv,nts)
-end if
+call bump%nam%setup_internal(nl0,nv,nts,ens1_ne,0)
 
 ! Initialize listing
 call bump%mpl%init_listing(bump%nam%prefix,bump%nam%model,bump%nam%colorlog,bump%nam%logpres)
@@ -362,7 +358,7 @@ nts = 1
 ens1_ne = nens*ncyc
 
 ! Set internal namelist parameters
-call bump%nam%setup_internal(nl0,nv,nts,ens1_ne)
+call bump%nam%setup_internal(nl0,nv,nts,ens1_ne,0)
 
 ! Initialize listing
 call bump%mpl%init_listing(bump%nam%prefix,bump%nam%model,bump%nam%colorlog,bump%nam%logpres,lunit=lunit)
@@ -550,11 +546,7 @@ if (bump%nam%check_adjoints.or.bump%nam%check_pos_def.or.bump%nam%check_sqrt.or.
    write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(bump%mpl%unit,'(a)') '--- Call NICAS tests driver'
    call flush(bump%mpl%unit)
-   if (allocated(bump%ens1%fld)) then
-      call bump%nicas%run_nicas_tests(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%cmat,bump%ens1)
-   else
-      call bump%nicas%run_nicas_tests(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%cmat)
-   end if
+   call bump%nicas%run_nicas_tests(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%cmat,bump%ens1)
 end if
 
 if (.not.bump%lct%allocated) then

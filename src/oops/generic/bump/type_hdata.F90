@@ -48,8 +48,8 @@ type hdata_type
    integer,allocatable :: c2_to_c0(:)               !< Subgrid to grid
 
    ! Local data
-   logical,allocatable ::  local_mask(:,:,:)        !< Local mask
-   logical,allocatable ::  displ_mask(:,:,:)        !< Displacement mask
+   logical,allocatable ::  local_mask(:,:)          !< Local mask
+   logical,allocatable ::  displ_mask(:,:)          !< Displacement mask
    integer,allocatable :: nn_c2_index(:,:,:)        !< Nearest diagnostic neighbors from diagnostic points
    real(kind_real),allocatable :: nn_c2_dist(:,:,:) !< Nearest diagnostic neighbors distance from diagnostic points
    integer,allocatable :: nn_ldwv_index(:)          !< Nearest diagnostic neighbors for local diagnostics profiles
@@ -154,9 +154,9 @@ if (nam%new_lct.or.nam%var_diag.or.nam%local_diag.or.nam%displ_diag) then
    allocate(hdata%nn_c2_dist(nam%nc2,nam%nc2,geom%nl0i))
    allocate(hdata%hfull(geom%nl0i))
 end if
-if (nam%local_diag) allocate(hdata%local_mask(nam%nc1,nam%nc2,geom%nl0i))
+if (nam%local_diag) allocate(hdata%local_mask(nam%nc1,nam%nc2))
 if (nam%displ_diag) then
-   allocate(hdata%displ_mask(nam%nc1,nam%nc2,geom%nl0i))
+   allocate(hdata%displ_mask(nam%nc1,nam%nc2))
    allocate(hdata%displ_lon(geom%nc0a,geom%nl0,nam%nts))
    allocate(hdata%displ_lat(geom%nc0a,geom%nl0,nam%nts))
 end if
@@ -394,9 +394,9 @@ do il0i=1,geom%nl0i
       do ic2=1,nam%nc2
          do ic1=1,nam%nc1
             if (local_maskint(ic1,ic2)==1) then
-               hdata%local_mask(ic1,ic2,il0i) = .true.
+               hdata%local_mask(ic1,ic2) = .true.
             elseif (local_maskint(ic1,ic2)==0) then
-               hdata%local_mask(ic1,ic2,il0i) = .false.
+               hdata%local_mask(ic1,ic2) = .false.
             else
                call mpl%abort('wrong local_mask')
            end if
@@ -416,9 +416,9 @@ do il0i=1,geom%nl0i
       do ic2=1,nam%nc2
          do ic1=1,nam%nc1
             if (displ_maskint(ic1,ic2)==1) then
-               hdata%displ_mask(ic1,ic2,il0i) = .true.
+               hdata%displ_mask(ic1,ic2) = .true.
             elseif (displ_maskint(ic1,ic2)==0) then
-               hdata%displ_mask(ic1,ic2,il0i) = .false.
+               hdata%displ_mask(ic1,ic2) = .false.
             else
                 call mpl%abort('wrong displ_mask')
             end if
@@ -580,6 +580,9 @@ do il0i=1,geom%nl0i
       ! Allocation
       allocate(local_maskint(nam%nc1,nam%nc2))
 
+      ! Definition mode
+      call mpl%ncerr(subr,nf90_redef(ncid))
+
       ! Define variables
       call mpl%ncerr(subr,nf90_def_var(ncid,'local_mask',nf90_int,(/nc1_id,nc2_1_id/),local_mask_id))
       call mpl%ncerr(subr,nf90_put_att(ncid,local_mask_id,'_FillValue',msvali))
@@ -587,13 +590,16 @@ do il0i=1,geom%nl0i
       ! Convert data
       do ic2=1,nam%nc2
          do ic1=1,nam%nc1
-            if (hdata%local_mask(ic1,ic2,il0i)) then
+            if (hdata%local_mask(ic1,ic2)) then
                local_maskint(ic1,ic2) = 1
             else
                local_maskint(ic1,ic2) = 0
             end if
          end do
       end do
+
+      ! End definition mode
+      call mpl%ncerr(subr,nf90_enddef(ncid))
 
       ! Write variables
       call mpl%ncerr(subr,nf90_put_var(ncid,local_mask_id,local_maskint))
@@ -606,6 +612,9 @@ do il0i=1,geom%nl0i
       ! Allocation
       allocate(displ_maskint(nam%nc1,nam%nc2))
 
+      ! Definition mode
+      call mpl%ncerr(subr,nf90_redef(ncid))
+
       ! Define variables
       call mpl%ncerr(subr,nf90_def_var(ncid,'displ_mask',nf90_int,(/nc1_id,nc2_1_id/),displ_mask_id))
       call mpl%ncerr(subr,nf90_put_att(ncid,displ_mask_id,'_FillValue',msvali))
@@ -613,13 +622,16 @@ do il0i=1,geom%nl0i
       ! Convert data
       do ic2=1,nam%nc2
          do ic1=1,nam%nc1
-            if (hdata%displ_mask(ic1,ic2,il0i)) then
+            if (hdata%displ_mask(ic1,ic2)) then
                displ_maskint(ic1,ic2) = 1
             else
                displ_maskint(ic1,ic2) = 0
             end if
          end do
       end do
+
+      ! End definition mode
+      call mpl%ncerr(subr,nf90_enddef(ncid))
 
       ! Write variables
       call mpl%ncerr(subr,nf90_put_var(ncid,displ_mask_id,displ_maskint))
@@ -653,7 +665,7 @@ type(geom_type),intent(in) :: geom       !< Geometry
 type(io_type),intent(in) :: io           !< I/O
 
 ! Local variables
-integer :: ios,ic0,il0,ic1,ic2,ildw,jc3,il0i,jc1,kc1,nc1_eff,nc2_eff
+integer :: ios,ic0,il0,ic1,ic2,ildw,jc3,il0i,jc1,kc1,nc2_eff
 integer,allocatable :: vbot(:),vtop(:),nn_c1_index(:)
 real(kind_real) :: rh0(geom%nc0),nn_dist(1),rh0_loc(geom%nc0a,geom%nl0)
 real(kind_real),allocatable :: nn_c1_dist(:)
@@ -759,34 +771,25 @@ if (nam%new_lct.or.nam%var_diag.or.nam%local_diag.or.nam%displ_diag) then
          allocate(nn_c1_dist(nam%nc1))
 
          ! Compute nearest neighbors
-         write(mpl%unit,'(a7,a)') '','Compute nearest neighbors'
+         write(mpl%unit,'(a7,a)') '','Compute local masks'
          call flush(mpl%unit)
-         do il0i=1,geom%nl0i
-            write(mpl%unit,'(a10,a,i3)') '','Independent level ',il0i
-            call flush(mpl%unit)
-            if (any(hdata%c1l0_log(:,il0i))) then
-               call kdtree%create(mpl,nam%nc1,geom%lon(hdata%c1_to_c0),geom%lat(hdata%c1_to_c0),hdata%c1l0_log(:,il0i))
-               do ic2=1,nam%nc2
-                  ic1 = hdata%c2_to_c1(ic2)
-                  ic0 = hdata%c2_to_c0(ic2)
-                  if (hdata%c1l0_log(ic1,il0i)) then
-                     ! Find nearest neighbors
-                     nc1_eff = min(nam%nc1,count(hdata%c1l0_log(:,il0i)))
-                     call kdtree%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0),nc1_eff,nn_c1_index(1:nc1_eff), &
-                   & nn_c1_dist(1:nc1_eff))
+         call kdtree%create(mpl,nam%nc1,geom%lon(hdata%c1_to_c0),geom%lat(hdata%c1_to_c0),any(hdata%c1l0_log,dim=2))
+         do ic2=1,nam%nc2
+            ! Inidices
+            ic1 = hdata%c2_to_c1(ic2)
+            ic0 = hdata%c2_to_c0(ic2)
 
-                     do jc1=1,nc1_eff
-                        kc1 = nn_c1_index(jc1)
-                        if (nam%local_diag) hdata%local_mask(kc1,ic2,il0i) = (jc1==1) &
-                      & .or.(nn_c1_dist(jc1)<min(nam%local_rad,hdata%mesh%bdist(ic2)))
-                        if (nam%displ_diag) hdata%displ_mask(kc1,ic2,il0i) = (jc1==1) &
-                      & .or.(nn_c1_dist(jc1)<min(nam%displ_rad,hdata%mesh%bdist(ic2)))
-                     end do
-                  end if
-               end do
-               call kdtree%dealloc
-            end if
+            ! Find nearest neighbors
+            call kdtree%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0),nam%nc1,nn_c1_index,nn_c1_dist)
+            do jc1=1,nam%nc1
+               kc1 = nn_c1_index(jc1)
+               if (nam%local_diag) hdata%local_mask(kc1,ic2) = (jc1==1) &
+             & .or.(nn_c1_dist(jc1)<min(nam%local_rad,hdata%mesh%bdist(ic2)))
+               if (nam%displ_diag) hdata%displ_mask(kc1,ic2) = (jc1==1) &
+             & .or.(nn_c1_dist(jc1)<min(nam%displ_rad,hdata%mesh%bdist(ic2)))
+            end do
          end do
+         call kdtree%dealloc
 
          ! Release memory
          deallocate(nn_c1_index)
@@ -1609,7 +1612,7 @@ do ic2a=1,hdata%nc2a
    ic1 = hdata%c2_to_c1(ic2)
    if (any(hdata%c1l0_log(ic1,:))) then
       do jc1=1,nam%nc1
-         if (any(hdata%displ_mask(jc1,ic2,:))) then
+         if (hdata%displ_mask(jc1,ic2)) then
             jc0 = hdata%c1_to_c0(jc1)
             hdata%lcheck_c0d(jc0) = .true.
          end if

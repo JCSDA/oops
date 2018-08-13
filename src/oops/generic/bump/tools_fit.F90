@@ -10,7 +10,8 @@
 !----------------------------------------------------------------------
 module tools_fit
 
-use tools_func, only:  gc99
+use tools_const, only: rth
+use tools_func, only: gc99
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsi,isnotmsr,isanynotmsr,ismsi,ismsr
 use type_mpl, only: mpl_type
@@ -75,8 +76,8 @@ if (n>1) then
             thinv = 0.33827292796125663
          else
             ! Curve-dependent threshold
-            th = minval(raw/raw(iz),mask=(raw>0.0))+1.0e-6
-   
+            th = minval(raw/raw(iz),mask=(raw>0.0))+rth
+
             ! Find inverse threshold by dichotomy
             thinv = 0.5
             dthinv = 0.25

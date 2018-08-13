@@ -72,7 +72,7 @@ logical,intent(in) :: double_fit       !< Double fit
 integer :: ib,ic2a
 
 ! Number of local points
-if (nam%local_diag) then
+if (nam%var_diag.or.nam%local_diag) then
    diag%nc2a = hdata%nc2a
 else
    diag%nc2a = 0
@@ -82,10 +82,10 @@ end if
 diag%prefix = trim(prefix)
 
 ! Allocation
-allocate(diag%blk(0:hdata%nc2a,bpar%nbe))
+allocate(diag%blk(0:diag%nc2a,bpar%nbe))
 do ib=1,bpar%nbe
    if (bpar%diag_block(ib)) then
-      do ic2a=0,hdata%nc2a
+      do ic2a=0,diag%nc2a
          call diag%blk(ic2a,ib)%alloc(nam,geom,bpar,ic2a,ib,prefix,double_fit.and.nam%double_fit(bpar%b_to_v1(ib)))
       end do
    end if
@@ -370,7 +370,6 @@ do ib=1,bpar%nbe
       write(mpl%unit,'(a10,a,a,a)') '','Block ',trim(bpar%blockname(ib))
       call flush(mpl%unit)
 
-write(mpl%unit,*) diag%nc2a;call flush(mpl%unit)
       do ic2a=0,diag%nc2a
          ! Copy
          if (ic2a>0) then
@@ -378,8 +377,6 @@ write(mpl%unit,*) diag%nc2a;call flush(mpl%unit)
          else
             ic2 = 0
          end if
-write(mpl%unit,*) ic2a,ic2;call flush(mpl%unit)
-write(mpl%unit,*) avg%blk(ic2,ib)%m11;call flush(mpl%unit)
          diag%blk(ic2a,ib)%raw = avg%blk(ic2,ib)%m11
       end do
 
@@ -434,7 +431,7 @@ do ib=1,bpar%nbe
       call flush(mpl%unit)
  
       ! Copy variance
-      do ic2a=0,hdata%nc2a
+      do ic2a=0,diag%nc2a
          if (nam%var_diag) then
             ! Global index
             if (ic2a>0) then

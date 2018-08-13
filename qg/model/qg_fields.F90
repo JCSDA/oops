@@ -701,7 +701,6 @@ subroutine analytic_init(fld, geom, config, vdate)
   character(len=30) :: ic
   character(len=20) :: sdate
   character(len=1024)  :: buf
-  real(kind=kind_real),parameter :: pi = acos(-1.0)
   real(kind=kind_real) :: d1, d2, height(2), z, f1, f2, xdum(2)
   real(kind=kind_real) :: deltax,deltay,deg_to_rad,rlat,rlon
   real(kind=kind_real) :: p0,u0,v0,w0,t0,phis0,ps0,rho0,hum0,q1,q2,q3,q4

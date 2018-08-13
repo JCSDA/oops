@@ -1,0 +1,104 @@
+{
+  "logging": {
+    "categories": "Info, Test, Warning, Error"
+  },
+  "resolution": {
+    "nx": "40",
+    "ny": "20",
+    "bc": "1"
+  },
+  "variables": {
+    "variables": ["x"]
+  },
+  "model": {
+    "tstep": "PT1H",
+    "top_layer_depth": "5500.0",
+    "bottom_layer_depth": "4500.0"
+  },
+  "initial": {
+    "filename": "Data/truth.fc.2009-12-15T00:00:00Z.P17D",
+    "date": "2010-01-01T00:00:00Z"
+  },
+  "Covariance": {
+    "covariance": "BUMP",
+    "date": "2010-01-01T00:00:00Z",
+    "prefix" : "bump",
+    "default_seed" : 1,
+    "method" : "cor",
+    "strategy" : "common",
+    "new_hdiag" : 0,
+    "new_param" : 1,
+    "check_adjoints" : 1,
+    "check_pos_def" : 0,
+    "check_sqrt" : 0,
+    "check_dirac" : 0,
+    "check_randomization" : 0,
+    "check_consistency" : 0,
+    "check_optimality" : 0,
+    "new_lct" : 0,
+    "new_obsop" : 0,
+    "sam_write" : 0,
+    "sam_read" : 0,
+    "mask_type" : "none",
+    "mask_th" : 0,
+    "mask_check" : 0,
+    "draw_type" : "random_uniform",
+    "nc1" : 400,
+    "ntry" : 3,
+    "nrep" : 2,
+    "nc3" : 10,
+    "dc" : 1000.0e3,
+    "nl0r" : 1,
+    "ne" : 5,
+    "gau_approx" : 0,
+    "full_var" : 0,
+    "local_diag" : 0,
+    "displ_diag" : 0,
+    "minim_algo" : "hooke",
+    "lhomh" : 0,
+    "lhomv" : 0,
+    "rvflt" : 0.0,
+    "lsqrt" : 1,
+    "resol" : 10.0,
+    "nicas_interp" : "bilin",
+    "network" : 0,
+    "mpicom" : 2,
+    "advmode" : 0,
+    "forced_radii" : 1,
+    "rh" : 2800.0e3,
+    "rv" : 2.407,
+    "ndir" : 0,
+    "nldwh" : 0,
+    "nldwv" : 0,
+    "diag_rhflt" : 0.0,
+    "diag_interp" : "bilin",
+    "field_io" : 1,
+    "split_io" : 1,
+    "grid_output" : 0,
+    "variable_changes": [ 
+       {
+         "varchange": "ErrStdDevQG",
+         "inputVariables": {
+            "variables": ["x"]
+          },
+         "outputVariables": {
+            "variables": ["x"]
+         },
+         "standard_deviation": "0.8"
+       }
+    ]
+  },
+  "dirac": {
+    "ndir": 1,
+    "ixdir(1)": 20,
+    "iydir(1)": 10,
+    "ildir": 1,
+    "ifdir": 1
+  },
+  "output_B": {
+    "datadir": "Data",
+    "exp": "B_bumpcov",
+    "type": "an",
+    "date": "2009-12-31T00:00:00Z"
+  }
+}

@@ -193,7 +193,7 @@ void ModelSpaceCovarianceBase<MODEL>::multiply(const Increment_ & dxi,
       Increment_ dxchvarout = it->multiply(*dxchvarin);
       dxchvarin.reset(new Increment_(dxchvarout));
     }
-    dxo = dxchvarout;
+    dxo = *dxchvarin;
   } else {
     this->doMultiply(dxi, dxo);
   }
@@ -221,7 +221,7 @@ void ModelSpaceCovarianceBase<MODEL>::inverseMultiply(const Increment_ & dxi,
       Increment_ dxchvarout = it->multiplyInverseAD(*dxchvarin);
       dxchvarin.reset(new Increment_(dxchvarout));
     }
-    dxo = dxchvarout;
+    dxo = *dxchvarin;
   } else {
     this->doInverseMultiply(dxi, dxo);
   }
