@@ -74,13 +74,13 @@ ErrorCovarianceBUMP<MODEL>::ErrorCovarianceBUMP(const Geometry_ & resol,
                                                 const Variables & vars,
                                                 const eckit::Configuration & conf,
                                                 const State_ & xb, const State_ & fg)
-  : ModelSpaceCovarianceBase<MODEL>(xb, fg, conf), vars_(vars), keyBUMP_(0)
+  : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, conf), vars_(vars), keyBUMP_(0)
 {
   Log::trace() << "ErrorCovarianceBUMP::ErrorCovarianceBUMP starting" << std::endl;
   const eckit::Configuration * fconf = &conf;
 
 // Setup dummy increment
-  Increment_ dx(fg.geometry(), vars_, fg.validTime());
+  Increment_ dx(resol, vars_, fg.validTime());
 
 // Define unstructured grid coordinates
   UnstructuredGrid ug;

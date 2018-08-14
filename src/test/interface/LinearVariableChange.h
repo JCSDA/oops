@@ -95,7 +95,8 @@ template <typename MODEL> void testLinearVariableChangeZero() {
     oops::Variables varout(varoutconf);
 
     boost::scoped_ptr<LinearVariableChange_> changevar(LinearVariableChangeFactory_::create(
-                                      Test_::xx(), Test_::xx(), Test_::linvarchgconfs()[jj]));
+                                      Test_::xx(), Test_::xx(),
+                                      Test_::resol(), Test_::linvarchgconfs()[jj]));
 
     Increment_   dxin(Test_::resol(), varin,  Test_::time());
     Increment_ KTdxin(Test_::resol(), varout, Test_::time());
@@ -134,7 +135,8 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
     oops::Variables varout(varoutconf);
 
     boost::scoped_ptr<LinearVariableChange_> changevar(LinearVariableChangeFactory_::create(
-                                      Test_::xx(), Test_::xx(), Test_::linvarchgconfs()[jj]));
+                                      Test_::xx(), Test_::xx(),
+                                      Test_::resol(), Test_::linvarchgconfs()[jj]));
 
     Increment_   dxin(Test_::resol(), varin,  Test_::time());
     Increment_ KTdxin(Test_::resol(), varout, Test_::time());

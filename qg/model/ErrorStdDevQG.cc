@@ -21,7 +21,8 @@
 
 namespace qg {
 // -----------------------------------------------------------------------------
-ErrorStdDevQG::ErrorStdDevQG(const StateQG &, const StateQG &, const eckit::Configuration & conf)
+ErrorStdDevQG::ErrorStdDevQG(const StateQG &, const StateQG &,
+                             const GeometryQG &, const eckit::Configuration & conf)
   : keyFtnConfig_(0)
 {
   const eckit::Configuration * configc = &conf;

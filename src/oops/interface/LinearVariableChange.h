@@ -41,7 +41,8 @@ class LinearVariableChange : public oops::LinearVariableChangeBase<MODEL> {
  public:
   static const std::string classname() {return "oops::LinearVariableChange";}
 
-  LinearVariableChange(const State_ &, const State_ &, const eckit::Configuration &);
+  LinearVariableChange(const State_ &, const State_ &,
+                       const Geometry_ &, const eckit::Configuration &);
   virtual ~LinearVariableChange();
 
   void multiply(const Increment_ &, Increment_ &) const override;
@@ -59,12 +60,13 @@ class LinearVariableChange : public oops::LinearVariableChangeBase<MODEL> {
 
 template<typename MODEL, typename CHVAR>
 LinearVariableChange<MODEL, CHVAR>::LinearVariableChange(const State_ & bg, const State_ & fg,
+                                                         const Geometry_ & geom,
                                                          const eckit::Configuration & conf)
   : LinearVariableChangeBase<MODEL>(conf), chvar_()
 {
   Log::trace() << "LinearVariableChange<MODEL, CHVAR>::LinearVariableChange starting" << std::endl;
   util::Timer timer(classname(), "LinearVariableChange");
-  chvar_.reset(new CHVAR(bg.state(), fg.state(), conf));
+  chvar_.reset(new CHVAR(bg.state(), fg.state(), geom.geometry(), conf));
   Log::trace() << "LinearVariableChange<MODEL, CHVAR>::LinearVariableChange done" << std::endl;
 }
 

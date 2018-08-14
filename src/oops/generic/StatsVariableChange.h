@@ -36,7 +36,8 @@ class StatsVariableChange : public LinearVariableChangeBase<MODEL> {
  public:
   static const std::string classname() {return "oops::StatsVariableChange";}
 
-  StatsVariableChange(const State_ &, const State_ &, const eckit::Configuration &);
+  StatsVariableChange(const State_ &, const State_ &,
+                      const Geometry_ &, const eckit::Configuration &);
   virtual ~StatsVariableChange();
 
   void multiply(const Increment_ &, Increment_ &) const override;
@@ -61,6 +62,7 @@ class StatsVariableChange : public LinearVariableChangeBase<MODEL> {
 
 template<typename MODEL>
 StatsVariableChange<MODEL>::StatsVariableChange(const State_ &, const State_ &,
+                                                const Geometry_ &,
                                                 const eckit::Configuration & conf)
   : LinearVariableChangeBase<MODEL>(conf)
 {

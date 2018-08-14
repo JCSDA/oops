@@ -49,7 +49,8 @@ class ModelSpaceCovarianceBase {
   typedef typename ChvarVec_::const_reverse_iterator ircst_;
 
  public:
-  ModelSpaceCovarianceBase(const State_ &, const State_ &, const eckit::Configuration & conf);
+  ModelSpaceCovarianceBase(const State_ &, const State_ &,
+                           const Geometry_ &, const eckit::Configuration &);
   virtual ~ModelSpaceCovarianceBase() {}
 
 //  const LinearVariableChangeBase_ & getK(const unsigned & ii) const {return *chvars_[ii];}
@@ -149,12 +150,13 @@ ModelSpaceCovarianceBase<MODEL>* CovarianceFactory<MODEL>::create(
 
 template <typename MODEL>
 ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(const State_ & bg, const State_ & fg,
+                                                          const Geometry_ & resol,
                                                           const eckit::Configuration & conf) {
   if (conf.has("variable_changes")) {
     std::vector<eckit::LocalConfiguration> chvarconfs;
     conf.get("variable_changes", chvarconfs);
     for (const auto & config : chvarconfs) {
-      chvars_.push_back(LinearVariableChangeFactory<MODEL>::create(bg, fg, config));
+      chvars_.push_back(LinearVariableChangeFactory<MODEL>::create(bg, fg, resol, config));
     }
   }
 }

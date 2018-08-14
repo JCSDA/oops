@@ -63,21 +63,21 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL> {
 /// Constructor, destructor
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ &, const Variables &,
+EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Variables &,
                                               const eckit::Configuration & conf,
                                               const State_ & xb, const State_ & fg)
-  : ModelSpaceCovarianceBase<MODEL>(xb, fg, conf),
+  : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, conf),
     time_(conf.getString("date")), loc_()
 {
   Log::trace() << "EnsembleCovariance::EnsembleCovariance start" << std::endl;
 // Compute the ensemble of perturbations at time of xb.
   ASSERT(xb.validTime() == time_);
   EnsemblePtr_ ens_k(new Ensemble_(xb.validTime(), conf));
-  ens_k->linearize(xb, fg.geometry());
+  ens_k->linearize(xb, resol);
   EnsemblesCollection_::getInstance().put(xb.validTime(), ens_k);
 
   const eckit::LocalConfiguration confloc(conf, "localization");
-  loc_.reset(new Localization_(fg.geometry(), confloc));
+  loc_.reset(new Localization_(resol, confloc));
   Log::trace() << "EnsembleCovariance::EnsembleCovariance done" << std::endl;
 }
 // -----------------------------------------------------------------------------

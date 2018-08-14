@@ -40,7 +40,8 @@ class ErrorStdDevQG: public util::Printable {
  public:
   static const std::string classname() {return "qg::ErrorStdDevQG";}
 
-  ErrorStdDevQG(const StateQG &, const StateQG &, const eckit::Configuration &);
+  ErrorStdDevQG(const StateQG &, const StateQG &,
+                const GeometryQG &, const eckit::Configuration &);
   ~ErrorStdDevQG();
 
 /// Perform linear transforms

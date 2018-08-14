@@ -30,7 +30,7 @@ class ChangeVar: public util::Printable {
  public:
   static const std::string classname() {return "qg::ChangeVar";}
 
-  ChangeVar(const StateQG &, const StateQG &, const eckit::Configuration &);
+  ChangeVar(const StateQG &, const StateQG &, const GeometryQG &, const eckit::Configuration &);
   ~ChangeVar();
 
 /// Perform linear transforms

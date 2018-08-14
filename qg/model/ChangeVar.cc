@@ -17,7 +17,8 @@
 
 namespace qg {
 // -----------------------------------------------------------------------------
-ChangeVar::ChangeVar(const StateQG &, const StateQG &, const eckit::Configuration &) {}
+ChangeVar::ChangeVar(const StateQG &, const StateQG &,
+                     const GeometryQG &, const eckit::Configuration &) {}
 // -----------------------------------------------------------------------------
 ChangeVar::~ChangeVar() {}
 // -----------------------------------------------------------------------------

@@ -61,7 +61,7 @@ template<typename MODEL>
 HybridCovariance<MODEL>::HybridCovariance(const Geometry_ & resol, const Variables & vars,
                                           const eckit::Configuration & config,
                                           const State_ & xb, const State_ & fg)
-  : ModelSpaceCovarianceBase<MODEL>(xb, fg, config),
+  : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, config),
     static_(CovarianceFactory<MODEL>::create(
               eckit::LocalConfiguration(config, "static"), resol, vars, xb, fg))
 {
