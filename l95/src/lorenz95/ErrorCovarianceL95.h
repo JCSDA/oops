@@ -49,7 +49,6 @@ class ErrorCovarianceL95 : public util::Printable,
                      const eckit::Configuration &, const StateL95 &, const StateL95 &);
   ~ErrorCovarianceL95();
 
-  void linearize(const StateL95 &, const Resolution &);
   void multiply(const IncrementL95 &, IncrementL95 &) const;
   void inverseMultiply(const IncrementL95 &, IncrementL95 &) const;
   void randomize(IncrementL95 &) const;

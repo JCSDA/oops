@@ -80,7 +80,6 @@ template <typename MODEL> class GenEnsPertB : public Application {
     const eckit::LocalConfiguration covar(fullConfig, "Covariance");
     boost::scoped_ptr< ModelSpaceCovarianceBase<MODEL> >
       Bmat(CovarianceFactory<MODEL>::create(covar, resol, vars, xx, xx));
-    Bmat->linearize(xx, resol);
 
 //  Generate perturbed states
     Increment_ dx(resol, vars, bgndate);

@@ -14,7 +14,6 @@
 #include <ostream>
 #include <string>
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
 #include "model/GeometryQG.h"
@@ -45,7 +44,6 @@ class ErrorCovarianceQG : public util::Printable,
                     const eckit::Configuration &, const StateQG &, const StateQG &);
   ~ErrorCovarianceQG();
 
-  void linearize(const StateQG &, const GeometryQG &);
   void multiply(const IncrementQG &, IncrementQG &) const;
   void inverseMultiply(const IncrementQG &, IncrementQG &) const;
   void randomize(IncrementQG &) const;
@@ -53,7 +51,6 @@ class ErrorCovarianceQG : public util::Printable,
  private:
   void print(std::ostream &) const;
   F90bmat keyFtnConfig_;
-  boost::scoped_ptr<const GeometryQG> geom_;
   util::DateTime time_;
 };
 // -----------------------------------------------------------------------------

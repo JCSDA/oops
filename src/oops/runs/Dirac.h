@@ -89,7 +89,6 @@ template <typename MODEL> class Dirac : public Application {
     const eckit::LocalConfiguration covarConfig(fullConfig, "Covariance");
     boost::scoped_ptr< ModelSpaceCovarianceBase<MODEL> > B(CovarianceFactory<MODEL>::create(
                                                            covarConfig, resol, vars, xx, xx));
-    B->linearize(xx, resol);
     Log::info() << "Setup full ensemble B matrix OK" << std::endl;
 
     if (covarConfig.has("localization")) {

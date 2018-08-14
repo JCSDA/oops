@@ -45,7 +45,6 @@ class HybridCovariance : public ModelSpaceCovarianceBase<MODEL> {
   void randomize(Increment_ &) const override;
 
  private:
-  void doLinearize(const State_ &, const Geometry_ &) override;
   void doMultiply(const Increment_ &, Increment_ &) const override;
   void doInverseMultiply(const Increment_ &, Increment_ &) const override;
 
@@ -77,13 +76,6 @@ HybridCovariance<MODEL>::HybridCovariance(const Geometry_ & resol, const Variabl
 template<typename MODEL>
 HybridCovariance<MODEL>::~HybridCovariance() {
   Log::trace() << "HybridCovariance destructed" << std::endl;
-}
-// -----------------------------------------------------------------------------
-template<typename MODEL>
-void HybridCovariance<MODEL>::doLinearize(const State_ & xb, const Geometry_ & resol) {
-  static_->linearize(xb, resol);
-  ensemble_->linearize(xb, resol);
-  Log::trace() << "HybridCovariance linearized." << std::endl;
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>

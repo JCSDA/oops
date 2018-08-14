@@ -51,11 +51,9 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL> {
   void randomize(Increment_ &) const override;
 
  private:
-  void doLinearize(const State_ &, const Geometry_ &) override;
   void doMultiply(const Increment_ &, Increment_ &) const override;
   void doInverseMultiply(const Increment_ &, Increment_ &) const override;
 
-  const eckit::LocalConfiguration config_;
   const util::DateTime time_;
   boost::scoped_ptr<Localization_> loc_;
 };
@@ -69,28 +67,23 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ &, const Variables
                                               const eckit::Configuration & conf,
                                               const State_ & xb, const State_ & fg)
   : ModelSpaceCovarianceBase<MODEL>(xb, fg, conf),
-    config_(conf), time_(config_.getString("date")), loc_()
+    time_(conf.getString("date")), loc_()
 {
-  Log::trace() << "EnsembleCovariance created." << std::endl;
+  Log::trace() << "EnsembleCovariance::EnsembleCovariance start" << std::endl;
+// Compute the ensemble of perturbations at time of xb.
+  ASSERT(xb.validTime() == time_);
+  EnsemblePtr_ ens_k(new Ensemble_(xb.validTime(), conf));
+  ens_k->linearize(xb, fg.geometry());
+  EnsemblesCollection_::getInstance().put(xb.validTime(), ens_k);
+
+  const eckit::LocalConfiguration confloc(conf, "localization");
+  loc_.reset(new Localization_(fg.geometry(), confloc));
+  Log::trace() << "EnsembleCovariance::EnsembleCovariance done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 EnsembleCovariance<MODEL>::~EnsembleCovariance() {
   Log::trace() << "EnsembleCovariance destructed." << std::endl;
-}
-// -----------------------------------------------------------------------------
-template<typename MODEL>
-void EnsembleCovariance<MODEL>::doLinearize(const State_ & xb,
-                                            const Geometry_ & resol) {
-  // Compute the ensemble of perturbations at time of xb.
-  ASSERT(xb.validTime() == time_);
-  EnsemblePtr_ ens_k(new Ensemble_(xb.validTime(), config_));
-  ens_k->linearize(xb, resol);
-  EnsemblesCollection_::getInstance().put(xb.validTime(), ens_k);
-
-  const eckit::LocalConfiguration conf(config_, "localization");
-  loc_.reset(new Localization_(resol, conf));
-  Log::trace() << "EnsembleCovariance linearized." << std::endl;
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>

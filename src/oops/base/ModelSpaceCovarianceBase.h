@@ -52,17 +52,15 @@ class ModelSpaceCovarianceBase {
   ModelSpaceCovarianceBase(const State_ &, const State_ &, const eckit::Configuration & conf);
   virtual ~ModelSpaceCovarianceBase() {}
 
-  const LinearVariableChangeBase_ & getK(const unsigned & ii) const {return *chvars_[ii];}
-  bool hasK() const { return (chvars_.size() == 0) ? false : true; }
+//  const LinearVariableChangeBase_ & getK(const unsigned & ii) const {return *chvars_[ii];}
+//  bool hasK() const { return (chvars_.size() == 0) ? false : true; }
 
-  void linearize(const State_ &, const Geometry_ &);
   void multiply(const Increment_ &, Increment_ &) const;
   void inverseMultiply(const Increment_ &, Increment_ &) const;
 
   virtual void randomize(Increment_ &) const = 0;
 
  private:
-  virtual void doLinearize(const State_ &, const Geometry_ &) = 0;
   virtual void doMultiply(const Increment_ &, Increment_ &) const = 0;
   virtual void doInverseMultiply(const Increment_ &, Increment_ &) const = 0;
 
@@ -99,8 +97,7 @@ class CovarMaker : public CovarianceFactory<MODEL> {
   typedef State<MODEL>               State_;
 
   virtual ModelSpaceCovarianceBase<MODEL> * make(const eckit::Configuration & conf,
-                                                 const Geometry_ & resol,
-                                                 const Variables & vars,
+                                                 const Geometry_ & resol, const Variables & vars,
                                                  const State_ & xb, const State_ & fg) {
     return new COVAR(resol, vars, conf, xb, fg);
   }
@@ -160,13 +157,6 @@ ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(const State_ & bg, con
       chvars_.push_back(LinearVariableChangeFactory<MODEL>::create(bg, fg, config));
     }
   }
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-void ModelSpaceCovarianceBase<MODEL>::linearize(const State_ & fg, const Geometry_ & geom) {
-  this->doLinearize(fg, geom);
 }
 
 // -----------------------------------------------------------------------------

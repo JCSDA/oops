@@ -123,8 +123,7 @@ void CostJb3D<MODEL>::linearize(const State4D_ & fg, const Geometry_ & lowres) {
   ASSERT(fg.checkStatesNumber(1));
   resol_.reset(new Geometry_(lowres));
   time_.reset(new util::DateTime(fg[0].validTime()));
-  B_.reset(CovarianceFactory<MODEL>::create(conf_, lowres, controlvars_, xb_, fg[0])),
-  B_->linearize(fg[0], *resol_);
+  B_.reset(CovarianceFactory<MODEL>::create(conf_, lowres, controlvars_, xb_, fg[0]));
 }
 
 // -----------------------------------------------------------------------------

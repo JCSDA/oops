@@ -58,13 +58,11 @@ class ErrorCovarianceBUMP : public oops::ModelSpaceCovarianceBase<MODEL>,
   void randomize(Increment_ &) const override;
 
  private:
-  void doLinearize(const State_ &, const Geometry_ &) override;
   void doMultiply(const Increment_ &, Increment_ &) const override;
   void doInverseMultiply(const Increment_ &, Increment_ &) const override;
 
   void print(std::ostream &) const override;
 
-  const eckit::LocalConfiguration conf_;
   const Variables vars_;
   int keyBUMP_;
 };
@@ -76,9 +74,25 @@ ErrorCovarianceBUMP<MODEL>::ErrorCovarianceBUMP(const Geometry_ & resol,
                                                 const Variables & vars,
                                                 const eckit::Configuration & conf,
                                                 const State_ & xb, const State_ & fg)
-  : ModelSpaceCovarianceBase<MODEL>(xb, fg, conf), conf_(conf), vars_(vars), keyBUMP_(0)
+  : ModelSpaceCovarianceBase<MODEL>(xb, fg, conf), vars_(vars), keyBUMP_(0)
 {
-  Log::trace() << "ErrorCovarianceBUMP<MODEL>::ErrorCovarianceBUMP constructed" << std::endl;
+  Log::trace() << "ErrorCovarianceBUMP::ErrorCovarianceBUMP starting" << std::endl;
+  const eckit::Configuration * fconf = &conf;
+
+// Setup dummy increment
+  Increment_ dx(fg.geometry(), vars_, fg.validTime());
+
+// Define unstructured grid coordinates
+  UnstructuredGrid ug;
+  dx.ug_coord(ug);
+
+// Create BUMP
+  create_bump_f90(keyBUMP_, ug.toFortran(), &fconf, 0);
+
+// Run BUMP
+  run_bump_drivers_f90(keyBUMP_);
+
+  Log::trace() << "ErrorCovarianceBUMP::ErrorCovarianceBUMP done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -89,34 +103,6 @@ ErrorCovarianceBUMP<MODEL>::~ErrorCovarianceBUMP() {
   util::Timer timer(classname(), "~ErrorCovarianceBUMP");
   delete_bump_f90(keyBUMP_);
   Log::trace() << "ErrorCovarianceBUMP<MODEL>::~ErrorCovarianceBUMP done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void ErrorCovarianceBUMP<MODEL>::doLinearize(const State_ & xx, const Geometry_ & resol) {
-  Log::trace() << "ErrorCovarianceBUMP<MODEL>::doLinearize starting" << std::endl;
-  util::Timer timer(classname(), "doLinearize");
-
-  const eckit::Configuration * fconf = &conf_;
-
-// Setup dummy increment
-  Increment_ dx(resol, vars_, xx.validTime());
-
-// Define unstructured grid coordinates
-  UnstructuredGrid ug;
-  dx.ug_coord(ug);
-
-// Delete BUMP if present
-  if (keyBUMP_) delete_bump_f90(keyBUMP_);
-
-// Create BUMP
-  create_bump_f90(keyBUMP_, ug.toFortran(), &fconf, 0);
-
-// Run BUMP
-  run_bump_drivers_f90(keyBUMP_);
-
-  Log::trace() << "ErrorCovarianceBUMP<MODEL>::doLinearize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

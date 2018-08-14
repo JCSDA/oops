@@ -127,7 +127,6 @@ void CostJbJq<MODEL>::linearize(const State4D_ & fg, const Geometry_ & lowres) {
     B_.push_back(CovarianceFactory<MODEL>::create(confs[jsub], lowres, ctlvars_,
                                                   xb_[jsub], fg[jsub]));
     times_.push_back(fg[jsub].validTime());
-    B_[jsub].linearize(fg[jsub], *resol_);
   }
   ASSERT(fg.checkStatesNumber(B_.size()));
 }

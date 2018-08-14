@@ -76,7 +76,6 @@ template <typename MODEL> class ErrorCovarianceFixture : private boost::noncopya
 //  Setup the B matrix
     const eckit::LocalConfiguration covar(TestEnvironment::config(), "Covariance");
     B_.reset(oops::CovarianceFactory<MODEL>::create(covar, *resol_, *ctlvars_, xx, xx));
-    B_->linearize(xx, *resol_);
   }
 
   ~ErrorCovarianceFixture<MODEL>() {}

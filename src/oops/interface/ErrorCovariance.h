@@ -63,7 +63,6 @@ class ErrorCovariance : public oops::ModelSpaceCovarianceBase<MODEL>,
   void randomize(Increment_ &) const override;
 
  private:
-  void doLinearize(const State_ &, const Geometry_ &) override;
   void doMultiply(const Increment_ &, Increment_ &) const override;
   void doInverseMultiply(const Increment_ &, Increment_ &) const override;
 
@@ -94,16 +93,6 @@ ErrorCovariance<MODEL>::~ErrorCovariance() {
   util::Timer timer(classname(), "~ErrorCovariance");
   covariance_.reset();
   Log::trace() << "ErrorCovariance<MODEL>::~ErrorCovariance done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void ErrorCovariance<MODEL>::doLinearize(const State_ & xx, const Geometry_ & resol) {
-  Log::trace() << "ErrorCovariance<MODEL>::doLinearize starting" << std::endl;
-  util::Timer timer(classname(), "doLinearize");
-  covariance_->linearize(xx.state(), resol.geometry());
-  Log::trace() << "ErrorCovariance<MODEL>::doLinearize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

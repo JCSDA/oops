@@ -32,13 +32,9 @@ ErrorCovarianceL95::ErrorCovarianceL95(const Resolution & geom, const oops::Vari
   time_(util::DateTime(config.getString("date"))),
   sigmab_(config.getDouble("standard_deviation")),
   rscale_(1.0/config.getDouble("length_scale"))
-{}
-// -----------------------------------------------------------------------------
-ErrorCovarianceL95::~ErrorCovarianceL95() {}
-// -----------------------------------------------------------------------------
-void ErrorCovarianceL95::linearize(const StateL95 &, const Resolution & resol) {
+{
 // Gaussian structure function
-  resol_ = resol.npoints();
+  resol_ = geom.npoints();
   size_ = resol_/2+1;
   std::vector<double> structFct(resol_);
   for (unsigned int jj = 0; jj < resol_; ++jj) {
@@ -54,6 +50,8 @@ void ErrorCovarianceL95::linearize(const StateL95 &, const Resolution & resol) {
     bcoefs_[jj] = std::real(coefs[jj]);
   }
 }
+// -----------------------------------------------------------------------------
+ErrorCovarianceL95::~ErrorCovarianceL95() {}
 // -----------------------------------------------------------------------------
 void ErrorCovarianceL95::multiply(const IncrementL95 & dxin,
                                   IncrementL95 & dxout) const {
