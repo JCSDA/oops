@@ -73,7 +73,7 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
 // Compute the ensemble of perturbations at time of xb.
   ASSERT(xb.validTime() == time_);
   EnsemblePtr_ ens_k(new Ensemble_(xb.validTime(), conf));
-  ens_k->linearize(xb, resol);
+  ens_k->linearize(xb, fg, resol);
   EnsemblesCollection_::getInstance().put(xb.validTime(), ens_k);
 
   const eckit::LocalConfiguration confloc(conf, "localization");

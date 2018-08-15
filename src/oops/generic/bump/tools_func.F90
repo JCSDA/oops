@@ -10,7 +10,7 @@
 !----------------------------------------------------------------------
 module tools_func
 
-use tools_const, only: pi,rth
+use tools_const, only: pi,rth,gc_gau
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsr
 use type_mpl, only: mpl_type
@@ -18,7 +18,7 @@ use type_mpl, only: mpl_type
 implicit none
 
 real(kind_real),parameter :: Dmin = 1.0e-12_kind_real !< Minimum tensor diagonal value
-integer,parameter :: M = 0                            !< Number of implicit itteration for the Matern function (Gaussian function if M = 0)
+integer,parameter :: M = -1                           !< Number of implicit itteration for the Matern function (GC 99 function if M = -1 and Gaussian function if M = 0)
 real(kind_real),parameter :: eta = 1.0e-9_kind_real   !< Small parameter for the Cholesky decomposition
 
 private
@@ -691,7 +691,7 @@ real(kind_real),intent(out) :: fit(nc,nl0)  !< Fit
 
 ! Local variables
 integer :: jl0,jc3,iscales,offset
-real(kind_real) :: Hcoef(nscales),D11,D22,D33,D12,H11,H22,H33,H12,rsq,det
+real(kind_real) :: Hcoef(nscales),D11,D22,D33,D12,H11,H22,H33,H12,rsq,det,distnorm
 
 ! Initialization
 offset = 0
@@ -736,7 +736,11 @@ do iscales=1,nscales
             if (nl0>1) rsq = rsq+H33*dz(jl0)**2
             if (ncomp(iscales)==4) rsq = rsq+2.0*H12*dx(jc3,jl0)*dy(jc3,jl0)
 
-            if (M==0) then
+            if (M==-1) then
+               ! Gaspari-Cohn 1999 function
+               distnorm = sqrt(rsq)*gc_gau
+               fit(jc3,jl0) = fit(jc3,jl0)+Hcoef(iscales)*gc99(mpl,distnorm)
+            elseif (M==0) then
                ! Gaussian function
                if (rsq<40.0) fit(jc3,jl0) = fit(jc3,jl0)+Hcoef(iscales)*exp(-0.5*rsq)
             else

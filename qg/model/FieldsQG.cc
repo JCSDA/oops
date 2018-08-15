@@ -155,12 +155,12 @@ void FieldsQG::diff(const FieldsQG & x1, const FieldsQG & x2) {
   qg_field_diff_incr_f90(keyFlds_, x1.keyFlds_, x2.keyFlds_);
 }
 // -----------------------------------------------------------------------------
-void FieldsQG::ug_coord(oops::UnstructuredGrid & ug) const {
-  qg_field_ug_coord_f90(keyFlds_, ug.toFortran());
+void FieldsQG::ug_coord(oops::UnstructuredGrid & ug, const int & colocated) const {
+  qg_field_ug_coord_f90(keyFlds_, ug.toFortran(), colocated);
 }
 // -----------------------------------------------------------------------------
-void FieldsQG::field_to_ug(oops::UnstructuredGrid & ug) const {
-  qg_field_field_to_ug_f90(keyFlds_, ug.toFortran());
+void FieldsQG::field_to_ug(oops::UnstructuredGrid & ug, const int & colocated) const {
+  qg_field_field_to_ug_f90(keyFlds_, ug.toFortran(), colocated);
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::field_from_ug(const oops::UnstructuredGrid & ug) {

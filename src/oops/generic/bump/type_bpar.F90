@@ -61,7 +61,7 @@ type(nam_type),intent(in) :: nam       !< Namelist
 type(geom_type),intent(in) :: geom     !< Geometry
 
 ! Local variables
-integer :: ib,iv,jv,its,jts,il0r,jl0,il0off
+integer :: ib,iv,jv,its,jts,il0,jl0r,jl0off
 
 ! Number of blocks
 if (nam%new_lct) then
@@ -107,18 +107,20 @@ if (nam%new_lct) then
       do its=1,nam%nts
          ! Classes and levels
          bpar%nl0r(ib) = nam%nl0r
-         do jl0=1,geom%nl0
-            il0off = jl0-(bpar%nl0r(ib)-1)/2-1
-            if (il0off<1) il0off = 0
-            if (il0off+nam%nl0r>geom%nl0) il0off = geom%nl0-nam%nl0r
-            do il0r=1,nam%nl0r
-               bpar%l0rl0b_to_l0(il0r,jl0,ib) = il0off+il0r
-               if (bpar%l0rl0b_to_l0(il0r,jl0,ib)==jl0) bpar%il0rz(jl0,ib) = il0r
+         do il0=1,geom%nl0
+            jl0off = il0-(bpar%nl0r(ib)-1)/2-1
+            if (jl0off<1) jl0off = 0
+            if (jl0off+nam%nl0r>geom%nl0) jl0off = geom%nl0-nam%nl0r
+            do jl0r=1,nam%nl0r
+               bpar%l0rl0b_to_l0(jl0r,il0,ib) = jl0off+jl0r
+               if (bpar%l0rl0b_to_l0(jl0r,il0,ib)==il0) bpar%il0rz(il0,ib) = jl0r
             end do
          end do
          bpar%nc3(ib) = nam%nc3
          bpar%nc3(ib) = nam%nc3
-         bpar%vbal_block(iv,jv) = .false.
+         do jv=1,nam%nv
+            bpar%vbal_block(iv,jv) = (iv>1).and.(jv<iv).and.nam%vbal_block((iv-1)*(iv-2)/2+jv)
+         end do
          bpar%diag_block(ib) = .true.
          bpar%avg_block(ib) = .false.
          bpar%fit_block(ib) = .false.
@@ -171,19 +173,19 @@ else
                ! Classes and levels
                if ((trim(nam%strategy)=='diag_all').or.((iv==jv).and.(its==jts))) then
                   bpar%nl0r(ib) = nam%nl0r
-                  do jl0=1,geom%nl0
-                     il0off = jl0-(bpar%nl0r(ib)-1)/2-1
-                     if (il0off<1) il0off = 0
-                     if (il0off+nam%nl0r>geom%nl0) il0off = geom%nl0-nam%nl0r
-                     do il0r=1,nam%nl0r
-                        bpar%l0rl0b_to_l0(il0r,jl0,ib) = il0off+il0r
-                        if (bpar%l0rl0b_to_l0(il0r,jl0,ib)==jl0) bpar%il0rz(jl0,ib) = il0r
+                  do il0=1,geom%nl0
+                     jl0off = il0-(bpar%nl0r(ib)-1)/2-1
+                     if (jl0off<1) jl0off = 0
+                     if (jl0off+nam%nl0r>geom%nl0) jl0off = geom%nl0-nam%nl0r
+                     do jl0r=1,nam%nl0r
+                        bpar%l0rl0b_to_l0(jl0r,il0,ib) = jl0off+jl0r
+                        if (bpar%l0rl0b_to_l0(jl0r,il0,ib)==il0) bpar%il0rz(il0,ib) = jl0r
                      end do
                   end do
                   bpar%nc3(ib) = nam%nc3
                else
-                  do jl0=1,geom%nl0
-                     bpar%l0rl0b_to_l0(:,jl0,ib) = jl0
+                  do il0=1,geom%nl0
+                     bpar%l0rl0b_to_l0(:,il0,ib) = il0
                   end do
                   bpar%il0rz(:,ib) = 1
                   bpar%nl0r(ib) = 1
@@ -191,7 +193,7 @@ else
                end if
 
                ! Select blocks
-               bpar%vbal_block(iv,jv) = (iv>=2).and.(jv<=iv-1).and..true. ! TODO: add namelist variable
+               bpar%vbal_block(iv,jv) = (iv>1).and.(jv<iv).and.nam%vbal_block((iv-1)*(iv-2)/2+jv)
                select case (nam%strategy)
                case ('diag_all')
                   bpar%diag_block(ib) = .true.
@@ -202,9 +204,9 @@ else
                case ('common')
                   bpar%diag_block(ib) = (iv==jv).and.(its==1).and.(jts==1)
                   bpar%avg_block(ib) = (iv==jv).and.(its==1).and.(jts==1)
-                  bpar%B_block(ib) = (bpar%nbe==bpar%nb)
-                  bpar%nicas_block(ib) = (bpar%nbe==bpar%nb)
-                  bpar%cv_block(ib) = (bpar%nbe==bpar%nb)
+                  bpar%B_block(ib) = (ib==bpar%nbe)
+                  bpar%nicas_block(ib) = (ib==bpar%nbe)
+                  bpar%cv_block(ib) = (ib==bpar%nbe)
                case ('specific_univariate')
                   bpar%diag_block(ib) = (iv==jv).and.(its==1).and.(jts==1)
                   bpar%avg_block(ib) = .false.
@@ -216,7 +218,7 @@ else
                   bpar%avg_block(ib) = (bpar%nbe==bpar%nb)
                   bpar%B_block(ib) = (iv==jv).and.(its==1).and.(jts==1)
                   bpar%nicas_block(ib) = (iv==jv).and.(its==1).and.(jts==1)
-                  bpar%cv_block(ib) = (bpar%nbe==bpar%nb)
+                  bpar%cv_block(ib) = (ib==bpar%nbe)
                case ('common_weighted')
                   bpar%diag_block(ib) = .true.
                   bpar%avg_block(ib) = (iv==jv).and.(its==jts)
@@ -248,13 +250,13 @@ else
 
       ! Classes and levels
       bpar%nl0r(ib) = nam%nl0r
-      do jl0=1,geom%nl0
-         il0off = jl0-(bpar%nl0r(ib)-1)/2-1
-         if (il0off<1) il0off = 0
-         if (il0off+nam%nl0r>geom%nl0) il0off = geom%nl0-nam%nl0r
-         do il0r=1,nam%nl0r
-            bpar%l0rl0b_to_l0(il0r,jl0,ib) = il0off+il0r
-            if (bpar%l0rl0b_to_l0(il0r,jl0,ib)==jl0) bpar%il0rz(jl0,ib) = il0r
+      do il0=1,geom%nl0
+         jl0off = il0-(bpar%nl0r(ib)-1)/2-1
+         if (jl0off<1) jl0off = 0
+         if (jl0off+nam%nl0r>geom%nl0) jl0off = geom%nl0-nam%nl0r
+         do jl0r=1,nam%nl0r
+            bpar%l0rl0b_to_l0(jl0r,il0,ib) = jl0off+jl0r
+            if (bpar%l0rl0b_to_l0(jl0r,il0,ib)==il0) bpar%il0rz(il0,ib) = jl0r
          end do
       end do
       bpar%nc3(ib) = nam%nc3

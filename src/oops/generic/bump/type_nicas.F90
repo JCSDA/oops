@@ -575,9 +575,9 @@ if (nam%check_adjoints) then
       end if
    end do
 
-   ! Test localization adjoint
+   ! Test NICAS adjoint
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Test localization adjoint'
+   write(mpl%unit,'(a)') '--- Test NICAS adjoint'
    call flush(mpl%unit)
    call nicas%test_adjoint(mpl,rng,nam,geom,bpar,ens)
 end if
@@ -613,9 +613,9 @@ if (nam%check_sqrt) then
       end if
    end do
 
-   ! Test localization full/square-root equivalence
+   ! Test NICAS full/square-root equivalence
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Test localization full/square-root equivalence'
+   write(mpl%unit,'(a)') '--- Test NICAS full/square-root equivalence'
    call flush(mpl%unit)
    call nicas%test_sqrt(mpl,rng,nam,geom,bpar,io,cmat,ens)
 end if
@@ -635,9 +635,9 @@ if (nam%check_dirac) then
       end if
    end do
 
-   ! Apply localization to diracs
+   ! Apply NICAS to diracs
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Apply localization to diracs'
+   write(mpl%unit,'(a)') '--- Apply NICAS to diracs'
    call flush(mpl%unit)
    call nicas%test_dirac(mpl,nam,geom,bpar,io,ens)
 end if
@@ -732,7 +732,7 @@ end subroutine nicas_random_cv
 
 !----------------------------------------------------------------------
 ! Subroutine: nicas_apply
-!> Purpose: apply localization
+!> Purpose: apply NICAS
 !----------------------------------------------------------------------
 subroutine nicas_apply(nicas,mpl,nam,geom,bpar,fld)
 
@@ -790,7 +790,7 @@ case ('common')
    end do
    !$omp end parallel do
 
-   ! Apply common localization
+   ! Apply common NICAS
    call nicas%blk(bpar%nbe)%apply(mpl,nam,geom,fld_3d)
 
    ! Apply common ensemble coefficient square-root
@@ -832,7 +832,7 @@ case ('specific_univariate')
          ! Apply common ensemble coefficient square-root
          fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(ib)%coef_ens)
 
-         ! Apply specific localization (same for all timeslots)
+         ! Apply specific NICAS (same for all timeslots)
          call nicas%blk(ib)%apply(mpl,nam,geom,fld_4d(:,:,iv))
 
          ! Apply common ensemble coefficient square-root
@@ -845,7 +845,7 @@ case ('specific_univariate')
       fld(:,:,:,its) = fld_4d
    end do
 case ('specific_multivariate')
-   call mpl%abort('specific multivariate strategy should not be called from apply_localization (lsqrt required)')
+   call mpl%abort('specific multivariate strategy should not be called from apply_NICAS (lsqrt required)')
 case ('common_weighted')
    ! Allocation
    allocate(fld_4d(geom%nc0a,geom%nl0,nam%nv))
@@ -885,7 +885,7 @@ case ('common_weighted')
       ! Apply common ensemble coefficient square-root
       fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(bpar%nbe)%coef_ens)
 
-      ! Apply common localization
+      ! Apply common NICAS
       call nicas%blk(bpar%nbe)%apply(mpl,nam,geom,fld_4d(:,:,iv))
 
       ! Apply common ensemble coefficient square-root
@@ -920,7 +920,7 @@ end subroutine nicas_apply
 
 !----------------------------------------------------------------------
 ! Subroutine: nicas_apply_from_sqrt
-!> Purpose: apply localization from square-root
+!> Purpose: apply NICAS from square-root
 !----------------------------------------------------------------------
 subroutine nicas_apply_from_sqrt(nicas,mpl,nam,geom,bpar,fld)
 
@@ -962,7 +962,7 @@ end subroutine nicas_apply_from_sqrt
 
 !----------------------------------------------------------------------
 ! Subroutine: nicas_apply_sqrt
-!> Purpose: apply localization square-root
+!> Purpose: apply NICAS square-root
 !----------------------------------------------------------------------
 subroutine nicas_apply_sqrt(nicas,mpl,nam,geom,bpar,cv,fld)
 
@@ -987,7 +987,7 @@ case ('common')
    ! Allocation
    allocate(fld_3d(geom%nc0a,geom%nl0))
 
-   ! Apply common localization
+   ! Apply common NICAS
    call nicas%blk(bpar%nbe)%apply_sqrt(mpl,geom,cv%blk(bpar%nbe)%alpha,fld_3d)
 
    ! Apply common ensemble coefficient square-root
@@ -1008,7 +1008,7 @@ case ('specific_univariate')
          ! Variable index
          iv = bpar%b_to_v1(ib)
 
-         ! Apply specific localization (same for all timeslots)
+         ! Apply specific NICAS (same for all timeslots)
          call nicas%blk(ib)%apply_sqrt(mpl,geom,cv%blk(ib)%alpha,fld_4d(:,:,iv))
 
          ! Apply specific ensemble coefficient square-root
@@ -1029,7 +1029,7 @@ case ('specific_multivariate')
          ! Variable index
          iv = bpar%b_to_v1(ib)
 
-         ! Apply specific localization (same for all timeslots)
+         ! Apply specific NICAS (same for all timeslots)
          call nicas%blk(ib)%apply_sqrt(mpl,geom,cv%blk(bpar%nbe)%alpha,fld_4d(:,:,iv))
 
          ! Apply specific ensemble coefficient square-root
@@ -1095,7 +1095,7 @@ case ('common_weighted')
          ! Variable index
          iv = bpar%b_to_v1(ib)
 
-         ! Apply specific localization (same for all timeslots)
+         ! Apply specific NICAS (same for all timeslots)
          call nicas%blk(bpar%nbe)%apply_sqrt(mpl,geom,cv%blk(ib)%alpha,fld_4d(:,:,iv))
 
          ! Apply common ensemble coefficient square-root
@@ -1124,7 +1124,7 @@ end subroutine nicas_apply_sqrt
 
 !----------------------------------------------------------------------
 ! Subroutine: nicas_apply_sqrt_ad
-!> Purpose: apply localization square-root, adjoint
+!> Purpose: apply NICAS square-root, adjoint
 !----------------------------------------------------------------------
 subroutine nicas_apply_sqrt_ad(nicas,mpl,nam,geom,bpar,fld,cv)
 
@@ -1171,7 +1171,7 @@ case ('common')
    ! Apply common ensemble coefficient square-root
    fld_3d = fld_3d*sqrt(nicas%blk(bpar%nbe)%coef_ens)
 
-   ! Apply common localization
+   ! Apply common NICAS
    call nicas%blk(bpar%nbe)%apply_sqrt_ad(mpl,geom,fld_3d,cv%blk(bpar%nbe)%alpha)
 case ('specific_univariate')
    ! Allocation
@@ -1191,7 +1191,7 @@ case ('specific_univariate')
          ! Apply common ensemble coefficient square-root
          fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(ib)%coef_ens)
 
-         ! Apply specific localization (same for all timeslots)
+         ! Apply specific NICAS (same for all timeslots)
          call nicas%blk(ib)%apply_sqrt_ad(mpl,geom,fld_4d(:,:,iv),cv%blk(ib)%alpha)
       end if
    end do
@@ -1217,7 +1217,7 @@ case ('specific_multivariate')
          ! Apply common ensemble coefficient square-root
          fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(ib)%coef_ens)
 
-         ! Apply specific localization (same for all timeslots)
+         ! Apply specific NICAS (same for all timeslots)
          call nicas%blk(ib)%apply_sqrt_ad(mpl,geom,fld_4d(:,:,iv),cv_tmp%blk(bpar%nbe)%alpha)
 
          ! Sum control variable
@@ -1295,7 +1295,7 @@ case ('common_weighted')
          ! Apply common ensemble coefficient square-root
          fld_4d_tmp(:,:,iv) = fld_4d_tmp(:,:,iv)*sqrt(nicas%blk(bpar%nbe)%coef_ens)
 
-         ! Apply specific localization (same for all timeslots)
+         ! Apply specific NICAS (same for all timeslots)
          call nicas%blk(bpar%nbe)%apply_sqrt_ad(mpl,geom,fld_4d_tmp(:,:,iv),cv%blk(ib)%alpha)
       end if
    end do
@@ -1305,7 +1305,7 @@ end subroutine nicas_apply_sqrt_ad
 
 !----------------------------------------------------------------------
 ! Subroutine: nicas_randomize
-!> Purpose: randomize localization from square-root
+!> Purpose: randomize NICAS from square-root
 !----------------------------------------------------------------------
 subroutine nicas_randomize(nicas,mpl,rng,nam,geom,bpar,ne,ens)
 
@@ -1392,7 +1392,7 @@ do ie=1,nam%ens1_ne
    ! Schur product
    fld_tmp = pert*fld_copy
 
-   ! Apply localization
+   ! Apply NICAS
    if (nam%lsqrt) then
       call nicas%apply_from_sqrt(mpl,nam,geom,bpar,fld_tmp)
    else
@@ -1457,7 +1457,7 @@ end subroutine nicas_apply_bens_noloc
 
 !----------------------------------------------------------------------
 ! Subroutine: nicas_test_adjoint
-!> Purpose: test localization adjoint
+!> Purpose: test NICAS adjoint
 !----------------------------------------------------------------------
 subroutine nicas_test_adjoint(nicas,mpl,rng,nam,geom,bpar,ens)
 
@@ -1517,7 +1517,7 @@ end if
 ! Print result
 call mpl%dot_prod(fld1_loc,fld2_save,sum1)
 call mpl%dot_prod(fld2_loc,fld1_save,sum2)
-write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Localization adjoint test: ', &
+write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','NICAS adjoint test: ', &
  & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
 call flush(mpl%unit)
 if (abs(nam%advmode)==1) then
@@ -1579,7 +1579,7 @@ if (ens%ne>0) then
    fld_bens_sqrt = fld_bens
 end if
 
-! Apply localization, initial version
+! Apply NICAS, initial version
 if (nam%lsqrt) then
    call nicas%apply_from_sqrt(mpl,nam,geom,bpar,fld_loc_sqrt)
 else
@@ -1616,7 +1616,7 @@ do ib=1,bpar%nbe
    end if
 end do
 
-! Apply localization, other version
+! Apply NICAS, other version
 if (nam%lsqrt) then
    call nicas_other%apply_from_sqrt(mpl,nam,geom,bpar,fld_loc_sqrt)
 else
@@ -1644,7 +1644,7 @@ end do
 nam%lsqrt = .not.nam%lsqrt
 
 ! Print difference
-write(mpl%unit,'(a7,a,f6.1,a)') '','Localization full / square-root error : ', &
+write(mpl%unit,'(a7,a,f6.1,a)') '','NICAS full / square-root error : ', &
  & sqrt(sum((fld_loc_sqrt-fld_loc)**2)/sum(fld_loc**2))*100.0,'%'
 if (ens%ne>0) write(mpl%unit,'(a7,a,f6.1,a)') '','Ensemble B full / square-root error:  ', &
  & sqrt(sum((fld_bens_sqrt-fld_bens)**2)/sum(fld_bens**2))*100.0,'%'
@@ -1654,7 +1654,7 @@ end subroutine nicas_test_sqrt
 
 !----------------------------------------------------------------------
 ! Subroutine: nicas_test_dirac
-!> Purpose: apply localization to diracs
+!> Purpose: apply NICAS to diracs
 !----------------------------------------------------------------------
 subroutine nicas_test_dirac(nicas,mpl,nam,geom,bpar,io,ens)
 
@@ -1691,7 +1691,7 @@ end do
 allocate(fld_loc(geom%nc0a,geom%nl0,nam%nv,nam%nts))
 if (ens%ne>0) allocate(fld_bens(geom%nc0a,geom%nl0,nam%nv,nam%nts))
 
-! Apply localization to dirac
+! Apply NICAS to dirac
 fld_loc = fld
 if (nam%lsqrt) then
    call nicas%apply_from_sqrt(mpl,nam,geom,bpar,fld_loc)
@@ -1749,8 +1749,8 @@ write(mpl%unit,'(a4,a)') '','Define test vectors'
 call flush(mpl%unit)
 call define_test_vectors(mpl,rng,nam,geom,ntest,fld_save)
 
-! Apply localization to test vectors
-write(mpl%unit,'(a4,a)') '','Apply localization to test vectors'
+! Apply NICAS to test vectors
+write(mpl%unit,'(a4,a)') '','Apply NICAS to test vectors'
 call flush(mpl%unit)
 fld_ref = fld_save
 do itest=1,ntest
@@ -1785,7 +1785,7 @@ do ifac=1,nfac
    call nicas%randomize(mpl,rng,nam,geom,bpar,nefac(ifac),ens)
 
    do itest=1,ntest
-      ! Test localization
+      ! Test NICAS
       fld = fld_save(:,:,:,:,itest)
       call nicas%apply_bens_noloc(mpl,nam,geom,ens,fld)
 
@@ -1935,8 +1935,8 @@ write(mpl%unit,'(a4,a)') '','Define test vectors'
 call flush(mpl%unit)
 call define_test_vectors(mpl,rng,nam,geom,ntest,fld_save)
 
-! Apply localization to test vectors
-write(mpl%unit,'(a4,a)') '','Apply localization to test vectors'
+! Apply NICAS to test vectors
+write(mpl%unit,'(a4,a)') '','Apply NICAS to test vectors'
 call flush(mpl%unit)
 fld_ref = fld_save
 do itest=1,ntest
@@ -2004,7 +2004,7 @@ do ifac=1,nfac
    end do
 
    do itest=1,ntest
-      ! Test localization
+      ! Test NICAS
       fld = fld_save(:,:,:,:,itest)
       call nicas_test%apply_bens(mpl,nam,geom,bpar,ens,fld)
 

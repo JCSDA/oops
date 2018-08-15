@@ -1313,101 +1313,162 @@ use unstructured_grid_mod
 implicit none
 type(qg_field), intent(in) :: self
 type(unstructured_grid), intent(inout) :: ug
+integer :: igrid
 
-!MPI: integer :: myproc,info
+! Set number of grids
+if (ug%colocated==1) then
+   ! Colocatd
+   ug%ngrid = 1
+else
+   ! Not colocatedd
+   ug%ngrid = 1
+end if
 
-!MPI: ! Find rank
-!MPI: call mpi_comm_rank(mpi_comm_world,myproc,info)
-!MPI: myproc = myproc+1
+! Allocate grid instances
+if (.not.allocated(ug%grid)) allocate(ug%grid(ug%ngrid))
 
-! Set local number of points
-ug%nmga = self%geom%nx*self%geom%ny
+if (ug%colocated==1) then
+  ! colocatedd
 
-! Set number of levels
-ug%nl0 = self%nl
+  ! Set local number of points
+  ug%grid(1)%nmga = self%geom%nx*self%geom%ny
 
-! Set number of variables
-ug%nv = self%nf
+  ! Set number of levels
+  ug%grid(1)%nl0 = self%nl
 
-! Set number of timeslots
-ug%nts = 1
+  ! Set number of variables
+  ug%grid(1)%nv = self%nf
+
+  ! Set number of timeslots
+  ug%grid(1)%nts = 1
+else
+  ! Not colocatedd
+  do igrid=1,ug%ngrid
+     ! Set local number of points
+     ug%grid(igrid)%nmga = self%geom%nx*self%geom%ny
+
+     ! Set number of levels
+     ug%grid(igrid)%nl0 = self%nl
+
+     ! Set number of variables
+     ug%grid(igrid)%nv = self%nf
+
+     ! Set number of timeslots
+     ug%grid(igrid)%nts = 1
+  enddo
+end if
 
 end subroutine ug_size
 
 ! ------------------------------------------------------------------------------
 
-subroutine ug_coord(self, ug)
+subroutine ug_coord(self, ug, colocated)
 use unstructured_grid_mod
 implicit none
 type(qg_field), intent(in) :: self
 type(unstructured_grid), intent(inout) :: ug
+integer, intent(in) :: colocated
 
-integer :: imga,jx,jy,jl!MPI: ,myproc,info
+integer :: igrid,imga,jx,jy,jl
+
+! Copy colocated
+ug%colocated = colocated
 
 ! Define size
 call ug_size(self, ug)
-
-!MPI: ! Find rank
-!MPI: call mpi_comm_rank(mpi_comm_world,myproc,info)
-!MPI: myproc = myproc+1
 
 ! Allocate unstructured grid coordinates
 call allocate_unstructured_grid_coord(ug)
 
 ! Define coordinates
-imga = 0
-do jy=1,self%geom%ny
-  do jx=1,self%geom%nx
-!MPI:     if (self%geom%myproc(jx,jy)==myproc) then
-      imga = imga+1
-      ug%lon(imga) = self%geom%lon(jx)
-      ug%lat(imga) = self%geom%lat(jy)
-      ug%area(imga) = self%geom%area(jx,jy)
-      do jl=1,self%nl
-        ug%vunit(imga,jl) = real(jl,kind=kind_real)
-        ug%lmask(imga,jl) = .true.
-      enddo
-!MPI:     endif
+if (ug%colocated==1) then
+  ! colocatedd
+  imga = 0
+  do jy=1,self%geom%ny
+    do jx=1,self%geom%nx
+        imga = imga+1
+        ug%grid(1)%lon(imga) = self%geom%lon(jx)
+        ug%grid(1)%lat(imga) = self%geom%lat(jy)
+        ug%grid(1)%area(imga) = self%geom%area(jx,jy)
+        do jl=1,self%nl
+          ug%grid(1)%vunit(imga,jl) = real(jl,kind=kind_real)
+          ug%grid(1)%lmask(imga,jl) = .true.
+        enddo
+    enddo
   enddo
-enddo
+else
+  ! Not colocatedd
+  do igrid=1,ug%ngrid
+    imga = 0
+    do jy=1,self%geom%ny
+      do jx=1,self%geom%nx
+          imga = imga+1
+          ug%grid(igrid)%lon(imga) = self%geom%lon(jx)
+          ug%grid(igrid)%lat(imga) = self%geom%lat(jy)
+          ug%grid(igrid)%area(imga) = self%geom%area(jx,jy)
+          do jl=1,self%nl
+            ug%grid(igrid)%vunit(imga,jl) = real(jl,kind=kind_real)
+            ug%grid(igrid)%lmask(imga,jl) = .true.
+          enddo
+      enddo
+    enddo
+  enddo
+endif
 
 end subroutine ug_coord
 
 ! ------------------------------------------------------------------------------
 
-subroutine field_to_ug(self, ug)
+subroutine field_to_ug(self, ug, colocated)
 use unstructured_grid_mod
 implicit none
 type(qg_field), intent(in) :: self
 type(unstructured_grid), intent(inout) :: ug
+integer, intent(in) :: colocated
 
-integer :: imga,jx,jy,jl,jf,joff!MPI: ,myproc,info
+integer :: igrid,imga,jx,jy,jl,jf,joff
+
+! Copy colocated
+ug%colocated = colocated
 
 ! Define size
 call ug_size(self, ug)
-
-!MPI: ! Find rank
-!MPI: call mpi_comm_rank(mpi_comm_world,myproc,info)
-!MPI: myproc = myproc+1
 
 ! Allocate unstructured grid field
 call allocate_unstructured_grid_field(ug)
 
 ! Copy field
-imga = 0
-do jy=1,self%geom%ny
-  do jx=1,self%geom%nx
-!MPI:     if (self%geom%myproc(jx,jy)==myproc) then
+if (ug%colocated==1) then
+  ! colocatedd
+  imga = 0
+  do jy=1,self%geom%ny
+    do jx=1,self%geom%nx
       imga = imga+1
       do jf=1,self%nf
         joff = (jf-1)*self%nl
         do jl=1,self%nl
-          ug%fld(imga,jl,jf,1) = self%gfld3d(jx,jy,joff+jl)
+          ug%grid(1)%fld(imga,jl,jf,1) = self%gfld3d(jx,jy,joff+jl)
         enddo
       enddo
-!MPI:     endif
+    enddo
   enddo
-enddo
+else
+  ! Not colocatedd
+  do igrid=1,ug%ngrid
+    imga = 0
+    do jy=1,self%geom%ny
+      do jx=1,self%geom%nx
+        imga = imga+1
+        do jf=1,self%nf
+          joff = (jf-1)*self%nl
+          do jl=1,self%nl
+            ug%grid(igrid)%fld(imga,jl,jf,1) = self%gfld3d(jx,jy,joff+jl)
+          enddo
+        enddo
+      enddo
+    enddo
+  enddo
+endif
 
 end subroutine field_to_ug
 
@@ -1419,31 +1480,40 @@ implicit none
 type(qg_field), intent(inout) :: self
 type(unstructured_grid), intent(in) :: ug
 
-integer :: imga,jx,jy,jl,jf,joff!MPI: ,myproc,info
-
-!MPI: ! Find rank
-!MPI: call mpi_comm_rank(mpi_comm_world,myproc,info)
-!MPI: myproc = myproc+1
+integer :: igrid,imga,jx,jy,jl,jf,joff
 
 ! Copy field
-imga = 0
-do jy=1,self%geom%ny
-  do jx=1,self%geom%nx
-!MPI:     if (self%geom%myproc(jx,jy)==myproc) then
-      ! Copy local field
-      imga = imga+1
-      do jf=1,self%nf
-        joff = (jf-1)*self%nl
-        do jl=1,self%nl
-          self%gfld3d(jx,jy,joff+jl) = ug%fld(imga,jl,jf,1)
+if (ug%colocated==1) then
+  ! colocatedd (adjoint)
+  imga = 0
+  do jy=1,self%geom%ny
+    do jx=1,self%geom%nx
+        imga = imga+1
+        do jf=1,self%nf
+          joff = (jf-1)*self%nl
+          do jl=1,self%nl
+            self%gfld3d(jx,jy,joff+jl) = ug%grid(1)%fld(imga,jl,jf,1)
+          enddo
         enddo
-      enddo
-!MPI:     endif
-
-!MPI:     ! Broadcast
-!MPI:     call mpi_bcast(self%gfld3d(jx,jy,:),self%nf*self%nl,mpi_double,self%geom%myproc(jx,jy)-1,mpi_comm_world,info)
+    enddo
   enddo
-enddo
+else
+  ! Not colocatedd
+  do igrid=1,ug%ngrid
+    imga = 0
+    do jy=1,self%geom%ny
+      do jx=1,self%geom%nx
+          imga = imga+1
+          do jf=1,self%nf
+            joff = (jf-1)*self%nl
+            do jl=1,self%nl
+              self%gfld3d(jx,jy,joff+jl) = ug%grid(igrid)%fld(imga,jl,jf,1)
+            enddo
+          enddo
+      enddo
+    enddo
+  enddo
+end if
 
 end subroutine field_from_ug
 

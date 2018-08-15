@@ -116,13 +116,14 @@ oops/base/WeightingFct.cc
 oops/base/instantiateCovarFactory.h
 oops/base/instantiateFilterFactory.h
 
+oops/generic/ParametersBUMP.h
 oops/generic/ErrorCovarianceBUMP.h
 oops/generic/LocalizationBUMP.h
 oops/generic/ObsErrorDiag.h
 oops/generic/UnstructuredGrid.cc
 oops/generic/UnstructuredGrid.h
-oops/generic/bump_f.h
-oops/generic/bump_mod.F90
+oops/generic/oobump_f.h
+oops/generic/oobump_mod.F90
 oops/generic/dcmip_initial_conditions_test_1_2_3_v5.f90
 oops/generic/dcmip_initial_conditions_test_4_v3.f90
 oops/generic/instantiateLocalizationFactory.h
@@ -207,6 +208,7 @@ oops/interface/LinearVariableChange.h
 oops/runs/Application.h
 oops/runs/Dirac.h
 oops/runs/EnsForecasts.h
+oops/runs/EstimateParams.h
 oops/runs/ExternalDFI.h
 oops/runs/Forecast.h
 oops/runs/GenEnsPertB.h

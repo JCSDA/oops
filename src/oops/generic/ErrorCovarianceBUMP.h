@@ -18,7 +18,7 @@
 
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/Variables.h"
-#include "oops/generic/bump_f.h"
+#include "oops/generic/oobump_f.h"
 #include "oops/generic/UnstructuredGrid.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -41,9 +41,9 @@ namespace oops {
 
 template <typename MODEL>
 class ErrorCovarianceBUMP : public oops::ModelSpaceCovarianceBase<MODEL>,
-                        public util::Printable,
-                        private util::ObjectCounter<ErrorCovarianceBUMP<MODEL> >,
-                        private boost::noncopyable {
+                            public util::Printable,
+                            private util::ObjectCounter<ErrorCovarianceBUMP<MODEL> >,
+                            private boost::noncopyable {
   typedef Geometry<MODEL>            Geometry_;
   typedef Increment<MODEL>           Increment_;
   typedef State<MODEL>               State_;
@@ -64,6 +64,7 @@ class ErrorCovarianceBUMP : public oops::ModelSpaceCovarianceBase<MODEL>,
   void print(std::ostream &) const override;
 
   const Variables vars_;
+  int colocated_;
   int keyBUMP_;
 };
 
@@ -74,7 +75,7 @@ ErrorCovarianceBUMP<MODEL>::ErrorCovarianceBUMP(const Geometry_ & resol,
                                                 const Variables & vars,
                                                 const eckit::Configuration & conf,
                                                 const State_ & xb, const State_ & fg)
-  : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, conf), vars_(vars), keyBUMP_(0)
+  : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, conf), vars_(vars), colocated_(0), keyBUMP_(0)
 {
   Log::trace() << "ErrorCovarianceBUMP::ErrorCovarianceBUMP starting" << std::endl;
   const eckit::Configuration * fconf = &conf;
@@ -84,13 +85,16 @@ ErrorCovarianceBUMP<MODEL>::ErrorCovarianceBUMP(const Geometry_ & resol,
 
 // Define unstructured grid coordinates
   UnstructuredGrid ug;
-  dx.ug_coord(ug);
+  dx.ug_coord(ug, colocated_);
+
+// Delete BUMP if present
+  if (keyBUMP_) delete_oobump_f90(keyBUMP_);
 
 // Create BUMP
-  create_bump_f90(keyBUMP_, ug.toFortran(), &fconf, 0);
+  create_oobump_f90(keyBUMP_, ug.toFortran(), &fconf, 0, 1, 0, 1);
 
 // Run BUMP
-  run_bump_drivers_f90(keyBUMP_);
+  run_oobump_drivers_f90(keyBUMP_);
 
   Log::trace() << "ErrorCovarianceBUMP::ErrorCovarianceBUMP done" << std::endl;
 }
@@ -101,7 +105,7 @@ template<typename MODEL>
 ErrorCovarianceBUMP<MODEL>::~ErrorCovarianceBUMP() {
   Log::trace() << "ErrorCovarianceBUMP<MODEL>::~ErrorCovarianceBUMP starting" << std::endl;
   util::Timer timer(classname(), "~ErrorCovarianceBUMP");
-  delete_bump_f90(keyBUMP_);
+  delete_oobump_f90(keyBUMP_);
   Log::trace() << "ErrorCovarianceBUMP<MODEL>::~ErrorCovarianceBUMP done" << std::endl;
 }
 
@@ -113,8 +117,8 @@ void ErrorCovarianceBUMP<MODEL>::doMultiply(const Increment_ & dx1,
   Log::trace() << "ErrorCovarianceBUMP<MODEL>::doMultiply starting" << std::endl;
   util::Timer timer(classname(), "doMultiply");
   UnstructuredGrid ug;
-  dx1.field_to_ug(ug);
-  bump_multiply_f90(keyBUMP_, ug.toFortran());
+  dx1.field_to_ug(ug, colocated_);
+  multiply_oobump_nicas_f90(keyBUMP_, ug.toFortran());
   dx2.field_from_ug(ug);
   Log::trace() << "ErrorCovarianceBUMP<MODEL>::doMultiply done" << std::endl;
 }

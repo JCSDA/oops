@@ -19,7 +19,7 @@
 #include "oops/base/Ensemble.h"
 #include "oops/base/EnsemblesCollection.h"
 #include "oops/base/Variables.h"
-#include "oops/generic/bump_f.h"
+#include "oops/generic/oobump_f.h"
 #include "oops/generic/UnstructuredGrid.h"
 #include "oops/interface/LocalizationBase.h"
 #include "oops/util/DateTime.h"
@@ -53,6 +53,7 @@ class LocalizationBUMP : public LocalizationBase<MODEL> {
  private:
   void print(std::ostream &) const;
 
+  int colocated_;
   int keyBUMP_;
 };
 
@@ -60,7 +61,9 @@ class LocalizationBUMP : public LocalizationBase<MODEL> {
 
 template<typename MODEL>
 LocalizationBUMP<MODEL>::LocalizationBUMP(const Geometry_ & resol,
-                                          const eckit::Configuration & conf) {
+                                          const eckit::Configuration & conf)
+  : colocated_(1), keyBUMP_(0)
+{
   const eckit::Configuration * fconf = &conf;
 
 // Setup variables
@@ -74,8 +77,9 @@ LocalizationBUMP<MODEL>::LocalizationBUMP(const Geometry_ & resol,
   Increment_ dx(resol, vars, date);
 
 // Define unstructured grid coordinates
+  colocated_ = 1;  // conf.getString("colocated") TODO
   UnstructuredGrid ug;
-  dx.ug_coord(ug);
+  dx.ug_coord(ug, colocated_);
 
 // Define ensemble size
   int new_hdiag = conf.getInt("new_hdiag");
@@ -88,7 +92,7 @@ LocalizationBUMP<MODEL>::LocalizationBUMP(const Geometry_ & resol,
   }
 
 // Create BUMP
-  create_bump_f90(keyBUMP_, ug.toFortran(), &fconf, ens1_ne);
+  create_oobump_f90(keyBUMP_, ug.toFortran(), &fconf, ens1_ne, 1, 0, 0);
 
 // Copy ensemble members
   if (new_hdiag == 1) {
@@ -99,15 +103,15 @@ LocalizationBUMP<MODEL>::LocalizationBUMP(const Geometry_ & resol,
 
       // Define unstructured grid field
       UnstructuredGrid ugmem;
-      (*ens_ptr)[ie].field_to_ug(ugmem);
+      (*ens_ptr)[ie].field_to_ug(ugmem, colocated_);
 
       // Copy field into BUMP ensemble
-      add_bump_member_f90(keyBUMP_, ugmem.toFortran(), ie+1);
+      add_oobump_member_f90(keyBUMP_, ugmem.toFortran(), ie+1, bump::readEnsMember);
     }
   }
 
 // Run BUMP
-  run_bump_drivers_f90(keyBUMP_);
+  run_oobump_drivers_f90(keyBUMP_);
 
   Log::trace() << "LocalizationBUMP:LocalizationBUMP constructed" << std::endl;
 }
@@ -116,7 +120,7 @@ LocalizationBUMP<MODEL>::LocalizationBUMP(const Geometry_ & resol,
 
 template<typename MODEL>
 LocalizationBUMP<MODEL>::~LocalizationBUMP() {
-  delete_bump_f90(keyBUMP_);
+  delete_oobump_f90(keyBUMP_);
   Log::trace() << "LocalizationBUMP:~LocalizationBUMP destructed" << std::endl;
 }
 
@@ -125,33 +129,10 @@ LocalizationBUMP<MODEL>::~LocalizationBUMP() {
 template<typename MODEL>
 void LocalizationBUMP<MODEL>::multiply(Increment_ & dx) const {
   Log::trace() << "LocalizationBUMP:multiply starting" << std::endl;
-
   UnstructuredGrid ug;
-
-  MPI_Barrier(MPI_COMM_WORLD);
-  boost::posix_time::ptime ti1 = boost::posix_time::microsec_clock::local_time();
-  dx.field_to_ug(ug);
-  boost::posix_time::ptime t1 = boost::posix_time::microsec_clock::local_time();
-  boost::posix_time::time_duration diff1 = t1 - ti1;
-  Log::info() << "field_to_ug time: " << diff1.total_nanoseconds()/1000
-              << " microseconds" << std::endl;
-
-  MPI_Barrier(MPI_COMM_WORLD);
-  boost::posix_time::ptime ti2 = boost::posix_time::microsec_clock::local_time();
-  bump_multiply_f90(keyBUMP_, ug.toFortran());
-  boost::posix_time::ptime t2 = boost::posix_time::microsec_clock::local_time();
-  boost::posix_time::time_duration diff2 = t2 - ti2;
-  Log::info() << "multiply time: " << diff2.total_nanoseconds()/1000
-              << " microseconds" << std::endl;
-
-  MPI_Barrier(MPI_COMM_WORLD);
-  boost::posix_time::ptime ti3 = boost::posix_time::microsec_clock::local_time();
+  dx.field_to_ug(ug, colocated_);
+  multiply_oobump_nicas_f90(keyBUMP_, ug.toFortran());
   dx.field_from_ug(ug);
-  boost::posix_time::ptime t3 = boost::posix_time::microsec_clock::local_time();
-  boost::posix_time::time_duration diff3 = t3 - ti3;
-  Log::info() << "field_from_ug time: " << diff3.total_nanoseconds()/1000
-              << " microseconds" << std::endl;
-
   Log::trace() << "LocalizationBUMP:multiply done" << std::endl;
 }
 

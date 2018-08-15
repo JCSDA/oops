@@ -20,7 +20,8 @@ public unstructured_grid, allocate_unstructured_grid_coord, allocate_unstructure
 
 !>  Derived type containing the data
 
-type unstructured_grid
+type grid_type
+  integer :: igrid                                 !> Index of the grid
   integer :: nmga                                  !> Number of gridpoints (on a given MPI task)
   integer :: nl0                                   !> Number of levels
   integer :: nv                                    !> Number of variables
@@ -31,6 +32,12 @@ type unstructured_grid
   real(kind=kind_real), allocatable :: vunit(:,:)  !> Vertical unit
   logical,allocatable :: lmask(:,:)                !> Mask
   real(kind=kind_real),allocatable :: fld(:,:,:,:) !> Data
+end type grid_type
+
+type unstructured_grid
+  integer :: colocated                            !> Colocation flag
+  integer :: ngrid                                !> Number of different grids
+  type(grid_type),allocatable :: grid(:)          !> Grid instance
 end type unstructured_grid
 
 ! ------------------------------------------------------------------------------
@@ -82,13 +89,16 @@ end subroutine
 subroutine allocate_unstructured_grid_coord(self)
 implicit none
 type(unstructured_grid), intent(inout) :: self
+integer :: igrid
 
 ! Allocation
-if (.not.allocated(self%lon)) allocate(self%lon(self%nmga))
-if (.not.allocated(self%lat)) allocate(self%lat(self%nmga))
-if (.not.allocated(self%area)) allocate(self%area(self%nmga))
-if (.not.allocated(self%vunit)) allocate(self%vunit(self%nmga,self%nl0))
-if (.not.allocated(self%lmask)) allocate(self%lmask(self%nmga,self%nl0))
+do igrid=1,self%ngrid
+   if (.not.allocated(self%grid(igrid)%lon)) allocate(self%grid(igrid)%lon(self%grid(igrid)%nmga))
+   if (.not.allocated(self%grid(igrid)%lat)) allocate(self%grid(igrid)%lat(self%grid(igrid)%nmga))
+   if (.not.allocated(self%grid(igrid)%area)) allocate(self%grid(igrid)%area(self%grid(igrid)%nmga))
+   if (.not.allocated(self%grid(igrid)%vunit)) allocate(self%grid(igrid)%vunit(self%grid(igrid)%nmga,self%grid(igrid)%nl0))
+   if (.not.allocated(self%grid(igrid)%lmask)) allocate(self%grid(igrid)%lmask(self%grid(igrid)%nmga,self%grid(igrid)%nl0))
+enddo
 
 end subroutine allocate_unstructured_grid_coord
 
@@ -97,9 +107,13 @@ end subroutine allocate_unstructured_grid_coord
 subroutine allocate_unstructured_grid_field(self)
 implicit none
 type(unstructured_grid), intent(inout) :: self
+integer :: igrid
 
 ! Allocation
-if (.not.allocated(self%fld)) allocate(self%fld(self%nmga,self%nl0,self%nv,self%nts))
+do igrid=1,self%ngrid
+   if (.not.allocated(self%grid(igrid)%fld)) allocate(self%grid(igrid)%fld(self%grid(igrid)%nmga,self%grid(igrid)%nl0, &
+ & self%grid(igrid)%nv,self%grid(igrid)%nts))
+enddo
 
 end subroutine allocate_unstructured_grid_field
 
@@ -108,14 +122,17 @@ end subroutine allocate_unstructured_grid_field
 subroutine delete_unstructured_grid(self)
 implicit none
 type(unstructured_grid), intent(inout) :: self
+integer :: igrid
 
-! Release memory 
-if (allocated(self%lon)) deallocate(self%lon)
-if (allocated(self%lat)) deallocate(self%lat)
-if (allocated(self%area)) deallocate(self%area)
-if (allocated(self%vunit)) deallocate(self%vunit)
-if (allocated(self%lmask)) deallocate(self%lmask)
-if (allocated(self%fld)) deallocate(self%fld)
+! Release memory
+do igrid=1,self%ngrid
+   if (allocated(self%grid(igrid)%lon)) deallocate(self%grid(igrid)%lon)
+   if (allocated(self%grid(igrid)%lat)) deallocate(self%grid(igrid)%lat)
+   if (allocated(self%grid(igrid)%area)) deallocate(self%grid(igrid)%area)
+   if (allocated(self%grid(igrid)%vunit)) deallocate(self%grid(igrid)%vunit)
+   if (allocated(self%grid(igrid)%lmask)) deallocate(self%grid(igrid)%lmask)
+   if (allocated(self%grid(igrid)%fld)) deallocate(self%grid(igrid)%fld)
+enddo
 
 end subroutine delete_unstructured_grid
 

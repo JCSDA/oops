@@ -271,99 +271,60 @@ integer :: imin(1),imax(1),nmoves,imoves
 integer,allocatable :: nop(:),iop(:),srcproc(:,:),srcic0(:,:),order(:),nobs_to_move(:),nobs_to_move_tmp(:),obs_moved(:,:)
 real(kind_real) :: N_max,C_max
 real(kind_real),allocatable :: proc_to_lonobs(:),proc_to_latobs(:),lonobs(:),latobs(:),list(:)
-logical :: global
 logical,allocatable :: maskobs(:),lcheck_nc0b(:)
 
 ! Allocation
 allocate(obsop%proc_to_nobsa(mpl%nproc))
 
-! Find out if obs are global or local
-call mpl%allgather(1,(/obsop%nobs/),obsop%proc_to_nobsa)
-global = all(obsop%proc_to_nobsa==obsop%proc_to_nobsa(mpl%ioproc))
-if (global) then
-   ! Allocation
-   allocate(proc_to_lonobs(mpl%nproc))
-   allocate(proc_to_latobs(mpl%nproc))
+! Get global number of observations
+obsop%nobsa = obsop%nobs
+obsop%nobs = sum(obsop%proc_to_nobsa)
 
-   iobs = 1
-   do while (global.and.(iobs<=obsop%nobs))
-      ! Gather
-      call mpl%allgather(1,(/obsop%lonobs(iobs)/),proc_to_lonobs)
-      call mpl%allgather(1,(/obsop%latobs(iobs)/),proc_to_latobs)
+! Allocation
+allocate(lonobs(obsop%nobs))
+allocate(latobs(obsop%nobs))
 
-      ! Check
-      global = all(.not.abs(proc_to_lonobs-proc_to_lonobs(mpl%ioproc))>0.0) &
-             & .and.all(.not.abs(proc_to_latobs-proc_to_latobs(mpl%ioproc))>0.0)
-
-      ! Update
-      iobs = iobs+1
-   end do
-end if
-if (global) then
-   write(mpl%unit,'(a7,a)') '','Observations are provided globally'
-else
-   write(mpl%unit,'(a7,a)') '','Observations are provided locally'
-end if
-
-if (global) then
-   ! Allocation
-   allocate(lonobs(obsop%nobs))
-   allocate(latobs(obsop%nobs))
-
-   ! Copy coordinates
-   lonobs = obsop%lonobs
-   latobs = obsop%latobs
-else
-   ! Get global number of observations
-   obsop%nobsa = obsop%nobs
-   obsop%nobs = sum(obsop%proc_to_nobsa)
-
-   ! Allocation
-   allocate(lonobs(obsop%nobs))
-   allocate(latobs(obsop%nobs))
-
-   ! Get observations coordinates
-   if (mpl%main) then
-      offset = 0
-      do iproc=1,mpl%nproc
-         if (obsop%proc_to_nobsa(iproc)>0) then
-            if (iproc==mpl%ioproc) then
-               ! Copy data
-               lonobs(offset+1:offset+obsop%proc_to_nobsa(iproc)) = obsop%lonobs
-               latobs(offset+1:offset+obsop%proc_to_nobsa(iproc)) = obsop%latobs
-            else
-               ! Receive data on ioproc
-               call mpl%recv(obsop%proc_to_nobsa(iproc),lonobs(offset+1:offset+obsop%proc_to_nobsa(iproc)),iproc,mpl%tag)
-               call mpl%recv(obsop%proc_to_nobsa(iproc),latobs(offset+1:offset+obsop%proc_to_nobsa(iproc)),iproc,mpl%tag+1)
-            end if
+! Get observations coordinates
+if (mpl%main) then
+   offset = 0
+   do iproc=1,mpl%nproc
+      if (obsop%proc_to_nobsa(iproc)>0) then
+         if (iproc==mpl%ioproc) then
+            ! Copy data
+            lonobs(offset+1:offset+obsop%proc_to_nobsa(iproc)) = obsop%lonobs
+            latobs(offset+1:offset+obsop%proc_to_nobsa(iproc)) = obsop%latobs
+         else
+            ! Receive data on ioproc
+            call mpl%recv(obsop%proc_to_nobsa(iproc),lonobs(offset+1:offset+obsop%proc_to_nobsa(iproc)),iproc,mpl%tag)
+            call mpl%recv(obsop%proc_to_nobsa(iproc),latobs(offset+1:offset+obsop%proc_to_nobsa(iproc)),iproc,mpl%tag+1)
          end if
-
-         ! Update offset
-         offset = offset+obsop%proc_to_nobsa(iproc)
-      end do
-   else
-      if (obsop%nobsa>0) then
-         ! Send data to ioproc
-         call mpl%send(obsop%nobsa,obsop%lonobs,mpl%ioproc,mpl%tag)
-         call mpl%send(obsop%nobsa,obsop%latobs,mpl%ioproc,mpl%tag+1)
       end if
+
+      ! Update offset
+      offset = offset+obsop%proc_to_nobsa(iproc)
+   end do
+else
+   if (obsop%nobsa>0) then
+      ! Send data to ioproc
+      call mpl%send(obsop%nobsa,obsop%lonobs,mpl%ioproc,mpl%tag)
+      call mpl%send(obsop%nobsa,obsop%latobs,mpl%ioproc,mpl%tag+1)
    end if
-   mpl%tag = mpl%tag+2
-
-   ! Broadcast data
-   call mpl%bcast(lonobs)
-   call mpl%bcast(latobs)
-
-   ! Reallocation
-   deallocate(obsop%lonobs)
-   deallocate(obsop%latobs)
-   allocate(obsop%lonobs(obsop%nobs))
-   allocate(obsop%latobs(obsop%nobs))
-
-   ! Copy
-   obsop%lonobs = lonobs
-   obsop%latobs = latobs
 end if
+mpl%tag = mpl%tag+2
+
+! Broadcast data
+call mpl%bcast(lonobs)
+call mpl%bcast(latobs)
+
+! Reallocation
+deallocate(obsop%lonobs)
+deallocate(obsop%latobs)
+allocate(obsop%lonobs(obsop%nobs))
+allocate(obsop%latobs(obsop%nobs))
+
+! Copy
+obsop%lonobs = lonobs
+obsop%latobs = latobs
 
 ! Allocation
 allocate(maskobs(obsop%nobs))
@@ -403,7 +364,16 @@ do i_s=1,obsop%hfull%n_s
    srcic0(iop(iobs),iobs) = ic0
 end do
 
-if (global) then
+if (.true.) then ! TODO
+   ! Fill obs_to_proc
+   iobs = 0
+   do iproc=1,mpl%nproc
+      do iobsa=1,obsop%proc_to_nobsa(iproc)
+         iobs = iobs+1
+         obsop%obs_to_proc(iobs) = iproc
+      end do
+   end do
+else
    ! Generate observation distribution on processors
    select case (trim(nam%obsdis))
    case('random')
@@ -524,15 +494,6 @@ if (global) then
 
    ! Define nobsa
    obsop%nobsa = obsop%proc_to_nobsa(mpl%myproc)
-else
-   ! Fill obs_to_proc
-   iobs = 0
-   do iproc=1,mpl%nproc
-      do iobsa=1,obsop%proc_to_nobsa(iproc)
-         iobs = iobs+1
-         obsop%obs_to_proc(iobs) = iproc
-      end do
-   end do
 end if
 
 ! Allocation

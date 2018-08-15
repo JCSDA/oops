@@ -39,7 +39,7 @@ real(kind_real),parameter :: rcoast = 0.2_kind_real          !< Minimum value to
 ! HDIAG data derived type
 type hdata_type
    ! Sampling
-   real(kind_real),allocatable :: rh0(:,:)          !< Sampling radius
+   real(kind_real),allocatable :: rh_c0(:,:)        !< Sampling radius
    integer,allocatable :: c1_to_c0(:)               !< First sampling index
    logical,allocatable :: c1l0_log(:,:)             !< Log for the first sampling index
    integer,allocatable :: c1c3_to_c0(:,:)           !< Second horizontal sampling index
@@ -48,6 +48,7 @@ type hdata_type
    integer,allocatable :: c2_to_c0(:)               !< Subgrid to grid
 
    ! Local data
+   logical,allocatable ::  vbal_mask(:,:)           !< Vertical balance mask
    logical,allocatable ::  local_mask(:,:)          !< Local mask
    logical,allocatable ::  displ_mask(:,:)          !< Displacement mask
    integer,allocatable :: nn_c2_index(:,:,:)        !< Nearest diagnostic neighbors from diagnostic points
@@ -142,18 +143,19 @@ type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 
 ! Allocation
-allocate(hdata%rh0(geom%nc0,geom%nl0))
+allocate(hdata%rh_c0(geom%nc0,geom%nl0))
 allocate(hdata%c1_to_c0(nam%nc1))
 allocate(hdata%c1l0_log(nam%nc1,geom%nl0))
 allocate(hdata%c1c3_to_c0(nam%nc1,nam%nc3))
 allocate(hdata%c1c3l0_log(nam%nc1,nam%nc3,geom%nl0))
-if (nam%new_lct.or.nam%var_diag.or.nam%local_diag.or.nam%displ_diag) then
+if (nam%new_vbal.or.nam%new_lct.or.(nam%new_hdiag.and.(nam%var_diag.or.nam%local_diag.or.nam%displ_diag))) then
    allocate(hdata%c2_to_c1(nam%nc2))
    allocate(hdata%c2_to_c0(nam%nc2))
    allocate(hdata%nn_c2_index(nam%nc2,nam%nc2,geom%nl0i))
    allocate(hdata%nn_c2_dist(nam%nc2,nam%nc2,geom%nl0i))
    allocate(hdata%hfull(geom%nl0i))
 end if
+if (nam%new_vbal) allocate(hdata%vbal_mask(nam%nc1,nam%nc2))
 if (nam%local_diag) allocate(hdata%local_mask(nam%nc1,nam%nc2))
 if (nam%displ_diag) then
    allocate(hdata%displ_mask(nam%nc1,nam%nc2))
@@ -162,17 +164,18 @@ if (nam%displ_diag) then
 end if
 
 ! Initialization
-call msr(hdata%rh0)
+call msr(hdata%rh_c0)
 call msi(hdata%c1_to_c0)
 hdata%c1l0_log = .false.
 call msi(hdata%c1c3_to_c0)
 hdata%c1c3l0_log = .false.
-if (nam%new_lct.or.nam%var_diag.or.nam%local_diag.or.nam%displ_diag) then
+if (nam%new_vbal.or.nam%new_lct.or.(nam%new_hdiag.and.(nam%var_diag.or.nam%local_diag.or.nam%displ_diag))) then
    call msi(hdata%c2_to_c1)
    call msi(hdata%c2_to_c0)
    call msi(hdata%nn_c2_index)
    call msr(hdata%nn_c2_dist)
 end if
+if (nam%new_vbal) hdata%vbal_mask = .false.
 if (nam%local_diag) hdata%local_mask = .false.
 if (nam%displ_diag) then
    hdata%displ_mask = .false.
@@ -198,7 +201,7 @@ type(geom_type),intent(in) :: geom       !< Geometry
 integer :: il0
 
 ! Release memory
-if (allocated(hdata%rh0)) deallocate(hdata%rh0)
+if (allocated(hdata%rh_c0)) deallocate(hdata%rh_c0)
 if (allocated(hdata%c1_to_c0)) deallocate(hdata%c1_to_c0)
 if (allocated(hdata%c1l0_log)) deallocate(hdata%c1l0_log)
 if (allocated(hdata%c1c3_to_c0)) deallocate(hdata%c1c3_to_c0)
@@ -207,6 +210,7 @@ if (allocated(hdata%c2_to_c1)) deallocate(hdata%c2_to_c1)
 if (allocated(hdata%c2_to_c0)) deallocate(hdata%c2_to_c0)
 if (allocated(hdata%c2a_to_c2)) deallocate(hdata%c2a_to_c2)
 if (allocated(hdata%c2_to_c2a)) deallocate(hdata%c2_to_c2a)
+if (allocated(hdata%vbal_mask)) deallocate(hdata%vbal_mask)
 if (allocated(hdata%local_mask)) deallocate(hdata%local_mask)
 if (allocated(hdata%displ_mask)) deallocate(hdata%displ_mask)
 if (allocated(hdata%nn_c2_index)) deallocate(hdata%nn_c2_index)
@@ -249,9 +253,9 @@ integer :: il0,il0i,ic1,jc3,ic2
 integer :: nl0_test,nl0r_test,nc_test,nc1_test,nc2_test,nc2_1_test,nc2_2_test
 integer :: info,ncid,nl0_id,nc3_id,nc1_id,nc2_id,nc2_1_id,nc2_2_id
 integer :: c1_to_c0_id,c1l0_log_id,c1c3_to_c0_id,c1c3l0_log_id
-integer :: c2_to_c1_id,c2_to_c0_id,local_mask_id,displ_mask_id,nn_c2_index_id,nn_c2_dist_id
+integer :: c2_to_c1_id,c2_to_c0_id,vbal_mask_id,local_mask_id,displ_mask_id,nn_c2_index_id,nn_c2_dist_id
 integer :: c1l0_logint(nam%nc1,geom%nl0),c1c3l0_logint(nam%nc1,nam%nc3,geom%nl0)
-integer,allocatable :: local_maskint(:,:),displ_maskint(:,:)
+integer,allocatable :: vbal_maskint(:,:),local_maskint(:,:),displ_maskint(:,:)
 character(len=3) :: il0ichar
 character(len=1024) :: subr = 'hdata_read'
 
@@ -348,7 +352,7 @@ call mpl%ncerr(subr,nf90_close(ncid))
 
 ! Read nearest neighbors and interpolation
 do il0i=1,geom%nl0i
-   if ((ios==0).and.(nam%new_lct.or.nam%var_diag.or.nam%local_diag.or.nam%displ_diag)) then
+   if ((ios==0).and.(nam%new_vbal.or.nam%new_lct.or.(nam%new_hdiag.and.(nam%var_diag.or.nam%local_diag.or.nam%displ_diag)))) then
       ! Open file
       write(il0ichar,'(i3.3)') il0i
       info = nf90_open(trim(nam%datadir)//'/'//trim(nam%prefix)//'_sampling_'//il0ichar//'.nc',nf90_nowrite,ncid)
@@ -383,6 +387,28 @@ do il0i=1,geom%nl0i
       end if
       write(hdata%hfull(il0i)%prefix,'(a,i3.3)') 'hfull_',il0i
       call hdata%hfull(il0i)%read(mpl,ncid)
+   end if
+
+   if ((ios==0).and.nam%new_vbal) then
+      ! Allocation
+      allocate(vbal_maskint(nam%nc1,nam%nc2))
+
+      call mpl%ncerr(subr,nf90_inq_varid(ncid,'vbal_mask',vbal_mask_id))
+      call mpl%ncerr(subr,nf90_get_var(ncid,vbal_mask_id,vbal_maskint))
+      do ic2=1,nam%nc2
+         do ic1=1,nam%nc1
+            if (vbal_maskint(ic1,ic2)==1) then
+               hdata%vbal_mask(ic1,ic2) = .true.
+            elseif (vbal_maskint(ic1,ic2)==0) then
+               hdata%vbal_mask(ic1,ic2) = .false.
+            else
+               call mpl%abort('wrong vbal_mask')
+           end if
+         end do
+      end do
+
+      ! Release memory
+      deallocate(vbal_maskint)
    end if
 
    if ((ios==0).and.nam%local_diag) then
@@ -455,9 +481,9 @@ type(geom_type),intent(in) :: geom    !< Geometry
 integer :: il0,il0i,ic1,jc3,ic2
 integer :: ncid,nl0_id,nc1_id,nc2_id,nc2_1_id,nc2_2_id,nc3_id
 integer :: lat_id,lon_id,smax_id,c1_to_c0_id,c1l0_log_id,c1c3_to_c0_id,c1c3l0_log_id
-integer :: c2_to_c1_id,c2_to_c0_id,local_mask_id,displ_mask_id,nn_c2_index_id,nn_c2_dist_id
+integer :: c2_to_c1_id,c2_to_c0_id,vbal_mask_id,local_mask_id,displ_mask_id,nn_c2_index_id,nn_c2_dist_id
 integer :: c1l0_logint(nam%nc1,geom%nl0),c1c3l0_logint(nam%nc1,nam%nc3,geom%nl0)
-integer,allocatable :: local_maskint(:,:),displ_maskint(:,:)
+integer,allocatable :: vbal_maskint(:,:),local_maskint(:,:),displ_maskint(:,:)
 real(kind_real) :: lon(nam%nc1,nam%nc3,geom%nl0),lat(nam%nc1,nam%nc3,geom%nl0)
 character(len=3) :: il0ichar
 character(len=1024) :: subr = 'hdata_write'
@@ -478,7 +504,8 @@ call mpl%ncerr(subr,nf90_def_dim(ncid,'nl0',geom%nl0,nl0_id))
 call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,'nl0r',nam%nl0r))
 call mpl%ncerr(subr,nf90_def_dim(ncid,'nc3',nam%nc3,nc3_id))
 call mpl%ncerr(subr,nf90_def_dim(ncid,'nc1',nam%nc1,nc1_id))
-if (nam%new_lct.or.nam%var_diag.or.nam%local_diag.or.nam%displ_diag) call mpl%ncerr(subr,nf90_def_dim(ncid,'nc2',nam%nc2,nc2_id))
+if (nam%new_vbal.or.nam%new_lct.or.(nam%new_hdiag.and.(nam%var_diag.or.nam%local_diag.or.nam%displ_diag))) &
+ & call mpl%ncerr(subr,nf90_def_dim(ncid,'nc2',nam%nc2,nc2_id))
 
 ! Define variables
 call mpl%ncerr(subr,nf90_def_var(ncid,'lat',ncfloat,(/nc1_id,nc3_id,nl0_id/),lat_id))
@@ -547,7 +574,7 @@ call mpl%ncerr(subr,nf90_close(ncid))
 
 ! Write nearest neighbors and interpolation
 do il0i=1,geom%nl0i
-   if (nam%new_lct.or.nam%var_diag.or.nam%local_diag.or.nam%displ_diag) then
+   if (nam%new_vbal.or.nam%new_lct.or.(nam%new_hdiag.and.(nam%var_diag.or.nam%local_diag.or.nam%displ_diag))) then
       ! Create file
       write(il0ichar,'(i3.3)') il0i
       call mpl%ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(nam%prefix)//'_sampling_'//il0ichar//'.nc', &
@@ -574,6 +601,38 @@ do il0i=1,geom%nl0i
       call mpl%ncerr(subr,nf90_put_var(ncid,nn_c2_index_id,hdata%nn_c2_index(:,:,il0i)))
       call mpl%ncerr(subr,nf90_put_var(ncid,nn_c2_dist_id,hdata%nn_c2_dist(:,:,il0i)))
       call hdata%hfull(il0i)%write(mpl,ncid)
+   end if
+
+   if (nam%local_diag) then
+      ! Allocation
+      allocate(vbal_maskint(nam%nc1,nam%nc2))
+
+      ! Definition mode
+      call mpl%ncerr(subr,nf90_redef(ncid))
+
+      ! Define variables
+      call mpl%ncerr(subr,nf90_def_var(ncid,'vbal_mask',nf90_int,(/nc1_id,nc2_1_id/),vbal_mask_id))
+      call mpl%ncerr(subr,nf90_put_att(ncid,vbal_mask_id,'_FillValue',msvali))
+
+      ! Convert data
+      do ic2=1,nam%nc2
+         do ic1=1,nam%nc1
+            if (hdata%vbal_mask(ic1,ic2)) then
+               vbal_maskint(ic1,ic2) = 1
+            else
+               vbal_maskint(ic1,ic2) = 0
+            end if
+         end do
+      end do
+
+      ! End definition mode
+      call mpl%ncerr(subr,nf90_enddef(ncid))
+
+      ! Write variables
+      call mpl%ncerr(subr,nf90_put_var(ncid,vbal_mask_id,vbal_maskint))
+
+      ! Release memory
+      deallocate(vbal_maskint)
    end if
 
    if (nam%local_diag) then
@@ -667,7 +726,7 @@ type(io_type),intent(in) :: io           !< I/O
 ! Local variables
 integer :: ios,ic0,il0,ic1,ic2,ildw,jc3,il0i,jc1,kc1,nc2_eff
 integer,allocatable :: vbot(:),vtop(:),nn_c1_index(:)
-real(kind_real) :: rh0(geom%nc0),nn_dist(1),rh0_loc(geom%nc0a,geom%nl0)
+real(kind_real) :: rh_c0(geom%nc0),nn_dist(1),rh_c0_loc(geom%nc0a,geom%nl0)
 real(kind_real),allocatable :: nn_c1_dist(:)
 logical :: mask_c1(nam%nc1)
 character(len=1024) :: filename
@@ -702,16 +761,16 @@ if (ios==1) then
    call hdata%compute_sampling_mask(nam,geom)
 end if
 
-if (nam%new_lct.or.nam%var_diag.or.nam%local_diag.or.nam%displ_diag) then
+if (nam%new_vbal.or.nam%new_lct.or.(nam%new_hdiag.and.(nam%var_diag.or.nam%local_diag.or.nam%displ_diag))) then
    if ((ios==1).or.(ios==2)) then
       ! Define subsampling
       if (mpl%main) then
          write(mpl%unit,'(a7,a)',advance='no') '','Define subsampling:'
          call flush(mpl%unit)
          mask_c1 = .true.
-         rh0 = 1.0
+         rh_c0 = 1.0
          call rng%initialize_sampling(mpl,nam%nc1,geom%lon(hdata%c1_to_c0),geom%lat(hdata%c1_to_c0),mask_c1, &
-       & rh0,nam%ntry,nam%nrep,nam%nc2,hdata%c2_to_c1)
+       & rh_c0,nam%ntry,nam%nrep,nam%nc2,hdata%c2_to_c1)
       else
          write(mpl%unit,'(a7,a)') '','Define subsampling'
          call flush(mpl%unit)
@@ -765,12 +824,12 @@ if (nam%new_lct.or.nam%var_diag.or.nam%local_diag.or.nam%displ_diag) then
    call hdata%mesh%barcs
 
    if ((ios==1).or.(ios==2).or.(ios==3)) then
-      if (nam%local_diag.or.nam%displ_diag) then
+      if (nam%new_vbal.or.nam%local_diag.or.nam%displ_diag) then
          ! Allocation
          allocate(nn_c1_index(nam%nc1))
          allocate(nn_c1_dist(nam%nc1))
 
-         ! Compute nearest neighbors
+         ! Compute local masks
          write(mpl%unit,'(a7,a)') '','Compute local masks'
          call flush(mpl%unit)
          call kdtree%create(mpl,nam%nc1,geom%lon(hdata%c1_to_c0),geom%lat(hdata%c1_to_c0),any(hdata%c1l0_log,dim=2))
@@ -783,6 +842,8 @@ if (nam%new_lct.or.nam%var_diag.or.nam%local_diag.or.nam%displ_diag) then
             call kdtree%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0),nam%nc1,nn_c1_index,nn_c1_dist)
             do jc1=1,nam%nc1
                kc1 = nn_c1_index(jc1)
+               if (nam%new_vbal) hdata%vbal_mask(kc1,ic2) = (jc1==1) &
+             & .or.(nn_c1_dist(jc1)<min(nam%vbal_rad,hdata%mesh%bdist(ic2)))
                if (nam%local_diag) hdata%local_mask(kc1,ic2) = (jc1==1) &
              & .or.(nn_c1_dist(jc1)<min(nam%local_rad,hdata%mesh%bdist(ic2)))
                if (nam%displ_diag) hdata%displ_mask(kc1,ic2) = (jc1==1) &
@@ -820,13 +881,13 @@ end if
 if (nam%sam_write) then
    if (mpl%main) call hdata%write(mpl,nam,geom)
 
-   ! Write rh0
+   ! Write rh_c0
    if (trim(nam%draw_type)=='random_coast') then
       do il0=1,geom%nl0
-         call mpl%glb_to_loc(geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,hdata%rh0(:,il0),geom%nc0a,rh0_loc(:,il0))
+         call mpl%glb_to_loc(geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,hdata%rh_c0(:,il0),geom%nc0a,rh_c0_loc(:,il0))
       end do
-      filename = trim(nam%prefix)//'_sampling_rh0'
-      call io%fld_write(mpl,nam,geom,filename,'rh0',rh0_loc)
+      filename = trim(nam%prefix)//'_sampling_rh_c0'
+      call io%fld_write(mpl,nam,geom,filename,'rh_c0',rh_c0_loc)
    end if
 end if
 
@@ -902,30 +963,30 @@ if (nam%nc1<maxval(count(geom%mask,dim=1))) then
          if (trim(nam%draw_type)=='random_uniform') then
             ! Random draw
             do ic0=1,geom%nc0
-               if (any(geom%mask(ic0,:))) hdata%rh0(ic0,1) = 1.0
+               if (any(geom%mask(ic0,:))) hdata%rh_c0(ic0,1) = 1.0
             end do
          elseif (trim(nam%draw_type)=='random_coast') then
             ! More points around coasts
             do ic0=1,geom%nc0
-               if (any(geom%mask(ic0,:))) hdata%rh0(ic0,1) = 0.0
+               if (any(geom%mask(ic0,:))) hdata%rh_c0(ic0,1) = 0.0
             end do
             do il0=1,geom%nl0
                call kdtree%create(mpl,geom%nc0,geom%lon,geom%lat,.not.geom%mask(:,il0))
                do ic0=1,geom%nc0
                   if (geom%mask(ic0,il0)) then
                      call kdtree%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0),1,nn_index,nn_dist)
-                     hdata%rh0(ic0,1) = hdata%rh0(ic0,1)+exp(-nn_dist(1)/Lcoast)
+                     hdata%rh_c0(ic0,1) = hdata%rh_c0(ic0,1)+exp(-nn_dist(1)/Lcoast)
                   else
-                     hdata%rh0(ic0,1) = hdata%rh0(ic0,1)+1.0
+                     hdata%rh_c0(ic0,1) = hdata%rh_c0(ic0,1)+1.0
                   end if
                end do
                call kdtree%dealloc
             end do
-            hdata%rh0(:,1) = rcoast+(1.0-rcoast)*(1.0-hdata%rh0(:,1)/real(geom%nl0,kind_real))
+            hdata%rh_c0(:,1) = rcoast+(1.0-rcoast)*(1.0-hdata%rh_c0(:,1)/real(geom%nl0,kind_real))
          end if
 
          ! Initialize sampling
-         call rng%initialize_sampling(mpl,geom%nc0,geom%lon,geom%lat,mask_c0,hdata%rh0(:,1),nam%ntry,nam%nrep, &
+         call rng%initialize_sampling(mpl,geom%nc0,geom%lon,geom%lat,mask_c0,hdata%rh_c0(:,1),nam%ntry,nam%nrep, &
        & nam%nc1,hdata%c1_to_c0)
       case ('icosahedron')
          ! Icosahedron grid

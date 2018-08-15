@@ -327,16 +327,6 @@ if ((nam%local_diag.or.nam%displ_diag).and.(nam%diag_rhflt>0.0)) then
    call hdata%compute_mpi_f(mpl,nam,geom)
 end if
 
-if (nam%local_diag.and..false.) then ! TODO
-   ! Compute vertical balance operator
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Compute vertical balance operator'
-   call flush(mpl%unit)
-   call vbal%compute(mpl,nam,geom,bpar,hdata,ens1)
-   call mpl%barrier
-   call mpl%abort('ok')
-end if
-
 ! Compute sample moments
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
 write(mpl%unit,'(a)') '--- Compute sample moments'
@@ -616,16 +606,15 @@ end do
 ! Sampling parameters
 if (trim(nam%strategy)=='specific_multivariate') then
    ! Initialization
-   cmat%blk(ib)%rhs_c0 = huge(1.0)
-   cmat%blk(ib)%rvs_c0 = huge(1.0)
-
-   ! Get minimum
-   do ib=1,bpar%nbe
+   cmat%blk(bpar%nbe)%rhs_c0 = huge(1.0)
+   cmat%blk(bpar%nbe)%rvs_c0 = huge(1.0)
+   do ib=1,bpar%nb
       if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
+         ! Get minimum
          do il0=1,geom%nl0
             do ic0a=1,geom%nc0a
-               cmat%blk(ib)%rhs_c0(ic0a,il0) = min(cmat%blk(ib)%rhs_c0(ic0a,il0),cmat%blk(ib)%rh_c0(ic0a,il0))
-               cmat%blk(ib)%rvs_c0(ic0a,il0) = min(cmat%blk(ib)%rvs_c0(ic0a,il0),cmat%blk(ib)%rv_c0(ic0a,il0))
+               cmat%blk(bpar%nbe)%rhs_c0(ic0a,il0) = min(cmat%blk(bpar%nbe)%rhs_c0(ic0a,il0),cmat%blk(ib)%rh_c0(ic0a,il0))
+               cmat%blk(bpar%nbe)%rvs_c0(ic0a,il0) = min(cmat%blk(bpar%nbe)%rvs_c0(ic0a,il0),cmat%blk(ib)%rv_c0(ic0a,il0))
             end do
          end do
       end if

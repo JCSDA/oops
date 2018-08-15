@@ -31,6 +31,12 @@
         "variable_changes": [ 
            {
              "varchange": "StatsVariableChange",
+             "variables": {
+                 "variables": ["x"]
+             },
+             "prefix" : "bump",
+             "strategy" : "common",
+             "check_vbal" : 1,
              "inputVariables": {
                 "variables": ["x"]
               },

@@ -14,16 +14,18 @@ use,intrinsic :: iso_c_binding
 !$ use omp_lib
 use netcdf
 use tools_const, only: msvali,msvalr
-use tools_func, only: infeq
+use tools_func, only: infeq,pos
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsr
 use tools_nc, only: ncfloat
 use type_bpar, only: bpar_type
 use type_ens, only: ens_type
 use type_geom, only: geom_type
+use type_io, only: io_type
 use type_mpl, only: mpl_type
 use type_hdata, only: hdata_type
 use type_nam, only: nam_type
+use type_rng, only: rng_type
 use type_vbal_blk, only: vbal_blk_type
 
 implicit none
@@ -31,20 +33,29 @@ implicit none
 ! Vertical balance derived type
 type vbal_type
    integer :: np                               !< Maximum number of neighbors
+   integer :: nc2b                             !< Subset Sc2 size, halo B
+   logical :: allocated                        !< Allocation flag
    integer,allocatable :: h_n_s(:,:)           !< Number of neighbors for the horizontal interpolation
    integer,allocatable :: h_c2b(:,:,:)         !< Index of neighbors for the horizontal interpolation
    real(kind_real),allocatable :: h_S(:,:,:)   !< Weight of neighbors for the horizontal interpolation
    type(vbal_blk_type),allocatable :: blk(:,:) !< Vertical balance blocks
 contains
    procedure :: alloc => vbal_alloc
+   procedure :: dealloc => vbal_dealloc
    procedure :: read => vbal_read
    procedure :: write => vbal_write
-   procedure :: compute => vbal_compute
+   procedure :: run_vbal => vbal_run_vbal
+   procedure :: run_vbal_tests => vbal_run_vbal_tests
    procedure :: apply => vbal_apply
    procedure :: apply_inv => vbal_apply_inv
+   procedure :: apply_ad => vbal_apply_ad
+   procedure :: apply_inv_ad => vbal_apply_inv_ad
+   procedure :: test_inverse => vbal_test_inverse
+   procedure :: test_adjoint => vbal_test_adjoint
 end type vbal_type
 
-real(kind_real),parameter :: var_th = 0.95 !< Variance threshold to truncate the vertical auto-covariance spectrum
+logical,parameter :: diag_auto = .true.   !< Diagonal auto-covariance for the inversion
+real(kind_real),parameter :: var_th = 0.8 !< Variance threshold to truncate the vertical auto-covariance spectrum
 
 private
 public :: vbal_type
@@ -55,7 +66,7 @@ contains
 ! Subroutine: vbal_alloc
 !> Purpose: allocate vertical balance
 !----------------------------------------------------------------------
-subroutine vbal_alloc(vbal,mpl,nam,geom,bpar,hdata)
+subroutine vbal_alloc(vbal,mpl,nam,geom,bpar,nc2b)
 
 implicit none
 
@@ -65,7 +76,7 @@ type(mpl_type),intent(in) :: mpl       !< MPI data
 type(nam_type),intent(in) :: nam       !< Namelist
 type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
-type(hdata_type),intent(in) :: hdata   !< HDIAG data
+integer,intent(in) :: nc2b             !< Subset Sc2 size, halo B
 
 ! Local variables
 integer :: iv,jv
@@ -81,6 +92,7 @@ elseif (trim(nam%diag_interp)=='natural') then
 else
    call mpl%abort('wrong interpolation type')
 end if
+vbal%nc2b = nc2b
 
 ! Allocation
 allocate(vbal%h_n_s(geom%nc0a,geom%nl0i))
@@ -90,18 +102,54 @@ allocate(vbal%blk(nam%nv,nam%nv))
 do iv=1,nam%nv
    do jv=1,nam%nv
       if (bpar%vbal_block(iv,jv)) then
-         call vbal%blk(iv,jv)%alloc(nam,geom,bpar,hdata,iv,jv)
+         call vbal%blk(iv,jv)%alloc(nam,geom,bpar,vbal%nc2b,iv,jv)
       end if
    end do
 end do
 
+! Update allocation flag
+vbal%allocated = .true.
+
 end subroutine vbal_alloc
+
+!----------------------------------------------------------------------
+! Subroutine: vbal_dealloc
+!> Purpose: vertical balance allocation
+!----------------------------------------------------------------------
+subroutine vbal_dealloc(vbal,nam)
+
+implicit none
+
+! Passed variables
+class(vbal_type),intent(inout) :: vbal !< Vertical balance
+type(nam_type),intent(in) :: nam       !< Namelist
+
+! Local variables
+integer :: iv,jv
+
+! Release memory
+if (allocated(vbal%h_n_s)) deallocate(vbal%h_n_s)
+if (allocated(vbal%h_c2b)) deallocate(vbal%h_c2b)
+if (allocated(vbal%h_S)) deallocate(vbal%h_S)
+if (allocated(vbal%blk)) then
+   do iv=1,nam%nv
+      do jv=1,nam%nv
+         call vbal%blk(iv,jv)%dealloc
+      end do
+   end do
+   deallocate(vbal%blk)
+end if
+
+! Update allocation flag
+vbal%allocated = .false.
+
+end subroutine vbal_dealloc
 
 !----------------------------------------------------------------------
 ! Subroutine: vbal_read
 !> Purpose: read vertical balance
 !----------------------------------------------------------------------
-subroutine vbal_read(vbal,mpl,nam,geom,bpar,hdata)
+subroutine vbal_read(vbal,mpl,nam,geom,bpar)
 
 implicit none
 
@@ -111,25 +159,17 @@ type(mpl_type),intent(in) :: mpl       !< MPI data
 type(nam_type),intent(in) :: nam       !< Namelist
 type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
-type(hdata_type),intent(in) :: hdata   !< HDIAG data
 
 ! Local variables
 integer :: iv,jv
 integer :: ncid,np_id,nc0a_id,nc2b_id,nl0i_id,nl0_1_id,nl0_2_id,h_n_s_id,h_c2b_id,h_S_id,reg_id(nam%nv,nam%nv)
-integer :: nc0a_test,nc2b_test,nl0i_test,nl0_1_test,nl0_2_test
+integer :: nc0a_test,nl0i_test,nl0_1_test,nl0_2_test
 character(len=1024) :: filename
 character(len=1024),parameter :: subr='vbal_read'
 
 ! Open file
 write(filename,'(a,a,i4.4,a,i4.4,a)') trim(nam%prefix),'_vbal_',mpl%nproc,'-',mpl%myproc,'.nc'
 call mpl%ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),or(nf90_clobber,nf90_64bit_offset),ncid))
-
-call mpl%ncerr(subr,nf90_def_dim(ncid,'np',vbal%np,np_id))
-call mpl%ncerr(subr,nf90_def_dim(ncid,'nc0a',geom%nc0a,nc0a_id))
-call mpl%ncerr(subr,nf90_def_dim(ncid,'nc2b',hdata%nc2b,nc2b_id))
-call mpl%ncerr(subr,nf90_def_dim(ncid,'nl0i',geom%nl0i,nl0i_id))
-call mpl%ncerr(subr,nf90_def_dim(ncid,'nl0_1',geom%nl0,nl0_1_id))
-call mpl%ncerr(subr,nf90_def_dim(ncid,'nl0_2',geom%nl0,nl0_2_id))
 
 ! Get dimensions
 call mpl%ncerr(subr,nf90_inq_dimid(ncid,'np',np_id))
@@ -138,8 +178,7 @@ call mpl%ncerr(subr,nf90_inq_dimid(ncid,'nc0a',nc0a_id))
 call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nc0a_id,len=nc0a_test))
 if (nc0a_test/=geom%nc0a) call mpl%abort('wrong dimension when reading vbal')
 call mpl%ncerr(subr,nf90_inq_dimid(ncid,'nc2b',nc2b_id))
-call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nc2b_id,len=nc2b_test))
-if (nc2b_test/=hdata%nc2b) call mpl%abort('wrong dimension when reading vbal')
+call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nc2b_id,len=vbal%nc2b))
 call mpl%ncerr(subr,nf90_inq_dimid(ncid,'nl0i',nl0i_id))
 call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nl0i_id,len=nl0i_test))
 if (nl0i_test/=geom%nl0i) call mpl%abort('wrong dimension when reading vbal')
@@ -158,7 +197,7 @@ allocate(vbal%blk(nam%nv,nam%nv))
 do iv=1,nam%nv
    do jv=1,nam%nv
       if (bpar%vbal_block(iv,jv)) then
-         call vbal%blk(iv,jv)%alloc(nam,geom,bpar,hdata,iv,jv)
+         call vbal%blk(iv,jv)%alloc(nam,geom,bpar,vbal%nc2b,iv,jv)
       end if
    end do
 end do
@@ -192,7 +231,7 @@ end subroutine vbal_read
 ! Subroutine: vbal_write
 !> Purpose: write vertical balance
 !----------------------------------------------------------------------
-subroutine vbal_write(vbal,mpl,nam,geom,bpar,hdata)
+subroutine vbal_write(vbal,mpl,nam,geom,bpar)
 
 implicit none
 
@@ -202,7 +241,6 @@ type(mpl_type),intent(in) :: mpl       !< MPI data
 type(nam_type),intent(in) :: nam       !< Namelist
 type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
-type(hdata_type),intent(in) :: hdata   !< HDIAG data
 
 ! Local variables
 integer :: iv,jv
@@ -221,7 +259,7 @@ call nam%ncwrite(mpl,ncid)
 ! Define dimensions
 call mpl%ncerr(subr,nf90_def_dim(ncid,'np',vbal%np,np_id))
 call mpl%ncerr(subr,nf90_def_dim(ncid,'nc0a',geom%nc0a,nc0a_id))
-call mpl%ncerr(subr,nf90_def_dim(ncid,'nc2b',hdata%nc2b,nc2b_id))
+call mpl%ncerr(subr,nf90_def_dim(ncid,'nc2b',vbal%nc2b,nc2b_id))
 call mpl%ncerr(subr,nf90_def_dim(ncid,'nl0i',geom%nl0i,nl0i_id))
 call mpl%ncerr(subr,nf90_def_dim(ncid,'nl0_1',geom%nl0,nl0_1_id))
 call mpl%ncerr(subr,nf90_def_dim(ncid,'nl0_2',geom%nl0,nl0_2_id))
@@ -272,38 +310,64 @@ call mpl%ncerr(subr,nf90_close(ncid))
 end subroutine vbal_write
 
 !----------------------------------------------------------------------
-! Subroutine: vbal_compute
+! Subroutine: vbal_run_vbal
 !> Purpose: compute vertical balance
 !----------------------------------------------------------------------
-subroutine vbal_compute(vbal,mpl,nam,geom,bpar,hdata,ens)
+subroutine vbal_run_vbal(vbal,mpl,rng,nam,geom,bpar,io,ens)
 
 implicit none
 
 ! Passed variables
 class(vbal_type),intent(inout) :: vbal !< Vertical balance
-type(mpl_type),intent(in) :: mpl       !< MPI data
-type(nam_type),intent(in) :: nam       !< Namelist
+type(mpl_type),intent(inout) :: mpl    !< MPI data
+type(rng_type),intent(inout) :: rng    !< Random number generator
+type(nam_type),intent(inout) :: nam    !< Namelist
 type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
-type(hdata_type),intent(in) :: hdata   !< HDIAG data
+type(io_type),intent(in) :: io         !< I/O
 type(ens_type), intent(in) :: ens      !< Ensemble
 
 ! Local variables
 integer :: il0i,i_s,ic0a,ic2b,ic2,ie,ie_sub,ic0,jl0,il0,isub,ic1,ic1a,iv,jv,offset,nc1a,lwork,info,progint
 real(kind_real) :: var,var_tot
-real(kind_real) :: egv(geom%nl0),M(geom%nl0,geom%nl0),D(geom%nl0,geom%nl0)
-real(kind_real) :: fld_1(hdata%nc1a,geom%nl0),fld_2(hdata%nc1a,geom%nl0),fld(geom%nc0a,geom%nl0)
-real(kind_real) :: auto(hdata%nc1a,geom%nl0,geom%nl0,ens%nsub),cross(hdata%nc1a,geom%nl0,geom%nl0,ens%nsub)
+real(kind_real) :: egv(geom%nl0),M(geom%nl0,geom%nl0),D(geom%nl0,geom%nl0),fld(geom%nc0a,geom%nl0)
+real(kind_real) :: auto_avg(nam%nc2,geom%nl0,geom%nl0),cross_avg(nam%nc2,geom%nl0,geom%nl0),auto_inv(geom%nl0,geom%nl0)
 real(kind_real) :: sbuf(2*nam%nc2*geom%nl0**2),rbuf(2*nam%nc2*geom%nl0**2)
 real(kind_real),allocatable :: list_auto(:),list_cross(:),work(:)
-logical :: valid,done_c2(nam%nc2),done_c2b(hdata%nc2b),mask_unpack(geom%nl0,geom%nl0)
+real(kind_real),allocatable :: fld_1(:,:),fld_2(:,:),auto(:,:,:,:),cross(:,:,:,:)
+logical :: valid,done_c2(nam%nc2),mask_unpack(geom%nl0,geom%nl0)
+logical,allocatable :: done_c2b(:)
 type(ens_type) :: ensu
+type(hdata_type) :: hdata
+
+! Setup sampling
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a,i5,a)') '--- Setup sampling (nc1 = ',nam%nc1,')'
+call flush(mpl%unit)
+call hdata%setup_sampling(mpl,rng,nam,geom,io)
+
+! Compute MPI distribution, halo A
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a)') '--- Compute MPI distribution, halos A'
+call flush(mpl%unit)
+call hdata%compute_mpi_a(mpl,nam,geom)
+
+! Compute MPI distribution, halos A-B
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a)') '--- Compute MPI distribution, halos A-B'
+call flush(mpl%unit)
+call hdata%compute_mpi_ab(mpl,nam,geom)
 
 ! Copy ensemble
 call ensu%copy(ens)
 
 ! Allocation
-call vbal%alloc(mpl,nam,geom,bpar,hdata)
+allocate(fld_1(hdata%nc1a,geom%nl0))
+allocate(fld_2(hdata%nc1a,geom%nl0))
+allocate(auto(hdata%nc1a,geom%nl0,geom%nl0,ens%nsub))
+allocate(cross(hdata%nc1a,geom%nl0,geom%nl0,ens%nsub))
+allocate(done_c2b(hdata%nc2b))
+call vbal%alloc(mpl,nam,geom,bpar,hdata%nc2b)
 
 ! Initialization
 mask_unpack = .true.
@@ -400,7 +464,7 @@ do iv=1,nam%nv
                      ic1 = hdata%c1a_to_c1(ic1a)
       
                      ! Check validity
-                     valid = hdata%c1l0_log(ic1,il0).and.hdata%c1l0_log(ic1,jl0).and.hdata%local_mask(ic1,ic2)
+                     valid = hdata%c1l0_log(ic1,il0).and.hdata%c1l0_log(ic1,jl0).and.hdata%vbal_mask(ic1,ic2)
       
                      if (valid) then
                         ! Update
@@ -414,11 +478,11 @@ do iv=1,nam%nv
    
                   ! Average
                   if (nc1a>0) then
-                     vbal%blk(iv,jv)%auto(ic2,jl0,il0) = sum(list_auto(1:nc1a))
-                     vbal%blk(iv,jv)%cross(ic2,jl0,il0) = sum(list_cross(1:nc1a))
+                     auto_avg(ic2,jl0,il0) = sum(list_auto(1:nc1a))
+                     cross_avg(ic2,jl0,il0) = sum(list_cross(1:nc1a))
                   else
-                     vbal%blk(iv,jv)%auto(ic2,jl0,il0) = 0.0
-                     vbal%blk(iv,jv)%cross(ic2,jl0,il0) = 0.0
+                     auto_avg(ic2,jl0,il0) = 0.0
+                     cross_avg(ic2,jl0,il0) = 0.0
                   end if
    
                   ! Release memory
@@ -442,9 +506,9 @@ do iv=1,nam%nv
             ! Pack data
             offset = 0
             do ic2=1,nam%nc2
-               sbuf(offset+1:offset+geom%nl0**2) = pack(vbal%blk(iv,jv)%auto(ic2,:,:),.true.)
+               sbuf(offset+1:offset+geom%nl0**2) = pack(auto_avg(ic2,:,:),.true.)
                offset = offset+geom%nl0**2
-               sbuf(offset+1:offset+geom%nl0**2) = pack(vbal%blk(iv,jv)%cross(ic2,:,:),.true.)
+               sbuf(offset+1:offset+geom%nl0**2) = pack(cross_avg(ic2,:,:),.true.)
                offset = offset+geom%nl0**2
             end do
    
@@ -454,9 +518,9 @@ do iv=1,nam%nv
             ! Unpack data
             offset = 0
             do ic2=1,nam%nc2
-               vbal%blk(iv,jv)%auto(ic2,:,:) = unpack(rbuf(offset+1:offset+geom%nl0**2),mask_unpack,vbal%blk(iv,jv)%auto(ic2,:,:))
+               auto_avg(ic2,:,:) = unpack(rbuf(offset+1:offset+geom%nl0**2),mask_unpack,auto_avg(ic2,:,:))
                offset = offset+geom%nl0**2
-               vbal%blk(iv,jv)%cross(ic2,:,:) = unpack(rbuf(offset+1:offset+geom%nl0**2),mask_unpack,vbal%blk(iv,jv)%cross(ic2,:,:))
+               cross_avg(ic2,:,:) = unpack(rbuf(offset+1:offset+geom%nl0**2),mask_unpack,cross_avg(ic2,:,:))
                offset = offset+geom%nl0**2
             end do
          end if
@@ -469,42 +533,52 @@ do iv=1,nam%nv
             ! Global index
             ic2 = hdata%c2b_to_c2(ic2b)
    
-            ! Inverse the vertical auto-covariance
-            M = vbal%blk(iv,jv)%auto(ic2,:,:)
-            lwork = -1
-            allocate(work(max(1,lwork)))
-            if (kind_real==c_float) then
-               call ssyev("V","U",geom%nl0,M,geom%nl0,egv,work,lwork,info)
-            elseif (kind_real==c_double) then
-               call dsyev("V","U",geom%nl0,M,geom%nl0,egv,work,lwork,info)
+            if (diag_auto) then
+               ! Diagonal inversion
+               auto_inv = 0.0
+               do il0=1,geom%nl0
+                  if (pos(auto_avg(ic2,il0,il0))) auto_inv(il0,il0) = 1.0/auto_avg(ic2,il0,il0)
+               end do
             else
-               call mpl%abort('wrong kind_real for lapack')
+               ! Inverse the vertical auto-covariance
+               M = auto_avg(ic2,:,:)
+               lwork = -1
+               allocate(work(max(1,lwork)))
+               if (kind_real==c_float) then
+                  call ssyev("V","U",geom%nl0,M,geom%nl0,egv,work,lwork,info)
+               elseif (kind_real==c_double) then
+                  call dsyev("V","U",geom%nl0,M,geom%nl0,egv,work,lwork,info)
+               else
+                  call mpl%abort('wrong kind_real for lapack')
+               end if
+               lwork = int(work(1))
+               deallocate(work)
+               M = auto_avg(ic2,:,:)
+               allocate(work(max(1,lwork)))
+               if (kind_real==c_float) then
+                  call ssyev("V","U",geom%nl0,M,geom%nl0,egv,work,lwork,info)
+               elseif (kind_real==c_double) then
+                  call dsyev("V","U",geom%nl0,M,geom%nl0,egv,work,lwork,info)
+               else
+                  call mpl%abort('wrong kind_real for lapack')
+               end if
+               deallocate(work)
+               write(mpl%unit,*) 'Condition number for ',ic2b,': ',maxval(egv)/minval(egv)
+               D = 0.0
+               var = 0.0
+               var_tot = sum(egv)
+               do il0=geom%nl0,1,-1
+                   if (infeq(var,var_th*var_tot)) D(il0,il0) = 1.0/egv(il0)
+                   var = var+egv(il0)
+               end do
+               auto_inv = matmul(M,matmul(D,transpose(M)))
             end if
-            lwork = int(work(1))
-            deallocate(work)
-            M = vbal%blk(iv,jv)%auto(ic2,:,:)
-            allocate(work(max(1,lwork)))
-            if (kind_real==c_float) then
-               call ssyev("V","U",geom%nl0,M,geom%nl0,egv,work,lwork,info)
-            elseif (kind_real==c_double) then
-               call dsyev("V","U",geom%nl0,M,geom%nl0,egv,work,lwork,info)
-            else
-               call mpl%abort('wrong kind_real for lapack')
-            end if
-            deallocate(work)
-            D = 0.0
-            var = 0.0
-            var_tot = sum(egv)
-            do il0=geom%nl0,1,-1
-                var = var+egv(il0)
-                if (infeq(var,var_th*var_tot)) D(il0,il0) = 1.0/egv(il0)
-            end do
-            vbal%blk(iv,jv)%auto_inv(ic2b,:,:) = matmul(M,matmul(D,transpose(M)))
    
             ! Compute the regression
-            vbal%blk(iv,jv)%reg(ic2b,:,:) = matmul(transpose(vbal%blk(iv,jv)%cross(ic2,:,:)),vbal%blk(iv,jv)%auto_inv(ic2b,:,:))
-
-            write(mpl%unit,*) 'egv for',ic2b,':',egv(1),' to ',egv(geom%nl0)
+            vbal%blk(iv,jv)%auto(ic2b,:,:) = auto_avg(ic2,:,:)
+            vbal%blk(iv,jv)%cross(ic2b,:,:) = cross_avg(ic2,:,:)
+            vbal%blk(iv,jv)%auto_inv(ic2b,:,:) = auto_inv
+            vbal%blk(iv,jv)%reg(ic2b,:,:) = matmul(cross_avg(ic2,:,:),auto_inv)
 
             ! Update
             done_c2b(ic2b) = .true.
@@ -530,15 +604,39 @@ do iv=1,nam%nv
             end if
          end do
       end do
-      write(mpl%unit,'(a)') '100%'
+      write(mpl%unit,'(a)') ''
       call flush(mpl%unit)
    end if
 end do
 
 ! Write balance operator
-call vbal%write(mpl,nam,geom,bpar,hdata)
+call vbal%write(mpl,nam,geom,bpar)
 
-end subroutine vbal_compute
+end subroutine vbal_run_vbal
+
+!----------------------------------------------------------------------
+! Subroutine: vbal_run_vbal_tests
+!> Purpose: compute vertical balance tests
+!----------------------------------------------------------------------
+subroutine vbal_run_vbal_tests(vbal,mpl,rng,nam,geom,bpar)
+
+implicit none
+
+! Passed variables
+class(vbal_type),intent(inout) :: vbal !< Vertical balance
+type(mpl_type),intent(inout) :: mpl    !< MPI data
+type(rng_type),intent(inout) :: rng    !< Random number generator
+type(nam_type),intent(inout) :: nam    !< Namelist
+type(geom_type),intent(in) :: geom     !< Geometry
+type(bpar_type),intent(in) :: bpar     !< Block parameters
+
+! Test inverse
+call vbal%test_inverse(mpl,rng,nam,geom,bpar)
+
+! Test adjoint
+call vbal%test_adjoint(mpl,rng,nam,geom,bpar)
+
+end subroutine vbal_run_vbal_tests
 
 !----------------------------------------------------------------------
 ! Subroutine: vbal_apply
@@ -617,5 +715,225 @@ end do
 fld = fld_out
 
 end subroutine vbal_apply_inv
+
+!----------------------------------------------------------------------
+! Subroutine: vbal_apply_ad
+!> Purpose: apply adjoint vertical balance
+!----------------------------------------------------------------------
+subroutine vbal_apply_ad(vbal,mpl,nam,geom,bpar,fld)
+
+implicit none
+
+! Passed variables
+class(vbal_type),intent(in) :: vbal                             !< Vertical balance
+type(mpl_type),intent(in) :: mpl                                !< MPI data
+type(nam_type),intent(in) :: nam                                !< Namelist
+type(geom_type),intent(in) :: geom                              !< Geometry
+type(bpar_type),intent(in) :: bpar                              !< Block parameters
+real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv) !< Source/destination vector
+
+! Local variables
+integer :: iv,jv
+real(kind_real) :: fld_tmp(geom%nc0a,geom%nl0),fld_out(geom%nc0a,geom%nl0,nam%nv)
+
+! Initialization
+fld_out = fld
+
+! Add balance component
+do iv=1,nam%nv
+   do jv=1,nam%nv
+      if (bpar%vbal_block(iv,jv)) then
+         fld_tmp = fld(:,:,iv)
+         call vbal%blk(iv,jv)%apply_ad(mpl,geom,vbal%np,vbal%h_n_s,vbal%h_c2b,vbal%h_S,fld_tmp)
+         fld_out(:,:,jv) = fld_out(:,:,jv)+fld_tmp
+      end if
+   end do
+end do
+
+! Final copy
+fld = fld_out
+
+end subroutine vbal_apply_ad
+
+!----------------------------------------------------------------------
+! Subroutine: vbal_apply_inv_ad
+!> Purpose: apply inverse adjoint vertical balance
+!----------------------------------------------------------------------
+subroutine vbal_apply_inv_ad(vbal,mpl,nam,geom,bpar,fld)
+
+implicit none
+
+! Passed variables
+class(vbal_type),intent(in) :: vbal                             !< Vertical balance
+type(mpl_type),intent(in) :: mpl                                !< MPI data
+type(nam_type),intent(in) :: nam                                !< Namelist
+type(geom_type),intent(in) :: geom                              !< Geometry
+type(bpar_type),intent(in) :: bpar                              !< Block parameters
+real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv) !< Source/destination vector
+
+! Local variables
+integer :: iv,jv
+real(kind_real) :: fld_tmp(geom%nc0a,geom%nl0),fld_out(geom%nc0a,geom%nl0,nam%nv)
+
+! Initialization
+fld_out = fld
+
+! Remove balance component
+do iv=1,nam%nv
+   do jv=1,nam%nv
+      if (bpar%vbal_block(iv,jv)) then
+         fld_tmp = fld_out(:,:,iv)
+         call vbal%blk(iv,jv)%apply_ad(mpl,geom,vbal%np,vbal%h_n_s,vbal%h_c2b,vbal%h_S,fld_tmp)
+         fld_out(:,:,jv) = fld_out(:,:,jv)-fld_tmp
+      end if
+   end do
+end do
+
+! Final copy
+fld = fld_out
+
+end subroutine vbal_apply_inv_ad
+
+!----------------------------------------------------------------------
+! Subroutine: vbal_test_inverse
+!> Purpose: test vertical balance inverse
+!----------------------------------------------------------------------
+subroutine vbal_test_inverse(vbal,mpl,rng,nam,geom,bpar)
+
+implicit none
+
+! Passed variables
+class(vbal_type),intent(in) :: vbal       !< Vertical balance
+type(mpl_type),intent(in) :: mpl          !< MPI data
+type(rng_type),intent(inout) :: rng       !< Random number generator
+type(nam_type),intent(in) :: nam          !< Namelist
+type(geom_type),intent(in) :: geom        !< Geometry
+type(bpar_type),intent(in) :: bpar        !< Block parameters
+
+! Local variables
+real(kind_real) :: mse,mse_tot
+real(kind_real),allocatable :: fld(:,:,:),fld_save(:,:,:)
+
+! Allocation
+allocate(fld(geom%nc0a,geom%nl0,nam%nv))
+allocate(fld_save(geom%nc0a,geom%nl0,nam%nv))
+
+! Generate random field
+call rng%rand_real(0.0_kind_real,1.0_kind_real,fld_save)
+
+! Direct / inverse
+fld = fld_save
+call vbal%apply(mpl,nam,geom,bpar,fld)
+call vbal%apply_inv(mpl,nam,geom,bpar,fld)
+mse = sum((fld-fld_save)**2)
+call mpl%allreduce_sum(mse,mse_tot)
+write(mpl%unit,'(a7,a,e15.8)') '','Vertical balance direct/inverse test:  ',mse_tot
+call flush(mpl%unit)
+
+! Inverse / direct
+fld = fld_save
+call vbal%apply_inv(mpl,nam,geom,bpar,fld)
+call vbal%apply(mpl,nam,geom,bpar,fld)
+mse = sum((fld-fld_save)**2)
+call mpl%allreduce_sum(mse,mse_tot)
+write(mpl%unit,'(a7,a,e15.8)') '','Vertical balance inverse/direct test:  ',mse_tot
+call flush(mpl%unit)
+
+! Direct / inverse, adjoint
+fld = fld_save
+call vbal%apply_ad(mpl,nam,geom,bpar,fld)
+call vbal%apply_inv_ad(mpl,nam,geom,bpar,fld)
+mse = sum((fld-fld_save)**2)
+call mpl%allreduce_sum(mse,mse_tot)
+write(mpl%unit,'(a7,a,e15.8)') '','Vertical balance direct/inverse (adjoint) test:  ',mse_tot
+call flush(mpl%unit)
+
+! Inverse / direct
+fld = fld_save
+call vbal%apply_inv_ad(mpl,nam,geom,bpar,fld)
+call vbal%apply_ad(mpl,nam,geom,bpar,fld)
+mse = sum((fld-fld_save)**2)
+call mpl%allreduce_sum(mse,mse_tot)
+write(mpl%unit,'(a7,a,e15.8)') '','Vertical balance inverse/direct (adjoint) test:  ',mse_tot
+call flush(mpl%unit)
+
+end subroutine vbal_test_inverse
+
+!----------------------------------------------------------------------
+! Subroutine: vbal_test_adjoint
+!> Purpose: test vertical balance adjoint
+!----------------------------------------------------------------------
+subroutine vbal_test_adjoint(vbal,mpl,rng,nam,geom,bpar)
+
+implicit none
+
+! Passed variables
+class(vbal_type),intent(in) :: vbal       !< Vertical balance
+type(mpl_type),intent(in) :: mpl          !< MPI data
+type(rng_type),intent(inout) :: rng       !< Random number generator
+type(nam_type),intent(in) :: nam          !< Namelist
+type(geom_type),intent(in) :: geom        !< Geometry
+type(bpar_type),intent(in) :: bpar        !< Block parameters
+
+! Local variables
+integer :: iv,jv
+real(kind_real) :: sum1,sum2
+real(kind_real),allocatable :: fld1_blk(:,:,:),fld1_dir(:,:,:),fld1_inv(:,:,:),fld1_save(:,:,:)
+real(kind_real),allocatable :: fld2_blk(:,:,:),fld2_dir(:,:,:),fld2_inv(:,:,:),fld2_save(:,:,:)
+
+! Allocation
+allocate(fld1_dir(geom%nc0a,geom%nl0,nam%nv))
+allocate(fld2_dir(geom%nc0a,geom%nl0,nam%nv))
+allocate(fld1_inv(geom%nc0a,geom%nl0,nam%nv))
+allocate(fld2_inv(geom%nc0a,geom%nl0,nam%nv))
+allocate(fld1_save(geom%nc0a,geom%nl0,nam%nv))
+allocate(fld2_save(geom%nc0a,geom%nl0,nam%nv))
+
+! Generate random field
+call rng%rand_real(0.0_kind_real,1.0_kind_real,fld1_save)
+call rng%rand_real(0.0_kind_real,1.0_kind_real,fld2_save)
+
+! Block adjoint test
+fld1_blk = fld1_save
+fld2_blk = fld2_save
+do iv=1,nam%nv
+   do jv=1,nam%nv
+      if (bpar%vbal_block(iv,jv)) then
+         call vbal%blk(iv,jv)%apply(mpl,geom,vbal%np,vbal%h_n_s,vbal%h_c2b,vbal%h_S,fld1_blk(:,:,iv))
+         call vbal%blk(iv,jv)%apply_ad(mpl,geom,vbal%np,vbal%h_n_s,vbal%h_c2b,vbal%h_S,fld2_blk(:,:,iv))
+         call mpl%dot_prod(fld1_blk(:,:,iv),fld2_save(:,:,iv),sum1)
+         call mpl%dot_prod(fld2_blk(:,:,iv),fld1_save(:,:,iv),sum2)
+         write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Vertical balance block adjoint test:  ', &
+         & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
+         call flush(mpl%unit)
+      end if
+   end do
+end do
+
+! Direct adjoint test
+fld1_dir = fld1_save
+fld2_dir = fld2_save
+call vbal%apply(mpl,nam,geom,bpar,fld1_dir)
+call vbal%apply_ad(mpl,nam,geom,bpar,fld2_dir)
+
+! Inverse adjoint test
+fld1_inv = fld1_save
+fld2_inv = fld2_save
+call vbal%apply_inv(mpl,nam,geom,bpar,fld1_inv)
+call vbal%apply_inv_ad(mpl,nam,geom,bpar,fld2_inv)
+
+! Print result
+call mpl%dot_prod(fld1_dir,fld2_save,sum1)
+call mpl%dot_prod(fld2_dir,fld1_save,sum2)
+write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Vertical balance direct adjoint test:  ', &
+ & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
+call flush(mpl%unit)
+call mpl%dot_prod(fld1_inv,fld2_save,sum1)
+call mpl%dot_prod(fld2_inv,fld1_save,sum2)
+write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Vertical balance inverse adjoint test: ', &
+ & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
+call flush(mpl%unit)
+
+end subroutine vbal_test_adjoint
 
 end module type_vbal

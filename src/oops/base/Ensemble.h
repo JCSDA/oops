@@ -41,9 +41,12 @@ template<typename MODEL> class Ensemble {
   typedef State<MODEL>               State_;
   typedef Increment<MODEL>           Increment_;
 
+  typedef typename boost::ptr_vector<LinearVariableChangeBase_> ChvarVec_;
+  typedef typename ChvarVec_::const_reverse_iterator ircst_;
+
  public:
 /// Constructor
-  Ensemble(const util::DateTime&, const eckit::Configuration&);
+  Ensemble(const util::DateTime &, const eckit::Configuration &);
 
 /// Destructor
   virtual ~Ensemble() {}
@@ -59,17 +62,18 @@ template<typename MODEL> class Ensemble {
     return ensemblePerturbs_[ii];
   }
 
-  void linearize(const State_ &, const Geometry_ &);
-  void linearize(const State_ &, const Geometry_ &, const LinearVariableChangeBase_ &);
+  void linearize(const State_ &, const State_ &, const Geometry_ &);
 
   const Variables & controlVariables() const {return vars_;}
 
  private:
   const eckit::LocalConfiguration config_;
-  const util::DateTime validTime_;
-  boost::scoped_ptr<const Geometry_> resol_;
-  const Variables vars_;
+
   unsigned int rank_;
+  const util::DateTime validTime_;
+  const Variables vars_;
+  boost::scoped_ptr<const Geometry_> resol_;
+
   boost::ptr_vector<Increment_> ensemblePerturbs_;
 };
 
@@ -77,10 +81,9 @@ template<typename MODEL> class Ensemble {
 
 template<typename MODEL>
 Ensemble<MODEL>::Ensemble(const util::DateTime & validTime, const eckit::Configuration & conf)
-  : config_(conf), validTime_(validTime), resol_(),
+  : config_(conf), rank_(conf.getInt("members")), validTime_(validTime),
     vars_(eckit::LocalConfiguration(conf, "variables")),
-    rank_(conf.getInt("members")),
-    ensemblePerturbs_()
+    resol_(), ensemblePerturbs_()
 {
   Log::trace() << "Ensemble:contructor done" << std::endl;
 }
@@ -88,47 +91,21 @@ Ensemble<MODEL>::Ensemble(const util::DateTime & validTime, const eckit::Configu
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void Ensemble<MODEL>::linearize(const State_ & xb, const Geometry_ & resol) {
+void Ensemble<MODEL>::linearize(const State_ & xb, const State_ & fg, const Geometry_ & resol) {
   ASSERT(xb.validTime() == validTime_);
   resol_.reset(new Geometry_(resol));
-  State_ xblr(*resol_, xb);
-  Accumulator<MODEL, Increment_, State_> bgmean(*resol_, vars_, validTime_);
-  bgmean.accumul(1.0, xblr);
-  const double rr = 1.0/static_cast<double>(rank_);
 
-  std::vector<eckit::LocalConfiguration> confs;
-  config_.get("state", confs);
-  ASSERT(confs.size() == rank_);
-
-  State_ xread(xblr);
-  for (unsigned int jm = 0; jm < rank_; ++jm) {
-    xread.read(confs[jm]);
-    ASSERT(xread.validTime() == validTime_);
-
-//  Ensemble will be centered around bg
-    Increment_ * dx = new Increment_(*resol_, vars_, validTime_);
-    dx->diff(xread, xblr);
-    ensemblePerturbs_.push_back(dx);
-
-//  Compute bg - ensemble mean
-    bgmean.accumul(-rr, xread);
+// Setup change of variable
+  ChvarVec_ chvars;
+  if (config_.has("variable_changes")) {
+    std::vector<eckit::LocalConfiguration> chvarconfs;
+    config_.get("variable_changes", chvarconfs);
+    for (const auto & conf : chvarconfs) {
+      chvars.push_back(LinearVariableChangeFactory<MODEL>::create(xb, fg, resol, conf));
+    }
   }
 
-// Re-center around mean instead of bg and rescale
-  const double rk = 1.0 / sqrt((static_cast<double>(rank_) - 1.0));
-  for (unsigned int jm = 0; jm < rank_; ++jm) {
-    ensemblePerturbs_[jm] += bgmean;
-    ensemblePerturbs_[jm] *= rk;
-  }
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void Ensemble<MODEL>::linearize(const State_ & xb, const Geometry_ & resol,
-                                const LinearVariableChangeBase_ & balop) {
-  ASSERT(xb.validTime() == validTime_);
-  resol_.reset(new Geometry_(resol));
+// Read ensemble and compute mean
   State_ xblr(*resol_, xb);
   Accumulator<MODEL, State_, State_> bgmean(*resol_, vars_, validTime_);
   const double rr = 1.0/static_cast<double>(rank_);
@@ -151,12 +128,18 @@ void Ensemble<MODEL>::linearize(const State_ & xb, const Geometry_ & resol,
   const double rk = 1.0 / sqrt((static_cast<double>(rank_) - 1.0));
   for (unsigned int jm = 0; jm < rank_; ++jm) {
 //  Ensemble will be centered around ensemble mean
-    Increment_ * dx = new Increment_(*resol_, vars_, validTime_);
+    boost::scoped_ptr<Increment_> dx(new Increment_(*resol_, vars_, validTime_));
     dx->diff(ensemble[jm], bgmean);
 
 //  Apply inverse of the linear balance operator
-    Increment_ dxunbal = balop.multiplyInverse(*dx);
-    Increment_ * dxunbalptr = new Increment_(dxunbal);
+
+    // K_1^{-1} K_2^{-1} .. K_N^{-1}
+    for (ircst_ it = chvars.rbegin(); it != chvars.rend(); ++it) {
+      Increment_ dxchvarout = it->multiplyInverse(*dx);
+      dx.reset(new Increment_(dxchvarout));
+    }
+
+    Increment_ * dxunbalptr = new Increment_(*dx);
     ensemblePerturbs_.push_back(dxunbalptr);
 
 //  Rescale

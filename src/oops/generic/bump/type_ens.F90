@@ -33,9 +33,8 @@ contains
    procedure :: copy => ens_copy
    procedure :: remove_mean => ens_remove_mean
    procedure :: ens_from
-   procedure :: ens_from_oops
    procedure :: ens_from_nemovar
-   generic :: from => ens_from,ens_from_oops,ens_from_nemovar
+   generic :: from => ens_from,ens_from_nemovar
 end type ens_type
 
 private
@@ -59,14 +58,18 @@ integer,intent(in) :: ne             !< Ensemble size
 integer,intent(in) :: nsub           !< Number of sub-ensembles
 
 ! Allocate
-allocate(ens%fld(geom%nc0a,geom%nl0,nam%nv,nam%nts,ne))
-allocate(ens%mean(geom%nc0a,geom%nl0,nam%nv,nam%nts,nsub))
+if (ne>0) then
+   allocate(ens%fld(geom%nc0a,geom%nl0,nam%nv,nam%nts,ne))
+   allocate(ens%mean(geom%nc0a,geom%nl0,nam%nv,nam%nts,nsub))
+end if
 
 ! Initialization
 ens%ne = ne
 ens%nsub = nsub
-call msr(ens%fld)
-call msr(ens%mean)
+if (ens%ne>0) then
+   call msr(ens%fld)
+   call msr(ens%mean)
+end if
 
 end subroutine ens_alloc
 
@@ -99,14 +102,18 @@ class(ens_type),intent(inout) :: ens_out !< Ensemble
 type(ens_type),intent(in) :: ens_in      !< Ensemble
 
 ! Allocate
-allocate(ens_out%fld(size(ens_in%fld,1),size(ens_in%fld,2),size(ens_in%fld,3),size(ens_in%fld,4),size(ens_in%fld,5)))
-allocate(ens_out%mean(size(ens_in%mean,1),size(ens_in%mean,2),size(ens_in%mean,3),size(ens_in%mean,4),size(ens_in%mean,5)))
+if (ens_in%ne>0) then
+   allocate(ens_out%fld(size(ens_in%fld,1),size(ens_in%fld,2),size(ens_in%fld,3),size(ens_in%fld,4),size(ens_in%fld,5)))
+   allocate(ens_out%mean(size(ens_in%mean,1),size(ens_in%mean,2),size(ens_in%mean,3),size(ens_in%mean,4),size(ens_in%mean,5)))
+end if
 
 ! Initialization
 ens_out%ne = ens_in%ne
 ens_out%nsub = ens_in%nsub
-ens_out%fld = ens_in%fld
-ens_out%mean = ens_in%mean
+if (ens_in%ne>0) then
+   ens_out%fld = ens_in%fld
+   ens_out%mean = ens_in%mean
+end if
 
 end subroutine ens_copy
 
@@ -124,22 +131,24 @@ class(ens_type),intent(inout) :: ens !< Ensemble
 ! Local variables
 integer :: isub,ie_sub,ie
 
-! Loop over sub-ensembles
-do isub=1,ens%nsub
-   ! Compute mean
-   ens%mean(:,:,:,:,isub) = 0.0
-   do ie_sub=1,ens%ne/ens%nsub
-      ie = ie_sub+(isub-1)*ens%ne/ens%nsub
-      ens%mean(:,:,:,:,isub) = ens%mean(:,:,:,:,isub)+ens%fld(:,:,:,:,ie)
-   end do
-   ens%mean(:,:,:,:,isub) = ens%mean(:,:,:,:,isub)/(ens%ne/ens%nsub)
+if (ens%ne>0) then
+   ! Loop over sub-ensembles
+   do isub=1,ens%nsub
+      ! Compute mean
+      ens%mean(:,:,:,:,isub) = 0.0
+      do ie_sub=1,ens%ne/ens%nsub
+         ie = ie_sub+(isub-1)*ens%ne/ens%nsub
+         ens%mean(:,:,:,:,isub) = ens%mean(:,:,:,:,isub)+ens%fld(:,:,:,:,ie)
+      end do
+      ens%mean(:,:,:,:,isub) = ens%mean(:,:,:,:,isub)/(ens%ne/ens%nsub)
 
-   ! Remove mean
-   do ie_sub=1,ens%ne/ens%nsub
-      ie = ie_sub+(isub-1)*ens%ne/ens%nsub
-      ens%fld(:,:,:,:,ie) = ens%fld(:,:,:,:,ie)-ens%mean(:,:,:,:,isub)
+      ! Remove mean
+      do ie_sub=1,ens%ne/ens%nsub
+         ie = ie_sub+(isub-1)*ens%ne/ens%nsub
+         ens%fld(:,:,:,:,ie) = ens%fld(:,:,:,:,ie)-ens%mean(:,:,:,:,isub)
+      end do
    end do
-end do
+end if
 
 end subroutine ens_remove_mean
 
@@ -164,72 +173,23 @@ integer :: ie,its,iv,il0
 ! Allocation
 call ens%alloc(nam,geom,ne,1)
 
-! Copy
-do ie=1,ens%ne
-   do its=1,nam%nts
-      do iv=1,nam%nv
-         do il0=1,geom%nl0
-            ens%fld(:,il0,iv,its,ie) = ens_mga(geom%c0a_to_mga,il0,iv,its,ie)
+if (ens%ne>0) then
+   ! Copy
+   do ie=1,ens%ne
+      do its=1,nam%nts
+         do iv=1,nam%nv
+            do il0=1,geom%nl0
+               ens%fld(:,il0,iv,its,ie) = ens_mga(geom%c0a_to_mga,il0,iv,its,ie)
+            end do
          end do
       end do
    end do
-end do
 
-! Remove mean
-call ens%remove_mean
+   ! Remove mean
+   call ens%remove_mean
+end if
 
 end subroutine ens_from
-
-!----------------------------------------------------------------------
-! Subroutine: ens_from_oops
-!> Purpose: copy OOPS ensemble into ensemble data
-!----------------------------------------------------------------------
-subroutine ens_from_oops(ens,nam,geom,ne,ens_mga)
-
-implicit none
-
-! Passed variables
-class(ens_type),intent(inout) :: ens                                        !< Ensemble
-type(nam_type),intent(in) :: nam                                            !< Namelist
-type(geom_type),intent(in) :: geom                                          !< Geometry
-integer,intent(in) :: ne                                                    !< Ensemble size
-real(kind_real),intent(in) :: ens_mga(geom%nmga*geom%nl0*nam%nv*nam%nts*ne) !< Ensemble on model grid, halo A
-
-! Local variables
-integer :: ie,its,iv,il0,offset,n
-real(kind_real) :: fld(geom%nmga,geom%nl0,nam%nv,nam%nts)
-logical :: mask_unpack(geom%nmga,geom%nl0,nam%nv,nam%nts)
-
-! Allocation
-call ens%alloc(nam,geom,ne,1)
-
-! Initialization
-mask_unpack = .true.
-offset = 0
-n = geom%nmga*geom%nl0*nam%nv*nam%nts
-
-do ie=1,ne
-   ! Unpack
-   call msr(fld)
-   fld = unpack(ens_mga(offset+1:offset+n),mask_unpack,fld)
-
-   ! Copy
-   do its=1,nam%nts
-      do iv=1,nam%nv
-         do il0=1,geom%nl0
-            ens%fld(:,il0,iv,its,ie) = fld(geom%c0a_to_mga,il0,iv,its)
-         end do
-      end do
-   end do
-
-   ! Update
-   offset = offset+n
-end do
-
-! Remove mean
-call ens%remove_mean
-
-end subroutine ens_from_oops
 
 !----------------------------------------------------------------------
 ! Subroutine: ens_from_nemovar

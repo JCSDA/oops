@@ -11,8 +11,13 @@
 #include <string>
 #include <vector>
 #include <boost/noncopyable.hpp>
+#include "eckit/config/Configuration.h"
+#include "oops/base/Ensemble.h"
+#include "oops/base/EnsemblesCollection.h"
 #include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/Variables.h"
+#include "oops/generic/oobump_f.h"
+#include "oops/generic/UnstructuredGrid.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
@@ -57,16 +62,44 @@ class StatsVariableChange : public LinearVariableChangeBase<MODEL> {
                      std::vector<std::string>& modelVarToCalcList,
                      std::vector<std::string>& varRegrByList);
 
+  int colocated_;
+  int keyBUMP_;
+
   // StatsVarData populate(const varin_ , const varout_, const eckit::Configuration);
 };
 
 template<typename MODEL>
-StatsVariableChange<MODEL>::StatsVariableChange(const State_ &, const State_ &,
-                                                const Geometry_ &,
+StatsVariableChange<MODEL>::StatsVariableChange(const State_ & xb, const State_ &,
+                                                const Geometry_ & resol,
                                                 const eckit::Configuration & conf)
-  : LinearVariableChangeBase<MODEL>(conf)
+  : LinearVariableChangeBase<MODEL>(conf), colocated_(1)
 {
   Log::trace() << "StatsVariableChange<MODEL>::StatsVariableChange starting" << std::endl;
+
+  const eckit::Configuration * fconf = &conf;
+
+// Setup variables
+  std::cout << conf << std::endl;
+  const eckit::LocalConfiguration varConfig(conf, "variables");
+  const Variables vars(varConfig);
+
+// Setup dummy increment
+  Increment_ dx(resol, vars, xb.validTime());
+
+// Define unstructured grid coordinates
+  colocated_ = 1;  // conf.getString("colocated") TODO
+  UnstructuredGrid ug;
+  dx.ug_coord(ug, colocated_);
+
+// Delete BUMP if present
+  if (keyBUMP_) delete_oobump_f90(keyBUMP_);
+
+// Create BUMP
+  create_oobump_f90(keyBUMP_, ug.toFortran(), &fconf, 0, 1, 0, 1);
+
+// Run BUMP
+  run_oobump_drivers_f90(keyBUMP_);
+
   Log::trace() << "StatsVariableChange<MODEL>::StatsVariableChange done" << std::endl;
 }
 
@@ -81,7 +114,8 @@ void StatsVariableChange<MODEL>::multiply(const Increment_ & in, Increment_ & ou
   Log::trace() << "StatsVariableChange<MODEL>::multiply starting" << std::endl;
 
   UnstructuredGrid ug;
-  in.field_to_ug(ug);
+  in.field_to_ug(ug, colocated_);
+  multiply_oobump_vbal_f90(keyBUMP_, ug.toFortran());
   out.field_from_ug(ug);
 
   Log::trace() << "StatsVariableChange<MODEL>::multiply done" << std::endl;
@@ -92,7 +126,8 @@ void StatsVariableChange<MODEL>::multiplyInverse(const Increment_ & in, Incremen
   Log::trace() << "StatsVariableChange<MODEL>::multiplyInverse starting" << std::endl;
 
   UnstructuredGrid ug;
-  in.field_to_ug(ug);
+  in.field_to_ug(ug, colocated_);
+  multiply_oobump_vbal_inv_f90(keyBUMP_, ug.toFortran());
   out.field_from_ug(ug);
 
   Log::trace() << "StatsVariableChange<MODEL>::multiplyInverse done" << std::endl;
@@ -103,7 +138,8 @@ void StatsVariableChange<MODEL>::multiplyAD(const Increment_ & in, Increment_ & 
   Log::trace() << "StatsVariableChange<MODEL>::multiplyAD starting" << std::endl;
 
   UnstructuredGrid ug;
-  in.field_to_ug(ug);
+  in.field_to_ug(ug, colocated_);
+  multiply_oobump_vbal_ad_f90(keyBUMP_, ug.toFortran());
   out.field_from_ug(ug);
 
   Log::trace() << "StatsVariableChange<MODEL>::multiplyAD done" << std::endl;
@@ -114,7 +150,8 @@ void StatsVariableChange<MODEL>::multiplyInverseAD(const Increment_ & in, Increm
   Log::trace() << "StatsVariableChange<MODEL>::multiplyInverseAD starting" << std::endl;
 
   UnstructuredGrid ug;
-  in.field_to_ug(ug);
+  in.field_to_ug(ug, colocated_);
+  multiply_oobump_vbal_inv_ad_f90(keyBUMP_, ug.toFortran());
   out.field_from_ug(ug);
 
   Log::trace() << "StatsVariableChange<MODEL>::multiplyInverseAD done" << std::endl;

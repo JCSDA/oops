@@ -96,8 +96,8 @@ class Increment : public oops::GeneralizedDepartures,
   Geometry_ geometry() const;
 
 /// Unstructured grid
-  void ug_coord(UnstructuredGrid &) const;
-  void field_to_ug(UnstructuredGrid &) const;
+  void ug_coord(UnstructuredGrid &, const int &) const;
+  void field_to_ug(UnstructuredGrid &, const int &) const;
   void field_from_ug(const UnstructuredGrid &);
 
  private:
@@ -365,20 +365,20 @@ Geometry<MODEL> Increment<MODEL>::geometry() const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void Increment<MODEL>::ug_coord(UnstructuredGrid & ug) const {
+void Increment<MODEL>::ug_coord(UnstructuredGrid & ug, const int & colocated) const {
   Log::trace() << "Increment<MODEL>::ug_coord starting" << std::endl;
   util::Timer timer(classname(), "ug_coord");
-  increment_->ug_coord(ug);
+  increment_->ug_coord(ug, colocated);
   Log::trace() << "Increment<MODEL>::ug_coord done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void Increment<MODEL>::field_to_ug(UnstructuredGrid & ug) const {
+void Increment<MODEL>::field_to_ug(UnstructuredGrid & ug, const int & colocated) const {
   Log::trace() << "Increment<MODEL>::field_to_ug starting" << std::endl;
   util::Timer timer(classname(), "field_to_ug");
-  increment_->field_to_ug(ug);
+  increment_->field_to_ug(ug, colocated);
   Log::trace() << "Increment<MODEL>::field_to_ug done" << std::endl;
 }
 

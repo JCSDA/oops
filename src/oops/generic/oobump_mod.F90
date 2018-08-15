@@ -3,9 +3,9 @@
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
 
-!>  Fortran module for handling generic BUMP localization
+!>  Fortran module for handling generic BUMP
 
-module bump_mod
+module oobump_mod
 
 use iso_c_binding
 use kinds
@@ -17,21 +17,29 @@ use mpi
 use type_bump, only: bump_type
 
 implicit none
+
+type oobump_type
+   integer :: ngrid                       !> Number of instances of BUMP
+   type(bump_type),allocatable :: bump(:) !> Instances of BUMP
+end type oobump_type
+
 private
-public create_bump, delete_bump, add_bump_member, bump_multiply, run_bump_drivers, bump_read_conf
+public oobump_type, create_oobump, delete_oobump, add_oobump_member, &
+     & multiply_oobump_vbal, multiply_oobump_vbal_inv, multiply_oobump_vbal_ad, multiply_oobump_vbal_inv_ad, &
+     & multiply_oobump_nicas, run_oobump_drivers, bump_read_conf
 
 #ifndef notdef_
   INCLUDE 'mpif.h'
 #endif  
 ! ------------------------------------------------------------------------------
 
-#define LISTED_TYPE bump_type
+#define LISTED_TYPE oobump_type
 
 !> Linked list interface - defines registry_t type
 #include "oops/util/linkedList_i.f"
 
 !> Global registry
-type(registry_t) :: bump_registry
+type(registry_t) :: oobump_registry
 
 !-------------------------------------------------------------------------------
 contains
@@ -44,129 +52,261 @@ contains
 !  C++ interfaces
 ! ------------------------------------------------------------------------------
 
-subroutine create_bump_c(key, idx, c_conf, ens1_ne) bind(c, name='create_bump_f90')
+subroutine create_oobump_c(key, idx, c_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub) bind(c, name='create_oobump_f90')
 implicit none
 integer(c_int), intent(inout) :: key
 integer(c_int), intent(in) :: idx
 type(c_ptr), intent(in) :: c_conf
 integer, intent(in) :: ens1_ne
+integer, intent(in) :: ens1_nsub
+integer, intent(in) :: ens2_ne
+integer, intent(in) :: ens2_nsub
 
-type(bump_type), pointer :: self
+type(oobump_type), pointer :: self
 type(unstructured_grid), pointer :: ug
 
 ! Initialize BUMP registry
-call bump_registry%init()
-call bump_registry%add(key)
-call bump_registry%get(key,self)
+call oobump_registry%init()
+call oobump_registry%add(key)
+call oobump_registry%get(key,self)
 
-! Get unstrucutred grid
+! Get unstructured grid
 call unstructured_grid_registry%get(idx, ug)
 
 ! Create BUMP
-call create_bump(self, ug, c_conf, ens1_ne)
+call create_oobump(self, ug, c_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub)
 
-end subroutine create_bump_c
+end subroutine create_oobump_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine delete_bump_c(key) bind(c, name='delete_bump_f90')
+subroutine delete_oobump_c(key) bind(c, name='delete_oobump_f90')
 implicit none
 integer(c_int), intent(inout) :: key
 
-type(bump_type), pointer :: self
+type(oobump_type), pointer :: self
 
 ! Get BUMP
-call bump_registry%get(key,self)
+call oobump_registry%get(key,self)
 
 ! Delete BUMP
-call delete_bump(self)
+call delete_oobump(self)
 
 ! Delete registry key
-call bump_registry%remove(key)
+call oobump_registry%remove(key)
 
-end subroutine delete_bump_c
+end subroutine delete_oobump_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine add_bump_member_c(key, idx, ie) bind(c, name='add_bump_member_f90')
+subroutine add_oobump_member_c(key, idx, ie, iens) bind(c, name='add_oobump_member_f90')
 implicit none
 integer(c_int), intent(in) :: key
 integer(c_int), intent(in) :: idx
 integer, intent(in) :: ie
+integer, intent(in) :: iens
 
-type(bump_type), pointer :: self
+type(oobump_type), pointer :: self
 type(unstructured_grid), pointer :: ug
 
 ! Get BUMP
-call bump_registry%get(key,self)
+call oobump_registry%get(key,self)
 
-! Get unstrucutred grid
+! Get unstructured grid
 call unstructured_grid_registry%get(idx, ug)
 
 ! Add BUMP member
-call add_bump_member(self, ug, ie)
+call add_oobump_member(self, ug, ie, iens)
 
-end subroutine add_bump_member_c
+end subroutine add_oobump_member_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine run_bump_drivers_c(key) bind(c, name='run_bump_drivers_f90')
+subroutine run_oobump_drivers_c(key) bind(c, name='run_oobump_drivers_f90')
 implicit none
 integer(c_int), intent(in) :: key
 
-type(bump_type), pointer :: self
+type(oobump_type), pointer :: self
 
 ! Get BUMP
-call bump_registry%get(key,self)
+call oobump_registry%get(key,self)
 
 ! Run BUMP drivers
-call run_bump_drivers(self)
+call run_oobump_drivers(self)
 
-end subroutine run_bump_drivers_c
+end subroutine run_oobump_drivers_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine bump_multiply_c(key, idx) bind(c, name='bump_multiply_f90')
+subroutine multiply_oobump_vbal_c(key, idx) bind(c, name='multiply_oobump_vbal_f90')
 implicit none
 integer(c_int), intent(in) :: key
 integer(c_int), intent(in) :: idx
 
-type(bump_type), pointer :: self
+type(oobump_type), pointer :: self
 type(unstructured_grid), pointer :: ug
 
 ! Get BUMP
-call bump_registry%get(key,self)
+call oobump_registry%get(key,self)
 
-! Get unstrucutred grid
+! Get unstructured grid
 call unstructured_grid_registry%get(idx, ug)
 
 ! Multiply
-call bump_multiply(self, ug)
+call multiply_oobump_vbal(self, ug)
 
-end subroutine bump_multiply_c
+end subroutine multiply_oobump_vbal_c
+
+! ------------------------------------------------------------------------------
+
+subroutine multiply_oobump_vbal_inv_c(key, idx) bind(c, name='multiply_oobump_vbal_inv_f90')
+implicit none
+integer(c_int), intent(in) :: key
+integer(c_int), intent(in) :: idx
+
+type(oobump_type), pointer :: self
+type(unstructured_grid), pointer :: ug
+
+! Get BUMP
+call oobump_registry%get(key,self)
+
+! Get unstructured grid
+call unstructured_grid_registry%get(idx, ug)
+
+! Multiply
+call multiply_oobump_vbal_inv(self, ug)
+
+end subroutine multiply_oobump_vbal_inv_c
+
+! ------------------------------------------------------------------------------
+
+subroutine multiply_oobump_vbal_ad_c(key, idx) bind(c, name='multiply_oobump_vbal_ad_f90')
+implicit none
+integer(c_int), intent(in) :: key
+integer(c_int), intent(in) :: idx
+
+type(oobump_type), pointer :: self
+type(unstructured_grid), pointer :: ug
+
+! Get BUMP
+call oobump_registry%get(key,self)
+
+! Get unstructured grid
+call unstructured_grid_registry%get(idx, ug)
+
+! Multiply
+call multiply_oobump_vbal_ad(self, ug)
+
+end subroutine multiply_oobump_vbal_ad_c
+
+! ------------------------------------------------------------------------------
+
+subroutine multiply_oobump_vbal_inv_ad_c(key, idx) bind(c, name='multiply_oobump_vbal_inv_ad_f90')
+implicit none
+integer(c_int), intent(in) :: key
+integer(c_int), intent(in) :: idx
+
+type(oobump_type), pointer :: self
+type(unstructured_grid), pointer :: ug
+
+! Get BUMP
+call oobump_registry%get(key,self)
+
+! Get unstructured grid
+call unstructured_grid_registry%get(idx, ug)
+
+! Multiply
+call multiply_oobump_vbal_inv_ad(self, ug)
+
+end subroutine multiply_oobump_vbal_inv_ad_c
+
+! ------------------------------------------------------------------------------
+
+subroutine multiply_oobump_nicas_c(key, idx) bind(c, name='multiply_oobump_nicas_f90')
+implicit none
+integer(c_int), intent(in) :: key
+integer(c_int), intent(in) :: idx
+
+type(oobump_type), pointer :: self
+type(unstructured_grid), pointer :: ug
+
+! Get BUMP
+call oobump_registry%get(key,self)
+
+! Get unstructured grid
+call unstructured_grid_registry%get(idx, ug)
+
+! Multiply
+call multiply_oobump_nicas(self, ug)
+
+end subroutine multiply_oobump_nicas_c
+
+! ------------------------------------------------------------------------------
+
+subroutine get_oobump_param_c(key, nstr, cstr, idx) bind(c, name='get_oobump_param_f90')
+implicit none
+integer(c_int), intent(in) :: key
+integer(c_int), intent(in) :: nstr
+character(kind=c_char), intent(in) :: cstr(nstr)
+integer(c_int), intent(in) :: idx
+
+type(oobump_type), pointer :: self
+type(unstructured_grid), pointer :: ug
+integer :: istr
+character(len=nstr) :: param
+
+! Get BUMP
+call oobump_registry%get(key,self)
+
+! Get unstructured grid
+call unstructured_grid_registry%get(idx, ug)
+
+! Copy string
+param = ''
+do istr=1,nstr
+   param = trim(param)//cstr(istr)
+end do
+
+! Get parameter
+call get_oobump_param(self, param, ug)
+
+end subroutine get_oobump_param_c
 
 ! ------------------------------------------------------------------------------
 !  End C++ interfaces
 ! ------------------------------------------------------------------------------
 
-subroutine create_bump(self, ug, c_conf, ens1_ne)
+subroutine create_oobump(self, ug, c_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub)
 
 implicit none
-type(bump_type), intent(inout) :: self
+type(oobump_type), intent(inout) :: self
 type(unstructured_grid), intent(in) :: ug
 type(c_ptr), intent(in) :: c_conf
 integer, intent(in) :: ens1_ne
+integer, intent(in) :: ens1_nsub
+integer, intent(in) :: ens2_ne
+integer, intent(in) :: ens2_nsub
 
-! Initialize namelist
-call self%nam%init
+integer :: igrid
 
-! Read JSON
-call bump_read_conf(c_conf,self)
+! Allocation
+self%ngrid = ug%ngrid
+allocate(self%bump(self%ngrid))
 
-! Online setup
-call self%setup_online_oops(mpi_comm_world,ug%nmga,ug%nl0,ug%nv,ug%nts,ug%lon,ug%lat,ug%area,ug%vunit,ug%lmask,ens1_ne)
+do igrid=1,self%ngrid
+   ! Initialize namelist
+   call self%bump(igrid)%nam%init
 
-end subroutine create_bump
+   ! Read JSON
+   call bump_read_conf(c_conf,self%bump(igrid))
+
+   ! Online setup
+   call self%bump(igrid)%setup_online(mpi_comm_world,ug%grid(igrid)%nmga,ug%grid(igrid)%nl0,ug%grid(igrid)%nv,ug%grid(igrid)%nts, &
+ & ug%grid(igrid)%lon,ug%grid(igrid)%lat,ug%grid(igrid)%area,ug%grid(igrid)%vunit,ug%grid(igrid)%lmask, &
+ & ens1_ne=ens1_ne,ens1_nsub=ens1_nsub,ens2_ne=ens2_ne,ens2_nsub=ens2_nsub)
+end do
+
+end subroutine create_oobump
 
 !-------------------------------------------------------------------------------
 
@@ -186,8 +326,11 @@ if (config_element_exists(c_conf,"default_seed")) bump%nam%default_seed = intege
 ! driver_param
 if (config_element_exists(c_conf,"method")) bump%nam%method = config_get_string(c_conf,1024,"method")
 if (config_element_exists(c_conf,"strategy")) bump%nam%strategy = config_get_string(c_conf,1024,"strategy")
+if (config_element_exists(c_conf,"new_vbal")) bump%nam%new_vbal = integer_to_logical(config_get_int(c_conf,"new_vbal"))
 if (config_element_exists(c_conf,"new_hdiag")) bump%nam%new_hdiag = integer_to_logical(config_get_int(c_conf,"new_hdiag"))
+if (config_element_exists(c_conf,"new_lct")) bump%nam%new_lct = integer_to_logical(config_get_int(c_conf,"new_lct"))
 if (config_element_exists(c_conf,"new_param")) bump%nam%new_param = integer_to_logical(config_get_int(c_conf,"new_param"))
+if (config_element_exists(c_conf,"new_obsop")) bump%nam%new_obsop = integer_to_logical(config_get_int(c_conf,"new_obsop"))
 if (config_element_exists(c_conf,"check_adjoints")) &
  & bump%nam%check_adjoints = integer_to_logical(config_get_int(c_conf,"check_adjoints"))
 if (config_element_exists(c_conf,"check_pos_def")) &
@@ -200,8 +343,6 @@ if (config_element_exists(c_conf,"check_consistency")) &
  & bump%nam%check_consistency = integer_to_logical(config_get_int(c_conf,"check_consistency"))
 if (config_element_exists(c_conf,"check_optimality")) &
  & bump%nam%check_optimality = integer_to_logical(config_get_int(c_conf,"check_optimality"))
-if (config_element_exists(c_conf,"new_lct")) bump%nam%new_lct = integer_to_logical(config_get_int(c_conf,"new_lct"))
-if (config_element_exists(c_conf,"new_obsop")) bump%nam%new_obsop = integer_to_logical(config_get_int(c_conf,"new_obsop"))
 
 ! sampling_param
 if (config_element_exists(c_conf,"sam_read")) bump%nam%sam_read = integer_to_logical(config_get_int(c_conf,"sam_read"))
@@ -211,7 +352,7 @@ if (config_element_exists(c_conf,"mask_th")) bump%nam%mask_th = config_get_real(
 if (config_element_exists(c_conf,"mask_check")) bump%nam%mask_check = integer_to_logical(config_get_int(c_conf,"mask_check"))
 if (config_element_exists(c_conf,"draw_type")) bump%nam%draw_type = config_get_string(c_conf,1024,"draw_type")
 if (config_element_exists(c_conf,"nc1")) bump%nam%nc1 = config_get_int(c_conf,"nc1")
-if (config_element_exists(c_conf,"nc2")) bump%nam%nc1 = config_get_int(c_conf,"nc2")
+if (config_element_exists(c_conf,"nc2")) bump%nam%nc2 = config_get_int(c_conf,"nc2")
 if (config_element_exists(c_conf,"ntry")) bump%nam%ntry = config_get_int(c_conf,"ntry")
 if (config_element_exists(c_conf,"nrep")) bump%nam%nrep = config_get_int(c_conf,"nrep")
 if (config_element_exists(c_conf,"nc3")) bump%nam%nc3 = config_get_int(c_conf,"nc3")
@@ -316,51 +457,141 @@ end function integer_to_logical
 
 !-------------------------------------------------------------------------------
 
-subroutine delete_bump(self)
+subroutine delete_oobump(self)
 implicit none
-type(bump_type), intent(inout) :: self
+type(oobump_type), intent(inout) :: self
+integer :: igrid
 
 ! Deallocate BUMP
-call self%dealloc
+do igrid=1,self%ngrid  
+   call self%bump(igrid)%dealloc
+end do
+deallocate(self%bump)
 
-end subroutine delete_bump
+end subroutine delete_oobump
 
 !-------------------------------------------------------------------------------
 
-subroutine add_bump_member(self,ug,ie)
+subroutine add_oobump_member(self,ug,ie,iens)
 implicit none
-type(bump_type), intent(inout) :: self
+type(oobump_type), intent(inout) :: self
 type(unstructured_grid), intent(inout) :: ug
 integer, intent(in) :: ie
+integer, intent(in) :: iens
+integer :: igrid
 
-! Apply localization
-call self%add_member(ug%fld,ie)
+! Add member
+do igrid=1,self%ngrid
+   call self%bump(igrid)%add_member(ug%grid(igrid)%fld,ie,iens)
+end do
 
-end subroutine add_bump_member
+end subroutine add_oobump_member
 
 !-------------------------------------------------------------------------------
 
-subroutine run_bump_drivers(self)
+subroutine run_oobump_drivers(self)
 implicit none
-type(bump_type), intent(inout) :: self
+type(oobump_type), intent(inout) :: self
+integer :: igrid
 
 ! Run BUMP drivers
-call self%run_drivers_oops
+do igrid=1,self%ngrid
+   call self%bump(igrid)%run_drivers
+end do
 
-end subroutine run_bump_drivers
+end subroutine run_oobump_drivers
 
 !-------------------------------------------------------------------------------
 
-subroutine bump_multiply(self,ug)
+subroutine multiply_oobump_vbal(self,ug)
 implicit none
-type(bump_type), intent(inout) :: self
+type(oobump_type), intent(in) :: self
 type(unstructured_grid), intent(inout) :: ug
+integer :: igrid
 
-! Apply localization
-call self%apply_nicas(ug%fld)
+! Apply vertical balance
+do igrid=1,self%ngrid
+   call self%bump(igrid)%apply_vbal(ug%grid(igrid)%fld)
+end do
 
-end subroutine bump_multiply
+end subroutine multiply_oobump_vbal
 
 !-------------------------------------------------------------------------------
 
-end module bump_mod
+subroutine multiply_oobump_vbal_inv(self,ug)
+implicit none
+type(oobump_type), intent(in) :: self
+type(unstructured_grid), intent(inout) :: ug
+integer :: igrid
+
+! Apply vertical balance, inverse
+do igrid=1,self%ngrid
+   call self%bump(igrid)%apply_vbal_inv(ug%grid(igrid)%fld)
+end do
+
+end subroutine multiply_oobump_vbal_inv
+
+!-------------------------------------------------------------------------------
+
+subroutine multiply_oobump_vbal_ad(self,ug)
+implicit none
+type(oobump_type), intent(in) :: self
+type(unstructured_grid), intent(inout) :: ug
+integer :: igrid
+
+! Apply vertical balance, adjoint
+do igrid=1,self%ngrid
+   call self%bump(igrid)%apply_vbal_ad(ug%grid(igrid)%fld)
+end do
+
+end subroutine multiply_oobump_vbal_ad
+
+!-------------------------------------------------------------------------------
+
+subroutine multiply_oobump_vbal_inv_ad(self,ug)
+implicit none
+type(oobump_type), intent(in) :: self
+type(unstructured_grid), intent(inout) :: ug
+integer :: igrid
+
+! Apply vertical balance, inverse adjoint
+do igrid=1,self%ngrid
+   call self%bump(igrid)%apply_vbal_inv_ad(ug%grid(igrid)%fld)
+end do
+
+end subroutine multiply_oobump_vbal_inv_ad
+
+!-------------------------------------------------------------------------------
+
+subroutine multiply_oobump_nicas(self,ug)
+implicit none
+type(oobump_type), intent(in) :: self
+type(unstructured_grid), intent(inout) :: ug
+integer :: igrid
+
+! Apply NICAS
+do igrid=1,self%ngrid
+   call self%bump(igrid)%apply_nicas(ug%grid(igrid)%fld)
+end do
+
+end subroutine multiply_oobump_nicas
+
+!-------------------------------------------------------------------------------
+
+subroutine get_oobump_param(self,param,ug)
+implicit none
+type(oobump_type), intent(in) :: self
+character(len=*),intent(in) :: param
+type(unstructured_grid), intent(inout) :: ug
+integer :: igrid
+
+! Get parameter
+do igrid=1,self%ngrid
+   call self%bump(igrid)%get_parameter(param,ug%grid(igrid)%fld)
+end do
+
+end subroutine get_oobump_param
+
+!-------------------------------------------------------------------------------
+
+end module oobump_mod
