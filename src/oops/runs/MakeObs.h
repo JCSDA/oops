@@ -81,7 +81,7 @@ template <typename MODEL> class MakeObs : public Application {
     const eckit::LocalConfiguration initialConfig(fullConfig, "Initial Condition");
     Log::info() << "Initial configuration is:" << initialConfig << std::endl;
     State_ xx(resol, initialConfig);
-    Log::test() << "Initial state: " << xx.norm() << std::endl;
+    Log::test() << "Initial state: " << xx << std::endl;
 
 //  Setup augmented state
     ModelAux_ moderr(resol, initialConfig);
@@ -116,7 +116,7 @@ template <typename MODEL> class MakeObs : public Application {
 
 //  Run forecast and generate observations
     model.forecast(xx, moderr, fclen, post);
-    Log::test() << "Final state: " << xx.norm() << std::endl;
+    Log::test() << "Final state: " << xx << std::endl;
     Log::info() << "MakeObs: Finished observation generation." << std::endl;
 
     boost::scoped_ptr<Observations_> yobs(pobs->release());

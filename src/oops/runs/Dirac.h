@@ -96,18 +96,18 @@ template <typename MODEL> class Dirac : public Application {
         const eckit::LocalConfiguration locConfig(covarConfig, "localization");
         boost::scoped_ptr<Localization_> loc_;
         loc_.reset(new Localization_(resol, locConfig));
-        Log::info() << "Setup localization OK" << std::endl;
+        Log::trace() << "Setup localization OK" << std::endl;
 
         //  Apply localization
         loc_->multiply(dxdirout);
         loc_->multiply(dxrndout);
-        Log::info() << "Apply localization OK" << std::endl;
+        Log::trace() << "Apply localization OK" << std::endl;
 
         //  Write increment
         const eckit::LocalConfiguration output_localization(fullConfig, "output_localization");
         dxdirout.write(output_localization);
-        Log::info() << "Write increment OK" << std::endl;
-        Log::test() << "Increment norm: " << dxrndout.norm() << std::endl;
+        Log::trace() << "Write increment OK" << std::endl;
+        Log::test() << "Increment: " << dxrndout << std::endl;
 
         //  Test adjoint
         x1.random();
@@ -129,8 +129,8 @@ template <typename MODEL> class Dirac : public Application {
 //  Write increment
     const eckit::LocalConfiguration output_B(fullConfig, "output_B");
     dxdirout.write(output_B);
-    Log::info() << "Write increment OK" << std::endl;
-    Log::test() << "Increment norm: " << dxrndout.norm() << std::endl;
+    Log::trace() << "Write increment OK" << std::endl;
+    Log::test() << "Increment: " << dxrndout << std::endl;
 
 //  Test adjoint
     x1.random();

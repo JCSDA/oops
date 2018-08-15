@@ -57,7 +57,7 @@ template <typename MODEL> class ExternalDFI : public Application {
 //  Setup initial state
     const eckit::LocalConfiguration initialConfig(fullConfig, "initial");
     State_ xx(resol, initialConfig);
-    Log::test() << "Initial state: " << xx.norm() << std::endl;
+    Log::test() << "Initial state: " << xx << std::endl;
 
 //  Setup augmented state
     const ModelAux_ moderr(resol, initialConfig);
@@ -90,7 +90,7 @@ template <typename MODEL> class ExternalDFI : public Application {
 
 //  Retrieve initialized state
     boost::scoped_ptr<State_> xdfi(pdfi->releaseMean());
-    Log::test() << "Filtered state: " << xdfi->norm() << std::endl;
+    Log::test() << "Filtered state: " << *xdfi << std::endl;
 
 //  Setup forecast outputs
     const eckit::LocalConfiguration outConfig(fullConfig, "output");
@@ -101,7 +101,7 @@ template <typename MODEL> class ExternalDFI : public Application {
     if (fclength < util::Duration(0)) ABORT("DFI: fliter span longer than forecast");
     State_ zz(*xdfi);
     model.forecast(zz, moderr, fclen, post);
-    Log::test() << "Final state: " << zz.norm() << std::endl;
+    Log::test() << "Final state: " << zz << std::endl;
 
     return 0;
   }

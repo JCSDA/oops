@@ -66,7 +66,7 @@ class State : public util::Printable,
 /// I/O and diagnostics
   void read(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;
-  double norm() const;
+  double norm() const;  // Only for tests
   Geometry_ geometry() const;
 
  protected:

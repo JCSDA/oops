@@ -1,3 +1,13 @@
-Test     : Initial state: 14.7101
-Test     : Final state: 14.6092
+Test     : Initial state: 
+Test     :   Valid time: 2010-01-01T00:00:00Z
+Test     :   Resolution = 40, 20, Fields = 1, 2
+Test     :   Min=-29.7988, Max=12.9629, RMS=12.6152
+Test     :   Min=-25.2, Max=0, RMS=12.9878
+Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
+Test     : Final state: 
+Test     :   Valid time: 2010-01-01T12:00:00Z
+Test     :   Resolution = 40, 20, Fields = 1, 2
+Test     :   Min=-29.4962, Max=11.0006, RMS=12.4853
+Test     :   Min=-25.2, Max=0, RMS=12.9878
+Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     : H(x): Stream nobs= 300 Min=-28.281, Max=11.3653, Average=-7.87884Wind nobs= 160 Min=-9.13149, Max=13.5288, Average=1.41975WSpeed nobs= 300 Min=1.28211, Max=13.5728, Average=5.84825

@@ -65,7 +65,7 @@ template <typename MODEL> class GenEnsPertB : public Application {
 //  Setup initial state
     const eckit::LocalConfiguration initialConfig(fullConfig, "initial");
     const State_ xx(resol, initialConfig);
-    Log::test() << "Initial state: " << xx.norm() << std::endl;
+    Log::test() << "Initial state: " << xx << std::endl;
 
 //  Setup augmented state
     const ModelAux_ moderr(resol, initialConfig);
@@ -102,7 +102,7 @@ template <typename MODEL> class GenEnsPertB : public Application {
 
 //    Run forecast
       model.forecast(xp, moderr, fclength, post);
-      Log::test() << "Member " << jm << " final state: " << xp.norm() << std::endl;
+      Log::test() << "Member " << jm << " final state: " << xp << std::endl;
     }
 
     return 0;

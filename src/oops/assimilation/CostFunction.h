@@ -336,8 +336,8 @@ void CostFunction<MODEL>::addIncrement(CtrlVar_ & xx, const CtrlInc_ & dx,
   xx.modVar() += dx.modVar();
   this->addIncr(xx, dx, post);
 
-  Log::info() << "CostFunction::addIncrement: Analysis:" << xx << std::endl;
-  Log::test() << "CostFunction::addIncrement: Analysis norm: " << xx.norm() << std::endl;
+  Log::info() << "CostFunction::addIncrement: Analysis: " << xx << std::endl;
+  Log::test() << "CostFunction::addIncrement: Analysis: " << xx << std::endl;
   Log::trace() << "CostFunction::addIncrement done" << std::endl;
 }
 

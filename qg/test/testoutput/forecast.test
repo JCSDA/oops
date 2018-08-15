@@ -1,2 +1,12 @@
-Test     : Initial state: 15.0104
-Test     : Final state: 13.3919
+Test     : Initial state: 
+Test     :   Valid time: 2009-12-31T00:00:00Z
+Test     :   Resolution = 40, 20, Fields = 1, 2
+Test     :   Min=-30.5908, Max=12.4057, RMS=12.9993
+Test     :   Min=-25.2, Max=0, RMS=12.9878
+Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
+Test     : Final state: 
+Test     :   Valid time: 2010-01-02T00:00:00Z
+Test     :   Resolution = 40, 20, Fields = 1, 2
+Test     :   Min=-25.5724, Max=9.32694, RMS=10.8768
+Test     :   Min=-25.2, Max=0, RMS=12.9878
+Test     :   Min=-42.4306, Max=36.45, RMS=28.1071

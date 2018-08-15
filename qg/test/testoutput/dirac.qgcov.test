@@ -1,2 +1,5 @@
-Test     : Increment norm: 3.75379
+Test     : Increment: 
+Test     :   Valid time: 2010-01-01T00:00:00Z
+Test     :   Resolution = 40, 20, Fields = 1, 0
+Test     :   Min=-8.07377, Max=9.71411, RMS=3.75379
 Test     : Adjoint test: -344.436 / -344.436

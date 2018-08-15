@@ -1,3 +1,24 @@
-Test     : Initial state: 13.9654
-Test     : Filtered state: 12.7198
-Test     : Final state: 13.0169
+Test     : Initial state: 
+Test     :   Valid time: 2010-01-01T00:00:00Z
+Test     :   Resolution = 40, 20, Fields = 1, 2
+Test     :   Min=-27.7757, Max=10.5671, RMS=11.6447
+Test     :   Min=-25.2, Max=0, RMS=12.9878
+Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
+Test     : Filtered state: 
+Test     :   Valid time: 2010-01-01T06:00:00Z
+Test     :   Resolution = 40, 20, Fields = 4, 2
+Test     :   Min=-27.1598, Max=10.1156, RMS=11.3795
+Test     :   Min=-43.0704, Max=36.1919, RMS=20.6384
+Test     :   Min=-8.08656, Max=11.0841, RMS=4.39794
+Test     :   Min=-7.36017, Max=7.9203, RMS=3.09132
+Test     :   Min=-25.2, Max=0, RMS=12.9878
+Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
+Test     : Final state: 
+Test     :   Valid time: 2010-01-08T00:00:00Z
+Test     :   Resolution = 40, 20, Fields = 4, 2
+Test     :   Min=-24.5545, Max=6.47943, RMS=10.662
+Test     :   Min=-42.586, Max=36.3345, RMS=21.9651
+Test     :   Min=-6.00222, Max=10.8262, RMS=3.78498
+Test     :   Min=-7.7047, Max=5.37821, RMS=2.28699
+Test     :   Min=-25.2, Max=0, RMS=12.9878
+Test     :   Min=-42.4306, Max=36.45, RMS=28.1071

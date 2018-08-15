@@ -54,7 +54,7 @@ template <typename MODEL> class EnsForecast : public Application {
 //    Setup initial state
       const eckit::Configuration initialConfig(fullConfig, "member", jj);
       State_ xx(resol, initialConfig);
-      Log::test() << "Initial state: " << xx.norm() << std::endl;
+      Log::test() << "Initial state: " << xx << std::endl;
 
 //    Setup augmented state
       const ModelAux_ moderr(initialConfig);
@@ -78,7 +78,7 @@ template <typename MODEL> class EnsForecast : public Application {
 //    Run forecast
       model.forecast(xx, moderr, fclength, post);
 
-      Log::test() << "Final state " << jj << " : " << xx.norm() << std::endl;
+      Log::test() << "Final state " << jj << " : " << xx << std::endl;
     }
     return 0;
   }
