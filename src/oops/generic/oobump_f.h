@@ -26,6 +26,7 @@ extern "C" {
   void multiply_oobump_vbal_inv_ad_f90(const int &, const int &);
   void multiply_oobump_nicas_f90(const int &, const int &);
   void get_oobump_param_f90(const int &, const int &, const char *, const int &);
+  void set_oobump_param_f90(const int &, const int &, const char *, const int &);
 }
 
 namespace bump {

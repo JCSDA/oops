@@ -273,6 +273,37 @@ call get_oobump_param(self, param, ug)
 end subroutine get_oobump_param_c
 
 ! ------------------------------------------------------------------------------
+
+subroutine set_oobump_param_c(key, nstr, cstr, idx) bind(c, name='set_oobump_param_f90')
+implicit none
+integer(c_int), intent(in) :: key
+integer(c_int), intent(in) :: nstr
+character(kind=c_char), intent(in) :: cstr(nstr)
+integer(c_int), intent(in) :: idx
+
+type(oobump_type), pointer :: self
+type(unstructured_grid), pointer :: ug
+integer :: istr
+character(len=nstr) :: param
+
+! Get BUMP
+call oobump_registry%get(key,self)
+
+! Get unstructured grid
+call unstructured_grid_registry%get(idx, ug)
+
+! Copy string
+param = ''
+do istr=1,nstr
+   param = trim(param)//cstr(istr)
+end do
+
+! Set parameter
+call set_oobump_param(self, param, ug)
+
+end subroutine set_oobump_param_c
+
+! ------------------------------------------------------------------------------
 !  End C++ interfaces
 ! ------------------------------------------------------------------------------
 
@@ -606,6 +637,22 @@ do igrid=1,self%ngrid
 end do
 
 end subroutine get_oobump_param
+
+!-------------------------------------------------------------------------------
+
+subroutine set_oobump_param(self,param,ug)
+implicit none
+type(oobump_type), intent(inout) :: self
+character(len=*),intent(in) :: param
+type(unstructured_grid), intent(in) :: ug
+integer :: igrid
+
+! Set parameter
+do igrid=1,self%ngrid
+   call self%bump(igrid)%set_parameter(param,ug%grid(igrid)%fld)
+end do
+
+end subroutine set_oobump_param
 
 !-------------------------------------------------------------------------------
 

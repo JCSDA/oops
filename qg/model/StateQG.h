@@ -51,7 +51,7 @@ class StateQG : public util::Printable,
 
 /// Constructor, destructor
   StateQG(const GeometryQG &, const oops::Variables &, const util::DateTime &);  // Is it used?
-  StateQG(const GeometryQG &, const eckit::Configuration &);
+  StateQG(const GeometryQG &, const oops::Variables &, const eckit::Configuration &);
   StateQG(const GeometryQG &, const StateQG &);
   StateQG(const StateQG &);
   virtual ~StateQG();
@@ -83,9 +83,6 @@ class StateQG : public util::Printable,
   }
 
 /// Other
-  void activateModel();
-  void deactivateModel();
-
   void zero();
   void accumul(const double &, const StateQG &);
 

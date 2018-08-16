@@ -275,7 +275,7 @@ else
       call mpl%send(geom%nmga,lmask(:,il0),mpl%ioproc,mpl%tag+2+geom%nl0+il0)
    end do
 end if
-mpl%tag = mpl%tag+3+2*geom%nl0
+call mpl%update_tag(3+2*geom%nl0)
 
 if (mpl%main) then
    ! Convert to radians

@@ -13,6 +13,7 @@ module type_linop
 use netcdf
 !$ use omp_lib
 use tools_kinds, only: kind_real
+use tools_func, only: inf
 use tools_missing, only: msi,msr,isnotmsr,isnotmsi
 use tools_nc, only: ncfloat
 use tools_qsort, only: qsort
@@ -25,6 +26,7 @@ use type_rng, only: rng_type
 implicit none
 
 logical,parameter :: check_data = .false.             !< Activate data check for all linear operations
+integer,parameter :: reorder_max = 1000000            !< Maximum size of linear operation to allow reordering
 integer,parameter :: nnatmax = 40                     !< Maximum number of natural neighbors
 real(kind_real),parameter :: S_inf = 1.0e-2_kind_real !< Minimum interpolation coefficient
 
@@ -171,7 +173,7 @@ type(mpl_type),intent(in) :: mpl         !< MPI data
 integer :: row,i_s_s,i_s_e,n_s,i_s
 integer,allocatable :: order(:)
 
-if (linop%n_s<1000000) then
+if (linop%n_s<reorder_max) then
    ! Sort with respect to row
    allocate(order(linop%n_s))
    call qsort(linop%n_s,linop%row,order)
@@ -749,7 +751,7 @@ do i_dst_loc=1,n_dst_loc(mpl%myproc)
          call mesh%barycentric(lon_dst(i_dst),lat_dst(i_dst),nn_index(1),b,ib)
          if (sum(b)>0.0) b = b/sum(b)
          do i=1,3
-            b(i) = nint(b(i)/S_inf)*S_inf
+            if (inf(b(i),S_inf)) b(i) = 0.0
          end do
          if (sum(b)>0.0) b = b/sum(b)
 
@@ -795,7 +797,7 @@ do i_dst_loc=1,n_dst_loc(mpl%myproc)
                      natwgt(1:nnat) = area_polygon(natis(1:nnat))-area_polygon_new(1:nnat)
                      if (sum(natwgt(1:nnat))>0.0) natwgt(1:nnat) = natwgt(1:nnat)/sum(natwgt(1:nnat))
                      do inat=1,nnat
-                        natwgt(inat) = nint(natwgt(inat)/S_inf)*S_inf
+                        if (inf(natwgt(inat),S_inf)) natwgt(inat) = 0.0
                      end do
                      if (sum(natwgt(1:nnat))>0.0) natwgt(1:nnat) = natwgt(1:nnat)/sum(natwgt(1:nnat))
 
@@ -865,7 +867,7 @@ else
       call mpl%send(n_s,S(1:n_s),mpl%ioproc,mpl%tag+2)
    end if
 end if
-mpl%tag = mpl%tag+3
+call mpl%update_tag(3)
 
 ! Broadcast data
 call mpl%bcast(linop%row)
@@ -1080,7 +1082,7 @@ else
       call mpl%send(n_s_loc(mpl%myproc),valid(i_s_s(mpl%myproc):i_s_e(mpl%myproc)),mpl%ioproc,mpl%tag)
    end if
 end if
-mpl%tag = mpl%tag+1
+call mpl%update_tag(1)
 
 ! Broadcast data
 call mpl%bcast(valid)

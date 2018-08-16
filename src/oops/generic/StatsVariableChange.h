@@ -72,7 +72,7 @@ template<typename MODEL>
 StatsVariableChange<MODEL>::StatsVariableChange(const State_ & xb, const State_ &,
                                                 const Geometry_ & resol,
                                                 const eckit::Configuration & conf)
-  : LinearVariableChangeBase<MODEL>(conf), colocated_(1)
+  : LinearVariableChangeBase<MODEL>(conf), colocated_(1), keyBUMP_(0)
 {
   Log::trace() << "StatsVariableChange<MODEL>::StatsVariableChange starting" << std::endl;
 

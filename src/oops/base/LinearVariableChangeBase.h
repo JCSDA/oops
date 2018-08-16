@@ -40,8 +40,8 @@ class LinearVariableChangeBase : public util::Printable,
   explicit LinearVariableChangeBase(const eckit::Configuration &);
   virtual ~LinearVariableChangeBase() {}
 
-  void setInputVariables(Variables & vars) { varin_.reset(new Variables(vars)); }
-  void setOutputVariables(Variables & vars) { varout_.reset(new Variables(vars)); }
+  void setInputVariables(const Variables & vars) { varin_.reset(new Variables(vars)); }
+  void setOutputVariables(const Variables & vars) { varout_.reset(new Variables(vars)); }
 
   virtual void multiply(const Increment_ &, Increment_ &) const = 0;
   virtual void multiplyInverse(const Increment_ &, Increment_ &) const = 0;

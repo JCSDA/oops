@@ -41,21 +41,10 @@ StateQG::StateQG(const GeometryQG & resol, const oops::Variables & vars,
   oops::Log::trace() << "StateQG::StateQG created." << std::endl;
 }
 // -----------------------------------------------------------------------------
-StateQG::StateQG(const GeometryQG & resol, const eckit::Configuration & file)
-  : fields_(), stash_()
+StateQG::StateQG(const GeometryQG & resol, const oops::Variables & vars,
+                 const eckit::Configuration & file)
+  : fields_(new FieldsQG(resol, vars, util::DateTime())), stash_()
 {
-// Should get variables from file. YT
-  const std::vector<std::string> *vv;
-
-  if (file.has("variables")) {
-    vv = new std::vector<std::string>(file.getStringVector("variables"));
-  } else {
-    vv = new std::vector<std::string>({"x", "bc"});
-  }
-
-  oops::Variables vars(*vv);
-  fields_.reset(new FieldsQG(resol, vars, util::DateTime()));
-
   if (file.has("analytic_init")) {
     fields_->analytic_init(file, resol);
   } else if (file.has("read_from_file")) {
@@ -86,26 +75,6 @@ StateQG::StateQG(const StateQG & other)
 // -----------------------------------------------------------------------------
 StateQG::~StateQG() {
   oops::Log::trace() << "StateQG::StateQG destructed." << std::endl;
-}
-// -----------------------------------------------------------------------------
-void StateQG::activateModel() {
-// Should get variables from model. YT
-  const std::vector<std::string> vv{"x", "q", "u", "v", "bc"};
-  oops::Variables vars(vv);
-  stash_.reset(new FieldsQG(*fields_, vars));
-  swap(fields_, stash_);
-  ASSERT(fields_);
-  ASSERT(stash_);
-  oops::Log::trace() << "StateQG activated for Model" << std::endl;
-}
-// -----------------------------------------------------------------------------
-void StateQG::deactivateModel() {
-  swap(fields_, stash_);
-  *fields_ = *stash_;
-  stash_.reset();
-  ASSERT(fields_);
-  ASSERT(!stash_);
-  oops::Log::trace() << "StateQG deactivated for Model" << std::endl;
 }
 // -----------------------------------------------------------------------------
 /// Basic operators

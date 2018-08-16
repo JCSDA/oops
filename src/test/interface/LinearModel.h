@@ -90,16 +90,16 @@ template <typename MODEL> class LinearModelFixture : private boost::noncopyable 
     const eckit::LocalConfiguration varConfig(TestEnvironment::config(), "Variables");
     ctlvars_.reset(new oops::Variables(varConfig));
 
-    const eckit::LocalConfiguration iniConf(TestEnvironment::config(), "State");
-    xref_.reset(new State_(*resol_, iniConf));
-    time_.reset(new util::DateTime(xref_->validTime()));
-
     const eckit::LocalConfiguration biasConf(TestEnvironment::config(), "ModelBias");
     bias_.reset(new ModelAux_(*resol_, biasConf));
     dbias_.reset(new ModelAuxIncr_(*resol_, biasConf));
 
     const eckit::LocalConfiguration nlConf(TestEnvironment::config(), "Model");
     model_.reset(new Model_(*resol_, nlConf));
+
+    const eckit::LocalConfiguration iniConf(TestEnvironment::config(), "State");
+    xref_.reset(new State_(*resol_, model_->variables(), iniConf));
+    time_.reset(new util::DateTime(xref_->validTime()));
 
 //  Create a covariance matrix
     oops::instantiateCovarFactory<MODEL>();

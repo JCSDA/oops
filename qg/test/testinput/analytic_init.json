@@ -7,6 +7,7 @@
   },
   "StateTest": {
     "StateFile": {
+      "variables": ["x","bc"],
       "filename": "Data/truth.fc.2009-12-15T00:00:00Z.P16D",
       "date": "2009-12-31T00:00:00Z"
     },
@@ -30,7 +31,7 @@
        "random_seed": "560921"
     },
     "norm-file": "15.010355026",
-    "norm-gen": "4.5654911216431504",
+    "norm-gen": "5.6505535850404307",
     "interp_tolerance": "3.0"
   }
 }

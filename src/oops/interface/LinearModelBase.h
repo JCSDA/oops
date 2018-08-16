@@ -72,6 +72,7 @@ class LinearModelBase : public util::Printable,
 
 // Information and diagnostics
   virtual const util::Duration & timeResolution() const = 0;
+  virtual const oops::Variables & variables() const = 0;
 
  protected:
 // Set the linearization trajectory

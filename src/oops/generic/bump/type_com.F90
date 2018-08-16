@@ -499,7 +499,7 @@ else
    call mpl%send(next,ext_to_glb,mpl%ioproc,mpl%tag+2)
    call mpl%send(nred,red_to_ext,mpl%ioproc,mpl%tag+3)
 end if
-mpl%tag = mpl%tag+4
+call mpl%update_tag(4)
 
 if (mpl%main) then
    ! Allocation
@@ -603,7 +603,7 @@ else
    call mpl%recv(com_out%nhalo,mpl%ioproc,mpl%tag+2)
    call mpl%recv(com_out%nexcl,mpl%ioproc,mpl%tag+3)
 end if
-mpl%tag = mpl%tag+4
+call mpl%update_tag(4)
 
 ! Allocation
 allocate(com_out%red_to_ext(com_out%nred))
@@ -647,7 +647,7 @@ else
    if (com_out%nhalo>0) call mpl%recv(com_out%nhalo,com_out%halo,mpl%ioproc,mpl%tag+5)
    if (com_out%nexcl>0) call mpl%recv(com_out%nexcl,com_out%excl,mpl%ioproc,mpl%tag+6)
 end if
-mpl%tag = mpl%tag+7
+call mpl%update_tag(7)
 
 ! Set prefix
 com_out%prefix = trim(prefix)

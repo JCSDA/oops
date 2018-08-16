@@ -12,7 +12,9 @@
 #define OOPS_GENERIC_LINEARMODELID_H_
 
 #include <string>
+#include <vector>
 
+#include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/LinearModelBase.h"
@@ -67,18 +69,21 @@ class LinearModelId : public LinearModelBase<MODEL> {
 
 // Information and diagnostics
   const util::Duration & timeResolution() const override {return tstep_;}
+  const oops::Variables & variables() const override {return vars_;}
   void print(std::ostream &) const override {}
 
  private:
   const Geometry_ resol_;
   const util::Duration tstep_;
+  const Variables vars_;
 };
 
 // =============================================================================
 
 template<typename MODEL>
 LinearModelId<MODEL>::LinearModelId(const Geometry_ & resol, const eckit::Configuration & tlConf)
-  : resol_(resol), tstep_(util::Duration(tlConf.getString("tstep")))
+  : resol_(resol), tstep_(util::Duration(tlConf.getString("tstep"))),
+    vars_(std::vector<std::string>{""})
 {
   Log::trace() << "LinearModelId<MODEL>::LinearModelId done" << std::endl;
 }

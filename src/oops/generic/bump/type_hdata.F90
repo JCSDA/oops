@@ -1373,7 +1373,7 @@ else
    deallocate(sbufi)
    deallocate(sbufl)
 end if
-mpl%tag = mpl%tag+2
+call mpl%update_tag(2)
 
 ! Broadcast data
 call mpl%bcast(hdata%c1c3_to_c0)

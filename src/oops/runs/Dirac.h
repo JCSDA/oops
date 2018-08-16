@@ -64,7 +64,7 @@ template <typename MODEL> class Dirac : public Application {
 
 //  Setup initial state
     const eckit::LocalConfiguration initialConfig(fullConfig, "initial");
-    const State_ xx(resol, initialConfig);
+    const State_ xx(resol, vars, initialConfig);
     Log::info() << "Setup initial state OK" << std::endl;
 
 //  Setup time

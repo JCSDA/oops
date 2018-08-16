@@ -49,14 +49,12 @@ template<typename MODEL> class CostFct3DVar : public CostFunction<MODEL> {
 
  public:
   CostFct3DVar(const eckit::Configuration &, const Geometry_ &, const Model_ &);
-  ~CostFct3DVar() {}
+  virtual ~CostFct3DVar() {}
 
   void runTLM(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
-              PostProcessor<Increment_>,
-              const bool idModel = false) const override;
+              PostProcessor<Increment_>, const bool) const override;
   void runADJ(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
-              PostProcessor<Increment_>,
-              const bool idModel = false) const override;
+              PostProcessor<Increment_>, const bool) const override;
   void zeroAD(CtrlInc_ &) const override;
 
   void runNL(CtrlVar_ &, PostProcessor<State_>&) const override;
@@ -82,7 +80,7 @@ template<typename MODEL> class CostFct3DVar : public CostFunction<MODEL> {
 template<typename MODEL>
 CostFct3DVar<MODEL>::CostFct3DVar(const eckit::Configuration & config,
                                   const Geometry_ & resol, const Model_ & model)
-  : CostFunction<MODEL>::CostFunction(resol, model),
+  : CostFunction<MODEL>::CostFunction(config, resol, model),
     windowLength_(), windowHalf_(), zero_(0), ctlvars_(config)
 {
   Log::trace() << "CostFct3DVar::CostFct3DVar start" << std::endl;
@@ -132,7 +130,9 @@ void CostFct3DVar<MODEL>::runNL(CtrlVar_ & xx,
   Log::trace() << "CostFct3DVar::runNL start" << std::endl;
   ASSERT(xx.state().checkStatesNumber(1));
   ASSERT(xx.state()[0].validTime() == windowHalf_);
-  CostFct_::getModel().forecast(xx.state()[0], xx.modVar(), util::Duration(0), post);
+  State_ xm(xx.state()[0].geometry(), CostFct_::getModel().variables(), windowHalf_);
+  xm = xx.state()[0];
+  CostFct_::getModel().forecast(xm, xx.modVar(), util::Duration(0), post);
   Log::trace() << "CostFct3DVar::runNL done" << std::endl;
 }
 
@@ -142,7 +142,7 @@ template <typename MODEL>
 void CostFct3DVar<MODEL>::runTLM(CtrlInc_ & dx,
                                  PostProcessorTLAD<MODEL> & cost,
                                  PostProcessor<Increment_> post,
-                                 const bool idModel) const {
+                                 const bool) const {
   Log::trace() << "CostFct3DVar::runTLM start" << std::endl;
   ASSERT(dx.state()[0].validTime() == windowHalf_);
   CostFct_::getTLM().forecastTL(dx.state()[0], dx.modVar(), util::Duration(0), post, cost);
@@ -167,7 +167,7 @@ template <typename MODEL>
 void CostFct3DVar<MODEL>::runADJ(CtrlInc_ & dx,
                                  PostProcessorTLAD<MODEL> & cost,
                                  PostProcessor<Increment_> post,
-                                 const bool idModel) const {
+                                 const bool) const {
   Log::trace() << "CostFct3DVar::runADJ start" << std::endl;
   ASSERT(dx.state()[0].validTime() == windowHalf_);
   CostFct_::getTLM().forecastAD(dx.state()[0], dx.modVar(), util::Duration(0), post, cost);

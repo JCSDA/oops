@@ -653,7 +653,7 @@ do ib=1,bpar%nb
             ! Send data
             if (iproc==mpl%myproc) call mpl%send(nam%nc3*bpar%nl0r(ib)*2,sbuf,mpl%ioproc,mpl%tag)
          end if
-         mpl%tag = mpl%tag+1
+         call mpl%update_tag(1)
 
          ! Release memory
          if (iproc==mpl%myproc) deallocate(sbuf)

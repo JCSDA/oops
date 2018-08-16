@@ -719,7 +719,7 @@ else
    call mpl%send(hdata%nc2a,hdata%c2a_to_c2,mpl%ioproc,mpl%tag)
    call mpl%send(hdata%nc2a*geom%nl0*(2+(nam%nts-1)*6),sbuf,mpl%ioproc,mpl%tag+1)
 end if
-mpl%tag = mpl%tag+2
+call mpl%update_tag(2)
 
 ! Release memory
 deallocate(sbuf)

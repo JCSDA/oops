@@ -89,7 +89,7 @@ template<typename MODEL> class CostFct4DEnsVar : public CostFunction<MODEL> {
 template<typename MODEL>
 CostFct4DEnsVar<MODEL>::CostFct4DEnsVar(const eckit::Configuration & config,
                                         const Geometry_ & resol, const Model_ & model)
-  : CostFunction<MODEL>::CostFunction(resol, model), zero_(0), ctlvars_(config)
+  : CostFunction<MODEL>::CostFunction(config, resol, model), zero_(0), ctlvars_(config)
 {
   windowLength_ = util::Duration(config.getString("window_length"));
   windowBegin_ = util::DateTime(config.getString("window_begin"));
@@ -134,11 +134,14 @@ CostTermBase<MODEL> * CostFct4DEnsVar<MODEL>::newJc(const eckit::Configuration &
 template <typename MODEL>
 void CostFct4DEnsVar<MODEL>::runNL(CtrlVar_ & xx,
                                    PostProcessor<State_> & post) const {
+  State_ xm(xx.state()[0].geometry(), CostFct_::getModel().variables(), windowBegin_);
   for (unsigned int jsub = 0; jsub <= ncontrol_; ++jsub) {
     util::DateTime now(windowBegin_ + jsub*windowSub_);
 
     ASSERT(xx.state()[jsub].validTime() == now);
-    CostFct_::getModel().forecast(xx.state()[jsub], xx.modVar(), util::Duration(0), post);
+    xm = xx.state()[jsub];
+    CostFct_::getModel().forecast(xm, xx.modVar(), util::Duration(0), post);
+    xx.state()[jsub] = xm;
     ASSERT(xx.state()[jsub].validTime() == now);
   }
 }

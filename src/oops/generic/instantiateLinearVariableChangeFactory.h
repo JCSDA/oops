@@ -12,6 +12,7 @@
 #define OOPS_GENERIC_INSTANTIATELINEARVARIABLECHANGEFACTORY_H_
 
 #include "oops/base/LinearVariableChangeBase.h"
+#include "oops/generic/IdVariableChange.h"
 #include "oops/generic/StatsVariableChange.h"
 
 namespace oops {
@@ -19,6 +20,7 @@ namespace oops {
 template <typename MODEL> void instantiateLinearVariableChangeFactory() {
   static LinearVariableChangeMaker<MODEL, StatsVariableChange<MODEL> >
                         makerStatsVarChange_("StatsVariableChange");
+  static LinearVariableChangeMaker<MODEL, IdVariableChange<MODEL> > makerIdChange_("Identity");
 }
 
 }  // namespace oops

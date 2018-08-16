@@ -240,6 +240,7 @@ logical,allocatable :: maskobs(:),lcheck_nc0b(:)
 allocate(obsop%proc_to_nobsa(mpl%nproc))
 
 ! Get global number of observations
+call mpl%allgather(1,(/obsop%nobs/),obsop%proc_to_nobsa) 
 obsop%nobsa = obsop%nobs
 obsop%nobs = sum(obsop%proc_to_nobsa)
 
@@ -273,7 +274,7 @@ else
       call mpl%send(obsop%nobsa,obsop%latobs,mpl%ioproc,mpl%tag+1)
    end if
 end if
-mpl%tag = mpl%tag+2
+call mpl%update_tag(2)
 
 ! Broadcast data
 call mpl%bcast(lonobs)

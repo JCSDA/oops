@@ -64,7 +64,7 @@ template <typename MODEL> class GenEnsPertB : public Application {
 
 //  Setup initial state
     const eckit::LocalConfiguration initialConfig(fullConfig, "initial");
-    const State_ xx(resol, initialConfig);
+    const State_ xx(resol, model.variables(), initialConfig);
     Log::test() << "Initial state: " << xx << std::endl;
 
 //  Setup augmented state

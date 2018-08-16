@@ -118,6 +118,7 @@ oops/base/instantiateFilterFactory.h
 
 oops/generic/ParametersBUMP.h
 oops/generic/ErrorCovarianceBUMP.h
+oops/generic/IdVariableChange.h
 oops/generic/LocalizationBUMP.h
 oops/generic/ObsErrorDiag.h
 oops/generic/UnstructuredGrid.cc

@@ -8,6 +8,8 @@
  * does it submit to any jurisdiction.
  */
 
+#include <vector>
+
 #include "model/TlmIdQG.h"
 
 #include "eckit/config/LocalConfiguration.h"
@@ -26,7 +28,8 @@ namespace qg {
 static oops::LinearModelMaker<QgTraits, TlmIdQG> makerQGIdTLM_("QgIdTLM");
 // -----------------------------------------------------------------------------
 TlmIdQG::TlmIdQG(const GeometryQG & resol, const eckit::Configuration & tlConf)
-  : keyConfig_(0), tstep_(), resol_(resol)
+  : keyConfig_(0), tstep_(), resol_(resol),
+    linvars_(std::vector<std::string>{"x", "q", "u", "v"})
 {
   tstep_ = util::Duration(tlConf.getString("tstep"));
 

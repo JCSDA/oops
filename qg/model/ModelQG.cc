@@ -10,6 +10,8 @@
 
 #include "model/ModelQG.h"
 
+#include <vector>
+
 #include "eckit/config/Configuration.h"
 #include "model/FieldsQG.h"
 #include "model/GeometryQG.h"
@@ -22,7 +24,8 @@
 namespace qg {
 // -----------------------------------------------------------------------------
 ModelQG::ModelQG(const GeometryQG & resol, const eckit::Configuration & model)
-  : keyConfig_(0), tstep_(0), geom_(resol)
+  : keyConfig_(0), tstep_(0), geom_(resol),
+    vars_(std::vector<std::string>{"x", "q", "u", "v", "bc"})
 {
   oops::Log::trace() << "ModelQG::ModelQG" << std::endl;
   tstep_ = util::Duration(model.getString("tstep"));
@@ -37,7 +40,6 @@ ModelQG::~ModelQG() {
 }
 // -----------------------------------------------------------------------------
 void ModelQG::initialize(StateQG & xx) const {
-  xx.activateModel();
   ASSERT(xx.fields().isForModel(true));
   qg_prepare_integration_f90(keyConfig_, xx.fields().toFortran());
   oops::Log::debug() << "ModelQG::initialize" << xx.fields() << std::endl;
@@ -52,12 +54,12 @@ void ModelQG::step(StateQG & xx, const ModelBias &) const {
 }
 // -----------------------------------------------------------------------------
 void ModelQG::finalize(StateQG & xx) const {
-  xx.deactivateModel();
+  ASSERT(xx.fields().isForModel(true));
   oops::Log::debug() << "ModelQG::finalize" << xx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------
 int ModelQG::saveTrajectory(StateQG & xx, const ModelBias &) const {
-// ASSERT(xx.fields().isForModel(true));
+  ASSERT(xx.fields().isForModel(true));
   int ftraj = 0;
   oops::Log::debug() << "ModelQG::saveTrajectory fields in" << xx.fields() << std::endl;
   qg_prop_traj_f90(keyConfig_, xx.fields().toFortran(), ftraj);

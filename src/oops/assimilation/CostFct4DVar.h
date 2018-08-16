@@ -82,7 +82,7 @@ template<typename MODEL> class CostFct4DVar : public CostFunction<MODEL> {
 template<typename MODEL>
 CostFct4DVar<MODEL>::CostFct4DVar(const eckit::Configuration & config,
                                   const Geometry_ & resol, const Model_ & model)
-  : CostFunction<MODEL>::CostFunction(resol, model), ctlvars_(config)
+  : CostFunction<MODEL>::CostFunction(config, resol, model), ctlvars_(config)
 {
   Log::trace() << "CostFct4DVar:CostFct4DVar" << std::endl;
   windowLength_ = util::Duration(config.getString("window_length"));
@@ -126,7 +126,10 @@ void CostFct4DVar<MODEL>::runNL(CtrlVar_ & xx,
                                 PostProcessor<State_> & post) const {
   ASSERT(xx.state().checkStatesNumber(1));
   ASSERT(xx.state()[0].validTime() == windowBegin_);
-  CostFct_::getModel().forecast(xx.state()[0], xx.modVar(), windowLength_, post);
+  State_ xm(xx.state()[0].geometry(), CostFct_::getModel().variables(), windowBegin_);
+  xm = xx.state()[0];
+  CostFct_::getModel().forecast(xm, xx.modVar(), windowLength_, post);
+  xx.state()[0] = xm;
   ASSERT(xx.state()[0].validTime() == windowEnd_);
 }
 

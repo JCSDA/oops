@@ -55,6 +55,7 @@ class Model : public util::Printable,
 
 // Information and diagnostics
   const util::Duration & timeResolution() const {return model_->timeResolution();}
+  const oops::Variables & variables() const {return model_->variables();}
 
  private:
   void initialize(State_ &) const;

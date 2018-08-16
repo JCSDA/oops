@@ -1,13 +1,19 @@
 Test     : Initial state: 
 Test     :   Valid time: 2010-01-01T00:00:00Z
-Test     :   Resolution = 40, 20, Fields = 1, 2
+Test     :   Resolution = 40, 20, Fields = 4, 2
 Test     :   Min=-29.7988, Max=12.9629, RMS=12.6152
+Test     :   Min=-42.6962, Max=36.162, RMS=21.0688
+Test     :   Min=0, Max=0, RMS=0
+Test     :   Min=0, Max=0, RMS=0
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     : Final state: 
 Test     :   Valid time: 2010-01-01T15:00:00Z
-Test     :   Resolution = 40, 20, Fields = 1, 2
+Test     :   Resolution = 40, 20, Fields = 4, 2
 Test     :   Min=-29.2587, Max=10.7269, RMS=12.399
+Test     :   Min=-41.5756, Max=37.719, RMS=20.4591
+Test     :   Min=-8.98617, Max=13.2281, RMS=4.67984
+Test     :   Min=-8.7847, Max=9.12999, RMS=3.66358
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     : Generated observation: Stream nobs= 600 Min=-28.281, Max=9.77591, Average=-7.71367

@@ -46,7 +46,8 @@ class State : public util::Printable,
   static const std::string classname() {return "oops::State";}
 
 /// Constructor, destructor
-  State(const Geometry_ &, const eckit::Configuration &);
+  State(const Geometry_ &, const Variables &, const util::DateTime &);
+  State(const Geometry_ &, const Variables &, const eckit::Configuration &);
   State(const Geometry_ &, const State &);
   State(const State &);
   ~State();
@@ -70,8 +71,6 @@ class State : public util::Printable,
   Geometry_ geometry() const;
 
  protected:
-/// Protected methods are for Accumulator. Could we find a better design?
-  State(const Geometry_ &, const Variables &, const util::DateTime &);
   void zero();
   void accumul(const double &, const State &);
 
@@ -95,11 +94,12 @@ State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-State<MODEL>::State(const Geometry_ & resol, const eckit::Configuration & conf) : state_()
+State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
+                    const eckit::Configuration & conf) : state_()
 {
   Log::trace() << "State<MODEL>::State read starting" << std::endl;
   util::Timer timer(classname(), "State");
-  state_.reset(new State_(resol.geometry(), conf));
+  state_.reset(new State_(resol.geometry(), vars, conf));
   Log::trace() << "State<MODEL>::State read done" << std::endl;
 }
 

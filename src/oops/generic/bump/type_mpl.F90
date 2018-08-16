@@ -65,6 +65,7 @@ contains
    procedure :: prog_init => mpl_prog_init
    procedure :: prog_print => mpl_prog_print
    procedure :: ncerr => mpl_ncerr
+   procedure :: update_tag => mpl_update_tag
    procedure :: mpl_bcast_integer
    procedure :: mpl_bcast_integer_array_1d
    procedure :: mpl_bcast_integer_array_2d
@@ -229,8 +230,12 @@ else
 end if
 
 ! Time-based tag
-if (mpl%main) call system_clock(count=mpl%tag)
+if (mpl%main) then
+   call system_clock(count=mpl%tag)
+   call mpl%update_tag(0)
+end if
 call mpl%bcast(mpl%tag)
+
 
 ! Set max number of OpenMP threads
 mpl%nthread = 1
@@ -448,6 +453,27 @@ integer,intent(in) :: info          !< Info index
 if (info/=nf90_noerr) call mpl%abort('in '//trim(subr)//': '//trim(nf90_strerror(info)))
 
 end subroutine mpl_ncerr
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_update_tag
+!> Purpose: update MPL tag
+!----------------------------------------------------------------------
+subroutine mpl_update_tag(mpl,add)
+
+implicit none
+
+! Passed variables
+class(mpl_type) :: mpl    !< MPI data
+integer,intent(in) :: add !< Tag update incrememnt
+
+! Update tag
+mpl%tag = mpl%tag+add
+
+! Apply bounds (between 1 and 10000)
+mpl%tag = mod(mpl%tag,10000)
+mpl%tag = max(mpl%tag,1)
+
+end subroutine mpl_update_tag
 
 !----------------------------------------------------------------------
 ! Subroutine: mpl_bcast_integer
@@ -1835,7 +1861,7 @@ else
    ! Send data to ioproc
    call mpl%send(n_loc,loc_to_glb,mpl%ioproc,mpl%tag+1)
 end if
-mpl%tag = mpl%tag+2
+call mpl%update_tag(2)
 
 ! Broadcast
 call mpl%bcast(glb_to_loc)
@@ -1893,7 +1919,7 @@ else
    ! Receive data from ioproc
    call mpl%recv(n_loc,loc,mpl%ioproc,mpl%tag)
 end if
-mpl%tag = mpl%tag+1
+call mpl%update_tag(1)
 
 end subroutine mpl_glb_to_loc_1d
 
@@ -1949,7 +1975,7 @@ else
    ! Send data to ioproc
    call mpl%send(n_loc,loc,mpl%ioproc,mpl%tag)
 end if
-mpl%tag = mpl%tag+1
+call mpl%update_tag(1)
 
 ! Broadcast
 if (bcast) call mpl%bcast(glb)
