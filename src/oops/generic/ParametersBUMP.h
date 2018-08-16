@@ -127,13 +127,18 @@ ParametersBUMP<MODEL>::ParametersBUMP(const eckit::Configuration & conf)
   create_oobump_f90(keyBUMP_, ug.toFortran(), &fconf, ens1_ne, 1, ens2_ne, 1);
 
 // Copy ensemble members
+  const double rk = sqrt((static_cast<double>(ens1_ne) - 1.0));
   for (int ie = 0; ie < ens1_ne; ++ie) {
-     Log::info() << "Copy ensemble member " << ie+1 << " / "
+    Log::info() << "Copy ensemble member " << ie+1 << " / "
                  << ens1_ne << " to BUMP" << std::endl;
+
+    // Renormalize member
+    dx = (*ens_ptr)[ie];
+    dx *= rk;
 
     // Define unstructured grid field
     UnstructuredGrid ugmem;
-    (*ens_ptr)[ie].field_to_ug(ugmem, colocated_);
+    dx.field_to_ug(ugmem, colocated_);
 
     // Copy field into BUMP ensemble
     add_oobump_member_f90(keyBUMP_, ugmem.toFortran(), ie+1, bump::readEnsMember);

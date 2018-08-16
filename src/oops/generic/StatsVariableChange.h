@@ -91,9 +91,6 @@ StatsVariableChange<MODEL>::StatsVariableChange(const State_ & xb, const State_ 
   UnstructuredGrid ug;
   dx.ug_coord(ug, colocated_);
 
-// Delete BUMP if present
-  if (keyBUMP_) delete_oobump_f90(keyBUMP_);
-
 // Create BUMP
   create_oobump_f90(keyBUMP_, ug.toFortran(), &fconf, 0, 1, 0, 1);
 

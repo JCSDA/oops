@@ -10,10 +10,10 @@
   "variables": {
     "variables": ["x"]
   },
-  "date": "2010-01-01T00:00:00Z",
+  "date": "2009-12-31T00:00:00Z",
   "background": {
-    "filename": "Data/truth.fc.2009-12-15T00:00:00Z.P17D",
-    "date": "2010-01-01T00:00:00Z"
+    "filename": "Data/truth.fc.2009-12-15T00:00:00Z.P16D",
+    "date": "2009-12-31T00:00:00Z"
   },
   "ensemble": {
     "members": "10",
@@ -22,43 +22,43 @@
     },
     "state" : [
       {
-        "filename": "Data/test.ens.1.2009-12-31T00:00:00Z.P1D",
+        "filename": "Data/pert.ens.1.2009-12-31T00:00:00Z.PT0S",
         "date": "2010-01-01T00:00:00Z"
       },
       {
-        "filename": "Data/test.ens.2.2009-12-31T00:00:00Z.P1D",
+        "filename": "Data/pert.ens.2.2009-12-31T00:00:00Z.PT0S",
         "date": "2010-01-01T00:00:00Z"
       },
       {
-        "filename": "Data/test.ens.3.2009-12-31T00:00:00Z.P1D",
+        "filename": "Data/pert.ens.3.2009-12-31T00:00:00Z.PT0S",
         "date": "2010-01-01T00:00:00Z"
       },
       {
-        "filename": "Data/test.ens.4.2009-12-31T00:00:00Z.P1D",
+        "filename": "Data/pert.ens.4.2009-12-31T00:00:00Z.PT0S",
         "date": "2010-01-01T00:00:00Z"
       },
       {
-        "filename": "Data/test.ens.5.2009-12-31T00:00:00Z.P1D",
+        "filename": "Data/pert.ens.5.2009-12-31T00:00:00Z.PT0S",
         "date": "2010-01-01T00:00:00Z"
       },
       {
-        "filename": "Data/test.ens.6.2009-12-31T00:00:00Z.P1D",
+        "filename": "Data/pert.ens.6.2009-12-31T00:00:00Z.PT0S",
         "date": "2010-01-01T00:00:00Z"
       },
       {
-        "filename": "Data/test.ens.7.2009-12-31T00:00:00Z.P1D",
+        "filename": "Data/pert.ens.7.2009-12-31T00:00:00Z.PT0S",
         "date": "2010-01-01T00:00:00Z"
       },
       {
-        "filename": "Data/test.ens.8.2009-12-31T00:00:00Z.P1D",
+        "filename": "Data/pert.ens.8.2009-12-31T00:00:00Z.PT0S",
         "date": "2010-01-01T00:00:00Z"
       },
       {
-        "filename": "Data/test.ens.9.2009-12-31T00:00:00Z.P1D",
+        "filename": "Data/pert.ens.9.2009-12-31T00:00:00Z.PT0S",
         "date": "2010-01-01T00:00:00Z"
       },
       {
-        "filename": "Data/test.ens.10.2009-12-31T00:00:00Z.P1D",
+        "filename": "Data/pert.ens.10.2009-12-31T00:00:00Z.PT0S",
         "date": "2010-01-01T00:00:00Z"
       }
     ]
@@ -67,30 +67,29 @@
     "covariance": "QgError",
     "standard_deviation": "0.8",
     "vertical_correlation": "0.2",
-    "horizontal_length_scale": "1e6",
+    "horizontal_length_scale": "3e5",
     "maximum_condition_number": "1.0e6",
-    "date": "2010-01-01T00:00:00Z",
-    "pseudoens_size" : 12
+    "date": "2009-12-31T00:00:00Z",
+    "pseudoens_size" : 20
    },
   "prefix" : "bump",
   "default_seed" : 1,
   "method" : "hyb-rnd",
   "strategy" : "common",
   "new_hdiag" : 1,
-  "new_param" : 1,
-  "check_adjoints" : 1,
+  "new_nicas" : 1,
   "mask_type" : "none",
   "draw_type" : "random_uniform",
   "nc1" : 400,
   "nc2" : 100,
   "ntry" : 3,
   "nrep" : 2,
-  "nc3" : 40,
-  "dc" : 150.0e3,
+  "nc3" : 15,
+  "dc" : 500.0e3,
   "nl0r" : 2,
   "ne" : 10,
   "local_diag" : 1,
-  "local_rad" : 1000.0e3,
+  "local_rad" : 3000.0e3,
   "minim_algo" : "hooke",
   "rvflt" : 0.0,
   "lsqrt" : 1,

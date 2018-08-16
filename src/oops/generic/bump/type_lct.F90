@@ -11,7 +11,7 @@
 module type_lct
 
 use tools_const, only: req,reqkm,pi
-use tools_func, only: pos
+use tools_func, only: poseq
 use tools_kinds, only: kind_real
 use tools_missing, only: msr,isnotmsr,isallnotmsr
 use type_bpar, only: bpar_type
@@ -442,7 +442,7 @@ do ib=1,bpar%nb
                end if
 
                ! Check coefficient
-               valid_coef = pos(lct%blk(ib)%coef(iscales,ic1a,il0)).and.pos(1.0-lct%blk(ib)%coef(iscales,ic1a,il0))
+               valid_coef = poseq(lct%blk(ib)%coef(iscales,ic1a,il0)).and.poseq(1.0-lct%blk(ib)%coef(iscales,ic1a,il0))
 
                if ((det>0.0).and.valid_coef) then
                   ! Copy diffusion tensor
@@ -458,6 +458,7 @@ do ib=1,bpar%nb
                   ! Copy coefficient
                   fld_c1a(ic1a,il0,lct%blk(ib)%ncomp(iscales)+1) = lct%blk(ib)%coef(iscales,ic1a,il0)
                else
+                  write(*,*) det,lct%blk(ib)%coef(iscales,ic1a,il0)
                   call mpl%abort('non-valid LCT, grid c1')
                end if
             end if
@@ -496,7 +497,8 @@ do ib=1,bpar%nb
                end if
 
                ! Check coefficient
-               valid_coef = pos(fld(ic0a,il0,lct%blk(ib)%ncomp(iscales)+1)).and.pos(1.0-fld(ic0a,il0,lct%blk(ib)%ncomp(iscales)+1))
+               valid_coef = poseq(fld(ic0a,il0,lct%blk(ib)%ncomp(iscales)+1)) &
+                          & .and.poseq(1.0-fld(ic0a,il0,lct%blk(ib)%ncomp(iscales)+1))
                if (.not.valid_coef) call mpl%abort('non-valid coefficient in LCT, grid c0')
             end if
          end do

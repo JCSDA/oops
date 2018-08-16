@@ -28,7 +28,7 @@
         "default_seed" : 1,
         "method" : "cor",
         "strategy" : "common",
-        "new_param" : 1,
+        "new_nicas" : 1,
         "ntry" : 3,
         "nrep" : 2,
         "lsqrt" : 1,

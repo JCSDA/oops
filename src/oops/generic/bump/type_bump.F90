@@ -402,7 +402,7 @@ if (.not.bump%vbal%allocated) then
       write(bump%mpl%unit,'(a)') '--- Run vertical balance driver'
       call flush(bump%mpl%unit)
       call bump%vbal%run_vbal(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1)
-   elseif (any(bump%bpar%vbal_block)) then
+   elseif (bump%nam%load_vbal) then
       ! Read vertical balance data
       write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
       write(bump%mpl%unit,'(a)') '--- Read vertical balance data'
@@ -411,7 +411,7 @@ if (.not.bump%vbal%allocated) then
   end if
 end if
 
-if (bump%nam%check_vbal.and.any(bump%bpar%vbal_block)) then
+if (bump%nam%check_vbal) then
    ! Run vertical balance tests driver
    write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(bump%mpl%unit,'(a)') '--- Run vertical balance tests driver'
@@ -430,17 +430,6 @@ if (.not.bump%cmat%allocated) then
       else
          call bump%cmat%run_hdiag(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1)
       end if
-   elseif (bump%nam%new_param) then
-      if (bump%nam%forced_radii) then
-         ! Copy namelist support radii into C matrix
-         call bump%cmat%from(bump%mpl,bump%nam,bump%geom,bump%bpar)
-      else
-         ! Read C matrix data
-         write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
-         write(bump%mpl%unit,'(a)') '--- Read C matrix data'
-         call flush(bump%mpl%unit)
-         call bump%cmat%read(bump%mpl,bump%nam,bump%geom,bump%bpar,bump%io)
-      end if
    end if
 end if
 
@@ -454,15 +443,32 @@ if (.not.bump%lct%allocated) then
    end if
 end if
 
+if (.not.bump%cmat%allocated) then
+   if (bump%nam%load_cmat) then
+      ! Read C matrix data
+      write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+      write(bump%mpl%unit,'(a)') '--- Read C matrix data'
+      call flush(bump%mpl%unit)
+      call bump%cmat%read(bump%mpl,bump%nam,bump%geom,bump%bpar,bump%io)
+   else
+      if (bump%nam%forced_radii) then
+         ! Copy namelist support radii into C matrix
+         write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+         write(bump%mpl%unit,'(a)') '--- Copy namelist support radii into C matrix'
+         call flush(bump%mpl%unit)
+         call bump%cmat%from(bump%mpl,bump%nam,bump%geom,bump%bpar)
+      end if
+   end if
+end if
+
 if (.not.bump%nicas%allocated) then
-   if (bump%nam%new_param) then
+   if (bump%nam%new_nicas) then
       ! Run NICAS driver
       write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
       write(bump%mpl%unit,'(a)') '--- Run NICAS driver'
       call flush(bump%mpl%unit)
       call bump%nicas%run_nicas(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%cmat)
-   elseif (bump%nam%check_adjoints.or.bump%nam%check_pos_def.or.bump%nam%check_sqrt.or.bump%nam%check_dirac.or. &
-    & bump%nam%check_randomization.or.bump%nam%check_consistency.or.bump%nam%check_optimality) then
+   elseif (bump%nam%load_nicas) then
       ! Read NICAS parameters
       write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
       write(bump%mpl%unit,'(a)') '--- Read NICAS parameters'
@@ -487,7 +493,17 @@ if (.not.bump%obsop%allocated) then
       write(bump%mpl%unit,'(a)') '--- Run observation operator driver'
       call flush(bump%mpl%unit)
       call bump%obsop%run_obsop(bump%mpl,bump%rng,bump%nam,bump%geom)
+   elseif (bump%nam%load_obsop) then
+      call bump%mpl%abort('load obstop not implemented yet')
    end if
+end if
+
+if (bump%nam%check_obsop) then
+   ! Run observation operator tests driver
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Run observation operator tests driver'
+   call flush(bump%mpl%unit)
+   call bump%obsop%run_obsop_tests(bump%mpl,bump%rng,bump%nam,bump%geom)
 end if
 
 ! Close listings
@@ -729,6 +745,10 @@ character(len=*),intent(in) :: param                             !< Parameter
 integer,intent(in) :: ib                                         !< Block index
 real(kind_real),intent(out) :: fld(bump%geom%nc0a,bump%geom%nl0) !< Field
 
+! Local variables
+integer :: iscales
+character(len=1) :: iscaleschar
+
 ! Select parameter
 select case (trim(param))
 case ('var')
@@ -746,7 +766,30 @@ case ('loc_rv')
 case ('hyb_coef')
    fld = bump%cmat%blk(ib)%coef_sta
 case default
-   call bump%mpl%abort('parameter '//trim(param)//' not yet implemented in get_parameter')
+   select case (param(1:4))
+   case ('D11_')
+      do iscales=1,9
+         write(iscaleschar,'(i1)') iscales
+         if (param(5:5)==iscaleschar) fld = bump%lct%blk(ib)%D11(:,:,iscales)
+      end do
+   case ('D22_')
+      do iscales=1,9
+         write(iscaleschar,'(i1)') iscales
+         if (param(5:5)==iscaleschar) fld = bump%lct%blk(ib)%D22(:,:,iscales)
+      end do
+   case ('D33_')
+      do iscales=1,9
+         write(iscaleschar,'(i1)') iscales
+         if (param(5:5)==iscaleschar) fld = bump%lct%blk(ib)%D33(:,:,iscales)
+      end do
+   case ('D12_')
+      do iscales=1,9
+         write(iscaleschar,'(i1)') iscales
+         if (param(5:5)==iscaleschar) fld = bump%lct%blk(ib)%D12(:,:,iscales)
+      end do
+   case default
+      call bump%mpl%abort('parameter '//trim(param)//' not yet implemented in get_parameter')
+   end select
 end select
 
 end subroutine bump_copy_to_field

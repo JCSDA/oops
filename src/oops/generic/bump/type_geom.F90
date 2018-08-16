@@ -502,7 +502,7 @@ call geom%mesh%bnodes
 if ((.not.any(geom%area>0.0))) call geom%compute_area
 
 ! Compute mask boundaries
-if ((nam%new_param.or.nam%new_lct).and.nam%mask_check) call geom%compute_mask_boundaries(mpl)
+if ((nam%new_nicas.or.nam%new_lct).and.nam%mask_check) call geom%compute_mask_boundaries(mpl)
 
 ! Check whether the mask is the same for all levels
 same_mask = .true.

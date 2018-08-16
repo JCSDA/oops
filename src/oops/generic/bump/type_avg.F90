@@ -615,7 +615,7 @@ allocate(done(0:nam%nc2))
 
 do ib=1,bpar%nb
    if (bpar%diag_block(ib)) then
-      write(mpl%unit,'(a10,a,a,a)',advance='no') '','Block ',trim(bpar%blockname(ib)),':'
+      write(mpl%unit,'(a10,a,a,a)') '','Block ',trim(bpar%blockname(ib)),':'
       call flush(mpl%unit)
 
       ! Compute averaged statistics

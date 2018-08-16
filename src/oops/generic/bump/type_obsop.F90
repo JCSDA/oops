@@ -64,7 +64,7 @@ contains
    procedure :: generate => obsop_generate
    procedure :: from => obsop_from
    procedure :: run_obsop => obsop_run_obsop
-   procedure :: parameters => obsop_parameters
+   procedure :: run_obsop_tests => obsop_run_obsop_tests
    procedure :: apply => obsop_apply
    procedure :: apply_ad => obsop_apply_ad
    procedure :: test_adjoint => obsop_test_adjoint
@@ -218,43 +218,6 @@ end subroutine obsop_from
 !> Purpose: observation operator driver
 !----------------------------------------------------------------------
 subroutine obsop_run_obsop(obsop,mpl,rng,nam,geom)
-
-implicit none
-
-! Passed variables
-class(obsop_type),intent(inout) :: obsop !< Observation operator data
-type(mpl_type),intent(inout) :: mpl      !< MPI data
-type(rng_type),intent(inout) :: rng      !< Random number generator
-type(nam_type),intent(in) :: nam         !< Namelist
-type(geom_type),intent(in) :: geom       !< Geometry
-
-! Compute observation operator parameters
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Compute observation operator parameters'
-call flush(mpl%unit)
-call obsop%parameters(mpl,rng,nam,geom)
-
-if (nam%check_adjoints) then
-   ! Test adjoints
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Test observation operator adjoint'
-   call flush(mpl%unit)
-   call obsop%test_adjoint(mpl,rng,geom)
-end if
-
-! Test precision
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Test observation operator precision'
-call flush(mpl%unit)
-call obsop%test_accuracy(mpl,geom)
-
-end subroutine obsop_run_obsop
-
-!----------------------------------------------------------------------
-! Subroutine: obsop_parameters
-!> Purpose: compute observation operator interpolation parameters
-!----------------------------------------------------------------------
-subroutine obsop_parameters(obsop,mpl,rng,nam,geom)
 
 implicit none
 
@@ -623,7 +586,36 @@ end if
 ! Update allocation flag
 obsop%allocated = .true.
 
-end subroutine obsop_parameters
+end subroutine obsop_run_obsop
+
+!----------------------------------------------------------------------
+! Subroutine: obsop_run_obsop_tests
+!> Purpose: observation operator tests driver
+!----------------------------------------------------------------------
+subroutine obsop_run_obsop_tests(obsop,mpl,rng,nam,geom)
+
+implicit none
+
+! Passed variables
+class(obsop_type),intent(inout) :: obsop !< Observation operator data
+type(mpl_type),intent(inout) :: mpl      !< MPI data
+type(rng_type),intent(inout) :: rng      !< Random number generator
+type(nam_type),intent(in) :: nam         !< Namelist
+type(geom_type),intent(in) :: geom       !< Geometry
+
+! Test adjoints
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a)') '--- Test observation operator adjoint'
+call flush(mpl%unit)
+call obsop%test_adjoint(mpl,rng,geom)
+
+! Test precision
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a)') '--- Test observation operator precision'
+call flush(mpl%unit)
+call obsop%test_accuracy(mpl,geom)
+
+end subroutine obsop_run_obsop_tests
 
 !----------------------------------------------------------------------
 ! Subroutine: obsop_apply
