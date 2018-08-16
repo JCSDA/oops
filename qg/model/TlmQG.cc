@@ -30,7 +30,8 @@ static oops::LinearModelMaker<QgTraits, TlmQG> makerQGTLM_("QgTLM");
 // -----------------------------------------------------------------------------
 TlmQG::TlmQG(const GeometryQG & resol, const eckit::Configuration & tlConf)
   : keyConfig_(0), tstep_(), resol_(resol), traj_(),
-    lrmodel_(resol_, eckit::LocalConfiguration(tlConf, "trajectory"))
+    lrmodel_(resol_, eckit::LocalConfiguration(tlConf, "trajectory")),
+    linvars_(std::vector<std::string>{"x", "q", "u", "v"})
 {
   tstep_ = util::Duration(tlConf.getString("tstep"));
 

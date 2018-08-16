@@ -72,7 +72,7 @@ template<typename MODEL>
 StatsVariableChange<MODEL>::StatsVariableChange(const State_ & xb, const State_ &,
                                                 const Geometry_ & resol,
                                                 const eckit::Configuration & conf)
-  : LinearVariableChangeBase<MODEL>(conf), colocated_(1)
+  : LinearVariableChangeBase<MODEL>(conf), colocated_(1), keyBUMP_(0)
 {
   Log::trace() << "StatsVariableChange<MODEL>::StatsVariableChange starting" << std::endl;
 
@@ -90,9 +90,6 @@ StatsVariableChange<MODEL>::StatsVariableChange(const State_ & xb, const State_ 
   colocated_ = 1;  // conf.getString("colocated") TODO
   UnstructuredGrid ug;
   dx.ug_coord(ug, colocated_);
-
-// Delete BUMP if present
-  if (keyBUMP_) delete_oobump_f90(keyBUMP_);
 
 // Create BUMP
   create_oobump_f90(keyBUMP_, ug.toFortran(), &fconf, 0, 1, 0, 1);

@@ -51,7 +51,7 @@ template <typename MODEL> class Forecast : public Application {
 
 //  Setup initial state
     const eckit::LocalConfiguration initialConfig(fullConfig, "initial");
-    State_ xx(resol, initialConfig);
+    State_ xx(resol, model.variables(), initialConfig);
     Log::test() << "Initial state: " << xx << std::endl;
 
 //  Setup augmented state

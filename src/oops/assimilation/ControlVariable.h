@@ -17,6 +17,7 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/assimilation/State4D.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/ObsAuxControl.h"
@@ -51,7 +52,7 @@ class ControlVariable : public util::Printable,
   static const std::string classname() {return "oops::ControlVariable";}
 
 /// The arguments define the number of sub-windows and the resolution
-  ControlVariable(const eckit::Configuration &, const Geometry_ &);
+  ControlVariable(const eckit::Configuration &, const Variables &, const Geometry_ &);
   explicit ControlVariable(const ControlVariable &);
   ~ControlVariable();
 
@@ -85,8 +86,8 @@ class ControlVariable : public util::Printable,
 
 template<typename MODEL>
 ControlVariable<MODEL>::ControlVariable(const eckit::Configuration & conf,
-                                        const Geometry_ & resol)
-  : state4d_(conf, resol),
+                                        const Variables & vars, const Geometry_ & resol)
+  : state4d_(conf, vars, resol),
     modbias_(resol, conf.getSubConfiguration("ModelBias")),
     obsbias_(conf.getSubConfiguration("ObsBias"))
 {

@@ -26,7 +26,7 @@ namespace lorenz95 {
 ModelL95::ModelL95(const Resolution & resol, const eckit::Configuration & config)
   : resol_(resol), f_(config.getDouble("f")),
     tstep_(util::Duration(config.getString("tstep"))),
-    dt_(tstep_.toSeconds()/432000.0)
+    dt_(tstep_.toSeconds()/432000.0), vars_(config)
 {
   oops::Log::info() << *this << std::endl;
   oops::Log::trace() << "ModelL95::ModelL95 created" << std::endl;

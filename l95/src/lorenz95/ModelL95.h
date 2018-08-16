@@ -15,6 +15,7 @@
 #include <string>
 
 #include "eckit/config/Configuration.h"
+#include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
@@ -48,6 +49,7 @@ class ModelL95 : public util::Printable,
 
 // Information and diagnostics
   const util::Duration & timeResolution() const {return tstep_;}
+  const oops::Variables & variables() const {return vars_;}
 
  private:
   void print(std::ostream &) const;
@@ -58,6 +60,7 @@ class ModelL95 : public util::Printable,
   const double f_;
   const util::Duration tstep_;
   const double dt_;
+  const oops::Variables vars_;
 };
 
 // -----------------------------------------------------------------------------

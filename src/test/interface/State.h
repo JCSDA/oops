@@ -78,7 +78,8 @@ template <typename MODEL> void testStateConstructors() {
 
 // Test main constructor
   const eckit::LocalConfiguration conf(Test_::test(), "StateFile");
-  boost::scoped_ptr<State_> xx1(new State_(Test_::resol(), conf));
+  const oops::Variables vars(conf);
+  boost::scoped_ptr<State_> xx1(new State_(Test_::resol(), vars, conf));
 
   BOOST_CHECK(xx1.get());
   const double norm1 = xx1->norm();
@@ -145,7 +146,8 @@ template <typename MODEL> void testStateInterpolation() {
   // the config file and checks its norm
 
   const eckit::LocalConfiguration confgen(Test_::test(), "StateGenerate");
-  const State_ xx(Test_::resol(), confgen);
+  const oops::Variables statevars(confgen);
+  const State_ xx(Test_::resol(), statevars, confgen);
   const double norm = Test_::test().getDouble("norm-gen");
   const double tol = Test_::test().getDouble("tolerance");
   BOOST_CHECK_CLOSE(xx.norm(), norm, tol);

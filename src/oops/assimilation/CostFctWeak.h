@@ -87,7 +87,7 @@ template<typename MODEL> class CostFctWeak : public CostFunction<MODEL> {
 template<typename MODEL>
 CostFctWeak<MODEL>::CostFctWeak(const eckit::Configuration & config,
                                 const Geometry_ & resol, const Model_ & model)
-  : CostFunction<MODEL>::CostFunction(resol, model),
+  : CostFunction<MODEL>::CostFunction(config, resol, model),
     tlforcing_(false), ctlvars_(config)
 {
   windowLength_ = util::Duration(config.getString("window_length"));
@@ -137,12 +137,15 @@ CostTermBase<MODEL> * CostFctWeak<MODEL>::newJc(const eckit::Configuration & jcC
 template <typename MODEL>
 void CostFctWeak<MODEL>::runNL(CtrlVar_ & xx,
                                PostProcessor<State_> & post) const {
+  State_ xm(xx.state()[0].geometry(), CostFct_::getModel().variables(), windowBegin_);
   for (unsigned int jsub = 0; jsub < nsubwin_; ++jsub) {
     util::DateTime bgn(windowBegin_ + jsub*windowSub_);
     util::DateTime end(bgn + windowSub_);
 
     ASSERT(xx.state()[jsub].validTime() == bgn);
-    CostFct_::getModel().forecast(xx.state()[jsub], xx.modVar(), windowSub_, post);
+    xm = xx.state()[jsub];
+    CostFct_::getModel().forecast(xm, xx.modVar(), windowSub_, post);
+    xx.state()[jsub] = xm;
     ASSERT(xx.state()[jsub].validTime() == end);
   }
 }

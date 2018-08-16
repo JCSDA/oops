@@ -18,12 +18,14 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
+#include "oops/base/Variables.h"
 #include "oops/interface/LinearModelBase.h"
 
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
+#include "model/QgFortran.h"
 #include "model/QgTraits.h"
 
 // Forward declarations
@@ -61,6 +63,7 @@ class TlmQG: public oops::LinearModelBase<QgTraits>,
 /// Other utilities
   const util::Duration & timeResolution() const override {return tstep_;}
   const GeometryQG & resolution() const {return resol_;}
+  const oops::Variables & variables() const override {return linvars_;}
 
  private:
   void print(std::ostream &) const override;
@@ -73,6 +76,7 @@ class TlmQG: public oops::LinearModelBase<QgTraits>,
   const GeometryQG resol_;
   std::map< util::DateTime, F90traj> traj_;
   const ModelQG lrmodel_;
+  const oops::Variables linvars_;
 };
 // -----------------------------------------------------------------------------
 

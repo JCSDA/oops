@@ -80,7 +80,7 @@ template <typename MODEL> class MakeObs : public Application {
 //  Setup initial "true" state
     const eckit::LocalConfiguration initialConfig(fullConfig, "Initial Condition");
     Log::info() << "Initial configuration is:" << initialConfig << std::endl;
-    State_ xx(resol, initialConfig);
+    State_ xx(resol, model.variables(), initialConfig);
     Log::test() << "Initial state: " << xx << std::endl;
 
 //  Setup augmented state

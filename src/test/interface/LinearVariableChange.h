@@ -26,6 +26,7 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/LinearVariableChangeBase.h"
+#include "oops/base/Variables.h"
 #include "oops/generic/instantiateLinearVariableChangeFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -47,10 +48,10 @@ template <typename MODEL> class LinearVariableChangeFixture : private boost::non
 
  public:
   static std::vector<eckit::LocalConfiguration>
-                                     & linvarchgconfs()      {return getInstance().linvarchgconfs_;}
-  static const State_                & xx()                  {return *getInstance().xx_;}
-  static const Geometry_             & resol()               {return *getInstance().resol_;}
-  static const DateTime_             & time()                {return *getInstance().time_;}
+                           & linvarchgconfs()   {return getInstance().linvarchgconfs_;}
+  static const State_      & xx()               {return *getInstance().xx_;}
+  static const Geometry_   & resol()            {return *getInstance().resol_;}
+  static const DateTime_   & time()             {return *getInstance().time_;}
 
  private:
   static LinearVariableChangeFixture<MODEL>& getInstance() {
@@ -64,8 +65,9 @@ template <typename MODEL> class LinearVariableChangeFixture : private boost::non
     const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "Geometry");
     resol_.reset(new Geometry_(resolConfig));
 
+    const oops::Variables vars(eckit::LocalConfiguration(TestEnvironment::config(), "State"));
     const eckit::LocalConfiguration fgconf(TestEnvironment::config(), "State");
-    xx_.reset(new State_(*resol_, fgconf));
+    xx_.reset(new State_(*resol_, vars, fgconf));
 
     time_.reset(new util::DateTime(xx_->validTime()));
 

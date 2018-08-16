@@ -53,7 +53,7 @@ template <typename MODEL> class EnsForecast : public Application {
     for (unsigned jj = 0; jj < nm; ++jj) {
 //    Setup initial state
       const eckit::Configuration initialConfig(fullConfig, "member", jj);
-      State_ xx(resol, initialConfig);
+      State_ xx(resol, model.variables(), initialConfig);
       Log::test() << "Initial state: " << xx << std::endl;
 
 //    Setup augmented state

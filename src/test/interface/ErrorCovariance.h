@@ -69,7 +69,7 @@ template <typename MODEL> class ErrorCovarianceFixture : private boost::noncopya
     ctlvars_.reset(new oops::Variables(varConfig));
 
     const eckit::LocalConfiguration fgconf(TestEnvironment::config(), "State");
-    oops::State<MODEL> xx(*resol_, fgconf);
+    oops::State<MODEL> xx(*resol_, *ctlvars_, fgconf);
 
     time_.reset(new util::DateTime(xx.validTime()));
 

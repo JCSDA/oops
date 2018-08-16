@@ -117,9 +117,11 @@ self%fldnames(:)=vars%fldnames(:)
 
 if (self%lbc) then
   allocate(self%xbound(4))
+  self%xbound(:)=0.0_kind_real
   self%x_north => self%xbound(1:2)
   self%x_south => self%xbound(3:4)
   allocate(self%qbound(self%geom%nx,4))
+  self%qbound(:,:)=0.0_kind_real
   self%q_north => self%qbound(:,1:2)
   self%q_south => self%qbound(:,3:4)
 else
@@ -1076,16 +1078,16 @@ real(kind=kind_real) :: zz
 call check(fld)
 
 zz = 0.0
+ii = 0
 
-do jf=1,fld%nl*fld%nf
+do jf=1,fld%nl !*fld%nf
   do jy=1,fld%geom%ny
     do jx=1,fld%geom%nx
       zz = zz + fld%gfld3d(jx,jy,jf)*fld%gfld3d(jx,jy,jf)
     enddo
   enddo
+  ii = ii + fld%geom%nx * fld%geom%ny
 enddo
-
-ii = fld%nl*fld%nf*fld%geom%ny*fld%geom%nx
 
 if (fld%lbc) then
   do jf=1,4

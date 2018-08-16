@@ -45,7 +45,8 @@ StateL95::StateL95(const Resolution & resol, const oops::Variables &,
   oops::Log::trace() << "StateL95::StateL95 created" << std::endl;
 }
 // -----------------------------------------------------------------------------
-StateL95::StateL95(const Resolution & resol, const eckit::Configuration & conf)
+StateL95::StateL95(const Resolution & resol, const oops::Variables &,
+                   const eckit::Configuration & conf)
   : fld_(resol), time_(conf.getString("date"))
 {
   oops::Log::trace() << "StateL95::StateL95 conf " << conf << std::endl;

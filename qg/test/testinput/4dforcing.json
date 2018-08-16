@@ -15,7 +15,7 @@
     "window_length": "P1D",
     "window_sub": "PT12H",
     "tlforcing": "on",
-    "variables": ["x"],
+    "variables": ["x","bc"],
     "Jb": {
       "Background": {
         "state": [

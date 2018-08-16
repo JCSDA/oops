@@ -89,7 +89,7 @@ ParametersBUMP<MODEL>::ParametersBUMP(const eckit::Configuration & conf)
 
 // Setup background state
   const eckit::LocalConfiguration backgroundConfig(conf_, "background");
-  State_ xx(resol, backgroundConfig);
+  State_ xx(resol, vars, backgroundConfig);
 
 // Setup dummy increment
   Increment_ dx(resol, vars, date);

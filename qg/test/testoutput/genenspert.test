@@ -1,66 +1,99 @@
 Test     : Initial state: 
 Test     :   Valid time: 2009-12-31T00:00:00Z
-Test     :   Resolution = 40, 20, Fields = 1, 2
+Test     :   Resolution = 40, 20, Fields = 4, 2
 Test     :   Min=-30.5908, Max=12.4057, RMS=12.9993
+Test     :   Min=-41.8524, Max=36.3133, RMS=21.0398
+Test     :   Min=0, Max=0, RMS=0
+Test     :   Min=0, Max=0, RMS=0
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     : Member 0 final state: 
 Test     :   Valid time: 2010-01-01T12:00:00Z
-Test     :   Resolution = 40, 20, Fields = 1, 2
+Test     :   Resolution = 40, 20, Fields = 4, 2
 Test     :   Min=-24.9987, Max=11.8185, RMS=9.93471
+Test     :   Min=-42.1492, Max=39.4225, RMS=21.2701
+Test     :   Min=-8.70035, Max=11.6594, RMS=4.53013
+Test     :   Min=-5.89844, Max=6.69433, RMS=2.75341
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     : Member 1 final state: 
 Test     :   Valid time: 2010-01-01T12:00:00Z
-Test     :   Resolution = 40, 20, Fields = 1, 2
+Test     :   Resolution = 40, 20, Fields = 4, 2
 Test     :   Min=-26.6699, Max=9.41573, RMS=11.1707
+Test     :   Min=-41.7627, Max=39.1334, RMS=20.5229
+Test     :   Min=-8.00828, Max=11.1439, RMS=4.2753
+Test     :   Min=-6.78306, Max=7.50367, RMS=3.02657
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     : Member 2 final state: 
 Test     :   Valid time: 2010-01-01T12:00:00Z
-Test     :   Resolution = 40, 20, Fields = 1, 2
+Test     :   Resolution = 40, 20, Fields = 4, 2
 Test     :   Min=-26.6178, Max=7.92832, RMS=11.6979
+Test     :   Min=-43.6481, Max=36.8103, RMS=20.3739
+Test     :   Min=-7.34135, Max=10.2793, RMS=4.21499
+Test     :   Min=-7.54437, Max=7.56273, RMS=2.84621
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     : Member 3 final state: 
 Test     :   Valid time: 2010-01-01T12:00:00Z
-Test     :   Resolution = 40, 20, Fields = 1, 2
+Test     :   Resolution = 40, 20, Fields = 4, 2
 Test     :   Min=-26.2498, Max=10.2048, RMS=11.1236
+Test     :   Min=-42.0684, Max=38.87, RMS=20.6141
+Test     :   Min=-8.69645, Max=9.20348, RMS=4.39877
+Test     :   Min=-7.34563, Max=7.56199, RMS=2.84188
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     : Member 4 final state: 
 Test     :   Valid time: 2010-01-01T12:00:00Z
-Test     :   Resolution = 40, 20, Fields = 1, 2
+Test     :   Resolution = 40, 20, Fields = 4, 2
 Test     :   Min=-26.7885, Max=8.87632, RMS=11.4904
+Test     :   Min=-42.2501, Max=40.5404, RMS=20.7271
+Test     :   Min=-7.93214, Max=10.9764, RMS=4.35831
+Test     :   Min=-6.58759, Max=7.9452, RMS=2.92297
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     : Member 5 final state: 
 Test     :   Valid time: 2010-01-01T12:00:00Z
-Test     :   Resolution = 40, 20, Fields = 1, 2
+Test     :   Resolution = 40, 20, Fields = 4, 2
 Test     :   Min=-26.6421, Max=10.2404, RMS=10.7877
+Test     :   Min=-41.7143, Max=36.9456, RMS=21.536
+Test     :   Min=-8.07722, Max=11.0827, RMS=4.49446
+Test     :   Min=-7.22413, Max=8.50618, RMS=3.08176
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     : Member 6 final state: 
 Test     :   Valid time: 2010-01-01T12:00:00Z
-Test     :   Resolution = 40, 20, Fields = 1, 2
+Test     :   Resolution = 40, 20, Fields = 4, 2
 Test     :   Min=-27.025, Max=9.50035, RMS=11.4443
+Test     :   Min=-43.5219, Max=40.4384, RMS=21.3879
+Test     :   Min=-8.88822, Max=10.3926, RMS=4.57857
+Test     :   Min=-7.60186, Max=7.24248, RMS=2.89498
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     : Member 7 final state: 
 Test     :   Valid time: 2010-01-01T12:00:00Z
-Test     :   Resolution = 40, 20, Fields = 1, 2
+Test     :   Resolution = 40, 20, Fields = 4, 2
 Test     :   Min=-24.9686, Max=10.6168, RMS=10.1836
+Test     :   Min=-41.7161, Max=37.558, RMS=20.9407
+Test     :   Min=-8.97157, Max=10.6496, RMS=4.54554
+Test     :   Min=-4.93208, Max=9.41497, RMS=2.89634
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     : Member 8 final state: 
 Test     :   Valid time: 2010-01-01T12:00:00Z
-Test     :   Resolution = 40, 20, Fields = 1, 2
+Test     :   Resolution = 40, 20, Fields = 4, 2
 Test     :   Min=-26.4129, Max=9.38499, RMS=10.8595
+Test     :   Min=-42.0647, Max=37.1305, RMS=20.6722
+Test     :   Min=-8.13685, Max=10.4764, RMS=4.21026
+Test     :   Min=-6.33048, Max=6.91106, RMS=2.68526
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     : Member 9 final state: 
 Test     :   Valid time: 2010-01-01T12:00:00Z
-Test     :   Resolution = 40, 20, Fields = 1, 2
+Test     :   Resolution = 40, 20, Fields = 4, 2
 Test     :   Min=-26.5654, Max=7.63493, RMS=11.8153
+Test     :   Min=-41.9852, Max=38.6351, RMS=21.0225
+Test     :   Min=-7.39299, Max=9.86382, RMS=4.12041
+Test     :   Min=-7.44924, Max=6.86614, RMS=2.78398
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071

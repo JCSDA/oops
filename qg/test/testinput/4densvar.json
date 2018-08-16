@@ -14,7 +14,7 @@
     "window_begin": "2010-01-01T00:00:00Z",
     "window_length": "PT12H",
     "window_sub": "PT1H",
-    "variables": ["x"],
+    "variables": ["x","bc"],
     "Jb": {
       "Background": {
         "state": [

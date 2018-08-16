@@ -63,7 +63,7 @@ BOOST_FIXTURE_TEST_SUITE(test_StateL95, StateTestFixture)
   }
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_stateL95_readin_constructor) {
-    boost::scoped_ptr<lorenz95::StateL95> xx(new lorenz95::StateL95(*resol_, *file_));
+    boost::scoped_ptr<lorenz95::StateL95> xx(new lorenz95::StateL95(*resol_, *vars_, *file_));
     BOOST_CHECK(xx.get() != NULL);
   }
 // -----------------------------------------------------------------------------

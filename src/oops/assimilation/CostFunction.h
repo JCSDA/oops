@@ -67,7 +67,7 @@ template<typename MODEL> class CostFunction : private boost::noncopyable {
   typedef Increment<MODEL>           Increment_;
 
  public:
-  CostFunction(const Geometry_ &, const Model_ &);
+  CostFunction(const eckit::Configuration &, const Geometry_ &, const Model_ &);
   virtual ~CostFunction() {}
 
   double evaluate(const CtrlVar_ &,
@@ -107,8 +107,7 @@ template<typename MODEL> class CostFunction : private boost::noncopyable {
   const LinearModel_ & getTLM(const unsigned isub = 0) const {return tlm_[isub];}
 
  private:
-  virtual void addIncr(CtrlVar_ &, const CtrlInc_ &,
-                       PostProcessor<Increment_>&) const = 0;
+  virtual void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_>&) const = 0;
 
   virtual CostJbState<MODEL>  * newJb(const eckit::Configuration &, const Geometry_ &,
                                       const CtrlVar_ &) const = 0;
@@ -125,6 +124,7 @@ template<typename MODEL> class CostFunction : private boost::noncopyable {
 
   mutable double costJb_;
   mutable double costJoJc_;
+  const Variables anvars_;
 };
 
 // -----------------------------------------------------------------------------
@@ -155,8 +155,8 @@ class CostMaker : public CostFactory<MODEL> {
   typedef Geometry<MODEL>            Geometry_;
   typedef Model<MODEL>               Model_;
  private:
-  virtual CostFunction<MODEL> * make(const eckit::Configuration & config,
-                                     const Geometry_ & resol, const Model_ & model)
+  CostFunction<MODEL> * make(const eckit::Configuration & config,
+                             const Geometry_ & resol, const Model_ & model) override
     {return new FCT(config, resol, model);}
  public:
   explicit CostMaker(const std::string & name) : CostFactory<MODEL>(name) {}
@@ -188,6 +188,7 @@ CostFunction<MODEL>* CostFactory<MODEL>::create(const eckit::Configuration & con
     Log::error() << id << " does not exist in cost function factory." << std::endl;
     ABORT("Element does not exist in CostFactory.");
   }
+  Log::trace() << "CostFactory::create found cost function type" << std::endl;
   return (*j).second->make(config, resol, model);
 }
 
@@ -196,8 +197,9 @@ CostFunction<MODEL>* CostFactory<MODEL>::create(const eckit::Configuration & con
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-CostFunction<MODEL>::CostFunction(const Geometry_ & resol, const Model_ & model)
-  : resol_(resol), model_(model), jb_(), jterms_(), tlm_()
+CostFunction<MODEL>::CostFunction(const eckit::Configuration & config,
+                                  const Geometry_ & resol, const Model_ & model)
+  : resol_(resol), model_(model), jb_(), jterms_(), tlm_(), anvars_(config)
 {
   Log::trace() << "CostFunction:created" << std::endl;
 }
@@ -216,7 +218,7 @@ void CostFunction<MODEL>::setupTerms(const eckit::Configuration & config) {
 
 // Jb
   const eckit::LocalConfiguration jbConf(config, "Jb");
-  xb_.reset(new CtrlVar_(eckit::LocalConfiguration(jbConf, "Background"), resol_));
+  xb_.reset(new CtrlVar_(eckit::LocalConfiguration(jbConf, "Background"), anvars_, resol_));
   jb_.reset(new JbTotal_(*xb_, this->newJb(jbConf, resol_, *xb_), jbConf, resol_));
   Log::trace() << "CostFunction::setupTerms Jb added" << std::endl;
 
