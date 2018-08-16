@@ -541,7 +541,7 @@ integer :: its
 
 ! Apply vertical balance
 do its=1,bump%nam%nts
-   call bump%vbal%apply(bump%mpl,bump%nam,bump%geom,bump%bpar,fld(:,:,:,its))
+   call bump%vbal%apply(bump%nam,bump%geom,bump%bpar,fld(:,:,:,its))
 end do
 
 end subroutine bump_apply_vbal
@@ -563,7 +563,7 @@ integer :: its
 
 ! Apply vertical balance, inverse
 do its=1,bump%nam%nts
-   call bump%vbal%apply_inv(bump%mpl,bump%nam,bump%geom,bump%bpar,fld(:,:,:,its))
+   call bump%vbal%apply_inv(bump%nam,bump%geom,bump%bpar,fld(:,:,:,its))
 end do
 
 end subroutine bump_apply_vbal_inv
@@ -585,7 +585,7 @@ integer :: its
 
 ! Apply vertical balance, adjoint
 do its=1,bump%nam%nts
-   call bump%vbal%apply_ad(bump%mpl,bump%nam,bump%geom,bump%bpar,fld(:,:,:,its))
+   call bump%vbal%apply_ad(bump%nam,bump%geom,bump%bpar,fld(:,:,:,its))
 end do
 
 end subroutine bump_apply_vbal_ad
@@ -607,7 +607,7 @@ integer :: its
 
 ! Apply vertical balance, inverse adjoint
 do its=1,bump%nam%nts
-   call bump%vbal%apply_inv_ad(bump%mpl,bump%nam,bump%geom,bump%bpar,fld(:,:,:,its))
+   call bump%vbal%apply_inv_ad(bump%nam,bump%geom,bump%bpar,fld(:,:,:,its))
 end do
 
 end subroutine bump_apply_vbal_inv_ad
@@ -690,7 +690,7 @@ real(kind_real),intent(out) :: fld(bump%geom%nc0a,bump%geom%nl0,bump%nam%nv,bump
 integer :: ib,iv,jv,its,jts
 
 select case (trim(bump%nam%strategy))
-case ('diag_all','specific_univariate','specific_multivariate')
+case ('specific_univariate','specific_multivariate')
    do ib=1,bump%bpar%nb
       ! Get indices
       iv = bump%bpar%b_to_v1(ib)
@@ -734,9 +734,17 @@ select case (trim(param))
 case ('var')
    fld = bump%cmat%blk(ib)%coef_ens
 case ('cor_rh')
-   fld = bump%cmat%blk(ib)%rh_c0
+   fld = bump%cmat%blk(ib)%rh_c0*req
 case ('cor_rv')
    fld = bump%cmat%blk(ib)%rv_c0
+case ('loc_coef')
+   fld = bump%cmat%blk(ib)%coef_ens
+case ('loc_rh')
+   fld = bump%cmat%blk(ib)%rh_c0*req
+case ('loc_rv')
+   fld = bump%cmat%blk(ib)%rv_c0
+case ('hyb_coef')
+   fld = bump%cmat%blk(ib)%coef_sta
 case default
    call bump%mpl%abort('parameter '//trim(param)//' not yet implemented in get_parameter')
 end select

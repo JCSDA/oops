@@ -1,2 +1,4 @@
-Test     : Increment norm: 3.92552
-Test     : Adjoint test: -292.207 / -292.207
+Test     : Norm of loc_coef: 0.323663
+Test     : Norm of loc_rh: 1.98887e+07
+Test     : Norm of loc_rv: 0
+Test     : Norm of hyb_coef: 2.11744

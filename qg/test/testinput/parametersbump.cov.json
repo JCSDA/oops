@@ -80,7 +80,7 @@
   "dc" : 500.0e3,
   "nl0r" : 2,
   "ne" : 10,
-  "var_diag" : 0,
+  "var_diag" : 1,
   "local_diag" : 1,
   "local_rad" : 1000.0e3,
   "minim_algo" : "hooke",
@@ -90,11 +90,18 @@
   "nicas_interp" : "bilin",
   "mpicom" : 2,
   "advmode" : 0,
-  "diag_rhflt" : 2000.0e3,
+  "diag_rhflt" : 3000.0e3,
   "diag_interp" : "bilin",
   "nldwh" : 0,
   "nldwv" : 0,
   "output" : [
+    {
+      "parameter" : "var",
+      "datadir": "Data",
+      "exp": "var",
+      "type": "an",
+      "date": "2009-12-31T00:00:00Z"
+    },
     {
       "parameter" : "cor_rh",
       "datadir": "Data",

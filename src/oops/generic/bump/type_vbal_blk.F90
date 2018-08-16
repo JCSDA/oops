@@ -43,7 +43,7 @@ contains
 ! Subroutine: vbal_blk_alloc
 !> Purpose: vertical balance block data allocation
 !----------------------------------------------------------------------
-subroutine vbal_blk_alloc(vbal_blk,nam,geom,bpar,nc2b,iv,jv)
+subroutine vbal_blk_alloc(vbal_blk,nam,geom,nc2b,iv,jv)
 
 implicit none
 
@@ -51,7 +51,6 @@ implicit none
 class(vbal_blk_type),intent(inout) :: vbal_blk !< Vertical balance block
 type(nam_type),intent(in) :: nam               !< Namelist
 type(geom_type),intent(in) :: geom             !< Geometry
-type(bpar_type),intent(in) :: bpar             !< Block parameters
 integer,intent(in) :: nc2b                     !< Subset Sc2 size, halo B
 integer,intent(in) :: iv                       !< First variable index
 integer,intent(in) :: jv                       !< Second variable index
@@ -92,13 +91,12 @@ end subroutine vbal_blk_dealloc
 ! Subroutine: vbal_blk_apply
 !> Purpose: apply vertical balance block
 !----------------------------------------------------------------------
-subroutine vbal_blk_apply(vbal_blk,mpl,geom,np,h_n_s,h_c2b,h_S,fld)
+subroutine vbal_blk_apply(vbal_blk,geom,np,h_n_s,h_c2b,h_S,fld)
 
 implicit none
 
 ! Passed variables
 class(vbal_blk_type),intent(in) :: vbal_blk               !< Vertical balance block
-type(mpl_type),intent(in) :: mpl                          !< MPI data
 type(geom_type),intent(in) :: geom                        !< Geometry
 integer,intent(in) :: np                                  !< Maximum number of neighbors
 integer,intent(in) :: h_n_s(geom%nc0a,geom%nl0i)          !< Number of neighbors for the horizontal interpolation
@@ -138,13 +136,12 @@ end subroutine vbal_blk_apply
 ! Subroutine: vbal_blk_apply_ad
 !> Purpose: apply adjoint vertical balance block
 !----------------------------------------------------------------------
-subroutine vbal_blk_apply_ad(vbal_blk,mpl,geom,np,h_n_s,h_c2b,h_S,fld)
+subroutine vbal_blk_apply_ad(vbal_blk,geom,np,h_n_s,h_c2b,h_S,fld)
 
 implicit none
 
 ! Passed variables
 class(vbal_blk_type),intent(in) :: vbal_blk               !< Vertical balance block
-type(mpl_type),intent(in) :: mpl                          !< MPI data
 type(geom_type),intent(in) :: geom                        !< Geometry
 integer,intent(in) :: np                                  !< Maximum number of neighbors
 integer,intent(in) :: h_n_s(geom%nc0a,geom%nl0i)          !< Number of neighbors for the horizontal interpolation

@@ -27,7 +27,6 @@ use type_mom, only: mom_type
 use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 use type_rng, only: rng_type
-use type_vbal, only: vbal_type
 
 implicit none
 
@@ -277,7 +276,6 @@ type(diag_type) :: cov_1,cov_2,cor_1,cor_2,loc_1,loc_2,loc_3
 type(displ_type) :: displ
 type(hdata_type) :: hdata
 type(mom_type) :: mom_1,mom_2
-type(vbal_type) :: vbal
 
 ! Setup sampling
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
@@ -337,12 +335,13 @@ write(mpl%unit,'(a7,a)') '','Ensemble 1:'
 call flush(mpl%unit)
 call mom_1%compute(mpl,nam,geom,bpar,hdata,ens1)
 
-if ((trim(nam%method)=='hyb-rnd').or.(trim(nam%method)=='dual-ens')) then
+select case(trim(nam%method))
+case ('hyb-rnd','dual-ens')
    ! Compute randomized sample moments
    write(mpl%unit,'(a7,a)') '','Ensemble 2:'
    call flush(mpl%unit)
    call mom_2%compute(mpl,nam,geom,bpar,hdata,ens2)
-end if
+end select
 
 ! Compute statistics
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
@@ -354,12 +353,16 @@ write(mpl%unit,'(a7,a)') '','Ensemble 1:'
 call flush(mpl%unit)
 call avg_1%compute(mpl,nam,geom,bpar,hdata,mom_1,nam%ne)
 
-if ((trim(nam%method)=='hyb-rnd').or.(trim(nam%method)=='dual-ens')) then
-   ! Compute randomized sample moments
+select case(trim(nam%method))
+case ('hyb-rnd','dual-ens')
+   ! Compute ensemble 2 statistics
    write(mpl%unit,'(a7,a)') '','Ensemble 2:'
    call flush(mpl%unit)
    call avg_2%compute(mpl,nam,geom,bpar,hdata,mom_2,nam%ens2_ne)
-end if
+case ('hyb-avg')
+   ! Copy ensemble 1 statistics
+   avg_2 = avg_1%copy(nam,geom,bpar)
+end select
 
 select case (trim(nam%method))
 case ('hyb-avg','hyb-rnd','dual-ens')
@@ -463,6 +466,10 @@ if (trim(nam%minim_algo)/='none') then
       call cmat%from(mpl,nam,geom,bpar,hdata,cor_1)
    case ('loc_norm','loc')
       call cmat%from(mpl,nam,geom,bpar,hdata,loc_1)
+   case ('hyb-avg','hyb-rnd')
+      call cmat%from(mpl,nam,geom,bpar,hdata,loc_2)
+   case ('dual-ens')
+      call mpl%abort('dual-ens not ready yet for C matrix data')
    case default
       call mpl%abort('cmat not implemented yet for this method')
    end select
@@ -538,8 +545,6 @@ do ib=1,bpar%nbe
                         fld_c2a(ic2a,:) = 0.0
                      case ('hyb-avg','hyb-rnd')
                         fld_c2a(ic2a,:) = diag%blk(ic2a,ib)%raw_coef_sta
-                     case ('dual-ens')
-                        call mpl%abort('dual-ens not ready yet for C matrix data')
                      end select
                   elseif (i==3) then
                      fld_c2a(ic2a,:) = diag%blk(ic2a,ib)%fit_rh
@@ -550,6 +555,11 @@ do ib=1,bpar%nbe
                   elseif (i==6) then
                      fld_c2a(ic2a,:) = diag%blk(ic2a,ib)%fit_rv_coef
                   end if
+               end do
+
+               ! Fill missing values
+               do il0=1,geom%nl0
+                  call hdata%diag_fill(mpl,nam,geom,il0,fld_c2a(:,il0))
                end do
 
                ! Interpolate

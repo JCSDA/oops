@@ -843,9 +843,9 @@ if (nam%new_vbal.or.nam%new_lct.or.(nam%new_hdiag.and.(nam%var_diag.or.nam%local
             do jc1=1,nam%nc1
                kc1 = nn_c1_index(jc1)
                if (nam%new_vbal) hdata%vbal_mask(kc1,ic2) = (jc1==1) &
-             & .or.(nn_c1_dist(jc1)<min(nam%vbal_rad,hdata%mesh%bdist(ic2)))
+             & .or.(nn_c1_dist(jc1)<nam%vbal_rad)
                if (nam%local_diag) hdata%local_mask(kc1,ic2) = (jc1==1) &
-             & .or.(nn_c1_dist(jc1)<min(nam%local_rad,hdata%mesh%bdist(ic2)))
+             & .or.(nn_c1_dist(jc1)<nam%local_rad)
                if (nam%displ_diag) hdata%displ_mask(kc1,ic2) = (jc1==1) &
              & .or.(nn_c1_dist(jc1)<min(nam%displ_rad,hdata%mesh%bdist(ic2)))
             end do

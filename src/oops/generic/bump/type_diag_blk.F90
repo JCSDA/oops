@@ -67,7 +67,7 @@ contains
 ! Subroutine: diag_blk_alloc
 !> Purpose: diagnostic block data allocation
 !----------------------------------------------------------------------
-subroutine diag_blk_alloc(diag_blk,nam,geom,bpar,ic2a,ib,prefix,double_fit)
+subroutine diag_blk_alloc(diag_blk,nam,geom,bpar,hdata,ic2a,ib,prefix,double_fit)
 
 implicit none
 
@@ -76,17 +76,21 @@ class(diag_blk_type),intent(inout) :: diag_blk !< Diagnostic block
 type(nam_type),intent(in) :: nam               !< Namelist
 type(geom_type),intent(in) :: geom             !< Geometry
 type(bpar_type),intent(in) :: bpar             !< Block parameters
+type(hdata_type),intent(in) :: hdata           !< HDIAG data
 integer,intent(in) :: ic2a                     !< Local index
 integer,intent(in) :: ib                       !< Block index
 character(len=*),intent(in) :: prefix          !< Block prefix
 logical,intent(in) :: double_fit               !< Double fit
+
+! Local variables
+integer :: ic0,ic2,il0,jl0,jl0r
+real(kind_real) :: vunit(geom%nl0)
 
 ! Set attributes
 diag_blk%ic2a = ic2a
 diag_blk%ib = ib
 diag_blk%name = trim(prefix)//'_'//trim(bpar%blockname(ib))
 diag_blk%double_fit = double_fit
-
 
 ! Allocation
 allocate(diag_blk%raw_coef_ens(geom%nl0))
@@ -119,6 +123,23 @@ if (((ic2a==0).or.nam%local_diag).and.(trim(nam%minim_algo)/='none')) then
       call msr(diag_blk%fit_rv_coef)
    end if
    call msr(diag_blk%distvr)
+
+   ! Vertical unit
+   if (ic2a==0) then
+      vunit = geom%vunitavg
+   else
+      ic2 = hdata%c2a_to_c2(ic2a)
+      ic0 = hdata%c2_to_c0(ic2)
+      vunit = geom%vunit(ic0,:)
+   end if
+
+   ! Reduced vertical distance
+   do il0=1,geom%nl0
+      do jl0r=1,nam%nl0r
+         jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
+         diag_blk%distvr(jl0r,il0) = abs(vunit(il0)-vunit(jl0))
+      end do
+   end do
 end if
 
 end subroutine diag_blk_alloc
@@ -345,15 +366,6 @@ else
    ic0 = hdata%c2_to_c0(ic2)
    vunit = geom%vunit(ic0,:)
 end if
-
-! Reduced vertical distance
-call msr(diag_blk%distvr)
-do il0=1,geom%nl0
-   do jl0r=1,nam%nl0r
-      jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
-      diag_blk%distvr(jl0r,il0) = abs(vunit(il0)-vunit(jl0))
-   end do
-end do
 
 ! Fast fit
 do il0=1,geom%nl0
@@ -604,7 +616,7 @@ type(avg_blk_type),intent(in) :: avg_sta_blk   !< Static averaged statistics blo
 
 ! Local variables
 integer :: il0,jl0r,jc3
-real(kind_real) :: num,den
+real(kind_real) :: wgt,num,den
 
 ! Associate
 associate(ib=>diag_blk%ib)
@@ -617,31 +629,36 @@ do il0=1,geom%nl0
       do jc3=1,bpar%nc3(ib)
          if (isnotmsr(avg_blk%m11asysq(jc3,jl0r,il0)).and.isnotmsr(avg_blk%m11sq(jc3,jl0r,il0)) &
        & .and.isnotmsr(avg_sta_blk%m11sta(jc3,jl0r,il0)).and.isnotmsr(avg_sta_blk%stasq(jc3,jl0r,il0))) then
-            num = num+geom%disth(jc3)*(1.0-avg_blk%m11asysq(jc3,jl0r,il0)/avg_blk%m11sq(jc3,jl0r,il0)) &
+            wgt = 1.0 !geom%disth(jc3)*diag_blk%distvr(jl0r,il0) TODO: define weight
+            num = num+wgt*(1.0-avg_blk%m11asysq(jc3,jl0r,il0)/avg_blk%m11sq(jc3,jl0r,il0)) &
                 & *avg_sta_blk%m11sta(jc3,jl0r,il0)
-            den = den+geom%disth(jc3)*(avg_sta_blk%stasq(jc3,jl0r,il0)-avg_sta_blk%m11sta(jc3,jl0r,il0)**2 &
+            den = den+wgt*(avg_sta_blk%stasq(jc3,jl0r,il0)-avg_sta_blk%m11sta(jc3,jl0r,il0)**2 &
                 & /avg_blk%m11sq(jc3,jl0r,il0))
          end if
       end do
    end do
 end do
-if ((num>0.0).and.(den>0.0)) diag_blk%raw_coef_sta = num/den
-do il0=1,geom%nl0
-   do jl0r=1,bpar%nl0r(ib)
-      do jc3=1,bpar%nc3(ib)
-         if (isnotmsr(avg_blk%m11asysq(jc3,jl0r,il0)).and.isnotmsr(diag_blk%raw_coef_sta) &
-       & .and.isnotmsr(avg_sta_blk%m11sta(jc3,jl0r,il0)).and.isnotmsr(avg_sta_blk%stasq(jc3,jl0r,il0)) &
-       & .and.isnotmsr(avg_blk%m11sq(jc3,jl0r,il0))) then
-            ! Compute localization
-            diag_blk%raw(jc3,jl0r,il0) = (avg_blk%m11asysq(jc3,jl0r,il0)-diag_blk%raw_coef_sta &
-                                    & *avg_sta_blk%m11sta(jc3,jl0r,il0))/avg_blk%m11sq(jc3,jl0r,il0)
+if ((num>0.0).and.(den>0.0)) then
+   diag_blk%raw_coef_sta = num/den
+   do il0=1,geom%nl0
+      do jl0r=1,bpar%nl0r(ib)
+         do jc3=1,bpar%nc3(ib)
+            if (isnotmsr(avg_blk%m11asysq(jc3,jl0r,il0)).and.isnotmsr(diag_blk%raw_coef_sta) &
+          & .and.isnotmsr(avg_sta_blk%m11sta(jc3,jl0r,il0)).and.isnotmsr(avg_blk%m11sq(jc3,jl0r,il0))) then
+               ! Compute localization
+               diag_blk%raw(jc3,jl0r,il0) = (avg_blk%m11asysq(jc3,jl0r,il0)-diag_blk%raw_coef_sta &
+                                          & *avg_sta_blk%m11sta(jc3,jl0r,il0))/avg_blk%m11sq(jc3,jl0r,il0)
 
-            ! Lower bound
-            if (diag_blk%raw(jc3,jl0r,il0)<0.0) call msr(diag_blk%raw(jc3,jl0r,il0))
-         end if
+               ! Lower bound
+               if (diag_blk%raw(jc3,jl0r,il0)<0.0) call msr(diag_blk%raw(jc3,jl0r,il0))
+            end if
+         end do
       end do
    end do
-end do
+else
+   call msr(diag_blk%raw_coef_sta)
+   call msr(diag_blk%raw)
+end if
 
 ! End associate
 end associate

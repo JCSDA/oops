@@ -33,6 +33,8 @@ type avg_type
    type(avg_blk_type),allocatable :: blk(:,:) !< Averaged statistics blocks
 contains
    procedure :: alloc => avg_alloc
+   procedure :: dealloc => avg_dealloc
+   procedure :: copy => avg_copy
    procedure :: gather => avg_gather
    procedure :: gather_lr => avg_gather_lr
    procedure :: var_filter => avg_var_filter
@@ -49,7 +51,7 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: avg_alloc
-!> Purpose: allocation
+!> Purpose: averaged statistics allocation
 !----------------------------------------------------------------------
 subroutine avg_alloc(avg,nam,geom,bpar,ne,nsub)
 
@@ -81,6 +83,70 @@ do ib=1,bpar%nbe
 end do
 
 end subroutine avg_alloc
+
+!----------------------------------------------------------------------
+! Subroutine: avg_dealloc
+!> Purpose: averaged statistics deallocation
+!----------------------------------------------------------------------
+subroutine avg_dealloc(avg,nam,bpar)
+
+implicit none
+
+! Passed variables
+class(avg_type),intent(inout) :: avg !< Averaged statistics
+type(nam_type),intent(in) :: nam     !< Namelist
+type(bpar_type),intent(in) :: bpar   !< Block parameters
+
+! Local variables
+integer :: ib,ic2
+
+! Allocation
+if (allocated(avg%blk)) then
+   do ib=1,bpar%nbe
+      if (bpar%diag_block(ib)) then
+         do ic2=0,nam%nc2
+            call avg%blk(ic2,ib)%dealloc
+         end do
+      end if
+   end do
+   deallocate(avg%blk)
+end if
+
+end subroutine avg_dealloc
+
+!----------------------------------------------------------------------
+! Function: avg_copy
+!> Purpose: averaged statistics copy
+!----------------------------------------------------------------------
+type(avg_type) function avg_copy(avg,nam,geom,bpar)
+
+implicit none
+
+! Passed variables
+class(avg_type),intent(in) :: avg !< Averaged statistics
+type(nam_type),intent(in) :: nam     !< Namelist
+type(geom_type),intent(in) :: geom   !< Geometry
+type(bpar_type),intent(in) :: bpar   !< Block parameters
+
+! Local variables
+integer :: ib,ic2
+
+! Deallocation
+call avg_copy%dealloc(nam,bpar)
+
+! Allocation
+call avg_copy%alloc(nam,geom,bpar,avg%ne,avg%nsub)
+
+! Copy
+do ib=1,bpar%nbe
+   if (bpar%diag_block(ib)) then
+      do ic2=0,nam%nc2
+         avg_copy%blk(ic2,ib) = avg%blk(ic2,ib)%copy(nam,geom,bpar)
+      end do
+   end if
+end do
+
+end function avg_copy
 
 !----------------------------------------------------------------------
 ! Subroutine: avg_gather
@@ -387,7 +453,7 @@ do ib=1,bpar%nb
             m2 = m2_ini
 
             ! Median filter to remove extreme values
-!            call hdata%diag_filter(mpl,nam,geom,il0,'median',rhflt,m2)
+            call hdata%diag_filter(mpl,nam,geom,il0,'median',rhflt,m2)
  
             ! Average filter to smooth displacement
             call hdata%diag_filter(mpl,nam,geom,il0,'gc99',rhflt,m2)
@@ -544,7 +610,7 @@ integer :: ib,ic2,progint
 logical,allocatable :: done(:)
 
 ! Allocation
-if (.not.allocated(avg_2%blk)) call avg_2%alloc(nam,geom,bpar,avg_1%ne,avg_1%nsub)
+if (.not.allocated(avg_2%blk)) call avg_2%alloc(nam,geom,bpar,avg_2%ne,avg_2%nsub)
 allocate(done(0:nam%nc2))
 
 do ib=1,bpar%nb
@@ -560,7 +626,7 @@ do ib=1,bpar%nb
          select case (trim(nam%method))
          case ('hyb-avg')
             ! Static covariance = ensemble covariance
-            avg_2%blk(ic2,ib)%m11sta = avg_1%blk(ic2,ib)%m11*avg_1%blk(ic2,ib)%m11
+            avg_2%blk(ic2,ib)%m11sta = avg_1%blk(ic2,ib)%m11**2
             avg_2%blk(ic2,ib)%stasq = avg_1%blk(ic2,ib)%m11**2
          case ('hyb-rnd')
             ! Static covariance = randomized covariance
@@ -577,7 +643,6 @@ do ib=1,bpar%nb
       call flush(mpl%unit)
    end if
 end do
-
 
 if (trim(nam%method)=='dual-ens') then
    if (mpl%nproc>1) then

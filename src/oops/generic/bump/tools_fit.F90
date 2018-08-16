@@ -45,38 +45,39 @@ real(kind_real),intent(out) :: fit_r  !< Fast fit result
 integer :: di,i,im,ip,iter
 real(kind_real) :: th,thinv,dthinv,thtest
 real(kind_real) :: fit_rm,fit_rp
+real(kind_real) :: raw_tmp(n)
 logical :: valid
 
 if (any(dist<0.0)) call mpl%abort('negative distance in fast_fit')
 
-if (n>1) then
-   if (raw(iz)>0.0) then
-      ! Initialization
-      valid = .false.
-   
+if (raw(iz)>0.0) then
+   if (n>1) then
+      ! Copy points that are lower than the zero-separation
+      call msr(raw_tmp)
+      raw_tmp(iz) = raw(iz)
+      do i=1,n
+        if (i/=iz) then
+           if (raw(i)<raw(iz)) raw_tmp(i) = raw(i)
+        end if
+      end do
+  
       ! At least one positive point is needed
+      valid = .false.
       do i=1,n
         if (i/=iz) then
-           if (raw(i)>0.0) valid = .true.
+           if (raw_tmp(i)>0.0) valid = .true.
         end if
       end do
-   
-      ! The zero-separation point must be the maximum
-      do i=1,n
-        if (i/=iz) then
-           if (.not.(raw(i)<raw(iz))) valid = .false.
-        end if
-      end do
-   
+
       if (valid) then
          ! Define threshold and its inverse
-         if (minval(raw/raw(iz),mask=(raw>0.0))<0.5) then
+         if (minval(raw_tmp/raw_tmp(iz),mask=(raw_tmp>0.0))<0.5) then
             ! Default threshold
             th = 0.5
             thinv = 0.33827292796125663
          else
             ! Curve-dependent threshold
-            th = minval(raw/raw(iz),mask=(raw>0.0))+rth
+            th = minval(raw_tmp/raw_tmp(iz),mask=(raw_tmp>0.0))+rth
 
             ! Find inverse threshold by dichotomy
             thinv = 0.5
@@ -104,11 +105,11 @@ if (n>1) then
                ! Check index validity
                if (im>=1) then
                   ! Check raw value validity
-                  if (raw(im)>0.0) then
+                  if (raw_tmp(im)>0.0) then
                      ! Check whether threshold has been crossed
-                     if (raw(im)<th*raw(iz)) then
+                     if (raw_tmp(im)<th*raw_tmp(iz)) then
                         ! Set fit value
-                        fit_rm = dist(im)+(dist(ip)-dist(im))*(th*raw(iz)-raw(im))/(raw(ip)-raw(im))
+                        fit_rm = dist(im)+(dist(ip)-dist(im))*(th*raw_tmp(iz)-raw_tmp(im))/(raw_tmp(ip)-raw_tmp(im))
                      else
                         ! Update index
                         ip = im
@@ -130,11 +131,11 @@ if (n>1) then
                ! Check index validity
                if (ip<=n) then
                   ! Check raw value validity
-                  if (raw(ip)>0.0) then
+                  if (raw_tmp(ip)>0.0) then
                      ! Check whether threshold has been crossed
-                     if (raw(ip)<th*raw(iz)) then
+                     if (raw_tmp(ip)<th*raw_tmp(iz)) then
                         ! Set fit value
-                        fit_rp = dist(im)+(dist(ip)-dist(im))*(th*raw(iz)-raw(im))/(raw(ip)-raw(im))
+                        fit_rp = dist(im)+(dist(ip)-dist(im))*(th*raw_tmp(iz)-raw_tmp(im))/(raw_tmp(ip)-raw_tmp(im))
                      else
                         ! Update index
                         im = ip
@@ -156,7 +157,7 @@ if (n>1) then
          ! Check
          if (fit_r<0.0) then
             write(mpl%unit,*) iz,valid
-            write(mpl%unit,*) raw
+            write(mpl%unit,*) raw_tmp
             write(mpl%unit,*) th,thinv
             write(mpl%unit,*) fit_rm,fit_rp,fit_r
             call mpl%abort('negative fit_r in fast_fit')
@@ -164,13 +165,17 @@ if (n>1) then
    
          ! Normalize
          if (isnotmsr(fit_r)) fit_r = fit_r/thinv
+      else
+         ! Only the zero-separation point is valid, zero radius
+         fit_r = 0.0
       end if
    else
-      call msr(fit_r)
+      ! Only one point, zero radius
+      fit_r = 0.0
    end if
 else
-   ! Only one point, zero radius
-   fit_r = 0.0
+   ! Zero-separation point is negative
+   call msr(fit_r)
 end if
 
 end subroutine fast_fit
