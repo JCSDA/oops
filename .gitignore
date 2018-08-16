@@ -14,6 +14,7 @@ exp.summary.txt
 *.swp
 *.sublime-workspace
 *~
+*.DS_Store
 CMakeLists.txt.user
 dependencies.mk
 loadmap

@@ -463,10 +463,12 @@ type(oobump_type), intent(inout) :: self
 integer :: igrid
 
 ! Deallocate BUMP
-do igrid=1,self%ngrid  
-   call self%bump(igrid)%dealloc
-end do
-deallocate(self%bump)
+if (allocated(self%bump)) then
+  do igrid=1,self%ngrid  
+     call self%bump(igrid)%dealloc
+  end do
+  deallocate(self%bump)
+endif
 
 end subroutine delete_oobump
 
