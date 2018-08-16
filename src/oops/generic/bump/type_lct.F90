@@ -458,7 +458,6 @@ do ib=1,bpar%nb
                   ! Copy coefficient
                   fld_c1a(ic1a,il0,lct%blk(ib)%ncomp(iscales)+1) = lct%blk(ib)%coef(iscales,ic1a,il0)
                else
-                  write(*,*) det,lct%blk(ib)%coef(iscales,ic1a,il0)
                   call mpl%abort('non-valid LCT, grid c1')
                end if
             end if
@@ -510,16 +509,16 @@ do ib=1,bpar%nb
       end do
 
       ! Copy to LCT
-      lct%blk(ib)%D11(:,:,iscales) = fld(:,:,1)*req**2
-      lct%blk(ib)%D22(:,:,iscales) = fld(:,:,2)*req**2
+      lct%blk(ib)%D11(:,:,iscales) = fld(:,:,1)
+      lct%blk(ib)%D22(:,:,iscales) = fld(:,:,2)
       lct%blk(ib)%D33(:,:,iscales) = fld(:,:,3)
       if (lct%blk(ib)%ncomp(iscales)==4) then
-         lct%blk(ib)%D12(:,:,iscales) = sqrt(fld(:,:,1)*fld(:,:,2))*fld(:,:,4)*req**2
+         lct%blk(ib)%D12(:,:,iscales) = sqrt(fld(:,:,1)*fld(:,:,2))*fld(:,:,4)
       else
          lct%blk(ib)%D12(:,:,iscales) = 0.0
       end if
       lct%blk(ib)%Dcoef(:,:,iscales) = fld(:,:,lct%blk(ib)%ncomp(iscales)+1)
-      lct%blk(ib)%DLh(:,:,iscales) = fld(:,:,lct%blk(ib)%ncomp(iscales)+2)*reqkm
+      lct%blk(ib)%DLh(:,:,iscales) = fld(:,:,lct%blk(ib)%ncomp(iscales)+2)
 
       ! Write LCT
       write(mpl%unit,'(a13,a)') '','Write LCT'

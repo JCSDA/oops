@@ -112,12 +112,12 @@
     "datadir": "Data",
     "exp": "localization_bumploc",
     "type": "an",
-    "date": "2009-12-31T00:00:00Z"
+    "date": "2010-01-01T00:00:00Z"
   },
   "output_B": {
     "datadir": "Data",
-    "exp": "B_bumpcov",
+    "exp": "B_bumploc",
     "type": "an",
-    "date": "2009-12-31T00:00:00Z"
+    "date": "2010-01-01T00:00:00Z"
   }
 }

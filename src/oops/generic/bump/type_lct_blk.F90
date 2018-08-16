@@ -277,9 +277,6 @@ do il0=1,geom%nl0
       ic0 = hdata%c1_to_c0(ic1)
 
       if (hdata%c1l0_log(ic1,il0)) then
-
-         write(*,*) 'TEST',hdata%c1l0_log(ic1,il0),hdata%nc1a
-
          ! Prepare vectors
          do jl0r=1,bpar%nl0r(ib)
             jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
@@ -309,7 +306,6 @@ do il0=1,geom%nl0
                end do
             end if
          end do
-         write(*,*) 'TOST',count(isnotmsr(Dh)),sum(Dh,mask=isnotmsr(Dh))/real(count(isnotmsr(Dh)),kind_real)
          call msr(Dhbar)
          if (count(isnotmsr(Dh))>0) Dhbar = sum(Dh,mask=isnotmsr(Dh))/real(count(isnotmsr(Dh)),kind_real)
 

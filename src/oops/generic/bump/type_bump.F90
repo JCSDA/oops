@@ -76,7 +76,7 @@ contains
 !> Purpose: online setup
 !----------------------------------------------------------------------
 subroutine bump_setup_online(bump,mpi_comm,nmga,nl0,nv,nts,lon,lat,area,vunit,lmask,ens1_ne,ens1_nsub,ens2_ne,ens2_nsub, & 
-                           & nobs,lonobs,latobs)
+                           & nobs,lonobs,latobs,namelname)
 
 implicit none
 
@@ -99,12 +99,19 @@ integer,intent(in),optional :: ens2_nsub               !< Ensemble 2 size of sub
 integer,intent(in),optional :: nobs                    !< Number of observations
 real(kind_real),intent(in),optional :: lonobs(:)       !< Observations longitude (in degrees: -180 to 180)
 real(kind_real),intent(in),optional :: latobs(:)       !< Observations latitude (in degrees: -90 to 90)
+character(len=*),intent(in),optional :: namelname      !< Namelist name
 
 ! Local variables
 integer :: lens1_ne,lens1_nsub,lens2_ne,lens2_nsub
 
 ! Initialize MPL
 call bump%mpl%init(mpi_comm)
+
+if (present(namelname)) then
+   ! Read and broadcast namelist
+   call bump%nam%read(bump%mpl,namelname)
+   call bump%nam%bcast(bump%mpl)
+end if
 
 ! Set internal namelist parameters
 lens1_ne = 0
@@ -116,9 +123,6 @@ if (present(ens1_nsub)) lens1_nsub = ens1_nsub
 if (present(ens2_ne)) lens2_ne = ens2_ne
 if (present(ens2_ne)) lens2_nsub = ens2_nsub
 call bump%nam%setup_internal(nl0,nv,nts,lens1_ne,lens1_nsub,lens2_ne,lens2_nsub)
-
-! Broadcast namelist
-call bump%nam%bcast(bump%mpl)
 
 ! Initialize listing
 call bump%mpl%init_listing(bump%nam%prefix,bump%nam%model,bump%nam%colorlog,bump%nam%logpres)
@@ -631,12 +635,12 @@ case default
    case ('D11_')
       do iscales=1,9
          write(iscaleschar,'(i1)') iscales
-         if (param(5:5)==iscaleschar) fld = bump%lct%blk(ib)%D11(:,:,iscales)
+         if (param(5:5)==iscaleschar) fld = bump%lct%blk(ib)%D11(:,:,iscales)*req**2
       end do
    case ('D22_')
       do iscales=1,9
          write(iscaleschar,'(i1)') iscales
-         if (param(5:5)==iscaleschar) fld = bump%lct%blk(ib)%D22(:,:,iscales)
+         if (param(5:5)==iscaleschar) fld = bump%lct%blk(ib)%D22(:,:,iscales)*req**2
       end do
    case ('D33_')
       do iscales=1,9
@@ -646,7 +650,7 @@ case default
    case ('D12_')
       do iscales=1,9
          write(iscaleschar,'(i1)') iscales
-         if (param(5:5)==iscaleschar) fld = bump%lct%blk(ib)%D12(:,:,iscales)
+         if (param(5:5)==iscaleschar) fld = bump%lct%blk(ib)%D12(:,:,iscales)*req**2
       end do
    case ('Dcoe')
       do iscales=1,9
@@ -656,7 +660,7 @@ case default
    case ('DLh_')
       do iscales=1,9
          write(iscaleschar,'(i1)') iscales
-         if (param(5:5)==iscaleschar) fld = bump%lct%blk(ib)%DLh(:,:,iscales)
+         if (param(5:5)==iscaleschar) fld = bump%lct%blk(ib)%DLh(:,:,iscales)*req
       end do
    case default
       call bump%mpl%abort('parameter '//trim(param)//' not yet implemented in get_parameter')

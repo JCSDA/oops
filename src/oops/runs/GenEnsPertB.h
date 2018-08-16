@@ -88,11 +88,6 @@ template <typename MODEL> class GenEnsPertB : public Application {
 //    Generate pertubation
       Bmat->randomize(dx);
 
-//    Write perturbation
-      eckit::LocalConfiguration outConfig_pert(fullConfig, "output_pert");
-      outConfig_pert.set("member", jm+1);
-      dx.write(outConfig_pert);
-
 //    Add mean state
       State_ xp(xx);
       xp += dx;

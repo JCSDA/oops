@@ -1,2 +1,6 @@
-Test     : Increment norm: 3.92552
-Test     : Adjoint test: -292.207 / -292.207
+Test     : Norm of D11_1: 1.09077e+13
+Test     : Norm of D22_1: 1.56739e+13
+Test     : Norm of D33_1: 48.3434
+Test     : Norm of D12_1: 0
+Test     : Norm of Dcoef_1: 1
+Test     : Norm of DLh_1: 2.20807e+06

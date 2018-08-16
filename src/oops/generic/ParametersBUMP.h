@@ -184,6 +184,7 @@ void ParametersBUMP<MODEL>::estimate() const {
 }
 
 // -----------------------------------------------------------------------------
+
 template<typename MODEL>
 void ParametersBUMP<MODEL>::write() const {
   Log::trace() << "ParametersBUMP::write starting" << std::endl;

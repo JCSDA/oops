@@ -336,6 +336,9 @@ class(nam_type),intent(inout) :: nam     !< Namelist
 type(mpl_type),intent(in) :: mpl         !< MPI data
 character(len=*),intent(in) :: namelname !< Namelist name
 
+! Local variables
+integer :: iv
+
 ! Namelist variables
 integer :: lunit
 integer :: nl,levs(nlmax),nv,nts,timeslot(ntsmax),ens1_ne,ens1_ne_offset,ens1_nsub,ens2_ne,ens2_ne_offset,ens2_nsub
@@ -371,6 +374,141 @@ namelist/output_param/nldwh,il_ldwh,ic_ldwh,nldwv,lon_ldwv,lat_ldwv,diag_rhflt,d
                     & grid_output,grid_resol,grid_interp
 
 if (mpl%main) then
+   ! general_param default
+   datadir = ''
+   prefix = ''
+   model = ''
+   colorlog = .false.
+   default_seed = .false.
+   use_metis = .false.
+
+   ! driver_param default
+   method = ''
+   strategy = ''
+   new_vbal = .false.
+   load_vbal = .false.
+   new_hdiag = .false.
+   new_lct = .false.
+   load_cmat = .false.
+   new_nicas = .false.
+   load_nicas = .false.
+   new_obsop = .false.
+   load_obsop = .false.
+   check_vbal = .false.
+   check_adjoints = .false.
+   check_pos_def = .false.
+   check_sqrt = .false.
+   check_dirac = .false.
+   check_randomization = .false.
+   check_consistency = .false.
+   check_optimality = .false.
+   check_obsop = .false.
+
+   ! model_param default
+   call msi(nl)
+   call msi(levs)
+   logpres = .false.
+   call msi(nv)
+   do iv=1,nvmax
+      varname(iv) = ''
+      addvar2d(iv) = ''
+   end do
+   call msi(nts)
+   call msi(timeslot)
+   
+   ! ens1_param default
+   call msi(ens1_ne)
+   call msi(ens1_ne_offset)
+   call msi(ens1_nsub)
+   
+   ! ens2_param default
+   call msi(ens2_ne)
+   call msi(ens2_ne_offset)
+   call msi(ens2_nsub)
+   
+   ! sampling_param default
+   sam_write = .false.
+   sam_read = .false.
+   mask_type = ''
+   call msr(mask_th)
+   mask_check = .false.
+   draw_type = ''
+   call msi(nc1)
+   call msi(nc2)
+   call msi(ntry)
+   call msi(nrep)
+   call msi(nc3)
+   call msr(dc)
+   call msi(nl0r)
+   
+   ! diag_param default
+   call msi(ne)
+   gau_approx = .false.
+   do iv=1,nvmax*(nvmax-1)/2
+      vbal_block(iv) = .false.
+   end do
+   call msr(vbal_rad)
+   var_diag = .false.
+   var_filter = .false.
+   var_full = .false.
+   call msi(var_niter)
+   call msr(var_rhflt)
+   local_diag = .false.
+   call msr(local_rad)
+   displ_diag = .false.
+   call msr(displ_rad)
+   call msi(displ_niter)
+   call msr(displ_rhflt)
+   call msr(displ_tol)
+   
+   ! fit_param default
+   minim_algo = ''
+   do iv=0,nvmax
+      double_fit(iv) = .false.
+   end do
+   lhomh = .false.
+   lhomv = .false.
+   call msr(rvflt)
+   call msi(lct_nscales)
+   lct_diag = .false.
+   
+   ! nicas_param default
+   lsqrt = .false.
+   call msr(resol)
+   nicas_interp = ''
+   network = .false.
+   call msi(mpicom)
+   call msi(advmode)
+   forced_radii = .false.
+   call msr(rh)
+   call msr(rv)
+   call msi(ndir)
+   call msr(londir)
+   call msr(latdir)
+   call msi(levdir)
+   call msi(ivdir)
+   call msi(itsdir)
+   
+   ! obsop_param default
+   call msi(nobs)
+   obsdis = ''
+   obsop_interp = ''
+   
+   ! output_param default
+   call msi(nldwh)
+   call msi(il_ldwh)
+   call msi(ic_ldwh)
+   call msi(nldwv)
+   call msr(lon_ldwv)
+   call msr(lat_ldwv)
+   call msr(diag_rhflt)
+   diag_interp = ''
+   field_io = .true.
+   split_io = .false.
+   grid_output = .false.
+   call msr(grid_resol)
+   grid_interp = ''
+
    ! Open namelist
    call mpl%newunit(lunit)
    open(unit=lunit,file=trim(namelname),status='old',action='read')
