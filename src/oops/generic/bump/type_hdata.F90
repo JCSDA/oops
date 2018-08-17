@@ -752,7 +752,7 @@ if (ios==1) then
    if (nam%new_lct) then
       ! Compute LCT sampling
       call hdata%compute_sampling_lct(mpl,nam,geom)
-   else
+   elseif (nam%new_hdiag) then
       ! Compute positive separation sampling
       call hdata%compute_sampling_ps(mpl,rng,nam,geom)
    end if

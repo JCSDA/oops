@@ -345,8 +345,8 @@ subroutine bump_read_conf(c_conf,bump)
 implicit none
 type(c_ptr), intent(in) :: c_conf
 type(bump_type), intent(inout) :: bump
-integer :: il,its,iscales,ildwh,ildwv,idir
-character(len=3) :: ilchar,itschar,iscaleschar,ildwhchar,ildwvchar,idirchar
+integer :: il,its,iscales,ildwh,ildwv,idir,iv
+character(len=3) :: ilchar,itschar,iscaleschar,ildwhchar,ildwvchar,idirchar,ivchar
 
 ! Setup from configuration
 
@@ -400,22 +400,24 @@ if (config_element_exists(c_conf,"nl0r")) bump%nam%nl0r = config_get_int(c_conf,
 ! diag_param
 if (config_element_exists(c_conf,"ne")) bump%nam%ne = config_get_int(c_conf,"ne")
 if (config_element_exists(c_conf,"gau_approx")) bump%nam%gau_approx = integer_to_logical(config_get_int(c_conf,"gau_approx"))
+do iv=1,bump%nam%nv*(bump%nam%nv-1)/2
+   write(ivchar,'(i3)') iv
+   if (config_element_exists(c_conf,"vbal_block("//trim(adjustl(ivchar))//")")) &
+ & bump%nam%vbal_block(iv) = integer_to_logical(config_get_int(c_conf,"vbal_block("//trim(adjustl(ivchar))//")"))
+end do
+if (config_element_exists(c_conf,"vbal_rad")) bump%nam%vbal_rad = config_get_real(c_conf,"vbal_rad")
 if (config_element_exists(c_conf,"var_diag")) bump%nam%var_diag = integer_to_logical(config_get_int(c_conf,"var_diag"))
 if (config_element_exists(c_conf,"var_filter")) bump%nam%var_filter = integer_to_logical(config_get_int(c_conf,"var_filter"))
 if (config_element_exists(c_conf,"var_full")) bump%nam%var_full = integer_to_logical(config_get_int(c_conf,"var_full"))
 if (config_element_exists(c_conf,"var_niter")) bump%nam%var_niter = config_get_int(c_conf,"var_niter")
-   if (config_element_exists(c_conf,"var_rhflt")) bump%nam%var_rhflt = config_get_real(c_conf,"var_rhflt")
+if (config_element_exists(c_conf,"var_rhflt")) bump%nam%var_rhflt = config_get_real(c_conf,"var_rhflt")
 if (config_element_exists(c_conf,"local_diag")) bump%nam%local_diag = integer_to_logical(config_get_int(c_conf,"local_diag"))
-if (bump%nam%local_diag) then
-   if (config_element_exists(c_conf,"local_rad")) bump%nam%local_rad = config_get_real(c_conf,"local_rad")
-end if
+if (config_element_exists(c_conf,"local_rad")) bump%nam%local_rad = config_get_real(c_conf,"local_rad")
 if (config_element_exists(c_conf,"displ_diag")) bump%nam%displ_diag = integer_to_logical(config_get_int(c_conf,"displ_diag"))
-if (bump%nam%displ_diag) then
-   if (config_element_exists(c_conf,"displ_rad")) bump%nam%displ_rad = config_get_real(c_conf,"displ_rad")
-   if (config_element_exists(c_conf,"displ_niter")) bump%nam%displ_niter = config_get_int(c_conf,"displ_niter")
-   if (config_element_exists(c_conf,"displ_rhflt")) bump%nam%displ_rhflt = config_get_real(c_conf,"displ_rhflt")
-   if (config_element_exists(c_conf,"displ_tol")) bump%nam%displ_tol = config_get_real(c_conf,"displ_tol")
-end if
+if (config_element_exists(c_conf,"displ_rad")) bump%nam%displ_rad = config_get_real(c_conf,"displ_rad")
+if (config_element_exists(c_conf,"displ_niter")) bump%nam%displ_niter = config_get_int(c_conf,"displ_niter")
+if (config_element_exists(c_conf,"displ_rhflt")) bump%nam%displ_rhflt = config_get_real(c_conf,"displ_rhflt")
+if (config_element_exists(c_conf,"displ_tol")) bump%nam%displ_tol = config_get_real(c_conf,"displ_tol")
 
 ! fit_param
 if (config_element_exists(c_conf,"minim_algo")) bump%nam%minim_algo = config_get_string(c_conf,1024,"minim_algo")
@@ -476,10 +478,8 @@ if (config_element_exists(c_conf,"diag_interp")) bump%nam%diag_interp = config_g
 if (config_element_exists(c_conf,"field_io")) bump%nam%field_io = integer_to_logical(config_get_int(c_conf,"field_io"))
 if (config_element_exists(c_conf,"split_io")) bump%nam%split_io = integer_to_logical(config_get_int(c_conf,"split_io"))
 if (config_element_exists(c_conf,"grid_output")) bump%nam%grid_output = integer_to_logical(config_get_int(c_conf,"grid_output"))
-if (bump%nam%grid_output) then
-   if (config_element_exists(c_conf,"grid_resol")) bump%nam%grid_resol = config_get_real(c_conf,"grid_resol")
-   if (config_element_exists(c_conf,"grid_interp")) bump%nam%grid_interp = config_get_string(c_conf,1024,"grid_interp")
-end if
+if (config_element_exists(c_conf,"grid_resol")) bump%nam%grid_resol = config_get_real(c_conf,"grid_resol")
+if (config_element_exists(c_conf,"grid_interp")) bump%nam%grid_interp = config_get_string(c_conf,1024,"grid_interp")
 
 end subroutine bump_read_conf
 

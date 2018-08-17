@@ -313,7 +313,7 @@ end subroutine vbal_write
 ! Subroutine: vbal_run_vbal
 !> Purpose: compute vertical balance
 !----------------------------------------------------------------------
-subroutine vbal_run_vbal(vbal,mpl,rng,nam,geom,bpar,io,ens)
+subroutine vbal_run_vbal(vbal,mpl,rng,nam,geom,bpar,io,ens,ensu)
 
 implicit none
 
@@ -326,6 +326,7 @@ type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
 type(io_type),intent(in) :: io         !< I/O
 type(ens_type), intent(in) :: ens      !< Ensemble
+type(ens_type),intent(inout) :: ensu   !< Unbalanced ensemble
 
 ! Local variables
 integer :: il0i,i_s,ic0a,ic2b,ic2,ie,ie_sub,ic0,jl0,il0,isub,ic1,ic1a,iv,jv,offset,nc1a,lwork,info,progint
@@ -337,7 +338,6 @@ real(kind_real),allocatable :: list_auto(:),list_cross(:),work(:)
 real(kind_real),allocatable :: fld_1(:,:),fld_2(:,:),auto(:,:,:,:),cross(:,:,:,:)
 logical :: valid,done_c2(nam%nc2),mask_unpack(geom%nl0,geom%nl0)
 logical,allocatable :: done_c2b(:)
-type(ens_type) :: ensu
 type(hdata_type) :: hdata
 
 ! Setup sampling

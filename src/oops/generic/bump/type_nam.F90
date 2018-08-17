@@ -1036,7 +1036,7 @@ if (nam%new_vbal) then
    if (.not.(any(nam%vbal_block(1:nam%nv*(nam%nv-1)/2)))) &
  & call mpl%abort('no block selected for the vertical balance diagnostics')
 
-   if (nam%vbal_rad<0.0) call mpl%abort('displ_rad should be non-negative')
+   if (nam%vbal_rad<0.0) call mpl%abort('vbal_rad should be non-negative')
 end if
 if (nam%new_hdiag) then
    select case (trim(nam%method))

@@ -35,6 +35,7 @@ type bump_type
    type(bpar_type) :: bpar
    type(cmat_type) :: cmat
    type(ens_type) :: ens1
+   type(ens_type) :: ens1u
    type(ens_type) :: ens2
    type(geom_type) :: geom
    type(io_type) :: io
@@ -274,7 +275,7 @@ if (bump%nam%new_vbal) then
    write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(bump%mpl%unit,'(a)') '--- Run vertical balance driver'
    call flush(bump%mpl%unit)
-   call bump%vbal%run_vbal(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1)
+   call bump%vbal%run_vbal(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1,bump%ens1u)
 elseif (bump%nam%load_vbal) then
    ! Read vertical balance data
    write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
@@ -643,8 +644,7 @@ integer,intent(in) :: ib                                         !< Block index
 real(kind_real),intent(out) :: fld(bump%geom%nmga,bump%geom%nl0) !< Field
 
 ! Local variables
-integer :: iscales
-character(len=1) :: iscaleschar
+integer :: iscales,ie,iv,its
 
 ! Select parameter
 select case (trim(param))
@@ -669,37 +669,32 @@ case ('hyb_coef')
 case default
    select case (param(1:4))
    case ('D11_')
-      do iscales=1,9
-         write(iscaleschar,'(i1)') iscales
-         if (param(5:5)==iscaleschar) call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%D11(:,:,iscales)*req**2,fld)
-      end do
+      read(param(5:5),'(i1)') iscales
+      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%D11(:,:,iscales)*req**2,fld)
    case ('D22_')
-      do iscales=1,9
-         write(iscaleschar,'(i1)') iscales
-         if (param(5:5)==iscaleschar) call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%D22(:,:,iscales)*req**2,fld)
-      end do
+      read(param(5:5),'(i1)') iscales
+      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%D22(:,:,iscales)*req**2,fld)
    case ('D33_')
-      do iscales=1,9
-         write(iscaleschar,'(i1)') iscales
-         if (param(5:5)==iscaleschar) call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%D33(:,:,iscales),fld)
-      end do
+      read(param(5:5),'(i1)') iscales
+      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%D33(:,:,iscales),fld)
    case ('D12_')
-      do iscales=1,9
-         write(iscaleschar,'(i1)') iscales
-         if (param(5:5)==iscaleschar) call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%D12(:,:,iscales)*req**2,fld)
-      end do
+      read(param(5:5),'(i1)') iscales
+      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%D12(:,:,iscales)*req**2,fld)
    case ('Dcoe')
-      do iscales=1,9
-         write(iscaleschar,'(i1)') iscales
-         if (param(5:7)=='f_'//iscaleschar) call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%Dcoef(:,:,iscales),fld)
-      end do
+      read(param(7:7),'(i1)') iscales
+      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%Dcoef(:,:,iscales),fld)
    case ('DLh_')
-      do iscales=1,9
-         write(iscaleschar,'(i1)') iscales
-         if (param(5:5)==iscaleschar) call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%DLh(:,:,iscales)*req,fld)
-      end do
+      read(param(5:5),'(i1)') iscales
+      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%DLh(:,:,iscales)*req,fld)
    case default
-      call bump%mpl%abort('parameter '//trim(param)//' not yet implemented in get_parameter')
+      if (param(1:6)=='ens1u_') then
+         read(param(7:10),'(i4.4)') ie
+         iv = bump%bpar%b_to_v1(ib)
+         its = bump%bpar%b_to_ts1(ib)
+         call bump%geom%copy_c0a_to_mga(bump%mpl,bump%ens1u%fld(:,:,iv,its,ie),fld)
+      else
+         call bump%mpl%abort('parameter '//trim(param)//' not yet implemented in get_parameter')
+      end if
    end select
 end select
 

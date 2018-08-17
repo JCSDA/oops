@@ -76,5 +76,42 @@
   "ntry" : 3,
   "nrep" : 2,
   "nl0r" : 2,
-  "diag_interp" : "bilin"
+  "vbal_block(1)" : 1,
+  "vbal_block(2)" : 1,
+  "vbal_block(3)" : 1,
+  "vbal_block(4)" : 1,
+  "vbal_block(5)" : 1,
+  "vbal_block(6)" : 1,
+  "vbal_rad" : 1000.0e3,
+  "diag_interp" : "bilin",
+  "output" : [
+    {
+      "parameter" : "ens1u_0001",
+      "datadir": "Data",
+      "exp": "ens1u_0001",
+      "type": "an",
+      "date": "2010-01-01T00:00:00Z"
+    },
+    {
+      "parameter" : "ens1u_0002",
+      "datadir": "Data",
+      "exp": "ens1u_0002",
+      "type": "an",
+      "date": "2010-01-01T00:00:00Z"
+    },
+    {
+      "parameter" : "ens1u_0003",
+      "datadir": "Data",
+      "exp": "ens1u_0003",
+      "type": "an",
+      "date": "2010-01-01T00:00:00Z"
+    },
+    {
+      "parameter" : "ens1u_0004",
+      "datadir": "Data",
+      "exp": "ens1u_0004",
+      "type": "an",
+      "date": "2010-01-01T00:00:00Z"
+    }
+  ]
 }

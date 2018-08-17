@@ -1048,8 +1048,10 @@ do il0=1,geom%nl0
    do imga=1,geom%nmga
       img = geom%mga_to_mg(imga)
       jmg = geom%redundant(img)
-      jmga = geom%mg_to_mga(jmg)
-      if (isnotmsi(jmg)) fld_mga(imga,il0) = fld_mga(jmga,il0)
+      if (isnotmsi(jmg)) then
+         jmga = geom%mg_to_mga(jmg)
+         fld_mga(imga,il0) = fld_mga(jmga,il0)
+      end if
    end do
 end do
 

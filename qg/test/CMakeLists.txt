@@ -288,7 +288,15 @@ ecbuild_add_test( TARGET  test_qg_localization
                   ARGS    "testinput/interfaces.json"
                   LIBS    qg )
 
-# test_qg_parameters_bump_vbal should be executed before test_qg_linearvariablechange
+# Application test_qg_linearvariablechange requires test_qg_parameters_bump_vbal output, which requires test_qg_genenspert output
+
+ecbuild_add_test( TARGET test_qg_genenspert
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_genpert.x testinput/genenspert.json"
+                       testoutput/genenspert.test
+                  DEPENDS qg_genpert.x )
+
 ecbuild_add_test( TARGET test_qg_parameters_bump_vbal
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
@@ -370,14 +378,12 @@ ecbuild_add_test( TARGET test_qg_4dvar_dripcg
                        testoutput/4dvar.dripcg.test
                   DEPENDS qg_4dvar.x )
 
-if( ${OOPS_SENSITIVE_TESTS} )
 ecbuild_add_test( TARGET test_qg_4dvar_ipcg
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/4dvar.ipcg.json"
                        testoutput/4dvar.ipcg.test
                   DEPENDS qg_4dvar.x )
-endif()
 
 ecbuild_add_test( TARGET test_qg_4dvar_rpcg
                   TYPE SCRIPT
@@ -406,14 +412,6 @@ ecbuild_add_test( TARGET test_qg_4dvar_saddlepoint
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/4dsaddlepoint.json"
                        testoutput/4dsaddlepoint.test
                   DEPENDS qg_4dvar.x )
-
-if( ${OOPS_SENSITIVE_TESTS} )
-ecbuild_add_test( TARGET test_qg_genenspert
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_genpert.x testinput/genenspert.json"
-                       testoutput/genenspert.test
-                  DEPENDS qg_genpert.x )
 
 ecbuild_add_test( TARGET test_qg_4dvar_hybrid
                   TYPE SCRIPT
@@ -491,8 +489,6 @@ ecbuild_add_test( TARGET test_qg_parameters_bump_readloc
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_parameters.x testinput/parametersbump.readloc.json"
                        testoutput/parametersbump.readloc.test
                   DEPENDS qg_parameters.x )
-
-endif()
 
 ecbuild_add_test( TARGET test_qg_dfi
                   TYPE SCRIPT
