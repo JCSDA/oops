@@ -14,7 +14,7 @@ use netcdf
 use tools_const, only: pi,req,deg2rad,rad2deg,reqkm
 use tools_func, only: pos,lonlatmod,sphere_dist,vector_product,vector_triple_product
 use tools_kinds, only: kind_real
-use tools_missing, only: msi,msr,isnotmsi,ismsi
+use tools_missing, only: msi,msr,isnotmsi,ismsi,ismsr
 use tools_nc, only: ncfloat
 use tools_qsort, only: qsort
 use tools_stripack, only: areas,trans
@@ -96,6 +96,8 @@ contains
    procedure :: compute_mask_boundaries => geom_compute_mask_boundaries
    procedure :: define_distribution => geom_define_distribution
    procedure :: check_arc => geom_check_arc
+   procedure :: copy_c0a_to_mga => geom_copy_c0a_to_mga
+   procedure :: copy_mga_to_c0a => geom_copy_mga_to_c0a
 end type geom_type
 
 private
@@ -1014,5 +1016,76 @@ do ibnd=1,geom%nbnd(il0)
 end do
 
 end subroutine geom_check_arc
+
+!----------------------------------------------------------------------
+! Subroutine: geom_copy_c0a_to_mga
+!> Purpose: copy from subset Sc0 to model grid, halo A
+!----------------------------------------------------------------------
+subroutine geom_copy_c0a_to_mga(geom,mpl,fld_c0a,fld_mga)
+
+implicit none
+
+! Passed variables
+class(geom_type),intent(in) :: geom                        !< Geometry
+type(mpl_type),intent(in) :: mpl                           !< MPI data
+real(kind_real),intent(in) :: fld_c0a(geom%nc0a,geom%nl0)  !< Field on subset Sc0, halo A
+real(kind_real),intent(out) :: fld_mga(geom%nmga,geom%nl0) !< Field on model grid, halo A
+
+! Local variables
+integer :: ic0a,il0,imga,img,jmg,jmga
+
+! Initialization
+call msr(fld_mga)
+
+do il0=1,geom%nl0
+   ! Copy non-redundant points
+   do ic0a=1,geom%nc0a
+      imga = geom%c0a_to_mga(ic0a)
+      fld_mga(imga,il0) = fld_c0a(ic0a,il0)
+   end do
+
+   ! Deal with redundant points
+   do imga=1,geom%nmga
+      img = geom%mga_to_mg(imga)
+      jmg = geom%redundant(img)
+      jmga = geom%mg_to_mga(jmg)
+      if (isnotmsi(jmg)) fld_mga(imga,il0) = fld_mga(jmga,il0)
+   end do
+end do
+
+! Check for missing values
+if (any(ismsr(fld_mga))) call mpl%abort('missing value in copy_c0a_to_mga')
+
+end subroutine geom_copy_c0a_to_mga
+
+!----------------------------------------------------------------------
+! Subroutine: geom_copy_mga_to_c0a
+!> Purpose: copy from model grid to subset Sc0, halo A
+!----------------------------------------------------------------------
+subroutine geom_copy_mga_to_c0a(geom,mpl,fld_mga,fld_c0a)
+
+implicit none
+
+! Passed variables
+class(geom_type),intent(in) :: geom                        !< Geometry
+type(mpl_type),intent(in) :: mpl                           !< MPI data
+real(kind_real),intent(in) :: fld_mga(geom%nmga,geom%nl0)  !< Field on model grid, halo A
+real(kind_real),intent(out) :: fld_c0a(geom%nc0a,geom%nl0) !< Field on subset Sc0, halo A
+
+! Local variables
+integer :: ic0a,il0,imga
+
+do il0=1,geom%nl0
+   ! Copy non-redundant points
+   do ic0a=1,geom%nc0a
+      imga = geom%c0a_to_mga(ic0a)
+      fld_c0a(ic0a,il0) = fld_mga(imga,il0)
+   end do
+end do
+
+! Check for missing values
+if (any(ismsr(fld_c0a))) call mpl%abort('missing value in copy_mga_to_c0a')
+
+end subroutine geom_copy_mga_to_c0a
 
 end module type_geom
