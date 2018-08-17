@@ -46,6 +46,9 @@
            },
            {
              "varchange": "ChVarQG",
+             "top_layer_depth": "5500.0",
+             "bottom_layer_depth": "4500.0",
+             "tstep": "PT1H",
              "inputVariables": {
                 "variables": ["x"]
               },
@@ -128,6 +131,7 @@
           "bc": "1"
         },
         "linearmodel": {
+          "varchange": "Identity",
           "version": "QgIdTLM",
           "tstep": "PT1H",
           "top_layer_depth": "5500.0",
@@ -152,6 +156,7 @@
           "bc": "1"
         },
         "linearmodel": {
+          "varchange": "Identity",
           "version": "QgIdTLM",
           "tstep": "PT1H",
           "top_layer_depth": "5500.0",

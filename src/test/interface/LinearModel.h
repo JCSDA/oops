@@ -155,17 +155,24 @@ template <typename MODEL> void testLinearModelZeroLength() {
   const util::DateTime vt(Test_::time());
   const util::Duration zero(0);
 
-  Increment_ dx(Test_::resol(), Test_::ctlvars(), vt);
-  Test_::covariance().randomize(dx);
+  Increment_ dxref(Test_::resol(), Test_::ctlvars(), vt);
+  Test_::covariance().randomize(dxref);
   ModelAuxIncr_ daux(Test_::dbias());
-  const double ininorm = dx.norm();
+  const double ininorm = dxref.norm();
   BOOST_CHECK(ininorm > 0.0);
 
-  Test_::tlm().forecastTL(dx, daux, zero);
+  Increment_ dx(Test_::resol(), Test_::ctlvars(), vt);
+  Increment_ dxm(Test_::resol(), Test_::tlm().variables(), vt);
+  dxm = dxref;
+  Test_::tlm().forecastTL(dxm, daux, zero);
+  dx = dxm;
   BOOST_CHECK_EQUAL(dx.validTime(), vt);
   BOOST_CHECK_EQUAL(dx.norm(), ininorm);
 
-  Test_::tlm().forecastAD(dx, daux, zero);
+  dxm.zero();
+  dxm = dxref;
+  Test_::tlm().forecastAD(dxm, daux, zero);
+  dx = dxm;
   BOOST_CHECK_EQUAL(dx.validTime(), vt);
   BOOST_CHECK_EQUAL(dx.norm(), ininorm);
 }
@@ -182,7 +189,7 @@ template <typename MODEL> void testLinearModelZeroPert() {
   const util::DateTime t2(t1 + len);
   BOOST_CHECK(t2 > t1);
 
-  Increment_ dx(Test_::resol(), Test_::ctlvars(), t1);
+  Increment_ dx(Test_::resol(), Test_::tlm().variables(), t1);
   ModelAuxIncr_ daux(Test_::dbias());
 
   dx.zero();
@@ -213,7 +220,7 @@ template <typename MODEL> void testLinearModelLinearity() {
   BOOST_CHECK(t2 > t1);
   const double zz = 3.1415;
 
-  Increment_ dx1(Test_::resol(), Test_::ctlvars(), t1);
+  Increment_ dx1(Test_::resol(), Test_::tlm().variables(), t1);
   Test_::covariance().randomize(dx1);
   ModelAuxIncr_ daux1(Test_::dbias());
   BOOST_CHECK(dx1.norm() > 0.0);
@@ -247,7 +254,7 @@ template <typename MODEL> void testLinearApproximation() {
   const util::DateTime t2(t1 + len);
   BOOST_CHECK(t2 > t1);
 
-  Increment_ dx0(Test_::resol(), Test_::ctlvars(), t1);
+  Increment_ dx0(Test_::resol(), Test_::tlm().variables(), t1);
   Test_::covariance().randomize(dx0);
   BOOST_CHECK(dx0.norm() > 0.0);
 
@@ -273,7 +280,7 @@ template <typename MODEL> void testLinearApproximation() {
     xx += pert;
     Test_::model().forecast(xx, Test_::bias(), len, post);
 
-    Increment_ diff(Test_::resol(), Test_::ctlvars(), t2);
+    Increment_ diff(Test_::resol(), Test_::tlm().variables(), t2);
     diff.diff(xx, xx0);
     const double difnorm = diff.norm();
     const double err = zz * dxnorm / difnorm;
@@ -306,7 +313,7 @@ template <typename MODEL> void testLinearModelAdjoint() {
   const util::DateTime t2(t1 + len);
   BOOST_CHECK(t2 > t1);
 
-  Increment_ dx11(Test_::resol(), Test_::ctlvars(), t1);
+  Increment_ dx11(Test_::resol(), Test_::tlm().variables(), t1);
   Test_::covariance().randomize(dx11);
   ModelAuxIncr_ daux1(Test_::dbias());
   BOOST_CHECK(dx11.norm() > 0.0);
@@ -314,7 +321,7 @@ template <typename MODEL> void testLinearModelAdjoint() {
   Test_::tlm().forecastTL(dx12, daux1, len);
   BOOST_CHECK(dx12.norm() > 0.0);
 
-  Increment_ dx22(Test_::resol(), Test_::ctlvars(), t2);
+  Increment_ dx22(Test_::resol(), Test_::tlm().variables(), t2);
   Test_::covariance().randomize(dx22);
   ModelAuxIncr_ daux2(Test_::dbias());
   BOOST_CHECK(dx22.norm() > 0.0);

@@ -113,6 +113,8 @@ template<typename MODEL> class CostFunction : private boost::noncopyable {
                                       const CtrlVar_ &) const = 0;
   virtual CostJo<MODEL>       * newJo(const eckit::Configuration &) const = 0;
   virtual CostTermBase<MODEL> * newJc(const eckit::Configuration &, const Geometry_ &) const = 0;
+  virtual void doLinearize(const Geometry_ &, const eckit::Configuration &,
+                           const CtrlVar_ &, const CtrlVar_ &) = 0;
 
 // Data members
   const Geometry_ & resol_;
@@ -303,6 +305,10 @@ double CostFunction<MODEL>::linearize(const CtrlVar_ & fguess,
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
     jterms_[jj].finalizeTraj();
   }
+
+// Specific linearization if needed
+  this->doLinearize(lowres, innerConf, *xb_, fguess);
+
   Log::trace() << "CostFunction::linearize done" << std::endl;
   return zzz;
 }

@@ -197,6 +197,7 @@
           "bc": "1"
         },
         "linearmodel": {
+          "varchange": "Identity",
           "version": "QgTLM",
           "tstep": "PT1H",
           "top_layer_depth": "5500.0",
@@ -221,6 +222,7 @@
           "bc": "1"
         },
         "linearmodel": {
+          "varchange": "Identity",
           "version": "QgTLM",
           "tstep": "PT1H",
           "top_layer_depth": "5500.0",
