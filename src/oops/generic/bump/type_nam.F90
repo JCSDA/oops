@@ -42,18 +42,23 @@ type nam_type
    character(len=1024) :: method                    !< Localization/hybridization to compute ('cor', 'loc_norm', 'loc', 'hyb-avg', 'hyb-rnd' or 'dual-ens')
    character(len=1024) :: strategy                  !< Localization strategy ('diag_all', 'common', 'specific_univariate', 'specific_multivariate' or 'common_weighted')
    logical :: new_vbal                              !< Compute new vertical balance operator
+   logical :: load_vbal                             !< Load existing vertical balance operator
    logical :: new_hdiag                             !< Compute new HDIAG diagnostics
    logical :: new_lct                               !< Compute new LCT
-   logical :: new_param                             !< Compute new NICAS parameters
-   logical :: new_obsop                             !< Compute observation operator
+   logical :: load_cmat                             !< Load existing C matrix
+   logical :: new_nicas                             !< Compute new NICAS parameters
+   logical :: load_nicas                            !< Load existing NICAS parameters
+   logical :: new_obsop                             !< Compute new observation operator
+   logical :: load_obsop                            !< Load existing observation operator
    logical :: check_vbal                            !< Test vertical balance inverse and adjoint
-   logical :: check_adjoints                        !< Test adjoints
-   logical :: check_pos_def                         !< Test positive definiteness
-   logical :: check_sqrt                            !< Test full/square-root equivalence
+   logical :: check_adjoints                        !< Test NICAS adjoints
+   logical :: check_pos_def                         !< Test NICAS positive definiteness
+   logical :: check_sqrt                            !< Test NICAS full/square-root equivalence
    logical :: check_dirac                           !< Test NICAS application on diracs
    logical :: check_randomization                   !< Test NICAS randomization
    logical :: check_consistency                     !< Test HDIAG-NICAS consistency
    logical :: check_optimality                      !< Test HDIAG optimality
+   logical :: check_obsop                           !< Test observation operator
 
    ! model_param
    integer :: nl                                    !< Number of levels
@@ -193,10 +198,14 @@ nam%use_metis = .false.
 nam%method = ''
 nam%strategy = ''
 nam%new_vbal = .false.
+nam%load_vbal = .false.
 nam%new_hdiag = .false.
 nam%new_lct = .false.
-nam%new_param = .false.
+nam%load_cmat = .false.
+nam%new_nicas = .false.
+nam%load_nicas = .false.
 nam%new_obsop = .false.
+nam%load_obsop = .false.
 nam%check_vbal = .false.
 nam%check_adjoints = .false.
 nam%check_pos_def = .false.
@@ -205,6 +214,7 @@ nam%check_dirac = .false.
 nam%check_randomization = .false.
 nam%check_consistency = .false.
 nam%check_optimality = .false.
+nam%check_obsop = .false.
 
 ! model_param default
 call msi(nam%nl)
@@ -326,15 +336,19 @@ class(nam_type),intent(inout) :: nam     !< Namelist
 type(mpl_type),intent(in) :: mpl         !< MPI data
 character(len=*),intent(in) :: namelname !< Namelist name
 
+! Local variables
+integer :: iv
+
 ! Namelist variables
 integer :: lunit
 integer :: nl,levs(nlmax),nv,nts,timeslot(ntsmax),ens1_ne,ens1_ne_offset,ens1_nsub,ens2_ne,ens2_ne_offset,ens2_nsub
 integer :: nc1,nc2,ntry,nrep,nc3,nl0r,ne,var_niter,displ_niter,lct_nscales,mpicom,advmode,ndir,levdir(ndirmax),ivdir(ndirmax)
 integer :: itsdir(ndirmax),nobs,nldwh,il_ldwh(nlmax*nc3max),ic_ldwh(nlmax*nc3max),nldwv
 logical :: colorlog,default_seed,use_metis
-logical :: new_vbal,new_hdiag,new_lct,new_obsop,new_param,check_vbal,check_adjoints,check_pos_def,check_sqrt,check_dirac
-logical :: check_randomization,check_consistency,check_optimality,logpres,sam_write,sam_read,mask_check
-logical :: vbal_block(nvmax*(nvmax-1)/2),var_diag,var_filter,var_full,gau_approx,local_diag,displ_diag,double_fit(nvmax)
+logical :: new_vbal,load_vbal,new_hdiag,new_lct,load_cmat,new_nicas,load_nicas,new_obsop,load_obsop
+logical :: check_vbal,check_adjoints,check_pos_def,check_sqrt,check_dirac,check_randomization,check_consistency,check_optimality
+logical :: check_obsop,logpres,sam_write,sam_read,mask_check
+logical :: vbal_block(nvmax*(nvmax-1)/2),var_diag,var_filter,var_full,gau_approx,local_diag,displ_diag,double_fit(0:nvmax)
 logical :: lhomh,lhomv,lct_diag(nscalesmax),lsqrt,network,forced_radii,field_io,split_io,grid_output
 real(kind_real) :: mask_th,dc,vbal_rad,var_rhflt,local_rad,displ_rad,displ_rhflt,displ_tol,rvflt,lon_ldwv(nldwvmax)
 real(kind_real) :: lat_ldwv(nldwvmax),diag_rhflt,resol,rh,rv,londir(ndirmax),latdir(ndirmax),grid_resol
@@ -344,8 +358,9 @@ character(len=1024),dimension(nvmax) :: varname,addvar2d
 
 ! Namelist blocks
 namelist/general_param/datadir,prefix,model,colorlog,default_seed,use_metis
-namelist/driver_param/method,strategy,new_vbal,new_hdiag,new_lct,new_param,new_obsop,check_vbal,check_adjoints,check_pos_def, &
-                    & check_sqrt,check_dirac,check_randomization,check_consistency,check_optimality
+namelist/driver_param/method,strategy,new_vbal,load_vbal,new_hdiag,new_lct,load_cmat,new_nicas,load_nicas,new_obsop,load_obsop, &
+                    & check_vbal,check_adjoints,check_pos_def,check_sqrt,check_dirac,check_randomization,check_consistency, &
+                    & check_optimality,check_obsop
 namelist/model_param/nl,levs,logpres,nv,varname,addvar2d,nts,timeslot
 namelist/ens1_param/ens1_ne,ens1_ne_offset,ens1_nsub
 namelist/ens2_param/ens2_ne,ens2_ne_offset,ens2_nsub
@@ -359,6 +374,141 @@ namelist/output_param/nldwh,il_ldwh,ic_ldwh,nldwv,lon_ldwv,lat_ldwv,diag_rhflt,d
                     & grid_output,grid_resol,grid_interp
 
 if (mpl%main) then
+   ! general_param default
+   datadir = ''
+   prefix = ''
+   model = ''
+   colorlog = .false.
+   default_seed = .false.
+   use_metis = .false.
+
+   ! driver_param default
+   method = ''
+   strategy = ''
+   new_vbal = .false.
+   load_vbal = .false.
+   new_hdiag = .false.
+   new_lct = .false.
+   load_cmat = .false.
+   new_nicas = .false.
+   load_nicas = .false.
+   new_obsop = .false.
+   load_obsop = .false.
+   check_vbal = .false.
+   check_adjoints = .false.
+   check_pos_def = .false.
+   check_sqrt = .false.
+   check_dirac = .false.
+   check_randomization = .false.
+   check_consistency = .false.
+   check_optimality = .false.
+   check_obsop = .false.
+
+   ! model_param default
+   call msi(nl)
+   call msi(levs)
+   logpres = .false.
+   call msi(nv)
+   do iv=1,nvmax
+      varname(iv) = ''
+      addvar2d(iv) = ''
+   end do
+   call msi(nts)
+   call msi(timeslot)
+   
+   ! ens1_param default
+   call msi(ens1_ne)
+   call msi(ens1_ne_offset)
+   call msi(ens1_nsub)
+   
+   ! ens2_param default
+   call msi(ens2_ne)
+   call msi(ens2_ne_offset)
+   call msi(ens2_nsub)
+   
+   ! sampling_param default
+   sam_write = .false.
+   sam_read = .false.
+   mask_type = ''
+   call msr(mask_th)
+   mask_check = .false.
+   draw_type = ''
+   call msi(nc1)
+   call msi(nc2)
+   call msi(ntry)
+   call msi(nrep)
+   call msi(nc3)
+   call msr(dc)
+   call msi(nl0r)
+   
+   ! diag_param default
+   call msi(ne)
+   gau_approx = .false.
+   do iv=1,nvmax*(nvmax-1)/2
+      vbal_block(iv) = .false.
+   end do
+   call msr(vbal_rad)
+   var_diag = .false.
+   var_filter = .false.
+   var_full = .false.
+   call msi(var_niter)
+   call msr(var_rhflt)
+   local_diag = .false.
+   call msr(local_rad)
+   displ_diag = .false.
+   call msr(displ_rad)
+   call msi(displ_niter)
+   call msr(displ_rhflt)
+   call msr(displ_tol)
+   
+   ! fit_param default
+   minim_algo = ''
+   do iv=0,nvmax
+      double_fit(iv) = .false.
+   end do
+   lhomh = .false.
+   lhomv = .false.
+   call msr(rvflt)
+   call msi(lct_nscales)
+   lct_diag = .false.
+   
+   ! nicas_param default
+   lsqrt = .false.
+   call msr(resol)
+   nicas_interp = ''
+   network = .false.
+   call msi(mpicom)
+   call msi(advmode)
+   forced_radii = .false.
+   call msr(rh)
+   call msr(rv)
+   call msi(ndir)
+   call msr(londir)
+   call msr(latdir)
+   call msi(levdir)
+   call msi(ivdir)
+   call msi(itsdir)
+   
+   ! obsop_param default
+   call msi(nobs)
+   obsdis = ''
+   obsop_interp = ''
+   
+   ! output_param default
+   call msi(nldwh)
+   call msi(il_ldwh)
+   call msi(ic_ldwh)
+   call msi(nldwv)
+   call msr(lon_ldwv)
+   call msr(lat_ldwv)
+   call msr(diag_rhflt)
+   diag_interp = ''
+   field_io = .true.
+   split_io = .false.
+   grid_output = .false.
+   call msr(grid_resol)
+   grid_interp = ''
+
    ! Open namelist
    call mpl%newunit(lunit)
    open(unit=lunit,file=trim(namelname),status='old',action='read')
@@ -377,10 +527,14 @@ if (mpl%main) then
    nam%method = method
    nam%strategy = strategy
    nam%new_vbal = new_vbal
+   nam%load_vbal = load_vbal
    nam%new_hdiag = new_hdiag
    nam%new_lct = new_lct
-   nam%new_param = new_param
+   nam%load_cmat = load_cmat
+   nam%new_nicas = new_nicas
+   nam%load_nicas = load_nicas
    nam%new_obsop = new_obsop
+   nam%load_obsop = load_obsop
    nam%check_vbal = check_vbal
    nam%check_adjoints = check_adjoints
    nam%check_pos_def = check_pos_def
@@ -389,6 +543,8 @@ if (mpl%main) then
    nam%check_randomization = check_randomization
    nam%check_consistency = check_consistency
    nam%check_optimality = check_optimality
+   nam%check_obsop = check_obsop
+
    ! model_param
    read(lunit,nml=model_param)
    if (nl>nlmax) call mpl%abort('nl is too large')
@@ -535,10 +691,14 @@ call mpl%bcast(nam%use_metis)
 call mpl%bcast(nam%method)
 call mpl%bcast(nam%strategy)
 call mpl%bcast(nam%new_vbal)
+call mpl%bcast(nam%load_vbal)
 call mpl%bcast(nam%new_hdiag)
 call mpl%bcast(nam%new_lct)
-call mpl%bcast(nam%new_param)
+call mpl%bcast(nam%load_cmat)
+call mpl%bcast(nam%new_nicas)
+call mpl%bcast(nam%load_nicas)
 call mpl%bcast(nam%new_obsop)
+call mpl%bcast(nam%load_obsop)
 call mpl%bcast(nam%check_vbal)
 call mpl%bcast(nam%check_adjoints)
 call mpl%bcast(nam%check_pos_def)
@@ -547,6 +707,7 @@ call mpl%bcast(nam%check_dirac)
 call mpl%bcast(nam%check_randomization)
 call mpl%bcast(nam%check_consistency)
 call mpl%bcast(nam%check_optimality)
+call mpl%bcast(nam%check_obsop)
 
 ! model_param
 call mpl%bcast(nam%nl)
@@ -670,7 +831,7 @@ integer,intent(in) :: ens2_nsub           !< Ensemble 2 size of sub-ensembles
 ! Local variables
 integer :: il,iv
 
-nam%datadir = '.'
+if (trim(nam%datadir)=='') nam%datadir = '.'
 nam%model = 'online'
 nam%colorlog = .false.
 nam%use_metis = .false.
@@ -756,8 +917,10 @@ if (nam%new_hdiag.or.nam%check_consistency.or.nam%check_optimality) then
       call mpl%abort('wrong method')
    end select
 end if
-if (nam%new_hdiag.or.nam%new_param.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_sqrt.or.nam%check_dirac &
- & .or.nam%check_randomization.or.nam%check_consistency.or.nam%check_optimality) then
+if (nam%new_lct) then
+   if (trim(nam%method)/='cor') call mpl%abort('new_lct requires cor method')
+end if
+if (nam%new_hdiag.or.nam%new_lct.or.nam%load_cmat.or.nam%new_nicas.or.nam%load_nicas) then
    select case (trim(nam%strategy))
    case ('diag_all','common','specific_univariate','common_weighted')
    case ('specific_multivariate')
@@ -766,24 +929,23 @@ if (nam%new_hdiag.or.nam%new_param.or.nam%check_adjoints.or.nam%check_pos_def.or
       call mpl%abort('wrong strategy')
    end select
 end if
-if (nam%new_lct) then
-   if (trim(nam%method)/='cor') call mpl%abort('new_lct requires cor method')
-   if (nam%new_hdiag) call mpl%abort('new_lct and new_hdiag should not active together')
-end if
-if (nam%check_sqrt.and.(.not.nam%new_param)) call mpl%abort('square-root check requires new parameters calculation')
-if (nam%check_randomization) then
-   if (.not.nam%lsqrt) call mpl%abort('lsqrt required for check_randomization')
-end if
-if (nam%check_consistency) then
-   if (.not.nam%new_hdiag) call mpl%abort('new_hdiag required for check_consistency')
-   if (.not.nam%new_param) call mpl%abort('new_param required for check_consistency')
-   if (.not.nam%lsqrt) call mpl%abort('lsqrt required for check_consistency')
-end if
-if (nam%check_optimality) then
-   if (.not.nam%new_hdiag) call mpl%abort('new_hdiag required for check_optimality')
-   if (.not.nam%new_param) call mpl%abort('new_param required for check_optimality')
-   if (.not.nam%lsqrt) call mpl%abort('lsqrt required for check_optimality')
-end if
+if (nam%new_vbal.and.nam%load_vbal) call mpl%abort('new_vbal and load_vbal are exclusive')
+if (nam%new_hdiag.and.nam%new_lct) call mpl%abort('new_hdiag and new_lct are exclusive')
+if ((nam%new_hdiag.or.nam%new_lct).and.nam%load_cmat) call mpl%abort('new_hdiag or new_lct and load_cmat are exclusive')
+if (nam%new_nicas.and.nam%load_nicas) call mpl%abort('new_nicas and load_nicas are exclusive')
+if (nam%new_obsop.and.nam%load_obsop) call mpl%abort('new_obsop and load_obsop are exclusive')
+if (nam%check_vbal.and..not.(nam%new_vbal.or.nam%load_vbal)) call mpl%abort('check_vbal requires new_vbal or load_vbal')
+if (nam%check_adjoints.and..not.(nam%new_nicas.or.nam%load_nicas)) call mpl%abort('check_adjoint requires new_nicas or load_nicas')
+if (nam%check_pos_def.and..not.(nam%new_nicas.or.nam%load_nicas)) call mpl%abort('check_pos_def requires new_nicas or load_nicas')
+if (nam%check_sqrt.and..not.(nam%new_nicas.or.nam%load_nicas)) call mpl%abort('check_sqrt requires new_nicas or load_nicas')
+if (nam%check_dirac.and..not.(nam%new_nicas.or.nam%load_nicas)) call mpl%abort('check_dirac requires new_nicas or load_nicas')
+if (nam%check_randomization.and..not.(nam%new_nicas.or.nam%load_nicas)) &
+ & call mpl%abort('check_randomization requires new_nicas or load_nicas')
+if (nam%check_consistency.and..not.((nam%new_hdiag.or.nam%load_cmat).and.nam%new_nicas)) &
+ & call mpl%abort('check_adjoint requires new_nicas or load_nicas and new_nicas')
+if (nam%check_optimality.and..not.(nam%new_nicas.or.nam%load_nicas)) &
+ & call mpl%abort('check_optimality requires new_nicas or load_nicas')
+if (nam%check_obsop.and..not.(nam%new_obsop.or.nam%load_obsop)) call mpl%abort('check_obsop requires new_obsop or load_obsop')
 
 ! Check model_param
 if (nam%nl<=0) call mpl%abort('nl should be positive')
@@ -798,8 +960,7 @@ if (nam%logpres) then
       nam%logpres = .false.
    end select
 end if
-if (nam%new_vbal.or.nam%new_hdiag.or.nam%new_param.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_sqrt &
- & .or.nam%check_dirac.or.nam%check_randomization.or.nam%check_consistency.or.nam%check_optimality.or.nam%new_lct) then
+if (nam%new_vbal.or.nam%load_vbal.or.nam%new_hdiag.or.nam%new_lct.or.nam%load_cmat.or.nam%new_nicas.or.nam%load_nicas) then
    if (nam%nv<=0) call mpl%abort('nv should be positive')
    do iv=1,nam%nv
       write(ivchar,'(i2.2)') iv
@@ -855,12 +1016,14 @@ if (nam%new_vbal.or.nam%new_hdiag.or.nam%new_lct) then
       nam%nc2 = nam%nc1
    end if
 end if
-if (nam%new_vbal.or.nam%new_hdiag.or.nam%new_lct.or.nam%new_param) then
+if (nam%new_vbal.or.nam%new_hdiag.or.nam%new_lct.or.nam%new_nicas) then
    if (nam%ntry<=0) call mpl%abort('ntry should be positive')
    if (nam%nrep<0) call mpl%abort('nrep should be non-negative')
 end if
-if (nam%new_vbal.or.nam%new_hdiag.or.nam%new_lct) then
+if (nam%new_hdiag.or.nam%new_lct) then
    if (nam%nc3<=0) call mpl%abort('nc3 should be positive')
+end if
+if (nam%new_vbal.or.nam%load_vbal.or.nam%new_hdiag.or.nam%new_lct) then
    if (nam%nl0r<1) call mpl%abort ('nl0r should be positive')
 end if
 if (nam%new_hdiag) then
@@ -873,7 +1036,7 @@ if (nam%new_vbal) then
    if (.not.(any(nam%vbal_block(1:nam%nv*(nam%nv-1)/2)))) &
  & call mpl%abort('no block selected for the vertical balance diagnostics')
 
-   if (nam%vbal_rad<0.0) call mpl%abort('displ_rad should be non-negative')
+   if (nam%vbal_rad<0.0) call mpl%abort('vbal_rad should be non-negative')
 end if
 if (nam%new_hdiag) then
    select case (trim(nam%method))
@@ -924,20 +1087,29 @@ if (nam%new_hdiag) then
 end if
 
 ! Check nicas_param
-if (nam%new_param.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_sqrt.or.nam%check_dirac.or.nam%check_randomization &
+if (nam%new_nicas.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_sqrt.or.nam%check_dirac.or.nam%check_randomization &
  & .or.nam%check_consistency.or.nam%check_optimality) then
    if (nam%lsqrt) then
       if (nam%mpicom==1) call mpl%abort('mpicom should be 2 for square-root application')
    end if
-   if (nam%new_param) then
+   if (nam%check_randomization) then
+      if (.not.nam%lsqrt) call mpl%abort('lsqrt required for check_randomization')
+   end if
+   if (nam%check_consistency) then
+      if (.not.nam%lsqrt) call mpl%abort('lsqrt required for check_consistency')
+   end if
+   if (nam%check_optimality) then
+      if (.not.nam%lsqrt) call mpl%abort('lsqrt required for check_optimality')
+   end if
+   if (nam%new_nicas) then
       if (.not.(nam%resol>0.0)) call mpl%abort('resol should be positive')
    end if
-   if (nam%new_param.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_sqrt.or.nam%check_dirac.or. &
-    & nam%check_randomization.or.nam%check_consistency.or.nam%check_optimality) then
+   if (nam%new_nicas.or.nam%load_nicas) then
       if ((nam%mpicom/=1).and.(nam%mpicom/=2)) call mpl%abort('mpicom should be 1 or 2')
    end if
    if (nam%forced_radii) then
-      if (nam%new_hdiag) call mpl%abort('forced_radii should be inactive if new_hdiag is active')
+      if (nam%new_hdiag.or.nam%new_lct.or.nam%load_cmat) &
+    & call mpl%abort('forced_radii requires new_hdiag, new_lct and load_cmat to be inactive')
       if (nam%rh<0.0) call mpl%abort('rh should be non-negative')
       if (nam%rv<0.0) call mpl%abort('rv should be non-negative')
    end if
@@ -998,7 +1170,7 @@ if (nam%new_hdiag.or.nam%new_lct) then
       call mpl%abort('wrong interpolation for diagnostics')
    end select
 end if
-if (nam%new_hdiag.or.nam%new_param.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_sqrt.or.nam%check_dirac &
+if (nam%new_hdiag.or.nam%new_nicas.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_sqrt.or.nam%check_dirac &
  & .or.nam%check_randomization.or.nam%check_consistency.or.nam%check_optimality.or.nam%new_lct) then
    if (nam%grid_output) then
       if (.not.(nam%grid_resol>0.0)) call mpl%abort('grid_resol should be positive')
@@ -1115,10 +1287,14 @@ call put_att(mpl,ncid,'use_metis',nam%use_metis)
 call put_att(mpl,ncid,'method',trim(nam%method))
 call put_att(mpl,ncid,'strategy',trim(nam%strategy))
 call put_att(mpl,ncid,'new_vbal',nam%new_vbal)
+call put_att(mpl,ncid,'load_vbal',nam%load_vbal)
 call put_att(mpl,ncid,'new_hdiag',nam%new_hdiag)
 call put_att(mpl,ncid,'new_lct',nam%new_lct)
-call put_att(mpl,ncid,'new_param',nam%new_param)
+call put_att(mpl,ncid,'load_cmat',nam%load_cmat)
+call put_att(mpl,ncid,'new_nicas',nam%new_nicas)
+call put_att(mpl,ncid,'load_nicas',nam%load_nicas)
 call put_att(mpl,ncid,'new_obsop',nam%new_obsop)
+call put_att(mpl,ncid,'load_obsop',nam%load_obsop)
 call put_att(mpl,ncid,'check_vbal',nam%check_vbal)
 call put_att(mpl,ncid,'check_adjoints',nam%check_adjoints)
 call put_att(mpl,ncid,'check_pos_def',nam%check_pos_def)
@@ -1127,6 +1303,7 @@ call put_att(mpl,ncid,'check_dirac',nam%check_dirac)
 call put_att(mpl,ncid,'check_randomization',nam%check_randomization)
 call put_att(mpl,ncid,'check_consistency',nam%check_consistency)
 call put_att(mpl,ncid,'check_optimality',nam%check_optimality)
+call put_att(mpl,ncid,'check_obsop',nam%check_obsop)
 
 ! model_param
 call put_att(mpl,ncid,'nl',nam%nl)

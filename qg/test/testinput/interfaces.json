@@ -68,16 +68,24 @@
     {
       "varchange": "StatsVariableChange",
       "variables": {
-        "variables": ["x"]
+        "variables": ["x","q","u","v","bc"]
       },
       "prefix" : "bump",
       "strategy" : "common",
+      "load_vbal" : 1,
       "check_vbal" : 1,
+      "nl0r" : 2,
+      "vbal_block(1)" : 1,
+      "vbal_block(2)" : 1,
+      "vbal_block(3)" : 1,
+      "vbal_block(4)" : 1,
+      "vbal_block(5)" : 1,
+      "vbal_block(6)" : 1,
       "inputVariables": {
-        "variables": ["x"]
+        "variables": ["x","q","u","v","bc"]
       },
       "outputVariables": {
-        "variables": ["x"]
+        "variables": ["x","q","u","v","bc"]
       }
     }
   ],    

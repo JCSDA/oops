@@ -12,6 +12,7 @@
 #define OOPS_GENERIC_ERRORCOVARIANCEBUMP_H_
 
 #include <string>
+#include <vector>
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -92,6 +93,20 @@ ErrorCovarianceBUMP<MODEL>::ErrorCovarianceBUMP(const Geometry_ & resol,
 
 // Create BUMP
   create_oobump_f90(keyBUMP_, ug.toFortran(), &fconf, 0, 1, 0, 1);
+
+// Read data from files
+  if (conf.has("input")) {
+    std::vector<eckit::LocalConfiguration> inputConfigs;
+    conf.get("input", inputConfigs);
+    for (const auto & subconf : inputConfigs) {
+      dx.read(subconf);
+      dx.field_to_ug(ug, colocated_);
+      std::string param = subconf.getString("parameter");
+      const int nstr = param.size();
+      const char *cstr = param.c_str();
+      set_oobump_param_f90(keyBUMP_, nstr, cstr, ug.toFortran());
+    }
+  }
 
 // Run BUMP
   run_oobump_drivers_f90(keyBUMP_);

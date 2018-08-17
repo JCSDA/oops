@@ -125,14 +125,17 @@ type(unstructured_grid), intent(inout) :: self
 integer :: igrid
 
 ! Release memory
-do igrid=1,self%ngrid
-   if (allocated(self%grid(igrid)%lon)) deallocate(self%grid(igrid)%lon)
-   if (allocated(self%grid(igrid)%lat)) deallocate(self%grid(igrid)%lat)
-   if (allocated(self%grid(igrid)%area)) deallocate(self%grid(igrid)%area)
-   if (allocated(self%grid(igrid)%vunit)) deallocate(self%grid(igrid)%vunit)
-   if (allocated(self%grid(igrid)%lmask)) deallocate(self%grid(igrid)%lmask)
-   if (allocated(self%grid(igrid)%fld)) deallocate(self%grid(igrid)%fld)
-enddo
+if (allocated(self%grid)) then
+   do igrid=1,self%ngrid
+      if (allocated(self%grid(igrid)%lon)) deallocate(self%grid(igrid)%lon)
+      if (allocated(self%grid(igrid)%lat)) deallocate(self%grid(igrid)%lat)
+      if (allocated(self%grid(igrid)%area)) deallocate(self%grid(igrid)%area)
+      if (allocated(self%grid(igrid)%vunit)) deallocate(self%grid(igrid)%vunit)
+      if (allocated(self%grid(igrid)%lmask)) deallocate(self%grid(igrid)%lmask)
+      if (allocated(self%grid(igrid)%fld)) deallocate(self%grid(igrid)%fld)
+   enddo
+   deallocate(self%grid)
+endif
 
 end subroutine delete_unstructured_grid
 

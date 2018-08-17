@@ -3,8 +3,8 @@ Test     :   Valid time: 2009-12-31T00:00:00Z
 Test     :   Resolution = 40, 20, Fields = 4, 2
 Test     :   Min=-30.5908, Max=12.4057, RMS=12.9993
 Test     :   Min=-41.8524, Max=36.3133, RMS=21.0398
-Test     :   Min=0, Max=0, RMS=0
-Test     :   Min=0, Max=0, RMS=0
+Test     :   Min=-10.5424, Max=18.7879, RMS=5.08563
+Test     :   Min=-9.89405, Max=10.3394, RMS=4.30144
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     : Final state: 

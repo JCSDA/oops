@@ -8,57 +8,19 @@
     "bc": "1"
   },
   "variables": {
-    "variables": ["x"]
+    "variables": ["x","q","u","v","bc"]
   },
-  "model": {
-    "tstep": "PT1H",
-    "top_layer_depth": "5500.0",
-    "bottom_layer_depth": "4500.0"
-  },
-  "initial": {
+  "date": "2010-01-01T00:00:00Z",
+  "background": {
     "filename": "Data/truth.fc.2009-12-15T00:00:00Z.P17D",
     "date": "2010-01-01T00:00:00Z"
   },
-  "Covariance": {
-    "covariance": "ensemble",
+  "ensemble": {
     "members": "10",
     "variables": {
-      "variables": ["x"]
-     },
-    "date": "2010-01-01T00:00:00Z",
-    "localization": {
-      "localization": "BUMP",
-      "date": "2010-01-01T00:00:00Z",
-      "variables": {
-        "variables": ["x"]
-      },
-      "prefix" : "bump",
-      "default_seed" : 1,
-      "method" : "loc_norm",
-      "strategy" : "common",
-      "new_hdiag" : 1,
-      "new_nicas" : 1,
-      "mask_type" : "none",
-      "draw_type" : "random_uniform",
-      "nc1" : 400,
-      "ntry" : 3,
-      "nrep" : 2,
-      "nc3" : 15,
-      "dc" : 500.0e3,
-      "nl0r" : 2,
-      "ne" : 10,
-      "minim_algo" : "hooke",
-      "rvflt" : 0.0,
-      "lsqrt" : 1,
-      "resol" : 10.0,
-      "nicas_interp" : "bilin",
-      "mpicom" : 2,
-      "advmode" : 0,
-      "diag_interp" : "bilin",
-      "nldwh" : 0,
-      "nldwv" : 0
+      "variables": ["x","q","u","v","bc"]
     },
-    "state": [
+    "state" : [
       {
         "filename": "Data/test.ens.1.2009-12-31T00:00:00Z.P1D",
         "date": "2010-01-01T00:00:00Z"
@@ -101,23 +63,55 @@
       }
     ]
   },
-  "dirac": {
-    "ndir": 1,
-    "ixdir(1)": 20,
-    "iydir(1)": 10,
-    "ildir": 1,
-    "ifdir": 1
-  },
-  "output_localization": {
-    "datadir": "Data",
-    "exp": "localization_bumploc",
-    "type": "an",
-    "date": "2010-01-01T00:00:00Z"
-  },
-  "output_B": {
-    "datadir": "Data",
-    "exp": "B_bumploc",
-    "type": "an",
-    "date": "2010-01-01T00:00:00Z"
-  }
+  "prefix" : "bump",
+  "default_seed" : 1,
+  "method" : "cor",
+  "strategy" : "specific_univariate",
+  "new_vbal" : 1,
+  "check_vbal" : 1,
+  "mask_type" : "none",
+  "draw_type" : "random_uniform",
+  "nc1" : 400,
+  "nc2" : 100,
+  "ntry" : 3,
+  "nrep" : 2,
+  "nl0r" : 2,
+  "vbal_block(1)" : 1,
+  "vbal_block(2)" : 1,
+  "vbal_block(3)" : 1,
+  "vbal_block(4)" : 1,
+  "vbal_block(5)" : 1,
+  "vbal_block(6)" : 1,
+  "vbal_rad" : 1000.0e3,
+  "diag_interp" : "bilin",
+  "output" : [
+    {
+      "parameter" : "ens1u_0001",
+      "datadir": "Data",
+      "exp": "ens1u_0001",
+      "type": "an",
+      "date": "2010-01-01T00:00:00Z"
+    },
+    {
+      "parameter" : "ens1u_0002",
+      "datadir": "Data",
+      "exp": "ens1u_0002",
+      "type": "an",
+      "date": "2010-01-01T00:00:00Z"
+    },
+    {
+      "parameter" : "ens1u_0003",
+      "datadir": "Data",
+      "exp": "ens1u_0003",
+      "type": "an",
+      "date": "2010-01-01T00:00:00Z"
+    },
+    {
+      "parameter" : "ens1u_0004",
+      "datadir": "Data",
+      "exp": "ens1u_0004",
+      "type": "an",
+      "date": "2010-01-01T00:00:00Z"
+    }
+  ]
 }

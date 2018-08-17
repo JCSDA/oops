@@ -603,7 +603,7 @@ do il0i=1,geom%nl0i
       call hdata%hfull(il0i)%write(mpl,ncid)
    end if
 
-   if (nam%local_diag) then
+   if (any(nam%vbal_block(1:nam%nv*(nam%nv+1)))) then
       ! Allocation
       allocate(vbal_maskint(nam%nc1,nam%nc2))
 
@@ -752,7 +752,7 @@ if (ios==1) then
    if (nam%new_lct) then
       ! Compute LCT sampling
       call hdata%compute_sampling_lct(mpl,nam,geom)
-   else
+   elseif (nam%new_hdiag) then
       ! Compute positive separation sampling
       call hdata%compute_sampling_ps(mpl,rng,nam,geom)
    end if
@@ -843,9 +843,9 @@ if (nam%new_vbal.or.nam%new_lct.or.(nam%new_hdiag.and.(nam%var_diag.or.nam%local
             do jc1=1,nam%nc1
                kc1 = nn_c1_index(jc1)
                if (nam%new_vbal) hdata%vbal_mask(kc1,ic2) = (jc1==1) &
-             & .or.(nn_c1_dist(jc1)<min(nam%vbal_rad,hdata%mesh%bdist(ic2)))
+             & .or.(nn_c1_dist(jc1)<nam%vbal_rad)
                if (nam%local_diag) hdata%local_mask(kc1,ic2) = (jc1==1) &
-             & .or.(nn_c1_dist(jc1)<min(nam%local_rad,hdata%mesh%bdist(ic2)))
+             & .or.(nn_c1_dist(jc1)<nam%local_rad)
                if (nam%displ_diag) hdata%displ_mask(kc1,ic2) = (jc1==1) &
              & .or.(nn_c1_dist(jc1)<min(nam%displ_rad,hdata%mesh%bdist(ic2)))
             end do
@@ -1373,7 +1373,7 @@ else
    deallocate(sbufi)
    deallocate(sbufl)
 end if
-mpl%tag = mpl%tag+2
+call mpl%update_tag(2)
 
 ! Broadcast data
 call mpl%bcast(hdata%c1c3_to_c0)

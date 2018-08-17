@@ -85,11 +85,11 @@ template <typename MODEL> class GenEnsPertB : public Application {
     Increment_ dx(resol, vars, bgndate);
     const int members = fullConfig.getInt("members");
     for (int jm = 0; jm < members; ++jm) {
+//    Generate pertubation
       Bmat->randomize(dx);
-      Log::debug() << "before copy xx:" << xx << std::endl;
+
+//    Add mean state
       State_ xp(xx);
-      Log::debug() << "after copy xx:" << xx << std::endl;
-      Log::debug() << "after copy xp:" << xp << std::endl;
       xp += dx;
 
 //    Setup forecast outputs

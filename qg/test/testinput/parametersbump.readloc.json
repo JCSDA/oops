@@ -63,69 +63,82 @@
       }
     ]
   },
+  "covariance": {
+    "covariance": "QgError",
+    "standard_deviation": "1.8",
+    "vertical_correlation": "0.2",
+    "horizontal_length_scale": "3e6",
+    "maximum_condition_number": "1.0e6",
+    "date": "2010-01-01T00:00:00Z",
+    "pseudoens_size" : 20
+   },
   "prefix" : "bump",
   "default_seed" : 1,
-  "method" : "cor",
-  "strategy" : "specific_univariate",
-  "new_lct" : 1,
+  "method" : "hyb-rnd",
+  "strategy" : "common",
+  "new_hdiag" : 1,
+  "new_nicas" : 1,
   "mask_type" : "none",
   "draw_type" : "random_uniform",
-  "nc1" : 100,
+  "nc1" : 400,
   "nc2" : 100,
   "ntry" : 3,
   "nrep" : 2,
-  "nc3" : 50,
+  "nc3" : 15,
   "dc" : 500.0e3,
   "nl0r" : 2,
   "ne" : 10,
+  "local_diag" : 1,
+  "local_rad" : 3000.0e3,
   "minim_algo" : "hooke",
   "rvflt" : 0.0,
-  "lct_nscales" : 1,
-  "lct_diag(1)" : 1,
+  "lsqrt" : 1,
+  "resol" : 10.0,
+  "nicas_interp" : "bilin",
+  "mpicom" : 2,
+  "advmode" : 0,
   "diag_rhflt" : 3000.0e3,
   "diag_interp" : "bilin",
   "nldwh" : 0,
   "nldwv" : 0,
+  "input" : [
+    {
+      "parameter" : "loc_rh",
+      "filename": "Data/hyb_loc_rh.an.2010-01-01T00:00:00Z",
+      "date": "2010-01-01T00:00:00Z"
+    },
+    {
+      "parameter" : "loc_rv",
+      "filename": "Data/hyb_loc_rv.an.2010-01-01T00:00:00Z",
+      "date": "2010-01-01T00:00:00Z"
+    }
+  ],
   "output" : [
     {
-      "parameter" : "D11_1",
+      "parameter" : "loc_coef",
       "datadir": "Data",
-      "exp": "D11_1",
+      "exp": "read_hyb_loc_coef",
       "type": "an",
       "date": "2010-01-01T00:00:00Z"
     },
     {
-      "parameter" : "D22_1",
+      "parameter" : "loc_rh",
       "datadir": "Data",
-      "exp": "D22_1",
+      "exp": "read_hyb_loc_rh",
       "type": "an",
       "date": "2010-01-01T00:00:00Z"
     },
     {
-      "parameter" : "D33_1",
+      "parameter" : "loc_rv",
       "datadir": "Data",
-      "exp": "D33_1",
+      "exp": "read_hyb_loc_rv",
       "type": "an",
       "date": "2010-01-01T00:00:00Z"
     },
     {
-      "parameter" : "D12_1",
+      "parameter" : "hyb_coef",
       "datadir": "Data",
-      "exp": "D12_1",
-      "type": "an",
-      "date": "2010-01-01T00:00:00Z"
-    },
-    {
-      "parameter" : "Dcoef_1",
-      "datadir": "Data",
-      "exp": "Dcoef_1",
-      "type": "an",
-      "date": "2010-01-01T00:00:00Z"
-    },
-    {
-      "parameter" : "DLh_1",
-      "datadir": "Data",
-      "exp": "DLh_1",
+      "exp": "read_hyb_sta_coef",
       "type": "an",
       "date": "2010-01-01T00:00:00Z"
     }

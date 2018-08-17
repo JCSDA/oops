@@ -273,6 +273,37 @@ call get_oobump_param(self, param, ug)
 end subroutine get_oobump_param_c
 
 ! ------------------------------------------------------------------------------
+
+subroutine set_oobump_param_c(key, nstr, cstr, idx) bind(c, name='set_oobump_param_f90')
+implicit none
+integer(c_int), intent(in) :: key
+integer(c_int), intent(in) :: nstr
+character(kind=c_char), intent(in) :: cstr(nstr)
+integer(c_int), intent(in) :: idx
+
+type(oobump_type), pointer :: self
+type(unstructured_grid), pointer :: ug
+integer :: istr
+character(len=nstr) :: param
+
+! Get BUMP
+call oobump_registry%get(key,self)
+
+! Get unstructured grid
+call unstructured_grid_registry%get(idx, ug)
+
+! Copy string
+param = ''
+do istr=1,nstr
+   param = trim(param)//cstr(istr)
+end do
+
+! Set parameter
+call set_oobump_param(self, param, ug)
+
+end subroutine set_oobump_param_c
+
+! ------------------------------------------------------------------------------
 !  End C++ interfaces
 ! ------------------------------------------------------------------------------
 
@@ -314,12 +345,13 @@ subroutine bump_read_conf(c_conf,bump)
 implicit none
 type(c_ptr), intent(in) :: c_conf
 type(bump_type), intent(inout) :: bump
-integer :: il,its,iscales,ildwh,ildwv,idir
-character(len=3) :: ilchar,itschar,ildwhchar,ildwvchar,idirchar
+integer :: il,its,iscales,ildwh,ildwv,idir,iv
+character(len=3) :: ilchar,itschar,iscaleschar,ildwhchar,ildwvchar,idirchar,ivchar
 
 ! Setup from configuration
 
 ! general_param
+if (config_element_exists(c_conf,"datadir")) bump%nam%datadir = config_get_string(c_conf,1024,"datadir")
 if (config_element_exists(c_conf,"prefix")) bump%nam%prefix = config_get_string(c_conf,1024,"prefix")
 if (config_element_exists(c_conf,"default_seed")) bump%nam%default_seed = integer_to_logical(config_get_int(c_conf,"default_seed"))
 
@@ -327,10 +359,14 @@ if (config_element_exists(c_conf,"default_seed")) bump%nam%default_seed = intege
 if (config_element_exists(c_conf,"method")) bump%nam%method = config_get_string(c_conf,1024,"method")
 if (config_element_exists(c_conf,"strategy")) bump%nam%strategy = config_get_string(c_conf,1024,"strategy")
 if (config_element_exists(c_conf,"new_vbal")) bump%nam%new_vbal = integer_to_logical(config_get_int(c_conf,"new_vbal"))
+if (config_element_exists(c_conf,"load_vbal")) bump%nam%load_vbal = integer_to_logical(config_get_int(c_conf,"load_vbal"))
 if (config_element_exists(c_conf,"new_hdiag")) bump%nam%new_hdiag = integer_to_logical(config_get_int(c_conf,"new_hdiag"))
 if (config_element_exists(c_conf,"new_lct")) bump%nam%new_lct = integer_to_logical(config_get_int(c_conf,"new_lct"))
-if (config_element_exists(c_conf,"new_param")) bump%nam%new_param = integer_to_logical(config_get_int(c_conf,"new_param"))
+if (config_element_exists(c_conf,"load_cmat")) bump%nam%load_cmat = integer_to_logical(config_get_int(c_conf,"load_cmat"))
+if (config_element_exists(c_conf,"new_nicas")) bump%nam%new_nicas = integer_to_logical(config_get_int(c_conf,"new_nicas"))
+if (config_element_exists(c_conf,"load_nicas")) bump%nam%load_nicas = integer_to_logical(config_get_int(c_conf,"load_nicas"))
 if (config_element_exists(c_conf,"new_obsop")) bump%nam%new_obsop = integer_to_logical(config_get_int(c_conf,"new_obsop"))
+if (config_element_exists(c_conf,"load_obsop")) bump%nam%load_obsop = integer_to_logical(config_get_int(c_conf,"load_obsop"))
 if (config_element_exists(c_conf,"check_adjoints")) &
  & bump%nam%check_adjoints = integer_to_logical(config_get_int(c_conf,"check_adjoints"))
 if (config_element_exists(c_conf,"check_pos_def")) &
@@ -343,6 +379,8 @@ if (config_element_exists(c_conf,"check_consistency")) &
  & bump%nam%check_consistency = integer_to_logical(config_get_int(c_conf,"check_consistency"))
 if (config_element_exists(c_conf,"check_optimality")) &
  & bump%nam%check_optimality = integer_to_logical(config_get_int(c_conf,"check_optimality"))
+if (config_element_exists(c_conf,"check_obsop")) &
+ & bump%nam%check_obsop = integer_to_logical(config_get_int(c_conf,"check_obsop"))
 
 ! sampling_param
 if (config_element_exists(c_conf,"sam_read")) bump%nam%sam_read = integer_to_logical(config_get_int(c_conf,"sam_read"))
@@ -362,28 +400,36 @@ if (config_element_exists(c_conf,"nl0r")) bump%nam%nl0r = config_get_int(c_conf,
 ! diag_param
 if (config_element_exists(c_conf,"ne")) bump%nam%ne = config_get_int(c_conf,"ne")
 if (config_element_exists(c_conf,"gau_approx")) bump%nam%gau_approx = integer_to_logical(config_get_int(c_conf,"gau_approx"))
+do iv=1,bump%nam%nv*(bump%nam%nv-1)/2
+   write(ivchar,'(i3)') iv
+   if (config_element_exists(c_conf,"vbal_block("//trim(adjustl(ivchar))//")")) &
+ & bump%nam%vbal_block(iv) = integer_to_logical(config_get_int(c_conf,"vbal_block("//trim(adjustl(ivchar))//")"))
+end do
+if (config_element_exists(c_conf,"vbal_rad")) bump%nam%vbal_rad = config_get_real(c_conf,"vbal_rad")
 if (config_element_exists(c_conf,"var_diag")) bump%nam%var_diag = integer_to_logical(config_get_int(c_conf,"var_diag"))
 if (config_element_exists(c_conf,"var_filter")) bump%nam%var_filter = integer_to_logical(config_get_int(c_conf,"var_filter"))
 if (config_element_exists(c_conf,"var_full")) bump%nam%var_full = integer_to_logical(config_get_int(c_conf,"var_full"))
 if (config_element_exists(c_conf,"var_niter")) bump%nam%var_niter = config_get_int(c_conf,"var_niter")
-   if (config_element_exists(c_conf,"var_rhflt")) bump%nam%var_rhflt = config_get_real(c_conf,"var_rhflt")
+if (config_element_exists(c_conf,"var_rhflt")) bump%nam%var_rhflt = config_get_real(c_conf,"var_rhflt")
 if (config_element_exists(c_conf,"local_diag")) bump%nam%local_diag = integer_to_logical(config_get_int(c_conf,"local_diag"))
-if (bump%nam%local_diag) then
-   if (config_element_exists(c_conf,"local_rad")) bump%nam%local_rad = config_get_real(c_conf,"local_rad")
-end if
+if (config_element_exists(c_conf,"local_rad")) bump%nam%local_rad = config_get_real(c_conf,"local_rad")
 if (config_element_exists(c_conf,"displ_diag")) bump%nam%displ_diag = integer_to_logical(config_get_int(c_conf,"displ_diag"))
-if (bump%nam%displ_diag) then
-   if (config_element_exists(c_conf,"displ_rad")) bump%nam%displ_rad = config_get_real(c_conf,"displ_rad")
-   if (config_element_exists(c_conf,"displ_niter")) bump%nam%displ_niter = config_get_int(c_conf,"displ_niter")
-   if (config_element_exists(c_conf,"displ_rhflt")) bump%nam%displ_rhflt = config_get_real(c_conf,"displ_rhflt")
-   if (config_element_exists(c_conf,"displ_tol")) bump%nam%displ_tol = config_get_real(c_conf,"displ_tol")
-end if
+if (config_element_exists(c_conf,"displ_rad")) bump%nam%displ_rad = config_get_real(c_conf,"displ_rad")
+if (config_element_exists(c_conf,"displ_niter")) bump%nam%displ_niter = config_get_int(c_conf,"displ_niter")
+if (config_element_exists(c_conf,"displ_rhflt")) bump%nam%displ_rhflt = config_get_real(c_conf,"displ_rhflt")
+if (config_element_exists(c_conf,"displ_tol")) bump%nam%displ_tol = config_get_real(c_conf,"displ_tol")
 
 ! fit_param
 if (config_element_exists(c_conf,"minim_algo")) bump%nam%minim_algo = config_get_string(c_conf,1024,"minim_algo")
 if (config_element_exists(c_conf,"lhomh")) bump%nam%lhomh = integer_to_logical(config_get_int(c_conf,"lhomh"))
 if (config_element_exists(c_conf,"lhomv")) bump%nam%lhomv = integer_to_logical(config_get_int(c_conf,"lhomv"))
 if (config_element_exists(c_conf,"rvflt")) bump%nam%rvflt = config_get_real(c_conf,"rvflt")
+if (config_element_exists(c_conf,"lct_nscales")) bump%nam%lct_nscales = config_get_int(c_conf,"lct_nscales")
+do iscales=1,bump%nam%lct_nscales
+   write(iscaleschar,'(i3)') iscales
+   if (config_element_exists(c_conf,"lct_diag("//trim(adjustl(iscaleschar))//")")) &
+ & bump%nam%lct_diag(iscales) = integer_to_logical(config_get_int(c_conf,"lct_diag("//trim(adjustl(iscaleschar))//")"))
+end do
 
 ! nicas_param
 if (config_element_exists(c_conf,"lsqrt")) bump%nam%lsqrt = integer_to_logical(config_get_int(c_conf,"lsqrt"))
@@ -432,10 +478,8 @@ if (config_element_exists(c_conf,"diag_interp")) bump%nam%diag_interp = config_g
 if (config_element_exists(c_conf,"field_io")) bump%nam%field_io = integer_to_logical(config_get_int(c_conf,"field_io"))
 if (config_element_exists(c_conf,"split_io")) bump%nam%split_io = integer_to_logical(config_get_int(c_conf,"split_io"))
 if (config_element_exists(c_conf,"grid_output")) bump%nam%grid_output = integer_to_logical(config_get_int(c_conf,"grid_output"))
-if (bump%nam%grid_output) then
-   if (config_element_exists(c_conf,"grid_resol")) bump%nam%grid_resol = config_get_real(c_conf,"grid_resol")
-   if (config_element_exists(c_conf,"grid_interp")) bump%nam%grid_interp = config_get_string(c_conf,1024,"grid_interp")
-end if
+if (config_element_exists(c_conf,"grid_resol")) bump%nam%grid_resol = config_get_real(c_conf,"grid_resol")
+if (config_element_exists(c_conf,"grid_interp")) bump%nam%grid_interp = config_get_string(c_conf,1024,"grid_interp")
 
 end subroutine bump_read_conf
 
@@ -464,11 +508,11 @@ integer :: igrid
 
 ! Deallocate BUMP
 if (allocated(self%bump)) then
-  do igrid=1,self%ngrid  
-     call self%bump(igrid)%dealloc
-  end do
-  deallocate(self%bump)
-endif
+   do igrid=1,self%ngrid  
+      call self%bump(igrid)%dealloc
+   end do
+   deallocate(self%bump)
+end if
 
 end subroutine delete_oobump
 
@@ -593,6 +637,22 @@ do igrid=1,self%ngrid
 end do
 
 end subroutine get_oobump_param
+
+!-------------------------------------------------------------------------------
+
+subroutine set_oobump_param(self,param,ug)
+implicit none
+type(oobump_type), intent(inout) :: self
+character(len=*),intent(in) :: param
+type(unstructured_grid), intent(in) :: ug
+integer :: igrid
+
+! Set parameter
+do igrid=1,self%ngrid
+   call self%bump(igrid)%set_parameter(param,ug%grid(igrid)%fld)
+end do
+
+end subroutine set_oobump_param
 
 !-------------------------------------------------------------------------------
 

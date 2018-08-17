@@ -64,7 +64,7 @@ contains
    procedure :: generate => obsop_generate
    procedure :: from => obsop_from
    procedure :: run_obsop => obsop_run_obsop
-   procedure :: parameters => obsop_parameters
+   procedure :: run_obsop_tests => obsop_run_obsop_tests
    procedure :: apply => obsop_apply
    procedure :: apply_ad => obsop_apply_ad
    procedure :: test_adjoint => obsop_test_adjoint
@@ -228,49 +228,12 @@ type(rng_type),intent(inout) :: rng      !< Random number generator
 type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 
-! Compute observation operator parameters
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Compute observation operator parameters'
-call flush(mpl%unit)
-call obsop%parameters(mpl,rng,nam,geom)
-
-if (nam%check_adjoints) then
-   ! Test adjoints
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Test observation operator adjoint'
-   call flush(mpl%unit)
-   call obsop%test_adjoint(mpl,rng,geom)
-end if
-
-! Test precision
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Test observation operator precision'
-call flush(mpl%unit)
-call obsop%test_accuracy(mpl,geom)
-
-end subroutine obsop_run_obsop
-
-!----------------------------------------------------------------------
-! Subroutine: obsop_parameters
-!> Purpose: compute observation operator interpolation parameters
-!----------------------------------------------------------------------
-subroutine obsop_parameters(obsop,mpl,rng,nam,geom)
-
-implicit none
-
-! Passed variables
-class(obsop_type),intent(inout) :: obsop !< Observation operator data
-type(mpl_type),intent(inout) :: mpl      !< MPI data
-type(rng_type),intent(inout) :: rng      !< Random number generator
-type(nam_type),intent(in) :: nam         !< Namelist
-type(geom_type),intent(in) :: geom       !< Geometry
-
 ! Local variables
 integer :: offset,iobs,jobs,iobsa,iproc,nobsa,i_s,ic0,ic0b,i,ic0a,delta,nres,ind(1),lunit
 integer :: imin(1),imax(1),nmoves,imoves
 integer,allocatable :: nop(:),iop(:),srcproc(:,:),srcic0(:,:),order(:),nobs_to_move(:),nobs_to_move_tmp(:),obs_moved(:,:)
 real(kind_real) :: N_max,C_max
-real(kind_real),allocatable :: proc_to_lonobs(:),proc_to_latobs(:),lonobs(:),latobs(:),list(:)
+real(kind_real),allocatable :: lonobs(:),latobs(:),list(:)
 logical,allocatable :: maskobs(:),lcheck_nc0b(:)
 
 ! Allocation
@@ -311,7 +274,7 @@ else
       call mpl%send(obsop%nobsa,obsop%latobs,mpl%ioproc,mpl%tag+1)
    end if
 end if
-mpl%tag = mpl%tag+2
+call mpl%update_tag(2)
 
 ! Broadcast data
 call mpl%bcast(lonobs)
@@ -624,7 +587,36 @@ end if
 ! Update allocation flag
 obsop%allocated = .true.
 
-end subroutine obsop_parameters
+end subroutine obsop_run_obsop
+
+!----------------------------------------------------------------------
+! Subroutine: obsop_run_obsop_tests
+!> Purpose: observation operator tests driver
+!----------------------------------------------------------------------
+subroutine obsop_run_obsop_tests(obsop,mpl,rng,nam,geom)
+
+implicit none
+
+! Passed variables
+class(obsop_type),intent(inout) :: obsop !< Observation operator data
+type(mpl_type),intent(inout) :: mpl      !< MPI data
+type(rng_type),intent(inout) :: rng      !< Random number generator
+type(nam_type),intent(in) :: nam         !< Namelist
+type(geom_type),intent(in) :: geom       !< Geometry
+
+! Test adjoints
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a)') '--- Test observation operator adjoint'
+call flush(mpl%unit)
+call obsop%test_adjoint(mpl,rng,geom)
+
+! Test precision
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a)') '--- Test observation operator precision'
+call flush(mpl%unit)
+call obsop%test_accuracy(mpl,geom)
+
+end subroutine obsop_run_obsop_tests
 
 !----------------------------------------------------------------------
 ! Subroutine: obsop_apply

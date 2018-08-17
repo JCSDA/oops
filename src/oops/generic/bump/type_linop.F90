@@ -867,7 +867,7 @@ else
       call mpl%send(n_s,S(1:n_s),mpl%ioproc,mpl%tag+2)
    end if
 end if
-mpl%tag = mpl%tag+3
+call mpl%update_tag(3)
 
 ! Broadcast data
 call mpl%bcast(linop%row)
@@ -1082,7 +1082,7 @@ else
       call mpl%send(n_s_loc(mpl%myproc),valid(i_s_s(mpl%myproc):i_s_e(mpl%myproc)),mpl%ioproc,mpl%tag)
    end if
 end if
-mpl%tag = mpl%tag+1
+call mpl%update_tag(1)
 
 ! Broadcast data
 call mpl%bcast(valid)

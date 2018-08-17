@@ -51,6 +51,7 @@ type avg_blk_type
 contains
    procedure :: alloc => avg_blk_alloc
    procedure :: dealloc => avg_blk_dealloc
+   procedure :: copy => avg_blk_copy
    procedure :: compute => avg_blk_compute
    procedure :: compute_asy => avg_blk_compute_asy
    procedure :: compute_lr => avg_blk_compute_lr
@@ -108,7 +109,7 @@ if (.not.allocated(avg_blk%nc1a)) then
       if (.not.nam%gau_approx) allocate(avg_blk%m22asy(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
       allocate(avg_blk%m11sq(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
       select case (trim(nam%method))
-      case ('hyb-avg_blk','hyb-rnd')
+      case ('hyb-avg','hyb-rnd')
          allocate(avg_blk%m11sta(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
          allocate(avg_blk%stasq(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
       case ('dual-ens')
@@ -183,6 +184,59 @@ if (allocated(avg_blk%m11lrm11)) deallocate(avg_blk%m11lrm11)
 if (allocated(avg_blk%m11lrm11asy)) deallocate(avg_blk%m11lrm11asy)
 
 end subroutine avg_blk_dealloc
+
+!----------------------------------------------------------------------
+! Function: avg_blk_copy
+!> Purpose: averaged statistics block copy
+!----------------------------------------------------------------------
+type(avg_blk_type) function avg_blk_copy(avg_blk,nam,geom,bpar)
+
+implicit none
+
+! Passed variables
+class(avg_blk_type),intent(in) :: avg_blk !< Averaged statistics block
+type(nam_type),intent(in) :: nam          !< Namelist
+type(geom_type),intent(in) :: geom        !< Geometry
+type(bpar_type),intent(in) :: bpar        !< Block parameters
+
+! Deallocation
+call avg_blk_copy%dealloc
+
+! Allocation
+call avg_blk_copy%alloc(nam,geom,bpar,avg_blk%ic2,avg_blk%ib,avg_blk%ne,avg_blk%nsub)
+
+! Copy data
+if ((avg_blk%ic2==0).or.(nam%var_diag)) then
+   avg_blk_copy%m2 = avg_blk%m2
+   if (nam%var_filter) then
+      if (.not.nam%gau_approx) avg_blk_copy%m4 = avg_blk%m4
+      avg_blk_copy%m2flt = avg_blk%m2flt
+   end if
+end if
+if ((avg_blk%ic2==0).or.(nam%local_diag)) then
+   avg_blk_copy%nc1a = avg_blk%nc1a
+   avg_blk_copy%m11 = avg_blk%m11
+   avg_blk_copy%m11m11 = avg_blk%m11m11
+   avg_blk_copy%m2m2 = avg_blk%m2m2
+   if (.not.nam%gau_approx) avg_blk_copy%m22 = avg_blk%m22
+   avg_blk_copy%nc1a_cor = avg_blk%nc1a_cor
+   avg_blk_copy%cor = avg_blk%cor
+   avg_blk_copy%m11asysq = avg_blk%m11asysq
+   avg_blk_copy%m2m2asy = avg_blk%m2m2asy
+   if (.not.nam%gau_approx) avg_blk_copy%m22asy = avg_blk%m22asy
+   avg_blk_copy%m11sq = avg_blk%m11sq
+   select case (trim(nam%method))
+   case ('hyb-avg_blk','hyb-rnd')
+      avg_blk_copy%m11sta = avg_blk%m11sta
+      avg_blk_copy%stasq = avg_blk%stasq
+   case ('dual-ens')
+      avg_blk_copy%m11lrm11sub = avg_blk%m11lrm11sub
+      avg_blk_copy%m11lrm11sub = avg_blk%m11lrm11sub
+      avg_blk_copy%m11lrm11asy = avg_blk%m11lrm11asy
+   end select
+end if
+
+end function avg_blk_copy
 
 !----------------------------------------------------------------------
 ! Subroutine: avg_blk_compute

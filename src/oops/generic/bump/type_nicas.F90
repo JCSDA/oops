@@ -1875,7 +1875,7 @@ call cmat_test%run_hdiag(mpl,rng,nam,geom,bpar,io,ens)
 
 ! Print scores
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- hdiag-nicas consistency results'
+write(mpl%unit,'(a)') '--- HDIAG/NICAS consistency results'
 do ib=1,bpar%nbe
    if (bpar%nicas_block(ib)) then
       write(mpl%unit,'(a7,a,a)') '','Block: ',trim(bpar%blockname(ib))

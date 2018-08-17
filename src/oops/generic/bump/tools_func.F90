@@ -18,11 +18,12 @@ use type_mpl, only: mpl_type
 implicit none
 
 real(kind_real),parameter :: Dmin = 1.0e-12_kind_real !< Minimum tensor diagonal value
-integer,parameter :: M = -1                           !< Number of implicit itteration for the Matern function (GC 99 function if M = -1 and Gaussian function if M = 0)
+integer,parameter :: M = 0                            !< Number of implicit itteration for the Matern function (GC 99 function if M = -1 and Gaussian function if M = 0)
 real(kind_real),parameter :: eta = 1.0e-9_kind_real   !< Small parameter for the Cholesky decomposition
 
 private
-public :: eq,inf,infeq,sup,supeq,indist,pos,lonlatmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,add,divide, &
+public :: eq,inf,infeq,sup,supeq,indist,pos,poseq, &
+        & lonlatmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,add,divide, &
         & fit_diag,fit_diag_dble,gc99,fit_lct,cholesky
 
 contains
@@ -158,6 +159,24 @@ logical :: pos
 pos = (x>rth)
 
 end function pos
+
+!----------------------------------------------------------------------
+! Function: poseq
+!> Purpose: non-negativity test for reals
+!----------------------------------------------------------------------
+function poseq(x)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: x !< Real
+
+! Returned variable
+logical :: poseq
+
+poseq = (x>-rth)
+
+end function poseq
 
 !----------------------------------------------------------------------
 ! Subroutine: lonlatmod

@@ -628,7 +628,7 @@ else
    call mpl%send(io%noga,io%oga_to_og,mpl%ioproc,mpl%tag)
    call mpl%send(io%noga*geom%nl0,sbuf,mpl%ioproc,mpl%tag+1)
 end if
-mpl%tag = mpl%tag+2
+call mpl%update_tag(2)
 
 ! Release memory
 deallocate(sbuf)

@@ -86,7 +86,7 @@ allocate(diag%blk(0:diag%nc2a,bpar%nbe))
 do ib=1,bpar%nbe
    if (bpar%diag_block(ib)) then
       do ic2a=0,diag%nc2a
-         call diag%blk(ic2a,ib)%alloc(nam,geom,bpar,ic2a,ib,prefix,double_fit.and.nam%double_fit(bpar%b_to_v1(ib)))
+         call diag%blk(ic2a,ib)%alloc(nam,geom,bpar,hdata,ic2a,ib,prefix,double_fit.and.nam%double_fit(bpar%b_to_v1(ib)))
       end do
    end if
 end do
@@ -563,20 +563,22 @@ do ib=1,bpar%nbe
 
       ! Print results
       do il0=1,geom%nl0
-         if (trim(nam%method)=='loc') then
+         select case (trim(nam%method))
+         case ('loc','hyb-avg','hyb-rnd','dual-ens')
             if (isnotmsr(diag%blk(0,ib)%raw_coef_ens(il0))) then
                write(mpl%unit,'(a13,a,i3,a4,a20,a,f10.2,a)') '','Level: ',nam%levs(il0),' ~> ','loc. at class zero: ', &
              & trim(mpl%peach),diag%blk(0,ib)%raw_coef_ens(il0),trim(mpl%black)
                call flush(mpl%unit)
             end if
-         end if
+         end select
          if (bpar%fit_block(ib)) then
             if (isnotmsr(diag%blk(0,ib)%fit_rh(il0))) then
-               if (trim(nam%method)=='loc') then
+               select case (trim(nam%method))
+               case ('loc','hyb-avg','hyb-rnd','dual-ens')
                   write(mpl%unit,'(a47)',advance='no') 'loc. support radii: '
-               elseif (trim(nam%method)=='loc_norm') then
+               case ('loc_norm')
                   write(mpl%unit,'(a13,a,i3,a4,a20)',advance='no') '','Level: ',nam%levs(il0),' ~> ','loc. support radii: '
-               endif
+               end select
                write(mpl%unit,'(a,f10.2,a,f10.2,a)') trim(mpl%aqua),diag%blk(0,ib)%fit_rh(il0)*reqkm, &
              & trim(mpl%black)//' km  / '//trim(mpl%aqua),diag%blk(0,ib)%fit_rv(il0),trim(mpl%black)//' '//trim(mpl%vunitchar)
                call flush(mpl%unit)
@@ -637,7 +639,7 @@ do ib=1,bpar%nbe
          else
             ic2 = 0
          end if
-         call diag%blk(ic2a,ib)%hybridization(geom,bpar,avg%blk(ic2,ib),avg_sta%blk(ic2a,ib))
+         call diag%blk(ic2a,ib)%hybridization(geom,bpar,avg%blk(ic2,ib),avg_sta%blk(ic2,ib))
 
          ! Normalization
          call diag%blk(ic2a,ib)%normalization(geom,bpar)
@@ -667,7 +669,7 @@ do ib=1,bpar%nbe
             end if
          end if
       end do
-      write(mpl%unit,'(a13,a,f10.2,a)') '','Raw static coeff.: ',trim(mpl%purple),diag%blk(0,ib)%raw_coef_sta,trim(mpl%black)
+      write(mpl%unit,'(a13,a,a,f10.2,a)') '','Raw static coeff.: ',trim(mpl%purple),diag%blk(0,ib)%raw_coef_sta,trim(mpl%black)
       call flush(mpl%unit)
    end if
 end do

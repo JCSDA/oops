@@ -102,7 +102,7 @@ allocate(vbal%blk(nam%nv,nam%nv))
 do iv=1,nam%nv
    do jv=1,nam%nv
       if (bpar%vbal_block(iv,jv)) then
-         call vbal%blk(iv,jv)%alloc(nam,geom,bpar,vbal%nc2b,iv,jv)
+         call vbal%blk(iv,jv)%alloc(nam,geom,vbal%nc2b,iv,jv)
       end if
    end do
 end do
@@ -197,7 +197,7 @@ allocate(vbal%blk(nam%nv,nam%nv))
 do iv=1,nam%nv
    do jv=1,nam%nv
       if (bpar%vbal_block(iv,jv)) then
-         call vbal%blk(iv,jv)%alloc(nam,geom,bpar,vbal%nc2b,iv,jv)
+         call vbal%blk(iv,jv)%alloc(nam,geom,vbal%nc2b,iv,jv)
       end if
    end do
 end do
@@ -313,7 +313,7 @@ end subroutine vbal_write
 ! Subroutine: vbal_run_vbal
 !> Purpose: compute vertical balance
 !----------------------------------------------------------------------
-subroutine vbal_run_vbal(vbal,mpl,rng,nam,geom,bpar,io,ens)
+subroutine vbal_run_vbal(vbal,mpl,rng,nam,geom,bpar,io,ens,ensu)
 
 implicit none
 
@@ -326,6 +326,7 @@ type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
 type(io_type),intent(in) :: io         !< I/O
 type(ens_type), intent(in) :: ens      !< Ensemble
+type(ens_type),intent(inout) :: ensu   !< Unbalanced ensemble
 
 ! Local variables
 integer :: il0i,i_s,ic0a,ic2b,ic2,ie,ie_sub,ic0,jl0,il0,isub,ic1,ic1a,iv,jv,offset,nc1a,lwork,info,progint
@@ -337,7 +338,6 @@ real(kind_real),allocatable :: list_auto(:),list_cross(:),work(:)
 real(kind_real),allocatable :: fld_1(:,:),fld_2(:,:),auto(:,:,:,:),cross(:,:,:,:)
 logical :: valid,done_c2(nam%nc2),mask_unpack(geom%nl0,geom%nl0)
 logical,allocatable :: done_c2b(:)
-type(ens_type) :: ensu
 type(hdata_type) :: hdata
 
 ! Setup sampling
@@ -599,7 +599,7 @@ do iv=1,nam%nv
          do jv=1,iv-1
             if (bpar%vbal_block(iv,jv)) then
                fld = ensu%fld(:,:,jv,1,ie)
-               call vbal%blk(iv,jv)%apply(mpl,geom,vbal%np,vbal%h_n_s,vbal%h_c2b,vbal%h_S,fld)
+               call vbal%blk(iv,jv)%apply(geom,vbal%np,vbal%h_n_s,vbal%h_c2b,vbal%h_S,fld)
                ensu%fld(:,:,iv,1,ie) = ensu%fld(:,:,iv,1,ie)-fld
             end if
          end do
@@ -642,13 +642,12 @@ end subroutine vbal_run_vbal_tests
 ! Subroutine: vbal_apply
 !> Purpose: apply vertical balance
 !----------------------------------------------------------------------
-subroutine vbal_apply(vbal,mpl,nam,geom,bpar,fld)
+subroutine vbal_apply(vbal,nam,geom,bpar,fld)
 
 implicit none
 
 ! Passed variables
 class(vbal_type),intent(in) :: vbal                             !< Vertical balance
-type(mpl_type),intent(in) :: mpl                                !< MPI data
 type(nam_type),intent(in) :: nam                                !< Namelist
 type(geom_type),intent(in) :: geom                              !< Geometry
 type(bpar_type),intent(in) :: bpar                              !< Block parameters
@@ -666,7 +665,7 @@ do iv=1,nam%nv
    do jv=1,nam%nv
       if (bpar%vbal_block(iv,jv)) then
          fld_tmp = fld(:,:,jv)
-         call vbal%blk(iv,jv)%apply(mpl,geom,vbal%np,vbal%h_n_s,vbal%h_c2b,vbal%h_S,fld_tmp)
+         call vbal%blk(iv,jv)%apply(geom,vbal%np,vbal%h_n_s,vbal%h_c2b,vbal%h_S,fld_tmp)
          fld_out(:,:,iv) = fld_out(:,:,iv)+fld_tmp
       end if
    end do
@@ -681,13 +680,12 @@ end subroutine vbal_apply
 ! Subroutine: vbal_apply_inv
 !> Purpose: apply inverse vertical balance
 !----------------------------------------------------------------------
-subroutine vbal_apply_inv(vbal,mpl,nam,geom,bpar,fld)
+subroutine vbal_apply_inv(vbal,nam,geom,bpar,fld)
 
 implicit none
 
 ! Passed variables
 class(vbal_type),intent(in) :: vbal                             !< Vertical balance
-type(mpl_type),intent(in) :: mpl                                !< MPI data
 type(nam_type),intent(in) :: nam                                !< Namelist
 type(geom_type),intent(in) :: geom                              !< Geometry
 type(bpar_type),intent(in) :: bpar                              !< Block parameters
@@ -705,7 +703,7 @@ do iv=1,nam%nv
    do jv=1,nam%nv
       if (bpar%vbal_block(iv,jv)) then
          fld_tmp = fld_out(:,:,jv)
-         call vbal%blk(iv,jv)%apply(mpl,geom,vbal%np,vbal%h_n_s,vbal%h_c2b,vbal%h_S,fld_tmp)
+         call vbal%blk(iv,jv)%apply(geom,vbal%np,vbal%h_n_s,vbal%h_c2b,vbal%h_S,fld_tmp)
          fld_out(:,:,iv) = fld_out(:,:,iv)-fld_tmp
       end if
    end do
@@ -720,13 +718,12 @@ end subroutine vbal_apply_inv
 ! Subroutine: vbal_apply_ad
 !> Purpose: apply adjoint vertical balance
 !----------------------------------------------------------------------
-subroutine vbal_apply_ad(vbal,mpl,nam,geom,bpar,fld)
+subroutine vbal_apply_ad(vbal,nam,geom,bpar,fld)
 
 implicit none
 
 ! Passed variables
 class(vbal_type),intent(in) :: vbal                             !< Vertical balance
-type(mpl_type),intent(in) :: mpl                                !< MPI data
 type(nam_type),intent(in) :: nam                                !< Namelist
 type(geom_type),intent(in) :: geom                              !< Geometry
 type(bpar_type),intent(in) :: bpar                              !< Block parameters
@@ -744,7 +741,7 @@ do iv=1,nam%nv
    do jv=1,nam%nv
       if (bpar%vbal_block(iv,jv)) then
          fld_tmp = fld(:,:,iv)
-         call vbal%blk(iv,jv)%apply_ad(mpl,geom,vbal%np,vbal%h_n_s,vbal%h_c2b,vbal%h_S,fld_tmp)
+         call vbal%blk(iv,jv)%apply_ad(geom,vbal%np,vbal%h_n_s,vbal%h_c2b,vbal%h_S,fld_tmp)
          fld_out(:,:,jv) = fld_out(:,:,jv)+fld_tmp
       end if
    end do
@@ -759,13 +756,12 @@ end subroutine vbal_apply_ad
 ! Subroutine: vbal_apply_inv_ad
 !> Purpose: apply inverse adjoint vertical balance
 !----------------------------------------------------------------------
-subroutine vbal_apply_inv_ad(vbal,mpl,nam,geom,bpar,fld)
+subroutine vbal_apply_inv_ad(vbal,nam,geom,bpar,fld)
 
 implicit none
 
 ! Passed variables
 class(vbal_type),intent(in) :: vbal                             !< Vertical balance
-type(mpl_type),intent(in) :: mpl                                !< MPI data
 type(nam_type),intent(in) :: nam                                !< Namelist
 type(geom_type),intent(in) :: geom                              !< Geometry
 type(bpar_type),intent(in) :: bpar                              !< Block parameters
@@ -783,7 +779,7 @@ do iv=1,nam%nv
    do jv=1,nam%nv
       if (bpar%vbal_block(iv,jv)) then
          fld_tmp = fld_out(:,:,iv)
-         call vbal%blk(iv,jv)%apply_ad(mpl,geom,vbal%np,vbal%h_n_s,vbal%h_c2b,vbal%h_S,fld_tmp)
+         call vbal%blk(iv,jv)%apply_ad(geom,vbal%np,vbal%h_n_s,vbal%h_c2b,vbal%h_S,fld_tmp)
          fld_out(:,:,jv) = fld_out(:,:,jv)-fld_tmp
       end if
    end do
@@ -823,8 +819,8 @@ call rng%rand_real(0.0_kind_real,1.0_kind_real,fld_save)
 
 ! Direct / inverse
 fld = fld_save
-call vbal%apply(mpl,nam,geom,bpar,fld)
-call vbal%apply_inv(mpl,nam,geom,bpar,fld)
+call vbal%apply(nam,geom,bpar,fld)
+call vbal%apply_inv(nam,geom,bpar,fld)
 mse = sum((fld-fld_save)**2)
 call mpl%allreduce_sum(mse,mse_tot)
 write(mpl%unit,'(a7,a,e15.8)') '','Vertical balance direct/inverse test:  ',mse_tot
@@ -832,8 +828,8 @@ call flush(mpl%unit)
 
 ! Inverse / direct
 fld = fld_save
-call vbal%apply_inv(mpl,nam,geom,bpar,fld)
-call vbal%apply(mpl,nam,geom,bpar,fld)
+call vbal%apply_inv(nam,geom,bpar,fld)
+call vbal%apply(nam,geom,bpar,fld)
 mse = sum((fld-fld_save)**2)
 call mpl%allreduce_sum(mse,mse_tot)
 write(mpl%unit,'(a7,a,e15.8)') '','Vertical balance inverse/direct test:  ',mse_tot
@@ -841,8 +837,8 @@ call flush(mpl%unit)
 
 ! Direct / inverse, adjoint
 fld = fld_save
-call vbal%apply_ad(mpl,nam,geom,bpar,fld)
-call vbal%apply_inv_ad(mpl,nam,geom,bpar,fld)
+call vbal%apply_ad(nam,geom,bpar,fld)
+call vbal%apply_inv_ad(nam,geom,bpar,fld)
 mse = sum((fld-fld_save)**2)
 call mpl%allreduce_sum(mse,mse_tot)
 write(mpl%unit,'(a7,a,e15.8)') '','Vertical balance direct/inverse (adjoint) test:  ',mse_tot
@@ -850,8 +846,8 @@ call flush(mpl%unit)
 
 ! Inverse / direct
 fld = fld_save
-call vbal%apply_inv_ad(mpl,nam,geom,bpar,fld)
-call vbal%apply_ad(mpl,nam,geom,bpar,fld)
+call vbal%apply_inv_ad(nam,geom,bpar,fld)
+call vbal%apply_ad(nam,geom,bpar,fld)
 mse = sum((fld-fld_save)**2)
 call mpl%allreduce_sum(mse,mse_tot)
 write(mpl%unit,'(a7,a,e15.8)') '','Vertical balance inverse/direct (adjoint) test:  ',mse_tot
@@ -899,8 +895,8 @@ fld2_blk = fld2_save
 do iv=1,nam%nv
    do jv=1,nam%nv
       if (bpar%vbal_block(iv,jv)) then
-         call vbal%blk(iv,jv)%apply(mpl,geom,vbal%np,vbal%h_n_s,vbal%h_c2b,vbal%h_S,fld1_blk(:,:,iv))
-         call vbal%blk(iv,jv)%apply_ad(mpl,geom,vbal%np,vbal%h_n_s,vbal%h_c2b,vbal%h_S,fld2_blk(:,:,iv))
+         call vbal%blk(iv,jv)%apply(geom,vbal%np,vbal%h_n_s,vbal%h_c2b,vbal%h_S,fld1_blk(:,:,iv))
+         call vbal%blk(iv,jv)%apply_ad(geom,vbal%np,vbal%h_n_s,vbal%h_c2b,vbal%h_S,fld2_blk(:,:,iv))
          call mpl%dot_prod(fld1_blk(:,:,iv),fld2_save(:,:,iv),sum1)
          call mpl%dot_prod(fld2_blk(:,:,iv),fld1_save(:,:,iv),sum2)
          write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Vertical balance block adjoint test:  ', &
@@ -913,14 +909,14 @@ end do
 ! Direct adjoint test
 fld1_dir = fld1_save
 fld2_dir = fld2_save
-call vbal%apply(mpl,nam,geom,bpar,fld1_dir)
-call vbal%apply_ad(mpl,nam,geom,bpar,fld2_dir)
+call vbal%apply(nam,geom,bpar,fld1_dir)
+call vbal%apply_ad(nam,geom,bpar,fld2_dir)
 
 ! Inverse adjoint test
 fld1_inv = fld1_save
 fld2_inv = fld2_save
-call vbal%apply_inv(mpl,nam,geom,bpar,fld1_inv)
-call vbal%apply_inv_ad(mpl,nam,geom,bpar,fld2_inv)
+call vbal%apply_inv(nam,geom,bpar,fld1_inv)
+call vbal%apply_inv_ad(nam,geom,bpar,fld2_inv)
 
 ! Print result
 call mpl%dot_prod(fld1_dir,fld2_save,sum1)
