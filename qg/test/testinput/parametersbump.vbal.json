@@ -8,7 +8,7 @@
     "bc": "1"
   },
   "variables": {
-    "variables": ["x"]
+    "variables": ["x","q","u","v","bc"]
   },
   "date": "2010-01-01T00:00:00Z",
   "background": {
@@ -18,7 +18,7 @@
   "ensemble": {
     "members": "10",
     "variables": {
-      "variables": ["x"]
+       "variables": ["x","q","u","v","bc"]
     },
     "state" : [
       {

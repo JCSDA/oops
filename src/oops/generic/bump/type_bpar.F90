@@ -139,30 +139,6 @@ if (nam%new_lct) then
          ib = ib+1
       end do
    end do
-
-   if (bpar%nbe>bpar%nb) then
-      ! Common block
-      ib = bpar%nbe
-
-      ! Classes and levels
-      bpar%l0rl0b_to_l0(:,:,ib) = 0
-      bpar%il0rz(:,ib) = 0
-      bpar%nl0r(ib) = 0
-      bpar%nc3(ib) = 0
-      bpar%diag_block(ib) = .false.
-      bpar%avg_block(ib) = .false.
-      bpar%fit_block(ib) = .false.
-      bpar%B_block(ib) = .false.
-      bpar%nicas_block(ib) = .false.
-      bpar%cv_block(ib) = .false.
-
-      ! Blocks information
-      bpar%blockname(ib) = 'common'
-      bpar%b_to_v1(ib) = 0
-      bpar%b_to_v2(ib) = 0
-      bpar%b_to_ts1(ib) = 0
-      bpar%b_to_ts2(ib) = 0
-   end if
 else
    ! Individual blocks
    ib = 1

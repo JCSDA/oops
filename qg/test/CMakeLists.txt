@@ -288,6 +288,14 @@ ecbuild_add_test( TARGET  test_qg_localization
                   ARGS    "testinput/interfaces.json"
                   LIBS    qg )
 
+# test_qg_parameters_bump_vbal should be executed before test_qg_linearvariablechange
+ecbuild_add_test( TARGET test_qg_parameters_bump_vbal
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_parameters.x testinput/parametersbump.vbal.json"
+                       testoutput/parametersbump.vbal.test
+                  DEPENDS qg_parameters.x )
+
 ecbuild_add_test( TARGET  test_qg_linearvariablechange
                   BOOST
                   SOURCES executables/TestLinearVariableChange.cc
@@ -484,12 +492,6 @@ ecbuild_add_test( TARGET test_qg_parameters_bump_readloc
                        testoutput/parametersbump.readloc.test
                   DEPENDS qg_parameters.x )
 
-ecbuild_add_test( TARGET test_qg_parameters_bump_vbal
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_parameters.x testinput/parametersbump.vbal.json"
-                       testoutput/parametersbump.vbal.test
-                  DEPENDS qg_parameters.x )
 endif()
 
 ecbuild_add_test( TARGET test_qg_dfi

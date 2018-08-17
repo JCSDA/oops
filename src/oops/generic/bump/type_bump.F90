@@ -45,8 +45,7 @@ type bump_type
    type(obsop_type) :: obsop
    type(rng_type) :: rng
    type(vbal_type) :: vbal
-   integer :: nx
-   integer :: ny
+   logical :: close_listing
 contains
    procedure :: setup_online => bump_setup_online
    procedure :: setup_generic => bump_setup_generic
@@ -128,8 +127,10 @@ call bump%nam%setup_internal(nl0,nv,nts,lens1_ne,lens1_nsub,lens2_ne,lens2_nsub)
 ! Initialize listing
 if (present(lunit)) then
    call bump%mpl%init_listing(bump%nam%prefix,bump%nam%model,bump%nam%colorlog,bump%nam%logpres,lunit)
+   bump%close_listing = .false.
 else
    call bump%mpl%init_listing(bump%nam%prefix,bump%nam%model,bump%nam%colorlog,bump%nam%logpres)
+   bump%close_listing = (trim(bump%nam%model)=='online')
 end if
 
 ! Generic setup
@@ -400,7 +401,7 @@ if (bump%nam%check_obsop) then
    call bump%obsop%run_obsop_tests(bump%mpl,bump%rng,bump%nam,bump%geom)
 end if
 
-if (trim(bump%nam%model)=='online') then
+if (bump%close_listing) then
    ! Close listings
    write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(bump%mpl%unit,'(a)') '--- Close listings'
