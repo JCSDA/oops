@@ -1032,46 +1032,67 @@ real(kind_real),intent(in) :: fld_c0a(geom%nc0a,geom%nl0)  !< Field on subset Sc
 real(kind_real),intent(out) :: fld_mga(geom%nmga,geom%nl0) !< Field on model grid, halo A
 
 ! Local variables
-integer :: ic0a,il0,imga,img,jmg,jmga,iproc,jproc
+integer :: ic0a,il0,imga,nred,ired,img,jmg,jmga
+integer,allocatable :: red_img(:),red_jmg(:)
+real(kind_real),allocatable :: red_val(:,:),red_val_pack(:),red_val_tot(:,:),red_val_pack_tot(:)
+logical,allocatable :: mask_unpack(:,:)
 
 ! Initialization
 call msr(fld_mga)
 
-do il0=1,geom%nl0
-   ! Copy non-redundant points
-   do ic0a=1,geom%nc0a
-      imga = geom%c0a_to_mga(ic0a)
-      fld_mga(imga,il0) = fld_c0a(ic0a,il0)
-   end do
-
-   ! Deal with redundant points
-   do imga=1,geom%nmga
-      img = geom%mga_to_mg(imga)
-      jmg = geom%redundant(img)
-      if (isnotmsi(jmg)) then
-         ! Communicate the value
-         iproc = geom%mg_to_proc(img)
-         jproc = geom%mg_to_proc(jmg)
-         if (iproc==jproc) then
-            jmga = geom%mg_to_mga(jmg)
-            fld_mga(imga,il0) = fld_mga(jmga,il0)
-         else
-            if (mpl%myproc==iproc) then
-               ! Receive value
-               call mpl%recv(fld_mga(imga,il0),jproc,mpl%tag)
-            elseif (mpl%myproc==jproc) then
-               ! Send value
-               jmga = geom%mg_to_mga(jmg)
-               call mpl%send(fld_mga(jmga,il0),iproc,mpl%tag)
-            end if
-            call mpl%update_tag(1)
-         end if
-      end if
-   end do
+! Copy non-redundant points
+do ic0a=1,geom%nc0a
+   imga = geom%c0a_to_mga(ic0a)
+   fld_mga(imga,:) = fld_c0a(ic0a,:)
 end do
 
-! Check for missing values
-if (any(ismsr(fld_mga))) call mpl%abort('missing value in copy_c0a_to_mga')
+nred = geom%nmg-geom%nc0
+if (nred>0) then
+   ! Allocation
+   allocate(red_img(nred))
+   allocate(red_jmg(nred))
+   allocate(red_val(nred,geom%nl0))
+   allocate(red_val_pack(nred*geom%nl0))
+   allocate(red_val_tot(nred,geom%nl0))
+   allocate(red_val_pack_tot(nred*geom%nl0))
+   allocate(mask_unpack(nred,geom%nl0))
+
+   ! Find redundant points indices
+   ired = 0
+   do img=1,geom%nmg
+      jmg = geom%redundant(img)
+      if (isnotmsi(jmg)) then
+         ired = ired+1
+         red_img(ired) = img
+         red_jmg(ired) = jmg
+      end if
+    end do
+
+   ! Copy redundant values
+   red_val = 0.0
+   do ired=1,nred
+      jmg = red_jmg(ired)
+      if (mpl%myproc==geom%mg_to_proc(jmg)) then 
+         jmga = geom%mg_to_mga(jmg)
+         red_val(ired,:) = fld_mga(jmga,:)
+      end if
+   end do
+ 
+   ! Communicate redundant values
+   mask_unpack = .true.
+   red_val_pack = pack(red_val,.true.)
+   call mpl%allreduce_sum(red_val_pack,red_val_pack_tot)
+   red_val_tot = unpack(red_val_pack_tot,mask_unpack,red_val_tot)
+
+   ! Copy values
+   do ired=1,nred
+      img = red_img(ired)
+      if (mpl%myproc==geom%mg_to_proc(img)) then 
+         imga = geom%mg_to_mga(img)
+         fld_mga(imga,:) = red_val_tot(ired,:)
+      end if
+   end do
+end if
 
 end subroutine geom_copy_c0a_to_mga
 
