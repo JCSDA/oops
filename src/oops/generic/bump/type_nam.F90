@@ -348,7 +348,7 @@ logical :: colorlog,default_seed,use_metis
 logical :: new_vbal,load_vbal,new_hdiag,new_lct,load_cmat,new_nicas,load_nicas,new_obsop,load_obsop
 logical :: check_vbal,check_adjoints,check_pos_def,check_sqrt,check_dirac,check_randomization,check_consistency,check_optimality
 logical :: check_obsop,logpres,sam_write,sam_read,mask_check
-logical :: vbal_block(nvmax*(nvmax-1)/2),var_diag,var_filter,var_full,gau_approx,local_diag,displ_diag,double_fit(nvmax)
+logical :: vbal_block(nvmax*(nvmax-1)/2),var_diag,var_filter,var_full,gau_approx,local_diag,displ_diag,double_fit(0:nvmax)
 logical :: lhomh,lhomv,lct_diag(nscalesmax),lsqrt,network,forced_radii,field_io,split_io,grid_output
 real(kind_real) :: mask_th,dc,vbal_rad,var_rhflt,local_rad,displ_rad,displ_rhflt,displ_tol,rvflt,lon_ldwv(nldwvmax)
 real(kind_real) :: lat_ldwv(nldwvmax),diag_rhflt,resol,rh,rv,londir(ndirmax),latdir(ndirmax),grid_resol

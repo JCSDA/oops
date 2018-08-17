@@ -11,7 +11,7 @@
 module type_lct
 
 use tools_const, only: req,reqkm,pi
-use tools_func, only: poseq
+use tools_func, only: pos,poseq
 use tools_kinds, only: kind_real
 use tools_missing, only: msr,isnotmsr,isallnotmsr
 use type_bpar, only: bpar_type
@@ -444,7 +444,7 @@ do ib=1,bpar%nb
                ! Check coefficient
                valid_coef = poseq(lct%blk(ib)%coef(iscales,ic1a,il0)).and.poseq(1.0-lct%blk(ib)%coef(iscales,ic1a,il0))
 
-               if ((det>0.0).and.valid_coef) then
+               if (pos(det).and.valid_coef) then
                   ! Copy diffusion tensor
                   fld_c1a(ic1a,il0,1) = lct%blk(ib)%D(offset+1,ic1a,il0)
                   fld_c1a(ic1a,il0,2) = lct%blk(ib)%D(offset+2,ic1a,il0)
@@ -488,7 +488,7 @@ do ib=1,bpar%nb
                else
                   det = fld(ic0a,il0,1)*fld(ic0a,il0,2)*(1.0-fld(ic0a,il0,4)**2)
                end if
-               if (det>0.0) then
+               if (pos(det)) then
                   ! Length-scale = D determinant^{1/4}
                   fld(ic0a,il0,lct%blk(ib)%ncomp(iscales)+2) = sqrt(sqrt(det))
                else

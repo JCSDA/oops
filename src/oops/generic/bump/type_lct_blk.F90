@@ -11,7 +11,7 @@
 module type_lct_blk
 
 !$ use omp_lib
-use tools_func, only: lonlatmod,fit_lct
+use tools_func, only: pos,poseq,lonlatmod,fit_lct
 use tools_kinds, only: kind_real
 use tools_missing, only: msr,isnotmsr
 use type_bpar, only: bpar_type
@@ -184,7 +184,7 @@ do jsub=1,mom_blk%nsub
                ic1 = hdata%c1a_to_c1(ic1a)
                if (hdata%c1l0_log(ic1,il0)) then
                   den = mom_blk%m2_1(ic1a,jc3,il0,jsub)*mom_blk%m2_2(ic1a,jc3,jl0,jsub)
-                  if (den>0.0) then
+                  if (pos(den)) then
                      lct_blk%raw(jc3,jl0r,ic1a,il0) = lct_blk%raw(jc3,jl0r,ic1a,il0)+mom_blk%m11(ic1a,jc3,jl0r,il0,jsub)/sqrt(den)
                      lct_blk%norm(jc3,jl0r,ic1a,il0) = lct_blk%norm(jc3,jl0r,ic1a,il0)+1.0
                   end if
@@ -202,7 +202,7 @@ do il0=1,geom%nl0
          do ic1a=1,hdata%nc1a
             ic1 = hdata%c1a_to_c1(ic1a)
             if (hdata%c1l0_log(ic1,il0)) then
-               if (lct_blk%norm(jc3,jl0r,ic1a,il0)>0.0) lct_blk%raw(jc3,jl0r,ic1a,il0) = lct_blk%raw(jc3,jl0r,ic1a,il0) &
+               if (pos(lct_blk%norm(jc3,jl0r,ic1a,il0))) lct_blk%raw(jc3,jl0r,ic1a,il0) = lct_blk%raw(jc3,jl0r,ic1a,il0) &
              & /lct_blk%norm(jc3,jl0r,ic1a,il0)
             end if
          end do
@@ -300,7 +300,7 @@ do il0=1,geom%nl0
                do jc3=1,nam%nc3
                   if (dmask(jc3,jl0r)) then
                      distsq = dx(jc3,jl0r)**2+dy(jc3,jl0r)**2
-                     if ((lct_blk%raw(jc3,jl0r,ic1a,il0)>cor_min).and.(distsq>0.0))  &
+                     if ((lct_blk%raw(jc3,jl0r,ic1a,il0)>cor_min).and.pos(distsq))  &
                    & Dh(jc3) = -distsq/(2.0*log(lct_blk%raw(jc3,jl0r,ic1a,il0)))
                   end if
                end do
@@ -314,7 +314,7 @@ do il0=1,geom%nl0
          jc3 = 1
          do jl0r=1,bpar%nl0r(ib)
             distsq = dz(jl0r)**2
-            if ((lct_blk%raw(jc3,jl0r,ic1a,il0)>cor_min).and.(distsq>0.0)) &
+            if ((lct_blk%raw(jc3,jl0r,ic1a,il0)>cor_min).and.pos(distsq)) &
           & Dv(jl0r) = -distsq/(2.0*log(lct_blk%raw(jc3,jl0r,ic1a,il0)))
          end do
          if (bpar%nl0r(ib)>1) then
@@ -389,11 +389,11 @@ do il0=1,geom%nl0
             spd = .true.
             offset = 0
             do iscales=1,lct_blk%nscales
-               spd = spd.and.(lct_blk%D(offset+1,ic1a,il0)>0.0).and.(lct_blk%D(offset+2,ic1a,il0)>0.0)
-               if (bpar%nl0r(ib)>1) spd = spd.and.(lct_blk%D(offset+3,ic1a,il0)>0.0)
-               if (lct_blk%ncomp(iscales)==4) spd = spd.and.(lct_blk%D(offset+4,ic1a,il0)>-1.0) &
-                                                  & .and.(lct_blk%D(offset+4,ic1a,il0)<1.0)
-               spd = spd.and.(lct_blk%coef(iscales,ic1a,il0)>0.0)
+               spd = spd.and.(pos(lct_blk%D(offset+1,ic1a,il0))).and.(pos(lct_blk%D(offset+2,ic1a,il0)))
+               if (bpar%nl0r(ib)>1) spd = spd.and.(poseq(lct_blk%D(offset+3,ic1a,il0)))
+               if (lct_blk%ncomp(iscales)==4) spd = spd.and.pos(lct_blk%D(offset+4,ic1a,il0)-1.0) &
+                                                  & .and.pos(1.0-lct_blk%D(offset+4,ic1a,il0))
+               spd = spd.and.(poseq(lct_blk%coef(iscales,ic1a,il0)))
                offset = offset+lct_blk%ncomp(iscales)
             end do
             if (spd) then

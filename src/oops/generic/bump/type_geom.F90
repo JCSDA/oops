@@ -1053,6 +1053,7 @@ do il0=1,geom%nl0
          iproc = geom%mg_to_proc(img)
          jproc = geom%mg_to_proc(jmg)
          if (iproc==jproc) then
+            jmga = geom%mg_to_mga(jmg)
             fld_mga(imga,il0) = fld_mga(jmga,il0)
          else
             if (mpl%myproc==iproc) then
