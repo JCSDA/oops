@@ -21,8 +21,9 @@ list( APPEND qg_test_input
   testinput/dirac.qgcov.json
   testinput/dirac.bumploc.json
   testinput/parametersbump.cov.json
-  testinput/parametersbump.loc.json
   testinput/parametersbump.lct.json
+  testinput/parametersbump.loc.json
+  testinput/parametersbump.readloc.json
   testinput/forecast.json
   testinput/genenspert.json
   testinput/hofx.json
@@ -60,8 +61,9 @@ list( APPEND qg_testoutput
   testoutput/dirac.qgcov.test
   testoutput/dirac.bumploc.test
   testoutput/parametersbump.cov.test
-  testoutput/parametersbump.loc.test
   testoutput/parametersbump.lct.test
+  testoutput/parametersbump.loc.test
+  testoutput/parametersbump.readloc.test
   testoutput/forecast.test
   testoutput/genenspert.test
   testoutput/hofx.test
@@ -459,6 +461,13 @@ ecbuild_add_test( TARGET test_qg_parameters_bump_cov
                        testoutput/parametersbump.cov.test
                   DEPENDS qg_parameters.x )
 
+ecbuild_add_test( TARGET test_qg_parameters_bump_lct
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_parameters.x testinput/parametersbump.lct.json"
+                       testoutput/parametersbump.lct.test
+                  DEPENDS qg_parameters.x )
+
 ecbuild_add_test( TARGET test_qg_parameters_bump_loc
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
@@ -466,11 +475,11 @@ ecbuild_add_test( TARGET test_qg_parameters_bump_loc
                        testoutput/parametersbump.loc.test
                   DEPENDS qg_parameters.x )
 
-ecbuild_add_test( TARGET test_qg_parameters_bump_lct
+ecbuild_add_test( TARGET test_qg_parameters_bump_readloc
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_parameters.x testinput/parametersbump.lct.json"
-                       testoutput/parametersbump.lct.test
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_parameters.x testinput/parametersbump.readloc.json"
+                       testoutput/parametersbump.readloc.test
                   DEPENDS qg_parameters.x )
 endif()
 

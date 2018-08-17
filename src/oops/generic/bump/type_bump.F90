@@ -260,23 +260,27 @@ write(bump%mpl%unit,'(a)') '--- Finalize ensemble 2'
 call flush(bump%mpl%unit)
 call bump%ens2%remove_mean
 
-if (.not.bump%vbal%allocated) then
-   if (bump%nam%new_vbal) then
-      ! Run vertical balance driver
-      write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
-      write(bump%mpl%unit,'(a)') '--- Run vertical balance driver'
-      call flush(bump%mpl%unit)
-      call bump%vbal%run_vbal(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1)
-   elseif (bump%nam%load_vbal) then
-      ! Read vertical balance data
-      write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
-      write(bump%mpl%unit,'(a)') '--- Read vertical balance data'
-      call flush(bump%mpl%unit)
-      call bump%vbal%read(bump%mpl,bump%nam,bump%geom,bump%bpar)
-  end if
+if (bump%nam%new_vbal) then
+   ! Reseed random number generator
+   if (bump%nam%default_seed) call bump%rng%reseed(bump%mpl)
+
+   ! Run vertical balance driver
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Run vertical balance driver'
+   call flush(bump%mpl%unit)
+   call bump%vbal%run_vbal(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1)
+elseif (bump%nam%load_vbal) then
+   ! Read vertical balance data
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Read vertical balance data'
+   call flush(bump%mpl%unit)
+   call bump%vbal%read(bump%mpl,bump%nam,bump%geom,bump%bpar)
 end if
 
 if (bump%nam%check_vbal) then
+   ! Reseed random number generator
+   if (bump%nam%default_seed) call bump%rng%reseed(bump%mpl)
+
    ! Run vertical balance tests driver
    write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(bump%mpl%unit,'(a)') '--- Run vertical balance tests driver'
@@ -284,66 +288,82 @@ if (bump%nam%check_vbal) then
    call bump%vbal%run_vbal_tests(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar)
 end if
 
-if (.not.bump%cmat%allocated) then
-   if (bump%nam%new_hdiag) then
-      ! Run HDIAG driver
-      write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
-      write(bump%mpl%unit,'(a)') '--- Run HDIAG driver'
-      call flush(bump%mpl%unit)
-      if ((trim(bump%nam%method)=='hyb-rnd').or.(trim(bump%nam%method)=='dual-ens')) then
-         call bump%cmat%run_hdiag(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1,bump%ens2)
-      else
-         call bump%cmat%run_hdiag(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1)
-      end if
-   end if
-end if
+if (bump%nam%new_hdiag) then
+   ! Reseed random number generator
+   if (bump%nam%default_seed) call bump%rng%reseed(bump%mpl)
 
-if (.not.bump%lct%allocated) then
-   if (bump%nam%new_lct) then
-      ! Run LCT driver
-      write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
-      write(bump%mpl%unit,'(a)') '--- Run LCT driver'
-      call flush(bump%mpl%unit)
-      call bump%lct%run_lct(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1)
-   end if
-end if
-
-if (.not.bump%cmat%allocated) then
-   if (bump%nam%load_cmat) then
-      ! Read C matrix data
-      write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
-      write(bump%mpl%unit,'(a)') '--- Read C matrix data'
-      call flush(bump%mpl%unit)
-      call bump%cmat%read(bump%mpl,bump%nam,bump%geom,bump%bpar,bump%io)
+   ! Run HDIAG driver
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Run HDIAG driver'
+   call flush(bump%mpl%unit)
+   if ((trim(bump%nam%method)=='hyb-rnd').or.(trim(bump%nam%method)=='dual-ens')) then
+      call bump%cmat%run_hdiag(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1,bump%ens2)
    else
-      if (bump%nam%forced_radii) then
-         ! Copy namelist support radii into C matrix
-         write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
-         write(bump%mpl%unit,'(a)') '--- Copy namelist support radii into C matrix'
-         call flush(bump%mpl%unit)
-         call bump%cmat%from(bump%mpl,bump%nam,bump%geom,bump%bpar)
-      end if
+      call bump%cmat%run_hdiag(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1)
    end if
 end if
 
-if (.not.bump%nicas%allocated) then
-   if (bump%nam%new_nicas) then
-      ! Run NICAS driver
+if (bump%nam%new_lct) then
+   ! Reseed random number generator
+   if (bump%nam%default_seed) call bump%rng%reseed(bump%mpl)
+
+   ! Run LCT driver
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Run LCT driver'
+   call flush(bump%mpl%unit)
+   call bump%lct%run_lct(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1)
+end if
+
+if (bump%nam%load_cmat) then
+   ! Read C matrix data
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Read C matrix data'
+   call flush(bump%mpl%unit)
+   call bump%cmat%read(bump%mpl,bump%nam,bump%geom,bump%bpar,bump%io)
+else
+   if (bump%nam%forced_radii) then
+      ! Copy namelist support radii into C matrix
       write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
-      write(bump%mpl%unit,'(a)') '--- Run NICAS driver'
+      write(bump%mpl%unit,'(a)') '--- Copy namelist support radii into C matrix'
       call flush(bump%mpl%unit)
-      call bump%nicas%run_nicas(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%cmat)
-   elseif (bump%nam%load_nicas) then
-      ! Read NICAS parameters
-      write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
-      write(bump%mpl%unit,'(a)') '--- Read NICAS parameters'
-      call flush(bump%mpl%unit)
-      call bump%nicas%read(bump%mpl,bump%nam,bump%geom,bump%bpar)
+      call bump%cmat%from_nam(bump%mpl,bump%nam,bump%geom,bump%bpar)
    end if
+end if
+
+if (allocated(bump%cmat%blk)) then
+   ! Get C matrix data from OOPS
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Get C matrix data from OOPS'
+   call bump%cmat%from_oops(bump%mpl,bump%bpar)
+
+   ! Setup C matrix sampling
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Setup C matrix sampling'
+   call bump%cmat%setup_sampling(bump%nam,bump%geom,bump%bpar)
+end if
+
+if (bump%nam%new_nicas) then
+   ! Reseed random number generator
+   if (bump%nam%default_seed) call bump%rng%reseed(bump%mpl)
+
+   ! Run NICAS driver
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Run NICAS driver'
+   call flush(bump%mpl%unit)
+   call bump%nicas%run_nicas(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%cmat)
+elseif (bump%nam%load_nicas) then
+   ! Read NICAS parameters
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Read NICAS parameters'
+   call flush(bump%mpl%unit)
+   call bump%nicas%read(bump%mpl,bump%nam,bump%geom,bump%bpar)
 end if
 
 if (bump%nam%check_adjoints.or.bump%nam%check_pos_def.or.bump%nam%check_sqrt.or.bump%nam%check_dirac.or. &
  & bump%nam%check_randomization.or.bump%nam%check_consistency.or.bump%nam%check_optimality) then
+   ! Reseed random number generator
+   if (bump%nam%default_seed) call bump%rng%reseed(bump%mpl)
+
    ! Run NICAS tests driver
    write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(bump%mpl%unit,'(a)') '--- Run NICAS tests driver'
@@ -351,19 +371,23 @@ if (bump%nam%check_adjoints.or.bump%nam%check_pos_def.or.bump%nam%check_sqrt.or.
    call bump%nicas%run_nicas_tests(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%cmat,bump%ens1)
 end if
 
-if (.not.bump%obsop%allocated) then
-   if (bump%nam%new_obsop) then
-      ! Run observation operator driver
-      write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
-      write(bump%mpl%unit,'(a)') '--- Run observation operator driver'
-      call flush(bump%mpl%unit)
-      call bump%obsop%run_obsop(bump%mpl,bump%rng,bump%nam,bump%geom)
-   elseif (bump%nam%load_obsop) then
-      call bump%mpl%abort('load obstop not implemented yet')
-   end if
+if (bump%nam%new_obsop) then
+   ! Reseed random number generator
+   if (bump%nam%default_seed) call bump%rng%reseed(bump%mpl)
+
+   ! Run observation operator driver
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Run observation operator driver'
+   call flush(bump%mpl%unit)
+   call bump%obsop%run_obsop(bump%mpl,bump%rng,bump%nam,bump%geom)
+elseif (bump%nam%load_obsop) then
+   call bump%mpl%abort('load obstop not implemented yet')
 end if
 
 if (bump%nam%check_obsop) then
+   ! Reseed random number generator
+   if (bump%nam%default_seed) call bump%rng%reseed(bump%mpl)
+
    ! Run observation operator tests driver
    write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(bump%mpl%unit,'(a)') '--- Run observation operator tests driver'
@@ -622,6 +646,10 @@ case ('cor_rh')
    fld = bump%cmat%blk(ib)%rh_c0*req
 case ('cor_rv')
    fld = bump%cmat%blk(ib)%rv_c0
+case ('cor_rv_rfac')
+   fld = bump%cmat%blk(ib)%rv_rfac_c0
+case ('cor_rv_coef')
+   fld = bump%cmat%blk(ib)%rv_coef_c0
 case ('loc_coef')
    fld = bump%cmat%blk(ib)%coef_ens
 case ('loc_rh')
@@ -726,24 +754,37 @@ integer,intent(in) :: ib                                        !< Block index
 real(kind_real),intent(in) :: fld(bump%geom%nc0a,bump%geom%nl0) !< Field
 
 ! Allocation
-if (.not.bump%cmat%allocated) call bump%cmat%alloc(bump%nam,bump%geom,bump%bpar,'cmat')
+if (.not.allocated(bump%cmat%blk)) allocate(bump%cmat%blk(bump%bpar%nbe))
 
 ! Select parameter
 select case (trim(param))
 case ('var')
-   bump%cmat%blk(ib)%coef_ens = fld
+   if (.not.allocated(bump%cmat%blk(ib)%oops_coef_ens)) allocate(bump%cmat%blk(ib)%oops_coef_ens(bump%geom%nc0a,bump%geom%nl0))
+   bump%cmat%blk(ib)%oops_coef_ens = fld
 case ('cor_rh')
-   bump%cmat%blk(ib)%rh_c0 = fld/req
+   if (.not.allocated(bump%cmat%blk(ib)%oops_rh_c0)) allocate(bump%cmat%blk(ib)%oops_rh_c0(bump%geom%nc0a,bump%geom%nl0))
+   bump%cmat%blk(ib)%oops_rh_c0 = fld/req
 case ('cor_rv')
-   bump%cmat%blk(ib)%rv_c0 = fld
+   if (.not.allocated(bump%cmat%blk(ib)%oops_rv_c0)) allocate(bump%cmat%blk(ib)%oops_rv_c0(bump%geom%nc0a,bump%geom%nl0))
+   bump%cmat%blk(ib)%oops_rv_c0 = fld
+case ('cor_rv_rfac')
+   if (.not.allocated(bump%cmat%blk(ib)%oops_rv_rfac_c0)) allocate(bump%cmat%blk(ib)%oops_rv_rfac_c0(bump%geom%nc0a,bump%geom%nl0))
+   bump%cmat%blk(ib)%oops_rv_rfac_c0 = fld
+case ('cor_rv_coef')
+   if (.not.allocated(bump%cmat%blk(ib)%oops_rv_coef_c0)) allocate(bump%cmat%blk(ib)%oops_rv_coef_c0(bump%geom%nc0a,bump%geom%nl0))
+   bump%cmat%blk(ib)%oops_rv_coef_c0 = fld
 case ('loc_coef')
-   bump%cmat%blk(ib)%coef_ens = fld
+   if (.not.allocated(bump%cmat%blk(ib)%oops_coef_ens)) allocate(bump%cmat%blk(ib)%oops_coef_ens(bump%geom%nc0a,bump%geom%nl0))
+   bump%cmat%blk(ib)%oops_coef_ens = fld
 case ('loc_rh')
-   bump%cmat%blk(ib)%rh_c0 = fld/req
+   if (.not.allocated(bump%cmat%blk(ib)%oops_rh_c0)) allocate(bump%cmat%blk(ib)%oops_rh_c0(bump%geom%nc0a,bump%geom%nl0))
+   bump%cmat%blk(ib)%oops_rh_c0 = fld/req
 case ('loc_rv')
-   bump%cmat%blk(ib)%rv_c0 = fld
+   if (.not.allocated(bump%cmat%blk(ib)%oops_rv_c0)) allocate(bump%cmat%blk(ib)%oops_rv_c0(bump%geom%nc0a,bump%geom%nl0))
+   bump%cmat%blk(ib)%oops_rv_c0 = fld
 case ('hyb_coef')
-   bump%cmat%blk(ib)%coef_sta = fld
+   if (.not.allocated(bump%cmat%blk(ib)%oops_coef_sta)) allocate(bump%cmat%blk(ib)%oops_coef_sta(bump%geom%nc0a,bump%geom%nl0))
+   bump%cmat%blk(ib)%oops_coef_sta = fld
 case default
    call bump%mpl%abort('parameter '//trim(param)//' not yet implemented in set_parameter')
 end select

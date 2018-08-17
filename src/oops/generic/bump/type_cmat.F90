@@ -42,10 +42,10 @@ contains
    procedure :: read => cmat_read
    procedure :: write => cmat_write
    procedure :: run_hdiag => cmat_run_hdiag
-   procedure :: cmat_from_diag
-   procedure :: cmat_from_fields
-   procedure :: cmat_from_nam
-   generic :: from => cmat_from_diag,cmat_from_fields,cmat_from_nam
+   procedure :: from_diag => cmat_from_diag
+   procedure :: from_nam => cmat_from_nam
+   procedure :: from_oops => cmat_from_oops
+   procedure :: setup_sampling => cmat_setup_sampling
 end type cmat_type
 
 private
@@ -75,7 +75,7 @@ integer :: ib
 cmat%prefix = prefix
 
 ! Allocation
-allocate(cmat%blk(bpar%nbe))
+if (.not.allocated(cmat%blk)) allocate(cmat%blk(bpar%nbe))
 do ib=1,bpar%nbe
    cmat%blk(ib)%ib = ib
    call cmat%blk(ib)%alloc(nam,geom,bpar,prefix)
@@ -463,11 +463,11 @@ if (trim(nam%minim_algo)/='none') then
    call flush(mpl%unit)
    select case (trim(nam%method))
    case ('cor')
-      call cmat%from(mpl,nam,geom,bpar,hdata,cor_1)
+      call cmat%from_diag(mpl,nam,geom,bpar,hdata,cor_1)
    case ('loc_norm','loc')
-      call cmat%from(mpl,nam,geom,bpar,hdata,loc_1)
+      call cmat%from_diag(mpl,nam,geom,bpar,hdata,loc_1)
    case ('hyb-avg','hyb-rnd')
-      call cmat%from(mpl,nam,geom,bpar,hdata,loc_2)
+      call cmat%from_diag(mpl,nam,geom,bpar,hdata,loc_2)
    case ('dual-ens')
       call mpl%abort('dual-ens not ready yet for C matrix data')
    case default
@@ -613,32 +613,6 @@ do ib=1,bpar%nbe
    end if
 end do
 
-! Sampling parameters
-if (trim(nam%strategy)=='specific_multivariate') then
-   ! Initialization
-   cmat%blk(bpar%nbe)%rhs_c0 = huge(1.0)
-   cmat%blk(bpar%nbe)%rvs_c0 = huge(1.0)
-   do ib=1,bpar%nb
-      if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
-         ! Get minimum
-         do il0=1,geom%nl0
-            do ic0a=1,geom%nc0a
-               cmat%blk(bpar%nbe)%rhs_c0(ic0a,il0) = min(cmat%blk(bpar%nbe)%rhs_c0(ic0a,il0),cmat%blk(ib)%rh_c0(ic0a,il0))
-               cmat%blk(bpar%nbe)%rvs_c0(ic0a,il0) = min(cmat%blk(bpar%nbe)%rvs_c0(ic0a,il0),cmat%blk(ib)%rv_c0(ic0a,il0))
-            end do
-         end do
-      end if
-   end do
-else
-   ! Copy
-   do ib=1,bpar%nbe
-      if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
-         cmat%blk(ib)%rhs_c0 = cmat%blk(ib)%rh_c0
-         cmat%blk(ib)%rvs_c0 = cmat%blk(ib)%rv_c0
-      end if
-   end do
-end if
-
 ! Displacement
 if (nam%displ_diag) then
    do its=2,nam%nts
@@ -648,88 +622,6 @@ if (nam%displ_diag) then
 end if
 
 end subroutine cmat_from_diag
-
-!----------------------------------------------------------------------
-! Subroutine: cmat_from_fields
-!> Purpose: copy radii into C matrix data
-!----------------------------------------------------------------------
-subroutine cmat_from_fields(cmat,mpl,nam,geom,bpar,rh_c0,rv_c0)
-
-implicit none
-
-! Passed variables
-class(cmat_type),intent(inout) :: cmat                               !< C matrix data
-type(mpl_type),intent(in) :: mpl                                     !< MPI data
-type(nam_type),intent(in) :: nam                                     !< Namelist
-type(geom_type),intent(in) :: geom                                   !< Geometry
-type(bpar_type),intent(in) :: bpar                                   !< Block parameters
-real(kind_real),intent(in) :: rh_c0(geom%nmga,geom%nl0,nam%nv,nam%nts) !< Horizontal support radius on model grid, halo A  (in m)
-real(kind_real),intent(in) :: rv_c0(geom%nmga,geom%nl0,nam%nv,nam%nts) !< Vertical support radius on model grid, halo A
-
-! Local variables
-integer :: ib,iv,jv,its,jts,il0,ic0
-
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Copy radii fields into C matrix'
-call flush(mpl%unit)
-
-! Allocation
-call cmat%alloc(nam,geom,bpar,'cmat')
-
-! Convolution parameters
-do ib=1,bpar%nbe
-   if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
-      ! Copy attribute
-      cmat%blk(ib)%double_fit = .false.
-
-      ! Indices
-      iv = bpar%b_to_v1(ib)
-      jv = bpar%b_to_v2(ib)
-      its = bpar%b_to_ts1(ib)
-      jts = bpar%b_to_ts2(ib)
-      if ((iv/=jv).or.(its/=jts)) call mpl%abort('only diagonal blocks for cmat_from_radii')
-
-      ! Copy support radii
-      do il0=1,geom%nl0
-         cmat%blk(ib)%rh_c0(:,il0) = rh_c0(geom%c0a_to_mga,il0,iv,its)/req
-         cmat%blk(ib)%rv_c0(:,il0) = rv_c0(geom%c0a_to_mga,il0,iv,its)
-      end do
-
-      ! Set coefficients
-      cmat%blk(ib)%coef_ens = 1.0
-      cmat%blk(ib)%coef_sta = 0.0
-      cmat%blk(ib)%wgt = 1.0
-   end if
-end do
-
-! Sampling parameters
-if (trim(nam%strategy)=='specific_multivariate') then
-   ! Initialization
-   cmat%blk(ib)%rhs_c0 = huge(1.0)
-   cmat%blk(ib)%rvs_c0 = huge(1.0)
-
-   ! Get minimum
-   do ib=1,bpar%nbe
-      if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
-         do il0=1,geom%nl0
-            do ic0=1,geom%nc0
-               cmat%blk(ib)%rhs_c0(ic0,il0) = min(cmat%blk(ib)%rhs_c0(ic0,il0),cmat%blk(ib)%rh_c0(ic0,il0))
-               cmat%blk(ib)%rvs_c0(ic0,il0) = min(cmat%blk(ib)%rvs_c0(ic0,il0),cmat%blk(ib)%rv_c0(ic0,il0))
-            end do
-         end do
-      end if
-   end do
-else
-   ! Copy
-   do ib=1,bpar%nbe
-      if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
-         cmat%blk(ib)%rhs_c0 = cmat%blk(ib)%rh_c0
-         cmat%blk(ib)%rvs_c0 = cmat%blk(ib)%rv_c0
-      end if
-   end do
-end if
-
-end subroutine cmat_from_fields
 
 !----------------------------------------------------------------------
 ! Subroutine: cmat_from_nam
@@ -783,5 +675,98 @@ do ib=1,bpar%nbe
 end do
 
 end subroutine cmat_from_nam
+
+
+!----------------------------------------------------------------------
+! Subroutine: cmat_from_oops
+!> Purpose: copy C matrix data from OOPS
+!----------------------------------------------------------------------
+subroutine cmat_from_oops(cmat,mpl,bpar)
+
+implicit none
+
+! Passed variables
+class(cmat_type),intent(inout) :: cmat !< C matrix data
+type(mpl_type),intent(in) :: mpl       !< MPI data
+type(bpar_type),intent(in) :: bpar     !< Block parameters
+
+! Local variables
+integer :: ib
+
+do ib=1,bpar%nbe
+   if (bpar%B_block(ib)) then
+      if (allocated(cmat%blk(ib)%oops_coef_ens)) then
+         write(mpl%unit,'(a7,a,a)') '','Ensemble coefficient copied from OOPS for block ',trim(bpar%blockname(ib))
+         cmat%blk(ib)%coef_ens = cmat%blk(ib)%oops_coef_ens
+      end if
+      if (allocated(cmat%blk(ib)%oops_coef_sta)) then
+         write(mpl%unit,'(a7,a,a)') '','Static coefficient copied from OOPS for block ',trim(bpar%blockname(ib))
+         cmat%blk(ib)%coef_sta = cmat%blk(ib)%oops_coef_sta
+      end if
+      if (allocated(cmat%blk(ib)%oops_rh_c0)) then
+         write(mpl%unit,'(a7,a,a)') '','Horizontal fit support radius copied from OOPS for block ',trim(bpar%blockname(ib))
+         cmat%blk(ib)%rh_c0 = cmat%blk(ib)%oops_rh_c0
+      end if
+      if (allocated(cmat%blk(ib)%oops_rv_c0)) then
+         write(mpl%unit,'(a7,a,a)') '','Vertical fit support radius copied from OOPS for block ',trim(bpar%blockname(ib))
+         cmat%blk(ib)%rv_c0 = cmat%blk(ib)%oops_rv_c0
+      end if
+      if (allocated(cmat%blk(ib)%oops_rv_rfac_c0)) then
+         write(mpl%unit,'(a7,a,a)') '','Vertical fit factor copied from OOPS for block ',trim(bpar%blockname(ib))
+         cmat%blk(ib)%rv_rfac_c0 = cmat%blk(ib)%oops_rv_rfac_c0
+      end if
+      if (allocated(cmat%blk(ib)%oops_rv_coef_c0)) then
+         write(mpl%unit,'(a7,a,a)') '','Vertical fit coefficient copied from OOPS for block ',trim(bpar%blockname(ib))
+         cmat%blk(ib)%rv_coef_c0 = cmat%blk(ib)%oops_rv_coef_c0
+      end if
+   end if
+end do
+
+end subroutine cmat_from_oops
+
+!----------------------------------------------------------------------
+! Subroutine: cmat_setup_sampling
+!> Purpose: setup C matrix sampling
+!----------------------------------------------------------------------
+subroutine cmat_setup_sampling(cmat,nam,geom,bpar)
+
+implicit none
+
+! Passed variables
+class(cmat_type),intent(inout) :: cmat !< C matrix data
+type(nam_type),target,intent(in) :: nam   !< Namelist
+type(geom_type),target,intent(in) :: geom !< Geometry
+type(bpar_type),intent(in) :: bpar        !< Block parameters
+
+! Local variables
+integer :: ib,il0,ic0a
+
+! Sampling parameters
+if (trim(nam%strategy)=='specific_multivariate') then
+   ! Initialization
+   cmat%blk(bpar%nbe)%rhs_c0 = huge(1.0)
+   cmat%blk(bpar%nbe)%rvs_c0 = huge(1.0)
+   do ib=1,bpar%nb
+      if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
+         ! Get minimum
+         do il0=1,geom%nl0
+            do ic0a=1,geom%nc0a
+               cmat%blk(bpar%nbe)%rhs_c0(ic0a,il0) = min(cmat%blk(bpar%nbe)%rhs_c0(ic0a,il0),cmat%blk(ib)%rh_c0(ic0a,il0))
+               cmat%blk(bpar%nbe)%rvs_c0(ic0a,il0) = min(cmat%blk(bpar%nbe)%rvs_c0(ic0a,il0),cmat%blk(ib)%rv_c0(ic0a,il0))
+            end do
+         end do
+      end if
+   end do
+else
+   ! Copy
+   do ib=1,bpar%nbe
+      if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
+         cmat%blk(ib)%rhs_c0 = cmat%blk(ib)%rh_c0
+         cmat%blk(ib)%rvs_c0 = cmat%blk(ib)%rv_c0
+      end if
+   end do
+end if
+
+end subroutine cmat_setup_sampling
 
 end module type_cmat

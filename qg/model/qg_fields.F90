@@ -523,7 +523,7 @@ character(len=4)  :: cnx
 character(len=11) :: fmt1='(X,ES24.16)'
 character(len=1024)  :: buf
 integer :: ic, iy, il, ix, is, jx, jy, jf, iread, nf
-integer :: info, ncid, nx_id, ny_id, nl_id, nc_id, gfld3d_id, xbound_id, qbound_id
+integer :: ncid, nx_id, ny_id, nl_id, nc_id, gfld3d_id, xbound_id, qbound_id
 real(kind=kind_real), allocatable :: zz(:)
 
 iread = 1
@@ -546,15 +546,15 @@ else
   ! Read data
   if (netcdfio) then
 
-    info = nf90_open(trim(filename)//'.nc',nf90_nowrite,ncid)
-    info = nf90_inq_dimid(ncid,'nx',nx_id)
-    info = nf90_inq_dimid(ncid,'ny',ny_id)
-    info = nf90_inq_dimid(ncid,'nl',nl_id)
-    info = nf90_inq_dimid(ncid,'nc',nc_id)
-    info = nf90_inquire_dimension(ncid,nx_id,len=ix)
-    info = nf90_inquire_dimension(ncid,ny_id,len=iy)
-    info = nf90_inquire_dimension(ncid,nl_id,len=il)
-    info = nf90_inquire_dimension(ncid,nl_id,len=ic)
+    call ncerr(nf90_open(trim(filename)//'.nc',nf90_nowrite,ncid))
+    call ncerr(nf90_inq_dimid(ncid,'nx',nx_id))
+    call ncerr(nf90_inq_dimid(ncid,'ny',ny_id))
+    call ncerr(nf90_inq_dimid(ncid,'nl',nl_id))
+    call ncerr(nf90_inq_dimid(ncid,'nc',nc_id))
+    call ncerr(nf90_inquire_dimension(ncid,nx_id,len=ix))
+    call ncerr(nf90_inquire_dimension(ncid,ny_id,len=iy))
+    call ncerr(nf90_inquire_dimension(ncid,nl_id,len=il))
+    call ncerr(nf90_inquire_dimension(ncid,nc_id,len=ic))
     if (ix /= fld%geom%nx .or. iy /= fld%geom%ny .or. il /= fld%nl) then
       write (record,*) "qg_fields:read_file: ", &
                      & "input fields have wrong dimensions: ",ix,iy,il
@@ -563,22 +563,22 @@ else
       call fckit_log%error(record)
       call abor1_ftn("qg_fields:read_file: input fields have wrong dimensions")
     endif
-    info = nf90_get_att(ncid,nf90_global,'lbc',is)
-      info = nf90_get_att(ncid,nf90_global,'sdate',sdate)
+    call ncerr(nf90_get_att(ncid,nf90_global,'lbc',is))
+      call ncerr(nf90_get_att(ncid,nf90_global,'sdate',sdate))
     write(buf,*) 'validity date is: '//sdate
     call fckit_log%info(buf)
     nf = min(fld%nf, ic)
-    info = nf90_inq_varid(ncid,'gfld3d',gfld3d_id)
+    call ncerr(nf90_inq_varid(ncid,'gfld3d',gfld3d_id))
     do jf=1,il*nf
-      info = nf90_get_var(ncid,gfld3d_id,fld%gfld3d(:,:,jf),(/1,1,jf/),(/ix,iy,1/))
+      call ncerr(nf90_get_var(ncid,gfld3d_id,fld%gfld3d(:,:,jf),(/1,1,jf/),(/ix,iy,1/)))
     enddo
     if (fld%lbc) then
-      info = nf90_inq_varid(ncid,'xbound',xbound_id)
-      info = nf90_get_var(ncid,xbound_id,fld%xbound)
-      info = nf90_inq_varid(ncid,'qbound',qbound_id)
-      info = nf90_get_var(ncid,qbound_id,fld%qbound)
+      call ncerr(nf90_inq_varid(ncid,'xbound',xbound_id))
+      call ncerr(nf90_get_var(ncid,xbound_id,fld%xbound))
+      call ncerr(nf90_inq_varid(ncid,'qbound',qbound_id))
+      call ncerr(nf90_get_var(ncid,qbound_id,fld%qbound))
     endif
-    info = nf90_close(ncid)
+    call ncerr(nf90_close(ncid))
 
   else
 
@@ -948,7 +948,7 @@ type(datetime), intent(in) :: vdate  !< DateTime
 
 integer, parameter :: iunit=11
 integer, parameter :: max_string_length=800 ! Yuk!
-integer :: info, ncid, nx_id, ny_id, nl_id, nc_id, ntot_id, four_id, gfld3d_id, xbound_id, qbound_id
+integer :: ncid, nx_id, ny_id, nl_id, nc_id, ntot_id, four_id, gfld3d_id, xbound_id, qbound_id
 character(len=max_string_length+50) :: record
 character(len=max_string_length) :: filename
 character(len=20) :: sdate, fmtn
@@ -969,33 +969,33 @@ call datetime_to_string(vdate, sdate)
 
 if (netcdfio) then
   
-  info = nf90_create(trim(filename)//'.nc',or(nf90_clobber,nf90_64bit_offset),ncid)
-  info = nf90_def_dim(ncid,'nx',fld%geom%nx,nx_id)
-  info = nf90_def_dim(ncid,'ny',fld%geom%ny,ny_id)
-  info = nf90_def_dim(ncid,'nl',fld%nl,nl_id)
-  info = nf90_def_dim(ncid,'nc',fld%nf,nc_id)
-  info = nf90_def_dim(ncid,'ntot',fld%nl*fld%nf,ntot_id)
-  info = nf90_def_dim(ncid,'four',4,four_id)
-  info = nf90_put_att(ncid,nf90_global,'lbc',is)
+  call ncerr(nf90_create(trim(filename)//'.nc',or(nf90_clobber,nf90_64bit_offset),ncid))
+  call ncerr(nf90_def_dim(ncid,'nx',fld%geom%nx,nx_id))
+  call ncerr(nf90_def_dim(ncid,'ny',fld%geom%ny,ny_id))
+  call ncerr(nf90_def_dim(ncid,'nl',fld%nl,nl_id))
+  call ncerr(nf90_def_dim(ncid,'nc',fld%nf,nc_id))
+  call ncerr(nf90_def_dim(ncid,'ntot',fld%nl*fld%nf,ntot_id))
+  call ncerr(nf90_def_dim(ncid,'four',4,four_id))
+  call ncerr(nf90_put_att(ncid,nf90_global,'lbc',is))
   
-  info = nf90_put_att(ncid,nf90_global,'sdate',sdate)
-  info = nf90_def_var(ncid,'gfld3d',nf90_double,(/nx_id,ny_id,ntot_id/),gfld3d_id)
-  
-  if (fld%lbc) then
-    info = nf90_def_var(ncid,'xbound',nf90_double,(/four_id/),xbound_id)
-    info = nf90_def_var(ncid,'qbound',nf90_double,(/nx_id,four_id/),qbound_id)
-  end if
-  
-  info = nf90_enddef(ncid)
-  
-  info = nf90_put_var(ncid,gfld3d_id,fld%gfld3d)
+  call ncerr(nf90_put_att(ncid,nf90_global,'sdate',sdate))
+  call ncerr(nf90_def_var(ncid,'gfld3d',nf90_double,(/nx_id,ny_id,ntot_id/),gfld3d_id))
   
   if (fld%lbc) then
-    info = nf90_put_var(ncid,xbound_id,fld%xbound)
-    info = nf90_put_var(ncid,qbound_id,fld%qbound)
+    call ncerr(nf90_def_var(ncid,'xbound',nf90_double,(/four_id/),xbound_id))
+    call ncerr(nf90_def_var(ncid,'qbound',nf90_double,(/nx_id,four_id/),qbound_id))
   end if
   
-  info = nf90_close(ncid)
+  call ncerr(nf90_enddef(ncid))
+  
+  call ncerr(nf90_put_var(ncid,gfld3d_id,fld%gfld3d))
+  
+  if (fld%lbc) then
+    call ncerr(nf90_put_var(ncid,xbound_id,fld%xbound))
+    call ncerr(nf90_put_var(ncid,qbound_id,fld%qbound))
+  end if
+  
+  call ncerr(nf90_close(ncid))
 
 else
 
@@ -1661,5 +1661,20 @@ endif
 end subroutine check
 
 ! ------------------------------------------------------------------------------
+
+subroutine ncerr(info)
+
+implicit none
+
+! Passed variables
+integer,intent(in) :: info !< Info index
+
+! Check status
+if (info/=nf90_noerr) then
+   write(*,*) trim(nf90_strerror(info))
+   stop
+end if
+
+end subroutine ncerr
 
 end module qg_fields

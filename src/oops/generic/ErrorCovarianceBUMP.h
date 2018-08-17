@@ -94,9 +94,6 @@ ErrorCovarianceBUMP<MODEL>::ErrorCovarianceBUMP(const Geometry_ & resol,
 // Create BUMP
   create_oobump_f90(keyBUMP_, ug.toFortran(), &fconf, 0, 1, 0, 1);
 
-// Run BUMP
-  run_oobump_drivers_f90(keyBUMP_);
-
 // Read data from files
   if (conf.has("input")) {
     std::vector<eckit::LocalConfiguration> inputConfigs;
@@ -110,6 +107,9 @@ ErrorCovarianceBUMP<MODEL>::ErrorCovarianceBUMP(const Geometry_ & resol,
       set_oobump_param_f90(keyBUMP_, nstr, cstr, ug.toFortran());
     }
   }
+
+// Run BUMP
+  run_oobump_drivers_f90(keyBUMP_);
 
   Log::trace() << "ErrorCovarianceBUMP::ErrorCovarianceBUMP done" << std::endl;
 }

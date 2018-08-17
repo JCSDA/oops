@@ -177,6 +177,38 @@ void ParametersBUMP<MODEL>::estimate() const {
   Log::trace() << "ParametersBUMP::estimate starting" << std::endl;
   util::Timer timer(classname(), "estimate");
 
+//  Setup resolution
+  const eckit::LocalConfiguration resolConfig(conf_, "resolution");
+  const Geometry_ resol(resolConfig);
+
+// Setup variables
+  const eckit::LocalConfiguration varConfig(conf_, "variables");
+  const Variables vars(varConfig);
+
+// Setup time
+  const util::DateTime date(conf_.getString("date"));
+
+// Setup dummy increment
+  Increment_ dx(resol, vars, date);
+  dx.zero();
+
+// Setup unstructured grid
+  UnstructuredGrid ug;
+
+// Read data from files
+  if (conf_.has("input")) {
+    std::vector<eckit::LocalConfiguration> inputConfigs;
+    conf_.get("input", inputConfigs);
+    for (const auto & conf : inputConfigs) {
+      dx.read(conf);
+      dx.field_to_ug(ug, colocated_);
+      std::string param = conf.getString("parameter");
+      const int nstr = param.size();
+      const char *cstr = param.c_str();
+      set_oobump_param_f90(keyBUMP_, nstr, cstr, ug.toFortran());
+    }
+  }
+
 // Estimate parameters
   run_oobump_drivers_f90(keyBUMP_);
 

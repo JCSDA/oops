@@ -603,7 +603,7 @@ do il0i=1,geom%nl0i
       call hdata%hfull(il0i)%write(mpl,ncid)
    end if
 
-   if (nam%local_diag) then
+   if (any(nam%vbal_block(1:nam%nv*(nam%nv+1)))) then
       ! Allocation
       allocate(vbal_maskint(nam%nc1,nam%nc2))
 
