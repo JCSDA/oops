@@ -1020,8 +1020,10 @@ if (nam%new_vbal.or.nam%new_hdiag.or.nam%new_lct.or.nam%new_nicas) then
    if (nam%ntry<=0) call mpl%abort('ntry should be positive')
    if (nam%nrep<0) call mpl%abort('nrep should be non-negative')
 end if
-if (nam%new_vbal.or.nam%new_hdiag.or.nam%new_lct) then
+if (nam%new_hdiag.or.nam%new_lct) then
    if (nam%nc3<=0) call mpl%abort('nc3 should be positive')
+end if
+if (nam%new_vbal.or.nam%new_hdiag.or.nam%new_lct) then
    if (nam%nl0r<1) call mpl%abort ('nl0r should be positive')
 end if
 if (nam%new_hdiag) then

@@ -72,7 +72,13 @@
       },
       "prefix" : "bump",
       "strategy" : "common",
+      "load_vbal" : 1,
       "check_vbal" : 1,
+      "nc1" : 2000,
+      "nc2" : 200,
+      "ntry" : 3,
+      "nrep" : 2,
+      "nl0r" : 2,
       "inputVariables": {
         "variables": ["x"]
       },

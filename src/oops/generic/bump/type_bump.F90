@@ -76,7 +76,7 @@ contains
 !> Purpose: online setup
 !----------------------------------------------------------------------
 subroutine bump_setup_online(bump,mpi_comm,nmga,nl0,nv,nts,lon,lat,area,vunit,lmask,ens1_ne,ens1_nsub,ens2_ne,ens2_nsub, & 
-                           & nobs,lonobs,latobs,namelname)
+                           & nobs,lonobs,latobs,namelname,lunit)
 
 implicit none
 
@@ -100,6 +100,7 @@ integer,intent(in),optional :: nobs                    !< Number of observations
 real(kind_real),intent(in),optional :: lonobs(:)       !< Observations longitude (in degrees: -180 to 180)
 real(kind_real),intent(in),optional :: latobs(:)       !< Observations latitude (in degrees: -90 to 90)
 character(len=*),intent(in),optional :: namelname      !< Namelist name
+integer,intent(in),optional :: lunit                   !< Listing unit
 
 ! Local variables
 integer :: lens1_ne,lens1_nsub,lens2_ne,lens2_nsub
@@ -125,7 +126,11 @@ if (present(ens2_ne)) lens2_nsub = ens2_nsub
 call bump%nam%setup_internal(nl0,nv,nts,lens1_ne,lens1_nsub,lens2_ne,lens2_nsub)
 
 ! Initialize listing
-call bump%mpl%init_listing(bump%nam%prefix,bump%nam%model,bump%nam%colorlog,bump%nam%logpres)
+if (present(lunit)) then
+   call bump%mpl%init_listing(bump%nam%prefix,bump%nam%model,bump%nam%colorlog,bump%nam%logpres,lunit)
+else
+   call bump%mpl%init_listing(bump%nam%prefix,bump%nam%model,bump%nam%colorlog,bump%nam%logpres)
+end if
 
 ! Generic setup
 call bump%setup_generic
@@ -395,12 +400,14 @@ if (bump%nam%check_obsop) then
    call bump%obsop%run_obsop_tests(bump%mpl,bump%rng,bump%nam,bump%geom)
 end if
 
-! Close listings
-write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(bump%mpl%unit,'(a)') '--- Close listings'
-write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
-call flush(bump%mpl%unit)
-close(unit=bump%mpl%unit)
+if (trim(bump%nam%model)=='online') then
+   ! Close listings
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Close listings'
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   call flush(bump%mpl%unit)
+   close(unit=bump%mpl%unit)
+end if
 
 end subroutine bump_run_drivers
 

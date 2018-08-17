@@ -24,6 +24,7 @@ list( APPEND qg_test_input
   testinput/parametersbump.lct.json
   testinput/parametersbump.loc.json
   testinput/parametersbump.readloc.json
+  testinput/parametersbump.vbal.json
   testinput/forecast.json
   testinput/genenspert.json
   testinput/hofx.json
@@ -64,6 +65,7 @@ list( APPEND qg_testoutput
   testoutput/parametersbump.lct.test
   testoutput/parametersbump.loc.test
   testoutput/parametersbump.readloc.test
+  testoutput/parametersbump.vbal.test
   testoutput/forecast.test
   testoutput/genenspert.test
   testoutput/hofx.test
@@ -480,6 +482,13 @@ ecbuild_add_test( TARGET test_qg_parameters_bump_readloc
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_parameters.x testinput/parametersbump.readloc.json"
                        testoutput/parametersbump.readloc.test
+                  DEPENDS qg_parameters.x )
+
+ecbuild_add_test( TARGET test_qg_parameters_bump_vbal
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_parameters.x testinput/parametersbump.vbal.json"
+                       testoutput/parametersbump.vbal.test
                   DEPENDS qg_parameters.x )
 endif()
 
