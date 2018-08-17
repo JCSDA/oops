@@ -1023,7 +1023,7 @@ end if
 if (nam%new_hdiag.or.nam%new_lct) then
    if (nam%nc3<=0) call mpl%abort('nc3 should be positive')
 end if
-if (nam%new_vbal.or.nam%new_hdiag.or.nam%new_lct) then
+if (nam%new_vbal.or.nam%load_vbal.or.nam%new_hdiag.or.nam%new_lct) then
    if (nam%nl0r<1) call mpl%abort ('nl0r should be positive')
 end if
 if (nam%new_hdiag) then

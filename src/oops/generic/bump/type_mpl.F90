@@ -88,14 +88,16 @@ contains
                      & mpl_bcast_logical_array_2d,mpl_bcast_logical_array_3d,mpl_bcast_string,mpl_bcast_string_array_1d
    procedure :: mpl_recv_integer
    procedure :: mpl_recv_integer_array_1d
+   procedure :: mpl_recv_real
    procedure :: mpl_recv_real_array_1d
    procedure :: mpl_recv_logical_array_1d
-   generic :: recv => mpl_recv_integer,mpl_recv_integer_array_1d,mpl_recv_real_array_1d,mpl_recv_logical_array_1d
+   generic :: recv => mpl_recv_integer,mpl_recv_integer_array_1d,mpl_recv_real,mpl_recv_real_array_1d,mpl_recv_logical_array_1d
    procedure :: mpl_send_integer
    procedure :: mpl_send_integer_array_1d
+   procedure :: mpl_send_real
    procedure :: mpl_send_real_array_1d
    procedure :: mpl_send_logical_array_1d
-   generic :: send => mpl_send_integer,mpl_send_integer_array_1d,mpl_send_real_array_1d,mpl_send_logical_array_1d
+   generic :: send => mpl_send_integer,mpl_send_integer_array_1d,mpl_send_real,mpl_send_real_array_1d,mpl_send_logical_array_1d
    procedure :: mpl_gatherv_real
    generic :: gatherv => mpl_gatherv_real
    procedure :: mpl_scatterv_real
@@ -1021,6 +1023,32 @@ call mpl%check(info)
 end subroutine mpl_recv_integer_array_1d
 
 !----------------------------------------------------------------------
+! Subroutine: mpl_recv_real
+!> Purpose: receive real
+!----------------------------------------------------------------------
+subroutine mpl_recv_real(mpl,var,src,tag)
+
+implicit none
+
+! Passed variables
+class(mpl_type) :: mpl             !< MPI data
+real(kind_real),intent(out) :: var !< Real
+integer,intent(in) :: src          !< Source task
+integer,intent(in) :: tag          !< Tag
+
+! Local variable
+integer :: info
+integer,dimension(mpi_status_size) :: status
+
+! Receive
+call mpi_recv(var,1,mpl%rtype,src-1,tag,mpl%mpi_comm,status,info)
+
+! Check
+call mpl%check(info)
+
+end subroutine mpl_recv_real
+
+!----------------------------------------------------------------------
 ! Subroutine: mpl_recv_real_array_1d
 !> Purpose: receive 1d real array
 !----------------------------------------------------------------------
@@ -1124,6 +1152,31 @@ call mpi_send(var,n,mpi_integer,dst-1,tag,mpl%mpi_comm,info)
 call mpl%check(info)
 
 end subroutine mpl_send_integer_array_1d
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_send_real
+!> Purpose: send real
+!----------------------------------------------------------------------
+subroutine mpl_send_real(mpl,var,dst,tag)
+
+implicit none
+
+! Passed variables
+class(mpl_type) :: mpl            !< MPI data
+real(kind_real),intent(in) :: var !< Real
+integer,intent(in) :: dst         !< Destination task
+integer,intent(in) :: tag         !< Tag
+
+! Local variable
+integer :: info
+
+! Send
+call mpi_send(var,1,mpl%rtype,dst-1,tag,mpl%mpi_comm,info)
+
+! Check
+call mpl%check(info)
+
+end subroutine mpl_send_real
 
 !----------------------------------------------------------------------
 ! Subroutine: mpl_send_integer_array_1d

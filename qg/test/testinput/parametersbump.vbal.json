@@ -18,7 +18,7 @@
   "ensemble": {
     "members": "10",
     "variables": {
-       "variables": ["x","q","u","v","bc"]
+      "variables": ["x","q","u","v","bc"]
     },
     "state" : [
       {

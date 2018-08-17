@@ -1032,7 +1032,7 @@ real(kind_real),intent(in) :: fld_c0a(geom%nc0a,geom%nl0)  !< Field on subset Sc
 real(kind_real),intent(out) :: fld_mga(geom%nmga,geom%nl0) !< Field on model grid, halo A
 
 ! Local variables
-integer :: ic0a,il0,imga,img,jmg,jmga
+integer :: ic0a,il0,imga,img,jmg,jmga,iproc,jproc
 
 ! Initialization
 call msr(fld_mga)
@@ -1049,8 +1049,20 @@ do il0=1,geom%nl0
       img = geom%mga_to_mg(imga)
       jmg = geom%redundant(img)
       if (isnotmsi(jmg)) then
-         jmga = geom%mg_to_mga(jmg)
-         fld_mga(imga,il0) = fld_mga(jmga,il0)
+         ! Communicate the value
+         iproc = geom%mg_to_proc(img)
+         jproc = geom%mg_to_proc(jmg)
+         if (iproc/=jproc) then
+            if (mpl%myproc==iproc) then
+               ! Receive value
+               call mpl%recv(fld_mga(imga,il0),jproc,mpl%tag)
+            elseif (mpl%myproc==jproc) then
+               ! Send value
+               jmga = geom%mg_to_mga(jmg)
+               call mpl%send(fld_mga(jmga,il0),iproc,mpl%tag)
+            end if
+            call mpl%update_tag(1)
+         end if
       end if
    end do
 end do
