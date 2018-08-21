@@ -785,7 +785,7 @@ case ('common')
    !$omp parallel do schedule(static) private(il0,ic0a)
    do il0=1,geom%nl0
       do ic0a=1,geom%nc0a
-         fld_3d(ic0a,il0) = fld_3d(ic0a,il0)*sqrt(nicas%blk(bpar%nbe)%coef_ens(ic0a,il0))
+         if (geom%mask(geom%c0a_to_c0(ic0a),il0)) fld_3d(ic0a,il0) = fld_3d(ic0a,il0)*sqrt(nicas%blk(bpar%nbe)%coef_ens(ic0a,il0))
       end do
    end do
    !$omp end parallel do
@@ -797,7 +797,7 @@ case ('common')
    !$omp parallel do schedule(static) private(il0,ic0a)
    do il0=1,geom%nl0
       do ic0a=1,geom%nc0a
-         fld_3d(ic0a,il0) = fld_3d(ic0a,il0)*sqrt(nicas%blk(bpar%nbe)%coef_ens(ic0a,il0))
+         if (geom%mask(geom%c0a_to_c0(ic0a),il0)) fld_3d(ic0a,il0) = fld_3d(ic0a,il0)*sqrt(nicas%blk(bpar%nbe)%coef_ens(ic0a,il0))
       end do
    end do
    !$omp end parallel do
@@ -830,13 +830,27 @@ case ('specific_univariate')
          iv = bpar%b_to_v1(ib)
 
          ! Apply common ensemble coefficient square-root
-         fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(ib)%coef_ens)
+         !$omp parallel do schedule(static) private(il0,ic0a)
+         do il0=1,geom%nl0
+            do ic0a=1,geom%nc0a
+               if (geom%mask(geom%c0a_to_c0(ic0a),il0)) fld_4d(ic0a,il0,iv) = fld_4d(ic0a,il0,iv) &
+                                                                            & *sqrt(nicas%blk(ib)%coef_ens(ic0a,il0))
+            end do
+         end do
+         !$omp end parallel do
 
          ! Apply specific NICAS (same for all timeslots)
          call nicas%blk(ib)%apply(mpl,nam,geom,fld_4d(:,:,iv))
 
          ! Apply common ensemble coefficient square-root
-         fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(ib)%coef_ens)
+         !$omp parallel do schedule(static) private(il0,ic0a)
+         do il0=1,geom%nl0
+            do ic0a=1,geom%nc0a
+               if (geom%mask(geom%c0a_to_c0(ic0a),il0)) fld_4d(ic0a,il0,iv) = fld_4d(ic0a,il0,iv) &
+                                                                            & *sqrt(nicas%blk(ib)%coef_ens(ic0a,il0))
+            end do
+         end do
+         !$omp end parallel do
       end if
    end do
 
@@ -883,13 +897,27 @@ case ('common_weighted')
 
    do iv=1,nam%nv
       ! Apply common ensemble coefficient square-root
-      fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(bpar%nbe)%coef_ens)
+      !$omp parallel do schedule(static) private(il0,ic0a)
+      do il0=1,geom%nl0
+         do ic0a=1,geom%nc0a
+            if (geom%mask(geom%c0a_to_c0(ic0a),il0)) fld_4d(ic0a,il0,iv) = fld_4d(ic0a,il0,iv) &
+                                                                         & *sqrt(nicas%blk(bpar%nbe)%coef_ens(ic0a,il0))
+         end do
+      end do
+      !$omp end parallel do
 
       ! Apply common NICAS
       call nicas%blk(bpar%nbe)%apply(mpl,nam,geom,fld_4d(:,:,iv))
 
       ! Apply common ensemble coefficient square-root
-      fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(bpar%nbe)%coef_ens)
+      !$omp parallel do schedule(static) private(il0,ic0a)
+      do il0=1,geom%nl0
+         do ic0a=1,geom%nc0a
+            if (geom%mask(geom%c0a_to_c0(ic0a),il0)) fld_4d(ic0a,il0,iv) = fld_4d(ic0a,il0,iv) &
+                                                                         & *sqrt(nicas%blk(bpar%nbe)%coef_ens(ic0a,il0))
+         end do
+      end do
+      !$omp end parallel do
    end do
 
    ! Apply weights
@@ -978,7 +1006,7 @@ type(cv_type),intent(in) :: cv                                        !< Control
 real(kind_real),intent(out) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) !< Field
 
 ! Local variable
-integer :: ib,its,iv,jv,i
+integer :: ib,its,iv,jv,i,ic0a,il0
 real(kind_real),allocatable :: fld_3d(:,:),fld_4d(:,:,:),fld_4d_tmp(:,:,:)
 real(kind_real),allocatable :: wgt(:,:),wgt_diag(:),a(:),u(:)
 
@@ -991,7 +1019,13 @@ case ('common')
    call nicas%blk(bpar%nbe)%apply_sqrt(mpl,geom,cv%blk(bpar%nbe)%alpha,fld_3d)
 
    ! Apply common ensemble coefficient square-root
-   fld_3d = fld_3d*sqrt(nicas%blk(bpar%nbe)%coef_ens)
+   !$omp parallel do schedule(static) private(il0,ic0a)
+   do il0=1,geom%nl0
+      do ic0a=1,geom%nc0a
+         if (geom%mask(geom%c0a_to_c0(ic0a),il0)) fld_3d(ic0a,il0) = fld_3d(ic0a,il0)*sqrt(nicas%blk(bpar%nbe)%coef_ens(ic0a,il0))
+      end do
+   end do
+   !$omp end parallel do
 
    ! Build final vector
    do its=1,nam%nts
@@ -1012,7 +1046,14 @@ case ('specific_univariate')
          call nicas%blk(ib)%apply_sqrt(mpl,geom,cv%blk(ib)%alpha,fld_4d(:,:,iv))
 
          ! Apply specific ensemble coefficient square-root
-         fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(ib)%coef_ens)
+         !$omp parallel do schedule(static) private(il0,ic0a)
+         do il0=1,geom%nl0
+            do ic0a=1,geom%nc0a
+               if (geom%mask(geom%c0a_to_c0(ic0a),il0)) fld_4d(ic0a,il0,iv) = fld_4d(ic0a,il0,iv) &
+                                                                            & *sqrt(nicas%blk(ib)%coef_ens(ic0a,il0))
+            end do
+         end do
+         !$omp end parallel do
       end if
    end do
 
@@ -1033,7 +1074,14 @@ case ('specific_multivariate')
          call nicas%blk(ib)%apply_sqrt(mpl,geom,cv%blk(bpar%nbe)%alpha,fld_4d(:,:,iv))
 
          ! Apply specific ensemble coefficient square-root
-         fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(ib)%coef_ens)
+         !$omp parallel do schedule(static) private(il0,ic0a)
+         do il0=1,geom%nl0
+            do ic0a=1,geom%nc0a
+               if (geom%mask(geom%c0a_to_c0(ic0a),il0)) fld_4d(ic0a,il0,iv) = fld_4d(ic0a,il0,iv) &
+                                                                            & *sqrt(nicas%blk(ib)%coef_ens(ic0a,il0))
+            end do
+         end do
+         !$omp end parallel do
       end if
    end do
 
@@ -1099,7 +1147,14 @@ case ('common_weighted')
          call nicas%blk(bpar%nbe)%apply_sqrt(mpl,geom,cv%blk(ib)%alpha,fld_4d(:,:,iv))
 
          ! Apply common ensemble coefficient square-root
-         fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(bpar%nbe)%coef_ens)
+         !$omp parallel do schedule(static) private(il0,ic0a)
+         do il0=1,geom%nl0
+            do ic0a=1,geom%nc0a
+               if (geom%mask(geom%c0a_to_c0(ic0a),il0)) fld_4d(ic0a,il0,iv) = fld_4d(ic0a,il0,iv) &
+                                                                            & *sqrt(nicas%blk(bpar%nbe)%coef_ens(ic0a,il0))
+            end do
+         end do
+         !$omp end parallel do
       end if
    end do
 
@@ -1140,7 +1195,7 @@ real(kind_real),intent(in) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) !< Field
 type(cv_type),intent(out) :: cv                                      !< Control variable
 
 ! Local variable
-integer :: ib,its,iv,jv,i
+integer :: ib,its,iv,jv,i,ic0a,il0
 real(kind_real),allocatable :: fld_3d(:,:),fld_4d(:,:,:),fld_4d_tmp(:,:,:),fld_5d(:,:,:,:)
 real(kind_real),allocatable :: wgt(:,:),wgt_diag(:),a(:),u(:)
 type(cv_type) :: cv_tmp
@@ -1169,7 +1224,13 @@ case ('common')
    end do
 
    ! Apply common ensemble coefficient square-root
-   fld_3d = fld_3d*sqrt(nicas%blk(bpar%nbe)%coef_ens)
+   !$omp parallel do schedule(static) private(il0,ic0a)
+   do il0=1,geom%nl0
+      do ic0a=1,geom%nc0a
+         if (geom%mask(geom%c0a_to_c0(ic0a),il0)) fld_3d(ic0a,il0) = fld_3d(ic0a,il0)*sqrt(nicas%blk(bpar%nbe)%coef_ens(ic0a,il0))
+      end do
+   end do
+   !$omp end parallel do
 
    ! Apply common NICAS
    call nicas%blk(bpar%nbe)%apply_sqrt_ad(mpl,geom,fld_3d,cv%blk(bpar%nbe)%alpha)
@@ -1189,7 +1250,14 @@ case ('specific_univariate')
          iv = bpar%b_to_v1(ib)
 
          ! Apply common ensemble coefficient square-root
-         fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(ib)%coef_ens)
+         !$omp parallel do schedule(static) private(il0,ic0a)
+         do il0=1,geom%nl0
+            do ic0a=1,geom%nc0a
+               if (geom%mask(geom%c0a_to_c0(ic0a),il0)) fld_4d(ic0a,il0,iv) = fld_4d(ic0a,il0,iv) &
+                                                                            & *sqrt(nicas%blk(ib)%coef_ens(ic0a,il0))
+            end do
+         end do
+         !$omp end parallel do
 
          ! Apply specific NICAS (same for all timeslots)
          call nicas%blk(ib)%apply_sqrt_ad(mpl,geom,fld_4d(:,:,iv),cv%blk(ib)%alpha)
@@ -1215,7 +1283,14 @@ case ('specific_multivariate')
          iv = bpar%b_to_v1(ib)
 
          ! Apply common ensemble coefficient square-root
-         fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(ib)%coef_ens)
+         !$omp parallel do schedule(static) private(il0,ic0a)
+         do il0=1,geom%nl0
+            do ic0a=1,geom%nc0a
+               if (geom%mask(geom%c0a_to_c0(ic0a),il0)) fld_4d(ic0a,il0,iv) = fld_4d(ic0a,il0,iv) &
+                                                                            & *sqrt(nicas%blk(ib)%coef_ens(ic0a,il0))
+            end do
+         end do
+         !$omp end parallel do
 
          ! Apply specific NICAS (same for all timeslots)
          call nicas%blk(ib)%apply_sqrt_ad(mpl,geom,fld_4d(:,:,iv),cv_tmp%blk(bpar%nbe)%alpha)
@@ -1293,7 +1368,14 @@ case ('common_weighted')
          iv = bpar%b_to_v1(ib)
 
          ! Apply common ensemble coefficient square-root
-         fld_4d_tmp(:,:,iv) = fld_4d_tmp(:,:,iv)*sqrt(nicas%blk(bpar%nbe)%coef_ens)
+         !$omp parallel do schedule(static) private(il0,ic0a)
+         do il0=1,geom%nl0
+            do ic0a=1,geom%nc0a
+               if (geom%mask(geom%c0a_to_c0(ic0a),il0)) fld_4d_tmp(ic0a,il0,iv) = fld_4d_tmp(ic0a,il0,iv) &
+                                                                            & *sqrt(nicas%blk(bpar%nbe)%coef_ens(ic0a,il0))
+            end do
+         end do
+         !$omp end parallel do
 
          ! Apply specific NICAS (same for all timeslots)
          call nicas%blk(bpar%nbe)%apply_sqrt_ad(mpl,geom,fld_4d_tmp(:,:,iv),cv%blk(ib)%alpha)
@@ -1322,8 +1404,8 @@ integer,intent(in) :: ne                   !< Number of members
 type(ens_type),intent(out) :: ens          !< Ensemble
 
 ! Local variable
-integer :: ie
-real(kind_real) :: mean(geom%nc0a,geom%nl0,nam%nv,nam%nts),std(geom%nc0a,geom%nl0,nam%nv,nam%nts)
+integer :: ie,ic0a,il0,its,iv
+real(kind_real) :: norm,mean(geom%nc0a,geom%nl0,nam%nv,nam%nts),std(geom%nc0a,geom%nl0,nam%nv,nam%nts)
 type(cv_type) :: cv_ens(ne)
 
 ! Allocation
@@ -1337,15 +1419,40 @@ do ie=1,ne
    call nicas%apply_sqrt(mpl,nam,geom,bpar,cv_ens(ie),ens%fld(:,:,:,:,ie))
 end do
 
-! Normalize ensemble
+! Remove mean
 mean = sum(ens%fld,dim=5)/real(ne,kind_real)
 do ie=1,ne
    ens%fld(:,:,:,:,ie) = ens%fld(:,:,:,:,ie)-mean
 end do
-std = sqrt(sum(ens%fld**2,dim=5)/real(ne-1,kind_real))
-do ie=1,ne
-   ens%fld(:,:,:,:,ie) = ens%fld(:,:,:,:,ie)/std
+
+! Compute standard deviation
+norm = real(ne-1,kind_real)
+!$omp parallel do schedule(static) private(its,iv,il0,ic0a)
+do its=1,nam%nts
+   do iv=1,nam%nv
+      do il0=1,geom%nl0
+         do ic0a=1,geom%nc0a
+            if (geom%mask(geom%c0a_to_c0(ic0a),il0)) std(ic0a,il0,iv,its) = sqrt(sum(ens%fld(ic0a,il0,iv,its,:)**2)) &
+                                                                          & /norm
+         end do
+      end do
+   end do
 end do
+!$omp end parallel do
+
+! Normalize perturbations
+!$omp parallel do schedule(static) private(its,iv,il0,ic0a)
+do its=1,nam%nts
+   do iv=1,nam%nv
+      do il0=1,geom%nl0
+         do ic0a=1,geom%nc0a
+            if (geom%mask(geom%c0a_to_c0(ic0a),il0)) ens%fld(ic0a,il0,iv,its,:) = ens%fld(ic0a,il0,iv,its,:) &
+                                                                                & /std(ic0a,il0,iv,its)
+         end do
+      end do
+   end do
+end do
+!$omp end parallel do
 
 end subroutine nicas_randomize
 
@@ -1369,10 +1476,7 @@ real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) !< Field
 ! Local variable
 integer :: ie
 real(kind_real) :: fld_copy(geom%nc0a,geom%nl0,nam%nv,nam%nts),fld_tmp(geom%nc0a,geom%nl0,nam%nv,nam%nts)
-real(kind_real) :: mean(geom%nc0a,geom%nl0,nam%nv,nam%nts),pert(geom%nc0a,geom%nl0,nam%nv,nam%nts)
-
-! Compute mean
-mean = sum(ens%fld,dim=5)/real(nam%ens1_ne,kind_real)
+real(kind_real) :: pert(geom%nc0a,geom%nl0,nam%nv,nam%nts)
 
 ! Copy field
 fld_copy = fld
@@ -1384,7 +1488,7 @@ if (nam%advmode==-1) call nicas%blk(bpar%nbe)%apply_adv_ad(mpl,nam,geom,fld_copy
 fld = 0.0
 do ie=1,nam%ens1_ne
    ! Compute perturbation
-   pert = (ens%fld(:,:,:,:,ie)-mean)/sqrt(real(nam%ens1_ne-1,kind_real))
+   pert = ens%fld(:,:,:,:,ie)
 
    ! Inverse advection
    if (nam%advmode==-1) call nicas%blk(bpar%nbe)%apply_adv_inv(mpl,nam,geom,pert)
@@ -1401,6 +1505,9 @@ do ie=1,nam%ens1_ne
 
    ! Schur product
    fld = fld+fld_tmp*pert
+
+   ! Normalization
+   fld = fld/real(nam%ens1_ne-1,kind_real)
 end do
 
 ! Advection
@@ -1425,23 +1532,31 @@ type(ens_type),intent(in) :: ens                                        !< Ensem
 real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) !< Field
 
 ! Local variable
-integer :: ie
-real(kind_real) :: alpha
+integer :: ie,ic0a,il0,iv,its
+real(kind_real) :: alpha,norm
 real(kind_real) :: fld_copy(geom%nc0a,geom%nl0,nam%nv,nam%nts)
-real(kind_real) :: mean(geom%nc0a,geom%nl0,nam%nv,nam%nts),pert(geom%nc0a,geom%nl0,nam%nv,nam%nts)
+real(kind_real) :: pert(geom%nc0a,geom%nl0,nam%nv,nam%nts)
 character(len=1024) :: dum
-
-! Compute mean
-mean = sum(ens%fld,dim=5)/real(nam%ens1_ne,kind_real)
 
 ! Initialization
 fld_copy = fld
 
 ! Apply localized ensemble covariance formula
 fld = 0.0
+norm = sqrt(real(nam%ens1_ne-1,kind_real))
 do ie=1,nam%ens1_ne
    ! Compute perturbation
-   pert = (ens%fld(:,:,:,:,ie)-mean)/sqrt(real(nam%ens1_ne-1,kind_real))
+   !$omp parallel do schedule(static) private(its,iv,il0,ic0a)
+   do its=1,nam%nts
+      do iv=1,nam%nv
+         do il0=1,geom%nl0
+            do ic0a=1,geom%nc0a
+               if (geom%mask(geom%c0a_to_c0(ic0a),il0)) pert(ic0a,il0,iv,its) = ens%fld(ic0a,il0,iv,its,ie)/norm
+            end do
+         end do
+      end do
+   end do
+   !$omp end parallel do
 
    ! Dot product
    call mpl%dot_prod(pert,fld_copy,alpha)
@@ -1880,14 +1995,14 @@ do ib=1,bpar%nbe
    if (bpar%nicas_block(ib)) then
       write(mpl%unit,'(a7,a,a)') '','Block: ',trim(bpar%blockname(ib))
       do il0=1,geom%nl0
-         call mpl%allreduce_sum(sum(cmat_test%blk(ib)%rh_c0(:,il0)-cmat%blk(ib)%rh_c0(:,il0),geom%mask(geom%c0a_to_c0,il0)), &
+         call mpl%allreduce_sum(sum(cmat_test%blk(ib)%rh(:,il0)-cmat%blk(ib)%rh(:,il0),geom%mask(geom%c0a_to_c0,il0)), &
        & rh_c0_sum)
-         call mpl%allreduce_sum(sum(cmat_test%blk(ib)%rv_c0(:,il0)-cmat%blk(ib)%rv_c0(:,il0),geom%mask(geom%c0a_to_c0,il0)), &
+         call mpl%allreduce_sum(sum(cmat_test%blk(ib)%rv(:,il0)-cmat%blk(ib)%rv(:,il0),geom%mask(geom%c0a_to_c0,il0)), &
        & rv_c0_sum)
          call mpl%allreduce_sum(real(count(geom%mask(geom%c0a_to_c0,il0)),kind_real),norm)
          write(mpl%unit,'(a10,a7,i3,a4,a25,f6.1,a)') '','Level: ',nam%levs(il0),' ~> ','horizontal length-scale: ', &
        & rh_c0_sum/norm*reqkm,' km'
-         if (any(abs(cmat%blk(ib)%rv_c0(:,il0))>0.0)) then
+         if (any(abs(cmat%blk(ib)%rv(:,il0))>0.0)) then
             write(mpl%unit,'(a49,f6.1,a)') 'vertical length-scale: ',rh_c0_sum/norm,' '//trim(mpl%vunitchar)
          end if
       end do
@@ -1982,11 +2097,11 @@ do ifac=1,nfac
    do ib=1,bpar%nbe
       if (bpar%nicas_block(ib)) then
          ! Length-scales multiplication
-         cmat_test%blk(ib)%rh_c0 = fac(ifac)*cmat_save%blk(ib)%rh_c0
-         cmat_test%blk(ib)%rv_c0 = fac(ifac)*cmat_save%blk(ib)%rv_c0
+         cmat_test%blk(ib)%rh = fac(ifac)*cmat_save%blk(ib)%rh
+         cmat_test%blk(ib)%rv = fac(ifac)*cmat_save%blk(ib)%rv
          if (trim(nam%strategy)=='specific_multivariate') then
-            cmat_test%blk(ib)%rhs_c0 = fac(ifac)*cmat_save%blk(ib)%rhs_c0
-            cmat_test%blk(ib)%rvs_c0 = fac(ifac)*cmat_save%blk(ib)%rvs_c0
+            cmat_test%blk(ib)%rhs = fac(ifac)*cmat_save%blk(ib)%rhs
+            cmat_test%blk(ib)%rvs = fac(ifac)*cmat_save%blk(ib)%rvs
          end if
 
          ! Compute NICAS parameters

@@ -1032,7 +1032,7 @@ real(kind_real),intent(in) :: fld_c0a(geom%nc0a,geom%nl0)  !< Field on subset Sc
 real(kind_real),intent(out) :: fld_mga(geom%nmga,geom%nl0) !< Field on model grid, halo A
 
 ! Local variables
-integer :: ic0a,il0,imga,nred,ired,img,jmg,jmga
+integer :: ic0a,imga,nred,ired,img,jmg,jmga
 integer,allocatable :: red_img(:),red_jmg(:)
 real(kind_real),allocatable :: red_val(:,:),red_val_pack(:),red_val_tot(:,:),red_val_pack_tot(:)
 logical,allocatable :: mask_unpack(:,:)

@@ -233,7 +233,7 @@ type(hdata_type),intent(in) :: hdata         !< HDIAG data
 
 ! Local variables
 integer :: il0,jl0r,jl0,ic1a,ic1,ic0,jc3,iscales,offset,progint
-real(kind_real) :: distsq,Dhbar,Dvbar
+real(kind_real) :: distsq,Dhbar,Dvbar,det,diag_prod
 real(kind_real),allocatable :: Dh(:),Dv(:),dx(:,:),dy(:,:),dz(:)
 logical :: spd
 logical,allocatable :: dmask(:,:),done(:)
@@ -389,11 +389,16 @@ do il0=1,geom%nl0
             spd = .true.
             offset = 0
             do iscales=1,lct_blk%nscales
-               spd = spd.and.(pos(lct_blk%D(offset+1,ic1a,il0))).and.(pos(lct_blk%D(offset+2,ic1a,il0)))
-               if (bpar%nl0r(ib)>1) spd = spd.and.(poseq(lct_blk%D(offset+3,ic1a,il0)))
-               if (lct_blk%ncomp(iscales)==4) spd = spd.and.pos(lct_blk%D(offset+4,ic1a,il0)-1.0) &
-                                                  & .and.pos(1.0-lct_blk%D(offset+4,ic1a,il0))
-               spd = spd.and.(poseq(lct_blk%coef(iscales,ic1a,il0)))
+               ! Check D determinant
+               diag_prod = lct_blk%D(offset+1,ic1a,il0)*lct_blk%D(offset+2,ic1a,il0)
+               if (lct_blk%ncomp(iscales)==3) then
+                  det = diag_prod
+               else
+                  det = diag_prod*(1.0-lct_blk%D(offset+4,ic1a,il0)**2)
+               end if
+               if (bpar%nl0r(ib)>1) det = det*lct_blk%D(offset+3,ic1a,il0)
+               spd = spd.and.pos(det).and.poseq(lct_blk%coef(iscales,ic1a,il0)) &
+                   & .and.poseq(1.0-lct_blk%coef(iscales,ic1a,il0))
                offset = offset+lct_blk%ncomp(iscales)
             end do
             if (spd) then

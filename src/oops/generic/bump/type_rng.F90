@@ -443,14 +443,19 @@ integer,intent(in) :: ns             !< Number of samplings points
 integer,intent(out) :: ihor(ns)      !< Horizontal sampling index
 
 ! Local variables
-integer :: is,js,i,irep,irmax,itry,ir,nn_index(2),ismin,progint
-real(kind_real) :: distmax,distmin,d,dist(ns),nn_dist(2)
-logical :: lmask(n),smask(n),done(ns+nrep)
+integer :: is,js,i,irep,irmax,itry,ir_red,i_red,ir,nn_index(2),ismin,progint,nmask
+real(kind_real) :: distmax,distmin,d,nn_dist(2)
+real(kind_real),allocatable :: dist(:)
+logical,allocatable :: lmask(:),smask(:),done(:)
 type(kdtree_type) :: kdtree
 
-if (ns>count(mask)) then
+! Check mask size
+nmask = count(mask)
+if (nmask==0) then
+    call mpl%abort('empty mask in initialize sampling')
+elseif (nmask<ns) then
    call mpl%abort('ns greater that mask size in initialize_sampling')
-elseif (ns==count(mask)) then
+elseif (nmask==ns) then
    write(mpl%unit,'(a)') 'all points are used'
    is = 0
    do i=1,n
@@ -460,10 +465,15 @@ elseif (ns==count(mask)) then
       end if
    end do
 else
+   ! Allocation
+   allocate(dist(ns))
+   allocate(lmask(n))
+   allocate(smask(n))
+   allocate(done(ns+nrep))
+
    ! Initialization
    call msi(ihor)
    lmask = mask
-   if (count(lmask)==0) call mpl%abort('empty mask in initialize sampling')
    smask = .false.
    is = 1
    irep = 1
@@ -482,7 +492,17 @@ else
       ! Find a new point
       do while (itry<=ntry)
          ! Generate a random index
-         call rng%rand_integer(1,n,ir)
+         call msi(ir)
+         nmask = count(lmask)
+         call rng%rand_integer(1,nmask,ir_red)
+         i_red = 0
+         do i=1,n
+            if (lmask(i)) i_red = i_red+1
+            if (i_red==ir_red) then
+               ir = i
+               exit
+            end if
+         end do
 
          ! Check point validity
          if (lmask(ir)) then
@@ -547,6 +567,7 @@ else
 
             ! Remove worst point
             distmin = huge(1.0)
+            call msi(ismin)
             do js=1,ns
                if (inf(dist(js),distmin)) then
                   ismin = js
@@ -568,7 +589,7 @@ else
       end if
 
       ! Update
-      done(is+irep-2) = .true.
+      if (is+irep-2>0) done(is+irep-2) = .true.
       call mpl%prog_print(progint,done)
    end do
    write(mpl%unit,'(a)') '100%'

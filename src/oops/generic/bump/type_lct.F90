@@ -440,6 +440,7 @@ do ib=1,bpar%nb
                else
                   det = diag_prod*(1.0-lct%blk(ib)%D(offset+4,ic1a,il0)**2)
                end if
+               if (bpar%nl0r(ib)>1) det = det*lct%blk(ib)%D(offset+3,ic1a,il0)
 
                ! Check coefficient
                valid_coef = poseq(lct%blk(ib)%coef(iscales,ic1a,il0)).and.poseq(1.0-lct%blk(ib)%coef(iscales,ic1a,il0))
@@ -509,16 +510,23 @@ do ib=1,bpar%nb
       end do
 
       ! Copy to LCT
-      lct%blk(ib)%D11(:,:,iscales) = fld(:,:,1)
-      lct%blk(ib)%D22(:,:,iscales) = fld(:,:,2)
-      lct%blk(ib)%D33(:,:,iscales) = fld(:,:,3)
-      if (lct%blk(ib)%ncomp(iscales)==4) then
-         lct%blk(ib)%D12(:,:,iscales) = sqrt(fld(:,:,1)*fld(:,:,2))*fld(:,:,4)
-      else
-         lct%blk(ib)%D12(:,:,iscales) = 0.0
-      end if
-      lct%blk(ib)%Dcoef(:,:,iscales) = fld(:,:,lct%blk(ib)%ncomp(iscales)+1)
-      lct%blk(ib)%DLh(:,:,iscales) = fld(:,:,lct%blk(ib)%ncomp(iscales)+2)
+      do il0=1,geom%nl0
+         do ic0a=1,geom%nc0a
+            ic0 = geom%c0a_to_c0(ic0a)
+            if (geom%mask(ic0,il0)) then
+               lct%blk(ib)%D11(ic0a,il0,iscales) = fld(ic0a,il0,1)
+               lct%blk(ib)%D22(ic0a,il0,iscales) = fld(ic0a,il0,2)
+               lct%blk(ib)%D33(ic0a,il0,iscales) = fld(ic0a,il0,3)
+               if (lct%blk(ib)%ncomp(iscales)==4) then
+                  lct%blk(ib)%D12(ic0a,il0,iscales) = sqrt(fld(ic0a,il0,1)*fld(ic0a,il0,2))*fld(ic0a,il0,4)
+               else
+                  lct%blk(ib)%D12(ic0a,il0,iscales) = 0.0
+               end if
+               lct%blk(ib)%Dcoef(ic0a,il0,iscales) = fld(ic0a,il0,lct%blk(ib)%ncomp(iscales)+1)
+               lct%blk(ib)%DLh(ic0a,il0,iscales) = fld(ic0a,il0,lct%blk(ib)%ncomp(iscales)+2)
+            end if
+         end do
+      end do
 
       ! Write LCT
       write(mpl%unit,'(a13,a)') '','Write LCT'

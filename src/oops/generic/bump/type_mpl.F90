@@ -127,8 +127,12 @@ contains
    generic :: dot_prod => mpl_dot_prod_1d,mpl_dot_prod_2d,mpl_dot_prod_3d,mpl_dot_prod_4d
    procedure :: split => mpl_split
    procedure :: glb_to_loc_index => mpl_glb_to_loc_index
-   procedure :: glb_to_loc => mpl_glb_to_loc_1d
-   procedure :: loc_to_glb => mpl_loc_to_glb_1d
+   procedure :: mpl_glb_to_loc_1d
+   procedure :: mpl_glb_to_loc_2d
+   generic :: glb_to_loc => mpl_glb_to_loc_1d,mpl_glb_to_loc_2d
+   procedure :: mpl_loc_to_glb_1d
+   procedure :: mpl_loc_to_glb_2d
+   generic :: loc_to_glb => mpl_loc_to_glb_1d,mpl_loc_to_glb_2d
 end type mpl_type
 
 private
@@ -1977,6 +1981,81 @@ call mpl%update_tag(1)
 end subroutine mpl_glb_to_loc_1d
 
 !----------------------------------------------------------------------
+! Subroutine: mpl_glb_to_loc_2d
+!> Purpose: global to local, 2d array
+!----------------------------------------------------------------------
+subroutine mpl_glb_to_loc_2d(mpl,nl,n_glb,glb_to_proc,glb_to_loc,glb,n_loc,loc)
+
+implicit none
+
+! Passed variables
+class(mpl_type) :: mpl                   !< MPI data
+integer,intent(in) :: nl                    !< Number of levels
+integer,intent(in) :: n_glb
+integer,intent(in) :: glb_to_proc(n_glb)
+integer,intent(in) :: glb_to_loc(n_glb)
+real(kind_real),intent(in) :: glb(n_glb,nl)
+integer,intent(in) :: n_loc              !< Local dimension
+real(kind_real),intent(out) :: loc(n_loc,nl)
+
+! Local variables
+integer :: iproc,jproc,i_glb,i_loc,n_loc_tmp,il,ibuf
+real(kind_real),allocatable :: sbuf(:),rbuf(:)
+
+! Allocation
+allocate(rbuf(n_loc*nl))
+
+if (mpl%main) then
+   do iproc=1,mpl%nproc
+      ! Allocation
+      n_loc_tmp = count(glb_to_proc==iproc)
+      allocate(sbuf(n_loc_tmp*nl))
+
+      ! Prepare buffers
+      ibuf = 0
+      do il=1,nl
+         do i_glb=1,n_glb
+            jproc = glb_to_proc(i_glb)
+            if (iproc==jproc) then
+               ibuf = ibuf+1
+               sbuf(ibuf) = glb(i_glb,il)
+            end if
+         end do
+      end do
+
+      if (iproc==mpl%ioproc) then
+         ! Copy data
+         rbuf = sbuf
+      else
+         ! Send data to iproc
+         call mpl%send(n_loc_tmp,sbuf,iproc,mpl%tag)
+      end if 
+
+      ! Release memory
+      deallocate(sbuf)     
+   end do
+else
+   ! Receive data from ioproc
+   call mpl%recv(n_loc,rbuf,mpl%ioproc,mpl%tag)
+end if
+call mpl%update_tag(1)
+
+! Unpack buffer
+ibuf = 1
+do il=1,nl
+   do i_glb=1,n_glb
+      jproc = glb_to_proc(i_glb)
+      if (iproc==jproc) then
+         ibuf = ibuf+1
+         i_loc = glb_to_loc(i_glb)
+         loc(i_loc,il) = sbuf(ibuf)
+      end if
+   end do
+end do
+
+end subroutine mpl_glb_to_loc_2d
+
+!----------------------------------------------------------------------
 ! Subroutine: mpl_loc_to_glb_1d
 !> Purpose: local to global, 1d array
 !----------------------------------------------------------------------
@@ -2034,5 +2113,81 @@ call mpl%update_tag(1)
 if (bcast) call mpl%bcast(glb)
 
 end subroutine mpl_loc_to_glb_1d
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_loc_to_glb_2d
+!> Purpose: local to global, 2d array
+!----------------------------------------------------------------------
+subroutine mpl_loc_to_glb_2d(mpl,nl,n_loc,loc,n_glb,glb_to_proc,glb_to_loc,bcast,glb)
+
+implicit none
+
+! Passed variables
+class(mpl_type) :: mpl                   !< MPI data
+integer,intent(in) :: nl                    !< Number of levels
+integer,intent(in) :: n_loc              !< Local dimension
+real(kind_real),intent(in) :: loc(n_loc,nl) !< TODO
+integer,intent(in) :: n_glb
+integer,intent(in) :: glb_to_proc(n_glb)
+integer,intent(in) :: glb_to_loc(n_glb)
+logical,intent(in) :: bcast
+real(kind_real),intent(out) :: glb(n_glb,nl)
+
+! Local variables
+integer :: iproc,jproc,i_glb,i_loc,n_loc_tmp,il,ibuf
+real(kind_real),allocatable :: rbuf(:),sbuf(:)
+
+! Allocation
+allocate(sbuf(n_loc*nl))
+
+! Prepare buffer
+ibuf = 0
+do il=1,nl
+   do i_loc=1,n_loc
+      ibuf = ibuf+1
+      sbuf(ibuf) = loc(i_loc,il)
+   end do
+end do
+
+if (mpl%main) then
+   do iproc=1,mpl%nproc
+      ! Allocation
+      n_loc_tmp = count(glb_to_proc==iproc)
+      allocate(rbuf(n_loc_tmp))
+
+      if (iproc==mpl%ioproc) then
+          ! Copy data
+          rbuf = sbuf
+      else
+          ! Receive data from iproc
+          call mpl%recv(n_loc_tmp,rbuf,iproc,mpl%tag)
+      end if
+
+      ! Add data to glb
+      ibuf = 0
+      do il=1,nl
+         do i_glb=1,n_glb
+            jproc = glb_to_proc(i_glb)
+            if (iproc==jproc) then
+               ibuf = ibuf+1
+               i_loc = glb_to_loc(i_glb)
+               glb(i_glb,il) = rbuf(ibuf)
+            end if
+         end do
+      end do
+
+      ! Release memory
+      deallocate(rbuf)     
+   end do
+else
+   ! Send data to ioproc
+   call mpl%send(n_loc,sbuf,mpl%ioproc,mpl%tag)
+end if
+call mpl%update_tag(1)
+
+! Broadcast
+if (bcast) call mpl%bcast(glb)
+
+end subroutine mpl_loc_to_glb_2d
 
 end module type_mpl

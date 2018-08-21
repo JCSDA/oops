@@ -21,30 +21,30 @@ implicit none
 ! C matrix block data derived type
 type cmat_blk_type
    ! Block index and name
-   integer :: ib                                       !< Block index
-   character(len=1024) :: name                         !< Name
-   logical :: double_fit                               !< Double fit
+   integer :: ib                                     !< Block index
+   character(len=1024) :: name                       !< Name
+   logical :: double_fit                             !< Double fit
 
    ! Read data
-   real(kind_real),allocatable :: oops_coef_ens(:,:)   !< OOPS ensemble coefficient
-   real(kind_real),allocatable :: oops_coef_sta(:,:)   !< OOPS static coefficient
-   real(kind_real),allocatable :: oops_rh_c0(:,:)      !< OOPS horizontal fit support radius
-   real(kind_real),allocatable :: oops_rv_c0(:,:)      !< OOPS vertical fit support radius
-   real(kind_real),allocatable :: oops_rv_rfac_c0(:,:) !< OOPS vertical fit support radius factor
-   real(kind_real),allocatable :: oops_rv_coef_c0(:,:) !< OOPS vertical fit coefficient
+   real(kind_real),allocatable :: oops_coef_ens(:,:) !< OOPS ensemble coefficient
+   real(kind_real),allocatable :: oops_coef_sta(:,:) !< OOPS static coefficient
+   real(kind_real),allocatable :: oops_rh(:,:)       !< OOPS horizontal fit support radius
+   real(kind_real),allocatable :: oops_rv(:,:)       !< OOPS vertical fit support radius
+   real(kind_real),allocatable :: oops_rv_rfac(:,:)  !< OOPS vertical fit support radius factor
+   real(kind_real),allocatable :: oops_rv_coef(:,:)  !< OOPS vertical fit coefficient
 
    ! Data
-   real(kind_real),allocatable :: coef_ens(:,:)        !< Ensemble coefficient
-   real(kind_real),allocatable :: coef_sta(:,:)        !< Static coefficient
-   real(kind_real),allocatable :: rh_c0(:,:)           !< Horizontal fit support radius
-   real(kind_real),allocatable :: rv_c0(:,:)           !< Vertical fit support radius
-   real(kind_real),allocatable :: rv_rfac_c0(:,:)      !< Vertical fit support radius factor
-   real(kind_real),allocatable :: rv_coef_c0(:,:)      !< Vertical fit coefficient
-   real(kind_real),allocatable :: rhs_c0(:,:)          !< Fit support radius  for sampling
-   real(kind_real),allocatable :: rvs_c0(:,:)          !< Fit support radius, for sampling
-   real(kind_real) :: wgt                              !< Block weight
-   real(kind_real),allocatable :: displ_lon(:,:,:)     !< Displaced longitude
-   real(kind_real),allocatable :: displ_lat(:,:,:)     !< Displaced latitude
+   real(kind_real),allocatable :: coef_ens(:,:)      !< Ensemble coefficient
+   real(kind_real),allocatable :: coef_sta(:,:)      !< Static coefficient
+   real(kind_real),allocatable :: rh(:,:)            !< Horizontal fit support radius
+   real(kind_real),allocatable :: rv(:,:)            !< Vertical fit support radius
+   real(kind_real),allocatable :: rv_rfac(:,:)       !< Vertical fit support radius factor
+   real(kind_real),allocatable :: rv_coef(:,:)       !< Vertical fit coefficient
+   real(kind_real),allocatable :: rhs(:,:)           !< Fit support radius  for sampling
+   real(kind_real),allocatable :: rvs(:,:)           !< Fit support radius, for sampling
+   real(kind_real) :: wgt                            !< Block weight
+   real(kind_real),allocatable :: displ_lon(:,:,:)   !< Displaced longitude
+   real(kind_real),allocatable :: displ_lat(:,:,:)   !< Displaced latitude
 contains
    procedure :: alloc => cmat_blk_alloc
    procedure :: dealloc => cmat_blk_dealloc
@@ -80,26 +80,26 @@ if (bpar%diag_block(ib)) then
    ! Allocation
    allocate(cmat_blk%coef_ens(geom%nc0a,geom%nl0))
    allocate(cmat_blk%coef_sta(geom%nc0a,geom%nl0))
-   allocate(cmat_blk%rh_c0(geom%nc0a,geom%nl0))
-   allocate(cmat_blk%rv_c0(geom%nc0a,geom%nl0))
+   allocate(cmat_blk%rh(geom%nc0a,geom%nl0))
+   allocate(cmat_blk%rv(geom%nc0a,geom%nl0))
    if (cmat_blk%double_fit) then
-      allocate(cmat_blk%rv_rfac_c0(geom%nc0a,geom%nl0))
-      allocate(cmat_blk%rv_coef_c0(geom%nc0a,geom%nl0))
+      allocate(cmat_blk%rv_rfac(geom%nc0a,geom%nl0))
+      allocate(cmat_blk%rv_coef(geom%nc0a,geom%nl0))
    end if
-   allocate(cmat_blk%rhs_c0(geom%nc0a,geom%nl0))
-   allocate(cmat_blk%rvs_c0(geom%nc0a,geom%nl0))
+   allocate(cmat_blk%rhs(geom%nc0a,geom%nl0))
+   allocate(cmat_blk%rvs(geom%nc0a,geom%nl0))
 
    ! Initialization
    call msr(cmat_blk%coef_ens)
    call msr(cmat_blk%coef_sta)
-   call msr(cmat_blk%rh_c0)
-   call msr(cmat_blk%rv_c0)
+   call msr(cmat_blk%rh)
+   call msr(cmat_blk%rv)
    if (cmat_blk%double_fit) then
-      call msr(cmat_blk%rv_rfac_c0)
-      call msr(cmat_blk%rv_coef_c0)
+      call msr(cmat_blk%rv_rfac)
+      call msr(cmat_blk%rv_coef)
    end if
-   call msr(cmat_blk%rhs_c0)
-   call msr(cmat_blk%rvs_c0)
+   call msr(cmat_blk%rhs)
+   call msr(cmat_blk%rvs)
    call msr(cmat_blk%wgt)
 end if
 
@@ -134,12 +134,12 @@ class(cmat_blk_type),intent(inout) :: cmat_blk !< C matrix data block
 ! Release memory
 if (allocated(cmat_blk%coef_ens)) deallocate(cmat_blk%coef_ens)
 if (allocated(cmat_blk%coef_sta)) deallocate(cmat_blk%coef_sta)
-if (allocated(cmat_blk%rh_c0)) deallocate(cmat_blk%rh_c0)
-if (allocated(cmat_blk%rv_c0)) deallocate(cmat_blk%rv_c0)
-if (allocated(cmat_blk%rv_rfac_c0)) deallocate(cmat_blk%rv_rfac_c0)
-if (allocated(cmat_blk%rv_coef_c0)) deallocate(cmat_blk%rv_coef_c0)
-if (allocated(cmat_blk%rhs_c0)) deallocate(cmat_blk%rhs_c0)
-if (allocated(cmat_blk%rvs_c0)) deallocate(cmat_blk%rvs_c0)
+if (allocated(cmat_blk%rh)) deallocate(cmat_blk%rh)
+if (allocated(cmat_blk%rv)) deallocate(cmat_blk%rv)
+if (allocated(cmat_blk%rv_rfac)) deallocate(cmat_blk%rv_rfac)
+if (allocated(cmat_blk%rv_coef)) deallocate(cmat_blk%rv_coef)
+if (allocated(cmat_blk%rhs)) deallocate(cmat_blk%rhs)
+if (allocated(cmat_blk%rvs)) deallocate(cmat_blk%rvs)
 if (allocated(cmat_blk%displ_lon)) deallocate(cmat_blk%displ_lon)
 if (allocated(cmat_blk%displ_lat)) deallocate(cmat_blk%displ_lat)
 

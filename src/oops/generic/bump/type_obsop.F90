@@ -593,7 +593,7 @@ end subroutine obsop_run_obsop
 ! Subroutine: obsop_run_obsop_tests
 !> Purpose: observation operator tests driver
 !----------------------------------------------------------------------
-subroutine obsop_run_obsop_tests(obsop,mpl,rng,nam,geom)
+subroutine obsop_run_obsop_tests(obsop,mpl,rng,geom)
 
 implicit none
 
@@ -601,7 +601,6 @@ implicit none
 class(obsop_type),intent(inout) :: obsop !< Observation operator data
 type(mpl_type),intent(inout) :: mpl      !< MPI data
 type(rng_type),intent(inout) :: rng      !< Random number generator
-type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 
 ! Test adjoints

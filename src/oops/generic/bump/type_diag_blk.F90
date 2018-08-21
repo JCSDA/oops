@@ -340,7 +340,7 @@ type(bpar_type),intent(in) :: bpar             !< Block parameters
 type(hdata_type),intent(in) :: hdata           !< HDIAG data
 
 ! Local variables
-integer :: ic2,ic0,il0,jl0r,jl0,offset,isc
+integer :: ic2,ic0,il0,jl0r,offset,isc
 real(kind_real) :: vunit(geom%nl0),rawv(nam%nl0r)
 real(kind_real) :: alpha,alpha_opt,mse,mse_opt
 real(kind_real) :: fit_rh(geom%nl0),fit_rv(geom%nl0)
