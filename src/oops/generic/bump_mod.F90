@@ -11,7 +11,7 @@ use iso_c_binding
 use kinds
 use config_mod
 use unstructured_grid_mod
-use mpi
+use fckit_mpi_module, only: fckit_mpi_comm
 use type_bump, only: bump_type
 
 implicit none
@@ -123,6 +123,11 @@ integer, intent(in) :: imask(nmga*nl0)
 integer, intent(in), optional :: ens1_ne
 real(kind=kind_real), intent(in), optional :: ens1(:)
 
+type(fckit_mpi_comm) :: f_comm
+
+! Get MPI communicator
+f_comm = fckit_mpi_comm()
+
 ! Initialize namelist
 call self%nam%init
 
@@ -131,9 +136,9 @@ call bump_read_conf(c_conf,self)
 
 ! Online setup
 if (present(ens1_ne).and.present(ens1)) then
-   call self%setup_online(mpi_comm_world,nmga,nl0,nv,nts,lon,lat,area,vunit,imask,ens1_ne,ens1)
+   call self%setup_online(f_comm%communicator(),nmga,nl0,nv,nts,lon,lat,area,vunit,imask,ens1_ne,ens1)
 else
-   call self%setup_online(mpi_comm_world,nmga,nl0,nv,nts,lon,lat,area,vunit,imask)
+   call self%setup_online(f_comm%communicator(),nmga,nl0,nv,nts,lon,lat,area,vunit,imask)
 end if
 
 end subroutine create_bump

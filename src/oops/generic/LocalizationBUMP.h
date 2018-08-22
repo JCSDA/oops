@@ -22,6 +22,7 @@
 #include "oops/generic/bump_f.h"
 #include "oops/generic/UnstructuredGrid.h"
 #include "oops/interface/LocalizationBase.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -129,7 +130,7 @@ void LocalizationBUMP<MODEL>::multiply(Increment_ & dx) const {
 
   UnstructuredGrid ug;
 
-  MPI_Barrier(MPI_COMM_WORLD);
+  oops::mpi::comm().barrier();
   boost::posix_time::ptime ti1 = boost::posix_time::microsec_clock::local_time();
   dx.convert_to(ug);
   boost::posix_time::ptime t1 = boost::posix_time::microsec_clock::local_time();
@@ -137,7 +138,7 @@ void LocalizationBUMP<MODEL>::multiply(Increment_ & dx) const {
   Log::info() << "convert_to time: " << diff1.total_nanoseconds()/1000
               << " microseconds" << std::endl;
 
-  MPI_Barrier(MPI_COMM_WORLD);
+  oops::mpi::comm().barrier();
   boost::posix_time::ptime ti2 = boost::posix_time::microsec_clock::local_time();
   bump_multiply_f90(keyBUMP_, ug.toFortran());
   boost::posix_time::ptime t2 = boost::posix_time::microsec_clock::local_time();
@@ -145,7 +146,7 @@ void LocalizationBUMP<MODEL>::multiply(Increment_ & dx) const {
   Log::info() << "multiply time: " << diff2.total_nanoseconds()/1000
               << " microseconds" << std::endl;
 
-  MPI_Barrier(MPI_COMM_WORLD);
+  oops::mpi::comm().barrier();
   boost::posix_time::ptime ti3 = boost::posix_time::microsec_clock::local_time();
   dx.convert_from(ug);
   boost::posix_time::ptime t3 = boost::posix_time::microsec_clock::local_time();

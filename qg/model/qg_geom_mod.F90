@@ -13,7 +13,7 @@ module qg_geom_mod
 use iso_c_binding
 use config_mod
 use kinds
-!BM: use mpi
+!use fckit_mpi_module, only: fckit_mpi_comm
 
 implicit none
 private
@@ -59,6 +59,10 @@ real(kind=kind_real) :: dx,dy
 real(kind=kind_real),parameter :: pi = acos(-1.0)
 real(kind=kind_real),parameter :: req = 6371229.0
 type(qg_geom), pointer :: self
+!type(fckit_mpi_comm) :: f_comm
+
+! Get MPI communicator
+!f_comm = fckit_mpi_comm()
 
 call qg_geom_registry%init()
 call qg_geom_registry%add(c_key_self)
@@ -90,12 +94,12 @@ do iy=1,self%ny
 end do
 
 ! Define processor
-!BM: call mpi_comm_size(mpi_comm_world,nproc,info)
-!BM: myproc = 1
-!BM: do ix=1,self%nx
-!BM:    self%myproc(ix,:) = myproc
-!BM:    if (ix>myproc*self%nx/nproc) myproc = myproc+1
-!BM: end do
+!nproc = f_comm%size()
+!myproc = 1
+!do ix=1,self%nx
+!   self%myproc(ix,:) = myproc
+!   if (ix>myproc*self%nx/nproc) myproc = myproc+1
+!end do
 
 ! Convert longitude/latitude to degrees
 self%lon = self%lon*180_kind_real/pi

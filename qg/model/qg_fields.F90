@@ -18,7 +18,7 @@ use qg_goms_mod
 use calculate_pv, only : calc_pv
 use netcdf
 use kinds
-use mpi
+!use fckit_mpi_module, only: fckit_mpi_comm
 
 implicit none
 private
@@ -1322,10 +1322,14 @@ type(unstructured_grid), intent(inout) :: ug
 integer :: nc0a,ic0a,jx,jy,jl,jf,joff!MPI: ,myproc,info
 integer,allocatable :: imask(:,:)
 real(kind=kind_real),allocatable :: lon(:),lat(:),area(:),vunit(:,:)
+!type(fckit_mpi_comm) :: f_comm
 
-!MPI: ! Find rank
-!MPI: call mpi_comm_rank(mpi_comm_world,myproc,info)
-!MPI: myproc = myproc+1
+! Get MPI communicator
+!f_comm = fckit_mpi_comm()
+
+! Find rank
+!myproc = f_comm%rank()
+!myproc = myproc+1
 
 ! Define local number of gridpoints
 nc0a = self%geom%nx*self%geom%ny
@@ -1387,10 +1391,14 @@ type(qg_field), intent(inout) :: self
 type(unstructured_grid), intent(in) :: ug
 
 integer :: ic0a,jx,jy,jl,jf,joff!MPI: ,myproc,info
+!type(fckit_mpi_comm) :: f_comm
 
-!MPI: ! Find rank
-!MPI: call mpi_comm_rank(mpi_comm_world,myproc,info)
-!MPI: myproc = myproc+1
+! Get MPI communicator
+!f_comm = fckit_mpi_comm()
+
+! Find rank
+!myproc = f_comm%rank()
+!myproc = myproc+1
 
 ! Copy field
 ic0a = 0
@@ -1407,8 +1415,8 @@ do jy=1,self%geom%ny
       enddo
 !MPI:     endif
 
-!MPI:     ! Broadcast
-!MPI:     call mpi_bcast(self%gfld3d(jx,jy,:),self%nf*self%nl,mpi_double,self%geom%myproc(jx,jy)-1,mpi_comm_world,info)
+    ! Broadcast
+    !call f_comm%broadcast(self%gfld3d(jx,jy,:),self%geom%myproc(jx,jy)-1)
   enddo
 enddo
 
