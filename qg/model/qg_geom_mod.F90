@@ -56,6 +56,10 @@ type(c_ptr), intent(in)    :: c_conf
 integer :: ix,iy
 real(kind=kind_real) :: lat_center,lat_south, lat_north, lon_west, lon_east, full_area
 type(qg_geom), pointer :: self
+!type(fckit_mpi_comm) :: f_comm
+
+! Get MPI communicator
+!f_comm = fckit_mpi_comm()
 
 call qg_geom_registry%init()
 call qg_geom_registry%add(c_key_self)

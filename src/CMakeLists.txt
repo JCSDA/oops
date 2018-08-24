@@ -206,6 +206,9 @@ oops/interface/ObservationSpace.h
 oops/interface/State.h
 oops/interface/LinearVariableChange.h
 
+oops/parallel/mpi/mpi.h
+oops/parallel/mpi/mpi.cc
+
 oops/runs/Application.h
 oops/runs/Dirac.h
 oops/runs/EnsForecasts.h
