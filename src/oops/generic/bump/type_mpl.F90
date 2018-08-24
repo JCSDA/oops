@@ -223,6 +223,8 @@ end if
 
 ! Time-based tag
 if (mpl%main) call system_clock(count=mpl%tag)
+mpl%tag = mod(mpl%tag,10000)
+mpl%tag = max(mpl%tag,1)
 call mpl%bcast(mpl%tag)
 
 ! Set max number of OpenMP threads
