@@ -30,12 +30,11 @@
 #include "lorenz95/StateL95.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
-#include "test/TestFixture.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
-class StateTestFixture : TestFixture {
+class StateTestFixture {
  public:
   StateTestFixture() {
     file_.reset(new eckit::LocalConfiguration(TestConfig::config(), "state"));

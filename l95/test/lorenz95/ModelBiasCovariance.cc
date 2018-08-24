@@ -18,12 +18,11 @@
 #include "lorenz95/ModelBiasCorrection.h"
 #include "lorenz95/ModelBiasCovariance.h"
 #include "lorenz95/Resolution.h"
-#include "test/TestFixture.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
-class ModBiasCovTestFixture : TestFixture {
+class ModBiasCovTestFixture {
  public:
   ModBiasCovTestFixture() {
     eckit::LocalConfiguration res(TestConfig::config(), "resolution");

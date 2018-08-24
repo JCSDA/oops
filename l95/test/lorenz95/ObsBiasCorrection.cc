@@ -19,12 +19,11 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "lorenz95/ObsBias.h"
 #include "lorenz95/ObsBiasCorrection.h"
-#include "test/TestFixture.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
-class ObsBiasTestFixture : TestFixture {
+class ObsBiasTestFixture {
  public:
   ObsBiasTestFixture() {
     off_.reset(new eckit::LocalConfiguration());

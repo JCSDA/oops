@@ -16,12 +16,11 @@
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ObsTable.h"
 #include "oops/util/DateTime.h"
-#include "test/TestFixture.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
-class LocsTestFixture : TestFixture {
+class LocsTestFixture {
  public:
   LocsTestFixture() {
     const eckit::LocalConfiguration conf(TestConfig::config(), "Observations");
