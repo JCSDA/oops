@@ -1151,7 +1151,7 @@ if (count(missing)>0) then
    lmask = mask_dst.and.(.not.missing)
 
    ! Compute KD-tree
-   call kdtree%create(mpl,n_dst,lon_dst,lat_dst,lmask)
+   call kdtree%create(mpl,n_dst,lon_dst,lat_dst,mask=lmask)
 
    do i_dst=1,n_dst
       if (missing(i_dst)) then

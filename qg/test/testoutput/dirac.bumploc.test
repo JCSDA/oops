@@ -1,10 +1,10 @@
 Test     : Increment: 
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 0
-Test     :   Min=11.5169, Max=30.0124, RMS=24.4468
-Test     : Adjoint test: -1759.99 / -1759.99
+Test     :   Min=-11.1454, Max=37.545, RMS=25.5822
+Test     : Adjoint test: -1690.65 / -1690.65
 Test     : Increment: 
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 0
-Test     :   Min=-17.2498, Max=214.356, RMS=77.0951
-Test     : Adjoint test: 2189.07 / 2189.07
+Test     :   Min=-18.5545, Max=202.516, RMS=70.1887
+Test     : Adjoint test: 1494.24 / 1494.24

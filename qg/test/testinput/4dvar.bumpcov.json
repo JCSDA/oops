@@ -38,8 +38,8 @@
         "mpicom" : 2,
         "advmode" : 0,
         "forced_radii" : 1,
-        "rh" : 3600.0e3,
-        "rv" : 0.72,
+        "rh" : 3900.0e3,
+        "rv" : 2.407,
         "variable_changes": [ 
            {
              "varchange": "ErrStdDevQG",

@@ -41,7 +41,7 @@ contains
 ! Subroutine: kdtree_create
 !> Purpose: create a KD-tree
 !----------------------------------------------------------------------
-subroutine kdtree_create(kdtree,mpl,n,lon,lat,mask,sort)
+subroutine kdtree_create(kdtree,mpl,n,lon,lat,mask,sort,rearrange)
 
 implicit none
 
@@ -53,11 +53,12 @@ real(kind_real),intent(in) :: lon(n)       !< Points longitudes
 real(kind_real),intent(in) :: lat(n)       !< Points latitudes
 logical,intent(in),optional :: mask(n)     !< Mask
 logical,intent(in),optional :: sort        !< Sorting flag
+logical,intent(in),optional :: rearrange   !< Rearranging flag
 
 ! Local variable
 integer :: neff,i,ieff
 real(kind_real),allocatable :: input_data(:,:)
-logical :: lmask(n),lsort
+logical :: lmask(n),lsort,lrearrange
 
 ! Mask
 if (present(mask)) then
@@ -71,6 +72,13 @@ if (present(sort)) then
    lsort = sort
 else
    lsort = .true.
+end if
+
+! Rearranging flag
+if (present(rearrange)) then
+   lrearrange = rearrange
+else
+   lrearrange = .true.
 end if
 
 ! Effective tree size
@@ -98,7 +106,7 @@ do i=1,n
 end do
 
 ! Create KD-tree
-kdtree%tp => kdtree2_create(input_data,sort=lsort)
+kdtree%tp => kdtree2_create(input_data,sort=lsort,rearrange=lrearrange)
 
 end subroutine kdtree_create
 

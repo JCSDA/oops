@@ -11,7 +11,7 @@
 module type_minim
 
 use tools_fit, only: ver_smooth
-use tools_func, only: eq,inf,infeq,sup,pos,fit_diag,fit_diag_dble,fit_lct
+use tools_func, only: eq,inf,infeq,sup,fit_diag,fit_diag_dble,fit_lct
 use tools_kinds, only: kind_real
 use tools_missing, only: isnotmsr
 use type_mpl, only: mpl_type
@@ -385,7 +385,7 @@ real(kind_real) :: delta(minim%nx),newx(minim%nx)
 newx = guess
 minim%x = guess
 do i=1,minim%nx
-   if (pos(guess(i))) then
+   if (guess(i)>0.0) then
       delta(i) = rho*abs(guess(i))
    else
       delta(i) = rho

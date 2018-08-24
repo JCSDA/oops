@@ -154,17 +154,14 @@ if (raw(iz)>0.0) then
             fit_r = fit_rp
          end if
    
-         ! Check
-         if (fit_r<0.0) then
-            write(mpl%unit,*) iz,valid
-            write(mpl%unit,*) raw_tmp
-            write(mpl%unit,*) th,thinv
-            write(mpl%unit,*) fit_rm,fit_rp,fit_r
-            call mpl%abort('negative fit_r in fast_fit')
-         end if
-   
          ! Normalize
          if (isnotmsr(fit_r)) fit_r = fit_r/thinv
+
+         ! Check positivity
+         if (fit_r<0.0) then
+            call mpl%warning('negative fit_r in fast_fit')
+            fit_r = 0.0
+         end if
       else
          ! Only the zero-separation point is valid, zero radius
          fit_r = 0.0

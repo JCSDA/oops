@@ -14,7 +14,7 @@ use,intrinsic :: iso_c_binding
 !$ use omp_lib
 use netcdf
 use tools_const, only: msvali,msvalr
-use tools_func, only: infeq,pos
+use tools_func, only: infeq,syminv
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsr
 use tools_nc, only: ncfloat
@@ -329,12 +329,11 @@ type(ens_type), intent(in) :: ens      !< Ensemble
 type(ens_type),intent(inout) :: ensu   !< Unbalanced ensemble
 
 ! Local variables
-integer :: il0i,i_s,ic0a,ic2b,ic2,ie,ie_sub,ic0,jl0,il0,isub,ic1,ic1a,iv,jv,offset,nc1a,lwork,info,progint
-real(kind_real) :: var,var_tot
-real(kind_real) :: egv(geom%nl0),M(geom%nl0,geom%nl0),D(geom%nl0,geom%nl0),fld(geom%nc0a,geom%nl0)
+integer :: il0i,i_s,ic0a,ic2b,ic2,ie,ie_sub,ic0,jl0,il0,isub,ic1,ic1a,iv,jv,offset,nc1a,progint,i
+real(kind_real) :: fld(geom%nc0a,geom%nl0)
 real(kind_real) :: auto_avg(nam%nc2,geom%nl0,geom%nl0),cross_avg(nam%nc2,geom%nl0,geom%nl0),auto_inv(geom%nl0,geom%nl0)
 real(kind_real) :: sbuf(2*nam%nc2*geom%nl0**2),rbuf(2*nam%nc2*geom%nl0**2)
-real(kind_real),allocatable :: list_auto(:),list_cross(:),work(:)
+real(kind_real),allocatable :: list_auto(:),list_cross(:),a(:),c(:)
 real(kind_real),allocatable :: fld_1(:,:),fld_2(:,:),auto(:,:,:,:),cross(:,:,:,:)
 logical :: valid,done_c2(nam%nc2),mask_unpack(geom%nl0,geom%nl0)
 logical,allocatable :: done_c2b(:)
@@ -367,6 +366,10 @@ allocate(fld_2(hdata%nc1a,geom%nl0))
 allocate(auto(hdata%nc1a,geom%nl0,geom%nl0,ens%nsub))
 allocate(cross(hdata%nc1a,geom%nl0,geom%nl0,ens%nsub))
 allocate(done_c2b(hdata%nc2b))
+if (.not.diag_auto) then
+   allocate(a(geom%nl0*(geom%nl0+1)/2))
+   allocate(c(geom%nl0*(geom%nl0+1)/2))
+end if
 call vbal%alloc(mpl,nam,geom,bpar,hdata%nc2b)
 
 ! Initialization
@@ -524,7 +527,7 @@ do iv=1,nam%nv
                offset = offset+geom%nl0**2
             end do
          end if
-    
+
          ! Compute regressions
          write(mpl%unit,'(a10,a)',advance='no') '','Compute regressions: '
          call flush(mpl%unit)
@@ -537,43 +540,28 @@ do iv=1,nam%nv
                ! Diagonal inversion
                auto_inv = 0.0
                do il0=1,geom%nl0
-                  if (pos(auto_avg(ic2,il0,il0))) auto_inv(il0,il0) = 1.0/auto_avg(ic2,il0,il0)
+                  if (auto_avg(ic2,il0,il0)>0.0) auto_inv(il0,il0) = 1.0/auto_avg(ic2,il0,il0)
                end do
             else
                ! Inverse the vertical auto-covariance
-               M = auto_avg(ic2,:,:)
-               lwork = -1
-               allocate(work(max(1,lwork)))
-               if (kind_real==c_float) then
-                  call ssyev("V","U",geom%nl0,M,geom%nl0,egv,work,lwork,info)
-               elseif (kind_real==c_double) then
-                  call dsyev("V","U",geom%nl0,M,geom%nl0,egv,work,lwork,info)
-               else
-                  call mpl%abort('wrong kind_real for lapack')
-               end if
-               lwork = int(work(1))
-               deallocate(work)
-               M = auto_avg(ic2,:,:)
-               allocate(work(max(1,lwork)))
-               if (kind_real==c_float) then
-                  call ssyev("V","U",geom%nl0,M,geom%nl0,egv,work,lwork,info)
-               elseif (kind_real==c_double) then
-                  call dsyev("V","U",geom%nl0,M,geom%nl0,egv,work,lwork,info)
-               else
-                  call mpl%abort('wrong kind_real for lapack')
-               end if
-               deallocate(work)
-               write(mpl%unit,*) 'Condition number for ',ic2b,': ',maxval(egv)/minval(egv)
-               D = 0.0
-               var = 0.0
-               var_tot = sum(egv)
-               do il0=geom%nl0,1,-1
-                   if (infeq(var,var_th*var_tot)) D(il0,il0) = 1.0/egv(il0)
-                   var = var+egv(il0)
+               i = 0
+               do il0=1,geom%nl0
+                  do jl0=1,il0
+                     i = i+1
+                     a(i) = auto_avg(ic2,il0,jl0)
+                  end do
                end do
-               auto_inv = matmul(M,matmul(D,transpose(M)))
+               call syminv(mpl,geom%nl0,geom%nl0*(geom%nl0+1)/2,a,c)
+               i = 0
+               do il0=1,geom%nl0
+                  do jl0=1,il0
+                     i = i+1
+                     auto_inv(il0,jl0) = c(i)
+                     auto_inv(jl0,il0) = auto_inv(il0,jl0)
+                  end do
+               end do
             end if
-   
+
             ! Compute the regression
             vbal%blk(iv,jv)%auto(ic2b,:,:) = auto_avg(ic2,:,:)
             vbal%blk(iv,jv)%cross(ic2b,:,:) = cross_avg(ic2,:,:)

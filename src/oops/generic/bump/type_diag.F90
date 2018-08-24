@@ -548,7 +548,7 @@ do ib=1,bpar%nbe
          call diag%blk(ic2a,ib)%localization(geom,bpar,avg%blk(ic2,ib))
 
          ! Normalization
-         call diag%blk(ic2a,ib)%normalization(geom,bpar)
+         call diag%blk(ic2a,ib)%normalization(geom,bpar,.true.)
          if (trim(nam%method)=='loc_norm') diag%blk(ic2a,ib)%raw_coef_ens = 1.0
 
          ! Fitting
@@ -642,7 +642,7 @@ do ib=1,bpar%nbe
          call diag%blk(ic2a,ib)%hybridization(geom,bpar,avg%blk(ic2,ib),avg_sta%blk(ic2,ib))
 
          ! Normalization
-         call diag%blk(ic2a,ib)%normalization(geom,bpar)
+         call diag%blk(ic2a,ib)%normalization(geom,bpar,.true.)
 
          ! Fitting
          if (bpar%fit_block(ib)) call diag%blk(ic2a,ib)%fitting(mpl,nam,geom,bpar,hdata)
@@ -731,8 +731,8 @@ do ib=1,bpar%nbe
          call diag%blk(ic2a,ib)%dualens(geom,bpar,avg%blk(ic2,ib),avg_lr%blk(ic2a,ib),diag_lr%blk(ic2a,ib))
 
          ! Normalization
-         call diag%blk(ic2a,ib)%normalization(geom,bpar)
-         call diag_lr%blk(ic2a,ib)%normalization(geom,bpar)
+         call diag%blk(ic2a,ib)%normalization(geom,bpar,.true.)
+         call diag_lr%blk(ic2a,ib)%normalization(geom,bpar,.true.)
 
          ! Fitting
          if (bpar%fit_block(ib)) then

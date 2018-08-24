@@ -22,9 +22,9 @@ integer,parameter :: M = 0                            !< Number of implicit itte
 real(kind_real),parameter :: eta = 1.0e-9_kind_real   !< Small parameter for the Cholesky decomposition
 
 private
-public :: eq,inf,infeq,sup,supeq,indist,pos,poseq, &
+public :: eq,inf,infeq,sup,supeq,indist, &
         & lonlatmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,add,divide, &
-        & fit_diag,fit_diag_dble,gc99,fit_lct,cholesky
+        & fit_diag,fit_diag_dble,gc99,fit_lct,cholesky,syminv
 
 contains
 
@@ -141,42 +141,6 @@ logical :: indist
 indist = abs(x)<rth*abs(y)
 
 end function indist
-
-!----------------------------------------------------------------------
-! Function: pos
-!> Purpose: positivity test for reals
-!----------------------------------------------------------------------
-function pos(x)
-
-implicit none
-
-! Passed variables
-real(kind_real),intent(in) :: x !< Real
-
-! Returned variable
-logical :: pos
-
-pos = (x>rth)
-
-end function pos
-
-!----------------------------------------------------------------------
-! Function: poseq
-!> Purpose: non-negativity test for reals
-!----------------------------------------------------------------------
-function poseq(x)
-
-implicit none
-
-! Passed variables
-real(kind_real),intent(in) :: x !< Real
-
-! Returned variable
-logical :: poseq
-
-poseq = (x>-rth)
-
-end function poseq
 
 !----------------------------------------------------------------------
 ! Subroutine: lonlatmod
@@ -871,19 +835,101 @@ do icol=1,n
       if (abs(u(l))>0.0) then
          u(k) = w/u(l)
       else
-         if (abs(x*a(k))<w**2) call mpl%abort('A is not positive semi-definite')
+         u(k) = 0.0
+         if (inf(abs(x*a(k)),w**2)) call mpl%abort('A is not positive semi-definite')
       end if
    end do
 
    ! End of row, estimate relative accuracy of diagonal element
-   if (abs(w)<=abs(eta*a(k))) then
+   if (infeq(abs(w),abs(eta*a(k)))) then
       u(k) = 0.0
    else
       if (w<0.0) call mpl%abort('A is not positive semi-definite')
+      u(k) = sqrt(w)
    end if
    j = j+icol
 end do
 
 end subroutine cholesky
+
+!----------------------------------------------------------------------
+! Subroutine: syminv
+!> Purpose: compute inverse of a symmetric matrix
+!> Author: Original FORTRAN77 version by Michael Healy, modifications by AJ Miller, FORTRAN90 version by John Burkardt.
+!----------------------------------------------------------------------
+subroutine syminv(mpl,n,nn,a,c)
+
+implicit none
+
+! Passed variables
+type(mpl_type),intent(in) :: mpl     !< MPI data
+integer,intent(in) :: n              !< Matrix rank
+integer,intent(in) :: nn             !< Half-matrix size (n*(n-1)/2)
+real(kind_real),intent(in) :: a(nn)  !< Matrix
+real(kind_real),intent(out) :: c(nn) !< Matrix inverse
+
+! Local variables
+integer :: i,icol,irow,j,jcol,k,l,mdiag,ndiag,nrow
+real(kind_real) :: w(n),x
+
+! Initialization
+nrow = n
+if (nn/=(n*(n+1))/2) then
+   call mpl%abort('wrong size in Cholesky decomposition')
+end if
+w = 0.0
+
+! Compute the Cholesky factorization of A
+call cholesky(mpl,n,nn,a,c)
+
+! Invert C and form the product (Cinv)' * Cinv, where Cinv is the inverse of C, row by row starting with the last row
+irow = nrow
+ndiag = nn
+
+do
+   if (abs(c(ndiag))>0.0) then
+      ! General case
+      l = ndiag
+      do i=irow,nrow
+         w(i) = c(l)
+         l = l+i
+      end do
+      icol = nrow
+      jcol = nn
+      mdiag = nn
+      do 
+         l = jcol
+         if (icol==irow) then
+            x = 1.0/w(irow)
+         else
+            x = 0.0
+         end if
+         k = nrow
+         do while (irow<k)
+            x = x-w(k)*c(l)
+            k = k-1
+            l = l-1
+            if (mdiag<l) l = l-k+1
+         end do
+         c(l) = x/w(irow)
+         if (icol<=irow) exit
+         mdiag = mdiag-icol
+         icol = icol-1
+         jcol = jcol-1
+      end do
+   else
+      ! Special case, zero diagonal element
+      l = ndiag
+      do j=irow,nrow
+         c(l) = 0.0
+         l = l+j
+      end do
+   end if
+   ndiag = ndiag-irow
+   irow = irow-1
+   if (irow<=0) exit
+end do
+
+end subroutine syminv
 
 end module tools_func

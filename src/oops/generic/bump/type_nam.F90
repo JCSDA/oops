@@ -33,7 +33,7 @@ type nam_type
    ! general_param
    character(len=1024) :: datadir                   !< Data directory
    character(len=1024) :: prefix                    !< Files prefix
-   character(len=1024) :: model                     !< Model name ('aro', 'arp', 'gem', 'geos', 'gfs', 'ifs', 'mpas', 'nemo' or 'wrf')
+   character(len=1024) :: model                     !< Model name ('aro', 'arp', 'fv3', 'gem', 'geos', 'gfs', 'ifs', 'mpas', 'nemo' or 'wrf')
    logical :: colorlog                              !< Add colors to the log (for display on terminal)
    logical :: default_seed                          !< Default seed for random numbers
    logical :: use_metis                             !< Use METIS to split the domain between processors

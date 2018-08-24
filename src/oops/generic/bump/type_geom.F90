@@ -12,7 +12,7 @@ module type_geom
 
 use netcdf
 use tools_const, only: pi,req,deg2rad,rad2deg,reqkm
-use tools_func, only: pos,lonlatmod,sphere_dist,vector_product,vector_triple_product
+use tools_func, only: lonlatmod,sphere_dist,vector_product,vector_triple_product
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsi,ismsi,ismsr
 use tools_nc, only: ncfloat
@@ -419,7 +419,7 @@ if (present(lon).and.present(lat)) then
 
       ! Count redundant points
       do ired=1,nredmax
-         if (pos(nn_dist(ired)).or.(nn_index(ired)>=img)) nn_index(ired) = geom%nmg+1
+         if ((nn_dist(ired)>0.0).or.(nn_index(ired)>=img)) nn_index(ired) = geom%nmg+1
       end do
 
       if (any(nn_index<=geom%nmg)) then

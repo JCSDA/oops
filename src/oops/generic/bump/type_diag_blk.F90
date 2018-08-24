@@ -14,7 +14,7 @@ use netcdf
 !$ use omp_lib
 use tools_const, only: msvali,msvalr
 use tools_fit, only: fast_fit,ver_fill
-use tools_func, only: fit_diag,fit_diag_dble
+use tools_func, only: sup,fit_diag,fit_diag_dble
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsr,isallnotmsr,isanynotmsr
 use tools_nc, only: ncfloat
@@ -28,8 +28,9 @@ use type_nam, only: nam_type
 
 implicit none
 
-integer,parameter :: nsc = 50   !< Number of iterations for the scaling optimization
-logical :: lprt = .false.       !< Optimization print
+integer,parameter :: nsc = 50                          !< Number of iterations for the scaling optimization
+logical :: lprt = .false.                              !< Optimization print
+real(kind_real),parameter :: maxfactor = 2.0_kind_real !< Maximum factor for diagnostics with respect to the origin
 
 ! Diagnostic block derived type
 type diag_blk_type
@@ -285,7 +286,7 @@ end subroutine diag_blk_write
 ! Subroutine: diag_blk_normalization
 !> Purpose: compute diagnostic block normalization
 !----------------------------------------------------------------------
-subroutine diag_blk_normalization(diag_blk,geom,bpar)
+subroutine diag_blk_normalization(diag_blk,geom,bpar,remove_max)
 
 implicit none
 
@@ -293,30 +294,50 @@ implicit none
 class(diag_blk_type),intent(inout) :: diag_blk !< Diagnostic block
 type(geom_type),intent(in) :: geom             !< Geometry
 type(bpar_type),intent(in) :: bpar             !< Block parameters
+logical,intent(in),optional :: remove_max      !< Remove excessive values
 
 ! Local variables
-integer :: il0r,il0,jl0,jc3
+integer :: il0,jl0r,jl0,jc3
+logical :: lremove_max
 
 ! Associate
 associate(ib=>diag_blk%ib)
 
 ! Get diagonal values
-do jl0=1,geom%nl0
-   il0r = bpar%il0rz(jl0,ib)
-   if (isnotmsr(diag_blk%raw(1,il0r,jl0))) diag_blk%raw_coef_ens(jl0) = diag_blk%raw(1,il0r,jl0)
+do il0=1,geom%nl0
+   jl0r = bpar%il0rz(il0,ib)
+   if (isnotmsr(diag_blk%raw(1,jl0r,il0))) diag_blk%raw_coef_ens(il0) = diag_blk%raw(1,jl0r,il0)
 end do
 
 ! Normalize
-do jl0=1,geom%nl0
-   do il0r=1,bpar%nl0r(ib)
-      il0 = bpar%l0rl0b_to_l0(il0r,jl0,ib)
+do il0=1,geom%nl0
+   do jl0r=1,bpar%nl0r(ib)
+      jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
       do jc3=1,bpar%nc3(ib)
-         if (isnotmsr(diag_blk%raw(jc3,il0r,jl0)).and.isnotmsr(diag_blk%raw_coef_ens(il0)) &
+         if (isnotmsr(diag_blk%raw(jc3,jl0r,il0)).and.isnotmsr(diag_blk%raw_coef_ens(il0)) &
        & .and.isnotmsr(diag_blk%raw_coef_ens(jl0))) &
-       & diag_blk%raw(jc3,il0r,jl0) = diag_blk%raw(jc3,il0r,jl0)/sqrt(diag_blk%raw_coef_ens(il0)*diag_blk%raw_coef_ens(jl0))
+       & diag_blk%raw(jc3,jl0r,il0) = diag_blk%raw(jc3,jl0r,il0)/sqrt(diag_blk%raw_coef_ens(il0)*diag_blk%raw_coef_ens(jl0))
       end do
    end do
 end do
+
+! Remove excessive values compared to the origin point
+if (present(remove_max)) then
+   lremove_max = remove_max
+else
+   lremove_max = .false.
+end if
+if (lremove_max) then
+   !$omp parallel do schedule(static) private(il0,jl0r,jc3)
+   do il0=1,geom%nl0
+      do jl0r=1,bpar%nl0r(ib)
+         do jc3=1,bpar%nc3(ib)
+            if (sup(diag_blk%raw(jc3,jl0r,il0),maxfactor)) call msr(diag_blk%raw(jc3,jl0r,il0))
+         end do
+      end do
+   end do
+   !$omp end parallel do
+end if
 
 ! End associate
 end associate
@@ -592,7 +613,6 @@ do il0=1,geom%nl0
       end do
    end do
 end do
-!$omp end parallel do
 
 ! End associate
 end associate

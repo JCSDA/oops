@@ -1128,7 +1128,7 @@ case ('common_weighted')
          a(i) = wgt(iv,jv)
       end do
    end do
-   call cholesky(mpl,nam%nv,(nam%nv*(nam%nv+1))/2,a,u)
+   call cholesky(mpl,nam%nv,nam%nv*(nam%nv+1)/2,a,u)
    i = 0
    wgt = 0.0
    do iv=1,nam%nv
@@ -1338,7 +1338,7 @@ case ('common_weighted')
          a(i) = wgt(iv,jv)
       end do
    end do
-   call cholesky(mpl,nam%nv,(nam%nv*(nam%nv+1))/2,a,u)
+   call cholesky(mpl,nam%nv,nam%nv*(nam%nv+1)/2,a,u)
    i = 0
    wgt = 0.0
    do jv=1,nam%nv

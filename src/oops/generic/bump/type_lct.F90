@@ -11,7 +11,6 @@
 module type_lct
 
 use tools_const, only: req,reqkm,pi
-use tools_func, only: pos,poseq
 use tools_kinds, only: kind_real
 use tools_missing, only: msr,isnotmsr,isallnotmsr
 use type_bpar, only: bpar_type
@@ -443,9 +442,10 @@ do ib=1,bpar%nb
                if (bpar%nl0r(ib)>1) det = det*lct%blk(ib)%D(offset+3,ic1a,il0)
 
                ! Check coefficient
-               valid_coef = poseq(lct%blk(ib)%coef(iscales,ic1a,il0)).and.poseq(1.0-lct%blk(ib)%coef(iscales,ic1a,il0))
+               valid_coef = (lct%blk(ib)%coef(iscales,ic1a,il0)>0.0)
+               if (lct%blk(ib)%nscales>1) valid_coef = valid_coef.and.(lct%blk(ib)%coef(iscales,ic1a,il0)<1.0)
 
-               if (pos(det).and.valid_coef) then
+               if ((det>0.0).and.valid_coef) then
                   ! Copy diffusion tensor
                   fld_c1a(ic1a,il0,1) = lct%blk(ib)%D(offset+1,ic1a,il0)
                   fld_c1a(ic1a,il0,2) = lct%blk(ib)%D(offset+2,ic1a,il0)
@@ -489,7 +489,7 @@ do ib=1,bpar%nb
                else
                   det = fld(ic0a,il0,1)*fld(ic0a,il0,2)*(1.0-fld(ic0a,il0,4)**2)
                end if
-               if (pos(det)) then
+               if (det>0.0) then
                   ! Length-scale = D determinant^{1/4}
                   fld(ic0a,il0,lct%blk(ib)%ncomp(iscales)+2) = sqrt(sqrt(det))
                else
@@ -497,8 +497,8 @@ do ib=1,bpar%nb
                end if
 
                ! Check coefficient
-               valid_coef = poseq(fld(ic0a,il0,lct%blk(ib)%ncomp(iscales)+1)) &
-                          & .and.poseq(1.0-fld(ic0a,il0,lct%blk(ib)%ncomp(iscales)+1))
+               valid_coef = (fld(ic0a,il0,lct%blk(ib)%ncomp(iscales)+1)>0.0)
+               if (lct%blk(ib)%nscales>1) valid_coef = valid_coef.and.(fld(ic0a,il0,lct%blk(ib)%ncomp(iscales)+1)<1.0)
                if (.not.valid_coef) call mpl%abort('non-valid coefficient in LCT, grid c0')
             end if
          end do

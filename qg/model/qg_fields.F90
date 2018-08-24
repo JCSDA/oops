@@ -1322,7 +1322,7 @@ if (ug%colocated==1) then
    ! Colocatd
    ug%ngrid = 1
 else
-   ! Not colocatedd
+   ! Not colocated
    ug%ngrid = 1
 end if
 
@@ -1330,7 +1330,7 @@ end if
 if (.not.allocated(ug%grid)) allocate(ug%grid(ug%ngrid))
 
 if (ug%colocated==1) then
-  ! colocatedd
+  ! Colocated
 
   ! Set local number of points
   ug%grid(1)%nmga = self%geom%nx*self%geom%ny
@@ -1344,7 +1344,7 @@ if (ug%colocated==1) then
   ! Set number of timeslots
   ug%grid(1)%nts = 1
 else
-  ! Not colocatedd
+  ! Not colocated
   do igrid=1,ug%ngrid
      ! Set local number of points
      ug%grid(igrid)%nmga = self%geom%nx*self%geom%ny
@@ -1384,7 +1384,7 @@ call allocate_unstructured_grid_coord(ug)
 
 ! Define coordinates
 if (ug%colocated==1) then
-  ! colocatedd
+  ! Colocated
   imga = 0
   do jy=1,self%geom%ny
     do jx=1,self%geom%nx
@@ -1399,7 +1399,7 @@ if (ug%colocated==1) then
     enddo
   enddo
 else
-  ! Not colocatedd
+  ! Not colocated
   do igrid=1,ug%ngrid
     imga = 0
     do jy=1,self%geom%ny
@@ -1441,7 +1441,7 @@ call allocate_unstructured_grid_field(ug)
 
 ! Copy field
 if (ug%colocated==1) then
-  ! colocatedd
+  ! Colocated
   imga = 0
   do jy=1,self%geom%ny
     do jx=1,self%geom%nx
@@ -1455,7 +1455,7 @@ if (ug%colocated==1) then
     enddo
   enddo
 else
-  ! Not colocatedd
+  ! Not colocated
   do igrid=1,ug%ngrid
     imga = 0
     do jy=1,self%geom%ny
@@ -1486,7 +1486,7 @@ integer :: igrid,imga,jx,jy,jl,jf,joff
 
 ! Copy field
 if (ug%colocated==1) then
-  ! colocatedd (adjoint)
+  ! Colocated (adjoint)
   imga = 0
   do jy=1,self%geom%ny
     do jx=1,self%geom%nx
@@ -1500,7 +1500,7 @@ if (ug%colocated==1) then
     enddo
   enddo
 else
-  ! Not colocatedd
+  ! Not colocated
   do igrid=1,ug%ngrid
     imga = 0
     do jy=1,self%geom%ny
