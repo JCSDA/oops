@@ -15,17 +15,12 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "lorenz95/LocalizationMatrixL95.h"
 #include "lorenz95/Resolution.h"
+#include "test/TestFixture.h"
 
 namespace test {
-// -----------------------------------------------------------------------------
-class LocMatrixTestFixture {
- public:
-  LocMatrixTestFixture() {}
-  ~LocMatrixTestFixture() {}
-};
 
 // -----------------------------------------------------------------------------
-BOOST_FIXTURE_TEST_SUITE(test_localizationMatrixL95, LocMatrixTestFixture)
+BOOST_FIXTURE_TEST_SUITE(test_localizationMatrixL95, TestFixture)
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_localizationMatrixL95_constructor) {
     eckit::LocalConfiguration resolCfg(TestConfig::config(), "resolution");

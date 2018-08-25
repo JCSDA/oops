@@ -20,11 +20,12 @@
 #include "lorenz95/ModelBias.h"
 #include "lorenz95/ModelBiasCorrection.h"
 #include "lorenz95/Resolution.h"
+#include "test/TestFixture.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
-class ModBiasTestFixture {
+class ModBiasTestFixture : TestFixture {
  public:
   ModBiasTestFixture() {
     eckit::LocalConfiguration res(TestConfig::config(), "resolution");

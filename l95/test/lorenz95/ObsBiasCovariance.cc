@@ -18,11 +18,12 @@
 #include "lorenz95/ObsBiasCorrection.h"
 #include "lorenz95/ObsBiasCovariance.h"
 #include "lorenz95/Resolution.h"
+#include "test/TestFixture.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
-class ObsBiasTestFixture {
+class ObsBiasTestFixture : TestFixture {
  public:
   ObsBiasTestFixture() {
     biasconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "ObsBias"));

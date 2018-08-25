@@ -22,11 +22,12 @@
 #include "lorenz95/Resolution.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
+#include "test/TestFixture.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
-class ModelTestFixture {
+class ModelTestFixture : TestFixture {
  public:
   ModelTestFixture() {
     eckit::LocalConfiguration res(TestConfig::config(), "resolution");

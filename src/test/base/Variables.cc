@@ -15,11 +15,12 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Variables.h"
 #include "test/TestEnvironment.h"
+#include "test/TestFixture.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
-class VariablesFixture {
+class VariablesFixture : TestFixture {
  public:
   VariablesFixture() {
     conf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "Variables"));
