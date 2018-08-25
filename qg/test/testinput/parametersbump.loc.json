@@ -65,12 +65,12 @@
   },
   "covariance": {
     "covariance": "QgError",
-    "standard_deviation": "1.7",
-    "vertical_correlation": "0.5",
-    "horizontal_length_scale": "2.0e6",
+    "standard_deviation": "1.8",
+    "vertical_correlation": "0.2",
+    "horizontal_length_scale": "3e6",
     "maximum_condition_number": "1.0e6",
     "date": "2010-01-01T00:00:00Z",
-    "pseudoens_size" : 25
+    "pseudoens_size" : 20
    },
   "prefix" : "bump",
   "default_seed" : 1,
@@ -88,7 +88,7 @@
   "dc" : 200.0e3,
   "nl0r" : 2,
   "ne" : 10,
-  "local_diag" : 0,
+  "local_diag" : 1,
   "local_rad" : 3000.0e3,
   "minim_algo" : "hooke",
   "rvflt" : 0.0,

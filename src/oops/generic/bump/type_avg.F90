@@ -643,7 +643,7 @@ do ib=1,bpar%nb
       call flush(mpl%unit)
       call mpl%prog_init(progint,done)
       do ic2=0,nam%nc2
-         call avg%blk(ic2,ib)%compute(nam,geom,bpar,hdata,mom%blk(ib))
+         if ((ic2==0).or.nam%local_diag) call avg%blk(ic2,ib)%compute(nam,geom,bpar,hdata,mom%blk(ib))
          done(ic2) = .true.
          call mpl%prog_print(progint,done)
       end do
@@ -680,7 +680,7 @@ do ib=1,bpar%nb
       call flush(mpl%unit)
       call mpl%prog_init(progint,done)
       do ic2=0,nam%nc2
-         call avg%blk(ic2,ib)%compute_asy(nam,geom,bpar,ne)
+         if ((ic2==0).or.nam%local_diag) call avg%blk(ic2,ib)%compute_asy(nam,geom,bpar,ne)
          done(ic2) = .true.
          call mpl%prog_print(progint,done)
       end do
@@ -728,19 +728,21 @@ do ib=1,bpar%nb
       call flush(mpl%unit)
       call mpl%prog_init(progint,done)
       do ic2=0,nam%nc2
-         select case (trim(nam%method))
-         case ('hyb-avg')
-            ! Static covariance = ensemble covariance
-            avg_2%blk(ic2,ib)%m11sta = avg_1%blk(ic2,ib)%m11**2
-            avg_2%blk(ic2,ib)%stasq = avg_1%blk(ic2,ib)%m11**2
-         case ('hyb-rnd')
-            ! Static covariance = randomized covariance
-            avg_2%blk(ic2,ib)%m11sta = avg_1%blk(ic2,ib)%m11*avg_2%blk(ic2,ib)%m11
-            avg_2%blk(ic2,ib)%stasq = avg_2%blk(ic2,ib)%m11**2
-         case ('dual-ens')
-            ! LR covariance/HR covariance product average
-            call avg_2%blk(ic2,ib)%compute_lr(mpl,nam,geom,bpar,hdata,mom_1%blk(ib),mom_2%blk(ib))
-         end select
+         if ((ic2==0).or.nam%local_diag) then
+            select case (trim(nam%method))
+            case ('hyb-avg')
+               ! Static covariance = ensemble covariance
+               avg_2%blk(ic2,ib)%m11sta = avg_1%blk(ic2,ib)%m11**2
+               avg_2%blk(ic2,ib)%stasq = avg_1%blk(ic2,ib)%m11**2
+            case ('hyb-rnd')
+               ! Static covariance = randomized covariance
+               avg_2%blk(ic2,ib)%m11sta = avg_1%blk(ic2,ib)%m11*avg_2%blk(ic2,ib)%m11
+               avg_2%blk(ic2,ib)%stasq = avg_2%blk(ic2,ib)%m11**2
+            case ('dual-ens')
+               ! LR covariance/HR covariance product average
+               call avg_2%blk(ic2,ib)%compute_lr(mpl,nam,geom,bpar,hdata,mom_1%blk(ib),mom_2%blk(ib))
+            end select
+         end if
          done(ic2) = .true.
          call mpl%prog_print(progint,done)
       end do
@@ -769,7 +771,7 @@ if (trim(nam%method)=='dual-ens') then
          call flush(mpl%unit)
          call mpl%prog_init(progint,done)
          do ic2=0,nam%nc2
-            call avg_2%blk(ic2,ib)%compute_asy_lr(nam,geom,bpar)
+            if ((ic2==0).or.nam%local_diag) call avg_2%blk(ic2,ib)%compute_asy_lr(nam,geom,bpar)
             done(ic2) = .true.
             call mpl%prog_print(progint,done)
          end do
