@@ -22,7 +22,6 @@
 #include "oops/generic/oobump_f.h"
 #include "oops/generic/UnstructuredGrid.h"
 #include "oops/interface/LocalizationBase.h"
-#include "oops/parallel/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"

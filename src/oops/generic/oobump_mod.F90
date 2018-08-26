@@ -11,9 +11,7 @@ use iso_c_binding
 use kinds
 use config_mod
 use unstructured_grid_mod
-#ifdef notdef_
-use mpi
-#endif
+use fckit_mpi_module, only: fckit_mpi_comm
 use type_bump, only: bump_type
 
 implicit none
@@ -28,9 +26,6 @@ public oobump_type, create_oobump, delete_oobump, add_oobump_member, &
      & multiply_oobump_vbal, multiply_oobump_vbal_inv, multiply_oobump_vbal_ad, multiply_oobump_vbal_inv_ad, &
      & multiply_oobump_nicas, run_oobump_drivers, bump_read_conf
 
-#ifndef notdef_
-  INCLUDE 'mpif.h'
-#endif  
 ! ------------------------------------------------------------------------------
 
 #define LISTED_TYPE oobump_type
@@ -319,22 +314,28 @@ integer, intent(in) :: ens2_ne
 integer, intent(in) :: ens2_nsub
 
 integer :: igrid
+type(fckit_mpi_comm) :: f_comm
+
+! Get MPI communicator
+f_comm = fckit_mpi_comm()
 
 ! Allocation
 self%ngrid = ug%ngrid
 allocate(self%bump(self%ngrid))
 
 do igrid=1,self%ngrid
-   ! Initialize namelist
-   call self%bump(igrid)%nam%init
+  ! Initialize namelist
+  call self%bump(igrid)%nam%init
 
-   ! Read JSON
-   call bump_read_conf(c_conf,self%bump(igrid))
+  ! Read JSON
+  call bump_read_conf(c_conf,self%bump(igrid))
 
-   ! Online setup
-   call self%bump(igrid)%setup_online(mpi_comm_world,ug%grid(igrid)%nmga,ug%grid(igrid)%nl0,ug%grid(igrid)%nv,ug%grid(igrid)%nts, &
- & ug%grid(igrid)%lon,ug%grid(igrid)%lat,ug%grid(igrid)%area,ug%grid(igrid)%vunit,ug%grid(igrid)%lmask, &
- & ens1_ne=ens1_ne,ens1_nsub=ens1_nsub,ens2_ne=ens2_ne,ens2_nsub=ens2_nsub)
+  ! Online setup
+  call self%bump(igrid)%setup_online(f_comm%communicator(), &
+              & ug%grid(igrid)%nmga, ug%grid(igrid)%nl0, ug%grid(igrid)%nv, ug%grid(igrid)%nts, &
+              & ug%grid(igrid)%lon, ug%grid(igrid)%lat, ug%grid(igrid)%area, &
+              & ug%grid(igrid)%vunit, ug%grid(igrid)%lmask, &
+              & ens1_ne=ens1_ne, ens1_nsub=ens1_nsub, ens2_ne=ens2_ne, ens2_nsub=ens2_nsub)
 end do
 
 end subroutine create_oobump

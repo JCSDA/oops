@@ -298,6 +298,7 @@ ecbuild_add_test( TARGET test_qg_genenspert
                   DEPENDS qg_genpert.x )
 
 ecbuild_add_test( TARGET test_qg_parameters_bump_vbal
+                  MPI    1
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_parameters.x testinput/parametersbump.vbal.json"
@@ -305,6 +306,7 @@ ecbuild_add_test( TARGET test_qg_parameters_bump_vbal
                   DEPENDS qg_parameters.x )
 
 ecbuild_add_test( TARGET  test_qg_linearvariablechange
+                  MPI    1
                   BOOST
                   SOURCES executables/TestLinearVariableChange.cc
                   ARGS    "testinput/interfaces.json"
@@ -330,6 +332,7 @@ ecbuild_add_test( TARGET test_qg_3dvar
                   DEPENDS qg_4dvar.x )
 
 ecbuild_add_test( TARGET test_qg_3dvar_chvar
+                  MPI    1
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/3dvar.chvar.json"
@@ -344,6 +347,7 @@ ecbuild_add_test( TARGET test_qg_3dfgat
                   DEPENDS qg_4dvar.x )
 
 ecbuild_add_test( TARGET test_qg_4dvar_bump_covariance
+                  MPI    1
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/4dvar.bumpcov.json"
@@ -421,6 +425,7 @@ ecbuild_add_test( TARGET test_qg_4dvar_hybrid
                   DEPENDS qg_4dvar.x )
 
 ecbuild_add_test( TARGET test_qg_4dvar_hybrid_bump
+                  MPI    1
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/4dhybridbump.json"
@@ -442,6 +447,7 @@ ecbuild_add_test( TARGET test_qg_alpha
                   DEPENDS qg_4dvar.x )
 
 ecbuild_add_test( TARGET test_qg_dirac_bumpcov
+                  MPI    1
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_dirac.x testinput/dirac.bumpcov.json"
@@ -449,6 +455,7 @@ ecbuild_add_test( TARGET test_qg_dirac_bumpcov
                   DEPENDS qg_dirac.x )
 
 ecbuild_add_test( TARGET test_qg_dirac_bumploc
+                  MPI    1
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_dirac.x testinput/dirac.bumploc.json"
@@ -463,6 +470,7 @@ ecbuild_add_test( TARGET test_qg_dirac_qgcov
                   DEPENDS qg_dirac.x )
 
 ecbuild_add_test( TARGET test_qg_parameters_bump_cov
+                  MPI    1
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_parameters.x testinput/parametersbump.cov.json"
@@ -470,6 +478,7 @@ ecbuild_add_test( TARGET test_qg_parameters_bump_cov
                   DEPENDS qg_parameters.x )
 
 ecbuild_add_test( TARGET test_qg_parameters_bump_lct
+                  MPI    1
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_parameters.x testinput/parametersbump.lct.json"
@@ -477,6 +486,7 @@ ecbuild_add_test( TARGET test_qg_parameters_bump_lct
                   DEPENDS qg_parameters.x )
 
 ecbuild_add_test( TARGET test_qg_parameters_bump_loc
+                  MPI    1
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_parameters.x testinput/parametersbump.loc.json"
@@ -484,6 +494,7 @@ ecbuild_add_test( TARGET test_qg_parameters_bump_loc
                   DEPENDS qg_parameters.x )
 
 ecbuild_add_test( TARGET test_qg_parameters_bump_readloc
+                  MPI    1
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_parameters.x testinput/parametersbump.readloc.json"
