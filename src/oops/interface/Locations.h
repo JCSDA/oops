@@ -52,8 +52,7 @@ class Locations : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-Locations<MODEL>::Locations(const Locations_ * locs)
-  : locs_(locs)
+Locations<MODEL>::Locations(const Locations_ * locs) : locs_(locs)
 {
   Log::trace() << "Locations<MODEL>::Locations constructed" << std::endl;
 }

@@ -10,6 +10,7 @@
 
 #include "oops/runs/Run.h"
 
+#include <mpi.h>
 #include <string>
 #include <boost/scoped_ptr.hpp>
 
@@ -17,6 +18,7 @@
 #include "eckit/config/YAMLConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/LibOOPS.h"
 #include "oops/util/Logger.h"
@@ -28,6 +30,9 @@ namespace oops {
 // -----------------------------------------------------------------------------
 
 Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(), timer_() {
+// Initialize MPI
+  oops::mpi::comm().communicator();
+
 // Get configuration file from command line
   ASSERT(argc >= 2);
   eckit::PathName configfile = argv[argc - 1];

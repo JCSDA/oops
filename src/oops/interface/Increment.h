@@ -15,6 +15,7 @@
 
 #include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/Variables.h"
+#include "oops/generic/UnstructuredGrid.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/InterpolatorTraj.h"
@@ -75,6 +76,7 @@ class Increment : public oops::GeneralizedDepartures,
 /// Linear algebra operators
   void zero();
   void zero(const util::DateTime &);
+  void dirac(const eckit::Configuration &);
   Increment & operator =(const Increment &);
   Increment & operator+=(const Increment &);
   Increment & operator-=(const Increment &);
@@ -92,6 +94,10 @@ class Increment : public oops::GeneralizedDepartures,
 
 /// Get geometry
   Geometry_ geometry() const;
+
+/// Convert to/from generic unstructured grid
+  void convert_to(UnstructuredGrid &) const;
+  void convert_from(const UnstructuredGrid &);
 
  private:
   void print(std::ostream &) const;
@@ -206,6 +212,16 @@ void Increment<MODEL>::zero(const util::DateTime & tt) {
   util::Timer timer(classname(), "zero");
   increment_->zero(tt);
   Log::trace() << "Increment<MODEL>::zero done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::dirac(const eckit::Configuration & config) {
+  Log::trace() << "Increment<MODEL>::dirac starting" << std::endl;
+  util::Timer timer(classname(), "dirac");
+  increment_->dirac(config);
+  Log::trace() << "Increment<MODEL>::dirac done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -343,6 +359,26 @@ Geometry<MODEL> Increment<MODEL>::geometry() const {
   Geometry<MODEL> geom(increment_->geometry());
   Log::trace() << "Increment<MODEL>::geometry done" << std::endl;
   return geom;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::convert_to(UnstructuredGrid & ug) const {
+  Log::trace() << "Increment<MODEL>::convert_to starting" << std::endl;
+  util::Timer timer(classname(), "convert_to");
+  increment_->convert_to(ug);
+  Log::trace() << "Increment<MODEL>::convert_to done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::convert_from(const UnstructuredGrid & ug) {
+  Log::trace() << "Increment<MODEL>::convert_from starting" << std::endl;
+  util::Timer timer(classname(), "convert_from");
+  increment_->convert_from(ug);
+  Log::trace() << "Increment<MODEL>::convert_from done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

@@ -18,6 +18,7 @@
 #include "oops/interface/LocalizationBase.h"
 #include "oops/util/ObjectCounter.h"
 
+#include "model/GeometryQG.h"
 #include "model/QgFortran.h"
 #include "model/QgTraits.h"
 

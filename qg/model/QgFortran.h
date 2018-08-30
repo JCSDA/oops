@@ -96,6 +96,7 @@ extern "C" {
   void qg_field_dot_prod_f90(const F90flds &, const F90flds &, double &);
   void qg_field_self_schur_f90(const F90flds &, const F90flds &);
   void qg_field_random_f90(const F90flds &);
+  void qg_field_dirac_f90(const F90flds &, const eckit::Configuration * const *);
 
   void qg_field_add_incr_f90(const F90flds &, const F90flds &);
   void qg_field_diff_incr_f90(const F90flds &, const F90flds &, const F90flds &);
@@ -113,6 +114,8 @@ extern "C" {
   void qg_field_interp_f90(const F90flds &, const F90locs &, const F90vars *, const F90goms &);
   void qg_field_interp_tl_f90(const F90flds &, const F90locs &, const F90vars *, const F90goms &);
   void qg_field_interp_ad_f90(const F90flds &, const F90locs &, const F90vars *, const F90goms &);
+  void qg_field_convert_to_f90(const F90flds &, const int &);
+  void qg_field_convert_from_f90(const F90flds &, const int &);
 
   void qg_field_gpnorm_f90(const F90flds &, const int &, double &);
   void qg_field_sizes_f90(const F90flds &, int &, int &, int &, int &);
@@ -163,7 +166,7 @@ extern "C" {
   void qg_gom_mult_f90(const F90goms &, const double &);
   void qg_gom_add_f90(const F90goms &, const F90goms &);
   void qg_gom_diff_f90(const F90goms &, const F90goms &);
-  void qg_gom_normalize_f90(const F90goms &, const F90goms &);
+  void qg_gom_divide_f90(const F90goms &, const F90goms &);
   void qg_gom_dotprod_f90(const F90goms &, const F90goms &, double &);
   void qg_gom_minmaxavg_f90(const F90goms &, int &, double &, double &, double &);
   void qg_gom_maxloc_f90(const F90goms &, double &, int &, int &);
