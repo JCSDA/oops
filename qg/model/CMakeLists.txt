@@ -1,6 +1,10 @@
 list( APPEND oops_qg_src_files
+ChangeVar.cc
+ChangeVar.h
 ErrorCovarianceQG.cc
 ErrorCovarianceQG.h
+ErrorStdDevQG.cc
+ErrorStdDevQG.h
 FieldsQG.cc
 FieldsQG.h
 GeometryQG.cc
@@ -65,6 +69,7 @@ advect_pv.f90
 advect_pv_ad.f90
 advect_pv_tl.f90
 c_qg_bmatrix.f90
+c_qg_bstddev.f90
 c_qg_model.F90
 c_qg_obs_data.F90
 calc_pv.f90
@@ -74,6 +79,7 @@ fft_f.cc
 fft_f.h
 fft_mod.F90
 generate_locations.f90
+instantiateQgChangeVarFactory.h
 instantiateQgLocalizationFactory.h
 invent_state.f90
 invert_pv.f90
@@ -86,6 +92,7 @@ meridional_wind_tl.f90
 propagate.f90
 pv_operator.f90
 pv_operator_ad.f90
+qg_bstddev_mod.F90
 qg_configs.F90
 qg_constants.f90
 qg_covariance_mod.F90

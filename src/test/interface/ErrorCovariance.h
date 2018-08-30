@@ -69,14 +69,13 @@ template <typename MODEL> class ErrorCovarianceFixture : private boost::noncopya
     ctlvars_.reset(new oops::Variables(varConfig));
 
     const eckit::LocalConfiguration fgconf(TestEnvironment::config(), "State");
-    oops::State<MODEL> xx(*resol_, fgconf);
+    oops::State<MODEL> xx(*resol_, *ctlvars_, fgconf);
 
     time_.reset(new util::DateTime(xx.validTime()));
 
 //  Setup the B matrix
     const eckit::LocalConfiguration covar(TestEnvironment::config(), "Covariance");
-    B_.reset(oops::CovarianceFactory<MODEL>::create(covar, *resol_, *ctlvars_, xx));
-    B_->linearize(xx, *resol_);
+    B_.reset(oops::CovarianceFactory<MODEL>::create(covar, *resol_, *ctlvars_, xx, xx));
   }
 
   ~ErrorCovarianceFixture<MODEL>() {}

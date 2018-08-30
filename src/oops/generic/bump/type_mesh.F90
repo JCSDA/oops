@@ -392,7 +392,6 @@ if (mesh%nb>0) then
          end if
       end do
    end do
-   mesh%bdist = mesh%bdist/req
 else
    mesh%bdist = huge(1.0)
 end if

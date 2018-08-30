@@ -1,0 +1,146 @@
+{
+  "logging": {
+    "categories": "Info, Test, Warning, Error"
+  },
+  "resolution": {
+    "nx": "40",
+    "ny": "20",
+    "bc": "1"
+  },
+  "variables": {
+    "variables": ["x"]
+  },
+  "date": "2010-01-01T00:00:00Z",
+  "background": {
+    "filename": "Data/truth.fc.2009-12-15T00:00:00Z.P17D",
+    "date": "2010-01-01T00:00:00Z"
+  },
+  "ensemble": {
+    "members": "10",
+    "variables": {
+      "variables": ["x"]
+    },
+    "state" : [
+      {
+        "filename": "Data/test.ens.1.2009-12-31T00:00:00Z.P1D",
+        "date": "2010-01-01T00:00:00Z"
+      },
+      {
+        "filename": "Data/test.ens.2.2009-12-31T00:00:00Z.P1D",
+        "date": "2010-01-01T00:00:00Z"
+      },
+      {
+        "filename": "Data/test.ens.3.2009-12-31T00:00:00Z.P1D",
+        "date": "2010-01-01T00:00:00Z"
+      },
+      {
+        "filename": "Data/test.ens.4.2009-12-31T00:00:00Z.P1D",
+        "date": "2010-01-01T00:00:00Z"
+      },
+      {
+        "filename": "Data/test.ens.5.2009-12-31T00:00:00Z.P1D",
+        "date": "2010-01-01T00:00:00Z"
+      },
+      {
+        "filename": "Data/test.ens.6.2009-12-31T00:00:00Z.P1D",
+        "date": "2010-01-01T00:00:00Z"
+      },
+      {
+        "filename": "Data/test.ens.7.2009-12-31T00:00:00Z.P1D",
+        "date": "2010-01-01T00:00:00Z"
+      },
+      {
+        "filename": "Data/test.ens.8.2009-12-31T00:00:00Z.P1D",
+        "date": "2010-01-01T00:00:00Z"
+      },
+      {
+        "filename": "Data/test.ens.9.2009-12-31T00:00:00Z.P1D",
+        "date": "2010-01-01T00:00:00Z"
+      },
+      {
+        "filename": "Data/test.ens.10.2009-12-31T00:00:00Z.P1D",
+        "date": "2010-01-01T00:00:00Z"
+      }
+    ]
+  },
+  "covariance": {
+    "covariance": "QgError",
+    "standard_deviation": "1.8",
+    "vertical_correlation": "0.2",
+    "horizontal_length_scale": "3e6",
+    "maximum_condition_number": "1.0e6",
+    "date": "2010-01-01T00:00:00Z",
+    "pseudoens_size" : 20
+   },
+  "prefix" : "bump",
+  "default_seed" : 1,
+  "method" : "hyb-rnd",
+  "strategy" : "common",
+  "new_hdiag" : 1,
+  "new_nicas" : 1,
+  "mask_type" : "none",
+  "draw_type" : "random_uniform",
+  "nc1" : 400,
+  "nc2" : 100,
+  "ntry" : 3,
+  "nrep" : 2,
+  "nc3" : 15,
+  "dc" : 500.0e3,
+  "nl0r" : 2,
+  "ne" : 10,
+  "local_diag" : 1,
+  "local_rad" : 3000.0e3,
+  "minim_algo" : "hooke",
+  "rvflt" : 0.0,
+  "lsqrt" : 1,
+  "resol" : 10.0,
+  "nicas_interp" : "bilin",
+  "mpicom" : 2,
+  "advmode" : 0,
+  "diag_rhflt" : 3000.0e3,
+  "diag_interp" : "bilin",
+  "nldwh" : 0,
+  "nldwv" : 0,
+  "input" : [
+    {
+      "parameter" : "loc_rh",
+      "filename": "Data/hyb_loc_rh.an.2010-01-01T00:00:00Z",
+      "date": "2010-01-01T00:00:00Z"
+    },
+    {
+      "parameter" : "loc_rv",
+      "filename": "Data/hyb_loc_rv.an.2010-01-01T00:00:00Z",
+      "date": "2010-01-01T00:00:00Z"
+    }
+  ],
+  "output" : [
+    {
+      "parameter" : "loc_coef",
+      "datadir": "Data",
+      "exp": "read_hyb_loc_coef",
+      "type": "an",
+      "date": "2010-01-01T00:00:00Z"
+    },
+    {
+      "parameter" : "loc_rh",
+      "datadir": "Data",
+      "exp": "read_hyb_loc_rh",
+      "type": "an",
+      "date": "2010-01-01T00:00:00Z"
+    },
+    {
+      "parameter" : "loc_rv",
+      "datadir": "Data",
+      "exp": "read_hyb_loc_rv",
+      "type": "an",
+      "date": "2010-01-01T00:00:00Z"
+    },
+    {
+      "parameter" : "hyb_coef",
+      "datadir": "Data",
+      "exp": "read_hyb_sta_coef",
+      "type": "an",
+      "date": "2010-01-01T00:00:00Z"
+    }
+  ]
+}

@@ -21,22 +21,30 @@ implicit none
 ! C matrix block data derived type
 type cmat_blk_type
    ! Block index and name
-   integer :: ib                                   !< Block index
-   character(len=1024) :: name                     !< Name
-   logical :: double_fit                           !< Double fit
+   integer :: ib                                       !< Block index
+   character(len=1024) :: name                         !< Name
+   logical :: double_fit                               !< Double fit
+
+   ! Read data
+   real(kind_real),allocatable :: oops_coef_ens(:,:)   !< OOPS ensemble coefficient
+   real(kind_real),allocatable :: oops_coef_sta(:,:)   !< OOPS static coefficient
+   real(kind_real),allocatable :: oops_rh_c0(:,:)      !< OOPS horizontal fit support radius
+   real(kind_real),allocatable :: oops_rv_c0(:,:)      !< OOPS vertical fit support radius
+   real(kind_real),allocatable :: oops_rv_rfac_c0(:,:) !< OOPS vertical fit support radius factor
+   real(kind_real),allocatable :: oops_rv_coef_c0(:,:) !< OOPS vertical fit coefficient
 
    ! Data
-   real(kind_real),allocatable :: coef_ens(:,:)    !< Ensemble coefficient
-   real(kind_real),allocatable :: coef_sta(:,:)    !< Static coefficient
-   real(kind_real),allocatable :: rh_c0(:,:)       !< Fit support radius
-   real(kind_real),allocatable :: rv_c0(:,:)       !< Fit support radius
-   real(kind_real),allocatable :: rv_rfac_c0(:,:)  !< TODO
-   real(kind_real),allocatable :: rv_coef_c0(:,:)  !< TODO
-   real(kind_real),allocatable :: rhs_c0(:,:)      !< Fit support radius  for sampling
-   real(kind_real),allocatable :: rvs_c0(:,:)      !< Fit support radius, for sampling
-   real(kind_real) :: wgt                          !< Block weight
-   real(kind_real),allocatable :: displ_lon(:,:,:) !< Displaced longitude
-   real(kind_real),allocatable :: displ_lat(:,:,:) !< Displaced latitude
+   real(kind_real),allocatable :: coef_ens(:,:)        !< Ensemble coefficient
+   real(kind_real),allocatable :: coef_sta(:,:)        !< Static coefficient
+   real(kind_real),allocatable :: rh_c0(:,:)           !< Horizontal fit support radius
+   real(kind_real),allocatable :: rv_c0(:,:)           !< Vertical fit support radius
+   real(kind_real),allocatable :: rv_rfac_c0(:,:)      !< Vertical fit support radius factor
+   real(kind_real),allocatable :: rv_coef_c0(:,:)      !< Vertical fit coefficient
+   real(kind_real),allocatable :: rhs_c0(:,:)          !< Fit support radius  for sampling
+   real(kind_real),allocatable :: rvs_c0(:,:)          !< Fit support radius, for sampling
+   real(kind_real) :: wgt                              !< Block weight
+   real(kind_real),allocatable :: displ_lon(:,:,:)     !< Displaced longitude
+   real(kind_real),allocatable :: displ_lat(:,:,:)     !< Displaced latitude
 contains
    procedure :: alloc => cmat_blk_alloc
    procedure :: dealloc => cmat_blk_dealloc
@@ -95,7 +103,7 @@ if (bpar%diag_block(ib)) then
    call msr(cmat_blk%wgt)
 end if
 
-if ((ib==bpar%nb+1).and.nam%displ_diag) then
+if ((ib==bpar%nbe).and.nam%displ_diag) then
    ! Allocation
    allocate(cmat_blk%displ_lon(geom%nc0a,geom%nl0,2:nam%nts))
    allocate(cmat_blk%displ_lat(geom%nc0a,geom%nl0,2:nam%nts))

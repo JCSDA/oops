@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -12,7 +12,9 @@
 #define OOPS_GENERIC_LINEARMODELID_H_
 
 #include <string>
+#include <vector>
 
+#include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/LinearModelBase.h"
@@ -33,7 +35,7 @@ namespace oops {
 
 /// Encapsulates the linear forecast model.
 /*!
- * Generic implementation of the identity linear model. 
+ * Generic implementation of the identity linear model.
  */
 
 // -----------------------------------------------------------------------------
@@ -67,18 +69,21 @@ class LinearModelId : public LinearModelBase<MODEL> {
 
 // Information and diagnostics
   const util::Duration & timeResolution() const override {return tstep_;}
+  const oops::Variables & variables() const override {return vars_;}
   void print(std::ostream &) const override {}
 
  private:
   const Geometry_ resol_;
   const util::Duration tstep_;
+  const Variables vars_;
 };
 
 // =============================================================================
 
 template<typename MODEL>
 LinearModelId<MODEL>::LinearModelId(const Geometry_ & resol, const eckit::Configuration & tlConf)
-  : resol_(resol), tstep_(util::Duration(tlConf.getString("tstep")))
+  : resol_(resol), tstep_(util::Duration(tlConf.getString("tstep"))),
+    vars_(std::vector<std::string>{""})
 {
   Log::trace() << "LinearModelId<MODEL>::LinearModelId done" << std::endl;
 }

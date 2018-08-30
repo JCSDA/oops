@@ -10,7 +10,7 @@
 !----------------------------------------------------------------------
 module tools_func
 
-use tools_const, only: pi,rth
+use tools_const, only: pi,rth,gc_gau
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsr
 use type_mpl, only: mpl_type
@@ -18,11 +18,12 @@ use type_mpl, only: mpl_type
 implicit none
 
 real(kind_real),parameter :: Dmin = 1.0e-12_kind_real !< Minimum tensor diagonal value
-integer,parameter :: M = 0                            !< Number of implicit itteration for the Matern function (Gaussian function if M = 0)
+integer,parameter :: M = 0                            !< Number of implicit itteration for the Matern function (GC 99 function if M = -1 and Gaussian function if M = 0)
 real(kind_real),parameter :: eta = 1.0e-9_kind_real   !< Small parameter for the Cholesky decomposition
 
 private
-public :: eq,inf,sup,lonlatmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,add,divide, &
+public :: eq,inf,infeq,sup,supeq,indist,pos,poseq, &
+        & lonlatmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,add,divide, &
         & fit_diag,fit_diag_dble,gc99,fit_lct,cholesky
 
 contains
@@ -66,8 +67,27 @@ inf = (abs(x-y)>rth*abs(x+y)).and.(x<y)
 end function inf
 
 !----------------------------------------------------------------------
+! Function: infeq
+!> Purpose: inferior or equal test for reals
+!----------------------------------------------------------------------
+function infeq(x,y)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: x !< First real
+real(kind_real),intent(in) :: y !< Second real
+
+! Returned variable
+logical :: infeq
+
+infeq = inf(x,y).or.eq(x,y)
+
+end function infeq
+
+!----------------------------------------------------------------------
 ! Function: sup
-!> Purpose: sup test for reals
+!> Purpose: superior test for reals
 !----------------------------------------------------------------------
 function sup(x,y)
 
@@ -83,6 +103,80 @@ logical :: sup
 sup = (abs(x-y)>rth*abs(x+y)).and.(x>y)
 
 end function sup
+
+!----------------------------------------------------------------------
+! Function: supeq
+!> Purpose: superior or equal test for reals
+!----------------------------------------------------------------------
+function supeq(x,y)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: x !< First real
+real(kind_real),intent(in) :: y !< Second real
+
+! Returned variable
+logical :: supeq
+
+supeq = sup(x,y).or.eq(x,y)
+
+end function supeq
+
+!----------------------------------------------------------------------
+! Function: indist
+!> Purpose: indistiguishability test
+!----------------------------------------------------------------------
+function indist(x,y)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: x !< First real
+real(kind_real),intent(in) :: y !< Second real
+
+! Returned variable
+logical :: indist
+
+indist = abs(x)<rth*abs(y)
+
+end function indist
+
+!----------------------------------------------------------------------
+! Function: pos
+!> Purpose: positivity test for reals
+!----------------------------------------------------------------------
+function pos(x)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: x !< Real
+
+! Returned variable
+logical :: pos
+
+pos = (x>rth)
+
+end function pos
+
+!----------------------------------------------------------------------
+! Function: poseq
+!> Purpose: non-negativity test for reals
+!----------------------------------------------------------------------
+function poseq(x)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: x !< Real
+
+! Returned variable
+logical :: poseq
+
+poseq = (x>-rth)
+
+end function poseq
 
 !----------------------------------------------------------------------
 ! Subroutine: lonlatmod
@@ -616,7 +710,7 @@ real(kind_real),intent(out) :: fit(nc,nl0)  !< Fit
 
 ! Local variables
 integer :: jl0,jc3,iscales,offset
-real(kind_real) :: Hcoef(nscales),D11,D22,D33,D12,H11,H22,H33,H12,rsq,det
+real(kind_real) :: Hcoef(nscales),D11,D22,D33,D12,H11,H22,H33,H12,rsq,det,distnorm
 
 ! Initialization
 offset = 0
@@ -661,7 +755,11 @@ do iscales=1,nscales
             if (nl0>1) rsq = rsq+H33*dz(jl0)**2
             if (ncomp(iscales)==4) rsq = rsq+2.0*H12*dx(jc3,jl0)*dy(jc3,jl0)
 
-            if (M==0) then
+            if (M==-1) then
+               ! Gaspari-Cohn 1999 function
+               distnorm = sqrt(rsq)*gc_gau
+               fit(jc3,jl0) = fit(jc3,jl0)+Hcoef(iscales)*gc99(mpl,distnorm)
+            elseif (M==0) then
                ! Gaussian function
                if (rsq<40.0) fit(jc3,jl0) = fit(jc3,jl0)+Hcoef(iscales)*exp(-0.5*rsq)
             else
@@ -748,6 +846,7 @@ k = 0
 if (nn/=(n*(n+1))/2) then
    call mpl%abort('wrong size in Cholesky decomposition')
 end if
+w = 0.0
 
 ! Factorize column by column, ICOL = column number
 do icol=1,n

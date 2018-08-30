@@ -10,9 +10,8 @@
 !----------------------------------------------------------------------
 module type_minim
 
-use tools_const, only: rth
 use tools_fit, only: ver_smooth
-use tools_func, only: fit_diag,fit_diag_dble,fit_lct
+use tools_func, only: eq,inf,infeq,sup,pos,fit_diag,fit_diag_dble,fit_lct
 use tools_kinds, only: kind_real
 use tools_missing, only: isnotmsr
 use type_mpl, only: mpl_type
@@ -386,7 +385,7 @@ real(kind_real) :: delta(minim%nx),newx(minim%nx)
 newx = guess
 minim%x = guess
 do i=1,minim%nx
-   if (abs(guess(i))>rth) then
+   if (pos(guess(i))) then
       delta(i) = rho*abs(guess(i))
    else
       delta(i) = rho
@@ -400,7 +399,7 @@ funevals = funevals + 1
 newf = fbefore
 
 ! Iterative search
-do while ((iters<itermax).and.(abs(tol-steplength)>rth*abs(tol+steplength)).and.(tol<steplength))
+do while ((iters<itermax).and.inf(tol,steplength))
    ! Update iteration
    iters = iters + 1
 
@@ -411,10 +410,10 @@ do while ((iters<itermax).and.(abs(tol-steplength)>rth*abs(tol+steplength)).and.
    ! If we made some improvements, pursue that direction
    keep = 1
 
-   do while ((abs(newf-fbefore)>rth*abs(newf+fbefore)).and.(newf<fbefore).and.(keep==1))
+   do while (inf(newf,fbefore).and.(keep==1))
       do i=1,minim%nx
          ! Arrange the sign of delta
-         if ((abs(newx(i)-minim%x(i))>rth*abs(newx(i)+minim%x(i))).and.(newx(i)>minim%x(i))) then
+         if (sup(newx(i),minim%x(i))) then
             delta(i) = abs(delta(i))
          else
             delta(i) = -abs(delta(i))
@@ -431,7 +430,7 @@ do while ((iters<itermax).and.(abs(tol-steplength)>rth*abs(tol+steplength)).and.
       call minim%best_nearby(mpl,delta,newx,fbefore,funevals,newf)
 
       ! If the further (optimistic) move was bad...
-      if ((abs(newf-fbefore)>rth*abs(newf+fbefore)).and.(fbefore<newf)) exit
+      if (inf(fbefore,newf)) exit
 
       ! Make sure that the differences between the new and the old points
       ! are due to actual displacements; beware of roundoff errors that
@@ -439,16 +438,14 @@ do while ((iters<itermax).and.(abs(tol-steplength)>rth*abs(tol+steplength)).and.
       keep = 0
 
       do i=1,minim%nx
-         if ((abs(0.5*abs(delta(i))-abs(newx(i)-minim%x(i)))>rth*abs(0.5*abs(delta(i))+abs(newx(i)-minim%x(i)))) &
-       & .and.(0.5*abs(delta(i))<abs(newx(i)-minim%x(i)))) then
+         if (inf(0.5*abs(delta(i)),abs(newx(i)-minim%x(i)))) then
             keep = 1
             exit
          end if
       end do
    end do
 
-   if ((abs(tol-steplength)>rth*abs(tol+steplength)).and.(.not.(tol>steplength)) &
- & .and.((abs(newf-fbefore)<tiny(1.0)).or.(abs(newf-fbefore)>rth*abs(newf+fbefore))).and.(.not.(fbefore>newf))) then
+   if (infeq(tol,steplength).and.infeq(fbefore,newf)) then
       steplength = steplength*rho
       delta = delta*rho
    end if
@@ -487,14 +484,14 @@ do i=1,minim%nx
    z(i) = point(i)+delta(i)
    call minim%cost(mpl,z,ftmp)
    funevals = funevals+1
-   if ((abs(ftmp-minf)>rth*abs(ftmp+minf)).and.(ftmp<minf)) then
+   if (inf(ftmp,minf)) then
       minf = ftmp
    else
       delta(i) = -delta(i)
       z(i) = point(i)+delta(i)
       call minim%cost(mpl,z,ftmp)
       funevals = funevals+1
-      if ((abs(ftmp-minf)>rth*abs(ftmp+minf)).and.(ftmp<minf)) then
+      if (inf(ftmp,minf)) then
          minf = ftmp
       else
          z(i) = point(i)

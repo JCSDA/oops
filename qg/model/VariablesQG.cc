@@ -20,7 +20,7 @@ namespace qg {
 VariablesQG::VariablesQG(const oops::Variables & oopsvars) {
   oops::Log::debug() << "VariablesQG oopsvar:" << oopsvars.variables() << std::endl;
   this->setF90(oopsvars.variables());
-  print(oops::Log::debug());
+  oops::Log::debug() << *this << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -30,7 +30,7 @@ VariablesQG::VariablesQG(const eckit::Configuration & config) {
   std::vector<std::string> vars;
   config.get("variables", vars);
   this->setF90(vars);
-  print(oops::Log::debug());
+  oops::Log::debug() << *this << std::endl;
 }
 
 // -----------------------------------------------------------------------------

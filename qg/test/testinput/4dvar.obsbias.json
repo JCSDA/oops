@@ -13,7 +13,7 @@
     "cost_type": "4D-Var",
     "window_begin": "2010-01-01T00:00:00Z",
     "window_length": "P1D",
-    "variables": ["x"],
+    "variables": ["x","bc"],
     "Jb": {
       "Background": {
         "state": [{
@@ -118,6 +118,7 @@
           "bc": "1"
         },
         "linearmodel": {
+          "varchange": "Identity",
           "version": "QgTLM",
           "tstep": "PT1H",
           "top_layer_depth": "5500.0",
@@ -142,6 +143,7 @@
           "bc": "1"
         },
         "linearmodel": {
+          "varchange": "Identity",
           "version": "QgTLM",
           "tstep": "PT1H",
           "top_layer_depth": "5500.0",

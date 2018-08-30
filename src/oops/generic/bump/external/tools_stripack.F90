@@ -10,7 +10,7 @@
 !----------------------------------------------------------------------
 module tools_stripack
 
-use tools_const, only: rth
+use tools_func, only: eq,inf,sup,indist
 use tools_kinds, only: kind_real
 use type_mpl, only: mpl_type
 
@@ -181,7 +181,7 @@ subroutine addnod ( mpl, nst, k, x, y, z, list, lptr, lend, lnew, ier )
 
     l = i1
 
-    if ( (abs(p(1)-x(l))<rth) .and. (abs(p(2)-y(l))<rth)  .and. (abs(p(3)-z(l))<rth) ) then
+    if ( eq(p(1),x(l)) .and. eq(p(2),y(l))  .and. eq(p(3),z(l)) ) then
       ier = l
       write ( *, '(a)' ) ' '
       write ( *, '(a)' ) 'ADDNOD - Fatal error!'
@@ -191,7 +191,7 @@ subroutine addnod ( mpl, nst, k, x, y, z, list, lptr, lend, lnew, ier )
 
     l = i2
 
-    if ( (abs(p(1)-x(l))<rth) .and. (abs(p(2)-y(l))<rth)  .and. (abs(p(3)-z(l))<rth) ) then
+    if ( eq(p(1),x(l)) .and. eq(p(2),y(l))  .and. eq(p(3),z(l)) ) then
       ier = l
       write ( *, '(a)' ) ' '
       write ( *, '(a)' ) 'ADDNOD - Fatal error!'
@@ -200,7 +200,7 @@ subroutine addnod ( mpl, nst, k, x, y, z, list, lptr, lend, lnew, ier )
     end if
 
     l = i3
-    if ( (abs(p(1)-x(l))<rth) .and. (abs(p(2)-y(l))<rth)  .and. (abs(p(3)-z(l))<rth) ) then
+    if ( eq(p(1),x(l)) .and. eq(p(2),y(l))  .and. eq(p(3),z(l)) ) then
       ier = l
       write ( *, '(a)' ) ' '
       write ( *, '(a)' ) 'ADDNOD - Fatal error!'
@@ -288,7 +288,7 @@ subroutine addnod ( mpl, nst, k, x, y, z, list, lptr, lend, lnew, ier )
   end do
 
   return
-end
+end subroutine addnod
 function areas ( v1, v2, v3 )
 
 !*****************************************************************************80
@@ -432,7 +432,7 @@ function areas ( v1, v2, v3 )
   end if
 
   return
-end
+end function areas
 subroutine bdyadd ( kk, i1, i2, list, lptr, lend, lnew )
 
 !*****************************************************************************80
@@ -573,7 +573,7 @@ subroutine bdyadd ( kk, i1, i2, list, lptr, lend, lnew )
   lnew = lnew + 1
 
   return
-end
+end subroutine bdyadd
 subroutine bnodes ( n, list, lptr, lend, nodes, nb, na, nt )
 
 !*****************************************************************************80
@@ -708,7 +708,7 @@ subroutine bnodes ( n, list, lptr, lend, nodes, nb, na, nt )
   na = nt + n - 1
 
   return
-end
+end subroutine bnodes
 subroutine circum ( v1, v2, v3, c, ier )
 
 !*****************************************************************************80
@@ -794,7 +794,7 @@ subroutine circum ( v1, v2, v3, c, ier )
   c(1:3) = cu(1:3) / cnorm
 
   return
-end
+end subroutine circum
 subroutine covsph ( kk, n0, list, lptr, lend, lnew )
 
 !*****************************************************************************80
@@ -906,7 +906,7 @@ subroutine covsph ( kk, n0, list, lptr, lend, lnew )
   lend(k) = lnew - 1
 
   return
-end
+end subroutine covsph
 subroutine det ( x1, y1, z1, x2, y2, z2, x0, y0, z0, output )
 !*****************************************************************************80
 !
@@ -939,8 +939,8 @@ subroutine det ( x1, y1, z1, x2, y2, z2, x0, y0, z0, output )
   output = t1 - t2 + t3
 
   ! Indistinguishability threshold for cross-plateform reproducibility
-  if ((abs(output)<rth*abs(t1)).or.(abs(output)<rth*abs(t2)).or.(abs(output)<rth*abs(t3))) output = 0.0
-end
+  if (indist(output,t1).or.indist(output,t2).or.indist(output,t3)) output = 0.0
+end subroutine det
 subroutine crlist ( n, ncol, x, y, z, list, lend, lptr, lnew, &
   ltri, listc, nb, xc, yc, zc, rc, ier )
 
@@ -1580,7 +1580,7 @@ subroutine crlist ( n, ncol, x, y, z, list, lend, lptr, lnew, &
   ier = 0
 
   return
-end
+end subroutine crlist
 subroutine insert ( k, lp, list, lptr, lnew )
 
 !*****************************************************************************80
@@ -1638,7 +1638,7 @@ subroutine insert ( k, lp, list, lptr, lnew )
   lnew = lnew + 1
 
   return
-end
+end subroutine insert
 function inside ( p, lv, xv, yv, zv, nv, listv, ier )
 
 !*****************************************************************************80
@@ -2000,7 +2000,7 @@ function inside ( p, lv, xv, yv, zv, nv, listv, ier )
   inside = even
 
   return
-end
+end function inside
 subroutine intadd ( kk, i1, i2, i3, list, lptr, lend, lnew )
 
 !*****************************************************************************80
@@ -2101,7 +2101,7 @@ subroutine intadd ( kk, i1, i2, i3, list, lptr, lend, lnew )
   lnew = lnew + 3
 
   return
-end
+end subroutine intadd
 subroutine intrsc ( p1, p2, cn, p, ier )
 
 !*****************************************************************************80
@@ -2208,7 +2208,7 @@ subroutine intrsc ( p1, p2, cn, p, ier )
   ier = 0
 
   return
-end
+end subroutine intrsc
 subroutine jrand ( n, ix, iy, iz, output )
 
 !*****************************************************************************80
@@ -2273,7 +2273,7 @@ subroutine jrand ( n, ix, iy, iz, output )
   output = int ( real ( n, kind_real ) * u ) + 1
 
   return
-end
+end subroutine jrand
 subroutine left ( x1, y1, z1, x2, y2, z2, x0, y0, z0, output )
 
 !*****************************************************************************80
@@ -2335,7 +2335,7 @@ subroutine left ( x1, y1, z1, x2, y2, z2, x0, y0, z0, output )
   output = zz > 0.0_kind_real
 
   return
-end
+end subroutine left
 subroutine lstptr ( lpl, nb, list, lptr, output )
 
 !*****************************************************************************80
@@ -2415,7 +2415,7 @@ subroutine lstptr ( lpl, nb, list, lptr, output )
   output = lp
 
   return
-end
+end subroutine lstptr
 function nbcnt ( lpl, lptr )
 
 !*****************************************************************************80
@@ -2490,7 +2490,7 @@ function nbcnt ( lpl, lptr )
   nbcnt = k
 
   return
-end
+end function nbcnt
 function nearnd ( p, ist, n, x, y, z, list, lptr, lend, al )
 
 !*****************************************************************************80
@@ -2813,7 +2813,7 @@ function nearnd ( p, ist, n, x, y, z, list, lptr, lend, al )
   nearnd = nr
 
   return
-end
+end function nearnd
 subroutine scoord ( px, py, pz, plat, plon, pnrm )
 
 !*****************************************************************************80
@@ -2877,7 +2877,7 @@ subroutine scoord ( px, py, pz, plat, plon, pnrm )
   end if
 
   return
-end
+end subroutine scoord
 subroutine swap ( in1, in2, io1, io2, list, lptr, lend, lp21 )
 
 !*****************************************************************************80
@@ -2993,7 +2993,7 @@ subroutine swap ( in1, in2, io1, io2, list, lptr, lend, lp21 )
   lp21 = lph
 
   return
-end
+end subroutine swap
 subroutine swptst ( n1, n2, n3, n4, x, y, z, output )
 
 !*****************************************************************************80
@@ -3092,7 +3092,7 @@ subroutine swptst ( n1, n2, n3, n4, x, y, z, output )
   output = zz > 0.0_kind_real
 
   return
-end
+end subroutine swptst
 subroutine trans ( n, rlat, rlon, x, y, z )
 
 !*****************************************************************************80
@@ -3169,7 +3169,7 @@ subroutine trans ( n, rlat, rlon, x, y, z )
   end do
 
   return
-end
+end subroutine trans
 subroutine trfind ( nst, p, n, x, y, z, list, lptr, lend, b1, b2, b3, i1, &
   i2, i3 )
 
@@ -3683,7 +3683,7 @@ subroutine trfind ( nst, p, n, x, y, z, list, lptr, lend, b1, b2, b3, i1, &
   i3 = 0
 
   return
-end
+end subroutine trfind
 subroutine trlist ( n, list, lptr, lend, nrow, nt, ltri, ier )
 
 !*****************************************************************************80
@@ -3982,7 +3982,7 @@ subroutine trlist ( n, list, lptr, lend, nrow, nt, ltri, ier )
   ier = 0
 
   return
-end
+end subroutine trlist
 subroutine trmesh ( mpl, n, x, y, z, list, lptr, lend, lnew, near, next, dist, ier )
 
 !*****************************************************************************80
@@ -4317,12 +4317,12 @@ subroutine trmesh ( mpl, n, x, y, z, list, lptr, lend, lnew, near, next, dist, i
     d2 = -( x(k) * x(2) + y(k) * y(2) + z(k) * z(2) )
     d3 = -( x(k) * x(3) + y(k) * y(3) + z(k) * z(3) )
 
-    if ( (abs(d1-d2)>rth*abs(d1+d2).and.(d1 < d2)) .and. (abs(d1-d3)>rth*abs(d1+d3).and.(d1 < d3)) ) then
+    if ( inf(d1,d2) .and. inf(d1,d3) ) then
       near(k) = 1
       dist(k) = d1
       next(k) = near(1)
       near(1) = k
-    else if ( (abs(d2-d1)>rth*abs(d2+d1).and.(d2 < d1)) .and. (abs(d2-d3)>rth*abs(d2+d3).and.(d2 < d3)) ) then
+    else if ( inf(d2,d1) .and. inf(d2,d3) ) then
       near(k) = 2
       dist(k) = d2
       next(k) = near(2)
@@ -4408,7 +4408,7 @@ subroutine trmesh ( mpl, n, x, y, z, list, lptr, lend, lnew, near, next, dist, i
 !  from I to J. Indistinguishability threshold for cross-plateform reproducibility
 !
       d = - ( x(i) * x(k) + y(i) * y(k) + z(i) * z(k) )
-      if ( abs(d-dist(i))>rth*abs(d+dist(i)) .and. d < dist(i)) then
+      if ( inf(d,dist(i)) ) then
 !
 !  Replace J by K as the nearest triangulation node to I:
 !  update NEAR(I) and DIST(I), and remove I from J's set
@@ -4442,6 +4442,6 @@ subroutine trmesh ( mpl, n, x, y, z, list, lptr, lend, lnew, near, next, dist, i
   end do
 
   return
-end
+end subroutine trmesh
 
 end module tools_stripack

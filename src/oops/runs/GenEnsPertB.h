@@ -64,8 +64,8 @@ template <typename MODEL> class GenEnsPertB : public Application {
 
 //  Setup initial state
     const eckit::LocalConfiguration initialConfig(fullConfig, "initial");
-    const State_ xx(resol, initialConfig);
-    Log::test() << "Initial state: " << xx.norm() << std::endl;
+    const State_ xx(resol, model.variables(), initialConfig);
+    Log::test() << "Initial state: " << xx << std::endl;
 
 //  Setup augmented state
     const ModelAux_ moderr(resol, initialConfig);
@@ -79,18 +79,17 @@ template <typename MODEL> class GenEnsPertB : public Application {
 //  Setup B matrix
     const eckit::LocalConfiguration covar(fullConfig, "Covariance");
     boost::scoped_ptr< ModelSpaceCovarianceBase<MODEL> >
-      Bmat(CovarianceFactory<MODEL>::create(covar, resol, vars, xx));
-    Bmat->linearize(xx, resol);
+      Bmat(CovarianceFactory<MODEL>::create(covar, resol, vars, xx, xx));
 
 //  Generate perturbed states
     Increment_ dx(resol, vars, bgndate);
     const int members = fullConfig.getInt("members");
     for (int jm = 0; jm < members; ++jm) {
+//    Generate pertubation
       Bmat->randomize(dx);
-      Log::debug() << "before copy xx:" << xx << std::endl;
+
+//    Add mean state
       State_ xp(xx);
-      Log::debug() << "after copy xx:" << xx << std::endl;
-      Log::debug() << "after copy xp:" << xp << std::endl;
       xp += dx;
 
 //    Setup forecast outputs
@@ -103,7 +102,7 @@ template <typename MODEL> class GenEnsPertB : public Application {
 
 //    Run forecast
       model.forecast(xp, moderr, fclength, post);
-      Log::test() << "Member " << jm << " final state: " << xp.norm() << std::endl;
+      Log::test() << "Member " << jm << " final state: " << xp << std::endl;
     }
 
     return 0;

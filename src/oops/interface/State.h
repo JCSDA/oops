@@ -18,7 +18,6 @@
 #include "eckit/config/Configuration.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/Variables.h"
-#include "oops/generic/UnstructuredGrid.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/InterpolatorTraj.h"
@@ -47,7 +46,8 @@ class State : public util::Printable,
   static const std::string classname() {return "oops::State";}
 
 /// Constructor, destructor
-  State(const Geometry_ &, const eckit::Configuration &);
+  State(const Geometry_ &, const Variables &, const util::DateTime &);
+  State(const Geometry_ &, const Variables &, const eckit::Configuration &);
   State(const Geometry_ &, const State &);
   State(const State &);
   ~State();
@@ -67,16 +67,10 @@ class State : public util::Printable,
 /// I/O and diagnostics
   void read(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;
-  double norm() const;
+  double norm() const;  // Only for tests
   Geometry_ geometry() const;
 
-/// Convert to/from generic unstructured grid
-  void convert_to(UnstructuredGrid &) const;
-  void convert_from(const UnstructuredGrid &);
-
  protected:
-/// Protected methods are for Accumulator. Could we find a better design?
-  State(const Geometry_ &, const Variables &, const util::DateTime &);
   void zero();
   void accumul(const double &, const State &);
 
@@ -100,11 +94,12 @@ State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-State<MODEL>::State(const Geometry_ & resol, const eckit::Configuration & conf) : state_()
+State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
+                    const eckit::Configuration & conf) : state_()
 {
   Log::trace() << "State<MODEL>::State read starting" << std::endl;
   util::Timer timer(classname(), "State");
-  state_.reset(new State_(resol.geometry(), conf));
+  state_.reset(new State_(resol.geometry(), vars, conf));
   Log::trace() << "State<MODEL>::State read done" << std::endl;
 }
 
@@ -171,26 +166,6 @@ void State<MODEL>::getValues(const Locations_ & locs, const Variables & vars,
   util::Timer timer(classname(), "getValues");
   state_->getValues(locs.locations(), vars, gvals.geovals(), traj.interpolatortraj());
   Log::trace() << "State<MODEL>::getValues traj done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void State<MODEL>::convert_to(UnstructuredGrid & ug) const {
-  Log::trace() << "State<MODEL>::convert_to starting" << std::endl;
-  util::Timer timer(classname(), "convert_to");
-  state_->convert_to(ug);
-  Log::trace() << "State<MODEL>::convert_to done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void State<MODEL>::convert_from(const UnstructuredGrid & ug) {
-  Log::trace() << "State<MODEL>::convert_from starting" << std::endl;
-  util::Timer timer(classname(), "convert_from");
-  state_->convert_from(ug);
-  Log::trace() << "State<MODEL>::convert_from done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

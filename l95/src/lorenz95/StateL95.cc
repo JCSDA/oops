@@ -45,7 +45,8 @@ StateL95::StateL95(const Resolution & resol, const oops::Variables &,
   oops::Log::trace() << "StateL95::StateL95 created" << std::endl;
 }
 // -----------------------------------------------------------------------------
-StateL95::StateL95(const Resolution & resol, const eckit::Configuration & conf)
+StateL95::StateL95(const Resolution & resol, const oops::Variables &,
+                   const eckit::Configuration & conf)
   : fld_(resol), time_(conf.getString("date"))
 {
   oops::Log::trace() << "StateL95::StateL95 conf " << conf << std::endl;
@@ -99,16 +100,6 @@ StateL95 & StateL95::operator+=(const IncrementL95 & dx) {
   ASSERT(time_ == dx.validTime());
   fld_ += dx.getField();
   return *this;
-}
-// -----------------------------------------------------------------------------
-/// Convert to/from unstructured grid
-// -----------------------------------------------------------------------------
-void StateL95::convert_to(oops::UnstructuredGrid & ug) const {
-  fld_.convert_to(ug);
-}
-// -----------------------------------------------------------------------------
-void StateL95::convert_from(const oops::UnstructuredGrid & ug) {
-  fld_.convert_from(ug);
 }
 // -----------------------------------------------------------------------------
 /// Utilities
@@ -176,5 +167,16 @@ void StateL95::print(std::ostream & os) const {
   os << std::endl << fld_;
 }
 // -----------------------------------------------------------------------------
+/// For accumulator
+// -----------------------------------------------------------------------------
+void StateL95::zero() {
+  fld_.zero();
+}
+// -----------------------------------------------------------------------------
+void StateL95::accumul(const double & zz, const StateL95 & xx) {
+  fld_.axpy(zz, xx.fld_);
+}
+// -----------------------------------------------------------------------------
+
 
 }  // namespace lorenz95

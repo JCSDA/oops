@@ -12,7 +12,9 @@ module type_mpl
 
 use iso_fortran_env, only : output_unit
 use iso_c_binding
-use mpi
+#ifdef notdef_
+  use mpi
+#endif
 use netcdf
 !$ use omp_lib
 use tools_const, only: msvali,msvalr
@@ -20,6 +22,10 @@ use tools_kinds, only: kind_real
 use tools_missing, only: msi,isnotmsi
 
 implicit none
+
+#ifndef notdef_
+  INCLUDE 'mpif.h'
+#endif  
 
 integer,parameter :: lunit_min=10   !< Minimum unit number
 integer,parameter :: lunit_max=1000 !< Maximum unit number
@@ -55,9 +61,11 @@ contains
    procedure :: init_listing => mpl_init_listing
    procedure :: abort => mpl_abort
    procedure :: warning => mpl_warning
+   procedure :: barrier => mpl_barrier
    procedure :: prog_init => mpl_prog_init
    procedure :: prog_print => mpl_prog_print
    procedure :: ncerr => mpl_ncerr
+   procedure :: update_tag => mpl_update_tag
    procedure :: mpl_bcast_integer
    procedure :: mpl_bcast_integer_array_1d
    procedure :: mpl_bcast_integer_array_2d
@@ -80,14 +88,16 @@ contains
                      & mpl_bcast_logical_array_2d,mpl_bcast_logical_array_3d,mpl_bcast_string,mpl_bcast_string_array_1d
    procedure :: mpl_recv_integer
    procedure :: mpl_recv_integer_array_1d
+   procedure :: mpl_recv_real
    procedure :: mpl_recv_real_array_1d
    procedure :: mpl_recv_logical_array_1d
-   generic :: recv => mpl_recv_integer,mpl_recv_integer_array_1d,mpl_recv_real_array_1d,mpl_recv_logical_array_1d
+   generic :: recv => mpl_recv_integer,mpl_recv_integer_array_1d,mpl_recv_real,mpl_recv_real_array_1d,mpl_recv_logical_array_1d
    procedure :: mpl_send_integer
    procedure :: mpl_send_integer_array_1d
+   procedure :: mpl_send_real
    procedure :: mpl_send_real_array_1d
    procedure :: mpl_send_logical_array_1d
-   generic :: send => mpl_send_integer,mpl_send_integer_array_1d,mpl_send_real_array_1d,mpl_send_logical_array_1d
+   generic :: send => mpl_send_integer,mpl_send_integer_array_1d,mpl_send_real,mpl_send_real_array_1d,mpl_send_logical_array_1d
    procedure :: mpl_gatherv_real
    generic :: gatherv => mpl_gatherv_real
    procedure :: mpl_scatterv_real
@@ -222,9 +232,10 @@ else
 end if
 
 ! Time-based tag
-if (mpl%main) call system_clock(count=mpl%tag)
-mpl%tag = mod(mpl%tag,10000)
-mpl%tag = max(mpl%tag,1)
+if (mpl%main) then
+   call system_clock(count=mpl%tag)
+   call mpl%update_tag(0)
+end if
 call mpl%bcast(mpl%tag)
 
 ! Set max number of OpenMP threads
@@ -251,7 +262,7 @@ logical,intent(in) :: logpres          !< Vertical unit flag
 integer,intent(in),optional :: lunit   !< Main listing unit
 
 ! Local variables
-integer :: iproc,info
+integer :: iproc
 character(len=1024) :: filename
 
 ! Setup display colors
@@ -302,10 +313,7 @@ do iproc=1,mpl%nproc
    end if
 
    ! Wait
-   call mpi_barrier(mpl%mpi_comm,info)
-
-   ! Check
-   call mpl%check(info)
+   call mpl%barrier
 end do
 
 end subroutine mpl_init_listing
@@ -337,6 +345,28 @@ call flush(output_unit)
 call mpi_abort(mpl%mpi_comm,1,info)
 
 end subroutine mpl_abort
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_barrier
+!> Purpose: MPI barrier
+!----------------------------------------------------------------------
+subroutine mpl_barrier(mpl)
+
+implicit none
+
+! Passed variable
+class(mpl_type) :: mpl !< MPI data
+
+! Local variables
+integer :: info
+
+! Wait
+call mpi_barrier(mpl%mpi_comm,info)
+
+! Check
+call mpl%check(info)
+
+end subroutine mpl_barrier
 
 !----------------------------------------------------------------------
 ! Subroutine: mpl_warning
@@ -424,6 +454,27 @@ integer,intent(in) :: info          !< Info index
 if (info/=nf90_noerr) call mpl%abort('in '//trim(subr)//': '//trim(nf90_strerror(info)))
 
 end subroutine mpl_ncerr
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_update_tag
+!> Purpose: update MPL tag
+!----------------------------------------------------------------------
+subroutine mpl_update_tag(mpl,add)
+
+implicit none
+
+! Passed variables
+class(mpl_type) :: mpl    !< MPI data
+integer,intent(in) :: add !< Tag update incrememnt
+
+! Update tag
+mpl%tag = mpl%tag+add
+
+! Apply bounds (between 1 and 10000)
+mpl%tag = mod(mpl%tag,10000)
+mpl%tag = max(mpl%tag,1)
+
+end subroutine mpl_update_tag
 
 !----------------------------------------------------------------------
 ! Subroutine: mpl_bcast_integer
@@ -971,6 +1022,32 @@ call mpl%check(info)
 end subroutine mpl_recv_integer_array_1d
 
 !----------------------------------------------------------------------
+! Subroutine: mpl_recv_real
+!> Purpose: receive real
+!----------------------------------------------------------------------
+subroutine mpl_recv_real(mpl,var,src,tag)
+
+implicit none
+
+! Passed variables
+class(mpl_type) :: mpl             !< MPI data
+real(kind_real),intent(out) :: var !< Real
+integer,intent(in) :: src          !< Source task
+integer,intent(in) :: tag          !< Tag
+
+! Local variable
+integer :: info
+integer,dimension(mpi_status_size) :: status
+
+! Receive
+call mpi_recv(var,1,mpl%rtype,src-1,tag,mpl%mpi_comm,status,info)
+
+! Check
+call mpl%check(info)
+
+end subroutine mpl_recv_real
+
+!----------------------------------------------------------------------
 ! Subroutine: mpl_recv_real_array_1d
 !> Purpose: receive 1d real array
 !----------------------------------------------------------------------
@@ -1074,6 +1151,31 @@ call mpi_send(var,n,mpi_integer,dst-1,tag,mpl%mpi_comm,info)
 call mpl%check(info)
 
 end subroutine mpl_send_integer_array_1d
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_send_real
+!> Purpose: send real
+!----------------------------------------------------------------------
+subroutine mpl_send_real(mpl,var,dst,tag)
+
+implicit none
+
+! Passed variables
+class(mpl_type) :: mpl            !< MPI data
+real(kind_real),intent(in) :: var !< Real
+integer,intent(in) :: dst         !< Destination task
+integer,intent(in) :: tag         !< Tag
+
+! Local variable
+integer :: info
+
+! Send
+call mpi_send(var,1,mpl%rtype,dst-1,tag,mpl%mpi_comm,info)
+
+! Check
+call mpl%check(info)
+
+end subroutine mpl_send_real
 
 !----------------------------------------------------------------------
 ! Subroutine: mpl_send_integer_array_1d
@@ -1811,7 +1913,7 @@ else
    ! Send data to ioproc
    call mpl%send(n_loc,loc_to_glb,mpl%ioproc,mpl%tag+1)
 end if
-mpl%tag = mpl%tag+2
+call mpl%update_tag(2)
 
 ! Broadcast
 call mpl%bcast(glb_to_loc)
@@ -1869,7 +1971,7 @@ else
    ! Receive data from ioproc
    call mpl%recv(n_loc,loc,mpl%ioproc,mpl%tag)
 end if
-mpl%tag = mpl%tag+1
+call mpl%update_tag(1)
 
 end subroutine mpl_glb_to_loc_1d
 
@@ -1925,7 +2027,7 @@ else
    ! Send data to ioproc
    call mpl%send(n_loc,loc,mpl%ioproc,mpl%tag)
 end if
-mpl%tag = mpl%tag+1
+call mpl%update_tag(1)
 
 ! Broadcast
 if (bcast) call mpl%bcast(glb)

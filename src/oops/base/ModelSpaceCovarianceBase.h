@@ -13,9 +13,12 @@
 
 #include <map>
 #include <string>
+#include <vector>
 #include <boost/noncopyable.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
 
-#include "eckit/config/Configuration.h"
+#include "eckit/config/LocalConfiguration.h"
+#include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -39,14 +42,30 @@ class ModelSpaceCovarianceBase {
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
   typedef Increment<MODEL>           Increment_;
+  typedef LinearVariableChangeBase<MODEL>  LinearVariableChangeBase_;
+  typedef typename boost::ptr_vector<LinearVariableChangeBase_> ChvarVec_;
+  typedef typename ChvarVec_::iterator iter_;
+  typedef typename ChvarVec_::const_iterator icst_;
+  typedef typename ChvarVec_::const_reverse_iterator ircst_;
 
  public:
+  ModelSpaceCovarianceBase(const State_ &, const State_ &,
+                           const Geometry_ &, const eckit::Configuration &);
   virtual ~ModelSpaceCovarianceBase() {}
 
-  virtual void linearize(const State_ &, const Geometry_ &) = 0;
-  virtual void multiply(const Increment_ &, Increment_ &) const = 0;
-  virtual void inverseMultiply(const Increment_ &, Increment_ &) const = 0;
+//  const LinearVariableChangeBase_ & getK(const unsigned & ii) const {return *chvars_[ii];}
+//  bool hasK() const { return (chvars_.size() == 0) ? false : true; }
+
+  void multiply(const Increment_ &, Increment_ &) const;
+  void inverseMultiply(const Increment_ &, Increment_ &) const;
+
   virtual void randomize(Increment_ &) const = 0;
+
+ private:
+  virtual void doMultiply(const Increment_ &, Increment_ &) const = 0;
+  virtual void doInverseMultiply(const Increment_ &, Increment_ &) const = 0;
+
+  ChvarVec_ chvars_;
 };
 
 // -----------------------------------------------------------------------------
@@ -58,14 +77,16 @@ class CovarianceFactory {
   typedef State<MODEL>               State_;
 
  public:
-  static ModelSpaceCovarianceBase<MODEL> * create(const eckit::Configuration &, const Geometry_ &,
-                                                  const Variables &, const State_ &);
+  static ModelSpaceCovarianceBase<MODEL> * create(const eckit::Configuration &,
+                                                  const Geometry_ &, const Variables &,
+                                                  const State_ &, const State_ &);
   virtual ~CovarianceFactory() { makers_.clear(); }
  protected:
   explicit CovarianceFactory(const std::string &);
  private:
-  virtual ModelSpaceCovarianceBase<MODEL> * make(const eckit::Configuration &, const Geometry_ &,
-                                                 const Variables &, const State_ &) = 0;
+  virtual ModelSpaceCovarianceBase<MODEL> * make(const eckit::Configuration &,
+                                                 const Geometry_ &, const Variables &,
+                                                 const State_ &, const State_ &) = 0;
   static std::map < std::string, CovarianceFactory<MODEL> * > makers_;
 };
 
@@ -77,10 +98,9 @@ class CovarMaker : public CovarianceFactory<MODEL> {
   typedef State<MODEL>               State_;
 
   virtual ModelSpaceCovarianceBase<MODEL> * make(const eckit::Configuration & conf,
-                                                 const Geometry_ & resol,
-                                                 const Variables & vars,
-                                                 const State_ & xb) {
-    return new COVAR(resol, vars, conf, xb);
+                                                 const Geometry_ & resol, const Variables & vars,
+                                                 const State_ & xb, const State_ & fg) {
+    return new COVAR(resol, vars, conf, xb, fg);
   }
  public:
   explicit CovarMaker(const std::string & name) : CovarianceFactory<MODEL>(name) {}
@@ -109,7 +129,7 @@ ModelSpaceCovarianceBase<MODEL>* CovarianceFactory<MODEL>::create(
                                                          const eckit::Configuration & conf,
                                                          const Geometry_ & resol,
                                                          const Variables & vars,
-                                                         const State_ & xb) {
+                                                         const State_ & xb, const State_ & fg) {
   const std::string id = conf.getString("covariance");
   Log::trace() << "ModelSpaceCovarianceBase type = " << id << std::endl;
   typename std::map<std::string, CovarianceFactory<MODEL>*>::iterator
@@ -123,7 +143,78 @@ ModelSpaceCovarianceBase<MODEL>* CovarianceFactory<MODEL>::create(
     }
     ABORT("Element does not exist in CovarianceFactory.");
   }
-  return (*j).second->make(conf, resol, vars, xb);
+  return (*j).second->make(conf, resol, vars, xb, fg);
+}
+
+// =============================================================================
+
+template <typename MODEL>
+ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(const State_ & bg, const State_ & fg,
+                                                          const Geometry_ & resol,
+                                                          const eckit::Configuration & conf) {
+  if (conf.has("variable_changes")) {
+    std::vector<eckit::LocalConfiguration> chvarconfs;
+    conf.get("variable_changes", chvarconfs);
+    for (const auto & config : chvarconfs) {
+      chvars_.push_back(LinearVariableChangeFactory<MODEL>::create(bg, fg, resol, config));
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+void ModelSpaceCovarianceBase<MODEL>::multiply(const Increment_ & dxi,
+                                               Increment_ & dxo) const {
+  if (chvars_.size()) {
+    // K_1^T K_2^T .. K_N^T
+    boost::scoped_ptr<Increment_> dxchvarin(new Increment_(dxi));
+    for (ircst_ it = chvars_.rbegin(); it != chvars_.rend(); ++it) {
+      Increment_ dxchvarout = it->multiplyAD(*dxchvarin);
+      dxchvarin.reset(new Increment_(dxchvarout));
+    }
+    Increment_ dxchvarout(*dxchvarin, false);
+
+    this->doMultiply(*dxchvarin, dxchvarout);
+
+    // K_N K_N-1 ... K_1
+    dxchvarin.reset(new Increment_(dxchvarout));
+    for (icst_ it = chvars_.begin(); it != chvars_.end(); ++it) {
+      Increment_ dxchvarout = it->multiply(*dxchvarin);
+      dxchvarin.reset(new Increment_(dxchvarout));
+    }
+    dxo = *dxchvarin;
+  } else {
+    this->doMultiply(dxi, dxo);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+void ModelSpaceCovarianceBase<MODEL>::inverseMultiply(const Increment_ & dxi,
+                                                      Increment_ & dxo) const {
+  if (chvars_.size()) {
+    // K_1^{-1} K_2^{-1} .. K_N^{-1}
+    boost::scoped_ptr<Increment_> dxchvarin(new Increment_(dxi));
+    for (ircst_ it = chvars_.rbegin(); it != chvars_.rend(); ++it) {
+      Increment_ dxchvarout = it->multiplyInverse(*dxchvarin);
+      dxchvarin.reset(new Increment_(dxchvarout));
+    }
+    Increment_ dxchvarout(*dxchvarin, false);
+
+    this->doInverseMultiply(*dxchvarin, dxchvarout);
+
+    // K_N^T^{-1} K_N-1^T^{-1} ... K_1^T^{-1}
+    dxchvarin.reset(new Increment_(dxchvarout));
+    for (icst_ it = chvars_.begin(); it != chvars_.end(); ++it) {
+      Increment_ dxchvarout = it->multiplyInverseAD(*dxchvarin);
+      dxchvarin.reset(new Increment_(dxchvarout));
+    }
+    dxo = *dxchvarin;
+  } else {
+    this->doInverseMultiply(dxi, dxo);
+  }
 }
 
 // -----------------------------------------------------------------------------

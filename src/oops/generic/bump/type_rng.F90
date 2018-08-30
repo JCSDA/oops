@@ -11,7 +11,7 @@
 module type_rng
 
 use iso_fortran_env, only: int64
-use tools_func, only: sup,sphere_dist
+use tools_func, only: inf,sup,sphere_dist
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,isnotmsi
 use type_kdtree, only: kdtree_type
@@ -443,14 +443,15 @@ integer,intent(in) :: ns             !< Number of samplings points
 integer,intent(out) :: ihor(ns)      !< Horizontal sampling index
 
 ! Local variables
-integer :: is,js,i,irep,irmax,itry,ir,nn_index(2),ismin(1)
-real(kind_real) :: distmax,d,dist(ns),nn_dist(2)
-logical :: lmask(n),smask(n)
+integer :: is,js,i,irep,irmax,itry,ir,nn_index(2),ismin,progint
+real(kind_real) :: distmax,distmin,d,dist(ns),nn_dist(2)
+logical :: lmask(n),smask(n),done(ns+nrep)
 type(kdtree_type) :: kdtree
 
 if (ns>count(mask)) then
    call mpl%abort('ns greater that mask size in initialize_sampling')
 elseif (ns==count(mask)) then
+   write(mpl%unit,'(a)') 'all points are used'
    is = 0
    do i=1,n
       if (mask(i)) then
@@ -466,6 +467,7 @@ else
    smask = .false.
    is = 1
    irep = 1
+   call mpl%prog_init(progint,done)
 
    ! Define sampling
    do while (is<=ns)
@@ -544,21 +546,33 @@ else
             call kdtree%dealloc
 
             ! Remove worst point
-            ismin = minloc(dist)
-            smask(ihor(ismin(1))) = .false.
-            call msi(ihor(ismin(1)))
+            distmin = huge(1.0)
+            do js=1,ns
+               if (inf(dist(js),distmin)) then
+                  ismin = js
+                  distmin = dist(js)
+               end if
+            end do
+            smask(ihor(ismin)) = .false.
+            call msi(ihor(ismin))
 
             ! Shift sampling
-            if (ismin(1)<ns) ihor(ismin(1):ns-1) = ihor(ismin(1)+1:ns)
+            if (ismin<ns) ihor(ismin:ns-1) = ihor(ismin+1:ns)
 
             ! Reset is to ns and try again!
             is = ns
-         end if
 
-         ! Update irep
-         irep = irep+1
+            ! Update irep
+            irep = irep+1
+         end if
       end if
+
+      ! Update
+      done(is+irep-2) = .true.
+      call mpl%prog_print(progint,done)
    end do
+   write(mpl%unit,'(a)') '100%'
+   call flush(mpl%unit)
 end if
 
 end subroutine initialize_sampling

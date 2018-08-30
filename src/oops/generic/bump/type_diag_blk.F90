@@ -37,7 +37,6 @@ type diag_blk_type
    integer :: ib                                  !< Block index
    character(len=1024) :: name                    !< Name
    logical :: double_fit                          !< Double fit flag
-   integer :: npack                               !< Pack buffer size
 
    real(kind_real),allocatable :: raw(:,:,:)      !< Raw diagnostic
    real(kind_real),allocatable :: raw_coef_ens(:) !< Raw ensemble coefficient
@@ -68,7 +67,7 @@ contains
 ! Subroutine: diag_blk_alloc
 !> Purpose: diagnostic block data allocation
 !----------------------------------------------------------------------
-subroutine diag_blk_alloc(diag_blk,nam,geom,bpar,ic2a,ib,prefix,double_fit)
+subroutine diag_blk_alloc(diag_blk,nam,geom,bpar,hdata,ic2a,ib,prefix,double_fit)
 
 implicit none
 
@@ -77,28 +76,34 @@ class(diag_blk_type),intent(inout) :: diag_blk !< Diagnostic block
 type(nam_type),intent(in) :: nam               !< Namelist
 type(geom_type),intent(in) :: geom             !< Geometry
 type(bpar_type),intent(in) :: bpar             !< Block parameters
+type(hdata_type),intent(in) :: hdata           !< HDIAG data
 integer,intent(in) :: ic2a                     !< Local index
 integer,intent(in) :: ib                       !< Block index
 character(len=*),intent(in) :: prefix          !< Block prefix
 logical,intent(in) :: double_fit               !< Double fit
+
+! Local variables
+integer :: ic0,ic2,il0,jl0,jl0r
+real(kind_real) :: vunit(geom%nl0)
 
 ! Set attributes
 diag_blk%ic2a = ic2a
 diag_blk%ib = ib
 diag_blk%name = trim(prefix)//'_'//trim(bpar%blockname(ib))
 diag_blk%double_fit = double_fit
-diag_blk%npack = nam%nc3*geom%nl0*bpar%nl0r(ib)+2*geom%nl0
 
 ! Allocation
-allocate(diag_blk%raw(nam%nc3,bpar%nl0r(ib),geom%nl0))
 allocate(diag_blk%raw_coef_ens(geom%nl0))
+if ((ic2a==0).or.nam%local_diag) allocate(diag_blk%raw(nam%nc3,bpar%nl0r(ib),geom%nl0))
 
 ! Initialization
-call msr(diag_blk%raw)
 call msr(diag_blk%raw_coef_ens)
-call msr(diag_blk%raw_coef_sta)
+if ((ic2a==0).or.nam%local_diag) then
+   call msr(diag_blk%raw)
+   call msr(diag_blk%raw_coef_sta)
+end if
 
-if (trim(nam%minim_algo)/='none') then
+if (((ic2a==0).or.nam%local_diag).and.(trim(nam%minim_algo)/='none')) then
    ! Allocation
    allocate(diag_blk%fit(nam%nc3,bpar%nl0r(ib),geom%nl0))
    allocate(diag_blk%fit_rh(geom%nl0))
@@ -118,6 +123,23 @@ if (trim(nam%minim_algo)/='none') then
       call msr(diag_blk%fit_rv_coef)
    end if
    call msr(diag_blk%distvr)
+
+   ! Vertical unit
+   if (ic2a==0) then
+      vunit = geom%vunitavg
+   else
+      ic2 = hdata%c2a_to_c2(ic2a)
+      ic0 = hdata%c2_to_c0(ic2)
+      vunit = geom%vunit(ic0,:)
+   end if
+
+   ! Reduced vertical distance
+   do il0=1,geom%nl0
+      do jl0r=1,nam%nl0r
+         jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
+         diag_blk%distvr(jl0r,il0) = abs(vunit(il0)-vunit(jl0))
+      end do
+   end do
 end if
 
 end subroutine diag_blk_alloc
@@ -168,7 +190,7 @@ integer :: fit_id,fit_rh_id,fit_rv_id,fit_rv_rfac_id,fit_rv_coef_id
 character(len=1024) :: subr = 'diag_blk_write'
 
 ! Associate
-associate(ib=>diag_blk%ib)
+associate(ib=>diag_blk%ib,ic2a=>diag_blk%ic2a)
 
 ! Check if the file exists
 info = nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_noclobber,nf90_64bit_offset),ncid)
@@ -200,30 +222,32 @@ else
 end if
 
 ! Define variables
-call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw',ncfloat,(/nc3_id,nl0r_id,nl0_id/),raw_id))
-call mpl%ncerr(subr,nf90_put_att(ncid,raw_id,'_FillValue',msvalr))
 call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw_coef_ens',ncfloat,(/nl0_id/),raw_coef_ens_id))
 call mpl%ncerr(subr,nf90_put_att(ncid,raw_coef_ens_id,'_FillValue',msvalr))
-if (isnotmsr(diag_blk%raw_coef_sta)) then
-   call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw_coef_sta',ncfloat,(/one_id/),raw_coef_sta_id))
-   call mpl%ncerr(subr,nf90_put_att(ncid,raw_coef_sta_id,'_FillValue',msvalr))
-end if
-if ((trim(nam%minim_algo)/='none').and.(isanynotmsr(diag_blk%fit))) then
-   call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit',ncfloat,(/nc3_id,nl0r_id,nl0_id/),fit_id))
-   call mpl%ncerr(subr,nf90_put_att(ncid,fit_id,'_FillValue',msvalr))
-   call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rh',ncfloat,(/nl0_id/),fit_rh_id))
-   call mpl%ncerr(subr,nf90_put_att(ncid,fit_rh_id,'_FillValue',msvalr))
-   call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rv',ncfloat,(/nl0_id/),fit_rv_id))
-   call mpl%ncerr(subr,nf90_put_att(ncid,fit_rv_id,'_FillValue',msvalr))
-   if (diag_blk%double_fit) then
-      call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rv_rfac',ncfloat,(/nl0_id/),fit_rv_rfac_id))
-      call mpl%ncerr(subr,nf90_put_att(ncid,fit_rv_rfac_id,'_FillValue',msvalr))
-      call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rv_coef',ncfloat,(/nl0_id/),fit_rv_coef_id))
-      call mpl%ncerr(subr,nf90_put_att(ncid,fit_rv_coef_id,'_FillValue',msvalr))
+if ((ic2a==0).or.nam%local_diag) then
+   call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw',ncfloat,(/nc3_id,nl0r_id,nl0_id/),raw_id))
+   call mpl%ncerr(subr,nf90_put_att(ncid,raw_id,'_FillValue',msvalr))
+   if (isnotmsr(diag_blk%raw_coef_sta)) then
+      call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw_coef_sta',ncfloat,(/one_id/),raw_coef_sta_id))
+      call mpl%ncerr(subr,nf90_put_att(ncid,raw_coef_sta_id,'_FillValue',msvalr))
    end if
+   if ((trim(nam%minim_algo)/='none').and.(isanynotmsr(diag_blk%fit))) then
+      call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit',ncfloat,(/nc3_id,nl0r_id,nl0_id/),fit_id))
+      call mpl%ncerr(subr,nf90_put_att(ncid,fit_id,'_FillValue',msvalr))
+      call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rh',ncfloat,(/nl0_id/),fit_rh_id))
+      call mpl%ncerr(subr,nf90_put_att(ncid,fit_rh_id,'_FillValue',msvalr))
+      call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rv',ncfloat,(/nl0_id/),fit_rv_id))
+      call mpl%ncerr(subr,nf90_put_att(ncid,fit_rv_id,'_FillValue',msvalr))
+      if (diag_blk%double_fit) then
+         call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rv_rfac',ncfloat,(/nl0_id/),fit_rv_rfac_id))
+         call mpl%ncerr(subr,nf90_put_att(ncid,fit_rv_rfac_id,'_FillValue',msvalr))
+         call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rv_coef',ncfloat,(/nl0_id/),fit_rv_coef_id))
+         call mpl%ncerr(subr,nf90_put_att(ncid,fit_rv_coef_id,'_FillValue',msvalr))
+      end if
+   end if
+   call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_l0rl0_to_l0',nf90_int,(/nl0r_id,nl0_id/),l0rl0_to_l0_id))
+   call mpl%ncerr(subr,nf90_put_att(ncid,l0rl0_to_l0_id,'_FillValue',msvali))
 end if
-call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_l0rl0_to_l0',nf90_int,(/nl0r_id,nl0_id/),l0rl0_to_l0_id))
-call mpl%ncerr(subr,nf90_put_att(ncid,l0rl0_to_l0_id,'_FillValue',msvali))
 
 ! End definition mode
 call mpl%ncerr(subr,nf90_enddef(ncid))
@@ -233,19 +257,21 @@ if (info==nf90_noerr) then
    call mpl%ncerr(subr,nf90_put_var(ncid,disth_id,geom%disth(1:nam%nc3)))
    call mpl%ncerr(subr,nf90_put_var(ncid,vunit_id,sum(geom%vunit,mask=geom%mask,dim=1)/real(count(geom%mask,dim=1),kind_real)))
 end if
-call mpl%ncerr(subr,nf90_put_var(ncid,raw_id,diag_blk%raw))
 call mpl%ncerr(subr,nf90_put_var(ncid,raw_coef_ens_id,diag_blk%raw_coef_ens))
-if (isnotmsr(diag_blk%raw_coef_sta)) call mpl%ncerr(subr,nf90_put_var(ncid,raw_coef_sta_id,diag_blk%raw_coef_sta))
-if ((trim(nam%minim_algo)/='none').and.(isanynotmsr(diag_blk%fit))) then
-   call mpl%ncerr(subr,nf90_put_var(ncid,fit_id,diag_blk%fit))
-   call mpl%ncerr(subr,nf90_put_var(ncid,fit_rh_id,diag_blk%fit_rh))
-   call mpl%ncerr(subr,nf90_put_var(ncid,fit_rv_id,diag_blk%fit_rv))
-   if (diag_blk%double_fit) then
-      call mpl%ncerr(subr,nf90_put_var(ncid,fit_rv_rfac_id,diag_blk%fit_rv_rfac))
-      call mpl%ncerr(subr,nf90_put_var(ncid,fit_rv_coef_id,diag_blk%fit_rv_coef))
+if ((ic2a==0).or.nam%local_diag) then
+   call mpl%ncerr(subr,nf90_put_var(ncid,raw_id,diag_blk%raw))
+   if (isnotmsr(diag_blk%raw_coef_sta)) call mpl%ncerr(subr,nf90_put_var(ncid,raw_coef_sta_id,diag_blk%raw_coef_sta))
+   if ((trim(nam%minim_algo)/='none').and.(isanynotmsr(diag_blk%fit))) then
+      call mpl%ncerr(subr,nf90_put_var(ncid,fit_id,diag_blk%fit))
+      call mpl%ncerr(subr,nf90_put_var(ncid,fit_rh_id,diag_blk%fit_rh))
+      call mpl%ncerr(subr,nf90_put_var(ncid,fit_rv_id,diag_blk%fit_rv))
+      if (diag_blk%double_fit) then
+         call mpl%ncerr(subr,nf90_put_var(ncid,fit_rv_rfac_id,diag_blk%fit_rv_rfac))
+         call mpl%ncerr(subr,nf90_put_var(ncid,fit_rv_coef_id,diag_blk%fit_rv_coef))
+      end if
    end if
+   call mpl%ncerr(subr,nf90_put_var(ncid,l0rl0_to_l0_id,bpar%l0rl0b_to_l0(:,:,ib)))
 end if
-call mpl%ncerr(subr,nf90_put_var(ncid,l0rl0_to_l0_id,bpar%l0rl0b_to_l0(:,:,ib)))
 
 ! Close file
 call mpl%ncerr(subr,nf90_close(ncid))
@@ -340,15 +366,6 @@ else
    ic0 = hdata%c2_to_c0(ic2)
    vunit = geom%vunit(ic0,:)
 end if
-
-! Reduced vertical distance
-call msr(diag_blk%distvr)
-do il0=1,geom%nl0
-   do jl0r=1,nam%nl0r
-      jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
-      diag_blk%distvr(jl0r,il0) = abs(vunit(il0)-vunit(jl0))
-   end do
-end do
 
 ! Fast fit
 do il0=1,geom%nl0
@@ -599,7 +616,7 @@ type(avg_blk_type),intent(in) :: avg_sta_blk   !< Static averaged statistics blo
 
 ! Local variables
 integer :: il0,jl0r,jc3
-real(kind_real) :: num,den
+real(kind_real) :: wgt,num,den
 
 ! Associate
 associate(ib=>diag_blk%ib)
@@ -612,31 +629,36 @@ do il0=1,geom%nl0
       do jc3=1,bpar%nc3(ib)
          if (isnotmsr(avg_blk%m11asysq(jc3,jl0r,il0)).and.isnotmsr(avg_blk%m11sq(jc3,jl0r,il0)) &
        & .and.isnotmsr(avg_sta_blk%m11sta(jc3,jl0r,il0)).and.isnotmsr(avg_sta_blk%stasq(jc3,jl0r,il0))) then
-            num = num+geom%disth(jc3)*(1.0-avg_blk%m11asysq(jc3,jl0r,il0)/avg_blk%m11sq(jc3,jl0r,il0)) &
+            wgt = 1.0 !geom%disth(jc3)*diag_blk%distvr(jl0r,il0) TODO: define weight
+            num = num+wgt*(1.0-avg_blk%m11asysq(jc3,jl0r,il0)/avg_blk%m11sq(jc3,jl0r,il0)) &
                 & *avg_sta_blk%m11sta(jc3,jl0r,il0)
-            den = den+geom%disth(jc3)*(avg_sta_blk%stasq(jc3,jl0r,il0)-avg_sta_blk%m11sta(jc3,jl0r,il0)**2 &
+            den = den+wgt*(avg_sta_blk%stasq(jc3,jl0r,il0)-avg_sta_blk%m11sta(jc3,jl0r,il0)**2 &
                 & /avg_blk%m11sq(jc3,jl0r,il0))
          end if
       end do
    end do
 end do
-if ((num>0.0).and.(den>0.0)) diag_blk%raw_coef_sta = num/den
-do il0=1,geom%nl0
-   do jl0r=1,bpar%nl0r(ib)
-      do jc3=1,bpar%nc3(ib)
-         if (isnotmsr(avg_blk%m11asysq(jc3,jl0r,il0)).and.isnotmsr(diag_blk%raw_coef_sta) &
-       & .and.isnotmsr(avg_sta_blk%m11sta(jc3,jl0r,il0)).and.isnotmsr(avg_sta_blk%stasq(jc3,jl0r,il0)) &
-       & .and.isnotmsr(avg_blk%m11sq(jc3,jl0r,il0))) then
-            ! Compute localization
-            diag_blk%raw(jc3,jl0r,il0) = (avg_blk%m11asysq(jc3,jl0r,il0)-diag_blk%raw_coef_sta &
-                                    & *avg_sta_blk%m11sta(jc3,jl0r,il0))/avg_blk%m11sq(jc3,jl0r,il0)
+if ((num>0.0).and.(den>0.0)) then
+   diag_blk%raw_coef_sta = num/den
+   do il0=1,geom%nl0
+      do jl0r=1,bpar%nl0r(ib)
+         do jc3=1,bpar%nc3(ib)
+            if (isnotmsr(avg_blk%m11asysq(jc3,jl0r,il0)).and.isnotmsr(diag_blk%raw_coef_sta) &
+          & .and.isnotmsr(avg_sta_blk%m11sta(jc3,jl0r,il0)).and.isnotmsr(avg_blk%m11sq(jc3,jl0r,il0))) then
+               ! Compute localization
+               diag_blk%raw(jc3,jl0r,il0) = (avg_blk%m11asysq(jc3,jl0r,il0)-diag_blk%raw_coef_sta &
+                                          & *avg_sta_blk%m11sta(jc3,jl0r,il0))/avg_blk%m11sq(jc3,jl0r,il0)
 
-            ! Lower bound
-            if (diag_blk%raw(jc3,jl0r,il0)<0.0) call msr(diag_blk%raw(jc3,jl0r,il0))
-         end if
+               ! Lower bound
+               if (diag_blk%raw(jc3,jl0r,il0)<0.0) call msr(diag_blk%raw(jc3,jl0r,il0))
+            end if
+         end do
       end do
    end do
-end do
+else
+   call msr(diag_blk%raw_coef_sta)
+   call msr(diag_blk%raw)
+end if
 
 ! End associate
 end associate

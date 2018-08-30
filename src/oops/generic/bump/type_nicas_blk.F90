@@ -34,7 +34,7 @@ use type_rng, only: rng_type
 implicit none
 
 integer,parameter :: nc1max = 15000                       !< Maximum size of the Sc1 subset
-logical,parameter :: write_grids = .true.                 !< Write Sc1 and Sc2 subsets lon/lat
+logical,parameter :: write_grids = .false.                !< Write Sc1 and Sc2 subsets lon/lat
 real(kind_real),parameter :: sqrt_r = 0.721_kind_real     !< Square-root factor (empirical)
 real(kind_real),parameter :: sqrt_r_dble = 0.86_kind_real !< Square-root factor (empirical)
 real(kind_real),parameter :: sqrt_rfac = 0.9_kind_real    !< Square-root factor (empirical)
@@ -322,7 +322,7 @@ end subroutine nicas_blk_dealloc
 ! Subroutine: nicas_blk_compute_parameters
 !> Purpose: compute NICAS parameters
 !----------------------------------------------------------------------
-subroutine nicas_blk_compute_parameters(nicas_blk,mpl,rng,nam,geom,bpar,cmat_blk)
+subroutine nicas_blk_compute_parameters(nicas_blk,mpl,rng,nam,geom,cmat_blk)
 
 implicit none
 
@@ -332,7 +332,6 @@ type(mpl_type),intent(inout) :: mpl              !< MPI data
 type(rng_type),intent(inout) :: rng              !< Random number generator
 type(nam_type),intent(in) :: nam                 !< Namelist
 type(geom_type),intent(in) :: geom               !< Geometry
-type(bpar_type),intent(in) :: bpar               !< Block parameters
 type(cmat_blk_type),intent(in) :: cmat_blk       !< C matrix data block
 
 ! Local variables
@@ -366,7 +365,7 @@ call nicas_blk%compute_mpi_ab(mpl,geom)
 ! Compute convolution data
 write(mpl%unit,'(a7,a)') '','Compute convolution data'
 call flush(mpl%unit)
-call nicas_blk%compute_convol(mpl,rng,nam,geom,bpar,cmat_blk)
+call nicas_blk%compute_convol(mpl,rng,nam,geom,cmat_blk)
 
 ! Compute MPI distribution, halo C
 write(mpl%unit,'(a7,a)') '','Compute MPI distribution, halo C'
@@ -426,7 +425,7 @@ type(cmat_blk_type),intent(in) :: cmat_blk       !< C matrix data block
 ! Local variables
 integer :: il0,il0_prev,il1,ic0,ic1,ic2,is,ic0a
 integer :: ncid,nc1_id,nl1_id,lon_c1_id,lat_c1_id,mask_c2_id
-integer,allocatable :: c1_to_proc(:),c2_to_c1(:),s_to_proc(:)
+integer,allocatable :: c2_to_c1(:)
 real(kind_real) :: rhs_avg(geom%nl0),rvs_avg(geom%nl0),rhs_minavg,distnorm(geom%nc0a),distnormmin,rv
 real(kind_real),allocatable :: rhs_min(:),rhs_min_glb(:),rhs_glb(:),rhs_c1(:)
 real(kind_real),allocatable :: lon_c1(:),lat_c1(:),mask_c2_real(:,:)
@@ -491,14 +490,19 @@ if (nicas_blk%nc1<3) call mpl%abort('nicas_blk%nc1 lower than 3')
 ! Allocation
 allocate(nicas_blk%c1_to_c0(nicas_blk%nc1))
 
-! Compute subset
-write(mpl%unit,'(a7,a)') '','Compute horizontal subset C1'
-call flush(mpl%unit)
+! Communication
 call mpl%loc_to_glb(geom%nc0a,rhs_min,geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,.false.,rhs_min_glb)
+
+! Compute subset
 if (mpl%main) then
-   ! Initialize sampling
+   write(mpl%unit,'(a7,a)',advance='no') '','Compute horizontal subset C1: '
+   call flush(mpl%unit)
+
    call rng%initialize_sampling(mpl,geom%nc0,geom%lon,geom%lat,mask_c0,rhs_min_glb,nam%ntry,nam%nrep, &
  & nicas_blk%nc1,nicas_blk%c1_to_c0)
+else
+   write(mpl%unit,'(a7,a)') '','Compute horizontal subset C1'
+   call flush(mpl%unit)
 end if
 call mpl%bcast(nicas_blk%c1_to_c0)
 nicas_blk%c1_to_proc = geom%c0_to_proc(nicas_blk%c1_to_c0)
@@ -593,8 +597,13 @@ allocate(mask_c1(nicas_blk%nc1))
 
 ! Horizontal subsampling
 do il1=1,nicas_blk%nl1
-   write(mpl%unit,'(a7,a,i3,a)') '','Compute horizontal subset C2 (level ',il1,')'
-   call flush(mpl%unit)
+   if (mpl%main) then
+      write(mpl%unit,'(a7,a,i3,a)',advance='no') '','Compute horizontal subset C2 (level ',il1,'): '
+      call flush(mpl%unit)
+   else
+      write(mpl%unit,'(a7,a,i3,a)') '','Compute horizontal subset C2 (level ',il1,')'
+      call flush(mpl%unit)
+   end if
 
    ! Compute nc2
    il0 = nicas_blk%l1_to_l0(il1)
@@ -628,6 +637,11 @@ do il1=1,nicas_blk%nl1
       ! Release memory
       deallocate(c2_to_c1)
    else
+      if (mpl%main) then
+         write(mpl%unit,'(a)') 'use all C1 points'
+         call flush(mpl%unit)
+      end if
+
       ! Fill C2 mask
       nicas_blk%mask_c2(:,il1) = .true.
    end if
@@ -1201,7 +1215,7 @@ end subroutine nicas_blk_compute_mpi_ab
 ! Subroutine: nicas_blk_compute_convol
 !> Purpose: compute convolution
 !----------------------------------------------------------------------
-subroutine nicas_blk_compute_convol(nicas_blk,mpl,rng,nam,geom,bpar,cmat_blk)
+subroutine nicas_blk_compute_convol(nicas_blk,mpl,rng,nam,geom,cmat_blk)
 
 implicit none
 
@@ -1211,7 +1225,6 @@ type(mpl_type),intent(in) :: mpl                 !< MPI data
 type(rng_type),intent(inout) :: rng              !< Random number generator
 type(nam_type),intent(in) :: nam                 !< Namelist
 type(geom_type),intent(in) :: geom               !< Geometry
-type(bpar_type),intent(in) :: bpar               !< Block parameters
 type(cmat_blk_type),intent(in) :: cmat_blk       !< C matrix data block
 
 ! Local variables
@@ -1283,7 +1296,6 @@ if (nam%network) then
          end if
 
          ! Square-root coefficient
-         rh_c1a(ic1a,il1) = rh_c1a(ic1a,il1)*sqrt_r
          if (nicas_blk%double_fit) then
             rv_c1a(ic1a,il1) = rv_c1a(ic1a,il1)*sqrt_r_dble
             rv_rfac_c1a(ic1a,il1) = rv_rfac_c1a(ic1a,il1)*sqrt_rfac
@@ -1302,13 +1314,12 @@ else
       rv_sa(isa) = cmat_blk%rv_c0(ic0a,il0)
 
       ! Square-root coefficient
-      rh_sa(isa) = rh_sa(isa)*sqrt_r
       if (nicas_blk%double_fit) then
          rv_sa(isa) = rv_sa(isa)*sqrt_r_dble
          rv_rfac_sa(isa) = rv_rfac_sa(isa)*sqrt_rfac
          rv_coef_sa(isa) = rv_coef_sa(isa)*sqrt_coef
       else
-         rv_sa(isa) = rh_sa(isa)*sqrt_r
+         rv_sa(isa) = rv_sa(isa)*sqrt_r
       end if
    end do
 end if
@@ -1720,8 +1731,8 @@ c_n_s = 0
 c_nor_n_s = 0
 
 ! Compute weights
-!$omp parallel do schedule(static) private(isbb,is,ithread,ic1,il1,np,np_new,ip,jc1,jl1,k,kc1,dkl1,kl1,disttest,add_to_front), &
-!$omp&                             private(jp,js,distnorm,S_test,add_op,kc0,kl0,distvsq,rvsq,disth,rfac,coef), &
+!$omp parallel do schedule(static) private(isbb,is,ithread,ic1,il1,ic0,il0,np,np_new,ip,jc1,jl1,k,kc1,dkl1,kl1,disttest), &
+!$omp&                             private(add_to_front,jp,js,distnorm,S_test,add_op,kc0,kl0,distvsq,rvsq,disth,rfac,coef), &
 !$omp&                             firstprivate(plist,plist_new,dist,distv,valid)
 do isbb=1,nicas_blk%nsbb
    ! Indices
@@ -1730,6 +1741,8 @@ do isbb=1,nicas_blk%nsbb
 !$ ithread = omp_get_thread_num()+1
    ic1 = nicas_blk%s_to_c1(is)
    il1 = nicas_blk%s_to_l1(is)
+   ic0 = nicas_blk%c1_to_c0(ic1)
+   il0 = nicas_blk%l1_to_l0(il1)
 
    ! Allocation
    allocate(plist(nicas_blk%nc1*nicas_blk%nl1,2))
@@ -3564,7 +3577,7 @@ end if
 nam%lsqrt = .not.nam%lsqrt
 
 ! Compute NICAS parameters
-call nicas_blk_other%compute_parameters(mpl,rng,nam,geom,bpar,cmat_blk)
+call nicas_blk_other%compute_parameters(mpl,rng,nam,geom,cmat_blk)
 
 ! Apply NICAS, other version
 if (nam%lsqrt) then

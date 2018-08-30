@@ -1,5 +1,21 @@
-Test     : Initial state: 14.7101
-Test     : Final state: 14.6092
+Test     : Initial state: 
+Test     :   Valid time: 2010-01-01T00:00:00Z
+Test     :   Resolution = 40, 20, Fields = 4, 2
+Test     :   Min=-29.7988, Max=12.9629, RMS=12.6152
+Test     :   Min=-42.6962, Max=36.162, RMS=21.0688
+Test     :   Min=-9.80188, Max=16.0459, RMS=5.01516
+Test     :   Min=-9.71003, Max=9.54206, RMS=4.27135
+Test     :   Min=-25.2, Max=0, RMS=12.9878
+Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
+Test     : Final state: 
+Test     :   Valid time: 2010-01-01T12:00:00Z
+Test     :   Resolution = 40, 20, Fields = 4, 2
+Test     :   Min=-29.4962, Max=11.0006, RMS=12.4853
+Test     :   Min=-41.0841, Max=38.0607, RMS=20.4377
+Test     :   Min=-9.35663, Max=13.0283, RMS=4.73687
+Test     :   Min=-9.12844, Max=9.71299, RMS=3.7726
+Test     :   Min=-25.2, Max=0, RMS=12.9878
+Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     : Generated observation: Stream nobs= 300 Min=-28.281, Max=11.3653, Average=-7.87884
 Test     : Generated observation: Wind nobs= 160 Min=-9.13149, Max=13.5288, Average=1.41975
 Test     : Generated observation: WSpeed nobs= 300 Min=1.28211, Max=13.5728, Average=5.84825

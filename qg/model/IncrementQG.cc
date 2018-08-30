@@ -65,26 +65,6 @@ IncrementQG::~IncrementQG() {
   oops::Log::trace() << "IncrementQG destructed" << std::endl;
 }
 // -----------------------------------------------------------------------------
-void IncrementQG::activateModel() {
-// Should get variables from linear model. YT
-  const std::vector<std::string> vv{"x", "q", "u", "v"};
-  oops::Variables vars(vv);
-  stash_.reset(new FieldsQG(*fields_, vars));
-  swap(fields_, stash_);
-  ASSERT(fields_);
-  ASSERT(stash_);
-  oops::Log::trace() << "IncrementQG activated for TLM" << std::endl;
-}
-// -----------------------------------------------------------------------------
-void IncrementQG::deactivateModel() {
-  swap(fields_, stash_);
-  *fields_ = *stash_;
-  stash_.reset();
-  ASSERT(fields_);
-  ASSERT(!stash_);
-  oops::Log::trace() << "IncrementQG deactivated for TLM" << std::endl;
-}
-// -----------------------------------------------------------------------------
 /// Basic operators
 // -----------------------------------------------------------------------------
 void IncrementQG::diff(const StateQG & x1, const StateQG & x2) {
@@ -164,14 +144,18 @@ void IncrementQG::getValuesAD(const LocationsQG & locs, const oops::Variables & 
   fields_->getValuesAD(locs, vars, cols);
 }
 // -----------------------------------------------------------------------------
-/// Convert to/from unstructured grid
+/// Unstructured grid
 // -----------------------------------------------------------------------------
-void IncrementQG::convert_to(oops::UnstructuredGrid & ug) const {
-  fields_->convert_to(ug);
+void IncrementQG::ug_coord(oops::UnstructuredGrid & ug, const int & colocated) const {
+  fields_->ug_coord(ug, colocated);
 }
 // -----------------------------------------------------------------------------
-void IncrementQG::convert_from(const oops::UnstructuredGrid & ug) {
-  fields_->convert_from(ug);
+void IncrementQG::field_to_ug(oops::UnstructuredGrid & ug, const int & colocated) const {
+  fields_->field_to_ug(ug, colocated);
+}
+// -----------------------------------------------------------------------------
+void IncrementQG::field_from_ug(const oops::UnstructuredGrid & ug) {
+  fields_->field_from_ug(ug);
 }
 // -----------------------------------------------------------------------------
 /// I/O and diagnostics

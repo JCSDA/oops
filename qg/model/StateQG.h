@@ -51,7 +51,7 @@ class StateQG : public util::Printable,
 
 /// Constructor, destructor
   StateQG(const GeometryQG &, const oops::Variables &, const util::DateTime &);  // Is it used?
-  StateQG(const GeometryQG &, const eckit::Configuration &);
+  StateQG(const GeometryQG &, const oops::Variables &, const eckit::Configuration &);
   StateQG(const GeometryQG &, const StateQG &);
   StateQG(const StateQG &);
   virtual ~StateQG();
@@ -74,10 +74,6 @@ class StateQG : public util::Printable,
   const util::DateTime & validTime() const {return fields_->time();}
   util::DateTime & validTime() {return fields_->time();}
 
-/// Convert to/from unstructured grid
-  void convert_to(oops::UnstructuredGrid &) const;
-  void convert_from(const oops::UnstructuredGrid &);
-
 /// Access to fields
   FieldsQG & fields() {return *fields_;}
   const FieldsQG & fields() const {return *fields_;}
@@ -87,9 +83,6 @@ class StateQG : public util::Printable,
   }
 
 /// Other
-  void activateModel();
-  void deactivateModel();
-
   void zero();
   void accumul(const double &, const StateQG &);
 

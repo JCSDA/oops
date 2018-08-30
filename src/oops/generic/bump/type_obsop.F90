@@ -64,7 +64,7 @@ contains
    procedure :: generate => obsop_generate
    procedure :: from => obsop_from
    procedure :: run_obsop => obsop_run_obsop
-   procedure :: parameters => obsop_parameters
+   procedure :: run_obsop_tests => obsop_run_obsop_tests
    procedure :: apply => obsop_apply
    procedure :: apply_ad => obsop_apply_ad
    procedure :: test_adjoint => obsop_test_adjoint
@@ -228,142 +228,67 @@ type(rng_type),intent(inout) :: rng      !< Random number generator
 type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 
-! Compute observation operator parameters
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Compute observation operator parameters'
-call flush(mpl%unit)
-call obsop%parameters(mpl,rng,nam,geom)
-
-if (nam%check_adjoints) then
-   ! Test adjoints
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Test observation operator adjoint'
-   call flush(mpl%unit)
-   call obsop%test_adjoint(mpl,rng,geom)
-end if
-
-! Test precision
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Test observation operator precision'
-call flush(mpl%unit)
-call obsop%test_accuracy(mpl,geom)
-
-end subroutine obsop_run_obsop
-
-!----------------------------------------------------------------------
-! Subroutine: obsop_parameters
-!> Purpose: compute observation operator interpolation parameters
-!----------------------------------------------------------------------
-subroutine obsop_parameters(obsop,mpl,rng,nam,geom)
-
-implicit none
-
-! Passed variables
-class(obsop_type),intent(inout) :: obsop !< Observation operator data
-type(mpl_type),intent(inout) :: mpl      !< MPI data
-type(rng_type),intent(inout) :: rng      !< Random number generator
-type(nam_type),intent(in) :: nam         !< Namelist
-type(geom_type),intent(in) :: geom       !< Geometry
-
 ! Local variables
 integer :: offset,iobs,jobs,iobsa,iproc,nobsa,i_s,ic0,ic0b,i,ic0a,delta,nres,ind(1),lunit
 integer :: imin(1),imax(1),nmoves,imoves
 integer,allocatable :: nop(:),iop(:),srcproc(:,:),srcic0(:,:),order(:),nobs_to_move(:),nobs_to_move_tmp(:),obs_moved(:,:)
 real(kind_real) :: N_max,C_max
-real(kind_real),allocatable :: proc_to_lonobs(:),proc_to_latobs(:),lonobs(:),latobs(:),list(:)
-logical :: global
+real(kind_real),allocatable :: lonobs(:),latobs(:),list(:)
 logical,allocatable :: maskobs(:),lcheck_nc0b(:)
 
 ! Allocation
 allocate(obsop%proc_to_nobsa(mpl%nproc))
 
-! Find out if obs are global or local
-call mpl%allgather(1,(/obsop%nobs/),obsop%proc_to_nobsa)
-global = all(obsop%proc_to_nobsa==obsop%proc_to_nobsa(mpl%ioproc))
-if (global) then
-   ! Allocation
-   allocate(proc_to_lonobs(mpl%nproc))
-   allocate(proc_to_latobs(mpl%nproc))
+! Get global number of observations
+call mpl%allgather(1,(/obsop%nobs/),obsop%proc_to_nobsa) 
+obsop%nobsa = obsop%nobs
+obsop%nobs = sum(obsop%proc_to_nobsa)
 
-   iobs = 1
-   do while (global.and.(iobs<=obsop%nobs))
-      ! Gather
-      call mpl%allgather(1,(/obsop%lonobs(iobs)/),proc_to_lonobs)
-      call mpl%allgather(1,(/obsop%latobs(iobs)/),proc_to_latobs)
+! Allocation
+allocate(lonobs(obsop%nobs))
+allocate(latobs(obsop%nobs))
 
-      ! Check
-      global = all(.not.abs(proc_to_lonobs-proc_to_lonobs(mpl%ioproc))>0.0) &
-             & .and.all(.not.abs(proc_to_latobs-proc_to_latobs(mpl%ioproc))>0.0)
-
-      ! Update
-      iobs = iobs+1
-   end do
-end if
-if (global) then
-   write(mpl%unit,'(a7,a)') '','Observations are provided globally'
-else
-   write(mpl%unit,'(a7,a)') '','Observations are provided locally'
-end if
-
-if (global) then
-   ! Allocation
-   allocate(lonobs(obsop%nobs))
-   allocate(latobs(obsop%nobs))
-
-   ! Copy coordinates
-   lonobs = obsop%lonobs
-   latobs = obsop%latobs
-else
-   ! Get global number of observations
-   obsop%nobsa = obsop%nobs
-   obsop%nobs = sum(obsop%proc_to_nobsa)
-
-   ! Allocation
-   allocate(lonobs(obsop%nobs))
-   allocate(latobs(obsop%nobs))
-
-   ! Get observations coordinates
-   if (mpl%main) then
-      offset = 0
-      do iproc=1,mpl%nproc
-         if (obsop%proc_to_nobsa(iproc)>0) then
-            if (iproc==mpl%ioproc) then
-               ! Copy data
-               lonobs(offset+1:offset+obsop%proc_to_nobsa(iproc)) = obsop%lonobs
-               latobs(offset+1:offset+obsop%proc_to_nobsa(iproc)) = obsop%latobs
-            else
-               ! Receive data on ioproc
-               call mpl%recv(obsop%proc_to_nobsa(iproc),lonobs(offset+1:offset+obsop%proc_to_nobsa(iproc)),iproc,mpl%tag)
-               call mpl%recv(obsop%proc_to_nobsa(iproc),latobs(offset+1:offset+obsop%proc_to_nobsa(iproc)),iproc,mpl%tag+1)
-            end if
+! Get observations coordinates
+if (mpl%main) then
+   offset = 0
+   do iproc=1,mpl%nproc
+      if (obsop%proc_to_nobsa(iproc)>0) then
+         if (iproc==mpl%ioproc) then
+            ! Copy data
+            lonobs(offset+1:offset+obsop%proc_to_nobsa(iproc)) = obsop%lonobs
+            latobs(offset+1:offset+obsop%proc_to_nobsa(iproc)) = obsop%latobs
+         else
+            ! Receive data on ioproc
+            call mpl%recv(obsop%proc_to_nobsa(iproc),lonobs(offset+1:offset+obsop%proc_to_nobsa(iproc)),iproc,mpl%tag)
+            call mpl%recv(obsop%proc_to_nobsa(iproc),latobs(offset+1:offset+obsop%proc_to_nobsa(iproc)),iproc,mpl%tag+1)
          end if
-
-         ! Update offset
-         offset = offset+obsop%proc_to_nobsa(iproc)
-      end do
-   else
-      if (obsop%nobsa>0) then
-         ! Send data to ioproc
-         call mpl%send(obsop%nobsa,obsop%lonobs,mpl%ioproc,mpl%tag)
-         call mpl%send(obsop%nobsa,obsop%latobs,mpl%ioproc,mpl%tag+1)
       end if
+
+      ! Update offset
+      offset = offset+obsop%proc_to_nobsa(iproc)
+   end do
+else
+   if (obsop%nobsa>0) then
+      ! Send data to ioproc
+      call mpl%send(obsop%nobsa,obsop%lonobs,mpl%ioproc,mpl%tag)
+      call mpl%send(obsop%nobsa,obsop%latobs,mpl%ioproc,mpl%tag+1)
    end if
-   mpl%tag = mpl%tag+2
-
-   ! Broadcast data
-   call mpl%bcast(lonobs)
-   call mpl%bcast(latobs)
-
-   ! Reallocation
-   deallocate(obsop%lonobs)
-   deallocate(obsop%latobs)
-   allocate(obsop%lonobs(obsop%nobs))
-   allocate(obsop%latobs(obsop%nobs))
-
-   ! Copy
-   obsop%lonobs = lonobs
-   obsop%latobs = latobs
 end if
+call mpl%update_tag(2)
+
+! Broadcast data
+call mpl%bcast(lonobs)
+call mpl%bcast(latobs)
+
+! Reallocation
+deallocate(obsop%lonobs)
+deallocate(obsop%latobs)
+allocate(obsop%lonobs(obsop%nobs))
+allocate(obsop%latobs(obsop%nobs))
+
+! Copy
+obsop%lonobs = lonobs
+obsop%latobs = latobs
 
 ! Allocation
 allocate(maskobs(obsop%nobs))
@@ -403,7 +328,16 @@ do i_s=1,obsop%hfull%n_s
    srcic0(iop(iobs),iobs) = ic0
 end do
 
-if (global) then
+if (.true.) then ! TODO
+   ! Fill obs_to_proc
+   iobs = 0
+   do iproc=1,mpl%nproc
+      do iobsa=1,obsop%proc_to_nobsa(iproc)
+         iobs = iobs+1
+         obsop%obs_to_proc(iobs) = iproc
+      end do
+   end do
+else
    ! Generate observation distribution on processors
    select case (trim(nam%obsdis))
    case('random')
@@ -524,15 +458,6 @@ if (global) then
 
    ! Define nobsa
    obsop%nobsa = obsop%proc_to_nobsa(mpl%myproc)
-else
-   ! Fill obs_to_proc
-   iobs = 0
-   do iproc=1,mpl%nproc
-      do iobsa=1,obsop%proc_to_nobsa(iproc)
-         iobs = iobs+1
-         obsop%obs_to_proc(iobs) = iproc
-      end do
-   end do
 end if
 
 ! Allocation
@@ -662,7 +587,36 @@ end if
 ! Update allocation flag
 obsop%allocated = .true.
 
-end subroutine obsop_parameters
+end subroutine obsop_run_obsop
+
+!----------------------------------------------------------------------
+! Subroutine: obsop_run_obsop_tests
+!> Purpose: observation operator tests driver
+!----------------------------------------------------------------------
+subroutine obsop_run_obsop_tests(obsop,mpl,rng,nam,geom)
+
+implicit none
+
+! Passed variables
+class(obsop_type),intent(inout) :: obsop !< Observation operator data
+type(mpl_type),intent(inout) :: mpl      !< MPI data
+type(rng_type),intent(inout) :: rng      !< Random number generator
+type(nam_type),intent(in) :: nam         !< Namelist
+type(geom_type),intent(in) :: geom       !< Geometry
+
+! Test adjoints
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a)') '--- Test observation operator adjoint'
+call flush(mpl%unit)
+call obsop%test_adjoint(mpl,rng,geom)
+
+! Test precision
+write(mpl%unit,'(a)') '-------------------------------------------------------------------'
+write(mpl%unit,'(a)') '--- Test observation operator precision'
+call flush(mpl%unit)
+call obsop%test_accuracy(mpl,geom)
+
+end subroutine obsop_run_obsop_tests
 
 !----------------------------------------------------------------------
 ! Subroutine: obsop_apply
@@ -847,14 +801,14 @@ if (obsop%nobsa>0) then
       distsum = sum(dist,mask=isnotmsr(dist))
    else
       distmin = huge(1.0)
-      distmax = tiny(1.0)
+      distmax = 0.0
       distsum = 0.0
    end if
 else
    ! No observation on this task
    norm = 0
    distmin = huge(1.0)
-   distmax = tiny(1.0)
+   distmax = 0.0
    distsum = 0.0
 end if
 

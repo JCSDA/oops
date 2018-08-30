@@ -11,7 +11,7 @@
 module type_lct_blk
 
 !$ use omp_lib
-use tools_func, only: lonlatmod,fit_lct
+use tools_func, only: pos,poseq,lonlatmod,fit_lct
 use tools_kinds, only: kind_real
 use tools_missing, only: msr,isnotmsr
 use type_bpar, only: bpar_type
@@ -164,7 +164,7 @@ type(hdata_type),intent(in) :: hdata         !< HDIAG data
 type(mom_blk_type),intent(in) :: mom_blk     !< Moments block
 
 ! Local variables
-integer :: jsub,il0,jl0r,jc3,ic1a,ic1
+integer :: jsub,il0,jl0r,jl0,jc3,ic1a,ic1
 real(kind_real) :: den
 
 ! Associate
@@ -178,12 +178,13 @@ lct_blk%norm = 0.0
 do jsub=1,mom_blk%nsub
    do il0=1,geom%nl0
       do jl0r=1,bpar%nl0r(ib)
+         jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
          do jc3=1,nam%nc3
             do ic1a=1,hdata%nc1a
                ic1 = hdata%c1a_to_c1(ic1a)
                if (hdata%c1l0_log(ic1,il0)) then
-                  den = mom_blk%m2_1(ic1a,jc3,jl0r,il0,jsub)*mom_blk%m2_2(ic1a,jc3,jl0r,il0,jsub)
-                  if (den>0.0) then
+                  den = mom_blk%m2_1(ic1a,jc3,il0,jsub)*mom_blk%m2_2(ic1a,jc3,jl0,jsub)
+                  if (pos(den)) then
                      lct_blk%raw(jc3,jl0r,ic1a,il0) = lct_blk%raw(jc3,jl0r,ic1a,il0)+mom_blk%m11(ic1a,jc3,jl0r,il0,jsub)/sqrt(den)
                      lct_blk%norm(jc3,jl0r,ic1a,il0) = lct_blk%norm(jc3,jl0r,ic1a,il0)+1.0
                   end if
@@ -201,7 +202,7 @@ do il0=1,geom%nl0
          do ic1a=1,hdata%nc1a
             ic1 = hdata%c1a_to_c1(ic1a)
             if (hdata%c1l0_log(ic1,il0)) then
-               if (lct_blk%norm(jc3,jl0r,ic1a,il0)>0.0) lct_blk%raw(jc3,jl0r,ic1a,il0) = lct_blk%raw(jc3,jl0r,ic1a,il0) &
+               if (pos(lct_blk%norm(jc3,jl0r,ic1a,il0))) lct_blk%raw(jc3,jl0r,ic1a,il0) = lct_blk%raw(jc3,jl0r,ic1a,il0) &
              & /lct_blk%norm(jc3,jl0r,ic1a,il0)
             end if
          end do
@@ -299,112 +300,112 @@ do il0=1,geom%nl0
                do jc3=1,nam%nc3
                   if (dmask(jc3,jl0r)) then
                      distsq = dx(jc3,jl0r)**2+dy(jc3,jl0r)**2
-                     if ((lct_blk%raw(jc3,jl0r,ic1a,il0)>cor_min).and.(distsq>0.0))  &
+                     if ((lct_blk%raw(jc3,jl0r,ic1a,il0)>cor_min).and.pos(distsq))  &
                    & Dh(jc3) = -distsq/(2.0*log(lct_blk%raw(jc3,jl0r,ic1a,il0)))
                   end if
                end do
             end if
          end do
          call msr(Dhbar)
-         if (count(isnotmsr(Dh))>0) then
-            Dhbar = sum(Dh,mask=isnotmsr(Dh))/real(count(isnotmsr(Dh)),kind_real)
-         else
-            exit
-         end if
+         if (count(isnotmsr(Dh))>0) Dhbar = sum(Dh,mask=isnotmsr(Dh))/real(count(isnotmsr(Dh)),kind_real)
 
          ! Approximate homogeneous vertical length-scale
          call msr(Dv)
          jc3 = 1
          do jl0r=1,bpar%nl0r(ib)
             distsq = dz(jl0r)**2
-            if ((lct_blk%raw(jc3,jl0r,ic1a,il0)>cor_min).and.(distsq>0.0)) &
+            if ((lct_blk%raw(jc3,jl0r,ic1a,il0)>cor_min).and.pos(distsq)) &
           & Dv(jl0r) = -distsq/(2.0*log(lct_blk%raw(jc3,jl0r,ic1a,il0)))
          end do
          if (bpar%nl0r(ib)>1) then
-            if (count(isnotmsr(Dv))>0) then
-               Dvbar = sum(Dv,mask=isnotmsr(Dv))/real(count(isnotmsr(Dv)),kind_real)
-            else
-               exit
-            end if
+            if (count(isnotmsr(Dv))>0) Dvbar = sum(Dv,mask=isnotmsr(Dv))/real(count(isnotmsr(Dv)),kind_real)
          else
              Dvbar = 0.0
          end if
 
-         ! Define norm and bounds
-         offset = 0
-         do iscales=1,lct_blk%nscales
-            minim%guess(offset+1:offset+3) = (/Dhbar,Dhbar,Dvbar/)*Dscale**(iscales-1)
-            if (lct_blk%nscales==1) then
-               minim%binf(offset+1:offset+3) = (/1.0/Dscale,1.0/Dscale,1.0/Dscale/)*minim%guess(1:3)
-               minim%bsup(offset+1:offset+3) = (/Dscale,Dscale,Dscale/)*minim%guess(1:3)
-            else
-               minim%binf(offset+1:offset+3) = (/1.0/sqrt(Dscale),1.0/sqrt(Dscale),1.0/sqrt(Dscale)/)*minim%guess(1:3) &
-                                              & *Dscale**(iscales-1)
-               minim%bsup(offset+1:offset+3) = (/sqrt(Dscale),sqrt(Dscale),sqrt(Dscale)/)*minim%guess(1:3)*Dscale**(iscales-1)
-            end if
-            offset = offset+3
-            if (lct_blk%ncomp(iscales)==4) then
-               minim%guess(offset+1) = 0.0
-               minim%binf(offset+1) = -1.0
-               minim%bsup(offset+1) = 1.0
-               offset = offset+1
-            end if
-         end do
-         do iscales=1,lct_blk%nscales-1
-            minim%guess(offset+1) = 1.0/real(lct_blk%nscales,kind_real)
-            minim%binf(offset+1) = 0.1
-            minim%bsup(offset+1) = 1.0
-            offset = offset+1
-         end do
-
-         ! Fill minim
-         minim%obs = pack(lct_blk%raw(:,:,ic1a,il0),.true.)
-         minim%cost_function = 'fit_lct'
-         minim%algo = trim(nam%minim_algo)
-         minim%nc3 = nam%nc3
-         minim%nl0 = bpar%nl0r(ib)
-         minim%dx = dx
-         minim%dy = dy
-         minim%dz = dz
-         minim%dmask = dmask
-         minim%nscales = lct_blk%nscales
-         minim%ncomp = lct_blk%ncomp
-
-         ! Compute fit
-         call minim%compute(mpl,lprt)
-
-         ! Copy parameters
-         lct_blk%D(:,ic1a,il0) = minim%x(1:sum(lct_blk%ncomp))
-         if (lct_blk%nscales>1) then
-            lct_blk%coef(1:lct_blk%nscales-1,ic1a,il0) = minim%x(sum(lct_blk%ncomp)+1:sum(lct_blk%ncomp)+lct_blk%nscales-1)
-            lct_blk%coef(lct_blk%nscales,ic1a,il0) = 1.0-sum(lct_blk%coef(1:lct_blk%nscales-1,ic1a,il0))
-         else
-            lct_blk%coef(1,ic1a,il0) = 1.0
-         end if
-
-         ! Fixed positive value for the 2D case
-         if (bpar%nl0r(ib)==1) then
+         if (isnotmsr(Dhbar).and.(isnotmsr(Dvbar))) then
+            ! Define norm and bounds
             offset = 0
             do iscales=1,lct_blk%nscales
-               lct_blk%D(offset+3,ic1a,il0) = 0.0
+               minim%guess(offset+1:offset+3) = (/Dhbar,Dhbar,Dvbar/)*Dscale**(iscales-1)
+               if (lct_blk%nscales==1) then
+                  minim%binf(offset+1:offset+3) = (/1.0/Dscale,1.0/Dscale,1.0/Dscale/)*minim%guess(1:3)
+                  minim%bsup(offset+1:offset+3) = (/Dscale,Dscale,Dscale/)*minim%guess(1:3)
+               else
+                  minim%binf(offset+1:offset+3) = (/1.0/sqrt(Dscale),1.0/sqrt(Dscale),1.0/sqrt(Dscale)/)*minim%guess(1:3) &
+                                                 & *Dscale**(iscales-1)
+                  minim%bsup(offset+1:offset+3) = (/sqrt(Dscale),sqrt(Dscale),sqrt(Dscale)/)*minim%guess(1:3)*Dscale**(iscales-1)
+               end if
+               offset = offset+3
+               if (lct_blk%ncomp(iscales)==4) then
+                  minim%guess(offset+1) = 0.0
+                  minim%binf(offset+1) = -1.0
+                  minim%bsup(offset+1) = 1.0
+                  offset = offset+1
+               end if
+            end do
+            do iscales=1,lct_blk%nscales-1
+               minim%guess(offset+1) = 1.0/real(lct_blk%nscales,kind_real)
+               minim%binf(offset+1) = 0.1
+               minim%bsup(offset+1) = 1.0
+               offset = offset+1
+            end do
+   
+            ! Fill minim
+            minim%obs = pack(lct_blk%raw(:,:,ic1a,il0),.true.)
+            minim%cost_function = 'fit_lct'
+            minim%algo = trim(nam%minim_algo)
+            minim%nc3 = nam%nc3
+            minim%nl0 = bpar%nl0r(ib)
+            minim%dx = dx
+            minim%dy = dy
+            minim%dz = dz
+            minim%dmask = dmask
+            minim%nscales = lct_blk%nscales
+            minim%ncomp = lct_blk%ncomp
+   
+            ! Compute fit
+            call minim%compute(mpl,lprt)
+   
+            ! Copy parameters
+            lct_blk%D(:,ic1a,il0) = minim%x(1:sum(lct_blk%ncomp))
+            if (lct_blk%nscales>1) then
+               lct_blk%coef(1:lct_blk%nscales-1,ic1a,il0) = minim%x(sum(lct_blk%ncomp)+1:sum(lct_blk%ncomp)+lct_blk%nscales-1)
+               lct_blk%coef(lct_blk%nscales,ic1a,il0) = 1.0-sum(lct_blk%coef(1:lct_blk%nscales-1,ic1a,il0))
+            else
+               lct_blk%coef(1,ic1a,il0) = 1.0
+            end if
+   
+            ! Fixed positive value for the 2D case
+            if (bpar%nl0r(ib)==1) then
+               offset = 0
+               do iscales=1,lct_blk%nscales
+                  lct_blk%D(offset+3,ic1a,il0) = 0.0
+                  offset = offset+lct_blk%ncomp(iscales)
+               end do
+            end if
+   
+            ! Check positive-definiteness and coefficients values
+            spd = .true.
+            offset = 0
+            do iscales=1,lct_blk%nscales
+               spd = spd.and.(pos(lct_blk%D(offset+1,ic1a,il0))).and.(pos(lct_blk%D(offset+2,ic1a,il0)))
+               if (bpar%nl0r(ib)>1) spd = spd.and.(poseq(lct_blk%D(offset+3,ic1a,il0)))
+               if (lct_blk%ncomp(iscales)==4) spd = spd.and.pos(lct_blk%D(offset+4,ic1a,il0)-1.0) &
+                                                  & .and.pos(1.0-lct_blk%D(offset+4,ic1a,il0))
+               spd = spd.and.(poseq(lct_blk%coef(iscales,ic1a,il0)))
                offset = offset+lct_blk%ncomp(iscales)
             end do
-         end if
-
-         ! Check positive-definiteness and coefficients values
-         spd = .true.
-         offset = 0
-         do iscales=1,lct_blk%nscales
-            spd = spd.and.(lct_blk%D(offset+1,ic1a,il0)>0.0).and.(lct_blk%D(offset+2,ic1a,il0)>0.0)
-            if (bpar%nl0r(ib)>1) spd = spd.and.(lct_blk%D(offset+3,ic1a,il0)>0.0)
-            if (lct_blk%ncomp(iscales)==4) spd = spd.and.(lct_blk%D(offset+4,ic1a,il0)>-1.0).and.(lct_blk%D(offset+4,ic1a,il0)<1.0)
-            spd = spd.and.(lct_blk%coef(iscales,ic1a,il0)>0.0)
-            offset = offset+lct_blk%ncomp(iscales)
-         end do
-         if (spd) then
-            ! Rebuild fit
-            call fit_lct(mpl,nam%nc3,bpar%nl0r(ib),dx,dy,dz,dmask,lct_blk%nscales,lct_blk%ncomp,lct_blk%D(:,ic1a,il0), &
-          & lct_blk%coef(:,ic1a,il0),lct_blk%fit(:,:,ic1a,il0))
+            if (spd) then
+               ! Rebuild fit
+               call fit_lct(mpl,nam%nc3,bpar%nl0r(ib),dx,dy,dz,dmask,lct_blk%nscales,lct_blk%ncomp,lct_blk%D(:,ic1a,il0), &
+             & lct_blk%coef(:,ic1a,il0),lct_blk%fit(:,:,ic1a,il0))
+            else
+               ! Missing values
+               call msr(lct_blk%D(:,ic1a,il0))
+               call msr(lct_blk%coef(:,ic1a,il0))
+               call msr(lct_blk%fit(:,:,ic1a,il0))
+            end if
          else
             ! Missing values
             call msr(lct_blk%D(:,ic1a,il0))

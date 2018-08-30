@@ -40,7 +40,7 @@ template<typename MODEL> class State4D : public util::Printable {
   static const std::string classname() {return "State4D";}
 
 /// The arguments define the number of sub-windows and the resolution
-  State4D(const eckit::Configuration &, const Geometry_ &);
+  State4D(const eckit::Configuration &, const Variables &, const Geometry_ &);
   explicit State4D(const State4D &);
   ~State4D();
 
@@ -51,6 +51,7 @@ template<typename MODEL> class State4D : public util::Printable {
 
 /// Get model space control variable
   bool checkStatesNumber(const unsigned int nn) const {return state4d_.size() == nn;}
+  size_t size() const {return state4d_.size();}
   State_ & operator[](const int ii) {return state4d_[ii];}
   const State_ & operator[](const int ii) const {return state4d_[ii];}
 
@@ -64,14 +65,15 @@ template<typename MODEL> class State4D : public util::Printable {
 // =============================================================================
 
 template<typename MODEL>
-State4D<MODEL>::State4D(const eckit::Configuration & config, const Geometry_ & resol) {
+State4D<MODEL>::State4D(const eckit::Configuration & config, const Variables & vars,
+                        const Geometry_ & resol) {
   std::vector<eckit::LocalConfiguration> files;
   config.get("state", files);
   Log::debug() << "State4D: reading " << files.size() << " states." << std::endl;
 
   for (size_t jsub = 0; jsub < files.size(); ++jsub) {
     Log::debug() << "State4D:reading" << files[jsub] << std::endl;
-    State_ * js = new State_(resol, files[jsub]);
+    State_ * js = new State_(resol, vars, files[jsub]);
     Log::debug() << "State4D:State4D: read bg at " << js->validTime() << std::endl;
     state4d_.push_back(js);
   }

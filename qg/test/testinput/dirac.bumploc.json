@@ -21,91 +21,42 @@
   },
   "Covariance": {
     "covariance": "ensemble",
-    "members": "5",
+    "members": "10",
     "variables": {
       "variables": ["x"]
-    },
+     },
     "date": "2010-01-01T00:00:00Z",
     "localization": {
       "localization": "BUMP",
+      "date": "2010-01-01T00:00:00Z",
       "variables": {
         "variables": ["x"]
       },
-      "bump_ensemble": [
-      {
-        "filename": "Data/test.ens.1.2009-12-31T00:00:00Z.P1D",
-        "date": "2010-01-01T00:00:00Z"
-      },
-      {
-        "filename": "Data/test.ens.2.2009-12-31T00:00:00Z.P1D",
-        "date": "2010-01-01T00:00:00Z"
-      },
-      {
-        "filename": "Data/test.ens.3.2009-12-31T00:00:00Z.P1D",
-        "date": "2010-01-01T00:00:00Z"
-      },
-      {
-        "filename": "Data/test.ens.4.2009-12-31T00:00:00Z.P1D",
-        "date": "2010-01-01T00:00:00Z"
-      },
-      {
-        "filename": "Data/test.ens.5.2009-12-31T00:00:00Z.P1D",
-        "date": "2010-01-01T00:00:00Z"
-      }
-      ],
       "prefix" : "bump",
       "default_seed" : 1,
-      "method" : "loc",
+      "method" : "loc_norm",
       "strategy" : "common",
       "new_hdiag" : 1,
-      "new_param" : 1,
-      "check_adjoints" : 1,
-      "check_pos_def" : 0,
-      "check_sqrt" : 0,
-      "check_dirac" : 0,
-      "check_randomization" : 0,
-      "check_consistency" : 0,
-      "check_optimality" : 0,
-      "new_lct" : 0,
-      "new_obsop" : 0,
-      "sam_write" : 0,
-      "sam_read" : 0,
+      "new_nicas" : 1,
       "mask_type" : "none",
-      "mask_th" : 0,
-      "mask_check" : 0,
       "draw_type" : "random_uniform",
       "nc1" : 400,
       "ntry" : 3,
       "nrep" : 2,
-      "nc3" : 10,
-      "dc" : 1000.0e3,
-      "nl0r" : 1,
-      "ne" : 5,
-      "gau_approx" : 0,
-      "full_var" : 0,
-      "local_diag" : 0,
-      "displ_diag" : 0,
+      "nc3" : 15,
+      "dc" : 500.0e3,
+      "nl0r" : 2,
+      "ne" : 10,
       "minim_algo" : "hooke",
-      "lhomh" : 0,
-      "lhomv" : 0,
       "rvflt" : 0.0,
       "lsqrt" : 1,
       "resol" : 10.0,
       "nicas_interp" : "bilin",
-      "network" : 0,
       "mpicom" : 2,
       "advmode" : 0,
-      "forced_radii" : 0,
-      "rh" : 5000.0e3,
-      "rv" : 4.0,
-      "ndir" : 0,
-      "nldwh" : 0,
-      "nldwv" : 0,
-      "diag_rhflt" : 0.0,
       "diag_interp" : "bilin",
-      "field_io" : 1,
-      "split_io" : 1,
-      "grid_output" : 0
+      "nldwh" : 0,
+      "nldwv" : 0
     },
     "state": [
       {
@@ -127,6 +78,26 @@
       {
         "filename": "Data/test.ens.5.2009-12-31T00:00:00Z.P1D",
         "date": "2010-01-01T00:00:00Z"
+      },
+      {
+        "filename": "Data/test.ens.6.2009-12-31T00:00:00Z.P1D",
+        "date": "2010-01-01T00:00:00Z"
+      },
+      {
+        "filename": "Data/test.ens.7.2009-12-31T00:00:00Z.P1D",
+        "date": "2010-01-01T00:00:00Z"
+      },
+      {
+        "filename": "Data/test.ens.8.2009-12-31T00:00:00Z.P1D",
+        "date": "2010-01-01T00:00:00Z"
+      },
+      {
+        "filename": "Data/test.ens.9.2009-12-31T00:00:00Z.P1D",
+        "date": "2010-01-01T00:00:00Z"
+      },
+      {
+        "filename": "Data/test.ens.10.2009-12-31T00:00:00Z.P1D",
+        "date": "2010-01-01T00:00:00Z"
       }
     ]
   },
@@ -137,16 +108,16 @@
     "ildir": 1,
     "ifdir": 1
   },
-  "output_bump": {
+  "output_localization": {
     "datadir": "Data",
-    "exp": "dirac",
+    "exp": "localization_bumploc",
     "type": "an",
-    "date": "2009-12-31T00:00:00Z"
+    "date": "2010-01-01T00:00:00Z"
   },
-  "output_Bens": {
+  "output_B": {
     "datadir": "Data",
-    "exp": "Bens",
+    "exp": "B_bumploc",
     "type": "an",
-    "date": "2009-12-31T00:00:00Z"
+    "date": "2010-01-01T00:00:00Z"
   }
 }

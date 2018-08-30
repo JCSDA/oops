@@ -29,7 +29,10 @@ real(kind_real),parameter :: msvalr = -999.0_kind_real    !< Real missing value
 ! Reproducibility threshold
 real(kind_real),parameter :: rth = 1.0e-12                !< Reproducibility threshold
 
+! Gaussian to GC99 factor
+real(kind_real),parameter :: gc_gau = 0.28                !< Gaussian to GC99 factor
+
 private
-public :: pi,deg2rad,rad2deg,req,reqkm,ps,msvali,msvalr,rth
+public :: pi,deg2rad,rad2deg,req,reqkm,ps,msvali,msvalr,rth,gc_gau
 
 end module tools_const

@@ -27,6 +27,8 @@ real(kind=kind_real),parameter :: f0 = 1e-4_kind_real         !< Coriolis parame
 real(kind=kind_real),parameter :: bet0 = 1.5e-11_kind_real    !< Meridional gradient of f (s^{-1} m^{-1})
 real(kind=kind_real),parameter :: horog = 2000.0_kind_real    !< height of orography (m)
 real(kind=kind_real),parameter :: worog = 1000e3_kind_real    !< e-folding width of orography (m)
+real(kind=kind_real),parameter :: req = 6371229.0             !< Earth radius at equator (m)
+real(kind=kind_real),parameter :: omega = 7.2921e-5           !< Rotation rate of the Earth (rad/s)
 
 !--- Non-dimensional parameters
 
@@ -34,5 +36,6 @@ real(kind=kind_real),parameter :: u1 = ubar1/ubar
 real(kind=kind_real),parameter :: u2 = ubar2/ubar
 real(kind=kind_real),parameter :: bet = bet0*scale_length*scale_length/ubar
 real(kind=kind_real),parameter :: rossby_number = ubar/(f0*scale_length)
+real(kind=kind_real),parameter :: pi = acos(-1.0)
 
 end module qg_constants

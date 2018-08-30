@@ -64,7 +64,7 @@ template <typename MODEL> class Dirac : public Application {
 
 //  Setup initial state
     const eckit::LocalConfiguration initialConfig(fullConfig, "initial");
-    const State_ xx(resol, initialConfig);
+    const State_ xx(resol, vars, initialConfig);
     Log::info() << "Setup initial state OK" << std::endl;
 
 //  Setup time
@@ -77,56 +77,68 @@ template <typename MODEL> class Dirac : public Application {
     dxdir.dirac(diracConfig);
     Increment_ dxrnd(resol, vars, bgndate);
     dxrnd.random();
-    Log::info() << "Setup increments OK" << std::endl;
-
-//  Setup localization
-    const eckit::LocalConfiguration covarConfig(fullConfig, "Covariance");
-    const eckit::LocalConfiguration locConfig(covarConfig, "localization");
-    boost::scoped_ptr<Localization_> loc_;
-    loc_.reset(new Localization_(resol, locConfig));
-    Log::info() << "Setup localization OK" << std::endl;
-
-//  Apply BUMP
     Increment_ dxdirout(dxdir);
-    loc_->multiply(dxdirout);
     Increment_ dxrndout(dxrnd);
-    loc_->multiply(dxrndout);
-    Log::info() << "Apply BUMP OK" << std::endl;
-
-//  Write increment
-    const eckit::LocalConfiguration output_bump(fullConfig, "output_bump");
-    dxdirout.write(output_bump);
-    Log::info() << "Write increment OK" << std::endl;
-    Log::test() << "Increment norm: " << dxrndout.norm() << std::endl;
-
-//  Setup full ensemble B matrix
-    boost::scoped_ptr< ModelSpaceCovarianceBase<MODEL> >
-      Bens(CovarianceFactory<MODEL>::create(covarConfig, resol, vars, xx));
-    Bens->linearize(xx, resol);
-    Log::info() << "Setup full ensemble B matrix OK" << std::endl;
-
-//  Apply full ensemble B matrix to Dirac increment
-    Bens->multiply(dxdir, dxdirout);
-    Bens->multiply(dxrnd, dxrndout);
-    Log::info() << "Apply full ensemble B matrix OK" << std::endl;
-
-//  Write increment
-    const eckit::LocalConfiguration output_Bens(fullConfig, "output_Bens");
-    dxdirout.write(output_Bens);
-    Log::info() << "Write increment OK" << std::endl;
-    Log::test() << "Increment norm: " << dxrndout.norm() << std::endl;
-
-//  Test BUMP adjoint
     Increment_ x1(dxdir);
     Increment_ x2(dxdir);
     Increment_ x1save(dxdir);
     Increment_ x2save(dxdir);
+    Log::info() << "Setup increments OK" << std::endl;
+
+//  Setup B matrix
+    const eckit::LocalConfiguration covarConfig(fullConfig, "Covariance");
+    boost::scoped_ptr< ModelSpaceCovarianceBase<MODEL> > B(CovarianceFactory<MODEL>::create(
+                                                           covarConfig, resol, vars, xx, xx));
+    Log::info() << "Setup full ensemble B matrix OK" << std::endl;
+
+    if (covarConfig.has("localization")) {
+        //  Setup localization
+        const eckit::LocalConfiguration locConfig(covarConfig, "localization");
+        boost::scoped_ptr<Localization_> loc_;
+        loc_.reset(new Localization_(resol, locConfig));
+        Log::trace() << "Setup localization OK" << std::endl;
+
+        //  Apply localization
+        loc_->multiply(dxdirout);
+        loc_->multiply(dxrndout);
+        Log::trace() << "Apply localization OK" << std::endl;
+
+        //  Write increment
+        const eckit::LocalConfiguration output_localization(fullConfig, "output_localization");
+        dxdirout.write(output_localization);
+        Log::trace() << "Write increment OK" << std::endl;
+        Log::test() << "Increment: " << dxrndout << std::endl;
+
+        //  Test adjoint
+        x1.random();
+        x2.random();
+        x1save = x1;
+        x2save = x2;
+        loc_->multiply(x1);
+        loc_->multiply(x2);
+        double p1 = x1.dot_product_with(x2save);
+        double p2 = x2.dot_product_with(x1save);
+        Log::test() << "Adjoint test: " << p1 << " / " << p2 << std::endl;
+    }
+
+//  Apply B matrix to Dirac increment
+    B->multiply(dxdir, dxdirout);
+    B->multiply(dxrnd, dxrndout);
+    Log::info() << "Apply B matrix OK" << std::endl;
+
+//  Write increment
+    const eckit::LocalConfiguration output_B(fullConfig, "output_B");
+    dxdirout.write(output_B);
+    Log::trace() << "Write increment OK" << std::endl;
+    Log::test() << "Increment: " << dxrndout << std::endl;
+
+//  Test adjoint
     x1.random();
     x2.random();
     x1save = x1;
     x2save = x2;
-    loc_->multiply(x1);
-    loc_->multiply(x2);
+    B->multiply(x1save, x1);
+    B->multiply(x2save, x2);
     double p1 = x1.dot_product_with(x2save);
     double p2 = x2.dot_product_with(x1save);
     Log::test() << "Adjoint test: " << p1 << " / " << p2 << std::endl;

@@ -32,11 +32,10 @@ use type_rng, only: rng_type
 
 implicit none
 
-logical,parameter :: lcoef_ens = .false.   !< Apply ensemble coefficient (will reduce variance)
-integer,parameter :: ne_rand = 150         !< Ensemble size for randomization
-integer,parameter :: nfac = 10             !< Number of length-scale factors
-integer,parameter :: ntest = 100           !< Number of tests
-logical,parameter :: pos_def_test = .true. !< Positive-definiteness test
+integer,parameter :: ne_rand = 150          !< Ensemble size for randomization
+integer,parameter :: nfac = 10              !< Number of length-scale factors
+integer,parameter :: ntest = 100            !< Number of tests
+logical,parameter :: pos_def_test = .false. !< Positive-definiteness test
 
 ! NICAS derived type
 type nicas_type
@@ -93,10 +92,10 @@ integer :: ib
 nicas%prefix = prefix
 
 ! Allocation
-allocate(nicas%blk(bpar%nb+1))
+allocate(nicas%blk(bpar%nbe))
 
 ! Set name
-do ib=1,bpar%nb+1
+do ib=1,bpar%nbe
    nicas%blk(ib)%ib = ib
    if (nam%lsqrt) then
       write(nicas%blk(ib)%name,'(a,i1,a,i4.4,a,i4.4,a,a)') trim(prefix)//'-',nam%mpicom,'-sqrt_',mpl%nproc,'-',mpl%myproc, &
@@ -129,7 +128,7 @@ integer :: ib
 
 ! Release memory
 if (allocated(nicas%blk)) then
-   do ib=1,bpar%nb+1
+   do ib=1,bpar%nbe
       call nicas%blk(ib)%dealloc(nam,geom)
    end do
    deallocate(nicas%blk)
@@ -168,7 +167,7 @@ character(len=1024) :: subr = 'nicas_read'
 ! Allocation
 call nicas%alloc(mpl,nam,bpar,'nicas')
 
-do ib=1,bpar%nb+1
+do ib=1,bpar%nbe
    if (bpar%B_block(ib)) then
       ! Open file and get dimensions
       filename = trim(nam%prefix)//'_'//trim(nicas%blk(ib)%name)//'.nc'
@@ -204,7 +203,7 @@ do ib=1,bpar%nb+1
          end if
          call mpl%ncerr(subr,nf90_get_att(ncid,nf90_global,'nsc',nicas%blk(ib)%nsc))
       end if
-      if ((ib==bpar%nb+1).and.(abs(nam%advmode)==1)) then
+      if ((ib==bpar%nbe).and.(abs(nam%advmode)==1)) then
          call mpl%ncerr(subr,nf90_inq_dimid(ncid,'nc0d',nc0d_id))
          call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nc0d_id,len=nicas%blk(ib)%nc0d))
          call mpl%ncerr(subr,nf90_inq_dimid(ncid,'nc0dinv',nc0dinv_id))
@@ -222,7 +221,7 @@ do ib=1,bpar%nb+1
          allocate(nicas%blk(ib)%h(geom%nl0i))
          allocate(nicas%blk(ib)%s(nicas%blk(ib)%nl1))
       end if
-      if ((ib==bpar%nb+1).and.(abs(nam%advmode)==1)) then
+      if ((ib==bpar%nbe).and.(abs(nam%advmode)==1)) then
          allocate(nicas%blk(ib)%d(geom%nl0,2:nam%nts))
          allocate(nicas%blk(ib)%dinv(geom%nl0,2:nam%nts))
       end if
@@ -260,7 +259,7 @@ do ib=1,bpar%nb+1
             call nicas%blk(ib)%s(il1)%read(mpl,ncid)
          end do
       end if
-      if ((ib==bpar%nb+1).and.(abs(nam%advmode)==1)) then
+      if ((ib==bpar%nbe).and.(abs(nam%advmode)==1)) then
          call nicas%blk(ib)%com_AD%read(mpl,ncid,'com_AD')
          call nicas%blk(ib)%com_ADinv%read(mpl,ncid,'com_ADinv')
          do its=2,nam%nts
@@ -307,7 +306,7 @@ integer :: norm_id,coef_ens_id
 character(len=1024) :: filename
 character(len=1024) :: subr = 'nicas_write'
 
-do ib=1,bpar%nb+1
+do ib=1,bpar%nbe
    if (bpar%B_block(ib)) then
       ! Create file
       filename = trim(nam%prefix)//'_'//trim(nicas%blk(ib)%name)//'.nc'
@@ -327,7 +326,7 @@ do ib=1,bpar%nb+1
          if (nicas%blk(ib)%nsb>0) call mpl%ncerr(subr,nf90_def_dim(ncid,'nsb',nicas%blk(ib)%nsb,nsb_id))
          call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,'nsc',nicas%blk(ib)%nsc))
       end if
-      if ((ib==bpar%nb+1).and.nam%displ_diag) then
+      if ((ib==bpar%nbe).and.nam%displ_diag) then
          call mpl%ncerr(subr,nf90_def_dim(ncid,'nc0d',nicas%blk(ib)%nc0d,nc0d_id))
          call mpl%ncerr(subr,nf90_def_dim(ncid,'nc0dinv',nicas%blk(ib)%nc0dinv,nc0dinv_id))
       end if
@@ -372,7 +371,7 @@ do ib=1,bpar%nb+1
             call nicas%blk(ib)%s(il1)%write(mpl,ncid)
          end do
       end if
-      if ((ib==bpar%nb+1).and.nam%displ_diag) then
+      if ((ib==bpar%nbe).and.nam%displ_diag) then
          call nicas%blk(ib)%com_AD%write(mpl,ncid)
          call nicas%blk(ib)%com_ADinv%write(mpl,ncid)
          do its=2,nam%nts
@@ -413,7 +412,7 @@ real(kind_real),allocatable :: lcheck(:,:)
 character(len=1024) :: filename
 character(len=1024) :: subr = 'nicas_write_mpi_summary'
 
-do ib=1,bpar%nb+1
+do ib=1,bpar%nbe
    if (bpar%nicas_block(ib)) then
       ! Allocation
       allocate(lcheck(nicas%blk(ib)%nc1,nicas%blk(ib)%nl1))
@@ -501,19 +500,20 @@ write(mpl%unit,'(a)') '---------------------------------------------------------
 write(mpl%unit,'(a)') '--- Compute NICAS parameters'
 call flush(mpl%unit)
 
-do ib=1,bpar%nb+1
-   if (bpar%nicas_block(ib).or.((ib==bpar%nb+1).and.nam%displ_diag)) then
+do ib=1,bpar%nbe
+   if (bpar%nicas_block(ib).or.((ib==bpar%nbe).and.nam%displ_diag)) then
       write(mpl%unit,'(a)') '-------------------------------------------------------------------'
       write(mpl%unit,'(a)') '--- Block: '//trim(bpar%blockname(ib))
       call flush(mpl%unit)
    end if
 
    ! NICAS parameters
-   if (bpar%nicas_block(ib)) call nicas%blk(ib)%compute_parameters(mpl,rng,nam,geom,bpar,cmat%blk(ib))
+   if (bpar%nicas_block(ib)) call nicas%blk(ib)%compute_parameters(mpl,rng,nam,geom,cmat%blk(ib))
 
    ! Advection
-   if ((ib==bpar%nb+1).and.nam%displ_diag) call nicas%blk(ib)%compute_adv(mpl,rng,nam,geom,cmat%blk(ib))
+   if ((ib==bpar%nbe).and.nam%displ_diag) call nicas%blk(ib)%compute_adv(mpl,rng,nam,geom,cmat%blk(ib))
 
+   ! Coefficient
    if (bpar%B_block(ib)) then
       ! Copy weights
       nicas%blk(ib)%wgt = cmat%blk(ib)%wgt
@@ -555,7 +555,7 @@ type(geom_type),intent(inout) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar        !< Block parameters
 type(io_type),intent(in) :: io            !< I/O
 type(cmat_type),intent(in) :: cmat        !< C matrix data
-type(ens_type),intent(in),optional :: ens !< Ensemble
+type(ens_type),intent(in) :: ens          !< Ensemble
 
 ! Local variables
 integer :: ib
@@ -566,7 +566,7 @@ if (nam%check_adjoints) then
    write(mpl%unit,'(a)') '--- Test NICAS adjoint'
    call flush(mpl%unit)
 
-   do ib=1,bpar%nb+1
+   do ib=1,bpar%nbe
       if (bpar%nicas_block(ib)) then
          write(mpl%unit,'(a)') '-------------------------------------------------------------------'
          write(mpl%unit,'(a)') '--- Block: '//trim(bpar%blockname(ib))
@@ -575,15 +575,11 @@ if (nam%check_adjoints) then
       end if
    end do
 
-   ! Test localization adjoint
+   ! Test NICAS adjoint
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Test localization adjoint'
+   write(mpl%unit,'(a)') '--- Test NICAS adjoint'
    call flush(mpl%unit)
-   if (present(ens)) then
-      call nicas%test_adjoint(mpl,rng,nam,geom,bpar,ens)
-   else
-      call nicas%test_adjoint(mpl,rng,nam,geom,bpar)
-   end if
+   call nicas%test_adjoint(mpl,rng,nam,geom,bpar,ens)
 end if
 
 if (nam%check_pos_def) then
@@ -592,7 +588,7 @@ if (nam%check_pos_def) then
    write(mpl%unit,'(a)') '--- Test NICAS positive definiteness'
    call flush(mpl%unit)
 
-   do ib=1,bpar%nb+1
+   do ib=1,bpar%nbe
       if (bpar%nicas_block(ib)) then
          write(mpl%unit,'(a)') '-------------------------------------------------------------------'
          write(mpl%unit,'(a)') '--- Block: '//trim(bpar%blockname(ib))
@@ -608,7 +604,7 @@ if (nam%check_sqrt) then
    write(mpl%unit,'(a)') '--- Test NICAS full/square-root equivalence'
    call flush(mpl%unit)
 
-   do ib=1,bpar%nb+1
+   do ib=1,bpar%nbe
       if (bpar%nicas_block(ib)) then
          write(mpl%unit,'(a)') '-------------------------------------------------------------------'
          write(mpl%unit,'(a)') '--- Block: '//trim(bpar%blockname(ib))
@@ -617,15 +613,11 @@ if (nam%check_sqrt) then
       end if
    end do
 
-   ! Test localization full/square-root equivalence
+   ! Test NICAS full/square-root equivalence
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Test localization full/square-root equivalence'
+   write(mpl%unit,'(a)') '--- Test NICAS full/square-root equivalence'
    call flush(mpl%unit)
-   if (present(ens)) then
-      call nicas%test_sqrt(mpl,rng,nam,geom,bpar,io,cmat,ens)
-   else
-      call nicas%test_sqrt(mpl,rng,nam,geom,bpar,io,cmat)
-   end if
+   call nicas%test_sqrt(mpl,rng,nam,geom,bpar,io,cmat,ens)
 end if
 
 if (nam%check_dirac) then
@@ -634,7 +626,7 @@ if (nam%check_dirac) then
    write(mpl%unit,'(a)') '--- Apply NICAS to diracs'
    call flush(mpl%unit)
 
-   do ib=1,bpar%nb+1
+   do ib=1,bpar%nbe
       if (bpar%nicas_block(ib)) then
          write(mpl%unit,'(a)') '-------------------------------------------------------------------'
          write(mpl%unit,'(a)') '--- Block: '//trim(bpar%blockname(ib))
@@ -643,15 +635,11 @@ if (nam%check_dirac) then
       end if
    end do
 
-   ! Apply localization to diracs
+   ! Apply NICAS to diracs
    write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Apply localization to diracs'
+   write(mpl%unit,'(a)') '--- Apply NICAS to diracs'
    call flush(mpl%unit)
-   if (present(ens)) then
-      call nicas%test_dirac(mpl,nam,geom,bpar,io,ens)
-   else
-      call nicas%test_dirac(mpl,nam,geom,bpar,io)
-   end if
+   call nicas%test_dirac(mpl,nam,geom,bpar,io,ens)
 end if
 
 if (nam%check_randomization) then
@@ -697,9 +685,9 @@ type(cv_type),intent(inout) :: cv     !< Control vector
 integer :: ib
 
 ! Allocation
-allocate(cv%blk(bpar%nb+1))
+allocate(cv%blk(bpar%nbe))
 
-do ib=1,bpar%nb+1
+do ib=1,bpar%nbe
    if (bpar%cv_block(ib)) then
       ! Allocation
       if (bpar%nicas_block(ib)) then
@@ -736,7 +724,7 @@ integer :: ib
 call nicas%alloc_cv(bpar,cv)
 
 ! Random initialization
-do ib=1,bpar%nb+1
+do ib=1,bpar%nbe
    if (bpar%cv_block(ib)) call rng%rand_gau(cv%blk(ib)%alpha)
 end do
 
@@ -744,7 +732,7 @@ end subroutine nicas_random_cv
 
 !----------------------------------------------------------------------
 ! Subroutine: nicas_apply
-!> Purpose: apply localization
+!> Purpose: apply NICAS
 !----------------------------------------------------------------------
 subroutine nicas_apply(nicas,mpl,nam,geom,bpar,fld)
 
@@ -772,7 +760,7 @@ if (pos_def_test) then
 end if
 
 ! Adjoint advection
-if (nam%advmode==1) call nicas%blk(bpar%nb+1)%apply_adv_ad(mpl,nam,geom,fld)
+if (nam%advmode==1) call nicas%blk(bpar%nbe)%apply_adv_ad(mpl,nam,geom,fld)
 
 select case (nam%strategy)
 case ('common')
@@ -793,30 +781,26 @@ case ('common')
    end do
    !$omp end parallel do
 
-   if (lcoef_ens) then
-      ! Apply common ensemble coefficient square-root
-      !$omp parallel do schedule(static) private(il0,ic0a)
-      do il0=1,geom%nl0
-         do ic0a=1,geom%nc0a
-            fld_3d(ic0a,il0) = fld_3d(ic0a,il0)*sqrt(nicas%blk(bpar%nb+1)%coef_ens(ic0a,il0))
-         end do
+   ! Apply common ensemble coefficient square-root
+   !$omp parallel do schedule(static) private(il0,ic0a)
+   do il0=1,geom%nl0
+      do ic0a=1,geom%nc0a
+         fld_3d(ic0a,il0) = fld_3d(ic0a,il0)*sqrt(nicas%blk(bpar%nbe)%coef_ens(ic0a,il0))
       end do
-      !$omp end parallel do
-   end if
+   end do
+   !$omp end parallel do
 
-   ! Apply common localization
-   call nicas%blk(bpar%nb+1)%apply(mpl,nam,geom,fld_3d)
+   ! Apply common NICAS
+   call nicas%blk(bpar%nbe)%apply(mpl,nam,geom,fld_3d)
 
-   if (lcoef_ens) then
-      ! Apply common ensemble coefficient square-root
-      !$omp parallel do schedule(static) private(il0,ic0a)
-      do il0=1,geom%nl0
-         do ic0a=1,geom%nc0a
-            fld_3d(ic0a,il0) = fld_3d(ic0a,il0)*sqrt(nicas%blk(bpar%nb+1)%coef_ens(ic0a,il0))
-         end do
+   ! Apply common ensemble coefficient square-root
+   !$omp parallel do schedule(static) private(il0,ic0a)
+   do il0=1,geom%nl0
+      do ic0a=1,geom%nc0a
+         fld_3d(ic0a,il0) = fld_3d(ic0a,il0)*sqrt(nicas%blk(bpar%nbe)%coef_ens(ic0a,il0))
       end do
-      !$omp end parallel do
-   end if
+   end do
+   !$omp end parallel do
 
    ! Build final vector
    !$omp parallel do schedule(static) private(il0,ic0a,its,iv)
@@ -846,13 +830,13 @@ case ('specific_univariate')
          iv = bpar%b_to_v1(ib)
 
          ! Apply common ensemble coefficient square-root
-         if (lcoef_ens) fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(ib)%coef_ens)
+         fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(ib)%coef_ens)
 
-         ! Apply specific localization (same for all timeslots)
+         ! Apply specific NICAS (same for all timeslots)
          call nicas%blk(ib)%apply(mpl,nam,geom,fld_4d(:,:,iv))
 
          ! Apply common ensemble coefficient square-root
-         if (lcoef_ens) fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(ib)%coef_ens)
+         fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(ib)%coef_ens)
       end if
    end do
 
@@ -861,7 +845,7 @@ case ('specific_univariate')
       fld(:,:,:,its) = fld_4d
    end do
 case ('specific_multivariate')
-   call mpl%abort('specific multivariate strategy should not be called from apply_localization (lsqrt required)')
+   call mpl%abort('specific multivariate strategy should not be called from apply_NICAS (lsqrt required)')
 case ('common_weighted')
    ! Allocation
    allocate(fld_4d(geom%nc0a,geom%nl0,nam%nv))
@@ -899,13 +883,13 @@ case ('common_weighted')
 
    do iv=1,nam%nv
       ! Apply common ensemble coefficient square-root
-      if (lcoef_ens) fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(bpar%nb+1)%coef_ens)
+      fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(bpar%nbe)%coef_ens)
 
-      ! Apply common localization
-      call nicas%blk(bpar%nb+1)%apply(mpl,nam,geom,fld_4d(:,:,iv))
+      ! Apply common NICAS
+      call nicas%blk(bpar%nbe)%apply(mpl,nam,geom,fld_4d(:,:,iv))
 
       ! Apply common ensemble coefficient square-root
-      if (lcoef_ens) fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(bpar%nb+1)%coef_ens)
+      fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(bpar%nbe)%coef_ens)
    end do
 
    ! Apply weights
@@ -930,13 +914,13 @@ if (pos_def_test) then
 end if
 
 ! Advection
-if (nam%advmode==1) call nicas%blk(bpar%nb+1)%apply_adv(mpl,nam,geom,fld)
+if (nam%advmode==1) call nicas%blk(bpar%nbe)%apply_adv(mpl,nam,geom,fld)
 
 end subroutine nicas_apply
 
 !----------------------------------------------------------------------
 ! Subroutine: nicas_apply_from_sqrt
-!> Purpose: apply localization from square-root
+!> Purpose: apply NICAS from square-root
 !----------------------------------------------------------------------
 subroutine nicas_apply_from_sqrt(nicas,mpl,nam,geom,bpar,fld)
 
@@ -978,7 +962,7 @@ end subroutine nicas_apply_from_sqrt
 
 !----------------------------------------------------------------------
 ! Subroutine: nicas_apply_sqrt
-!> Purpose: apply localization square-root
+!> Purpose: apply NICAS square-root
 !----------------------------------------------------------------------
 subroutine nicas_apply_sqrt(nicas,mpl,nam,geom,bpar,cv,fld)
 
@@ -1003,11 +987,11 @@ case ('common')
    ! Allocation
    allocate(fld_3d(geom%nc0a,geom%nl0))
 
-   ! Apply common localization
-   call nicas%blk(bpar%nb+1)%apply_sqrt(mpl,geom,cv%blk(bpar%nb+1)%alpha,fld_3d)
+   ! Apply common NICAS
+   call nicas%blk(bpar%nbe)%apply_sqrt(mpl,geom,cv%blk(bpar%nbe)%alpha,fld_3d)
 
    ! Apply common ensemble coefficient square-root
-   if (lcoef_ens) fld_3d = fld_3d*sqrt(nicas%blk(bpar%nb+1)%coef_ens)
+   fld_3d = fld_3d*sqrt(nicas%blk(bpar%nbe)%coef_ens)
 
    ! Build final vector
    do its=1,nam%nts
@@ -1024,11 +1008,11 @@ case ('specific_univariate')
          ! Variable index
          iv = bpar%b_to_v1(ib)
 
-         ! Apply specific localization (same for all timeslots)
+         ! Apply specific NICAS (same for all timeslots)
          call nicas%blk(ib)%apply_sqrt(mpl,geom,cv%blk(ib)%alpha,fld_4d(:,:,iv))
 
          ! Apply specific ensemble coefficient square-root
-         if (lcoef_ens) fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(ib)%coef_ens)
+         fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(ib)%coef_ens)
       end if
    end do
 
@@ -1045,11 +1029,11 @@ case ('specific_multivariate')
          ! Variable index
          iv = bpar%b_to_v1(ib)
 
-         ! Apply specific localization (same for all timeslots)
-         call nicas%blk(ib)%apply_sqrt(mpl,geom,cv%blk(bpar%nb+1)%alpha,fld_4d(:,:,iv))
+         ! Apply specific NICAS (same for all timeslots)
+         call nicas%blk(ib)%apply_sqrt(mpl,geom,cv%blk(bpar%nbe)%alpha,fld_4d(:,:,iv))
 
          ! Apply specific ensemble coefficient square-root
-         if (lcoef_ens) fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(ib)%coef_ens)
+         fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(ib)%coef_ens)
       end if
    end do
 
@@ -1111,11 +1095,11 @@ case ('common_weighted')
          ! Variable index
          iv = bpar%b_to_v1(ib)
 
-         ! Apply specific localization (same for all timeslots)
-         call nicas%blk(bpar%nb+1)%apply_sqrt(mpl,geom,cv%blk(ib)%alpha,fld_4d(:,:,iv))
+         ! Apply specific NICAS (same for all timeslots)
+         call nicas%blk(bpar%nbe)%apply_sqrt(mpl,geom,cv%blk(ib)%alpha,fld_4d(:,:,iv))
 
          ! Apply common ensemble coefficient square-root
-         if (lcoef_ens) fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(bpar%nb+1)%coef_ens)
+         fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(bpar%nbe)%coef_ens)
       end if
    end do
 
@@ -1134,13 +1118,13 @@ case ('common_weighted')
 end select
 
 ! Advection
-if (nam%advmode==1) call nicas%blk(bpar%nb+1)%apply_adv(mpl,nam,geom,fld)
+if (nam%advmode==1) call nicas%blk(bpar%nbe)%apply_adv(mpl,nam,geom,fld)
 
 end subroutine nicas_apply_sqrt
 
 !----------------------------------------------------------------------
 ! Subroutine: nicas_apply_sqrt_ad
-!> Purpose: apply localization square-root, adjoint
+!> Purpose: apply NICAS square-root, adjoint
 !----------------------------------------------------------------------
 subroutine nicas_apply_sqrt_ad(nicas,mpl,nam,geom,bpar,fld,cv)
 
@@ -1169,7 +1153,7 @@ call nicas%alloc_cv(bpar,cv)
 fld_5d = fld
 
 ! Adjoint advection
-if (nam%advmode==1) call nicas%blk(bpar%nb+1)%apply_adv_ad(mpl,nam,geom,fld_5d)
+if (nam%advmode==1) call nicas%blk(bpar%nbe)%apply_adv_ad(mpl,nam,geom,fld_5d)
 
 select case (nam%strategy)
 case ('common')
@@ -1185,10 +1169,10 @@ case ('common')
    end do
 
    ! Apply common ensemble coefficient square-root
-   if (lcoef_ens) fld_3d = fld_3d*sqrt(nicas%blk(bpar%nb+1)%coef_ens)
+   fld_3d = fld_3d*sqrt(nicas%blk(bpar%nbe)%coef_ens)
 
-   ! Apply common localization
-   call nicas%blk(bpar%nb+1)%apply_sqrt_ad(mpl,geom,fld_3d,cv%blk(bpar%nb+1)%alpha)
+   ! Apply common NICAS
+   call nicas%blk(bpar%nbe)%apply_sqrt_ad(mpl,geom,fld_3d,cv%blk(bpar%nbe)%alpha)
 case ('specific_univariate')
    ! Allocation
    allocate(fld_4d(geom%nc0a,geom%nl0,nam%nv))
@@ -1205,9 +1189,9 @@ case ('specific_univariate')
          iv = bpar%b_to_v1(ib)
 
          ! Apply common ensemble coefficient square-root
-         if (lcoef_ens) fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(ib)%coef_ens)
+         fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(ib)%coef_ens)
 
-         ! Apply specific localization (same for all timeslots)
+         ! Apply specific NICAS (same for all timeslots)
          call nicas%blk(ib)%apply_sqrt_ad(mpl,geom,fld_4d(:,:,iv),cv%blk(ib)%alpha)
       end if
    end do
@@ -1217,7 +1201,7 @@ case ('specific_multivariate')
    call nicas%alloc_cv(bpar,cv_tmp)
 
    ! Initialization
-   cv%blk(bpar%nb+1)%alpha = 0.0
+   cv%blk(bpar%nbe)%alpha = 0.0
 
    ! Sum product over timeslots
    fld_4d = 0.0
@@ -1231,13 +1215,13 @@ case ('specific_multivariate')
          iv = bpar%b_to_v1(ib)
 
          ! Apply common ensemble coefficient square-root
-         if (lcoef_ens) fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(ib)%coef_ens)
+         fld_4d(:,:,iv) = fld_4d(:,:,iv)*sqrt(nicas%blk(ib)%coef_ens)
 
-         ! Apply specific localization (same for all timeslots)
-         call nicas%blk(ib)%apply_sqrt_ad(mpl,geom,fld_4d(:,:,iv),cv_tmp%blk(bpar%nb+1)%alpha)
+         ! Apply specific NICAS (same for all timeslots)
+         call nicas%blk(ib)%apply_sqrt_ad(mpl,geom,fld_4d(:,:,iv),cv_tmp%blk(bpar%nbe)%alpha)
 
          ! Sum control variable
-         cv%blk(bpar%nb+1)%alpha = cv%blk(bpar%nb+1)%alpha+cv_tmp%blk(bpar%nb+1)%alpha
+         cv%blk(bpar%nbe)%alpha = cv%blk(bpar%nbe)%alpha+cv_tmp%blk(bpar%nbe)%alpha
       end if
    end do
 case ('common_weighted')
@@ -1309,10 +1293,10 @@ case ('common_weighted')
          iv = bpar%b_to_v1(ib)
 
          ! Apply common ensemble coefficient square-root
-         if (lcoef_ens) fld_4d_tmp(:,:,iv) = fld_4d_tmp(:,:,iv)*sqrt(nicas%blk(bpar%nb+1)%coef_ens)
+         fld_4d_tmp(:,:,iv) = fld_4d_tmp(:,:,iv)*sqrt(nicas%blk(bpar%nbe)%coef_ens)
 
-         ! Apply specific localization (same for all timeslots)
-         call nicas%blk(bpar%nb+1)%apply_sqrt_ad(mpl,geom,fld_4d_tmp(:,:,iv),cv%blk(ib)%alpha)
+         ! Apply specific NICAS (same for all timeslots)
+         call nicas%blk(bpar%nbe)%apply_sqrt_ad(mpl,geom,fld_4d_tmp(:,:,iv),cv%blk(ib)%alpha)
       end if
    end do
 end select
@@ -1321,7 +1305,7 @@ end subroutine nicas_apply_sqrt_ad
 
 !----------------------------------------------------------------------
 ! Subroutine: nicas_randomize
-!> Purpose: randomize localization from square-root
+!> Purpose: randomize NICAS from square-root
 !----------------------------------------------------------------------
 subroutine nicas_randomize(nicas,mpl,rng,nam,geom,bpar,ne,ens)
 
@@ -1335,7 +1319,7 @@ type(nam_type),target,intent(in) :: nam    !< Namelist
 type(geom_type),target,intent(in) :: geom  !< Geometry
 type(bpar_type),target,intent(in) :: bpar  !< Blocal parameters
 integer,intent(in) :: ne                   !< Number of members
-type(ens_type),intent(out),optional :: ens !< Ensemble
+type(ens_type),intent(out) :: ens          !< Ensemble
 
 ! Local variable
 integer :: ie
@@ -1394,7 +1378,7 @@ mean = sum(ens%fld,dim=5)/real(nam%ens1_ne,kind_real)
 fld_copy = fld
 
 ! Adjoint advection
-if (nam%advmode==-1) call nicas%blk(bpar%nb+1)%apply_adv_ad(mpl,nam,geom,fld_copy)
+if (nam%advmode==-1) call nicas%blk(bpar%nbe)%apply_adv_ad(mpl,nam,geom,fld_copy)
 
 ! Apply localized ensemble covariance formula
 fld = 0.0
@@ -1403,12 +1387,12 @@ do ie=1,nam%ens1_ne
    pert = (ens%fld(:,:,:,:,ie)-mean)/sqrt(real(nam%ens1_ne-1,kind_real))
 
    ! Inverse advection
-   if (nam%advmode==-1) call nicas%blk(bpar%nb+1)%apply_adv_inv(mpl,nam,geom,pert)
+   if (nam%advmode==-1) call nicas%blk(bpar%nbe)%apply_adv_inv(mpl,nam,geom,pert)
 
    ! Schur product
    fld_tmp = pert*fld_copy
 
-   ! Apply localization
+   ! Apply NICAS
    if (nam%lsqrt) then
       call nicas%apply_from_sqrt(mpl,nam,geom,bpar,fld_tmp)
    else
@@ -1420,7 +1404,7 @@ do ie=1,nam%ens1_ne
 end do
 
 ! Advection
-if (nam%advmode==-1) call nicas%blk(bpar%nb+1)%apply_adv(mpl,nam,geom,fld)
+if (nam%advmode==-1) call nicas%blk(bpar%nbe)%apply_adv(mpl,nam,geom,fld)
 
 end subroutine nicas_apply_bens
 
@@ -1473,7 +1457,7 @@ end subroutine nicas_apply_bens_noloc
 
 !----------------------------------------------------------------------
 ! Subroutine: nicas_test_adjoint
-!> Purpose: test localization adjoint
+!> Purpose: test NICAS adjoint
 !----------------------------------------------------------------------
 subroutine nicas_test_adjoint(nicas,mpl,rng,nam,geom,bpar,ens)
 
@@ -1486,7 +1470,7 @@ type(rng_type),intent(inout) :: rng       !< Random number generator
 type(nam_type),intent(in) :: nam          !< Namelist
 type(geom_type),intent(in) :: geom        !< Geometry
 type(bpar_type),intent(in) :: bpar        !< Block parameters
-type(ens_type),intent(in),optional :: ens !< Ensemble
+type(ens_type),intent(in) :: ens          !< Ensemble
 
 ! Local variables
 real(kind_real) :: sum1,sum2
@@ -1498,7 +1482,7 @@ allocate(fld1_save(geom%nc0a,geom%nl0,nam%nv,nam%nts))
 allocate(fld2_save(geom%nc0a,geom%nl0,nam%nv,nam%nts))
 allocate(fld1_loc(geom%nc0a,geom%nl0,nam%nv,nam%nts))
 allocate(fld2_loc(geom%nc0a,geom%nl0,nam%nv,nam%nts))
-if (present(ens)) then
+if (ens%ne>0) then
    allocate(fld1_bens(geom%nc0a,geom%nl0,nam%nv,nam%nts))
    allocate(fld2_bens(geom%nc0a,geom%nl0,nam%nv,nam%nts))
 end if
@@ -1520,10 +1504,10 @@ end if
 if (abs(nam%advmode)==1) then
    fld1_adv = fld1_save
    fld2_adv = fld2_save
-   call nicas%blk(bpar%nb+1)%apply_adv(mpl,nam,geom,fld1_adv)
-   call nicas%blk(bpar%nb+1)%apply_adv_ad(mpl,nam,geom,fld2_adv)
+   call nicas%blk(bpar%nbe)%apply_adv(mpl,nam,geom,fld1_adv)
+   call nicas%blk(bpar%nbe)%apply_adv_ad(mpl,nam,geom,fld2_adv)
 end if
-if (present(ens)) then
+if (ens%ne>0) then
    fld1_bens = fld1_save
    fld2_bens = fld2_save
    call nicas%apply_bens(mpl,nam,geom,bpar,ens,fld1_bens)
@@ -1533,7 +1517,7 @@ end if
 ! Print result
 call mpl%dot_prod(fld1_loc,fld2_save,sum1)
 call mpl%dot_prod(fld2_loc,fld1_save,sum2)
-write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Localization adjoint test: ', &
+write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','NICAS adjoint test: ', &
  & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
 call flush(mpl%unit)
 if (abs(nam%advmode)==1) then
@@ -1543,7 +1527,7 @@ if (abs(nam%advmode)==1) then
  & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
    call flush(mpl%unit)
 end if
-if (present(ens)) then
+if (ens%ne>0) then
    call mpl%dot_prod(fld1_bens,fld2_save,sum1)
    call mpl%dot_prod(fld2_bens,fld1_save,sum2)
    write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Ensemble B adjoint test:   ', &
@@ -1570,7 +1554,7 @@ type(geom_type),intent(in),target :: geom  !< Geometry
 type(bpar_type),intent(in) :: bpar         !< Block parameters
 type(io_type),intent(in) :: io             !< I/O
 type(cmat_type),intent(in) :: cmat         !< C matrix data
-type(ens_type),intent(in),optional :: ens  !< Ensemble
+type(ens_type),intent(in) :: ens           !< Ensemble
 
 ! Local variables
 integer :: ib,iv
@@ -1582,7 +1566,7 @@ type(nicas_type) :: nicas_other
 ! Allocation
 allocate(fld_loc(geom%nc0a,geom%nl0,nam%nv,nam%nts))
 allocate(fld_loc_sqrt(geom%nc0a,geom%nl0,nam%nv,nam%nts))
-if (present(ens)) then
+if (ens%ne>0) then
    allocate(fld_bens(geom%nc0a,geom%nl0,nam%nv,nam%nts))
    allocate(fld_bens_sqrt(geom%nc0a,geom%nl0,nam%nv,nam%nts))
 end if
@@ -1590,18 +1574,18 @@ end if
 ! Generate random field
 call rng%rand_real(-1.0_kind_real,1.0_kind_real,fld_loc)
 fld_loc_sqrt = fld_loc
-if (present(ens)) then
+if (ens%ne>0) then
    call rng%rand_real(-1.0_kind_real,1.0_kind_real,fld_bens)
    fld_bens_sqrt = fld_bens
 end if
 
-! Apply localization, initial version
+! Apply NICAS, initial version
 if (nam%lsqrt) then
    call nicas%apply_from_sqrt(mpl,nam,geom,bpar,fld_loc_sqrt)
 else
    call nicas%apply(mpl,nam,geom,bpar,fld_loc)
 end if
-if (present(ens)) then
+if (ens%ne>0) then
    if (nam%lsqrt) then
       call nicas%apply_bens(mpl,nam,geom,bpar,ens,fld_bens_sqrt)
    else
@@ -1616,10 +1600,10 @@ nam%lsqrt = .not.nam%lsqrt
 call nicas_other%alloc(mpl,nam,bpar,'nicas_other')
 
 ! Prepare nicas, other version
-do ib=1,bpar%nb+1
+do ib=1,bpar%nbe
    if (bpar%nicas_block(ib)) then
       ! Compute NICAS parameters
-      call nicas_other%blk(ib)%compute_parameters(mpl,rng,nam,geom,bpar,cmat%blk(ib))
+      call nicas_other%blk(ib)%compute_parameters(mpl,rng,nam,geom,cmat%blk(ib))
    end if
 
    if (bpar%B_block(ib)) then
@@ -1632,13 +1616,13 @@ do ib=1,bpar%nb+1
    end if
 end do
 
-! Apply localization, other version
+! Apply NICAS, other version
 if (nam%lsqrt) then
    call nicas_other%apply_from_sqrt(mpl,nam,geom,bpar,fld_loc_sqrt)
 else
    call nicas_other%apply(mpl,nam,geom,bpar,fld_loc)
 end if
-if (present(ens)) then
+if (ens%ne>0) then
    if (nam%lsqrt) then
       call nicas_other%apply_bens(mpl,nam,geom,bpar,ens,fld_bens_sqrt)
    else
@@ -1660,9 +1644,9 @@ end do
 nam%lsqrt = .not.nam%lsqrt
 
 ! Print difference
-write(mpl%unit,'(a7,a,f6.1,a)') '','Localization full / square-root error : ', &
+write(mpl%unit,'(a7,a,f6.1,a)') '','NICAS full / square-root error : ', &
  & sqrt(sum((fld_loc_sqrt-fld_loc)**2)/sum(fld_loc**2))*100.0,'%'
-if (present(ens)) write(mpl%unit,'(a7,a,f6.1,a)') '','Ensemble B full / square-root error:  ', &
+if (ens%ne>0) write(mpl%unit,'(a7,a,f6.1,a)') '','Ensemble B full / square-root error:  ', &
  & sqrt(sum((fld_bens_sqrt-fld_bens)**2)/sum(fld_bens**2))*100.0,'%'
 call flush(mpl%unit)
 
@@ -1670,7 +1654,7 @@ end subroutine nicas_test_sqrt
 
 !----------------------------------------------------------------------
 ! Subroutine: nicas_test_dirac
-!> Purpose: apply localization to diracs
+!> Purpose: apply NICAS to diracs
 !----------------------------------------------------------------------
 subroutine nicas_test_dirac(nicas,mpl,nam,geom,bpar,io,ens)
 
@@ -1683,7 +1667,7 @@ type(nam_type),intent(in) :: nam          !< Namelist
 type(geom_type),intent(in) :: geom        !< Geometry
 type(bpar_type),intent(in) :: bpar        !< Block parameters
 type(io_type),intent(in) :: io            !< I/O
-type(ens_type),intent(in),optional :: ens !< Ensemble
+type(ens_type),intent(in) :: ens          !< Ensemble
 
 ! Local variables
 integer :: iprocdir(nam%ndir),ic0adir(nam%ndir),il0dir(nam%ndir),idir,iv,its
@@ -1705,9 +1689,9 @@ end do
 
 ! Allocation
 allocate(fld_loc(geom%nc0a,geom%nl0,nam%nv,nam%nts))
-if (present(ens)) allocate(fld_bens(geom%nc0a,geom%nl0,nam%nv,nam%nts))
+if (ens%ne>0) allocate(fld_bens(geom%nc0a,geom%nl0,nam%nv,nam%nts))
 
-! Apply localization to dirac
+! Apply NICAS to dirac
 fld_loc = fld
 if (nam%lsqrt) then
    call nicas%apply_from_sqrt(mpl,nam,geom,bpar,fld_loc)
@@ -1715,7 +1699,7 @@ else
    call nicas%apply(mpl,nam,geom,bpar,fld_loc)
 end if
 
-if (present(ens)) then
+if (ens%ne>0) then
    ! Apply localized ensemble covariance
    fld_bens = fld
    call nicas%apply_bens(mpl,nam,geom,bpar,ens,fld_bens)
@@ -1727,7 +1711,7 @@ do its=1,nam%nts
    write(itschar,'(i2.2)') its
    do iv=1,nam%nv
       call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_'//itschar,fld_loc(:,:,iv,its))
-      if (present(ens)) call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_'//itschar//'_Bens', &
+      if (ens%ne>0) call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_'//itschar//'_Bens', &
        & fld_bens(:,:,iv,its))
    end do
 end do
@@ -1765,8 +1749,8 @@ write(mpl%unit,'(a4,a)') '','Define test vectors'
 call flush(mpl%unit)
 call define_test_vectors(mpl,rng,nam,geom,ntest,fld_save)
 
-! Apply localization to test vectors
-write(mpl%unit,'(a4,a)') '','Apply localization to test vectors'
+! Apply NICAS to test vectors
+write(mpl%unit,'(a4,a)') '','Apply NICAS to test vectors'
 call flush(mpl%unit)
 fld_ref = fld_save
 do itest=1,ntest
@@ -1801,7 +1785,7 @@ do ifac=1,nfac
    call nicas%randomize(mpl,rng,nam,geom,bpar,nefac(ifac),ens)
 
    do itest=1,ntest
-      ! Test localization
+      ! Test NICAS
       fld = fld_save(:,:,:,:,itest)
       call nicas%apply_bens_noloc(mpl,nam,geom,ens,fld)
 
@@ -1891,8 +1875,8 @@ call cmat_test%run_hdiag(mpl,rng,nam,geom,bpar,io,ens)
 
 ! Print scores
 write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- hdiag-nicas consistency results'
-do ib=1,bpar%nb+1
+write(mpl%unit,'(a)') '--- HDIAG/NICAS consistency results'
+do ib=1,bpar%nbe
    if (bpar%nicas_block(ib)) then
       write(mpl%unit,'(a7,a,a)') '','Block: ',trim(bpar%blockname(ib))
       do il0=1,geom%nl0
@@ -1951,8 +1935,8 @@ write(mpl%unit,'(a4,a)') '','Define test vectors'
 call flush(mpl%unit)
 call define_test_vectors(mpl,rng,nam,geom,ntest,fld_save)
 
-! Apply localization to test vectors
-write(mpl%unit,'(a4,a)') '','Apply localization to test vectors'
+! Apply NICAS to test vectors
+write(mpl%unit,'(a4,a)') '','Apply NICAS to test vectors'
 call flush(mpl%unit)
 fld_ref = fld_save
 do itest=1,ntest
@@ -1975,7 +1959,7 @@ method = nam%method
 
 ! Set namelist variables
 nam%prefix = trim(nam%prefix)//'_optimality-test'
-nam%method = 'loc'
+nam%method = 'loc_norm'
 
 ! Allocation
 call nicas_test%alloc(mpl,nam,bpar,'nicas_test')
@@ -1995,7 +1979,7 @@ do ifac=1,nfac
    write(mpl%unit,'(a,f4.2,a)') '--- Apply a multiplicative factor ',fac(ifac),' to length-scales'
    call flush(mpl%unit)
 
-   do ib=1,bpar%nb+1
+   do ib=1,bpar%nbe
       if (bpar%nicas_block(ib)) then
          ! Length-scales multiplication
          cmat_test%blk(ib)%rh_c0 = fac(ifac)*cmat_save%blk(ib)%rh_c0
@@ -2006,7 +1990,7 @@ do ifac=1,nfac
          end if
 
          ! Compute NICAS parameters
-         call nicas_test%blk(ib)%compute_parameters(mpl,rng,nam,geom,bpar,cmat_test%blk(ib))
+         call nicas_test%blk(ib)%compute_parameters(mpl,rng,nam,geom,cmat_test%blk(ib))
       end if
 
       if (bpar%B_block(ib)) then
@@ -2020,7 +2004,7 @@ do ifac=1,nfac
    end do
 
    do itest=1,ntest
-      ! Test localization
+      ! Test NICAS
       fld = fld_save(:,:,:,:,itest)
       call nicas_test%apply_bens(mpl,nam,geom,bpar,ens,fld)
 

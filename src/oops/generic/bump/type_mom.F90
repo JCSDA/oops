@@ -72,36 +72,18 @@ do ib=1,bpar%nb
       ! Allocation
       mom%blk(ib)%ne = ne
       mom%blk(ib)%nsub = nsub
-      allocate(mom%blk(ib)%m1_1(hdata%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,mom%blk(ib)%nsub))
-      allocate(mom%blk(ib)%m2_1(hdata%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,mom%blk(ib)%nsub))
-      allocate(mom%blk(ib)%m1_2(hdata%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,mom%blk(ib)%nsub))
-      allocate(mom%blk(ib)%m2_2(hdata%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,mom%blk(ib)%nsub))
+      allocate(mom%blk(ib)%m2_1(hdata%nc1a,bpar%nc3(ib),geom%nl0,mom%blk(ib)%nsub))
+      allocate(mom%blk(ib)%m2_2(hdata%nc1a,bpar%nc3(ib),geom%nl0,mom%blk(ib)%nsub))
       allocate(mom%blk(ib)%m11(hdata%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,mom%blk(ib)%nsub))
-      if (.not.nam%gau_approx) then
-         allocate(mom%blk(ib)%m12(hdata%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,mom%blk(ib)%nsub))
-         allocate(mom%blk(ib)%m21(hdata%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,mom%blk(ib)%nsub))
-         allocate(mom%blk(ib)%m22(hdata%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,mom%blk(ib)%nsub))
-      end if
-      if (nam%full_var) then
-         allocate(mom%blk(ib)%m1full(geom%nc0a,geom%nl0,mom%blk(ib)%nsub))
-         allocate(mom%blk(ib)%m2full(geom%nc0a,geom%nl0,mom%blk(ib)%nsub))
-      end if
+      if (.not.nam%gau_approx) allocate(mom%blk(ib)%m22(hdata%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,mom%blk(ib)%nsub))
+      if (nam%var_full) allocate(mom%blk(ib)%m2full(geom%nc0a,geom%nl0,mom%blk(ib)%nsub))
 
       ! Initialization
-      mom%blk(ib)%m1_1 = 0.0
       mom%blk(ib)%m2_1 = 0.0
-      mom%blk(ib)%m1_2 = 0.0
       mom%blk(ib)%m2_2 = 0.0
       mom%blk(ib)%m11 = 0.0
-      if (.not.nam%gau_approx) then
-         mom%blk(ib)%m12 = 0.0
-         mom%blk(ib)%m21 = 0.0
-         mom%blk(ib)%m22 = 0.0
-      end if
-      if (nam%full_var) then
-         mom%blk(ib)%m1full = 0.0
-         mom%blk(ib)%m2full = 0.0
-      end if
+      if (.not.nam%gau_approx) mom%blk(ib)%m22 = 0.0
+      if (nam%var_full) mom%blk(ib)%m2full = 0.0
    end if
 end do
 
@@ -126,8 +108,7 @@ type(ens_type), intent(in) :: ens    !< Ensemble
 
 ! Local variables
 integer :: ie,ie_sub,jc0,ic0c,jc0c,ic0,jl0r,jl0,il0,isub,jc3,ic1,ic1a,ib,jv,iv,jts,its
-real(kind_real) :: fac1,fac2,fac3,fac4,fac5,fac6
-real(kind_real),allocatable :: fld_ext(:,:,:,:),fld_1(:,:,:,:),fld_2(:,:,:,:)
+real(kind_real),allocatable :: fld_ext(:,:,:,:),fld_1(:,:,:),fld_2(:,:,:)
 logical,allocatable :: mask_unpack(:,:)
 
 ! Allocation
@@ -142,21 +123,13 @@ do isub=1,ens%nsub
    end if
    call flush(mpl%unit)
 
-   ! Compute centered moments iteratively
+   ! Compute centered moments
    do ie_sub=1,ens%ne/ens%nsub
       write(mpl%unit,'(i4)',advance='no') ie_sub
       call flush(mpl%unit)
 
       ! Full ensemble index
       ie = ie_sub+(isub-1)*ens%ne/ens%nsub
-
-      ! Computation factors
-      fac1 = 2.0/real(ie_sub,kind_real)
-      fac2 = 1.0/real(ie_sub**2,kind_real)
-      fac3 = real((ie_sub-1)*(ie_sub**2-3*ie_sub+3),kind_real)/real(ie_sub**3,kind_real)
-      fac4 = 1.0/real(ie_sub,kind_real)
-      fac5 = real((ie_sub-1)*(ie_sub-2),kind_real)/real(ie_sub**2,kind_real)
-      fac6 = real(ie_sub-1,kind_real)/real(ie_sub,kind_real)
 
       ! Allocation
       allocate(fld_ext(hdata%nc0c,geom%nl0,nam%nv,nam%nts))
@@ -177,8 +150,8 @@ do isub=1,ens%nsub
       do ib=1,bpar%nb
          if (bpar%diag_block(ib)) then
             ! Allocation
-            allocate(fld_1(hdata%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
-            allocate(fld_2(hdata%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
+            allocate(fld_1(hdata%nc1a,bpar%nc3(ib),geom%nl0))
+            allocate(fld_2(hdata%nc1a,bpar%nc3(ib),geom%nl0))
 
             ! Initialization
             iv = bpar%b_to_v1(ib)
@@ -193,91 +166,57 @@ do isub=1,ens%nsub
                ! Interpolate zero separation points
                !$omp parallel do schedule(static) private(il0)
                do il0=1,geom%nl0
-                  call hdata%d(il0,its)%apply(mpl,fld_ext(:,il0,iv,its),fld_1(:,1,1,il0))
-                  call hdata%d(il0,jts)%apply(mpl,fld_ext(:,il0,jv,jts),fld_2(:,1,1,il0))
+                  call hdata%d(il0,its)%apply(mpl,fld_ext(:,il0,iv,its),fld_1(:,1,il0))
+                  call hdata%d(il0,jts)%apply(mpl,fld_ext(:,il0,jv,jts),fld_2(:,1,il0))
                end do
                !$omp end parallel do
             else
                ! Copy all separations points
-               !$omp parallel do schedule(static) private(il0,jl0r,jl0,jc3,ic1a,ic1,ic0,jc0,ic0c,jc0c)
+               !$omp parallel do schedule(static) private(il0,jc3,ic1a,ic1,ic0,jc0,ic0c,jc0c)
                do il0=1,geom%nl0
-                  do jl0r=1,bpar%nl0r(ib)
-                     jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
-                     do jc3=1,bpar%nc3(ib)
-                        do ic1a=1,hdata%nc1a
+                  do jc3=1,bpar%nc3(ib)
+                     do ic1a=1,hdata%nc1a
+                        ! Indices
+                        ic1 = hdata%c1a_to_c1(ic1a)
+
+                        if (hdata%c1l0_log(ic1,il0).and.hdata%c1c3l0_log(ic1,jc3,il0)) then
                            ! Indices
-                           ic1 = hdata%c1a_to_c1(ic1a)
+                           ic0 = hdata%c1_to_c0(ic1)
+                           jc0 = hdata%c1c3_to_c0(ic1,jc3)
+                           ic0c = hdata%c0_to_c0c(ic0)
+                           jc0c = hdata%c0_to_c0c(jc0)
 
-                           if (hdata%c1l0_log(ic1,il0).and.hdata%c1c3l0_log(ic1,jc3,il0).and. &
-                         & hdata%c1l0_log(ic1,jl0).and.hdata%c1c3l0_log(ic1,jc3,jl0)) then
-                              ! Indices
-                              ic0 = hdata%c1_to_c0(ic1)
-                              jc0 = hdata%c1c3_to_c0(ic1,jc3)
-                              ic0c = hdata%c0_to_c0c(ic0)
-                              jc0c = hdata%c0_to_c0c(jc0)
-
-                              ! Copy points
-                              fld_1(ic1a,jc3,jl0r,il0) = fld_ext(ic0c,il0,iv,its)
-                              fld_2(ic1a,jc3,jl0r,il0) = fld_ext(jc0c,jl0,jv,jts)
-                           end if
-                        end do
+                           ! Copy points
+                           fld_1(ic1a,jc3,il0) = fld_ext(ic0c,il0,iv,its)
+                           fld_2(ic1a,jc3,il0) = fld_ext(jc0c,il0,jv,jts)
+                        end if
                      end do
                   end do
                end do
                !$omp end parallel do
             end if
 
-            !$omp parallel do schedule(static) private(il0)
+            !$omp parallel do schedule(static) private(il0,jl0r,jl0)
             do il0=1,geom%nl0
-               ! Remove means
-               fld_1(:,:,:,il0) = fld_1(:,:,:,il0) - mom%blk(ib)%m1_1(:,:,:,il0,isub)
-               fld_2(:,:,:,il0) = fld_2(:,:,:,il0) - mom%blk(ib)%m1_2(:,:,:,il0,isub)
+               do jl0r=1,bpar%nl0r(ib)
+                  jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
 
-               ! Update high-order moments
-               if (ie_sub>1) then
-                  if (.not.nam%gau_approx) then
-                       ! Fourth-order moment
-                        mom%blk(ib)%m22(:,:,:,il0,isub) = mom%blk(ib)%m22(:,:,:,il0,isub) &
-                                                    & -fac1*(mom%blk(ib)%m12(:,:,:,il0,isub)*fld_1(:,:,:,il0) &
-                                                    & +mom%blk(ib)%m21(:,:,:,il0,isub)*fld_2(:,:,:,il0)) &
-                                                    & +fac2*(4.0*mom%blk(ib)%m11(:,:,:,il0,isub)*fld_1(:,:,:,il0)*fld_2(:,:,:,il0) &
-                                                    & +mom%blk(ib)%m2_1(:,:,:,il0,isub)*fld_2(:,:,:,il0)**2 &
-                                                    & +mom%blk(ib)%m2_2(:,:,:,il0,isub)*fld_1(:,:,:,il0)**2) &
-                                                    & +fac3*fld_1(:,:,:,il0)**2*fld_2(:,:,:,il0)**2
-
-                        ! Third-order moments
-                        mom%blk(ib)%m12(:,:,:,il0,isub) = mom%blk(ib)%m12(:,:,:,il0,isub) &
-                                                    & -fac4*(2.0*mom%blk(ib)%m11(:,:,:,il0,isub)*fld_2(:,:,:,il0) &
-                                                    & +mom%blk(ib)%m2_2(:,:,:,il0,isub)*fld_1(:,:,:,il0)) &
-                                                    & +fac5*fld_2(:,:,:,il0)**2*fld_1(:,:,:,il0)
-
-                        mom%blk(ib)%m21(:,:,:,il0,isub) = mom%blk(ib)%m21(:,:,:,il0,isub) &
-                                                    & -fac4*(2.0*mom%blk(ib)%m11(:,:,:,il0,isub)*fld_1(:,:,:,il0) &
-                                                    & +mom%blk(ib)%m2_1(:,:,:,il0,isub)*fld_2(:,:,:,il0)) &
-                                                    & +fac5*fld_1(:,:,:,il0)**2*fld_2(:,:,:,il0)
-                  end if
+                  ! Fourth-order moment
+                  if (.not.nam%gau_approx) mom%blk(ib)%m22(:,:,jl0r,il0,isub) = mom%blk(ib)%m22(:,:,jl0r,il0,isub) &
+                                                                              & +fld_1(:,:,il0)**2*fld_2(:,:,jl0)**2
 
                   ! Covariance
-                  mom%blk(ib)%m11(:,:,:,il0,isub) = mom%blk(ib)%m11(:,:,:,il0,isub)+fac6*fld_1(:,:,:,il0)*fld_2(:,:,:,il0)
-
-                  ! Variances
-                  mom%blk(ib)%m2_1(:,:,:,il0,isub) = mom%blk(ib)%m2_1(:,:,:,il0,isub)+fac6*fld_1(:,:,:,il0)**2
-                  mom%blk(ib)%m2_2(:,:,:,il0,isub) = mom%blk(ib)%m2_2(:,:,:,il0,isub)+fac6*fld_2(:,:,:,il0)**2
-
-                  ! Full variance
-                  if (nam%full_var) mom%blk(ib)%m2full(:,il0,isub) = mom%blk(ib)%m2full(:,il0,isub) &
-                                  & +fac6*(ens%fld(:,il0,iv,its,ie)-mom%blk(ib)%m1full(:,il0,isub))**2
-               end if
-
-               ! Update means
-               mom%blk(ib)%m1_1(:,:,:,il0,isub) = mom%blk(ib)%m1_1(:,:,:,il0,isub)+fac4*fld_1(:,:,:,il0)
-               mom%blk(ib)%m1_2(:,:,:,il0,isub) = mom%blk(ib)%m1_2(:,:,:,il0,isub)+fac4*fld_2(:,:,:,il0)
-
-               ! Full mean
-               if (nam%full_var) mom%blk(ib)%m1full(:,il0,isub) = mom%blk(ib)%m1full(:,il0,isub) &
-                               & +fac4*(ens%fld(:,il0,iv,its,ie)-mom%blk(ib)%m1full(:,il0,isub))
+                  mom%blk(ib)%m11(:,:,jl0r,il0,isub) = mom%blk(ib)%m11(:,:,jl0r,il0,isub)+fld_1(:,:,il0)*fld_2(:,:,jl0)
+               end do
             end do
             !$omp end parallel do
+
+            ! Variances
+            mom%blk(ib)%m2_1(:,:,:,isub) = mom%blk(ib)%m2_1(:,:,:,isub)+fld_1**2
+            mom%blk(ib)%m2_2(:,:,:,isub) = mom%blk(ib)%m2_2(:,:,:,isub)+fld_2**2
+
+            ! Full variance
+            if (nam%var_full) mom%blk(ib)%m2full(:,:,isub) = mom%blk(ib)%m2full(:,:,isub)+ens%fld(:,:,iv,its,ie)**2
 
             ! Release memory
             deallocate(fld_1)
@@ -291,25 +230,17 @@ do isub=1,ens%nsub
    end do
    write(mpl%unit,'(a)') ''
    call flush(mpl%unit)
+end do
 
-   ! Normalize statistics
-   do ib=1,bpar%nb
-      if (bpar%diag_block(ib)) then
-         !$omp parallel do schedule(static) private(il0)
-         do il0=1,geom%nl0
-            mom%blk(ib)%m2_1(:,:,:,il0,isub) = mom%blk(ib)%m2_1(:,:,:,il0,isub)/real(mom%ne/mom%nsub-1,kind_real)
-            mom%blk(ib)%m2_2(:,:,:,il0,isub) = mom%blk(ib)%m2_2(:,:,:,il0,isub)/real(mom%ne/mom%nsub-1,kind_real)
-            mom%blk(ib)%m11(:,:,:,il0,isub) = mom%blk(ib)%m11(:,:,:,il0,isub)/real(mom%ne/mom%nsub-1,kind_real)
-            if (.not.nam%gau_approx) then
-               mom%blk(ib)%m12(:,:,:,il0,isub) = mom%blk(ib)%m12(:,:,:,il0,isub)/real(mom%ne/mom%nsub,kind_real)
-               mom%blk(ib)%m21(:,:,:,il0,isub) = mom%blk(ib)%m21(:,:,:,il0,isub)/real(mom%ne/mom%nsub,kind_real)
-               mom%blk(ib)%m22(:,:,:,il0,isub) = mom%blk(ib)%m22(:,:,:,il0,isub)/real(mom%ne/mom%nsub,kind_real)
-            end if
-            if (nam%full_var) mom%blk(ib)%m2full(:,il0,isub) = mom%blk(ib)%m2full(:,il0,isub)/real(mom%ne/mom%nsub-1,kind_real)
-         end do
-         !$omp end parallel do
-      end if
-   end do
+! Normalize moments
+do ib=1,bpar%nb
+   if (bpar%diag_block(ib)) then
+      mom%blk(ib)%m2_1 = mom%blk(ib)%m2_1/real(mom%ne/mom%nsub-1,kind_real)
+      mom%blk(ib)%m2_2 = mom%blk(ib)%m2_2/real(mom%ne/mom%nsub-1,kind_real)
+      mom%blk(ib)%m11 = mom%blk(ib)%m11/real(mom%ne/mom%nsub-1,kind_real)
+      if (.not.nam%gau_approx) mom%blk(ib)%m22 = mom%blk(ib)%m22/real(mom%ne/mom%nsub,kind_real)
+      if (nam%var_full) mom%blk(ib)%m2full = mom%blk(ib)%m2full/real(mom%ne/mom%nsub-1,kind_real)
+   end if
 end do
 
 end subroutine mom_compute

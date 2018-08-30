@@ -88,10 +88,12 @@ template<typename MODEL> class CostJb4D : public CostJbState<MODEL> {
   Increment_ * newStateIncrement(const unsigned int) const override;
 
  private:
+  const State4D_ & xb_;
   boost::ptr_vector< ModelSpaceCovarianceBase<MODEL> > B_;
-  const Variables controlvars_;
+  const Variables ctlvars_;
   boost::scoped_ptr<const Geometry_> resol_;
   std::vector<util::DateTime> times_;
+  const eckit::LocalConfiguration conf_;
 };
 
 // =============================================================================
@@ -100,36 +102,29 @@ template<typename MODEL> class CostJb4D : public CostJbState<MODEL> {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-CostJb4D<MODEL>::CostJb4D(const eckit::Configuration & config, const Geometry_ & resolouter,
+CostJb4D<MODEL>::CostJb4D(const eckit::Configuration & config, const Geometry_ &,
                           const Variables & ctlvars, const util::Duration &, const State4D_ & xb)
-  : B_(), controlvars_(ctlvars), resol_(), times_()
+  : xb_(xb), B_(), ctlvars_(ctlvars), resol_(), times_(), conf_(config, "Covariance")
 {
-// Create one row of blocks of the whole BMatrix, one object for each
-// subwindow. Each object stands for all blocks in the same column of the B Matrix.
-// It can be from any concrete class of ModelSpaceCovarianceBase,
-// according to the configuration file.
-  const eckit::LocalConfiguration covar(config, "Covariance");
-  std::vector<eckit::LocalConfiguration> confs;
-  covar.get("covariance_time", confs);
-
-  for (size_t jsub = 0; jsub < confs.size(); ++jsub) {
-    B_.push_back(CovarianceFactory<MODEL>::create(confs[jsub], resolouter, ctlvars, xb[jsub]));
-  }
-
   Log::trace() << "CostJb4D contructed." << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void CostJb4D<MODEL>::linearize(const State4D_ & fg, const Geometry_ & resolinner) {
-  ASSERT(fg.checkStatesNumber(B_.size()));
-  resol_.reset(new Geometry_(resolinner));
+void CostJb4D<MODEL>::linearize(const State4D_ & fg, const Geometry_ & lowres) {
+  ASSERT(fg.checkStatesNumber(xb_.size()));
+  resol_.reset(new Geometry_(lowres));
   times_.clear();
-  for (unsigned jsub = 0; jsub < B_.size(); ++jsub) {
+  B_.clear();
+  std::vector<eckit::LocalConfiguration> confs;
+  conf_.get("covariance_time", confs);
+  for (unsigned jsub = 0; jsub < fg.size(); ++jsub) {
+    B_.push_back(CovarianceFactory<MODEL>::create(confs[jsub], lowres, ctlvars_,
+                                                  xb_[jsub], fg[jsub]));
     times_.push_back(fg[jsub].validTime());
-    B_[jsub].linearize(fg[jsub], *resol_);
   }
+  ASSERT(fg.checkStatesNumber(B_.size()));
 }
 
 // -----------------------------------------------------------------------------
@@ -178,7 +173,6 @@ void CostJb4D<MODEL>::Bminv(const Increment4D_ & dxin, Increment4D_ & dxout) con
   Log::warning() << "*** B inverse might not always exist ***" << std::endl;
 }
 
-
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
@@ -193,7 +187,7 @@ void CostJb4D<MODEL>::randomize(Increment4D_ & dx) const {
 template<typename MODEL>
 Increment<MODEL> *
 CostJb4D<MODEL>::newStateIncrement(const unsigned int isub) const {
-  Increment_ * incr = new Increment_(*resol_, controlvars_, times_[isub]);
+  Increment_ * incr = new Increment_(*resol_, ctlvars_, times_[isub]);
   return incr;
 }
 

@@ -105,6 +105,7 @@ oops/base/PostTimer.cc
 oops/base/StateInfo.h
 oops/base/StateWriter.h
 oops/base/TrajectorySaver.h
+oops/base/LinearVariableChangeBase.h
 oops/base/Variables.h
 oops/base/Variables.cc
 oops/base/WeightedDiff.h
@@ -115,18 +116,23 @@ oops/base/WeightingFct.cc
 oops/base/instantiateCovarFactory.h
 oops/base/instantiateFilterFactory.h
 
+oops/generic/ParametersBUMP.h
+oops/generic/ErrorCovarianceBUMP.h
+oops/generic/IdVariableChange.h
 oops/generic/LocalizationBUMP.h
 oops/generic/ObsErrorDiag.h
 oops/generic/UnstructuredGrid.cc
 oops/generic/UnstructuredGrid.h
-oops/generic/bump_f.h
-oops/generic/bump_mod.F90
+oops/generic/oobump_f.h
+oops/generic/oobump_mod.F90
 oops/generic/dcmip_initial_conditions_test_1_2_3_v5.f90
 oops/generic/dcmip_initial_conditions_test_4_v3.f90
 oops/generic/instantiateLocalizationFactory.h
 oops/generic/instantiateObsErrorFactory.h
+oops/generic/instantiateLinearVariableChangeFactory.h
 oops/generic/unstructured_grid_f.h
 oops/generic/unstructured_grid_mod.F90
+oops/generic/StatsVariableChange.h
 
 oops/generic/bump/tools_const.F90
 oops/generic/bump/tools_fit.F90
@@ -167,6 +173,8 @@ oops/generic/bump/type_nicas.F90
 oops/generic/bump/type_obsop.F90
 oops/generic/bump/type_rng.F90
 oops/generic/bump/type_timer.F90
+oops/generic/bump/type_vbal_blk.F90
+oops/generic/bump/type_vbal.F90
 oops/generic/bump/external/tools_kdtree2.F90
 oops/generic/bump/external/tools_kdtree2_pq.F90
 oops/generic/bump/external/tools_qsort.F90
@@ -196,6 +204,7 @@ oops/interface/ObsSpaceBase.h
 oops/interface/ObsVector.h
 oops/interface/ObservationSpace.h
 oops/interface/State.h
+oops/interface/LinearVariableChange.h
 
 oops/parallel/mpi/mpi.h
 oops/parallel/mpi/mpi.cc
@@ -203,6 +212,7 @@ oops/parallel/mpi/mpi.cc
 oops/runs/Application.h
 oops/runs/Dirac.h
 oops/runs/EnsForecasts.h
+oops/runs/EstimateParams.h
 oops/runs/ExternalDFI.h
 oops/runs/Forecast.h
 oops/runs/GenEnsPertB.h
@@ -262,6 +272,7 @@ test/interface/ObservationSpace.h
 test/interface/ObsOperator.h
 test/interface/ObsTestsFixture.h
 test/interface/ObsVector.h
+test/interface/LinearVariableChange.h
 test/TestEnvironment.h
 
 )

@@ -8,6 +8,8 @@
  * does it submit to any jurisdiction.
  */
 
+#include <vector>
+
 #include "model/TlmIdQG.h"
 
 #include "eckit/config/LocalConfiguration.h"
@@ -26,7 +28,8 @@ namespace qg {
 static oops::LinearModelMaker<QgTraits, TlmIdQG> makerQGIdTLM_("QgIdTLM");
 // -----------------------------------------------------------------------------
 TlmIdQG::TlmIdQG(const GeometryQG & resol, const eckit::Configuration & tlConf)
-  : keyConfig_(0), tstep_(), resol_(resol)
+  : keyConfig_(0), tstep_(), resol_(resol),
+    linvars_(std::vector<std::string>{"x", "q", "u", "v"})
 {
   tstep_ = util::Duration(tlConf.getString("tstep"));
 
@@ -44,7 +47,6 @@ TlmIdQG::~TlmIdQG() {
 void TlmIdQG::setTrajectory(const StateQG &, StateQG &, const ModelBias &) {}
 // -----------------------------------------------------------------------------
 void TlmIdQG::initializeTL(IncrementQG & dx) const {
-  dx.activateModel();
   ASSERT(dx.fields().isForModel(false));
   qg_prepare_integration_tl_f90(keyConfig_, dx.fields().toFortran());
   oops::Log::debug() << "TlmIdQG::initializeTL" << dx.fields() << std::endl;
@@ -55,12 +57,10 @@ void TlmIdQG::stepTL(IncrementQG & dx, const ModelBiasIncrement &) const {
 }
 // -----------------------------------------------------------------------------
 void TlmIdQG::finalizeTL(IncrementQG & dx) const {
-  dx.deactivateModel();
   oops::Log::debug() << "TlmIdQG::finalizeTL" << dx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------
 void TlmIdQG::initializeAD(IncrementQG & dx) const {
-  dx.activateModel();
   ASSERT(dx.fields().isForModel(false));
   oops::Log::debug() << "TlmIdQG::initializeAD" << dx.fields() << std::endl;
 }
@@ -71,7 +71,6 @@ void TlmIdQG::stepAD(IncrementQG & dx, ModelBiasIncrement &) const {
 // -----------------------------------------------------------------------------
 void TlmIdQG::finalizeAD(IncrementQG & dx) const {
   qg_prepare_integration_ad_f90(keyConfig_, dx.fields().toFortran());
-  dx.deactivateModel();
   oops::Log::debug() << "TlmIdQG::finalizeAD" << dx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------
