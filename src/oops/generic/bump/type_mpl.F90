@@ -242,7 +242,6 @@ if (mpl%main) then
 end if
 call mpl%bcast(mpl%tag)
 
-
 ! Set max number of OpenMP threads
 mpl%nthread = 1
 !$ mpl%nthread = omp_get_max_threads()

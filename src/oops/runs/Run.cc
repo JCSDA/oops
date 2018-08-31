@@ -18,6 +18,7 @@
 #include "eckit/config/YAMLConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/LibOOPS.h"
 #include "oops/util/Logger.h"
@@ -29,8 +30,8 @@ namespace oops {
 // -----------------------------------------------------------------------------
 
 Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(), timer_() {
-// Start MPI
-  MPI_Init(&argc, &argv);
+// Initialize MPI
+  oops::mpi::comm().communicator();
 
 // Get configuration file from command line
   ASSERT(argc >= 2);
@@ -50,8 +51,6 @@ Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(
 // -----------------------------------------------------------------------------
 
 Run::~Run() {
-// Finalize MPI
-  MPI_Finalize();
   LibOOPS::instance().finalise();
 }
 
