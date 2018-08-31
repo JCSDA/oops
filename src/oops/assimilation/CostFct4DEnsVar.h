@@ -19,6 +19,7 @@
 #include "oops/assimilation/CostJcDFI.h"
 #include "oops/assimilation/CostJo.h"
 #include "oops/assimilation/CostTermBase.h"
+#include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/StateInfo.h"
@@ -52,6 +53,7 @@ template<typename MODEL> class CostFct4DEnsVar : public CostFunction<MODEL> {
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
   typedef Model<MODEL>               Model_;
+  typedef LinearVariableChangeBase<MODEL> ChangeVar_;
 
  public:
   CostFct4DEnsVar(const eckit::Configuration &, const Geometry_ &, const Model_ &);
@@ -74,6 +76,8 @@ template<typename MODEL> class CostFct4DEnsVar : public CostFunction<MODEL> {
                               const CtrlVar_ &) const override;
   CostJo<MODEL>       * newJo(const eckit::Configuration &) const override;
   CostTermBase<MODEL> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
+  void doLinearize(const Geometry_ &, const eckit::Configuration &,
+                   const CtrlVar_ &, const CtrlVar_ &) override;
 
   util::Duration windowLength_;
   util::DateTime windowBegin_;
@@ -82,6 +86,7 @@ template<typename MODEL> class CostFct4DEnsVar : public CostFunction<MODEL> {
   util::Duration zero_;
   unsigned int ncontrol_;
   const Variables ctlvars_;
+  boost::scoped_ptr<ChangeVar_> an2model_;
 };
 
 // =============================================================================
@@ -89,7 +94,7 @@ template<typename MODEL> class CostFct4DEnsVar : public CostFunction<MODEL> {
 template<typename MODEL>
 CostFct4DEnsVar<MODEL>::CostFct4DEnsVar(const eckit::Configuration & config,
                                         const Geometry_ & resol, const Model_ & model)
-  : CostFunction<MODEL>::CostFunction(config, resol, model), zero_(0), ctlvars_(config)
+  : CostFunction<MODEL>::CostFunction(config, resol, model), zero_(0), ctlvars_(config), an2model_()
 {
   windowLength_ = util::Duration(config.getString("window_length"));
   windowBegin_ = util::DateTime(config.getString("window_begin"));
@@ -148,16 +153,35 @@ void CostFct4DEnsVar<MODEL>::runNL(CtrlVar_ & xx,
 
 // -----------------------------------------------------------------------------
 
+template<typename MODEL>
+void CostFct4DEnsVar<MODEL>::doLinearize(const Geometry_ & resol,
+                                         const eckit::Configuration & innerConf,
+                                         const CtrlVar_ & bg, const CtrlVar_ & fg) {
+  Log::trace() << "CostFct4DEnsVar::doLinearize start" << std::endl;
+  eckit::LocalConfiguration conf(innerConf, "linearmodel");
+  an2model_.reset(LinearVariableChangeFactory<MODEL>::create(bg.state()[0], fg.state()[0],
+                                                             resol, conf));
+  an2model_->setInputVariables(ctlvars_);
+  an2model_->setOutputVariables(CostFct_::getTLM().variables());
+  Log::trace() << "CostFct4DEnsVar::doLinearize done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
 template <typename MODEL>
 void CostFct4DEnsVar<MODEL>::runTLM(CtrlInc_ & dx,
                                     PostProcessorTLAD<MODEL> & cost,
                                     PostProcessor<Increment_> post,
-                                    const bool idModel) const {
+                                    const bool) const {
+  Increment_ dxmodel(dx.state()[0].geometry(), CostFct_::getTLM().variables(), windowBegin_);
+
   for (unsigned int jsub = 0; jsub <= ncontrol_; ++jsub) {
     util::DateTime now(windowBegin_ + jsub*windowSub_);
 
     ASSERT(dx.state()[jsub].validTime() == now);
-    CostFct_::getTLM(jsub).forecastTL(dx.state()[jsub], dx.modVar(), util::Duration(0), post, cost);
+    an2model_->multiply(dx.state()[jsub], dxmodel);
+    CostFct_::getTLM(jsub).forecastTL(dxmodel, dx.modVar(), util::Duration(0), post, cost);
+    an2model_->multiplyInverse(dxmodel, dx.state()[jsub]);
     ASSERT(dx.state()[jsub].validTime() == now);
   }
 }
@@ -181,12 +205,16 @@ template <typename MODEL>
 void CostFct4DEnsVar<MODEL>::runADJ(CtrlInc_ & dx,
                                     PostProcessorTLAD<MODEL> & cost,
                                     PostProcessor<Increment_> post,
-                                    const bool idModel) const {
+                                    const bool) const {
+  Increment_ dxmodel(dx.state()[0].geometry(), CostFct_::getTLM().variables(), windowEnd_);
+
   for (int jsub = ncontrol_; jsub >= 0; --jsub) {
     util::DateTime now(windowBegin_ + jsub*windowSub_);
 
     ASSERT(dx.state()[jsub].validTime() == now);
-    CostFct_::getTLM(jsub).forecastAD(dx.state()[jsub], dx.modVar(), util::Duration(0), post, cost);
+    an2model_->multiplyInverseAD(dx.state()[jsub], dxmodel);
+    CostFct_::getTLM(jsub).forecastAD(dxmodel, dx.modVar(), util::Duration(0), post, cost);
+    an2model_->multiplyAD(dxmodel, dx.state()[jsub]);
     ASSERT(dx.state()[jsub].validTime() == now);
   }
 }

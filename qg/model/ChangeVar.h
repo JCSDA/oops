@@ -11,6 +11,7 @@
 #include <ostream>
 #include <string>
 
+#include "model/QgFortran.h"
 #include "oops/util/Printable.h"
 
 // Forward declarations
@@ -41,6 +42,9 @@ class ChangeVar: public util::Printable {
 
  private:
   void print(std::ostream &) const override;
+
+// Data
+  F90model keyConfig_;
 };
 // -----------------------------------------------------------------------------
 

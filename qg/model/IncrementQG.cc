@@ -65,26 +65,6 @@ IncrementQG::~IncrementQG() {
   oops::Log::trace() << "IncrementQG destructed" << std::endl;
 }
 // -----------------------------------------------------------------------------
-void IncrementQG::activateModel() {
-// Should get variables from linear model. YT
-  const std::vector<std::string> vv{"x", "q", "u", "v"};
-  oops::Variables vars(vv);
-  stash_.reset(new FieldsQG(*fields_, vars));
-  swap(fields_, stash_);
-  ASSERT(fields_);
-  ASSERT(stash_);
-  oops::Log::trace() << "IncrementQG activated for TLM" << std::endl;
-}
-// -----------------------------------------------------------------------------
-void IncrementQG::deactivateModel() {
-  swap(fields_, stash_);
-  *fields_ = *stash_;
-  stash_.reset();
-  ASSERT(fields_);
-  ASSERT(!stash_);
-  oops::Log::trace() << "IncrementQG deactivated for TLM" << std::endl;
-}
-// -----------------------------------------------------------------------------
 /// Basic operators
 // -----------------------------------------------------------------------------
 void IncrementQG::diff(const StateQG & x1, const StateQG & x2) {

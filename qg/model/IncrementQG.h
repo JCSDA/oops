@@ -107,9 +107,6 @@ class IncrementQG : public oops::GeneralizedDepartures,
   }
 
 /// Other
-  void activateModel();
-  void deactivateModel();
-
   void accumul(const double &, const StateQG &);
 
 /// Data
