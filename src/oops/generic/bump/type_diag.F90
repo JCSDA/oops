@@ -429,7 +429,7 @@ do ib=1,bpar%nbe
    if (bpar%diag_block(ib)) then
       write(mpl%unit,'(a10,a,a,a)',advance='no') '','Block ',trim(bpar%blockname(ib)),':'
       call flush(mpl%unit)
- 
+
       ! Copy variance
       do ic2a=0,diag%nc2a
          if (nam%var_diag) then

@@ -236,7 +236,7 @@ else
          end do
       end do
       bpar%nc3(ib) = nam%nc3
-   
+
       ! Select blocks
       select case (nam%strategy)
       case ('diag_all')
@@ -272,7 +272,7 @@ else
       end select
       bpar%fit_block(ib) = bpar%diag_block(ib).and.(trim(nam%minim_algo)/='none')
       if (nam%local_diag) bpar%fit_block(ib) = bpar%fit_block(ib).and.bpar%nicas_block(ib)
-   
+
       ! Blocks information
       bpar%blockname(ib) = 'common'
       bpar%b_to_v1(ib) = 0

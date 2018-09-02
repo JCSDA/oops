@@ -1072,12 +1072,12 @@ if (nred>0) then
    red_val = 0.0
    do ired=1,nred
       jmg = red_jmg(ired)
-      if (mpl%myproc==geom%mg_to_proc(jmg)) then 
+      if (mpl%myproc==geom%mg_to_proc(jmg)) then
          jmga = geom%mg_to_mga(jmg)
          red_val(ired,:) = fld_mga(jmga,:)
       end if
    end do
- 
+
    ! Communicate redundant values
    mask_unpack = .true.
    red_val_pack = pack(red_val,.true.)
@@ -1087,7 +1087,7 @@ if (nred>0) then
    ! Copy values
    do ired=1,nred
       img = red_img(ired)
-      if (mpl%myproc==geom%mg_to_proc(img)) then 
+      if (mpl%myproc==geom%mg_to_proc(img)) then
          imga = geom%mg_to_mga(img)
          fld_mga(imga,:) = red_val_tot(ired,:)
       end if

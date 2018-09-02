@@ -395,7 +395,7 @@ do iv=1,nam%nv
          write(mpl%unit,'(a7,a)') '','Unbalancing: '//trim(nam%varname(iv))//' with respect to unbalanced '//trim(nam%varname(jv))
          auto = 0.0
          cross = 0.0
-   
+
          ! Loop on sub-ensembles
          do isub=1,ensu%nsub
             if (ensu%nsub==1) then
@@ -404,27 +404,27 @@ do iv=1,nam%nv
                write(mpl%unit,'(a10,a,i4,a)',advance='no') '','Sub-ensemble ',isub,', member:'
             end if
             call flush(mpl%unit)
-   
+
             ! Compute centered moments iteratively
             do ie_sub=1,ensu%ne/ensu%nsub
                write(mpl%unit,'(i4)',advance='no') ie_sub
                call flush(mpl%unit)
-   
+
                ! Full ensemble index
                ie = ie_sub+(isub-1)*ensu%ne/ensu%nsub
-   
+
                ! Copy all separations points
                !$omp parallel do schedule(static) private(il0,ic1a,ic1,ic0,ic0a)
                do il0=1,geom%nl0
                   do ic1a=1,hdata%nc1a
                      ! Indice
                      ic1 = hdata%c1a_to_c1(ic1a)
-   
+
                      if (hdata%c1l0_log(ic1,il0)) then
                         ! Indice
                         ic0 = hdata%c1_to_c0(ic1)
                         ic0a = geom%c0_to_c0a(ic0)
-   
+
                         ! Copy points
                         fld_1(ic1a,il0) = ensu%fld(ic0a,il0,iv,1,ie)
                         fld_2(ic1a,il0) = ensu%fld(ic0a,il0,jv,1,ie)
@@ -432,7 +432,7 @@ do iv=1,nam%nv
                   end do
                end do
                !$omp end parallel do
-   
+
                !$omp parallel do schedule(static) private(il0,jl0)
                do il0=1,geom%nl0
                   do jl0=1,geom%nl0
@@ -446,7 +446,7 @@ do iv=1,nam%nv
             write(mpl%unit,'(a)') ''
             call flush(mpl%unit)
          end do
-   
+
          ! Average covariances
          write(mpl%unit,'(a10,a)',advance='no') '','Average covariances: '
          call flush(mpl%unit)
@@ -459,26 +459,26 @@ do iv=1,nam%nv
                   ! Allocation
                   allocate(list_auto(hdata%nc1a))
                   allocate(list_cross(hdata%nc1a))
-   
+
                   ! Fill lists
                   nc1a = 0
                   do ic1a=1,hdata%nc1a
                      ! Index
                      ic1 = hdata%c1a_to_c1(ic1a)
-      
+
                      ! Check validity
                      valid = hdata%c1l0_log(ic1,il0).and.hdata%c1l0_log(ic1,jl0).and.hdata%vbal_mask(ic1,ic2)
-      
+
                      if (valid) then
                         ! Update
                          nc1a = nc1a+1
-      
+
                         ! Averages for diagnostics
                         list_auto(nc1a) = sum(auto(ic1a,jl0,il0,:))/real(ensu%nsub,kind_real)
                         list_cross(nc1a) = sum(cross(ic1a,jl0,il0,:))/real(ensu%nsub,kind_real)
                      end if
                   end do
-   
+
                   ! Average
                   if (nc1a>0) then
                      auto_avg(ic2,jl0,il0) = sum(list_auto(1:nc1a))
@@ -487,7 +487,7 @@ do iv=1,nam%nv
                      auto_avg(ic2,jl0,il0) = 0.0
                      cross_avg(ic2,jl0,il0) = 0.0
                   end if
-   
+
                   ! Release memory
                   deallocate(list_auto)
                   deallocate(list_cross)
@@ -502,7 +502,7 @@ do iv=1,nam%nv
          write(mpl%unit,'(a)') ''
          call flush(mpl%unit)
 
-         ! Gather data   
+         ! Gather data
          write(mpl%unit,'(a10,a)') '','Gather data'
          call flush(mpl%unit)
          if (mpl%nproc>1) then
@@ -514,10 +514,10 @@ do iv=1,nam%nv
                sbuf(offset+1:offset+geom%nl0**2) = pack(cross_avg(ic2,:,:),.true.)
                offset = offset+geom%nl0**2
             end do
-   
+
             ! Reduce data
             call mpl%allreduce_sum(sbuf,rbuf)
-   
+
             ! Unpack data
             offset = 0
             do ic2=1,nam%nc2
@@ -535,7 +535,7 @@ do iv=1,nam%nv
          do ic2b=1,hdata%nc2b
             ! Global index
             ic2 = hdata%c2b_to_c2(ic2b)
-   
+
             if (diag_auto) then
                ! Diagonal inversion
                auto_inv = 0.0

@@ -311,7 +311,7 @@ do ib=1,bpar%nb
          if ((ic2==0).or.(nam%local_diag)) then
             !$omp parallel do schedule(static) private(il0,jl0r,jc3,isub,jsub)
             do il0=1,geom%nl0
-               do jl0r=1,bpar%nl0r(ib)     
+               do jl0r=1,bpar%nl0r(ib)
                   do jc3=1,bpar%nc3(ib)
                      if (avg%blk(ic2,ib)%nc1a(jc3,jl0r,il0)>0.0) then
                         avg%blk(ic2,ib)%m11(jc3,jl0r,il0) = avg%blk(ic2,ib)%m11(jc3,jl0r,il0) &
@@ -323,7 +323,7 @@ do ib=1,bpar%nb
                               avg%blk(ic2,ib)%m2m2(jc3,jl0r,il0,jsub,isub) = avg%blk(ic2,ib)%m2m2(jc3,jl0r,il0,jsub,isub) &
                                                                            & /avg%blk(ic2,ib)%nc1a(jc3,jl0r,il0)
                             end do
-                           if (.not.nam%gau_approx) avg%blk(ic2,ib)%m22(jc3,jl0r,il0,isub) & 
+                           if (.not.nam%gau_approx) avg%blk(ic2,ib)%m22(jc3,jl0r,il0,isub) &
                          & = avg%blk(ic2,ib)%m22(jc3,jl0r,il0,isub)/avg%blk(ic2,ib)%nc1a(jc3,jl0r,il0)
                         end do
                      else
@@ -386,7 +386,7 @@ end do
 ! Allocation
 allocate(sbuf(npack))
 allocate(rbuf(npack))
-   
+
 ! Pack data
 offset = 0
 do ib=1,bpar%nb
@@ -400,7 +400,7 @@ do ib=1,bpar%nb
       end do
    end if
 end do
-   
+
 ! Reduce data
 call mpl%allreduce_sum(sbuf,rbuf)
 
@@ -455,7 +455,7 @@ do ib=1,bpar%nb
          if ((ic2==0).or.(nam%local_diag)) then
             !$omp parallel do schedule(static) private(il0,jl0r,jc3,isub,jsub)
             do il0=1,geom%nl0
-               do jl0r=1,bpar%nl0r(ib)     
+               do jl0r=1,bpar%nl0r(ib)
                   do jc3=1,bpar%nc3(ib)
                      if (avg_lr%blk(ic2,ib)%nc1a(jc3,jl0r,il0)>0.0) then
                         do isub=1,avg_lr%blk(ic2,ib)%nsub
@@ -505,7 +505,7 @@ real(kind_real) :: P9,P20,P21
 real(kind_real) :: m2sq,m4,m2sqasy,rhflt,drhflt
 real(kind_real) :: m2_ini(hdata%nc2a),m2(hdata%nc2a),m2prod,m2prod_tot
 logical :: dichotomy,convergence
- 
+
 ! Ensemble/sub-ensemble size-dependent coefficients
 n = avg%ne/avg%nsub
 P9 = -real(n,kind_real)/real((n-2)*(n-3),kind_real)
@@ -522,7 +522,7 @@ do ib=1,bpar%nb
          call flush(mpl%unit)
 
          ! Global averages
-         m2sq = 0.0 
+         m2sq = 0.0
          m4 = 0.0
          do ic2=1,nam%nc2
             m2sq = m2sq+sum(avg%blk(ic2,ib)%m2(il0,:)**2)/real(avg%nsub,kind_real)
@@ -554,7 +554,7 @@ do ib=1,bpar%nb
 
             ! Median filter to remove extreme values
             call hdata%diag_filter(mpl,nam,geom,il0,'median',rhflt,m2)
- 
+
             ! Average filter to smooth displacement
             call hdata%diag_filter(mpl,nam,geom,il0,'gc99',rhflt,m2)
 
@@ -885,7 +885,7 @@ do ic2=0,nam%nc2
          avg%blk(ic2,bpar%nbe)%m11lrm11asy = 0.0
          m11lrm11asy = 0.0
       end select
-   
+
       ! Block averages
       do ib=1,bpar%nb
          if (bpar%avg_block(ib)) then
@@ -898,7 +898,7 @@ do ic2=0,nam%nc2
                   else
                      bwgtsq = 0.0
                   end if
-   
+
                   ! Compute sum
                   do jc3=1,nam%nc3
                      call add(avg%blk(ic2,ib)%cor(jc3,jl0r,il0),avg%blk(ic2,bpar%nbe)%cor(jc3,jl0r,il0),cor(jc3,jl0r,il0))
@@ -924,7 +924,7 @@ do ic2=0,nam%nc2
             !$omp end parallel do
          end if
       end do
-   
+
       ! Normalization
       !$omp parallel do schedule(static) private(il0,jl0r,jc3)
       do il0=1,geom%nl0

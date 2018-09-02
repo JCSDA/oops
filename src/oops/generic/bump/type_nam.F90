@@ -415,17 +415,17 @@ if (mpl%main) then
    end do
    call msi(nts)
    call msi(timeslot)
-   
+
    ! ens1_param default
    call msi(ens1_ne)
    call msi(ens1_ne_offset)
    call msi(ens1_nsub)
-   
+
    ! ens2_param default
    call msi(ens2_ne)
    call msi(ens2_ne_offset)
    call msi(ens2_nsub)
-   
+
    ! sampling_param default
    sam_write = .false.
    sam_read = .false.
@@ -440,7 +440,7 @@ if (mpl%main) then
    call msi(nc3)
    call msr(dc)
    call msi(nl0r)
-   
+
    ! diag_param default
    call msi(ne)
    gau_approx = .false.
@@ -460,7 +460,7 @@ if (mpl%main) then
    call msi(displ_niter)
    call msr(displ_rhflt)
    call msr(displ_tol)
-   
+
    ! fit_param default
    minim_algo = ''
    do iv=0,nvmax
@@ -471,7 +471,7 @@ if (mpl%main) then
    call msr(rvflt)
    call msi(lct_nscales)
    lct_diag = .false.
-   
+
    ! nicas_param default
    lsqrt = .false.
    call msr(resol)
@@ -488,12 +488,12 @@ if (mpl%main) then
    call msi(levdir)
    call msi(ivdir)
    call msi(itsdir)
-   
+
    ! obsop_param default
    call msi(nobs)
    obsdis = ''
    obsop_interp = ''
-   
+
    ! output_param default
    call msi(nldwh)
    call msi(il_ldwh)
@@ -1046,7 +1046,7 @@ if (nam%new_hdiag) then
    if (nam%var_diag.and.(.not.trim(nam%method)=='cor')) call mpl%abort('var_diag requires method = cor')
    if (nam%var_filter.and.(.not.nam%var_diag)) call mpl%abort('var_filter requires var_diag')
    if (nam%var_filter) then
-      if (nam%var_niter<=0) call mpl%abort('var_niter should be positive') 
+      if (nam%var_niter<=0) call mpl%abort('var_niter should be positive')
       if (nam%var_rhflt<0.0) call mpl%abort('var_rhflt should be non-negative')
    end if
    if (nam%local_diag) then

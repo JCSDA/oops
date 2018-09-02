@@ -60,7 +60,7 @@ if (raw(iz)>0.0) then
            if (raw(i)<raw(iz)) raw_tmp(i) = raw(i)
         end if
       end do
-  
+
       ! At least one positive point is needed
       valid = .false.
       do i=1,n
@@ -92,7 +92,7 @@ if (raw(iz)>0.0) then
                dthinv = 0.5*dthinv
             end do
          end if
-   
+
          ! Find support radius, lower value
          call msr(fit_rm)
          ip = iz
@@ -101,7 +101,7 @@ if (raw(iz)>0.0) then
             if (ismsr(fit_rm)) then
                ! Index
                im = iz-di
-   
+
                ! Check index validity
                if (im>=1) then
                   ! Check raw value validity
@@ -118,7 +118,7 @@ if (raw(iz)>0.0) then
                end if
             end if
          end do
-   
+
          ! Find support radius, upper value
          call msr(fit_rp)
          im = iz
@@ -127,7 +127,7 @@ if (raw(iz)>0.0) then
             if (ismsr(fit_rp)) then
                ! Index
                ip = iz+di
-   
+
                ! Check index validity
                if (ip<=n) then
                   ! Check raw value validity
@@ -144,7 +144,7 @@ if (raw(iz)>0.0) then
                end if
             end if
          end do
-   
+
          ! Gather values
          if (isnotmsr(fit_rm).and.isnotmsr(fit_rp)) then
             fit_r = 0.5*(fit_rm+fit_rp)
@@ -153,7 +153,7 @@ if (raw(iz)>0.0) then
          elseif (isnotmsr(fit_rp)) then
             fit_r = fit_rp
          end if
-   
+
          ! Normalize
          if (isnotmsr(fit_r)) fit_r = fit_r/thinv
 

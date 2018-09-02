@@ -123,8 +123,8 @@ type nicas_blk_type
    real(kind_real),allocatable :: rv_c1(:,:)       !<
    real(kind_real),allocatable :: distnorm(:,:,:)  !<
    real(kind_real),allocatable :: distnormv(:,:,:) !< TODO
-   real(kind_real),allocatable :: rfac(:,:,:)      !< 
-   real(kind_real),allocatable :: coef(:,:,:)      !< 
+   real(kind_real),allocatable :: rfac(:,:,:)      !<
+   real(kind_real),allocatable :: coef(:,:,:)      !<
 
    ! Extended data for normalization computation
    integer :: nsc_nor                           !< Number of subgrid nodes on halo C (extended for normalization)
@@ -1460,7 +1460,7 @@ if (nicas_blk%double_fit) then
          il0 = nicas_blk%l1_to_l0(il1)
          rv_rfac_c1a(ic1a,il1) = cmat_blk%rv_rfac(ic0a,il0)
          rv_coef_c1a(ic1a,il1) = cmat_blk%rv_coef(ic0a,il0)
-   
+
          ! Square-root rescaling
          rv_rfac_c1a(ic1a,il1) = rv_rfac_c1a(ic1a,il1)*sqrt_rfac
          rv_coef_c1a(ic1a,il1) = rv_coef_c1a(ic1a,il1)*sqrt_coef
@@ -1649,12 +1649,12 @@ type(mesh_type) :: mesh
 
 ! Allocation
 allocate(net_nnb(nicas_blk%nc1))
-   
+
 ! Create mesh
 write(mpl%unit,'(a10,a)') '','Create mesh'
 call flush(mpl%unit)
 call mesh%create(mpl,rng,nicas_blk%nc1,geom%lon(nicas_blk%c1_to_c0),geom%lat(nicas_blk%c1_to_c0))
-   
+
 ! Count neighbors
 write(mpl%unit,'(a10,a)') '','Count neighbors'
 call flush(mpl%unit)

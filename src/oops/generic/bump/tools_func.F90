@@ -897,7 +897,7 @@ do
       icol = nrow
       jcol = nn
       mdiag = nn
-      do 
+      do
          l = jcol
          if (icol==irow) then
             x = 1.0/w(irow)

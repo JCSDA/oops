@@ -350,7 +350,7 @@ do il0=1,geom%nl0
                minim%bsup(offset+1) = 1.0
                offset = offset+1
             end do
-   
+
             ! Fill minim
             minim%obs = pack(lct_blk%raw(:,:,ic1a,il0),.true.)
             minim%cost_function = 'fit_lct'
@@ -363,10 +363,10 @@ do il0=1,geom%nl0
             minim%dmask = dmask
             minim%nscales = lct_blk%nscales
             minim%ncomp = lct_blk%ncomp
-   
+
             ! Compute fit
             call minim%compute(mpl,lprt)
-   
+
             ! Copy parameters
             lct_blk%D(:,ic1a,il0) = minim%x(1:sum(lct_blk%ncomp))
             if (lct_blk%nscales>1) then
@@ -375,7 +375,7 @@ do il0=1,geom%nl0
             else
                lct_blk%coef(1,ic1a,il0) = 1.0
             end if
-   
+
             ! Fixed positive value for the 2D case
             if (bpar%nl0r(ib)==1) then
                offset = 0
@@ -384,7 +384,7 @@ do il0=1,geom%nl0
                   offset = offset+lct_blk%ncomp(iscales)
                end do
             end if
-   
+
             ! Check positive-definiteness and coefficients values
             spd = .true.
             offset = 0

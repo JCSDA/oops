@@ -240,7 +240,7 @@ logical,allocatable :: maskobs(:),lcheck_nc0b(:)
 allocate(obsop%proc_to_nobsa(mpl%nproc))
 
 ! Get global number of observations
-call mpl%allgather(1,(/obsop%nobs/),obsop%proc_to_nobsa) 
+call mpl%allgather(1,(/obsop%nobs/),obsop%proc_to_nobsa)
 obsop%nobsa = obsop%nobs
 obsop%nobs = sum(obsop%proc_to_nobsa)
 

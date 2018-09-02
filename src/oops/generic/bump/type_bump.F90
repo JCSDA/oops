@@ -75,7 +75,7 @@ contains
 ! Subroutine: bump_setup_online
 !> Purpose: online setup
 !----------------------------------------------------------------------
-subroutine bump_setup_online(bump,mpi_comm,nmga,nl0,nv,nts,lon,lat,area,vunit,lmask,ens1_ne,ens1_nsub,ens2_ne,ens2_nsub, & 
+subroutine bump_setup_online(bump,mpi_comm,nmga,nl0,nv,nts,lon,lat,area,vunit,lmask,ens1_ne,ens1_nsub,ens2_ne,ens2_nsub, &
                            & nobs,lonobs,latobs,namelname,lunit)
 
 implicit none
