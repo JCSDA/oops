@@ -341,7 +341,7 @@ if (allocated(bump%cmat%blk)) then
    ! Get C matrix data from OOPS
    write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
    write(bump%mpl%unit,'(a)') '--- Get C matrix data from OOPS'
-   call bump%cmat%from_oops(bump%mpl,bump%bpar)
+   call bump%cmat%from_oops(bump%mpl,bump%geom,bump%bpar)
 
    ! Setup C matrix sampling
    write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
@@ -615,7 +615,7 @@ case ('specific_univariate','specific_multivariate')
       ! Copy to field
       if ((iv==jv).and.(its==jts)) call bump%copy_to_field(param,ib,fld(:,:,iv,its))
    end do
-case ('common','common_weighted')
+case ('common','common_univariate','common_weighted')
    ! Set common index
    ib = bump%bpar%nbe
 
@@ -728,7 +728,7 @@ case ('specific_univariate','specific_multivariate')
       ! Copy to field
       if ((iv==jv).and.(its==jts)) call bump%copy_from_field(param,ib,fld(:,:,iv,its))
    end do
-case ('common','common_weighted')
+case ('common','common_univariate','common_weighted')
    ! Set common index
    ib = bump%bpar%nbe
 

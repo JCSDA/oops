@@ -183,6 +183,18 @@ else
                   bpar%B_block(ib) = (ib==bpar%nbe)
                   bpar%nicas_block(ib) = (ib==bpar%nbe)
                   bpar%cv_block(ib) = (ib==bpar%nbe)
+               case ('common_univariate')
+                  bpar%diag_block(ib) = (iv==jv).and.(its==1).and.(jts==1)
+                  bpar%avg_block(ib) = (iv==jv).and.(its==1).and.(jts==1)
+                  bpar%B_block(ib) = (ib==bpar%nbe)
+                  bpar%nicas_block(ib) = (ib==bpar%nbe)
+                  bpar%cv_block(ib) = (iv==jv).and.(its==jts)
+               case ('common_weighted')
+                  bpar%diag_block(ib) = .true.
+                  bpar%avg_block(ib) = (iv==jv).and.(its==jts)
+                  bpar%B_block(ib) = .true.
+                  bpar%nicas_block(ib) = (bpar%nbe==bpar%nb)
+                  bpar%cv_block(ib) = (iv==jv).and.(its==jts)
                case ('specific_univariate')
                   bpar%diag_block(ib) = (iv==jv).and.(its==1).and.(jts==1)
                   bpar%avg_block(ib) = .false.
@@ -195,12 +207,6 @@ else
                   bpar%B_block(ib) = (iv==jv).and.(its==1).and.(jts==1)
                   bpar%nicas_block(ib) = (iv==jv).and.(its==1).and.(jts==1)
                   bpar%cv_block(ib) = (ib==bpar%nbe)
-               case ('common_weighted')
-                  bpar%diag_block(ib) = .true.
-                  bpar%avg_block(ib) = (iv==jv).and.(its==jts)
-                  bpar%B_block(ib) = .true.
-                  bpar%nicas_block(ib) = (bpar%nbe==bpar%nb)
-                  bpar%cv_block(ib) = (iv==jv).and.(its==jts)
                end select
                bpar%fit_block(ib) = (bpar%nb==1).or.(bpar%diag_block(ib).and.(iv==jv).and.(its==jts) &
                                   & .and.(trim(nam%minim_algo)/='none'))
@@ -251,6 +257,18 @@ else
          bpar%B_block(ib) = .true.
          bpar%nicas_block(ib) = .true.
          bpar%cv_block(ib) = .true.
+      case ('common_univariate')
+         bpar%diag_block(ib) = .true.
+         bpar%avg_block(ib) = .false.
+         bpar%B_block(ib) = .true.
+         bpar%nicas_block(ib) = .true.
+         bpar%cv_block(ib) = .false.
+      case ('common_weighted')
+         bpar%diag_block(ib) = .true.
+         bpar%avg_block(ib) = .false.
+         bpar%B_block(ib) = .true.
+         bpar%nicas_block(ib) = .true.
+         bpar%cv_block(ib) = .false.
       case ('specific_univariate')
          bpar%diag_block(ib) = .false.
          bpar%avg_block(ib) = .false.
@@ -263,12 +281,6 @@ else
          bpar%B_block(ib) = .false.
          bpar%nicas_block(ib) = .false.
          bpar%cv_block(ib) = .true.
-      case ('common_weighted')
-         bpar%diag_block(ib) = .true.
-         bpar%avg_block(ib) = .false.
-         bpar%B_block(ib) = .true.
-         bpar%nicas_block(ib) = .true.
-         bpar%cv_block(ib) = .false.
       end select
       bpar%fit_block(ib) = bpar%diag_block(ib).and.(trim(nam%minim_algo)/='none')
       if (nam%local_diag) bpar%fit_block(ib) = bpar%fit_block(ib).and.bpar%nicas_block(ib)

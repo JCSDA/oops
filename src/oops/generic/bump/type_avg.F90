@@ -303,28 +303,27 @@ type(bpar_type),intent(in) :: bpar   !< Block parameters
 
 ! Local variables
 integer :: ib,ic2,il0,jl0r,jc3,isub,jsub
+real(kind_real) :: norm
 
 ! Normalize
 do ib=1,bpar%nb
    if (bpar%diag_block(ib)) then
       do ic2=0,nam%nc2
          if ((ic2==0).or.(nam%local_diag)) then
-            !$omp parallel do schedule(static) private(il0,jl0r,jc3,isub,jsub)
+            !$omp parallel do schedule(static) private(il0,jl0r,jc3,isub,jsub,norm)
             do il0=1,geom%nl0
                do jl0r=1,bpar%nl0r(ib)
                   do jc3=1,bpar%nc3(ib)
                      if (avg%blk(ic2,ib)%nc1a(jc3,jl0r,il0)>0.0) then
-                        avg%blk(ic2,ib)%m11(jc3,jl0r,il0) = avg%blk(ic2,ib)%m11(jc3,jl0r,il0) &
-                                                          & /avg%blk(ic2,ib)%nc1a(jc3,jl0r,il0)
+                        norm = 1.0/avg%blk(ic2,ib)%nc1a(jc3,jl0r,il0)
+                        avg%blk(ic2,ib)%m11(jc3,jl0r,il0) = avg%blk(ic2,ib)%m11(jc3,jl0r,il0)*norm
                         do isub=1,avg%blk(ic2,ib)%nsub
                            do jsub=1,avg%blk(ic2,ib)%nsub
-                              avg%blk(ic2,ib)%m11m11(jc3,jl0r,il0,jsub,isub) = avg%blk(ic2,ib)%m11m11(jc3,jl0r,il0,jsub,isub) &
-                                                                             & /avg%blk(ic2,ib)%nc1a(jc3,jl0r,il0)
-                              avg%blk(ic2,ib)%m2m2(jc3,jl0r,il0,jsub,isub) = avg%blk(ic2,ib)%m2m2(jc3,jl0r,il0,jsub,isub) &
-                                                                           & /avg%blk(ic2,ib)%nc1a(jc3,jl0r,il0)
+                              avg%blk(ic2,ib)%m11m11(jc3,jl0r,il0,jsub,isub) = avg%blk(ic2,ib)%m11m11(jc3,jl0r,il0,jsub,isub)*norm
+                              avg%blk(ic2,ib)%m2m2(jc3,jl0r,il0,jsub,isub) = avg%blk(ic2,ib)%m2m2(jc3,jl0r,il0,jsub,isub)*norm
                             end do
                            if (.not.nam%gau_approx) avg%blk(ic2,ib)%m22(jc3,jl0r,il0,isub) &
-                         & = avg%blk(ic2,ib)%m22(jc3,jl0r,il0,isub)/avg%blk(ic2,ib)%nc1a(jc3,jl0r,il0)
+                         & = avg%blk(ic2,ib)%m22(jc3,jl0r,il0,isub)*norm
                         end do
                      else
                         call msr(avg%blk(ic2,ib)%m11(jc3,jl0r,il0))
@@ -447,22 +446,23 @@ type(bpar_type),intent(in) :: bpar      !< Block parameters
 
 ! Local variables
 integer :: ib,ic2,il0,jl0r,jc3,isub,jsub
+real(kind_real) :: norm
 
 ! Normalize
 do ib=1,bpar%nb
    if (bpar%diag_block(ib)) then
       do ic2=0,nam%nc2
          if ((ic2==0).or.(nam%local_diag)) then
-            !$omp parallel do schedule(static) private(il0,jl0r,jc3,isub,jsub)
+            !$omp parallel do schedule(static) private(il0,jl0r,jc3,isub,jsub,norm)
             do il0=1,geom%nl0
                do jl0r=1,bpar%nl0r(ib)
                   do jc3=1,bpar%nc3(ib)
                      if (avg_lr%blk(ic2,ib)%nc1a(jc3,jl0r,il0)>0.0) then
+                        norm = 1.0/avg_lr%blk(ic2,ib)%nc1a(jc3,jl0r,il0)
                         do isub=1,avg_lr%blk(ic2,ib)%nsub
                            do jsub=1,avg_lr%blk(ic2,ib)%nsub
                               avg_lr%blk(ic2,ib)%m11lrm11sub(jc3,jl0r,il0,jsub,isub) &
-                            & = avg_lr%blk(ic2,ib)%m11lrm11sub(jc3,jl0r,il0,jsub,isub) &
-                            & /avg_lr%blk(ic2,ib)%nc1a(jc3,jl0r,il0)
+                            & = avg_lr%blk(ic2,ib)%m11lrm11sub(jc3,jl0r,il0,jsub,isub)*norm
                             end do
                         end do
                      else

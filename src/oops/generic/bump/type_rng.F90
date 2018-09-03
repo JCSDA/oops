@@ -443,7 +443,7 @@ integer,intent(in) :: ns             !< Number of samplings points
 integer,intent(out) :: ihor(ns)      !< Horizontal sampling index
 
 ! Local variables
-integer :: is,js,i,irep,irmax,itry,irval,irvalmax,i_red,ir,nn_index(2),ismin,progint,nval
+integer :: is,js,i,irep,irmax,itry,irval,irvalmax,i_red,ir,nn_index(2),ismin,progint,nval,nrep_eff
 integer,allocatable :: val_to_full(:)
 real(kind_real) :: distmax,distmin,d,nn_dist(2)
 real(kind_real),allocatable :: dist(:)
@@ -467,11 +467,12 @@ elseif (nval==ns) then
    end do
 else
    ! Allocation
+   nrep_eff = min(nrep,n-ns)
    allocate(dist(ns))
    allocate(lmask(n))
    allocate(smask(n))
    allocate(val_to_full(n))
-   allocate(done(ns+nrep))
+   allocate(done(ns+nrep_eff))
 
    ! Initialization
    call msi(ihor)
@@ -550,7 +551,7 @@ else
 
       if (is==ns+1) then
          ! Try replacement
-         if (irep<=nrep) then
+         if (irep<=nrep_eff) then
             ! Create KD-tree (unsorted)
             call kdtree%create(mpl,n,lon,lat,mask=smask,sort=.false.)
 

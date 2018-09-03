@@ -699,18 +699,18 @@ end do
 
 end subroutine cmat_from_nam
 
-
 !----------------------------------------------------------------------
 ! Subroutine: cmat_from_oops
 !> Purpose: copy C matrix data from OOPS
 !----------------------------------------------------------------------
-subroutine cmat_from_oops(cmat,mpl,bpar)
+subroutine cmat_from_oops(cmat,mpl,geom,bpar)
 
 implicit none
 
 ! Passed variables
 class(cmat_type),intent(inout) :: cmat !< C matrix data
 type(mpl_type),intent(in) :: mpl       !< MPI data
+type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
 
 ! Local variables
@@ -721,6 +721,8 @@ do ib=1,bpar%nbe
       if (allocated(cmat%blk(ib)%oops_coef_ens)) then
          write(mpl%unit,'(a7,a,a)') '','Ensemble coefficient copied from OOPS for block ',trim(bpar%blockname(ib))
          cmat%blk(ib)%coef_ens = cmat%blk(ib)%oops_coef_ens
+         call mpl%allreduce_sum(sum(cmat%blk(ib)%coef_ens,mask=geom%mask(geom%c0a_to_c0,:)),cmat%blk(ib)%wgt)
+         cmat%blk(ib)%wgt = cmat%blk(ib)%wgt/real(count(geom%mask),kind_real)
       end if
       if (allocated(cmat%blk(ib)%oops_coef_sta)) then
          write(mpl%unit,'(a7,a,a)') '','Static coefficient copied from OOPS for block ',trim(bpar%blockname(ib))
