@@ -2,11 +2,19 @@
 ! Module: tools_qsort.f90
 !> Purpose: qsort routines
 !> <br>
-!> Author: Benjamin Menetrier
+!> Source: http://jblevins.org/mirror/amiller/qsort.f90
+!> <br>
+!> Author: Brainerd, W.S., Goldberg, C.H. & Adams, J.C. (1990) "Programmer's Guide to Fortran 90", McGraw-Hill  ISBN 0-07-000248-7, pages 149-150.
+!> <br>
+!> Original licensing: none
+!> <br>
+!> Modified by Alan Miller
+!> <br>
+!> Modified by Benjamin Menetrier for BUMP
 !> <br>
 !> Licensing: this code is distributed under the CeCILL-C license
 !> <br>
-!> Copyright © 2017 METEO-FRANCE
+!> Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE
 !----------------------------------------------------------------------
 module tools_qsort
 
@@ -35,11 +43,8 @@ public :: qsort
 contains
 
 !----------------------------------------------------------------------
-! qsort_integer
-! Brainerd, W.S., Goldberg, C.H. & Adams, J.C. (1990) "Programmer's Guide to Fortran 90", McGraw-Hill  ISBN 0-07-000248-7, pages 149-150.
-! Modified by Alan Miller to include an associated integer array which gives the positions of the elements in the original order.
-! Source: http://jblevins.org/mirror/amiller/qsort.f90
-! Modified by Benjamin Menetrier for BUMP
+! Subroutine: qsort_integer
+!> Purpose: sort an integer subvector
 !----------------------------------------------------------------------
 recursive subroutine qsort_integer(n,list,order)
 
@@ -62,11 +67,8 @@ call quick_sort(n,1,n,list,order)
 end subroutine qsort_integer
 
 !----------------------------------------------------------------------
-! qsort_real
-! Brainerd, W.S., Goldberg, C.H. & Adams, J.C. (1990) "Programmer's Guide to Fortran 90", McGraw-Hill  ISBN 0-07-000248-7, pages 149-150.
-! Modified by Alan Miller to include an associated integer array which gives the positions of the elements in the original order.
-! Source: http://jblevins.org/mirror/amiller/qsort.f90
-! Modified by Benjamin Menetrier for BUMP
+! Subroutine: qsort_real
+!> Purpose: sort a real subvector
 !----------------------------------------------------------------------
 recursive subroutine qsort_real(n,list,order)
 
@@ -152,7 +154,7 @@ end subroutine quick_sort_integer
 
 !----------------------------------------------------------------------
 ! Subroutine: quick_sort_real
-!> Purpose: sort an real subvector
+!> Purpose: sort a real subvector
 !----------------------------------------------------------------------
 recursive subroutine quick_sort_real(n,left_end,right_end,list,order)
 

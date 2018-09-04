@@ -10,12 +10,12 @@
 !----------------------------------------------------------------------
 module type_kdtree
 
-use tools_const, only: rth
 use tools_kdtree2, only: kdtree2,kdtree2_result,kdtree2_create,kdtree2_destroy, &
                        & kdtree2_n_nearest,kdtree2_r_count
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,isnotmsi
 use tools_qsort, only: qsort
+use tools_repro, only: rth
 use tools_stripack, only: trans,scoord
 use type_mpl, only: mpl_type
 

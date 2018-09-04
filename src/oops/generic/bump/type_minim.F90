@@ -11,9 +11,10 @@
 module type_minim
 
 use tools_fit, only: ver_smooth
-use tools_func, only: eq,inf,infeq,sup,fit_diag,fit_diag_dble,fit_lct
+use tools_func, only: fit_diag,fit_diag_dble,fit_lct
 use tools_kinds, only: kind_real
 use tools_missing, only: isnotmsr
+use tools_repro, only: eq,inf,infeq,sup
 use type_mpl, only: mpl_type
 
 implicit none
@@ -47,7 +48,7 @@ type minim_type
    logical :: lhomv                           !< Vertically homogenous vertical support radius key
    integer,allocatable :: l0rl0_to_l0(:,:)    !< Reduced level to level
    real(kind_real),allocatable :: disth(:)    !< Horizontal distance
-   real(kind_real),allocatable :: distvr(:,:) !< Vertical distance
+   real(kind_real),allocatable :: distv(:,:)  !< Vertical distance
 
    ! Specific data (LCT)
    integer :: nscales                         !< Number of LCT scales
@@ -205,7 +206,7 @@ else
 end if
 
 ! Compute function
-call fit_diag(mpl,minim%nc3,minim%nl0r,minim%nl0,minim%l0rl0_to_l0,minim%disth,minim%distvr,fit_rh,fit_rv,fit)
+call fit_diag(mpl,minim%nc3,minim%nl0r,minim%nl0,minim%l0rl0_to_l0,minim%disth,minim%distv,fit_rh,fit_rv,fit)
 
 ! Pack
 fit_pack = pack(fit,mask=.true.)
@@ -283,7 +284,7 @@ else
 end if
 
 ! Compute function
-call fit_diag_dble(mpl,minim%nc3,minim%nl0r,minim%nl0,minim%l0rl0_to_l0,minim%disth,minim%distvr,fit_rh,fit_rv, &
+call fit_diag_dble(mpl,minim%nc3,minim%nl0r,minim%nl0,minim%l0rl0_to_l0,minim%disth,minim%distv,fit_rh,fit_rv, &
  & fit_rv_rfac,fit_rv_coef,fit)
 
 ! Pack

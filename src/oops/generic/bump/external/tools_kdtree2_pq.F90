@@ -1,12 +1,22 @@
-!
-!(c) Matthew Kennel, Institute for Nonlinear Science (2004)
-!
-! Licensed under the Academic Free License version 1.1 found in file LICENSE
-! with additional provisions found in that same file.
-!
+!----------------------------------------------------------------------
+! Module: tools_kdtree2_pq.f90
+!> Purpose: K-d tree priority queue routines
+!> <br>
+!> Source: https://github.com/jmhodges/kdtree2
+!> <br>
+!> Author: Matthew Kennel, Institute for Nonlinear Science (2004)
+!> <br>
+!> Original licensing: Academic Free License version 1.1
+!> <br>
+!> Modified by Benjamin Menetrier for BUMP
+!> <br>
+!> Licensing: this code is distributed under the CeCILL-C license
+!> <br>
+!> Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE
+!----------------------------------------------------------------------
 module tools_kdtree2_pq
-  use tools_func, only: inf,sup,supeq
   use tools_kinds, only: kind_real
+  use tools_repro, only: inf,sup,supeq
   !
   ! maintain a priority queue (PQ) of data, pairs of 'priority/payload',
   ! implemented with a binary heap.  This is the type, and the 'dis' field

@@ -1045,9 +1045,9 @@ type(cv_type),intent(in) :: cv                                        !< Control
 real(kind_real),intent(out) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) !< Field
 
 ! Local variable
-integer :: ib,its,iv,jv,i,ic0a,il0
+integer :: ib,its,iv,jv,ic0a,il0
 real(kind_real),allocatable :: fld_3d(:,:),fld_4d(:,:,:),fld_4d_tmp(:,:,:)
-real(kind_real),allocatable :: wgt(:,:),wgt_diag(:),a(:),u(:)
+real(kind_real),allocatable :: wgt(:,:),wgt_diag(:),wgt_u(:,:)
 
 select case (nam%strategy)
 case ('common')
@@ -1106,8 +1106,7 @@ case ('common_weighted')
    allocate(fld_4d_tmp(geom%nc0a,geom%nl0,nam%nv))
    allocate(wgt(nam%nv,nam%nv))
    allocate(wgt_diag(nam%nv))
-   allocate(a((nam%nv*(nam%nv+1))/2))
-   allocate(u((nam%nv*(nam%nv+1))/2))
+   allocate(wgt_u(nam%nv,nam%nv))
 
    ! Copy weights
    do ib=1,bpar%nb
@@ -1132,22 +1131,7 @@ case ('common_weighted')
    end do
 
    ! Cholesky decomposition
-   i = 0
-   do iv=1,nam%nv
-      do jv=1,iv
-         i = i+1
-         a(i) = wgt(iv,jv)
-      end do
-   end do
-   call cholesky(mpl,nam%nv,nam%nv*(nam%nv+1)/2,a,u)
-   i = 0
-   wgt = 0.0
-   do iv=1,nam%nv
-      do jv=1,iv
-         i = i+1
-         wgt(iv,jv) = u(i)
-      end do
-   end do
+   call cholesky(mpl,nam%nv,wgt,wgt_u)
 
    do ib=1,bpar%nb
       if (bpar%cv_block(ib)) then
@@ -1173,7 +1157,7 @@ case ('common_weighted')
    fld_4d_tmp = 0.0
    do iv=1,nam%nv
       do jv=1,iv
-         fld_4d_tmp(:,:,iv) = fld_4d_tmp(:,:,iv)+wgt(iv,jv)*fld_4d(:,:,jv)
+         fld_4d_tmp(:,:,iv) = fld_4d_tmp(:,:,iv)+wgt_u(iv,jv)*fld_4d(:,:,jv)
       end do
    end do
 
@@ -1262,9 +1246,9 @@ real(kind_real),intent(in) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) !< Field
 type(cv_type),intent(out) :: cv                                      !< Control variable
 
 ! Local variable
-integer :: ib,its,iv,jv,i,ic0a,il0
+integer :: ib,its,iv,jv,ic0a,il0
 real(kind_real),allocatable :: fld_3d(:,:),fld_4d(:,:,:),fld_4d_tmp(:,:,:),fld_5d(:,:,:,:)
-real(kind_real),allocatable :: wgt(:,:),wgt_diag(:),a(:),u(:)
+real(kind_real),allocatable :: wgt(:,:),wgt_diag(:),wgt_u(:,:)
 type(cv_type) :: cv_tmp
 
 ! Allocation
@@ -1336,8 +1320,7 @@ case ('common_weighted')
    allocate(fld_4d_tmp(geom%nc0a,geom%nl0,nam%nv))
    allocate(wgt(nam%nv,nam%nv))
    allocate(wgt_diag(nam%nv))
-   allocate(a((nam%nv*(nam%nv+1))/2))
-   allocate(u((nam%nv*(nam%nv+1))/2))
+   allocate(wgt_u(nam%nv,nam%nv))
 
    ! Copy weights
    do ib=1,bpar%nb
@@ -1362,22 +1345,7 @@ case ('common_weighted')
    end do
 
    ! Cholesky decomposition
-   i = 0
-   do iv=1,nam%nv
-      do jv=1,iv
-         i = i+1
-         a(i) = wgt(iv,jv)
-      end do
-   end do
-   call cholesky(mpl,nam%nv,nam%nv*(nam%nv+1)/2,a,u)
-   i = 0
-   wgt = 0.0
-   do jv=1,nam%nv
-      do iv=1,jv
-         i = i+1
-         wgt(iv,jv) = u(i)
-      end do
-   end do
+   call cholesky(mpl,nam%nv,wgt,wgt_u)
 
    ! Sum product over timeslots
    fld_4d = 0.0
@@ -1389,7 +1357,7 @@ case ('common_weighted')
    fld_4d_tmp = 0.0
    do iv=1,nam%nv
       do jv=iv,nam%nv
-         fld_4d_tmp(:,:,iv) = fld_4d_tmp(:,:,iv)+wgt(iv,jv)*fld_4d(:,:,jv)
+         fld_4d_tmp(:,:,iv) = fld_4d_tmp(:,:,iv)+wgt_u(iv,jv)*fld_4d(:,:,jv)
       end do
    end do
 

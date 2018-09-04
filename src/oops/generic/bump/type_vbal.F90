@@ -14,10 +14,11 @@ use,intrinsic :: iso_c_binding
 !$ use omp_lib
 use netcdf
 use tools_const, only: msvali,msvalr
-use tools_func, only: infeq,syminv
+use tools_func, only: syminv
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsr
 use tools_nc, only: ncfloat
+use tools_repro, only: infeq
 use type_bpar, only: bpar_type
 use type_ens, only: ens_type
 use type_geom, only: geom_type
@@ -333,7 +334,7 @@ integer :: il0i,i_s,ic0a,ic2b,ic2,ie,ie_sub,ic0,jl0,il0,isub,ic1,ic1a,iv,jv,offs
 real(kind_real) :: fld(geom%nc0a,geom%nl0)
 real(kind_real) :: auto_avg(nam%nc2,geom%nl0,geom%nl0),cross_avg(nam%nc2,geom%nl0,geom%nl0),auto_inv(geom%nl0,geom%nl0)
 real(kind_real) :: sbuf(2*nam%nc2*geom%nl0**2),rbuf(2*nam%nc2*geom%nl0**2)
-real(kind_real),allocatable :: list_auto(:),list_cross(:),a(:),c(:)
+real(kind_real),allocatable :: list_auto(:),list_cross(:),auto_avg_tmp(:,:)
 real(kind_real),allocatable :: fld_1(:,:),fld_2(:,:),auto(:,:,:,:),cross(:,:,:,:)
 logical :: valid,done_c2(nam%nc2),mask_unpack(geom%nl0,geom%nl0)
 logical,allocatable :: done_c2b(:)
@@ -366,10 +367,7 @@ allocate(fld_2(hdata%nc1a,geom%nl0))
 allocate(auto(hdata%nc1a,geom%nl0,geom%nl0,ens%nsub))
 allocate(cross(hdata%nc1a,geom%nl0,geom%nl0,ens%nsub))
 allocate(done_c2b(hdata%nc2b))
-if (.not.diag_auto) then
-   allocate(a(geom%nl0*(geom%nl0+1)/2))
-   allocate(c(geom%nl0*(geom%nl0+1)/2))
-end if
+if (.not.diag_auto) allocate(auto_avg_tmp(geom%nl0,geom%nl0))
 call vbal%alloc(mpl,nam,geom,bpar,hdata%nc2b)
 
 ! Initialization
@@ -544,22 +542,8 @@ do iv=1,nam%nv
                end do
             else
                ! Inverse the vertical auto-covariance
-               i = 0
-               do il0=1,geom%nl0
-                  do jl0=1,il0
-                     i = i+1
-                     a(i) = auto_avg(ic2,il0,jl0)
-                  end do
-               end do
-               call syminv(mpl,geom%nl0,geom%nl0*(geom%nl0+1)/2,a,c)
-               i = 0
-               do il0=1,geom%nl0
-                  do jl0=1,il0
-                     i = i+1
-                     auto_inv(il0,jl0) = c(i)
-                     auto_inv(jl0,il0) = auto_inv(il0,jl0)
-                  end do
-               end do
+               auto_avg_tmp = auto_avg(ic2,:,:)
+               call syminv(mpl,geom%nl0,auto_avg_tmp,auto_inv)
             end if
 
             ! Compute the regression

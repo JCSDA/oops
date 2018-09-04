@@ -10,10 +10,9 @@
 !----------------------------------------------------------------------
 module type_avg_blk
 
-use tools_const, only: rth
 use tools_kinds, only: kind_real
-use tools_func, only: inf
 use tools_missing, only: msr,isanynotmsr,isnotmsr,ismsr
+use tools_repro, only: rth,inf
 use type_bpar, only: bpar_type
 use type_geom, only: geom_type
 use type_hdata, only: hdata_type

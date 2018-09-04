@@ -10,10 +10,10 @@
 !----------------------------------------------------------------------
 module tools_fit
 
-use tools_const, only: rth
 use tools_func, only: gc99
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsi,isnotmsr,isanynotmsr,ismsi,ismsr
+use tools_repro, only: rth
 use type_mpl, only: mpl_type
 
 implicit none

@@ -13,10 +13,10 @@ module type_linop
 use netcdf
 !$ use omp_lib
 use tools_kinds, only: kind_real
-use tools_func, only: inf
 use tools_missing, only: msi,msr,isnotmsr,isnotmsi
 use tools_nc, only: ncfloat
 use tools_qsort, only: qsort
+use tools_repro, only: inf
 use type_geom, only: geom_type
 use type_kdtree, only: kdtree_type
 use type_mesh, only: mesh_type

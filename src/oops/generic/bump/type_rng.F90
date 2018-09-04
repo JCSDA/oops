@@ -11,9 +11,10 @@
 module type_rng
 
 use iso_fortran_env, only: int64
-use tools_func, only: inf,sup,sphere_dist
+use tools_func, only: sphere_dist
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,isnotmsi
+use tools_repro, only: inf,sup
 use type_kdtree, only: kdtree_type
 use type_mpl, only: mpl_type
 use type_nam, only: nam_type

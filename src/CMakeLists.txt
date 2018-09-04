@@ -141,6 +141,7 @@ oops/generic/bump/tools_icos.F90
 oops/generic/bump/tools_kinds.F90
 oops/generic/bump/tools_missing.F90
 oops/generic/bump/tools_nc.F90
+oops/generic/bump/tools_repro.F90
 oops/generic/bump/tools_test.F90
 oops/generic/bump/type_avg_blk.F90
 oops/generic/bump/type_avg.F90
@@ -175,6 +176,7 @@ oops/generic/bump/type_rng.F90
 oops/generic/bump/type_timer.F90
 oops/generic/bump/type_vbal_blk.F90
 oops/generic/bump/type_vbal.F90
+oops/generic/bump/external/tools_asa007.F90
 oops/generic/bump/external/tools_kdtree2.F90
 oops/generic/bump/external/tools_kdtree2_pq.F90
 oops/generic/bump/external/tools_qsort.F90
