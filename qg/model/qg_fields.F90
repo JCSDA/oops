@@ -398,11 +398,14 @@ call check(rhs)
 
 if (self%geom%nx==rhs%geom%nx .and. self%geom%ny==rhs%geom%ny) then
   self%x(:,:,:) = self%x(:,:,:) + rhs%x(:,:,:)
+  if (rhs%nf>1) then
+    self%q(:,:,:) = self%q(:,:,:) + rhs%q(:,:,:)
+    self%u(:,:,:) = self%u(:,:,:) + rhs%u(:,:,:)
+    self%v(:,:,:) = self%v(:,:,:) + rhs%v(:,:,:)
+  end if
 else
   call abor1_ftn("qg_fields:add_incr: not coded for low res increment yet")
 endif
-
-if (self%nf>1) self%x(:,:,self%nl+1:) = 0.0_kind_real
 
 return
 end subroutine add_incr
@@ -423,6 +426,11 @@ call zeros(lhs)
 if (x1%geom%nx==x2%geom%nx .and. x1%geom%ny==x2%geom%ny) then
   if (lhs%geom%nx==x1%geom%nx .and. lhs%geom%ny==x1%geom%ny) then
     lhs%x(:,:,:) = x1%x(:,:,:) - x2%x(:,:,:)
+    if (x1%nf>1) then
+      lhs%q(:,:,:) = x1%q(:,:,:) - x2%q(:,:,:)
+      lhs%u(:,:,:) = x1%u(:,:,:) - x2%u(:,:,:)
+      lhs%v(:,:,:) = x1%v(:,:,:) - x2%v(:,:,:)
+    end if
   else
     call abor1_ftn("qg_fields:diff_incr: not coded for low res increment yet")
   endif
@@ -557,7 +565,7 @@ else
       call abor1_ftn("qg_fields:read_file: input fields have wrong dimensions")
     endif
     call ncerr(nf90_get_att(ncid,nf90_global,'lbc',is))
-      call ncerr(nf90_get_att(ncid,nf90_global,'sdate',sdate))
+    call ncerr(nf90_get_att(ncid,nf90_global,'sdate',sdate))
     write(buf,*) 'validity date is: '//sdate
     call fckit_log%info(buf)
     nf = min(fld%nf, ic)

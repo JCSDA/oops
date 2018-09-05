@@ -195,6 +195,11 @@ if (present(nobs)) then
    close(unit=bump%mpl%unit)
 end if
 
+if ((bump%nam%ens1_ne>0).or.(bump%nam%ens2_ne>0)) then
+   write(bump%mpl%unit,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%unit,'(a)') '--- Add members to BUMP ensembles'
+end if
+
 end subroutine bump_setup_online
 
 !----------------------------------------------------------------------
@@ -441,11 +446,11 @@ else
 end if
 
 ! Print norm
-write(bump%mpl%unit,'(a4,a,i3,a,i1)') '','Member ',ie,' added to ensemble ',iens
+write(bump%mpl%unit,'(a7,a,i3,a,i1)') '','Member ',ie,' added to ensemble ',iens
 do its=1,bump%nam%nts
    do iv=1,bump%nam%nv
       norm = sum(fld(:,:,iv,its)**2)
-      write(bump%mpl%unit,'(a7,a,i2,a,i2,a,e9.2)') '','Local norm for variable ',iv,' and timeslot ',its,': ',norm
+      write(bump%mpl%unit,'(a10,a,i2,a,i2,a,e9.2)') '','Local norm for variable ',iv,' and timeslot ',its,': ',norm
    end do
 end do
 
@@ -616,8 +621,32 @@ real(kind_real),intent(out) :: fld(bump%geom%nc0a,bump%geom%nl0,bump%nam%nv,bump
 ! Local variables
 integer :: ib,iv,jv,its,jts
 
-select case (trim(bump%nam%strategy))
-case ('specific_univariate','specific_multivariate')
+select case (trim(param))
+case ('var','cor_rh','cor_rv','cor_rv_rfac','cor_rv_coef','loc_coef','loc_rh','loc_rv','hyb_coef')
+   select case (trim(bump%nam%strategy))
+   case ('specific_univariate','specific_multivariate')
+      do ib=1,bump%bpar%nb
+         ! Get indices
+         iv = bump%bpar%b_to_v1(ib)
+         jv = bump%bpar%b_to_v2(ib)
+         its = bump%bpar%b_to_ts1(ib)
+         jts = bump%bpar%b_to_ts2(ib)
+
+         ! Copy to field
+         if ((iv==jv).and.(its==jts)) call bump%copy_to_field(param,ib,fld(:,:,iv,its))
+      end do
+   case ('common','common_univariate','common_weighted')
+      ! Set common index
+      ib = bump%bpar%nbe
+
+      do its=1,bump%nam%nts
+         do iv=1,bump%nam%nv
+            ! Copy to field
+            call bump%copy_to_field(param,ib,fld(:,:,iv,its))
+         end do
+      end do
+   end select
+case default
    do ib=1,bump%bpar%nb
       ! Get indices
       iv = bump%bpar%b_to_v1(ib)
@@ -627,16 +656,6 @@ case ('specific_univariate','specific_multivariate')
 
       ! Copy to field
       if ((iv==jv).and.(its==jts)) call bump%copy_to_field(param,ib,fld(:,:,iv,its))
-   end do
-case ('common','common_univariate','common_weighted')
-   ! Set common index
-   ib = bump%bpar%nbe
-
-   do its=1,bump%nam%nts
-      do iv=1,bump%nam%nv
-         ! Copy to field
-         call bump%copy_to_field(param,ib,fld(:,:,iv,its))
-      end do
    end do
 end select
 
@@ -729,8 +748,32 @@ real(kind_real),intent(in) :: fld(bump%geom%nc0a,bump%geom%nl0,bump%nam%nv,bump%
 ! Local variables
 integer :: ib,iv,jv,its,jts
 
-select case (trim(bump%nam%strategy))
-case ('specific_univariate','specific_multivariate')
+select case (trim(param))
+case ('var','cor_rh','cor_rv','cor_rv_rfac','cor_rv_coef','loc_coef','loc_rh','loc_rv','hyb_coef')
+   select case (trim(bump%nam%strategy))
+   case ('specific_univariate','specific_multivariate')
+      do ib=1,bump%bpar%nb
+         ! Get indices
+         iv = bump%bpar%b_to_v1(ib)
+         jv = bump%bpar%b_to_v2(ib)
+         its = bump%bpar%b_to_ts1(ib)
+         jts = bump%bpar%b_to_ts2(ib)
+   
+         ! Copy to field
+         if ((iv==jv).and.(its==jts)) call bump%copy_from_field(param,ib,fld(:,:,iv,its))
+      end do
+   case ('common','common_univariate','common_weighted')
+      ! Set common index
+      ib = bump%bpar%nbe
+   
+      do its=1,bump%nam%nts
+         do iv=1,bump%nam%nv
+            ! Copy to field
+            call bump%copy_from_field(param,ib,fld(:,:,iv,its))
+         end do
+      end do
+   end select
+case default
    do ib=1,bump%bpar%nb
       ! Get indices
       iv = bump%bpar%b_to_v1(ib)
@@ -740,16 +783,6 @@ case ('specific_univariate','specific_multivariate')
 
       ! Copy to field
       if ((iv==jv).and.(its==jts)) call bump%copy_from_field(param,ib,fld(:,:,iv,its))
-   end do
-case ('common','common_univariate','common_weighted')
-   ! Set common index
-   ib = bump%bpar%nbe
-
-   do its=1,bump%nam%nts
-      do iv=1,bump%nam%nv
-         ! Copy to field
-         call bump%copy_from_field(param,ib,fld(:,:,iv,its))
-      end do
    end do
 end select
 
