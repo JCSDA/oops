@@ -346,6 +346,7 @@ subroutine bump_read_conf(c_conf,bump)
 implicit none
 type(c_ptr), intent(in) :: c_conf
 type(bump_type), intent(inout) :: bump
+integer,parameter :: nvmax = 20
 integer :: il,its,iscales,ildwh,ildwv,idir,iv
 character(len=3) :: ilchar,itschar,iscaleschar,ildwhchar,ildwvchar,idirchar,ivchar
 
@@ -401,7 +402,7 @@ if (config_element_exists(c_conf,"nl0r")) bump%nam%nl0r = config_get_int(c_conf,
 ! diag_param
 if (config_element_exists(c_conf,"ne")) bump%nam%ne = config_get_int(c_conf,"ne")
 if (config_element_exists(c_conf,"gau_approx")) bump%nam%gau_approx = integer_to_logical(config_get_int(c_conf,"gau_approx"))
-do iv=1,bump%nam%nv*(bump%nam%nv-1)/2
+do iv=1,nvmax*(nvmax-1)/2
    write(ivchar,'(i3)') iv
    if (config_element_exists(c_conf,"vbal_block("//trim(adjustl(ivchar))//")")) &
  & bump%nam%vbal_block(iv) = integer_to_logical(config_get_int(c_conf,"vbal_block("//trim(adjustl(ivchar))//")"))
