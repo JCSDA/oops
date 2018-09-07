@@ -177,26 +177,26 @@ void ParametersBUMP<MODEL>::estimate() const {
   Log::trace() << "ParametersBUMP::estimate starting" << std::endl;
   util::Timer timer(classname(), "estimate");
 
-//  Setup resolution
-  const eckit::LocalConfiguration resolConfig(conf_, "resolution");
-  const Geometry_ resol(resolConfig);
-
-// Setup variables
-  const eckit::LocalConfiguration varConfig(conf_, "variables");
-  const Variables vars(varConfig);
-
-// Setup time
-  const util::DateTime date(conf_.getString("date"));
-
-// Setup dummy increment
-  Increment_ dx(resol, vars, date);
-  dx.zero();
-
-// Setup unstructured grid
-  UnstructuredGrid ug;
-
 // Read data from files
   if (conf_.has("input")) {
+  //  Setup resolution
+    const eckit::LocalConfiguration resolConfig(conf_, "resolution");
+    const Geometry_ resol(resolConfig);
+
+  // Setup variables
+    const eckit::LocalConfiguration varConfig(conf_, "variables");
+    const Variables vars(varConfig);
+
+  // Setup time
+    const util::DateTime date(conf_.getString("date"));
+
+  // Setup dummy increment
+    Increment_ dx(resol, vars, date);
+    dx.zero();
+
+  // Setup unstructured grid
+    UnstructuredGrid ug;
+
     std::vector<eckit::LocalConfiguration> inputConfigs;
     conf_.get("input", inputConfigs);
     for (const auto & conf : inputConfigs) {
@@ -211,7 +211,6 @@ void ParametersBUMP<MODEL>::estimate() const {
 
 // Estimate parameters
   run_oobump_drivers_f90(keyBUMP_);
-
   Log::trace() << "ParametersBUMP:estimate done" << std::endl;
 }
 

@@ -693,13 +693,13 @@ logical,intent(in) :: mask_dst(n_dst)        !< Destination mask
 character(len=*),intent(in) :: interp_type   !< Interpolation type
 
 ! Local variables
-integer :: i,i_src,i_dst,nn_index(1),n_s,progint,ib(3),nnat,inat,np,iproc,offset,i_s
+integer :: i,i_src,i_dst,nn_index(1),n_s,ib(3),nnat,inat,np,iproc,offset,i_s
 integer :: i_dst_s(mpl%nproc),i_dst_e(mpl%nproc),n_dst_loc(mpl%nproc),i_dst_loc,proc_to_n_s(mpl%nproc)
 integer,allocatable :: natis(:),row(:),col(:)
 real(kind_real) :: nn_dist(1),b(3)
 real(kind_real),allocatable :: area_polygon(:),area_polygon_new(:),natwgt(:),S(:)
 logical :: loop
-logical,allocatable :: done(:),missing(:)
+logical,allocatable :: missing(:)
 type(mesh_type) :: meshnew
 
 ! MPI splitting
@@ -723,7 +723,6 @@ end if
 allocate(row(np*n_dst_loc(mpl%myproc)))
 allocate(col(np*n_dst_loc(mpl%myproc)))
 allocate(S(np*n_dst_loc(mpl%myproc)))
-allocate(done(n_dst_loc(mpl%myproc)))
 
 if (trim(interp_type)=='natural') then
    ! Compute polygons areas
@@ -736,7 +735,7 @@ end if
 ! Compute interpolation
 write(mpl%unit,'(a10,a)',advance='no') '','Compute interpolation: '
 call flush(mpl%unit)
-call mpl%prog_init(progint,done)
+call mpl%prog_init(n_dst_loc(mpl%myproc))
 n_s = 0
 do i_dst_loc=1,n_dst_loc(mpl%myproc)
    ! Indices
@@ -823,8 +822,8 @@ do i_dst_loc=1,n_dst_loc(mpl%myproc)
       end if
    end if
 
-   done(i_dst_loc) = .true.
-   call mpl%prog_print(progint,done)
+   ! Update
+   call mpl%prog_print(i_dst_loc)
 end do
 write(mpl%unit,'(a)') '100%'
 call flush(mpl%unit)
@@ -1023,19 +1022,15 @@ integer,intent(in),optional :: row_to_ic0(linop%n_dst) !< Conversion from row to
 integer,intent(in),optional :: col_to_ic0(linop%n_src) !< Conversion from col to ic0 (identity if missing)
 
 ! Local variables
-integer :: ic0,i_s,jc0,jc1,progint,il0,iproc
+integer :: ic0,i_s,jc0,jc1,il0,iproc
 integer :: i_s_s(mpl%nproc),i_s_e(mpl%nproc),n_s_loc(mpl%nproc),i_s_loc
 real(kind_real),allocatable :: x(:),y(:),z(:),v1(:),v2(:),va(:),vp(:),t(:)
-logical,allocatable :: done(:)
 
 ! MPI splitting
 call mpl%split(linop%n_s,i_s_s,i_s_e,n_s_loc)
 
-! Allocation
-allocate(done(n_s_loc(mpl%myproc)))
-
 ! Check that interpolations are not crossing mask boundaries
-call mpl%prog_init(progint,done)
+call mpl%prog_init(n_s_loc(mpl%myproc))
 !$omp parallel do schedule(static) private(i_s_loc,i_s,x,y,z,v1,v2,va,vp,t,ic0,jc1,jc0)
 do i_s_loc=1,n_s_loc(mpl%myproc)
    ! Indices
@@ -1058,9 +1053,8 @@ do i_s_loc=1,n_s_loc(mpl%myproc)
       call geom%check_arc(il0,geom%lon(ic0),geom%lat(ic0),geom%lon(jc0),geom%lat(jc0),valid(i_s))
    end if
 
-   ! Print progression
-   done(i_s_loc) = .true.
-   call mpl%prog_print(progint,done)
+   ! Update
+   call mpl%prog_print(i_s_loc)
 end do
 !$omp end parallel do
 write(mpl%unit,'(a)') '100%'
@@ -1086,9 +1080,6 @@ call mpl%update_tag(1)
 
 ! Broadcast data
 call mpl%bcast(valid)
-
-! Release memory
-deallocate(done)
 
 end subroutine linop_interp_check_mask
 

@@ -330,14 +330,13 @@ type(ens_type), intent(in) :: ens      !< Ensemble
 type(ens_type),intent(inout) :: ensu   !< Unbalanced ensemble
 
 ! Local variables
-integer :: il0i,i_s,ic0a,ic2b,ic2,ie,ie_sub,ic0,jl0,il0,isub,ic1,ic1a,iv,jv,offset,nc1a,progint,i
+integer :: il0i,i_s,ic0a,ic2b,ic2,ie,ie_sub,ic0,jl0,il0,isub,ic1,ic1a,iv,jv,offset,nc1a,i
 real(kind_real) :: fld(geom%nc0a,geom%nl0)
 real(kind_real) :: auto_avg(nam%nc2,geom%nl0,geom%nl0),cross_avg(nam%nc2,geom%nl0,geom%nl0),auto_inv(geom%nl0,geom%nl0)
 real(kind_real) :: sbuf(2*nam%nc2*geom%nl0**2),rbuf(2*nam%nc2*geom%nl0**2)
 real(kind_real),allocatable :: list_auto(:),list_cross(:),auto_avg_tmp(:,:)
 real(kind_real),allocatable :: fld_1(:,:),fld_2(:,:),auto(:,:,:,:),cross(:,:,:,:)
-logical :: valid,done_c2(nam%nc2),mask_unpack(geom%nl0,geom%nl0)
-logical,allocatable :: done_c2b(:)
+logical :: valid,mask_unpack(geom%nl0,geom%nl0)
 type(hdata_type) :: hdata
 
 ! Setup sampling
@@ -366,7 +365,6 @@ allocate(fld_1(hdata%nc1a,geom%nl0))
 allocate(fld_2(hdata%nc1a,geom%nl0))
 allocate(auto(hdata%nc1a,geom%nl0,geom%nl0,ens%nsub))
 allocate(cross(hdata%nc1a,geom%nl0,geom%nl0,ens%nsub))
-allocate(done_c2b(hdata%nc2b))
 if (.not.diag_auto) allocate(auto_avg_tmp(geom%nl0,geom%nl0))
 call vbal%alloc(mpl,nam,geom,bpar,hdata%nc2b)
 
@@ -448,7 +446,7 @@ do iv=1,nam%nv
          ! Average covariances
          write(mpl%unit,'(a10,a)',advance='no') '','Average covariances: '
          call flush(mpl%unit)
-         call mpl%prog_init(progint,done_c2)
+         call mpl%prog_init(nam%nc2)
          do ic2=1,nam%nc2
             !$omp parallel do schedule(static) private(il0,jl0,nc1a,ic1a,ic1,valid,isub), &
             !$omp&                             firstprivate(list_auto,list_cross)
@@ -494,10 +492,9 @@ do iv=1,nam%nv
             !$omp end parallel do
 
             ! Update
-            done_c2(ic2) = .true.
-            call mpl%prog_print(progint,done_c2)
+            call mpl%prog_print(ic2)
          end do
-         write(mpl%unit,'(a)') ''
+         write(mpl%unit,'(a)') '100%'
          call flush(mpl%unit)
 
          ! Gather data
@@ -529,7 +526,7 @@ do iv=1,nam%nv
          ! Compute regressions
          write(mpl%unit,'(a10,a)',advance='no') '','Compute regressions: '
          call flush(mpl%unit)
-         call mpl%prog_init(progint,done_c2b)
+         call mpl%prog_init(hdata%nc2b)
          do ic2b=1,hdata%nc2b
             ! Global index
             ic2 = hdata%c2b_to_c2(ic2b)
@@ -553,8 +550,7 @@ do iv=1,nam%nv
             vbal%blk(iv,jv)%reg(ic2b,:,:) = matmul(cross_avg(ic2,:,:),auto_inv)
 
             ! Update
-            done_c2b(ic2b) = .true.
-            call mpl%prog_print(progint,done_c2b)
+            call mpl%prog_print(ic2b)
          end do
          write(mpl%unit,'(a)') '100%'
          call flush(mpl%unit)

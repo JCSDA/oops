@@ -393,16 +393,24 @@ implicit none
 type(qg_field), intent(inout) :: self
 type(qg_field), intent(in)    :: rhs
 
+integer :: i
+
 call check(self)
 call check(rhs)
 
 if (self%geom%nx==rhs%geom%nx .and. self%geom%ny==rhs%geom%ny) then
-  self%x(:,:,:) = self%x(:,:,:) + rhs%x(:,:,:)
-  if (rhs%nf>1) then
-    self%q(:,:,:) = self%q(:,:,:) + rhs%q(:,:,:)
-    self%u(:,:,:) = self%u(:,:,:) + rhs%u(:,:,:)
-    self%v(:,:,:) = self%v(:,:,:) + rhs%v(:,:,:)
-  end if
+  do i=1,rhs%nf
+    select case (trim(rhs%fldnames(i)))
+    case ("x")
+      self%x(:,:,:) = self%x(:,:,:) + rhs%x(:,:,:)
+    case ("q")
+      self%q(:,:,:) = self%q(:,:,:) + rhs%q(:,:,:)
+    case ("u")
+      self%u(:,:,:) = self%u(:,:,:) + rhs%u(:,:,:)
+    case ("v")
+      self%v(:,:,:) = self%v(:,:,:) + rhs%v(:,:,:)
+    end select
+  end do
 else
   call abor1_ftn("qg_fields:add_incr: not coded for low res increment yet")
 endif
@@ -418,6 +426,8 @@ type(qg_field), intent(inout) :: lhs
 type(qg_field), intent(in)    :: x1
 type(qg_field), intent(in)    :: x2
 
+integer :: i
+
 call check(lhs)
 call check(x1)
 call check(x2)
@@ -425,12 +435,18 @@ call check(x2)
 call zeros(lhs)
 if (x1%geom%nx==x2%geom%nx .and. x1%geom%ny==x2%geom%ny) then
   if (lhs%geom%nx==x1%geom%nx .and. lhs%geom%ny==x1%geom%ny) then
-    lhs%x(:,:,:) = x1%x(:,:,:) - x2%x(:,:,:)
-    if (x1%nf>1) then
-      lhs%q(:,:,:) = x1%q(:,:,:) - x2%q(:,:,:)
-      lhs%u(:,:,:) = x1%u(:,:,:) - x2%u(:,:,:)
-      lhs%v(:,:,:) = x1%v(:,:,:) - x2%v(:,:,:)
-    end if
+    do i=1,lhs%nf
+      select case (trim(lhs%fldnames(i)))
+      case ("x")
+        lhs%x(:,:,:) = x1%x(:,:,:) - x2%x(:,:,:)
+      case ("q")
+        lhs%q(:,:,:) = x1%q(:,:,:) - x2%q(:,:,:)
+      case ("u")
+        lhs%u(:,:,:) = x1%u(:,:,:) - x2%u(:,:,:)
+      case ("v")
+        lhs%v(:,:,:) = x1%v(:,:,:) - x2%v(:,:,:)
+      end select
+    end do
   else
     call abor1_ftn("qg_fields:diff_incr: not coded for low res increment yet")
   endif

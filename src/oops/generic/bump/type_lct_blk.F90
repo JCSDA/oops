@@ -225,18 +225,18 @@ implicit none
 
 ! Passed variables
 class(lct_blk_type),intent(inout) :: lct_blk !< LCT block
-type(mpl_type),intent(in) :: mpl             !< MPI data
+type(mpl_type),intent(inout) :: mpl          !< MPI data
 type(nam_type),intent(in) :: nam             !< Namelist
 type(geom_type),intent(in) :: geom           !< Geometry
 type(bpar_type),intent(in) :: bpar           !< Block parameters
 type(hdata_type),intent(in) :: hdata         !< HDIAG data
 
 ! Local variables
-integer :: il0,jl0r,jl0,ic1a,ic1,ic0,jc3,iscales,offset,progint
+integer :: il0,jl0r,jl0,ic1a,ic1,ic0,jc3,iscales,offset
 real(kind_real) :: distsq,Dhbar,Dvbar,det,diag_prod
 real(kind_real),allocatable :: Dh(:),Dv(:),dx(:,:),dy(:,:),dz(:)
 logical :: spd
-logical,allocatable :: dmask(:,:),done(:)
+logical,allocatable :: dmask(:,:)
 type(minim_type) :: minim
 
 ! Associate
@@ -249,7 +249,6 @@ allocate(dx(nam%nc3,bpar%nl0r(ib)))
 allocate(dy(nam%nc3,bpar%nl0r(ib)))
 allocate(dz(bpar%nl0r(ib)))
 allocate(dmask(nam%nc3,bpar%nl0r(ib)))
-allocate(done(hdata%nc1a))
 minim%nx = sum(lct_blk%ncomp)
 if (lct_blk%nscales>1) minim%nx = minim%nx+lct_blk%nscales-1
 minim%ny = nam%nc3*bpar%nl0r(ib)
@@ -269,7 +268,7 @@ do il0=1,geom%nl0
    call flush(mpl%unit)
 
    ! Initialization
-   call mpl%prog_init(progint,done)
+   call mpl%prog_init(hdata%nc1a)
 
    do ic1a=1,hdata%nc1a
       ! Global index
@@ -420,8 +419,7 @@ do il0=1,geom%nl0
       end if
 
       ! Update
-      done(ic1a) = .true.
-      call mpl%prog_print(progint,done)
+      call mpl%prog_print(ic1a)
    end do
    write(mpl%unit,'(a)') '100%'
    call flush(mpl%unit)

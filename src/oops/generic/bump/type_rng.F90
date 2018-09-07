@@ -13,7 +13,7 @@ module type_rng
 use iso_fortran_env, only: int64
 use tools_func, only: sphere_dist
 use tools_kinds, only: kind_real
-use tools_missing, only: msi,isnotmsi
+use tools_missing, only: msi,msr,isnotmsi
 use tools_repro, only: inf,sup
 use type_kdtree, only: kdtree_type
 use type_mpl, only: mpl_type
@@ -432,7 +432,7 @@ implicit none
 
 ! Passed variables
 class(rng_type),intent(inout) :: rng !< Random number generator
-type(mpl_type),intent(in) :: mpl     !< MPI data
+type(mpl_type),intent(inout) :: mpl  !< MPI data
 integer,intent(in) :: n              !< Number of points
 real(kind_real),intent(in) :: lon(n) !< Longitudes
 real(kind_real),intent(in) :: lat(n) !< Latitudes
@@ -444,11 +444,11 @@ integer,intent(in) :: ns             !< Number of samplings points
 integer,intent(out) :: ihor(ns)      !< Horizontal sampling index
 
 ! Local variables
-integer :: is,js,i,irep,irmax,itry,irval,irvalmax,i_red,ir,nn_index(2),ismin,progint,nval,nrep_eff
+integer :: is,js,i,irep,irmax,itry,irval,irvalmax,i_red,ir,nn_index(2),ismin,nval,nrep_eff
 integer,allocatable :: val_to_full(:)
 real(kind_real) :: distmax,distmin,d,nn_dist(2)
 real(kind_real),allocatable :: dist(:)
-logical,allocatable :: lmask(:),smask(:),done(:)
+logical,allocatable :: lmask(:),smask(:)
 type(kdtree_type) :: kdtree
 
 ! Check mask size
@@ -472,13 +472,14 @@ else
    allocate(dist(ns))
    allocate(lmask(n))
    allocate(smask(n))
-   allocate(val_to_full(n))
-   allocate(done(ns+nrep_eff))
+   allocate(val_to_full(nval))
 
    ! Initialization
    call msi(ihor)
+   call msr(dist)
    lmask = mask
    smask = .false.
+   call msi(val_to_full)
    i_red = 0
    do i=1,n
       if (lmask(i)) then
@@ -488,7 +489,7 @@ else
    end do
    is = 1
    irep = 1
-   call mpl%prog_init(progint,done)
+   call mpl%prog_init(ns+nrep_eff)
 
    ! Define sampling
    do while (is<=ns)
@@ -597,8 +598,7 @@ else
       end if
 
       ! Update
-      if (is+irep-2>0) done(is+irep-2) = .true.
-      call mpl%prog_print(progint,done)
+      if (is+irep-2>0) call mpl%prog_print(is+irep-2)
    end do
    write(mpl%unit,'(a)') '100%'
    call flush(mpl%unit)

@@ -206,7 +206,7 @@ implicit none
 
 ! Passed variables
 class(lct_type),intent(inout) :: lct !< LCT
-type(mpl_type),intent(in) :: mpl     !< MPI data
+type(mpl_type),intent(inout) :: mpl  !< MPI data
 type(nam_type),intent(in) :: nam     !< Namelist
 type(geom_type),intent(in) :: geom   !< Geometry
 type(bpar_type),intent(in) :: bpar   !< Block parameters
@@ -246,7 +246,7 @@ implicit none
 
 ! Passed variables
 class(lct_type),intent(inout) :: lct    !< LCT
-type(mpl_type),intent(in) :: mpl        !< MPI data
+type(mpl_type),intent(inout) :: mpl     !< MPI data
 type(nam_type),intent(in) :: nam        !< Namelist
 type(geom_type),intent(in) :: geom      !< Geometry
 type(bpar_type),intent(in) :: bpar      !< Block parameters

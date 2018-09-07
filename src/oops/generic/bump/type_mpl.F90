@@ -43,6 +43,11 @@ type mpl_type
    integer :: tag                   !< MPI tag
    integer :: nthread               !< Number of OpenMP threads
 
+   ! Progression print
+   integer :: nprog                 !< Progression array size
+   integer :: progint               !< Progression integer
+   logical,allocatable :: done(:)   !< Progression array
+
    ! Display colors
    character(len=1024) :: black     !< Black color code
    character(len=1024) :: green     !< Green color code
@@ -149,8 +154,8 @@ subroutine mpl_newunit(mpl,lunit)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl       !< MPI data
-integer,intent(out) :: lunit !< New unit
+class(mpl_type),intent(in) :: mpl !< MPI data
+integer,intent(out) :: lunit      !< New unit
 
 ! Local variables
 integer :: lun
@@ -179,8 +184,8 @@ subroutine mpl_check(mpl,info)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl     !< MPI data
-integer,intent(in) :: info !< Error index
+class(mpl_type),intent(in) :: mpl !< MPI data
+integer,intent(in) :: info        !< Error index
 
 ! Local variables
 integer :: len,info_loc
@@ -205,8 +210,8 @@ subroutine mpl_init(mpl,mpi_comm)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                 !< MPI data
-integer,intent(in) :: mpi_comm         !< MPI communicator
+class(mpl_type),intent(inout) :: mpl !< MPI data
+integer,intent(in) :: mpi_comm       !< MPI communicator
 
 ! Local variables
 integer :: info
@@ -258,7 +263,7 @@ subroutine mpl_init_listing(mpl,prefix,model,colorlog,logpres,lunit)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                 !< MPI data
+class(mpl_type),intent(inout) :: mpl   !< MPI data
 character(len=*),intent(in) :: prefix  !< Output prefix
 character(len=*),intent(in) :: model   !< Model
 logical,intent(in) :: colorlog         !< Color listing flag
@@ -331,7 +336,7 @@ subroutine mpl_abort(mpl,message)
 implicit none
 
 ! Passed variable
-class(mpl_type) :: mpl                 !< MPI data
+class(mpl_type),intent(in) :: mpl      !< MPI data
 character(len=*),intent(in) :: message !< Message
 
 ! Local variables
@@ -359,7 +364,7 @@ subroutine mpl_barrier(mpl)
 implicit none
 
 ! Passed variable
-class(mpl_type) :: mpl !< MPI data
+class(mpl_type),intent(in) :: mpl !< MPI data
 
 ! Local variables
 integer :: info
@@ -381,7 +386,7 @@ subroutine mpl_warning(mpl,message)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                 !< MPI data
+class(mpl_type),intent(in) :: mpl      !< MPI data
 character(len=*),intent(in) :: message !< Message
 
 ! Print warning message
@@ -394,22 +399,26 @@ end subroutine mpl_warning
 ! Subroutine: prog_init
 !> Purpose: initialize progression display
 !----------------------------------------------------------------------
-subroutine mpl_prog_init(mpl,progint,done)
+subroutine mpl_prog_init(mpl,nprog)
 
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                            !< MPI data
-integer,intent(out) :: progint                    !< Progression integer
-logical,dimension(:),intent(out),optional :: done !< Progression logical array
+class(mpl_type),intent(inout) :: mpl !< MPI data
+integer,intent(in) :: nprog          !< Array size
 
 ! Print message
 write(mpl%unit,'(i3,a)',advance='no') 0,'%'
 call flush(mpl%unit)
 
+! Allocation
+if (allocated(mpl%done)) deallocate(mpl%done)
+allocate(mpl%done(nprog))
+
 ! Initialization
-progint = ddis
-if (present(done)) done = .false.
+mpl%nprog = nprog
+mpl%progint = ddis
+mpl%done = .false.
 
 end subroutine mpl_prog_init
 
@@ -417,26 +426,28 @@ end subroutine mpl_prog_init
 ! Subroutine: mpl_prog_print
 !> Purpose: print progression display
 !----------------------------------------------------------------------
-subroutine mpl_prog_print(mpl,progint,done)
+subroutine mpl_prog_print(mpl,i)
 
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                  !< MPI data
-integer,intent(inout) :: progint        !< Progression integer
-logical,dimension(:),intent(in) :: done !< Progression logical array
+class(mpl_type),intent(inout) :: mpl !< MPI data
+integer,intent(in),optional :: i     !< Index
 
 ! Local variables
 real(kind_real) :: prog
 
+! Update progression array
+if (present(i)) mpl%done(i) = .true.
+
 ! Print message
-prog = 100.0*real(count(done),kind_real)/real(size(done),kind_real)
-if (int(prog)>progint) then
-   if (progint<100) then
-      write(mpl%unit,'(i3,a)',advance='no') progint,'% '
+prog = 100.0*real(count(mpl%done),kind_real)/real(mpl%nprog,kind_real)
+if (int(prog)>mpl%progint) then
+   if (mpl%progint<100) then
+      write(mpl%unit,'(i3,a)',advance='no') mpl%progint,'% '
       call flush(mpl%unit)
    end if
-   progint = progint+ddis
+   mpl%progint = mpl%progint+ddis
 end if
 
 end subroutine mpl_prog_print
@@ -450,7 +461,7 @@ subroutine mpl_ncerr(mpl,subr,info)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                  !< MPI data
+class(mpl_type),intent(in) :: mpl   !< MPI data
 character(len=*),intent(in) :: subr !< Calling subroutine
 integer,intent(in) :: info          !< Info index
 
@@ -468,8 +479,8 @@ subroutine mpl_update_tag(mpl,add)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl    !< MPI data
-integer,intent(in) :: add !< Tag update incrememnt
+class(mpl_type),intent(inout) :: mpl !< MPI data
+integer,intent(in) :: add            !< Tag update incrememnt
 
 ! Update tag
 mpl%tag = mpl%tag+add
@@ -489,7 +500,7 @@ subroutine mpl_bcast_integer(mpl,var,root)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl              !< MPI data
+class(mpl_type),intent(in) :: mpl   !< MPI data
 integer,intent(in) :: var           !< Integer
 integer,intent(in),optional :: root !< Root task
 
@@ -520,7 +531,7 @@ subroutine mpl_bcast_integer_array_1d(mpl,var,root)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                 !< MPI data
+class(mpl_type),intent(in) :: mpl      !< MPI data
 integer,dimension(:),intent(in) :: var !< Integer array, 1d
 integer,intent(in),optional :: root    !< Root task
 
@@ -551,7 +562,7 @@ subroutine mpl_bcast_integer_array_2d(mpl,var,root)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                   !< MPI data
+class(mpl_type),intent(in) :: mpl        !< MPI data
 integer,dimension(:,:),intent(in) :: var !< Integer array, 2d
 integer,intent(in),optional :: root      !< Root task
 
@@ -582,7 +593,7 @@ subroutine mpl_bcast_real(mpl,var,root)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl              !< MPI data
+class(mpl_type),intent(in) :: mpl   !< MPI data
 real(kind_real),intent(in) :: var   !< Real
 integer,intent(in),optional :: root !< Root task
 
@@ -613,7 +624,7 @@ subroutine mpl_bcast_real_array_1d(mpl,var,root)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                         !< MPI data
+class(mpl_type),intent(in) :: mpl              !< MPI data
 real(kind_real),dimension(:),intent(in) :: var !< Real array, 1d
 integer,intent(in),optional :: root            !< Root task
 
@@ -644,7 +655,7 @@ subroutine mpl_bcast_real_array_2d(mpl,var,root)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                           !< MPI data
+class(mpl_type),intent(in) :: mpl                !< MPI data
 real(kind_real),dimension(:,:),intent(in) :: var !< Real array, 2d
 integer,intent(in),optional :: root              !< Root task
 
@@ -675,7 +686,7 @@ subroutine mpl_bcast_real_array_3d(mpl,var,root)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                             !< MPI data
+class(mpl_type),intent(in) :: mpl                  !< MPI data
 real(kind_real),dimension(:,:,:),intent(in) :: var !< Real array, 3d
 integer,intent(in),optional :: root                !< Root task
 
@@ -706,7 +717,7 @@ subroutine mpl_bcast_real_array_4d(mpl,var,root)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                               !< MPI data
+class(mpl_type),intent(in) :: mpl                    !< MPI data
 real(kind_real),dimension(:,:,:,:),intent(in) :: var !< Real array, 4d
 integer,intent(in),optional :: root                  !< Root task
 
@@ -737,7 +748,7 @@ subroutine mpl_bcast_real_array_5d(mpl,var,root)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                                 !< MPI data
+class(mpl_type),intent(in) :: mpl                      !< MPI data
 real(kind_real),dimension(:,:,:,:,:),intent(in) :: var !< Real array, 5d
 integer,intent(in),optional :: root                    !< Root task
 
@@ -768,7 +779,7 @@ subroutine mpl_bcast_real_array_6d(mpl,var,root)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                                   !< MPI data
+class(mpl_type),intent(in) :: mpl                        !< MPI data
 real(kind_real),dimension(:,:,:,:,:,:),intent(in) :: var !< Real array, 6d
 integer,intent(in),optional :: root                      !< Root task
 
@@ -799,7 +810,7 @@ subroutine mpl_bcast_logical(mpl,var,root)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl              !< MPI data
+class(mpl_type),intent(in) :: mpl   !< MPI data
 logical,intent(in) :: var           !< Logical
 integer,intent(in),optional :: root !< Root task
 
@@ -830,7 +841,7 @@ subroutine mpl_bcast_logical_array_1d(mpl,var,root)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                 !< MPI data
+class(mpl_type),intent(in) :: mpl      !< MPI data
 logical,dimension(:),intent(in) :: var !< Logical array, 1d
 integer,intent(in),optional :: root    !< Root task
 
@@ -861,7 +872,7 @@ subroutine mpl_bcast_logical_array_2d(mpl,var,root)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                   !< MPI data
+class(mpl_type),intent(in) :: mpl        !< MPI data
 logical,dimension(:,:),intent(in) :: var !< Logical array, 1d
 integer,intent(in),optional :: root      !< Root task
 
@@ -892,7 +903,7 @@ subroutine mpl_bcast_logical_array_3d(mpl,var,root)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                     !< MPI data
+class(mpl_type),intent(in) :: mpl          !< MPI data
 logical,dimension(:,:,:),intent(in) :: var !< Logical array, 1d
 integer,intent(in),optional :: root        !< Root task
 
@@ -923,7 +934,7 @@ subroutine mpl_bcast_string(mpl,var,root)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl              !< MPI data
+class(mpl_type),intent(in) :: mpl   !< MPI data
 character(len=*),intent(in) :: var  !< String
 integer,intent(in),optional :: root !< Root task
 
@@ -954,7 +965,7 @@ subroutine mpl_bcast_string_array_1d(mpl,var,root)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                          !< MPI data
+class(mpl_type),intent(in) :: mpl               !< MPI data
 character(len=*),dimension(:),intent(in) :: var !< Logical array, 1d
 integer,intent(in),optional :: root             !< Root task
 
@@ -981,10 +992,10 @@ subroutine mpl_recv_integer(mpl,var,src,tag)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl     !< MPI data
-integer,intent(out) :: var !< Integer
-integer,intent(in) :: src  !< Source task
-integer,intent(in) :: tag  !< Tag
+class(mpl_type),intent(in) :: mpl !< MPI data
+integer,intent(out) :: var        !< Integer
+integer,intent(in) :: src         !< Source task
+integer,intent(in) :: tag         !< Tag
 
 ! Local variable
 integer :: info
@@ -1007,11 +1018,11 @@ subroutine mpl_recv_integer_array_1d(mpl,n,var,src,tag)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl        !< MPI data
-integer,intent(in) :: n       !< Array size
-integer,intent(out) :: var(n) !< Integer array, 1d
-integer,intent(in) :: src     !< Source task
-integer,intent(in) :: tag     !< Tag
+class(mpl_type),intent(in) :: mpl !< MPI data
+integer,intent(in) :: n           !< Array size
+integer,intent(out) :: var(n)     !< Integer array, 1d
+integer,intent(in) :: src         !< Source task
+integer,intent(in) :: tag         !< Tag
 
 ! Local variable
 integer :: info
@@ -1034,7 +1045,7 @@ subroutine mpl_recv_real(mpl,var,src,tag)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl             !< MPI data
+class(mpl_type),intent(in) :: mpl  !< MPI data
 real(kind_real),intent(out) :: var !< Real
 integer,intent(in) :: src          !< Source task
 integer,intent(in) :: tag          !< Tag
@@ -1060,7 +1071,7 @@ subroutine mpl_recv_real_array_1d(mpl,n,var,src,tag)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                !< MPI data
+class(mpl_type),intent(in) :: mpl     !< MPI data
 integer,intent(in) :: n               !< Array size
 real(kind_real),intent(out) :: var(n) !< Real array, 1d
 integer,intent(in) :: src             !< Source task
@@ -1087,11 +1098,11 @@ subroutine mpl_recv_logical_array_1d(mpl,n,var,src,tag)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl        !< MPI data
-integer,intent(in) :: n       !< Array size
-logical,intent(out) :: var(n) !< Logical array, 1d
-integer,intent(in) :: src     !< Source task
-integer,intent(in) :: tag     !< Tag
+class(mpl_type),intent(in) :: mpl !< MPI data
+integer,intent(in) :: n           !< Array size
+logical,intent(out) :: var(n)     !< Logical array, 1d
+integer,intent(in) :: src         !< Source task
+integer,intent(in) :: tag         !< Tag
 
 ! Local variable
 integer :: info
@@ -1114,10 +1125,10 @@ subroutine mpl_send_integer(mpl,var,dst,tag)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl    !< MPI data
-integer,intent(in) :: var !< Integer
-integer,intent(in) :: dst !< Destination task
-integer,intent(in) :: tag !< Tag
+class(mpl_type),intent(in) :: mpl !< MPI data
+integer,intent(in) :: var         !< Integer
+integer,intent(in) :: dst         !< Destination task
+integer,intent(in) :: tag         !< Tag
 
 ! Local variable
 integer :: info
@@ -1139,11 +1150,11 @@ subroutine mpl_send_integer_array_1d(mpl,n,var,dst,tag)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl       !< MPI data
-integer,intent(in) :: n      !< Array size
-integer,intent(in) :: var(n) !< Integer array, 1d
-integer,intent(in) :: dst    !< Destination task
-integer,intent(in) :: tag    !< Tag
+class(mpl_type),intent(in) :: mpl !< MPI data
+integer,intent(in) :: n           !< Array size
+integer,intent(in) :: var(n)      !< Integer array, 1d
+integer,intent(in) :: dst         !< Destination task
+integer,intent(in) :: tag         !< Tag
 
 ! Local variable
 integer :: info
@@ -1165,7 +1176,7 @@ subroutine mpl_send_real(mpl,var,dst,tag)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl            !< MPI data
+class(mpl_type),intent(in) :: mpl !< MPI data
 real(kind_real),intent(in) :: var !< Real
 integer,intent(in) :: dst         !< Destination task
 integer,intent(in) :: tag         !< Tag
@@ -1190,7 +1201,7 @@ subroutine mpl_send_real_array_1d(mpl,n,var,dst,tag)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl               !< MPI data
+class(mpl_type),intent(in) :: mpl    !< MPI data
 integer,intent(in) :: n              !< Array size
 real(kind_real),intent(in) :: var(n) !< Real array, 1d
 integer,intent(in) :: dst            !< Destination task
@@ -1216,11 +1227,11 @@ subroutine mpl_send_logical_array_1d(mpl,n,var,dst,tag)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl       !< MPI data
-integer,intent(in) :: n      !< Array size
-logical,intent(in) :: var(n) !< Logical array, 1d
-integer,intent(in) :: dst    !< Destination task
-integer,intent(in) :: tag    !< Tag
+class(mpl_type),intent(in) :: mpl !< MPI data
+integer,intent(in) :: n           !< Array size
+logical,intent(in) :: var(n)      !< Logical array, 1d
+integer,intent(in) :: dst         !< Destination task
+integer,intent(in) :: tag         !< Tag
 
 ! Local variable
 integer :: info
@@ -1242,7 +1253,7 @@ subroutine mpl_gatherv_real(mpl,ns,sbuf,rcounts,nr,rbuf)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                   !< MPI data
+class(mpl_type),intent(in) :: mpl        !< MPI data
 integer,intent(in) :: ns                 !< Sent buffer size
 real(kind_real),intent(in) :: sbuf(ns)   !< Sent buffer
 integer,intent(in) :: rcounts(mpl%nproc) !< Received counts
@@ -1278,7 +1289,7 @@ subroutine mpl_scatterv_real(mpl,scounts,ns,sbuf,nr,rbuf)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                   !< MPI data
+class(mpl_type),intent(in) :: mpl        !< MPI data
 integer,intent(in) :: scounts(mpl%nproc) !< Sent counts
 integer,intent(in) :: ns                 !< Sent buffer size
 real(kind_real),intent(in) :: sbuf(ns)   !< Sent buffer
@@ -1314,7 +1325,7 @@ subroutine mpl_allgather_integer(mpl,ns,sbuf,rbuf)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                    !< MPI data
+class(mpl_type),intent(in) :: mpl         !< MPI data
 integer,intent(in) :: ns                  !< Sent buffer size
 integer,intent(in) :: sbuf(ns)            !< Sent buffer
 integer,intent(out) :: rbuf(mpl%nproc*ns) !< Received buffer
@@ -1339,7 +1350,7 @@ subroutine mpl_allgather_real(mpl,ns,sbuf,rbuf)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                            !< MPI data
+class(mpl_type),intent(in) :: mpl                 !< MPI data
 integer,intent(in) :: ns                          !< Sent buffer size
 real(kind_real),intent(in) :: sbuf(ns)            !< Sent buffer
 real(kind_real),intent(out) :: rbuf(mpl%nproc*ns) !< Received buffer
@@ -1364,7 +1375,7 @@ subroutine mpl_allgather_logical(mpl,ns,sbuf,rbuf)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                    !< MPI data
+class(mpl_type),intent(in) :: mpl         !< MPI data
 integer,intent(in) :: ns                  !< Sent buffer size
 logical,intent(in) :: sbuf(ns)            !< Sent buffer
 logical,intent(out) :: rbuf(mpl%nproc*ns) !< Received buffer
@@ -1389,7 +1400,7 @@ subroutine mpl_allgatherv_real(mpl,ns,sbuf,rcounts,nr,rbuf)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                   !< MPI data
+class(mpl_type),intent(in) :: mpl        !< MPI data
 integer,intent(in) :: ns                 !< Sent buffer size
 real(kind_real),intent(in) :: sbuf(ns)   !< Sent buffer
 integer,intent(in) :: rcounts(mpl%nproc) !< Received counts
@@ -1425,7 +1436,7 @@ subroutine mpl_alltoallv_real(mpl,ns,sbuf,scounts,sdispl,nr,rbuf,rcounts,rdispl)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                   !< MPI data
+class(mpl_type),intent(in) :: mpl        !< MPI data
 integer,intent(in) :: ns                 !< Sent buffer size
 real(kind_real),intent(in) :: sbuf(ns)   !< Sent buffer
 integer,intent(in) :: scounts(mpl%nproc) !< Sending counts
@@ -1455,9 +1466,9 @@ subroutine mpl_allreduce_sum_integer(mpl,var_in,var_out)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl         !< MPI data
-integer,intent(in) :: var_in   !< Input integer
-integer,intent(out) :: var_out !< Output integer
+class(mpl_type),intent(in) :: mpl !< MPI data
+integer,intent(in) :: var_in      !< Input integer
+integer,intent(out) :: var_out    !< Output integer
 
 ! Local variable
 integer :: info
@@ -1488,7 +1499,7 @@ subroutine mpl_allreduce_sum_real(mpl,var_in,var_out)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                 !< MPI data
+class(mpl_type),intent(in) :: mpl      !< MPI data
 real(kind_real),intent(in) :: var_in   !< Input real
 real(kind_real),intent(out) :: var_out !< Output real
 
@@ -1521,7 +1532,7 @@ subroutine mpl_allreduce_sum_real_array_1d(mpl,var_in,var_out)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                    !< MPI data
+class(mpl_type),intent(in) :: mpl         !< MPI data
 real(kind_real),intent(in) :: var_in(:)   !< Input real
 real(kind_real),intent(out) :: var_out(:) !< Output real
 
@@ -1556,7 +1567,7 @@ subroutine mpl_allreduce_min_real(mpl,var_in,var_out)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                 !< MPI data
+class(mpl_type),intent(in) :: mpl      !< MPI data
 real(kind_real),intent(in) :: var_in   !< Input real
 real(kind_real),intent(out) :: var_out !< Output real
 
@@ -1589,7 +1600,7 @@ subroutine mpl_allreduce_min_real_array_1d(mpl,var_in,var_out)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                    !< MPI data
+class(mpl_type),intent(in) :: mpl         !< MPI data
 real(kind_real),intent(in) :: var_in(:)   !< Input real
 real(kind_real),intent(out) :: var_out(:) !< Output real
 
@@ -1624,7 +1635,7 @@ subroutine mpl_allreduce_max_real(mpl,var_in,var_out)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                 !< MPI data
+class(mpl_type),intent(in) :: mpl      !< MPI data
 real(kind_real),intent(in) :: var_in   !< Input real
 real(kind_real),intent(out) :: var_out !< Output real
 
@@ -1657,7 +1668,7 @@ subroutine mpl_allreduce_max_real_array_1d(mpl,var_in,var_out)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                    !< MPI data
+class(mpl_type),intent(in) :: mpl         !< MPI data
 real(kind_real),intent(in) :: var_in(:)   !< Input real
 real(kind_real),intent(out) :: var_out(:) !< Output real
 
@@ -1692,7 +1703,7 @@ subroutine mpl_dot_prod_1d(mpl,fld1,fld2,dp)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                !< MPI data
+class(mpl_type),intent(in) :: mpl     !< MPI data
 real(kind_real),intent(in) :: fld1(:) !< Field 1
 real(kind_real),intent(in) :: fld2(:) !< Field 2
 real(kind_real),intent(out) :: dp     !< Global dot product
@@ -1728,7 +1739,7 @@ subroutine mpl_dot_prod_2d(mpl,fld1,fld2,dp)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                  !< MPI data
+class(mpl_type),intent(in) :: mpl       !< MPI data
 real(kind_real),intent(in) :: fld1(:,:) !< Field 1
 real(kind_real),intent(in) :: fld2(:,:) !< Field 2
 real(kind_real),intent(out) :: dp       !< Global dot product
@@ -1764,7 +1775,7 @@ subroutine mpl_dot_prod_3d(mpl,fld1,fld2,dp)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                    !< MPI data
+class(mpl_type),intent(in) :: mpl         !< MPI data
 real(kind_real),intent(in) :: fld1(:,:,:) !< Field 1
 real(kind_real),intent(in) :: fld2(:,:,:) !< Field 2
 real(kind_real),intent(out) :: dp         !< Global dot product
@@ -1800,7 +1811,7 @@ subroutine mpl_dot_prod_4d(mpl,fld1,fld2,dp)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                      !< MPI data
+class(mpl_type),intent(in) :: mpl           !< MPI data
 real(kind_real),intent(in) :: fld1(:,:,:,:) !< Field 1
 real(kind_real),intent(in) :: fld2(:,:,:,:) !< Field 2
 real(kind_real),intent(out) :: dp           !< Global dot product
@@ -1836,7 +1847,7 @@ subroutine mpl_split(mpl,n,i_s,i_e,n_loc)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                  !< MPI data
+class(mpl_type),intent(in) :: mpl       !< MPI data
 integer,intent(in) :: n                 !< Total array size
 integer,intent(out) :: i_s(mpl%nproc)   !< Index start
 integer,intent(out) :: i_e(mpl%nproc)   !< Index end
@@ -1871,7 +1882,7 @@ subroutine mpl_glb_to_loc_index(mpl,n_loc,loc_to_glb,n_glb,glb_to_loc)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                   !< MPI data
+class(mpl_type),intent(inout) :: mpl     !< MPI data
 integer,intent(in) :: n_loc              !< Local dimension
 integer,intent(in) :: loc_to_glb(n_loc)  !< Local to global index
 integer,intent(in) :: n_glb              !< Global dimension
@@ -1933,13 +1944,13 @@ subroutine mpl_glb_to_loc_1d(mpl,n_glb,glb_to_proc,glb_to_loc,glb,n_loc,loc)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                   !< MPI data
-integer,intent(in) :: n_glb
-integer,intent(in) :: glb_to_proc(n_glb)
-integer,intent(in) :: glb_to_loc(n_glb)
-real(kind_real),intent(in) :: glb(n_glb)
-integer,intent(in) :: n_loc              !< Local dimension
-real(kind_real),intent(out) :: loc(n_loc)
+class(mpl_type),intent(inout) :: mpl      !< MPI data
+integer,intent(in) :: n_glb               !< TODO
+integer,intent(in) :: glb_to_proc(n_glb)  !< TODO
+integer,intent(in) :: glb_to_loc(n_glb)   !< TODO
+real(kind_real),intent(in) :: glb(n_glb)  !< TODO
+integer,intent(in) :: n_loc               !< Local dimension
+real(kind_real),intent(out) :: loc(n_loc) !< TODO
 
 ! Local variables
 integer :: iproc,jproc,i_glb,i_loc,n_loc_tmp
@@ -1988,14 +1999,14 @@ subroutine mpl_glb_to_loc_2d(mpl,nl,n_glb,glb_to_proc,glb_to_loc,glb,n_loc,loc)
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                   !< MPI data
-integer,intent(in) :: nl                    !< Number of levels
-integer,intent(in) :: n_glb
-integer,intent(in) :: glb_to_proc(n_glb)
-integer,intent(in) :: glb_to_loc(n_glb)
-real(kind_real),intent(in) :: glb(n_glb,nl)
-integer,intent(in) :: n_loc              !< Local dimension
-real(kind_real),intent(out) :: loc(n_loc,nl)
+class(mpl_type),intent(inout) :: mpl         !< MPI data
+integer,intent(in) :: nl                     !< Number of levels
+integer,intent(in) :: n_glb                  !< TODO
+integer,intent(in) :: glb_to_proc(n_glb)     !< TODO
+integer,intent(in) :: glb_to_loc(n_glb)      !< TODO
+real(kind_real),intent(in) :: glb(n_glb,nl)  !< TODO
+integer,intent(in) :: n_loc                  !< Local dimension
+real(kind_real),intent(out) :: loc(n_loc,nl) !< TODO
 
 ! Local variables
 integer :: iproc,jproc,i_glb,i_loc,n_loc_tmp,il,ibuf
@@ -2063,9 +2074,9 @@ subroutine mpl_loc_to_glb_1d(mpl,n_loc,loc,n_glb,glb_to_proc,glb_to_loc,bcast,gl
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                   !< MPI data
+class(mpl_type),intent(inout) :: mpl     !< MPI data
 integer,intent(in) :: n_loc              !< Local dimension
-real(kind_real),intent(in) :: loc(n_loc)
+real(kind_real),intent(in) :: loc(n_loc) !< TODO
 integer,intent(in) :: n_glb
 integer,intent(in) :: glb_to_proc(n_glb)
 integer,intent(in) :: glb_to_loc(n_glb)
@@ -2122,13 +2133,13 @@ subroutine mpl_loc_to_glb_2d(mpl,nl,n_loc,loc,n_glb,glb_to_proc,glb_to_loc,bcast
 implicit none
 
 ! Passed variables
-class(mpl_type) :: mpl                   !< MPI data
+class(mpl_type),intent(inout) :: mpl        !< MPI data
 integer,intent(in) :: nl                    !< Number of levels
-integer,intent(in) :: n_loc              !< Local dimension
+integer,intent(in) :: n_loc                 !< Local dimension
 real(kind_real),intent(in) :: loc(n_loc,nl) !< TODO
-integer,intent(in) :: n_glb
-integer,intent(in) :: glb_to_proc(n_glb)
-integer,intent(in) :: glb_to_loc(n_glb)
+integer,intent(in) :: n_glb                 !< TODO
+integer,intent(in) :: glb_to_proc(n_glb)    !< TODO
+integer,intent(in) :: glb_to_loc(n_glb)     !< TODO
 logical,intent(in) :: bcast
 real(kind_real),intent(out) :: glb(n_glb,nl)
 

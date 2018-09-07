@@ -209,8 +209,8 @@ real(kind_real),intent(in) :: vunit(nmga,nl0) !< Vertical unit
 logical,intent(in) :: lmask(nmga,nl0)         !< Mask
 
 ! Local variables
-integer :: ic0,ic0a,il0,offset,iproc,img,imga
-integer,allocatable :: order(:),order_inv(:)
+integer :: ic0,ic0a,il0,offset,iproc,img,imga,vec(1)
+integer,allocatable :: mg_to_proc(:),order(:),order_inv(:)
 real(kind_real),allocatable :: lon_mg(:),lat_mg(:),area_mg(:),vunit_mg(:,:),list(:)
 logical,allocatable :: lmask_mg(:,:)
 
@@ -223,7 +223,8 @@ geom%nlev = nl0
 allocate(geom%proc_to_nmga(mpl%nproc))
 
 ! Communication
-call mpl%allgather(1,(/geom%nmga/),geom%proc_to_nmga)
+vec = (/geom%nmga/)
+call mpl%allgather(1,vec,geom%proc_to_nmga)
 
 ! Global number of model grid points
 geom%nmg = sum(geom%proc_to_nmga)
@@ -234,6 +235,7 @@ allocate(lat_mg(geom%nmg))
 allocate(area_mg(geom%nmg))
 allocate(vunit_mg(geom%nmg,geom%nl0))
 allocate(lmask_mg(geom%nmg,geom%nl0))
+allocate(mg_to_proc(geom%nmg))
 allocate(geom%mg_to_proc(geom%nmg))
 allocate(geom%mg_to_mga(geom%nmg))
 allocate(geom%mga_to_mg(geom%nmga))
@@ -339,8 +341,11 @@ do ic0a=1,geom%nc0a
 end do
 
 ! Setup communications
-call geom%com_mg%setup(mpl,'com_mg',geom%nmg,geom%nc0a,geom%nmga,geom%mga_to_mg,geom%c0a_to_mga, &
- & geom%c0_to_proc(geom%mg_to_c0),geom%c0_to_c0a)
+do img=1,geom%nmg
+   ic0 = geom%mg_to_c0(img)
+   mg_to_proc(img) = geom%c0_to_proc(ic0)
+end do
+call geom%com_mg%setup(mpl,'com_mg',geom%nmg,geom%nc0a,geom%nmga,geom%mga_to_mg,geom%c0a_to_mga,mg_to_proc,geom%c0_to_c0a)
 
 ! Deal with mask on redundant points
 do il0=1,geom%nl0

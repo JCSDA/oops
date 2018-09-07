@@ -1069,11 +1069,11 @@ type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 
 ! Local variables
-integer :: irmaxloc,progint,jc3,ic1,ir,ic0,jc0,i,nvc0,ivc0,icinf,icsup,ictest
+integer :: irmaxloc,jc3,ic1,ir,ic0,jc0,i,nvc0,ivc0,icinf,icsup,ictest
 integer,allocatable :: vic0(:)
 real(kind_real) :: d
 real(kind_real),allocatable :: x(:),y(:),z(:),v1(:),v2(:),va(:),vp(:),t(:)
-logical :: found,done(nam%nc3*nam%nc1)
+logical :: found
 
 ! First class
 hdata%c1c3_to_c0(:,1) = hdata%c1_to_c0
@@ -1099,7 +1099,7 @@ if (nam%nc3>1) then
    end do
 
    ! Sample classes of positive separation
-   call mpl%prog_init(progint)
+   call mpl%prog_init(nam%nc3*nam%nc1)
    ir = 0
    irmaxloc = irmax
    do while ((.not.all(isnotmsi(hdata%c1c3_to_c0))).and.(nvc0>1).and.(ir<=irmaxloc))
@@ -1173,9 +1173,9 @@ if (nam%nc3>1) then
       vic0(i) = vic0(nvc0)
       nvc0 = nvc0-1
 
-      ! Print progression
-      done = pack(isnotmsi(hdata%c1c3_to_c0),mask=.true.)
-      call mpl%prog_print(progint,done)
+      ! Update
+      mpl%done = pack(isnotmsi(hdata%c1c3_to_c0),mask=.true.)
+      call mpl%prog_print
    end do
    write(mpl%unit,'(a)') '100%'
    call flush(mpl%unit)
@@ -1201,13 +1201,13 @@ type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 
 ! Local variables
-integer :: i,il0,ic1,ic0,jc0,ibnd,ic3,progint
+integer :: i,il0,ic1,ic0,jc0,ibnd,ic3
 integer :: nn_index(nam%nc3)
 integer :: iproc,ic1_s(mpl%nproc),ic1_e(mpl%nproc),nc1_loc(mpl%nproc),ic1_loc
 integer,allocatable :: sbufi(:),rbufi(:)
 real(kind_real) :: nn_dist(nam%nc3)
 real(kind_real),allocatable :: x(:),y(:),z(:),v1(:),v2(:),va(:),vp(:),t(:)
-logical,allocatable :: sbufl(:),rbufl(:),done(:)
+logical,allocatable :: sbufl(:),rbufl(:)
 
 write(mpl%unit,'(a7,a)',advance='no') '','Compute LCT sampling: '
 call flush(mpl%unit)
@@ -1215,11 +1215,8 @@ call flush(mpl%unit)
 ! MPI splitting
 call mpl%split(nam%nc1,ic1_s,ic1_e,nc1_loc)
 
-! Allocation
-allocate(done(nc1_loc(mpl%myproc)))
-
 ! Initialization
-call mpl%prog_init(progint)
+call mpl%prog_init(nc1_loc(mpl%myproc))
 
 do ic1_loc=1,nc1_loc(mpl%myproc)
    ! MPI offset
@@ -1301,9 +1298,8 @@ do ic1_loc=1,nc1_loc(mpl%myproc)
       end if
    end if
 
-   ! Print progression
-   done(ic1_loc) = .true.
-   call mpl%prog_print(progint,done)
+   ! Update
+   call mpl%prog_print(ic1_loc)
 end do
 write(mpl%unit,'(a)') '100%'
 call flush(mpl%unit)
@@ -1973,7 +1969,7 @@ implicit none
 
 ! Passed variables
 class(hdata_type),intent(in) :: hdata             !< HDIAG data
-type(mpl_type),intent(in) :: mpl                  !< MPI data
+type(mpl_type),intent(inout) :: mpl               !< MPI data
 type(nam_type),intent(in) :: nam                  !< Namelist
 type(geom_type),intent(in) :: geom                !< Geometry
 integer,intent(in) :: il0                         !< Level
@@ -2090,7 +2086,7 @@ implicit none
 
 ! Passed variables
 class(hdata_type),intent(in) :: hdata             !< HDIAG data
-type(mpl_type),intent(in) :: mpl                  !< MPI data
+type(mpl_type),intent(inout) :: mpl               !< MPI data
 type(nam_type),intent(in) :: nam                  !< Namelist
 type(geom_type),intent(in) :: geom                !< Geometry
 integer,intent(in) :: il0                         !< Level

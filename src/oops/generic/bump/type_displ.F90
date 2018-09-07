@@ -138,7 +138,7 @@ implicit none
 
 ! Passed variables
 class(displ_type),intent(inout) :: displ !< Displacement data
-type(mpl_type),intent(in) :: mpl         !< MPI data
+type(mpl_type),intent(inout) :: mpl      !< MPI data
 type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 type(hdata_type),intent(inout) :: hdata  !< HDIAG data

@@ -493,7 +493,7 @@ implicit none
 
 ! Passed variables
 class(avg_type),intent(inout) :: avg !< Averaged statistics
-type(mpl_type),intent(in) :: mpl     !< MPI data
+type(mpl_type),intent(inout) :: mpl  !< MPI data
 type(nam_type),intent(in) :: nam     !< Namelist
 type(geom_type),intent(in) :: geom   !< Geometry
 type(bpar_type),intent(in) :: bpar   !< Block parameters
@@ -618,7 +618,7 @@ implicit none
 
 ! Passed variables
 class(avg_type),intent(inout) :: avg !< Averaged statistics
-type(mpl_type),intent(in) :: mpl     !< MPI data
+type(mpl_type),intent(inout) :: mpl  !< MPI data
 type(nam_type),intent(in) :: nam     !< Namelist
 type(geom_type),intent(in) :: geom   !< Geometry
 type(bpar_type),intent(in) :: bpar   !< Block parameters
@@ -627,12 +627,10 @@ type(mom_type),intent(in) :: mom     !< Moments
 integer,intent(in) :: ne             !< Ensemble size
 
 ! Local variables
-integer :: ib,ic2,progint
-logical,allocatable :: done(:)
+integer :: ib,ic2
 
 ! Allocation
 call avg%alloc(nam,geom,bpar,mom%ne,mom%nsub)
-allocate(done(0:nam%nc2))
 
 ! Compute averaged statistics
 write(mpl%unit,'(a10,a)') '','Compute averaged statistics'
@@ -641,11 +639,10 @@ do ib=1,bpar%nb
    if (bpar%diag_block(ib)) then
       write(mpl%unit,'(a13,a,a,a)',advance='no') '','Block ',trim(bpar%blockname(ib)),':'
       call flush(mpl%unit)
-      call mpl%prog_init(progint,done)
+      call mpl%prog_init(nam%nc2+1)
       do ic2=0,nam%nc2
          if ((ic2==0).or.nam%local_diag) call avg%blk(ic2,ib)%compute(nam,geom,bpar,hdata,mom%blk(ib))
-         done(ic2) = .true.
-         call mpl%prog_print(progint,done)
+         call mpl%prog_print(ic2+1)
       end do
       write(mpl%unit,'(a)') '100%'
       call flush(mpl%unit)
@@ -678,11 +675,10 @@ do ib=1,bpar%nb
    if (bpar%diag_block(ib)) then
       write(mpl%unit,'(a13,a,a,a)',advance='no') '','Block ',trim(bpar%blockname(ib)),':'
       call flush(mpl%unit)
-      call mpl%prog_init(progint,done)
+      call mpl%prog_init(nam%nc2+1)
       do ic2=0,nam%nc2
          if ((ic2==0).or.nam%local_diag) call avg%blk(ic2,ib)%compute_asy(nam,geom,bpar,ne)
-         done(ic2) = .true.
-         call mpl%prog_print(progint,done)
+         call mpl%prog_print(ic2+1)
       end do
       write(mpl%unit,'(a)') '100%'
       call flush(mpl%unit)
@@ -701,7 +697,7 @@ implicit none
 
 ! Passed variables
 class(avg_type),intent(inout) :: avg_2 !< Ensemble 2 averaged statistics
-type(mpl_type),intent(in) :: mpl       !< MPI data
+type(mpl_type),intent(inout) :: mpl  !< MPI data
 type(nam_type),intent(in) :: nam       !< Namelist
 type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
@@ -711,12 +707,10 @@ type(mom_type),intent(in) :: mom_2     !< Ensemble 1 moments
 class(avg_type),intent(inout) :: avg_1 !< Ensemble 1 averaged statistics
 
 ! Local variables
-integer :: ib,ic2,progint
-logical,allocatable :: done(:)
+integer :: ib,ic2
 
 ! Allocation
 if (.not.allocated(avg_2%blk)) call avg_2%alloc(nam,geom,bpar,avg_2%ne,avg_2%nsub)
-allocate(done(0:nam%nc2))
 
 do ib=1,bpar%nb
    if (bpar%diag_block(ib)) then
@@ -726,7 +720,7 @@ do ib=1,bpar%nb
       ! Compute averaged statistics
       write(mpl%unit,'(a13,a)',advance='no') '','Compute averaged statistics:'
       call flush(mpl%unit)
-      call mpl%prog_init(progint,done)
+      call mpl%prog_init(nam%nc2+1)
       do ic2=0,nam%nc2
          if ((ic2==0).or.nam%local_diag) then
             select case (trim(nam%method))
@@ -743,8 +737,7 @@ do ib=1,bpar%nb
                call avg_2%blk(ic2,ib)%compute_lr(mpl,nam,geom,bpar,hdata,mom_1%blk(ib),mom_2%blk(ib))
             end select
          end if
-         done(ic2) = .true.
-         call mpl%prog_print(progint,done)
+         call mpl%prog_print(ic2+1)
       end do
       write(mpl%unit,'(a)') '100%'
       call flush(mpl%unit)
@@ -769,11 +762,10 @@ if (trim(nam%method)=='dual-ens') then
          ! Compute asymptotic statistics
          write(mpl%unit,'(a13,a)',advance='no') '','Compute asymptotic statistics:'
          call flush(mpl%unit)
-         call mpl%prog_init(progint,done)
+         call mpl%prog_init(nam%nc2+1)
          do ic2=0,nam%nc2
             if ((ic2==0).or.nam%local_diag) call avg_2%blk(ic2,ib)%compute_asy_lr(nam,geom,bpar)
-            done(ic2) = .true.
-            call mpl%prog_print(progint,done)
+            call mpl%prog_print(ic2+1)
          end do
          write(mpl%unit,'(a)') '100%'
          call flush(mpl%unit)
@@ -826,19 +818,18 @@ implicit none
 
 ! Passed variables
 class(avg_type),intent(inout) :: avg !< Averaged statistics
-type(mpl_type),intent(in) :: mpl     !< MPI data
+type(mpl_type),intent(inout) :: mpl  !< MPI data
 type(nam_type),intent(in) :: nam     !< Namelist
 type(geom_type),intent(in) :: geom   !< Geometry
 type(bpar_type),intent(in) :: bpar   !< Block parameters
 type(avg_type),intent(in) :: avg_wgt !< Averaged statistics for weights
 
 ! Local variables
-integer :: ib,ic2,il0,jl0r,jc3,progint
+integer :: ib,ic2,il0,jl0r,jc3
 real(kind_real) :: bwgtsq
 real(kind_real),allocatable :: cor(:,:,:),m11asysq(:,:,:),m11sq(:,:,:)
 real(kind_real),allocatable :: m11sta(:,:,:),stasq(:,:,:)
 real(kind_real),allocatable :: m11lrm11(:,:,:),m11lrm11asy(:,:,:)
-logical,allocatable :: done(:)
 
 ! Allocation
 allocate(cor(nam%nc3,nam%nl0r,geom%nl0))
@@ -852,13 +843,12 @@ case ('dual-ens')
    allocate(m11lrm11(nam%nc3,nam%nl0r,geom%nl0))
    allocate(m11lrm11asy(nam%nc3,nam%nl0r,geom%nl0))
 end select
-allocate(done(0:nam%nc2))
 
 write(mpl%unit,'(a10,a,a,a)',advance='no') '','Block ',trim(bpar%blockname(bpar%nbe)),':'
 call flush(mpl%unit)
 
 ! Initialization
-call mpl%prog_init(progint,done)
+call mpl%prog_init(nam%nc2+1)
 
 do ic2=0,nam%nc2
    ! Copy ensemble size
@@ -948,8 +938,7 @@ do ic2=0,nam%nc2
    end if
 
    ! Update
-   done(ic2) = .true.
-   call mpl%prog_print(progint,done)
+   call mpl%prog_print(ic2+1)
 end do
 write(mpl%unit,'(a)') '100%'
 call flush(mpl%unit)

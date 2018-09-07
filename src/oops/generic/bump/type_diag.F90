@@ -103,7 +103,7 @@ implicit none
 
 ! Passed variables
 class(diag_type),intent(inout) :: diag !< Diagnostic
-type(mpl_type),intent(in) :: mpl       !< MPI data
+type(mpl_type),intent(inout) :: mpl    !< MPI data
 type(nam_type),intent(in) :: nam       !< Namelist
 type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
@@ -416,14 +416,12 @@ type(avg_type),intent(in) :: avg       !< Averaged statistics
 character(len=*),intent(in) :: prefix  !< Diagnostic prefix
 
 ! Local variables
-integer :: ib,ic2a,ic2,progint,il0
-logical,allocatable :: done(:)
+integer :: ib,ic2a,ic2,il0
 type(diag_type) :: ndiag
 
 ! Allocation
 call diag%alloc(nam,geom,bpar,hdata,prefix,.true.)
 call ndiag%alloc(nam,geom,bpar,hdata,'n'//trim(prefix),.false.)
-allocate(done(0:diag%nc2a))
 
 do ib=1,bpar%nbe
    if (bpar%diag_block(ib)) then
@@ -452,7 +450,7 @@ do ib=1,bpar%nbe
       end do
 
       ! Initialization
-      call mpl%prog_init(progint,done)
+      call mpl%prog_init(diag%nc2a+1)
 
       do ic2a=0,diag%nc2a
          ! Global index
@@ -469,8 +467,7 @@ do ib=1,bpar%nbe
          if (bpar%fit_block(ib)) call diag%blk(ic2a,ib)%fitting(mpl,nam,geom,bpar,hdata)
 
          ! Update
-         done(ic2a) = .true.
-         call mpl%prog_print(progint,done)
+         call mpl%prog_print(ic2a+1)
       end do
       ndiag%blk(0,ib)%raw = avg%blk(0,ib)%nc1a_cor
       write(mpl%unit,'(a)') '100%'
@@ -523,12 +520,10 @@ type(avg_type),intent(in) :: avg       !< Averaged statistics
 character(len=*),intent(in) :: prefix  !< Block prefix
 
 ! Local variables
-integer :: ib,ic2a,ic2,progint,il0
-logical,allocatable :: done(:)
+integer :: ib,ic2a,ic2,il0
 
 ! Allocation
 call diag%alloc(nam,geom,bpar,hdata,prefix,.false.)
-allocate(done(0:diag%nc2a))
 
 do ib=1,bpar%nbe
    if (bpar%diag_block(ib)) then
@@ -536,7 +531,7 @@ do ib=1,bpar%nbe
       call flush(mpl%unit)
 
       ! Initialization
-      call mpl%prog_init(progint,done)
+      call mpl%prog_init(diag%nc2a+1)
 
       do ic2a=0,diag%nc2a
          ! Compute localization
@@ -555,8 +550,7 @@ do ib=1,bpar%nbe
          if (bpar%fit_block(ib)) call diag%blk(ic2a,ib)%fitting(mpl,nam,geom,bpar,hdata)
 
          ! Update
-         done(ic2a) = .true.
-         call mpl%prog_print(progint,done)
+         call mpl%prog_print(ic2a+1)
       end do
       write(mpl%unit,'(a)') '100%'
       call flush(mpl%unit)
@@ -617,12 +611,10 @@ type(avg_type),intent(in) :: avg_sta   !< Static averaged statistics
 character(len=*),intent(in) :: prefix  !< Diagnostic prefix
 
 ! Local variables
-integer :: ib,ic2a,ic2,progint,il0
-logical,allocatable :: done(:)
+integer :: ib,ic2a,ic2,il0
 
 ! Allocation
 call diag%alloc(nam,geom,bpar,hdata,prefix,.false.)
-allocate(done(0:diag%nc2a))
 
 do ib=1,bpar%nbe
    if (bpar%diag_block(ib)) then
@@ -630,7 +622,7 @@ do ib=1,bpar%nbe
       call flush(mpl%unit)
 
       ! Initialization
-      call mpl%prog_init(progint,done)
+      call mpl%prog_init(diag%nc2a+1)
 
       do ic2a=0,diag%nc2a
          ! Compute hybridization
@@ -648,8 +640,7 @@ do ib=1,bpar%nbe
          if (bpar%fit_block(ib)) call diag%blk(ic2a,ib)%fitting(mpl,nam,geom,bpar,hdata)
 
          ! Update
-         done(ic2a) = .true.
-         call mpl%prog_print(progint,done)
+         call mpl%prog_print(ic2a+1)
       end do
       write(mpl%unit,'(a)') '100%'
       call flush(mpl%unit)
@@ -705,13 +696,11 @@ character(len=*),intent(in) :: prefix    !< Diagnostic prefix
 character(len=*),intent(in) :: prefix_lr !< LR diagnostic prefix
 
 ! Local variables
-integer :: ib,ic2a,ic2,progint,il0
-logical,allocatable :: done(:)
+integer :: ib,ic2a,ic2,il0
 
 ! Allocation
 call diag%alloc(nam,geom,bpar,hdata,prefix,.false.)
 call diag_lr%alloc(nam,geom,bpar,hdata,prefix_lr,.false.)
-allocate(done(0:diag%nc2a))
 
 do ib=1,bpar%nbe
    if (bpar%diag_block(ib)) then
@@ -719,7 +708,7 @@ do ib=1,bpar%nbe
       call flush(mpl%unit)
 
       ! Initialization
-      call mpl%prog_init(progint,done)
+      call mpl%prog_init(diag%nc2a+1)
 
       do ic2a=0,diag%nc2a
          ! Compute dualens
@@ -741,8 +730,7 @@ do ib=1,bpar%nbe
          end if
 
          ! Update
-         done(ic2a) = .true.
-         call mpl%prog_print(progint,done)
+         call mpl%prog_print(ic2a+1)
       end do
       write(mpl%unit,'(a)') '100%'
       call flush(mpl%unit)

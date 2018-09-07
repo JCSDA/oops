@@ -1234,14 +1234,14 @@ implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(inout) :: nicas_blk !< NICAS data block
-type(mpl_type),intent(in) :: mpl                 !< MPI data
+type(mpl_type),intent(inout) :: mpl              !< MPI data
 type(rng_type),intent(inout) :: rng              !< Random number generator
 type(nam_type),intent(in) :: nam                 !< Namelist
 type(geom_type),intent(in) :: geom               !< Geometry
 type(cmat_blk_type),intent(in) :: cmat_blk       !< C matrix data block
 
 ! Local variables
-integer :: n_s_max,progint,ithread,is,ic1,jc1,il1,il0,j,js,isb,ic1b,ic0,ic0a,ic1a,i_s,jc,kc,ks,jc0,jl0,jl1,ic1bb,isbb
+integer :: n_s_max,ithread,is,ic1,jc1,il1,il0,j,js,isb,ic1b,ic0,ic0a,ic1a,i_s,jc,kc,ks,jc0,jl0,jl1,ic1bb,isbb
 integer :: c_n_s(mpl%nthread)
 integer,allocatable :: nn(:),nn_index(:),inec(:),c_ind(:,:)
 real(kind_real) :: distvsq,rvsq,S_test
@@ -1250,7 +1250,7 @@ real(kind_real),allocatable :: rh_c1a(:,:),rv_c1a(:,:),rv_rfac_c1a(:,:),rv_coef_
 real(kind_real),allocatable :: rv_c1(:,:),rv_rfac_c1(:,:),rv_coef_c1(:,:)
 real(kind_real),allocatable :: c_S(:,:),c_S_conv(:)
 logical :: add_op
-logical,allocatable :: done(:),lcheck_c1bb(:)
+logical,allocatable :: lcheck_c1bb(:)
 type(linop_type) :: ctmp,c(mpl%nthread)
 
 ! Associate
@@ -1303,11 +1303,8 @@ else
       call nicas_blk%kdtree%count_nearest_neighbors(geom%lon(ic0),geom%lat(ic0),nicas_blk%rhmax,nn(ic1b))
    end do
 
-   ! Allocation
-   allocate(done(nicas_blk%nc1b))
-
    ! Initialization
-   call mpl%prog_init(progint,done)
+   call mpl%prog_init(nicas_blk%nc1b)
    lcheck_c1bb = .false.
 
    do ic1b=1,nicas_blk%nc1b
@@ -1332,9 +1329,8 @@ else
       deallocate(nn_index)
       deallocate(nn_dist)
 
-      ! Print progression
-      done(ic1b) = .true.
-      call mpl%prog_print(progint,done)
+      ! Update
+      call mpl%prog_print(ic1b)
    end do
    write(mpl%unit,'(a)') '100%'
    call flush(mpl%unit)
@@ -1342,9 +1338,6 @@ else
    ! Halo size
    nicas_blk%nc1bb = count(lcheck_c1bb)
    write(mpl%unit,'(a10,a,i6,a,i6)') '','Halo sizes nc1b / nc1bb: ',nicas_blk%nc1b,' / ',nicas_blk%nc1bb
-
-   ! Release memory
-   deallocate(done)
 end if
 
 ! Allocation
@@ -1541,13 +1534,10 @@ else
       c_S(inec(is),is) = ctmp%S(i_s)
    end do
 
-   ! Allocation
-   allocate(done(nicas_blk%nsb))
-
    ! Initialization
    write(mpl%unit,'(a10,a)',advance='no') '','Second pass:     '
    call flush(mpl%unit)
-   call mpl%prog_init(progint,done)
+   call mpl%prog_init(nicas_blk%nsb)
    n_s_max = 100*nint(real(geom%nc0*geom%nl0)/real(mpl%nthread*mpl%nproc))
    c_n_s = 0
    do ithread=1,mpl%nthread
@@ -1596,9 +1586,8 @@ else
       ! Release memory
       deallocate(c_S_conv)
 
-      ! Print progression
-      done(isb) = .true.
-      call mpl%prog_print(progint,done)
+      ! Update
+      call mpl%prog_print(isb)
    end do
    !$omp end parallel do
    write(mpl%unit,'(a)') '100%'
@@ -1632,19 +1621,18 @@ implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(inout) :: nicas_blk !< NICAS data block
-type(mpl_type),intent(in) :: mpl                 !< MPI data
+type(mpl_type),intent(inout) :: mpl              !< MPI data
 type(rng_type),intent(inout) :: rng              !< Random number generator
 type(nam_type),intent(in) :: nam                 !< Namelist
 type(geom_type),intent(in) :: geom               !< Geometry
 
 ! Local variables
-integer :: net_nnbmax,is,ic0,ic1,il0,jl1,np,np_new,i,j,k,ip,kc1,jc1,il1,dkl1,kl1,jp,isbb,djl1,inr,jc0,jl0,progint
+integer :: net_nnbmax,is,ic0,ic1,il0,jl1,np,np_new,i,j,k,ip,kc1,jc1,il1,dkl1,kl1,jp,isbb,djl1,inr,jc0,jl0
 integer,allocatable :: net_nnb(:),net_inb(:,:),plist(:,:),plist_new(:,:)
 real(kind_real) :: distnorm,disttest
 real(kind_real) :: dnb,disthsq,distvsq,rhsq,rvsq
 real(kind_real),allocatable :: net_dnb(:,:,:,:)
 logical :: init,valid_arc,add_to_front
-logical,allocatable :: done(:)
 type(mesh_type) :: mesh
 
 ! Allocation
@@ -1691,13 +1679,10 @@ do ic1=1,nicas_blk%nc1
    end do
 end do
 
-! Allocation
-allocate(done(nicas_blk%nc1))
-
 ! Compute mesh edges distances
 write(mpl%unit,'(a10,a)',advance='no') '','Compute mesh edges distances: '
 call flush(mpl%unit)
-call mpl%prog_init(progint,done)
+call mpl%prog_init(nicas_blk%nc1)
 net_dnb = 1.0
 !$omp parallel do schedule(static) private(ic1,j,ic0,jc1,jc0,dnb,il1,il0,valid_arc,djl1,jl1,jl0,disthsq,distvsq,rhsq,rvsq), &
 !$omp&                             private(distnorm)
@@ -1749,19 +1734,12 @@ do ic1=1,nicas_blk%nc1
       end if
    end do
 
-   ! Print progression
-   done(ic1) = .true.
-   call mpl%prog_print(progint,done)
+   ! Update
+   call mpl%prog_print(ic1)
 end do
 !$omp end parallel do
 write(mpl%unit,'(a)') '100%'
 call flush(mpl%unit)
-
-! Release memory
-deallocate(done)
-
-! Allocation
-allocate(done(nicas_blk%nsbb))
 
 ! Initialization
 nicas_blk%distnorm = 1.0
@@ -1769,7 +1747,7 @@ nicas_blk%distnorm = 1.0
 ! Compute distances
 write(mpl%unit,'(a10,a)',advance='no') '','Compute distances: '
 call flush(mpl%unit)
-call mpl%prog_init(progint,done)
+call mpl%prog_init(nicas_blk%nsbb)
 !$omp parallel do schedule(static) private(isbb,is,ic1,il1,np,np_new,jc1,jl1,k,kc1,dkl1,kl1,disttest,add_to_front,jp), &
 !$omp&                             firstprivate(plist,plist_new)
 do isbb=1,nicas_blk%nsbb
@@ -1841,9 +1819,8 @@ do isbb=1,nicas_blk%nsbb
    deallocate(plist)
    deallocate(plist_new)
 
-   ! Print progression
-   done(isbb) = .true.
-   call mpl%prog_print(progint,done)
+   ! Update
+   call mpl%prog_print(isbb)
 end do
 write(mpl%unit,'(a)') '100%'
 call flush(mpl%unit)
@@ -1860,16 +1837,15 @@ implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(inout) :: nicas_blk                      !< NICAS data block
-type(mpl_type),intent(in) :: mpl                                      !< MPI data
+type(mpl_type),intent(inout) :: mpl                                   !< MPI data
 type(geom_type),intent(in) :: geom                                    !< Geometry
 
 ! Local variables
-integer :: nnmax,progint,ithread,is,ic1,jc1,il1,il0,j,js,ic0,jc0,jl0,jl1
+integer :: nnmax,ithread,is,ic1,jc1,il1,il0,j,js,ic0,jc0,jl0,jl1
 integer :: ic1bb,isbb
 integer,allocatable :: nn(:),nn_index(:,:)
 real(kind_real) :: disthsq,distvsq,rhsq,rvsq
 real(kind_real),allocatable :: nn_dist(:,:)
-logical,allocatable :: done(:)
 
 ! Allocation
 allocate(nn(nicas_blk%nc1bb))
@@ -1892,12 +1868,11 @@ write(mpl%unit,'(a10,a,i6,a,f5.1,a)') '','Number of neighbors to find: ',nnmax,'
 ! Allocation
 allocate(nn_index(nnmax,nicas_blk%nc1bb))
 allocate(nn_dist(nnmax,nicas_blk%nc1bb))
-allocate(done(nicas_blk%nc1bb))
 
 ! Find nearest neighbors
 write(mpl%unit,'(a10,a)',advance='no') '','Find nearest neighbors: '
 call flush(mpl%unit)
-call mpl%prog_init(progint,done)
+call mpl%prog_init(nicas_blk%nc1bb)
 do ic1bb=1,nicas_blk%nc1bb
    ! Indices
    ic1 = nicas_blk%c1bb_to_c1(ic1bb)
@@ -1907,23 +1882,16 @@ do ic1bb=1,nicas_blk%nc1bb
    call nicas_blk%kdtree%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0), &
  & nn(ic1bb),nn_index(1:nn(ic1bb),ic1bb),nn_dist(1:nn(ic1bb),ic1bb))
 
-   ! Print progression
-   done(ic1bb) = .true.
-   call mpl%prog_print(progint,done)
+   ! Update
+   call mpl%prog_print(ic1bb)
 end do
 write(mpl%unit,'(a)') '100%'
 call flush(mpl%unit)
 
-! Release memory
-deallocate(done)
-
-! Allocation
-allocate(done(nicas_blk%nsbb))
-
 ! Compute distances
 write(mpl%unit,'(a10,a)',advance='no') '','Compute distances: '
 call flush(mpl%unit)
-call mpl%prog_init(progint,done)
+call mpl%prog_init(nicas_blk%nsbb)
 nicas_blk%distnorm = 1.0
 !$omp parallel do schedule(static) private(isbb,is,ithread,ic1,ic1bb,ic0,il1,il0,j,jl1,jl0,js,jc1,jc0), &
 !$omp&                             private(disthsq,distvsq,rhsq,rvsq)
@@ -1965,9 +1933,8 @@ do isbb=1,nicas_blk%nsbb
       end do
    end do
 
-   ! Print progression
-   done(isbb) = .true.
-   call mpl%prog_print(progint,done)
+   ! Update
+   call mpl%prog_print(isbb)
 end do
 !$omp end parallel do
 write(mpl%unit,'(a)') '100%'
@@ -1985,17 +1952,16 @@ implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(inout) :: nicas_blk      !< NICAS data block
-type(mpl_type),intent(in) :: mpl                      !< MPI data
+type(mpl_type),intent(inout) :: mpl                   !< MPI data
 type(nam_type),intent(in) :: nam                      !< Namelist
 type(geom_type),intent(in) :: geom                    !< Geometry
 type(linop_type),intent(inout) :: ctmp                !< Convolution operator
 
 ! Local variables
-integer :: n_s_max,progint,ithread,is,ic1,jc1,il1,jl1,il0,js,ic0,ic1bb,isbb
+integer :: n_s_max,ithread,is,ic1,jc1,il1,jl1,il0,js,ic0,ic1bb,isbb
 integer :: c_n_s(mpl%nthread),c_nor_n_s(mpl%nthread)
 real(kind_real) :: disth,S_test
 logical :: add_op
-logical,allocatable :: done(:)
 type(linop_type) :: c(mpl%nthread),c_nor(mpl%nthread)
 
 ! Allocation
@@ -2006,12 +1972,11 @@ do ithread=1,mpl%nthread
    c_nor(ithread)%n_s = n_s_max
    call c_nor(ithread)%alloc
 end do
-allocate(done(nicas_blk%nsbb))
 
 ! Initialization
 write(mpl%unit,'(a10,a)',advance='no') '','Compute weights: '
 call flush(mpl%unit)
-call mpl%prog_init(progint,done)
+call mpl%prog_init(nicas_blk%nsbb)
 c_n_s = 0
 c_nor_n_s = 0
 
@@ -2067,9 +2032,8 @@ do isbb=1,nicas_blk%nsbb
       end if
    end do
 
-   ! Print progression
-   done(isbb) = .true.
-   call mpl%prog_print(progint,done)
+   ! Update
+   call mpl%prog_print(isbb)
 end do
 !$omp end parallel do
 write(mpl%unit,'(a)') '100%'
@@ -2084,7 +2048,6 @@ do ithread=1,mpl%nthread
    call c(ithread)%dealloc
    call c_nor(ithread)%dealloc
 end do
-deallocate(done)
 
 end subroutine nicas_blk_compute_convol_weights
 
@@ -2217,19 +2180,18 @@ implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(inout) :: nicas_blk !< NICAS data block
-type(mpl_type),intent(in) :: mpl                 !< MPI data
+type(mpl_type),intent(inout) :: mpl              !< MPI data
 type(nam_type),intent(in) :: nam                 !< Namelist
 type(geom_type),intent(in) :: geom               !< Geometry
 
 ! Local variables
-integer :: il0i,i_s,ic1,ic1b,jc1b,is,js,isc,jsb,jsc,ic0,ic0a,il0,il1,ih,jv,nlr,ilr,jlr,ic,isc_add,progint
+integer :: il0i,i_s,ic1,ic1b,jc1b,is,js,isc,jsb,jsc,ic0,ic0a,il0,il1,ih,jv,nlr,ilr,jlr,ic,isc_add
 integer,allocatable :: ineh(:,:),inev(:),ines(:,:),inec(:),order(:),isc_list(:),order2(:)
 integer,allocatable :: h_col(:,:,:),v_col(:,:),s_col(:,:,:),c_ind(:,:)
 real(kind_real) :: S_add
 real(kind_real),allocatable :: h_S(:,:,:),v_S(:,:,:),s_S(:,:,:),c_S(:,:)
 real(kind_real),allocatable :: list(:),S_list(:),S_list_tmp(:)
 logical :: conv
-logical,allocatable :: done(:)
 
 ! Compute horizontal interpolation inverse mapping
 allocate(ineh(geom%nc0a,geom%nl0i))
@@ -2357,7 +2319,6 @@ end do
 
 ! Allocation
 allocate(nicas_blk%norm(geom%nc0a,geom%nl0))
-allocate(done(geom%nc0a))
 call msr(nicas_blk%norm)
 
 ! Compute normalization weights
@@ -2365,7 +2326,7 @@ do il0=1,geom%nl0
    il0i = min(il0,geom%nl0i)
    write(mpl%unit,'(a10,a,i3,a)',advance='no') '','Level ',nam%levs(il0),': '
    call flush(mpl%unit)
-   call mpl%prog_init(progint,done)
+   call mpl%prog_init(geom%nc0a)
 
    !$omp parallel do schedule(static) private(ic0a,ic0,nlr,isc_add,S_add,ih,ic1b,ic1,jv,il1,is,ilr,conv,ic,jlr,isc,jsc), &
    !$omp&                             firstprivate(isc_list,order2,S_list,S_list_tmp)
@@ -2432,11 +2393,10 @@ do il0=1,geom%nl0
          ! Normalization factor
          nicas_blk%norm(ic0a,il0) = 1.0/sqrt(nicas_blk%norm(ic0a,il0))
 
-         ! Print progression
-         done(ic0a) = .true.
-         call mpl%prog_print(progint,done)
+         ! Update
+         call mpl%prog_print(ic0a)
 
-          ! Release memory
+         ! Release memory
          deallocate(isc_list)
          deallocate(S_list)
          deallocate(S_list_tmp)
@@ -2446,9 +2406,6 @@ do il0=1,geom%nl0
    write(mpl%unit,'(a)') '100%'
    call flush(mpl%unit)
 end do
-
-! Release memory
-deallocate(done)
 
 end subroutine nicas_blk_compute_normalization
 
