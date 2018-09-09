@@ -14,7 +14,7 @@ use tools_fit, only: ver_smooth
 use tools_func, only: fit_diag,fit_diag_dble,fit_lct
 use tools_kinds, only: kind_real
 use tools_missing, only: isnotmsr
-use tools_repro, only: eq,inf,infeq,sup
+use tools_repro, only: rth,eq,inf,infeq,sup
 use type_mpl, only: mpl_type
 
 implicit none
@@ -386,7 +386,7 @@ real(kind_real) :: delta(minim%nx),newx(minim%nx)
 newx = guess
 minim%x = guess
 do i=1,minim%nx
-   if (guess(i)>0.0) then
+   if (sup(abs(guess(i)),rth)) then
       delta(i) = rho*abs(guess(i))
    else
       delta(i) = rho
@@ -541,7 +541,7 @@ integer :: ix
 ! Inverse hyperbolic tangent of the linearly bounded variable
 if (any((x<minim%binf).or.(x>minim%bsup))) call mpl%abort('variable out of bounds in vt_inv')
 do ix=1,minim%nx
-   if (minim%bsup(ix)>minim%binf(ix)) then
+   if (sup(minim%bsup(ix),minim%binf(ix))) then
       x(ix) = atanh(2.0*(x(ix)-minim%binf(ix))/(minim%bsup(ix)-minim%binf(ix))-1.0)
    else
       x(ix) = 0.0

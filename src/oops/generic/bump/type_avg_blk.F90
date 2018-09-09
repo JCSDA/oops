@@ -12,7 +12,7 @@ module type_avg_blk
 
 use tools_kinds, only: kind_real
 use tools_missing, only: msr,isanynotmsr,isnotmsr,ismsr
-use tools_repro, only: rth,inf
+use tools_repro, only: sup,inf
 use type_bpar, only: bpar_type
 use type_geom, only: geom_type
 use type_hdata, only: hdata_type
@@ -349,9 +349,9 @@ if ((ic2==0).or.(nam%local_diag)) then
                      ! Correlation
                      m2_1 = sum(mom_blk%m2_1(ic1a,jc3,il0,:))/real(avg_blk%nsub,kind_real)
                      m2_2 = sum(mom_blk%m2_2(ic1a,jc3,jl0,:))/real(avg_blk%nsub,kind_real)
-                     if ((m2_1>var_min).and.(m2_2>var_min)) then
+                     if (sup(m2_1,var_min).and.sup(m2_2,var_min)) then
                         list_cor(nc1a) = list_m11(nc1a)/sqrt(m2_1*m2_2)
-                        if (abs(list_cor(nc1a))>1.0+rth) call msr(list_cor(nc1a))
+                        if (sup(abs(list_cor(nc1a)),1.0_kind_real)) call msr(list_cor(nc1a))
                      else
                         call msr(list_cor(nc1a))
                      end if
