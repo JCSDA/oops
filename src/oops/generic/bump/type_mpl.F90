@@ -71,60 +71,64 @@ contains
    procedure :: prog_print => mpl_prog_print
    procedure :: ncerr => mpl_ncerr
    procedure :: update_tag => mpl_update_tag
-   procedure :: mpl_bcast_integer
-   procedure :: mpl_bcast_integer_array_1d
-   procedure :: mpl_bcast_integer_array_2d
-   procedure :: mpl_bcast_real
-   procedure :: mpl_bcast_real_array_1d
-   procedure :: mpl_bcast_real_array_2d
-   procedure :: mpl_bcast_real_array_3d
-   procedure :: mpl_bcast_real_array_4d
-   procedure :: mpl_bcast_real_array_5d
-   procedure :: mpl_bcast_real_array_6d
-   procedure :: mpl_bcast_logical
-   procedure :: mpl_bcast_logical_array_1d
-   procedure :: mpl_bcast_logical_array_2d
-   procedure :: mpl_bcast_logical_array_3d
-   procedure :: mpl_bcast_string
-   procedure :: mpl_bcast_string_array_1d
-   generic :: bcast => mpl_bcast_integer,mpl_bcast_integer_array_1d,mpl_bcast_integer_array_2d,mpl_bcast_real, &
-                     & mpl_bcast_real_array_1d,mpl_bcast_real_array_2d,mpl_bcast_real_array_3d,mpl_bcast_real_array_4d, &
-                     & mpl_bcast_real_array_5d,mpl_bcast_real_array_6d,mpl_bcast_logical,mpl_bcast_logical_array_1d, &
-                     & mpl_bcast_logical_array_2d,mpl_bcast_logical_array_3d,mpl_bcast_string,mpl_bcast_string_array_1d
-   procedure :: mpl_recv_integer
-   procedure :: mpl_recv_integer_array_1d
-   procedure :: mpl_recv_real
-   procedure :: mpl_recv_real_array_1d
-   procedure :: mpl_recv_logical_array_1d
-   generic :: recv => mpl_recv_integer,mpl_recv_integer_array_1d,mpl_recv_real,mpl_recv_real_array_1d,mpl_recv_logical_array_1d
-   procedure :: mpl_send_integer
-   procedure :: mpl_send_integer_array_1d
-   procedure :: mpl_send_real
-   procedure :: mpl_send_real_array_1d
-   procedure :: mpl_send_logical_array_1d
-   generic :: send => mpl_send_integer,mpl_send_integer_array_1d,mpl_send_real,mpl_send_real_array_1d,mpl_send_logical_array_1d
+   procedure :: mpl_bcast_integer_0d
+   procedure :: mpl_bcast_integer_1d
+   procedure :: mpl_bcast_integer_2d
+   procedure :: mpl_bcast_real_0d
+   procedure :: mpl_bcast_real_1d
+   procedure :: mpl_bcast_real_2d
+   procedure :: mpl_bcast_real_3d
+   procedure :: mpl_bcast_real_4d
+   procedure :: mpl_bcast_real_5d
+   procedure :: mpl_bcast_real_6d
+   procedure :: mpl_bcast_logical_0d
+   procedure :: mpl_bcast_logical_1d
+   procedure :: mpl_bcast_logical_2d
+   procedure :: mpl_bcast_logical_3d
+   procedure :: mpl_bcast_string_0d
+   procedure :: mpl_bcast_string_1d
+   generic :: bcast => mpl_bcast_integer_0d,mpl_bcast_integer_1d,mpl_bcast_integer_2d,mpl_bcast_real_0d, &
+                     & mpl_bcast_real_1d,mpl_bcast_real_2d,mpl_bcast_real_3d,mpl_bcast_real_4d, &
+                     & mpl_bcast_real_5d,mpl_bcast_real_6d,mpl_bcast_logical_0d,mpl_bcast_logical_1d, &
+                     & mpl_bcast_logical_2d,mpl_bcast_logical_3d,mpl_bcast_string_0d,mpl_bcast_string_1d
+   procedure :: mpl_recv_integer_0d
+   procedure :: mpl_recv_integer_1d
+   procedure :: mpl_recv_real_0d
+   procedure :: mpl_recv_real_1d
+   procedure :: mpl_recv_logical_1d
+   generic :: recv => mpl_recv_integer_0d,mpl_recv_integer_1d,mpl_recv_real_0d,mpl_recv_real_1d,mpl_recv_logical_1d
+   procedure :: mpl_send_integer_0d
+   procedure :: mpl_send_integer_1d
+   procedure :: mpl_send_real_0d
+   procedure :: mpl_send_real_1d
+   procedure :: mpl_send_logical_1d
+   generic :: send => mpl_send_integer_0d,mpl_send_integer_1d,mpl_send_real_0d,mpl_send_real_1d,mpl_send_logical_1d
    procedure :: mpl_gatherv_real
    generic :: gatherv => mpl_gatherv_real
    procedure :: mpl_scatterv_real
    generic :: scatterv => mpl_scatterv_real
-   procedure :: mpl_allgather_integer
-   procedure :: mpl_allgather_real
-   procedure :: mpl_allgather_logical
-   generic :: allgather => mpl_allgather_integer,mpl_allgather_real,mpl_allgather_logical
+   procedure :: mpl_allgather_integer_0d
+   procedure :: mpl_allgather_integer_1d
+   procedure :: mpl_allgather_real_0d
+   procedure :: mpl_allgather_real_1d
+   procedure :: mpl_allgather_logical_0d
+   procedure :: mpl_allgather_logical_1d
+   generic :: allgather => mpl_allgather_integer_0d,mpl_allgather_integer_1d,mpl_allgather_real_0d,mpl_allgather_real_1d, &
+                         & mpl_allgather_logical_0d,mpl_allgather_logical_1d
    procedure :: mpl_allgatherv_real
    generic :: allgatherv => mpl_allgatherv_real
    procedure :: mpl_alltoallv_real
    generic :: alltoallv => mpl_alltoallv_real
-   procedure :: mpl_allreduce_sum_integer
-   procedure :: mpl_allreduce_sum_real
-   procedure :: mpl_allreduce_sum_real_array_1d
-   generic :: allreduce_sum => mpl_allreduce_sum_integer,mpl_allreduce_sum_real,mpl_allreduce_sum_real_array_1d
-   procedure :: mpl_allreduce_min_real
-   procedure :: mpl_allreduce_min_real_array_1d
-   generic :: allreduce_min => mpl_allreduce_min_real,mpl_allreduce_min_real_array_1d
-   procedure :: mpl_allreduce_max_real
-   procedure :: mpl_allreduce_max_real_array_1d
-   generic :: allreduce_max => mpl_allreduce_max_real,mpl_allreduce_max_real_array_1d
+   procedure :: mpl_allreduce_sum_integer_0d
+   procedure :: mpl_allreduce_sum_real_0d
+   procedure :: mpl_allreduce_sum_real_1d
+   generic :: allreduce_sum => mpl_allreduce_sum_integer_0d,mpl_allreduce_sum_real_0d,mpl_allreduce_sum_real_1d
+   procedure :: mpl_allreduce_min_real_0d
+   procedure :: mpl_allreduce_min_real_1d
+   generic :: allreduce_min => mpl_allreduce_min_real_0d,mpl_allreduce_min_real_1d
+   procedure :: mpl_allreduce_max_real_0d
+   procedure :: mpl_allreduce_max_real_1d
+   generic :: allreduce_max => mpl_allreduce_max_real_0d,mpl_allreduce_max_real_1d
    procedure :: mpl_dot_prod_1d
    procedure :: mpl_dot_prod_2d
    procedure :: mpl_dot_prod_3d
@@ -492,10 +496,10 @@ mpl%tag = max(mpl%tag,1)
 end subroutine mpl_update_tag
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_bcast_integer
+! Subroutine: mpl_bcast_integer_0d
 !> Purpose: broadcast integer
 !----------------------------------------------------------------------
-subroutine mpl_bcast_integer(mpl,var,root)
+subroutine mpl_bcast_integer_0d(mpl,var,root)
 
 implicit none
 
@@ -520,13 +524,13 @@ call mpi_bcast(var,1,mpi_integer,mpi_root,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_bcast_integer
+end subroutine mpl_bcast_integer_0d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_bcast_integer_array_1d
+! Subroutine: mpl_bcast_integer_1d
 !> Purpose: broadcast 1d integer array
 !----------------------------------------------------------------------
-subroutine mpl_bcast_integer_array_1d(mpl,var,root)
+subroutine mpl_bcast_integer_1d(mpl,var,root)
 
 implicit none
 
@@ -551,13 +555,13 @@ call mpi_bcast(var,size(var),mpi_integer,mpi_root,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_bcast_integer_array_1d
+end subroutine mpl_bcast_integer_1d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_bcast_integer_array_2d
+! Subroutine: mpl_bcast_integer_2d
 !> Purpose: broadcast 2d integer array
 !----------------------------------------------------------------------
-subroutine mpl_bcast_integer_array_2d(mpl,var,root)
+subroutine mpl_bcast_integer_2d(mpl,var,root)
 
 implicit none
 
@@ -582,13 +586,13 @@ call mpi_bcast(var,size(var),mpi_integer,mpi_root,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_bcast_integer_array_2d
+end subroutine mpl_bcast_integer_2d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_bcast_real
+! Subroutine: mpl_bcast_real_0d
 !> Purpose: broadcast real
 !----------------------------------------------------------------------
-subroutine mpl_bcast_real(mpl,var,root)
+subroutine mpl_bcast_real_0d(mpl,var,root)
 
 implicit none
 
@@ -613,13 +617,13 @@ call mpi_bcast(var,1,mpl%rtype,mpi_root,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_bcast_real
+end subroutine mpl_bcast_real_0d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_bcast_real_array_1d
+! Subroutine: mpl_bcast_real_1d
 !> Purpose: broadcast 1d real array
 !----------------------------------------------------------------------
-subroutine mpl_bcast_real_array_1d(mpl,var,root)
+subroutine mpl_bcast_real_1d(mpl,var,root)
 
 implicit none
 
@@ -644,13 +648,13 @@ call mpi_bcast(var,size(var),mpl%rtype,mpi_root,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_bcast_real_array_1d
+end subroutine mpl_bcast_real_1d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_bcast_real_array_2d
+! Subroutine: mpl_bcast_real_2d
 !> Purpose: broadcast 2d real array
 !----------------------------------------------------------------------
-subroutine mpl_bcast_real_array_2d(mpl,var,root)
+subroutine mpl_bcast_real_2d(mpl,var,root)
 
 implicit none
 
@@ -675,13 +679,13 @@ call mpi_bcast(var,size(var),mpl%rtype,mpi_root,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_bcast_real_array_2d
+end subroutine mpl_bcast_real_2d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_bcast_real_array_3d
+! Subroutine: mpl_bcast_real_3d
 !> Purpose: broadcast 3d real array
 !----------------------------------------------------------------------
-subroutine mpl_bcast_real_array_3d(mpl,var,root)
+subroutine mpl_bcast_real_3d(mpl,var,root)
 
 implicit none
 
@@ -706,13 +710,13 @@ call mpi_bcast(var,size(var),mpl%rtype,mpi_root,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_bcast_real_array_3d
+end subroutine mpl_bcast_real_3d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_bcast_real_array_4d
+! Subroutine: mpl_bcast_real_4d
 !> Purpose: broadcast 4d real array
 !----------------------------------------------------------------------
-subroutine mpl_bcast_real_array_4d(mpl,var,root)
+subroutine mpl_bcast_real_4d(mpl,var,root)
 
 implicit none
 
@@ -737,13 +741,13 @@ call mpi_bcast(var,size(var),mpl%rtype,mpi_root,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_bcast_real_array_4d
+end subroutine mpl_bcast_real_4d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_bcast_real_array_5d
+! Subroutine: mpl_bcast_real_5d
 !> Purpose: broadcast 5d real array
 !----------------------------------------------------------------------
-subroutine mpl_bcast_real_array_5d(mpl,var,root)
+subroutine mpl_bcast_real_5d(mpl,var,root)
 
 implicit none
 
@@ -768,13 +772,13 @@ call mpi_bcast(var,size(var),mpl%rtype,mpi_root,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_bcast_real_array_5d
+end subroutine mpl_bcast_real_5d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_bcast_real_array_6d
+! Subroutine: mpl_bcast_real_6d
 !> Purpose: broadcast 6d real array
 !----------------------------------------------------------------------
-subroutine mpl_bcast_real_array_6d(mpl,var,root)
+subroutine mpl_bcast_real_6d(mpl,var,root)
 
 implicit none
 
@@ -799,13 +803,13 @@ call mpi_bcast(var,size(var),mpl%rtype,mpi_root,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_bcast_real_array_6d
+end subroutine mpl_bcast_real_6d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_bcast_logical
+! Subroutine: mpl_bcast_logical_0d
 !> Purpose: broadcast logical
 !----------------------------------------------------------------------
-subroutine mpl_bcast_logical(mpl,var,root)
+subroutine mpl_bcast_logical_0d(mpl,var,root)
 
 implicit none
 
@@ -830,13 +834,13 @@ call mpi_bcast(var,1,mpi_logical,mpi_root,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_bcast_logical
+end subroutine mpl_bcast_logical_0d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_bcast_logical_array_1d
+! Subroutine: mpl_bcast_logical_1d
 !> Purpose: broadcast 1d logical array
 !----------------------------------------------------------------------
-subroutine mpl_bcast_logical_array_1d(mpl,var,root)
+subroutine mpl_bcast_logical_1d(mpl,var,root)
 
 implicit none
 
@@ -861,13 +865,13 @@ call mpi_bcast(var,size(var),mpi_logical,mpi_root,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_bcast_logical_array_1d
+end subroutine mpl_bcast_logical_1d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_bcast_logical_array_2d
+! Subroutine: mpl_bcast_logical_2d
 !> Purpose: broadcast 2d logical array
 !----------------------------------------------------------------------
-subroutine mpl_bcast_logical_array_2d(mpl,var,root)
+subroutine mpl_bcast_logical_2d(mpl,var,root)
 
 implicit none
 
@@ -892,13 +896,13 @@ call mpi_bcast(var,size(var),mpi_logical,mpi_root,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_bcast_logical_array_2d
+end subroutine mpl_bcast_logical_2d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_bcast_logical_array_3d
+! Subroutine: mpl_bcast_logical_3d
 !> Purpose: broadcast 3d logical array
 !----------------------------------------------------------------------
-subroutine mpl_bcast_logical_array_3d(mpl,var,root)
+subroutine mpl_bcast_logical_3d(mpl,var,root)
 
 implicit none
 
@@ -923,13 +927,13 @@ call mpi_bcast(var,size(var),mpi_logical,mpi_root,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_bcast_logical_array_3d
+end subroutine mpl_bcast_logical_3d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_bcast_string
+! Subroutine: mpl_bcast_string_0d
 !> Purpose: broadcast string
 !----------------------------------------------------------------------
-subroutine mpl_bcast_string(mpl,var,root)
+subroutine mpl_bcast_string_0d(mpl,var,root)
 
 implicit none
 
@@ -954,13 +958,13 @@ call mpi_bcast(var,len(var),mpi_character,mpi_root,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_bcast_string
+end subroutine mpl_bcast_string_0d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_bcast_string_array_1d
+! Subroutine: mpl_bcast_string_1d
 !> Purpose: broadcast 1d string array
 !----------------------------------------------------------------------
-subroutine mpl_bcast_string_array_1d(mpl,var,root)
+subroutine mpl_bcast_string_1d(mpl,var,root)
 
 implicit none
 
@@ -981,13 +985,13 @@ do i=1,size(var)
    end if
 end do
 
-end subroutine mpl_bcast_string_array_1d
+end subroutine mpl_bcast_string_1d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_recv_integer
+! Subroutine: mpl_recv_integer_0d
 !> Purpose: receive integer
 !----------------------------------------------------------------------
-subroutine mpl_recv_integer(mpl,var,src,tag)
+subroutine mpl_recv_integer_0d(mpl,var,src,tag)
 
 implicit none
 
@@ -1007,13 +1011,13 @@ call mpi_recv(var,1,mpi_integer,src-1,tag,mpl%mpi_comm,status,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_recv_integer
+end subroutine mpl_recv_integer_0d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_recv_integer_array_1d
+! Subroutine: mpl_recv_integer_1d
 !> Purpose: receive 1d integer array
 !----------------------------------------------------------------------
-subroutine mpl_recv_integer_array_1d(mpl,n,var,src,tag)
+subroutine mpl_recv_integer_1d(mpl,n,var,src,tag)
 
 implicit none
 
@@ -1034,13 +1038,13 @@ call mpi_recv(var,n,mpi_integer,src-1,tag,mpl%mpi_comm,status,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_recv_integer_array_1d
+end subroutine mpl_recv_integer_1d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_recv_real
+! Subroutine: mpl_recv_real_0d
 !> Purpose: receive real
 !----------------------------------------------------------------------
-subroutine mpl_recv_real(mpl,var,src,tag)
+subroutine mpl_recv_real_0d(mpl,var,src,tag)
 
 implicit none
 
@@ -1060,13 +1064,13 @@ call mpi_recv(var,1,mpl%rtype,src-1,tag,mpl%mpi_comm,status,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_recv_real
+end subroutine mpl_recv_real_0d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_recv_real_array_1d
+! Subroutine: mpl_recv_real_1d
 !> Purpose: receive 1d real array
 !----------------------------------------------------------------------
-subroutine mpl_recv_real_array_1d(mpl,n,var,src,tag)
+subroutine mpl_recv_real_1d(mpl,n,var,src,tag)
 
 implicit none
 
@@ -1087,13 +1091,13 @@ call mpi_recv(var,n,mpl%rtype,src-1,tag,mpl%mpi_comm,status,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_recv_real_array_1d
+end subroutine mpl_recv_real_1d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_recv_logical_array_1d
+! Subroutine: mpl_recv_logical_1d
 !> Purpose: receive 1d logical array
 !----------------------------------------------------------------------
-subroutine mpl_recv_logical_array_1d(mpl,n,var,src,tag)
+subroutine mpl_recv_logical_1d(mpl,n,var,src,tag)
 
 implicit none
 
@@ -1114,13 +1118,13 @@ call mpi_recv(var,n,mpi_logical,src-1,tag,mpl%mpi_comm,status,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_recv_logical_array_1d
+end subroutine mpl_recv_logical_1d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_send_integer
+! Subroutine: mpl_send_integer_0d
 !> Purpose: send integer
 !----------------------------------------------------------------------
-subroutine mpl_send_integer(mpl,var,dst,tag)
+subroutine mpl_send_integer_0d(mpl,var,dst,tag)
 
 implicit none
 
@@ -1139,13 +1143,13 @@ call mpi_send(var,1,mpi_integer,dst-1,tag,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_send_integer
+end subroutine mpl_send_integer_0d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_send_integer_array_1d
+! Subroutine: mpl_send_integer_1d
 !> Purpose: send 1d integer array
 !----------------------------------------------------------------------
-subroutine mpl_send_integer_array_1d(mpl,n,var,dst,tag)
+subroutine mpl_send_integer_1d(mpl,n,var,dst,tag)
 
 implicit none
 
@@ -1165,13 +1169,13 @@ call mpi_send(var,n,mpi_integer,dst-1,tag,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_send_integer_array_1d
+end subroutine mpl_send_integer_1d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_send_real
+! Subroutine: mpl_send_real_0d
 !> Purpose: send real
 !----------------------------------------------------------------------
-subroutine mpl_send_real(mpl,var,dst,tag)
+subroutine mpl_send_real_0d(mpl,var,dst,tag)
 
 implicit none
 
@@ -1190,13 +1194,13 @@ call mpi_send(var,1,mpl%rtype,dst-1,tag,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_send_real
+end subroutine mpl_send_real_0d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_send_integer_array_1d
+! Subroutine: mpl_send_integer_1d
 !> Purpose: send 1d real array
 !----------------------------------------------------------------------
-subroutine mpl_send_real_array_1d(mpl,n,var,dst,tag)
+subroutine mpl_send_real_1d(mpl,n,var,dst,tag)
 
 implicit none
 
@@ -1216,13 +1220,13 @@ call mpi_send(var,n,mpl%rtype,dst-1,tag,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_send_real_array_1d
+end subroutine mpl_send_real_1d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_send_logical_array_1d
+! Subroutine: mpl_send_logical_1d
 !> Purpose: send 1d logical array
 !----------------------------------------------------------------------
-subroutine mpl_send_logical_array_1d(mpl,n,var,dst,tag)
+subroutine mpl_send_logical_1d(mpl,n,var,dst,tag)
 
 implicit none
 
@@ -1242,7 +1246,7 @@ call mpi_send(var,n,mpi_logical,dst-1,tag,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_send_logical_array_1d
+end subroutine mpl_send_logical_1d
 
 !----------------------------------------------------------------------
 ! Subroutine: mpl_gatherv_real
@@ -1317,10 +1321,38 @@ call mpl%check(info)
 end subroutine mpl_scatterv_real
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_allgather_integer
-!> Purpose: allgather for a integer array
+! Subroutine: mpl_allgather_integer_0d
+!> Purpose: allgather for a integer
 !----------------------------------------------------------------------
-subroutine mpl_allgather_integer(mpl,ns,sbuf,rbuf)
+subroutine mpl_allgather_integer_0d(mpl,sbuf,rbuf)
+
+implicit none
+
+! Passed variables
+class(mpl_type),intent(in) :: mpl      !< MPI data
+integer,intent(in) :: sbuf             !< Sent buffer
+integer,intent(out) :: rbuf(mpl%nproc) !< Received buffer
+
+! Local variable
+integer :: info
+integer :: sbuf_vec(1)
+
+! Initialization
+sbuf_vec = (/sbuf/)
+
+! Allgather
+call mpi_allgather(sbuf_vec,1,mpi_integer,rbuf,1,mpi_integer,mpl%mpi_comm,info)
+
+! Check
+call mpl%check(info)
+
+end subroutine mpl_allgather_integer_0d
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_allgather_integer_1d
+!> Purpose: allgather for a integer array, 1d
+!----------------------------------------------------------------------
+subroutine mpl_allgather_integer_1d(mpl,ns,sbuf,rbuf)
 
 implicit none
 
@@ -1339,13 +1371,41 @@ call mpi_allgather(sbuf,ns,mpi_integer,rbuf,ns,mpi_integer,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_allgather_integer
+end subroutine mpl_allgather_integer_1d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_allgather_real
-!> Purpose: allgather for a real array
+! Subroutine: mpl_allgather_real_0d
+!> Purpose: allgather for a real
 !----------------------------------------------------------------------
-subroutine mpl_allgather_real(mpl,ns,sbuf,rbuf)
+subroutine mpl_allgather_real_0d(mpl,sbuf,rbuf)
+
+implicit none
+
+! Passed variables
+class(mpl_type),intent(in) :: mpl              !< MPI data
+real(kind_real),intent(in) :: sbuf             !< Sent buffer
+real(kind_real),intent(out) :: rbuf(mpl%nproc) !< Received buffer
+
+! Local variable
+integer :: info
+real(kind_real) :: sbuf_vec(1)
+
+! Initialization
+sbuf_vec = (/sbuf/)
+
+! Allgather
+call mpi_allgather(sbuf_vec,1,mpl%rtype,rbuf,1,mpl%rtype,mpl%mpi_comm,info)
+
+! Check
+call mpl%check(info)
+
+end subroutine mpl_allgather_real_0d
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_allgather_real_1d
+!> Purpose: allgather for a real array, 1d
+!----------------------------------------------------------------------
+subroutine mpl_allgather_real_1d(mpl,ns,sbuf,rbuf)
 
 implicit none
 
@@ -1364,13 +1424,41 @@ call mpi_allgather(sbuf,ns,mpl%rtype,rbuf,ns,mpl%rtype,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_allgather_real
+end subroutine mpl_allgather_real_1d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_allgather_logical
-!> Purpose: allgather for a logical array
+! Subroutine: mpl_allgather_logical_0d
+!> Purpose: allgather for a logical
 !----------------------------------------------------------------------
-subroutine mpl_allgather_logical(mpl,ns,sbuf,rbuf)
+subroutine mpl_allgather_logical_0d(mpl,sbuf,rbuf)
+
+implicit none
+
+! Passed variables
+class(mpl_type),intent(in) :: mpl      !< MPI data
+logical,intent(in) :: sbuf             !< Sent buffer
+logical,intent(out) :: rbuf(mpl%nproc) !< Received buffer
+
+! Local variable
+integer :: info
+logical :: sbuf_vec(1)
+
+! Initialization
+sbuf_vec = (/sbuf/)
+
+! Allgather
+call mpi_allgather(sbuf_vec,1,mpi_logical,rbuf,1,mpi_logical,mpl%mpi_comm,info)
+
+! Check
+call mpl%check(info)
+
+end subroutine mpl_allgather_logical_0d
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_allgather_logical_1d
+!> Purpose: allgather for a logical array, 1d
+!----------------------------------------------------------------------
+subroutine mpl_allgather_logical_1d(mpl,ns,sbuf,rbuf)
 
 implicit none
 
@@ -1389,7 +1477,7 @@ call mpi_allgather(sbuf,ns,mpi_logical,rbuf,ns,mpi_logical,mpl%mpi_comm,info)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_allgather_logical
+end subroutine mpl_allgather_logical_1d
 
 !----------------------------------------------------------------------
 ! Subroutine: mpl_allgatherv_real
@@ -1458,10 +1546,10 @@ call mpl%check(info)
 end subroutine mpl_alltoallv_real
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_allreduce_sum_integer
+! Subroutine: mpl_allreduce_sum_integer_0d
 !> Purpose: allreduce sum for an integer
 !----------------------------------------------------------------------
-subroutine mpl_allreduce_sum_integer(mpl,var_in,var_out)
+subroutine mpl_allreduce_sum_integer_0d(mpl,var_in,var_out)
 
 implicit none
 
@@ -1488,13 +1576,13 @@ var_out = rbuf(1)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_allreduce_sum_integer
+end subroutine mpl_allreduce_sum_integer_0d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_allreduce_sum_real
+! Subroutine: mpl_allreduce_sum_real_0d
 !> Purpose: allreduce sum for a real number
 !----------------------------------------------------------------------
-subroutine mpl_allreduce_sum_real(mpl,var_in,var_out)
+subroutine mpl_allreduce_sum_real_0d(mpl,var_in,var_out)
 
 implicit none
 
@@ -1521,13 +1609,13 @@ var_out = rbuf(1)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_allreduce_sum_real
+end subroutine mpl_allreduce_sum_real_0d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_allreduce_sum_real_array_1d
+! Subroutine: mpl_allreduce_sum_real_1d
 !> Purpose: allreduce sum for a real array, 1d
 !----------------------------------------------------------------------
-subroutine mpl_allreduce_sum_real_array_1d(mpl,var_in,var_out)
+subroutine mpl_allreduce_sum_real_1d(mpl,var_in,var_out)
 
 implicit none
 
@@ -1556,13 +1644,13 @@ var_out = rbuf
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_allreduce_sum_real_array_1d
+end subroutine mpl_allreduce_sum_real_1d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_allreduce_min_real
+! Subroutine: mpl_allreduce_min_real_0d
 !> Purpose: allreduce min for a real number
 !----------------------------------------------------------------------
-subroutine mpl_allreduce_min_real(mpl,var_in,var_out)
+subroutine mpl_allreduce_min_real_0d(mpl,var_in,var_out)
 
 implicit none
 
@@ -1589,13 +1677,13 @@ var_out = rbuf(1)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_allreduce_min_real
+end subroutine mpl_allreduce_min_real_0d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_allreduce_min_real_array_1d
+! Subroutine: mpl_allreduce_min_real_1d
 !> Purpose: allreduce min for a real array, 1d
 !----------------------------------------------------------------------
-subroutine mpl_allreduce_min_real_array_1d(mpl,var_in,var_out)
+subroutine mpl_allreduce_min_real_1d(mpl,var_in,var_out)
 
 implicit none
 
@@ -1624,13 +1712,13 @@ var_out = rbuf
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_allreduce_min_real_array_1d
+end subroutine mpl_allreduce_min_real_1d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_allreduce_max_real
+! Subroutine: mpl_allreduce_max_real_0d
 !> Purpose: allreduce max for a real number
 !----------------------------------------------------------------------
-subroutine mpl_allreduce_max_real(mpl,var_in,var_out)
+subroutine mpl_allreduce_max_real_0d(mpl,var_in,var_out)
 
 implicit none
 
@@ -1657,13 +1745,13 @@ var_out = rbuf(1)
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_allreduce_max_real
+end subroutine mpl_allreduce_max_real_0d
 
 !----------------------------------------------------------------------
-! Subroutine: mpl_allreduce_max_real_array_1d
+! Subroutine: mpl_allreduce_max_real_1d
 !> Purpose: allreduce max for a real array, 1d
 !----------------------------------------------------------------------
-subroutine mpl_allreduce_max_real_array_1d(mpl,var_in,var_out)
+subroutine mpl_allreduce_max_real_1d(mpl,var_in,var_out)
 
 implicit none
 
@@ -1692,7 +1780,7 @@ var_out = rbuf
 ! Check
 call mpl%check(info)
 
-end subroutine mpl_allreduce_max_real_array_1d
+end subroutine mpl_allreduce_max_real_1d
 
 !----------------------------------------------------------------------
 ! Subroutine: mpl_dot_prod_1d
@@ -2009,59 +2097,59 @@ integer,intent(in) :: n_loc                  !< Local dimension
 real(kind_real),intent(out) :: loc(n_loc,nl) !< TODO
 
 ! Local variables
-integer :: iproc,jproc,i_glb,i_loc,n_loc_tmp,il,ibuf
+integer :: iproc,jproc,i_glb,i_loc,n_loc_tmp,il
 real(kind_real),allocatable :: sbuf(:),rbuf(:)
 
-! Allocation
-allocate(rbuf(n_loc*nl))
-
-if (mpl%main) then
-   do iproc=1,mpl%nproc
-      ! Allocation
-      n_loc_tmp = count(glb_to_proc==iproc)
-      allocate(sbuf(n_loc_tmp*nl))
-
-      ! Prepare buffers
-      ibuf = 0
-      do il=1,nl
+if (.true.) then
+   ! Allocation
+   allocate(rbuf(n_loc*nl))
+   
+   if (mpl%main) then
+      do iproc=1,mpl%nproc
+         ! Allocation
+         n_loc_tmp = count(glb_to_proc==iproc)
+         allocate(sbuf(n_loc_tmp*nl))
+   
+         ! Prepare buffers
          do i_glb=1,n_glb
             jproc = glb_to_proc(i_glb)
             if (iproc==jproc) then
-               ibuf = ibuf+1
-               sbuf(ibuf) = glb(i_glb,il)
+               i_loc = glb_to_loc(i_glb)
+               do il=1,nl
+                  sbuf((il-1)*n_loc_tmp+i_loc) = glb(i_glb,il)
+               end do
             end if
          end do
+   
+         if (iproc==mpl%ioproc) then
+            ! Copy data
+            rbuf = sbuf
+         else
+            ! Send data to iproc
+            call mpl%send(n_loc_tmp*nl,sbuf,iproc,mpl%tag)
+         end if
+   
+         ! Release memory
+         deallocate(sbuf)
       end do
-
-      if (iproc==mpl%ioproc) then
-         ! Copy data
-         rbuf = sbuf
-      else
-         ! Send data to iproc
-         call mpl%send(n_loc_tmp,sbuf,iproc,mpl%tag)
-      end if
-
-      ! Release memory
-      deallocate(sbuf)
+   else
+      ! Receive data from ioproc
+      call mpl%recv(n_loc*nl,rbuf,mpl%ioproc,mpl%tag)
+   end if
+   call mpl%update_tag(1)
+   
+   ! Unpack buffer
+   do il=1,nl
+      do i_loc=1,n_loc
+         loc(i_loc,il) = rbuf((il-1)*n_loc+i_loc)
+      end do
    end do
 else
-   ! Receive data from ioproc
-   call mpl%recv(n_loc,rbuf,mpl%ioproc,mpl%tag)
-end if
-call mpl%update_tag(1)
-
-! Unpack buffer
-ibuf = 1
-do il=1,nl
-   do i_glb=1,n_glb
-      jproc = glb_to_proc(i_glb)
-      if (iproc==jproc) then
-         ibuf = ibuf+1
-         i_loc = glb_to_loc(i_glb)
-         loc(i_loc,il) = sbuf(ibuf)
-      end if
+   ! Communication for each level
+   do il=1,nl
+      call mpl%glb_to_loc(n_glb,glb_to_proc,glb_to_loc,glb(:,il),n_loc,loc(:,il))
    end do
-end do
+end if
 
 end subroutine mpl_glb_to_loc_2d
 
@@ -2144,56 +2232,59 @@ logical,intent(in) :: bcast
 real(kind_real),intent(out) :: glb(n_glb,nl)
 
 ! Local variables
-integer :: iproc,jproc,i_glb,i_loc,n_loc_tmp,il,ibuf
+integer :: iproc,jproc,i_glb,i_loc,n_loc_tmp,il
 real(kind_real),allocatable :: rbuf(:),sbuf(:)
 
-! Allocation
-allocate(sbuf(n_loc*nl))
-
-! Prepare buffer
-ibuf = 0
-do il=1,nl
-   do i_loc=1,n_loc
-      ibuf = ibuf+1
-      sbuf(ibuf) = loc(i_loc,il)
+if (.true.) then
+   ! Allocation
+   allocate(sbuf(n_loc*nl))
+   
+   ! Prepare buffer
+   do il=1,nl
+      do i_loc=1,n_loc
+         sbuf((il-1)*n_loc+i_loc) = loc(i_loc,il)
+      end do
    end do
-end do
-
-if (mpl%main) then
-   do iproc=1,mpl%nproc
-      ! Allocation
-      n_loc_tmp = count(glb_to_proc==iproc)
-      allocate(rbuf(n_loc_tmp))
-
-      if (iproc==mpl%ioproc) then
-          ! Copy data
-          rbuf = sbuf
-      else
-          ! Receive data from iproc
-          call mpl%recv(n_loc_tmp,rbuf,iproc,mpl%tag)
-      end if
-
-      ! Add data to glb
-      ibuf = 0
-      do il=1,nl
+   
+   if (mpl%main) then
+      do iproc=1,mpl%nproc
+         ! Allocation
+         n_loc_tmp = count(glb_to_proc==iproc)
+         allocate(rbuf(n_loc_tmp*nl))
+   
+         if (iproc==mpl%ioproc) then
+             ! Copy data
+             rbuf = sbuf
+         else
+             ! Receive data from iproc
+             call mpl%recv(n_loc_tmp*nl,rbuf,iproc,mpl%tag)
+         end if
+   
+         ! Add data to glb
          do i_glb=1,n_glb
             jproc = glb_to_proc(i_glb)
             if (iproc==jproc) then
-               ibuf = ibuf+1
                i_loc = glb_to_loc(i_glb)
-               glb(i_glb,il) = rbuf(ibuf)
+               do il=1,nl
+                  glb(i_glb,il) = rbuf((il-1)*n_loc_tmp+i_loc)
+               end do
             end if
          end do
+   
+         ! Release memory
+         deallocate(rbuf)
       end do
-
-      ! Release memory
-      deallocate(rbuf)
-   end do
+   else
+      ! Send data to ioproc
+      call mpl%send(n_loc*nl,sbuf,mpl%ioproc,mpl%tag)
+   end if
+   call mpl%update_tag(1)
 else
-   ! Send data to ioproc
-   call mpl%send(n_loc,sbuf,mpl%ioproc,mpl%tag)
+   ! Communication for each level
+   do il=1,nl
+      call mpl%loc_to_glb(n_loc,loc(:,il),n_glb,glb_to_proc,glb_to_loc,bcast,glb(:,il))
+   end do
 end if
-call mpl%update_tag(1)
 
 ! Broadcast
 if (bcast) call mpl%bcast(glb)

@@ -595,8 +595,8 @@ do ib=1,bpar%nbe
                ! Copy to C matrix
                if (i==1) then
                   cmat%blk(ib)%coef_ens = fld_c0a
-                  call mpl%allreduce_sum(sum(cmat%blk(ib)%coef_ens,mask=geom%mask(geom%c0a_to_c0,:)),cmat%blk(ib)%wgt)
-                  cmat%blk(ib)%wgt = cmat%blk(ib)%wgt/real(count(geom%mask),kind_real)
+                  call mpl%allreduce_sum(sum(cmat%blk(ib)%coef_ens,mask=geom%mask_c0a),cmat%blk(ib)%wgt)
+                  cmat%blk(ib)%wgt = cmat%blk(ib)%wgt/real(count(geom%mask_c0),kind_real)
                elseif (i==2) then
                   cmat%blk(ib)%coef_sta = fld_c0a
                elseif (i==3) then
@@ -721,8 +721,8 @@ do ib=1,bpar%nbe
       if (allocated(cmat%blk(ib)%oops_coef_ens)) then
          write(mpl%unit,'(a7,a,a)') '','Ensemble coefficient copied from OOPS for block ',trim(bpar%blockname(ib))
          cmat%blk(ib)%coef_ens = cmat%blk(ib)%oops_coef_ens
-         call mpl%allreduce_sum(sum(cmat%blk(ib)%coef_ens,mask=geom%mask(geom%c0a_to_c0,:)),cmat%blk(ib)%wgt)
-         cmat%blk(ib)%wgt = cmat%blk(ib)%wgt/real(count(geom%mask),kind_real)
+         call mpl%allreduce_sum(sum(cmat%blk(ib)%coef_ens,mask=geom%mask_c0a),cmat%blk(ib)%wgt)
+         cmat%blk(ib)%wgt = cmat%blk(ib)%wgt/real(count(geom%mask_c0),kind_real)
       end if
       if (allocated(cmat%blk(ib)%oops_coef_sta)) then
          write(mpl%unit,'(a7,a,a)') '','Static coefficient copied from OOPS for block ',trim(bpar%blockname(ib))

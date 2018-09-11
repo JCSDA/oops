@@ -142,9 +142,7 @@ if (nam%field_io) then
       end if
 
       ! Global to local
-      do il0=1,geom%nl0
-         call mpl%glb_to_loc(geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,fld_c0(:,il0),geom%nc0a,fld(:,il0))
-      end do
+      call mpl%glb_to_loc(geom%nl0,geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,fld_c0,geom%nc0a,fld)
    end if
 else
    ! No field I/O
@@ -186,7 +184,7 @@ if (nam%field_io) then
    do il0=1,geom%nl0
       do ic0a=1,geom%nc0a
          ic0 = geom%c0a_to_c0(ic0a)
-         if (geom%mask(ic0,il0)) then
+         if (geom%mask_c0(ic0,il0)) then
             fld_c0a(ic0a,il0) = fld(ic0a,il0)
          else
             call msr(fld_c0a(ic0a,il0))
@@ -249,9 +247,7 @@ if (nam%field_io) then
       call mpl%ncerr(subr,nf90_close(ncid))
    else
       ! Local to global
-      do il0=1,geom%nl0
-         call mpl%loc_to_glb(geom%nc0a,fld_c0a(:,il0),geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,.false.,fld_c0(:,il0))
-      end do
+      call mpl%loc_to_glb(geom%nl0,geom%nc0a,fld_c0a,geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,.false.,fld_c0)
 
       if (mpl%main) then
          ! Check if the file exists
@@ -518,7 +514,7 @@ do i_s=1,io%og%n_s
    ioga = io%og%row(i_s)
    ic0 = io%c0b_to_c0(ic0b)
    do il0=1,geom%nl0
-      if (.not.geom%mask(ic0,il0)) io%mask(ioga,il0) = .false.
+      if (.not.geom%mask_c0(ic0,il0)) io%mask(ioga,il0) = .false.
    end do
 end do
 

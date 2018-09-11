@@ -683,7 +683,8 @@ select case (trim(param))
 case ('var')
    call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%coef_ens,fld)
 case ('cor_rh')
-   call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%rh*req,fld)
+   call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%rh,fld)
+   fld = fld*req
 case ('cor_rv')
    call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%rv,fld)
 case ('cor_rv_rfac')
@@ -693,7 +694,8 @@ case ('cor_rv_coef')
 case ('loc_coef')
    call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%coef_ens,fld)
 case ('loc_rh')
-   call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%rh*req,fld)
+   call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%rh,fld)
+   fld = fld*req
 case ('loc_rv')
    call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%rv,fld)
 case ('hyb_coef')
@@ -702,22 +704,26 @@ case default
    select case (param(1:4))
    case ('D11_')
       read(param(5:5),'(i1)') iscales
-      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%D11(:,:,iscales)*req**2,fld)
+      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%D11(:,:,iscales),fld)
+      fld = fld*req**2
    case ('D22_')
       read(param(5:5),'(i1)') iscales
-      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%D22(:,:,iscales)*req**2,fld)
+      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%D22(:,:,iscales),fld)
+      fld = fld*req**2
    case ('D33_')
       read(param(5:5),'(i1)') iscales
       call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%D33(:,:,iscales),fld)
    case ('D12_')
       read(param(5:5),'(i1)') iscales
-      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%D12(:,:,iscales)*req**2,fld)
+      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%D12(:,:,iscales),fld)
+      fld = fld*req**2
    case ('Dcoe')
       read(param(7:7),'(i1)') iscales
       call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%Dcoef(:,:,iscales),fld)
    case ('DLh_')
       read(param(5:5),'(i1)') iscales
-      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%DLh(:,:,iscales)*req,fld)
+      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%DLh(:,:,iscales),fld)
+      fld = fld*req
    case default
       if (param(1:6)=='ens1u_') then
          read(param(7:10),'(i4.4)') ie
@@ -812,7 +818,8 @@ case ('var')
    call bump%geom%copy_mga_to_c0a(bump%mpl,fld,bump%cmat%blk(ib)%oops_coef_ens)
 case ('cor_rh')
    if (.not.allocated(bump%cmat%blk(ib)%oops_rh)) allocate(bump%cmat%blk(ib)%oops_rh(bump%geom%nc0a,bump%geom%nl0))
-   call bump%geom%copy_mga_to_c0a(bump%mpl,fld/req,bump%cmat%blk(ib)%oops_rh)
+   call bump%geom%copy_mga_to_c0a(bump%mpl,fld,bump%cmat%blk(ib)%oops_rh)
+   bump%cmat%blk(ib)%oops_rh = bump%cmat%blk(ib)%oops_rh/req
 case ('cor_rv')
    if (.not.allocated(bump%cmat%blk(ib)%oops_rv)) allocate(bump%cmat%blk(ib)%oops_rv(bump%geom%nc0a,bump%geom%nl0))
    call bump%geom%copy_mga_to_c0a(bump%mpl,fld,bump%cmat%blk(ib)%oops_rv)
@@ -827,7 +834,8 @@ case ('loc_coef')
    call bump%geom%copy_mga_to_c0a(bump%mpl,fld,bump%cmat%blk(ib)%oops_coef_ens)
 case ('loc_rh')
    if (.not.allocated(bump%cmat%blk(ib)%oops_rh)) allocate(bump%cmat%blk(ib)%oops_rh(bump%geom%nc0a,bump%geom%nl0))
-   call bump%geom%copy_mga_to_c0a(bump%mpl,fld/req,bump%cmat%blk(ib)%oops_rh)
+   call bump%geom%copy_mga_to_c0a(bump%mpl,fld,bump%cmat%blk(ib)%oops_rh)
+   bump%cmat%blk(ib)%oops_rh = bump%cmat%blk(ib)%oops_rh/req
 case ('loc_rv')
    if (.not.allocated(bump%cmat%blk(ib)%oops_rv)) allocate(bump%cmat%blk(ib)%oops_rv(bump%geom%nc0a,bump%geom%nl0))
    call bump%geom%copy_mga_to_c0a(bump%mpl,fld,bump%cmat%blk(ib)%oops_rv)

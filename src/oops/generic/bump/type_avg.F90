@@ -166,7 +166,7 @@ type(geom_type),intent(in) :: geom   !< Geometry
 type(bpar_type),intent(in) :: bpar   !< Block parameters
 
 ! Local variables
-integer :: npack,offset,ib,ic2,il0,jl0r,jc3,isub,jsub
+integer :: npack,offset,ib,ic2
 real(kind_real),allocatable :: sbuf(:),rbuf(:)
 logical,allocatable :: mask_0(:,:,:),mask_1(:,:,:,:),mask_2(:,:,:,:,:)
 
@@ -290,13 +290,12 @@ end subroutine avg_gather
 ! Subroutine: avg_normalize
 !> Purpose: normalize averaged statistics data
 !----------------------------------------------------------------------
-subroutine avg_normalize(avg,mpl,nam,geom,bpar)
+subroutine avg_normalize(avg,nam,geom,bpar)
 
 implicit none
 
 ! Passed variables
 class(avg_type),intent(inout) :: avg !< Averaged statistics
-type(mpl_type),intent(in) :: mpl     !< MPI data
 type(nam_type),intent(in) :: nam     !< Namelist
 type(geom_type),intent(in) :: geom   !< Geometry
 type(bpar_type),intent(in) :: bpar   !< Block parameters
@@ -433,13 +432,12 @@ end subroutine avg_gather_lr
 ! Subroutine: avg_normalize_lr
 !> Purpose: normalize low-resolution averaged statistics data
 !----------------------------------------------------------------------
-subroutine avg_normalize_lr(avg_lr,mpl,nam,geom,bpar)
+subroutine avg_normalize_lr(avg_lr,nam,geom,bpar)
 
 implicit none
 
 ! Passed variables
 class(avg_type),intent(inout) :: avg_lr !< Averaged statistics, low resolution
-type(mpl_type),intent(in) :: mpl        !< MPI data
 type(nam_type),intent(in) :: nam        !< Namelist
 type(geom_type),intent(in) :: geom      !< Geometry
 type(bpar_type),intent(in) :: bpar      !< Block parameters
@@ -659,7 +657,7 @@ end if
 ! Normalize averaged statistics
 write(mpl%unit,'(a10,a)') '','Normalize averaged statistics'
 call flush(mpl%unit)
-call avg%normalize(mpl,nam,geom,bpar)
+call avg%normalize(nam,geom,bpar)
 
 if (nam%var_filter) then
    ! Filter variance
@@ -755,7 +753,7 @@ if (trim(nam%method)=='dual-ens') then
    ! Normalize averaged statistics
    write(mpl%unit,'(a10,a)') '','Normalize averaged statistics'
    call flush(mpl%unit)
-   call avg_2%normalize_lr(mpl,nam,geom,bpar)
+   call avg_2%normalize_lr(nam,geom,bpar)
 
    do ib=1,bpar%nb
       if (bpar%diag_block(ib)) then

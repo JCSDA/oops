@@ -168,6 +168,7 @@ contains
 end type nam_type
 
 private
+public :: nvmax,ntsmax,nlmax,nc3max,nscalesmax,ndirmax,nldwvmax 
 public :: nam_type
 
 contains
@@ -1022,6 +1023,8 @@ if (nam%new_vbal.or.nam%new_hdiag.or.nam%new_lct.or.nam%new_nicas) then
 end if
 if (nam%new_hdiag.or.nam%new_lct) then
    if (nam%nc3<=0) call mpl%abort('nc3 should be positive')
+else
+   nam%nc3 = 1
 end if
 if (nam%new_vbal.or.nam%load_vbal.or.nam%new_hdiag.or.nam%new_lct) then
    if (nam%nl0r<1) call mpl%abort ('nl0r should be positive')
@@ -1275,6 +1278,9 @@ class(nam_type),intent(in) :: nam !< Namelist
 type(mpl_type),intent(in) :: mpl  !< MPI data
 integer,intent(in) :: ncid        !< NetCDF file ID
 
+! Local variables
+integer,allocatable :: londir(:),latdir(:),lon_ldwv(:),lat_ldwv(:)
+
 ! general_param
 call put_att(mpl,ncid,'datadir',trim(nam%datadir))
 call put_att(mpl,ncid,'prefix',trim(nam%prefix))
@@ -1340,7 +1346,7 @@ call put_att(mpl,ncid,'dc',nam%dc*req)
 call put_att(mpl,ncid,'nl0r',nam%nl0r)
 
 ! vbal_param
-call put_att(mpl,ncid,'vbal_block',nam%nv*(nam%nv-1)/2,nam%vbal_block(1:nam%nv*(nam%nv-1)/2))
+if (nam%nv>1) call put_att(mpl,ncid,'vbal_block',nam%nv*(nam%nv-1)/2,nam%vbal_block(1:nam%nv*(nam%nv-1)/2))
 
 ! diag_param
 call put_att(mpl,ncid,'ne',nam%ne)
@@ -1375,11 +1381,17 @@ call put_att(mpl,ncid,'network',nam%network)
 call put_att(mpl,ncid,'mpicom',nam%mpicom)
 call put_att(mpl,ncid,'advmode',nam%advmode)
 call put_att(mpl,ncid,'ndir',nam%ndir)
-call put_att(mpl,ncid,'londir',nam%ndir,nam%londir(1:nam%ndir)*rad2deg)
-call put_att(mpl,ncid,'latdir',nam%ndir,nam%latdir(1:nam%ndir)*rad2deg)
-call put_att(mpl,ncid,'levdir',nam%ndir,nam%levdir(1:nam%ndir))
-call put_att(mpl,ncid,'ivdir',nam%ndir,nam%ivdir(1:nam%ndir))
-call put_att(mpl,ncid,'itsdir',nam%ndir,nam%itsdir(1:nam%ndir))
+if (nam%ndir>0) then
+   allocate(londir(nam%ndir))
+   allocate(latdir(nam%ndir))
+   londir = nam%londir(1:nam%ndir)*rad2deg
+   latdir = nam%latdir(1:nam%ndir)*rad2deg
+   call put_att(mpl,ncid,'londir',nam%ndir,londir)
+   call put_att(mpl,ncid,'latdir',nam%ndir,latdir)
+   call put_att(mpl,ncid,'levdir',nam%ndir,nam%levdir(1:nam%ndir))
+   call put_att(mpl,ncid,'ivdir',nam%ndir,nam%ivdir(1:nam%ndir))
+   call put_att(mpl,ncid,'itsdir',nam%ndir,nam%itsdir(1:nam%ndir))
+end if
 
 ! obsop_param
 call put_att(mpl,ncid,'nobs',nam%nobs)
@@ -1388,11 +1400,19 @@ call put_att(mpl,ncid,'obsop_interp',nam%obsop_interp)
 
 ! output_param
 call put_att(mpl,ncid,'nldwh',nam%nldwh)
-call put_att(mpl,ncid,'il_ldwh',nam%nldwh,nam%il_ldwh(1:nam%nldwh))
-call put_att(mpl,ncid,'ic_ldwh',nam%nldwh,nam%ic_ldwh(1:nam%nldwh))
+if (nam%nldwh>0) then
+   call put_att(mpl,ncid,'il_ldwh',nam%nldwh,nam%il_ldwh(1:nam%nldwh))
+   call put_att(mpl,ncid,'ic_ldwh',nam%nldwh,nam%ic_ldwh(1:nam%nldwh))
+end if
 call put_att(mpl,ncid,'nldwv',nam%nldwv)
-call put_att(mpl,ncid,'lon_ldwv',nam%nldwv,nam%lon_ldwv(1:nam%nldwv)*rad2deg)
-call put_att(mpl,ncid,'lat_ldwv',nam%nldwv,nam%lat_ldwv(1:nam%nldwv)*rad2deg)
+if (nam%nldwv>0) then
+   allocate(lon_ldwv(nam%nldwv))
+   allocate(lat_ldwv(nam%nldwv))
+   lon_ldwv = nam%lon_ldwv(1:nam%nldwv)*rad2deg
+   lat_ldwv = nam%lat_ldwv(1:nam%nldwv)*rad2deg
+   call put_att(mpl,ncid,'lon_ldwv',nam%nldwv,lon_ldwv)
+   call put_att(mpl,ncid,'lat_ldwv',nam%nldwv,lat_ldwv)
+end if
 call put_att(mpl,ncid,'diag_rhflt',nam%diag_rhflt*req)
 call put_att(mpl,ncid,'diag_interp',nam%diag_interp)
 call put_att(mpl,ncid,'field_io',nam%field_io)

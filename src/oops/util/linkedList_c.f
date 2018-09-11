@@ -29,7 +29,6 @@ subroutine add_(self,key)
  integer           :: key
 
  type(node_t), pointer :: next
- type(node_t), pointer :: current
 
  !increase global counter and assign key
  self%count = self%count+1
@@ -51,7 +50,6 @@ subroutine get_(self,key,ptr)
  type (LISTED_TYPE), pointer :: ptr
 
  type(node_t), pointer :: next
- integer               :: lkey
 
  !note that the list starts from self%head%next
  next => self%head
@@ -74,7 +72,6 @@ subroutine remove_(self,key)
 
  type(node_t), pointer :: prev
  type(node_t), pointer :: next
- integer               :: lkey
 
  next => self%head%next
  prev => NULL()

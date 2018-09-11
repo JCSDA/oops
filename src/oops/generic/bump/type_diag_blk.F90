@@ -30,7 +30,7 @@ use type_nam, only: nam_type
 implicit none
 
 integer,parameter :: nsc = 50                          !< Number of iterations for the scaling optimization
-logical :: lprt = .true.                              !< Optimization print
+logical :: lprt = .false.                              !< Optimization print
 real(kind_real),parameter :: maxfactor = 2.0_kind_real !< Maximum factor for diagnostics with respect to the origin
 
 ! Diagnostic block derived type
@@ -85,7 +85,7 @@ character(len=*),intent(in) :: prefix          !< Block prefix
 logical,intent(in) :: double_fit               !< Double fit
 
 ! Local variables
-integer :: ic0,ic2,il0,jl0,jl0r
+integer :: ic0,ic2,il0,jl0
 real(kind_real) :: vunit(geom%nl0)
 
 ! Set attributes
@@ -267,7 +267,7 @@ call mpl%ncerr(subr,nf90_enddef(ncid))
 ! Write variables
 if (info==nf90_noerr) then
    call mpl%ncerr(subr,nf90_put_var(ncid,disth_id,geom%disth(1:nam%nc3)))
-   call mpl%ncerr(subr,nf90_put_var(ncid,vunit_id,sum(geom%vunit,mask=geom%mask,dim=1)/real(count(geom%mask,dim=1),kind_real)))
+   call mpl%ncerr(subr,nf90_put_var(ncid,vunit_id,sum(geom%vunit,mask=geom%mask_c0,dim=1)/real(geom%nc0_mask,kind_real)))
 end if
 call mpl%ncerr(subr,nf90_put_var(ncid,raw_coef_ens_id,diag_blk%raw_coef_ens))
 if ((ic2a==0).or.nam%local_diag) then
@@ -389,7 +389,7 @@ type(hdata_type),intent(in) :: hdata           !< HDIAG data
 
 ! Local variables
 integer :: ic2,ic0,il0,jl0r,offset,isc
-real(kind_real) :: vunit(geom%nl0),rawv(nam%nl0r)
+real(kind_real) :: vunit(geom%nl0),rawv(nam%nl0r),distv(nam%nl0r)
 real(kind_real) :: alpha,alpha_opt,mse,mse_opt
 real(kind_real) :: fit_rh(geom%nl0),fit_rv(geom%nl0)
 real(kind_real) :: fit(nam%nc3,nam%nl0r,geom%nl0)
@@ -425,7 +425,8 @@ do il0=1,geom%nl0
 
    ! Vertical fast fit
    rawv = diag_blk%raw(1,:,il0)
-   call fast_fit(mpl,nam%nl0r,jl0r,diag_blk%distv(bpar%l0rl0b_to_l0(:,il0,ib),il0),rawv,diag_blk%fit_rv(il0))
+   distv = diag_blk%distv(bpar%l0rl0b_to_l0(:,il0,ib),il0)
+   call fast_fit(mpl,nam%nl0r,jl0r,distv,rawv,diag_blk%fit_rv(il0))
 end do
 
 if (any(isnotmsr(diag_blk%fit_rh)).and.any(isnotmsr(diag_blk%fit_rv))) then

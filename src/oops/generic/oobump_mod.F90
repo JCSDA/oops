@@ -13,6 +13,7 @@ use config_mod
 use unstructured_grid_mod
 use fckit_mpi_module, only: fckit_mpi_comm
 use type_bump, only: bump_type
+use type_nam, only: nvmax,nlmax,nc3max,nscalesmax,ndirmax,nldwvmax 
 
 implicit none
 
@@ -346,9 +347,9 @@ subroutine bump_read_conf(c_conf,bump)
 implicit none
 type(c_ptr), intent(in) :: c_conf
 type(bump_type), intent(inout) :: bump
-integer,parameter :: nvmax = 20
-integer :: il,its,iscales,ildwh,ildwv,idir,iv
-character(len=3) :: ilchar,itschar,iscaleschar,ildwhchar,ildwvchar,idirchar,ivchar
+integer :: iscales,ildwh,ildwv,idir,iv
+character(len=3) :: iscaleschar,ildwvchar,idirchar,ivchar
+character(len=6) :: ildwhchar
 
 ! Setup from configuration
 
@@ -427,7 +428,7 @@ if (config_element_exists(c_conf,"lhomh")) bump%nam%lhomh = integer_to_logical(c
 if (config_element_exists(c_conf,"lhomv")) bump%nam%lhomv = integer_to_logical(config_get_int(c_conf,"lhomv"))
 if (config_element_exists(c_conf,"rvflt")) bump%nam%rvflt = config_get_real(c_conf,"rvflt")
 if (config_element_exists(c_conf,"lct_nscales")) bump%nam%lct_nscales = config_get_int(c_conf,"lct_nscales")
-do iscales=1,bump%nam%lct_nscales
+do iscales=1,nscalesmax
    write(iscaleschar,'(i3)') iscales
    if (config_element_exists(c_conf,"lct_diag("//trim(adjustl(iscaleschar))//")")) &
  & bump%nam%lct_diag(iscales) = integer_to_logical(config_get_int(c_conf,"lct_diag("//trim(adjustl(iscaleschar))//")"))
@@ -444,7 +445,7 @@ if (config_element_exists(c_conf,"forced_radii")) bump%nam%forced_radii = intege
 if (config_element_exists(c_conf,"rh")) bump%nam%rh = config_get_real(c_conf,"rh")
 if (config_element_exists(c_conf,"rv")) bump%nam%rv = config_get_real(c_conf,"rv")
 if (config_element_exists(c_conf,"ndir")) bump%nam%ndir = config_get_int(c_conf,"ndir")
-do idir=1,bump%nam%ndir
+do idir=1,ndirmax
    write(idirchar,'(i3)') idir
    if (config_element_exists(c_conf,"londir("//trim(adjustl(idirchar))//")")) &
  & bump%nam%londir(idir) = config_get_real(c_conf,"londir("//trim(adjustl(idirchar))//")")
@@ -460,15 +461,15 @@ end do
 
 ! output_param
 if (config_element_exists(c_conf,"nldwh")) bump%nam%nldwh = config_get_int(c_conf,"nldwh")
-do ildwh=1,bump%nam%nldwh
-   write(ildwvchar,'(i3)') ildwh
+do ildwh=1,nlmax*nc3max
+   write(ildwhchar,'(i6)') ildwh
    if (config_element_exists(c_conf,"il_ldwh("//trim(adjustl(ildwhchar))//")")) &
  & bump%nam%il_ldwh(ildwh) = config_get_int(c_conf,"il_ldwh("//trim(adjustl(ildwhchar))//")")
    if (config_element_exists(c_conf,"ic_ldwh("//trim(adjustl(ildwhchar))//")")) &
  & bump%nam%ic_ldwh(ildwh) = config_get_int(c_conf,"ic_ldwh("//trim(adjustl(ildwhchar))//")")
 end do
 if (config_element_exists(c_conf,"nldwv")) bump%nam%nldwv = config_get_int(c_conf,"nldwv")
-do ildwv=1,bump%nam%nldwv
+do ildwv=1,nldwvmax
    write(ildwvchar,'(i3)') ildwv
    if (config_element_exists(c_conf,"lon_ldwv("//trim(adjustl(ildwvchar))//")")) &
  & bump%nam%lon_ldwv(ildwv) = config_get_real(c_conf,"lon_ldwv("//trim(adjustl(ildwvchar))//")")

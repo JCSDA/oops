@@ -635,6 +635,7 @@ character(len=*),intent(in) :: interp_type   !< Interpolation type
 ! Local variables
 integer :: n_src_eff,i_src,i_src_eff
 integer,allocatable :: src_eff_to_src(:)
+real(kind_real),allocatable :: lon_src_eff(:),lat_src_eff(:)
 logical,allocatable :: mask_src_eff(:)
 type(kdtree_type) :: kdtree
 type(mesh_type) :: mesh
@@ -644,6 +645,8 @@ n_src_eff = count(mask_src)
 
 ! Allocation
 allocate(src_eff_to_src(n_src_eff))
+allocate(lon_src_eff(n_src_eff))
+allocate(lat_src_eff(n_src_eff))
 allocate(mask_src_eff(n_src_eff))
 
 ! Conversion
@@ -654,15 +657,17 @@ do i_src=1,n_src
       src_eff_to_src(i_src_eff) = i_src
    end if
 end do
+lon_src_eff = lon_src(src_eff_to_src)
+lat_src_eff = lat_src(src_eff_to_src)
+mask_src_eff = .true.
 
 ! Create mesh
-call mesh%create(mpl,rng,n_src_eff,lon_src(src_eff_to_src),lat_src(src_eff_to_src))
+call mesh%create(mpl,rng,n_src_eff,lon_src_eff,lat_src_eff)
 
 ! Compute KD-tree
-call kdtree%create(mpl,n_src_eff,lon_src(src_eff_to_src),lat_src(src_eff_to_src))
+call kdtree%create(mpl,n_src_eff,lon_src_eff,lat_src_eff)
 
 ! Compute interpolation
-mask_src_eff = .true.
 call linop%interp(mpl,mesh,kdtree,n_src_eff,mask_src_eff,n_dst,lon_dst,lat_dst,mask_dst,interp_type)
 
 ! Effective points conversion
@@ -829,7 +834,7 @@ write(mpl%unit,'(a)') '100%'
 call flush(mpl%unit)
 
 ! Communication
-call mpl%allgather(1,(/n_s/),proc_to_n_s)
+call mpl%allgather(n_s,proc_to_n_s)
 
 ! Allocation
 linop%n_s = sum(proc_to_n_s)
@@ -914,13 +919,23 @@ type(linop_type),intent(inout) :: interp_base !< Linear operator (base interpola
 ! Local variables
 integer :: ic0,ic1,jc0,jc1,i_s
 real(kind_real) :: renorm(geom%nc0)
+real(kind_real),allocatable :: lon_c1(:),lat_c1(:)
 logical :: test_c0(geom%nc0)
-logical,allocatable :: mask_extra(:),valid(:)
+logical,allocatable :: mask_c1(:),mask_extra(:),valid(:)
 
 if (.not.allocated(interp_base%row)) then
+   ! Allocation
+   allocate(lon_c1(nc1))
+   allocate(lat_c1(nc1))
+   allocate(mask_c1(nc1))
+
+   ! Initialization
+   lon_c1 = geom%lon(c1_to_c0)
+   lat_c1 = geom%lat(c1_to_c0)
+   mask_c1 = geom%mask_hor_c0(c1_to_c0)
+
    ! Compute base interpolation
-   call interp_base%interp(mpl,rng,nc1,geom%lon(c1_to_c0),geom%lat(c1_to_c0),any(geom%mask(c1_to_c0,:),dim=2), &
- & geom%nc0,geom%lon,geom%lat,any(geom%mask,dim=2),interp_type)
+   call interp_base%interp(mpl,rng,nc1,lon_c1,lat_c1,mask_c1,geom%nc0,geom%lon,geom%lat,geom%mask_hor_c0,interp_type)
 end if
 
 ! Allocation
@@ -932,7 +947,7 @@ do i_s=1,interp_base%n_s
    ic0 = interp_base%row(i_s)
    jc1 = interp_base%col(i_s)
    jc0 = c1_to_c0(jc1)
-   valid(i_s) = geom%mask(ic0,il0i).and.geom%mask(jc0,il0i)
+   valid(i_s) = geom%mask_c0(ic0,il0i).and.geom%mask_c0(jc0,il0i)
 end do
 
 ! Check mask boundaries
@@ -947,7 +962,7 @@ if (geom%nl0i>1) then
    mask_extra = .false.
    do ic1=1,nc1
       ic0 = c1_to_c0(ic1)
-      if (geom%mask(ic0,il0i).and.((il0i<vbot(ic1)).or.(il0i>vtop(ic1)))) mask_extra(ic1) = .true.
+      if (geom%mask_c0(ic0,il0i).and.((il0i<vbot(ic1)).or.(il0i>vtop(ic1)))) mask_extra(ic1) = .true.
    end do
 
    ! Remove operations for extrapolated points
@@ -990,10 +1005,10 @@ end do
 call interp_base%dealloc
 
 ! Deal with missing points
-call linop%interp_missing(mpl,geom%nc0,geom%lon,geom%lat,geom%mask(:,il0i),interp_type)
+call linop%interp_missing(mpl,geom%nc0,geom%lon,geom%lat,geom%mask_c0(:,il0i),interp_type)
 
 ! Check interpolation
-test_c0 = geom%mask(:,il0i)
+test_c0 = geom%mask_c0(:,il0i)
 do i_s=1,linop%n_s
    test_c0(linop%row(i_s)) = .false.
 end do

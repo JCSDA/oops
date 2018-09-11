@@ -433,7 +433,6 @@ do ib=1,bpar%nb
             if (mask_c1a(ic1a,il0)) then
                ! Check D determinant
                diag_prod = lct%blk(ib)%D(offset+1,ic1a,il0)*lct%blk(ib)%D(offset+2,ic1a,il0)
-               if (bpar%nl0r(ib)>1) det = det*lct%blk(ib)%D(offset+3,ic1a,il0)
                if (lct%blk(ib)%ncomp(iscales)==3) then
                   det = diag_prod
                else
@@ -482,7 +481,7 @@ do ib=1,bpar%nb
       do il0=1,geom%nl0
          do ic0a=1,geom%nc0a
             ic0 = geom%c0a_to_c0(ic0a)
-            if (geom%mask(ic0,il0)) then
+            if (geom%mask_c0(ic0,il0)) then
                ! Check D determinant
                if (lct%blk(ib)%ncomp(iscales)==3) then
                   det = fld(ic0a,il0,1)*fld(ic0a,il0,2)
@@ -513,7 +512,7 @@ do ib=1,bpar%nb
       do il0=1,geom%nl0
          do ic0a=1,geom%nc0a
             ic0 = geom%c0a_to_c0(ic0a)
-            if (geom%mask(ic0,il0)) then
+            if (geom%mask_c0(ic0,il0)) then
                lct%blk(ib)%D11(ic0a,il0,iscales) = fld(ic0a,il0,1)
                lct%blk(ib)%D22(ic0a,il0,iscales) = fld(ic0a,il0,2)
                lct%blk(ib)%D33(ic0a,il0,iscales) = fld(ic0a,il0,3)
@@ -573,7 +572,7 @@ type(hdata_type),intent(inout) :: hdata !< HDIAG data
 
 ! Local variables
 integer :: ib,iv,il0,jl0r,jl0,ic1a,ic1,jc3,i,iproc,ic0
-real(kind_real) :: fld_glb(geom%nc0,geom%nl0,2),fld(geom%nc0a,geom%nl0,2)
+real(kind_real) :: fld_c0(geom%nc0,geom%nl0,2),fld(geom%nc0a,geom%nl0,2)
 real(kind_real),allocatable :: sbuf(:),rbuf(:)
 logical :: valid
 logical :: free(geom%nc0,geom%nl0)
@@ -590,7 +589,7 @@ do ib=1,bpar%nb
    il0 = 1
 
    ! Prepare field
-   call msr(fld_glb)
+   call msr(fld_c0)
    free = .true.
    do ic1=1,nam%nc1
       ! Select tensor to plot
@@ -650,8 +649,8 @@ do ib=1,bpar%nb
                do jc3=1,nam%nc3
                   if (hdata%c1l0_log(ic1,il0).and.hdata%c1c3l0_log(ic1,jc3,jl0)) then
                      ic0 = hdata%c1c3_to_c0(ic1,jc3)
-                     fld_glb(ic0,jl0,1) = rbuf(i)
-                     fld_glb(ic0,jl0,2) = rbuf(i+1)
+                     fld_c0(ic0,jl0,1) = rbuf(i)
+                     fld_c0(ic0,jl0,2) = rbuf(i+1)
                   end if
                   i = i+2
                end do
@@ -668,10 +667,8 @@ do ib=1,bpar%nb
    end do
 
    ! Global to local
-   do il0=1,geom%nl0
-      call mpl%glb_to_loc(geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,fld_glb(:,il0,1),geom%nc0a,fld(:,il0,1))
-      call mpl%glb_to_loc(geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,fld_glb(:,il0,2),geom%nc0a,fld(:,il0,2))
-   end do
+   call mpl%glb_to_loc(geom%nl0,geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,fld_c0(:,:,1),geom%nc0a,fld(:,:,1))
+   call mpl%glb_to_loc(geom%nl0,geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,fld_c0(:,:,2),geom%nc0a,fld(:,:,2))
 
    ! Write LCT diagnostics
    write(mpl%unit,'(a10,a)') '','Write LCT diagnostics'

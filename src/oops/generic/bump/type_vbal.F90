@@ -330,7 +330,7 @@ type(ens_type), intent(in) :: ens      !< Ensemble
 type(ens_type),intent(inout) :: ensu   !< Unbalanced ensemble
 
 ! Local variables
-integer :: il0i,i_s,ic0a,ic2b,ic2,ie,ie_sub,ic0,jl0,il0,isub,ic1,ic1a,iv,jv,offset,nc1a,i
+integer :: il0i,i_s,ic0a,ic2b,ic2,ie,ie_sub,ic0,jl0,il0,isub,ic1,ic1a,iv,jv,offset,nc1a
 real(kind_real) :: fld(geom%nc0a,geom%nl0)
 real(kind_real) :: auto_avg(nam%nc2,geom%nl0,geom%nl0),cross_avg(nam%nc2,geom%nl0,geom%nl0),auto_inv(geom%nl0,geom%nl0)
 real(kind_real) :: sbuf(2*nam%nc2*geom%nl0**2),rbuf(2*nam%nc2*geom%nl0**2)

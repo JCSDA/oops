@@ -145,9 +145,8 @@ type(hdata_type),intent(inout) :: hdata  !< HDIAG data
 type(ens_type), intent(in) :: ens        !< Ensemble
 
 ! Local variables
-integer :: ic0,ic1,ic2,ic2a,jc0,jc1,il0,il0i,isub,iv,its,ie,ie_sub,iter,ic0a,jc0d
-integer,allocatable :: ind(:)
-real(kind_real) :: fac4,fac6,m11_avg,m2m2_avg,fld_1,fld_2,drhflt,dum,distsum,norm
+integer :: ic0,ic1,ic2,ic2a,jc0,jc1,il0,il0i,isub,iv,its,ie,ie_sub,iter,ic0a,jc0d,ind
+real(kind_real) :: fac4,fac6,m11_avg,m2m2_avg,fld_1,fld_2,drhflt,dum,distsum,norm,cormax
 real(kind_real) :: lon_target,lat_target,rad_target,x_cm,y_cm,z_cm,n_cm
 real(kind_real) :: norm_tot,distsum_tot
 real(kind_real),allocatable :: fld_ext(:,:,:,:)
@@ -300,7 +299,7 @@ do its=2,nam%nts
       call mpl%allreduce_sum(norm,norm_tot)
 
       !$omp parallel do schedule(static) private(ic2a,ic2,jc1,jc0,iv,m11_avg,m2m2_avg,lon_target,lat_target,rad_target), &
-      !$omp&                             private(x_cm,y_cm,z_cm,n_cm) firstprivate(cor,cor_avg,ind,x,y,z)
+      !$omp&                             private(x_cm,y_cm,z_cm,n_cm,ind) firstprivate(cor,cor_avg,x,y,z)
       do ic2a=1,hdata%nc2a
          ic2 = hdata%c2a_to_c2(ic2a)
          if (mask_c2a(ic2a,il0)) then
@@ -337,14 +336,17 @@ do its=2,nam%nts
             select case (trim(displ_method))
             case ('cor_max')
                ! Locate the maximum correlation, with a correlation threshold
-
-               ! Allocation
-               allocate(ind(1))
-
                if (maxval(cor_avg)>cor_th) then
                   ! Find maximum
-                  ind = maxloc(cor_avg)
-                  jc1 = ind(1)
+                  call msi(ind)
+                  cormax = cor_th
+                  do jc1=1,nam%nc1
+                     if (cor_avg(jc1)>cormax) then
+                        ind = jc1
+                        cormax = cor_avg(jc1)
+                     end if
+                  end do
+                  jc1 = ind
                   jc0 = hdata%c1_to_c0(jc1)
                   lon_target = geom%lon(jc0)
                   lat_target = geom%lat(jc0)
@@ -352,9 +354,6 @@ do its=2,nam%nts
                   lon_target = 0.0
                   lat_target = 0.0
                end if
-
-               ! Release memory
-               deallocate(ind)
             case ('cor_center_mass')
                ! Locate the correlation center of mass, with a correlation threshold
 

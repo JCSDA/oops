@@ -726,17 +726,19 @@ type(io_type),intent(in) :: io           !< I/O
 ! Local variables
 integer :: ios,ic0,il0,ic1,ic2,ildw,jc3,il0i,jc1,kc1,nc2_eff
 integer,allocatable :: vbot(:),vtop(:),nn_c1_index(:)
-real(kind_real) :: rh_c0(geom%nc0),nn_dist(1),rh_c0_loc(geom%nc0a,geom%nl0)
+real(kind_real) :: lon_c1(nam%nc1),lat_c1(nam%nc1)
+real(kind_real) :: lon_c2(nam%nc2),lat_c2(nam%nc2)
+real(kind_real) :: rh_c0(geom%nc0),rh_c0a(geom%nc0a,geom%nl0),nn_dist(1)
 real(kind_real),allocatable :: nn_c1_dist(:)
-logical :: mask_c1(nam%nc1)
+logical :: mask_c1(nam%nc1),mask_c2(nam%nc2)
 character(len=1024) :: filename
 type(kdtree_type) :: kdtree
 type(linop_type) :: hbase
 
 ! Check subsampling size
-if (nam%nc1>maxval(count(geom%mask,dim=1))) then
+if (nam%nc1>maxval(geom%nc0_mask)) then
    call mpl%warning('nc1 is too large for then mask, reset nc1 to the largest possible value')
-   nam%nc1 = maxval(count(geom%mask,dim=1))
+   nam%nc1 = maxval(geom%nc0_mask)
 end if
 
 ! Allocation
@@ -752,14 +754,9 @@ if (ios==1) then
    if (nam%new_lct) then
       ! Compute LCT sampling
       call hdata%compute_sampling_lct(mpl,nam,geom)
-   elseif (nam%new_hdiag) then
+   elseif (nam%new_vbal.or.nam%new_hdiag) then
       ! Compute positive separation sampling
       call hdata%compute_sampling_ps(mpl,rng,nam,geom)
-   elseif (nam%new_vbal) then
-      ! Set log
-      do jc3=1,nam%nc3
-         hdata%c1c3_to_c0(:,jc3) = hdata%c1_to_c0
-      end do
    end if
 
    ! Compute sampling mask
@@ -772,10 +769,11 @@ if (nam%new_vbal.or.nam%new_lct.or.(nam%new_hdiag.and.(nam%var_diag.or.nam%local
       if (mpl%main) then
          write(mpl%unit,'(a7,a)',advance='no') '','Define subsampling:'
          call flush(mpl%unit)
+         lon_c1 = geom%lon(hdata%c1_to_c0)
+         lat_c1 = geom%lat(hdata%c1_to_c0)
          mask_c1 = .true.
          rh_c0 = 1.0
-         call rng%initialize_sampling(mpl,nam%nc1,geom%lon(hdata%c1_to_c0),geom%lat(hdata%c1_to_c0),mask_c1, &
-       & rh_c0,nam%ntry,nam%nrep,nam%nc2,hdata%c2_to_c1)
+         call rng%initialize_sampling(mpl,nam%nc1,lon_c1,lat_c1,mask_c1,rh_c0,nam%ntry,nam%nrep,nam%nc2,hdata%c2_to_c1)
       else
          write(mpl%unit,'(a7,a)') '','Define subsampling'
          call flush(mpl%unit)
@@ -792,9 +790,11 @@ if (nam%new_vbal.or.nam%new_lct.or.(nam%new_hdiag.and.(nam%var_diag.or.nam%local
          if ((il0==1).or.(geom%nl0i>1)) then
             write(mpl%unit,'(a10,a,i3)') '','Level ',nam%levs(il0)
             call flush(mpl%unit)
-            if (any(hdata%c1l0_log(hdata%c2_to_c1,il0))) then
-               call kdtree%create(mpl,nam%nc2,geom%lon(hdata%c2_to_c0),geom%lat(hdata%c2_to_c0), &
-             & mask=hdata%c1l0_log(hdata%c2_to_c1,il0))
+            mask_c2 = hdata%c1l0_log(hdata%c2_to_c1,il0)
+            if (any(mask_c2)) then
+               lon_c2 = geom%lon(hdata%c2_to_c0)
+               lat_c2 = geom%lat(hdata%c2_to_c0)
+               call kdtree%create(mpl,nam%nc2,lon_c2,lat_c2,mask=mask_c2)
                do ic2=1,nam%nc2
                   ic1 = hdata%c2_to_c1(ic2)
                   ic0 = hdata%c2_to_c0(ic2)
@@ -811,7 +811,9 @@ if (nam%new_vbal.or.nam%new_lct.or.(nam%new_hdiag.and.(nam%var_diag.or.nam%local
    ! Compute sampling mesh
    write(mpl%unit,'(a7,a)') '','Compute sampling mesh'
    call flush(mpl%unit)
-   call hdata%mesh%create(mpl,rng,nam%nc2,geom%lon(hdata%c2_to_c0),geom%lat(hdata%c2_to_c0))
+   lon_c2 = geom%lon(hdata%c2_to_c0)
+   lat_c2 = geom%lat(hdata%c2_to_c0)
+   call hdata%mesh%create(mpl,rng,nam%nc2,lon_c2,lat_c2)
 
    ! Compute triangles list
    write(mpl%unit,'(a7,a)') '','Compute triangles list '
@@ -837,7 +839,10 @@ if (nam%new_vbal.or.nam%new_lct.or.(nam%new_hdiag.and.(nam%var_diag.or.nam%local
          ! Compute local masks
          write(mpl%unit,'(a7,a)') '','Compute local masks'
          call flush(mpl%unit)
-         call kdtree%create(mpl,nam%nc1,geom%lon(hdata%c1_to_c0),geom%lat(hdata%c1_to_c0),mask=any(hdata%c1l0_log,dim=2))
+         lon_c1 = geom%lon(hdata%c1_to_c0)
+         lat_c1 = geom%lat(hdata%c1_to_c0)
+         mask_c1 = any(hdata%c1l0_log,dim=2)
+         call kdtree%create(mpl,nam%nc1,lon_c1,lat_c1,mask=mask_c1)
          do ic2=1,nam%nc2
             ! Inidices
             ic1 = hdata%c2_to_c1(ic2)
@@ -870,6 +875,8 @@ if (nam%new_vbal.or.nam%new_lct.or.(nam%new_hdiag.and.(nam%var_diag.or.nam%local
       vbot = 1
       vtop = geom%nl0
 
+      ! Compute grid interpolation
+      write(mpl%unit,'(a7,a)') '','Compute grid interpolation'
       do il0i=1,geom%nl0i
          ! Compute grid interpolation
          write(hdata%hfull(il0i)%prefix,'(a,i3.3)') 'hfull_',il0i
@@ -888,11 +895,9 @@ if (nam%sam_write) then
 
    ! Write rh_c0
    if (trim(nam%draw_type)=='random_coast') then
-      do il0=1,geom%nl0
-         call mpl%glb_to_loc(geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,hdata%rh_c0(:,il0),geom%nc0a,rh_c0_loc(:,il0))
-      end do
+      call mpl%glb_to_loc(geom%nl0,geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,hdata%rh_c0,geom%nc0a,rh_c0a)
       filename = trim(nam%prefix)//'_sampling_rh_c0'
-      call io%fld_write(mpl,nam,geom,filename,'rh_c0',rh_c0_loc)
+      call io%fld_write(mpl,nam,geom,filename,'rh_c0',rh_c0a)
    end if
 end if
 
@@ -951,15 +956,11 @@ integer :: ic0,ic1,il0,fac,np,ip
 integer :: nn_index(1)
 real(kind_real) :: nn_dist(1)
 real(kind_real),allocatable :: lon(:),lat(:)
-logical :: mask_c0(geom%nc0)
 character(len=5) :: ic1char
 type(kdtree_type) :: kdtree
 
-! Initialize mask
-mask_c0 = any(geom%mask,dim=2)
-
 ! Compute subset
-if (nam%nc1<maxval(count(geom%mask,dim=1))) then
+if (nam%nc1<maxval(geom%nc0_mask)) then
    if (mpl%main) then
       write(mpl%unit,'(a7,a)',advance='no') '','Compute horizontal subset C1: '
       call flush(mpl%unit)
@@ -968,17 +969,17 @@ if (nam%nc1<maxval(count(geom%mask,dim=1))) then
          if (trim(nam%draw_type)=='random_uniform') then
             ! Random draw
             do ic0=1,geom%nc0
-               if (any(geom%mask(ic0,:))) hdata%rh_c0(ic0,1) = 1.0
+               if (geom%mask_hor_c0(ic0)) hdata%rh_c0(ic0,1) = 1.0
             end do
          elseif (trim(nam%draw_type)=='random_coast') then
             ! More points around coasts
             do ic0=1,geom%nc0
-               if (any(geom%mask(ic0,:))) hdata%rh_c0(ic0,1) = 0.0
+               if (geom%mask_hor_c0(ic0)) hdata%rh_c0(ic0,1) = 0.0
             end do
             do il0=1,geom%nl0
-               call kdtree%create(mpl,geom%nc0,geom%lon,geom%lat,mask=.not.geom%mask(:,il0))
+               call kdtree%create(mpl,geom%nc0,geom%lon,geom%lat,mask=.not.geom%mask_c0(:,il0))
                do ic0=1,geom%nc0
-                  if (geom%mask(ic0,il0)) then
+                  if (geom%mask_c0(ic0,il0)) then
                      call kdtree%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0),1,nn_index,nn_dist)
                      hdata%rh_c0(ic0,1) = hdata%rh_c0(ic0,1)+exp(-nn_dist(1)/Lcoast)
                   else
@@ -991,7 +992,7 @@ if (nam%nc1<maxval(count(geom%mask,dim=1))) then
          end if
 
          ! Initialize sampling
-         call rng%initialize_sampling(mpl,geom%nc0,geom%lon,geom%lat,mask_c0,hdata%rh_c0(:,1),nam%ntry,nam%nrep, &
+         call rng%initialize_sampling(mpl,geom%nc0,geom%lon,geom%lat,geom%mask_hor_c0,hdata%rh_c0(:,1),nam%ntry,nam%nrep, &
        & nam%nc1,hdata%c1_to_c0)
       case ('icosahedron')
          ! Icosahedron grid
@@ -1016,7 +1017,7 @@ if (nam%nc1<maxval(count(geom%mask,dim=1))) then
             ic0 = nn_index(1)
 
             ! Check mask
-            if (mask_c0(ic0)) then
+            if (geom%mask_hor_c0(ic0)) then
                ic1 = ic1+1
                if (ic1<=nam%nc1) hdata%c1_to_c0(ic1) = ic0
             end if
@@ -1044,7 +1045,7 @@ if (nam%nc1<maxval(count(geom%mask,dim=1))) then
 else
    ic1 = 0
    do ic0=1,geom%nc0
-      if (any(geom%mask(ic0,:))) then
+      if (geom%mask_hor_c0(ic0)) then
          ic1 = ic1+1
          hdata%c1_to_c0(ic1) = ic0
       end if
@@ -1088,11 +1089,11 @@ if (nam%nc3>1) then
    end do
 
    ! Define valid nodes vector
-   nvc0 = count(any(geom%mask,dim=2))
+   nvc0 = count(geom%mask_hor_c0)
    allocate(vic0(nvc0))
    ivc0 = 0
    do ic0=1,geom%nc0
-      if (any(geom%mask(ic0,:))) then
+      if (geom%mask_hor_c0(ic0)) then
          ivc0 = ivc0+1
          vic0(ivc0) = ic0
       end if
@@ -1233,7 +1234,7 @@ do ic1_loc=1,nc1_loc(mpl%myproc)
          jc0 = nn_index(ic3)
          hdata%c1c3_to_c0(ic1,ic3) = nn_index(ic3)
          do il0=1,geom%nl0
-            hdata%c1c3l0_log(ic1,ic3,il0) = geom%mask(jc0,il0)
+            hdata%c1c3l0_log(ic1,ic3,il0) = geom%mask_c0(jc0,il0)
          end do
       end do
 
@@ -1401,7 +1402,7 @@ logical :: valid
 
 ! First point
 do il0=1,geom%nl0
-   hdata%c1l0_log(:,il0) = geom%mask(hdata%c1_to_c0,il0)
+   hdata%c1l0_log(:,il0) = geom%mask_c0(hdata%c1_to_c0,il0)
 end do
 
 ! Second point
@@ -1417,7 +1418,7 @@ do il0=1,geom%nl0
 
          if (valid) then
             ! Check mask
-            valid = geom%mask(ic0,il0).and.geom%mask(jc0,il0)
+            valid = geom%mask_c0(ic0,il0).and.geom%mask_c0(jc0,il0)
 
             ! Check mask bounds
             if (nam%mask_check.and.valid) call geom%check_arc(il0,geom%lon(ic0),geom%lat(ic0),geom%lon(jc0),geom%lat(jc0),valid)
@@ -1733,33 +1734,33 @@ type(geom_type),intent(in) :: geom       !< Geometry
 ! Local variables
 integer :: jc3,ic0,ic0a,ic0c,ic1,ic1a,its,il0,d_n_s_max,d_n_s_max_loc,i_s,i_s_loc
 integer,allocatable :: interpd_lg(:,:,:)
-real(kind_real),allocatable :: displ_lon(:),displ_lat(:),lon_c1(:),lat_c1(:)
+real(kind_real),allocatable :: displ_lon(:,:),displ_lat(:,:),lon_c1(:),lat_c1(:)
 type(linop_type),allocatable :: dfull(:,:)
 
 if (nam%displ_diag) then
    ! Allocation
    allocate(dfull(geom%nl0,nam%nts))
-   allocate(displ_lon(geom%nc0))
-   allocate(displ_lat(geom%nc0))
+   allocate(displ_lon(geom%nc0,geom%nl0))
+   allocate(displ_lat(geom%nc0,geom%nl0))
    allocate(lon_c1(nam%nc1))
    allocate(lat_c1(nam%nc1))
 
    ! Prepare displacement interpolation
    do its=1,nam%nts
-      do il0=1,geom%nl0
-         ! Local to global
-         call mpl%loc_to_glb(geom%nc0a,hdata%displ_lon(:,il0,its),geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,.true.,displ_lon)
-         call mpl%loc_to_glb(geom%nc0a,hdata%displ_lat(:,il0,its),geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,.true.,displ_lat)
+      ! Local to global
+      call mpl%loc_to_glb(geom%nl0,geom%nc0a,hdata%displ_lon(:,:,its),geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,.true.,displ_lon)
+      call mpl%loc_to_glb(geom%nl0,geom%nc0a,hdata%displ_lat(:,:,its),geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,.true.,displ_lat)
 
+      do il0=1,geom%nl0
          ! Copy Sc1 points
          do ic1=1,nam%nc1
             ic0 = hdata%c1_to_c0(ic1)
-            lon_c1(ic1) = displ_lon(ic0)
-            lat_c1(ic1) = displ_lat(ic0)
+            lon_c1(ic1) = displ_lon(ic0,il0)
+            lat_c1(ic1) = displ_lat(ic0,il0)
          end do
 
          ! Compute interpolation
-         call dfull(il0,its)%interp(mpl,geom%mesh,geom%kdtree,geom%nc0,geom%mask(:,il0),nam%nc1,lon_c1,lat_c1, &
+         call dfull(il0,its)%interp(mpl,geom%mesh,geom%kdtree,geom%nc0,geom%mask_c0(:,il0),nam%nc1,lon_c1,lat_c1, &
        & hdata%c1l0_log(:,il0),nam%diag_interp)
       end do
    end do
