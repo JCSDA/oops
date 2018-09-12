@@ -29,6 +29,7 @@ namespace eckit {
 }
 
 namespace oops {
+  class UnstructuredGrid;
   class Variables;
 }
 
@@ -60,6 +61,7 @@ class FieldsQG : public util::Printable,
   void axpy(const double &, const FieldsQG &);
   double dot_product_with(const FieldsQG &) const;
   void schur_product_with(const FieldsQG &);
+  void dirac(const eckit::Configuration &);
   void random();
 
 // Get fields values at given location
@@ -71,6 +73,11 @@ class FieldsQG : public util::Printable,
   void changeResolution(const FieldsQG &);
   void add(const FieldsQG &);
   void diff(const FieldsQG &, const FieldsQG &);
+
+// Unstructured grid
+  void ug_coord(oops::UnstructuredGrid &, const int &) const;
+  void field_to_ug(oops::UnstructuredGrid &, const int &) const;
+  void field_from_ug(const oops::UnstructuredGrid &);
 
 // Utilities
   void read(const eckit::Configuration &);

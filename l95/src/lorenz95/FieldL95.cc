@@ -17,12 +17,12 @@
 #include <string>
 
 #include "eckit/config/Configuration.h"
-#include "oops/util/Logger.h"
-
 #include "lorenz95/GomL95.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/Resolution.h"
+#include "oops/generic/UnstructuredGrid.h"
 #include "oops/util/abor1_cpp.h"
+#include "oops/util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
@@ -55,6 +55,21 @@ FieldL95::FieldL95(const FieldL95 & other, const bool copy)
 // -----------------------------------------------------------------------------
 void FieldL95::zero() {
   for (int jj = 0; jj < resol_; ++jj) x_[jj] = 0.0;
+}
+// -----------------------------------------------------------------------------
+void FieldL95::dirac(const eckit::Configuration & config) {
+// Get Diracs position
+  std::vector<int> ixdir(config.getIntVector("ixdir"));
+
+// Check
+  ASSERT(ixdir.size() > 0);
+  for (unsigned int jj = 0; jj < ixdir.size(); ++jj) {
+     ASSERT(ixdir[jj] < resol_);
+  }
+
+// Setup Dirac
+  for (int jj = 0; jj < resol_; ++jj) x_[jj] = 0.0;
+  for (unsigned int jj = 0; jj < ixdir.size(); ++jj) x_[ixdir[jj]] = 1.0;
 }
 // -----------------------------------------------------------------------------
 void FieldL95::generate(const eckit::Configuration & conf) {
@@ -151,6 +166,18 @@ void FieldL95::interpAD(const LocsL95 & locs, const GomL95 & gom) {
     if (ii == resol_) ii = 0;
     x_[ii] += gom[gom.current()+jobs];
   }
+}
+// -----------------------------------------------------------------------------
+void FieldL95::ug_coord(oops::UnstructuredGrid & ug, const int & colocated) const {
+  ABORT("FieldL95 unstructured grid setup not implemented.");
+}
+// -----------------------------------------------------------------------------
+void FieldL95::field_to_ug(oops::UnstructuredGrid & ug, const int & colocated) const {
+  ABORT("FieldL95 conversion to unstructured grid not implemented.");
+}
+// -----------------------------------------------------------------------------
+void FieldL95::field_from_ug(const oops::UnstructuredGrid & ug) {
+  ABORT("FieldL95 conversion from unstructured grid not implemented.");
 }
 // -----------------------------------------------------------------------------
 void FieldL95::read(std::ifstream & fin) {

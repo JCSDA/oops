@@ -19,6 +19,7 @@
 
 #include "oops/interface/LinearModelBase.h"
 
+#include "oops/base/Variables.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -63,6 +64,7 @@ class TLML95: public oops::LinearModelBase<L95Traits>,
 /// Other utilities
   const util::Duration & timeResolution() const override {return tstep_;}
   const Resolution & resolution() const {return resol_;}
+  const oops::Variables & variables() const {return vars_;}
 
  private:
   const ModelTrajectory * getTrajectory(const util::DateTime &) const;
@@ -79,6 +81,7 @@ class TLML95: public oops::LinearModelBase<L95Traits>,
   const double dt_;
   std::map< util::DateTime, ModelTrajectory * > traj_;
   const ModelL95 lrmodel_;
+  const oops::Variables vars_;
 };
 
 // -----------------------------------------------------------------------------

@@ -29,6 +29,7 @@ namespace eckit {
 }
 
 namespace oops {
+  class UnstructuredGrid;
   class Variables;
 }
 
@@ -63,6 +64,7 @@ class IncrementL95 : public util::Printable,
   void diff(const StateL95 &, const StateL95 &);
   void zero();
   void zero(const util::DateTime &);
+  void dirac(const eckit::Configuration &);
   IncrementL95 & operator =(const IncrementL95 &);
   IncrementL95 & operator+=(const IncrementL95 &);
   IncrementL95 & operator-=(const IncrementL95 &);
@@ -77,6 +79,11 @@ class IncrementL95 : public util::Printable,
                    GomL95 &, const Nothing &) const;
   void getValuesAD(const LocsL95 &, const oops::Variables &,
                    const GomL95 &, const Nothing &);
+
+/// Unstructured grid
+  void ug_coord(oops::UnstructuredGrid &, const int &) const;
+  void field_to_ug(oops::UnstructuredGrid &, const int &) const;
+  void field_from_ug(const oops::UnstructuredGrid &);
 
 // Utilities
   void read(const eckit::Configuration &);

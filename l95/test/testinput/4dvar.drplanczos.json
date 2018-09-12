@@ -67,6 +67,7 @@
           "resol": 40
         },
         "linearmodel": {
+          "varchange": "Identity",
           "version": "L95TLM",
           "tstep": "PT1H30M",
           "trajectory": {
@@ -86,6 +87,7 @@
           "resol": 40
         },
         "linearmodel": {
+          "varchange": "Identity",
           "version": "L95TLM",
           "tstep": "PT1H30M",
           "trajectory": {

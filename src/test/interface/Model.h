@@ -64,14 +64,14 @@ template <typename MODEL> class ModelFixture : private boost::noncopyable {
     const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "Geometry");
     resol_.reset(new Geometry_(resolConfig));
 
-    const eckit::LocalConfiguration iniConf(TestEnvironment::config(), "State");
-    xref_.reset(new State_(*resol_, iniConf));
-
     const eckit::LocalConfiguration biasConf(TestEnvironment::config(), "ModelBias");
     bias_.reset(new ModelAux_(*resol_, biasConf));
 
     const eckit::LocalConfiguration conf(TestEnvironment::config(), "Model");
     model_.reset(new Model_(*resol_, conf));
+
+    const eckit::LocalConfiguration iniConf(TestEnvironment::config(), "State");
+    xref_.reset(new State_(*resol_, model_->variables(), iniConf));
   }
 
   ~ModelFixture<MODEL>() {}

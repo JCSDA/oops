@@ -27,7 +27,7 @@
   "members": "10",
   "forecast_length": "P1DT12H",
   "output": {
-    "first": "PT24H",
+    "first": "P1D",
     "frequency": "PT1H",
     "datadir": "Data",
     "exp": "test",

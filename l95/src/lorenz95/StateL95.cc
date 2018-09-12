@@ -23,13 +23,14 @@
 #include "lorenz95/ModelTrajectory.h"
 #include "lorenz95/Nothing.h"
 #include "lorenz95/Resolution.h"
+#include "oops/generic/UnstructuredGrid.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
-class Variables;
+  class Variables;
 }
 
 namespace lorenz95 {
@@ -44,7 +45,8 @@ StateL95::StateL95(const Resolution & resol, const oops::Variables &,
   oops::Log::trace() << "StateL95::StateL95 created" << std::endl;
 }
 // -----------------------------------------------------------------------------
-StateL95::StateL95(const Resolution & resol, const eckit::Configuration & conf)
+StateL95::StateL95(const Resolution & resol, const oops::Variables &,
+                   const eckit::Configuration & conf)
   : fld_(resol), time_(conf.getString("date"))
 {
   oops::Log::trace() << "StateL95::StateL95 conf " << conf << std::endl;
@@ -165,5 +167,16 @@ void StateL95::print(std::ostream & os) const {
   os << std::endl << fld_;
 }
 // -----------------------------------------------------------------------------
+/// For accumulator
+// -----------------------------------------------------------------------------
+void StateL95::zero() {
+  fld_.zero();
+}
+// -----------------------------------------------------------------------------
+void StateL95::accumul(const double & zz, const StateL95 & xx) {
+  fld_.axpy(zz, xx.fld_);
+}
+// -----------------------------------------------------------------------------
+
 
 }  // namespace lorenz95

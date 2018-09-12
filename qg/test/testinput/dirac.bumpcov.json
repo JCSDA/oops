@@ -1,0 +1,66 @@
+{
+  "logging": {
+    "categories": "Info, Test, Warning, Error"
+  },
+  "resolution": {
+    "nx": "40",
+    "ny": "20",
+    "bc": "1"
+  },
+  "variables": {
+    "variables": ["x"]
+  },
+  "model": {
+    "tstep": "PT1H",
+    "top_layer_depth": "5500.0",
+    "bottom_layer_depth": "4500.0"
+  },
+  "initial": {
+    "filename": "Data/truth.fc.2009-12-15T00:00:00Z.P17D",
+    "date": "2010-01-01T00:00:00Z"
+  },
+  "Covariance": {
+    "covariance": "BUMP",
+    "date": "2010-01-01T00:00:00Z",
+    "prefix" : "bump",
+    "strategy" : "common",
+    "new_param" : 1,
+    "new_nicas" : 1,
+    "ntry" : 3,
+    "nrep" : 2,
+    "lsqrt" : 1,
+    "resol" : 10.0,
+    "nicas_interp" : "bilin",
+    "network" : 0,
+    "mpicom" : 2,
+    "advmode" : 0,
+    "forced_radii" : 1,
+    "rh" : 2800.0e3,
+    "rv" : 2.407,
+    "variable_changes": [ 
+       {
+         "varchange": "ErrStdDevQG",
+         "inputVariables": {
+            "variables": ["x"]
+          },
+         "outputVariables": {
+            "variables": ["x"]
+         },
+         "standard_deviation": "0.8"
+       }
+    ]
+  },
+  "dirac": {
+    "ndir": 1,
+    "ixdir(1)": 20,
+    "iydir(1)": 10,
+    "ildir": 1,
+    "ifdir": 1
+  },
+  "output_B": {
+    "datadir": "Data",
+    "exp": "B_bumpcov",
+    "type": "an",
+    "date": "2010-01-01T00:00:00Z"
+  }
+}

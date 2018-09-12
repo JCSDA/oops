@@ -75,8 +75,8 @@ template <typename MODEL> class HofX : public Application {
 //  Setup initial state
     const eckit::LocalConfiguration initialConfig(fullConfig, "Initial Condition");
     Log::info() << "Initial configuration is:" << initialConfig << std::endl;
-    State_ xx(resol, initialConfig);
-    Log::test() << "Initial state: " << xx.norm() << std::endl;
+    State_ xx(resol, model.variables(), initialConfig);
+    Log::test() << "Initial state: " << xx << std::endl;
 
 //  Setup augmented state
     ModelAux_ moderr(resol, initialConfig);
@@ -112,7 +112,7 @@ template <typename MODEL> class HofX : public Application {
 //  Compute H(x)
     model.forecast(xx, moderr, winlen, post);
     Log::info() << "HofX: Finished observation computation." << std::endl;
-    Log::test() << "Final state: " << xx.norm() << std::endl;
+    Log::test() << "Final state: " << xx << std::endl;
 
 //  Save H(x)
     boost::scoped_ptr<Observations_> yobs(pobs->release());

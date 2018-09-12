@@ -247,55 +247,40 @@ enddo
 end subroutine c_qg_gom_diff
 
 ! ------------------------------------------------------------------------------
-!> QG GeoVaLs Normalization Operator
-!!
-!! \details
-!!
-!! This is a normalization operator that first computes the normalization 
-!! factor for each variable based on the rms amplitude of that variable across 
-!! all locations in the reference GeoVaLs object (other).  Then each element of 
-!! the input GeoVals object (self) is divided by these normalization factors.
-!!
-!!
+!> QG GeoVaLs division Operator
 
-subroutine c_qg_gom_normalize(c_key_self, c_key_other) bind(c,name='qg_gom_normalize_f90')
+subroutine c_qg_gom_divide(c_key_self, c_key_other) bind(c,name='qg_gom_divide_f90')
 implicit none
 integer(c_int), intent(in) :: c_key_self
 integer(c_int), intent(in) :: c_key_other
 type(qg_goms), pointer :: self
 type(qg_goms), pointer :: other
-real(kind_real) :: over_nloc, vrms, norm
-integer :: iloc, ivar
+real(kind_real) :: tol
+integer :: jloc, jvar, ii
 
 call qg_goms_registry%get(c_key_self, self)
 call qg_goms_registry%get(c_key_other, other)
 
-over_nloc = 1.0_kind_real / real(other%nobs,kind=kind_real)
+tol = epsilon(tol)
+ii=0
 
-do ivar = 1, self%nvar
-
-   !> Compute normalization factors for the errors based on the rms amplitude of 
-   !! each variable across all of the selected locations.  Use the "other" GeoVaLs
-   !! object as a reference, since this will typically be the exact analytic answer
-   vrms = 0.0_kind_real
-   do iloc = 1, other%nobs
-      vrms = vrms + other%values(ivar,iloc)**2
-   enddo
-
-   if (vrms > 0.0_kind_real) then
-      norm = 1.0_kind_real / sqrt(vrms*over_nloc)
-   else
-      norm = 0.0_kind_real
-   endif
-
-   ! second pass through the locations to compute the normalized error
-   do iloc = 1, self%nobs
-      self%values(ivar,iloc) = norm*self%values(ivar,iloc)
-   enddo
-
+do jvar = 1, self%nvar
+  write(*,*)'qg_gom_divide variable =', trim(self%variables(jvar))
+  do jloc = 1, self%nobs
+    if (abs(other%values(jvar,jloc)) > tol) then
+      write(*,*)'qg_gom_divide self, other = ',self%values(jvar,jloc), other%values(jvar,jloc), &
+                                             & self%values(jvar,jloc) / other%values(jvar,jloc)
+      self%values(jvar,jloc) = self%values(jvar,jloc) / other%values(jvar,jloc)
+    else
+      write(*,*)'qg_gom_divide self, other = ',self%values(jvar,jloc), other%values(jvar,jloc)
+      self%values(jvar,jloc) = 0.0
+      ii=ii+1
+    endif
+  enddo
 enddo
+write(*,*)'qg_gom_divide ii = ',ii, self%nvar*self%nobs, tol
 
-end subroutine c_qg_gom_normalize
+end subroutine c_qg_gom_divide
 
 ! ------------------------------------------------------------------------------
 
@@ -535,7 +520,7 @@ height(1) = d2 + 0.5_kind_real*d1
 
 do iloc = 1, locs%nloc
 
-   ! First get the locations and convert to latitude (degrees), longiude (degrees) and height (meters)
+   ! First get the locations and convert to latitude (rad), longiude (rad) and height (meters)
 
    klon = (locs%xyz(1,iloc)*2.0_kind_real - 1.0_kind_real)*pi
    klat = (locs%xyz(2,iloc) - 0.5_kind_real)*pi

@@ -1,10 +1,13 @@
 list( APPEND qg_test_input
   testinput/3dvar.json
+  testinput/3dvar.chvar.json
   testinput/3dfgat.json
   testinput/4densvar.json
   testinput/4dvar.alpha.json
+  testinput/4dvar.bumpcov.json
   testinput/4dforcing.json
   testinput/4dhybrid.json
+  testinput/4dhybridbump.json
   testinput/4dsaddlepoint.json
   testinput/4dvar.dripcg.json
   testinput/4dvar.drpcglmp.json
@@ -14,6 +17,14 @@ list( APPEND qg_test_input
   testinput/4dvar.obsbias.json
   testinput/4dvar.rpcg.json
   testinput/dfi.json
+  testinput/dirac.bumpcov.json
+  testinput/dirac.qgcov.json
+  testinput/dirac.bumploc.json
+  testinput/parametersbump.cov.json
+  testinput/parametersbump.lct.json
+  testinput/parametersbump.loc.json
+  testinput/parametersbump.readloc.json
+  testinput/parametersbump.vbal.json
   testinput/forecast.json
   testinput/genenspert.json
   testinput/hofx.json
@@ -34,8 +45,10 @@ list( APPEND qg_testoutput
   testoutput/3dfgat.test
   testoutput/4densvar.test
   testoutput/4dvar.alpha.test
+  testoutput/4dvar.bumpcov.test
   testoutput/4dforcing.test
   testoutput/4dhybrid.test
+  testoutput/4dhybridbump.test
   testoutput/4dsaddlepoint.test
   testoutput/4dvar.dripcg.test
   testoutput/4dvar.drpcglmp.test
@@ -45,6 +58,14 @@ list( APPEND qg_testoutput
   testoutput/4dvar.obsbias.test
   testoutput/4dvar.rpcg.test
   testoutput/dfi.test
+  testoutput/dirac.bumpcov.test
+  testoutput/dirac.qgcov.test
+  testoutput/dirac.bumploc.test
+  testoutput/parametersbump.cov.test
+  testoutput/parametersbump.lct.test
+  testoutput/parametersbump.loc.test
+  testoutput/parametersbump.readloc.test
+  testoutput/parametersbump.vbal.test
   testoutput/forecast.test
   testoutput/genenspert.test
   testoutput/hofx.test
@@ -267,6 +288,30 @@ ecbuild_add_test( TARGET  test_qg_localization
                   ARGS    "testinput/interfaces.json"
                   LIBS    qg )
 
+# Application test_qg_linearvariablechange requires test_qg_parameters_bump_vbal output, which requires test_qg_genenspert output
+
+ecbuild_add_test( TARGET test_qg_genenspert
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_genpert.x testinput/genenspert.json"
+                       testoutput/genenspert.test
+                  DEPENDS qg_genpert.x )
+
+ecbuild_add_test( TARGET test_qg_parameters_bump_vbal
+                  MPI    1
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_parameters.x testinput/parametersbump.vbal.json"
+                       testoutput/parametersbump.vbal.test
+                  DEPENDS qg_parameters.x )
+
+ecbuild_add_test( TARGET  test_qg_linearvariablechange
+                  MPI    1
+                  BOOST
+                  SOURCES executables/TestLinearVariableChange.cc
+                  ARGS    "testinput/interfaces.json"
+                  LIBS    qg )
+
 # Test oops classes with QG
 
 
@@ -286,11 +331,27 @@ ecbuild_add_test( TARGET test_qg_3dvar
                        testoutput/3dvar.test
                   DEPENDS qg_4dvar.x )
 
+ecbuild_add_test( TARGET test_qg_3dvar_chvar
+                  MPI    1
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/3dvar.chvar.json"
+                       testoutput/3dvar.test
+                  DEPENDS qg_4dvar.x )
+
 ecbuild_add_test( TARGET test_qg_3dfgat
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/3dfgat.json"
                        testoutput/3dfgat.test
+                  DEPENDS qg_4dvar.x )
+
+ecbuild_add_test( TARGET test_qg_4dvar_bump_covariance
+                  MPI    1
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/4dvar.bumpcov.json"
+                       testoutput/4dvar.bumpcov.test
                   DEPENDS qg_4dvar.x )
 
 ecbuild_add_test( TARGET test_qg_4dvar_drpcglmp
@@ -321,14 +382,12 @@ ecbuild_add_test( TARGET test_qg_4dvar_dripcg
                        testoutput/4dvar.dripcg.test
                   DEPENDS qg_4dvar.x )
 
-if( ${OOPS_SENSITIVE_TESTS} )
 ecbuild_add_test( TARGET test_qg_4dvar_ipcg
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/4dvar.ipcg.json"
                        testoutput/4dvar.ipcg.test
                   DEPENDS qg_4dvar.x )
-endif()
 
 ecbuild_add_test( TARGET test_qg_4dvar_rpcg
                   TYPE SCRIPT
@@ -358,19 +417,19 @@ ecbuild_add_test( TARGET test_qg_4dvar_saddlepoint
                        testoutput/4dsaddlepoint.test
                   DEPENDS qg_4dvar.x )
 
-if( ${OOPS_SENSITIVE_TESTS} )
-ecbuild_add_test( TARGET test_qg_genenspert
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_genpert.x testinput/genenspert.json"
-                       testoutput/genenspert.test
-                  DEPENDS qg_genpert.x )
-
 ecbuild_add_test( TARGET test_qg_4dvar_hybrid
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/4dhybrid.json"
                        testoutput/4dhybrid.test
+                  DEPENDS qg_4dvar.x )
+
+ecbuild_add_test( TARGET test_qg_4dvar_hybrid_bump
+                  MPI    1
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/4dhybridbump.json"
+                       testoutput/4dhybridbump.test
                   DEPENDS qg_4dvar.x )
 
 ecbuild_add_test( TARGET test_qg_4densvar
@@ -386,7 +445,61 @@ ecbuild_add_test( TARGET test_qg_alpha
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/4dvar.alpha.json"
                        testoutput/4dvar.alpha.test
                   DEPENDS qg_4dvar.x )
-endif()
+
+ecbuild_add_test( TARGET test_qg_dirac_bumpcov
+                  MPI    1
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_dirac.x testinput/dirac.bumpcov.json"
+                       testoutput/dirac.bumpcov.test
+                  DEPENDS qg_dirac.x )
+
+ecbuild_add_test( TARGET test_qg_dirac_bumploc
+                  MPI    1
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_dirac.x testinput/dirac.bumploc.json"
+                       testoutput/dirac.bumploc.test
+                  DEPENDS qg_dirac.x )
+
+ecbuild_add_test( TARGET test_qg_dirac_qgcov
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_dirac.x testinput/dirac.qgcov.json"
+                       testoutput/dirac.qgcov.test
+                  DEPENDS qg_dirac.x )
+
+ecbuild_add_test( TARGET test_qg_parameters_bump_cov
+                  MPI    1
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_parameters.x testinput/parametersbump.cov.json"
+                       testoutput/parametersbump.cov.test
+                  DEPENDS qg_parameters.x )
+
+ecbuild_add_test( TARGET test_qg_parameters_bump_lct
+                  MPI    1
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_parameters.x testinput/parametersbump.lct.json"
+                       testoutput/parametersbump.lct.test
+                  DEPENDS qg_parameters.x )
+
+ecbuild_add_test( TARGET test_qg_parameters_bump_loc
+                  MPI    1
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_parameters.x testinput/parametersbump.loc.json"
+                       testoutput/parametersbump.loc.test
+                  DEPENDS qg_parameters.x )
+
+ecbuild_add_test( TARGET test_qg_parameters_bump_readloc
+                  MPI    1
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_parameters.x testinput/parametersbump.readloc.json"
+                       testoutput/parametersbump.readloc.test
+                  DEPENDS qg_parameters.x )
 
 ecbuild_add_test( TARGET test_qg_dfi
                   TYPE SCRIPT

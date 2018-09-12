@@ -30,7 +30,8 @@ static oops::LinearModelMaker<QgTraits, TlmQG> makerQGTLM_("QgTLM");
 // -----------------------------------------------------------------------------
 TlmQG::TlmQG(const GeometryQG & resol, const eckit::Configuration & tlConf)
   : keyConfig_(0), tstep_(), resol_(resol), traj_(),
-    lrmodel_(resol_, eckit::LocalConfiguration(tlConf, "trajectory"))
+    lrmodel_(resol_, eckit::LocalConfiguration(tlConf, "trajectory")),
+    linvars_(std::vector<std::string>{"x", "q", "u", "v"})
 {
   tstep_ = util::Duration(tlConf.getString("tstep"));
 
@@ -66,7 +67,6 @@ void TlmQG::setTrajectory(const StateQG & xx, StateQG & xlr, const ModelBias & b
 }
 // -----------------------------------------------------------------------------
 void TlmQG::initializeTL(IncrementQG & dx) const {
-  dx.activateModel();
   ASSERT(dx.fields().isForModel(false));
   qg_prepare_integration_tl_f90(keyConfig_, dx.fields().toFortran());
   oops::Log::debug() << "TlmQG::initializeTL" << dx.fields() << std::endl;
@@ -86,12 +86,10 @@ void TlmQG::stepTL(IncrementQG & dx, const ModelBiasIncrement &) const {
 }
 // -----------------------------------------------------------------------------
 void TlmQG::finalizeTL(IncrementQG & dx) const {
-  dx.deactivateModel();
   oops::Log::debug() << "TlmQG::finalizeTL" << dx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------
 void TlmQG::initializeAD(IncrementQG & dx) const {
-  dx.activateModel();
   ASSERT(dx.fields().isForModel(false));
   oops::Log::debug() << "TlmQG::initializeAD" << dx.fields() << std::endl;
 }
@@ -111,7 +109,6 @@ void TlmQG::stepAD(IncrementQG & dx, ModelBiasIncrement &) const {
 // -----------------------------------------------------------------------------
 void TlmQG::finalizeAD(IncrementQG & dx) const {
   qg_prepare_integration_ad_f90(keyConfig_, dx.fields().toFortran());
-  dx.deactivateModel();
   oops::Log::debug() << "TlmQG::finalizeAD" << dx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------

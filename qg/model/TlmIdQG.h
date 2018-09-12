@@ -17,6 +17,7 @@
 
 #include "oops/interface/LinearModelBase.h"
 
+#include "oops/base/Variables.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -58,6 +59,7 @@ class TlmIdQG: public oops::LinearModelBase<QgTraits>,
 /// Other utilities
   const util::Duration & timeResolution() const override {return tstep_;}
   const GeometryQG & resolution() const {return resol_;}
+  const oops::Variables & variables() const override {return linvars_;}
 
  private:
   void print(std::ostream &) const override;
@@ -66,6 +68,7 @@ class TlmIdQG: public oops::LinearModelBase<QgTraits>,
   int keyConfig_;
   util::Duration tstep_;
   const GeometryQG resol_;
+  const oops::Variables linvars_;
 };
 // -----------------------------------------------------------------------------
 

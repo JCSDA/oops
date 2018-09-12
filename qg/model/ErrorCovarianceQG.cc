@@ -26,7 +26,8 @@ namespace qg {
 // -----------------------------------------------------------------------------
 
 ErrorCovarianceQG::ErrorCovarianceQG(const GeometryQG & resol, const oops::Variables &,
-                                     const eckit::Configuration & conf, const StateQG &) {
+                                     const eckit::Configuration & conf,
+                                     const StateQG &, const StateQG &) {
   time_ = util::DateTime(conf.getString("date"));
   const eckit::Configuration * configc = &conf;
   qg_b_setup_f90(keyFtnConfig_, &configc, resol.toFortran());
@@ -42,15 +43,9 @@ ErrorCovarianceQG::~ErrorCovarianceQG() {
 
 // -----------------------------------------------------------------------------
 
-void ErrorCovarianceQG::linearize(const StateQG &, const GeometryQG & resol) {
-  geom_.reset(new GeometryQG(resol));
-}
-
-// -----------------------------------------------------------------------------
-
 void ErrorCovarianceQG::multiply(const IncrementQG & dxin, IncrementQG & dxout) const {
   qg_b_mult_f90(keyFtnConfig_, dxin.fields().toFortran(),
-                            dxout.fields().toFortran());
+                               dxout.fields().toFortran());
 }
 
 // -----------------------------------------------------------------------------

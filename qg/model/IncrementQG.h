@@ -31,6 +31,7 @@ namespace eckit {
 }
 
 namespace oops {
+  class UnstructuredGrid;
   class Variables;
 }
 
@@ -76,6 +77,7 @@ class IncrementQG : public oops::GeneralizedDepartures,
   double dot_product_with(const IncrementQG &) const;
   void schur_product_with(const IncrementQG &);
   void random();
+  void dirac(const eckit::Configuration &);
 
 /// Get increment values at observation locations
   void getValuesTL(const LocationsQG &, const oops::Variables &,
@@ -91,6 +93,11 @@ class IncrementQG : public oops::GeneralizedDepartures,
   util::DateTime & validTime() {return fields_->time();}
   void updateTime(const util::Duration & dt) {fields_->time() += dt;}
 
+/// Unstructured grid
+  void ug_coord(oops::UnstructuredGrid &, const int &) const;
+  void field_to_ug(oops::UnstructuredGrid &, const int &) const;
+  void field_from_ug(const oops::UnstructuredGrid &);
+
 /// Access to fields
   FieldsQG & fields() {return *fields_;}
   const FieldsQG & fields() const {return *fields_;}
@@ -100,9 +107,6 @@ class IncrementQG : public oops::GeneralizedDepartures,
   }
 
 /// Other
-  void activateModel();
-  void deactivateModel();
-
   void accumul(const double &, const StateQG &);
 
 /// Data

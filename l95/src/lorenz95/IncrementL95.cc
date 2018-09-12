@@ -13,6 +13,7 @@
 #include <fstream>
 #include <string>
 
+#include "oops/generic/UnstructuredGrid.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
@@ -28,7 +29,7 @@
 #include "lorenz95/StateL95.h"
 
 namespace oops {
-class Variables;
+  class Variables;
 }
 
 namespace lorenz95 {
@@ -99,6 +100,10 @@ void IncrementL95::zero() {
 void IncrementL95::zero(const util::DateTime & vt) {
   fld_.zero();
   time_ = vt;
+}
+// -----------------------------------------------------------------------------
+void IncrementL95::dirac(const eckit::Configuration & config) {
+  fld_.dirac(config);
 }
 // -----------------------------------------------------------------------------
 void IncrementL95::axpy(const double & zz, const IncrementL95 & rhs,
@@ -190,6 +195,20 @@ void IncrementL95::getValuesTL(const LocsL95 & locs, const oops::Variables &,
 void IncrementL95::getValuesAD(const LocsL95 & locs, const oops::Variables &,
                                const GomL95 & vals, const Nothing &) {
   fld_.interpAD(locs, vals);
+}
+// -----------------------------------------------------------------------------
+/// Convert to/from unstructured grid
+// -----------------------------------------------------------------------------
+void IncrementL95::ug_coord(oops::UnstructuredGrid & ug, const int & colocated) const {
+  fld_.ug_coord(ug, colocated);
+}
+// -----------------------------------------------------------------------------
+void IncrementL95::field_to_ug(oops::UnstructuredGrid & ug, const int & colocated) const {
+  fld_.field_to_ug(ug, colocated);
+}
+// -----------------------------------------------------------------------------
+void IncrementL95::field_from_ug(const oops::UnstructuredGrid & ug) {
+  fld_.field_from_ug(ug);
 }
 // -----------------------------------------------------------------------------
 

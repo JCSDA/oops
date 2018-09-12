@@ -105,6 +105,7 @@ oops/base/PostTimer.cc
 oops/base/StateInfo.h
 oops/base/StateWriter.h
 oops/base/TrajectorySaver.h
+oops/base/LinearVariableChangeBase.h
 oops/base/Variables.h
 oops/base/Variables.cc
 oops/base/WeightedDiff.h
@@ -115,10 +116,69 @@ oops/base/WeightingFct.cc
 oops/base/instantiateCovarFactory.h
 oops/base/instantiateFilterFactory.h
 
+oops/generic/ParametersBUMP.h
+oops/generic/ErrorCovarianceBUMP.h
+oops/generic/IdVariableChange.h
+oops/generic/LocalizationBUMP.h
+oops/generic/ObsErrorDiag.h
+oops/generic/UnstructuredGrid.cc
+oops/generic/UnstructuredGrid.h
+oops/generic/oobump_f.h
+oops/generic/oobump_mod.F90
 oops/generic/dcmip_initial_conditions_test_1_2_3_v5.f90
 oops/generic/dcmip_initial_conditions_test_4_v3.f90
-oops/generic/ObsErrorDiag.h
+oops/generic/instantiateLocalizationFactory.h
 oops/generic/instantiateObsErrorFactory.h
+oops/generic/instantiateLinearVariableChangeFactory.h
+oops/generic/unstructured_grid_f.h
+oops/generic/unstructured_grid_mod.F90
+oops/generic/StatsVariableChange.h
+
+oops/generic/bump/tools_const.F90
+oops/generic/bump/tools_fit.F90
+oops/generic/bump/tools_func.F90
+oops/generic/bump/tools_icos.F90
+oops/generic/bump/tools_kinds.F90
+oops/generic/bump/tools_missing.F90
+oops/generic/bump/tools_nc.F90
+oops/generic/bump/tools_test.F90
+oops/generic/bump/type_avg_blk.F90
+oops/generic/bump/type_avg.F90
+oops/generic/bump/type_bpar.F90
+oops/generic/bump/type_bump.F90
+oops/generic/bump/type_cmat_blk.F90
+oops/generic/bump/type_cmat.F90
+oops/generic/bump/type_com.F90
+oops/generic/bump/type_cv_blk.F90
+oops/generic/bump/type_cv.F90
+oops/generic/bump/type_diag_blk.F90
+oops/generic/bump/type_diag.F90
+oops/generic/bump/type_displ.F90
+oops/generic/bump/type_ens.F90
+oops/generic/bump/type_geom.F90
+oops/generic/bump/type_hdata.F90
+oops/generic/bump/type_io.F90
+oops/generic/bump/type_kdtree.F90
+oops/generic/bump/type_lct_blk.F90
+oops/generic/bump/type_lct.F90
+oops/generic/bump/type_linop.F90
+oops/generic/bump/type_mesh.F90
+oops/generic/bump/type_minim.F90
+oops/generic/bump/type_mom_blk.F90
+oops/generic/bump/type_mom.F90
+oops/generic/bump/type_mpl.F90
+oops/generic/bump/type_nam.F90
+oops/generic/bump/type_nicas_blk.F90
+oops/generic/bump/type_nicas.F90
+oops/generic/bump/type_obsop.F90
+oops/generic/bump/type_rng.F90
+oops/generic/bump/type_timer.F90
+oops/generic/bump/type_vbal_blk.F90
+oops/generic/bump/type_vbal.F90
+oops/generic/bump/external/tools_kdtree2.F90
+oops/generic/bump/external/tools_kdtree2_pq.F90
+oops/generic/bump/external/tools_qsort.F90
+oops/generic/bump/external/tools_stripack.F90
 
 oops/interface/ErrorCovariance.h
 oops/interface/Geometry.h
@@ -144,9 +204,15 @@ oops/interface/ObsSpaceBase.h
 oops/interface/ObsVector.h
 oops/interface/ObservationSpace.h
 oops/interface/State.h
+oops/interface/LinearVariableChange.h
+
+oops/parallel/mpi/mpi.h
+oops/parallel/mpi/mpi.cc
 
 oops/runs/Application.h
+oops/runs/Dirac.h
 oops/runs/EnsForecasts.h
+oops/runs/EstimateParams.h
 oops/runs/ExternalDFI.h
 oops/runs/Forecast.h
 oops/runs/GenEnsPertB.h
@@ -206,6 +272,7 @@ test/interface/ObservationSpace.h
 test/interface/ObsOperator.h
 test/interface/ObsTestsFixture.h
 test/interface/ObsVector.h
+test/interface/LinearVariableChange.h
 test/TestEnvironment.h
 
 )
@@ -251,7 +318,6 @@ ecbuild_add_library( TARGET     oops
 
 ecbuild_add_test( TARGET oops_coding_norms
                   TYPE SCRIPT
-                  COMMAND cpplint.py
-                  ARGS --quiet --recursive ${CMAKE_CURRENT_SOURCE_DIR}
-                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/cpplint.py
+                  ARGS --quiet --recursive ${CMAKE_CURRENT_SOURCE_DIR} )
 

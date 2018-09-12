@@ -67,7 +67,6 @@ class PostBaseTLAD : private boost::noncopyable {
                     const util::Duration & step) {
     timer_.initialize(dx.validTime(), end, step);
     this->doInitializeTL(dx, end, step);
-    if (timer_.itIsTime(dx.validTime())) this->doProcessingTL(dx);
   }
 
   void processTL(const Increment_ & dx) {
@@ -93,7 +92,6 @@ class PostBaseTLAD : private boost::noncopyable {
   }
 
   void finalizeAD(Increment_ & dx) {
-    if (timer_.itIsTime(dx.validTime())) this->doProcessingAD(dx);
     this->doLastAD(dx);
   }
 

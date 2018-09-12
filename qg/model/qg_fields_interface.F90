@@ -68,6 +68,21 @@ end subroutine qg_field_zero_c
 
 ! ------------------------------------------------------------------------------
 
+subroutine qg_field_dirac_c(c_key_self,c_conf) bind(c,name='qg_field_dirac_f90')
+use iso_c_binding
+use qg_fields
+implicit none
+integer(c_int), intent(in) :: c_key_self
+type(c_ptr), intent(in)    :: c_conf !< Configuration
+type(qg_field), pointer :: self
+
+call qg_field_registry%get(c_key_self,self)
+call dirac(self,c_conf)
+
+end subroutine qg_field_dirac_c
+
+! ------------------------------------------------------------------------------
+
 subroutine qg_field_random_c(c_key_self) bind(c,name='qg_field_random_f90')
 use iso_c_binding
 use qg_fields
@@ -270,6 +285,69 @@ call qg_field_registry%get(c_key_rhs,rhs)
 call change_resol(fld,rhs)
 
 end subroutine qg_field_change_resol_c
+
+! ------------------------------------------------------------------------------
+
+subroutine qg_field_ug_coord_c(c_key_fld, c_key_ug, c_colocated) bind (c,name='qg_field_ug_coord_f90')
+use iso_c_binding
+use qg_fields
+use unstructured_grid_mod
+implicit none
+integer(c_int), intent(in) :: c_key_fld
+integer(c_int), intent(in) :: c_key_ug
+integer(c_int), intent(in) :: c_colocated
+type(qg_field), pointer :: fld
+type(unstructured_grid), pointer :: ug
+integer :: colocated
+
+call qg_field_registry%get(c_key_fld,fld)
+call unstructured_grid_registry%get(c_key_ug,ug)
+colocated = c_colocated
+
+call ug_coord(fld, ug, colocated)
+
+end subroutine qg_field_ug_coord_c
+
+! ------------------------------------------------------------------------------
+
+subroutine qg_field_field_to_ug_c(c_key_fld, c_key_ug, c_colocated) bind (c,name='qg_field_field_to_ug_f90')
+use iso_c_binding
+use qg_fields
+use unstructured_grid_mod
+implicit none
+integer(c_int), intent(in) :: c_key_fld
+integer(c_int), intent(in) :: c_key_ug
+integer(c_int), intent(in) :: c_colocated
+type(qg_field), pointer :: fld
+type(unstructured_grid), pointer :: ug
+integer :: colocated
+
+call qg_field_registry%get(c_key_fld,fld)
+call unstructured_grid_registry%get(c_key_ug,ug)
+colocated = c_colocated
+
+call field_to_ug(fld, ug, colocated)
+
+end subroutine qg_field_field_to_ug_c
+
+! ------------------------------------------------------------------------------
+
+subroutine qg_field_field_from_ug_c(c_key_fld, c_key_ug) bind (c,name='qg_field_field_from_ug_f90')
+use iso_c_binding
+use qg_fields
+use unstructured_grid_mod
+implicit none
+integer(c_int), intent(in) :: c_key_fld
+integer(c_int), intent(in) :: c_key_ug
+type(qg_field), pointer :: fld
+type(unstructured_grid), pointer :: ug
+
+call qg_field_registry%get(c_key_fld,fld)
+call unstructured_grid_registry%get(c_key_ug,ug)
+
+call field_from_ug(fld, ug)
+
+end subroutine qg_field_field_from_ug_c
 
 ! ------------------------------------------------------------------------------
 

@@ -79,6 +79,7 @@ class LinearModel : public util::Printable,
 
 // Information and diagnostics
   const util::Duration & timeResolution() const {return tlm_->timeResolution();}
+  const oops::Variables & variables() const {return tlm_->variables();}
 
  protected:
 // Run the TL forecast
@@ -142,6 +143,8 @@ void LinearModel<MODEL>::forecastTL(Increment_ & dx, const ModelAuxIncr_ & mctl,
   this->initializeTL(dx);
   cost.initializeTL(dx, end, tstep);
   post.initialize(dx, end, tstep);
+  cost.processTL(dx);
+  post.process(dx);
   if (idmodel) {
     while (dx.validTime() < end) {
       dx.updateTime(tstep);
@@ -194,6 +197,8 @@ void LinearModel<MODEL>::forecastAD(Increment_ & dx, ModelAuxIncr_ & mctl,
       post.process(dx);
     }
   }
+  cost.processAD(dx);
+  post.process(dx);
   cost.finalizeAD(dx);
   post.finalize(dx);
   this->finalizeAD(dx);

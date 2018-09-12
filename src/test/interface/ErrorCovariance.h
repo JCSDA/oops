@@ -33,6 +33,7 @@
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
+#include "oops/util/Logger.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
@@ -68,14 +69,13 @@ template <typename MODEL> class ErrorCovarianceFixture : private boost::noncopya
     ctlvars_.reset(new oops::Variables(varConfig));
 
     const eckit::LocalConfiguration fgconf(TestEnvironment::config(), "State");
-    oops::State<MODEL> xx(*resol_, fgconf);
+    oops::State<MODEL> xx(*resol_, *ctlvars_, fgconf);
 
     time_.reset(new util::DateTime(xx.validTime()));
 
 //  Setup the B matrix
     const eckit::LocalConfiguration covar(TestEnvironment::config(), "Covariance");
-    B_.reset(oops::CovarianceFactory<MODEL>::create(covar, *resol_, *ctlvars_, xx));
-    B_->linearize(xx, *resol_);
+    B_.reset(oops::CovarianceFactory<MODEL>::create(covar, *resol_, *ctlvars_, xx, xx));
   }
 
   ~ErrorCovarianceFixture<MODEL>() {}
@@ -150,7 +150,11 @@ template <typename MODEL> void testErrorCovarianceSym() {
   Test_::covariance().multiply(dy, Bdy);
   const double zz1 = dot_product(dx, Bdy);
   const double zz2 = dot_product(Bdx, dy);
-  const double tol = 1.0e-8;
+  oops::Log::info() << "<dx,Bdy>-<Bdx,dy>/<dx,Bdy>="
+                    <<  (zz1-zz2)/zz1 << std::endl;
+  oops::Log::info() << "<dx,Bdy>-<Bdx,dy>/<Bdx,dy>="
+                    <<  (zz1-zz2)/zz2 << std::endl;
+  const double tol = Test_::test().getDouble("tolerance");
   BOOST_CHECK_CLOSE(zz1, zz2, tol);
 }
 

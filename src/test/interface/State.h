@@ -20,7 +20,6 @@
 #define BOOST_TEST_ALTERNATIVE_INIT_API
 #define BOOST_TEST_DYN_LINK
 
-#include <boost/test/data/monomorphic.hpp>
 #include <boost/test/unit_test.hpp>
 
 #include <boost/noncopyable.hpp>
@@ -79,7 +78,8 @@ template <typename MODEL> void testStateConstructors() {
 
 // Test main constructor
   const eckit::LocalConfiguration conf(Test_::test(), "StateFile");
-  boost::scoped_ptr<State_> xx1(new State_(Test_::resol(), conf));
+  const oops::Variables vars(conf);
+  boost::scoped_ptr<State_> xx1(new State_(Test_::resol(), vars, conf));
 
   BOOST_CHECK(xx1.get());
   const double norm1 = xx1->norm();
@@ -146,10 +146,18 @@ template <typename MODEL> void testStateInterpolation() {
   // the config file and checks its norm
 
   const eckit::LocalConfiguration confgen(Test_::test(), "StateGenerate");
-  const State_ xx(Test_::resol(), confgen);
+  const oops::Variables statevars(confgen);
+  const State_ xx(Test_::resol(), statevars, confgen);
   const double norm = Test_::test().getDouble("norm-gen");
   const double tol = Test_::test().getDouble("tolerance");
   BOOST_CHECK_CLOSE(xx.norm(), norm, tol);
+
+  // If the analytic initial conditions are not yet implemented
+  // in the model, then bypass the interpolation test for now
+  if (!confgen.has("analytic_init")) {
+      oops::Log::warning() << "Bypassing Interpolation Test";
+      return;
+    }
 
   // Now extract the user-defined locations from the "StateTest.Locations"
   // section of the config file and use it to define a Locations object
@@ -170,7 +178,7 @@ template <typename MODEL> void testStateInterpolation() {
   xx.getValues(locs, vars, gval);
 
   // Now create another GeoVaLs object that contains the exact
-  // analytic solutions
+  // analytic solutions.
   GeoVaLs_ ref(gval);
   ref.analytic_init(locs, confgen);
 
@@ -199,7 +207,8 @@ template <typename MODEL> void testStateInterpolation() {
   oops::Log::debug() << "TestStateInterpolation() Locations: "
                      << std::endl << locs << std::endl;
 }
-// =============================================================================
+
+// -----------------------------------------------------------------------------
 
 template <typename MODEL> class State : public oops::Test {
  public:

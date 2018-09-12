@@ -67,7 +67,7 @@ template<typename MODEL> class CostFunction : private boost::noncopyable {
   typedef Increment<MODEL>           Increment_;
 
  public:
-  CostFunction(const Geometry_ &, const Model_ &);
+  CostFunction(const eckit::Configuration &, const Geometry_ &, const Model_ &);
   virtual ~CostFunction() {}
 
   double evaluate(const CtrlVar_ &,
@@ -107,13 +107,14 @@ template<typename MODEL> class CostFunction : private boost::noncopyable {
   const LinearModel_ & getTLM(const unsigned isub = 0) const {return tlm_[isub];}
 
  private:
-  virtual void addIncr(CtrlVar_ &, const CtrlInc_ &,
-                       PostProcessor<Increment_>&) const = 0;
+  virtual void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_>&) const = 0;
 
   virtual CostJbState<MODEL>  * newJb(const eckit::Configuration &, const Geometry_ &,
                                       const CtrlVar_ &) const = 0;
   virtual CostJo<MODEL>       * newJo(const eckit::Configuration &) const = 0;
   virtual CostTermBase<MODEL> * newJc(const eckit::Configuration &, const Geometry_ &) const = 0;
+  virtual void doLinearize(const Geometry_ &, const eckit::Configuration &,
+                           const CtrlVar_ &, const CtrlVar_ &) = 0;
 
 // Data members
   const Geometry_ & resol_;
@@ -123,8 +124,9 @@ template<typename MODEL> class CostFunction : private boost::noncopyable {
   boost::ptr_vector<CostBase_> jterms_;
   boost::ptr_vector<LinearModel_> tlm_;
 
-  double costJb_;
-  double costJoJc_;
+  mutable double costJb_;
+  mutable double costJoJc_;
+  const Variables anvars_;
 };
 
 // -----------------------------------------------------------------------------
@@ -155,8 +157,8 @@ class CostMaker : public CostFactory<MODEL> {
   typedef Geometry<MODEL>            Geometry_;
   typedef Model<MODEL>               Model_;
  private:
-  virtual CostFunction<MODEL> * make(const eckit::Configuration & config,
-                                     const Geometry_ & resol, const Model_ & model)
+  CostFunction<MODEL> * make(const eckit::Configuration & config,
+                             const Geometry_ & resol, const Model_ & model) override
     {return new FCT(config, resol, model);}
  public:
   explicit CostMaker(const std::string & name) : CostFactory<MODEL>(name) {}
@@ -188,6 +190,7 @@ CostFunction<MODEL>* CostFactory<MODEL>::create(const eckit::Configuration & con
     Log::error() << id << " does not exist in cost function factory." << std::endl;
     ABORT("Element does not exist in CostFactory.");
   }
+  Log::trace() << "CostFactory::create found cost function type" << std::endl;
   return (*j).second->make(config, resol, model);
 }
 
@@ -196,8 +199,9 @@ CostFunction<MODEL>* CostFactory<MODEL>::create(const eckit::Configuration & con
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-CostFunction<MODEL>::CostFunction(const Geometry_ & resol, const Model_ & model)
-  : resol_(resol), model_(model), jb_(), jterms_(), tlm_()
+CostFunction<MODEL>::CostFunction(const eckit::Configuration & config,
+                                  const Geometry_ & resol, const Model_ & model)
+  : resol_(resol), model_(model), jb_(), jterms_(), tlm_(), anvars_(config)
 {
   Log::trace() << "CostFunction:created" << std::endl;
 }
@@ -216,7 +220,7 @@ void CostFunction<MODEL>::setupTerms(const eckit::Configuration & config) {
 
 // Jb
   const eckit::LocalConfiguration jbConf(config, "Jb");
-  xb_.reset(new CtrlVar_(eckit::LocalConfiguration(jbConf, "Background"), resol_));
+  xb_.reset(new CtrlVar_(eckit::LocalConfiguration(jbConf, "Background"), anvars_, resol_));
   jb_.reset(new JbTotal_(*xb_, this->newJb(jbConf, resol_, *xb_), jbConf, resol_));
   Log::trace() << "CostFunction::setupTerms Jb added" << std::endl;
 
@@ -254,10 +258,14 @@ double CostFunction<MODEL>::evaluate(const CtrlVar_ & fguess,
   if (config.has("diagnostics")) {
     diagnostic = eckit::LocalConfiguration(config, "diagnostics");
   }
-  double zzz = jb_->finalize(jq);
+  double zzz = 0.0;
+  costJb_ = jb_->finalize(jq);
+  zzz += costJb_;
+  costJoJc_ = 0.0;
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
-    zzz += jterms_[jj].finalize(diagnostic);
+    costJoJc_ += jterms_[jj].finalize(diagnostic);
   }
+  zzz += costJoJc_;
   Log::test() << "CostFunction: Nonlinear J = " << zzz << std::endl;
   Log::trace() << "CostFunction::evaluate done" << std::endl;
   return zzz;
@@ -297,6 +305,10 @@ double CostFunction<MODEL>::linearize(const CtrlVar_ & fguess,
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
     jterms_[jj].finalizeTraj();
   }
+
+// Specific linearization if needed
+  this->doLinearize(lowres, innerConf, *xb_, fguess);
+
   Log::trace() << "CostFunction::linearize done" << std::endl;
   return zzz;
 }
@@ -332,8 +344,8 @@ void CostFunction<MODEL>::addIncrement(CtrlVar_ & xx, const CtrlInc_ & dx,
   xx.modVar() += dx.modVar();
   this->addIncr(xx, dx, post);
 
-  Log::info() << "CostFunction::addIncrement: Analysis:" << xx << std::endl;
-  Log::test() << "CostFunction::addIncrement: Analysis norm: " << xx.norm() << std::endl;
+  Log::info() << "CostFunction::addIncrement: Analysis: " << xx << std::endl;
+  Log::test() << "CostFunction::addIncrement: Analysis: " << xx << std::endl;
   Log::trace() << "CostFunction::addIncrement done" << std::endl;
 }
 

@@ -15,6 +15,7 @@
 
 #include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/Variables.h"
+#include "oops/generic/UnstructuredGrid.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/InterpolatorTraj.h"
@@ -75,6 +76,7 @@ class Increment : public oops::GeneralizedDepartures,
 /// Linear algebra operators
   void zero();
   void zero(const util::DateTime &);
+  void dirac(const eckit::Configuration &);
   Increment & operator =(const Increment &);
   Increment & operator+=(const Increment &);
   Increment & operator-=(const Increment &);
@@ -92,6 +94,11 @@ class Increment : public oops::GeneralizedDepartures,
 
 /// Get geometry
   Geometry_ geometry() const;
+
+/// Unstructured grid
+  void ug_coord(UnstructuredGrid &, const int &) const;
+  void field_to_ug(UnstructuredGrid &, const int &) const;
+  void field_from_ug(const UnstructuredGrid &);
 
  private:
   void print(std::ostream &) const;
@@ -206,6 +213,16 @@ void Increment<MODEL>::zero(const util::DateTime & tt) {
   util::Timer timer(classname(), "zero");
   increment_->zero(tt);
   Log::trace() << "Increment<MODEL>::zero done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::dirac(const eckit::Configuration & config) {
+  Log::trace() << "Increment<MODEL>::dirac starting" << std::endl;
+  util::Timer timer(classname(), "dirac");
+  increment_->dirac(config);
+  Log::trace() << "Increment<MODEL>::dirac done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -343,6 +360,36 @@ Geometry<MODEL> Increment<MODEL>::geometry() const {
   Geometry<MODEL> geom(increment_->geometry());
   Log::trace() << "Increment<MODEL>::geometry done" << std::endl;
   return geom;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::ug_coord(UnstructuredGrid & ug, const int & colocated) const {
+  Log::trace() << "Increment<MODEL>::ug_coord starting" << std::endl;
+  util::Timer timer(classname(), "ug_coord");
+  increment_->ug_coord(ug, colocated);
+  Log::trace() << "Increment<MODEL>::ug_coord done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::field_to_ug(UnstructuredGrid & ug, const int & colocated) const {
+  Log::trace() << "Increment<MODEL>::field_to_ug starting" << std::endl;
+  util::Timer timer(classname(), "field_to_ug");
+  increment_->field_to_ug(ug, colocated);
+  Log::trace() << "Increment<MODEL>::field_to_ug done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::field_from_ug(const UnstructuredGrid & ug) {
+  Log::trace() << "Increment<MODEL>::field_from_ug starting" << std::endl;
+  util::Timer timer(classname(), "field_from_ug");
+  increment_->field_from_ug(ug);
+  Log::trace() << "Increment<MODEL>::field_from_ug done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

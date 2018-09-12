@@ -27,6 +27,7 @@ namespace eckit {
 }
 
 namespace oops {
+  class UnstructuredGrid;
   class Variables;
 }
 
@@ -53,7 +54,7 @@ class StateL95 : public util::Printable,
 
 /// Constructor, destructor
   StateL95(const Resolution &, const oops::Variables &, const util::DateTime &);
-  StateL95(const Resolution &, const eckit::Configuration &);
+  StateL95(const Resolution &, const oops::Variables &, const eckit::Configuration &);
   StateL95(const Resolution &, const StateL95 &);
   StateL95(const StateL95 &);
   virtual ~StateL95();
@@ -79,6 +80,10 @@ class StateL95 : public util::Printable,
   double norm () const {return fld_.rms();}
   const util::DateTime & validTime() const {return time_;}
   util::DateTime & validTime() {return time_;}
+
+// For accumulator
+  void zero();
+  void accumul(const double &, const StateL95 &);
 
  private:
   void print(std::ostream &) const;

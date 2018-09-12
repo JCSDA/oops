@@ -1,0 +1,43 @@
+{
+  "logging": {
+    "categories": "Info, Test, Warning, Error"
+  },
+  "resolution": {
+    "nx": "40",
+    "ny": "20",
+    "bc": "1"
+  },
+  "variables": {
+    "variables": ["x"]
+  },
+  "model": {
+    "tstep": "PT1H",
+    "top_layer_depth": "5500.0",
+    "bottom_layer_depth": "4500.0"
+  },
+  "initial": {
+    "filename": "Data/truth.fc.2009-12-15T00:00:00Z.P17D",
+    "date": "2010-01-01T00:00:00Z"
+  },
+  "Covariance": {
+    "covariance": "QgError",
+    "standard_deviation": "0.8",
+    "vertical_correlation": "0.2",
+    "horizontal_length_scale": "1e6",
+    "maximum_condition_number": "1.0e6",
+    "date": "2010-01-01T00:00:00Z"
+   },
+  "dirac": {
+    "ndir": 1,
+    "ixdir(1)": 20,
+    "iydir(1)": 10,
+    "ildir": 1,
+    "ifdir": 1
+  },
+  "output_B": {
+    "datadir": "Data",
+    "exp": "B_qgcov",
+    "type": "an",
+    "date": "2009-12-31T00:00:00Z"
+  }
+}

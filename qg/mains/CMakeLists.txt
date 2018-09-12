@@ -28,3 +28,12 @@ ecbuild_add_executable( TARGET  qg_makeobs.x
                         LIBS    qg
                       )
 
+ecbuild_add_executable( TARGET  qg_dirac.x
+                        SOURCES qgDirac.cc
+                        LIBS    qg
+                      )
+
+ecbuild_add_executable( TARGET  qg_parameters.x
+                        SOURCES qgEstimateParams.cc
+                        LIBS    qg
+                      )

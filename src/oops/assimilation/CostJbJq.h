@@ -89,12 +89,13 @@ template<typename MODEL> class CostJbJq : public CostJbState<MODEL> {
 
  private:
   boost::ptr_vector< ModelSpaceCovarianceBase<MODEL> > B_;
-
+  const State4D_ & xb_;
   const util::Duration subwin_;
   const bool forcing_;
-  const Variables controlvars_;
+  const Variables ctlvars_;
   boost::scoped_ptr<const Geometry_> resol_;
   std::vector<util::DateTime> times_;
+  const eckit::LocalConfiguration conf_;
 };
 
 // =============================================================================
@@ -106,27 +107,28 @@ template<typename MODEL>
 CostJbJq<MODEL>::CostJbJq(const eckit::Configuration & config, const Geometry_ & resolouter,
                           const Variables & ctlvars, const util::Duration & len,
                           const State4D_ & xb, const bool forcing)
-  : B_(0), subwin_(len), forcing_(forcing), controlvars_(ctlvars), resol_(), times_()
+  : B_(0), xb_(xb), subwin_(len), forcing_(forcing), ctlvars_(ctlvars), resol_(), times_(),
+    conf_(config)
 {
-  std::vector<eckit::LocalConfiguration> confs;
-  config.get("Covariance", confs);
-  for (size_t jsub = 0; jsub < confs.size(); ++jsub) {
-    B_.push_back(CovarianceFactory<MODEL>::create(confs[jsub], resolouter, ctlvars, xb[jsub]));
-  }
   Log::trace() << "CostJbJq contructed." << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void CostJbJq<MODEL>::linearize(const State4D_ & fg, const Geometry_ & resolinner) {
-  ASSERT(fg.checkStatesNumber(B_.size()));
-  resol_.reset(new Geometry_(resolinner));
+void CostJbJq<MODEL>::linearize(const State4D_ & fg, const Geometry_ & lowres) {
+  ASSERT(fg.checkStatesNumber(xb_.size()));
+  resol_.reset(new Geometry_(lowres));
   times_.clear();
-  for (unsigned jsub = 0; jsub < B_.size(); ++jsub) {
+  B_.clear();
+  std::vector<eckit::LocalConfiguration> confs;
+  conf_.get("Covariance", confs);
+  for (unsigned jsub = 0; jsub < confs.size(); ++jsub) {
+    B_.push_back(CovarianceFactory<MODEL>::create(confs[jsub], lowres, ctlvars_,
+                                                  xb_[jsub], fg[jsub]));
     times_.push_back(fg[jsub].validTime());
-    B_[jsub].linearize(fg[jsub], *resol_);
   }
+  ASSERT(fg.checkStatesNumber(B_.size()));
 }
 
 // -----------------------------------------------------------------------------
@@ -240,7 +242,7 @@ void CostJbJq<MODEL>::Bminv(const Increment4D_ & dxin, Increment4D_ & dxout) con
 template<typename MODEL>
 Increment<MODEL> *
 CostJbJq<MODEL>::newStateIncrement(const unsigned int isub) const {
-  Increment_ * incr = new Increment_(*resol_, controlvars_, times_[isub]);
+  Increment_ * incr = new Increment_(*resol_, ctlvars_, times_[isub]);
   return incr;
 }
 

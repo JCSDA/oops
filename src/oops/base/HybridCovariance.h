@@ -39,17 +39,15 @@ class HybridCovariance : public ModelSpaceCovarianceBase<MODEL> {
 
  public:
   HybridCovariance(const Geometry_ &, const Variables &,
-                   const eckit::Configuration &, const State_ &);
+                   const eckit::Configuration &, const State_ &, const State_ &);
   ~HybridCovariance();
-
-  void linearize(const State_ &, const Geometry_ &) override;
-
-  void multiply(const Increment_ &, Increment_ &) const override;
-  void inverseMultiply(const Increment_ &, Increment_ &) const override;
 
   void randomize(Increment_ &) const override;
 
  private:
+  void doMultiply(const Increment_ &, Increment_ &) const override;
+  void doInverseMultiply(const Increment_ &, Increment_ &) const override;
+
   boost::scoped_ptr< ModelSpaceCovarianceBase<MODEL> > static_;
   boost::scoped_ptr< EnsembleCovariance<MODEL> >  ensemble_;
   double ensWeight_;
@@ -61,12 +59,14 @@ class HybridCovariance : public ModelSpaceCovarianceBase<MODEL> {
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 HybridCovariance<MODEL>::HybridCovariance(const Geometry_ & resol, const Variables & vars,
-                                          const eckit::Configuration & config, const State_ & xb)
-  : static_(CovarianceFactory<MODEL>::create(
-              eckit::LocalConfiguration(config, "static"), resol, vars, xb))
+                                          const eckit::Configuration & config,
+                                          const State_ & xb, const State_ & fg)
+  : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, config),
+    static_(CovarianceFactory<MODEL>::create(
+              eckit::LocalConfiguration(config, "static"), resol, vars, xb, fg))
 {
   const eckit::LocalConfiguration ensConf(config, "ensemble");
-  ensemble_.reset(new EnsembleCovariance<MODEL>(resol,  vars, ensConf, xb));
+  ensemble_.reset(new EnsembleCovariance<MODEL>(resol,  vars, ensConf, xb, fg));
 
   ensWeight_ = config.getDouble("ensemble_weight");
   ASSERT(ensWeight_ > 0.0 && ensWeight_ <= 1.0);
@@ -79,15 +79,7 @@ HybridCovariance<MODEL>::~HybridCovariance() {
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-void HybridCovariance<MODEL>::linearize(const State_ & xb,
-                                        const Geometry_ & resol) {
-  static_->linearize(xb, resol);
-  ensemble_->linearize(xb, resol);
-  Log::trace() << "HybridCovariance linearized." << std::endl;
-}
-// -----------------------------------------------------------------------------
-template<typename MODEL>
-void HybridCovariance<MODEL>::multiply(const Increment_ & dxi, Increment_ & dxo) const {
+void HybridCovariance<MODEL>::doMultiply(const Increment_ & dxi, Increment_ & dxo) const {
   static_->multiply(dxi, dxo);
   dxo *= (1.0-ensWeight_);
   Increment_ tmp(dxo);
@@ -96,7 +88,7 @@ void HybridCovariance<MODEL>::multiply(const Increment_ & dxi, Increment_ & dxo)
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-void HybridCovariance<MODEL>::inverseMultiply(const Increment_ & dxi, Increment_ & dxo) const {
+void HybridCovariance<MODEL>::doInverseMultiply(const Increment_ & dxi, Increment_ & dxo) const {
   IdentityMatrix<Increment_> Id;
   dxo.zero();
   GMRESR(dxo, dxi, *this, Id, 10, 1.0e-3);

@@ -17,18 +17,18 @@ use qg_vars_mod
 use qg_goms_mod
 use calculate_pv, only : calc_pv
 use netcdf
-use tools_nc, only: ncerr
 use kinds
 
 implicit none
 private
 
 public :: qg_field, &
-        & create, delete, zeros, random, copy, &
+        & create, delete, zeros, dirac, random, copy, &
         & self_add, self_schur, self_sub, self_mul, axpy, &
         & dot_prod, add_incr, diff_incr, &
         & read_file, write_file, gpnorm, fldrms, &
         & change_resol, interp_tl, interp_ad, &
+        & ug_coord, field_to_ug, field_from_ug, &
         & analytic_init
 public :: qg_field_registry
 
@@ -110,9 +110,11 @@ self%fldnames(:)=vars%fldnames(:)
 
 if (self%lbc) then
   allocate(self%xbound(4))
+  self%xbound(:)=0.0_kind_real
   self%x_north => self%xbound(1:2)
   self%x_south => self%xbound(3:4)
   allocate(self%qbound(self%geom%nx,4))
+  self%qbound(:,:)=0.0_kind_real
   self%q_north => self%qbound(:,1:2)
   self%q_south => self%qbound(:,3:4)
 else
@@ -158,6 +160,47 @@ if (self%lbc) then
 endif
 
 end subroutine zeros
+
+! ------------------------------------------------------------------------------
+
+subroutine dirac(self, c_conf)
+use iso_c_binding
+implicit none
+type(qg_field), intent(inout) :: self
+type(c_ptr), intent(in)       :: c_conf   !< Configuration
+integer :: ndir,idir,ildir,ifdir,ioff
+integer,allocatable :: ixdir(:),iydir(:)
+character(len=3) :: idirchar
+
+call check(self)
+
+! Get Diracs positions
+ndir = config_get_int(c_conf,"ndir")
+allocate(ixdir(ndir))
+allocate(iydir(ndir))
+do idir=1,ndir
+   write(idirchar,'(i3)') idir
+   ixdir(idir) = config_get_int(c_conf,"ixdir("//trim(adjustl(idirchar))//")")
+   iydir(idir) = config_get_int(c_conf,"iydir("//trim(adjustl(idirchar))//")")
+end do
+ildir = config_get_int(c_conf,"ildir")
+ifdir = config_get_int(c_conf,"ifdir")
+
+! Check
+if (ndir<1) call abor1_ftn("qg_fields:dirac non-positive ndir")
+if (any(ixdir<1).or.any(ixdir>self%geom%nx)) call abor1_ftn("qg_fields:dirac invalid ixdir")
+if (any(iydir<1).or.any(iydir>self%geom%ny)) call abor1_ftn("qg_fields:dirac invalid iydir")
+if ((ildir<1).or.(ildir>self%nl)) call abor1_ftn("qg_fields:dirac invalid ildir")
+if ((ifdir<1).or.(ifdir>self%nf)) call abor1_ftn("qg_fields:dirac invalid ifdir")
+
+! Setup Diracs
+call zeros(self)
+ioff = (ifdir-1)*self%nl
+do idir=1,ndir
+   self%gfld3d(ixdir(idir),iydir(idir),ioff+ildir) = 1.0
+end do
+
+end subroutine dirac
 
 ! ------------------------------------------------------------------------------
 
@@ -475,7 +518,6 @@ character(len=1024)  :: buf
 integer :: ic, iy, il, ix, is, jx, jy, jf, iread, nf
 integer :: ncid, nx_id, ny_id, nl_id, nc_id, gfld3d_id, xbound_id, qbound_id
 real(kind=kind_real), allocatable :: zz(:)
-character(len=1024) :: subr='read_file'
 
 iread = 1
 if (config_element_exists(c_conf,"read_from_file")) then
@@ -497,15 +539,15 @@ else
   ! Read data
   if (netcdfio) then
 
-    call ncerr(subr,nf90_open(trim(filename)//'.nc',nf90_nowrite,ncid))
-    call ncerr(subr,nf90_inq_dimid(ncid,'nx',nx_id))
-    call ncerr(subr,nf90_inq_dimid(ncid,'ny',ny_id))
-    call ncerr(subr,nf90_inq_dimid(ncid,'nl',nl_id))
-    call ncerr(subr,nf90_inq_dimid(ncid,'nc',nc_id))
-    call ncerr(subr,nf90_inquire_dimension(ncid,nx_id,len=ix))
-    call ncerr(subr,nf90_inquire_dimension(ncid,ny_id,len=iy))
-    call ncerr(subr,nf90_inquire_dimension(ncid,nl_id,len=il))
-    call ncerr(subr,nf90_inquire_dimension(ncid,nl_id,len=ic))
+    call ncerr(nf90_open(trim(filename)//'.nc',nf90_nowrite,ncid))
+    call ncerr(nf90_inq_dimid(ncid,'nx',nx_id))
+    call ncerr(nf90_inq_dimid(ncid,'ny',ny_id))
+    call ncerr(nf90_inq_dimid(ncid,'nl',nl_id))
+    call ncerr(nf90_inq_dimid(ncid,'nc',nc_id))
+    call ncerr(nf90_inquire_dimension(ncid,nx_id,len=ix))
+    call ncerr(nf90_inquire_dimension(ncid,ny_id,len=iy))
+    call ncerr(nf90_inquire_dimension(ncid,nl_id,len=il))
+    call ncerr(nf90_inquire_dimension(ncid,nc_id,len=ic))
     if (ix /= fld%geom%nx .or. iy /= fld%geom%ny .or. il /= fld%nl) then
       write (record,*) "qg_fields:read_file: ", &
                      & "input fields have wrong dimensions: ",ix,iy,il
@@ -514,26 +556,22 @@ else
       call fckit_log%error(record)
       call abor1_ftn("qg_fields:read_file: input fields have wrong dimensions")
     endif
-    call ncerr(subr,nf90_get_att(ncid,nf90_global,'lbc',is))
-  
-    call ncerr(subr,nf90_get_att(ncid,nf90_global,'sdate',sdate))
+    call ncerr(nf90_get_att(ncid,nf90_global,'lbc',is))
+      call ncerr(nf90_get_att(ncid,nf90_global,'sdate',sdate))
     write(buf,*) 'validity date is: '//sdate
     call fckit_log%info(buf)
-  
     nf = min(fld%nf, ic)
-    call ncerr(subr,nf90_inq_varid(ncid,'gfld3d',gfld3d_id))
+    call ncerr(nf90_inq_varid(ncid,'gfld3d',gfld3d_id))
     do jf=1,il*nf
-      call ncerr(subr,nf90_get_var(ncid,gfld3d_id,fld%gfld3d(:,:,jf),(/1,1,jf/),(/ix,iy,1/)))
+      call ncerr(nf90_get_var(ncid,gfld3d_id,fld%gfld3d(:,:,jf),(/1,1,jf/),(/ix,iy,1/)))
     enddo
-  
     if (fld%lbc) then
-      call ncerr(subr,nf90_inq_varid(ncid,'xbound',xbound_id))
-      call ncerr(subr,nf90_get_var(ncid,xbound_id,fld%xbound))
-      call ncerr(subr,nf90_inq_varid(ncid,'qbound',qbound_id))
-      call ncerr(subr,nf90_get_var(ncid,qbound_id,fld%qbound))
+      call ncerr(nf90_inq_varid(ncid,'xbound',xbound_id))
+      call ncerr(nf90_get_var(ncid,xbound_id,fld%xbound))
+      call ncerr(nf90_inq_varid(ncid,'qbound',qbound_id))
+      call ncerr(nf90_get_var(ncid,qbound_id,fld%qbound))
     endif
-  
-    call ncerr(subr,nf90_close(ncid))
+    call ncerr(nf90_close(ncid))
 
   else
 
@@ -659,7 +697,7 @@ subroutine analytic_init(fld, geom, config, vdate)
   character(len=20) :: sdate
   character(len=1024)  :: buf
   real(kind=kind_real) :: d1, d2, height(2), z, f1, f2, xdum(2)
-  real(kind=kind_real) :: deltax,deltay
+  real(kind=kind_real) :: deltax,deltay,deg_to_rad,rlat,rlon
   real(kind=kind_real) :: p0,u0,v0,w0,t0,phis0,ps0,rho0,hum0,q1,q2,q3,q4
   real(kind=kind_real), allocatable :: rs(:,:)
   integer :: ix, iy, il
@@ -694,7 +732,10 @@ subroutine analytic_init(fld, geom, config, vdate)
 
   allocate(rs(geom%nx,geom%ny))
   rs = 0.0_kind_real
-  
+
+  deg_to_rad = pi/180.0_kind_real
+
+  write(*,*) "MSM: NEW GEOMETRY DEFINED"
   !--------------------------------------
   init_option: select case (ic)
 
@@ -707,7 +748,11 @@ subroutine analytic_init(fld, geom, config, vdate)
            z = height(il)
            do iy = 1,fld%geom%ny ; do ix = 1, fld%geom%nx 
 
-              call test1_advection_deformation(geom%lon(ix),geom%lat(iy),p0,z,1,&
+              ! convert lat and lon to radians
+              rlat = deg_to_rad * geom%lat(iy)
+              rlon = deg_to_rad*modulo(geom%lon(ix)+180.0_kind_real,360.0_kind_real) - pi
+               
+              call test1_advection_deformation(rlon,rlat,p0,z,1,&
                    u0,v0,w0,t0,phis0,ps0,rho0,hum0,q1,q2,q3,q4)
               
               fld%u(ix,iy,il) = u0 / ubar
@@ -733,7 +778,11 @@ subroutine analytic_init(fld, geom, config, vdate)
            z = height(il)
            do iy = 1,fld%geom%ny ; do ix = 1, fld%geom%nx 
 
-              call test1_advection_hadley(geom%lon(ix),geom%lat(iy),p0,z,1,&
+              ! convert lat and lon to radians
+              rlat = deg_to_rad * geom%lat(iy)
+              rlon = deg_to_rad*modulo(geom%lon(ix)+180.0_kind_real,360.0_kind_real) - pi
+
+              call test1_advection_hadley(rlon,rlat,p0,z,1,&
                    u0,v0,w0,t0,phis0,ps0,rho0,hum0,q1)
            
               fld%u(ix,iy,il) = u0 / ubar
@@ -900,7 +949,6 @@ character(len=4)  :: cnx
 character(len=11) :: fmt1='(X,ES24.16)'
 character(len=1024):: buf
 integer :: jf, jy, jx, is
-character(len=1024) :: subr='write_file'
 
 call check(fld)
 
@@ -914,33 +962,33 @@ call datetime_to_string(vdate, sdate)
 
 if (netcdfio) then
   
-  call ncerr(subr,nf90_create(trim(filename)//'.nc',or(nf90_clobber,nf90_64bit_offset),ncid))
-  call ncerr(subr,nf90_def_dim(ncid,'nx',fld%geom%nx,nx_id))
-  call ncerr(subr,nf90_def_dim(ncid,'ny',fld%geom%ny,ny_id))
-  call ncerr(subr,nf90_def_dim(ncid,'nl',fld%nl,nl_id))
-  call ncerr(subr,nf90_def_dim(ncid,'nc',fld%nf,nc_id))
-  call ncerr(subr,nf90_def_dim(ncid,'ntot',fld%nl*fld%nf,ntot_id))
-  call ncerr(subr,nf90_def_dim(ncid,'four',4,four_id))
-  call ncerr(subr,nf90_put_att(ncid,nf90_global,'lbc',is))
+  call ncerr(nf90_create(trim(filename)//'.nc',or(nf90_clobber,nf90_64bit_offset),ncid))
+  call ncerr(nf90_def_dim(ncid,'nx',fld%geom%nx,nx_id))
+  call ncerr(nf90_def_dim(ncid,'ny',fld%geom%ny,ny_id))
+  call ncerr(nf90_def_dim(ncid,'nl',fld%nl,nl_id))
+  call ncerr(nf90_def_dim(ncid,'nc',fld%nf,nc_id))
+  call ncerr(nf90_def_dim(ncid,'ntot',fld%nl*fld%nf,ntot_id))
+  call ncerr(nf90_def_dim(ncid,'four',4,four_id))
+  call ncerr(nf90_put_att(ncid,nf90_global,'lbc',is))
   
-  call ncerr(subr,nf90_put_att(ncid,nf90_global,'sdate',sdate))
-  call ncerr(subr,nf90_def_var(ncid,'gfld3d',nf90_double,(/nx_id,ny_id,ntot_id/),gfld3d_id))
-  
-  if (fld%lbc) then
-    call ncerr(subr,nf90_def_var(ncid,'xbound',nf90_double,(/four_id/),xbound_id))
-    call ncerr(subr,nf90_def_var(ncid,'qbound',nf90_double,(/nx_id,four_id/),qbound_id))
-  end if
-  
-  call ncerr(subr,nf90_enddef(ncid))
-  
-  call ncerr(subr,nf90_put_var(ncid,gfld3d_id,fld%gfld3d))
+  call ncerr(nf90_put_att(ncid,nf90_global,'sdate',sdate))
+  call ncerr(nf90_def_var(ncid,'gfld3d',nf90_double,(/nx_id,ny_id,ntot_id/),gfld3d_id))
   
   if (fld%lbc) then
-    call ncerr(subr,nf90_put_var(ncid,xbound_id,fld%xbound))
-    call ncerr(subr,nf90_put_var(ncid,qbound_id,fld%qbound))
+    call ncerr(nf90_def_var(ncid,'xbound',nf90_double,(/four_id/),xbound_id))
+    call ncerr(nf90_def_var(ncid,'qbound',nf90_double,(/nx_id,four_id/),qbound_id))
   end if
   
-  call ncerr(subr,nf90_close(ncid))
+  call ncerr(nf90_enddef(ncid))
+  
+  call ncerr(nf90_put_var(ncid,gfld3d_id,fld%gfld3d))
+  
+  if (fld%lbc) then
+    call ncerr(nf90_put_var(ncid,xbound_id,fld%xbound))
+    call ncerr(nf90_put_var(ncid,qbound_id,fld%qbound))
+  end if
+  
+  call ncerr(nf90_close(ncid))
 
 else
 
@@ -1023,16 +1071,16 @@ real(kind=kind_real) :: zz
 call check(fld)
 
 zz = 0.0
+ii = 0
 
-do jf=1,fld%nl*fld%nf
+do jf=1,fld%nl !*fld%nf
   do jy=1,fld%geom%ny
     do jx=1,fld%geom%nx
       zz = zz + fld%gfld3d(jx,jy,jf)*fld%gfld3d(jx,jy,jf)
     enddo
   enddo
+  ii = ii + fld%geom%nx * fld%geom%ny
 enddo
-
-ii = fld%nl*fld%nf*fld%geom%ny*fld%geom%nx
 
 if (fld%lbc) then
   do jf=1,4
@@ -1255,6 +1303,217 @@ end subroutine lin_weights
 
 ! ------------------------------------------------------------------------------
 
+subroutine ug_size(self, ug)
+use unstructured_grid_mod
+implicit none
+type(qg_field), intent(in) :: self
+type(unstructured_grid), intent(inout) :: ug
+integer :: igrid
+
+! Set number of grids
+if (ug%colocated==1) then
+   ! Colocatd
+   ug%ngrid = 1
+else
+   ! Not colocatedd
+   ug%ngrid = 1
+end if
+
+! Allocate grid instances
+if (.not.allocated(ug%grid)) allocate(ug%grid(ug%ngrid))
+
+if (ug%colocated==1) then
+  ! colocatedd
+
+  ! Set local number of points
+  ug%grid(1)%nmga = self%geom%nx*self%geom%ny
+
+  ! Set number of levels
+  ug%grid(1)%nl0 = self%nl
+
+  ! Set number of variables
+  ug%grid(1)%nv = self%nf
+
+  ! Set number of timeslots
+  ug%grid(1)%nts = 1
+else
+  ! Not colocatedd
+  do igrid=1,ug%ngrid
+     ! Set local number of points
+     ug%grid(igrid)%nmga = self%geom%nx*self%geom%ny
+
+     ! Set number of levels
+     ug%grid(igrid)%nl0 = self%nl
+
+     ! Set number of variables
+     ug%grid(igrid)%nv = self%nf
+
+     ! Set number of timeslots
+     ug%grid(igrid)%nts = 1
+  enddo
+end if
+
+end subroutine ug_size
+
+! ------------------------------------------------------------------------------
+
+subroutine ug_coord(self, ug, colocated)
+use unstructured_grid_mod
+implicit none
+type(qg_field), intent(in) :: self
+type(unstructured_grid), intent(inout) :: ug
+integer, intent(in) :: colocated
+
+integer :: igrid,imga,jx,jy,jl
+
+! Copy colocated
+ug%colocated = colocated
+
+! Define size
+call ug_size(self, ug)
+
+! Allocate unstructured grid coordinates
+call allocate_unstructured_grid_coord(ug)
+
+! Define coordinates
+if (ug%colocated==1) then
+  ! colocatedd
+  imga = 0
+  do jy=1,self%geom%ny
+    do jx=1,self%geom%nx
+        imga = imga+1
+        ug%grid(1)%lon(imga) = self%geom%lon(jx)
+        ug%grid(1)%lat(imga) = self%geom%lat(jy)
+        ug%grid(1)%area(imga) = self%geom%area(jx,jy)
+        do jl=1,self%nl
+          ug%grid(1)%vunit(imga,jl) = real(jl,kind=kind_real)
+          ug%grid(1)%lmask(imga,jl) = .true.
+        enddo
+    enddo
+  enddo
+else
+  ! Not colocatedd
+  do igrid=1,ug%ngrid
+    imga = 0
+    do jy=1,self%geom%ny
+      do jx=1,self%geom%nx
+          imga = imga+1
+          ug%grid(igrid)%lon(imga) = self%geom%lon(jx)
+          ug%grid(igrid)%lat(imga) = self%geom%lat(jy)
+          ug%grid(igrid)%area(imga) = self%geom%area(jx,jy)
+          do jl=1,self%nl
+            ug%grid(igrid)%vunit(imga,jl) = real(jl,kind=kind_real)
+            ug%grid(igrid)%lmask(imga,jl) = .true.
+          enddo
+      enddo
+    enddo
+  enddo
+endif
+
+end subroutine ug_coord
+
+! ------------------------------------------------------------------------------
+
+subroutine field_to_ug(self, ug, colocated)
+use unstructured_grid_mod
+implicit none
+type(qg_field), intent(in) :: self
+type(unstructured_grid), intent(inout) :: ug
+integer, intent(in) :: colocated
+
+integer :: igrid,imga,jx,jy,jl,jf,joff
+
+! Copy colocated
+ug%colocated = colocated
+
+! Define size
+call ug_size(self, ug)
+
+! Allocate unstructured grid field
+call allocate_unstructured_grid_field(ug)
+
+! Copy field
+if (ug%colocated==1) then
+  ! colocatedd
+  imga = 0
+  do jy=1,self%geom%ny
+    do jx=1,self%geom%nx
+      imga = imga+1
+      do jf=1,self%nf
+        joff = (jf-1)*self%nl
+        do jl=1,self%nl
+          ug%grid(1)%fld(imga,jl,jf,1) = self%gfld3d(jx,jy,joff+jl)
+        enddo
+      enddo
+    enddo
+  enddo
+else
+  ! Not colocatedd
+  do igrid=1,ug%ngrid
+    imga = 0
+    do jy=1,self%geom%ny
+      do jx=1,self%geom%nx
+        imga = imga+1
+        do jf=1,self%nf
+          joff = (jf-1)*self%nl
+          do jl=1,self%nl
+            ug%grid(igrid)%fld(imga,jl,jf,1) = self%gfld3d(jx,jy,joff+jl)
+          enddo
+        enddo
+      enddo
+    enddo
+  enddo
+endif
+
+end subroutine field_to_ug
+
+! ------------------------------------------------------------------------------
+
+subroutine field_from_ug(self, ug)
+use unstructured_grid_mod
+implicit none
+type(qg_field), intent(inout) :: self
+type(unstructured_grid), intent(in) :: ug
+
+integer :: igrid,imga,jx,jy,jl,jf,joff
+
+! Copy field
+if (ug%colocated==1) then
+  ! colocatedd (adjoint)
+  imga = 0
+  do jy=1,self%geom%ny
+    do jx=1,self%geom%nx
+        imga = imga+1
+        do jf=1,self%nf
+          joff = (jf-1)*self%nl
+          do jl=1,self%nl
+            self%gfld3d(jx,jy,joff+jl) = ug%grid(1)%fld(imga,jl,jf,1)
+          enddo
+        enddo
+    enddo
+  enddo
+else
+  ! Not colocatedd
+  do igrid=1,ug%ngrid
+    imga = 0
+    do jy=1,self%geom%ny
+      do jx=1,self%geom%nx
+          imga = imga+1
+          do jf=1,self%nf
+            joff = (jf-1)*self%nl
+            do jl=1,self%nl
+              self%gfld3d(jx,jy,joff+jl) = ug%grid(igrid)%fld(imga,jl,jf,1)
+            enddo
+          enddo
+      enddo
+    enddo
+  enddo
+end if
+
+end subroutine field_from_ug
+
+! ------------------------------------------------------------------------------
+
 function genfilename (c_conf,length,vdate)
 use iso_c_binding
 use datetime_mod
@@ -1395,5 +1654,20 @@ endif
 end subroutine check
 
 ! ------------------------------------------------------------------------------
+
+subroutine ncerr(info)
+
+implicit none
+
+! Passed variables
+integer,intent(in) :: info !< Info index
+
+! Check status
+if (info/=nf90_noerr) then
+   write(*,*) trim(nf90_strerror(info))
+   stop
+end if
+
+end subroutine ncerr
 
 end module qg_fields

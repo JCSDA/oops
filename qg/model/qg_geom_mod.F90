@@ -11,6 +11,7 @@
 module qg_geom_mod
 
 use iso_c_binding
+use qg_constants
 use config_mod
 use kinds
 
@@ -27,6 +28,7 @@ type :: qg_geom
   integer :: ny
   real(kind=kind_real),allocatable :: lat(:)
   real(kind=kind_real),allocatable :: lon(:)
+  real(kind=kind_real),allocatable :: area(:,:)
 end type qg_geom
 
 #define LISTED_TYPE qg_geom
@@ -40,6 +42,7 @@ type(registry_t) :: qg_geom_registry
 ! ------------------------------------------------------------------------------
 contains
 ! ------------------------------------------------------------------------------
+
 !> Linked list implementation
 #include "oops/util/linkedList_c.f"
 
@@ -50,9 +53,8 @@ implicit none
 integer(c_int), intent(inout) :: c_key_self
 type(c_ptr), intent(in)    :: c_conf
 
-integer :: ix,iy,nx_loc,ix_loc
-real(kind=kind_real) :: dx,dytot,dy
-real(kind=kind_real),parameter :: pi = acos(-1.0)
+integer :: ix,iy
+real(kind=kind_real) :: lat_center,lat_south, lat_north, lon_west, lon_east, full_area
 type(qg_geom), pointer :: self
 
 call qg_geom_registry%init()
@@ -62,18 +64,31 @@ call qg_geom_registry%get(c_key_self,self)
 self%nx = config_get_int(c_conf, "nx")
 self%ny = config_get_int(c_conf, "ny")
 
+! Allocate
 allocate(self%lon(self%nx))
 allocate(self%lat(self%ny))
+allocate(self%area(self%nx,self%ny))
 
-dx = 2.0_kind_real * pi / real(self%nx,kind=kind_real);
-dy = pi / real(self%ny,kind=kind_real);
+! Define longitude/latitude
+lat_center = 0.0! asin(f0/(2.0*omega))
+lat_south = lat_center-0.5*domain_meridional/req   ! 28 deg S
+lat_north = lat_center+0.5*domain_meridional/req   ! 28 deg N
+lon_west = 0.0                                          ! 0 deg
+lon_east = lon_west+domain_zonal/(req*cos(lat_center))  ! 107 deg E
 do ix=1,self%nx
-   self%lon(ix) = -pi+(real(ix,kind=kind_real)-1.0_kind_real)*dx
+   self%lon(ix) = lon_west+real(ix-1,kind=kind_real)/real(self%nx-1,kind=kind_real)*(lon_east-lon_west)
 end do
 do iy=1,self%ny
-   !self%lat(iy) = -0.5_kind_real*pi+(real(iy,kind=kind_real)-0.5_kind_real)*dy;
-   self%lat(iy) = -0.5_kind_real*pi+(real(iy,kind=kind_real)-1.0_kind_real)*dy;
+   self%lat(iy) = lat_south+real(iy-1,kind=kind_real)/real(self%ny-1,kind=kind_real)*(lat_north-lat_south)
 end do
+
+! Convert longitude/latitude to degrees
+self%lon = self%lon*180_kind_real/pi
+self%lat = self%lat*180_kind_real/pi
+
+! Define area (approximate)
+full_area = domain_meridional*domain_zonal
+self%area = full_area/real(self%nx*self%ny,kind=kind_real)
 
 end subroutine c_qg_geo_setup
 
@@ -93,8 +108,10 @@ other%nx = self%nx
 other%ny = self%ny
 allocate(other%lon(other%nx))
 allocate(other%lat(other%ny))
+allocate(other%area(other%nx,other%ny))
 other%lon = self%lon
 other%lat = self%lat
+other%area = self%area
 
 end subroutine c_qg_geo_clone
 

@@ -63,7 +63,7 @@ BOOST_FIXTURE_TEST_SUITE(test_StateL95, StateTestFixture)
   }
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_stateL95_readin_constructor) {
-    boost::scoped_ptr<lorenz95::StateL95> xx(new lorenz95::StateL95(*resol_, *file_));
+    boost::scoped_ptr<lorenz95::StateL95> xx(new lorenz95::StateL95(*resol_, *vars_, *file_));
     BOOST_CHECK(xx.get() != NULL);
   }
 // -----------------------------------------------------------------------------
@@ -98,7 +98,8 @@ BOOST_FIXTURE_TEST_SUITE(test_StateL95, StateTestFixture)
   }
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_stateL95_assignment) {
-    lorenz95::StateL95 xx1(*resol_, *vars_, *time_);
+    util::DateTime tt(file_->getString("date"));
+    lorenz95::StateL95 xx1(*resol_, *vars_, tt);
     xx1.read(*file_);
 
     // construct the second StateL95 object
@@ -118,11 +119,12 @@ BOOST_FIXTURE_TEST_SUITE(test_StateL95, StateTestFixture)
   }
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_stateL95_compound_assignment) {
-    lorenz95::StateL95 xx(*resol_, *vars_, *time_);
+    util::DateTime tt(file_->getString("date"));
+    lorenz95::StateL95 xx(*resol_, *vars_, tt);
     xx.read(*file_);
 
     // construct the incrementL95 object
-    lorenz95::IncrementL95 dx(*resol_, *vars_, *time_);
+    lorenz95::IncrementL95 dx(*resol_, *vars_, tt);
     dx.read(*file_);
 
     xx += dx;
@@ -135,7 +137,8 @@ BOOST_FIXTURE_TEST_SUITE(test_StateL95, StateTestFixture)
   }
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_stateL95_read) {
-    lorenz95::StateL95 xx(*resol_, *vars_, *time_);
+    util::DateTime tt(file_->getString("date"));
+    lorenz95::StateL95 xx(*resol_, *vars_, tt);
     xx.read(*file_);
 
     // to verify the information has been read correctly, we need to open
