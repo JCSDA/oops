@@ -16,6 +16,7 @@ use tools_func, only: sphere_dist
 use tools_kinds,only: kind_real
 use type_bpar, only: bpar_type
 use type_cmat, only: cmat_type
+use type_cv, only: cv_type
 use type_ens, only: ens_type
 use type_geom, only: geom_type
 use type_io, only: io_type
@@ -57,6 +58,9 @@ contains
    procedure :: apply_vbal_ad => bump_apply_vbal_ad
    procedure :: apply_vbal_inv_ad => bump_apply_vbal_inv_ad
    procedure :: apply_nicas => bump_apply_nicas
+   procedure :: get_cv_size => bump_get_cv_size
+   procedure :: apply_nicas_sqrt => bump_apply_nicas_sqrt
+   procedure :: apply_nicas_sqrt_ad => bump_apply_nicas_sqrt_ad
    procedure :: apply_obsop => bump_apply_obsop
    procedure :: apply_obsop_ad => bump_apply_obsop_ad
    procedure :: get_parameter => bump_get_parameter
@@ -572,6 +576,90 @@ end if
 end subroutine bump_apply_nicas
 
 !----------------------------------------------------------------------
+! Subroutine: bump_get_cv_size
+!> Purpose: get control variable size
+!----------------------------------------------------------------------
+subroutine bump_get_cv_size(bump,n)
+
+implicit none
+
+! Passed variables
+class(bump_type),intent(inout) :: bump !< BUMP
+integer,intent(out) :: n               !< Control variable size
+
+! Local variables
+type(cv_type) :: cv
+
+! Allocate control variable
+call bump%nicas%alloc_cv(bump%bpar,cv,getsizeonly=.true.)
+
+! Copy size
+n = cv%n
+
+end subroutine bump_get_cv_size
+
+!----------------------------------------------------------------------
+! Subroutine: bump_apply_nicas_sqrt
+!> Purpose: NICAS square-root application
+!----------------------------------------------------------------------
+subroutine bump_apply_nicas_sqrt(bump,pcv,fld)
+
+implicit none
+
+! Passed variables
+class(bump_type),intent(inout) :: bump                                                      !< BUMP
+real(kind_real),intent(in) :: pcv(:)                                                        !< Packed control variable
+real(kind_real),intent(inout) :: fld(bump%geom%nc0a,bump%geom%nl0,bump%nam%nv,bump%nam%nts) !< Field
+
+! Local variables
+type(cv_type) :: cv
+
+! Allocation
+call bump%nicas%alloc_cv(bump%bpar,cv)
+
+! Check dimension
+if (size(pcv)==cv%n) then
+   ! Unpack control variable
+   call cv%unpack(pcv)
+else
+   call bump%mpl%abort('wrong control variable size in bump_apply_nicas_sqrt')
+end if
+
+! Apply NICAS square-root
+call bump%nicas%apply_sqrt(bump%mpl,bump%nam,bump%geom,bump%bpar,cv,fld)
+
+end subroutine bump_apply_nicas_sqrt
+
+!----------------------------------------------------------------------
+! Subroutine: bump_apply_nicas_sqrt_ad
+!> Purpose: NICAS square-root adjoint application
+!----------------------------------------------------------------------
+subroutine bump_apply_nicas_sqrt_ad(bump,fld,pcv)
+
+implicit none
+
+! Passed variables
+class(bump_type),intent(inout) :: bump                                                   !< BUMP
+real(kind_real),intent(in) :: fld(bump%geom%nc0a,bump%geom%nl0,bump%nam%nv,bump%nam%nts) !< Field
+real(kind_real),intent(inout) :: pcv(:)                                                  !< Packed control variable
+
+! Local variables
+type(cv_type) :: cv
+
+! Apply NICAS square-root adjoint
+call bump%nicas%apply_sqrt_ad(bump%mpl,bump%nam,bump%geom,bump%bpar,fld,cv)
+
+! Check dimension
+if (size(pcv)==cv%n) then
+   ! Pack control variable
+   call cv%pack(pcv)
+else
+   call bump%mpl%abort('wrong control variable size in bump_apply_nicas_sqrt_ad')
+end if
+
+end subroutine bump_apply_nicas_sqrt_ad
+
+!----------------------------------------------------------------------
 ! Subroutine: bump_apply_obsop
 !> Purpose: observation operator application
 !----------------------------------------------------------------------
@@ -869,6 +957,7 @@ class(bump_type),intent(inout) :: bump !< BUMP
 call bump%bpar%dealloc
 call bump%cmat%dealloc(bump%bpar)
 call bump%ens1%dealloc
+call bump%ens1u%dealloc
 call bump%ens2%dealloc
 call bump%geom%dealloc
 call bump%io%dealloc

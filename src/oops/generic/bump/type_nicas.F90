@@ -672,32 +672,49 @@ end subroutine nicas_run_nicas_tests
 ! Subroutine: nicas_alloc_cv
 !> Purpose: control vector allocation
 !----------------------------------------------------------------------
-subroutine nicas_alloc_cv(nicas,bpar,cv)
+subroutine nicas_alloc_cv(nicas,bpar,cv,getsizeonly)
 
 implicit none
 
 ! Passed variables
-class(nicas_type),intent(in) :: nicas !< NICAS data
-type(bpar_type),intent(in) :: bpar    !< Block parameters
-type(cv_type),intent(inout) :: cv     !< Control vector
+class(nicas_type),intent(in) :: nicas      !< NICAS data
+type(bpar_type),intent(in) :: bpar         !< Block parameters
+type(cv_type),intent(inout) :: cv          !< Control vector
+logical,intent(in),optional :: getsizeonly !< Flag to get the control variable size only (no allocation)
 
 ! Local variables
 integer :: ib
+logical :: lgetsizeonly
+
+! Check flag existence
+lgetsizeonly = .false.
+if (present(getsizeonly)) lgetsizeonly = getsizeonly
 
 ! Allocation
 allocate(cv%blk(bpar%nbe))
 
+! Initialization
+cv%n = 0
+cv%nbe = bpar%nbe
+
 do ib=1,bpar%nbe
    if (bpar%cv_block(ib)) then
-      ! Allocation
-      if (bpar%nicas_block(ib)) then
-         allocate(cv%blk(ib)%alpha(nicas%blk(ib)%nsa))
-      else
-         allocate(cv%blk(ib)%alpha(nicas%blk(1)%nsa))
-      end if
+      ! Copy block size
+      cv%blk(ib)%n = nicas%blk(ib)%nsa
 
-      ! Initialization
-      call msr(cv%blk(ib)%alpha)
+      ! Update total size
+      cv%n = cv%n+nicas%blk(ib)%nsa
+
+      if (.not.lgetsizeonly) then
+         ! Allocation
+         allocate(cv%blk(ib)%alpha(cv%blk(ib)%n))
+
+         ! Initialization
+         call msr(cv%blk(ib)%alpha)
+      end if
+   else
+      ! Set zero size
+      cv%blk(ib)%n = 0
    end if
 end do
 
