@@ -512,12 +512,12 @@ P21 = real(n-1,kind_real)/real(n+1,kind_real)
 
 do ib=1,bpar%nb
    if (bpar%diag_block(ib)) then
-      write(mpl%unit,'(a13,a,a,a)') '','Block ',trim(bpar%blockname(ib)),':'
-      call flush(mpl%unit)
+      write(mpl%info,'(a13,a,a,a)') '','Block ',trim(bpar%blockname(ib)),':'
+      call flush(mpl%info)
 
       do il0=1,geom%nl0
-         write(mpl%unit,'(a16,a,i3,a)') '','Level ',nam%levs(il0),':'
-         call flush(mpl%unit)
+         write(mpl%info,'(a16,a,i3,a)') '','Level ',nam%levs(il0),':'
+         call flush(mpl%info)
 
          ! Global averages
          m2sq = 0.0
@@ -563,9 +563,9 @@ do ib=1,bpar%nb
             call mpl%allreduce_sum(m2prod,m2prod_tot)
 
             ! Print result
-            write(mpl%unit,'(a19,a,i2,a,f10.2,a,f10.2)') '','Iteration ',iter,': rhflt = ', &
+            write(mpl%info,'(a19,a,i2,a,f10.2,a,f10.2)') '','Iteration ',iter,': rhflt = ', &
           & rhflt*reqkm,' km, difference = ',m2prod_tot-m2sqasy
-            call flush(mpl%unit)
+            call flush(mpl%info)
 
             ! Update support radius
             if (m2prod_tot>m2sqasy) then
@@ -631,55 +631,55 @@ integer :: ib,ic2
 call avg%alloc(nam,geom,bpar,mom%ne,mom%nsub)
 
 ! Compute averaged statistics
-write(mpl%unit,'(a10,a)') '','Compute averaged statistics'
-call flush(mpl%unit)
+write(mpl%info,'(a10,a)') '','Compute averaged statistics'
+call flush(mpl%info)
 do ib=1,bpar%nb
    if (bpar%diag_block(ib)) then
-      write(mpl%unit,'(a13,a,a,a)',advance='no') '','Block ',trim(bpar%blockname(ib)),':'
-      call flush(mpl%unit)
+      write(mpl%info,'(a13,a,a,a)',advance='no') '','Block ',trim(bpar%blockname(ib)),':'
+      call flush(mpl%info)
       call mpl%prog_init(nam%nc2+1)
       do ic2=0,nam%nc2
          if ((ic2==0).or.nam%local_diag) call avg%blk(ic2,ib)%compute(nam,geom,bpar,hdata,mom%blk(ib))
          call mpl%prog_print(ic2+1)
       end do
-      write(mpl%unit,'(a)') '100%'
-      call flush(mpl%unit)
+      write(mpl%info,'(a)') '100%'
+      call flush(mpl%info)
    end if
 end do
 
 if (mpl%nproc>1) then
    ! Gather averaged statistics
-   write(mpl%unit,'(a10,a)') '','Gather averaged statistics'
-   call flush(mpl%unit)
+   write(mpl%info,'(a10,a)') '','Gather averaged statistics'
+   call flush(mpl%info)
    call avg%gather(mpl,nam,geom,bpar)
 end if
 
 ! Normalize averaged statistics
-write(mpl%unit,'(a10,a)') '','Normalize averaged statistics'
-call flush(mpl%unit)
+write(mpl%info,'(a10,a)') '','Normalize averaged statistics'
+call flush(mpl%info)
 call avg%normalize(nam,geom,bpar)
 
 if (nam%var_filter) then
    ! Filter variance
-   write(mpl%unit,'(a10,a)') '','Filter variance'
-   call flush(mpl%unit)
+   write(mpl%info,'(a10,a)') '','Filter variance'
+   call flush(mpl%info)
    call avg%var_filter(mpl,nam,geom,bpar,hdata)
 end if
 
 ! Compute asymptotic statistics
-write(mpl%unit,'(a10,a)') '','Compute asymptotic statistics:'
-call flush(mpl%unit)
+write(mpl%info,'(a10,a)') '','Compute asymptotic statistics:'
+call flush(mpl%info)
 do ib=1,bpar%nb
    if (bpar%diag_block(ib)) then
-      write(mpl%unit,'(a13,a,a,a)',advance='no') '','Block ',trim(bpar%blockname(ib)),':'
-      call flush(mpl%unit)
+      write(mpl%info,'(a13,a,a,a)',advance='no') '','Block ',trim(bpar%blockname(ib)),':'
+      call flush(mpl%info)
       call mpl%prog_init(nam%nc2+1)
       do ic2=0,nam%nc2
          if ((ic2==0).or.nam%local_diag) call avg%blk(ic2,ib)%compute_asy(nam,geom,bpar,ne)
          call mpl%prog_print(ic2+1)
       end do
-      write(mpl%unit,'(a)') '100%'
-      call flush(mpl%unit)
+      write(mpl%info,'(a)') '100%'
+      call flush(mpl%info)
    end if
 end do
 
@@ -712,12 +712,12 @@ if (.not.allocated(avg_2%blk)) call avg_2%alloc(nam,geom,bpar,avg_2%ne,avg_2%nsu
 
 do ib=1,bpar%nb
    if (bpar%diag_block(ib)) then
-      write(mpl%unit,'(a10,a,a,a)') '','Block ',trim(bpar%blockname(ib)),':'
-      call flush(mpl%unit)
+      write(mpl%info,'(a10,a,a,a)') '','Block ',trim(bpar%blockname(ib)),':'
+      call flush(mpl%info)
 
       ! Compute averaged statistics
-      write(mpl%unit,'(a13,a)',advance='no') '','Compute averaged statistics:'
-      call flush(mpl%unit)
+      write(mpl%info,'(a13,a)',advance='no') '','Compute averaged statistics:'
+      call flush(mpl%info)
       call mpl%prog_init(nam%nc2+1)
       do ic2=0,nam%nc2
          if ((ic2==0).or.nam%local_diag) then
@@ -737,36 +737,36 @@ do ib=1,bpar%nb
          end if
          call mpl%prog_print(ic2+1)
       end do
-      write(mpl%unit,'(a)') '100%'
-      call flush(mpl%unit)
+      write(mpl%info,'(a)') '100%'
+      call flush(mpl%info)
    end if
 end do
 
 if (trim(nam%method)=='dual-ens') then
    if (mpl%nproc>1) then
       ! Gather averaged statistics
-      write(mpl%unit,'(a13,a)') '','Gather averaged statistics'
-      call flush(mpl%unit)
+      write(mpl%info,'(a13,a)') '','Gather averaged statistics'
+      call flush(mpl%info)
       call avg_2%gather_lr(mpl,nam,geom,bpar)
     end if
 
    ! Normalize averaged statistics
-   write(mpl%unit,'(a10,a)') '','Normalize averaged statistics'
-   call flush(mpl%unit)
+   write(mpl%info,'(a10,a)') '','Normalize averaged statistics'
+   call flush(mpl%info)
    call avg_2%normalize_lr(nam,geom,bpar)
 
    do ib=1,bpar%nb
       if (bpar%diag_block(ib)) then
          ! Compute asymptotic statistics
-         write(mpl%unit,'(a13,a)',advance='no') '','Compute asymptotic statistics:'
-         call flush(mpl%unit)
+         write(mpl%info,'(a13,a)',advance='no') '','Compute asymptotic statistics:'
+         call flush(mpl%info)
          call mpl%prog_init(nam%nc2+1)
          do ic2=0,nam%nc2
             if ((ic2==0).or.nam%local_diag) call avg_2%blk(ic2,ib)%compute_asy_lr(nam,geom,bpar)
             call mpl%prog_print(ic2+1)
          end do
-         write(mpl%unit,'(a)') '100%'
-         call flush(mpl%unit)
+         write(mpl%info,'(a)') '100%'
+         call flush(mpl%info)
       end if
    end do
 end if
@@ -842,8 +842,8 @@ case ('dual-ens')
    allocate(m11lrm11asy(nam%nc3,nam%nl0r,geom%nl0))
 end select
 
-write(mpl%unit,'(a10,a,a,a)',advance='no') '','Block ',trim(bpar%blockname(bpar%nbe)),':'
-call flush(mpl%unit)
+write(mpl%info,'(a10,a,a,a)',advance='no') '','Block ',trim(bpar%blockname(bpar%nbe)),':'
+call flush(mpl%info)
 
 ! Initialization
 call mpl%prog_init(nam%nc2+1)
@@ -938,8 +938,8 @@ do ic2=0,nam%nc2
    ! Update
    call mpl%prog_print(ic2+1)
 end do
-write(mpl%unit,'(a)') '100%'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '100%'
+call flush(mpl%info)
 
 end subroutine avg_compute_bwavg
 

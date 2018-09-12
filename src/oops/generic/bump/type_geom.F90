@@ -434,7 +434,7 @@ call msi(geom%redundant)
 
 ! Look for redundant points
 if (present(lon).and.present(lat)) then
-   write(mpl%unit,'(a7,a)') '','Look for redundant points in the model grid'
+   write(mpl%info,'(a7,a)') '','Look for redundant points in the model grid'
 
    ! Create KD-tree
    call kdtree%create(mpl,geom%nmg,lon,lat)
@@ -465,11 +465,11 @@ if (present(lon).and.present(lat)) then
    end do
 end if
 geom%nc0 = count(ismsi(geom%redundant))
-write(mpl%unit,'(a7,a,i8)') '','Model grid size:         ',geom%nmg
-write(mpl%unit,'(a7,a,i8)') '','Subset Sc0 size:         ',geom%nc0
-write(mpl%unit,'(a7,a,i6,a,f6.2,a)') '','Number of redundant points:',(geom%nmg-geom%nc0), &
+write(mpl%info,'(a7,a,i8)') '','Model grid size:         ',geom%nmg
+write(mpl%info,'(a7,a,i8)') '','Subset Sc0 size:         ',geom%nc0
+write(mpl%info,'(a7,a,i6,a,f6.2,a)') '','Number of redundant points:',(geom%nmg-geom%nc0), &
  & ' (',real(geom%nmg-geom%nc0,kind_real)/real(geom%nmg,kind_real)*100.0,'%)'
-call flush(mpl%unit)
+call flush(mpl%info)
 
 ! Conversion
 allocate(geom%c0_to_mg(geom%nc0))
@@ -546,8 +546,8 @@ if (same_mask) then
 else
    geom%nl0i = geom%nl0
 end if
-write(mpl%unit,'(a7,a,i3)') '','Number of independent levels: ',geom%nl0i
-call flush(mpl%unit)
+write(mpl%info,'(a7,a,i3)') '','Number of independent levels: ',geom%nl0i
+call flush(mpl%info)
 
 ! Create KD-tree
 call geom%kdtree%create(mpl,geom%nc0,geom%lon,geom%lat)
@@ -559,18 +559,18 @@ do jc3=1,nam%nc3
 end do
 
 ! Print summary
-write(mpl%unit,'(a10,a,f7.1,a,f7.1)') '','Min. / max. longitudes:',minval(geom%lon)*rad2deg,' / ',maxval(geom%lon)*rad2deg
-write(mpl%unit,'(a10,a,f7.1,a,f7.1)') '','Min. / max. latitudes: ',minval(geom%lat)*rad2deg,' / ',maxval(geom%lat)*rad2deg
-write(mpl%unit,'(a10,a)') '','Unmasked area (% of Earth area) / masked points / vertical unit:'
+write(mpl%info,'(a10,a,f7.1,a,f7.1)') '','Min. / max. longitudes:',minval(geom%lon)*rad2deg,' / ',maxval(geom%lon)*rad2deg
+write(mpl%info,'(a10,a,f7.1,a,f7.1)') '','Min. / max. latitudes: ',minval(geom%lat)*rad2deg,' / ',maxval(geom%lat)*rad2deg
+write(mpl%info,'(a10,a)') '','Unmasked area (% of Earth area) / masked points / vertical unit:'
 do il0=1,geom%nl0
-   write(mpl%unit,'(a13,a,i3,a,f5.1,a,f5.1,a,f12.1,a)') '','Level ',nam%levs(il0),' ~> ',geom%area(il0)/(4.0*pi)*100.0,'% / ', &
+   write(mpl%info,'(a13,a,i3,a,f5.1,a,f5.1,a,f12.1,a)') '','Level ',nam%levs(il0),' ~> ',geom%area(il0)/(4.0*pi)*100.0,'% / ', &
  & real(count(.not.geom%mask_c0(:,il0)),kind_real)/real(geom%nc0,kind_real)*100.0,'% / ',geom%vunitavg(il0),' '//trim(mpl%vunitchar)
 end do
-write(mpl%unit,'(a7,a)') '','Distribution summary:'
+write(mpl%info,'(a7,a)') '','Distribution summary:'
 do iproc=1,mpl%nproc
-   write(mpl%unit,'(a10,a,i3,a,i8,a)') '','Proc #',iproc,': ',geom%proc_to_nc0a(iproc),' grid-points'
+   write(mpl%info,'(a10,a,i3,a,i8,a)') '','Proc #',iproc,': ',geom%proc_to_nc0a(iproc),' grid-points'
 end do
-call flush(mpl%unit)
+call flush(mpl%info)
 
 end subroutine geom_init
 
@@ -789,8 +789,8 @@ elseif (mpl%nproc>1) then
 
    if (info==nf90_noerr) then
       ! Read local distribution
-      write(mpl%unit,'(a7,a,i4,a)') '','Read local distribution for: ',mpl%nproc,' MPI tasks'
-      call flush(mpl%unit)
+      write(mpl%info,'(a7,a,i4,a)') '','Read local distribution for: ',mpl%nproc,' MPI tasks'
+      call flush(mpl%info)
 
       if (mpl%main) then
          ! Get variables ID
@@ -814,8 +814,8 @@ elseif (mpl%nproc>1) then
    else
       ! Generate a distribution
       if (nam%use_metis) then
-         write(mpl%unit,'(a7,a,i4,a)') '','Try to use METIS for ',mpl%nproc,' MPI tasks'
-         call flush(mpl%unit)
+         write(mpl%info,'(a7,a,i4,a)') '','Try to use METIS for ',mpl%nproc,' MPI tasks'
+         call flush(mpl%info)
 
          ! Compute graph
          call mesh%create(mpl,rng,geom%nc0,geom%lon,geom%lat)
@@ -862,8 +862,8 @@ elseif (mpl%nproc>1) then
       end if
 
       if (ismetis) then
-         write(mpl%unit,'(a7,a)') '','Use METIS to generate the local distribution'
-         call flush(mpl%unit)
+         write(mpl%info,'(a7,a)') '','Use METIS to generate the local distribution'
+         call flush(mpl%info)
 
          if (mpl%main) then
             ! Allocation
@@ -897,8 +897,8 @@ elseif (mpl%nproc>1) then
          call mpl%bcast(geom%c0_to_proc)
          call mpl%bcast(geom%c0_to_c0a)
       else
-         write(mpl%unit,'(a7,a)') '','Define a basic local distribution'
-         call flush(mpl%unit)
+         write(mpl%info,'(a7,a)') '','Define a basic local distribution'
+         call flush(mpl%info)
 
          ! Basic distribution
          nc0amax = geom%nc0/mpl%nproc

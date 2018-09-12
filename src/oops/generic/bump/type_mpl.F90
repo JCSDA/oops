@@ -36,9 +36,10 @@ type mpl_type
    integer :: mpi_comm              !< MPI communicator
    integer :: nproc                 !< Number of MPI tasks
    integer :: myproc                !< MPI task index
-   integer :: ioproc = 1            !< Main task index
+   integer :: ioproc                !< Main task index
    logical :: main                  !< Main task logical
-   integer :: unit                  !< Listing unit
+   integer :: info                  !< Listing unit (info)
+   integer :: test                  !< Listing unit (test)
    integer :: rtype                 !< MPI real type
    integer :: tag                   !< MPI tag
    integer :: nthread               !< Number of OpenMP threads
@@ -64,6 +65,7 @@ contains
    procedure :: check => mpl_check
    procedure :: init => mpl_init
    procedure :: init_listing => mpl_init_listing
+   procedure :: delete_empty_test => mpl_delete_empty_test
    procedure :: abort => mpl_abort
    procedure :: warning => mpl_warning
    procedure :: barrier => mpl_barrier
@@ -233,6 +235,7 @@ call mpl%check(info)
 mpl%myproc = mpl%myproc+1
 
 ! Define main task
+mpl%ioproc = 1
 mpl%main = (mpl%myproc==mpl%ioproc)
 
 ! Define real type for MPI
@@ -260,7 +263,7 @@ end subroutine mpl_init
 
 !----------------------------------------------------------------------
 ! Subroutine: mpl_init_listing
-!> Purpose: start MPI
+!> Purpose: initialize listings
 !----------------------------------------------------------------------
 subroutine mpl_init_listing(mpl,prefix,model,colorlog,logpres,lunit)
 
@@ -308,20 +311,20 @@ else
    end if
 end if
 
-! Define unit and open file
+! Define info unit and open file
 do iproc=1,mpl%nproc
    if (mpl%main.and.present(lunit)) then
       ! Specific listing unit
-      mpl%unit = lunit
+      mpl%info = lunit
    else
       ! Deal with each proc sequentially
       if (iproc==mpl%myproc) then
          ! Find a free unit
-         call mpl%newunit(mpl%unit)
+         call mpl%newunit(mpl%info)
 
          ! Open listing file
-         write(filename,'(a,i4.4)') trim(prefix)//'.out.',mpl%myproc-1
-         open(unit=mpl%unit,file=trim(filename),action='write')
+         write(filename,'(a,i4.4)') trim(prefix)//'.info.',mpl%myproc-1
+         open(unit=mpl%info,file=trim(filename),action='write',status='replace')
       end if
    end if
 
@@ -329,7 +332,59 @@ do iproc=1,mpl%nproc
    call mpl%barrier
 end do
 
+! Define test unit and open file
+do iproc=1,mpl%nproc
+   ! Deal with each proc sequentially
+   if (iproc==mpl%myproc) then
+      ! Find a free unit
+      call mpl%newunit(mpl%test)
+
+      ! Open listing file
+      write(filename,'(a,i4.4)') trim(prefix)//'.test.',mpl%myproc-1
+      open(unit=mpl%test,file=trim(filename),action='write',status='replace')
+   end if
+
+   ! Wait
+   call mpl%barrier
+end do
+
 end subroutine mpl_init_listing
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_delete_empty_test
+!> Purpose: delete test file if empty
+!----------------------------------------------------------------------
+subroutine mpl_delete_empty_test(mpl,prefix)
+
+implicit none
+
+! Passed variables
+class(mpl_type),intent(in) :: mpl     !< MPI data
+character(len=*),intent(in) :: prefix !< Output prefix
+
+! Local variables
+integer :: iproc,isize
+character(len=1024) :: filename
+
+! Define test unit and open file
+do iproc=1,mpl%nproc
+   ! Deal with each proc sequentially
+   if (iproc==mpl%myproc) then
+      ! Check file size
+      write(filename,'(a,i4.4)') trim(prefix)//'.test.',mpl%myproc-1
+      inquire(file=trim(filename),size=isize)
+      if (isize==0) then
+         call execute_command_line ('rm -f '//trim(filename))
+      elseif (mpl%main) then
+         call execute_command_line ('cp -f '//trim(filename)//' bump.test')
+      end if
+   end if
+
+   ! Wait
+   call mpl%barrier
+end do
+
+end subroutine mpl_delete_empty_test
 
 !----------------------------------------------------------------------
 ! Subroutine: mpl_abort
@@ -347,8 +402,8 @@ character(len=*),intent(in) :: message !< Message
 integer :: info
 
 ! Write message
-write(mpl%unit,'(a)') trim(mpl%err)//'!!! Error: '//trim(message)//trim(mpl%black)
-call flush(mpl%unit)
+write(mpl%info,'(a)') trim(mpl%err)//'!!! Error: '//trim(message)//trim(mpl%black)
+call flush(mpl%info)
 
 ! Write message
 write(output_unit,'(a,i4.4,a)') '!!! ABORT on task #',mpl%myproc,': '//trim(message)
@@ -394,8 +449,8 @@ class(mpl_type),intent(in) :: mpl      !< MPI data
 character(len=*),intent(in) :: message !< Message
 
 ! Print warning message
-write(mpl%unit,'(a)') trim(mpl%wng)//'!!! Warning: '//trim(message)//trim(mpl%black)
-call flush(mpl%unit)
+write(mpl%info,'(a)') trim(mpl%wng)//'!!! Warning: '//trim(message)//trim(mpl%black)
+call flush(mpl%info)
 
 end subroutine mpl_warning
 
@@ -412,8 +467,8 @@ class(mpl_type),intent(inout) :: mpl !< MPI data
 integer,intent(in) :: nprog          !< Array size
 
 ! Print message
-write(mpl%unit,'(i3,a)',advance='no') 0,'%'
-call flush(mpl%unit)
+write(mpl%info,'(i3,a)',advance='no') 0,'%'
+call flush(mpl%info)
 
 ! Allocation
 if (allocated(mpl%done)) deallocate(mpl%done)
@@ -448,8 +503,8 @@ if (present(i)) mpl%done(i) = .true.
 prog = 100.0*real(count(mpl%done),kind_real)/real(mpl%nprog,kind_real)
 if (int(prog)>mpl%progint) then
    if (mpl%progint<100) then
-      write(mpl%unit,'(i3,a)',advance='no') mpl%progint,'% '
-      call flush(mpl%unit)
+      write(mpl%info,'(i3,a)',advance='no') mpl%progint,'% '
+      call flush(mpl%info)
    end if
    mpl%progint = mpl%progint+ddis
 end if
@@ -513,6 +568,7 @@ integer :: info,mpi_root
 
 ! Find root
 if (present(root)) then
+   if ((root<1).or.(root>mpl%nproc)) call mpl%abort('specified broadcast root out of range')
    mpi_root = root-1
 else
    mpi_root = mpl%ioproc-1
@@ -544,6 +600,7 @@ integer :: info,mpi_root
 
 ! Find root
 if (present(root)) then
+   if ((root<1).or.(root>mpl%nproc)) call mpl%abort('specified broadcast root out of range')
    mpi_root = root-1
 else
    mpi_root = mpl%ioproc-1
@@ -575,6 +632,7 @@ integer :: info,mpi_root
 
 ! Find root
 if (present(root)) then
+   if ((root<1).or.(root>mpl%nproc)) call mpl%abort('specified broadcast root out of range')
    mpi_root = root-1
 else
    mpi_root = mpl%ioproc-1
@@ -606,6 +664,7 @@ integer :: info,mpi_root
 
 ! Find root
 if (present(root)) then
+   if ((root<1).or.(root>mpl%nproc)) call mpl%abort('specified broadcast root out of range')
    mpi_root = root-1
 else
    mpi_root = mpl%ioproc-1
@@ -637,6 +696,7 @@ integer :: info,mpi_root
 
 ! Find root
 if (present(root)) then
+   if ((root<1).or.(root>mpl%nproc)) call mpl%abort('specified broadcast root out of range')
    mpi_root = root-1
 else
    mpi_root = mpl%ioproc-1
@@ -668,6 +728,7 @@ integer :: info,mpi_root
 
 ! Find root
 if (present(root)) then
+   if ((root<1).or.(root>mpl%nproc)) call mpl%abort('specified broadcast root out of range')
    mpi_root = root-1
 else
    mpi_root = mpl%ioproc-1
@@ -699,6 +760,7 @@ integer :: info,mpi_root
 
 ! Find root
 if (present(root)) then
+   if ((root<1).or.(root>mpl%nproc)) call mpl%abort('specified broadcast root out of range')
    mpi_root = root-1
 else
    mpi_root = mpl%ioproc-1
@@ -730,6 +792,7 @@ integer :: info,mpi_root
 
 ! Find root
 if (present(root)) then
+   if ((root<1).or.(root>mpl%nproc)) call mpl%abort('specified broadcast root out of range')
    mpi_root = root-1
 else
    mpi_root = mpl%ioproc-1
@@ -761,6 +824,7 @@ integer :: info,mpi_root
 
 ! Find root
 if (present(root)) then
+   if ((root<1).or.(root>mpl%nproc)) call mpl%abort('specified broadcast root out of range')
    mpi_root = root-1
 else
    mpi_root = mpl%ioproc-1
@@ -792,6 +856,7 @@ integer :: info,mpi_root
 
 ! Find root
 if (present(root)) then
+   if ((root<1).or.(root>mpl%nproc)) call mpl%abort('specified broadcast root out of range')
    mpi_root = root-1
 else
    mpi_root = mpl%ioproc-1
@@ -823,6 +888,7 @@ integer :: info,mpi_root
 
 ! Find root
 if (present(root)) then
+   if ((root<1).or.(root>mpl%nproc)) call mpl%abort('specified broadcast root out of range')
    mpi_root = root-1
 else
    mpi_root = mpl%ioproc-1
@@ -854,6 +920,7 @@ integer :: info,mpi_root
 
 ! Find root
 if (present(root)) then
+   if ((root<1).or.(root>mpl%nproc)) call mpl%abort('specified broadcast root out of range')
    mpi_root = root-1
 else
    mpi_root = mpl%ioproc-1
@@ -885,6 +952,7 @@ integer :: info,mpi_root
 
 ! Find root
 if (present(root)) then
+   if ((root<1).or.(root>mpl%nproc)) call mpl%abort('specified broadcast root out of range')
    mpi_root = root-1
 else
    mpi_root = mpl%ioproc-1
@@ -916,6 +984,7 @@ integer :: info,mpi_root
 
 ! Find root
 if (present(root)) then
+   if ((root<1).or.(root>mpl%nproc)) call mpl%abort('specified broadcast root out of range')
    mpi_root = root-1
 else
    mpi_root = mpl%ioproc-1
@@ -947,6 +1016,7 @@ integer :: info,mpi_root
 
 ! Find root
 if (present(root)) then
+   if ((root<1).or.(root>mpl%nproc)) call mpl%abort('specified broadcast root out of range')
    mpi_root = root-1
 else
    mpi_root = mpl%ioproc-1
@@ -979,6 +1049,7 @@ integer :: i
 ! Broadcast one string at a time
 do i=1,size(var)
    if (present(root)) then
+      if ((root<1).or.(root>mpl%nproc)) call mpl%abort('specified broadcast root out of range')
       call mpl%bcast(var(i),root)
    else
       call mpl%bcast(var(i))
@@ -1004,6 +1075,9 @@ integer,intent(in) :: tag         !< Tag
 ! Local variable
 integer :: info
 integer,dimension(mpi_status_size) :: status
+
+! Check source task
+if ((src<1).or.(src>mpl%nproc)) call mpl%abort('specified source task out of range')
 
 ! Receive
 call mpi_recv(var,1,mpi_integer,src-1,tag,mpl%mpi_comm,status,info)
@@ -1032,6 +1106,9 @@ integer,intent(in) :: tag         !< Tag
 integer :: info
 integer,dimension(mpi_status_size) :: status
 
+! Check source task
+if ((src<1).or.(src>mpl%nproc)) call mpl%abort('specified source task out of range')
+
 ! Receive
 call mpi_recv(var,n,mpi_integer,src-1,tag,mpl%mpi_comm,status,info)
 
@@ -1057,6 +1134,9 @@ integer,intent(in) :: tag          !< Tag
 ! Local variable
 integer :: info
 integer,dimension(mpi_status_size) :: status
+
+! Check source task
+if ((src<1).or.(src>mpl%nproc)) call mpl%abort('specified source task out of range')
 
 ! Receive
 call mpi_recv(var,1,mpl%rtype,src-1,tag,mpl%mpi_comm,status,info)
@@ -1085,6 +1165,9 @@ integer,intent(in) :: tag             !< Tag
 integer :: info
 integer,dimension(mpi_status_size) :: status
 
+! Check source task
+if ((src<1).or.(src>mpl%nproc)) call mpl%abort('specified source task out of range')
+
 ! Receive
 call mpi_recv(var,n,mpl%rtype,src-1,tag,mpl%mpi_comm,status,info)
 
@@ -1112,6 +1195,9 @@ integer,intent(in) :: tag         !< Tag
 integer :: info
 integer,dimension(mpi_status_size) :: status
 
+! Check source task
+if ((src<1).or.(src>mpl%nproc)) call mpl%abort('specified source task out of range')
+
 ! Receive
 call mpi_recv(var,n,mpi_logical,src-1,tag,mpl%mpi_comm,status,info)
 
@@ -1136,6 +1222,9 @@ integer,intent(in) :: tag         !< Tag
 
 ! Local variable
 integer :: info
+
+! Check destination task
+if ((dst<1).or.(dst>mpl%nproc)) call mpl%abort('specified destination task out of range')
 
 ! Send
 call mpi_send(var,1,mpi_integer,dst-1,tag,mpl%mpi_comm,info)
@@ -1163,6 +1252,9 @@ integer,intent(in) :: tag         !< Tag
 ! Local variable
 integer :: info
 
+! Check destination task
+if ((dst<1).or.(dst>mpl%nproc)) call mpl%abort('specified destination task out of range')
+
 ! Send
 call mpi_send(var,n,mpi_integer,dst-1,tag,mpl%mpi_comm,info)
 
@@ -1187,6 +1279,9 @@ integer,intent(in) :: tag         !< Tag
 
 ! Local variable
 integer :: info
+
+! Check destination task
+if ((dst<1).or.(dst>mpl%nproc)) call mpl%abort('specified destination task out of range')
 
 ! Send
 call mpi_send(var,1,mpl%rtype,dst-1,tag,mpl%mpi_comm,info)
@@ -1214,6 +1309,9 @@ integer,intent(in) :: tag            !< Tag
 ! Local variable
 integer :: info
 
+! Check destination task
+if ((dst<1).or.(dst>mpl%nproc)) call mpl%abort('specified destination task out of range')
+
 ! Send
 call mpi_send(var,n,mpl%rtype,dst-1,tag,mpl%mpi_comm,info)
 
@@ -1239,6 +1337,9 @@ integer,intent(in) :: tag         !< Tag
 
 ! Local variable
 integer :: info
+
+! Check destination task
+if ((dst<1).or.(dst>mpl%nproc)) call mpl%abort('specified destination task out of range')
 
 ! Send
 call mpi_send(var,n,mpi_logical,dst-1,tag,mpl%mpi_comm,info)
@@ -2033,12 +2134,12 @@ implicit none
 
 ! Passed variables
 class(mpl_type),intent(inout) :: mpl      !< MPI data
-integer,intent(in) :: n_glb               !< TODO
-integer,intent(in) :: glb_to_proc(n_glb)  !< TODO
-integer,intent(in) :: glb_to_loc(n_glb)   !< TODO
-real(kind_real),intent(in) :: glb(n_glb)  !< TODO
-integer,intent(in) :: n_loc               !< Local dimension
-real(kind_real),intent(out) :: loc(n_loc) !< TODO
+integer,intent(in) :: n_glb               !< Global array size
+integer,intent(in) :: glb_to_proc(n_glb)  !< Global index to task index
+integer,intent(in) :: glb_to_loc(n_glb)   !< Global index to local index
+real(kind_real),intent(in) :: glb(n_glb)  !< Global array
+integer,intent(in) :: n_loc               !< Local array size
+real(kind_real),intent(out) :: loc(n_loc) !< Local array
 
 ! Local variables
 integer :: iproc,jproc,i_glb,i_loc,n_loc_tmp
@@ -2089,12 +2190,12 @@ implicit none
 ! Passed variables
 class(mpl_type),intent(inout) :: mpl         !< MPI data
 integer,intent(in) :: nl                     !< Number of levels
-integer,intent(in) :: n_glb                  !< TODO
-integer,intent(in) :: glb_to_proc(n_glb)     !< TODO
-integer,intent(in) :: glb_to_loc(n_glb)      !< TODO
-real(kind_real),intent(in) :: glb(n_glb,nl)  !< TODO
-integer,intent(in) :: n_loc                  !< Local dimension
-real(kind_real),intent(out) :: loc(n_loc,nl) !< TODO
+integer,intent(in) :: n_glb                  !< Global array size
+integer,intent(in) :: glb_to_proc(n_glb)     !< Global index to task index
+integer,intent(in) :: glb_to_loc(n_glb)      !< Global index to local index
+real(kind_real),intent(in) :: glb(n_glb,nl)  !< Global array
+integer,intent(in) :: n_loc                  !< Local array size
+real(kind_real),intent(out) :: loc(n_loc,nl) !< Local array
 
 ! Local variables
 integer :: iproc,jproc,i_glb,i_loc,n_loc_tmp,il
@@ -2162,14 +2263,14 @@ subroutine mpl_loc_to_glb_1d(mpl,n_loc,loc,n_glb,glb_to_proc,glb_to_loc,bcast,gl
 implicit none
 
 ! Passed variables
-class(mpl_type),intent(inout) :: mpl     !< MPI data
-integer,intent(in) :: n_loc              !< Local dimension
-real(kind_real),intent(in) :: loc(n_loc) !< TODO
-integer,intent(in) :: n_glb
-integer,intent(in) :: glb_to_proc(n_glb)
-integer,intent(in) :: glb_to_loc(n_glb)
-logical,intent(in) :: bcast
-real(kind_real),intent(out) :: glb(n_glb)
+class(mpl_type),intent(inout) :: mpl      !< MPI data
+integer,intent(in) :: n_loc               !< Local array size
+real(kind_real),intent(in) :: loc(n_loc)  !< Local array
+integer,intent(in) :: n_glb               !< Global array size
+integer,intent(in) :: glb_to_proc(n_glb)  !< Global index to task index
+integer,intent(in) :: glb_to_loc(n_glb)   !< Global index to local index
+logical,intent(in) :: bcast               !< Broadcast option
+real(kind_real),intent(out) :: glb(n_glb) !< Global array
 
 ! Local variables
 integer :: iproc,jproc,i_glb,i_loc,n_loc_tmp
@@ -2221,15 +2322,15 @@ subroutine mpl_loc_to_glb_2d(mpl,nl,n_loc,loc,n_glb,glb_to_proc,glb_to_loc,bcast
 implicit none
 
 ! Passed variables
-class(mpl_type),intent(inout) :: mpl        !< MPI data
-integer,intent(in) :: nl                    !< Number of levels
-integer,intent(in) :: n_loc                 !< Local dimension
-real(kind_real),intent(in) :: loc(n_loc,nl) !< TODO
-integer,intent(in) :: n_glb                 !< TODO
-integer,intent(in) :: glb_to_proc(n_glb)    !< TODO
-integer,intent(in) :: glb_to_loc(n_glb)     !< TODO
-logical,intent(in) :: bcast
-real(kind_real),intent(out) :: glb(n_glb,nl)
+class(mpl_type),intent(inout) :: mpl         !< MPI data
+integer,intent(in) :: nl                     !< Number of levels
+integer,intent(in) :: n_loc                  !< Local array size
+real(kind_real),intent(in) :: loc(n_loc,nl)  !< Local array
+integer,intent(in) :: n_glb                  !< Global array size
+integer,intent(in) :: glb_to_proc(n_glb)     !< Global index to task index
+integer,intent(in) :: glb_to_loc(n_glb)      !< Global index to local index
+logical,intent(in) :: bcast                  !< Broadcast option
+real(kind_real),intent(out) :: glb(n_glb,nl) !< Global array
 
 ! Local variables
 integer :: iproc,jproc,i_glb,i_loc,n_loc_tmp,il

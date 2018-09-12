@@ -86,11 +86,11 @@ rng%seed = int(seed,kind=int64)
 
 ! Print result
 if (nam%default_seed) then
-   write(mpl%unit,'(a7,a)') '','Linear congruential generator initialized with a default seed'
+   write(mpl%info,'(a7,a)') '','Linear congruential generator initialized with a default seed'
 else
-   write(mpl%unit,'(a7,a)') '','Linear congruential generator initialized'
+   write(mpl%info,'(a7,a)') '','Linear congruential generator initialized'
 end if
-call flush(mpl%unit)
+call flush(mpl%info)
 
 end subroutine rng_init
 
@@ -458,7 +458,7 @@ if (nval==0) then
 elseif (nval<ns) then
    call mpl%abort('ns greater that mask size in initialize_sampling')
 elseif (nval==ns) then
-   write(mpl%unit,'(a)') 'all points are used'
+   write(mpl%info,'(a)') 'all points are used'
    is = 0
    do i=1,n
       if (mask(i)) then
@@ -600,8 +600,8 @@ else
       ! Update
       if (is+irep-2>0) call mpl%prog_print(is+irep-2)
    end do
-   write(mpl%unit,'(a)') '100%'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '100%'
+   call flush(mpl%info)
 end if
 
 end subroutine initialize_sampling

@@ -76,7 +76,6 @@ LocalizationBUMP<MODEL>::LocalizationBUMP(const Geometry_ & resol,
   Increment_ dx(resol, vars, date);
 
 // Define unstructured grid coordinates
-  colocated_ = 1;  // conf.getString("colocated") TODO
   UnstructuredGrid ug;
   dx.ug_coord(ug, colocated_);
 
@@ -116,6 +115,12 @@ LocalizationBUMP<MODEL>::LocalizationBUMP(const Geometry_ & resol,
 
 // Run BUMP
   run_oobump_drivers_f90(keyBUMP_);
+
+// Copy test
+  std::ifstream infile("bump.test");
+  std::string line;
+  while (std::getline(infile, line)) Log::test() << line << std::endl;
+  remove("bump.test");
 
   Log::trace() << "LocalizationBUMP:LocalizationBUMP constructed" << std::endl;
 }

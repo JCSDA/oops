@@ -738,8 +738,8 @@ if (trim(interp_type)=='natural') then
 end if
 
 ! Compute interpolation
-write(mpl%unit,'(a10,a)',advance='no') '','Compute interpolation: '
-call flush(mpl%unit)
+write(mpl%info,'(a10,a)',advance='no') '','Compute interpolation: '
+call flush(mpl%info)
 call mpl%prog_init(n_dst_loc(mpl%myproc))
 n_s = 0
 do i_dst_loc=1,n_dst_loc(mpl%myproc)
@@ -830,8 +830,8 @@ do i_dst_loc=1,n_dst_loc(mpl%myproc)
    ! Update
    call mpl%prog_print(i_dst_loc)
 end do
-write(mpl%unit,'(a)') '100%'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '100%'
+call flush(mpl%info)
 
 ! Communication
 call mpl%allgather(n_s,proc_to_n_s)
@@ -952,8 +952,8 @@ end do
 
 ! Check mask boundaries
 if (mask_check) then
-   write(mpl%unit,'(a10,a,i3,a)',advance='no') '','Sublevel ',il0i,': '
-   call flush(mpl%unit)
+   write(mpl%info,'(a10,a,i3,a)',advance='no') '','Sublevel ',il0i,': '
+   call flush(mpl%info)
    call interp_base%interp_check_mask(mpl,geom,valid,il0i,col_to_ic0=c1_to_c0)
 end if
 
@@ -973,8 +973,8 @@ if (geom%nl0i>1) then
       end if
    end do
    if (count(mask_extra)>0) then
-      write(mpl%unit,'(a10,a,i5)') '','Extrapolated points: ',count(mask_extra)
-      call flush(mpl%unit)
+      write(mpl%info,'(a10,a,i5)') '','Extrapolated points: ',count(mask_extra)
+      call flush(mpl%info)
    end if
 else
    mask_extra = .false.
@@ -1072,8 +1072,8 @@ do i_s_loc=1,n_s_loc(mpl%myproc)
    call mpl%prog_print(i_s_loc)
 end do
 !$omp end parallel do
-write(mpl%unit,'(a)') '100%'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '100%'
+call flush(mpl%info)
 
 ! Communication
 if (mpl%main) then
@@ -1133,7 +1133,7 @@ do i_s=1,linop%n_s
 end do
 
 if (count(missing)>0) then
-   write(mpl%unit,'(a10,a,i6,a)') '','Deal with ',count(missing),' missing interpolation points'
+   write(mpl%info,'(a10,a,i6,a)') '','Deal with ',count(missing),' missing interpolation points'
 
    ! Allocate temporary interpolation
    if (trim(interp_type)=='bilin') then

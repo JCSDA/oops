@@ -114,9 +114,9 @@ call minim%cost(mpl,minim%x,minim%f_min)
 if (minim%f_min<minim%f_guess) then
    call minim%vt_dir(minim%x)
    if (lprt) then
-      write(mpl%unit,'(a13,a,f6.1,a,e9.2,a,e9.2,a)') '','Minimizer '//trim(minim%algo)//', cost function decrease:', &
+      write(mpl%info,'(a13,a,f6.1,a,e9.2,a,e9.2,a)') '','Minimizer '//trim(minim%algo)//', cost function decrease:', &
     & abs(minim%f_min-minim%f_guess)/minim%f_guess*100.0,'% (',minim%f_guess,' to ',minim%f_min,')'
-      call flush(mpl%unit)
+      call flush(mpl%info)
    end if
 else
    minim%x = minim%guess

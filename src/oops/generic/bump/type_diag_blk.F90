@@ -477,9 +477,9 @@ if (any(isnotmsr(diag_blk%fit_rh)).and.any(isnotmsr(diag_blk%fit_rv))) then
       diag_blk%fit_rv = alpha_opt*diag_blk%fit_rv
 
       if (lprt) then
-         write(mpl%unit,'(a)') ''
-         write(mpl%unit,'(a13,a,f6.1,a)') '','Scaling optimization, cost function decrease:',abs(mse_opt-mse)/mse*100.0,'%'
-         call flush(mpl%unit)
+         write(mpl%info,'(a)') ''
+         write(mpl%info,'(a13,a,f6.1,a)') '','Scaling optimization, cost function decrease:',abs(mse_opt-mse)/mse*100.0,'%'
+         call flush(mpl%info)
       end if
    end if
 

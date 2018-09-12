@@ -301,86 +301,86 @@ type(hdata_type) :: hdata
 type(mom_type) :: mom_1,mom_2
 
 ! Setup sampling
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a,i5,a)') '--- Setup sampling (nc1 = ',nam%nc1,')'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '-------------------------------------------------------------------'
+write(mpl%info,'(a,i5,a)') '--- Setup sampling (nc1 = ',nam%nc1,')'
+call flush(mpl%info)
 call hdata%setup_sampling(mpl,rng,nam,geom,io)
 
 ! Compute MPI distribution, halo A
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Compute MPI distribution, halos A'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '-------------------------------------------------------------------'
+write(mpl%info,'(a)') '--- Compute MPI distribution, halos A'
+call flush(mpl%info)
 call hdata%compute_mpi_a(mpl,nam,geom)
 
 if (nam%new_lct.or.nam%var_diag.or.nam%local_diag.or.nam%displ_diag) then
    ! Compute MPI distribution, halos A-B
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Compute MPI distribution, halos A-B'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(mpl%info,'(a)') '--- Compute MPI distribution, halos A-B'
+   call flush(mpl%info)
    call hdata%compute_mpi_ab(mpl,nam,geom)
 end if
 
 if (nam%displ_diag) then
    ! Compute MPI distribution, halo D
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Compute MPI distribution, halo D'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(mpl%info,'(a)') '--- Compute MPI distribution, halo D'
+   call flush(mpl%info)
    call hdata%compute_mpi_d(mpl,nam,geom)
 
    ! Compute displacement diagnostic
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Compute displacement diagnostic'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(mpl%info,'(a)') '--- Compute displacement diagnostic'
+   call flush(mpl%info)
    call displ%compute(mpl,nam,geom,hdata,ens1)
 end if
 
 ! Compute MPI distribution, halo C
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Compute MPI distribution, halo C'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '-------------------------------------------------------------------'
+write(mpl%info,'(a)') '--- Compute MPI distribution, halo C'
+call flush(mpl%info)
 call hdata%compute_mpi_c(mpl,nam,geom)
 
 if ((nam%local_diag.or.nam%displ_diag).and.(nam%diag_rhflt>0.0)) then
    ! Compute MPI distribution, halo F
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Compute MPI distribution, halo F'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(mpl%info,'(a)') '--- Compute MPI distribution, halo F'
+   call flush(mpl%info)
    call hdata%compute_mpi_f(mpl,nam,geom)
 end if
 
 ! Compute sample moments
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Compute sample moments'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '-------------------------------------------------------------------'
+write(mpl%info,'(a)') '--- Compute sample moments'
+call flush(mpl%info)
 
 ! Compute ensemble 1 sample moments
-write(mpl%unit,'(a7,a)') '','Ensemble 1:'
-call flush(mpl%unit)
+write(mpl%info,'(a7,a)') '','Ensemble 1:'
+call flush(mpl%info)
 call mom_1%compute(mpl,nam,geom,bpar,hdata,ens1)
 
 select case(trim(nam%method))
 case ('hyb-rnd','dual-ens')
    ! Compute randomized sample moments
-   write(mpl%unit,'(a7,a)') '','Ensemble 2:'
-   call flush(mpl%unit)
+   write(mpl%info,'(a7,a)') '','Ensemble 2:'
+   call flush(mpl%info)
    call mom_2%compute(mpl,nam,geom,bpar,hdata,ens2)
 end select
 
 ! Compute statistics
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Compute statistics'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '-------------------------------------------------------------------'
+write(mpl%info,'(a)') '--- Compute statistics'
+call flush(mpl%info)
 
 ! Compute ensemble 1 statistics
-write(mpl%unit,'(a7,a)') '','Ensemble 1:'
-call flush(mpl%unit)
+write(mpl%info,'(a7,a)') '','Ensemble 1:'
+call flush(mpl%info)
 call avg_1%compute(mpl,nam,geom,bpar,hdata,mom_1,nam%ne)
 
 select case(trim(nam%method))
 case ('hyb-rnd','dual-ens')
    ! Compute ensemble 2 statistics
-   write(mpl%unit,'(a7,a)') '','Ensemble 2:'
-   call flush(mpl%unit)
+   write(mpl%info,'(a7,a)') '','Ensemble 2:'
+   call flush(mpl%info)
    call avg_2%compute(mpl,nam,geom,bpar,hdata,mom_2,nam%ens2_ne)
 case ('hyb-avg')
    ! Copy ensemble 1 statistics
@@ -390,36 +390,36 @@ end select
 select case (trim(nam%method))
 case ('hyb-avg','hyb-rnd','dual-ens')
    ! Compute hybrid statistics
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Compute hybrid statistics'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(mpl%info,'(a)') '--- Compute hybrid statistics'
+   call flush(mpl%info)
    call avg_2%compute_hyb(mpl,nam,geom,bpar,hdata,mom_1,mom_2,avg_1)
 end select
 
 if ((bpar%nbe>bpar%nb).and.bpar%diag_block(bpar%nbe)) then
    ! Compute block-averaged statistics
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Compute block-averaged statistics'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(mpl%info,'(a)') '--- Compute block-averaged statistics'
+   call flush(mpl%info)
    avg_wgt = avg_1%copy_wgt(geom,bpar)
    call avg_1%compute_bwavg(mpl,nam,geom,bpar,avg_wgt)
    if ((trim(nam%method)=='hyb-rnd').or.(trim(nam%method)=='dual-ens')) call avg_2%compute_bwavg(mpl,nam,geom,bpar,avg_wgt)
 end if
 
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Compute covariance'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '-------------------------------------------------------------------'
+write(mpl%info,'(a)') '--- Compute covariance'
+call flush(mpl%info)
 
 ! Compute ensemble 1 covariance
-write(mpl%unit,'(a7,a)') '','Ensemble 1:'
-call flush(mpl%unit)
+write(mpl%info,'(a7,a)') '','Ensemble 1:'
+call flush(mpl%info)
 call cov_1%covariance(mpl,nam,geom,bpar,io,hdata,avg_1,'cov')
 
 select case (trim(nam%method))
 case ('hyb-avg','hyb-rnd','dual-ens')
    ! Compute ensemble 2 covariance
-   write(mpl%unit,'(a7,a)') '','Ensemble 2:'
-   call flush(mpl%unit)
+   write(mpl%info,'(a7,a)') '','Ensemble 2:'
+   call flush(mpl%info)
    select case (trim(nam%method))
    case ('hyb-avg','hyb-rnd')
       call cov_2%covariance(mpl,nam,geom,bpar,io,hdata,avg_2,'cov_sta')
@@ -428,20 +428,20 @@ case ('hyb-avg','hyb-rnd','dual-ens')
    end select
 end select
 
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Compute correlation'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '-------------------------------------------------------------------'
+write(mpl%info,'(a)') '--- Compute correlation'
+call flush(mpl%info)
 
 ! Compute ensemble 1 correlation
-write(mpl%unit,'(a7,a)') '','Ensemble 1:'
-call flush(mpl%unit)
+write(mpl%info,'(a7,a)') '','Ensemble 1:'
+call flush(mpl%info)
 call cor_1%correlation(mpl,nam,geom,bpar,io,hdata,avg_1,'cor')
 
 select case (trim(nam%method))
 case ('hyb-avg','hyb-rnd','dual-ens')
    ! Compute ensemble 2 correlation
-   write(mpl%unit,'(a7,a)') '','Ensemble 2:'
-   call flush(mpl%unit)
+   write(mpl%info,'(a7,a)') '','Ensemble 2:'
+   call flush(mpl%info)
    select case (trim(nam%method))
    case ('hyb-avg','hyb-rnd')
       call cor_2%correlation(mpl,nam,geom,bpar,io,hdata,avg_2,'cor_sta')
@@ -453,37 +453,37 @@ end select
 select case (trim(nam%method))
 case ('loc_norm','loc','hyb-avg','hyb-rnd','dual-ens')
    ! Compute localization
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Compute localization'
-   write(mpl%unit,'(a7,a)') '','Ensemble 1:'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(mpl%info,'(a)') '--- Compute localization'
+   write(mpl%info,'(a7,a)') '','Ensemble 1:'
+   call flush(mpl%info)
    call loc_1%localization(mpl,nam,geom,bpar,io,hdata,avg_1,'loc')
 end select
 
 select case (trim(nam%method))
 case ('hyb-avg','hyb-rnd')
    ! Compute static hybridization
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Compute static hybridization'
-   write(mpl%unit,'(a7,a)') '','Ensemble 1 and 2:'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(mpl%info,'(a)') '--- Compute static hybridization'
+   write(mpl%info,'(a7,a)') '','Ensemble 1 and 2:'
+   call flush(mpl%info)
    call loc_2%hybridization(mpl,nam,geom,bpar,io,hdata,avg_1,avg_2,'loc_hyb')
 end select
 
 if (trim(nam%method)=='dual-ens') then
    ! Compute dual-ensemble hybridization diagnostic and fit
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Compute dual-ensemble hybridization'
-   write(mpl%unit,'(a7,a)') '','Ensembles 1 and 2:'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(mpl%info,'(a)') '--- Compute dual-ensemble hybridization'
+   write(mpl%info,'(a7,a)') '','Ensembles 1 and 2:'
+   call flush(mpl%info)
    call loc_2%dualens(mpl,nam,geom,bpar,io,hdata,avg_1,avg_2,loc_3,'loc_deh','loc_deh_lr')
 end if
 
 if (trim(nam%minim_algo)/='none') then
    ! Copy diagnostics into C matrix data
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Copy diagnostics into C matrix data'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(mpl%info,'(a)') '--- Copy diagnostics into C matrix data'
+   call flush(mpl%info)
    select case (trim(nam%method))
    case ('cor')
       call cmat%from_diag(mpl,nam,geom,bpar,hdata,cor_1)
@@ -498,16 +498,16 @@ if (trim(nam%minim_algo)/='none') then
    end select
 
    ! Write C matrix data
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Write C matrix data'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(mpl%info,'(a)') '--- Write C matrix data'
+   call flush(mpl%info)
    call cmat%write(mpl,nam,geom,bpar,io)
 end if
 
 ! Write data
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Write data'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '-------------------------------------------------------------------'
+write(mpl%info,'(a)') '--- Write data'
+call flush(mpl%info)
 
 ! Displacement
 if (nam%displ_diag) call displ%write(mpl,nam,geom,hdata,trim(nam%prefix)//'_displ_diag.nc')
@@ -664,9 +664,9 @@ type(bpar_type),intent(in) :: bpar                                   !< Block pa
 ! Local variables
 integer :: ib,iv,jv,its,jts
 
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Copy namemlist radii into C matrix'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '-------------------------------------------------------------------'
+write(mpl%info,'(a)') '--- Copy namemlist radii into C matrix'
+call flush(mpl%info)
 
 ! Allocation
 call cmat%alloc(nam,geom,bpar,'cmat')
@@ -719,29 +719,29 @@ integer :: ib
 do ib=1,bpar%nbe
    if (bpar%B_block(ib)) then
       if (allocated(cmat%blk(ib)%oops_coef_ens)) then
-         write(mpl%unit,'(a7,a,a)') '','Ensemble coefficient copied from OOPS for block ',trim(bpar%blockname(ib))
+         write(mpl%info,'(a7,a,a)') '','Ensemble coefficient copied from OOPS for block ',trim(bpar%blockname(ib))
          cmat%blk(ib)%coef_ens = cmat%blk(ib)%oops_coef_ens
          call mpl%allreduce_sum(sum(cmat%blk(ib)%coef_ens,mask=geom%mask_c0a),cmat%blk(ib)%wgt)
          cmat%blk(ib)%wgt = cmat%blk(ib)%wgt/real(count(geom%mask_c0),kind_real)
       end if
       if (allocated(cmat%blk(ib)%oops_coef_sta)) then
-         write(mpl%unit,'(a7,a,a)') '','Static coefficient copied from OOPS for block ',trim(bpar%blockname(ib))
+         write(mpl%info,'(a7,a,a)') '','Static coefficient copied from OOPS for block ',trim(bpar%blockname(ib))
          cmat%blk(ib)%coef_sta = cmat%blk(ib)%oops_coef_sta
       end if
       if (allocated(cmat%blk(ib)%oops_rh)) then
-         write(mpl%unit,'(a7,a,a)') '','Horizontal fit support radius copied from OOPS for block ',trim(bpar%blockname(ib))
+         write(mpl%info,'(a7,a,a)') '','Horizontal fit support radius copied from OOPS for block ',trim(bpar%blockname(ib))
          cmat%blk(ib)%rh = cmat%blk(ib)%oops_rh
       end if
       if (allocated(cmat%blk(ib)%oops_rv)) then
-         write(mpl%unit,'(a7,a,a)') '','Vertical fit support radius copied from OOPS for block ',trim(bpar%blockname(ib))
+         write(mpl%info,'(a7,a,a)') '','Vertical fit support radius copied from OOPS for block ',trim(bpar%blockname(ib))
          cmat%blk(ib)%rv = cmat%blk(ib)%oops_rv
       end if
       if (allocated(cmat%blk(ib)%oops_rv_rfac)) then
-         write(mpl%unit,'(a7,a,a)') '','Vertical fit factor copied from OOPS for block ',trim(bpar%blockname(ib))
+         write(mpl%info,'(a7,a,a)') '','Vertical fit factor copied from OOPS for block ',trim(bpar%blockname(ib))
          cmat%blk(ib)%rv_rfac = cmat%blk(ib)%oops_rv_rfac
       end if
       if (allocated(cmat%blk(ib)%oops_rv_coef)) then
-         write(mpl%unit,'(a7,a,a)') '','Vertical fit coefficient copied from OOPS for block ',trim(bpar%blockname(ib))
+         write(mpl%info,'(a7,a,a)') '','Vertical fit coefficient copied from OOPS for block ',trim(bpar%blockname(ib))
          cmat%blk(ib)%rv_coef = cmat%blk(ib)%oops_rv_coef
       end if
    end if

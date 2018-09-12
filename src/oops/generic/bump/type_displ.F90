@@ -206,20 +206,20 @@ displ%lon_c2a = lon_c2a_ori
 displ%lat_c2a = lat_c2a_ori
 
 ! Compute moments
-write(mpl%unit,'(a7,a)') '','Compute moments'
-call flush(mpl%unit)
+write(mpl%info,'(a7,a)') '','Compute moments'
+call flush(mpl%info)
 do isub=1,ens%nsub
    if (ens%nsub==1) then
-      write(mpl%unit,'(a10,a)',advance='no') '','Full ensemble, member:'
+      write(mpl%info,'(a10,a)',advance='no') '','Full ensemble, member:'
    else
-      write(mpl%unit,'(a10,a,i4,a)',advance='no') '','Sub-ensemble ',isub,', member:'
+      write(mpl%info,'(a10,a,i4,a)',advance='no') '','Sub-ensemble ',isub,', member:'
    end if
-   call flush(mpl%unit)
+   call flush(mpl%info)
 
    ! Compute centered moments iteratively
    do ie_sub=1,ens%ne/ens%nsub
-      write(mpl%unit,'(i4)',advance='no') ie_sub
-      call flush(mpl%unit)
+      write(mpl%info,'(i4)',advance='no') ie_sub
+      call flush(mpl%info)
 
       ! Full ensemble index
       ie = ie_sub+(isub-1)*ens%ne/ens%nsub
@@ -281,18 +281,18 @@ do isub=1,ens%nsub
          end do
       end do
    end do
-   write(mpl%unit,'(a)') ''
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') ''
+   call flush(mpl%info)
 end do
 
 ! Find correlation propagation
-write(mpl%unit,'(a7,a)') '','Find correlation propagation'
-call flush(mpl%unit)
+write(mpl%info,'(a7,a)') '','Find correlation propagation'
+call flush(mpl%info)
 
 do its=2,nam%nts
    do il0=1,geom%nl0
-      write(mpl%unit,'(a10,a,i2,a,i3)') '','Timeslot ',its,' - level ',nam%levs(il0)
-      call flush(mpl%unit)
+      write(mpl%info,'(a10,a,i2,a,i3)') '','Timeslot ',its,' - level ',nam%levs(il0)
+      call flush(mpl%info)
 
       ! Number of points
       norm = real(count(mask_c2a(:,il0)),kind_real)
@@ -525,10 +525,10 @@ do its=2,nam%nts
             displ%dist(iter,il0,its) = distsum_tot/norm_tot
 
             ! Print results
-            write(mpl%unit,'(a13,a,i2,a,f10.2,a,f6.2,a,f6.2,a,f7.2,a)') '','Iteration ',iter,': rhflt = ', &
+            write(mpl%info,'(a13,a,i2,a,f10.2,a,f6.2,a,f6.2,a,f7.2,a)') '','Iteration ',iter,': rhflt = ', &
           & displ%rhflt(iter,il0,its)*reqkm,' km, valid points: ',100.0*displ%valid(0,il0,its),'% ~> ', &
           & 100.0*displ%valid(iter,il0,its),'%, average displacement = ',displ%dist(iter,il0,its)*reqkm,' km'
-            call flush(mpl%unit)
+            call flush(mpl%info)
 
             ! Update support radius
             if (displ%valid(iter,il0,its)<1.0-nam%displ_tol) then
@@ -566,10 +566,10 @@ do its=2,nam%nts
          if (.not.convergence) call mpl%abort('iterative filtering failed')
       else
          ! Print results
-         write(mpl%unit,'(a10,a22,f10.2,a,f6.2,a,f7.2,a)') '','Raw displacement: rhflt = ', &
+         write(mpl%info,'(a10,a22,f10.2,a,f6.2,a,f7.2,a)') '','Raw displacement: rhflt = ', &
        & displ%rhflt(0,il0,its)*reqkm,' km, valid points: ',100.0*displ%valid(0,il0,its),'%, average displacement = ', &
        & displ%dist(0,il0,its)*reqkm,' km'
-         call flush(mpl%unit)
+         call flush(mpl%info)
       end if
 
       ! Displacement interpolation

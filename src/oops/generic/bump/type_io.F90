@@ -359,10 +359,10 @@ end do
 io%nog = count(mask_lonlat)
 
 ! Print results
-write(mpl%unit,'(a7,a)') '','Output grid:'
-write(mpl%unit,'(a10,a,f7.2,a,f5.2,a)') '','Effective resolution: ',0.5*(dlon+dlat)*reqkm,' km (', &
+write(mpl%info,'(a7,a)') '','Output grid:'
+write(mpl%info,'(a10,a,f7.2,a,f5.2,a)') '','Effective resolution: ',0.5*(dlon+dlat)*reqkm,' km (', &
  & 0.5*(dlon+dlat)*rad2deg,' deg.)'
-write(mpl%unit,'(a10,a,i4,a,i4)') '',      'Size (nlon x nlat):   ',io%nlon,' x ',io%nlat
+write(mpl%info,'(a10,a,i4,a,i4)') '',      'Size (nlon x nlat):   ',io%nlon,' x ',io%nlat
 
 ! Allocation
 allocate(io%og_to_lon(io%nog))
@@ -519,14 +519,14 @@ do i_s=1,io%og%n_s
 end do
 
 ! Print results
-write(mpl%unit,'(a7,a,i4)') '','Parameters for processor #',mpl%myproc
-write(mpl%unit,'(a10,a,i8)') '','nc0 =    ',geom%nc0
-write(mpl%unit,'(a10,a,i8)') '','nc0a =   ',geom%nc0a
-write(mpl%unit,'(a10,a,i8)') '','nc0b =   ',io%nc0b
-write(mpl%unit,'(a10,a,i8)') '','nog =    ',io%nog
-write(mpl%unit,'(a10,a,i8)') '','noga =   ',io%noga
-write(mpl%unit,'(a10,a,i8)') '','og%n_s = ',io%og%n_s
-call flush(mpl%unit)
+write(mpl%info,'(a7,a,i4)') '','Parameters for processor #',mpl%myproc
+write(mpl%info,'(a10,a,i8)') '','nc0 =    ',geom%nc0
+write(mpl%info,'(a10,a,i8)') '','nc0a =   ',geom%nc0a
+write(mpl%info,'(a10,a,i8)') '','nc0b =   ',io%nc0b
+write(mpl%info,'(a10,a,i8)') '','nog =    ',io%nog
+write(mpl%info,'(a10,a,i8)') '','noga =   ',io%noga
+write(mpl%info,'(a10,a,i8)') '','og%n_s = ',io%og%n_s
+call flush(mpl%info)
 
 end subroutine io_grid_init
 

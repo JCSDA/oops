@@ -304,8 +304,8 @@ if (nam%new_lct.or.nam%var_diag.or.nam%local_diag.or.nam%displ_diag) then
    end if
 end if
 
-write(mpl%unit,'(a7,a)') '','Read HDIAG sampling'
-call flush(mpl%unit)
+write(mpl%info,'(a7,a)') '','Read HDIAG sampling'
+call flush(mpl%info)
 
 ! Get arrays ID
 call mpl%ncerr(subr,nf90_inq_varid(ncid,'c1_to_c0',c1_to_c0_id))
@@ -492,8 +492,8 @@ character(len=1024) :: subr = 'hdata_write'
 if (.not.mpl%main) call mpl%abort('only I/O proc should enter '//trim(subr))
 
 ! Create file
-write(mpl%unit,'(a7,a)') '','Write HDIAG sampling'
-call flush(mpl%unit)
+write(mpl%info,'(a7,a)') '','Write HDIAG sampling'
+call flush(mpl%info)
 call mpl%ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(nam%prefix)//'_sampling.nc',or(nf90_clobber,nf90_64bit_offset),ncid))
 
 ! Write namelist parameters
@@ -767,16 +767,16 @@ if (nam%new_vbal.or.nam%new_lct.or.(nam%new_hdiag.and.(nam%var_diag.or.nam%local
    if ((ios==1).or.(ios==2)) then
       ! Define subsampling
       if (mpl%main) then
-         write(mpl%unit,'(a7,a)',advance='no') '','Define subsampling:'
-         call flush(mpl%unit)
+         write(mpl%info,'(a7,a)',advance='no') '','Define subsampling:'
+         call flush(mpl%info)
          lon_c1 = geom%lon(hdata%c1_to_c0)
          lat_c1 = geom%lat(hdata%c1_to_c0)
          mask_c1 = .true.
          rh_c0 = 1.0
          call rng%initialize_sampling(mpl,nam%nc1,lon_c1,lat_c1,mask_c1,rh_c0,nam%ntry,nam%nrep,nam%nc2,hdata%c2_to_c1)
       else
-         write(mpl%unit,'(a7,a)') '','Define subsampling'
-         call flush(mpl%unit)
+         write(mpl%info,'(a7,a)') '','Define subsampling'
+         call flush(mpl%info)
       end if
       call mpl%bcast(hdata%c2_to_c1)
       hdata%c2_to_c0 = hdata%c1_to_c0(hdata%c2_to_c1)
@@ -784,12 +784,12 @@ if (nam%new_vbal.or.nam%new_lct.or.(nam%new_hdiag.and.(nam%var_diag.or.nam%local
 
    if ((ios==1).or.(ios==2).or.(ios==3).or.(ios==4)) then
       ! Find nearest neighbors
-      write(mpl%unit,'(a7,a)') '','Find nearest neighbors'
-      call flush(mpl%unit)
+      write(mpl%info,'(a7,a)') '','Find nearest neighbors'
+      call flush(mpl%info)
       do il0=1,geom%nl0
          if ((il0==1).or.(geom%nl0i>1)) then
-            write(mpl%unit,'(a10,a,i3)') '','Level ',nam%levs(il0)
-            call flush(mpl%unit)
+            write(mpl%info,'(a10,a,i3)') '','Level ',nam%levs(il0)
+            call flush(mpl%info)
             mask_c2 = hdata%c1l0_log(hdata%c2_to_c1,il0)
             if (any(mask_c2)) then
                lon_c2 = geom%lon(hdata%c2_to_c0)
@@ -809,25 +809,25 @@ if (nam%new_vbal.or.nam%new_lct.or.(nam%new_hdiag.and.(nam%var_diag.or.nam%local
    end if
 
    ! Compute sampling mesh
-   write(mpl%unit,'(a7,a)') '','Compute sampling mesh'
-   call flush(mpl%unit)
+   write(mpl%info,'(a7,a)') '','Compute sampling mesh'
+   call flush(mpl%info)
    lon_c2 = geom%lon(hdata%c2_to_c0)
    lat_c2 = geom%lat(hdata%c2_to_c0)
    call hdata%mesh%create(mpl,rng,nam%nc2,lon_c2,lat_c2)
 
    ! Compute triangles list
-   write(mpl%unit,'(a7,a)') '','Compute triangles list '
-   call flush(mpl%unit)
+   write(mpl%info,'(a7,a)') '','Compute triangles list '
+   call flush(mpl%info)
    call hdata%mesh%trlist
 
    ! Find boundary nodes
-   write(mpl%unit,'(a7,a)') '','Find boundary nodes'
-   call flush(mpl%unit)
+   write(mpl%info,'(a7,a)') '','Find boundary nodes'
+   call flush(mpl%info)
    call hdata%mesh%bnodes
 
    ! Find boundary arcs
-   write(mpl%unit,'(a7,a)') '','Find boundary arcs'
-   call flush(mpl%unit)
+   write(mpl%info,'(a7,a)') '','Find boundary arcs'
+   call flush(mpl%info)
    call hdata%mesh%barcs
 
    if ((ios==1).or.(ios==2).or.(ios==3)) then
@@ -837,8 +837,8 @@ if (nam%new_vbal.or.nam%new_lct.or.(nam%new_hdiag.and.(nam%var_diag.or.nam%local
          allocate(nn_c1_dist(nam%nc1))
 
          ! Compute local masks
-         write(mpl%unit,'(a7,a)') '','Compute local masks'
-         call flush(mpl%unit)
+         write(mpl%info,'(a7,a)') '','Compute local masks'
+         call flush(mpl%info)
          lon_c1 = geom%lon(hdata%c1_to_c0)
          lat_c1 = geom%lat(hdata%c1_to_c0)
          mask_c1 = any(hdata%c1l0_log,dim=2)
@@ -876,7 +876,7 @@ if (nam%new_vbal.or.nam%new_lct.or.(nam%new_hdiag.and.(nam%var_diag.or.nam%local
       vtop = geom%nl0
 
       ! Compute grid interpolation
-      write(mpl%unit,'(a7,a)') '','Compute grid interpolation'
+      write(mpl%info,'(a7,a)') '','Compute grid interpolation'
       do il0i=1,geom%nl0i
          ! Compute grid interpolation
          write(hdata%hfull(il0i)%prefix,'(a,i3.3)') 'hfull_',il0i
@@ -903,8 +903,8 @@ end if
 
 ! Compute nearest neighbors for local diagnostics output
 if (nam%local_diag.and.(nam%nldwv>0)) then
-   write(mpl%unit,'(a7,a)') '','Compute nearest neighbors for local diagnostics output'
-   call flush(mpl%unit)
+   write(mpl%info,'(a7,a)') '','Compute nearest neighbors for local diagnostics output'
+   call flush(mpl%info)
    allocate(hdata%nn_ldwv_index(nam%nldwv))
    call kdtree%create(mpl,nam%nc2,geom%lon(hdata%c2_to_c0), &
                 geom%lat(hdata%c2_to_c0),mask=hdata%c1l0_log(hdata%c2_to_c1,1))
@@ -915,24 +915,24 @@ if (nam%local_diag.and.(nam%nldwv>0)) then
 end if
 
 ! Print results
-write(mpl%unit,'(a7,a)') '','Sampling efficiency (%):'
+write(mpl%info,'(a7,a)') '','Sampling efficiency (%):'
 do il0=1,geom%nl0
-   write(mpl%unit,'(a10,a,i3,a)',advance='no') '','Level ',nam%levs(il0),' ~> '
+   write(mpl%info,'(a10,a,i3,a)',advance='no') '','Level ',nam%levs(il0),' ~> '
    do jc3=1,nam%nc3
       if (count(hdata%c1c3l0_log(:,jc3,il0))>=nam%nc1/2) then
          ! Sucessful sampling
-         write(mpl%unit,'(a,i3,a)',advance='no') trim(mpl%green), &
+         write(mpl%info,'(a,i3,a)',advance='no') trim(mpl%green), &
        & int(100.0*real(count(hdata%c1c3l0_log(:,jc3,il0)),kind_real)/real(nam%nc1,kind_real)),trim(mpl%black)
       else
          ! Insufficient sampling
-         write(mpl%unit,'(a,i3,a)',advance='no') trim(mpl%peach), &
+         write(mpl%info,'(a,i3,a)',advance='no') trim(mpl%peach), &
        & int(100.0*real(count(hdata%c1c3l0_log(:,jc3,il0)),kind_real)/real(nam%nc1,kind_real)),trim(mpl%black)
       end if
-      if (jc3<nam%nc3) write(mpl%unit,'(a)',advance='no') '-'
+      if (jc3<nam%nc3) write(mpl%info,'(a)',advance='no') '-'
    end do
-   write(mpl%unit,'(a)') ' '
+   write(mpl%info,'(a)') ' '
 end do
-call flush(mpl%unit)
+call flush(mpl%info)
 
 end subroutine hdata_setup_sampling
 
@@ -962,8 +962,8 @@ type(kdtree_type) :: kdtree
 ! Compute subset
 if (nam%nc1<maxval(geom%nc0_mask)) then
    if (mpl%main) then
-      write(mpl%unit,'(a7,a)',advance='no') '','Compute horizontal subset C1: '
-      call flush(mpl%unit)
+      write(mpl%info,'(a7,a)',advance='no') '','Compute horizontal subset C1: '
+      call flush(mpl%info)
       select case (trim(nam%draw_type))
       case ('random_uniform','random_coast')
          if (trim(nam%draw_type)=='random_uniform') then
@@ -996,8 +996,8 @@ if (nam%nc1<maxval(geom%nc0_mask)) then
        & nam%nc1,hdata%c1_to_c0)
       case ('icosahedron')
          ! Icosahedron grid
-         write(mpl%unit,'(a)') 'icosahedron'
-         call flush(mpl%unit)
+         write(mpl%info,'(a)') 'icosahedron'
+         call flush(mpl%info)
 
          ! Compute icosahedron size
          call closest_icos(nam%nc1,fac,np)
@@ -1038,8 +1038,8 @@ if (nam%nc1<maxval(geom%nc0_mask)) then
          deallocate(lat)
       end select
    else
-      write(mpl%unit,'(a7,a)') '','Compute horizontal subset C1'
-      call flush(mpl%unit)
+      write(mpl%info,'(a7,a)') '','Compute horizontal subset C1'
+      call flush(mpl%info)
    end if
    call mpl%bcast(hdata%c1_to_c0)
 else
@@ -1080,8 +1080,8 @@ logical :: found
 hdata%c1c3_to_c0(:,1) = hdata%c1_to_c0
 
 if (nam%nc3>1) then
-   write(mpl%unit,'(a7,a)',advance='no') '','Compute positive separation sampling: '
-   call flush(mpl%unit)
+   write(mpl%info,'(a7,a)',advance='no') '','Compute positive separation sampling: '
+   call flush(mpl%info)
 
    ! Initialize
    do jc3=1,nam%nc3
@@ -1178,8 +1178,8 @@ if (nam%nc3>1) then
       mpl%done = pack(isnotmsi(hdata%c1c3_to_c0),mask=.true.)
       call mpl%prog_print
    end do
-   write(mpl%unit,'(a)') '100%'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '100%'
+   call flush(mpl%info)
 
    ! Release memory
    deallocate(vic0)
@@ -1210,8 +1210,8 @@ real(kind_real) :: nn_dist(nam%nc3)
 real(kind_real),allocatable :: x(:),y(:),z(:),v1(:),v2(:),va(:),vp(:),t(:)
 logical,allocatable :: sbufl(:),rbufl(:)
 
-write(mpl%unit,'(a7,a)',advance='no') '','Compute LCT sampling: '
-call flush(mpl%unit)
+write(mpl%info,'(a7,a)',advance='no') '','Compute LCT sampling: '
+call flush(mpl%info)
 
 ! MPI splitting
 call mpl%split(nam%nc1,ic1_s,ic1_e,nc1_loc)
@@ -1302,8 +1302,8 @@ do ic1_loc=1,nc1_loc(mpl%myproc)
    ! Update
    call mpl%prog_print(ic1_loc)
 end do
-write(mpl%unit,'(a)') '100%'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '100%'
+call flush(mpl%info)
 
 ! Communication
 if (mpl%main) then
@@ -1483,13 +1483,13 @@ do ic1=1,nam%nc1
 end do
 
 ! Print results
-write(mpl%unit,'(a7,a,i4)') '','Parameters for processor #',mpl%myproc
-write(mpl%unit,'(a10,a,i8)') '','nc0 =        ',geom%nc0
-write(mpl%unit,'(a10,a,i8)') '','nc0a =       ',geom%nc0a
-write(mpl%unit,'(a10,a,i8)') '','nl0 =        ',geom%nl0
-write(mpl%unit,'(a10,a,i8)') '','nc1 =        ',nam%nc1
-write(mpl%unit,'(a10,a,i8)') '','nc1a =       ',hdata%nc1a
-call flush(mpl%unit)
+write(mpl%info,'(a7,a,i4)') '','Parameters for processor #',mpl%myproc
+write(mpl%info,'(a10,a,i8)') '','nc0 =        ',geom%nc0
+write(mpl%info,'(a10,a,i8)') '','nc0a =       ',geom%nc0a
+write(mpl%info,'(a10,a,i8)') '','nl0 =        ',geom%nl0
+write(mpl%info,'(a10,a,i8)') '','nc1 =        ',nam%nc1
+write(mpl%info,'(a10,a,i8)') '','nc1a =       ',hdata%nc1a
+call flush(mpl%info)
 
 end subroutine hdata_compute_mpi_a
 
@@ -1635,14 +1635,14 @@ call hdata%com_AB%setup(mpl,'com_AB',nam%nc2,hdata%nc2a,hdata%nc2b,hdata%c2b_to_
  & hdata%c2_to_c2a)
 
 ! Print results
-write(mpl%unit,'(a7,a,i4)') '','Parameters for processor #',mpl%myproc
-write(mpl%unit,'(a10,a,i8)') '','nc2 =        ',nam%nc2
-write(mpl%unit,'(a10,a,i8)') '','nc2a =       ',hdata%nc2a
-write(mpl%unit,'(a10,a,i8)') '','nc2b =       ',hdata%nc2b
+write(mpl%info,'(a7,a,i4)') '','Parameters for processor #',mpl%myproc
+write(mpl%info,'(a10,a,i8)') '','nc2 =        ',nam%nc2
+write(mpl%info,'(a10,a,i8)') '','nc2a =       ',hdata%nc2a
+write(mpl%info,'(a10,a,i8)') '','nc2b =       ',hdata%nc2b
 do il0i=1,geom%nl0i
-   write(mpl%unit,'(a10,a,i3,a,i8)') '','h(',il0i,')%n_s = ',hdata%h(il0i)%n_s
+   write(mpl%info,'(a10,a,i3,a,i8)') '','h(',il0i,')%n_s = ',hdata%h(il0i)%n_s
 end do
-call flush(mpl%unit)
+call flush(mpl%info)
 
 end subroutine hdata_compute_mpi_ab
 
@@ -1711,9 +1711,9 @@ end do
 call hdata%com_AD%setup(mpl,'com_AD',geom%nc0,geom%nc0a,hdata%nc0d,hdata%c0d_to_c0,hdata%c0a_to_c0d,geom%c0_to_proc,geom%c0_to_c0a)
 
 ! Print results
-write(mpl%unit,'(a7,a,i4)') '','Parameters for processor #',mpl%myproc
-write(mpl%unit,'(a10,a,i8)') '','nc0d =       ',hdata%nc0d
-call flush(mpl%unit)
+write(mpl%info,'(a7,a,i4)') '','Parameters for processor #',mpl%myproc
+write(mpl%info,'(a10,a,i8)') '','nc0d =       ',hdata%nc0d
+call flush(mpl%info)
 
 end subroutine hdata_compute_mpi_d
 
@@ -1880,9 +1880,9 @@ end if
 call hdata%com_AC%setup(mpl,'com_AC',geom%nc0,geom%nc0a,hdata%nc0c,hdata%c0c_to_c0,hdata%c0a_to_c0c,geom%c0_to_proc,geom%c0_to_c0a)
 
 ! Print results
-write(mpl%unit,'(a7,a,i4)') '','Parameters for processor #',mpl%myproc
-write(mpl%unit,'(a10,a,i8)') '','nc0c =      ',hdata%nc0c
-call flush(mpl%unit)
+write(mpl%info,'(a7,a,i4)') '','Parameters for processor #',mpl%myproc
+write(mpl%info,'(a10,a,i8)') '','nc0c =      ',hdata%nc0c
+call flush(mpl%info)
 
 end subroutine hdata_compute_mpi_c
 
@@ -1954,9 +1954,9 @@ call hdata%com_AF%setup(mpl,'com_AF',nam%nc2,hdata%nc2a,hdata%nc2f,hdata%c2f_to_
  & hdata%c2_to_c2a)
 
 ! Print results
-write(mpl%unit,'(a7,a,i4)') '','Parameters for processor #',mpl%myproc
-write(mpl%unit,'(a10,a,i8)') '','nc2f =       ',hdata%nc2f
-call flush(mpl%unit)
+write(mpl%info,'(a7,a,i4)') '','Parameters for processor #',mpl%myproc
+write(mpl%info,'(a10,a,i8)') '','nc2f =       ',hdata%nc2f
+call flush(mpl%info)
 
 end subroutine hdata_compute_mpi_f
 

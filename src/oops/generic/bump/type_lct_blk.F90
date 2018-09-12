@@ -264,8 +264,8 @@ allocate(minim%dmask(nam%nc3,bpar%nl0r(ib)))
 allocate(minim%ncomp(lct_blk%nscales))
 
 do il0=1,geom%nl0
-   write(mpl%unit,'(a13,a,i3,a)',advance='no') '','Level ',nam%levs(il0),':'
-   call flush(mpl%unit)
+   write(mpl%info,'(a13,a,i3,a)',advance='no') '','Level ',nam%levs(il0),':'
+   call flush(mpl%info)
 
    ! Initialization
    call mpl%prog_init(hdata%nc1a)
@@ -421,8 +421,8 @@ do il0=1,geom%nl0
       ! Update
       call mpl%prog_print(ic1a)
    end do
-   write(mpl%unit,'(a)') '100%'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '100%'
+   call flush(mpl%info)
 end do
 
 ! End associate
