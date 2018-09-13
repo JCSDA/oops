@@ -2,16 +2,22 @@
 ! Module: tools_stripack.f90
 !> Purpose: STRIPACK routines
 !> <br>
-!> Author: Benjamin Menetrier
+!> Source: https://people.sc.fsu.edu/~jburkardt/f_src/stripack/stripack.html
+!> <br>
+!> Author: Robert Renka
+!> <br>
+!> Original licensing: none
+!> <br>
+!> Modified by Benjamin Menetrier for BUMP
 !> <br>
 !> Licensing: this code is distributed under the CeCILL-C license
 !> <br>
-!> Copyright © 2017 METEO-FRANCE
+!> Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE
 !----------------------------------------------------------------------
 module tools_stripack
 
-use tools_func, only: eq,inf,sup,indist
 use tools_kinds, only: kind_real
+use tools_repro, only: eq,inf,sup,indist
 use type_mpl, only: mpl_type
 
 implicit none

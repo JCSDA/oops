@@ -138,16 +138,15 @@ implicit none
 
 ! Passed variables
 class(displ_type),intent(inout) :: displ !< Displacement data
-type(mpl_type),intent(in) :: mpl         !< MPI data
+type(mpl_type),intent(inout) :: mpl      !< MPI data
 type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 type(hdata_type),intent(inout) :: hdata  !< HDIAG data
 type(ens_type), intent(in) :: ens        !< Ensemble
 
 ! Local variables
-integer :: ic0,ic1,ic2,ic2a,jc0,jc1,il0,il0i,isub,iv,its,ie,ie_sub,iter,ic0a,jc0d
-integer,allocatable :: ind(:)
-real(kind_real) :: fac4,fac6,m11_avg,m2m2_avg,fld_1,fld_2,drhflt,dum,distsum,norm
+integer :: ic0,ic1,ic2,ic2a,jc0,jc1,il0,il0i,isub,iv,its,ie,ie_sub,iter,ic0a,jc0d,ind
+real(kind_real) :: fac4,fac6,m11_avg,m2m2_avg,fld_1,fld_2,drhflt,dum,distsum,norm,cormax
 real(kind_real) :: lon_target,lat_target,rad_target,x_cm,y_cm,z_cm,n_cm
 real(kind_real) :: norm_tot,distsum_tot
 real(kind_real),allocatable :: fld_ext(:,:,:,:)
@@ -207,20 +206,20 @@ displ%lon_c2a = lon_c2a_ori
 displ%lat_c2a = lat_c2a_ori
 
 ! Compute moments
-write(mpl%unit,'(a7,a)') '','Compute moments'
-call flush(mpl%unit)
+write(mpl%info,'(a7,a)') '','Compute moments'
+call flush(mpl%info)
 do isub=1,ens%nsub
    if (ens%nsub==1) then
-      write(mpl%unit,'(a10,a)',advance='no') '','Full ensemble, member:'
+      write(mpl%info,'(a10,a)',advance='no') '','Full ensemble, member:'
    else
-      write(mpl%unit,'(a10,a,i4,a)',advance='no') '','Sub-ensemble ',isub,', member:'
+      write(mpl%info,'(a10,a,i4,a)',advance='no') '','Sub-ensemble ',isub,', member:'
    end if
-   call flush(mpl%unit)
+   call flush(mpl%info)
 
    ! Compute centered moments iteratively
    do ie_sub=1,ens%ne/ens%nsub
-      write(mpl%unit,'(i4)',advance='no') ie_sub
-      call flush(mpl%unit)
+      write(mpl%info,'(i4)',advance='no') ie_sub
+      call flush(mpl%info)
 
       ! Full ensemble index
       ie = ie_sub+(isub-1)*ens%ne/ens%nsub
@@ -282,25 +281,25 @@ do isub=1,ens%nsub
          end do
       end do
    end do
-   write(mpl%unit,'(a)') ''
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') ''
+   call flush(mpl%info)
 end do
 
 ! Find correlation propagation
-write(mpl%unit,'(a7,a)') '','Find correlation propagation'
-call flush(mpl%unit)
+write(mpl%info,'(a7,a)') '','Find correlation propagation'
+call flush(mpl%info)
 
 do its=2,nam%nts
    do il0=1,geom%nl0
-      write(mpl%unit,'(a10,a,i2,a,i3)') '','Timeslot ',its,' - level ',nam%levs(il0)
-      call flush(mpl%unit)
+      write(mpl%info,'(a10,a,i2,a,i3)') '','Timeslot ',its,' - level ',nam%levs(il0)
+      call flush(mpl%info)
 
       ! Number of points
       norm = real(count(mask_c2a(:,il0)),kind_real)
       call mpl%allreduce_sum(norm,norm_tot)
 
       !$omp parallel do schedule(static) private(ic2a,ic2,jc1,jc0,iv,m11_avg,m2m2_avg,lon_target,lat_target,rad_target), &
-      !$omp&                             private(x_cm,y_cm,z_cm,n_cm) firstprivate(cor,cor_avg,ind,x,y,z)
+      !$omp&                             private(x_cm,y_cm,z_cm,n_cm,ind) firstprivate(cor,cor_avg,x,y,z)
       do ic2a=1,hdata%nc2a
          ic2 = hdata%c2a_to_c2(ic2a)
          if (mask_c2a(ic2a,il0)) then
@@ -337,14 +336,17 @@ do its=2,nam%nts
             select case (trim(displ_method))
             case ('cor_max')
                ! Locate the maximum correlation, with a correlation threshold
-
-               ! Allocation
-               allocate(ind(1))
-
                if (maxval(cor_avg)>cor_th) then
                   ! Find maximum
-                  ind = maxloc(cor_avg)
-                  jc1 = ind(1)
+                  call msi(ind)
+                  cormax = cor_th
+                  do jc1=1,nam%nc1
+                     if (cor_avg(jc1)>cormax) then
+                        ind = jc1
+                        cormax = cor_avg(jc1)
+                     end if
+                  end do
+                  jc1 = ind
                   jc0 = hdata%c1_to_c0(jc1)
                   lon_target = geom%lon(jc0)
                   lat_target = geom%lat(jc0)
@@ -352,9 +354,6 @@ do its=2,nam%nts
                   lon_target = 0.0
                   lat_target = 0.0
                end if
-
-               ! Release memory
-               deallocate(ind)
             case ('cor_center_mass')
                ! Locate the correlation center of mass, with a correlation threshold
 
@@ -526,10 +525,10 @@ do its=2,nam%nts
             displ%dist(iter,il0,its) = distsum_tot/norm_tot
 
             ! Print results
-            write(mpl%unit,'(a13,a,i2,a,f10.2,a,f6.2,a,f6.2,a,f7.2,a)') '','Iteration ',iter,': rhflt = ', &
+            write(mpl%info,'(a13,a,i2,a,f10.2,a,f6.2,a,f6.2,a,f7.2,a)') '','Iteration ',iter,': rhflt = ', &
           & displ%rhflt(iter,il0,its)*reqkm,' km, valid points: ',100.0*displ%valid(0,il0,its),'% ~> ', &
           & 100.0*displ%valid(iter,il0,its),'%, average displacement = ',displ%dist(iter,il0,its)*reqkm,' km'
-            call flush(mpl%unit)
+            call flush(mpl%info)
 
             ! Update support radius
             if (displ%valid(iter,il0,its)<1.0-nam%displ_tol) then
@@ -567,10 +566,10 @@ do its=2,nam%nts
          if (.not.convergence) call mpl%abort('iterative filtering failed')
       else
          ! Print results
-         write(mpl%unit,'(a10,a22,f10.2,a,f6.2,a,f7.2,a)') '','Raw displacement: rhflt = ', &
+         write(mpl%info,'(a10,a22,f10.2,a,f6.2,a,f7.2,a)') '','Raw displacement: rhflt = ', &
        & displ%rhflt(0,il0,its)*reqkm,' km, valid points: ',100.0*displ%valid(0,il0,its),'%, average displacement = ', &
        & displ%dist(0,il0,its)*reqkm,' km'
-         call flush(mpl%unit)
+         call flush(mpl%info)
       end if
 
       ! Displacement interpolation

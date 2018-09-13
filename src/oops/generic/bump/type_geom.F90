@@ -12,7 +12,7 @@ module type_geom
 
 use netcdf
 use tools_const, only: pi,req,deg2rad,rad2deg,reqkm
-use tools_func, only: pos,lonlatmod,sphere_dist,vector_product,vector_triple_product
+use tools_func, only: lonlatmod,sphere_dist,vector_product,vector_triple_product
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsi,ismsi,ismsr
 use tools_nc, only: ncfloat
@@ -48,11 +48,18 @@ type geom_type
    ! Basic geometry data
    real(kind_real),allocatable :: lon(:)      !< Longitudes
    real(kind_real),allocatable :: lat(:)      !< Latitudes
-   logical,allocatable :: mask(:,:)           !< Mask
    real(kind_real),allocatable :: area(:)     !< Domain area
    real(kind_real),allocatable :: vunit(:,:)  !< Vertical unit
    real(kind_real),allocatable :: vunitavg(:) !< Averaged vertical unit
    real(kind_real),allocatable :: disth(:)    !< Horizontal distance
+
+   ! Masks
+   logical,allocatable :: mask_c0(:,:)        !< Mask on subset Sc0, global
+   logical,allocatable :: mask_c0a(:,:)       !< Mask on subset Sc0, halo A
+   logical,allocatable :: mask_hor_c0(:)      !< Union of horizontal masks on subset Sc0, global
+   logical,allocatable :: mask_hor_c0a(:)     !< Union of horizontal masks on subset Sc0, halo A
+   logical,allocatable :: mask_ver_c0(:)      !< Union of vertical masks
+   integer,allocatable :: nc0_mask(:)         !< Horizontal mask size on subset Sc0
 
    ! Mesh
    type(mesh_type) :: mesh                    !< Mesh
@@ -127,7 +134,10 @@ allocate(geom%lat(geom%nc0))
 allocate(geom%area(geom%nl0))
 allocate(geom%vunit(geom%nc0,geom%nl0))
 allocate(geom%vunitavg(geom%nl0))
-allocate(geom%mask(geom%nc0,geom%nl0))
+allocate(geom%mask_c0(geom%nc0,geom%nl0))
+allocate(geom%mask_hor_c0(geom%nc0))
+allocate(geom%mask_ver_c0(geom%nl0))
+allocate(geom%nc0_mask(geom%nl0))
 
 ! Initialization
 call msi(geom%c0_to_proc)
@@ -140,7 +150,10 @@ call msr(geom%lat)
 call msr(geom%area)
 call msr(geom%vunit)
 call msr(geom%vunitavg)
-geom%mask = .false.
+geom%mask_c0 = .false.
+geom%mask_hor_c0 = .false.
+geom%mask_ver_c0 = .false.
+call msi(geom%nc0_mask)
 
 end subroutine geom_alloc
 
@@ -161,7 +174,9 @@ if (allocated(geom%c0_to_lat)) deallocate(geom%c0_to_lat)
 if (allocated(geom%c0_to_tile)) deallocate(geom%c0_to_tile)
 if (allocated(geom%lon)) deallocate(geom%lon)
 if (allocated(geom%lat)) deallocate(geom%lat)
-if (allocated(geom%mask)) deallocate(geom%mask)
+if (allocated(geom%mask_c0)) deallocate(geom%mask_c0)
+if (allocated(geom%mask_hor_c0)) deallocate(geom%mask_hor_c0)
+if (allocated(geom%mask_ver_c0)) deallocate(geom%mask_ver_c0)
 if (allocated(geom%area)) deallocate(geom%area)
 if (allocated(geom%vunit)) deallocate(geom%vunit)
 if (allocated(geom%vunitavg)) deallocate(geom%vunitavg)
@@ -210,7 +225,7 @@ logical,intent(in) :: lmask(nmga,nl0)         !< Mask
 
 ! Local variables
 integer :: ic0,ic0a,il0,offset,iproc,img,imga
-integer,allocatable :: order(:),order_inv(:)
+integer,allocatable :: mg_to_proc(:),order(:),order_inv(:)
 real(kind_real),allocatable :: lon_mg(:),lat_mg(:),area_mg(:),vunit_mg(:,:),list(:)
 logical,allocatable :: lmask_mg(:,:)
 
@@ -223,7 +238,7 @@ geom%nlev = nl0
 allocate(geom%proc_to_nmga(mpl%nproc))
 
 ! Communication
-call mpl%allgather(1,(/geom%nmga/),geom%proc_to_nmga)
+call mpl%allgather(geom%nmga,geom%proc_to_nmga)
 
 ! Global number of model grid points
 geom%nmg = sum(geom%proc_to_nmga)
@@ -234,6 +249,7 @@ allocate(lat_mg(geom%nmg))
 allocate(area_mg(geom%nmg))
 allocate(vunit_mg(geom%nmg,geom%nl0))
 allocate(lmask_mg(geom%nmg,geom%nl0))
+allocate(mg_to_proc(geom%nmg))
 allocate(geom%mg_to_proc(geom%nmg))
 allocate(geom%mg_to_mga(geom%nmg))
 allocate(geom%mga_to_mg(geom%nmga))
@@ -302,7 +318,6 @@ allocate(list(geom%nc0))
 allocate(order(geom%nc0))
 allocate(order_inv(geom%nc0))
 
-
 ! Model grid conversions and Sc0 size on halo A
 img = 0
 geom%proc_to_nc0a = 0
@@ -339,8 +354,11 @@ do ic0a=1,geom%nc0a
 end do
 
 ! Setup communications
-call geom%com_mg%setup(mpl,'com_mg',geom%nmg,geom%nc0a,geom%nmga,geom%mga_to_mg,geom%c0a_to_mga, &
- & geom%c0_to_proc(geom%mg_to_c0),geom%c0_to_c0a)
+do img=1,geom%nmg
+   ic0 = geom%mg_to_c0(img)
+   mg_to_proc(img) = geom%c0_to_proc(ic0)
+end do
+call geom%com_mg%setup(mpl,'com_mg',geom%nmg,geom%nc0a,geom%nmga,geom%mga_to_mg,geom%c0a_to_mga,mg_to_proc,geom%c0_to_c0a)
 
 ! Deal with mask on redundant points
 do il0=1,geom%nl0
@@ -355,7 +373,7 @@ geom%lat = lat_mg(geom%c0_to_mg)
 do il0=1,geom%nl0
    geom%area(il0) = sum(area_mg(geom%c0_to_mg),lmask_mg(geom%c0_to_mg,il0))/req**2
    geom%vunit(:,il0) = vunit_mg(geom%c0_to_mg,il0)
-   geom%mask(:,il0) = lmask_mg(geom%c0_to_mg,il0)
+   geom%mask_c0(:,il0) = lmask_mg(geom%c0_to_mg,il0)
 end do
 
 ! Reorder points based on lon/lat
@@ -375,10 +393,19 @@ geom%lon = geom%lon(order)
 geom%lat = geom%lat(order)
 do il0=1,geom%nl0
    geom%vunit(:,il0) = geom%vunit(order,il0)
-   geom%mask(:,il0) = geom%mask(order,il0)
+   geom%mask_c0(:,il0) = geom%mask_c0(order,il0)
 end do
 geom%c0_to_mg = geom%c0_to_mg(order)
 geom%mg_to_c0 = order_inv(geom%mg_to_c0)
+
+! Other masks
+allocate(geom%mask_c0a(geom%nc0a,geom%nl0))
+allocate(geom%mask_hor_c0a(geom%nc0a))
+geom%mask_c0a = geom%mask_c0(geom%c0a_to_c0,:)
+geom%mask_hor_c0 = any(geom%mask_c0,dim=2)
+geom%mask_hor_c0a = geom%mask_hor_c0(geom%c0a_to_c0)
+geom%mask_ver_c0 = any(geom%mask_c0,dim=1)
+geom%nc0_mask = count(geom%mask_c0,dim=1)
 
 end subroutine geom_setup_online
 
@@ -407,7 +434,7 @@ call msi(geom%redundant)
 
 ! Look for redundant points
 if (present(lon).and.present(lat)) then
-   write(mpl%unit,'(a7,a)') '','Look for redundant points in the model grid'
+   write(mpl%info,'(a7,a)') '','Look for redundant points in the model grid'
 
    ! Create KD-tree
    call kdtree%create(mpl,geom%nmg,lon,lat)
@@ -419,7 +446,7 @@ if (present(lon).and.present(lat)) then
 
       ! Count redundant points
       do ired=1,nredmax
-         if (pos(nn_dist(ired)).or.(nn_index(ired)>=img)) nn_index(ired) = geom%nmg+1
+         if ((nn_dist(ired)>0.0).or.(nn_index(ired)>=img)) nn_index(ired) = geom%nmg+1
       end do
 
       if (any(nn_index<=geom%nmg)) then
@@ -438,11 +465,11 @@ if (present(lon).and.present(lat)) then
    end do
 end if
 geom%nc0 = count(ismsi(geom%redundant))
-write(mpl%unit,'(a7,a,i8)') '','Model grid size:         ',geom%nmg
-write(mpl%unit,'(a7,a,i8)') '','Subset Sc0 size:         ',geom%nc0
-write(mpl%unit,'(a7,a,i6,a,f6.2,a)') '','Number of redundant points:',(geom%nmg-geom%nc0), &
+write(mpl%info,'(a7,a,i8)') '','Model grid size:         ',geom%nmg
+write(mpl%info,'(a7,a,i8)') '','Subset Sc0 size:         ',geom%nc0
+write(mpl%info,'(a7,a,i6,a,f6.2,a)') '','Number of redundant points:',(geom%nmg-geom%nc0), &
  & ' (',real(geom%nmg-geom%nc0,kind_real)/real(geom%nmg,kind_real)*100.0,'%)'
-call flush(mpl%unit)
+call flush(mpl%info)
 
 ! Conversion
 allocate(geom%c0_to_mg(geom%nc0))
@@ -489,8 +516,8 @@ call geom%define_mask(mpl,nam)
 
 ! Averaged vertical unit
 do il0=1,geom%nl0
-   if (any(geom%mask(:,il0))) then
-      geom%vunitavg(il0) = sum(geom%vunit(:,il0),geom%mask(:,il0))/real(count(geom%mask(:,il0)),kind_real)
+   if (geom%mask_ver_c0(il0)) then
+      geom%vunitavg(il0) = sum(geom%vunit(:,il0),geom%mask_c0(:,il0))/real(geom%nc0_mask(il0),kind_real)
    else
       geom%vunitavg(il0) = 0.0
    end if
@@ -509,8 +536,8 @@ if ((nam%new_nicas.or.nam%new_lct).and.nam%mask_check) call geom%compute_mask_bo
 ! Check whether the mask is the same for all levels
 same_mask = .true.
 do il0=2,geom%nl0
-   same_mask = same_mask.and.(all((geom%mask(:,il0).and.geom%mask(:,1)) &
-             & .or.(.not.geom%mask(:,il0).and..not.geom%mask(:,1))))
+   same_mask = same_mask.and.(all((geom%mask_c0(:,il0).and.geom%mask_c0(:,1)) &
+             & .or.(.not.geom%mask_c0(:,il0).and..not.geom%mask_c0(:,1))))
 end do
 
 ! Define number of independent levels
@@ -519,8 +546,8 @@ if (same_mask) then
 else
    geom%nl0i = geom%nl0
 end if
-write(mpl%unit,'(a7,a,i3)') '','Number of independent levels: ',geom%nl0i
-call flush(mpl%unit)
+write(mpl%info,'(a7,a,i3)') '','Number of independent levels: ',geom%nl0i
+call flush(mpl%info)
 
 ! Create KD-tree
 call geom%kdtree%create(mpl,geom%nc0,geom%lon,geom%lat)
@@ -532,18 +559,18 @@ do jc3=1,nam%nc3
 end do
 
 ! Print summary
-write(mpl%unit,'(a10,a,f7.1,a,f7.1)') '','Min. / max. longitudes:',minval(geom%lon)*rad2deg,' / ',maxval(geom%lon)*rad2deg
-write(mpl%unit,'(a10,a,f7.1,a,f7.1)') '','Min. / max. latitudes: ',minval(geom%lat)*rad2deg,' / ',maxval(geom%lat)*rad2deg
-write(mpl%unit,'(a10,a)') '','Unmasked area (% of Earth area) / masked points / vertical unit:'
+write(mpl%info,'(a10,a,f7.1,a,f7.1)') '','Min. / max. longitudes:',minval(geom%lon)*rad2deg,' / ',maxval(geom%lon)*rad2deg
+write(mpl%info,'(a10,a,f7.1,a,f7.1)') '','Min. / max. latitudes: ',minval(geom%lat)*rad2deg,' / ',maxval(geom%lat)*rad2deg
+write(mpl%info,'(a10,a)') '','Unmasked area (% of Earth area) / masked points / vertical unit:'
 do il0=1,geom%nl0
-   write(mpl%unit,'(a13,a,i3,a,f5.1,a,f5.1,a,f12.1,a)') '','Level ',nam%levs(il0),' ~> ',geom%area(il0)/(4.0*pi)*100.0,'% / ', &
- & real(count(.not.geom%mask(:,il0)),kind_real)/real(geom%nc0,kind_real)*100.0,'% / ',geom%vunitavg(il0),' '//trim(mpl%vunitchar)
+   write(mpl%info,'(a13,a,i3,a,f5.1,a,f5.1,a,f12.1,a)') '','Level ',nam%levs(il0),' ~> ',geom%area(il0)/(4.0*pi)*100.0,'% / ', &
+ & real(count(.not.geom%mask_c0(:,il0)),kind_real)/real(geom%nc0,kind_real)*100.0,'% / ',geom%vunitavg(il0),' '//trim(mpl%vunitchar)
 end do
-write(mpl%unit,'(a7,a)') '','Distribution summary:'
+write(mpl%info,'(a7,a)') '','Distribution summary:'
 do iproc=1,mpl%nproc
-   write(mpl%unit,'(a10,a,i3,a,i8,a)') '','Proc #',iproc,': ',geom%proc_to_nc0a(iproc),' grid-points'
+   write(mpl%info,'(a10,a,i3,a,i8,a)') '','Proc #',iproc,': ',geom%proc_to_nc0a(iproc),' grid-points'
 end do
-call flush(mpl%unit)
+call flush(mpl%info)
 
 end subroutine geom_init
 
@@ -576,8 +603,8 @@ if (nam%mask_type(1:3)=='lat') then
    read(nam%mask_type(7:9),'(i3)') latmax
    if (latmin>=latmax) call mpl%abort('latmin should be lower than latmax')
    do il0=1,geom%nl0
-      geom%mask(:,il0) = geom%mask(:,il0).and.(geom%lat>=real(latmin,kind_real)*deg2rad) &
-                       & .and.(geom%lat<=real(latmax,kind_real)*deg2rad)
+      geom%mask_c0(:,il0) = geom%mask_c0(:,il0).and.(geom%lat>=real(latmin,kind_real)*deg2rad) &
+                          & .and.(geom%lat<=real(latmax,kind_real)*deg2rad)
    end do
 elseif (trim(nam%mask_type)=='hyd') then
    ! Read from hydrometeors mask file
@@ -593,7 +620,7 @@ elseif (trim(nam%mask_type)=='hyd') then
          write(il0char,'(i3.3)') nam%levs(il0)
          call mpl%ncerr(subr,nf90_inq_varid(ncid,'S'//il0char//'MASK',mask_id))
          call mpl%ncerr(subr,nf90_get_var(ncid,mask_id,hydmask,(/1,1/),(/geom%nlon,geom%nlat/)))
-         geom%mask(:,il0) = geom%mask(:,il0).and.pack(real(hydmask,kind(1.0))>nam%mask_th,mask=.true.)
+         geom%mask_c0(:,il0) = geom%mask_c0(:,il0).and.pack(real(hydmask,kind(1.0))>nam%mask_th,mask=.true.)
       end do
       deallocate(hydmask)
       call mpl%ncerr(subr,nf90_close(ncid))
@@ -601,14 +628,14 @@ elseif (trim(nam%mask_type)=='hyd') then
 elseif (trim(nam%mask_type)=='ldwv') then
    ! Compute distance to the vertical diagnostic points
    do ic0=1,geom%nc0
-      if (any(geom%mask(ic0,:))) then
+      if (geom%mask_hor_c0(ic0)) then
          mask_test = .false.
          do ildw=1,nam%nldwv
             call sphere_dist(nam%lon_ldwv(ildw),nam%lat_ldwv(ildw),geom%lon(ic0),geom%lat(ic0),dist)
             mask_test = mask_test.or.(dist<1.1*nam%local_rad)
          end do
          do il0=1,geom%nl0
-            if (geom%mask(ic0,il0)) geom%mask(ic0,:) = mask_test
+            if (geom%mask_c0(ic0,il0)) geom%mask_c0(ic0,:) = mask_test
          end do
       end if
    end do
@@ -641,7 +668,7 @@ do it=1,geom%mesh%nt
               & (/geom%mesh%x(geom%mesh%ltri(2,it)),geom%mesh%y(geom%mesh%ltri(2,it)),geom%mesh%z(geom%mesh%ltri(2,it))/), &
               & (/geom%mesh%x(geom%mesh%ltri(3,it)),geom%mesh%y(geom%mesh%ltri(3,it)),geom%mesh%z(geom%mesh%ltri(3,it))/))
    do il0=1,geom%nl0
-      frac = real(count(geom%mask(geom%mesh%order(geom%mesh%ltri(1:3,it)),il0)),kind_real)/3.0
+      frac = real(count(geom%mask_c0(geom%mesh%order(geom%mesh%ltri(1:3,it)),il0)),kind_real)/3.0
       geom%area(il0) = geom%area(il0)+frac*area
    end do
 end do
@@ -676,7 +703,7 @@ do il0=1,geom%nl0
    do i=1,geom%mesh%n
       ! Check mask points only
       ic0 = geom%mesh%order(i)
-      if (.not.geom%mask(ic0,il0)) then
+      if (.not.geom%mask_c0(ic0,il0)) then
          iend = geom%mesh%lend(i)
          init = .true.
          do while ((iend/=geom%mesh%lend(i)).or.init)
@@ -684,7 +711,7 @@ do il0=1,geom%nl0
             k = abs(geom%mesh%list(geom%mesh%lptr(iend)))
             jc0 = geom%mesh%order(j)
             kc0 = geom%mesh%order(k)
-            if (.not.geom%mask(jc0,il0).and.geom%mask(kc0,il0)) then
+            if (.not.geom%mask_c0(jc0,il0).and.geom%mask_c0(kc0,il0)) then
                ! Create a new boundary arc
                geom%nbnd(il0) = geom%nbnd(il0)+1
                if (geom%nbnd(il0)>geom%mesh%n) call mpl%abort('too many boundary arcs')
@@ -762,8 +789,8 @@ elseif (mpl%nproc>1) then
 
    if (info==nf90_noerr) then
       ! Read local distribution
-      write(mpl%unit,'(a7,a,i4,a)') '','Read local distribution for: ',mpl%nproc,' MPI tasks'
-      call flush(mpl%unit)
+      write(mpl%info,'(a7,a,i4,a)') '','Read local distribution for: ',mpl%nproc,' MPI tasks'
+      call flush(mpl%info)
 
       if (mpl%main) then
          ! Get variables ID
@@ -787,8 +814,8 @@ elseif (mpl%nproc>1) then
    else
       ! Generate a distribution
       if (nam%use_metis) then
-         write(mpl%unit,'(a7,a,i4,a)') '','Try to use METIS for ',mpl%nproc,' MPI tasks'
-         call flush(mpl%unit)
+         write(mpl%info,'(a7,a,i4,a)') '','Try to use METIS for ',mpl%nproc,' MPI tasks'
+         call flush(mpl%info)
 
          ! Compute graph
          call mesh%create(mpl,rng,geom%nc0,geom%lon,geom%lat)
@@ -835,8 +862,8 @@ elseif (mpl%nproc>1) then
       end if
 
       if (ismetis) then
-         write(mpl%unit,'(a7,a)') '','Use METIS to generate the local distribution'
-         call flush(mpl%unit)
+         write(mpl%info,'(a7,a)') '','Use METIS to generate the local distribution'
+         call flush(mpl%info)
 
          if (mpl%main) then
             ! Allocation
@@ -870,8 +897,8 @@ elseif (mpl%nproc>1) then
          call mpl%bcast(geom%c0_to_proc)
          call mpl%bcast(geom%c0_to_c0a)
       else
-         write(mpl%unit,'(a7,a)') '','Define a basic local distribution'
-         call flush(mpl%unit)
+         write(mpl%info,'(a7,a)') '','Define a basic local distribution'
+         call flush(mpl%info)
 
          ! Basic distribution
          nc0amax = geom%nc0/mpl%nproc
@@ -956,13 +983,22 @@ geom%lon(c0_reorder) = geom%lon
 geom%lat(c0_reorder) = geom%lat
 do il0=1,geom%nl0
    geom%vunit(c0_reorder,il0) = geom%vunit(:,il0)
-   geom%mask(c0_reorder,il0) = geom%mask(:,il0)
+   geom%mask_c0(c0_reorder,il0) = geom%mask_c0(:,il0)
 end do
 geom%c0_to_proc(c0_reorder) = geom%c0_to_proc
 geom%c0_to_c0a(c0_reorder) = geom%c0_to_c0a
 do ic0a=1,geom%nc0a
    geom%c0a_to_c0(ic0a) = c0_reorder(geom%c0a_to_c0(ic0a))
 end do
+
+! Other masks
+allocate(geom%mask_c0a(geom%nc0a,geom%nl0))
+allocate(geom%mask_hor_c0a(geom%nc0a))
+geom%mask_c0a = geom%mask_c0(geom%c0a_to_c0,:)
+geom%mask_hor_c0 = any(geom%mask_c0,dim=2)
+geom%mask_hor_c0a = geom%mask_hor_c0(geom%c0a_to_c0)
+geom%mask_ver_c0 = any(geom%mask_c0,dim=1)
+geom%nc0_mask = count(geom%mask_c0,dim=1)
 
 end subroutine geom_define_distribution
 
@@ -1032,7 +1068,7 @@ real(kind_real),intent(in) :: fld_c0a(geom%nc0a,geom%nl0)  !< Field on subset Sc
 real(kind_real),intent(out) :: fld_mga(geom%nmga,geom%nl0) !< Field on model grid, halo A
 
 ! Local variables
-integer :: ic0a,il0,imga,nred,ired,img,jmg,jmga
+integer :: ic0a,imga,nred,ired,img,jmg,jmga
 integer,allocatable :: red_img(:),red_jmg(:)
 real(kind_real),allocatable :: red_val(:,:),red_val_pack(:),red_val_tot(:,:),red_val_pack_tot(:)
 logical,allocatable :: mask_unpack(:,:)
@@ -1072,12 +1108,12 @@ if (nred>0) then
    red_val = 0.0
    do ired=1,nred
       jmg = red_jmg(ired)
-      if (mpl%myproc==geom%mg_to_proc(jmg)) then 
+      if (mpl%myproc==geom%mg_to_proc(jmg)) then
          jmga = geom%mg_to_mga(jmg)
          red_val(ired,:) = fld_mga(jmga,:)
       end if
    end do
- 
+
    ! Communicate redundant values
    mask_unpack = .true.
    red_val_pack = pack(red_val,.true.)
@@ -1087,7 +1123,7 @@ if (nred>0) then
    ! Copy values
    do ired=1,nred
       img = red_img(ired)
-      if (mpl%myproc==geom%mg_to_proc(img)) then 
+      if (mpl%myproc==geom%mg_to_proc(img)) then
          imga = geom%mg_to_mga(img)
          fld_mga(imga,:) = red_val_tot(ired,:)
       end if

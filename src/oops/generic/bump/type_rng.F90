@@ -11,9 +11,10 @@
 module type_rng
 
 use iso_fortran_env, only: int64
-use tools_func, only: inf,sup,sphere_dist
+use tools_func, only: sphere_dist
 use tools_kinds, only: kind_real
-use tools_missing, only: msi,isnotmsi
+use tools_missing, only: msi,msr,isnotmsi
+use tools_repro, only: inf,sup
 use type_kdtree, only: kdtree_type
 use type_mpl, only: mpl_type
 use type_nam, only: nam_type
@@ -85,11 +86,11 @@ rng%seed = int(seed,kind=int64)
 
 ! Print result
 if (nam%default_seed) then
-   write(mpl%unit,'(a7,a)') '','Linear congruential generator initialized with a default seed'
+   write(mpl%info,'(a7,a)') '','Linear congruential generator initialized with a default seed'
 else
-   write(mpl%unit,'(a7,a)') '','Linear congruential generator initialized'
+   write(mpl%info,'(a7,a)') '','Linear congruential generator initialized'
 end if
-call flush(mpl%unit)
+call flush(mpl%info)
 
 end subroutine rng_init
 
@@ -431,7 +432,7 @@ implicit none
 
 ! Passed variables
 class(rng_type),intent(inout) :: rng !< Random number generator
-type(mpl_type),intent(in) :: mpl     !< MPI data
+type(mpl_type),intent(inout) :: mpl  !< MPI data
 integer,intent(in) :: n              !< Number of points
 real(kind_real),intent(in) :: lon(n) !< Longitudes
 real(kind_real),intent(in) :: lat(n) !< Latitudes
@@ -443,15 +444,21 @@ integer,intent(in) :: ns             !< Number of samplings points
 integer,intent(out) :: ihor(ns)      !< Horizontal sampling index
 
 ! Local variables
-integer :: is,js,i,irep,irmax,itry,ir,nn_index(2),ismin,progint
-real(kind_real) :: distmax,distmin,d,dist(ns),nn_dist(2)
-logical :: lmask(n),smask(n),done(ns+nrep)
+integer :: is,js,i,irep,irmax,itry,irval,irvalmax,i_red,ir,nn_index(2),ismin,nval,nrep_eff
+integer,allocatable :: val_to_full(:)
+real(kind_real) :: distmax,distmin,d,nn_dist(2)
+real(kind_real),allocatable :: dist(:)
+logical,allocatable :: lmask(:),smask(:)
 type(kdtree_type) :: kdtree
 
-if (ns>count(mask)) then
+! Check mask size
+nval = count(mask)
+if (nval==0) then
+    call mpl%abort('empty mask in initialize sampling')
+elseif (nval<ns) then
    call mpl%abort('ns greater that mask size in initialize_sampling')
-elseif (ns==count(mask)) then
-   write(mpl%unit,'(a)') 'all points are used'
+elseif (nval==ns) then
+   write(mpl%info,'(a)') 'all points are used'
    is = 0
    do i=1,n
       if (mask(i)) then
@@ -460,14 +467,29 @@ elseif (ns==count(mask)) then
       end if
    end do
 else
+   ! Allocation
+   nrep_eff = min(nrep,n-ns)
+   allocate(dist(ns))
+   allocate(lmask(n))
+   allocate(smask(n))
+   allocate(val_to_full(nval))
+
    ! Initialization
    call msi(ihor)
+   call msr(dist)
    lmask = mask
-   if (count(lmask)==0) call mpl%abort('empty mask in initialize sampling')
    smask = .false.
+   call msi(val_to_full)
+   i_red = 0
+   do i=1,n
+      if (lmask(i)) then
+         i_red = i_red+1
+         val_to_full(i_red) = i
+      end if
+   end do
    is = 1
    irep = 1
-   call mpl%prog_init(progint,done)
+   call mpl%prog_init(ns+nrep_eff)
 
    ! Define sampling
    do while (is<=ns)
@@ -477,33 +499,35 @@ else
       ! Initialization
       distmax = 0.0
       irmax = 0
+      irvalmax = 0
       itry = 1
 
       ! Find a new point
       do while (itry<=ntry)
-         ! Generate a random index
-         call rng%rand_integer(1,n,ir)
+         ! Generate a random index among valid points
+         call rng%rand_integer(1,nval,irval)
+         ir = val_to_full(irval)
 
          ! Check point validity
-         if (lmask(ir)) then
-            if (is==1) then
-               ! Accept point
-               irmax = ir
+         if (is==1) then
+            ! Accept point
+            irvalmax = irval
+            irmax = ir
+         else
+            if (is==2) then
+               ! Compute distance
+               call sphere_dist(lon(ir),lat(ir),lon(ihor(1)),lat(ihor(1)),d)
             else
-               if (is==2) then
-                  ! Compute distance
-                  call sphere_dist(lon(ir),lat(ir),lon(ihor(1)),lat(ihor(1)),d)
-               else
-                  ! Find nearest neighbor distance
-                  call kdtree%find_nearest_neighbors(lon(ir),lat(ir),1,nn_index(1:1),nn_dist(1:1))
-                  d = nn_dist(1)**2/(rh(ir)**2+rh(nn_index(1))**2)
-               end if
+               ! Find nearest neighbor distance
+               call kdtree%find_nearest_neighbors(lon(ir),lat(ir),1,nn_index(1:1),nn_dist(1:1))
+               d = nn_dist(1)**2/(rh(ir)**2+rh(nn_index(1))**2)
+            end if
 
-               ! Check distance
-               if (sup(d,distmax)) then
-                  distmax = d
-                  irmax = ir
-               end if
+            ! Check distance
+            if (sup(d,distmax)) then
+               distmax = d
+               irvalmax = irval
+               irmax = ir
             end if
          end if
 
@@ -516,15 +540,20 @@ else
 
       ! Add point to sampling
       if (irmax>0) then
+         ! New sampling point
          ihor(is) = irmax
          lmask(irmax) = .false.
          smask(irmax) = .true.
          is = is+1
+
+         ! Shift valid points array
+         if (irvalmax<nval) val_to_full(irvalmax:nval-1) = val_to_full(irvalmax+1:nval)
+         nval = nval-1
       end if
 
       if (is==ns+1) then
          ! Try replacement
-         if (irep<=nrep) then
+         if (irep<=nrep_eff) then
             ! Create KD-tree (unsorted)
             call kdtree%create(mpl,n,lon,lat,mask=smask,sort=.false.)
 
@@ -547,6 +576,7 @@ else
 
             ! Remove worst point
             distmin = huge(1.0)
+            call msi(ismin)
             do js=1,ns
                if (inf(dist(js),distmin)) then
                   ismin = js
@@ -568,11 +598,10 @@ else
       end if
 
       ! Update
-      done(is+irep-2) = .true.
-      call mpl%prog_print(progint,done)
+      if (is+irep-2>0) call mpl%prog_print(is+irep-2)
    end do
-   write(mpl%unit,'(a)') '100%'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '100%'
+   call flush(mpl%info)
 end if
 
 end subroutine initialize_sampling

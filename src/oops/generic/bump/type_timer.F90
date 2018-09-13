@@ -95,10 +95,10 @@ type(mpl_type),intent(in) :: mpl         !< MPI data
 call timer%end
 
 ! Display
-write(mpl%unit,'(a,f8.3,a)') '--- CPU time:                   ',timer%cpu,' s'
-write(mpl%unit,'(a,f8.3,a)') '--- Elapsed time:               ',timer%elapsed,' s'
-if (timer%elapsed>0.0) write(mpl%unit,'(a,f8.3)') '--- CPU/elapsed ratio:          ',timer%cpu/timer%elapsed
-call flush(mpl%unit)
+write(mpl%info,'(a,f8.3,a)') '--- CPU time:                   ',timer%cpu,' s'
+write(mpl%info,'(a,f8.3,a)') '--- Elapsed time:               ',timer%elapsed,' s'
+if (timer%elapsed>0.0) write(mpl%info,'(a,f8.3)') '--- CPU/elapsed ratio:          ',timer%cpu/timer%elapsed
+call flush(mpl%info)
 
 end subroutine timer_display
 

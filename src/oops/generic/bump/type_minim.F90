@@ -11,9 +11,10 @@
 module type_minim
 
 use tools_fit, only: ver_smooth
-use tools_func, only: eq,inf,infeq,sup,pos,fit_diag,fit_diag_dble,fit_lct
+use tools_func, only: fit_diag,fit_diag_dble,fit_lct
 use tools_kinds, only: kind_real
 use tools_missing, only: isnotmsr
+use tools_repro, only: rth,eq,inf,infeq,sup
 use type_mpl, only: mpl_type
 
 implicit none
@@ -47,7 +48,7 @@ type minim_type
    logical :: lhomv                           !< Vertically homogenous vertical support radius key
    integer,allocatable :: l0rl0_to_l0(:,:)    !< Reduced level to level
    real(kind_real),allocatable :: disth(:)    !< Horizontal distance
-   real(kind_real),allocatable :: distvr(:,:) !< Vertical distance
+   real(kind_real),allocatable :: distv(:,:)  !< Vertical distance
 
    ! Specific data (LCT)
    integer :: nscales                         !< Number of LCT scales
@@ -113,9 +114,9 @@ call minim%cost(mpl,minim%x,minim%f_min)
 if (minim%f_min<minim%f_guess) then
    call minim%vt_dir(minim%x)
    if (lprt) then
-      write(mpl%unit,'(a13,a,f6.1,a,e8.2,a,e8.2,a)') '','Minimizer '//trim(minim%algo)//', cost function decrease:', &
+      write(mpl%info,'(a13,a,f6.1,a,e9.2,a,e9.2,a)') '','Minimizer '//trim(minim%algo)//', cost function decrease:', &
     & abs(minim%f_min-minim%f_guess)/minim%f_guess*100.0,'% (',minim%f_guess,' to ',minim%f_min,')'
-      call flush(mpl%unit)
+      call flush(mpl%info)
    end if
 else
    minim%x = minim%guess
@@ -205,7 +206,7 @@ else
 end if
 
 ! Compute function
-call fit_diag(mpl,minim%nc3,minim%nl0r,minim%nl0,minim%l0rl0_to_l0,minim%disth,minim%distvr,fit_rh,fit_rv,fit)
+call fit_diag(mpl,minim%nc3,minim%nl0r,minim%nl0,minim%l0rl0_to_l0,minim%disth,minim%distv,fit_rh,fit_rv,fit)
 
 ! Pack
 fit_pack = pack(fit,mask=.true.)
@@ -283,7 +284,7 @@ else
 end if
 
 ! Compute function
-call fit_diag_dble(mpl,minim%nc3,minim%nl0r,minim%nl0,minim%l0rl0_to_l0,minim%disth,minim%distvr,fit_rh,fit_rv, &
+call fit_diag_dble(mpl,minim%nc3,minim%nl0r,minim%nl0,minim%l0rl0_to_l0,minim%disth,minim%distv,fit_rh,fit_rv, &
  & fit_rv_rfac,fit_rv_coef,fit)
 
 ! Pack
@@ -385,7 +386,7 @@ real(kind_real) :: delta(minim%nx),newx(minim%nx)
 newx = guess
 minim%x = guess
 do i=1,minim%nx
-   if (pos(guess(i))) then
+   if (sup(abs(guess(i)),rth)) then
       delta(i) = rho*abs(guess(i))
    else
       delta(i) = rho
@@ -540,7 +541,7 @@ integer :: ix
 ! Inverse hyperbolic tangent of the linearly bounded variable
 if (any((x<minim%binf).or.(x>minim%bsup))) call mpl%abort('variable out of bounds in vt_inv')
 do ix=1,minim%nx
-   if (minim%bsup(ix)>minim%binf(ix)) then
+   if (sup(minim%bsup(ix),minim%binf(ix))) then
       x(ix) = atanh(2.0*(x(ix)-minim%binf(ix))/(minim%bsup(ix)-minim%binf(ix))-1.0)
    else
       x(ix) = 0.0

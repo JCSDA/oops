@@ -181,8 +181,8 @@ call mpl%bcast(obsop%lonobs)
 call mpl%bcast(obsop%latobs)
 
 ! Print results
-write(mpl%unit,'(a7,a,i8)') '','Number of observations: ',obsop%nobs
-call flush(mpl%unit)
+write(mpl%info,'(a7,a,i8)') '','Number of observations: ',obsop%nobs
+call flush(mpl%info)
 
 end subroutine obsop_generate
 
@@ -240,7 +240,7 @@ logical,allocatable :: maskobs(:),lcheck_nc0b(:)
 allocate(obsop%proc_to_nobsa(mpl%nproc))
 
 ! Get global number of observations
-call mpl%allgather(1,(/obsop%nobs/),obsop%proc_to_nobsa) 
+call mpl%allgather(obsop%nobs,obsop%proc_to_nobsa)
 obsop%nobsa = obsop%nobs
 obsop%nobs = sum(obsop%proc_to_nobsa)
 
@@ -299,10 +299,10 @@ allocate(obsop%obs_to_obsa(obsop%nobs))
 
 ! Compute interpolation
 obsop%hfull%prefix = 'o'
-write(mpl%unit,'(a7,a)') '','Single level:'
-call flush(mpl%unit)
+write(mpl%info,'(a7,a)') '','Single level:'
+call flush(mpl%info)
 maskobs = .true.
-call obsop%hfull%interp(mpl,geom%mesh,geom%kdtree,geom%nc0,any(geom%mask,dim=2),obsop%nobs,lonobs,latobs,maskobs,nam%obsop_interp)
+call obsop%hfull%interp(mpl,geom%mesh,geom%kdtree,geom%nc0,geom%mask_hor_c0,obsop%nobs,lonobs,latobs,maskobs,nam%obsop_interp)
 
 ! Count interpolation points
 nop = 0
@@ -554,16 +554,16 @@ C_max = C_max/(3.0*real(obsop%nobs,kind_real)/real(mpl%nproc,kind_real))
 N_max = real(maxval(obsop%proc_to_nobsa),kind_real)/(real(obsop%nobs,kind_real)/real(mpl%nproc,kind_real))
 
 ! Print results
-write(mpl%unit,'(a7,a)') '','Number of observations per MPI task:'
+write(mpl%info,'(a7,a)') '','Number of observations per MPI task:'
 do iproc=1,mpl%nproc
-   write(mpl%unit,'(a10,a,i3,a,i8)') '','Task ',iproc,': ',obsop%proc_to_nobsa(iproc)
+   write(mpl%info,'(a10,a,i3,a,i8)') '','Task ',iproc,': ',obsop%proc_to_nobsa(iproc)
 end do
-write(mpl%unit,'(a7,a,f5.1,a)') '','Observation repartition imbalance: ',100.0*real(maxval(obsop%proc_to_nobsa) &
+write(mpl%info,'(a7,a,f5.1,a)') '','Observation repartition imbalance: ',100.0*real(maxval(obsop%proc_to_nobsa) &
  & -minval(obsop%proc_to_nobsa),kind_real)/(real(sum(obsop%proc_to_nobsa),kind_real)/real(mpl%nproc,kind_real)),' %'
-write(mpl%unit,'(a7,a,i3)') '','Number of grid points, halo size and number of received values for MPI task: ',mpl%myproc
-write(mpl%unit,'(a10,i8,a,i8,a,i8)') '',obsop%com%nred,' / ',obsop%com%next,' / ',obsop%com%nhalo
-write(mpl%unit,'(a7,a,f10.2,a,f10.2)') '','Scores (N_max / C_max):',N_max,' / ',C_max
-call flush(mpl%unit)
+write(mpl%info,'(a7,a,i3)') '','Number of grid points, halo size and number of received values for MPI task: ',mpl%myproc
+write(mpl%info,'(a10,i8,a,i8,a,i8)') '',obsop%com%nred,' / ',obsop%com%next,' / ',obsop%com%nhalo
+write(mpl%info,'(a7,a,f10.2,a,f10.2)') '','Scores (N_max / C_max):',N_max,' / ',C_max
+call flush(mpl%info)
 
 if (mpl%main) then
    call mpl%newunit(lunit)
@@ -593,7 +593,7 @@ end subroutine obsop_run_obsop
 ! Subroutine: obsop_run_obsop_tests
 !> Purpose: observation operator tests driver
 !----------------------------------------------------------------------
-subroutine obsop_run_obsop_tests(obsop,mpl,rng,nam,geom)
+subroutine obsop_run_obsop_tests(obsop,mpl,rng,geom)
 
 implicit none
 
@@ -601,19 +601,18 @@ implicit none
 class(obsop_type),intent(inout) :: obsop !< Observation operator data
 type(mpl_type),intent(inout) :: mpl      !< MPI data
 type(rng_type),intent(inout) :: rng      !< Random number generator
-type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 
 ! Test adjoints
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Test observation operator adjoint'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '-------------------------------------------------------------------'
+write(mpl%info,'(a)') '--- Test observation operator adjoint'
+call flush(mpl%info)
 call obsop%test_adjoint(mpl,rng,geom)
 
 ! Test precision
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Test observation operator precision'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '-------------------------------------------------------------------'
+write(mpl%info,'(a)') '--- Test observation operator precision'
+call flush(mpl%info)
 call obsop%test_accuracy(mpl,geom)
 
 end subroutine obsop_run_obsop_tests
@@ -735,9 +734,9 @@ end if
 call mpl%allreduce_sum(sum2_loc,sum2)
 
 ! Print results
-write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Observation operator adjoint test: ', &
+write(mpl%info,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Observation operator adjoint test: ', &
  & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
-call flush(mpl%unit)
+call flush(mpl%info)
 
 end subroutine obsop_test_adjoint
 
@@ -755,9 +754,9 @@ type(mpl_type),intent(in) :: mpl         !< MPI data
 type(geom_type),intent(in) :: geom       !< Geometry
 
 ! Local variables
-integer :: ic0a,ic0,iobsa,iobs
-integer :: iprocmax(1),iobsamax(1),iobsmax(1)
-real(kind_real) :: ylonmax(1),ylatmax(1)
+integer :: ic0a,ic0,iobsa,iobs,iproc
+integer :: iprocmax,iobsamax,iobsmax
+real(kind_real) :: ylonmax,ylatmax
 real(kind_real) :: norm,distmin,distmax,distsum
 real(kind_real) :: norm_tot,distmin_tot,proc_to_distmax(mpl%nproc),distsum_tot
 real(kind_real),allocatable :: lon(:,:),lat(:,:)
@@ -816,33 +815,47 @@ end if
 ! Gather results
 call mpl%allreduce_sum(norm,norm_tot)
 call mpl%allreduce_min(distmin,distmin_tot)
-call mpl%allgather(1,(/distmax/),proc_to_distmax)
+call mpl%allgather(distmax,proc_to_distmax)
 call mpl%allreduce_sum(distsum,distsum_tot)
 
 ! Max. error detail
-iprocmax = maxloc(proc_to_distmax)
-if (iprocmax(1)==mpl%myproc) then
-   iobsamax = maxloc(dist,mask=isnotmsr(dist))
+call msi(iprocmax)
+distmax = 0.0
+do iproc=1,mpl%nproc
+   if (proc_to_distmax(iproc)>distmax) then
+      iprocmax = iproc
+      distmax = proc_to_distmax(iproc)
+   end if
+end do
+if (iprocmax==mpl%myproc) then
+   call msi(iobsamax)
+   distmax = 0.0
+   do iobsa=1,obsop%nobsa
+      if (dist(iobsa)>distmax) then
+         iobsamax = iobsa
+         distmax = dist(iobsa)
+      end if
+   end do
    iobsmax = obsop%obsa_to_obs(iobsamax)
    ylonmax = ylon(iobsamax,1)
    ylatmax = ylat(iobsamax,1)
 end if
 
 ! Broadcast results
-call mpl%bcast(iobsmax,iprocmax(1))
-call mpl%bcast(ylonmax,iprocmax(1))
-call mpl%bcast(ylatmax,iprocmax(1))
+call mpl%bcast(iobsmax,iprocmax)
+call mpl%bcast(ylonmax,iprocmax)
+call mpl%bcast(ylatmax,iprocmax)
 
 ! Print results
 if (norm_tot>0.0) then
-   write(mpl%unit,'(a7,a,f10.2,a,f10.2,a,f10.2,a)') '','Interpolation error (min/mean/max): ',distmin_tot, &
+   write(mpl%info,'(a7,a,f10.2,a,f10.2,a,f10.2,a)') '','Interpolation error (min/mean/max): ',distmin_tot, &
  & ' km / ',distsum_tot/norm_tot,' km / ',maxval(proc_to_distmax),' km'
-   write(mpl%unit,'(a7,a)') '','Max. interpolation error location (lon/lat): '
-   write(mpl%unit,'(a10,a14,f10.2,a,f10.2,a)') '','Observation:  ',obsop%lonobs(iobsmax(1))*rad2deg, &
- & ' deg. / ' ,obsop%latobs(iobsmax(1))*rad2deg,' deg.'
-   write(mpl%unit,'(a10,a14,f10.2,a,f10.2,a)') '','Interpolation:',ylonmax*rad2deg, &
+   write(mpl%info,'(a7,a)') '','Max. interpolation error location (lon/lat): '
+   write(mpl%info,'(a10,a14,f10.2,a,f10.2,a)') '','Observation:  ',obsop%lonobs(iobsmax)*rad2deg, &
+ & ' deg. / ' ,obsop%latobs(iobsmax)*rad2deg,' deg.'
+   write(mpl%info,'(a10,a14,f10.2,a,f10.2,a)') '','Interpolation:',ylonmax*rad2deg, &
  & ' deg. / ' ,ylatmax*rad2deg,' deg.'
-   call flush(mpl%unit)
+   call flush(mpl%info)
 else
    call mpl%abort('all observations are out of the test windows')
 end if

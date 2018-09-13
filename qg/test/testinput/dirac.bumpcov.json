@@ -23,6 +23,7 @@
     "covariance": "BUMP",
     "date": "2010-01-01T00:00:00Z",
     "prefix" : "bump",
+    "default_seed" : 1,
     "strategy" : "common",
     "new_param" : 1,
     "new_nicas" : 1,
@@ -35,7 +36,7 @@
     "mpicom" : 2,
     "advmode" : 0,
     "forced_radii" : 1,
-    "rh" : 2800.0e3,
+    "rh" : 3900.0e3,
     "rv" : 2.407,
     "variable_changes": [ 
        {

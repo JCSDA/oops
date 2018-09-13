@@ -11,7 +11,7 @@
 module type_lct_blk
 
 !$ use omp_lib
-use tools_func, only: pos,poseq,lonlatmod,fit_lct
+use tools_func, only: lonlatmod,fit_lct
 use tools_kinds, only: kind_real
 use tools_missing, only: msr,isnotmsr
 use type_bpar, only: bpar_type
@@ -184,7 +184,7 @@ do jsub=1,mom_blk%nsub
                ic1 = hdata%c1a_to_c1(ic1a)
                if (hdata%c1l0_log(ic1,il0)) then
                   den = mom_blk%m2_1(ic1a,jc3,il0,jsub)*mom_blk%m2_2(ic1a,jc3,jl0,jsub)
-                  if (pos(den)) then
+                  if (den>0.0) then
                      lct_blk%raw(jc3,jl0r,ic1a,il0) = lct_blk%raw(jc3,jl0r,ic1a,il0)+mom_blk%m11(ic1a,jc3,jl0r,il0,jsub)/sqrt(den)
                      lct_blk%norm(jc3,jl0r,ic1a,il0) = lct_blk%norm(jc3,jl0r,ic1a,il0)+1.0
                   end if
@@ -202,7 +202,7 @@ do il0=1,geom%nl0
          do ic1a=1,hdata%nc1a
             ic1 = hdata%c1a_to_c1(ic1a)
             if (hdata%c1l0_log(ic1,il0)) then
-               if (pos(lct_blk%norm(jc3,jl0r,ic1a,il0))) lct_blk%raw(jc3,jl0r,ic1a,il0) = lct_blk%raw(jc3,jl0r,ic1a,il0) &
+               if (lct_blk%norm(jc3,jl0r,ic1a,il0)>0.0) lct_blk%raw(jc3,jl0r,ic1a,il0) = lct_blk%raw(jc3,jl0r,ic1a,il0) &
              & /lct_blk%norm(jc3,jl0r,ic1a,il0)
             end if
          end do
@@ -225,18 +225,18 @@ implicit none
 
 ! Passed variables
 class(lct_blk_type),intent(inout) :: lct_blk !< LCT block
-type(mpl_type),intent(in) :: mpl             !< MPI data
+type(mpl_type),intent(inout) :: mpl          !< MPI data
 type(nam_type),intent(in) :: nam             !< Namelist
 type(geom_type),intent(in) :: geom           !< Geometry
 type(bpar_type),intent(in) :: bpar           !< Block parameters
 type(hdata_type),intent(in) :: hdata         !< HDIAG data
 
 ! Local variables
-integer :: il0,jl0r,jl0,ic1a,ic1,ic0,jc3,iscales,offset,progint
-real(kind_real) :: distsq,Dhbar,Dvbar
+integer :: il0,jl0r,jl0,ic1a,ic1,ic0,jc3,iscales,offset
+real(kind_real) :: distsq,Dhbar,Dvbar,det,diag_prod
 real(kind_real),allocatable :: Dh(:),Dv(:),dx(:,:),dy(:,:),dz(:)
 logical :: spd
-logical,allocatable :: dmask(:,:),done(:)
+logical,allocatable :: dmask(:,:)
 type(minim_type) :: minim
 
 ! Associate
@@ -249,7 +249,6 @@ allocate(dx(nam%nc3,bpar%nl0r(ib)))
 allocate(dy(nam%nc3,bpar%nl0r(ib)))
 allocate(dz(bpar%nl0r(ib)))
 allocate(dmask(nam%nc3,bpar%nl0r(ib)))
-allocate(done(hdata%nc1a))
 minim%nx = sum(lct_blk%ncomp)
 if (lct_blk%nscales>1) minim%nx = minim%nx+lct_blk%nscales-1
 minim%ny = nam%nc3*bpar%nl0r(ib)
@@ -265,11 +264,11 @@ allocate(minim%dmask(nam%nc3,bpar%nl0r(ib)))
 allocate(minim%ncomp(lct_blk%nscales))
 
 do il0=1,geom%nl0
-   write(mpl%unit,'(a13,a,i3,a)',advance='no') '','Level ',nam%levs(il0),':'
-   call flush(mpl%unit)
+   write(mpl%info,'(a13,a,i3,a)',advance='no') '','Level ',nam%levs(il0),':'
+   call flush(mpl%info)
 
    ! Initialization
-   call mpl%prog_init(progint,done)
+   call mpl%prog_init(hdata%nc1a)
 
    do ic1a=1,hdata%nc1a
       ! Global index
@@ -300,7 +299,7 @@ do il0=1,geom%nl0
                do jc3=1,nam%nc3
                   if (dmask(jc3,jl0r)) then
                      distsq = dx(jc3,jl0r)**2+dy(jc3,jl0r)**2
-                     if ((lct_blk%raw(jc3,jl0r,ic1a,il0)>cor_min).and.pos(distsq))  &
+                     if ((lct_blk%raw(jc3,jl0r,ic1a,il0)>cor_min).and.(distsq>0.0))  &
                    & Dh(jc3) = -distsq/(2.0*log(lct_blk%raw(jc3,jl0r,ic1a,il0)))
                   end if
                end do
@@ -314,7 +313,7 @@ do il0=1,geom%nl0
          jc3 = 1
          do jl0r=1,bpar%nl0r(ib)
             distsq = dz(jl0r)**2
-            if ((lct_blk%raw(jc3,jl0r,ic1a,il0)>cor_min).and.pos(distsq)) &
+            if ((lct_blk%raw(jc3,jl0r,ic1a,il0)>cor_min).and.(distsq>0.0)) &
           & Dv(jl0r) = -distsq/(2.0*log(lct_blk%raw(jc3,jl0r,ic1a,il0)))
          end do
          if (bpar%nl0r(ib)>1) then
@@ -350,7 +349,7 @@ do il0=1,geom%nl0
                minim%bsup(offset+1) = 1.0
                offset = offset+1
             end do
-   
+
             ! Fill minim
             minim%obs = pack(lct_blk%raw(:,:,ic1a,il0),.true.)
             minim%cost_function = 'fit_lct'
@@ -363,10 +362,10 @@ do il0=1,geom%nl0
             minim%dmask = dmask
             minim%nscales = lct_blk%nscales
             minim%ncomp = lct_blk%ncomp
-   
+
             ! Compute fit
             call minim%compute(mpl,lprt)
-   
+
             ! Copy parameters
             lct_blk%D(:,ic1a,il0) = minim%x(1:sum(lct_blk%ncomp))
             if (lct_blk%nscales>1) then
@@ -375,7 +374,7 @@ do il0=1,geom%nl0
             else
                lct_blk%coef(1,ic1a,il0) = 1.0
             end if
-   
+
             ! Fixed positive value for the 2D case
             if (bpar%nl0r(ib)==1) then
                offset = 0
@@ -384,16 +383,21 @@ do il0=1,geom%nl0
                   offset = offset+lct_blk%ncomp(iscales)
                end do
             end if
-   
+
             ! Check positive-definiteness and coefficients values
             spd = .true.
             offset = 0
             do iscales=1,lct_blk%nscales
-               spd = spd.and.(pos(lct_blk%D(offset+1,ic1a,il0))).and.(pos(lct_blk%D(offset+2,ic1a,il0)))
-               if (bpar%nl0r(ib)>1) spd = spd.and.(poseq(lct_blk%D(offset+3,ic1a,il0)))
-               if (lct_blk%ncomp(iscales)==4) spd = spd.and.pos(lct_blk%D(offset+4,ic1a,il0)-1.0) &
-                                                  & .and.pos(1.0-lct_blk%D(offset+4,ic1a,il0))
-               spd = spd.and.(poseq(lct_blk%coef(iscales,ic1a,il0)))
+               ! Check D determinant
+               diag_prod = lct_blk%D(offset+1,ic1a,il0)*lct_blk%D(offset+2,ic1a,il0)
+               if (lct_blk%ncomp(iscales)==3) then
+                  det = diag_prod
+               else
+                  det = diag_prod*(1.0-lct_blk%D(offset+4,ic1a,il0)**2)
+               end if
+               if (bpar%nl0r(ib)>1) det = det*lct_blk%D(offset+3,ic1a,il0)
+               spd = spd.and.(det>0.0).and.(lct_blk%coef(iscales,ic1a,il0)>0.0)
+               if (lct_blk%nscales>1) spd = spd.and.(lct_blk%coef(iscales,ic1a,il0)<1.0)
                offset = offset+lct_blk%ncomp(iscales)
             end do
             if (spd) then
@@ -415,11 +419,10 @@ do il0=1,geom%nl0
       end if
 
       ! Update
-      done(ic1a) = .true.
-      call mpl%prog_print(progint,done)
+      call mpl%prog_print(ic1a)
    end do
-   write(mpl%unit,'(a)') '100%'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '100%'
+   call flush(mpl%info)
 end do
 
 ! End associate

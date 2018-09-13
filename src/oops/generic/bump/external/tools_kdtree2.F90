@@ -1,13 +1,24 @@
-!
-!(c) Matthew Kennel, Institute for Nonlinear Science (2004)
-!
-! Licensed under the Academic Free License version 1.1 found in file LICENSE
-! with additional provisions found in that same file.
-!
+!----------------------------------------------------------------------
+! Module: tools_kdtree2.f90
+!> Purpose: K-d tree routines
+!> <br>
+!> Source: https://github.com/jmhodges/kdtree2
+!> <br>
+!> Author: Matthew Kennel, Institute for Nonlinear Science (2004)
+!> <br>
+!> Original licensing: Academic Free License version 1.1
+!> <br>
+!> Modified by Benjamin Menetrier for BUMP
+!> <br>
+!> Licensing: this code is distributed under the CeCILL-C license
+!> <br>
+!> Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE
+!----------------------------------------------------------------------
 module tools_kdtree2
-  use tools_func, only: inf,infeq,sup,sphere_dist
+  use tools_func, only: sphere_dist
   use tools_kdtree2_pq
   use tools_kinds, only: kind_real
+  use tools_repro, only: inf,infeq,sup
   use tools_stripack, only: scoord
   ! K-D tree routines in Fortran 90 by Matt Kennel.
   ! Original program was written in Sather by Steve Omohundro and

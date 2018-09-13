@@ -10,10 +10,10 @@
 !----------------------------------------------------------------------
 module tools_fit
 
-use tools_const, only: rth
 use tools_func, only: gc99
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsi,isnotmsr,isanynotmsr,ismsi,ismsr
+use tools_repro, only: inf,sup
 use type_mpl, only: mpl_type
 
 implicit none
@@ -57,10 +57,10 @@ if (raw(iz)>0.0) then
       raw_tmp(iz) = raw(iz)
       do i=1,n
         if (i/=iz) then
-           if (raw(i)<raw(iz)) raw_tmp(i) = raw(i)
+           if (inf(raw(i),raw(iz))) raw_tmp(i) = raw(i)
         end if
       end do
-  
+
       ! At least one positive point is needed
       valid = .false.
       do i=1,n
@@ -71,20 +71,20 @@ if (raw(iz)>0.0) then
 
       if (valid) then
          ! Define threshold and its inverse
-         if (minval(raw_tmp/raw_tmp(iz),mask=(raw_tmp>0.0))<0.5) then
+         if (inf(minval(raw_tmp/raw_tmp(iz),mask=(raw_tmp>0.0)),0.5_kind_real)) then
             ! Default threshold
             th = 0.5
             thinv = 0.33827292796125663
          else
             ! Curve-dependent threshold
-            th = minval(raw_tmp/raw_tmp(iz),mask=(raw_tmp>0.0))+rth
+            th = minval(raw_tmp/raw_tmp(iz),mask=(raw_tmp>0.0))+1.0e-6
 
             ! Find inverse threshold by dichotomy
             thinv = 0.5
             dthinv = 0.25
             do iter=1,itermax
                thtest = gc99(mpl,thinv)
-               if (th>thtest) then
+               if (sup(th,thtest)) then
                   thinv = thinv-dthinv
                else
                   thinv = thinv+dthinv
@@ -92,7 +92,7 @@ if (raw(iz)>0.0) then
                dthinv = 0.5*dthinv
             end do
          end if
-   
+
          ! Find support radius, lower value
          call msr(fit_rm)
          ip = iz
@@ -101,13 +101,13 @@ if (raw(iz)>0.0) then
             if (ismsr(fit_rm)) then
                ! Index
                im = iz-di
-   
+
                ! Check index validity
                if (im>=1) then
                   ! Check raw value validity
                   if (raw_tmp(im)>0.0) then
                      ! Check whether threshold has been crossed
-                     if (raw_tmp(im)<th*raw_tmp(iz)) then
+                     if (inf(raw_tmp(im),th*raw_tmp(iz))) then
                         ! Set fit value
                         fit_rm = dist(im)+(dist(ip)-dist(im))*(th*raw_tmp(iz)-raw_tmp(im))/(raw_tmp(ip)-raw_tmp(im))
                      else
@@ -118,7 +118,7 @@ if (raw(iz)>0.0) then
                end if
             end if
          end do
-   
+
          ! Find support radius, upper value
          call msr(fit_rp)
          im = iz
@@ -127,13 +127,13 @@ if (raw(iz)>0.0) then
             if (ismsr(fit_rp)) then
                ! Index
                ip = iz+di
-   
+
                ! Check index validity
                if (ip<=n) then
                   ! Check raw value validity
                   if (raw_tmp(ip)>0.0) then
                      ! Check whether threshold has been crossed
-                     if (raw_tmp(ip)<th*raw_tmp(iz)) then
+                     if (inf(raw_tmp(ip),th*raw_tmp(iz))) then
                         ! Set fit value
                         fit_rp = dist(im)+(dist(ip)-dist(im))*(th*raw_tmp(iz)-raw_tmp(im))/(raw_tmp(ip)-raw_tmp(im))
                      else
@@ -144,7 +144,7 @@ if (raw(iz)>0.0) then
                end if
             end if
          end do
-   
+
          ! Gather values
          if (isnotmsr(fit_rm).and.isnotmsr(fit_rp)) then
             fit_r = 0.5*(fit_rm+fit_rp)
@@ -153,18 +153,15 @@ if (raw(iz)>0.0) then
          elseif (isnotmsr(fit_rp)) then
             fit_r = fit_rp
          end if
-   
-         ! Check
-         if (fit_r<0.0) then
-            write(mpl%unit,*) iz,valid
-            write(mpl%unit,*) raw_tmp
-            write(mpl%unit,*) th,thinv
-            write(mpl%unit,*) fit_rm,fit_rp,fit_r
-            call mpl%abort('negative fit_r in fast_fit')
-         end if
-   
+
          ! Normalize
          if (isnotmsr(fit_r)) fit_r = fit_r/thinv
+
+         ! Check positivity
+         if (inf(fit_r,0.0_kind_real)) then
+            call mpl%warning('negative fit_r in fast_fit')
+            fit_r = 0.0
+         end if
       else
          ! Only the zero-separation point is valid, zero radius
          fit_r = 0.0

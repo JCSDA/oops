@@ -138,12 +138,12 @@ call cmat_copy%alloc(nam,geom,bpar,trim(cmat%prefix))
 do ib=1,bpar%nbe
    if (allocated(cmat%blk(ib)%coef_ens)) cmat_copy%blk(ib)%coef_ens = cmat%blk(ib)%coef_ens
    if (allocated(cmat%blk(ib)%coef_sta)) cmat_copy%blk(ib)%coef_sta = cmat%blk(ib)%coef_sta
-   if (allocated(cmat%blk(ib)%rh_c0)) cmat_copy%blk(ib)%rh_c0 = cmat%blk(ib)%rh_c0
-   if (allocated(cmat%blk(ib)%rv_c0)) cmat_copy%blk(ib)%rv_c0 = cmat%blk(ib)%rv_c0
-   if (allocated(cmat%blk(ib)%rv_rfac_c0)) cmat_copy%blk(ib)%rv_rfac_c0 = cmat%blk(ib)%rv_rfac_c0
-   if (allocated(cmat%blk(ib)%rv_coef_c0)) cmat_copy%blk(ib)%rv_coef_c0 = cmat%blk(ib)%rv_coef_c0
-   if (allocated(cmat%blk(ib)%rhs_c0)) cmat_copy%blk(ib)%rhs_c0 = cmat%blk(ib)%rhs_c0
-   if (allocated(cmat%blk(ib)%rvs_c0)) cmat_copy%blk(ib)%rvs_c0 = cmat%blk(ib)%rvs_c0
+   if (allocated(cmat%blk(ib)%rh)) cmat_copy%blk(ib)%rh = cmat%blk(ib)%rh
+   if (allocated(cmat%blk(ib)%rv)) cmat_copy%blk(ib)%rv = cmat%blk(ib)%rv
+   if (allocated(cmat%blk(ib)%rv_rfac)) cmat_copy%blk(ib)%rv_rfac = cmat%blk(ib)%rv_rfac
+   if (allocated(cmat%blk(ib)%rv_coef)) cmat_copy%blk(ib)%rv_coef = cmat%blk(ib)%rv_coef
+   if (allocated(cmat%blk(ib)%rhs)) cmat_copy%blk(ib)%rhs = cmat%blk(ib)%rhs
+   if (allocated(cmat%blk(ib)%rvs)) cmat_copy%blk(ib)%rvs = cmat%blk(ib)%rvs
    if (allocated(cmat%blk(ib)%displ_lon)) cmat_copy%blk(ib)%displ_lon = cmat%blk(ib)%displ_lon
    if (allocated(cmat%blk(ib)%displ_lat)) cmat_copy%blk(ib)%displ_lat = cmat%blk(ib)%displ_lat
 end do
@@ -160,45 +160,55 @@ implicit none
 
 ! Passed variables
 class(cmat_type),intent(inout) :: cmat !< C matrix data
-type(mpl_type),intent(in) :: mpl       !< MPI data
+type(mpl_type),intent(inout) :: mpl    !< MPI data
 type(nam_type),intent(in) :: nam       !< Namelist
 type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
 type(io_type),intent(in) :: io         !< I/O
 
 ! Local variables
-integer :: ib
-character(len=1024) :: filename
+integer :: ib,ncid
+character(len=1024) :: filename,double_fitchar
+character(len=1024) :: subr = 'cmat_read'
 
 ! Allocation
 call cmat%alloc(nam,geom,bpar,'cmat')
 
 do ib=1,bpar%nbe
    if (bpar%B_block(ib)) then
+      ! Set filename
       filename = trim(nam%prefix)//'_'//trim(cmat%blk(ib)%name)
+
+      ! Read fields
       if (bpar%nicas_block(ib)) then
          call io%fld_read(mpl,nam,geom,filename,'coef_ens',cmat%blk(ib)%coef_ens)
          call io%fld_read(mpl,nam,geom,filename,'coef_sta',cmat%blk(ib)%coef_sta)
-         call io%fld_read(mpl,nam,geom,filename,'rh_c0',cmat%blk(ib)%rh_c0)
-         call io%fld_read(mpl,nam,geom,filename,'rv_c0',cmat%blk(ib)%rv_c0)
+         call io%fld_read(mpl,nam,geom,filename,'rh',cmat%blk(ib)%rh)
+         call io%fld_read(mpl,nam,geom,filename,'rv',cmat%blk(ib)%rv)
          if (nam%double_fit(bpar%b_to_v1(ib))) then
-            call io%fld_read(mpl,nam,geom,filename,'rv_rfac_c0',cmat%blk(ib)%rv_rfac_c0)
-            call io%fld_read(mpl,nam,geom,filename,'rv_coef_c0',cmat%blk(ib)%rv_coef_c0)
+            call io%fld_read(mpl,nam,geom,filename,'rv_rfac',cmat%blk(ib)%rv_rfac)
+            call io%fld_read(mpl,nam,geom,filename,'rv_coef',cmat%blk(ib)%rv_coef)
          end if
-         call io%fld_read(mpl,nam,geom,filename,'rhs_c0',cmat%blk(ib)%rhs_c0)
-         call io%fld_read(mpl,nam,geom,filename,'rvs_c0',cmat%blk(ib)%rvs_c0)
+         call io%fld_read(mpl,nam,geom,filename,'rhs',cmat%blk(ib)%rhs)
+         call io%fld_read(mpl,nam,geom,filename,'rvs',cmat%blk(ib)%rvs)
       end if
       if ((ib==bpar%nbe).and.nam%displ_diag) then
          call io%fld_read(mpl,nam,geom,filename,'displ_lon',cmat%blk(ib)%displ_lon)
          call io%fld_read(mpl,nam,geom,filename,'displ_lat',cmat%blk(ib)%displ_lat)
       end if
 
-      ! Check
+      ! Read attribute
+      call mpl%ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename)//'.nc',nf90_nowrite,ncid))
+      call mpl%ncerr(subr,nf90_get_att(ncid,nf90_global,'double_fit',double_fitchar))
+      cmat%blk(ib)%double_fit = (trim(double_fitchar)=='double_fit')
+      call mpl%ncerr(subr,nf90_close(ncid))
+
+      ! Check fields
       if (bpar%nicas_block(ib)) then
-         if (any((cmat%blk(ib)%rh_c0<0.0).and.isnotmsr(cmat%blk(ib)%rh_c0))) call mpl%abort('rh_c0 should be positive')
-         if (any((cmat%blk(ib)%rv_c0<0.0).and.isnotmsr(cmat%blk(ib)%rv_c0))) call mpl%abort('rv_c0 should be positive')
-         if (any((cmat%blk(ib)%rhs_c0<0.0).and.isnotmsr(cmat%blk(ib)%rhs_c0))) call mpl%abort('rhs_c0 should be positive')
-         if (any((cmat%blk(ib)%rvs_c0<0.0).and.isnotmsr(cmat%blk(ib)%rvs_c0))) call mpl%abort('rvs_c0 should be positive')
+         if (any((cmat%blk(ib)%rh<0.0).and.isnotmsr(cmat%blk(ib)%rh))) call mpl%abort('rh should be positive')
+         if (any((cmat%blk(ib)%rv<0.0).and.isnotmsr(cmat%blk(ib)%rv))) call mpl%abort('rv should be positive')
+         if (any((cmat%blk(ib)%rhs<0.0).and.isnotmsr(cmat%blk(ib)%rhs))) call mpl%abort('rhs should be positive')
+         if (any((cmat%blk(ib)%rvs<0.0).and.isnotmsr(cmat%blk(ib)%rvs))) call mpl%abort('rvs should be positive')
       end if
    end if
 end do
@@ -222,28 +232,41 @@ type(bpar_type),intent(in) :: bpar  !< Block parameters
 type(io_type),intent(in) :: io      !< I/O
 
 ! Local variables
-integer :: ib
+integer :: ib,ncid
 character(len=1024) :: filename
+character(len=1024) :: subr = 'cmat_write'
 
 do ib=1,bpar%nbe
    if (bpar%B_block(ib)) then
+      ! Set filename
       filename = trim(nam%prefix)//'_'//trim(cmat%blk(ib)%name)
+
+      ! Write fields
       if (bpar%nicas_block(ib)) then
          call io%fld_write(mpl,nam,geom,filename,'coef_ens',cmat%blk(ib)%coef_ens)
          call io%fld_write(mpl,nam,geom,filename,'coef_sta',cmat%blk(ib)%coef_sta)
-         call io%fld_write(mpl,nam,geom,filename,'rh_c0',cmat%blk(ib)%rh_c0)
-         call io%fld_write(mpl,nam,geom,filename,'rv_c0',cmat%blk(ib)%rv_c0)
+         call io%fld_write(mpl,nam,geom,filename,'rh',cmat%blk(ib)%rh)
+         call io%fld_write(mpl,nam,geom,filename,'rv',cmat%blk(ib)%rv)
          if (nam%double_fit(bpar%b_to_v1(ib))) then
-            call io%fld_write(mpl,nam,geom,filename,'rv_rfac_c0',cmat%blk(ib)%rv_rfac_c0)
-            call io%fld_write(mpl,nam,geom,filename,'rv_coef_c0',cmat%blk(ib)%rv_coef_c0)
+            call io%fld_write(mpl,nam,geom,filename,'rv_rfac',cmat%blk(ib)%rv_rfac)
+            call io%fld_write(mpl,nam,geom,filename,'rv_coef',cmat%blk(ib)%rv_coef)
          end if
-         call io%fld_write(mpl,nam,geom,filename,'rhs_c0',cmat%blk(ib)%rhs_c0)
-         call io%fld_write(mpl,nam,geom,filename,'rvs_c0',cmat%blk(ib)%rvs_c0)
+         call io%fld_write(mpl,nam,geom,filename,'rhs',cmat%blk(ib)%rhs)
+         call io%fld_write(mpl,nam,geom,filename,'rvs',cmat%blk(ib)%rvs)
       end if
       if ((ib==bpar%nbe).and.nam%displ_diag) then
          call io%fld_write(mpl,nam,geom,filename,'displ_lon',cmat%blk(ib)%displ_lon)
          call io%fld_write(mpl,nam,geom,filename,'displ_lat',cmat%blk(ib)%displ_lat)
       end if
+
+      ! Write attribute
+      call mpl%ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename)//'.nc',nf90_write,ncid))
+      if (cmat%blk(ib)%double_fit) then
+         call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,'double_fit','.true.'))
+      else
+         call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,'double_fit','.false.'))
+      end if
+      call mpl%ncerr(subr,nf90_close(ncid))
    end if
 end do
 
@@ -278,86 +301,86 @@ type(hdata_type) :: hdata
 type(mom_type) :: mom_1,mom_2
 
 ! Setup sampling
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a,i5,a)') '--- Setup sampling (nc1 = ',nam%nc1,')'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '-------------------------------------------------------------------'
+write(mpl%info,'(a,i5,a)') '--- Setup sampling (nc1 = ',nam%nc1,')'
+call flush(mpl%info)
 call hdata%setup_sampling(mpl,rng,nam,geom,io)
 
 ! Compute MPI distribution, halo A
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Compute MPI distribution, halos A'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '-------------------------------------------------------------------'
+write(mpl%info,'(a)') '--- Compute MPI distribution, halos A'
+call flush(mpl%info)
 call hdata%compute_mpi_a(mpl,nam,geom)
 
 if (nam%new_lct.or.nam%var_diag.or.nam%local_diag.or.nam%displ_diag) then
    ! Compute MPI distribution, halos A-B
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Compute MPI distribution, halos A-B'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(mpl%info,'(a)') '--- Compute MPI distribution, halos A-B'
+   call flush(mpl%info)
    call hdata%compute_mpi_ab(mpl,nam,geom)
 end if
 
 if (nam%displ_diag) then
    ! Compute MPI distribution, halo D
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Compute MPI distribution, halo D'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(mpl%info,'(a)') '--- Compute MPI distribution, halo D'
+   call flush(mpl%info)
    call hdata%compute_mpi_d(mpl,nam,geom)
 
    ! Compute displacement diagnostic
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Compute displacement diagnostic'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(mpl%info,'(a)') '--- Compute displacement diagnostic'
+   call flush(mpl%info)
    call displ%compute(mpl,nam,geom,hdata,ens1)
 end if
 
 ! Compute MPI distribution, halo C
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Compute MPI distribution, halo C'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '-------------------------------------------------------------------'
+write(mpl%info,'(a)') '--- Compute MPI distribution, halo C'
+call flush(mpl%info)
 call hdata%compute_mpi_c(mpl,nam,geom)
 
 if ((nam%local_diag.or.nam%displ_diag).and.(nam%diag_rhflt>0.0)) then
    ! Compute MPI distribution, halo F
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Compute MPI distribution, halo F'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(mpl%info,'(a)') '--- Compute MPI distribution, halo F'
+   call flush(mpl%info)
    call hdata%compute_mpi_f(mpl,nam,geom)
 end if
 
 ! Compute sample moments
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Compute sample moments'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '-------------------------------------------------------------------'
+write(mpl%info,'(a)') '--- Compute sample moments'
+call flush(mpl%info)
 
 ! Compute ensemble 1 sample moments
-write(mpl%unit,'(a7,a)') '','Ensemble 1:'
-call flush(mpl%unit)
+write(mpl%info,'(a7,a)') '','Ensemble 1:'
+call flush(mpl%info)
 call mom_1%compute(mpl,nam,geom,bpar,hdata,ens1)
 
 select case(trim(nam%method))
 case ('hyb-rnd','dual-ens')
    ! Compute randomized sample moments
-   write(mpl%unit,'(a7,a)') '','Ensemble 2:'
-   call flush(mpl%unit)
+   write(mpl%info,'(a7,a)') '','Ensemble 2:'
+   call flush(mpl%info)
    call mom_2%compute(mpl,nam,geom,bpar,hdata,ens2)
 end select
 
 ! Compute statistics
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Compute statistics'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '-------------------------------------------------------------------'
+write(mpl%info,'(a)') '--- Compute statistics'
+call flush(mpl%info)
 
 ! Compute ensemble 1 statistics
-write(mpl%unit,'(a7,a)') '','Ensemble 1:'
-call flush(mpl%unit)
+write(mpl%info,'(a7,a)') '','Ensemble 1:'
+call flush(mpl%info)
 call avg_1%compute(mpl,nam,geom,bpar,hdata,mom_1,nam%ne)
 
 select case(trim(nam%method))
 case ('hyb-rnd','dual-ens')
    ! Compute ensemble 2 statistics
-   write(mpl%unit,'(a7,a)') '','Ensemble 2:'
-   call flush(mpl%unit)
+   write(mpl%info,'(a7,a)') '','Ensemble 2:'
+   call flush(mpl%info)
    call avg_2%compute(mpl,nam,geom,bpar,hdata,mom_2,nam%ens2_ne)
 case ('hyb-avg')
    ! Copy ensemble 1 statistics
@@ -367,36 +390,36 @@ end select
 select case (trim(nam%method))
 case ('hyb-avg','hyb-rnd','dual-ens')
    ! Compute hybrid statistics
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Compute hybrid statistics'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(mpl%info,'(a)') '--- Compute hybrid statistics'
+   call flush(mpl%info)
    call avg_2%compute_hyb(mpl,nam,geom,bpar,hdata,mom_1,mom_2,avg_1)
 end select
 
 if ((bpar%nbe>bpar%nb).and.bpar%diag_block(bpar%nbe)) then
    ! Compute block-averaged statistics
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Compute block-averaged statistics'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(mpl%info,'(a)') '--- Compute block-averaged statistics'
+   call flush(mpl%info)
    avg_wgt = avg_1%copy_wgt(geom,bpar)
    call avg_1%compute_bwavg(mpl,nam,geom,bpar,avg_wgt)
    if ((trim(nam%method)=='hyb-rnd').or.(trim(nam%method)=='dual-ens')) call avg_2%compute_bwavg(mpl,nam,geom,bpar,avg_wgt)
 end if
 
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Compute covariance'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '-------------------------------------------------------------------'
+write(mpl%info,'(a)') '--- Compute covariance'
+call flush(mpl%info)
 
 ! Compute ensemble 1 covariance
-write(mpl%unit,'(a7,a)') '','Ensemble 1:'
-call flush(mpl%unit)
+write(mpl%info,'(a7,a)') '','Ensemble 1:'
+call flush(mpl%info)
 call cov_1%covariance(mpl,nam,geom,bpar,io,hdata,avg_1,'cov')
 
 select case (trim(nam%method))
 case ('hyb-avg','hyb-rnd','dual-ens')
    ! Compute ensemble 2 covariance
-   write(mpl%unit,'(a7,a)') '','Ensemble 2:'
-   call flush(mpl%unit)
+   write(mpl%info,'(a7,a)') '','Ensemble 2:'
+   call flush(mpl%info)
    select case (trim(nam%method))
    case ('hyb-avg','hyb-rnd')
       call cov_2%covariance(mpl,nam,geom,bpar,io,hdata,avg_2,'cov_sta')
@@ -405,20 +428,20 @@ case ('hyb-avg','hyb-rnd','dual-ens')
    end select
 end select
 
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Compute correlation'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '-------------------------------------------------------------------'
+write(mpl%info,'(a)') '--- Compute correlation'
+call flush(mpl%info)
 
 ! Compute ensemble 1 correlation
-write(mpl%unit,'(a7,a)') '','Ensemble 1:'
-call flush(mpl%unit)
+write(mpl%info,'(a7,a)') '','Ensemble 1:'
+call flush(mpl%info)
 call cor_1%correlation(mpl,nam,geom,bpar,io,hdata,avg_1,'cor')
 
 select case (trim(nam%method))
 case ('hyb-avg','hyb-rnd','dual-ens')
    ! Compute ensemble 2 correlation
-   write(mpl%unit,'(a7,a)') '','Ensemble 2:'
-   call flush(mpl%unit)
+   write(mpl%info,'(a7,a)') '','Ensemble 2:'
+   call flush(mpl%info)
    select case (trim(nam%method))
    case ('hyb-avg','hyb-rnd')
       call cor_2%correlation(mpl,nam,geom,bpar,io,hdata,avg_2,'cor_sta')
@@ -430,37 +453,37 @@ end select
 select case (trim(nam%method))
 case ('loc_norm','loc','hyb-avg','hyb-rnd','dual-ens')
    ! Compute localization
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Compute localization'
-   write(mpl%unit,'(a7,a)') '','Ensemble 1:'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(mpl%info,'(a)') '--- Compute localization'
+   write(mpl%info,'(a7,a)') '','Ensemble 1:'
+   call flush(mpl%info)
    call loc_1%localization(mpl,nam,geom,bpar,io,hdata,avg_1,'loc')
 end select
 
 select case (trim(nam%method))
 case ('hyb-avg','hyb-rnd')
    ! Compute static hybridization
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Compute static hybridization'
-   write(mpl%unit,'(a7,a)') '','Ensemble 1 and 2:'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(mpl%info,'(a)') '--- Compute static hybridization'
+   write(mpl%info,'(a7,a)') '','Ensemble 1 and 2:'
+   call flush(mpl%info)
    call loc_2%hybridization(mpl,nam,geom,bpar,io,hdata,avg_1,avg_2,'loc_hyb')
 end select
 
 if (trim(nam%method)=='dual-ens') then
    ! Compute dual-ensemble hybridization diagnostic and fit
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Compute dual-ensemble hybridization'
-   write(mpl%unit,'(a7,a)') '','Ensembles 1 and 2:'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(mpl%info,'(a)') '--- Compute dual-ensemble hybridization'
+   write(mpl%info,'(a7,a)') '','Ensembles 1 and 2:'
+   call flush(mpl%info)
    call loc_2%dualens(mpl,nam,geom,bpar,io,hdata,avg_1,avg_2,loc_3,'loc_deh','loc_deh_lr')
 end if
 
 if (trim(nam%minim_algo)/='none') then
    ! Copy diagnostics into C matrix data
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Copy diagnostics into C matrix data'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(mpl%info,'(a)') '--- Copy diagnostics into C matrix data'
+   call flush(mpl%info)
    select case (trim(nam%method))
    case ('cor')
       call cmat%from_diag(mpl,nam,geom,bpar,hdata,cor_1)
@@ -475,16 +498,16 @@ if (trim(nam%minim_algo)/='none') then
    end select
 
    ! Write C matrix data
-   write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-   write(mpl%unit,'(a)') '--- Write C matrix data'
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(mpl%info,'(a)') '--- Write C matrix data'
+   call flush(mpl%info)
    call cmat%write(mpl,nam,geom,bpar,io)
 end if
 
 ! Write data
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Write data'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '-------------------------------------------------------------------'
+write(mpl%info,'(a)') '--- Write data'
+call flush(mpl%info)
 
 ! Displacement
 if (nam%displ_diag) call displ%write(mpl,nam,geom,hdata,trim(nam%prefix)//'_displ_diag.nc')
@@ -510,7 +533,7 @@ implicit none
 
 ! Passed variables
 class(cmat_type),intent(inout) :: cmat !< C matrix data
-type(mpl_type),intent(in) :: mpl       !< MPI data
+type(mpl_type),intent(inout) :: mpl    !< MPI data
 type(nam_type),intent(in) :: nam       !< Namelist
 type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
@@ -518,7 +541,7 @@ type(hdata_type),intent(in) :: hdata   !< HDIAG data
 type(diag_type),intent(in) :: diag     !< Diagnostics
 
 ! Local variables
-integer :: ib,n,i,ic0a,il0,il0i,ic2a,its
+integer :: ib,n,i,il0,il0i,ic2a,its
 real(kind_real) :: fld_c2a(hdata%nc2a,geom%nl0),fld_c2b(hdata%nc2b,geom%nl0),fld_c0a(geom%nc0a,geom%nl0)
 
 ! Allocation
@@ -572,29 +595,29 @@ do ib=1,bpar%nbe
                ! Copy to C matrix
                if (i==1) then
                   cmat%blk(ib)%coef_ens = fld_c0a
-                  call mpl%allreduce_sum(sum(cmat%blk(ib)%coef_ens,mask=geom%mask(geom%c0a_to_c0,:)),cmat%blk(ib)%wgt)
-                  cmat%blk(ib)%wgt = cmat%blk(ib)%wgt/real(count(geom%mask),kind_real)
+                  call mpl%allreduce_sum(sum(cmat%blk(ib)%coef_ens,mask=geom%mask_c0a),cmat%blk(ib)%wgt)
+                  cmat%blk(ib)%wgt = cmat%blk(ib)%wgt/real(count(geom%mask_c0),kind_real)
                elseif (i==2) then
                   cmat%blk(ib)%coef_sta = fld_c0a
                elseif (i==3) then
-                  cmat%blk(ib)%rh_c0 = fld_c0a
+                  cmat%blk(ib)%rh = fld_c0a
                elseif (i==4) then
-                  cmat%blk(ib)%rv_c0 = fld_c0a
+                  cmat%blk(ib)%rv = fld_c0a
                elseif (i==5) then
-                  cmat%blk(ib)%rv_rfac_c0 = fld_c0a
+                  cmat%blk(ib)%rv_rfac = fld_c0a
                elseif (i==6) then
-                  cmat%blk(ib)%rv_coef_c0 = fld_c0a
+                  cmat%blk(ib)%rv_coef = fld_c0a
                end if
             end do
          else
             ! Copy to C matrix
             do il0=1,geom%nl0
                cmat%blk(ib)%coef_ens(:,il0) = diag%blk(0,ib)%raw_coef_ens(il0)
-               cmat%blk(ib)%rh_c0(:,il0) = diag%blk(0,ib)%fit_rh(il0)
-               cmat%blk(ib)%rv_c0(:,il0) = diag%blk(0,ib)%fit_rv(il0)
+               cmat%blk(ib)%rh(:,il0) = diag%blk(0,ib)%fit_rh(il0)
+               cmat%blk(ib)%rv(:,il0) = diag%blk(0,ib)%fit_rv(il0)
                if (cmat%blk(ib)%double_fit) then
-                  cmat%blk(ib)%rv_rfac_c0(:,il0) = diag%blk(0,ib)%fit_rv_rfac(il0)
-                  cmat%blk(ib)%rv_coef_c0(:,il0) = diag%blk(0,ib)%fit_rv_coef(il0)
+                  cmat%blk(ib)%rv_rfac(:,il0) = diag%blk(0,ib)%fit_rv_rfac(il0)
+                  cmat%blk(ib)%rv_coef(:,il0) = diag%blk(0,ib)%fit_rv_coef(il0)
                end if
                select case (trim(nam%method))
                case ('cor','loc_norm','loc')
@@ -641,9 +664,9 @@ type(bpar_type),intent(in) :: bpar                                   !< Block pa
 ! Local variables
 integer :: ib,iv,jv,its,jts
 
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Copy namemlist radii into C matrix'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '-------------------------------------------------------------------'
+write(mpl%info,'(a)') '--- Copy namemlist radii into C matrix'
+call flush(mpl%info)
 
 ! Allocation
 call cmat%alloc(nam,geom,bpar,'cmat')
@@ -662,10 +685,10 @@ do ib=1,bpar%nbe
       if ((iv/=jv).or.(its/=jts)) call mpl%abort('only diagonal blocks for cmat_from_radii')
 
       ! Copy support radii
-      cmat%blk(ib)%rh_c0 = nam%rh
-      cmat%blk(ib)%rhs_c0 = nam%rh
-      cmat%blk(ib)%rv_c0 = nam%rv
-      cmat%blk(ib)%rvs_c0 = nam%rv
+      cmat%blk(ib)%rh = nam%rh
+      cmat%blk(ib)%rhs = nam%rh
+      cmat%blk(ib)%rv = nam%rv
+      cmat%blk(ib)%rvs = nam%rv
 
       ! Set coefficients
       cmat%blk(ib)%coef_ens = 1.0
@@ -676,18 +699,18 @@ end do
 
 end subroutine cmat_from_nam
 
-
 !----------------------------------------------------------------------
 ! Subroutine: cmat_from_oops
 !> Purpose: copy C matrix data from OOPS
 !----------------------------------------------------------------------
-subroutine cmat_from_oops(cmat,mpl,bpar)
+subroutine cmat_from_oops(cmat,mpl,geom,bpar)
 
 implicit none
 
 ! Passed variables
 class(cmat_type),intent(inout) :: cmat !< C matrix data
 type(mpl_type),intent(in) :: mpl       !< MPI data
+type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
 
 ! Local variables
@@ -696,28 +719,30 @@ integer :: ib
 do ib=1,bpar%nbe
    if (bpar%B_block(ib)) then
       if (allocated(cmat%blk(ib)%oops_coef_ens)) then
-         write(mpl%unit,'(a7,a,a)') '','Ensemble coefficient copied from OOPS for block ',trim(bpar%blockname(ib))
+         write(mpl%info,'(a7,a,a)') '','Ensemble coefficient copied from OOPS for block ',trim(bpar%blockname(ib))
          cmat%blk(ib)%coef_ens = cmat%blk(ib)%oops_coef_ens
+         call mpl%allreduce_sum(sum(cmat%blk(ib)%coef_ens,mask=geom%mask_c0a),cmat%blk(ib)%wgt)
+         cmat%blk(ib)%wgt = cmat%blk(ib)%wgt/real(count(geom%mask_c0),kind_real)
       end if
       if (allocated(cmat%blk(ib)%oops_coef_sta)) then
-         write(mpl%unit,'(a7,a,a)') '','Static coefficient copied from OOPS for block ',trim(bpar%blockname(ib))
+         write(mpl%info,'(a7,a,a)') '','Static coefficient copied from OOPS for block ',trim(bpar%blockname(ib))
          cmat%blk(ib)%coef_sta = cmat%blk(ib)%oops_coef_sta
       end if
-      if (allocated(cmat%blk(ib)%oops_rh_c0)) then
-         write(mpl%unit,'(a7,a,a)') '','Horizontal fit support radius copied from OOPS for block ',trim(bpar%blockname(ib))
-         cmat%blk(ib)%rh_c0 = cmat%blk(ib)%oops_rh_c0
+      if (allocated(cmat%blk(ib)%oops_rh)) then
+         write(mpl%info,'(a7,a,a)') '','Horizontal fit support radius copied from OOPS for block ',trim(bpar%blockname(ib))
+         cmat%blk(ib)%rh = cmat%blk(ib)%oops_rh
       end if
-      if (allocated(cmat%blk(ib)%oops_rv_c0)) then
-         write(mpl%unit,'(a7,a,a)') '','Vertical fit support radius copied from OOPS for block ',trim(bpar%blockname(ib))
-         cmat%blk(ib)%rv_c0 = cmat%blk(ib)%oops_rv_c0
+      if (allocated(cmat%blk(ib)%oops_rv)) then
+         write(mpl%info,'(a7,a,a)') '','Vertical fit support radius copied from OOPS for block ',trim(bpar%blockname(ib))
+         cmat%blk(ib)%rv = cmat%blk(ib)%oops_rv
       end if
-      if (allocated(cmat%blk(ib)%oops_rv_rfac_c0)) then
-         write(mpl%unit,'(a7,a,a)') '','Vertical fit factor copied from OOPS for block ',trim(bpar%blockname(ib))
-         cmat%blk(ib)%rv_rfac_c0 = cmat%blk(ib)%oops_rv_rfac_c0
+      if (allocated(cmat%blk(ib)%oops_rv_rfac)) then
+         write(mpl%info,'(a7,a,a)') '','Vertical fit factor copied from OOPS for block ',trim(bpar%blockname(ib))
+         cmat%blk(ib)%rv_rfac = cmat%blk(ib)%oops_rv_rfac
       end if
-      if (allocated(cmat%blk(ib)%oops_rv_coef_c0)) then
-         write(mpl%unit,'(a7,a,a)') '','Vertical fit coefficient copied from OOPS for block ',trim(bpar%blockname(ib))
-         cmat%blk(ib)%rv_coef_c0 = cmat%blk(ib)%oops_rv_coef_c0
+      if (allocated(cmat%blk(ib)%oops_rv_coef)) then
+         write(mpl%info,'(a7,a,a)') '','Vertical fit coefficient copied from OOPS for block ',trim(bpar%blockname(ib))
+         cmat%blk(ib)%rv_coef = cmat%blk(ib)%oops_rv_coef
       end if
    end if
 end do
@@ -744,15 +769,15 @@ integer :: ib,il0,ic0a
 ! Sampling parameters
 if (trim(nam%strategy)=='specific_multivariate') then
    ! Initialization
-   cmat%blk(bpar%nbe)%rhs_c0 = huge(1.0)
-   cmat%blk(bpar%nbe)%rvs_c0 = huge(1.0)
+   cmat%blk(bpar%nbe)%rhs = huge(1.0)
+   cmat%blk(bpar%nbe)%rvs = huge(1.0)
    do ib=1,bpar%nb
       if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
          ! Get minimum
          do il0=1,geom%nl0
             do ic0a=1,geom%nc0a
-               cmat%blk(bpar%nbe)%rhs_c0(ic0a,il0) = min(cmat%blk(bpar%nbe)%rhs_c0(ic0a,il0),cmat%blk(ib)%rh_c0(ic0a,il0))
-               cmat%blk(bpar%nbe)%rvs_c0(ic0a,il0) = min(cmat%blk(bpar%nbe)%rvs_c0(ic0a,il0),cmat%blk(ib)%rv_c0(ic0a,il0))
+               cmat%blk(bpar%nbe)%rhs(ic0a,il0) = min(cmat%blk(bpar%nbe)%rhs(ic0a,il0),cmat%blk(ib)%rh(ic0a,il0))
+               cmat%blk(bpar%nbe)%rvs(ic0a,il0) = min(cmat%blk(bpar%nbe)%rvs(ic0a,il0),cmat%blk(ib)%rv(ic0a,il0))
             end do
          end do
       end if
@@ -761,8 +786,8 @@ else
    ! Copy
    do ib=1,bpar%nbe
       if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
-         cmat%blk(ib)%rhs_c0 = cmat%blk(ib)%rh_c0
-         cmat%blk(ib)%rvs_c0 = cmat%blk(ib)%rv_c0
+         cmat%blk(ib)%rhs = cmat%blk(ib)%rh
+         cmat%blk(ib)%rvs = cmat%blk(ib)%rv
       end if
    end do
 end if

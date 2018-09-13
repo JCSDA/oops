@@ -95,7 +95,6 @@ ParametersBUMP<MODEL>::ParametersBUMP(const eckit::Configuration & conf)
   Increment_ dx(resol, vars, date);
 
 // Define unstructured grid coordinates
-  colocated_ = 1;  // conf_.getString("colocated") TODO
   UnstructuredGrid ug;
   dx.ug_coord(ug, colocated_);
 
@@ -177,26 +176,26 @@ void ParametersBUMP<MODEL>::estimate() const {
   Log::trace() << "ParametersBUMP::estimate starting" << std::endl;
   util::Timer timer(classname(), "estimate");
 
-//  Setup resolution
-  const eckit::LocalConfiguration resolConfig(conf_, "resolution");
-  const Geometry_ resol(resolConfig);
-
-// Setup variables
-  const eckit::LocalConfiguration varConfig(conf_, "variables");
-  const Variables vars(varConfig);
-
-// Setup time
-  const util::DateTime date(conf_.getString("date"));
-
-// Setup dummy increment
-  Increment_ dx(resol, vars, date);
-  dx.zero();
-
-// Setup unstructured grid
-  UnstructuredGrid ug;
-
 // Read data from files
   if (conf_.has("input")) {
+  //  Setup resolution
+    const eckit::LocalConfiguration resolConfig(conf_, "resolution");
+    const Geometry_ resol(resolConfig);
+
+  // Setup variables
+    const eckit::LocalConfiguration varConfig(conf_, "variables");
+    const Variables vars(varConfig);
+
+  // Setup time
+    const util::DateTime date(conf_.getString("date"));
+
+  // Setup dummy increment
+    Increment_ dx(resol, vars, date);
+    dx.zero();
+
+  // Setup unstructured grid
+    UnstructuredGrid ug;
+
     std::vector<eckit::LocalConfiguration> inputConfigs;
     conf_.get("input", inputConfigs);
     for (const auto & conf : inputConfigs) {
@@ -211,6 +210,12 @@ void ParametersBUMP<MODEL>::estimate() const {
 
 // Estimate parameters
   run_oobump_drivers_f90(keyBUMP_);
+
+// Copy test
+  std::ifstream infile("bump.test");
+  std::string line;
+  while (std::getline(infile, line)) Log::test() << line << std::endl;
+  remove("bump.test");
 
   Log::trace() << "ParametersBUMP:estimate done" << std::endl;
 }

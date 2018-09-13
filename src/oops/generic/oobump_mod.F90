@@ -13,6 +13,7 @@ use config_mod
 use unstructured_grid_mod
 use fckit_mpi_module, only: fckit_mpi_comm
 use type_bump, only: bump_type
+use type_nam, only: nvmax,nlmax,nc3max,nscalesmax,ndirmax,nldwvmax 
 
 implicit none
 
@@ -24,7 +25,8 @@ end type oobump_type
 private
 public oobump_type, create_oobump, delete_oobump, add_oobump_member, &
      & multiply_oobump_vbal, multiply_oobump_vbal_inv, multiply_oobump_vbal_ad, multiply_oobump_vbal_inv_ad, &
-     & multiply_oobump_nicas, run_oobump_drivers, bump_read_conf
+     & multiply_oobump_nicas, get_oobump_cv_size, multiply_oobump_nicas_sqrt, multiply_oobump_nicas_sqrt_ad, &
+     & run_oobump_drivers, bump_read_conf
 
 ! ------------------------------------------------------------------------------
 
@@ -63,7 +65,7 @@ type(unstructured_grid), pointer :: ug
 ! Initialize BUMP registry
 call oobump_registry%init()
 call oobump_registry%add(key)
-call oobump_registry%get(key,self)
+call oobump_registry%get(key, self)
 
 ! Get unstructured grid
 call unstructured_grid_registry%get(idx, ug)
@@ -82,7 +84,7 @@ integer(c_int), intent(inout) :: key
 type(oobump_type), pointer :: self
 
 ! Get BUMP
-call oobump_registry%get(key,self)
+call oobump_registry%get(key, self)
 
 ! Delete BUMP
 call delete_oobump(self)
@@ -105,7 +107,7 @@ type(oobump_type), pointer :: self
 type(unstructured_grid), pointer :: ug
 
 ! Get BUMP
-call oobump_registry%get(key,self)
+call oobump_registry%get(key, self)
 
 ! Get unstructured grid
 call unstructured_grid_registry%get(idx, ug)
@@ -124,7 +126,7 @@ integer(c_int), intent(in) :: key
 type(oobump_type), pointer :: self
 
 ! Get BUMP
-call oobump_registry%get(key,self)
+call oobump_registry%get(key, self)
 
 ! Run BUMP drivers
 call run_oobump_drivers(self)
@@ -142,7 +144,7 @@ type(oobump_type), pointer :: self
 type(unstructured_grid), pointer :: ug
 
 ! Get BUMP
-call oobump_registry%get(key,self)
+call oobump_registry%get(key, self)
 
 ! Get unstructured grid
 call unstructured_grid_registry%get(idx, ug)
@@ -163,7 +165,7 @@ type(oobump_type), pointer :: self
 type(unstructured_grid), pointer :: ug
 
 ! Get BUMP
-call oobump_registry%get(key,self)
+call oobump_registry%get(key, self)
 
 ! Get unstructured grid
 call unstructured_grid_registry%get(idx, ug)
@@ -184,7 +186,7 @@ type(oobump_type), pointer :: self
 type(unstructured_grid), pointer :: ug
 
 ! Get BUMP
-call oobump_registry%get(key,self)
+call oobump_registry%get(key, self)
 
 ! Get unstructured grid
 call unstructured_grid_registry%get(idx, ug)
@@ -205,7 +207,7 @@ type(oobump_type), pointer :: self
 type(unstructured_grid), pointer :: ug
 
 ! Get BUMP
-call oobump_registry%get(key,self)
+call oobump_registry%get(key, self)
 
 ! Get unstructured grid
 call unstructured_grid_registry%get(idx, ug)
@@ -226,7 +228,7 @@ type(oobump_type), pointer :: self
 type(unstructured_grid), pointer :: ug
 
 ! Get BUMP
-call oobump_registry%get(key,self)
+call oobump_registry%get(key, self)
 
 ! Get unstructured grid
 call unstructured_grid_registry%get(idx, ug)
@@ -235,6 +237,67 @@ call unstructured_grid_registry%get(idx, ug)
 call multiply_oobump_nicas(self, ug)
 
 end subroutine multiply_oobump_nicas_c
+
+! ------------------------------------------------------------------------------
+
+subroutine get_oobump_cv_size_c(key, n) bind(c, name='get_oobump_cv_size_f90')
+implicit none
+integer(c_int), intent(in) :: key
+integer(c_int), intent(out) :: n
+
+type(oobump_type), pointer :: self
+
+! Get BUMP
+call oobump_registry%get(key, self)
+
+! Get control variable size
+call get_oobump_cv_size(self, n)
+
+end subroutine get_oobump_cv_size_c
+
+! ------------------------------------------------------------------------------
+
+subroutine multiply_oobump_nicas_sqrt_c(key, cv, idx) bind(c, name='multiply_oobump_nicas_sqrt_f90')
+implicit none
+integer(c_int), intent(in) :: key
+real(c_double), intent(in) :: cv(:)
+integer(c_int), intent(in) :: idx
+
+type(oobump_type), pointer :: self
+type(unstructured_grid), pointer :: ug
+
+! Get BUMP
+call oobump_registry%get(key, self)
+
+! Get unstructured grid
+call unstructured_grid_registry%get(idx, ug)
+
+! Square-root multiply
+call multiply_oobump_nicas_sqrt(self, cv, ug)
+
+end subroutine multiply_oobump_nicas_sqrt_c
+
+! ------------------------------------------------------------------------------
+
+subroutine multiply_oobump_nicas_sqrt_ad_c(key, idx, cv) bind(c, name='multiply_oobump_nicas_sqrt_ad_f90')
+implicit none
+integer(c_int), intent(in) :: key
+integer(c_int), intent(in) :: idx
+real(c_double), intent(inout) :: cv(:)
+
+type(oobump_type), pointer :: self
+type(unstructured_grid), pointer :: ug
+
+! Get BUMP
+call oobump_registry%get(key, self)
+
+! Get unstructured grid
+call unstructured_grid_registry%get(idx, ug)
+
+! Square-root multiply
+call multiply_oobump_nicas_sqrt_ad(self, ug, cv)
+
+end subroutine multiply_oobump_nicas_sqrt_ad_c
 
 ! ------------------------------------------------------------------------------
 
@@ -251,7 +314,7 @@ integer :: istr
 character(len=nstr) :: param
 
 ! Get BUMP
-call oobump_registry%get(key,self)
+call oobump_registry%get(key, self)
 
 ! Get unstructured grid
 call unstructured_grid_registry%get(idx, ug)
@@ -282,7 +345,7 @@ integer :: istr
 character(len=nstr) :: param
 
 ! Get BUMP
-call oobump_registry%get(key,self)
+call oobump_registry%get(key, self)
 
 ! Get unstructured grid
 call unstructured_grid_registry%get(idx, ug)
@@ -346,8 +409,9 @@ subroutine bump_read_conf(c_conf,bump)
 implicit none
 type(c_ptr), intent(in) :: c_conf
 type(bump_type), intent(inout) :: bump
-integer :: il,its,iscales,ildwh,ildwv,idir,iv
-character(len=3) :: ilchar,itschar,iscaleschar,ildwhchar,ildwvchar,idirchar,ivchar
+integer :: iscales,ildwh,ildwv,idir,iv
+character(len=3) :: iscaleschar,ildwvchar,idirchar,ivchar
+character(len=6) :: ildwhchar
 
 ! Setup from configuration
 
@@ -401,7 +465,7 @@ if (config_element_exists(c_conf,"nl0r")) bump%nam%nl0r = config_get_int(c_conf,
 ! diag_param
 if (config_element_exists(c_conf,"ne")) bump%nam%ne = config_get_int(c_conf,"ne")
 if (config_element_exists(c_conf,"gau_approx")) bump%nam%gau_approx = integer_to_logical(config_get_int(c_conf,"gau_approx"))
-do iv=1,bump%nam%nv*(bump%nam%nv-1)/2
+do iv=1,nvmax*(nvmax-1)/2
    write(ivchar,'(i3)') iv
    if (config_element_exists(c_conf,"vbal_block("//trim(adjustl(ivchar))//")")) &
  & bump%nam%vbal_block(iv) = integer_to_logical(config_get_int(c_conf,"vbal_block("//trim(adjustl(ivchar))//")"))
@@ -426,7 +490,7 @@ if (config_element_exists(c_conf,"lhomh")) bump%nam%lhomh = integer_to_logical(c
 if (config_element_exists(c_conf,"lhomv")) bump%nam%lhomv = integer_to_logical(config_get_int(c_conf,"lhomv"))
 if (config_element_exists(c_conf,"rvflt")) bump%nam%rvflt = config_get_real(c_conf,"rvflt")
 if (config_element_exists(c_conf,"lct_nscales")) bump%nam%lct_nscales = config_get_int(c_conf,"lct_nscales")
-do iscales=1,bump%nam%lct_nscales
+do iscales=1,nscalesmax
    write(iscaleschar,'(i3)') iscales
    if (config_element_exists(c_conf,"lct_diag("//trim(adjustl(iscaleschar))//")")) &
  & bump%nam%lct_diag(iscales) = integer_to_logical(config_get_int(c_conf,"lct_diag("//trim(adjustl(iscaleschar))//")"))
@@ -443,7 +507,7 @@ if (config_element_exists(c_conf,"forced_radii")) bump%nam%forced_radii = intege
 if (config_element_exists(c_conf,"rh")) bump%nam%rh = config_get_real(c_conf,"rh")
 if (config_element_exists(c_conf,"rv")) bump%nam%rv = config_get_real(c_conf,"rv")
 if (config_element_exists(c_conf,"ndir")) bump%nam%ndir = config_get_int(c_conf,"ndir")
-do idir=1,bump%nam%ndir
+do idir=1,ndirmax
    write(idirchar,'(i3)') idir
    if (config_element_exists(c_conf,"londir("//trim(adjustl(idirchar))//")")) &
  & bump%nam%londir(idir) = config_get_real(c_conf,"londir("//trim(adjustl(idirchar))//")")
@@ -459,15 +523,15 @@ end do
 
 ! output_param
 if (config_element_exists(c_conf,"nldwh")) bump%nam%nldwh = config_get_int(c_conf,"nldwh")
-do ildwh=1,bump%nam%nldwh
-   write(ildwvchar,'(i3)') ildwh
+do ildwh=1,nlmax*nc3max
+   write(ildwhchar,'(i6)') ildwh
    if (config_element_exists(c_conf,"il_ldwh("//trim(adjustl(ildwhchar))//")")) &
  & bump%nam%il_ldwh(ildwh) = config_get_int(c_conf,"il_ldwh("//trim(adjustl(ildwhchar))//")")
    if (config_element_exists(c_conf,"ic_ldwh("//trim(adjustl(ildwhchar))//")")) &
  & bump%nam%ic_ldwh(ildwh) = config_get_int(c_conf,"ic_ldwh("//trim(adjustl(ildwhchar))//")")
 end do
 if (config_element_exists(c_conf,"nldwv")) bump%nam%nldwv = config_get_int(c_conf,"nldwv")
-do ildwv=1,bump%nam%nldwv
+do ildwv=1,nldwvmax
    write(ildwvchar,'(i3)') ildwv
    if (config_element_exists(c_conf,"lon_ldwv("//trim(adjustl(ildwvchar))//")")) &
  & bump%nam%lon_ldwv(ildwv) = config_get_real(c_conf,"lon_ldwv("//trim(adjustl(ildwvchar))//")")
@@ -625,10 +689,77 @@ end subroutine multiply_oobump_nicas
 
 !-------------------------------------------------------------------------------
 
+subroutine get_oobump_cv_size(self,n)
+implicit none
+type(oobump_type), intent(in) :: self
+integer, intent(out) :: n
+integer :: igrid,nn
+
+! Add control variable sizes for each grid
+n = 0
+do igrid=1,self%ngrid
+   call self%bump(igrid)%get_cv_size(nn)
+   n = n+nn
+end do
+
+end subroutine get_oobump_cv_size
+
+!-------------------------------------------------------------------------------
+
+subroutine multiply_oobump_nicas_sqrt(self,cv,ug)
+implicit none
+type(oobump_type), intent(in) :: self
+real(kind_real), intent(in) :: cv(:)
+type(unstructured_grid), intent(inout) :: ug
+integer :: offset,igrid,nn
+
+! Initialization
+offset = 0
+
+do igrid=1,self%ngrid
+   ! Get control variable size for this grid
+   call self%bump(igrid)%get_cv_size(nn)
+
+   ! Apply NICAS square-root
+   call self%bump(igrid)%apply_nicas_sqrt(cv(offset+1:offset+nn), ug%grid(igrid)%fld)
+
+   ! Update
+   offset = offset+nn
+end do
+
+end subroutine multiply_oobump_nicas_sqrt
+
+!-------------------------------------------------------------------------------
+
+subroutine multiply_oobump_nicas_sqrt_ad(self,ug,cv)
+implicit none
+type(oobump_type), intent(in) :: self
+type(unstructured_grid), intent(in) :: ug
+real(kind_real), intent(inout) :: cv(:)
+integer :: offset,igrid,nn
+
+! Initialization
+offset = 0
+
+do igrid=1,self%ngrid
+   ! Get control variable size for this grid
+   call self%bump(igrid)%get_cv_size(nn)
+
+   ! Apply NICAS square-root
+   call self%bump(igrid)%apply_nicas_sqrt_ad(ug%grid(igrid)%fld, cv(offset+1:offset+nn))
+
+   ! Update
+   offset = offset+nn
+end do
+
+end subroutine multiply_oobump_nicas_sqrt_ad
+
+!-------------------------------------------------------------------------------
+
 subroutine get_oobump_param(self,param,ug)
 implicit none
 type(oobump_type), intent(in) :: self
-character(len=*),intent(in) :: param
+character(len=*), intent(in) :: param
 type(unstructured_grid), intent(inout) :: ug
 integer :: igrid
 

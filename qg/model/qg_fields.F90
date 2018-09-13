@@ -393,16 +393,27 @@ implicit none
 type(qg_field), intent(inout) :: self
 type(qg_field), intent(in)    :: rhs
 
+integer :: i
+
 call check(self)
 call check(rhs)
 
 if (self%geom%nx==rhs%geom%nx .and. self%geom%ny==rhs%geom%ny) then
-  self%x(:,:,:) = self%x(:,:,:) + rhs%x(:,:,:)
+  do i=1,rhs%nf
+    select case (trim(rhs%fldnames(i)))
+    case ("x")
+      self%x(:,:,:) = self%x(:,:,:) + rhs%x(:,:,:)
+    case ("q")
+      self%q(:,:,:) = self%q(:,:,:) + rhs%q(:,:,:)
+    case ("u")
+      self%u(:,:,:) = self%u(:,:,:) + rhs%u(:,:,:)
+    case ("v")
+      self%v(:,:,:) = self%v(:,:,:) + rhs%v(:,:,:)
+    end select
+  end do
 else
   call abor1_ftn("qg_fields:add_incr: not coded for low res increment yet")
 endif
-
-if (self%nf>1) self%x(:,:,self%nl+1:) = 0.0_kind_real
 
 return
 end subroutine add_incr
@@ -415,6 +426,8 @@ type(qg_field), intent(inout) :: lhs
 type(qg_field), intent(in)    :: x1
 type(qg_field), intent(in)    :: x2
 
+integer :: i
+
 call check(lhs)
 call check(x1)
 call check(x2)
@@ -422,7 +435,18 @@ call check(x2)
 call zeros(lhs)
 if (x1%geom%nx==x2%geom%nx .and. x1%geom%ny==x2%geom%ny) then
   if (lhs%geom%nx==x1%geom%nx .and. lhs%geom%ny==x1%geom%ny) then
-    lhs%x(:,:,:) = x1%x(:,:,:) - x2%x(:,:,:)
+    do i=1,lhs%nf
+      select case (trim(lhs%fldnames(i)))
+      case ("x")
+        lhs%x(:,:,:) = x1%x(:,:,:) - x2%x(:,:,:)
+      case ("q")
+        lhs%q(:,:,:) = x1%q(:,:,:) - x2%q(:,:,:)
+      case ("u")
+        lhs%u(:,:,:) = x1%u(:,:,:) - x2%u(:,:,:)
+      case ("v")
+        lhs%v(:,:,:) = x1%v(:,:,:) - x2%v(:,:,:)
+      end select
+    end do
   else
     call abor1_ftn("qg_fields:diff_incr: not coded for low res increment yet")
   endif
@@ -557,7 +581,7 @@ else
       call abor1_ftn("qg_fields:read_file: input fields have wrong dimensions")
     endif
     call ncerr(nf90_get_att(ncid,nf90_global,'lbc',is))
-      call ncerr(nf90_get_att(ncid,nf90_global,'sdate',sdate))
+    call ncerr(nf90_get_att(ncid,nf90_global,'sdate',sdate))
     write(buf,*) 'validity date is: '//sdate
     call fckit_log%info(buf)
     nf = min(fld%nf, ic)
@@ -1315,7 +1339,7 @@ if (ug%colocated==1) then
    ! Colocatd
    ug%ngrid = 1
 else
-   ! Not colocatedd
+   ! Not colocated
    ug%ngrid = 1
 end if
 
@@ -1323,7 +1347,7 @@ end if
 if (.not.allocated(ug%grid)) allocate(ug%grid(ug%ngrid))
 
 if (ug%colocated==1) then
-  ! colocatedd
+  ! Colocated
 
   ! Set local number of points
   ug%grid(1)%nmga = self%geom%nx*self%geom%ny
@@ -1337,7 +1361,7 @@ if (ug%colocated==1) then
   ! Set number of timeslots
   ug%grid(1)%nts = 1
 else
-  ! Not colocatedd
+  ! Not colocated
   do igrid=1,ug%ngrid
      ! Set local number of points
      ug%grid(igrid)%nmga = self%geom%nx*self%geom%ny
@@ -1377,7 +1401,7 @@ call allocate_unstructured_grid_coord(ug)
 
 ! Define coordinates
 if (ug%colocated==1) then
-  ! colocatedd
+  ! Colocated
   imga = 0
   do jy=1,self%geom%ny
     do jx=1,self%geom%nx
@@ -1392,7 +1416,7 @@ if (ug%colocated==1) then
     enddo
   enddo
 else
-  ! Not colocatedd
+  ! Not colocated
   do igrid=1,ug%ngrid
     imga = 0
     do jy=1,self%geom%ny
@@ -1434,7 +1458,7 @@ call allocate_unstructured_grid_field(ug)
 
 ! Copy field
 if (ug%colocated==1) then
-  ! colocatedd
+  ! Colocated
   imga = 0
   do jy=1,self%geom%ny
     do jx=1,self%geom%nx
@@ -1448,7 +1472,7 @@ if (ug%colocated==1) then
     enddo
   enddo
 else
-  ! Not colocatedd
+  ! Not colocated
   do igrid=1,ug%ngrid
     imga = 0
     do jy=1,self%geom%ny
@@ -1479,7 +1503,7 @@ integer :: igrid,imga,jx,jy,jl,jf,joff
 
 ! Copy field
 if (ug%colocated==1) then
-  ! colocatedd (adjoint)
+  ! Colocated (adjoint)
   imga = 0
   do jy=1,self%geom%ny
     do jx=1,self%geom%nx
@@ -1493,7 +1517,7 @@ if (ug%colocated==1) then
     enddo
   enddo
 else
-  ! Not colocatedd
+  ! Not colocated
   do igrid=1,ug%ngrid
     imga = 0
     do jy=1,self%geom%ny

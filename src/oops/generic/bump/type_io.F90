@@ -98,7 +98,7 @@ implicit none
 
 ! Passed variables
 class(io_type),intent(in) :: io                        !< I/O
-type(mpl_type),intent(in) :: mpl                       !< MPI data
+type(mpl_type),intent(inout) :: mpl                    !< MPI data
 type(nam_type),intent(in) :: nam                       !< Namelist
 type(geom_type),intent(in) :: geom                     !< Geometry
 character(len=*),intent(in) :: filename                !< File name
@@ -142,9 +142,7 @@ if (nam%field_io) then
       end if
 
       ! Global to local
-      do il0=1,geom%nl0
-         call mpl%glb_to_loc(geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,fld_c0(:,il0),geom%nc0a,fld(:,il0))
-      end do
+      call mpl%glb_to_loc(geom%nl0,geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,fld_c0,geom%nc0a,fld)
    end if
 else
    ! No field I/O
@@ -186,7 +184,7 @@ if (nam%field_io) then
    do il0=1,geom%nl0
       do ic0a=1,geom%nc0a
          ic0 = geom%c0a_to_c0(ic0a)
-         if (geom%mask(ic0,il0)) then
+         if (geom%mask_c0(ic0,il0)) then
             fld_c0a(ic0a,il0) = fld(ic0a,il0)
          else
             call msr(fld_c0a(ic0a,il0))
@@ -249,9 +247,7 @@ if (nam%field_io) then
       call mpl%ncerr(subr,nf90_close(ncid))
    else
       ! Local to global
-      do il0=1,geom%nl0
-         call mpl%loc_to_glb(geom%nc0a,fld_c0a(:,il0),geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,.false.,fld_c0(:,il0))
-      end do
+      call mpl%loc_to_glb(geom%nl0,geom%nc0a,fld_c0a,geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,.false.,fld_c0)
 
       if (mpl%main) then
          ! Check if the file exists
@@ -363,10 +359,10 @@ end do
 io%nog = count(mask_lonlat)
 
 ! Print results
-write(mpl%unit,'(a7,a)') '','Output grid:'
-write(mpl%unit,'(a10,a,f7.2,a,f5.2,a)') '','Effective resolution: ',0.5*(dlon+dlat)*reqkm,' km (', &
+write(mpl%info,'(a7,a)') '','Output grid:'
+write(mpl%info,'(a10,a,f7.2,a,f5.2,a)') '','Effective resolution: ',0.5*(dlon+dlat)*reqkm,' km (', &
  & 0.5*(dlon+dlat)*rad2deg,' deg.)'
-write(mpl%unit,'(a10,a,i4,a,i4)') '',      'Size (nlon x nlat):   ',io%nlon,' x ',io%nlat
+write(mpl%info,'(a10,a,i4,a,i4)') '',      'Size (nlon x nlat):   ',io%nlon,' x ',io%nlat
 
 ! Allocation
 allocate(io%og_to_lon(io%nog))
@@ -518,19 +514,19 @@ do i_s=1,io%og%n_s
    ioga = io%og%row(i_s)
    ic0 = io%c0b_to_c0(ic0b)
    do il0=1,geom%nl0
-      if (.not.geom%mask(ic0,il0)) io%mask(ioga,il0) = .false.
+      if (.not.geom%mask_c0(ic0,il0)) io%mask(ioga,il0) = .false.
    end do
 end do
 
 ! Print results
-write(mpl%unit,'(a7,a,i4)') '','Parameters for processor #',mpl%myproc
-write(mpl%unit,'(a10,a,i8)') '','nc0 =    ',geom%nc0
-write(mpl%unit,'(a10,a,i8)') '','nc0a =   ',geom%nc0a
-write(mpl%unit,'(a10,a,i8)') '','nc0b =   ',io%nc0b
-write(mpl%unit,'(a10,a,i8)') '','nog =    ',io%nog
-write(mpl%unit,'(a10,a,i8)') '','noga =   ',io%noga
-write(mpl%unit,'(a10,a,i8)') '','og%n_s = ',io%og%n_s
-call flush(mpl%unit)
+write(mpl%info,'(a7,a,i4)') '','Parameters for processor #',mpl%myproc
+write(mpl%info,'(a10,a,i8)') '','nc0 =    ',geom%nc0
+write(mpl%info,'(a10,a,i8)') '','nc0a =   ',geom%nc0a
+write(mpl%info,'(a10,a,i8)') '','nc0b =   ',io%nc0b
+write(mpl%info,'(a10,a,i8)') '','nog =    ',io%nog
+write(mpl%info,'(a10,a,i8)') '','noga =   ',io%noga
+write(mpl%info,'(a10,a,i8)') '','og%n_s = ',io%og%n_s
+call flush(mpl%info)
 
 end subroutine io_grid_init
 

@@ -14,10 +14,11 @@ use,intrinsic :: iso_c_binding
 !$ use omp_lib
 use netcdf
 use tools_const, only: msvali,msvalr
-use tools_func, only: infeq,pos
+use tools_func, only: syminv
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsr
 use tools_nc, only: ncfloat
+use tools_repro, only: infeq
 use type_bpar, only: bpar_type
 use type_ens, only: ens_type
 use type_geom, only: geom_type
@@ -329,33 +330,31 @@ type(ens_type), intent(in) :: ens      !< Ensemble
 type(ens_type),intent(inout) :: ensu   !< Unbalanced ensemble
 
 ! Local variables
-integer :: il0i,i_s,ic0a,ic2b,ic2,ie,ie_sub,ic0,jl0,il0,isub,ic1,ic1a,iv,jv,offset,nc1a,lwork,info,progint
-real(kind_real) :: var,var_tot
-real(kind_real) :: egv(geom%nl0),M(geom%nl0,geom%nl0),D(geom%nl0,geom%nl0),fld(geom%nc0a,geom%nl0)
+integer :: il0i,i_s,ic0a,ic2b,ic2,ie,ie_sub,ic0,jl0,il0,isub,ic1,ic1a,iv,jv,offset,nc1a
+real(kind_real) :: fld(geom%nc0a,geom%nl0)
 real(kind_real) :: auto_avg(nam%nc2,geom%nl0,geom%nl0),cross_avg(nam%nc2,geom%nl0,geom%nl0),auto_inv(geom%nl0,geom%nl0)
 real(kind_real) :: sbuf(2*nam%nc2*geom%nl0**2),rbuf(2*nam%nc2*geom%nl0**2)
-real(kind_real),allocatable :: list_auto(:),list_cross(:),work(:)
+real(kind_real),allocatable :: list_auto(:),list_cross(:),auto_avg_tmp(:,:)
 real(kind_real),allocatable :: fld_1(:,:),fld_2(:,:),auto(:,:,:,:),cross(:,:,:,:)
-logical :: valid,done_c2(nam%nc2),mask_unpack(geom%nl0,geom%nl0)
-logical,allocatable :: done_c2b(:)
+logical :: valid,mask_unpack(geom%nl0,geom%nl0)
 type(hdata_type) :: hdata
 
 ! Setup sampling
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a,i5,a)') '--- Setup sampling (nc1 = ',nam%nc1,')'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '-------------------------------------------------------------------'
+write(mpl%info,'(a,i5,a)') '--- Setup sampling (nc1 = ',nam%nc1,')'
+call flush(mpl%info)
 call hdata%setup_sampling(mpl,rng,nam,geom,io)
 
 ! Compute MPI distribution, halo A
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Compute MPI distribution, halos A'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '-------------------------------------------------------------------'
+write(mpl%info,'(a)') '--- Compute MPI distribution, halos A'
+call flush(mpl%info)
 call hdata%compute_mpi_a(mpl,nam,geom)
 
 ! Compute MPI distribution, halos A-B
-write(mpl%unit,'(a)') '-------------------------------------------------------------------'
-write(mpl%unit,'(a)') '--- Compute MPI distribution, halos A-B'
-call flush(mpl%unit)
+write(mpl%info,'(a)') '-------------------------------------------------------------------'
+write(mpl%info,'(a)') '--- Compute MPI distribution, halos A-B'
+call flush(mpl%info)
 call hdata%compute_mpi_ab(mpl,nam,geom)
 
 ! Copy ensemble
@@ -366,7 +365,7 @@ allocate(fld_1(hdata%nc1a,geom%nl0))
 allocate(fld_2(hdata%nc1a,geom%nl0))
 allocate(auto(hdata%nc1a,geom%nl0,geom%nl0,ens%nsub))
 allocate(cross(hdata%nc1a,geom%nl0,geom%nl0,ens%nsub))
-allocate(done_c2b(hdata%nc2b))
+if (.not.diag_auto) allocate(auto_avg_tmp(geom%nl0,geom%nl0))
 call vbal%alloc(mpl,nam,geom,bpar,hdata%nc2b)
 
 ! Initialization
@@ -389,39 +388,39 @@ do iv=1,nam%nv
    do jv=1,nam%nv
       if (bpar%vbal_block(iv,jv)) then
          ! Initialization
-         write(mpl%unit,'(a7,a)') '','Unbalancing: '//trim(nam%varname(iv))//' with respect to unbalanced '//trim(nam%varname(jv))
+         write(mpl%info,'(a7,a)') '','Unbalancing: '//trim(nam%varname(iv))//' with respect to unbalanced '//trim(nam%varname(jv))
          auto = 0.0
          cross = 0.0
-   
+
          ! Loop on sub-ensembles
          do isub=1,ensu%nsub
             if (ensu%nsub==1) then
-               write(mpl%unit,'(a10,a)',advance='no') '','Full ensemble, member:'
+               write(mpl%info,'(a10,a)',advance='no') '','Full ensemble, member:'
             else
-               write(mpl%unit,'(a10,a,i4,a)',advance='no') '','Sub-ensemble ',isub,', member:'
+               write(mpl%info,'(a10,a,i4,a)',advance='no') '','Sub-ensemble ',isub,', member:'
             end if
-            call flush(mpl%unit)
-   
+            call flush(mpl%info)
+
             ! Compute centered moments iteratively
             do ie_sub=1,ensu%ne/ensu%nsub
-               write(mpl%unit,'(i4)',advance='no') ie_sub
-               call flush(mpl%unit)
-   
+               write(mpl%info,'(i4)',advance='no') ie_sub
+               call flush(mpl%info)
+
                ! Full ensemble index
                ie = ie_sub+(isub-1)*ensu%ne/ensu%nsub
-   
+
                ! Copy all separations points
                !$omp parallel do schedule(static) private(il0,ic1a,ic1,ic0,ic0a)
                do il0=1,geom%nl0
                   do ic1a=1,hdata%nc1a
                      ! Indice
                      ic1 = hdata%c1a_to_c1(ic1a)
-   
+
                      if (hdata%c1l0_log(ic1,il0)) then
                         ! Indice
                         ic0 = hdata%c1_to_c0(ic1)
                         ic0a = geom%c0_to_c0a(ic0)
-   
+
                         ! Copy points
                         fld_1(ic1a,il0) = ensu%fld(ic0a,il0,iv,1,ie)
                         fld_2(ic1a,il0) = ensu%fld(ic0a,il0,jv,1,ie)
@@ -429,7 +428,7 @@ do iv=1,nam%nv
                   end do
                end do
                !$omp end parallel do
-   
+
                !$omp parallel do schedule(static) private(il0,jl0)
                do il0=1,geom%nl0
                   do jl0=1,geom%nl0
@@ -440,14 +439,14 @@ do iv=1,nam%nv
                end do
                !$omp end parallel do
             end do
-            write(mpl%unit,'(a)') ''
-            call flush(mpl%unit)
+            write(mpl%info,'(a)') ''
+            call flush(mpl%info)
          end do
-   
+
          ! Average covariances
-         write(mpl%unit,'(a10,a)',advance='no') '','Average covariances: '
-         call flush(mpl%unit)
-         call mpl%prog_init(progint,done_c2)
+         write(mpl%info,'(a10,a)',advance='no') '','Average covariances: '
+         call flush(mpl%info)
+         call mpl%prog_init(nam%nc2)
          do ic2=1,nam%nc2
             !$omp parallel do schedule(static) private(il0,jl0,nc1a,ic1a,ic1,valid,isub), &
             !$omp&                             firstprivate(list_auto,list_cross)
@@ -456,26 +455,26 @@ do iv=1,nam%nv
                   ! Allocation
                   allocate(list_auto(hdata%nc1a))
                   allocate(list_cross(hdata%nc1a))
-   
+
                   ! Fill lists
                   nc1a = 0
                   do ic1a=1,hdata%nc1a
                      ! Index
                      ic1 = hdata%c1a_to_c1(ic1a)
-      
+
                      ! Check validity
                      valid = hdata%c1l0_log(ic1,il0).and.hdata%c1l0_log(ic1,jl0).and.hdata%vbal_mask(ic1,ic2)
-      
+
                      if (valid) then
                         ! Update
                          nc1a = nc1a+1
-      
+
                         ! Averages for diagnostics
                         list_auto(nc1a) = sum(auto(ic1a,jl0,il0,:))/real(ensu%nsub,kind_real)
                         list_cross(nc1a) = sum(cross(ic1a,jl0,il0,:))/real(ensu%nsub,kind_real)
                      end if
                   end do
-   
+
                   ! Average
                   if (nc1a>0) then
                      auto_avg(ic2,jl0,il0) = sum(list_auto(1:nc1a))
@@ -484,7 +483,7 @@ do iv=1,nam%nv
                      auto_avg(ic2,jl0,il0) = 0.0
                      cross_avg(ic2,jl0,il0) = 0.0
                   end if
-   
+
                   ! Release memory
                   deallocate(list_auto)
                   deallocate(list_cross)
@@ -493,15 +492,14 @@ do iv=1,nam%nv
             !$omp end parallel do
 
             ! Update
-            done_c2(ic2) = .true.
-            call mpl%prog_print(progint,done_c2)
+            call mpl%prog_print(ic2)
          end do
-         write(mpl%unit,'(a)') ''
-         call flush(mpl%unit)
+         write(mpl%info,'(a)') '100%'
+         call flush(mpl%info)
 
-         ! Gather data   
-         write(mpl%unit,'(a10,a)') '','Gather data'
-         call flush(mpl%unit)
+         ! Gather data
+         write(mpl%info,'(a10,a)') '','Gather data'
+         call flush(mpl%info)
          if (mpl%nproc>1) then
             ! Pack data
             offset = 0
@@ -511,10 +509,10 @@ do iv=1,nam%nv
                sbuf(offset+1:offset+geom%nl0**2) = pack(cross_avg(ic2,:,:),.true.)
                offset = offset+geom%nl0**2
             end do
-   
+
             ! Reduce data
             call mpl%allreduce_sum(sbuf,rbuf)
-   
+
             ! Unpack data
             offset = 0
             do ic2=1,nam%nc2
@@ -524,56 +522,27 @@ do iv=1,nam%nv
                offset = offset+geom%nl0**2
             end do
          end if
-    
+
          ! Compute regressions
-         write(mpl%unit,'(a10,a)',advance='no') '','Compute regressions: '
-         call flush(mpl%unit)
-         call mpl%prog_init(progint,done_c2b)
+         write(mpl%info,'(a10,a)',advance='no') '','Compute regressions: '
+         call flush(mpl%info)
+         call mpl%prog_init(hdata%nc2b)
          do ic2b=1,hdata%nc2b
             ! Global index
             ic2 = hdata%c2b_to_c2(ic2b)
-   
+
             if (diag_auto) then
                ! Diagonal inversion
                auto_inv = 0.0
                do il0=1,geom%nl0
-                  if (pos(auto_avg(ic2,il0,il0))) auto_inv(il0,il0) = 1.0/auto_avg(ic2,il0,il0)
+                  if (auto_avg(ic2,il0,il0)>0.0) auto_inv(il0,il0) = 1.0/auto_avg(ic2,il0,il0)
                end do
             else
                ! Inverse the vertical auto-covariance
-               M = auto_avg(ic2,:,:)
-               lwork = -1
-               allocate(work(max(1,lwork)))
-               if (kind_real==c_float) then
-                  call ssyev("V","U",geom%nl0,M,geom%nl0,egv,work,lwork,info)
-               elseif (kind_real==c_double) then
-                  call dsyev("V","U",geom%nl0,M,geom%nl0,egv,work,lwork,info)
-               else
-                  call mpl%abort('wrong kind_real for lapack')
-               end if
-               lwork = int(work(1))
-               deallocate(work)
-               M = auto_avg(ic2,:,:)
-               allocate(work(max(1,lwork)))
-               if (kind_real==c_float) then
-                  call ssyev("V","U",geom%nl0,M,geom%nl0,egv,work,lwork,info)
-               elseif (kind_real==c_double) then
-                  call dsyev("V","U",geom%nl0,M,geom%nl0,egv,work,lwork,info)
-               else
-                  call mpl%abort('wrong kind_real for lapack')
-               end if
-               deallocate(work)
-               write(mpl%unit,*) 'Condition number for ',ic2b,': ',maxval(egv)/minval(egv)
-               D = 0.0
-               var = 0.0
-               var_tot = sum(egv)
-               do il0=geom%nl0,1,-1
-                   if (infeq(var,var_th*var_tot)) D(il0,il0) = 1.0/egv(il0)
-                   var = var+egv(il0)
-               end do
-               auto_inv = matmul(M,matmul(D,transpose(M)))
+               auto_avg_tmp = auto_avg(ic2,:,:)
+               call syminv(mpl,geom%nl0,auto_avg_tmp,auto_inv)
             end if
-   
+
             ! Compute the regression
             vbal%blk(iv,jv)%auto(ic2b,:,:) = auto_avg(ic2,:,:)
             vbal%blk(iv,jv)%cross(ic2b,:,:) = cross_avg(ic2,:,:)
@@ -581,21 +550,20 @@ do iv=1,nam%nv
             vbal%blk(iv,jv)%reg(ic2b,:,:) = matmul(cross_avg(ic2,:,:),auto_inv)
 
             ! Update
-            done_c2b(ic2b) = .true.
-            call mpl%prog_print(progint,done_c2b)
+            call mpl%prog_print(ic2b)
          end do
-         write(mpl%unit,'(a)') '100%'
-         call flush(mpl%unit)
+         write(mpl%info,'(a)') '100%'
+         call flush(mpl%info)
       end if
    end do
 
    ! Unbalance ensemble
    if (any(bpar%vbal_block(iv,1:iv-1))) then
-      write(mpl%unit,'(a10,a)',advance='no') '','Unbalance ensemble members: '
-      call flush(mpl%unit)
+      write(mpl%info,'(a10,a)',advance='no') '','Unbalance ensemble members: '
+      call flush(mpl%info)
       do ie=1,ensu%ne
-         write(mpl%unit,'(i4)',advance='no') ie
-         call flush(mpl%unit)
+         write(mpl%info,'(i4)',advance='no') ie
+         call flush(mpl%info)
          do jv=1,iv-1
             if (bpar%vbal_block(iv,jv)) then
                fld = ensu%fld(:,:,jv,1,ie)
@@ -604,8 +572,8 @@ do iv=1,nam%nv
             end if
          end do
       end do
-      write(mpl%unit,'(a)') ''
-      call flush(mpl%unit)
+      write(mpl%info,'(a)') ''
+      call flush(mpl%info)
    end if
 end do
 
@@ -823,8 +791,8 @@ call vbal%apply(nam,geom,bpar,fld)
 call vbal%apply_inv(nam,geom,bpar,fld)
 mse = sum((fld-fld_save)**2)
 call mpl%allreduce_sum(mse,mse_tot)
-write(mpl%unit,'(a7,a,e15.8)') '','Vertical balance direct/inverse test:  ',mse_tot
-call flush(mpl%unit)
+write(mpl%info,'(a7,a,e15.8)') '','Vertical balance direct/inverse test:  ',mse_tot
+call flush(mpl%info)
 
 ! Inverse / direct
 fld = fld_save
@@ -832,8 +800,8 @@ call vbal%apply_inv(nam,geom,bpar,fld)
 call vbal%apply(nam,geom,bpar,fld)
 mse = sum((fld-fld_save)**2)
 call mpl%allreduce_sum(mse,mse_tot)
-write(mpl%unit,'(a7,a,e15.8)') '','Vertical balance inverse/direct test:  ',mse_tot
-call flush(mpl%unit)
+write(mpl%info,'(a7,a,e15.8)') '','Vertical balance inverse/direct test:  ',mse_tot
+call flush(mpl%info)
 
 ! Direct / inverse, adjoint
 fld = fld_save
@@ -841,8 +809,8 @@ call vbal%apply_ad(nam,geom,bpar,fld)
 call vbal%apply_inv_ad(nam,geom,bpar,fld)
 mse = sum((fld-fld_save)**2)
 call mpl%allreduce_sum(mse,mse_tot)
-write(mpl%unit,'(a7,a,e15.8)') '','Vertical balance direct/inverse (adjoint) test:  ',mse_tot
-call flush(mpl%unit)
+write(mpl%info,'(a7,a,e15.8)') '','Vertical balance direct/inverse (adjoint) test:  ',mse_tot
+call flush(mpl%info)
 
 ! Inverse / direct
 fld = fld_save
@@ -850,8 +818,8 @@ call vbal%apply_inv_ad(nam,geom,bpar,fld)
 call vbal%apply_ad(nam,geom,bpar,fld)
 mse = sum((fld-fld_save)**2)
 call mpl%allreduce_sum(mse,mse_tot)
-write(mpl%unit,'(a7,a,e15.8)') '','Vertical balance inverse/direct (adjoint) test:  ',mse_tot
-call flush(mpl%unit)
+write(mpl%info,'(a7,a,e15.8)') '','Vertical balance inverse/direct (adjoint) test:  ',mse_tot
+call flush(mpl%info)
 
 end subroutine vbal_test_inverse
 
@@ -899,9 +867,9 @@ do iv=1,nam%nv
          call vbal%blk(iv,jv)%apply_ad(geom,vbal%np,vbal%h_n_s,vbal%h_c2b,vbal%h_S,fld2_blk(:,:,iv))
          call mpl%dot_prod(fld1_blk(:,:,iv),fld2_save(:,:,iv),sum1)
          call mpl%dot_prod(fld2_blk(:,:,iv),fld1_save(:,:,iv),sum2)
-         write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Vertical balance block adjoint test:  ', &
+         write(mpl%info,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Vertical balance block adjoint test:  ', &
          & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
-         call flush(mpl%unit)
+         call flush(mpl%info)
       end if
    end do
 end do
@@ -921,14 +889,14 @@ call vbal%apply_inv_ad(nam,geom,bpar,fld2_inv)
 ! Print result
 call mpl%dot_prod(fld1_dir,fld2_save,sum1)
 call mpl%dot_prod(fld2_dir,fld1_save,sum2)
-write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Vertical balance direct adjoint test:  ', &
+write(mpl%info,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Vertical balance direct adjoint test:  ', &
  & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
-call flush(mpl%unit)
+call flush(mpl%info)
 call mpl%dot_prod(fld1_inv,fld2_save,sum1)
 call mpl%dot_prod(fld2_inv,fld1_save,sum2)
-write(mpl%unit,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Vertical balance inverse adjoint test: ', &
+write(mpl%info,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Vertical balance inverse adjoint test: ', &
  & sum1,' / ',sum2,' / ',2.0*abs(sum1-sum2)/abs(sum1+sum2)
-call flush(mpl%unit)
+call flush(mpl%info)
 
 end subroutine vbal_test_adjoint
 

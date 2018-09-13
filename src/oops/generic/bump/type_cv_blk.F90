@@ -16,7 +16,8 @@ implicit none
 
 ! Control vector block derived type
 type cv_blk_type
-   real(kind_real),allocatable :: alpha(:) !< Control vector field
+   integer :: n                            !< Control variable block size
+   real(kind_real),allocatable :: alpha(:) !< Control vector block field
 end type cv_blk_type
 
 private

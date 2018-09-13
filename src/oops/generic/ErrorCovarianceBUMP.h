@@ -76,7 +76,7 @@ ErrorCovarianceBUMP<MODEL>::ErrorCovarianceBUMP(const Geometry_ & resol,
                                                 const Variables & vars,
                                                 const eckit::Configuration & conf,
                                                 const State_ & xb, const State_ & fg)
-  : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, conf), vars_(vars), colocated_(0), keyBUMP_(0)
+  : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, conf), vars_(vars), colocated_(1), keyBUMP_(0)
 {
   Log::trace() << "ErrorCovarianceBUMP::ErrorCovarianceBUMP starting" << std::endl;
   const eckit::Configuration * fconf = &conf;
@@ -110,6 +110,12 @@ ErrorCovarianceBUMP<MODEL>::ErrorCovarianceBUMP(const Geometry_ & resol,
 
 // Run BUMP
   run_oobump_drivers_f90(keyBUMP_);
+
+// Copy test
+  std::ifstream infile("bump.test");
+  std::string line;
+  while (std::getline(infile, line)) Log::test() << line << std::endl;
+  remove("bump.test");
 
   Log::trace() << "ErrorCovarianceBUMP::ErrorCovarianceBUMP done" << std::endl;
 }

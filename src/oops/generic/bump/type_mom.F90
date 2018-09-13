@@ -117,16 +117,16 @@ call mom%alloc(nam,geom,bpar,hdata,ens%ne,ens%nsub)
 ! Loop on sub-ensembles
 do isub=1,ens%nsub
    if (ens%nsub==1) then
-      write(mpl%unit,'(a10,a)',advance='no') '','Full ensemble, member:'
+      write(mpl%info,'(a10,a)',advance='no') '','Full ensemble, member:'
    else
-      write(mpl%unit,'(a10,a,i4,a)',advance='no') '','Sub-ensemble ',isub,', member:'
+      write(mpl%info,'(a10,a,i4,a)',advance='no') '','Sub-ensemble ',isub,', member:'
    end if
-   call flush(mpl%unit)
+   call flush(mpl%info)
 
    ! Compute centered moments
    do ie_sub=1,ens%ne/ens%nsub
-      write(mpl%unit,'(i4)',advance='no') ie_sub
-      call flush(mpl%unit)
+      write(mpl%info,'(i4)',advance='no') ie_sub
+      call flush(mpl%info)
 
       ! Full ensemble index
       ie = ie_sub+(isub-1)*ens%ne/ens%nsub
@@ -228,8 +228,8 @@ do isub=1,ens%nsub
       deallocate(fld_ext)
       deallocate(mask_unpack)
    end do
-   write(mpl%unit,'(a)') ''
-   call flush(mpl%unit)
+   write(mpl%info,'(a)') ''
+   call flush(mpl%info)
 end do
 
 ! Normalize moments

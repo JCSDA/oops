@@ -10,173 +10,23 @@
 !----------------------------------------------------------------------
 module tools_func
 
-use tools_const, only: pi,rth,gc_gau
+use tools_asa007, only: asa007_cholesky,asa007_syminv
+use tools_const, only: pi
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsr
 use type_mpl, only: mpl_type
 
 implicit none
 
+real(kind_real),parameter :: gc_gau = 0.28            !< Gaussian to GC99 factor (empirical)
 real(kind_real),parameter :: Dmin = 1.0e-12_kind_real !< Minimum tensor diagonal value
 integer,parameter :: M = 0                            !< Number of implicit itteration for the Matern function (GC 99 function if M = -1 and Gaussian function if M = 0)
-real(kind_real),parameter :: eta = 1.0e-9_kind_real   !< Small parameter for the Cholesky decomposition
 
 private
-public :: eq,inf,infeq,sup,supeq,indist,pos,poseq, &
-        & lonlatmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,add,divide, &
-        & fit_diag,fit_diag_dble,gc99,fit_lct,cholesky
+public :: lonlatmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,add,divide, &
+        & fit_diag,fit_diag_dble,gc99,fit_lct,cholesky,syminv
 
 contains
-
-!----------------------------------------------------------------------
-! Function: eq
-!> Purpose: equal test for reals
-!----------------------------------------------------------------------
-function eq(x,y)
-
-implicit none
-
-! Passed variables
-real(kind_real),intent(in) :: x !< First real
-real(kind_real),intent(in) :: y !< Second real
-
-! Returned variable
-logical :: eq
-
-eq = abs(x-y)<rth
-
-end function eq
-
-!----------------------------------------------------------------------
-! Function: inf
-!> Purpose: inferior test for reals
-!----------------------------------------------------------------------
-function inf(x,y)
-
-implicit none
-
-! Passed variables
-real(kind_real),intent(in) :: x !< First real
-real(kind_real),intent(in) :: y !< Second real
-
-! Returned variable
-logical :: inf
-
-inf = (abs(x-y)>rth*abs(x+y)).and.(x<y)
-
-end function inf
-
-!----------------------------------------------------------------------
-! Function: infeq
-!> Purpose: inferior or equal test for reals
-!----------------------------------------------------------------------
-function infeq(x,y)
-
-implicit none
-
-! Passed variables
-real(kind_real),intent(in) :: x !< First real
-real(kind_real),intent(in) :: y !< Second real
-
-! Returned variable
-logical :: infeq
-
-infeq = inf(x,y).or.eq(x,y)
-
-end function infeq
-
-!----------------------------------------------------------------------
-! Function: sup
-!> Purpose: superior test for reals
-!----------------------------------------------------------------------
-function sup(x,y)
-
-implicit none
-
-! Passed variables
-real(kind_real),intent(in) :: x !< First real
-real(kind_real),intent(in) :: y !< Second real
-
-! Returned variable
-logical :: sup
-
-sup = (abs(x-y)>rth*abs(x+y)).and.(x>y)
-
-end function sup
-
-!----------------------------------------------------------------------
-! Function: supeq
-!> Purpose: superior or equal test for reals
-!----------------------------------------------------------------------
-function supeq(x,y)
-
-implicit none
-
-! Passed variables
-real(kind_real),intent(in) :: x !< First real
-real(kind_real),intent(in) :: y !< Second real
-
-! Returned variable
-logical :: supeq
-
-supeq = sup(x,y).or.eq(x,y)
-
-end function supeq
-
-!----------------------------------------------------------------------
-! Function: indist
-!> Purpose: indistiguishability test
-!----------------------------------------------------------------------
-function indist(x,y)
-
-implicit none
-
-! Passed variables
-real(kind_real),intent(in) :: x !< First real
-real(kind_real),intent(in) :: y !< Second real
-
-! Returned variable
-logical :: indist
-
-indist = abs(x)<rth*abs(y)
-
-end function indist
-
-!----------------------------------------------------------------------
-! Function: pos
-!> Purpose: positivity test for reals
-!----------------------------------------------------------------------
-function pos(x)
-
-implicit none
-
-! Passed variables
-real(kind_real),intent(in) :: x !< Real
-
-! Returned variable
-logical :: pos
-
-pos = (x>rth)
-
-end function pos
-
-!----------------------------------------------------------------------
-! Function: poseq
-!> Purpose: non-negativity test for reals
-!----------------------------------------------------------------------
-function poseq(x)
-
-implicit none
-
-! Passed variables
-real(kind_real),intent(in) :: x !< Real
-
-! Returned variable
-logical :: poseq
-
-poseq = (x>-rth)
-
-end function poseq
 
 !----------------------------------------------------------------------
 ! Subroutine: lonlatmod
@@ -380,7 +230,7 @@ end subroutine divide
 ! Subroutine: fit_diag
 !> Purpose: diagnostic fit
 !----------------------------------------------------------------------
-subroutine fit_diag(mpl,nc3,nl0r,nl0,l0rl0_to_l0,disth,distvr,rh,rv,fit)
+subroutine fit_diag(mpl,nc3,nl0r,nl0,l0rl0_to_l0,disth,distv,rh,rv,fit)
 
 implicit none
 
@@ -391,7 +241,7 @@ integer,intent(in) :: nl0r                       !< Reduced number of levels
 integer,intent(in) :: nl0                        !< Number of levels
 integer,intent(in) :: l0rl0_to_l0(nl0r,nl0)      !< Reduced level to level
 real(kind_real),intent(in) :: disth(nc3)         !< Horizontal distance
-real(kind_real),intent(in) :: distvr(nl0r,nl0)   !< Vertical distance
+real(kind_real),intent(in) :: distv(nl0,nl0)     !< Vertical distance
 real(kind_real),intent(in) :: rh(nl0)            !< Horizontal support radius
 real(kind_real),intent(in) :: rv(nl0)            !< Vertical support radius
 real(kind_real),intent(out) :: fit(nc3,nl0r,nl0) !< Fit
@@ -455,8 +305,8 @@ do il0=1,nl0
                   distnorm = distnorm+0.5*huge(1.0)
                end if
                if (rvsq>0.0) then
-                  distnorm = distnorm+distvr(kl0r,jl0)**2/rvsq
-               elseif (kl0r/=jl0r) then
+                  distnorm = distnorm+distv(kl0,jl0)**2/rvsq
+               elseif (kl0/=jl0) then
                   distnorm = distnorm+0.5*huge(1.0)
                end if
                disttest = dist(jc3,jl0r)+sqrt(distnorm)
@@ -514,7 +364,7 @@ end subroutine fit_diag
 ! Subroutine: fit_diag_dble
 !> Purpose: diagnostic fit, double-fit
 !----------------------------------------------------------------------
-subroutine fit_diag_dble(mpl,nc3,nl0r,nl0,l0rl0_to_l0,disth,distvr,rh,rv,rv_rfac,rv_coef,fit)
+subroutine fit_diag_dble(mpl,nc3,nl0r,nl0,l0rl0_to_l0,disth,distv,rh,rv,rv_rfac,rv_coef,fit)
 
 implicit none
 
@@ -525,7 +375,7 @@ integer,intent(in) :: nl0r                       !< Reduced number of levels
 integer,intent(in) :: nl0                        !< Number of levels
 integer,intent(in) :: l0rl0_to_l0(nl0r,nl0)      !< Reduced level to level
 real(kind_real),intent(in) :: disth(nc3)         !< Horizontal distance
-real(kind_real),intent(in) :: distvr(nl0r,nl0)   !< Vertical distance
+real(kind_real),intent(in) :: distv(nl0,nl0)     !< Vertical distance
 real(kind_real),intent(in) :: rh(nl0)            !< Horizontal support radius
 real(kind_real),intent(in) :: rv(nl0)            !< Vertical support radius
 real(kind_real),intent(in) :: rv_rfac(nl0)       !< Vertical fit support radius ratio for the positive component
@@ -591,8 +441,8 @@ do il0=1,nl0
                   distnorm = distnorm+0.5*huge(1.0)
                end if
                if (rvsq>0.0) then
-                  distnorm = distnorm+distvr(kl0r,jl0)**2/rvsq
-               elseif (kl0r/=jl0r) then
+                  distnorm = distnorm+distv(kl0,jl0)**2/rvsq
+               elseif (kl0/=jl0) then
                   distnorm = distnorm+0.5*huge(1.0)
                end if
                disttest = dist(jc3,jl0r)+sqrt(distnorm)
@@ -683,6 +533,9 @@ else if (distnorm<1.0) then
 else
    gc99 = 0.0
 end if
+
+! Enforce positivity
+gc99 = max(gc99,0.0)
 
 end function gc99
 
@@ -824,66 +677,95 @@ end function matern
 !> Purpose: compute cholesky decomposition
 !> Author: Original FORTRAN77 version by Michael Healy, modifications by AJ Miller, FORTRAN90 version by John Burkardt.
 !----------------------------------------------------------------------
-subroutine cholesky(mpl,n,nn,a,u)
+subroutine cholesky(mpl,n,a,u)
 
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl     !< MPI data
-integer,intent(in) :: n              !< Matrix rank
-integer,intent(in) :: nn             !< Half-matrix size (n*(n-1)/2)
-real(kind_real),intent(in) :: a(nn)  !< Matrix
-real(kind_real),intent(out) :: u(nn) !< Matrix square-root
+type(mpl_type),intent(in) :: mpl      !< MPI data
+integer,intent(in) :: n               !< Matrix rank
+real(kind_real),intent(in) :: a(n,n)  !< Matrix
+real(kind_real),intent(out) :: u(n,n) !< Matrix square-root
 
 ! Local variables
-integer :: i,icol,ii,irow,j,k,kk,l,m
-real(kind_real) :: w,x
+integer :: nn,i,j,ij
+real(kind_real),allocatable :: apack(:),upack(:)
 
-! Initialization
-ii = 0
-j = 1
-k = 0
-if (nn/=(n*(n+1))/2) then
-   call mpl%abort('wrong size in Cholesky decomposition')
-end if
-w = 0.0
+! Allocation
+nn = (n*(n+1))/2
+allocate(apack(nn))
+allocate(upack(nn))
 
-! Factorize column by column, ICOL = column number
-do icol=1,n
-   ii = ii+icol
-   x = eta**2*a(ii)
-   l = 0
-   kk = 0
-
-   ! IROW = row number within column ICOL
-   do irow=1,icol
-      kk = kk+irow
-      k = k+1
-      w = a(k)
-      m = j
-      do i=1,irow-1
-        l = l+1
-        w = w-u(l)*u(m)
-        m = m+1
-      end do
-      l = l+1
-      if (irow==icol) exit
-      if (abs(u(l))>0.0) then
-         u(k) = w/u(l)
-      else
-         if (abs(x*a(k))<w**2) call mpl%abort('A is not positive semi-definite')
-      end if
+! Pack matrix
+ij = 0
+do i=1,n
+   do j=1,i
+      ij = ij+1
+      apack(ij) = a(i,j)
    end do
+end do
 
-   ! End of row, estimate relative accuracy of diagonal element
-   if (abs(w)<=abs(eta*a(k))) then
-      u(k) = 0.0
-   else
-      if (w<0.0) call mpl%abort('A is not positive semi-definite')
-   end if
-   j = j+icol
+! Cholesky decomposition
+call asa007_cholesky(mpl,n,nn,apack,upack)
+
+! Unpack matrix
+ij = 0
+u = 0.0
+do i=1,n
+   do j=1,i
+      ij = ij+1
+      u(i,j) = upack(ij)
+   end do
 end do
 
 end subroutine cholesky
+
+!----------------------------------------------------------------------
+! Subroutine: syminv
+!> Purpose: compute inverse of a symmetric matrix
+!> Author: Original FORTRAN77 version by Michael Healy, modifications by AJ Miller, FORTRAN90 version by John Burkardt.
+!----------------------------------------------------------------------
+subroutine syminv(mpl,n,a,c)
+
+implicit none
+
+! Passed variables
+type(mpl_type),intent(in) :: mpl      !< MPI data
+integer,intent(in) :: n               !< Matrix rank
+real(kind_real),intent(in) :: a(n,n)  !< Matrix
+real(kind_real),intent(out) :: c(n,n) !< Matrix inverse
+
+! Local variables
+integer :: nn,i,j,ij
+real(kind_real),allocatable :: apack(:),cpack(:)
+
+! Allocation
+nn = (n*(n+1))/2
+allocate(apack(nn))
+allocate(cpack(nn))
+
+! Pack matrix
+ij = 0
+do i=1,n
+   do j=1,i
+      ij = ij+1
+      apack(ij) = a(i,j)
+   end do
+end do
+
+! Matrix inversion
+call asa007_syminv(mpl,n,nn,apack,cpack)
+
+! Unpack matrix
+ij = 0
+do i=1,n
+   do j=1,i
+      ij = ij+1
+      c(i,j) = cpack(ij)
+      c(j,i) = c(i,j)
+   end do
+end do
+
+end subroutine syminv
 
 end module tools_func

@@ -141,6 +141,7 @@ real(kind_real),intent(out) :: vec_ext(com%next,nl) !< Extended vector
 
 ! Local variables
 integer :: il,iexcl,ired,ihalo
+integer :: jexclcounts(mpl%nproc),jexcldispl(mpl%nproc),jhalocounts(mpl%nproc),jhalodispl(mpl%nproc)
 real(kind_real) :: sbuf(com%nexcl*nl),rbuf(com%nhalo*nl)
 
 ! Prepare buffers to send
@@ -153,7 +154,11 @@ end do
 !$omp end parallel do
 
 ! Communication
-call mpl%alltoallv(com%nexcl*nl,sbuf,com%jexclcounts*nl,com%jexcldispl*nl,com%nhalo*nl,rbuf,com%jhalocounts*nl,com%jhalodispl*nl)
+jexclcounts = com%jexclcounts*nl
+jexcldispl = com%jexcldispl*nl
+jhalocounts = com%jhalocounts*nl
+jhalodispl = com%jhalodispl*nl
+call mpl%alltoallv(com%nexcl*nl,sbuf,jexclcounts,jexcldispl,com%nhalo*nl,rbuf,jhalocounts,jhalodispl)
 
 ! Copy interior
 !$omp parallel do schedule(static) private(il,ired)
