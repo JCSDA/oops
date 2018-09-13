@@ -69,6 +69,7 @@
   },    
   "ModelBias": null,
   "Model": {
+    "name": "QG",
     "tstep": "PT1H",
     "top_layer_depth": "5500.0",
     "bottom_layer_depth": "4500.0"

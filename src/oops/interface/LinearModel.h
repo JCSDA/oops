@@ -16,11 +16,11 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
+#include "oops/base/LinearModelBase.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
-#include "oops/interface/LinearModelBase.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/ModelAuxIncrement.h"
 #include "oops/interface/State.h"

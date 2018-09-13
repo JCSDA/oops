@@ -8,8 +8,8 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef OOPS_INTERFACE_LINEARMODELBASE_H_
-#define OOPS_INTERFACE_LINEARMODELBASE_H_
+#ifndef OOPS_BASE_LINEARMODELBASE_H_
+#define OOPS_BASE_LINEARMODELBASE_H_
 
 #include <map>
 #include <string>
@@ -228,4 +228,4 @@ void LinearModelBase<MODEL>::finalizeAD(Increment_ & dx) const {
 
 }  // namespace oops
 
-#endif  // OOPS_INTERFACE_LINEARMODELBASE_H_
+#endif  // OOPS_BASE_LINEARMODELBASE_H_

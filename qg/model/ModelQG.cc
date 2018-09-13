@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -13,15 +13,19 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
+
 #include "model/FieldsQG.h"
 #include "model/GeometryQG.h"
 #include "model/ModelBias.h"
 #include "model/QgFortran.h"
 #include "model/StateQG.h"
+
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
 namespace qg {
+// -----------------------------------------------------------------------------
+static oops::ModelMaker<QgTraits, ModelQG> makermodel_("QG");
 // -----------------------------------------------------------------------------
 ModelQG::ModelQG(const GeometryQG & resol, const eckit::Configuration & model)
   : keyConfig_(0), tstep_(0), geom_(resol),

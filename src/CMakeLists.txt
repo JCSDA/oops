@@ -88,6 +88,7 @@ oops/base/HybridCovariance.h
 oops/base/IdentityMatrix.h
 oops/base/InterpolatorTLAD.h
 oops/base/LinearObsOperators.h
+oops/base/ModelBase.h
 oops/base/ModelSpaceCovarianceBase.h
 oops/base/ObsErrors.h
 oops/base/ObsFilter.h
@@ -122,15 +123,17 @@ oops/generic/ErrorCovarianceBUMP.h
 oops/generic/IdVariableChange.h
 oops/generic/LocalizationBUMP.h
 oops/generic/ObsErrorDiag.h
+oops/generic/PseudoModel.h
 oops/generic/UnstructuredGrid.cc
 oops/generic/UnstructuredGrid.h
 oops/generic/oobump_f.h
 oops/generic/oobump_mod.F90
 oops/generic/dcmip_initial_conditions_test_1_2_3_v5.f90
 oops/generic/dcmip_initial_conditions_test_4_v3.f90
-oops/generic/instantiateLocalizationFactory.h
-oops/generic/instantiateObsErrorFactory.h
 oops/generic/instantiateLinearVariableChangeFactory.h
+oops/generic/instantiateLocalizationFactory.h
+oops/generic/instantiateModelFactory.h
+oops/generic/instantiateObsErrorFactory.h
 oops/generic/unstructured_grid_f.h
 oops/generic/unstructured_grid_mod.F90
 oops/generic/StatsVariableChange.h
@@ -312,7 +315,7 @@ function(generate_fortran_bindings output filename)
 endfunction()
 
 ecbuild_add_library( TARGET     oops
-                     SOURCES    
+                     SOURCES
                                 ${FORTRAN_BINDINGS}
                                 ${oops_src_files}
                      LIBS       ${LAPACK_LIBRARIES} ${NETCDF_LIBRARIES} fckit eckit_mpi eckit
