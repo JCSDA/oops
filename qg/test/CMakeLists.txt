@@ -168,6 +168,12 @@ ecbuild_add_test( TARGET  test_qg_geometry
                   ARGS    "testinput/interfaces.json"
                   LIBS    qg )
 
+ecbuild_add_test( TARGET  test_qg_geometry_iterator
+                  BOOST
+                  SOURCES executables/TestGeometryIterator.cc
+                  ARGS    "testinput/interfaces.json"
+                  LIBS    qg )
+
 ecbuild_add_test( TARGET  test_qg_geovals
                   BOOST
                   SOURCES executables/TestGeoVaLs.cc

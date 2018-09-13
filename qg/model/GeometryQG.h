@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "model/GeometryQGIterator.h"
 #include "model/QgFortran.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -24,6 +25,7 @@ namespace eckit {
 }
 
 namespace qg {
+class GeometryQGIterator;
 
 // -----------------------------------------------------------------------------
 /// GeometryQG handles geometry for QG model.
@@ -39,6 +41,9 @@ class GeometryQG : public util::Printable,
 
   F90geom & toFortran() {return keyGeom_;}
   const F90geom & toFortran() const {return keyGeom_;}
+
+  GeometryQGIterator begin() const;
+  GeometryQGIterator end() const;
 
  private:
   GeometryQG & operator=(const GeometryQG &);

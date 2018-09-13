@@ -197,7 +197,8 @@ void FieldsQG::print(std::ostream & os) const {
   int ny = -1;
   int nf = -1;
   int nb = -1;
-  qg_field_sizes_f90(keyFlds_, nx, ny, nf, nb);
+  int nl = -1;
+  qg_field_sizes_f90(keyFlds_, nx, ny, nf, nb, nl);
   os << std::endl << "  Resolution = " << nx << ", " << ny
      << ", Fields = " << nf << ", " << nb;
   nf += nb;
@@ -209,15 +210,29 @@ void FieldsQG::print(std::ostream & os) const {
   }
 }
 // -----------------------------------------------------------------------------
-bool FieldsQG::isForModel(bool nonlinear) const {
+bool FieldsQG::isForModel(const bool & nonlinear) const {
   int nx = -1;
   int ny = -1;
   int nf = -1;
   int nb = -1;
-  qg_field_sizes_f90(keyFlds_, nx, ny, nf, nb);
+  int nl = -1;
+  qg_field_sizes_f90(keyFlds_, nx, ny, nf, nb, nl);
   bool ok = (nf == 4);
   if (nonlinear) ok = ok && (nb == 2);
   return ok;
 }
 // -----------------------------------------------------------------------------
+oops::GridPoint FieldsQG::getPoint(const GeometryQGIterator & iter) const {
+  int nx = -1;
+  int ny = -1;
+  int nf = -1;
+  int nb = -1;
+  int nl = -1;
+  qg_field_sizes_f90(keyFlds_, nx, ny, nf, nb, nl);
+  std::vector<int> varlens(nf, nl);
+  std::vector<double> values(nf*nl);
+  qg_field_getpoint_f90(keyFlds_, iter.toFortran(), nf*nl, values[0]);
+  return oops::GridPoint(vars_.toOopsVariables(), values, varlens);
+}
+
 }  // namespace qg

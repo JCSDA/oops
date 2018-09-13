@@ -82,6 +82,7 @@ oops/base/EnsembleCovariance.h
 oops/base/EnsemblesCollection.h
 oops/base/FilterBase.h
 oops/base/GeneralizedDepartures.h
+oops/base/GeoLocation.h
 oops/base/GeoVaLsWriter.h
 oops/base/HybridCovariance.h
 oops/base/IdentityMatrix.h
@@ -182,6 +183,7 @@ oops/generic/bump/external/tools_stripack.F90
 
 oops/interface/ErrorCovariance.h
 oops/interface/Geometry.h
+oops/interface/GeometryIterator.h
 oops/interface/GeoVaLs.h
 oops/interface/Increment.h
 oops/interface/InterpolatorTraj.h

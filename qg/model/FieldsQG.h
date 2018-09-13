@@ -17,7 +17,10 @@
 #include <boost/shared_ptr.hpp>
 
 #include "model/GeometryQG.h"
+#include "model/GeometryQGIterator.h"
 #include "model/VariablesQG.h"
+#include "oops/base/GridPoint.h"
+#include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
@@ -31,6 +34,7 @@ namespace eckit {
 namespace oops {
   class UnstructuredGrid;
   class Variables;
+  class GridPoint;
 }
 
 namespace qg {
@@ -92,7 +96,9 @@ class FieldsQG : public util::Printable,
   int & toFortran() {return keyFlds_;}
   const int & toFortran() const {return keyFlds_;}
 
-  bool isForModel(const bool) const;
+  bool isForModel(const bool &) const;
+
+  oops::GridPoint getPoint(const GeometryQGIterator &) const;
 
  private:
   void print(std::ostream &) const;

@@ -16,6 +16,7 @@
 #include "model/ChangeVar.h"
 #include "model/ErrorCovarianceQG.h"
 #include "model/GeometryQG.h"
+#include "model/GeometryQGIterator.h"
 #include "model/GomQG.h"
 #include "model/IncrementQG.h"
 #include "model/LocationsQG.h"
@@ -40,6 +41,8 @@ struct QgTraits {
   static std::string nameCovar() {return "QgError";}
 
   typedef qg::GeometryQG            Geometry;
+
+  typedef qg::GeometryQGIterator    GeometryIterator;
 
   typedef qg::StateQG               State;
   typedef qg::ModelQG               Model;

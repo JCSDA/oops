@@ -447,6 +447,41 @@ end subroutine qg_field_gpnorm_c
 
 ! ------------------------------------------------------------------------------
 
+subroutine qg_field_getpoint_c(c_key_fld, c_key_iter, c_nval, c_vals) bind(c,name='qg_field_getpoint_f90')
+use iso_c_binding
+use qg_fields
+use qg_geom_iter_mod
+use kinds
+implicit none
+integer(c_int), intent(in) :: c_key_fld
+integer(c_int), intent(in) :: c_key_iter
+integer(c_int), intent(in) :: c_nval
+real(c_double), intent(inout) :: c_vals(c_nval)
+
+type(qg_field), pointer :: fld
+type(qg_geom_iter), pointer :: iter
+
+call qg_field_registry%get(c_key_fld, fld)
+call qg_geom_iter_registry%get(c_key_iter, iter)
+
+!AS NOTE: this check fails; for some reason the pointers aren't pointing to 
+!         the same thing (???)
+!if (.not. associated(fld%geom, iter%geom)) then
+!  print *, 'qg_field_getpoint ERROR: geometries are different!'
+!  stop
+!endif
+
+if (fld%nf*fld%nl /= c_nval) then
+  print *, 'qg_field_getpoint ERROR: array sizes are different: ', fld%nf*fld%nl, c_nval
+  stop
+endif
+
+c_vals = fld%gfld3d(iter%ilon, iter%ilat, :)
+
+end subroutine qg_field_getpoint_c
+
+! ------------------------------------------------------------------------------
+
 subroutine qg_field_rms_c(c_key_fld, prms) bind(c,name='qg_field_rms_f90')
 use iso_c_binding
 use qg_fields
@@ -522,21 +557,22 @@ end subroutine qg_field_interp_ad_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine qg_fieldnum_c(c_key_fld, nx, ny, nf, nb) bind(c,name='qg_field_sizes_f90')
+subroutine qg_fieldnum_c(c_key_fld, c_nx, c_ny, c_nf, c_nb, c_nl) bind(c,name='qg_field_sizes_f90')
 use iso_c_binding
 use qg_fields
 implicit none
 integer(c_int), intent(in) :: c_key_fld
-integer(kind=c_int), intent(inout) :: nx, ny, nf, nb
+integer(kind=c_int), intent(inout) :: c_nx, c_ny, c_nf, c_nb, c_nl
 type(qg_field), pointer :: fld
 
 call qg_field_registry%get(c_key_fld,fld)
 
-nx = fld%geom%nx
-ny = fld%geom%ny
-nf = fld%nf
-nb =0
-if (fld%lbc) nb = 2
+c_nx = fld%geom%nx
+c_ny = fld%geom%ny
+c_nf = fld%nf
+c_nl = fld%nl
+c_nb =0
+if (fld%lbc) c_nb = 2
 
 end subroutine qg_fieldnum_c
 

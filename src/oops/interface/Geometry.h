@@ -17,6 +17,7 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include "oops/interface/GeometryIterator.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -34,6 +35,7 @@ template <typename MODEL>
 class Geometry : public util::Printable,
                  private util::ObjectCounter<Geometry<MODEL> > {
   typedef typename MODEL::Geometry              Geometry_;
+  typedef GeometryIterator<MODEL>               GeometryIterator_;
 
  public:
   static const std::string classname() {return "oops::Geometry";}
@@ -54,6 +56,9 @@ class Geometry : public util::Printable,
 
 /// Interfacing
   const Geometry_ & geometry() const {return *geom_;}
+
+  GeometryIterator_ begin() const;
+  GeometryIterator_ end()   const;
 
  private:
   Geometry & operator=(const Geometry &);
@@ -149,6 +154,25 @@ std::vector<int> Geometry<MODEL>::getMask(const int & ilev) const {
   return geom_.getMask();
 }
 
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+GeometryIterator<MODEL> Geometry<MODEL>::begin() const {
+  Log::trace() << "Geometry<MODEL>::begin starting" << std::endl;
+  util::Timer timer(classname(), "begin");
+  return GeometryIterator_(geom_->begin());
+  Log::trace() << "Geometry<MODEL>::begin done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+GeometryIterator<MODEL> Geometry<MODEL>::end() const {
+  Log::trace() << "Geometry<MODEL>::end starting" << std::endl;
+  util::Timer timer(classname(), "end");
+  return GeometryIterator_(geom_->end());
+  Log::trace() << "Geometry<MODEL>::end done" << std::endl;
+}
 
 // -----------------------------------------------------------------------------
 

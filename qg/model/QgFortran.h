@@ -25,6 +25,7 @@ namespace qg {
 
 // Geometry key type
 typedef int F90geom;
+typedef int F90iter;
 // Model key type
 typedef int F90model;
 // Variables key type
@@ -65,6 +66,12 @@ extern "C" {
   void qg_geo_info_f90(const F90geom &, int &, int &);
   void qg_geo_delete_f90(F90geom &);
 
+  void qg_geo_iter_setup_f90(F90iter &, const F90geom &, const int &);
+  void qg_geo_iter_clone_f90(F90iter &, const F90iter &);
+  void qg_geo_iter_delete_f90(F90iter &);
+  void qg_geo_iter_equals_f90(const F90iter &, const F90iter&, int &);
+  void qg_geo_iter_current_f90(const F90iter &, double &, double &);
+  void qg_geo_iter_next_f90(const F90iter &);
 // -----------------------------------------------------------------------------
 //  Model
 // -----------------------------------------------------------------------------
@@ -121,9 +128,9 @@ extern "C" {
   void qg_field_field_from_ug_f90(const F90flds &, const int &);
 
   void qg_field_gpnorm_f90(const F90flds &, const int &, double &);
-  void qg_field_sizes_f90(const F90flds &, int &, int &, int &, int &);
+  void qg_field_sizes_f90(const F90flds &, int &, int &, int &, int &, int &);
   void qg_field_rms_f90(const F90flds &, double &);
-
+  void qg_field_getpoint_f90(const F90flds&, const F90iter&, const int &, double &);
 // -----------------------------------------------------------------------------
 //  Background error
 // -----------------------------------------------------------------------------

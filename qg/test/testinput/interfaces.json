@@ -5,6 +5,20 @@
     "ny": "20",
     "bc": "1"
   },
+  "GeometryIterator": {
+    "Geometry": {
+      "nx": "40",
+      "ny": "20",
+      "bc": "1"
+    },
+    "State": {
+      "variables": ["x","bc"],
+      "filename": "Data/truth.fc.2009-12-15T00:00:00Z.P16D",
+      "date": "2009-12-31T00:00:00Z",
+      "rms": "12.99933594566324",
+      "tolerance": "1e-8"
+    }
+  },
   "Variables": {
     "variables": ["x"]
   },
