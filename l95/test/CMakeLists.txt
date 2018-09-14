@@ -381,13 +381,6 @@ ecbuild_add_test( TARGET test_l95_hofx
                        testoutput/hofx.test
                   DEPENDS l95_hofx.x )
 
-ecbuild_add_test( TARGET test_l95_enshofx
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_enshofx.x testinput/enshofx.json"
-                       testoutput/enshofx.test
-                  DEPENDS l95_enshofx.x )
-
 ecbuild_add_test( TARGET test_l95_3dvar
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
@@ -528,6 +521,13 @@ ecbuild_add_test( TARGET test_l95_genenspert
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_genpert.x testinput/genenspert.json"
                        testoutput/genenspert.test
                   DEPENDS l95_genpert.x )
+
+ecbuild_add_test( TARGET test_l95_enshofx
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_enshofx.x testinput/enshofx.json"
+                       testoutput/enshofx.test
+                  DEPENDS l95_enshofx.x )
 
 ecbuild_add_test( TARGET test_l95_alpha
                   TYPE SCRIPT
