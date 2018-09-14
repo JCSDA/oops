@@ -3,6 +3,11 @@ ecbuild_add_executable( TARGET  qg_dfi.x
                         LIBS    qg
                        )
 
+ecbuild_add_executable( TARGET  qg_enshofx.x
+                        SOURCES qgEnsHofX.cc
+                        LIBS    qg
+                       )
+
 ecbuild_add_executable( TARGET  qg_forecast.x
                         SOURCES qgForecast.cc
                         LIBS    qg

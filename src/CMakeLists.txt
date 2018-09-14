@@ -77,7 +77,6 @@ oops/base/Departures.h
 oops/base/DiagonalMatrix.h
 oops/base/DolphChebyshev.h
 oops/base/DolphChebyshev.cc
-oops/base/Ensemble.h
 oops/base/EnsembleCovariance.h
 oops/base/EnsemblesCollection.h
 oops/base/FilterBase.h
@@ -90,6 +89,7 @@ oops/base/InterpolatorTLAD.h
 oops/base/LinearObsOperators.h
 oops/base/ModelBase.h
 oops/base/ModelSpaceCovarianceBase.h
+oops/base/ObsEnsemble.h
 oops/base/ObsErrors.h
 oops/base/ObsFilter.h
 oops/base/ObsFilters.h
@@ -104,6 +104,7 @@ oops/base/PostProcessor.h
 oops/base/PostProcessorTLAD.h
 oops/base/PostTimer.h
 oops/base/PostTimer.cc
+oops/base/StateEnsemble.h
 oops/base/StateInfo.h
 oops/base/StateWriter.h
 oops/base/TrajectorySaver.h
@@ -219,6 +220,7 @@ oops/parallel/mpi/mpi.cc
 oops/runs/Application.h
 oops/runs/Dirac.h
 oops/runs/EnsForecasts.h
+oops/runs/EnsHofX.h
 oops/runs/EstimateParams.h
 oops/runs/ExternalDFI.h
 oops/runs/Forecast.h

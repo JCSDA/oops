@@ -21,6 +21,7 @@ list( APPEND l95_test_input
   testinput/4dsaddlepoint.json
   testinput/4dhybrid.json
   testinput/4densvar.json
+  testinput/enshofx.json
   testinput/forecast.json
   testinput/genenspert.json
   testinput/hofx.json
@@ -64,6 +65,7 @@ list( APPEND l95_testoutput
   testoutput/4dvar.planczos.test
   testoutput/4dvar.rpcg.test
   testoutput/4dvar.rplanczos.test
+  testoutput/enshofx.test
   testoutput/forecast.test
   testoutput/genenspert.test
   testoutput/hofx.test
@@ -378,6 +380,13 @@ ecbuild_add_test( TARGET test_l95_hofx
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_hofx.x testinput/hofx.json"
                        testoutput/hofx.test
                   DEPENDS l95_hofx.x )
+
+ecbuild_add_test( TARGET test_l95_enshofx
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_enshofx.x testinput/enshofx.json"
+                       testoutput/enshofx.test
+                  DEPENDS l95_enshofx.x )
 
 ecbuild_add_test( TARGET test_l95_3dvar
                   TYPE SCRIPT

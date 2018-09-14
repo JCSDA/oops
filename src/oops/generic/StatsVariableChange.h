@@ -12,8 +12,6 @@
 #include <vector>
 #include <boost/noncopyable.hpp>
 #include "eckit/config/Configuration.h"
-#include "oops/base/Ensemble.h"
-#include "oops/base/EnsemblesCollection.h"
 #include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/oobump_f.h"

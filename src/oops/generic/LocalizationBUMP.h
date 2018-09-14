@@ -15,8 +15,8 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
-#include "oops/base/Ensemble.h"
 #include "oops/base/EnsemblesCollection.h"
+#include "oops/base/StateEnsemble.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/oobump_f.h"
 #include "oops/generic/UnstructuredGrid.h"
@@ -40,8 +40,8 @@ class LocalizationBUMP : public LocalizationBase<MODEL> {
   typedef typename MODEL::Increment             Increment_;
   typedef typename MODEL::State                 State_;
 
-  typedef boost::shared_ptr<Ensemble<MODEL> >   EnsemblePtr_;
-  typedef EnsemblesCollection<MODEL>            EnsemblesCollection_;
+  typedef boost::shared_ptr<StateEnsemble<MODEL> >   EnsemblePtr_;
+  typedef EnsemblesCollection<MODEL>                 EnsemblesCollection_;
 
  public:
   LocalizationBUMP(const Geometry_ &, const eckit::Configuration &);
