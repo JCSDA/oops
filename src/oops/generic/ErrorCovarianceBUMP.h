@@ -162,7 +162,7 @@ template<typename MODEL>
 void ErrorCovarianceBUMP<MODEL>::randomize(Increment_ & dx) const {
   Log::trace() << "ErrorCovarianceBUMP<MODEL>::randomize starting" << std::endl;
   util::Timer timer(classname(), "randomize");
-  Log::info() << "ErrorCovarianceBUMP<MODEL>::randomize not implemented" << std::endl;
+  dx.random();
   Log::trace() << "ErrorCovarianceBUMP<MODEL>::randomize done" << std::endl;
 }
 
