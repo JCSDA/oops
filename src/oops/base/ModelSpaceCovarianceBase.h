@@ -80,14 +80,17 @@ class CovarianceFactory {
   static ModelSpaceCovarianceBase<MODEL> * create(const eckit::Configuration &,
                                                   const Geometry_ &, const Variables &,
                                                   const State_ &, const State_ &);
-  virtual ~CovarianceFactory() { makers_.clear(); }
+  virtual ~CovarianceFactory() { getMakers().clear(); }
  protected:
   explicit CovarianceFactory(const std::string &);
  private:
   virtual ModelSpaceCovarianceBase<MODEL> * make(const eckit::Configuration &,
                                                  const Geometry_ &, const Variables &,
                                                  const State_ &, const State_ &) = 0;
-  static std::map < std::string, CovarianceFactory<MODEL> * > makers_;
+  static std::map < std::string, CovarianceFactory<MODEL> * > & getMakers() {
+    static std::map < std::string, CovarianceFactory<MODEL> * > makers_;
+    return makers_;
+  }
 };
 
 // -----------------------------------------------------------------------------
@@ -109,17 +112,12 @@ class CovarMaker : public CovarianceFactory<MODEL> {
 // =============================================================================
 
 template <typename MODEL>
-std::map < std::string, CovarianceFactory<MODEL> * > CovarianceFactory<MODEL>::makers_;
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
 CovarianceFactory<MODEL>::CovarianceFactory(const std::string & name) {
-  if (makers_.find(name) != makers_.end()) {
+  if (getMakers().find(name) != getMakers().end()) {
     Log::error() << name << " already registered in covariance factory." << std::endl;
     ABORT("Element already registered in CovarianceFactory.");
   }
-  makers_[name] = this;
+  getMakers()[name] = this;
 }
 
 // -----------------------------------------------------------------------------
@@ -132,18 +130,17 @@ ModelSpaceCovarianceBase<MODEL>* CovarianceFactory<MODEL>::create(
                                                          const State_ & xb, const State_ & fg) {
   const std::string id = conf.getString("covariance");
   Log::trace() << "ModelSpaceCovarianceBase type = " << id << std::endl;
-  typename std::map<std::string, CovarianceFactory<MODEL>*>::iterator
-    j = makers_.find(id);
-  if (j == makers_.end()) {
-    Log::error() << id << " does not exist in covariance factory." << std::endl;
-    Log::error() << "Covariance factory contains " << makers_.size() << " elements:" << std::endl;
+  typename std::map<std::string, CovarianceFactory<MODEL>*>::iterator jcov = getMakers().find(id);
+  if (jcov == getMakers().end()) {
+    Log::error() << id << " does not exist in CovarianceFactory." << std::endl;
+    Log::error() << "CovarianceFactory has " << getMakers().size() << " elements:" << std::endl;
     for (typename std::map<std::string, CovarianceFactory<MODEL>*>::const_iterator
-         jj = makers_.begin(); jj != makers_.end(); ++jj) {
-       Log::error() << "A" << jj->first << "B" << std::endl;
+         jj = getMakers().begin(); jj != getMakers().end(); ++jj) {
+       Log::error() << "A " << jj->first << " B" << std::endl;
     }
     ABORT("Element does not exist in CovarianceFactory.");
   }
-  return (*j).second->make(conf, resol, vars, xb, fg);
+  return (*jcov).second->make(conf, resol, vars, xb, fg);
 }
 
 // =============================================================================

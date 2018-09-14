@@ -119,10 +119,17 @@ LinearVariableChangeBase<MODEL> * LinearVariableChangeFactory<MODEL>::create(
   const std::string id = conf.getString("varchange");
   typename std::map<std::string, LinearVariableChangeFactory<MODEL>*>::iterator
     jerr = getMakers().find(id);
+
   if (jerr == getMakers().end()) {
-    Log::error() << id << " does not exist in the variable change factory factory." << std::endl;
+    Log::error() << id << " does not exist in LinearVariableChangeFactory." << std::endl;
+    Log::error() << "Factory contains " << getMakers().size() << " elements:" << std::endl;
+    for (typename std::map<std::string, LinearVariableChangeFactory<MODEL>*>::const_iterator
+         jj = getMakers().begin(); jj !=  getMakers().end(); ++jj) {
+      Log::error() << "A " << jj->first << " variable change option" << std::endl;
+    }
     ABORT("Element does not exist in LinearVariableChangeFactory.");
   }
+
   LinearVariableChangeBase<MODEL> * ptr = jerr->second->make(bg, fg, geom, conf);
   Log::trace() << "LinearVariableChangeBase<MODEL>::create done" << std::endl;
   return ptr;
