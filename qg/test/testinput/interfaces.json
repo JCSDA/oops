@@ -48,13 +48,13 @@
        "lons": ["10.0","77.0"],
        "heights": ["0.25","0.75"],
        "Nrandom": "8",
-       "random_seed": "560921"
+       "random_seed": "5649021"
     },
     "Variables": {
       "variables": ["x"]
     },
     "InterpTest": {
-      "variables": ["x","q","u","v"]
+      "variables": ["x","u","v"]
     },
     "norm-file": "15.010355026",
     "norm-gen": "5.6497709763346515",

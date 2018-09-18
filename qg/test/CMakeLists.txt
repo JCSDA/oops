@@ -37,7 +37,6 @@ list( APPEND qg_test_input
   testinput/test.json
   testinput/truth.json
   testinput/test_op_obs.json
-  testinput/analytic_init.json
   testinput/analytic_init_fc.json
 )
 
@@ -186,12 +185,6 @@ ecbuild_add_test( TARGET  test_qg_state
                   BOOST
                   SOURCES executables/TestState.cc
                   ARGS    "testinput/interfaces.json"
-                  LIBS    qg )
-
-ecbuild_add_test( TARGET  test_qg_analytic_init
-                  BOOST
-                  SOURCES executables/TestState.cc
-                  ARGS    "testinput/analytic_init.json"
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_modelaux

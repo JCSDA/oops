@@ -759,7 +759,6 @@ subroutine analytic_init(fld, geom, config, vdate)
 
   deg_to_rad = pi/180.0_kind_real
 
-  write(*,*) "MSM: NEW GEOMETRY DEFINED"
   !--------------------------------------
   init_option: select case (ic)
 

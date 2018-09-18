@@ -239,6 +239,8 @@ integer :: jo, jv
 call qg_goms_registry%get(c_key_self, self)
 call qg_goms_registry%get(c_key_other, other)
 do jo=1,self%nobs
+  write(*,*) "qg_gom_diff u: ",jo,self%values(3,jo),other%values(3,jo)
+  write(*,*) "qg_gom_diff v: ",jo,self%values(4,jo),other%values(4,jo)
   do jv=1,self%nvar
     self%values(jv,jo) = self%values(jv,jo) - other%values(jv,jo)
   enddo
@@ -278,7 +280,6 @@ do jvar = 1, self%nvar
     endif
   enddo
 enddo
-write(*,*)'qg_gom_divide ii = ',ii, self%nvar*self%nobs, tol
 
 end subroutine c_qg_gom_divide
 
@@ -296,6 +297,7 @@ call qg_goms_registry%get(c_key_self, self)
 rms=0.0_kind_real
 do jo=1,self%nobs
   do jv=1,self%nvar
+write(*,*) "MSM: ",jv,jo,self%values(jv,jo)
     rms=rms+self%values(jv,jo)**2
   enddo
 enddo
