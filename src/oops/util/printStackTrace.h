@@ -10,7 +10,7 @@
 
 /// Print backtrace for debugging
 
-#define _GNU_SOURCE
+// #define _GNU_SOURCE
 // #include <boost/stacktrace.hpp>
 
 #include "oops/util/Logger.h"
