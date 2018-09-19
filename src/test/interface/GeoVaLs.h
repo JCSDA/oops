@@ -52,10 +52,7 @@ class GeoVaLsFixture : private boost::noncopyable {
     tbgn_.reset(new util::DateTime(TestEnvironment::config().getString("window_begin")));
     tend_.reset(new util::DateTime(TestEnvironment::config().getString("window_end")));
 
-    // Add in a mark so that the underlying code knows this is a test.
-    eckit::LocalConfiguration conf(TestEnvironment::config(), "Observations");
-    conf.set("TestInProgress", 1);
-
+    const eckit::LocalConfiguration conf(TestEnvironment::config(), "Observations");
     ospaces_.reset(new ObsSpaces_(conf, *tbgn_, *tend_));
   }
 
