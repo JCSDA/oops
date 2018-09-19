@@ -239,8 +239,6 @@ integer :: jo, jv
 call qg_goms_registry%get(c_key_self, self)
 call qg_goms_registry%get(c_key_other, other)
 do jo=1,self%nobs
-  write(*,*) "qg_gom_diff u: ",jo,self%values(3,jo),other%values(3,jo)
-  write(*,*) "qg_gom_diff v: ",jo,self%values(4,jo),other%values(4,jo)
   do jv=1,self%nvar
     self%values(jv,jo) = self%values(jv,jo) - other%values(jv,jo)
   enddo
@@ -297,7 +295,6 @@ call qg_goms_registry%get(c_key_self, self)
 rms=0.0_kind_real
 do jo=1,self%nobs
   do jv=1,self%nvar
-write(*,*) "MSM: ",jv,jo,self%values(jv,jo)
     rms=rms+self%values(jv,jo)**2
   enddo
 enddo
@@ -488,9 +485,10 @@ type(qg_locs), pointer :: locs
 
 character(len=30) :: ic
 character(len=1024) :: buf
-real(kind_real) :: d1, d2, height(2), klon, klat, kz
+real(kind_real) :: d1, d2, height(2), klon, klat, kx, ky, kz, xx, yy
 real(kind_real) :: pi = acos(-1.0_kind_real)
-real(kind_real) :: p0,u0,v0,w0,t0,phis0,ps0,rho0,hum0,q1,q2,q3,q4
+real(kind_real) :: p0,u0,v0,x0,w0,t0,phis0,ps0,rho0,hum0,q1,q2,q3,q4
+real(kind_real) :: lat_range(2),lon_range(2)
 integer :: iloc, ivar
 
 ! Get F90 Locations object
@@ -520,15 +518,29 @@ height(1) = d2 + 0.5_kind_real*d1
 
 ! Now loop over locations
 
+! These are only needed for the dcmip initial conditions, which are not currently used for testing,
+! the lat range and lon range are hardwired in for now: see qg_geom_mod.F90 for further details
+lat_range = (/ -28.0_kind_real, 28.0_kind_real /)
+lon_range = (/ 0.0_kind_real, 107.0_kind_real /)
+
 do iloc = 1, locs%nloc
 
    ! First get the locations and convert to latitude (rad), longiude (rad) and height (meters)
-
-   klon = (locs%xyz(1,iloc)*2.0_kind_real - 1.0_kind_real)*pi
-   klat = (locs%xyz(2,iloc) - 0.5_kind_real)*pi
+   klat = (lat_range(1) + locs%xyz(2,iloc)*(lat_range(2)-lat_range(1)))*pi/180.0_kind_real
+   klon = (lon_range(1) + locs%xyz(1,iloc)*(lon_range(2)-lon_range(1)))*pi/180.0_kind_real
    kz   = height(nint(locs%xyz(3,iloc)))
 
    init_option: select case (ic)
+
+   case ("large-vortices")
+
+      xx = locs%xyz(1,iloc)
+      yy = locs%xyz(2,iloc)
+      kx = pi
+      ky = 2.0_kind_real * pi
+      u0 = -ky*sin(kx*xx)*cos(ky*yy)
+      v0 =  kx*cos(kx*xx)*sin(ky*yy)
+      x0 =     sin(kx*xx)*sin(ky*yy) ! streamfunction
 
    case ("dcmip-test-1-1")
       

@@ -721,7 +721,8 @@ subroutine analytic_init(fld, geom, config, vdate)
   character(len=20) :: sdate
   character(len=1024)  :: buf
   real(kind=kind_real) :: d1, d2, height(2), z, f1, f2, xdum(2)
-  real(kind=kind_real) :: deltax,deltay,deg_to_rad,rlat,rlon
+  real(kind=kind_real) :: deltax,deltay,deg_to_rad,rlat,rlon,xx,yy,kx,ky
+  real(kind=kind_real) :: latrange, lonrange, sclx, scly
   real(kind=kind_real) :: p0,u0,v0,w0,t0,phis0,ps0,rho0,hum0,q1,q2,q3,q4
   real(kind=kind_real), allocatable :: rs(:,:)
   integer :: ix, iy, il
@@ -732,7 +733,7 @@ subroutine analytic_init(fld, geom, config, vdate)
      ! this is mainly for backward compatibility
      ic = "baroclinic-instability"
   endif
-
+  
   call fckit_log%warning("qg_fields:analytic_init: "//IC)
   sdate = config_get_string(config,len(sdate),"date")
   write(buf,*) 'validity date is: '//sdate
@@ -764,6 +765,43 @@ subroutine analytic_init(fld, geom, config, vdate)
 
      case ("baroclinic-instability")
         call invent_state(fld,config)   
+
+     case ("large-vortices")
+
+        latrange = geom%lat(geom%ny) - geom%lat(1)
+        lonrange = geom%lon(geom%nx) - geom%lon(1)
+        if (geom%lon(geom%nx) < geom%lon(1)) lonrange=lonrange+360.0_kind_real
+
+        ! In interp_tl, the effective grid spacing is assumed to be dx = 1/nx
+        ! similarly for dy.  This is a scale factor to take this into account
+        sclx = (geom%nx-1.0_kind_real)/geom%nx
+        scly = (geom%ny-1.0_kind_real)/geom%ny
+        
+        kx = pi 
+        ky = 2.0_kind_real * pi 
+        
+        do il = 1, fld%nl
+           z = height(il)
+           do iy = 1,fld%geom%ny ; do ix = 1, fld%geom%nx 
+              ! convert lat and lon to normalized x,y coordinate between 0 and 1   
+              xx = sclx*(geom%lon(ix)-geom%lon(1))/lonrange
+              if (geom%lon(ix) < geom%lon(1)) xx=xx+sclx*360.0_kind_real/lonrange
+              yy = scly*(geom%lat(iy)-geom%lat(1))/latrange
+
+              fld%x(ix,iy,il) = sin(kx*xx)*sin(ky*yy)
+              fld%u(ix,iy,il) = -ky*sin(kx*xx)*cos(ky*yy)
+              fld%v(ix,iy,il) =  kx*cos(kx*xx)*sin(ky*yy)
+              
+           enddo; enddo
+        enddo
+
+        if (fld%lbc) then
+           call calc_pv(geom%nx,geom%ny,fld%q,fld%x,fld%x_north,fld%x_south,&
+                        f1,f2,deltax,deltay,bet,rs,fld%lbc)
+        else
+           call calc_pv(geom%nx,geom%ny,fld%q,fld%x,xdum,xdum,&
+                        f1,f2,deltax,deltay,bet,rs,fld%lbc)
+        endif
 
      case ("dcmip-test-1-1")
 
