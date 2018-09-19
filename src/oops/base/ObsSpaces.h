@@ -77,9 +77,6 @@ ObsSpaces<MODEL>::ObsSpaces(const eckit::Configuration & conf,
   std::vector<eckit::LocalConfiguration> obsconf;
   conf.get("ObsTypes", obsconf);
   for (std::size_t jj = 0; jj < obsconf.size(); ++jj) {
-    // Pass down the test in progress mark
-    if (conf.has("TestInProgress")) { obsconf[jj].set("TestInProgress", 1); }
-
     Log::debug() << "ObsSpaces::ObsSpaces : conf " << obsconf[jj] << std::endl;
     const std::string otype = obsconf[jj].getString("ObsType");
     ASSERT(types_.count(otype) == 0);
