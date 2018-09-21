@@ -954,17 +954,19 @@ implicit none
 class(bump_type),intent(inout) :: bump !< BUMP
 
 ! Release memory
-call bump%bpar%dealloc
 call bump%cmat%dealloc(bump%bpar)
 call bump%ens1%dealloc
 call bump%ens1u%dealloc
 call bump%ens2%dealloc
-call bump%geom%dealloc
 call bump%io%dealloc
 call bump%lct%dealloc(bump%bpar)
 call bump%nicas%dealloc(bump%nam,bump%geom,bump%bpar)
 call bump%obsop%dealloc
 call bump%vbal%dealloc(bump%nam)
+
+! Final memory release (because objects required for previous memory releases)
+call bump%bpar%dealloc
+call bump%geom%dealloc
 
 end subroutine bump_dealloc
 

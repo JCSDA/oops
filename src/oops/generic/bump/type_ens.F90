@@ -86,6 +86,7 @@ class(ens_type),intent(inout) :: ens !< Ensemble
 
 ! Release memory
 if (allocated(ens%fld)) deallocate(ens%fld)
+if (allocated(ens%mean)) deallocate(ens%mean)
 
 end subroutine ens_dealloc
 

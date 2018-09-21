@@ -262,6 +262,8 @@ if (allocated(nicas_blk%mask_c2)) deallocate(nicas_blk%mask_c2)
 if (allocated(nicas_blk%c1l1_to_s)) deallocate(nicas_blk%c1l1_to_s)
 if (allocated(nicas_blk%c1_to_proc)) deallocate(nicas_blk%c1_to_proc)
 if (allocated(nicas_blk%s_to_proc)) deallocate(nicas_blk%s_to_proc)
+if (allocated(nicas_blk%proc_to_nc1a)) deallocate(nicas_blk%proc_to_nc1a)
+if (allocated(nicas_blk%proc_to_nsa)) deallocate(nicas_blk%proc_to_nsa)
 if (allocated(nicas_blk%lcheck_c1a)) deallocate(nicas_blk%lcheck_c1a)
 if (allocated(nicas_blk%lcheck_c1b)) deallocate(nicas_blk%lcheck_c1b)
 if (allocated(nicas_blk%lcheck_sa)) deallocate(nicas_blk%lcheck_sa)
@@ -277,6 +279,9 @@ if (allocated(nicas_blk%c1_to_c1b)) deallocate(nicas_blk%c1_to_c1b)
 if (allocated(nicas_blk%c1bl1_to_sb)) deallocate(nicas_blk%c1bl1_to_sb)
 if (allocated(nicas_blk%interph_lg)) deallocate(nicas_blk%interph_lg)
 if (allocated(nicas_blk%interps_lg)) deallocate(nicas_blk%interps_lg)
+if (allocated(nicas_blk%c1a_to_c0a)) deallocate(nicas_blk%c1a_to_c0a)
+if (allocated(nicas_blk%sa_to_c0a)) deallocate(nicas_blk%sa_to_c0a)
+if (allocated(nicas_blk%sa_to_l0)) deallocate(nicas_blk%sa_to_l0)
 if (allocated(nicas_blk%sa_to_sb)) deallocate(nicas_blk%sa_to_sb)
 if (allocated(nicas_blk%sc_to_sb)) deallocate(nicas_blk%sc_to_sb)
 if (allocated(nicas_blk%sa_to_s)) deallocate(nicas_blk%sa_to_s)
@@ -288,10 +293,17 @@ if (allocated(nicas_blk%s_to_sc)) deallocate(nicas_blk%s_to_sc)
 if (allocated(nicas_blk%sbb_to_s)) deallocate(nicas_blk%sbb_to_s)
 if (allocated(nicas_blk%c1_to_c1bb)) deallocate(nicas_blk%c1_to_c1bb)
 if (allocated(nicas_blk%c1bb_to_c1)) deallocate(nicas_blk%c1bb_to_c1)
+if (allocated(nicas_blk%rh_c1)) deallocate(nicas_blk%rh_c1)
+if (allocated(nicas_blk%rv_c1)) deallocate(nicas_blk%rv_c1)
+if (allocated(nicas_blk%distnorm)) deallocate(nicas_blk%distnorm)
+if (allocated(nicas_blk%distnormv)) deallocate(nicas_blk%distnormv)
+if (allocated(nicas_blk%rfac)) deallocate(nicas_blk%rfac)
+if (allocated(nicas_blk%coef)) deallocate(nicas_blk%coef)
 if (allocated(nicas_blk%sc_nor_to_s)) deallocate(nicas_blk%sc_nor_to_s)
 if (allocated(nicas_blk%s_to_sc_nor)) deallocate(nicas_blk%s_to_sc_nor)
 if (allocated(nicas_blk%sb_to_sc_nor)) deallocate(nicas_blk%sb_to_sc_nor)
 call nicas_blk%c_nor%dealloc
+call nicas_blk%kdtree%dealloc
 if (allocated(nicas_blk%sa_to_sc)) deallocate(nicas_blk%sa_to_sc)
 if (allocated(nicas_blk%sb_to_sc)) deallocate(nicas_blk%sb_to_sc)
 call nicas_blk%c%dealloc
@@ -325,6 +337,8 @@ if (allocated(nicas_blk%coef_ens)) deallocate(nicas_blk%coef_ens)
 if (allocated(nicas_blk%sb_to_c1b)) deallocate(nicas_blk%sb_to_c1b)
 call nicas_blk%com_AB%dealloc
 call nicas_blk%com_AC%dealloc
+call nicas_blk%com_AD%dealloc
+call nicas_blk%com_ADinv%dealloc
 
 end subroutine nicas_blk_dealloc
 
