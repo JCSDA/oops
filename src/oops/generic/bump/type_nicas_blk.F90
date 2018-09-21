@@ -118,13 +118,13 @@ type nicas_blk_type
    integer,allocatable :: c1bb_to_c1(:)         !< Subset Sc1, halo B (extended) to global
 
    ! Convolution parameters
-   real(kind_real) :: rhmax                        !<
-   real(kind_real),allocatable :: rh_c1(:,:)       !<
-   real(kind_real),allocatable :: rv_c1(:,:)       !<
-   real(kind_real),allocatable :: distnorm(:,:,:)  !<
+   real(kind_real) :: rhmax                        !< TODO
+   real(kind_real),allocatable :: rh_c1(:,:)       !< TODO
+   real(kind_real),allocatable :: rv_c1(:,:)       !< TODO
+   real(kind_real),allocatable :: distnorm(:,:,:)  !< TODO
    real(kind_real),allocatable :: distnormv(:,:,:) !< TODO
-   real(kind_real),allocatable :: rfac(:,:,:)      !<
-   real(kind_real),allocatable :: coef(:,:,:)      !<
+   real(kind_real),allocatable :: rfac(:,:,:)      !< TODO
+   real(kind_real),allocatable :: coef(:,:,:)      !< TODO
 
    ! Extended data for normalization computation
    integer :: nsc_nor                           !< Number of subgrid nodes on halo C (extended for normalization)

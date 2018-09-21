@@ -24,6 +24,7 @@ type cmat_blk_type
    integer :: ib                                     !< Block index
    character(len=1024) :: name                       !< Name
    logical :: double_fit                             !< Double fit
+   logical :: anisotropic                            !< Anisoptropic tensor
 
    ! Read data
    real(kind_real),allocatable :: oops_coef_ens(:,:) !< OOPS ensemble coefficient
@@ -43,6 +44,11 @@ type cmat_blk_type
    real(kind_real),allocatable :: rhs(:,:)           !< Fit support radius  for sampling
    real(kind_real),allocatable :: rvs(:,:)           !< Fit support radius, for sampling
    real(kind_real) :: wgt                            !< Block weight
+   real(kind_real),allocatable :: H11(:,:)           !< LCT component 11
+   real(kind_real),allocatable :: H22(:,:)           !< LCT component 22
+   real(kind_real),allocatable :: H33(:,:)           !< LCT component 33
+   real(kind_real),allocatable :: H12(:,:)           !< LCT component 12
+   real(kind_real),allocatable :: Hcoef(:,:)         !< LCT scales coefficients
    real(kind_real),allocatable :: displ_lon(:,:,:)   !< Displaced longitude
    real(kind_real),allocatable :: displ_lat(:,:,:)   !< Displaced latitude
 contains
@@ -88,6 +94,13 @@ if (bpar%diag_block(ib)) then
    end if
    allocate(cmat_blk%rhs(geom%nc0a,geom%nl0))
    allocate(cmat_blk%rvs(geom%nc0a,geom%nl0))
+   if (cmat_blk%anisotropic) then
+      allocate(cmat_blk%H11(geom%nc0a,geom%nl0))
+      allocate(cmat_blk%H22(geom%nc0a,geom%nl0))
+      allocate(cmat_blk%H33(geom%nc0a,geom%nl0))
+      allocate(cmat_blk%H12(geom%nc0a,geom%nl0))
+      allocate(cmat_blk%Hcoef(geom%nc0a,geom%nl0))
+   end if
 
    ! Initialization
    call msr(cmat_blk%coef_ens)
@@ -101,7 +114,15 @@ if (bpar%diag_block(ib)) then
    call msr(cmat_blk%rhs)
    call msr(cmat_blk%rvs)
    call msr(cmat_blk%wgt)
+   if (cmat_blk%anisotropic) then
+      call msr(cmat_blk%H11)
+      call msr(cmat_blk%H22)
+      call msr(cmat_blk%H33)
+      call msr(cmat_blk%H12)
+      call msr(cmat_blk%Hcoef)
+   end if
 end if
+
 
 if ((ib==bpar%nbe).and.nam%displ_diag) then
    ! Allocation
@@ -140,6 +161,11 @@ if (allocated(cmat_blk%rv_rfac)) deallocate(cmat_blk%rv_rfac)
 if (allocated(cmat_blk%rv_coef)) deallocate(cmat_blk%rv_coef)
 if (allocated(cmat_blk%rhs)) deallocate(cmat_blk%rhs)
 if (allocated(cmat_blk%rvs)) deallocate(cmat_blk%rvs)
+if (allocated(cmat_blk%H11)) deallocate(cmat_blk%H11)
+if (allocated(cmat_blk%H22)) deallocate(cmat_blk%H22)
+if (allocated(cmat_blk%H33)) deallocate(cmat_blk%H33)
+if (allocated(cmat_blk%H12)) deallocate(cmat_blk%H12)
+if (allocated(cmat_blk%Hcoef)) deallocate(cmat_blk%Hcoef)
 if (allocated(cmat_blk%displ_lon)) deallocate(cmat_blk%displ_lon)
 if (allocated(cmat_blk%displ_lat)) deallocate(cmat_blk%displ_lat)
 

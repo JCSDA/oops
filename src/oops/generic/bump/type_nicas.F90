@@ -2157,7 +2157,6 @@ nam%method = 'loc_norm'
 
 ! Allocation
 call nicas_test%alloc(mpl,nam,bpar,'nicas_test')
-call cmat_save%alloc(nam,geom,bpar,'cmat_save')
 
 ! Call hdiag driver
 call cmat_save%run_hdiag(mpl,rng,nam,geom,bpar,io,ens)

@@ -10,7 +10,7 @@
 !----------------------------------------------------------------------
 module type_lct
 
-use tools_const, only: req,reqkm,pi
+use tools_const, only: reqkm,pi
 use tools_kinds, only: kind_real
 use tools_missing, only: msr,isnotmsr,isallnotmsr
 use type_bpar, only: bpar_type
@@ -537,7 +537,7 @@ do ib=1,bpar%nb
       call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_D22_'//iscaleschar,lct%blk(ib)%D22(:,:,iscales))
       call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_D33_'//iscaleschar,lct%blk(ib)%D33(:,:,iscales))
       if (lct%blk(ib)%ncomp(iscales)==4) call io%fld_write(mpl,nam,geom,filename, &
-    & trim(nam%varname(iv))//'_D12_'//iscaleschar,fld(:,:,4)*req**2)
+    & trim(nam%varname(iv))//'_D12_'//iscaleschar,fld(:,:,4))
       call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_coef_'//iscaleschar,lct%blk(ib)%Dcoef(:,:,iscales))
       call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_Lh_'//iscaleschar,lct%blk(ib)%DLh(:,:,iscales))
 
