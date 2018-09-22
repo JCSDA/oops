@@ -133,17 +133,18 @@ contains
 ! Subroutine: hdata_alloc
 !> Purpose: HDIAG data allocation
 !----------------------------------------------------------------------
-subroutine hdata_alloc(hdata,nam,geom)
+subroutine hdata_alloc(hdata,mpl,nam,geom)
 
 implicit none
 
 ! Passed variables
 class(hdata_type),intent(inout) :: hdata !< HDIAG data
+type(mpl_type),intent(in) :: mpl         !< MPI data
 type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 
 ! Allocation
-allocate(hdata%rh_c0(geom%nc0,geom%nl0))
+if (mpl%main) allocate(hdata%rh_c0(geom%nc0,geom%nl0))
 allocate(hdata%c1_to_c0(nam%nc1))
 allocate(hdata%c1l0_log(nam%nc1,geom%nl0))
 allocate(hdata%c1c3_to_c0(nam%nc1,nam%nc3))
@@ -164,7 +165,7 @@ if (nam%displ_diag) then
 end if
 
 ! Initialization
-call msr(hdata%rh_c0)
+if (mpl%main) call msr(hdata%rh_c0)
 call msi(hdata%c1_to_c0)
 hdata%c1l0_log = .false.
 call msi(hdata%c1c3_to_c0)
@@ -728,8 +729,8 @@ integer :: ios,ic0,il0,ic1,ic2,ildw,jc3,il0i,jc1,kc1,nc2_eff
 integer,allocatable :: vbot(:),vtop(:),nn_c1_index(:)
 real(kind_real) :: lon_c1(nam%nc1),lat_c1(nam%nc1)
 real(kind_real) :: lon_c2(nam%nc2),lat_c2(nam%nc2)
-real(kind_real) :: rh_c0(geom%nc0),rh_c0a(geom%nc0a,geom%nl0),nn_dist(1)
-real(kind_real),allocatable :: nn_c1_dist(:)
+real(kind_real) :: rh_c0a(geom%nc0a,geom%nl0),nn_dist(1)
+real(kind_real),allocatable :: rh_c1(:),nn_c1_dist(:)
 logical :: mask_c1(nam%nc1),mask_c2(nam%nc2)
 character(len=1024) :: filename
 type(kdtree_type) :: kdtree
@@ -742,7 +743,7 @@ if (nam%nc1>maxval(geom%nc0_mask)) then
 end if
 
 ! Allocation
-call hdata%alloc(nam,geom)
+call hdata%alloc(mpl,nam,geom)
 
 ! Read or compute sampling data
 ios = 1
@@ -769,11 +770,12 @@ if (nam%new_vbal.or.nam%new_lct.or.(nam%new_hdiag.and.(nam%var_diag.or.nam%local
       if (mpl%main) then
          write(mpl%info,'(a7,a)',advance='no') '','Define subsampling:'
          call flush(mpl%info)
+         allocate(rh_c1(nam%nc1))
          lon_c1 = geom%lon(hdata%c1_to_c0)
          lat_c1 = geom%lat(hdata%c1_to_c0)
          mask_c1 = .true.
-         rh_c0 = 1.0
-         call rng%initialize_sampling(mpl,nam%nc1,lon_c1,lat_c1,mask_c1,rh_c0,nam%ntry,nam%nrep,nam%nc2,hdata%c2_to_c1)
+         rh_c1 = 1.0
+         call rng%initialize_sampling(mpl,nam%nc1,lon_c1,lat_c1,mask_c1,rh_c1,nam%ntry,nam%nrep,nam%nc2,hdata%c2_to_c1)
       else
          write(mpl%info,'(a7,a)') '','Define subsampling'
          call flush(mpl%info)
@@ -2107,7 +2109,7 @@ call mpl%allreduce_sum(nmsr,nmsr_tot)
 
 if (nmsr_tot>0) then
    ! Allocation
-   allocate(diag_glb(nam%nc2))
+   if (mpl%main) allocate(diag_glb(nam%nc2))
 
    ! Local to global
    call mpl%loc_to_glb(hdata%nc2a,diag,nam%nc2,hdata%c2_to_proc,hdata%c2_to_c2a,.false.,diag_glb)
