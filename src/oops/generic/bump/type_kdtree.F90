@@ -121,11 +121,13 @@ implicit none
 ! Passed variables
 class(kdtree_type),intent(inout) :: kdtree !< KD-tree
 
-! Delete KD-tree
-call kdtree2_destroy(kdtree%tp)
+if (allocated(kdtree%from_eff)) then
+   ! Deallocation
+   deallocate(kdtree%from_eff)
 
-! Deallocation
-if (allocated(kdtree%from_eff)) deallocate(kdtree%from_eff)
+   ! Delete KD-tree
+   call kdtree2_destroy(kdtree%tp)
+end if
 
 end subroutine kdtree_dealloc
 
