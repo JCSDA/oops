@@ -365,6 +365,12 @@ if (allocated(bump%cmat%blk)) then
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
    write(bump%mpl%info,'(a)') '--- Setup C matrix sampling'
    call bump%cmat%setup_sampling(bump%nam,bump%geom,bump%bpar)
+
+   ! Write C matrix data
+   write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%info,'(a)') '--- Write C matrix data'
+   call flush(bump%mpl%info)
+   call bump%cmat%write(bump%mpl,bump%nam,bump%geom,bump%bpar,bump%io)
 end if
 
 if (bump%nam%new_nicas) then
