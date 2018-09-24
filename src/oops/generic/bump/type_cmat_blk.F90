@@ -123,7 +123,6 @@ if (bpar%diag_block(ib)) then
    end if
 end if
 
-
 if ((ib==bpar%nbe).and.nam%displ_diag) then
    ! Allocation
    allocate(cmat_blk%displ_lon(geom%nc0a,geom%nl0,2:nam%nts))
@@ -153,6 +152,12 @@ implicit none
 class(cmat_blk_type),intent(inout) :: cmat_blk !< C matrix data block
 
 ! Release memory
+if (allocated(cmat_blk%oops_coef_ens)) deallocate(cmat_blk%oops_coef_ens)
+if (allocated(cmat_blk%oops_coef_sta)) deallocate(cmat_blk%oops_coef_sta)
+if (allocated(cmat_blk%oops_rh)) deallocate(cmat_blk%oops_rh)
+if (allocated(cmat_blk%oops_rv)) deallocate(cmat_blk%oops_rv)
+if (allocated(cmat_blk%oops_rv_rfac)) deallocate(cmat_blk%oops_rv_rfac)
+if (allocated(cmat_blk%oops_rv_coef)) deallocate(cmat_blk%oops_rv_coef)
 if (allocated(cmat_blk%coef_ens)) deallocate(cmat_blk%coef_ens)
 if (allocated(cmat_blk%coef_sta)) deallocate(cmat_blk%coef_sta)
 if (allocated(cmat_blk%rh)) deallocate(cmat_blk%rh)

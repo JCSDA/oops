@@ -674,6 +674,9 @@ call linop%interp(mpl,mesh,kdtree,n_src_eff,mask_src_eff,n_dst,lon_dst,lat_dst,m
 linop%n_src = n_src
 linop%col = src_eff_to_src(linop%col)
 
+! Release memory
+call kdtree%dealloc
+
 end subroutine linop_interp_from_lat_lon
 
 !----------------------------------------------------------------------
@@ -1190,6 +1193,7 @@ if (count(missing)>0) then
    linop%S = interp_tmp%S(1:linop%n_s)
 
    ! Release memory
+   call kdtree%dealloc
    call interp_tmp%dealloc
 end if
 

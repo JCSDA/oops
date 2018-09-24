@@ -17,3 +17,7 @@ ecbuild_add_executable( TARGET  l95_makeobs.x
 ecbuild_add_executable( TARGET  l95_hofx.x
                         SOURCES HofX.cc
                         LIBS    lorenz95 )
+
+ecbuild_add_executable( TARGET  l95_enshofx.x
+                        SOURCES EnsHofX.cc
+                        LIBS    lorenz95 )

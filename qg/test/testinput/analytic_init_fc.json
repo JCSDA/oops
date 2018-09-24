@@ -5,6 +5,7 @@
     "bc": "0"
   },
   "model": {
+    "name": "QG",
     "tstep": "PT10M",
     "top_layer_depth": "6000.0",
     "bottom_layer_depth": "6000.0",

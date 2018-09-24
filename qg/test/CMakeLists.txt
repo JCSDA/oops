@@ -20,6 +20,7 @@ list( APPEND qg_test_input
   testinput/dirac.bumpcov.json
   testinput/dirac.qgcov.json
   testinput/dirac.bumploc.json
+  testinput/enshofx.json
   testinput/parametersbump.cov.json
   testinput/parametersbump.lct.json
   testinput/parametersbump.loc.json
@@ -61,6 +62,7 @@ list( APPEND qg_testoutput
   testoutput/dirac.bumpcov.test
   testoutput/dirac.qgcov.test
   testoutput/dirac.bumploc.test
+  testoutput/enshofx.test
   testoutput/parametersbump.cov.test
   testoutput/parametersbump.lct.test
   testoutput/parametersbump.loc.test
@@ -165,6 +167,12 @@ ecbuild_add_test( TARGET test_qg_makeobsbias
 ecbuild_add_test( TARGET  test_qg_geometry
                   BOOST
                   SOURCES executables/TestGeometry.cc
+                  ARGS    "testinput/interfaces.json"
+                  LIBS    qg )
+
+ecbuild_add_test( TARGET  test_qg_geometry_iterator
+                  BOOST
+                  SOURCES executables/TestGeometryIterator.cc
                   ARGS    "testinput/interfaces.json"
                   LIBS    qg )
 
@@ -323,6 +331,13 @@ ecbuild_add_test( TARGET test_qg_hofx
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_hofx.x testinput/hofx.json"
                        testoutput/hofx.test
                   DEPENDS qg_hofx.x )
+
+ecbuild_add_test( TARGET test_qg_enshofx
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_enshofx.x testinput/enshofx.json"
+                       testoutput/enshofx.test
+                  DEPENDS qg_enshofx.x )
 
 ecbuild_add_test( TARGET test_qg_3dvar
                   TYPE SCRIPT

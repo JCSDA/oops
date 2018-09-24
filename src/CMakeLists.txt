@@ -77,17 +77,19 @@ oops/base/Departures.h
 oops/base/DiagonalMatrix.h
 oops/base/DolphChebyshev.h
 oops/base/DolphChebyshev.cc
-oops/base/Ensemble.h
 oops/base/EnsembleCovariance.h
 oops/base/EnsemblesCollection.h
 oops/base/FilterBase.h
 oops/base/GeneralizedDepartures.h
+oops/base/GeoLocation.h
 oops/base/GeoVaLsWriter.h
 oops/base/HybridCovariance.h
 oops/base/IdentityMatrix.h
 oops/base/InterpolatorTLAD.h
 oops/base/LinearObsOperators.h
+oops/base/ModelBase.h
 oops/base/ModelSpaceCovarianceBase.h
+oops/base/ObsEnsemble.h
 oops/base/ObsErrors.h
 oops/base/ObsFilter.h
 oops/base/ObsFilters.h
@@ -102,6 +104,7 @@ oops/base/PostProcessor.h
 oops/base/PostProcessorTLAD.h
 oops/base/PostTimer.h
 oops/base/PostTimer.cc
+oops/base/StateEnsemble.h
 oops/base/StateInfo.h
 oops/base/StateWriter.h
 oops/base/TrajectorySaver.h
@@ -121,15 +124,17 @@ oops/generic/ErrorCovarianceBUMP.h
 oops/generic/IdVariableChange.h
 oops/generic/LocalizationBUMP.h
 oops/generic/ObsErrorDiag.h
+oops/generic/PseudoModel.h
 oops/generic/UnstructuredGrid.cc
 oops/generic/UnstructuredGrid.h
 oops/generic/oobump_f.h
 oops/generic/oobump_mod.F90
 oops/generic/dcmip_initial_conditions_test_1_2_3_v5.f90
 oops/generic/dcmip_initial_conditions_test_4_v3.f90
-oops/generic/instantiateLocalizationFactory.h
-oops/generic/instantiateObsErrorFactory.h
 oops/generic/instantiateLinearVariableChangeFactory.h
+oops/generic/instantiateLocalizationFactory.h
+oops/generic/instantiateModelFactory.h
+oops/generic/instantiateObsErrorFactory.h
 oops/generic/unstructured_grid_f.h
 oops/generic/unstructured_grid_mod.F90
 oops/generic/StatsVariableChange.h
@@ -184,6 +189,7 @@ oops/generic/bump/external/tools_stripack.F90
 
 oops/interface/ErrorCovariance.h
 oops/interface/Geometry.h
+oops/interface/GeometryIterator.h
 oops/interface/GeoVaLs.h
 oops/interface/Increment.h
 oops/interface/InterpolatorTraj.h
@@ -214,6 +220,7 @@ oops/parallel/mpi/mpi.cc
 oops/runs/Application.h
 oops/runs/Dirac.h
 oops/runs/EnsForecasts.h
+oops/runs/EnsHofX.h
 oops/runs/EstimateParams.h
 oops/runs/ExternalDFI.h
 oops/runs/Forecast.h
@@ -310,7 +317,7 @@ function(generate_fortran_bindings output filename)
 endfunction()
 
 ecbuild_add_library( TARGET     oops
-                     SOURCES    
+                     SOURCES
                                 ${FORTRAN_BINDINGS}
                                 ${oops_src_files}
                      LIBS       ${LAPACK_LIBRARIES} ${NETCDF_LIBRARIES} fckit eckit_mpi eckit

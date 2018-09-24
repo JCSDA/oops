@@ -8,8 +8,8 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef OOPS_BASE_ENSEMBLE_H_
-#define OOPS_BASE_ENSEMBLE_H_
+#ifndef OOPS_BASE_STATEENSEMBLE_H_
+#define OOPS_BASE_STATEENSEMBLE_H_
 
 #include <string>
 #include <vector>
@@ -35,7 +35,7 @@ namespace oops {
 
 /// Ensemble
 
-template<typename MODEL> class Ensemble {
+template<typename MODEL> class StateEnsemble {
   typedef LinearVariableChangeBase<MODEL>  LinearVariableChangeBase_;
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
@@ -46,10 +46,10 @@ template<typename MODEL> class Ensemble {
 
  public:
 /// Constructor
-  Ensemble(const util::DateTime &, const eckit::Configuration &);
+  StateEnsemble(const util::DateTime &, const eckit::Configuration &);
 
 /// Destructor
-  virtual ~Ensemble() {}
+  virtual ~StateEnsemble() {}
 
   /// Accessors
   unsigned int size() const {
@@ -80,18 +80,20 @@ template<typename MODEL> class Ensemble {
 // ====================================================================================
 
 template<typename MODEL>
-Ensemble<MODEL>::Ensemble(const util::DateTime & validTime, const eckit::Configuration & conf)
+StateEnsemble<MODEL>::StateEnsemble(const util::DateTime & validTime,
+                                    const eckit::Configuration & conf)
   : config_(conf), rank_(conf.getInt("members")), validTime_(validTime),
     vars_(eckit::LocalConfiguration(conf, "variables")),
     resol_(), ensemblePerturbs_()
 {
-  Log::trace() << "Ensemble:contructor done" << std::endl;
+  Log::trace() << "StateEnsemble:contructor done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void Ensemble<MODEL>::linearize(const State_ & xb, const State_ & fg, const Geometry_ & resol) {
+void StateEnsemble<MODEL>::linearize(const State_ & xb, const State_ & fg,
+                                     const Geometry_ & resol) {
   ASSERT(xb.validTime() == validTime_);
   resol_.reset(new Geometry_(resol));
 
@@ -150,4 +152,4 @@ void Ensemble<MODEL>::linearize(const State_ & xb, const State_ & fg, const Geom
 // -----------------------------------------------------------------------------
 }  // namespace oops
 
-#endif  // OOPS_BASE_ENSEMBLE_H_
+#endif  // OOPS_BASE_STATEENSEMBLE_H_

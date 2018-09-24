@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -20,7 +20,6 @@
 #include "lorenz95/ModelBias.h"
 #include "lorenz95/ModelBiasCorrection.h"
 #include "lorenz95/ModelBiasCovariance.h"
-#include "lorenz95/ModelL95.h"
 #include "lorenz95/Nothing.h"
 #include "lorenz95/ObsBias.h"
 #include "lorenz95/ObsBiasCorrection.h"
@@ -41,7 +40,6 @@ struct L95Traits {
   typedef lorenz95::Resolution             Geometry;
 
   typedef lorenz95::StateL95               State;
-  typedef lorenz95::ModelL95               Model;
   typedef lorenz95::IncrementL95           Increment;
   typedef lorenz95::ErrorCovarianceL95     Covariance;
   typedef lorenz95::Nothing                InterpolatorTraj;

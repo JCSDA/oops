@@ -97,17 +97,26 @@ template <typename MODEL> void testErrorCovarianceZero() {
   Increment_ dx2(Test_::resol(), Test_::ctlvars(), Test_::time());
 
   Test_::covariance().randomize(dx2);
+  oops::Log::info() << "dx2.norm()=" << dx2.norm() << std::endl;
+
   BOOST_CHECK_EQUAL(dx1.norm(), 0.0);
   BOOST_CHECK(dx2.norm() > 0.0);
   Test_::covariance().multiply(dx1, dx2);
   BOOST_CHECK_EQUAL(dx2.norm(), 0.0);
 
-  dx1.zero();
-  Test_::covariance().randomize(dx2);
-  BOOST_CHECK_EQUAL(dx1.norm(), 0.0);
-  BOOST_CHECK(dx2.norm() > 0.0);
-  Test_::covariance().inverseMultiply(dx1, dx2);
-  BOOST_CHECK_EQUAL(dx2.norm(), 0.0);
+  const bool testinverse = Test_::test().getBool("testinverse", true);
+  if (testinverse)
+    {
+      oops::Log::info() << "Doing zero test for inverse" << std::endl;
+      dx1.zero();
+      Test_::covariance().randomize(dx2);
+      BOOST_CHECK_EQUAL(dx1.norm(), 0.0);
+      BOOST_CHECK(dx2.norm() > 0.0);
+      Test_::covariance().inverseMultiply(dx1, dx2);
+      BOOST_CHECK_EQUAL(dx2.norm(), 0.0);
+    } else {
+      oops::Log::info() << "Not doing zero test for inverse" << std::endl;
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -116,20 +125,26 @@ template <typename MODEL> void testErrorCovarianceInverse() {
   typedef ErrorCovarianceFixture<MODEL>   Test_;
   typedef oops::Increment<MODEL>    Increment_;
 
-  Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());
-  Increment_ dx2(Test_::resol(), Test_::ctlvars(), Test_::time());
-  Increment_ dx3(Test_::resol(), Test_::ctlvars(), Test_::time());
-  Test_::covariance().randomize(dx1);
-  BOOST_CHECK(dx1.norm() > 0.0);
+  const bool testinverse = Test_::test().getBool("testinverse", true);
+  if (testinverse)
+    {
+      Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());
+      Increment_ dx2(Test_::resol(), Test_::ctlvars(), Test_::time());
+      Increment_ dx3(Test_::resol(), Test_::ctlvars(), Test_::time());
+      Test_::covariance().randomize(dx1);
+      BOOST_CHECK(dx1.norm() > 0.0);
 
-  Test_::covariance().multiply(dx1, dx2);
-  Test_::covariance().inverseMultiply(dx2, dx3);
+      Test_::covariance().multiply(dx1, dx2);
+      Test_::covariance().inverseMultiply(dx2, dx3);
 
-  BOOST_CHECK(dx2.norm() > 0.0);
-  BOOST_CHECK(dx3.norm() > 0.0);
-  dx3 -= dx1;
-  const double tol = Test_::test().getDouble("tolerance");
-  BOOST_CHECK_SMALL(dx3.norm(), tol);
+      BOOST_CHECK(dx2.norm() > 0.0);
+      BOOST_CHECK(dx3.norm() > 0.0);
+      dx3 -= dx1;
+      const double tol = Test_::test().getDouble("tolerance");
+      BOOST_CHECK_SMALL(dx3.norm(), tol);
+    } else {
+      return;
+    }
 }
 
 // -----------------------------------------------------------------------------

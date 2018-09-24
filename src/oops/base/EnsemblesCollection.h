@@ -15,7 +15,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
 
-#include "oops/base/Ensemble.h"
+#include "oops/base/StateEnsemble.h"
 #include "oops/util/DateTime.h"
 
 namespace oops {
@@ -27,7 +27,7 @@ namespace oops {
 
 template<typename MODEL> class EnsemblesCollection {
   typedef boost::unordered_map<util::DateTime,
-                               boost::shared_ptr<Ensemble<MODEL> > > EnsemblesMap;
+                               boost::shared_ptr<StateEnsemble<MODEL> > > EnsemblesMap;
 
  public:
 /// Constructor
@@ -37,11 +37,11 @@ template<typename MODEL> class EnsemblesCollection {
   }
 
 /// Accessors
-  boost::shared_ptr<Ensemble<MODEL> > operator[](const util::DateTime& d) const {
+  boost::shared_ptr<StateEnsemble<MODEL> > operator[](const util::DateTime& d) const {
     return ensMap_.at(d);
   }
 
-  void put(const util::DateTime& d, boost::shared_ptr<Ensemble<MODEL> > e) {
+  void put(const util::DateTime& d, boost::shared_ptr<StateEnsemble<MODEL> > e) {
     ensMap_[d] = e;
   }
 

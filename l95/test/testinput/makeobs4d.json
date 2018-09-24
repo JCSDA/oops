@@ -26,6 +26,7 @@
     "resol": "40"
   },
   "Model": {
+    "name": "L95",
     "tstep": "PT1H30M",
     "f": "8.0"
   },

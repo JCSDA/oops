@@ -17,7 +17,8 @@ namespace qg {
 
 // -----------------------------------------------------------------------------
 
-VariablesQG::VariablesQG(const oops::Variables & oopsvars) {
+VariablesQG::VariablesQG(const oops::Variables & oopsvars)
+                         : oopsvars_(oopsvars) {
   oops::Log::debug() << "VariablesQG oopsvar:" << oopsvars.variables() << std::endl;
   this->setF90(oopsvars.variables());
   oops::Log::debug() << *this << std::endl;
@@ -25,7 +26,8 @@ VariablesQG::VariablesQG(const oops::Variables & oopsvars) {
 
 // -----------------------------------------------------------------------------
 
-VariablesQG::VariablesQG(const eckit::Configuration & config) {
+VariablesQG::VariablesQG(const eckit::Configuration & config)
+                         : oopsvars_(config) {
   oops::Log::debug() << "VariablesQG config:" << config << std::endl;
   std::vector<std::string> vars;
   config.get("variables", vars);
@@ -60,7 +62,9 @@ VariablesQG::~VariablesQG() {}
 
 // -----------------------------------------------------------------------------
 
-VariablesQG::VariablesQG(const VariablesQG & other): fvars_(other.fvars_) {}
+VariablesQG::VariablesQG(const VariablesQG & other)
+           : fvars_(other.fvars_),
+             oopsvars_(other.toOopsVariables()) {}
 
 // -----------------------------------------------------------------------------
 

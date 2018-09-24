@@ -21,6 +21,7 @@ implicit none
 real(kind_real),parameter :: gc_gau = 0.28            !< Gaussian to GC99 factor (empirical)
 real(kind_real),parameter :: Dmin = 1.0e-12_kind_real !< Minimum tensor diagonal value
 integer,parameter :: M = 0                            !< Number of implicit itteration for the Matern function (GC 99 function if M = -1 and Gaussian function if M = 0)
+real(kind_real),parameter :: eta = 1.0e-9_kind_real   !< Small parameter for the Cholesky decomposition
 
 private
 public :: gc_gau

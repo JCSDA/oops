@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+#include "oops/base/Variables.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
@@ -40,11 +41,12 @@ class VariablesQG : public util::Printable,
   VariablesQG(const VariablesQG &);
 
   const int * toFortran() const {return &fvars_[0];}
-
+  const oops::Variables& toOopsVariables() const {return oopsvars_;}
  private:
   void print(std::ostream &) const;
   void setF90(const std::vector<std::string>);
   std::vector<int> fvars_;
+  const oops::Variables oopsvars_;
 };
 
 // -----------------------------------------------------------------------------

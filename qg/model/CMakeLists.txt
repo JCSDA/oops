@@ -9,6 +9,8 @@ FieldsQG.cc
 FieldsQG.h
 GeometryQG.cc
 GeometryQG.h
+GeometryQGIterator.cc
+GeometryQGIterator.h
 GomQG.cc
 GomQG.h
 IncrementQG.cc
@@ -99,6 +101,7 @@ qg_covariance_mod.F90
 qg_fields.F90
 qg_fields_interface.F90
 qg_geom_mod.F90
+qg_geom_iter_mod.F90
 qg_goms_mod.F90
 qg_localization_matrix.f90
 qg_locs_mod.F90

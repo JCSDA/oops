@@ -39,6 +39,7 @@
     "standard_deviation": "0.5"
   },
   "model": {
+    "name": "L95",
     "tstep": "PT1H30M",
     "f": "8.0"
   },

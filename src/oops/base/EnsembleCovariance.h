@@ -15,10 +15,10 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/GMRESR.h"
-#include "oops/base/Ensemble.h"
 #include "oops/base/EnsemblesCollection.h"
 #include "oops/base/IdentityMatrix.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
+#include "oops/base/StateEnsemble.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -35,9 +35,9 @@ namespace oops {
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL> {
-  typedef Ensemble<MODEL>                       Ensemble_;
-  typedef boost::shared_ptr<Ensemble<MODEL> >   EnsemblePtr_;
-  typedef EnsemblesCollection<MODEL>            EnsemblesCollection_;
+  typedef StateEnsemble<MODEL>                     Ensemble_;
+  typedef boost::shared_ptr<StateEnsemble<MODEL> > EnsemblePtr_;
+  typedef EnsemblesCollection<MODEL>               EnsemblesCollection_;
   typedef Geometry<MODEL>            Geometry_;
   typedef Increment<MODEL>           Increment_;
   typedef Localization<MODEL>        Localization_;

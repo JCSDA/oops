@@ -29,6 +29,17 @@ GeometryQG::~GeometryQG() {
   qg_geo_delete_f90(keyGeom_);
 }
 // -----------------------------------------------------------------------------
+GeometryQGIterator GeometryQG::begin() const {
+  return GeometryQGIterator(*this);
+}
+// -----------------------------------------------------------------------------
+GeometryQGIterator GeometryQG::end() const {
+  int nx = 0;
+  int ny = 0;
+  qg_geo_info_f90(keyGeom_, nx, ny);
+  return GeometryQGIterator(*this, nx*ny+1);
+}
+// -----------------------------------------------------------------------------
 void GeometryQG::print(std::ostream & os) const {
   int nx;
   int ny;

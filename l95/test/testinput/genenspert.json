@@ -4,6 +4,7 @@
   },
   "variables": null,
   "model": {
+    "name": "L95",
     "tstep": "PT1H30M",
     "f": "8.0"
   },

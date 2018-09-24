@@ -8,8 +8,8 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef OOPS_INTERFACE_LINEARMODELBASE_H_
-#define OOPS_INTERFACE_LINEARMODELBASE_H_
+#ifndef OOPS_BASE_LINEARMODELBASE_H_
+#define OOPS_BASE_LINEARMODELBASE_H_
 
 #include <map>
 #include <string>
@@ -146,6 +146,11 @@ LinearModelBase<MODEL>* LinearModelFactory<MODEL>::create(const Geometry_ & geom
     jerr = getMakers().find(id);
   if (jerr == getMakers().end()) {
     Log::error() << id << " does not exist in the tangent linear model factory." << std::endl;
+    Log::error() << "Factory contains " << getMakers().size() << " elements:" << std::endl;
+    for (typename std::map<std::string, LinearModelFactory<MODEL>*>::const_iterator
+         jj = getMakers().begin(); jj !=  getMakers().end(); ++jj) {
+      Log::error() << "A " << jj->first << " linear model" << std::endl;
+    }
     ABORT("Element does not exist in LinearModelFactory.");
   }
   LinearModelBase<MODEL> * ptr = jerr->second->make(geom, conf);
@@ -228,4 +233,4 @@ void LinearModelBase<MODEL>::finalizeAD(Increment_ & dx) const {
 
 }  // namespace oops
 
-#endif  // OOPS_INTERFACE_LINEARMODELBASE_H_
+#endif  // OOPS_BASE_LINEARMODELBASE_H_

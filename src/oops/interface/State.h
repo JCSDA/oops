@@ -16,9 +16,11 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
+#include "oops/base/GridPoint.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
+#include "oops/interface/GeometryIterator.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/InterpolatorTraj.h"
 #include "oops/interface/Locations.h"
@@ -38,6 +40,7 @@ class State : public util::Printable,
               private util::ObjectCounter<State<MODEL> > {
   typedef typename MODEL::State      State_;
   typedef Geometry<MODEL>            Geometry_;
+  typedef GeometryIterator<MODEL>    GeometryIterator_;
   typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef InterpolatorTraj<MODEL>    InterpolatorTraj_;
   typedef Locations<MODEL>           Locations_;
@@ -69,6 +72,8 @@ class State : public util::Printable,
   void write(const eckit::Configuration &) const;
   double norm() const;  // Only for tests
   Geometry_ geometry() const;
+
+  GridPoint getPoint(const GeometryIterator_ & iter) const;
 
  protected:
   void zero();
@@ -239,6 +244,17 @@ void State<MODEL>::accumul(const double & zz, const State & xx) {
   util::Timer timer(classname(), "accumul");
   state_->accumul(zz, *xx.state_);
   Log::trace() << "State<MODEL>::accumul done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+GridPoint State<MODEL>::getPoint(const GeometryIterator_ & iter) const {
+  Log::trace() << "State<MODEL>::getPoint starting" << std::endl;
+  util::Timer timer(classname(), "getPoint");
+  GridPoint gp = state_->getPoint(iter.geometryiter());
+  Log::trace() << "State<MODEL>::getPoint done" << std::endl;
+  return gp;
 }
 
 // -----------------------------------------------------------------------------

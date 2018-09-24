@@ -486,6 +486,11 @@ if (config_element_exists(c_conf,"displ_tol")) bump%nam%displ_tol = config_get_r
 
 ! fit_param
 if (config_element_exists(c_conf,"minim_algo")) bump%nam%minim_algo = config_get_string(c_conf,1024,"minim_algo")
+do iv=0,nvmax
+   write(ivchar,'(i3)') iv
+   if (config_element_exists(c_conf,"double_fit("//trim(adjustl(ivchar))//")")) &
+ & bump%nam%double_fit(iv) = integer_to_logical(config_get_int(c_conf,"double_fit("//trim(adjustl(ivchar))//")"))
+end do
 if (config_element_exists(c_conf,"lhomh")) bump%nam%lhomh = integer_to_logical(config_get_int(c_conf,"lhomh"))
 if (config_element_exists(c_conf,"lhomv")) bump%nam%lhomv = integer_to_logical(config_get_int(c_conf,"lhomv"))
 if (config_element_exists(c_conf,"rvflt")) bump%nam%rvflt = config_get_real(c_conf,"rvflt")

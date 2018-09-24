@@ -11,8 +11,8 @@
 #ifndef OOPS_GENERIC_INSTANTIATETLMFACTORY_H_
 #define OOPS_GENERIC_INSTANTIATETLMFACTORY_H_
 
+#include "oops/base/LinearModelBase.h"
 #include "oops/generic/LinearModelId.h"
-#include "oops/interface/LinearModelBase.h"
 
 namespace oops {
 

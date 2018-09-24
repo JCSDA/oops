@@ -572,8 +572,8 @@ type(hdata_type),intent(inout) :: hdata !< HDIAG data
 
 ! Local variables
 integer :: ib,iv,il0,jl0r,jl0,ic1a,ic1,jc3,i,iproc,ic0
-real(kind_real) :: fld_c0(geom%nc0,geom%nl0,2),fld(geom%nc0a,geom%nl0,2)
-real(kind_real),allocatable :: sbuf(:),rbuf(:)
+real(kind_real) :: fld(geom%nc0a,geom%nl0,2)
+real(kind_real),allocatable :: fld_c0(:,:,:),sbuf(:),rbuf(:)
 logical :: valid
 logical :: free(geom%nc0,geom%nl0)
 character(len=1024) :: filename
@@ -589,7 +589,10 @@ do ib=1,bpar%nb
    il0 = 1
 
    ! Prepare field
-   call msr(fld_c0)
+   if (mpl%main) then
+      allocate(fld_c0(geom%nc0,geom%nl0,2))
+      call msr(fld_c0)
+   end if
    free = .true.
    do ic1=1,nam%nc1
       ! Select tensor to plot

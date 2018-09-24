@@ -16,13 +16,13 @@
 #include "model/ChangeVar.h"
 #include "model/ErrorCovarianceQG.h"
 #include "model/GeometryQG.h"
+#include "model/GeometryQGIterator.h"
 #include "model/GomQG.h"
 #include "model/IncrementQG.h"
 #include "model/LocationsQG.h"
 #include "model/ModelBias.h"
 #include "model/ModelBiasCovariance.h"
 #include "model/ModelBiasIncrement.h"
-#include "model/ModelQG.h"
 #include "model/Nothing.h"
 #include "model/ObsBias.h"
 #include "model/ObsBiasCovariance.h"
@@ -41,8 +41,9 @@ struct QgTraits {
 
   typedef qg::GeometryQG            Geometry;
 
+  typedef qg::GeometryQGIterator    GeometryIterator;
+
   typedef qg::StateQG               State;
-  typedef qg::ModelQG               Model;
   typedef qg::IncrementQG           Increment;
   typedef qg::ErrorCovarianceQG     Covariance;
   typedef qg::Nothing               InterpolatorTraj;

@@ -107,7 +107,7 @@ real(kind_real),intent(out) :: fld(geom%nc0a,geom%nl0) !< Field
 
 ! Local variables
 integer :: ncid,fld_id,il0,dum
-real(kind_real) :: fld_c0(geom%nc0,geom%nl0)
+real(kind_real),allocatable :: fld_c0(:,:)
 character(len=1024) :: filename_proc
 character(len=1024) :: subr = 'fld_read'
 
@@ -127,6 +127,8 @@ if (nam%field_io) then
       call mpl%ncerr(subr,nf90_close(ncid))
    else
       if (mpl%main) then
+         ! Allocation
+         allocate(fld_c0(geom%nc0,geom%nl0))
 
          ! Open file
          call mpl%ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename)//'.nc',nf90_nowrite,ncid))
@@ -175,7 +177,7 @@ real(kind_real),intent(in) :: fld(geom%nc0a,geom%nl0) !< Field
 integer :: ic0a,ic0,il0,info
 integer :: ncid,nc0a_id,nc0_id,nl0_id,fld_id,lon_id,lat_id
 real(kind_real) :: fld_c0a(geom%nc0a,geom%nl0)
-real(kind_real) :: fld_c0(geom%nc0,geom%nl0)
+real(kind_real),allocatable :: fld_c0(:,:)
 character(len=1024) :: filename_proc
 character(len=1024) :: subr = 'io_fld_write'
 
@@ -246,6 +248,9 @@ if (nam%field_io) then
       ! Close file
       call mpl%ncerr(subr,nf90_close(ncid))
    else
+      ! Allocation
+      if (mpl%main) allocate(fld_c0(geom%nc0,geom%nl0))
+
       ! Local to global
       call mpl%loc_to_glb(geom%nl0,geom%nc0a,fld_c0a,geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,.false.,fld_c0)
 

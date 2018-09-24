@@ -153,18 +153,7 @@ type(bpar_type),intent(in) :: bpar        !< Block parameters
 integer :: ib
 
 ! Allocation
-call cmat_copy%alloc(bpar,trim(cmat%prefix))
-
-! Copy attributes
-do ib=1,bpar%nbe
-   if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
-      cmat_copy%blk(ib)%double_fit = cmat%blk(ib)%double_fit
-      cmat_copy%blk(ib)%anisotropic = cmat%blk(ib)%anisotropic
-   end if
-end do
-
-! Allocation
-call cmat_copy%alloc(nam,geom,bpar)
+call cmat_copy%alloc(nam,geom,bpar,trim(cmat%prefix))
 
 ! Copy
 do ib=1,bpar%nbe
@@ -844,7 +833,7 @@ type(bpar_type),intent(in) :: bpar     !< Block parameters
 integer :: ib,iv,jv,its,jts
 
 write(mpl%info,'(a)') '-------------------------------------------------------------------'
-write(mpl%info,'(a)') '--- Copy namemlist radii into C matrix'
+write(mpl%info,'(a)') '--- Copy namelist radii into C matrix'
 call flush(mpl%info)
 
 ! Allocation
