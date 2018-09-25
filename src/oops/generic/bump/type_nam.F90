@@ -870,11 +870,8 @@ class(nam_type),intent(inout) :: nam !< Namelist
 type(mpl_type),intent(in) :: mpl     !< MPI data
 
 ! Local variables
-integer :: iv,its,il,idir,ildw,itest
+integer :: iv,its,il,idir
 character(len=2) :: ivchar
-character(len=4) :: itestchar
-character(len=7) :: lonchar,latchar
-character(len=1024) :: filename
 
 ! Check maximum sizes
 if (nam%nl>nlmax) call mpl%abort('nl is too large')
