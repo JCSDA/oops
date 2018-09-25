@@ -249,7 +249,6 @@ call bump%rng%init(bump%mpl,bump%nam)
 bump%cmat%allocated = .false.
 bump%lct%allocated = .false.
 bump%nicas%allocated = .false.
-bump%obsop%allocated = .false.
 
 end subroutine bump_setup_generic
 
@@ -412,7 +411,11 @@ if (bump%nam%new_obsop) then
    call flush(bump%mpl%info)
    call bump%obsop%run_obsop(bump%mpl,bump%rng,bump%nam,bump%geom)
 elseif (bump%nam%load_obsop) then
-   call bump%mpl%abort('load obstop not implemented yet')
+   ! Read observation operator
+   write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%info,'(a)') '--- Read observation operator'
+   call flush(bump%mpl%info)
+   call bump%obsop%read(bump%mpl,bump%nam)
 end if
 
 if (bump%nam%check_obsop) then
