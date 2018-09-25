@@ -123,16 +123,14 @@ endif
 
 allocate(xx(nloc),yy(nloc))
 
-! convert lat and lon to normalized x,y coordinate between 0 and 1   
-! this is what interp_tl() wants
 !!
-!> \warning **qg_loc_test()** latitudes are converted to normalized locations
-!! based on on an assumed latitudinal extent of 180 degrees 
+!> \warning **qg_loc_test()** latitudes and longitudes are assumed to
+!! be in normalized coordinates between 0 and 1
 !!
 
 if (klocs > 0) then
-   xx(1:klocs) = modulo((klons(:)+180.0_kind_real),360.0_kind_real)/360.0_kind_real
-   yy(1:klocs) = (klats(:) + 90.0_kind_real)/180.0_kind_real
+   xx(1:klocs) = klons(:)
+   yy(1:klocs) = klats(:)
 endif
 
 if (config_element_exists(config,"random_seed")) then
