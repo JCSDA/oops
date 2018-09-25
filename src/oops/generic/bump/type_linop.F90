@@ -1040,16 +1040,15 @@ integer,intent(in),optional :: row_to_ic0(linop%n_dst) !< Conversion from row to
 integer,intent(in),optional :: col_to_ic0(linop%n_src) !< Conversion from col to ic0 (identity if missing)
 
 ! Local variables
-integer :: ic0,i_s,jc0,jc1,il0,iproc
+integer :: ic0,i_s,jc0,il0,iproc
 integer :: i_s_s(mpl%nproc),i_s_e(mpl%nproc),n_s_loc(mpl%nproc),i_s_loc
-real(kind_real),allocatable :: x(:),y(:),z(:),v1(:),v2(:),va(:),vp(:),t(:)
 
 ! MPI splitting
 call mpl%split(linop%n_s,i_s_s,i_s_e,n_s_loc)
 
 ! Check that interpolations are not crossing mask boundaries
 call mpl%prog_init(n_s_loc(mpl%myproc))
-!$omp parallel do schedule(static) private(i_s_loc,i_s,x,y,z,v1,v2,va,vp,t,ic0,jc1,jc0)
+!$omp parallel do schedule(static) private(i_s_loc,i_s,ic0,jc0)
 do i_s_loc=1,n_s_loc(mpl%myproc)
    ! Indices
    i_s = i_s_s(mpl%myproc)+i_s_loc-1

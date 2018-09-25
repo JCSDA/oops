@@ -100,8 +100,7 @@ type(mpl_type),intent(in) :: mpl         !< MPI data
 type(nam_type),intent(in) :: nam         !< Namelist
 
 ! Local variables
-integer :: ncid,nobs_id,lonobs_id,latobs_id
-real(kind_real),allocatable :: lonobs(:),latobs(:)
+integer :: ncid
 character(len=1024) :: filename
 character(len=1024) :: subr = 'obsop_read'
 
@@ -139,8 +138,7 @@ type(mpl_type),intent(in) :: mpl         !< MPI data
 type(nam_type),intent(in) :: nam         !< Namelist
 
 ! Local variables
-integer :: ncid,nobs_id,lonobs_id,latobs_id
-real(kind_real),allocatable :: lonobs(:),latobs(:)
+integer :: ncid
 character(len=1024) :: filename
 character(len=1024) :: subr = 'obsop_write'
 
@@ -185,9 +183,9 @@ type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 
 ! Local variables
-integer :: info,iobs,jobs,nobsa,iproc,iobsa
-integer,allocatable :: order(:)
-real(kind_real),allocatable :: lonobs(:),latobs(:),list(:),obs_to_proc(:)
+integer :: iobs,jobs,iproc,iobsa
+integer,allocatable :: order(:),obs_to_proc(:)
+real(kind_real),allocatable :: lonobs(:),latobs(:),list(:)
 
 ! Check observation number
 if (nam%nobs<1) call mpl%abort('nobs should be positive for offline observation operator')

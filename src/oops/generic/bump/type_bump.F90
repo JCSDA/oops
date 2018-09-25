@@ -335,7 +335,7 @@ if (bump%nam%new_lct) then
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
    write(bump%mpl%info,'(a)') '--- Copy LCT into C matrix'
    call flush(bump%mpl%info)
-   call bump%cmat%from_lct(bump%mpl,bump%nam,bump%geom,bump%bpar,bump%io,bump%lct)
+   call bump%cmat%from_lct(bump%mpl,bump%nam,bump%geom,bump%bpar,bump%lct)
 end if
 
 if (bump%nam%load_cmat) then

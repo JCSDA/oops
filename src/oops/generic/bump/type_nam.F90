@@ -1185,84 +1185,6 @@ if (nam%new_hdiag.or.nam%new_nicas.or.nam%check_adjoints.or.nam%check_pos_def.or
    end if
 end if
 
-! Clean files
-if (mpl%main) then
-   ! Diagnostics
-   if (nam%new_hdiag) then
-      filename = trim(nam%prefix)//'_diag.nc'
-      call system('rm -f '//trim(nam%datadir)//'/'//trim(filename))
-
-      if (nam%local_diag) then
-         filename = trim(nam%prefix)//'_local_diag_*.nc'
-         call system('rm -f '//trim(nam%datadir)//'/'//trim(filename))
-      end if
-
-      do ildw=1,nam%nldwv
-         write(lonchar,'(f7.2)') nam%lon_ldwv(ildw)
-         write(latchar,'(f7.2)') nam%lat_ldwv(ildw)
-         filename = trim(nam%prefix)//'_diag_'//trim(adjustl(lonchar))//'-'//trim(adjustl(latchar))//'.nc'
-         call system('rm -f '//trim(nam%datadir)//'/'//trim(filename))
-      end do
-
-      ! rh0
-      if (nam%sam_write.and.(trim(nam%draw_type)=='random_coast')) then
-         filename = trim(nam%prefix)//'_sampling_rh0.nc'
-         call system('rm -f '//trim(nam%datadir)//'/'//trim(filename))
-      end if
-   end if
-
-   ! Diagnostics
-   if (nam%new_hdiag) then
-      filename = trim(nam%prefix)//'_diag.nc'
-      call system('rm -f '//trim(nam%datadir)//'/'//trim(filename))
-
-      if (nam%local_diag) then
-         filename = trim(nam%prefix)//'_local_diag_*.nc'
-         call system('rm -f '//trim(nam%datadir)//'/'//trim(filename))
-      end if
-
-      do ildw=1,nam%nldwv
-         write(lonchar,'(f7.2)') nam%lon_ldwv(ildw)
-         write(latchar,'(f7.2)') nam%lat_ldwv(ildw)
-         filename = trim(nam%prefix)//'_diag_'//trim(adjustl(lonchar))//'-'//trim(adjustl(latchar))//'.nc'
-         call system('rm -f '//trim(nam%datadir)//'/'//trim(filename))
-      end do
-
-      ! rh0
-      if (nam%sam_write.and.(trim(nam%draw_type)=='random_coast')) then
-         filename = trim(nam%prefix)//'_sampling_rh0.nc'
-         call system('rm -f '//trim(nam%datadir)//'/'//trim(filename))
-      end if
-
-      ! C matrix
-      if (trim(nam%minim_algo)/='none') then
-         filename = trim(nam%prefix)//'_cmat_*.nc'
-         call system('rm -f '//trim(nam%datadir)//'/'//trim(filename))
-      end if
-   end if
-
-   ! Dirac test
-   if (nam%check_dirac) then
-      filename = trim(nam%prefix)//'_dirac.nc'
-      call system('rm -f '//trim(nam%datadir)//'/'//trim(filename))
-   end if
-
-   ! Randomization test
-   if (nam%check_randomization) then
-      do itest=1,10
-         write(itestchar,'(i4.4)') itest
-         filename = trim(nam%prefix)//'_randomize_'//itestchar//'.nc'
-         call system('rm -f '//trim(nam%datadir)//'/'//trim(filename))
-      end do
-   end if
-
-   ! LCT
-   if (nam%new_lct) then
-      filename = trim(nam%prefix)//'_lct.nc'
-      call system('rm -f '//trim(nam%datadir)//'/'//trim(filename))
-   end if
-end if
-
 end subroutine nam_check
 
 !----------------------------------------------------------------------
@@ -1279,7 +1201,7 @@ type(mpl_type),intent(in) :: mpl  !< MPI data
 integer,intent(in) :: ncid        !< NetCDF file ID
 
 ! Local variables
-integer,allocatable :: londir(:),latdir(:),lon_ldwv(:),lat_ldwv(:)
+real(kind_real),allocatable :: londir(:),latdir(:),lon_ldwv(:),lat_ldwv(:)
 
 ! general_param
 call put_att(mpl,ncid,'datadir',trim(nam%datadir))

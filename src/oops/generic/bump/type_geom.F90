@@ -854,7 +854,7 @@ elseif (mpl%nproc>1) then
 
             ! Call METIS
             write(nprocchar,'(i4)') mpl%nproc
-            call system('gpmetis '//trim(nam%datadir)//'/'//trim(filename_metis)//' '//adjustl(nprocchar)//' > '// &
+            call execute_command_line('gpmetis '//trim(nam%datadir)//'/'//trim(filename_metis)//' '//adjustl(nprocchar)//' > '// &
           & trim(nam%datadir)//'/'//trim(filename_metis)//'.out')
 
             ! Check for METIS output

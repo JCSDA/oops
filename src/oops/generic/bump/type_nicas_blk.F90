@@ -1356,10 +1356,10 @@ type(cmat_blk_type),intent(in) :: cmat_blk       !< C matrix data block
 integer :: n_s_max,ithread,is,ic1,jc1,il1,il0,j,js,isb,ic1b,ic0,ic0a,ic1a,i_s,jc,kc,ks,jbd,jc0,jl0,jl1,ic1bb,isbb
 integer :: c_n_s(mpl%nthread)
 integer,allocatable :: nn(:),nn_index(:),inec(:),c_ind(:,:)
-real(kind_real) :: distvsq,rvsq,S_test
+real(kind_real) :: distvsq,rvsq
 real(kind_real),allocatable :: lon_c1(:),lat_c1(:),nn_dist(:)
 real(kind_real),allocatable :: rh_c1a(:,:),rv_c1a(:,:),rv_rfac_c1a(:,:),rv_coef_c1a(:,:)
-real(kind_real),allocatable :: rv_c1(:,:),rv_rfac_c1(:,:),rv_coef_c1(:,:)
+real(kind_real),allocatable :: rv_rfac_c1(:,:),rv_coef_c1(:,:)
 real(kind_real),allocatable :: distnormv(:,:),rfac(:,:),coef(:,:)
 real(kind_real),allocatable :: c_S(:,:),c_S_conv(:)
 logical :: add_op
@@ -1631,7 +1631,7 @@ if (nicas_blk%double_fit) then
 
          ! Vertical distance
          distvsq = (geom%vunit(ic0,il0)-geom%vunit(jc0,jl0))**2
-         rvsq = 0.5*(rv_c1(ic1,il1)**2+rv_c1(jc1,jl1)**2)
+         rvsq = 0.5*(nicas_blk%rv_c1(ic1,il1)**2+nicas_blk%rv_c1(jc1,jl1)**2)
          if (rvsq>0.0) then
             distnormv(jc1,jl1) = sqrt(distvsq/rvsq)
          elseif (distvsq>0.0) then
@@ -1716,7 +1716,7 @@ else
    end do
 
    ! Apply convolution
-   !$omp parallel do schedule(static) private(isb,is,ithread,jc,js,kc,ks,S_test,add_op) firstprivate(c_S_conv)
+   !$omp parallel do schedule(static) private(isb,is,ithread,jc,js,kc,ks,add_op) firstprivate(c_S_conv)
    do isb=1,nicas_blk%nsb
       ! Indices
       is = nicas_blk%sb_to_s(isb)
@@ -2016,7 +2016,7 @@ type(mpl_type),intent(inout) :: mpl                                   !< MPI dat
 type(geom_type),intent(in) :: geom                                    !< Geometry
 
 ! Local variables
-integer :: nnmax,ithread,is,ic1,jc1,il1,il0,j,js,ic0,jc0,jl0,jl1
+integer :: nnmax,is,ic1,jc1,il1,il0,j,js,ic0,jc0,jl0,jl1
 integer :: ic1bb,isbb
 integer,allocatable :: nn(:),nn_index(:,:)
 real(kind_real) :: disthsq,distvsq,rhsq,rvsq
@@ -2067,8 +2067,8 @@ call flush(mpl%info)
 write(mpl%info,'(a10,a)',advance='no') '','Compute distances: '
 call flush(mpl%info)
 call mpl%prog_init(nicas_blk%nsbb)
-!$omp parallel do schedule(static) private(isbb,is,ithread,ic1,ic1bb,ic0,il1,il0,j,jl1,jl0,js,jc1,jc0), &
-!$omp&                             private(disthsq,distvsq,rhsq,rvsq) firstprivate(distnorm)
+!$omp parallel do schedule(static) private(isbb,is,ic1,ic1bb,ic0,il1,il0,j,jl1,jl0,js,jc1,jc0,disthsq,distvsq,rhsq,rvsq), &
+!$omp&                             firstprivate(distnorm)
 do isbb=1,nicas_blk%nsbb
    ! Indices
    is = nicas_blk%sbb_to_s(isbb)
@@ -2379,13 +2379,12 @@ type(nam_type),intent(in) :: nam                 !< Namelist
 type(geom_type),intent(in) :: geom               !< Geometry
 
 ! Local variables
-integer :: il0i,i_s,ic1,ic1b,jc1b,is,js,isc,jsb,jsc,ic0,ic0a,il0,il1,ih,jv,nlr,ilr,jlr,ic,isc_add
-integer,allocatable :: ineh(:,:),inev(:),ines(:,:),inec(:),order(:),isc_list(:),order2(:)
+integer :: il0i,i_s,ic1,ic1b,jc1b,is,js,isc,jsb,jsc,ic0,ic0a,il0,il1,ih,jv,nlr,ilr,ic,isc_add
+integer,allocatable :: ineh(:,:),inev(:),ines(:,:),inec(:),order(:),isc_list(:)
 integer,allocatable :: h_col(:,:,:),v_col(:,:),s_col(:,:,:),c_ind(:,:)
 real(kind_real) :: S_add
 real(kind_real),allocatable :: h_S(:,:,:),v_S(:,:,:),s_S(:,:,:),c_S(:,:)
 real(kind_real),allocatable :: list(:),S_list(:),S_list_tmp(:)
-logical :: conv
 
 ! Compute horizontal interpolation inverse mapping
 allocate(ineh(geom%nc0a,geom%nl0i))
@@ -2522,8 +2521,8 @@ do il0=1,geom%nl0
    call flush(mpl%info)
    call mpl%prog_init(geom%nc0a)
 
-   !$omp parallel do schedule(static) private(ic0a,ic0,nlr,isc_add,S_add,ih,ic1b,ic1,jv,il1,is,ilr,conv,ic,jlr,isc,jsc), &
-   !$omp&                             firstprivate(isc_list,order2,S_list,S_list_tmp)
+   !$omp parallel do schedule(static) private(ic0a,ic0,nlr,isc_add,S_add,ih,ic1b,ic1,jv,il1,is,ilr,ic,isc,jsc), &
+   !$omp&                             firstprivate(isc_list,S_list,S_list_tmp)
    do ic0a=1,geom%nc0a
       ! Index
       ic0 = geom%c0a_to_c0(ic0a)

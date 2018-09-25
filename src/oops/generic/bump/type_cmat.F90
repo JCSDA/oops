@@ -563,11 +563,11 @@ if (trim(nam%minim_algo)/='none') then
    call flush(mpl%info)
    select case (trim(nam%method))
    case ('cor')
-      call cmat%from_diag(mpl,nam,geom,bpar,io,hdata,cor_1)
+      call cmat%from_diag(mpl,nam,geom,bpar,hdata,cor_1)
    case ('loc_norm','loc')
-      call cmat%from_diag(mpl,nam,geom,bpar,io,hdata,loc_1)
+      call cmat%from_diag(mpl,nam,geom,bpar,hdata,loc_1)
    case ('hyb-avg','hyb-rnd')
-      call cmat%from_diag(mpl,nam,geom,bpar,io,hdata,loc_2)
+      call cmat%from_diag(mpl,nam,geom,bpar,hdata,loc_2)
    case ('dual-ens')
       call mpl%abort('dual-ens not ready yet for C matrix data')
    case default
@@ -598,7 +598,7 @@ end subroutine cmat_run_hdiag
 ! Subroutine: cmat_from_diag
 !> Purpose: transform diagnostics into C matrix data
 !----------------------------------------------------------------------
-subroutine cmat_from_diag(cmat,mpl,nam,geom,bpar,io,hdata,diag)
+subroutine cmat_from_diag(cmat,mpl,nam,geom,bpar,hdata,diag)
 
 implicit none
 
@@ -608,7 +608,6 @@ type(mpl_type),intent(inout) :: mpl    !< MPI data
 type(nam_type),intent(in) :: nam       !< Namelist
 type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
-type(io_type),intent(in) :: io         !< I/O
 type(hdata_type),intent(in) :: hdata   !< HDIAG data
 type(diag_type),intent(in) :: diag     !< Diagnostics
 
@@ -730,7 +729,7 @@ end subroutine cmat_from_diag
 ! Subroutine: cmat_from_lct
 !> Purpose: copy LCT into C matrix data
 !----------------------------------------------------------------------
-subroutine cmat_from_lct(cmat,mpl,nam,geom,bpar,io,lct)
+subroutine cmat_from_lct(cmat,mpl,nam,geom,bpar,lct)
 
 implicit none
 
@@ -740,8 +739,7 @@ type(mpl_type),intent(inout) :: mpl    !< MPI data
 type(nam_type),intent(in) :: nam       !< Namelist
 type(geom_type),intent(in) :: geom     !< Geometry
 type(bpar_type),intent(in) :: bpar     !< Block parameters
-type(io_type),intent(in) :: io         !< I/O
-type(lct_type),intent(in) :: lct       !< Block parameters
+type(lct_type),intent(in) :: lct       !< LCT
 
 ! Local variables
 integer :: ib,iv,jv,its,jts,iscales,il0,ic0a

@@ -2049,7 +2049,7 @@ call flush(mpl%info)
 call nicas%randomize(mpl,rng,nam,geom,bpar,ne_rand,ens)
 
 ! Copy sampling
-call system('cp -f '//trim(nam%datadir)//'/'//trim(nam%prefix)//'_sampling.nc ' &
+call execute_command_line('cp -f '//trim(nam%datadir)//'/'//trim(nam%prefix)//'_sampling.nc ' &
  & //trim(nam%datadir)//'/'//trim(nam%prefix)//'_consistency-test_sampling.nc')
 
 ! Save namelist variables
@@ -2144,7 +2144,7 @@ call flush(mpl%info)
 call nicas%randomize(mpl,rng,nam,geom,bpar,nam%ens1_ne,ens)
 
 ! Copy sampling
-call system('cp -f '//trim(nam%datadir)//'/'//trim(nam%prefix)//'_sampling.nc ' &
+call execute_command_line('cp -f '//trim(nam%datadir)//'/'//trim(nam%prefix)//'_sampling.nc ' &
  & //trim(nam%datadir)//'/'//trim(nam%prefix)//'_optimality-test_sampling.nc')
 
 ! Save namelist variables
