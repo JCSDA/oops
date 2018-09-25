@@ -273,9 +273,11 @@ obsop%nobs = nobs
 allocate(obsop%lonobs(obsop%nobs))
 allocate(obsop%latobs(obsop%nobs))
 
-! Copy
-obsop%lonobs = lonobs*deg2rad
-obsop%latobs = latobs*deg2rad
+if (obsop%nobs>0) then
+   ! Copy
+   obsop%lonobs = lonobs*deg2rad
+   obsop%latobs = latobs*deg2rad
+end if
 
 end subroutine obsop_from
 
@@ -413,6 +415,13 @@ case('')
          obs_to_proc(iobs) = iproc
       end do
    end do
+case('gathered')
+   ! Observations gathered on the same task
+   write(mpl%info,'(a7,a)') '','Observations gathered on the same task'
+   call flush(mpl%info)
+
+   ! Fill obs_to_proc
+   obs_to_proc = mpl%ioproc
 case('random')
    ! Observations randomly distributed
    write(mpl%info,'(a7,a)') '','Observations randomly distributed'
@@ -532,7 +541,7 @@ case default
 end select
 
 select case (trim(nam%obsdis))
-case('random','local','adjusted')
+case('gathered','random','local','adjusted')
    ! Local number of observations
    proc_to_nobsa = 0
    do iobs=1,obsop%nobs
@@ -548,7 +557,7 @@ case('random','local','adjusted')
 end select
 
 ! Allocation
-if (obsop%nobsa>0) allocate(obsop%obsa_to_obs(obsop%nobsa))
+allocate(obsop%obsa_to_obs(obsop%nobsa))
 
 ! Fill obs_to_obsa and obsa_to_obs
 proc_to_nobsa = 0
@@ -785,24 +794,17 @@ real(kind_real) :: sum1,sum2_loc,sum2
 real(kind_real) :: fld(geom%nc0a,geom%nl0),fld_save(geom%nc0a,geom%nl0)
 real(kind_real),allocatable :: yobs(:,:),yobs_save(:,:)
 
-if (obsop%nobsa>0) then
-   ! Allocation
-   allocate(yobs(obsop%nobsa,geom%nl0))
-   allocate(yobs_save(obsop%nobsa,geom%nl0))
-end if
+! Allocation
+allocate(yobs(obsop%nobsa,geom%nl0))
+allocate(yobs_save(obsop%nobsa,geom%nl0))
 
 ! Generate random fields
 call rng%rand_real(0.0_kind_real,1.0_kind_real,fld_save)
 if (obsop%nobsa>0) call rng%rand_real(0.0_kind_real,1.0_kind_real,yobs_save)
 
-if (obsop%nobsa>0) then
-   ! Apply direct and adjoint obsservation operators
-   call obsop%apply(mpl,geom,fld_save,yobs)
-   call obsop%apply_ad(mpl,geom,yobs_save,fld)
-else
-   ! No observation on this task
-   fld = 0.0
-end if
+! Apply direct and adjoint obsservation operators
+call obsop%apply(mpl,geom,fld_save,yobs)
+call obsop%apply_ad(mpl,geom,yobs_save,fld)
 
 ! Compute adjoint test
 call mpl%dot_prod(fld,fld_save,sum1)
@@ -846,11 +848,9 @@ real(kind_real),allocatable :: dist(:)
 ! Allocation
 allocate(lon(geom%nc0a,geom%nl0))
 allocate(lat(geom%nc0a,geom%nl0))
-if (obsop%nobsa>0) then
-   allocate(ylon(obsop%nobsa,geom%nl0))
-   allocate(ylat(obsop%nobsa,geom%nl0))
-   allocate(dist(obsop%nobsa))
-end if
+allocate(ylon(obsop%nobsa,geom%nl0))
+allocate(ylat(obsop%nobsa,geom%nl0))
+allocate(dist(obsop%nobsa))
 
 ! Initialization
 do ic0a=1,geom%nc0a
@@ -859,11 +859,11 @@ do ic0a=1,geom%nc0a
    lat(ic0a,:) = geom%lat(ic0)
 end do
 
-if (obsop%nobsa>0) then
-   ! Apply obsop
-   call obsop%apply(mpl,geom,lon,ylon)
-   call obsop%apply(mpl,geom,lat,ylat)
+! Apply obsop
+call obsop%apply(mpl,geom,lon,ylon)
+call obsop%apply(mpl,geom,lat,ylat)
 
+if (obsop%nobsa>0) then
    ! Remove points close to the longitude discontinuity and to the poles
    call msr(dist)
    do iobsa=1,obsop%nobsa
@@ -891,14 +891,13 @@ else
    distsum = 0.0
 end if
 
-
 ! Gather results
 call mpl%allreduce_sum(norm,norm_tot)
 call mpl%allreduce_min(distmin,distmin_tot)
 call mpl%allgather(1,(/distmax/),proc_to_distmax)
 call mpl%allreduce_sum(distsum,distsum_tot)
 
-! Max. error detail
+! Maximum error detail
 iprocmax = maxloc(proc_to_distmax)
 if (iprocmax(1)==mpl%myproc) then
    iobsamax = maxloc(dist,mask=isnotmsr(dist))
