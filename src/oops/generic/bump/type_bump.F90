@@ -135,7 +135,7 @@ if (present(lunit)) then
    bump%close_listing = .false.
 else
    call bump%mpl%init_listing(bump%nam%prefix,bump%nam%model,bump%nam%colorlog,bump%nam%logpres)
-   bump%close_listing = (trim(bump%nam%model)=='online')
+   bump%close_listing = (trim(bump%nam%model)=='online').and.(.not.present(nobs))
 end if
 
 ! Generic setup

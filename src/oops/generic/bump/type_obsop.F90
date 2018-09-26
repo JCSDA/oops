@@ -309,7 +309,7 @@ allocate(proc_to_nobsa(mpl%nproc))
 
 ! Get global number of observations
 vec = (/obsop%nobs/)
-call mpl%allgather(1,vec,proc_to_nobsa) 
+call mpl%allgather(1,vec,proc_to_nobsa)
 obsop%nobsa = obsop%nobs
 obsop%nobs = sum(proc_to_nobsa)
 
