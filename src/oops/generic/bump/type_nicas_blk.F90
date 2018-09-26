@@ -43,7 +43,7 @@ real(kind_real),parameter :: sqrt_coef = 0.54_kind_real   !< Square-root factor 
 real(kind_real),parameter :: S_inf = 1.0e-2_kind_real     !< Minimum value for the convolution coefficients
 real(kind_real),parameter :: tol = 1.0e-3_kind_real       !< Positive-definiteness test tolerance
 integer,parameter :: nitermax = 50                        !< Number of iterations for the positive-definiteness test
-logical,parameter :: test_no_point = .true.               !< Test NICAS with no subgrid point on the last MPI task
+logical,parameter :: test_no_point = .false.              !< Test NICAS with no subgrid point on the last MPI task
 
 ! Ball data derived type
 type balldata_type

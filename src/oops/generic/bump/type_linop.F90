@@ -239,7 +239,7 @@ integer,intent(in) :: ncid               !< NetCDF file ID
 
 ! Local variables
 integer :: info,nvec
-integer :: n_s_id,row_id,col_id,S_id
+integer :: n_s_id,row_id,col_id,S_id,Svec_id
 character(len=1024) :: subr = 'linop_read'
 
 ! Get operator size
@@ -266,13 +266,17 @@ if (linop%n_s>0) then
    ! Get variables id
    call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_row',row_id))
    call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_col',col_id))
-   call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_S',S_id))
+   if (isnotmsi(linop%nvec)) then
+      if (linop%nvec>0) call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_Svec',Svec_id))
+   else
+      call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_S',S_id))
+   end if
 
    ! Get variables
    call mpl%ncerr(subr,nf90_get_var(ncid,row_id,linop%row))
    call mpl%ncerr(subr,nf90_get_var(ncid,col_id,linop%col))
    if (isnotmsi(linop%nvec)) then
-      if (linop%nvec>0) call mpl%ncerr(subr,nf90_get_var(ncid,S_id,linop%Svec))
+      if (linop%nvec>0) call mpl%ncerr(subr,nf90_get_var(ncid,Svec_id,linop%Svec))
    else
       call mpl%ncerr(subr,nf90_get_var(ncid,S_id,linop%S))
    end if
@@ -294,7 +298,7 @@ type(mpl_type),intent(in) :: mpl      !< MPI data
 integer,intent(in) :: ncid            !< NetCDF file ID
 
 ! Local variables
-integer :: n_s_id,nvec_id,row_id,col_id,S_id
+integer :: n_s_id,nvec_id,row_id,col_id,S_id,Svec_id
 character(len=1024) :: subr = 'linop_write'
 
 ! Start definition mode
@@ -315,7 +319,7 @@ if (linop%n_s>0) then
    call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_row',nf90_int,(/n_s_id/),row_id))
    call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_col',nf90_int,(/n_s_id/),col_id))
    if (isnotmsi(linop%nvec)) then
-      if (linop%nvec>0) call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_S',ncfloat,(/n_s_id,nvec_id/),S_id))
+      if (linop%nvec>0) call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_Svec',ncfloat,(/n_s_id,nvec_id/),Svec_id))
    else
       call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_S',ncfloat,(/n_s_id/),S_id))
    end if
@@ -327,7 +331,7 @@ if (linop%n_s>0) then
    call mpl%ncerr(subr,nf90_put_var(ncid,row_id,linop%row))
    call mpl%ncerr(subr,nf90_put_var(ncid,col_id,linop%col))
    if (isnotmsi(linop%nvec)) then
-      if (linop%nvec>0) call mpl%ncerr(subr,nf90_put_var(ncid,S_id,linop%Svec))
+      if (linop%nvec>0) call mpl%ncerr(subr,nf90_put_var(ncid,Svec_id,linop%Svec))
    else
       call mpl%ncerr(subr,nf90_put_var(ncid,S_id,linop%S))
    end if
