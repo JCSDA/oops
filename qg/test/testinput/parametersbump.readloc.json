@@ -72,7 +72,7 @@
     "date": "2010-01-01T00:00:00Z",
     "pseudoens_size" : 20
    },
-  "prefix" : "bump",
+  "prefix" : "bump_parametersbump.readloc",
   "default_seed" : 1,
   "method" : "hyb-rnd",
   "strategy" : "common",

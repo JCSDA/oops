@@ -227,7 +227,9 @@ end do
 
 ! Sum over threads
 do ithread=1,mpl%nthread
-   vec_red = vec_red+vec_red_arr(:,ithread)
+   do ired=1,com%nred
+      vec_red(ired) = vec_red(ired)+vec_red_arr(ired,ithread)
+   end do
 end do
 
 end subroutine com_red_1d
@@ -286,7 +288,11 @@ end do
 
 ! Sum over threads
 do ithread=1,mpl%nthread
-   vec_red = vec_red+vec_red_arr(:,:,ithread)
+   do il=1,nl
+      do ired=1,com%nred
+         vec_red(ired,il) = vec_red(ired,il)+vec_red_arr(ired,il,ithread)
+      end do
+   end do
 end do
 
 end subroutine com_red_2d

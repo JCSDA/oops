@@ -85,7 +85,7 @@
       "variables": {
         "variables": ["x","q","u","v","bc"]
       },
-      "prefix" : "bump",
+      "prefix" : "bump_interfaces",
       "strategy" : "common",
       "load_vbal" : 1,
       "check_vbal" : 1,

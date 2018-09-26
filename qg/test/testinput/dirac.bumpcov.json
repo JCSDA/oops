@@ -22,7 +22,7 @@
   "Covariance": {
     "covariance": "BUMP",
     "date": "2010-01-01T00:00:00Z",
-    "prefix" : "bump",
+    "prefix" : "bump_dirac.bumpcov",
     "default_seed" : 1,
     "strategy" : "common",
     "new_param" : 1,

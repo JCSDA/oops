@@ -78,24 +78,31 @@ implicit none
 class(linop_type),intent(inout) :: linop !< Linear operator
 integer,intent(in),optional :: nvec      !< Size of the vector of linear operators with similar row and col
 
+! Vector size
+if (present(nvec)) then
+   linop%nvec = nvec
+else
+   call msi(linop%nvec)
+end if
+
 ! Allocation
 allocate(linop%row(linop%n_s))
 allocate(linop%col(linop%n_s))
 if (present(nvec)) then
-   linop%nvec = nvec
    allocate(linop%Svec(linop%n_s,linop%nvec))
 else
    allocate(linop%S(linop%n_s))
 end if
 
 ! Initialization
-call msi(linop%row)
-call msi(linop%col)
-if (present(nvec)) then
-   call msr(linop%Svec)
-else
-   call msi(linop%nvec)
-   call msr(linop%S)
+if (linop%n_s>0) then
+   call msi(linop%row)
+   call msi(linop%col)
+   if (present(nvec)) then
+      if (linop%nvec>0) call msr(linop%Svec)
+   else
+      call msr(linop%S)
+   end if
 end if
 
 end subroutine linop_alloc
@@ -147,12 +154,14 @@ else
 end if
 
 ! Copy data
-linop_copy%row = linop%row
-linop_copy%col = linop%col
-if (isnotmsi(linop_copy%nvec)) then
-   linop_copy%Svec = linop%Svec
-else
-   linop_copy%S = linop%S
+if (linop%n_s>0) then
+   linop_copy%row = linop%row
+   linop_copy%col = linop%col
+   if (isnotmsi(linop_copy%nvec)) then
+      if (linop_copy%nvec>0) linop_copy%Svec = linop%Svec
+   else
+      linop_copy%S = linop%S
+   end if
 end if
 
 end function linop_copy
@@ -173,7 +182,7 @@ type(mpl_type),intent(in) :: mpl         !< MPI data
 integer :: row,i_s_s,i_s_e,n_s,i_s
 integer,allocatable :: order(:)
 
-if (linop%n_s<reorder_max) then
+if ((linop%n_s>0).and.(linop%n_s<reorder_max)) then
    ! Sort with respect to row
    allocate(order(linop%n_s))
    call qsort(linop%n_s,linop%row,order)
@@ -181,7 +190,7 @@ if (linop%n_s<reorder_max) then
    ! Sort col and S
    linop%col = linop%col(order)
    if (isnotmsi(linop%nvec)) then
-      linop%Svec = linop%Svec(order,:)
+      if (linop%nvec>0) linop%Svec = linop%Svec(order,:)
    else
       linop%S = linop%S(order)
    end if
@@ -200,7 +209,7 @@ if (linop%n_s<reorder_max) then
          call qsort(n_s,linop%col(i_s_s:i_s_e),order)
          order = order+i_s_s-1
          if (isnotmsi(linop%nvec)) then
-            linop%Svec(i_s_s:i_s_e,:) = linop%Svec(order,:)
+            if (linop%nvec>0) linop%Svec(i_s_s:i_s_e,:) = linop%Svec(order,:)
          else
             linop%S(i_s_s:i_s_e) = linop%S(order)
          end if
@@ -263,7 +272,7 @@ if (linop%n_s>0) then
    call mpl%ncerr(subr,nf90_get_var(ncid,row_id,linop%row))
    call mpl%ncerr(subr,nf90_get_var(ncid,col_id,linop%col))
    if (isnotmsi(linop%nvec)) then
-      call mpl%ncerr(subr,nf90_get_var(ncid,S_id,linop%Svec))
+      if (linop%nvec>0) call mpl%ncerr(subr,nf90_get_var(ncid,S_id,linop%Svec))
    else
       call mpl%ncerr(subr,nf90_get_var(ncid,S_id,linop%S))
    end if
@@ -299,13 +308,14 @@ if (linop%n_s>0) then
 
    ! Define dimensions
    call mpl%ncerr(subr,nf90_def_dim(ncid,trim(linop%prefix)//'_n_s',linop%n_s,n_s_id))
-   if (isnotmsi(linop%nvec)) call mpl%ncerr(subr,nf90_def_dim(ncid,trim(linop%prefix)//'_nvec',linop%nvec,nvec_id))
+   if (isnotmsi(linop%nvec).and.(linop%nvec>0)) call mpl%ncerr(subr,nf90_def_dim(ncid,trim(linop%prefix)//'_nvec',linop%nvec, &
+ & nvec_id))
 
    ! Define variables
    call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_row',nf90_int,(/n_s_id/),row_id))
    call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_col',nf90_int,(/n_s_id/),col_id))
    if (isnotmsi(linop%nvec)) then
-      call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_S',ncfloat,(/n_s_id,nvec_id/),S_id))
+      if (linop%nvec>0) call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_S',ncfloat,(/n_s_id,nvec_id/),S_id))
    else
       call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_S',ncfloat,(/n_s_id/),S_id))
    end if
@@ -317,7 +327,7 @@ if (linop%n_s>0) then
    call mpl%ncerr(subr,nf90_put_var(ncid,row_id,linop%row))
    call mpl%ncerr(subr,nf90_put_var(ncid,col_id,linop%col))
    if (isnotmsi(linop%nvec)) then
-      call mpl%ncerr(subr,nf90_put_var(ncid,S_id,linop%Svec))
+      if (linop%nvec>0) call mpl%ncerr(subr,nf90_put_var(ncid,S_id,linop%Svec))
    else
       call mpl%ncerr(subr,nf90_put_var(ncid,S_id,linop%S))
    end if

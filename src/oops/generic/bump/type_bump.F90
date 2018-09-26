@@ -199,7 +199,6 @@ if (present(nobs)) then
    close(unit=bump%mpl%info)
    call flush(bump%mpl%test)
    close(unit=bump%mpl%test)
-   call bump%mpl%delete_empty_test(bump%nam%prefix)
 end if
 
 if ((bump%nam%ens1_ne>0).or.(bump%nam%ens2_ne>0)) then
@@ -438,7 +437,6 @@ if (bump%close_listing) then
    close(unit=bump%mpl%info)
    call flush(bump%mpl%test)
    close(unit=bump%mpl%test)
-   call bump%mpl%delete_empty_test(bump%nam%prefix)
 end if
 
 end subroutine bump_run_drivers
