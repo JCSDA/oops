@@ -71,11 +71,19 @@ class(cmat_type),intent(inout) :: cmat    !< C matrix data
 type(bpar_type),intent(in) :: bpar        !< Block parameters
 character(len=*),intent(in) :: prefix     !< Prefix
 
+! Local variables
+integer :: ib
+
 ! Copy prefix
 cmat%prefix = prefix
 
 ! Allocation
 if (.not.allocated(cmat%blk)) allocate(cmat%blk(bpar%nbe))
+
+! Set block name
+do ib=1,bpar%nbe
+   cmat%blk(ib)%name = trim(prefix)//'_'//trim(bpar%blockname(ib))
+end do
 
 end subroutine cmat_alloc
 
@@ -99,7 +107,7 @@ integer :: ib
 ! Allocation
 do ib=1,bpar%nbe
    cmat%blk(ib)%ib = ib
-   call cmat%blk(ib)%alloc(nam,geom,bpar,cmat%prefix)
+   call cmat%blk(ib)%alloc(nam,geom,bpar)
 end do
 
 ! Update allocation flag

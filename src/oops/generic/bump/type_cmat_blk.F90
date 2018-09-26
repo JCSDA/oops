@@ -65,7 +65,7 @@ contains
 ! Subroutine: cmat_blk_alloc
 !> Purpose: C matrix block data allocation
 !----------------------------------------------------------------------
-subroutine cmat_blk_alloc(cmat_blk,nam,geom,bpar,prefix)
+subroutine cmat_blk_alloc(cmat_blk,nam,geom,bpar)
 
 implicit none
 
@@ -74,13 +74,9 @@ class(cmat_blk_type),intent(inout) :: cmat_blk !< C matrix data block
 type(nam_type),target,intent(in) :: nam        !< Namelist
 type(geom_type),target,intent(in) :: geom      !< Geometry
 type(bpar_type),intent(in) :: bpar             !< Block parameters
-character(len=*),intent(in) :: prefix          !< Prefix
 
 ! Associate
 associate(ib=>cmat_blk%ib)
-
-! Set block name
-cmat_blk%name = trim(prefix)//'_'//trim(bpar%blockname(ib))
 
 if (bpar%diag_block(ib)) then
    ! Allocation

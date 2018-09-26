@@ -933,6 +933,8 @@ if ((nam%new_hdiag.or.nam%new_lct).and.nam%load_cmat) call mpl%abort('new_hdiag 
 if (nam%new_nicas.and.nam%load_nicas) call mpl%abort('new_nicas and load_nicas are exclusive')
 if (nam%new_obsop.and.nam%load_obsop) call mpl%abort('new_obsop and load_obsop are exclusive')
 if (nam%check_vbal.and..not.(nam%new_vbal.or.nam%load_vbal)) call mpl%abort('check_vbal requires new_vbal or load_vbal')
+if (nam%new_nicas.and..not.(nam%new_hdiag.or.nam%new_lct.or.nam%load_cmat.or.nam%forced_radii)) &
+ & call mpl%abort('new_nicas requires a C matrix')
 if (nam%check_adjoints.and..not.(nam%new_nicas.or.nam%load_nicas)) call mpl%abort('check_adjoint requires new_nicas or load_nicas')
 if (nam%check_pos_def.and..not.(nam%new_nicas.or.nam%load_nicas)) call mpl%abort('check_pos_def requires new_nicas or load_nicas')
 if (nam%check_sqrt.and..not.(nam%new_nicas.or.nam%load_nicas)) call mpl%abort('check_sqrt requires new_nicas or load_nicas')

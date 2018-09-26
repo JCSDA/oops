@@ -250,19 +250,19 @@ else
    linop%n_s = 0
 end if
 
+! Get source/destination dimensions
+call mpl%ncerr(subr,nf90_get_att(ncid,nf90_global,trim(linop%prefix)//'_n_src',linop%n_src))
+call mpl%ncerr(subr,nf90_get_att(ncid,nf90_global,trim(linop%prefix)//'_n_dst',linop%n_dst))
+call mpl%ncerr(subr,nf90_get_att(ncid,nf90_global,trim(linop%prefix)//'_nvec',nvec))
+
+! Allocation
+if (isnotmsi(nvec)) then
+   call linop%alloc(nvec)
+else
+   call linop%alloc
+end if
+
 if (linop%n_s>0) then
-   ! Get source/destination dimensions
-   call mpl%ncerr(subr,nf90_get_att(ncid,nf90_global,trim(linop%prefix)//'_n_src',linop%n_src))
-   call mpl%ncerr(subr,nf90_get_att(ncid,nf90_global,trim(linop%prefix)//'_n_dst',linop%n_dst))
-   call mpl%ncerr(subr,nf90_get_att(ncid,nf90_global,trim(linop%prefix)//'_nvec',nvec))
-
-   ! Allocation
-   if (isnotmsi(nvec)) then
-      call linop%alloc(nvec)
-   else
-      call linop%alloc
-   end if
-
    ! Get variables id
    call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_row',row_id))
    call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_col',col_id))
@@ -297,15 +297,15 @@ integer,intent(in) :: ncid            !< NetCDF file ID
 integer :: n_s_id,nvec_id,row_id,col_id,S_id
 character(len=1024) :: subr = 'linop_write'
 
+! Start definition mode
+call mpl%ncerr(subr,nf90_redef(ncid))
+
+! Write source/destination dimensions
+call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,trim(linop%prefix)//'_n_src',linop%n_src))
+call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,trim(linop%prefix)//'_n_dst',linop%n_dst))
+call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,trim(linop%prefix)//'_nvec',linop%nvec))
+
 if (linop%n_s>0) then
-   ! Start definition mode
-   call mpl%ncerr(subr,nf90_redef(ncid))
-
-   ! Write source/destination dimensions
-   call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,trim(linop%prefix)//'_n_src',linop%n_src))
-   call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,trim(linop%prefix)//'_n_dst',linop%n_dst))
-   call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,trim(linop%prefix)//'_nvec',linop%nvec))
-
    ! Define dimensions
    call mpl%ncerr(subr,nf90_def_dim(ncid,trim(linop%prefix)//'_n_s',linop%n_s,n_s_id))
    if (isnotmsi(linop%nvec).and.(linop%nvec>0)) call mpl%ncerr(subr,nf90_def_dim(ncid,trim(linop%prefix)//'_nvec',linop%nvec, &
@@ -331,6 +331,9 @@ if (linop%n_s>0) then
    else
       call mpl%ncerr(subr,nf90_put_var(ncid,S_id,linop%S))
    end if
+else
+   ! End definition mode
+   call mpl%ncerr(subr,nf90_enddef(ncid))
 end if
 
 end subroutine linop_write
@@ -492,7 +495,7 @@ integer,intent(in),optional :: ivec               !< Index of the vector of line
 ! Local variables
 integer :: i_s,ithread
 real(kind_real) :: fld_arr(linop%n_dst,mpl%nthread)
-
+   
 if (check_data) then
    ! Check linear operation
    if (minval(linop%col)<1) call mpl%abort('col<1 for symmetric linear operation '//trim(linop%prefix))
