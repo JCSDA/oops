@@ -141,8 +141,8 @@ implicit none
 
 ! Passed variables
 class(kdtree_type),intent(in) :: kdtree    !< KD-tree
-real(kind_real),intent(in) :: lon(1)       !< Point longitude
-real(kind_real),intent(in) :: lat(1)       !< Point latitude
+real(kind_real),intent(in) :: lon          !< Point longitude
+real(kind_real),intent(in) :: lat          !< Point latitude
 integer,intent(in) :: nn                   !< Number of nearest neighbors to find
 integer,intent(out) :: nn_index(nn)        !< Neareast neighbors index
 real(kind_real),intent(out) :: nn_dist(nn) !< Neareast neighbors distance
@@ -150,11 +150,17 @@ real(kind_real),intent(out) :: nn_dist(nn) !< Neareast neighbors distance
 ! Local variables
 integer :: i,j,nid
 integer,allocatable :: order(:)
+real(kind_real) :: lontmp(1),lattmp(1)
 real(kind_real) :: qv(3)
 type(kdtree2_result) :: results(nn)
 
+
+! Copy lon/lat
+lontmp(1) = lon
+lattmp(1) = lat
+
 ! Transform to cartesian coordinates
-call trans(1,lat,lon,qv(1),qv(2),qv(3))
+call trans(1,lattmp,lontmp,qv(1),qv(2),qv(3))
 
 ! Find nearest neighbors
 call kdtree2_n_nearest(kdtree%tp,qv,nn,results)
@@ -198,16 +204,21 @@ implicit none
 
 ! Passed variables
 class(kdtree_type),intent(in) :: kdtree !< KD-tree
-real(kind_real),intent(in) :: lon(1)    !< Point longitude
-real(kind_real),intent(in) :: lat(1)    !< Point latitude
+real(kind_real),intent(in) :: lon       !< Point longitude
+real(kind_real),intent(in) :: lat       !< Point latitude
 real(kind_real),intent(in) :: sr        !< Spherical radius
 integer,intent(out) :: nn               !< Number of nearest neighbors found
 
 ! Local variables
+real(kind_real) :: lontmp(1),lattmp(1)
 real(kind_real) :: qv(3),brsq
 
+! Copy lon/lat
+lontmp(1) = lon
+lattmp(1) = lat
+
 ! Transform to cartesian coordinates
-call trans(1,lat,lon,qv(1),qv(2),qv(3))
+call trans(1,lattmp,lontmp,qv(1),qv(2),qv(3))
 
 ! Convert spherical radius to squared ball radius
 brsq = (1.0-cos(sr))**2+sin(sr)**2

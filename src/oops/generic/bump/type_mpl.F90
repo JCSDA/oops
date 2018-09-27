@@ -372,6 +372,9 @@ call flush(mpl%info)
 write(output_unit,'(a,i4.4,a)') '!!! ABORT on task #',mpl%myproc,': '//trim(message)
 call flush(output_unit)
 
+! Flush test
+call flush(mpl%test)
+
 ! Abort MPI
 call mpi_abort(mpl%mpi_comm,1,info)
 

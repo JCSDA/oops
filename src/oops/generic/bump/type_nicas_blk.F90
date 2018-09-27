@@ -613,31 +613,25 @@ allocate(nicas_blk%c1_to_c0(nicas_blk%nc1))
 call mpl%loc_to_glb(geom%nc0a,rhs_min,geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,.false.,rhs_min_glb)
 
 ! Compute subset
-if (mpl%main) then
-   write(mpl%info,'(a7,a)',advance='no') '','Compute horizontal subset C1: '
-   call flush(mpl%info)
+write(mpl%info,'(a7,a)',advance='no') '','Compute horizontal subset C1: '
+call flush(mpl%info)
 
-   ! Allocation
-   allocate(mask_hor_c0(geom%nc0))
-   mask_hor_c0 = geom%mask_hor_c0
+! Allocation
+allocate(mask_hor_c0(geom%nc0))
+mask_hor_c0 = geom%mask_hor_c0
 
-   if (test_no_point) then
-      ! Mask points on the last MPI task
-      if (mpl%nproc==1) call mpl%abort('at least 2 MPI tasks required for test_no_point')
-      do ic0=1,geom%nc0
-         iproc = geom%c0_to_proc(ic0)
-         if (iproc==mpl%nproc) mask_hor_c0(ic0) = .false.
-      end do
-   end if
-
-   ! Compute subsampling
-   call rng%initialize_sampling(mpl,geom%nc0,geom%lon,geom%lat,mask_hor_c0,rhs_min_glb,nam%ntry,nam%nrep, &
- & nicas_blk%nc1,nicas_blk%c1_to_c0)
-else
-   write(mpl%info,'(a7,a)') '','Compute horizontal subset C1'
-   call flush(mpl%info)
+if (test_no_point) then
+   ! Mask points on the last MPI task
+   if (mpl%nproc==1) call mpl%abort('at least 2 MPI tasks required for test_no_point')
+   do ic0=1,geom%nc0
+      iproc = geom%c0_to_proc(ic0)
+      if (iproc==mpl%nproc) mask_hor_c0(ic0) = .false.
+   end do
 end if
-call mpl%bcast(nicas_blk%c1_to_c0)
+
+! Compute subsampling
+call rng%initialize_sampling(mpl,geom%nc0,geom%lon,geom%lat,mask_hor_c0,rhs_min_glb,nam%ntry,nam%nrep, &
+ & nicas_blk%nc1,nicas_blk%c1_to_c0)
 nicas_blk%c1_to_proc = geom%c0_to_proc(nicas_blk%c1_to_c0)
 
 ! Inverse conversion
@@ -724,19 +718,16 @@ end do
 ! Allocation
 allocate(nicas_blk%nc2(nicas_blk%nl1))
 allocate(nicas_blk%mask_c2(nicas_blk%nc1,nicas_blk%nl1))
-if (mpl%main) allocate(rhs_c0(geom%nc0))
-if (mpl%main) allocate(rhs_c1(nicas_blk%nc1))
+allocate(lon_c1(nicas_blk%nc1))
+allocate(lat_c1(nicas_blk%nc1))
 allocate(mask_c1(nicas_blk%nc1))
+allocate(rhs_c0(geom%nc0))
+allocate(rhs_c1(nicas_blk%nc1))
 
 ! Horizontal subsampling
 do il1=1,nicas_blk%nl1
-   if (mpl%main) then
-      write(mpl%info,'(a7,a,i3,a)',advance='no') '','Compute horizontal subset C2 (level ',il1,'): '
-      call flush(mpl%info)
-   else
-      write(mpl%info,'(a7,a,i3,a)') '','Compute horizontal subset C2 (level ',il1,')'
-      call flush(mpl%info)
-   end if
+   write(mpl%info,'(a7,a,i3,a)',advance='no') '','Compute horizontal subset C2 (level ',il1,'): '
+   call flush(mpl%info)
 
    ! Compute nc2
    il0 = nicas_blk%l1_to_l0(il1)
@@ -750,17 +741,15 @@ do il1=1,nicas_blk%nl1
 
       ! Compute subset
       call mpl%loc_to_glb(geom%nc0a,cmat_blk%rhs(:,il0),geom%nc0,geom%c0_to_proc,geom%c0_to_c0a,.false.,rhs_c0)
-      if (mpl%main) then
-         ! Initialization
-         lon_c1 = geom%lon(nicas_blk%c1_to_c0)
-         lat_c1 = geom%lat(nicas_blk%c1_to_c0)
-         mask_c1 = geom%mask_c0(nicas_blk%c1_to_c0,il0)
-         rhs_c1 = rhs_c0(nicas_blk%c1_to_c0)
 
-         ! Initialize sampling
-         call rng%initialize_sampling(mpl,nicas_blk%nc1,lon_c1,lat_c1,mask_c1,rhs_c1,nam%ntry,nam%nrep,nicas_blk%nc2(il1),c2_to_c1)
-      end if
-      call mpl%bcast(c2_to_c1)
+      ! Initialization
+      lon_c1 = geom%lon(nicas_blk%c1_to_c0)
+      lat_c1 = geom%lat(nicas_blk%c1_to_c0)
+      mask_c1 = geom%mask_c0(nicas_blk%c1_to_c0,il0)
+      rhs_c1 = rhs_c0(nicas_blk%c1_to_c0)
+
+      ! Initialize sampling
+      call rng%initialize_sampling(mpl,nicas_blk%nc1,lon_c1,lat_c1,mask_c1,rhs_c1,nam%ntry,nam%nrep,nicas_blk%nc2(il1),c2_to_c1)
 
       ! Fill C2 mask
       nicas_blk%mask_c2(:,il1) = .false.

@@ -26,7 +26,6 @@ use type_nam, only: nam_type
 use type_nicas, only: nicas_type
 use type_obsop, only: obsop_type
 use type_rng, only: rng_type
-use type_timer, only: timer_type
 use type_vbal, only: vbal_type
 
 implicit none

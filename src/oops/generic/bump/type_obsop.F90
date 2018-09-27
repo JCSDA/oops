@@ -26,6 +26,8 @@ use type_rng, only: rng_type
 
 implicit none
 
+logical,parameter :: test_no_obs = .false. !< Test observation operator with no observation on the last MPI task
+
 ! Observation operator data derived type
 type obsop_type
    ! Observations
@@ -183,7 +185,7 @@ type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 
 ! Local variables
-integer :: iobs,jobs,iproc,iobsa
+integer :: iobs,jobs,iproc,iobsa,nproc_max
 integer,allocatable :: order(:),obs_to_proc(:)
 real(kind_real),allocatable :: lonobs(:),latobs(:),list(:)
 
@@ -193,8 +195,6 @@ if (nam%nobs<1) call mpl%abort('nobs should be positive for offline observation 
 ! Allocation
 allocate(lonobs(nam%nobs))
 allocate(latobs(nam%nobs))
-allocate(list(nam%nobs))
-allocate(order(nam%nobs))
 allocate(obs_to_proc(nam%nobs))
 
 if (mpl%main) then
@@ -215,23 +215,35 @@ end if
 call mpl%bcast(lonobs)
 call mpl%bcast(latobs)
 
-! Split observations between processors randomly
-if (mpl%main) call rng%rand_real(0.0_kind_real,1.0_kind_real,list)
-call mpl%bcast(list)
-call qsort(nam%nobs,list,order)
-obsop%nobs = nam%nobs/mpl%nproc
-if (obsop%nobs*mpl%nproc<nam%nobs) obsop%nobs = obsop%nobs+1
-iproc = 1
-iobsa = 1
-do iobs=1,nam%nobs
-   jobs = order(iobs)
-   obs_to_proc(jobs) = iproc
-   iobsa = iobsa+1
-   if (iobsa>obsop%nobs) then
+! Split observations between processors
+if (test_no_obs.and.(mpl%nproc==1)) call mpl%abort('at least 2 MPI tasks required for test_no_obs')
+if (mpl%main) then
+   ! Allocation
+   allocate(list(nam%nobs))
+   allocate(order(nam%nobs))
+
+   ! Generate random order
+   call rng%rand_real(0.0_kind_real,1.0_kind_real,list)
+   call qsort(nam%nobs,list,order)
+
+   ! Split observations
+   iproc = 1
+   if (test_no_obs) then
+      nproc_max = mpl%nproc-1
+   else
+      nproc_max = mpl%nproc
+   end  if
+   do iobs=1,nam%nobs
+      jobs = order(iobs)
+      obs_to_proc(jobs) = iproc
       iproc = iproc+1
-      iobsa = 1
-   end if
-end do
+      if (iproc>nproc_max) iproc = 1
+   end do
+end if
+
+! Broadcast
+call mpl%bcast(obs_to_proc)
+obsop%nobs = count(obs_to_proc==mpl%myproc)
 
 ! Allocation
 allocate(obsop%lonobs(obsop%nobs))
@@ -295,7 +307,7 @@ type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 
 ! Local variables
-integer :: offset,iobs,jobs,iobsa,iproc,nobsa,i_s,ic0,ic0b,i,ic0a,delta,nres,ind(1),lunit
+integer :: offset,iobs,jobs,iobsa,iproc,i_s,ic0,ic0b,i,ic0a,delta,nres,ind(1),lunit
 integer :: vec(1),imin(1),imax(1),nmoves,imoves
 integer,allocatable :: nop(:),iop(:),srcproc(:,:),srcic0(:,:),order(:),nobs_to_move(:),nobs_to_move_tmp(:),obs_moved(:,:)
 integer,allocatable :: obs_to_proc(:),obs_to_obsa(:),proc_to_nobsa(:),c0b_to_c0(:),c0_to_c0b(:),c0a_to_c0b(:)
@@ -312,6 +324,13 @@ vec = (/obsop%nobs/)
 call mpl%allgather(1,vec,proc_to_nobsa)
 obsop%nobsa = obsop%nobs
 obsop%nobs = sum(proc_to_nobsa)
+
+! Print input
+write(mpl%info,'(a7,a)') '','Number of observations per MPI task on input:'
+do iproc=1,mpl%nproc
+   write(mpl%info,'(a10,a,i3,a,i8)') '','Task ',iproc,': ',proc_to_nobsa(iproc)
+end do
+write(mpl%info,'(a10,a,i8)') '','Total   : ',obsop%nobs
 
 ! Allocation
 allocate(lonobs(obsop%nobs))
@@ -348,16 +367,6 @@ call mpl%update_tag(2)
 ! Broadcast data
 call mpl%bcast(lonobs)
 call mpl%bcast(latobs)
-
-! Reallocation
-deallocate(obsop%lonobs)
-deallocate(obsop%latobs)
-allocate(obsop%lonobs(obsop%nobs))
-allocate(obsop%latobs(obsop%nobs))
-
-! Copy
-obsop%lonobs = lonobs
-obsop%latobs = latobs
 
 ! Allocation
 allocate(maskobs(obsop%nobs))
@@ -413,43 +422,33 @@ case('')
          obs_to_proc(iobs) = iproc
       end do
    end do
-case('gathered')
-   ! Observations gathered on the same task
-   write(mpl%info,'(a7,a)') '','Observations gathered on the same task'
-   call flush(mpl%info)
-
-   ! Fill obs_to_proc
-   obs_to_proc = mpl%ioproc
 case('random')
    ! Observations randomly distributed
    write(mpl%info,'(a7,a)') '','Observations randomly distributed'
    call flush(mpl%info)
 
-   ! Allocation
-   allocate(list(obsop%nobs))
-   allocate(order(obsop%nobs))
+   if (mpl%main) then
+      ! Allocation
+      allocate(list(obsop%nobs))
+      allocate(order(obsop%nobs))
 
-   ! Random repartition
-   if (mpl%main) call rng%rand_real(0.0_kind_real,1.0_kind_real,list)
-   call mpl%bcast(list)
-   call qsort(obsop%nobs,list,order)
-   nobsa = obsop%nobs/mpl%nproc
-   if (nobsa*mpl%nproc<obsop%nobs) nobsa = nobsa+1
-   iproc = 1
-   iobsa = 1
-   do iobs=1,obsop%nobs
-      jobs = order(iobs)
-      obs_to_proc(jobs) = iproc
-      iobsa = iobsa+1
-      if (iobsa>nobsa) then
+      ! Generate random order
+      call rng%rand_real(0.0_kind_real,1.0_kind_real,list)
+      call qsort(obsop%nobs,list,order)
+
+      ! Split observations
+      iproc = 1
+      do iobs=1,obsop%nobs
+         jobs = order(iobs)
+         obs_to_proc(jobs) = iproc
+         write(mpl%info,*) 'TOUST',iobs,jobs,iproc
          iproc = iproc+1
-         iobsa = 1
-      end if
-   end do
+         if (iproc>mpl%nproc) iproc = 1
+      end do
+   end if
 
-   ! Release memory
-   deallocate(list)
-   deallocate(order)
+   ! Broadcast
+   call mpl%bcast(obs_to_proc)
 case ('local','adjusted')
    ! Grid-based repartition
    do iobs=1,obsop%nobs
@@ -538,26 +537,11 @@ case default
    call mpl%abort('wrong obsdis')
 end select
 
-select case (trim(nam%obsdis))
-case('gathered','random','local','adjusted')
-   ! Local number of observations
-   proc_to_nobsa = 0
-   do iobs=1,obsop%nobs
-      ! Concerned proc
-      iproc = obs_to_proc(iobs)
-
-      ! Number of observations per proc
-      proc_to_nobsa(iproc) = proc_to_nobsa(iproc)+1
-   end do
-
-   ! Define nobsa
-   obsop%nobsa = proc_to_nobsa(mpl%myproc)
-end select
-
 ! Allocation
-allocate(obsop%obsa_to_obs(obsop%nobsa))
+obsop%nobsa = count(obs_to_proc==mpl%myproc)
 
-! Fill obs_to_obsa and obsa_to_obs
+allocate(obsop%obsa_to_obs(obsop%nobsa))
+! Fill proc_to_nobsa, obs_to_obsa and obsa_to_obs
 proc_to_nobsa = 0
 do iobs=1,obsop%nobs
    ! Concerned proc
@@ -647,8 +631,8 @@ call mpl%allreduce_max(real(obsop%com%nhalo,kind_real),C_max)
 C_max = C_max/(3.0*real(obsop%nobs,kind_real)/real(mpl%nproc,kind_real))
 N_max = real(maxval(proc_to_nobsa),kind_real)/(real(obsop%nobs,kind_real)/real(mpl%nproc,kind_real))
 
-! Print results
-write(mpl%info,'(a7,a)') '','Number of observations per MPI task:'
+! Print output
+write(mpl%info,'(a7,a)') '','Number of observations per MPI task on output:'
 do iproc=1,mpl%nproc
    write(mpl%info,'(a10,a,i3,a,i8)') '','Task ',iproc,': ',proc_to_nobsa(iproc)
 end do
@@ -834,7 +818,7 @@ type(mpl_type),intent(in) :: mpl         !< MPI data
 type(geom_type),intent(in) :: geom       !< Geometry
 
 ! Local variables
-integer :: ic0a,ic0,iobsa,iobs
+integer :: ic0a,ic0,iobsa
 integer :: iprocmax(1),iobsamax(1),iobsmax(1)
 real(kind_real) :: ylonmax(1),ylatmax(1)
 real(kind_real) :: norm,distmin,distmax,distsum
@@ -865,9 +849,8 @@ if (obsop%nobsa>0) then
    ! Remove points close to the longitude discontinuity and to the poles
    call msr(dist)
    do iobsa=1,obsop%nobsa
-      iobs = obsop%obsa_to_obs(iobsa)
-      if ((abs(obsop%lonobs(iobs))<0.8*pi).and.(abs(obsop%latobs(iobs))<0.4*pi)) then
-         call sphere_dist(ylon(iobsa,1),ylat(iobsa,1),obsop%lonobs(iobs),obsop%latobs(iobs),dist(iobsa))
+      if ((abs(obsop%lonobs(iobsa))<0.8*pi).and.(abs(obsop%latobs(iobsa))<0.4*pi)) then
+         call sphere_dist(ylon(iobsa,1),ylat(iobsa,1),obsop%lonobs(iobsa),obsop%latobs(iobsa),dist(iobsa))
          dist(iobsa) = dist(iobsa)*reqkm
       end if
    end do

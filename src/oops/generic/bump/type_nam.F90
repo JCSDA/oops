@@ -1137,7 +1137,6 @@ end if
 
 ! Check obsop_param
 if (nam%new_obsop) then
-   if (nam%nobs<1) call mpl%abort('nobs should be positive')
    select case (trim(nam%obsop_interp))
    case ('bilin','natural')
    case default

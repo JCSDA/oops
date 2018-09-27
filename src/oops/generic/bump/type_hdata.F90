@@ -14,7 +14,6 @@ use netcdf
 !$ use omp_lib
 use tools_const, only: pi,req,deg2rad,rad2deg,msvali,msvalr
 use tools_func, only: gc99,sphere_dist,vector_product,vector_triple_product
-use tools_icos, only: closest_icos,build_icos
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsi,isnotmsr,ismsi,ismsr
 use tools_nc, only: ncfloat
@@ -133,18 +132,17 @@ contains
 ! Subroutine: hdata_alloc
 !> Purpose: HDIAG data allocation
 !----------------------------------------------------------------------
-subroutine hdata_alloc(hdata,mpl,nam,geom)
+subroutine hdata_alloc(hdata,nam,geom)
 
 implicit none
 
 ! Passed variables
 class(hdata_type),intent(inout) :: hdata !< HDIAG data
-type(mpl_type),intent(in) :: mpl         !< MPI data
 type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 
 ! Allocation
-if (mpl%main) allocate(hdata%rh_c0(geom%nc0,geom%nl0))
+allocate(hdata%rh_c0(geom%nc0,geom%nl0))
 allocate(hdata%c1_to_c0(nam%nc1))
 allocate(hdata%c1l0_log(nam%nc1,geom%nl0))
 allocate(hdata%c1c3_to_c0(nam%nc1,nam%nc3))
@@ -165,7 +163,7 @@ if (nam%displ_diag) then
 end if
 
 ! Initialization
-if (mpl%main) call msr(hdata%rh_c0)
+call msr(hdata%rh_c0)
 call msi(hdata%c1_to_c0)
 hdata%c1l0_log = .false.
 call msi(hdata%c1c3_to_c0)
@@ -743,7 +741,7 @@ if (nam%nc1>maxval(geom%nc0_mask)) then
 end if
 
 ! Allocation
-call hdata%alloc(mpl,nam,geom)
+call hdata%alloc(nam,geom)
 
 ! Read or compute sampling data
 ios = 1
@@ -767,22 +765,16 @@ end if
 if (nam%new_vbal.or.nam%new_lct.or.(nam%new_hdiag.and.(nam%var_diag.or.nam%local_diag.or.nam%displ_diag))) then
    if ((ios==1).or.(ios==2)) then
       ! Define subsampling
-      if (mpl%main) then
-         write(mpl%info,'(a7,a)',advance='no') '','Define subsampling:'
-         call flush(mpl%info)
-         allocate(rh_c1(nam%nc1))
-         lon_c1 = geom%lon(hdata%c1_to_c0)
-         lat_c1 = geom%lat(hdata%c1_to_c0)
-         mask_c1 = .true.
-         rh_c1 = 1.0
-         call rng%initialize_sampling(mpl,nam%nc1,lon_c1,lat_c1,mask_c1,rh_c1,nam%ntry,nam%nrep,nam%nc2,hdata%c2_to_c1)
-         deallocate(rh_c1)
-      else
-         write(mpl%info,'(a7,a)') '','Define subsampling'
-         call flush(mpl%info)
-      end if
-      call mpl%bcast(hdata%c2_to_c1)
+      write(mpl%info,'(a7,a)',advance='no') '','Define subsampling:'
+      call flush(mpl%info)
+      allocate(rh_c1(nam%nc1))
+      lon_c1 = geom%lon(hdata%c1_to_c0)
+      lat_c1 = geom%lat(hdata%c1_to_c0)
+      mask_c1 = .true.
+      rh_c1 = 1.0
+      call rng%initialize_sampling(mpl,nam%nc1,lon_c1,lat_c1,mask_c1,rh_c1,nam%ntry,nam%nrep,nam%nc2,hdata%c2_to_c1)
       hdata%c2_to_c0 = hdata%c1_to_c0(hdata%c2_to_c1)
+      deallocate(rh_c1)
    end if
 
    if ((ios==1).or.(ios==2).or.(ios==3).or.(ios==4)) then
@@ -955,96 +947,44 @@ type(nam_type),intent(in) :: nam         !< Namelist
 type(geom_type),intent(in) :: geom       !< Geometry
 
 ! Local variables
-integer :: ic0,ic1,il0,fac,np,ip
+integer :: ic0,ic1,il0
 integer :: nn_index(1)
 real(kind_real) :: nn_dist(1)
-real(kind_real),allocatable :: lon(:),lat(:)
-character(len=5) :: ic1char
 type(kdtree_type) :: kdtree
 
 ! Compute subset
 if (nam%nc1<maxval(geom%nc0_mask)) then
-   if (mpl%main) then
-      write(mpl%info,'(a7,a)',advance='no') '','Compute horizontal subset C1: '
-      call flush(mpl%info)
-      select case (trim(nam%draw_type))
-      case ('random_uniform','random_coast')
-         if (trim(nam%draw_type)=='random_uniform') then
-            ! Random draw
-            do ic0=1,geom%nc0
-               if (geom%mask_hor_c0(ic0)) hdata%rh_c0(ic0,1) = 1.0
-            end do
-         elseif (trim(nam%draw_type)=='random_coast') then
-            ! More points around coasts
-            do ic0=1,geom%nc0
-               if (geom%mask_hor_c0(ic0)) hdata%rh_c0(ic0,1) = 0.0
-            end do
-            do il0=1,geom%nl0
-               call kdtree%create(mpl,geom%nc0,geom%lon,geom%lat,mask=.not.geom%mask_c0(:,il0))
-               do ic0=1,geom%nc0
-                  if (geom%mask_c0(ic0,il0)) then
-                     call kdtree%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0),1,nn_index,nn_dist)
-                     hdata%rh_c0(ic0,1) = hdata%rh_c0(ic0,1)+exp(-nn_dist(1)/Lcoast)
-                  else
-                     hdata%rh_c0(ic0,1) = hdata%rh_c0(ic0,1)+1.0
-                  end if
-               end do
-               call kdtree%dealloc
-            end do
-            hdata%rh_c0(:,1) = rcoast+(1.0-rcoast)*(1.0-hdata%rh_c0(:,1)/real(geom%nl0,kind_real))
-         end if
-
-         ! Initialize sampling
-         call rng%initialize_sampling(mpl,geom%nc0,geom%lon,geom%lat,geom%mask_hor_c0,hdata%rh_c0(:,1),nam%ntry,nam%nrep, &
-       & nam%nc1,hdata%c1_to_c0)
-      case ('icosahedron')
-         ! Icosahedron grid
-         write(mpl%info,'(a)') 'icosahedron'
-         call flush(mpl%info)
-
-         ! Compute icosahedron size
-         call closest_icos(nam%nc1,fac,np)
-
-         ! Allocation
-         allocate(lon(np))
-         allocate(lat(np))
-
-         ! Compute icosahedron
-         call build_icos(fac,np,lon,lat)
-
-         ! Fill c1_to_c0
-         ic1 = 0
-         do ip=1,np
-            ! Find nearest neighbor
-            call geom%kdtree%find_nearest_neighbors(lon(ip),lat(ip),1,nn_index,nn_dist)
-            ic0 = nn_index(1)
-
-            ! Check mask
-            if (geom%mask_hor_c0(ic0)) then
-               ic1 = ic1+1
-               if (ic1<=nam%nc1) hdata%c1_to_c0(ic1) = ic0
+   write(mpl%info,'(a7,a)',advance='no') '','Compute horizontal subset C1: '
+   call flush(mpl%info)
+   select case (trim(nam%draw_type))
+   case ('random_uniform')
+      ! Random draw
+      do ic0=1,geom%nc0
+         if (geom%mask_hor_c0(ic0)) hdata%rh_c0(ic0,1) = 1.0
+      end do
+   case ('random_coast')
+      ! More points around coasts
+      do ic0=1,geom%nc0
+         if (geom%mask_hor_c0(ic0)) hdata%rh_c0(ic0,1) = 0.0
+      end do
+      do il0=1,geom%nl0
+         call kdtree%create(mpl,geom%nc0,geom%lon,geom%lat,mask=.not.geom%mask_c0(:,il0))
+         do ic0=1,geom%nc0
+            if (geom%mask_c0(ic0,il0)) then
+               call kdtree%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0),1,nn_index,nn_dist)
+               hdata%rh_c0(ic0,1) = hdata%rh_c0(ic0,1)+exp(-nn_dist(1)/Lcoast)
+            else
+               hdata%rh_c0(ic0,1) = hdata%rh_c0(ic0,1)+1.0
             end if
          end do
+         call kdtree%dealloc
+      end do
+      hdata%rh_c0(:,1) = rcoast+(1.0-rcoast)*(1.0-hdata%rh_c0(:,1)/real(geom%nl0,kind_real))
+   end select
 
-         ! Check size
-         if (ic1<nam%nc1) then
-            write(ic1char,'(i5)') ic1
-            call mpl%abort('nc1 should be decreased to '//ic1char)
-         end if
-         if (ic1>nam%nc1) then
-            write(ic1char,'(i5)') ic1
-            call mpl%warning('nc1 could be increased to '//ic1char)
-         end if
-
-         ! Release memory
-         deallocate(lon)
-         deallocate(lat)
-      end select
-   else
-      write(mpl%info,'(a7,a)') '','Compute horizontal subset C1'
-      call flush(mpl%info)
-   end if
-   call mpl%bcast(hdata%c1_to_c0)
+   ! Initialize sampling
+   call rng%initialize_sampling(mpl,geom%nc0,geom%lon,geom%lat,geom%mask_hor_c0,hdata%rh_c0(:,1),nam%ntry,nam%nrep, &
+ & nam%nc1,hdata%c1_to_c0)
 else
    ic1 = 0
    do ic0=1,geom%nc0

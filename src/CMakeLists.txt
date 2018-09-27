@@ -142,7 +142,6 @@ oops/generic/StatsVariableChange.h
 oops/generic/bump/tools_const.F90
 oops/generic/bump/tools_fit.F90
 oops/generic/bump/tools_func.F90
-oops/generic/bump/tools_icos.F90
 oops/generic/bump/tools_kinds.F90
 oops/generic/bump/tools_missing.F90
 oops/generic/bump/tools_nc.F90
@@ -178,7 +177,6 @@ oops/generic/bump/type_nicas_blk.F90
 oops/generic/bump/type_nicas.F90
 oops/generic/bump/type_obsop.F90
 oops/generic/bump/type_rng.F90
-oops/generic/bump/type_timer.F90
 oops/generic/bump/type_vbal_blk.F90
 oops/generic/bump/type_vbal.F90
 oops/generic/bump/external/tools_asa007.F90
