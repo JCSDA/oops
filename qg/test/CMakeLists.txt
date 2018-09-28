@@ -38,6 +38,7 @@ list( APPEND qg_test_input
   testinput/truth.json
   testinput/test_op_obs.json
   testinput/analytic_init_fc.json
+  testinput/static_binit.yml
 )
 
 list( APPEND qg_testoutput
@@ -156,6 +157,13 @@ ecbuild_add_test( TARGET test_qg_makeobsbias
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_makeobs.x testinput/makeobsbias.json"
                        testoutput/makeobsbias.test
                   DEPENDS qg_makeobs.x )
+
+ecbuild_add_test( TARGET  test_qg_staticbinit
+                  TYPE    EXE
+                  SOURCES ../mains/qgStaticBInit.cc
+                  ARGS    "testinput/static_binit.yml"
+                  MPI     1		  
+                  LIBS    qg )
 
 # Test QG internal classes
 

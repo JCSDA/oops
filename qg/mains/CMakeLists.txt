@@ -42,3 +42,8 @@ ecbuild_add_executable( TARGET  qg_parameters.x
                         SOURCES qgEstimateParams.cc
                         LIBS    qg
                       )
+
+ecbuild_add_executable( TARGET  qg_staticbinit.x
+                        SOURCES qgStaticBInit.cc
+                        LIBS    qg
+                      )

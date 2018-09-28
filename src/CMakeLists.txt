@@ -227,6 +227,7 @@ oops/runs/HofX.h
 oops/runs/MakeObs.h
 oops/runs/Run.h
 oops/runs/Run.cc
+oops/runs/StaticBInit.h
 oops/runs/Test.h
 oops/runs/Variational.h
 
