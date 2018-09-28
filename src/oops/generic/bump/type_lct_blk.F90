@@ -43,12 +43,12 @@ type lct_blk_type
    real(kind_real),allocatable :: fit(:,:,:,:)  !< Fitted correlations
 
    ! Output data
-   real(kind_real),allocatable :: D11(:,:,:)
-   real(kind_real),allocatable :: D22(:,:,:)
-   real(kind_real),allocatable :: D33(:,:,:)
-   real(kind_real),allocatable :: D12(:,:,:)
-   real(kind_real),allocatable :: Dcoef(:,:,:)
-   real(kind_real),allocatable :: DLh(:,:,:)
+   real(kind_real),allocatable :: D11(:,:,:)    !< TODO
+   real(kind_real),allocatable :: D22(:,:,:)    !< TODO
+   real(kind_real),allocatable :: D33(:,:,:)    !< TODO
+   real(kind_real),allocatable :: D12(:,:,:)    !< TODO
+   real(kind_real),allocatable :: Dcoef(:,:,:)  !< TODO
+   real(kind_real),allocatable :: DLh(:,:,:)    !< TODO
 contains
    procedure :: alloc => lct_blk_alloc
    procedure :: dealloc => lct_blk_dealloc

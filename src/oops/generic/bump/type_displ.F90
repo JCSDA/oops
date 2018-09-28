@@ -160,7 +160,7 @@ real(kind_real) :: dlon_c2a(hdata%nc2a),dlat_c2a(hdata%nc2a),dist_c2a(hdata%nc2a
 real(kind_real) :: dlon_c2b(hdata%nc2b),dlat_c2b(hdata%nc2b)
 real(kind_real) :: lon_c2a_ori(hdata%nc2a,geom%nl0),lat_c2a_ori(hdata%nc2a,geom%nl0)
 real(kind_real) :: lon_c2a(hdata%nc2a),lat_c2a(hdata%nc2a)
-real(kind_real) :: lon_c2(nam%nc2),lat_c2(nam%nc2),valid_c2(nam%nc2)
+real(kind_real),allocatable :: lon_c2(:),lat_c2(:),valid_c2(:)
 real(kind_real) :: x_ori(hdata%nc2a),y_ori(hdata%nc2a),z_ori(hdata%nc2a)
 real(kind_real) :: dx_ini(hdata%nc2a),dy_ini(hdata%nc2a),dz_ini(hdata%nc2a)
 real(kind_real) :: dx(hdata%nc2a),dy(hdata%nc2a),dz(hdata%nc2a)
@@ -176,6 +176,11 @@ allocate(m2_1(nam%nc1,hdata%nc2a,geom%nl0,nam%nv,2:nam%nts,ens%nsub))
 allocate(m1_2(nam%nc1,hdata%nc2a,geom%nl0,nam%nv,2:nam%nts,ens%nsub))
 allocate(m2_2(nam%nc1,hdata%nc2a,geom%nl0,nam%nv,2:nam%nts,ens%nsub))
 allocate(m11(nam%nc1,hdata%nc2a,geom%nl0,nam%nv,2:nam%nts,ens%nsub))
+if (mpl%main) then
+   allocate(lon_c2(nam%nc2))
+   allocate(lat_c2(nam%nc2))
+   allocate(valid_c2(nam%nc2))
+end if
 
 ! Initialization
 m1_1 = 0.0
@@ -422,9 +427,8 @@ do its=2,nam%nts
       end do
 
       ! Check raw mesh
-     call mpl%loc_to_glb(hdata%nc2a,lon_c2a,nam%nc2,hdata%c2_to_proc,hdata%c2_to_c2a,.false.,lon_c2)
-     call mpl%loc_to_glb(hdata%nc2a,lat_c2a,nam%nc2,hdata%c2_to_proc,hdata%c2_to_c2a,.false.,lat_c2)
-
+      call mpl%loc_to_glb(hdata%nc2a,lon_c2a,nam%nc2,hdata%c2_to_proc,hdata%c2_to_c2a,.false.,lon_c2)
+      call mpl%loc_to_glb(hdata%nc2a,lat_c2a,nam%nc2,hdata%c2_to_proc,hdata%c2_to_c2a,.false.,lat_c2)
       if (mpl%main) then
          mesh = hdata%mesh%copy()
          call mesh%trans(lon_c2,lat_c2)

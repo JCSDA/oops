@@ -298,6 +298,7 @@ ecbuild_add_test( TARGET  test_qg_localization
                   LIBS    qg )
 
 # Application test_qg_linearvariablechange requires test_qg_parameters_bump_vbal output, which requires test_qg_genenspert output
+# Vertical balance written by test_qg_parameters_bump_vbal is linked by test_qg_copy_vbal
 
 ecbuild_add_test( TARGET test_qg_genenspert
                   TYPE SCRIPT
@@ -313,6 +314,11 @@ ecbuild_add_test( TARGET test_qg_parameters_bump_vbal
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_parameters.x testinput/parametersbump.vbal.json"
                        testoutput/parametersbump.vbal.test
                   DEPENDS qg_parameters.x )
+
+ecbuild_add_test( TARGET test_qg_copy_vbal
+                  TYPE SCRIPT
+                  COMMAND "ln"
+                  ARGS  -sf bump_parametersbump.vbal_vbal_0001-0001.nc bump_interfaces_vbal_0001-0001.nc )
 
 ecbuild_add_test( TARGET  test_qg_linearvariablechange
                   MPI    1

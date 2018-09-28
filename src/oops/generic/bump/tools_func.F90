@@ -23,8 +23,9 @@ real(kind_real),parameter :: Dmin = 1.0e-12_kind_real !< Minimum tensor diagonal
 integer,parameter :: M = 0                            !< Number of implicit itteration for the Matern function (GC 99 function if M = -1 and Gaussian function if M = 0)
 
 private
+public :: gc_gau
 public :: lonlatmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,add,divide, &
-        & fit_diag,fit_diag_dble,gc99,fit_lct,cholesky,syminv
+        & fit_diag,fit_diag_dble,gc99,fit_lct,lct_d2h,cholesky,syminv
 
 contains
 
@@ -535,7 +536,7 @@ else
 end if
 
 ! Enforce positivity
-gc99 = max(gc99,0.0)
+gc99 = max(gc99,0.0_kind_real)
 
 end function gc99
 
@@ -563,7 +564,7 @@ real(kind_real),intent(out) :: fit(nc,nl0)  !< Fit
 
 ! Local variables
 integer :: jl0,jc3,iscales,offset
-real(kind_real) :: Hcoef(nscales),D11,D22,D33,D12,H11,H22,H33,H12,rsq,det,distnorm
+real(kind_real) :: Hcoef(nscales),D11,D22,D33,D12,H11,H22,H33,H12,rsq,distnorm
 
 ! Initialization
 offset = 0
@@ -577,23 +578,13 @@ do iscales=1,nscales
    ! Ensure positive-definiteness of D
    D11 = max(Dmin,D(offset+1))
    D22 = max(Dmin,D(offset+2))
-   call msr(D33)
+   D33 = 0.0
    if (nl0>1) D33 = max(Dmin,D(offset+3))
-   call msr(D12)
+   D12 = 0.0
    if (ncomp(iscales)==4) D12 = sqrt(D11*D22)*max(-1.0_kind_real+Dmin,min(D(offset+4),1.0_kind_real-Dmin))
 
    ! Inverse D to get H
-   if (ncomp(iscales)==3) then
-      det = D11*D22
-   else
-      det = D11*D22-D12**2
-   end if
-   H11 = D22/det
-   H22 = D11/det
-   call msr(H33)
-   if (nl0>1) H33 = 1.0/D33
-   call msr(H12)
-   if (ncomp(iscales)==4) H12 = -D12/det
+   call lct_d2h(D11,D22,D33,D12,H11,H22,H33,H12)
 
    ! Homogeneous anisotropic approximation
    !$omp parallel do schedule(static) private(jl0,jc3,rsq)
@@ -629,6 +620,42 @@ do iscales=1,nscales
 end do
 
 end subroutine fit_lct
+
+!----------------------------------------------------------------------
+! Subroutine: lct_d2h
+!> Purpose: inversion from D (Daley tensor) to H (local correlation tensor)
+!----------------------------------------------------------------------
+subroutine lct_d2h(D11,D22,D33,D12,H11,H22,H33,H12)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: D11  !< Daley tensor component 11
+real(kind_real),intent(in) :: D22  !< Daley tensor component 22
+real(kind_real),intent(in) :: D33  !< Daley tensor component 33
+real(kind_real),intent(in) :: D12  !< Daley tensor component 12
+real(kind_real),intent(out) :: H11 !< Local correlation tensor component 11
+real(kind_real),intent(out) :: H22 !< Local correlation tensor component 22
+real(kind_real),intent(out) :: H33 !< Local correlation tensor component 33
+real(kind_real),intent(out) :: H12 !< Local correlation tensor component 12
+
+! Local variables
+real(kind_real) :: det
+
+! Compute horizontal determinant
+det = D11*D22-D12**2
+
+! Inverse D to get H
+H11 = D22/det
+H22 = D11/det
+if (D33>0.0) then
+   H33 = 1.0/D33
+else
+   H33 = 0.0
+end if
+H12 = -D12/det
+
+end subroutine lct_d2h
 
 !----------------------------------------------------------------------
 ! Function: matern

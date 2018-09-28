@@ -199,76 +199,105 @@ info = nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_noclobber,nf90
 if (info==nf90_noerr) then
    ! Write namelist parameters
    call nam%ncwrite(mpl,ncid)
-
-   ! Define dimensions
-   call mpl%ncerr(subr,nf90_def_dim(ncid,'one',1,one_id))
-   call mpl%ncerr(subr,nf90_def_dim(ncid,'nc3',nam%nc3,nc3_id))
-   call mpl%ncerr(subr,nf90_def_dim(ncid,'nl0r',nam%nl0r,nl0r_id))
-   call mpl%ncerr(subr,nf90_def_dim(ncid,'nl0_1',geom%nl0,nl0_1_id))
-   if (nam%nl0r/=geom%nl0) call mpl%ncerr(subr,nf90_def_dim(ncid,'nl0_2',geom%nl0,nl0_2_id))
-
-   ! Define variables
-   call mpl%ncerr(subr,nf90_def_var(ncid,'disth',ncfloat,(/nc3_id/),disth_id))
-   call mpl%ncerr(subr,nf90_def_var(ncid,'vunit',ncfloat,(/nl0_1_id/),vunit_id))
 else
    ! Open file
    call mpl%ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_write,ncid))
-
-   ! Get dimensions ID
-   call mpl%ncerr(subr,nf90_inq_dimid(ncid,'one',one_id))
-   call mpl%ncerr(subr,nf90_inq_dimid(ncid,'nc3',nc3_id))
-   call mpl%ncerr(subr,nf90_inq_dimid(ncid,'nl0r',nl0r_id))
-   call mpl%ncerr(subr,nf90_inq_dimid(ncid,'nl0_1',nl0_1_id))
-   if (nam%nl0r/=geom%nl0) call mpl%ncerr(subr,nf90_inq_dimid(ncid,'nl0_2',nl0_2_id))
 
    ! Redef mode
    call mpl%ncerr(subr,nf90_redef(ncid))
 end if
 
-! Define variables
-call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw_coef_ens',ncfloat,(/nl0_1_id/),raw_coef_ens_id))
-call mpl%ncerr(subr,nf90_put_att(ncid,raw_coef_ens_id,'_FillValue',msvalr))
+! Define dimensions and variables if necessary
+info = nf90_inq_dimid(ncid,'one',one_id)
+if (info/=nf90_noerr) call mpl%ncerr(subr,nf90_def_dim(ncid,'one',1,one_id))
+info = nf90_inq_dimid(ncid,'nc3',nc3_id)
+if (info/=nf90_noerr) call mpl%ncerr(subr,nf90_def_dim(ncid,'nc3',nam%nc3,nc3_id))
+info = nf90_inq_dimid(ncid,'nl0r',nl0r_id)
+if (info/=nf90_noerr) call mpl%ncerr(subr,nf90_def_dim(ncid,'nl0r',nam%nl0r,nl0r_id))
+info = nf90_inq_dimid(ncid,'nl0_1',nl0_1_id)
+if (info/=nf90_noerr) call mpl%ncerr(subr,nf90_def_dim(ncid,'nl0_1',geom%nl0,nl0_1_id))
+if (nam%nl0r/=geom%nl0) then
+   info = nf90_inq_dimid(ncid,'nl0_2',nl0_2_id)
+   if (info/=nf90_noerr) call mpl%ncerr(subr,nf90_def_dim(ncid,'nl0_2',geom%nl0,nl0_2_id))
+end if
+info = nf90_inq_varid(ncid,'disth',disth_id)
+if (info/=nf90_noerr) call mpl%ncerr(subr,nf90_def_var(ncid,'disth',ncfloat,(/nc3_id/),disth_id))
+info = nf90_inq_varid(ncid,'vunit',vunit_id)
+if (info/=nf90_noerr) call mpl%ncerr(subr,nf90_def_var(ncid,'vunit',ncfloat,(/nl0_1_id/),vunit_id))
+info = nf90_inq_varid(ncid,trim(diag_blk%name)//'_raw_coef_ens',raw_coef_ens_id)
+if (info/=nf90_noerr) then
+   call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw_coef_ens',ncfloat,(/nl0_1_id/),raw_coef_ens_id))
+   call mpl%ncerr(subr,nf90_put_att(ncid,raw_coef_ens_id,'_FillValue',msvalr))
+end if
 if ((ic2a==0).or.nam%local_diag) then
-   call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw',ncfloat,(/nc3_id,nl0r_id,nl0_1_id/),raw_id))
-   call mpl%ncerr(subr,nf90_put_att(ncid,raw_id,'_FillValue',msvalr))
+   info = nf90_inq_varid(ncid,trim(diag_blk%name)//'_raw',raw_id)
+   if (info/=nf90_noerr) then
+      call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw',ncfloat,(/nc3_id,nl0r_id,nl0_1_id/),raw_id))
+      call mpl%ncerr(subr,nf90_put_att(ncid,raw_id,'_FillValue',msvalr))
+   end if
    if (nam%nl0r/=geom%nl0) then
-      call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw_zs',ncfloat,(/nl0_2_id,nl0_1_id/),raw_zs_id))
-      call mpl%ncerr(subr,nf90_put_att(ncid,raw_zs_id,'_FillValue',msvalr))
+      info = nf90_inq_varid(ncid,trim(diag_blk%name)//'_raw_zs',raw_zs_id)
+      if (info/=nf90_noerr) then
+         call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw_zs',ncfloat,(/nl0_2_id,nl0_1_id/),raw_zs_id))
+         call mpl%ncerr(subr,nf90_put_att(ncid,raw_zs_id,'_FillValue',msvalr))
+      end if
    end if
    if (isnotmsr(diag_blk%raw_coef_sta)) then
-      call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw_coef_sta',ncfloat,(/one_id/),raw_coef_sta_id))
-      call mpl%ncerr(subr,nf90_put_att(ncid,raw_coef_sta_id,'_FillValue',msvalr))
+      info = nf90_inq_varid(ncid,trim(diag_blk%name)//'_raw_coef_sta',raw_coef_sta_id)
+      if (info/=nf90_noerr) then
+         call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw_coef_sta',ncfloat,(/one_id/),raw_coef_sta_id))
+         call mpl%ncerr(subr,nf90_put_att(ncid,raw_coef_sta_id,'_FillValue',msvalr))
+      end if
    end if
    if ((trim(nam%minim_algo)/='none').and.(isanynotmsr(diag_blk%fit))) then
-      call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit',ncfloat,(/nc3_id,nl0r_id,nl0_1_id/),fit_id))
-      call mpl%ncerr(subr,nf90_put_att(ncid,fit_id,'_FillValue',msvalr))
-      if (nam%nl0r/=geom%nl0) then
-         call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_zs',ncfloat,(/nl0_2_id,nl0_1_id/),fit_zs_id))
-         call mpl%ncerr(subr,nf90_put_att(ncid,fit_zs_id,'_FillValue',msvalr))
+      info = nf90_inq_varid(ncid,trim(diag_blk%name)//'_fit',fit_id)
+      if (info/=nf90_noerr) then
+         call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit',ncfloat,(/nc3_id,nl0r_id,nl0_1_id/),fit_id))
+         call mpl%ncerr(subr,nf90_put_att(ncid,fit_id,'_FillValue',msvalr))
       end if
-      call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rh',ncfloat,(/nl0_1_id/),fit_rh_id))
-      call mpl%ncerr(subr,nf90_put_att(ncid,fit_rh_id,'_FillValue',msvalr))
-      call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rv',ncfloat,(/nl0_1_id/),fit_rv_id))
-      call mpl%ncerr(subr,nf90_put_att(ncid,fit_rv_id,'_FillValue',msvalr))
+      if (nam%nl0r/=geom%nl0) then
+         info = nf90_inq_varid(ncid,trim(diag_blk%name)//'_fit_zs',fit_zs_id)
+         if (info/=nf90_noerr) then
+            call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_zs',ncfloat,(/nl0_2_id,nl0_1_id/),fit_zs_id))
+            call mpl%ncerr(subr,nf90_put_att(ncid,fit_zs_id,'_FillValue',msvalr))
+         end if
+      end if
+      info = nf90_inq_varid(ncid,trim(diag_blk%name)//'_fit_rh',fit_rh_id)
+      if (info/=nf90_noerr) then
+         call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rh',ncfloat,(/nl0_1_id/),fit_rh_id))
+         call mpl%ncerr(subr,nf90_put_att(ncid,fit_rh_id,'_FillValue',msvalr))
+      end if
+      info = nf90_inq_varid(ncid,trim(diag_blk%name)//'_fit_rv',fit_rv_id)
+      if (info/=nf90_noerr) then
+         call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rv',ncfloat,(/nl0_1_id/),fit_rv_id))
+         call mpl%ncerr(subr,nf90_put_att(ncid,fit_rv_id,'_FillValue',msvalr))
+      end if
       if (diag_blk%double_fit) then
-         call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rv_rfac',ncfloat,(/nl0_1_id/),fit_rv_rfac_id))
-         call mpl%ncerr(subr,nf90_put_att(ncid,fit_rv_rfac_id,'_FillValue',msvalr))
-         call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rv_coef',ncfloat,(/nl0_1_id/),fit_rv_coef_id))
-         call mpl%ncerr(subr,nf90_put_att(ncid,fit_rv_coef_id,'_FillValue',msvalr))
+         info = nf90_inq_varid(ncid,trim(diag_blk%name)//'_fit_rv_rfac',fit_rv_rfac_id)
+         if (info/=nf90_noerr) then
+            call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rv_rfac',ncfloat,(/nl0_1_id/),fit_rv_rfac_id))
+            call mpl%ncerr(subr,nf90_put_att(ncid,fit_rv_rfac_id,'_FillValue',msvalr))
+         end if
+         info = nf90_inq_varid(ncid,trim(diag_blk%name)//'_fit_rv_coef',fit_rv_coef_id)
+         if (info/=nf90_noerr) then
+            call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rv_coef',ncfloat,(/nl0_1_id/),fit_rv_coef_id))
+            call mpl%ncerr(subr,nf90_put_att(ncid,fit_rv_coef_id,'_FillValue',msvalr))
+         end if
       end if
    end if
-   call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_l0rl0_to_l0',nf90_int,(/nl0r_id,nl0_1_id/),l0rl0_to_l0_id))
-   call mpl%ncerr(subr,nf90_put_att(ncid,l0rl0_to_l0_id,'_FillValue',msvali))
+   info = nf90_inq_varid(ncid,trim(diag_blk%name)//'_l0rl0_to_l0',l0rl0_to_l0_id)
+   if (info/=nf90_noerr) then
+      call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_l0rl0_to_l0',nf90_int,(/nl0r_id,nl0_1_id/),l0rl0_to_l0_id))
+      call mpl%ncerr(subr,nf90_put_att(ncid,l0rl0_to_l0_id,'_FillValue',msvali))
+   end if
 end if
 
 ! End definition mode
 call mpl%ncerr(subr,nf90_enddef(ncid))
 
 ! Write variables
-if (info==nf90_noerr) then
-   call mpl%ncerr(subr,nf90_put_var(ncid,disth_id,geom%disth(1:nam%nc3)))
-   call mpl%ncerr(subr,nf90_put_var(ncid,vunit_id,sum(geom%vunit,mask=geom%mask_c0,dim=1)/real(geom%nc0_mask,kind_real)))
-end if
+call mpl%ncerr(subr,nf90_put_var(ncid,disth_id,geom%disth(1:nam%nc3)))
+call mpl%ncerr(subr,nf90_put_var(ncid,vunit_id,sum(geom%vunit,mask=geom%mask_c0,dim=1)/real(geom%nc0_mask,kind_real)))
 call mpl%ncerr(subr,nf90_put_var(ncid,raw_coef_ens_id,diag_blk%raw_coef_ens))
 if ((ic2a==0).or.nam%local_diag) then
    call mpl%ncerr(subr,nf90_put_var(ncid,raw_id,diag_blk%raw))

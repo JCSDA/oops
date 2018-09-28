@@ -11,9 +11,11 @@
 module type_rng
 
 use iso_fortran_env, only: int64
-use tools_func, only: sphere_dist
+use tools_const, only: pi
+use tools_func, only: sphere_dist,gc99
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsi
+use tools_qsort, only: qsort
 use tools_repro, only: inf,sup
 use type_kdtree, only: kdtree_type
 use type_mpl, only: mpl_type
@@ -25,6 +27,7 @@ integer,parameter :: default_seed = 140587            !< Default seed
 integer(kind=int64),parameter :: a = 1103515245_int64 !< Linear congruential multiplier
 integer(kind=int64),parameter :: c = 12345_int64      !< Linear congruential offset
 integer(kind=int64),parameter :: m = 2147483648_int64 !< Linear congruential modulo
+logical,parameter :: nn_stats = .true.                !< Compute and print subsampling statistics
 
 type rng_type
    integer(kind=int64) :: seed
@@ -444,165 +447,224 @@ integer,intent(in) :: ns             !< Number of samplings points
 integer,intent(out) :: ihor(ns)      !< Horizontal sampling index
 
 ! Local variables
-integer :: is,js,i,irep,irmax,itry,irval,irvalmax,i_red,ir,nn_index(2),ismin,nval,nrep_eff
+integer :: system_clock_start,system_clock_end,count_rate,count_max
+integer :: is,js,i,irep,irmax,itry,irval,irvalmax,i_red,ir,ismin,nval,nrep_eff,nn_index(2)
 integer,allocatable :: val_to_full(:)
-real(kind_real) :: distmax,distmin,d,nn_dist(2)
+real(kind_real) :: elapsed
+real(kind_real) :: d,distmax,distmin,nn_dist(2)
+real(kind_real) :: nn_sdist_min,nn_sdist_max,nn_sdist_avg,nn_sdist_std
 real(kind_real),allocatable :: dist(:)
+real(kind_real),allocatable :: sdist(:,:),nn_sdist(:)
 logical,allocatable :: lmask(:),smask(:)
 type(kdtree_type) :: kdtree
 
-! Check mask size
-nval = count(mask)
-if (nval==0) then
-    call mpl%abort('empty mask in initialize sampling')
-elseif (nval<ns) then
-   call mpl%abort('ns greater that mask size in initialize_sampling')
-elseif (nval==ns) then
-   write(mpl%info,'(a)') 'all points are used'
-   is = 0
-   do i=1,n
-      if (mask(i)) then
-         is = is+1
-         ihor(is) = i
+if (mpl%main) then
+   ! Check mask size
+   nval = count(mask)
+   if (nval==0) then
+       call mpl%abort('empty mask in initialize sampling')
+   elseif (nval<ns) then
+      call mpl%abort('ns greater that mask size in initialize_sampling')
+   elseif (nval==ns) then
+      write(mpl%info,'(a)') 'all points are used'
+      is = 0
+      do i=1,n
+         if (mask(i)) then
+            is = is+1
+            ihor(is) = i
+         end if
+      end do
+   else
+      if (nn_stats) then
+         ! Save initial time
+         call system_clock(count=system_clock_start)
       end if
-   end do
-else
-   ! Allocation
-   nrep_eff = min(nrep,n-ns)
-   allocate(dist(ns))
-   allocate(lmask(n))
-   allocate(smask(n))
-   allocate(val_to_full(nval))
-
-   ! Initialization
-   call msi(ihor)
-   call msr(dist)
-   lmask = mask
-   smask = .false.
-   call msi(val_to_full)
-   i_red = 0
-   do i=1,n
-      if (lmask(i)) then
-         i_red = i_red+1
-         val_to_full(i_red) = i
-      end if
-   end do
-   is = 1
-   irep = 1
-   call mpl%prog_init(ns+nrep_eff)
-
-   ! Define sampling
-   do while (is<=ns)
-      ! Create KD-tree (unsorted)
-      if (is>2) call kdtree%create(mpl,n,lon,lat,mask=smask,sort=.false.)
-
+   
+      ! Allocation
+      nrep_eff = min(nrep,n-ns)
+      allocate(dist(ns))
+      allocate(lmask(n))
+      allocate(smask(n))
+      allocate(val_to_full(nval))
+   
       ! Initialization
-      distmax = 0.0
-      irmax = 0
-      irvalmax = 0
-      itry = 1
-
-      ! Find a new point
-      do while (itry<=ntry)
-         ! Generate a random index among valid points
-         call rng%rand_integer(1,nval,irval)
-         ir = val_to_full(irval)
-
-         ! Check point validity
-         if (is==1) then
-            ! Accept point
-            irvalmax = irval
-            irmax = ir
-         else
-            if (is==2) then
-               ! Compute distance
-               call sphere_dist(lon(ir),lat(ir),lon(ihor(1)),lat(ihor(1)),d)
-            else
-               ! Find nearest neighbor distance
-               call kdtree%find_nearest_neighbors(lon(ir),lat(ir),1,nn_index(1:1),nn_dist(1:1))
-               d = nn_dist(1)**2/(rh(ir)**2+rh(nn_index(1))**2)
-            end if
-
-            ! Check distance
-            if (sup(d,distmax)) then
-               distmax = d
+      call msi(ihor)
+      call msr(dist)
+      lmask = mask
+      smask = .false.
+      call msi(val_to_full)
+      i_red = 0
+      do i=1,n
+         if (lmask(i)) then
+            i_red = i_red+1
+            val_to_full(i_red) = i
+         end if
+      end do
+      is = 1
+      irep = 1
+      call mpl%prog_init(ns+nrep_eff)
+   
+      ! Define sampling
+      do while (is<=ns)
+         ! Create KD-tree (unsorted)
+         if (is>2) call kdtree%create(mpl,n,lon,lat,mask=smask,sort=.false.)
+   
+         ! Initialization
+         distmax = 0.0
+         irmax = 0
+         irvalmax = 0
+         itry = 1
+   
+         ! Find a new point
+         do itry=1,ntry
+            ! Generate a random index among valid points
+            call rng%rand_integer(1,nval,irval)
+            ir = val_to_full(irval)
+   
+            ! Check point validity
+            if (is==1) then
+               ! Accept point
                irvalmax = irval
                irmax = ir
+            else
+               if (is==2) then
+                  ! Compute distance
+                  call sphere_dist(lon(ir),lat(ir),lon(ihor(1)),lat(ihor(1)),d)
+               else
+                  ! Find nearest neighbor distance
+                  call kdtree%find_nearest_neighbors(lon(ir),lat(ir),1,nn_index(1:1),nn_dist(1:1))
+                  d = nn_dist(1)**2/(rh(ir)**2+rh(nn_index(1))**2)
+               end if
+   
+               ! Check distance
+               if (sup(d,distmax)) then
+                  distmax = d
+                  irvalmax = irval
+                  irmax = ir
+               end if
+            end if
+         end do
+   
+         ! Delete kdtree
+         if (is>2) call kdtree%dealloc
+   
+         ! Add point to sampling
+         if (irmax>0) then
+            ! New sampling point
+            ihor(is) = irmax
+            lmask(irmax) = .false.
+            smask(irmax) = .true.
+            is = is+1
+   
+            ! Shift valid points array
+            if (irvalmax<nval) val_to_full(irvalmax:nval-1) = val_to_full(irvalmax+1:nval)
+            nval = nval-1
+         end if
+   
+         if (is==ns+1) then
+            ! Try replacement
+            if (irep<=nrep_eff) then
+               ! Create KD-tree (unsorted)
+               call kdtree%create(mpl,n,lon,lat,mask=smask,sort=.false.)
+   
+               ! Get minimum distance
+               do js=1,ns
+                  ! Find nearest neighbor distance
+                  call kdtree%find_nearest_neighbors(lon(ihor(js)),lat(ihor(js)),2,nn_index,nn_dist)
+                  if (nn_index(1)==ihor(js)) then
+                     dist(js) = nn_dist(2)
+                  elseif (nn_index(2)==ihor(js)) then
+                     dist(js) = nn_dist(1)
+                  else
+                     call mpl%abort('wrong index in replacement')
+                  end if
+                  dist(js) = dist(js)**2/(rh(nn_index(1))**2+rh(nn_index(2))**2)
+               end do
+   
+               ! Delete kdtree
+               call kdtree%dealloc
+   
+               ! Remove worst point
+               distmin = huge(1.0)
+               call msi(ismin)
+               do js=1,ns
+                  if (inf(dist(js),distmin)) then
+                     ismin = js
+                     distmin = dist(js)
+                  end if
+               end do
+               smask(ihor(ismin)) = .false.
+               call msi(ihor(ismin))
+   
+               ! Shift sampling
+               if (ismin<ns) ihor(ismin:ns-1) = ihor(ismin+1:ns)
+   
+               ! Reset is to ns and try again!
+               is = ns
+   
+               ! Update irep
+               irep = irep+1
             end if
          end if
-
-         ! Update itry
-         itry = itry+1
+   
+         ! Update
+         if (is+irep-2>0) call mpl%prog_print(is+irep-2)
       end do
-
-      ! Delete kdtree
-      if (is>2) call kdtree%dealloc
-
-      ! Add point to sampling
-      if (irmax>0) then
-         ! New sampling point
-         ihor(is) = irmax
-         lmask(irmax) = .false.
-         smask(irmax) = .true.
-         is = is+1
-
-         ! Shift valid points array
-         if (irvalmax<nval) val_to_full(irvalmax:nval-1) = val_to_full(irvalmax+1:nval)
-         nval = nval-1
-      end if
-
-      if (is==ns+1) then
-         ! Try replacement
-         if (irep<=nrep_eff) then
-            ! Create KD-tree (unsorted)
-            call kdtree%create(mpl,n,lon,lat,mask=smask,sort=.false.)
-
-            ! Get minimum distance
-            do js=1,ns
-               ! Find nearest neighbor distance
-               call kdtree%find_nearest_neighbors(lon(ihor(js)),lat(ihor(js)),2,nn_index,nn_dist)
-               if (nn_index(1)==ihor(js)) then
-                  dist(js) = nn_dist(2)
-               elseif (nn_index(2)==ihor(js)) then
-                  dist(js) = nn_dist(1)
-               else
-                  call mpl%abort('wrong index in replacement')
-               end if
-               dist(js) = dist(js)**2/(rh(nn_index(1))**2+rh(nn_index(2))**2)
-            end do
-
-            ! Delete kdtree
-            call kdtree%dealloc
-
-            ! Remove worst point
-            distmin = huge(1.0)
-            call msi(ismin)
-            do js=1,ns
-               if (inf(dist(js),distmin)) then
-                  ismin = js
-                  distmin = dist(js)
-               end if
-            end do
-            smask(ihor(ismin)) = .false.
-            call msi(ihor(ismin))
-
-            ! Shift sampling
-            if (ismin<ns) ihor(ismin:ns-1) = ihor(ismin+1:ns)
-
-            ! Reset is to ns and try again!
-            is = ns
-
-            ! Update irep
-            irep = irep+1
+      write(mpl%info,'(a)') '100%'
+      call flush(mpl%info)
+   
+      if (nn_stats) then
+         ! Save final time
+         call system_clock(count=system_clock_end)
+         call system_clock(count_rate=count_rate,count_max=count_max)
+         if (system_clock_end<system_clock_start) then
+            elapsed = real(system_clock_end-system_clock_start+count_max,kind_real) &
+                    & /real(count_rate,kind_real)
+         else
+            elapsed = real(system_clock_end-system_clock_start,kind_real) &
+                    & /real(count_rate,kind_real)
          end if
+   
+         ! Allocation
+         allocate(sdist(ns,ns))
+         allocate(nn_sdist(ns))
+   
+         ! Compute normalized distances between sampling points
+         do is=1,ns
+            sdist(is,is) = huge(1.0)
+            do js=1,is-1
+               call sphere_dist(lon(ihor(is)),lat(ihor(is)),lon(ihor(js)),lat(ihor(js)),sdist(is,js))
+               sdist(is,js) = sdist(is,js)/sqrt(rh(ihor(is))**2+rh(ihor(js))**2)
+               sdist(js,is) = sdist(is,js)
+            end do
+         end do
+   
+         ! Find nearest neighbor normalized distance
+         do is=1,ns
+            nn_sdist(is) = minval(sdist(:,is))
+         end do
+   
+         ! Compute statistics
+         nn_sdist_min = minval(nn_sdist)
+         nn_sdist_max = maxval(nn_sdist)
+         nn_sdist_avg = sum(nn_sdist)/real(ns,kind_real)
+         nn_sdist_std = sqrt(sum((nn_sdist-nn_sdist_avg)**2)/real(ns-1,kind_real))
+   
+         ! Print statistics
+         write(mpl%info,'(a10,a)') '','Nearest neighbor normalized distance statistics:'
+         write(mpl%info,'(a13,a,e9.2)') '','Minimum: ',nn_sdist_min
+         write(mpl%info,'(a13,a,e9.2)') '','Maximum: ',nn_sdist_max
+         write(mpl%info,'(a13,a,e9.2)') '','Average: ',nn_sdist_avg
+         write(mpl%info,'(a13,a,e9.2)') '','Std-dev: ',nn_sdist_std
+         write(mpl%info,'(a10,a,f8.3,a)') '','Elapsed time to compute the subsampling: ',elapsed,' s'
       end if
-
-      ! Update
-      if (is+irep-2>0) call mpl%prog_print(is+irep-2)
-   end do
-   write(mpl%info,'(a)') '100%'
-   call flush(mpl%info)
+   end if
+else
+   write(mpl%info,'(a)') ''
 end if
+
+! Broadcast
+call mpl%bcast(ihor)
 
 end subroutine initialize_sampling
 

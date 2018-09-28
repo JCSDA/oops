@@ -10,7 +10,7 @@
 !----------------------------------------------------------------------
 module type_lct
 
-use tools_const, only: req,reqkm,pi
+use tools_const, only: reqkm,pi
 use tools_kinds, only: kind_real
 use tools_missing, only: msr,isnotmsr,isallnotmsr
 use type_bpar, only: bpar_type
@@ -537,7 +537,7 @@ do ib=1,bpar%nb
       call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_D22_'//iscaleschar,lct%blk(ib)%D22(:,:,iscales))
       call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_D33_'//iscaleschar,lct%blk(ib)%D33(:,:,iscales))
       if (lct%blk(ib)%ncomp(iscales)==4) call io%fld_write(mpl,nam,geom,filename, &
-    & trim(nam%varname(iv))//'_D12_'//iscaleschar,fld(:,:,4)*req**2)
+    & trim(nam%varname(iv))//'_D12_'//iscaleschar,fld(:,:,4))
       call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_coef_'//iscaleschar,lct%blk(ib)%Dcoef(:,:,iscales))
       call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_Lh_'//iscaleschar,lct%blk(ib)%DLh(:,:,iscales))
 
@@ -572,8 +572,8 @@ type(hdata_type),intent(inout) :: hdata !< HDIAG data
 
 ! Local variables
 integer :: ib,iv,il0,jl0r,jl0,ic1a,ic1,jc3,i,iproc,ic0
-real(kind_real) :: fld_c0(geom%nc0,geom%nl0,2),fld(geom%nc0a,geom%nl0,2)
-real(kind_real),allocatable :: sbuf(:),rbuf(:)
+real(kind_real) :: fld(geom%nc0a,geom%nl0,2)
+real(kind_real),allocatable :: fld_c0(:,:,:),sbuf(:),rbuf(:)
 logical :: valid
 logical :: free(geom%nc0,geom%nl0)
 character(len=1024) :: filename
@@ -589,7 +589,10 @@ do ib=1,bpar%nb
    il0 = 1
 
    ! Prepare field
-   call msr(fld_c0)
+   if (mpl%main) then
+      allocate(fld_c0(geom%nc0,geom%nl0,2))
+      call msr(fld_c0)
+   end if
    free = .true.
    do ic1=1,nam%nc1
       ! Select tensor to plot

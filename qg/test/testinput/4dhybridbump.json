@@ -45,7 +45,7 @@
             "variables": {
               "variables": ["x"]
             },
-            "prefix" : "bump",
+            "prefix" : "bump_4dhybridbump",
             "default_seed" : 1,
             "method" : "loc_norm",
             "strategy" : "common",

@@ -26,7 +26,6 @@ use type_nam, only: nam_type
 use type_nicas, only: nicas_type
 use type_obsop, only: obsop_type
 use type_rng, only: rng_type
-use type_timer, only: timer_type
 use type_vbal, only: vbal_type
 
 implicit none
@@ -135,7 +134,7 @@ if (present(lunit)) then
    bump%close_listing = .false.
 else
    call bump%mpl%init_listing(bump%nam%prefix,bump%nam%model,bump%nam%colorlog,bump%nam%logpres)
-   bump%close_listing = (trim(bump%nam%model)=='online')
+   bump%close_listing = (trim(bump%nam%model)=='online').and.(.not.present(nobs))
 end if
 
 ! Generic setup
@@ -199,7 +198,6 @@ if (present(nobs)) then
    close(unit=bump%mpl%info)
    call flush(bump%mpl%test)
    close(unit=bump%mpl%test)
-   call bump%mpl%delete_empty_test(bump%nam%prefix)
 end if
 
 if ((bump%nam%ens1_ne>0).or.(bump%nam%ens2_ne>0)) then
@@ -249,7 +247,6 @@ call bump%rng%init(bump%mpl,bump%nam)
 bump%cmat%allocated = .false.
 bump%lct%allocated = .false.
 bump%nicas%allocated = .false.
-bump%obsop%allocated = .false.
 
 end subroutine bump_setup_generic
 
@@ -331,6 +328,12 @@ if (bump%nam%new_lct) then
    write(bump%mpl%info,'(a)') '--- Run LCT driver'
    call flush(bump%mpl%info)
    call bump%lct%run_lct(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1)
+
+   ! Copy LCT into C matrix
+   write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%info,'(a)') '--- Copy LCT into C matrix'
+   call flush(bump%mpl%info)
+   call bump%cmat%from_lct(bump%mpl,bump%nam,bump%geom,bump%bpar,bump%lct)
 end if
 
 if (bump%nam%load_cmat) then
@@ -359,6 +362,12 @@ if (allocated(bump%cmat%blk)) then
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
    write(bump%mpl%info,'(a)') '--- Setup C matrix sampling'
    call bump%cmat%setup_sampling(bump%nam,bump%geom,bump%bpar)
+
+   ! Write C matrix data
+   write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%info,'(a)') '--- Write C matrix data'
+   call flush(bump%mpl%info)
+   call bump%cmat%write(bump%mpl,bump%nam,bump%geom,bump%bpar,bump%io)
 end if
 
 if (bump%nam%new_nicas) then
@@ -400,7 +409,11 @@ if (bump%nam%new_obsop) then
    call flush(bump%mpl%info)
    call bump%obsop%run_obsop(bump%mpl,bump%rng,bump%nam,bump%geom)
 elseif (bump%nam%load_obsop) then
-   call bump%mpl%abort('load obstop not implemented yet')
+   ! Read observation operator
+   write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%info,'(a)') '--- Read observation operator'
+   call flush(bump%mpl%info)
+   call bump%obsop%read(bump%mpl,bump%nam)
 end if
 
 if (bump%nam%check_obsop) then
@@ -423,7 +436,6 @@ if (bump%close_listing) then
    close(unit=bump%mpl%info)
    call flush(bump%mpl%test)
    close(unit=bump%mpl%test)
-   call bump%mpl%delete_empty_test(bump%nam%prefix)
 end if
 
 end subroutine bump_run_drivers
@@ -673,7 +685,7 @@ real(kind_real),intent(in) :: fld(bump%geom%nc0a,bump%geom%nl0)    !< Field
 real(kind_real),intent(out) :: obs(bump%obsop%nobsa,bump%geom%nl0) !< Observations columns
 
 ! Apply observation operator
-if (bump%obsop%nobsa>0) call bump%obsop%apply(bump%mpl,bump%geom,fld,obs)
+call bump%obsop%apply(bump%mpl,bump%geom,fld,obs)
 
 end subroutine bump_apply_obsop
 
@@ -691,11 +703,7 @@ real(kind_real),intent(in) :: obs(bump%obsop%nobsa,bump%geom%nl0) !< Observation
 real(kind_real),intent(out) :: fld(bump%geom%nc0a,bump%geom%nl0)  !< Field
 
 ! Apply observation operator adjoint
-if (bump%obsop%nobsa>0) then
-   call bump%obsop%apply_ad(bump%mpl,bump%geom,obs,fld)
-else
-   fld = 0.0
-end if
+call bump%obsop%apply_ad(bump%mpl,bump%geom,obs,fld)
 
 end subroutine bump_apply_obsop_ad
 
@@ -954,17 +962,19 @@ implicit none
 class(bump_type),intent(inout) :: bump !< BUMP
 
 ! Release memory
-call bump%bpar%dealloc
 call bump%cmat%dealloc(bump%bpar)
 call bump%ens1%dealloc
 call bump%ens1u%dealloc
 call bump%ens2%dealloc
-call bump%geom%dealloc
 call bump%io%dealloc
 call bump%lct%dealloc(bump%bpar)
 call bump%nicas%dealloc(bump%nam,bump%geom,bump%bpar)
 call bump%obsop%dealloc
 call bump%vbal%dealloc(bump%nam)
+
+! Final memory release (because objects required for previous memory releases)
+call bump%bpar%dealloc
+call bump%geom%dealloc
 
 end subroutine bump_dealloc
 

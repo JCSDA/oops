@@ -103,41 +103,40 @@ call msi(bpar%il0rz)
 if (nam%new_lct) then
    ! Individual blocks
    ib = 1
+   its = 1
    do iv=1,nam%nv
-      do its=1,nam%nts
-         ! Classes and levels
-         bpar%nl0r(ib) = nam%nl0r
-         do il0=1,geom%nl0
-            jl0off = il0-(bpar%nl0r(ib)-1)/2-1
-            if (jl0off<1) jl0off = 0
-            if (jl0off+nam%nl0r>geom%nl0) jl0off = geom%nl0-nam%nl0r
-            do jl0r=1,nam%nl0r
-               bpar%l0rl0b_to_l0(jl0r,il0,ib) = jl0off+jl0r
-               if (bpar%l0rl0b_to_l0(jl0r,il0,ib)==il0) bpar%il0rz(il0,ib) = jl0r
-            end do
+      ! Classes and levels
+      bpar%nl0r(ib) = nam%nl0r
+      do il0=1,geom%nl0
+         jl0off = il0-(bpar%nl0r(ib)-1)/2-1
+         if (jl0off<1) jl0off = 0
+         if (jl0off+nam%nl0r>geom%nl0) jl0off = geom%nl0-nam%nl0r
+         do jl0r=1,nam%nl0r
+            bpar%l0rl0b_to_l0(jl0r,il0,ib) = jl0off+jl0r
+            if (bpar%l0rl0b_to_l0(jl0r,il0,ib)==il0) bpar%il0rz(il0,ib) = jl0r
          end do
-         bpar%nc3(ib) = nam%nc3
-         bpar%nc3(ib) = nam%nc3
-         do jv=1,nam%nv
-            bpar%vbal_block(iv,jv) = (iv>1).and.(jv<iv).and.nam%vbal_block((iv-1)*(iv-2)/2+jv)
-         end do
-         bpar%diag_block(ib) = .true.
-         bpar%avg_block(ib) = .false.
-         bpar%fit_block(ib) = .false.
-         bpar%B_block(ib) = .false.
-         bpar%nicas_block(ib) = .false.
-         bpar%cv_block(ib) = .false.
-
-         ! Blocks information
-         write(bpar%blockname(ib),'(i2.2,a,i2.2)') iv,'_',its
-         bpar%b_to_v1(ib) = iv
-         bpar%b_to_v2(ib) = iv
-         bpar%b_to_ts1(ib) = its
-         bpar%b_to_ts2(ib) = its
-
-         ! Update block index
-         ib = ib+1
       end do
+      bpar%nc3(ib) = nam%nc3
+      bpar%nc3(ib) = nam%nc3
+      do jv=1,nam%nv
+         bpar%vbal_block(iv,jv) = (iv>1).and.(jv<iv).and.nam%vbal_block((iv-1)*(iv-2)/2+jv)
+      end do
+      bpar%diag_block(ib) = .true.
+      bpar%avg_block(ib) = .false.
+      bpar%fit_block(ib) = .false.
+      bpar%B_block(ib) = .true.
+      bpar%nicas_block(ib) = .true.
+      bpar%cv_block(ib) = .true.
+
+      ! Blocks information
+      write(bpar%blockname(ib),'(i2.2,a,i2.2)') iv,'_',its
+      bpar%b_to_v1(ib) = iv
+      bpar%b_to_v2(ib) = iv
+      bpar%b_to_ts1(ib) = its
+      bpar%b_to_ts2(ib) = its
+
+      ! Update block index
+      ib = ib+1
    end do
 else
    ! Individual blocks
