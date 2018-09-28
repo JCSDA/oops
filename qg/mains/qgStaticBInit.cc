@@ -6,8 +6,8 @@
  */
 
 #include "model/QgTraits.h"
-#include "oops/runs/StaticBInit.h"
 #include "oops/runs/Run.h"
+#include "oops/runs/StaticBInit.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);

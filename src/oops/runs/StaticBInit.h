@@ -15,24 +15,8 @@
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
-#include "oops/interface/Increment.h"
-#include "oops/interface/State.h"
-#include "oops/util/DateTime.h"
-#include "oops/util/dot_product.h"
-#include "oops/util/Logger.h"
-
-#include "eckit/config/LocalConfiguration.h"
-#include "oops/base/StateInfo.h"
-#include "oops/base/StateWriter.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Model.h"
-#include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
 #include "oops/runs/Application.h"
-#include "oops/util/DateTime.h"
-#include "oops/util/Duration.h"
-#include "oops/util/Logger.h"
-
 
 namespace oops {
 
@@ -41,7 +25,7 @@ namespace oops {
     typedef Geometry<MODEL>                  Geometry_;
     typedef State<MODEL>                     State_;
 
-  public:
+   public:
     // -----------------------------------------------------------------------------
     StaticBInit() {
       instantiateCovarFactory<MODEL>();
@@ -50,7 +34,6 @@ namespace oops {
     virtual ~StaticBInit() {}
     // -----------------------------------------------------------------------------
     int execute(const eckit::Configuration & fullConfig) const {
-
       //  Setup resolution
       const eckit::LocalConfiguration resolConfig(fullConfig, "Geometry");
       const Geometry_ resol(resolConfig);
@@ -58,7 +41,7 @@ namespace oops {
       //  Setup variables
       const eckit::LocalConfiguration varConfig(fullConfig, "Variables");
       const Variables vars(varConfig);
-      
+
       //  Setup background state
       const eckit::LocalConfiguration bkgconf(fullConfig, "State");
       State_ xx(resol, vars, bkgconf);
@@ -66,12 +49,12 @@ namespace oops {
       //  Initialize static B matrix
       const eckit::LocalConfiguration covarconf(fullConfig, "Covariance");
       boost::scoped_ptr< Covariance_ >
-	Bmat(CovarianceFactory<MODEL>::create(covarconf, resol, vars, xx, xx));
-      
+       Bmat(CovarianceFactory<MODEL>::create(covarconf, resol, vars, xx, xx));
+
       return 0;
     }
     // -----------------------------------------------------------------------------
-  private:
+   private:
     std::string appname() const {
       return "oops::StaticBInit<" + MODEL::name() + ">";
     }
@@ -81,7 +64,3 @@ namespace oops {
 }  // namespace oops
 
 #endif  // OOPS_RUNS_STATICBINIT_H_
-  
-
-
-
