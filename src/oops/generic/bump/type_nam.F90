@@ -1137,6 +1137,13 @@ end if
 
 ! Check obsop_param
 if (nam%new_obsop) then
+   select case (trim(nam%obsdis))
+   case('')
+   case ('random','local','adjusted')
+      if (trim(nam%model)=='online') call mpl%abort('modified distribution of observations only available for offline execution')
+   case default
+      call mpl%abort('wrong observation distribution')
+   end select
    select case (trim(nam%obsop_interp))
    case ('bilin','natural')
    case default
