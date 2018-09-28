@@ -63,7 +63,7 @@
       }
     ]
   },
-  "prefix" : "bump",
+  "prefix" : "bump_parametersbump.lct",
   "default_seed" : 1,
   "method" : "cor",
   "strategy" : "specific_univariate",

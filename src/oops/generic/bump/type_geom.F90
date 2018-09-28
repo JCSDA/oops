@@ -37,7 +37,7 @@ type geom_type
    integer :: nlev                            !< Number of levels
    integer,allocatable :: c0_to_lon(:)        !< Subset Sc0 to longitude index
    integer,allocatable :: c0_to_lat(:)        !< Subset Sc0 to latgitude index
-   integer,allocatable :: c0_to_tile(:)        !< Subset Sc0 to tile index
+   integer,allocatable :: c0_to_tile(:)       !< Subset Sc0 to tile index
 
    ! Number of points and levels
    integer :: nmg                             !< Number of model grid points
@@ -174,13 +174,16 @@ if (allocated(geom%c0_to_lat)) deallocate(geom%c0_to_lat)
 if (allocated(geom%c0_to_tile)) deallocate(geom%c0_to_tile)
 if (allocated(geom%lon)) deallocate(geom%lon)
 if (allocated(geom%lat)) deallocate(geom%lat)
-if (allocated(geom%mask_c0)) deallocate(geom%mask_c0)
-if (allocated(geom%mask_hor_c0)) deallocate(geom%mask_hor_c0)
-if (allocated(geom%mask_ver_c0)) deallocate(geom%mask_ver_c0)
 if (allocated(geom%area)) deallocate(geom%area)
 if (allocated(geom%vunit)) deallocate(geom%vunit)
 if (allocated(geom%vunitavg)) deallocate(geom%vunitavg)
 if (allocated(geom%disth)) deallocate(geom%disth)
+if (allocated(geom%mask_c0)) deallocate(geom%mask_c0)
+if (allocated(geom%mask_c0a)) deallocate(geom%mask_c0a)
+if (allocated(geom%mask_hor_c0)) deallocate(geom%mask_hor_c0)
+if (allocated(geom%mask_hor_c0a)) deallocate(geom%mask_hor_c0a)
+if (allocated(geom%mask_ver_c0)) deallocate(geom%mask_ver_c0)
+if (allocated(geom%nc0_mask)) deallocate(geom%nc0_mask)
 call geom%mesh%dealloc
 call geom%kdtree%dealloc
 if (allocated(geom%nbnd)) deallocate(geom%nbnd)
@@ -463,6 +466,9 @@ if (present(lon).and.present(lat)) then
          end do
       end if
    end do
+
+   ! Release memory
+   call kdtree%dealloc
 end if
 geom%nc0 = count(ismsi(geom%redundant))
 write(mpl%info,'(a7,a,i8)') '','Model grid size:         ',geom%nmg
@@ -848,7 +854,7 @@ elseif (mpl%nproc>1) then
 
             ! Call METIS
             write(nprocchar,'(i4)') mpl%nproc
-            call system('gpmetis '//trim(nam%datadir)//'/'//trim(filename_metis)//' '//adjustl(nprocchar)//' > '// &
+            call execute_command_line('gpmetis '//trim(nam%datadir)//'/'//trim(filename_metis)//' '//adjustl(nprocchar)//' > '// &
           & trim(nam%datadir)//'/'//trim(filename_metis)//'.out')
 
             ! Check for METIS output

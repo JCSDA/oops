@@ -78,24 +78,31 @@ implicit none
 class(linop_type),intent(inout) :: linop !< Linear operator
 integer,intent(in),optional :: nvec      !< Size of the vector of linear operators with similar row and col
 
+! Vector size
+if (present(nvec)) then
+   linop%nvec = nvec
+else
+   call msi(linop%nvec)
+end if
+
 ! Allocation
 allocate(linop%row(linop%n_s))
 allocate(linop%col(linop%n_s))
 if (present(nvec)) then
-   linop%nvec = nvec
    allocate(linop%Svec(linop%n_s,linop%nvec))
 else
    allocate(linop%S(linop%n_s))
 end if
 
 ! Initialization
-call msi(linop%row)
-call msi(linop%col)
-if (present(nvec)) then
-   call msr(linop%Svec)
-else
-   call msi(linop%nvec)
-   call msr(linop%S)
+if (linop%n_s>0) then
+   call msi(linop%row)
+   call msi(linop%col)
+   if (present(nvec)) then
+      if (linop%nvec>0) call msr(linop%Svec)
+   else
+      call msr(linop%S)
+   end if
 end if
 
 end subroutine linop_alloc
@@ -147,12 +154,14 @@ else
 end if
 
 ! Copy data
-linop_copy%row = linop%row
-linop_copy%col = linop%col
-if (isnotmsi(linop_copy%nvec)) then
-   linop_copy%Svec = linop%Svec
-else
-   linop_copy%S = linop%S
+if (linop%n_s>0) then
+   linop_copy%row = linop%row
+   linop_copy%col = linop%col
+   if (isnotmsi(linop_copy%nvec)) then
+      if (linop_copy%nvec>0) linop_copy%Svec = linop%Svec
+   else
+      linop_copy%S = linop%S
+   end if
 end if
 
 end function linop_copy
@@ -173,7 +182,7 @@ type(mpl_type),intent(in) :: mpl         !< MPI data
 integer :: row,i_s_s,i_s_e,n_s,i_s
 integer,allocatable :: order(:)
 
-if (linop%n_s<reorder_max) then
+if ((linop%n_s>0).and.(linop%n_s<reorder_max)) then
    ! Sort with respect to row
    allocate(order(linop%n_s))
    call qsort(linop%n_s,linop%row,order)
@@ -181,7 +190,7 @@ if (linop%n_s<reorder_max) then
    ! Sort col and S
    linop%col = linop%col(order)
    if (isnotmsi(linop%nvec)) then
-      linop%Svec = linop%Svec(order,:)
+      if (linop%nvec>0) linop%Svec = linop%Svec(order,:)
    else
       linop%S = linop%S(order)
    end if
@@ -200,7 +209,7 @@ if (linop%n_s<reorder_max) then
          call qsort(n_s,linop%col(i_s_s:i_s_e),order)
          order = order+i_s_s-1
          if (isnotmsi(linop%nvec)) then
-            linop%Svec(i_s_s:i_s_e,:) = linop%Svec(order,:)
+            if (linop%nvec>0) linop%Svec(i_s_s:i_s_e,:) = linop%Svec(order,:)
          else
             linop%S(i_s_s:i_s_e) = linop%S(order)
          end if
@@ -230,7 +239,7 @@ integer,intent(in) :: ncid               !< NetCDF file ID
 
 ! Local variables
 integer :: info,nvec
-integer :: n_s_id,row_id,col_id,S_id
+integer :: n_s_id,row_id,col_id,S_id,Svec_id
 character(len=1024) :: subr = 'linop_read'
 
 ! Get operator size
@@ -241,29 +250,33 @@ else
    linop%n_s = 0
 end if
 
+! Get source/destination dimensions
+call mpl%ncerr(subr,nf90_get_att(ncid,nf90_global,trim(linop%prefix)//'_n_src',linop%n_src))
+call mpl%ncerr(subr,nf90_get_att(ncid,nf90_global,trim(linop%prefix)//'_n_dst',linop%n_dst))
+call mpl%ncerr(subr,nf90_get_att(ncid,nf90_global,trim(linop%prefix)//'_nvec',nvec))
+
+! Allocation
+if (isnotmsi(nvec)) then
+   call linop%alloc(nvec)
+else
+   call linop%alloc
+end if
+
 if (linop%n_s>0) then
-   ! Get source/destination dimensions
-   call mpl%ncerr(subr,nf90_get_att(ncid,nf90_global,trim(linop%prefix)//'_n_src',linop%n_src))
-   call mpl%ncerr(subr,nf90_get_att(ncid,nf90_global,trim(linop%prefix)//'_n_dst',linop%n_dst))
-   call mpl%ncerr(subr,nf90_get_att(ncid,nf90_global,trim(linop%prefix)//'_nvec',nvec))
-
-   ! Allocation
-   if (isnotmsi(nvec)) then
-      call linop%alloc(nvec)
-   else
-      call linop%alloc
-   end if
-
    ! Get variables id
    call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_row',row_id))
    call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_col',col_id))
-   call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_S',S_id))
+   if (isnotmsi(linop%nvec)) then
+      if (linop%nvec>0) call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_Svec',Svec_id))
+   else
+      call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_S',S_id))
+   end if
 
    ! Get variables
    call mpl%ncerr(subr,nf90_get_var(ncid,row_id,linop%row))
    call mpl%ncerr(subr,nf90_get_var(ncid,col_id,linop%col))
    if (isnotmsi(linop%nvec)) then
-      call mpl%ncerr(subr,nf90_get_var(ncid,S_id,linop%Svec))
+      if (linop%nvec>0) call mpl%ncerr(subr,nf90_get_var(ncid,Svec_id,linop%Svec))
    else
       call mpl%ncerr(subr,nf90_get_var(ncid,S_id,linop%S))
    end if
@@ -285,27 +298,28 @@ type(mpl_type),intent(in) :: mpl      !< MPI data
 integer,intent(in) :: ncid            !< NetCDF file ID
 
 ! Local variables
-integer :: n_s_id,nvec_id,row_id,col_id,S_id
+integer :: n_s_id,nvec_id,row_id,col_id,S_id,Svec_id
 character(len=1024) :: subr = 'linop_write'
 
+! Start definition mode
+call mpl%ncerr(subr,nf90_redef(ncid))
+
+! Write source/destination dimensions
+call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,trim(linop%prefix)//'_n_src',linop%n_src))
+call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,trim(linop%prefix)//'_n_dst',linop%n_dst))
+call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,trim(linop%prefix)//'_nvec',linop%nvec))
+
 if (linop%n_s>0) then
-   ! Start definition mode
-   call mpl%ncerr(subr,nf90_redef(ncid))
-
-   ! Write source/destination dimensions
-   call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,trim(linop%prefix)//'_n_src',linop%n_src))
-   call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,trim(linop%prefix)//'_n_dst',linop%n_dst))
-   call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,trim(linop%prefix)//'_nvec',linop%nvec))
-
    ! Define dimensions
    call mpl%ncerr(subr,nf90_def_dim(ncid,trim(linop%prefix)//'_n_s',linop%n_s,n_s_id))
-   if (isnotmsi(linop%nvec)) call mpl%ncerr(subr,nf90_def_dim(ncid,trim(linop%prefix)//'_nvec',linop%nvec,nvec_id))
+   if (isnotmsi(linop%nvec).and.(linop%nvec>0)) call mpl%ncerr(subr,nf90_def_dim(ncid,trim(linop%prefix)//'_nvec',linop%nvec, &
+ & nvec_id))
 
    ! Define variables
    call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_row',nf90_int,(/n_s_id/),row_id))
    call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_col',nf90_int,(/n_s_id/),col_id))
    if (isnotmsi(linop%nvec)) then
-      call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_S',ncfloat,(/n_s_id,nvec_id/),S_id))
+      if (linop%nvec>0) call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_Svec',ncfloat,(/n_s_id,nvec_id/),Svec_id))
    else
       call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_S',ncfloat,(/n_s_id/),S_id))
    end if
@@ -317,10 +331,13 @@ if (linop%n_s>0) then
    call mpl%ncerr(subr,nf90_put_var(ncid,row_id,linop%row))
    call mpl%ncerr(subr,nf90_put_var(ncid,col_id,linop%col))
    if (isnotmsi(linop%nvec)) then
-      call mpl%ncerr(subr,nf90_put_var(ncid,S_id,linop%Svec))
+      if (linop%nvec>0) call mpl%ncerr(subr,nf90_put_var(ncid,Svec_id,linop%Svec))
    else
       call mpl%ncerr(subr,nf90_put_var(ncid,S_id,linop%S))
    end if
+else
+   ! End definition mode
+   call mpl%ncerr(subr,nf90_enddef(ncid))
 end if
 
 end subroutine linop_write
@@ -482,7 +499,7 @@ integer,intent(in),optional :: ivec               !< Index of the vector of line
 ! Local variables
 integer :: i_s,ithread
 real(kind_real) :: fld_arr(linop%n_dst,mpl%nthread)
-
+   
 if (check_data) then
    ! Check linear operation
    if (minval(linop%col)<1) call mpl%abort('col<1 for symmetric linear operation '//trim(linop%prefix))
@@ -673,6 +690,9 @@ call linop%interp(mpl,mesh,kdtree,n_src_eff,mask_src_eff,n_dst,lon_dst,lat_dst,m
 ! Effective points conversion
 linop%n_src = n_src
 linop%col = src_eff_to_src(linop%col)
+
+! Release memory
+call kdtree%dealloc
 
 end subroutine linop_interp_from_lat_lon
 
@@ -1037,16 +1057,15 @@ integer,intent(in),optional :: row_to_ic0(linop%n_dst) !< Conversion from row to
 integer,intent(in),optional :: col_to_ic0(linop%n_src) !< Conversion from col to ic0 (identity if missing)
 
 ! Local variables
-integer :: ic0,i_s,jc0,jc1,il0,iproc
+integer :: ic0,i_s,jc0,il0,iproc
 integer :: i_s_s(mpl%nproc),i_s_e(mpl%nproc),n_s_loc(mpl%nproc),i_s_loc
-real(kind_real),allocatable :: x(:),y(:),z(:),v1(:),v2(:),va(:),vp(:),t(:)
 
 ! MPI splitting
 call mpl%split(linop%n_s,i_s_s,i_s_e,n_s_loc)
 
 ! Check that interpolations are not crossing mask boundaries
 call mpl%prog_init(n_s_loc(mpl%myproc))
-!$omp parallel do schedule(static) private(i_s_loc,i_s,x,y,z,v1,v2,va,vp,t,ic0,jc1,jc0)
+!$omp parallel do schedule(static) private(i_s_loc,i_s,ic0,jc0)
 do i_s_loc=1,n_s_loc(mpl%myproc)
    ! Indices
    i_s = i_s_s(mpl%myproc)+i_s_loc-1
@@ -1190,6 +1209,7 @@ if (count(missing)>0) then
    linop%S = interp_tmp%S(1:linop%n_s)
 
    ! Release memory
+   call kdtree%dealloc
    call interp_tmp%dealloc
 end if
 

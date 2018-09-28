@@ -93,7 +93,7 @@ module tools_kdtree2
       ! bucket.
       logical       :: sort = .false.
       ! do we always sort output results?
-      logical       :: rearrange = .false.
+      logical       :: rearrange = .true.
       real(kind_real), pointer :: rearranged_data(:,:) => null()
       ! if (rearrange .eqv. .true.) then rearranged_data has been
       ! created so that rearranged_data(:,i) = the_data(:,ind(i)),
@@ -180,14 +180,13 @@ contains
        mr%rearrange = .true.
     endif
 
+    allocate(mr%rearranged_data(3,mr%n))
     if (mr%rearrange) then
-       allocate(mr%rearranged_data(3,mr%n))
        do i=1,mr%n
-          mr%rearranged_data(:,i) = mr%the_data(:, &
-           mr%ind(i))
+          mr%rearranged_data(:,i) = mr%the_data(:,mr%ind(i))
        enddo
     else
-       nullify(mr%rearranged_data)
+       mr%rearranged_data = mr%the_data
     endif
 
   end function kdtree2_create
@@ -221,18 +220,6 @@ contains
       logical :: recompute
       real(kind_real)    :: average
 
-!!$      If (.False.) Then
-!!$         If ((l .Lt. 1) .Or. (l .Gt. tp%n)) Then
-!!$            Stop 'illegal L value in build_tree_for_range'
-!!$         End If
-!!$         If ((u .Lt. 1) .Or. (u .Gt. tp%n)) Then
-!!$            Stop 'illegal u value in build_tree_for_range'
-!!$         End If
-!!$         If (u .Lt. l) Then
-!!$            Stop 'U is less than L, thats illegal.'
-!!$         End If
-!!$      Endif
-!!$
       ! first compute min and max
       allocate (res)
       allocate(res%box(3))
@@ -496,10 +483,8 @@ contains
     deallocate (tp%ind)
     nullify (tp%ind)
 
-    if (tp%rearrange) then
-       deallocate(tp%rearranged_data)
-       nullify(tp%rearranged_data)
-    endif
+    deallocate(tp%rearranged_data)
+    nullify(tp%rearranged_data)
 
     deallocate(tp)
     return
@@ -552,11 +537,7 @@ contains
 
     sr%ind => tp%ind
     sr%rearrange = tp%rearrange
-    if (tp%rearrange) then
-       sr%Data => tp%rearranged_data
-    else
-       sr%Data => tp%the_data
-    endif
+    sr%Data => tp%rearranged_data
 
     call validate_query_storage(nn)
     sr%pq = pq_create(results)
@@ -594,11 +575,7 @@ contains
                              ! for counting.
     sr%ind => tp%ind
     sr%rearrange = tp%rearrange
-    if (tp%rearrange) then
-       sr%Data => tp%rearranged_data
-    else
-       sr%Data => tp%the_data
-    endif
+    sr%Data => tp%rearranged_data
 
     !
     !sr%dsl = Huge(sr%dsl)    ! set to huge positive values

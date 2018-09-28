@@ -32,7 +32,7 @@
       "variables": {
         "variables": ["x"]
       },
-      "prefix" : "bump",
+      "prefix" : "bump_dirac.bumploc",
       "default_seed" : 1,
       "method" : "loc_norm",
       "strategy" : "common",
