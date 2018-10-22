@@ -51,9 +51,9 @@ template <typename MODEL> void testLinearity() {
   typedef ObsTestsFixture<MODEL>         Test_;
   typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
   typedef oops::Locations<MODEL>         Locations_;
-  typedef oops::LinearObsOperator<MODEL> LinearObsOperator_;
   typedef oops::ObsAuxControl<MODEL>     ObsAuxCtrl_;
   typedef oops::ObsAuxIncrement<MODEL>   ObsAuxIncr_;
+  typedef oops::ObsOperator<MODEL>       ObsOperator_;
   typedef oops::LinearObsOperator<MODEL> LinearObsOperator_;
   typedef oops::ObsVector<MODEL>         ObsVector_;
 
@@ -65,11 +65,12 @@ template <typename MODEL> void testLinearity() {
   obsconf.get("ObsTypes", conf);
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    ObsOperator_ hop(Test_::obspace()[jj]);
     LinearObsOperator_ hoptl(Test_::obspace()[jj]);
 
     const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
     Locations_ locs(Test_::obspace()[jj].locations(Test_::tbgn(), Test_::tend()));
-    const GeoVaLs_ gval(gconf, hoptl.variables());
+    const GeoVaLs_ gval(gconf, hop.variables());
 
     eckit::LocalConfiguration biasConf;
     conf[jj].get("ObsBias", biasConf);
@@ -106,6 +107,7 @@ template <typename MODEL> void testAdjoint() {
   typedef ObsTestsFixture<MODEL> Test_;
   typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
   typedef oops::Locations<MODEL>         Locations_;
+  typedef oops::ObsOperator<MODEL>       ObsOperator_;
   typedef oops::LinearObsOperator<MODEL> LinearObsOperator_;
   typedef oops::ObsAuxControl<MODEL>     ObsAuxCtrl_;
   typedef oops::ObsAuxIncrement<MODEL>   ObsAuxIncr_;
@@ -118,10 +120,11 @@ template <typename MODEL> void testAdjoint() {
   obsconf.get("ObsTypes", conf);
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    ObsOperator_ hop(Test_::obspace()[jj]);
     LinearObsOperator_ hoptl(Test_::obspace()[jj]);
     eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
     Locations_ locs(Test_::obspace()[jj].locations(Test_::tbgn(), Test_::tend()));
-    const GeoVaLs_ gval(gconf, hoptl.variables());
+    const GeoVaLs_ gval(gconf, hop.variables());
 
     eckit::LocalConfiguration biasConf;
     conf[jj].get("ObsBias", biasConf);
@@ -149,6 +152,10 @@ template <typename MODEL> void testAdjoint() {
 
     const double zz1 = dot_product(gv1, gv2);
     const double zz2 = dot_product(dy1, dy2);
+
+    oops::Log::debug() << "Adjoint test result: (<x,HTy>-<Hx,y>)/<Hx,y> = "
+                       << (zz1-zz2)/zz2 << std::endl;
+
     BOOST_CHECK(zz1 != zero);
     BOOST_CHECK(zz2 != zero);
     BOOST_CHECK_CLOSE(zz1, zz2, tol);
@@ -162,7 +169,6 @@ template <typename MODEL> void testTangentLinear() {
   typedef ObsTestsFixture<MODEL>         Test_;
   typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
   typedef oops::Locations<MODEL>         Locations_;
-  typedef oops::LinearObsOperator<MODEL> LinearObsOperator_;
   typedef oops::ObsAuxControl<MODEL>     ObsAuxCtrl_;
   typedef oops::ObsAuxIncrement<MODEL>   ObsAuxIncr_;
   typedef oops::LinearObsOperator<MODEL> LinearObsOperator_;
