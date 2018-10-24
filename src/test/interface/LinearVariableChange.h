@@ -114,14 +114,23 @@ template <typename MODEL> void testLinearVariableChangeZero() {
     dxin.zero();
     changevar->multiplyAD(dxin, KTdxin);
     BOOST_CHECK_EQUAL(KTdxin.norm(), 0.0);
+
+    const bool testinverse = Test_::linvarchgconfs()[jj].getBool("testinverse", true);
+    if (testinverse)
+      {
+        oops::Log::info() << "Doing zero test for inverse" << std::endl;
+        dxout.zero();
+        changevar->multiply(dxout, Kdxout);
+        BOOST_CHECK_EQUAL(Kdxout.norm(), 0.0);
+
+        dxin.zero();
+        changevar->multiplyAD(dxin, KTdxin);
+        BOOST_CHECK_EQUAL(KTdxin.norm(), 0.0);
+      } else {
+      oops::Log::info() << "Not doing zero test for inverse" << std::endl;
+    }
   }
 }
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL> void testLinearVariableChangeInverse() {
-}
-
 // -----------------------------------------------------------------------------
 
 template <typename MODEL> void testLinearVariableChangeAdjoint() {
@@ -155,17 +164,83 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
     changevar->multiplyAD(dxin, KTdxin);
 
     // zz1 = <Kdxout,dxin>
-    const double zz1 = dot_product(Kdxout, dxin0);
+    double zz1 = dot_product(Kdxout, dxin0);
     // zz2 = <dxout,KTdxin>
-    const double zz2 = dot_product(dxout0, KTdxin);
+    double zz2 = dot_product(dxout0, KTdxin);
 
-    // Print
     oops::Log::info() << "<dxout,KTdxin>-<Kdxout,dxin>/<dxout,KTdxin>="
                       << (zz1-zz2)/zz1 << std::endl;
     oops::Log::info() << "<dxout,KTdxin>-<Kdxout,dxin>/<Kdxout,dxin>="
                       << (zz1-zz2)/zz2 << std::endl;
     const double tol = 1e-8;
     BOOST_CHECK_CLOSE(zz1, zz2, tol);
+    const bool testinverse = Test_::linvarchgconfs()[jj].getBool("testinverse", true);
+    if (testinverse)
+      {
+        oops::Log::info() << "Doing adjoint test for inverse" << std::endl;
+        dxin.random();
+        dxout.random();
+        dxin0 = dxin;
+        dxout0 = dxout;
+        changevar->multiplyInverse(dxout, Kdxout);
+        changevar->multiplyInverseAD(dxin, KTdxin);
+        zz1 = dot_product(Kdxout, dxin0);
+        zz2 = dot_product(dxout0, KTdxin);
+        oops::Log::info() << "<dxout,KinvTdxin>-<Kinvdxout,dxin>/<dxout,KinvTdxin>="
+                      << (zz1-zz2)/zz1 << std::endl;
+        oops::Log::info() << "<dxout,KinvTdxin>-<Kinvdxout,dxin>/<Kinvdxout,dxin>="
+                      << (zz1-zz2)/zz2 << std::endl;
+        BOOST_CHECK_CLOSE(zz1, zz2, tol);
+      } else {
+      oops::Log::info() << "Not doing adjoint test for inverse" << std::endl;
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testLinearVariableChangeInverse() {
+  typedef LinearVariableChangeFixture<MODEL>       Test_;
+  typedef oops::Increment<MODEL>                   Increment_;
+  typedef oops::LinearVariableChangeBase<MODEL>    LinearVariableChange_;
+  typedef oops::LinearVariableChangeFactory<MODEL> LinearVariableChangeFactory_;
+
+  for (std::size_t jj = 0; jj < Test_::linvarchgconfs().size(); ++jj) {
+    eckit::LocalConfiguration varinconf(Test_::linvarchgconfs()[jj], "inputVariables");
+    eckit::LocalConfiguration varoutconf(Test_::linvarchgconfs()[jj], "outputVariables");
+    oops::Variables varin(varinconf);
+    oops::Variables varout(varoutconf);
+
+    const double tol = Test_::linvarchgconfs()[jj].getDouble("toleranceInverse");
+
+    const bool testinverse = Test_::linvarchgconfs()[jj].getBool("testinverse", false);
+    if (testinverse)
+      {
+      oops::Log::info() << "Testing multiplyInverse" << std::endl;
+      boost::scoped_ptr<LinearVariableChange_> changevar(LinearVariableChangeFactory_::create(
+                                        Test_::xx(), Test_::xx(),
+                                        Test_::resol(), Test_::linvarchgconfs()[jj]));
+
+      Increment_    dxin(Test_::resol(), varin,  Test_::time());
+      Increment_  KIdxin(Test_::resol(), varout, Test_::time());
+      Increment_ KKIdxin(Test_::resol(), varin,  Test_::time());
+
+      dxin.random();
+
+      changevar->multiplyInverse(dxin, KIdxin);
+      changevar->multiply(KIdxin, KKIdxin);
+
+      const double zz1 = dxin.norm();
+      const double zz2 = KKIdxin.norm();
+
+      oops::Log::info() << "<x>, <KK^{-1}x>=" << zz1 << " " << zz2 << std::endl;
+      oops::Log::info() << "<x>-<KK^{-1}x>=" << zz1-zz2 << std::endl;
+
+      BOOST_CHECK((zz1-zz2) < tol);
+    } else {
+      oops::Log::info() << "multiplyInverse test not executed" << std::endl;
+      BOOST_CHECK(1.0 < 2.0);
+    }
   }
 }
 
@@ -183,6 +258,7 @@ template <typename MODEL> class LinearVariableChange : public oops::Test {
 
     ts->add(BOOST_TEST_CASE(&testLinearVariableChangeZero<MODEL>));
     ts->add(BOOST_TEST_CASE(&testLinearVariableChangeAdjoint<MODEL>));
+    ts->add(BOOST_TEST_CASE(&testLinearVariableChangeInverse<MODEL>));
 
     boost::unit_test::framework::master_test_suite().add(ts);
   }

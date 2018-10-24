@@ -82,6 +82,8 @@
   "LinearVariableChangeTests": [
     {
       "varchange": "StatsVariableChange",
+	"toleranceInverse": "1.0e-8",
+	"testinverse": "0",	
       "variables": {
         "variables": ["x","q","u","v","bc"]
       },
