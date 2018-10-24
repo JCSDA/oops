@@ -77,6 +77,11 @@ template <typename MODEL> void testNotZero() {
 
     const double ovov2 = dot_product(ov, ov);
     BOOST_CHECK(ovov2 > zero);
+
+    ov.zero();
+
+    const double zz = dot_product(ov, ov);
+    BOOST_CHECK(zz == zero);
   }
 }
 
