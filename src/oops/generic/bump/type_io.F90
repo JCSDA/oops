@@ -22,6 +22,7 @@ use type_linop, only: linop_type
 use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 use type_rng, only: rng_type
+use fckit_mpi_module, only: fckit_mpi_status
 
 implicit none
 
@@ -572,6 +573,7 @@ real(kind_real) :: fld_c0b(io%nc0b,geom%nl0)
 real(kind_real) :: fld_oga(io%noga,geom%nl0)
 real(kind_real),allocatable :: sbuf(:),rbuf(:),fld_grid(:,:,:),lon_gridded(:),lat_gridded(:)
 character(len=1024) :: subr = 'io_grid_write'
+type(fckit_mpi_status) :: status
 
 ! Halo extension and interpolation
 call io%com_AB%ext(mpl,geom%nl0,fld,fld_c0b)
@@ -616,8 +618,8 @@ if (mpl%main) then
          rbuf = sbuf
       else
          ! Receive data on ioproc
-         call mpl%recv(io%proc_to_noga(iproc),oga_to_og,iproc,mpl%tag)
-         call mpl%recv(io%proc_to_noga(iproc)*geom%nl0,rbuf,iproc,mpl%tag+1)
+         call mpl%f_comm%receive(oga_to_og,iproc-1,mpl%tag,status)
+         call mpl%f_comm%receive(rbuf,iproc-1,mpl%tag+1,status)
       end if
 
       ! Write data
@@ -638,8 +640,8 @@ if (mpl%main) then
    end do
 else
    ! Send data to ioproc
-   call mpl%send(io%noga,io%oga_to_og,mpl%ioproc,mpl%tag)
-   call mpl%send(io%noga*geom%nl0,sbuf,mpl%ioproc,mpl%tag+1)
+   call mpl%f_comm%send(io%oga_to_og,mpl%ioproc-1,mpl%tag)
+   call mpl%f_comm%send(sbuf,mpl%ioproc-1,mpl%tag+1)
 end if
 call mpl%update_tag(2)
 

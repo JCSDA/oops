@@ -115,7 +115,7 @@ if (shuffle) then
    ! Shuffle order (more efficient to compute the Delaunay triangulation)
    allocate(jtab(mesh%n))
    if (mpl%main) call rng%rand_integer(1,mesh%n,jtab)
-   call mpl%bcast(jtab)
+   call mpl%f_comm%broadcast(jtab,mpl%ioproc-1)
    do i=mesh%n,2,-1
       k = mesh%order(jtab(i))
       mesh%order(jtab(i)) = mesh%order(i)

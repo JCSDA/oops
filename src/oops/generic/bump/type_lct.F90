@@ -23,6 +23,7 @@ use type_mom, only: mom_type
 use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 use type_rng, only: rng_type
+use fckit_mpi_module, only: fckit_mpi_sum,fckit_mpi_status
 
 implicit none
 
@@ -276,7 +277,7 @@ do ib=1,bpar%nb
          if (mask_c1a(ic1a,il0).and.(.not.(all(isnotmsr(lct%blk(ib)%coef(:,ic1a,il0))) &
       & .and.all(isnotmsr(lct%blk(ib)%coef(:,ic1a,il0)))))) nmsr = nmsr+1
       end do
-      call mpl%allreduce_sum(nmsr,nmsr_tot)
+      call mpl%f_comm%allreduce(nmsr,nmsr_tot,fckit_mpi_sum())
       write(mpl%info,'(a10,a,i3,a,i8,a)',advance='no') '','Level',nam%levs(il0),': ',nmsr_tot,' missing points'
 
       if (nmsr_tot>0) then
@@ -312,7 +313,7 @@ do ib=1,bpar%nb
          if (mask_c1a(ic1a,il0).and.(.not.(all(isnotmsr(lct%blk(ib)%coef(:,ic1a,il0))) &
       & .and.all(isnotmsr(lct%blk(ib)%coef(:,ic1a,il0)))))) nmsr = nmsr+1
       end do
-      call mpl%allreduce_sum(nmsr,nmsr_tot)
+      call mpl%f_comm%allreduce(nmsr,nmsr_tot,fckit_mpi_sum())
       write(mpl%info,'(a,i8,a)') ' ~> ',nmsr_tot,' missing points'
    end do
 end do
@@ -362,8 +363,8 @@ do ib=1,bpar%nb
          end do
       end do
    end do
-   call mpl%allreduce_sum(rmse,rmse_tot)
-   call mpl%allreduce_sum(norm,norm_tot)
+   call mpl%f_comm%allreduce(rmse,rmse_tot,fckit_mpi_sum())
+   call mpl%f_comm%allreduce(norm,norm_tot,fckit_mpi_sum())
    if (norm_tot>0.0) rmse_tot = sqrt(rmse_tot/norm_tot)
    write(mpl%info,'(a10,a,e15.8,a,i8,a)') '','LCT diag RMSE: ',rmse_tot,' for ',int(norm_tot),' diagnostic points'
    call flush(mpl%info)
@@ -503,8 +504,8 @@ do ib=1,bpar%nb
          end do
          Lavg = sum(fld(:,il0,lct%blk(ib)%ncomp(iscales)+2),isnotmsr(fld(:,il0,lct%blk(ib)%ncomp(iscales)+2)))
          norm = real(count(isnotmsr(fld(:,il0,lct%blk(ib)%ncomp(iscales)+2))),kind_real)
-         call mpl%allreduce_sum(Lavg,Lavg_tot)
-         call mpl%allreduce_sum(norm,norm_tot)
+         call mpl%f_comm%allreduce(Lavg,Lavg_tot,fckit_mpi_sum())
+         call mpl%f_comm%allreduce(norm,norm_tot,fckit_mpi_sum())
          if (norm_tot>0.0) write(mpl%info,'(a13,a,i3,a,f10.2,a)') '','Level',nam%levs(il0),' ~> ',Lavg_tot/norm_tot*reqkm,' km'
       end do
 
@@ -577,6 +578,7 @@ real(kind_real),allocatable :: fld_c0(:,:,:),sbuf(:),rbuf(:)
 logical :: valid
 logical :: free(geom%nc0,geom%nl0)
 character(len=1024) :: filename
+type(fckit_mpi_status) :: status
 
 do ib=1,bpar%nb
    write(mpl%info,'(a7,a,a)') '','Block: ',trim(bpar%blockname(ib))
@@ -642,7 +644,7 @@ do ib=1,bpar%nb
                rbuf = sbuf
             else
                ! Receive data
-               call mpl%recv(nam%nc3*bpar%nl0r(ib)*2,rbuf,iproc,mpl%tag)
+               call mpl%f_comm%receive(rbuf,iproc-1,mpl%tag,status)
             end if
 
             ! Fill field
@@ -660,7 +662,7 @@ do ib=1,bpar%nb
             end do
          else
             ! Send data
-            if (iproc==mpl%myproc) call mpl%send(nam%nc3*bpar%nl0r(ib)*2,sbuf,mpl%ioproc,mpl%tag)
+            if (iproc==mpl%myproc) call mpl%f_comm%send(sbuf,mpl%ioproc-1,mpl%tag)
          end if
          call mpl%update_tag(1)
 

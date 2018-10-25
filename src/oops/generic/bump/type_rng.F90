@@ -664,7 +664,7 @@ else
 end if
 
 ! Broadcast
-call mpl%bcast(ihor)
+call mpl%f_comm%broadcast(ihor,mpl%ioproc-1)
 
 end subroutine initialize_sampling
 

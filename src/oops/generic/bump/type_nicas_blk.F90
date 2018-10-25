@@ -31,6 +31,7 @@ use type_mesh, only: mesh_type
 use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 use type_rng, only: rng_type
+use fckit_mpi_module, only: fckit_mpi_sum,fckit_mpi_min,fckit_mpi_max
 
 implicit none
 
@@ -564,10 +565,10 @@ if (trim(nam%strategy)=='specific_multivariate') call rng%reseed(mpl)
 ! Compute support radii
 norm = 1.0/real(geom%nc0_mask,kind_real)
 rhs_sum = sum(cmat_blk%rhs,dim=1,mask=geom%mask_c0a)
-call mpl%allreduce_sum(rhs_sum,rhs_avg)
+call mpl%f_comm%allreduce(rhs_sum,rhs_avg,fckit_mpi_sum())
 rhs_avg = rhs_avg*norm
 rvs_sum = sum(cmat_blk%rvs,dim=1,mask=geom%mask_c0a)
-call mpl%allreduce_sum(rvs_sum,rvs_avg)
+call mpl%f_comm%allreduce(rvs_sum,rvs_avg,fckit_mpi_sum())
 rvs_avg = rvs_avg*norm
 write(mpl%info,'(a10,a)') '','Average support radii (H/V): '
 do il0=1,geom%nl0
@@ -587,7 +588,7 @@ do ic0a=1,geom%nc0a
       end if
    end do
 end do
-call mpl%allreduce_sum(sum(rhs_min,mask=geom%mask_hor_c0a),rhs_minavg)
+call mpl%f_comm%allreduce(sum(rhs_min,mask=geom%mask_hor_c0a),rhs_minavg,fckit_mpi_sum())
 rhs_minavg = rhs_minavg*norm(1)
 if (rhs_minavg>0.0) then
    nicas_blk%nc1 = floor(2.0*maxval(geom%area)*nam%resol**2/(sqrt(3.0)*rhs_minavg**2))
@@ -661,7 +662,7 @@ do il0=1,geom%nl0
             if (rv>0.0) distnorm(ic0a) = abs(geom%vunit(ic0,il0)-geom%vunit(ic0,il0_prev))/rv
          end if
       end do
-      call mpl%allreduce_min(minval(distnorm),distnormmin)
+      call mpl%f_comm%allreduce(minval(distnorm),distnormmin,fckit_mpi_min())
       nicas_blk%llev(il0) = distnormmin>1.0/nam%resol
    end if
 
@@ -1151,9 +1152,9 @@ end do
 
 ! Sizes
 nicas_blk%nc1a = count(lcheck_c1a)
-call mpl%allgather(nicas_blk%nc1a,proc_to_nc1a)
+call mpl%f_comm%allgather(nicas_blk%nc1a,proc_to_nc1a)
 nicas_blk%nsa = count(nicas_blk%lcheck_sa)
-call mpl%allgather(nicas_blk%nsa,proc_to_nsa)
+call mpl%f_comm%allgather(nicas_blk%nsa,proc_to_nsa)
 do il0i=1,geom%nl0i
    nicas_blk%h(il0i)%n_s = count(lcheck_h(:,il0i))
 end do
@@ -1398,7 +1399,7 @@ call flush(mpl%info)
 call nicas_blk%kdtree%create(mpl,nicas_blk%nc1,lon_c1,lat_c1)
 
 ! Find largest possible radius
-call mpl%allreduce_max(maxval(cmat_blk%rh),nicas_blk%rhmax)
+call mpl%f_comm%allreduce(maxval(cmat_blk%rh),nicas_blk%rhmax,fckit_mpi_max())
 if (nicas_blk%double_fit) then
    nicas_blk%rhmax = nicas_blk%rhmax*sqrt_r_dble
 else
@@ -3817,7 +3818,7 @@ write(mpl%info,'(a7,a)') '','Values at dirac points:'
 call flush(mpl%info)
 do idir=1,nam%ndir
    if (iprocdir(idir)==mpl%myproc) val = fld(ic0adir(idir),il0dir(idir))
-   call mpl%bcast(val,iprocdir(idir))
+   call mpl%f_comm%broadcast(val,iprocdir(idir)-1)
    write(mpl%info,'(a10,f6.1,a,f6.1,a,f10.7)') '',nam%londir(idir)*rad2deg,' / ',nam%latdir(idir)*rad2deg,': ',val
    call flush(mpl%info)
 end do
@@ -3826,9 +3827,9 @@ call flush(mpl%info)
 do il0=1,geom%nl0
    valmin = minval(fld(:,il0),mask=geom%mask_c0a(:,il0))
    valmax = maxval(fld(:,il0),mask=geom%mask_c0a(:,il0))
-   call mpl%allreduce_min(valmin,valmin_tot)
-   call mpl%allreduce_max(valmax,valmax_tot)
-   write(mpl%info,'(a10,a,i3,a,f10.7,a,f10.7)') '','Level ',nam%levs(il0),': ',valmin_tot,' - ',valmax_tot
+   call mpl%f_comm%allreduce(valmin,valmin_tot,fckit_mpi_min())
+   call mpl%f_comm%allreduce(valmax,valmax_tot,fckit_mpi_max())
+   !write(mpl%info,'(a10,a,i3,a,f10.7,a,f10.7)') '','Level ',nam%levs(il0),': ',valmin_tot,' - ',valmax_tot
    call flush(mpl%info)
 end do
 

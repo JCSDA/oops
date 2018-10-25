@@ -16,6 +16,7 @@ use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr
 use tools_nc, only: ncfloat
 use type_mpl, only: mpl_type
+use fckit_mpi_module, only: fckit_mpi_status
 
 implicit none
 
@@ -106,7 +107,7 @@ end do
 !$omp end parallel do
 
 ! Communication
-call mpl%alltoallv(com%nexcl,sbuf,com%jexclcounts,com%jexcldispl,com%nhalo,rbuf,com%jhalocounts,com%jhalodispl)
+call mpl%f_comm%alltoallv(sbuf,com%jexclcounts,com%jexcldispl,rbuf,com%jhalocounts,com%jhalodispl)
 
 ! Copy interior
 !$omp parallel do schedule(static) private(ired)
@@ -158,7 +159,7 @@ jexclcounts = com%jexclcounts*nl
 jexcldispl = com%jexcldispl*nl
 jhalocounts = com%jhalocounts*nl
 jhalodispl = com%jhalodispl*nl
-call mpl%alltoallv(com%nexcl*nl,sbuf,jexclcounts,jexcldispl,com%nhalo*nl,rbuf,jhalocounts,jhalodispl)
+call mpl%f_comm%alltoallv(sbuf,jexclcounts,jexcldispl,rbuf,jhalocounts,jhalodispl)
 
 ! Copy interior
 !$omp parallel do schedule(static) private(il,ired)
@@ -206,7 +207,7 @@ end do
 !$omp end parallel do
 
 ! Communication
-call mpl%alltoallv(com%nhalo,sbuf,com%jhalocounts,com%jhalodispl,com%nexcl,rbuf,com%jexclcounts,com%jexcldispl)
+call mpl%f_comm%alltoallv(sbuf,com%jhalocounts,com%jhalodispl,rbuf,com%jexclcounts,com%jexcldispl)
 
 ! Copy interior
 !$omp parallel do schedule(static) private(ired)
@@ -263,7 +264,7 @@ end do
 !$omp end parallel do
 
 ! Communication
-call mpl%alltoallv(com%nhalo*nl,sbuf,com%jhalocounts*nl,com%jhalodispl*nl,com%nexcl*nl,rbuf,com%jexclcounts*nl,com%jexcldispl*nl)
+call mpl%f_comm%alltoallv(sbuf,com%jhalocounts*nl,com%jhalodispl*nl,rbuf,com%jexclcounts*nl,com%jexcldispl*nl)
 
 ! Copy interior
 !$omp parallel do schedule(static) private(il,ired)
@@ -452,6 +453,7 @@ integer,intent(in) :: glb_to_red(nglb)   !< Global to reduced halo
 integer :: iproc,jproc,iext,iglb,ired,icount,nred_tmp,next_tmp
 integer,allocatable :: ext_to_glb_tmp(:),red_to_ext_tmp(:)
 type(com_type) :: com_in(mpl%nproc)
+type(fckit_mpi_status) :: status
 
 if (mpl%main) then
    do iproc=1,mpl%nproc
@@ -462,8 +464,8 @@ if (mpl%main) then
          next_tmp = next
       else
          ! Receive dimensions on ioproc
-         call mpl%recv(nred_tmp,iproc,mpl%tag)
-         call mpl%recv(next_tmp,iproc,mpl%tag+1)
+         call mpl%f_comm%receive(nred_tmp,iproc-1,mpl%tag,status)
+         call mpl%f_comm%receive(next_tmp,iproc-1,mpl%tag+1,status)
       end if
 
       ! Allocation
@@ -477,8 +479,8 @@ if (mpl%main) then
          red_to_ext_tmp = red_to_ext
       else
          ! Receive data on ioproc
-         call mpl%recv(next_tmp,ext_to_glb_tmp,iproc,mpl%tag+2)
-         call mpl%recv(nred_tmp,red_to_ext_tmp,iproc,mpl%tag+3)
+         call mpl%f_comm%receive(ext_to_glb_tmp,iproc-1,mpl%tag+2,status)
+         call mpl%f_comm%receive(red_to_ext_tmp,iproc-1,mpl%tag+3,status)
       end if
 
       ! Allocation
@@ -503,12 +505,12 @@ if (mpl%main) then
    end do
 else
    ! Send dimensions to ioproc
-   call mpl%send(nred,mpl%ioproc,mpl%tag)
-   call mpl%send(next,mpl%ioproc,mpl%tag+1)
+   call mpl%f_comm%send(nred,mpl%ioproc-1,mpl%tag)
+   call mpl%f_comm%send(next,mpl%ioproc-1,mpl%tag+1)
 
    ! Send data to ioproc
-   call mpl%send(next,ext_to_glb,mpl%ioproc,mpl%tag+2)
-   call mpl%send(nred,red_to_ext,mpl%ioproc,mpl%tag+3)
+   call mpl%f_comm%send(ext_to_glb,mpl%ioproc-1,mpl%tag+2)
+   call mpl%f_comm%send(red_to_ext,mpl%ioproc-1,mpl%tag+3)
 end if
 call mpl%update_tag(4)
 
@@ -601,18 +603,18 @@ if (mpl%main) then
          com_out%nexcl = com_in(iproc)%nexcl
       else
          ! Send dimensions to iproc
-         call mpl%send(com_in(iproc)%nred,iproc,mpl%tag)
-         call mpl%send(com_in(iproc)%next,iproc,mpl%tag+1)
-         call mpl%send(com_in(iproc)%nhalo,iproc,mpl%tag+2)
-         call mpl%send(com_in(iproc)%nexcl,iproc,mpl%tag+3)
+         call mpl%f_comm%send(com_in(iproc)%nred,iproc-1,mpl%tag)
+         call mpl%f_comm%send(com_in(iproc)%next,iproc-1,mpl%tag+1)
+         call mpl%f_comm%send(com_in(iproc)%nhalo,iproc-1,mpl%tag+2)
+         call mpl%f_comm%send(com_in(iproc)%nexcl,iproc-1,mpl%tag+3)
       end if
    end do
 else
    ! Receive dimensions from ioproc
-   call mpl%recv(com_out%nred,mpl%ioproc,mpl%tag)
-   call mpl%recv(com_out%next,mpl%ioproc,mpl%tag+1)
-   call mpl%recv(com_out%nhalo,mpl%ioproc,mpl%tag+2)
-   call mpl%recv(com_out%nexcl,mpl%ioproc,mpl%tag+3)
+   call mpl%f_comm%receive(com_out%nred,mpl%ioproc-1,mpl%tag,status)
+   call mpl%f_comm%receive(com_out%next,mpl%ioproc-1,mpl%tag+1,status)
+   call mpl%f_comm%receive(com_out%nhalo,mpl%ioproc-1,mpl%tag+2,status)
+   call mpl%f_comm%receive(com_out%nexcl,mpl%ioproc-1,mpl%tag+3,status)
 end if
 call mpl%update_tag(4)
 
@@ -639,24 +641,24 @@ if (mpl%main) then
          com_out%excl = com_in(iproc)%excl
       else
          ! Send dimensions to iproc
-         call mpl%send(com_in(iproc)%nred,com_in(iproc)%red_to_ext,iproc,mpl%tag)
-         call mpl%send(mpl%nproc,com_in(iproc)%jhalocounts,iproc,mpl%tag+1)
-         call mpl%send(mpl%nproc,com_in(iproc)%jexclcounts,iproc,mpl%tag+2)
-         call mpl%send(mpl%nproc,com_in(iproc)%jhalodispl,iproc,mpl%tag+3)
-         call mpl%send(mpl%nproc,com_in(iproc)%jexcldispl,iproc,mpl%tag+4)
-         if (com_in(iproc)%nhalo>0) call mpl%send(com_in(iproc)%nhalo,com_in(iproc)%halo,iproc,mpl%tag+5)
-         if (com_in(iproc)%nexcl>0) call mpl%send(com_in(iproc)%nexcl,com_in(iproc)%excl,iproc,mpl%tag+6)
+         call mpl%f_comm%send(com_in(iproc)%red_to_ext,iproc-1,mpl%tag)
+         call mpl%f_comm%send(com_in(iproc)%jhalocounts,iproc-1,mpl%tag+1)
+         call mpl%f_comm%send(com_in(iproc)%jexclcounts,iproc-1,mpl%tag+2)
+         call mpl%f_comm%send(com_in(iproc)%jhalodispl,iproc-1,mpl%tag+3)
+         call mpl%f_comm%send(com_in(iproc)%jexcldispl,iproc-1,mpl%tag+4)
+         if (com_in(iproc)%nhalo>0) call mpl%f_comm%send(com_in(iproc)%halo,iproc-1,mpl%tag+5)
+         if (com_in(iproc)%nexcl>0) call mpl%f_comm%send(com_in(iproc)%excl,iproc-1,mpl%tag+6)
       end if
    end do
 else
    ! Receive dimensions from ioproc
-   call mpl%recv(com_out%nred,com_out%red_to_ext,mpl%ioproc,mpl%tag)
-   call mpl%recv(mpl%nproc,com_out%jhalocounts,mpl%ioproc,mpl%tag+1)
-   call mpl%recv(mpl%nproc,com_out%jexclcounts,mpl%ioproc,mpl%tag+2)
-   call mpl%recv(mpl%nproc,com_out%jhalodispl,mpl%ioproc,mpl%tag+3)
-   call mpl%recv(mpl%nproc,com_out%jexcldispl,mpl%ioproc,mpl%tag+4)
-   if (com_out%nhalo>0) call mpl%recv(com_out%nhalo,com_out%halo,mpl%ioproc,mpl%tag+5)
-   if (com_out%nexcl>0) call mpl%recv(com_out%nexcl,com_out%excl,mpl%ioproc,mpl%tag+6)
+   call mpl%f_comm%receive(com_out%red_to_ext,mpl%ioproc-1,mpl%tag,status)
+   call mpl%f_comm%receive(com_out%jhalocounts,mpl%ioproc-1,mpl%tag+1,status)
+   call mpl%f_comm%receive(com_out%jexclcounts,mpl%ioproc-1,mpl%tag+2,status)
+   call mpl%f_comm%receive(com_out%jhalodispl,mpl%ioproc-1,mpl%tag+3,status)
+   call mpl%f_comm%receive(com_out%jexcldispl,mpl%ioproc-1,mpl%tag+4,status)
+   if (com_out%nhalo>0) call mpl%f_comm%receive(com_out%halo,mpl%ioproc-1,mpl%tag+5,status)
+   if (com_out%nexcl>0) call mpl%f_comm%receive(com_out%excl,mpl%ioproc-1,mpl%tag+6,status)
 end if
 call mpl%update_tag(7)
 

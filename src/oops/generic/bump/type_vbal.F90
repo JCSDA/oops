@@ -28,6 +28,7 @@ use type_hdata, only: hdata_type
 use type_nam, only: nam_type
 use type_rng, only: rng_type
 use type_vbal_blk, only: vbal_blk_type
+use fckit_mpi_module, only: fckit_mpi_sum
 
 implicit none
 
@@ -511,7 +512,7 @@ do iv=1,nam%nv
             end do
 
             ! Reduce data
-            call mpl%allreduce_sum(sbuf,rbuf)
+            call mpl%f_comm%allreduce(sbuf,rbuf,fckit_mpi_sum())
 
             ! Unpack data
             offset = 0
@@ -790,7 +791,7 @@ fld = fld_save
 call vbal%apply(nam,geom,bpar,fld)
 call vbal%apply_inv(nam,geom,bpar,fld)
 mse = sum((fld-fld_save)**2)
-call mpl%allreduce_sum(mse,mse_tot)
+call mpl%f_comm%allreduce(mse,mse_tot,fckit_mpi_sum())
 write(mpl%info,'(a7,a,e15.8)') '','Vertical balance direct/inverse test:  ',mse_tot
 call flush(mpl%info)
 
@@ -799,7 +800,7 @@ fld = fld_save
 call vbal%apply_inv(nam,geom,bpar,fld)
 call vbal%apply(nam,geom,bpar,fld)
 mse = sum((fld-fld_save)**2)
-call mpl%allreduce_sum(mse,mse_tot)
+call mpl%f_comm%allreduce(mse,mse_tot,fckit_mpi_sum())
 write(mpl%info,'(a7,a,e15.8)') '','Vertical balance inverse/direct test:  ',mse_tot
 call flush(mpl%info)
 
@@ -808,7 +809,7 @@ fld = fld_save
 call vbal%apply_ad(nam,geom,bpar,fld)
 call vbal%apply_inv_ad(nam,geom,bpar,fld)
 mse = sum((fld-fld_save)**2)
-call mpl%allreduce_sum(mse,mse_tot)
+call mpl%f_comm%allreduce(mse,mse_tot,fckit_mpi_sum())
 write(mpl%info,'(a7,a,e15.8)') '','Vertical balance direct/inverse (adjoint) test:  ',mse_tot
 call flush(mpl%info)
 
@@ -817,7 +818,7 @@ fld = fld_save
 call vbal%apply_inv_ad(nam,geom,bpar,fld)
 call vbal%apply_ad(nam,geom,bpar,fld)
 mse = sum((fld-fld_save)**2)
-call mpl%allreduce_sum(mse,mse_tot)
+call mpl%f_comm%allreduce(mse,mse_tot,fckit_mpi_sum())
 write(mpl%info,'(a7,a,e15.8)') '','Vertical balance inverse/direct (adjoint) test:  ',mse_tot
 call flush(mpl%info)
 

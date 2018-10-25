@@ -29,6 +29,7 @@ use type_mom, only: mom_type
 use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 use type_rng, only: rng_type
+use fckit_mpi_module, only: fckit_mpi_sum
 
 implicit none
 
@@ -682,7 +683,8 @@ do ib=1,bpar%nbe
                ! Copy to C matrix
                if (i==1) then
                   cmat%blk(ib)%coef_ens = fld_c0a
-                  call mpl%allreduce_sum(sum(cmat%blk(ib)%coef_ens,mask=geom%mask_c0a),cmat%blk(ib)%wgt)
+                  call mpl%f_comm%allreduce(sum(cmat%blk(ib)%coef_ens,mask=geom%mask_c0a), &
+                 &     cmat%blk(ib)%wgt,fckit_mpi_sum())
                   cmat%blk(ib)%wgt = cmat%blk(ib)%wgt/real(count(geom%mask_c0),kind_real)
                elseif (i==2) then
                   cmat%blk(ib)%coef_sta = fld_c0a
@@ -902,7 +904,7 @@ do ib=1,bpar%nbe
       if (allocated(cmat%blk(ib)%oops_coef_ens)) then
          write(mpl%info,'(a7,a,a)') '','Ensemble coefficient copied from OOPS for block ',trim(bpar%blockname(ib))
          cmat%blk(ib)%coef_ens = cmat%blk(ib)%oops_coef_ens
-         call mpl%allreduce_sum(sum(cmat%blk(ib)%coef_ens,mask=geom%mask_c0a),cmat%blk(ib)%wgt)
+         call mpl%f_comm%allreduce(sum(cmat%blk(ib)%coef_ens,mask=geom%mask_c0a),cmat%blk(ib)%wgt,fckit_mpi_sum())
          cmat%blk(ib)%wgt = cmat%blk(ib)%wgt/real(count(geom%mask_c0),kind_real)
       end if
       if (allocated(cmat%blk(ib)%oops_coef_sta)) then

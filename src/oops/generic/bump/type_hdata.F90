@@ -28,6 +28,7 @@ use type_mesh, only: mesh_type
 use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 use type_rng, only: rng_type
+use fckit_mpi_module, only: fckit_mpi_sum,fckit_mpi_status
 
 implicit none
 
@@ -1049,7 +1050,7 @@ if (nam%nc3>1) then
    do while ((.not.all(isnotmsi(hdata%c1c3_to_c0))).and.(nvc0>1).and.(ir<=irmaxloc))
       ! Try a random point
       if (mpl%main) call rng%rand_integer(1,nvc0,i)
-      call mpl%bcast(i)
+      call mpl%f_comm%broadcast(i,mpl%ioproc-1)
       ir = ir+1
       jc0 = vic0(i)
 
@@ -1152,6 +1153,7 @@ integer,allocatable :: sbufi(:),rbufi(:)
 real(kind_real) :: nn_dist(nam%nc3)
 real(kind_real),allocatable :: x(:),y(:),z(:),v1(:),v2(:),va(:),vp(:),t(:)
 logical,allocatable :: sbufl(:),rbufl(:)
+type(fckit_mpi_status) :: status
 
 write(mpl%info,'(a7,a)',advance='no') '','Compute LCT sampling: '
 call flush(mpl%info)
@@ -1257,8 +1259,8 @@ if (mpl%main) then
          allocate(rbufl(nc1_loc(iproc)*nam%nc3*geom%nl0))
 
          ! Receive data on ioproc
-         call mpl%recv(nc1_loc(iproc)*nam%nc3,rbufi,iproc,mpl%tag)
-         call mpl%recv(nc1_loc(iproc)*nam%nc3*geom%nl0,rbufl,iproc,mpl%tag+1)
+         call mpl%f_comm%receive(rbufi,iproc-1,mpl%tag,status)
+         call mpl%f_comm%receive(rbufl,iproc-1,mpl%tag+1,status)
 
          ! Format data
          i = 0
@@ -1311,8 +1313,8 @@ else
    end do
 
    ! Send data to ioproc
-   call mpl%send(nc1_loc(mpl%myproc)*nam%nc3,sbufi,mpl%ioproc,mpl%tag)
-   call mpl%send(nc1_loc(mpl%myproc)*nam%nc3*geom%nl0,sbufl,mpl%ioproc,mpl%tag+1)
+   call mpl%f_comm%send(sbufi,mpl%ioproc-1,mpl%tag)
+   call mpl%f_comm%send(sbufl,mpl%ioproc-1,mpl%tag+1)
 
    ! Release memory
    deallocate(sbufi)
@@ -1321,8 +1323,8 @@ end if
 call mpl%update_tag(2)
 
 ! Broadcast data
-call mpl%bcast(hdata%c1c3_to_c0)
-call mpl%bcast(hdata%c1c3l0_log)
+call mpl%f_comm%broadcast(hdata%c1c3_to_c0,mpl%ioproc-1)
+call mpl%f_comm%broadcast(hdata%c1c3l0_log,mpl%ioproc-1)
 
 end subroutine hdata_compute_sampling_lct
 
@@ -2046,7 +2048,7 @@ if (hdata%nc2a>0) then
 else
    nmsr = 0
 end if
-call mpl%allreduce_sum(nmsr,nmsr_tot)
+call mpl%f_comm%allreduce(nmsr,nmsr_tot,fckit_mpi_sum())
 
 if (nmsr_tot>0) then
    ! Allocation

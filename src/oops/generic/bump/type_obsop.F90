@@ -23,6 +23,7 @@ use type_linop, only: linop_type
 use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 use type_rng, only: rng_type
+use fckit_mpi_module, only: fckit_mpi_sum,fckit_mpi_min,fckit_mpi_max,fckit_mpi_status
 
 implicit none
 
@@ -212,8 +213,8 @@ if (mpl%main) then
 end if
 
 ! Broadcast data
-call mpl%bcast(lonobs)
-call mpl%bcast(latobs)
+call mpl%f_comm%broadcast(obsop%lonobs,mpl%ioproc-1)
+call mpl%f_comm%broadcast(obsop%latobs,mpl%ioproc-1)
 
 ! Split observations between processors
 if (test_no_obs.and.(mpl%nproc==1)) call mpl%abort('at least 2 MPI tasks required for test_no_obs')
@@ -242,7 +243,7 @@ if (mpl%main) then
 end if
 
 ! Broadcast
-call mpl%bcast(obs_to_proc)
+call mpl%f_comm%broadcast(obs_to_proc,mpl%ioproc-1)
 obsop%nobs = count(obs_to_proc==mpl%myproc)
 
 ! Allocation
@@ -308,20 +309,20 @@ type(geom_type),intent(in) :: geom       !< Geometry
 
 ! Local variables
 integer :: offset,iobs,jobs,iobsa,iproc,i_s,ic0,ic0b,i,ic0a,delta,nres,ind(1),lunit
-integer :: vec(1),imin(1),imax(1),nmoves,imoves
+integer :: imin(1),imax(1),nmoves,imoves
 integer,allocatable :: nop(:),iop(:),srcproc(:,:),srcic0(:,:),order(:),nobs_to_move(:),nobs_to_move_tmp(:),obs_moved(:,:)
 integer,allocatable :: obs_to_proc(:),obs_to_obsa(:),proc_to_nobsa(:),c0b_to_c0(:),c0_to_c0b(:),c0a_to_c0b(:)
 real(kind_real) :: N_max,C_max
 real(kind_real),allocatable :: lonobs(:),latobs(:),list(:)
 logical,allocatable :: maskobs(:),lcheck_nc0b(:)
+type(fckit_mpi_status) :: status
 type(linop_type) :: hfull
 
 ! Allocation
 allocate(proc_to_nobsa(mpl%nproc))
 
 ! Get global number of observations
-vec = (/obsop%nobs/)
-call mpl%allgather(1,vec,proc_to_nobsa)
+call mpl%f_comm%allgather(obsop%nobs,proc_to_nobsa)
 obsop%nobsa = obsop%nobs
 obsop%nobs = sum(proc_to_nobsa)
 
@@ -347,8 +348,8 @@ if (mpl%main) then
             latobs(offset+1:offset+proc_to_nobsa(iproc)) = obsop%latobs
          else
             ! Receive data on ioproc
-            call mpl%recv(proc_to_nobsa(iproc),lonobs(offset+1:offset+proc_to_nobsa(iproc)),iproc,mpl%tag)
-            call mpl%recv(proc_to_nobsa(iproc),latobs(offset+1:offset+proc_to_nobsa(iproc)),iproc,mpl%tag+1)
+            call mpl%f_comm%receive(lonobs(offset+1:offset+proc_to_nobsa(iproc)),iproc-1,mpl%tag,status)
+            call mpl%f_comm%receive(latobs(offset+1:offset+proc_to_nobsa(iproc)),iproc-1,mpl%tag+1,status)
          end if
       end if
 
@@ -358,15 +359,15 @@ if (mpl%main) then
 else
    if (obsop%nobsa>0) then
       ! Send data to ioproc
-      call mpl%send(obsop%nobsa,obsop%lonobs,mpl%ioproc,mpl%tag)
-      call mpl%send(obsop%nobsa,obsop%latobs,mpl%ioproc,mpl%tag+1)
+      call mpl%f_comm%send(obsop%lonobs,mpl%ioproc-1,mpl%tag)
+      call mpl%f_comm%send(obsop%latobs,mpl%ioproc-1,mpl%tag+1)
    end if
 end if
 call mpl%update_tag(2)
 
 ! Broadcast data
-call mpl%bcast(lonobs)
-call mpl%bcast(latobs)
+call mpl%f_comm%broadcast(lonobs,mpl%ioproc-1)
+call mpl%f_comm%broadcast(latobs,mpl%ioproc-1)
 
 ! Allocation
 allocate(maskobs(obsop%nobs))
@@ -448,7 +449,7 @@ case('random')
    end if
 
    ! Broadcast
-   call mpl%bcast(obs_to_proc)
+   call mpl%f_comm%broadcast(obs_to_proc,mpl%ioproc-1)
 case ('local','adjusted')
    ! Grid-based repartition
    do iobs=1,obsop%nobs
@@ -627,7 +628,7 @@ end do
 call obsop%com%setup(mpl,'com',geom%nc0,geom%nc0a,obsop%nc0b,c0b_to_c0,c0a_to_c0b,geom%c0_to_proc,geom%c0_to_c0a)
 
 ! Compute scores
-call mpl%allreduce_max(real(obsop%com%nhalo,kind_real),C_max)
+call mpl%f_comm%allreduce(real(obsop%com%nhalo,kind_real),C_max,fckit_mpi_max())
 C_max = C_max/(3.0*real(obsop%nobs,kind_real)/real(mpl%nproc,kind_real))
 N_max = real(maxval(proc_to_nobsa),kind_real)/(real(obsop%nobs,kind_real)/real(mpl%nproc,kind_real))
 
@@ -795,7 +796,7 @@ if (obsop%nobsa>0) then
 else
    sum2_loc = 0.0
 end if
-call mpl%allreduce_sum(sum2_loc,sum2)
+call mpl%f_comm%allreduce(sum2_loc,sum2,fckit_mpi_sum())
 
 ! Print results
 write(mpl%info,'(a7,a,e15.8,a,e15.8,a,e15.8)') '','Observation operator adjoint test: ', &
@@ -873,10 +874,10 @@ else
 end if
 
 ! Gather results
-call mpl%allreduce_sum(norm,norm_tot)
-call mpl%allreduce_min(distmin,distmin_tot)
-call mpl%allgather(1,(/distmax/),proc_to_distmax)
-call mpl%allreduce_sum(distsum,distsum_tot)
+call mpl%f_comm%allreduce(norm,norm_tot,fckit_mpi_sum())
+call mpl%f_comm%allreduce(distmin,distmin_tot,fckit_mpi_min())
+call mpl%f_comm%allgather(distmax,proc_to_distmax)
+call mpl%f_comm%allreduce(distsum,distsum_tot,fckit_mpi_sum())
 
 ! Maximum error detail
 iprocmax = maxloc(proc_to_distmax)
@@ -888,9 +889,9 @@ if (iprocmax(1)==mpl%myproc) then
 end if
 
 ! Broadcast results
-call mpl%bcast(iobsmax,iprocmax(1))
-call mpl%bcast(ylonmax,iprocmax(1))
-call mpl%bcast(ylatmax,iprocmax(1))
+call mpl%f_comm%broadcast(iobsmax,iprocmax(1)-1)
+call mpl%f_comm%broadcast(ylonmax,iprocmax(1)-1)
+call mpl%f_comm%broadcast(ylatmax,iprocmax(1)-1)
 
 ! Print results
 if (norm_tot>0.0) then

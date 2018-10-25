@@ -22,6 +22,7 @@ use type_kdtree, only: kdtree_type
 use type_mesh, only: mesh_type
 use type_mpl, only: mpl_type
 use type_rng, only: rng_type
+use fckit_mpi_module, only: fckit_mpi_status
 
 implicit none
 
@@ -726,6 +727,7 @@ real(kind_real),allocatable :: area_polygon(:),area_polygon_new(:),natwgt(:),S(:
 logical :: loop
 logical,allocatable :: missing(:)
 type(mesh_type) :: meshnew
+type(fckit_mpi_status) :: status
 
 ! MPI splitting
 call mpl%split(n_dst,i_dst_s,i_dst_e,n_dst_loc)
@@ -854,7 +856,7 @@ write(mpl%info,'(a)') '100%'
 call flush(mpl%info)
 
 ! Communication
-call mpl%allgather(n_s,proc_to_n_s)
+call mpl%f_comm%allgather(n_s,proc_to_n_s)
 
 ! Allocation
 linop%n_s = sum(proc_to_n_s)
@@ -874,9 +876,9 @@ if (mpl%main) then
             linop%S(offset+1:offset+proc_to_n_s(iproc)) = S(1:proc_to_n_s(iproc))
          else
             ! Receive data on ioproc
-            call mpl%recv(proc_to_n_s(iproc),linop%row(offset+1:offset+proc_to_n_s(iproc)),iproc,mpl%tag)
-            call mpl%recv(proc_to_n_s(iproc),linop%col(offset+1:offset+proc_to_n_s(iproc)),iproc,mpl%tag+1)
-            call mpl%recv(proc_to_n_s(iproc),linop%S(offset+1:offset+proc_to_n_s(iproc)),iproc,mpl%tag+2)
+            call mpl%f_comm%receive(linop%row(offset+1:offset+proc_to_n_s(iproc)),iproc-1,mpl%tag,status)
+            call mpl%f_comm%receive(linop%col(offset+1:offset+proc_to_n_s(iproc)),iproc-1,mpl%tag+1,status)
+            call mpl%f_comm%receive(linop%S(offset+1:offset+proc_to_n_s(iproc)),iproc-1,mpl%tag+2,status)
          end if
       end if
 
@@ -886,17 +888,17 @@ if (mpl%main) then
 else
    if (n_s>0) then
       ! Send data to ioproc
-      call mpl%send(n_s,row(1:n_s),mpl%ioproc,mpl%tag)
-      call mpl%send(n_s,col(1:n_s),mpl%ioproc,mpl%tag+1)
-      call mpl%send(n_s,S(1:n_s),mpl%ioproc,mpl%tag+2)
+      call mpl%f_comm%send(row(1:n_s),mpl%ioproc-1,mpl%tag)
+      call mpl%f_comm%send(col(1:n_s),mpl%ioproc-1,mpl%tag+1)
+      call mpl%f_comm%send(S(1:n_s),mpl%ioproc-1,mpl%tag+2)
    end if
 end if
 call mpl%update_tag(3)
 
 ! Broadcast data
-call mpl%bcast(linop%row)
-call mpl%bcast(linop%col)
-call mpl%bcast(linop%S)
+call mpl%f_comm%broadcast(linop%row,mpl%ioproc-1)
+call mpl%f_comm%broadcast(linop%col,mpl%ioproc-1)
+call mpl%f_comm%broadcast(linop%S,mpl%ioproc-1)
 
 ! Deal with missing points
 call linop%interp_missing(mpl,n_dst,lon_dst,lat_dst,mask_dst,interp_type)
@@ -1059,6 +1061,7 @@ integer,intent(in),optional :: col_to_ic0(linop%n_src) !< Conversion from col to
 ! Local variables
 integer :: ic0,i_s,jc0,il0,iproc
 integer :: i_s_s(mpl%nproc),i_s_e(mpl%nproc),n_s_loc(mpl%nproc),i_s_loc
+type(fckit_mpi_status) :: status
 
 ! MPI splitting
 call mpl%split(linop%n_s,i_s_s,i_s_e,n_s_loc)
@@ -1100,20 +1103,20 @@ if (mpl%main) then
       if (n_s_loc(iproc)>0) then
          if (iproc/=mpl%ioproc) then
             ! Receive data on ioproc
-            call mpl%recv(n_s_loc(iproc),valid(i_s_s(iproc):i_s_e(iproc)),iproc,mpl%tag)
+            call mpl%f_comm%receive(valid(i_s_s(iproc):i_s_e(iproc)),iproc-1,mpl%tag,status)
          end if
       end if
    end do
 else
    if (n_s_loc(mpl%myproc)>0) then
       ! Send data to ioproc
-      call mpl%send(n_s_loc(mpl%myproc),valid(i_s_s(mpl%myproc):i_s_e(mpl%myproc)),mpl%ioproc,mpl%tag)
+      call mpl%f_comm%send(valid(i_s_s(mpl%myproc):i_s_e(mpl%myproc)),mpl%ioproc-1,mpl%tag)
    end if
 end if
 call mpl%update_tag(1)
 
 ! Broadcast data
-call mpl%bcast(valid)
+call mpl%f_comm%broadcast(valid,mpl%ioproc-1)
 
 end subroutine linop_interp_check_mask
 

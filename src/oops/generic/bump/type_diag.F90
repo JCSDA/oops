@@ -25,6 +25,7 @@ use type_hdata, only: hdata_type
 use type_io, only: io_type
 use type_mpl, only: mpl_type
 use type_nam, only: nam_type
+use fckit_mpi_module, only: fckit_mpi_sum
 
 implicit none
 
@@ -226,8 +227,8 @@ do ib=1,bpar%nbe
          rmse = rmse+sum(abs(diag%blk(ic2a,ib)%fit-diag%blk(ic2a,ib)%raw),mask=isnotmsr(diag%blk(ic2a,ib)%raw))
          norm = norm+real(count(isnotmsr(diag%blk(ic2a,ib)%raw)),kind_real)
       end do
-      call mpl%allreduce_sum(rmse,rmse_tot)
-      call mpl%allreduce_sum(norm,norm_tot)
+      call mpl%f_comm%allreduce(rmse,rmse_tot,fckit_mpi_sum())
+      call mpl%f_comm%allreduce(norm,norm_tot,fckit_mpi_sum())
       if (norm_tot>0.0) rmse_tot = sqrt(rmse_tot/norm_tot)
       write(mpl%info,'(a10,a,a,a,e15.8,a,i8,a)') '','Fit RMSE for block ',trim(bpar%blockname(ib)),': ',rmse_tot, &
     & ' for ',int(norm_tot),' diagnostic points'

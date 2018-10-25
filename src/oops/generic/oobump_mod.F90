@@ -379,7 +379,7 @@ integer, intent(in) :: ens2_nsub
 integer :: igrid
 type(fckit_mpi_comm) :: f_comm
 
-! Get MPI communicator
+! Get MPI Communicator
 f_comm = fckit_mpi_comm()
 
 ! Allocation

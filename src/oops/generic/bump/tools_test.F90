@@ -83,8 +83,8 @@ if (mpl%main) then
    call rng%rand_integer(1,geom%nc0,ic0dir)
    call rng%rand_integer(1,geom%nl0,il0dir)
 end if
-call mpl%bcast(ic0dir)
-call mpl%bcast(il0dir)
+call mpl%f_comm%broadcast(ic0dir,mpl%ioproc-1)
+call mpl%f_comm%broadcast(il0dir,mpl%ioproc-1)
 ivdir = 1
 itsdir = 1
 
