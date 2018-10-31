@@ -1,12 +1,9 @@
 !----------------------------------------------------------------------
 ! Module: type_vbal_blk
-!> Purpose: vertical balance block derived type
-!> <br>
-!> Author: Benjamin Menetrier
-!> <br>
-!> Licensing: this code is distributed under the CeCILL-C license
-!> <br>
-!> Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE
+! Purpose: vertical balance block derived type
+! Author: Benjamin Menetrier
+! Licensing: this code is distributed under the CeCILL-C license
+! Copyright © 2015-... UCAR, CERFACS, METEO-FRANCE and IRIT
 !----------------------------------------------------------------------
 module type_vbal_blk
 
@@ -20,13 +17,13 @@ implicit none
 
 ! Vertical balance block derived type
 type vbal_blk_type
-   integer :: iv                                  !< First variable index
-   integer :: jv                                  !< Second variable index
-   character(len=1024) :: name                    !< Name
-   real(kind_real),allocatable :: auto(:,:,:)     !< Auto-covariance
-   real(kind_real),allocatable :: cross(:,:,:)    !< Cross-covariance
-   real(kind_real),allocatable :: auto_inv(:,:,:) !< Inverse auto-covariance
-   real(kind_real),allocatable :: reg(:,:,:)      !< Regression
+   integer :: iv                                  ! First variable index
+   integer :: jv                                  ! Second variable index
+   character(len=1024) :: name                    ! Name
+   real(kind_real),allocatable :: auto(:,:,:)     ! Auto-covariance
+   real(kind_real),allocatable :: cross(:,:,:)    ! Cross-covariance
+   real(kind_real),allocatable :: auto_inv(:,:,:) ! Inverse auto-covariance
+   real(kind_real),allocatable :: reg(:,:,:)      ! Regression
 contains
    procedure :: alloc => vbal_blk_alloc
    procedure :: dealloc => vbal_blk_dealloc
@@ -41,19 +38,19 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: vbal_blk_alloc
-!> Purpose: vertical balance block data allocation
+! Purpose: vertical balance block data allocation
 !----------------------------------------------------------------------
 subroutine vbal_blk_alloc(vbal_blk,nam,geom,nc2b,iv,jv)
 
 implicit none
 
 ! Passed variables
-class(vbal_blk_type),intent(inout) :: vbal_blk !< Vertical balance block
-type(nam_type),intent(in) :: nam               !< Namelist
-type(geom_type),intent(in) :: geom             !< Geometry
-integer,intent(in) :: nc2b                     !< Subset Sc2 size, halo B
-integer,intent(in) :: iv                       !< First variable index
-integer,intent(in) :: jv                       !< Second variable index
+class(vbal_blk_type),intent(inout) :: vbal_blk ! Vertical balance block
+type(nam_type),intent(in) :: nam               ! Namelist
+type(geom_type),intent(in) :: geom             ! Geometry
+integer,intent(in) :: nc2b                     ! Subset Sc2 size, halo B
+integer,intent(in) :: iv                       ! First variable index
+integer,intent(in) :: jv                       ! Second variable index
 
 ! Set attributes
 vbal_blk%iv = iv
@@ -70,14 +67,14 @@ end subroutine vbal_blk_alloc
 
 !----------------------------------------------------------------------
 ! Subroutine: vbal_blk_dealloc
-!> Purpose: vertical balance block data deallocation
+! Purpose: vertical balance block data deallocation
 !----------------------------------------------------------------------
 subroutine vbal_blk_dealloc(vbal_blk)
 
 implicit none
 
 ! Passed variables
-class(vbal_blk_type),intent(inout) :: vbal_blk !< Vertical balance block
+class(vbal_blk_type),intent(inout) :: vbal_blk ! Vertical balance block
 
 ! Allocation
 if (allocated(vbal_blk%auto)) deallocate(vbal_blk%auto)
@@ -89,20 +86,20 @@ end subroutine vbal_blk_dealloc
 
 !----------------------------------------------------------------------
 ! Subroutine: vbal_blk_apply
-!> Purpose: apply vertical balance block
+! Purpose: apply vertical balance block
 !----------------------------------------------------------------------
 subroutine vbal_blk_apply(vbal_blk,geom,np,h_n_s,h_c2b,h_S,fld)
 
 implicit none
 
 ! Passed variables
-class(vbal_blk_type),intent(in) :: vbal_blk               !< Vertical balance block
-type(geom_type),intent(in) :: geom                        !< Geometry
-integer,intent(in) :: np                                  !< Maximum number of neighbors
-integer,intent(in) :: h_n_s(geom%nc0a,geom%nl0i)          !< Number of neighbors for the horizontal interpolation
-integer,intent(in) :: h_c2b(np,geom%nc0a,geom%nl0i)       !< Index of neighbors for the horizontal interpolation
-real(kind_real),intent(in) :: h_S(np,geom%nc0a,geom%nl0i) !< Weight of neighbors for the horizontal interpolation
-real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0)  !< Source/destination vector
+class(vbal_blk_type),intent(in) :: vbal_blk               ! Vertical balance block
+type(geom_type),intent(in) :: geom                        ! Geometry
+integer,intent(in) :: np                                  ! Maximum number of neighbors
+integer,intent(in) :: h_n_s(geom%nc0a,geom%nl0i)          ! Number of neighbors for the horizontal interpolation
+integer,intent(in) :: h_c2b(np,geom%nc0a,geom%nl0i)       ! Index of neighbors for the horizontal interpolation
+real(kind_real),intent(in) :: h_S(np,geom%nc0a,geom%nl0i) ! Weight of neighbors for the horizontal interpolation
+real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0)  ! Source/destination vector
 
 ! Local variables
 integer :: ic0a,il0,jl0,i_s,ic2b
@@ -134,20 +131,20 @@ end subroutine vbal_blk_apply
 
 !----------------------------------------------------------------------
 ! Subroutine: vbal_blk_apply_ad
-!> Purpose: apply adjoint vertical balance block
+! Purpose: apply adjoint vertical balance block
 !----------------------------------------------------------------------
 subroutine vbal_blk_apply_ad(vbal_blk,geom,np,h_n_s,h_c2b,h_S,fld)
 
 implicit none
 
 ! Passed variables
-class(vbal_blk_type),intent(in) :: vbal_blk               !< Vertical balance block
-type(geom_type),intent(in) :: geom                        !< Geometry
-integer,intent(in) :: np                                  !< Maximum number of neighbors
-integer,intent(in) :: h_n_s(geom%nc0a,geom%nl0i)          !< Number of neighbors for the horizontal interpolation
-integer,intent(in) :: h_c2b(np,geom%nc0a,geom%nl0i)       !< Index of neighbors for the horizontal interpolation
-real(kind_real),intent(in) :: h_S(np,geom%nc0a,geom%nl0i) !< Weight of neighbors for the horizontal interpolation
-real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0)  !< Source/destination vector
+class(vbal_blk_type),intent(in) :: vbal_blk               ! Vertical balance block
+type(geom_type),intent(in) :: geom                        ! Geometry
+integer,intent(in) :: np                                  ! Maximum number of neighbors
+integer,intent(in) :: h_n_s(geom%nc0a,geom%nl0i)          ! Number of neighbors for the horizontal interpolation
+integer,intent(in) :: h_c2b(np,geom%nc0a,geom%nl0i)       ! Index of neighbors for the horizontal interpolation
+real(kind_real),intent(in) :: h_S(np,geom%nc0a,geom%nl0i) ! Weight of neighbors for the horizontal interpolation
+real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0)  ! Source/destination vector
 
 ! Local variables
 integer :: ic0a,il0,jl0,i_s,ic2b

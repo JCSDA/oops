@@ -1,18 +1,12 @@
 !----------------------------------------------------------------------
-! Module: tools_stripack.f90
-!> Purpose: STRIPACK routines
-!> <br>
-!> Source: https://people.sc.fsu.edu/~jburkardt/f_src/stripack/stripack.html
-!> <br>
-!> Author: Robert Renka
-!> <br>
-!> Original licensing: none
-!> <br>
-!> Modified by Benjamin Menetrier for BUMP
-!> <br>
-!> Licensing: this code is distributed under the CeCILL-C license
-!> <br>
-!> Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE
+! Module: tools_stripack
+! Purpose: STRIPACK routines
+! Source: https://people.sc.fsu.edu/~jburkardt/f_src/stripack/stripack.html
+! Author: Robert Renka
+! Original licensing: none
+! Modified by Benjamin Menetrier for BUMP
+! Licensing: this code is distributed under the CeCILL-C license
+! Copyright © 2015-... UCAR, CERFACS, METEO-FRANCE and IRIT
 !----------------------------------------------------------------------
 module tools_stripack
 
@@ -31,7 +25,8 @@ subroutine addnod ( mpl, nst, k, x, y, z, list, lptr, lend, lnew, ier )
 
 !*****************************************************************************80
 !
-!! ADDNOD adds a node to a triangulation.
+! Subroutine: addnod
+! Purpose: add a node to a triangulation
 !
 !  Discussion:
 !
@@ -110,7 +105,7 @@ subroutine addnod ( mpl, nst, k, x, y, z, list, lptr, lend, lnew, ier )
 !
   implicit none
 
-  type(mpl_type),intent(in) :: mpl !< MPI data
+  type(mpl_type),intent(in) :: mpl ! MPI data
 
   integer k
 
@@ -299,7 +294,8 @@ function areas ( v1, v2, v3 )
 
 !*****************************************************************************80
 !
-!! AREAS computes the area of a spherical triangle on the unit sphere.
+! Function: areas
+! Purpose: compute the area of a spherical triangle on the unit sphere
 !
 !  Discussion:
 !
@@ -443,7 +439,8 @@ subroutine bdyadd ( kk, i1, i2, list, lptr, lend, lnew )
 
 !*****************************************************************************80
 !
-!! BDYADD adds a boundary node to a triangulation.
+! Subroutine: bdyadd
+! Purpose: add a boundary node to a triangulation
 !
 !  Discussion:
 !
@@ -584,7 +581,8 @@ subroutine bnodes ( n, list, lptr, lend, nodes, nb, na, nt )
 
 !*****************************************************************************80
 !
-!! BNODES returns the boundary nodes of a triangulation.
+! Subroutine: bnodes
+! Purpose: return the boundary nodes of a triangulation
 !
 !  Discussion:
 !
@@ -719,7 +717,8 @@ subroutine circum ( v1, v2, v3, c, ier )
 
 !*****************************************************************************80
 !
-!! CIRCUM returns the circumcenter of a spherical triangle.
+! Subroutine: circum
+! Purpose: return the circumcenter of a spherical triangle
 !
 !  Discussion:
 !
@@ -805,7 +804,8 @@ subroutine covsph ( kk, n0, list, lptr, lend, lnew )
 
 !*****************************************************************************80
 !
-!! COVSPH connects an exterior node to boundary nodes, covering the sphere.
+! Subroutine: covsph
+! Purpose: connect an exterior node to boundary nodes, covering the sphere
 !
 !  Discussion:
 !
@@ -916,7 +916,8 @@ end subroutine covsph
 subroutine det ( x1, y1, z1, x2, y2, z2, x0, y0, z0, output )
 !*****************************************************************************80
 !
-!!  Statement function:
+! Subroutine: det
+! Purpose: compute 3D determinant
 !
 !  DET(X1,...,Z0) >= 0 if and only if (X0,Y0,Z0) is in the
 !  (closed) left hemisphere defined by the plane containing (0,0,0),
@@ -952,7 +953,8 @@ subroutine crlist ( n, ncol, x, y, z, list, lend, lptr, lnew, &
 
 !*****************************************************************************80
 !
-!! CRLIST returns triangle circumcenters and other information.
+! Subroutine: crlist
+! Purpose: return triangle circumcenters and other information
 !
 !  Discussion:
 !
@@ -1591,7 +1593,8 @@ subroutine insert ( k, lp, list, lptr, lnew )
 
 !*****************************************************************************80
 !
-!! INSERT inserts K as a neighbor of N1.
+! Subroutine: insert
+! Purpose: insert K as a neighbor of N1
 !
 !  Discussion:
 !
@@ -1649,7 +1652,8 @@ function inside ( p, lv, xv, yv, zv, nv, listv, ier )
 
 !*****************************************************************************80
 !
-!! INSIDE determines if a point is inside a polygonal region.
+! Function: inside
+! Purpose: determine if a point is inside a polygonal region
 !
 !  Discussion:
 !
@@ -2011,7 +2015,8 @@ subroutine intadd ( kk, i1, i2, i3, list, lptr, lend, lnew )
 
 !*****************************************************************************80
 !
-!! INTADD adds an interior node to a triangulation.
+! Subroutine: intadd
+! Purpose: add an interior node to a triangulation
 !
 !  Discussion:
 !
@@ -2112,7 +2117,8 @@ subroutine intrsc ( p1, p2, cn, p, ier )
 
 !*****************************************************************************80
 !
-!! INTSRC finds the intersection of two great circles.
+! Subroutine: intrsc
+! Purpose: find the intersection of two great circles
 !
 !  Discussion:
 !
@@ -2219,7 +2225,8 @@ subroutine jrand ( n, ix, iy, iz, output )
 
 !*****************************************************************************80
 !
-!! JRAND returns a random integer between 1 and N.
+! Subroutine: jrand
+! Purpose: return a random integer between 1 and N
 !
 !  Discussion:
 !
@@ -2284,7 +2291,8 @@ subroutine left ( x1, y1, z1, x2, y2, z2, x0, y0, z0, output )
 
 !*****************************************************************************80
 !
-!! LEFT determines whether a node is to the left of a plane through the origin.
+! Subroutine: left
+! Purpose: determin whether a node is to the left of a plane through the origin
 !
 !  Discussion:
 !
@@ -2346,7 +2354,8 @@ subroutine lstptr ( lpl, nb, list, lptr, output )
 
 !*****************************************************************************80
 !
-!! LSTPTR returns the index of NB in the adjacency list.
+! Subroutine: lstptr
+! Purpose: return the index of NB in the adjacency list
 !
 !  Discussion:
 !
@@ -2426,7 +2435,8 @@ function nbcnt ( lpl, lptr )
 
 !*****************************************************************************80
 !
-!! NBCNT returns the number of neighbors of a node.
+! Function: nbcnt
+! Purpose: return the number of neighbors of a node
 !
 !  Discussion:
 !
@@ -2501,7 +2511,8 @@ function nearnd ( p, ist, n, x, y, z, list, lptr, lend, al )
 
 !*****************************************************************************80
 !
-!! NEARND returns the nearest node to a given point.
+! Function: nearnd
+! Purpose: return the nearest node to a given point
 !
 !  Discussion:
 !
@@ -2824,7 +2835,8 @@ subroutine scoord ( px, py, pz, plat, plon, pnrm )
 
 !*****************************************************************************80
 !
-!! SCOORD converts from Cartesian to spherical coordinates.
+! Subroutine: scoord
+! Purpose: convert from Cartesian to spherical coordinates
 !
 !  Discussion:
 !
@@ -2888,7 +2900,8 @@ subroutine swap ( in1, in2, io1, io2, list, lptr, lend, lp21 )
 
 !*****************************************************************************80
 !
-!! SWAP replaces the diagonal arc of a quadrilateral with the other diagonal.
+! Subroutine: swap
+! Purpose: replace the diagonal arc of a quadrilateral with the other diagonal
 !
 !  Discussion:
 !
@@ -3004,7 +3017,8 @@ subroutine swptst ( n1, n2, n3, n4, x, y, z, output )
 
 !*****************************************************************************80
 !
-!! SWPTST decides whether to replace a diagonal arc by the other.
+! Subroutine: swptst
+! Purpose: decide whether to replace a diagonal arc by the other
 !
 !  Discussion:
 !
@@ -3103,7 +3117,8 @@ subroutine trans ( n, rlat, rlon, x, y, z )
 
 !*****************************************************************************80
 !
-!! TRANS transforms spherical coordinates to Cartesian coordinates.
+! Subroutine: trans
+! Purpose: transform spherical coordinates to Cartesian coordinates
 !
 !  Discussion:
 !
@@ -3181,7 +3196,8 @@ subroutine trfind ( nst, p, n, x, y, z, list, lptr, lend, b1, b2, b3, i1, &
 
 !*****************************************************************************80
 !
-!! TRFIND locates a point relative to a triangulation.
+! Subroutine: trfind
+! Purpose: locate a point relative to a triangulation
 !
 !  Discussion:
 !
@@ -3694,7 +3710,8 @@ subroutine trlist ( n, list, lptr, lend, nrow, nt, ltri, ier )
 
 !*****************************************************************************80
 !
-!! TRLIST converts a triangulation data structure to a triangle list.
+! Subroutine: trlist
+! Purpose: convert a triangulation data structure to a triangle list
 !
 !  Discussion:
 !
@@ -3993,7 +4010,8 @@ subroutine trmesh ( mpl, n, x, y, z, list, lptr, lend, lnew, near, next, dist, i
 
 !*****************************************************************************80
 !
-!! TRMESH creates a Delaunay triangulation on the unit sphere.
+! Subroutine: trmesh
+! Purpose: create a Delaunay triangulation on the unit sphere
 !
 !  Discussion:
 !
@@ -4170,7 +4188,7 @@ subroutine trmesh ( mpl, n, x, y, z, list, lptr, lend, lnew, near, next, dist, i
 !
   implicit none
 
-  type(mpl_type),intent(in) :: mpl !< MPI data
+  type(mpl_type),intent(in) :: mpl ! MPI data
 
   integer n
 

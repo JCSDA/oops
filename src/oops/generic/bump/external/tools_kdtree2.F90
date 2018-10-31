@@ -1,18 +1,12 @@
 !----------------------------------------------------------------------
-! Module: tools_kdtree2.f90
-!> Purpose: K-d tree routines
-!> <br>
-!> Source: https://github.com/jmhodges/kdtree2
-!> <br>
-!> Author: Matthew Kennel, Institute for Nonlinear Science (2004)
-!> <br>
-!> Original licensing: Academic Free License version 1.1
-!> <br>
-!> Modified by Benjamin Menetrier for BUMP
-!> <br>
-!> Licensing: this code is distributed under the CeCILL-C license
-!> <br>
-!> Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE
+! Module: tools_kdtree2
+! Purpose: K-d tree routines
+! Source: https://github.com/jmhodges/kdtree2
+! Author: Matthew Kennel, Institute for Nonlinear Science (2004)
+! Original licensing: Academic Free License version 1.1
+! Modified by Benjamin Menetrier for BUMP
+! Licensing: this code is distributed under the CeCILL-C license
+! Copyright © 2015-... UCAR, CERFACS, METEO-FRANCE and IRIT
 !----------------------------------------------------------------------
 module tools_kdtree2
   use tools_func, only: sphere_dist
@@ -133,9 +127,10 @@ module tools_kdtree2
 contains
 
   function kdtree2_create(input_data,sort,rearrange) result (mr)
-    !
-    ! create the actual tree structure, given an input array of data.
-    !
+! Function: kdtree2_create
+! Purpose: create the actual tree structure, given an input array of data
+
+
     ! Note, input data is input_data(1:d,1:N), NOT the other way around.
     ! THIS IS THE REVERSE OF THE PREVIOUS VERSION OF THIS MODULE.
     ! The reason for it is cache friendliness, improving performance.
@@ -192,6 +187,8 @@ contains
   end function kdtree2_create
 
     subroutine build_tree(tp)
+! Subroutine: build_tree
+! Purpose: build tree
       type (kdtree2), pointer :: tp
       ! ..
       integer :: j
@@ -205,6 +202,9 @@ contains
     end subroutine build_tree
 
     recursive function build_tree_for_range(tp,l,u,parent) result (res)
+! Function: build_tree_for_range
+! Purpose: build tree
+
       ! .. Function Return Cut_value ..
       type (tree_node), pointer :: res
       ! ..
@@ -331,11 +331,9 @@ contains
 
     integer function select_on_coordinate_value(v,ind,c,alpha,li,ui) &
      result(res)
-      ! Move elts of ind around between l and u, so that all points
-      ! <= than alpha (in c cooordinate) are first, and then
-      ! all points > alpha are second.
+! Function: select_on_coordinate_value
+! Purpose: move elts of ind around between l and u, so that all points <= than alpha (in c cooordinate) are first, and then all points > alpha are second
 
-      !
       ! Algorithm (matt kennel).
       !
       ! Consider the list as having three parts: on the left,
@@ -391,9 +389,9 @@ contains
     end function select_on_coordinate_value
 
     subroutine select_on_coordinate(v,ind,c,k,li,ui)
-      ! Move elts of ind around between l and u, so that the kth
-      ! element
-      ! is >= those below, <= those above, in the coordinate c.
+! Subroutine: select_on_coordinate
+! Purpose: move elts of ind around between l and u, so that the kth element is >= those below, <= those above, in the coordinate c
+
       ! .. Scalar Arguments ..
       integer, intent (In) :: c, k, li, ui
       ! ..
@@ -424,10 +422,9 @@ contains
     end subroutine select_on_coordinate
 
    subroutine spread_in_coordinate(tp,c,l,u,interv)
-      ! the spread in coordinate 'c', between l and u.
-      !
-      ! Return lower bound in 'smin', and upper in 'smax',
-      ! ..
+! Subroutine: spread_in_coordinate
+! Purpose: return lower bound in 'smin', and upper in 'smax', the spread in coordinate 'c', between l and u.
+
       ! .. Structure Arguments ..
       type (kdtree2), pointer :: tp
       type(interval), intent(out) :: interv
@@ -472,9 +469,10 @@ contains
 
     end subroutine spread_in_coordinate
 
-
   subroutine kdtree2_destroy(tp)
-    ! Deallocates all memory for the tree, except input data matrix
+! Subroutine: kdtree2_destroy
+! Purpose: deallocates all memory for the tree, except input data matrix
+
     ! .. Structure Arguments ..
     type (kdtree2), pointer :: tp
     ! ..
@@ -491,6 +489,9 @@ contains
 
   contains
     recursive subroutine destroy_node(np)
+! Subroutine: destroy_node
+! Purpose: destroy node
+
       ! .. Structure Arguments ..
       type (tree_node), pointer :: np
       ! ..
@@ -514,9 +515,11 @@ contains
   end subroutine kdtree2_destroy
 
   subroutine kdtree2_n_nearest(tp,qv,nn,results)
-    ! Find the 'nn' vectors in the tree nearest to 'qv' in euclidean norm
-    ! returning their indexes and distances in 'indexes' and 'distances'
-    ! arrays already allocated passed to this subroutine.
+! Subroutine: kdtree2_n_nearest
+! Purpose: find the 'nn' vectors in the tree nearest to 'qv' in euclidean norm
+
+    ! Returning their indexes and distances in 'indexes' and 'distances'
+    ! Arrays already allocated passed to this subroutine.
     type (kdtree2), pointer              :: tp
     real(kind_real), target, intent (In) :: qv(:)
     integer, intent (In)                 :: nn
@@ -552,7 +555,9 @@ contains
   end subroutine kdtree2_n_nearest
 
   function kdtree2_r_count(tp,qv,r2) result(nfound)
-    ! Count the number of neighbors within square distance 'r2'.
+! Function: kdtree2_r_count
+! Purpose: count the number of neighbors within square distance 'r2'
+
     type (kdtree2), pointer   :: tp
     real(kind_real), target, intent (In) :: qv(:)
     real(kind_real), intent(in)          :: r2
@@ -591,9 +596,9 @@ contains
   end function kdtree2_r_count
 
   subroutine validate_query_storage(n)
-    !
-    ! make sure we have enough storage for n
-    !
+! Subroutine: validate_query_storage
+! Purpose: make sure we have enough storage for n
+
     integer, intent(in) :: n
 
     if (size(sr%results,1) .lt. n) then
@@ -606,7 +611,9 @@ contains
   end subroutine validate_query_storage
 
   function square_distance(iv, qv) result (res)
-    ! distance between iv[1:n] and qv[1:n]
+! Function: square_distance
+! Purpose: distance between iv[1:n] and qv[1:n]
+
     ! .. Function Return Value ..
     ! re-implemented to improve vectorization.
     real(kind_real) :: res
@@ -620,7 +627,9 @@ contains
   end function square_distance
 
   function sdistance(iv, qv) result (res)
-    ! spherical distance between iv[1:n] and qv[1:n]
+! Function: sdistance
+! Purpose: spherical distance between iv[1:n] and qv[1:n]
+
     ! .. Function Return Value ..
     ! re-implemented to improve vectorization.
     real(kind_real) :: res, ilat, ilon, ir, qlat, qlon, qr
@@ -639,9 +648,10 @@ contains
   end function sdistance
 
   recursive subroutine search(node)
-    !
-    ! This is the innermost core routine of the kd-tree search.  Along
-    ! with "process_terminal_node", it is the performance bottleneck.
+! Subroutine: validate_query_storage
+! Purpose: innermost core routine of the kd-tree search
+
+    ! Along with "process_terminal_node", it is the performance bottleneck.
     !
     ! This version uses a logically complete secondary search of
     ! "box in bounds", whether the sear
@@ -715,6 +725,9 @@ contains
   end subroutine search
 
   real(kind_real) function dis2_from_bnd(x,amin,amax) result (res)
+! Function: dis2_from_bnd
+! Purpose: compute squared distance
+
     real(kind_real), intent(in) :: x, amin,amax
 
     if (sup(x,amax)) then
@@ -733,10 +746,9 @@ contains
   end function dis2_from_bnd
 
   subroutine process_terminal_node(node)
-    !
-    ! Look for actual near neighbors in 'node', and update
-    ! the search results on the sr data structure.
-    !
+! Subroutine: process_terminal_node
+! Purpose: Look for actual near neighbors in 'node', and update the search results on the sr data structure
+
     type (tree_node), pointer          :: node
     !
     real(kind_real), pointer          :: qv(:)
@@ -832,11 +844,9 @@ contains
   end subroutine process_terminal_node
 
   subroutine process_terminal_node_fixedball(node)
-    !
-    ! Look for actual near neighbors in 'node', and update
-    ! the search results on the sr data structure, i.e.
-    ! save all within a fixed ball.
-    !
+! Subroutine: process_terminal_node_fixedball
+! Purpose: look for actual near neighbors in 'node', and update the search results on the sr data structure, i.e. save all within a fixed ball.
+
     type (tree_node), pointer          :: node
     !
     real(kind_real), pointer          :: qv(:)
@@ -918,8 +928,8 @@ contains
   end subroutine process_terminal_node_fixedball
 
   subroutine kdtree2_sort_results(nfound,results)
-    !  Use after search to sort results(1:nfound) in order of increasing
-    !  distance.
+! Subroutine: kdtree2_sort_results
+! Purpose: use after search to sort results(1:nfound) in order of increasing distance
     integer, intent(in)          :: nfound
     type(kdtree2_result), target :: results(:)
     !
@@ -934,10 +944,9 @@ contains
   end subroutine kdtree2_sort_results
 
   subroutine heapsort_struct(a,n)
-    !
-    ! Sort a(1:n) in ascending order
-    !
-    !
+! Subroutine: heapsort_struct
+! Purpose: sort a(1:n) in ascending order
+
     integer,intent(in)                 :: n
     type(kdtree2_result),intent(inout) :: a(:)
 

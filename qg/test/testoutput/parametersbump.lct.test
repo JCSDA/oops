@@ -1,6 +1,6 @@
-Test     : Norm of D11_1: 1.63763e+13
-Test     : Norm of D22_1: 1.9211e+13
-Test     : Norm of D33_1: 47.7521
+Test     : Norm of D11_1: 4.11161e+12
+Test     : Norm of D22_1: 4.28709e+12
+Test     : Norm of D33_1: 6.60955
 Test     : Norm of D12_1: 0
 Test     : Norm of Dcoef_1: 1
-Test     : Norm of DLh_1: 2.33992e+06
+Test     : Norm of DLh_1: 1.96859e+06

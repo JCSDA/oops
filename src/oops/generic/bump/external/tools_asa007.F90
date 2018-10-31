@@ -1,22 +1,14 @@
 !----------------------------------------------------------------------
-! Module: tools_asa007.f90
-!> Purpose: inverse of symmetric positive definite matrix routines
-!> <br>
-!> Source: https://people.sc.fsu.edu/~jburkardt/f_src/asa007/asa007.html
-!> <br>
-!> Author: Michael Healy
-!> <br>
-!> Original licensing: none
-!> <br>
-!> Modified by Alan Miller
-!> <br>
-!> Fortran 90 version by John Burkardt
-!> <br>
-!> Modified by Benjamin Menetrier for BUMP
-!> <br>
-!> Licensing: this code is distributed under the CeCILL-C license
-!> <br>
-!> Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE
+! Module: tools_asa007
+! Purpose: inverse of symmetric positive definite matrix routines
+! Source: https://people.sc.fsu.edu/~jburkardt/f_src/asa007/asa007.html
+! Author: Michael Healy
+! Original licensing: none
+! Modified by Alan Miller
+! Fortran 90 version by John Burkardt
+! Modified by Benjamin Menetrier for BUMP
+! Licensing: this code is distributed under the CeCILL-C license
+! Copyright © 2015-... UCAR, CERFACS, METEO-FRANCE and IRIT
 !----------------------------------------------------------------------
 module tools_asa007
 
@@ -26,7 +18,7 @@ use type_mpl, only: mpl_type
 
 implicit none
 
-real(kind_real),parameter :: eta = 1.0e-9_kind_real   !< Small parameter for the Cholesky decomposition
+real(kind_real),parameter :: eta = 1.0e-9_kind_real   ! Small parameter for the Cholesky decomposition
 
 private
 public :: asa007_cholesky,asa007_syminv
@@ -35,18 +27,18 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: asa007_cholesky
-!> Purpose: compute cholesky decomposition
+! Purpose: compute cholesky decomposition
 !----------------------------------------------------------------------
 subroutine asa007_cholesky(mpl,n,nn,a,u)
 
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl     !< MPI data
-integer,intent(in) :: n              !< Matrix rank
-integer,intent(in) :: nn             !< Half-matrix size (n*(n-1)/2)
-real(kind_real),intent(in) :: a(nn)  !< Matrix
-real(kind_real),intent(out) :: u(nn) !< Matrix square-root
+type(mpl_type),intent(in) :: mpl     ! MPI data
+integer,intent(in) :: n              ! Matrix rank
+integer,intent(in) :: nn             ! Half-matrix size (n*(n-1)/2)
+real(kind_real),intent(in) :: a(nn)  ! Matrix
+real(kind_real),intent(out) :: u(nn) ! Matrix square-root
 
 ! Local variables
 integer :: i,icol,ii,irow,j,k,kk,l,m
@@ -103,18 +95,18 @@ end subroutine asa007_cholesky
 
 !----------------------------------------------------------------------
 ! Subroutine: asa007_syminv
-!> Purpose: compute inverse of a symmetric matrix
+! Purpose: compute inverse of a symmetric matrix
 !----------------------------------------------------------------------
 subroutine asa007_syminv(mpl,n,nn,a,c)
 
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl     !< MPI data
-integer,intent(in) :: n              !< Matrix rank
-integer,intent(in) :: nn             !< Half-matrix size (n*(n-1)/2)
-real(kind_real),intent(in) :: a(nn)  !< Matrix
-real(kind_real),intent(out) :: c(nn) !< Matrix inverse
+type(mpl_type),intent(in) :: mpl     ! MPI data
+integer,intent(in) :: n              ! Matrix rank
+integer,intent(in) :: nn             ! Half-matrix size (n*(n-1)/2)
+real(kind_real),intent(in) :: a(nn)  ! Matrix
+real(kind_real),intent(out) :: c(nn) ! Matrix inverse
 
 ! Local variables
 integer :: i,icol,irow,j,jcol,k,l,mdiag,ndiag,nrow

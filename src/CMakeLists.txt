@@ -146,7 +146,6 @@ oops/generic/bump/tools_kinds.F90
 oops/generic/bump/tools_missing.F90
 oops/generic/bump/tools_nc.F90
 oops/generic/bump/tools_repro.F90
-oops/generic/bump/tools_test.F90
 oops/generic/bump/type_avg_blk.F90
 oops/generic/bump/type_avg.F90
 oops/generic/bump/type_bpar.F90
@@ -161,7 +160,7 @@ oops/generic/bump/type_diag.F90
 oops/generic/bump/type_displ.F90
 oops/generic/bump/type_ens.F90
 oops/generic/bump/type_geom.F90
-oops/generic/bump/type_hdata.F90
+oops/generic/bump/type_hdiag.F90
 oops/generic/bump/type_io.F90
 oops/generic/bump/type_kdtree.F90
 oops/generic/bump/type_lct_blk.F90
@@ -177,6 +176,7 @@ oops/generic/bump/type_nicas_blk.F90
 oops/generic/bump/type_nicas.F90
 oops/generic/bump/type_obsop.F90
 oops/generic/bump/type_rng.F90
+oops/generic/bump/type_samp.F90
 oops/generic/bump/type_vbal_blk.F90
 oops/generic/bump/type_vbal.F90
 oops/generic/bump/external/tools_asa007.F90

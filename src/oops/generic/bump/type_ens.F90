@@ -1,12 +1,9 @@
 !----------------------------------------------------------------------
 ! Module: type_ens
-!> Purpose: ensemble derived type
-!> <br>
-!> Author: Benjamin Menetrier
-!> <br>
-!> Licensing: this code is distributed under the CeCILL-C license
-!> <br>
-!> Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE
+! Purpose: ensemble derived type
+! Author: Benjamin Menetrier
+! Licensing: this code is distributed under the CeCILL-C license
+! Copyright © 2015-... UCAR, CERFACS, METEO-FRANCE and IRIT
 !----------------------------------------------------------------------
 module type_ens
 
@@ -21,12 +18,12 @@ implicit none
 ! Ensemble derived type
 type ens_type
    ! Attributes
-   integer :: ne                                  !< Ensemble size
-   integer :: nsub                                !< Number of sub-ensembles
+   integer :: ne                                  ! Ensemble size
+   integer :: nsub                                ! Number of sub-ensembles
 
    ! Data
-   real(kind_real),allocatable :: fld(:,:,:,:,:)  !< Ensemble perturbation
-   real(kind_real),allocatable :: mean(:,:,:,:,:) !< Ensemble mean
+   real(kind_real),allocatable :: fld(:,:,:,:,:)  ! Ensemble perturbation
+   real(kind_real),allocatable :: mean(:,:,:,:,:) ! Ensemble mean
 contains
    procedure :: alloc => ens_alloc
    procedure :: dealloc => ens_dealloc
@@ -44,18 +41,18 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: ens_alloc
-!> Purpose: ensemble data allocation
+! Purpose: ensemble data allocation
 !----------------------------------------------------------------------
 subroutine ens_alloc(ens,nam,geom,ne,nsub)
 
 implicit none
 
 ! Passed variables
-class(ens_type),intent(inout) :: ens !< Ensemble
-type(nam_type),intent(in) :: nam     !< Namelist
-type(geom_type),intent(in) :: geom   !< Geometry
-integer,intent(in) :: ne             !< Ensemble size
-integer,intent(in) :: nsub           !< Number of sub-ensembles
+class(ens_type),intent(inout) :: ens ! Ensemble
+type(nam_type),intent(in) :: nam     ! Namelist
+type(geom_type),intent(in) :: geom   ! Geometry
+integer,intent(in) :: ne             ! Ensemble size
+integer,intent(in) :: nsub           ! Number of sub-ensembles
 
 ! Allocate
 if (ne>0) then
@@ -75,14 +72,14 @@ end subroutine ens_alloc
 
 !----------------------------------------------------------------------
 ! Subroutine: ens_dealloc
-!> Purpose: ensemble data deallocation
+! Purpose: ensemble data deallocation
 !----------------------------------------------------------------------
 subroutine ens_dealloc(ens)
 
 implicit none
 
 ! Passed variables
-class(ens_type),intent(inout) :: ens !< Ensemble
+class(ens_type),intent(inout) :: ens ! Ensemble
 
 ! Release memory
 if (allocated(ens%fld)) deallocate(ens%fld)
@@ -92,15 +89,15 @@ end subroutine ens_dealloc
 
 !----------------------------------------------------------------------
 ! Subroutine: ens_copy
-!> Purpose: ensemble data copy
+! Purpose: ensemble data copy
 !----------------------------------------------------------------------
 subroutine ens_copy(ens_out,ens_in)
 
 implicit none
 
 ! Passed variables
-class(ens_type),intent(inout) :: ens_out !< Ensemble
-type(ens_type),intent(in) :: ens_in      !< Ensemble
+class(ens_type),intent(inout) :: ens_out ! Ensemble
+type(ens_type),intent(in) :: ens_in      ! Ensemble
 
 ! Allocate
 if (ens_in%ne>0) then
@@ -120,14 +117,14 @@ end subroutine ens_copy
 
 !----------------------------------------------------------------------
 ! Subroutine: ens_remove_mean
-!> Purpose: remove ensemble mean
+! Purpose: remove ensemble mean
 !----------------------------------------------------------------------
 subroutine ens_remove_mean(ens)
 
 implicit none
 
 ! Passed variables
-class(ens_type),intent(inout) :: ens !< Ensemble
+class(ens_type),intent(inout) :: ens ! Ensemble
 
 ! Local variables
 integer :: isub,ie_sub,ie
@@ -155,18 +152,18 @@ end subroutine ens_remove_mean
 
 !----------------------------------------------------------------------
 ! Subroutine: ens_from
-!> Purpose: copy ensemble array into ensemble data
+! Purpose: copy ensemble array into ensemble data
 !----------------------------------------------------------------------
 subroutine ens_from(ens,nam,geom,ne,ens_mga)
 
 implicit none
 
 ! Passed variables
-class(ens_type),intent(inout) :: ens                                        !< Ensemble
-type(nam_type),intent(in) :: nam                                            !< Namelist
-type(geom_type),intent(in) :: geom                                          !< Geometry
-integer,intent(in) :: ne                                                    !< Ensemble size
-real(kind_real),intent(in) :: ens_mga(geom%nmga,geom%nl0,nam%nv,nam%nts,ne) !< Ensemble on model grid, halo A
+class(ens_type),intent(inout) :: ens                                        ! Ensemble
+type(nam_type),intent(in) :: nam                                            ! Namelist
+type(geom_type),intent(in) :: geom                                          ! Geometry
+integer,intent(in) :: ne                                                    ! Ensemble size
+real(kind_real),intent(in) :: ens_mga(geom%nmga,geom%nl0,nam%nv,nam%nts,ne) ! Ensemble on model grid, halo A
 
 ! Local variables
 integer :: ie,its,iv,il0
@@ -194,23 +191,23 @@ end subroutine ens_from
 
 !----------------------------------------------------------------------
 ! Subroutine: ens_from_nemovar
-!> Purpose: copy 2d NEMOVAR ensemble into ensemble data
+! Purpose: copy 2d NEMOVAR ensemble into ensemble data
 !----------------------------------------------------------------------
 subroutine ens_from_nemovar(ens,mpl,nam,geom,nx,ny,nens,ncyc,ens_2d,ens_3d)
 
 implicit none
 
 ! Passed variables
-class(ens_type),intent(inout) :: ens                                    !< Ensemble
-type(mpl_type),intent(in) :: mpl                                        !< MPI data
-type(nam_type),intent(in) :: nam                                        !< Namelist
-type(geom_type),intent(in) :: geom                                      !< Geometry
-integer,intent(in) :: nx                                                !< X-axis size
-integer,intent(in) :: ny                                                !< Y-axis size
-integer,intent(in) :: nens                                              !< Ensemble size at each cycle
-integer,intent(in) :: ncyc                                              !< Number of cycles
-real(kind_real),intent(in),optional :: ens_2d(nx,ny,nens,ncyc)          !< Ensemble on model grid, halo A
-real(kind_real),intent(in),optional :: ens_3d(nx,ny,geom%nl0,nens,ncyc) !< Ensemble on model grid, halo A
+class(ens_type),intent(inout) :: ens                                    ! Ensemble
+type(mpl_type),intent(in) :: mpl                                        ! MPI data
+type(nam_type),intent(in) :: nam                                        ! Namelist
+type(geom_type),intent(in) :: geom                                      ! Geometry
+integer,intent(in) :: nx                                                ! X-axis size
+integer,intent(in) :: ny                                                ! Y-axis size
+integer,intent(in) :: nens                                              ! Ensemble size at each cycle
+integer,intent(in) :: ncyc                                              ! Number of cycles
+real(kind_real),intent(in),optional :: ens_2d(nx,ny,nens,ncyc)          ! Ensemble on model grid, halo A
+real(kind_real),intent(in),optional :: ens_3d(nx,ny,geom%nl0,nens,ncyc) ! Ensemble on model grid, halo A
 
 ! Local variables
 integer :: ie,iens,icyc,its,iv,il0

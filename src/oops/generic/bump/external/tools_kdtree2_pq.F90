@@ -1,18 +1,12 @@
 !----------------------------------------------------------------------
-! Module: tools_kdtree2_pq.f90
-!> Purpose: K-d tree priority queue routines
-!> <br>
-!> Source: https://github.com/jmhodges/kdtree2
-!> <br>
-!> Author: Matthew Kennel, Institute for Nonlinear Science (2004)
-!> <br>
-!> Original licensing: Academic Free License version 1.1
-!> <br>
-!> Modified by Benjamin Menetrier for BUMP
-!> <br>
-!> Licensing: this code is distributed under the CeCILL-C license
-!> <br>
-!> Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE
+! Module: tools_kdtree2_pq
+! Purpose: K-d tree priority queue routines
+! Source: https://github.com/jmhodges/kdtree2
+! Author: Matthew Kennel, Institute for Nonlinear Science (2004)
+! Original licensing: Academic Free License version 1.1
+! Modified by Benjamin Menetrier for BUMP
+! Licensing: this code is distributed under the CeCILL-C license
+! Copyright © 2015-... UCAR, CERFACS, METEO-FRANCE and IRIT
 !----------------------------------------------------------------------
 module tools_kdtree2_pq
   use tools_kinds, only: kind_real
@@ -85,12 +79,11 @@ contains
 
 
   function pq_create(results_in) result(res)
-    !
-    ! Create a priority queue from ALREADY allocated
-    ! array pointers for storage.  NOTE! It will NOT
-    ! add any alements to the heap, i.e. any existing
-    ! data in the input arrays will NOT be used and may
-    ! be overwritten.
+! Function: pq_create
+! Purpose: create a priority queue from ALREADY allocated array pointers for storage
+
+    ! NOTE! It will NOT add any alements to the heap, i.e. any existing
+    ! data in the input arrays will NOT be used and may be overwritten.
     !
     ! usage:
     !    real(kind_real), pointer :: x(:)
@@ -113,44 +106,11 @@ contains
     return
   end function pq_create
 
-  !
-  ! operations for getting parents and left + right children
-  ! of elements in a binary heap.
-  !
-
-!
-! These are written inline for speed.
-!
-!  integer function parent(i)
-!    integer, intent(in) :: i
-!    parent = (i/2)
-!    return
-!  end function parent
-
-!  integer function left(i)
-!    integer, intent(in) ::i
-!    left = (2*i)
-!    return
-!  end function left
-
-!  integer function right(i)
-!    integer, intent(in) :: i
-!    right = (2*i)+1
-!    return
-!  end function right
-
-!  logical function compare_priority(p1,p2)
-!    real(kind_real), intent(in) :: p1, p2
-!
-!    compare_priority = (p1 .gt. p2)
-!    return
-!  end function compare_priority
-
   subroutine heapify(a,i_in)
-    !
-    ! take a heap rooted at 'i' and force it to be in the
-    ! heap canonical form.   This is performance critical
-    ! and has been tweaked a little to reflect this.
+! Subroutine: heapify
+! Purpose: take a heap rooted at 'i' and force it to be in the heap canonical form
+
+    ! This is performance critical and has been tweaked a little to reflect this.
     !
     type(pq),pointer   :: a
     integer, intent(in) :: i_in
@@ -224,11 +184,9 @@ bigloop:  do
   end subroutine heapify
 
   subroutine pq_max(a,e)
-    !
-    ! return the priority and its payload of the maximum priority element
-    ! on the queue, which should be the first one, if it is
-    ! in heapified form.
-    !
+! Subroutine: pq_max
+! Purpose: return the priority and its payload of the maximum priority element on the queue, which should be the first one, if it is in heapified form
+
     type(pq),pointer :: a
     type(kdtree2_result),intent(out)  :: e
 
@@ -242,6 +200,9 @@ bigloop:  do
   end subroutine pq_max
 
   real(kind_real) function pq_maxpri(a)
+! Function: pq_maxpri
+! Purpose: unknown
+
     type(pq), pointer :: a
 
     if (a%heap_size .gt. 0) then
@@ -254,9 +215,9 @@ bigloop:  do
   end function pq_maxpri
 
   subroutine pq_extract_max(a,e)
-    !
-    ! return the priority and payload of maximum priority
-    ! element, and remove it from the queue.
+! Subroutine: pq_extract_max
+! Purpose: return the priority and payload of maximum priority element, and remove it from the queue
+
     ! (equivalent to 'pop()' on a stack)
     !
     type(pq),pointer :: a
@@ -284,10 +245,9 @@ bigloop:  do
 
 
   real(kind_real) function pq_insert(a,dis,sdis,idx)
-    !
-    ! Insert a new element and return the new maximum priority,
-    ! which may or may not be the same as the old maximum priority.
-    !
+! Function: pq_insert
+! Purpose: insert a new element and return the new maximum priority, which may or may not be the same as the old maximum priority
+
     type(pq),pointer  :: a
     real(kind_real), intent(in) :: dis
     real(kind_real), intent(in) :: sdis
@@ -332,11 +292,10 @@ bigloop:  do
   end function pq_insert
 
   real(kind_real) function pq_replace_max(a,dis,sdis,idx)
-    !
-    ! Replace the extant maximum priority element
-    ! in the PQ with (dis,sdis,idx).  Return
-    ! the new maximum priority, which may be larger
-    ! or smaller than the old one.
+! Function: pq_replace_max
+! Purpose: replace the extant maximum priority element in the PQ with (dis,sdis,idx)
+
+    ! Return the new maximum priority, which may be larger or smaller than the old one.
     !
     type(pq),pointer         :: a
     real(kind_real), intent(in) :: dis
@@ -407,9 +366,9 @@ bigloop:  do
   end function pq_replace_max
 
   subroutine pq_delete(a,i)
-    !
-    ! delete item with index 'i'
-    !
+! Subroutine: pq_delete
+! Purpose: delete item with index 'i'
+
     type(pq),pointer :: a
     integer           :: i
 

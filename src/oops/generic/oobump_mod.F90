@@ -11,7 +11,6 @@ use iso_c_binding
 use kinds
 use config_mod
 use unstructured_grid_mod
-use fckit_mpi_module, only: fckit_mpi_comm
 use type_bump, only: bump_type
 use type_nam, only: nvmax,nlmax,nc3max,nscalesmax,ndirmax,nldwvmax 
 
@@ -377,28 +376,22 @@ integer, intent(in) :: ens2_ne
 integer, intent(in) :: ens2_nsub
 
 integer :: igrid
-type(fckit_mpi_comm) :: f_comm
-
-! Get MPI Communicator
-f_comm = fckit_mpi_comm()
 
 ! Allocation
 self%ngrid = ug%ngrid
 allocate(self%bump(self%ngrid))
 
 do igrid=1,self%ngrid
-  ! Initialize namelist
-  call self%bump(igrid)%nam%init
+   ! Initialize namelist
+   call self%bump(igrid)%nam%init
 
-  ! Read JSON
-  call bump_read_conf(c_conf,self%bump(igrid))
+   ! Read JSON
+   call bump_read_conf(c_conf,self%bump(igrid))
 
-  ! Online setup
-  call self%bump(igrid)%setup_online(f_comm%communicator(), &
-              & ug%grid(igrid)%nmga, ug%grid(igrid)%nl0, ug%grid(igrid)%nv, ug%grid(igrid)%nts, &
-              & ug%grid(igrid)%lon, ug%grid(igrid)%lat, ug%grid(igrid)%area, &
-              & ug%grid(igrid)%vunit, ug%grid(igrid)%lmask, &
-              & ens1_ne=ens1_ne, ens1_nsub=ens1_nsub, ens2_ne=ens2_ne, ens2_nsub=ens2_nsub)
+   ! Online setup
+   call self%bump(igrid)%setup_online(ug%grid(igrid)%nmga,ug%grid(igrid)%nl0,ug%grid(igrid)%nv,ug%grid(igrid)%nts, &
+ & ug%grid(igrid)%lon,ug%grid(igrid)%lat,ug%grid(igrid)%area,ug%grid(igrid)%vunit,ug%grid(igrid)%lmask,ens1_ne=ens1_ne, &
+ & ens1_nsub=ens1_nsub, ens2_ne=ens2_ne, ens2_nsub=ens2_nsub)
 end do
 
 end subroutine create_oobump
@@ -504,6 +497,8 @@ end do
 ! nicas_param
 if (config_element_exists(c_conf,"lsqrt")) bump%nam%lsqrt = integer_to_logical(config_get_int(c_conf,"lsqrt"))
 if (config_element_exists(c_conf,"resol")) bump%nam%resol = config_get_real(c_conf,"resol")
+if (config_element_exists(c_conf,"fast_sampling")) bump%nam%fast_sampling =  integer_to_logical(config_get_int(c_conf, &
+ & "fast_sampling"))
 if (config_element_exists(c_conf,"nicas_interp")) bump%nam%nicas_interp = config_get_string(c_conf,1024,"nicas_interp")
 if (config_element_exists(c_conf,"network")) bump%nam%network = integer_to_logical(config_get_int(c_conf,"network"))
 if (config_element_exists(c_conf,"mpicom")) bump%nam%mpicom = config_get_int(c_conf,"mpicom")

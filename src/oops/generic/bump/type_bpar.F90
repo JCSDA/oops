@@ -1,12 +1,9 @@
 !----------------------------------------------------------------------
 ! Module: type_bpar
-!> Purpose: block parameters derived type
-!> <br>
-!> Author: Benjamin Menetrier
-!> <br>
-!> Licensing: this code is distributed under the CeCILL-C license
-!> <br>
-!> Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE
+! Purpose: block parameters derived type
+! Author: Benjamin Menetrier
+! Licensing: this code is distributed under the CeCILL-C license
+! Copyright © 2015-... UCAR, CERFACS, METEO-FRANCE and IRIT
 !----------------------------------------------------------------------
 module type_bpar
 
@@ -19,24 +16,25 @@ implicit none
 
 type bpar_type
    ! Block parameters
-   integer :: nb                                 !< Number of blocks
-   integer :: nbe                                !< Extended number of blocks
-   integer,allocatable :: nl0r(:)                !< Effective number of levels
-   integer,allocatable :: l0rl0b_to_l0(:,:,:)    !< Effective level to level
-   integer,allocatable :: il0rz(:,:)             !< Effective zero separation level
-   integer,allocatable :: nc3(:)                 !< Maximum class
-   logical,allocatable :: vbal_block(:,:)        !< Vertical balance block
-   logical,allocatable :: diag_block(:)          !< HDIAG block
-   logical,allocatable :: avg_block(:)           !< Averaging block
-   logical,allocatable :: fit_block(:)           !< Fit block
-   logical,allocatable :: B_block(:)             !< B-involved block
-   logical,allocatable :: nicas_block(:)         !< NICAS block
-   logical,allocatable :: cv_block(:)            !< Control variable block
-   character(len=11),allocatable :: blockname(:) !< Block name
-   integer,allocatable :: b_to_v1(:)             !< Block to first variable
-   integer,allocatable :: b_to_v2(:)             !< Block to second variable
-   integer,allocatable :: b_to_ts1(:)            !< Block to first timeslot
-   integer,allocatable :: b_to_ts2(:)            !< Block to second timeslot
+   integer :: nb                                 ! Number of blocks
+   integer :: nbe                                ! Extended number of blocks
+   integer :: nl0rmax                            ! Maximum effective number of levels
+   integer,allocatable :: nl0r(:)                ! Effective number of levels
+   integer,allocatable :: l0rl0b_to_l0(:,:,:)    ! Effective level to level
+   integer,allocatable :: il0rz(:,:)             ! Effective zero separation level
+   integer,allocatable :: nc3(:)                 ! Maximum class
+   logical,allocatable :: vbal_block(:,:)        ! Vertical balance block
+   logical,allocatable :: diag_block(:)          ! HDIAG block
+   logical,allocatable :: avg_block(:)           ! Averaging block
+   logical,allocatable :: fit_block(:)           ! Fit block
+   logical,allocatable :: B_block(:)             ! B-involved block
+   logical,allocatable :: nicas_block(:)         ! NICAS block
+   logical,allocatable :: cv_block(:)            ! Control variable block
+   character(len=11),allocatable :: blockname(:) ! Block name
+   integer,allocatable :: b_to_v1(:)             ! Block to first variable
+   integer,allocatable :: b_to_v2(:)             ! Block to second variable
+   integer,allocatable :: b_to_ts1(:)            ! Block to first timeslot
+   integer,allocatable :: b_to_ts2(:)            ! Block to second timeslot
 contains
    procedure :: alloc => bpar_alloc
    procedure :: dealloc => bpar_dealloc
@@ -49,16 +47,16 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: bpar_alloc
-!> Purpose: allocate general parameters
+! Purpose: allocate general parameters
 !----------------------------------------------------------------------
 subroutine bpar_alloc(bpar,nam,geom)
 
 implicit none
 
 ! Passed variable
-class(bpar_type),intent(inout) :: bpar !< Block parameters
-type(nam_type),intent(in) :: nam       !< Namelist
-type(geom_type),intent(in) :: geom     !< Geometry
+class(bpar_type),intent(inout) :: bpar ! Block parameters
+type(nam_type),intent(in) :: nam       ! Namelist
+type(geom_type),intent(in) :: geom     ! Geometry
 
 ! Local variables
 integer :: ib,iv,jv,its,jts,il0,jl0r,jl0off
@@ -79,7 +77,8 @@ else
 end if
 
 ! Allocation
-allocate(bpar%l0rl0b_to_l0(nam%nl0r,geom%nl0,bpar%nbe))
+bpar%nl0rmax = min(nam%nl0r,geom%nl0)
+allocate(bpar%l0rl0b_to_l0(bpar%nl0rmax,geom%nl0,bpar%nbe))
 allocate(bpar%il0rz(geom%nl0,bpar%nbe))
 allocate(bpar%nl0r(bpar%nbe))
 allocate(bpar%nc3(bpar%nbe))
@@ -106,12 +105,12 @@ if (nam%new_lct) then
    its = 1
    do iv=1,nam%nv
       ! Classes and levels
-      bpar%nl0r(ib) = nam%nl0r
+      bpar%nl0r(ib) = bpar%nl0rmax
       do il0=1,geom%nl0
          jl0off = il0-(bpar%nl0r(ib)-1)/2-1
          if (jl0off<1) jl0off = 0
-         if (jl0off+nam%nl0r>geom%nl0) jl0off = geom%nl0-nam%nl0r
-         do jl0r=1,nam%nl0r
+         if (jl0off+bpar%nl0rmax>geom%nl0) jl0off = geom%nl0-bpar%nl0rmax
+         do jl0r=1,bpar%nl0rmax
             bpar%l0rl0b_to_l0(jl0r,il0,ib) = jl0off+jl0r
             if (bpar%l0rl0b_to_l0(jl0r,il0,ib)==il0) bpar%il0rz(il0,ib) = jl0r
          end do
@@ -129,7 +128,7 @@ if (nam%new_lct) then
       bpar%cv_block(ib) = .true.
 
       ! Blocks information
-      write(bpar%blockname(ib),'(i2.2,a,i2.2)') iv,'_',its
+      write(bpar%blockname(ib),'(i2.2,a,i2.2,a,i2.2,a,i2.2)') iv,'_',iv,'_',its,'_',its
       bpar%b_to_v1(ib) = iv
       bpar%b_to_v2(ib) = iv
       bpar%b_to_ts1(ib) = its
@@ -147,12 +146,12 @@ else
             do jts=1,nam%nts
                ! Classes and levels
                if ((trim(nam%strategy)=='diag_all').or.((iv==jv).and.(its==jts))) then
-                  bpar%nl0r(ib) = nam%nl0r
+                  bpar%nl0r(ib) = bpar%nl0rmax
                   do il0=1,geom%nl0
                      jl0off = il0-(bpar%nl0r(ib)-1)/2-1
                      if (jl0off<1) jl0off = 0
-                     if (jl0off+nam%nl0r>geom%nl0) jl0off = geom%nl0-nam%nl0r
-                     do jl0r=1,nam%nl0r
+                     if (jl0off+bpar%nl0rmax>geom%nl0) jl0off = geom%nl0-bpar%nl0rmax
+                     do jl0r=1,bpar%nl0rmax
                         bpar%l0rl0b_to_l0(jl0r,il0,ib) = jl0off+jl0r
                         if (bpar%l0rl0b_to_l0(jl0r,il0,ib)==il0) bpar%il0rz(il0,ib) = jl0r
                      end do
@@ -230,12 +229,12 @@ else
       ib = bpar%nbe
 
       ! Classes and levels
-      bpar%nl0r(ib) = nam%nl0r
+      bpar%nl0r(ib) = bpar%nl0rmax
       do il0=1,geom%nl0
          jl0off = il0-(bpar%nl0r(ib)-1)/2-1
          if (jl0off<1) jl0off = 0
-         if (jl0off+nam%nl0r>geom%nl0) jl0off = geom%nl0-nam%nl0r
-         do jl0r=1,nam%nl0r
+         if (jl0off+bpar%nl0rmax>geom%nl0) jl0off = geom%nl0-bpar%nl0rmax
+         do jl0r=1,bpar%nl0rmax
             bpar%l0rl0b_to_l0(jl0r,il0,ib) = jl0off+jl0r
             if (bpar%l0rl0b_to_l0(jl0r,il0,ib)==il0) bpar%il0rz(il0,ib) = jl0r
          end do
@@ -297,14 +296,14 @@ end subroutine bpar_alloc
 
 !----------------------------------------------------------------------
 ! Subroutine: bpar_dealloc
-!> Purpose: deallocate general parameters
+! Purpose: deallocate general parameters
 !----------------------------------------------------------------------
 subroutine bpar_dealloc(bpar)
 
 implicit none
 
 ! Passed variable
-class(bpar_type),intent(inout) :: bpar !< Block parameters
+class(bpar_type),intent(inout) :: bpar ! Block parameters
 
 ! Release memory
 if (allocated(bpar%nl0r)) deallocate(bpar%nl0r)

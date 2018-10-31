@@ -1,12 +1,9 @@
 !----------------------------------------------------------------------
 ! Module: tools_func
-!> Purpose: usual functions
-!> <br>
-!> Author: Benjamin Menetrier
-!> <br>
-!> Licensing: this code is distributed under the CeCILL-C license
-!> <br>
-!> Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE
+! Purpose: usual functions
+! Author: Benjamin Menetrier
+! Licensing: this code is distributed under the CeCILL-C license
+! Copyright © 2015-... UCAR, CERFACS, METEO-FRANCE and IRIT
 !----------------------------------------------------------------------
 module tools_func
 
@@ -14,32 +11,35 @@ use tools_asa007, only: asa007_cholesky,asa007_syminv
 use tools_const, only: pi
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsr
+use tools_repro, only: inf
 use type_mpl, only: mpl_type
 
 implicit none
 
-real(kind_real),parameter :: gc_gau = 0.28            !< Gaussian to GC99 factor (empirical)
-real(kind_real),parameter :: Dmin = 1.0e-12_kind_real !< Minimum tensor diagonal value
-integer,parameter :: M = 0                            !< Number of implicit itteration for the Matern function (GC 99 function if M = -1 and Gaussian function if M = 0)
+real(kind_real),parameter :: gc2gau = 0.28            ! GC99 support radius to Gaussian Daley length-scale (empirical)
+real(kind_real),parameter :: gau2gc = 3.57            ! Gaussian Daley length-scale to GC99 support radius (empirical)
+real(kind_real),parameter :: Dmin = 1.0e-12_kind_real ! Minimum tensor diagonal value
+real(kind_real),parameter :: condmax = 1.0e2          ! Maximum tensor conditioning number
+integer,parameter :: M = 0                            ! Number of implicit itteration for the Matern function (Gaussian function if M = 0)
 
 private
-public :: gc_gau
+public :: gc2gau,gau2gc,Dmin,M
 public :: lonlatmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,add,divide, &
-        & fit_diag,fit_diag_dble,gc99,fit_lct,lct_d2h,cholesky,syminv
+        & fit_diag,fit_diag_dble,gc99,fit_lct,lct_d2h,check_cond,cholesky,syminv
 
 contains
 
 !----------------------------------------------------------------------
 ! Subroutine: lonlatmod
-!> Purpose: set latitude between -pi/2 and pi/2 and longitude between -pi and pi
+! Purpose: set latitude between -pi/2 and pi/2 and longitude between -pi and pi
 !----------------------------------------------------------------------
 subroutine lonlatmod(lon,lat)
 
 implicit none
 
 ! Passed variables
-real(kind_real),intent(inout) :: lon !< Longitude
-real(kind_real),intent(inout) :: lat !< Latitude
+real(kind_real),intent(inout) :: lon ! Longitude
+real(kind_real),intent(inout) :: lat ! Latitude
 
 ! Check latitude bounds
 if (lat>0.5*pi) then
@@ -61,18 +61,18 @@ end subroutine lonlatmod
 
 !----------------------------------------------------------------------
 ! Subroutine: sphere_dist
-!> Purpose: compute the great-circle distance between two points
+! Purpose: compute the great-circle distance between two points
 !----------------------------------------------------------------------
 subroutine sphere_dist(lon_i,lat_i,lon_f,lat_f,dist)
 
 implicit none
 
 ! Passed variable
-real(kind_real),intent(in) :: lon_i !< Initial point longitude (radian)
-real(kind_real),intent(in) :: lat_i !< Initial point latitude (radian)
-real(kind_real),intent(in) :: lon_f !< Final point longitude (radian)
-real(kind_real),intent(in) :: lat_f !< Final point longilatitudetude (radian)
-real(kind_real),intent(out) :: dist !< Great-circle distance
+real(kind_real),intent(in) :: lon_i ! Initial point longitude (radian)
+real(kind_real),intent(in) :: lat_i ! Initial point latitude (radian)
+real(kind_real),intent(in) :: lon_f ! Final point longitude (radian)
+real(kind_real),intent(in) :: lat_f ! Final point longilatitudetude (radian)
+real(kind_real),intent(out) :: dist ! Great-circle distance
 
 ! Check that there is no missing value
 if (isnotmsr(lon_i).and.isnotmsr(lat_i).and.isnotmsr(lon_f).and.isnotmsr(lat_f)) then
@@ -88,19 +88,19 @@ end subroutine sphere_dist
 
 !----------------------------------------------------------------------
 ! Subroutine: reduce_arc
-!> Purpose: reduce arc to a given distance
+! Purpose: reduce arc to a given distance
 !----------------------------------------------------------------------
 subroutine reduce_arc(lon_i,lat_i,lon_f,lat_f,maxdist,dist)
 
 implicit none
 
 ! Passed variables
-real(kind_real),intent(in) :: lon_i    !< Initial point longitude
-real(kind_real),intent(in) :: lat_i    !< Initial point latitude
-real(kind_real),intent(inout) :: lon_f !< Final point longitude
-real(kind_real),intent(inout) :: lat_f !< Final point latitude
-real(kind_real),intent(in) :: maxdist  !< Maximum distance
-real(kind_real),intent(out) :: dist    !< Effective distance
+real(kind_real),intent(in) :: lon_i    ! Initial point longitude
+real(kind_real),intent(in) :: lat_i    ! Initial point latitude
+real(kind_real),intent(inout) :: lon_f ! Final point longitude
+real(kind_real),intent(inout) :: lat_f ! Final point latitude
+real(kind_real),intent(in) :: maxdist  ! Maximum distance
+real(kind_real),intent(out) :: dist    ! Effective distance
 
 ! Local variable
 real(kind_real) :: theta
@@ -125,16 +125,16 @@ end subroutine reduce_arc
 
 !----------------------------------------------------------------------
 ! Subroutine: vector_product
-!> Purpose: compute normalized vector product
+! Purpose: compute normalized vector product
 !----------------------------------------------------------------------
 subroutine vector_product(v1,v2,vp)
 
 implicit none
 
 ! Passed variables
-real(kind_real),intent(in) :: v1(3)  !< First vector
-real(kind_real),intent(in) :: v2(3)  !< Second vector
-real(kind_real),intent(out) :: vp(3) !< Vector product
+real(kind_real),intent(in) :: v1(3)  ! First vector
+real(kind_real),intent(in) :: v2(3)  ! Second vector
+real(kind_real),intent(out) :: vp(3) ! Vector product
 
 ! Local variable
 real(kind_real) :: r
@@ -152,17 +152,17 @@ end subroutine vector_product
 
 !----------------------------------------------------------------------
 ! Subroutine: vector_triple_product
-!> Purpose: compute vector triple product
+! Purpose: compute vector triple product
 !----------------------------------------------------------------------
 subroutine vector_triple_product(v1,v2,v3,p)
 
 implicit none
 
 ! Passed variables
-real(kind_real),intent(in) :: v1(3) !< First vector
-real(kind_real),intent(in) :: v2(3) !< Second vector
-real(kind_real),intent(in) :: v3(3) !< Third vector
-real(kind_real),intent(out) :: p    !< Triple product
+real(kind_real),intent(in) :: v1(3) ! First vector
+real(kind_real),intent(in) :: v2(3) ! Second vector
+real(kind_real),intent(in) :: v3(3) ! Third vector
+real(kind_real),intent(out) :: p    ! Triple product
 
 ! Local variable
 real(kind_real) :: vp(3)
@@ -179,17 +179,17 @@ end subroutine vector_triple_product
 
 !----------------------------------------------------------------------
 ! Subroutine: add
-!> Purpose: check if missing and add
+! Purpose: check if value missing and add if not missing
 !----------------------------------------------------------------------
 subroutine add(value,cumul,num,wgt)
 
 implicit none
 
 ! Passed variables
-real(kind_real),intent(in) :: value        !< Value to add
-real(kind_real),intent(inout) :: cumul     !< Cumul
-real(kind_real),intent(inout) :: num       !< Number of values
-real(kind_real),intent(in),optional :: wgt !< Weight
+real(kind_real),intent(in) :: value        ! Value to add
+real(kind_real),intent(inout) :: cumul     ! Cumul
+real(kind_real),intent(inout) :: num       ! Number of values
+real(kind_real),intent(in),optional :: wgt ! Weight
 
 ! Local variables
 real(kind_real) :: lwgt
@@ -208,15 +208,15 @@ end subroutine add
 
 !----------------------------------------------------------------------
 ! Subroutine: divide
-!> Purpose: check if missing and divide
+! Purpose: check if value missing and divide if not missing
 !----------------------------------------------------------------------
 subroutine divide(value,num)
 
 implicit none
 
 ! Passed variables
-real(kind_real),intent(inout) :: value !< Value to divide
-real(kind_real),intent(in) :: num      !< Divider
+real(kind_real),intent(inout) :: value ! Value to divide
+real(kind_real),intent(in) :: num      ! Divider
 
 ! Divide cumul by num
 if (abs(num)>0.0) then
@@ -229,23 +229,23 @@ end subroutine divide
 
 !----------------------------------------------------------------------
 ! Subroutine: fit_diag
-!> Purpose: diagnostic fit
+! Purpose: compute diagnostic fit function
 !----------------------------------------------------------------------
 subroutine fit_diag(mpl,nc3,nl0r,nl0,l0rl0_to_l0,disth,distv,rh,rv,fit)
 
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl                 !< MPI data
-integer,intent(in) :: nc3                        !< Number of classes
-integer,intent(in) :: nl0r                       !< Reduced number of levels
-integer,intent(in) :: nl0                        !< Number of levels
-integer,intent(in) :: l0rl0_to_l0(nl0r,nl0)      !< Reduced level to level
-real(kind_real),intent(in) :: disth(nc3)         !< Horizontal distance
-real(kind_real),intent(in) :: distv(nl0,nl0)     !< Vertical distance
-real(kind_real),intent(in) :: rh(nl0)            !< Horizontal support radius
-real(kind_real),intent(in) :: rv(nl0)            !< Vertical support radius
-real(kind_real),intent(out) :: fit(nc3,nl0r,nl0) !< Fit
+type(mpl_type),intent(in) :: mpl                 ! MPI data
+integer,intent(in) :: nc3                        ! Number of classes
+integer,intent(in) :: nl0r                       ! Reduced number of levels
+integer,intent(in) :: nl0                        ! Number of levels
+integer,intent(in) :: l0rl0_to_l0(nl0r,nl0)      ! Reduced level to level
+real(kind_real),intent(in) :: disth(nc3)         ! Horizontal distance
+real(kind_real),intent(in) :: distv(nl0,nl0)     ! Vertical distance
+real(kind_real),intent(in) :: rh(nl0)            ! Horizontal support radius
+real(kind_real),intent(in) :: rv(nl0)            ! Vertical support radius
+real(kind_real),intent(out) :: fit(nc3,nl0r,nl0) ! Fit
 
 ! Local variables
 integer :: jl0r,jl0,il0,kl0r,kl0,jc3,kc3,ip,jp,np,np_new
@@ -363,25 +363,25 @@ end subroutine fit_diag
 
 !----------------------------------------------------------------------
 ! Subroutine: fit_diag_dble
-!> Purpose: diagnostic fit, double-fit
+! Purpose: compute diagnostic fit function
 !----------------------------------------------------------------------
 subroutine fit_diag_dble(mpl,nc3,nl0r,nl0,l0rl0_to_l0,disth,distv,rh,rv,rv_rfac,rv_coef,fit)
 
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl                 !< MPI data
-integer,intent(in) :: nc3                        !< Number of classes
-integer,intent(in) :: nl0r                       !< Reduced number of levels
-integer,intent(in) :: nl0                        !< Number of levels
-integer,intent(in) :: l0rl0_to_l0(nl0r,nl0)      !< Reduced level to level
-real(kind_real),intent(in) :: disth(nc3)         !< Horizontal distance
-real(kind_real),intent(in) :: distv(nl0,nl0)     !< Vertical distance
-real(kind_real),intent(in) :: rh(nl0)            !< Horizontal support radius
-real(kind_real),intent(in) :: rv(nl0)            !< Vertical support radius
-real(kind_real),intent(in) :: rv_rfac(nl0)       !< Vertical fit support radius ratio for the positive component
-real(kind_real),intent(in) :: rv_coef(nl0)       !< Vertical fit coefficient
-real(kind_real),intent(out) :: fit(nc3,nl0r,nl0) !< Fit
+type(mpl_type),intent(in) :: mpl                 ! MPI data
+integer,intent(in) :: nc3                        ! Number of classes
+integer,intent(in) :: nl0r                       ! Reduced number of levels
+integer,intent(in) :: nl0                        ! Number of levels
+integer,intent(in) :: l0rl0_to_l0(nl0r,nl0)      ! Reduced level to level
+real(kind_real),intent(in) :: disth(nc3)         ! Horizontal distance
+real(kind_real),intent(in) :: distv(nl0,nl0)     ! Vertical distance
+real(kind_real),intent(in) :: rh(nl0)            ! Horizontal support radius
+real(kind_real),intent(in) :: rv(nl0)            ! Vertical support radius
+real(kind_real),intent(in) :: rv_rfac(nl0)       ! Vertical fit support radius ratio for the positive component
+real(kind_real),intent(in) :: rv_coef(nl0)       ! Vertical fit coefficient
+real(kind_real),intent(out) :: fit(nc3,nl0r,nl0) ! Fit
 
 ! Local variables
 integer :: jl0r,jl0,il0,kl0r,kl0,jc3,kc3,ip,jp,np,np_new
@@ -512,13 +512,13 @@ end subroutine fit_diag_dble
 
 !----------------------------------------------------------------------
 ! Function: gc99
-!> Purpose: Gaspari and Cohn (1999) function, with the support radius as a parameter
+! Purpose: Gaspari and Cohn (1999) function, with the support radius as a parameter
 !----------------------------------------------------------------------
 function gc99(mpl,distnorm)
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl       !< MPI data
-real(kind_real),intent(in) :: distnorm !< Normalized distance
+type(mpl_type),intent(in) :: mpl       ! MPI data
+real(kind_real),intent(in) :: distnorm ! Normalized distance
 
 ! Returned variable
 real(kind_real) :: gc99
@@ -542,49 +542,49 @@ end function gc99
 
 !----------------------------------------------------------------------
 ! Subroutine: fit_lct
-!> Purpose: LCT fit
+! Purpose: LCT fit
 !----------------------------------------------------------------------
-subroutine fit_lct(mpl,nc,nl0,dx,dy,dz,dmask,nscales,ncomp,D,coef,fit)
+subroutine fit_lct(mpl,nc,nl0,dx,dy,dz,dmask,nscales,D,coef,fit)
 
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl            !< MPI data
-integer,intent(in) :: nc                    !< Number of classes
-integer,intent(in) :: nl0                   !< Number of levels
-real(kind_real),intent(in) :: dx(nc,nl0)    !< Zonal separation
-real(kind_real),intent(in) :: dy(nc,nl0)    !< Meridian separation
-real(kind_real),intent(in) :: dz(nl0)       !< Vertical separation
-logical,intent(in) :: dmask(nc,nl0)         !< Mask
-integer,intent(in) :: nscales               !< Number of LCT scales
-integer,intent(in) :: ncomp(nscales)        !< Number of LCT components
-real(kind_real),intent(in) :: D(sum(ncomp)) !< LCT components
-real(kind_real),intent(in) :: coef(nscales) !< LCT coefficients
-real(kind_real),intent(out) :: fit(nc,nl0)  !< Fit
+type(mpl_type),intent(in) :: mpl            ! MPI data
+integer,intent(in) :: nc                    ! Number of classes
+integer,intent(in) :: nl0                   ! Number of levels
+real(kind_real),intent(in) :: dx(nc,nl0)    ! Zonal separation
+real(kind_real),intent(in) :: dy(nc,nl0)    ! Meridian separation
+real(kind_real),intent(in) :: dz(nc,nl0)    ! Vertical separation
+logical,intent(in) :: dmask(nc,nl0)         ! Mask
+integer,intent(in) :: nscales               ! Number of LCT scales
+real(kind_real),intent(in) :: D(4,nscales)  ! LCT components
+real(kind_real),intent(in) :: coef(nscales) ! LCT coefficients
+real(kind_real),intent(out) :: fit(nc,nl0)  ! Fit
 
 ! Local variables
-integer :: jl0,jc3,iscales,offset
-real(kind_real) :: Hcoef(nscales),D11,D22,D33,D12,H11,H22,H33,H12,rsq,distnorm
+integer :: jl0,jc3,iscales
+real(kind_real) :: Dcoef(nscales),D11,D22,D33,D12,H11,H22,H33,H12,rsq
 
 ! Initialization
-offset = 0
 call msr(fit)
 
 ! Coefficients
-Hcoef = max(Dmin,min(coef,1.0_kind_real))
-Hcoef = Hcoef/sum(Hcoef)
+Dcoef = max(Dmin,min(coef,1.0_kind_real))
+Dcoef = Dcoef/sum(Dcoef)
 
 do iscales=1,nscales
    ! Ensure positive-definiteness of D
-   D11 = max(Dmin,D(offset+1))
-   D22 = max(Dmin,D(offset+2))
-   D33 = 0.0
-   if (nl0>1) D33 = max(Dmin,D(offset+3))
-   D12 = 0.0
-   if (ncomp(iscales)==4) D12 = sqrt(D11*D22)*max(-1.0_kind_real+Dmin,min(D(offset+4),1.0_kind_real-Dmin))
+   D11 = max(Dmin,D(1,iscales))
+   D22 = max(Dmin,D(2,iscales))
+   if (nl0>1) then
+      D33 = max(Dmin,D(3,iscales))
+   else
+      D33 = 0.0
+   end if
+   D12 = sqrt(D11*D22)*max(-1.0_kind_real+Dmin,min(D(4,iscales),1.0_kind_real-Dmin))
 
    ! Inverse D to get H
-   call lct_d2h(D11,D22,D33,D12,H11,H22,H33,H12)
+   call lct_d2h(mpl,D11,D22,D33,D12,H11,H22,H33,H12)
 
    ! Homogeneous anisotropic approximation
    !$omp parallel do schedule(static) private(jl0,jc3,rsq)
@@ -595,49 +595,41 @@ do iscales=1,nscales
             if (iscales==1) fit(jc3,jl0) = 0.0
 
             ! Squared distance
-            rsq = H11*dx(jc3,jl0)**2+H22*dy(jc3,jl0)**2
-            if (nl0>1) rsq = rsq+H33*dz(jl0)**2
-            if (ncomp(iscales)==4) rsq = rsq+2.0*H12*dx(jc3,jl0)*dy(jc3,jl0)
+            rsq = H11*dx(jc3,jl0)**2+H22*dy(jc3,jl0)**2+H33*dz(jc3,jl0)**2+2.0*H12*dx(jc3,jl0)*dy(jc3,jl0)
 
-            if (M==-1) then
-               ! Gaspari-Cohn 1999 function
-               distnorm = sqrt(rsq)*gc_gau
-               fit(jc3,jl0) = fit(jc3,jl0)+Hcoef(iscales)*gc99(mpl,distnorm)
-            elseif (M==0) then
+            if (M==0) then
                ! Gaussian function
-               if (rsq<40.0) fit(jc3,jl0) = fit(jc3,jl0)+Hcoef(iscales)*exp(-0.5*rsq)
+               if (rsq<40.0) fit(jc3,jl0) = fit(jc3,jl0)+Dcoef(iscales)*exp(-0.5*rsq)
             else
                ! Matern function
-               fit(jc3,jl0) = fit(jc3,jl0)+Hcoef(iscales)*matern(mpl,M,sqrt(rsq))
+               fit(jc3,jl0) = fit(jc3,jl0)+Dcoef(iscales)*matern(mpl,M,sqrt(rsq))
             end if
          end if
       end do
    end do
    !$omp end parallel do
-
-   ! Update offset
-   offset = offset+ncomp(iscales)
 end do
 
 end subroutine fit_lct
 
 !----------------------------------------------------------------------
 ! Subroutine: lct_d2h
-!> Purpose: inversion from D (Daley tensor) to H (local correlation tensor)
+! Purpose: inversion from D (Daley tensor) to H (local correlation tensor)
 !----------------------------------------------------------------------
-subroutine lct_d2h(D11,D22,D33,D12,H11,H22,H33,H12)
+subroutine lct_d2h(mpl,D11,D22,D33,D12,H11,H22,H33,H12)
 
 implicit none
 
 ! Passed variables
-real(kind_real),intent(in) :: D11  !< Daley tensor component 11
-real(kind_real),intent(in) :: D22  !< Daley tensor component 22
-real(kind_real),intent(in) :: D33  !< Daley tensor component 33
-real(kind_real),intent(in) :: D12  !< Daley tensor component 12
-real(kind_real),intent(out) :: H11 !< Local correlation tensor component 11
-real(kind_real),intent(out) :: H22 !< Local correlation tensor component 22
-real(kind_real),intent(out) :: H33 !< Local correlation tensor component 33
-real(kind_real),intent(out) :: H12 !< Local correlation tensor component 12
+type(mpl_type),intent(in) :: mpl   ! MPI data
+real(kind_real),intent(in) :: D11  ! Daley tensor component 11
+real(kind_real),intent(in) :: D22  ! Daley tensor component 22
+real(kind_real),intent(in) :: D33  ! Daley tensor component 33
+real(kind_real),intent(in) :: D12  ! Daley tensor component 12
+real(kind_real),intent(out) :: H11 ! Local correlation tensor component 11
+real(kind_real),intent(out) :: H22 ! Local correlation tensor component 22
+real(kind_real),intent(out) :: H33 ! Local correlation tensor component 33
+real(kind_real),intent(out) :: H12 ! Local correlation tensor component 12
 
 ! Local variables
 real(kind_real) :: det
@@ -646,29 +638,74 @@ real(kind_real) :: det
 det = D11*D22-D12**2
 
 ! Inverse D to get H
-H11 = D22/det
-H22 = D11/det
+if (det>0.0) then
+   H11 = D22/det
+   H22 = D11/det
+   H12 = -D12/det
+else
+   call mpl%abort('non-invertible tensor')
+end if
 if (D33>0.0) then
    H33 = 1.0/D33
 else
    H33 = 0.0
 end if
-H12 = -D12/det
 
 end subroutine lct_d2h
 
 !----------------------------------------------------------------------
+! Subroutine: check_cond
+! Purpose: check tensor conditioning
+!----------------------------------------------------------------------
+subroutine check_cond(d1,d2,nod,valid)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: d1  ! First diagonal coefficient
+real(kind_real),intent(in) :: d2  ! Second diagonal coefficient
+real(kind_real),intent(in) :: nod ! Normalized off-diagonal coefficient
+logical,intent(out) :: valid      ! Conditioning validity
+
+! Local variables
+real(kind_real) :: det,tr,diff,ev1,ev2
+
+! Compute trace and determinant
+tr = d1+d2
+det = d1*d2*(1.0-nod**2)
+diff = 0.25*(d1-d2)**2+d1*d2*nod**2
+
+if ((det>0.0).and..not.(diff<0.0)) then
+   ! Compute eigenvalues
+   ev1 = 0.5*tr+sqrt(diff)
+   ev2 = 0.5*tr-sqrt(diff)
+
+   if (ev2>0.0) then
+      ! Check conditioning
+      valid = inf(ev1,condmax*ev2)
+   else
+      ! Lowest negative eigenvalue is negative
+      valid = .false.
+   end if
+else
+   ! Non-positive definite tensor
+   valid = .false.
+end if
+
+end subroutine check_cond
+
+!----------------------------------------------------------------------
 ! Function: matern
-!> Purpose: compute the normalized diffusion function from eq. (55) of Mirouze and Weaver (2013), for the 3d case (d = 3)
+! Purpose: compute the normalized diffusion function from eq. (55) of Mirouze and Weaver (2013), for the 3d case (d = 3)
 !----------------------------------------------------------------------
 real(kind_real) function matern(mpl,M,x)
 
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl !< MPI data
-integer,intent(in) :: M          !< Matern function order
-real(kind_real),intent(in) :: x  !< Argument
+type(mpl_type),intent(in) :: mpl ! MPI data
+integer,intent(in) :: M          ! Matern function order
+real(kind_real),intent(in) :: x  ! Argument
 
 ! Local variables
 integer :: j
@@ -701,18 +738,18 @@ end function matern
 
 !----------------------------------------------------------------------
 ! Subroutine: cholesky
-!> Purpose: compute cholesky decomposition
-!> Author: Original FORTRAN77 version by Michael Healy, modifications by AJ Miller, FORTRAN90 version by John Burkardt.
+! Purpose: compute cholesky decomposition
+! Author: Original FORTRAN77 version by Michael Healy, modifications by AJ Miller, FORTRAN90 version by John Burkardt.
 !----------------------------------------------------------------------
 subroutine cholesky(mpl,n,a,u)
 
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl      !< MPI data
-integer,intent(in) :: n               !< Matrix rank
-real(kind_real),intent(in) :: a(n,n)  !< Matrix
-real(kind_real),intent(out) :: u(n,n) !< Matrix square-root
+type(mpl_type),intent(in) :: mpl      ! MPI data
+integer,intent(in) :: n               ! Matrix rank
+real(kind_real),intent(in) :: a(n,n)  ! Matrix
+real(kind_real),intent(out) :: u(n,n) ! Matrix square-root
 
 ! Local variables
 integer :: nn,i,j,ij
@@ -749,18 +786,18 @@ end subroutine cholesky
 
 !----------------------------------------------------------------------
 ! Subroutine: syminv
-!> Purpose: compute inverse of a symmetric matrix
-!> Author: Original FORTRAN77 version by Michael Healy, modifications by AJ Miller, FORTRAN90 version by John Burkardt.
+! Purpose: compute inverse of a symmetric matrix
+! Author: Original FORTRAN77 version by Michael Healy, modifications by AJ Miller, FORTRAN90 version by John Burkardt.
 !----------------------------------------------------------------------
 subroutine syminv(mpl,n,a,c)
 
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl      !< MPI data
-integer,intent(in) :: n               !< Matrix rank
-real(kind_real),intent(in) :: a(n,n)  !< Matrix
-real(kind_real),intent(out) :: c(n,n) !< Matrix inverse
+type(mpl_type),intent(in) :: mpl      ! MPI data
+integer,intent(in) :: n               ! Matrix rank
+real(kind_real),intent(in) :: a(n,n)  ! Matrix
+real(kind_real),intent(out) :: c(n,n) ! Matrix inverse
 
 ! Local variables
 integer :: nn,i,j,ij

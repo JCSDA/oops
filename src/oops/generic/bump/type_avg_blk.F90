@@ -1,12 +1,9 @@
 !----------------------------------------------------------------------
 ! Module: type_avg_blk
-!> Purpose: averaged statistics block derived type
-!> <br>
-!> Author: Benjamin Menetrier
-!> <br>
-!> Licensing: this code is distributed under the CeCILL-C license
-!> <br>
-!> Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE
+! Purpose: averaged statistics block derived type
+! Author: Benjamin Menetrier
+! Licensing: this code is distributed under the CeCILL-C license
+! Copyright © 2015-... UCAR, CERFACS, METEO-FRANCE and IRIT
 !----------------------------------------------------------------------
 module type_avg_blk
 
@@ -15,40 +12,41 @@ use tools_missing, only: msr,isanynotmsr,isnotmsr,ismsr
 use tools_repro, only: sup,inf
 use type_bpar, only: bpar_type
 use type_geom, only: geom_type
-use type_hdata, only: hdata_type
 use type_mom_blk, only: mom_blk_type
 use type_mpl, only: mpl_type
 use type_nam, only: nam_type
+use type_samp, only: samp_type
+
 implicit none
 
-real(kind_real),parameter :: var_min = 1.0e-24_kind_real !< Minimum variance for correlation computation
-real(kind_real),parameter :: nc1a_cor_th = 0.5           !< Threshold on the effective sampling size for asymptotic statistics
+real(kind_real),parameter :: var_min = 1.0e-24_kind_real ! Minimum variance for correlation computation
+real(kind_real),parameter :: nc1a_cor_th = 0.1           ! Threshold on the effective sampling size for asymptotic statistics
 
 ! Averaged statistics block derived type
 type avg_blk_type
-   integer :: ic2                                        !< Global index
-   integer :: ib                                         !< Block index
-   integer :: ne                                         !< Ensemble size
-   integer :: nsub                                       !< Sub-ensembles number
-   real(kind_real),allocatable :: m2(:,:)                !< Variance
-   real(kind_real),allocatable :: m4(:,:)                !< Fourth-order centered moment
-   real(kind_real),allocatable :: m2flt(:)               !< Filtered variance
-   real(kind_real),allocatable :: nc1a(:,:,:)            !< Number of points in subset Sc1 on halo A
-   real(kind_real),allocatable :: m11(:,:,:)             !< Covariance average
-   real(kind_real),allocatable :: m11m11(:,:,:,:,:)      !< Product of covariances average
-   real(kind_real),allocatable :: m2m2(:,:,:,:,:)        !< Product of variances average
-   real(kind_real),allocatable :: m22(:,:,:,:)           !< Fourth-order centered moment average
-   real(kind_real),allocatable :: nc1a_cor(:,:,:)        !< Number of points in subset Sc1 on halo A with valid correlations
-   real(kind_real),allocatable :: cor(:,:,:)             !< Correlation average
-   real(kind_real),allocatable :: m11asysq(:,:,:)        !< Squared asymptotic covariance average
-   real(kind_real),allocatable :: m2m2asy(:,:,:)         !< Product of asymptotic variances average
-   real(kind_real),allocatable :: m22asy(:,:,:)          !< Asymptotic fourth-order centered moment average
-   real(kind_real),allocatable :: m11sq(:,:,:)           !< Squared covariance average for several ensemble sizes
-   real(kind_real),allocatable :: m11sta(:,:,:)          !< Ensemble covariance/static covariance product
-   real(kind_real),allocatable :: stasq(:,:,:)           !< Squared static covariance
-   real(kind_real),allocatable :: m11lrm11sub(:,:,:,:,:) !< LR covariance/HR covariance product average
-   real(kind_real),allocatable :: m11lrm11(:,:,:)        !< LR covariance/HR covariance product average, averaged over sub-ensembles
-   real(kind_real),allocatable :: m11lrm11asy(:,:,:)     !< LR covariance/HR asymptotic covariance product average
+   integer :: ic2                                        ! Global index
+   integer :: ib                                         ! Block index
+   integer :: ne                                         ! Ensemble size
+   integer :: nsub                                       ! Sub-ensembles number
+   real(kind_real),allocatable :: m2(:,:)                ! Variance
+   real(kind_real),allocatable :: m4(:,:)                ! Fourth-order centered moment
+   real(kind_real),allocatable :: m2flt(:)               ! Filtered variance
+   real(kind_real),allocatable :: nc1a(:,:,:)            ! Number of points in subset Sc1 on halo A
+   real(kind_real),allocatable :: m11(:,:,:)             ! Covariance average
+   real(kind_real),allocatable :: m11m11(:,:,:,:,:)      ! Product of covariances average
+   real(kind_real),allocatable :: m2m2(:,:,:,:,:)        ! Product of variances average
+   real(kind_real),allocatable :: m22(:,:,:,:)           ! Fourth-order centered moment average
+   real(kind_real),allocatable :: nc1a_cor(:,:,:)        ! Number of points in subset Sc1 on halo A with valid correlations
+   real(kind_real),allocatable :: cor(:,:,:)             ! Correlation average
+   real(kind_real),allocatable :: m11asysq(:,:,:)        ! Squared asymptotic covariance average
+   real(kind_real),allocatable :: m2m2asy(:,:,:)         ! Product of asymptotic variances average
+   real(kind_real),allocatable :: m22asy(:,:,:)          ! Asymptotic fourth-order centered moment average
+   real(kind_real),allocatable :: m11sq(:,:,:)           ! Squared covariance average for several ensemble sizes
+   real(kind_real),allocatable :: m11sta(:,:,:)          ! Ensemble covariance/static covariance product
+   real(kind_real),allocatable :: stasq(:,:,:)           ! Squared static covariance
+   real(kind_real),allocatable :: m11lrm11sub(:,:,:,:,:) ! LR covariance/HR covariance product average
+   real(kind_real),allocatable :: m11lrm11(:,:,:)        ! LR covariance/HR covariance product average, averaged over sub-ensembles
+   real(kind_real),allocatable :: m11lrm11asy(:,:,:)     ! LR covariance/HR asymptotic covariance product average
 contains
    procedure :: alloc => avg_blk_alloc
    procedure :: dealloc => avg_blk_dealloc
@@ -66,21 +64,21 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: avg_blk_alloc
-!> Purpose: averaged statistics block data allocation
+! Purpose: averaged statistics block data allocation
 !----------------------------------------------------------------------
 subroutine avg_blk_alloc(avg_blk,nam,geom,bpar,ic2,ib,ne,nsub)
 
 implicit none
 
 ! Passed variables
-class(avg_blk_type),intent(inout) :: avg_blk !< Averaged statistics block
-type(nam_type),intent(in) :: nam             !< Namelist
-type(geom_type),intent(in) :: geom           !< Geometry
-type(bpar_type),intent(in) :: bpar           !< Block parameters
-integer,intent(in) :: ne                     !< Ensemble size
-integer,intent(in) :: nsub                   !< Sub-ensembles number
-integer,intent(in) :: ic2                    !< Global index
-integer,intent(in) :: ib                     !< Block index
+class(avg_blk_type),intent(inout) :: avg_blk ! Averaged statistics block
+type(nam_type),intent(in) :: nam             ! Namelist
+type(geom_type),intent(in) :: geom           ! Geometry
+type(bpar_type),intent(in) :: bpar           ! Block parameters
+integer,intent(in) :: ne                     ! Ensemble size
+integer,intent(in) :: nsub                   ! Sub-ensembles number
+integer,intent(in) :: ic2                    ! Global index
+integer,intent(in) :: ib                     ! Block index
 
 ! Set attributes
 avg_blk%ic2 = ic2
@@ -156,14 +154,14 @@ end subroutine avg_blk_alloc
 
 !----------------------------------------------------------------------
 ! Subroutine: avg_blk_dealloc
-!> Purpose: averaged statistics block data deallocation
+! Purpose: averaged statistics block data deallocation
 !----------------------------------------------------------------------
 subroutine avg_blk_dealloc(avg_blk)
 
 implicit none
 
 ! Passed variables
-class(avg_blk_type),intent(inout) :: avg_blk !< Averaged statistics block
+class(avg_blk_type),intent(inout) :: avg_blk ! Averaged statistics block
 
 ! Allocation
 if (allocated(avg_blk%m2)) deallocate(avg_blk%m2)
@@ -188,17 +186,17 @@ end subroutine avg_blk_dealloc
 
 !----------------------------------------------------------------------
 ! Function: avg_blk_copy
-!> Purpose: averaged statistics block copy
+! Purpose: averaged statistics block copy
 !----------------------------------------------------------------------
 type(avg_blk_type) function avg_blk_copy(avg_blk,nam,geom,bpar)
 
 implicit none
 
 ! Passed variables
-class(avg_blk_type),intent(in) :: avg_blk !< Averaged statistics block
-type(nam_type),intent(in) :: nam          !< Namelist
-type(geom_type),intent(in) :: geom        !< Geometry
-type(bpar_type),intent(in) :: bpar        !< Block parameters
+class(avg_blk_type),intent(in) :: avg_blk ! Averaged statistics block
+type(nam_type),intent(in) :: nam          ! Namelist
+type(geom_type),intent(in) :: geom        ! Geometry
+type(bpar_type),intent(in) :: bpar        ! Block parameters
 
 ! Deallocation
 call avg_blk_copy%dealloc
@@ -241,19 +239,19 @@ end function avg_blk_copy
 
 !----------------------------------------------------------------------
 ! Subroutine: avg_blk_compute
-!> Purpose: compute averaged statistics via spatial-angular erogodicity assumption
+! Purpose: compute averaged statistics via spatial-angular erogodicity assumption
 !----------------------------------------------------------------------
-subroutine avg_blk_compute(avg_blk,nam,geom,bpar,hdata,mom_blk)
+subroutine avg_blk_compute(avg_blk,nam,geom,bpar,samp,mom_blk)
 
 implicit none
 
 ! Passed variables
-class(avg_blk_type),intent(inout) :: avg_blk !< Averaged statistics block
-type(nam_type),intent(in) :: nam             !< Namelist
-type(geom_type),intent(in) :: geom           !< Geometry
-type(bpar_type),intent(in) :: bpar           !< Block parameters
-type(hdata_type),intent(in) :: hdata         !< HDIAG data
-type(mom_blk_type),intent(in) :: mom_blk     !< Moments
+class(avg_blk_type),intent(inout) :: avg_blk ! Averaged statistics block
+type(nam_type),intent(in) :: nam             ! Namelist
+type(geom_type),intent(in) :: geom           ! Geometry
+type(bpar_type),intent(in) :: bpar           ! Block parameters
+type(samp_type),intent(in) :: samp           ! Sampling
+type(mom_blk_type),intent(in) :: mom_blk     ! Moments
 
 ! Local variables
 integer :: il0,jl0,jl0r,jc3,isub,jsub,ic1a,ic1,nc1amax,nc1a
@@ -278,9 +276,9 @@ if ((ic2==0).or.(nam%var_diag)) then
    else
       avg_blk%m2 = 0.0
       if (nam%var_filter.and.(.not.nam%gau_approx)) avg_blk%m4 = 0.0
-      do ic1a=1,hdata%nc1a
-         ic1 = hdata%c1a_to_c1(ic1a)
-         if (ic1==hdata%c2_to_c1(ic2)) then
+      do ic1a=1,samp%nc1a
+         ic1 = samp%c1a_to_c1(ic1a)
+         if (ic1==samp%c2_to_c1(ic2)) then
             do isub=1,avg_blk%nsub
                do il0=1,geom%nl0
                   jl0r = bpar%il0rz(il0,ib)
@@ -296,7 +294,7 @@ end if
 if ((ic2==0).or.(nam%local_diag)) then
    ! Check whether this task is involved
    if (ic2>0) then
-      involved = any(hdata%local_mask(hdata%c1a_to_c1,ic2))
+      involved = any(samp%local_mask(samp%c1a_to_c1,ic2))
    else
       involved = .true.
    end if
@@ -311,9 +309,9 @@ if ((ic2==0).or.(nam%local_diag)) then
 
             ! Allocation
             if (ic2>0) then
-               nc1amax = count(hdata%local_mask(hdata%c1a_to_c1,ic2))
+               nc1amax = count(samp%local_mask(samp%c1a_to_c1,ic2))
             else
-               nc1amax = hdata%nc1a
+               nc1amax = samp%nc1a
             end if
             allocate(list_m11(nc1amax))
             allocate(list_m11m11(nc1amax,avg_blk%nsub,avg_blk%nsub))
@@ -324,13 +322,13 @@ if ((ic2==0).or.(nam%local_diag)) then
             do jc3=1,bpar%nc3(ib)
                ! Fill lists
                nc1a = 0
-               do ic1a=1,hdata%nc1a
+               do ic1a=1,samp%nc1a
                   ! Index
-                  ic1 = hdata%c1a_to_c1(ic1a)
+                  ic1 = samp%c1a_to_c1(ic1a)
 
                   ! Check validity
-                  valid = hdata%c1l0_log(ic1,il0).and.hdata%c1c3l0_log(ic1,jc3,jl0)
-                  if (ic2>0) valid = valid.and.hdata%local_mask(ic1,ic2)
+                  valid = samp%c1l0_log(ic1,il0).and.samp%c1c3l0_log(ic1,jc3,jl0)
+                  if (ic2>0) valid = valid.and.samp%local_mask(ic1,ic2)
 
                   if (valid) then
                      ! Update
@@ -417,18 +415,18 @@ end subroutine avg_blk_compute
 
 !----------------------------------------------------------------------
 ! Subroutine: avg_blk_compute_asy
-!> Purpose: compute asymptotic statistics
+! Purpose: compute asymptotic statistics
 !----------------------------------------------------------------------
 subroutine avg_blk_compute_asy(avg_blk,nam,geom,bpar,ne)
 
 implicit none
 
 ! Passed variables
-class(avg_blk_type),intent(inout) :: avg_blk !< Averaged statistics block
-type(nam_type),intent(in) :: nam             !< Namelist
-type(geom_type),intent(in) :: geom           !< Geometry
-type(bpar_type),intent(in) :: bpar           !< Block parameters
-integer,intent(in) :: ne                     !< Ensemble size
+class(avg_blk_type),intent(inout) :: avg_blk ! Averaged statistics block
+type(nam_type),intent(in) :: nam             ! Namelist
+type(geom_type),intent(in) :: geom           ! Geometry
+type(bpar_type),intent(in) :: bpar           ! Block parameters
+integer,intent(in) :: ne                     ! Ensemble size
 
 ! Local variables
 integer :: il0,jl0r,jc3,isub,jsub,n
@@ -547,21 +545,21 @@ end subroutine avg_blk_compute_asy
 
 !----------------------------------------------------------------------
 ! Subroutine: avg_blk_compute_lr
-!> Purpose: compute averaged statistics via spatial-angular erogodicity assumption, for LR covariance/HR covariance and LR covariance/HR asymptotic covariance products
+! Purpose: compute averaged statistics via spatial-angular erogodicity assumption, for LR covariance/HR covariance and LR covariance/HR asymptotic covariance products
 !----------------------------------------------------------------------
-subroutine avg_blk_compute_lr(avg_blk_lr,mpl,nam,geom,bpar,hdata,mom_blk,mom_lr_blk)
+subroutine avg_blk_compute_lr(avg_blk_lr,mpl,nam,geom,bpar,samp,mom_blk,mom_lr_blk)
 
 implicit none
 
 ! Passed variables
-class(avg_blk_type),intent(inout) :: avg_blk_lr !< Low-resolution averaged statistics block
-type(mpl_type),intent(in) :: mpl                !< MPI data
-type(nam_type),intent(in) :: nam                !< Namelist
-type(geom_type),intent(in) :: geom              !< Geometry
-type(bpar_type),intent(in) :: bpar              !< Block parameters
-type(hdata_type),intent(in) :: hdata            !< HDIAG data
-type(mom_blk_type),intent(in) :: mom_blk        !< Moments block
-type(mom_blk_type),intent(in) :: mom_lr_blk     !< Low-resolution moments block
+class(avg_blk_type),intent(inout) :: avg_blk_lr ! Low-resolution averaged statistics block
+type(mpl_type),intent(in) :: mpl                ! MPI data
+type(nam_type),intent(in) :: nam                ! Namelist
+type(geom_type),intent(in) :: geom              ! Geometry
+type(bpar_type),intent(in) :: bpar              ! Block parameters
+type(samp_type),intent(in) :: samp              ! Sampling
+type(mom_blk_type),intent(in) :: mom_blk        ! Moments block
+type(mom_blk_type),intent(in) :: mom_lr_blk     ! Low-resolution moments block
 
 ! Local variables
 integer :: il0,jl0,jl0r,jc3,isub,jsub,ic1a,ic1,nc1amax,nc1a
@@ -583,22 +581,22 @@ if ((ic2==0).or.(nam%local_diag)) then
 
          ! Allocation
          if (ic2>0) then
-            nc1amax = count(hdata%local_mask(hdata%c1a_to_c1,ic2))
+            nc1amax = count(samp%local_mask(samp%c1a_to_c1,ic2))
          else
-            nc1amax = hdata%nc1a
+            nc1amax = samp%nc1a
          end if
          allocate(list_m11lrm11(nc1amax,avg_blk_lr%nsub,avg_blk_lr%nsub))
 
          do jc3=1,bpar%nc3(ib)
             ! Fill lists
             nc1a = 0
-            do ic1a=1,hdata%nc1a
+            do ic1a=1,samp%nc1a
                ! Index
-               ic1 = hdata%c1a_to_c1(ic1a)
+               ic1 = samp%c1a_to_c1(ic1a)
 
                ! Check validity
-               valid = hdata%c1l0_log(ic1,il0).and.hdata%c1c3l0_log(ic1,jc3,jl0)
-               if (ic2>0) valid = valid.and.hdata%local_mask(ic1,ic2)
+               valid = samp%c1l0_log(ic1,il0).and.samp%c1c3l0_log(ic1,jc3,jl0)
+               if (ic2>0) valid = valid.and.samp%local_mask(ic1,ic2)
 
                if (valid) then
                   ! Update
@@ -636,17 +634,17 @@ end subroutine avg_blk_compute_lr
 
 !----------------------------------------------------------------------
 ! Subroutine: avg_blk_compute_asy_lr
-!> Purpose: compute LR covariance/HR asymptotic covariance products
+! Purpose: compute LR covariance/HR asymptotic covariance products
 !----------------------------------------------------------------------
 subroutine avg_blk_compute_asy_lr(avg_blk_lr,nam,geom,bpar)
 
 implicit none
 
 ! Passed variables
-class(avg_blk_type),intent(inout) :: avg_blk_lr !< Low-resolution averaged statistics block
-type(nam_type),intent(in) :: nam                !< Namelist
-type(geom_type),intent(in) :: geom              !< Geometry
-type(bpar_type),intent(in) :: bpar              !< Block parameters
+class(avg_blk_type),intent(inout) :: avg_blk_lr ! Low-resolution averaged statistics block
+type(nam_type),intent(in) :: nam                ! Namelist
+type(geom_type),intent(in) :: geom              ! Geometry
+type(bpar_type),intent(in) :: bpar              ! Block parameters
 
 ! Local variables
 integer :: il0,jl0r,jc3,isub,jsub

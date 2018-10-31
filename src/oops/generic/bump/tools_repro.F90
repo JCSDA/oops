@@ -1,12 +1,9 @@
 !----------------------------------------------------------------------
 ! Module: tools_repro
-!> Purpose: reproducibility functions
-!> <br>
-!> Author: Benjamin Menetrier
-!> <br>
-!> Licensing: this code is distributed under the CeCILL-C license
-!> <br>
-!> Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE
+! Purpose: reproducibility functions
+! Author: Benjamin Menetrier
+! Licensing: this code is distributed under the CeCILL-C license
+! Copyright © 2015-... UCAR, CERFACS, METEO-FRANCE and IRIT
 !----------------------------------------------------------------------
 module tools_repro
 
@@ -15,7 +12,7 @@ use tools_kinds, only: kind_real
 
 implicit none
 
-real(kind_real),parameter :: rth = 1.0e-12 !< Reproducibility threshold
+real(kind_real),parameter :: rth = 1.0e-12 ! Reproducibility threshold
 
 private
 public :: rth
@@ -25,15 +22,15 @@ contains
 
 !----------------------------------------------------------------------
 ! Function: eq
-!> Purpose: equal test for reals
+! Purpose: equal test for reals
 !----------------------------------------------------------------------
 function eq(x,y)
 
 implicit none
 
 ! Passed variables
-real(kind_real),intent(in) :: x !< First real
-real(kind_real),intent(in) :: y !< Second real
+real(kind_real),intent(in) :: x ! First real
+real(kind_real),intent(in) :: y ! Second real
 
 ! Returned variable
 logical :: eq
@@ -44,15 +41,15 @@ end function eq
 
 !----------------------------------------------------------------------
 ! Function: inf
-!> Purpose: inferior test for reals
+! Purpose: inferior test for reals
 !----------------------------------------------------------------------
 function inf(x,y)
 
 implicit none
 
 ! Passed variables
-real(kind_real),intent(in) :: x !< First real
-real(kind_real),intent(in) :: y !< Second real
+real(kind_real),intent(in) :: x ! First real
+real(kind_real),intent(in) :: y ! Second real
 
 ! Returned variable
 logical :: inf
@@ -63,15 +60,15 @@ end function inf
 
 !----------------------------------------------------------------------
 ! Function: infeq
-!> Purpose: inferior or equal test for reals
+! Purpose: inferior or equal test for reals
 !----------------------------------------------------------------------
 function infeq(x,y)
 
 implicit none
 
 ! Passed variables
-real(kind_real),intent(in) :: x !< First real
-real(kind_real),intent(in) :: y !< Second real
+real(kind_real),intent(in) :: x ! First real
+real(kind_real),intent(in) :: y ! Second real
 
 ! Returned variable
 logical :: infeq
@@ -82,15 +79,15 @@ end function infeq
 
 !----------------------------------------------------------------------
 ! Function: sup
-!> Purpose: superior test for reals
+! Purpose: superior test for reals
 !----------------------------------------------------------------------
 function sup(x,y)
 
 implicit none
 
 ! Passed variables
-real(kind_real),intent(in) :: x !< First real
-real(kind_real),intent(in) :: y !< Second real
+real(kind_real),intent(in) :: x ! First real
+real(kind_real),intent(in) :: y ! Second real
 
 ! Returned variable
 logical :: sup
@@ -101,15 +98,15 @@ end function sup
 
 !----------------------------------------------------------------------
 ! Function: supeq
-!> Purpose: superior or equal test for reals
+! Purpose: superior or equal test for reals
 !----------------------------------------------------------------------
 function supeq(x,y)
 
 implicit none
 
 ! Passed variables
-real(kind_real),intent(in) :: x !< First real
-real(kind_real),intent(in) :: y !< Second real
+real(kind_real),intent(in) :: x ! First real
+real(kind_real),intent(in) :: y ! Second real
 
 ! Returned variable
 logical :: supeq
@@ -120,15 +117,15 @@ end function supeq
 
 !----------------------------------------------------------------------
 ! Function: indist
-!> Purpose: indistiguishability test
+! Purpose: indistiguishability test
 !----------------------------------------------------------------------
 function indist(x,y)
 
 implicit none
 
 ! Passed variables
-real(kind_real),intent(in) :: x !< First real
-real(kind_real),intent(in) :: y !< Second real
+real(kind_real),intent(in) :: x ! First real
+real(kind_real),intent(in) :: y ! Second real
 
 ! Returned variable
 logical :: indist

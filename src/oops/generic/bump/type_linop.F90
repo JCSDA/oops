@@ -1,12 +1,9 @@
 !----------------------------------------------------------------------
 ! Module: type_linop
-!> Purpose: linear operator derived type
-!> <br>
-!> Author: Benjamin Menetrier
-!> <br>
-!> Licensing: this code is distributed under the CeCILL-C license
-!> <br>
-!> Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE
+! Purpose: linear operator derived type
+! Author: Benjamin Menetrier
+! Licensing: this code is distributed under the CeCILL-C license
+! Copyright © 2015-... UCAR, CERFACS, METEO-FRANCE and IRIT
 !----------------------------------------------------------------------
 module type_linop
 
@@ -26,22 +23,22 @@ use fckit_mpi_module, only: fckit_mpi_status
 
 implicit none
 
-logical,parameter :: check_data = .false.             !< Activate data check for all linear operations
-integer,parameter :: reorder_max = 1000000            !< Maximum size of linear operation to allow reordering
-integer,parameter :: nnatmax = 40                     !< Maximum number of natural neighbors
-real(kind_real),parameter :: S_inf = 1.0e-2_kind_real !< Minimum interpolation coefficient
+logical,parameter :: check_data = .false.             ! Activate data check for all linear operations
+integer,parameter :: reorder_max = 1000000            ! Maximum size of linear operation to allow reordering
+integer,parameter :: nnatmax = 40                     ! Maximum number of natural neighbors
+real(kind_real),parameter :: S_inf = 1.0e-2_kind_real ! Minimum interpolation coefficient
 
 ! Linear operator derived type
 type linop_type
-   character(len=1024) :: prefix            !< Operator prefix (for I/O)
-   integer :: n_src                         !< Source vector size
-   integer :: n_dst                         !< Destination vector size
-   integer :: n_s                           !< Operator size
-   integer,allocatable :: row(:)            !< Output indices
-   integer,allocatable :: col(:)            !< Input indices
-   real(kind_real),allocatable :: S(:)      !< Coefficients
-   integer :: nvec                          !< Size of the vector of linear operators with similar row and col
-   real(kind_real),allocatable :: Svec(:,:) !< Coefficients of the vector of linear operators with similar row and col
+   character(len=1024) :: prefix            ! Operator prefix (for I/O)
+   integer :: n_src                         ! Source vector size
+   integer :: n_dst                         ! Destination vector size
+   integer :: n_s                           ! Operator size
+   integer,allocatable :: row(:)            ! Output indices
+   integer,allocatable :: col(:)            ! Input indices
+   real(kind_real),allocatable :: S(:)      ! Coefficients
+   integer :: nvec                          ! Size of the vector of linear operators with similar row and col
+   real(kind_real),allocatable :: Svec(:,:) ! Coefficients of the vector of linear operators with similar row and col
 contains
    procedure :: alloc => linop_alloc
    procedure :: dealloc => linop_dealloc
@@ -69,15 +66,15 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: linop_alloc
-!> Purpose: linear operator allocation
+! Purpose: linear operator allocation
 !----------------------------------------------------------------------
 subroutine linop_alloc(linop,nvec)
 
 implicit none
 
 ! Passed variables
-class(linop_type),intent(inout) :: linop !< Linear operator
-integer,intent(in),optional :: nvec      !< Size of the vector of linear operators with similar row and col
+class(linop_type),intent(inout) :: linop ! Linear operator
+integer,intent(in),optional :: nvec      ! Size of the vector of linear operators with similar row and col
 
 ! Vector size
 if (present(nvec)) then
@@ -110,14 +107,14 @@ end subroutine linop_alloc
 
 !----------------------------------------------------------------------
 ! Subroutine: linop_dealloc
-!> Purpose: linear operator deallocation
+! Purpose: linear operator deallocation
 !----------------------------------------------------------------------
 subroutine linop_dealloc(linop)
 
 implicit none
 
 ! Passed variables
-class(linop_type),intent(inout) :: linop !< Linear operator
+class(linop_type),intent(inout) :: linop ! Linear operator
 
 ! Release memory
 if (allocated(linop%row)) deallocate(linop%row)
@@ -129,14 +126,14 @@ end subroutine linop_dealloc
 
 !----------------------------------------------------------------------
 ! Function: linop_copy
-!> Purpose: linear operator copy
+! Purpose: linear operator copy
 !----------------------------------------------------------------------
 type(linop_type) function linop_copy(linop)
 
 implicit none
 
 ! Passed variables
-class(linop_type),intent(in) :: linop !< Linear operator
+class(linop_type),intent(in) :: linop ! Linear operator
 
 ! Copy attributes
 linop_copy%prefix = trim(linop%prefix)
@@ -169,15 +166,15 @@ end function linop_copy
 
 !----------------------------------------------------------------------
 ! Subroutine: linop_reorder
-!> Purpose: reorder linear operator
+! Purpose: reorder linear operator
 !----------------------------------------------------------------------
 subroutine linop_reorder(linop,mpl)
 
 implicit none
 
 ! Passed variables
-class(linop_type),intent(inout) :: linop !< Linear operator
-type(mpl_type),intent(in) :: mpl         !< MPI data
+class(linop_type),intent(inout) :: linop ! Linear operator
+type(mpl_type),intent(in) :: mpl         ! MPI data
 
 ! Local variables
 integer :: row,i_s_s,i_s_e,n_s,i_s
@@ -227,16 +224,16 @@ end subroutine linop_reorder
 
 !----------------------------------------------------------------------
 ! Subroutine: linop_read
-!> Purpose: read linear operator from a NetCDF file
+! Purpose: read linear operator from a NetCDF file
 !----------------------------------------------------------------------
 subroutine linop_read(linop,mpl,ncid)
 
 implicit none
 
 ! Passed variables
-class(linop_type),intent(inout) :: linop !< Linear operator
-type(mpl_type),intent(in) :: mpl         !< MPI data
-integer,intent(in) :: ncid               !< NetCDF file ID
+class(linop_type),intent(inout) :: linop ! Linear operator
+type(mpl_type),intent(in) :: mpl         ! MPI data
+integer,intent(in) :: ncid               ! NetCDF file ID
 
 ! Local variables
 integer :: info,nvec
@@ -287,16 +284,16 @@ end subroutine linop_read
 
 !----------------------------------------------------------------------
 ! Subroutine: linop_write
-!> Purpose: write linear operator to a NetCDF file
+! Purpose: write linear operator to a NetCDF file
 !----------------------------------------------------------------------
 subroutine linop_write(linop,mpl,ncid)
 
 implicit none
 
 ! Passed variables
-class(linop_type),intent(in) :: linop !< Linear operator
-type(mpl_type),intent(in) :: mpl      !< MPI data
-integer,intent(in) :: ncid            !< NetCDF file ID
+class(linop_type),intent(in) :: linop ! Linear operator
+type(mpl_type),intent(in) :: mpl      ! MPI data
+integer,intent(in) :: ncid            ! NetCDF file ID
 
 ! Local variables
 integer :: n_s_id,nvec_id,row_id,col_id,S_id,Svec_id
@@ -345,20 +342,20 @@ end subroutine linop_write
 
 !----------------------------------------------------------------------
 ! Subroutine: linop_apply
-!> Purpose: apply linear operator
+! Purpose: apply linear operator
 !----------------------------------------------------------------------
 subroutine linop_apply(linop,mpl,fld_src,fld_dst,ivec,mssrc,msdst)
 
 implicit none
 
 ! Passed variables
-class(linop_type),intent(in) :: linop               !< Linear operator
-type(mpl_type),intent(in) :: mpl                    !< MPI data
-real(kind_real),intent(in) :: fld_src(linop%n_src)  !< Source vector
-real(kind_real),intent(out) :: fld_dst(linop%n_dst) !< Destination vector
-integer,intent(in),optional :: ivec                 !< Index of the vector of linear operators with similar row and col
-logical,intent(in),optional :: mssrc                !< Check for missing source
-logical,intent(in),optional :: msdst                !< Check for missing destination
+class(linop_type),intent(in) :: linop               ! Linear operator
+type(mpl_type),intent(in) :: mpl                    ! MPI data
+real(kind_real),intent(in) :: fld_src(linop%n_src)  ! Source vector
+real(kind_real),intent(out) :: fld_dst(linop%n_dst) ! Destination vector
+integer,intent(in),optional :: ivec                 ! Index of the vector of linear operators with similar row and col
+logical,intent(in),optional :: mssrc                ! Check for missing source
+logical,intent(in),optional :: msdst                ! Check for missing destination
 
 ! Local variables
 integer :: i_s,i_dst
@@ -431,18 +428,18 @@ end subroutine linop_apply
 
 !----------------------------------------------------------------------
 ! Subroutine: linop_apply_ad
-!> Purpose: apply linear operator, adjoint
+! Purpose: apply linear operator, adjoint
 !----------------------------------------------------------------------
 subroutine linop_apply_ad(linop,mpl,fld_dst,fld_src,ivec)
 
 implicit none
 
 ! Passed variables
-class(linop_type),intent(in) :: linop               !< Linear operator
-type(mpl_type),intent(in) :: mpl                    !< MPI data
-real(kind_real),intent(in) :: fld_dst(linop%n_dst)  !< Destination vector
-real(kind_real),intent(out) :: fld_src(linop%n_src) !< Source vector
-integer,intent(in),optional :: ivec                 !< Index of the vector of linear operators with similar row and col
+class(linop_type),intent(in) :: linop               ! Linear operator
+type(mpl_type),intent(in) :: mpl                    ! MPI data
+real(kind_real),intent(in) :: fld_dst(linop%n_dst)  ! Destination vector
+real(kind_real),intent(out) :: fld_src(linop%n_src) ! Source vector
+integer,intent(in),optional :: ivec                 ! Index of the vector of linear operators with similar row and col
 
 ! Local variables
 integer :: i_s
@@ -485,22 +482,22 @@ end subroutine linop_apply_ad
 
 !----------------------------------------------------------------------
 ! Subroutine: linop_apply_sym
-!> Purpose: apply linear operator, symmetric
+! Purpose: apply linear operator, symmetric
 !----------------------------------------------------------------------
 subroutine linop_apply_sym(linop,mpl,fld,ivec)
 
 implicit none
 
 ! Passed variables
-class(linop_type),intent(in) :: linop             !< Linear operator
-type(mpl_type),intent(in) :: mpl                  !< MPI data
-real(kind_real),intent(inout) :: fld(linop%n_src) !< Source/destination vector
-integer,intent(in),optional :: ivec               !< Index of the vector of linear operators with similar row and col
+class(linop_type),intent(in) :: linop             ! Linear operator
+type(mpl_type),intent(in) :: mpl                  ! MPI data
+real(kind_real),intent(inout) :: fld(linop%n_src) ! Source/destination vector
+integer,intent(in),optional :: ivec               ! Index of the vector of linear operators with similar row and col
 
 ! Local variables
 integer :: i_s,ithread
 real(kind_real) :: fld_arr(linop%n_dst,mpl%nthread)
-   
+
 if (check_data) then
    ! Check linear operation
    if (minval(linop%col)<1) call mpl%abort('col<1 for symmetric linear operation '//trim(linop%prefix))
@@ -551,18 +548,18 @@ end subroutine linop_apply_sym
 
 !----------------------------------------------------------------------
 ! Subroutine: linop_add_op
-!> Purpose: add operation
+! Purpose: add operation
 !----------------------------------------------------------------------
 subroutine linop_add_op(linop,n_s,row,col,S)
 
 implicit none
 
 ! Passed variables
-class(linop_type),intent(inout) :: linop !< Linear operator
-integer,intent(inout) :: n_s             !< Number of operations
-integer,intent(in) :: row                !< Row index
-integer,intent(in) :: col                !< Column index
-real(kind_real),intent(in) :: S          !< Value
+class(linop_type),intent(inout) :: linop ! Linear operator
+integer,intent(inout) :: n_s             ! Number of operations
+integer,intent(in) :: row                ! Row index
+integer,intent(in) :: col                ! Column index
+real(kind_real),intent(in) :: S          ! Value
 
 ! Local variables
 type(linop_type) :: linop_tmp
@@ -596,17 +593,17 @@ end subroutine linop_add_op
 
 !----------------------------------------------------------------------
 ! Subroutine: linop_gather
-!> Purpose: gather data from OpenMP threads
+! Purpose: gather data from OpenMP threads
 !----------------------------------------------------------------------
 subroutine linop_gather(linop,mpl,n_s_arr,linop_arr)
 
 implicit none
 
 ! Passed variables
-class(linop_type),intent(inout) :: linop              !< Linear operator
-type(mpl_type),intent(in) :: mpl                      !< MPI data
-integer,intent(in) :: n_s_arr(mpl%nthread)            !< Number of operations
-type(linop_type),intent(in) :: linop_arr(mpl%nthread) !< Linear operator array
+class(linop_type),intent(inout) :: linop              ! Linear operator
+type(mpl_type),intent(in) :: mpl                      ! MPI data
+integer,intent(in) :: n_s_arr(mpl%nthread)            ! Number of operations
+type(linop_type),intent(in) :: linop_arr(mpl%nthread) ! Linear operator array
 
 ! Local variables
 integer :: ithread,offset
@@ -630,25 +627,25 @@ end subroutine linop_gather
 
 !----------------------------------------------------------------------
 ! Subroutine: linop_interp_from_lat_lon
-!> Purpose: compute horizontal interpolation from source latitude/longitude
+! Purpose: compute horizontal interpolation from source latitude/longitude
 !----------------------------------------------------------------------
 subroutine linop_interp_from_lat_lon(linop,mpl,rng,n_src,lon_src,lat_src,mask_src,n_dst,lon_dst,lat_dst,mask_dst,interp_type)
 
 implicit none
 
 ! Passed variables
-class(linop_type),intent(inout) :: linop     !< Linear operator
-type(mpl_type),intent(inout) :: mpl          !< MPI data
-type(rng_type),intent(inout) :: rng          !< Random number generator
-integer,intent(in) :: n_src                  !< Source size
-real(kind_real),intent(in) :: lon_src(n_src) !< Source longitudes
-real(kind_real),intent(in) :: lat_src(n_src) !< Source latitudes
-logical,intent(in) :: mask_src(n_src)        !< Source mask
-integer,intent(in) :: n_dst                  !< Destination size
-real(kind_real),intent(in) :: lon_dst(n_dst) !< Destination longitudes
-real(kind_real),intent(in) :: lat_dst(n_dst) !< Destination latitudes
-logical,intent(in) :: mask_dst(n_dst)        !< Destination mask
-character(len=*),intent(in) :: interp_type   !< Interpolation type
+class(linop_type),intent(inout) :: linop     ! Linear operator
+type(mpl_type),intent(inout) :: mpl          ! MPI data
+type(rng_type),intent(inout) :: rng          ! Random number generator
+integer,intent(in) :: n_src                  ! Source size
+real(kind_real),intent(in) :: lon_src(n_src) ! Source longitudes
+real(kind_real),intent(in) :: lat_src(n_src) ! Source latitudes
+logical,intent(in) :: mask_src(n_src)        ! Source mask
+integer,intent(in) :: n_dst                  ! Destination size
+real(kind_real),intent(in) :: lon_dst(n_dst) ! Destination longitudes
+real(kind_real),intent(in) :: lat_dst(n_dst) ! Destination latitudes
+logical,intent(in) :: mask_dst(n_dst)        ! Destination mask
+character(len=*),intent(in) :: interp_type   ! Interpolation type
 
 ! Local variables
 integer :: n_src_eff,i_src,i_src_eff
@@ -699,24 +696,24 @@ end subroutine linop_interp_from_lat_lon
 
 !----------------------------------------------------------------------
 ! Subroutine: linop_interp_from_mesh_kdtree
-!> Purpose: compute horizontal interpolation from source mesh and kdtree
+! Purpose: compute horizontal interpolation from source mesh and kdtree
 !----------------------------------------------------------------------
 subroutine linop_interp_from_mesh_kdtree(linop,mpl,mesh,kdtree,n_src,mask_src,n_dst,lon_dst,lat_dst,mask_dst,interp_type)
 
 implicit none
 
 ! Passed variables
-class(linop_type),intent(inout) :: linop     !< Linear operator
-type(mpl_type),intent(inout) :: mpl          !< MPI data
-type(mesh_type),intent(in) :: mesh           !< Mesh
-type(kdtree_type),intent(in) :: kdtree       !< KD-tree
-integer,intent(in) :: n_src                  !< Source size
-logical,intent(in) :: mask_src(n_src)        !< Source mask
-integer,intent(in) :: n_dst                  !< Destination size
-real(kind_real),intent(in) :: lon_dst(n_dst) !< Destination longitudes
-real(kind_real),intent(in) :: lat_dst(n_dst) !< Destination latitudes
-logical,intent(in) :: mask_dst(n_dst)        !< Destination mask
-character(len=*),intent(in) :: interp_type   !< Interpolation type
+class(linop_type),intent(inout) :: linop     ! Linear operator
+type(mpl_type),intent(inout) :: mpl          ! MPI data
+type(mesh_type),intent(in) :: mesh           ! Mesh
+type(kdtree_type),intent(in) :: kdtree       ! KD-tree
+integer,intent(in) :: n_src                  ! Source size
+logical,intent(in) :: mask_src(n_src)        ! Source mask
+integer,intent(in) :: n_dst                  ! Destination size
+real(kind_real),intent(in) :: lon_dst(n_dst) ! Destination longitudes
+real(kind_real),intent(in) :: lat_dst(n_dst) ! Destination latitudes
+logical,intent(in) :: mask_dst(n_dst)        ! Destination mask
+character(len=*),intent(in) :: interp_type   ! Interpolation type
 
 ! Local variables
 integer :: i,i_src,i_dst,nn_index(1),n_s,ib(3),nnat,inat,np,iproc,offset,i_s
@@ -918,30 +915,30 @@ end subroutine linop_interp_from_mesh_kdtree
 
 !----------------------------------------------------------------------
 ! Subroutine: linop_interp_grid
-!> Purpose: compute horizontal grid interpolation
+! Purpose: compute horizontal grid interpolation
 !----------------------------------------------------------------------
 subroutine linop_interp_grid(linop,mpl,rng,geom,il0i,nc1,c1_to_c0,mask_check,vbot,vtop,interp_type,interp_base)
 
 implicit none
 
 ! Passed variables
-class(linop_type),intent(inout) :: linop      !< Linear operator
-type(mpl_type),intent(inout) :: mpl           !< MPI data
-type(rng_type),intent(inout) :: rng           !< Random number generator
-type(geom_type),intent(in) :: geom            !< Geometry
-integer,intent(in) :: il0i                    !< Level
-integer,intent(in) :: nc1                     !< Subset Sc1 size
-integer,intent(in) :: c1_to_c0(nc1)           !< Subset Sc1 to subset Sc0
-logical,intent(in) :: mask_check              !< Mask check key
-integer,intent(in) :: vbot(nc1)               !< Bottom level
-integer,intent(in) :: vtop(nc1)               !< Top level
-character(len=*),intent(in) :: interp_type    !< Interpolation type
-type(linop_type),intent(inout) :: interp_base !< Linear operator (base interpolation)
+class(linop_type),intent(inout) :: linop      ! Linear operator
+type(mpl_type),intent(inout) :: mpl           ! MPI data
+type(rng_type),intent(inout) :: rng           ! Random number generator
+type(geom_type),intent(in) :: geom            ! Geometry
+integer,intent(in) :: il0i                    ! Level
+integer,intent(in) :: nc1                     ! Subset Sc1 size
+integer,intent(in) :: c1_to_c0(nc1)           ! Subset Sc1 to subset Sc0
+logical,intent(in) :: mask_check              ! Mask check key
+integer,intent(in) :: vbot(nc1)               ! Bottom level
+integer,intent(in) :: vtop(nc1)               ! Top level
+character(len=*),intent(in) :: interp_type    ! Interpolation type
+type(linop_type),intent(inout) :: interp_base ! Linear operator (base interpolation)
 
 ! Local variables
 integer :: ic0,ic1,jc0,jc1,i_s
 real(kind_real) :: renorm(geom%nc0)
-real(kind_real),allocatable :: lon_c1(:),lat_c1(:)
+real(kind_real),allocatable :: lon_c1(:),lat_c1(:),lon_col(:),lat_col(:)
 logical :: test_c0(geom%nc0)
 logical,allocatable :: mask_c1(:),mask_extra(:),valid(:)
 
@@ -972,11 +969,20 @@ do i_s=1,interp_base%n_s
    valid(i_s) = geom%mask_c0(ic0,il0i).and.geom%mask_c0(jc0,il0i)
 end do
 
-! Check mask boundaries
 if (mask_check) then
    write(mpl%info,'(a10,a,i3,a)',advance='no') '','Sublevel ',il0i,': '
    call flush(mpl%info)
-   call interp_base%interp_check_mask(mpl,geom,valid,il0i,col_to_ic0=c1_to_c0)
+
+   ! Allocation
+   allocate(lon_col(nc1))
+   allocate(lat_col(nc1))
+
+   ! Initialization
+   lon_col = geom%lon(c1_to_c0)
+   lat_col = geom%lat(c1_to_c0)
+
+   ! Check mask boundaries
+   call interp_base%interp_check_mask(mpl,geom,valid,il0i,lon_col=lon_col,lat_col=lat_col)
 end if
 
 if (geom%nl0i>1) then
@@ -1043,24 +1049,27 @@ deallocate(mask_extra)
 end subroutine linop_interp_grid
 
 !----------------------------------------------------------------------
-! Subroutine: interp_check_mask
-!> Purpose: check mask boundaries for interpolations
+! Subroutine: linop_interp_check_mask
+! Purpose: check mask boundaries for interpolations
 !----------------------------------------------------------------------
-subroutine linop_interp_check_mask(linop,mpl,geom,valid,il0,row_to_ic0,col_to_ic0)
+subroutine linop_interp_check_mask(linop,mpl,geom,valid,il0,lon_row,lat_row,lon_col,lat_col)
 
 implicit none
 
 ! Passed variables
-class(linop_type),intent(inout) :: linop               !< Linear operator
-type(mpl_type),intent(inout) :: mpl                    !< MPI data
-type(geom_type),intent(in) :: geom                     !< Geometry
-logical,intent(inout) :: valid(linop%n_s)              !< Valid points
-integer,intent(in),optional :: row_to_ic0(linop%n_dst) !< Conversion from row to ic0 (identity if missing)
-integer,intent(in),optional :: col_to_ic0(linop%n_src) !< Conversion from col to ic0 (identity if missing)
+class(linop_type),intent(inout) :: linop                    ! Linear operator
+type(mpl_type),intent(inout) :: mpl                         ! MPI data
+type(geom_type),intent(in) :: geom                          ! Geometry
+logical,intent(inout) :: valid(linop%n_s)                   ! Valid points
+real(kind_real),intent(in),optional :: lon_row(linop%n_dst) ! Row longitude (Sc0 longitude if missing)
+real(kind_real),intent(in),optional :: lat_row(linop%n_dst) ! Row latitude (Sc0 latitude if missing)
+real(kind_real),intent(in),optional :: lon_col(linop%n_src) ! Column longitude (Sc0 longitude if missing)
+real(kind_real),intent(in),optional :: lat_col(linop%n_src) ! Column latitude (Sc0 latitude if missing)
 
 ! Local variables
-integer :: ic0,i_s,jc0,il0,iproc
+integer :: i_s,il0,iproc
 integer :: i_s_s(mpl%nproc),i_s_e(mpl%nproc),n_s_loc(mpl%nproc),i_s_loc
+real(kind_real) :: llon_row,llat_row,llon_col,llat_col
 type(fckit_mpi_status) :: status
 
 ! MPI splitting
@@ -1068,26 +1077,32 @@ call mpl%split(linop%n_s,i_s_s,i_s_e,n_s_loc)
 
 ! Check that interpolations are not crossing mask boundaries
 call mpl%prog_init(n_s_loc(mpl%myproc))
-!$omp parallel do schedule(static) private(i_s_loc,i_s,ic0,jc0)
+!$omp parallel do schedule(static) private(i_s_loc,i_s,llon_row,llat_row,llon_col,llat_col)
 do i_s_loc=1,n_s_loc(mpl%myproc)
    ! Indices
    i_s = i_s_s(mpl%myproc)+i_s_loc-1
 
    if (valid(i_s)) then
-      ! Indices
-      if (present(row_to_ic0)) then
-         ic0 = row_to_ic0(linop%row(i_s))
+      ! Row lon/lat
+      if (present(lon_row).and.present(lat_row)) then
+         llon_row = lon_row(linop%row(i_s))
+         llat_row = lat_row(linop%row(i_s))
       else
-         ic0 = linop%row(i_s)
+         llon_row = geom%lon(linop%row(i_s))
+         llat_row = geom%lat(linop%row(i_s))
       end if
-      if (present(col_to_ic0)) then
-         jc0 = col_to_ic0(linop%col(i_s))
+
+      ! Column lon/lat
+      if (present(lon_col).and.present(lat_col)) then
+         llon_col = lon_col(linop%col(i_s))
+         llat_col = lat_col(linop%col(i_s))
       else
-         jc0 = linop%col(i_s)
+         llon_col = geom%lon(linop%col(i_s))
+         llat_col = geom%lat(linop%col(i_s))
       end if
 
       ! Check if arc is crossing boundary arcs
-      call geom%check_arc(il0,geom%lon(ic0),geom%lat(ic0),geom%lon(jc0),geom%lat(jc0),valid(i_s))
+      call geom%check_arc(il0,llon_row,llat_row,llon_col,llat_col,valid(i_s))
    end if
 
    ! Update
@@ -1122,20 +1137,20 @@ end subroutine linop_interp_check_mask
 
 !----------------------------------------------------------------------
 ! Subroutine: linop_interp_missing
-!> Purpose: deal with missing interpolation points
+! Purpose: deal with missing interpolation points
 !----------------------------------------------------------------------
 subroutine linop_interp_missing(linop,mpl,n_dst,lon_dst,lat_dst,mask_dst,interp_type)
 
 implicit none
 
 ! Passed variables
-class(linop_type),intent(inout) :: linop     !< Linear operator (interpolation)
-type(mpl_type),intent(in) :: mpl             !< MPI data
-integer,intent(in) :: n_dst                  !< Destination size
-real(kind_real),intent(in) :: lon_dst(n_dst) !< Destination longitude
-real(kind_real),intent(in) :: lat_dst(n_dst) !< Destination latitude
-logical,intent(in) :: mask_dst(n_dst)        !< Destination mask
-character(len=*),intent(in) :: interp_type   !< Interpolation type
+class(linop_type),intent(inout) :: linop     ! Linear operator (interpolation)
+type(mpl_type),intent(in) :: mpl             ! MPI data
+integer,intent(in) :: n_dst                  ! Destination size
+real(kind_real),intent(in) :: lon_dst(n_dst) ! Destination longitude
+real(kind_real),intent(in) :: lat_dst(n_dst) ! Destination latitude
+logical,intent(in) :: mask_dst(n_dst)        ! Destination mask
+character(len=*),intent(in) :: interp_type   ! Interpolation type
 
 ! Local variables
 integer :: i_dst,i_s

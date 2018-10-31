@@ -1,12 +1,9 @@
 !----------------------------------------------------------------------
 ! Module: type_geom
-!> Purpose: geometry derived type
-!> <br>
-!> Author: Benjamin Menetrier
-!> <br>
-!> Licensing: this code is distributed under the CeCILL-C license
-!> <br>
-!> Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE
+! Purpose: geometry derived type
+! Author: Benjamin Menetrier
+! Licensing: this code is distributed under the CeCILL-C license
+! Copyright © 2015-... UCAR, CERFACS, METEO-FRANCE and IRIT
 !----------------------------------------------------------------------
 module type_geom
 
@@ -14,7 +11,7 @@ use netcdf
 use tools_const, only: pi,req,deg2rad,rad2deg,reqkm
 use tools_func, only: lonlatmod,sphere_dist,vector_product,vector_triple_product
 use tools_kinds, only: kind_real
-use tools_missing, only: msi,msr,isnotmsi,ismsi,ismsr
+use tools_missing, only: msi,msr,isnotmsi,ismsi,ismsr,isanynotmsr
 use tools_nc, only: ncfloat
 use tools_qsort, only: qsort
 use tools_stripack, only: areas,trans
@@ -24,88 +21,104 @@ use type_mesh, only: mesh_type
 use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 use type_rng, only: rng_type
-use fckit_mpi_module, only: fckit_mpi_sum,fckit_mpi_status
+use fckit_mpi_module, only: fckit_mpi_sum,fckit_mpi_min,fckit_mpi_max,fckit_mpi_status
 
 implicit none
 
-integer :: nredmax = 10 !< Maximum number of similar redundant points
+integer,parameter :: nredmax = 10                 ! Maximum number of similar redundant points
+real(kind_real),parameter :: distminred = 1.0e-12 ! Minimum distance (in rad) to consider points as redundant
+logical,parameter :: test_no_point = .false.      ! Test BUMP with no grid point on the last MPI task
 
 ! Geometry derived type
 type geom_type
    ! Offline geometry data
-   integer :: nlon                            !< Longitude size
-   integer :: nlat                            !< Latitude size
-   integer :: nlev                            !< Number of levels
-   integer,allocatable :: c0_to_lon(:)        !< Subset Sc0 to longitude index
-   integer,allocatable :: c0_to_lat(:)        !< Subset Sc0 to latgitude index
-   integer,allocatable :: c0_to_tile(:)       !< Subset Sc0 to tile index
+   integer :: nlon                            ! Longitude size
+   integer :: nlat                            ! Latitude size
+   integer :: nlev                            ! Number of levels
+   integer,allocatable :: c0_to_lon(:)        ! Subset Sc0 to longitude index
+   integer,allocatable :: c0_to_lat(:)        ! Subset Sc0 to latgitude index
+   integer,allocatable :: c0_to_tile(:)       ! Subset Sc0 to tile index
 
    ! Number of points and levels
-   integer :: nmg                             !< Number of model grid points
-   integer :: nc0                             !< Number of points in subset Sc0
-   integer :: nl0                             !< Number of levels in subset Sl0
-   integer :: nl0i                            !< Number of independent levels in subset Sl0
+   integer :: nmg                             ! Number of model grid points
+   integer :: nc0                             ! Number of points in subset Sc0
+   integer :: nl0                             ! Number of levels in subset Sl0f
+   integer :: nl0i                            ! Number of independent levels in subset Sl0
 
    ! Basic geometry data
-   real(kind_real),allocatable :: lon(:)      !< Longitudes
-   real(kind_real),allocatable :: lat(:)      !< Latitudes
-   real(kind_real),allocatable :: area(:)     !< Domain area
-   real(kind_real),allocatable :: vunit(:,:)  !< Vertical unit
-   real(kind_real),allocatable :: vunitavg(:) !< Averaged vertical unit
-   real(kind_real),allocatable :: disth(:)    !< Horizontal distance
+   real(kind_real),allocatable :: lon(:)      ! Longitudes
+   real(kind_real),allocatable :: lat(:)      ! Latitudes
+   real(kind_real),allocatable :: area(:)     ! Domain area
+   real(kind_real),allocatable :: vunit(:,:)  ! Vertical unit
+   real(kind_real),allocatable :: vunitavg(:) ! Averaged vertical unit
+   real(kind_real),allocatable :: disth(:)    ! Horizontal distance
 
    ! Masks
-   logical,allocatable :: mask_c0(:,:)        !< Mask on subset Sc0, global
-   logical,allocatable :: mask_c0a(:,:)       !< Mask on subset Sc0, halo A
-   logical,allocatable :: mask_hor_c0(:)      !< Union of horizontal masks on subset Sc0, global
-   logical,allocatable :: mask_hor_c0a(:)     !< Union of horizontal masks on subset Sc0, halo A
-   logical,allocatable :: mask_ver_c0(:)      !< Union of vertical masks
-   integer,allocatable :: nc0_mask(:)         !< Horizontal mask size on subset Sc0
+   logical,allocatable :: mask_hor_mg(:)      ! Horizontal mask on model grid, global
+   logical,allocatable :: mask_c0(:,:)        ! Mask on subset Sc0, global
+   logical,allocatable :: mask_c0a(:,:)       ! Mask on subset Sc0, halo A
+   logical,allocatable :: mask_hor_c0(:)      ! Union of horizontal masks on subset Sc0, global
+   logical,allocatable :: mask_hor_c0a(:)     ! Union of horizontal masks on subset Sc0, halo A
+   logical,allocatable :: mask_ver_c0(:)      ! Union of vertical masks
+   integer,allocatable :: nc0_mask(:)         ! Horizontal mask size on subset Sc0
+   logical :: mask_del                        ! Remove subset Sc0 points that are masked for all level
 
    ! Mesh
-   type(mesh_type) :: mesh                    !< Mesh
+   type(mesh_type) :: mesh                    ! Mesh
 
    ! KD-tree
-   type(kdtree_type) :: kdtree                !< KD-tree
+   type(kdtree_type) :: kdtree                ! KD-tree
 
    ! Boundary nodes
-   integer,allocatable :: nbnd(:)             !< Number of boundary nodes
-   real(kind_real),allocatable :: xbnd(:,:,:) !< Boundary nodes, x-coordinate
-   real(kind_real),allocatable :: ybnd(:,:,:) !< Boundary nodes, y-coordinate
-   real(kind_real),allocatable :: zbnd(:,:,:) !< Boundary nodes, z-coordinate
-   real(kind_real),allocatable :: vbnd(:,:,:) !< Boundary nodes, orthogonal vector
+   integer,allocatable :: nbnd(:)             ! Number of boundary nodes
+   real(kind_real),allocatable :: xbnd(:,:,:) ! Boundary nodes, x-coordinate
+   real(kind_real),allocatable :: ybnd(:,:,:) ! Boundary nodes, y-coordinate
+   real(kind_real),allocatable :: zbnd(:,:,:) ! Boundary nodes, z-coordinate
+   real(kind_real),allocatable :: vbnd(:,:,:) ! Boundary nodes, orthogonal vector
 
    ! Gripoints and subset Sc0
-   integer,allocatable :: redundant(:)        !< Redundant points array
-   integer,allocatable :: c0_to_mg(:)         !< Subset Sc0 to model grid
-   integer,allocatable :: mg_to_c0(:)         !< Model grid to subset Sc0
+   integer,allocatable :: redundant(:)        ! Redundant points array
+   integer,allocatable :: c0_to_mg(:)         ! Subset Sc0 to model grid
+   integer,allocatable :: mg_to_c0(:)         ! Model grid to subset Sc0
+
+   ! Dirac information
+   integer :: ndir                            ! Number of valid Dirac points
+   real(kind_real),allocatable :: londir(:)   ! Dirac longitude
+   real(kind_real),allocatable :: latdir(:)   ! Dirac latitude
+   integer,allocatable :: iprocdir(:)         ! Dirac processor
+   integer,allocatable :: ic0adir(:)          ! Dirac gridpoint
+   integer,allocatable :: il0dir(:)           ! Dirac level
+   integer,allocatable :: ivdir(:)            ! Dirac variable
+   integer,allocatable :: itsdir(:)           ! Dirac timeslot
 
    ! MPI distribution
-   integer :: nmga                            !< Halo A size for model grid
-   integer :: nc0a                            !< Halo A size for subset Sc0
-   integer,allocatable :: mg_to_proc(:)       !< Model grid to local task
-   integer,allocatable :: mg_to_mga(:)        !< Model grid, global to halo A
-   integer,allocatable :: mga_to_mg(:)        !< Model grid, halo A to global
-   integer,allocatable :: proc_to_nmga(:)     !< Halo A size for each proc
-   integer,allocatable :: c0_to_proc(:)       !< Subset Sc0 to local task
-   integer,allocatable :: c0_to_c0a(:)        !< Subset Sc0, global to halo A
-   integer,allocatable :: c0a_to_c0(:)        !< Subset Sc0, halo A to global
-   integer,allocatable :: proc_to_nc0a(:)     !< Halo A size for each proc
-   integer,allocatable :: c0a_to_mga(:)       !< Subset Sc0 to model grid, halo A
-   type(com_type) :: com_mg                   !< Communication between subset Sc0 and model grid
+   integer :: nmga                            ! Halo A size for model grid
+   integer :: nc0a                            ! Halo A size for subset Sc0
+   integer,allocatable :: mg_to_proc(:)       ! Model grid to local task
+   integer,allocatable :: mg_to_mga(:)        ! Model grid, global to halo A
+   integer,allocatable :: mga_to_mg(:)        ! Model grid, halo A to global
+   integer,allocatable :: proc_to_nmga(:)     ! Halo A size for each proc
+   integer,allocatable :: c0_to_proc(:)       ! Subset Sc0 to local task
+   integer,allocatable :: c0_to_c0a(:)        ! Subset Sc0, global to halo A
+   integer,allocatable :: c0a_to_c0(:)        ! Subset Sc0, halo A to global
+   integer,allocatable :: proc_to_nc0a(:)     ! Halo A size for each proc
+   integer,allocatable :: mga_to_c0(:)        ! Model grid, halo A to subset Sc0, global
+   integer,allocatable :: c0a_to_mga(:)       ! Subset Sc0 to model grid, halo A
+   type(com_type) :: com_mg                   ! Communication between subset Sc0 and model grid
 contains
    procedure :: alloc => geom_alloc
    procedure :: dealloc => geom_dealloc
    procedure :: setup_online => geom_setup_online
-   procedure :: find_redundant => geom_find_redundant
+   procedure :: find_sc0 => geom_find_sc0
    procedure :: init => geom_init
    procedure :: define_mask => geom_define_mask
    procedure :: compute_area => geom_compute_area
-   procedure :: compute_mask_boundaries => geom_compute_mask_boundaries
+   procedure :: define_dirac => geom_define_dirac
    procedure :: define_distribution => geom_define_distribution
    procedure :: check_arc => geom_check_arc
    procedure :: copy_c0a_to_mga => geom_copy_c0a_to_mga
    procedure :: copy_mga_to_c0a => geom_copy_mga_to_c0a
+   procedure :: compute_deltas => geom_compute_deltas
 end type geom_type
 
 private
@@ -115,14 +128,14 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: geom_alloc
-!> Purpose: geometry allocation
+! Purpose: geometry allocation
 !----------------------------------------------------------------------
 subroutine geom_alloc(geom)
 
 implicit none
 
 ! Passed variables
-class(geom_type),intent(inout) :: geom !< Geometry
+class(geom_type),intent(inout) :: geom ! Geometry
 
 ! Allocation
 allocate(geom%c0_to_proc(geom%nc0))
@@ -160,14 +173,14 @@ end subroutine geom_alloc
 
 !----------------------------------------------------------------------
 ! Subroutine: geom_dealloc
-!> Purpose: geometry deallocation
+! Purpose: geometry deallocation
 !----------------------------------------------------------------------
 subroutine geom_dealloc(geom)
 
 implicit none
 
 ! Passed variables
-class(geom_type),intent(inout) :: geom !< Geometry
+class(geom_type),intent(inout) :: geom ! Geometry
 
 ! Release memory
 if (allocated(geom%c0_to_lon)) deallocate(geom%c0_to_lon)
@@ -187,12 +200,12 @@ if (allocated(geom%mask_ver_c0)) deallocate(geom%mask_ver_c0)
 if (allocated(geom%nc0_mask)) deallocate(geom%nc0_mask)
 call geom%mesh%dealloc
 call geom%kdtree%dealloc
+if (allocated(geom%redundant)) deallocate(geom%redundant)
 if (allocated(geom%nbnd)) deallocate(geom%nbnd)
 if (allocated(geom%xbnd)) deallocate(geom%xbnd)
 if (allocated(geom%ybnd)) deallocate(geom%ybnd)
 if (allocated(geom%zbnd)) deallocate(geom%zbnd)
 if (allocated(geom%vbnd)) deallocate(geom%vbnd)
-if (allocated(geom%redundant)) deallocate(geom%redundant)
 if (allocated(geom%c0_to_mg)) deallocate(geom%c0_to_mg)
 if (allocated(geom%mg_to_c0)) deallocate(geom%mg_to_c0)
 if (allocated(geom%mg_to_proc)) deallocate(geom%mg_to_proc)
@@ -203,6 +216,7 @@ if (allocated(geom%c0_to_proc)) deallocate(geom%c0_to_proc)
 if (allocated(geom%c0_to_c0a)) deallocate(geom%c0_to_c0a)
 if (allocated(geom%c0a_to_c0)) deallocate(geom%c0a_to_c0)
 if (allocated(geom%proc_to_nc0a)) deallocate(geom%proc_to_nc0a)
+if (allocated(geom%mga_to_c0)) deallocate(geom%mga_to_c0)
 if (allocated(geom%c0a_to_mga)) deallocate(geom%c0a_to_mga)
 call geom%com_mg%dealloc
 
@@ -210,26 +224,28 @@ end subroutine geom_dealloc
 
 !----------------------------------------------------------------------
 ! Subroutine: geom_setup_online
-!> Purpose: setup online geometry
+! Purpose: setup online geometry
 !----------------------------------------------------------------------
-subroutine geom_setup_online(geom,mpl,nmga,nl0,lon,lat,area,vunit,lmask)
+subroutine geom_setup_online(geom,mpl,rng,nam,nmga,nl0,lon,lat,area,vunit,lmask)
 
 implicit none
 
 ! Passed variables
-class(geom_type),intent(inout) :: geom        !< Geometry
-type(mpl_type),intent(inout) :: mpl           !< MPI data
-integer,intent(in) :: nmga                    !< Halo A size
-integer,intent(in) :: nl0                     !< Number of levels in subset Sl0
-real(kind_real),intent(in) :: lon(nmga)       !< Longitudes
-real(kind_real),intent(in) :: lat(nmga)       !< Latitudes
-real(kind_real),intent(in) :: area(nmga)      !< Area
-real(kind_real),intent(in) :: vunit(nmga,nl0) !< Vertical unit
-logical,intent(in) :: lmask(nmga,nl0)         !< Mask
+class(geom_type),intent(inout) :: geom        ! Geometry
+type(mpl_type),intent(inout) :: mpl           ! MPI data
+type(rng_type),intent(inout) :: rng           ! Random number generator
+type(nam_type),intent(in) :: nam              ! Namelist
+integer,intent(in) :: nmga                    ! Halo A size
+integer,intent(in) :: nl0                     ! Number of levels in subset Sl0
+real(kind_real),intent(in) :: lon(nmga)       ! Longitudes
+real(kind_real),intent(in) :: lat(nmga)       ! Latitudes
+real(kind_real),intent(in) :: area(nmga)      ! Area
+real(kind_real),intent(in) :: vunit(nmga,nl0) ! Vertical unit
+logical,intent(in) :: lmask(nmga,nl0)         ! Mask
 
 ! Local variables
 integer :: ic0,ic0a,il0,offset,iproc,img,imga
-integer,allocatable :: mg_to_proc(:),order(:),order_inv(:)
+integer,allocatable :: order(:),order_inv(:)
 real(kind_real),allocatable :: lon_mg(:),lat_mg(:),area_mg(:),vunit_mg(:,:),list(:)
 logical,allocatable :: lmask_mg(:,:)
 type(fckit_mpi_status) :: status
@@ -254,7 +270,6 @@ allocate(lat_mg(geom%nmg))
 allocate(area_mg(geom%nmg))
 allocate(vunit_mg(geom%nmg,geom%nl0))
 allocate(lmask_mg(geom%nmg,geom%nl0))
-allocate(mg_to_proc(geom%nmg))
 allocate(geom%mg_to_proc(geom%nmg))
 allocate(geom%mg_to_mga(geom%nmg))
 allocate(geom%mga_to_mg(geom%nmga))
@@ -313,8 +328,8 @@ call mpl%f_comm%broadcast(area_mg,mpl%ioproc-1)
 call mpl%f_comm%broadcast(vunit_mg,mpl%ioproc-1)
 call mpl%f_comm%broadcast(lmask_mg,mpl%ioproc-1)
 
-! Find redundant points
-call geom%find_redundant(mpl,lon_mg,lat_mg)
+! Find subset Sc0 points
+call geom%find_sc0(mpl,rng,lon_mg,lat_mg,lmask_mg,.true.,nam%mask_check,.false.)
 
 ! Allocation
 call geom%alloc
@@ -332,7 +347,7 @@ do iproc=1,mpl%nproc
       geom%mg_to_proc(img) = iproc
       geom%mg_to_mga(img) = imga
       if (iproc==mpl%myproc) geom%mga_to_mg(imga) = img
-      if (ismsi(geom%redundant(img))) geom%proc_to_nc0a(iproc) = geom%proc_to_nc0a(iproc)+1
+      if (geom%mask_hor_mg(img)) geom%proc_to_nc0a(iproc) = geom%proc_to_nc0a(iproc)+1
    end do
 end do
 geom%nc0a = geom%proc_to_nc0a(mpl%myproc)
@@ -350,20 +365,19 @@ end do
 call mpl%glb_to_loc_index(geom%nc0a,geom%c0a_to_c0,geom%nc0,geom%c0_to_c0a)
 
 ! Inter-halo conversions
+allocate(geom%mga_to_c0(geom%nmga))
 allocate(geom%c0a_to_mga(geom%nc0a))
+do imga=1,geom%nmga
+   img = geom%mga_to_mg(imga)
+   ic0 = geom%mg_to_c0(img)
+   geom%mga_to_c0(imga) = ic0
+end do
 do ic0a=1,geom%nc0a
    ic0 = geom%c0a_to_c0(ic0a)
    img = geom%c0_to_mg(ic0)
    imga = geom%mg_to_mga(img)
    geom%c0a_to_mga(ic0a) = imga
 end do
-
-! Setup communications
-do img=1,geom%nmg
-   ic0 = geom%mg_to_c0(img)
-   mg_to_proc(img) = geom%c0_to_proc(ic0)
-end do
-call geom%com_mg%setup(mpl,'com_mg',geom%nmg,geom%nc0a,geom%nmga,geom%mga_to_mg,geom%c0a_to_mga,mg_to_proc,geom%c0_to_c0a)
 
 ! Deal with mask on redundant points
 do il0=1,geom%nl0
@@ -402,6 +416,7 @@ do il0=1,geom%nl0
 end do
 geom%c0_to_mg = geom%c0_to_mg(order)
 geom%mg_to_c0 = order_inv(geom%mg_to_c0)
+geom%mga_to_c0 = order_inv(geom%mga_to_c0)
 
 ! Other masks
 allocate(geom%mask_c0a(geom%nc0a,geom%nl0))
@@ -412,33 +427,50 @@ geom%mask_hor_c0a = geom%mask_hor_c0(geom%c0a_to_c0)
 geom%mask_ver_c0 = any(geom%mask_c0,dim=1)
 geom%nc0_mask = count(geom%mask_c0,dim=1)
 
+! Setup redundant points communication
+call geom%com_mg%setup(mpl,'com_mg',geom%nc0,geom%nc0a,geom%nmga,geom%mga_to_c0,geom%c0a_to_mga,geom%c0_to_proc,geom%c0_to_c0a)
+
 end subroutine geom_setup_online
 
 !----------------------------------------------------------------------
-! Subroutine: geom_find_redundant
-!> Purpose: find redundant model grid points
+! Subroutine: geom_find_sc0
+! Purpose: find subset Sc0 points
 !----------------------------------------------------------------------
-subroutine geom_find_redundant(geom,mpl,lon,lat)
+subroutine geom_find_sc0(geom,mpl,rng,lon,lat,lmask,red_check,mask_check,mask_del)
 
 implicit none
 
 ! Passed variables
-class(geom_type),intent(inout) :: geom               !< Geometry
-type(mpl_type),intent(in) :: mpl                     !< MPI data
-real(kind_real),intent(in),optional :: lon(geom%nmg) !< Longitudes
-real(kind_real),intent(in),optional :: lat(geom%nmg) !< Latitudes
+class(geom_type),intent(inout) :: geom         ! Geometry
+type(mpl_type),intent(in) :: mpl               ! MPI data
+type(rng_type),intent(inout) :: rng            ! Random number generator
+real(kind_real),intent(in) :: lon(geom%nmg)    ! Longitudes
+real(kind_real),intent(in) :: lat(geom%nmg)    ! Latitudes
+logical,intent(in) :: lmask(geom%nmg,geom%nl0) ! Mask
+logical,intent(in) :: red_check                ! Check redundant points
+logical,intent(in) :: mask_check               ! Check mask boundaries
+logical,intent(in) :: mask_del                 ! Delete masked points
 
 ! Local variables
-integer :: img,ic0,ired,nn_index(nredmax)
-real(kind_real) :: nn_dist(nredmax)
+integer :: img,ic0,ired,nn_index(nredmax),nc0full,ic0full,jc0full,kc0full,i,j,k,iend,ibnd,il0
+integer,allocatable :: c0full_to_mg(:),mg_to_c0full(:),ic0full_bnd(:,:,:)
+real(kind_real) :: nn_dist(nredmax),latbnd(2),lonbnd(2),v1(3),v2(3)
+real(kind_real),allocatable :: lon_c0full(:),lat_c0full(:)
+logical :: init
+logical,allocatable :: lmask_c0full(:,:)
 type(kdtree_type) :: kdtree
+type(mesh_type) :: mesh
 
 ! Allocation
+allocate(geom%mask_hor_mg(geom%nmg))
 allocate(geom%redundant(geom%nmg))
+allocate(geom%mg_to_c0(geom%nmg))
+
+! Initialization
 call msi(geom%redundant)
 
 ! Look for redundant points
-if (present(lon).and.present(lat)) then
+if (red_check) then
    write(mpl%info,'(a7,a)') '','Look for redundant points in the model grid'
 
    ! Create KD-tree
@@ -451,7 +483,7 @@ if (present(lon).and.present(lat)) then
 
       ! Count redundant points
       do ired=1,nredmax
-         if ((nn_dist(ired)>0.0).or.(nn_index(ired)>=img)) nn_index(ired) = geom%nmg+1
+         if ((nn_dist(ired)>distminred).or.(nn_index(ired)>=img)) nn_index(ired) = geom%nmg+1
       end do
 
       if (any(nn_index<=geom%nmg)) then
@@ -472,43 +504,150 @@ if (present(lon).and.present(lat)) then
    ! Release memory
    call kdtree%dealloc
 end if
-geom%nc0 = count(ismsi(geom%redundant))
-write(mpl%info,'(a7,a,i8)') '','Model grid size:         ',geom%nmg
-write(mpl%info,'(a7,a,i8)') '','Subset Sc0 size:         ',geom%nc0
-write(mpl%info,'(a7,a,i6,a,f6.2,a)') '','Number of redundant points:',(geom%nmg-geom%nc0), &
- & ' (',real(geom%nmg-geom%nc0,kind_real)/real(geom%nmg,kind_real)*100.0,'%)'
-call flush(mpl%info)
+
+! Horizontal model grid mask
+geom%mask_hor_mg = ismsi(geom%redundant)
+
+! Allocation
+nc0full = count(geom%mask_hor_mg)
+allocate(c0full_to_mg(nc0full))
+allocate(mg_to_c0full(geom%nmg))
+allocate(lon_c0full(nc0full))
+allocate(lat_c0full(nc0full))
+allocate(lmask_c0full(nc0full,geom%nl0))
 
 ! Conversion
-allocate(geom%c0_to_mg(geom%nc0))
-allocate(geom%mg_to_c0(geom%nmg))
-ic0 = 0
+ic0full = 0
 do img=1,geom%nmg
    if (ismsi(geom%redundant(img))) then
+      ic0full = ic0full+1
+      c0full_to_mg(ic0full) = img
+      mg_to_c0full(img) = ic0full
+   end if
+end do
+lon_c0full = lon(c0full_to_mg)
+lat_c0full = lat(c0full_to_mg)
+lmask_c0full = lmask(c0full_to_mg,:)
+
+! Delete points flag
+geom%mask_del = mask_del.and.(any(.not.lmask_c0full))
+
+if (geom%mask_del.or.mask_check) then
+   ! Create mesh
+   call mesh%create(mpl,rng,nc0full,lon_c0full,lat_c0full)
+
+   ! Allocation
+   allocate(geom%nbnd(geom%nl0))
+   allocate(ic0full_bnd(2,mesh%n,geom%nl0))
+
+   ! Find border points
+   do il0=1,geom%nl0
+      geom%nbnd(il0) = 0
+      do i=1,mesh%n
+         ! Check mask points only
+         ic0full = mesh%order(i)
+         if (.not.lmask_c0full(ic0full,il0)) then
+            iend = mesh%lend(i)
+            init = .true.
+            do while ((iend/=mesh%lend(i)).or.init)
+               j = abs(mesh%list(iend))
+               k = abs(mesh%list(mesh%lptr(iend)))
+               jc0full = mesh%order(j)
+               kc0full = mesh%order(k)
+               if (.not.lmask_c0full(jc0full,il0).and.lmask_c0full(kc0full,il0)) then
+                  ! Create a new boundary arc
+                  geom%nbnd(il0) = geom%nbnd(il0)+1
+                  if (geom%nbnd(il0)>mesh%n) call mpl%abort('too many boundary arcs')
+                  ic0full_bnd(1,geom%nbnd(il0),il0) = ic0full
+                  ic0full_bnd(2,geom%nbnd(il0),il0) = jc0full
+               end if
+               iend = mesh%lptr(iend)
+               init = .false.
+            end do
+         end if
+      end do
+   end do
+
+   ! Allocation
+   allocate(geom%xbnd(2,maxval(geom%nbnd),geom%nl0))
+   allocate(geom%ybnd(2,maxval(geom%nbnd),geom%nl0))
+   allocate(geom%zbnd(2,maxval(geom%nbnd),geom%nl0))
+   allocate(geom%vbnd(3,maxval(geom%nbnd),geom%nl0))
+
+   do il0=1,geom%nl0
+      ! Compute boundary arcs
+      do ibnd=1,geom%nbnd(il0)
+         latbnd = lat_c0full(ic0full_bnd(:,ibnd,il0))
+         lonbnd = lon_c0full(ic0full_bnd(:,ibnd,il0))
+         call trans(2,latbnd,lonbnd,geom%xbnd(:,ibnd,il0),geom%ybnd(:,ibnd,il0),geom%zbnd(:,ibnd,il0))
+      end do
+      do ibnd=1,geom%nbnd(il0)
+         v1 = (/geom%xbnd(1,ibnd,il0),geom%ybnd(1,ibnd,il0),geom%zbnd(1,ibnd,il0)/)
+         v2 = (/geom%xbnd(2,ibnd,il0),geom%ybnd(2,ibnd,il0),geom%zbnd(2,ibnd,il0)/)
+         call vector_product(v1,v2,geom%vbnd(:,ibnd,il0))
+      end do
+   end do
+end if
+
+if (geom%mask_del) then
+   ! Remove subset Sc0 points that are masked for all levels
+   do img=1,geom%nmg
+      if (geom%mask_hor_mg(img)) then
+         ic0full = mg_to_c0full(img)
+         geom%mask_hor_mg(img) = any(lmask_c0full(ic0full,:))
+      end if
+   end do
+end if
+
+! Allocation
+geom%nc0 = count(geom%mask_hor_mg)
+allocate(geom%c0_to_mg(geom%nc0))
+
+! Initialization
+call msi(geom%mg_to_c0)
+
+! Conversion
+ic0 = 0
+do img=1,geom%nmg
+   if (geom%mask_hor_mg(img)) then
       ic0 = ic0+1
       geom%c0_to_mg(ic0) = img
       geom%mg_to_c0(img) = ic0
    end if
 end do
+
+ ! Deal with redundant points
 do img=1,geom%nmg
    if (isnotmsi(geom%redundant(img))) geom%mg_to_c0(img) = geom%mg_to_c0(geom%redundant(img))
 end do
 
-end subroutine geom_find_redundant
+! Print results
+if (red_check) write(mpl%info,'(a7,a,i6,a,f6.2,a)') '','Number of redundant points:    ',(geom%nmg-nc0full), &
+ & ' (',real(geom%nmg-nc0full,kind_real)/real(geom%nmg,kind_real)*100.0,'%)'
+if (mask_del) write(mpl%info,'(a7,a,i6,a,f6.2,a)') '','Number of masked points       :',(nc0full-geom%nc0), &
+ & ' (',real(nc0full-geom%nc0,kind_real)/real(geom%nmg,kind_real)*100.0,'%)'
+if (red_check.and.mask_del) write(mpl%info,'(a7,a,i6,a,f6.2,a)') '','Total number of removed points:',(geom%nmg-geom%nc0), &
+ & ' (',real(geom%nmg-geom%nc0,kind_real)/real(geom%nmg,kind_real)*100.0,'%)'
+call flush(mpl%info)
+write(mpl%info,'(a7,a,i8)') '','Model grid size:         ',geom%nmg
+if (red_check) write(mpl%info,'(a7,a,i8)') '','Non-redundant grid size: ',nc0full
+write(mpl%info,'(a7,a,i8)') '','Subset Sc0 size:         ',geom%nc0
+
+end subroutine geom_find_sc0
 
 !----------------------------------------------------------------------
 ! Subroutine: geom_init
-!> Purpose: initialize geometry
+! Purpose: initialize geometry
 !----------------------------------------------------------------------
 subroutine geom_init(geom,mpl,rng,nam)
 
 implicit none
 
 ! Passed variables
-class(geom_type),intent(inout) :: geom !< Geometry
-type(mpl_type),intent(in) :: mpl       !< MPI data
-type(rng_type),intent(inout) :: rng    !< Random number generator
-type(nam_type),intent(in) :: nam       !< Namelist
+class(geom_type),intent(inout) :: geom ! Geometry
+type(mpl_type),intent(in) :: mpl       ! MPI data
+type(rng_type),intent(inout) :: rng    ! Random number generator
+type(nam_type),intent(in) :: nam       ! Namelist
 
 ! Local variables
 integer :: ic0,il0,jc3,iproc
@@ -536,10 +675,7 @@ call geom%mesh%create(mpl,rng,geom%nc0,geom%lon,geom%lat)
 call geom%mesh%bnodes
 
 ! Compute area
-if ((.not.any(geom%area>0.0))) call geom%compute_area
-
-! Compute mask boundaries
-if ((nam%new_nicas.or.nam%new_lct).and.nam%mask_check) call geom%compute_mask_boundaries(mpl)
+if (.not.isanynotmsr(geom%area)) call geom%compute_area(mpl)
 
 ! Check whether the mask is the same for all levels
 same_mask = .true.
@@ -566,6 +702,9 @@ do jc3=1,nam%nc3
    geom%disth(jc3) = real(jc3-1,kind_real)*nam%dc
 end do
 
+! Define dirac points
+if (nam%ndir>0) call geom%define_dirac(nam)
+
 ! Print summary
 write(mpl%info,'(a10,a,f7.1,a,f7.1)') '','Min. / max. longitudes:',minval(geom%lon)*rad2deg,' / ',maxval(geom%lon)*rad2deg
 write(mpl%info,'(a10,a,f7.1,a,f7.1)') '','Min. / max. latitudes: ',minval(geom%lat)*rad2deg,' / ',maxval(geom%lat)*rad2deg
@@ -584,16 +723,16 @@ end subroutine geom_init
 
 !----------------------------------------------------------------------
 ! Subroutine: geom_define_mask
-!> Purpose: define mask
+! Purpose: define mask
 !----------------------------------------------------------------------
 subroutine geom_define_mask(geom,mpl,nam)
 
 implicit none
 
 ! Passed variables
-class(geom_type),intent(inout) :: geom !< Geometry
-type(mpl_type),intent(in) :: mpl       !< MPI data
-type(nam_type),intent(in) :: nam       !< Namelist
+class(geom_type),intent(inout) :: geom ! Geometry
+type(mpl_type),intent(in) :: mpl       ! MPI data
+type(nam_type),intent(in) :: nam       ! Namelist
 
 ! Local variables
 integer :: latmin,latmax,il0,ic0,ildw
@@ -653,18 +792,21 @@ end subroutine geom_define_mask
 
 !----------------------------------------------------------------------
 ! Subroutine: geom_compute_area
-!> Purpose: compute domain area
+! Purpose: compute domain area
 !----------------------------------------------------------------------
-subroutine geom_compute_area(geom)
+subroutine geom_compute_area(geom,mpl)
 
 implicit none
 
 ! Passed variables
-class(geom_type),intent(inout) :: geom !< Geometry
+class(geom_type),intent(inout) :: geom ! Geometry
+type(mpl_type),intent(in) :: mpl       ! MPI data
 
 ! Local variables
 integer :: il0,it
 real(kind_real) :: area,frac
+
+write(mpl%info,'(a7,a)') '','Compute area (might take a long time)'
 
 ! Create triangles list
 if (.not.allocated(geom%mesh%ltri)) call geom%mesh%trlist
@@ -684,101 +826,91 @@ end do
 end subroutine geom_compute_area
 
 !----------------------------------------------------------------------
-! Subroutine: geom_compute_mask_boundaries
-!> Purpose: compute domain area
+! Subroutine: geom_define_dirac
+! Purpose: define dirac indices
 !----------------------------------------------------------------------
-subroutine geom_compute_mask_boundaries(geom,mpl)
+subroutine geom_define_dirac(geom,nam)
 
 implicit none
 
 ! Passed variables
-class(geom_type),intent(inout) :: geom !< Geometry
-type(mpl_type),intent(in) :: mpl       !< MPI data
+class(geom_type),intent(inout) :: geom ! Geometry
+type(nam_type),intent(in) :: nam       ! Namelist
 
 ! Local variables
-integer :: i,j,k,iend,ic0,jc0,kc0,ibnd,il0
-integer,allocatable :: ic0_bnd(:,:,:)
-real(kind_real) :: latbnd(2),lonbnd(2),v1(3),v2(3)
-logical :: init
+integer :: idir,il0,nn_index(1),ic0dir,il0dir
+real(kind_real) :: nn_dist(1)
+logical :: valid
 
 ! Allocation
-allocate(geom%nbnd(geom%nl0))
-allocate(ic0_bnd(2,geom%mesh%n,geom%nl0))
+allocate(geom%londir(nam%ndir))
+allocate(geom%latdir(nam%ndir))
+allocate(geom%iprocdir(nam%ndir))
+allocate(geom%ic0adir(nam%ndir))
+allocate(geom%il0dir(nam%ndir))
+allocate(geom%ivdir(nam%ndir))
+allocate(geom%itsdir(nam%ndir))
 
-! Find border points
-do il0=1,geom%nl0
-   geom%nbnd(il0) = 0
-   do i=1,geom%mesh%n
-      ! Check mask points only
-      ic0 = geom%mesh%order(i)
-      if (.not.geom%mask_c0(ic0,il0)) then
-         iend = geom%mesh%lend(i)
-         init = .true.
-         do while ((iend/=geom%mesh%lend(i)).or.init)
-            j = abs(geom%mesh%list(iend))
-            k = abs(geom%mesh%list(geom%mesh%lptr(iend)))
-            jc0 = geom%mesh%order(j)
-            kc0 = geom%mesh%order(k)
-            if (.not.geom%mask_c0(jc0,il0).and.geom%mask_c0(kc0,il0)) then
-               ! Create a new boundary arc
-               geom%nbnd(il0) = geom%nbnd(il0)+1
-               if (geom%nbnd(il0)>geom%mesh%n) call mpl%abort('too many boundary arcs')
-               ic0_bnd(1,geom%nbnd(il0),il0) = ic0
-               ic0_bnd(2,geom%nbnd(il0),il0) = jc0
-            end if
-            iend = geom%mesh%lptr(iend)
-            init = .false.
-         end do
-      end if
+! Initialization
+geom%ndir = 0
+do idir=1,nam%ndir
+   ! Find level
+   do il0=1,geom%nl0
+      if (nam%levs(il0)==nam%levdir(idir)) il0dir = il0
    end do
+
+   ! Find nearest neighbor
+   call geom%kdtree%find_nearest_neighbors(nam%londir(idir),nam%latdir(idir),1,nn_index,nn_dist)
+   ic0dir = nn_index(1)
+
+   ! Check arc
+   if (geom%mask_del) then
+      call geom%check_arc(il0dir,nam%londir(idir),nam%latdir(idir),geom%lon(ic0dir),geom%lat(ic0dir),valid)
+   else
+      valid = geom%mask_c0(ic0dir,il0dir)
+   end if
+
+   if (valid) then
+      ! Add valid dirac point
+      geom%ndir = geom%ndir+1
+      geom%londir(geom%ndir) = nam%londir(idir)
+      geom%latdir(geom%ndir) = nam%latdir(idir)
+      geom%iprocdir(geom%ndir) = geom%c0_to_proc(ic0dir)
+      geom%ic0adir(geom%ndir) = geom%c0_to_c0a(ic0dir)
+      geom%il0dir(geom%ndir) = il0dir
+      geom%ivdir(geom%ndir) = nam%ivdir(idir)
+      geom%itsdir(geom%ndir) = nam%itsdir(idir)
+   end if
 end do
 
-! Allocation
-allocate(geom%xbnd(2,maxval(geom%nbnd),geom%nl0))
-allocate(geom%ybnd(2,maxval(geom%nbnd),geom%nl0))
-allocate(geom%zbnd(2,maxval(geom%nbnd),geom%nl0))
-allocate(geom%vbnd(3,maxval(geom%nbnd),geom%nl0))
-
-do il0=1,geom%nl0
-   ! Compute boundary arcs
-   do ibnd=1,geom%nbnd(il0)
-      latbnd = geom%lat(ic0_bnd(:,ibnd,il0))
-      lonbnd = geom%lon(ic0_bnd(:,ibnd,il0))
-      call trans(2,latbnd,lonbnd,geom%xbnd(:,ibnd,il0),geom%ybnd(:,ibnd,il0),geom%zbnd(:,ibnd,il0))
-   end do
-   do ibnd=1,geom%nbnd(il0)
-      v1 = (/geom%xbnd(1,ibnd,il0),geom%ybnd(1,ibnd,il0),geom%zbnd(1,ibnd,il0)/)
-      v2 = (/geom%xbnd(2,ibnd,il0),geom%ybnd(2,ibnd,il0),geom%zbnd(2,ibnd,il0)/)
-      call vector_product(v1,v2,geom%vbnd(:,ibnd,il0))
-   end do
-end do
-
-end subroutine geom_compute_mask_boundaries
+end subroutine geom_define_dirac
 
 !----------------------------------------------------------------------
 ! Subroutine: geom_define_distribution
-!> Purpose: define local distribution
+! Purpose: define local distribution
 !----------------------------------------------------------------------
 subroutine geom_define_distribution(geom,mpl,nam,rng)
 
 implicit none
 
 ! Passed variables
-class(geom_type),intent(inout) :: geom !< Geometry
-type(mpl_type),intent(in) :: mpl       !< MPI data
-type(nam_type),intent(in) :: nam       !< Namelist
-type(rng_type),intent(inout) :: rng    !< Random number generator
+class(geom_type),intent(inout) :: geom ! Geometry
+type(mpl_type),intent(inout) :: mpl    ! MPI data
+type(nam_type),intent(in) :: nam       ! Namelist
+type(rng_type),intent(inout) :: rng    ! Random number generator
 
 ! Local variables
-integer :: ic0,il0,i,j,iend,info,iproc,ic0a,nc0amax,lunit
+integer :: ic0,il0,info,iproc,ic0a,nc0a,ny,nres,iy,delta,ix
 integer :: ncid,nc0_id,c0_to_proc_id,c0_to_c0a_id,lon_id,lat_id
-integer :: c0_reorder(geom%nc0)
-integer,allocatable :: nr_to_proc(:),ic0a_arr(:)
-logical :: init,ismetis
+integer :: c0_reorder(geom%nc0),nn_index(1)
+integer,allocatable :: center_to_c0(:),nx(:),ic0a_arr(:)
+real(kind_real) :: nn_dist(1),dlat,dlon
+real(kind_real),allocatable :: rh_c0(:),lon_center(:),lat_center(:)
+logical,allocatable :: mask_hor_c0(:)
 character(len=4) :: nprocchar
-character(len=1024) :: filename_nc,filename_metis
+character(len=1024) :: filename_nc
 character(len=1024) :: subr = 'geom_define_distribution'
-type(mesh_type) :: mesh
+type(kdtree_type) :: kdtree
 
 if (mpl%nproc==1) then
    ! All points on a single processor
@@ -821,106 +953,93 @@ elseif (mpl%nproc>1) then
       if (maxval(geom%c0_to_proc)>mpl%nproc) call mpl%abort('wrong distribution')
    else
       ! Generate a distribution
-      if (nam%use_metis) then
-         write(mpl%info,'(a7,a,i4,a)') '','Try to use METIS for ',mpl%nproc,' MPI tasks'
-         call flush(mpl%info)
 
-         ! Compute graph
-         call mesh%create(mpl,rng,geom%nc0,geom%lon,geom%lat)
-         call mesh%bnodes
+      ! Allocation
+      allocate(lon_center(mpl%nproc))
+      allocate(lat_center(mpl%nproc))
+      allocate(ic0a_arr(mpl%nproc))
 
-         if (mpl%main) then
-            ! Open file
-            filename_metis = trim(nam%prefix)//'_metis'
-            call mpl%newunit(lunit)
-            open(unit=lunit,file=trim(nam%datadir)//'/'//trim(filename_metis),status='replace')
+      ! Define distribution centers
+      if (.false.) then
+         ! Using a random sampling
 
-            ! Write header
-            write(lunit,*) mesh%n,mesh%na-mesh%nb/2
+         ! Allocation
+         allocate(mask_hor_c0(geom%nc0))
+         allocate(rh_c0(geom%nc0))
+         allocate(center_to_c0(mpl%nproc))
 
-            ! Write connectivity
-            do i=1,mesh%n
-               iend = mesh%lend(i)
-               init = .true.
-               do while ((iend/=mesh%lend(i)).or.init)
-                  j = mesh%list(iend)
-                  if (j>0) write(lunit,'(i7)',advance='no') j
-                  iend = mesh%lptr(iend)
-                  init = .false.
-               end do
-               write(lunit,*) ''
-            end do
+         ! Initialization
+         mask_hor_c0 = any(geom%mask_c0,dim=2)
+         rh_c0 = 1.0
 
-            ! Close file
-            close(unit=lunit)
+         ! Compute sampling
+         write(mpl%info,'(a7,a)',advance='no') '','Define distribution centers:'
+         call rng%initialize_sampling(mpl,geom%nc0,geom%lon,geom%lat,mask_hor_c0,rh_c0,nam%ntry,nam%nrep,mpl%nproc,center_to_c0)
 
-            ! Call METIS
-            write(nprocchar,'(i4)') mpl%nproc
-            call execute_command_line('gpmetis '//trim(nam%datadir)//'/'//trim(filename_metis)//' '//adjustl(nprocchar)//' > '// &
-          & trim(nam%datadir)//'/'//trim(filename_metis)//'.out')
-
-            ! Check for METIS output
-            inquire(file=trim(nam%datadir)//'/'//trim(filename_metis)//'.part.'//adjustl(nprocchar),exist=ismetis)
-            if (.not.ismetis) call mpl%warning('METIS not available to generate the local distribution')
-         end if
-         call mpl%f_comm%broadcast(ismetis,mpl%ioproc-1)
+         ! Define centers coordinates
+         lon_center = geom%lon(center_to_c0)
+         lat_center = geom%lat(center_to_c0)
       else
-         ! No METIS
-         ismetis = .false.
+         ! Using a regular splitting
+
+         ! Allocation
+         ny = nint(sqrt(real(mpl%nproc,kind_real)))
+         if (ny**2<mpl%nproc) ny = ny+1
+         allocate(nx(ny))
+         nres = mpl%nproc
+         do iy=1,ny
+            delta = mpl%nproc/ny
+            if (nres>(ny-iy+1)*delta) delta = delta+1
+            nx(iy) = delta
+            nres = nres-delta
+         end do
+         if (sum(nx)/=mpl%nproc) call mpl%abort('wrong number of tiles in define_distribution')
+         dlat = (maxval(geom%lat)-minval(geom%lat))/ny
+         iproc = 0
+         do iy=1,ny
+            dlon = (maxval(geom%lon)-minval(geom%lon))/nx(iy)
+            do ix=1,nx(iy)
+               iproc = iproc+1
+               lat_center(iproc) = minval(geom%lat)+(real(iy,kind_real)-0.5)*dlat
+               lon_center(iproc) = minval(geom%lon)+(real(ix,kind_real)-0.5)*dlon
+            end do
+         end do
       end if
 
-      if (ismetis) then
-         write(mpl%info,'(a7,a)') '','Use METIS to generate the local distribution'
-         call flush(mpl%info)
+      if (mpl%main) then
+         ! Define kdtree
+         call kdtree%create(mpl,mpl%nproc,lon_center,lat_center)
 
-         if (mpl%main) then
-            ! Allocation
-            allocate(nr_to_proc(mesh%n))
-            allocate(ic0a_arr(mpl%nproc))
-
-            ! Read METIS file
-            call mpl%newunit(lunit)
-            open(unit=lunit,file=trim(nam%datadir)//'/'//trim(filename_metis)//'.part.'//adjustl(nprocchar),status='old')
-            do i=1,mesh%n
-               read(lunit,*) nr_to_proc(i)
-            end do
-            close(unit=lunit)
-
-            ! Reorder and offset
-            do ic0=1,geom%nc0
-               i = mesh%order_inv(ic0)
-               geom%c0_to_proc(ic0) = nr_to_proc(i)+1
-            end do
-
-            ! Local index
-            ic0a_arr = 0
-            do ic0=1,geom%nc0
-               iproc = geom%c0_to_proc(ic0)
-               ic0a_arr(iproc) = ic0a_arr(iproc)+1
-               geom%c0_to_c0a(ic0) = ic0a_arr(iproc)
-            end do
-         end if
-
-         ! Broadcast distribution
-         call mpl%f_comm%broadcast(geom%c0_to_proc,mpl%ioproc-1)
-         call mpl%f_comm%broadcast(geom%c0_to_c0a,mpl%ioproc-1)
-      else
-         write(mpl%info,'(a7,a)') '','Define a basic local distribution'
-         call flush(mpl%info)
-
-         ! Basic distribution
-         nc0amax = geom%nc0/mpl%nproc
-         if (nc0amax*mpl%nproc<geom%nc0) nc0amax = nc0amax+1
-         iproc = 1
-         ic0a = 1
+         ! Local processor
          do ic0=1,geom%nc0
-            geom%c0_to_proc(ic0) = iproc
-            geom%c0_to_c0a(ic0) = ic0a
-            ic0a = ic0a+1
-            if (ic0a>nc0amax) then
-               ! Change proc
-               iproc = iproc+1
-               ic0a = 1
+            call kdtree%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0),1,nn_index,nn_dist)
+            geom%c0_to_proc(ic0) = nn_index(1)
+         end do
+
+         ! Local index
+         ic0a_arr = 0
+         do ic0=1,geom%nc0
+            iproc = geom%c0_to_proc(ic0)
+            ic0a_arr(iproc) = ic0a_arr(iproc)+1
+            geom%c0_to_c0a(ic0) = ic0a_arr(iproc)
+         end do
+      end if
+
+      ! Broadcast distribution
+      call mpl%f_comm%broadcast(geom%c0_to_proc,mpl%ioproc-1)
+      call mpl%f_comm%broadcast(geom%c0_to_c0a,mpl%ioproc-1)
+
+
+      if (test_no_point) then
+         ! Count points on the penultimate processor
+         nc0a = count(geom%c0_to_proc==mpl%nproc-1)
+
+         ! Move all point from the last to the penultimate processor
+         do ic0=1,geom%nc0
+            if (geom%c0_to_proc(ic0)==mpl%nproc) then
+               nc0a = nc0a+1
+               geom%c0_to_proc(ic0) = mpl%nproc-1
+               geom%c0_to_c0a(ic0) = nc0a
             end if
          end do
       end if
@@ -1012,20 +1131,20 @@ end subroutine geom_define_distribution
 
 !----------------------------------------------------------------------
 ! Subroutine: geom_check_arc
-!> Purpose: check if an arc is crossing boundaries
+! Purpose: check if an arc is crossing boundaries
 !----------------------------------------------------------------------
 subroutine geom_check_arc(geom,il0,lon_s,lat_s,lon_e,lat_e,valid)
 
 implicit none
 
 ! Passed variables
-class(geom_type),intent(in) :: geom !< Geometry
-integer,intent(in) :: il0           !< Level
-real(kind_real),intent(in) :: lon_s !< First point longitude
-real(kind_real),intent(in) :: lat_s !< First point latitude
-real(kind_real),intent(in) :: lon_e !< Second point longitude
-real(kind_real),intent(in) :: lat_e !< Second point latitude
-logical,intent(out) :: valid        !< True for valid arcs
+class(geom_type),intent(in) :: geom ! Geometry
+integer,intent(in) :: il0           ! Level
+real(kind_real),intent(in) :: lon_s ! First point longitude
+real(kind_real),intent(in) :: lat_s ! First point latitude
+real(kind_real),intent(in) :: lon_e ! Second point longitude
+real(kind_real),intent(in) :: lat_e ! Second point latitude
+logical,intent(out) :: valid        ! True for valid arcs
 
 ! Local variables
 integer :: ibnd
@@ -1063,111 +1182,120 @@ end subroutine geom_check_arc
 
 !----------------------------------------------------------------------
 ! Subroutine: geom_copy_c0a_to_mga
-!> Purpose: copy from subset Sc0 to model grid, halo A
+! Purpose: copy from subset Sc0 to model grid, halo A
 !----------------------------------------------------------------------
 subroutine geom_copy_c0a_to_mga(geom,mpl,fld_c0a,fld_mga)
 
 implicit none
 
 ! Passed variables
-class(geom_type),intent(in) :: geom                        !< Geometry
-type(mpl_type),intent(in) :: mpl                           !< MPI data
-real(kind_real),intent(in) :: fld_c0a(geom%nc0a,geom%nl0)  !< Field on subset Sc0, halo A
-real(kind_real),intent(out) :: fld_mga(geom%nmga,geom%nl0) !< Field on model grid, halo A
+class(geom_type),intent(in) :: geom                        ! Geometry
+type(mpl_type),intent(in) :: mpl                           ! MPI data
+real(kind_real),intent(in) :: fld_c0a(geom%nc0a,geom%nl0)  ! Field on subset Sc0, halo A
+real(kind_real),intent(out) :: fld_mga(geom%nmga,geom%nl0) ! Field on model grid, halo A
 
-! Local variables
-integer :: ic0a,imga,nred,ired,img,jmg,jmga
-integer,allocatable :: red_img(:),red_jmg(:)
-real(kind_real),allocatable :: red_val(:,:),red_val_pack(:),red_val_tot(:,:),red_val_pack_tot(:)
-logical,allocatable :: mask_unpack(:,:)
-
-! Initialization
-call msr(fld_mga)
-
-! Copy non-redundant points
-do ic0a=1,geom%nc0a
-   imga = geom%c0a_to_mga(ic0a)
-   fld_mga(imga,:) = fld_c0a(ic0a,:)
-end do
-
-nred = geom%nmg-geom%nc0
-if (nred>0) then
-   ! Allocation
-   allocate(red_img(nred))
-   allocate(red_jmg(nred))
-   allocate(red_val(nred,geom%nl0))
-   allocate(red_val_pack(nred*geom%nl0))
-   allocate(red_val_tot(nred,geom%nl0))
-   allocate(red_val_pack_tot(nred*geom%nl0))
-   allocate(mask_unpack(nred,geom%nl0))
-
-   ! Find redundant points indices
-   ired = 0
-   do img=1,geom%nmg
-      jmg = geom%redundant(img)
-      if (isnotmsi(jmg)) then
-         ired = ired+1
-         red_img(ired) = img
-         red_jmg(ired) = jmg
-      end if
-    end do
-
-   ! Copy redundant values
-   red_val = 0.0
-   do ired=1,nred
-      jmg = red_jmg(ired)
-      if (mpl%myproc==geom%mg_to_proc(jmg)) then
-         jmga = geom%mg_to_mga(jmg)
-         red_val(ired,:) = fld_mga(jmga,:)
-      end if
-   end do
-
-   ! Communicate redundant values
-   mask_unpack = .true.
-   red_val_pack = pack(red_val,.true.)
-   call mpl%f_comm%allreduce(red_val_pack,red_val_pack_tot,fckit_mpi_sum())
-   red_val_tot = unpack(red_val_pack_tot,mask_unpack,red_val_tot)
-
-   ! Copy values
-   do ired=1,nred
-      img = red_img(ired)
-      if (mpl%myproc==geom%mg_to_proc(img)) then
-         imga = geom%mg_to_mga(img)
-         fld_mga(imga,:) = red_val_tot(ired,:)
-      end if
-   end do
+if (geom%nc0==geom%nmg) then
+   ! Model grid and subset Sc0 are identical
+   fld_mga = fld_c0a
+else
+   ! Extend subset Sc0 to model grid
+   call geom%com_mg%ext(mpl,geom%nl0,fld_c0a,fld_mga)
 end if
+
+write(mpl%info,*) 'c0a_to_mga',mpl%myproc,maxval(fld_c0a),maxval(fld_mga),sum(fld_c0a),sum(fld_mga)
 
 end subroutine geom_copy_c0a_to_mga
 
 !----------------------------------------------------------------------
 ! Subroutine: geom_copy_mga_to_c0a
-!> Purpose: copy from model grid to subset Sc0, halo A
+! Purpose: copy from model grid to subset Sc0, halo A
 !----------------------------------------------------------------------
 subroutine geom_copy_mga_to_c0a(geom,mpl,fld_mga,fld_c0a)
 
 implicit none
 
 ! Passed variables
-class(geom_type),intent(in) :: geom                        !< Geometry
-type(mpl_type),intent(in) :: mpl                           !< MPI data
-real(kind_real),intent(in) :: fld_mga(geom%nmga,geom%nl0)  !< Field on model grid, halo A
-real(kind_real),intent(out) :: fld_c0a(geom%nc0a,geom%nl0) !< Field on subset Sc0, halo A
+class(geom_type),intent(in) :: geom                        ! Geometry
+type(mpl_type),intent(in) :: mpl                           ! MPI data
+real(kind_real),intent(in) :: fld_mga(geom%nmga,geom%nl0)  ! Field on model grid, halo A
+real(kind_real),intent(out) :: fld_c0a(geom%nc0a,geom%nl0) ! Field on subset Sc0, halo A
 
 ! Local variables
-integer :: ic0a,il0,imga
+integer :: ic0a,imga,il0
+real(kind_real) :: fld_mga_zero(geom%nmga,geom%nl0)
 
-do il0=1,geom%nl0
-   ! Copy non-redundant points
+if (geom%nc0==geom%nmg) then
+   ! Model grid and subset Sc0 are identical
+   fld_c0a = fld_mga
+else
+   ! Initialization
+   fld_mga_zero = fld_mga
    do ic0a=1,geom%nc0a
       imga = geom%c0a_to_mga(ic0a)
-      fld_c0a(ic0a,il0) = fld_mga(imga,il0)
+      fld_mga_zero(imga,:) = 0.0
    end do
-end do
 
-! Check for missing values
-if (any(ismsr(fld_c0a))) call mpl%abort('missing value in copy_mga_to_c0a')
+   ! Reduce model grid to subset Sc0
+   call geom%com_mg%red(mpl,geom%nl0,fld_mga_zero,fld_c0a)
+
+write(mpl%info,*) 'mga_to_c0a',mpl%myproc,maxval(fld_mga_zero),maxval(fld_c0a),sum(fld_mga_zero),sum(fld_c0a)
+
+   ! Copy non-redundant points
+   do il0=1,geom%nl0
+      do ic0a=1,geom%nc0a
+         imga = geom%c0a_to_mga(ic0a)
+         if (abs(fld_mga(imga,il0)-fld_c0a(ic0a,il0))>0.0) then
+            ! Values are different
+            if (ismsr(fld_c0a(ic0a,il0))) then
+               ! Subset Sc0 value is missing
+               fld_c0a(ic0a,il0) = fld_mga(imga,il0)
+            elseif (ismsr(fld_mga(imga,il0))) then
+               ! Nothing to do
+            else
+               ! Both values are not missing, check for zero value
+               if (.not.(abs(fld_c0a(ic0a,il0))>0.0)) then
+                  ! Subset Sc0 value is zero
+                  fld_c0a(ic0a,il0) = fld_mga(imga,il0)
+               elseif (.not.(abs(fld_mga(imga,il0))>0.0)) then
+                  ! Nothing to do
+               else
+                  call mpl%abort('both redundant values are different, not missing and nonzero')
+               end if
+            end if
+         end if
+      end do
+   end do
+end if
+
+write(mpl%info,*) 'mga_to_c0a',mpl%myproc,maxval(fld_mga),maxval(fld_c0a),sum(fld_mga),sum(fld_c0a)
 
 end subroutine geom_copy_mga_to_c0a
+
+!----------------------------------------------------------------------
+! Subroutine: geom_compute_deltas
+! Purpose: compute deltas for LCT definition
+!----------------------------------------------------------------------
+subroutine geom_compute_deltas(geom,ic0,il0,jc0,jl0,dx,dy,dz)
+
+implicit none
+
+! Passed variables
+class(geom_type),intent(in) :: geom ! Geometry
+integer,intent(in) :: ic0           ! First horizontal index
+integer,intent(in) :: il0           ! First vertical index
+integer,intent(in) :: jc0           ! Second horizontal index
+integer,intent(in) :: jl0           ! Second vertical index
+real(kind_real),intent(out) :: dx   ! Longitude delta
+real(kind_real),intent(out) :: dy   ! Latitude delta
+real(kind_real),intent(out) :: dz   ! Altitude delta
+
+! Compute deltas
+dx = geom%lon(jc0)-geom%lon(ic0)
+dy = geom%lat(jc0)-geom%lat(ic0)
+call lonlatmod(dx,dy)
+dx = dx*cos(geom%lat(ic0))
+dz = real(geom%vunit(ic0,jl0)-geom%vunit(ic0,il0),kind_real)
+
+end subroutine geom_compute_deltas
 
 end module type_geom

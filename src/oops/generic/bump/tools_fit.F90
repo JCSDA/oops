@@ -1,12 +1,9 @@
 !----------------------------------------------------------------------
 ! Module: tools_fit
-!> Purpose: fit routines
-!> <br>
-!> Author: Benjamin Menetrier
-!> <br>
-!> Licensing: this code is distributed under the CeCILL-C license
-!> <br>
-!> Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE
+! Purpose: fit-related tools
+! Author: Benjamin Menetrier
+! Licensing: this code is distributed under the CeCILL-C license
+! Copyright © 2015-... UCAR, CERFACS, METEO-FRANCE and IRIT
 !----------------------------------------------------------------------
 module tools_fit
 
@@ -18,7 +15,7 @@ use type_mpl, only: mpl_type
 
 implicit none
 
-integer,parameter :: itermax = 10 !< Maximum number of iteration for the threshold definition
+integer,parameter :: itermax = 10 ! Maximum number of iteration for the threshold definition
 
 private
 public :: fast_fit,ver_smooth,ver_fill
@@ -27,19 +24,19 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: fast_fit
-!> Purpose: compute a fast fit of a raw function
+! Purpose: fast fit length-scale estimation based on the value at mid-height
 !----------------------------------------------------------------------
 subroutine fast_fit(mpl,n,iz,dist,raw,fit_r)
 
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl      !< MPI data
-integer,intent(in) :: n               !< Vector size
-integer,intent(in) :: iz              !< Zero separation index
-real(kind_real),intent(in) :: dist(n) !< Distance
-real(kind_real),intent(in) :: raw(n)  !< Raw data
-real(kind_real),intent(out) :: fit_r  !< Fast fit result
+type(mpl_type),intent(in) :: mpl      ! MPI data
+integer,intent(in) :: n               ! Vector size
+integer,intent(in) :: iz              ! Zero separation index
+real(kind_real),intent(in) :: dist(n) ! Distance
+real(kind_real),intent(in) :: raw(n)  ! Raw data
+real(kind_real),intent(out) :: fit_r  ! Fast fit result
 
 ! Local variables
 integer :: di,i,im,ip,iter
@@ -179,18 +176,18 @@ end subroutine fast_fit
 
 !----------------------------------------------------------------------
 ! Subroutine: ver_smooth
-!> Purpose: homogeneous vertical smoothing
+! Purpose: homogeneous smoothing of a vertical profile
 !----------------------------------------------------------------------
 subroutine ver_smooth(mpl,n,x,rv,profile)
 
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl            !< MPI data
-integer,intent(in) :: n                     !< Vector size
-real(kind_real),intent(in) :: x(n)          !< Coordinate
-real(kind_real),intent(in) :: rv            !< Filtering support radius
-real(kind_real),intent(inout) :: profile(n) !< Vertical profile
+type(mpl_type),intent(in) :: mpl            ! MPI data
+integer,intent(in) :: n                     ! Vector size
+real(kind_real),intent(in) :: x(n)          ! Coordinate
+real(kind_real),intent(in) :: rv            ! Filtering support radius
+real(kind_real),intent(inout) :: profile(n) ! Vertical profile
 
 ! Local variables
 integer :: i,j
@@ -232,17 +229,17 @@ end subroutine ver_smooth
 
 !----------------------------------------------------------------------
 ! Subroutine: ver_fill
-!> Purpose: fill missing values
+! Purpose: missing values filling of a vertical profile
 !----------------------------------------------------------------------
 subroutine ver_fill(mpl,n,x,profile)
 
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl            !< MPI data
-integer,intent(in) :: n                     !< Vector size
-real(kind_real),intent(in) :: x(n)          !< Coordinate
-real(kind_real),intent(inout) :: profile(n) !< Vertical profile
+type(mpl_type),intent(in) :: mpl            ! MPI data
+integer,intent(in) :: n                     ! Vector size
+real(kind_real),intent(in) :: x(n)          ! Coordinate
+real(kind_real),intent(inout) :: profile(n) ! Vertical profile
 
 ! Local variables
 integer :: i,j,iinf,isup

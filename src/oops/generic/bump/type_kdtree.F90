@@ -1,12 +1,9 @@
 !----------------------------------------------------------------------
 ! Module: type_kdtree
-!> Purpose: KD-tree derived type
-!> <br>
-!> Author: Benjamin Menetrier
-!> <br>
-!> Licensing: this code is distributed under the CeCILL-C license
-!> <br>
-!> Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE
+! Purpose: KD-tree derived type
+! Author: Benjamin Menetrier
+! Licensing: this code is distributed under the CeCILL-C license
+! Copyright © 2015-... UCAR, CERFACS, METEO-FRANCE and IRIT
 !----------------------------------------------------------------------
 module type_kdtree
 
@@ -23,8 +20,8 @@ implicit none
 
 ! KD-tree derived type
 type kdtree_type
-    type(kdtree2),pointer :: tp        !< KD-tree pointer
-    integer,allocatable :: from_eff(:) !< Effective index conversion
+    type(kdtree2),pointer :: tp        ! KD-tree pointer
+    integer,allocatable :: from_eff(:) ! Effective index conversion
 contains
     procedure :: create => kdtree_create
     procedure :: dealloc => kdtree_dealloc
@@ -39,21 +36,21 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: kdtree_create
-!> Purpose: create a KD-tree
+! Purpose: create a KD-tree
 !----------------------------------------------------------------------
 subroutine kdtree_create(kdtree,mpl,n,lon,lat,mask,sort,rearrange)
 
 implicit none
 
 ! Passed variables
-class(kdtree_type),intent(inout) :: kdtree !< KD-tree
-type(mpl_type),intent(in) :: mpl           !< MPI data
-integer,intent(in) :: n                    !< Number of points
-real(kind_real),intent(in) :: lon(n)       !< Points longitudes
-real(kind_real),intent(in) :: lat(n)       !< Points latitudes
-logical,intent(in),optional :: mask(n)     !< Mask
-logical,intent(in),optional :: sort        !< Sorting flag
-logical,intent(in),optional :: rearrange   !< Rearranging flag
+class(kdtree_type),intent(inout) :: kdtree ! KD-tree
+type(mpl_type),intent(in) :: mpl           ! MPI data
+integer,intent(in) :: n                    ! Number of points
+real(kind_real),intent(in) :: lon(n)       ! Points longitudes
+real(kind_real),intent(in) :: lat(n)       ! Points latitudes
+logical,intent(in),optional :: mask(n)     ! Mask
+logical,intent(in),optional :: sort        ! Sorting flag
+logical,intent(in),optional :: rearrange   ! Rearranging flag
 
 ! Local variable
 integer :: neff,i,ieff
@@ -112,14 +109,14 @@ end subroutine kdtree_create
 
 !----------------------------------------------------------------------
 ! Subroutine: kdtree_dealloc
-!> Purpose: deallocate KD-tree
+! Purpose: deallocate KD-tree
 !----------------------------------------------------------------------
 subroutine kdtree_dealloc(kdtree)
 
 implicit none
 
 ! Passed variables
-class(kdtree_type),intent(inout) :: kdtree !< KD-tree
+class(kdtree_type),intent(inout) :: kdtree ! KD-tree
 
 if (allocated(kdtree%from_eff)) then
    ! Deallocation
@@ -133,19 +130,19 @@ end subroutine kdtree_dealloc
 
 !----------------------------------------------------------------------
 ! Subroutine: kdtree_find_nearest_neighbors
-!> Purpose: find nearest neighbors using a KD-tree
+! Purpose: find nearest neighbors using a KD-tree
 !----------------------------------------------------------------------
 subroutine kdtree_find_nearest_neighbors(kdtree,lon,lat,nn,nn_index,nn_dist)
 
 implicit none
 
 ! Passed variables
-class(kdtree_type),intent(in) :: kdtree    !< KD-tree
-real(kind_real),intent(in) :: lon          !< Point longitude
-real(kind_real),intent(in) :: lat          !< Point latitude
-integer,intent(in) :: nn                   !< Number of nearest neighbors to find
-integer,intent(out) :: nn_index(nn)        !< Neareast neighbors index
-real(kind_real),intent(out) :: nn_dist(nn) !< Neareast neighbors distance
+class(kdtree_type),intent(in) :: kdtree    ! KD-tree
+real(kind_real),intent(in) :: lon          ! Point longitude
+real(kind_real),intent(in) :: lat          ! Point latitude
+integer,intent(in) :: nn                   ! Number of nearest neighbors to find
+integer,intent(out) :: nn_index(nn)        ! Neareast neighbors index
+real(kind_real),intent(out) :: nn_dist(nn) ! Neareast neighbors distance
 
 ! Local variables
 integer :: i,j,nid
@@ -196,18 +193,18 @@ end subroutine kdtree_find_nearest_neighbors
 
 !----------------------------------------------------------------------
 ! Subroutine: kdtree_count_nearest_neighbors
-!> Purpose: count nearest neighbors using a KD-tree
+! Purpose: count nearest neighbors using a KD-tree
 !----------------------------------------------------------------------
 subroutine kdtree_count_nearest_neighbors(kdtree,lon,lat,sr,nn)
 
 implicit none
 
 ! Passed variables
-class(kdtree_type),intent(in) :: kdtree !< KD-tree
-real(kind_real),intent(in) :: lon       !< Point longitude
-real(kind_real),intent(in) :: lat       !< Point latitude
-real(kind_real),intent(in) :: sr        !< Spherical radius
-integer,intent(out) :: nn               !< Number of nearest neighbors found
+class(kdtree_type),intent(in) :: kdtree ! KD-tree
+real(kind_real),intent(in) :: lon       ! Point longitude
+real(kind_real),intent(in) :: lat       ! Point latitude
+real(kind_real),intent(in) :: sr        ! Spherical radius
+integer,intent(out) :: nn               ! Number of nearest neighbors found
 
 ! Local variables
 real(kind_real) :: lontmp(1),lattmp(1)

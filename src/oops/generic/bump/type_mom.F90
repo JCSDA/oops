@@ -1,12 +1,9 @@
 !----------------------------------------------------------------------
 ! Module: type_mom
-!> Purpose: moments derived type
-!> <br>
-!> Author: Benjamin Menetrier
-!> <br>
-!> Licensing: this code is distributed under the CeCILL-C license
-!> <br>
-!> Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE
+! Purpose: moments derived type
+! Author: Benjamin Menetrier
+! Licensing: this code is distributed under the CeCILL-C license
+! Copyright © 2015-... UCAR, CERFACS, METEO-FRANCE and IRIT
 !----------------------------------------------------------------------
 module type_mom
 
@@ -20,8 +17,8 @@ use type_geom, only: geom_type
 use type_linop, only: linop_type
 use type_mom_blk, only: mom_blk_type
 use type_mpl, only: mpl_type
-use type_hdata, only: hdata_type
 use type_nam, only: nam_type
+use type_samp, only: samp_type
 
 implicit none
 
@@ -29,7 +26,7 @@ implicit none
 type mom_type
    integer :: ne
    integer :: nsub
-   type(mom_blk_type),allocatable :: blk(:) !< Moments blocks
+   type(mom_blk_type),allocatable :: blk(:) ! Moments blocks
 contains
    procedure :: alloc => mom_alloc
    procedure :: compute => mom_compute
@@ -42,20 +39,20 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: mom_alloc
-!> Purpose: allocate moments
+! Purpose: allocate moments
 !----------------------------------------------------------------------
-subroutine mom_alloc(mom,nam,geom,bpar,hdata,ne,nsub)
+subroutine mom_alloc(mom,nam,geom,bpar,samp,ne,nsub)
 
 implicit none
 
 ! Passed variables
-class(mom_type),intent(inout) :: mom !< Moments
-type(nam_type),intent(in) :: nam     !< Namelist
-type(geom_type),intent(in) :: geom   !< Geometry
-type(bpar_type),intent(in) :: bpar   !< Block parameters
-type(hdata_type),intent(in) :: hdata !< HDIAG data
-integer,intent(in) :: ne             !< Ensemble size
-integer,intent(in) :: nsub           !< Number of sub-ensembles
+class(mom_type),intent(inout) :: mom ! Moments
+type(nam_type),intent(in) :: nam     ! Namelist
+type(geom_type),intent(in) :: geom   ! Geometry
+type(bpar_type),intent(in) :: bpar   ! Block parameters
+type(samp_type),intent(in) :: samp   ! Sampling
+integer,intent(in) :: ne             ! Ensemble size
+integer,intent(in) :: nsub           ! Number of sub-ensembles
 
 ! Local variables
 integer :: ib
@@ -72,10 +69,10 @@ do ib=1,bpar%nb
       ! Allocation
       mom%blk(ib)%ne = ne
       mom%blk(ib)%nsub = nsub
-      allocate(mom%blk(ib)%m2_1(hdata%nc1a,bpar%nc3(ib),geom%nl0,mom%blk(ib)%nsub))
-      allocate(mom%blk(ib)%m2_2(hdata%nc1a,bpar%nc3(ib),geom%nl0,mom%blk(ib)%nsub))
-      allocate(mom%blk(ib)%m11(hdata%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,mom%blk(ib)%nsub))
-      if (.not.nam%gau_approx) allocate(mom%blk(ib)%m22(hdata%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,mom%blk(ib)%nsub))
+      allocate(mom%blk(ib)%m2_1(samp%nc1a,bpar%nc3(ib),geom%nl0,mom%blk(ib)%nsub))
+      allocate(mom%blk(ib)%m2_2(samp%nc1a,bpar%nc3(ib),geom%nl0,mom%blk(ib)%nsub))
+      allocate(mom%blk(ib)%m11(samp%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,mom%blk(ib)%nsub))
+      if (.not.nam%gau_approx) allocate(mom%blk(ib)%m22(samp%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,mom%blk(ib)%nsub))
       if (nam%var_full) allocate(mom%blk(ib)%m2full(geom%nc0a,geom%nl0,mom%blk(ib)%nsub))
 
       ! Initialization
@@ -91,20 +88,20 @@ end subroutine mom_alloc
 
 !----------------------------------------------------------------------
 ! Subroutine: mom_compute
-!> Purpose: compute centered moments (iterative formulae)
+! Purpose: compute centered moments (iterative formulae)
 !----------------------------------------------------------------------
-subroutine mom_compute(mom,mpl,nam,geom,bpar,hdata,ens)
+subroutine mom_compute(mom,mpl,nam,geom,bpar,samp,ens)
 
 implicit none
 
 ! Passed variables
-class(mom_type),intent(inout) :: mom !< Moments
-type(mpl_type),intent(in) :: mpl     !< MPI data
-type(nam_type),intent(in) :: nam     !< Namelist
-type(geom_type),intent(in) :: geom   !< Geometry
-type(bpar_type),intent(in) :: bpar   !< Block parameters
-type(hdata_type),intent(in) :: hdata !< HDIAG data
-type(ens_type), intent(in) :: ens    !< Ensemble
+class(mom_type),intent(inout) :: mom ! Moments
+type(mpl_type),intent(in) :: mpl     ! MPI data
+type(nam_type),intent(in) :: nam     ! Namelist
+type(geom_type),intent(in) :: geom   ! Geometry
+type(bpar_type),intent(in) :: bpar   ! Block parameters
+type(samp_type),intent(in) :: samp   ! Sampling
+type(ens_type), intent(in) :: ens    ! Ensemble
 
 ! Local variables
 integer :: ie,ie_sub,jc0,ic0c,jc0c,ic0,jl0r,jl0,il0,isub,jc3,ic1,ic1a,ib,jv,iv,jts,its
@@ -112,7 +109,7 @@ real(kind_real),allocatable :: fld_ext(:,:,:,:),fld_1(:,:,:),fld_2(:,:,:)
 logical,allocatable :: mask_unpack(:,:)
 
 ! Allocation
-call mom%alloc(nam,geom,bpar,hdata,ens%ne,ens%nsub)
+call mom%alloc(nam,geom,bpar,samp,ens%ne,ens%nsub)
 
 ! Loop on sub-ensembles
 do isub=1,ens%nsub
@@ -132,8 +129,8 @@ do isub=1,ens%nsub
       ie = ie_sub+(isub-1)*ens%ne/ens%nsub
 
       ! Allocation
-      allocate(fld_ext(hdata%nc0c,geom%nl0,nam%nv,nam%nts))
-      allocate(mask_unpack(hdata%nc0c,geom%nl0))
+      allocate(fld_ext(samp%nc0c,geom%nl0,nam%nv,nam%nts))
+      allocate(mask_unpack(samp%nc0c,geom%nl0))
       mask_unpack = .true.
 
       do ib=1,bpar%nb
@@ -144,14 +141,14 @@ do isub=1,ens%nsub
          jts = bpar%b_to_ts2(ib)
 
          ! Halo extension
-         if ((iv==jv).and.(its==jts)) call hdata%com_AC%ext(mpl,geom%nl0,ens%fld(:,:,iv,its,ie),fld_ext(:,:,iv,its))
+         if ((iv==jv).and.(its==jts)) call samp%com_AC%ext(mpl,geom%nl0,ens%fld(:,:,iv,its,ie),fld_ext(:,:,iv,its))
       end do
 
       do ib=1,bpar%nb
          if (bpar%diag_block(ib)) then
             ! Allocation
-            allocate(fld_1(hdata%nc1a,bpar%nc3(ib),geom%nl0))
-            allocate(fld_2(hdata%nc1a,bpar%nc3(ib),geom%nl0))
+            allocate(fld_1(samp%nc1a,bpar%nc3(ib),geom%nl0))
+            allocate(fld_2(samp%nc1a,bpar%nc3(ib),geom%nl0))
 
             ! Initialization
             iv = bpar%b_to_v1(ib)
@@ -166,8 +163,8 @@ do isub=1,ens%nsub
                ! Interpolate zero separation points
                !$omp parallel do schedule(static) private(il0)
                do il0=1,geom%nl0
-                  call hdata%d(il0,its)%apply(mpl,fld_ext(:,il0,iv,its),fld_1(:,1,il0))
-                  call hdata%d(il0,jts)%apply(mpl,fld_ext(:,il0,jv,jts),fld_2(:,1,il0))
+                  call samp%d(il0,its)%apply(mpl,fld_ext(:,il0,iv,its),fld_1(:,1,il0))
+                  call samp%d(il0,jts)%apply(mpl,fld_ext(:,il0,jv,jts),fld_2(:,1,il0))
                end do
                !$omp end parallel do
             else
@@ -175,16 +172,16 @@ do isub=1,ens%nsub
                !$omp parallel do schedule(static) private(il0,jc3,ic1a,ic1,ic0,jc0,ic0c,jc0c)
                do il0=1,geom%nl0
                   do jc3=1,bpar%nc3(ib)
-                     do ic1a=1,hdata%nc1a
+                     do ic1a=1,samp%nc1a
                         ! Indices
-                        ic1 = hdata%c1a_to_c1(ic1a)
+                        ic1 = samp%c1a_to_c1(ic1a)
 
-                        if (hdata%c1l0_log(ic1,il0).and.hdata%c1c3l0_log(ic1,jc3,il0)) then
+                        if (samp%c1l0_log(ic1,il0).and.samp%c1c3l0_log(ic1,jc3,il0)) then
                            ! Indices
-                           ic0 = hdata%c1_to_c0(ic1)
-                           jc0 = hdata%c1c3_to_c0(ic1,jc3)
-                           ic0c = hdata%c0_to_c0c(ic0)
-                           jc0c = hdata%c0_to_c0c(jc0)
+                           ic0 = samp%c1_to_c0(ic1)
+                           jc0 = samp%c1c3_to_c0(ic1,jc3)
+                           ic0c = samp%c0_to_c0c(ic0)
+                           jc0c = samp%c0_to_c0c(jc0)
 
                            ! Copy points
                            fld_1(ic1a,jc3,il0) = fld_ext(ic0c,il0,iv,its)

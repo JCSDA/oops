@@ -1,12 +1,9 @@
 !----------------------------------------------------------------------
 ! Module: type_mom_blk
-!> Purpose: moments block derived type
-!> <br>
-!> Author: Benjamin Menetrier
-!> <br>
-!> Licensing: this code is distributed under the CeCILL-C license
-!> <br>
-!> Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE
+! Purpose: moments block derived type
+! Author: Benjamin Menetrier
+! Licensing: this code is distributed under the CeCILL-C license
+! Copyright © 2015-... UCAR, CERFACS, METEO-FRANCE and IRIT
 !----------------------------------------------------------------------
 module type_mom_blk
 
@@ -16,13 +13,13 @@ implicit none
 
 ! Moments block derived type
 type mom_blk_type
-   integer :: ne                                  !< Ensemble size
-   integer :: nsub                                !< Number of sub-ensembles
-   real(kind_real),allocatable :: m2_1(:,:,:,:)   !< Variance
-   real(kind_real),allocatable :: m2_2(:,:,:,:)   !< Variance
-   real(kind_real),allocatable :: m11(:,:,:,:,:)  !< Covariance
-   real(kind_real),allocatable :: m22(:,:,:,:,:)  !< Fourth-order centered moment
-   real(kind_real),allocatable :: m2full(:,:,:)   !< Full variance
+   integer :: ne                                  ! Ensemble size
+   integer :: nsub                                ! Number of sub-ensembles
+   real(kind_real),allocatable :: m2_1(:,:,:,:)   ! Variance
+   real(kind_real),allocatable :: m2_2(:,:,:,:)   ! Variance
+   real(kind_real),allocatable :: m11(:,:,:,:,:)  ! Covariance
+   real(kind_real),allocatable :: m22(:,:,:,:,:)  ! Fourth-order centered moment
+   real(kind_real),allocatable :: m2full(:,:,:)   ! Full variance
 end type mom_blk_type
 
 private

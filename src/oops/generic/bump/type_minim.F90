@@ -1,12 +1,9 @@
 !----------------------------------------------------------------------
 ! Module: type_minim
-!> Purpose: minimization data derived type
-!> <br>
-!> Author: Benjamin Menetrier
-!> <br>
-!> Licensing: this code is distributed under the CeCILL-C license
-!> <br>
-!> Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE
+! Purpose: minimization data derived type
+! Author: Benjamin Menetrier
+! Licensing: this code is distributed under the CeCILL-C license
+! Copyright © 2015-... UCAR, CERFACS, METEO-FRANCE and IRIT
 !----------------------------------------------------------------------
 module type_minim
 
@@ -19,44 +16,43 @@ use type_mpl, only: mpl_type
 
 implicit none
 
-real(kind_real),parameter :: rho = 0.5_kind_real    !< Convergence parameter for the Hooke algorithm
-real(kind_real),parameter :: tol = 1.0e-6_kind_real !< Tolerance for the Hooke algorithm
-integer,parameter :: itermax = 10                   !< Maximum number of iteration for the Hooke algorithm
+real(kind_real),parameter :: rho = 0.5_kind_real    ! Convergence parameter for the Hooke algorithm
+real(kind_real),parameter :: tol = 1.0e-6_kind_real ! Tolerance for the Hooke algorithm
+integer,parameter :: itermax = 10                   ! Maximum number of iteration for the Hooke algorithm
 
 ! Minimization data derived type
 type minim_type
    ! Generic data
-   integer :: nx                              !< Control vector size
-   integer :: ny                              !< Function output size
-   real(kind_real),allocatable :: x(:)        !< Control vector
-   real(kind_real),allocatable :: guess(:)    !< Control vector guess
-   real(kind_real),allocatable :: binf(:)     !< Control vector lower bound
-   real(kind_real),allocatable :: bsup(:)     !< Control vector upper bound
-   real(kind_real),allocatable :: obs(:)      !< Observation
-   character(len=1024) :: cost_function       !< Cost function
-   real(kind_real) :: f_guess                 !< Guess cost
-   real(kind_real) :: f_min                   !< Minimum cost
-   character(len=1024) :: algo                !< Minimization algorithm
+   integer :: nx                              ! Control vector size
+   integer :: ny                              ! Function output size
+   real(kind_real),allocatable :: x(:)        ! Control vector
+   real(kind_real),allocatable :: guess(:)    ! Control vector guess
+   real(kind_real),allocatable :: binf(:)     ! Control vector lower bound
+   real(kind_real),allocatable :: bsup(:)     ! Control vector upper bound
+   real(kind_real),allocatable :: obs(:)      ! Observation
+   character(len=1024) :: cost_function       ! Cost function
+   real(kind_real) :: f_guess                 ! Guess cost
+   real(kind_real) :: f_min                   ! Minimum cost
+   character(len=1024) :: algo                ! Minimization algorithm
 
    ! Common data
-   integer :: nl0                             !< Number of levels
-   integer :: nc3                             !< Number of classes
+   integer :: nl0                             ! Number of levels
+   integer :: nc3                             ! Number of classes
 
    ! Specific data (fit)
-   integer :: nl0r                            !< Reduced number of levels
-   logical :: lhomh                           !< Vertically homogenous horizontal support radius key
-   logical :: lhomv                           !< Vertically homogenous vertical support radius key
-   integer,allocatable :: l0rl0_to_l0(:,:)    !< Reduced level to level
-   real(kind_real),allocatable :: disth(:)    !< Horizontal distance
-   real(kind_real),allocatable :: distv(:,:)  !< Vertical distance
+   integer :: nl0r                            ! Reduced number of levels
+   logical :: lhomh                           ! Vertically homogenous horizontal support radius key
+   logical :: lhomv                           ! Vertically homogenous vertical support radius key
+   integer,allocatable :: l0rl0_to_l0(:,:)    ! Reduced level to level
+   real(kind_real),allocatable :: disth(:)    ! Horizontal distance
+   real(kind_real),allocatable :: distv(:,:)  ! Vertical distance
 
    ! Specific data (LCT)
-   integer :: nscales                         !< Number of LCT scales
-   integer,allocatable :: ncomp(:)            !< Number of LCT components
-   real(kind_real),allocatable :: dx(:,:)     !< Zonal separation
-   real(kind_real),allocatable :: dy(:,:)     !< Meridian separation
-   real(kind_real),allocatable :: dz(:)       !< Vertical separation
-   logical,allocatable :: dmask(:,:)          !< Mask
+   integer :: nscales                         ! Number of LCT scales
+   real(kind_real),allocatable :: dx(:,:)     ! Zonal separation
+   real(kind_real),allocatable :: dy(:,:)     ! Meridian separation
+   real(kind_real),allocatable :: dz(:,:)     ! Vertical separation
+   logical,allocatable :: dmask(:,:)          ! Mask
 contains
    procedure :: compute => minim_compute
    procedure :: cost => minim_cost
@@ -76,16 +72,16 @@ contains
 
 !----------------------------------------------------------------------
 ! subroutine: minim_compute
-!> Purpose: minimize ensuring bounds constraints
+! Purpose: minimize ensuring bounds constraints
 !----------------------------------------------------------------------
 subroutine minim_compute(minim,mpl,lprt)
 
 implicit none
 
 ! Passed variables
-class(minim_type),intent(inout) :: minim !< Minimization data
-type(mpl_type),intent(in) :: mpl         !< MPI data
-logical,intent(in) :: lprt               !< Print key
+class(minim_type),intent(inout) :: minim ! Minimization data
+type(mpl_type),intent(in) :: mpl         ! MPI data
+logical,intent(in) :: lprt               ! Print key
 
 ! Local variables
 real(kind_real) :: guess(minim%nx)
@@ -127,17 +123,17 @@ end subroutine minim_compute
 
 !----------------------------------------------------------------------
 ! Subroutine: minim_cost
-!> Purpose: compute cost function
+! Purpose: compute cost function
 !----------------------------------------------------------------------
 subroutine minim_cost(minim,mpl,x,f)
 
 implicit none
 
 ! Passed variables
-class(minim_type),intent(in) :: minim     !< Minimization data
-type(mpl_type),intent(in) :: mpl          !< MPI data
-real(kind_real),intent(in) :: x(minim%nx) !< Control vector
-real(kind_real),intent(out) :: f          !< Cost function value
+class(minim_type),intent(in) :: minim     ! Minimization data
+type(mpl_type),intent(in) :: mpl          ! MPI data
+real(kind_real),intent(in) :: x(minim%nx) ! Control vector
+real(kind_real),intent(out) :: f          ! Cost function value
 
 select case (minim%cost_function)
 case ('fit_diag')
@@ -152,17 +148,17 @@ end subroutine minim_cost
 
 !----------------------------------------------------------------------
 ! Subroutine: minim_cost_fit_diag
-!> Purpose: diagnosic fit function cost
+! Purpose: diagnosic fit function cost
 !----------------------------------------------------------------------
 subroutine minim_cost_fit_diag(minim,mpl,x,f)
 
 implicit none
 
 ! Passed variables
-class(minim_type),intent(in) :: minim     !< Minimization data
-type(mpl_type),intent(in) :: mpl          !< MPI data
-real(kind_real),intent(in) :: x(minim%nx) !< Control vector
-real(kind_real),intent(out) :: f          !< Cost function value
+class(minim_type),intent(in) :: minim     ! Minimization data
+type(mpl_type),intent(in) :: mpl          ! MPI data
+real(kind_real),intent(in) :: x(minim%nx) ! Control vector
+real(kind_real),intent(out) :: f          ! Cost function value
 
 ! Local variables
 integer :: offset,il0
@@ -235,17 +231,17 @@ end subroutine minim_cost_fit_diag
 
 !----------------------------------------------------------------------
 ! Subroutine: minim_cost_fit_diag_dble
-!> Purpose: diagnosic fit function cost, double fit
+! Purpose: diagnosic fit function cost, double fit
 !----------------------------------------------------------------------
 subroutine minim_cost_fit_diag_dble(minim,mpl,x,f)
 
 implicit none
 
 ! Passed variables
-class(minim_type),intent(in) :: minim     !< Minimization data
-type(mpl_type),intent(in) :: mpl          !< MPI data
-real(kind_real),intent(in) :: x(minim%nx) !< Control vector
-real(kind_real),intent(out) :: f          !< Cost function value
+class(minim_type),intent(in) :: minim     ! Minimization data
+type(mpl_type),intent(in) :: mpl          ! MPI data
+real(kind_real),intent(in) :: x(minim%nx) ! Control vector
+real(kind_real),intent(out) :: f          ! Cost function value
 
 ! Local variables
 integer :: offset,il0
@@ -322,21 +318,22 @@ end subroutine minim_cost_fit_diag_dble
 
 !----------------------------------------------------------------------
 ! Function: minim_cost_fit_lct
-!> Purpose: LCT fit function cost
+! Purpose: LCT fit function cost
 !----------------------------------------------------------------------
 subroutine minim_cost_fit_lct(minim,mpl,x,f)
 
 implicit none
 
 ! Passed variables
-class(minim_type),intent(in) :: minim     !< Minimization data
-type(mpl_type),intent(in) :: mpl          !< MPI data
-real(kind_real),intent(in) :: x(minim%nx) !< Control vector
-real(kind_real),intent(out) :: f          !< Cost function value
+class(minim_type),intent(in) :: minim     ! Minimization data
+type(mpl_type),intent(in) :: mpl          ! MPI data
+real(kind_real),intent(in) :: x(minim%nx) ! Control vector
+real(kind_real),intent(out) :: f          ! Cost function value
 
 ! Local variables
+integer :: iscales,icomp
 real(kind_real) :: norm
-real(kind_real) :: fit(minim%nc3,minim%nl0)
+real(kind_real) :: fit(minim%nc3,minim%nl0),D(4,minim%nscales)
 real(kind_real) :: xtmp(minim%nx),fit_pack(minim%ny),coef(minim%nscales)
 
 ! Renormalize
@@ -344,14 +341,19 @@ xtmp = x
 call minim%vt_dir(xtmp)
 
 ! Compute function
+do iscales=1,minim%nscales
+   do icomp=1,4
+      D(icomp,iscales) = xtmp((iscales-1)*4+icomp)
+   end do
+end do
 if (minim%nscales>1) then
-   coef(1:minim%nscales-1) = xtmp(sum(minim%ncomp)+1:sum(minim%ncomp)+minim%nscales-1)
+   coef(1:minim%nscales-1) = xtmp(minim%nscales*4+1:minim%nscales*4+minim%nscales-1)
    coef(minim%nscales) = 1.0-sum(coef(1:minim%nscales-1))
 else
    coef(1) = 1.0
 end if
-call fit_lct(mpl,minim%nc3,minim%nl0,minim%dx,minim%dy,minim%dz,minim%dmask,minim%nscales,minim%ncomp, &
- & xtmp(1:sum(minim%ncomp)),coef,fit)
+call fit_lct(mpl,minim%nc3,minim%nl0,minim%dx,minim%dy,minim%dz,minim%dmask,minim%nscales, &
+ & xtmp(1:minim%nscales*4),coef,fit)
 
 ! Pack
 fit_pack = pack(fit,mask=.true.)
@@ -365,17 +367,17 @@ end subroutine minim_cost_fit_lct
 
 !----------------------------------------------------------------------
 ! Subroutine: minim_hooke
-!> Purpose: seeks a minimizer of a scalar function of several variables
-!> Author: ALGOL original by Arthur Kaupe, C version by Mark Johnson, FORTRAN90 version by John Burkardt
+! Purpose: seeks a minimizer of a scalar function of several variables
+! Author: ALGOL original by Arthur Kaupe, C version by Mark Johnson, FORTRAN90 version by John Burkardt
 !----------------------------------------------------------------------
 subroutine minim_hooke(minim,mpl,guess)
 
 implicit none
 
 ! Passed variables
-class(minim_type),intent(inout) :: minim      !< Minimization data
-type(mpl_type),intent(in) :: mpl              !< MPI data
-real(kind_real),intent(in) :: guess(minim%nx) !< Guess
+class(minim_type),intent(inout) :: minim      ! Minimization data
+type(mpl_type),intent(in) :: mpl              ! MPI data
+real(kind_real),intent(in) :: guess(minim%nx) ! Guess
 
 ! Local variables
 integer :: funevals,i,iters,keep
@@ -456,21 +458,21 @@ end subroutine minim_hooke
 
 !----------------------------------------------------------------------
 ! Subroutine: minim_best_nearby
-!> Purpose: looks for a better nearby point, one coordinate at a time
-!> Author: ALGOL original by Arthur Kaupe, C version by Mark Johnson, FORTRAN90 version by John Burkardt
+! Purpose: looks for a better nearby point, one coordinate at a time
+! Author: ALGOL original by Arthur Kaupe, C version by Mark Johnson, FORTRAN90 version by John Burkardt
 !----------------------------------------------------------------------
 subroutine minim_best_nearby(minim,mpl,delta,point,prevbest,funevals,minf)
 
 implicit none
 
 ! Passed variables
-class(minim_type),intent(inout) :: minim         !< Minimization data
-type(mpl_type),intent(in) :: mpl                 !< MPI data
-real(kind_real),intent(inout) :: delta(minim%nx) !< Step
-real(kind_real),intent(inout) :: point(minim%nx) !< Point
-real(kind_real),intent(in) :: prevbest           !< Best existing cost
-integer,intent(inout) :: funevals                !< Number of evaluations
-real(kind_real),intent(out) :: minf              !< Minimum cost
+class(minim_type),intent(inout) :: minim         ! Minimization data
+type(mpl_type),intent(in) :: mpl                 ! MPI data
+real(kind_real),intent(inout) :: delta(minim%nx) ! Step
+real(kind_real),intent(inout) :: point(minim%nx) ! Point
+real(kind_real),intent(in) :: prevbest           ! Best existing cost
+integer,intent(inout) :: funevals                ! Number of evaluations
+real(kind_real),intent(out) :: minf              ! Minimum cost
 
 ! Local variables
 integer :: i
@@ -507,15 +509,15 @@ end subroutine minim_best_nearby
 
 !----------------------------------------------------------------------
 ! Subroutine: vt_dir
-!> Purpose: direct variable transform
+! Purpose: direct variable transform
 !----------------------------------------------------------------------
 subroutine minim_vt_dir(minim,x)
 
 implicit none
 
 ! Passed variables
-class(minim_type),intent(in) :: minim        !< Minimization data
-real(kind_real),intent(inout) :: x(minim%nx) !< Vector
+class(minim_type),intent(in) :: minim        ! Minimization data
+real(kind_real),intent(inout) :: x(minim%nx) ! Vector
 
 ! Linear expansion of the hyperbolic tangent of the variable
 x = minim%binf+0.5*(1.0+tanh(x))*(minim%bsup-minim%binf)
@@ -524,16 +526,16 @@ end subroutine minim_vt_dir
 
 !----------------------------------------------------------------------
 ! Subroutine: vt_inv
-!> Purpose: inverse variable transform
+! Purpose: inverse variable transform
 !----------------------------------------------------------------------
 subroutine minim_vt_inv(minim,mpl,x)
 
 implicit none
 
 ! Passed variables
-class(minim_type),intent(in) :: minim        !< Minimization data
-type(mpl_type),intent(in) :: mpl             !< MPI data
-real(kind_real),intent(inout) :: x(minim%nx) !< Vector
+class(minim_type),intent(in) :: minim        ! Minimization data
+type(mpl_type),intent(in) :: mpl             ! MPI data
+real(kind_real),intent(inout) :: x(minim%nx) ! Vector
 
 ! Local variables
 integer :: ix

@@ -1,12 +1,9 @@
 !----------------------------------------------------------------------
 ! Module: type_rng
-!> Purpose: random numbers generator derived type
-!> <br>
-!> Author: Benjamin Menetrier
-!> <br>
-!> Licensing: this code is distributed under the CeCILL-C license
-!> <br>
-!> Copyright © 2015-... UCAR, CERFACS and METEO-FRANCE
+! Purpose: random numbers generator derived type
+! Author: Benjamin Menetrier
+! Licensing: this code is distributed under the CeCILL-C license
+! Copyright © 2015-... UCAR, CERFACS, METEO-FRANCE and IRIT
 !----------------------------------------------------------------------
 module type_rng
 
@@ -16,18 +13,18 @@ use tools_func, only: sphere_dist,gc99
 use tools_kinds, only: kind_real
 use tools_missing, only: msi,msr,isnotmsi
 use tools_qsort, only: qsort
-use tools_repro, only: inf,sup
+use tools_repro, only: inf,sup,infeq
 use type_kdtree, only: kdtree_type
 use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 
 implicit none
 
-integer,parameter :: default_seed = 140587            !< Default seed
-integer(kind=int64),parameter :: a = 1103515245_int64 !< Linear congruential multiplier
-integer(kind=int64),parameter :: c = 12345_int64      !< Linear congruential offset
-integer(kind=int64),parameter :: m = 2147483648_int64 !< Linear congruential modulo
-logical,parameter :: nn_stats = .true.                !< Compute and print subsampling statistics
+integer,parameter :: default_seed = 140587            ! Default seed
+integer(kind=int64),parameter :: a = 1103515245_int64 ! Linear congruential multiplier
+integer(kind=int64),parameter :: c = 12345_int64      ! Linear congruential offset
+integer(kind=int64),parameter :: m = 2147483648_int64 ! Linear congruential modulo
+logical,parameter :: nn_stats = .false.               ! Compute and print subsampling statistics
 
 type rng_type
    integer(kind=int64) :: seed
@@ -35,20 +32,20 @@ contains
    procedure :: init => rng_init
    procedure :: reseed => rng_reseed
    procedure :: lcg => rng_lcg
-   procedure :: rand_integer_0d
-   procedure :: rand_integer_1d
-   generic :: rand_integer => rand_integer_0d,rand_integer_1d
-   procedure :: rand_real_0d
-   procedure :: rand_real_1d
-   procedure :: rand_real_2d
-   procedure :: rand_real_3d
-   procedure :: rand_real_4d
-   procedure :: rand_real_5d
-   generic :: rand_real => rand_real_0d,rand_real_1d,rand_real_2d,rand_real_3d,rand_real_4d,rand_real_5d
-   procedure :: rand_gau_1d
-   procedure :: rand_gau_5d
-   generic :: rand_gau => rand_gau_1d,rand_gau_5d
-   procedure :: initialize_sampling
+   procedure :: rng_rand_integer_0d
+   procedure :: rng_rand_integer_1d
+   generic :: rand_integer => rng_rand_integer_0d,rng_rand_integer_1d
+   procedure :: rng_rand_real_0d
+   procedure :: rng_rand_real_1d
+   procedure :: rng_rand_real_2d
+   procedure :: rng_rand_real_3d
+   procedure :: rng_rand_real_4d
+   procedure :: rng_rand_real_5d
+   generic :: rand_real => rng_rand_real_0d,rng_rand_real_1d,rng_rand_real_2d,rng_rand_real_3d,rng_rand_real_4d,rng_rand_real_5d
+   procedure :: rng_rand_gau_1d
+   procedure :: rng_rand_gau_5d
+   generic :: rand_gau => rng_rand_gau_1d,rng_rand_gau_5d
+   procedure :: initialize_sampling => rng_initialize_sampling
 end type rng_type
 
 private
@@ -58,16 +55,16 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: rng_init
-!> Purpose: initialize the random number generator
+! Purpose: initialize the random number generator
 !----------------------------------------------------------------------
 subroutine rng_init(rng,mpl,nam)
 
 implicit none
 
 ! Passed variables
-class(rng_type),intent(inout) :: rng !< Random number generator
-type(mpl_type),intent(in) :: mpl     !< MPI data
-type(nam_type),intent(in) :: nam     !< Namelist variables
+class(rng_type),intent(inout) :: rng ! Random number generator
+type(mpl_type),intent(in) :: mpl     ! MPI data
+type(nam_type),intent(in) :: nam     ! Namelist variables
 
 ! Local variable
 integer :: seed
@@ -99,15 +96,15 @@ end subroutine rng_init
 
 !----------------------------------------------------------------------
 ! Subroutine: rng_reseed
-!> Purpose: re-seed the random number generator
+! Purpose: re-seed the random number generator
 !----------------------------------------------------------------------
 subroutine rng_reseed(rng,mpl)
 
 implicit none
 
 ! Passed variable
-class(rng_type),intent(inout) :: rng !< Random number generator
-type(mpl_type),intent(in) :: mpl     !< MPI data
+class(rng_type),intent(inout) :: rng ! Random number generator
+type(mpl_type),intent(in) :: mpl     ! MPI data
 
 ! Local variable
 integer :: seed
@@ -125,15 +122,15 @@ end subroutine rng_reseed
 
 !----------------------------------------------------------------------
 ! Subroutine: rng_lcg
-!> Purpose: linear congruential generator
+! Purpose: linear congruential generator
 !----------------------------------------------------------------------
 subroutine rng_lcg(rng,x)
 
 implicit none
 
 ! Passed variable
-class(rng_type),intent(inout) :: rng !< Random number generator
-real(kind_real),intent(out) :: x             !< Random number between 0 and 1
+class(rng_type),intent(inout) :: rng ! Random number generator
+real(kind_real),intent(out) :: x             ! Random number between 0 and 1
 
 ! Update seed
 rng%seed = mod(a*rng%seed+c,m)
@@ -144,18 +141,18 @@ x = real(rng%seed,kind_real)/real(m-1,kind_real)
 end subroutine rng_lcg
 
 !----------------------------------------------------------------------
-! Subroutine: rand_integer_0d
-!> Purpose: generate a random integer, 0d
+! Subroutine: rng_rand_integer_0d
+! Purpose: generate a random integer, 0d
 !----------------------------------------------------------------------
-subroutine rand_integer_0d(rng,binf,bsup,ir)
+subroutine rng_rand_integer_0d(rng,binf,bsup,ir)
 
 implicit none
 
 ! Passed variables
-class(rng_type),intent(inout) :: rng !< Random number generator
-integer,intent(in) :: binf           !< Lower bound
-integer,intent(in) :: bsup           !< Upper bound
-integer,intent(out) :: ir            !< Random integer
+class(rng_type),intent(inout) :: rng ! Random number generator
+integer,intent(in) :: binf           ! Lower bound
+integer,intent(in) :: bsup           ! Upper bound
+integer,intent(out) :: ir            ! Random integer
 
 ! Local variables
 real(kind_real) :: x
@@ -169,21 +166,21 @@ x = x*real(bsup-binf+1,kind_real)
 ! Add offset
 ir = binf+int(x)
 
-end subroutine rand_integer_0d
+end subroutine rng_rand_integer_0d
 
 !----------------------------------------------------------------------
-! Subroutine: rand_integer_1d
-!> Purpose: generate a random integer, 1d
+! Subroutine: rng_rand_integer_1d
+! Purpose: generate a random integer, 1d
 !----------------------------------------------------------------------
-subroutine rand_integer_1d(rng,binf,bsup,ir)
+subroutine rng_rand_integer_1d(rng,binf,bsup,ir)
 
 implicit none
 
 ! Passed variables
-class(rng_type),intent(inout) :: rng !< Random number generator
-integer,intent(in) :: binf           !< Lower bound
-integer,intent(in) :: bsup           !< Upper bound
-integer,intent(out) :: ir(:)         !< Random integer
+class(rng_type),intent(inout) :: rng ! Random number generator
+integer,intent(in) :: binf           ! Lower bound
+integer,intent(in) :: bsup           ! Upper bound
+integer,intent(out) :: ir(:)         ! Random integer
 
 ! Local variables
 integer :: i
@@ -192,21 +189,21 @@ do i=1,size(ir)
    call rng%rand_integer(binf,bsup,ir(i))
 end do
 
-end subroutine rand_integer_1d
+end subroutine rng_rand_integer_1d
 
 !----------------------------------------------------------------------
-! Subroutine: rand_real_0d
-!> Purpose: generate a random real, 0d
+! Subroutine: rng_rand_real_0d
+! Purpose: generate a random real, 0d
 !----------------------------------------------------------------------
-subroutine rand_real_0d(rng,binf,bsup,rr)
+subroutine rng_rand_real_0d(rng,binf,bsup,rr)
 
 implicit none
 
 ! Passed variables
-class(rng_type),intent(inout) :: rng !< Random number generator
-real(kind_real),intent(in) :: binf   !< Lower bound
-real(kind_real),intent(in) :: bsup   !< Upper bound
-real(kind_real),intent(out) :: rr    !< Random integer
+class(rng_type),intent(inout) :: rng ! Random number generator
+real(kind_real),intent(in) :: binf   ! Lower bound
+real(kind_real),intent(in) :: bsup   ! Upper bound
+real(kind_real),intent(out) :: rr    ! Random integer
 
 ! Local variables
 real(kind_real) :: x
@@ -220,21 +217,21 @@ x = x*(bsup-binf)
 ! Add offset
 rr = binf+x
 
-end subroutine rand_real_0d
+end subroutine rng_rand_real_0d
 
 !----------------------------------------------------------------------
-! Subroutine: rand_real_1d
-!> Purpose: generate a random real, 1d
+! Subroutine: rng_rand_real_1d
+! Purpose: generate a random real, 1d
 !----------------------------------------------------------------------
-subroutine rand_real_1d(rng,binf,bsup,rr)
+subroutine rng_rand_real_1d(rng,binf,bsup,rr)
 
 implicit none
 
 ! Passed variables
-class(rng_type),intent(inout) :: rng !< Random number generator
-real(kind_real),intent(in) :: binf   !< Lower bound
-real(kind_real),intent(in) :: bsup   !< Upper bound
-real(kind_real),intent(out) :: rr(:) !< Random integer
+class(rng_type),intent(inout) :: rng ! Random number generator
+real(kind_real),intent(in) :: binf   ! Lower bound
+real(kind_real),intent(in) :: bsup   ! Upper bound
+real(kind_real),intent(out) :: rr(:) ! Random integer
 
 ! Local variables
 integer :: i
@@ -243,21 +240,21 @@ do i=1,size(rr)
    call rng%rand_real(binf,bsup,rr(i))
 end do
 
-end subroutine rand_real_1d
+end subroutine rng_rand_real_1d
 
 !----------------------------------------------------------------------
-! Subroutine: rand_real_2d
-!> Purpose: generate a random real, 2d
+! Subroutine: rng_rand_real_2d
+! Purpose: generate a random real, 2d
 !----------------------------------------------------------------------
-subroutine rand_real_2d(rng,binf,bsup,rr)
+subroutine rng_rand_real_2d(rng,binf,bsup,rr)
 
 implicit none
 
 ! Passed variables
-class(rng_type),intent(inout) :: rng    !< Random number generator
-real(kind_real),intent(in) :: binf      !< Lower bound
-real(kind_real),intent(in) :: bsup      !< Upper bound
-real(kind_real),intent(out) :: rr(:,:)  !< Random integer
+class(rng_type),intent(inout) :: rng    ! Random number generator
+real(kind_real),intent(in) :: binf      ! Lower bound
+real(kind_real),intent(in) :: bsup      ! Upper bound
+real(kind_real),intent(out) :: rr(:,:)  ! Random integer
 
 ! Local variables
 integer :: i,j
@@ -268,21 +265,21 @@ do i=1,size(rr,2)
    end do
 end do
 
-end subroutine rand_real_2d
+end subroutine rng_rand_real_2d
 
 !----------------------------------------------------------------------
-! Subroutine: rand_real_3d
-!> Purpose: generate a random real, 3d
+! Subroutine: rng_rand_real_3d
+! Purpose: generate a random real, 3d
 !----------------------------------------------------------------------
-subroutine rand_real_3d(rng,binf,bsup,rr)
+subroutine rng_rand_real_3d(rng,binf,bsup,rr)
 
 implicit none
 
 ! Passed variables
-class(rng_type),intent(inout) :: rng     !< Random number generator
-real(kind_real),intent(in) :: binf       !< Lower bound
-real(kind_real),intent(in) :: bsup       !< Upper bound
-real(kind_real),intent(out) :: rr(:,:,:) !< Random integer
+class(rng_type),intent(inout) :: rng     ! Random number generator
+real(kind_real),intent(in) :: binf       ! Lower bound
+real(kind_real),intent(in) :: bsup       ! Upper bound
+real(kind_real),intent(out) :: rr(:,:,:) ! Random integer
 
 ! Local variables
 integer :: i,j,k
@@ -295,21 +292,21 @@ do i=1,size(rr,3)
    end do
 end do
 
-end subroutine rand_real_3d
+end subroutine rng_rand_real_3d
 
 !----------------------------------------------------------------------
-! Subroutine: rand_real_4d
-!> Purpose: generate a random real, 4d
+! Subroutine: rng_rand_real_4d
+! Purpose: generate a random real, 4d
 !----------------------------------------------------------------------
-subroutine rand_real_4d(rng,binf,bsup,rr)
+subroutine rng_rand_real_4d(rng,binf,bsup,rr)
 
 implicit none
 
 ! Passed variables
-class(rng_type),intent(inout) :: rng       !< Random number generator
-real(kind_real),intent(in) :: binf         !< Lower bound
-real(kind_real),intent(in) :: bsup         !< Upper bound
-real(kind_real),intent(out) :: rr(:,:,:,:) !< Random integer
+class(rng_type),intent(inout) :: rng       ! Random number generator
+real(kind_real),intent(in) :: binf         ! Lower bound
+real(kind_real),intent(in) :: bsup         ! Upper bound
+real(kind_real),intent(out) :: rr(:,:,:,:) ! Random integer
 
 ! Local variables
 integer :: i,j,k,l
@@ -324,21 +321,21 @@ do i=1,size(rr,4)
    end do
 end do
 
-end subroutine rand_real_4d
+end subroutine rng_rand_real_4d
 
 !----------------------------------------------------------------------
-! Subroutine: rand_real_5d
-!> Purpose: generate a random real, 5d
+! Subroutine: rng_rand_real_5d
+! Purpose: generate a random real, 5d
 !----------------------------------------------------------------------
-subroutine rand_real_5d(rng,binf,bsup,rr)
+subroutine rng_rand_real_5d(rng,binf,bsup,rr)
 
 implicit none
 
 ! Passed variables
-class(rng_type),intent(inout) :: rng         !< Random number generator
-real(kind_real),intent(in) :: binf           !< Lower bound
-real(kind_real),intent(in) :: bsup           !< Upper bound
-real(kind_real),intent(out) :: rr(:,:,:,:,:) !< Random integer
+class(rng_type),intent(inout) :: rng         ! Random number generator
+real(kind_real),intent(in) :: binf           ! Lower bound
+real(kind_real),intent(in) :: bsup           ! Upper bound
+real(kind_real),intent(out) :: rr(:,:,:,:,:) ! Random integer
 
 ! Local variables
 integer :: i,j,k,l,m
@@ -355,19 +352,19 @@ do i=1,size(rr,5)
    end do
 end do
 
-end subroutine rand_real_5d
+end subroutine rng_rand_real_5d
 
 !----------------------------------------------------------------------
-! Subroutine: rand_gau_1d
-!> Purpose: generate random Gaussian deviates, 1d
+! Subroutine: rng_rand_gau_1d
+! Purpose: generate random Gaussian deviates, 1d
 !----------------------------------------------------------------------
-subroutine rand_gau_1d(rng,rr)
+subroutine rng_rand_gau_1d(rng,rr)
 
 implicit none
 
 ! Passed variables
-class(rng_type),intent(inout) :: rng !< Random number generator
-real(kind_real),intent(out) :: rr(:) !< Random integer
+class(rng_type),intent(inout) :: rng ! Random number generator
+real(kind_real),intent(out) :: rr(:) ! Random integer
 
 ! Local variables
 integer :: i,iset
@@ -396,19 +393,19 @@ do i=1,size(rr,1)
    rr(i) = gasdev
 end do
 
-end subroutine rand_gau_1d
+end subroutine rng_rand_gau_1d
 
 !----------------------------------------------------------------------
-! Subroutine: rand_gau_5d
-!> Purpose: generate random Gaussian deviates, 5d
+! Subroutine: rng_rand_gau_5d
+! Purpose: generate random Gaussian deviates, 5d
 !----------------------------------------------------------------------
-subroutine rand_gau_5d(rng,rr)
+subroutine rng_rand_gau_5d(rng,rr)
 
 implicit none
 
 ! Passed variables
-class(rng_type),intent(inout) :: rng         !< Random number generator
-real(kind_real),intent(out) :: rr(:,:,:,:,:) !< Random integer
+class(rng_type),intent(inout) :: rng         ! Random number generator
+real(kind_real),intent(out) :: rr(:,:,:,:,:) ! Random integer
 
 ! Local variables
 integer :: i,j,k,l
@@ -423,39 +420,43 @@ do i=1,size(rr,5)
    end do
 end do
 
-end subroutine rand_gau_5d
+end subroutine rng_rand_gau_5d
 
 !----------------------------------------------------------------------
-! Subroutine: initialize_sampling
-!> Purpose: intialize sampling
+! Subroutine: rng_initialize_sampling
+! Purpose: intialize sampling
 !----------------------------------------------------------------------
-subroutine initialize_sampling(rng,mpl,n,lon,lat,mask,rh,ntry,nrep,ns,ihor)
+subroutine rng_initialize_sampling(rng,mpl,n,lon,lat,mask,rh,ntry,nrep,ns,ihor,fast)
 
 implicit none
 
 ! Passed variables
-class(rng_type),intent(inout) :: rng !< Random number generator
-type(mpl_type),intent(inout) :: mpl  !< MPI data
-integer,intent(in) :: n              !< Number of points
-real(kind_real),intent(in) :: lon(n) !< Longitudes
-real(kind_real),intent(in) :: lat(n) !< Latitudes
-logical,intent(in) :: mask(n)        !< Mask
-real(kind_real),intent(in) :: rh(n)  !< Horizontal support radius
-integer,intent(in) :: ntry           !< Number of tries
-integer,intent(in) :: nrep           !< Number of replacements
-integer,intent(in) :: ns             !< Number of samplings points
-integer,intent(out) :: ihor(ns)      !< Horizontal sampling index
+class(rng_type),intent(inout) :: rng ! Random number generator
+type(mpl_type),intent(inout) :: mpl  ! MPI data
+integer,intent(in) :: n              ! Number of points
+real(kind_real),intent(in) :: lon(n) ! Longitudes
+real(kind_real),intent(in) :: lat(n) ! Latitudes
+logical,intent(in) :: mask(n)        ! Mask
+real(kind_real),intent(in) :: rh(n)  ! Horizontal support radius
+integer,intent(in) :: ntry           ! Number of tries
+integer,intent(in) :: nrep           ! Number of replacements
+integer,intent(in) :: ns             ! Number of samplings points
+integer,intent(out) :: ihor(ns)      ! Horizontal sampling index
+logical,intent(in),optional :: fast  ! Fast sampling flag
 
 ! Local variables
 integer :: system_clock_start,system_clock_end,count_rate,count_max
-integer :: is,js,i,irep,irmax,itry,irval,irvalmax,i_red,ir,ismin,nval,nrep_eff,nn_index(2)
-integer,allocatable :: val_to_full(:)
+integer :: is,js,i,irep,irmax,itry,irval,irvalmin,irvalmax,i_red,ir,ismin,nval,nrep_eff,nn_index(2)
+integer,allocatable :: val_to_full(:),ihor_tmp(:)
 real(kind_real) :: elapsed
 real(kind_real) :: d,distmax,distmin,nn_dist(2)
 real(kind_real) :: nn_sdist_min,nn_sdist_max,nn_sdist_avg,nn_sdist_std
-real(kind_real),allocatable :: dist(:)
+real(kind_real) :: cdf_norm,rr
+real(kind_real),allocatable :: cdf(:)
+real(kind_real),allocatable :: lon_rep(:),lat_rep(:),dist(:)
 real(kind_real),allocatable :: sdist(:,:),nn_sdist(:)
-logical,allocatable :: lmask(:),smask(:)
+logical :: lfast
+logical,allocatable :: lmask(:),smask(:),rmask(:)
 type(kdtree_type) :: kdtree
 
 if (mpl%main) then
@@ -466,7 +467,7 @@ if (mpl%main) then
    elseif (nval<ns) then
       call mpl%abort('ns greater that mask size in initialize_sampling')
    elseif (nval==ns) then
-      write(mpl%info,'(a)') 'all points are used'
+      write(mpl%info,'(a)') ' all points are used'
       is = 0
       do i=1,n
          if (mask(i)) then
@@ -479,19 +480,16 @@ if (mpl%main) then
          ! Save initial time
          call system_clock(count=system_clock_start)
       end if
-   
+
       ! Allocation
       nrep_eff = min(nrep,n-ns)
-      allocate(dist(ns))
+      allocate(ihor_tmp(ns+nrep_eff))
       allocate(lmask(n))
-      allocate(smask(n))
       allocate(val_to_full(nval))
-   
+
       ! Initialization
-      call msi(ihor)
-      call msr(dist)
+      call msi(ihor_tmp)
       lmask = mask
-      smask = .false.
       call msi(val_to_full)
       i_red = 0
       do i=1,n
@@ -500,119 +498,201 @@ if (mpl%main) then
             val_to_full(i_red) = i
          end if
       end do
-      is = 1
-      irep = 1
       call mpl%prog_init(ns+nrep_eff)
-   
-      ! Define sampling
-      do while (is<=ns)
-         ! Create KD-tree (unsorted)
-         if (is>2) call kdtree%create(mpl,n,lon,lat,mask=smask,sort=.false.)
-   
-         ! Initialization
-         distmax = 0.0
-         irmax = 0
-         irvalmax = 0
-         itry = 1
-   
-         ! Find a new point
-         do itry=1,ntry
-            ! Generate a random index among valid points
-            call rng%rand_integer(1,nval,irval)
-            ir = val_to_full(irval)
-   
-            ! Check point validity
-            if (is==1) then
-               ! Accept point
-               irvalmax = irval
-               irmax = ir
-            else
-               if (is==2) then
-                  ! Compute distance
-                  call sphere_dist(lon(ir),lat(ir),lon(ihor(1)),lat(ihor(1)),d)
+      lfast = .false.
+      if (present(fast)) lfast = fast
+
+      if (lfast) then
+         ! Allocation
+         allocate(cdf(nval))
+
+         ! Define sampling with cumulative distribution function
+         cdf(1) = 0.0
+         do i_red=2,nval
+             i = val_to_full(i_red)
+             cdf(i_red) = cdf(i_red-1)+1.0/rh(i)**2
+         end do
+         cdf_norm = 1.0/cdf(nval)
+         cdf(1:nval) = cdf(1:nval)*cdf_norm
+
+         do is=1,ns+nrep
+            ! Generate random number
+            call rng%rand_real(0.0_kind_real,1.0_kind_real,rr)
+
+            ! Dichotomy to find the value
+            irvalmin = 1
+            irvalmax = nval
+            do while (irvalmax-irvalmin>1)
+               irval = (irvalmin+irvalmax)/2
+               if ((cdf(irvalmin)-rr)*(cdf(irval)-rr)>0.0) then
+                  irvalmin = irval
                else
-                  ! Find nearest neighbor distance
-                  call kdtree%find_nearest_neighbors(lon(ir),lat(ir),1,nn_index(1:1),nn_dist(1:1))
-                  d = nn_dist(1)**2/(rh(ir)**2+rh(nn_index(1))**2)
+                  irvalmax = irval
                end if
-   
-               ! Check distance
-               if (sup(d,distmax)) then
-                  distmax = d
+            end do
+
+            ! New sampling point
+            ir = val_to_full(irval)
+            ihor_tmp(is) = ir
+            lmask(ir) = .false.
+
+            ! Shift valid points array
+            if (irval<nval) then
+               cdf(irval:nval-1) = cdf(irval+1:nval)
+               val_to_full(irval:nval-1) = val_to_full(irval+1:nval)
+            end if
+            nval = nval-1
+
+            ! Renormalize cdf
+            cdf_norm = 1.0/cdf(nval)
+            cdf(1:nval) = cdf(1:nval)*cdf_norm
+
+            ! Update
+            call mpl%prog_print(is)
+         end do
+      else
+         ! Allocation
+         allocate(smask(n))
+
+         ! Initialization
+         smask = .false.
+
+         ! Define sampling with KD-tree
+         do is=1,ns+nrep_eff
+            ! Create KD-tree (unsorted)
+            if (is>2) call kdtree%create(mpl,n,lon,lat,mask=smask,sort=.false.)
+
+            ! Initialization
+            distmax = 0.0
+            irmax = 0
+            irvalmax = 0
+            itry = 1
+
+            ! Find a new point
+            do itry=1,ntry
+               ! Generate a random index among valid points
+               call rng%rand_integer(1,nval,irval)
+               ir = val_to_full(irval)
+
+               ! Check point validity
+               if (is==1) then
+                  ! Accept point
                   irvalmax = irval
                   irmax = ir
+               else
+                  if (is==2) then
+                     ! Compute distance
+                     call sphere_dist(lon(ir),lat(ir),lon(ihor_tmp(1)),lat(ihor_tmp(1)),d)
+                  else
+                     ! Find nearest neighbor distance
+                     call kdtree%find_nearest_neighbors(lon(ir),lat(ir),1,nn_index(1:1),nn_dist(1:1))
+                     d = nn_dist(1)**2/(rh(ir)**2+rh(nn_index(1))**2)
+                  end if
+
+                  ! Check distance
+                  if (sup(d,distmax)) then
+                     distmax = d
+                     irvalmax = irval
+                     irmax = ir
+                  end if
                end if
+            end do
+
+            ! Delete kdtree
+            if (is>2) call kdtree%dealloc
+
+            ! Add point to sampling
+            if (irmax>0) then
+               ! New sampling point
+               ihor_tmp(is) = irmax
+               lmask(irmax) = .false.
+               smask(irmax) = .true.
+
+               ! Shift valid points array
+               if (irvalmax<nval) val_to_full(irvalmax:nval-1) = val_to_full(irvalmax+1:nval)
+               nval = nval-1
             end if
+
+            ! Update
+            call mpl%prog_print(is)
          end do
-   
-         ! Delete kdtree
-         if (is>2) call kdtree%dealloc
-   
-         ! Add point to sampling
-         if (irmax>0) then
-            ! New sampling point
-            ihor(is) = irmax
-            lmask(irmax) = .false.
-            smask(irmax) = .true.
-            is = is+1
-   
-            ! Shift valid points array
-            if (irvalmax<nval) val_to_full(irvalmax:nval-1) = val_to_full(irvalmax+1:nval)
-            nval = nval-1
-         end if
-   
-         if (is==ns+1) then
-            ! Try replacement
-            if (irep<=nrep_eff) then
-               ! Create KD-tree (unsorted)
-               call kdtree%create(mpl,n,lon,lat,mask=smask,sort=.false.)
-   
-               ! Get minimum distance
-               do js=1,ns
+      end if
+
+      if (nrep_eff>0) then
+         write(mpl%info,'(a)',advance='no') '100% => '
+         call flush(mpl%info)
+
+         ! Allocation
+         allocate(rmask(ns+nrep_eff))
+         allocate(lon_rep(ns+nrep_eff))
+         allocate(lat_rep(ns+nrep_eff))
+         allocate(dist(ns+nrep_eff))
+
+         ! Initialization
+         rmask = .true.
+         do is=1,ns+nrep_eff
+            lon_rep(is) = lon(ihor_tmp(is))
+            lat_rep(is) = lat(ihor_tmp(is))
+         end do
+         call msr(dist)
+         call mpl%prog_init(nrep_eff)
+
+         ! Remove closest points
+         do irep=1,nrep_eff
+            ! Create KD-tree (unsorted)
+            call kdtree%create(mpl,ns+nrep_eff,lon_rep,lat_rep,mask=rmask,sort=.false.)
+
+            ! Get minimum distance
+            do is=1,ns+nrep_eff
+               if (rmask(is)) then
                   ! Find nearest neighbor distance
-                  call kdtree%find_nearest_neighbors(lon(ihor(js)),lat(ihor(js)),2,nn_index,nn_dist)
-                  if (nn_index(1)==ihor(js)) then
-                     dist(js) = nn_dist(2)
-                  elseif (nn_index(2)==ihor(js)) then
-                     dist(js) = nn_dist(1)
+                  call kdtree%find_nearest_neighbors(lon(ihor_tmp(is)),lat(ihor_tmp(is)),2,nn_index,nn_dist)
+                  if (nn_index(1)==is) then
+                     dist(is) = nn_dist(2)
+                  elseif (nn_index(2)==is) then
+                     dist(is) = nn_dist(1)
                   else
                      call mpl%abort('wrong index in replacement')
                   end if
-                  dist(js) = dist(js)**2/(rh(nn_index(1))**2+rh(nn_index(2))**2)
-               end do
-   
-               ! Delete kdtree
-               call kdtree%dealloc
-   
-               ! Remove worst point
-               distmin = huge(1.0)
-               call msi(ismin)
-               do js=1,ns
-                  if (inf(dist(js),distmin)) then
-                     ismin = js
-                     distmin = dist(js)
+                  dist(is) = dist(is)**2/(rh(ihor_tmp(nn_index(1)))**2+rh(ihor_tmp(nn_index(2)))**2)
+               end if
+            end do
+
+            ! Delete kdtree
+            call kdtree%dealloc
+
+            ! Remove worst point
+            distmin = huge(1.0)
+            call msi(ismin)
+            do is=1,ns+nrep_eff
+               if (rmask(is)) then
+                  if (inf(dist(is),distmin)) then
+                     ismin = is
+                     distmin = dist(is)
                   end if
-               end do
-               smask(ihor(ismin)) = .false.
-               call msi(ihor(ismin))
-   
-               ! Shift sampling
-               if (ismin<ns) ihor(ismin:ns-1) = ihor(ismin+1:ns)
-   
-               ! Reset is to ns and try again!
-               is = ns
-   
-               ! Update irep
-               irep = irep+1
+               end if
+            end do
+            rmask(ismin) = .false.
+
+             ! Update
+            call mpl%prog_print(irep)
+         end do
+
+         ! Copy ihor
+         js = 0
+         do is=1,ns+nrep_eff
+            if (rmask(is)) then
+               js = js+1
+               ihor(js) = ihor_tmp(is)
             end if
-         end if
-   
-         ! Update
-         if (is+irep-2>0) call mpl%prog_print(is+irep-2)
-      end do
+         end do
+      else
+         ! Copy ihor
+         ihor = ihor_tmp
+      end if
       write(mpl%info,'(a)') '100%'
       call flush(mpl%info)
-   
+
       if (nn_stats) then
          ! Save final time
          call system_clock(count=system_clock_end)
@@ -624,11 +704,11 @@ if (mpl%main) then
             elapsed = real(system_clock_end-system_clock_start,kind_real) &
                     & /real(count_rate,kind_real)
          end if
-   
+
          ! Allocation
          allocate(sdist(ns,ns))
          allocate(nn_sdist(ns))
-   
+
          ! Compute normalized distances between sampling points
          do is=1,ns
             sdist(is,is) = huge(1.0)
@@ -638,18 +718,18 @@ if (mpl%main) then
                sdist(js,is) = sdist(is,js)
             end do
          end do
-   
+
          ! Find nearest neighbor normalized distance
          do is=1,ns
             nn_sdist(is) = minval(sdist(:,is))
          end do
-   
+
          ! Compute statistics
          nn_sdist_min = minval(nn_sdist)
          nn_sdist_max = maxval(nn_sdist)
          nn_sdist_avg = sum(nn_sdist)/real(ns,kind_real)
          nn_sdist_std = sqrt(sum((nn_sdist-nn_sdist_avg)**2)/real(ns-1,kind_real))
-   
+
          ! Print statistics
          write(mpl%info,'(a10,a)') '','Nearest neighbor normalized distance statistics:'
          write(mpl%info,'(a13,a,e9.2)') '','Minimum: ',nn_sdist_min
@@ -666,6 +746,6 @@ end if
 ! Broadcast
 call mpl%f_comm%broadcast(ihor,mpl%ioproc-1)
 
-end subroutine initialize_sampling
+end subroutine rng_initialize_sampling
 
 end module type_rng
