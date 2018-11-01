@@ -85,7 +85,6 @@ oops/base/GeoLocation.h
 oops/base/GeoVaLsWriter.h
 oops/base/HybridCovariance.h
 oops/base/IdentityMatrix.h
-oops/base/InterpolatorTLAD.h
 oops/base/LinearObsOperators.h
 oops/base/ModelBase.h
 oops/base/ModelSpaceCovarianceBase.h

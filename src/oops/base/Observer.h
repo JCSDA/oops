@@ -16,7 +16,6 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "oops/base/InterpolatorTLAD.h"
 #include "oops/base/LinearObsOperators.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObsFilters.h"
@@ -24,6 +23,7 @@
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
 #include "oops/interface/GeoVaLs.h"
+#include "oops/interface/InterpolatorTraj.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -42,7 +42,7 @@ namespace oops {
 template <typename MODEL, typename STATE>
 class Observer : public util::Printable, public PostBase<STATE> {
   typedef GeoVaLs<MODEL>             GeoVaLs_;
-  typedef InterpolatorTLAD<MODEL>    InterpolatorTLAD_;
+  typedef InterpolatorTraj<MODEL>    InterpolatorTraj_;
   typedef LinearObsOperators<MODEL>  LinearObsOperator_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef ObsFilters<MODEL>          ObsFilters_;
@@ -57,7 +57,7 @@ class Observer : public util::Printable, public PostBase<STATE> {
 
   Observations_ * release() {return yobs_.release();}
 
-  void processTraj(const STATE &, InterpolatorTLAD_ &) const;
+  void processTraj(const STATE &, std::vector<boost::shared_ptr<InterpolatorTraj_> > &) const;
   void finalizeTraj(const STATE &, LinearObsOperator_ &);
 
  private:
@@ -147,16 +147,22 @@ void Observer<MODEL, STATE>::doProcessing(const STATE & xx) {
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename STATE>
-void Observer<MODEL, STATE>::processTraj(const STATE & xx, InterpolatorTLAD_ & traj) const {
+void Observer<MODEL, STATE>::processTraj(const STATE & xx,
+                    std::vector<boost::shared_ptr<InterpolatorTraj_> > & traj) const {
   Log::trace() << "Observer::processTraj start" << std::endl;
   util::DateTime t1(xx.validTime()-hslot_);
   util::DateTime t2(xx.validTime()+hslot_);
   if (t1 < bgn_) t1 = bgn_;
   if (t2 > end_) t2 = end_;
 
+// Index for bin
+  int ii = (xx.validTime()-bgn_).toSeconds() / (2*hslot_.toSeconds());
+  int nsteps = 1+(end_-bgn_).toSeconds()/(2*hslot_.toSeconds());
+
 // Get state variables at obs locations and trajectory
   for (size_t jj = 0; jj < obspace_.size(); ++jj) {
-    xx.getValues(obspace_[jj].locations(t1, t2), hop_.variables(jj), *gvals_.at(jj), traj[jj]);
+    xx.getValues(obspace_[jj].locations(t1, t2), hop_.variables(jj), *gvals_.at(jj),
+                 *traj.at(jj*nsteps+ii));
   }
   Log::trace() << "Observer::processTraj done" << std::endl;
 }
