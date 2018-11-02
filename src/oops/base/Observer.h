@@ -84,6 +84,8 @@ class Observer : public util::Printable, public PostBase<STATE> {
 
   std::vector<boost::shared_ptr<GeoVaLs_> > gvals_;
   const ObsFilters_ filters_;
+
+  typedef std::vector<boost::shared_ptr<InterpolatorTraj_> > vspit;
 };
 
 // -----------------------------------------------------------------------------
@@ -147,22 +149,17 @@ void Observer<MODEL, STATE>::doProcessing(const STATE & xx) {
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename STATE>
-void Observer<MODEL, STATE>::processTraj(const STATE & xx,
-                    std::vector<boost::shared_ptr<InterpolatorTraj_> > & traj) const {
+void Observer<MODEL, STATE>::processTraj(const STATE & xx, vspit & traj) const {
   Log::trace() << "Observer::processTraj start" << std::endl;
   util::DateTime t1(xx.validTime()-hslot_);
   util::DateTime t2(xx.validTime()+hslot_);
   if (t1 < bgn_) t1 = bgn_;
   if (t2 > end_) t2 = end_;
 
-// Index for bin
-  int ii = (xx.validTime()-bgn_).toSeconds() / (2*hslot_.toSeconds());
-  int nsteps = 1+(end_-bgn_).toSeconds()/(2*hslot_.toSeconds());
-
 // Get state variables at obs locations and trajectory
   for (size_t jj = 0; jj < obspace_.size(); ++jj) {
     xx.getValues(obspace_[jj].locations(t1, t2), hop_.variables(jj), *gvals_.at(jj),
-                 *traj.at(jj*nsteps+ii));
+                 *traj.at(jj));
   }
   Log::trace() << "Observer::processTraj done" << std::endl;
 }
