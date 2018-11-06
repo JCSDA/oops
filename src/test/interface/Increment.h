@@ -28,6 +28,8 @@
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
+#include "oops/interface/InterpolatorTraj.h"
+#include "oops/interface/State.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
@@ -194,6 +196,77 @@ template <typename MODEL> void testIncrementAxpy() {
   BOOST_CHECK_SMALL(dx2.norm(), 1e-8);
 }
 
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testIncrementInterpAD() {
+  typedef IncrementFixture<MODEL>       Test_;
+  typedef oops::Increment<MODEL>        Increment_;
+  typedef oops::Locations<MODEL>        Locations_;
+  typedef oops::GeoVaLs<MODEL>          GeoVaLs_;
+  typedef oops::InterpolatorTraj<MODEL> InterpolatorTraj_;
+  typedef oops::State<MODEL>            State_;
+  typedef eckit::LocalConfiguration     LocalConf_;
+
+  // Check if "InterpTest" is present
+  if (!TestEnvironment::config().has("InterpTest")) {
+      oops::Log::warning() << "Bypassing test for adjoint of interpolation";
+      return;
+  }
+
+  // Create Background
+  const LocalConf_ confstate(TestEnvironment::config(), "State");
+  const State_ xx(Test_::resol(), Test_::ctlvars(), confstate);
+
+  // Locations from config
+  const LocalConf_ configlocs(TestEnvironment::config(), "InterpTest.Locations");
+  const Locations_ locs(configlocs);
+
+  // Variables from config
+  const LocalConf_ configvars(TestEnvironment::config(), "InterpTest.GeoVaLs");
+  const oops::Variables vars(configvars);
+
+  // Setup Increments
+  Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
+  Increment_ Htdg(dx);
+  Htdg.zero();
+
+  // Get tolerance of dot product test
+  const double tol = TestEnvironment::config().getDouble("InterpTest.tolerance");
+
+  // Call NL getvalues to setup and initialize trajectory
+  InterpolatorTraj_ traj;
+  GeoVaLs_ hofx(locs, vars);
+  xx.getValues(locs, vars, hofx, traj);
+
+  // Randomize increments
+  dx.random();
+
+  // Create geovals from locs and vars
+  GeoVaLs_ Hdx(locs, vars);
+
+  // Forward getValues (state to geovals)
+  dx.getValuesTL(locs, vars, Hdx, traj);
+
+  // Setup and randomize geoval increments
+  GeoVaLs_ dg(Hdx);
+  dg.zero();
+  dg.random();
+
+  // Backward getValues (geovals to state)
+  Htdg.getValuesAD(locs, vars, dg, traj);
+
+  // Check adjoint: <Htdg,dx>=<dg,Hdx>
+  double zz1 = dot_product(Htdg, dx);
+  double zz2 = dot_product(dg, Hdx);
+
+  oops::Log::debug() << "Adjoint test result: (<HTdg,dx>-<dg,Hdx>) = "
+                       << zz1-zz2 << std::endl;
+
+  BOOST_CHECK(zz1 != 0.0);
+  BOOST_CHECK(zz2 != 0.0);
+  BOOST_CHECK_CLOSE(zz1, zz2, tol);
+}
+
 // =============================================================================
 
 template <typename MODEL> class Increment : public oops::Test {
@@ -212,6 +285,7 @@ template <typename MODEL> class Increment : public oops::Test {
     ts->add(BOOST_TEST_CASE(&testIncrementOpPlusEq<MODEL>));
     ts->add(BOOST_TEST_CASE(&testIncrementDotProduct<MODEL>));
     ts->add(BOOST_TEST_CASE(&testIncrementAxpy<MODEL>));
+    ts->add(BOOST_TEST_CASE(&testIncrementInterpAD<MODEL>));
 
     boost::unit_test::framework::master_test_suite().add(ts);
   }
