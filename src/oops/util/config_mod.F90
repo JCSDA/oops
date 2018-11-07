@@ -17,7 +17,8 @@ use kinds
 implicit none
 
 private
-public config_element_exists, config_get_int, config_get_real, config_get_string
+public config_element_exists, config_get_int, config_get_real, config_get_string, &
+       config_get_string_vector
 
 #include "config.intfb.h"
 
@@ -112,7 +113,53 @@ function config_get_string(c_dom,length,query)
   endif
 
   deallocate(c_query)
+  if (allocated(c_data)) deallocate(c_data)
 end function config_get_string
+
+!-------------------------------------------------------------------------------
+
+!>  Return the contents of a Config element as a string vector
+
+function config_get_string_vector(c_dom, length, query)
+  implicit none
+  type(c_ptr), intent(in) :: c_dom
+  integer, intent(in) :: length
+  character(len=*), intent(in) :: query
+  character(len=length), allocatable ::  config_get_string_vector(:)
+
+  character(kind=c_char,len=1), allocatable :: c_query(:), c_data(:)
+  integer :: nchars, ndim, index
+
+  !  Translate query from Fortran string to C++ char[].
+  call f_c_string(query,c_query)
+
+  ! Call C++ to process the query the dimension of string vector
+  ndim = c_config_get_data_dimension(c_dom, c_query)
+  if (ndim>0) then
+    allocate(config_get_string_vector(ndim))
+  else
+    call abor1_ftn('config_get_string_vector: element not found')
+  endif
+
+  ! Call C++ to process the query the string vector element one by one
+  do index = 1, ndim
+    nchars = c_config_get_data_element_length(c_dom, c_query, index)
+    if (nchars > length) &
+      call abor1_ftn('config_get_string: return argument too short')
+
+    if (nchars>0) then
+      allocate(c_data(nchars+1))
+      call c_config_get_data_element(c_dom, c_query, index, c_data)
+      call c_f_string(c_data, config_get_string_vector(index))
+      deallocate(c_data)
+    else
+      call abor1_ftn('config_get_string: element not found')
+    endif
+  enddo
+
+  deallocate(c_query)
+  if (allocated(c_data)) deallocate(c_data)
+end function config_get_string_vector
 
 !-------------------------------------------------------------------------------
 

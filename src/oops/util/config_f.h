@@ -30,6 +30,11 @@ extern "C" {
   double config_get_data_as_double_f(const eckit::Configuration & d, const char str[]);
   int config_get_data_length_f(const eckit::Configuration & d, const char str[]);
   void config_get_data_f(const eckit::Configuration & d, const char str[], char output[]);
+  int config_get_data_dimension_f(const eckit::Configuration & d, const char str[]);
+  int config_get_data_element_length_f(const eckit::Configuration & d, const char str[],
+                                       const int & index);
+  void config_get_data_element_f(const eckit::Configuration & d, const char str[],
+                                 const int & index, char output[]);
 }
 
 }  // namespace util

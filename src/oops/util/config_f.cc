@@ -16,6 +16,7 @@
 #include <limits>
 #include <sstream>
 #include <string>
+#include <vector>
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
@@ -96,6 +97,27 @@ void config_get_data_f(const eckit::Configuration & d, const char str[], char ou
   const std::string data(d.getString(s));
   size_t lendata = data.size();
   strncpy(output, data.c_str(), lendata);
+}
+
+int config_get_data_dimension_f(const eckit::Configuration & d, const char str[]) {
+  const std::string s(str);
+  const std::vector < std::string > data(d.getStringVector(s));
+  return data.size();
+}
+
+int config_get_data_element_length_f(const eckit::Configuration & d, const char str[],
+                                     const int & index) {
+  const std::string s(str);
+  const std::vector < std::string > data(d.getStringVector(s));
+  return data[index-1].length();
+}
+
+void config_get_data_element_f(const eckit::Configuration & d, const char str[],
+                               const int & index, char output[]) {
+  const std::string s(str);
+  const std::vector < std::string > data(d.getStringVector(s));
+  size_t lendata = data[index-1].size();
+  strncpy(output, data[index-1].c_str(), lendata);
 }
 
 // -----------------------------------------------------------------------------
