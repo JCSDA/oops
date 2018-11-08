@@ -57,7 +57,8 @@ class ObsOperator : public util::Printable,
 
 /// Other
   const ObsSpace_ & obspace() const {return *obsdb_;}
-  const Variables & variables() const;  // Required inputs variables from Model
+  const Variables & variables() const;  // Required input variables from Model
+  const Variables & observed() const;   // Observed variables produced by H
   const eckit::Configuration & config() const {return conf_;}
   Locations_ locations(const util::DateTime &, const util::DateTime &) const;
 
@@ -110,6 +111,15 @@ const Variables & ObsOperator<MODEL>::variables() const {
   Log::trace() << "ObsOperator<MODEL>::variables starting" << std::endl;
   util::Timer timer(classname(), "variables");
   return oper_->variables();
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+const Variables & ObsOperator<MODEL>::observed() const {
+  Log::trace() << "ObsOperator<MODEL>::observed starting" << std::endl;
+  util::Timer timer(classname(), "observed");
+  return oper_->observed();
 }
 
 // -----------------------------------------------------------------------------

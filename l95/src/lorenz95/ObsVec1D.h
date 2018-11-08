@@ -20,6 +20,10 @@
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
+namespace oops {
+  class Variables;
+}
+
 namespace lorenz95 {
   class ObsTable;
 
@@ -34,7 +38,7 @@ class ObsVec1D : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::ObsVec1D";}
 
-  explicit ObsVec1D(const ObsTable &);
+  ObsVec1D(const ObsTable &, const oops::Variables &);
   ObsVec1D(const ObsVec1D &, const bool copy = true);
   ~ObsVec1D() {}
 

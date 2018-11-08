@@ -75,7 +75,7 @@ template <typename MODEL> void testLinearity() {
     hoptl.setTrajectory(gval, ybias);
 
     const ObsAuxIncr_ ybinc(biasConf);
-    ObsVector_ dy1(Test_::hoper()[jj].obspace());
+    ObsVector_ dy1(Test_::hoper()[jj].obspace(), Test_::hoper()[jj].observed());
     GeoVaLs_ gv(gconf, hoptl.variables());
 
     gv.zero();
@@ -89,7 +89,7 @@ template <typename MODEL> void testLinearity() {
     BOOST_CHECK(dy1.rms() > zero);
 
     gv *= coef;
-    ObsVector_ dy2(Test_::hoper()[jj].obspace());
+    ObsVector_ dy2(Test_::hoper()[jj].obspace(), Test_::hoper()[jj].observed());
     hoptl.simulateObsTL(gv, dy2, ybinc);
 
     dy1 -= dy2;
@@ -129,8 +129,8 @@ template <typename MODEL> void testAdjoint() {
 
     ObsAuxIncr_ ybinc(biasConf);
 
-    ObsVector_ dy1(Test_::hoper()[jj].obspace());
-    ObsVector_ dy2(Test_::hoper()[jj].obspace());
+    ObsVector_ dy1(Test_::hoper()[jj].obspace(), Test_::hoper()[jj].observed());
+    ObsVector_ dy2(Test_::hoper()[jj].obspace(), Test_::hoper()[jj].observed());
     GeoVaLs_ gv1(gconf, hoptl.variables());
     GeoVaLs_ gv2(gconf, hoptl.variables());
 
@@ -188,9 +188,12 @@ template <typename MODEL> void testTangentLinear() {
 
     const ObsAuxIncr_ ybinc(biasConf);
 
-    ObsVector_ y1(Test_::hoper()[jj].obspace());   // y1 = hop(x)
-    ObsVector_ y2(Test_::hoper()[jj].obspace());   // y2 = hop(x+alpha*dx)
-    ObsVector_ y3(Test_::hoper()[jj].obspace());   // y3 = hoptl(alpha*dx)
+//  y1 = hop(x)
+    ObsVector_ y1(Test_::hoper()[jj].obspace(), Test_::hoper()[jj].observed());
+//  y2 = hop(x+alpha*dx)
+    ObsVector_ y2(Test_::hoper()[jj].obspace(), Test_::hoper()[jj].observed());
+//  y3 = hoptl(alpha*dx)
+    ObsVector_ y3(Test_::hoper()[jj].obspace(), Test_::hoper()[jj].observed());
 
     GeoVaLs_ gv(gconf, Test_::hoper()[jj].variables());  // Background
 
@@ -203,7 +206,7 @@ template <typename MODEL> void testTangentLinear() {
 
     GeoVaLs_ gv0(gconf, Test_::hoper()[jj].variables());
     gv0 = gv;
-    ObsVector_ y3_init(Test_::hoper()[jj].obspace());
+    ObsVector_ y3_init(Test_::hoper()[jj].obspace(), Test_::hoper()[jj].observed());
     y3_init = y3;
     double alpha = 0.1;
     for (int jter = 0; jter < iter; ++jter) {

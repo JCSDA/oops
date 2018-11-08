@@ -27,7 +27,7 @@ namespace lorenz95 {
 // -----------------------------------------------------------------------------
 
 ObservationL95::ObservationL95(const ObsTable & ot, const eckit::Configuration & conf)
-  : obsdb_(ot), inputs_(conf)
+  : obsdb_(ot), inputs_(conf), outputs_(conf)
 {}
 
 // -----------------------------------------------------------------------------

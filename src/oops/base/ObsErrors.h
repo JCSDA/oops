@@ -17,7 +17,6 @@
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Departures.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObsOperators.h"
@@ -70,8 +69,7 @@ template <typename MODEL>
 ObsErrors<MODEL>::ObsErrors(const ObsOperators_ & hop) : err_(0)
 {
   for (std::size_t jj = 0; jj < hop.size(); ++jj) {
-    eckit::LocalConfiguration conf(hop[jj].config(), "Covariance");
-    boost::shared_ptr<ObsError_> tmp(new ObsError_(hop[jj].obspace(), conf));
+    boost::shared_ptr<ObsError_> tmp(new ObsError_(hop[jj]));
     err_.push_back(tmp);
   }
 }

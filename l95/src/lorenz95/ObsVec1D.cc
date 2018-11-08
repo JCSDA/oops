@@ -25,7 +25,7 @@
 
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-ObsVec1D::ObsVec1D(const ObsTable & ot): obsdb_(ot), data_(ot.nobs())
+ObsVec1D::ObsVec1D(const ObsTable & ot, const oops::Variables &): obsdb_(ot), data_(ot.nobs())
 {
   BOOST_FOREACH(double & val, data_) val = 0.0;
 }

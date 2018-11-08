@@ -93,7 +93,7 @@ template<typename MODEL>
 Departures<MODEL>::Departures(const ObsOperators_ & hop): dep_(0)
 {
   for (std::size_t jj = 0; jj < hop.size(); ++jj) {
-    boost::shared_ptr<ObsVector_> tmp(new ObsVector_(hop[jj].obspace()));
+    boost::shared_ptr<ObsVector_> tmp(new ObsVector_(hop[jj].obspace(), hop[jj].observed()));
     dep_.push_back(tmp);
   }
   Log::trace() << "Departures created" << std::endl;

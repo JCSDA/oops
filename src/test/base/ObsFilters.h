@@ -57,7 +57,7 @@ template <typename MODEL> void testFilters() {
     typeconfs[jj].get("ObsBias", biasConf);
     const ObsAuxCtrl_ ybias(biasConf);
 
-    ObsVector_ ovec(Test_::hoper()[jj].obspace());
+    ObsVector_ ovec(Test_::hoper()[jj].obspace(), Test_::hoper()[jj].observed());
 
     std::vector<eckit::LocalConfiguration> filtconf;
     typeconfs[jj].get("ObsFilters", filtconf);

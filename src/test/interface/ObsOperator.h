@@ -55,7 +55,7 @@ template <typename MODEL> void testSimulateObs() {
     conf[jj].get("ObsBias", biasConf);
     const ObsAuxCtrl_ ybias(biasConf);
 
-    ObsVector_ ovec(hop.obspace());
+    ObsVector_ ovec(hop.obspace(), hop.observed());
 
     hop.simulateObs(gval, ovec, ybias);
 

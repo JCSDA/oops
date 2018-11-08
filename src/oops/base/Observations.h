@@ -79,7 +79,7 @@ template <typename MODEL>
 Observations<MODEL>::Observations(const ObsOperators_ & hop): obs_(0)
 {
   for (std::size_t jj = 0; jj < hop.size(); ++jj) {
-    obs_.push_back(new ObsVector_(hop[jj].obspace()));
+    obs_.push_back(new ObsVector_(hop[jj].obspace(), hop[jj].observed()));
   }
   Log::trace() << "Observations created" << std::endl;
 }
