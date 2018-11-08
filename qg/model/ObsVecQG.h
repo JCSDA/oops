@@ -47,7 +47,7 @@ class ObsVecQG : public util::Printable,
   double dot_product_with(const ObsVecQG &) const;
   double rms() const;
 
-  unsigned int size() const;
+  unsigned int nobs() const;
 
   int & toFortran() {return keyOvec_;}
   const int & toFortran() const {return keyOvec_;}

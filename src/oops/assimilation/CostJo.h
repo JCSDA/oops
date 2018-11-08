@@ -12,6 +12,7 @@
 #define OOPS_ASSIMILATION_COSTJO_H_
 
 #include <string>
+#include <vector>
 #include <boost/noncopyable.hpp>
 #include <boost/pointer_cast.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -151,9 +152,11 @@ template<typename MODEL>
 boost::shared_ptr<PostBase<State<MODEL> > >
 CostJo<MODEL>::initialize(const CtrlVar_ & xx) const {
   Log::trace() << "CostJo::initialize start" << std::endl;
-  const eckit::LocalConfiguration conf;
-  ObsFilters_ filter(obspace_, conf);
-  pobs_.reset(new Observer<MODEL, State_>(obspace_, hop_, xx.obsVar(), filter,
+  std::vector<ObsFilters_> filters_;  // should be controlled by outer loop
+  for (size_t jj = 0; jj < obspace_.size(); ++jj) {
+    filters_.push_back(ObsFilters_(obspace_[jj], obspace_[jj].config()));
+  }
+  pobs_.reset(new Observer<MODEL, State_>(obspace_, hop_, xx.obsVar(), filters_,
                                           tslot_, subwindows_));
   Log::trace() << "CostJo::initialize done" << std::endl;
   return pobs_;
@@ -191,8 +194,11 @@ boost::shared_ptr<PostBaseTLAD<MODEL> >
 CostJo<MODEL>::initializeTraj(const CtrlVar_ & xx, const Geometry_ &,
                               const eckit::Configuration & conf) {
   Log::trace() << "CostJo::initializeTraj start" << std::endl;
-  ObsFilters_ filter(obspace_, conf);
-  pobstlad_.reset(new ObserverTLAD_(obspace_, hop_, xx.obsVar(), filter,
+  std::vector<ObsFilters_> filters_;  // should be controlled by outer loop
+  for (size_t jj = 0; jj < obspace_.size(); ++jj) {
+    filters_.push_back(ObsFilters_(obspace_[jj], obspace_[jj].config()));
+  }
+  pobstlad_.reset(new ObserverTLAD_(obspace_, hop_, xx.obsVar(), filters_,
                                     tslot_, subwindows_));
   Log::trace() << "CostJo::initializeTraj done" << std::endl;
   return pobstlad_;
@@ -287,7 +293,7 @@ double CostJo<MODEL>::printJo(const Departures_ & dy, const Departures_ & grad) 
   double zjo = 0.0;
   for (std::size_t jj = 0; jj < dy.size(); ++jj) {
     const double zz = 0.5 * dot_product(dy[jj], grad[jj]);
-    const unsigned nobs = dy[jj].size();
+    const unsigned nobs = dy[jj].nobs();
     if (nobs > 0) {
       Log::test() << "CostJo   : Nonlinear Jo = " << zz
                   << ", nobs = " << nobs << ", Jo/n = " << zz/nobs

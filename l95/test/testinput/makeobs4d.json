@@ -14,12 +14,11 @@
         "obs_frequency": "PT3H",
         "obs_density": "20",
         "obs_error": "0.4"
-      }
-    }],
-    "ObsFilters":[{
-      "ObsType": "Lorenz 95",
-      "Filter": "GOMsaver",
-      "filename": "Data/l95.gom"
+      },
+      "ObsFilters":[{
+        "Filter": "GOMsaver",
+        "filename": "Data/l95.gom"
+      }]
     }]
   },
   "Geometry": {

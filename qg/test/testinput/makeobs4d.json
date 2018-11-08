@@ -27,6 +27,10 @@
         },
         "obserror": "ObsErr"
       },
+      "ObsFilters": [{
+        "Filter": "GOMsaver",
+        "filename": "Data/qg.stream.gom"
+      }],
       "Generate": {
         "begin": "PT3H",
         "obs_period": "PT3H",
@@ -45,6 +49,10 @@
         },
         "obserror": "ObsErr"
       },
+      "ObsFilters": [{
+        "Filter": "GOMsaver",
+        "filename": "Data/qg.wind.gom"
+      }],
       "Generate": {
         "begin": "PT6H",
         "obs_period": "PT6H",
@@ -63,6 +71,10 @@
         },
         "obserror": "ObsErr"
       },
+      "ObsFilters": [{
+        "Filter": "GOMsaver",
+        "filename": "Data/qg.wspeed.gom"
+      }],
       "Generate": {
         "begin": "PT3H",
         "obs_period": "PT6H",
@@ -72,26 +84,10 @@
         "nval": "1",
         "obs_error": "1.2"
       }
-    }
-  ],
-  "ObsFilters": [
-    {
-      "ObsType": "Stream",
-      "Filter": "GOMsaver",
-      "filename": "Data/qg.stream.gom"
-    },
-    {
-      "ObsType": "Wind",
-      "Filter": "GOMsaver",
-      "filename": "Data/qg.wind.gom"
-    },
-    {
-      "ObsType": "WSpeed",
-      "Filter": "GOMsaver",
-      "filename": "Data/qg.wspeed.gom"
     }]
   },
   "prints": {
     "frequency": "PT3H"
   }
 }
+

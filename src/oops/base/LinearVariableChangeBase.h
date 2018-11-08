@@ -31,7 +31,7 @@ namespace oops {
 
 template <typename MODEL>
 class LinearVariableChangeBase : public util::Printable,
-                           private boost::noncopyable {
+                                 private boost::noncopyable {
   typedef Geometry<MODEL>            Geometry_;
   typedef Increment<MODEL>           Increment_;
   typedef State<MODEL>               State_;

@@ -79,7 +79,6 @@ oops/base/DolphChebyshev.h
 oops/base/DolphChebyshev.cc
 oops/base/EnsembleCovariance.h
 oops/base/EnsemblesCollection.h
-oops/base/FilterBase.h
 oops/base/GeneralizedDepartures.h
 oops/base/GeoLocation.h
 oops/base/GeoVaLsWriter.h
@@ -90,7 +89,7 @@ oops/base/ModelBase.h
 oops/base/ModelSpaceCovarianceBase.h
 oops/base/ObsEnsemble.h
 oops/base/ObsErrors.h
-oops/base/ObsFilter.h
+oops/base/ObsFilterBase.h
 oops/base/ObsFilters.h
 oops/base/ObsOperators.h
 oops/base/ObsSpaces.h
@@ -116,7 +115,7 @@ oops/base/WeightedMean.h
 oops/base/WeightingFct.h
 oops/base/WeightingFct.cc
 oops/base/instantiateCovarFactory.h
-oops/base/instantiateFilterFactory.h
+oops/base/instantiateObsFilterFactory.h
 
 oops/generic/ParametersBUMP.h
 oops/generic/ErrorCovarianceBUMP.h
@@ -204,6 +203,7 @@ oops/interface/ObsAuxCovariance.h
 oops/interface/ObsAuxIncrement.h
 oops/interface/ObsErrorBase.h
 oops/interface/ObsErrorCovariance.h
+oops/interface/ObsFilter.h
 oops/interface/ObsOperator.h
 oops/interface/ObsSpaceBase.h
 oops/interface/ObsVector.h
@@ -272,6 +272,7 @@ oops/util/TimerHelper.h
 oops/util/TimerHelper.cc
 oops/util/utilNamespaceDoc.h
 
+test/base/ObsFilters.h
 test/interface/GeoVaLs.h
 test/interface/LinearObsOperator.h
 test/interface/Locations.h

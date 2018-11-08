@@ -48,7 +48,7 @@ template <typename MODEL> void testConstructor() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testEquiv() {
+template <typename MODEL> void testSimulateObs() {
   typedef ObsTestsFixture<MODEL> Test_;
   typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
   typedef oops::Locations<MODEL>         Locations_;
@@ -94,7 +94,7 @@ template <typename MODEL> class ObsOperator : public oops::Test {
     boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/ObsOperator");
 
     ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testEquiv<MODEL>));
+    ts->add(BOOST_TEST_CASE(&testSimulateObs<MODEL>));
 
     boost::unit_test::framework::master_test_suite().add(ts);
   }

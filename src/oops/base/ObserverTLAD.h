@@ -53,7 +53,8 @@ class ObserverTLAD : public PostBaseTLAD<MODEL> {
   typedef State<MODEL>               State_;
 
  public:
-  ObserverTLAD(const ObsSpace_ &, const ObsOperators_ &, const ObsAuxCtrl_ &, const ObsFilters_ &,
+  ObserverTLAD(const ObsSpace_ &, const ObsOperators_ &, const ObsAuxCtrl_ &,
+               const std::vector<ObsFilters_> &,
                const util::Duration & tslot = util::Duration(0), const bool subwin = false);
   ~ObserverTLAD() {}
 
@@ -97,8 +98,7 @@ class ObserverTLAD : public PostBaseTLAD<MODEL> {
   const bool subwindows_;
 
   std::vector<std::vector<boost::shared_ptr<InterpolatorTraj_> > > traj_;
-  util::Duration bintstep;
-  int nsteps;
+  util::Duration bintstep_;
 
   std::vector<boost::shared_ptr<GeoVaLs_> > gvals_;
 };
@@ -108,7 +108,7 @@ template <typename MODEL>
 ObserverTLAD<MODEL>::ObserverTLAD(const ObsSpace_ & obsdb,
                                   const ObsOperators_ & hop,
                                   const ObsAuxCtrl_ & ybias,
-                                  const ObsFilters_ & filters,
+                                  const std::vector<ObsFilters_> & filters,
                                   const util::Duration & tslot, const bool subwin)
   : PostBaseTLAD<MODEL>(obsdb.windowStart(), obsdb.windowEnd()),
     obspace_(obsdb), hoptlad_(obspace_),
@@ -126,8 +126,8 @@ void ObserverTLAD<MODEL>::doInitializeTraj(const State_ & xx,
   Log::trace() << "ObserverTLAD::doInitializeTraj start" << std::endl;
 
 // Create full trajectory object
-  bintstep = tstep;
-  nsteps = 1+(winend_-winbgn_).toSeconds() / tstep.toSeconds();
+  bintstep_ = tstep;
+  unsigned int nsteps = 1+(winend_-winbgn_).toSeconds() / bintstep_.toSeconds();
   for (std::size_t ib = 0; ib < nsteps; ++ib) {
     std::vector<boost::shared_ptr<InterpolatorTraj_> > obstraj;
     for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
@@ -146,7 +146,7 @@ void ObserverTLAD<MODEL>::doProcessingTraj(const State_ & xx) {
   Log::trace() << "ObserverTLAD::doProcessingTraj start" << std::endl;
 
   // Index for current bin
-  int ib = (xx.validTime()-winbgn_).toSeconds() / bintstep.toSeconds();
+  int ib = (xx.validTime()-winbgn_).toSeconds() / bintstep_.toSeconds();
 
   // Call nonlinear observer
   observer_.processTraj(xx, traj_[ib]);
@@ -204,7 +204,7 @@ void ObserverTLAD<MODEL>::doProcessingTL(const Increment_ & dx) {
   if (t2 > end_) t2 = end_;
 
 // Index for current bin
-  int ib = (dx.validTime()-winbgn_).toSeconds() / bintstep.toSeconds();
+  int ib = (dx.validTime()-winbgn_).toSeconds() / bintstep_.toSeconds();
 
 // Get increment variables at obs locations
   for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
@@ -269,7 +269,7 @@ void ObserverTLAD<MODEL>::doProcessingAD(Increment_ & dx) {
   if (t2 > end_) t2 = end_;
 
 // Index for current bin
-  int ib = (dx.validTime()-winbgn_).toSeconds() / bintstep.toSeconds();
+  int ib = (dx.validTime()-winbgn_).toSeconds() / bintstep_.toSeconds();
 
 // Adjoint of get increment variables at obs locations
   for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {

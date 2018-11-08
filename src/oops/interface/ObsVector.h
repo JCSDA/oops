@@ -66,7 +66,7 @@ class ObsVector : public util::Printable,
   void random();
   double dot_product_with(const ObsVector &) const;
   double rms() const;
-  unsigned int size() const {return data_->size();}
+  unsigned int nobs() const {return data_->nobs();}
 
 // I/O
   void read(const std::string &);

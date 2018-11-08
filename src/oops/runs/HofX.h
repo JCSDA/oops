@@ -12,12 +12,13 @@
 #define OOPS_RUNS_HOFX_H_
 
 #include <string>
+#include <vector>
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/base/instantiateFilterFactory.h"
+#include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
 #include "oops/base/ObsFilters.h"
@@ -51,7 +52,7 @@ template <typename MODEL> class HofX : public Application {
  public:
 // -----------------------------------------------------------------------------
   HofX() {
-    instantiateFilterFactory<MODEL>();
+    instantiateObsFilterFactory<MODEL>();
   }
 // -----------------------------------------------------------------------------
   virtual ~HofX() {}
@@ -100,13 +101,11 @@ template <typename MODEL> class HofX : public Application {
     ObsOperator_ hop(obsdb);
 
 //  Setup QC filters
-    eckit::LocalConfiguration filterConf;
-    obsconf.get("ObsFilters", filterConf);
-    ObsFilters_ filter(obsdb, obsconf);
+    std::vector<ObsFilters_> filters(obsdb.size());
 
 //  Setup Observer
     boost::shared_ptr<Observer<MODEL, State_> >
-      pobs(new Observer<MODEL, State_>(obsdb, hop, ybias, filter));
+      pobs(new Observer<MODEL, State_>(obsdb, hop, ybias, filters));
     post.enrollProcessor(pobs);
 
 //  Compute H(x)

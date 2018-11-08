@@ -49,9 +49,11 @@ class Observer : public util::Printable, public PostBase<STATE> {
   typedef Observations<MODEL>        Observations_;
   typedef ObsOperators<MODEL>        ObsOperator_;
   typedef ObsSpaces<MODEL>           ObsSpace_;
+  typedef std::vector<boost::shared_ptr<InterpolatorTraj_> > vspit;
 
  public:
-  Observer(const ObsSpace_ &, const ObsOperator_ &, const ObsAuxCtrl_ &, const ObsFilters_ &,
+  Observer(const ObsSpace_ &, const ObsOperator_ &, const ObsAuxCtrl_ &,
+           const std::vector<ObsFilters_> &,
            const util::Duration & tslot = util::Duration(0), const bool subwin = false);
   ~Observer() {}
 
@@ -83,9 +85,7 @@ class Observer : public util::Printable, public PostBase<STATE> {
   const bool subwindows_;
 
   std::vector<boost::shared_ptr<GeoVaLs_> > gvals_;
-  const ObsFilters_ filters_;
-
-  typedef std::vector<boost::shared_ptr<InterpolatorTraj_> > vspit;
+  std::vector<ObsFilters_> filters_;
 };
 
 // -----------------------------------------------------------------------------
@@ -94,7 +94,7 @@ template <typename MODEL, typename STATE>
 Observer<MODEL, STATE>::Observer(const ObsSpace_ & obsdb,
                                  const ObsOperator_ & hop,
                                  const ObsAuxCtrl_ & ybias,
-                                 const ObsFilters_ & filters,
+                                 const std::vector<ObsFilters_> & filters,
                                  const util::Duration & tslot, const bool swin)
   : PostBase<STATE>(), obspace_(obsdb), hop_(hop),
     yobs_(new Observations_(obsdb)), ybias_(ybias),
@@ -103,9 +103,10 @@ Observer<MODEL, STATE>::Observer(const ObsSpace_ & obsdb,
     gvals_(0), filters_(filters)
 {
   Log::trace() << "Observer::Observer" << std::endl;
-  Log::debug() << "Observer filter is " << filters_ << std::endl;
 }
+
 // -----------------------------------------------------------------------------
+
 template <typename MODEL, typename STATE>
 void Observer<MODEL, STATE>::doInitialize(const STATE & xx,
                                           const util::DateTime & end,
@@ -132,7 +133,9 @@ void Observer<MODEL, STATE>::doInitialize(const STATE & xx,
   }
   Log::trace() << "Observer::doInitialize done" << std::endl;
 }
+
 // -----------------------------------------------------------------------------
+
 template <typename MODEL, typename STATE>
 void Observer<MODEL, STATE>::doProcessing(const STATE & xx) {
   Log::trace() << "Observer::doProcessing start" << std::endl;
@@ -147,7 +150,9 @@ void Observer<MODEL, STATE>::doProcessing(const STATE & xx) {
   }
   Log::trace() << "Observer::doProcessing done" << std::endl;
 }
+
 // -----------------------------------------------------------------------------
+
 template <typename MODEL, typename STATE>
 void Observer<MODEL, STATE>::processTraj(const STATE & xx, vspit & traj) const {
   Log::trace() << "Observer::processTraj start" << std::endl;
@@ -163,7 +168,9 @@ void Observer<MODEL, STATE>::processTraj(const STATE & xx, vspit & traj) const {
   }
   Log::trace() << "Observer::processTraj done" << std::endl;
 }
+
 // -----------------------------------------------------------------------------
+
 template <typename MODEL, typename STATE>
 void Observer<MODEL, STATE>::finalizeTraj(const STATE & xx, LinearObsOperator_ & htlad) {
   Log::trace() << "Observer::finalizeTraj start" << std::endl;
@@ -173,20 +180,26 @@ void Observer<MODEL, STATE>::finalizeTraj(const STATE & xx, LinearObsOperator_ &
   this->doFinalize(xx);
   Log::trace() << "Observer::finalizeTraj done" << std::endl;
 }
+
 // -----------------------------------------------------------------------------
+
 template <typename MODEL, typename STATE>
 void Observer<MODEL, STATE>::doFinalize(const STATE &) {
   Log::trace() << "Observer::doFinalize start" << std::endl;
   for (size_t jj = 0; jj < obspace_.size(); ++jj) {
+    filters_[jj].priorFilter(*gvals_.at(jj));
     hop_[jj].simulateObs(*gvals_.at(jj), (*yobs_)[jj], ybias_);
-    filters_[jj].postFilter(*gvals_.at(jj), (*yobs_)[jj], obspace_[jj]);
+    filters_[jj].postFilter((*yobs_)[jj]);
   }
   gvals_.clear();
   Log::trace() << "Observer::doFinalize done" << std::endl;
 }
+
 // -----------------------------------------------------------------------------
+
 template <typename MODEL, typename STATE>
 void Observer<MODEL, STATE>::print(std::ostream &) const {}
+
 // -----------------------------------------------------------------------------
 
 }  // namespace oops

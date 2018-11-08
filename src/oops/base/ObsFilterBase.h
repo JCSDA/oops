@@ -1,12 +1,12 @@
 /*
  * (C) Copyright 2017-2018 UCAR
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef OOPS_BASE_FILTERBASE_H_
-#define OOPS_BASE_FILTERBASE_H_
+#ifndef OOPS_BASE_OBSFILTERBASE_H_
+#define OOPS_BASE_OBSFILTERBASE_H_
 
 #include <map>
 #include <string>
@@ -26,18 +26,17 @@ namespace oops {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-class FilterBase : public util::Printable,
-                   private boost::noncopyable {
+class ObsFilterBase : public util::Printable,
+                      private boost::noncopyable {
   typedef GeoVaLs<MODEL>             GeoVaLs_;
-  typedef ObservationSpace<MODEL>    ObsSpace_;
   typedef ObsVector<MODEL>           ObsVector_;
 
  public:
-  FilterBase() {}
-  virtual ~FilterBase() {}
+  ObsFilterBase() {}
+  virtual ~ObsFilterBase() {}
 
-  virtual void priorFilter(const ObsSpace_ &) const = 0;
-  virtual void postFilter(const GeoVaLs_ &, const ObsVector_ &, const ObsSpace_ &) const = 0;
+  virtual void priorFilter(const GeoVaLs_ &) const = 0;
+  virtual void postFilter(const ObsVector_ &) const = 0;
 
  private:
   virtual void print(std::ostream &) const = 0;
@@ -48,13 +47,14 @@ class FilterBase : public util::Printable,
 /// ObsFilter Factory
 template <typename MODEL>
 class FilterFactory {
+  typedef ObservationSpace<MODEL>    ObsSpace_;
  public:
-  static FilterBase<MODEL> * create(const eckit::Configuration &);
+  static ObsFilterBase<MODEL> * create(const ObsSpace_ &, const eckit::Configuration &);
   virtual ~FilterFactory() { getMakers().clear(); }
  protected:
   explicit FilterFactory(const std::string &);
  private:
-  virtual FilterBase<MODEL> * make(const eckit::Configuration &) = 0;
+  virtual ObsFilterBase<MODEL> * make(const ObsSpace_ &, const eckit::Configuration &) = 0;
   static std::map < std::string, FilterFactory<MODEL> * > & getMakers() {
     static std::map < std::string, FilterFactory<MODEL> * > makers_;
     return makers_;
@@ -65,8 +65,9 @@ class FilterFactory {
 
 template<class MODEL, class T>
 class FilterMaker : public FilterFactory<MODEL> {
-  virtual FilterBase<MODEL> * make(const eckit::Configuration & conf)
-    { return new T(conf); }
+  typedef ObservationSpace<MODEL>    ObsSpace_;
+  virtual ObsFilterBase<MODEL> * make(const ObsSpace_ & os, const eckit::Configuration & conf)
+    { return new T(os, conf); }
  public:
   explicit FilterMaker(const std::string & name) : FilterFactory<MODEL>(name) {}
 };
@@ -85,9 +86,9 @@ FilterFactory<MODEL>::FilterFactory(const std::string & name) {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-FilterBase<MODEL>* FilterFactory<MODEL>::create(const eckit::Configuration & conf) {
-  Log::trace() << "FilterBase<MODEL>::create starting" << std::endl;
-  Log::debug() << "FilterBase<MODEL>::create conf" << conf << std::endl;
+ObsFilterBase<MODEL>* FilterFactory<MODEL>::create(const ObsSpace_ & os,
+                                                   const eckit::Configuration & conf) {
+  Log::trace() << "ObsFilterBase<MODEL>::create starting" << std::endl;
   const std::string id = conf.getString("Filter");
   typename std::map<std::string, FilterFactory<MODEL>*>::iterator
     jloc = getMakers().find(id);
@@ -95,8 +96,8 @@ FilterBase<MODEL>* FilterFactory<MODEL>::create(const eckit::Configuration & con
     Log::error() << id << " does not exist in obs filter factory." << std::endl;
     ABORT("Element does not exist in FilterFactory.");
   }
-  FilterBase<MODEL> * ptr = jloc->second->make(conf);
-  Log::trace() << "FilterBase<MODEL>::create done" << std::endl;
+  ObsFilterBase<MODEL> * ptr = jloc->second->make(os, conf);
+  Log::trace() << "ObsFilterBase<MODEL>::create done" << std::endl;
   return ptr;
 }
 
@@ -104,4 +105,4 @@ FilterBase<MODEL>* FilterFactory<MODEL>::create(const eckit::Configuration & con
 
 }  // namespace oops
 
-#endif  // OOPS_BASE_FILTERBASE_H_
+#endif  // OOPS_BASE_OBSFILTERBASE_H_

@@ -47,7 +47,7 @@ BOOST_FIXTURE_TEST_SUITE(test_ObsVec1D, ObsVecTestFixture)
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_ObsVec1D_nobs) {
     boost::scoped_ptr<lorenz95::ObsVec1D> ov(new lorenz95::ObsVec1D(*obstable_));
-    BOOST_CHECK_EQUAL(ov->size(), obstable_->nobs());
+    BOOST_CHECK_EQUAL(ov->nobs(), obstable_->nobs());
   }
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_ObsVec1D_read) {

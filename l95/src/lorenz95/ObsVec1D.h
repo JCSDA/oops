@@ -52,7 +52,7 @@ class ObsVec1D : public util::Printable,
   double dot_product_with(const ObsVec1D &) const;
   double rms() const;
 
-  unsigned int size() const {return data_.size();}
+  unsigned int nobs() const {return data_.size();}
   double & operator() (const unsigned int ii) {return data_[ii];}
   const double & operator() (const unsigned int ii) const {return data_[ii];}
 

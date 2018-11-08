@@ -188,5 +188,6 @@ void GomL95::print(std::ostream & os) const {
     oops::Log::debug() << std::endl << "GomL95: Maximum Value = " << std::setprecision(4)
                        << zmax << " at location = " << jmax << std::endl;
 }
+// -----------------------------------------------------------------------------
 
 }  // namespace lorenz95

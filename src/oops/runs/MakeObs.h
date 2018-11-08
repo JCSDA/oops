@@ -12,13 +12,14 @@
 #define OOPS_RUNS_MAKEOBS_H_
 
 #include <string>
+#include <vector>
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Departures.h"
-#include "oops/base/instantiateFilterFactory.h"
+#include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
@@ -56,7 +57,7 @@ template <typename MODEL> class MakeObs : public Application {
 // -----------------------------------------------------------------------------
   MakeObs() {
     instantiateObsErrorFactory<MODEL>();
-    instantiateFilterFactory<MODEL>();
+    instantiateObsFilterFactory<MODEL>();
   }
 // -----------------------------------------------------------------------------
   virtual ~MakeObs() {}
@@ -105,13 +106,14 @@ template <typename MODEL> class MakeObs : public Application {
     ObsOperator_ hop(obspace);
 
 //  Setup QC filters
-    eckit::LocalConfiguration filterConf;
-    obsconf.get("ObsFilters", filterConf);
-    ObsFilters_ filter(obspace, obsconf);
+    std::vector<ObsFilters_> filters;
+    for (size_t jj = 0; jj < obspace.size(); ++jj) {
+      filters.push_back(ObsFilters_(obspace[jj], obspace[jj].config()));
+    }
 
 //  Setup Observer
     boost::shared_ptr<Observer<MODEL, State_> >
-      pobs(new Observer<MODEL, State_>(obspace, hop, ybias, filter));
+      pobs(new Observer<MODEL, State_>(obspace, hop, ybias, filters));
     post.enrollProcessor(pobs);
 
 //  Run forecast and generate observations

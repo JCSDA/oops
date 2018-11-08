@@ -9,7 +9,7 @@
 #define OOPS_BASE_GEOVALSWRITER_H_
 
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/base/FilterBase.h"
+#include "oops/base/ObsFilterBase.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsVector.h"
@@ -21,21 +21,22 @@ namespace oops {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-class GeoVaLsWriter : public FilterBase<MODEL> {
+class GeoVaLsWriter : public ObsFilterBase<MODEL> {
   typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef ObservationSpace<MODEL>    ObsSpace_;
   typedef ObsVector<MODEL>           ObsVector_;
 
  public:
-  explicit GeoVaLsWriter(const eckit::Configuration & conf) : conf_(conf) {}
+  GeoVaLsWriter(const ObsSpace_ &, const eckit::Configuration & conf) : conf_(conf) {}
   ~GeoVaLsWriter() {}
 
-  void priorFilter(const ObsSpace_ &) const override {}
-  void postFilter(const GeoVaLs_ & gv, const ObsVector_ &, const ObsSpace_ &) const override {
+  void priorFilter(const GeoVaLs_ & gv) const override {
     const double zz = sqrt(dot_product(gv, gv));
     Log::debug() << "GeoVaLsWriter norm = " << zz << std::endl;
     gv.write(conf_);
   }
+
+  void postFilter(const ObsVector_ &) const override {}
 
  private:
   const eckit::LocalConfiguration conf_;
@@ -46,7 +47,7 @@ class GeoVaLsWriter : public FilterBase<MODEL> {
 
 template <typename MODEL>
 void GeoVaLsWriter<MODEL>::print(std::ostream & os) const {
-  os << "GeoVaLsWriter " << conf_;
+  os << "GeoVaLsWriter: " << conf_;
 }
 
 // -----------------------------------------------------------------------------

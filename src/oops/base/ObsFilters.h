@@ -14,53 +14,60 @@
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/base/FilterBase.h"
-#include "oops/base/ObsFilter.h"
-#include "oops/base/ObsSpaces.h"
+#include "oops/base/ObsFilterBase.h"
+#include "oops/interface/GeoVaLs.h"
+#include "oops/interface/ObservationSpace.h"
+#include "oops/interface/ObsVector.h"
 #include "oops/util/Printable.h"
 
 namespace oops {
+
+/// Holds observation filters (usually QC) for one observation type
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
 class ObsFilters : public util::Printable {
-  typedef FilterBase<MODEL>         FilterBase_;
-  typedef ObsFilter<MODEL>          ObsFilter_;
-  typedef ObsSpaces<MODEL>          ObsSpace_;
+  typedef GeoVaLs<MODEL>            GeoVaLs_;
+  typedef ObsFilterBase<MODEL>      ObsFilterBase_;
+  typedef ObservationSpace<MODEL>   ObsSpace_;
+  typedef ObsVector<MODEL>          ObsVector_;
 
  public:
   ObsFilters(const ObsSpace_ &, const eckit::Configuration &);
+  ObsFilters();
+  ObsFilters(const ObsFilters &);
   ~ObsFilters();
 
-  const ObsFilter_ & operator[](const std::size_t ii) const {return *filters_.at(ii);}
+  void priorFilter(const GeoVaLs_ &) const;
+  void postFilter(const ObsVector_ &) const;
 
  private:
   void print(std::ostream &) const;
-  std::vector<boost::shared_ptr<ObsFilter_> > filters_;
+  std::vector< boost::shared_ptr<ObsFilterBase_> > filters_;
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-ObsFilters<MODEL>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration & conf)
-  : filters_(os.size())
-{
-  for (std::size_t jj = 0; jj < os.size(); ++jj) {
-    boost::shared_ptr<ObsFilter_> tmp(new ObsFilter_);
-    filters_[jj] = tmp;
-  }
-
+ObsFilters<MODEL>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration & conf) {
   std::vector<eckit::LocalConfiguration> confs;
   conf.get("ObsFilters", confs);
-
+  filters_.resize(confs.size());
   for (std::size_t jj = 0; jj < confs.size(); ++jj) {
-    const std::string type = confs[jj].getString("ObsType");
-    const std::size_t ii = os.itype(type);
-    boost::shared_ptr<FilterBase_> tmp(FilterFactory<MODEL>::create(confs[jj]));
-    filters_[ii]->enrollFilter(tmp);
+    filters_[jj].reset(FilterFactory<MODEL>::create(os, confs[jj]));
   }
 }
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+ObsFilters<MODEL>::ObsFilters(): filters_() {}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+ObsFilters<MODEL>::ObsFilters(const ObsFilters & other): filters_(other.filters_) {}
 
 // -----------------------------------------------------------------------------
 
@@ -69,9 +76,27 @@ ObsFilters<MODEL>::~ObsFilters() {}
 
 // -----------------------------------------------------------------------------
 
+template<typename MODEL>
+void ObsFilters<MODEL>::priorFilter(const GeoVaLs_ & gv) const {
+  for (std::size_t jj = 0; jj < filters_.size(); ++jj) {
+    filters_.at(jj)->priorFilter(gv);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void ObsFilters<MODEL>::postFilter(const ObsVector_ & ovec) const {
+  for (std::size_t jj = 0; jj < filters_.size(); ++jj) {
+    filters_.at(jj)->postFilter(ovec);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 template <typename MODEL>
 void ObsFilters<MODEL>::print(std::ostream & os) const {
-  os << "ObsFilters for " << filters_.size() << " types:" << std::endl;
+  os << "ObsFilters: " << filters_.size() << " elements:" << std::endl;
   for (std::size_t jj = 0; jj < filters_.size(); ++jj) {
     os << *filters_[jj] << std::endl;
   }

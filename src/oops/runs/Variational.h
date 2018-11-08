@@ -22,6 +22,7 @@
 #include "oops/assimilation/instantiateCostFactory.h"
 #include "oops/assimilation/instantiateMinFactory.h"
 #include "oops/base/instantiateCovarFactory.h"
+#include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/Observations.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
@@ -51,6 +52,7 @@ template <typename MODEL> class Variational : public Application {
     instantiateCovarFactory<MODEL>();
     instantiateMinFactory<MODEL>();
     instantiateObsErrorFactory<MODEL>();
+    instantiateObsFilterFactory<MODEL>();
     instantiateTlmFactory<MODEL>();
     instantiateLinearVariableChangeFactory<MODEL>();
   }

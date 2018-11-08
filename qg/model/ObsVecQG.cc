@@ -117,11 +117,11 @@ void ObsVecQG::save(const std::string & name) const {
 void ObsVecQG::print(std::ostream & os) const {
   double zmin, zmax, zavg;
   qg_obsvec_minmaxavg_f90(keyOvec_, zmin, zmax, zavg);
-  os << obsdb_.obsname() << " nobs= " << size()
+  os << obsdb_.obsname() << " nobs= " << nobs()
      << " Min=" << zmin << ", Max=" << zmax << ", Average=" << zavg;
 }
 // -----------------------------------------------------------------------------
-unsigned int ObsVecQG::size() const {
+unsigned int ObsVecQG::nobs() const {
   int iobs;
   qg_obsvec_nobs_f90(keyOvec_, iobs);
   unsigned int nobs(iobs);

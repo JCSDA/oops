@@ -55,8 +55,7 @@
           "obsvalue": "ObsVal"
         }
       }
-    ],
-    "ObsFilters": []
+    ]
   },
   "Prints": {
     "frequency": "PT3H"

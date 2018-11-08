@@ -15,7 +15,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/base/instantiateFilterFactory.h"
+#include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/ObsEnsemble.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
@@ -51,7 +51,7 @@ template <typename MODEL> class EnsHofX : public Application {
  public:
 // -----------------------------------------------------------------------------
   EnsHofX() {
-    instantiateFilterFactory<MODEL>();
+    instantiateObsFilterFactory<MODEL>();
   }
 // -----------------------------------------------------------------------------
   virtual ~EnsHofX() {}
@@ -84,9 +84,7 @@ template <typename MODEL> class EnsHofX : public Application {
     ObsOperator_ hop(obsdb);
 
 //  Setup QC filters
-    eckit::LocalConfiguration filterConf;
-    obsconf.get("ObsFilters", filterConf);
-    ObsFilters_ filter(obsdb, obsconf);
+    std::vector<ObsFilters_> filters(obsdb.size());
 
 //  Setup initial states
     const eckit::LocalConfiguration initialConfig(fullConfig, "Initial Condition");
@@ -114,7 +112,7 @@ template <typename MODEL> class EnsHofX : public Application {
 
 //    Setup postprocessor: Observer
       boost::shared_ptr<Observer<MODEL, State_> >
-      pobs(new Observer<MODEL, State_>(obsdb, hop, ybias, filter));
+      pobs(new Observer<MODEL, State_>(obsdb, hop, ybias, filters));
       post.enrollProcessor(pobs);
 
 //    Compute H(x)
