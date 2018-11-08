@@ -18,6 +18,7 @@
 
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
+#include "oops/interface/Locations.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsVector.h"
@@ -37,6 +38,7 @@ class ObsOperator : public util::Printable,
                     private util::ObjectCounter<ObsOperator<MODEL> > {
   typedef typename MODEL::ObsOperator  ObsOperator_;
   typedef GeoVaLs<MODEL>               GeoVaLs_;
+  typedef Locations<MODEL>             Locations_;
   typedef ObsAuxControl<MODEL>         ObsAuxControl_;
   typedef ObsVector<MODEL>             ObsVector_;
   typedef ObservationSpace<MODEL>      ObsSpace_;
@@ -44,7 +46,7 @@ class ObsOperator : public util::Printable,
  public:
   static const std::string classname() {return "oops::ObsOperator";}
 
-  explicit ObsOperator(const ObsSpace_ &);
+  ObsOperator(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
   ~ObsOperator();
 
 /// Obs Operator
@@ -54,20 +56,29 @@ class ObsOperator : public util::Printable,
   const ObsOperator_ & obsoperator() const {return *oper_;}
 
 /// Other
-  const Variables & variables() const;  // Required inputs variables from Model
+  const ObsSpace_ & obspace() const {return *obsdb_;}
+  const Variables & variables() const;  // Required input variables from Model
+  const Variables & observed() const;   // Observed variables produced by H
+  const eckit::Configuration & config() const {return conf_;}
+  Locations_ locations(const util::DateTime &, const util::DateTime &) const;
 
  private:
   void print(std::ostream &) const;
+  const eckit::LocalConfiguration conf_;
+  boost::scoped_ptr<ObsSpace_> obsdb_;  // To be moved into ObsOperator_
   boost::scoped_ptr<ObsOperator_> oper_;
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-ObsOperator<MODEL>::ObsOperator(const ObsSpace_ & os) : oper_() {
+ObsOperator<MODEL>::ObsOperator(const eckit::Configuration & conf,
+                                const util::DateTime & bgn,
+                                const util::DateTime & end) : conf_(conf), obsdb_(), oper_() {
   Log::trace() << "ObsOperator<MODEL>::ObsOperator starting" << std::endl;
   util::Timer timer(classname(), "ObsOperator");
-  oper_.reset(new ObsOperator_(os.observationspace(), os.config()));
+  obsdb_.reset(new ObsSpace_(conf, bgn, end));
+  oper_.reset(new ObsOperator_(obsdb_->observationspace(), conf));
   Log::trace() << "ObsOperator<MODEL>::ObsOperator done" << std::endl;
 }
 
@@ -77,6 +88,7 @@ template <typename MODEL>
 ObsOperator<MODEL>::~ObsOperator() {
   Log::trace() << "ObsOperator<MODEL>::~ObsOperator starting" << std::endl;
   util::Timer timer(classname(), "~ObsOperator");
+  obsdb_.reset();
   oper_.reset();
   Log::trace() << "ObsOperator<MODEL>::~ObsOperator done" << std::endl;
 }
@@ -99,6 +111,25 @@ const Variables & ObsOperator<MODEL>::variables() const {
   Log::trace() << "ObsOperator<MODEL>::variables starting" << std::endl;
   util::Timer timer(classname(), "variables");
   return oper_->variables();
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+const Variables & ObsOperator<MODEL>::observed() const {
+  Log::trace() << "ObsOperator<MODEL>::observed starting" << std::endl;
+  util::Timer timer(classname(), "observed");
+  return oper_->observed();
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+Locations<MODEL> ObsOperator<MODEL>::locations(const util::DateTime & t1,
+                                               const util::DateTime & t2) const {
+  Log::trace() << "ObsOperator<MODEL>::locations starting" << std::endl;
+  util::Timer timer(classname(), "locations");
+  return Locations_(oper_->locations(t1, t2));
 }
 
 // -----------------------------------------------------------------------------

@@ -27,8 +27,8 @@ namespace qg {
 static ObsOpMaker<ObsWindQG>   makerWind_("Wind");
 // -----------------------------------------------------------------------------
 
-ObsWindQG::ObsWindQG(const ObsSpaceQG &, const eckit::Configuration & config)
-  : keyOperWind_(0), varin_(std::vector<std::string>{"u", "v"})
+ObsWindQG::ObsWindQG(const ObsSpaceQG & odb, const eckit::Configuration & config)
+  : keyOperWind_(0), obsdb_(odb), varin_(std::vector<std::string>{"u", "v"})
 {
   const eckit::Configuration * configc = &config;
   qg_wind_setup_f90(keyOperWind_, &configc);
@@ -46,6 +46,12 @@ ObsWindQG::~ObsWindQG() {
 void ObsWindQG::simulateObs(const GomQG & gom, ObsVecQG & ovec,
                             const ObsBias & bias) const {
   qg_wind_equiv_f90(gom.toFortran(), ovec.toFortran(), bias.wind());
+}
+
+// -----------------------------------------------------------------------------
+
+LocationsQG * ObsWindQG::locations(const util::DateTime & t1, const util::DateTime & t2) const {
+  return obsdb_.locations(t1, t2);
 }
 
 // -----------------------------------------------------------------------------

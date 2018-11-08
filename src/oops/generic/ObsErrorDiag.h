@@ -16,6 +16,7 @@
 
 #include <boost/scoped_ptr.hpp>
 
+#include "oops/base/Variables.h"
 #include "oops/interface/ObsErrorBase.h"
 #include "oops/util/Logger.h"
 
@@ -34,7 +35,7 @@ class ObsErrorDiag : public ObsErrorBase<MODEL> {
   typedef typename MODEL::ObsVector             ObsVector_;
 
  public:
-  ObsErrorDiag(const ObsSpace_ &, const eckit::Configuration &);
+  ObsErrorDiag(const eckit::Configuration &, const ObsSpace_ &, const Variables &);
   ~ObsErrorDiag();
 
 /// Linearize and reset for inner loop (nothing in this simple case)
@@ -62,10 +63,11 @@ class ObsErrorDiag : public ObsErrorBase<MODEL> {
 // =============================================================================
 
 template<typename MODEL>
-ObsErrorDiag<MODEL>::ObsErrorDiag(const ObsSpace_ & obsgeom, const eckit::Configuration & config)
+ObsErrorDiag<MODEL>::ObsErrorDiag(const eckit::Configuration & config, const ObsSpace_ & obsgeom,
+                                  const Variables & observed)
   : stddev_(), inverseVariance_()
 {
-  stddev_.reset(new ObsVector_(obsgeom));
+  stddev_.reset(new ObsVector_(obsgeom, observed));
   const std::string col = config.getString("obserror");
   stddev_->read(col);
 

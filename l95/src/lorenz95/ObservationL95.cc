@@ -16,6 +16,7 @@
 #include "eckit/config/Configuration.h"
 #include "lorenz95/GomL95.h"
 #include "lorenz95/ObsBias.h"
+#include "lorenz95/ObsTable.h"
 #include "lorenz95/ObsVec1D.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
@@ -26,7 +27,7 @@ namespace lorenz95 {
 // -----------------------------------------------------------------------------
 
 ObservationL95::ObservationL95(const ObsTable & ot, const eckit::Configuration & conf)
-  : obsdb_(ot), inputs_(conf)
+  : obsdb_(ot), inputs_(conf), outputs_(conf)
 {}
 
 // -----------------------------------------------------------------------------
@@ -41,6 +42,12 @@ void ObservationL95::simulateObs(const GomL95 & gom, ObsVec1D & ovec,
     const int ii = gom.getindx(jj);
     ovec(ii) = gom[jj] + bias.value();
   }
+}
+
+// -----------------------------------------------------------------------------
+
+LocsL95 * ObservationL95::locations(const util::DateTime & t1, const util::DateTime & t2) const {
+  return obsdb_.locations(t1, t2);
 }
 
 // -----------------------------------------------------------------------------

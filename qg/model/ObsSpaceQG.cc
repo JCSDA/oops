@@ -47,7 +47,7 @@ ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config,
   }
 
   otiter it = theObsFileRegister_.find(ref_);
-  if (it == theObsFileRegister_.end()) {
+  if (it == theObsFileRegister_.end() || theObsFileCount_[ref_] == 0) {
     // Open new file
     oops::Log::trace() << "ObsSpaceQG::getHelper: " << "Opening " << ref_ << std::endl;
     helper_ = new ObsHelpQG(config);

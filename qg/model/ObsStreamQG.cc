@@ -26,8 +26,8 @@ namespace qg {
 static ObsOpMaker<ObsStreamQG> makerStream_("Stream");
 // -----------------------------------------------------------------------------
 
-ObsStreamQG::ObsStreamQG(const ObsSpaceQG &, const eckit::Configuration & config)
-  : keyOperStrm_(0), varin_(std::vector<std::string>{"x"})
+ObsStreamQG::ObsStreamQG(const ObsSpaceQG & odb, const eckit::Configuration & config)
+  : keyOperStrm_(0), obsdb_(odb), varin_(std::vector<std::string>{"x"})
 {
   const eckit::Configuration * configc = &config;
   qg_stream_setup_f90(keyOperStrm_, &configc);
@@ -46,6 +46,12 @@ ObsStreamQG::~ObsStreamQG() {
 void ObsStreamQG::simulateObs(const GomQG & gom, ObsVecQG & ovec,
                               const ObsBias & bias) const {
   qg_stream_equiv_f90(gom.toFortran(), ovec.toFortran(), bias.stream());
+}
+
+// -----------------------------------------------------------------------------
+
+LocationsQG * ObsStreamQG::locations(const util::DateTime & t1, const util::DateTime & t2) const {
+  return obsdb_.locations(t1, t2);
 }
 
 // -----------------------------------------------------------------------------

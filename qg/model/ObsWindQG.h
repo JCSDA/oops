@@ -50,6 +50,7 @@ class ObsWindQG : public ObsOpBaseQG,
 
 // Other
   const oops::Variables & variables() const override {return varin_;}
+  LocationsQG * locations(const util::DateTime &, const util::DateTime &) const;
 
   int & toFortran() {return keyOperWind_;}
   const int & toFortran() const {return keyOperWind_;}
@@ -57,6 +58,7 @@ class ObsWindQG : public ObsOpBaseQG,
  private:
   void print(std::ostream &) const;
   F90hop keyOperWind_;
+  const ObsSpaceQG & obsdb_;
   const oops::Variables varin_;
 };
 // -----------------------------------------------------------------------------

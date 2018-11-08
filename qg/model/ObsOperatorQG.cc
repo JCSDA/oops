@@ -12,18 +12,20 @@
 
 #include "eckit/config/Configuration.h"
 #include "model/GomQG.h"
+#include "model/LocationsQG.h"
 #include "model/ObsBias.h"
 #include "model/ObsOpBaseQG.h"
 #include "model/ObsSpaceQG.h"
 #include "model/ObsVecQG.h"
 #include "oops/base/Variables.h"
+#include "oops/util/DateTime.h"
 
 namespace qg {
 
 // -----------------------------------------------------------------------------
 
 ObsOperatorQG::ObsOperatorQG(const ObsSpaceQG & os, const eckit::Configuration & conf)
-  : oper_(ObsOpFactory::create(os, conf))
+  : oper_(ObsOpFactory::create(os, conf)), obsv_({"zz"}, "")
 {}
 
 // -----------------------------------------------------------------------------
@@ -40,6 +42,12 @@ void ObsOperatorQG::simulateObs(const GomQG & gvals, ObsVecQG & yy, const ObsBia
 
 const oops::Variables & ObsOperatorQG::variables() const {
   return oper_->variables();
+}
+
+// -----------------------------------------------------------------------------
+
+LocationsQG * ObsOperatorQG::locations(const util::DateTime & t1, const util::DateTime & t2) const {
+  return oper_->locations(t1, t2);
 }
 
 // -----------------------------------------------------------------------------

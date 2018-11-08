@@ -17,7 +17,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include "oops/base/ObsSpaces.h"
+#include "oops/base/ObsOperators.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/LinearObsOperator.h"
 #include "oops/interface/ObsAuxControl.h"
@@ -37,13 +37,13 @@ class LinearObsOperators : public util::Printable,
   typedef LinearObsOperator<MODEL>   LinearObsOperator_;
   typedef ObsAuxControl<MODEL>       ObsAuxControl_;
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncrement_;
-  typedef ObsSpaces<MODEL>           ObsSpace_;
+  typedef ObsOperators<MODEL>        ObsOperators_;
   typedef ObsVector<MODEL>           ObsVector_;
 
  public:
   static const std::string classname() {return "oops::LinearObsOperators";}
 
-  explicit LinearObsOperators(const ObsSpace_ &);
+  explicit LinearObsOperators(const ObsOperators_ &);
   ~LinearObsOperators();
 
 /// Access
@@ -60,9 +60,9 @@ class LinearObsOperators : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-LinearObsOperators<MODEL>::LinearObsOperators(const ObsSpace_ & os): ops_(0) {
-  for (std::size_t jobs = 0; jobs < os.size(); ++jobs) {
-    boost::shared_ptr<LinearObsOperator_> tmp(new LinearObsOperator_(os[jobs]));
+LinearObsOperators<MODEL>::LinearObsOperators(const ObsOperators_ & hop): ops_(0) {
+  for (std::size_t jobs = 0; jobs < hop.size(); ++jobs) {
+    boost::shared_ptr<LinearObsOperator_> tmp(new LinearObsOperator_(hop[jobs]));
     ops_.push_back(tmp);
   }
 }

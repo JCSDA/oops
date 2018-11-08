@@ -17,6 +17,7 @@
 #include <boost/noncopyable.hpp>
 #include "eckit/config/Configuration.h"
 
+#include "oops/base/Variables.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
@@ -65,12 +66,14 @@ template <typename MODEL>
 class ObsErrorFactory {
   typedef ObservationSpace<MODEL> ObsSpace_;
  public:
-  static ObsErrorBase<MODEL> * create(const ObsSpace_ &, const eckit::Configuration &);
+  static ObsErrorBase<MODEL> * create(const eckit::Configuration &, const ObsSpace_ &,
+                                      const Variables &);
   virtual ~ObsErrorFactory() { getMakers().clear(); }
  protected:
   explicit ObsErrorFactory(const std::string &);
  private:
-  virtual ObsErrorBase<MODEL> * make(const ObsSpace_ &, const eckit::Configuration &) = 0;
+  virtual ObsErrorBase<MODEL> * make(const eckit::Configuration &, const ObsSpace_ &,
+                                     const Variables &) = 0;
   static std::map < std::string, ObsErrorFactory<MODEL> * > & getMakers() {
     static std::map < std::string, ObsErrorFactory<MODEL> * > makers_;
     return makers_;
@@ -82,8 +85,9 @@ class ObsErrorFactory {
 template<class MODEL, class T>
 class ObsErrorMaker : public ObsErrorFactory<MODEL> {
   typedef ObservationSpace<MODEL> ObsSpace_;
-  virtual ObsErrorBase<MODEL> * make(const ObsSpace_ & obs, const eckit::Configuration & conf)
-    { return new T(obs.observationspace(), conf); }
+  virtual ObsErrorBase<MODEL> * make(const eckit::Configuration & conf, const ObsSpace_ & obs,
+                                     const Variables & vars)
+    { return new T(conf, obs.observationspace(), vars); }
  public:
   explicit ObsErrorMaker(const std::string & name) : ObsErrorFactory<MODEL>(name) {}
 };
@@ -102,8 +106,8 @@ ObsErrorFactory<MODEL>::ObsErrorFactory(const std::string & name) {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-ObsErrorBase<MODEL>* ObsErrorFactory<MODEL>::create(const ObsSpace_ & obs,
-                                                    const eckit::Configuration & conf) {
+ObsErrorBase<MODEL>* ObsErrorFactory<MODEL>::create(const eckit::Configuration & conf,
+                                                    const ObsSpace_ & obs, const Variables & vars) {
   Log::trace() << "ObsErrorBase<MODEL>::create starting" << std::endl;
   const std::string id = conf.getString("covariance");
   typename std::map<std::string, ObsErrorFactory<MODEL>*>::iterator
@@ -112,7 +116,7 @@ ObsErrorBase<MODEL>* ObsErrorFactory<MODEL>::create(const ObsSpace_ & obs,
     Log::error() << id << " does not exist in observation error factory." << std::endl;
     ABORT("Element does not exist in ObsErrorFactory.");
   }
-  ObsErrorBase<MODEL> * ptr = jerr->second->make(obs, conf);
+  ObsErrorBase<MODEL> * ptr = jerr->second->make(conf, obs, vars);
   Log::trace() << "ObsErrorBase<MODEL>::create done" << std::endl;
   return ptr;
 }

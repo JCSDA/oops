@@ -16,6 +16,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
+#include "oops/base/Variables.h"
 #include "oops/util/Printable.h"
 
 // Forward declarations
@@ -23,12 +24,13 @@ namespace eckit {
   class Configuration;
 }
 
-namespace oops {
-  class Variables;
+namespace util {
+  class DateTime;
 }
 
 namespace qg {
   class GomQG;
+  class LocationsQG;
   class ObsBias;
   class ObsOpBaseQG;
   class ObsSpaceQG;
@@ -46,11 +48,14 @@ class ObsOperatorQG : public util::Printable,
   void simulateObs(const GomQG &, ObsVecQG &, const ObsBias &) const;
 
 /// Other
-  const oops::Variables & variables() const;  // Required inputs variables from Model
+  const oops::Variables & variables() const;  // Required input variables from Model
+  const oops::Variables & observed() const {return obsv_;}   // Output variables produced by H
+  LocationsQG * locations(const util::DateTime &, const util::DateTime &) const;
 
  private:
   void print(std::ostream &) const;
   boost::scoped_ptr<ObsOpBaseQG> oper_;
+  oops::Variables obsv_;
 };
 
 // -----------------------------------------------------------------------------

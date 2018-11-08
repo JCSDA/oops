@@ -92,7 +92,6 @@ oops/base/ObsErrors.h
 oops/base/ObsFilterBase.h
 oops/base/ObsFilters.h
 oops/base/ObsOperators.h
-oops/base/ObsSpaces.h
 oops/base/Observations.h
 oops/base/Observer.h
 oops/base/ObserverTLAD.h

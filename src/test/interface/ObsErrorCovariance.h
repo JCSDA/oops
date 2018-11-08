@@ -21,7 +21,6 @@
 
 #include <boost/scoped_ptr.hpp>
 
-#include "eckit/config/LocalConfiguration.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/interface/ObsErrorCovariance.h"
 #include "oops/runs/Test.h"
@@ -38,13 +37,8 @@ template <typename MODEL> void testConstructor() {
 
   oops::instantiateObsErrorFactory<MODEL>();
 
-  const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
-  std::vector<eckit::LocalConfiguration> conf;
-  obsconf.get("ObsTypes", conf);
-
-  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    const eckit::LocalConfiguration rconf(conf[jj], "Covariance");
-    boost::scoped_ptr<Covar_> R(new Covar_(Test_::obspace()[jj], rconf));
+  for (std::size_t jj = 0; jj < Test_::hoper().size(); ++jj) {
+    boost::scoped_ptr<Covar_> R(new Covar_(Test_::hoper()[jj]));
     BOOST_CHECK(R.get());
 
     R.reset();

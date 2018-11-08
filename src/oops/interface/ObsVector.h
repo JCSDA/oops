@@ -17,6 +17,7 @@
 
 #include <boost/scoped_ptr.hpp>
 
+#include "oops/base/Variables.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -43,9 +44,9 @@ class ObsVector : public util::Printable,
  public:
   static const std::string classname() {return "oops::ObsVector";}
 
-  explicit ObsVector(const ObservationSpace<MODEL> &);
+  ObsVector(const ObservationSpace<MODEL> &, const Variables &);
   explicit ObsVector(const ObsVector &, const bool copy = true);
-  explicit ObsVector(ObsVector_ *);
+  explicit ObsVector(ObsVector_ *);  // TODO(YT): remove, used only in ObsErrorCovariance
   ~ObsVector();
 
 /// Interfacing
@@ -79,11 +80,12 @@ class ObsVector : public util::Printable,
 
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-ObsVector<MODEL>::ObsVector(const ObservationSpace<MODEL> & os): data_() {
+ObsVector<MODEL>::ObsVector(const ObservationSpace<MODEL> & os,
+                            const Variables & vars): data_() {
   Log::trace() << "ObsVector<MODEL>::ObsVector starting" << std::endl;
   util::Timer timer(classname(), "ObsVector");
 
-  data_.reset(new ObsVector_(os.observationspace()));
+  data_.reset(new ObsVector_(os.observationspace(), vars));
 
   Log::trace() << "ObsVector<MODEL>::ObsVector done" << std::endl;
 }
