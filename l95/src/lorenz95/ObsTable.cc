@@ -47,7 +47,7 @@ ObsTable::ObsTable(const eckit::Configuration & config,
       nameOut_ = dataConfig.getString("ObsDataOut.filename");
     }
   }
-  oops::Log::trace() << "ObsTable::ObsTable created" << std::endl;
+  oops::Log::trace() << "ObsTable::ObsTable created nobs = " << nobs() << std::endl;
 }
 
 // -----------------------------------------------------------------------------

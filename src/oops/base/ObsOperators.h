@@ -17,11 +17,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include "oops/base/ObsSpaces.h"
-#include "oops/base/Variables.h"
-#include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsOperator.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
@@ -34,34 +30,41 @@ namespace oops {
 template <typename MODEL>
 class ObsOperators : public util::Printable,
                      private boost::noncopyable {
-  typedef ObsAuxControl<MODEL>       ObsAuxControl_;
   typedef ObsOperator<MODEL>         ObsOperator_;
-  typedef ObsVector<MODEL>           ObsVector_;
-  typedef ObsSpaces<MODEL>           ObsSpace_;
 
  public:
   static const std::string classname() {return "oops::ObsOperators";}
 
-  explicit ObsOperators(const ObsSpace_ &);
+  ObsOperators(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
   ~ObsOperators();
 
 /// Access
   std::size_t size() const {return ops_.size();}
   const ObsOperator_ & operator[](const std::size_t ii) const {return *ops_.at(ii);}
-  const Variables & variables(const std::size_t jobs) const;
+
+/// Assimilation window
+  const util::DateTime & windowStart() const {return wbgn_;}
+  const util::DateTime & windowEnd() const {return wend_;}
 
  private:
   void print(std::ostream &) const;
   std::vector<boost::shared_ptr<ObsOperator_> > ops_;
+  const util::DateTime wbgn_;
+  const util::DateTime wend_;
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-ObsOperators<MODEL>::ObsOperators(const ObsSpace_ & os) : ops_(0)
+ObsOperators<MODEL>::ObsOperators(const eckit::Configuration & conf,
+                                  const util::DateTime & bgn,
+                                  const util::DateTime & end)
+  : ops_(0), wbgn_(bgn), wend_(end)
 {
-  for (std::size_t jobs = 0; jobs < os.size(); ++jobs) {
-    boost::shared_ptr<ObsOperator_> tmp(new ObsOperator_(os[jobs]));
+  std::vector<eckit::LocalConfiguration> conftypes;
+  conf.get("ObsTypes", conftypes);
+  for (std::size_t jj = 0; jj < conftypes.size(); ++jj) {
+    boost::shared_ptr<ObsOperator_> tmp(new ObsOperator_(conftypes[jj], bgn, end));
     ops_.push_back(tmp);
   }
 }
@@ -70,13 +73,6 @@ ObsOperators<MODEL>::ObsOperators(const ObsSpace_ & os) : ops_(0)
 
 template <typename MODEL>
 ObsOperators<MODEL>::~ObsOperators() {}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-const Variables & ObsOperators<MODEL>::variables(const std::size_t jobs) const {
-  return ops_.at(jobs)->variables();
-}
 
 // -----------------------------------------------------------------------------
 

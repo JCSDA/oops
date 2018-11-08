@@ -17,10 +17,12 @@
 #include "model/ObsSpaceQG.h"
 #include "oops/base/Variables.h"
 #include "oops/util/abor1_cpp.h"
+#include "oops/util/DateTime.h"
 #include "oops/util/Printable.h"
 
 namespace qg {
 class GomQG;
+class LocationsQG;
 class ObsBias;
 class ObsVecQG;
 
@@ -38,6 +40,7 @@ class ObsOpBaseQG : public util::Printable,
 
 /// Other
   virtual const oops::Variables & variables() const = 0;  // Required from Model
+  virtual LocationsQG * locations(const util::DateTime &, const util::DateTime &) const = 0;
 
  private:
   virtual void print(std::ostream &) const = 0;

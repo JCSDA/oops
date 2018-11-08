@@ -28,6 +28,7 @@ class ObsSpaceBase : public util::Printable,
   ObsSpaceBase(const eckit::Configuration & config,
                const util::DateTime & bgn, const util::DateTime & end)
   : conf_(config), winbgn_(bgn), winend_(end) {}
+
   virtual ~ObsSpaceBase() {}
 
 /// Access information

@@ -59,7 +59,6 @@ class ObservationSpace : public util::Printable,
   const eckit::Configuration & config() const {return obsdb_->config();}
 
 // Other
-  Locations_ locations(const util::DateTime &, const util::DateTime &) const;
   void generateDistribution(const eckit::Configuration &);
   void printJo(const ObsVector_ &, const ObsVector_ &) const;
 
@@ -77,6 +76,10 @@ ObservationSpace<MODEL>::ObservationSpace(const eckit::Configuration & conf,
   Log::trace() << "ObservationSpace<MODEL>::ObservationSpace starting" << std::endl;
   util::Timer timer(classname(), "ObservationSpace");
   obsdb_.reset(new ObsSpace_(conf, bgn, end));
+  if (conf.has("Generate")) {
+    const eckit::LocalConfiguration gconf(conf, "Generate");
+    obsdb_->generateDistribution(gconf);
+  }
   Log::trace() << "ObservationSpace<MODEL>::ObservationSpace done" << std::endl;
 }
 
@@ -105,16 +108,6 @@ void ObservationSpace<MODEL>::generateDistribution(const eckit::Configuration & 
   util::Timer timer(classname(), "generateDistribution");
   obsdb_->generateDistribution(conf);
   Log::trace() << "ObservationSpace<MODEL>::generateDistribution done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-Locations<MODEL> ObservationSpace<MODEL>::locations(const util::DateTime & t1,
-                                                    const util::DateTime & t2) const {
-  Log::trace() << "ObservationSpace<MODEL>::locations starting" << std::endl;
-  util::Timer timer(classname(), "locations");
-  return Locations_(obsdb_->locations(t1, t2));
 }
 
 // -----------------------------------------------------------------------------

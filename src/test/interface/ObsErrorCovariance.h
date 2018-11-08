@@ -42,9 +42,9 @@ template <typename MODEL> void testConstructor() {
   std::vector<eckit::LocalConfiguration> conf;
   obsconf.get("ObsTypes", conf);
 
-  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+  for (std::size_t jj = 0; jj < Test_::hoper().size(); ++jj) {
     const eckit::LocalConfiguration rconf(conf[jj], "Covariance");
-    boost::scoped_ptr<Covar_> R(new Covar_(Test_::obspace()[jj], rconf));
+    boost::scoped_ptr<Covar_> R(new Covar_(Test_::hoper()[jj].obspace(), rconf));
     BOOST_CHECK(R.get());
 
     R.reset();

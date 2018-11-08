@@ -23,12 +23,17 @@ namespace eckit {
   class Configuration;
 }
 
+namespace util {
+  class DateTime;
+}
+
 namespace oops {
   class Variables;
 }
 
 namespace qg {
   class GomQG;
+  class LocationsQG;
   class ObsBias;
   class ObsOpBaseQG;
   class ObsSpaceQG;
@@ -47,6 +52,7 @@ class ObsOperatorQG : public util::Printable,
 
 /// Other
   const oops::Variables & variables() const;  // Required inputs variables from Model
+  LocationsQG * locations(const util::DateTime &, const util::DateTime &) const;
 
  private:
   void print(std::ostream &) const;

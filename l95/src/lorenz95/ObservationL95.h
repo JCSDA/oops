@@ -18,6 +18,7 @@
 
 #include "lorenz95/ObservationTLAD.h"
 #include "oops/base/Variables.h"
+#include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
@@ -28,6 +29,7 @@ namespace eckit {
 
 namespace lorenz95 {
   class GomL95;
+  class LocsL95;
   class ObsBias;
   class ObsTable;
   class ObsVec1D;
@@ -53,6 +55,7 @@ class ObservationL95 : public util::Printable,
 
 // Other
   const oops::Variables & variables() const {return inputs_;}
+  LocsL95 * locations(const util::DateTime & t1, const util::DateTime & t2) const;
 
   const ObsTable & table() const {return obsdb_;}
 

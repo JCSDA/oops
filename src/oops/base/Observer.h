@@ -20,7 +20,6 @@
 #include "oops/base/Observations.h"
 #include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
-#include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/InterpolatorTraj.h"
@@ -43,16 +42,15 @@ template <typename MODEL, typename STATE>
 class Observer : public util::Printable, public PostBase<STATE> {
   typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef InterpolatorTraj<MODEL>    InterpolatorTraj_;
-  typedef LinearObsOperators<MODEL>  LinearObsOperator_;
+  typedef LinearObsOperators<MODEL>  LinearObsOperators_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef ObsFilters<MODEL>          ObsFilters_;
   typedef Observations<MODEL>        Observations_;
-  typedef ObsOperators<MODEL>        ObsOperator_;
-  typedef ObsSpaces<MODEL>           ObsSpace_;
+  typedef ObsOperators<MODEL>        ObsOperators_;
   typedef std::vector<boost::shared_ptr<InterpolatorTraj_> > vspit;
 
  public:
-  Observer(const ObsSpace_ &, const ObsOperator_ &, const ObsAuxCtrl_ &,
+  Observer(const ObsOperators_ &, const ObsAuxCtrl_ &,
            const std::vector<ObsFilters_> &,
            const util::Duration & tslot = util::Duration(0), const bool subwin = false);
   ~Observer() {}
@@ -60,7 +58,7 @@ class Observer : public util::Printable, public PostBase<STATE> {
   Observations_ * release() {return yobs_.release();}
 
   void processTraj(const STATE &, std::vector<boost::shared_ptr<InterpolatorTraj_> > &) const;
-  void finalizeTraj(const STATE &, LinearObsOperator_ &);
+  void finalizeTraj(const STATE &, LinearObsOperators_ &);
 
  private:
 // Methods
@@ -70,8 +68,7 @@ class Observer : public util::Printable, public PostBase<STATE> {
   void print(std::ostream &) const;
 
 // Obs operator
-  const ObsSpace_ & obspace_;
-  const ObsOperator_ & hop_;
+  const ObsOperators_ & hop_;
 
 // Data
   std::auto_ptr<Observations_> yobs_;
@@ -91,14 +88,13 @@ class Observer : public util::Printable, public PostBase<STATE> {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename STATE>
-Observer<MODEL, STATE>::Observer(const ObsSpace_ & obsdb,
-                                 const ObsOperator_ & hop,
+Observer<MODEL, STATE>::Observer(const ObsOperators_ & hop,
                                  const ObsAuxCtrl_ & ybias,
                                  const std::vector<ObsFilters_> & filters,
                                  const util::Duration & tslot, const bool swin)
-  : PostBase<STATE>(), obspace_(obsdb), hop_(hop),
-    yobs_(new Observations_(obsdb)), ybias_(ybias),
-    winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
+  : PostBase<STATE>(), hop_(hop),
+    yobs_(new Observations_(hop_)), ybias_(ybias),
+    winbgn_(hop_.windowStart()), winend_(hop_.windowEnd()),
     bgn_(winbgn_), end_(winend_), hslot_(tslot/2), subwindows_(swin),
     gvals_(0), filters_(filters)
 {
@@ -126,9 +122,9 @@ void Observer<MODEL, STATE>::doInitialize(const STATE & xx,
   if (bgn_ < winbgn_) bgn_ = winbgn_;
   if (end_ > winend_) end_ = winend_;
 
-  for (size_t jj = 0; jj < obspace_.size(); ++jj) {
-    boost::shared_ptr<GeoVaLs_> tmp(new GeoVaLs_(obspace_[jj].locations(bgn_, end_),
-                                                 hop_.variables(jj)));
+  for (size_t jj = 0; jj < hop_.size(); ++jj) {
+    boost::shared_ptr<GeoVaLs_> tmp(new GeoVaLs_(hop_[jj].locations(bgn_, end_),
+                                                 hop_[jj].variables()));
     gvals_.push_back(tmp);
   }
   Log::trace() << "Observer::doInitialize done" << std::endl;
@@ -145,8 +141,8 @@ void Observer<MODEL, STATE>::doProcessing(const STATE & xx) {
   if (t2 > end_) t2 = end_;
 
 // Get state variables at obs locations
-  for (size_t jj = 0; jj < obspace_.size(); ++jj) {
-    xx.getValues(obspace_[jj].locations(t1, t2), hop_.variables(jj), *gvals_.at(jj));
+  for (size_t jj = 0; jj < hop_.size(); ++jj) {
+    xx.getValues(hop_[jj].locations(t1, t2), hop_[jj].variables(), *gvals_.at(jj));
   }
   Log::trace() << "Observer::doProcessing done" << std::endl;
 }
@@ -162,8 +158,8 @@ void Observer<MODEL, STATE>::processTraj(const STATE & xx, vspit & traj) const {
   if (t2 > end_) t2 = end_;
 
 // Get state variables at obs locations and trajectory
-  for (size_t jj = 0; jj < obspace_.size(); ++jj) {
-    xx.getValues(obspace_[jj].locations(t1, t2), hop_.variables(jj), *gvals_.at(jj),
+  for (size_t jj = 0; jj < hop_.size(); ++jj) {
+    xx.getValues(hop_[jj].locations(t1, t2), hop_[jj].variables(), *gvals_.at(jj),
                  *traj.at(jj));
   }
   Log::trace() << "Observer::processTraj done" << std::endl;
@@ -172,9 +168,9 @@ void Observer<MODEL, STATE>::processTraj(const STATE & xx, vspit & traj) const {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename STATE>
-void Observer<MODEL, STATE>::finalizeTraj(const STATE & xx, LinearObsOperator_ & htlad) {
+void Observer<MODEL, STATE>::finalizeTraj(const STATE & xx, LinearObsOperators_ & htlad) {
   Log::trace() << "Observer::finalizeTraj start" << std::endl;
-  for (size_t jj = 0; jj < obspace_.size(); ++jj) {
+  for (size_t jj = 0; jj < htlad.size(); ++jj) {
     htlad[jj].setTrajectory(*gvals_.at(jj), ybias_);
   }
   this->doFinalize(xx);
@@ -186,7 +182,7 @@ void Observer<MODEL, STATE>::finalizeTraj(const STATE & xx, LinearObsOperator_ &
 template <typename MODEL, typename STATE>
 void Observer<MODEL, STATE>::doFinalize(const STATE &) {
   Log::trace() << "Observer::doFinalize start" << std::endl;
-  for (size_t jj = 0; jj < obspace_.size(); ++jj) {
+  for (size_t jj = 0; jj < hop_.size(); ++jj) {
     filters_[jj].priorFilter(*gvals_.at(jj));
     hop_[jj].simulateObs(*gvals_.at(jj), (*yobs_)[jj], ybias_);
     filters_[jj].postFilter((*yobs_)[jj]);

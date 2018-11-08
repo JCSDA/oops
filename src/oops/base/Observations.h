@@ -21,10 +21,9 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/Departures.h"
-#include "oops/base/ObsSpaces.h"
+#include "oops/base/ObsOperators.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
-#include "oops/interface/ObsOperator.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
@@ -46,12 +45,11 @@ template <typename MODEL> class Observations : public util::Printable {
   typedef Departures<MODEL>          Departures_;
   typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
-  typedef ObsOperator<MODEL>         ObsOperator_;
-  typedef ObsSpaces<MODEL>           ObsSpace_;
+  typedef ObsOperators<MODEL>        ObsOperators_;
   typedef ObsVector<MODEL>           ObsVector_;
 
  public:
-  explicit Observations(const ObsSpace_ &);
+  explicit Observations(const ObsOperators_ &);
   explicit Observations(const Observations &);
   ~Observations();
   Observations & operator=(const Observations &);
@@ -78,10 +76,10 @@ template <typename MODEL> class Observations : public util::Printable {
 // =============================================================================
 
 template <typename MODEL>
-Observations<MODEL>::Observations(const ObsSpace_ & obsdb): obs_(0)
+Observations<MODEL>::Observations(const ObsOperators_ & hop): obs_(0)
 {
-  for (std::size_t jj = 0; jj < obsdb.size(); ++jj) {
-    obs_.push_back(new ObsVector_(obsdb[jj]));
+  for (std::size_t jj = 0; jj < hop.size(); ++jj) {
+    obs_.push_back(new ObsVector_(hop[jj].obspace()));
   }
   Log::trace() << "Observations created" << std::endl;
 }
