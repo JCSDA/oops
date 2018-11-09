@@ -1,0 +1,62 @@
+Covariance:
+  covariance: L95Error
+  date: '2010-01-01T03:00:00Z'
+  length_scale: '1.0'
+  standard_deviation: '0.6'
+ModelBias:
+  bias: '0.2'
+ModelBiasCovariance:
+  standard_deviation: '0.8'
+ObsBias:
+  bias: '0.3'
+ObsBiasCovariance:
+  standard_deviation: '0.5'
+Observations:
+  Covariance:
+    covariance: diagonal
+  Generate:
+    begin: PT3H
+    obs_density: '20'
+    obs_error: '0.4'
+    obs_frequency: PT3H
+  Observation:
+    ObsData:
+      ObsDataIn:
+        filename: Data/truth.2010-01-02T00:00:00Z.obt
+      ObsDataOut:
+        filename: Data/test.2010-01-02T00:00:00Z.obt
+    ObsType: Lorenz 95
+  window_begin: '2010-01-01T03:00:00Z'
+  window_end: '2010-01-02T03:00:00Z'
+example_tests:
+  test_read_config: '42'
+geometry:
+  resol: '40'
+linearmodel:
+  trajectory:
+    f: '8.0'
+    tstep: PT1H30M
+  tstep: PT1H30M
+  version: L95TLM
+model:
+  f: '8.0'
+  name: L95
+  tstep: PT1H30M
+outputFile:
+  datadir: Data
+  date: '2014-09-12T09:35:00Z'
+  exp: IncrementL95Test
+  filename: IncrementL95Test.txt
+  resol: '40'
+  type: txt
+resolution:
+  resol: '40'
+state:
+  date: '2010-01-01T03:00:00Z'
+  filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H
+testInnerLoop: null
+test_framework_runtime_config: --log_level=test_suite
+test_length: P1D
+testdate: '2010-01-01T03:00:00Z'
+toleranceTestAD: '1.0e-12'
+window_length: PT24H

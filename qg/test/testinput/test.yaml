@@ -1,0 +1,86 @@
+Covariance:
+  covariance: QgError
+  date: '2009-12-31T00:00:00Z'
+  horizontal_length_scale: 1e6
+  maximum_condition_number: 1.0e6
+  standard_deviation: '0.8'
+  vertical_correlation: '0.2'
+example_tests:
+  test_read_config: '42'
+geometry:
+  bc: '1'
+  nx: '40'
+  ny: '20'
+linearmodel:
+  bottom_layer_depth: '4500.0'
+  top_layer_depth: '5500.0'
+  trajectory:
+    bottom_layer_depth: '4500.0'
+    top_layer_depth: '5500.0'
+    tstep: PT1H
+  tstep: PT1H
+  version: QgTLM
+model:
+  bottom_layer_depth: '4500.0'
+  name: QG
+  top_layer_depth: '5500.0'
+  tstep: PT1H
+observations:
+  Observation:
+  - Covariance:
+      covariance: diagonal
+    ObsData:
+      ObsDataIn:
+        obsfile: Data/qg.truth4d.obt
+      ObsDataOut:
+        obsfile: Data/qg.test.obt
+      ObsHandler: ObsHelpQG
+    ObsOperator: OnTheFly
+    ObsType: Stream
+  - Covariance:
+      covariance: diagonal
+    ObsData:
+      ObsDataIn:
+        obsfile: Data/qg.truth4d.obt
+      ObsDataOut:
+        obsfile: Data/qg.test.obt
+      ObsHandler: ObsHelpQG
+    ObsOperator: OnTheFly
+    ObsType: Wind
+  - Covariance:
+      covariance: diagonal
+    ObsData:
+      ObsDataIn:
+        obsfile: Data/qg.truth4d.obt
+      ObsDataOut:
+        obsfile: Data/qg.test.obt
+      ObsHandler: ObsHelpQG
+    ObsOperator: OnTheFly
+    ObsType: WSpeed
+obstypetest:
+  Covariance:
+    covariance: diagonal
+  ObsData:
+    ObsDataIn:
+      obsfile: Data/qg.truth4d.obt
+    ObsDataOut:
+      obsfile: Data/qg.test.obt
+    ObsHandler: ObsHelpQG
+  ObsOperator: OnTheFly
+  ObsType: Stream
+resolution:
+  bc: '1'
+  nx: '40'
+  ny: '20'
+state:
+  date: '2009-12-31T00:00:00Z'
+  filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D
+testInnerLoop: null
+test_framework_runtime_config: --log_level=test_suite
+test_length: P1D
+testdate: '2009-12-31T00:00:00Z'
+toleranceTestAD: '1.0e-12'
+variables:
+  variables:
+  - x
+window_length: PT24H

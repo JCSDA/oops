@@ -1,0 +1,24 @@
+Assimilation Window:
+  Begin: '2010-01-01T21:00:00Z'
+  End: '2010-01-02T03:00:00Z'
+Geometry:
+  resol: '40'
+Initial Condition:
+  date: '2010-01-01T21:00:00Z'
+  filename: Data/truth.fc.2010-01-01T00:00:00Z.PT21H
+Model:
+  f: '8.0'
+  name: L95
+  tstep: PT1H30M
+Observations:
+  ObsTypes:
+  - Generate:
+      begin: PT1H30M
+      end: PT4H30M
+      obs_density: '40'
+      obs_error: '0.4'
+      obs_frequency: PT1H30M
+    ObsData:
+      ObsDataOut:
+        filename: Data/l95.truth3d.2010-01-02T00:00:00Z.obt
+    ObsType: Lorenz 95
