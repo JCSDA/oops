@@ -24,8 +24,7 @@
       "ObsData": {
         "ObsDataOut": {
           "obsfile": "Data/qg.truth4d.obt"
-        },
-        "obserror": "ObsErr"
+        }
       },
       "ObsFilters": [{
         "Filter": "GOMsaver",
@@ -46,8 +45,7 @@
       "ObsData": {
         "ObsDataOut": {
           "obsfile": "Data/qg.truth4d.obt"
-        },
-        "obserror": "ObsErr"
+        }
       },
       "ObsFilters": [{
         "Filter": "GOMsaver",
@@ -68,8 +66,7 @@
       "ObsData": {
         "ObsDataOut": {
           "obsfile": "Data/qg.truth4d.obt"
-        },
-        "obserror": "ObsErr"
+        }
       },
       "ObsFilters": [{
         "Filter": "GOMsaver",

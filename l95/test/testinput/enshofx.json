@@ -8,8 +8,7 @@
         },
         "ObsDataOut": {
           "filename": "Data/l95.enshofx.2010-01-02T00:00:00Z.obt"
-        },
-        "obsvalue": "ObsVal"
+        }
       }
     }]
   },

@@ -59,7 +59,7 @@ BOOST_FIXTURE_TEST_SUITE(test_ObsVec1D, ObsVecTestFixture)
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_ObsVec1D_read) {
     boost::scoped_ptr<lorenz95::ObsVec1D> ov(new lorenz95::ObsVec1D(*obstable_, *vars_));
-    ov->read("ObsVal");
+    ov->read("ObsValue");
     for (unsigned int ii = 0; ii < obstable_->nobs(); ++ii) {
       BOOST_CHECK((*ov)(ii) != 0.0);
     }
@@ -67,7 +67,7 @@ BOOST_FIXTURE_TEST_SUITE(test_ObsVec1D, ObsVecTestFixture)
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_ObsVec1D_copy_constructor_copy) {
     boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*obstable_, *vars_));
-    ov1->read("ObsVal");
+    ov1->read("ObsValue");
     boost::scoped_ptr<lorenz95::ObsVec1D> ov2(new lorenz95::ObsVec1D(*ov1, true));
 
     for (unsigned int ii = 0; ii < obstable_->nobs(); ++ii) {
@@ -77,7 +77,7 @@ BOOST_FIXTURE_TEST_SUITE(test_ObsVec1D, ObsVecTestFixture)
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_ObsVec1D_copy_constructor_no_copy) {
     boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*obstable_, *vars_));
-    ov1->read("ObsVal");
+    ov1->read("ObsValue");
     boost::scoped_ptr<lorenz95::ObsVec1D> ov2(new lorenz95::ObsVec1D(*ov1, false));
 
     for (unsigned int ii = 0; ii < obstable_->nobs(); ++ii) {
@@ -92,7 +92,7 @@ BOOST_FIXTURE_TEST_SUITE(test_ObsVec1D, ObsVecTestFixture)
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_ObsVec1D_assignment) {
     boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*obstable_, *vars_));
-    ov1->read("ObsVal");
+    ov1->read("ObsValue");
     boost::scoped_ptr<lorenz95::ObsVec1D> ov2(new lorenz95::ObsVec1D(*obstable_, *vars_));
 
     // use the assignment operator to populate the second ObsVec1D object
@@ -105,7 +105,7 @@ BOOST_FIXTURE_TEST_SUITE(test_ObsVec1D, ObsVecTestFixture)
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_ObsVec1D_compound_assignment_multiply_double) {
     boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*obstable_, *vars_));
-    ov1->read("ObsVal");
+    ov1->read("ObsValue");
     boost::scoped_ptr<lorenz95::ObsVec1D> ov2(new lorenz95::ObsVec1D(*ov1, true));
 
     // create a random double value
@@ -119,7 +119,7 @@ BOOST_FIXTURE_TEST_SUITE(test_ObsVec1D, ObsVecTestFixture)
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_ObsVec1D_compound_assignment_add) {
     boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*obstable_, *vars_));
-    ov1->read("ObsVal");
+    ov1->read("ObsValue");
     boost::scoped_ptr<lorenz95::ObsVec1D> ov2(new lorenz95::ObsVec1D(*ov1, true));
 
     *ov1 += *ov2;
@@ -131,7 +131,7 @@ BOOST_FIXTURE_TEST_SUITE(test_ObsVec1D, ObsVecTestFixture)
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_ObsVec1D_compound_assignment_subtract) {
     boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*obstable_, *vars_));
-    ov1->read("ObsVal");
+    ov1->read("ObsValue");
     boost::scoped_ptr<lorenz95::ObsVec1D> ov2(new lorenz95::ObsVec1D(*ov1, true));
 
     *ov1 -= *ov2;
@@ -143,7 +143,7 @@ BOOST_FIXTURE_TEST_SUITE(test_ObsVec1D, ObsVecTestFixture)
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_ObsVec1D_compound_assignment_multiply) {
     boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*obstable_, *vars_));
-    ov1->read("ObsVal");
+    ov1->read("ObsValue");
     boost::scoped_ptr<lorenz95::ObsVec1D> ov2(new lorenz95::ObsVec1D(*ov1, true));
 
     *ov1 *= *ov2;
@@ -155,7 +155,7 @@ BOOST_FIXTURE_TEST_SUITE(test_ObsVec1D, ObsVecTestFixture)
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_ObsVec1D_compound_assignment_divide) {
     boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*obstable_, *vars_));
-    ov1->read("ObsVal");
+    ov1->read("ObsValue");
     boost::scoped_ptr<lorenz95::ObsVec1D> ov2(new lorenz95::ObsVec1D(*ov1, true));
 
     *ov1 /= *ov2;
@@ -167,7 +167,7 @@ BOOST_FIXTURE_TEST_SUITE(test_ObsVec1D, ObsVecTestFixture)
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_ObsVec1D_zero) {
     boost::scoped_ptr<lorenz95::ObsVec1D> ov(new lorenz95::ObsVec1D(*obstable_, *vars_));
-    ov->read("ObsVal");
+    ov->read("ObsValue");
 
     ov->zero();
 
@@ -178,7 +178,7 @@ BOOST_FIXTURE_TEST_SUITE(test_ObsVec1D, ObsVecTestFixture)
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_ObsVec1D_axpy) {
     boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*obstable_, *vars_));
-    ov1->read("ObsVal");
+    ov1->read("ObsValue");
     boost::scoped_ptr<lorenz95::ObsVec1D> ov2(new lorenz95::ObsVec1D(*ov1, true));
 
     double mult = 2.00;
@@ -192,7 +192,7 @@ BOOST_FIXTURE_TEST_SUITE(test_ObsVec1D, ObsVecTestFixture)
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_ObsVec1D_invert) {
     boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*obstable_, *vars_));
-    ov1->read("ObsVal");
+    ov1->read("ObsValue");
     boost::scoped_ptr<lorenz95::ObsVec1D> ov2(new lorenz95::ObsVec1D(*ov1, true));
 
     ov1->invert();
@@ -214,7 +214,7 @@ BOOST_FIXTURE_TEST_SUITE(test_ObsVec1D, ObsVecTestFixture)
 // -----------------------------------------------------------------------------
   BOOST_AUTO_TEST_CASE(test_ObsVec1D_dot_product_with) {
     boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*obstable_, *vars_));
-    ov1->read("ObsVal");
+    ov1->read("ObsValue");
     boost::scoped_ptr<lorenz95::ObsVec1D> ov2(new lorenz95::ObsVec1D(*ov1, true));
 
     double result = ov1->dot_product_with(*ov2);

@@ -24,8 +24,7 @@
       "ObsData": {
         "ObsDataOut": {
           "obsfile": "Data/qg.truth4d12h.obt"
-        },
-        "obserror": "ObsErr"
+        }
       },
       "Generate": {
         "begin": "PT2H",
@@ -42,8 +41,7 @@
       "ObsData": {
         "ObsDataOut": {
           "obsfile": "Data/qg.truth4d12h.obt"
-        },
-        "obserror": "ObsErr"
+        }
       },
       "Generate": {
         "begin": "PT1H",
@@ -60,8 +58,7 @@
       "ObsData": {
         "ObsDataOut": {
           "obsfile": "Data/qg.truth4d12h.obt"
-        },
-        "obserror": "ObsErr"
+        }
       },
       "Generate": {
         "begin": "PT1H",

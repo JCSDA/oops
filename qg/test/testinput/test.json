@@ -59,12 +59,10 @@
       },
       "ObsDataOut": {
         "obsfile": "Data/qg.test.obt"
-      },
-      "obsvalue": "ObsVal"
+      }
     },
     "Covariance": {
-      "covariance": "diagonal",
-      "obserror": "ObsErr"
+      "covariance": "diagonal"
     }
   },
   "observations": {
@@ -79,12 +77,10 @@
           },
           "ObsDataOut": {
             "obsfile": "Data/qg.test.obt"
-          },
-          "obsvalue": "ObsVal"
+          }
         },
         "Covariance": {
-          "covariance": "diagonal",
-          "obserror": "ObsErr"
+          "covariance": "diagonal"
         }
       },
       {
@@ -97,12 +93,10 @@
           },
           "ObsDataOut": {
             "obsfile": "Data/qg.test.obt"
-          },
-          "obsvalue": "ObsVal"
+          }
         },
         "Covariance": {
-          "covariance": "diagonal",
-          "obserror": "ObsErr"
+          "covariance": "diagonal"
         }
       },
       {
@@ -115,12 +109,10 @@
           },
           "ObsDataOut": {
             "obsfile": "Data/qg.test.obt"
-          },
-          "obsvalue": "ObsVal"
+          }
         },
         "Covariance": {
-          "covariance": "diagonal",
-          "obserror": "ObsErr"
+          "covariance": "diagonal"
         }
       }
     ]

@@ -24,8 +24,7 @@
       "ObsData": {
         "ObsDataOut": {
           "obsfile": "Data/qg.truth3d.obt"
-        },
-        "obserror": "ObsErr"
+        }
       },
       "Generate": {
         "begin": "PT10H",
@@ -42,8 +41,7 @@
       "ObsData": {
         "ObsDataOut": {
           "obsfile": "Data/qg.truth3d.obt"
-        },
-        "obserror": "ObsErr"
+        }
       },
       "Generate": {
         "begin": "PT11H",
@@ -60,8 +58,7 @@
       "ObsData": {
         "ObsDataOut": {
           "obsfile": "Data/qg.truth3d.obt"
-        },
-        "obserror": "ObsErr"
+        }
       },
       "Generate": {
         "begin": "PT10H",

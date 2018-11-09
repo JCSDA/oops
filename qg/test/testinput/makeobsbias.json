@@ -28,8 +28,7 @@
       "ObsData": {
         "ObsDataOut": {
           "obsfile": "Data/qg.biased.obt"
-        },
-        "obserror": "ObsErr"
+        }
       },
       "Generate": {
         "begin": "PT3H",
@@ -46,8 +45,7 @@
       "ObsData": {
         "ObsDataOut": {
           "obsfile": "Data/qg.biased.obt"
-        },
-        "obserror": "ObsErr"
+        }
       },
       "Generate": {
         "begin": "PT6H",
@@ -64,8 +62,7 @@
       "ObsData": {
         "ObsDataOut": {
           "obsfile": "Data/qg.biased.obt"
-        },
-        "obserror": "ObsErr"
+        }
       },
       "Generate": {
         "begin": "PT3H",

@@ -541,13 +541,10 @@
           },
           "ObsDataOut": {
             "filename": "Data/l95.4densvar.2010-01-01T12:00:00Z.obt"
-          },
-          "obsvalue": "ObsVal",
-          "obserror": "ObsErr"
+          }
         },
         "Covariance": {
-          "covariance": "diagonal",
-          "obserror": "ObsErr"
+          "covariance": "diagonal"
         }
       }]
     },

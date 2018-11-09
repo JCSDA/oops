@@ -59,12 +59,10 @@
             },
             "ObsDataOut": {
               "obsfile": "Data/qg.4dforcing.obt"
-            },
-            "obsvalue": "ObsVal"
+            }
           },
           "Covariance": {
-            "covariance": "diagonal",
-            "obserror": "ObsErr"
+            "covariance": "diagonal"
           }
         },
         {
@@ -75,12 +73,10 @@
             },
             "ObsDataOut": {
               "obsfile": "Data/qg.4dforcing.obt"
-            },
-            "obsvalue": "ObsVal"
+            }
           },
           "Covariance": {
-            "covariance": "diagonal",
-            "obserror": "ObsErr"
+            "covariance": "diagonal"
           }
         },
         {
@@ -91,12 +87,10 @@
             },
             "ObsDataOut": {
               "obsfile": "Data/qg.4dforcing.obt"
-            },
-            "obsvalue": "ObsVal"
+            }
           },
           "Covariance": {
-            "covariance": "diagonal",
-            "obserror": "ObsErr"
+            "covariance": "diagonal"
           }
         }
       ]

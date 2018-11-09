@@ -67,14 +67,11 @@
         },
         "ObsDataOut": {
           "filename": "Data/test.2010-01-02T00:00:00Z.obt"
-        },
-        "obsvalue": "ObsVal",
-        "obserror": "ObsErr"
+        }
       }
     },
     "Covariance": {
-      "covariance": "diagonal",
-      "obserror": "ObsErr"
+      "covariance": "diagonal"
     },
     "Generate": {
       "begin": "PT3H",

@@ -70,12 +70,10 @@
             },
             "ObsDataOut": {
               "obsfile": "Data/qg.3dvar.obt"
-            },
-            "obsvalue": "ObsVal"
+            }
           },
           "Covariance": {
-            "covariance": "diagonal",
-            "obserror": "ObsErr"
+            "covariance": "diagonal"
           }
         },
         {
@@ -86,12 +84,10 @@
             },
             "ObsDataOut": {
               "obsfile": "Data/qg.3dvar.obt"
-            },
-            "obsvalue": "ObsVal"
+            }
           },
           "Covariance": {
-            "covariance": "diagonal",
-            "obserror": "ObsErr"
+            "covariance": "diagonal"
           }
         },
         {
@@ -102,12 +98,10 @@
             },
             "ObsDataOut": {
               "obsfile": "Data/qg.3dvar.obt"
-            },
-            "obsvalue": "ObsVal"
+            }
           },
           "Covariance": {
-            "covariance": "diagonal",
-            "obserror": "ObsErr"
+            "covariance": "diagonal"
           }
         }
       ]

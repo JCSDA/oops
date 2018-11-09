@@ -163,16 +163,14 @@
         },
         "ObsDataOut": {
           "obsfile": "Data/qg.test.obt"
-        },
-        "obsvalue": "ObsVal"
+        }
       },
       "GeoVaLs": {
         "filename": "Data/qg.stream.gom",
         "norm": "356.985842472369"
       },
       "Covariance": {
-        "covariance": "diagonal",
-        "obserror": "ObsErr"
+        "covariance": "diagonal"
       },
       "rmsequiv": "12.62135549999",
       "tolerance": "1.0e-8"
@@ -186,16 +184,14 @@
         },
         "ObsDataOut": {
           "obsfile": "Data/qg.test.obt"
-        },
-        "obsvalue": "ObsVal"
+        }
       },
       "GeoVaLs": {
         "filename": "Data/qg.wind.gom",
         "norm": "120.590296066919"
       },
       "Covariance": {
-        "covariance": "diagonal",
-        "obserror": "ObsErr"
+        "covariance": "diagonal"
       },
       "rmsequiv": "4.2635108047106",
       "tolerance": "1.0e-8"
@@ -209,16 +205,14 @@
         },
         "ObsDataOut": {
           "obsfile": "Data/qg.test.obt"
-        },
-        "obsvalue": "ObsVal"
+        }
       },
       "GeoVaLs": {
         "filename": "Data/qg.wspeed.gom",
         "norm": "122.535512929154"
       },
       "Covariance": {
-        "covariance": "diagonal",
-        "obserror": "ObsErr"
+        "covariance": "diagonal"
       },
       "rmsequiv": "6.12677564645768",
       "tolerance": "1.0e-8"

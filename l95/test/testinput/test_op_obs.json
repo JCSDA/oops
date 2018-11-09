@@ -36,13 +36,11 @@
           },
           "ObsDataOut": {
             "filename": "Data/l95.4dvar.dripcg.2010-01-02T00:00:00Z.obt"
-          },
-          "obsvalue": "ObsVal"
+          }
         }
       },
       "Covariance": {
-        "covariance": "diagonal",
-        "obserror": "ObsErr"
+        "covariance": "diagonal"
       }
     }
   },

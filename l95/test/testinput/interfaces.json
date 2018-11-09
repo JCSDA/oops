@@ -95,16 +95,14 @@
         },
         "ObsDataOut": {
           "filename": "Data/test.2010-01-02T00:00:00Z.obt"
-        },
-        "obsvalue": "ObsVal"
+        }
       },
       "GeoVaLs": {
         "filename": "Data/l95.gom",
         "norm": 101.4587929124312
       },
       "Covariance": {
-        "covariance": "diagonal",
-        "obserror": "ObsErr"
+        "covariance": "diagonal"
       },
       "rmsequiv": 8.02102185636578,
       "tolerance": 1.0e-8

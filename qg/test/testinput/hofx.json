@@ -27,8 +27,7 @@
           },
           "ObsDataOut": {
             "obsfile": "Data/qg.hofx.obt"
-          },
-          "obsvalue": "ObsVal"
+          }
         }
       },
       {
@@ -39,8 +38,7 @@
           },
           "ObsDataOut": {
             "obsfile": "Data/qg.hofx.obt"
-          },
-          "obsvalue": "ObsVal"
+          }
         }
       },
       {
@@ -51,8 +49,7 @@
           },
           "ObsDataOut": {
             "obsfile": "Data/qg.hofx.obt"
-          },
-          "obsvalue": "ObsVal"
+          }
         }
       }
     ]

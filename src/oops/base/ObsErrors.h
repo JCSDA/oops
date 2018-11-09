@@ -48,9 +48,6 @@ class ObsErrors : public util::Printable,
   std::size_t size() const {return err_.size();}
   const ObsError_ & operator[](const std::size_t ii) const {return *err_.at(ii);}
 
-/// Linearize and reset for inner loop if needed
-  void linearize(const Observations_ &);
-
 /// Multiply a Departure by \f$R\f$ and \f$R^{-1}\f$
   Departures_ * multiply(const Departures_ &) const;
   Departures_ * inverseMultiply(const Departures_ &) const;
@@ -78,15 +75,6 @@ ObsErrors<MODEL>::ObsErrors(const ObsOperators_ & hop) : err_(0)
 
 template <typename MODEL>
 ObsErrors<MODEL>::~ObsErrors() {}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-void ObsErrors<MODEL>::linearize(const Observations_ & yy) {
-  for (std::size_t jj = 0; jj < err_.size(); ++jj) {
-    err_[jj]->linearize(yy[jj]);
-  }
-}
 
 // -----------------------------------------------------------------------------
 

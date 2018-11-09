@@ -56,7 +56,6 @@ void PostTimer::initialize(const util::DateTime & bgn, const util::DateTime & en
   end_ = finish;
 
 // User specified configuration
-  Log::debug() << "PProc configuration is:"  << conf_ << std::endl;
 // User specified frequency and start
   if (conf_.has("frequency"))
     freq_ = util::Duration(conf_.getString("frequency"));

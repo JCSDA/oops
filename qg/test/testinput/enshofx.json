@@ -47,8 +47,7 @@
           },
           "ObsDataOut": {
             "obsfile": "Data/qg.enshofx.obt"
-          },
-          "obsvalue": "ObsVal"
+          }
         }
       },
       {
@@ -59,8 +58,7 @@
           },
           "ObsDataOut": {
             "obsfile": "Data/qg.enshofx.obt"
-          },
-          "obsvalue": "ObsVal"
+          }
         }
       },
       {
@@ -71,8 +69,7 @@
           },
           "ObsDataOut": {
             "obsfile": "Data/qg.enshofx.obt"
-          },
-          "obsvalue": "ObsVal"
+          }
         }
       }
     ]

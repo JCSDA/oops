@@ -28,7 +28,7 @@ namespace oops {
 // -----------------------------------------------------------------------------
 /// Base class for observation error covariance matrices.
 /*!
- *  Base class for observation error covariance matrices for a given model.
+ *  Base class for observation error covariance matrices.
  *  The interface for the observation error comprises two levels (ObsErrorCovariance
  *  and ObsErrorBase) because we want run time polymorphism.
  *  The ObsErrorCovariance does conversion of arguments to templated ObsVector and
@@ -40,13 +40,11 @@ template<typename MODEL>
 class ObsErrorBase : public util::Printable,
                      private boost::noncopyable {
   typedef typename MODEL::ObsVector        ObsVector_;
+  typedef typename MODEL::ObsSpace         ObsSpace_;
 
  public:
-  ObsErrorBase() {}
+  ObsErrorBase(const ObsSpace_ &, const Variables &);
   virtual ~ObsErrorBase() {}
-
-/// Linearize and reset for inner loop if needed
-  virtual void linearize(const ObsVector_ &) = 0;
 
 /// Multiply a Departure by \f$R\f$ and \f$R^{-1}\f$
   virtual ObsVector_ * multiply(const ObsVector_ &) const = 0;
@@ -119,6 +117,17 @@ ObsErrorBase<MODEL>* ObsErrorFactory<MODEL>::create(const eckit::Configuration &
   ObsErrorBase<MODEL> * ptr = jerr->second->make(conf, obs, vars);
   Log::trace() << "ObsErrorBase<MODEL>::create done" << std::endl;
   return ptr;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+ObsErrorBase<MODEL>::ObsErrorBase(const ObsSpace_ & obsdb, const Variables & observed) {
+  ObsVector_ err(obsdb, observed);
+  bool found = err.tryRead("EffectiveError");
+  if (!found) err.read("ObsError");
+  err.applyQC("QC");
+  if (!found) err.save("EffectiveError");
 }
 
 // -----------------------------------------------------------------------------

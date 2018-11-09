@@ -5,9 +5,7 @@
       "ObsData": {
         "ObsDataOut": {
           "filename": "Data/l95.truth3d.2010-01-02T00:00:00Z.obt"
-        },
-        "obsvalue": "ObsVal",
-        "obserror": "ObsErr"
+        }
       },
       "Generate": {
         "begin": "PT1H30M",

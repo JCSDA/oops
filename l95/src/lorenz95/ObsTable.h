@@ -47,6 +47,7 @@ class ObsTable : public oops::ObsSpaceBase,
   void putdb(const std::string &, const std::vector<double> &) const;
   void getdb(const std::string &, std::vector<double> &) const;
 
+  bool has(const std::string & col) const;
   LocsL95 * locations(const util::DateTime & t1, const util::DateTime & t2) const;
   std::vector<int> timeSelect(const util::DateTime &, const util::DateTime &) const;
   void generateDistribution(const eckit::Configuration &);

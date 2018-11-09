@@ -44,6 +44,10 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
     helper_->putdb(obsname_, col, keyData);
   }
 
+  bool has(const std::string & col) const {
+    return helper_->has(obsname_, col);
+  }
+
   LocationsQG * locations(const util::DateTime & t1, const util::DateTime & t2) const {
     int key_locs = helper_->locations(obsname_, t1, t2);
     return new LocationsQG(key_locs);

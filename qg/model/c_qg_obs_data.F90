@@ -111,4 +111,25 @@ end subroutine qg_obs_put
 
 ! ------------------------------------------------------------------------------
 
+subroutine qg_obs_has(c_key_self, lreq, c_req, lcol, c_col, c_has) bind(c,name='qg_obsdb_has_f90')
+implicit none
+integer(c_int), intent(in) :: c_key_self
+integer(c_int), intent(in) :: lreq, lcol
+character(kind=c_char,len=1), intent(in) :: c_req(lreq+1), c_col(lcol+1)
+integer(c_int), intent(out) :: c_has
+
+type(obs_data), pointer :: self
+character(len=lreq) :: req
+character(len=lcol) :: col
+
+call obs_data_registry%get(c_key_self, self)
+call c_f_string(c_req, req)
+call c_f_string(c_col, col)
+
+c_has = obs_has(self, trim(req), trim(col))
+
+end subroutine qg_obs_has
+
+! ------------------------------------------------------------------------------
+
 end module c_qg_obs_data
