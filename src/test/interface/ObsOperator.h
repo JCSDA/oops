@@ -46,18 +46,19 @@ template <typename MODEL> void testSimulateObs() {
   obsconf.get("ObsTypes", conf);
 
   for (std::size_t jj = 0; jj < conf.size(); ++jj) {
-    ObsOperator_ hop(conf[jj], Test_::tbgn(), Test_::tend());
     eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    Locations_ locs(hop.locations(Test_::tbgn(), Test_::tend()));
-    const GeoVaLs_ gval(gconf, hop.variables());
+    Locations_ locs(Test_::hoper()[jj].locations(Test_::tbgn(), Test_::tend()));
+    const GeoVaLs_ gval(gconf, Test_::hoper()[jj].variables());
 
     eckit::LocalConfiguration biasConf;
     conf[jj].get("ObsBias", biasConf);
     const ObsAuxCtrl_ ybias(biasConf);
 
-    ObsVector_ ovec(hop.obspace(), hop.observed());
+    ObsVector_ ovec(Test_::hoper()[jj].obspace(), Test_::hoper()[jj].observed());
 
-    hop.simulateObs(gval, ovec, ybias);
+    Test_::hoper()[jj].simulateObs(gval, ovec, ybias);
+
+    ovec.save("hofx");
 
     const double zz = ovec.rms();
     const double xx = conf[jj].getDouble("rmsequiv");
