@@ -79,7 +79,7 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
                                                   const Geometry_ &,
                                                   const eckit::Configuration &) override;
   /// Finalize \f$ J_o\f$ after the integration of the model.
-  double finalize(const eckit::Configuration &) const override;
+  double finalize(const eckit::Configuration &) override;
   void finalizeTraj() override;
 
   /// Initialize \f$ J_o\f$ before starting the TL run.
@@ -108,7 +108,7 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
  private:
   const ObsOperators_ hop_;
   Observations_ yobs_;
-  ObsErrors<MODEL> R_;
+  boost::scoped_ptr<ObsErrors<MODEL> > Rmat_;
 
   /// Gradient at first guess : \f$ R^{-1} (H(x_{fg})-y_{obs}) \f$.
   boost::scoped_ptr<Departures_> gradFG_;
@@ -130,13 +130,12 @@ template<typename MODEL>
 CostJo<MODEL>::CostJo(const eckit::Configuration & joConf,
                       const util::DateTime & winbgn, const util::DateTime & winend,
                       const util::Duration & tslot, const bool subwindows)
-  : hop_(joConf, winbgn, winend), yobs_(hop_), R_(hop_),
+  : hop_(joConf, winbgn, winend), yobs_(hop_), Rmat_(),
     gradFG_(), pobs_(), tslot_(tslot),
     pobstlad_(), subwindows_(subwindows)
 {
   Log::trace() << "CostJo::CostJo start" << std::endl;
-  Log::debug() << "CostJo:setup tslot_ = " << tslot_ << std::endl;
-  yobs_.read(joConf);
+  yobs_.read("ObsValue");
   Log::trace() << "CostJo::CostJo done" << std::endl;
 }
 
@@ -159,15 +158,17 @@ CostJo<MODEL>::initialize(const CtrlVar_ & xx) const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-double CostJo<MODEL>::finalize(const eckit::Configuration & conf) const {
+double CostJo<MODEL>::finalize(const eckit::Configuration & conf) {
   Log::trace() << "CostJo::finalize start" << std::endl;
   boost::scoped_ptr<Observations_> yeqv(pobs_->release());
   Log::info() << "Jo Observation Equivalent:" << *yeqv << std::endl;
 
+  Rmat_.reset(new ObsErrors<MODEL>(hop_));
+
   Departures_ ydep(*yeqv - yobs_);
   Log::info() << "Jo Departures:" << ydep << std::endl;
 
-  boost::scoped_ptr<Departures_> grad(R_.inverseMultiply(ydep));
+  boost::scoped_ptr<Departures_> grad(Rmat_->inverseMultiply(ydep));
 
   double zjo = this->printJo(ydep, *grad);
 
@@ -205,12 +206,11 @@ void CostJo<MODEL>::finalizeTraj() {
   Log::trace() << "CostJo::finalizeTraj start" << std::endl;
   boost::scoped_ptr<Observations_> yeqv(pobstlad_->release());
   Log::info() << "Jo Traj Observation Equivalent:" << *yeqv << std::endl;
-  R_.linearize(*yeqv);
 
   Departures_ ydep(*yeqv - yobs_);
   Log::info() << "Jo Traj Departures:" << ydep << std::endl;
 
-  gradFG_.reset(R_.inverseMultiply(ydep));
+  gradFG_.reset(Rmat_->inverseMultiply(ydep));
   Log::trace() << "CostJo::finalizeTraj done" << std::endl;
 }
 
@@ -244,8 +244,9 @@ boost::shared_ptr<PostBaseTLAD<MODEL> > CostJo<MODEL>::setupAD(
 template<typename MODEL>
 Departures<MODEL> * CostJo<MODEL>::multiplyCovar(const GeneralizedDepartures & v1) const {
   Log::trace() << "CostJo::multiplyCovar start" << std::endl;
+  ASSERT(Rmat_);
   const Departures_ & y1 = dynamic_cast<const Departures_ &>(v1);
-  return R_.multiply(y1);
+  return Rmat_->multiply(y1);
 }
 
 // -----------------------------------------------------------------------------
@@ -253,8 +254,9 @@ Departures<MODEL> * CostJo<MODEL>::multiplyCovar(const GeneralizedDepartures & v
 template<typename MODEL>
 Departures<MODEL> * CostJo<MODEL>::multiplyCoInv(const GeneralizedDepartures & v1) const {
   Log::trace() << "CostJo::multiplyCoInv start" << std::endl;
+  ASSERT(Rmat_);
   const Departures_ & y1 = dynamic_cast<const Departures_ &>(v1);
-  return R_.inverseMultiply(y1);
+  return Rmat_->inverseMultiply(y1);
 }
 
 // -----------------------------------------------------------------------------
@@ -282,16 +284,17 @@ void CostJo<MODEL>::resetLinearization() {
 template<typename MODEL>
 double CostJo<MODEL>::printJo(const Departures_ & dy, const Departures_ & grad) const {
   Log::trace() << "CostJo::printJo start" << std::endl;
+  ASSERT(Rmat_);
 
   double zjo = 0.0;
   for (std::size_t jj = 0; jj < hop_.size(); ++jj) {
     hop_[jj].obspace().printJo(dy[jj], grad[jj]);
     const double zz = 0.5 * dot_product(dy[jj], grad[jj]);
-    const unsigned nobs = dy[jj].nobs();
+    const unsigned nobs = grad[jj].nobs();
     if (nobs > 0) {
       Log::test() << "CostJo   : Nonlinear Jo = " << zz
                   << ", nobs = " << nobs << ", Jo/n = " << zz/nobs
-                  << ", err = " << R_[jj].getRMSE() << std::endl;
+                  << ", err = " << (*Rmat_)[jj].getRMSE() << std::endl;
     } else {
       Log::test() << "CostJo   : Nonlinear Jo = " << zz << " --- No Observations" << std::endl;
       Log::warning() << "CostJo: No Observations!!!" << std::endl;

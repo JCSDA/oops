@@ -72,7 +72,7 @@ template<typename MODEL> class CostFunction : private boost::noncopyable {
 
   double evaluate(const CtrlVar_ &,
                   const eckit::Configuration & config = eckit::LocalConfiguration(),
-                  PostProcessor<State_> post = PostProcessor<State_>() ) const;
+                  PostProcessor<State_> post = PostProcessor<State_>() );
   double linearize(const CtrlVar_ &, const eckit::Configuration &,
                    PostProcessor<State_> post = PostProcessor<State_>() );
 
@@ -239,7 +239,7 @@ void CostFunction<MODEL>::setupTerms(const eckit::Configuration & config) {
 template<typename MODEL>
 double CostFunction<MODEL>::evaluate(const CtrlVar_ & fguess,
                                      const eckit::Configuration & config,
-                                     PostProcessor<State_> post) const {
+                                     PostProcessor<State_> post) {
   Log::trace() << "CostFunction::evaluate start" << std::endl;
 // Setup terms of cost function
   PostProcessor<State_> pp(post);

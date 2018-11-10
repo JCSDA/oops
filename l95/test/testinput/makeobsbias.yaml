@@ -1,0 +1,25 @@
+Assimilation Window:
+  Begin: '2010-01-01T03:00:00Z'
+  End: '2010-01-02T03:00:00Z'
+Geometry:
+  resol: '40'
+Initial Condition:
+  date: '2010-01-01T03:00:00Z'
+  filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H
+Model:
+  f: '8.0'
+  name: L95
+  tstep: PT1H30M
+ObsBias:
+  bias: '0.6'
+Observations:
+  ObsTypes:
+  - Generate:
+      begin: PT3H
+      obs_density: '20'
+      obs_error: '0.4'
+      obs_frequency: PT3H
+    ObsData:
+      ObsDataOut:
+        filename: Data/l95.biased.2010-01-02T00:00:00Z.obt
+    ObsType: Lorenz 95

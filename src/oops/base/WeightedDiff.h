@@ -88,9 +88,6 @@ WeightedDiff<MODEL, INCR, FLDS>::WeightedDiff(const eckit::Configuration & confi
 
 template <typename MODEL, typename INCR, typename FLDS>
 INCR * WeightedDiff<MODEL, INCR, FLDS>::releaseDiff() {
-  Log::debug() << "WeightedDiff: release sum = " << sum_
-               << ", bgnleg_ = " << bgnleg_ << ", endleg_ = " << endleg_
-               << ", bgn_ = " << bgn_ << ", end_ = " << end_ << std::endl;
   ASSERT(linit_);
   ASSERT(std::abs(sum_) < 1.0e-8);
   return avg_;
@@ -114,9 +111,6 @@ void WeightedDiff<MODEL, INCR, FLDS>::doInitialize(const FLDS & xx,
   bgnleg_ = bgn;
   endleg_ = end;
   current_ = bgn-tstep;
-  Log::debug() << "WeightedDiff: initialized"
-               << " bgnleg_ = " << bgnleg_ << ", endleg_ = " << endleg_
-               << ", bgn_ = " << bgn_ << ", end_ = " << end_ << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -132,8 +126,6 @@ void WeightedDiff<MODEL, INCR, FLDS>::doProcessing(const FLDS & xx) {
     const double zz = weights_[now];
     avg_->accumul(zz, xx);
     sum_ += zz;
-    Log::debug() << "WeightedDiff: time = " << now
-                 << ", weight = " << zz << ", sum = " << sum_ << std::endl;
   }
   current_ = now;
 }

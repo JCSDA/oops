@@ -1,0 +1,36 @@
+Variables:
+  variables:
+  - x
+  - q
+  - u
+  - v
+forecast_length: P4D
+initial:
+  analytic_init: dcmip-test-1-1
+  bottom_layer_depth: '6000.0'
+  date: '2009-12-15T00:00:00Z'
+  perturb: '0'
+  top_layer_depth: '6000.0'
+  variables:
+  - x
+  - q
+  - u
+  - v
+model:
+  bottom_layer_depth: '6000.0'
+  name: QG
+  orography: flat
+  top_layer_depth: '6000.0'
+  tstep: PT10M
+output:
+  datadir: Data
+  date: '2009-12-15T00:00:00Z'
+  exp: dcmip_1-1
+  frequency: PT12H
+  type: fc
+prints:
+  frequency: PT3H
+resolution:
+  bc: '0'
+  nx: '40'
+  ny: '20'

@@ -1,0 +1,89 @@
+Covariance:
+  covariance: L95Error
+  date: '2010-01-01T03:00:00Z'
+  length_scale: 1.0
+  standard_deviation: 0.6
+CovarianceTest:
+  tolerance: 1.0e-08
+Geometry:
+  resol: 40
+LinearModel:
+  trajectory:
+    f: 8.0
+    tstep: PT1H30M
+  tstep: PT1H30M
+  version: L95TLM
+LinearModelTest:
+  fclength: PT48H
+  testiterTL: 12
+  toleranceAD: 1.0e-12
+  toleranceTL: 1.0e-07
+LinearObsOpTest:
+  testiterTL: '10'
+  toleranceAD: '1.0e-14'
+  toleranceTL: '1.0e-14'
+Localization:
+  length_scale: 1.0
+  localization: L95
+Locations:
+  positions:
+  - 0.717
+Model:
+  f: 8.0
+  name: L95
+  tstep: PT1H30M
+ModelBias:
+  bias: 0.2
+ModelBiasCovariance:
+  standard_deviation: 1.0
+ModelTest:
+  fclength: PT48H
+  finalnorm: 7.938
+  tolerance: 0.005
+ObsBias:
+  bias: 0.3
+ObsBiasCovariance:
+  standard_deviation: 0.5
+Observations:
+  ObsTypes:
+  - Covariance:
+      covariance: diagonal
+    GeoVaLs:
+      filename: Data/l95.gom
+      norm: 101.4587929124312
+    ObsData:
+      ObsDataIn:
+        filename: Data/truth.2010-01-02T00:00:00Z.obt
+      ObsDataOut:
+        filename: Data/test.2010-01-02T00:00:00Z.obt
+    ObsType: Lorenz 95
+    rmsequiv: 8.02102185636578
+    tolerance: 1.0e-08
+State:
+  date: '2010-01-01T03:00:00Z'
+  filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H
+StateTest:
+  InterpTest: null
+  Locations:
+    positions:
+    - 0.717
+  StateFile:
+    date: '2010-01-01T03:00:00Z'
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H
+  StateGenerate:
+    date: '2010-01-01T03:00:00Z'
+    mean: 8.0
+    sinus: 2.0
+  Variables: null
+  date: '2010-01-01T03:00:00Z'
+  interp_tolerance: 0.004
+  norm-file: 8.025826422250747
+  norm-gen: 8.12403840464
+  tolerance: 1.0e-10
+  values:
+  - 6.042838
+TestDate: '2010-01-01T03:00:00Z'
+Variables: null
+test_framework_runtime_config: --log_level=test_suite
+window_begin: '2010-01-01T03:00:00Z'
+window_end: '2010-01-02T03:00:00Z'

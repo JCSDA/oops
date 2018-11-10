@@ -65,7 +65,7 @@ template<typename MODEL> class CostJcDFI : public CostTermBase<MODEL> {
                                                          const eckit::Configuration &) override;
 
 /// Finalize computation after nonlinear model integration.
-  double finalize(const eckit::Configuration &) const override;
+  double finalize(const eckit::Configuration &) override;
   void finalizeTraj() override;
 
 /// Initialize \f$ J_c\f$ before starting the TL run.
@@ -134,7 +134,7 @@ CostJcDFI<MODEL>::initialize(const CtrlVar_ &) const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-double CostJcDFI<MODEL>::finalize(const eckit::Configuration &) const {
+double CostJcDFI<MODEL>::finalize(const eckit::Configuration &) {
   double zz = 0.5 * alpha_;
   boost::scoped_ptr<Increment_> dx(filter_->releaseDiff());
   zz *= dot_product(*dx, *dx);

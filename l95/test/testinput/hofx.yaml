@@ -1,0 +1,20 @@
+Assimilation Window:
+  Begin: '2010-01-01T03:00:00Z'
+  Length: P1D
+Geometry:
+  resol: '40'
+Initial Condition:
+  date: '2010-01-01T03:00:00Z'
+  filename: Data/test.fc.2010-01-01T00:00:00Z.PT3H
+Model:
+  f: '8.0'
+  name: L95
+  tstep: PT1H30M
+Observations:
+  ObsTypes:
+  - ObsData:
+      ObsDataIn:
+        filename: Data/l95.truth4d.2010-01-02T00:00:00Z.obt
+      ObsDataOut:
+        filename: Data/l95.hofx.2010-01-02T00:00:00Z.obt
+    ObsType: Lorenz 95

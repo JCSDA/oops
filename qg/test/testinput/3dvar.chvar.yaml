@@ -1,0 +1,127 @@
+cost_function:
+  Jb:
+    Background:
+      state:
+      - date: '2010-01-01T12:00:00Z'
+        filename: Data/example.fc.2009-12-31T00:00:00Z.P1DT12H
+    Covariance:
+      covariance: QgError
+      date: '2010-01-01T12:00:00Z'
+      horizontal_length_scale: 1e6
+      maximum_condition_number: 1.0e6
+      standard_deviation: '0.8'
+      variable_changes:
+      - check_vbal: 1
+        inputVariables:
+          variables:
+          - x
+        outputVariables:
+          variables:
+          - x
+        prefix: bump_3dvar.chvar
+        strategy: common
+        varchange: StatsVariableChange
+        variables:
+          variables:
+          - x
+      - bottom_layer_depth: '4500.0'
+        inputVariables:
+          variables:
+          - x
+        outputVariables:
+          variables:
+          - x
+        top_layer_depth: '5500.0'
+        tstep: PT1H
+        varchange: ChVarQG
+      vertical_correlation: '0.2'
+  Jo:
+    ObsTypes:
+    - Covariance:
+        covariance: diagonal
+      ObsData:
+        ObsDataIn:
+          obsfile: Data/qg.truth3d.obt
+        ObsDataOut:
+          obsfile: Data/qg.3dvar.obt
+      ObsType: Stream
+    - Covariance:
+        covariance: diagonal
+      ObsData:
+        ObsDataIn:
+          obsfile: Data/qg.truth3d.obt
+        ObsDataOut:
+          obsfile: Data/qg.3dvar.obt
+      ObsType: Wind
+    - Covariance:
+        covariance: diagonal
+      ObsData:
+        ObsDataIn:
+          obsfile: Data/qg.truth3d.obt
+        ObsDataOut:
+          obsfile: Data/qg.3dvar.obt
+      ObsType: WSpeed
+  cost_type: 3D-Var
+  variables:
+  - x
+  - bc
+  window_begin: '2010-01-01T09:00:00Z'
+  window_length: PT6H
+final:
+  diagnostics:
+    departures: oman
+minimizer:
+  algorithm: DRIPCG
+model:
+  bottom_layer_depth: '4500.0'
+  name: QG
+  top_layer_depth: '5500.0'
+  tstep: PT1H
+output:
+  datadir: Data
+  exp: example
+  first: PT3H
+  frequency: PT06H
+  type: an
+resolution:
+  bc: '1'
+  nx: '40'
+  ny: '20'
+variational:
+  iteration:
+  - diagnostics:
+      departures: ombg
+    gradient_norm_reduction: 1e-10
+    linearmodel:
+      bottom_layer_depth: '4500.0'
+      top_layer_depth: '5500.0'
+      trajectory:
+        bottom_layer_depth: '4500.0'
+        top_layer_depth: '5500.0'
+        tstep: PT1H
+      tstep: PT1H
+      varchange: Identity
+      version: QgIdTLM
+    ninner: '10'
+    resolution:
+      bc: '1'
+      nx: '40'
+      ny: '20'
+    test: 'on'
+  - gradient_norm_reduction: 1e-10
+    linearmodel:
+      bottom_layer_depth: '4500.0'
+      top_layer_depth: '5500.0'
+      trajectory:
+        bottom_layer_depth: '4500.0'
+        top_layer_depth: '5500.0'
+        tstep: PT1H
+      tstep: PT1H
+      varchange: Identity
+      version: QgIdTLM
+    ninner: '10'
+    resolution:
+      bc: '1'
+      nx: '40'
+      ny: '20'
+    test: 'on'

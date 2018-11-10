@@ -136,7 +136,7 @@ template <typename MODEL> class MakeObs : public Application {
     for (std::size_t jj = 0; jj < yobs->size(); ++jj) {
       Log::test() << "Generated observation: " << (*yobs)[jj] << std::endl;
     }
-    yobs->save("ObsVal");
+    yobs->save("ObsValue");
 
     return 0;
   }

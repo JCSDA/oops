@@ -51,6 +51,14 @@ void ObsHelpQG::getdb(const std::string & obsname, const std::string & col, int 
 
 // -----------------------------------------------------------------------------
 
+bool ObsHelpQG::has(const std::string & obsname, const std::string & col) const {
+  int ii;
+  qg_obsdb_has_f90(keyHelp_, obsname.size(), obsname.c_str(), col.size(), col.c_str(), ii);
+  return ii;
+}
+
+// -----------------------------------------------------------------------------
+
 F90locs ObsHelpQG::locations(const std::string & obsname,
                              const util::DateTime & t1, const util::DateTime & t2) const {
   const util::DateTime * p1 = &t1;

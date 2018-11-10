@@ -54,9 +54,6 @@ class ObsErrorCovariance : public util::Printable,
   explicit ObsErrorCovariance(const ObsOperator_ &);
   ~ObsErrorCovariance();
 
-/// Linearize and reset for inner loop if needed
-  void linearize(const ObsVector_ &);
-
 /// Multiply a Departure by \f$R\f$ and \f$R^{-1}\f$
   ObsVector_ * multiply(const ObsVector_ &) const;
   ObsVector_ * inverseMultiply(const ObsVector_ &) const;
@@ -91,16 +88,6 @@ ObsErrorCovariance<MODEL>::~ObsErrorCovariance() {
   util::Timer timer(classname(), "~ObsErrorCovariance");
   covar_.reset();
   Log::trace() << "ObsErrorCovariance<MODEL>::~ObsErrorCovariance done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-void ObsErrorCovariance<MODEL>::linearize(const ObsVector_ & yy) {
-  Log::trace() << "ObsErrorCovariance<MODEL>::linearize starting" << std::endl;
-  util::Timer timer(classname(), "linearize");
-  covar_->linearize(yy.obsvector());
-  Log::trace() << "ObsErrorCovariance<MODEL>::linearize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

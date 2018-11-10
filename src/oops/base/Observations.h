@@ -65,7 +65,7 @@ template <typename MODEL> class Observations : public util::Printable {
 
 /// Save observations values
   void save(const std::string &) const;
-  void read(const eckit::Configuration &);
+  void read(const std::string &);
 
  private:
   void print(std::ostream &) const;
@@ -131,11 +131,8 @@ void Observations<MODEL>::save(const std::string & name) const {
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-void Observations<MODEL>::read(const eckit::Configuration & config) {
-  std::vector<eckit::LocalConfiguration> conf;
-  config.get("ObsTypes", conf);
+void Observations<MODEL>::read(const std::string & name) {
   for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
-    const std::string name = conf[jj].getString("ObsData.obsvalue");
     obs_[jj].read(name);
   }
   Log::trace() << "Observations:Observations have been read" << std::endl;

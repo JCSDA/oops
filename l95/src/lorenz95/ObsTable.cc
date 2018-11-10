@@ -61,6 +61,12 @@ ObsTable::~ObsTable() {
 
 // -----------------------------------------------------------------------------
 
+bool ObsTable::has(const std::string & col) const {
+  return (data_.find(col) != data_.end());
+}
+
+// -----------------------------------------------------------------------------
+
 void ObsTable::putdb(const std::string & col, const std::vector<double> & vec) const {
   ASSERT(vec.size() == nobs());
   ASSERT(data_.find(col) == data_.end());
@@ -145,7 +151,7 @@ void ObsTable::generateDistribution(const eckit::Configuration & config) {
   for (unsigned int jj = 0; jj < nobs; ++jj) {
     obserr[jj] = err;
   }
-  this->putdb("ObsErr", obserr);
+  this->putdb("ObsError", obserr);
 
   oops::Log::trace() << "ObsTable::generateDistribution done" << std::endl;
 }

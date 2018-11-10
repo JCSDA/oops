@@ -51,7 +51,7 @@ template<typename MODEL> class CostTermBase {
                                       const Geometry_ &, const eckit::Configuration &) = 0;
 
 /// Finalize computation after nonlinear model integration.
-  virtual double finalize(const eckit::Configuration &) const = 0;
+  virtual double finalize(const eckit::Configuration &) = 0;
   virtual void finalizeTraj() = 0;
 
 /// Initialize before starting the TL run.

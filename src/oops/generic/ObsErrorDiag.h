@@ -38,9 +38,6 @@ class ObsErrorDiag : public ObsErrorBase<MODEL> {
   ObsErrorDiag(const eckit::Configuration &, const ObsSpace_ &, const Variables &);
   ~ObsErrorDiag();
 
-/// Linearize and reset for inner loop (nothing in this simple case)
-  void linearize(const ObsVector_ &) {}
-
 /// Multiply a Departure by \f$R\f$
   ObsVector_ * multiply(const ObsVector_ &) const;
 
@@ -63,18 +60,18 @@ class ObsErrorDiag : public ObsErrorBase<MODEL> {
 // =============================================================================
 
 template<typename MODEL>
-ObsErrorDiag<MODEL>::ObsErrorDiag(const eckit::Configuration & config, const ObsSpace_ & obsgeom,
+ObsErrorDiag<MODEL>::ObsErrorDiag(const eckit::Configuration &, const ObsSpace_ & obsgeom,
                                   const Variables & observed)
-  : stddev_(), inverseVariance_()
+  : ObsErrorBase<MODEL>(obsgeom, observed), stddev_(), inverseVariance_()
 {
   stddev_.reset(new ObsVector_(obsgeom, observed));
-  const std::string col = config.getString("obserror");
-  stddev_->read(col);
+  stddev_->read("EffectiveError");
 
   inverseVariance_.reset(new ObsVector_(*stddev_));
   *inverseVariance_ *= *inverseVariance_;
   inverseVariance_->invert();
 
+  Log::debug() << "ObsErrorDiag:ObsErrorDiag constructed nobs = " << stddev_->nobs() << std::endl;
   Log::trace() << "ObsErrorDiag:ObsErrorDiag constructed" << std::endl;
 }
 
@@ -100,6 +97,8 @@ template<typename MODEL>
 typename MODEL::ObsVector * ObsErrorDiag<MODEL>::inverseMultiply(const ObsVector_ & dy) const {
   ObsVector_ * res = new ObsVector_(dy);
   *res *= *inverseVariance_;
+  Log::debug() << "ObsErrorDiag:inverseMultiply nobs in = " << dy.nobs()
+                               << ", out = " << res->nobs() << std::endl;
   return res;
 }
 

@@ -26,7 +26,7 @@ use kinds
 implicit none
 private
 
-public :: obs_data, obs_setup, obs_delete, obs_get, obs_put, obs_count, max_string
+public :: obs_data, obs_setup, obs_delete, obs_get, obs_put, obs_has, obs_count, max_string
 public :: obs_data_registry
 
 ! ------------------------------------------------------------------------------
@@ -237,6 +237,26 @@ end subroutine obs_put
 
 ! ------------------------------------------------------------------------------
 
+integer function obs_has(self, req, col)
+implicit none
+type(obs_data), intent(in) :: self
+character(len=*), intent(in) :: req, col
+
+type(group_data),  pointer :: jgrp
+type(column_data), pointer :: jcol
+
+obs_has = 0
+
+call findgroup(self,req,jgrp)
+if (associated(jgrp)) then
+  call findcolumn(jgrp,col,jcol)
+  if (associated(jcol)) obs_has = 1
+endif
+
+end function obs_has
+
+! ------------------------------------------------------------------------------
+
 subroutine obs_locations(c_key_self, lreq, c_req, c_t1, c_t2, c_key_locs) bind(c,name='qg_obsdb_locations_f90')
 implicit none
 integer(c_int), intent(in) :: c_key_self
@@ -319,7 +339,7 @@ err = config_get_real(c_conf, "obs_error");
 ncol = config_get_int(c_conf, "nval");
 call obsvec_setup(obserr,ncol,kobs)
 obserr%values(:,:)=err
-call obs_put(self, trim(req), "ObsErr", obserr)
+call obs_put(self, trim(req), "ObsError", obserr)
 deallocate(obserr%values)
 
 end subroutine obs_generate

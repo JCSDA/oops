@@ -1,0 +1,55 @@
+Covariance:
+  advmode: 0
+  covariance: BUMP
+  date: '2010-01-01T00:00:00Z'
+  default_seed: 1
+  forced_radii: 1
+  lsqrt: 1
+  mpicom: 2
+  network: 0
+  new_nicas: 1
+  new_param: 1
+  nicas_interp: bilin
+  nrep: 2
+  ntry: 3
+  prefix: bump_dirac.bumpcov
+  resol: 10.0
+  rh: 3900000.0
+  rv: 2.407
+  strategy: common
+  variable_changes:
+  - inputVariables:
+      variables:
+      - x
+    outputVariables:
+      variables:
+      - x
+    standard_deviation: '0.8'
+    varchange: ErrStdDevQG
+dirac:
+  ifdir: 1
+  ildir: 1
+  ixdir(1): 20
+  iydir(1): 10
+  ndir: 1
+initial:
+  date: '2010-01-01T00:00:00Z'
+  filename: Data/truth.fc.2009-12-15T00:00:00Z.P17D
+logging:
+  categories: Info, Test, Warning, Error
+model:
+  bottom_layer_depth: '4500.0'
+  top_layer_depth: '5500.0'
+  tstep: PT1H
+output_B:
+  datadir: Data
+  date: '2010-01-01T00:00:00Z'
+  exp: B_bumpcov
+  type: an
+resolution:
+  bc: '1'
+  nx: '40'
+  ny: '20'
+variables:
+  variables:
+  - x

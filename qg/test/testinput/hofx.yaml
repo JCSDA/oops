@@ -1,0 +1,37 @@
+Assimilation Window:
+  Begin: '2010-01-01T00:00:00Z'
+  Length: PT12H
+Geometry:
+  bc: '1'
+  nx: '40'
+  ny: '20'
+Initial Condition:
+  date: '2010-01-01T00:00:00Z'
+  filename: Data/truth.fc.2009-12-15T00:00:00Z.P17D
+Model:
+  bottom_layer_depth: '4500.0'
+  name: QG
+  top_layer_depth: '5500.0'
+  tstep: PT1H
+Observations:
+  ObsTypes:
+  - ObsData:
+      ObsDataIn:
+        obsfile: Data/qg.truth4d12h.obt
+      ObsDataOut:
+        obsfile: Data/qg.hofx.obt
+    ObsType: Stream
+  - ObsData:
+      ObsDataIn:
+        obsfile: Data/qg.truth4d12h.obt
+      ObsDataOut:
+        obsfile: Data/qg.hofx.obt
+    ObsType: Wind
+  - ObsData:
+      ObsDataIn:
+        obsfile: Data/qg.truth4d12h.obt
+      ObsDataOut:
+        obsfile: Data/qg.hofx.obt
+    ObsType: WSpeed
+Prints:
+  frequency: PT3H
