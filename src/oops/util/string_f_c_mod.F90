@@ -10,11 +10,11 @@
 
 module string_f_c_mod
 
-use, intrinsic :: iso_c_binding, only : c_char, c_null_char
+use, intrinsic :: iso_c_binding, only : c_char, c_null_char, c_horizontal_tab
 
 implicit none
 private
-public f_c_string, c_f_string
+public f_c_string, c_f_string, f_c_string_vector
 
 contains
 
@@ -34,6 +34,36 @@ enddo
 cstring(len_trim(fstring)+1) = c_null_char
 
 end subroutine f_c_string
+
+! ------------------------------------------------------------------------------
+!> Convert Fortran vector of strings to allocatable C++ string buffer.
+
+subroutine f_c_string_vector(fstring_vec, cstring_vec)
+use fckit_log_module, only : fckit_log
+character(len=*), intent(in)               :: fstring_vec(:)
+character(kind=c_char, len=1), intent(inout) :: cstring_vec(:)
+integer :: ii,jj,idx
+
+!> store string in buffer delineated by tabs
+idx=0
+do ii=1,size(fstring_vec)
+   do jj=1,len_trim(fstring_vec(ii))
+      idx=idx+1
+      if (idx > size(cstring_vec)) &
+          call abor1_ftn("oops/util::f_c_string_vector: string buffer too small")
+      cstring_vec(idx) = fstring_vec(ii)(jj:jj)
+   enddo
+   idx=idx+1
+   if (idx > size(cstring_vec)) &
+       call abor1_ftn("oops/util::f_c_string_vector: string buffer too small")
+   if (ii < size(fstring_vec)) then
+      cstring_vec(idx) = c_horizontal_tab
+   else
+      cstring_vec(idx) = c_null_char
+   endif
+enddo
+
+end subroutine f_c_string_vector
 
 ! ------------------------------------------------------------------------------
 !> Convert C++ string to Fortran string.
