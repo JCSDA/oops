@@ -39,6 +39,7 @@ end subroutine f_c_string
 !> Convert Fortran vector of strings to allocatable C++ string buffer.
 
 subroutine f_c_string_vector(fstring_vec, cstring_vec)
+use fckit_log_module, only : fckit_log
 character(len=*), intent(in)               :: fstring_vec(:)
 character(kind=c_char, len=1), intent(inout) :: cstring_vec(:)
 integer :: ii,jj,idx
@@ -48,9 +49,13 @@ idx=0
 do ii=1,size(fstring_vec)
    do jj=1,len_trim(fstring_vec(ii))
       idx=idx+1
+      if (idx > size(cstring_vec)) &
+          call abor1_ftn("oops/util::f_c_string_vector: string buffer too small")
       cstring_vec(idx) = fstring_vec(ii)(jj:jj)
    enddo
    idx=idx+1
+   if (idx > size(cstring_vec)) &
+       call abor1_ftn("oops/util::f_c_string_vector: string buffer too small")
    if (ii < size(fstring_vec)) then
       cstring_vec(idx) = c_horizontal_tab
    else
