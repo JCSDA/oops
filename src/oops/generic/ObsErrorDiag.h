@@ -71,6 +71,7 @@ ObsErrorDiag<MODEL>::ObsErrorDiag(const eckit::Configuration &, const ObsSpace_ 
   *inverseVariance_ *= *inverseVariance_;
   inverseVariance_->invert();
 
+  Log::debug() << "ObsErrorDiag:ObsErrorDiag constructed nobs = " << stddev_->nobs() << std::endl;
   Log::trace() << "ObsErrorDiag:ObsErrorDiag constructed" << std::endl;
 }
 
@@ -96,6 +97,8 @@ template<typename MODEL>
 typename MODEL::ObsVector * ObsErrorDiag<MODEL>::inverseMultiply(const ObsVector_ & dy) const {
   ObsVector_ * res = new ObsVector_(dy);
   *res *= *inverseVariance_;
+  Log::debug() << "ObsErrorDiag:inverseMultiply nobs in = " << dy.nobs()
+                               << ", out = " << res->nobs() << std::endl;
   return res;
 }
 

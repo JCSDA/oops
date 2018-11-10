@@ -290,7 +290,7 @@ double CostJo<MODEL>::printJo(const Departures_ & dy, const Departures_ & grad) 
   for (std::size_t jj = 0; jj < hop_.size(); ++jj) {
     hop_[jj].obspace().printJo(dy[jj], grad[jj]);
     const double zz = 0.5 * dot_product(dy[jj], grad[jj]);
-    const unsigned nobs = dy[jj].nobs();
+    const unsigned nobs = grad[jj].nobs();
     if (nobs > 0) {
       Log::test() << "CostJo   : Nonlinear Jo = " << zz
                   << ", nobs = " << nobs << ", Jo/n = " << zz/nobs
