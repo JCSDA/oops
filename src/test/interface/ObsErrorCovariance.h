@@ -44,7 +44,7 @@ template <typename MODEL> void testConstructor() {
   obsconf.get("ObsTypes", conf);
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    ObsOperator_ hop(Test_::obspace()[jj]);
+    ObsOperator_ hop(Test_::obspace()[jj], conf[jj]);
     const eckit::LocalConfiguration rconf(conf[jj], "Covariance");
     boost::scoped_ptr<Covar_> R(new Covar_(rconf, Test_::obspace()[jj], hop.observed()));
     BOOST_CHECK(R.get());

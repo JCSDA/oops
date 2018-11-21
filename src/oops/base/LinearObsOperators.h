@@ -43,7 +43,7 @@ class LinearObsOperators : public util::Printable,
  public:
   static const std::string classname() {return "oops::LinearObsOperators";}
 
-  explicit LinearObsOperators(const ObsSpace_ &);
+  LinearObsOperators(const ObsSpace_ &, const eckit::Configuration &);
   ~LinearObsOperators();
 
 /// Access
@@ -60,9 +60,12 @@ class LinearObsOperators : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-LinearObsOperators<MODEL>::LinearObsOperators(const ObsSpace_ & os): ops_(0) {
+LinearObsOperators<MODEL>::LinearObsOperators(const ObsSpace_ & os,
+                                              const eckit::Configuration & conf) : ops_(0) {
+  std::vector<eckit::LocalConfiguration> obsconf;
+  conf.get("ObsTypes", obsconf);
   for (std::size_t jobs = 0; jobs < os.size(); ++jobs) {
-    boost::shared_ptr<LinearObsOperator_> tmp(new LinearObsOperator_(os[jobs]));
+    boost::shared_ptr<LinearObsOperator_> tmp(new LinearObsOperator_(os[jobs], obsconf[jobs]));
     ops_.push_back(tmp);
   }
 }

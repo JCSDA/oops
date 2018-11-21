@@ -36,8 +36,13 @@ template <typename MODEL> void testConstructor() {
   typedef ObsTestsFixture<MODEL>  Test_;
   typedef oops::LinearObsOperator<MODEL>  LinearObsOperator_;
 
+  const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
+  std::vector<eckit::LocalConfiguration> conf;
+  obsconf.get("ObsTypes", conf);
+
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    boost::scoped_ptr<LinearObsOperator_> ov(new LinearObsOperator_(Test_::obspace()[jj]));
+    boost::scoped_ptr<LinearObsOperator_> ov(
+      new LinearObsOperator_(Test_::obspace()[jj], conf[jj]));
     BOOST_CHECK(ov.get());
 
     ov.reset();
@@ -65,8 +70,8 @@ template <typename MODEL> void testLinearity() {
   obsconf.get("ObsTypes", conf);
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    ObsOperator_ hop(Test_::obspace()[jj]);
-    LinearObsOperator_ hoptl(Test_::obspace()[jj]);
+    ObsOperator_ hop(Test_::obspace()[jj], conf[jj]);
+    LinearObsOperator_ hoptl(Test_::obspace()[jj], conf[jj]);
 
     const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
     Locations_ locs(hop.locations(Test_::tbgn(), Test_::tend()));
@@ -120,8 +125,8 @@ template <typename MODEL> void testAdjoint() {
   obsconf.get("ObsTypes", conf);
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    ObsOperator_ hop(Test_::obspace()[jj]);
-    LinearObsOperator_ hoptl(Test_::obspace()[jj]);
+    ObsOperator_ hop(Test_::obspace()[jj], conf[jj]);
+    LinearObsOperator_ hoptl(Test_::obspace()[jj], conf[jj]);
     eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
     Locations_ locs(hop.locations(Test_::tbgn(), Test_::tend()));
     const GeoVaLs_ gval(gconf, hop.variables());
@@ -183,8 +188,8 @@ template <typename MODEL> void testTangentLinear() {
   const int iter = TestEnvironment::config().getDouble("LinearObsOpTest.testiterTL");
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    LinearObsOperator_ hoptl(Test_::obspace()[jj]);
-    ObsOperator_ hop(Test_::obspace()[jj]);
+    LinearObsOperator_ hoptl(Test_::obspace()[jj], conf[jj]);
+    ObsOperator_ hop(Test_::obspace()[jj], conf[jj]);
 
     const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
     Locations_ locs(hop.locations(Test_::tbgn(), Test_::tend()));

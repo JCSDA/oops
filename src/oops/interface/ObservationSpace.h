@@ -56,7 +56,6 @@ class ObservationSpace : public util::Printable,
 /// Assimilation window
   const util::DateTime & windowStart() const {return obsdb_->windowStart();}
   const util::DateTime & windowEnd() const {return obsdb_->windowEnd();}
-  const eckit::Configuration & config() const {return obsdb_->config();}
 
 // Other
   void generateDistribution(const eckit::Configuration &);
