@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- *
+ * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
- * In applying this licence, ECMWF does not waive the privileges and immunities
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * In applying this licence, ECMWF does not waive the privileges and immunities 
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -12,7 +12,6 @@
 #define TEST_INTERFACE_OBSERVATIONSPACE_H_
 
 #include <string>
-#include <vector>
 
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API
@@ -25,6 +24,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/runs/Test.h"
+#include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
@@ -32,18 +32,11 @@ namespace test {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL> void testConstructor() {
-  util::DateTime bgn(TestEnvironment::config().getString("window_begin"));
-  util::DateTime end(TestEnvironment::config().getString("window_end"));
+  typedef ObsTestsFixture<MODEL> Test_;
 
-  const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
-  std::vector<eckit::LocalConfiguration> conf;
-  obsconf.get("ObsTypes", conf);
-
-  for (std::size_t jj = 0; jj < conf.size(); ++jj) {
-    oops::ObservationSpace<MODEL> obspace(conf[jj], bgn, end);
-
-    BOOST_CHECK_EQUAL(obspace.windowStart(), bgn);
-    BOOST_CHECK_EQUAL(obspace.windowEnd(),   end);
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    BOOST_CHECK_EQUAL(Test_::obspace()[jj].windowStart(), Test_::tbgn());
+    BOOST_CHECK_EQUAL(Test_::obspace()[jj].windowEnd(),   Test_::tend());
   }
 }
 

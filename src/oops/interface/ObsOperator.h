@@ -18,7 +18,6 @@
 
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
-#include "oops/interface/Locations.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsVector.h"
@@ -46,7 +45,7 @@ class ObsOperator : public util::Printable,
  public:
   static const std::string classname() {return "oops::ObsOperator";}
 
-  ObsOperator(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
+  explicit ObsOperator(const ObsSpace_ &);
   ~ObsOperator();
 
 /// Obs Operator
@@ -56,29 +55,22 @@ class ObsOperator : public util::Printable,
   const ObsOperator_ & obsoperator() const {return *oper_;}
 
 /// Other
-  const ObsSpace_ & obspace() const {return *obsdb_;}
   const Variables & variables() const;  // Required input variables from Model
   const Variables & observed() const;   // Observed variables produced by H
-  const eckit::Configuration & config() const {return conf_;}
   Locations_ locations(const util::DateTime &, const util::DateTime &) const;
 
  private:
   void print(std::ostream &) const;
-  const eckit::LocalConfiguration conf_;
-  boost::scoped_ptr<ObsSpace_> obsdb_;  // To be moved into ObsOperator_
   boost::scoped_ptr<ObsOperator_> oper_;
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-ObsOperator<MODEL>::ObsOperator(const eckit::Configuration & conf,
-                                const util::DateTime & bgn,
-                                const util::DateTime & end) : conf_(conf), obsdb_(), oper_() {
+ObsOperator<MODEL>::ObsOperator(const ObsSpace_ & os) : oper_() {
   Log::trace() << "ObsOperator<MODEL>::ObsOperator starting" << std::endl;
   util::Timer timer(classname(), "ObsOperator");
-  obsdb_.reset(new ObsSpace_(conf, bgn, end));
-  oper_.reset(new ObsOperator_(obsdb_->observationspace(), conf));
+  oper_.reset(new ObsOperator_(os.observationspace(), os.config()));
   Log::trace() << "ObsOperator<MODEL>::ObsOperator done" << std::endl;
 }
 
@@ -88,7 +80,6 @@ template <typename MODEL>
 ObsOperator<MODEL>::~ObsOperator() {
   Log::trace() << "ObsOperator<MODEL>::~ObsOperator starting" << std::endl;
   util::Timer timer(classname(), "~ObsOperator");
-  obsdb_.reset();
   oper_.reset();
   Log::trace() << "ObsOperator<MODEL>::~ObsOperator done" << std::endl;
 }

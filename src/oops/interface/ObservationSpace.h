@@ -76,10 +76,6 @@ ObservationSpace<MODEL>::ObservationSpace(const eckit::Configuration & conf,
   Log::trace() << "ObservationSpace<MODEL>::ObservationSpace starting" << std::endl;
   util::Timer timer(classname(), "ObservationSpace");
   obsdb_.reset(new ObsSpace_(conf, bgn, end));
-  if (conf.has("Generate")) {
-    const eckit::LocalConfiguration gconf(conf, "Generate");
-    obsdb_->generateDistribution(gconf);
-  }
   Log::trace() << "ObservationSpace<MODEL>::ObservationSpace done" << std::endl;
 }
 

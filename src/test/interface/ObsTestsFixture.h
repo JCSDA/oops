@@ -14,7 +14,7 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/base/ObsOperators.h"
+#include "oops/base/ObsSpaces.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
@@ -26,20 +26,20 @@ namespace test {
 
 template <typename MODEL>
 class ObsTestsFixture : private boost::noncopyable {
-  typedef oops::ObsOperators<MODEL>  ObsOperators_;
+  typedef oops::ObsSpaces<MODEL>  ObsSpaces_;
 
  public:
   static const util::DateTime & tbgn() {return *getInstance().tbgn_;}
   static const util::DateTime & tend() {return *getInstance().tend_;}
-  static ObsOperators_ & hoper()       {return *getInstance().hoper_;}
+  static ObsSpaces_ & obspace()        {return *getInstance().ospaces_;}
 
  private:
-  ObsTestsFixture(): tbgn_(), tend_(), hoper_() {
+  ObsTestsFixture(): tbgn_(), tend_(), ospaces_() {
     tbgn_.reset(new util::DateTime(TestEnvironment::config().getString("window_begin")));
     tend_.reset(new util::DateTime(TestEnvironment::config().getString("window_end")));
 
     const eckit::LocalConfiguration conf(TestEnvironment::config(), "Observations");
-    hoper_.reset(new ObsOperators_(conf, *tbgn_, *tend_));
+    ospaces_.reset(new ObsSpaces_(conf, *tbgn_, *tend_));
   }
 
   ~ObsTestsFixture() {}
@@ -51,7 +51,7 @@ class ObsTestsFixture : private boost::noncopyable {
 
   boost::scoped_ptr<const util::DateTime> tbgn_;
   boost::scoped_ptr<const util::DateTime> tend_;
-  boost::scoped_ptr<ObsOperators_> hoper_;
+  boost::scoped_ptr<ObsSpaces_> ospaces_;
 };
 
 // -----------------------------------------------------------------------------

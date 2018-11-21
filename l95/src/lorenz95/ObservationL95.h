@@ -18,13 +18,16 @@
 
 #include "lorenz95/ObservationTLAD.h"
 #include "oops/base/Variables.h"
-#include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
 // Forward declarations
 namespace eckit {
   class Configuration;
+}
+
+namespace util {
+  class DateTime;
 }
 
 namespace lorenz95 {
@@ -56,7 +59,7 @@ class ObservationL95 : public util::Printable,
 // Other
   const oops::Variables & variables() const {return inputs_;}
   const oops::Variables & observed() const {return outputs_;}
-  LocsL95 * locations(const util::DateTime & t1, const util::DateTime & t2) const;
+  LocsL95 * locations(const util::DateTime &, const util::DateTime &) const;
 
   const ObsTable & table() const {return obsdb_;}
 

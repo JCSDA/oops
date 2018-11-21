@@ -48,16 +48,17 @@ template <typename MODEL> void testFilters() {
   std::vector<eckit::LocalConfiguration> typeconfs;
   obsconf.get("ObsTypes", typeconfs);
 
-  for (std::size_t jj = 0; jj < Test_::hoper().size(); ++jj) {
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    ObsOperator_ hop(Test_::obspace()[jj]);  // should not need hop for this test (use geovals)
     eckit::LocalConfiguration gconf(typeconfs[jj], "GeoVaLs");
-    Locations_ locs(Test_::hoper()[jj].locations(Test_::tbgn(), Test_::tend()));
-    const GeoVaLs_ gval(gconf, Test_::hoper()[jj].variables());
+    Locations_ locs(hop.locations(Test_::tbgn(), Test_::tend()));
+    const GeoVaLs_ gval(gconf, hop.variables());
 
     eckit::LocalConfiguration biasConf;
     typeconfs[jj].get("ObsBias", biasConf);
     const ObsAuxCtrl_ ybias(biasConf);
 
-    ObsVector_ ovec(Test_::hoper()[jj].obspace(), Test_::hoper()[jj].observed());
+    ObsVector_ ovec(Test_::obspace()[jj], hop.observed());
 
     std::vector<eckit::LocalConfiguration> filtconf;
     typeconfs[jj].get("ObsFilters", filtconf);
@@ -68,10 +69,10 @@ template <typename MODEL> void testFilters() {
 
     for (std::size_t jf = 0; jf < filtconf.size(); ++jf) {
       boost::scoped_ptr<ObsFilterBase_> filter(
-        oops::FilterFactory<MODEL>::create(Test_::hoper()[jj].obspace(), filtconf[jf]));
+        oops::FilterFactory<MODEL>::create(Test_::obspace()[jj], filtconf[jf]));
 
       filter->priorFilter(gval);
-      Test_::hoper()[jj].simulateObs(gval, ovec, ybias);
+      hop.simulateObs(gval, ovec, ybias);
       filter->postFilter(ovec);
 
       const double zz = ovec.rms();

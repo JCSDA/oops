@@ -23,12 +23,14 @@
 #include "oops/assimilation/ControlVariable.h"
 #include "oops/assimilation/CostTermBase.h"
 #include "oops/base/Departures.h"
+#include "oops/base/LinearObsOperators.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
 #include "oops/base/ObserverTLAD.h"
 #include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
+#include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
 #include "oops/base/PostBaseTLAD.h"
 #include "oops/interface/Geometry.h"
@@ -60,10 +62,13 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   typedef State<MODEL>               State_;
   typedef Increment<MODEL>           Increment_;
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
+  typedef ObsErrors<MODEL>           ObsErrors_;
   typedef ObsFilters<MODEL>          ObsFilters_;
-  typedef ObsOperators<MODEL>        ObsOperators_;
+  typedef ObsOperators<MODEL>        ObsOperator_;
+  typedef ObsSpaces<MODEL>           ObsSpace_;
   typedef ObserverTLAD<MODEL>        ObserverTLAD_;
   typedef PostBaseTLAD<MODEL>        PostBaseTLAD_;
+  typedef LinearObsOperators<MODEL>  LinearObsOperator_;
 
  public:
   /// Construct \f$ J_o\f$ from \f$ R\f$ and \f$ y_{obs}\f$.
@@ -106,9 +111,10 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   double printJo(const Departures_ &, const Departures_ &) const;
 
  private:
-  const ObsOperators_ hop_;
+  ObsSpace_ obspace_;
+  ObsOperator_ hop_;
   Observations_ yobs_;
-  boost::scoped_ptr<ObsErrors<MODEL> > Rmat_;
+  boost::scoped_ptr<ObsErrors_> Rmat_;
 
   /// Gradient at first guess : \f$ R^{-1} (H(x_{fg})-y_{obs}) \f$.
   boost::scoped_ptr<Departures_> gradFG_;
@@ -130,7 +136,8 @@ template<typename MODEL>
 CostJo<MODEL>::CostJo(const eckit::Configuration & joConf,
                       const util::DateTime & winbgn, const util::DateTime & winend,
                       const util::Duration & tslot, const bool subwindows)
-  : hop_(joConf, winbgn, winend), yobs_(hop_), Rmat_(),
+  : obspace_(joConf, winbgn, winend),
+    hop_(obspace_), yobs_(obspace_, hop_), Rmat_(),
     gradFG_(), pobs_(), tslot_(tslot),
     pobstlad_(), subwindows_(subwindows)
 {
@@ -146,10 +153,10 @@ boost::shared_ptr<PostBase<State<MODEL> > >
 CostJo<MODEL>::initialize(const CtrlVar_ & xx) const {
   Log::trace() << "CostJo::initialize start" << std::endl;
   std::vector<ObsFilters_> filters_;  // should be controlled by outer loop
-  for (size_t jj = 0; jj < hop_.size(); ++jj) {
-    filters_.push_back(ObsFilters_(hop_[jj].obspace(), hop_[jj].config()));
+  for (size_t jj = 0; jj < obspace_.size(); ++jj) {
+    filters_.push_back(ObsFilters_(obspace_[jj], obspace_[jj].config()));
   }
-  pobs_.reset(new Observer<MODEL, State_>(hop_, xx.obsVar(), filters_,
+  pobs_.reset(new Observer<MODEL, State_>(obspace_, hop_, xx.obsVar(), filters_,
                                           tslot_, subwindows_));
   Log::trace() << "CostJo::initialize done" << std::endl;
   return pobs_;
@@ -163,7 +170,7 @@ double CostJo<MODEL>::finalize(const eckit::Configuration & conf) {
   boost::scoped_ptr<Observations_> yeqv(pobs_->release());
   Log::info() << "Jo Observation Equivalent:" << *yeqv << std::endl;
 
-  Rmat_.reset(new ObsErrors<MODEL>(hop_));
+  Rmat_.reset(new ObsErrors_(obspace_, hop_));
 
   Departures_ ydep(*yeqv - yobs_);
   Log::info() << "Jo Departures:" << ydep << std::endl;
@@ -190,10 +197,10 @@ CostJo<MODEL>::initializeTraj(const CtrlVar_ & xx, const Geometry_ &,
                               const eckit::Configuration & conf) {
   Log::trace() << "CostJo::initializeTraj start" << std::endl;
   std::vector<ObsFilters_> filters_;  // should be controlled by outer loop
-  for (size_t jj = 0; jj < hop_.size(); ++jj) {
-    filters_.push_back(ObsFilters_(hop_[jj].obspace(), hop_[jj].config()));
+  for (size_t jj = 0; jj < obspace_.size(); ++jj) {
+    filters_.push_back(ObsFilters_(obspace_[jj], obspace_[jj].config()));
   }
-  pobstlad_.reset(new ObserverTLAD_(hop_, xx.obsVar(), filters_,
+  pobstlad_.reset(new ObserverTLAD_(obspace_, hop_, xx.obsVar(), filters_,
                                     tslot_, subwindows_));
   Log::trace() << "CostJo::initializeTraj done" << std::endl;
   return pobstlad_;
@@ -264,7 +271,7 @@ Departures<MODEL> * CostJo<MODEL>::multiplyCoInv(const GeneralizedDepartures & v
 template<typename MODEL>
 Departures<MODEL> * CostJo<MODEL>::newDualVector() const {
   Log::trace() << "CostJo::newDualVector start" << std::endl;
-  Departures_ * ydep = new Departures_(hop_);
+  Departures_ * ydep = new Departures_(obspace_, hop_);
   ydep->zero();
   Log::trace() << "CostJo::newDualVector done" << std::endl;
   return ydep;
@@ -285,10 +292,10 @@ template<typename MODEL>
 double CostJo<MODEL>::printJo(const Departures_ & dy, const Departures_ & grad) const {
   Log::trace() << "CostJo::printJo start" << std::endl;
   ASSERT(Rmat_);
+  obspace_.printJo(dy, grad);
 
   double zjo = 0.0;
-  for (std::size_t jj = 0; jj < hop_.size(); ++jj) {
-    hop_[jj].obspace().printJo(dy[jj], grad[jj]);
+  for (std::size_t jj = 0; jj < dy.size(); ++jj) {
     const double zz = 0.5 * dot_product(dy[jj], grad[jj]);
     const unsigned nobs = grad[jj].nobs();
     if (nobs > 0) {
