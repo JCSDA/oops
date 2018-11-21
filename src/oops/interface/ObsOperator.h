@@ -45,7 +45,7 @@ class ObsOperator : public util::Printable,
  public:
   static const std::string classname() {return "oops::ObsOperator";}
 
-  explicit ObsOperator(const ObsSpace_ &);
+  ObsOperator(const ObsSpace_ &, const eckit::Configuration &);
   ~ObsOperator();
 
 /// Obs Operator
@@ -67,10 +67,11 @@ class ObsOperator : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-ObsOperator<MODEL>::ObsOperator(const ObsSpace_ & os) : oper_() {
+ObsOperator<MODEL>::ObsOperator(const ObsSpace_ & os,
+                                const eckit::Configuration & config) : oper_() {
   Log::trace() << "ObsOperator<MODEL>::ObsOperator starting" << std::endl;
   util::Timer timer(classname(), "ObsOperator");
-  oper_.reset(new ObsOperator_(os.observationspace(), os.config()));
+  oper_.reset(new ObsOperator_(os.observationspace(), config));
   Log::trace() << "ObsOperator<MODEL>::ObsOperator done" << std::endl;
 }
 

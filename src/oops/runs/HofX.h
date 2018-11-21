@@ -98,7 +98,7 @@ template <typename MODEL> class HofX : public Application {
     eckit::LocalConfiguration obsconf(fullConfig, "Observations");
     Log::debug() << "Observations configuration is:" << obsconf << std::endl;
     ObsSpaces_ obsdb(obsconf, winbgn, winend);
-    ObsOperators_ hop(obsdb);
+    ObsOperators_ hop(obsdb, obsconf);
 
 //  Setup QC filters
     std::vector<ObsFilters_> filters(obsdb.size());

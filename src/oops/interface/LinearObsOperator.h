@@ -46,7 +46,7 @@ class LinearObsOperator : public util::Printable,
  public:
   static const std::string classname() {return "oops::LinearObsOperator";}
 
-  explicit LinearObsOperator(const ObsSpace_ &);
+  LinearObsOperator(const ObsSpace_ &, const eckit::Configuration &);
   ~LinearObsOperator();
 
 /// Interfacing
@@ -68,10 +68,11 @@ class LinearObsOperator : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-LinearObsOperator<MODEL>::LinearObsOperator(const ObsSpace_ & os): oper_() {
+LinearObsOperator<MODEL>::LinearObsOperator(const ObsSpace_ & os,
+                                            const eckit::Configuration & config): oper_() {
   Log::trace() << "LinearObsOperator<MODEL>::LinearObsOperator starting" << std::endl;
   util::Timer timer(classname(), "LinearObsOperator");
-  oper_.reset(new LinearObsOper_(os.observationspace(), os.config()));
+  oper_.reset(new LinearObsOper_(os.observationspace(), config));
   Log::trace() << "LinearObsOperator<MODEL>::LinearObsOperator done" << std::endl;
 }
 

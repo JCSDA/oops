@@ -43,7 +43,7 @@ class ObsErrors : public util::Printable,
  public:
   static const std::string classname() {return "oops::ObsErrors";}
 
-  ObsErrors(const ObsSpaces_ &, const ObsOperators_ &);
+  ObsErrors(const eckit::Configuration &, const ObsSpaces_ &, const ObsOperators_ &);
   ~ObsErrors();
 
 /// Access
@@ -65,10 +65,13 @@ class ObsErrors : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-ObsErrors<MODEL>::ObsErrors(const ObsSpaces_ & os, const ObsOperators_ & hop) : err_(0)
+ObsErrors<MODEL>::ObsErrors(const eckit::Configuration & config,
+                            const ObsSpaces_ & os, const ObsOperators_ & hop) : err_(0)
 {
+  std::vector<eckit::LocalConfiguration> obsconf;
+  config.get("ObsTypes", obsconf);
   for (std::size_t jj = 0; jj < os.size(); ++jj) {
-    eckit::LocalConfiguration conf(os[jj].config(), "Covariance");
+    eckit::LocalConfiguration conf(obsconf[jj], "Covariance");
     boost::shared_ptr<ObsError_> tmp(new ObsError_(conf, os[jj], hop[jj].observed()));
     err_.push_back(tmp);
   }

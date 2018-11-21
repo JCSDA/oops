@@ -81,7 +81,7 @@ template <typename MODEL> class EnsHofX : public Application {
     eckit::LocalConfiguration obsconf(fullConfig, "Observations");
     Log::debug() << "Observations configuration is:" << obsconf << std::endl;
     ObsSpace_ obsdb(obsconf, winbgn, winend);
-    ObsOperator_ hop(obsdb);
+    ObsOperator_ hop(obsdb, obsconf);
 
 //  Setup QC filters
     std::vector<ObsFilters_> filters(obsdb.size());

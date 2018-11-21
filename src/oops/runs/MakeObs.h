@@ -103,12 +103,14 @@ template <typename MODEL> class MakeObs : public Application {
     const eckit::LocalConfiguration obsconf(fullConfig, "Observations");
     Log::info() << "Observation configuration is:" << obsconf << std::endl;
     ObsSpaces_ obspace(obsconf, bgn, end);
-    ObsOperators_ hop(obspace);
+    ObsOperators_ hop(obspace, obsconf);
 
 //  Setup QC filters
+    std::vector<eckit::LocalConfiguration> typeconfs;
+    obsconf.get("ObsTypes", typeconfs);
     std::vector<ObsFilters_> filters;
     for (size_t jj = 0; jj < obspace.size(); ++jj) {
-      filters.push_back(ObsFilters_(obspace[jj], obspace[jj].config()));
+      filters.push_back(ObsFilters_(obspace[jj], typeconfs[jj]));
     }
 
 //  Setup Observer
@@ -127,7 +129,7 @@ template <typename MODEL> class MakeObs : public Application {
 //  Perturb observations
     if (obsconf.has("obspert")) {
       Departures_ ypert(obspace, hop);
-      ObsErrors<MODEL> matR(obspace, hop);
+      ObsErrors<MODEL> matR(obsconf, obspace, hop);
       matR.randomize(ypert);
       double opert = obsconf.getDouble("obspert");
       ypert *= opert;
