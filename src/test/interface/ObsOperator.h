@@ -33,6 +33,21 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 
+template <typename MODEL> void testConstructor() {
+  typedef ObsTestsFixture<MODEL> Test_;
+  typedef oops::ObsOperator<MODEL>       ObsOperator_;
+
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    boost::scoped_ptr<ObsOperator_> hop(new ObsOperator_(Test_::obspace()[jj]));
+    BOOST_CHECK(hop.get());
+
+    hop.reset();
+    BOOST_CHECK(!hop.get());
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 template <typename MODEL> void testSimulateObs() {
   typedef ObsTestsFixture<MODEL> Test_;
   typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
@@ -45,18 +60,19 @@ template <typename MODEL> void testSimulateObs() {
   std::vector<eckit::LocalConfiguration> conf;
   obsconf.get("ObsTypes", conf);
 
-  for (std::size_t jj = 0; jj < conf.size(); ++jj) {
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    ObsOperator_ hop(Test_::obspace()[jj]);
     eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    Locations_ locs(Test_::hoper()[jj].locations(Test_::tbgn(), Test_::tend()));
-    const GeoVaLs_ gval(gconf, Test_::hoper()[jj].variables());
+    Locations_ locs(hop.locations(Test_::tbgn(), Test_::tend()));
+    const GeoVaLs_ gval(gconf, hop.variables());
 
     eckit::LocalConfiguration biasConf;
     conf[jj].get("ObsBias", biasConf);
     const ObsAuxCtrl_ ybias(biasConf);
 
-    ObsVector_ ovec(Test_::hoper()[jj].obspace(), Test_::hoper()[jj].observed());
+    ObsVector_ ovec(Test_::obspace()[jj], hop.observed());
 
-    Test_::hoper()[jj].simulateObs(gval, ovec, ybias);
+    hop.simulateObs(gval, ovec, ybias);
 
     ovec.save("hofx");
 
@@ -79,6 +95,7 @@ template <typename MODEL> class ObsOperator : public oops::Test {
   void register_tests() const {
     boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/ObsOperator");
 
+    ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
     ts->add(BOOST_TEST_CASE(&testSimulateObs<MODEL>));
 
     boost::unit_test::framework::master_test_suite().add(ts);

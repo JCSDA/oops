@@ -17,7 +17,7 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "oops/interface/ObsErrorBase.h"
-#include "oops/interface/ObsOperator.h"
+#include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/util/Printable.h"
 
@@ -45,13 +45,13 @@ class ObsErrorCovariance : public util::Printable,
                            private util::ObjectCounter<ObsErrorCovariance<MODEL> >,
                            private boost::noncopyable {
   typedef ObsErrorBase<MODEL>        ObsErrorBase_;
-  typedef ObsOperator<MODEL>         ObsOperator_;
+  typedef ObservationSpace<MODEL>    ObsSpace_;
   typedef ObsVector<MODEL>           ObsVector_;
 
  public:
   static const std::string classname() {return "oops::ObsErrorCovariance";}
 
-  explicit ObsErrorCovariance(const ObsOperator_ &);
+  ObsErrorCovariance(const eckit::Configuration &, const ObsSpace_ &, const Variables &);
   ~ObsErrorCovariance();
 
 /// Multiply a Departure by \f$R\f$ and \f$R^{-1}\f$
@@ -72,11 +72,12 @@ class ObsErrorCovariance : public util::Printable,
 // ====================================================================================
 
 template <typename MODEL>
-ObsErrorCovariance<MODEL>::ObsErrorCovariance(const ObsOperator_ & hop) : covar_() {
+ObsErrorCovariance<MODEL>::ObsErrorCovariance(const eckit::Configuration & conf,
+                                              const ObsSpace_ & obsdb,
+                                              const Variables & obsvar) : covar_() {
   Log::trace() << "ObsErrorCovariance<MODEL>::ObsErrorCovariance starting" << std::endl;
   util::Timer timer(classname(), "ObsErrorCovariance");
-  eckit::LocalConfiguration conf(hop.config(), "Covariance");
-  covar_.reset(ObsErrorFactory<MODEL>::create(conf, hop.obspace(), hop.observed()));
+  covar_.reset(ObsErrorFactory<MODEL>::create(conf, obsdb, obsvar));
   Log::trace() << "ObsErrorCovariance<MODEL>::ObsErrorCovariance done" << std::endl;
 }
 

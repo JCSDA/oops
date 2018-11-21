@@ -20,8 +20,8 @@
 
 #include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/ObsOperators.h"
+#include "oops/base/ObsSpaces.h"
 #include "oops/interface/GeoVaLs.h"
-#include "oops/interface/LinearObsOperator.h"
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/ObsErrorBase.h"
 #include "oops/interface/ObsVector.h"
@@ -52,11 +52,12 @@ class Departures : public util::Printable,
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
   typedef ObsErrorBase<MODEL>        ObsErrorBase_;
   typedef ObsOperators<MODEL>        ObsOperators_;
+  typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef ObsVector<MODEL>           ObsVector_;
 
  public:
 // Constructors and destructor
-  explicit Departures(const ObsOperators_ &);
+  Departures(const ObsSpaces_ &, const ObsOperators_ &);
   explicit Departures(std::vector<boost::shared_ptr<ObsVector_> >);
   explicit Departures(const Departures &);
   ~Departures();
@@ -90,10 +91,10 @@ class Departures : public util::Printable,
 // =============================================================================
 
 template<typename MODEL>
-Departures<MODEL>::Departures(const ObsOperators_ & hop): dep_(0)
+Departures<MODEL>::Departures(const ObsSpaces_ & obsgeom, const ObsOperators_ & hop): dep_(0)
 {
-  for (std::size_t jj = 0; jj < hop.size(); ++jj) {
-    boost::shared_ptr<ObsVector_> tmp(new ObsVector_(hop[jj].obspace(), hop[jj].observed()));
+  for (std::size_t jj = 0; jj < obsgeom.size(); ++jj) {
+    boost::shared_ptr<ObsVector_> tmp(new ObsVector_(obsgeom[jj], hop[jj].observed()));
     dep_.push_back(tmp);
   }
   Log::trace() << "Departures created" << std::endl;

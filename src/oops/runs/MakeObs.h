@@ -25,6 +25,7 @@
 #include "oops/base/Observer.h"
 #include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
+#include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
@@ -48,6 +49,7 @@ template <typename MODEL> class MakeObs : public Application {
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef Observations<MODEL>        Observations_;
   typedef ObsFilters<MODEL>          ObsFilters_;
+  typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef ObsOperators<MODEL>        ObsOperators_;
   typedef State<MODEL>               State_;
 
@@ -100,17 +102,18 @@ template <typename MODEL> class MakeObs : public Application {
 //  Setup observations
     const eckit::LocalConfiguration obsconf(fullConfig, "Observations");
     Log::info() << "Observation configuration is:" << obsconf << std::endl;
-    ObsOperators_ hop(obsconf, bgn, end);
+    ObsSpaces_ obspace(obsconf, bgn, end);
+    ObsOperators_ hop(obspace);
 
 //  Setup QC filters
     std::vector<ObsFilters_> filters;
-    for (size_t jj = 0; jj < hop.size(); ++jj) {
-      filters.push_back(ObsFilters_(hop[jj].obspace(), hop[jj].config()));
+    for (size_t jj = 0; jj < obspace.size(); ++jj) {
+      filters.push_back(ObsFilters_(obspace[jj], obspace[jj].config()));
     }
 
 //  Setup Observer
     boost::shared_ptr<Observer<MODEL, State_> >
-      pobs(new Observer<MODEL, State_>(hop, ybias, filters));
+      pobs(new Observer<MODEL, State_>(obspace, hop, ybias, filters));
     post.enrollProcessor(pobs);
 
 //  Run forecast and generate observations
@@ -123,8 +126,8 @@ template <typename MODEL> class MakeObs : public Application {
 
 //  Perturb observations
     if (obsconf.has("obspert")) {
-      Departures_ ypert(hop);
-      ObsErrors<MODEL> matR(hop);
+      Departures_ ypert(obspace, hop);
+      ObsErrors<MODEL> matR(obspace, hop);
       matR.randomize(ypert);
       double opert = obsconf.getDouble("obspert");
       ypert *= opert;

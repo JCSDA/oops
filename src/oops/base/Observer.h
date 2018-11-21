@@ -20,6 +20,7 @@
 #include "oops/base/Observations.h"
 #include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
+#include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/InterpolatorTraj.h"
@@ -47,10 +48,11 @@ class Observer : public util::Printable, public PostBase<STATE> {
   typedef ObsFilters<MODEL>          ObsFilters_;
   typedef Observations<MODEL>        Observations_;
   typedef ObsOperators<MODEL>        ObsOperators_;
+  typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef std::vector<boost::shared_ptr<InterpolatorTraj_> > vspit;
 
  public:
-  Observer(const ObsOperators_ &, const ObsAuxCtrl_ &,
+  Observer(const ObsSpaces_ &, const ObsOperators_ &, const ObsAuxCtrl_ &,
            const std::vector<ObsFilters_> &,
            const util::Duration & tslot = util::Duration(0), const bool subwin = false);
   ~Observer() {}
@@ -88,13 +90,14 @@ class Observer : public util::Printable, public PostBase<STATE> {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename STATE>
-Observer<MODEL, STATE>::Observer(const ObsOperators_ & hop,
+Observer<MODEL, STATE>::Observer(const ObsSpaces_ & obsdb,
+                                 const ObsOperators_ & hop,
                                  const ObsAuxCtrl_ & ybias,
                                  const std::vector<ObsFilters_> & filters,
                                  const util::Duration & tslot, const bool swin)
   : PostBase<STATE>(), hop_(hop),
-    yobs_(new Observations_(hop_)), ybias_(ybias),
-    winbgn_(hop_.windowStart()), winend_(hop_.windowEnd()),
+    yobs_(new Observations_(obsdb, hop_)), ybias_(ybias),
+    winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
     bgn_(winbgn_), end_(winend_), hslot_(tslot/2), subwindows_(swin),
     gvals_(0), filters_(filters)
 {

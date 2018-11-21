@@ -23,6 +23,7 @@
 #include "oops/base/Observer.h"
 #include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
+#include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
 #include "oops/interface/Geometry.h"
@@ -45,6 +46,7 @@ template <typename MODEL> class HofX : public Application {
   typedef Observations<MODEL>        Observations_;
   typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsOperators<MODEL>        ObsOperators_;
+  typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef State<MODEL>               State_;
 
  public:
@@ -95,14 +97,15 @@ template <typename MODEL> class HofX : public Application {
 //  Setup observations
     eckit::LocalConfiguration obsconf(fullConfig, "Observations");
     Log::debug() << "Observations configuration is:" << obsconf << std::endl;
-    ObsOperators_ hop(obsconf, winbgn, winend);
+    ObsSpaces_ obsdb(obsconf, winbgn, winend);
+    ObsOperators_ hop(obsdb);
 
 //  Setup QC filters
-    std::vector<ObsFilters_> filters(hop.size());
+    std::vector<ObsFilters_> filters(obsdb.size());
 
 //  Setup Observer
     boost::shared_ptr<Observer<MODEL, State_> >
-      pobs(new Observer<MODEL, State_>(hop, ybias, filters));
+      pobs(new Observer<MODEL, State_>(obsdb, hop, ybias, filters));
     post.enrollProcessor(pobs);
 
 //  Compute H(x)

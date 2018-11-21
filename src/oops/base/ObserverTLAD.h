@@ -22,6 +22,7 @@
 #include "oops/base/Observations.h"
 #include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
+#include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBaseTLAD.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Increment.h"
@@ -48,10 +49,11 @@ class ObserverTLAD : public PostBaseTLAD<MODEL> {
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
   typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsOperators<MODEL>        ObsOperators_;
+  typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef State<MODEL>               State_;
 
  public:
-  ObserverTLAD(const ObsOperators_ &, const ObsAuxCtrl_ &,
+  ObserverTLAD(const ObsSpaces_ &, const ObsOperators_ &, const ObsAuxCtrl_ &,
                const std::vector<ObsFilters_> &,
                const util::Duration & tslot = util::Duration(0), const bool subwin = false);
   ~ObserverTLAD() {}
@@ -78,6 +80,7 @@ class ObserverTLAD : public PostBaseTLAD<MODEL> {
   void doLastAD(Increment_ &) override;
 
 // Obs operator
+  const ObsSpaces_ & obspace_;
   const ObsOperators_ & hop_;
   LinearObsOperators_ hoptlad_;
   Observer<MODEL, State_> observer_;
@@ -103,15 +106,16 @@ class ObserverTLAD : public PostBaseTLAD<MODEL> {
 
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-ObserverTLAD<MODEL>::ObserverTLAD(const ObsOperators_ & hop,
+ObserverTLAD<MODEL>::ObserverTLAD(const ObsSpaces_ & obsdb,
+                                  const ObsOperators_ & hop,
                                   const ObsAuxCtrl_ & ybias,
                                   const std::vector<ObsFilters_> & filters,
                                   const util::Duration & tslot, const bool subwin)
-  : PostBaseTLAD<MODEL>(hop.windowStart(), hop.windowEnd()),
-    hop_(hop), hoptlad_(hop_),
-    observer_(hop_, ybias, filters, tslot, subwin),
+  : PostBaseTLAD<MODEL>(obsdb.windowStart(), obsdb.windowEnd()),
+    obspace_(obsdb), hop_(hop), hoptlad_(obspace_),
+    observer_(obspace_, hop, ybias, filters, tslot, subwin),
     ydeptl_(), ybiastl_(), ydepad_(), ybiasad_(),
-    winbgn_(hop_.windowStart()), winend_(hop_.windowEnd()),
+    winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
     bgn_(winbgn_), end_(winend_), hslot_(tslot/2), subwindows_(subwin)
 {
   Log::trace() << "ObserverTLAD::ObserverTLAD" << std::endl;
@@ -127,7 +131,7 @@ void ObserverTLAD<MODEL>::doInitializeTraj(const State_ & xx,
   unsigned int nsteps = 1+(winend_-winbgn_).toSeconds() / bintstep_.toSeconds();
   for (std::size_t ib = 0; ib < nsteps; ++ib) {
     std::vector<boost::shared_ptr<InterpolatorTraj_> > obstraj;
-    for (std::size_t jj = 0; jj < hop_.size(); ++jj) {
+    for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
       boost::shared_ptr<InterpolatorTraj_> traj(new InterpolatorTraj_());
       obstraj.push_back(traj);
     }
@@ -161,7 +165,7 @@ void ObserverTLAD<MODEL>::doFinalizeTraj(const State_ & xx) {
 template <typename MODEL>
 void ObserverTLAD<MODEL>::setupTL(const ObsAuxIncr_ & ybias) {
   Log::trace() << "ObserverTLAD::setupTL start" << std::endl;
-  ydeptl_.reset(new Departures_(hop_));
+  ydeptl_.reset(new Departures_(obspace_, hop_));
   ybiastl_ = &ybias;
   Log::trace() << "ObserverTLAD::setupTL done" << std::endl;
 }
@@ -214,7 +218,7 @@ void ObserverTLAD<MODEL>::doProcessingTL(const Increment_ & dx) {
 template <typename MODEL>
 void ObserverTLAD<MODEL>::doFinalizeTL(const Increment_ &) {
   Log::trace() << "ObserverTLAD::doFinalizeTL start" << std::endl;
-  for (std::size_t jj = 0; jj < hop_.size(); ++jj) {
+  for (std::size_t jj = 0; jj < hoptlad_.size(); ++jj) {
     hoptlad_[jj].simulateObsTL(*gvals_.at(jj), (*ydeptl_)[jj], *ybiastl_);
   }
   gvals_.clear();
@@ -248,7 +252,7 @@ void ObserverTLAD<MODEL>::doFirstAD(Increment_ & dx, const util::DateTime & bgn,
   if (bgn_ < winbgn_) bgn_ = winbgn_;
   if (end_ > winend_) end_ = winend_;
 
-  for (std::size_t jj = 0; jj < hop_.size(); ++jj) {
+  for (std::size_t jj = 0; jj < hoptlad_.size(); ++jj) {
     boost::shared_ptr<GeoVaLs_>
       gom(new GeoVaLs_(hop_[jj].locations(bgn_, end_), hoptlad_.variables(jj)));
     hoptlad_[jj].simulateObsAD(*gom, (*ydepad_)[jj], *ybiasad_);

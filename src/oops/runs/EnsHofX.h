@@ -21,6 +21,7 @@
 #include "oops/base/Observer.h"
 #include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
+#include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
 #include "oops/interface/Geometry.h"
@@ -43,7 +44,8 @@ template <typename MODEL> class EnsHofX : public Application {
   typedef Observations<MODEL>        Observations_;
   typedef ObsEnsemble<MODEL>         ObsEnsemble_;
   typedef ObsFilters<MODEL>          ObsFilters_;
-  typedef ObsOperators<MODEL>        ObsOperators_;
+  typedef ObsOperators<MODEL>        ObsOperator_;
+  typedef ObsSpaces<MODEL>           ObsSpace_;
   typedef State<MODEL>               State_;
 
  public:
@@ -78,10 +80,11 @@ template <typename MODEL> class EnsHofX : public Application {
 //  Setup observations
     eckit::LocalConfiguration obsconf(fullConfig, "Observations");
     Log::debug() << "Observations configuration is:" << obsconf << std::endl;
-    ObsOperators_ hop(obsconf, winbgn, winend);
+    ObsSpace_ obsdb(obsconf, winbgn, winend);
+    ObsOperator_ hop(obsdb);
 
 //  Setup QC filters
-    std::vector<ObsFilters_> filters(hop.size());
+    std::vector<ObsFilters_> filters(obsdb.size());
 
 //  Setup initial states
     const eckit::LocalConfiguration initialConfig(fullConfig, "Initial Condition");
@@ -90,7 +93,7 @@ template <typename MODEL> class EnsHofX : public Application {
     Log::debug() << "EnsHofX: using " << members.size() << " states." << std::endl;
 
 //  Setup ObsEnsemble
-    ObsEnsemble_ obsens(hop, members.size());
+    ObsEnsemble_ obsens(obsdb, hop, members.size());
 //  Loop on all ensemble members
     for (unsigned jj = 0; jj < members.size(); ++jj) {
 //    Setup initial state for jj-th member
@@ -109,7 +112,7 @@ template <typename MODEL> class EnsHofX : public Application {
 
 //    Setup postprocessor: Observer
       boost::shared_ptr<Observer<MODEL, State_> >
-      pobs(new Observer<MODEL, State_>(hop, ybias, filters));
+      pobs(new Observer<MODEL, State_>(obsdb, hop, ybias, filters));
       post.enrollProcessor(pobs);
 
 //    Compute H(x)
