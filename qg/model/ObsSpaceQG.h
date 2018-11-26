@@ -15,7 +15,7 @@
 #include <ostream>
 #include <string>
 
-#include "oops/interface/ObsSpaceBase.h"
+#include "oops/base/ObsSpaceBase.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Printable.h"
 

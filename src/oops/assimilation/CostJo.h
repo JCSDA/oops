@@ -115,7 +115,7 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   ObsSpace_ obspace_;
   ObsOperator_ hop_;
   Observations_ yobs_;
-  boost::scoped_ptr<ObsErrors_> Rmat_;
+  ObsErrors_ Rmat_;
 
   /// Gradient at first guess : \f$ R^{-1} (H(x_{fg})-y_{obs}) \f$.
   boost::scoped_ptr<Departures_> gradFG_;
@@ -138,7 +138,7 @@ CostJo<MODEL>::CostJo(const eckit::Configuration & joConf,
                       const util::DateTime & winbgn, const util::DateTime & winend,
                       const util::Duration & tslot, const bool subwindows)
   : obsconf_(joConf), obspace_(joConf, winbgn, winend),
-    hop_(obspace_, joConf), yobs_(obspace_, hop_), Rmat_(),
+    hop_(obspace_, joConf), yobs_(obspace_, hop_), Rmat_(obsconf_, obspace_, hop_),
     gradFG_(), pobs_(), tslot_(tslot),
     pobstlad_(), subwindows_(subwindows)
 {
@@ -173,14 +173,15 @@ double CostJo<MODEL>::finalize(const eckit::Configuration & conf) {
   boost::scoped_ptr<Observations_> yeqv(pobs_->release());
   Log::info() << "Jo Observation Equivalent:" << *yeqv << std::endl;
 
-  Rmat_.reset(new ObsErrors_(obsconf_, obspace_, hop_));
+  Rmat_.update();
 
   Departures_ ydep(*yeqv - yobs_);
   Log::info() << "Jo Departures:" << ydep << std::endl;
 
-  boost::scoped_ptr<Departures_> grad(Rmat_->inverseMultiply(ydep));
+  Departures_ grad(ydep);
+  Rmat_.inverseMultiply(grad);
 
-  double zjo = this->printJo(ydep, *grad);
+  double zjo = this->printJo(ydep, grad);
 
   if (conf.has("departures")) {
     const std::string depname = conf.getString("departures");
@@ -222,7 +223,12 @@ void CostJo<MODEL>::finalizeTraj() {
   Departures_ ydep(*yeqv - yobs_);
   Log::info() << "Jo Traj Departures:" << ydep << std::endl;
 
-  gradFG_.reset(Rmat_->inverseMultiply(ydep));
+  if (!gradFG_) {
+    gradFG_.reset(new Departures_(ydep));
+  } else {
+    *gradFG_ = ydep;
+  }
+  Rmat_.inverseMultiply(*gradFG_);
   Log::trace() << "CostJo::finalizeTraj done" << std::endl;
 }
 
@@ -256,9 +262,9 @@ boost::shared_ptr<PostBaseTLAD<MODEL> > CostJo<MODEL>::setupAD(
 template<typename MODEL>
 Departures<MODEL> * CostJo<MODEL>::multiplyCovar(const GeneralizedDepartures & v1) const {
   Log::trace() << "CostJo::multiplyCovar start" << std::endl;
-  ASSERT(Rmat_);
-  const Departures_ & y1 = dynamic_cast<const Departures_ &>(v1);
-  return Rmat_->multiply(y1);
+  Departures_ * y1 = new Departures_(dynamic_cast<const Departures_ &>(v1));
+  Rmat_.multiply(*y1);
+  return y1;
 }
 
 // -----------------------------------------------------------------------------
@@ -266,9 +272,9 @@ Departures<MODEL> * CostJo<MODEL>::multiplyCovar(const GeneralizedDepartures & v
 template<typename MODEL>
 Departures<MODEL> * CostJo<MODEL>::multiplyCoInv(const GeneralizedDepartures & v1) const {
   Log::trace() << "CostJo::multiplyCoInv start" << std::endl;
-  ASSERT(Rmat_);
-  const Departures_ & y1 = dynamic_cast<const Departures_ &>(v1);
-  return Rmat_->inverseMultiply(y1);
+  Departures_ * y1 = new Departures_(dynamic_cast<const Departures_ &>(v1));
+  Rmat_.inverseMultiply(*y1);
+  return y1;
 }
 
 // -----------------------------------------------------------------------------
@@ -296,7 +302,6 @@ void CostJo<MODEL>::resetLinearization() {
 template<typename MODEL>
 double CostJo<MODEL>::printJo(const Departures_ & dy, const Departures_ & grad) const {
   Log::trace() << "CostJo::printJo start" << std::endl;
-  ASSERT(Rmat_);
   obspace_.printJo(dy, grad);
 
   double zjo = 0.0;
@@ -306,7 +311,7 @@ double CostJo<MODEL>::printJo(const Departures_ & dy, const Departures_ & grad) 
     if (nobs > 0) {
       Log::test() << "CostJo   : Nonlinear Jo = " << zz
                   << ", nobs = " << nobs << ", Jo/n = " << zz/nobs
-                  << ", err = " << (*Rmat_)[jj].getRMSE() << std::endl;
+                  << ", err = " << Rmat_[jj].getRMSE() << std::endl;
     } else {
       Log::test() << "CostJo   : Nonlinear Jo = " << zz << " --- No Observations" << std::endl;
       Log::warning() << "CostJo: No Observations!!!" << std::endl;

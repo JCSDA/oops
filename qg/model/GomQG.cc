@@ -10,6 +10,8 @@
 
 #include "model/GomQG.h"
 
+#include <iomanip>
+
 #include "eckit/config/Configuration.h"
 #include "model/LocationsQG.h"
 #include "model/QgFortran.h"

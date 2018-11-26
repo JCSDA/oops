@@ -8,14 +8,17 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef OOPS_INTERFACE_OBSSPACEBASE_H_
-#define OOPS_INTERFACE_OBSSPACEBASE_H_
+#ifndef OOPS_BASE_OBSSPACEBASE_H_
+#define OOPS_BASE_OBSSPACEBASE_H_
 
 #include <boost/noncopyable.hpp>
-#include "eckit/config/LocalConfiguration.h"
 
 #include "oops/util/DateTime.h"
 #include "oops/util/Printable.h"
+
+namespace eckit {
+  class Configuration;
+}
 
 namespace oops {
 
@@ -25,14 +28,12 @@ namespace oops {
 class ObsSpaceBase : public util::Printable,
                      private boost::noncopyable {
  public:
-  ObsSpaceBase(const eckit::Configuration & config,
-               const util::DateTime & bgn, const util::DateTime & end)
-  : conf_(config), winbgn_(bgn), winend_(end) {}
+  ObsSpaceBase(const eckit::Configuration &, const util::DateTime & bgn, const util::DateTime & end)
+  : winbgn_(bgn), winend_(end) {}
 
   virtual ~ObsSpaceBase() {}
 
 /// Access information
-  const eckit::Configuration & config() const {return conf_;}
   const util::DateTime & windowStart() const {return winbgn_;}
   const util::DateTime & windowEnd() const {return winend_;}
 
@@ -40,11 +41,10 @@ class ObsSpaceBase : public util::Printable,
   virtual void generateDistribution(const eckit::Configuration &) = 0;
 
  private:
-  const eckit::LocalConfiguration conf_;
   const util::DateTime winbgn_;
   const util::DateTime winend_;
 };
 
 }  // namespace oops
 
-#endif  // OOPS_INTERFACE_OBSSPACEBASE_H_
+#endif  // OOPS_BASE_OBSSPACEBASE_H_

@@ -46,9 +46,12 @@ class ObsErrorBase : public util::Printable,
   ObsErrorBase(const ObsSpace_ &, const Variables &);
   virtual ~ObsErrorBase() {}
 
+/// Update after obs filters
+  virtual void update() = 0;
+
 /// Multiply a Departure by \f$R\f$ and \f$R^{-1}\f$
-  virtual ObsVector_ * multiply(const ObsVector_ &) const = 0;
-  virtual ObsVector_ * inverseMultiply(const ObsVector_ &) const = 0;
+  virtual void multiply(ObsVector_ &) const = 0;
+  virtual void inverseMultiply(ObsVector_ &) const = 0;
 
 /// Generate random perturbation
   virtual void randomize(ObsVector_ &) const = 0;

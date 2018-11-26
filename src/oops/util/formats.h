@@ -11,6 +11,7 @@
 #ifndef OOPS_UTIL_FORMATS_H_
 #define OOPS_UTIL_FORMATS_H_
 
+#include <iomanip>
 #include <limits>
 #include <sstream>
 #include <string>

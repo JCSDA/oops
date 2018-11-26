@@ -46,7 +46,6 @@ class ObsVector : public util::Printable,
 
   ObsVector(const ObservationSpace<MODEL> &, const Variables &);
   explicit ObsVector(const ObsVector &, const bool copy = true);
-  explicit ObsVector(ObsVector_ *);  // TODO(YT): remove, used only in ObsErrorCovariance
   ~ObsVector();
 
 /// Interfacing
@@ -97,11 +96,6 @@ ObsVector<MODEL>::ObsVector(const ObsVector & other, const bool copy): data_() {
 
   data_.reset(new ObsVector_(*other.data_, copy));
 
-  Log::trace() << "ObsVector<MODEL>::ObsVector done" << std::endl;
-}
-// -----------------------------------------------------------------------------
-template <typename MODEL>
-ObsVector<MODEL>::ObsVector(ObsVector_ * data): data_(data) {
   Log::trace() << "ObsVector<MODEL>::ObsVector done" << std::endl;
 }
 // -----------------------------------------------------------------------------

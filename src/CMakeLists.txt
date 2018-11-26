@@ -92,6 +92,7 @@ oops/base/ObsErrors.h
 oops/base/ObsFilterBase.h
 oops/base/ObsFilters.h
 oops/base/ObsOperators.h
+oops/base/ObsSpaceBase.h
 oops/base/ObsSpaces.h
 oops/base/Observations.h
 oops/base/Observer.h
@@ -205,7 +206,6 @@ oops/interface/ObsErrorBase.h
 oops/interface/ObsErrorCovariance.h
 oops/interface/ObsFilter.h
 oops/interface/ObsOperator.h
-oops/interface/ObsSpaceBase.h
 oops/interface/ObsVector.h
 oops/interface/ObservationSpace.h
 oops/interface/State.h

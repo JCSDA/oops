@@ -14,8 +14,6 @@
 #include <sstream>
 #include <string>
 
-#include <boost/scoped_ptr.hpp>
-
 #include "oops/base/Variables.h"
 #include "oops/interface/ObsErrorBase.h"
 #include "oops/util/Logger.h"
@@ -38,23 +36,26 @@ class ObsErrorDiag : public ObsErrorBase<MODEL> {
   ObsErrorDiag(const eckit::Configuration &, const ObsSpace_ &, const Variables &);
   ~ObsErrorDiag();
 
+/// Update after QC od other obs filters
+  void update();
+
 /// Multiply a Departure by \f$R\f$
-  ObsVector_ * multiply(const ObsVector_ &) const;
+  void multiply(ObsVector_ &) const;
 
 /// Multiply a Departure by \f$R^{-1}\f$
-  ObsVector_ * inverseMultiply(const ObsVector_ &) const;
+  void inverseMultiply(ObsVector_ &) const;
 
 /// Generate random perturbation
   void randomize(ObsVector_ &) const;
 
 /// Get mean error for Jo table
-  double getRMSE() const {return stddev_->rms();}
+  double getRMSE() const {return stddev_.rms();}
 
  private:
   void print(std::ostream &) const;
 
-  boost::scoped_ptr<ObsVector_> stddev_;
-  boost::scoped_ptr<ObsVector_> inverseVariance_;
+  ObsVector_ stddev_;
+  ObsVector_ inverseVariance_;
 };
 
 // =============================================================================
@@ -62,16 +63,10 @@ class ObsErrorDiag : public ObsErrorBase<MODEL> {
 template<typename MODEL>
 ObsErrorDiag<MODEL>::ObsErrorDiag(const eckit::Configuration &, const ObsSpace_ & obsgeom,
                                   const Variables & observed)
-  : ObsErrorBase<MODEL>(obsgeom, observed), stddev_(), inverseVariance_()
+  : ObsErrorBase<MODEL>(obsgeom, observed),
+    stddev_(obsgeom, observed), inverseVariance_(obsgeom, observed)
 {
-  stddev_.reset(new ObsVector_(obsgeom, observed));
-  stddev_->read("EffectiveError");
-
-  inverseVariance_.reset(new ObsVector_(*stddev_));
-  *inverseVariance_ *= *inverseVariance_;
-  inverseVariance_->invert();
-
-  Log::debug() << "ObsErrorDiag:ObsErrorDiag constructed nobs = " << stddev_->nobs() << std::endl;
+  this->update();
   Log::trace() << "ObsErrorDiag:ObsErrorDiag constructed" << std::endl;
 }
 
@@ -85,21 +80,28 @@ ObsErrorDiag<MODEL>::~ObsErrorDiag() {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-typename MODEL::ObsVector * ObsErrorDiag<MODEL>::multiply(const ObsVector_ & dy) const {
-  ObsVector_ * res = new ObsVector_(dy);
-  *res /= *inverseVariance_;
-  return res;
+void ObsErrorDiag<MODEL>::update() {
+  stddev_.read("EffectiveError");
+
+  inverseVariance_ = stddev_;
+  inverseVariance_ *= stddev_;
+  inverseVariance_.invert();
+
+  Log::trace() << "ObsErrorDiag:update nobs = " << stddev_.nobs() << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-typename MODEL::ObsVector * ObsErrorDiag<MODEL>::inverseMultiply(const ObsVector_ & dy) const {
-  ObsVector_ * res = new ObsVector_(dy);
-  *res *= *inverseVariance_;
-  Log::debug() << "ObsErrorDiag:inverseMultiply nobs in = " << dy.nobs()
-                               << ", out = " << res->nobs() << std::endl;
-  return res;
+void ObsErrorDiag<MODEL>::multiply(ObsVector_ & dy) const {
+  dy /= inverseVariance_;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void ObsErrorDiag<MODEL>::inverseMultiply(ObsVector_ & dy) const {
+  dy *= inverseVariance_;
 }
 
 // -----------------------------------------------------------------------------
@@ -107,7 +109,7 @@ typename MODEL::ObsVector * ObsErrorDiag<MODEL>::inverseMultiply(const ObsVector
 template<typename MODEL>
 void ObsErrorDiag<MODEL>::randomize(ObsVector_ & dy) const {
   dy.random();
-  dy *= *stddev_;
+  dy *= stddev_;
 }
 
 // -----------------------------------------------------------------------------

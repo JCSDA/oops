@@ -11,6 +11,7 @@
 #ifndef QG_MODEL_LOCATIONSQG_H_
 #define QG_MODEL_LOCATIONSQG_H_
 
+#include <iomanip>
 #include <ostream>
 #include <string>
 #include <vector>

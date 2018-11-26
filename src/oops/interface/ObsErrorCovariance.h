@@ -54,9 +54,12 @@ class ObsErrorCovariance : public util::Printable,
   ObsErrorCovariance(const eckit::Configuration &, const ObsSpace_ &, const Variables &);
   ~ObsErrorCovariance();
 
+/// Update after QC or other obs filters
+  void update();
+
 /// Multiply a Departure by \f$R\f$ and \f$R^{-1}\f$
-  ObsVector_ * multiply(const ObsVector_ &) const;
-  ObsVector_ * inverseMultiply(const ObsVector_ &) const;
+  void multiply(ObsVector_ &) const;
+  void inverseMultiply(ObsVector_ &) const;
 
 /// Generate random perturbation
   void randomize(ObsVector_ &) const;
@@ -94,23 +97,31 @@ ObsErrorCovariance<MODEL>::~ObsErrorCovariance() {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-ObsVector<MODEL> * ObsErrorCovariance<MODEL>::multiply(const ObsVector_ & dy) const {
-  Log::trace() << "ObsErrorCovariance<MODEL>::multiply starting" << std::endl;
-  util::Timer timer(classname(), "multiply");
-  ObsVector_ * dz = new ObsVector_(covar_->multiply(dy.obsvector()));
-  Log::trace() << "ObsErrorCovariance<MODEL>::multiply done" << std::endl;
-  return dz;
+void ObsErrorCovariance<MODEL>::update() {
+  Log::trace() << "ObsErrorCovariance<MODEL>::update starting" << std::endl;
+  util::Timer timer(classname(), "update");
+  covar_->update();
+  Log::trace() << "ObsErrorCovariance<MODEL>::update done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-ObsVector<MODEL> * ObsErrorCovariance<MODEL>::inverseMultiply(const ObsVector_ & dy) const {
+void ObsErrorCovariance<MODEL>::multiply(ObsVector_ & dy) const {
+  Log::trace() << "ObsErrorCovariance<MODEL>::multiply starting" << std::endl;
+  util::Timer timer(classname(), "multiply");
+  covar_->multiply(dy.obsvector());
+  Log::trace() << "ObsErrorCovariance<MODEL>::multiply done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+void ObsErrorCovariance<MODEL>::inverseMultiply(ObsVector_ & dy) const {
   Log::trace() << "ObsErrorCovariance<MODEL>::inverseMultiply starting" << std::endl;
   util::Timer timer(classname(), "inverseMultiply");
-  ObsVector_ * dz = new ObsVector_(covar_->inverseMultiply(dy.obsvector()));
+  covar_->inverseMultiply(dy.obsvector());
   Log::trace() << "ObsErrorCovariance<MODEL>::inverseMultiply done" << std::endl;
-  return dz;
 }
 
 // -----------------------------------------------------------------------------

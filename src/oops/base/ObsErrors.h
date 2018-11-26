@@ -50,9 +50,12 @@ class ObsErrors : public util::Printable,
   std::size_t size() const {return err_.size();}
   const ObsError_ & operator[](const std::size_t ii) const {return *err_.at(ii);}
 
+/// Update, for example after QC
+  void update();
+
 /// Multiply a Departure by \f$R\f$ and \f$R^{-1}\f$
-  Departures_ * multiply(const Departures_ &) const;
-  Departures_ * inverseMultiply(const Departures_ &) const;
+  void multiply(Departures_ &) const;
+  void inverseMultiply(Departures_ &) const;
 
 /// Generate random perturbation
   void randomize(Departures_ &) const;
@@ -85,25 +88,28 @@ ObsErrors<MODEL>::~ObsErrors() {}
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-Departures<MODEL> * ObsErrors<MODEL>::multiply(const Departures_ & dy) const {
-  std::vector<boost::shared_ptr<ObsVector_> > ovec;
+void ObsErrors<MODEL>::update() {
   for (std::size_t jj = 0; jj < err_.size(); ++jj) {
-    boost::shared_ptr<ObsVector_> tmp(err_[jj]->multiply(dy[jj]));
-    ovec.push_back(tmp);
+    err_[jj]->update();
   }
-  return new Departures_(ovec);
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-Departures<MODEL> * ObsErrors<MODEL>::inverseMultiply(const Departures_ & dy) const {
-  std::vector<boost::shared_ptr<ObsVector_> > ovec;
+void ObsErrors<MODEL>::multiply(Departures_ & dy) const {
   for (std::size_t jj = 0; jj < err_.size(); ++jj) {
-    boost::shared_ptr<ObsVector_> tmp(err_[jj]->inverseMultiply(dy[jj]));
-    ovec.push_back(tmp);
+    err_[jj]->multiply(dy[jj]);
   }
-  return new Departures_(ovec);
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+void ObsErrors<MODEL>::inverseMultiply(Departures_ & dy) const {
+  for (std::size_t jj = 0; jj < err_.size(); ++jj) {
+    err_[jj]->inverseMultiply(dy[jj]);
+  }
 }
 
 // -----------------------------------------------------------------------------
