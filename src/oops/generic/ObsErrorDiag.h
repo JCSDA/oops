@@ -14,13 +14,10 @@
 #include <sstream>
 #include <string>
 
+#include "eckit/config/Configuration.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/ObsErrorBase.h"
 #include "oops/util/Logger.h"
-
-namespace eckit {
-  class Configuration;
-}
 
 namespace oops {
 
@@ -56,15 +53,17 @@ class ObsErrorDiag : public ObsErrorBase<MODEL> {
 
   ObsVector_ stddev_;
   ObsVector_ inverseVariance_;
+  double pert_;
 };
 
 // =============================================================================
 
 template<typename MODEL>
-ObsErrorDiag<MODEL>::ObsErrorDiag(const eckit::Configuration &, const ObsSpace_ & obsgeom,
+ObsErrorDiag<MODEL>::ObsErrorDiag(const eckit::Configuration & conf, const ObsSpace_ & obsgeom,
                                   const Variables & observed)
   : ObsErrorBase<MODEL>(obsgeom, observed),
-    stddev_(obsgeom, observed), inverseVariance_(obsgeom, observed)
+    stddev_(obsgeom, observed), inverseVariance_(obsgeom, observed),
+    pert_(conf.getDouble("random_amplitude", 1.0))
 {
   this->update();
   Log::trace() << "ObsErrorDiag:ObsErrorDiag constructed" << std::endl;
@@ -110,6 +109,7 @@ template<typename MODEL>
 void ObsErrorDiag<MODEL>::randomize(ObsVector_ & dy) const {
   dy.random();
   dy *= stddev_;
+  dy *= pert_;
 }
 
 // -----------------------------------------------------------------------------
@@ -120,7 +120,6 @@ void ObsErrorDiag<MODEL>::print(std::ostream & os) const {
 }
 
 // -----------------------------------------------------------------------------
-
 
 }  // namespace oops
 

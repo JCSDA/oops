@@ -73,9 +73,11 @@ ObsSpaces<MODEL>::ObsSpaces(const eckit::Configuration & conf,
                             const util::DateTime & bgn, const util::DateTime & end)
   : spaces_(0), types_(), wbgn_(bgn), wend_(end)
 {
+  int member = conf.getInt("member", 0);
   std::vector<eckit::LocalConfiguration> obsconf;
   conf.get("ObsTypes", obsconf);
   for (std::size_t jj = 0; jj < obsconf.size(); ++jj) {
+    if (member) obsconf[jj].set("member", member);
     Log::debug() << "ObsSpaces::ObsSpaces : conf " << obsconf[jj] << std::endl;
     const std::string otype = obsconf[jj].getString("ObsType");
     ASSERT(types_.count(otype) == 0);

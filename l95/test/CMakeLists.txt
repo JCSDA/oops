@@ -9,6 +9,7 @@ list( APPEND l95_test_input
   testinput/4dvar.drpcgqn.yaml
   testinput/4dvar.drplanczos.yaml
   testinput/4dvar.drplanclmp.yaml
+  testinput/4dvar.eda.pertobs.yaml
   testinput/4dvar.gmresr.yaml
   testinput/4dvar.ipcg.yaml
   testinput/4dvar.pcg.yaml
@@ -550,4 +551,10 @@ ecbuild_add_test( TARGET test_l95_4densvar
                        testoutput/4densvar.test
                   DEPENDS l95_4dvar.x )
 endif()
+
+ecbuild_add_test( TARGET test_l95_4dvar_eda
+                  MPI 4
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_eda.x
+                  ARGS testinput/4dvar.eda.pertobs.yaml
+                  DEPENDS l95_eda.x )
 

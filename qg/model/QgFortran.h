@@ -22,6 +22,7 @@ namespace util {
 }
 
 namespace qg {
+  class ObsSpaceQG;
 
 // Geometry key type
 typedef int F90geom;
@@ -242,7 +243,7 @@ extern "C" {
   void qg_obsvec_div_f90(const F90ovec &, const F90ovec &);
   void qg_obsvec_axpy_f90(const F90ovec &, const double &, const F90ovec &);
   void qg_obsvec_invert_f90(const F90ovec &);
-  void qg_obsvec_random_f90(const F90ovec &);
+  void qg_obsvec_random_f90(const ObsSpaceQG *, const F90ovec &);
   void qg_obsvec_dotprod_f90(const F90ovec &, const F90ovec &, double &);
   void qg_obsvec_minmaxavg_f90(const F90ovec &, double &, double &, double &);
   void qg_obsvec_nobs_f90(const F90ovec &, int &);

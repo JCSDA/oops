@@ -107,6 +107,8 @@ qg_localization_matrix.f90
 qg_locs_mod.F90
 qg_obs_data.F90
 qg_obs_vectors.F90
+qg_obsdb_random_f.h
+qg_obsdb_random_f.cc
 qg_obsoper_mod.F90
 qg_stream_mod.F90
 qg_trajectories.F90

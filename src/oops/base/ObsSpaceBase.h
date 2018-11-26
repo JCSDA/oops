@@ -28,8 +28,7 @@ namespace oops {
 class ObsSpaceBase : public util::Printable,
                      private boost::noncopyable {
  public:
-  ObsSpaceBase(const eckit::Configuration &, const util::DateTime & bgn, const util::DateTime & end)
-  : winbgn_(bgn), winend_(end) {}
+  ObsSpaceBase(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
 
   virtual ~ObsSpaceBase() {}
 
@@ -40,10 +39,19 @@ class ObsSpaceBase : public util::Printable,
 /// Pure virtual methods
   virtual void generateDistribution(const eckit::Configuration &) = 0;
 
+ protected:
+  int64_t getSeed() const {return seed_;}
+
  private:
+  static int instances_;
+
   const util::DateTime winbgn_;
   const util::DateTime winend_;
+  int64_t seed_;
+  const int instance_;
 };
+
+// -----------------------------------------------------------------------------
 
 }  // namespace oops
 

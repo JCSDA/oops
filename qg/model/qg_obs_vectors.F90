@@ -20,6 +20,21 @@ public :: obs_vect, obsvec_setup
 public :: qg_obs_vect_registry
 
 ! ------------------------------------------------------------------------------
+interface
+subroutine qg_obsdb_random_c(odb, nn, zz) bind(C, name='qg_obsdb_random_f')
+use, intrinsic :: iso_c_binding
+implicit none
+type(c_ptr), intent(in) :: odb
+integer(c_int), intent(in) :: nn
+real(kind=c_double), intent(inout) :: zz
+! The declaration:
+! real(kind=c_double), intent(inout) :: zz(:,:)
+! would not work because then fortran passes an array descriptor
+! (somebody could pass a non-contiguous array using array syntax)
+! instead of the address of the first element of the array. YT
+end subroutine qg_obsdb_random_c
+end interface
+! ------------------------------------------------------------------------------
 
 !> Fortran derived type to represent an observation vector
 type obs_vect
@@ -213,13 +228,16 @@ self%values(:,:)=1.0_kind_real/self%values(:,:)
 
 end subroutine c_qg_obsvec_invert
 ! ------------------------------------------------------------------------------
-subroutine c_qg_obsvec_random(c_key_self) bind(c,name='qg_obsvec_random_f90')
+subroutine c_qg_obsvec_random(c_odb, c_self) bind(c,name='qg_obsvec_random_f90')
 implicit none
-integer(c_int), intent(in) :: c_key_self
+type(c_ptr), intent(in) :: c_odb
+integer(c_int), intent(in) :: c_self
 type(obs_vect), pointer :: self
+integer(c_int) :: nval
 
-call qg_obs_vect_registry%get(c_key_self,self)
-call random_vector(self%values)
+call qg_obs_vect_registry%get(c_self, self)
+nval = self%nobs*self%ncol
+call qg_obsdb_random_c(c_odb, nval, self%values(1,1))
 
 end subroutine c_qg_obsvec_random
 ! ------------------------------------------------------------------------------

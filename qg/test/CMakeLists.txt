@@ -13,6 +13,7 @@ list( APPEND qg_test_input
   testinput/4dvar.drpcglmp.yaml
   testinput/4dvar.drpfom.yaml
   testinput/4dvar.drplanczos.yaml
+  testinput/4dvar.eda.pertobs.yaml
   testinput/4dvar.ipcg.yaml
   testinput/4dvar.obsbias.yaml
   testinput/4dvar.rpcg.yaml
@@ -529,3 +530,10 @@ ecbuild_add_test( TARGET test_qg_dfi
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_dfi.x testinput/dfi.yaml"
                        testoutput/dfi.test
                   DEPENDS qg_dfi.x )
+
+ecbuild_add_test( TARGET test_qg_4dvar_eda
+                  MPI 4
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_eda.x
+                  ARGS testinput/4dvar.eda.pertobs.yaml
+                  DEPENDS qg_eda.x )
+

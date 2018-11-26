@@ -87,7 +87,7 @@ void ObsVecQG::invert() {
 }
 // -----------------------------------------------------------------------------
 void ObsVecQG::random() {
-  qg_obsvec_random_f90(keyOvec_);
+  qg_obsvec_random_f90(&obsdb_, keyOvec_);
 }
 // -----------------------------------------------------------------------------
 double ObsVecQG::dot_product_with(const ObsVecQG & other) const {

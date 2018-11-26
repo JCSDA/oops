@@ -15,6 +15,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <random>
 #include <string>
 #include <utility>
 #include <vector>
@@ -154,6 +155,14 @@ void ObsTable::generateDistribution(const eckit::Configuration & config) {
   this->putdb("ObsError", obserr);
 
   oops::Log::trace() << "ObsTable::generateDistribution done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsTable::random(std::vector<double> & data) const {
+  static std::mt19937 generator(getSeed());
+  static std::normal_distribution<double> distribution(0.0, 1.0);
+  for (size_t jj = 0; jj < data.size(); ++jj) data[jj] = distribution(generator);
 }
 
 // -----------------------------------------------------------------------------

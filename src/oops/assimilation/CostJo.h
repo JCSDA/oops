@@ -137,7 +137,7 @@ template<typename MODEL>
 CostJo<MODEL>::CostJo(const eckit::Configuration & joConf,
                       const util::DateTime & winbgn, const util::DateTime & winend,
                       const util::Duration & tslot, const bool subwindows)
-  : obsconf_(joConf), obspace_(joConf, winbgn, winend),
+  : obsconf_(joConf), obspace_(obsconf_, winbgn, winend),
     hop_(obspace_, joConf), yobs_(obspace_, hop_), Rmat_(obsconf_, obspace_, hop_),
     gradFG_(), pobs_(), tslot_(tslot),
     pobstlad_(), subwindows_(subwindows)
@@ -145,6 +145,14 @@ CostJo<MODEL>::CostJo(const eckit::Configuration & joConf,
   Log::trace() << "CostJo::CostJo start" << std::endl;
   yobs_.read("ObsValue");
   Log::trace() << "CostJo::CostJo done" << std::endl;
+
+// Perturb observations according to obs error statistics
+  if (obsconf_.getBool("ObsPert", false)) {
+    Departures_ ypert_(obspace_, hop_);
+    Rmat_.randomize(ypert_);
+    yobs_ += ypert_;
+    Log::info() << "Perturbed observations: " << yobs_ << std::endl;
+  }
 }
 
 // -----------------------------------------------------------------------------

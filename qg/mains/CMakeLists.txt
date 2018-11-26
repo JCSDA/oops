@@ -47,3 +47,8 @@ ecbuild_add_executable( TARGET  qg_staticbinit.x
                         SOURCES qgStaticBInit.cc
                         LIBS    qg
                       )
+
+ecbuild_add_executable( TARGET  qg_eda.x
+                        SOURCES qgEDA.cc
+                        LIBS    qg
+                      )

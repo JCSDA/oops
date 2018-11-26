@@ -11,7 +11,6 @@
 #include "lorenz95/ObsVec1D.h"
 
 #include <math.h>
-#include <random>
 
 #include <boost/foreach.hpp>
 
@@ -89,9 +88,7 @@ void ObsVec1D::axpy(const double & zz, const ObsVec1D & rhs) {
 }
 // -----------------------------------------------------------------------------
 void ObsVec1D::random() {
-  static std::mt19937 generator(2);
-  static std::normal_distribution<double> distribution(0.0, 1.0);
-  for (unsigned int jj = 0; jj < data_.size(); ++jj) data_[jj] = distribution(generator);
+  obsdb_.random(data_);
 }
 // -----------------------------------------------------------------------------
 double ObsVec1D::dot_product_with(const ObsVec1D & other) const {

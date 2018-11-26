@@ -53,6 +53,8 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
     return new LocationsQG(key_locs);
   }
 
+  void random(const int &, double *) const;
+
   void generateDistribution(const eckit::Configuration & conf) {
     helper_->generateDistribution(conf, obsname_, winbgn_, winend_, nobs_);
   }

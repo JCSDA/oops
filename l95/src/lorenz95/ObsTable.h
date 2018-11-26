@@ -51,6 +51,7 @@ class ObsTable : public oops::ObsSpaceBase,
   LocsL95 * locations(const util::DateTime & t1, const util::DateTime & t2) const;
   std::vector<int> timeSelect(const util::DateTime &, const util::DateTime &) const;
   void generateDistribution(const eckit::Configuration &);
+  void random(std::vector<double> &) const;
   void printJo(const ObsVec1D &, const ObsVec1D &);
   unsigned int nobs() const {return times_.size();}
 

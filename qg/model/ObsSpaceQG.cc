@@ -11,6 +11,7 @@
 #include "model/ObsSpaceQG.h"
 
 #include <map>
+#include <random>
 #include <string>
 
 #include "eckit/config/Configuration.h"
@@ -78,6 +79,14 @@ ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config,
   if (obsname_ == "WSpeed") nvin_ = 2;
   if (obsname_ == "Wind") nvin_ = 2;
   ASSERT(nvin_ > 0);
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsSpaceQG::random(const int & nn, double * xx) const {
+  static std::mt19937 generator(getSeed());
+  static std::normal_distribution<double> distribution(0.0, 1.0);
+  for (int jj = 0; jj < nn; ++jj) xx[jj] = distribution(generator);
 }
 
 // -----------------------------------------------------------------------------
