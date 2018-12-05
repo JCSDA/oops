@@ -92,12 +92,6 @@ if (nam%new_lct.or.nam%var_diag.or.nam%local_diag.or.nam%displ_diag) then
 end if
 
 if (nam%displ_diag) then
-   ! Compute MPI distribution, halo D
-   write(mpl%info,'(a)') '-------------------------------------------------------------------'
-   write(mpl%info,'(a)') '--- Compute MPI distribution, halo D'
-   call flush(mpl%info)
-   call hdiag%samp%compute_mpi_d(mpl,nam,geom)
-
    ! Compute displacement diagnostic
    write(mpl%info,'(a)') '-------------------------------------------------------------------'
    write(mpl%info,'(a)') '--- Compute displacement diagnostic'

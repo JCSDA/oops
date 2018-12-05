@@ -59,6 +59,7 @@ contains
    procedure :: get_cv_size => bump_get_cv_size
    procedure :: apply_nicas_sqrt => bump_apply_nicas_sqrt
    procedure :: apply_nicas_sqrt_ad => bump_apply_nicas_sqrt_ad
+   procedure :: randomize => bump_randomize
    procedure :: apply_obsop => bump_apply_obsop
    procedure :: apply_obsop_ad => bump_apply_obsop_ad
    procedure :: get_parameter => bump_get_parameter
@@ -186,6 +187,7 @@ end if
 if ((bump%nam%ens1_ne>0).or.(bump%nam%ens2_ne>0)) then
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
    write(bump%mpl%info,'(a)') '--- Add members to BUMP ensembles'
+   call flush(bump%mpl%info)
 end if
 
 end subroutine bump_setup_online
@@ -258,6 +260,14 @@ write(bump%mpl%info,'(a)') '----------------------------------------------------
 write(bump%mpl%info,'(a)') '--- Finalize ensemble 2'
 call flush(bump%mpl%info)
 call bump%ens2%remove_mean
+
+if (bump%nam%new_cortrack) then
+   ! Run correlation tracker
+   write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   write(bump%mpl%info,'(a)') '--- Run correlation tracker'
+   call flush(bump%mpl%info)
+   call bump%ens1%cortrack(bump%mpl,bump%nam,bump%geom,bump%io)
+end if
 
 if (bump%nam%new_vbal) then
    ! Reseed random number generator
@@ -787,6 +797,43 @@ else
 end if
 
 end subroutine bump_apply_nicas_sqrt_ad
+
+!----------------------------------------------------------------------
+! Subroutine: bump_randomize
+! Purpose: NICAS randomization
+!----------------------------------------------------------------------
+subroutine bump_randomize(bump,fld_mga)
+
+implicit none
+
+! Passed variables
+class(bump_type),intent(inout) :: bump                                                        ! BUMP
+real(kind_real),intent(out) :: fld_mga(bump%geom%nmga,bump%geom%nl0,bump%nam%nv,bump%nam%nts) ! Field
+
+! Local variable
+integer :: its,iv
+real(kind_real) :: fld_c0a(bump%geom%nc0a,bump%geom%nl0,bump%nam%nv,bump%nam%nts)
+type(cv_type) :: cv
+
+! Generate random control vector
+call bump%nicas%random_cv(bump%rng,bump%bpar,cv)
+
+if (bump%geom%nc0==bump%geom%nmg) then
+   ! Apply NICAS square-root
+   call bump%nicas%apply_sqrt(bump%mpl,bump%nam,bump%geom,bump%bpar,cv,fld_mga)
+else
+   ! Apply NICAS square-root
+   call bump%nicas%apply_sqrt(bump%mpl,bump%nam,bump%geom,bump%bpar,cv,fld_c0a)
+
+   ! Subset Sc0 to model grid
+   do its=1,bump%nam%nts
+      do iv=1,bump%nam%nv
+         call bump%geom%copy_c0a_to_mga(bump%mpl,fld_c0a(:,:,iv,its),fld_mga(:,:,iv,its))
+      end do
+   end do
+end if
+
+end subroutine bump_randomize
 
 !----------------------------------------------------------------------
 ! Subroutine: bump_apply_obsop

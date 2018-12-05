@@ -316,8 +316,8 @@ if (nam%field_io) then
       end if
    end if
 
-   ! Regridded field output
-   if (nam%grid_output) call io%grid_write(mpl,nam,geom,filename,trim(varname)//'_regridded',fld)
+   ! Gridded field output
+   if (nam%grid_output) call io%grid_write(mpl,nam,geom,filename,trim(varname)//'_gridded',fld)
 else
    ! No field I/O
    call mpl%warning('field/variable not written: '//trim(filename)//'/'//trim(varname))
@@ -327,7 +327,7 @@ end subroutine io_fld_write
 
 !----------------------------------------------------------------------
 ! Subroutine: io_grid_init
-! Purpose: initialize fields regridding
+! Purpose: initialize fields gridding
 !----------------------------------------------------------------------
 subroutine io_grid_init(io,mpl,rng,nam,geom)
 

@@ -311,8 +311,8 @@ implicit none
 
 ! Passed variables
 class(nicas_blk_type),intent(inout) :: nicas_blk ! NICAS data block
-type(nam_type),target,intent(in) :: nam          ! Namelist
-type(geom_type),target,intent(in) :: geom        ! Geometry
+type(nam_type),intent(in) :: nam                 ! Namelist
+type(geom_type),intent(in) :: geom               ! Geometry
 
 ! Local variables
 integer :: il0,il1,its,isbb
@@ -3420,8 +3420,8 @@ implicit none
 ! Passed variables
 class(nicas_blk_type),intent(in) :: nicas_blk                           ! NICAS data block
 type(mpl_type),intent(in) :: mpl                                        ! MPI data
-type(nam_type),target,intent(in) :: nam                                 ! Namelist
-type(geom_type),target,intent(in) :: geom                               ! Geometry
+type(nam_type),intent(in) :: nam                                        ! Namelist
+type(geom_type),intent(in) :: geom                                      ! Geometry
 real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) ! Field
 
 ! Local variables
@@ -3455,8 +3455,8 @@ implicit none
 ! Passed variables
 class(nicas_blk_type),intent(in) :: nicas_blk                           ! NICAS data block
 type(mpl_type),intent(in) :: mpl                                        ! MPI data
-type(nam_type),target,intent(in) :: nam                                 ! Namelist
-type(geom_type),target,intent(in) :: geom                               ! Geometry
+type(nam_type),intent(in) :: nam                                        ! Namelist
+type(geom_type),intent(in) :: geom                                      ! Geometry
 real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) ! Field
 
 ! Local variables
@@ -3490,8 +3490,8 @@ implicit none
 ! Passed variables
 class(nicas_blk_type),intent(in) :: nicas_blk                           ! NICAS data block
 type(mpl_type),intent(in) :: mpl                                        ! MPI data
-type(nam_type),target,intent(in) :: nam                                 ! Namelist
-type(geom_type),target,intent(in) :: geom                               ! Geometry
+type(nam_type),intent(in) :: nam                                        ! Namelist
+type(geom_type),intent(in) :: geom                                      ! Geometry
 real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) ! Field
 
 ! Local variables

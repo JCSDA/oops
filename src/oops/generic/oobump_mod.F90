@@ -25,7 +25,7 @@ private
 public oobump_type, create_oobump, delete_oobump, add_oobump_member, &
      & multiply_oobump_vbal, multiply_oobump_vbal_inv, multiply_oobump_vbal_ad, multiply_oobump_vbal_inv_ad, &
      & multiply_oobump_nicas, get_oobump_cv_size, multiply_oobump_nicas_sqrt, multiply_oobump_nicas_sqrt_ad, &
-     & run_oobump_drivers, bump_read_conf
+     & randomize_oobump_nicas, run_oobump_drivers, bump_read_conf
 
 ! ------------------------------------------------------------------------------
 
@@ -297,6 +297,27 @@ call unstructured_grid_registry%get(idx, ug)
 call multiply_oobump_nicas_sqrt_ad(self, ug, cv)
 
 end subroutine multiply_oobump_nicas_sqrt_ad_c
+
+! ------------------------------------------------------------------------------
+
+subroutine randomize_oobump_nicas_c(key, idx) bind(c, name='randomize_oobump_nicas_f90')
+implicit none
+integer(c_int), intent(in) :: key
+integer(c_int), intent(in) :: idx
+
+type(oobump_type), pointer :: self
+type(unstructured_grid), pointer :: ug
+
+! Get BUMP
+call oobump_registry%get(key, self)
+
+! Get unstructured grid
+call unstructured_grid_registry%get(idx, ug)
+
+! Multiply
+call randomize_oobump_nicas(self, ug)
+
+end subroutine randomize_oobump_nicas_c
 
 ! ------------------------------------------------------------------------------
 
@@ -753,6 +774,21 @@ do igrid=1,self%ngrid
 end do
 
 end subroutine multiply_oobump_nicas_sqrt_ad
+
+!-------------------------------------------------------------------------------
+
+subroutine randomize_oobump_nicas(self,ug)
+implicit none
+type(oobump_type), intent(inout) :: self
+type(unstructured_grid), intent(out) :: ug
+integer :: igrid
+
+! Randomize NICAS
+do igrid=1,self%ngrid
+   call self%bump(igrid)%randomize(ug%grid(igrid)%fld)
+end do
+
+end subroutine randomize_oobump_nicas
 
 !-------------------------------------------------------------------------------
 

@@ -19,7 +19,7 @@ use type_mpl, only: mpl_type
 implicit none
 
 integer,parameter :: nvmax = 20     ! Maximum number of variables
-integer,parameter :: ntsmax = 20    ! Maximum number of time slots
+integer,parameter :: ntsmax = 99    ! Maximum number of time slots
 integer,parameter :: nlmax = 200    ! Maximum number of levels
 integer,parameter :: nc3max = 1000  ! Maximum number of classes
 integer,parameter :: nscalesmax = 5 ! Maximum number of variables
@@ -37,6 +37,7 @@ type nam_type
    ! driver_param
    character(len=1024) :: method                    ! Localization/hybridization to compute ('cor', 'loc_norm', 'loc', 'hyb-avg', 'hyb-rnd' or 'dual-ens')
    character(len=1024) :: strategy                  ! Localization strategy ('diag_all', 'common', 'common_univariate', 'common_weighted', 'specific_univariate' or 'specific_multivariate')
+   logical :: new_cortrack                          ! New correlation tracker
    logical :: new_vbal                              ! Compute new vertical balance operator
    logical :: load_vbal                             ! Load existing vertical balance operator
    logical :: new_hdiag                             ! Compute new HDIAG diagnostics
@@ -194,6 +195,7 @@ nam%default_seed = .false.
 ! driver_param default
 nam%method = ''
 nam%strategy = ''
+nam%new_cortrack = .false.
 nam%new_vbal = .false.
 nam%load_vbal = .false.
 nam%new_hdiag = .false.
@@ -343,7 +345,7 @@ integer :: nl,levs(nlmax),nv,nts,timeslot(ntsmax),ens1_ne,ens1_ne_offset,ens1_ns
 integer :: nc1,nc2,ntry,nrep,nc3,nl0r,ne,var_niter,displ_niter,lct_nscales,mpicom,advmode,ndir,levdir(ndirmax),ivdir(ndirmax)
 integer :: itsdir(ndirmax),nobs,nldwh,il_ldwh(nlmax*nc3max),ic_ldwh(nlmax*nc3max),nldwv
 logical :: colorlog,default_seed
-logical :: new_vbal,load_vbal,new_hdiag,new_lct,load_cmat,new_nicas,load_nicas,new_obsop,load_obsop
+logical :: new_cortrack,new_vbal,load_vbal,new_hdiag,new_lct,load_cmat,new_nicas,load_nicas,new_obsop,load_obsop
 logical :: check_vbal,check_adjoints,check_pos_def,check_sqrt,check_dirac,check_randomization,check_consistency,check_optimality
 logical :: check_obsop,logpres,sam_write,sam_read,mask_check
 logical :: vbal_block(nvmax*(nvmax-1)/2),var_diag,var_filter,var_full,gau_approx,local_diag,displ_diag,double_fit(0:nvmax)
@@ -356,9 +358,9 @@ character(len=1024),dimension(nvmax) :: varname,addvar2d
 
 ! Namelist blocks
 namelist/general_param/datadir,prefix,model,colorlog,default_seed
-namelist/driver_param/method,strategy,new_vbal,load_vbal,new_hdiag,new_lct,load_cmat,new_nicas,load_nicas,new_obsop,load_obsop, &
-                    & check_vbal,check_adjoints,check_pos_def,check_sqrt,check_dirac,check_randomization,check_consistency, &
-                    & check_optimality,check_obsop
+namelist/driver_param/method,strategy,new_cortrack,new_vbal,load_vbal,new_hdiag,new_lct,load_cmat,new_nicas,load_nicas,new_obsop, &
+                    & load_obsop,check_vbal,check_adjoints,check_pos_def,check_sqrt,check_dirac,check_randomization, &
+                    & check_consistency,check_optimality,check_obsop
 namelist/model_param/nl,levs,logpres,nv,varname,addvar2d,nts,timeslot
 namelist/ens1_param/ens1_ne,ens1_ne_offset,ens1_nsub
 namelist/ens2_param/ens2_ne,ens2_ne_offset,ens2_nsub
@@ -383,6 +385,7 @@ if (mpl%main) then
    ! driver_param default
    method = ''
    strategy = ''
+   new_cortrack = .false.
    new_vbal = .false.
    load_vbal = .false.
    new_hdiag = .false.
@@ -523,6 +526,7 @@ if (mpl%main) then
    read(lunit,nml=driver_param)
    nam%method = method
    nam%strategy = strategy
+   nam%new_cortrack = new_cortrack
    nam%new_vbal = new_vbal
    nam%load_vbal = load_vbal
    nam%new_hdiag = new_hdiag
@@ -687,6 +691,7 @@ call mpl%f_comm%broadcast(nam%default_seed,mpl%ioproc-1)
 ! driver_param
 call mpl%f_comm%broadcast(nam%method,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%strategy,mpl%ioproc-1)
+call mpl%f_comm%broadcast(nam%new_cortrack,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%new_vbal,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%load_vbal,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%new_hdiag,mpl%ioproc-1)
@@ -972,7 +977,7 @@ if (nam%new_vbal.or.nam%load_vbal.or.nam%new_hdiag.or.nam%new_lct.or.nam%load_cm
 end if
 
 ! Check ens1_param
-if (nam%new_vbal.or.nam%new_hdiag.or.nam%new_lct) then
+if (nam%new_cortrack.or.nam%new_vbal.or.nam%new_hdiag.or.nam%new_lct) then
    if (nam%ens1_ne_offset<0) call mpl%abort('ens1_ne_offset should be non-negative')
    if (nam%ens1_nsub<1) call mpl%abort('ens1_nsub should be positive')
    if (mod(nam%ens1_ne,nam%ens1_nsub)/=0) call mpl%abort('ens1_nsub should be a divider of ens1_ne')
@@ -1216,6 +1221,7 @@ call put_att(mpl,ncid,'default_seed',nam%default_seed)
 ! driver_param
 call put_att(mpl,ncid,'method',trim(nam%method))
 call put_att(mpl,ncid,'strategy',trim(nam%strategy))
+call put_att(mpl,ncid,'new_cortrack',nam%new_cortrack)
 call put_att(mpl,ncid,'new_vbal',nam%new_vbal)
 call put_att(mpl,ncid,'load_vbal',nam%load_vbal)
 call put_att(mpl,ncid,'new_hdiag',nam%new_hdiag)

@@ -11,6 +11,7 @@
 module tools_stripack
 
 use tools_kinds, only: kind_real
+use tools_missing, only: msr,isnotmsr
 use tools_repro, only: eq,inf,sup,indist
 use type_mpl, only: mpl_type
 
@@ -3181,12 +3182,18 @@ subroutine trans ( n, rlat, rlon, x, y, z )
   nn = n
 
   do i = 1, nn
-    phi = rlat(i)
-    theta = rlon(i)
-    cosphi = cos ( phi )
-    x(i) = cosphi * cos ( theta )
-    y(i) = cosphi * sin ( theta )
-    z(i) = sin ( phi )
+    if (isnotmsr(rlat(i)).and.isnotmsr(rlon(i))) then
+       phi = rlat(i)
+       theta = rlon(i)
+       cosphi = cos ( phi )
+       x(i) = cosphi * cos ( theta )
+       y(i) = cosphi * sin ( theta )
+       z(i) = sin ( phi )
+    else
+       call msr(x(i))
+       call msr(y(i))
+       call msr(z(i))
+    end if
   end do
 
   return

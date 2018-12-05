@@ -56,7 +56,6 @@ contains
    procedure :: apply_sqrt_ad => nicas_apply_sqrt_ad
    procedure :: randomize => nicas_randomize
    procedure :: apply_bens => nicas_apply_bens
-   procedure :: apply_bens_noloc => nicas_apply_bens_noloc
    procedure :: test_adjoint => nicas_test_adjoint
    procedure :: test_sqrt => nicas_test_sqrt
    procedure :: test_dirac => nicas_test_dirac
@@ -756,9 +755,9 @@ implicit none
 ! Passed variables
 class(nicas_type),intent(in) :: nicas                                   ! NICAS data
 type(mpl_type),intent(in) :: mpl                                        ! MPI data
-type(nam_type),target,intent(in) :: nam                                 ! Namelist
-type(geom_type),target,intent(in) :: geom                               ! Geometry
-type(bpar_type),target,intent(in) :: bpar                               ! Block parameters
+type(nam_type),intent(in) :: nam                                        ! Namelist
+type(geom_type),intent(in) :: geom                                      ! Geometry
+type(bpar_type),intent(in) :: bpar                                      ! Block parameters
 real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) ! Field
 
 ! Local variable
@@ -1011,9 +1010,9 @@ implicit none
 ! Passed variables
 class(nicas_type),intent(in) :: nicas                                   ! NICAS data
 type(mpl_type),intent(in) :: mpl                                        ! MPI data
-type(nam_type),target,intent(in) :: nam                                 ! Namelist
-type(geom_type),target,intent(in) :: geom                               ! Geometry
-type(bpar_type),target,intent(in) :: bpar                               ! Block parameters
+type(nam_type),intent(in) :: nam                                        ! Namelist
+type(geom_type),intent(in) :: geom                                      ! Geometry
+type(bpar_type),intent(in) :: bpar                                      ! Block parameters
 real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) ! Field
 
 ! Local variable
@@ -1053,9 +1052,9 @@ implicit none
 ! Passed variables
 class(nicas_type),intent(in) :: nicas                                 ! NICAS data
 type(mpl_type),intent(in) :: mpl                                      ! MPI data
-type(nam_type),target,intent(in) :: nam                               ! Namelist
-type(geom_type),target,intent(in) :: geom                             ! Geometry
-type(bpar_type),target,intent(in) :: bpar                             ! Block parameters
+type(nam_type),intent(in) :: nam                                      ! Namelist
+type(geom_type),intent(in) :: geom                                    ! Geometry
+type(bpar_type),intent(in) :: bpar                                    ! Block parameters
 type(cv_type),intent(in) :: cv                                        ! Control variable
 real(kind_real),intent(out) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) ! Field
 
@@ -1254,9 +1253,9 @@ implicit none
 ! Passed variables
 class(nicas_type),intent(in) :: nicas                                ! NICAS data
 type(mpl_type),intent(in) :: mpl                                     ! MPI data
-type(nam_type),target,intent(in) :: nam                              ! Namelist
-type(geom_type),target,intent(in) :: geom                            ! Geometry
-type(bpar_type),target,intent(in) :: bpar                            ! Block parameters
+type(nam_type),intent(in) :: nam                                     ! Namelist
+type(geom_type),intent(in) :: geom                                   ! Geometry
+type(bpar_type),intent(in) :: bpar                                   ! Block parameters
 real(kind_real),intent(in) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) ! Field
 type(cv_type),intent(out) :: cv                                      ! Control variable
 
@@ -1473,14 +1472,14 @@ subroutine nicas_randomize(nicas,mpl,rng,nam,geom,bpar,ne,ens)
 implicit none
 
 ! Passed variables
-class(nicas_type),intent(in) :: nicas      ! NICAS data
-type(mpl_type),intent(in) :: mpl           ! MPI data
-type(rng_type),intent(inout) :: rng        ! Random number generator
-type(nam_type),target,intent(in) :: nam    ! Namelist
-type(geom_type),target,intent(in) :: geom  ! Geometry
-type(bpar_type),target,intent(in) :: bpar  ! Blocal parameters
-integer,intent(in) :: ne                   ! Number of members
-type(ens_type),intent(out) :: ens          ! Ensemble
+class(nicas_type),intent(in) :: nicas ! NICAS data
+type(mpl_type),intent(in) :: mpl      ! MPI data
+type(rng_type),intent(inout) :: rng   ! Random number generator
+type(nam_type),intent(in) :: nam      ! Namelist
+type(geom_type),intent(in) :: geom    ! Geometry
+type(bpar_type),intent(in) :: bpar    ! Blocal parameters
+integer,intent(in) :: ne              ! Number of members
+type(ens_type),intent(out) :: ens     ! Ensemble
 
 ! Local variable
 integer :: ie,ic0a,il0,its,iv
@@ -1546,9 +1545,9 @@ implicit none
 ! Passed variables
 class(nicas_type),intent(in) :: nicas                                   ! NICAS data
 type(mpl_type),intent(in) :: mpl                                        ! MPI data
-type(nam_type),target,intent(in) :: nam                                 ! Namelist
-type(geom_type),target,intent(in) :: geom                               ! Geometry
-type(bpar_type),target,intent(in) :: bpar                               ! Blocal parameters
+type(nam_type),intent(in) :: nam                                        ! Namelist
+type(geom_type),intent(in) :: geom                                      ! Geometry
+type(bpar_type),intent(in) :: bpar                                      ! Blocal parameters
 type(ens_type),intent(in) :: ens                                        ! Ensemble
 real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) ! Field
 
@@ -1593,61 +1592,6 @@ end do
 if (nam%advmode==-1) call nicas%blk(bpar%nbe)%apply_adv(mpl,nam,geom,fld)
 
 end subroutine nicas_apply_bens
-
-!----------------------------------------------------------------------
-! Subroutine: nicas_apply_bens_noloc
-! Purpose: apply ensemble covariance, without localization
-!----------------------------------------------------------------------
-subroutine nicas_apply_bens_noloc(nicas,mpl,nam,geom,ens,fld)
-
-implicit none
-
-! Passed variables
-class(nicas_type),intent(in) :: nicas                                   ! NICAS data
-type(mpl_type),intent(in) :: mpl                                        ! MPI data
-type(nam_type),target,intent(in) :: nam                                 ! Namelist
-type(geom_type),target,intent(in) :: geom                               ! Geometry
-type(ens_type),intent(in) :: ens                                        ! Ensemble
-real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) ! Field
-
-! Local variable
-integer :: ie,ic0a,il0,iv,its
-real(kind_real) :: alpha,norm
-real(kind_real) :: fld_copy(geom%nc0a,geom%nl0,nam%nv,nam%nts)
-real(kind_real) :: pert(geom%nc0a,geom%nl0,nam%nv,nam%nts)
-character(len=1024) :: dum
-
-! Initialization
-fld_copy = fld
-
-! Apply localized ensemble covariance formula
-fld = 0.0
-norm = sqrt(real(nam%ens1_ne-1,kind_real))
-do ie=1,nam%ens1_ne
-   ! Compute perturbation
-   !$omp parallel do schedule(static) private(its,iv,il0,ic0a)
-   do its=1,nam%nts
-      do iv=1,nam%nv
-         do il0=1,geom%nl0
-            do ic0a=1,geom%nc0a
-               if (geom%mask_c0a(ic0a,il0)) pert(ic0a,il0,iv,its) = ens%fld(ic0a,il0,iv,its,ie)/norm
-            end do
-         end do
-      end do
-   end do
-   !$omp end parallel do
-
-   ! Dot product
-   call mpl%dot_prod(pert,fld_copy,alpha)
-
-   ! Schur product
-   fld = fld+alpha*pert
-end do
-
-! To avoid compilation warnings
-dum = nicas%prefix
-
-end subroutine nicas_apply_bens_noloc
 
 !----------------------------------------------------------------------
 ! Subroutine: nicas_test_adjoint
@@ -1740,15 +1684,15 @@ subroutine nicas_test_sqrt(nicas,mpl,rng,nam,geom,bpar,io,cmat,ens)
 implicit none
 
 ! Passed variables
-class(nicas_type),intent(in) :: nicas      ! NICAS data
-type(mpl_type),intent(inout) :: mpl        ! MPI data
-type(rng_type),intent(inout) :: rng        ! Random number generator
-type(nam_type),intent(inout),target :: nam ! Namelist
-type(geom_type),intent(in),target :: geom  ! Geometry
-type(bpar_type),intent(in) :: bpar         ! Block parameters
-type(io_type),intent(in) :: io             ! I/O
-type(cmat_type),intent(in) :: cmat         ! C matrix data
-type(ens_type),intent(in) :: ens           ! Ensemble
+class(nicas_type),intent(in) :: nicas ! NICAS data
+type(mpl_type),intent(inout) :: mpl   ! MPI data
+type(rng_type),intent(inout) :: rng   ! Random number generator
+type(nam_type),intent(inout) :: nam   ! Namelist
+type(geom_type),intent(in) :: geom    ! Geometry
+type(bpar_type),intent(in) :: bpar    ! Block parameters
+type(io_type),intent(in) :: io        ! I/O
+type(cmat_type),intent(in) :: cmat    ! C matrix data
+type(ens_type),intent(in) :: ens      ! Ensemble
 
 ! Local variables
 integer :: ib,iv
@@ -1978,7 +1922,7 @@ do ifac=1,nfac
    do itest=1,ntest
       ! Test NICAS
       fld = fld_save(:,:,:,:,itest)
-      call nicas%apply_bens_noloc(mpl,nam,geom,ens,fld)
+      call ens%apply_bens(mpl,nam,geom,fld)
 
       ! RMSE
       mse(itest,ifac) = sum((fld-fld_ref(:,:,:,:,itest))**2)

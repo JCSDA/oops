@@ -95,8 +95,8 @@ implicit none
 
 ! Passed variables
 class(cmat_type),intent(inout) :: cmat    ! C matrix
-type(nam_type),target,intent(in) :: nam   ! Namelist
-type(geom_type),target,intent(in) :: geom ! Geometry
+type(nam_type),intent(in) :: nam          ! Namelist
+type(geom_type),intent(in) :: geom        ! Geometry
 type(bpar_type),intent(in) :: bpar        ! Block parameters
 
 ! Local variables
@@ -151,8 +151,8 @@ implicit none
 
 ! Passed variables
 class(cmat_type),intent(in) :: cmat       ! C matrix
-type(nam_type),target,intent(in) :: nam   ! Namelist
-type(geom_type),target,intent(in) :: geom ! Geometry
+type(nam_type),intent(in) :: nam          ! Namelist
+type(geom_type),intent(in) :: geom        ! Geometry
 type(bpar_type),intent(in) :: bpar        ! Block parameters
 
 ! Local variables
@@ -751,8 +751,8 @@ implicit none
 
 ! Passed variables
 class(cmat_type),intent(inout) :: cmat    ! C matrix
-type(nam_type),target,intent(in) :: nam   ! Namelist
-type(geom_type),target,intent(in) :: geom ! Geometry
+type(nam_type),intent(in) :: nam          ! Namelist
+type(geom_type),intent(in) :: geom        ! Geometry
 type(bpar_type),intent(in) :: bpar        ! Block parameters
 
 ! Local variables

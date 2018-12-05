@@ -111,7 +111,6 @@ contains
    procedure :: setup_online => geom_setup_online
    procedure :: find_sc0 => geom_find_sc0
    procedure :: init => geom_init
-   procedure :: define_mask => geom_define_mask
    procedure :: compute_area => geom_compute_area
    procedure :: define_dirac => geom_define_dirac
    procedure :: define_distribution => geom_define_distribution
@@ -658,9 +657,6 @@ do ic0=1,geom%nc0
    call lonlatmod(geom%lon(ic0),geom%lat(ic0))
 end do
 
-! Define mask
-call geom%define_mask(mpl,nam)
-
 ! Averaged vertical unit
 do il0=1,geom%nl0
    if (geom%mask_ver_c0(il0)) then
@@ -703,7 +699,7 @@ do jc3=1,nam%nc3
 end do
 
 ! Define dirac points
-if (nam%ndir>0) call geom%define_dirac(nam)
+if (nam%check_dirac.and.(nam%ndir>0)) call geom%define_dirac(mpl,nam)
 
 ! Print summary
 write(mpl%info,'(a10,a,f7.1,a,f7.1)') '','Min. / max. longitudes:',minval(geom%lon)*rad2deg,' / ',maxval(geom%lon)*rad2deg
@@ -720,75 +716,6 @@ end do
 call flush(mpl%info)
 
 end subroutine geom_init
-
-!----------------------------------------------------------------------
-! Subroutine: geom_define_mask
-! Purpose: define mask
-!----------------------------------------------------------------------
-subroutine geom_define_mask(geom,mpl,nam)
-
-implicit none
-
-! Passed variables
-class(geom_type),intent(inout) :: geom ! Geometry
-type(mpl_type),intent(in) :: mpl       ! MPI data
-type(nam_type),intent(in) :: nam       ! Namelist
-
-! Local variables
-integer :: latmin,latmax,il0,ic0,ildw
-integer :: ncid,nlon_id,nlon_test,nlat_id,nlat_test,mask_id
-real(kind_real) :: dist
-real(kind_real),allocatable :: hydmask(:,:)
-logical :: mask_test
-character(len=3) :: il0char
-character(len=1024) :: subr = 'geom_define_mask'
-
-! Mask restriction
-if (nam%mask_type(1:3)=='lat') then
-   ! Latitude mask
-   read(nam%mask_type(4:6),'(i3)') latmin
-   read(nam%mask_type(7:9),'(i3)') latmax
-   if (latmin>=latmax) call mpl%abort('latmin should be lower than latmax')
-   do il0=1,geom%nl0
-      geom%mask_c0(:,il0) = geom%mask_c0(:,il0).and.(geom%lat>=real(latmin,kind_real)*deg2rad) &
-                          & .and.(geom%lat<=real(latmax,kind_real)*deg2rad)
-   end do
-elseif (trim(nam%mask_type)=='hyd') then
-   ! Read from hydrometeors mask file
-   call mpl%ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(nam%prefix)//'_hyd.nc',nf90_nowrite,ncid))
-   if (trim(nam%model)=='aro') then
-      call mpl%ncerr(subr,nf90_inq_dimid(ncid,'X',nlon_id))
-      call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nlon_id,len=nlon_test))
-      call mpl%ncerr(subr,nf90_inq_dimid(ncid,'Y',nlat_id))
-      call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nlat_id,len=nlat_test))
-      if ((nlon_test/=geom%nlon).or.(nlat_test/=geom%nlat)) call mpl%abort('wrong dimensions in the mask')
-      allocate(hydmask(geom%nlon,geom%nlat))
-      do il0=1,geom%nl0
-         write(il0char,'(i3.3)') nam%levs(il0)
-         call mpl%ncerr(subr,nf90_inq_varid(ncid,'S'//il0char//'MASK',mask_id))
-         call mpl%ncerr(subr,nf90_get_var(ncid,mask_id,hydmask,(/1,1/),(/geom%nlon,geom%nlat/)))
-         geom%mask_c0(:,il0) = geom%mask_c0(:,il0).and.pack(real(hydmask,kind(1.0))>nam%mask_th,mask=.true.)
-      end do
-      deallocate(hydmask)
-      call mpl%ncerr(subr,nf90_close(ncid))
-   end if
-elseif (trim(nam%mask_type)=='ldwv') then
-   ! Compute distance to the vertical diagnostic points
-   do ic0=1,geom%nc0
-      if (geom%mask_hor_c0(ic0)) then
-         mask_test = .false.
-         do ildw=1,nam%nldwv
-            call sphere_dist(nam%lon_ldwv(ildw),nam%lat_ldwv(ildw),geom%lon(ic0),geom%lat(ic0),dist)
-            mask_test = mask_test.or.(dist<1.1*nam%local_rad)
-         end do
-         do il0=1,geom%nl0
-            if (geom%mask_c0(ic0,il0)) geom%mask_c0(ic0,:) = mask_test
-         end do
-      end if
-   end do
-end if
-
-end subroutine geom_define_mask
 
 !----------------------------------------------------------------------
 ! Subroutine: geom_compute_area
@@ -829,12 +756,13 @@ end subroutine geom_compute_area
 ! Subroutine: geom_define_dirac
 ! Purpose: define dirac indices
 !----------------------------------------------------------------------
-subroutine geom_define_dirac(geom,nam)
+subroutine geom_define_dirac(geom,mpl,nam)
 
 implicit none
 
 ! Passed variables
 class(geom_type),intent(inout) :: geom ! Geometry
+type(mpl_type),intent(in) :: mpl       ! MPI data
 type(nam_type),intent(in) :: nam       ! Namelist
 
 ! Local variables
@@ -855,9 +783,11 @@ allocate(geom%itsdir(nam%ndir))
 geom%ndir = 0
 do idir=1,nam%ndir
    ! Find level
+   call msi(il0dir)
    do il0=1,geom%nl0
       if (nam%levs(il0)==nam%levdir(idir)) il0dir = il0
    end do
+   if (ismsi(il0dir)) call mpl%abort('impossible to find the Dirac level')
 
    ! Find nearest neighbor
    call geom%kdtree%find_nearest_neighbors(nam%londir(idir),nam%latdir(idir),1,nn_index,nn_dist)
@@ -1202,8 +1132,6 @@ else
    call geom%com_mg%ext(mpl,geom%nl0,fld_c0a,fld_mga)
 end if
 
-write(mpl%info,*) 'c0a_to_mga',mpl%myproc,maxval(fld_c0a),maxval(fld_mga),sum(fld_c0a),sum(fld_mga)
-
 end subroutine geom_copy_c0a_to_mga
 
 !----------------------------------------------------------------------
@@ -1238,8 +1166,6 @@ else
    ! Reduce model grid to subset Sc0
    call geom%com_mg%red(mpl,geom%nl0,fld_mga_zero,fld_c0a)
 
-write(mpl%info,*) 'mga_to_c0a',mpl%myproc,maxval(fld_mga_zero),maxval(fld_c0a),sum(fld_mga_zero),sum(fld_c0a)
-
    ! Copy non-redundant points
    do il0=1,geom%nl0
       do ic0a=1,geom%nc0a
@@ -1266,8 +1192,6 @@ write(mpl%info,*) 'mga_to_c0a',mpl%myproc,maxval(fld_mga_zero),maxval(fld_c0a),s
       end do
    end do
 end if
-
-write(mpl%info,*) 'mga_to_c0a',mpl%myproc,maxval(fld_mga),maxval(fld_c0a),sum(fld_mga),sum(fld_c0a)
 
 end subroutine geom_copy_mga_to_c0a
 

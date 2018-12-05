@@ -68,8 +68,8 @@ implicit none
 
 ! Passed variables
 class(cmat_blk_type),intent(inout) :: cmat_blk ! C matrix data block
-type(nam_type),target,intent(in) :: nam        ! Namelist
-type(geom_type),target,intent(in) :: geom      ! Geometry
+type(nam_type),intent(in) :: nam               ! Namelist
+type(geom_type),intent(in) :: geom             ! Geometry
 type(bpar_type),intent(in) :: bpar             ! Block parameters
 
 ! Associate

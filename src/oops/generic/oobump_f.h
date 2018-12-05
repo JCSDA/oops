@@ -28,6 +28,7 @@ extern "C" {
   void get_oobump_cv_size_f90(const int &, int &);
   void multiply_oobump_nicas_sqrt_f90(const int &, const double *, const int &);
   void multiply_oobump_nicas_sqrt_ad_f90(const int &, const int &, const double *);
+  void randomize_oobump_nicas_f90(const int &, const int &);
   void get_oobump_param_f90(const int &, const int &, const char *, const int &);
   void set_oobump_param_f90(const int &, const int &, const char *, const int &);
 }

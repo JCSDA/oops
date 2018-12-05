@@ -7,9 +7,13 @@
 !----------------------------------------------------------------------
 module type_ens
 
+use fckit_mpi_module, only: fckit_mpi_sum
+use tools_const, only: rad2deg
+use tools_func, only: sphere_dist
 use tools_kinds, only: kind_real
-use tools_missing, only: msi,msr
+use tools_missing, only: msi,msr,isnotmsi
 use type_geom, only: geom_type
+use type_io, only: io_type
 use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 
@@ -29,9 +33,9 @@ contains
    procedure :: dealloc => ens_dealloc
    procedure :: copy => ens_copy
    procedure :: remove_mean => ens_remove_mean
-   procedure :: ens_from
-   procedure :: ens_from_nemovar
-   generic :: from => ens_from,ens_from_nemovar
+   procedure :: from => ens_from
+   procedure :: apply_bens => ens_apply_bens
+   procedure :: cortrack => ens_cortrack
 end type ens_type
 
 private
@@ -190,61 +194,223 @@ end if
 end subroutine ens_from
 
 !----------------------------------------------------------------------
-! Subroutine: ens_from_nemovar
-! Purpose: copy 2d NEMOVAR ensemble into ensemble data
+! Subroutine: ens_apply_bens
+! Purpose: apply raw ensemble covariance
 !----------------------------------------------------------------------
-subroutine ens_from_nemovar(ens,mpl,nam,geom,nx,ny,nens,ncyc,ens_2d,ens_3d)
+subroutine ens_apply_bens(ens,mpl,nam,geom,fld)
 
 implicit none
 
 ! Passed variables
-class(ens_type),intent(inout) :: ens                                    ! Ensemble
+class(ens_type),intent(in) :: ens                                       ! Ensemble
 type(mpl_type),intent(in) :: mpl                                        ! MPI data
 type(nam_type),intent(in) :: nam                                        ! Namelist
 type(geom_type),intent(in) :: geom                                      ! Geometry
-integer,intent(in) :: nx                                                ! X-axis size
-integer,intent(in) :: ny                                                ! Y-axis size
-integer,intent(in) :: nens                                              ! Ensemble size at each cycle
-integer,intent(in) :: ncyc                                              ! Number of cycles
-real(kind_real),intent(in),optional :: ens_2d(nx,ny,nens,ncyc)          ! Ensemble on model grid, halo A
-real(kind_real),intent(in),optional :: ens_3d(nx,ny,geom%nl0,nens,ncyc) ! Ensemble on model grid, halo A
+real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) ! Field
 
-! Local variables
-integer :: ie,iens,icyc,its,iv,il0
-real(kind_real) :: tmp(geom%nmga)
+! Local variable
+integer :: ie,ic0a,il0,iv,its
+real(kind_real) :: alpha,norm
+real(kind_real) :: fld_copy(geom%nc0a,geom%nl0,nam%nv,nam%nts)
+real(kind_real) :: pert(geom%nc0a,geom%nl0,nam%nv,nam%nts)
 
-! Allocation
-call ens%alloc(nam,geom,nens*ncyc,ncyc)
+! Initialization
+fld_copy = fld
 
-! Copy
-iv = 1
-its = 1
-ie = 1
-do iens=1,nens
-   do icyc=1,ncyc
-      ! Pack and copy
-      if (present(ens_2d)) then
-         il0 = 1
-         tmp = pack(ens_2d(:,:,iens,icyc),.true.)
-         ens%fld(:,il0,iv,its,ie) = tmp(geom%c0a_to_mga)
-      elseif (present(ens_3d)) then
+! Apply localized ensemble covariance formula
+fld = 0.0
+norm = sqrt(real(nam%ens1_ne-1,kind_real))
+do ie=1,nam%ens1_ne
+   ! Compute perturbation
+   !$omp parallel do schedule(static) private(its,iv,il0,ic0a)
+   do its=1,nam%nts
+      do iv=1,nam%nv
          do il0=1,geom%nl0
-            ! Pack and copy
-            tmp = pack(ens_3d(:,:,il0,iens,icyc),.true.)
-            ens%fld(:,il0,iv,its,ie) = tmp(geom%c0a_to_mga)
+            do ic0a=1,geom%nc0a
+               if (geom%mask_c0a(ic0a,il0)) pert(ic0a,il0,iv,its) = ens%fld(ic0a,il0,iv,its,ie)/norm
+            end do
          end do
-      else
-         call mpl%abort('ens_2d or ens_3d should be provided in ens_from_nemovar')
-      end if
-
-      ! Update
-      ie = ie+1
+      end do
    end do
+   !$omp end parallel do
+
+   ! Dot product
+   call mpl%dot_prod(pert,fld_copy,alpha)
+
+   ! Schur product
+   fld = fld+alpha*pert
 end do
 
-! Remove mean
-call ens%remove_mean
+end subroutine ens_apply_bens
 
-end subroutine ens_from_nemovar
+!----------------------------------------------------------------------
+! Subroutine: ens_cortrack
+! Purpose: correlation tracker
+!----------------------------------------------------------------------
+subroutine ens_cortrack(ens,mpl,nam,geom,io)
+
+implicit none
+
+! Passed variables
+class(ens_type),intent(in) :: ens   ! Ensemble
+type(mpl_type),intent(inout) :: mpl ! MPI data
+type(nam_type),intent(in) :: nam    ! Namelist
+type(geom_type),intent(in) :: geom  ! Geometry
+type(io_type),intent(in) :: io      ! I/O
+
+! Local variable
+integer :: ic0a,ic0,jc0a,jc0,ie,its,ind(1)
+integer :: proc_to_ic0a(mpl%nproc),iproc(1)
+real(kind_real) :: dist,proc_to_val(mpl%nproc),lon,lat,val,var_dirac
+real(kind_real) :: u(geom%nc0a,geom%nl0,nam%nts),v(geom%nc0a,geom%nl0,nam%nts),ffsq(geom%nc0a,geom%nl0,nam%nts)
+real(kind_real) :: var(geom%nc0a,geom%nl0,nam%nts),dirac(geom%nc0a,geom%nl0,nam%nts),cor(geom%nc0a,geom%nl0,nam%nv,nam%nts)
+character(len=2) :: timeslotchar
+character(len=1024) :: filename
+
+! File name
+filename = trim(nam%prefix)//'_cortrack'
+
+! Compute variance
+write(mpl%info,'(a7,a)') '','Compute variance'
+call flush(mpl%info)
+var = 0.0
+do ie=1,ens%ne
+   var = var+ens%fld(:,:,1,:,ie)**2
+end do
+var = var/real(ens%ne-ens%nsub,kind_real)
+
+! Compute wind speed squared (variables 2 and 3 should be u and v)
+write(mpl%info,'(a7,a)') '','Compute wind speed'
+call flush(mpl%info)
+u = sum(ens%mean(:,:,2,:,:),dim=4)/real(ens%nsub,kind_real)
+v = sum(ens%mean(:,:,3,:,:),dim=4)/real(ens%nsub,kind_real)
+ffsq = u**2+v**2
+
+! Only North hemisphere
+write(mpl%info,'(a7,a)') '','Only North hemisphere'
+do ic0a=1,geom%nc0a
+   ic0 = geom%c0a_to_c0(ic0a)
+   if (geom%lat(ic0)<0.0) ffsq(ic0a,:,:) = 0.0
+end do
+
+! Write wind
+write(mpl%info,'(a7,a)') '','Write wind'
+call flush(mpl%info)
+do its=1,nam%nts
+   write(timeslotchar,'(i2.2)') nam%timeslot(its)
+   call io%fld_write(mpl,nam,geom,filename,'u_'//timeslotchar,u(:,:,its))
+   call io%fld_write(mpl,nam,geom,filename,'v_'//timeslotchar,v(:,:,its))
+end do
+
+if (.true.) then
+   ! Find local maximum value and index
+   write(mpl%info,'(a7,a)') '','Dirac point based on maximum wind speed'
+   call flush(mpl%info)
+   val = maxval(ffsq(:,1,1))
+   ind = maxloc(ffsq(:,1,1))
+   call mpl%f_comm%allgather(val,proc_to_val)
+   call mpl%f_comm%allgather(ind(1),proc_to_ic0a)
+   iproc = maxloc(proc_to_val)
+else
+   ! Find local minimum value and index
+   write(mpl%info,'(a7,a)') '','Dirac point based on minimum wind speed'
+   call flush(mpl%info)
+   val = minval(ffsq(:,1,1))
+   ind = minloc(ffsq(:,1,1))
+   call mpl%f_comm%allgather(val,proc_to_val)
+   call mpl%f_comm%allgather(ind(1),proc_to_ic0a)
+   iproc = minloc(proc_to_val)
+end if
+
+! Broadcast dirac point
+call msi(ic0a)
+call msi(ic0)
+if (mpl%myproc==iproc(1)) then
+   ic0a = proc_to_ic0a(iproc(1))
+   ic0 = geom%c0a_to_c0(ic0a)
+   lon = geom%lon(ic0)
+   lat = geom%lat(ic0)
+   val = ffsq(ic0a,1,1)
+end if
+call mpl%f_comm%broadcast(lon,iproc(1)-1)
+call mpl%f_comm%broadcast(lat,iproc(1)-1)
+call mpl%f_comm%broadcast(val,iproc(1)-1)
+write(mpl%info,'(a10,a,i2,a,f6.1,a,f6.1,a,f7.1)') '','Timeslot ',nam%timeslot(1),' ~> lon / lat / val: ', &
+ & lon*rad2deg,' / ',lat*rad2deg,' / ',sqrt(val)
+call flush(mpl%info)
+
+! Generate dirac field
+dirac = 0.0
+if (mpl%myproc==iproc(1)) dirac(ic0a,1,1) = 1.0
+
+! Apply raw ensemble covariance
+cor = 0.0
+cor(:,:,1,:) = dirac
+call ens%apply_bens(mpl,nam,geom,cor)
+
+! Normalize
+call mpl%f_comm%allreduce(sum(dirac*var),var_dirac,fckit_mpi_sum())
+cor(:,:,1,:) = cor(:,:,1,:)/sqrt(var*var_dirac)
+
+! Write correlation
+do its=1,nam%nts
+   write(timeslotchar,'(i2.2)') nam%timeslot(its)
+   call io%fld_write(mpl,nam,geom,filename,'cor_'//timeslotchar,cor(:,:,1,its))
+end do
+
+! Correlation tracker
+write(timeslotchar,'(i2.2)') nam%timeslot(1)
+call io%fld_write(mpl,nam,geom,filename,'tracker_'//timeslotchar//'_0',cor(:,:,1,1))
+call io%fld_write(mpl,nam,geom,filename,'tracker_'//timeslotchar//'_1',cor(:,:,1,2))
+do its=2,nam%nts-1
+   ! Locate correlation maximum and index
+   val = 0.0
+   do jc0a=1,geom%nc0a
+      jc0 = geom%c0a_to_c0(jc0a)
+      call sphere_dist(lon,lat,geom%lon(jc0),geom%lat(jc0),dist)
+      if (dist<nam%displ_rad) then
+         if (cor(jc0a,1,1,its)>val) then
+            val = cor(jc0a,1,1,its)
+            ic0a = jc0a
+         end if
+      end if
+   end do
+   call mpl%f_comm%allgather(val,proc_to_val)
+   call mpl%f_comm%allgather(ic0a,proc_to_ic0a)
+   iproc = maxloc(proc_to_val)
+   if (mpl%myproc==iproc(1)) then
+      ic0a = proc_to_ic0a(iproc(1))
+      ic0 = geom%c0a_to_c0(ic0a)
+      lon = geom%lon(ic0)
+      lat = geom%lat(ic0)
+      val = cor(ic0a,1,1,its)
+   end if
+   call mpl%f_comm%broadcast(lon,iproc(1)-1)
+   call mpl%f_comm%broadcast(lat,iproc(1)-1)
+   call mpl%f_comm%broadcast(val,iproc(1)-1)
+   write(mpl%info,'(a10,a,i2,a,f6.1,a,f6.1,a,f6.3)') '','Timeslot ',nam%timeslot(its),' ~> lon / lat / val: ', &
+ & lon*rad2deg,' / ',lat*rad2deg,' / ',val
+   call flush(mpl%info)
+
+   ! Generate dirac field
+   dirac = 0.0
+   if (mpl%myproc==iproc(1)) dirac(ic0a,1,its) = 1.0
+
+   ! Apply raw ensemble covariance
+   cor = 0.0
+   cor(:,:,1,:) = dirac
+   call ens%apply_bens(mpl,nam,geom,cor)
+
+   ! Normalize
+   call mpl%f_comm%allreduce(sum(dirac*var),var_dirac,fckit_mpi_sum())
+   cor(:,:,1,:) = cor(:,:,1,:)/sqrt(var*var_dirac)
+
+   ! Write correlation tracker
+   write(timeslotchar,'(i2.2)') nam%timeslot(its)
+   call io%fld_write(mpl,nam,geom,filename,'tracker_'//timeslotchar//'_0',cor(:,:,1,its))
+   call io%fld_write(mpl,nam,geom,filename,'tracker_'//timeslotchar//'_1',cor(:,:,1,its+1))
+end do
+
+end subroutine ens_cortrack
 
 end module type_ens
