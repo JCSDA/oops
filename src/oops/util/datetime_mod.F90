@@ -17,7 +17,7 @@ use duration_mod
 implicit none
 private
 public datetime, datetime_create, datetime_set, datetime_delete, &
-     & assignment(=), c_f_datetime, datetime_to_string, &
+     & assignment(=), c_f_datetime, f_c_datetime, datetime_to_string, &
      & operator(<), operator(<=), operator(>=), operator(>), &
      & datetime_update, datetime_diff, &
      & datetime_to_ifs, datetime_from_ifs
@@ -125,6 +125,18 @@ type(C_PTR), intent(in)     :: cdt
 type(datetime), intent(out) :: fdt
 fdt%ptr = cdt
 end subroutine c_f_datetime
+
+!-------------------------------------------------------------------------------
+
+!> Convert a Fortran datetime to a c++ DateTime
+
+subroutine f_c_datetime(fdt, cdt)
+implicit none
+type(datetime), intent(in) :: fdt
+type(C_PTR), intent(out)   :: cdt
+cdt = fdt%ptr
+end subroutine f_c_datetime
+
 
 !-------------------------------------------------------------------------------
 
