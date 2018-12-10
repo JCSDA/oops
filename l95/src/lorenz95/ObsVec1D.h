@@ -55,7 +55,7 @@ class ObsVec1D : public util::Printable,
   void random();
   double dot_product_with(const ObsVec1D &) const;
   double rms() const;
-  void applyQC(const std::string &) {}
+  void mask(const ObsVec1D &) {}
 
   unsigned int nobs() const {return data_.size();}
   double & operator() (const unsigned int ii) {return data_[ii];}
@@ -63,7 +63,6 @@ class ObsVec1D : public util::Printable,
 
 // I/O
   void read(const std::string &);
-  bool tryRead(const std::string &);
   void save(const std::string &) const;
 
  private:

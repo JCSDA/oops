@@ -109,12 +109,6 @@ void ObsVec1D::read(const std::string & name) {
   obsdb_.getdb(name, data_);
 }
 // -----------------------------------------------------------------------------
-bool ObsVec1D::tryRead(const std::string & name) {
-  bool found = obsdb_.has(name);
-  if (found) obsdb_.getdb(name, data_);
-  return found;
-}
-// -----------------------------------------------------------------------------
 void ObsVec1D::save(const std::string & name) const {
   obsdb_.putdb(name, data_);
 }

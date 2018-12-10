@@ -50,7 +50,7 @@ class ObsVecQG : public util::Printable,
   void random();
   double dot_product_with(const ObsVecQG &) const;
   double rms() const;
-  void applyQC(const std::string &) {}
+  void mask(const ObsVecQG &) {}
 
   unsigned int nobs() const;
 
@@ -59,7 +59,6 @@ class ObsVecQG : public util::Printable,
 
 // I/O
   void read(const std::string &);
-  bool tryRead(const std::string &);
   void save(const std::string &) const;
 
  private:

@@ -66,11 +66,13 @@ class ObsVector : public util::Printable,
   void random();
   double dot_product_with(const ObsVector &) const;
   double rms() const;
-  unsigned int nobs() const {return data_->nobs();}
+  void mask(const ObsVector &);
 
 // I/O
   void read(const std::string &);
   void save(const std::string &) const;
+
+  unsigned int nobs() const {return data_->nobs();}
 
  private:
   void print(std::ostream &) const;
@@ -245,6 +247,16 @@ void ObsVector<MODEL>::print(std::ostream & os) const {
   os << *data_;
 
   Log::trace() << "ObsVector<MODEL>::print done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename MODEL>
+void ObsVector<MODEL>::mask(const ObsVector & qc) {
+  Log::trace() << "ObsVector<MODEL>::mask starting" << std::endl;
+  util::Timer timer(classname(), "mask");
+
+  data_->mask(qc.data_);
+
+  Log::trace() << "ObsVector<MODEL>::mask done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>

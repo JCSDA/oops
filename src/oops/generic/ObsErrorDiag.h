@@ -61,11 +61,15 @@ class ObsErrorDiag : public ObsErrorBase<MODEL> {
 template<typename MODEL>
 ObsErrorDiag<MODEL>::ObsErrorDiag(const eckit::Configuration & conf, const ObsSpace_ & obsgeom,
                                   const Variables & observed)
-  : ObsErrorBase<MODEL>(obsgeom, observed),
-    stddev_(obsgeom, observed), inverseVariance_(obsgeom, observed),
+  : stddev_(obsgeom, observed), inverseVariance_(obsgeom, observed),
     pert_(conf.getDouble("random_amplitude", 1.0))
 {
-  this->update();
+  stddev_.read("ObsError");
+  stddev_.save("EffectiveError");
+
+  inverseVariance_ = stddev_;
+  inverseVariance_ *= stddev_;
+  inverseVariance_.invert();
   Log::trace() << "ObsErrorDiag:ObsErrorDiag constructed" << std::endl;
 }
 
@@ -81,6 +85,10 @@ ObsErrorDiag<MODEL>::~ObsErrorDiag() {
 template<typename MODEL>
 void ObsErrorDiag<MODEL>::update() {
   stddev_.read("EffectiveError");
+  ObsVector_ qc(stddev_, false);
+  qc.read("EffectiveQC");
+  stddev_.mask(qc);
+  stddev_.save("EffectiveError");
 
   inverseVariance_ = stddev_;
   inverseVariance_ *= stddev_;

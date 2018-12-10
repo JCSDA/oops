@@ -11,6 +11,7 @@
 #include "lorenz95/ObsTable.h"
 
 #include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -68,17 +69,44 @@ bool ObsTable::has(const std::string & col) const {
 
 // -----------------------------------------------------------------------------
 
+void ObsTable::putdb(const std::string & col, const std::vector<int> & vec) const {
+  std::vector<double> tmp(vec.size());
+  for (size_t jobs = 0; jobs < vec.size(); ++jobs) {
+    tmp[jobs] = static_cast<double>(vec[jobs]);
+  }
+  this->putdb(col, tmp);
+}
+
+// -----------------------------------------------------------------------------
+
 void ObsTable::putdb(const std::string & col, const std::vector<double> & vec) const {
   ASSERT(vec.size() == nobs());
-  ASSERT(data_.find(col) == data_.end());
+  if (data_.find(col) != data_.end()) {
+    oops::Log::warning() << "ObsTable::putdb over-writing " << col << std::endl;
+  }
   data_.insert(std::pair<std::string, std::vector<double> >(col, vec));
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsTable::getdb(const std::string & col, std::vector<int> & vec) const {
+  std::vector<double> tmp;
+  this->getdb(col, tmp);
+
+  vec.resize(nobs());
+  for (size_t jobs = 0; jobs < nobs(); ++jobs) {
+    vec[jobs] = lround(tmp[jobs]);
+  }
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsTable::getdb(const std::string & col, std::vector<double> & vec) const {
   std::map<std::string, std::vector<double> >::const_iterator ic = data_.find(col);
-  ASSERT(ic != data_.end());
+  if (ic == data_.end()) {
+    oops::Log::error() << "ObsTable::getdb " << col << " not found." << std::endl;
+    ABORT("ObsTable::getdb column not found");
+  }
   vec.resize(nobs());
   for (unsigned int jobs = 0; jobs < nobs(); ++jobs) {
     vec[jobs] = ic->second[jobs];

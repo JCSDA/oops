@@ -110,7 +110,8 @@ template <typename MODEL> class MakeObs : public Application {
     obsconf.get("ObsTypes", typeconfs);
     std::vector<ObsFilters_> filters;
     for (size_t jj = 0; jj < obspace.size(); ++jj) {
-      filters.push_back(ObsFilters_(obspace[jj], typeconfs[jj]));
+      typeconfs[jj].set("QCname", "PreQC");
+      filters.push_back(ObsFilters_(obspace[jj], typeconfs[jj], hop[jj].observed()));
     }
 
 //  Setup Observer

@@ -43,7 +43,7 @@ class ObsErrorBase : public util::Printable,
   typedef typename MODEL::ObsSpace         ObsSpace_;
 
  public:
-  ObsErrorBase(const ObsSpace_ &, const Variables &);
+  ObsErrorBase() {}
   virtual ~ObsErrorBase() {}
 
 /// Update after obs filters
@@ -120,17 +120,6 @@ ObsErrorBase<MODEL>* ObsErrorFactory<MODEL>::create(const eckit::Configuration &
   ObsErrorBase<MODEL> * ptr = jerr->second->make(conf, obs, vars);
   Log::trace() << "ObsErrorBase<MODEL>::create done" << std::endl;
   return ptr;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-ObsErrorBase<MODEL>::ObsErrorBase(const ObsSpace_ & obsdb, const Variables & observed) {
-  ObsVector_ err(obsdb, observed);
-  bool found = err.tryRead("EffectiveError");
-  if (!found) err.read("ObsError");
-  err.applyQC("QC");
-  if (!found) err.save("EffectiveError");
 }
 
 // -----------------------------------------------------------------------------

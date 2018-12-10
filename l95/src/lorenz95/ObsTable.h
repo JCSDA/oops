@@ -44,7 +44,9 @@ class ObsTable : public oops::ObsSpaceBase,
   ObsTable(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
   ~ObsTable();
 
+  void putdb(const std::string &, const std::vector<int> &) const;
   void putdb(const std::string &, const std::vector<double> &) const;
+  void getdb(const std::string &, std::vector<int> &) const;
   void getdb(const std::string &, std::vector<double> &) const;
 
   bool has(const std::string & col) const;

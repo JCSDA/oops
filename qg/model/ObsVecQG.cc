@@ -110,12 +110,6 @@ void ObsVecQG::read(const std::string & name) {
   obsdb_.getdb(name, keyOvec_);
 }
 // -----------------------------------------------------------------------------
-bool ObsVecQG::tryRead(const std::string & name) {
-  bool found = obsdb_.has(name);
-  if (found) obsdb_.getdb(name, keyOvec_);
-  return found;
-}
-// -----------------------------------------------------------------------------
 void ObsVecQG::save(const std::string & name) const {
   obsdb_.putdb(name, keyOvec_);
 }

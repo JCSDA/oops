@@ -165,7 +165,9 @@ CostJo<MODEL>::initialize(const CtrlVar_ & xx) const {
   std::vector<eckit::LocalConfiguration> typeconfs;
   obsconf_.get("ObsTypes", typeconfs);
   for (size_t jj = 0; jj < obspace_.size(); ++jj) {
-    filters_.push_back(ObsFilters_(obspace_[jj], typeconfs[jj]));
+//  typeconfs[jj].set("QCinit", "PreQC");  // uncomment when in IODA files
+    typeconfs[jj].set("QCname", "EffectiveQC");
+    filters_.push_back(ObsFilters_(obspace_[jj], typeconfs[jj], hop_[jj].observed()));
   }
   pobs_.reset(new Observer<MODEL, State_>(obspace_, hop_, xx.obsVar(), filters_,
                                           tslot_, subwindows_));
@@ -208,12 +210,7 @@ boost::shared_ptr<PostBaseTLAD<MODEL> >
 CostJo<MODEL>::initializeTraj(const CtrlVar_ & xx, const Geometry_ &,
                               const eckit::Configuration & conf) {
   Log::trace() << "CostJo::initializeTraj start" << std::endl;
-  std::vector<ObsFilters_> filters_;  // should be controlled by outer loop
-  std::vector<eckit::LocalConfiguration> typeconfs;
-  obsconf_.get("ObsTypes", typeconfs);
-  for (size_t jj = 0; jj < obspace_.size(); ++jj) {
-    filters_.push_back(ObsFilters_(obspace_[jj], typeconfs[jj]));
-  }
+  std::vector<ObsFilters_> filters_(obspace_.size());
   pobstlad_.reset(new ObserverTLAD_(obsconf_, obspace_, hop_, xx.obsVar(), filters_,
                                     tslot_, subwindows_));
   Log::trace() << "CostJo::initializeTraj done" << std::endl;
