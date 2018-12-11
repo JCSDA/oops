@@ -275,7 +275,7 @@ void Increment4D<MODEL>::shift_backward() {
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 void Increment4D<MODEL>::serialize(std::vector<double> & vect) const {
-  for (iter_ jsub = incr4d_.begin(); jsub != incr4d_.end(); ++jsub) {
+  for (icst_ jsub = incr4d_.begin(); jsub != incr4d_.end(); ++jsub) {
     jsub->second->serialize(vect);
   }
   Log::info() << "Increment4D::serialize done" << std::endl;
