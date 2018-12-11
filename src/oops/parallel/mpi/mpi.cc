@@ -16,6 +16,5 @@ namespace oops {
     const eckit::mpi::Comm& comm() {
       return eckit::mpi::comm();
     }
-
   }  // namespace mpi
 }  // namespace oops

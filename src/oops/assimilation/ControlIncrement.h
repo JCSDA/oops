@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -11,9 +11,11 @@
 #ifndef OOPS_ASSIMILATION_CONTROLINCREMENT_H_
 #define OOPS_ASSIMILATION_CONTROLINCREMENT_H_
 
+#include <cmath>
 #include <ostream>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "eckit/config/Configuration.h"
 #include "oops/assimilation/Increment4D.h"
@@ -89,6 +91,10 @@ class ControlIncrement : public util::Printable,
 /// Get augmented observation control variable
   ObsAuxIncr_ & obsVar() {return obsbias_;}
   const ObsAuxIncr_ & obsVar() const {return obsbias_;}
+
+/// Serialize and deserialize ControlIncrement
+  std::vector<double> serialize() const;
+  void deserialize(const std::vector<double> &);
 
  private:
   void print(std::ostream &) const;
@@ -212,6 +218,39 @@ double ControlIncrement<MODEL>::dot_product_with(const ControlIncrement & x2) co
   return zz;
 }
 // -----------------------------------------------------------------------------
+template<typename MODEL>
+std::vector<double> ControlIncrement<MODEL>::serialize() const {
+  std::vector<double> vec;
+  incrm4d_.serialize(vec);
+  vec.insert(vec.begin(), static_cast<double>(vec.size()));  // includes info+incr+time and date
+  vec.push_back(500.00);
+  modbias_.serialize(vec);
+  vec.push_back(500.00);
+  obsbias_.serialize(vec);
+  return vec;
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+void ControlIncrement<MODEL>::deserialize(const std::vector<double> & vec) {
+  unsigned int s_incrm4d = std::lround(vec[0]);
+  unsigned int s_modbias = std::lround(vec[s_incrm4d + 2]);
+  unsigned int s_obsbias = std::lround(vec[s_incrm4d + s_modbias + 4]);
+
+  ASSERT(vec[s_incrm4d + 1] == 500);
+  ASSERT(vec[s_incrm4d + s_modbias + 3] == 500);
+
+  std::vector<double> vec_incrm4d(vec.begin() + 1, vec.begin() + 1 + s_incrm4d);
+  std::vector<double> vec_modbias(vec.begin() + s_incrm4d + 3,
+                                  vec.begin() + s_incrm4d + 3 + s_modbias);
+  std::vector<double> vec_obsbias(vec.begin() + s_incrm4d + s_modbias + 5,
+                                  vec.begin() + s_incrm4d + s_modbias + 5 + s_obsbias);
+
+  incrm4d_.deserialize(vec_incrm4d);
+  modbias_.deserialize(vec_modbias);
+  obsbias_.deserialize(vec_obsbias);
+}
+// -----------------------------------------------------------------------------
+
 }  // namespace oops
 
 #endif  // OOPS_ASSIMILATION_CONTROLINCREMENT_H_

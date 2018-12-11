@@ -82,6 +82,10 @@ template<typename MODEL> class Increment4D : public util::Printable {
   void shift_forward();
   void shift_backward();
 
+/// Serialize-Deserialize an Increment4D
+  void serialize(std::vector<double> &) const;
+  void deserialize(const std::vector<double> &);
+
  private:
   Increment_ & get(const int);
   const Increment_ & get(const int) const;
@@ -268,6 +272,33 @@ void Increment4D<MODEL>::shift_backward() {
   Log::info() << "Increment4D::shift_backward erased " << last_ << std::endl;
   last_ -= 1;
 }
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+void Increment4D<MODEL>::serialize(std::vector<double> & vect) const {
+  for (iter_ jsub = incr4d_.begin(); jsub != incr4d_.end(); ++jsub) {
+    jsub->second->serialize(vect);
+  }
+  Log::info() << "Increment4D::serialize done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+void Increment4D<MODEL>::deserialize(const std::vector<double> & vect) {
+  int size_vec = 0;
+  int sum = 0;
+  int ii = 0;
+  int bgn = 0;
+
+  for (iter_ jsub = incr4d_.begin(); jsub != incr4d_.end(); ++jsub) {
+    sum += size_vec;
+    bgn = sum + 1 + ii;  // bgn = 1  for the first increment
+    size_vec = std::lround(vect[bgn - 1]);
+    std::vector<double> incr_ii(vect.begin() + bgn, vect.begin() + bgn + size_vec);
+    jsub->second->deserialize(incr_ii);
+    ++ii;
+  }
+  Log::info() << "Increment4D::deserialize done" << std::endl;
+}
+
 // -----------------------------------------------------------------------------
 }  // namespace oops
 

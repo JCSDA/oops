@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -13,6 +13,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <vector>
 
 #include "oops/util/Printable.h"
 
@@ -52,6 +53,10 @@ class ModelBiasCorrection : public util::Printable {
 
   double & bias() {return bias_;}
   const double & bias() const {return bias_;}
+
+/// Serialize and deserialize
+  void serialize(std::vector<double> &) const;
+  void deserialize(const std::vector<double> &);
 
  private:
   ModelBiasCorrection(const ModelBiasCorrection &);

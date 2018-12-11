@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -77,6 +77,10 @@ class FieldL95 : public util::Printable {
   void ug_coord(oops::UnstructuredGrid &, const int &) const;
   void field_to_ug(oops::UnstructuredGrid &, const int &) const;
   void field_from_ug(const oops::UnstructuredGrid &);
+
+// Serialize - deserialize
+  void serialize(std::vector<double> &) const;
+  void deserialize(const std::vector<double> &);
 
  private:
   void print(std::ostream &) const;

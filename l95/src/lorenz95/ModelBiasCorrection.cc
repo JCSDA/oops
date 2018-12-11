@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -83,6 +83,14 @@ double ModelBiasCorrection::dot_product_with(const ModelBiasCorrection & rhs) co
   double zz = 0.0;
   if (active_) zz = bias_ * rhs.bias_;
   return zz;
+}
+// -----------------------------------------------------------------------------
+void ModelBiasCorrection::serialize(std::vector<double> & vect) const {
+  vect.push_back(bias_);
+}
+// -----------------------------------------------------------------------------
+void ModelBiasCorrection::deserialize(const std::vector<double> & vect) {
+  if (!vect.empty()) bias_ = vect[0];
 }
 // -----------------------------------------------------------------------------
 void ModelBiasCorrection::print(std::ostream & os) const {

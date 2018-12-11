@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -209,6 +209,20 @@ void IncrementL95::field_to_ug(oops::UnstructuredGrid & ug, const int & colocate
 // -----------------------------------------------------------------------------
 void IncrementL95::field_from_ug(const oops::UnstructuredGrid & ug) {
   fld_.field_from_ug(ug);
+}
+// -----------------------------------------------------------------------------
+/// Serialize - deserialize
+// -----------------------------------------------------------------------------
+void IncrementL95::serialize(std::vector<double> & vect) const {
+  fld_.serialize(vect);
+  time_.serialize(vect);
+}
+// -----------------------------------------------------------------------------
+void IncrementL95::deserialize(const std::vector<double> & vect) {
+  int size = vect.size();
+  fld_.deserialize(vect);
+  std::vector<double> date_time { vect[size - 2], vect[size - 1] };
+  time_.deserialize(date_time);
 }
 // -----------------------------------------------------------------------------
 

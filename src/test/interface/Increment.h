@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -14,6 +14,7 @@
 #include <cmath>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API
@@ -267,6 +268,34 @@ template <typename MODEL> void testIncrementInterpAD() {
   BOOST_CHECK_CLOSE(zz1, zz2, tol);
 }
 
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testIncrementSerialize() {
+  typedef IncrementFixture<MODEL>   Test_;
+  typedef oops::Increment<MODEL>    Increment_;
+
+// Create two random increments
+  Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());
+  dx1.random();
+
+  util::DateTime tt(Test_::time() + util::Duration("PT15H"));
+  Increment_ dx2(Test_::resol(), Test_::ctlvars(), tt);
+
+// Test serialize-deserialize
+  std::vector<double> vect;
+  dx1.serialize(vect);
+
+  std::vector<double> incr(vect.begin() + 1, vect.end());  // exclude the first element (fld size)
+  dx2.deserialize(incr);
+
+  BOOST_CHECK(dx1.norm() > 0.0);
+  BOOST_CHECK(dx2.norm() > 0.0);
+  BOOST_CHECK_EQUAL(dx2.validTime(), Test_::time());
+
+  dx2 -= dx1;
+  BOOST_CHECK_EQUAL(dx2.norm(), 0.0);
+}
+
 // =============================================================================
 
 template <typename MODEL> class Increment : public oops::Test {
@@ -286,6 +315,7 @@ template <typename MODEL> class Increment : public oops::Test {
     ts->add(BOOST_TEST_CASE(&testIncrementDotProduct<MODEL>));
     ts->add(BOOST_TEST_CASE(&testIncrementAxpy<MODEL>));
     ts->add(BOOST_TEST_CASE(&testIncrementInterpAD<MODEL>));
+    // ts->add(BOOST_TEST_CASE(&testIncrementSerialize<MODEL>));
 
     boost::unit_test::framework::master_test_suite().add(ts);
   }

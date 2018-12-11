@@ -1,8 +1,8 @@
 ! (C) Copyright 2009-2016 ECMWF.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
-! In applying this licence, ECMWF does not waive the privileges and immunities 
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
@@ -372,7 +372,7 @@ end subroutine qg_field_read_file_c
 
 ! ------------------------------------------------------------------------------
 subroutine qg_field_analytic_init_c(c_key_fld, c_key_geom, c_conf, c_dt) bind(c,name='qg_field_analytic_init_f90')
-    
+
   use iso_c_binding
   use qg_fields
   use qg_geom_mod
@@ -383,7 +383,7 @@ subroutine qg_field_analytic_init_c(c_key_fld, c_key_geom, c_conf, c_dt) bind(c,
   integer(c_int), intent(in) :: c_key_geom  !< Grid information
   type(c_ptr), intent(in)    :: c_conf !< Configuration
   type(c_ptr), intent(inout) :: c_dt   !< DateTime
-  
+
   type(qg_field), pointer :: fld
   type(qg_geom), pointer :: geom
   type(datetime) :: fdate
@@ -393,7 +393,7 @@ subroutine qg_field_analytic_init_c(c_key_fld, c_key_geom, c_conf, c_dt) bind(c,
   call c_f_datetime(c_dt, fdate)
 
   call analytic_init(fld,geom,c_conf,fdate)
-  
+
 end subroutine qg_field_analytic_init_c
 
 ! ------------------------------------------------------------------------------
@@ -464,7 +464,7 @@ type(qg_geom_iter), pointer :: iter
 call qg_field_registry%get(c_key_fld, fld)
 call qg_geom_iter_registry%get(c_key_iter, iter)
 
-!AS NOTE: this check fails; for some reason the pointers aren't pointing to 
+!AS NOTE: this check fails; for some reason the pointers aren't pointing to
 !         the same thing (???)
 !if (.not. associated(fld%geom, iter%geom)) then
 !  print *, 'qg_field_getpoint ERROR: geometries are different!'
@@ -575,5 +575,84 @@ c_nb =0
 if (fld%lbc) c_nb = 2
 
 end subroutine qg_fieldnum_c
+
+! ------------------------------------------------------------------------------
+
+subroutine qg_field_serialize_c(c_key_fld, c_size, vect_fld) bind(c,name='qg_fields_serialize_f90')
+
+use iso_c_binding
+use qg_fields
+use kinds
+implicit none
+
+integer(c_int), intent(in) :: c_key_fld, c_size
+real(c_double), intent(out) :: vect_fld(c_size)
+
+integer :: nx, ny, nf, nl
+integer :: ii, jj, kk, indice1
+
+type(qg_field), pointer :: fld
+
+call qg_field_registry%get(c_key_fld, fld)
+
+nx = fld%geom%nx
+ny = fld%geom%ny
+nf = fld%nf
+nl = fld%nl
+
+ii = 0
+jj = 0
+kk = 0
+indice1 = 1
+
+do ii = 1, nx
+  do jj = 1, ny
+    do kk = 1, nl*nf
+      vect_fld(indice1) = fld%gfld3d(ii, jj, kk)
+      indice1 = indice1 + 1
+    enddo
+  enddo
+enddo
+
+end subroutine qg_field_serialize_c
+
+! ------------------------------------------------------------------------------
+
+subroutine qg_field_deserialize_c(c_key_self, c_size, vect_fld) bind(c,name='qg_fields_deserialize_f90')
+
+use iso_c_binding
+use qg_fields
+implicit none
+
+integer(c_int), intent(in) :: c_key_self, c_size
+real(c_double), intent(in) :: vect_fld(c_size)
+
+type(qg_field), pointer :: self
+
+integer :: nx, ny, nf, nl
+integer :: ii, jj, kk, indice1
+
+call qg_field_registry%get(c_key_self, self)
+
+nx = nint(vect_fld(1))
+ny = nint(vect_fld(2))
+nf = nint(vect_fld(3))
+nl = nint(vect_fld(4))
+
+ii = 0
+jj = 0
+kk = 0
+indice1 = 5
+
+do ii = 1, nx
+  do jj = 1, ny
+    do kk = 1, nl*nf
+      self%gfld3d(ii, jj, kk) = vect_fld(indice1)
+      indice1 = indice1 + 1
+    enddo
+  enddo
+enddo
+
+end subroutine qg_field_deserialize_c
 
 ! ------------------------------------------------------------------------------

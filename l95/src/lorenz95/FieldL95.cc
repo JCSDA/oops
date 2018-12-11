@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -194,6 +194,15 @@ double FieldL95::rms() const {
   for (int jj = 0; jj < resol_; ++jj) zz += x_[jj] * x_[jj];
   zz = sqrt(zz/resol_);
   return zz;
+}
+// -----------------------------------------------------------------------------
+void FieldL95::serialize(std::vector<double> & vect) const {
+  vect.push_back(x_.size() + 2);
+  vect.insert(vect.end(), x_.begin(), x_.end());
+}
+// -----------------------------------------------------------------------------
+void FieldL95::deserialize(const std::vector<double> & vect) {
+  for (int ii = 0; ii < resol_; ++ii) x_[ii] = vect[ii];
 }
 // -----------------------------------------------------------------------------
 void FieldL95::print(std::ostream & os) const {

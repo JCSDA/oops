@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -12,6 +12,7 @@
 #define QG_MODEL_MODELBIASINCREMENT_H_
 
 #include <iostream>
+#include <vector>
 
 #include "oops/util/Printable.h"
 
@@ -48,6 +49,15 @@ class ModelBiasIncrement : public util::Printable {
   void read(const eckit::Configuration &) {}
   void write(const eckit::Configuration &) const {}
   double norm() const {return 0.0;}
+
+/// Serialize and deserialize
+  void serialize(std::vector<double> & vect) const {
+    vect.push_back(0.0);
+    std::cout << "ModelBiasIncrement::serialize done" << std::endl;
+  }
+  void deserialize(const std::vector<double> &) {
+    std::cout << "ModelBiasIncrement::deserialize done" << std::endl;
+  }
 
  private:
   explicit ModelBiasIncrement(const ModelBiasCovariance &);

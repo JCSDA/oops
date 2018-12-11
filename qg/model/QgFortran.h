@@ -1,15 +1,17 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
 
 #ifndef QG_MODEL_QGFORTRAN_H_
 #define QG_MODEL_QGFORTRAN_H_
+
+#include <vector>
 
 // Forward declarations
 namespace eckit {
@@ -267,6 +269,12 @@ extern "C" {
                              const util::Duration * const *, const int &, int &);
   void qg_obsdb_nobs_f90(const F90odb &, const int &, const char *, int &);
   void qg_obsoper_inputs_f90(const F90hop &, F90vars *);
+
+// -----------------------------------------------------------------------------
+//  Serialize and deserialize
+// -----------------------------------------------------------------------------
+void qg_fields_serialize_f90(const F90flds &, const std::size_t &, double[]);
+void qg_fields_deserialize_f90(const F90flds &, const std::size_t &, const double[]);
 
 }
 

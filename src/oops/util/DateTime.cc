@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -12,6 +12,7 @@
 
 #include <stdint.h>
 
+#include <cmath>
 #include <iomanip>
 #include <istream>
 #include <limits>
@@ -301,6 +302,18 @@ void DateTime::failIfUnset() const {
 
 std::size_t DateTime::timestamp() const {
   return date_ * 25 + time_;
+}
+
+// -----------------------------------------------------------------------------
+void DateTime::serialize(std::vector<double> & vect) const {
+  vect.push_back(static_cast<double>(date_));
+  vect.push_back(static_cast<double>(time_));
+}
+
+// -----------------------------------------------------------------------------
+void DateTime::deserialize(const std::vector<double> & vect) {
+  date_ = std::lround(vect[0]);
+  time_ = std::lround(vect[1]);
 }
 
 // -----------------------------------------------------------------------------

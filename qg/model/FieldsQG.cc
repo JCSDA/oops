@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -234,5 +234,34 @@ oops::GridPoint FieldsQG::getPoint(const GeometryQGIterator & iter) const {
   qg_field_getpoint_f90(keyFlds_, iter.toFortran(), nf*nl, values[0]);
   return oops::GridPoint(vars_.toOopsVariables(), values, varlens);
 }
+// -----------------------------------------------------------------------------
+void FieldsQG::serialize(std::vector<double> & vect)  const{
+  int nx, ny, nf, nb, nl;
+  qg_field_sizes_f90(keyFlds_, nx, ny, nf, nb, nl);
+  int size_fld = nx * ny * nl * nf;
+  vect.push_back(static_cast<double>(size_fld + 6));
+  vect.push_back(static_cast<double>(nx));
+  vect.push_back(static_cast<double>(ny));
+  vect.push_back(static_cast<double>(nf));
+  vect.push_back(static_cast<double>(nl));
 
+// Allocate space for fld, xb and qb
+  std::vector<double> v_fld(size_fld, 0);
+
+// Serialize the field
+  qg_fields_serialize_f90(keyFlds_, static_cast<int>(v_fld.size()), v_fld.data());
+  vect.insert(vect.end(), v_fld.begin(), v_fld.end());
+
+// Serialize the date and time
+  time_.serialize(vect);
+}
+// -----------------------------------------------------------------------------
+void FieldsQG::deserialize(const std::vector<double> & vect) {
+  int size = vect.size();
+  std::vector<double> date_time { vect[size - 2], vect[size - 1] };
+  time_.deserialize(date_time);
+  qg_fields_deserialize_f90(keyFlds_, vect.size(), vect.data());
+}
+
+// -----------------------------------------------------------------------------
 }  // namespace qg

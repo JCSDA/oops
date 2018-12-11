@@ -13,6 +13,7 @@
 
 #include <ostream>
 #include <string>
+#include <vector>
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
@@ -108,6 +109,10 @@ class IncrementQG : public oops::GeneralizedDepartures,
 
 /// Other
   void accumul(const double &, const StateQG &);
+
+/// Serialize-Deserialize an IncrementQG
+  void serialize(std::vector<double> &) const;
+  void deserialize(const std::vector<double> &);
 
 /// Data
  private:

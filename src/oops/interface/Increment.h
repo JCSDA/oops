@@ -12,6 +12,7 @@
 #define OOPS_INTERFACE_INCREMENT_H_
 
 #include <string>
+#include <vector>
 
 #include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/Variables.h"
@@ -99,6 +100,10 @@ class Increment : public oops::GeneralizedDepartures,
   void ug_coord(UnstructuredGrid &, const int &) const;
   void field_to_ug(UnstructuredGrid &, const int &) const;
   void field_from_ug(const UnstructuredGrid &);
+
+/// Serialize and deserialize
+  void serialize(std::vector<double> &) const;
+  void deserialize(const std::vector<double> &);
 
  private:
   void print(std::ostream &) const;
@@ -390,6 +395,26 @@ void Increment<MODEL>::field_from_ug(const UnstructuredGrid & ug) {
   util::Timer timer(classname(), "field_from_ug");
   increment_->field_from_ug(ug);
   Log::trace() << "Increment<MODEL>::field_from_ug done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::serialize(std::vector<double> & vect) const {
+  Log::trace() << "Increment<MODEL>::serialize starting" << std::endl;
+  util::Timer timer("oops::Increment", "serialize");
+  increment_->serialize(vect);
+  Log::trace() << "Increment<MODEL>::serialize done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::deserialize(const std::vector<double> & vect) {
+  Log::trace() << "Increment<MODEL>::Increment deserialize starting" << std::endl;
+  util::Timer timer(classname(), "Increment deserialize");
+  increment_->deserialize(vect);
+  Log::trace() << "Increment<MODEL>::Increment deserialize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
