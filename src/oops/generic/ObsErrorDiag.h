@@ -30,7 +30,7 @@ class ObsErrorDiag : public ObsErrorBase<MODEL> {
   typedef typename MODEL::ObsVector             ObsVector_;
 
  public:
-  ObsErrorDiag(const eckit::Configuration &, const ObsSpace_ &, const Variables &);
+  ObsErrorDiag(const eckit::Configuration &, ObsSpace_ &, const Variables &);
   ~ObsErrorDiag();
 
 /// Update after QC od other obs filters
@@ -59,7 +59,7 @@ class ObsErrorDiag : public ObsErrorBase<MODEL> {
 // =============================================================================
 
 template<typename MODEL>
-ObsErrorDiag<MODEL>::ObsErrorDiag(const eckit::Configuration & conf, const ObsSpace_ & obsgeom,
+ObsErrorDiag<MODEL>::ObsErrorDiag(const eckit::Configuration & conf, ObsSpace_ & obsgeom,
                                   const Variables & observed)
   : stddev_(obsgeom, observed), inverseVariance_(obsgeom, observed),
     pert_(conf.getDouble("random_amplitude", 1.0))
