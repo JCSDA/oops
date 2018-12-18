@@ -70,20 +70,12 @@ bool config_element_exists_f(const eckit::Configuration & d, const char str[]) {
 
 int config_get_data_as_int_f(const eckit::Configuration & d, const char str[]) {
   const std::string s(str);
-  std::istringstream is;
-  is.str(d.getString(s));
-  int i;
-  is >> i;
-  return i;
+  return d.getInt(s);
 }
 
 double config_get_data_as_double_f(const eckit::Configuration & d, const char str[]) {
   const std::string s(str);
-  std::istringstream is;
-  is.str(d.getString(s));
-  double dd;
-  is >> dd;
-  return dd;
+  return d.getDouble(s);
 }
 
 int config_get_data_length_f(const eckit::Configuration & d, const char str[]) {
