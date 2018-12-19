@@ -77,13 +77,25 @@ template <typename MODEL> void testSimulateObs() {
     ObsVector_ ovec(Test_::obspace()[jj], hop.observed());
 
     hop.simulateObs(gval, ovec, ybias);
-
     ovec.save("hofx");
 
-    const double zz = ovec.rms();
-    const double xx = conf[jj].getDouble("rmsequiv");
     const double tol = conf[jj].getDouble("tolerance");
-    BOOST_CHECK_CLOSE(xx, zz, tol);
+    if (conf[jj].has("vecequiv")) {
+      // if reference h(x) is saved in file as a vector, read from file
+      // and compare the norm of difference to zero
+      ObsVector_ ovec_ref(ovec, false);
+      ovec_ref.read(conf[jj].getString("vecequiv"));
+      ovec_ref -= ovec;
+      const double zz = ovec_ref.rms();
+      oops::Log::info() << "Vector difference between reference and computed: " <<
+                           ovec_ref;
+      BOOST_CHECK_SMALL(zz, tol);
+    } else {
+      // else compare h(x) norm to the norm from the config
+      const double zz = ovec.rms();
+      const double xx = conf[jj].getDouble("rmsequiv");
+      BOOST_CHECK_CLOSE(xx, zz, tol);
+    }
   }
 }
 
