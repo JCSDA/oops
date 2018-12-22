@@ -57,11 +57,11 @@ class ModelSpaceCovarianceBase {
 //  bool hasK() const { return (chvars_.size() == 0) ? false : true; }
 
   void multiply(const Increment_ &, Increment_ &) const;
+  void randomize(Increment_ &) const;
   void inverseMultiply(const Increment_ &, Increment_ &) const;
 
-  virtual void randomize(Increment_ &) const = 0;
-
  private:
+  virtual void doRandomize(Increment_ &) const = 0;
   virtual void doMultiply(const Increment_ &, Increment_ &) const = 0;
   virtual void doInverseMultiply(const Increment_ &, Increment_ &) const = 0;
 
@@ -183,6 +183,22 @@ void ModelSpaceCovarianceBase<MODEL>::multiply(const Increment_ & dxi,
     dxo = *dxchvarin;
   } else {
     this->doMultiply(dxi, dxo);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+void ModelSpaceCovarianceBase<MODEL>::randomize(Increment_ & dx) const {
+  // TODO(notguillaume): Generalize to non-square change of variable
+  if (chvars_.size()) {
+    this->doRandomize(dx);   // dx = C^1/2 dx
+    // K_N K_N-1 ... K_1
+    for (icst_ ki = chvars_.begin(); ki != chvars_.end(); ++ki) {
+      dx = ki->multiply(dx);  // dx = K_i dx
+    }
+  } else {
+    this->doRandomize(dx);
   }
 }
 

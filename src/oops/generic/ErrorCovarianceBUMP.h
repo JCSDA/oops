@@ -56,9 +56,10 @@ class ErrorCovarianceBUMP : public oops::ModelSpaceCovarianceBase<MODEL>,
                       const eckit::Configuration &, const State_ &, const State_ &);
   virtual ~ErrorCovarianceBUMP();
 
-  void randomize(Increment_ &) const override;
+  void randomize(Increment_ &) const;
 
  private:
+  void doRandomize(Increment_ &) const override;
   void doMultiply(const Increment_ &, Increment_ &) const override;
   void doInverseMultiply(const Increment_ &, Increment_ &) const override;
 
@@ -159,11 +160,11 @@ void ErrorCovarianceBUMP<MODEL>::doInverseMultiply(const Increment_ & dx1,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void ErrorCovarianceBUMP<MODEL>::randomize(Increment_ & dx) const {
-  Log::trace() << "ErrorCovarianceBUMP<MODEL>::randomize starting" << std::endl;
-  util::Timer timer(classname(), "randomize");
+void ErrorCovarianceBUMP<MODEL>::doRandomize(Increment_ & dx) const {
+  Log::trace() << "ErrorCovarianceBUMP<MODEL>::doRandomize starting" << std::endl;
+  util::Timer timer(classname(), "doRandomize");
   dx.random();
-  Log::trace() << "ErrorCovarianceBUMP<MODEL>::randomize done" << std::endl;
+  Log::trace() << "ErrorCovarianceBUMP<MODEL>::doRandomize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

@@ -42,7 +42,7 @@ namespace oops {
 
 template<typename MODEL>
 class ParametersBUMP {
-  typedef ErrorCovariance<MODEL>                ErrorCovariance_;
+  typedef ModelSpaceCovarianceBase<MODEL>       ErrorCovariance_;
   typedef Geometry<MODEL>                       Geometry_;
   typedef Increment<MODEL>                      Increment_;
   typedef State<MODEL>                          State_;
@@ -111,13 +111,14 @@ ParametersBUMP<MODEL>::ParametersBUMP(const eckit::Configuration & conf)
   if (conf_.has("covariance")) {
   // Setup background error covariance
     const eckit::LocalConfiguration covarConfig(conf_, "covariance");
-    ErrorCovariance_ cov(resol, vars, covarConfig, xx, xx);
+    boost::scoped_ptr< ModelSpaceCovarianceBase<MODEL> >
+      cov(CovarianceFactory<MODEL>::create(covarConfig, resol, vars, xx, xx));
 
   // Compute a pseudo ensemble using randomization
     ens2_ne = covarConfig.getInt("pseudoens_size");
     for (int ii = 0; ii < ens2_ne; ++ii) {
       Increment_ * incr = new Increment_(resol, vars, date);
-      cov.randomize(*incr);
+      cov->randomize(*incr);
       bkgens.push_back(incr);
     }
   }

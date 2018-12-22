@@ -48,9 +48,8 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL> {
                      const eckit::Configuration &, const State_ &, const State_ &);
   ~EnsembleCovariance();
 
-  void randomize(Increment_ &) const override;
-
  private:
+  void doRandomize(Increment_ &) const override;
   void doMultiply(const Increment_ &, Increment_ &) const override;
   void doInverseMultiply(const Increment_ &, Increment_ &) const override;
 
@@ -115,8 +114,8 @@ void EnsembleCovariance<MODEL>::doInverseMultiply(const Increment_ & dxi,
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-void EnsembleCovariance<MODEL>::randomize(Increment_ &) const {
-  ABORT("EnsembleCovariance::randomize: Would it make sense?");
+void EnsembleCovariance<MODEL>::doRandomize(Increment_ &) const {
+  ABORT("EnsembleCovariance::doRandomize: Would it make sense?");
 }
 // -----------------------------------------------------------------------------
 }  // namespace oops

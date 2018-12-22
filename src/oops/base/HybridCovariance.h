@@ -42,9 +42,8 @@ class HybridCovariance : public ModelSpaceCovarianceBase<MODEL> {
                    const eckit::Configuration &, const State_ &, const State_ &);
   ~HybridCovariance();
 
-  void randomize(Increment_ &) const override;
-
  private:
+  void doRandomize(Increment_ &) const override;
   void doMultiply(const Increment_ &, Increment_ &) const override;
   void doInverseMultiply(const Increment_ &, Increment_ &) const override;
 
@@ -95,8 +94,8 @@ void HybridCovariance<MODEL>::doInverseMultiply(const Increment_ & dxi, Incremen
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-void HybridCovariance<MODEL>::randomize(Increment_ &) const {
-  ABORT("HybridCovariance::randomize: Would it make sense?");
+void HybridCovariance<MODEL>::doRandomize(Increment_ &) const {
+  ABORT("HybridCovariance::doRandomize: Would it make sense?");
 }
 // -----------------------------------------------------------------------------
 }  // namespace oops

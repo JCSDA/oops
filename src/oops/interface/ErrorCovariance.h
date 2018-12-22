@@ -60,9 +60,10 @@ class ErrorCovariance : public oops::ModelSpaceCovarianceBase<MODEL>,
                   const State_ &, const State_ &);
   virtual ~ErrorCovariance();
 
-  void randomize(Increment_ &) const override;
+  void randomize(Increment_ &) const;
 
  private:
+  void doRandomize(Increment_ &) const override;
   void doMultiply(const Increment_ &, Increment_ &) const override;
   void doInverseMultiply(const Increment_ &, Increment_ &) const override;
 
@@ -118,11 +119,11 @@ void ErrorCovariance<MODEL>::doInverseMultiply(const Increment_ & dx1, Increment
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void ErrorCovariance<MODEL>::randomize(Increment_ & dx) const {
-  Log::trace() << "ErrorCovariance<MODEL>::randomize starting" << std::endl;
-  util::Timer timer(classname(), "randomize");
+void ErrorCovariance<MODEL>::doRandomize(Increment_ & dx) const {
+  Log::trace() << "ErrorCovariance<MODEL>::doRandomize starting" << std::endl;
+  util::Timer timer(classname(), "doRandomize");
   covariance_->randomize(dx.increment());
-  Log::trace() << "ErrorCovariance<MODEL>::randomize done" << std::endl;
+  Log::trace() << "ErrorCovariance<MODEL>::doRandomize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
