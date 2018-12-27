@@ -165,7 +165,6 @@ CostJo<MODEL>::initialize(const CtrlVar_ & xx) const {
   std::vector<eckit::LocalConfiguration> typeconfs;
   obsconf_.get("ObsTypes", typeconfs);
   for (size_t jj = 0; jj < obspace_.size(); ++jj) {
-//  typeconfs[jj].set("QCinit", "PreQC");  // uncomment when in IODA files
     typeconfs[jj].set("QCname", "EffectiveQC");
     filters_.push_back(ObsFilters_(obspace_[jj], typeconfs[jj], hop_[jj].observed()));
   }

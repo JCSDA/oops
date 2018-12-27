@@ -17,7 +17,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/ObsFilterBase.h"
@@ -61,10 +61,16 @@ template <typename MODEL> void testFilters() {
 
     ObsVector_ ovec(Test_::obspace()[jj], hop.observed());
 
-    ObsVector_ qc(Test_::obspace()[jj], hop.observed());
-    qc.zero();
-    qc.save("EffectiveQC");
+//  Prepare storage for QC flags using PreQC filter
+    const std::string qcname = "TestQC";
+    eckit::LocalConfiguration preconf;
+    preconf.set("Filter", "PreQC");
+    preconf.set("observed", hop.observed().variables());
+    preconf.set("QCname", qcname);
+    boost::shared_ptr<ObsFilterBase_> preqc(  // All work is done in constructor
+      oops::FilterFactory<MODEL>::create(Test_::obspace()[jj], preconf));
 
+//  Get filters configurations
     std::vector<eckit::LocalConfiguration> filtconf;
     typeconfs[jj].get("ObsFilters", filtconf);
     oops::Log::debug() << "test filt conf " << filtconf[jj] << std::endl;
@@ -72,8 +78,10 @@ template <typename MODEL> void testFilters() {
     const double xx = typeconfs[jj].getDouble("rmsequiv");
     const double tol = typeconfs[jj].getDouble("tolerance");
 
+//  Test filters
     for (std::size_t jf = 0; jf < filtconf.size(); ++jf) {
-      boost::scoped_ptr<ObsFilterBase_> filter(
+      filtconf[jf].set("QCname", qcname);
+      boost::shared_ptr<ObsFilterBase_> filter(
         oops::FilterFactory<MODEL>::create(Test_::obspace()[jj], filtconf[jf]));
 
       filter->priorFilter(gval);

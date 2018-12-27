@@ -12,6 +12,7 @@
 #include <string>
 
 #include <boost/noncopyable.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObservationSpace.h"
@@ -49,7 +50,8 @@ template <typename MODEL>
 class FilterFactory {
   typedef ObservationSpace<MODEL>    ObsSpace_;
  public:
-  static ObsFilterBase<MODEL> * create(const ObsSpace_ &, const eckit::Configuration &);
+  static boost::shared_ptr<ObsFilterBase<MODEL>> create(const ObsSpace_ &,
+                                                        const eckit::Configuration &);
   virtual ~FilterFactory() { getMakers().clear(); }
  protected:
   explicit FilterFactory(const std::string &);
@@ -86,8 +88,8 @@ FilterFactory<MODEL>::FilterFactory(const std::string & name) {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-ObsFilterBase<MODEL>* FilterFactory<MODEL>::create(const ObsSpace_ & os,
-                                                   const eckit::Configuration & conf) {
+boost::shared_ptr<ObsFilterBase<MODEL>>
+FilterFactory<MODEL>::create(const ObsSpace_ & os, const eckit::Configuration & conf) {
   Log::trace() << "ObsFilterBase<MODEL>::create starting" << std::endl;
   const std::string id = conf.getString("Filter");
   typename std::map<std::string, FilterFactory<MODEL>*>::iterator
@@ -96,7 +98,7 @@ ObsFilterBase<MODEL>* FilterFactory<MODEL>::create(const ObsSpace_ & os,
     Log::error() << id << " does not exist in obs filter factory." << std::endl;
     ABORT("Element does not exist in FilterFactory.");
   }
-  ObsFilterBase<MODEL> * ptr = jloc->second->make(os, conf);
+  boost::shared_ptr<ObsFilterBase<MODEL>> ptr(jloc->second->make(os, conf));
   Log::trace() << "ObsFilterBase<MODEL>::create done" << std::endl;
   return ptr;
 }

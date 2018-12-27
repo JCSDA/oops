@@ -51,27 +51,24 @@ class ObsFilters : public util::Printable {
 
 template <typename MODEL>
 ObsFilters<MODEL>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration & conf,
-                              const Variables & observed) {
-// Prepare storage for QC flags if needed
+                              const Variables & observed) : filters_() {
+// Prepare storage for QC flags using PreQC filter (all work done in filter constructor)
   const std::string qcname(conf.getString("QCname", ""));
-  if (!qcname.empty()) {
-    ObsVector<MODEL> qc(os, observed);
-    const std::string qcin(conf.getString("QCinit", ""));
-    if (!qcin.empty()) {
-      qc.read(qcin);
-    } else {
-      qc.zero();
-    }
-    qc.save(qcname);
+  if (!qcname.empty()) {  // ie only if there are QC filters
+    eckit::LocalConfiguration preconf;
+    preconf.set("Filter", "PreQC");
+    preconf.set("QCname", qcname);
+    preconf.set("observed", observed.variables());
+    filters_.push_back(FilterFactory<MODEL>::create(os, preconf));
   }
 
 // Create the filters
   std::vector<eckit::LocalConfiguration> confs;
   conf.get("ObsFilters", confs);
-  filters_.resize(confs.size());
   for (std::size_t jj = 0; jj < confs.size(); ++jj) {
     if (!qcname.empty()) confs[jj].set("QCname", qcname);
-    filters_[jj].reset(FilterFactory<MODEL>::create(os, confs[jj]));
+    confs[jj].set("observed", observed.variables());
+    filters_.push_back(FilterFactory<MODEL>::create(os, confs[jj]));
   }
 }
 

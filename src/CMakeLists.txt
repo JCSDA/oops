@@ -258,6 +258,11 @@ oops/util/kinds.F90
 oops/util/LibOOPS.h
 oops/util/LibOOPS.cc
 oops/util/Logger.h
+oops/util/missing_values_f.cc
+oops/util/missing_values_f.h
+oops/util/missing_values_mod.F90
+oops/util/missingValues.cc
+oops/util/missingValues.h
 oops/util/ObjectCounter.h
 oops/util/ObjectCountHelper.h
 oops/util/ObjectCountHelper.cc
