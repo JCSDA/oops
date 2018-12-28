@@ -36,7 +36,7 @@ class Random : public util::Printable {
 
   std::size_t N_;
   std::vector<T> data_;
-  int seed_;
+  unsigned int seed_;
 };
 
 // -----------------------------------------------------------------------------
@@ -48,7 +48,7 @@ class UniformDistribution : Random<T> {
 
  public:
   // principal constructor
-  UniformDistribution(size_t, T, T, int);
+  UniformDistribution(size_t, T, T, unsigned int);
 
   // constructors with default values
   UniformDistribution(size_t N, T minv, T maxv):
@@ -76,7 +76,7 @@ class NormalDistribution : Random<T> {
 
  public:
   // principal constructor
-  NormalDistribution(size_t, T, T, int);
+  NormalDistribution(size_t, T, T, unsigned int);
 
   // constructors with default values
   NormalDistribution(size_t N, T mean, T sdev):

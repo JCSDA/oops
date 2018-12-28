@@ -19,7 +19,7 @@ namespace util {
 // Uniform random distribution
 
 template <typename T>
-UniformDistribution<T>::UniformDistribution(size_t N, T minv, T maxv, int seed):
+UniformDistribution<T>::UniformDistribution(size_t N, T minv, T maxv, unsigned int seed):
   Random<T>(N, seed), minv_(minv), maxv_(maxv) {
   boost::random::mt19937 generator(this->seed_);
 
@@ -36,7 +36,7 @@ UniformDistribution<T>::UniformDistribution(size_t N, T minv, T maxv, int seed):
 // Normal random distribution
 
 template <typename T>
-NormalDistribution<T>::NormalDistribution(size_t N, T mean, T sdev, int seed):
+NormalDistribution<T>::NormalDistribution(size_t N, T mean, T sdev, unsigned int seed):
   Random<T>(N, seed), mean_(mean), sdev_(sdev) {
   if (!std::is_floating_point<T>::value) {
     oops::Log::error() << "NormalDistribution only implemented for floating point data types"
