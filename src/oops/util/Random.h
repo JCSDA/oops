@@ -23,7 +23,8 @@ class Random : public util::Printable {
  public:
   virtual const std::string classname();
 
-  void newseed(const int seed = 77) {seed_ = seed;}
+  void SetSeed(const int seed =
+               static_cast<std::uint32_t>(std::time(0))) {seed_ = seed;}
 
   const T & operator[](const std::size_t ii) const {return data_[ii];}
 
@@ -46,7 +47,19 @@ class UniformDistribution : Random<T> {
   const std::string classname() {return "util::UniformDistribution";}
 
  public:
+  // principal constructor
   UniformDistribution(size_t, T, T, int);
+
+  // constructors with default values
+  UniformDistribution(size_t N, T minv, T maxv):
+  UniformDistribution(N, minv, maxv, static_cast<std::uint32_t>(std::time(0))) {}
+
+  explicit UniformDistribution(size_t N):
+  UniformDistribution(N, 0.0, 1.0, static_cast<std::uint32_t>(std::time(0))) {}
+
+  UniformDistribution():
+  UniformDistribution(1, 0.0, 1.0, static_cast<std::uint32_t>(std::time(0))) {}
+
   ~UniformDistribution();
 
  private:
@@ -62,7 +75,19 @@ class NormalDistribution : Random<T> {
   const std::string classname() {return "util::NormalDistribution";}
 
  public:
+  // principal constructor
   NormalDistribution(size_t, T, T, int);
+
+  // constructors with default values
+  NormalDistribution(size_t N, T mean, T sdev):
+  NormalDistribution(N, mean, sdev, static_cast<std::uint32_t>(std::time(0))) {}
+
+  explicit NormalDistribution(size_t N):
+  NormalDistribution(N, 0.0, 1.0, static_cast<std::uint32_t>(std::time(0))) {}
+
+  NormalDistribution():
+  NormalDistribution(1, 0.0, 1.0, static_cast<std::uint32_t>(std::time(0))) {}
+
   ~NormalDistribution();
 
  private:
