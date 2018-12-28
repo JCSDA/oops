@@ -254,7 +254,7 @@ void ObsVector<MODEL>::mask(const ObsVector & qc) {
   Log::trace() << "ObsVector<MODEL>::mask starting" << std::endl;
   util::Timer timer(classname(), "mask");
 
-  data_->mask(qc.data_);
+  data_->mask(*qc.data_);
 
   Log::trace() << "ObsVector<MODEL>::mask done" << std::endl;
 }

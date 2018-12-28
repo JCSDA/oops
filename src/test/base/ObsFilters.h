@@ -75,9 +75,6 @@ template <typename MODEL> void testFilters() {
     typeconfs[jj].get("ObsFilters", filtconf);
     oops::Log::debug() << "test filt conf " << filtconf[jj] << std::endl;
 
-    const double xx = typeconfs[jj].getDouble("rmsequiv");
-    const double tol = typeconfs[jj].getDouble("tolerance");
-
 //  Test filters
     for (std::size_t jf = 0; jf < filtconf.size(); ++jf) {
       filtconf[jf].set("QCname", qcname);
@@ -87,10 +84,26 @@ template <typename MODEL> void testFilters() {
       filter->priorFilter(gval);
       hop.simulateObs(gval, ovec, ybias);
       filter->postFilter(ovec);
+    }
 
+    const double tol = typeconfs[jj].getDouble("tolerance");
+    if (typeconfs[jj].has("vecequiv")) {
+      // if reference h(x) is saved in file as a vector, read from file
+      // and compare the norm of difference to zero
+      ObsVector_ ovec_ref(ovec, false);
+      ovec_ref.read(typeconfs[jj].getString("vecequiv"));
+      ovec_ref -= ovec;
+      const double zz = ovec_ref.rms();
+      oops::Log::info() << "Vector difference between reference and computed: " <<
+                           ovec_ref;
+      BOOST_CHECK_SMALL(zz, tol);
+    } else {
+      // else compare h(x) norm to the norm from the config
       const double zz = ovec.rms();
+      const double xx = typeconfs[jj].getDouble("rmsequiv");
       BOOST_CHECK_CLOSE(xx, zz, tol);
     }
+
   }
 }
 
