@@ -73,7 +73,10 @@ template <typename MODEL> void testFilters() {
 //  Get filters configurations
     std::vector<eckit::LocalConfiguration> filtconf;
     typeconfs[jj].get("ObsFilters", filtconf);
-    oops::Log::debug() << "test filt conf " << filtconf[jj] << std::endl;
+    oops::Log::debug() << "test filt conf " << filtconf << std::endl;
+
+//  For the case when no filters are specified
+    hop.simulateObs(gval, ovec, ybias);
 
 //  Test filters
     for (std::size_t jf = 0; jf < filtconf.size(); ++jf) {
@@ -85,6 +88,11 @@ template <typename MODEL> void testFilters() {
       hop.simulateObs(gval, ovec, ybias);
       filter->postFilter(ovec);
     }
+
+//  Mask out all the values that were QC-d out
+    ObsVector_ qc(ovec, false);
+    qc.read(qcname);
+    ovec.mask(qc);
 
     const double tol = typeconfs[jj].getDouble("tolerance");
     if (typeconfs[jj].has("vecequiv")) {
