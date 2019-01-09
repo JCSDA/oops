@@ -111,7 +111,6 @@ template <typename MODEL> void testFilters() {
       const double xx = typeconfs[jj].getDouble("rmsequiv");
       BOOST_CHECK_CLOSE(xx, zz, tol);
     }
-
   }
 }
 
