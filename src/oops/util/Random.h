@@ -16,45 +16,57 @@
 namespace util {
 
 // -----------------------------------------------------------------------------
-/// Classes for generating compiler-indpependent random numbers
+/*! Base Class for generating compiler-indpependent random numbers
+ *
+ * \details The *Random* class and its derived classes are intended to provide 
+ * a compiler independent pseudo random number generator.  So, if you use the
+ * same random seed, you should get the same results, regardless of compiler
+ * or platform.  Its sub-classes implement specific distributions, including
+ * uniform and Gaussian (Normal) deviates.  
+ * For usage tips, see each individual sub-class.
+ *
+ * \date Jan, 2019 (M. Miesch, created)
+ *
+ * \sa util::UniformDistribution util::NormalDistribution
+ */
+
 
 template <typename T>
 class Random : public util::Printable {
  public:
-  virtual const std::string classname();
 
-  void SetSeed(const int seed =
+  void SetSeed(const unsigned int seed =
                static_cast<std::uint32_t>(std::time(0))) {seed_ = seed;}
 
   const T & operator[](const std::size_t ii) const {return data_[ii];}
 
-  virtual void print(std::ostream) const;
-
  protected:
-  Random(size_t N, int seed): N_(N), seed_(seed) {}
+  Random(size_t N, unsigned int seed): N_(N), seed_(seed) {}
   ~Random();
 
   std::size_t N_;
   std::vector<T> data_;
   unsigned int seed_;
+
+ private:
+  virtual void print(std::ostream &) const = 0;
+  
 };
 
 // -----------------------------------------------------------------------------
-// Uniform distributions
 
 template <typename T>
 class UniformDistribution : Random<T> {
-  const std::string classname() {return "util::UniformDistribution";}
 
  public:
-  // principal constructor
+  /*! principal constructor */
   UniformDistribution(size_t, T, T, unsigned int);
 
-  // constructors with default values
+  /*! constructors with default values */
   UniformDistribution(size_t N, T minv, T maxv):
   UniformDistribution(N, minv, maxv, static_cast<std::uint32_t>(std::time(0))) {}
 
-  explicit UniformDistribution(size_t N):
+  UniformDistribution(size_t N):
   UniformDistribution(N, 0.0, 1.0, static_cast<std::uint32_t>(std::time(0))) {}
 
   UniformDistribution():
@@ -67,22 +79,21 @@ class UniformDistribution : Random<T> {
   T maxv_;
 };
 
-// -----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 // Normal distributions
 
 template <typename T>
 class NormalDistribution : Random<T> {
-  const std::string classname() {return "util::NormalDistribution";}
 
  public:
-  // principal constructor
+  /*! principal constructor */
   NormalDistribution(size_t, T, T, unsigned int);
 
-  // constructors with default values
+  /*! constructors with default values */
   NormalDistribution(size_t N, T mean, T sdev):
   NormalDistribution(N, mean, sdev, static_cast<std::uint32_t>(std::time(0))) {}
 
-  explicit NormalDistribution(size_t N):
+  NormalDistribution(size_t N):
   NormalDistribution(N, 0.0, 1.0, static_cast<std::uint32_t>(std::time(0))) {}
 
   NormalDistribution():
@@ -95,7 +106,7 @@ class NormalDistribution : Random<T> {
   T sdev_;
 };
 
-// -----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 }  // namespace util
 
