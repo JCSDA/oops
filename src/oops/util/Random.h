@@ -42,7 +42,7 @@ class Random : public util::Printable {
 
  protected:
   Random(size_t N, unsigned int seed): N_(N), seed_(seed) {}
-  ~Random();
+  virtual ~Random();
 
   std::size_t N_;
   std::vector<T> data_;
