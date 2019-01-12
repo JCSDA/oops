@@ -35,14 +35,17 @@ void testCppRandom() {
   BOOST_CHECK_EQUAL(N, 10);  
   BOOST_CHECK_EQUAL(seed, 1234321);  
 
-  //util::UniformDistribution<int> x(N,1,200,seed);
-  util::UniformDistribution<int> x(50,1,200);
-  //util::UniformDistribution<double> x(20,1.0,200.0);
+  //util::UniformIntDistribution<int> x(N,1,200,seed);
+  //util::UniformIntDistribution<int> x(50,1,200);
+  
+  util::UniformDistribution<double> x(50,1.0,200.0,seed);
 
-  //util::NormalDistribution<double> y(20,0.1,5.2);
+  util::NormalDistribution<double> y(20,0.1,5.2);
   //util::NormalDistribution<double> y();
 
-  std::cout << "MSM Random: \n" << x << std::endl;
+  std::cout << "MSM Uniform: \n" << x << std::endl;
+
+  std::cout << "MSM Normal: \n" << y << std::endl;
 
 }
 

@@ -31,7 +31,8 @@ namespace util {
  *
  * \date Jan, 2019 (M. Miesch, created)
  *
- * \sa util::UniformDistribution util::NormalDistribution
+ * \sa util::UniformDistribution, util::UniformIntDistribution, 
+ * util::NormalDistribution
  */
 
 
@@ -55,9 +56,10 @@ template <typename T>
   unsigned int seed_;
 
  private:
+  // need to change this to print out max precision
   void print(std::ostream &) const {
     for (size_t jj=0; jj < N_; ++jj) {
-      std::cout << "MSM Random: " << jj << ": " << data_[jj] << std::endl;
+      std::cout << "MSM: " << jj << ": " << data_[jj] << std::endl;
     }
   };
   
@@ -66,7 +68,45 @@ template <typename T>
 // -----------------------------------------------------------------------------
 /*! Class for generating uniformly-distributed random numbers
  *
- * \details *util::UniformDistribution* creates a vector of psedo-random numbers
+ * \details *util::UniformDistribution* creates a vector of psedo-random real
+ * numbers that are uniformly distributed across a specified interval of values.
+ *
+ * \param[in] N The size of the desired array (default 1)
+ * \param[in] minv The minimum value of the interval (default 0)
+ * \param[in] minv The maximum value of the interval (default 1)
+ * \param[in] optional seed to use for the random number generator.  If omitted,
+ *            the code will define a seed based on the current (calendar) time.
+ * 
+ * \note The interval is closed on the lower end and open on the upper end, i.e. [minv,maxv).  
+ *
+ * \warning Only implemented for floating point data types.  For a sequence of random 
+ * integers use **util::UniformIntDistribution()**
+ *
+ */
+
+template <typename T>
+class UniformDistribution : public Random<T> {
+
+public:
+ UniformDistribution(std::size_t N = 1, T minv = 0, T maxv = 1,
+		     unsigned int seed = static_cast<std::uint32_t>(std::time(0))):
+  Random<T>(N,seed), minv_(minv), maxv_(maxv) {    
+    boost::random::mt19937 generator(this->seed_);
+    boost::random::uniform_real_distribution<T> distribution(minv_, maxv_);
+    for (size_t jj=0; jj < this->N_; ++jj) this->data_.push_back(distribution(generator));
+  };    
+
+  virtual ~UniformDistribution() {};
+
+ private:
+  T minv_;
+  T maxv_;
+};
+
+// -----------------------------------------------------------------------------
+/*! Class for generating uniformly-distributed random integers
+ *
+ * \details *util::UniformIntDistribution* creates a vector of psedo-random integers
  * that are uniformly distributed across a specified interval of values.
  *
  * \param[in] N The size of the desired array (default 1)
@@ -75,39 +115,24 @@ template <typename T>
  * \param[in] optional seed to use for the random number generator.  If omitted,
  *            the code will define a seed based on the current (calendar) time.
  * 
- * \note If the data type is real, the interval is closed on the lower end and open
- * on the upper end, i.e. [minv,maxv).  However, if the type is integer the interval
- * is closed on both ends, i.e. [minv,maxv].  So, calling the integer constructor 
- * with vmin = 1 and vmax = 6 will return a random integer number between 1 and 6.
+ * \note the interval is closed on both ends, i.e. [minv,maxv].  So, calling the integer 
+ * constructor with vmin = 1 and vmax = 6 will return a random integer number between 1 and 6.
  *
  */
 
 template <typename T>
-class UniformDistribution : public Random<T> {
+class UniformIntDistribution : public Random<T> {
 
-public:
-
- UniformDistribution(std::size_t N = 1, T minv = 0, T maxv = 1,
-		     unsigned int seed = static_cast<std::uint32_t>(std::time(0))):
-  Random<T>(N,seed), minv_(minv), maxv_(maxv) {
-    
-    std::cout << "MSM N_ " << this->N_ << std::endl;
-    std::cout << "MSM minv_ " << minv_ << std::endl;
-    std::cout << "MSM maxv_ " << maxv_ << std::endl;
-    std::cout << "MSM seed_ " << this->seed_ << std::endl;
-
+ public:
+  UniformIntDistribution(std::size_t N = 1, T minv = 0, T maxv = 1,
+                         unsigned int seed = static_cast<std::uint32_t>(std::time(0))):
+  Random<T>(N,seed), minv_(minv), maxv_(maxv) {    
     boost::random::mt19937 generator(this->seed_);
-
-    if (std::is_integral<T>::value) {
-      boost::random::uniform_int_distribution<T> distribution(minv_, maxv_);
-      for (size_t jj=0; jj < this->N_; ++jj) this->data_.push_back(distribution(generator));
-    } else {
-      boost::random::uniform_real_distribution<T> distribution(minv_, maxv_);
-      for (size_t jj=0; jj < this->N_; ++jj) this->data_.push_back(distribution(generator));
-    }
+    boost::random::uniform_int_distribution<T> distribution(minv_, maxv_);
+    for (size_t jj=0; jj < this->N_; ++jj) this->data_.push_back(distribution(generator));
   };    
 
-  virtual ~UniformDistribution() {};
+  virtual ~UniformIntDistribution() {};
 
  private:
   T minv_;
@@ -126,21 +151,17 @@ public:
  * \param[in] seed seed to use for the random number generator.  If omitted,
  *            a seed will be generated based on the current (calendar) time.
  * 
+ * \warning Only implemented for floating point data types
  */
 
 template <typename T>
 class NormalDistribution : public Random<T> {
 
- public:
+public:
  NormalDistribution(std::size_t N = 1, T mean = 0, T sdev = 1,
 		     unsigned int seed = static_cast<std::uint32_t>(std::time(0))):
   Random<T>(N,seed), mean_(mean), sdev_(sdev) {
   
-    std::cout << "MSM Norm N " << N << std::endl;
-    std::cout << "MSM Norm mean " << mean << std::endl;
-    std::cout << "MSM Norm sdev " << sdev << std::endl;
-    std::cout << "MSM Norm seed " << seed << std::endl;
-
     if (!std::is_floating_point<T>::value) {
       oops::Log::error() << "NormalDistribution only implemented for floating point data types"
 			 << std::endl;
