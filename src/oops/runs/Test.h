@@ -21,6 +21,7 @@
 #include "eckit/config/Configuration.h"
 #include "oops/runs/Application.h"
 #include "oops/util/Logger.h"
+#include "oops/util/Printable.h"
 #include "test/TestEnvironment.h"
 
 namespace oops {

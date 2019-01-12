@@ -9,8 +9,12 @@
 #ifndef OOPS_UTIL_RANDOM_H_
 #define OOPS_UTIL_RANDOM_H_
 
+#include <boost/random.hpp>
+#include <iostream>
 #include <string>
 #include <vector>
+#include "oops/util/abor1_cpp.h"
+#include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
 
 namespace util {
@@ -32,47 +36,78 @@ namespace util {
 
 
 template <typename T>
-class Random : public util::Printable {
+  class Random : public util::Printable {
+
  public:
 
+  void SetN(const size_t N = 1) {N_ = N;}
   void SetSeed(const unsigned int seed =
                static_cast<std::uint32_t>(std::time(0))) {seed_ = seed;}
 
   const T & operator[](const std::size_t ii) const {return data_[ii];}
 
  protected:
-  Random(size_t N, unsigned int seed): N_(N), seed_(seed) {}
-  virtual ~Random();
+  Random(size_t N, unsigned int seed): N_(N), seed_(seed) {};
+  virtual ~Random() {};
 
   std::size_t N_;
   std::vector<T> data_;
   unsigned int seed_;
 
  private:
-  virtual void print(std::ostream &) const = 0;
+  void print(std::ostream &) const {
+    for (size_t jj=0; jj < N_; ++jj) {
+      std::cout << "MSM Random: " << jj << ": " << data_[jj] << std::endl;
+    }
+  };
   
 };
 
 // -----------------------------------------------------------------------------
+/*! Class for generating uniformly-distributed random numbers
+ *
+ * \details *util::UniformDistribution* creates a vector of psedo-random numbers
+ * that are uniformly distributed across a specified interval of values.
+ *
+ * \param[in] N The size of the desired array (default 1)
+ * \param[in] minv The minimum value of the interval (default 0)
+ * \param[in] minv The maximum value of the interval (default 1)
+ * \param[in] optional seed to use for the random number generator.  If omitted,
+ *            the code will define a seed based on the current (calendar) time.
+ * 
+ * \note If the data type is real, the interval is closed on the lower end and open
+ * on the upper end, i.e. [minv,maxv).  However, if the type is integer the interval
+ * is closed on both ends, i.e. [minv,maxv].  So, calling the integer constructor 
+ * with vmin = 1 and vmax = 6 will return a random integer number between 1 and 6.
+ *
+ */
 
 template <typename T>
-class UniformDistribution : Random<T> {
+class UniformDistribution : public Random<T> {
 
- public:
-  /*! principal constructor */
-  UniformDistribution(size_t, T, T, unsigned int);
+public:
 
-  /*! constructors with default values */
-  UniformDistribution(size_t N, T minv, T maxv):
-  UniformDistribution(N, minv, maxv, static_cast<std::uint32_t>(std::time(0))) {}
+ UniformDistribution(std::size_t N = 1, T minv = 0, T maxv = 1,
+		     unsigned int seed = static_cast<std::uint32_t>(std::time(0))):
+  Random<T>(N,seed), minv_(minv), maxv_(maxv) {
+    
+    std::cout << "MSM N_ " << this->N_ << std::endl;
+    std::cout << "MSM minv_ " << minv_ << std::endl;
+    std::cout << "MSM maxv_ " << maxv_ << std::endl;
+    std::cout << "MSM seed_ " << this->seed_ << std::endl;
 
-  UniformDistribution(size_t N):
-  UniformDistribution(N, 0.0, 1.0, static_cast<std::uint32_t>(std::time(0))) {}
+    boost::random::mt19937 generator(this->seed_);
 
-  UniformDistribution():
-  UniformDistribution(1, 0.0, 1.0, static_cast<std::uint32_t>(std::time(0))) {}
+    if (std::is_integral<T>::value) {
+      boost::random::uniform_int_distribution<T> distribution(minv_, maxv_);
+      for (size_t jj=0; jj < this->N_; ++jj) this->data_.push_back(distribution(generator));
+    } else {
+      boost::random::uniform_real_distribution<T> distribution(minv_, maxv_);
+      for (size_t jj=0; jj < this->N_; ++jj) this->data_.push_back(distribution(generator));
+    }
+  };    
 
-  ~UniformDistribution();
+  virtual ~UniformDistribution() {};
 
  private:
   T minv_;
@@ -80,26 +115,45 @@ class UniformDistribution : Random<T> {
 };
 
 // ------------------------------------------------------------------------------
-// Normal distributions
+/*! Class for generating Gaussian-distributed random numbers
+ *
+ * \details *util::NormalDistribution* creates a vector of psedo-random numbers
+ * with a normal (Gaussian) distribution.
+ *
+ * \param[in] N The size of the desired array (default 1)
+ * \param[in] mean The mean of the distribution (default 0)
+ * \param[in] sdev The standard deviation of the destribution (default 1)
+ * \param[in] seed seed to use for the random number generator.  If omitted,
+ *            a seed will be generated based on the current (calendar) time.
+ * 
+ */
 
 template <typename T>
-class NormalDistribution : Random<T> {
+class NormalDistribution : public Random<T> {
 
  public:
-  /*! principal constructor */
-  NormalDistribution(size_t, T, T, unsigned int);
+ NormalDistribution(std::size_t N = 1, T mean = 0, T sdev = 1,
+		     unsigned int seed = static_cast<std::uint32_t>(std::time(0))):
+  Random<T>(N,seed), mean_(mean), sdev_(sdev) {
+  
+    std::cout << "MSM Norm N " << N << std::endl;
+    std::cout << "MSM Norm mean " << mean << std::endl;
+    std::cout << "MSM Norm sdev " << sdev << std::endl;
+    std::cout << "MSM Norm seed " << seed << std::endl;
 
-  /*! constructors with default values */
-  NormalDistribution(size_t N, T mean, T sdev):
-  NormalDistribution(N, mean, sdev, static_cast<std::uint32_t>(std::time(0))) {}
+    if (!std::is_floating_point<T>::value) {
+      oops::Log::error() << "NormalDistribution only implemented for floating point data types"
+			 << std::endl;
+      ABORT("NormalDistribution only implemented for floating point data types");
+    }
 
-  NormalDistribution(size_t N):
-  NormalDistribution(N, 0.0, 1.0, static_cast<std::uint32_t>(std::time(0))) {}
+    boost::random::mt19937 generator(this->seed_);
+    boost::random::normal_distribution<T> distribution(mean_, sdev_);
+    for (size_t jj=0; jj < this->N_; ++jj) this->data_.push_back(distribution(generator));
 
-  NormalDistribution():
-  NormalDistribution(1, 0.0, 1.0, static_cast<std::uint32_t>(std::time(0))) {}
+  };
 
-  ~NormalDistribution();
+  virtual ~NormalDistribution() {};
 
  private:
   T mean_;
