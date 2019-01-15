@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 #include "oops/util/abor1_cpp.h"
+#include "oops/util/formats.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
 
@@ -56,10 +57,9 @@ template <typename T>
   unsigned int seed_;
 
  private:
-  // need to change this to print out max precision
   void print(std::ostream &) const {
     for (size_t jj=0; jj < N_; ++jj) {
-      std::cout << "MSM: " << jj << ": " << data_[jj] << std::endl;
+      oops::Log::info() << "   - " << util::full_precision(data_[jj]) << std::endl;
     }
   };
   

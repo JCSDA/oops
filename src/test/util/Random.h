@@ -35,18 +35,19 @@ void testCppRandom() {
   BOOST_CHECK_EQUAL(N, 10);  
   BOOST_CHECK_EQUAL(seed, 1234321);  
 
-  //util::UniformIntDistribution<int> x(N,1,200,seed);
-  //util::UniformIntDistribution<int> x(50,1,200);
+  std::vector<float> real_range = config.getFloatVector("uniform_real_range");
+  util::UniformDistribution<float> x(N,real_range[0],real_range[1],seed);
+  std::cout << "\nMSM Uniform: \n" << x << std::endl;
   
-  util::UniformDistribution<double> x(50,1.0,200.0,seed);
+  std::vector<int> int_range = config.getIntVector("uniform_int_range");
+  util::UniformIntDistribution<int> y(N,int_range[0],int_range[1],seed);
+  std::cout << "\nMSM Int: \n" << y << std::endl;
 
-  util::NormalDistribution<double> y(20,0.1,5.2);
-  //util::NormalDistribution<double> y();
-
-  std::cout << "MSM Uniform: \n" << x << std::endl;
-
-  std::cout << "MSM Normal: \n" << y << std::endl;
-
+  double normal_mean = config.getDouble("normal_mean");
+  double normal_sdev = config.getDouble("normal_sdev");
+  util::NormalDistribution<double> z(N,normal_mean,normal_sdev,seed);
+  std::cout << "\nMSM Normal: \n" << z << std::endl;
+  
 }
 
 // -----------------------------------------------------------------------------

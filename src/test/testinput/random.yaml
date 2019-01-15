@@ -3,3 +3,14 @@ test_framework_runtime_config: "--log_level=test_suite"
 test_random:
   N: 10
   seed: 1234321
+
+  # test of uniform real distribution
+  uniform_real_range: [1.0,10.0]
+
+  # test of uniform integer distribution
+  uniform_int_range: [1, 100]
+
+  # test of normal distribution
+  normal_mean: 0.0
+  normal_sdev: 2.0
+  
