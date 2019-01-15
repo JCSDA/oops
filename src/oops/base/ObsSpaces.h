@@ -80,7 +80,6 @@ ObsSpaces<MODEL>::ObsSpaces(const eckit::Configuration & conf,
     if (member) obsconf[jj].set("member", member);
     Log::debug() << "ObsSpaces::ObsSpaces : conf " << obsconf[jj] << std::endl;
     const std::string otype = obsconf[jj].getString("ObsType");
-    ASSERT(types_.count(otype) == 0);
     types_[otype] = jj;
     boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf[jj], bgn, end));
     spaces_.push_back(tmp);
