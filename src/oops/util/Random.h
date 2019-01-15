@@ -9,13 +9,12 @@
 #ifndef OOPS_UTIL_RANDOM_H_
 #define OOPS_UTIL_RANDOM_H_
 
-#include <boost/random.hpp>
 #include <iostream>
 #include <string>
 #include <vector>
+#include <boost/random.hpp>
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/formats.h"
-#include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
 
 namespace util {
@@ -36,12 +35,9 @@ namespace util {
  * util::NormalDistribution
  */
 
-
 template <typename T>
-  class Random : public util::Printable {
-
+class Random : public util::Printable {
  public:
-
   void SetN(const size_t N = 1) {N_ = N;}
   void SetSeed(const unsigned int seed =
                static_cast<std::uint32_t>(std::time(0))) {seed_ = seed;}
@@ -49,20 +45,20 @@ template <typename T>
   const T & operator[](const std::size_t ii) const {return data_[ii];}
 
  protected:
-  Random(size_t N, unsigned int seed): N_(N), seed_(seed) {};
-  virtual ~Random() {};
+  Random(size_t N, unsigned int seed): N_(N), seed_(seed) {}
+  virtual ~Random() {}
 
   std::size_t N_;
   std::vector<T> data_;
   unsigned int seed_;
 
  private:
-  void print(std::ostream &) const {
+  /*! This prints in a format that can be easily inserted into a yaml file for testing */
+  void print(std::ostream & os) const {
     for (size_t jj=0; jj < N_; ++jj) {
-      oops::Log::info() << "   - " << util::full_precision(data_[jj]) << std::endl;
+      os << "   - " << util::full_precision(data_[jj]) << std::endl;
     }
-  };
-  
+  }
 };
 
 // -----------------------------------------------------------------------------
@@ -77,6 +73,11 @@ template <typename T>
  * \param[in] optional seed to use for the random number generator.  If omitted,
  *            the code will define a seed based on the current (calendar) time.
  * 
+ * \example Example usage:
+ * util::UniformDistribution<double> x(N,1.0,100.0)  
+ * std::cout << x[i] << std::endl;  // access one element
+ * std::cout << x << std::endl;  // print full array
+ *  
  * \note The interval is closed on the lower end and open on the upper end, i.e. [minv,maxv).  
  *
  * \warning Only implemented for floating point data types.  For a sequence of random 
@@ -86,17 +87,16 @@ template <typename T>
 
 template <typename T>
 class UniformDistribution : public Random<T> {
-
-public:
- UniformDistribution(std::size_t N = 1, T minv = 0, T maxv = 1,
-		     unsigned int seed = static_cast<std::uint32_t>(std::time(0))):
-  Random<T>(N,seed), minv_(minv), maxv_(maxv) {    
+ public:
+  UniformDistribution(std::size_t N = 1, T minv = 0, T maxv = 1,
+                      unsigned int seed = static_cast<std::uint32_t>(std::time(0))):
+  Random<T>(N, seed), minv_(minv), maxv_(maxv) {
     boost::random::mt19937 generator(this->seed_);
     boost::random::uniform_real_distribution<T> distribution(minv_, maxv_);
     for (size_t jj=0; jj < this->N_; ++jj) this->data_.push_back(distribution(generator));
-  };    
+  }
 
-  virtual ~UniformDistribution() {};
+  virtual ~UniformDistribution() {}
 
  private:
   T minv_;
@@ -115,6 +115,11 @@ public:
  * \param[in] optional seed to use for the random number generator.  If omitted,
  *            the code will define a seed based on the current (calendar) time.
  * 
+ * \example Example usage:
+ * util::UniformIntDistribution<int> x(N,1,100)  
+ * std::cout << x[i] << std::endl;  // access one element
+ * std::cout << x << std::endl;  // print full array
+ *  
  * \note the interval is closed on both ends, i.e. [minv,maxv].  So, calling the integer 
  * constructor with vmin = 1 and vmax = 6 will return a random integer number between 1 and 6.
  *
@@ -122,17 +127,16 @@ public:
 
 template <typename T>
 class UniformIntDistribution : public Random<T> {
-
  public:
   UniformIntDistribution(std::size_t N = 1, T minv = 0, T maxv = 1,
                          unsigned int seed = static_cast<std::uint32_t>(std::time(0))):
-  Random<T>(N,seed), minv_(minv), maxv_(maxv) {    
+  Random<T>(N, seed), minv_(minv), maxv_(maxv) {
     boost::random::mt19937 generator(this->seed_);
     boost::random::uniform_int_distribution<T> distribution(minv_, maxv_);
     for (size_t jj=0; jj < this->N_; ++jj) this->data_.push_back(distribution(generator));
-  };    
+  }
 
-  virtual ~UniformIntDistribution() {};
+  virtual ~UniformIntDistribution() {}
 
  private:
   T minv_;
@@ -151,30 +155,31 @@ class UniformIntDistribution : public Random<T> {
  * \param[in] seed seed to use for the random number generator.  If omitted,
  *            a seed will be generated based on the current (calendar) time.
  * 
+ * \example Example usage:
+ * util::NormalDistribution<double> x(N,0.0,20.0)  
+ * std::cout << x[i] << std::endl;  // access one element
+ * std::cout << x << std::endl;  // print full array
+ * 
  * \warning Only implemented for floating point data types
  */
 
 template <typename T>
 class NormalDistribution : public Random<T> {
-
-public:
- NormalDistribution(std::size_t N = 1, T mean = 0, T sdev = 1,
-		     unsigned int seed = static_cast<std::uint32_t>(std::time(0))):
-  Random<T>(N,seed), mean_(mean), sdev_(sdev) {
-  
+ public:
+  NormalDistribution(std::size_t N = 1, T mean = 0, T sdev = 1,
+                     unsigned int seed = static_cast<std::uint32_t>(std::time(0))):
+  Random<T>(N, seed), mean_(mean), sdev_(sdev) {
     if (!std::is_floating_point<T>::value) {
       oops::Log::error() << "NormalDistribution only implemented for floating point data types"
-			 << std::endl;
+                         << std::endl;
       ABORT("NormalDistribution only implemented for floating point data types");
     }
-
     boost::random::mt19937 generator(this->seed_);
     boost::random::normal_distribution<T> distribution(mean_, sdev_);
     for (size_t jj=0; jj < this->N_; ++jj) this->data_.push_back(distribution(generator));
+  }
 
-  };
-
-  virtual ~NormalDistribution() {};
+  virtual ~NormalDistribution() {}
 
  private:
   T mean_;
