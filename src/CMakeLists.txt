@@ -293,6 +293,8 @@ test/interface/ObsVector.h
 test/interface/LinearVariableChange.h
 test/TestEnvironment.h
 test/util/Random.h
+test/util/Fortran.h
+test/util/random.F90
 )
 
 # macro to create a symlink from src to dst

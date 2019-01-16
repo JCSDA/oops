@@ -18,6 +18,8 @@
 #include <limits>
 #include <string>
 #include <vector>
+#include <boost/noncopyable.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <boost/test/unit_test.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
@@ -25,8 +27,31 @@
 #include "oops/util/Logger.h"
 #include "oops/util/Random.h"
 #include "test/TestEnvironment.h"
+#include "test/util/Fortran.h"
 
 namespace test {
+
+// -----------------------------------------------------------------------------
+/*! Test Fixture for random number generators */
+
+class RandomFixture : private boost::noncopyable {
+ public:
+  static const eckit::Configuration & test() {return *getInstance().test_;}
+
+ private:
+  static RandomFixture & getInstance() {
+    static RandomFixture theRandomFixture;
+    return theRandomFixture;
+  }
+
+  RandomFixture() {
+    test_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "test_random"));
+  }
+
+  ~RandomFixture() {}
+
+  boost::scoped_ptr<const eckit::LocalConfiguration> test_;
+};
 
 // -----------------------------------------------------------------------------
 /*! Test C++ implementation of random number generators
@@ -35,12 +60,13 @@ namespace test {
  * oops::util::Random.h are reproducible.  Specifically, we want to make sure that 
  * they are independent of the compiler and platform for a given random seed.
  *
- */
+*/
 
 void testCppRandom() {
-  const eckit::LocalConfiguration config(TestEnvironment::config(), "test_random");
-  std::size_t N = static_cast<size_t>(config.getInt("N"));
-  unsigned int seed = static_cast<unsigned int>(config.getInt("seed"));
+  typedef RandomFixture Test_;
+  
+  std::size_t N = static_cast<size_t>(Test_::test().getInt("N"));
+  unsigned int seed = static_cast<unsigned int>(Test_::test().getInt("seed"));
 
   /*! Test uniform real distrubution 
    * The tolerance is based on the precision of the data type, in this case <float>.  
@@ -51,32 +77,53 @@ void testCppRandom() {
   */
   double sfac = 10;
   float tol = 100 * sfac * std::numeric_limits<float>::epsilon();
-  std::vector<float> real_range = config.getFloatVector("uniform_real_range");
+  std::vector<float> real_range = Test_::test().getFloatVector("uniform_real_range");
   util::UniformDistribution<float> x(N, real_range[0], real_range[1], seed);
-  std::vector<float> x_check = config.getFloatVector("uniform_real_answer");
+  std::vector<float> x_check = Test_::test().getFloatVector("uniform_real_answer");
   oops::Log::info() << "\nTesting oops::util::Random.h Uniform Real Distribution: \n"
                     << x << std::endl;
   for (std::size_t jj = 0; jj < N; ++jj) BOOST_CHECK_CLOSE(x[jj], x_check[jj],
                                                            tol * std::abs(x_check[jj]));
 
   /*! Test uniform integer distribution */
-  std::vector<int> int_range = config.getIntVector("uniform_int_range");
+  std::vector<int> int_range = Test_::test().getIntVector("uniform_int_range");
   util::UniformIntDistribution<int> y(N, int_range[0], int_range[1], seed);
-  std::vector<int> y_check = config.getIntVector("uniform_int_answer");
+  std::vector<int> y_check = Test_::test().getIntVector("uniform_int_answer");
   oops::Log::info() << "\nTesting oops::util::Random.h Uniform Int Distribution: \n"
                     << y << std::endl;
   for (std::size_t jj = 0; jj < N; ++jj) BOOST_CHECK_EQUAL(y[jj], y_check[jj]);
 
   /*! Test normal distribution */
   tol = 100 * sfac * std::numeric_limits<double>::epsilon();  // see comment above
-  double normal_mean = config.getDouble("normal_mean");
-  double normal_sdev = config.getDouble("normal_sdev");
+  double normal_mean = Test_::test().getDouble("normal_mean");
+  double normal_sdev = Test_::test().getDouble("normal_sdev");
   util::NormalDistribution<double> z(N, normal_mean, normal_sdev, seed);
-  std::vector<double> z_check = config.getDoubleVector("normal_answer");
+  std::vector<double> z_check = Test_::test().getDoubleVector("normal_answer");
   oops::Log::info() << "\nTesting oops::util::Random.h Gaussian Distribution: \n"
                     << z << std::endl;
   for (std::size_t jj = 0; jj < N; ++jj) BOOST_CHECK_CLOSE(z[jj], z_check[jj],
                                                            tol * std::abs(z_check[jj]));
+  }
+
+// -----------------------------------------------------------------------------
+/*! Test Fortran implementation of random number generators
+ *
+ * \details This is intended to make sure that the random number generators in 
+ * oops::util::Random.h are reproducible.  Specifically, we want to make sure that 
+ * they are independent of the compiler and platform for a given random seed.
+ *
+ */
+
+void testFortranRandom() {
+  typedef RandomFixture Test_;
+
+  const eckit::Configuration * config = &Test_::test();
+
+  std::int32_t res = test_uniform_real_f(&config);
+  BOOST_CHECK(res == 0);
+  
+  //BOOST_CHECK(test_uniform_real_f(Test_::test()) == 0);
+  
 }
 
 // -----------------------------------------------------------------------------
@@ -93,6 +140,7 @@ class Random : public oops::Test {
     boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("util/Random");
 
     ts->add(BOOST_TEST_CASE(&testCppRandom));
+    ts->add(BOOST_TEST_CASE(&testFortranRandom));
 
     boost::unit_test::framework::master_test_suite().add(ts);
   }
