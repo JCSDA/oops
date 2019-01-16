@@ -278,6 +278,9 @@ oops/util/TimerHelper.h
 oops/util/TimerHelper.cc
 oops/util/utilNamespaceDoc.h
 oops/util/Random.h
+oops/util/random_f.h
+oops/util/random_f.cc
+oops/util/random_mod.F90
 
 test/base/ObsFilters.h
 test/interface/GeoVaLs.h

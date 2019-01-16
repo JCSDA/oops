@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2017 UCAR
+ * (C) Copyright 2019 UCAR
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -15,6 +15,7 @@
 #include <boost/random.hpp>
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/formats.h"
+#include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
 
 namespace util {
@@ -38,10 +39,6 @@ namespace util {
 template <typename T>
 class Random : public util::Printable {
  public:
-  void SetN(const size_t N = 1) {N_ = N;}
-  void SetSeed(const unsigned int seed =
-               static_cast<std::uint32_t>(std::time(0))) {seed_ = seed;}
-
   const T & operator[](const std::size_t ii) const {return data_[ii];}
 
  protected:
