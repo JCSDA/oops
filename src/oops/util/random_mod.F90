@@ -15,7 +15,7 @@ implicit none
 
 private
 public uniform_distribution
-!public normal_distribution
+public normal_distribution
 
 #include "random_interface.f"
 

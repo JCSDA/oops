@@ -17,25 +17,64 @@ use random_mod
 implicit none
 private
 
+integer, parameter :: max_string = 800, max_number = 30
+
 !-------------------------------------------------------------------------------
 contains
 !-------------------------------------------------------------------------------
-
+!> Test uniform real distribution
+!
+  
 integer(c_int32_t) function c_test_uniform_real(c_conf) bind(c,name='test_uniform_real_f')  
 implicit none
 type(c_ptr), intent(in) :: c_conf
-integer :: N, seed
+integer :: N, seed, i
+character(len=max_number) :: range(2)
+character(len=max_number), allocatable :: x_check(:)
+real(kind_real), allocatable :: x(:)
+real(kind_real) :: minv, maxv, tol
+character(len=*), parameter :: myname_="test_uniform_real"
+character(max_string) :: err_msg
 
 N = config_get_int(c_conf, "N")
 seed = config_get_int(c_conf, "seed")
 
-write(*,*) "MSM N: ", N
-write(*,*) "MSM seed: ", seed
+if (size(config_get_string_vector(c_conf, max_string, "uniform_real_range")) == 2) then
+   range = config_get_string_vector(c_conf, max_number, "uniform_real_range")
+   read(range(1),*) minv
+   read(range(2),*) maxv
+else
+   write(err_msg,*) myname_ // "error reading range"
+   call abor1_ftn(err_msg)
+endif
+
+!> Compute random vector
+allocate(x(N))
+call uniform_distribution(x, minv, maxv, seed)
+
+if (size(config_get_string_vector(c_conf, max_string, "uniform_real_answer")) == N) then
+   allocate(x_check(N))
+   x_check = config_get_string_vector(c_conf, max_number, "uniform_real_answer")
+   do i=1,N 
+      write(*,*) "MSM: ", x(i), x_check(i)
+   enddo
+else
+   write(err_msg,*) myname_ // "error reading answer"
+   call abor1_ftn(err_msg)
+endif
+
+! Test uniform real distribution.
+! The tolerance is based on the precision of the data type.
+tol = epsilon(minv)
+write(*,*) "MSM tol: ", tol
 
 ! if (passes)
 c_test_uniform_real = 0
 ! else
 !c_test_uniform_real = 1
+
+! clean up
+deallocate(x,x_check)
 
 end function c_test_uniform_real
 

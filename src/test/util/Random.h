@@ -119,10 +119,7 @@ void testFortranRandom() {
 
   const eckit::Configuration * config = &Test_::test();
 
-  std::int32_t res = test_uniform_real_f(&config);
-  BOOST_CHECK(res == 0);
-  
-  //BOOST_CHECK(test_uniform_real_f(Test_::test()) == 0);
+  BOOST_CHECK(test_uniform_real_f(&config) == 0);
   
 }
 
