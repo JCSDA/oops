@@ -25,6 +25,14 @@ extern "C" {
                               std::int32_t &, float *);
   void random_uniform_double_f(const std::size_t &, const double &, const double &,
                                std::int32_t &, double *);
+  void random_uniform_int_f(const std::size_t &, const std::int32_t &,
+                            const std::int32_t &, std::int32_t &, std::int32_t *);
+  void random_uniform_long_f(const std::size_t &, const std::int64_t &,
+                             const std::int64_t &, std::int32_t &, std::int64_t *);
+  void random_normal_float_f(const std::size_t &, const float &, const float &,
+                             std::int32_t &, float *);
+  void random_normal_double_f(const std::size_t &, const double &, const double &,
+                              std::int32_t &, double *);
 }
 
 }  // namespace util

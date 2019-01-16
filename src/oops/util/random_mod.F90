@@ -24,14 +24,14 @@ public uniform_distribution
 interface uniform_distribution
    module procedure uniform_float_distribution
    module procedure uniform_double_distribution
-!   module procedure uniform_int_distribution
-!   module procedure uniform_long_distribution
+   module procedure uniform_int_distribution
+   module procedure uniform_long_distribution
 end interface uniform_distribution
 
-!interface normal_distribution
-!   module procedure normal_float_distribution
-!   module procedure normal_double_distribution
-!end interface normal_distribution
+interface normal_distribution
+   module procedure normal_float_distribution
+   module procedure normal_double_distribution
+end interface normal_distribution
 
 !-------------------------------------------------------------------------------
 contains
@@ -65,5 +65,61 @@ subroutine uniform_double_distribution(x, minv, maxv, seed)
   
 end subroutine uniform_double_distribution
   
+subroutine uniform_int_distribution(x, minv, maxv, seed)
+  implicit none
+  integer(c_int32_t), intent(inout) :: x(:)  !< Array that will contain the result
+  integer(c_int32_t), intent(in)    :: minv  !< minimum value of range
+  integer(c_int32_t), intent(in)    :: maxv  !< minimum value of range
+  integer, intent(inout), optional  :: seed  !< random seed
+  integer(c_size_t) :: length
+  
+  length = size(x)
+  if (.not. present(seed)) seed = time()
+  call c_random_uniform_int(length,minv,maxv,int(seed,c_int32_t),x)
+  
+end subroutine uniform_int_distribution
+  
+subroutine uniform_long_distribution(x, minv, maxv, seed)
+  implicit none
+  integer(c_int64_t), intent(inout) :: x(:)  !< Array that will contain the result
+  integer(c_int64_t), intent(in)    :: minv  !< minimum value of range
+  integer(c_int64_t), intent(in)    :: maxv  !< minimum value of range
+  integer, intent(inout), optional  :: seed  !< random seed
+  integer(c_size_t) :: length
+  
+  length = size(x)
+  if (.not. present(seed)) seed = time()
+  call c_random_uniform_long(length,minv,maxv,int(seed,c_int32_t),x)
+  
+end subroutine uniform_long_distribution
+  
+subroutine normal_float_distribution(x, mean, sdev, seed)
+  implicit none
+  real(c_float), intent(inout)     :: x(:)  !< Array that will contain the result
+  real(c_float), intent(in)        :: mean  !< mean
+  real(c_float), intent(in)        :: sdev  !< standard deviation
+  integer, intent(inout), optional :: seed  !< random seed
+  integer(c_size_t) :: length  
+  
+  length = size(x)
+  if (.not. present(seed)) seed = time()
+  call c_random_normal_float(length,mean,sdev,int(seed,c_int32_t),x)
+  
+end subroutine normal_float_distribution
+
+subroutine normal_double_distribution(x, mean, sdev, seed)
+  implicit none
+  real(c_double), intent(inout)    :: x(:)  !< Array that will contain the result
+  real(c_double), intent(in)       :: mean  !< mean
+  real(c_double), intent(in)       :: sdev  !< standard deviation
+  integer, intent(inout), optional :: seed  !< random seed
+  integer(c_size_t) :: length  
+  
+  length = size(x)
+  if (.not. present(seed)) seed = time()
+  call c_random_normal_double(length,mean,sdev,int(seed,c_int32_t),x)
+  
+end subroutine normal_double_distribution
+
 !-------------------------------------------------------------------------------
 end module random_mod
