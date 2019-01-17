@@ -205,16 +205,16 @@ end subroutine dirac
 ! ------------------------------------------------------------------------------
 
 subroutine random(self)
-use random_mod
+use random_vectors_mod
 implicit none
 type(qg_field), intent(inout) :: self
 
 call check(self)
 
-call normal_distribution(self%gfld3d(:,:,:),0.0_kind_real,1.0_kind_real)
+call random_vector(self%gfld3d(:,:,:))
 if (self%lbc) then
-  call normal_distribution(self%xbound(:),0.0_kind_real,1.0_kind_real)
-  call normal_distribution(self%qbound(:,:),0.0_kind_real,1.0_kind_real)
+  call random_vector(self%xbound(:))
+  call random_vector(self%qbound(:,:))
 endif
 
 end subroutine random

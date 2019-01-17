@@ -180,12 +180,12 @@ end subroutine c_qg_gom_abs
 ! ------------------------------------------------------------------------------
 
 subroutine c_qg_gom_random(c_key_self) bind(c,name='qg_gom_random_f90')
-use random_mod
+use random_vectors_mod
 implicit none
 integer(c_int), intent(in) :: c_key_self
 type(qg_goms), pointer :: self
 call qg_goms_registry%get(c_key_self, self)
-call normal_distribution(self%values(:,:),0.0_kind_real,1.0_kind_real)
+call random_vector(self%values(:,:))
 end subroutine c_qg_gom_random
 
 ! ------------------------------------------------------------------------------
