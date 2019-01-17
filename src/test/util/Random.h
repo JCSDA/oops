@@ -64,7 +64,7 @@ class RandomFixture : private boost::noncopyable {
 
 void testCppRandom() {
   typedef RandomFixture Test_;
-  
+
   std::size_t N = static_cast<size_t>(Test_::test().getInt("N"));
   unsigned int seed = static_cast<unsigned int>(Test_::test().getInt("seed"));
 
@@ -120,7 +120,8 @@ void testFortranRandom() {
   const eckit::Configuration * config = &Test_::test();
 
   BOOST_CHECK(test_uniform_real_f(&config) == 0);
-  
+  BOOST_CHECK(test_uniform_int_f(&config) == 0);
+  BOOST_CHECK(test_normal_real_f(&config) == 0);
 }
 
 // -----------------------------------------------------------------------------

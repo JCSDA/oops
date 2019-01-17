@@ -108,7 +108,7 @@ class UniformDistribution : public Random<T> {
  *
  * \param[in] N The size of the desired array (default 1)
  * \param[in] minv The minimum value of the interval (default 0)
- * \param[in] minv The maximum value of the interval (default 1)
+ * \param[in] minv The maximum value of the interval (default 100)
  * \param[in] optional seed to use for the random number generator.  If omitted,
  *            the code will define a seed based on the current (calendar) time.
  * 
@@ -125,7 +125,7 @@ class UniformDistribution : public Random<T> {
 template <typename T>
 class UniformIntDistribution : public Random<T> {
  public:
-  UniformIntDistribution(std::size_t N = 1, T minv = 0, T maxv = 1,
+  UniformIntDistribution(std::size_t N = 1, T minv = 0, T maxv = 100,
                          unsigned int seed = static_cast<std::uint32_t>(std::time(0))):
   Random<T>(N, seed), minv_(minv), maxv_(maxv) {
     boost::random::mt19937 generator(this->seed_);

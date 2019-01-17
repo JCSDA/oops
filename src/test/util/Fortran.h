@@ -6,8 +6,8 @@
  *
  */
 
-#ifndef TEST_UTIL_F_H_
-#define TEST_UTIL_F_H_
+#ifndef TEST_UTIL_FORTRAN_H_
+#define TEST_UTIL_FORTRAN_H_
 
 #include <cstdint>
 #include "eckit/config/Configuration.h"
@@ -23,9 +23,11 @@ namespace test {
 extern "C" {
 
   std::int32_t test_uniform_real_f(const eckit::Configuration * const *);
+  std::int32_t test_uniform_int_f(const eckit::Configuration * const *);
+  std::int32_t test_normal_real_f(const eckit::Configuration * const *);
 
 }
 
-#endif  // TEST_UTIL_F_H_
+#endif  // TEST_UTIL_FORTRAN_H_
 
-} // namespace test 
+}  // namespace test

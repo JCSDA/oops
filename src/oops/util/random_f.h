@@ -13,7 +13,7 @@
 #include <cstdint>
 
 namespace util {
-  
+
 // -----------------------------------------------------------------------------
 /*! These functions provide a Fortran-callable interface to the 
  * C++ random number generators

@@ -126,7 +126,7 @@ void config_get_data_element_f(const eckit::Configuration & d, const char str[],
   ASSERT(x.size() == length);
   for (std::size_t jj = 0; jj < length; ++jj) vec[jj] = x[jj];
 }
-  
+
   void config_get_float_vector_f(const eckit::Configuration & d, const char str[],
                                  const std::size_t & length, float * vec) {
   const std::string s(str);
@@ -134,7 +134,7 @@ void config_get_data_element_f(const eckit::Configuration & d, const char str[],
   ASSERT(x.size() == length);
   for (std::size_t jj = 0; jj < length; ++jj) vec[jj] = x[jj];
 }
-  
+
   void config_get_int_vector_f(const eckit::Configuration & d, const char str[],
                                const std::size_t & length, std::int32_t * vec) {
   const std::string s(str);
@@ -142,7 +142,7 @@ void config_get_data_element_f(const eckit::Configuration & d, const char str[],
   ASSERT(x.size() == length);
   for (std::size_t jj = 0; jj < length; ++jj) vec[jj] = x[jj];
 }
-  
+
 // -----------------------------------------------------------------------------
 
 }  // namespace util
