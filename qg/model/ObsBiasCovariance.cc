@@ -21,6 +21,7 @@
 #include "model/ObsBias.h"
 #include "model/ObsBiasIncrement.h"
 #include "oops/util/Logger.h"
+#include "oops/util/Random.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {
@@ -75,12 +76,10 @@ void ObsBiasCovariance::inverseMultiply(const ObsBiasIncrement & dxin,
 }
 // -----------------------------------------------------------------------------
 void ObsBiasCovariance::randomize(ObsBiasIncrement & dx) const {
-  static std::mt19937 generator(4);
-  static std::normal_distribution<double> distribution(0.0, 1.0);
+  static util::NormalDistribution<double> dist(ObsBias::ntypes, 0.0, 1.0, 4);
   for (unsigned int jj = 0; jj < ObsBias::ntypes; ++jj) {
     if (variance_[jj] > 0.0) {
-      double zz = distribution(generator);
-      dx[jj] = zz * std::sqrt(variance_[jj]);
+      dx[jj] = dist[jj] * std::sqrt(variance_[jj]);
     } else {
       dx[jj] = 0.0;
     }

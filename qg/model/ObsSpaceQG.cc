@@ -18,6 +18,7 @@
 
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
+#include "oops/util/Random.h"
 
 #include "model/ObsVecQG.h"
 
@@ -84,9 +85,8 @@ ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config,
 // -----------------------------------------------------------------------------
 
 void ObsSpaceQG::random(const int & nn, double * xx) const {
-  static std::mt19937 generator(getSeed());
-  static std::normal_distribution<double> distribution(0.0, 1.0);
-  for (int jj = 0; jj < nn; ++jj) xx[jj] = distribution(generator);
+  static util::NormalDistribution<double> dist(nn, 0.0, 1.0, getSeed());
+  for (int jj = 0; jj < nn; ++jj) xx[jj] = dist[jj];
 }
 
 // -----------------------------------------------------------------------------

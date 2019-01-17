@@ -13,6 +13,7 @@
 subroutine c_qg_b_setup(c_key_self, c_conf, c_key_geom) &
           & bind (c,name='qg_b_setup_f90')
 
+use kinds
 use iso_c_binding
 use qg_covariance_mod
 use qg_geom_mod
@@ -60,7 +61,6 @@ subroutine c_qg_b_inv_mult(c_key_conf, c_key_in, c_key_out) bind(c,name='qg_b_in
 use iso_c_binding
 use qg_covariance_mod
 use qg_fields
-use kinds
 
 implicit none
 integer(c_int), intent(in) :: c_key_conf  !< covar config structure
@@ -130,7 +130,7 @@ subroutine c_qg_b_randomize(c_key_conf, c_key_out) bind(c,name='qg_b_randomize_f
 use iso_c_binding
 use qg_covariance_mod
 use qg_fields
-use random_vectors_mod
+use random_mod
 use kinds
 
 implicit none
@@ -145,7 +145,7 @@ call qg_field_registry%get(c_key_out,xout)
 
 allocate(xctl(conf%nx, conf%ny, 2))
 
-call random_vector(xctl(:,:,:))
+call normal_distribution(xctl(:,:,:),0.0_kind_real,1.0_kind_real)
 call zeros(xout)
 call qg_3d_covar_sqrt_mult(conf%nx,conf%ny,xout,xctl,conf)
 

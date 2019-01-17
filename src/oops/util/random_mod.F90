@@ -30,7 +30,11 @@ end interface uniform_distribution
 
 interface normal_distribution
    module procedure normal_float_distribution
+   module procedure normal_float_distribution_2D
+   module procedure normal_float_distribution_3D
    module procedure normal_double_distribution
+   module procedure normal_double_distribution_2D
+   module procedure normal_double_distribution_3D
 end interface normal_distribution
 
 !-------------------------------------------------------------------------------
@@ -120,6 +124,78 @@ subroutine normal_double_distribution(x, mean, sdev, seed)
   call c_random_normal_double(length,mean,sdev,int(seed,c_int32_t),x)
   
 end subroutine normal_double_distribution
+
+subroutine normal_double_distribution_2D(x, mean, sdev, seed)
+  implicit none
+  real(c_double), intent(inout)    :: x(:,:)  !< Array that will contain the result
+  real(c_double), intent(in)       :: mean    !< mean
+  real(c_double), intent(in)       :: sdev    !< standard deviation
+  integer, intent(inout), optional :: seed    !< random seed
+  integer(c_size_t) :: length
+  real(c_double), allocatable :: x_1d(:)
+
+  length = size(x)
+  allocate(x_1d(length))
+  if (.not. present(seed)) seed = time()
+  call c_random_normal_double(length,mean,sdev,int(seed,c_int32_t),x)
+  x = reshape(x_1d, shape(x))
+  deallocate(x_1d)
+  
+end subroutine normal_double_distribution_2D
+
+subroutine normal_double_distribution_3D(x, mean, sdev, seed)
+  implicit none
+  real(c_double), intent(inout)    :: x(:,:,:)  !< Array that will contain the result
+  real(c_double), intent(in)       :: mean      !< mean
+  real(c_double), intent(in)       :: sdev      !< standard deviation
+  integer, intent(inout), optional :: seed      !< random seed
+  integer(c_size_t) :: length
+  real(c_double), allocatable :: x_1d(:)
+
+  length = size(x)
+  allocate(x_1d(length))
+  if (.not. present(seed)) seed = time()
+  call c_random_normal_double(length,mean,sdev,int(seed,c_int32_t),x)
+  x = reshape(x_1d, shape(x))
+  deallocate(x_1d)
+  
+end subroutine normal_double_distribution_3D
+
+subroutine normal_float_distribution_2D(x, mean, sdev, seed)
+  implicit none
+  real(c_float), intent(inout)     :: x(:,:)  !< Array that will contain the result
+  real(c_float), intent(in)        :: mean    !< mean
+  real(c_float), intent(in)        :: sdev    !< standard deviation
+  integer, intent(inout), optional :: seed    !< random seed
+  integer(c_size_t) :: length
+  real(c_float), allocatable :: x_1d(:)
+
+  length = size(x)
+  allocate(x_1d(length))
+  if (.not. present(seed)) seed = time()
+  call c_random_normal_float(length,mean,sdev,int(seed,c_int32_t),x)
+  x = reshape(x_1d, shape(x))
+  deallocate(x_1d)
+  
+end subroutine normal_float_distribution_2D
+
+subroutine normal_float_distribution_3D(x, mean, sdev, seed)
+  implicit none
+  real(c_float), intent(inout)     :: x(:,:,:)  !< Array that will contain the result
+  real(c_float), intent(in)        :: mean      !< mean
+  real(c_float), intent(in)        :: sdev      !< standard deviation
+  integer, intent(inout), optional :: seed      !< random seed
+  integer(c_size_t) :: length
+  real(c_float), allocatable :: x_1d(:)
+
+  length = size(x)
+  allocate(x_1d(length))
+  if (.not. present(seed)) seed = time()
+  call c_random_normal_float(length,mean,sdev,int(seed,c_int32_t),x)
+  x = reshape(x_1d, shape(x))
+  deallocate(x_1d)
+  
+end subroutine normal_float_distribution_3D
 
 !-------------------------------------------------------------------------------
 end module random_mod
