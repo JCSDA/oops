@@ -12,6 +12,7 @@
 #define OOPS_UTIL_CONFIG_F_H_
 
 #include<istream>
+#include<cstdint>
 
 namespace eckit {
   class Configuration;
@@ -37,6 +38,10 @@ extern "C" {
                                  const int & index, char output[]);
   void config_get_double_vector_f(const eckit::Configuration & d, const char str[],
                                         const std::size_t & length, double * vec);
+  void config_get_float_vector_f(const eckit::Configuration & d, const char str[],
+                                        const std::size_t & length, float * vec);
+  void config_get_int_vector_f(const eckit::Configuration & d, const char str[],
+			       const std::size_t & length, std::int32_t * vec);
 }
 
 }  // namespace util
