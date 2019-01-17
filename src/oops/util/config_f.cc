@@ -112,6 +112,21 @@ void config_get_data_element_f(const eckit::Configuration & d, const char str[],
   strncpy(output, data[index-1].c_str(), lendata);
 }
 
+/*! Vector retrival from config file
+ * 
+ * 
+ * \warning It is the responsibility of the calling Fortran routine to allocate these
+ *
+ */ 
+
+  void config_get_double_vector_f(const eckit::Configuration & d, const char str[],
+                                  const std::size_t & length, double * vec) {
+  const std::string s(str);
+  std::vector<double> x = d.getDoubleVector(s);
+  ASSERT(x.size() == length);
+  for (std::size_t jj = 0; jj < length; ++jj) vec[jj] = x[jj];
+}
+  
 // -----------------------------------------------------------------------------
 
 }  // namespace util

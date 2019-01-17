@@ -19,7 +19,7 @@ implicit none
 private
 integer, parameter :: max_string=800
 public config_element_exists, config_get_int, config_get_real, config_get_string, &
-       config_get_string_vector
+       config_get_string_vector, config_get_double_vector
 
 #include "config.intfb.h"
 
@@ -192,5 +192,28 @@ function config_get_string_vector(c_dom, length, query)
 end function config_get_string_vector
 
 !-------------------------------------------------------------------------------
+
+subroutine config_get_double_vector(c_dom,query,vec)
+  implicit none
+  type(c_ptr), intent(in) :: c_dom
+  character(len=*), intent(in) :: query
+  real(c_double), intent(inout) :: vec(:)
+  integer(c_size_t) :: length
+  character(kind=c_char,len=1), allocatable :: c_query(:)
+  character(max_string) :: err_msg
+
+  !  Translate query from Fortran string to C++ char[].
+  call f_c_string(query,c_query)
+
+  ! Call C++ to process the query
+  if(LOGICAL(c_config_element_exists(c_dom,c_query))) then
+    length = size(vec)
+    call c_config_get_double_vector(c_dom,c_query,length,vec)
+  else
+     write(err_msg,*) "config_get_double_vector: ", trim(query), " does not exist in config and no default"
+     call abor1_ftn(err_msg)
+  endif
+  deallocate(c_query)
+end subroutine config_get_double_vector
 
 end module config_mod

@@ -100,5 +100,17 @@ subroutine c_config_get_data_element(dom, str, index, output) bind(C,name='confi
 end subroutine c_config_get_data_element
 
 !-------------------------------------------------------------------------------
+
+subroutine c_config_get_double_vector(dom, str, length, vect) &
+                                   & bind(C,name='config_get_double_vector_f')
+  use, intrinsic :: iso_c_binding, only : c_ptr, c_char, c_size_t, c_double
+  implicit none
+  type(c_ptr), value :: dom
+  character(kind=c_char, len=1), intent(in) :: str(*)
+  integer(c_size_t), intent(in) :: length
+  real(c_double), intent(inout) :: vect(length)
+end subroutine c_config_get_double_vector
+
+!-------------------------------------------------------------------------------
 end interface
 !-------------------------------------------------------------------------------

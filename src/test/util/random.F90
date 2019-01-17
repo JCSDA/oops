@@ -30,8 +30,7 @@ implicit none
 type(c_ptr), intent(in) :: c_conf
 integer :: N, seed, i
 character(len=max_number) :: range(2)
-character(len=max_number), allocatable :: x_check(:)
-real(kind_real), allocatable :: x(:)
+real(kind_real), allocatable :: x(:), x_check(:)
 real(kind_real) :: minv, maxv, tol
 character(len=*), parameter :: myname_="test_uniform_real"
 character(max_string) :: err_msg
@@ -54,9 +53,9 @@ call uniform_distribution(x, minv, maxv, seed)
 
 if (size(config_get_string_vector(c_conf, max_string, "uniform_real_answer")) == N) then
    allocate(x_check(N))
-   x_check = config_get_string_vector(c_conf, max_number, "uniform_real_answer")
+   call config_get_double_vector(c_conf, "uniform_real_answer", x_check)
    do i=1,N 
-      write(*,*) "MSM: ", x(i), x_check(i)
+      write(*,*) "MSM xcheck: ", x(i), x_check(i)
    enddo
 else
    write(err_msg,*) myname_ // "error reading answer"
@@ -64,8 +63,10 @@ else
 endif
 
 ! Test uniform real distribution.
-! The tolerance is based on the precision of the data type.
-tol = epsilon(minv)
+! The tolerance is based on the precision of the data type but multiply by 10 to
+! allow for roundoff error in the last digit during normalization
+
+tol = 10.0_kind_real * epsilon(minv)
 write(*,*) "MSM tol: ", tol
 
 ! if (passes)

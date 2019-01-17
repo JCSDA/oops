@@ -69,17 +69,17 @@ void testCppRandom() {
   unsigned int seed = static_cast<unsigned int>(Test_::test().getInt("seed"));
 
   /*! Test uniform real distrubution 
-   * The tolerance is based on the precision of the data type, in this case <float>.  
+   * The tolerance is based on the precision of the data type, in this case <double>.  
    * However, we have to multiply this by 100 because boost wants the tolerance as 
    * a percentage.  We also have to take into account the magnitude of the number 
    * itself, which requires another multiplication.  This can potentially decrease 
    * the accuracy by one significant digit.  So, also include a safety factor sfac.
   */
   double sfac = 10;
-  float tol = 100 * sfac * std::numeric_limits<float>::epsilon();
-  std::vector<float> real_range = Test_::test().getFloatVector("uniform_real_range");
-  util::UniformDistribution<float> x(N, real_range[0], real_range[1], seed);
-  std::vector<float> x_check = Test_::test().getFloatVector("uniform_real_answer");
+  double tol = 100 * sfac * std::numeric_limits<double>::epsilon();
+  std::vector<double> real_range = Test_::test().getDoubleVector("uniform_real_range");
+  util::UniformDistribution<double> x(N, real_range[0], real_range[1], seed);
+  std::vector<double> x_check = Test_::test().getDoubleVector("uniform_real_answer");
   oops::Log::info() << "\nTesting oops::util::Random.h Uniform Real Distribution: \n"
                     << x << std::endl;
   for (std::size_t jj = 0; jj < N; ++jj) BOOST_CHECK_CLOSE(x[jj], x_check[jj],

@@ -35,6 +35,8 @@ extern "C" {
                                        const int & index);
   void config_get_data_element_f(const eckit::Configuration & d, const char str[],
                                  const int & index, char output[]);
+  void config_get_double_vector_f(const eckit::Configuration & d, const char str[],
+                                        const std::size_t & length, double * vec);
 }
 
 }  // namespace util
