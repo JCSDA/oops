@@ -43,29 +43,39 @@ contains
 
 subroutine uniform_float_distribution(x, minv, maxv, seed)
   implicit none
-  real(c_float), intent(inout)     :: x(:)  !< Array that will contain the result
-  real(c_float), intent(in)        :: minv  !< minimum value of range
-  real(c_float), intent(in)        :: maxv  !< minimum value of range
-  integer, intent(inout), optional :: seed  !< random seed
-  integer(c_size_t) :: length  
+  real(c_float), intent(inout)  :: x(:)  !< Array that will contain the result
+  real(c_float), intent(in)     :: minv  !< minimum value of range
+  real(c_float), intent(in)     :: maxv  !< minimum value of range
+  integer, intent(in), optional :: seed  !< random seed
+  integer(c_size_t) :: length
+  integer(c_int32_t) :: cseed
   
   length = size(x)
-  if (.not. present(seed)) seed = time()
-  call c_random_uniform_float(length,minv,maxv,int(seed,c_int32_t),x)
+  if (present(seed)) then
+     cseed = seed
+  else
+     cseed = time()
+  endif
+  call c_random_uniform_float(length,minv,maxv,cseed,x)
   
 end subroutine uniform_float_distribution
 
 subroutine uniform_double_distribution(x, minv, maxv, seed)
   implicit none
-  real(c_double), intent(inout)     :: x(:)  !< Array that will contain the result
-  real(c_double), intent(in)        :: minv  !< minimum value of range
-  real(c_double), intent(in)        :: maxv  !< minimum value of range
-  integer, intent(inout), optional  :: seed  !< random seed
+  real(c_double), intent(inout)  :: x(:)  !< Array that will contain the result
+  real(c_double), intent(in)     :: minv  !< minimum value of range
+  real(c_double), intent(in)     :: maxv  !< minimum value of range
+  integer, intent(in), optional  :: seed  !< random seed
   integer(c_size_t) :: length
+  integer(c_int32_t) :: cseed
   
   length = size(x)
-  if (.not. present(seed)) seed = time()
-  call c_random_uniform_double(length,minv,maxv,int(seed,c_int32_t),x)
+  if (present(seed)) then
+     cseed = seed
+  else
+     cseed = time()
+  endif
+  call c_random_uniform_double(length,minv,maxv,cseed,x)
   
 end subroutine uniform_double_distribution
   
@@ -74,12 +84,17 @@ subroutine uniform_int_distribution(x, minv, maxv, seed)
   integer(c_int32_t), intent(inout) :: x(:)  !< Array that will contain the result
   integer(c_int32_t), intent(in)    :: minv  !< minimum value of range
   integer(c_int32_t), intent(in)    :: maxv  !< minimum value of range
-  integer, intent(inout), optional  :: seed  !< random seed
+  integer, intent(in), optional     :: seed  !< random seed
   integer(c_size_t) :: length
+  integer(c_int32_t) :: cseed
   
   length = size(x)
-  if (.not. present(seed)) seed = time()
-  call c_random_uniform_int(length,minv,maxv,int(seed,c_int32_t),x)
+  if (present(seed)) then
+     cseed = seed
+  else
+     cseed = time()
+  endif
+  call c_random_uniform_int(length,minv,maxv,cseed,x)
   
 end subroutine uniform_int_distribution
   
@@ -88,56 +103,76 @@ subroutine uniform_long_distribution(x, minv, maxv, seed)
   integer(c_int64_t), intent(inout) :: x(:)  !< Array that will contain the result
   integer(c_int64_t), intent(in)    :: minv  !< minimum value of range
   integer(c_int64_t), intent(in)    :: maxv  !< minimum value of range
-  integer, intent(inout), optional  :: seed  !< random seed
+  integer, intent(in), optional     :: seed  !< random seed
   integer(c_size_t) :: length
+  integer(c_int32_t) :: cseed
   
   length = size(x)
-  if (.not. present(seed)) seed = time()
-  call c_random_uniform_long(length,minv,maxv,int(seed,c_int32_t),x)
+  if (present(seed)) then
+     cseed = seed
+  else
+     cseed = time()
+  endif
+  call c_random_uniform_long(length,minv,maxv,cseed,x)
   
 end subroutine uniform_long_distribution
   
 subroutine normal_float_distribution(x, mean, sdev, seed)
   implicit none
-  real(c_float), intent(inout)     :: x(:)  !< Array that will contain the result
-  real(c_float), intent(in)        :: mean  !< mean
-  real(c_float), intent(in)        :: sdev  !< standard deviation
-  integer, intent(inout), optional :: seed  !< random seed
+  real(c_float), intent(inout)  :: x(:)  !< Array that will contain the result
+  real(c_float), intent(in)     :: mean  !< mean
+  real(c_float), intent(in)     :: sdev  !< standard deviation
+  integer, intent(in), optional :: seed  !< random seed
   integer(c_size_t) :: length  
+  integer(c_int32_t) :: cseed
   
   length = size(x)
-  if (.not. present(seed)) seed = time()
-  call c_random_normal_float(length,mean,sdev,int(seed,c_int32_t),x)
+  if (present(seed)) then
+     cseed = seed
+  else
+     cseed = time()
+  endif
+  call c_random_normal_float(length,mean,sdev,cseed,x)
   
 end subroutine normal_float_distribution
 
 subroutine normal_double_distribution(x, mean, sdev, seed)
   implicit none
-  real(c_double), intent(inout)    :: x(:)  !< Array that will contain the result
-  real(c_double), intent(in)       :: mean  !< mean
-  real(c_double), intent(in)       :: sdev  !< standard deviation
-  integer, intent(inout), optional :: seed  !< random seed
+  real(c_double), intent(inout) :: x(:)  !< Array that will contain the result
+  real(c_double), intent(in)    :: mean  !< mean
+  real(c_double), intent(in)    :: sdev  !< standard deviation
+  integer, intent(in), optional :: seed  !< random seed
   integer(c_size_t) :: length  
+  integer(c_int32_t) :: cseed
   
   length = size(x)
-  if (.not. present(seed)) seed = time()
-  call c_random_normal_double(length,mean,sdev,int(seed,c_int32_t),x)
+  if (present(seed)) then
+     cseed = seed
+  else
+     cseed = time()
+  endif
+  call c_random_normal_double(length,mean,sdev,cseed,x)
   
 end subroutine normal_double_distribution
 
 subroutine normal_double_distribution_2D(x, mean, sdev, seed)
   implicit none
-  real(c_double), intent(inout)    :: x(:,:)  !< Array that will contain the result
-  real(c_double), intent(in)       :: mean    !< mean
-  real(c_double), intent(in)       :: sdev    !< standard deviation
-  integer, intent(inout), optional :: seed    !< random seed
+  real(c_double), intent(inout) :: x(:,:)  !< Array that will contain the result
+  real(c_double), intent(in)    :: mean    !< mean
+  real(c_double), intent(in)    :: sdev    !< standard deviation
+  integer, intent(in), optional :: seed    !< random seed
   integer(c_size_t) :: length
   real(c_double), allocatable :: x_1d(:)
+  integer(c_int32_t) :: cseed
 
   length = size(x)
   allocate(x_1d(length))
-  if (.not. present(seed)) seed = time()
-  call c_random_normal_double(length,mean,sdev,int(seed,c_int32_t),x)
+  if (present(seed)) then
+     cseed = seed
+  else
+     cseed = time()
+  endif
+  call c_random_normal_double(length,mean,sdev,cseed,x_1d)
   x = reshape(x_1d, shape(x))
   deallocate(x_1d)
   
@@ -145,17 +180,22 @@ end subroutine normal_double_distribution_2D
 
 subroutine normal_double_distribution_3D(x, mean, sdev, seed)
   implicit none
-  real(c_double), intent(inout)    :: x(:,:,:)  !< Array that will contain the result
-  real(c_double), intent(in)       :: mean      !< mean
-  real(c_double), intent(in)       :: sdev      !< standard deviation
-  integer, intent(inout), optional :: seed      !< random seed
+  real(c_double), intent(inout)  :: x(:,:,:)  !< Array that will contain the result
+  real(c_double), intent(in)     :: mean      !< mean
+  real(c_double), intent(in)     :: sdev      !< standard deviation
+  integer, intent(in), optional  :: seed      !< random seed
   integer(c_size_t) :: length
   real(c_double), allocatable :: x_1d(:)
+  integer(c_int32_t) :: cseed
 
   length = size(x)
   allocate(x_1d(length))
-  if (.not. present(seed)) seed = time()
-  call c_random_normal_double(length,mean,sdev,int(seed,c_int32_t),x)
+  if (present(seed)) then
+     cseed = seed
+  else
+     cseed = time()
+  endif
+  call c_random_normal_double(length,mean,sdev,cseed,x_1d)
   x = reshape(x_1d, shape(x))
   deallocate(x_1d)
   
@@ -163,17 +203,22 @@ end subroutine normal_double_distribution_3D
 
 subroutine normal_float_distribution_2D(x, mean, sdev, seed)
   implicit none
-  real(c_float), intent(inout)     :: x(:,:)  !< Array that will contain the result
-  real(c_float), intent(in)        :: mean    !< mean
-  real(c_float), intent(in)        :: sdev    !< standard deviation
-  integer, intent(inout), optional :: seed    !< random seed
+  real(c_float), intent(inout)  :: x(:,:)  !< Array that will contain the result
+  real(c_float), intent(in)     :: mean    !< mean
+  real(c_float), intent(in)     :: sdev    !< standard deviation
+  integer, intent(in), optional :: seed    !< random seed
   integer(c_size_t) :: length
+  integer(c_int32_t) :: cseed
   real(c_float), allocatable :: x_1d(:)
 
   length = size(x)
   allocate(x_1d(length))
-  if (.not. present(seed)) seed = time()
-  call c_random_normal_float(length,mean,sdev,int(seed,c_int32_t),x)
+  if (present(seed)) then
+     cseed = seed
+  else
+     cseed = time()
+  endif
+  call c_random_normal_float(length,mean,sdev,cseed,x_1d)
   x = reshape(x_1d, shape(x))
   deallocate(x_1d)
   
@@ -181,17 +226,22 @@ end subroutine normal_float_distribution_2D
 
 subroutine normal_float_distribution_3D(x, mean, sdev, seed)
   implicit none
-  real(c_float), intent(inout)     :: x(:,:,:)  !< Array that will contain the result
-  real(c_float), intent(in)        :: mean      !< mean
-  real(c_float), intent(in)        :: sdev      !< standard deviation
-  integer, intent(inout), optional :: seed      !< random seed
+  real(c_float), intent(inout)  :: x(:,:,:)  !< Array that will contain the result
+  real(c_float), intent(in)     :: mean      !< mean
+  real(c_float), intent(in)     :: sdev      !< standard deviation
+  integer, intent(in), optional :: seed      !< random seed
   integer(c_size_t) :: length
+  integer(c_int32_t) :: cseed
   real(c_float), allocatable :: x_1d(:)
 
   length = size(x)
   allocate(x_1d(length))
-  if (.not. present(seed)) seed = time()
-  call c_random_normal_float(length,mean,sdev,int(seed,c_int32_t),x)
+  if (present(seed)) then
+     cseed = seed
+  else
+     cseed = time()
+  endif
+  call c_random_normal_float(length,mean,sdev,cseed,x_1d)
   x = reshape(x_1d, shape(x))
   deallocate(x_1d)
   
