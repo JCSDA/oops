@@ -168,7 +168,7 @@ StateTest:
     lons:
     - '.1'
     - '.75'
-    random_seed: '5649021'
+    random_seed: '569021'
   StateFile:
     date: '2009-12-31T00:00:00Z'
     filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D
