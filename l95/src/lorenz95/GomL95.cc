@@ -15,7 +15,6 @@
 #include <fstream>
 #include <iomanip>
 #include <limits>
-#include <random>
 
 #include "eckit/config/Configuration.h"
 #include "lorenz95/LocsL95.h"
