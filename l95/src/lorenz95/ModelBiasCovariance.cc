@@ -18,6 +18,7 @@
 #include "eckit/config/Configuration.h"
 #include "lorenz95/ModelBiasCorrection.h"
 #include "oops/util/Logger.h"
+#include "oops/util/Random.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
@@ -56,9 +57,8 @@ void ModelBiasCovariance::inverseMultiply(const ModelBiasCorrection & dxin,
 // -----------------------------------------------------------------------------
 void ModelBiasCovariance::randomize(ModelBiasCorrection & dx) const {
   const double stdev = std::sqrt(variance_);
-  static std::mt19937 generator(3);
-  static std::normal_distribution<double> distribution(0.0, stdev);
-  dx.bias() = distribution(generator);
+  util::NormalDistribution<double> x(1, 0.0, stdev, 3);
+  dx.bias() = x[0];
 }
 // -----------------------------------------------------------------------------
 void ModelBiasCovariance::print(std::ostream & os) const {

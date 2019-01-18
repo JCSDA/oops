@@ -23,6 +23,7 @@
 #include "oops/generic/UnstructuredGrid.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
+#include "oops/util/Random.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
@@ -140,9 +141,8 @@ void FieldL95::schur(const FieldL95 & rhs) {
 }
 // -----------------------------------------------------------------------------
 void FieldL95::random() {
-  static std::mt19937 generator(1);
-  static std::normal_distribution<double> distribution(0.0, 1.0);
-  for (int jj = 0; jj < resol_; ++jj) x_[jj] = distribution(generator);
+  util::NormalDistribution<double> xx(resol_, 0.0, 1.0, 1);
+  for (int jj = 0; jj < resol_; ++jj) x_[jj] = xx[jj];
 }
 // -----------------------------------------------------------------------------
 void FieldL95::interp(const LocsL95 & locs, GomL95 & gom) const {

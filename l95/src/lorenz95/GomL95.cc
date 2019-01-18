@@ -22,6 +22,7 @@
 #include "lorenz95/ObsTable.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
+#include "oops/util/Random.h"
 
 namespace oops {
 class Variables;
@@ -94,9 +95,8 @@ double GomL95::norm() const {
 }
 // -----------------------------------------------------------------------------
 void GomL95::random() {
-  static std::mt19937 generator(5);
-  static std::normal_distribution<double> distribution(0.0, 1.0);
-  for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = distribution(generator);
+  util::NormalDistribution<double> x(size_, 0.0, 1.0, 5);
+  for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = x[jj];
 }
 // -----------------------------------------------------------------------------
 double GomL95::dot_product_with(const GomL95 & gom) const {
