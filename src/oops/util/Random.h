@@ -40,6 +40,7 @@ template <typename T>
 class Random : public util::Printable {
  public:
   const T & operator[](const std::size_t ii) const {return data_[ii];}
+  std::vector<T> data() {return data_;}
 
  protected:
   Random(size_t N, unsigned int seed): N_(N), seed_(seed) {}
@@ -88,7 +89,7 @@ class UniformDistribution : public Random<T> {
   UniformDistribution(std::size_t N = 1, T minv = 0, T maxv = 1,
                       unsigned int seed = static_cast<std::uint32_t>(std::time(0))):
   Random<T>(N, seed), minv_(minv), maxv_(maxv) {
-    boost::random::mt19937 generator(this->seed_);
+    static boost::random::mt19937 generator(this->seed_);
     boost::random::uniform_real_distribution<T> distribution(minv_, maxv_);
     for (size_t jj=0; jj < this->N_; ++jj) this->data_.push_back(distribution(generator));
   }
@@ -128,7 +129,7 @@ class UniformIntDistribution : public Random<T> {
   UniformIntDistribution(std::size_t N = 1, T minv = 0, T maxv = 100,
                          unsigned int seed = static_cast<std::uint32_t>(std::time(0))):
   Random<T>(N, seed), minv_(minv), maxv_(maxv) {
-    boost::random::mt19937 generator(this->seed_);
+    static boost::random::mt19937 generator(this->seed_);
     boost::random::uniform_int_distribution<T> distribution(minv_, maxv_);
     for (size_t jj=0; jj < this->N_; ++jj) this->data_.push_back(distribution(generator));
   }
@@ -171,7 +172,7 @@ class NormalDistribution : public Random<T> {
                          << std::endl;
       ABORT("NormalDistribution only implemented for floating point data types");
     }
-    boost::random::mt19937 generator(this->seed_);
+    static boost::random::mt19937 generator(this->seed_);
     boost::random::normal_distribution<T> distribution(mean_, sdev_);
     for (size_t jj=0; jj < this->N_; ++jj) this->data_.push_back(distribution(generator));
   }

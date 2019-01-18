@@ -30,11 +30,11 @@ integer(c_int32_t) function c_test_uniform_real(c_conf) bind(c,name='test_unifor
 implicit none
 type(c_ptr), intent(in) :: c_conf
 integer :: n, seed, i
-real(kind_real) :: range(2)
-real(kind_real), allocatable :: x(:), x_check(:)
-real(kind_real) :: minv, maxv, tol, err
+real(c_double) :: range(2)
+real(c_double), allocatable :: x(:), x_check(:)
+real(c_double) :: minv, maxv, tol, err
 character(len=*), parameter :: myname_="test_uniform_real"
-character(max_string) :: err_msg
+character(max_string) :: err_msg, ans
 
 n = config_get_int(c_conf, "N")
 seed = config_get_int(c_conf, "seed")
@@ -52,9 +52,17 @@ endif
 allocate(x(n))
 call uniform_distribution(x, minv, maxv, seed)
 
-if (size(config_get_string_vector(c_conf, max_string, "uniform_real_answer")) == n) then
+! write result for inclusion in config file
+err_msg = achar(10) // myname_ // " Testing oops::util::random.F90 Uniform Real Distribution: " 
+call fckit_log%info(err_msg)
+do i = 1, n
+   write(ans,'(F30.16)') x(i)
+   call fckit_log%info("   - " // adjustl(ans))
+enddo
+
+if (size(config_get_string_vector(c_conf, max_string, "uniform_real_answer_f")) == n) then
    allocate(x_check(n))
-   call config_get_double_vector(c_conf, "uniform_real_answer", x_check)
+   call config_get_double_vector(c_conf, "uniform_real_answer_f", x_check)
 else
    write(err_msg,*) myname_ // "error reading answer"
    call abor1_ftn(err_msg)
@@ -92,7 +100,7 @@ integer(c_int32_t) :: range(2)
 integer(c_int32_t), allocatable :: x(:), x_check(:)
 integer(c_int32_t) :: minv, maxv
 character(len=*), parameter :: myname_="test_uniform_int"
-character(max_string) :: err_msg
+character(max_string) :: err_msg, ans
 
 n = config_get_int(c_conf, "N")
 seed = config_get_int(c_conf, "seed")
@@ -110,9 +118,17 @@ endif
 allocate(x(n))
 call uniform_distribution(x, minv, maxv, seed)
 
-if (size(config_get_string_vector(c_conf, max_string, "uniform_int_answer")) == n) then
+! write result for inclusion in config file
+err_msg = achar(10) // myname_ // " Testing oops::util::random.F90 Uniform Int Distribution: " 
+call fckit_log%info(err_msg)
+do i = 1, n
+   write(ans,'(I12)') x(i)
+   call fckit_log%info("   - " // adjustl(ans))
+enddo
+
+if (size(config_get_string_vector(c_conf, max_string, "uniform_int_answer_f")) == n) then
    allocate(x_check(n))
-   call config_get_int_vector(c_conf, "uniform_int_answer", x_check)
+   call config_get_int_vector(c_conf, "uniform_int_answer_f", x_check)
 else
    write(err_msg,*) myname_ // "error reading answer"
    call abor1_ftn(err_msg)
@@ -141,10 +157,10 @@ integer(c_int32_t) function c_test_normal_real(c_conf) bind(c,name='test_normal_
 implicit none
 type(c_ptr), intent(in) :: c_conf
 integer :: n, seed, i
-real(kind_real) :: mean, sdev, tol, err
-real(kind_real), allocatable :: x(:), x_check(:)
+real(c_double) :: mean, sdev, tol, err
+real(c_double), allocatable :: x(:), x_check(:)
 character(len=*), parameter :: myname_="test_normal_real"
-character(max_string) :: err_msg
+character(max_string) :: err_msg, ans
 
 n = config_get_int(c_conf, "N")
 seed = config_get_int(c_conf, "seed")
@@ -156,9 +172,17 @@ sdev = config_get_real(c_conf, "normal_sdev",1.0_kind_real)
 allocate(x(n))
 call normal_distribution(x, mean, sdev, seed)
 
-if (size(config_get_string_vector(c_conf, max_string, "normal_answer")) == n) then
+! write result for inclusion in config file
+err_msg = achar(10) // myname_ // " Testing oops::util::random.F90 Normal Distribution: " 
+call fckit_log%info(err_msg)
+do i = 1, n
+   write(ans,'(F30.16)') x(i)
+   call fckit_log%info("   - " // adjustl(ans))
+enddo
+
+if (size(config_get_string_vector(c_conf, max_string, "normal_answer_f")) == n) then
    allocate(x_check(n))
-   call config_get_double_vector(c_conf, "normal_answer", x_check)
+   call config_get_double_vector(c_conf, "normal_answer_f", x_check)
 else
    write(err_msg,*) myname_ // "error reading answer"
    call abor1_ftn(err_msg)

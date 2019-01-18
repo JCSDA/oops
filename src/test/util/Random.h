@@ -69,11 +69,11 @@ void testCppRandom() {
   unsigned int seed = static_cast<unsigned int>(Test_::test().getInt("seed"));
 
   /*! Test uniform real distrubution 
-   * The tolerance is based on the precision of the data type, in this case <double>.  
-   * However, we have to multiply this by 100 because boost wants the tolerance as 
-   * a percentage.  We also have to take into account the magnitude of the number 
-   * itself, which requires another multiplication.  This can potentially decrease 
-   * the accuracy by one significant digit.  So, also include a safety factor sfac.
+   *  The tolerance is based on the precision of the data type, in this case <double>.  
+   *  However, we have to multiply this by 100 because boost wants the tolerance as 
+   *  a percentage.  We also have to take into account the magnitude of the number 
+   *  itself, which requires another multiplication.  This can potentially decrease 
+   *  the accuracy by one significant digit.  So, also include a safety factor sfac.
   */
   double sfac = 10;
   double tol = 100 * sfac * std::numeric_limits<double>::epsilon();
@@ -83,7 +83,7 @@ void testCppRandom() {
   oops::Log::info() << "\nTesting oops::util::Random.h Uniform Real Distribution: \n"
                     << x << std::endl;
   for (std::size_t jj = 0; jj < N; ++jj) BOOST_CHECK_CLOSE(x[jj], x_check[jj],
-                                                           tol * std::abs(x_check[jj]));
+                                                 tol * std::abs(x_check[jj]));
 
   /*! Test uniform integer distribution */
   std::vector<int> int_range = Test_::test().getIntVector("uniform_int_range");
@@ -102,7 +102,7 @@ void testCppRandom() {
   oops::Log::info() << "\nTesting oops::util::Random.h Gaussian Distribution: \n"
                     << z << std::endl;
   for (std::size_t jj = 0; jj < N; ++jj) BOOST_CHECK_CLOSE(z[jj], z_check[jj],
-                                                           tol * std::abs(z_check[jj]));
+                                                 tol * std::abs(z_check[jj]));
   }
 
 // -----------------------------------------------------------------------------

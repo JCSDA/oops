@@ -130,7 +130,7 @@ subroutine c_qg_b_randomize(c_key_conf, c_key_out) bind(c,name='qg_b_randomize_f
 use iso_c_binding
 use qg_covariance_mod
 use qg_fields
-use random_vectors_mod
+use random_mod
 use kinds
 
 implicit none
@@ -139,13 +139,13 @@ integer(c_int), intent(in) :: c_key_out   !< Randomized increment
 type(qg_3d_covar_config), pointer :: conf
 type(qg_field), pointer :: xout
 real(kind=kind_real), allocatable :: xctl(:,:,:) ! Control vector
+integer :: rseed = 7 ! for reproducible tests
 
 call qg_3d_cov_registry%get(c_key_conf,conf)
 call qg_field_registry%get(c_key_out,xout)
 
 allocate(xctl(conf%nx, conf%ny, 2))
-
-call random_vector(xctl(:,:,:))
+call normal_distribution(xctl,0.0_kind_real,1.0_kind_real,rseed)
 call zeros(xout)
 call qg_3d_covar_sqrt_mult(conf%nx,conf%ny,xout,xctl,conf)
 

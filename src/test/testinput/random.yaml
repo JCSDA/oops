@@ -1,7 +1,7 @@
 ---
 test_framework_runtime_config: "--log_level=test_suite"
 test_random:
-  N: 10
+  N: 5
   seed: 1234321
 
   # test of uniform real distribution
@@ -12,6 +12,7 @@ test_random:
      - 1.001622545765713
      - 1.425280560972169
      - 3.474966624518856
+  uniform_real_answer_f: # for fortran test
      - 3.815046805655584
      - 2.6910903127864
      - 1.603911620331928
@@ -26,6 +27,7 @@ test_random:
      - 1
      - 5
      - 28
+  uniform_int_answer_f: # for fortran test
      - 32
      - 19
      - 7
@@ -41,6 +43,7 @@ test_random:
     - 2.221092423827989
     - -1.000202394993429
     - -3.067588684553691
+  normal_answer_f: # for fortran test
     - -1.944635297805725
     - 1.412477543217022
     - -2.476405111509744
