@@ -148,10 +148,6 @@ if (nrand > 0) then
    yy(klocs+1:nloc) = rnum(nrand+1:2*nrand)
 endif
 
-do jo=1,nloc
-   write(*,*) "MSM: ",xx(jo),yy(jo)
-enddo
-
 ! Now define the F90 locations object locs.  It's assumed that
 ! this object already exists in the registry.
 call qg_locs_registry%get(c_key_locs,locs)
