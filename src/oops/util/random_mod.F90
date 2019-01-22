@@ -49,12 +49,14 @@ subroutine uniform_float_distribution(x, minv, maxv, seed)
   integer, intent(in), optional :: seed  !< random seed
   integer(c_size_t) :: length
   integer(c_int32_t) :: cseed
+  real(kind_real) :: rseed
   
   length = size(x)
   if (present(seed)) then
      cseed = seed
   else
-     cseed = time()
+     call random_number(rseed)
+     cseed = int(1000*rseed,c_int32_t)
   endif
   call c_random_uniform_float(length,minv,maxv,cseed,x)
   
@@ -68,12 +70,14 @@ subroutine uniform_double_distribution(x, minv, maxv, seed)
   integer, intent(in), optional  :: seed  !< random seed
   integer(c_size_t) :: length
   integer(c_int32_t) :: cseed
+  real(kind_real) :: rseed
   
   length = size(x)
   if (present(seed)) then
      cseed = seed
   else
-     cseed = time()
+     call random_number(rseed)
+     cseed = int(1000*rseed,c_int32_t)
   endif
   call c_random_uniform_double(length,minv,maxv,cseed,x)
   
@@ -87,12 +91,14 @@ subroutine uniform_int_distribution(x, minv, maxv, seed)
   integer, intent(in), optional     :: seed  !< random seed
   integer(c_size_t) :: length
   integer(c_int32_t) :: cseed
+  real(kind_real) :: rseed
   
   length = size(x)
   if (present(seed)) then
      cseed = seed
   else
-     cseed = time()
+     call random_number(rseed)
+     cseed = int(1000*rseed,c_int32_t)
   endif
   call c_random_uniform_int(length,minv,maxv,cseed,x)
   
@@ -106,12 +112,14 @@ subroutine uniform_long_distribution(x, minv, maxv, seed)
   integer, intent(in), optional     :: seed  !< random seed
   integer(c_size_t) :: length
   integer(c_int32_t) :: cseed
+  real(kind_real) :: rseed
   
   length = size(x)
   if (present(seed)) then
      cseed = seed
   else
-     cseed = time()
+     call random_number(rseed)
+     cseed = int(1000*rseed,c_int32_t)
   endif
   call c_random_uniform_long(length,minv,maxv,cseed,x)
   
@@ -125,12 +133,14 @@ subroutine normal_float_distribution(x, mean, sdev, seed)
   integer, intent(in), optional :: seed  !< random seed
   integer(c_size_t) :: length  
   integer(c_int32_t) :: cseed
+  real(kind_real) :: rseed
   
   length = size(x)
   if (present(seed)) then
      cseed = seed
   else
-     cseed = time()
+     call random_number(rseed)
+     cseed = int(1000*rseed,c_int32_t)
   endif
   call c_random_normal_float(length,mean,sdev,cseed,x)
   
@@ -144,12 +154,14 @@ subroutine normal_double_distribution(x, mean, sdev, seed)
   integer, intent(in), optional :: seed  !< random seed
   integer(c_size_t) :: length  
   integer(c_int32_t) :: cseed
+  real(kind_real) :: rseed
   
   length = size(x)
   if (present(seed)) then
      cseed = seed
   else
-     cseed = time()
+     call random_number(rseed)
+     cseed = int(1000*rseed,c_int32_t)
   endif
   call c_random_normal_double(length,mean,sdev,cseed,x)
   
@@ -164,13 +176,15 @@ subroutine normal_double_distribution_2D(x, mean, sdev, seed)
   integer(c_size_t) :: length
   real(c_double), allocatable :: x_1d(:)
   integer(c_int32_t) :: cseed
+  real(kind_real) :: rseed
 
   length = size(x)
   allocate(x_1d(length))
   if (present(seed)) then
      cseed = seed
   else
-     cseed = time()
+     call random_number(rseed)
+     cseed = int(1000*rseed,c_int32_t)
   endif
   call c_random_normal_double(length,mean,sdev,cseed,x_1d)
   x = reshape(x_1d, shape(x))
@@ -187,13 +201,15 @@ subroutine normal_double_distribution_3D(x, mean, sdev, seed)
   integer(c_size_t) :: length
   real(c_double), allocatable :: x_1d(:)
   integer(c_int32_t) :: cseed
+  real(kind_real) :: rseed
 
   length = size(x)
   allocate(x_1d(length))
   if (present(seed)) then
      cseed = seed
   else
-     cseed = time()
+     call random_number(rseed)
+     cseed = int(1000*rseed,c_int32_t)
   endif
   call c_random_normal_double(length,mean,sdev,cseed,x_1d)
   x = reshape(x_1d, shape(x))
@@ -210,13 +226,15 @@ subroutine normal_float_distribution_2D(x, mean, sdev, seed)
   integer(c_size_t) :: length
   integer(c_int32_t) :: cseed
   real(c_float), allocatable :: x_1d(:)
+  real(kind_real) :: rseed
 
   length = size(x)
   allocate(x_1d(length))
   if (present(seed)) then
      cseed = seed
   else
-     cseed = time()
+     call random_number(rseed)
+     cseed = int(1000*rseed,c_int32_t)
   endif
   call c_random_normal_float(length,mean,sdev,cseed,x_1d)
   x = reshape(x_1d, shape(x))
@@ -233,13 +251,15 @@ subroutine normal_float_distribution_3D(x, mean, sdev, seed)
   integer(c_size_t) :: length
   integer(c_int32_t) :: cseed
   real(c_float), allocatable :: x_1d(:)
+  real(kind_real) :: rseed
 
   length = size(x)
   allocate(x_1d(length))
   if (present(seed)) then
      cseed = seed
   else
-     cseed = time()
+     call random_number(rseed)
+     cseed = int(1000*rseed,c_int32_t)
   endif
   call c_random_normal_float(length,mean,sdev,cseed,x_1d)
   x = reshape(x_1d, shape(x))
