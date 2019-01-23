@@ -85,6 +85,7 @@ end subroutine c_qg_loc_create
 !!
 subroutine c_qg_loc_test(c_key_locs,config,klocs,klats,klons,kz) bind(c,name='qg_loc_test_f90')
 use config_mod
+use random_mod  
 use fckit_log_module, only : fckit_log
   
 implicit none
@@ -98,8 +99,7 @@ real(c_double), intent(in) :: kz(klocs)    !< user-specified heights (normalized
 type(qg_locs), pointer ::locs
 real(kind_real), allocatable :: xx(:), yy(:), rnum(:)
 integer :: nrand, nloc, i, jo, nseed
-integer*4 :: rseed0
-integer*4, allocatable :: rseed(:)
+integer(c_int32_t) :: rseed0
 
 call fckit_log%warning("qg_locs_mod:qg_loc_test generating test locations")
 
@@ -133,27 +133,17 @@ if (klocs > 0) then
    yy(1:klocs) = klats(:)
 endif
 
-if (config_element_exists(config,"random_seed")) then
-   ! read in the (optional) seed as a real for higher precision
-   ! included for reproducibility
-   rseed0 = config_get_real(config,"random_seed")
-else
-   ! get the seed from the system clock
-   call system_clock(count=rseed0)
-endif
-
-! define an optionally reproducible random number seed
-call random_seed(size=nseed)
-allocate(rseed(nseed))
-do i=1,nseed
-   rseed(i) = rseed0 + i**2
-enddo
-call random_seed(put=rseed)
-
-allocate(rnum(3*nrand))
-call random_number(rnum)
-
 if (nrand > 0) then   
+   allocate(rnum(3*nrand))
+   if (config_element_exists(config,"random_seed")) then
+      ! read in the (optional) seed as a real for higher precision
+      ! included for reproducibility
+      rseed0 = config_get_real(config,"random_seed")
+      call uniform_distribution(rnum,0.0_kind_real,1.0_kind_real,rseed0)
+   else
+      call uniform_distribution(rnum,0.0_kind_real,1.0_kind_real)
+   endif
+
    xx(klocs+1:nloc) = rnum(1:nrand)
    yy(klocs+1:nloc) = rnum(nrand+1:2*nrand)
 endif

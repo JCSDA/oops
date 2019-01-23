@@ -4,149 +4,149 @@ Test     : CostJo   : Nonlinear Jo = 387.325, nobs = 160, Jo/n = 2.42078, err = 
 Test     : CostJo   : Nonlinear Jo = 191.577, nobs = 300, Jo/n = 0.638589, err = 1.2
 Test     : CostJcDFI: Nonlinear Jc = 2.77092
 Test     : CostFunction: Nonlinear J = 8204.65
-Test     : DRIPCGMinimizer: reduction in residual norm = 0.262756
+Test     : DRIPCGMinimizer: reduction in residual norm = 0.332876
 Test     : CostFunction::addIncrement: Analysis: 
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-30.5437, Max=12.348, RMS=12.5991
+Test     :   Min=-29.0897, Max=12.149, RMS=12.1055
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     :   Valid time: 2010-01-01T01:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-30.5316, Max=12.2969, RMS=12.572
+Test     :   Min=-29.072, Max=12.0417, RMS=12.1326
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     :   Valid time: 2010-01-01T02:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-30.5154, Max=12.2353, RMS=12.5503
+Test     :   Min=-29.0851, Max=11.9379, RMS=12.162
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     :   Valid time: 2010-01-01T03:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-30.4899, Max=12.1588, RMS=12.5332
+Test     :   Min=-29.117, Max=11.8362, RMS=12.1929
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     :   Valid time: 2010-01-01T04:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-30.5075, Max=12.0685, RMS=12.5206
+Test     :   Min=-29.1318, Max=11.7339, RMS=12.224
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     :   Valid time: 2010-01-01T05:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-30.5547, Max=11.9688, RMS=12.5128
+Test     :   Min=-29.1255, Max=11.6286, RMS=12.2539
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     :   Valid time: 2010-01-01T06:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-30.6051, Max=11.8627, RMS=12.5086
+Test     :   Min=-29.0954, Max=11.5183, RMS=12.2808
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     :   Valid time: 2010-01-01T07:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-30.5968, Max=11.752, RMS=12.5069
+Test     :   Min=-29.0471, Max=11.4004, RMS=12.3047
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     :   Valid time: 2010-01-01T08:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-30.661, Max=11.6389, RMS=12.507
+Test     :   Min=-29.0006, Max=11.2764, RMS=12.3252
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     :   Valid time: 2010-01-01T09:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-30.6995, Max=11.5241, RMS=12.507
+Test     :   Min=-28.9181, Max=11.1457, RMS=12.3424
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     :   Valid time: 2010-01-01T10:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-30.6473, Max=11.4095, RMS=12.5055
+Test     :   Min=-28.8012, Max=11.0073, RMS=12.3565
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     :   Valid time: 2010-01-01T11:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-30.6212, Max=11.2964, RMS=12.5006
+Test     :   Min=-28.765, Max=10.856, RMS=12.3674
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-30.5432, Max=11.1859, RMS=12.4902
+Test     :   Min=-28.6978, Max=10.7611, RMS=12.3748
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
-Test     : CostJb   : Nonlinear Jb = 349.808
-Test     : CostJo   : Nonlinear Jo = 204.769, nobs = 300, Jo/n = 0.682564, err = 0.4
-Test     : CostJo   : Nonlinear Jo = 88.0053, nobs = 160, Jo/n = 0.550033, err = 0.6
-Test     : CostJo   : Nonlinear Jo = 52.0708, nobs = 300, Jo/n = 0.173569, err = 1.2
-Test     : CostJcDFI: Nonlinear Jc = 30.4224
-Test     : CostFunction: Nonlinear J = 725.075
-Test     : DRIPCGMinimizer: reduction in residual norm = 0.679341
+Test     : CostJb   : Nonlinear Jb = 483.478
+Test     : CostJo   : Nonlinear Jo = 270.882, nobs = 300, Jo/n = 0.90294, err = 0.4
+Test     : CostJo   : Nonlinear Jo = 167.671, nobs = 160, Jo/n = 1.04794, err = 0.6
+Test     : CostJo   : Nonlinear Jo = 71.5663, nobs = 300, Jo/n = 0.238554, err = 1.2
+Test     : CostJcDFI: Nonlinear Jc = 51.8296
+Test     : CostFunction: Nonlinear J = 1045.43
+Test     : DRIPCGMinimizer: reduction in residual norm = 0.700658
 Test     : CostFunction::addIncrement: Analysis: 
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-30.0683, Max=12.3226, RMS=12.5718
+Test     :   Min=-28.7969, Max=12.4668, RMS=12.1487
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     :   Valid time: 2010-01-01T01:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-30.0256, Max=12.2194, RMS=12.5464
+Test     :   Min=-28.8409, Max=12.3022, RMS=12.1798
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     :   Valid time: 2010-01-01T02:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-29.9843, Max=12.1514, RMS=12.5265
+Test     :   Min=-28.8801, Max=12.147, RMS=12.2117
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     :   Valid time: 2010-01-01T03:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-29.9387, Max=12.0678, RMS=12.5111
+Test     :   Min=-28.9427, Max=12.0318, RMS=12.2433
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     :   Valid time: 2010-01-01T04:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-29.8866, Max=11.97, RMS=12.4999
+Test     :   Min=-29.0004, Max=11.9236, RMS=12.2734
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     :   Valid time: 2010-01-01T05:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-29.8281, Max=11.8635, RMS=12.4932
+Test     :   Min=-29.0424, Max=11.8391, RMS=12.3007
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     :   Valid time: 2010-01-01T06:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-29.8301, Max=11.7514, RMS=12.4895
+Test     :   Min=-29.0646, Max=11.7512, RMS=12.3236
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     :   Valid time: 2010-01-01T07:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-29.8241, Max=11.6356, RMS=12.4879
+Test     :   Min=-29.0643, Max=11.6506, RMS=12.3423
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     :   Valid time: 2010-01-01T08:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-29.8134, Max=11.5183, RMS=12.4877
+Test     :   Min=-29.0377, Max=11.5349, RMS=12.3569
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     :   Valid time: 2010-01-01T09:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-29.8602, Max=11.4004, RMS=12.4869
+Test     :   Min=-28.9835, Max=11.4039, RMS=12.3677
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     :   Valid time: 2010-01-01T10:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-29.8171, Max=11.2839, RMS=12.4842
+Test     :   Min=-28.9014, Max=11.259, RMS=12.3753
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     :   Valid time: 2010-01-01T11:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-29.7065, Max=11.1699, RMS=12.4777
+Test     :   Min=-28.7896, Max=11.0942, RMS=12.3798
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
-Test     :   Min=-29.6516, Max=11.0596, RMS=12.4656
+Test     :   Min=-28.7263, Max=10.9935, RMS=12.3814
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
-Test     : CostJb   : Nonlinear Jb = 392.574
-Test     : CostJo   : Nonlinear Jo = 155.21, nobs = 300, Jo/n = 0.517366, err = 0.4
-Test     : CostJo   : Nonlinear Jo = 66.2542, nobs = 160, Jo/n = 0.414089, err = 0.6
-Test     : CostJo   : Nonlinear Jo = 36.0092, nobs = 300, Jo/n = 0.120031, err = 1.2
-Test     : CostJcDFI: Nonlinear Jc = 30.7285
-Test     : CostFunction: Nonlinear J = 680.776
+Test     : CostJb   : Nonlinear Jb = 574.198
+Test     : CostJo   : Nonlinear Jo = 210.511, nobs = 300, Jo/n = 0.701704, err = 0.4
+Test     : CostJo   : Nonlinear Jo = 135.153, nobs = 160, Jo/n = 0.844703, err = 0.6
+Test     : CostJo   : Nonlinear Jo = 52.6887, nobs = 300, Jo/n = 0.175629, err = 1.2
+Test     : CostJcDFI: Nonlinear Jc = 52.1848
+Test     : CostFunction: Nonlinear J = 1024.74

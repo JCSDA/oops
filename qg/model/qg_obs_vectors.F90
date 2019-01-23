@@ -11,7 +11,6 @@
 module qg_obs_vectors
 
 use iso_c_binding
-use random_vectors_mod
 use kinds
 
 implicit none

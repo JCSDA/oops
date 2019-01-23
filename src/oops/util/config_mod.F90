@@ -19,7 +19,8 @@ implicit none
 private
 integer, parameter :: max_string=800
 public config_element_exists, config_get_int, config_get_real, config_get_string, &
-       config_get_string_vector
+       config_get_string_vector, config_get_double_vector, config_get_float_vector, &
+       config_get_int_vector
 
 #include "config.intfb.h"
 
@@ -192,5 +193,117 @@ function config_get_string_vector(c_dom, length, query)
 end function config_get_string_vector
 
 !-------------------------------------------------------------------------------
+!> Read a vector from the config file as a double
+!
+! \warning It is up to the calling routine to allocate the result
+!
+subroutine config_get_double_vector(c_dom,query,vec,rdefault)
+  implicit none
+  type(c_ptr), intent(in) :: c_dom
+  character(len=*), intent(in) :: query
+  real(c_double), intent(inout) :: vec(:)
+  real(c_double), intent(in), optional :: rdefault(:)
+  integer(c_size_t) :: length
+  character(kind=c_char,len=1), allocatable :: c_query(:)
+  character(max_string) :: err_msg
+
+  !  Translate query from Fortran string to C++ char[].
+  call f_c_string(query,c_query)
+
+  ! Call C++ to process the query
+  if(LOGICAL(c_config_element_exists(c_dom,c_query))) then
+    length = size(vec)
+    call c_config_get_double_vector(c_dom,c_query,length,vec)
+  else
+     if (present(rdefault)) then
+        if (size(vec) == size(rdefault)) then
+           vec = rdefault
+        else
+           write(err_msg,*) "config_get_double_vector: ", trim(query), " default incorrectly specified"
+           call abor1_ftn(err_msg)
+        endif
+     else
+        write(err_msg,*) "config_get_double_vector: ", trim(query), " does not exist in config and no default"
+        call abor1_ftn(err_msg)
+     endif
+  endif
+  deallocate(c_query)
+end subroutine config_get_double_vector
+
+!-------------------------------------------------------------------------------
+!> Read a vector from the config file as a float
+!
+! \warning It is up to the calling routine to allocate the result
+!
+subroutine config_get_float_vector(c_dom,query,vec,rdefault)
+  implicit none
+  type(c_ptr), intent(in) :: c_dom
+  character(len=*), intent(in) :: query
+  real(c_float), intent(inout) :: vec(:)
+  real(c_float), intent(in), optional :: rdefault(:)
+  integer(c_size_t) :: length
+  character(kind=c_char,len=1), allocatable :: c_query(:)
+  character(max_string) :: err_msg
+
+  !  Translate query from Fortran string to C++ char[].
+  call f_c_string(query,c_query)
+
+  ! Call C++ to process the query
+  if(LOGICAL(c_config_element_exists(c_dom,c_query))) then
+    length = size(vec)
+    call c_config_get_float_vector(c_dom,c_query,length,vec)
+  else
+     if (present(rdefault)) then
+        if (size(vec) == size(rdefault)) then
+           vec = rdefault
+        else
+           write(err_msg,*) "config_get_float_vector: ", trim(query), " default incorrectly specified"
+           call abor1_ftn(err_msg)
+        endif
+     else
+        write(err_msg,*) "config_get_float_vector: ", trim(query), " does not exist in config and no default"
+        call abor1_ftn(err_msg)
+     endif
+  endif
+  deallocate(c_query)
+end subroutine config_get_float_vector
+
+!-------------------------------------------------------------------------------
+!> Read a vector from the config file as an integer array
+!
+! \warning It is up to the calling routine to allocate the result
+!
+subroutine config_get_int_vector(c_dom,query,vec,rdefault)
+  implicit none
+  type(c_ptr), intent(in) :: c_dom
+  character(len=*), intent(in) :: query
+  integer(c_int32_t), intent(inout) :: vec(:)
+  integer(c_int32_t), intent(in), optional :: rdefault(:)
+  integer(c_size_t) :: length
+  character(kind=c_char,len=1), allocatable :: c_query(:)
+  character(max_string) :: err_msg
+
+  !  Translate query from Fortran string to C++ char[].
+  call f_c_string(query,c_query)
+
+  ! Call C++ to process the query
+  if(LOGICAL(c_config_element_exists(c_dom,c_query))) then
+    length = size(vec)
+    call c_config_get_int_vector(c_dom,c_query,length,vec)
+  else
+     if (present(rdefault)) then
+        if (size(vec) == size(rdefault)) then
+           vec = rdefault
+        else
+           write(err_msg,*) "config_get_int_vector: ", trim(query), " default incorrectly specified"
+           call abor1_ftn(err_msg)
+        endif
+     else
+        write(err_msg,*) "config_get_int_vector: ", trim(query), " does not exist in config and no default"
+        call abor1_ftn(err_msg)
+     endif
+  endif
+  deallocate(c_query)
+end subroutine config_get_int_vector
 
 end module config_mod

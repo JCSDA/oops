@@ -1,95 +1,95 @@
 Test     : 0 member initial state: 
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, Fields = 4, 2
-Test     :   Min=-25.3488, Max=12.5758, RMS=10.4985
-Test     :   Min=-42.1517, Max=46.0184, RMS=21.281
-Test     :   Min=-7.99889, Max=12.4696, RMS=4.59561
-Test     :   Min=-8.27987, Max=7.4956, RMS=3.10796
+Test     :   Min=-28.1305, Max=9.7597, RMS=11.421
+Test     :   Min=-41.7712, Max=39.6101, RMS=20.8043
+Test     :   Min=-8.52889, Max=11.2876, RMS=4.45925
+Test     :   Min=-8.16096, Max=7.75618, RMS=3.24069
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     : 0 member final state: 
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, Fields = 4, 2
-Test     :   Min=-24.9987, Max=11.8185, RMS=9.93471
-Test     :   Min=-42.1492, Max=39.4225, RMS=21.2701
-Test     :   Min=-8.70035, Max=11.6594, RMS=4.53013
-Test     :   Min=-5.89844, Max=6.69433, RMS=2.75341
+Test     :   Min=-26.9027, Max=9.04705, RMS=10.9771
+Test     :   Min=-42.1847, Max=38.5341, RMS=20.6877
+Test     :   Min=-7.28512, Max=12.6467, RMS=4.24288
+Test     :   Min=-6.23511, Max=6.82162, RMS=2.82179
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
-Test     : 0 member H(x): Stream nobs= 300 Min=-24.0371, Max=11.4014, Average=-4.76913Wind nobs= 160 Min=-8.0957, Max=10.9798, Average=1.40327WSpeed nobs= 300 Min=0.209256, Max=10.9829, Average=4.89357
+Test     : 0 member H(x): Stream nobs= 300 Min=-26.2566, Max=8.23014, Average=-7.05597Wind nobs= 160 Min=-6.68071, Max=11.2095, Average=1.4996WSpeed nobs= 300 Min=0.159176, Max=11.6202, Average=4.90054
 Test     : 1 member initial state: 
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, Fields = 4, 2
-Test     :   Min=-27.248, Max=9.61678, RMS=11.5207
-Test     :   Min=-41.4466, Max=40.7515, RMS=20.6293
-Test     :   Min=-8.45723, Max=12.5283, RMS=4.3978
-Test     :   Min=-8.41501, Max=6.81464, RMS=3.21307
+Test     :   Min=-27.3086, Max=12.0221, RMS=12.281
+Test     :   Min=-42.1213, Max=42.8284, RMS=21.4157
+Test     :   Min=-10.7651, Max=14.1712, RMS=4.82307
+Test     :   Min=-9.28743, Max=8.09095, RMS=3.74296
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     : 1 member final state: 
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, Fields = 4, 2
-Test     :   Min=-26.6699, Max=9.41573, RMS=11.1707
-Test     :   Min=-41.7627, Max=39.1334, RMS=20.5229
-Test     :   Min=-8.00828, Max=11.1439, RMS=4.2753
-Test     :   Min=-6.78306, Max=7.50367, RMS=3.02657
+Test     :   Min=-27.0514, Max=10.5307, RMS=12.1563
+Test     :   Min=-42.0931, Max=38.0872, RMS=21.2415
+Test     :   Min=-11.4989, Max=10.1613, RMS=4.6312
+Test     :   Min=-9.97973, Max=9.46054, RMS=3.51609
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
-Test     : 1 member H(x): Stream nobs= 300 Min=-25.9395, Max=7.46602, Average=-7.17362Wind nobs= 160 Min=-7.71308, Max=9.99102, Average=1.50016WSpeed nobs= 300 Min=0.717432, Max=10.0748, Average=4.99851
+Test     : 1 member H(x): Stream nobs= 300 Min=-27.1248, Max=9.94702, Average=-7.96587Wind nobs= 160 Min=-8.86334, Max=11.436, Average=1.4292WSpeed nobs= 300 Min=0.574448, Max=11.4581, Average=5.26863
 Test     : 2 member initial state: 
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, Fields = 4, 2
-Test     :   Min=-27.0526, Max=8.71877, RMS=11.6949
-Test     :   Min=-42.5303, Max=40.4222, RMS=20.5389
-Test     :   Min=-7.76555, Max=11.1939, RMS=4.30327
-Test     :   Min=-9.34719, Max=6.80021, RMS=3.18249
+Test     :   Min=-27.7265, Max=9.04606, RMS=11.1642
+Test     :   Min=-42.1279, Max=41.4356, RMS=20.6471
+Test     :   Min=-8.52387, Max=12.5109, RMS=4.31657
+Test     :   Min=-6.4977, Max=7.18619, RMS=3.03555
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     : 2 member final state: 
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, Fields = 4, 2
-Test     :   Min=-26.6178, Max=7.92832, RMS=11.6979
-Test     :   Min=-43.6481, Max=36.8103, RMS=20.3739
-Test     :   Min=-7.34135, Max=10.2793, RMS=4.21499
-Test     :   Min=-7.54437, Max=7.56273, RMS=2.84621
+Test     :   Min=-26.4967, Max=8.39293, RMS=10.8199
+Test     :   Min=-42.1953, Max=37.5459, RMS=20.6402
+Test     :   Min=-8.41793, Max=10.2532, RMS=4.08733
+Test     :   Min=-6.03437, Max=7.08543, RMS=2.80194
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
-Test     : 2 member H(x): Stream nobs= 300 Min=-26.0223, Max=8.24333, Average=-8.05339Wind nobs= 160 Min=-6.96057, Max=10.4861, Average=1.49427WSpeed nobs= 300 Min=0.488129, Max=10.5068, Average=4.68097
+Test     : 2 member H(x): Stream nobs= 300 Min=-26.3492, Max=7.78517, Average=-7.19987Wind nobs= 160 Min=-6.24573, Max=10.3413, Average=1.30021WSpeed nobs= 300 Min=0.95122, Max=10.3966, Average=4.7393
 Test     : 3 member initial state: 
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, Fields = 4, 2
-Test     :   Min=-27.392, Max=11.5829, RMS=11.7098
-Test     :   Min=-41.786, Max=40.6198, RMS=20.7053
-Test     :   Min=-9.95662, Max=12.6175, RMS=4.65926
-Test     :   Min=-7.93199, Max=6.36144, RMS=3.21616
+Test     :   Min=-28.1866, Max=11.0233, RMS=11.4668
+Test     :   Min=-42.6823, Max=42.869, RMS=21.2887
+Test     :   Min=-8.39639, Max=13.4147, RMS=4.75739
+Test     :   Min=-7.69199, Max=8.06682, RMS=3.44614
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     : 3 member final state: 
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, Fields = 4, 2
-Test     :   Min=-26.2498, Max=10.2048, RMS=11.1236
-Test     :   Min=-42.0684, Max=38.87, RMS=20.6141
-Test     :   Min=-8.69645, Max=9.20348, RMS=4.39877
-Test     :   Min=-7.34563, Max=7.56199, RMS=2.84188
+Test     :   Min=-26.161, Max=11.8268, RMS=10.7499
+Test     :   Min=-42.2249, Max=40.0674, RMS=21.4173
+Test     :   Min=-8.42626, Max=11.2436, RMS=4.73006
+Test     :   Min=-6.29927, Max=9.48573, RMS=3.17166
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
-Test     : 3 member H(x): Stream nobs= 300 Min=-26.6882, Max=10.2706, Average=-7.07907Wind nobs= 160 Min=-7.83878, Max=10.152, Average=1.44384WSpeed nobs= 300 Min=0.754494, Max=10.2348, Average=5.0231
+Test     : 3 member H(x): Stream nobs= 300 Min=-26.6844, Max=11.347, Average=-5.7036Wind nobs= 160 Min=-7.07409, Max=11.8753, Average=1.5256WSpeed nobs= 300 Min=1.32247, Max=11.8869, Average=5.38403
 Test     : 4 member initial state: 
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, Fields = 4, 2
-Test     :   Min=-27.6705, Max=9.29053, RMS=11.8164
-Test     :   Min=-42.0634, Max=43.1439, RMS=20.8875
-Test     :   Min=-8.68602, Max=10.6753, RMS=4.53236
-Test     :   Min=-7.51626, Max=8.42914, RMS=3.24397
+Test     :   Min=-29.7703, Max=9.95107, RMS=12.0379
+Test     :   Min=-44.0144, Max=39.8434, RMS=20.6241
+Test     :   Min=-9.65831, Max=11.8274, RMS=4.72902
+Test     :   Min=-8.78492, Max=7.26732, RMS=3.44163
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
 Test     : 4 member final state: 
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, Fields = 4, 2
-Test     :   Min=-26.7885, Max=8.87632, RMS=11.4904
-Test     :   Min=-42.2501, Max=40.5404, RMS=20.7271
-Test     :   Min=-7.93214, Max=10.9764, RMS=4.35831
-Test     :   Min=-6.58759, Max=7.9452, RMS=2.92297
+Test     :   Min=-27.5012, Max=11.5017, RMS=11.0147
+Test     :   Min=-42.2657, Max=38.9742, RMS=20.6954
+Test     :   Min=-8.62306, Max=9.89434, RMS=4.62425
+Test     :   Min=-7.20344, Max=9.07537, RMS=3.07921
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
-Test     : 4 member H(x): Stream nobs= 300 Min=-26.5519, Max=7.6744, Average=-7.47749Wind nobs= 160 Min=-7.01683, Max=9.64195, Average=1.48384WSpeed nobs= 300 Min=0.764293, Max=9.79528, Average=4.96282
+Test     : 4 member H(x): Stream nobs= 300 Min=-28.6078, Max=11.5017, Average=-6.59232Wind nobs= 160 Min=-7.26591, Max=10.0477, Average=1.55477WSpeed nobs= 300 Min=0.131511, Max=10.1851, Average=5.28867

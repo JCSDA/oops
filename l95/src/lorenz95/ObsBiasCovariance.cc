@@ -12,12 +12,12 @@
 
 #include <cmath>
 #include <iostream>
-#include <random>
 #include <string>
 
 #include "eckit/config/Configuration.h"
 #include "lorenz95/ObsBiasCorrection.h"
 #include "oops/util/Logger.h"
+#include "oops/util/Random.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
@@ -56,10 +56,8 @@ void ObsBiasCovariance::inverseMultiply(const ObsBiasCorrection & dxin,
 // -----------------------------------------------------------------------------
 void ObsBiasCovariance::randomize(ObsBiasCorrection & dx) const {
   if (active_) {
-    static std::mt19937 generator(4);
-    static std::normal_distribution<double> distribution(0.0, 1.0);
-    double zz = distribution(generator);
-    dx.value() = zz * std::sqrt(variance_);
+    util::NormalDistribution<double> x(1, 0.0, 1.0, 4);
+    dx.value() = x[0] * std::sqrt(variance_);
   } else {
     dx.zero();
   }

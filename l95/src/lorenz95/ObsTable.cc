@@ -16,7 +16,6 @@
 #include <iostream>
 #include <map>
 #include <memory>
-#include <random>
 #include <string>
 #include <utility>
 #include <vector>
@@ -28,6 +27,7 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/Random.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
@@ -188,9 +188,8 @@ void ObsTable::generateDistribution(const eckit::Configuration & config) {
 // -----------------------------------------------------------------------------
 
 void ObsTable::random(std::vector<double> & data) const {
-  static std::mt19937 generator(getSeed());
-  static std::normal_distribution<double> distribution(0.0, 1.0);
-  for (size_t jj = 0; jj < data.size(); ++jj) data[jj] = distribution(generator);
+  util::NormalDistribution<double> x(data.size(), 0.0, 1.0, getSeed());
+  for (size_t jj = 0; jj < data.size(); ++jj) data[jj] = x[jj];
 }
 
 // -----------------------------------------------------------------------------

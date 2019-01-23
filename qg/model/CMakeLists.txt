@@ -117,9 +117,6 @@ qg_trajectories.F90
 qg_vars_mod.F90
 qg_wind_mod.F90
 qg_wspeed_mod.F90
-random_f.cc
-random_f.h
-random_vectors_mod.F90
 solve_elliptic_system.f90
 solve_helmholz.f90
 zonal_wind.f90

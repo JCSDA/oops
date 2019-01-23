@@ -277,6 +277,10 @@ oops/util/Timer.cc
 oops/util/TimerHelper.h
 oops/util/TimerHelper.cc
 oops/util/utilNamespaceDoc.h
+oops/util/Random.h
+oops/util/random_f.h
+oops/util/random_f.cc
+oops/util/random_mod.F90
 
 test/base/ObsFilters.h
 test/interface/GeoVaLs.h
@@ -288,8 +292,26 @@ test/interface/ObsTestsFixture.h
 test/interface/ObsVector.h
 test/interface/LinearVariableChange.h
 test/TestEnvironment.h
-
+test/util/Random.h
+test/util/Fortran.h
+test/util/random.F90
 )
+
+# macro to create a symlink from src to dst
+function(CREATE_SYMLINK src dst)
+    foreach (FILENAME ${ARGN})
+        execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
+            ${src}/${FILENAME}
+            ${dst}/${FILENAME} )
+        endforeach(FILENAME)
+endfunction(CREATE_SYMLINK)
+
+# Link the oops test input files
+list( APPEND oops_test_input
+  test/testinput/random.yaml
+)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test/testinput)
+CREATE_SYMLINK( ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${oops_test_input} )  
 
 function(generate_fortran_bindings output filename)
 
@@ -335,3 +357,8 @@ ecbuild_add_test( TARGET oops_coding_norms
                   COMMAND ${CMAKE_BINARY_DIR}/bin/cpplint.py
                   ARGS --quiet --recursive ${CMAKE_CURRENT_SOURCE_DIR} )
 
+ecbuild_add_test( TARGET test_util_random
+                  BOOST
+                  SOURCES test/base/Random.cc
+		  ARGS    "test/testinput/random.yaml"
+                  LIBS    oops )

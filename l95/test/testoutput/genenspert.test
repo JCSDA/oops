@@ -3,31 +3,31 @@ Test     :  Valid time: 2010-01-01T00:00:00Z
 Test     :  Min=7, Max=8, Average=7.975
 Test     : Member 0 final state: 
 Test     :  Valid time: 2010-01-01T15:00:00Z
-Test     :  Min=5.43078, Max=10.3863, Average=7.70246
+Test     :  Min=6.16025, Max=10.8222, Average=8.01186
 Test     : Member 1 final state: 
 Test     :  Valid time: 2010-01-01T15:00:00Z
-Test     :  Min=5.9639, Max=10.4967, Average=8.14585
+Test     :  Min=5.4118, Max=10.1258, Average=7.87105
 Test     : Member 2 final state: 
 Test     :  Valid time: 2010-01-01T15:00:00Z
-Test     :  Min=5.7921, Max=9.63846, Average=7.81374
+Test     :  Min=6.23098, Max=10.0517, Average=7.85125
 Test     : Member 3 final state: 
 Test     :  Valid time: 2010-01-01T15:00:00Z
-Test     :  Min=6.39981, Max=9.76459, Average=7.94202
+Test     :  Min=6.28924, Max=10.3084, Average=7.83315
 Test     : Member 4 final state: 
 Test     :  Valid time: 2010-01-01T15:00:00Z
-Test     :  Min=5.61411, Max=9.16611, Average=7.71927
+Test     :  Min=5.11124, Max=9.89669, Average=7.71848
 Test     : Member 5 final state: 
 Test     :  Valid time: 2010-01-01T15:00:00Z
-Test     :  Min=5.5191, Max=9.90023, Average=7.8527
+Test     :  Min=5.64593, Max=10.9801, Average=7.95641
 Test     : Member 6 final state: 
 Test     :  Valid time: 2010-01-01T15:00:00Z
-Test     :  Min=5.95759, Max=10.8899, Average=7.87064
+Test     :  Min=5.97309, Max=10.1447, Average=7.84715
 Test     : Member 7 final state: 
 Test     :  Valid time: 2010-01-01T15:00:00Z
-Test     :  Min=5.30588, Max=9.95051, Average=7.92025
+Test     :  Min=6.04593, Max=9.55491, Average=7.72856
 Test     : Member 8 final state: 
 Test     :  Valid time: 2010-01-01T15:00:00Z
-Test     :  Min=6.48727, Max=9.90672, Average=8.16011
+Test     :  Min=5.65645, Max=9.95764, Average=7.89704
 Test     : Member 9 final state: 
 Test     :  Valid time: 2010-01-01T15:00:00Z
-Test     :  Min=5.38877, Max=9.84278, Average=7.82382
+Test     :  Min=6.4717, Max=10.3744, Average=7.95874

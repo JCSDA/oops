@@ -2,51 +2,51 @@ Test     : CostJb   : Nonlinear Jb = 0
 Test     : CostJo   : Nonlinear Jo = 14.0524, nobs = 80, Jo/n = 0.175655, err = 0.4
 Test     : CostJcDFI: Nonlinear Jc = 0.41739
 Test     : CostFunction: Nonlinear J = 14.4698
-Test     : DRIPCGMinimizer: reduction in residual norm = 0.0699222
+Test     : DRIPCGMinimizer: reduction in residual norm = 0.0362454
 Test     : CostFunction::addIncrement: Analysis: 
 Test     :  Valid time: 2010-01-01T03:00:00Z
-Test     :  Min=7.29441, Max=8.21519, Average=7.9852
+Test     :  Min=7.07313, Max=8.27028, Average=7.96786
 Test     :  Valid time: 2010-01-01T04:30:00Z
-Test     :  Min=7.29747, Max=8.27952, Average=7.98739
+Test     :  Min=7.09315, Max=8.30562, Average=7.96985
 Test     :  Valid time: 2010-01-01T06:00:00Z
-Test     :  Min=7.30156, Max=8.34935, Average=7.99
+Test     :  Min=7.11592, Max=8.36656, Average=7.97192
 Test     :  Valid time: 2010-01-01T07:30:00Z
-Test     :  Min=7.30899, Max=8.42257, Average=7.993
+Test     :  Min=7.14258, Max=8.42904, Average=7.97405
 Test     :  Valid time: 2010-01-01T09:00:00Z
-Test     :  Min=7.32201, Max=8.49639, Average=7.99633
+Test     :  Min=7.17407, Max=8.49202, Average=7.97622
 Test     :  Valid time: 2010-01-01T10:30:00Z
-Test     :  Min=7.34275, Max=8.56731, Average=7.99988
+Test     :  Min=7.21112, Max=8.55431, Average=7.97842
 Test     :  Valid time: 2010-01-01T12:00:00Z
-Test     :  Min=7.37314, Max=8.63116, Average=8.00353
+Test     :  Min=7.25426, Max=8.61449, Average=7.98062
 Test     :  Valid time: 2010-01-01T13:30:00Z
-Test     :  Min=7.41484, Max=8.68325, Average=8.00711
+Test     :  Min=7.30383, Max=8.67101, Average=7.9828
 Test     :  Valid time: 2010-01-01T15:00:00Z
-Test     :  Min=7.39939, Max=8.7185, Average=8.01044
-Test     : CostJb   : Nonlinear Jb = 5.48449
-Test     : CostJo   : Nonlinear Jo = 0.182255, nobs = 80, Jo/n = 0.00227819, err = 0.4
-Test     : CostJcDFI: Nonlinear Jc = 0.271008
-Test     : CostFunction: Nonlinear J = 5.93776
-Test     : DRIPCGMinimizer: reduction in residual norm = 0.0350546
+Test     :  Min=7.32311, Max=8.72216, Average=7.98493
+Test     : CostJb   : Nonlinear Jb = 4.86253
+Test     : CostJo   : Nonlinear Jo = 0.173461, nobs = 80, Jo/n = 0.00216826, err = 0.4
+Test     : CostJcDFI: Nonlinear Jc = 0.159854
+Test     : CostFunction: Nonlinear J = 5.19585
+Test     : DRIPCGMinimizer: reduction in residual norm = 0.0195046
 Test     : CostFunction::addIncrement: Analysis: 
 Test     :  Valid time: 2010-01-01T03:00:00Z
-Test     :  Min=7.29307, Max=8.21459, Average=7.98501
+Test     :  Min=7.07277, Max=8.2691, Average=7.96788
 Test     :  Valid time: 2010-01-01T04:30:00Z
-Test     :  Min=7.29643, Max=8.27886, Average=7.98724
+Test     :  Min=7.09249, Max=8.30551, Average=7.96989
 Test     :  Valid time: 2010-01-01T06:00:00Z
-Test     :  Min=7.30082, Max=8.34869, Average=7.98989
+Test     :  Min=7.11493, Max=8.36648, Average=7.97197
 Test     :  Valid time: 2010-01-01T07:30:00Z
-Test     :  Min=7.30853, Max=8.42198, Average=7.99293
+Test     :  Min=7.14123, Max=8.42898, Average=7.97411
 Test     :  Valid time: 2010-01-01T09:00:00Z
-Test     :  Min=7.32178, Max=8.49593, Average=7.99629
+Test     :  Min=7.17233, Max=8.49199, Average=7.97629
 Test     :  Valid time: 2010-01-01T10:30:00Z
-Test     :  Min=7.34268, Max=8.56705, Average=7.99988
+Test     :  Min=7.20897, Max=8.5543, Average=7.9785
 Test     :  Valid time: 2010-01-01T12:00:00Z
-Test     :  Min=7.37314, Max=8.63119, Average=8.00356
+Test     :  Min=7.25168, Max=8.61451, Average=7.9807
 Test     :  Valid time: 2010-01-01T13:30:00Z
-Test     :  Min=7.4148, Max=8.68364, Average=8.00716
+Test     :  Min=7.30081, Max=8.67106, Average=7.98288
 Test     :  Valid time: 2010-01-01T15:00:00Z
-Test     :  Min=7.40422, Max=8.71934, Average=8.0105
-Test     : CostJb   : Nonlinear Jb = 5.48409
-Test     : CostJo   : Nonlinear Jo = 0.184109, nobs = 80, Jo/n = 0.00230136, err = 0.4
-Test     : CostJcDFI: Nonlinear Jc = 0.266266
-Test     : CostFunction: Nonlinear J = 5.93446
+Test     :  Min=7.32351, Max=8.72224, Average=7.985
+Test     : CostJb   : Nonlinear Jb = 4.85079
+Test     : CostJo   : Nonlinear Jo = 0.172622, nobs = 80, Jo/n = 0.00215778, err = 0.4
+Test     : CostJcDFI: Nonlinear Jc = 0.159686
+Test     : CostFunction: Nonlinear J = 5.18309
