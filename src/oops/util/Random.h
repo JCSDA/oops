@@ -36,18 +36,18 @@ namespace util {
  * util::NormalDistribution
  */
 
-template <typename T>
+template <typename datatype>
 class Random : public util::Printable {
  public:
-  const T & operator[](const std::size_t ii) const {return data_[ii];}
-  std::vector<T> data() {return data_;}
+  const datatype & operator[](const std::size_t ii) const {return data_[ii];}
+  std::vector<datatype> data() {return data_;}
 
  protected:
-  Random(size_t N, unsigned int seed): N_(N), seed_(seed) {}
+  Random(size_t N, unsigned int seed): N_(N), seed_(seed) {data_.reserve(N);}
   virtual ~Random() {}
 
   std::size_t N_;
-  std::vector<T> data_;
+  std::vector<datatype> data_;
   unsigned int seed_;
 
  private:
@@ -83,22 +83,22 @@ class Random : public util::Printable {
  *
  */
 
-template <typename T>
-class UniformDistribution : public Random<T> {
+template <typename datatype>
+class UniformDistribution : public Random<datatype> {
  public:
-  UniformDistribution(std::size_t N = 1, T minv = 0, T maxv = 1,
+  UniformDistribution(std::size_t N = 1, datatype minv = 0, datatype maxv = 1,
                       unsigned int seed = static_cast<std::uint32_t>(std::time(0))):
-  Random<T>(N, seed), minv_(minv), maxv_(maxv) {
+  Random<datatype>(N, seed), minv_(minv), maxv_(maxv) {
     static boost::random::mt19937 generator(this->seed_);
-    boost::random::uniform_real_distribution<T> distribution(minv_, maxv_);
+    boost::random::uniform_real_distribution<datatype> distribution(minv_, maxv_);
     for (size_t jj=0; jj < this->N_; ++jj) this->data_.push_back(distribution(generator));
   }
 
   virtual ~UniformDistribution() {}
 
  private:
-  T minv_;
-  T maxv_;
+  datatype minv_;
+  datatype maxv_;
 };
 
 // -----------------------------------------------------------------------------
@@ -123,22 +123,22 @@ class UniformDistribution : public Random<T> {
  *
  */
 
-template <typename T>
-class UniformIntDistribution : public Random<T> {
+template <typename datatype>
+class UniformIntDistribution : public Random<datatype> {
  public:
-  UniformIntDistribution(std::size_t N = 1, T minv = 0, T maxv = 100,
+  UniformIntDistribution(std::size_t N = 1, datatype minv = 0, datatype maxv = 100,
                          unsigned int seed = static_cast<std::uint32_t>(std::time(0))):
-  Random<T>(N, seed), minv_(minv), maxv_(maxv) {
+  Random<datatype>(N, seed), minv_(minv), maxv_(maxv) {
     static boost::random::mt19937 generator(this->seed_);
-    boost::random::uniform_int_distribution<T> distribution(minv_, maxv_);
+    boost::random::uniform_int_distribution<datatype> distribution(minv_, maxv_);
     for (size_t jj=0; jj < this->N_; ++jj) this->data_.push_back(distribution(generator));
   }
 
   virtual ~UniformIntDistribution() {}
 
  private:
-  T minv_;
-  T maxv_;
+  datatype minv_;
+  datatype maxv_;
 };
 
 // ------------------------------------------------------------------------------
@@ -161,27 +161,27 @@ class UniformIntDistribution : public Random<T> {
  * \warning Only implemented for floating point data types
  */
 
-template <typename T>
-class NormalDistribution : public Random<T> {
+template <typename datatype>
+class NormalDistribution : public Random<datatype> {
  public:
-  NormalDistribution(std::size_t N = 1, T mean = 0, T sdev = 1,
+  NormalDistribution(std::size_t N = 1, datatype mean = 0, datatype sdev = 1,
                      unsigned int seed = static_cast<std::uint32_t>(std::time(0))):
-  Random<T>(N, seed), mean_(mean), sdev_(sdev) {
-    if (!std::is_floating_point<T>::value) {
+  Random<datatype>(N, seed), mean_(mean), sdev_(sdev) {
+    if (!std::is_floating_point<datatype>::value) {
       oops::Log::error() << "NormalDistribution only implemented for floating point data types"
                          << std::endl;
       ABORT("NormalDistribution only implemented for floating point data types");
     }
     static boost::random::mt19937 generator(this->seed_);
-    boost::random::normal_distribution<T> distribution(mean_, sdev_);
+    boost::random::normal_distribution<datatype> distribution(mean_, sdev_);
     for (size_t jj=0; jj < this->N_; ++jj) this->data_.push_back(distribution(generator));
   }
 
   virtual ~NormalDistribution() {}
 
  private:
-  T mean_;
-  T sdev_;
+  datatype mean_;
+  datatype sdev_;
 };
 
 // ------------------------------------------------------------------------------
