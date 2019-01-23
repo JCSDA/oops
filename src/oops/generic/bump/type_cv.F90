@@ -29,7 +29,7 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: cv_pack
-! Purpose: pack control variable
+! Purpose: pack
 !----------------------------------------------------------------------
 subroutine cv_pack(cv,pcv)
 
@@ -57,7 +57,7 @@ end subroutine cv_pack
 
 !----------------------------------------------------------------------
 ! Subroutine: cv_unpack
-! Purpose: unpack control variable
+! Purpose: unpack
 !----------------------------------------------------------------------
 subroutine cv_unpack(cv,pcv)
 

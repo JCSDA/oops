@@ -67,6 +67,7 @@ contains
    procedure :: set_parameter => bump_set_parameter
    procedure :: copy_from_field => bump_copy_from_field
    procedure :: dealloc => bump_dealloc
+   procedure :: partial_dealloc => bump_partial_dealloc
 end type bump_type
 
 private
@@ -79,7 +80,7 @@ contains
 ! Purpose: online setup
 !----------------------------------------------------------------------
 subroutine bump_setup_online(bump,nmga,nl0,nv,nts,lon,lat,area,vunit,lmask,ens1_ne,ens1_nsub,ens2_ne,ens2_nsub, &
-                           & nobs,lonobs,latobs,namelname,lunit)
+                           & nobs,lonobs,latobs,namelname,lunit,msvali,msvalr)
 
 implicit none
 
@@ -103,9 +104,19 @@ real(kind_real),intent(in),optional :: lonobs(:)  ! Observations longitude (in d
 real(kind_real),intent(in),optional :: latobs(:)  ! Observations latitude (in degrees: -90 to 90)
 character(len=*),intent(in),optional :: namelname ! Namelist name
 integer,intent(in),optional :: lunit              ! Listing unit
+integer,intent(in),optional :: msvali             ! Missing value for integers
+real(kind_real),intent(in),optional :: msvalr     ! Missing value for reals
 
 ! Local variables
-integer :: lens1_ne,lens1_nsub,lens2_ne,lens2_nsub
+integer :: lmsvali,lens1_ne,lens1_nsub,lens2_ne,lens2_nsub
+real(kind_real) :: lmsvalr
+
+! Set missing values
+lmsvali = -999
+if (present(msvali)) lmsvali = msvali
+lmsvalr = -999.0
+if (present(msvalr)) lmsvalr = msvalr
+call bump%mpl%msv%init(lmsvali,lmsvalr)
 
 ! Initialize MPL
 call bump%mpl%init
@@ -129,10 +140,10 @@ call bump%nam%setup_internal(nl0,nv,nts,lens1_ne,lens1_nsub,lens2_ne,lens2_nsub)
 
 ! Initialize listing
 if (present(lunit)) then
-   call bump%mpl%init_listing(bump%nam%prefix,bump%nam%model,bump%nam%colorlog,bump%nam%logpres,lunit)
+   call bump%mpl%init_listing(bump%nam%prefix,bump%nam%model,bump%nam%verbosity,bump%nam%colorlog,bump%nam%logpres,lunit)
    bump%close_listing = .false.
 else
-   call bump%mpl%init_listing(bump%nam%prefix,bump%nam%model,bump%nam%colorlog,bump%nam%logpres)
+   call bump%mpl%init_listing(bump%nam%prefix,bump%nam%model,bump%nam%verbosity,bump%nam%colorlog,bump%nam%logpres)
    bump%close_listing = (trim(bump%nam%model)=='online').and.(.not.present(nobs))
 end if
 
@@ -141,32 +152,41 @@ call bump%setup_generic
 
 ! Initialize geometry
 write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+call bump%mpl%flush
 write(bump%mpl%info,'(a)') '--- Initialize geometry'
-call flush(bump%mpl%info)
+call bump%mpl%flush
 call bump%geom%setup_online(bump%mpl,bump%rng,bump%nam,nmga,nl0,lon,lat,area,vunit,lmask)
 call bump%geom%init(bump%mpl,bump%rng,bump%nam)
 
 if (bump%nam%grid_output) then
    ! Initialize fields regridding
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   call bump%mpl%flush
    write(bump%mpl%info,'(a)') '--- Initialize fields regridding'
-   call flush(bump%mpl%info)
+   call bump%mpl%flush
    call bump%io%grid_init(bump%mpl,bump%rng,bump%nam,bump%geom)
 end if
 
 ! Initialize block parameters
 write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+call bump%mpl%flush
 write(bump%mpl%info,'(a)') '--- Initialize block parameters'
+call bump%mpl%flush
 call bump%bpar%alloc(bump%nam,bump%geom)
+call bump%bpar%init(bump%nam,bump%geom)
 
 ! Initialize ensemble 1
 write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+call bump%mpl%flush
 write(bump%mpl%info,'(a)') '--- Initialize ensemble 1'
+call bump%mpl%flush
 call bump%ens1%alloc(bump%nam,bump%geom,bump%nam%ens1_ne,bump%nam%ens1_nsub)
 
 ! Initialize ensemble 2
 write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+call bump%mpl%flush
 write(bump%mpl%info,'(a)') '--- Initialize ensemble 2'
+call bump%mpl%flush
 call bump%ens2%alloc(bump%nam,bump%geom,bump%nam%ens2_ne,bump%nam%ens2_nsub)
 
 if (present(nobs)) then
@@ -179,15 +199,17 @@ if (present(nobs)) then
 
    ! Initialize observations locations
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   call bump%mpl%flush
    write(bump%mpl%info,'(a)') '--- Initialize observations locations'
-   call flush(bump%mpl%info)
+   call bump%mpl%flush
    call bump%obsop%from(nobs,lonobs,latobs)
 end if
 
 if ((bump%nam%ens1_ne>0).or.(bump%nam%ens2_ne>0)) then
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   call bump%mpl%flush
    write(bump%mpl%info,'(a)') '--- Add members to BUMP ensembles'
-   call flush(bump%mpl%info)
+   call bump%mpl%flush
 end if
 
 end subroutine bump_setup_online
@@ -205,27 +227,33 @@ class(bump_type),intent(inout) :: bump ! BUMP
 
 ! Header
 write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+call bump%mpl%flush
 write(bump%mpl%info,'(a)') '--- You are running BUMP ------------------------------------------'
+call bump%mpl%flush
 write(bump%mpl%info,'(a)') '--- Author: Benjamin Menetrier ------------------------------------'
+call bump%mpl%flush
 write(bump%mpl%info,'(a)') '--- Copyright © 2015-... UCAR, CERFACS, METEO-FRANCE and IRIT -----'
-call flush(bump%mpl%info)
+call bump%mpl%flush
 
 ! Check namelist parameters
 write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+call bump%mpl%flush
 write(bump%mpl%info,'(a)') '--- Check namelist parameters'
-call flush(bump%mpl%info)
+call bump%mpl%flush
 call bump%nam%check(bump%mpl)
 
 ! Write parallel setup
 write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+call bump%mpl%flush
 write(bump%mpl%info,'(a,i3,a,i2,a)') '--- Parallelization with ',bump%mpl%nproc,' MPI tasks and ', &
  & bump%mpl%nthread,' OpenMP threads'
-call flush(bump%mpl%info)
+call bump%mpl%flush
 
 ! Initialize random number generator
 write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+call bump%mpl%flush
 write(bump%mpl%info,'(a)') '--- Initialize random number generator'
-call flush(bump%mpl%info)
+call bump%mpl%flush
 call bump%rng%init(bump%mpl,bump%nam)
 
 ! Initialize allocation flags
@@ -251,21 +279,24 @@ if (bump%nam%default_seed) call bump%rng%reseed(bump%mpl)
 
 ! Finalize ensemble 1
 write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+call bump%mpl%flush
 write(bump%mpl%info,'(a)') '--- Finalize ensemble 1'
-call flush(bump%mpl%info)
+call bump%mpl%flush
 call bump%ens1%remove_mean
 
 ! Finalize ensemble 2
 write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+call bump%mpl%flush
 write(bump%mpl%info,'(a)') '--- Finalize ensemble 2'
-call flush(bump%mpl%info)
+call bump%mpl%flush
 call bump%ens2%remove_mean
 
 if (bump%nam%new_cortrack) then
    ! Run correlation tracker
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   call bump%mpl%flush
    write(bump%mpl%info,'(a)') '--- Run correlation tracker'
-   call flush(bump%mpl%info)
+   call bump%mpl%flush
    call bump%ens1%cortrack(bump%mpl,bump%nam,bump%geom,bump%io)
 end if
 
@@ -275,14 +306,16 @@ if (bump%nam%new_vbal) then
 
    ! Run vertical balance driver
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   call bump%mpl%flush
    write(bump%mpl%info,'(a)') '--- Run vertical balance driver'
-   call flush(bump%mpl%info)
+   call bump%mpl%flush
    call bump%vbal%run_vbal(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1,bump%ens1u)
 elseif (bump%nam%load_vbal) then
    ! Read vertical balance
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   call bump%mpl%flush
    write(bump%mpl%info,'(a)') '--- Read vertical balance'
-   call flush(bump%mpl%info)
+   call bump%mpl%flush
    call bump%vbal%read(bump%mpl,bump%nam,bump%geom,bump%bpar)
 end if
 
@@ -292,8 +325,9 @@ if (bump%nam%check_vbal) then
 
    ! Run vertical balance tests driver
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   call bump%mpl%flush
    write(bump%mpl%info,'(a)') '--- Run vertical balance tests driver'
-   call flush(bump%mpl%info)
+   call bump%mpl%flush
    call bump%vbal%run_vbal_tests(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar)
 end if
 
@@ -303,8 +337,9 @@ if (bump%nam%new_hdiag) then
 
    ! Run HDIAG driver
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   call bump%mpl%flush
    write(bump%mpl%info,'(a)') '--- Run HDIAG driver'
-   call flush(bump%mpl%info)
+   call bump%mpl%flush
    if ((trim(bump%nam%method)=='hyb-rnd').or.(trim(bump%nam%method)=='dual-ens')) then
       call bump%hdiag%run_hdiag(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1,bump%ens2)
    else
@@ -313,8 +348,9 @@ if (bump%nam%new_hdiag) then
 
    ! Copy HDIAG into C matrix
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   call bump%mpl%flush
    write(bump%mpl%info,'(a)') '--- Copy HDIAG into C matrix'
-   call flush(bump%mpl%info)
+   call bump%mpl%flush
    call bump%cmat%from_hdiag(bump%mpl,bump%nam,bump%geom,bump%bpar,bump%hdiag)
 end if
 
@@ -324,29 +360,33 @@ if (bump%nam%new_lct) then
 
    ! Run LCT driver
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   call bump%mpl%flush
    write(bump%mpl%info,'(a)') '--- Run LCT driver'
-   call flush(bump%mpl%info)
+   call bump%mpl%flush
    call bump%lct%run_lct(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1)
 
    ! Copy LCT into C matrix
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   call bump%mpl%flush
    write(bump%mpl%info,'(a)') '--- Copy LCT into C matrix'
-   call flush(bump%mpl%info)
+   call bump%mpl%flush
    call bump%cmat%from_lct(bump%mpl,bump%nam,bump%geom,bump%bpar,bump%lct)
 end if
 
 if (bump%nam%load_cmat) then
    ! Read C matrix
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   call bump%mpl%flush
    write(bump%mpl%info,'(a)') '--- Read C matrix'
-   call flush(bump%mpl%info)
+   call bump%mpl%flush
    call bump%cmat%read(bump%mpl,bump%nam,bump%geom,bump%bpar,bump%io)
 else
    if (bump%nam%forced_radii) then
       ! Copy namelist support radii into C matrix
       write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+      call bump%mpl%flush
       write(bump%mpl%info,'(a)') '--- Copy namelist support radii into C matrix'
-      call flush(bump%mpl%info)
+      call bump%mpl%flush
       call bump%cmat%from_nam(bump%mpl,bump%nam,bump%geom,bump%bpar)
    end if
 end if
@@ -354,19 +394,26 @@ end if
 if (allocated(bump%cmat%blk)) then
    ! Get C matrix from OOPS
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   call bump%mpl%flush
    write(bump%mpl%info,'(a)') '--- Get C matrix from OOPS'
+   call bump%mpl%flush
    call bump%cmat%from_oops(bump%mpl,bump%geom,bump%bpar)
 
    ! Setup C matrix sampling
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   call bump%mpl%flush
    write(bump%mpl%info,'(a)') '--- Setup C matrix sampling'
+   call bump%mpl%flush
    call bump%cmat%setup_sampling(bump%nam,bump%geom,bump%bpar)
 
-   ! Write C matrix
-   write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
-   write(bump%mpl%info,'(a)') '--- Write C matrix'
-   call flush(bump%mpl%info)
-   call bump%cmat%write(bump%mpl,bump%nam,bump%geom,bump%bpar,bump%io)
+   if (bump%nam%write_cmat) then
+      ! Write C matrix
+      write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+      call bump%mpl%flush
+      write(bump%mpl%info,'(a)') '--- Write C matrix'
+      call bump%mpl%flush
+      call bump%cmat%write(bump%mpl,bump%nam,bump%geom,bump%bpar,bump%io)
+   end if
 end if
 
 if (bump%nam%new_nicas) then
@@ -375,14 +422,16 @@ if (bump%nam%new_nicas) then
 
    ! Run NICAS driver
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   call bump%mpl%flush
    write(bump%mpl%info,'(a)') '--- Run NICAS driver'
-   call flush(bump%mpl%info)
+   call bump%mpl%flush
    call bump%nicas%run_nicas(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%cmat)
 elseif (bump%nam%load_nicas) then
    ! Read NICAS parameters
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   call bump%mpl%flush
    write(bump%mpl%info,'(a)') '--- Read NICAS parameters'
-   call flush(bump%mpl%info)
+   call bump%mpl%flush
    call bump%nicas%read(bump%mpl,bump%nam,bump%geom,bump%bpar)
 end if
 
@@ -393,8 +442,9 @@ if (bump%nam%check_adjoints.or.bump%nam%check_pos_def.or.bump%nam%check_sqrt.or.
 
    ! Run NICAS tests driver
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   call bump%mpl%flush
    write(bump%mpl%info,'(a)') '--- Run NICAS tests driver'
-   call flush(bump%mpl%info)
+   call bump%mpl%flush
    call bump%nicas%run_nicas_tests(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%cmat,bump%ens1)
 end if
 
@@ -404,14 +454,16 @@ if (bump%nam%new_obsop) then
 
    ! Run observation operator driver
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   call bump%mpl%flush
    write(bump%mpl%info,'(a)') '--- Run observation operator driver'
-   call flush(bump%mpl%info)
+   call bump%mpl%flush
    call bump%obsop%run_obsop(bump%mpl,bump%rng,bump%nam,bump%geom)
 elseif (bump%nam%load_obsop) then
    ! Read observation operator
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   call bump%mpl%flush
    write(bump%mpl%info,'(a)') '--- Read observation operator'
-   call flush(bump%mpl%info)
+   call bump%mpl%flush
    call bump%obsop%read(bump%mpl,bump%nam)
 end if
 
@@ -421,20 +473,21 @@ if (bump%nam%check_obsop) then
 
    ! Run observation operator tests driver
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   call bump%mpl%flush
    write(bump%mpl%info,'(a)') '--- Run observation operator tests driver'
-   call flush(bump%mpl%info)
+   call bump%mpl%flush
    call bump%obsop%run_obsop_tests(bump%mpl,bump%rng,bump%geom)
 end if
 
 if (bump%close_listing) then
    ! Close listings
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   call bump%mpl%flush
    write(bump%mpl%info,'(a)') '--- Close listings'
+   call bump%mpl%flush
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
-   call flush(bump%mpl%info)
-   close(unit=bump%mpl%info)
-   call flush(bump%mpl%test)
-   close(unit=bump%mpl%test)
+   call bump%mpl%flush
+   call bump%mpl%close_listing
 end if
 
 end subroutine bump_run_drivers
@@ -495,7 +548,7 @@ subroutine bump_apply_vbal(bump,fld_mga)
 implicit none
 
 ! Passed variables
-class(bump_type),intent(in) :: bump                                                             ! BUMP
+class(bump_type),intent(inout) :: bump                                                          ! BUMP
 real(kind_real),intent(inout) :: fld_mga(bump%geom%nmga,bump%geom%nl0,bump%nam%nv,bump%nam%nts) ! Field
 
 ! Local variable
@@ -533,7 +586,7 @@ subroutine bump_apply_vbal_inv(bump,fld_mga)
 implicit none
 
 ! Passed variables
-class(bump_type),intent(in) :: bump                                                             ! BUMP
+class(bump_type),intent(inout) :: bump                                                          ! BUMP
 real(kind_real),intent(inout) :: fld_mga(bump%geom%nmga,bump%geom%nl0,bump%nam%nv,bump%nam%nts) ! Field
 
 ! Local variable
@@ -571,7 +624,7 @@ subroutine bump_apply_vbal_ad(bump,fld_mga)
 implicit none
 
 ! Passed variables
-class(bump_type),intent(in) :: bump                                                             ! BUMP
+class(bump_type),intent(inout) :: bump                                                          ! BUMP
 real(kind_real),intent(inout) :: fld_mga(bump%geom%nmga,bump%geom%nl0,bump%nam%nv,bump%nam%nts) ! Field
 
 ! Local variable
@@ -609,7 +662,7 @@ subroutine bump_apply_vbal_inv_ad(bump,fld_mga)
 implicit none
 
 ! Passed variables
-class(bump_type),intent(in) :: bump                                                             ! BUMP
+class(bump_type),intent(inout) :: bump                                                          ! BUMP
 real(kind_real),intent(inout) :: fld_mga(bump%geom%nmga,bump%geom%nl0,bump%nam%nv,bump%nam%nts) ! Field
 
 ! Local variable
@@ -647,7 +700,7 @@ subroutine bump_apply_nicas(bump,fld_mga)
 implicit none
 
 ! Passed variables
-class(bump_type),intent(in) :: bump                                                             ! BUMP
+class(bump_type),intent(inout) :: bump                                                          ! BUMP
 real(kind_real),intent(inout) :: fld_mga(bump%geom%nmga,bump%geom%nl0,bump%nam%nv,bump%nam%nts) ! Field
 
 ! Local variable
@@ -695,14 +748,14 @@ subroutine bump_get_cv_size(bump,n)
 implicit none
 
 ! Passed variables
-class(bump_type),intent(in) :: bump ! BUMP
-integer,intent(out) :: n            ! Control variable size
+class(bump_type),intent(inout) :: bump ! BUMP
+integer,intent(out) :: n               ! Control variable size
 
 ! Local variables
 type(cv_type) :: cv
 
 ! Allocate control variable
-call bump%nicas%alloc_cv(bump%bpar,cv,getsizeonly=.true.)
+call bump%nicas%alloc_cv(bump%mpl,bump%bpar,cv,getsizeonly=.true.)
 
 ! Copy size
 n = cv%n
@@ -718,7 +771,7 @@ subroutine bump_apply_nicas_sqrt(bump,pcv,fld_mga)
 implicit none
 
 ! Passed variables
-class(bump_type),intent(in) :: bump                                                             ! BUMP
+class(bump_type),intent(inout) :: bump                                                          ! BUMP
 real(kind_real),intent(in) :: pcv(:)                                                            ! Packed control variable
 real(kind_real),intent(inout) :: fld_mga(bump%geom%nmga,bump%geom%nl0,bump%nam%nv,bump%nam%nts) ! Field
 
@@ -728,7 +781,7 @@ real(kind_real) :: fld_c0a(bump%geom%nc0a,bump%geom%nl0,bump%nam%nv,bump%nam%nts
 type(cv_type) :: cv
 
 ! Allocation
-call bump%nicas%alloc_cv(bump%bpar,cv)
+call bump%nicas%alloc_cv(bump%mpl,bump%bpar,cv)
 
 ! Check dimension
 if (size(pcv)==cv%n) then
@@ -764,7 +817,7 @@ subroutine bump_apply_nicas_sqrt_ad(bump,fld_mga,pcv)
 implicit none
 
 ! Passed variables
-class(bump_type),intent(in) :: bump                                                      ! BUMP
+class(bump_type),intent(inout) :: bump                                                   ! BUMP
 real(kind_real),intent(in) :: fld_mga(bump%geom%nmga,bump%geom%nl0,bump%nam%nv,bump%nam%nts) ! Field
 real(kind_real),intent(inout) :: pcv(:)                                                  ! Packed control variable
 
@@ -816,7 +869,7 @@ real(kind_real) :: fld_c0a(bump%geom%nc0a,bump%geom%nl0,bump%nam%nv,bump%nam%nts
 type(cv_type) :: cv
 
 ! Generate random control vector
-call bump%nicas%random_cv(bump%rng,bump%bpar,cv)
+call bump%nicas%random_cv(bump%mpl,bump%rng,bump%bpar,cv)
 
 if (bump%geom%nc0==bump%geom%nmg) then
    ! Apply NICAS square-root
@@ -844,7 +897,7 @@ subroutine bump_apply_obsop(bump,fld_mga,obs)
 implicit none
 
 ! Passed variables
-class(bump_type),intent(in) :: bump                                 ! BUMP
+class(bump_type),intent(inout) :: bump                              ! BUMP
 real(kind_real),intent(in) :: fld_mga(bump%geom%nmga,bump%geom%nl0) ! Field
 real(kind_real),intent(out) :: obs(bump%obsop%nobsa,bump%geom%nl0)  ! Observations columns
 
@@ -873,7 +926,7 @@ subroutine bump_apply_obsop_ad(bump,obs,fld_mga)
 implicit none
 
 ! Passed variables
-class(bump_type),intent(in) :: bump                                  ! BUMP
+class(bump_type),intent(inout) :: bump                               ! BUMP
 real(kind_real),intent(in) :: obs(bump%obsop%nobsa,bump%geom%nl0)    ! Observations columns
 real(kind_real),intent(out) :: fld_mga(bump%geom%nmga,bump%geom%nl0) ! Field
 
@@ -902,7 +955,7 @@ subroutine bump_get_parameter(bump,param,fld_mga)
 implicit none
 
 ! Passed variables
-class(bump_type),intent(in) :: bump                                                           ! BUMP
+class(bump_type),intent(inout) :: bump                                                        ! BUMP
 character(len=*),intent(in) :: param                                                          ! Parameter
 real(kind_real),intent(out) :: fld_mga(bump%geom%nmga,bump%geom%nl0,bump%nam%nv,bump%nam%nts) ! Field
 
@@ -958,7 +1011,7 @@ subroutine bump_copy_to_field(bump,param,ib,fld_mga)
 implicit none
 
 ! Passed variables
-class(bump_type),intent(in) :: bump                                  ! BUMP
+class(bump_type),intent(inout) :: bump                               ! BUMP
 character(len=*),intent(in) :: param                                 ! Parameter
 integer,intent(in) :: ib                                             ! Block index
 real(kind_real),intent(out) :: fld_mga(bump%geom%nmga,bump%geom%nl0) ! Field
@@ -969,55 +1022,120 @@ integer :: iscales,ie,iv,its
 ! Select parameter
 select case (trim(param))
 case ('var')
-   call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%coef_ens,fld_mga)
+   if (allocated(bump%cmat%blk(ib)%coef_ens)) then
+      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%coef_ens,fld_mga)
+   else
+      call bump%mpl%abort(trim(param)//' is not allocated in bump%copy_to_field')
+   end if
 case ('cor_rh')
-   call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%rh,fld_mga)
-   fld_mga = fld_mga*req
+   if (allocated(bump%cmat%blk(ib)%rh)) then
+      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%rh,fld_mga)
+      fld_mga = fld_mga*req
+   else
+      call bump%mpl%abort(trim(param)//' is not allocated in bump%copy_to_field')
+   end if
 case ('cor_rv')
-   call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%rv,fld_mga)
+   if (allocated(bump%cmat%blk(ib)%rv)) then
+      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%rv,fld_mga)
+   else
+      call bump%mpl%abort(trim(param)//' is not allocated in bump%copy_to_field')
+   end if
 case ('cor_rv_rfac')
-   call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%rv_rfac,fld_mga)
+   if (allocated(bump%cmat%blk(ib)%rv_rfac)) then
+      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%rv_rfac,fld_mga)
+   else
+      call bump%mpl%abort(trim(param)//' is not allocated in bump%copy_to_field')
+   end if
 case ('cor_rv_coef')
-   call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%rv_coef,fld_mga)
+   if (allocated(bump%cmat%blk(ib)%rv_coef)) then
+      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%rv_coef,fld_mga)
+   else
+      call bump%mpl%abort(trim(param)//' is not allocated in bump%copy_to_field')
+   end if
 case ('loc_coef')
-   call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%coef_ens,fld_mga)
+   if (allocated(bump%cmat%blk(ib)%coef_ens)) then
+      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%coef_ens,fld_mga)
+   else
+      call bump%mpl%abort(trim(param)//' is not allocated in bump%copy_to_field')
+   end if
 case ('loc_rh')
-   call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%rh,fld_mga)
-   fld_mga = fld_mga*req
+   if (allocated(bump%cmat%blk(ib)%rh)) then
+      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%rh,fld_mga)
+      fld_mga = fld_mga*req
+   else
+      call bump%mpl%abort(trim(param)//' is not allocated in bump%copy_to_field')
+   end if
 case ('loc_rv')
-   call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%rv,fld_mga)
+   if (allocated(bump%cmat%blk(ib)%rv)) then
+      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%rv,fld_mga)
+   else
+      call bump%mpl%abort(trim(param)//' is not allocated in bump%copy_to_field')
+   end if
 case ('hyb_coef')
-   call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%coef_sta,fld_mga)
+   if (allocated(bump%cmat%blk(ib)%coef_sta)) then
+      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%cmat%blk(ib)%coef_sta,fld_mga)
+   else
+      call bump%mpl%abort(trim(param)//' is not allocated in bump%copy_to_field')
+   end if
 case default
    select case (param(1:4))
    case ('D11_')
       read(param(5:5),'(i1)') iscales
-      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%D11(:,:,iscales),fld_mga)
-      fld_mga = fld_mga*req**2
+      if (allocated(bump%lct%blk(ib)%D11)) then
+         call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%D11(:,:,iscales),fld_mga)
+         fld_mga = fld_mga*req**2
+      else
+         call bump%mpl%abort(trim(param)//' is not allocated in bump%copy_to_field')
+      end if
+
    case ('D22_')
       read(param(5:5),'(i1)') iscales
-      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%D22(:,:,iscales),fld_mga)
-      fld_mga = fld_mga*req**2
+      if (allocated(bump%lct%blk(ib)%D22)) then
+         call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%D22(:,:,iscales),fld_mga)
+         fld_mga = fld_mga*req**2
+      else
+         call bump%mpl%abort(trim(param)//' is not allocated in bump%copy_to_field')
+      end if
    case ('D33_')
       read(param(5:5),'(i1)') iscales
-      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%D33(:,:,iscales),fld_mga)
+      if (allocated(bump%lct%blk(ib)%D33)) then
+         call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%D33(:,:,iscales),fld_mga)
+      else
+         call bump%mpl%abort(trim(param)//' is not allocated in bump%copy_to_field')
+      end if
    case ('D12_')
       read(param(5:5),'(i1)') iscales
-      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%D12(:,:,iscales),fld_mga)
-      fld_mga = fld_mga*req**2
+      if (allocated(bump%lct%blk(ib)%D12)) then
+         call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%D12(:,:,iscales),fld_mga)
+         fld_mga = fld_mga*req**2
+      else
+         call bump%mpl%abort(trim(param)//' is not allocated in bump%copy_to_field')
+      end if
    case ('Dcoe')
       read(param(7:7),'(i1)') iscales
-      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%Dcoef(:,:,iscales),fld_mga)
+      if (allocated(bump%lct%blk(ib)%Dcoef)) then
+         call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%Dcoef(:,:,iscales),fld_mga)
+      else
+         call bump%mpl%abort(trim(param)//' is not allocated in bump%copy_to_field')
+      end if
    case ('DLh_')
       read(param(5:5),'(i1)') iscales
-      call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%DLh(:,:,iscales),fld_mga)
-      fld_mga = fld_mga*req
+      if (allocated(bump%lct%blk(ib)%DLh)) then
+         call bump%geom%copy_c0a_to_mga(bump%mpl,bump%lct%blk(ib)%DLh(:,:,iscales),fld_mga)
+         fld_mga = fld_mga*req
+      else
+         call bump%mpl%abort(trim(param)//' is not allocated in bump%copy_to_field')
+      end if
    case default
       if (param(1:6)=='ens1u_') then
          read(param(7:10),'(i4.4)') ie
          iv = bump%bpar%b_to_v1(ib)
          its = bump%bpar%b_to_ts1(ib)
-         call bump%geom%copy_c0a_to_mga(bump%mpl,bump%ens1u%fld(:,:,iv,its,ie),fld_mga)
+         if (allocated(bump%ens1u%fld)) then
+            call bump%geom%copy_c0a_to_mga(bump%mpl,bump%ens1u%fld(:,:,iv,its,ie),fld_mga)
+         else
+            call bump%mpl%abort(trim(param)//' is not allocated in bump%copy_to_field')
+         end if
       else
          call bump%mpl%abort('parameter '//trim(param)//' not yet implemented in get_parameter')
       end if
@@ -1137,8 +1255,35 @@ end select
 end subroutine bump_copy_from_field
 
 !----------------------------------------------------------------------
+! Subroutine: bump_partial_dealloc
+! Purpose: release memory (partial)
+!----------------------------------------------------------------------
+subroutine bump_partial_dealloc(bump)
+
+implicit none
+
+! Passed variables
+class(bump_type),intent(inout) :: bump ! BUMP
+
+! Release memory
+call bump%bpar%dealloc
+call bump%cmat%dealloc
+call bump%ens1%dealloc
+call bump%ens1u%dealloc
+call bump%ens2%dealloc
+call bump%geom%dealloc
+call bump%hdiag%dealloc
+call bump%io%dealloc
+call bump%lct%dealloc
+call bump%nicas%partial_dealloc
+call bump%obsop%partial_dealloc
+call bump%vbal%partial_dealloc
+
+end subroutine bump_partial_dealloc
+
+!----------------------------------------------------------------------
 ! Subroutine: bump_dealloc
-! Purpose: deallocation of BUMP fields
+! Purpose: release memory (full)
 !----------------------------------------------------------------------
 subroutine bump_dealloc(bump)
 
@@ -1148,19 +1293,18 @@ implicit none
 class(bump_type),intent(inout) :: bump ! BUMP
 
 ! Release memory
-call bump%cmat%dealloc(bump%bpar)
+call bump%bpar%dealloc
+call bump%cmat%dealloc
 call bump%ens1%dealloc
 call bump%ens1u%dealloc
 call bump%ens2%dealloc
-call bump%io%dealloc
-call bump%lct%dealloc(bump%bpar)
-call bump%nicas%dealloc(bump%nam,bump%geom,bump%bpar)
-call bump%obsop%dealloc
-call bump%vbal%dealloc(bump%nam)
-
-! Final memory release (because objects required for previous memory releases)
-call bump%bpar%dealloc
 call bump%geom%dealloc
+call bump%hdiag%dealloc
+call bump%io%dealloc
+call bump%lct%dealloc
+call bump%nicas%dealloc
+call bump%obsop%dealloc
+call bump%vbal%dealloc
 
 end subroutine bump_dealloc
 

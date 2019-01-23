@@ -11,7 +11,6 @@
 module tools_stripack
 
 use tools_kinds, only: kind_real
-use tools_missing, only: msr,isnotmsr
 use tools_repro, only: eq,inf,sup,indist
 use type_mpl, only: mpl_type
 
@@ -106,7 +105,7 @@ subroutine addnod ( mpl, nst, k, x, y, z, list, lptr, lend, lnew, ier )
 !
   implicit none
 
-  type(mpl_type),intent(in) :: mpl ! MPI data
+  type(mpl_type),intent(inout) :: mpl ! MPI data
 
   integer k
 
@@ -3114,7 +3113,7 @@ subroutine swptst ( n1, n2, n3, n4, x, y, z, output )
 
   return
 end subroutine swptst
-subroutine trans ( n, rlat, rlon, x, y, z )
+subroutine trans ( mpl, n, rlat, rlon, x, y, z )
 
 !*****************************************************************************80
 !
@@ -3166,6 +3165,7 @@ subroutine trans ( n, rlat, rlon, x, y, z )
 !
   implicit none
 
+  type(mpl_type),intent(inout) :: mpl
   integer n
 
   real ( kind_real ) cosphi
@@ -3182,7 +3182,7 @@ subroutine trans ( n, rlat, rlon, x, y, z )
   nn = n
 
   do i = 1, nn
-    if (isnotmsr(rlat(i)).and.isnotmsr(rlon(i))) then
+    if (mpl%msv%isnotr(rlat(i)).and.mpl%msv%isnotr(rlon(i))) then
        phi = rlat(i)
        theta = rlon(i)
        cosphi = cos ( phi )
@@ -3190,9 +3190,9 @@ subroutine trans ( n, rlat, rlon, x, y, z )
        y(i) = cosphi * sin ( theta )
        z(i) = sin ( phi )
     else
-       call msr(x(i))
-       call msr(y(i))
-       call msr(z(i))
+       x(i) = mpl%msv%valr
+       y(i) = mpl%msv%valr
+       z(i) = mpl%msv%valr
     end if
   end do
 
@@ -4195,7 +4195,7 @@ subroutine trmesh ( mpl, n, x, y, z, list, lptr, lend, lnew, near, next, dist, i
 !
   implicit none
 
-  type(mpl_type),intent(in) :: mpl ! MPI data
+  type(mpl_type),intent(inout) :: mpl ! MPI data
 
   integer n
 

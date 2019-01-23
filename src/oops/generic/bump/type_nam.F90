@@ -12,7 +12,6 @@ use netcdf, only: nf90_put_att,nf90_global
 !$ use omp_lib, only: omp_get_num_procs
 use tools_const, only: req,deg2rad,rad2deg
 use tools_kinds,only: kind_real
-use tools_missing, only: msi,msr
 use tools_nc, only: put_att
 use type_mpl, only: mpl_type
 
@@ -31,6 +30,7 @@ type nam_type
    character(len=1024) :: datadir                   ! Data directory
    character(len=1024) :: prefix                    ! Files prefix
    character(len=1024) :: model                     ! Model name ('aro', 'arp', 'fv3', 'gem', 'geos', 'gfs', 'ifs', 'mpas', 'nemo' or 'wrf')
+   character(len=1024) :: verbosity                 ! Verbosity level ('all', 'main' or 'none')
    logical :: colorlog                              ! Add colors to the log (for display on terminal)
    logical :: default_seed                          ! Default seed for random numbers
 
@@ -40,13 +40,19 @@ type nam_type
    logical :: new_cortrack                          ! New correlation tracker
    logical :: new_vbal                              ! Compute new vertical balance operator
    logical :: load_vbal                             ! Load existing vertical balance operator
+   logical :: write_vbal                            ! Write vertical balance operator
    logical :: new_hdiag                             ! Compute new HDIAG diagnostics
+   logical :: write_hdiag                           ! Write HDIAG diagnostics
    logical :: new_lct                               ! Compute new LCT
+   logical :: write_lct                             ! Write LCT
    logical :: load_cmat                             ! Load existing C matrix
+   logical :: write_cmat                            ! Write existing C matrix
    logical :: new_nicas                             ! Compute new NICAS parameters
    logical :: load_nicas                            ! Load existing NICAS parameters
+   logical :: write_nicas                           ! Write NICAS parameters
    logical :: new_obsop                             ! Compute new observation operator
    logical :: load_obsop                            ! Load existing observation operator
+   logical :: write_obsop                           ! Write observation operator
    logical :: check_vbal                            ! Test vertical balance inverse and adjoint
    logical :: check_adjoints                        ! Test NICAS adjoints
    logical :: check_pos_def                         ! Test NICAS positive definiteness
@@ -173,7 +179,7 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: nam_init
-! Purpose: intialize namelist parameters
+! Purpose: intialize
 !----------------------------------------------------------------------
 subroutine nam_init(nam)
 
@@ -189,6 +195,7 @@ integer :: iv
 nam%datadir = ''
 nam%prefix = ''
 nam%model = ''
+nam%verbosity = 'all'
 nam%colorlog = .false.
 nam%default_seed = .false.
 
@@ -198,13 +205,19 @@ nam%strategy = ''
 nam%new_cortrack = .false.
 nam%new_vbal = .false.
 nam%load_vbal = .false.
+nam%write_vbal = .true.
 nam%new_hdiag = .false.
+nam%write_hdiag = .true.
 nam%new_lct = .false.
+nam%write_lct = .true.
 nam%load_cmat = .false.
+nam%write_cmat = .true.
 nam%new_nicas = .false.
 nam%load_nicas = .false.
+nam%write_nicas = .true.
 nam%new_obsop = .false.
 nam%load_obsop = .false.
+nam%write_obsop = .true.
 nam%check_vbal = .false.
 nam%check_adjoints = .false.
 nam%check_pos_def = .false.
@@ -216,61 +229,61 @@ nam%check_optimality = .false.
 nam%check_obsop = .false.
 
 ! model_param default
-call msi(nam%nl)
-call msi(nam%levs)
+nam%nl = 0
+nam%levs = 0
 nam%logpres = .false.
-call msi(nam%nv)
+nam%nv = 0
 do iv=1,nvmax
    nam%varname(iv) = ''
    nam%addvar2d(iv) = ''
 end do
-call msi(nam%nts)
-call msi(nam%timeslot)
+nam%nts = 0
+nam%timeslot = 0
 
 ! ens1_param default
-call msi(nam%ens1_ne)
-call msi(nam%ens1_ne_offset)
-call msi(nam%ens1_nsub)
+nam%ens1_ne = 0
+nam%ens1_ne_offset = 0
+nam%ens1_nsub = 0
 
 ! ens2_param default
-call msi(nam%ens2_ne)
-call msi(nam%ens2_ne_offset)
-call msi(nam%ens2_nsub)
+nam%ens2_ne = 0
+nam%ens2_ne_offset = 0
+nam%ens2_nsub = 0
 
 ! sampling_param default
 nam%sam_write = .false.
 nam%sam_read = .false.
 nam%mask_type = ''
-call msr(nam%mask_th)
+nam%mask_th = 0.0
 nam%mask_check = .false.
 nam%draw_type = ''
-call msi(nam%nc1)
-call msi(nam%nc2)
-call msi(nam%ntry)
-call msi(nam%nrep)
-call msi(nam%nc3)
-call msr(nam%dc)
-call msi(nam%nl0r)
+nam%nc1 = 0
+nam%nc2 = 0
+nam%ntry = 0
+nam%nrep = 0
+nam%nc3 = 0
+nam%dc = 0.0
+nam%nl0r = 0
 
 ! diag_param default
-call msi(nam%ne)
+nam%ne = 0
 nam%gau_approx = .false.
 do iv=1,nvmax*(nvmax-1)/2
    nam%vbal_block(iv) = .false.
 end do
-call msr(nam%vbal_rad)
+nam%vbal_rad = 0.0
 nam%var_diag = .false.
 nam%var_filter = .false.
 nam%var_full = .false.
-call msi(nam%var_niter)
-call msr(nam%var_rhflt)
+nam%var_niter = 0
+nam%var_rhflt = 0.0
 nam%local_diag = .false.
-call msr(nam%local_rad)
+nam%local_rad = 0.0
 nam%displ_diag = .false.
-call msr(nam%displ_rad)
-call msi(nam%displ_niter)
-call msr(nam%displ_rhflt)
-call msr(nam%displ_tol)
+nam%displ_rad = 0.0
+nam%displ_niter = 0
+nam%displ_rhflt = 0.0
+nam%displ_tol = 0.0
 
 ! fit_param default
 nam%minim_algo = ''
@@ -279,53 +292,53 @@ do iv=0,nvmax
 end do
 nam%lhomh = .false.
 nam%lhomv = .false.
-call msr(nam%rvflt)
-call msi(nam%lct_nscales)
+nam%rvflt = 0.0
+nam%lct_nscales = 0
 nam%lct_diag = .false.
 
 ! nicas_param default
 nam%lsqrt = .false.
-call msr(nam%resol)
+nam%resol = 0.0
 nam%fast_sampling = .false.
 nam%nicas_interp = ''
 nam%network = .false.
-call msi(nam%mpicom)
-call msi(nam%advmode)
+nam%mpicom = 0
+nam%advmode = 0
 nam%forced_radii = .false.
-call msr(nam%rh)
-call msr(nam%rv)
-call msi(nam%ndir)
-call msr(nam%londir)
-call msr(nam%latdir)
-call msi(nam%levdir)
-call msi(nam%ivdir)
-call msi(nam%itsdir)
+nam%rh = 0.0
+nam%rv = 0.0
+nam%ndir = 0
+nam%londir = 0.0
+nam%latdir = 0.0
+nam%levdir = 0
+nam%ivdir = 0
+nam%itsdir = 0
 
 ! obsop_param default
-call msi(nam%nobs)
+nam%nobs = 0
 nam%obsdis = ''
 nam%obsop_interp = ''
 
 ! output_param default
-call msi(nam%nldwh)
-call msi(nam%il_ldwh)
-call msi(nam%ic_ldwh)
-call msi(nam%nldwv)
-call msr(nam%lon_ldwv)
-call msr(nam%lat_ldwv)
-call msr(nam%diag_rhflt)
+nam%nldwh = 0
+nam%il_ldwh = 0
+nam%ic_ldwh = 0
+nam%nldwv = 0
+nam%lon_ldwv = 0.0
+nam%lat_ldwv = 0.0
+nam%diag_rhflt = 0.0
 nam%diag_interp = ''
 nam%field_io = .true.
 nam%split_io = .false.
 nam%grid_output = .false.
-call msr(nam%grid_resol)
+nam%grid_resol = 0.0
 nam%grid_interp = ''
 
 end subroutine nam_init
 
 !----------------------------------------------------------------------
 ! Subroutine: nam_read
-! Purpose: read namelist parameters
+! Purpose: read
 !----------------------------------------------------------------------
 subroutine nam_read(nam,mpl,namelname)
 
@@ -333,7 +346,7 @@ implicit none
 
 ! Passed variable
 class(nam_type),intent(inout) :: nam     ! Namelist
-type(mpl_type),intent(in) :: mpl         ! MPI data
+type(mpl_type),intent(inout) :: mpl      ! MPI data
 character(len=*),intent(in) :: namelname ! Namelist name
 
 ! Local variables
@@ -345,22 +358,23 @@ integer :: nl,levs(nlmax),nv,nts,timeslot(ntsmax),ens1_ne,ens1_ne_offset,ens1_ns
 integer :: nc1,nc2,ntry,nrep,nc3,nl0r,ne,var_niter,displ_niter,lct_nscales,mpicom,advmode,ndir,levdir(ndirmax),ivdir(ndirmax)
 integer :: itsdir(ndirmax),nobs,nldwh,il_ldwh(nlmax*nc3max),ic_ldwh(nlmax*nc3max),nldwv
 logical :: colorlog,default_seed
-logical :: new_cortrack,new_vbal,load_vbal,new_hdiag,new_lct,load_cmat,new_nicas,load_nicas,new_obsop,load_obsop
-logical :: check_vbal,check_adjoints,check_pos_def,check_sqrt,check_dirac,check_randomization,check_consistency,check_optimality
-logical :: check_obsop,logpres,sam_write,sam_read,mask_check
+logical :: new_cortrack,new_vbal,load_vbal,write_vbal,new_hdiag,write_hdiag,new_lct,write_lct,load_cmat,write_cmat,new_nicas
+logical :: load_nicas,write_nicas,new_obsop,load_obsop,write_obsop,check_vbal,check_adjoints,check_pos_def,check_sqrt
+logical :: check_dirac,check_randomization,check_consistency,check_optimality,check_obsop,logpres,sam_write,sam_read,mask_check
 logical :: vbal_block(nvmax*(nvmax-1)/2),var_diag,var_filter,var_full,gau_approx,local_diag,displ_diag,double_fit(0:nvmax)
 logical :: lhomh,lhomv,lct_diag(nscalesmax),lsqrt,fast_sampling,network,forced_radii,field_io,split_io,grid_output
 real(kind_real) :: mask_th,dc,vbal_rad,var_rhflt,local_rad,displ_rad,displ_rhflt,displ_tol,rvflt,lon_ldwv(nldwvmax)
 real(kind_real) :: lat_ldwv(nldwvmax),diag_rhflt,resol,rh,rv,londir(ndirmax),latdir(ndirmax),grid_resol
-character(len=1024) :: datadir,prefix,model,strategy,method,mask_type,draw_type,minim_algo,nicas_interp
+character(len=1024) :: datadir,prefix,model,verbosity,strategy,method,mask_type,draw_type,minim_algo,nicas_interp
 character(len=1024) :: obsdis,obsop_interp,diag_interp,grid_interp
 character(len=1024),dimension(nvmax) :: varname,addvar2d
 
 ! Namelist blocks
-namelist/general_param/datadir,prefix,model,colorlog,default_seed
-namelist/driver_param/method,strategy,new_cortrack,new_vbal,load_vbal,new_hdiag,new_lct,load_cmat,new_nicas,load_nicas,new_obsop, &
-                    & load_obsop,check_vbal,check_adjoints,check_pos_def,check_sqrt,check_dirac,check_randomization, &
-                    & check_consistency,check_optimality,check_obsop
+namelist/general_param/datadir,prefix,model,verbosity,colorlog,default_seed
+namelist/driver_param/method,strategy,new_cortrack,new_vbal,load_vbal,write_vbal,new_hdiag,write_hdiag,new_lct,write_lct, &
+                    & load_cmat,write_cmat,new_nicas,load_nicas,write_nicas,new_obsop,load_obsop,write_obsop,check_vbal, &
+                    & check_adjoints,check_pos_def,check_sqrt,check_dirac,check_randomization,check_consistency, &
+                    & check_optimality,check_obsop
 namelist/model_param/nl,levs,logpres,nv,varname,addvar2d,nts,timeslot
 namelist/ens1_param/ens1_ne,ens1_ne_offset,ens1_nsub
 namelist/ens2_param/ens2_ne,ens2_ne_offset,ens2_nsub
@@ -379,6 +393,7 @@ if (mpl%main) then
    datadir = ''
    prefix = ''
    model = ''
+   verbosity = 'all'
    colorlog = .false.
    default_seed = .false.
 
@@ -388,13 +403,19 @@ if (mpl%main) then
    new_cortrack = .false.
    new_vbal = .false.
    load_vbal = .false.
+   write_vbal = .true.
    new_hdiag = .false.
+   write_hdiag = .true.
    new_lct = .false.
+   write_lct = .true.
    load_cmat = .false.
+   write_cmat = .true.
    new_nicas = .false.
    load_nicas = .false.
+   write_nicas = .true.
    new_obsop = .false.
    load_obsop = .false.
+   write_obsop = .true.
    check_vbal = .false.
    check_adjoints = .false.
    check_pos_def = .false.
@@ -406,61 +427,61 @@ if (mpl%main) then
    check_obsop = .false.
 
    ! model_param default
-   call msi(nl)
-   call msi(levs)
+   nl = 0
+   levs = 0
    logpres = .false.
-   call msi(nv)
+   nv = 0
    do iv=1,nvmax
       varname(iv) = ''
       addvar2d(iv) = ''
    end do
-   call msi(nts)
-   call msi(timeslot)
+   nts = 0
+   timeslot = 0
 
    ! ens1_param default
-   call msi(ens1_ne)
-   call msi(ens1_ne_offset)
-   call msi(ens1_nsub)
+   ens1_ne = 0
+   ens1_ne_offset = 0
+   ens1_nsub = 0
 
    ! ens2_param default
-   call msi(ens2_ne)
-   call msi(ens2_ne_offset)
-   call msi(ens2_nsub)
+   ens2_ne = 0
+   ens2_ne_offset = 0
+   ens2_nsub = 0
 
    ! sampling_param default
    sam_write = .false.
    sam_read = .false.
    mask_type = ''
-   call msr(mask_th)
+   mask_th = 0.0
    mask_check = .false.
    draw_type = ''
-   call msi(nc1)
-   call msi(nc2)
-   call msi(ntry)
-   call msi(nrep)
-   call msi(nc3)
-   call msr(dc)
-   call msi(nl0r)
+   nc1 = 0
+   nc2 = 0
+   ntry = 0
+   nrep = 0
+   nc3 = 0
+   dc = 0.0
+   nl0r = 0
 
    ! diag_param default
-   call msi(ne)
+   ne = 0
    gau_approx = .false.
    do iv=1,nvmax*(nvmax-1)/2
       vbal_block(iv) = .false.
    end do
-   call msr(vbal_rad)
+   vbal_rad = 0.0
    var_diag = .false.
    var_filter = .false.
    var_full = .false.
-   call msi(var_niter)
-   call msr(var_rhflt)
+   var_niter = 0
+   var_rhflt = 0.0
    local_diag = .false.
-   call msr(local_rad)
+   local_rad = 0.0
    displ_diag = .false.
-   call msr(displ_rad)
-   call msi(displ_niter)
-   call msr(displ_rhflt)
-   call msr(displ_tol)
+   displ_rad = 0.0
+   displ_niter = 0
+   displ_rhflt = 0.0
+   displ_tol = 0.0
 
    ! fit_param default
    minim_algo = ''
@@ -469,45 +490,45 @@ if (mpl%main) then
    end do
    lhomh = .false.
    lhomv = .false.
-   call msr(rvflt)
-   call msi(lct_nscales)
+   rvflt = 0.0
+   lct_nscales = 0
    lct_diag = .false.
 
    ! nicas_param default
    lsqrt = .false.
-   call msr(resol)
+   resol = 0.0
    nicas_interp = ''
    network = .false.
-   call msi(mpicom)
-   call msi(advmode)
+   mpicom = 0
+   advmode = 0
    forced_radii = .false.
-   call msr(rh)
-   call msr(rv)
-   call msi(ndir)
-   call msr(londir)
-   call msr(latdir)
-   call msi(levdir)
-   call msi(ivdir)
-   call msi(itsdir)
+   rh = 0.0
+   rv = 0.0
+   ndir = 0
+   londir = 0.0
+   latdir = 0.0
+   levdir = 0
+   ivdir = 0
+   itsdir = 0
 
    ! obsop_param default
-   call msi(nobs)
+   nobs = 0
    obsdis = ''
    obsop_interp = ''
 
    ! output_param default
-   call msi(nldwh)
-   call msi(il_ldwh)
-   call msi(ic_ldwh)
-   call msi(nldwv)
-   call msr(lon_ldwv)
-   call msr(lat_ldwv)
-   call msr(diag_rhflt)
+   nldwh = 0
+   il_ldwh = 0
+   ic_ldwh = 0
+   nldwv = 0
+   lon_ldwv = 0.0
+   lat_ldwv = 0.0
+   diag_rhflt = 0.0
    diag_interp = ''
    field_io = .true.
    split_io = .false.
    grid_output = .false.
-   call msr(grid_resol)
+   grid_resol = 0.0
    grid_interp = ''
 
    ! Open namelist
@@ -519,6 +540,7 @@ if (mpl%main) then
    nam%datadir = datadir
    nam%prefix = prefix
    nam%model = model
+   nam%verbosity = verbosity
    nam%colorlog = colorlog
    nam%default_seed = default_seed
 
@@ -529,13 +551,19 @@ if (mpl%main) then
    nam%new_cortrack = new_cortrack
    nam%new_vbal = new_vbal
    nam%load_vbal = load_vbal
+   nam%write_vbal = write_vbal
    nam%new_hdiag = new_hdiag
+   nam%write_hdiag = write_hdiag
    nam%new_lct = new_lct
+   nam%write_lct = write_lct
    nam%load_cmat = load_cmat
+   nam%write_cmat = write_cmat
    nam%new_nicas = new_nicas
    nam%load_nicas = load_nicas
+   nam%write_nicas = write_nicas
    nam%new_obsop = new_obsop
    nam%load_obsop = load_obsop
+   nam%write_obsop = write_obsop
    nam%check_vbal = check_vbal
    nam%check_adjoints = check_adjoints
    nam%check_pos_def = check_pos_def
@@ -671,7 +699,7 @@ end subroutine nam_read
 
 !----------------------------------------------------------------------
 ! Subroutine: nam_bcast
-! Purpose: broadcast namelist parameters
+! Purpose: broadcast
 !----------------------------------------------------------------------
 subroutine nam_bcast(nam,mpl)
 
@@ -679,12 +707,13 @@ implicit none
 
 ! Passed variable
 class(nam_type),intent(inout) :: nam ! Namelist
-type(mpl_type),intent(in) :: mpl     ! MPI data
+type(mpl_type),intent(inout) :: mpl  ! MPI data
 
 ! general_param
 call mpl%f_comm%broadcast(nam%datadir,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%prefix,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%model,mpl%ioproc-1)
+call mpl%f_comm%broadcast(nam%verbosity,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%colorlog,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%default_seed,mpl%ioproc-1)
 
@@ -694,13 +723,19 @@ call mpl%f_comm%broadcast(nam%strategy,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%new_cortrack,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%new_vbal,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%load_vbal,mpl%ioproc-1)
+call mpl%f_comm%broadcast(nam%write_vbal,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%new_hdiag,mpl%ioproc-1)
+call mpl%f_comm%broadcast(nam%write_hdiag,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%new_lct,mpl%ioproc-1)
+call mpl%f_comm%broadcast(nam%write_lct,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%load_cmat,mpl%ioproc-1)
+call mpl%f_comm%broadcast(nam%write_cmat,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%new_nicas,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%load_nicas,mpl%ioproc-1)
+call mpl%f_comm%broadcast(nam%write_nicas,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%new_obsop,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%load_obsop,mpl%ioproc-1)
+call mpl%f_comm%broadcast(nam%write_obsop,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%check_vbal,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%check_adjoints,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%check_pos_def,mpl%ioproc-1)
@@ -868,7 +903,7 @@ implicit none
 
 ! Passed variable
 class(nam_type),intent(inout) :: nam ! Namelist
-type(mpl_type),intent(in) :: mpl     ! MPI data
+type(mpl_type),intent(inout) :: mpl  ! MPI data
 
 ! Local variables
 integer :: iv,its,il,idir
@@ -906,6 +941,11 @@ select case (trim(nam%model))
 case ('aro','arp','fv3','gem','geos','gfs','ifs','mpas','nemo','online','wrf')
 case default
    call mpl%abort('wrong model')
+end select
+select case (trim(nam%verbosity))
+case ('all','main','none')
+case default
+   call mpl%abort('wrong verbosity level')
 end select
 
 ! Check driver_param
@@ -1197,16 +1237,16 @@ end subroutine nam_check
 
 !----------------------------------------------------------------------
 ! Subroutine: nam_ncwrite
-! Purpose: write namelist parameters as NetCDF attributes
+! Purpose: write
 !----------------------------------------------------------------------
 subroutine nam_ncwrite(nam,mpl,ncid)
 
 implicit none
 
 ! Passed variable
-class(nam_type),intent(in) :: nam ! Namelist
-type(mpl_type),intent(in) :: mpl  ! MPI data
-integer,intent(in) :: ncid        ! NetCDF file ID
+class(nam_type),intent(in) :: nam   ! Namelist
+type(mpl_type),intent(inout) :: mpl ! MPI data
+integer,intent(in) :: ncid          ! NetCDF file ID
 
 ! Local variables
 real(kind_real),allocatable :: londir(:),latdir(:),lon_ldwv(:),lat_ldwv(:)
@@ -1215,6 +1255,7 @@ real(kind_real),allocatable :: londir(:),latdir(:),lon_ldwv(:),lat_ldwv(:)
 call put_att(mpl,ncid,'datadir',trim(nam%datadir))
 call put_att(mpl,ncid,'prefix',trim(nam%prefix))
 call put_att(mpl,ncid,'model',trim(nam%model))
+call put_att(mpl,ncid,'verbosity',trim(nam%verbosity))
 call put_att(mpl,ncid,'colorlog',nam%colorlog)
 call put_att(mpl,ncid,'default_seed',nam%default_seed)
 
@@ -1224,13 +1265,19 @@ call put_att(mpl,ncid,'strategy',trim(nam%strategy))
 call put_att(mpl,ncid,'new_cortrack',nam%new_cortrack)
 call put_att(mpl,ncid,'new_vbal',nam%new_vbal)
 call put_att(mpl,ncid,'load_vbal',nam%load_vbal)
+call put_att(mpl,ncid,'write_vbal',nam%write_vbal)
 call put_att(mpl,ncid,'new_hdiag',nam%new_hdiag)
+call put_att(mpl,ncid,'write_hdiag',nam%write_hdiag)
 call put_att(mpl,ncid,'new_lct',nam%new_lct)
+call put_att(mpl,ncid,'write_lct',nam%write_lct)
 call put_att(mpl,ncid,'load_cmat',nam%load_cmat)
+call put_att(mpl,ncid,'write_cmat',nam%write_cmat)
 call put_att(mpl,ncid,'new_nicas',nam%new_nicas)
 call put_att(mpl,ncid,'load_nicas',nam%load_nicas)
+call put_att(mpl,ncid,'write_nicas',nam%write_nicas)
 call put_att(mpl,ncid,'new_obsop',nam%new_obsop)
 call put_att(mpl,ncid,'load_obsop',nam%load_obsop)
+call put_att(mpl,ncid,'write_obsop',nam%write_obsop)
 call put_att(mpl,ncid,'check_vbal',nam%check_vbal)
 call put_att(mpl,ncid,'check_adjoints',nam%check_adjoints)
 call put_att(mpl,ncid,'check_pos_def',nam%check_pos_def)
@@ -1351,6 +1398,16 @@ call put_att(mpl,ncid,'split_io',nam%split_io)
 call put_att(mpl,ncid,'grid_output',nam%grid_output)
 call put_att(mpl,ncid,'grid_resol',nam%grid_resol*req)
 call put_att(mpl,ncid,'grid_interp',nam%grid_interp)
+
+! Release memory
+if (nam%ndir>0) then
+   deallocate(londir)
+   deallocate(latdir)
+end if
+if (nam%nldwv>0) then
+   deallocate(lon_ldwv)
+   deallocate(lat_ldwv)
+end if
 
 end subroutine nam_ncwrite
 

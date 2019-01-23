@@ -10,7 +10,6 @@ module type_lct_blk
 !$ use omp_lib
 use tools_func, only: lonlatmod,fit_lct,check_cond
 use tools_kinds, only: kind_real
-use tools_missing, only: msr,isnotmsr
 use type_bpar, only: bpar_type
 use type_geom, only: geom_type
 use type_minim, only: minim_type
@@ -69,7 +68,7 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: lct_blk_alloc
-! Purpose: LCT block data allocation
+! Purpose: allocation
 !----------------------------------------------------------------------
 subroutine lct_blk_alloc(lct_blk,nam,geom,bpar,samp,ib)
 
@@ -108,32 +107,11 @@ allocate(lct_blk%H12(geom%nc0a,geom%nl0,lct_blk%nscales))
 allocate(lct_blk%Dcoef(geom%nc0a,geom%nl0,lct_blk%nscales))
 allocate(lct_blk%DLh(geom%nc0a,geom%nl0,lct_blk%nscales))
 
-! Initialization
-call msr(lct_blk%raw)
-call msr(lct_blk%D)
-call msr(lct_blk%coef)
-call msr(lct_blk%fit)
-if (nam%diag_rhflt>0) then
-   call msr(lct_blk%D)
-   call msr(lct_blk%coef)
-   call msr(lct_blk%fit)
-end if
-call msr(lct_blk%D11)
-call msr(lct_blk%D22)
-call msr(lct_blk%D33)
-call msr(lct_blk%D12)
-call msr(lct_blk%H11)
-call msr(lct_blk%H22)
-call msr(lct_blk%H33)
-call msr(lct_blk%H12)
-call msr(lct_blk%Dcoef)
-call msr(lct_blk%DLh)
-
 end subroutine lct_blk_alloc
 
 !----------------------------------------------------------------------
 ! Subroutine: lct_blk_dealloc
-! Purpose: LCT block data deallocation
+! Purpose: release memory
 !----------------------------------------------------------------------
 subroutine lct_blk_dealloc(lct_blk)
 
@@ -230,6 +208,9 @@ do il0=1,geom%nl0
    end do
 end do
 
+! Release memory
+deallocate(norm)
+
 ! End associate
 end associate
 
@@ -283,8 +264,8 @@ allocate(minim%dz(nam%nc3,bpar%nl0r(ib)))
 allocate(minim%dmask(nam%nc3,bpar%nl0r(ib)))
 
 do il0=1,geom%nl0
-   write(mpl%info,'(a13,a,i3,a)',advance='no') '','Level ',nam%levs(il0),':'
-   call flush(mpl%info)
+   write(mpl%info,'(a13,a,i3,a)') '','Level ',nam%levs(il0),':'
+   call mpl%flush(.false.)
 
    ! Initialization
    call mpl%prog_init(samp%nc1a)
@@ -308,7 +289,7 @@ do il0=1,geom%nl0
          end do
 
          ! Approximate homogeneous horizontal length-scale
-         call msr(Dh)
+         Dh = mpl%msv%valr
          do jl0r=1,bpar%nl0r(ib)
             jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
             if (il0==jl0) then
@@ -321,11 +302,11 @@ do il0=1,geom%nl0
                end do
             end if
          end do
-         call msr(Dhbar)
-         if (count(isnotmsr(Dh))>0) Dhbar = sum(Dh,mask=isnotmsr(Dh))/real(count(isnotmsr(Dh)),kind_real)
+         Dhbar = mpl%msv%valr
+         if (count(mpl%msv%isnotr(Dh))>0) Dhbar = sum(Dh,mask=mpl%msv%isnotr(Dh))/real(count(mpl%msv%isnotr(Dh)),kind_real)
 
          ! Approximate homogeneous vertical length-scale
-         call msr(Dv)
+         Dv = mpl%msv%valr
          jc3 = 1
          do jl0r=1,bpar%nl0r(ib)
             if (dmask(jc3,jl0r)) then
@@ -335,12 +316,12 @@ do il0=1,geom%nl0
             end if
          end do
          if (bpar%nl0r(ib)>1) then
-            if (count(isnotmsr(Dv))>0) Dvbar = sum(Dv,mask=isnotmsr(Dv))/real(count(isnotmsr(Dv)),kind_real)
+            if (count(mpl%msv%isnotr(Dv))>0) Dvbar = sum(Dv,mask=mpl%msv%isnotr(Dv))/real(count(mpl%msv%isnotr(Dv)),kind_real)
          else
              Dvbar = 0.0
          end if
 
-         if (isnotmsr(Dhbar).and.(isnotmsr(Dvbar))) then
+         if (mpl%msv%isnotr(Dhbar).and.(mpl%msv%isnotr(Dvbar))) then
             ! Define norm and bounds
             do iscales=1,lct_blk%nscales
                minim%guess((iscales-1)*4+1:(iscales-1)*4+3) = (/Dhbar,Dhbar,Dvbar/)*Dscale**(iscales-1)
@@ -420,24 +401,40 @@ do il0=1,geom%nl0
              & lct_blk%D(:,:,ic1a,il0),lct_blk%coef(:,ic1a,il0),lct_blk%fit(:,:,ic1a,il0))
             else
                ! Missing values
-               call msr(lct_blk%D(:,:,ic1a,il0))
-               call msr(lct_blk%coef(:,ic1a,il0))
-               call msr(lct_blk%fit(:,:,ic1a,il0))
+               lct_blk%D(:,:,ic1a,il0) = mpl%msv%valr
+               lct_blk%coef(:,ic1a,il0) = mpl%msv%valr
+               lct_blk%fit(:,:,ic1a,il0) = mpl%msv%valr
             end if
          else
             ! Missing values
-            call msr(lct_blk%D(:,:,ic1a,il0))
-            call msr(lct_blk%coef(:,ic1a,il0))
-            call msr(lct_blk%fit(:,:,ic1a,il0))
+            lct_blk%D(:,:,ic1a,il0) = mpl%msv%valr
+            lct_blk%coef(:,ic1a,il0) = mpl%msv%valr
+            lct_blk%fit(:,:,ic1a,il0) = mpl%msv%valr
          end if
       end if
 
       ! Update
       call mpl%prog_print(ic1a)
    end do
-   write(mpl%info,'(a)') '100%'
-   call flush(mpl%info)
+   call mpl%prog_final
 end do
+
+! Release memory
+deallocate(Dh)
+deallocate(Dv)
+deallocate(dx)
+deallocate(dy)
+deallocate(dz)
+deallocate(dmask)
+deallocate(minim%x)
+deallocate(minim%guess)
+deallocate(minim%binf)
+deallocate(minim%bsup)
+deallocate(minim%obs)
+deallocate(minim%dx)
+deallocate(minim%dy)
+deallocate(minim%dz)
+deallocate(minim%dmask)
 
 ! End associate
 end associate

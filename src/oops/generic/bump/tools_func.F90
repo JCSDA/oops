@@ -10,7 +10,6 @@ module tools_func
 use tools_asa007, only: asa007_cholesky,asa007_syminv
 use tools_const, only: pi
 use tools_kinds, only: kind_real
-use tools_missing, only: msi,msr,isnotmsr
 use tools_repro, only: inf
 use type_mpl, only: mpl_type
 
@@ -74,15 +73,10 @@ real(kind_real),intent(in) :: lon_f ! Final point longitude (radian)
 real(kind_real),intent(in) :: lat_f ! Final point longilatitudetude (radian)
 real(kind_real),intent(out) :: dist ! Great-circle distance
 
-! Check that there is no missing value
-if (isnotmsr(lon_i).and.isnotmsr(lat_i).and.isnotmsr(lon_f).and.isnotmsr(lat_f)) then
-   ! Great-circle distance using Vincenty formula on the unit sphere
-   dist = atan2(sqrt((cos(lat_f)*sin(lon_f-lon_i))**2 &
-        & +(cos(lat_i)*sin(lat_f)-sin(lat_i)*cos(lat_f)*cos(lon_f-lon_i))**2), &
-        & sin(lat_i)*sin(lat_f)+cos(lat_i)*cos(lat_f)*cos(lon_f-lon_i))
-else
-   call msr(dist)
-end if
+! Great-circle distance using Vincenty formula on the unit sphere
+dist = atan2(sqrt((cos(lat_f)*sin(lon_f-lon_i))**2 &
+     & +(cos(lat_i)*sin(lat_f)-sin(lat_i)*cos(lat_f)*cos(lon_f-lon_i))**2), &
+     & sin(lat_i)*sin(lat_f)+cos(lat_i)*cos(lat_f)*cos(lon_f-lon_i))
 
 end subroutine sphere_dist
 
@@ -181,12 +175,13 @@ end subroutine vector_triple_product
 ! Subroutine: add
 ! Purpose: check if value missing and add if not missing
 !----------------------------------------------------------------------
-subroutine add(value,cumul,num,wgt)
+subroutine add(mpl,val,cumul,num,wgt)
 
 implicit none
 
 ! Passed variables
-real(kind_real),intent(in) :: value        ! Value to add
+type(mpl_type),intent(in) :: mpl           ! MPI data
+real(kind_real),intent(in) :: val          ! Value to add
 real(kind_real),intent(inout) :: cumul     ! Cumul
 real(kind_real),intent(inout) :: num       ! Number of values
 real(kind_real),intent(in),optional :: wgt ! Weight
@@ -199,8 +194,8 @@ lwgt = 1.0
 if (present(wgt)) lwgt = wgt
 
 ! Add value to cumul
-if (isnotmsr(value)) then
-   cumul = cumul+lwgt*value
+if (mpl%msv%isnotr(val)) then
+   cumul = cumul+lwgt*val
    num = num+1.0
 end if
 
@@ -210,19 +205,20 @@ end subroutine add
 ! Subroutine: divide
 ! Purpose: check if value missing and divide if not missing
 !----------------------------------------------------------------------
-subroutine divide(value,num)
+subroutine divide(mpl,val,num)
 
 implicit none
 
 ! Passed variables
-real(kind_real),intent(inout) :: value ! Value to divide
-real(kind_real),intent(in) :: num      ! Divider
+type(mpl_type),intent(in) :: mpl     ! MPI data
+real(kind_real),intent(inout) :: val ! Value to divide
+real(kind_real),intent(in) :: num    ! Divider
 
 ! Divide cumul by num
 if (abs(num)>0.0) then
-   value = value/num
+   val = val/num
 else
-   call msr(value)
+   val = mpl%msv%valr
 end if
 
 end subroutine divide
@@ -236,7 +232,7 @@ subroutine fit_diag(mpl,nc3,nl0r,nl0,l0rl0_to_l0,disth,distv,rh,rv,fit)
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl                 ! MPI data
+type(mpl_type),intent(inout) :: mpl              ! MPI data
 integer,intent(in) :: nc3                        ! Number of classes
 integer,intent(in) :: nl0r                       ! Reduced number of levels
 integer,intent(in) :: nl0                        ! Number of levels
@@ -267,7 +263,7 @@ do il0=1,nl0
 
    ! Initialize the front
    np = 1
-   call msi(plist)
+   plist = mpl%msv%vali
    plist(1,1) = 1
    do jl0r=1,nl0r
       if (l0rl0_to_l0(jl0r,il0)==il0) plist(1,2) = jl0r
@@ -289,12 +285,12 @@ do il0=1,nl0
          do kc3=max(jc3-1,1),min(jc3+1,nc3)
             do kl0r=max(jl0r-1,1),min(jl0r+1,nl0r)
                kl0 = l0rl0_to_l0(kl0r,il0)
-               if (isnotmsr(rh(jl0)).and.isnotmsr(rh(kl0))) then
+               if (mpl%msv%isnotr(rh(jl0)).and.mpl%msv%isnotr(rh(kl0))) then
                   rhsq = 0.5*(rh(jl0)**2+rh(kl0)**2)
                else
                   rhsq = 0.0
                end if
-               if (isnotmsr(rv(jl0)).and.isnotmsr(rv(kl0))) then
+               if (mpl%msv%isnotr(rv(jl0)).and.mpl%msv%isnotr(rv(kl0))) then
                   rvsq = 0.5*(rv(jl0)**2+rv(kl0)**2)
                else
                   rvsq = 0.0
@@ -370,7 +366,7 @@ subroutine fit_diag_dble(mpl,nc3,nl0r,nl0,l0rl0_to_l0,disth,distv,rh,rv,rv_rfac,
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl                 ! MPI data
+type(mpl_type),intent(inout) :: mpl              ! MPI data
 integer,intent(in) :: nc3                        ! Number of classes
 integer,intent(in) :: nl0r                       ! Reduced number of levels
 integer,intent(in) :: nl0                        ! Number of levels
@@ -403,7 +399,7 @@ do il0=1,nl0
 
    ! Initialize the front
    np = 1
-   call msi(plist)
+   plist = mpl%msv%vali
    plist(1,1) = 1
    do jl0r=1,nl0r
       if (l0rl0_to_l0(jl0r,il0)==il0) plist(1,2) = jl0r
@@ -425,12 +421,12 @@ do il0=1,nl0
          do kc3=max(jc3-1,1),min(jc3+1,nc3)
             do kl0r=max(jl0r-1,1),min(jl0r+1,nl0r)
                kl0 = l0rl0_to_l0(kl0r,il0)
-               if (isnotmsr(rh(jl0)).and.isnotmsr(rh(kl0))) then
+               if (mpl%msv%isnotr(rh(jl0)).and.mpl%msv%isnotr(rh(kl0))) then
                   rhsq = 0.5*(rh(jl0)**2+rh(kl0)**2)
                else
                   rhsq = 0.0
                end if
-               if (isnotmsr(rv(jl0)).and.isnotmsr(rv(kl0))) then
+               if (mpl%msv%isnotr(rv(jl0)).and.mpl%msv%isnotr(rv(kl0))) then
                   rvsq = 0.5*(rv(jl0)**2+rv(kl0)**2)
                else
                   rvsq = 0.0
@@ -517,7 +513,7 @@ end subroutine fit_diag_dble
 function gc99(mpl,distnorm)
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl       ! MPI data
+type(mpl_type),intent(inout) :: mpl    ! MPI data
 real(kind_real),intent(in) :: distnorm ! Normalized distance
 
 ! Returned variable
@@ -549,7 +545,7 @@ subroutine fit_lct(mpl,nc,nl0,dx,dy,dz,dmask,nscales,D,coef,fit)
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl            ! MPI data
+type(mpl_type),intent(inout) :: mpl         ! MPI data
 integer,intent(in) :: nc                    ! Number of classes
 integer,intent(in) :: nl0                   ! Number of levels
 real(kind_real),intent(in) :: dx(nc,nl0)    ! Zonal separation
@@ -566,7 +562,7 @@ integer :: jl0,jc3,iscales
 real(kind_real) :: Dcoef(nscales),D11,D22,D33,D12,H11,H22,H33,H12,rsq
 
 ! Initialization
-call msr(fit)
+fit = mpl%msv%valr
 
 ! Coefficients
 Dcoef = max(Dmin,min(coef,1.0_kind_real))
@@ -621,7 +617,7 @@ subroutine lct_d2h(mpl,D11,D22,D33,D12,H11,H22,H33,H12)
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl   ! MPI data
+type(mpl_type),intent(inout) :: mpl! MPI data
 real(kind_real),intent(in) :: D11  ! Daley tensor component 11
 real(kind_real),intent(in) :: D22  ! Daley tensor component 22
 real(kind_real),intent(in) :: D33  ! Daley tensor component 33
@@ -703,9 +699,9 @@ real(kind_real) function matern(mpl,M,x)
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl ! MPI data
-integer,intent(in) :: M          ! Matern function order
-real(kind_real),intent(in) :: x  ! Argument
+type(mpl_type),intent(inout) :: mpl ! MPI data
+integer,intent(in) :: M             ! Matern function order
+real(kind_real),intent(in) :: x     ! Argument
 
 ! Local variables
 integer :: j
@@ -746,7 +742,7 @@ subroutine cholesky(mpl,n,a,u)
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl      ! MPI data
+type(mpl_type),intent(inout) :: mpl   ! MPI data
 integer,intent(in) :: n               ! Matrix rank
 real(kind_real),intent(in) :: a(n,n)  ! Matrix
 real(kind_real),intent(out) :: u(n,n) ! Matrix square-root
@@ -782,6 +778,10 @@ do i=1,n
    end do
 end do
 
+! Release memory
+deallocate(apack)
+deallocate(upack)
+
 end subroutine cholesky
 
 !----------------------------------------------------------------------
@@ -794,7 +794,7 @@ subroutine syminv(mpl,n,a,c)
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl      ! MPI data
+type(mpl_type),intent(inout) :: mpl   ! MPI data
 integer,intent(in) :: n               ! Matrix rank
 real(kind_real),intent(in) :: a(n,n)  ! Matrix
 real(kind_real),intent(out) :: c(n,n) ! Matrix inverse
@@ -829,6 +829,10 @@ do i=1,n
       c(j,i) = c(i,j)
    end do
 end do
+
+! Release memory
+deallocate(apack)
+deallocate(cpack)
 
 end subroutine syminv
 

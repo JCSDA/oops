@@ -50,7 +50,7 @@ contains
 
 real(c_float) function missing_value_float(fmvi)
   implicit none
-  real(c_float), intent(inout) :: fmvi
+  real(c_float), intent(in) :: fmvi
   missing_value_float = c_missing_value_flt()
 end function missing_value_float
 
@@ -58,7 +58,7 @@ end function missing_value_float
 
 real(c_double) function missing_value_double(dmvi)
   implicit none
-  real(c_double), intent(inout) :: dmvi
+  real(c_double), intent(in) :: dmvi
   missing_value_double = c_missing_value_dbl()
 end function missing_value_double
 
@@ -66,7 +66,7 @@ end function missing_value_double
 
 !real(kind_real) function missing_value_kind_real(rmvi)
 !  implicit none
-!  real(kind_real), intent(inout) :: rmvi
+!  real(kind_real), intent(in) :: rmvi
 !  missing_value_kind_real = c_missing_value_dbl()
 !end function missing_value_kind_real
 

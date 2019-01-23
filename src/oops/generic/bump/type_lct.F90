@@ -11,7 +11,6 @@ use fckit_mpi_module, only: fckit_mpi_sum,fckit_mpi_status
 use tools_const, only: reqkm,pi
 use tools_func, only: gau2gc,fit_lct,lct_d2h,check_cond,Dmin
 use tools_kinds, only: kind_real
-use tools_missing, only: msr,isnotmsr,isallnotmsr
 use type_bpar, only: bpar_type
 use type_ens, only: ens_type
 use type_geom, only: geom_type
@@ -51,7 +50,7 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: lct_alloc
-! Purpose: LCT data allocation
+! Purpose: allocation
 !----------------------------------------------------------------------
 subroutine lct_alloc(lct,nam,geom,bpar)
 
@@ -79,22 +78,21 @@ end subroutine lct_alloc
 
 !----------------------------------------------------------------------
 ! Subroutine: lct_dealloc
-! Purpose: LCT data deallocation
+! Purpose: release memory
 !----------------------------------------------------------------------
-subroutine lct_dealloc(lct,bpar)
+subroutine lct_dealloc(lct)
 
 implicit none
 
 ! Passed variables
 class(lct_type),intent(inout) :: lct ! LCT
-type(bpar_type),intent(in) :: bpar   ! Block parameters
 
 ! Local variables
 integer :: ib
 
 ! Release memory
 if (allocated(lct%blk)) then
-   do ib=1,bpar%nb
+   do ib=1,size(lct%blk)
       call lct%blk(ib)%dealloc
    end do
    deallocate(lct%blk)
@@ -125,8 +123,9 @@ type(ens_type),intent(in) :: ens     ! Ensemble
 
 ! Setup sampling
 write(mpl%info,'(a)') '-------------------------------------------------------------------'
+call mpl%flush
 write(mpl%info,'(a,i5,a)') '--- Setup sampling (nc1 = ',nam%nc1,')'
-call flush(mpl%info)
+call mpl%flush
 
 ! Set artificially small local radius
 nam%local_rad = 1.0e-12
@@ -136,66 +135,78 @@ call lct%samp%setup_sampling(mpl,rng,nam,geom,bpar,io,ens)
 
 ! Compute MPI distribution, halo A
 write(mpl%info,'(a)') '-------------------------------------------------------------------'
+call mpl%flush
 write(mpl%info,'(a)') '--- Compute MPI distribution, halos A'
-call flush(mpl%info)
+call mpl%flush
 call lct%samp%compute_mpi_a(mpl,nam,geom)
 
 ! Compute MPI distribution, halos A-B
 write(mpl%info,'(a)') '-------------------------------------------------------------------'
+call mpl%flush
 write(mpl%info,'(a)') '--- Compute MPI distribution, halos A-B'
-call flush(mpl%info)
+call mpl%flush
 call lct%samp%compute_mpi_ab(mpl,nam,geom)
 
 ! Compute MPI distribution, halo C
 write(mpl%info,'(a)') '-------------------------------------------------------------------'
+call mpl%flush
 write(mpl%info,'(a)') '--- Compute MPI distribution, halo C'
-call flush(mpl%info)
+call mpl%flush
 call lct%samp%compute_mpi_c(mpl,nam,geom)
 
 if (nam%diag_rhflt>0.0) then
    ! Compute MPI distribution, halo F
    write(mpl%info,'(a)') '-------------------------------------------------------------------'
+   call mpl%flush
    write(mpl%info,'(a)') '--- Compute MPI distribution, halo F'
-   call flush(mpl%info)
+   call mpl%flush
    call lct%samp%compute_mpi_f(mpl,nam,geom)
 end if
 
 ! Compute sample moments
 write(mpl%info,'(a)') '-------------------------------------------------------------------'
+call mpl%flush
 write(mpl%info,'(a)') '--- Compute sample moments'
-call flush(mpl%info)
+call mpl%flush
 call lct%mom%compute(mpl,nam,geom,bpar,lct%samp,ens)
 
 ! Compute LCT
 write(mpl%info,'(a)') '-------------------------------------------------------------------'
+call mpl%flush
 write(mpl%info,'(a)') '--- Compute LCT'
-call flush(mpl%info)
+call mpl%flush
 call lct%compute(mpl,nam,geom,bpar)
 
 ! Filter LCT
 write(mpl%info,'(a)') '-------------------------------------------------------------------'
+call mpl%flush
 write(mpl%info,'(a)') '--- Filter LCT'
-call flush(mpl%info)
+call mpl%flush
 call lct%filter(mpl,nam,geom,bpar)
 
 ! LCT RMSE
 write(mpl%info,'(a)') '-------------------------------------------------------------------'
+call mpl%flush
 write(mpl%info,'(a)') '--- LCT RMSE'
-call flush(mpl%info)
+call mpl%flush
 call lct%rmse(mpl,nam,geom,bpar)
 
-! Write LCT
-write(mpl%info,'(a)') '-------------------------------------------------------------------'
-write(mpl%info,'(a)') '--- Write LCT'
-call flush(mpl%info)
-call lct%write(mpl,nam,geom,bpar,io)
-
-if (write_cor) then
-   ! Write correlation and LCT fit
+if (nam%write_lct) then
+   ! Write LCT
    write(mpl%info,'(a)') '-------------------------------------------------------------------'
-   write(mpl%info,'(a)') '--- Write correlation and LCT fit'
-   call flush(mpl%info)
-   call lct%write_cor(mpl,nam,geom,bpar,io)
+   call mpl%flush
+   write(mpl%info,'(a)') '--- Write LCT'
+   call mpl%flush
+   call lct%write(mpl,nam,geom,bpar,io)
+
+   if (write_cor) then
+      ! Write correlation and LCT fit
+      write(mpl%info,'(a)') '-------------------------------------------------------------------'
+      call mpl%flush
+      write(mpl%info,'(a)') '--- Write correlation and LCT fit'
+      call mpl%flush
+      call lct%write_cor(mpl,nam,geom,bpar,io)
+   end if
 end if
 
 end subroutine lct_run_lct
@@ -223,16 +234,16 @@ call lct%alloc(nam,geom,bpar)
 
 do ib=1,bpar%nb
    write(mpl%info,'(a7,a,a)') '','Block: ',trim(bpar%blockname(ib))
-   call flush(mpl%info)
+   call mpl%flush
 
    ! Compute correlation
    write(mpl%info,'(a10,a)') '','Compute correlation'
-   call flush(mpl%info)
+   call mpl%flush
    call lct%blk(ib)%correlation(nam,geom,bpar,lct%samp,lct%mom%blk(ib))
 
    ! Compute LCT fit
    write(mpl%info,'(a10,a)') '','Compute LCT fit'
-   call flush(mpl%info)
+   call mpl%flush
    call lct%blk(ib)%fitting(mpl,nam,geom,bpar,lct%samp)
 end do
 
@@ -255,13 +266,12 @@ type(bpar_type),intent(in) :: bpar      ! Block parameters
 
 ! Local variables
 integer :: ib,il0,jl0,jl0r,ic1a,ic1,ic0,jc3,jc0,icomp,iscales,nmsr,nmsr_tot
-real(kind_real),allocatable :: fld_c1a(:),fld_filt_c1a(:),dx(:,:),dy(:,:),dz(:,:)
-logical :: valid
-logical,allocatable :: mask_c1a(:,:),dmask(:,:)
+real(kind_real) :: fld_c1a(lct%samp%nc1a)
+real(kind_real),allocatable :: fld_filt_c1a(:),dx(:,:),dy(:,:),dz(:,:)
+logical :: valid,mask_c1a(lct%samp%nc1a,geom%nl0)
+logical,allocatable :: dmask(:,:)
 
 ! Allocation
-allocate(fld_c1a(lct%samp%nc1a))
-allocate(mask_c1a(lct%samp%nc1a,geom%nl0))
 if (nam%diag_rhflt>0) allocate(fld_filt_c1a(lct%samp%nc1a))
 
 ! Define mask
@@ -274,7 +284,7 @@ end do
 
 do ib=1,bpar%nb
    write(mpl%info,'(a7,a,a)') '','Block: ',trim(bpar%blockname(ib))
-   call flush(mpl%info)
+   call mpl%flush
 
    ! Allocation
    if (nam%diag_rhflt>0) then
@@ -288,11 +298,12 @@ do ib=1,bpar%nb
       ! Count missing LCT
       nmsr = 0
       do ic1a=1,lct%samp%nc1a
-         if (mask_c1a(ic1a,il0).and.(.not.(all(isnotmsr(lct%blk(ib)%coef(:,ic1a,il0))) &
-      & .and.all(isnotmsr(lct%blk(ib)%coef(:,ic1a,il0)))))) nmsr = nmsr+1
+         if (mask_c1a(ic1a,il0).and.(.not.(all(mpl%msv%isnotr(lct%blk(ib)%coef(:,ic1a,il0))) &
+      & .and.all(mpl%msv%isnotr(lct%blk(ib)%coef(:,ic1a,il0)))))) nmsr = nmsr+1
       end do
       call mpl%f_comm%allreduce(nmsr,nmsr_tot,fckit_mpi_sum())
-      write(mpl%info,'(a10,a,i3,a,i8,a)',advance='no') '','Level',nam%levs(il0),': ',nmsr_tot,' missing points'
+      write(mpl%info,'(a10,a,i3,a,i8,a)') '','Level',nam%levs(il0),': ',nmsr_tot,' missing points'
+      call mpl%flush(.false.)
 
       do iscales=1,lct%blk(ib)%nscales
          do icomp=1,4+1
@@ -333,15 +344,18 @@ do ib=1,bpar%nb
       ! Count missing LCT
       nmsr = 0
       do ic1a=1,lct%samp%nc1a
-         if (mask_c1a(ic1a,il0).and.(.not.(all(isnotmsr(lct%blk(ib)%coef(:,ic1a,il0))) &
-      & .and.all(isnotmsr(lct%blk(ib)%coef(:,ic1a,il0)))))) nmsr = nmsr+1
+         if (mask_c1a(ic1a,il0).and.(.not.(all(mpl%msv%isnotr(lct%blk(ib)%coef(:,ic1a,il0))) &
+      & .and.all(mpl%msv%isnotr(lct%blk(ib)%coef(:,ic1a,il0)))))) nmsr = nmsr+1
       end do
       call mpl%f_comm%allreduce(nmsr,nmsr_tot,fckit_mpi_sum())
-      write(mpl%info,'(a,i8,a)',advance='no') ' ~> ',nmsr_tot,' missing points'
+      write(mpl%info,'(a,i8,a)') ' ~> ',nmsr_tot,' missing points'
+      call mpl%flush(.false.)
       if (nam%diag_rhflt>0) then
          write(mpl%info,'(a,f10.2,a)') ', filtering at ',nam%diag_rhflt*reqkm,' km'
+         call mpl%flush
       else
          write(mpl%info,'(a,f10.2,a)') ', no filtering'
+         call mpl%flush
       end if
 
       if (nam%diag_rhflt>0) then
@@ -380,7 +394,7 @@ do ib=1,bpar%nb
                 & lct%blk(ib)%D_filt(:,:,ic1a,il0),lct%blk(ib)%coef_filt(:,ic1a,il0),lct%blk(ib)%fit_filt(:,:,ic1a,il0))
                else
                   ! Missing values
-                  call msr(lct%blk(ib)%fit_filt(:,:,ic1a,il0))
+                  lct%blk(ib)%fit_filt(:,:,ic1a,il0) = mpl%msv%valr
                end if
             end if
          end do
@@ -396,6 +410,9 @@ do ib=1,bpar%nb
    end if
 end do
 
+! Release memory
+if (nam%diag_rhflt>0) deallocate(fld_filt_c1a)
+
 end subroutine lct_filter
 
 !----------------------------------------------------------------------
@@ -408,7 +425,7 @@ implicit none
 
 ! Passed variables
 class(lct_type),intent(in) :: lct       ! LCT
-type(mpl_type),intent(in) :: mpl        ! MPI data
+type(mpl_type),intent(inout) :: mpl     ! MPI data
 type(nam_type),intent(in) :: nam        ! Namelist
 type(geom_type),intent(in) :: geom      ! Geometry
 type(bpar_type),intent(in) :: bpar      ! Block parameters
@@ -420,7 +437,7 @@ real(kind_real) :: rmse_filt,norm_filt,rmse_filt_tot,norm_filt_tot
 
 do ib=1,bpar%nb
    write(mpl%info,'(a7,a,a)') '','Block: ',trim(bpar%blockname(ib))
-   call flush(mpl%info)
+   call mpl%flush
 
    ! Compute RMSE
    rmse = 0.0
@@ -436,12 +453,12 @@ do ib=1,bpar%nb
             jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
             do jc3=1,nam%nc3
                if (lct%samp%c1l0_log(ic1,il0).and.lct%samp%c1c3l0_log(ic1,jc3,jl0)) then
-                  if (isnotmsr(lct%blk(ib)%fit(jc3,jl0r,ic1a,il0))) then
+                  if (mpl%msv%isnotr(lct%blk(ib)%fit(jc3,jl0r,ic1a,il0))) then
                      rmse = rmse+(lct%blk(ib)%fit(jc3,jl0r,ic1a,il0)-lct%blk(ib)%raw(jc3,jl0r,ic1a,il0))**2
                      norm = norm+1.0
                   end if
                   if (nam%diag_rhflt>0) then
-                     if (isnotmsr(lct%blk(ib)%fit_filt(jc3,jl0r,ic1a,il0))) then
+                     if (mpl%msv%isnotr(lct%blk(ib)%fit_filt(jc3,jl0r,ic1a,il0))) then
                         rmse_filt = rmse_filt+(lct%blk(ib)%fit_filt(jc3,jl0r,ic1a,il0)-lct%blk(ib)%raw(jc3,jl0r,ic1a,il0))**2
                         norm_filt = norm_filt+1.0
                      end if
@@ -455,13 +472,13 @@ do ib=1,bpar%nb
    call mpl%f_comm%allreduce(norm,norm_tot,fckit_mpi_sum())
    if (norm_tot>0.0) rmse_tot = sqrt(rmse_tot/norm_tot)
    write(mpl%info,'(a10,a,e15.8,a,i8,a)') '','LCT fit RMSE:          ',rmse_tot,' for ',int(norm_tot),' diagnostic points'
-   call flush(mpl%info)
+   call mpl%flush
    if (nam%diag_rhflt>0) then
       call mpl%f_comm%allreduce(rmse_filt,rmse_filt_tot,fckit_mpi_sum())
       call mpl%f_comm%allreduce(norm_filt,norm_filt_tot,fckit_mpi_sum())
       if (norm_filt_tot>0.0) rmse_filt_tot = sqrt(rmse_filt_tot/norm_filt_tot)
       write(mpl%info,'(a10,a,e15.8,a,i8,a)') '','LCT filtered fit RMSE: ',rmse_filt_tot,' for ',int(norm_tot),' diagnostic points'
-      call flush(mpl%info)
+      call mpl%flush
    end if
 end do
 
@@ -486,7 +503,8 @@ type(io_type),intent(in) :: io          ! I/O
 ! Local variables
 integer :: ib,iv,il0,il0i,ic1a,ic1,icomp,ic0a,iscales
 real(kind_real) :: det,Lavg_tot,norm_tot
-real(kind_real),allocatable :: D(:,:,:,:),coef(:,:,:),fld_c1a(:,:,:),fld_c1b(:,:),fld(:,:,:)
+real(kind_real) :: fld_c1a(lct%samp%nc1a,geom%nl0,2*4+1),fld_c1b(lct%samp%nc2b,geom%nl0),fld(geom%nc0a,geom%nl0,2*4+2)
+real(kind_real),allocatable :: D(:,:,:,:),coef(:,:,:)
 logical :: mask_c1a(lct%samp%nc1a,geom%nl0)
 character(len=1) :: iscaleschar
 character(len=1024) :: filename
@@ -501,7 +519,7 @@ end do
 
 do ib=1,bpar%nb
    write(mpl%info,'(a7,a,a)') '','Block: ',trim(bpar%blockname(ib))
-   call flush(mpl%info)
+   call mpl%flush
 
    ! Allocation
    allocate(D(4,lct%blk(ib)%nscales,lct%samp%nc1a,geom%nl0))
@@ -518,19 +536,15 @@ do ib=1,bpar%nb
 
    do iscales=1,lct%blk(ib)%nscales
       write(mpl%info,'(a10,a,i2)') '','Scale: ',iscales
-
-      ! Allocation
-      allocate(fld_c1a(lct%samp%nc1a,geom%nl0,2*4+1))
-      allocate(fld_c1b(lct%samp%nc2b,geom%nl0))
-      allocate(fld(geom%nc0a,geom%nl0,2*4+2))
+      call mpl%flush
 
       ! Initialization
-      call msr(fld_c1a)
-      call msr(fld)
+      fld_c1a = mpl%msv%valr
+      fld = mpl%msv%valr
 
       ! Copy and inverse diffusion tensor
       write(mpl%info,'(a13,a)') '','Copy and inverse diffusion tensor'
-      call flush(mpl%info)
+      call mpl%flush
       do il0=1,geom%nl0
          do ic1a=1,lct%samp%nc1a
             ic1 = lct%samp%c1a_to_c1(ic1a)
@@ -559,7 +573,7 @@ do ib=1,bpar%nb
 
       ! Interpolate components
       write(mpl%info,'(a13,a)') '','Interpolate components'
-      call flush(mpl%info)
+      call mpl%flush
       do icomp=1,2*4+1
          call lct%samp%com_AB%ext(mpl,geom%nl0,fld_c1a(:,:,icomp),fld_c1b)
          do il0=1,geom%nl0
@@ -570,7 +584,7 @@ do ib=1,bpar%nb
 
       ! Compute horizontal length-scale and equivalent support radius
       write(mpl%info,'(a13,a)') '','Compute horizontal length-scale and equivalent support radius:'
-      call flush(mpl%info)
+      call mpl%flush
       do il0=1,geom%nl0
          do ic0a=1,geom%nc0a
             if (geom%mask_c0a(ic0a,il0)) then
@@ -583,10 +597,13 @@ do ib=1,bpar%nb
                end if
             end if
          end do
-         call mpl%f_comm%allreduce(sum(fld(:,il0,2*4+2),isnotmsr(fld(:,il0,2*3+2))),Lavg_tot,fckit_mpi_sum())
-         call mpl%f_comm%allreduce(real(count(isnotmsr(fld(:,il0,2*4+2))),kind_real),norm_tot,fckit_mpi_sum())
-         if (norm_tot>0.0) write(mpl%info,'(a16,a,i3,a,f10.2,a,f10.2,a)') '','Level',nam%levs(il0),' ~> ', &
-       & Lavg_tot/norm_tot*reqkm,' km / ',Lavg_tot/norm_tot*gau2gc*reqkm,' km'
+         call mpl%f_comm%allreduce(sum(fld(:,il0,2*4+2),mpl%msv%isnotr(fld(:,il0,2*3+2))),Lavg_tot,fckit_mpi_sum())
+         call mpl%f_comm%allreduce(real(count(mpl%msv%isnotr(fld(:,il0,2*4+2))),kind_real),norm_tot,fckit_mpi_sum())
+         if (norm_tot>0.0) then
+            write(mpl%info,'(a16,a,i3,a,f10.2,a,f10.2,a)') '','Level',nam%levs(il0),' ~> ', &
+          & Lavg_tot/norm_tot*reqkm,' km / ',Lavg_tot/norm_tot*gau2gc*reqkm,' km'
+            call mpl%flush
+         end if
       end do
 
       ! Copy output values
@@ -609,7 +626,7 @@ do ib=1,bpar%nb
 
       ! Write LCT
       write(mpl%info,'(a13,a)') '','Write LCT'
-      call flush(mpl%info)
+      call mpl%flush
       filename = trim(nam%prefix)//'_lct'
       iv = bpar%b_to_v2(ib)
       write(iscaleschar,'(i1)') iscales
@@ -623,11 +640,6 @@ do ib=1,bpar%nb
       call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_H12_'//iscaleschar,lct%blk(ib)%H12(:,:,iscales))
       call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_coef_'//iscaleschar,lct%blk(ib)%Dcoef(:,:,iscales))
       call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_Lh_'//iscaleschar,lct%blk(ib)%DLh(:,:,iscales))
-
-      ! Release memory
-      deallocate(fld_c1a)
-      deallocate(fld_c1b)
-      deallocate(fld)
    end do
 
    ! Release memory
@@ -673,7 +685,7 @@ allocate(fld_c0a(geom%nc0a,geom%nl0,nf))
 
 do ib=1,bpar%nb
    write(mpl%info,'(a7,a,a)') '','Block: ',trim(bpar%blockname(ib))
-   call flush(mpl%info)
+   call mpl%flush
 
    ! Allocation
    if (mpl%main) allocate(rbuf(nam%nc3*bpar%nl0r(ib)*nf))
@@ -683,7 +695,7 @@ do ib=1,bpar%nb
    il0 = 1
 
    ! Prepare field
-   if (mpl%main) call msr(fld_c0)
+   if (mpl%main) fld_c0 = mpl%msv%valr
    free = .true.
    do ic1=1,nam%nc1
       ! Select tensor to plot
@@ -712,7 +724,7 @@ do ib=1,bpar%nb
             allocate(sbuf(nam%nc3*bpar%nl0r(ib)*nf))
 
             ! Prepare buffer
-            call msr(sbuf)
+            sbuf = mpl%msv%valr
             ic1a = lct%samp%c1_to_c1a(ic1)
             i = 1
             do jl0r=1,bpar%nl0r(ib)
@@ -769,7 +781,7 @@ do ib=1,bpar%nb
 
    ! Write LCT diagnostics
    write(mpl%info,'(a10,a)') '','Write LCT diagnostics'
-   call flush(mpl%info)
+   call mpl%flush
    filename = trim(nam%prefix)//'_lct'
    iv = bpar%b_to_v2(ib)
    call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_raw',fld_c0a(:,:,1))
@@ -778,7 +790,11 @@ do ib=1,bpar%nb
 
    ! Release memory
    if (mpl%main) deallocate(rbuf)
+   deallocate(fld_c0)
 end do
+
+! Release memory
+deallocate(fld_c0a)
 
 end subroutine lct_write_cor
 

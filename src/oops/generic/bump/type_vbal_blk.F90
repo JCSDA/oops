@@ -26,6 +26,7 @@ type vbal_blk_type
    real(kind_real),allocatable :: reg(:,:,:)      ! Regression
 contains
    procedure :: alloc => vbal_blk_alloc
+   procedure :: partial_dealloc => vbal_blk_partial_dealloc
    procedure :: dealloc => vbal_blk_dealloc
    procedure :: apply => vbal_blk_apply
    procedure :: apply_ad => vbal_blk_apply_ad
@@ -38,7 +39,7 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: vbal_blk_alloc
-! Purpose: vertical balance block data allocation
+! Purpose: allocation
 !----------------------------------------------------------------------
 subroutine vbal_blk_alloc(vbal_blk,nam,geom,nc2b,iv,jv)
 
@@ -66,8 +67,26 @@ allocate(vbal_blk%reg(nc2b,geom%nl0,geom%nl0))
 end subroutine vbal_blk_alloc
 
 !----------------------------------------------------------------------
+! Subroutine: vbal_blk_partial_dealloc
+! Purpose: release memory (partial)
+!----------------------------------------------------------------------
+subroutine vbal_blk_partial_dealloc(vbal_blk)
+
+implicit none
+
+! Passed variables
+class(vbal_blk_type),intent(inout) :: vbal_blk ! Vertical balance block
+
+! Release memory
+if (allocated(vbal_blk%auto)) deallocate(vbal_blk%auto)
+if (allocated(vbal_blk%cross)) deallocate(vbal_blk%cross)
+if (allocated(vbal_blk%auto_inv)) deallocate(vbal_blk%auto_inv)
+
+end subroutine vbal_blk_partial_dealloc
+
+!----------------------------------------------------------------------
 ! Subroutine: vbal_blk_dealloc
-! Purpose: vertical balance block data deallocation
+! Purpose: release memory (full)
 !----------------------------------------------------------------------
 subroutine vbal_blk_dealloc(vbal_blk)
 
@@ -76,10 +95,8 @@ implicit none
 ! Passed variables
 class(vbal_blk_type),intent(inout) :: vbal_blk ! Vertical balance block
 
-! Allocation
-if (allocated(vbal_blk%auto)) deallocate(vbal_blk%auto)
-if (allocated(vbal_blk%cross)) deallocate(vbal_blk%cross)
-if (allocated(vbal_blk%auto_inv)) deallocate(vbal_blk%auto_inv)
+! Release memory
+call vbal_blk%partial_dealloc
 if (allocated(vbal_blk%reg)) deallocate(vbal_blk%reg)
 
 end subroutine vbal_blk_dealloc

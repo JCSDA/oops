@@ -10,7 +10,6 @@ module type_minim
 use tools_fit, only: ver_smooth
 use tools_func, only: fit_diag,fit_diag_dble,fit_lct
 use tools_kinds, only: kind_real
-use tools_missing, only: isnotmsr
 use tools_repro, only: rth,eq,inf,infeq,sup
 use type_mpl, only: mpl_type
 
@@ -80,7 +79,7 @@ implicit none
 
 ! Passed variables
 class(minim_type),intent(inout) :: minim ! Minimization data
-type(mpl_type),intent(in) :: mpl         ! MPI data
+type(mpl_type),intent(inout) :: mpl      ! MPI data
 logical,intent(in) :: lprt               ! Print key
 
 ! Local variables
@@ -112,7 +111,7 @@ if (minim%f_min<minim%f_guess) then
    if (lprt) then
       write(mpl%info,'(a13,a,f6.1,a,e9.2,a,e9.2,a)') '','Minimizer '//trim(minim%algo)//', cost function decrease:', &
     & abs(minim%f_min-minim%f_guess)/minim%f_guess*100.0,'% (',minim%f_guess,' to ',minim%f_min,')'
-      call flush(mpl%info)
+      call mpl%flush
    end if
 else
    minim%x = minim%guess
@@ -131,7 +130,7 @@ implicit none
 
 ! Passed variables
 class(minim_type),intent(in) :: minim     ! Minimization data
-type(mpl_type),intent(in) :: mpl          ! MPI data
+type(mpl_type),intent(inout) :: mpl       ! MPI data
 real(kind_real),intent(in) :: x(minim%nx) ! Control vector
 real(kind_real),intent(out) :: f          ! Cost function value
 
@@ -156,7 +155,7 @@ implicit none
 
 ! Passed variables
 class(minim_type),intent(in) :: minim     ! Minimization data
-type(mpl_type),intent(in) :: mpl          ! MPI data
+type(mpl_type),intent(inout) :: mpl       ! MPI data
 real(kind_real),intent(in) :: x(minim%nx) ! Control vector
 real(kind_real),intent(out) :: f          ! Cost function value
 
@@ -208,8 +207,8 @@ call fit_diag(mpl,minim%nc3,minim%nl0r,minim%nl0,minim%l0rl0_to_l0,minim%disth,m
 fit_pack = pack(fit,mask=.true.)
 
 ! Observations penalty
-fo = sum((fit_pack-minim%obs)**2,mask=isnotmsr(minim%obs).and.isnotmsr(fit_pack))
-norm = sum(minim%obs**2,mask=isnotmsr(minim%obs).and.isnotmsr(fit_pack))
+fo = sum((fit_pack-minim%obs)**2,mask=mpl%msv%isnotr(minim%obs).and.mpl%msv%isnotr(fit_pack))
+norm = sum(minim%obs**2,mask=mpl%msv%isnotr(minim%obs).and.mpl%msv%isnotr(fit_pack))
 if (norm>0.0) fo = fo/norm
 
 ! Smoothing penalty
@@ -239,7 +238,7 @@ implicit none
 
 ! Passed variables
 class(minim_type),intent(in) :: minim     ! Minimization data
-type(mpl_type),intent(in) :: mpl          ! MPI data
+type(mpl_type),intent(inout) :: mpl       ! MPI data
 real(kind_real),intent(in) :: x(minim%nx) ! Control vector
 real(kind_real),intent(out) :: f          ! Cost function value
 
@@ -287,8 +286,8 @@ call fit_diag_dble(mpl,minim%nc3,minim%nl0r,minim%nl0,minim%l0rl0_to_l0,minim%di
 fit_pack = pack(fit,mask=.true.)
 
 ! Observations penalty
-fo = sum((fit_pack-minim%obs)**2,mask=isnotmsr(minim%obs).and.isnotmsr(fit_pack))
-norm = sum(minim%obs**2,mask=isnotmsr(minim%obs).and.isnotmsr(fit_pack))
+fo = sum((fit_pack-minim%obs)**2,mask=mpl%msv%isnotr(minim%obs).and.mpl%msv%isnotr(fit_pack))
+norm = sum(minim%obs**2,mask=mpl%msv%isnotr(minim%obs).and.mpl%msv%isnotr(fit_pack))
 if (norm>0.0) fo = fo/norm
 
 ! Smoothing penalty
@@ -326,7 +325,7 @@ implicit none
 
 ! Passed variables
 class(minim_type),intent(in) :: minim     ! Minimization data
-type(mpl_type),intent(in) :: mpl          ! MPI data
+type(mpl_type),intent(inout) :: mpl       ! MPI data
 real(kind_real),intent(in) :: x(minim%nx) ! Control vector
 real(kind_real),intent(out) :: f          ! Cost function value
 
@@ -359,8 +358,8 @@ call fit_lct(mpl,minim%nc3,minim%nl0,minim%dx,minim%dy,minim%dz,minim%dmask,mini
 fit_pack = pack(fit,mask=.true.)
 
 ! Observations penalty
-f = sum((fit_pack-minim%obs)**2,mask=isnotmsr(minim%obs).and.isnotmsr(fit_pack))
-norm = sum(minim%obs**2,mask=isnotmsr(minim%obs).and.isnotmsr(fit_pack))
+f = sum((fit_pack-minim%obs)**2,mask=mpl%msv%isnotr(minim%obs).and.mpl%msv%isnotr(fit_pack))
+norm = sum(minim%obs**2,mask=mpl%msv%isnotr(minim%obs).and.mpl%msv%isnotr(fit_pack))
 if (norm>0.0) f = f/norm
 
 end subroutine minim_cost_fit_lct
@@ -376,7 +375,7 @@ implicit none
 
 ! Passed variables
 class(minim_type),intent(inout) :: minim      ! Minimization data
-type(mpl_type),intent(in) :: mpl              ! MPI data
+type(mpl_type),intent(inout) :: mpl           ! MPI data
 real(kind_real),intent(in) :: guess(minim%nx) ! Guess
 
 ! Local variables
@@ -467,7 +466,7 @@ implicit none
 
 ! Passed variables
 class(minim_type),intent(inout) :: minim         ! Minimization data
-type(mpl_type),intent(in) :: mpl                 ! MPI data
+type(mpl_type),intent(inout) :: mpl              ! MPI data
 real(kind_real),intent(inout) :: delta(minim%nx) ! Step
 real(kind_real),intent(inout) :: point(minim%nx) ! Point
 real(kind_real),intent(in) :: prevbest           ! Best existing cost
@@ -534,7 +533,7 @@ implicit none
 
 ! Passed variables
 class(minim_type),intent(in) :: minim        ! Minimization data
-type(mpl_type),intent(in) :: mpl             ! MPI data
+type(mpl_type),intent(inout) :: mpl          ! MPI data
 real(kind_real),intent(inout) :: x(minim%nx) ! Vector
 
 ! Local variables

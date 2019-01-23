@@ -8,8 +8,8 @@
 module type_bpar
 
 use tools_kinds,only: kind_real
-use tools_missing, only: msi,msr
 use type_geom, only: geom_type
+use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 
 implicit none
@@ -37,6 +37,7 @@ type bpar_type
    integer,allocatable :: b_to_ts2(:)            ! Block to second timeslot
 contains
    procedure :: alloc => bpar_alloc
+   procedure :: init => bpar_init
    procedure :: dealloc => bpar_dealloc
 end type bpar_type
 
@@ -47,7 +48,7 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: bpar_alloc
-! Purpose: allocate general parameters
+! Purpose: allocation
 !----------------------------------------------------------------------
 subroutine bpar_alloc(bpar,nam,geom)
 
@@ -57,9 +58,6 @@ implicit none
 class(bpar_type),intent(inout) :: bpar ! Block parameters
 type(nam_type),intent(in) :: nam       ! Namelist
 type(geom_type),intent(in) :: geom     ! Geometry
-
-! Local variables
-integer :: ib,iv,jv,its,jts,il0,jl0r,jl0off
 
 ! Number of blocks
 if (nam%new_lct) then
@@ -95,10 +93,25 @@ allocate(bpar%b_to_v2(bpar%nbe))
 allocate(bpar%b_to_ts1(bpar%nbe))
 allocate(bpar%b_to_ts2(bpar%nbe))
 
-! Initialization
-call msi(bpar%l0rl0b_to_l0)
-call msi(bpar%il0rz)
+end subroutine bpar_alloc
 
+!----------------------------------------------------------------------
+! Subroutine: bpar_init
+! Purpose: initialization
+!----------------------------------------------------------------------
+subroutine bpar_init(bpar,nam,geom)
+
+implicit none
+
+! Passed variable
+class(bpar_type),intent(inout) :: bpar ! Block parameters
+type(nam_type),intent(in) :: nam       ! Namelist
+type(geom_type),intent(in) :: geom     ! Geometry
+
+! Local variables
+integer :: ib,iv,jv,its,jts,il0,jl0r,jl0off
+
+! Initialization
 if (nam%new_lct) then
    ! Individual blocks
    ib = 1
@@ -292,11 +305,11 @@ else
    end if
 end if
 
-end subroutine bpar_alloc
+end subroutine bpar_init
 
 !----------------------------------------------------------------------
 ! Subroutine: bpar_dealloc
-! Purpose: deallocate general parameters
+! Purpose: release memory
 !----------------------------------------------------------------------
 subroutine bpar_dealloc(bpar)
 

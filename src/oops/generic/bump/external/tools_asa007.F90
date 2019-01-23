@@ -34,7 +34,7 @@ subroutine asa007_cholesky(mpl,n,nn,a,u)
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl     ! MPI data
+type(mpl_type),intent(inout) :: mpl  ! MPI data
 integer,intent(in) :: n              ! Matrix rank
 integer,intent(in) :: nn             ! Half-matrix size (n*(n-1)/2)
 real(kind_real),intent(in) :: a(nn)  ! Matrix
@@ -102,7 +102,7 @@ subroutine asa007_syminv(mpl,n,nn,a,c)
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl     ! MPI data
+type(mpl_type),intent(inout) :: mpl  ! MPI data
 integer,intent(in) :: n              ! Matrix rank
 integer,intent(in) :: nn             ! Half-matrix size (n*(n-1)/2)
 real(kind_real),intent(in) :: a(nn)  ! Matrix

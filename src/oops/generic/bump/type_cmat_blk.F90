@@ -8,9 +8,9 @@
 module type_cmat_blk
 
 use tools_kinds, only: kind_real
-use tools_missing, only: msr
 use type_bpar, only: bpar_type
 use type_geom, only: geom_type
+use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 
 implicit none
@@ -51,6 +51,7 @@ type cmat_blk_type
 contains
    procedure :: alloc => cmat_blk_alloc
    procedure :: dealloc => cmat_blk_dealloc
+   procedure :: copy => cmat_blk_copy
 end type cmat_blk_type
 
 private
@@ -60,7 +61,7 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: cmat_blk_alloc
-! Purpose: C matrix block data allocation
+! Purpose: allocation
 !----------------------------------------------------------------------
 subroutine cmat_blk_alloc(cmat_blk,nam,geom,bpar)
 
@@ -94,38 +95,12 @@ if (bpar%diag_block(ib)) then
       allocate(cmat_blk%H12(geom%nc0a,geom%nl0))
       allocate(cmat_blk%Hcoef(geom%nc0a,geom%nl0))
    end if
-
-   ! Initialization
-   call msr(cmat_blk%coef_ens)
-   call msr(cmat_blk%coef_sta)
-   call msr(cmat_blk%rh)
-   call msr(cmat_blk%rv)
-   if (cmat_blk%double_fit) then
-      call msr(cmat_blk%rv_rfac)
-      call msr(cmat_blk%rv_coef)
-   end if
-   call msr(cmat_blk%rhs)
-   call msr(cmat_blk%rvs)
-   call msr(cmat_blk%wgt)
-   if (cmat_blk%anisotropic) then
-      call msr(cmat_blk%H11)
-      call msr(cmat_blk%H22)
-      call msr(cmat_blk%H33)
-      call msr(cmat_blk%H12)
-      call msr(cmat_blk%Hcoef)
-   end if
 end if
 
 if ((ib==bpar%nbe).and.nam%displ_diag) then
    ! Allocation
    allocate(cmat_blk%displ_lon(geom%nc0a,geom%nl0,2:nam%nts))
    allocate(cmat_blk%displ_lat(geom%nc0a,geom%nl0,2:nam%nts))
-
-   ! Initialization
-   if (nam%displ_diag) then
-      call msr(cmat_blk%displ_lon)
-      call msr(cmat_blk%displ_lat)
-   end if
 end if
 
 ! End associate
@@ -135,7 +110,7 @@ end subroutine cmat_blk_alloc
 
 !----------------------------------------------------------------------
 ! Subroutine: cmat_blk_dealloc
-! Purpose: C matrix block data deallocation
+! Purpose: release memory
 !----------------------------------------------------------------------
 subroutine cmat_blk_dealloc(cmat_blk)
 
@@ -168,5 +143,45 @@ if (allocated(cmat_blk%displ_lon)) deallocate(cmat_blk%displ_lon)
 if (allocated(cmat_blk%displ_lat)) deallocate(cmat_blk%displ_lat)
 
 end subroutine cmat_blk_dealloc
+
+!----------------------------------------------------------------------
+! Subroutine: cmat_blk_copy
+! Purpose: copy
+!----------------------------------------------------------------------
+type(cmat_blk_type) function cmat_blk_copy(cmat_blk)
+
+implicit none
+
+! Passed variables
+class(cmat_blk_type),intent(in) :: cmat_blk ! C matrix data block
+
+! Copy data
+cmat_blk_copy%ib = cmat_blk%ib
+cmat_blk_copy%name = cmat_blk%name
+cmat_blk_copy%double_fit = cmat_blk%double_fit
+cmat_blk_copy%anisotropic = cmat_blk%anisotropic
+if (allocated(cmat_blk%oops_coef_ens)) cmat_blk_copy%oops_coef_ens = cmat_blk%oops_coef_ens
+if (allocated(cmat_blk%oops_coef_sta)) cmat_blk_copy%oops_coef_sta = cmat_blk%oops_coef_sta
+if (allocated(cmat_blk%oops_rh)) cmat_blk_copy%oops_rh = cmat_blk%oops_rh
+if (allocated(cmat_blk%oops_rv)) cmat_blk_copy%oops_rv = cmat_blk%oops_rv
+if (allocated(cmat_blk%oops_rv_rfac)) cmat_blk_copy%oops_rv_rfac = cmat_blk%oops_rv_rfac
+if (allocated(cmat_blk%oops_rv_coef)) cmat_blk_copy%oops_rv_coef = cmat_blk%oops_rv_coef
+if (allocated(cmat_blk%coef_ens)) cmat_blk_copy%coef_ens = cmat_blk%coef_ens
+if (allocated(cmat_blk%coef_sta)) cmat_blk_copy%coef_sta = cmat_blk%coef_sta
+if (allocated(cmat_blk%rh)) cmat_blk_copy%rh = cmat_blk%rh
+if (allocated(cmat_blk%rv)) cmat_blk_copy%rv = cmat_blk%rv
+if (allocated(cmat_blk%rv_rfac)) cmat_blk_copy%rv_rfac = cmat_blk%rv_rfac
+if (allocated(cmat_blk%rv_coef)) cmat_blk_copy%rv_coef = cmat_blk%rv_coef
+if (allocated(cmat_blk%rhs)) cmat_blk_copy%rhs = cmat_blk%rhs
+if (allocated(cmat_blk%rvs)) cmat_blk_copy%rvs = cmat_blk%rvs
+if (allocated(cmat_blk%H11)) cmat_blk_copy%H11 = cmat_blk%H11
+if (allocated(cmat_blk%H22)) cmat_blk_copy%H22 = cmat_blk%H22
+if (allocated(cmat_blk%H33)) cmat_blk_copy%H33 = cmat_blk%H33
+if (allocated(cmat_blk%H12)) cmat_blk_copy%H12 = cmat_blk%H12
+if (allocated(cmat_blk%Hcoef)) cmat_blk_copy%Hcoef = cmat_blk%Hcoef
+if (allocated(cmat_blk%displ_lon)) cmat_blk_copy%displ_lon = cmat_blk%displ_lon
+if (allocated(cmat_blk%displ_lat)) cmat_blk_copy%displ_lat = cmat_blk%displ_lat
+
+end function cmat_blk_copy
 
 end module type_cmat_blk

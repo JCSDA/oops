@@ -7,12 +7,13 @@
 
 module oobump_mod
 
+use config_mod
 use iso_c_binding
 use kinds
-use config_mod
-use unstructured_grid_mod
+use missing_values_mod
 use type_bump, only: bump_type
 use type_nam, only: nvmax,nlmax,nc3max,nscalesmax,ndirmax,nldwvmax 
+use unstructured_grid_mod
 
 implicit none
 
@@ -397,6 +398,7 @@ integer, intent(in) :: ens2_ne
 integer, intent(in) :: ens2_nsub
 
 integer :: igrid
+real(kind_real) :: msvalr
 
 ! Allocation
 self%ngrid = ug%ngrid
@@ -409,10 +411,13 @@ do igrid=1,self%ngrid
    ! Read JSON
    call bump_read_conf(c_conf,self%bump(igrid))
 
+   ! Get missing value
+   msvalr  = missing_value(1.0_kind_real)
+
    ! Online setup
    call self%bump(igrid)%setup_online(ug%grid(igrid)%nmga,ug%grid(igrid)%nl0,ug%grid(igrid)%nv,ug%grid(igrid)%nts, &
  & ug%grid(igrid)%lon,ug%grid(igrid)%lat,ug%grid(igrid)%area,ug%grid(igrid)%vunit,ug%grid(igrid)%lmask,ens1_ne=ens1_ne, &
- & ens1_nsub=ens1_nsub, ens2_ne=ens2_ne, ens2_nsub=ens2_nsub)
+ & ens1_nsub=ens1_nsub, ens2_ne=ens2_ne, ens2_nsub=ens2_nsub,msvalr=msvalr)
 end do
 
 end subroutine create_oobump
@@ -432,6 +437,7 @@ character(len=6) :: ildwhchar
 ! general_param
 if (config_element_exists(c_conf,"datadir")) bump%nam%datadir = config_get_string(c_conf,1024,"datadir")
 if (config_element_exists(c_conf,"prefix")) bump%nam%prefix = config_get_string(c_conf,1024,"prefix")
+if (config_element_exists(c_conf,"verbosity")) bump%nam%verbosity = config_get_string(c_conf,1024,"verbosity")
 if (config_element_exists(c_conf,"default_seed")) bump%nam%default_seed = integer_to_logical(config_get_int(c_conf,"default_seed"))
 
 ! driver_param
@@ -439,13 +445,19 @@ if (config_element_exists(c_conf,"method")) bump%nam%method = config_get_string(
 if (config_element_exists(c_conf,"strategy")) bump%nam%strategy = config_get_string(c_conf,1024,"strategy")
 if (config_element_exists(c_conf,"new_vbal")) bump%nam%new_vbal = integer_to_logical(config_get_int(c_conf,"new_vbal"))
 if (config_element_exists(c_conf,"load_vbal")) bump%nam%load_vbal = integer_to_logical(config_get_int(c_conf,"load_vbal"))
+if (config_element_exists(c_conf,"write_vbal")) bump%nam%write_vbal = integer_to_logical(config_get_int(c_conf,"write_vbal"))
 if (config_element_exists(c_conf,"new_hdiag")) bump%nam%new_hdiag = integer_to_logical(config_get_int(c_conf,"new_hdiag"))
+if (config_element_exists(c_conf,"write_hdiag")) bump%nam%write_hdiag = integer_to_logical(config_get_int(c_conf,"write_hdiag"))
 if (config_element_exists(c_conf,"new_lct")) bump%nam%new_lct = integer_to_logical(config_get_int(c_conf,"new_lct"))
+if (config_element_exists(c_conf,"write_lct")) bump%nam%write_lct = integer_to_logical(config_get_int(c_conf,"write_lct"))
 if (config_element_exists(c_conf,"load_cmat")) bump%nam%load_cmat = integer_to_logical(config_get_int(c_conf,"load_cmat"))
+if (config_element_exists(c_conf,"write_cmat")) bump%nam%write_cmat = integer_to_logical(config_get_int(c_conf,"write_cmat"))
 if (config_element_exists(c_conf,"new_nicas")) bump%nam%new_nicas = integer_to_logical(config_get_int(c_conf,"new_nicas"))
 if (config_element_exists(c_conf,"load_nicas")) bump%nam%load_nicas = integer_to_logical(config_get_int(c_conf,"load_nicas"))
+if (config_element_exists(c_conf,"write_nicas")) bump%nam%write_nicas = integer_to_logical(config_get_int(c_conf,"write_nicas"))
 if (config_element_exists(c_conf,"new_obsop")) bump%nam%new_obsop = integer_to_logical(config_get_int(c_conf,"new_obsop"))
 if (config_element_exists(c_conf,"load_obsop")) bump%nam%load_obsop = integer_to_logical(config_get_int(c_conf,"load_obsop"))
+if (config_element_exists(c_conf,"write_obsop")) bump%nam%write_obsop = integer_to_logical(config_get_int(c_conf,"write_obsop"))
 if (config_element_exists(c_conf,"check_adjoints")) &
  & bump%nam%check_adjoints = integer_to_logical(config_get_int(c_conf,"check_adjoints"))
 if (config_element_exists(c_conf,"check_pos_def")) &
@@ -637,7 +649,7 @@ end subroutine run_oobump_drivers
 
 subroutine multiply_oobump_vbal(self,ug)
 implicit none
-type(oobump_type), intent(in) :: self
+type(oobump_type), intent(inout) :: self
 type(unstructured_grid), intent(inout) :: ug
 integer :: igrid
 
@@ -652,7 +664,7 @@ end subroutine multiply_oobump_vbal
 
 subroutine multiply_oobump_vbal_inv(self,ug)
 implicit none
-type(oobump_type), intent(in) :: self
+type(oobump_type), intent(inout) :: self
 type(unstructured_grid), intent(inout) :: ug
 integer :: igrid
 
@@ -667,7 +679,7 @@ end subroutine multiply_oobump_vbal_inv
 
 subroutine multiply_oobump_vbal_ad(self,ug)
 implicit none
-type(oobump_type), intent(in) :: self
+type(oobump_type), intent(inout) :: self
 type(unstructured_grid), intent(inout) :: ug
 integer :: igrid
 
@@ -682,7 +694,7 @@ end subroutine multiply_oobump_vbal_ad
 
 subroutine multiply_oobump_vbal_inv_ad(self,ug)
 implicit none
-type(oobump_type), intent(in) :: self
+type(oobump_type), intent(inout) :: self
 type(unstructured_grid), intent(inout) :: ug
 integer :: igrid
 
@@ -697,7 +709,7 @@ end subroutine multiply_oobump_vbal_inv_ad
 
 subroutine multiply_oobump_nicas(self,ug)
 implicit none
-type(oobump_type), intent(in) :: self
+type(oobump_type), intent(inout) :: self
 type(unstructured_grid), intent(inout) :: ug
 integer :: igrid
 
@@ -712,7 +724,7 @@ end subroutine multiply_oobump_nicas
 
 subroutine get_oobump_cv_size(self,n)
 implicit none
-type(oobump_type), intent(in) :: self
+type(oobump_type), intent(inout) :: self
 integer, intent(out) :: n
 integer :: igrid,nn
 
@@ -729,7 +741,7 @@ end subroutine get_oobump_cv_size
 
 subroutine multiply_oobump_nicas_sqrt(self,cv,ug)
 implicit none
-type(oobump_type), intent(in) :: self
+type(oobump_type), intent(inout) :: self
 real(kind_real), intent(in) :: cv(:)
 type(unstructured_grid), intent(inout) :: ug
 integer :: offset,igrid,nn
@@ -754,7 +766,7 @@ end subroutine multiply_oobump_nicas_sqrt
 
 subroutine multiply_oobump_nicas_sqrt_ad(self,ug,cv)
 implicit none
-type(oobump_type), intent(in) :: self
+type(oobump_type), intent(inout) :: self
 type(unstructured_grid), intent(in) :: ug
 real(kind_real), intent(inout) :: cv(:)
 integer :: offset,igrid,nn
@@ -794,7 +806,7 @@ end subroutine randomize_oobump_nicas
 
 subroutine get_oobump_param(self,param,ug)
 implicit none
-type(oobump_type), intent(in) :: self
+type(oobump_type), intent(inout) :: self
 character(len=*), intent(in) :: param
 type(unstructured_grid), intent(inout) :: ug
 integer :: igrid

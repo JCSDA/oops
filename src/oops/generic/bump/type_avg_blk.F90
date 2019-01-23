@@ -8,7 +8,6 @@
 module type_avg_blk
 
 use tools_kinds, only: kind_real
-use tools_missing, only: msr,isanynotmsr,isnotmsr,ismsr
 use tools_repro, only: sup,inf
 use type_bpar, only: bpar_type
 use type_geom, only: geom_type
@@ -53,6 +52,7 @@ contains
    procedure :: copy => avg_blk_copy
    procedure :: compute => avg_blk_compute
    procedure :: compute_asy => avg_blk_compute_asy
+   procedure :: compute_hyb => avg_blk_compute_hyb
    procedure :: compute_lr => avg_blk_compute_lr
    procedure :: compute_asy_lr => avg_blk_compute_asy_lr
 end type avg_blk_type
@@ -64,7 +64,7 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: avg_blk_alloc
-! Purpose: averaged statistics block data allocation
+! Purpose: allocation
 !----------------------------------------------------------------------
 subroutine avg_blk_alloc(avg_blk,nam,geom,bpar,ic2,ib,ne,nsub)
 
@@ -99,6 +99,7 @@ if (.not.allocated(avg_blk%nc1a)) then
       allocate(avg_blk%nc1a(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
       allocate(avg_blk%m11(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
       allocate(avg_blk%m11m11(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,avg_blk%nsub,avg_blk%nsub))
+
       allocate(avg_blk%m2m2(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,avg_blk%nsub,avg_blk%nsub))
       if (.not.nam%gau_approx) allocate(avg_blk%m22(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,avg_blk%nsub))
       allocate(avg_blk%nc1a_cor(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
@@ -119,42 +120,11 @@ if (.not.allocated(avg_blk%nc1a)) then
    end if
 end if
 
-! Initialization
-if ((ic2==0).or.(nam%var_diag)) then
-   call msr(avg_blk%m2)
-   if (nam%var_filter) then
-      if (.not.nam%gau_approx) call msr(avg_blk%m4)
-      call msr(avg_blk%m2flt)
-   end if
-end if
-if ((ic2==0).or.(nam%local_diag)) then
-   call msr(avg_blk%nc1a)
-   call msr(avg_blk%m11)
-   call msr(avg_blk%m11m11)
-   call msr(avg_blk%m2m2)
-   if (.not.nam%gau_approx) call msr(avg_blk%m22)
-   call msr(avg_blk%nc1a_cor)
-   call msr(avg_blk%cor)
-   call msr(avg_blk%m11asysq)
-   call msr(avg_blk%m2m2asy)
-   if (.not.nam%gau_approx) call msr(avg_blk%m22asy)
-   call msr(avg_blk%m11sq)
-   select case (trim(nam%method))
-   case ('hyb-avg_blk','hyb-rnd')
-      call msr(avg_blk%m11sta)
-      call msr(avg_blk%stasq)
-   case ('dual-ens')
-      call msr(avg_blk%m11lrm11sub)
-      call msr(avg_blk%m11lrm11)
-      call msr(avg_blk%m11lrm11asy)
-   end select
-end if
-
 end subroutine avg_blk_alloc
 
 !----------------------------------------------------------------------
 ! Subroutine: avg_blk_dealloc
-! Purpose: averaged statistics block data deallocation
+! Purpose: release memory
 !----------------------------------------------------------------------
 subroutine avg_blk_dealloc(avg_blk)
 
@@ -186,54 +156,35 @@ end subroutine avg_blk_dealloc
 
 !----------------------------------------------------------------------
 ! Function: avg_blk_copy
-! Purpose: averaged statistics block copy
+! Purpose: copy
 !----------------------------------------------------------------------
-type(avg_blk_type) function avg_blk_copy(avg_blk,nam,geom,bpar)
+type(avg_blk_type) function avg_blk_copy(avg_blk)
 
 implicit none
 
 ! Passed variables
 class(avg_blk_type),intent(in) :: avg_blk ! Averaged statistics block
-type(nam_type),intent(in) :: nam          ! Namelist
-type(geom_type),intent(in) :: geom        ! Geometry
-type(bpar_type),intent(in) :: bpar        ! Block parameters
-
-! Deallocation
-call avg_blk_copy%dealloc
-
-! Allocation
-call avg_blk_copy%alloc(nam,geom,bpar,avg_blk%ic2,avg_blk%ib,avg_blk%ne,avg_blk%nsub)
 
 ! Copy data
-if ((avg_blk%ic2==0).or.(nam%var_diag)) then
-   avg_blk_copy%m2 = avg_blk%m2
-   if (nam%var_filter) then
-      if (.not.nam%gau_approx) avg_blk_copy%m4 = avg_blk%m4
-      avg_blk_copy%m2flt = avg_blk%m2flt
-   end if
-end if
-if ((avg_blk%ic2==0).or.(nam%local_diag)) then
-   avg_blk_copy%nc1a = avg_blk%nc1a
-   avg_blk_copy%m11 = avg_blk%m11
-   avg_blk_copy%m11m11 = avg_blk%m11m11
-   avg_blk_copy%m2m2 = avg_blk%m2m2
-   if (.not.nam%gau_approx) avg_blk_copy%m22 = avg_blk%m22
-   avg_blk_copy%nc1a_cor = avg_blk%nc1a_cor
-   avg_blk_copy%cor = avg_blk%cor
-   avg_blk_copy%m11asysq = avg_blk%m11asysq
-   avg_blk_copy%m2m2asy = avg_blk%m2m2asy
-   if (.not.nam%gau_approx) avg_blk_copy%m22asy = avg_blk%m22asy
-   avg_blk_copy%m11sq = avg_blk%m11sq
-   select case (trim(nam%method))
-   case ('hyb-avg_blk','hyb-rnd')
-      avg_blk_copy%m11sta = avg_blk%m11sta
-      avg_blk_copy%stasq = avg_blk%stasq
-   case ('dual-ens')
-      avg_blk_copy%m11lrm11sub = avg_blk%m11lrm11sub
-      avg_blk_copy%m11lrm11sub = avg_blk%m11lrm11sub
-      avg_blk_copy%m11lrm11asy = avg_blk%m11lrm11asy
-   end select
-end if
+if (allocated(avg_blk%m2)) avg_blk_copy%m2 = avg_blk%m2
+if (allocated(avg_blk%m4)) avg_blk_copy%m4 = avg_blk%m4
+if (allocated(avg_blk%m2flt)) avg_blk_copy%m2flt = avg_blk%m2flt
+if (allocated(avg_blk%nc1a)) avg_blk_copy%nc1a = avg_blk%nc1a
+if (allocated(avg_blk%m11)) avg_blk_copy%m11 = avg_blk%m11
+if (allocated(avg_blk%m11m11)) avg_blk_copy%m11m11 = avg_blk%m11m11
+if (allocated(avg_blk%m2m2)) avg_blk_copy%m2m2 = avg_blk%m2m2
+if (allocated(avg_blk%m22)) avg_blk_copy%m22 = avg_blk%m22
+if (allocated(avg_blk%nc1a_cor)) avg_blk_copy%nc1a_cor = avg_blk%nc1a_cor
+if (allocated(avg_blk%cor)) avg_blk_copy%cor = avg_blk%cor
+if (allocated(avg_blk%m11asysq)) avg_blk_copy%m11asysq = avg_blk%m11asysq
+if (allocated(avg_blk%m2m2asy)) avg_blk_copy%m2m2asy = avg_blk%m2m2asy
+if (allocated(avg_blk%m22asy)) avg_blk_copy%m22asy = avg_blk%m22asy
+if (allocated(avg_blk%m11sq)) avg_blk_copy%m11sq = avg_blk%m11sq
+if (allocated(avg_blk%m11sta)) avg_blk_copy%m11sta = avg_blk%m11sta
+if (allocated(avg_blk%stasq)) avg_blk_copy%stasq = avg_blk%stasq
+if (allocated(avg_blk%m11lrm11sub)) avg_blk_copy%m11lrm11sub = avg_blk%m11lrm11sub
+if (allocated(avg_blk%m11lrm11sub)) avg_blk_copy%m11lrm11sub = avg_blk%m11lrm11sub
+if (allocated(avg_blk%m11lrm11asy)) avg_blk_copy%m11lrm11asy = avg_blk%m11lrm11asy
 
 end function avg_blk_copy
 
@@ -241,12 +192,13 @@ end function avg_blk_copy
 ! Subroutine: avg_blk_compute
 ! Purpose: compute averaged statistics via spatial-angular erogodicity assumption
 !----------------------------------------------------------------------
-subroutine avg_blk_compute(avg_blk,nam,geom,bpar,samp,mom_blk)
+subroutine avg_blk_compute(avg_blk,mpl,nam,geom,bpar,samp,mom_blk)
 
 implicit none
 
 ! Passed variables
 class(avg_blk_type),intent(inout) :: avg_blk ! Averaged statistics block
+type(mpl_type),intent(inout) :: mpl          ! MPI data
 type(nam_type),intent(in) :: nam             ! Namelist
 type(geom_type),intent(in) :: geom           ! Geometry
 type(bpar_type),intent(in) :: bpar           ! Block parameters
@@ -349,16 +301,17 @@ if ((ic2==0).or.(nam%local_diag)) then
                      m2_2 = sum(mom_blk%m2_2(ic1a,jc3,jl0,:))/real(avg_blk%nsub,kind_real)
                      if (sup(m2_1,var_min).and.sup(m2_2,var_min)) then
                         list_cor(nc1a) = list_m11(nc1a)/sqrt(m2_1*m2_2)
-                        if (sup(abs(list_cor(nc1a)),1.0_kind_real)) call msr(list_cor(nc1a))
+                        if (sup(abs(list_cor(nc1a)),1.0_kind_real)) list_cor(nc1a) = mpl%msv%valr
                      else
-                        call msr(list_cor(nc1a))
+                        list_cor(nc1a) = mpl%msv%valr
                      end if
                   end if
                end do
 
-               ! Average
+               ! Number of valid points
                avg_blk%nc1a(jc3,jl0r,il0) = real(nc1a,kind_real)
                if (nc1a>0) then
+                  ! Average
                   avg_blk%m11(jc3,jl0r,il0) = sum(list_m11(1:nc1a))
                   do isub=1,avg_blk%nsub
                      do jsub=1,avg_blk%nsub
@@ -367,23 +320,24 @@ if ((ic2==0).or.(nam%local_diag)) then
                      end do
                      if (.not.nam%gau_approx) avg_blk%m22(jc3,jl0r,il0,isub) = sum(list_m22(1:nc1a,isub))
                   end do
-                  avg_blk%nc1a_cor(jc3,jl0r,il0) = real(count(isnotmsr(list_cor(1:nc1a))),kind_real)
+                  avg_blk%nc1a_cor(jc3,jl0r,il0) = real(count(mpl%msv%isnotr(list_cor(1:nc1a))),kind_real)
                   if (avg_blk%nc1a_cor(jc3,jl0r,il0)>0.0) then
-                     avg_blk%cor(jc3,jl0r,il0) = sum(list_cor(1:nc1a),mask=isnotmsr(list_cor(1:nc1a)))
+                     avg_blk%cor(jc3,jl0r,il0) = sum(list_cor(1:nc1a),mask=mpl%msv%isnotr(list_cor(1:nc1a)))
                   else
-                     call msr(avg_blk%cor(jc3,jl0r,il0))
+                     avg_blk%cor(jc3,jl0r,il0) = mpl%msv%valr
                   end if
                else
-                  avg_blk%m11(jc3,jl0r,il0) = 0.0
+                  ! Missing values
+                  avg_blk%m11(jc3,jl0r,il0) = mpl%msv%valr
                   do isub=1,avg_blk%nsub
                      do jsub=1,avg_blk%nsub
-                        avg_blk%m11m11(jc3,jl0r,il0,jsub,isub) = 0.0
-                        avg_blk%m2m2(jc3,jl0r,il0,jsub,isub) = 0.0
+                        avg_blk%m11m11(jc3,jl0r,il0,jsub,isub) = mpl%msv%valr
+                        avg_blk%m2m2(jc3,jl0r,il0,jsub,isub) = mpl%msv%valr
                      end do
-                     if (.not.nam%gau_approx) avg_blk%m22(jc3,jl0r,il0,isub) = 0.0
+                     if (.not.nam%gau_approx) avg_blk%m22(jc3,jl0r,il0,isub) = mpl%msv%valr
                   end do
-                  avg_blk%nc1a_cor(jc3,jl0r,il0) = 0.0
-                  avg_blk%cor(jc3,jl0r,il0) = 0.0
+                  avg_blk%nc1a_cor(jc3,jl0r,il0) = mpl%msv%valr
+                  avg_blk%cor(jc3,jl0r,il0) = mpl%msv%valr
                end if
             end do
 
@@ -399,12 +353,12 @@ if ((ic2==0).or.(nam%local_diag)) then
    else
       ! Set to zero
       avg_blk%nc1a = 0
-      avg_blk%m11 = 0.0
-      avg_blk%m11m11 = 0.0
-      avg_blk%m2m2 = 0.0
-      if (.not.nam%gau_approx) avg_blk%m22 = 0.0
-      avg_blk%nc1a_cor = 0.0
-      avg_blk%cor = 0.0
+      avg_blk%m11 = mpl%msv%valr
+      avg_blk%m11m11 = mpl%msv%valr
+      avg_blk%m2m2 = mpl%msv%valr
+      if (.not.nam%gau_approx) avg_blk%m22 = mpl%msv%valr
+      avg_blk%nc1a_cor = mpl%msv%valr
+      avg_blk%cor = mpl%msv%valr
    end if
 end if
 
@@ -417,12 +371,13 @@ end subroutine avg_blk_compute
 ! Subroutine: avg_blk_compute_asy
 ! Purpose: compute asymptotic statistics
 !----------------------------------------------------------------------
-subroutine avg_blk_compute_asy(avg_blk,nam,geom,bpar,ne)
+subroutine avg_blk_compute_asy(avg_blk,mpl,nam,geom,bpar,ne)
 
 implicit none
 
 ! Passed variables
 class(avg_blk_type),intent(inout) :: avg_blk ! Averaged statistics block
+type(mpl_type),intent(inout) :: mpl          ! MPI data
 type(nam_type),intent(in) :: nam             ! Namelist
 type(geom_type),intent(in) :: geom           ! Geometry
 type(bpar_type),intent(in) :: bpar           ! Block parameters
@@ -502,35 +457,47 @@ if ((ic2==0).or.(nam%local_diag)) then
                if (.not.nam%gau_approx) avg_blk%m22asy(jc3,jl0r,il0) = sum(m22asy)/real(avg_blk%nsub,kind_real)
 
                ! Check positivity
-               if (avg_blk%m11asysq(jc3,jl0r,il0)<0.0) call msr(avg_blk%m11asysq(jc3,jl0r,il0))
-               if (avg_blk%m2m2asy(jc3,jl0r,il0)<0.0) call msr(avg_blk%m2m2asy(jc3,jl0r,il0))
+               if (avg_blk%m11asysq(jc3,jl0r,il0)<0.0) avg_blk%m11asysq(jc3,jl0r,il0) = mpl%msv%valr
+               if (avg_blk%m2m2asy(jc3,jl0r,il0)<0.0) avg_blk%m2m2asy(jc3,jl0r,il0) = mpl%msv%valr
                if (.not.nam%gau_approx) then
-                  if (avg_blk%m22asy(jc3,jl0r,il0)<0.0) call msr(avg_blk%m22asy(jc3,jl0r,il0))
+                  if (avg_blk%m22asy(jc3,jl0r,il0)<0.0) avg_blk%m22asy(jc3,jl0r,il0) = mpl%msv%valr
                end if
 
                ! Squared covariance average
                if (nam%gau_approx) then
                   ! Gaussian approximation
-                  if (isnotmsr(avg_blk%m11asysq(jc3,jl0r,il0)).and.isnotmsr(avg_blk%m2m2asy(jc3,jl0r,il0))) &
-                & avg_blk%m11sq(jc3,jl0r,il0) = P16*avg_blk%m11asysq(jc3,jl0r,il0)+P4*avg_blk%m2m2asy(jc3,jl0r,il0)
+                  if (mpl%msv%isnotr(avg_blk%m11asysq(jc3,jl0r,il0)).and.mpl%msv%isnotr(avg_blk%m2m2asy(jc3,jl0r,il0))) then
+                     avg_blk%m11sq(jc3,jl0r,il0) = P16*avg_blk%m11asysq(jc3,jl0r,il0)+P4*avg_blk%m2m2asy(jc3,jl0r,il0)
+                  else
+                     avg_blk%m11sq(jc3,jl0r,il0) = mpl%msv%valr
+                  end if
                else
                   ! General case
-                  if (isnotmsr(avg_blk%m22asy(jc3,jl0r,il0)).and.isnotmsr(avg_blk%m11asysq(jc3,jl0r,il0)) &
-                & .and.isnotmsr(avg_blk%m2m2asy(jc3,jl0r,il0))) &
-                & avg_blk%m11sq(jc3,jl0r,il0) = P1*avg_blk%m22asy(jc3,jl0r,il0)+P14*avg_blk%m11asysq(jc3,jl0r,il0) &
+                  if (mpl%msv%isnotr(avg_blk%m22asy(jc3,jl0r,il0)).and.mpl%msv%isnotr(avg_blk%m11asysq(jc3,jl0r,il0)) &
+                & .and.mpl%msv%isnotr(avg_blk%m2m2asy(jc3,jl0r,il0))) then
+                     avg_blk%m11sq(jc3,jl0r,il0) = P1*avg_blk%m22asy(jc3,jl0r,il0)+P14*avg_blk%m11asysq(jc3,jl0r,il0) &
                                          & +P3*avg_blk%m2m2asy(jc3,jl0r,il0)
+                  else
+                     avg_blk%m11sq(jc3,jl0r,il0) = mpl%msv%valr
+                  end if
                end if
 
                ! Check value
-               if (ismsr(avg_blk%m11sq(jc3,jl0r,il0))) then
-                  if (inf(avg_blk%m11sq(jc3,jl0r,il0),avg_blk%m11asysq(jc3,jl0r,il0))) call msr(avg_blk%m11sq(jc3,jl0r,il0))
-                  if (inf(avg_blk%m11sq(jc3,jl0r,il0),avg_blk%m11(jc3,jl0r,il0)**2)) call msr(avg_blk%m11sq(jc3,jl0r,il0))
+               if (mpl%msv%isr(avg_blk%m11sq(jc3,jl0r,il0))) then
+                  if (inf(avg_blk%m11sq(jc3,jl0r,il0),avg_blk%m11asysq(jc3,jl0r,il0))) avg_blk%m11sq(jc3,jl0r,il0) = mpl%msv%valr
+                  if (inf(avg_blk%m11sq(jc3,jl0r,il0),avg_blk%m11(jc3,jl0r,il0)**2)) avg_blk%m11sq(jc3,jl0r,il0) = mpl%msv%valr
                end if
 
-               ! Allocation
+               ! Release memory
                deallocate(m11asysq)
                deallocate(m2m2asy)
                deallocate(m22asy)
+            else
+               ! Missing values
+               avg_blk%m11asysq(jc3,jl0r,il0) = mpl%msv%valr
+               avg_blk%m2m2asy(jc3,jl0r,il0) = mpl%msv%valr
+               if (.not.nam%gau_approx) avg_blk%m22asy(jc3,jl0r,il0) = mpl%msv%valr
+               avg_blk%m11sq(jc3,jl0r,il0) = mpl%msv%valr
             end if
          end do
       end do
@@ -544,6 +511,49 @@ end associate
 end subroutine avg_blk_compute_asy
 
 !----------------------------------------------------------------------
+! Subroutine: avg_blk_compute_hyb
+! Purpose: compute averaged statistics via spatial-angular erogodicity assumption, for hybrid covariance products
+!----------------------------------------------------------------------
+subroutine avg_blk_compute_hyb(avg_blk_hyb,mpl,geom,bpar,avg_blk,avg_blk_sta)
+
+implicit none
+
+! Passed variables
+class(avg_blk_type),intent(inout) :: avg_blk_hyb ! Hybrid averaged statistics block
+type(mpl_type),intent(inout) :: mpl              ! MPI data
+type(geom_type),intent(in) :: geom               ! Geometry
+type(bpar_type),intent(in) :: bpar               ! Block parameters
+type(avg_blk_type),intent(in) :: avg_blk         ! Ensemble averaged statistics block
+type(avg_blk_type),intent(in) :: avg_blk_sta     ! Static averaged statistics block
+
+! Local variables
+integer :: il0,jl0r,jc3
+
+! Associate
+associate(ib=>avg_blk_hyb%ib)
+
+do il0=1,geom%nl0
+   do jl0r=1,bpar%nl0r(ib)
+      do jc3=1,bpar%nc3(ib)
+         if (mpl%msv%isnotr(avg_blk%m11(jc3,jl0r,il0)).and.mpl%msv%isnotr(avg_blk_sta%m11(jc3,jl0r,il0))) then
+            ! Compute product
+            avg_blk_hyb%m11sta(jc3,jl0r,il0) = avg_blk%m11(jc3,jl0r,il0)*avg_blk_sta%m11(jc3,jl0r,il0)
+            avg_blk_hyb%stasq(jc3,jl0r,il0) = avg_blk_sta%m11(jc3,jl0r,il0)**2
+         else
+            ! Missing values
+            avg_blk_hyb%m11sta(jc3,jl0r,il0) = mpl%msv%valr
+            avg_blk_hyb%stasq(jc3,jl0r,il0) = mpl%msv%valr
+         end if
+      end do
+   end do
+end do
+
+! End associate
+end associate
+
+end subroutine avg_blk_compute_hyb
+
+!----------------------------------------------------------------------
 ! Subroutine: avg_blk_compute_lr
 ! Purpose: compute averaged statistics via spatial-angular erogodicity assumption, for LR covariance/HR covariance and LR covariance/HR asymptotic covariance products
 !----------------------------------------------------------------------
@@ -553,7 +563,7 @@ implicit none
 
 ! Passed variables
 class(avg_blk_type),intent(inout) :: avg_blk_lr ! Low-resolution averaged statistics block
-type(mpl_type),intent(in) :: mpl                ! MPI data
+type(mpl_type),intent(inout) :: mpl             ! MPI data
 type(nam_type),intent(in) :: nam                ! Namelist
 type(geom_type),intent(in) :: geom              ! Geometry
 type(bpar_type),intent(in) :: bpar              ! Block parameters
@@ -615,7 +625,11 @@ if ((ic2==0).or.(nam%local_diag)) then
             avg_blk_lr%nc1a(jc3,jl0r,il0) = real(nc1a,kind_real)
             do isub=1,avg_blk_lr%nsub
                do jsub=1,avg_blk_lr%nsub
-                  avg_blk_lr%m11lrm11sub(jc3,jl0r,il0,jsub,isub) = sum(list_m11lrm11(1:nc1a,jsub,isub))
+                  if (avg_blk_lr%nc1a(jc3,jl0r,il0)>0) then
+                     avg_blk_lr%m11lrm11sub(jc3,jl0r,il0,jsub,isub) = sum(list_m11lrm11(1:nc1a,jsub,isub))
+                  else
+                     avg_blk_lr%m11lrm11sub(jc3,jl0r,il0,jsub,isub) = mpl%msv%valr
+                  end if
                end do
             end do
          end do
@@ -636,12 +650,13 @@ end subroutine avg_blk_compute_lr
 ! Subroutine: avg_blk_compute_asy_lr
 ! Purpose: compute LR covariance/HR asymptotic covariance products
 !----------------------------------------------------------------------
-subroutine avg_blk_compute_asy_lr(avg_blk_lr,nam,geom,bpar)
+subroutine avg_blk_compute_asy_lr(avg_blk_lr,mpl,nam,geom,bpar)
 
 implicit none
 
 ! Passed variables
 class(avg_blk_type),intent(inout) :: avg_blk_lr ! Low-resolution averaged statistics block
+type(mpl_type),intent(inout) :: mpl             ! MPI data
 type(nam_type),intent(in) :: nam                ! Namelist
 type(geom_type),intent(in) :: geom              ! Geometry
 type(bpar_type),intent(in) :: bpar              ! Block parameters
@@ -665,6 +680,8 @@ if ((ic2==0).or.(nam%local_diag)) then
                                                                     & /avg_blk_lr%nc1a(jc3,jl0r,il0)
                   end do
                end do
+            else
+               avg_blk_lr%m11lrm11sub(jc3,jl0r,il0,:,:) = mpl%msv%valr
             end if
          end do
       end do
@@ -676,10 +693,12 @@ if ((ic2==0).or.(nam%local_diag)) then
    do il0=1,geom%nl0
       do jl0r=1,bpar%nl0r(ib)
          do jc3=1,bpar%nc3(ib)
-            if (isanynotmsr(avg_blk_lr%m11lrm11sub(jc3,jl0r,il0,:,:))) then
+            if (mpl%msv%isanynotr(avg_blk_lr%m11lrm11sub(jc3,jl0r,il0,:,:))) then
                avg_blk_lr%m11lrm11(jc3,jl0r,il0) = sum(avg_blk_lr%m11lrm11sub(jc3,jl0r,il0,:,:), &
-                                                 & mask=isnotmsr(avg_blk_lr%m11lrm11sub(jc3,jl0r,il0,:,:))) &
-                                                 & /real(count(isnotmsr(avg_blk_lr%m11lrm11sub(jc3,jl0r,il0,:,:))),kind_real)
+                                                 & mask=mpl%msv%isnotr(avg_blk_lr%m11lrm11sub(jc3,jl0r,il0,:,:))) &
+                                                 & /real(count(mpl%msv%isnotr(avg_blk_lr%m11lrm11sub(jc3,jl0r,il0,:,:))),kind_real)
+            else
+               avg_blk_lr%m11lrm11(jc3,jl0r,il0) = mpl%msv%valr
             end if
          end do
       end do

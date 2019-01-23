@@ -10,7 +10,6 @@ module type_kdtree
 use tools_kdtree2, only: kdtree2,kdtree2_result,kdtree2_create,kdtree2_destroy, &
                        & kdtree2_n_nearest,kdtree2_r_count
 use tools_kinds, only: kind_real
-use tools_missing, only: msi,isnotmsi
 use tools_qsort, only: qsort
 use tools_repro, only: rth
 use tools_stripack, only: trans,scoord
@@ -20,10 +19,14 @@ implicit none
 
 ! KD-tree derived type
 type kdtree_type
+    integer :: n                       ! Data size
+    integer :: neff                    ! Effective KD-tree size
+    logical,allocatable :: mask(:)     ! Mask
     type(kdtree2),pointer :: tp        ! KD-tree pointer
     integer,allocatable :: from_eff(:) ! Effective index conversion
 contains
-    procedure :: create => kdtree_create
+    procedure :: alloc => kdtree_alloc
+    procedure :: init => kdtree_init
     procedure :: dealloc => kdtree_dealloc
     procedure :: find_nearest_neighbors => kdtree_find_nearest_neighbors
     procedure :: count_nearest_neighbors => kdtree_count_nearest_neighbors
@@ -35,34 +38,61 @@ public :: kdtree_type
 contains
 
 !----------------------------------------------------------------------
-! Subroutine: kdtree_create
-! Purpose: create a KD-tree
+! Subroutine: kdtree_alloc
+! Purpose: allocation
 !----------------------------------------------------------------------
-subroutine kdtree_create(kdtree,mpl,n,lon,lat,mask,sort,rearrange)
+subroutine kdtree_alloc(kdtree,mpl,n,mask)
 
 implicit none
 
 ! Passed variables
 class(kdtree_type),intent(inout) :: kdtree ! KD-tree
-type(mpl_type),intent(in) :: mpl           ! MPI data
+type(mpl_type),intent(inout) :: mpl        ! MPI data
 integer,intent(in) :: n                    ! Number of points
-real(kind_real),intent(in) :: lon(n)       ! Points longitudes
-real(kind_real),intent(in) :: lat(n)       ! Points latitudes
 logical,intent(in),optional :: mask(n)     ! Mask
-logical,intent(in),optional :: sort        ! Sorting flag
-logical,intent(in),optional :: rearrange   ! Rearranging flag
 
-! Local variable
-integer :: neff,i,ieff
-real(kind_real),allocatable :: input_data(:,:)
-logical :: lmask(n),lsort,lrearrange
+! Allocation
+kdtree%n = n
+allocate(kdtree%mask(n))
 
 ! Mask
 if (present(mask)) then
-   lmask = mask
+   kdtree%mask = mask
 else
-   lmask = .true.
+   kdtree%mask = .true.
 end if
+
+! Effective tree size
+kdtree%neff = count(kdtree%mask)
+
+! Check size
+if (kdtree%neff<1) call mpl%abort('mask should have at least one valid point to create a kdtree')
+
+! Allocation
+allocate(kdtree%from_eff(kdtree%neff))
+
+end subroutine kdtree_alloc
+
+!----------------------------------------------------------------------
+! Subroutine: kdtree_init
+! Purpose: initialization
+!----------------------------------------------------------------------
+subroutine kdtree_init(kdtree,mpl,lon,lat,sort,rearrange)
+
+implicit none
+
+! Passed variables
+class(kdtree_type),intent(inout) :: kdtree  ! KD-tree
+type(mpl_type),intent(inout) :: mpl         ! MPI data
+real(kind_real),intent(in) :: lon(kdtree%n) ! Points longitudes
+real(kind_real),intent(in) :: lat(kdtree%n) ! Points latitudes
+logical,intent(in),optional :: sort         ! Sorting flag
+logical,intent(in),optional :: rearrange    ! Rearranging flag
+
+! Local variable
+integer :: i,ieff
+real(kind_real) :: input_data(3,kdtree%neff)
+logical :: lsort,lrearrange
 
 ! Sorting flag
 if (present(sort)) then
@@ -78,24 +108,14 @@ else
    lrearrange = .true.
 end if
 
-! Effective tree size
-neff = count(lmask)
-
-! Check size
-if (neff<1) call mpl%abort('mask should have at least one valid point to create a kdtree')
-
-! Allocation
-allocate(input_data(3,neff))
-allocate(kdtree%from_eff(neff))
-
 ! Loop over points
 ieff = 0
-do i=1,n
-   if (lmask(i)) then
+do i=1,kdtree%n
+   if (kdtree%mask(i)) then
       ieff = ieff+1
 
       ! Transform to cartesian coordinates
-      call trans(1,lat(i),lon(i),input_data(1,ieff),input_data(2,ieff),input_data(3,ieff))
+      call trans(mpl,1,lat(i),lon(i),input_data(1,ieff),input_data(2,ieff),input_data(3,ieff))
 
       ! Conversion
       kdtree%from_eff(ieff) = i
@@ -105,11 +125,11 @@ end do
 ! Create KD-tree
 kdtree%tp => kdtree2_create(input_data,sort=lsort,rearrange=lrearrange)
 
-end subroutine kdtree_create
+end subroutine kdtree_init
 
 !----------------------------------------------------------------------
 ! Subroutine: kdtree_dealloc
-! Purpose: deallocate KD-tree
+! Purpose: release memory
 !----------------------------------------------------------------------
 subroutine kdtree_dealloc(kdtree)
 
@@ -119,7 +139,8 @@ implicit none
 class(kdtree_type),intent(inout) :: kdtree ! KD-tree
 
 if (allocated(kdtree%from_eff)) then
-   ! Deallocation
+   ! Release memory
+   deallocate(kdtree%mask)
    deallocate(kdtree%from_eff)
 
    ! Delete KD-tree
@@ -132,12 +153,13 @@ end subroutine kdtree_dealloc
 ! Subroutine: kdtree_find_nearest_neighbors
 ! Purpose: find nearest neighbors using a KD-tree
 !----------------------------------------------------------------------
-subroutine kdtree_find_nearest_neighbors(kdtree,lon,lat,nn,nn_index,nn_dist)
+subroutine kdtree_find_nearest_neighbors(kdtree,mpl,lon,lat,nn,nn_index,nn_dist)
 
 implicit none
 
 ! Passed variables
 class(kdtree_type),intent(in) :: kdtree    ! KD-tree
+type(mpl_type),intent(inout) :: mpl        ! MPI data
 real(kind_real),intent(in) :: lon          ! Point longitude
 real(kind_real),intent(in) :: lat          ! Point latitude
 integer,intent(in) :: nn                   ! Number of nearest neighbors to find
@@ -157,7 +179,7 @@ lontmp(1) = lon
 lattmp(1) = lat
 
 ! Transform to cartesian coordinates
-call trans(1,lattmp,lontmp,qv(1),qv(2),qv(3))
+call trans(mpl,1,lattmp,lontmp,qv(1),qv(2),qv(3))
 
 ! Find nearest neighbors
 call kdtree2_n_nearest(kdtree%tp,qv,nn,results)
@@ -195,12 +217,13 @@ end subroutine kdtree_find_nearest_neighbors
 ! Subroutine: kdtree_count_nearest_neighbors
 ! Purpose: count nearest neighbors using a KD-tree
 !----------------------------------------------------------------------
-subroutine kdtree_count_nearest_neighbors(kdtree,lon,lat,sr,nn)
+subroutine kdtree_count_nearest_neighbors(kdtree,mpl,lon,lat,sr,nn)
 
 implicit none
 
 ! Passed variables
 class(kdtree_type),intent(in) :: kdtree ! KD-tree
+type(mpl_type),intent(inout) :: mpl     ! MPI data
 real(kind_real),intent(in) :: lon       ! Point longitude
 real(kind_real),intent(in) :: lat       ! Point latitude
 real(kind_real),intent(in) :: sr        ! Spherical radius
@@ -215,7 +238,7 @@ lontmp(1) = lon
 lattmp(1) = lat
 
 ! Transform to cartesian coordinates
-call trans(1,lattmp,lontmp,qv(1),qv(2),qv(3))
+call trans(mpl,1,lattmp,lontmp,qv(1),qv(2),qv(3))
 
 ! Convert spherical radius to squared ball radius
 brsq = (1.0-cos(sr))**2+sin(sr)**2

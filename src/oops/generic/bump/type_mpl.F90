@@ -9,18 +9,17 @@ module type_mpl
 
 use iso_fortran_env, only : output_unit
 use iso_c_binding
+use fckit_mpi_module, only: fckit_mpi_comm,fckit_mpi_sum,fckit_mpi_status
 use netcdf
 !$ use omp_lib
-use tools_const, only: msvali,msvalr
 use tools_kinds, only: kind_real
-use tools_missing, only: msi,isnotmsi
-use fckit_mpi_module, only: fckit_mpi_comm,fckit_mpi_sum,fckit_mpi_status
+use type_msv, only: msv_type
 
 implicit none
 
-integer,parameter :: lunit_min=10   ! Minimum unit number
-integer,parameter :: lunit_max=1000 ! Maximum unit number
-integer,parameter :: ddis = 5       ! Progression display step
+integer,parameter :: lunit_min=10                  ! Minimum unit number
+integer,parameter :: lunit_max=1000                ! Maximum unit number
+integer,parameter :: ddis = 5                      ! Progression display step
 
 type mpl_type
    ! MPI parameters
@@ -28,8 +27,11 @@ type mpl_type
    integer :: myproc                ! MPI task index
    integer :: ioproc                ! Main task index
    logical :: main                  ! Main task logical
-   integer :: info                  ! Listing unit (info)
-   integer :: test                  ! Listing unit (test)
+   character(len=1024) :: verbosity ! Verbosity level
+   character(len=1024) :: info      ! Info buffer
+   character(len=1024) :: test      ! Test buffer
+   integer :: info_unit             ! Info listing unit
+   integer :: test_unit             ! Test listing unit
    integer :: tag                   ! MPI tag
    integer :: nthread               ! Number of OpenMP threads
 
@@ -49,17 +51,21 @@ type mpl_type
    character(len=1024) :: err       ! Error color code
    character(len=1024) :: wng       ! Warning color code
 
-   ! Vertical unit
    character(len=1024) :: vunitchar ! Vertical unit
+
+   type(msv_type) :: msv            ! Missing values
 contains
    procedure :: newunit => mpl_newunit
    procedure :: init => mpl_init
    procedure :: final => mpl_final
    procedure :: init_listing => mpl_init_listing
+   procedure :: flush => mpl_flush
+   procedure :: close_listing => mpl_close_listing
    procedure :: abort => mpl_abort
    procedure :: warning => mpl_warning
    procedure :: prog_init => mpl_prog_init
    procedure :: prog_print => mpl_prog_print
+   procedure :: prog_final => mpl_prog_final
    procedure :: ncerr => mpl_ncerr
    procedure :: update_tag => mpl_update_tag
    procedure :: bcast => mpl_bcast_string_1d
@@ -93,8 +99,8 @@ subroutine mpl_newunit(mpl,lunit)
 implicit none
 
 ! Passed variables
-class(mpl_type),intent(in) :: mpl ! MPI data
-integer,intent(out) :: lunit      ! New unit
+class(mpl_type),intent(inout) :: mpl ! MPI data
+integer,intent(out) :: lunit         ! New unit
 
 ! Local variables
 integer :: lun
@@ -172,21 +178,25 @@ end subroutine mpl_final
 ! Subroutine: mpl_init_listing
 ! Purpose: initialize listings
 !----------------------------------------------------------------------
-subroutine mpl_init_listing(mpl,prefix,model,colorlog,logpres,lunit)
+subroutine mpl_init_listing(mpl,prefix,model,verbosity,colorlog,logpres,lunit)
 
 implicit none
 
 ! Passed variables
-class(mpl_type),intent(inout) :: mpl   ! MPI data
-character(len=*),intent(in) :: prefix  ! Output prefix
-character(len=*),intent(in) :: model   ! Model
-logical,intent(in) :: colorlog         ! Color listing flag
-logical,intent(in) :: logpres          ! Vertical unit flag
-integer,intent(in),optional :: lunit   ! Main listing unit
+class(mpl_type),intent(inout) :: mpl     ! MPI data
+character(len=*),intent(in) :: prefix    ! Output prefix
+character(len=*),intent(in) :: model     ! Model
+character(len=*),intent(in) :: verbosity ! Verbosity level
+logical,intent(in) :: colorlog           ! Color listing flag
+logical,intent(in) :: logpres            ! Vertical unit flag
+integer,intent(in),optional :: lunit     ! Main listing unit
 
 ! Local variables
 integer :: iproc
 character(len=1024) :: filename
+
+! Set verbosity level
+mpl%verbosity = trim(verbosity)
 
 ! Setup display colors
 if (colorlog) then
@@ -218,44 +228,117 @@ else
    end if
 end if
 
-! Define info unit and open file
+! Define info and test units, and open files
 do iproc=1,mpl%nproc
-   if (mpl%main.and.present(lunit)) then
-      ! Specific listing unit
-      mpl%info = lunit
-   else
-      ! Deal with each proc sequentially
+   if ((trim(mpl%verbosity)=='all').or.((trim(mpl%verbosity)=='main').and.(iproc==mpl%ioproc))) then
+      ! Info listing
+      if (mpl%main.and.present(lunit)) then
+         ! Specific listing unit
+         mpl%info_unit = lunit
+      else
+         ! Deal with each proc sequentially
+         if (iproc==mpl%myproc) then
+            ! Find a free unit
+            call mpl%newunit(mpl%info_unit)
+
+            ! Open listing file
+            write(filename,'(a,i4.4)') trim(prefix)//'.info.',mpl%myproc-1
+            open(unit=mpl%info_unit,file=trim(filename),action='write',status='replace')
+         end if
+      end if
+
+      ! Test listing
       if (iproc==mpl%myproc) then
          ! Find a free unit
-         call mpl%newunit(mpl%info)
+         call mpl%newunit(mpl%test_unit)
 
          ! Open listing file
-         write(filename,'(a,i4.4)') trim(prefix)//'.info.',mpl%myproc-1
-         open(unit=mpl%info,file=trim(filename),action='write',status='replace')
+         write(filename,'(a,i4.4)') trim(prefix)//'.test.',mpl%myproc-1
+         open(unit=mpl%test_unit,file=trim(filename),action='write',status='replace')
       end if
-   end if
 
-   ! Wait
-   call mpl%f_comm%barrier
+      ! Wait
+      call mpl%f_comm%barrier
+   end if
 end do
 
-! Define test unit and open file
-do iproc=1,mpl%nproc
-   ! Deal with each proc sequentially
-   if (iproc==mpl%myproc) then
-      ! Find a free unit
-      call mpl%newunit(mpl%test)
-
-      ! Open listing file
-      write(filename,'(a,i4.4)') trim(prefix)//'.test.',mpl%myproc-1
-      open(unit=mpl%test,file=trim(filename),action='write',status='replace')
-   end if
-
-   ! Wait
-   call mpl%f_comm%barrier
-end do
+! Initialize message
+mpl%info = 'no_message'
+mpl%test = 'no_message'
 
 end subroutine mpl_init_listing
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_flush
+! Purpose: flush listings
+!----------------------------------------------------------------------
+subroutine mpl_flush(mpl,advance_flag)
+
+implicit none
+
+! Passed variables
+class(mpl_type),intent(inout) :: mpl        ! MPI data
+logical,intent(in),optional :: advance_flag ! Advance flag
+
+! Local variables
+logical :: ladvance_flag
+
+if ((trim(mpl%verbosity)=='all').or.((trim(mpl%verbosity)=='main').and.mpl%main)) then
+   ! Set advance flag
+   ladvance_flag = .true.
+   if (present(advance_flag)) ladvance_flag = advance_flag
+
+   ! Check info message
+   if (trim(mpl%info)/='no_message') then
+      ! Write message
+      if (ladvance_flag) then
+         write(mpl%info_unit,'(a)') trim(mpl%info)
+      else
+         write(mpl%info_unit,'(a)',advance='no') trim(mpl%info)
+      end if
+      call flush(mpl%info_unit)
+
+      ! Set at 'no message'
+      mpl%info = 'no_message'
+   end if
+
+   ! Check test message
+   if (trim(mpl%test)/='no_message') then
+      ! Write message
+      if (ladvance_flag) then
+         write(mpl%test_unit,'(a)') trim(mpl%test)
+      else
+         write(mpl%test_unit,'(a)',advance='no') trim(mpl%test)
+      end if
+      call flush(mpl%test_unit)
+
+      ! Set at 'no message'
+      mpl%test = 'no_message'
+   end if
+end if
+
+end subroutine mpl_flush
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_close_listing
+! Purpose: close listings
+!----------------------------------------------------------------------
+subroutine mpl_close_listing(mpl)
+
+implicit none
+
+! Passed variables
+class(mpl_type),intent(in) :: mpl   ! MPI data
+
+if ((trim(mpl%verbosity)=='all').or.((trim(mpl%verbosity)=='main').and.mpl%main)) then
+   ! Close info listing
+   close(unit=mpl%info_unit)
+
+   ! Close test listing
+   close(unit=mpl%test_unit)
+end if
+
+end subroutine mpl_close_listing
 
 !----------------------------------------------------------------------
 ! Subroutine: mpl_abort
@@ -266,19 +349,18 @@ subroutine mpl_abort(mpl,message)
 implicit none
 
 ! Passed variable
-class(mpl_type),intent(in) :: mpl      ! MPI data
+class(mpl_type),intent(inout) :: mpl   ! MPI data
 character(len=*),intent(in) :: message ! Message
 
 ! Write message
 write(mpl%info,'(a)') trim(mpl%err)//'!!! Error: '//trim(message)//trim(mpl%black)
-call flush(mpl%info)
 
-! Write message
+! Flush listing
+call mpl%flush
+
+! Write standard output message
 write(output_unit,'(a,i4.4,a)') '!!! ABORT on task #',mpl%myproc,': '//trim(message)
 call flush(output_unit)
-
-! Flush test
-call flush(mpl%test)
 
 ! Abort MPI
 call mpl%f_comm%abort(1)
@@ -294,17 +376,17 @@ subroutine mpl_warning(mpl,message)
 implicit none
 
 ! Passed variables
-class(mpl_type),intent(in) :: mpl      ! MPI data
+class(mpl_type),intent(inout) :: mpl   ! MPI data
 character(len=*),intent(in) :: message ! Message
 
 ! Print warning message
 write(mpl%info,'(a)') trim(mpl%wng)//'!!! Warning: '//trim(message)//trim(mpl%black)
-call flush(mpl%info)
+call mpl%flush
 
 end subroutine mpl_warning
 
 !----------------------------------------------------------------------
-! Subroutine: prog_init
+! Subroutine: mpl_prog_init
 ! Purpose: initialize progression display
 !----------------------------------------------------------------------
 subroutine mpl_prog_init(mpl,nprog)
@@ -316,11 +398,10 @@ class(mpl_type),intent(inout) :: mpl ! MPI data
 integer,intent(in) :: nprog          ! Array size
 
 ! Print message
-write(mpl%info,'(i3,a)',advance='no') 0,'%'
-call flush(mpl%info)
+write(mpl%info,'(a)') ' 0%'
+call mpl%flush(.false.)
 
 ! Allocation
-if (allocated(mpl%done)) deallocate(mpl%done)
 allocate(mpl%done(nprog))
 
 ! Initialization
@@ -352,13 +433,45 @@ if (present(i)) mpl%done(i) = .true.
 prog = 100.0*real(count(mpl%done),kind_real)/real(mpl%nprog,kind_real)
 if (int(prog)>mpl%progint) then
    if (mpl%progint<100) then
-      write(mpl%info,'(i3,a)',advance='no') mpl%progint,'% '
-      call flush(mpl%info)
+      if (mpl%progint<10) then
+         write(mpl%info,'(i2,a)') mpl%progint,'% '
+      else
+         write(mpl%info,'(i3,a)') mpl%progint,'% '
+      end if
+      call mpl%flush(.false.)
    end if
    mpl%progint = mpl%progint+ddis
 end if
 
 end subroutine mpl_prog_print
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_prog_final
+! Purpose: finalize progression display
+!----------------------------------------------------------------------
+subroutine mpl_prog_final(mpl,advance_flag)
+
+implicit none
+
+! Passed variables
+class(mpl_type),intent(inout) :: mpl        ! MPI data
+logical,intent(in),optional :: advance_flag ! Advance flag
+
+! Local variables
+logical :: ladvance_flag
+
+! Set advance flag
+ladvance_flag = .true.
+if (present(advance_flag)) ladvance_flag = advance_flag
+
+! Print message
+write(mpl%info,'(a)') ' 100%'
+call mpl%flush(ladvance_flag)
+
+! Release memory
+deallocate(mpl%done)
+
+end subroutine mpl_prog_final
 
 !----------------------------------------------------------------------
 ! Subroutine: mpl_ncerr
@@ -369,9 +482,9 @@ subroutine mpl_ncerr(mpl,subr,info)
 implicit none
 
 ! Passed variables
-class(mpl_type),intent(in) :: mpl   ! MPI data
-character(len=*),intent(in) :: subr ! Calling subroutine
-integer,intent(in) :: info          ! Info index
+class(mpl_type),intent(inout) :: mpl ! MPI data
+character(len=*),intent(in) :: subr  ! Calling subroutine
+integer,intent(in) :: info           ! Info index
 
 ! Check status
 if (info/=nf90_noerr) call mpl%abort('in '//trim(subr)//': '//trim(nf90_strerror(info)))
@@ -729,6 +842,7 @@ end if
 
 ! Allocation
 allocate(rbuf(n_loc*nl))
+
 if (mpl%main) then
    do iproc=1,mpl%nproc
       ! Allocation
@@ -769,6 +883,9 @@ do il=1,nl
       loc(i_loc,il) = rbuf((il-1)*n_loc+i_loc)
    end do
 end do
+
+! Release memory
+deallocate(rbuf)
 
 end subroutine mpl_glb_to_loc_real_2d
 
@@ -914,6 +1031,9 @@ call mpl%update_tag(1)
 ! Broadcast
 if (bcast) call mpl%f_comm%broadcast(glb,mpl%ioproc-1)
 
+! Release memory
+deallocate(sbuf)
+
 end subroutine mpl_loc_to_glb_real_2d
 
 !----------------------------------------------------------------------
@@ -992,6 +1112,9 @@ call mpl%update_tag(1)
 
 ! Broadcast
 if (bcast) call mpl%f_comm%broadcast(glb,mpl%ioproc-1)
+
+! Release memory
+deallocate(sbuf)
 
 end subroutine mpl_loc_to_glb_logical_2d
 

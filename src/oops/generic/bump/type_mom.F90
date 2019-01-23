@@ -9,7 +9,6 @@ module type_mom
 
 !$ use omp_lib
 use tools_kinds, only: kind_real
-use tools_missing, only: msi,msr,isnotmsr
 use type_bpar, only: bpar_type
 use type_com, only: com_type
 use type_ens, only: ens_type
@@ -29,6 +28,8 @@ type mom_type
    type(mom_blk_type),allocatable :: blk(:) ! Moments blocks
 contains
    procedure :: alloc => mom_alloc
+   procedure :: init => mom_init
+   procedure :: dealloc => mom_dealloc
    procedure :: compute => mom_compute
 end type mom_type
 
@@ -39,7 +40,7 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: mom_alloc
-! Purpose: allocate moments
+! Purpose: allocation
 !----------------------------------------------------------------------
 subroutine mom_alloc(mom,nam,geom,bpar,samp,ne,nsub)
 
@@ -63,10 +64,8 @@ mom%nsub = nsub
 
 ! Allocation
 allocate(mom%blk(bpar%nb))
-
 do ib=1,bpar%nb
    if (bpar%diag_block(ib)) then
-      ! Allocation
       mom%blk(ib)%ne = ne
       mom%blk(ib)%nsub = nsub
       allocate(mom%blk(ib)%m2_1(samp%nc1a,bpar%nc3(ib),geom%nl0,mom%blk(ib)%nsub))
@@ -74,8 +73,30 @@ do ib=1,bpar%nb
       allocate(mom%blk(ib)%m11(samp%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,mom%blk(ib)%nsub))
       if (.not.nam%gau_approx) allocate(mom%blk(ib)%m22(samp%nc1a,bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,mom%blk(ib)%nsub))
       if (nam%var_full) allocate(mom%blk(ib)%m2full(geom%nc0a,geom%nl0,mom%blk(ib)%nsub))
+   end if
+end do
 
-      ! Initialization
+end subroutine mom_alloc
+
+!----------------------------------------------------------------------
+! Subroutine: mom_init
+! Purpose: initialization
+!----------------------------------------------------------------------
+subroutine mom_init(mom,nam,bpar)
+
+implicit none
+
+! Passed variables
+class(mom_type),intent(inout) :: mom ! Moments
+type(nam_type),intent(in) :: nam     ! Namelist
+type(bpar_type),intent(in) :: bpar   ! Block parameters
+
+! Local variables
+integer :: ib
+
+! Initialization
+do ib=1,bpar%nb
+   if (bpar%diag_block(ib)) then
       mom%blk(ib)%m2_1 = 0.0
       mom%blk(ib)%m2_2 = 0.0
       mom%blk(ib)%m11 = 0.0
@@ -84,7 +105,35 @@ do ib=1,bpar%nb
    end if
 end do
 
-end subroutine mom_alloc
+end subroutine mom_init
+
+!----------------------------------------------------------------------
+! Subroutine: mom_dealloc
+! Purpose: release memory
+!----------------------------------------------------------------------
+subroutine mom_dealloc(mom)
+
+implicit none
+
+! Passed variables
+class(mom_type),intent(inout) :: mom ! Moments
+
+! Local variables
+integer :: ib
+
+! Release memory
+if (allocated(mom%blk)) then
+   do ib=1,size(mom%blk)
+      if (allocated(mom%blk(ib)%m2_1)) deallocate(mom%blk(ib)%m2_1)
+      if (allocated(mom%blk(ib)%m2_2)) deallocate(mom%blk(ib)%m2_2)
+      if (allocated(mom%blk(ib)%m11)) deallocate(mom%blk(ib)%m11)
+      if (allocated(mom%blk(ib)%m22)) deallocate(mom%blk(ib)%m22)
+      if (allocated(mom%blk(ib)%m2full)) deallocate(mom%blk(ib)%m2full)
+   end do
+   deallocate(mom%blk)
+end if
+
+end subroutine mom_dealloc
 
 !----------------------------------------------------------------------
 ! Subroutine: mom_compute
@@ -96,7 +145,7 @@ implicit none
 
 ! Passed variables
 class(mom_type),intent(inout) :: mom ! Moments
-type(mpl_type),intent(in) :: mpl     ! MPI data
+type(mpl_type),intent(inout) :: mpl  ! MPI data
 type(nam_type),intent(in) :: nam     ! Namelist
 type(geom_type),intent(in) :: geom   ! Geometry
 type(bpar_type),intent(in) :: bpar   ! Block parameters
@@ -111,19 +160,23 @@ logical,allocatable :: mask_unpack(:,:)
 ! Allocation
 call mom%alloc(nam,geom,bpar,samp,ens%ne,ens%nsub)
 
+! Initialization
+call mom%init(nam,bpar)
+
 ! Loop on sub-ensembles
 do isub=1,ens%nsub
    if (ens%nsub==1) then
-      write(mpl%info,'(a10,a)',advance='no') '','Full ensemble, member:'
+      write(mpl%info,'(a10,a)') '','Full ensemble, member:'
+      call mpl%flush(.false.)
    else
-      write(mpl%info,'(a10,a,i4,a)',advance='no') '','Sub-ensemble ',isub,', member:'
+      write(mpl%info,'(a10,a,i4,a)') '','Sub-ensemble ',isub,', member:'
+      call mpl%flush(.false.)
    end if
-   call flush(mpl%info)
 
    ! Compute centered moments
    do ie_sub=1,ens%ne/ens%nsub
-      write(mpl%info,'(i4)',advance='no') ie_sub
-      call flush(mpl%info)
+      write(mpl%info,'(i4)') ie_sub
+      call mpl%flush(.false.)
 
       ! Full ensemble index
       ie = ie_sub+(isub-1)*ens%ne/ens%nsub
@@ -157,8 +210,8 @@ do isub=1,ens%nsub
             jts = bpar%b_to_ts2(ib)
 
             ! Copy valid field points
-            call msr(fld_1)
-            call msr(fld_2)
+            fld_1 = mpl%msv%valr
+            fld_2 = mpl%msv%valr
             if ((iv/=jv).and.(its/=jts).and.nam%displ_diag) then
                ! Interpolate zero separation points
                !$omp parallel do schedule(static) private(il0)
@@ -226,7 +279,7 @@ do isub=1,ens%nsub
       deallocate(mask_unpack)
    end do
    write(mpl%info,'(a)') ''
-   call flush(mpl%info)
+   call mpl%flush
 end do
 
 ! Normalize moments
@@ -236,7 +289,6 @@ do ib=1,bpar%nb
       mom%blk(ib)%m2_2 = mom%blk(ib)%m2_2/real(mom%ne/mom%nsub-1,kind_real)
       mom%blk(ib)%m11 = mom%blk(ib)%m11/real(mom%ne/mom%nsub-1,kind_real)
       if (.not.nam%gau_approx) mom%blk(ib)%m22 = mom%blk(ib)%m22/real(mom%ne/mom%nsub,kind_real)
-      if (nam%var_full) mom%blk(ib)%m2full = mom%blk(ib)%m2full/real(mom%ne/mom%nsub-1,kind_real)
    end if
 end do
 

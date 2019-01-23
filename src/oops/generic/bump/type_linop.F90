@@ -10,7 +10,6 @@ module type_linop
 use netcdf
 !$ use omp_lib
 use tools_kinds, only: kind_real
-use tools_missing, only: msi,msr,isnotmsr,isnotmsi
 use tools_nc, only: ncfloat
 use tools_qsort, only: qsort
 use tools_repro, only: inf
@@ -43,9 +42,9 @@ contains
    procedure :: alloc => linop_alloc
    procedure :: dealloc => linop_dealloc
    procedure :: copy => linop_copy
-   procedure :: reorder => linop_reorder
    procedure :: read => linop_read
    procedure :: write => linop_write
+   procedure :: reorder => linop_reorder
    procedure :: apply => linop_apply
    procedure :: apply_ad => linop_apply_ad
    procedure :: apply_sym => linop_apply_sym
@@ -66,7 +65,7 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: linop_alloc
-! Purpose: linear operator allocation
+! Purpose: allocation
 !----------------------------------------------------------------------
 subroutine linop_alloc(linop,nvec)
 
@@ -80,34 +79,23 @@ integer,intent(in),optional :: nvec      ! Size of the vector of linear operator
 if (present(nvec)) then
    linop%nvec = nvec
 else
-   call msi(linop%nvec)
+   linop%nvec = 0
 end if
 
 ! Allocation
 allocate(linop%row(linop%n_s))
 allocate(linop%col(linop%n_s))
-if (present(nvec)) then
+if (linop%nvec>0) then
    allocate(linop%Svec(linop%n_s,linop%nvec))
 else
    allocate(linop%S(linop%n_s))
-end if
-
-! Initialization
-if (linop%n_s>0) then
-   call msi(linop%row)
-   call msi(linop%col)
-   if (present(nvec)) then
-      if (linop%nvec>0) call msr(linop%Svec)
-   else
-      call msr(linop%S)
-   end if
 end if
 
 end subroutine linop_alloc
 
 !----------------------------------------------------------------------
 ! Subroutine: linop_dealloc
-! Purpose: linear operator deallocation
+! Purpose: release memory
 !----------------------------------------------------------------------
 subroutine linop_dealloc(linop)
 
@@ -126,7 +114,7 @@ end subroutine linop_dealloc
 
 !----------------------------------------------------------------------
 ! Function: linop_copy
-! Purpose: linear operator copy
+! Purpose: copy
 !----------------------------------------------------------------------
 type(linop_type) function linop_copy(linop)
 
@@ -135,28 +123,24 @@ implicit none
 ! Passed variables
 class(linop_type),intent(in) :: linop ! Linear operator
 
+! Release memory
+call linop_copy%dealloc
+
 ! Copy attributes
-linop_copy%prefix = trim(linop%prefix)
+linop_copy%prefix = linop%prefix
 linop_copy%n_src = linop%n_src
 linop_copy%n_dst = linop%n_dst
 linop_copy%n_s = linop%n_s
 
-! Deallocation
-call linop_copy%dealloc
-
 ! Allocation
-if (isnotmsi(linop%nvec)) then
-   call linop_copy%alloc(linop%nvec)
-else
-   call linop_copy%alloc
-end if
+call linop_copy%alloc(linop%nvec)
 
 ! Copy data
 if (linop%n_s>0) then
    linop_copy%row = linop%row
    linop_copy%col = linop%col
-   if (isnotmsi(linop_copy%nvec)) then
-      if (linop_copy%nvec>0) linop_copy%Svec = linop%Svec
+   if (linop_copy%nvec>0) then
+      linop_copy%Svec = linop%Svec
    else
       linop_copy%S = linop%S
    end if
@@ -165,66 +149,8 @@ end if
 end function linop_copy
 
 !----------------------------------------------------------------------
-! Subroutine: linop_reorder
-! Purpose: reorder linear operator
-!----------------------------------------------------------------------
-subroutine linop_reorder(linop,mpl)
-
-implicit none
-
-! Passed variables
-class(linop_type),intent(inout) :: linop ! Linear operator
-type(mpl_type),intent(in) :: mpl         ! MPI data
-
-! Local variables
-integer :: row,i_s_s,i_s_e,n_s,i_s
-integer,allocatable :: order(:)
-
-if ((linop%n_s>0).and.(linop%n_s<reorder_max)) then
-   ! Sort with respect to row
-   allocate(order(linop%n_s))
-   call qsort(linop%n_s,linop%row,order)
-
-   ! Sort col and S
-   linop%col = linop%col(order)
-   if (isnotmsi(linop%nvec)) then
-      if (linop%nvec>0) linop%Svec = linop%Svec(order,:)
-   else
-      linop%S = linop%S(order)
-   end if
-   deallocate(order)
-
-   ! Sort with respect to col for each row
-   row = minval(linop%row)
-   i_s_s = 1
-   call msi(i_s_e)
-   do i_s=1,linop%n_s
-      if (linop%row(i_s)==row) then
-         i_s_e = i_s
-      else
-         n_s = i_s_e-i_s_s+1
-         allocate(order(n_s))
-         call qsort(n_s,linop%col(i_s_s:i_s_e),order)
-         order = order+i_s_s-1
-         if (isnotmsi(linop%nvec)) then
-            if (linop%nvec>0) linop%Svec(i_s_s:i_s_e,:) = linop%Svec(order,:)
-         else
-            linop%S(i_s_s:i_s_e) = linop%S(order)
-         end if
-         deallocate(order)
-         i_s_s = i_s+1
-         row = linop%row(i_s)
-      end if
-   end do
-else
-   call mpl%warning('linear operator is too big, impossible to reorder')
-end if
-
-end subroutine linop_reorder
-
-!----------------------------------------------------------------------
 ! Subroutine: linop_read
-! Purpose: read linear operator from a NetCDF file
+! Purpose: read
 !----------------------------------------------------------------------
 subroutine linop_read(linop,mpl,ncid)
 
@@ -232,7 +158,7 @@ implicit none
 
 ! Passed variables
 class(linop_type),intent(inout) :: linop ! Linear operator
-type(mpl_type),intent(in) :: mpl         ! MPI data
+type(mpl_type),intent(inout) :: mpl      ! MPI data
 integer,intent(in) :: ncid               ! NetCDF file ID
 
 ! Local variables
@@ -254,18 +180,14 @@ call mpl%ncerr(subr,nf90_get_att(ncid,nf90_global,trim(linop%prefix)//'_n_dst',l
 call mpl%ncerr(subr,nf90_get_att(ncid,nf90_global,trim(linop%prefix)//'_nvec',nvec))
 
 ! Allocation
-if (isnotmsi(nvec)) then
-   call linop%alloc(nvec)
-else
-   call linop%alloc
-end if
+call linop%alloc(nvec)
 
 if (linop%n_s>0) then
    ! Get variables id
    call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_row',row_id))
    call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_col',col_id))
-   if (isnotmsi(linop%nvec)) then
-      if (linop%nvec>0) call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_Svec',Svec_id))
+   if (linop%nvec>0) then
+      call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_Svec',Svec_id))
    else
       call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(linop%prefix)//'_S',S_id))
    end if
@@ -273,8 +195,8 @@ if (linop%n_s>0) then
    ! Get variables
    call mpl%ncerr(subr,nf90_get_var(ncid,row_id,linop%row))
    call mpl%ncerr(subr,nf90_get_var(ncid,col_id,linop%col))
-   if (isnotmsi(linop%nvec)) then
-      if (linop%nvec>0) call mpl%ncerr(subr,nf90_get_var(ncid,Svec_id,linop%Svec))
+   if (linop%nvec>0) then
+      call mpl%ncerr(subr,nf90_get_var(ncid,Svec_id,linop%Svec))
    else
       call mpl%ncerr(subr,nf90_get_var(ncid,S_id,linop%S))
    end if
@@ -284,7 +206,7 @@ end subroutine linop_read
 
 !----------------------------------------------------------------------
 ! Subroutine: linop_write
-! Purpose: write linear operator to a NetCDF file
+! Purpose: write
 !----------------------------------------------------------------------
 subroutine linop_write(linop,mpl,ncid)
 
@@ -292,7 +214,7 @@ implicit none
 
 ! Passed variables
 class(linop_type),intent(in) :: linop ! Linear operator
-type(mpl_type),intent(in) :: mpl      ! MPI data
+type(mpl_type),intent(inout) :: mpl   ! MPI data
 integer,intent(in) :: ncid            ! NetCDF file ID
 
 ! Local variables
@@ -310,14 +232,14 @@ call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,trim(linop%prefix)//'_nvec',li
 if (linop%n_s>0) then
    ! Define dimensions
    call mpl%ncerr(subr,nf90_def_dim(ncid,trim(linop%prefix)//'_n_s',linop%n_s,n_s_id))
-   if (isnotmsi(linop%nvec).and.(linop%nvec>0)) call mpl%ncerr(subr,nf90_def_dim(ncid,trim(linop%prefix)//'_nvec',linop%nvec, &
- & nvec_id))
+   if (linop%nvec>0) call mpl%ncerr(subr,nf90_def_dim(ncid,trim(linop%prefix)//'_nvec', &
+ & linop%nvec,nvec_id))
 
    ! Define variables
    call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_row',nf90_int,(/n_s_id/),row_id))
    call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_col',nf90_int,(/n_s_id/),col_id))
-   if (isnotmsi(linop%nvec)) then
-      if (linop%nvec>0) call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_Svec',ncfloat,(/n_s_id,nvec_id/),Svec_id))
+   if (linop%nvec>0) then
+      call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_Svec',ncfloat,(/n_s_id,nvec_id/),Svec_id))
    else
       call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_S',ncfloat,(/n_s_id/),S_id))
    end if
@@ -328,8 +250,8 @@ if (linop%n_s>0) then
    ! Put variables
    call mpl%ncerr(subr,nf90_put_var(ncid,row_id,linop%row))
    call mpl%ncerr(subr,nf90_put_var(ncid,col_id,linop%col))
-   if (isnotmsi(linop%nvec)) then
-      if (linop%nvec>0) call mpl%ncerr(subr,nf90_put_var(ncid,Svec_id,linop%Svec))
+   if (linop%nvec>0) then
+      call mpl%ncerr(subr,nf90_put_var(ncid,Svec_id,linop%Svec))
    else
       call mpl%ncerr(subr,nf90_put_var(ncid,S_id,linop%S))
    end if
@@ -341,6 +263,64 @@ end if
 end subroutine linop_write
 
 !----------------------------------------------------------------------
+! Subroutine: linop_reorder
+! Purpose: reorder linear operator
+!----------------------------------------------------------------------
+subroutine linop_reorder(linop,mpl)
+
+implicit none
+
+! Passed variables
+class(linop_type),intent(inout) :: linop ! Linear operator
+type(mpl_type),intent(inout) :: mpl      ! MPI data
+
+! Local variables
+integer :: row,i_s_s,i_s_e,n_s,i_s
+integer,allocatable :: order(:)
+
+if ((linop%n_s>0).and.(linop%n_s<reorder_max)) then
+   ! Sort with respect to row
+   allocate(order(linop%n_s))
+   call qsort(linop%n_s,linop%row,order)
+
+   ! Sort col and S
+   linop%col = linop%col(order)
+   if (linop%nvec>0) then
+      linop%Svec = linop%Svec(order,:)
+   else
+      linop%S = linop%S(order)
+   end if
+   deallocate(order)
+
+   ! Sort with respect to col for each row
+   row = minval(linop%row)
+   i_s_s = 1
+   i_s_e = mpl%msv%vali
+   do i_s=1,linop%n_s
+      if (linop%row(i_s)==row) then
+         i_s_e = i_s
+      else
+         n_s = i_s_e-i_s_s+1
+         allocate(order(n_s))
+         call qsort(n_s,linop%col(i_s_s:i_s_e),order)
+         order = order+i_s_s-1
+         if (linop%nvec>0) then
+            linop%Svec(i_s_s:i_s_e,:) = linop%Svec(order,:)
+         else
+            linop%S(i_s_s:i_s_e) = linop%S(order)
+         end if
+         deallocate(order)
+         i_s_s = i_s+1
+         row = linop%row(i_s)
+      end if
+   end do
+else
+   call mpl%warning('linear operator is too big, impossible to reorder')
+end if
+
+end subroutine linop_reorder
+
+!----------------------------------------------------------------------
 ! Subroutine: linop_apply
 ! Purpose: apply linear operator
 !----------------------------------------------------------------------
@@ -350,7 +330,7 @@ implicit none
 
 ! Passed variables
 class(linop_type),intent(in) :: linop               ! Linear operator
-type(mpl_type),intent(in) :: mpl                    ! MPI data
+type(mpl_type),intent(inout) :: mpl                 ! MPI data
 real(kind_real),intent(in) :: fld_src(linop%n_src)  ! Source vector
 real(kind_real),intent(out) :: fld_dst(linop%n_dst) ! Destination vector
 integer,intent(in),optional :: ivec                 ! Index of the vector of linear operators with similar row and col
@@ -394,7 +374,7 @@ end if
 do i_s=1,linop%n_s
    if (lmssrc) then
       ! Check for missing source (WARNING: source-dependent => no adjoint)
-      valid = isnotmsr(fld_src(linop%col(i_s)))
+      valid = mpl%msv%isnotr(fld_src(linop%col(i_s)))
    else
       ! Source independent
       valid = .true.
@@ -415,8 +395,11 @@ end do
 if (lmsdst) then
    ! Missing destination values
    do i_dst=1,linop%n_dst
-      if (missing(i_dst)) call msr(fld_dst(i_dst))
+      if (missing(i_dst)) fld_dst(i_dst) = mpl%msv%valr
    end do
+
+   ! Release memory
+   deallocate(missing)
 end if
 
 if (check_data) then
@@ -436,7 +419,7 @@ implicit none
 
 ! Passed variables
 class(linop_type),intent(in) :: linop               ! Linear operator
-type(mpl_type),intent(in) :: mpl                    ! MPI data
+type(mpl_type),intent(inout) :: mpl                 ! MPI data
 real(kind_real),intent(in) :: fld_dst(linop%n_dst)  ! Destination vector
 real(kind_real),intent(out) :: fld_src(linop%n_src) ! Source vector
 integer,intent(in),optional :: ivec                 ! Index of the vector of linear operators with similar row and col
@@ -490,7 +473,7 @@ implicit none
 
 ! Passed variables
 class(linop_type),intent(in) :: linop             ! Linear operator
-type(mpl_type),intent(in) :: mpl                  ! MPI data
+type(mpl_type),intent(inout) :: mpl               ! MPI data
 real(kind_real),intent(inout) :: fld(linop%n_src) ! Source/destination vector
 integer,intent(in),optional :: ivec               ! Index of the vector of linear operators with similar row and col
 
@@ -555,7 +538,7 @@ subroutine linop_add_op(linop,n_s,row,col,S)
 implicit none
 
 ! Passed variables
-class(linop_type),intent(inout) :: linop ! Linear operator
+class(linop_type),intent(inout) :: linop ! Linear operators
 integer,intent(inout) :: n_s             ! Number of operations
 integer,intent(in) :: row                ! Row index
 integer,intent(in) :: col                ! Column index
@@ -601,7 +584,7 @@ implicit none
 
 ! Passed variables
 class(linop_type),intent(inout) :: linop              ! Linear operator
-type(mpl_type),intent(in) :: mpl                      ! MPI data
+type(mpl_type),intent(inout) :: mpl                   ! MPI data
 integer,intent(in) :: n_s_arr(mpl%nthread)            ! Number of operations
 type(linop_type),intent(in) :: linop_arr(mpl%nthread) ! Linear operator array
 
@@ -676,11 +659,13 @@ lon_src_eff = lon_src(src_eff_to_src)
 lat_src_eff = lat_src(src_eff_to_src)
 mask_src_eff = .true.
 
-! Create mesh
-call mesh%create(mpl,rng,n_src_eff,lon_src_eff,lat_src_eff)
+! Allocation
+call mesh%alloc(n_src_eff)
+call kdtree%alloc(mpl,n_src_eff)
 
-! Compute KD-tree
-call kdtree%create(mpl,n_src_eff,lon_src_eff,lat_src_eff)
+! Initialization
+call mesh%init(mpl,rng,lon_src_eff,lat_src_eff)
+call kdtree%init(mpl,lon_src_eff,lat_src_eff)
 
 ! Compute interpolation
 call linop%interp(mpl,mesh,kdtree,n_src_eff,mask_src_eff,n_dst,lon_dst,lat_dst,mask_dst,interp_type)
@@ -690,6 +675,11 @@ linop%n_src = n_src
 linop%col = src_eff_to_src(linop%col)
 
 ! Release memory
+deallocate(src_eff_to_src)
+deallocate(lon_src_eff)
+deallocate(lat_src_eff)
+deallocate(mask_src_eff)
+call mesh%dealloc
 call kdtree%dealloc
 
 end subroutine linop_interp_from_lat_lon
@@ -730,7 +720,7 @@ type(fckit_mpi_status) :: status
 call mpl%split(n_dst,i_dst_s,i_dst_e,n_dst_loc)
 
 ! Allocation
-call msi(np)
+np = mpl%msv%vali
 if (trim(interp_type)=='bilin') then
    ! Bilinear interpolation
    np = 3
@@ -757,8 +747,8 @@ if (trim(interp_type)=='natural') then
 end if
 
 ! Compute interpolation
-write(mpl%info,'(a10,a)',advance='no') '','Compute interpolation: '
-call flush(mpl%info)
+write(mpl%info,'(a10,a)') '','Compute interpolation: '
+call mpl%flush(.false.)
 call mpl%prog_init(n_dst_loc(mpl%myproc))
 n_s = 0
 do i_dst_loc=1,n_dst_loc(mpl%myproc)
@@ -767,11 +757,11 @@ do i_dst_loc=1,n_dst_loc(mpl%myproc)
 
    if (mask_dst(i_dst)) then
       ! Find nearest neighbor
-      call kdtree%find_nearest_neighbors(lon_dst(i_dst),lat_dst(i_dst),1,nn_index,nn_dist)
+      call kdtree%find_nearest_neighbors(mpl,lon_dst(i_dst),lat_dst(i_dst),1,nn_index,nn_dist)
 
       if (abs(nn_dist(1))>0.0) then
          ! Compute barycentric coordinates
-         call mesh%barycentric(lon_dst(i_dst),lat_dst(i_dst),nn_index(1),b,ib)
+         call mesh%barycentric(mpl,lon_dst(i_dst),lat_dst(i_dst),nn_index(1),b,ib)
          if (sum(b)>0.0) b = b/sum(b)
          do i=1,3
             if (inf(b(i),S_inf)) b(i) = 0.0
@@ -849,8 +839,7 @@ do i_dst_loc=1,n_dst_loc(mpl%myproc)
    ! Update
    call mpl%prog_print(i_dst_loc)
 end do
-write(mpl%info,'(a)') '100%'
-call flush(mpl%info)
+call mpl%prog_final
 
 ! Communication
 call mpl%f_comm%allgather(n_s,proc_to_n_s)
@@ -911,6 +900,18 @@ do i_s=1,linop%n_s
 end do
 if (any(missing)) call mpl%abort('missing destination points in interp_from_mesh_kdtree')
 
+! Release memory
+if (trim(interp_type)=='natural') then
+   deallocate(area_polygon)
+   deallocate(area_polygon_new)
+   deallocate(natis)
+   deallocate(natwgt)
+end if
+deallocate(row)
+deallocate(col)
+deallocate(S)
+deallocate(missing)
+
 end subroutine linop_interp_from_mesh_kdtree
 
 !----------------------------------------------------------------------
@@ -939,8 +940,8 @@ type(linop_type),intent(inout) :: interp_base ! Linear operator (base interpolat
 integer :: ic0,ic1,jc0,jc1,i_s
 real(kind_real) :: renorm(geom%nc0)
 real(kind_real),allocatable :: lon_c1(:),lat_c1(:),lon_col(:),lat_col(:)
-logical :: test_c0(geom%nc0)
-logical,allocatable :: mask_c1(:),mask_extra(:),valid(:)
+logical :: test_c0(geom%nc0),mask_extra(nc1)
+logical,allocatable :: mask_c1(:),valid(:)
 
 if (.not.allocated(interp_base%row)) then
    ! Allocation
@@ -955,11 +956,15 @@ if (.not.allocated(interp_base%row)) then
 
    ! Compute base interpolation
    call interp_base%interp(mpl,rng,nc1,lon_c1,lat_c1,mask_c1,geom%nc0,geom%lon,geom%lat,geom%mask_hor_c0,interp_type)
+
+   ! Release memory
+   deallocate(lon_c1)
+   deallocate(lat_c1)
+   deallocate(mask_c1)
 end if
 
 ! Allocation
 allocate(valid(interp_base%n_s))
-allocate(mask_extra(nc1))
 
 ! Check mask
 do i_s=1,interp_base%n_s
@@ -970,8 +975,8 @@ do i_s=1,interp_base%n_s
 end do
 
 if (mask_check) then
-   write(mpl%info,'(a10,a,i3,a)',advance='no') '','Sublevel ',il0i,': '
-   call flush(mpl%info)
+   write(mpl%info,'(a10,a,i3,a)') '','Sublevel ',il0i,': '
+   call mpl%flush(.false.)
 
    ! Allocation
    allocate(lon_col(nc1))
@@ -983,6 +988,10 @@ if (mask_check) then
 
    ! Check mask boundaries
    call interp_base%interp_check_mask(mpl,geom,valid,il0i,lon_col=lon_col,lat_col=lat_col)
+
+   ! Release memory
+   deallocate(lon_col)
+   deallocate(lat_col)
 end if
 
 if (geom%nl0i>1) then
@@ -1002,7 +1011,7 @@ if (geom%nl0i>1) then
    end do
    if (count(mask_extra)>0) then
       write(mpl%info,'(a10,a,i5)') '','Extrapolated points: ',count(mask_extra)
-      call flush(mpl%info)
+      call mpl%flush
    end if
 else
    mask_extra = .false.
@@ -1014,11 +1023,13 @@ do i_s=1,interp_base%n_s
    if (valid(i_s)) renorm(interp_base%row(i_s)) = renorm(interp_base%row(i_s))+interp_base%S(i_s)
 end do
 
-! Initialize linear operator
+! Allocation
 linop%n_src = nc1
 linop%n_dst = geom%nc0
 linop%n_s = count(valid)
 call linop%alloc
+
+! Initialization
 linop%n_s = 0
 do i_s=1,interp_base%n_s
    if (valid(i_s)) then
@@ -1044,7 +1055,6 @@ if (any(test_c0)) call mpl%abort('error with the grid interpolation row')
 
 ! Release memory
 deallocate(valid)
-deallocate(mask_extra)
 
 end subroutine linop_interp_grid
 
@@ -1102,15 +1112,14 @@ do i_s_loc=1,n_s_loc(mpl%myproc)
       end if
 
       ! Check if arc is crossing boundary arcs
-      call geom%check_arc(il0,llon_row,llat_row,llon_col,llat_col,valid(i_s))
+      call geom%check_arc(mpl,il0,llon_row,llat_row,llon_col,llat_col,valid(i_s))
    end if
 
    ! Update
    call mpl%prog_print(i_s_loc)
 end do
 !$omp end parallel do
-write(mpl%info,'(a)') '100%'
-call flush(mpl%info)
+call mpl%prog_final
 
 ! Communication
 if (mpl%main) then
@@ -1145,7 +1154,7 @@ implicit none
 
 ! Passed variables
 class(linop_type),intent(inout) :: linop     ! Linear operator (interpolation)
-type(mpl_type),intent(in) :: mpl             ! MPI data
+type(mpl_type),intent(inout) :: mpl          ! MPI data
 integer,intent(in) :: n_dst                  ! Destination size
 real(kind_real),intent(in) :: lon_dst(n_dst) ! Destination longitude
 real(kind_real),intent(in) :: lat_dst(n_dst) ! Destination latitude
@@ -1171,6 +1180,7 @@ end do
 
 if (count(missing)>0) then
    write(mpl%info,'(a10,a,i6,a)') '','Deal with ',count(missing),' missing interpolation points'
+   call mpl%flush
 
    ! Allocate temporary interpolation
    if (trim(interp_type)=='bilin') then
@@ -1190,16 +1200,17 @@ if (count(missing)>0) then
    ! Reset size
    interp_tmp%n_s = linop%n_s
 
-   ! Mask
+   ! Allocation
    lmask = mask_dst.and.(.not.missing)
+   call kdtree%alloc(mpl,n_dst,mask=lmask)
 
-   ! Compute KD-tree
-   call kdtree%create(mpl,n_dst,lon_dst,lat_dst,mask=lmask)
+   ! Initialization
+   call kdtree%init(mpl,lon_dst,lat_dst)
 
    do i_dst=1,n_dst
       if (missing(i_dst)) then
          ! Compute nearest neighbor
-         call kdtree%find_nearest_neighbors(lon_dst(i_dst),lat_dst(i_dst),1,nn,dum)
+         call kdtree%find_nearest_neighbors(mpl,lon_dst(i_dst),lat_dst(i_dst),1,nn,dum)
 
          ! Copy data
          found = .false.

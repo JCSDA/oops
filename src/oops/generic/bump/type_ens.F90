@@ -11,7 +11,6 @@ use fckit_mpi_module, only: fckit_mpi_sum
 use tools_const, only: rad2deg
 use tools_func, only: sphere_dist
 use tools_kinds, only: kind_real
-use tools_missing, only: msi,msr,isnotmsi
 use type_geom, only: geom_type
 use type_io, only: io_type
 use type_mpl, only: mpl_type
@@ -45,7 +44,7 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: ens_alloc
-! Purpose: ensemble data allocation
+! Purpose: allocation
 !----------------------------------------------------------------------
 subroutine ens_alloc(ens,nam,geom,ne,nsub)
 
@@ -58,25 +57,21 @@ type(geom_type),intent(in) :: geom   ! Geometry
 integer,intent(in) :: ne             ! Ensemble size
 integer,intent(in) :: nsub           ! Number of sub-ensembles
 
-! Allocate
+! Copy attributes
+ens%ne = ne
+ens%nsub = nsub
+
+! Allocation
 if (ne>0) then
    allocate(ens%fld(geom%nc0a,geom%nl0,nam%nv,nam%nts,ne))
    allocate(ens%mean(geom%nc0a,geom%nl0,nam%nv,nam%nts,nsub))
-end if
-
-! Initialization
-ens%ne = ne
-ens%nsub = nsub
-if (ens%ne>0) then
-   call msr(ens%fld)
-   call msr(ens%mean)
 end if
 
 end subroutine ens_alloc
 
 !----------------------------------------------------------------------
 ! Subroutine: ens_dealloc
-! Purpose: ensemble data deallocation
+! Purpose: release memory
 !----------------------------------------------------------------------
 subroutine ens_dealloc(ens)
 
@@ -92,32 +87,26 @@ if (allocated(ens%mean)) deallocate(ens%mean)
 end subroutine ens_dealloc
 
 !----------------------------------------------------------------------
-! Subroutine: ens_copy
-! Purpose: ensemble data copy
+! Function: ens_copy
+! Purpose: copy
 !----------------------------------------------------------------------
-subroutine ens_copy(ens_out,ens_in)
+type(ens_type) function ens_copy(ens,nam,geom)
 
 implicit none
 
 ! Passed variables
-class(ens_type),intent(inout) :: ens_out ! Ensemble
-type(ens_type),intent(in) :: ens_in      ! Ensemble
+class(ens_type),intent(in) :: ens  ! Ensemble
+type(nam_type),intent(in) :: nam   ! Namelist
+type(geom_type),intent(in) :: geom ! Geometry
 
 ! Allocate
-if (ens_in%ne>0) then
-   allocate(ens_out%fld(size(ens_in%fld,1),size(ens_in%fld,2),size(ens_in%fld,3),size(ens_in%fld,4),size(ens_in%fld,5)))
-   allocate(ens_out%mean(size(ens_in%mean,1),size(ens_in%mean,2),size(ens_in%mean,3),size(ens_in%mean,4),size(ens_in%mean,5)))
-end if
+call ens_copy%alloc(nam,geom,ens%ne,ens%nsub)
 
-! Initialization
-ens_out%ne = ens_in%ne
-ens_out%nsub = ens_in%nsub
-if (ens_in%ne>0) then
-   ens_out%fld = ens_in%fld
-   ens_out%mean = ens_in%mean
-end if
+! Copy data
+if (allocated(ens%fld)) ens_copy%fld = ens%fld
+if (allocated(ens%mean)) ens_copy%mean = ens%mean
 
-end subroutine ens_copy
+end function ens_copy
 
 !----------------------------------------------------------------------
 ! Subroutine: ens_remove_mean
@@ -203,7 +192,7 @@ implicit none
 
 ! Passed variables
 class(ens_type),intent(in) :: ens                                       ! Ensemble
-type(mpl_type),intent(in) :: mpl                                        ! MPI data
+type(mpl_type),intent(inout) :: mpl                                     ! MPI data
 type(nam_type),intent(in) :: nam                                        ! Namelist
 type(geom_type),intent(in) :: geom                                      ! Geometry
 real(kind_real),intent(inout) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts) ! Field
@@ -272,7 +261,7 @@ filename = trim(nam%prefix)//'_cortrack'
 
 ! Compute variance
 write(mpl%info,'(a7,a)') '','Compute variance'
-call flush(mpl%info)
+call mpl%flush
 var = 0.0
 do ie=1,ens%ne
    var = var+ens%fld(:,:,1,:,ie)**2
@@ -281,13 +270,14 @@ var = var/real(ens%ne-ens%nsub,kind_real)
 
 ! Compute wind speed squared (variables 2 and 3 should be u and v)
 write(mpl%info,'(a7,a)') '','Compute wind speed'
-call flush(mpl%info)
+call mpl%flush
 u = sum(ens%mean(:,:,2,:,:),dim=4)/real(ens%nsub,kind_real)
 v = sum(ens%mean(:,:,3,:,:),dim=4)/real(ens%nsub,kind_real)
 ffsq = u**2+v**2
 
 ! Only North hemisphere
 write(mpl%info,'(a7,a)') '','Only North hemisphere'
+call mpl%flush
 do ic0a=1,geom%nc0a
    ic0 = geom%c0a_to_c0(ic0a)
    if (geom%lat(ic0)<0.0) ffsq(ic0a,:,:) = 0.0
@@ -295,7 +285,7 @@ end do
 
 ! Write wind
 write(mpl%info,'(a7,a)') '','Write wind'
-call flush(mpl%info)
+call mpl%flush
 do its=1,nam%nts
    write(timeslotchar,'(i2.2)') nam%timeslot(its)
    call io%fld_write(mpl,nam,geom,filename,'u_'//timeslotchar,u(:,:,its))
@@ -305,7 +295,7 @@ end do
 if (.true.) then
    ! Find local maximum value and index
    write(mpl%info,'(a7,a)') '','Dirac point based on maximum wind speed'
-   call flush(mpl%info)
+   call mpl%flush
    val = maxval(ffsq(:,1,1))
    ind = maxloc(ffsq(:,1,1))
    call mpl%f_comm%allgather(val,proc_to_val)
@@ -314,7 +304,7 @@ if (.true.) then
 else
    ! Find local minimum value and index
    write(mpl%info,'(a7,a)') '','Dirac point based on minimum wind speed'
-   call flush(mpl%info)
+   call mpl%flush
    val = minval(ffsq(:,1,1))
    ind = minloc(ffsq(:,1,1))
    call mpl%f_comm%allgather(val,proc_to_val)
@@ -323,8 +313,8 @@ else
 end if
 
 ! Broadcast dirac point
-call msi(ic0a)
-call msi(ic0)
+ic0a = mpl%msv%vali
+ic0 = mpl%msv%vali
 if (mpl%myproc==iproc(1)) then
    ic0a = proc_to_ic0a(iproc(1))
    ic0 = geom%c0a_to_c0(ic0a)
@@ -337,7 +327,7 @@ call mpl%f_comm%broadcast(lat,iproc(1)-1)
 call mpl%f_comm%broadcast(val,iproc(1)-1)
 write(mpl%info,'(a10,a,i2,a,f6.1,a,f6.1,a,f7.1)') '','Timeslot ',nam%timeslot(1),' ~> lon / lat / val: ', &
  & lon*rad2deg,' / ',lat*rad2deg,' / ',sqrt(val)
-call flush(mpl%info)
+call mpl%flush
 
 ! Generate dirac field
 dirac = 0.0
@@ -390,7 +380,7 @@ do its=2,nam%nts-1
    call mpl%f_comm%broadcast(val,iproc(1)-1)
    write(mpl%info,'(a10,a,i2,a,f6.1,a,f6.1,a,f6.3)') '','Timeslot ',nam%timeslot(its),' ~> lon / lat / val: ', &
  & lon*rad2deg,' / ',lat*rad2deg,' / ',val
-   call flush(mpl%info)
+   call mpl%flush
 
    ! Generate dirac field
    dirac = 0.0

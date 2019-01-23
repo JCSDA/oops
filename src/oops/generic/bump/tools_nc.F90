@@ -41,7 +41,7 @@ subroutine put_att_integer(mpl,ncid,varname,var)
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl       ! MPI data
+type(mpl_type),intent(inout) :: mpl    ! MPI data
 integer,intent(in) :: ncid             ! NetCDF file id
 character(len=*),intent(in) :: varname ! Variable name
 integer,intent(in) :: var              ! Integer
@@ -63,7 +63,7 @@ subroutine put_att_integer_array(mpl,ncid,varname,n,var)
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl       ! MPI data
+type(mpl_type),intent(inout) :: mpl    ! MPI data
 integer,intent(in) :: ncid             ! NetCDF file id
 character(len=*),intent(in) :: varname ! Variable name
 integer,intent(in) :: n                ! Integer array size
@@ -95,7 +95,7 @@ subroutine put_att_real(mpl,ncid,varname,var)
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl       ! MPI data
+type(mpl_type),intent(inout) :: mpl    ! MPI data
 integer,intent(in) :: ncid             ! NetCDF file id
 character(len=*),intent(in) :: varname ! Variable name
 real(kind_real),intent(in) :: var      ! Real
@@ -117,7 +117,7 @@ subroutine put_att_real_array(mpl,ncid,varname,n,var)
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl       ! MPI data
+type(mpl_type),intent(inout) :: mpl    ! MPI data
 integer,intent(in) :: ncid             ! NetCDF file id
 character(len=*),intent(in) :: varname ! Variable name
 integer,intent(in) :: n                ! Real array size
@@ -149,7 +149,7 @@ subroutine put_att_logical(mpl,ncid,varname,var)
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl       ! MPI data
+type(mpl_type),intent(inout) :: mpl    ! MPI data
 integer,intent(in) :: ncid             ! NetCDF file id
 character(len=*),intent(in) :: varname ! Variable name
 logical,intent(in) :: var              ! Logical
@@ -175,7 +175,7 @@ subroutine put_att_logical_array(mpl,ncid,varname,n,var)
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl       ! MPI data
+type(mpl_type),intent(inout) :: mpl    ! MPI data
 integer,intent(in) :: ncid             ! NetCDF file id
 character(len=*),intent(in) :: varname ! Variable name
 integer,intent(in) :: n                ! Real array size
@@ -215,7 +215,7 @@ subroutine put_att_string(mpl,ncid,varname,var)
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl       ! MPI data
+type(mpl_type),intent(inout) :: mpl    ! MPI data
 integer,intent(in) :: ncid             ! NetCDF file id
 character(len=*),intent(in) :: varname ! Variable name
 character(len=*),intent(in) :: var     ! String
@@ -237,7 +237,7 @@ subroutine put_att_string_array(mpl,ncid,varname,n,var)
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl       ! MPI data
+type(mpl_type),intent(inout) :: mpl    ! MPI data
 integer,intent(in) :: ncid             ! NetCDF file id
 character(len=*),intent(in) :: varname ! Variable name
 integer,intent(in) :: n                ! String array size

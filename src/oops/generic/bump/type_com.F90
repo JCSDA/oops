@@ -10,7 +10,6 @@ module type_com
 use netcdf
 !$ use omp_lib
 use tools_kinds, only: kind_real
-use tools_missing, only: msi,msr
 use tools_nc, only: ncfloat
 use type_mpl, only: mpl_type
 use fckit_mpi_module, only: fckit_mpi_status
@@ -56,7 +55,7 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: com_dealloc
-! Purpose: communications data deallocation
+! Purpose: release memory
 !----------------------------------------------------------------------
 subroutine com_dealloc(com)
 
@@ -88,7 +87,7 @@ implicit none
 
 ! Passed variables
 class(com_type),intent(in) :: com                ! Communication data
-type(mpl_type),intent(in) :: mpl                 ! MPI data
+type(mpl_type),intent(inout) :: mpl              ! MPI data
 real(kind_real),intent(in) :: vec_red(com%nred)  ! Reduced vector
 real(kind_real),intent(out) :: vec_ext(com%next) ! Extended vector
 
@@ -132,7 +131,7 @@ implicit none
 
 ! Passed variables
 class(com_type),intent(in) :: com                   ! Communication data
-type(mpl_type),intent(in) :: mpl                    ! MPI data
+type(mpl_type),intent(inout) :: mpl                 ! MPI data
 integer,intent(in) :: nl                            ! Number of levels
 real(kind_real),intent(in) :: vec_red(com%nred,nl)  ! Reduced vector
 real(kind_real),intent(out) :: vec_ext(com%next,nl) ! Extended vector
@@ -188,7 +187,7 @@ implicit none
 
 ! Passed variables
 class(com_type),intent(in) :: com                ! Communication data
-type(mpl_type),intent(in) :: mpl                 ! MPI data
+type(mpl_type),intent(inout) :: mpl              ! MPI data
 real(kind_real),intent(in) :: vec_ext(com%next)  ! Extended vector
 real(kind_real),intent(out) :: vec_red(com%nred) ! Reduced vector
 
@@ -242,7 +241,7 @@ implicit none
 
 ! Passed variables
 class(com_type),intent(in) :: com                   ! Communication data
-type(mpl_type),intent(in) :: mpl                    ! MPI data
+type(mpl_type),intent(inout) :: mpl                 ! MPI data
 integer,intent(in) :: nl                            ! Number of levels
 real(kind_real),intent(in) :: vec_ext(com%next,nl)  ! Extended vector
 real(kind_real),intent(out) :: vec_red(com%nred,nl) ! Reduced vector
@@ -305,7 +304,7 @@ implicit none
 
 ! Passed variables
 class(com_type),intent(inout) :: com  ! Communication data
-type(mpl_type),intent(in) :: mpl      ! MPI data
+type(mpl_type),intent(inout) :: mpl   ! MPI data
 integer,intent(in) :: ncid            ! NetCDF file id
 character(len=*),intent(in) :: prefix ! Communication prefix
 
@@ -382,9 +381,9 @@ subroutine com_write(com,mpl,ncid)
 implicit none
 
 ! Passed variables
-class(com_type),intent(in) :: com ! Communication data
-type(mpl_type),intent(in) :: mpl  ! MPI data
-integer,intent(in) :: ncid        ! NetCDF file id
+class(com_type),intent(in) :: com   ! Communication data
+type(mpl_type),intent(inout) :: mpl ! MPI data
+integer,intent(in) :: ncid          ! NetCDF file id
 
 ! Local variables
 integer :: info

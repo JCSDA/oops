@@ -9,7 +9,6 @@ module tools_fit
 
 use tools_func, only: gc99
 use tools_kinds, only: kind_real
-use tools_missing, only: msi,msr,isnotmsi,isnotmsr,isanynotmsr,ismsi,ismsr
 use tools_repro, only: inf,sup
 use type_mpl, only: mpl_type
 
@@ -31,7 +30,7 @@ subroutine fast_fit(mpl,n,iz,dist,raw,fit_r)
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl      ! MPI data
+type(mpl_type),intent(inout) :: mpl   ! MPI data
 integer,intent(in) :: n               ! Vector size
 integer,intent(in) :: iz              ! Zero separation index
 real(kind_real),intent(in) :: dist(n) ! Distance
@@ -50,7 +49,7 @@ if (any(dist<0.0)) call mpl%abort('negative distance in fast_fit')
 if (raw(iz)>0.0) then
    if (n>1) then
       ! Copy points that are lower than the zero-separation
-      call msr(raw_tmp)
+      raw_tmp = mpl%msv%valr
       raw_tmp(iz) = raw(iz)
       do i=1,n
         if (i/=iz) then
@@ -91,11 +90,11 @@ if (raw(iz)>0.0) then
          end if
 
          ! Find support radius, lower value
-         call msr(fit_rm)
+         fit_rm = mpl%msv%valr
          ip = iz
          do di=1,n
             ! Check whether fit value has been found
-            if (ismsr(fit_rm)) then
+            if (mpl%msv%isr(fit_rm)) then
                ! Index
                im = iz-di
 
@@ -117,11 +116,11 @@ if (raw(iz)>0.0) then
          end do
 
          ! Find support radius, upper value
-         call msr(fit_rp)
+         fit_rp = mpl%msv%valr
          im = iz
          do di=1,n
             ! Check whether fit value has been found
-            if (ismsr(fit_rp)) then
+            if (mpl%msv%isr(fit_rp)) then
                ! Index
                ip = iz+di
 
@@ -143,16 +142,16 @@ if (raw(iz)>0.0) then
          end do
 
          ! Gather values
-         if (isnotmsr(fit_rm).and.isnotmsr(fit_rp)) then
+         if (mpl%msv%isnotr(fit_rm).and.mpl%msv%isnotr(fit_rp)) then
             fit_r = 0.5*(fit_rm+fit_rp)
-         elseif (isnotmsr(fit_rm)) then
+         elseif (mpl%msv%isnotr(fit_rm)) then
             fit_r = fit_rm
-         elseif (isnotmsr(fit_rp)) then
+         elseif (mpl%msv%isnotr(fit_rp)) then
             fit_r = fit_rp
          end if
 
          ! Normalize
-         if (isnotmsr(fit_r)) fit_r = fit_r/thinv
+         if (mpl%msv%isnotr(fit_r)) fit_r = fit_r/thinv
 
          ! Check positivity
          if (inf(fit_r,0.0_kind_real)) then
@@ -169,7 +168,7 @@ if (raw(iz)>0.0) then
    end if
 else
    ! Zero-separation point is negative
-   call msr(fit_r)
+   fit_r = mpl%msv%valr
 end if
 
 end subroutine fast_fit
@@ -183,7 +182,7 @@ subroutine ver_smooth(mpl,n,x,rv,profile)
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl            ! MPI data
+type(mpl_type),intent(inout) :: mpl         ! MPI data
 integer,intent(in) :: n                     ! Vector size
 real(kind_real),intent(in) :: x(n)          ! Coordinate
 real(kind_real),intent(in) :: rv            ! Filtering support radius
@@ -195,12 +194,12 @@ real(kind_real) :: kernel(n,n),distnorm,profile_init(n),norm
 
 if (rv<0.0) call mpl%abort('negative filtering support radius in ver_smooth')
 
-if ((rv>0.0).and.isanynotmsr(profile)) then
+if ((rv>0.0).and.mpl%msv%isanynotr(profile)) then
    ! Vertical smoothing kernel
    kernel = 0.0
    do i=1,n
       do j=1,n
-         if (isnotmsr(profile(j))) then
+         if (mpl%msv%isnotr(profile(j))) then
             ! Gaspari-Cohn (1999) function
             distnorm = abs(x(j)-x(i))/rv
             kernel(i,j) = gc99(mpl,distnorm)
@@ -220,7 +219,7 @@ if ((rv>0.0).and.isanynotmsr(profile)) then
       if (norm>0.0) then
          profile(i) = profile(i)/norm
       else
-         call msr(profile(i))
+         profile(i) = mpl%msv%valr
       end if
    end do
 end if
@@ -236,7 +235,7 @@ subroutine ver_fill(mpl,n,x,profile)
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl            ! MPI data
+type(mpl_type),intent(inout) :: mpl         ! MPI data
 integer,intent(in) :: n                     ! Vector size
 real(kind_real),intent(in) :: x(n)          ! Coordinate
 real(kind_real),intent(inout) :: profile(n) ! Vertical profile
@@ -245,31 +244,31 @@ real(kind_real),intent(inout) :: profile(n) ! Vertical profile
 integer :: i,j,iinf,isup
 real(kind_real) :: profile_init(n)
 
-if (isanynotmsr(profile)) then
+if (mpl%msv%isanynotr(profile)) then
    ! Initialization
    profile_init = profile
-   call msi(iinf)
+   iinf = mpl%msv%vali
 
    do i=1,n
-      if (isnotmsr(profile_init(i))) then
+      if (mpl%msv%isnotr(profile_init(i))) then
          ! Valid inferior point
          iinf = i
       else
          ! Look for a superior point
-         call msi(isup)
+         isup = mpl%msv%vali
          j = i+1
-         do while ((j<=n).and.(ismsi(isup)))
-            if (isnotmsr(profile_init(j))) isup = j
+         do while ((j<=n).and.(mpl%msv%isi(isup)))
+            if (mpl%msv%isnotr(profile_init(j))) isup = j
             j = j+1
          end do
 
-         if (isnotmsi(iinf).and.isnotmsi(isup)) then
+         if (mpl%msv%isnoti(iinf).and.mpl%msv%isnoti(isup)) then
             ! Interpolation
             profile(i) = profile_init(iinf)+(x(i)-x(iinf))*(profile_init(isup)-profile_init(iinf))/(x(isup)-x(iinf))
-         elseif (isnotmsi(isup)) then
+         elseif (mpl%msv%isnoti(isup)) then
             ! Extrapolation with nearest superior point
             profile(i) = profile(isup)
-         elseif (isnotmsi(iinf)) then
+         elseif (mpl%msv%isnoti(iinf)) then
             ! Extrapolation with nearest inferior point
             profile(i) = profile(iinf)
          else
