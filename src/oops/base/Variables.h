@@ -25,19 +25,26 @@ class Variables : public util::Printable {
  public:
   static const std::string classname() {return "oops::Variables";}
 
+  Variables();
   explicit Variables(const eckit::Configuration &);
   explicit Variables(const std::vector<std::string> &, const std::string & conv = "");
 
   ~Variables();
 
   Variables(const Variables &);
+  Variables & operator+=(const Variables &);
 
+  size_t size() const {return vars_.size();}
+  const std::string & operator[](const size_t kk) const {return vars_.at(kk);}
+
+  bool has(const std::string &) const;
   const std::vector<std::string> & variables() const {return vars_;}
   const eckit::Configuration & toFortran() const {return fconf_;}  // to be removed
   const eckit::Configuration * toFortranBetter() const {return &conf_;}
 
  private:
   void print(std::ostream &) const;
+  void setConf();
 
   std::string convention_;
   std::vector<std::string> vars_;

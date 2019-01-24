@@ -14,6 +14,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 
+#include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsVector.h"
@@ -38,6 +39,8 @@ class ObsFilterBase : public util::Printable,
 
   virtual void priorFilter(const GeoVaLs_ &) const = 0;
   virtual void postFilter(const ObsVector_ &) const = 0;
+
+  virtual const Variables & requiredGeoVaLs() const = 0;
 
  private:
   virtual void print(std::ostream &) const = 0;

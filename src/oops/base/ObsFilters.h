@@ -15,6 +15,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/ObsFilterBase.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsVector.h"
@@ -42,16 +43,19 @@ class ObsFilters : public util::Printable {
   void priorFilter(const GeoVaLs_ &) const;
   void postFilter(const ObsVector_ &) const;
 
+  const Variables & requiredGeoVaLs() const {return geovars_;}
+
  private:
   void print(std::ostream &) const;
   std::vector< boost::shared_ptr<ObsFilterBase_> > filters_;
+  Variables geovars_;
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
 ObsFilters<MODEL>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration & conf,
-                              const Variables & observed) : filters_() {
+                              const Variables & observed) : filters_(), geovars_() {
 // Prepare storage for QC flags using PreQC filter (all work done in filter constructor)
   const std::string qcname(conf.getString("QCname", ""));
   if (!qcname.empty()) {  // ie only if there are QC filters
@@ -68,19 +72,22 @@ ObsFilters<MODEL>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration &
   for (std::size_t jj = 0; jj < confs.size(); ++jj) {
     if (!qcname.empty()) confs[jj].set("QCname", qcname);
     confs[jj].set("observed", observed.variables());
-    filters_.push_back(FilterFactory<MODEL>::create(os, confs[jj]));
+    boost::shared_ptr<ObsFilterBase_> tmp(FilterFactory<MODEL>::create(os, confs[jj]));
+    geovars_ += tmp->requiredGeoVaLs();
+    filters_.push_back(tmp);
   }
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-ObsFilters<MODEL>::ObsFilters(): filters_() {}
+ObsFilters<MODEL>::ObsFilters(): filters_(), geovars_() {}
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-ObsFilters<MODEL>::ObsFilters(const ObsFilters & other): filters_(other.filters_) {}
+ObsFilters<MODEL>::ObsFilters(const ObsFilters & other)
+  : filters_(other.filters_), geovars_(other.geovars_) {}
 
 // -----------------------------------------------------------------------------
 

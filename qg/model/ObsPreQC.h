@@ -11,6 +11,7 @@
 #include <ostream>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/base/Variables.h"
 #include "oops/util/Printable.h"
 
 namespace qg {
@@ -26,8 +27,11 @@ class ObsPreQC : public util::Printable {
   void priorFilter(const GomQG &) const {}
   void postFilter(const ObsVecQG &) const {}
 
+  const oops::Variables & requiredGeoVaLs() const {return novars_;}
+
  private:
   void print(std::ostream &) const {}
+  const oops::Variables novars_;
 };
 
 }  // namespace qg

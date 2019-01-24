@@ -15,6 +15,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/ObsFilterBase.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsVector.h"
@@ -37,8 +38,10 @@ class ObsFilter : public ObsFilterBase<MODEL> {
   ObsFilter(const ObsSpace_ &, const eckit::Configuration &);
   ~ObsFilter();
 
-  void priorFilter(const GeoVaLs_ &) const;
-  void postFilter(const ObsVector_ &) const;
+  void priorFilter(const GeoVaLs_ &) const override;
+  void postFilter(const ObsVector_ &) const override;
+
+  const Variables & requiredGeoVaLs() const override;
 
  private:
   void print(std::ostream &) const override;
@@ -87,6 +90,14 @@ void ObsFilter<MODEL, FILTER>::postFilter(const ObsVector_ & ov) const {
   util::Timer timer(classname(), "ObsFilter");
   ofilt_->postFilter(ov.obsvector());
   Log::trace() << "ObsFilter<MODEL, FILTER>::postFilter done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename FILTER>
+const Variables & ObsFilter<MODEL, FILTER>::requiredGeoVaLs() const {
+  Log::trace() << "ObsFilter::requiredGeoVaLs" << std::endl;
+  return ofilt_->requiredGeoVaLs();
 }
 
 // -----------------------------------------------------------------------------

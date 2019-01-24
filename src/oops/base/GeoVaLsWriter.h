@@ -10,6 +10,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/ObsFilterBase.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsVector.h"
@@ -27,7 +28,7 @@ class GeoVaLsWriter : public ObsFilterBase<MODEL> {
   typedef ObsVector<MODEL>           ObsVector_;
 
  public:
-  GeoVaLsWriter(const ObsSpace_ &, const eckit::Configuration & conf) : conf_(conf) {}
+  GeoVaLsWriter(const ObsSpace_ &, const eckit::Configuration & conf): conf_(conf), geovars_() {}
   ~GeoVaLsWriter() {}
 
   void priorFilter(const GeoVaLs_ & gv) const override {
@@ -38,8 +39,11 @@ class GeoVaLsWriter : public ObsFilterBase<MODEL> {
 
   void postFilter(const ObsVector_ &) const override {}
 
+  const Variables & requiredGeoVaLs() const override {return geovars_;};
+
  private:
   const eckit::LocalConfiguration conf_;
+  const Variables geovars_;  // could be used to determine what needs saving
   void print(std::ostream &) const override;
 };
 

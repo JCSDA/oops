@@ -23,7 +23,7 @@ static oops::FilterMaker<L95Traits, oops::ObsFilter<L95Traits, ObsPreQC> >
   makerPreChk_("PreQC");
 // -----------------------------------------------------------------------------
 
-ObsPreQC::ObsPreQC(ObsTable & obsdb, const eckit::Configuration & config) {
+ObsPreQC::ObsPreQC(ObsTable & obsdb, const eckit::Configuration & config): novars_() {
   const std::string qcname(config.getString("QCname"));
   const oops::Variables var(config.getStringVector("observed"));
   ObsVec1D qc(obsdb, var);

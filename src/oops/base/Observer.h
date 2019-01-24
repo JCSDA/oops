@@ -22,6 +22,7 @@
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/InterpolatorTraj.h"
 #include "oops/interface/ObsAuxControl.h"
@@ -83,8 +84,10 @@ class Observer : public util::Printable, public PostBase<STATE> {
   util::Duration hslot_;    //!< Half time slot
   const bool subwindows_;
 
-  std::vector<boost::shared_ptr<GeoVaLs_> > gvals_;
   std::vector<ObsFilters_> filters_;
+
+  std::vector<Variables> geovars_;  // Variables needed from model (through geovals)
+  std::vector<boost::shared_ptr<GeoVaLs_> > gvals_;
 };
 
 // -----------------------------------------------------------------------------
@@ -99,9 +102,17 @@ Observer<MODEL, STATE>::Observer(const ObsSpaces_ & obsdb,
     yobs_(new Observations_(obsdb, hop_)), ybias_(ybias),
     winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
     bgn_(winbgn_), end_(winend_), hslot_(tslot/2), subwindows_(swin),
-    gvals_(0), filters_(filters)
+    filters_(filters), geovars_(hop_.size()), gvals_(0)
 {
-  Log::trace() << "Observer::Observer" << std::endl;
+  Log::trace() << "Observer::Observer starting" << std::endl;
+  ASSERT(filters_.size() == hop_.size());
+
+  for (size_t jj = 0; jj < hop_.size(); ++jj) {
+    geovars_[jj] += hop_[jj].variables();
+    geovars_[jj] += filters_[jj].requiredGeoVaLs();
+  }
+
+  Log::trace() << "Observer::Observer done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -126,8 +137,7 @@ void Observer<MODEL, STATE>::doInitialize(const STATE & xx,
   if (end_ > winend_) end_ = winend_;
 
   for (size_t jj = 0; jj < hop_.size(); ++jj) {
-    boost::shared_ptr<GeoVaLs_> tmp(new GeoVaLs_(hop_[jj].locations(bgn_, end_),
-                                                 hop_[jj].variables()));
+    boost::shared_ptr<GeoVaLs_> tmp(new GeoVaLs_(hop_[jj].locations(bgn_, end_), geovars_[jj]));
     gvals_.push_back(tmp);
   }
   Log::trace() << "Observer::doInitialize done" << std::endl;
@@ -145,7 +155,7 @@ void Observer<MODEL, STATE>::doProcessing(const STATE & xx) {
 
 // Get state variables at obs locations
   for (size_t jj = 0; jj < hop_.size(); ++jj) {
-    xx.getValues(hop_[jj].locations(t1, t2), hop_[jj].variables(), *gvals_.at(jj));
+    xx.getValues(hop_[jj].locations(t1, t2), geovars_[jj], *gvals_.at(jj));
   }
   Log::trace() << "Observer::doProcessing done" << std::endl;
 }
@@ -162,7 +172,7 @@ void Observer<MODEL, STATE>::processTraj(const STATE & xx, vspit & traj) const {
 
 // Get state variables at obs locations and trajectory
   for (size_t jj = 0; jj < hop_.size(); ++jj) {
-    xx.getValues(hop_[jj].locations(t1, t2), hop_[jj].variables(), *gvals_.at(jj),
+    xx.getValues(hop_[jj].locations(t1, t2), geovars_[jj], *gvals_.at(jj),
                  *traj.at(jj));
   }
   Log::trace() << "Observer::processTraj done" << std::endl;
