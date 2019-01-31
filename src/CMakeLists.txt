@@ -216,6 +216,7 @@ oops/parallel/mpi/mpi.h
 oops/parallel/mpi/mpi.cc
 
 oops/runs/Application.h
+oops/runs/ConvertState.h
 oops/runs/Dirac.h
 oops/runs/EnsForecasts.h
 oops/runs/EnsHofX.h

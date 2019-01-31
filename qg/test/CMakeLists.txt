@@ -40,6 +40,7 @@ list( APPEND qg_test_input
   testinput/test_op_obs.yaml
   testinput/analytic_init_fc.yaml
   testinput/static_binit.yml
+  testinput/convertstate.yaml
 )
 
 list( APPEND qg_testoutput
@@ -537,3 +538,7 @@ ecbuild_add_test( TARGET test_qg_4dvar_eda
                   ARGS testinput/4dvar.eda.pertobs.yaml
                   DEPENDS qg_eda.x )
 
+ecbuild_add_test( TARGET test_qg_convertstate
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_convertstate.x
+                  ARGS testinput/convertstate.yaml
+                  DEPENDS qg_convertstate.x )

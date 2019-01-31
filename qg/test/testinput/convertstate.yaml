@@ -1,0 +1,17 @@
+inputresolution:
+  bc: '1'
+  nx: '40'
+  ny: '20'
+outputresolution:
+  bc: '1'
+  nx: '40'
+  ny: '20'
+input:
+  date: '2010-01-01T09:00:00Z'
+  filename: Data/example.fc.2009-12-31T00:00:00Z.P1DT9H
+  variables: ["x","bc"]
+output:
+  date: '2010-01-01T09:00:00Z'
+  datadir: Data
+  exp: convert
+  type: fc
