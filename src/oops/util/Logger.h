@@ -19,10 +19,10 @@ namespace oops {
 // -----------------------------------------------------------------------------
 
 struct Log {
-  static std::ostream& info()    { return eckit::Log::info(); }
-  static std::ostream& error()   { return eckit::Log::error(); }
-  static std::ostream& warning() { return eckit::Log::warning(); }
-  static std::ostream& debug()   { return eckit::Log::debug<LibOOPS>(); }
+  static std::ostream& info()    {return LibOOPS::instance().infoChannel();}
+  static std::ostream& error()   {return eckit::Log::error();}
+  static std::ostream& warning() {return eckit::Log::warning();}
+  static std::ostream& debug()   {return LibOOPS::instance().debugChannel();}
 
 // Following are non-default to eckit. They wrap eckit::Log::info() with additional prefix
   static std::ostream& trace() {return LibOOPS::instance().traceChannel();}  // prefix "OOPS_TRACE"

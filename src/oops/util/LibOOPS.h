@@ -15,6 +15,7 @@
 #ifndef OOPS_UTIL_LIBOOPS_H_
 #define OOPS_UTIL_LIBOOPS_H_
 
+#include <memory>
 #include <string>
 #include "eckit/system/Library.h"
 
@@ -30,10 +31,11 @@ class LibOOPS : public eckit::system::Library {
 
   static LibOOPS& instance();
 
+  virtual eckit::Channel& infoChannel() const;
+  eckit::Channel& debugChannel() const override;
+
   virtual eckit::Channel& traceChannel() const;
-
   virtual eckit::Channel& statsChannel() const;
-
   virtual eckit::Channel& testChannel() const;
 
   void finalise();
@@ -45,13 +47,18 @@ class LibOOPS : public eckit::system::Library {
 
   virtual std::string gitsha1(unsigned int count) const;
 
-  mutable eckit::ScopedPtr<eckit::Channel> traceChannel_;
+  mutable std::unique_ptr<eckit::Channel> infoChannel_;
+  mutable std::unique_ptr<eckit::Channel> debugChannel_;
 
-  mutable eckit::ScopedPtr<eckit::Channel> statsChannel_;
+  mutable std::unique_ptr<eckit::Channel> traceChannel_;
+  mutable std::unique_ptr<eckit::Channel> statsChannel_;
+  mutable std::unique_ptr<eckit::Channel> testChannel_;
 
-  mutable eckit::ScopedPtr<eckit::Channel> testChannel_;
-
+  size_t rank_;
+  bool debug_;
+  std::string predebug_;
   bool trace_;
+  std::string pretrace_;
 };
 
 // -----------------------------------------------------------------------------

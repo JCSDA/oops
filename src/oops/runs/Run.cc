@@ -52,6 +52,9 @@ Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(
 
 Run::~Run() {
   LibOOPS::instance().finalise();
+// This is included to address a bug in OpenMPI on Mac OS (seen for version 3.1.1)
+// see ECKIT issue 166
+  eckit::mpi::finaliseAllComms();
 }
 
 // -----------------------------------------------------------------------------
