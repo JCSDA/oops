@@ -426,7 +426,7 @@ end subroutine rng_rand_gau_5d
 ! Subroutine: rng_initialize_sampling
 ! Purpose: intialize sampling
 !----------------------------------------------------------------------
-subroutine rng_initialize_sampling(rng,mpl,n,lon,lat,mask,rh,ntry,nrep,ns,ihor,fast)
+subroutine rng_initialize_sampling(rng,mpl,n,lon,lat,mask,nb,bnd,rh,ntry,nrep,ns,ihor,fast)
 
 implicit none
 
@@ -437,6 +437,8 @@ integer,intent(in) :: n              ! Number of points
 real(kind_real),intent(in) :: lon(n) ! Longitudes
 real(kind_real),intent(in) :: lat(n) ! Latitudes
 logical,intent(in) :: mask(n)        ! Mask
+integer,intent(in) :: nb             ! Number of boundary nodes (automatically included into the subsampling)
+integer,intent(in) :: bnd(nb)        ! Boundary nodes indices
 real(kind_real),intent(in) :: rh(n)  ! Horizontal support radius
 integer,intent(in) :: ntry           ! Number of tries
 integer,intent(in) :: nrep           ! Number of replacements
@@ -446,7 +448,7 @@ logical,intent(in),optional :: fast  ! Fast sampling flag
 
 ! Local variables
 integer :: system_clock_start,system_clock_end,count_rate,count_max
-integer :: is,js,i,irep,irmax,itry,irval,irvalmin,irvalmax,i_red,ir,ismin,nval,nrep_eff,nn_index(2)
+integer :: is,js,ib,i,irep,irmax,itry,irval,irvalmin,irvalmax,i_red,ir,ismin,nval,nrep_eff,nn_index(2)
 integer,allocatable :: val_to_full(:),ihor_tmp(:)
 real(kind_real) :: elapsed
 real(kind_real) :: d,distmax,distmin,nn_dist(2)
@@ -477,6 +479,8 @@ if (mpl%main) then
          end if
       end do
    else
+      if (ns<nb) call mpl%abort('ns lower than the number of boundary nodes')
+
       if (nn_stats) then
          ! Save initial time
          call system_clock(count=system_clock_start)
@@ -486,11 +490,13 @@ if (mpl%main) then
       nrep_eff = min(nrep,n-ns)
       allocate(ihor_tmp(ns+nrep_eff))
       allocate(lmask(n))
+      allocate(smask(n))
       allocate(val_to_full(nval))
 
       ! Initialization
       ihor_tmp = mpl%msv%vali
       lmask = mask
+      smask = .false.
       val_to_full = mpl%msv%vali
       i_red = 0
       do i=1,n
@@ -502,6 +508,25 @@ if (mpl%main) then
       call mpl%prog_init(ns+nrep_eff)
       lfast = .false.
       if (present(fast)) lfast = fast
+
+      ! Boundary nodes
+      do ib=1,nb
+         ! Find boundary node in the valid points vector
+         ir = bnd(ib)
+         do i=1,nval
+            if (val_to_full(i)==ir) then
+               irval = i
+               exit
+            end if
+         end do
+         ihor_tmp(ib) = ir
+         lmask(ir) = .false.
+         smask(ir) = .true.
+
+         ! Shift valid points array
+         if (irval<nval) val_to_full(irval:nval-1) = val_to_full(irval+1:nval)
+         nval = nval-1
+      end do
 
       if (lfast) then
          ! Allocation
@@ -516,7 +541,7 @@ if (mpl%main) then
          cdf_norm = 1.0/cdf(nval)
          cdf(1:nval) = cdf(1:nval)*cdf_norm
 
-         do is=1,ns+nrep
+         do is=1+nb,ns+nrep
             ! Generate random number
             call rng%rand_real(0.0_kind_real,1.0_kind_real,rr)
 
@@ -556,14 +581,8 @@ if (mpl%main) then
          ! Release memory
          deallocate(cdf)
       else
-         ! Allocation
-         allocate(smask(n))
-
-         ! Initialization
-         smask = .false.
-
          ! Define sampling with KD-tree
-         do is=1,ns+nrep_eff
+         do is=1+nb,ns+nrep_eff
             if (is>2) then
                ! Allocation
                call kdtree%alloc(mpl,n,mask=smask)
@@ -661,7 +680,7 @@ if (mpl%main) then
             call kdtree%init(mpl,lon_rep,lat_rep,sort=.false.)
 
             ! Get minimum distance
-            do is=1,ns+nrep_eff
+            do is=1+nb,ns+nrep_eff
                if (rmask(is)) then
                   ! Find nearest neighbor distance
                   call kdtree%find_nearest_neighbors(mpl,lon(ihor_tmp(is)),lat(ihor_tmp(is)),2,nn_index,nn_dist)
@@ -682,7 +701,7 @@ if (mpl%main) then
             ! Remove worst point
             distmin = huge(1.0)
             ismin = mpl%msv%vali
-            do is=1,ns+nrep_eff
+            do is=1+nb,ns+nrep_eff
                if (rmask(is)) then
                   if (inf(dist(is),distmin)) then
                      ismin = is

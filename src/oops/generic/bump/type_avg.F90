@@ -168,11 +168,9 @@ npack = 0
 do ib=1,bpar%nb
    if (bpar%diag_block(ib)) then
       do ic2=0,nam%nc2
-         if ((ic2==0).or.(nam%var_diag)) then
+         if ((ic2==0).or.nam%local_diag) then
             npack = npack+geom%nl0
             if (nam%var_filter.and.(.not.nam%gau_approx)) npack = npack+geom%nl0
-         end if
-         if ((ic2==0).or.(nam%local_diag)) then
             npack = npack+(4+2*avg%blk(ic2,ib)%nsub**2)*bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0
             if (.not.nam%gau_approx) npack = npack+avg%blk(ic2,ib)%nsub*bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0
          end if
@@ -190,15 +188,13 @@ sbuf = 0.0
 do ib=1,bpar%nb
    if (bpar%diag_block(ib)) then
       do ic2=0,nam%nc2
-         if ((ic2==0).or.(nam%var_diag)) then
+         if ((ic2==0).or.nam%local_diag) then
             sbuf(offset+1:offset+geom%nl0) = pack(avg%blk(ic2,ib)%m2,.true.)
             offset = offset+geom%nl0
             if (nam%var_filter.and.(.not.nam%gau_approx)) then
-               sbuf(offset+1:offset+geom%nl0) = pack(avg%blk(ic2,ib)%m4,.true.)
+              sbuf(offset+1:offset+geom%nl0) = pack(avg%blk(ic2,ib)%m4,.true.)
                offset = offset+geom%nl0
             end if
-         end if
-         if ((ic2==0).or.(nam%local_diag)) then
             sbuf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0) = pack(avg%blk(ic2,ib)%nc1a,.true.)
             offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0
             sbuf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0) = pack(avg%blk(ic2,ib)%m11,.true.)
@@ -239,16 +235,14 @@ do ib=1,bpar%nb
 
       do ic2=0,nam%nc2
          ! Unpack
-         if ((ic2==0).or.(nam%var_diag)) then
+         if ((ic2==0).or.nam%local_diag) then
             avg%blk(ic2,ib)%m2 = unpack(rbuf(offset+1:offset+geom%nl0),mask_1(1,1,:,:),avg%blk(ic2,ib)%m2)
             offset = offset+geom%nl0
             if (nam%var_filter.and.(.not.nam%gau_approx)) then
                avg%blk(ic2,ib)%m4 = unpack(rbuf(offset+1:offset+geom%nl0),mask_1(1,1,:,:),avg%blk(ic2,ib)%m4)
                offset = offset+geom%nl0
             end if
-         end if
-         if ((ic2==0).or.(nam%local_diag)) then
-            avg%blk(ic2,ib)%nc1a = unpack(rbuf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0),mask_0,avg%blk(ic2,ib)%m11)
+            avg%blk(ic2,ib)%nc1a = unpack(rbuf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0),mask_0,avg%blk(ic2,ib)%nc1a)
             offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0
             avg%blk(ic2,ib)%m11 = unpack(rbuf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0),mask_0,avg%blk(ic2,ib)%m11)
             offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0
@@ -303,12 +297,12 @@ real(kind_real) :: norm
 do ib=1,bpar%nb
    if (bpar%diag_block(ib)) then
       do ic2=0,nam%nc2
-         if ((ic2==0).or.(nam%local_diag)) then
+         if ((ic2==0).or.nam%local_diag) then
             !$omp parallel do schedule(static) private(il0,jl0r,jc3,isub,jsub,norm)
             do il0=1,geom%nl0
                do jl0r=1,bpar%nl0r(ib)
                   do jc3=1,bpar%nc3(ib)
-                     if (avg%blk(ic2,ib)%nc1a(jc3,jl0r,il0)>0.0) then
+                     if (avg%blk(ic2,ib)%nc1a(jc3,jl0r,il0)>0.5) then
                         norm = 1.0/avg%blk(ic2,ib)%nc1a(jc3,jl0r,il0)
                         avg%blk(ic2,ib)%m11(jc3,jl0r,il0) = avg%blk(ic2,ib)%m11(jc3,jl0r,il0)*norm
                         do isub=1,avg%blk(ic2,ib)%nsub
@@ -371,7 +365,7 @@ npack = 0
 do ib=1,bpar%nb
    if (bpar%diag_block(ib)) then
       do ic2=0,nam%nc2
-         if ((ic2==0).or.(nam%local_diag)) npack = npack+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg_lr%blk(ic2,ib)%nsub**2
+         if ((ic2==0).or.nam%local_diag) npack = npack+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg_lr%blk(ic2,ib)%nsub**2
       end do
    end if
 end do
@@ -386,7 +380,7 @@ sbuf = 0.0
 do ib=1,bpar%nb
    if (bpar%diag_block(ib)) then
       do ic2=0,nam%nc2
-         if ((ic2==0).or.(nam%local_diag)) then
+         if ((ic2==0).or.nam%local_diag) then
             sbuf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg_lr%blk(ic2,ib)%nsub**2) = &
           & pack(avg_lr%blk(ic2,ib)%m11lrm11sub,.true.)
             offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg_lr%blk(ic2,ib)%nsub**2
@@ -410,7 +404,7 @@ do ib=1,bpar%nb
 
       do ic2=0,nam%nc2
          ! Unpack
-         if ((ic2==0).or.(nam%local_diag)) then
+         if ((ic2==0).or.nam%local_diag) then
             avg_lr%blk(ic2,ib)%m11lrm11sub = unpack(rbuf(offset+1:offset+bpar%nc3(ib)*bpar%nl0r(ib)* &
                                            & geom%nl0*avg_lr%blk(ic2,ib)%nsub**2),mask_unpack,avg_lr%blk(ic2,ib)%m11lrm11sub)
             offset = offset+bpar%nc3(ib)*bpar%nl0r(ib)*geom%nl0*avg_lr%blk(ic2,ib)%nsub**2
@@ -447,7 +441,7 @@ real(kind_real) :: norm
 do ib=1,bpar%nb
    if (bpar%diag_block(ib)) then
       do ic2=0,nam%nc2
-         if ((ic2==0).or.(nam%local_diag)) then
+         if ((ic2==0).or.nam%local_diag) then
             !$omp parallel do schedule(static) private(il0,jl0r,jc3,isub,jsub,norm)
             do il0=1,geom%nl0
                do jl0r=1,bpar%nl0r(ib)
@@ -816,7 +810,8 @@ type(avg_type),intent(in) :: avg_wgt ! Averaged statistics for weights
 ! Local variables
 integer :: ib,ic2,il0,jl0r,jc3
 real(kind_real) :: bwgtsq
-real(kind_real) :: cor(nam%nc3,bpar%nl0rmax,geom%nl0),m11asysq(nam%nc3,bpar%nl0rmax,geom%nl0),m11sq(nam%nc3,bpar%nl0rmax,geom%nl0)
+real(kind_real) :: cor(nam%nc3,bpar%nl0rmax,geom%nl0),nc1a_cor(nam%nc3,bpar%nl0rmax,geom%nl0)
+real(kind_real) :: m11asysq(nam%nc3,bpar%nl0rmax,geom%nl0),m11sq(nam%nc3,bpar%nl0rmax,geom%nl0)
 real(kind_real),allocatable :: m11sta(:,:,:),stasq(:,:,:)
 real(kind_real),allocatable :: m11lrm11(:,:,:),m11lrm11asy(:,:,:)
 
@@ -830,10 +825,9 @@ case ('dual-ens')
    allocate(m11lrm11asy(nam%nc3,bpar%nl0rmax,geom%nl0))
 end select
 
+! Initialization
 write(mpl%info,'(a10,a,a,a)') '','Block ',trim(bpar%blockname(bpar%nbe)),':'
 call mpl%flush(.false.)
-
-! Initialization
 call mpl%prog_init(nam%nc2+1)
 
 do ic2=0,nam%nc2
@@ -841,10 +835,21 @@ do ic2=0,nam%nc2
    avg%blk(ic2,bpar%nbe)%ne = avg%blk(ic2,1)%ne
    avg%blk(ic2,bpar%nbe)%nsub = avg%blk(ic2,1)%nsub
 
-   if ((ic2==0).or.(nam%local_diag)) then
+   if ((ic2==0).or.nam%local_diag) then
       ! Initialization
+      if (nam%var_filter) then
+         avg%blk(ic2,bpar%nbe)%m2flt = 1.0
+      else
+         avg%blk(ic2,bpar%nbe)%m2 = 1.0
+      end if
       avg%blk(ic2,bpar%nbe)%cor = 0.0
       cor = 0.0
+      if (ic2==0) then
+         avg%blk(ic2,bpar%nbe)%nc1a_cor = 0.0
+         nc1a_cor = 0.0
+      else
+         avg%blk(ic2,bpar%nbe)%nc1a_cor = mpl%msv%valr
+      end if
       avg%blk(ic2,bpar%nbe)%m11asysq = 0.0
       m11asysq = 0.0
       avg%blk(ic2,bpar%nbe)%m11sq = 0.0
@@ -878,6 +883,8 @@ do ic2=0,nam%nc2
                   ! Compute sum
                   do jc3=1,nam%nc3
                      call add(mpl,avg%blk(ic2,ib)%cor(jc3,jl0r,il0),avg%blk(ic2,bpar%nbe)%cor(jc3,jl0r,il0),cor(jc3,jl0r,il0))
+                     if (ic2==0)call add(mpl,avg%blk(ic2,ib)%nc1a_cor(jc3,jl0r,il0),avg%blk(ic2,bpar%nbe)%nc1a_cor(jc3,jl0r,il0), &
+                   & nc1a_cor(jc3,jl0r,il0))
                      call add(mpl,avg%blk(ic2,ib)%m11asysq(jc3,jl0r,il0),avg%blk(ic2,bpar%nbe)%m11asysq(jc3,jl0r,il0), &
                    & m11asysq(jc3,jl0r,il0),bwgtsq)
                      call add(mpl,avg%blk(ic2,ib)%m11sq(jc3,jl0r,il0),avg%blk(ic2,bpar%nbe)%m11sq(jc3,jl0r,il0), &
@@ -907,6 +914,7 @@ do ic2=0,nam%nc2
          do jl0r=1,bpar%nl0r(ib)
             do jc3=1,nam%nc3
                call divide(mpl,avg%blk(ic2,bpar%nbe)%cor(jc3,jl0r,il0),cor(jc3,jl0r,il0))
+               if (ic2==0) call divide(mpl,avg%blk(ic2,bpar%nbe)%nc1a_cor(jc3,jl0r,il0),nc1a_cor(jc3,jl0r,il0))
                call divide(mpl,avg%blk(ic2,bpar%nbe)%m11asysq(jc3,jl0r,il0),m11asysq(jc3,jl0r,il0))
                call divide(mpl,avg%blk(ic2,bpar%nbe)%m11sq(jc3,jl0r,il0),m11sq(jc3,jl0r,il0))
                select case (trim(nam%method))

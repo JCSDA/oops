@@ -40,7 +40,7 @@ real(kind_real),intent(out) :: fit_r  ! Fast fit result
 ! Local variables
 integer :: di,i,im,ip,iter
 real(kind_real) :: th,thinv,dthinv,thtest
-real(kind_real) :: fit_rm,fit_rp
+real(kind_real) :: fit_rm,fit_rp,distmin
 real(kind_real) :: raw_tmp(n)
 logical :: valid
 
@@ -162,6 +162,12 @@ if (raw(iz)>0.0) then
          ! Only the zero-separation point is valid, zero radius
          fit_r = 0.0
       end if
+
+      ! Set minimum distance
+      distmin = huge(1.0)
+      if (iz>1) distmin = min(distmin,abs(dist(iz-1)-dist(iz)))
+      if (iz<n) distmin = min(distmin,abs(dist(iz+1)-dist(iz)))
+      fit_r = max(fit_r,distmin)
    else
       ! Only one point, zero radius
       fit_r = 0.0

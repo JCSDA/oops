@@ -40,7 +40,7 @@ logging:
   categories: Info, Test, Warning, Error
 lsqrt: 1
 mask_type: none
-method: cor
+method: cov
 minim_algo: hooke
 mpicom: 2
 nc1: 400

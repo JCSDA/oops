@@ -112,6 +112,7 @@ contains
    procedure :: init => geom_init
    procedure :: define_dirac => geom_define_dirac
    procedure :: define_distribution => geom_define_distribution
+   procedure :: reorder_points => geom_reorder_points
    procedure :: check_arc => geom_check_arc
    procedure :: copy_c0a_to_mga => geom_copy_c0a_to_mga
    procedure :: copy_mga_to_c0a => geom_copy_mga_to_c0a
@@ -226,7 +227,6 @@ logical,intent(in) :: lmask(nmga,nl0)         ! Mask
 
 ! Local variables
 integer :: ic0,ic0a,il0,offset,iproc,img,imga
-integer,allocatable :: order(:),order_inv(:)
 real(kind_real),allocatable :: lon_mg(:),lat_mg(:),area_mg(:),vunit_mg(:,:),list(:)
 logical,allocatable :: lmask_mg(:,:)
 type(fckit_mpi_status) :: status
@@ -316,8 +316,6 @@ call geom%find_sc0(mpl,rng,lon_mg,lat_mg,lmask_mg,.true.,nam%mask_check,.false.)
 call geom%alloc
 allocate(geom%proc_to_nc0a(mpl%nproc))
 allocate(list(geom%nc0))
-allocate(order(geom%nc0))
-allocate(order_inv(geom%nc0))
 
 ! Model grid conversions and Sc0 size on halo A
 img = 0
@@ -376,37 +374,8 @@ do il0=1,geom%nl0
    geom%mask_c0(:,il0) = lmask_mg(geom%c0_to_mg,il0)
 end do
 
-! Reorder points based on lon/lat
-do ic0=1,geom%nc0
-   list(ic0) = aint(abs(geom%lon(ic0))*1.0e6)+abs(geom%lat(ic0))*1.0e-1
-   if (geom%lon(ic0)<0.0) list(ic0) = list(ic0)+2.0e7
-   if (geom%lat(ic0)<0.0) list(ic0) = list(ic0)+1.0e7
-end do
-call qsort(geom%nc0,list,order)
-do ic0=1,geom%nc0
-   order_inv(order(ic0)) = ic0
-end do
-geom%c0_to_proc = geom%c0_to_proc(order)
-geom%c0_to_c0a = geom%c0_to_c0a(order)
-geom%c0a_to_c0 = order_inv(geom%c0a_to_c0)
-geom%lon = geom%lon(order)
-geom%lat = geom%lat(order)
-do il0=1,geom%nl0
-   geom%vunit(:,il0) = geom%vunit(order,il0)
-   geom%mask_c0(:,il0) = geom%mask_c0(order,il0)
-end do
-geom%c0_to_mg = geom%c0_to_mg(order)
-geom%mg_to_c0 = order_inv(geom%mg_to_c0)
-geom%mga_to_c0 = order_inv(geom%mga_to_c0)
-
-! Other masks
-allocate(geom%mask_c0a(geom%nc0a,geom%nl0))
-allocate(geom%mask_hor_c0a(geom%nc0a))
-geom%mask_c0a = geom%mask_c0(geom%c0a_to_c0,:)
-geom%mask_hor_c0 = any(geom%mask_c0,dim=2)
-geom%mask_hor_c0a = geom%mask_hor_c0(geom%c0a_to_c0)
-geom%mask_ver_c0 = any(geom%mask_c0,dim=1)
-geom%nc0_mask = count(geom%mask_c0,dim=1)
+! Reorder Sc0 points
+call geom%reorder_points
 
 ! Setup redundant points communication
 call geom%com_mg%setup(mpl,'com_mg',geom%nc0,geom%nc0a,geom%nmga,geom%mga_to_c0,geom%c0a_to_mga,geom%c0_to_proc,geom%c0_to_c0a)
@@ -418,8 +387,6 @@ deallocate(area_mg)
 deallocate(vunit_mg)
 deallocate(lmask_mg)
 deallocate(list)
-deallocate(order)
-deallocate(order_inv)
 
 end subroutine geom_setup_online
 
@@ -693,7 +660,7 @@ call geom%mesh%alloc(geom%nc0)
 call geom%mesh%init(mpl,rng,geom%lon,geom%lat)
 
 ! Compute boundary nodes
-call geom%mesh%bnodes
+call geom%mesh%bnodes(mpl)
 
 ! Check whether the mask is the same for all levels
 same_mask = .true.
@@ -724,7 +691,7 @@ do jc3=1,nam%nc3
 end do
 
 ! Define dirac points
-if (nam%check_dirac.and.(nam%ndir>0)) call geom%define_dirac(mpl,nam)
+if ((nam%check_dirac.or.nam%check_consistency).and.(nam%ndir>0)) call geom%define_dirac(mpl,nam)
 
 ! Print summary
 write(mpl%info,'(a10,a,f7.1,a,f7.1)') '','Min. / max. longitudes:',minval(geom%lon)*rad2deg,' / ',maxval(geom%lon)*rad2deg
@@ -825,9 +792,9 @@ type(nam_type),intent(in) :: nam       ! Namelist
 type(rng_type),intent(inout) :: rng    ! Random number generator
 
 ! Local variables
-integer :: ic0,il0,info,iproc,ic0a,nc0a,ny,nres,iy,delta,ix
+integer :: ic0,info,iproc,ic0a,nc0a,ny,nres,iy,delta,ix
 integer :: ncid,nc0_id,c0_to_proc_id,c0_to_c0a_id,lon_id,lat_id
-integer :: c0_reorder(geom%nc0),nn_index(1)
+integer :: nn_index(1),bnd(0)
 integer,allocatable :: center_to_c0(:),nx(:),ic0a_arr(:)
 real(kind_real) :: nn_dist(1),dlat,dlon
 real(kind_real),allocatable :: rh_c0(:),lon_center(:),lat_center(:)
@@ -900,7 +867,8 @@ elseif (mpl%nproc>1) then
          ! Compute sampling
          write(mpl%info,'(a7,a)') '','Define distribution centers:'
          call mpl%flush(.false.)
-         call rng%initialize_sampling(mpl,geom%nc0,geom%lon,geom%lat,mask_hor_c0,rh_c0,nam%ntry,nam%nrep,mpl%nproc,center_to_c0)
+         call rng%initialize_sampling(mpl,geom%nc0,geom%lon,geom%lat,mask_hor_c0,0,bnd,rh_c0,nam%ntry,nam%nrep, &
+       & mpl%nproc,center_to_c0)
 
          ! Define centers coordinates
          lon_center = geom%lon(center_to_c0)
@@ -1032,32 +1000,56 @@ do ic0=1,geom%nc0
    end if
 end do
 
-! Reorder Sc0 points to improve communication efficiency
+! Reorder Sc0 points
+call geom%reorder_points
+
+end subroutine geom_define_distribution
+
+!----------------------------------------------------------------------
+! Subroutine: geom_reorder_points
+! Purpose: reorder Sc0 points based on lon/lat
+!----------------------------------------------------------------------
+subroutine geom_reorder_points(geom)
+
+implicit none
+
+! Passed variables
+class(geom_type),intent(inout) :: geom ! Geometry
+
+! Local variables
+integer :: ic0,il0
+integer :: order(geom%nc0),order_inv(geom%nc0)
+real(kind_real) :: list(geom%nc0)
+
+! Define Sc0 points order
 do ic0=1,geom%nc0
-   iproc = geom%c0_to_proc(ic0)
-   ic0a = geom%c0_to_c0a(ic0)
-   if (iproc==1) then
-      c0_reorder(ic0) = ic0a
-   else
-      c0_reorder(ic0) = sum(geom%proc_to_nc0a(1:iproc-1))+ic0a
-   end if
+   list(ic0) = aint(abs(geom%lon(ic0))*1.0e6)+abs(geom%lat(ic0))*1.0e-1
+   if (geom%lon(ic0)<0.0) list(ic0) = list(ic0)+2.0e7
+   if (geom%lat(ic0)<0.0) list(ic0) = list(ic0)+1.0e7
 end do
-geom%c0_to_lon(c0_reorder) = geom%c0_to_lon
-geom%c0_to_lat(c0_reorder) = geom%c0_to_lat
-geom%c0_to_tile(c0_reorder) = geom%c0_to_tile
-geom%lon(c0_reorder) = geom%lon
-geom%lat(c0_reorder) = geom%lat
-do il0=1,geom%nl0
-   geom%vunit(c0_reorder,il0) = geom%vunit(:,il0)
-   geom%mask_c0(c0_reorder,il0) = geom%mask_c0(:,il0)
-end do
-geom%c0_to_proc(c0_reorder) = geom%c0_to_proc
-geom%c0_to_c0a(c0_reorder) = geom%c0_to_c0a
-do ic0a=1,geom%nc0a
-   geom%c0a_to_c0(ic0a) = c0_reorder(geom%c0a_to_c0(ic0a))
+call qsort(geom%nc0,list,order)
+do ic0=1,geom%nc0
+   order_inv(order(ic0)) = ic0
 end do
 
-! Other masks
+! Reorder Sc0 points
+geom%c0_to_proc = geom%c0_to_proc(order)
+geom%c0_to_c0a = geom%c0_to_c0a(order)
+geom%c0a_to_c0 = order_inv(geom%c0a_to_c0)
+geom%lon = geom%lon(order)
+geom%lat = geom%lat(order)
+if (allocated(geom%c0_to_lon)) geom%c0_to_lon = geom%c0_to_lon(order)
+if (allocated(geom%c0_to_lat)) geom%c0_to_lat = geom%c0_to_lat(order)
+if (allocated(geom%c0_to_tile)) geom%c0_to_tile = geom%c0_to_tile(order)
+do il0=1,geom%nl0
+   if (allocated(geom%vunit)) geom%vunit(:,il0) = geom%vunit(order,il0)
+   if (allocated(geom%mask_c0)) geom%mask_c0(:,il0) = geom%mask_c0(order,il0)
+end do
+if (allocated(geom%c0_to_mg)) geom%c0_to_mg = geom%c0_to_mg(order)
+if (allocated(geom%mg_to_c0)) geom%mg_to_c0 = order_inv(geom%mg_to_c0)
+if (allocated(geom%mga_to_c0)) geom%mga_to_c0 = order_inv(geom%mga_to_c0)
+
+! Define other masks
 allocate(geom%mask_c0a(geom%nc0a,geom%nl0))
 allocate(geom%mask_hor_c0a(geom%nc0a))
 geom%mask_c0a = geom%mask_c0(geom%c0a_to_c0,:)
@@ -1066,7 +1058,7 @@ geom%mask_hor_c0a = geom%mask_hor_c0(geom%c0a_to_c0)
 geom%mask_ver_c0 = any(geom%mask_c0,dim=1)
 geom%nc0_mask = count(geom%mask_c0,dim=1)
 
-end subroutine geom_define_distribution
+end subroutine geom_reorder_points
 
 !----------------------------------------------------------------------
 ! Subroutine: geom_check_arc

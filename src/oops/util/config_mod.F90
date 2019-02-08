@@ -18,9 +18,9 @@ implicit none
 
 private
 integer, parameter :: max_string=800
-public config_element_exists, config_get_int, config_get_real, config_get_string, &
-       config_get_string_vector, config_get_double_vector, config_get_float_vector, &
-       config_get_int_vector
+public config_element_exists, config_get_data_dimension, config_get_int, config_get_real,  &
+       config_get_string,config_get_string_vector, config_get_double_vector,  &
+       config_get_float_vector, config_get_int_vector
 
 #include "config.intfb.h"
 
@@ -44,6 +44,28 @@ logical function config_element_exists(c_dom,query)
   config_element_exists = LOGICAL(c_config_element_exists(c_dom,c_query))
   deallocate(c_query)
 end function config_element_exists
+
+!-------------------------------------------------------------------------------
+
+!> Get data vector dimension
+
+integer function config_get_data_dimension(c_dom,query)
+  implicit none
+  type(c_ptr), intent(in) :: c_dom
+  character(len=*), intent(in) :: query
+
+  character(kind=c_char,len=1), allocatable :: c_query(:)
+
+  !  Translate query from Fortran string to C++ char[].
+  call f_c_string(query,c_query)
+
+  ! Call C++ to process the query
+  if(LOGICAL(c_config_element_exists(c_dom,c_query))) then
+     config_get_data_dimension = c_config_get_data_dimension(c_dom,c_query)
+  else
+     config_get_data_dimension = 0
+  endif
+end function config_get_data_dimension
 
 !-------------------------------------------------------------------------------
 

@@ -24,12 +24,17 @@ type cmat_blk_type
    logical :: anisotropic                            ! Anisoptropic tensor
 
    ! Read data
-   real(kind_real),allocatable :: oops_coef_ens(:,:) ! OOPS ensemble coefficient
-   real(kind_real),allocatable :: oops_coef_sta(:,:) ! OOPS static coefficient
-   real(kind_real),allocatable :: oops_rh(:,:)       ! OOPS horizontal fit support radius
-   real(kind_real),allocatable :: oops_rv(:,:)       ! OOPS vertical fit support radius
-   real(kind_real),allocatable :: oops_rv_rfac(:,:)  ! OOPS vertical fit support radius factor
-   real(kind_real),allocatable :: oops_rv_coef(:,:)  ! OOPS vertical fit coefficient
+   real(kind_real),allocatable :: bump_coef_ens(:,:) ! BUMP ensemble coefficient
+   real(kind_real),allocatable :: bump_coef_sta(:,:) ! BUMP static coefficient
+   real(kind_real),allocatable :: bump_rh(:,:)       ! BUMP horizontal fit support radius
+   real(kind_real),allocatable :: bump_rv(:,:)       ! BUMP vertical fit support radius
+   real(kind_real),allocatable :: bump_rv_rfac(:,:)  ! BUMP vertical fit support radius factor
+   real(kind_real),allocatable :: bump_rv_coef(:,:)  ! BUMP vertical fit coefficient
+   real(kind_real),allocatable :: bump_D11(:,:)      ! BUMP Daley tensor component 11
+   real(kind_real),allocatable :: bump_D22(:,:)      ! BUMP Daley tensor component 22
+   real(kind_real),allocatable :: bump_D33(:,:)      ! BUMP Daley tensor component 33
+   real(kind_real),allocatable :: bump_D12(:,:)      ! BUMP Daley tensor component 12
+   real(kind_real),allocatable :: bump_Dcoef(:,:)    ! BUMP Daley tensor scales coefficients
 
    ! Data
    real(kind_real),allocatable :: coef_ens(:,:)      ! Ensemble coefficient
@@ -99,8 +104,8 @@ end if
 
 if ((ib==bpar%nbe).and.nam%displ_diag) then
    ! Allocation
-   allocate(cmat_blk%displ_lon(geom%nc0a,geom%nl0,2:nam%nts))
-   allocate(cmat_blk%displ_lat(geom%nc0a,geom%nl0,2:nam%nts))
+   allocate(cmat_blk%displ_lon(geom%nc0a,geom%nl0,nam%nts))
+   allocate(cmat_blk%displ_lat(geom%nc0a,geom%nl0,nam%nts))
 end if
 
 ! End associate
@@ -120,12 +125,17 @@ implicit none
 class(cmat_blk_type),intent(inout) :: cmat_blk ! C matrix data block
 
 ! Release memory
-if (allocated(cmat_blk%oops_coef_ens)) deallocate(cmat_blk%oops_coef_ens)
-if (allocated(cmat_blk%oops_coef_sta)) deallocate(cmat_blk%oops_coef_sta)
-if (allocated(cmat_blk%oops_rh)) deallocate(cmat_blk%oops_rh)
-if (allocated(cmat_blk%oops_rv)) deallocate(cmat_blk%oops_rv)
-if (allocated(cmat_blk%oops_rv_rfac)) deallocate(cmat_blk%oops_rv_rfac)
-if (allocated(cmat_blk%oops_rv_coef)) deallocate(cmat_blk%oops_rv_coef)
+if (allocated(cmat_blk%bump_coef_ens)) deallocate(cmat_blk%bump_coef_ens)
+if (allocated(cmat_blk%bump_coef_sta)) deallocate(cmat_blk%bump_coef_sta)
+if (allocated(cmat_blk%bump_rh)) deallocate(cmat_blk%bump_rh)
+if (allocated(cmat_blk%bump_rv)) deallocate(cmat_blk%bump_rv)
+if (allocated(cmat_blk%bump_rv_rfac)) deallocate(cmat_blk%bump_rv_rfac)
+if (allocated(cmat_blk%bump_rv_coef)) deallocate(cmat_blk%bump_rv_coef)
+if (allocated(cmat_blk%bump_D11)) deallocate(cmat_blk%bump_D11)
+if (allocated(cmat_blk%bump_D22)) deallocate(cmat_blk%bump_D22)
+if (allocated(cmat_blk%bump_D33)) deallocate(cmat_blk%bump_D33)
+if (allocated(cmat_blk%bump_D12)) deallocate(cmat_blk%bump_D12)
+if (allocated(cmat_blk%bump_Dcoef)) deallocate(cmat_blk%bump_Dcoef)
 if (allocated(cmat_blk%coef_ens)) deallocate(cmat_blk%coef_ens)
 if (allocated(cmat_blk%coef_sta)) deallocate(cmat_blk%coef_sta)
 if (allocated(cmat_blk%rh)) deallocate(cmat_blk%rh)
@@ -158,14 +168,17 @@ class(cmat_blk_type),intent(in) :: cmat_blk ! C matrix data block
 ! Copy data
 cmat_blk_copy%ib = cmat_blk%ib
 cmat_blk_copy%name = cmat_blk%name
-cmat_blk_copy%double_fit = cmat_blk%double_fit
-cmat_blk_copy%anisotropic = cmat_blk%anisotropic
-if (allocated(cmat_blk%oops_coef_ens)) cmat_blk_copy%oops_coef_ens = cmat_blk%oops_coef_ens
-if (allocated(cmat_blk%oops_coef_sta)) cmat_blk_copy%oops_coef_sta = cmat_blk%oops_coef_sta
-if (allocated(cmat_blk%oops_rh)) cmat_blk_copy%oops_rh = cmat_blk%oops_rh
-if (allocated(cmat_blk%oops_rv)) cmat_blk_copy%oops_rv = cmat_blk%oops_rv
-if (allocated(cmat_blk%oops_rv_rfac)) cmat_blk_copy%oops_rv_rfac = cmat_blk%oops_rv_rfac
-if (allocated(cmat_blk%oops_rv_coef)) cmat_blk_copy%oops_rv_coef = cmat_blk%oops_rv_coef
+if (allocated(cmat_blk%bump_coef_ens)) cmat_blk_copy%bump_coef_ens = cmat_blk%bump_coef_ens
+if (allocated(cmat_blk%bump_coef_sta)) cmat_blk_copy%bump_coef_sta = cmat_blk%bump_coef_sta
+if (allocated(cmat_blk%bump_rh)) cmat_blk_copy%bump_rh = cmat_blk%bump_rh
+if (allocated(cmat_blk%bump_rv)) cmat_blk_copy%bump_rv = cmat_blk%bump_rv
+if (allocated(cmat_blk%bump_rv_rfac)) cmat_blk_copy%bump_rv_rfac = cmat_blk%bump_rv_rfac
+if (allocated(cmat_blk%bump_rv_coef)) cmat_blk_copy%bump_rv_coef = cmat_blk%bump_rv_coef
+if (allocated(cmat_blk%bump_D11)) cmat_blk_copy%bump_D11 = cmat_blk%bump_D11
+if (allocated(cmat_blk%bump_D22)) cmat_blk_copy%bump_D22 = cmat_blk%bump_D22
+if (allocated(cmat_blk%bump_D33)) cmat_blk_copy%bump_D33 = cmat_blk%bump_D33
+if (allocated(cmat_blk%bump_D12)) cmat_blk_copy%bump_D12 = cmat_blk%bump_D12
+if (allocated(cmat_blk%bump_Dcoef)) cmat_blk_copy%bump_Dcoef = cmat_blk%bump_Dcoef
 if (allocated(cmat_blk%coef_ens)) cmat_blk_copy%coef_ens = cmat_blk%coef_ens
 if (allocated(cmat_blk%coef_sta)) cmat_blk_copy%coef_sta = cmat_blk%coef_sta
 if (allocated(cmat_blk%rh)) cmat_blk_copy%rh = cmat_blk%rh

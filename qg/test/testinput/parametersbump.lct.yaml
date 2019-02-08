@@ -33,7 +33,8 @@ ensemble:
   variables:
     variables:
     - x
-lct_diag(1): 1
+lct_diag:
+- 1
 lct_nscales: 1
 logging:
   categories: Info, Test, Warning, Error

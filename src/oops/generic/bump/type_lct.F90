@@ -272,7 +272,7 @@ logical :: valid,mask_c1a(lct%samp%nc1a,geom%nl0)
 logical,allocatable :: dmask(:,:)
 
 ! Allocation
-if (nam%diag_rhflt>0) allocate(fld_filt_c1a(lct%samp%nc1a))
+if (nam%diag_rhflt>0.0) allocate(fld_filt_c1a(lct%samp%nc1a))
 
 ! Define mask
 do il0=1,geom%nl0
@@ -287,7 +287,7 @@ do ib=1,bpar%nb
    call mpl%flush
 
    ! Allocation
-   if (nam%diag_rhflt>0) then
+   if (nam%diag_rhflt>0.0) then
       allocate(dx(nam%nc3,bpar%nl0r(ib)))
       allocate(dy(nam%nc3,bpar%nl0r(ib)))
       allocate(dz(nam%nc3,bpar%nl0r(ib)))
@@ -314,7 +314,7 @@ do ib=1,bpar%nb
                fld_c1a = lct%blk(ib)%coef(iscales,:,il0)
             end if
 
-            if (nam%diag_rhflt>0) then
+            if (nam%diag_rhflt>0.0) then
                ! Copy
                fld_filt_c1a = fld_c1a
 
@@ -326,17 +326,17 @@ do ib=1,bpar%nb
             ! Fill missing values
             if (nmsr_tot>0) then
                call lct%samp%diag_fill(mpl,nam,geom,il0,fld_c1a)
-               if (nam%diag_rhflt>0) call lct%samp%diag_fill(mpl,nam,geom,il0,fld_filt_c1a)
+               if (nam%diag_rhflt>0.0) call lct%samp%diag_fill(mpl,nam,geom,il0,fld_filt_c1a)
             end if
 
 
             ! Copy
             if (icomp<=4) then
                lct%blk(ib)%D(icomp,iscales,:,il0) = fld_c1a
-               if (nam%diag_rhflt>0) lct%blk(ib)%D_filt(icomp,iscales,:,il0) = fld_filt_c1a
+               if (nam%diag_rhflt>0.0) lct%blk(ib)%D_filt(icomp,iscales,:,il0) = fld_filt_c1a
             else
                lct%blk(ib)%coef(iscales,:,il0) = fld_c1a
-               if (nam%diag_rhflt>0) lct%blk(ib)%coef_filt(iscales,:,il0) = fld_filt_c1a
+               if (nam%diag_rhflt>0.0) lct%blk(ib)%coef_filt(iscales,:,il0) = fld_filt_c1a
             end if
          end do
       end do
@@ -350,7 +350,7 @@ do ib=1,bpar%nb
       call mpl%f_comm%allreduce(nmsr,nmsr_tot,fckit_mpi_sum())
       write(mpl%info,'(a,i8,a)') ' ~> ',nmsr_tot,' missing points'
       call mpl%flush(.false.)
-      if (nam%diag_rhflt>0) then
+      if (nam%diag_rhflt>0.0) then
          write(mpl%info,'(a,f10.2,a)') ', filtering at ',nam%diag_rhflt*reqkm,' km'
          call mpl%flush
       else
@@ -358,7 +358,7 @@ do ib=1,bpar%nb
          call mpl%flush
       end if
 
-      if (nam%diag_rhflt>0) then
+      if (nam%diag_rhflt>0.0) then
          do ic1a=1,lct%samp%nc1a
             ! Global index
             ic1 = lct%samp%c1a_to_c1(ic1a)
@@ -402,7 +402,7 @@ do ib=1,bpar%nb
    end do
 
    ! Release memory
-   if (nam%diag_rhflt>0) then
+   if (nam%diag_rhflt>0.0) then
       deallocate(dx)
       deallocate(dy)
       deallocate(dz)
@@ -411,7 +411,7 @@ do ib=1,bpar%nb
 end do
 
 ! Release memory
-if (nam%diag_rhflt>0) deallocate(fld_filt_c1a)
+if (nam%diag_rhflt>0.0) deallocate(fld_filt_c1a)
 
 end subroutine lct_filter
 
@@ -442,7 +442,7 @@ do ib=1,bpar%nb
    ! Compute RMSE
    rmse = 0.0
    norm = 0.0
-   if (nam%diag_rhflt>0) then
+   if (nam%diag_rhflt>0.0) then
       rmse_filt = 0.0
       norm_filt = 0.0
    end if
@@ -457,7 +457,7 @@ do ib=1,bpar%nb
                      rmse = rmse+(lct%blk(ib)%fit(jc3,jl0r,ic1a,il0)-lct%blk(ib)%raw(jc3,jl0r,ic1a,il0))**2
                      norm = norm+1.0
                   end if
-                  if (nam%diag_rhflt>0) then
+                  if (nam%diag_rhflt>0.0) then
                      if (mpl%msv%isnotr(lct%blk(ib)%fit_filt(jc3,jl0r,ic1a,il0))) then
                         rmse_filt = rmse_filt+(lct%blk(ib)%fit_filt(jc3,jl0r,ic1a,il0)-lct%blk(ib)%raw(jc3,jl0r,ic1a,il0))**2
                         norm_filt = norm_filt+1.0
@@ -473,7 +473,7 @@ do ib=1,bpar%nb
    if (norm_tot>0.0) rmse_tot = sqrt(rmse_tot/norm_tot)
    write(mpl%info,'(a10,a,e15.8,a,i8,a)') '','LCT fit RMSE:          ',rmse_tot,' for ',int(norm_tot),' diagnostic points'
    call mpl%flush
-   if (nam%diag_rhflt>0) then
+   if (nam%diag_rhflt>0.0) then
       call mpl%f_comm%allreduce(rmse_filt,rmse_filt_tot,fckit_mpi_sum())
       call mpl%f_comm%allreduce(norm_filt,norm_filt_tot,fckit_mpi_sum())
       if (norm_filt_tot>0.0) rmse_filt_tot = sqrt(rmse_filt_tot/norm_filt_tot)
@@ -526,7 +526,7 @@ do ib=1,bpar%nb
    allocate(coef(lct%blk(ib)%nscales,lct%samp%nc1a,geom%nl0))
 
    ! Initialization
-   if (nam%diag_rhflt>0) then
+   if (nam%diag_rhflt>0.0) then
       D = lct%blk(ib)%D_filt
       coef = lct%blk(ib)%coef_filt
    else
@@ -674,7 +674,7 @@ character(len=1024) :: filename
 type(fckit_mpi_status) :: status
 
 ! Number of fields
-if (nam%diag_rhflt>0) then
+if (nam%diag_rhflt>0.0) then
    nf = 3
 else
    nf = 2

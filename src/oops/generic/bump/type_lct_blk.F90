@@ -91,7 +91,7 @@ allocate(lct_blk%raw(nam%nc3,bpar%nl0r(ib),samp%nc1a,geom%nl0))
 allocate(lct_blk%D(4,lct_blk%nscales,samp%nc1a,geom%nl0))
 allocate(lct_blk%coef(lct_blk%nscales,samp%nc1a,geom%nl0))
 allocate(lct_blk%fit(nam%nc3,bpar%nl0r(ib),samp%nc1a,geom%nl0))
-if (nam%diag_rhflt>0) then
+if (nam%diag_rhflt>0.0) then
    allocate(lct_blk%D_filt(4,lct_blk%nscales,samp%nc1a,geom%nl0))
    allocate(lct_blk%coef_filt(lct_blk%nscales,samp%nc1a,geom%nl0))
    allocate(lct_blk%fit_filt(nam%nc3,bpar%nl0r(ib),samp%nc1a,geom%nl0))
@@ -264,10 +264,9 @@ allocate(minim%dz(nam%nc3,bpar%nl0r(ib)))
 allocate(minim%dmask(nam%nc3,bpar%nl0r(ib)))
 
 do il0=1,geom%nl0
+   ! Initialization
    write(mpl%info,'(a13,a,i3,a)') '','Level ',nam%levs(il0),':'
    call mpl%flush(.false.)
-
-   ! Initialization
    call mpl%prog_init(samp%nc1a)
 
    do ic1a=1,samp%nc1a

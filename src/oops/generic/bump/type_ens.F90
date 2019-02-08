@@ -8,7 +8,7 @@
 module type_ens
 
 use fckit_mpi_module, only: fckit_mpi_sum
-use tools_const, only: rad2deg
+use tools_const, only: deg2rad,rad2deg
 use tools_func, only: sphere_dist
 use tools_kinds, only: kind_real
 use type_geom, only: geom_type
@@ -249,8 +249,8 @@ type(io_type),intent(in) :: io      ! I/O
 
 ! Local variable
 integer :: ic0a,ic0,jc0a,jc0,ie,its,ind(1)
-integer :: proc_to_ic0a(mpl%nproc),iproc(1)
-real(kind_real) :: dist,proc_to_val(mpl%nproc),lon,lat,val,var_dirac
+integer :: proc_to_ic0a(mpl%nproc),iproc(1),nn_index(1)
+real(kind_real) :: dist,proc_to_val(mpl%nproc),lon,lat,val,var_dirac,nn_dist(1)
 real(kind_real) :: u(geom%nc0a,geom%nl0,nam%nts),v(geom%nc0a,geom%nl0,nam%nts),ffsq(geom%nc0a,geom%nl0,nam%nts)
 real(kind_real) :: var(geom%nc0a,geom%nl0,nam%nts),dirac(geom%nc0a,geom%nl0,nam%nts),cor(geom%nc0a,geom%nl0,nam%nv,nam%nts)
 character(len=2) :: timeslotchar
@@ -268,66 +268,60 @@ do ie=1,ens%ne
 end do
 var = var/real(ens%ne-ens%nsub,kind_real)
 
-! Compute wind speed squared (variables 2 and 3 should be u and v)
-write(mpl%info,'(a7,a)') '','Compute wind speed'
-call mpl%flush
-u = sum(ens%mean(:,:,2,:,:),dim=4)/real(ens%nsub,kind_real)
-v = sum(ens%mean(:,:,3,:,:),dim=4)/real(ens%nsub,kind_real)
-ffsq = u**2+v**2
-
-! Only North hemisphere
-write(mpl%info,'(a7,a)') '','Only North hemisphere'
-call mpl%flush
-do ic0a=1,geom%nc0a
-   ic0 = geom%c0a_to_c0(ic0a)
-   if (geom%lat(ic0)<0.0) ffsq(ic0a,:,:) = 0.0
-end do
-
-! Write wind
-write(mpl%info,'(a7,a)') '','Write wind'
-call mpl%flush
-do its=1,nam%nts
-   write(timeslotchar,'(i2.2)') nam%timeslot(its)
-   call io%fld_write(mpl,nam,geom,filename,'u_'//timeslotchar,u(:,:,its))
-   call io%fld_write(mpl,nam,geom,filename,'v_'//timeslotchar,v(:,:,its))
-end do
-
-if (.true.) then
-   ! Find local maximum value and index
-   write(mpl%info,'(a7,a)') '','Dirac point based on maximum wind speed'
+if (nam%nv==3) then
+   ! Compute wind speed squared (variables 2 and 3 should be u and v)
+   write(mpl%info,'(a7,a)') '','Compute wind speed'
    call mpl%flush
-   val = maxval(ffsq(:,1,1))
-   ind = maxloc(ffsq(:,1,1))
-   call mpl%f_comm%allgather(val,proc_to_val)
-   call mpl%f_comm%allgather(ind(1),proc_to_ic0a)
-   iproc = maxloc(proc_to_val)
+   u = sum(ens%mean(:,:,2,:,:),dim=4)/real(ens%nsub,kind_real)
+   v = sum(ens%mean(:,:,3,:,:),dim=4)/real(ens%nsub,kind_real)
+   ffsq = u**2+v**2
+
+   ! Write wind
+   write(mpl%info,'(a7,a)') '','Write wind'
+   call mpl%flush
+   do its=1,nam%nts
+      write(timeslotchar,'(i2.2)') nam%timeslot(its)
+      call io%fld_write(mpl,nam,geom,filename,'u_'//timeslotchar,u(:,:,its))
+      call io%fld_write(mpl,nam,geom,filename,'v_'//timeslotchar,v(:,:,its))
+   end do
+
+   if (.true.) then
+      ! Find local maximum value and index
+      write(mpl%info,'(a7,a)') '','Dirac point based on maximum wind speed'
+      call mpl%flush
+      val = maxval(ffsq(:,1,1))
+      ind = maxloc(ffsq(:,1,1))
+      call mpl%f_comm%allgather(val,proc_to_val)
+      call mpl%f_comm%allgather(ind(1),proc_to_ic0a)
+      iproc = maxloc(proc_to_val)
+   else
+      ! Find local minimum value and index
+      write(mpl%info,'(a7,a)') '','Dirac point based on minimum wind speed'
+      call mpl%flush
+      val = minval(ffsq(:,1,1))
+      ind = minloc(ffsq(:,1,1))
+      call mpl%f_comm%allgather(val,proc_to_val)
+      call mpl%f_comm%allgather(ind(1),proc_to_ic0a)
+      iproc = minloc(proc_to_val)
+   end if
 else
-   ! Find local minimum value and index
-   write(mpl%info,'(a7,a)') '','Dirac point based on minimum wind speed'
-   call mpl%flush
-   val = minval(ffsq(:,1,1))
-   ind = minloc(ffsq(:,1,1))
-   call mpl%f_comm%allgather(val,proc_to_val)
-   call mpl%f_comm%allgather(ind(1),proc_to_ic0a)
-   iproc = minloc(proc_to_val)
-end if
+   ! Define lon/lat
+   lon = 0.5*(minval(geom%lon)+maxval(geom%lon))
+   lat = 0.5*(minval(geom%lat)+maxval(geom%lat))
 
-! Broadcast dirac point
-ic0a = mpl%msv%vali
-ic0 = mpl%msv%vali
-if (mpl%myproc==iproc(1)) then
-   ic0a = proc_to_ic0a(iproc(1))
-   ic0 = geom%c0a_to_c0(ic0a)
-   lon = geom%lon(ic0)
-   lat = geom%lat(ic0)
-   val = ffsq(ic0a,1,1)
+   ! Find nearest neighbor
+   call geom%kdtree%find_nearest_neighbors(mpl,lon,lat,1,nn_index,nn_dist)
+
+   ! Broadcast dirac point
+   ic0a = mpl%msv%vali
+   ic0 = nn_index(1)
+   iproc(1) = geom%c0_to_proc(ic0)
+   if (mpl%myproc==iproc(1)) ic0a = geom%c0_to_c0a(ic0)
+   call mpl%f_comm%broadcast(ic0a,iproc(1)-1)
+   write(mpl%info,'(a10,a,i2,a,f6.1,a,f6.1)') '','Timeslot ',nam%timeslot(1),' ~> lon / lat: ', &
+    & lon*rad2deg,' / ',lat*rad2deg
+   call mpl%flush
 end if
-call mpl%f_comm%broadcast(lon,iproc(1)-1)
-call mpl%f_comm%broadcast(lat,iproc(1)-1)
-call mpl%f_comm%broadcast(val,iproc(1)-1)
-write(mpl%info,'(a10,a,i2,a,f6.1,a,f6.1,a,f7.1)') '','Timeslot ',nam%timeslot(1),' ~> lon / lat / val: ', &
- & lon*rad2deg,' / ',lat*rad2deg,' / ',sqrt(val)
-call mpl%flush
 
 ! Generate dirac field
 dirac = 0.0

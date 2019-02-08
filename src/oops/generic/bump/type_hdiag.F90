@@ -115,7 +115,7 @@ write(mpl%info,'(a)') '--- Compute MPI distribution, halos A'
 call mpl%flush
 call hdiag%samp%compute_mpi_a(mpl,nam,geom)
 
-if (nam%new_lct.or.nam%var_diag.or.nam%local_diag.or.nam%displ_diag) then
+if (nam%new_lct.or.nam%local_diag.or.nam%displ_diag) then
    ! Compute MPI distribution, halos A-B
    write(mpl%info,'(a)') '-------------------------------------------------------------------'
    call mpl%flush

@@ -24,7 +24,7 @@ integer,parameter :: M = 0                            ! Number of implicit itter
 private
 public :: gc2gau,gau2gc,Dmin,M
 public :: lonlatmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,add,divide, &
-        & fit_diag,fit_diag_dble,gc99,fit_lct,lct_d2h,check_cond,cholesky,syminv
+        & fit_diag,fit_diag_dble,gc99,fit_lct,lct_d2h,lct_h2r,lct_r2d,check_cond,cholesky,syminv
 
 contains
 
@@ -493,7 +493,7 @@ do il0=1,nl0
          ! Double Gaspari-Cohn (1999) function
          distnorm = dist(jc3,jl0r)
          distnormh = sqrt(distnorm**2-distnormv**2)
-         fit(jc3,jl0r,il0) = gc99(mpl,distnormh)*((1.0+coef)*gc99(mpl,distnormv/rfac)-coef*gc99(mpl,distnormv))
+         fit(jc3,jl0r,il0) = gc99(mpl,distnormh)*((1.0+coef)*gc99(mpl,distnormv)-coef*gc99(mpl,distnormv*rfac))
       end do
    end do
 
@@ -648,6 +648,73 @@ else
 end if
 
 end subroutine lct_d2h
+
+!----------------------------------------------------------------------
+! Subroutine: lct_h2r
+! Purpose: inversion from H (local correlation tensor) to support radii
+!----------------------------------------------------------------------
+subroutine lct_h2r(mpl,H11,H22,H33,H12,rh,rv)
+
+implicit none
+
+! Passed variables
+type(mpl_type),intent(inout) :: mpl ! MPI data
+real(kind_real),intent(in) :: H11   ! Local correlation tensor component 11
+real(kind_real),intent(in) :: H22   ! Local correlation tensor component 22
+real(kind_real),intent(in) :: H33   ! Local correlation tensor component 33
+real(kind_real),intent(in) :: H12   ! Local correlation tensor component 12
+real(kind_real),intent(out) :: rh   ! Horizontal support radius
+real(kind_real),intent(out) :: rv   ! Vertical support radius
+
+! Local variables
+real(kind_real) :: tr,det,diff
+
+! Check diagonal positivity
+if ((H11<0.0).or.(H22<0.0)) call mpl%abort('negative diagonal LCT coefficients')
+
+! Compute horizontal trace
+tr = H11+H22
+
+! Compute horizontal determinant
+det = H11*H22-H12**2
+
+! Compute horizontal support radius
+diff = 0.25*(H11-H22)**2+H12**2
+if ((det>0.0).and..not.(diff<0.0)) then
+   if (0.5*tr>sqrt(diff)) then
+      rh = gau2gc/sqrt(0.5*tr-sqrt(diff))
+   else
+      call mpl%abort('non positive-definite LCT (eigenvalue)')
+   end if
+else
+   call mpl%abort('non positive-definite LCT (determinant)')
+end if
+
+! Compute vertical support radius
+if (H33>0.0) then
+   rv = gau2gc/sqrt(H33)
+else
+   rv = 0.0
+end if
+
+end subroutine lct_h2r
+
+!----------------------------------------------------------------------
+! Subroutine: lct_r2d
+! Purpose: conversion from support radius to Daley tensor diagonal element
+!----------------------------------------------------------------------
+subroutine lct_r2d(r,D)
+
+implicit none
+
+! Passed variables
+real(kind_real),intent(in) :: r  ! Support radius
+real(kind_real),intent(out) :: D ! Daley tensor diagonal element
+
+! Convert from support radius to Daley length-scale and square
+D = (gc2gau*r)**2
+
+end subroutine lct_r2d
 
 !----------------------------------------------------------------------
 ! Subroutine: check_cond

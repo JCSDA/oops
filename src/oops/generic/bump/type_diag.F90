@@ -53,12 +53,13 @@ contains
 ! Subroutine: diag_alloc
 ! Purpose: allocation
 !----------------------------------------------------------------------
-subroutine diag_alloc(diag,nam,geom,bpar,samp,prefix,double_fit)
+subroutine diag_alloc(diag,mpl,nam,geom,bpar,samp,prefix,double_fit)
 
 implicit none
 
 ! Passed variables
 class(diag_type),intent(inout) :: diag ! Diagnostic
+type(mpl_type),intent(inout) :: mpl    ! MPI data
 type(nam_type),intent(in) :: nam       ! Namelist
 type(geom_type),intent(in) :: geom     ! Geometry
 type(bpar_type),intent(in) :: bpar     ! Block parameters
@@ -70,7 +71,7 @@ logical,intent(in) :: double_fit       ! Double fit
 integer :: ib,ic2a
 
 ! Number of local points
-if (nam%var_diag.or.nam%local_diag) then
+if (nam%local_diag) then
    diag%nc2a = samp%nc2a
 else
    diag%nc2a = 0
@@ -84,7 +85,7 @@ allocate(diag%blk(0:diag%nc2a,bpar%nbe))
 do ib=1,bpar%nbe
    if (bpar%diag_block(ib)) then
       do ic2a=0,diag%nc2a
-         call diag%blk(ic2a,ib)%alloc(nam,geom,bpar,samp,ic2a,ib,prefix,double_fit.and.nam%double_fit(bpar%b_to_v1(ib)))
+         call diag%blk(ic2a,ib)%alloc(mpl,nam,geom,bpar,samp,ic2a,ib,prefix,double_fit.and.nam%double_fit(bpar%b_to_v1(ib)))
       end do
    end if
 end do
@@ -149,7 +150,7 @@ if (mpl%main) then
    end do
 end if
 
-if ((trim(diag%prefix)/='cov').and.(nam%var_diag.or.nam%local_diag)) then
+if ((trim(diag%prefix)/='cov').and.nam%local_diag) then
    do ib=1,bpar%nbe
       if (bpar%fit_block(ib)) then
          filename = trim(nam%prefix)//'_local_diag_'//trim(diag%prefix)
@@ -252,14 +253,6 @@ do ib=1,bpar%nbe
          if (diag%blk(0,ib)%double_fit) then
             allocate(rv_rfac_c2a(samp%nc2a,geom%nl0))
             allocate(rv_coef_c2a(samp%nc2a,geom%nl0))
-         end if
-
-         ! Initialization
-         rh_c2a = mpl%msv%valr
-         rv_c2a = mpl%msv%valr
-         if (diag%blk(0,ib)%double_fit) then
-            rv_rfac_c2a = mpl%msv%valr
-            rv_coef_c2a = mpl%msv%valr
          end if
 
          do il0=1,geom%nl0
@@ -388,9 +381,9 @@ character(len=*),intent(in) :: prefix  ! Diagnostic prefix
 integer :: ib,ic2a,ic2,il0
 
 ! Allocation
-call diag%alloc(nam,geom,bpar,samp,prefix,.false.)
+call diag%alloc(mpl,nam,geom,bpar,samp,prefix,.false.)
 
-do ib=1,bpar%nbe
+do ib=1,bpar%nb
    if (bpar%diag_block(ib)) then
       write(mpl%info,'(a10,a,a,a)') '','Block ',trim(bpar%blockname(ib))
       call mpl%flush
@@ -403,9 +396,6 @@ do ib=1,bpar%nbe
             ic2 = 0
          end if
          diag%blk(ic2a,ib)%raw = avg%blk(ic2,ib)%m11
-
-         ! Hybrid weight
-         diag%blk(ic2a,ib)%raw_coef_sta = mpl%msv%valr
       end do
 
       ! Print results
@@ -448,37 +438,32 @@ integer :: ib,ic2a,ic2,il0
 type(diag_type) :: ndiag
 
 ! Allocation
-call diag%alloc(nam,geom,bpar,samp,prefix,.true.)
-call ndiag%alloc(nam,geom,bpar,samp,'n'//trim(prefix),.false.)
+call diag%alloc(mpl,nam,geom,bpar,samp,prefix,.true.)
+call ndiag%alloc(mpl,nam,geom,bpar,samp,'n'//trim(prefix),.false.)
 
 do ib=1,bpar%nbe
    if (bpar%diag_block(ib)) then
+      ! Initialization
       write(mpl%info,'(a10,a,a,a)') '','Block ',trim(bpar%blockname(ib)),':'
       call mpl%flush(.false.)
+      call mpl%prog_init(diag%nc2a+1)
 
       ! Copy variance
       do ic2a=0,diag%nc2a
-         if (nam%var_diag) then
-            ! Global index
-            if (ic2a>0) then
-               ic2 = samp%c2a_to_c2(ic2a)
-            else
-               ic2 = 0
-            end if
-
-            ! Copy
-            if (nam%var_filter) then
-               diag%blk(ic2a,ib)%raw_coef_ens = avg%blk(ic2,ib)%m2flt
-            else
-               diag%blk(ic2a,ib)%raw_coef_ens = sum(avg%blk(ic2,ib)%m2,dim=2)/real(avg%nsub,kind_real)
-            end if
+         ! Global index
+         if (ic2a>0) then
+            ic2 = samp%c2a_to_c2(ic2a)
          else
-            diag%blk(ic2a,ib)%raw_coef_ens = 1.0
+            ic2 = 0
+         end if
+
+         ! Copy
+         if (nam%var_filter) then
+            diag%blk(ic2a,ib)%raw_coef_ens = avg%blk(ic2,ib)%m2flt
+         else
+            diag%blk(ic2a,ib)%raw_coef_ens = sum(avg%blk(ic2,ib)%m2,dim=2)/real(avg%nsub,kind_real)
          end if
       end do
-
-      ! Initialization
-      call mpl%prog_init(diag%nc2a+1)
 
       do ic2a=0,diag%nc2a
          ! Global index
@@ -491,21 +476,11 @@ do ib=1,bpar%nbe
          ! Copy
          diag%blk(ic2a,ib)%raw = avg%blk(ic2,ib)%cor
 
-         ! Hybrid weight
-         diag%blk(ic2a,ib)%raw_coef_sta = mpl%msv%valr
-
          ! Fitting
          if (bpar%fit_block(ib)) call diag%blk(ic2a,ib)%fitting(mpl,nam,geom,bpar,samp)
 
          ! Number of valid couples
-         if (ic2a==0) then
-            ndiag%blk(ic2a,ib)%raw = avg%blk(ic2a,ib)%nc1a_cor
-         else
-            ndiag%blk(ic2a,ib)%raw = mpl%msv%valr
-         end if
-
-         ! Hybrid weight
-         ndiag%blk(ic2a,ib)%raw_coef_sta = mpl%msv%valr
+         if (ic2a==0) ndiag%blk(ic2a,ib)%raw = avg%blk(ic2a,ib)%nc1a_cor
 
          ! Update
          call mpl%prog_print(ic2a+1)
@@ -568,14 +543,13 @@ character(len=*),intent(in) :: prefix  ! Block prefix
 integer :: ib,ic2a,ic2,il0
 
 ! Allocation
-call diag%alloc(nam,geom,bpar,samp,prefix,.false.)
+call diag%alloc(mpl,nam,geom,bpar,samp,prefix,.false.)
 
 do ib=1,bpar%nbe
    if (bpar%diag_block(ib)) then
+      ! Initialization
       write(mpl%info,'(a10,a,a,a)') '','Block ',trim(bpar%blockname(ib)),':'
       call mpl%flush(.false.)
-
-      ! Initialization
       call mpl%prog_init(diag%nc2a+1)
 
       do ic2a=0,diag%nc2a
@@ -660,14 +634,13 @@ character(len=*),intent(in) :: prefix  ! Diagnostic prefix
 integer :: ib,ic2a,ic2,il0
 
 ! Allocation
-call diag%alloc(nam,geom,bpar,samp,prefix,.false.)
+call diag%alloc(mpl,nam,geom,bpar,samp,prefix,.false.)
 
 do ib=1,bpar%nbe
    if (bpar%diag_block(ib)) then
+      ! Initialization
       write(mpl%info,'(a10,a,a,a)') '','Block ',trim(bpar%blockname(ib)),':'
       call mpl%flush(.false.)
-
-      ! Initialization
       call mpl%prog_init(diag%nc2a+1)
 
       do ic2a=0,diag%nc2a
@@ -744,15 +717,14 @@ character(len=*),intent(in) :: prefix_lr ! LR diagnostic prefix
 integer :: ib,ic2a,ic2,il0
 
 ! Allocation
-call diag%alloc(nam,geom,bpar,samp,prefix,.false.)
-call diag_lr%alloc(nam,geom,bpar,samp,prefix_lr,.false.)
+call diag%alloc(mpl,nam,geom,bpar,samp,prefix,.false.)
+call diag_lr%alloc(mpl,nam,geom,bpar,samp,prefix_lr,.false.)
 
 do ib=1,bpar%nbe
    if (bpar%diag_block(ib)) then
+      ! Initialization
       write(mpl%info,'(a10,a,a,a)') '','Block ',trim(bpar%blockname(ib)),':'
       call mpl%flush(.false.)
-
-      ! Initialization
       call mpl%prog_init(diag%nc2a+1)
 
       do ic2a=0,diag%nc2a

@@ -31,8 +31,8 @@ type com_type
    integer :: nexcl                      ! Exclusive interior buffer size
    integer,allocatable :: jhalocounts(:) ! Halo counts
    integer,allocatable :: jexclcounts(:) ! Exclusive interior counts
-   integer,allocatable :: jhalodispl(:)  ! Halo displacement
-   integer,allocatable :: jexcldispl(:)  ! Exclusive interior displacement
+   integer,allocatable :: jhalodispls(:) ! Halo displacement
+   integer,allocatable :: jexcldispls(:) ! Exclusive interior displacement
    integer,allocatable :: halo(:)        ! Halo buffer
    integer,allocatable :: excl(:)        ! Exclusive interior buffer
 contains
@@ -70,8 +70,8 @@ if (allocated(com%ext_to_red)) deallocate(com%ext_to_red)
 if (allocated(com%red_to_ext)) deallocate(com%red_to_ext)
 if (allocated(com%jhalocounts)) deallocate(com%jhalocounts)
 if (allocated(com%jexclcounts)) deallocate(com%jexclcounts)
-if (allocated(com%jhalodispl)) deallocate(com%jhalodispl)
-if (allocated(com%jexcldispl)) deallocate(com%jexcldispl)
+if (allocated(com%jhalodispls)) deallocate(com%jhalodispls)
+if (allocated(com%jexcldispls)) deallocate(com%jexcldispls)
 if (allocated(com%halo)) deallocate(com%halo)
 if (allocated(com%excl)) deallocate(com%excl)
 
@@ -103,7 +103,7 @@ end do
 !$omp end parallel do
 
 ! Communication
-call mpl%f_comm%alltoallv(sbuf,com%jexclcounts,com%jexcldispl,rbuf,com%jhalocounts,com%jhalodispl)
+call mpl%f_comm%alltoallv(sbuf,com%jexclcounts,com%jexcldispls,rbuf,com%jhalocounts,com%jhalodispls)
 
 ! Copy interior
 !$omp parallel do schedule(static) private(ired)
@@ -138,7 +138,7 @@ real(kind_real),intent(out) :: vec_ext(com%next,nl) ! Extended vector
 
 ! Local variables
 integer :: il,iexcl,ired,ihalo
-integer :: jexclcounts(mpl%nproc),jexcldispl(mpl%nproc),jhalocounts(mpl%nproc),jhalodispl(mpl%nproc)
+integer :: jexclcounts(mpl%nproc),jexcldispls(mpl%nproc),jhalocounts(mpl%nproc),jhalodispls(mpl%nproc)
 real(kind_real) :: sbuf(com%nexcl*nl),rbuf(com%nhalo*nl)
 
 ! Prepare buffers to send
@@ -152,10 +152,10 @@ end do
 
 ! Communication
 jexclcounts = com%jexclcounts*nl
-jexcldispl = com%jexcldispl*nl
+jexcldispls = com%jexcldispls*nl
 jhalocounts = com%jhalocounts*nl
-jhalodispl = com%jhalodispl*nl
-call mpl%f_comm%alltoallv(sbuf,jexclcounts,jexcldispl,rbuf,jhalocounts,jhalodispl)
+jhalodispls = com%jhalodispls*nl
+call mpl%f_comm%alltoallv(sbuf,jexclcounts,jexcldispls,rbuf,jhalocounts,jhalodispls)
 
 ! Copy interior
 !$omp parallel do schedule(static) private(il,ired)
@@ -203,7 +203,7 @@ end do
 !$omp end parallel do
 
 ! Communication
-call mpl%f_comm%alltoallv(sbuf,com%jhalocounts,com%jhalodispl,rbuf,com%jexclcounts,com%jexcldispl)
+call mpl%f_comm%alltoallv(sbuf,com%jhalocounts,com%jhalodispls,rbuf,com%jexclcounts,com%jexcldispls)
 
 ! Copy interior
 !$omp parallel do schedule(static) private(ired)
@@ -260,7 +260,7 @@ end do
 !$omp end parallel do
 
 ! Communication
-call mpl%f_comm%alltoallv(sbuf,com%jhalocounts*nl,com%jhalodispl*nl,rbuf,com%jexclcounts*nl,com%jexcldispl*nl)
+call mpl%f_comm%alltoallv(sbuf,com%jhalocounts*nl,com%jhalodispls*nl,rbuf,com%jexclcounts*nl,com%jexcldispls*nl)
 
 ! Copy interior
 !$omp parallel do schedule(static) private(il,ired)
@@ -311,7 +311,7 @@ character(len=*),intent(in) :: prefix ! Communication prefix
 ! Local variables
 integer :: info
 integer :: nred_id,next_id,red_to_ext_id,nhalo_id,nexcl_id
-integer :: jhalocounts_id,jexclcounts_id,jhalodispl_id,jexcldispl_id,halo_id,excl_id
+integer :: jhalocounts_id,jexclcounts_id,jhalodispls_id,jexcldispls_id,halo_id,excl_id
 character(len=1024) :: subr = 'com_read'
 
 ! Copy prefix
@@ -347,8 +347,8 @@ end if
 if (com%nred>0) allocate(com%red_to_ext(com%nred))
 allocate(com%jhalocounts(mpl%nproc))
 allocate(com%jexclcounts(mpl%nproc))
-allocate(com%jhalodispl(mpl%nproc))
-allocate(com%jexcldispl(mpl%nproc))
+allocate(com%jhalodispls(mpl%nproc))
+allocate(com%jexcldispls(mpl%nproc))
 if (com%nhalo>0) allocate(com%halo(com%nhalo))
 if (com%nexcl>0) allocate(com%excl(com%nexcl))
 
@@ -356,8 +356,8 @@ if (com%nexcl>0) allocate(com%excl(com%nexcl))
 if (com%nred>0) call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_red_to_ext',red_to_ext_id))
 call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_jhalocounts',jhalocounts_id))
 call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_jexclcounts',jexclcounts_id))
-call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_jhalodispl',jhalodispl_id))
-call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_jexcldispl',jexcldispl_id))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_jhalodispls',jhalodispls_id))
+call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_jexcldispls',jexcldispls_id))
 if (com%nhalo>0) call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_halo',halo_id))
 if (com%nexcl>0) call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_excl',excl_id))
 
@@ -365,8 +365,8 @@ if (com%nexcl>0) call mpl%ncerr(subr,nf90_inq_varid(ncid,trim(prefix)//'_excl',e
 if (com%nred>0) call mpl%ncerr(subr,nf90_get_var(ncid,red_to_ext_id,com%red_to_ext))
 call mpl%ncerr(subr,nf90_get_var(ncid,jhalocounts_id,com%jhalocounts))
 call mpl%ncerr(subr,nf90_get_var(ncid,jexclcounts_id,com%jexclcounts))
-call mpl%ncerr(subr,nf90_get_var(ncid,jhalodispl_id,com%jhalodispl))
-call mpl%ncerr(subr,nf90_get_var(ncid,jexcldispl_id,com%jexcldispl))
+call mpl%ncerr(subr,nf90_get_var(ncid,jhalodispls_id,com%jhalodispls))
+call mpl%ncerr(subr,nf90_get_var(ncid,jexcldispls_id,com%jexcldispls))
 if (com%nhalo>0) call mpl%ncerr(subr,nf90_get_var(ncid,halo_id,com%halo))
 if (com%nexcl>0) call mpl%ncerr(subr,nf90_get_var(ncid,excl_id,com%excl))
 
@@ -388,7 +388,7 @@ integer,intent(in) :: ncid          ! NetCDF file id
 ! Local variables
 integer :: info
 integer :: nproc_id,nred_id,next_id,red_to_ext_id,nhalo_id,nexcl_id
-integer :: jhalocounts_id,jexclcounts_id,jhalodispl_id,jexcldispl_id,halo_id,excl_id
+integer :: jhalocounts_id,jexclcounts_id,jhalodispls_id,jexcldispls_id,halo_id,excl_id
 character(len=1024) :: subr = 'com_write'
 
 ! Start definition mode
@@ -406,8 +406,8 @@ if (com%nexcl>0) call mpl%ncerr(subr,nf90_def_dim(ncid,trim(com%prefix)//'_nexcl
 if (com%nred>0) call mpl%ncerr(subr,nf90_def_var(ncid,trim(com%prefix)//'_red_to_ext',nf90_int,(/nred_id/),red_to_ext_id))
 call mpl%ncerr(subr,nf90_def_var(ncid,trim(com%prefix)//'_jhalocounts',nf90_int,(/nproc_id/),jhalocounts_id))
 call mpl%ncerr(subr,nf90_def_var(ncid,trim(com%prefix)//'_jexclcounts',nf90_int,(/nproc_id/),jexclcounts_id))
-call mpl%ncerr(subr,nf90_def_var(ncid,trim(com%prefix)//'_jhalodispl',nf90_int,(/nproc_id/),jhalodispl_id))
-call mpl%ncerr(subr,nf90_def_var(ncid,trim(com%prefix)//'_jexcldispl',nf90_int,(/nproc_id/),jexcldispl_id))
+call mpl%ncerr(subr,nf90_def_var(ncid,trim(com%prefix)//'_jhalodispls',nf90_int,(/nproc_id/),jhalodispls_id))
+call mpl%ncerr(subr,nf90_def_var(ncid,trim(com%prefix)//'_jexcldispls',nf90_int,(/nproc_id/),jexcldispls_id))
 if (com%nhalo>0) call mpl%ncerr(subr,nf90_def_var(ncid,trim(com%prefix)//'_halo',nf90_int,(/nhalo_id/),halo_id))
 if (com%nexcl>0) call mpl%ncerr(subr,nf90_def_var(ncid,trim(com%prefix)//'_excl',nf90_int,(/nexcl_id/),excl_id))
 
@@ -418,8 +418,8 @@ call mpl%ncerr(subr,nf90_enddef(ncid))
 if (com%nred>0) call mpl%ncerr(subr,nf90_put_var(ncid,red_to_ext_id,com%red_to_ext))
 call mpl%ncerr(subr,nf90_put_var(ncid,jhalocounts_id,com%jhalocounts))
 call mpl%ncerr(subr,nf90_put_var(ncid,jexclcounts_id,com%jexclcounts))
-call mpl%ncerr(subr,nf90_put_var(ncid,jhalodispl_id,com%jhalodispl))
-call mpl%ncerr(subr,nf90_put_var(ncid,jexcldispl_id,com%jexcldispl))
+call mpl%ncerr(subr,nf90_put_var(ncid,jhalodispls_id,com%jhalodispls))
+call mpl%ncerr(subr,nf90_put_var(ncid,jexcldispls_id,com%jexcldispls))
 if (com%nhalo>0) call mpl%ncerr(subr,nf90_put_var(ncid,halo_id,com%halo))
 if (com%nexcl>0) call mpl%ncerr(subr,nf90_put_var(ncid,excl_id,com%excl))
 
@@ -515,16 +515,16 @@ if (mpl%main) then
    do iproc=1,mpl%nproc
       allocate(com_in(iproc)%jhalocounts(mpl%nproc))
       allocate(com_in(iproc)%jexclcounts(mpl%nproc))
-      allocate(com_in(iproc)%jhalodispl(mpl%nproc))
-      allocate(com_in(iproc)%jexcldispl(mpl%nproc))
+      allocate(com_in(iproc)%jhalodispls(mpl%nproc))
+      allocate(com_in(iproc)%jexcldispls(mpl%nproc))
    end do
 
    ! Initialization
    do iproc=1,mpl%nproc
       com_in(iproc)%jhalocounts = 0
       com_in(iproc)%jexclcounts = 0
-      com_in(iproc)%jhalodispl = 0
-      com_in(iproc)%jexcldispl = 0
+      com_in(iproc)%jhalodispls = 0
+      com_in(iproc)%jexcldispls = 0
    end do
 
    ! Compute counts
@@ -543,11 +543,11 @@ if (mpl%main) then
 
    ! Compute displacement
    do iproc=1,mpl%nproc
-      com_in(iproc)%jhalodispl(1) = 0
-      com_in(iproc)%jexcldispl(1) = 0
+      com_in(iproc)%jhalodispls(1) = 0
+      com_in(iproc)%jexcldispls(1) = 0
       do jproc=2,mpl%nproc
-         com_in(iproc)%jhalodispl(jproc) = com_in(iproc)%jhalodispl(jproc-1)+com_in(iproc)%jhalocounts(jproc-1)
-         com_in(iproc)%jexcldispl(jproc) = com_in(iproc)%jexcldispl(jproc-1)+com_in(iproc)%jexclcounts(jproc-1)
+         com_in(iproc)%jhalodispls(jproc) = com_in(iproc)%jhalodispls(jproc-1)+com_in(iproc)%jhalocounts(jproc-1)
+         com_in(iproc)%jexcldispls(jproc) = com_in(iproc)%jexcldispls(jproc-1)+com_in(iproc)%jexclcounts(jproc-1)
       end do
    end do
 
@@ -572,7 +572,7 @@ if (mpl%main) then
             com_in(iproc)%jhalocounts(jproc) = com_in(iproc)%jhalocounts(jproc)+1
 
             ! Local index of points sent from IPROC to JPROC
-            com_in(iproc)%halo(com_in(iproc)%jhalodispl(jproc)+com_in(iproc)%jhalocounts(jproc)) = iext
+            com_in(iproc)%halo(com_in(iproc)%jhalodispls(jproc)+com_in(iproc)%jhalocounts(jproc)) = iext
          end if
       end do
    end do
@@ -583,8 +583,8 @@ if (mpl%main) then
       do iproc=1,mpl%nproc
          do icount=1,com_in(iproc)%jhalocounts(jproc)
             ! Local index of points received on JPROC from IPROC
-            com_in(jproc)%excl(com_in(jproc)%jexcldispl(iproc)+icount) = &
-          & com_in(iproc)%ext_to_red(com_in(iproc)%halo(com_in(iproc)%jhalodispl(jproc)+icount))
+            com_in(jproc)%excl(com_in(jproc)%jexcldispls(iproc)+icount) = &
+          & com_in(iproc)%ext_to_red(com_in(iproc)%halo(com_in(iproc)%jhalodispls(jproc)+icount))
          end do
       end do
    end do
@@ -618,8 +618,8 @@ call mpl%update_tag(4)
 allocate(com_out%red_to_ext(com_out%nred))
 allocate(com_out%jhalocounts(mpl%nproc))
 allocate(com_out%jexclcounts(mpl%nproc))
-allocate(com_out%jhalodispl(mpl%nproc))
-allocate(com_out%jexcldispl(mpl%nproc))
+allocate(com_out%jhalodispls(mpl%nproc))
+allocate(com_out%jexcldispls(mpl%nproc))
 allocate(com_out%halo(com_out%nhalo))
 allocate(com_out%excl(com_out%nexcl))
 
@@ -631,8 +631,8 @@ if (mpl%main) then
          com_out%red_to_ext = com_in(iproc)%red_to_ext
          com_out%jhalocounts = com_in(iproc)%jhalocounts
          com_out%jexclcounts = com_in(iproc)%jexclcounts
-         com_out%jhalodispl = com_in(iproc)%jhalodispl
-         com_out%jexcldispl = com_in(iproc)%jexcldispl
+         com_out%jhalodispls = com_in(iproc)%jhalodispls
+         com_out%jexcldispls = com_in(iproc)%jexcldispls
          com_out%halo = com_in(iproc)%halo
          com_out%excl = com_in(iproc)%excl
       else
@@ -640,8 +640,8 @@ if (mpl%main) then
          call mpl%f_comm%send(com_in(iproc)%red_to_ext,iproc-1,mpl%tag)
          call mpl%f_comm%send(com_in(iproc)%jhalocounts,iproc-1,mpl%tag+1)
          call mpl%f_comm%send(com_in(iproc)%jexclcounts,iproc-1,mpl%tag+2)
-         call mpl%f_comm%send(com_in(iproc)%jhalodispl,iproc-1,mpl%tag+3)
-         call mpl%f_comm%send(com_in(iproc)%jexcldispl,iproc-1,mpl%tag+4)
+         call mpl%f_comm%send(com_in(iproc)%jhalodispls,iproc-1,mpl%tag+3)
+         call mpl%f_comm%send(com_in(iproc)%jexcldispls,iproc-1,mpl%tag+4)
          if (com_in(iproc)%nhalo>0) call mpl%f_comm%send(com_in(iproc)%halo,iproc-1,mpl%tag+5)
          if (com_in(iproc)%nexcl>0) call mpl%f_comm%send(com_in(iproc)%excl,iproc-1,mpl%tag+6)
       end if
@@ -651,8 +651,8 @@ else
    call mpl%f_comm%receive(com_out%red_to_ext,mpl%ioproc-1,mpl%tag,status)
    call mpl%f_comm%receive(com_out%jhalocounts,mpl%ioproc-1,mpl%tag+1,status)
    call mpl%f_comm%receive(com_out%jexclcounts,mpl%ioproc-1,mpl%tag+2,status)
-   call mpl%f_comm%receive(com_out%jhalodispl,mpl%ioproc-1,mpl%tag+3,status)
-   call mpl%f_comm%receive(com_out%jexcldispl,mpl%ioproc-1,mpl%tag+4,status)
+   call mpl%f_comm%receive(com_out%jhalodispls,mpl%ioproc-1,mpl%tag+3,status)
+   call mpl%f_comm%receive(com_out%jexcldispls,mpl%ioproc-1,mpl%tag+4,status)
    if (com_out%nhalo>0) call mpl%f_comm%receive(com_out%halo,mpl%ioproc-1,mpl%tag+5,status)
    if (com_out%nexcl>0) call mpl%f_comm%receive(com_out%excl,mpl%ioproc-1,mpl%tag+6,status)
 end if

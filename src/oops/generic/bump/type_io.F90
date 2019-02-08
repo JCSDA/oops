@@ -347,12 +347,13 @@ type(nam_type),intent(in) :: nam    ! Namelist
 type(geom_type),intent(in) :: geom  ! Geometry
 
 ! Local variables
-integer ::ilon,ilat,i_s,i_s_loc,iog,iproc,ic0,ic0a,ic0b,ioga,il0,nn_index(1)
+integer :: nlonlat,ilonlat,ilon,ilat,i_s,i_s_loc,iog,iproc,ic0,ic0a,ic0b,ioga,il0,nn_index(1)
+integer :: nlonlat_loc(0:mpl%nproc),ilonlat_loc
 integer,allocatable :: order(:),order_inv(:),interpg_lg(:)
 real(kind_real) :: dlon,dlat,nn_dist(1)
 real(kind_real),allocatable :: lon_og(:),lat_og(:)
 logical :: mask_c0(geom%nc0)
-logical,allocatable :: mask_lonlat(:,:),mask_og(:),lcheck_og(:),lcheck_c0b(:)
+logical,allocatable :: mask_lonlat(:),mask_og(:),lcheck_og(:),lcheck_c0b(:)
 type(linop_type) :: ogfull
 
 ! Grid size
@@ -362,44 +363,65 @@ dlon = 2.0*pi/real(io%nlon,kind_real)
 dlat = pi/real(io%nlat,kind_real)
 
 ! Allocation
+nlonlat = io%nlon*io%nlat
 allocate(io%lon(io%nlon))
 allocate(io%lat(io%nlat))
-allocate(mask_lonlat(io%nlon,io%nlat))
+allocate(mask_lonlat(nlonlat))
 
-! Setup output grid
-write(mpl%info,'(a7,a)') '','Setup output grid: '
-call mpl%flush(.false.)
-call mpl%prog_init(io%nlon*io%nlat)
+! Define lon/lat
 do ilat=1,io%nlat
    do ilon=1,io%nlon
-      ! Define lon/lat
       io%lon(ilon) = (-pi+dlon/2)+real(ilon-1,kind_real)*dlon
       io%lat(ilat) = (-pi/2+dlat/2)+real(ilat-1,kind_real)*dlat
-
-      ! Check that the interpolation point is inside the domain
-      call geom%mesh%inside(mpl,io%lon(ilon),io%lat(ilat),mask_lonlat(ilon,ilat))
-
-      if (mask_lonlat(ilon,ilat).and.(nam%mask_check.or.geom%mask_del)) then
-         ! Find the nearest Sc0 point
-         call geom%kdtree%find_nearest_neighbors(mpl,io%lon(ilon),io%lat(ilat),1,nn_index,nn_dist)
-
-         ! Check arc
-         call geom%check_arc(mpl,1,io%lon(ilon),io%lat(ilat),geom%lon(nn_index(1)),geom%lat(nn_index(1)),mask_lonlat(ilon,ilat))
-      end if
-
-      ! Update
-      call mpl%prog_print((ilat-1)*io%nlon+ilon)
    end do
 end do
-call mpl%prog_final
 
 ! Print results
 write(mpl%info,'(a7,a)') '','Output grid:'
 call mpl%flush
-write(mpl%info,'(a10,a,f7.2,a,f5.2,a)') '','Effective resolution: ',0.5*(dlon+dlat)*reqkm,' km (',0.5*(dlon+dlat)*rad2deg,' deg.)'
+write(mpl%info,'(a10,a,f7.2,a,f5.2,a)') '','Effective resolution: ',0.5*(dlon+dlat)*reqkm,' km (', &
+ & 0.5*(dlon+dlat)*rad2deg,' deg.)'
 call mpl%flush
 write(mpl%info,'(a10,a,i4,a,i4)') '',      'Size (nlon x nlat):   ',io%nlon,' x ',io%nlat
 call mpl%flush
+
+! MPI splitting
+call mpl%split(nlonlat,nlonlat_loc)
+
+! Check output grid
+write(mpl%info,'(a10,a)') '','Check output grid: '
+call mpl%flush(.false.)
+call mpl%prog_init(nlonlat_loc(mpl%myproc))
+do ilonlat_loc=1,nlonlat_loc(mpl%myproc)
+   ! MPI offset
+   ilonlat = sum(nlonlat_loc(0:mpl%myproc-1))+ilonlat_loc
+
+   ! Indices
+   ilon = mod(ilonlat,io%nlon)
+   if (ilon==0) ilon = io%nlon
+   ilat = (ilonlat-ilon)/io%nlon+1
+
+   ! Check that the interpolation point is inside the domain
+   call geom%mesh%inside(mpl,io%lon(ilon),io%lat(ilat),mask_lonlat(ilonlat))
+
+   if (mask_lonlat(ilonlat).and.(nam%mask_check.or.geom%mask_del)) then
+      ! Find the nearest Sc0 point
+      call geom%kdtree%find_nearest_neighbors(mpl,io%lon(ilon),io%lat(ilat),1,nn_index,nn_dist)
+
+      ! Check arc
+      call geom%check_arc(mpl,1,io%lon(ilon),io%lat(ilat),geom%lon(nn_index(1)),geom%lat(nn_index(1)),mask_lonlat(ilonlat))
+   end if
+
+    ! Check poles
+    if (abs(io%lat(ilat))>maxval(abs(geom%lat))) mask_lonlat(ilonlat) = .false.
+
+    ! Update
+    call mpl%prog_print(ilonlat_loc)
+end do
+call mpl%prog_final
+
+! MPI sharing
+call mpl%share(nlonlat,nlonlat_loc,mask_lonlat)
 
 ! Allocation
 io%nog = count(mask_lonlat)
@@ -416,9 +438,11 @@ allocate(io%og_to_oga(io%nog))
 
 ! Setup packed output grid
 iog = 0
-do ilon=1,io%nlon
-   do ilat=1,io%nlat
-      if (mask_lonlat(ilon,ilat)) then
+do ilat=1,io%nlat
+   do ilon=1,io%nlon
+      ! Index
+      ilonlat = (ilat-1)*io%nlon+ilon
+      if (mask_lonlat(ilonlat)) then
          iog = iog+1
          lon_og(iog) = io%lon(ilon)
          lat_og(iog) = io%lat(ilat)

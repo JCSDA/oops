@@ -88,18 +88,15 @@ avg_blk%nsub = nsub
 
 ! Allocation
 if (.not.allocated(avg_blk%nc1a)) then
-   if ((ic2==0).or.(nam%var_diag)) then
+   if ((ic2==0).or.nam%local_diag) then
+      allocate(avg_blk%nc1a(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
       allocate(avg_blk%m2(geom%nl0,avg_blk%nsub))
       if (nam%var_filter) then
          if (.not.nam%gau_approx) allocate(avg_blk%m4(geom%nl0,avg_blk%nsub))
          allocate(avg_blk%m2flt(geom%nl0))
       end if
-   end if
-   if ((ic2==0).or.(nam%local_diag)) then
-      allocate(avg_blk%nc1a(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
       allocate(avg_blk%m11(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
       allocate(avg_blk%m11m11(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,avg_blk%nsub,avg_blk%nsub))
-
       allocate(avg_blk%m2m2(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,avg_blk%nsub,avg_blk%nsub))
       if (.not.nam%gau_approx) allocate(avg_blk%m22(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,avg_blk%nsub))
       allocate(avg_blk%nc1a_cor(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
@@ -214,7 +211,7 @@ logical :: involved,valid
 ! Associate
 associate(ic2=>avg_blk%ic2,ib=>avg_blk%ib)
 
-if ((ic2==0).or.(nam%var_diag)) then
+if ((ic2==0).or.nam%local_diag) then
    ! Copy variance
    if (ic2==0) then
       do isub=1,avg_blk%nsub
@@ -241,9 +238,7 @@ if ((ic2==0).or.(nam%var_diag)) then
          end if
       end do
    end if
-end if
 
-if ((ic2==0).or.(nam%local_diag)) then
    ! Check whether this task is involved
    if (ic2>0) then
       involved = any(samp%local_mask(samp%c1a_to_c1,ic2))
@@ -327,17 +322,17 @@ if ((ic2==0).or.(nam%local_diag)) then
                      avg_blk%cor(jc3,jl0r,il0) = mpl%msv%valr
                   end if
                else
-                  ! Missing values
-                  avg_blk%m11(jc3,jl0r,il0) = mpl%msv%valr
+                  ! Set to zero for this task (average over tasks will follow)
+                  avg_blk%m11(jc3,jl0r,il0) = 0.0
                   do isub=1,avg_blk%nsub
                      do jsub=1,avg_blk%nsub
-                        avg_blk%m11m11(jc3,jl0r,il0,jsub,isub) = mpl%msv%valr
-                        avg_blk%m2m2(jc3,jl0r,il0,jsub,isub) = mpl%msv%valr
+                        avg_blk%m11m11(jc3,jl0r,il0,jsub,isub) = 0.0
+                        avg_blk%m2m2(jc3,jl0r,il0,jsub,isub) = 0.0
                      end do
-                     if (.not.nam%gau_approx) avg_blk%m22(jc3,jl0r,il0,isub) = mpl%msv%valr
+                     if (.not.nam%gau_approx) avg_blk%m22(jc3,jl0r,il0,isub) = 0.0
                   end do
-                  avg_blk%nc1a_cor(jc3,jl0r,il0) = mpl%msv%valr
-                  avg_blk%cor(jc3,jl0r,il0) = mpl%msv%valr
+                  avg_blk%nc1a_cor(jc3,jl0r,il0) = 0.0
+                  avg_blk%cor(jc3,jl0r,il0) = 0.0
                end if
             end do
 
@@ -351,14 +346,14 @@ if ((ic2==0).or.(nam%local_diag)) then
       end do
       !$omp end parallel do
    else
-      ! Set to zero
+      ! Set to zero for this task (average over tasks will follow)
       avg_blk%nc1a = 0
-      avg_blk%m11 = mpl%msv%valr
-      avg_blk%m11m11 = mpl%msv%valr
-      avg_blk%m2m2 = mpl%msv%valr
-      if (.not.nam%gau_approx) avg_blk%m22 = mpl%msv%valr
-      avg_blk%nc1a_cor = mpl%msv%valr
-      avg_blk%cor = mpl%msv%valr
+      avg_blk%m11 = 0.0
+      avg_blk%m11m11 = 0.0
+      avg_blk%m2m2 = 0.0
+      if (.not.nam%gau_approx) avg_blk%m22 = 0.0
+      avg_blk%nc1a_cor = 0.0
+      avg_blk%cor = 0.0
    end if
 end if
 
@@ -391,7 +386,7 @@ real(kind_real),allocatable :: m11asysq(:,:),m2m2asy(:,:),m22asy(:)
 ! Associate
 associate(ic2=>avg_blk%ic2,ib=>avg_blk%ib)
 
-if ((ic2==0).or.(nam%local_diag)) then
+if ((ic2==0).or.nam%local_diag) then
    ! Ensemble size-dependent coefficients
    n = ne
    P1 = 1.0/real(n,kind_real)
@@ -579,7 +574,7 @@ logical :: valid
 ! Associate
 associate(ic2=>avg_blk_lr%ic2,ib=>avg_blk_lr%ib)
 
-if ((ic2==0).or.(nam%local_diag)) then
+if ((ic2==0).or.nam%local_diag) then
    ! Check number of sub-ensembles
    if (avg_blk_lr%nsub/=avg_blk_lr%nsub) call mpl%abort('different number of sub-ensembles')
 
@@ -667,7 +662,7 @@ integer :: il0,jl0r,jc3,isub,jsub
 ! Associate
 associate(ic2=>avg_blk_lr%ic2,ib=>avg_blk_lr%ib)
 
-if ((ic2==0).or.(nam%local_diag)) then
+if ((ic2==0).or.nam%local_diag) then
    ! Normalize
    !$omp parallel do schedule(static) private(il0,jl0r,jc3,isub,jsub)
    do il0=1,geom%nl0

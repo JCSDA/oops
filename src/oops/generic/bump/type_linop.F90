@@ -18,7 +18,6 @@ use type_kdtree, only: kdtree_type
 use type_mesh, only: mesh_type
 use type_mpl, only: mpl_type
 use type_rng, only: rng_type
-use fckit_mpi_module, only: fckit_mpi_status
 
 implicit none
 
@@ -54,7 +53,7 @@ contains
    procedure :: linop_interp_from_mesh_kdtree
    procedure :: linop_interp_grid
    generic :: interp => linop_interp_from_lat_lon,linop_interp_from_mesh_kdtree,linop_interp_grid
-   procedure :: interp_check_mask => linop_interp_check_mask
+   procedure :: check_mask => linop_check_mask
    procedure :: interp_missing => linop_interp_missing
 end type linop_type
 
@@ -707,17 +706,16 @@ character(len=*),intent(in) :: interp_type   ! Interpolation type
 
 ! Local variables
 integer :: i,i_src,i_dst,nn_index(1),n_s,ib(3),nnat,inat,np,iproc,offset,i_s
-integer :: i_dst_s(mpl%nproc),i_dst_e(mpl%nproc),n_dst_loc(mpl%nproc),i_dst_loc,proc_to_n_s(mpl%nproc)
+integer :: n_dst_loc(0:mpl%nproc),i_dst_loc,proc_to_n_s(mpl%nproc),n_s_loc(0:mpl%nproc)
 integer,allocatable :: natis(:),row(:),col(:)
 real(kind_real) :: nn_dist(1),b(3)
 real(kind_real),allocatable :: area_polygon(:),area_polygon_new(:),natwgt(:),S(:)
 logical :: loop
 logical,allocatable :: missing(:)
 type(mesh_type) :: meshnew
-type(fckit_mpi_status) :: status
 
 ! MPI splitting
-call mpl%split(n_dst,i_dst_s,i_dst_e,n_dst_loc)
+call mpl%split(n_dst,n_dst_loc)
 
 ! Allocation
 np = mpl%msv%vali
@@ -753,7 +751,7 @@ call mpl%prog_init(n_dst_loc(mpl%myproc))
 n_s = 0
 do i_dst_loc=1,n_dst_loc(mpl%myproc)
    ! Indices
-   i_dst = i_dst_s(mpl%myproc)+i_dst_loc-1
+   i_dst = sum(n_dst_loc(0:mpl%myproc-1))+i_dst_loc
 
    if (mask_dst(i_dst)) then
       ! Find nearest neighbor
@@ -850,41 +848,25 @@ linop%n_src = n_src
 linop%n_dst = n_dst
 call linop%alloc
 
-! Communication
-if (mpl%main) then
-   offset = 0
-   do iproc=1,mpl%nproc
-      if (proc_to_n_s(iproc)>0) then
-         if (iproc==mpl%ioproc) then
-            ! Copy data
-            linop%row(offset+1:offset+proc_to_n_s(iproc)) = row(1:proc_to_n_s(iproc))
-            linop%col(offset+1:offset+proc_to_n_s(iproc)) = col(1:proc_to_n_s(iproc))
-            linop%S(offset+1:offset+proc_to_n_s(iproc)) = S(1:proc_to_n_s(iproc))
-         else
-            ! Receive data on ioproc
-            call mpl%f_comm%receive(linop%row(offset+1:offset+proc_to_n_s(iproc)),iproc-1,mpl%tag,status)
-            call mpl%f_comm%receive(linop%col(offset+1:offset+proc_to_n_s(iproc)),iproc-1,mpl%tag+1,status)
-            call mpl%f_comm%receive(linop%S(offset+1:offset+proc_to_n_s(iproc)),iproc-1,mpl%tag+2,status)
-         end if
+! Copy data
+offset = 0
+do iproc=1,mpl%nproc
+   if (proc_to_n_s(iproc)>0) then
+      if (iproc==mpl%myproc) then
+         linop%row(offset+1:offset+proc_to_n_s(iproc)) = row(1:proc_to_n_s(iproc))
+         linop%col(offset+1:offset+proc_to_n_s(iproc)) = col(1:proc_to_n_s(iproc))
+         linop%S(offset+1:offset+proc_to_n_s(iproc)) = S(1:proc_to_n_s(iproc))
       end if
-
-      ! Update offset
-      offset = offset+proc_to_n_s(iproc)
-   end do
-else
-   if (n_s>0) then
-      ! Send data to ioproc
-      call mpl%f_comm%send(row(1:n_s),mpl%ioproc-1,mpl%tag)
-      call mpl%f_comm%send(col(1:n_s),mpl%ioproc-1,mpl%tag+1)
-      call mpl%f_comm%send(S(1:n_s),mpl%ioproc-1,mpl%tag+2)
    end if
-end if
-call mpl%update_tag(3)
+   offset = offset+proc_to_n_s(iproc)
+end do
 
-! Broadcast data
-call mpl%f_comm%broadcast(linop%row,mpl%ioproc-1)
-call mpl%f_comm%broadcast(linop%col,mpl%ioproc-1)
-call mpl%f_comm%broadcast(linop%S,mpl%ioproc-1)
+! MPI sharing
+n_s_loc(0) = 0
+n_s_loc(1:mpl%nproc) = proc_to_n_s
+call mpl%share(linop%n_s,n_s_loc,linop%row)
+call mpl%share(linop%n_s,n_s_loc,linop%col)
+call mpl%share(linop%n_s,n_s_loc,linop%S)
 
 ! Deal with missing points
 call linop%interp_missing(mpl,n_dst,lon_dst,lat_dst,mask_dst,interp_type)
@@ -987,7 +969,7 @@ if (mask_check) then
    lat_col = geom%lat(c1_to_c0)
 
    ! Check mask boundaries
-   call interp_base%interp_check_mask(mpl,geom,valid,il0i,lon_col=lon_col,lat_col=lat_col)
+   call interp_base%check_mask(mpl,geom,valid,il0i,lon_col=lon_col,lat_col=lat_col)
 
    ! Release memory
    deallocate(lon_col)
@@ -1059,10 +1041,10 @@ deallocate(valid)
 end subroutine linop_interp_grid
 
 !----------------------------------------------------------------------
-! Subroutine: linop_interp_check_mask
-! Purpose: check mask boundaries for interpolations
+! Subroutine: linop_check_mask
+! Purpose: check mask boundaries for linear operators
 !----------------------------------------------------------------------
-subroutine linop_interp_check_mask(linop,mpl,geom,valid,il0,lon_row,lat_row,lon_col,lat_col)
+subroutine linop_check_mask(linop,mpl,geom,valid,il0,lon_row,lat_row,lon_col,lat_col)
 
 implicit none
 
@@ -1071,26 +1053,26 @@ class(linop_type),intent(inout) :: linop                    ! Linear operator
 type(mpl_type),intent(inout) :: mpl                         ! MPI data
 type(geom_type),intent(in) :: geom                          ! Geometry
 logical,intent(inout) :: valid(linop%n_s)                   ! Valid points
+integer,intent(in) :: il0                                   ! Level
 real(kind_real),intent(in),optional :: lon_row(linop%n_dst) ! Row longitude (Sc0 longitude if missing)
 real(kind_real),intent(in),optional :: lat_row(linop%n_dst) ! Row latitude (Sc0 latitude if missing)
 real(kind_real),intent(in),optional :: lon_col(linop%n_src) ! Column longitude (Sc0 longitude if missing)
 real(kind_real),intent(in),optional :: lat_col(linop%n_src) ! Column latitude (Sc0 latitude if missing)
 
 ! Local variables
-integer :: i_s,il0,iproc
-integer :: i_s_s(mpl%nproc),i_s_e(mpl%nproc),n_s_loc(mpl%nproc),i_s_loc
+integer :: i_s
+integer :: n_s_loc(0:mpl%nproc),i_s_loc
 real(kind_real) :: llon_row,llat_row,llon_col,llat_col
-type(fckit_mpi_status) :: status
 
 ! MPI splitting
-call mpl%split(linop%n_s,i_s_s,i_s_e,n_s_loc)
+call mpl%split(linop%n_s,n_s_loc)
 
 ! Check that interpolations are not crossing mask boundaries
 call mpl%prog_init(n_s_loc(mpl%myproc))
 !$omp parallel do schedule(static) private(i_s_loc,i_s,llon_row,llat_row,llon_col,llat_col)
 do i_s_loc=1,n_s_loc(mpl%myproc)
    ! Indices
-   i_s = i_s_s(mpl%myproc)+i_s_loc-1
+   i_s = sum(n_s_loc(0:mpl%myproc-1))+i_s_loc
 
    if (valid(i_s)) then
       ! Row lon/lat
@@ -1121,28 +1103,10 @@ end do
 !$omp end parallel do
 call mpl%prog_final
 
-! Communication
-if (mpl%main) then
-   do iproc=1,mpl%nproc
-      if (n_s_loc(iproc)>0) then
-         if (iproc/=mpl%ioproc) then
-            ! Receive data on ioproc
-            call mpl%f_comm%receive(valid(i_s_s(iproc):i_s_e(iproc)),iproc-1,mpl%tag,status)
-         end if
-      end if
-   end do
-else
-   if (n_s_loc(mpl%myproc)>0) then
-      ! Send data to ioproc
-      call mpl%f_comm%send(valid(i_s_s(mpl%myproc):i_s_e(mpl%myproc)),mpl%ioproc-1,mpl%tag)
-   end if
-end if
-call mpl%update_tag(1)
+! MPI sharing
+call mpl%share(linop%n_s,n_s_loc,valid)
 
-! Broadcast data
-call mpl%f_comm%broadcast(valid,mpl%ioproc-1)
-
-end subroutine linop_interp_check_mask
+end subroutine linop_check_mask
 
 !----------------------------------------------------------------------
 ! Subroutine: linop_interp_missing

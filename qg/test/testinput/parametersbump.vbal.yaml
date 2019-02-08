@@ -80,10 +80,11 @@ variables:
   - u
   - v
   - bc
-vbal_block(1): 1
-vbal_block(2): 1
-vbal_block(3): 1
-vbal_block(4): 1
-vbal_block(5): 1
-vbal_block(6): 1
+vbal_block:
+- 1
+- 1
+- 1
+- 1
+- 1
+- 1
 vbal_rad: 1000000.0

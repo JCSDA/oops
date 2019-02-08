@@ -27,7 +27,7 @@ use type_samp, only: samp_type
 
 implicit none
 
-logical,parameter :: cor_tracker = .true.                  ! Tracker method
+logical,parameter :: cor_tracker = .false.                 ! Tracker method
 real(kind_real),parameter :: max_std_ratio = 2.5_kind_real ! Minimum ratio between correlation maximum and local standard deviation
 
 ! Displacement data derived type
@@ -130,27 +130,29 @@ type(ens_type), intent(in) :: ens        ! Ensemble
 
 ! Local variables
 integer :: ic0,ic1,ic2,ic2a,jn,jc0,il0,il0i,isub,iv,its,ie,ie_sub,iter,ic0a,nc0d,ic0d,jc0d,jnmax,nnmax
-integer :: ic0_ori(samp%nc2a),nn(samp%nc2a,geom%nl0),ic0_rac(samp%nc2a,geom%nl0),c0_to_c0d(geom%nc0),c0a_to_c0d(geom%nc0a)
+integer :: nn(samp%nc2a,geom%nl0),ic0_rac(samp%nc2a,geom%nl0)
+integer :: c0_to_c0d(geom%nc0),c0a_to_c0d(geom%nc0a)
 integer,allocatable :: jc0_ra(:,:,:),c0d_to_c0(:)
-real(kind_real) :: m2m2,fld_1,fld_2,cov,drhflt,dum,cmax
+real(kind_real) :: m2m2,fld_1,fld_2,cov,drhflt,dum,cmax,search_rad
 real(kind_real) :: mean,stddev,norm_tot,distsum_tot
+real(kind_real) :: dlon_c2a(samp%nc2a),dlat_c2a(samp%nc2a),dist_c2a(samp%nc2a)
+real(kind_real) :: lon_c2a(samp%nc2a),lat_c2a(samp%nc2a)
+real(kind_real) :: x_ori(samp%nc2a),y_ori(samp%nc2a),z_ori(samp%nc2a)
+real(kind_real) :: x_ini(samp%nc2a),y_ini(samp%nc2a),z_ini(samp%nc2a)
+real(kind_real) :: dx_ini(samp%nc2a),dy_ini(samp%nc2a),dz_ini(samp%nc2a)
+real(kind_real) :: dx(samp%nc2a),dy(samp%nc2a),dz(samp%nc2a),dd(samp%nc2a)
+real(kind_real) :: dx_c2b(samp%nc2b),dy_c2b(samp%nc2b),dz_c2b(samp%nc2b)
+real(kind_real) :: dx_c0a(geom%nc0a),dy_c0a(geom%nc0a),dz_c0a(geom%nc0a)
+real(kind_real) :: x_ori_c0a(geom%nc0a),y_ori_c0a(geom%nc0a),z_ori_c0a(geom%nc0a)
+real(kind_real) :: lon_c2(nam%nc2),lat_c2(nam%nc2)
 real(kind_real),allocatable :: nn_dist(:)
 real(kind_real),allocatable :: fld_ext_1(:,:,:),fld_ext_2(:,:,:)
 real(kind_real),allocatable :: m1_1(:,:,:,:,:),m2_1(:,:,:,:,:)
 real(kind_real),allocatable :: m1_2(:,:,:,:,:),m2_2(:,:,:,:,:)
 real(kind_real),allocatable :: m11(:,:,:,:,:)
 real(kind_real),allocatable :: cor(:),cor_avg(:)
-real(kind_real) :: dlon_c0a(geom%nc0a),dlat_c0a(geom%nc0a)
-real(kind_real) :: dlon_c2a(samp%nc2a),dlat_c2a(samp%nc2a),dist_c2a(samp%nc2a)
-real(kind_real) :: dlon_c2b(samp%nc2b),dlat_c2b(samp%nc2b)
-real(kind_real) :: lon_c2a_ori(samp%nc2a,geom%nl0),lat_c2a_ori(samp%nc2a,geom%nl0)
-real(kind_real) :: lon_c2a(samp%nc2a),lat_c2a(samp%nc2a)
-real(kind_real) :: lon_c2(nam%nc2),lat_c2(nam%nc2),valid_c2(nam%nc2)
-real(kind_real) :: x_ori(samp%nc2a),y_ori(samp%nc2a),z_ori(samp%nc2a)
-real(kind_real) :: dx_ini(samp%nc2a),dy_ini(samp%nc2a),dz_ini(samp%nc2a)
-real(kind_real) :: dx(samp%nc2a),dy(samp%nc2a),dz(samp%nc2a)
 logical :: dichotomy,convergence
-logical :: mask_c2a(samp%nc2a,geom%nl0),mask_c2(nam%nc2,geom%nl0)
+logical :: valid_c2(nam%nc2),mask_c2a(samp%nc2a,geom%nl0),mask_c2(nam%nc2,geom%nl0)
 logical,allocatable :: lcheck_c0d(:),mask_nn(:,:,:),mask_nn_tmp(:)
 type(com_type) :: com_AD
 type(mesh_type) :: mesh
@@ -169,30 +171,32 @@ do il0=1,geom%nl0
       mask_c2a(ic2a,il0) = mask_c2(ic2,il0)
       if (mask_c2a(ic2a,il0)) then
          ic0 = samp%c2_to_c0(ic2)
-         lon_c2a_ori(ic2a,il0) = geom%lon(ic0)
-         lat_c2a_ori(ic2a,il0) = geom%lat(ic0)
+         displ%lon_c2a(ic2a,il0) = geom%lon(ic0)
+         displ%lat_c2a(ic2a,il0) = geom%lat(ic0)
       end if
    end do
 end do
-
-! Copy
-displ%lon_c2a = lon_c2a_ori
-displ%lat_c2a = lat_c2a_ori
+do ic2a=1,samp%nc2a
+   ic2 = samp%c2a_to_c2(ic2a)
+   ic0 = samp%c2_to_c0(ic2)
+   call trans(mpl,1,geom%lat(ic0),geom%lon(ic0),x_ori(ic2a:ic2a),y_ori(ic2a:ic2a),z_ori(ic2a:ic2a))
+end do
+do ic0a=1,geom%nc0a
+   ic0 = geom%c0a_to_c0(ic0a)
+   call trans(mpl,1,geom%lat(ic0),geom%lon(ic0),x_ori_c0a(ic0a:ic0a),y_ori_c0a(ic0a:ic0a),z_ori_c0a(ic0a:ic0a))
+end do
 
 do its=2,nam%nts
    write(mpl%info,'(a7,a,i2)') '','Timeslot ',its
    call mpl%flush
 
-   ! Find origin point and research area center
-   write(mpl%info,'(a10,a)') '','Find origin point and research area center'
+   ! Find research area center
+   write(mpl%info,'(a10,a)') '','Find research area center'
    call mpl%flush
    do ic2a=1,samp%nc2a
-      ! Origin point
-      ic2 = samp%c2a_to_c2(ic2a)
-      ic0_ori(ic2a) = samp%c2_to_c0(ic2)
-
-      if (its>2) then
-         ! Research area center
+      ! Research area center
+      if (cor_tracker.and.(its>2)) then
+         ! Find closer point to previous timeslot displaced mesh point
          allocate(nn_dist(1))
          do il0=1,geom%nl0
             call geom%kdtree%find_nearest_neighbors(mpl,displ%lon_c2a_flt(ic2a,il0,its-1),displ%lat_c2a_flt(ic2a,il0,its-1),1, &
@@ -200,7 +204,9 @@ do its=2,nam%nts
          end do
          deallocate(nn_dist)
       else
-         ic0_rac(ic2a,:) = ic0_ori(ic2a)
+         ! Set at origin mesh point
+         ic2 = samp%c2a_to_c2(ic2a)
+         ic0_rac(ic2a,:) = samp%c2_to_c0(ic2)
       end if
    end do
 
@@ -214,7 +220,8 @@ do its=2,nam%nts
          ic0 = ic0_rac(ic2a,il0)
 
          ! Count nearest neighbors
-         call geom%kdtree%count_nearest_neighbors(mpl,geom%lon(ic0),geom%lat(ic0),nam%displ_rad,nn(ic2a,il0))
+         search_rad = min(geom%mesh%bdist(geom%mesh%order_inv(ic0)),nam%displ_rad)
+         call geom%kdtree%count_nearest_neighbors(mpl,geom%lon(ic0),geom%lat(ic0),search_rad,nn(ic2a,il0))
          nn(ic2a,il0) = max(1,nn(ic2a,il0))
 
          ! Update
@@ -343,11 +350,7 @@ do its=2,nam%nts
                      do jn=1,nn(ic2a,il0)
                         if (mask_nn(jn,ic2a,il0)) then
                            ! Indices
-                           if (cor_tracker) then
-                              ic0 = ic0_rac(ic2a,il0)
-                           else
-                              ic0 = ic0_ori(ic2a)
-                           end if
+                           ic0 = ic0_rac(ic2a,il0)
                            jc0 = jc0_ra(jn,ic2a,il0)
 
                            ! Halo D indices
@@ -447,11 +450,12 @@ do its=2,nam%nts
                jc0 = jc0_ra(jn,ic2a,il0)
 
                ! Compute displacement and distance
-               dlon_c2a(ic2a) = geom%lon(jc0)-lon_c2a_ori(ic2a,il0)
-               dlat_c2a(ic2a) = geom%lat(jc0)-lat_c2a_ori(ic2a,il0)
+               dlon_c2a(ic2a) = geom%lon(jc0)-displ%lon_c2a(ic2a,il0)
+               dlat_c2a(ic2a) = geom%lat(jc0)-displ%lat_c2a(ic2a,il0)
                call lonlatmod(dlon_c2a(ic2a),dlat_c2a(ic2a))
-               call sphere_dist(lon_c2a_ori(ic2a,il0),lat_c2a_ori(ic2a,il0),geom%lon(jc0),geom%lat(jc0),dist_c2a(ic2a))
+               call sphere_dist(displ%lon_c2a(ic2a,il0),displ%lat_c2a(ic2a,il0),geom%lon(jc0),geom%lat(jc0),dist_c2a(ic2a))
             else
+               ! Set at missing value
                dlon_c2a(ic2a) = mpl%msv%valr
                dlat_c2a(ic2a) = mpl%msv%valr
                dist_c2a(ic2a) = mpl%msv%valr
@@ -468,8 +472,8 @@ do its=2,nam%nts
       ! Copy lon/lat
       do ic2a=1,samp%nc2a
          if (mpl%msv%isnotr(dlon_c2a(ic2a)).and.mpl%msv%isnotr(dlat_c2a(ic2a))) then
-            lon_c2a(ic2a) = lon_c2a_ori(ic2a,il0)+dlon_c2a(ic2a)
-            lat_c2a(ic2a) = lat_c2a_ori(ic2a,il0)+dlat_c2a(ic2a)
+            lon_c2a(ic2a) = displ%lon_c2a(ic2a,il0)+dlon_c2a(ic2a)
+            lat_c2a(ic2a) = displ%lat_c2a(ic2a,il0)+dlat_c2a(ic2a)
             call lonlatmod(lon_c2a(ic2a),lat_c2a(ic2a))
          else
             lon_c2a(ic2a) = mpl%msv%valr
@@ -484,9 +488,10 @@ do its=2,nam%nts
          mesh = samp%mesh%copy()
          call mesh%trans(mpl,lon_c2,lat_c2)
          call mesh%check(mpl,valid_c2)
-         displ%valid(0,il0,its) = sum(valid_c2,mask=mask_c2(:,il0))/real(count((mask_c2(:,il0))),kind_real)
       end if
-      call mpl%f_comm%broadcast(displ%valid(0,il0,its),mpl%ioproc-1)
+      call mpl%f_comm%broadcast(valid_c2,mpl%ioproc-1)
+      displ%valid(0,il0,its) = real(count(valid_c2.and.samp%mesh%valid.and.mask_c2(:,il0)),kind_real) &
+                             & /real(count(samp%mesh%valid.and.mask_c2(:,il0)),kind_real)
       displ%rhflt(0,il0,its) = 0.0
 
       ! Average distance
@@ -500,39 +505,54 @@ do its=2,nam%nts
    end do
 
    ! Filter displacement
-   write(mpl%info,'(a10,a)') '','Filter displacement'
+   if (nam%displ_niter>0) then
+      write(mpl%info,'(a10,a)') '','Filter and interpolate displacement'
    call mpl%flush
+   else
+      write(mpl%info,'(a10,a)') '','Interpolate displacement'
+   call mpl%flush
+   end if
 
    do il0=1,geom%nl0
       write(mpl%info,'(a13,a,i3)') '','Level ',nam%levs(il0)
       call mpl%flush
 
+      ! Convert to cartesian coordinates
+      if (cor_tracker.and.(its>2)) then
+         call trans(mpl,samp%nc2a,displ%lat_c2a_flt(:,il0,its-1),displ%lon_c2a_flt(:,il0,its-1), &
+       & x_ini,y_ini,z_ini)
+      else
+         x_ini = x_ori
+         y_ini = y_ori
+         z_ini = z_ori
+      end if
+
       if (nam%displ_niter>0) then
          ! Convert to cartesian coordinates
-         call trans(mpl,samp%nc2a,lat_c2a_ori(:,il0),lon_c2a_ori(:,il0),x_ori,y_ori,z_ori)
-         call trans(mpl,samp%nc2a,lat_c2a,lon_c2a,dx_ini,dy_ini,dz_ini)
-
-         ! Dichotomy initialization
+         call trans(mpl,samp%nc2a,displ%lat_c2a_raw(:,il0,its),displ%lon_c2a_raw(:,il0,its),dx_ini,dy_ini,dz_ini)
          do ic2a=1,samp%nc2a
             if (mpl%msv%isnotr(dx_ini(ic2a))) dx_ini(ic2a) = dx_ini(ic2a)-x_ori(ic2a)
             if (mpl%msv%isnotr(dy_ini(ic2a))) dy_ini(ic2a) = dy_ini(ic2a)-y_ori(ic2a)
             if (mpl%msv%isnotr(dz_ini(ic2a))) dz_ini(ic2a) = dz_ini(ic2a)-z_ori(ic2a)
          end do
+
+         ! Dichotomy initialization
          convergence = .true.
          dichotomy = .false.
          displ%rhflt(1,il0,its) = nam%displ_rhflt
          drhflt = displ%rhflt(1,il0,its)
 
          do iter=1,nam%displ_niter
-            ! Copy increment
+            ! Copy displacement
             dx = dx_ini
             dy = dy_ini
             dz = dz_ini
 
             ! Median filter to remove extreme values
-            call samp%diag_filter(mpl,nam,geom,il0,'median',displ%rhflt(iter,il0,its),dx)
-            call samp%diag_filter(mpl,nam,geom,il0,'median',displ%rhflt(iter,il0,its),dy)
-            call samp%diag_filter(mpl,nam,geom,il0,'median',displ%rhflt(iter,il0,its),dz)
+            dd = dx**2+dy**2+dz**2
+            call samp%diag_filter(mpl,nam,geom,il0,'median',displ%rhflt(iter,il0,its),dx,dd)
+            call samp%diag_filter(mpl,nam,geom,il0,'median',displ%rhflt(iter,il0,its),dy,dd)
+            call samp%diag_filter(mpl,nam,geom,il0,'median',displ%rhflt(iter,il0,its),dz,dd)
 
             ! Average filter to smooth displacement
             call samp%diag_filter(mpl,nam,geom,il0,'gc99',displ%rhflt(iter,il0,its),dx)
@@ -540,29 +560,21 @@ do its=2,nam%nts
             call samp%diag_filter(mpl,nam,geom,il0,'gc99',displ%rhflt(iter,il0,its),dz)
 
             ! Back to spherical coordinates
-            dx = dx+x_ori
-            dy = dy+y_ori
-            dz = dz+z_ori
+            dx = x_ini+dx
+            dy = y_ini+dy
+            dz = z_ini+dz
             do ic2a=1,samp%nc2a
                call scoord(dx(ic2a),dy(ic2a),dz(ic2a),lat_c2a(ic2a),lon_c2a(ic2a),dum)
             end do
 
-            ! Reduce distance with respect to boundary
+            ! Reduce distance with respect to the boundary
             do ic2a=1,samp%nc2a
                if (mask_c2a(ic2a,il0)) then
                   ic2 = samp%c2a_to_c2(ic2a)
-                  call reduce_arc(lon_c2a_ori(ic2a,il0),lat_c2a_ori(ic2a,il0),lon_c2a(ic2a),lat_c2a(ic2a),samp%mesh%bdist(ic2), &
-                & dist_c2a(ic2a))
-                  dlon_c2a(ic2a) = lon_c2a(ic2a)-lon_c2a_ori(ic2a,il0)
-                  dlat_c2a(ic2a) = lat_c2a(ic2a)-lat_c2a_ori(ic2a,il0)
+                  ic0 = samp%c2_to_c0(ic2)
+                  call reduce_arc(displ%lon_c2a(ic2a,il0),displ%lat_c2a(ic2a,il0),lon_c2a(ic2a),lat_c2a(ic2a), &
+                & geom%mesh%bdist(geom%mesh%order_inv(ic0)),dist_c2a(ic2a))
                end if
-            end do
-
-            ! Copy lon/lat
-            do ic2a=1,samp%nc2a
-               lon_c2a(ic2a) = lon_c2a_ori(ic2a,il0)+dlon_c2a(ic2a)
-               lat_c2a(ic2a) = lat_c2a_ori(ic2a,il0)+dlat_c2a(ic2a)
-               call lonlatmod(lon_c2a(ic2a),lat_c2a(ic2a))
             end do
 
             ! Check mesh
@@ -572,28 +584,23 @@ do its=2,nam%nts
                mesh = samp%mesh%copy()
                call mesh%trans(mpl,lon_c2,lat_c2)
                call mesh%check(mpl,valid_c2)
-               displ%valid(iter,il0,its) = sum(valid_c2,mask=mask_c2(:,il0))/real(count((mask_c2(:,il0))),kind_real)
             end if
-            call mpl%f_comm%broadcast(displ%valid(iter,il0,its),mpl%ioproc-1)
-
-            ! Compute distances
-            do ic2a=1,samp%nc2a
-               if (mask_c2a(ic2a,il0)) call sphere_dist(lon_c2a_ori(ic2a,il0),lat_c2a_ori(ic2a,il0), &
-             & lon_c2a(ic2a),lat_c2a(ic2a),dist_c2a(ic2a))
-            end do
+            call mpl%f_comm%broadcast(valid_c2,mpl%ioproc-1)
+            displ%valid(iter,il0,its) = real(count(valid_c2.and.samp%mesh%valid.and.mask_c2(:,il0)),kind_real) &
+                                      & /real(count(samp%mesh%valid.and.mask_c2(:,il0)),kind_real)
 
             ! Average distance
             call mpl%f_comm%allreduce(sum(dist_c2a,mask=mask_c2a(:,il0)),distsum_tot,fckit_mpi_sum())
             displ%dist(iter,il0,its) = distsum_tot/norm_tot
 
             ! Print results
-            write(mpl%info,'(a13,a,i2,a,f10.2,a,f6.2,a,f6.2,a,f7.2,a)') '','Iteration ',iter,': rhflt = ', &
+            write(mpl%info,'(a16,a,i2,a,f10.2,a,f6.2,a,f6.2,a,f7.2,a)') '','Iteration ',iter,': rhflt = ', &
           & displ%rhflt(iter,il0,its)*reqkm,' km, valid points: ',100.0*displ%valid(0,il0,its),'% ~> ', &
           & 100.0*displ%valid(iter,il0,its),'%, average displacement = ',displ%dist(iter,il0,its)*reqkm,' km'
             call mpl%flush
 
             ! Update support radius
-            if (displ%valid(iter,il0,its)<1.0-nam%displ_tol) then
+            if (displ%valid(iter,il0,its)<1.0) then
                ! Increase filtering support radius
                if (dichotomy) then
                   drhflt = 0.5*drhflt
@@ -623,9 +630,6 @@ do its=2,nam%nts
                displ%dist_c2a_flt(:,il0,its) = dist_c2a
             end if
          end do
-
-         ! Check convergence
-         if (.not.convergence) call mpl%abort('iterative filtering failed')
       else
          ! Print results
          write(mpl%info,'(a10,a22,f10.2,a,f6.2,a,f7.2,a)') '','Raw displacement: rhflt = ', &
@@ -633,28 +637,50 @@ do its=2,nam%nts
        & displ%dist(0,il0,its)*reqkm,' km'
          call mpl%flush
 
+         ! No filtering
+         convergence = .not.(displ%valid(0,il0,its)<1.0)
+
          ! Copy
          displ%lon_c2a_flt(:,il0,its) = displ%lon_c2a_raw(:,il0,its)
          displ%lat_c2a_flt(:,il0,its) = displ%lat_c2a_raw(:,il0,its)
          displ%dist_c2a_flt(:,il0,its) = displ%dist_c2a_raw(:,il0,its)
       end if
 
-      ! Displacement interpolation
-      do ic2a=1,samp%nc2a
-         call lonlatmod(dlon_c2a(ic2a),dlat_c2a(ic2a))
-      end do
-      il0i = min(il0,geom%nl0i)
-      call samp%com_AB%ext(mpl,dlon_c2a,dlon_c2b)
-      call samp%com_AB%ext(mpl,dlat_c2a,dlat_c2b)
-      call samp%h(il0i)%apply(mpl,dlon_c2b,dlon_c0a)
-      call samp%h(il0i)%apply(mpl,dlat_c2b,dlat_c0a)
+      ! Check convergence
+      if (.not.convergence) call mpl%abort('convergence failed in displ%compute')
 
-      ! Displaced grid
+      ! Convert to cartesian coordinates
+      call trans(mpl,samp%nc2a,displ%lat_c2a_flt(:,il0,its),displ%lon_c2a_flt(:,il0,its),dx,dy,dz)
+      do ic2a=1,samp%nc2a
+         if (mpl%msv%isnotr(dx(ic2a))) dx(ic2a) = dx(ic2a)-x_ori(ic2a)
+         if (mpl%msv%isnotr(dy(ic2a))) dy(ic2a) = dy(ic2a)-y_ori(ic2a)
+         if (mpl%msv%isnotr(dz(ic2a))) dz(ic2a) = dz(ic2a)-z_ori(ic2a)
+      end do
+
+      ! Displacement interpolation
+      il0i = min(il0,geom%nl0i)
+      call samp%com_AB%ext(mpl,dx,dx_c2b)
+      call samp%com_AB%ext(mpl,dy,dy_c2b)
+      call samp%com_AB%ext(mpl,dz,dz_c2b)
+      call samp%h(il0i)%apply(mpl,dx_c2b,dx_c0a)
+      call samp%h(il0i)%apply(mpl,dy_c2b,dy_c0a)
+      call samp%h(il0i)%apply(mpl,dz_c2b,dz_c0a)
+
+      ! Back to spherical coordinates
+      dx_c0a = x_ori_c0a+dx_c0a
+      dy_c0a = y_ori_c0a+dy_c0a
+      dz_c0a = z_ori_c0a+dz_c0a
       do ic0a=1,geom%nc0a
-         ic0 = geom%c0a_to_c0(ic0a)
-         samp%displ_lon(ic0a,il0,its) = geom%lon(ic0)+dlon_c0a(ic0a)
-         samp%displ_lat(ic0a,il0,its) = geom%lat(ic0)+dlat_c0a(ic0a)
-         call lonlatmod(samp%displ_lon(ic0a,il0,its),samp%displ_lat(ic0a,il0,its))
+         call scoord(dx_c0a(ic0a),dy_c0a(ic0a),dz_c0a(ic0a),samp%displ_lat(ic0a,il0,its),samp%displ_lon(ic0a,il0,its),dum)
+      end do
+
+      ! Reduce distance with respect to the boundary
+      do ic0a=1,geom%nc0a
+         if (geom%mask_c0a(ic0a,il0)) then
+            ic0 = geom%c0a_to_c0(ic0a)
+            call reduce_arc(geom%lon(ic0),geom%lat(ic0),samp%displ_lon(ic0a,il0,its),samp%displ_lat(ic0a,il0,its), &
+          & geom%mesh%bdist(geom%mesh%order_inv(ic0)),dum)
+         end if
       end do
    end do
 
