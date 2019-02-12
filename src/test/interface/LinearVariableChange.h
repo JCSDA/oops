@@ -118,14 +118,17 @@ template <typename MODEL> void testLinearVariableChangeZero() {
     const bool testinverse = Test_::linvarchgconfs()[jj].getBool("testinverse", true);
     if (testinverse)
       {
+        Increment_   KIdxin(Test_::resol(), varout, Test_::time());
+        Increment_ KTIdxout(Test_::resol(), varin,  Test_::time());
+
         oops::Log::info() << "Doing zero test for inverse" << std::endl;
         dxout.zero();
-        changevar->multiply(dxout, Kdxout);
-        BOOST_CHECK_EQUAL(Kdxout.norm(), 0.0);
+        changevar->multiplyInverseAD(dxout, KTIdxout);
+        BOOST_CHECK_EQUAL(KTIdxout.norm(), 0.0);
 
         dxin.zero();
-        changevar->multiplyAD(dxin, KTdxin);
-        BOOST_CHECK_EQUAL(KTdxin.norm(), 0.0);
+        changevar->multiplyInverse(dxin, KIdxin);
+        BOOST_CHECK_EQUAL(KIdxin.norm(), 0.0);
       } else {
       oops::Log::info() << "Not doing zero test for inverse" << std::endl;
     }
@@ -177,15 +180,17 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
     const bool testinverse = Test_::linvarchgconfs()[jj].getBool("testinverse", true);
     if (testinverse)
       {
+        Increment_   invKdxin(Test_::resol(), varout, Test_::time());
+        Increment_ KTIdxout(Test_::resol(), varin,  Test_::time());
         oops::Log::info() << "Doing adjoint test for inverse" << std::endl;
         dxin.random();
         dxout.random();
         dxin0 = dxin;
         dxout0 = dxout;
-        changevar->multiplyInverse(dxout, Kdxout);
-        changevar->multiplyInverseAD(dxin, KTdxin);
-        zz1 = dot_product(Kdxout, dxin0);
-        zz2 = dot_product(dxout0, KTdxin);
+        changevar->multiplyInverseAD(dxout, KTIdxout);
+        changevar->multiplyInverse(dxin, invKdxin);
+        zz1 = dot_product(KTIdxout, dxin0);
+        zz2 = dot_product(dxout0, invKdxin);
         oops::Log::info() << "<dxout,KinvTdxin>-<Kinvdxout,dxin>/<dxout,KinvTdxin>="
                       << (zz1-zz2)/zz1 << std::endl;
         oops::Log::info() << "<dxout,KinvTdxin>-<Kinvdxout,dxin>/<Kinvdxout,dxin>="
