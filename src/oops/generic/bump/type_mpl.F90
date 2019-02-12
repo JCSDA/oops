@@ -206,9 +206,11 @@ integer :: iproc,ifileunit
 logical :: ldatadir
 character(len=1024) :: filename
 
-! Check data directory existence
-inquire(file=trim(datadir),exist=ldatadir)
-if (.not.ldatadir) call execute_command_line('mkdir -p '//trim(datadir))
+if (mpl%main.and.(trim(datadir)/='.')) then
+   ! Check data directory existence
+   inquire(file=trim(datadir),exist=ldatadir)
+   if (.not.ldatadir) call execute_command_line('mkdir -p '//trim(datadir))
+end if
 
 ! Set verbosity level
 mpl%verbosity = trim(verbosity)
