@@ -190,6 +190,7 @@ character(len=1024) :: subr = 'diag_blk_write'
 associate(ib=>diag_blk%ib,ic2a=>diag_blk%ic2a)
 
 ! Check if the file exists
+call mpl%check_datadir(trim(nam%datadir))
 info = nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_noclobber,nf90_64bit_offset),ncid)
 if (info==nf90_noerr) then
    ! Write namelist parameters

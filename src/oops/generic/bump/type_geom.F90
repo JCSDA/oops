@@ -949,6 +949,7 @@ elseif (mpl%nproc>1) then
       ! Write distribution
       if (mpl%main) then
          ! Create file
+         call mpl%check_datadir(trim(nam%datadir))
          call mpl%ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename_nc),or(nf90_clobber,nf90_64bit_offset),ncid))
 
          ! Write namelist parameters
