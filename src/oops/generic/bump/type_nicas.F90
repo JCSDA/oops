@@ -329,7 +329,6 @@ character(len=1024) :: subr = 'nicas_write'
 do ib=1,bpar%nbe
    if (bpar%B_block(ib)) then
       ! Create file
-      call mpl%check_datadir(trim(nam%datadir))
       filename = trim(nam%prefix)//'_'//trim(nicas%blk(ib)%name)//'.nc'
       call mpl%ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_clobber,nf90_64bit_offset),ncid))
 
@@ -439,7 +438,6 @@ do ib=1,bpar%nbe
       allocate(lcheck(nicas%blk(ib)%nc1,nicas%blk(ib)%nl1))
 
       ! Create summary file
-      call mpl%check_datadir(trim(nam%datadir))
       filename = trim(nam%prefix)//'_'//trim(nicas%blk(ib)%name)//'_summary.nc'
       call mpl%ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_clobber,nf90_64bit_offset),ncid))
 

@@ -270,7 +270,6 @@ character(len=1024) :: filename
 character(len=1024),parameter :: subr='vbal_write'
 
 ! Create file
-call mpl%check_datadir(trim(nam%datadir))
 write(filename,'(a,a,i4.4,a,i4.4,a)') trim(nam%prefix),'_vbal_',mpl%nproc,'-',mpl%myproc,'.nc'
 call mpl%ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_clobber,nf90_64bit_offset),ncid))
 

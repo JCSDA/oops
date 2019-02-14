@@ -495,7 +495,6 @@ if (.not.mpl%main) call mpl%abort('only I/O proc should enter '//trim(subr))
 ! Create file
 write(mpl%info,'(a7,a)') '','Write sampling'
 call mpl%flush
-call mpl%check_datadir(trim(nam%datadir))
 call mpl%ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(nam%prefix)//'_sampling.nc',or(nf90_clobber,nf90_64bit_offset),ncid))
 
 ! Write namelist parameters
@@ -578,7 +577,6 @@ if (nam%new_vbal.or.nam%new_lct.or.(nam%new_hdiag.and.(nam%local_diag.or.nam%dis
    ! Write sampling masks
 
    ! Create file
-   call mpl%check_datadir(trim(nam%datadir))
    call mpl%ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(nam%prefix)//'_sampling_mask.nc', &
  & or(nf90_clobber,nf90_64bit_offset),ncid))
 
@@ -642,7 +640,6 @@ if (nam%new_vbal.or.nam%new_lct.or.(nam%new_hdiag.and.(nam%local_diag.or.nam%dis
    ! Write nearest neighbors and interpolation
    do il0i=1,geom%nl0i
       ! Create file
-      call mpl%check_datadir(trim(nam%datadir))
       write(il0ichar,'(i3.3)') il0i
       call mpl%ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(nam%prefix)//'_sampling_'//il0ichar//'.nc', &
     & or(nf90_clobber,nf90_64bit_offset),ncid))

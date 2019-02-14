@@ -833,7 +833,6 @@ deallocate(sbuf)
 
 if (mpl%main) then
    ! Create file
-   call mpl%check_datadir(trim(nam%datadir))
    call mpl%ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_clobber,nf90_64bit_offset),ncid))
 
    ! Write namelist parameters
