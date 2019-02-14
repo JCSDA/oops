@@ -54,8 +54,6 @@ type mpl_type
    character(len=1024) :: vunitchar ! Vertical unit
 
    type(msv_type) :: msv            ! Missing values
-
-   logical :: datadir_checked       ! Flag to know whether datadir existence has been checked
 contains
    procedure :: newunit => mpl_newunit
    procedure :: init => mpl_init
@@ -63,7 +61,6 @@ contains
    procedure :: init_listing => mpl_init_listing
    procedure :: flush => mpl_flush
    procedure :: close_listing => mpl_close_listing
-   procedure :: check_datadir => mpl_check_datadir
    procedure :: abort => mpl_abort
    procedure :: warning => mpl_warning
    procedure :: prog_init => mpl_prog_init
@@ -168,9 +165,6 @@ mpl%nthread = 1
 !$ mpl%nthread = omp_get_max_threads()
 !$ call omp_set_num_threads(mpl%nthread)
 
-! Datadir has not been checked yet
-mpl%datadir_checked = .false.
-
 end subroutine mpl_init
 
 !----------------------------------------------------------------------
@@ -193,12 +187,13 @@ end subroutine mpl_final
 ! Subroutine: mpl_init_listing
 ! Purpose: initialize listings
 !----------------------------------------------------------------------
-subroutine mpl_init_listing(mpl,prefix,model,verbosity,colorlog,logpres,lunit)
+subroutine mpl_init_listing(mpl,datadir,prefix,model,verbosity,colorlog,logpres,lunit)
 
 implicit none
 
 ! Passed variables
 class(mpl_type),intent(inout) :: mpl     ! MPI data
+character(len=*),intent(in) :: datadir   ! Output data directory
 character(len=*),intent(in) :: prefix    ! Output prefix
 character(len=*),intent(in) :: model     ! Model
 character(len=*),intent(in) :: verbosity ! Verbosity level
@@ -210,6 +205,10 @@ integer,intent(in),optional :: lunit     ! Main listing unit
 integer :: iproc,ifileunit
 logical :: ldatadir
 character(len=1024) :: filename
+
+! Check data directory existence
+inquire(file=trim(datadir),exist=ldatadir)
+if (.not.ldatadir) call execute_command_line('mkdir -p '//trim(datadir))
 
 ! Set verbosity level
 mpl%verbosity = trim(verbosity)
@@ -363,31 +362,6 @@ if ((trim(mpl%verbosity)=='all').or.((trim(mpl%verbosity)=='main').and.mpl%main)
 end if
 
 end subroutine mpl_close_listing
-
-!----------------------------------------------------------------------
-! Subroutine: mpl_check_datadir
-! Purpose: check datadir existence
-!----------------------------------------------------------------------
-subroutine mpl_check_datadir(mpl,datadir)
-
-implicit none
-
-! Passed variables
-class(mpl_type),intent(inout) :: mpl     ! MPI data
-character(len=*),intent(in) :: datadir   ! Output data directory
-
-! Local variables
-logical :: ldatadir
-
-if (mpl%main.and.(.not.mpl%datadir_checked).and.(trim(datadir)/='.')) then
-   ! Check data directory existence
-   inquire(file=trim(datadir),exist=ldatadir)
-   if (.not.ldatadir) call execute_command_line('mkdir -p '//trim(datadir))
-   mpl%datadir_checked = .true.
-end if
-
-end subroutine mpl_check_datadir
-
 !----------------------------------------------------------------------
 ! Subroutine: mpl_abort
 ! Purpose: clean MPI abort

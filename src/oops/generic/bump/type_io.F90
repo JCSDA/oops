@@ -190,7 +190,6 @@ if (nam%field_io) then
 
    if (nam%split_io.and.(mpl%nproc>1)) then
       ! Check if the file exists
-      call mpl%check_datadir(trim(nam%datadir))
       write(filename_proc,'(a,a,a,a,i4.4,a,i4.4,a)') trim(nam%datadir),'/',trim(filename),'_',mpl%nproc,'-',mpl%myproc,'.nc'
       info = nf90_create(trim(filename_proc),or(nf90_noclobber,nf90_64bit_offset),ncid)
       if (info==nf90_noerr) then
@@ -261,7 +260,6 @@ if (nam%field_io) then
 
       if (mpl%main) then
          ! Check if the file exists
-         call mpl%check_datadir(trim(nam%datadir))
          info = nf90_create(trim(nam%datadir)//'/'//trim(filename)//'.nc',or(nf90_noclobber,nf90_64bit_offset),ncid)
          if (info==nf90_noerr) then
             ! Write namelist parameters
@@ -713,7 +711,6 @@ deallocate(sbuf)
 
 if (mpl%main) then
    ! Check if the file exists
-   call mpl%check_datadir(trim(nam%datadir))
    info = nf90_create(trim(nam%datadir)//'/'//trim(filename)//'.nc',or(nf90_noclobber,nf90_64bit_offset),ncid)
    if (info==nf90_noerr) then
       ! Write namelist parameters

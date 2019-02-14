@@ -915,7 +915,6 @@ if (mpl%main.and.nam%write_grids) then
    end do
 
    ! Create file
-   call mpl%check_datadir(trim(nam%datadir))
    filename = trim(nam%prefix)//'_'//trim(nicas_blk%name)//'_grids.nc'
    call mpl%ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_clobber,nf90_64bit_offset),ncid))
 
