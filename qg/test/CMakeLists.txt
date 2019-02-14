@@ -35,6 +35,7 @@ list( APPEND qg_test_input
   testinput/makeobs4d.yaml
   testinput/makeobs4d12h.yaml
   testinput/makeobsbias.yaml
+  testinput/moments.yaml
   testinput/test.yaml
   testinput/truth.yaml
   testinput/test_op_obs.yaml
@@ -542,3 +543,8 @@ ecbuild_add_test( TARGET test_qg_convertstate
                   COMMAND ${CMAKE_BINARY_DIR}/bin/qg_convertstate.x
                   ARGS testinput/convertstate.yaml
                   DEPENDS qg_convertstate.x )
+
+ecbuild_add_test( TARGET test_qg_moments
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_moments.x
+                  ARGS testinput/moments.yaml
+                  DEPENDS qg_moments.x )

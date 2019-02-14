@@ -1,0 +1,46 @@
+bottom_layer_depth: '4500.0'
+top_layer_depth: '5500.0'
+tstep: PT1H
+Geometry:
+  bc: '1'
+  nx: '40'
+  ny: '20'
+Variables:
+  variables:
+  - x
+  - bc
+date:
+  validtime: 2010-01-01T01:00:00Z
+MeanOut:
+  datadir: Data
+  exp: mean
+  type: fc
+  date: 2010-01-01T01:00:00Z
+VarianceOut:
+  datadir: Data
+  exp: variance
+  type: fc
+  date: 2010-01-01T01:00:00Z
+
+varchange: ChVarQG
+inputVariables:
+  variables:
+  - x
+  - bc
+outputVariables:
+  variables:
+  - x
+  - bc
+
+States:
+  state:
+  - date: 2010-01-01T01:00:00Z
+    filename: Data/test.ens.1.2009-12-31T00:00:00Z.P1DT1H
+  - date: 2010-01-01T01:00:00Z
+    filename: Data/test.ens.2.2009-12-31T00:00:00Z.P1DT1H
+  - date: 2010-01-01T01:00:00Z
+    filename: Data/test.ens.3.2009-12-31T00:00:00Z.P1DT1H
+  - date: 2010-01-01T01:00:00Z
+    filename: Data/test.ens.4.2009-12-31T00:00:00Z.P1DT1H
+  - date: 2010-01-01T01:00:00Z
+    filename: Data/test.ens.5.2009-12-31T00:00:00Z.P1DT1H

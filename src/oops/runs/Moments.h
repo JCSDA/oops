@@ -50,9 +50,9 @@ namespace oops {
       const eckit::LocalConfiguration ensConfig(fullConfig, "States");
       std::vector<eckit::LocalConfiguration> members;
 
-      //  Setup date
+      //  Get valid time from config
       const eckit::LocalConfiguration dateConfig(fullConfig, "date");
-      const util::DateTime validtime(dateConfig.getString("date"));
+      const util::DateTime validtime(dateConfig.getString("validtime"));
 
       //  Setup output configuration      
       const eckit::LocalConfiguration meanout(fullConfig, "MeanOut");
@@ -66,37 +66,43 @@ namespace oops {
       unsigned nm = members.size();
       double zz = 1.0/nm;
       for (unsigned jj = 0; jj < nm; ++jj) {	
-	Log::trace() << "======== Ensemble member: "<< jj << std::endl;
-	Log::trace() << x_mean << jj << std::endl;	
 	State_ xx(resol, vars, members[jj]);
 	x_mean.accumul(zz, xx);
+	Log::trace() << "Reading ensemble member: "<< jj << std::endl;	
+	Log::trace() << xx << jj << std::endl;	
 	}
       x_mean.write(meanout);
 
       //  Setup balance operator
-      boost::scoped_ptr<Balance_> balance(BalanceFactory_::create(x_mean, x_mean, resol, fullConfig)); //use local config?
+      boost::scoped_ptr<Balance_> balance(BalanceFactory_::create(
+               x_mean, x_mean, resol, fullConfig));
       
       //  Compute variance of nm (K^-1 dx) perturbations
       zz = 1.0/(nm-1.0);
-      Increment_ dx(resol, vars, validtime);
+      Increment_ pert(resol, vars, validtime);
+      Increment_ dx(pert);
+      dx.zero();
       for (unsigned jj = 0; jj < nm; ++jj) {
 	// Read ensemble member jj
-	Log::trace() << "======== Ensemble member: "<< jj << std::endl;
 	State_ xx(resol, vars, members[jj]);
 
 	// Compute departure to mean
-	dx.diff(x_mean, xx);
+	pert.diff(x_mean, xx);
 
 	// Left multiply by K^-1
-	// TODO: replace K^-1 by inverse of nl change of variable
-	dx = balance->multiplyInverse(dx);
+	// TODO: replace K^-1 by inverse of nl balance operator
+	pert = balance->multiplyInverse(pert);
 	
 	// Accumulate dx^2
-	dx.schur_product_with(dx);
-	dx *= zz;
-	dx += dx;
+	pert.schur_product_with(pert);
+	pert *= zz;
+	dx += pert;
+
+	Log::trace() << "K^-1 dx for ensemble member perturbation: "<< jj << std::endl;
+	Log::trace() << pert << jj << std::endl;	
+	
 	}
-      dx.write(varianceout);      
+      dx.write(varianceout); 
       return 0;
     }
     // -----------------------------------------------------------------------------
