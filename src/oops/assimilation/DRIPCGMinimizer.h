@@ -108,11 +108,15 @@ double DRIPCGMinimizer<MODEL>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_ & rr
   CtrlInc_ ss(xh);
   CtrlInc_ sh(xh);
   CtrlInc_ dr(xh);
-  CtrlInc_ ww(xh);
+  CtrlInc_ r0(xh);
 
   std::vector<CtrlInc_> vvecs;  // for re-orthogonalization
   std::vector<CtrlInc_> zvecs;  // for re-orthogonalization
   std::vector<double> scals;  // for re-orthogonalization
+
+  const double costJ0 = costJ0Jb + costJ0JoJc;
+
+  r0 = rr;
 
   lmp_.multiply(rr, sh);
   B.multiply(sh, ss);
@@ -157,6 +161,11 @@ double DRIPCGMinimizer<MODEL>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_ & rr
     xh.axpy(alpha, ph);   // xh = xh + alpha*ph
     rr.axpy(-alpha, ap);  // rr = rr - alpha*ap
 
+    // Compute the quadratic cost function
+    double costJ = costJ0 - 0.5 * dot_product(xx, r0);
+    double costJb = costJ0Jb + 0.5 * dot_product(xx, xh);
+    double costJoJc = costJ - costJb;
+
     // Re-orthogonalization
     for (int jj = 0; jj < jiter; ++jj) {
       double proj = scals[jj] * dot_product(rr, zvecs[jj]);
@@ -171,7 +180,13 @@ double DRIPCGMinimizer<MODEL>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_ & rr
     normReduction = sqrt(dot_product(rr, rr)/dotRr0);
 
     Log::info() << "DRIPCG end of iteration " << jiter+1 << ". Norm reduction= "
-                << util::full_precision(normReduction) << std::endl << std::endl;
+                << util::full_precision(normReduction) << std::endl
+                << "  Quadratic cost function: J   (" <<  jiter+1 << ") = "
+                << util::full_precision(costJ)         << std::endl
+                << "  Quadratic cost function: Jb  (" <<  jiter+1 << ") = "
+                << util::full_precision(costJb)        << std::endl
+                << "  Quadratic cost function: JoJc(" << jiter+1 << ") = "
+                << util::full_precision(costJoJc)      << std::endl << std::endl;
 
     // Save the pairs for preconditioning
     lmp_.push(pp, ph, ap, rho);
