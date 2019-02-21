@@ -260,10 +260,16 @@ ecbuild_add_test( TARGET test_l95_obsBiasCovariance
 # Test interface classes with lorenz95
 
 ecbuild_add_test( TARGET test_l95_geometry
-                  BOOST
                   SOURCES executables/TestGeometry.cc
                   ARGS "testinput/interfaces.yaml"
+                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
+
+#ecbuild_add_test( TARGET test_l95_geometry
+#                  BOOST
+#                  SOURCES executables/TestGeometry.cc
+#                  ARGS "testinput/interfaces.yaml"
+#                  LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_geovals
                   BOOST
