@@ -173,11 +173,18 @@ ecbuild_add_test( TARGET  test_qg_staticbinit
 
 # Test interface classes with QG
 
+#ecbuild_add_test( TARGET  test_qg_geometry
+#                  BOOST
+#                  SOURCES executables/TestGeometry.cc
+#                  ARGS    "testinput/interfaces.yaml"
+#                  LIBS    qg )
+
 ecbuild_add_test( TARGET  test_qg_geometry
-                  BOOST
                   SOURCES executables/TestGeometry.cc
                   ARGS    "testinput/interfaces.yaml"
+                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    qg )
+
 
 ecbuild_add_test( TARGET  test_qg_geometry_iterator
                   BOOST
