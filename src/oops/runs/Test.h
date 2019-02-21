@@ -15,10 +15,13 @@
 #include <string>
 #include <vector>
 
+#ifndef OOPS_TEST_NO_BOOST
 #include <boost/test/unit_test.hpp>
-#include <boost/tokenizer.hpp>
+#endif
 
 #include "eckit/config/Configuration.h"
+#include "eckit/parser/Tokenizer.h"
+#include "eckit/testing/Test.h"
 #include "oops/runs/Application.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
@@ -26,12 +29,33 @@
 
 namespace oops {
 
+namespace testing {
+
+#ifndef OOPS_TEST_NO_BOOST
+struct BoostEngine {
+  using init_func_type = boost::unit_test::init_unit_test_func;
+  static int run(init_func_type init_func, int argc, char* argv[]) {
+    return boost::unit_test::unit_test_main(init_func, argc, argv);
+  }
+};
+#endif
+
+struct EcKitEngine {
+  using init_func_type = bool (*)(void);
+  static int run(init_func_type init_func, int argc, char* argv[]) {
+    return eckit::testing::run_tests(argc, argv, false);
+  }
+};
+
+}  // namespace testing
+
 // -----------------------------------------------------------------------------
 
-class Test : public Application {
+template <typename ENGINE>
+class TestTemplate : public Application {
  public:
-  Test() {}
-  virtual ~Test() {}
+  TestTemplate() {}
+  virtual ~TestTemplate() {}
   int execute(const eckit::Configuration & config) const;
  private:
   virtual void register_tests() const = 0;
@@ -40,9 +64,14 @@ class Test : public Application {
   std::string appname() const {return "oops::Test running " + testid();}
 };
 
+#ifndef OOPS_TEST_NO_BOOST
+using Test = TestTemplate<testing::BoostEngine>;
+#endif
+
 // -----------------------------------------------------------------------------
 
-int Test::execute(const eckit::Configuration & config) const {
+template <typename ENGINE>
+int TestTemplate<ENGINE>::execute(const eckit::Configuration & config) const {
 // Setup configuration for tests
   test::TestEnvironment::getInstance().setup(config);
 
@@ -53,12 +82,8 @@ int Test::execute(const eckit::Configuration & config) const {
   std::vector<std::string> argvec;
   argvec.push_back(std::string("abcd"));
 
-  typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
-  boost::char_separator<char> sep(" \n\t");
-  tokenizer tok(args, sep);
-  for (tokenizer::iterator it = tok.begin(); it != tok.end(); ++it) {
-    argvec.push_back(*it);
-  }
+  eckit::Tokenizer tok(" \n\t");
+  tok(args, argvec);
 
 // Generate the argc and argv arguments for unit_test_main(...)
   int argc = argvec.size();
@@ -72,7 +97,7 @@ int Test::execute(const eckit::Configuration & config) const {
   Log::trace() << "Registering the unit tests" << std::endl;
   register_tests();
   Log::trace() << "Running the unit tests" << std::endl;
-  int result = boost::unit_test::unit_test_main(&init_unit_test, argc, argv);
+  int result = ENGINE::run(&init_unit_test, argc, argv);
   Log::trace() << "Finished running the unit tests" << std::endl;
   Log::error() << "Finished running the unit tests, result = " << result << std::endl;
 
@@ -89,3 +114,4 @@ int Test::execute(const eckit::Configuration & config) const {
 
 }  // namespace oops
 #endif  // OOPS_RUNS_TEST_H_
+

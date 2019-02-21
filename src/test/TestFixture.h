@@ -13,26 +13,26 @@
 
 #pragma once
 
-#include "eckit/runtime/Main.h"
+#include "Setup.h"
 #include "oops/util/LibOOPS.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
-
-struct TestFixture {
-  TestFixture() {
-    // This method of initializing boost is currently only used for the Lorentz model
-    // (as of August, 2018)
-    eckit::Main::initialise(boost::unit_test::framework::master_test_suite().argc,
-                            boost::unit_test::framework::master_test_suite().argv);
+template <bool useBoost>
+struct TestFixtureBase : public testing::Setup<useBoost> {
+  TestFixtureBase() : testing::Setup<useBoost>() {
+    // Common setup for every unit-test goes here
   }
 
-  ~TestFixture() {
+  ~TestFixtureBase() {
     oops::LibOOPS::instance().finalise();
   }
 };
 
+#ifndef OOPS_TEST_NO_BOOST
+using TestFixture = TestFixtureBase<true>;
+#endif
 // -----------------------------------------------------------------------------
 
 }  // namespace test

@@ -11,17 +11,18 @@
 #ifndef TEST_INTERFACE_GEOMETRY_H_
 #define TEST_INTERFACE_GEOMETRY_H_
 
+#include <memory>  // for std::unique_ptr
 #include <string>
+#include <vector>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
+
 #include "eckit/config/Configuration.h"
+#include "eckit/testing/Test.h"
 #include "oops/interface/Geometry.h"
 #include "oops/runs/Test.h"
 #include "test/TestEnvironment.h"
@@ -47,36 +48,36 @@ template <typename MODEL> class GeometryFixture : private boost::noncopyable {
 
   boost::scoped_ptr<const eckit::LocalConfiguration> conf_;
 };
-// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 template <typename MODEL> void testConstructor() {
   typedef oops::Geometry<MODEL>        Geometry_;
 
   boost::scoped_ptr<Geometry_> geom(new Geometry_(GeometryFixture<MODEL>::getConfig()));
-  BOOST_CHECK(geom.get());
+
+  EXPECT(geom.get());
 
   geom.reset();
-  BOOST_CHECK(!geom.get());
+  EXPECT(!geom.get());
 }
 
 // -----------------------------------------------------------------------------
-
 template <typename MODEL> void testCopyConstructor() {
   typedef oops::Geometry<MODEL>        Geometry_;
   boost::scoped_ptr<Geometry_> geom(new Geometry_(GeometryFixture<MODEL>::getConfig()));
 
+
   boost::scoped_ptr<Geometry_> other(new Geometry_(*geom));
-  BOOST_CHECK(other.get());
+  EXPECT(other.get());
 
   other.reset();
-  BOOST_CHECK(!other.get());
+  EXPECT(!other.get());
 
-  BOOST_CHECK(geom.get());
+  EXPECT(geom.get());
 }
 
 // -----------------------------------------------------------------------------
-
-template <typename MODEL> class Geometry : public oops::Test {
+template <typename MODEL> class Geometry : public oops::TestTemplate<oops::testing::EcKitEngine> {
  public:
   Geometry() {}
   virtual ~Geometry() {}
@@ -84,12 +85,12 @@ template <typename MODEL> class Geometry : public oops::Test {
   std::string testid() const {return "test::Geometry<" + MODEL::name() + ">";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/Geometry");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testCopyConstructor<MODEL>));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("interface/Geometry/testConstructor")
+      { testConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/Geometry/testCopyConstructor")
+      { testCopyConstructor<MODEL>(); });
   }
 };
 
@@ -98,3 +99,4 @@ template <typename MODEL> class Geometry : public oops::Test {
 }  // namespace test
 
 #endif  // TEST_INTERFACE_GEOMETRY_H_
+
