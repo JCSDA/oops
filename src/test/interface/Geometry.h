@@ -77,7 +77,7 @@ template <typename MODEL> void testCopyConstructor() {
 }
 
 // -----------------------------------------------------------------------------
-template <typename MODEL> class Geometry : public oops::TestTemplate<oops::testing::EcKitEngine> {
+template <typename MODEL> class Geometry : public oops::Test {
  public:
   Geometry() {}
   virtual ~Geometry() {}
