@@ -96,7 +96,7 @@ variational:
       top_layer_depth: 5500.0
     test: on
 minimizer:
-  algorithm: DRIPCG
+  algorithm: DRPLanczos
 final:
   diagnostics:
     departures: oman
