@@ -4,7 +4,7 @@ Test     : CostJo   : Nonlinear Jo = 387.325, nobs = 160, Jo/n = 2.42078, err = 
 Test     : CostJo   : Nonlinear Jo = 191.577, nobs = 300, Jo/n = 0.638589, err = 1.2
 Test     : CostJcDFI: Nonlinear Jc = 2.77092
 Test     : CostFunction: Nonlinear J = 8204.65
-Test     : DRIPCGMinimizer: reduction in residual norm = 0.332876
+Test     : DRPLanczosMinimizer: reduction in residual norm = 0.0208334
 Test     : CostFunction::addIncrement: Analysis: 
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2
@@ -77,7 +77,7 @@ Test     : CostJo   : Nonlinear Jo = 167.671, nobs = 160, Jo/n = 1.04794, err = 
 Test     : CostJo   : Nonlinear Jo = 71.5663, nobs = 300, Jo/n = 0.238554, err = 1.2
 Test     : CostJcDFI: Nonlinear Jc = 51.8296
 Test     : CostFunction: Nonlinear J = 1045.43
-Test     : DRIPCGMinimizer: reduction in residual norm = 0.700658
+Test     : DRPLanczosMinimizer: reduction in residual norm = 0.650101
 Test     : CostFunction::addIncrement: Analysis: 
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, Fields = 1, 2

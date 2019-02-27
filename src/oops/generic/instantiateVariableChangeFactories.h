@@ -8,21 +8,28 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef OOPS_GENERIC_INSTANTIATELINEARVARIABLECHANGEFACTORY_H_
-#define OOPS_GENERIC_INSTANTIATELINEARVARIABLECHANGEFACTORY_H_
+#ifndef OOPS_GENERIC_INSTANTIATEVARIABLECHANGEFACTORIES_H_
+#define OOPS_GENERIC_INSTANTIATEVARIABLECHANGEFACTORIES_H_
 
 #include "oops/base/LinearVariableChangeBase.h"
+#include "oops/base/VariableChangeBase.h"
+#include "oops/generic/IdLinearVariableChange.h"
 #include "oops/generic/IdVariableChange.h"
 #include "oops/generic/StatsVariableChange.h"
 
 namespace oops {
 
-template <typename MODEL> void instantiateLinearVariableChangeFactory() {
+template <typename MODEL>
+void instantiateVariableChangeFactories() {
+// Nonlinear change of variables
+  static VariableChangeMaker<MODEL, IdVariableChange<MODEL> > makerId_("Identity");
+
+// Linear change of variables
   static LinearVariableChangeMaker<MODEL, StatsVariableChange<MODEL> >
                         makerStatsVarChange_("StatsVariableChange");
-  static LinearVariableChangeMaker<MODEL, IdVariableChange<MODEL> > makerIdChange_("Identity");
+  static LinearVariableChangeMaker<MODEL, IdLinearVariableChange<MODEL> > makerIdLin_("Identity");
 }
 
 }  // namespace oops
 
-#endif  // OOPS_GENERIC_INSTANTIATELINEARVARIABLECHANGEFACTORY_H_
+#endif  // OOPS_GENERIC_INSTANTIATEVARIABLECHANGEFACTORIES_H_
