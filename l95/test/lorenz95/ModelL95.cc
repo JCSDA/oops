@@ -11,10 +11,10 @@
 #include <iostream>
 
 #include <boost/scoped_ptr.hpp>
-#include <boost/test/unit_test.hpp>
 
 #include "./TestConfig.h"
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/ModelBias.h"
 #include "lorenz95/ModelL95.h"
@@ -27,7 +27,7 @@
 namespace test {
 
 // -----------------------------------------------------------------------------
-class ModelTestFixture : TestFixture {
+class ModelTestFixture : TestFixtureBase<false> {
  public:
   ModelTestFixture() {
     eckit::LocalConfiguration res(TestConfig::config(), "resolution");
@@ -39,35 +39,34 @@ class ModelTestFixture : TestFixture {
   boost::scoped_ptr<const eckit::LocalConfiguration> nlconf_;
 };
 // -----------------------------------------------------------------------------
-
+CASE("test_modelL95") {
+ModelTestFixture f;
 // -----------------------------------------------------------------------------
-BOOST_FIXTURE_TEST_SUITE(test_modelL95, ModelTestFixture)
-// -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelL95_constructor) {
-    boost::scoped_ptr<lorenz95::ModelL95> model(new lorenz95::ModelL95(*resol_, *nlconf_));
-    BOOST_CHECK(model != NULL);
+  SECTION("test_modelL95_constructor") {
+    boost::scoped_ptr<lorenz95::ModelL95> model(new lorenz95::ModelL95(*f.resol_, *f.nlconf_));
+    EXPECT(model != NULL);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelL95_get_classname) {
-    lorenz95::ModelL95 model(*resol_, *nlconf_);
-    BOOST_CHECK_EQUAL(model.classname(), "lorenz95::ModelL95");
+  SECTION("test_modelL95_get_classname") {
+    lorenz95::ModelL95 model(*f.resol_, *f.nlconf_);
+    EXPECT(model.classname() == "lorenz95::ModelL95");
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelL95_get_timestep) {
-    lorenz95::ModelL95 model(*resol_, *nlconf_);
-    util::Duration dt(nlconf_->getString("tstep"));
-    BOOST_CHECK_EQUAL(model.timeResolution().toSeconds(), dt.toSeconds());
+  SECTION("test_modelL95_get_timestep") {
+    lorenz95::ModelL95 model(*f.resol_, *f.nlconf_);
+    util::Duration dt(f.nlconf_->getString("tstep"));
+    EXPECT(model.timeResolution().toSeconds() == dt.toSeconds());
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelL95_stepRk) {
-    lorenz95::ModelL95 model(*resol_, *nlconf_);
+  SECTION("test_modelL95_stepRk") {
+    lorenz95::ModelL95 model(*f.resol_, *f.nlconf_);
 
     // construct a FieldL95 object
-    lorenz95::FieldL95 fieldL95(*resol_);
+    lorenz95::FieldL95 fieldL95(*f.resol_);
 
     // construct a ModelBias object
     eckit::LocalConfiguration biasCfg(TestConfig::config(), "ModelBias");
-    lorenz95::ModelBias modelBias(*resol_, biasCfg);
+    lorenz95::ModelBias modelBias(*f.resol_, biasCfg);
 
     // construct a ModelTrajectory object
     lorenz95::ModelTrajectory modelTraj(true);
@@ -84,5 +83,10 @@ BOOST_FIXTURE_TEST_SUITE(test_modelL95, ModelTestFixture)
 //    }
   }
 // -----------------------------------------------------------------------------
-BOOST_AUTO_TEST_SUITE_END()
+}  //  CASE
+// -----------------------------------------------------------------------------
 }  // namespace test
+int main(int argc, char **argv)
+{
+    return eckit::testing::run_tests ( argc, argv );
+}

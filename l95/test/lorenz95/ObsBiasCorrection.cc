@@ -13,18 +13,20 @@
 
 #include <boost/lexical_cast.hpp>
 #include <boost/scoped_ptr.hpp>
-#include <boost/test/unit_test.hpp>
 
 #include "./TestConfig.h"
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "lorenz95/ObsBias.h"
 #include "lorenz95/ObsBiasCorrection.h"
 #include "test/TestFixture.h"
 
+using eckit::types::is_approximately_equal;
+
 namespace test {
 
 // -----------------------------------------------------------------------------
-class ObsBiasTestFixture : TestFixture {
+class ObsBiasTestFixture : TestFixtureBase<false> {
  public:
   ObsBiasTestFixture() {
     off_.reset(new eckit::LocalConfiguration());
@@ -45,259 +47,260 @@ class ObsBiasTestFixture : TestFixture {
 };
 
 // -----------------------------------------------------------------------------
-BOOST_FIXTURE_TEST_SUITE(test_obsBiasCorrection, ObsBiasTestFixture)
+CASE("test_obsBiasCorrection") {
+  ObsBiasTestFixture f;
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_constructor_active) {
-    lorenz95::ObsBiasCorrection dob(*conf_);
-    BOOST_CHECK_EQUAL(dob.value(), 0.0);
+  SECTION("test_obsBiasCorrection_constructor_active") {
+    lorenz95::ObsBiasCorrection dob(*f.conf_);
+    EXPECT(dob.value() == 0.0);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_constructor_inactive) {
-    lorenz95::ObsBiasCorrection dob(*off_);
-    BOOST_CHECK_EQUAL(dob.value(), 0.0);
+  SECTION("test_obsBiasCorrection_constructor_inactive") {
+    lorenz95::ObsBiasCorrection dob(*f.off_);
+    EXPECT(dob.value() == 0.0);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_copy_ctor_active_copy) {
-    lorenz95::ObsBiasCorrection dob1(*conf_);
-    dob1.value() = bias1_;
+  SECTION("test_obsBiasCorrection_copy_ctor_active_copy") {
+    lorenz95::ObsBiasCorrection dob1(*f.conf_);
+    dob1.value() = f.bias1_;
 
     lorenz95::ObsBiasCorrection dob2(dob1, true);
 
-    BOOST_CHECK_EQUAL(dob2.value(), bias1_);
+    EXPECT(dob2.value() == f.bias1_);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_copy_ctor_active_no_copy) {
-    lorenz95::ObsBiasCorrection dob1(*conf_);
-    dob1.value() = bias1_;
+  SECTION("test_obsBiasCorrection_copy_ctor_active_no_copy") {
+    lorenz95::ObsBiasCorrection dob1(*f.conf_);
+    dob1.value() = f.bias1_;
 
     lorenz95::ObsBiasCorrection dob2(dob1, false);
 
     // because the copy is false,
     // the active_ flag is true and the bias1_ value is 0.0
-    BOOST_CHECK_EQUAL(dob2.value(), 0.0);
+    EXPECT(dob2.value() == 0.0);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_copy_ctor_inactive_copy) {
-    lorenz95::ObsBiasCorrection dob1(*off_);
-    dob1.value() = bias1_;
+  SECTION("test_obsBiasCorrection_copy_ctor_inactive_copy") {
+    lorenz95::ObsBiasCorrection dob1(*f.off_);
+    dob1.value() = f.bias1_;
 
     lorenz95::ObsBiasCorrection dob2(dob1, true);
 
     // because the cfg is empty when used,
     // the active_ flag is false and the bias1_ value is 0.0
-    BOOST_CHECK_EQUAL(dob2.value(), 0.0);
+    EXPECT(dob2.value() == 0.0);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_copy_ctor_inactive_no_copy) {
-    lorenz95::ObsBiasCorrection dob1(*off_);
-    dob1.value() = bias1_;
+  SECTION("test_obsBiasCorrection_copy_ctor_inactive_no_copy") {
+    lorenz95::ObsBiasCorrection dob1(*f.off_);
+    dob1.value() = f.bias1_;
 
     lorenz95::ObsBiasCorrection dob2(dob1, false);
 
     // because the cfg is empty when used and the copy flag is false,
     // the active_ flag is false and the bias1_ value is 0.0
-    BOOST_CHECK_EQUAL(dob2.value(), 0.0);
+    EXPECT(dob2.value() == 0.0);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_copy_constructor_config) {
-    lorenz95::ObsBiasCorrection dob1(*conf_);
-    dob1.value() = bias1_;
+  SECTION("test_obsBiasCorrection_copy_constructor_config") {
+    lorenz95::ObsBiasCorrection dob1(*f.conf_);
+    dob1.value() = f.bias1_;
 
-    lorenz95::ObsBiasCorrection dob2(dob1, *conf_);
+    lorenz95::ObsBiasCorrection dob2(dob1, *f.conf_);
 
-    BOOST_CHECK_EQUAL(dob2.value(), bias1_);
+    EXPECT(dob2.value() == f.bias1_);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_copy_constructor_no_config) {
-    lorenz95::ObsBiasCorrection dob1(*off_);
-    dob1.value() = bias1_;
+  SECTION("test_obsBiasCorrection_copy_constructor_no_config") {
+    lorenz95::ObsBiasCorrection dob1(*f.off_);
+    dob1.value() = f.bias1_;
 
     lorenz95::ObsBiasCorrection dob2(dob1, eckit::LocalConfiguration());
 
     // because the covarCfg is empty when used (regardless of the cfg),
     // the active_ flag is false and the bias1_ value is 0.0
-    BOOST_CHECK_EQUAL(dob2.value(), 0.0);
+    EXPECT(dob2.value() == 0.0);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_diff_active) {
-    lorenz95::ObsBias obias2(*conf_);
-    obias2.value() = bias2_;
+  SECTION("test_obsBiasCorrection_diff_active") {
+    lorenz95::ObsBias obias2(*f.conf_);
+    obias2.value() = f.bias2_;
 
-    lorenz95::ObsBiasCorrection dob(*conf_);
+    lorenz95::ObsBiasCorrection dob(*f.conf_);
 
-    dob.diff(*obias_, obias2);
+    dob.diff(*f.obias_, obias2);
 
-    BOOST_CHECK_EQUAL(dob.value(), bias1_ - bias2_);
+    EXPECT(dob.value() == f.bias1_ - f.bias2_);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_diff_inactive) {
-    lorenz95::ObsBias obias2(*conf_);
-    obias2.value() = bias2_;
+  SECTION("test_obsBiasCorrection_diff_inactive") {
+    lorenz95::ObsBias obias2(*f.conf_);
+    obias2.value() = f.bias2_;
 
     // construct the dob object with empty config
-    lorenz95::ObsBiasCorrection dob(*off_);
+    lorenz95::ObsBiasCorrection dob(*f.off_);
 
-    dob.diff(*obias_, obias2);
+    dob.diff(*f.obias_, obias2);
 
     // because the OBC has empty config the active_flag is false and
     // the diff will not be performed, leaving the OBC value unchanged
-    BOOST_CHECK_EQUAL(dob.value(), 0.0);
+    EXPECT(dob.value() == 0.0);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_zero) {
-    lorenz95::ObsBiasCorrection dob(*conf_);
-    dob.value() = bias1_;
+  SECTION("test_obsBiasCorrection_zero") {
+    lorenz95::ObsBiasCorrection dob(*f.conf_);
+    dob.value() = f.bias1_;
 
     dob.zero();
 
-    BOOST_CHECK_EQUAL(dob.value(), 0.0);
+    EXPECT(dob.value() == 0.0);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_assignment_active) {
-    lorenz95::ObsBiasCorrection dob1(*conf_);
-    dob1.value() = bias1_;
+  SECTION("test_obsBiasCorrection_assignment_active") {
+    lorenz95::ObsBiasCorrection dob1(*f.conf_);
+    dob1.value() = f.bias1_;
     lorenz95::ObsBiasCorrection dob2(dob1);
-    dob2.value() = bias2_;
+    dob2.value() = f.bias2_;
 
     dob1 = dob2;
 
-    BOOST_CHECK_EQUAL(dob1.value(), bias2_);
+    EXPECT(dob1.value() == f.bias2_);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_assignment_inactive) {
-    lorenz95::ObsBiasCorrection dob1(*off_);
-    dob1.value() = bias1_;
+  SECTION("test_obsBiasCorrection_assignment_inactive") {
+    lorenz95::ObsBiasCorrection dob1(*f.off_);
+    dob1.value() = f.bias1_;
     lorenz95::ObsBiasCorrection dob2(dob1);
-    dob2.value() = bias2_;
+    dob2.value() = f.bias2_;
 
     dob1 = dob2;
 
     // because the OBC has empty config the active_ flag is false
-    BOOST_CHECK_EQUAL(dob1.value(), 0.0);
+    EXPECT(dob1.value() == 0.0);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_assignment_add_active) {
-    lorenz95::ObsBiasCorrection dob1(*conf_);
-    dob1.value() = bias1_;
+  SECTION("test_obsBiasCorrection_assignment_add_active") {
+    lorenz95::ObsBiasCorrection dob1(*f.conf_);
+    dob1.value() = f.bias1_;
     lorenz95::ObsBiasCorrection dob2(dob1);
-    dob2.value() = bias2_;
+    dob2.value() = f.bias2_;
 
     dob1 += dob2;
 
-    BOOST_CHECK_EQUAL(dob1.value(), bias1_ + bias2_);
+    EXPECT(dob1.value() == f.bias1_ + f.bias2_);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_assign_add_inactive) {
-    lorenz95::ObsBiasCorrection dob1(*off_);
-    dob1.value() = bias1_;
+  SECTION("test_obsBiasCorrection_assign_add_inactive") {
+    lorenz95::ObsBiasCorrection dob1(*f.off_);
+    dob1.value() = f.bias1_;
     lorenz95::ObsBiasCorrection dob2(dob1);
-    dob2.value() = bias2_;
+    dob2.value() = f.bias2_;
 
     dob1 += dob2;
 
     // because the OBC has empty config, the bias value is unchanged
-    BOOST_CHECK_EQUAL(dob1.value(), bias1_);
+    EXPECT(dob1.value() == f.bias1_);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_assignment_subtract_active) {
-    lorenz95::ObsBiasCorrection dob1(*conf_);
-    dob1.value() = bias1_;
+  SECTION("test_obsBiasCorrection_assignment_subtract_active") {
+    lorenz95::ObsBiasCorrection dob1(*f.conf_);
+    dob1.value() = f.bias1_;
     lorenz95::ObsBiasCorrection dob2(dob1);
-    dob2.value() = bias2_;
+    dob2.value() = f.bias2_;
 
     dob1 -= dob2;
 
-    BOOST_CHECK_EQUAL(dob1.value(), bias1_ - bias2_);
+    EXPECT(dob1.value() == f.bias1_ - f.bias2_);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_assignment_subtract_inactive) {
-    lorenz95::ObsBiasCorrection dob1(*off_);
-    dob1.value() = bias1_;
+  SECTION("test_obsBiasCorrection_assignment_subtract_inactive") {
+    lorenz95::ObsBiasCorrection dob1(*f.off_);
+    dob1.value() = f.bias1_;
     lorenz95::ObsBiasCorrection dob2(dob1);
-    dob2.value() = bias2_;
+    dob2.value() = f.bias2_;
 
     dob1 -= dob2;
 
     // because the OBC has empty config, the bias value is unchanged
-    BOOST_CHECK_EQUAL(dob1.value(), bias1_);
+    EXPECT(dob1.value() == f.bias1_);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_assignment_multiply_active) {
-    lorenz95::ObsBiasCorrection dob(*conf_);
-    dob.value() = bias1_;
+  SECTION("test_obsBiasCorrection_assignment_multiply_active") {
+    lorenz95::ObsBiasCorrection dob(*f.conf_);
+    dob.value() = f.bias1_;
 
-    dob *= fact_;
+    dob *= f.fact_;
 
-    BOOST_CHECK_EQUAL(dob.value(), bias1_ * fact_);
+    EXPECT(dob.value() == f.bias1_ * f.fact_);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_assignment_multiply_inactive) {
-    lorenz95::ObsBiasCorrection dob(*off_);
-    dob.value() = bias1_;
+  SECTION("test_obsBiasCorrection_assignment_multiply_inactive") {
+    lorenz95::ObsBiasCorrection dob(*f.off_);
+    dob.value() = f.bias1_;
 
-    dob *= fact_;
+    dob *= f.fact_;
 
     // because the OBC has empty config, the bias value is unchanged
-    BOOST_CHECK_EQUAL(dob.value(), bias1_);
+    EXPECT(dob.value() == f.bias1_);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_axpy_active) {
-    lorenz95::ObsBiasCorrection dob1(*conf_);
-    dob1.value() = bias1_;
+  SECTION("test_obsBiasCorrection_axpy_active") {
+    lorenz95::ObsBiasCorrection dob1(*f.conf_);
+    dob1.value() = f.bias1_;
     lorenz95::ObsBiasCorrection dob2(dob1);
-    dob2.value() = bias2_;
+    dob2.value() = f.bias2_;
 
-    dob1.axpy(fact_, dob2);
+    dob1.axpy(f.fact_, dob2);
 
-    BOOST_CHECK_EQUAL(dob1.value(), bias1_ + (fact_ * bias2_));
+    EXPECT(dob1.value() == f.bias1_ + (f.fact_ * f.bias2_));
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_axpy_inactive) {
-    lorenz95::ObsBiasCorrection dob1(*off_);
-    dob1.value() = bias1_;
+  SECTION("test_obsBiasCorrection_axpy_inactive") {
+    lorenz95::ObsBiasCorrection dob1(*f.off_);
+    dob1.value() = f.bias1_;
     lorenz95::ObsBiasCorrection dob2(dob1);
-    dob2.value() = bias2_;
+    dob2.value() = f.bias2_;
 
-    dob1.axpy(fact_, dob2);
+    dob1.axpy(f.fact_, dob2);
 
     // because the OBC has empty config, the bias value is unchanged
-    BOOST_CHECK_EQUAL(dob1.value(), bias1_);
+    EXPECT(dob1.value() == f.bias1_);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_dot_product_with_active) {
-    lorenz95::ObsBiasCorrection dob1(*conf_);
-    dob1.value() = bias1_;
+  SECTION("test_obsBiasCorrection_dot_product_with_active") {
+    lorenz95::ObsBiasCorrection dob1(*f.conf_);
+    dob1.value() = f.bias1_;
     lorenz95::ObsBiasCorrection dob2(dob1);
-    dob2.value() = bias2_;
+    dob2.value() = f.bias2_;
 
     double dpwResult = dob1.dot_product_with(dob2);
 
-    BOOST_CHECK_EQUAL(dpwResult, bias1_ * bias2_);
+    EXPECT(dpwResult == f.bias1_ * f.bias2_);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_dot_product_with_inactive) {
-    lorenz95::ObsBiasCorrection dob1(*off_);
-    dob1.value() = bias1_;
+  SECTION("test_obsBiasCorrection_dot_product_with_inactive") {
+    lorenz95::ObsBiasCorrection dob1(*f.off_);
+    dob1.value() = f.bias1_;
     lorenz95::ObsBiasCorrection dob2(dob1);
-    dob2.value() = bias2_;
+    dob2.value() = f.bias2_;
 
     double dpwResult = dob1.dot_product_with(dob2);
 
     // because the OBC has empty config, the result is 0
-    BOOST_CHECK_EQUAL(dpwResult, 0.0);
+    EXPECT(dpwResult == 0.0);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_read) {
+  SECTION("test_obsBiasCorrection_read") {
     // not yet implemented
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_write) {
+  SECTION("test_obsBiasCorrection_write") {
     // not yet implemented
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCorrection_stream_output) {
-    lorenz95::ObsBiasCorrection dob(*conf_);
-    dob.value() = bias1_;
+  SECTION("test_obsBiasCorrection_stream_output") {
+    lorenz95::ObsBiasCorrection dob(*f.conf_);
+    dob.value() = f.bias1_;
 
     // use the operator<< method to write the value to a file
     std::filebuf fb;
@@ -323,18 +326,22 @@ BOOST_FIXTURE_TEST_SUITE(test_obsBiasCorrection, ObsBiasTestFixture)
         bias = boost::lexical_cast<double>(inputBias);
       }
       catch(boost::bad_lexical_cast const&) {
-        BOOST_ERROR("operator<< incorrectly output a non-double");
+        std::cout << "operator<< incorrectly output a non-double" << std::endl;
       }
 
-      BOOST_CHECK_CLOSE(bias1_, bias, 0.0001);
+      EXPECT(is_approximately_equal(f.bias1_, bias, 0.0001));
     } else {
       // if we can't open the file then we can't
       // verify that the value was correctly written
-      BOOST_ERROR("operator<< functionality cannot be determined");
+      std::cout << "operator<< functionality cannot be determined" << std::endl;
     }
     inputFile.close();
   }
 // -----------------------------------------------------------------------------
-
-BOOST_AUTO_TEST_SUITE_END()
+}  //  CASE
+// -----------------------------------------------------------------------------
 }  // namespace test
+int main(int argc, char **argv)
+{
+    return eckit::testing::run_tests ( argc, argv );
+}

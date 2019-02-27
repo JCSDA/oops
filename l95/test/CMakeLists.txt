@@ -156,106 +156,112 @@ ecbuild_add_test( TARGET test_l95_makeobs4d12h
 # Test lorenz95 internal classes
 
 ecbuild_add_test( TARGET test_l95_resolution
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/Resolution.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/Resolution.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  DEFINITIONS OOPS_TEST_NO_BOOST
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_stateL95
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/StateL95.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/StateL95.cc lorenz95/TestConfig.h
+                  DEFINITIONS OOPS_TEST_NO_BOOST
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_tlmL95
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/TLML95.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/TLML95.cc lorenz95/TestConfig.h
+                  DEFINITIONS OOPS_TEST_NO_BOOST
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_ObsTable
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/ObsTable.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/ObsTable.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  DEFINITIONS OOPS_TEST_NO_BOOST
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_obsVec1D
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/ObsVec1D.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/ObsVec1D.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  DEFINITIONS OOPS_TEST_NO_BOOST
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_locsL95
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/LocsL95.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/LocsL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  DEFINITIONS OOPS_TEST_NO_BOOST
+                  LIBS    lorenz95 eckit)
+
+#ecbuild_add_test( TARGET test_l95_gomL95
+#                  BOOST
+#                  SOURCES lorenz95/test_main.cc lorenz95/GomL95.cc lorenz95/TestConfig.h
+#                  ARGS "testinput/test.yaml"
+#                  LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_gomL95
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/GomL95.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/GomL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  DEFINITIONS OOPS_TEST_NO_BOOST
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_observationL95
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/ObservationL95.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/ObservationL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  DEFINITIONS OOPS_TEST_NO_BOOST
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_obsBias
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/ObsBias.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/ObsBias.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  DEFINITIONS OOPS_TEST_NO_BOOST
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_incrementL95
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/IncrementL95.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/IncrementL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  DEFINITIONS OOPS_TEST_NO_BOOST
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_localizationMatrixL95
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/LocalizationMatrixL95.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/LocalizationMatrixL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  DEFINITIONS OOPS_TEST_NO_BOOST
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_modelBias
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/ModelBias.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/ModelBias.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  DEFINITIONS OOPS_TEST_NO_BOOST
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_modelBiasCorrection
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/ModelBiasCorrection.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/ModelBiasCorrection.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  DEFINITIONS OOPS_TEST_NO_BOOST
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_modelBiasCovariance
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/ModelBiasCovariance.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/ModelBiasCovariance.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  DEFINITIONS OOPS_TEST_NO_BOOST
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_modelL95
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/ModelL95.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/ModelL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  DEFINITIONS OOPS_TEST_NO_BOOST
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_obsBiasCorrection
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/ObsBiasCorrection.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/ObsBiasCorrection.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  DEFINITIONS OOPS_TEST_NO_BOOST
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_obsBiasCovariance
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/ObsBiasCovariance.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/ObsBiasCovariance.cc lorenz95/TestConfig.h
+                  DEFINITIONS OOPS_TEST_NO_BOOST
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  LIBS    lorenz95 eckit)
 
 # Test interface classes with lorenz95
 
@@ -264,12 +270,6 @@ ecbuild_add_test( TARGET test_l95_geometry
                   ARGS "testinput/interfaces.yaml"
                   DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
-
-#ecbuild_add_test( TARGET test_l95_geometry
-#                  BOOST
-#                  SOURCES executables/TestGeometry.cc
-#                  ARGS "testinput/interfaces.yaml"
-#                  LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_geovals
                   BOOST

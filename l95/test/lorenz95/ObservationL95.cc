@@ -9,10 +9,10 @@
  */
 
 #include <boost/scoped_ptr.hpp>
-#include <boost/test/unit_test.hpp>
 
 #include "./TestConfig.h"
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "lorenz95/ObservationL95.h"
 #include "lorenz95/ObsTable.h"
 #include "test/TestFixture.h"
@@ -20,7 +20,7 @@
 namespace test {
 
 // -----------------------------------------------------------------------------
-class ObsTestFixture : TestFixture {
+class ObsTestFixture : TestFixtureBase<false> {
  public:
   ObsTestFixture() {
     const eckit::LocalConfiguration conf(TestConfig::config(), "Observations");
@@ -33,23 +33,25 @@ class ObsTestFixture : TestFixture {
   boost::scoped_ptr<lorenz95::ObsTable> ot_;
 };
 // -----------------------------------------------------------------------------
-
+CASE("test_ObsL95") {
+  ObsTestFixture f;
 // -----------------------------------------------------------------------------
-BOOST_FIXTURE_TEST_SUITE(test_ObsL95, ObsTestFixture)
-// -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_ObsL95_constructor) {
+  SECTION("test_ObsL95_constructor") {
     boost::scoped_ptr<lorenz95::ObservationL95>
-      obs(new lorenz95::ObservationL95(*ot_, TestConfig::config()));
-    BOOST_CHECK(obs.get() != NULL);
+      obs(new lorenz95::ObservationL95(*f.ot_, TestConfig::config()));
+    EXPECT(obs.get() != NULL);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_observationL95_classname) {
+  SECTION("test_observationL95_classname") {
     boost::scoped_ptr<lorenz95::ObservationL95>
-      obs(new lorenz95::ObservationL95(*ot_, TestConfig::config()));
-    BOOST_CHECK_EQUAL(obs->classname(), "lorenz95::ObservationL95");
+      obs(new lorenz95::ObservationL95(*f.ot_, TestConfig::config()));
+    EXPECT(obs->classname() == "lorenz95::ObservationL95");
   }
 // -----------------------------------------------------------------------------
-BOOST_AUTO_TEST_SUITE_END()
+}  //  CASE
 // -----------------------------------------------------------------------------
-
 }  // namespace test
+int main(int argc, char **argv)
+{
+    return eckit::testing::run_tests ( argc, argv );
+}

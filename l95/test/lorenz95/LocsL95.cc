@@ -8,20 +8,24 @@
  * does it submit to any jurisdiction.
  */
 
+#include <memory>  //  for std::unique_ptr
+
 #include <boost/scoped_ptr.hpp>
-#include <boost/test/unit_test.hpp>
 
 #include "./TestConfig.h"
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ObsTable.h"
 #include "oops/util/DateTime.h"
 #include "test/TestFixture.h"
 
+using eckit::types::is_approximately_equal;
+
 namespace test {
 
 // -----------------------------------------------------------------------------
-class LocsTestFixture : TestFixture {
+class LocsTestFixture : TestFixtureBase<false> {
  public:
   LocsTestFixture() {
     const eckit::LocalConfiguration conf(TestConfig::config(), "Observations");
@@ -38,32 +42,34 @@ class LocsTestFixture : TestFixture {
   boost::scoped_ptr<util::DateTime> t2_;
 };
 // -----------------------------------------------------------------------------
-
+CASE("test_LocsL95") {
+  LocsTestFixture f;
 // -----------------------------------------------------------------------------
-BOOST_FIXTURE_TEST_SUITE(test_LocsL95, LocsTestFixture)
-// -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_LocsL95_constructor) {
-    boost::scoped_ptr<lorenz95::LocsL95> locs(ot_->locations(*t1_, *t2_));
-    BOOST_CHECK(locs.get() != NULL);
+  SECTION("test_LocsL95_constructor") {
+    boost::scoped_ptr<lorenz95::LocsL95> locs(f.ot_->locations(*f.t1_, *f.t2_));
+    EXPECT(locs.get() != NULL);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_LocsL95_nobs) {
-    boost::scoped_ptr<lorenz95::LocsL95> locs(ot_->locations(*t1_, *t2_));
+  SECTION("test_LocsL95_nobs") {
+    boost::scoped_ptr<lorenz95::LocsL95> locs(f.ot_->locations(*f.t1_, *f.t2_));
     size_t ref = 80;
-    BOOST_CHECK_EQUAL(locs->size(), ref);
+    EXPECT(locs->size() == ref);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_LocsL95_operator) {
-    boost::scoped_ptr<lorenz95::LocsL95> locs(ot_->locations(*t1_, *t2_));
+  SECTION("test_LocsL95_operator") {
+    boost::scoped_ptr<lorenz95::LocsL95> locs(f.ot_->locations(*f.t1_, *f.t2_));
     double pos = 0.0;
     for (size_t jj = 0; jj < locs->size(); ++jj) {
-      BOOST_CHECK_CLOSE((*locs)[jj], pos, 0.000001);
+      EXPECT(is_approximately_equal((*locs)[jj], pos, 0.000001));
       pos += 0.05;
       if (pos >= 1.0) pos=0.0;
     }
   }
 // -----------------------------------------------------------------------------
-BOOST_AUTO_TEST_SUITE_END()
+}  //  CASE
 // -----------------------------------------------------------------------------
-
 }  // namespace test
+int main(int argc, char **argv)
+{
+    return eckit::testing::run_tests ( argc, argv );
+}

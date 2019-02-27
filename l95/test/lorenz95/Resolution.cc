@@ -13,17 +13,17 @@
 
 #include <boost/lexical_cast.hpp>
 #include <boost/scoped_ptr.hpp>
-#include <boost/test/unit_test.hpp>
 
 #include "./TestConfig.h"
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "lorenz95/Resolution.h"
 #include "test/TestFixture.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
-class ResolutionTestFixture : TestFixture {
+class ResolutionTestFixture : TestFixtureBase<false> {
  public:
   ResolutionTestFixture() {
     testconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "resolution"));
@@ -32,28 +32,27 @@ class ResolutionTestFixture : TestFixture {
   boost::scoped_ptr<const eckit::LocalConfiguration> testconf_;
 };
 // -----------------------------------------------------------------------------
-
+CASE("test_resolution") {
+  ResolutionTestFixture f;
 // -----------------------------------------------------------------------------
-BOOST_FIXTURE_TEST_SUITE(test_resolution, ResolutionTestFixture)
-// -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_resolution_constructor) {
-    boost::scoped_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*testconf_));
-    BOOST_CHECK(resol.get() != NULL);
+  SECTION("test_resolution_constructor") {
+    boost::scoped_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*f.testconf_));
+    EXPECT(resol.get() != NULL);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_resolution_copy_constructor) {
-    boost::scoped_ptr<lorenz95::Resolution> xx(new lorenz95::Resolution(*testconf_));
+  SECTION("test_resolution_copy_constructor") {
+    boost::scoped_ptr<lorenz95::Resolution> xx(new lorenz95::Resolution(*f.testconf_));
     boost::scoped_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*xx));
-    BOOST_CHECK(resol.get() != NULL);
+    EXPECT(resol.get() != NULL);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_resolution_get_npoints) {
-    boost::scoped_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*testconf_));
-    BOOST_CHECK_EQUAL(resol->npoints(), testconf_->getInt("resol"));
+  SECTION("test_resolution_get_npoints") {
+    boost::scoped_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*f.testconf_));
+    EXPECT(resol->npoints() == f.testconf_->getInt("resol"));
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_resolution_stream_output) {
-    boost::scoped_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*testconf_));
+  SECTION("test_resolution_stream_output") {
+    boost::scoped_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*f.testconf_));
 
     // use the operator<< method to write the value to a file
 
@@ -77,20 +76,23 @@ BOOST_FIXTURE_TEST_SUITE(test_resolution, ResolutionTestFixture)
       catch(boost::bad_lexical_cast const&) {
         // test fails because the value written to
         // the file can't be converted to an integer
-        BOOST_ERROR("operator<< incorrectly output a non-integer");
+        std::cout <<"operator<< incorrectly output a non-integer" << std::endl;
       }
 
       // it should equal the value that was used in the constructor
-      BOOST_CHECK_EQUAL(inputInt, resol->npoints());
+      EXPECT(inputInt == resol->npoints());
     } else {
       // if we can't open the file then we can't
       // verify that the value was correctly written
-      BOOST_ERROR("operator<< functionality cannot be determined");
+      std::cout << "operator<< functionality cannot be determined" << std::endl;
     }
     inputFile.close();
   }
 // -----------------------------------------------------------------------------
-BOOST_AUTO_TEST_SUITE_END()
+}  //  CASE
 // -----------------------------------------------------------------------------
-
 }  // namespace test
+int main(int argc, char **argv)
+{
+    return eckit::testing::run_tests ( argc, argv );
+}
