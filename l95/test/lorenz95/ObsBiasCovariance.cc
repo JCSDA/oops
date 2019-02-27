@@ -23,7 +23,7 @@
 namespace test {
 
 // -----------------------------------------------------------------------------
-class ObsBiasTestFixture : TestFixtureBase<false> {
+class ObsBiasTestFixture : TestFixture {
  public:
   ObsBiasTestFixture() {
     biasconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "ObsBias"));

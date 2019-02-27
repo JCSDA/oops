@@ -24,7 +24,7 @@
 namespace test {
 
 // -----------------------------------------------------------------------------
-class GomTestFixture : TestFixtureBase<false> {
+class GomTestFixture : TestFixture {
  public:
   GomTestFixture() {
     const eckit::LocalConfiguration conf(TestConfig::config(), "Observations");

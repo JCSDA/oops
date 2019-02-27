@@ -23,7 +23,7 @@
 namespace test {
 
 // -----------------------------------------------------------------------------
-class ModBiasCovTestFixture : TestFixtureBase<false> {
+class ModBiasCovTestFixture : TestFixture {
  public:
   ModBiasCovTestFixture() {
     eckit::LocalConfiguration res(TestConfig::config(), "resolution");

@@ -18,7 +18,7 @@
 #include "test/TestFixture.h"
 
 namespace test {
-class LocalizationMatrixFixture : TestFixtureBase<false> {
+class LocalizationMatrixFixture : TestFixture {
  public:
   LocalizationMatrixFixture() {
     eckit::LocalConfiguration res(TestConfig::config(), "resolution");

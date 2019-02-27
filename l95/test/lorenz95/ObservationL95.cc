@@ -20,7 +20,7 @@
 namespace test {
 
 // -----------------------------------------------------------------------------
-class ObsTestFixture : TestFixtureBase<false> {
+class ObsTestFixture : TestFixture {
  public:
   ObsTestFixture() {
     const eckit::LocalConfiguration conf(TestConfig::config(), "Observations");

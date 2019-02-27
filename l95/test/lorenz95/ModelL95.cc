@@ -27,7 +27,7 @@
 namespace test {
 
 // -----------------------------------------------------------------------------
-class ModelTestFixture : TestFixtureBase<false> {
+class ModelTestFixture : TestFixture {
  public:
   ModelTestFixture() {
     eckit::LocalConfiguration res(TestConfig::config(), "resolution");

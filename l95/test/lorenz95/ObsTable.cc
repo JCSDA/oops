@@ -20,7 +20,7 @@
 namespace test {
 
 // -----------------------------------------------------------------------------
-class ObsTableTestFixture : public TestFixtureBase<false> {
+class ObsTableTestFixture : public TestFixture {
  public:
   ObsTableTestFixture() {
     obsconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "Observations"));

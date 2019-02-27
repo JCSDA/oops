@@ -27,7 +27,7 @@ using eckit::types::is_approximately_equal;
 namespace test {
 
 // -----------------------------------------------------------------------------
-class ModBiasTestFixture : TestFixtureBase<false> {
+class ModBiasTestFixture : TestFixture {
  public:
   ModBiasTestFixture() {
     eckit::LocalConfiguration res(TestConfig::config(), "resolution");

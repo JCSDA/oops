@@ -19,20 +19,15 @@
 namespace test {
 
 // -----------------------------------------------------------------------------
-template <bool useBoost>
-struct TestFixtureBase : public testing::Setup<useBoost> {
-  TestFixtureBase() : testing::Setup<useBoost>() {
+struct TestFixture : public Setup {
+  TestFixture() : Setup() {
     // Common setup for every unit-test goes here
   }
 
-  ~TestFixtureBase() {
+  ~TestFixture() {
     oops::LibOOPS::instance().finalise();
   }
 };
-
-#ifndef OOPS_TEST_NO_BOOST
-using TestFixture = TestFixtureBase<true>;
-#endif
 // -----------------------------------------------------------------------------
 
 }  // namespace test

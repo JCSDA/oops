@@ -26,7 +26,7 @@ using eckit::types::is_approximately_equal;
 namespace test {
 
 // -----------------------------------------------------------------------------
-class ObsVecTestFixture : TestFixtureBase<false> {
+class ObsVecTestFixture : TestFixture {
  public:
   ObsVecTestFixture() {
     const eckit::LocalConfiguration conf(TestConfig::config(), "Observations");

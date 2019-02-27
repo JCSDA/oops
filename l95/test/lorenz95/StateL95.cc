@@ -37,7 +37,7 @@ using eckit::types::is_approximately_equal;
 namespace test {
 
 // -----------------------------------------------------------------------------
-class StateTestFixture : TestFixtureBase<false> {
+class StateTestFixture : TestFixture {
  public:
   StateTestFixture() {
     file_.reset(new eckit::LocalConfiguration(TestConfig::config(), "state"));

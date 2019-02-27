@@ -32,7 +32,7 @@ using eckit::types::is_approximately_equal;
 namespace test {
 
 // -----------------------------------------------------------------------------
-class IncrementTestFixture : TestFixtureBase<false> {
+class IncrementTestFixture : TestFixture {
  public:
   IncrementTestFixture() {
     file_.reset(new eckit::LocalConfiguration(TestConfig::config(), "state"));

@@ -13,19 +13,17 @@
 
 #include "eckit/runtime/Main.h"
 
-namespace testing {
+namespace test {
 
 //----------------------------------------------------------------------------------------------------------------------
 
-template<bool useBoost>
 struct Setup {
   Setup() {
   }
 };
 
 #ifndef OOPS_TEST_NO_BOOST
-template<>
-struct Setup<true> {
+struct Setup {
   Setup() {
     eckit::Main::initialise(boost::unit_test::framework::master_test_suite().argc,
                                 boost::unit_test::framework::master_test_suite().argv);
@@ -33,8 +31,6 @@ struct Setup<true> {
 };
 #endif
 
-//----------------------------------------------------------------------------------------------------------------------
-
-}  // namespace testing
+}  // namespace test
 
 #endif  // TEST_SETUP_H_

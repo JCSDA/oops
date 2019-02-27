@@ -25,7 +25,7 @@ using eckit::types::is_approximately_equal;
 namespace test {
 
 // -----------------------------------------------------------------------------
-class LocsTestFixture : TestFixtureBase<false> {
+class LocsTestFixture : TestFixture {
  public:
   LocsTestFixture() {
     const eckit::LocalConfiguration conf(TestConfig::config(), "Observations");

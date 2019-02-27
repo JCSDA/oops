@@ -191,12 +191,6 @@ ecbuild_add_test( TARGET test_l95_locsL95
                   DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 eckit)
 
-#ecbuild_add_test( TARGET test_l95_gomL95
-#                  BOOST
-#                  SOURCES lorenz95/test_main.cc lorenz95/GomL95.cc lorenz95/TestConfig.h
-#                  ARGS "testinput/test.yaml"
-#                  LIBS    lorenz95 )
-
 ecbuild_add_test( TARGET test_l95_gomL95
                   SOURCES lorenz95/GomL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"

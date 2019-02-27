@@ -31,7 +31,7 @@
 namespace test {
 
 // -----------------------------------------------------------------------------
-class TlmTestFixture : TestFixtureBase<false> {
+class TlmTestFixture : TestFixture {
  public:
   TlmTestFixture() {
     eckit::LocalConfiguration res(TestConfig::config(), "resolution");

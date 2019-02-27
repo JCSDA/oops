@@ -26,7 +26,7 @@ using eckit::types::is_approximately_equal;
 namespace test {
 
 // -----------------------------------------------------------------------------
-class ObsBiasTestFixture : TestFixtureBase<false> {
+class ObsBiasTestFixture : TestFixture {
  public:
   ObsBiasTestFixture() {
     off_.reset(new eckit::LocalConfiguration());
