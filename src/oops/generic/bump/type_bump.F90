@@ -140,12 +140,10 @@ call bump%nam%setup_internal(nl0,nv,nts,lens1_ne,lens1_nsub,lens2_ne,lens2_nsub)
 
 ! Initialize listing
 if (present(lunit)) then
-   call bump%mpl%init_listing(bump%nam%datadir,bump%nam%prefix,bump%nam%model,bump%nam%verbosity,bump%nam%colorlog, &
- & bump%nam%logpres,lunit)
+   call bump%mpl%init_listing(bump%nam%prefix,bump%nam%model,bump%nam%verbosity,bump%nam%colorlog,bump%nam%logpres,lunit)
    bump%close_listing = .false.
 else
-   call bump%mpl%init_listing(bump%nam%datadir,bump%nam%prefix,bump%nam%model,bump%nam%verbosity,bump%nam%colorlog, &
- & bump%nam%logpres)
+   call bump%mpl%init_listing(bump%nam%prefix,bump%nam%model,bump%nam%verbosity,bump%nam%colorlog,bump%nam%logpres)
    bump%close_listing = (trim(bump%nam%model)=='online').and.(.not.present(nobs))
 end if
 
