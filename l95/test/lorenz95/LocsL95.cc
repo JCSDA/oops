@@ -43,21 +43,21 @@ class LocsTestFixture : TestFixture {
 };
 // -----------------------------------------------------------------------------
 CASE("test_LocsL95") {
-  LocsTestFixture f;
+  LocsTestFixture fix;
 // -----------------------------------------------------------------------------
   SECTION("test_LocsL95_constructor") {
-    boost::scoped_ptr<lorenz95::LocsL95> locs(f.ot_->locations(*f.t1_, *f.t2_));
+    boost::scoped_ptr<lorenz95::LocsL95> locs(fix.ot_->locations(*fix.t1_, *fix.t2_));
     EXPECT(locs.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_LocsL95_nobs") {
-    boost::scoped_ptr<lorenz95::LocsL95> locs(f.ot_->locations(*f.t1_, *f.t2_));
+    boost::scoped_ptr<lorenz95::LocsL95> locs(fix.ot_->locations(*fix.t1_, *fix.t2_));
     size_t ref = 80;
     EXPECT(locs->size() == ref);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_LocsL95_operator") {
-    boost::scoped_ptr<lorenz95::LocsL95> locs(f.ot_->locations(*f.t1_, *f.t2_));
+    boost::scoped_ptr<lorenz95::LocsL95> locs(fix.ot_->locations(*fix.t1_, *fix.t2_));
     double pos = 0.0;
     for (size_t jj = 0; jj < locs->size(); ++jj) {
       EXPECT(is_approximately_equal((*locs)[jj], pos, 0.000001));

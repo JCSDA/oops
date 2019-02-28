@@ -34,17 +34,17 @@ class ObsTestFixture : TestFixture {
 };
 // -----------------------------------------------------------------------------
 CASE("test_ObsL95") {
-  ObsTestFixture f;
+  ObsTestFixture fix;
 // -----------------------------------------------------------------------------
   SECTION("test_ObsL95_constructor") {
     boost::scoped_ptr<lorenz95::ObservationL95>
-      obs(new lorenz95::ObservationL95(*f.ot_, TestConfig::config()));
+      obs(new lorenz95::ObservationL95(*fix.ot_, TestConfig::config()));
     EXPECT(obs.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_observationL95_classname") {
     boost::scoped_ptr<lorenz95::ObservationL95>
-      obs(new lorenz95::ObservationL95(*f.ot_, TestConfig::config()));
+      obs(new lorenz95::ObservationL95(*fix.ot_, TestConfig::config()));
     EXPECT(obs->classname() == "lorenz95::ObservationL95");
   }
 // -----------------------------------------------------------------------------

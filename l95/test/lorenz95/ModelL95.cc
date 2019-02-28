@@ -22,6 +22,7 @@
 #include "lorenz95/Resolution.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
 #include "test/TestFixture.h"
 
 namespace test {
@@ -40,46 +41,46 @@ class ModelTestFixture : TestFixture {
 };
 // -----------------------------------------------------------------------------
 CASE("test_modelL95") {
-ModelTestFixture f;
+ModelTestFixture fix;
 // -----------------------------------------------------------------------------
   SECTION("test_modelL95_constructor") {
-    boost::scoped_ptr<lorenz95::ModelL95> model(new lorenz95::ModelL95(*f.resol_, *f.nlconf_));
+    boost::scoped_ptr<lorenz95::ModelL95> model(new lorenz95::ModelL95(*fix.resol_, *fix.nlconf_));
     EXPECT(model != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_modelL95_get_classname") {
-    lorenz95::ModelL95 model(*f.resol_, *f.nlconf_);
+    lorenz95::ModelL95 model(*fix.resol_, *fix.nlconf_);
     EXPECT(model.classname() == "lorenz95::ModelL95");
   }
 // -----------------------------------------------------------------------------
   SECTION("test_modelL95_get_timestep") {
-    lorenz95::ModelL95 model(*f.resol_, *f.nlconf_);
-    util::Duration dt(f.nlconf_->getString("tstep"));
+    lorenz95::ModelL95 model(*fix.resol_, *fix.nlconf_);
+    util::Duration dt(fix.nlconf_->getString("tstep"));
     EXPECT(model.timeResolution().toSeconds() == dt.toSeconds());
   }
 // -----------------------------------------------------------------------------
   SECTION("test_modelL95_stepRk") {
-    lorenz95::ModelL95 model(*f.resol_, *f.nlconf_);
+    lorenz95::ModelL95 model(*fix.resol_, *fix.nlconf_);
 
     // construct a FieldL95 object
-    lorenz95::FieldL95 fieldL95(*f.resol_);
+    lorenz95::FieldL95 fieldL95(*fix.resol_);
 
     // construct a ModelBias object
     eckit::LocalConfiguration biasCfg(TestConfig::config(), "ModelBias");
-    lorenz95::ModelBias modelBias(*f.resol_, biasCfg);
+    lorenz95::ModelBias modelBias(*fix.resol_, biasCfg);
 
     // construct a ModelTrajectory object
     lorenz95::ModelTrajectory modelTraj(true);
     modelTraj.set(fieldL95);
 
 //    for(int i = 0; i < fieldL95.resol(); ++i) {
-//      std::cout << "PMC: pre  stepRK " << fieldL95[i] << std::endl;
+//      oops::Log::error() << "PMC: pre  stepRK " << fieldL95[i] << std::endl;
 //    }
 
     model.stepRK(fieldL95, modelBias, modelTraj);
 
 //    for(int i = 0; i < fieldL95.resol(); ++i) {
-//      std::cout << "PMC: post stepRK " << fieldL95[i] << std::endl;
+//      oops::Log::error() << "PMC: post stepRK " << fieldL95[i] << std::endl;
 //    }
   }
 // -----------------------------------------------------------------------------

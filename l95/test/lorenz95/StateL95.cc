@@ -30,6 +30,7 @@
 #include "lorenz95/StateL95.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
+#include "oops/util/Logger.h"
 #include "test/TestFixture.h"
 
 using eckit::types::is_approximately_equal;
@@ -56,26 +57,28 @@ class StateTestFixture : TestFixture {
 };
 // -----------------------------------------------------------------------------
 CASE("test_StateL95") {
-  StateTestFixture f;
+  StateTestFixture fix;
 // -----------------------------------------------------------------------------
   SECTION("test_stateL95_constructor") {
-    boost::scoped_ptr<lorenz95::StateL95> xx(new lorenz95::StateL95(*f.resol_, *f.vars_, *f.time_));
+    boost::scoped_ptr<lorenz95::StateL95>
+      xx(new lorenz95::StateL95(*fix.resol_, *fix.vars_, *fix.time_));
     EXPECT(xx.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_stateL95_readin_constructor") {
-    boost::scoped_ptr<lorenz95::StateL95> xx(new lorenz95::StateL95(*f.resol_, *f.vars_, *f.file_));
+    boost::scoped_ptr<lorenz95::StateL95>
+      xx(new lorenz95::StateL95(*fix.resol_, *fix.vars_, *fix.file_));
     EXPECT(xx.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_stateL95_interpolation_constructor") {
-    lorenz95::StateL95 xx1(*f.resol_, *f.vars_, *f.time_);
-    boost::scoped_ptr<lorenz95::StateL95> xx2(new lorenz95::StateL95(*f.resol_, xx1));
+    lorenz95::StateL95 xx1(*fix.resol_, *fix.vars_, *fix.time_);
+    boost::scoped_ptr<lorenz95::StateL95> xx2(new lorenz95::StateL95(*fix.resol_, xx1));
     EXPECT(xx2.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_stateL95_copy_constructor") {
-    lorenz95::StateL95 xx(*f.resol_, *f.vars_, *f.time_);
+    lorenz95::StateL95 xx(*fix.resol_, *fix.vars_, *fix.time_);
     boost::scoped_ptr<lorenz95::StateL95> xx2(new lorenz95::StateL95(xx));
     EXPECT(xx2.get() != NULL);
   }
@@ -85,28 +88,28 @@ CASE("test_StateL95") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_stateL95_getField") {
-    lorenz95::StateL95 xx(*f.resol_, *f.vars_, *f.time_);
+    lorenz95::StateL95 xx(*fix.resol_, *fix.vars_, *fix.time_);
 
     // there are 2 values in FieldL95: the 1st is the *resol_ value,
     // the 2nd is a vector of doubles initialised to 0.0, the size of the
     // vector is the *resol_ value
-    EXPECT(xx.getField().resol() == f.resol_->npoints());
+    EXPECT(xx.getField().resol() == fix.resol_->npoints());
   }
 // -----------------------------------------------------------------------------
   SECTION("test_stateL95_validTime") {
-    lorenz95::StateL95 xx(*f.resol_, *f.vars_, *f.time_);
-    EXPECT(xx.validTime().toString() == f.date_str_);
+    lorenz95::StateL95 xx(*fix.resol_, *fix.vars_, *fix.time_);
+    EXPECT(xx.validTime().toString() == fix.date_str_);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_stateL95_assignment") {
-    util::DateTime tt(f.file_->getString("date"));
-    lorenz95::StateL95 xx1(*f.resol_, *f.vars_, tt);
-    xx1.read(*f.file_);
+    util::DateTime tt(fix.file_->getString("date"));
+    lorenz95::StateL95 xx1(*fix.resol_, *fix.vars_, tt);
+    xx1.read(*fix.file_);
 
     // construct the second StateL95 object
     std::string date_string2("2014-09-14T09:35:00Z");
     util::DateTime dt2(date_string2);
-    lorenz95::StateL95 xx2(*f.resol_, *f.vars_, dt2);
+    lorenz95::StateL95 xx2(*fix.resol_, *fix.vars_, dt2);
 
     xx2 = xx1;
 
@@ -120,13 +123,13 @@ CASE("test_StateL95") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_stateL95_compound_assignment") {
-    util::DateTime tt(f.file_->getString("date"));
-    lorenz95::StateL95 xx(*f.resol_, *f.vars_, tt);
-    xx.read(*f.file_);
+    util::DateTime tt(fix.file_->getString("date"));
+    lorenz95::StateL95 xx(*fix.resol_, *fix.vars_, tt);
+    xx.read(*fix.file_);
 
     // construct the incrementL95 object
-    lorenz95::IncrementL95 dx(*f.resol_, *f.vars_, tt);
-    dx.read(*f.file_);
+    lorenz95::IncrementL95 dx(*fix.resol_, *fix.vars_, tt);
+    dx.read(*fix.file_);
 
     xx += dx;
 
@@ -138,16 +141,16 @@ CASE("test_StateL95") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_stateL95_read") {
-    util::DateTime tt(f.file_->getString("date"));
-    lorenz95::StateL95 xx(*f.resol_, *f.vars_, tt);
-    xx.read(*f.file_);
+    util::DateTime tt(fix.file_->getString("date"));
+    lorenz95::StateL95 xx(*fix.resol_, *fix.vars_, tt);
+    xx.read(*fix.file_);
 
     // to verify the information has been read correctly, we need to open
     // and read the file using ifstream functionality
-    const std::string filename(f.file_->getString("filename"));
+    const std::string filename(fix.file_->getString("filename"));
     std::ifstream inStream(filename.c_str());
     if (!inStream.is_open()) {
-      std::cout << "read functionality cannot be determined" << std::endl;
+      oops::Log::error() << "read functionality cannot be determined" << std::endl;
     }
 
     int resolInt;
@@ -162,15 +165,15 @@ CASE("test_StateL95") {
     }
     inStream.close();
 
-    for (int i = 0; i < f.resol_->npoints(); ++i) {
+    for (int i = 0; i < fix.resol_->npoints(); ++i) {
       EXPECT((xx.getField())[i] == doubleVec[i]);
     }
   }
 // -----------------------------------------------------------------------------
 /*
   SECTION("test_stateL95_stream_output") {
-    lorenz95::StateL95 xx(*f.resol_, *f.vars_, *f.time_);
-    xx.read(*f.file_);
+    lorenz95::StateL95 xx(*fix.resol_, *fix.vars_, *fix.time_);
+    xx.read(*fix.file_);
 
     // use the operator<< method to write the value to a file
 
@@ -198,7 +201,7 @@ CASE("test_StateL95") {
     double inputDouble = 0.0;
     std::string input;
     std::string inputTest;
-    std::string inputTimeTest(" Valid time: " + f.file_->getString("date"));
+    std::string inputTimeTest(" Valid time: " + fix.file_->getString("date"));
     std::ifstream inputFile(filename.c_str());
     if (inputFile.is_open()) {
       getline(inputFile, input);  // ignore the first (blank) line
@@ -228,23 +231,23 @@ CASE("test_StateL95") {
     } else {
       // if we can't open the file then we can't
       // verify that the value was correctly written
-      std::cout << "operator<< functionality cannot be determined" << std::endl;
+      oops::Log::error() << "operator<< functionality cannot be determined" << std::endl;
     }
     inputFile.close();
   }
 */
 // -----------------------------------------------------------------------------
 //  SECTION("test_stateL95_step_traj") {
-//    lorenz95::StateL95 xx(*f.resol_, *f.vars_, *f.time_);
-//    xx.read(*f.file_);
+//    lorenz95::StateL95 xx(*fix.resol_, *fix.vars_, *fix.time_);
+//    xx.read(*fix.file_);
 //
 //    // construct a ModelL95 object
 //    eckit::LocalConfiguration modelCfg(TestConfig::config(), "model");
-//    lorenz95::ModelL95 modelL95(*f.resol_, modelCfg);
+//    lorenz95::ModelL95 modelL95(*fix.resol_, modelCfg);
 //
 //    // construct a ModelBias object
 //    eckit::LocalConfiguration biasCfg(TestConfig::config(), "ModelBias");
-//    lorenz95::ModelBias modelBias(*f.resol_, biasCfg);
+//    lorenz95::ModelBias modelBias(*fix.resol_, biasCfg);
 //
 //    // construct a ModelTrajectory object
 //    lorenz95::ModelTrajectory modelTraj(true);

@@ -22,6 +22,7 @@
 #include "lorenz95/ModelBiasCorrection.h"
 #include "lorenz95/ModelBiasCovariance.h"
 #include "lorenz95/Resolution.h"
+#include "oops/util/Logger.h"
 #include "test/TestFixture.h"
 
 using eckit::types::is_approximately_equal;
@@ -53,15 +54,15 @@ class ModBiasTestFixture : TestFixture {
 };
 // -----------------------------------------------------------------------------
 CASE("test_modelBias") {
-  ModBiasTestFixture f;
+  ModBiasTestFixture fix;
 // -----------------------------------------------------------------------------
   SECTION("test_modelBias_constructor_bias") {
-    lorenz95::ModelBias mbias(*f.resol_, *f.biasconf_);
-    EXPECT(mbias.bias() == f.bias1_);
+    lorenz95::ModelBias mbias(*fix.resol_, *fix.biasconf_);
+    EXPECT(mbias.bias() == fix.bias1_);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_modelBias_constructor_nobias") {
-    lorenz95::ModelBias mbias(*f.resol_, *f.nobias_);
+    lorenz95::ModelBias mbias(*fix.resol_, *fix.nobias_);
 
     // because the biasconf_ is empty when used,
     // the active_ flag is false and the bias_ value is 0.0
@@ -69,14 +70,14 @@ CASE("test_modelBias") {
 }
 // -----------------------------------------------------------------------------
   SECTION("test_modelBias_constructor_active") {
-    lorenz95::ModelBias mbias1(*f.resol_, *f.biasconf_);
-    lorenz95::ModelBias mbias2(*f.resol_, mbias1);
-    EXPECT(mbias2.bias() == f.bias1_);
+    lorenz95::ModelBias mbias1(*fix.resol_, *fix.biasconf_);
+    lorenz95::ModelBias mbias2(*fix.resol_, mbias1);
+    EXPECT(mbias2.bias() == fix.bias1_);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_modelBias_constructor_inactive") {
-    lorenz95::ModelBias mbias1(*f.resol_, *f.nobias_);
-    lorenz95::ModelBias mbias2(*f.resol_, mbias1);
+    lorenz95::ModelBias mbias1(*fix.resol_, *fix.nobias_);
+    lorenz95::ModelBias mbias2(*fix.resol_, mbias1);
 
     // because the biasconf_ is empty when used,
     // the active_ flag is false and the bias_ value is 0.0
@@ -84,13 +85,13 @@ CASE("test_modelBias") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_modelBias_constructor_active_copy") {
-    lorenz95::ModelBias mbias1(*f.resol_, *f.biasconf_);
+    lorenz95::ModelBias mbias1(*fix.resol_, *fix.biasconf_);
     lorenz95::ModelBias mbias2(mbias1, true);
-    EXPECT(mbias2.bias() == f.bias1_);
+    EXPECT(mbias2.bias() == fix.bias1_);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_modelBias_constructor_active_nocopy") {
-    lorenz95::ModelBias mbias1(*f.resol_, *f.biasconf_);
+    lorenz95::ModelBias mbias1(*fix.resol_, *fix.biasconf_);
     lorenz95::ModelBias mbias2(mbias1, false);
 
     // because copy flag is set to false, bias is 0.0
@@ -98,7 +99,7 @@ CASE("test_modelBias") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_modelBias_constructor_inactive_copy") {
-    lorenz95::ModelBias mbias1(*f.resol_, *f.nobias_);
+    lorenz95::ModelBias mbias1(*fix.resol_, *fix.nobias_);
     lorenz95::ModelBias mbias2(mbias1, true);
 
     // because the biasconf_ is empty when used,
@@ -107,7 +108,7 @@ CASE("test_modelBias") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_modelBias_constructor_inactive_nocopy") {
-    lorenz95::ModelBias mbias1(*f.resol_, *f.nobias_);
+    lorenz95::ModelBias mbias1(*fix.resol_, *fix.nobias_);
     lorenz95::ModelBias mbias2(mbias1, false);
     EXPECT(mbias2.bias() == 0.0);
   }
@@ -117,22 +118,22 @@ CASE("test_modelBias") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_modelBias_classname") {
-    lorenz95::ModelBias mbias(*f.resol_, *f.biasconf_);
+    lorenz95::ModelBias mbias(*fix.resol_, *fix.biasconf_);
     EXPECT(mbias.classname() == "lorenz95::ModelBias");
   }
 // -----------------------------------------------------------------------------
   SECTION("test_modelBias_compound_assignment_active") {
-    lorenz95::ModelBias mbias(*f.resol_, *f.biasconf_);
+    lorenz95::ModelBias mbias(*fix.resol_, *fix.biasconf_);
 
-    mbias += *f.dbias_;
+    mbias += *fix.dbias_;
 
-    EXPECT(mbias.bias() == f.bias1_ + f.bias2_);
+    EXPECT(mbias.bias() == fix.bias1_ + fix.bias2_);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_modelBias_compound_assignment_inactive") {
-    lorenz95::ModelBias mbias(*f.resol_, *f.nobias_);
+    lorenz95::ModelBias mbias(*fix.resol_, *fix.nobias_);
 
-    mbias += *f.dbias_;
+    mbias += *fix.dbias_;
 
     // because the biasconf_ is empty,
     // mbias bias value is not modified from 0.0
@@ -140,8 +141,8 @@ CASE("test_modelBias") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_modelBias_bias") {
-    lorenz95::ModelBias mbias(*f.resol_, *f.biasconf_);
-    EXPECT(mbias.bias() == f.bias1_);
+    lorenz95::ModelBias mbias(*fix.resol_, *fix.biasconf_);
+    EXPECT(mbias.bias() == fix.bias1_);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_modelBias_read") {
@@ -153,7 +154,7 @@ CASE("test_modelBias") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_modelBias_stream_output") {
-    lorenz95::ModelBias mbias(*f.resol_, *f.biasconf_);
+    lorenz95::ModelBias mbias(*fix.resol_, *fix.biasconf_);
 
     // use the operator<< method to write the value to a file
     std::filebuf fb;
@@ -166,7 +167,7 @@ CASE("test_modelBias") {
     // then read the value that was written to the file
     std::string inputString;
     std::string inputBias;
-    double testBias = f.bias1_;
+    double testBias = fix.bias1_;
     double bias = 0.0;
     int biasStartPos = 12;  // length of "ModelBias = " is 12
     std::ifstream inputFile(filename.c_str());
@@ -180,14 +181,14 @@ CASE("test_modelBias") {
         bias = boost::lexical_cast<double>(inputBias);
       }
       catch(boost::bad_lexical_cast const&) {
-        std::cout << "operator<< incorrectly output a non-double" << std::endl;
+        oops::Log::error() << "operator<< incorrectly output a non-double" << std::endl;
       }
 
       EXPECT(is_approximately_equal(testBias, bias, 0.0001));
     } else {
       // if we can't open the file then we can't
       // verify that the value was correctly written
-      std::cout << "operator<< functionality cannot be determined" << std::endl;
+      oops::Log::error() << "operator<< functionality cannot be determined" << std::endl;
     }
     inputFile.close();
   }

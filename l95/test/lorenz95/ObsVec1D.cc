@@ -43,69 +43,69 @@ class ObsVecTestFixture : TestFixture {
 };
 // -----------------------------------------------------------------------------
 CASE("test_ObsVec1D") {
-  ObsVecTestFixture f;
+  ObsVecTestFixture fix;
 // -----------------------------------------------------------------------------
   SECTION("test_ObsVec1D_constructor") {
-    boost::scoped_ptr<lorenz95::ObsVec1D> ov(new lorenz95::ObsVec1D(*f.obstable_, *f.vars_));
+    boost::scoped_ptr<lorenz95::ObsVec1D> ov(new lorenz95::ObsVec1D(*fix.obstable_, *fix.vars_));
     EXPECT(ov.get() != NULL);
-    for (unsigned int ii = 0; ii < f.obstable_->nobs(); ++ii) {
+    for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
       EXPECT((*ov)(ii) == 0.0);
     }
   }
 // -----------------------------------------------------------------------------
   SECTION("test_ObsVec1D_nobs") {
-    boost::scoped_ptr<lorenz95::ObsVec1D> ov(new lorenz95::ObsVec1D(*f.obstable_, *f.vars_));
-    EXPECT(ov->nobs() == f.obstable_->nobs());
+    boost::scoped_ptr<lorenz95::ObsVec1D> ov(new lorenz95::ObsVec1D(*fix.obstable_, *fix.vars_));
+    EXPECT(ov->nobs() == fix.obstable_->nobs());
   }
 // -----------------------------------------------------------------------------
   SECTION("test_ObsVec1D_read") {
-    boost::scoped_ptr<lorenz95::ObsVec1D> ov(new lorenz95::ObsVec1D(*f.obstable_, *f.vars_));
+    boost::scoped_ptr<lorenz95::ObsVec1D> ov(new lorenz95::ObsVec1D(*fix.obstable_, *fix.vars_));
     ov->read("ObsValue");
-    for (unsigned int ii = 0; ii < f.obstable_->nobs(); ++ii) {
+    for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
       EXPECT((*ov)(ii) != 0.0);
     }
   }
 // -----------------------------------------------------------------------------
   SECTION("test_ObsVec1D_copy_constructor_copy") {
-    boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*f.obstable_, *f.vars_));
+    boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*fix.obstable_, *fix.vars_));
     ov1->read("ObsValue");
     boost::scoped_ptr<lorenz95::ObsVec1D> ov2(new lorenz95::ObsVec1D(*ov1, true));
 
-    for (unsigned int ii = 0; ii < f.obstable_->nobs(); ++ii) {
+    for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
       EXPECT((*ov2)(ii) == (*ov1)(ii));
     }
   }
 // -----------------------------------------------------------------------------
   SECTION("test_ObsVec1D_copy_constructor_no_copy") {
-    boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*f.obstable_, *f.vars_));
+    boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*fix.obstable_, *fix.vars_));
     ov1->read("ObsValue");
     boost::scoped_ptr<lorenz95::ObsVec1D> ov2(new lorenz95::ObsVec1D(*ov1, false));
 
-    for (unsigned int ii = 0; ii < f.obstable_->nobs(); ++ii) {
+    for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
       EXPECT((*ov2)(ii) == 0.0);
     }
   }
 // -----------------------------------------------------------------------------
   SECTION("test_ObsVec1D_classname") {
-    boost::scoped_ptr<lorenz95::ObsVec1D> ov(new lorenz95::ObsVec1D(*f.obstable_, *f.vars_));
+    boost::scoped_ptr<lorenz95::ObsVec1D> ov(new lorenz95::ObsVec1D(*fix.obstable_, *fix.vars_));
     EXPECT(ov->classname() == "lorenz95::ObsVec1D");
   }
 // -----------------------------------------------------------------------------
   SECTION("test_ObsVec1D_assignment") {
-    boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*f.obstable_, *f.vars_));
+    boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*fix.obstable_, *fix.vars_));
     ov1->read("ObsValue");
-    boost::scoped_ptr<lorenz95::ObsVec1D> ov2(new lorenz95::ObsVec1D(*f.obstable_, *f.vars_));
+    boost::scoped_ptr<lorenz95::ObsVec1D> ov2(new lorenz95::ObsVec1D(*fix.obstable_, *fix.vars_));
 
     // use the assignment operator to populate the second ObsVec1D object
     *ov2 = *ov1;
 
-    for (unsigned int ii = 0; ii < f.obstable_->nobs(); ++ii) {
+    for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
       EXPECT((*ov2)(ii) == (*ov1)(ii));
     }
   }
 // -----------------------------------------------------------------------------
   SECTION("test_ObsVec1D_compound_assignment_multiply_double") {
-    boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*f.obstable_, *f.vars_));
+    boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*fix.obstable_, *fix.vars_));
     ov1->read("ObsValue");
     boost::scoped_ptr<lorenz95::ObsVec1D> ov2(new lorenz95::ObsVec1D(*ov1, true));
 
@@ -113,72 +113,72 @@ CASE("test_ObsVec1D") {
     double mult = 7.92;
     *ov2 *= mult;
 
-    for (unsigned int ii = 0; ii < f.obstable_->nobs(); ++ii) {
+    for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
       EXPECT((*ov2)(ii) == (*ov1)(ii) * mult);
     }
   }
 // -----------------------------------------------------------------------------
   SECTION("test_ObsVec1D_compound_assignment_add") {
-    boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*f.obstable_, *f.vars_));
+    boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*fix.obstable_, *fix.vars_));
     ov1->read("ObsValue");
     boost::scoped_ptr<lorenz95::ObsVec1D> ov2(new lorenz95::ObsVec1D(*ov1, true));
 
     *ov1 += *ov2;
 
-    for (unsigned int ii = 0; ii < f.obstable_->nobs(); ++ii) {
+    for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
       EXPECT((*ov1)(ii) == (*ov2)(ii) + (*ov2)(ii));
     }
   }
 // -----------------------------------------------------------------------------
   SECTION("test_ObsVec1D_compound_assignment_subtract") {
-    boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*f.obstable_, *f.vars_));
+    boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*fix.obstable_, *fix.vars_));
     ov1->read("ObsValue");
     boost::scoped_ptr<lorenz95::ObsVec1D> ov2(new lorenz95::ObsVec1D(*ov1, true));
 
     *ov1 -= *ov2;
 
-    for (unsigned int ii = 0; ii < f.obstable_->nobs(); ++ii) {
+    for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
       EXPECT((*ov1)(ii) == 0.0);
     }
   }
 // -----------------------------------------------------------------------------
   SECTION("test_ObsVec1D_compound_assignment_multiply") {
-    boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*f.obstable_, *f.vars_));
+    boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*fix.obstable_, *fix.vars_));
     ov1->read("ObsValue");
     boost::scoped_ptr<lorenz95::ObsVec1D> ov2(new lorenz95::ObsVec1D(*ov1, true));
 
     *ov1 *= *ov2;
 
-    for (unsigned int ii = 0; ii < f.obstable_->nobs(); ++ii) {
+    for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
       EXPECT((*ov1)(ii) == (*ov2)(ii) * (*ov2)(ii));
     }
   }
 // -----------------------------------------------------------------------------
   SECTION("test_ObsVec1D_compound_assignment_divide") {
-    boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*f.obstable_, *f.vars_));
+    boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*fix.obstable_, *fix.vars_));
     ov1->read("ObsValue");
     boost::scoped_ptr<lorenz95::ObsVec1D> ov2(new lorenz95::ObsVec1D(*ov1, true));
 
     *ov1 /= *ov2;
 
-    for (unsigned int ii = 0; ii < f.obstable_->nobs(); ++ii) {
+    for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
       EXPECT((*ov1)(ii) == 1.0);
     }
   }
 // -----------------------------------------------------------------------------
   SECTION("test_ObsVec1D_zero") {
-    boost::scoped_ptr<lorenz95::ObsVec1D> ov(new lorenz95::ObsVec1D(*f.obstable_, *f.vars_));
+    boost::scoped_ptr<lorenz95::ObsVec1D> ov(new lorenz95::ObsVec1D(*fix.obstable_, *fix.vars_));
     ov->read("ObsValue");
 
     ov->zero();
 
-    for (unsigned int ii = 0; ii < f.obstable_->nobs(); ++ii) {
+    for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
       EXPECT((*ov)(ii) == 0.0);
     }
   }
 // -----------------------------------------------------------------------------
   SECTION("test_ObsVec1D_axpy") {
-    boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*f.obstable_, *f.vars_));
+    boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*fix.obstable_, *fix.vars_));
     ov1->read("ObsValue");
     boost::scoped_ptr<lorenz95::ObsVec1D> ov2(new lorenz95::ObsVec1D(*ov1, true));
 
@@ -186,42 +186,42 @@ CASE("test_ObsVec1D") {
 
     ov1->axpy(mult, *ov2);
 
-    for (unsigned int ii = 0; ii < f.obstable_->nobs(); ++ii) {
+    for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
       EXPECT((*ov1)(ii) == (*ov2)(ii) + mult * (*ov2)(ii));
     }
   }
 // -----------------------------------------------------------------------------
   SECTION("test_ObsVec1D_invert") {
-    boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*f.obstable_, *f.vars_));
+    boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*fix.obstable_, *fix.vars_));
     ov1->read("ObsValue");
     boost::scoped_ptr<lorenz95::ObsVec1D> ov2(new lorenz95::ObsVec1D(*ov1, true));
 
     ov1->invert();
 
-    for (unsigned int ii = 0; ii < f.obstable_->nobs(); ++ii) {
+    for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
       EXPECT((*ov1)(ii) == 1.0 / (*ov2)(ii));
     }
   }
 // -----------------------------------------------------------------------------
   SECTION("test_ObsVec1D_random") {
-    boost::scoped_ptr<lorenz95::ObsVec1D> ov(new lorenz95::ObsVec1D(*f.obstable_, *f.vars_));
+    boost::scoped_ptr<lorenz95::ObsVec1D> ov(new lorenz95::ObsVec1D(*fix.obstable_, *fix.vars_));
 
     ov->random();
 
-    for (unsigned int ii = 0; ii < f.obstable_->nobs(); ++ii) {
+    for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
       EXPECT((*ov)(ii) != 0);
     }
   }
 // -----------------------------------------------------------------------------
   SECTION("test_ObsVec1D_dot_product_with") {
-    boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*f.obstable_, *f.vars_));
+    boost::scoped_ptr<lorenz95::ObsVec1D> ov1(new lorenz95::ObsVec1D(*fix.obstable_, *fix.vars_));
     ov1->read("ObsValue");
     boost::scoped_ptr<lorenz95::ObsVec1D> ov2(new lorenz95::ObsVec1D(*ov1, true));
 
     double result = ov1->dot_product_with(*ov2);
 
     double check = 0.0;
-    for (unsigned int ii = 0; ii < f.obstable_->nobs(); ++ii) {
+    for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
       check += (*ov2)(ii) * (*ov2)(ii);
     }
 

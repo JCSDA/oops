@@ -18,6 +18,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "lorenz95/Resolution.h"
+#include "oops/util/Logger.h"
 #include "test/TestFixture.h"
 
 namespace test {
@@ -33,26 +34,26 @@ class ResolutionTestFixture : TestFixture {
 };
 // -----------------------------------------------------------------------------
 CASE("test_resolution") {
-  ResolutionTestFixture f;
+  ResolutionTestFixture fix;
 // -----------------------------------------------------------------------------
   SECTION("test_resolution_constructor") {
-    boost::scoped_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*f.testconf_));
+    boost::scoped_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*fix.testconf_));
     EXPECT(resol.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_resolution_copy_constructor") {
-    boost::scoped_ptr<lorenz95::Resolution> xx(new lorenz95::Resolution(*f.testconf_));
+    boost::scoped_ptr<lorenz95::Resolution> xx(new lorenz95::Resolution(*fix.testconf_));
     boost::scoped_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*xx));
     EXPECT(resol.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_resolution_get_npoints") {
-    boost::scoped_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*f.testconf_));
-    EXPECT(resol->npoints() == f.testconf_->getInt("resol"));
+    boost::scoped_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*fix.testconf_));
+    EXPECT(resol->npoints() == fix.testconf_->getInt("resol"));
   }
 // -----------------------------------------------------------------------------
   SECTION("test_resolution_stream_output") {
-    boost::scoped_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*f.testconf_));
+    boost::scoped_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*fix.testconf_));
 
     // use the operator<< method to write the value to a file
 
@@ -76,7 +77,7 @@ CASE("test_resolution") {
       catch(boost::bad_lexical_cast const&) {
         // test fails because the value written to
         // the file can't be converted to an integer
-        std::cout <<"operator<< incorrectly output a non-integer" << std::endl;
+        oops::Log::error() <<"operator<< incorrectly output a non-integer" << std::endl;
       }
 
       // it should equal the value that was used in the constructor
@@ -84,7 +85,7 @@ CASE("test_resolution") {
     } else {
       // if we can't open the file then we can't
       // verify that the value was correctly written
-      std::cout << "operator<< functionality cannot be determined" << std::endl;
+      oops::Log::error() << "operator<< functionality cannot be determined" << std::endl;
     }
     inputFile.close();
   }

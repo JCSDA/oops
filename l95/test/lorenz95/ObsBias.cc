@@ -19,6 +19,7 @@
 #include "eckit/testing/Test.h"
 #include "lorenz95/ObsBias.h"
 #include "lorenz95/ObsBiasCorrection.h"
+#include "oops/util/Logger.h"
 #include "test/TestFixture.h"
 
 using eckit::types::is_approximately_equal;
@@ -40,26 +41,26 @@ class ObsBiasTestFixture : TestFixture {
 };
 // -----------------------------------------------------------------------------
 CASE("test_obsBias") {
-  ObsBiasTestFixture f;
+  ObsBiasTestFixture fix;
 // -----------------------------------------------------------------------------
   SECTION("test_obsBias_constructor_bias") {
-    lorenz95::ObsBias ob(*f.biasconf_);
-    EXPECT(ob.value() == f.biasconf_->getDouble("bias"));
+    lorenz95::ObsBias ob(*fix.biasconf_);
+    EXPECT(ob.value() == fix.biasconf_->getDouble("bias"));
   }
 // -----------------------------------------------------------------------------
   SECTION("test_obsBias_constructor_no_bias") {
-    lorenz95::ObsBias ob(*f.nobias_);
+    lorenz95::ObsBias ob(*fix.nobias_);
     EXPECT(ob.value() == 0.0);
 }
 // -----------------------------------------------------------------------------
   SECTION("test_obsBias_copy_constructor_config_copy") {
-    lorenz95::ObsBias ob1(*f.biasconf_);
+    lorenz95::ObsBias ob1(*fix.biasconf_);
     lorenz95::ObsBias ob2(ob1, true);
-    EXPECT(ob2.value() == f.biasconf_->getDouble("bias"));
+    EXPECT(ob2.value() == fix.biasconf_->getDouble("bias"));
   }
 // -----------------------------------------------------------------------------
   SECTION("test_obsBias_copy_constructor_config_no_copy") {
-    lorenz95::ObsBias ob1(*f.biasconf_);
+    lorenz95::ObsBias ob1(*fix.biasconf_);
     lorenz95::ObsBias ob2(ob1, false);
 
     // bias value is 0 because copy flag was set to false
@@ -67,7 +68,7 @@ CASE("test_obsBias") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_obsBias_copy_constructor_no_config_copy") {
-    lorenz95::ObsBias ob1(*f.nobias_);
+    lorenz95::ObsBias ob1(*fix.nobias_);
     lorenz95::ObsBias ob2(ob1, true);
 
     // bias value is 0 because an empty config was used
@@ -75,7 +76,7 @@ CASE("test_obsBias") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_obsBias_copy_constructor_no_config_no_copy") {
-    lorenz95::ObsBias ob1(*f.nobias_);
+    lorenz95::ObsBias ob1(*fix.nobias_);
     lorenz95::ObsBias ob2(ob1, true);
 
     // bias value is 0 because an empty config was used
@@ -87,22 +88,22 @@ CASE("test_obsBias") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_obsBias_compound_assignment_add_active") {
-    lorenz95::ObsBias ob(*f.biasconf_);
+    lorenz95::ObsBias ob(*fix.biasconf_);
 
     // construct an obsBiasCorrection object
-    lorenz95::ObsBiasCorrection obsBiasCorrection(*f.covconf_);
+    lorenz95::ObsBiasCorrection obsBiasCorrection(*fix.covconf_);
     obsBiasCorrection.value() = 3.14;
 
     ob += obsBiasCorrection;
 
-    EXPECT(ob.value() == f.biasconf_->getDouble("bias") + 3.14);
+    EXPECT(ob.value() == fix.biasconf_->getDouble("bias") + 3.14);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_obsBias_compound_assignment_add_inactive") {
-    lorenz95::ObsBias ob(*f.nobias_);
+    lorenz95::ObsBias ob(*fix.nobias_);
 
     // construct an obsBiasCorrection object
-    lorenz95::ObsBiasCorrection obsBiasCorrection(*f.covconf_);
+    lorenz95::ObsBiasCorrection obsBiasCorrection(*fix.covconf_);
     obsBiasCorrection.value() = 3.14;
 
     ob += obsBiasCorrection;
@@ -112,8 +113,8 @@ CASE("test_obsBias") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_obsBias_value") {
-    lorenz95::ObsBias ob(*f.biasconf_);
-    EXPECT(ob.value() == f.biasconf_->getDouble("bias"));
+    lorenz95::ObsBias ob(*fix.biasconf_);
+    EXPECT(ob.value() == fix.biasconf_->getDouble("bias"));
   }
 // -----------------------------------------------------------------------------
   SECTION("test_obsBias_read") {
@@ -125,7 +126,7 @@ CASE("test_obsBias") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_obsBias_stream_output") {
-    lorenz95::ObsBias ob(*f.biasconf_);
+    lorenz95::ObsBias ob(*fix.biasconf_);
 
     // use the operator<< method to write the value to a file
     std::filebuf fb;
@@ -138,7 +139,7 @@ CASE("test_obsBias") {
     // then read the value that was written to the file
     std::string inputString;
     std::string inputBias;
-    double testBias = f.biasconf_->getDouble("bias");
+    double testBias = fix.biasconf_->getDouble("bias");
     double bias = 0.0;
     int biasStartPos = 10;  // length of "ObsBias = " is 10
     std::ifstream inputFile(filename.c_str());
@@ -152,14 +153,14 @@ CASE("test_obsBias") {
         bias = boost::lexical_cast<double>(inputBias);
       }
       catch(boost::bad_lexical_cast const&) {
-        std::cout << "operator<< incorrectly output a non-double" << std::endl;
+        oops::Log::error() << "operator<< incorrectly output a non-double" << std::endl;
       }
 
       EXPECT(is_approximately_equal(testBias, bias, 0.0001));
     } else {
       // if we can't open the file then we can't
       // verify that the value was correctly written
-      std::cout << "operator<< functionality cannot be determined" << std::endl;
+      oops::Log::error() << "operator<< functionality cannot be determined" << std::endl;
     }
     inputFile.close();
   }

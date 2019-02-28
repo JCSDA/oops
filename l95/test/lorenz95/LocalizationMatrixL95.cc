@@ -33,11 +33,11 @@ class LocalizationMatrixFixture : TestFixture {
 };
 // -----------------------------------------------------------------------------
 CASE("test_localizationMatrixL95") {
-  LocalizationMatrixFixture f;
+  LocalizationMatrixFixture fix;
 // -----------------------------------------------------------------------------
   SECTION("test_localizationMatrixL95_constructor") {
     boost::scoped_ptr<lorenz95::LocalizationMatrixL95> locmat(
-        new lorenz95::LocalizationMatrixL95(*f.resol_, *f.cfg_));
+        new lorenz95::LocalizationMatrixL95(*fix.resol_, *fix.cfg_));
 
     EXPECT(locmat.get() != NULL);
   }

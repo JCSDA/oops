@@ -25,6 +25,7 @@
 #include "lorenz95/StateL95.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
+#include "oops/util/Logger.h"
 #include "test/TestFixture.h"
 
 using eckit::types::is_approximately_equal;
@@ -51,39 +52,39 @@ class IncrementTestFixture : TestFixture {
 };
 // -----------------------------------------------------------------------------
 CASE("test_IncrementL95") {
-  IncrementTestFixture f;
+  IncrementTestFixture fix;
 // -----------------------------------------------------------------------------
   SECTION("test_incrementL95_constructor") {
     boost::scoped_ptr<lorenz95::IncrementL95>
-      dx(new lorenz95::IncrementL95(*f.resol_, *f.vars_, *f.time_));
+      dx(new lorenz95::IncrementL95(*fix.resol_, *fix.vars_, *fix.time_));
     EXPECT(dx.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_incrementL95_interpolation_constructor") {
     boost::scoped_ptr<lorenz95::IncrementL95>
-      dx1(new lorenz95::IncrementL95(*f.resol_, *f.vars_, *f.time_));
+      dx1(new lorenz95::IncrementL95(*fix.resol_, *fix.vars_, *fix.time_));
     boost::scoped_ptr<lorenz95::IncrementL95>
-      dx2(new lorenz95::IncrementL95(*f.resol_, *dx1));
+      dx2(new lorenz95::IncrementL95(*fix.resol_, *dx1));
     EXPECT(dx2.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_incrementL95_copy_constructor") {
     boost::scoped_ptr<lorenz95::IncrementL95>
-      dx1(new lorenz95::IncrementL95(*f.resol_, *f.vars_, *f.time_));
+      dx1(new lorenz95::IncrementL95(*fix.resol_, *fix.vars_, *fix.time_));
     boost::scoped_ptr<lorenz95::IncrementL95> dx2(new lorenz95::IncrementL95(*dx1));
     EXPECT(dx2.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_incrementL95_diff") {
-    util::DateTime tt(f.file_->getString("date"));
-    lorenz95::IncrementL95 dx(*f.resol_, *f.vars_, tt);
-    dx.read(*f.file_);
+    util::DateTime tt(fix.file_->getString("date"));
+    lorenz95::IncrementL95 dx(*fix.resol_, *fix.vars_, tt);
+    dx.read(*fix.file_);
 
     // construct the first stateL95 object
-    lorenz95::StateL95 xx1(*f.resol_, *f.vars_, tt);
+    lorenz95::StateL95 xx1(*fix.resol_, *fix.vars_, tt);
 
     // read in the state config info
-    xx1.read(*f.file_);
+    xx1.read(*fix.file_);
     lorenz95::StateL95 xx2(xx1);
 
     // to vary the results a little, change the second StateL95 field values
@@ -95,10 +96,10 @@ CASE("test_IncrementL95") {
 
     // to verify the diff method has worked correctly, we need
     // to open and read the file containing the FieldL95
-    std::string filename(f.file_->getString("filename"));
+    std::string filename(fix.file_->getString("filename"));
     std::ifstream inStream(filename.c_str());
     if (!inStream.is_open()) {
-      std::cout << "diff functionality cannot be determined" << std::endl;
+      oops::Log::error() << "diff functionality cannot be determined" << std::endl;
     }
 
     // we read in these two values but do not use them
@@ -113,7 +114,7 @@ CASE("test_IncrementL95") {
     }
     inStream.close();
 
-    for (int i = 0; i < f.resol_->npoints(); ++i) {
+    for (int i = 0; i < fix.resol_->npoints(); ++i) {
       EXPECT(is_approximately_equal((dx.getField())[i],
                          doubleVec[i] - (doubleVec[i] + (doubleVec[i] * fact)),
                          1.0e-6));
@@ -121,66 +122,68 @@ CASE("test_IncrementL95") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_incrementL95_zero") {
-    util::DateTime tt(f.file_->getString("date"));
-    lorenz95::IncrementL95 dx(*f.resol_, *f.vars_, tt);
-    dx.read(*f.file_);
+    util::DateTime tt(fix.file_->getString("date"));
+    lorenz95::IncrementL95 dx(*fix.resol_, *fix.vars_, tt);
+    dx.read(*fix.file_);
 
     // first check that we have good data, ie, at least one element is non-zero
     bool goodData = false;
-    for (int i = 0; i < f.resol_->npoints() && goodData == false; ++i) {
+    for (int i = 0; i < fix.resol_->npoints() && goodData == false; ++i) {
       if ((dx.getField())[i] != 0) {
         goodData = true;
       }
     }
 
     if (!goodData) {
-      std::cout << "unable to test zero method, since test data is already all zero" << std::endl;;
+      oops::Log::error() <<
+        "unable to test zero method, since test data is already all zero" << std::endl;;
     } else {
       dx.zero();
 
-      for (int i = 0; i < f.resol_->npoints(); ++i) {
+      for (int i = 0; i < fix.resol_->npoints(); ++i) {
         EXPECT(dx.getField()[i] == 0);
       }
     }
   }
 // -----------------------------------------------------------------------------
   SECTION("test_incrementL95_zero_set_datetime") {
-    util::DateTime tt(f.file_->getString("date"));
-    lorenz95::IncrementL95 dx(*f.resol_, *f.vars_, tt);
-    dx.read(*f.file_);
+    util::DateTime tt(fix.file_->getString("date"));
+    lorenz95::IncrementL95 dx(*fix.resol_, *fix.vars_, tt);
+    dx.read(*fix.file_);
 
     // first check that we have good data, ie, at least one element is non-zero
     bool goodData = false;
-    for (int i = 0; i < f.resol_->npoints() && goodData == false; ++i) {
+    for (int i = 0; i < fix.resol_->npoints() && goodData == false; ++i) {
       if (dx.getField()[i] != 0) {
         goodData = true;
       }
     }
 
     if (!goodData) {
-      std::cout << "unable to test zero method, since test data is already all zero" << std::endl;
+      oops::Log::error() <<
+        "unable to test zero method, since test data is already all zero" << std::endl;
     } else {
       const std::string modified_date_string("2010-01-01T10:35:00Z");
       const util::DateTime dtModified(modified_date_string);
       dx.zero(dtModified);
 
-      for (int i = 0; i < f.resol_->npoints(); ++i) {
+      for (int i = 0; i < fix.resol_->npoints(); ++i) {
         EXPECT(dx.getField()[i] == 0);
       }
 
-      EXPECT(dx.validTime().toString() != f.date_str_);
+      EXPECT(dx.validTime().toString() != fix.date_str_);
     }
   }
 // -----------------------------------------------------------------------------
   SECTION("test_incrementL95_assignment") {
-    util::DateTime tt(f.file_->getString("date"));
-    lorenz95::IncrementL95 dx1(*f.resol_, *f.vars_, tt);
-    dx1.read(*f.file_);
+    util::DateTime tt(fix.file_->getString("date"));
+    lorenz95::IncrementL95 dx1(*fix.resol_, *fix.vars_, tt);
+    dx1.read(*fix.file_);
 
     // construct the second dx object
-    lorenz95::IncrementL95 dx2(*f.resol_, *f.vars_, tt);
+    lorenz95::IncrementL95 dx2(*fix.resol_, *fix.vars_, tt);
     double fact = 0.75;
-    dx2.read(*f.file_);
+    dx2.read(*fix.file_);
     dx2 *= fact;
 
     dx1 = dx2;
@@ -191,9 +194,9 @@ CASE("test_IncrementL95") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_incrementL95_compound_assignment_add") {
-    util::DateTime tt(f.file_->getString("date"));
-    lorenz95::IncrementL95 dx1(*f.resol_, *f.vars_, tt);
-    dx1.read(*f.file_);
+    util::DateTime tt(fix.file_->getString("date"));
+    lorenz95::IncrementL95 dx1(*fix.resol_, *fix.vars_, tt);
+    dx1.read(*fix.file_);
 
     // copy construct the second stateL95 object
     lorenz95::IncrementL95 dx2(dx1);
@@ -208,9 +211,9 @@ CASE("test_IncrementL95") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_incrementL95_compound_assignment_subtract") {
-    util::DateTime tt(f.file_->getString("date"));
-    lorenz95::IncrementL95 dx1(*f.resol_, *f.vars_, tt);
-    dx1.read(*f.file_);
+    util::DateTime tt(fix.file_->getString("date"));
+    lorenz95::IncrementL95 dx1(*fix.resol_, *fix.vars_, tt);
+    dx1.read(*fix.file_);
 
     // copy construct the second stateL95 object
     lorenz95::IncrementL95 dx2(dx1);
@@ -225,9 +228,9 @@ CASE("test_IncrementL95") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_incrementL95_compound_assignment_multiply") {
-    util::DateTime tt(f.file_->getString("date"));
-    lorenz95::IncrementL95 dx(*f.resol_, *f.vars_, tt);
-    dx.read(*f.file_);
+    util::DateTime tt(fix.file_->getString("date"));
+    lorenz95::IncrementL95 dx(*fix.resol_, *fix.vars_, tt);
+    dx.read(*fix.file_);
 
     // create a copy of the original data for testing against
     std::vector<double> testData(dx.getField().resol());
@@ -244,9 +247,9 @@ CASE("test_IncrementL95") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_incrementL95_axpy") {
-    util::DateTime tt(f.file_->getString("date"));
-    lorenz95::IncrementL95 dx1(*f.resol_, *f.vars_, tt);
-    dx1.read(*f.file_);
+    util::DateTime tt(fix.file_->getString("date"));
+    lorenz95::IncrementL95 dx1(*fix.resol_, *fix.vars_, tt);
+    dx1.read(*fix.file_);
 
     // copy construct the second stateL95 object
     lorenz95::IncrementL95 dx2(dx1);
@@ -260,9 +263,9 @@ CASE("test_IncrementL95") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_incrementL95_dot_product_with") {
-    util::DateTime tt(f.file_->getString("date"));
-    lorenz95::IncrementL95 dx1(*f.resol_, *f.vars_, tt);
-    dx1.read(*f.file_);
+    util::DateTime tt(fix.file_->getString("date"));
+    lorenz95::IncrementL95 dx1(*fix.resol_, *fix.vars_, tt);
+    dx1.read(*fix.file_);
 
     // copy construct the second stateL95 object
     lorenz95::IncrementL95 dx2(dx1);
@@ -279,9 +282,9 @@ CASE("test_IncrementL95") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_incrementL95_schur_product_with") {
-    util::DateTime tt(f.file_->getString("date"));
-    lorenz95::IncrementL95 dx1(*f.resol_, *f.vars_, tt);
-    dx1.read(*f.file_);
+    util::DateTime tt(fix.file_->getString("date"));
+    lorenz95::IncrementL95 dx1(*fix.resol_, *fix.vars_, tt);
+    dx1.read(*fix.file_);
 
     // copy construct the second stateL95 object
     lorenz95::IncrementL95 dx2(dx1);
@@ -296,16 +299,16 @@ CASE("test_IncrementL95") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_incrementL95_read") {
-    util::DateTime tt(f.file_->getString("date"));
-    lorenz95::IncrementL95 dx(*f.resol_, *f.vars_, tt);
-    dx.read(*f.file_);
+    util::DateTime tt(fix.file_->getString("date"));
+    lorenz95::IncrementL95 dx(*fix.resol_, *fix.vars_, tt);
+    dx.read(*fix.file_);
 
     // to verify the information has been read correctly, we need to open
     // and read the file using ifstream functionality
-    const std::string filename(f.file_->getString("filename"));
+    const std::string filename(fix.file_->getString("filename"));
     std::ifstream inStream(filename.c_str());
     if (!inStream.is_open()) {
-      std::cout << "read functionality cannot be determined" << std::endl;
+      oops::Log::error() << "read functionality cannot be determined" << std::endl;
     }
 
     int resolInt;
@@ -320,15 +323,15 @@ CASE("test_IncrementL95") {
     }
     inStream.close();
 
-    for (int i = 0; i < f.resol_->npoints(); ++i) {
+    for (int i = 0; i < fix.resol_->npoints(); ++i) {
       EXPECT(dx.getField()[i] == doubleVec[i]);
     }
   }
 // -----------------------------------------------------------------------------
   SECTION("test_incrementL95_write") {
-    util::DateTime tt(f.file_->getString("date"));
-    lorenz95::IncrementL95 dx(*f.resol_, *f.vars_, tt);
-    dx.read(*f.file_);
+    util::DateTime tt(fix.file_->getString("date"));
+    lorenz95::IncrementL95 dx(*fix.resol_, *fix.vars_, tt);
+    dx.read(*fix.file_);
 
     eckit::LocalConfiguration opFileCfg(TestConfig::config(), "outputFile");
     dx.write(opFileCfg);
@@ -337,13 +340,13 @@ CASE("test_IncrementL95") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_incrementL95_validTime") {
-    lorenz95::IncrementL95 dx(*f.resol_, *f.vars_, *f.time_);
-    EXPECT(dx.validTime().toString() == f.date_str_);
+    lorenz95::IncrementL95 dx(*fix.resol_, *fix.vars_, *fix.time_);
+    EXPECT(dx.validTime().toString() == fix.date_str_);
   }
 // -----------------------------------------------------------------------------
 /*
   SECTION("test_incrementL95_stream_output") {
-    lorenz95::IncrementL95 dx(*f.resol_, *f.vars_, *f.time_);
+    lorenz95::IncrementL95 dx(*fix.resol_, *fix.vars_, *fix.time_);
 
     // use the operator<< method to write the value to a file
     std::filebuf fb;
@@ -355,7 +358,7 @@ CASE("test_IncrementL95") {
 
     // then read the value that was written to the file
     std::string input;
-    std::string inputTest(" Valid time: " + f.date_str_);
+    std::string inputTest(" Valid time: " + fix.date_str_);
     std::ifstream inputFile(filename.c_str());
     if (inputFile.is_open()) {
       getline(inputFile, input);  // ignore the first (blank) line
@@ -365,19 +368,19 @@ CASE("test_IncrementL95") {
     } else {
       // if we can't open the file then we can't
       // verify that the value was correctly written
-      std::cout << "operator<< functionality cannot be determined" << std::endl;
+      oops::Log::error() << "operator<< functionality cannot be determined" << std::endl;
     }
     inputFile.close();
   }
 */
 // -----------------------------------------------------------------------------
   SECTION("test_incrementL95_getField") {
-    lorenz95::IncrementL95 dx(*f.resol_, *f.vars_, *f.time_);
+    lorenz95::IncrementL95 dx(*fix.resol_, *fix.vars_, *fix.time_);
 
     // there are 2 values in FieldL95: the 1st is the *resol_ value,
     // the 2nd is a vector of doubles initialised to 0.0, the size of the
     // vector is the *resol_ value (we're just checking the final one)
-    EXPECT(dx.getField().resol() == f.resol_->npoints());
+    EXPECT(dx.getField().resol() == fix.resol_->npoints());
   }
 // -----------------------------------------------------------------------------
 }  //  CASE
