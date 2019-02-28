@@ -17,6 +17,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
+#include "oops/base/IdentityMatrix.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/oobump_f.h"
@@ -152,8 +153,9 @@ void ErrorCovarianceBUMP<MODEL>::doInverseMultiply(const Increment_ & dx1,
                                                    Increment_ & dx2) const {
   Log::trace() << "ErrorCovarianceBUMP<MODEL>::doInverseMultiply starting" << std::endl;
   util::Timer timer(classname(), "doInverseMultiply");
+  IdentityMatrix<Increment_> Id;
   dx2.zero();
-  Log::info() << "ErrorCovarianceBUMP<MODEL>::doInverseMultiply not implemented" << std::endl;
+  GMRESR(dx2, dx1, *this, Id, 10, 1.0e-3);
   Log::trace() << "ErrorCovarianceBUMP<MODEL>::doInverseMultiply done" << std::endl;
 }
 

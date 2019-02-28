@@ -12,14 +12,12 @@
 
 #include "eckit/config/Configuration.h"
 #include "model/GeometryQG.h"
-#include "model/IncrementQG.h"
 #include "model/StateQG.h"
 #include "oops/util/Logger.h"
 
 namespace qg {
 // -----------------------------------------------------------------------------
-ChangeVar::ChangeVar(const StateQG &, const StateQG &,
-                     const GeometryQG & resol, const eckit::Configuration & conf) {
+ChangeVar::ChangeVar(const GeometryQG & resol, const eckit::Configuration & conf) {
   oops::Log::trace() << "ChangeVar::ChangeVar start" << std::endl;
   const eckit::Configuration * configc = &conf;
   qg_setup_f90(&configc, resol.toFortran(), keyConfig_);
@@ -28,30 +26,19 @@ ChangeVar::ChangeVar(const StateQG &, const StateQG &,
 // -----------------------------------------------------------------------------
 ChangeVar::~ChangeVar() {}
 // -----------------------------------------------------------------------------
-void ChangeVar::multiply(const IncrementQG & dxa, IncrementQG & dxm) const {
-  dxm = dxa;
-//  ASSERT(dxm.fields().isForModel(false));
-//  qg_prepare_integration_tl_f90(keyConfig_, dxm.fields().toFortran());
-  oops::Log::debug() << "ChangeVar::multiply" << dxm << std::endl;
+void ChangeVar::changeVar(const StateQG & xa, StateQG & xm) const {
+  xm = xa;
+  ASSERT(xm.fields().isForModel(false));
+  qg_prepare_integration_f90(keyConfig_, xm.fields().toFortran());
+  oops::Log::debug() << "ChangeVar::multiply" << xm << std::endl;
 }
 // -----------------------------------------------------------------------------
-void ChangeVar::multiplyInverse(const IncrementQG & dxm, IncrementQG & dxa) const {
-  dxa = dxm;
-}
-// -----------------------------------------------------------------------------
-void ChangeVar::multiplyAD(const IncrementQG & dxm, IncrementQG & dxa) const {
-//  ASSERT(dxm.fields().isForModel(false));
-//  qg_prepare_integration_ad_f90(keyConfig_, dxm.fields().toFortran());
-  dxa = dxm;
-  oops::Log::debug() << "ChangeVar::multiplyAD" << dxa << std::endl;
-}
-// -----------------------------------------------------------------------------
-void ChangeVar::multiplyInverseAD(const IncrementQG & dxa, IncrementQG & dxm) const {
-  dxm = dxa;
+void ChangeVar::changeVarInverse(const StateQG & xm, StateQG & xa) const {
+  xa = xm;
 }
 // -----------------------------------------------------------------------------
 void ChangeVar::print(std::ostream & os) const {
-  os << "QG change variable";
+  os << "QG change of variable";
 }
 // -----------------------------------------------------------------------------
 }  // namespace qg

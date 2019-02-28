@@ -12,16 +12,21 @@
 #define QG_MODEL_INSTANTIATEQGCHANGEVARFACTORY_H_
 
 #include "model/ChangeVar.h"
+#include "model/ChangeVarTLAD.h"
 #include "model/ErrorStdDevQG.h"
 #include "model/QgTraits.h"
 #include "oops/interface/LinearVariableChange.h"
+#include "oops/interface/VariableChange.h"
 
 namespace qg {
 
 void instantiateQgChangeVarFactory() {
+  static oops::VariableChangeMaker<qg::QgTraits,
+                                   oops::VariableChange<qg::QgTraits, qg::ChangeVar> >
+               makerChVarQG_("ChVarQG");
   static oops::LinearVariableChangeMaker<qg::QgTraits,
-                                   oops::LinearVariableChange<qg::QgTraits, qg::ChangeVar> >
-               makerChangeVarQG_("ChVarQG");
+                                   oops::LinearVariableChange<qg::QgTraits, qg::ChangeVarTLAD> >
+               makerChLinVarQG_("ChVarQG");
   static oops::LinearVariableChangeMaker<qg::QgTraits,
                                    oops::LinearVariableChange<qg::QgTraits, qg::ErrorStdDevQG> >
                makerErrStdDevrQG_("ErrStdDevQG");

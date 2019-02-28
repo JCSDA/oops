@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef QG_MODEL_CHANGEVAR_H_
-#define QG_MODEL_CHANGEVAR_H_
+#ifndef QG_MODEL_CHANGEVARTLAD_H_
+#define QG_MODEL_CHANGEVARTLAD_H_
 
 #include <ostream>
 #include <string>
@@ -22,20 +22,23 @@ namespace eckit {
 namespace qg {
   class GeometryQG;
   class StateQG;
+  class IncrementQG;
 
 // -----------------------------------------------------------------------------
-/// QG change of variable
+/// QG linear change of variable
 
-class ChangeVar: public util::Printable {
+class ChangeVarTLAD: public util::Printable {
  public:
-  static const std::string classname() {return "qg::ChangeVar";}
+  static const std::string classname() {return "qg::ChangeVarTLAD";}
 
-  ChangeVar(const GeometryQG &, const eckit::Configuration &);
-  ~ChangeVar();
+  ChangeVarTLAD(const StateQG &, const StateQG &, const GeometryQG &, const eckit::Configuration &);
+  ~ChangeVarTLAD();
 
-/// Perform transforms
-  void changeVar(const StateQG &, StateQG &) const;
-  void changeVarInverse(const StateQG &, StateQG &) const;
+/// Perform linear transforms
+  void multiply(const IncrementQG &, IncrementQG &) const;
+  void multiplyInverse(const IncrementQG &, IncrementQG &) const;
+  void multiplyAD(const IncrementQG &, IncrementQG &) const;
+  void multiplyInverseAD(const IncrementQG &, IncrementQG &) const;
 
  private:
   void print(std::ostream &) const override;
@@ -46,4 +49,4 @@ class ChangeVar: public util::Printable {
 // -----------------------------------------------------------------------------
 
 }  // namespace qg
-#endif  // QG_MODEL_CHANGEVAR_H_
+#endif  // QG_MODEL_CHANGEVARTLAD_H_

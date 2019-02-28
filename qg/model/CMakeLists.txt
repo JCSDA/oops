@@ -1,6 +1,8 @@
 list( APPEND oops_qg_src_files
 ChangeVar.cc
 ChangeVar.h
+ChangeVarTLAD.cc
+ChangeVarTLAD.h
 ErrorCovarianceQG.cc
 ErrorCovarianceQG.h
 ErrorStdDevQG.cc

@@ -907,7 +907,8 @@ class(nam_type),intent(inout) :: nam ! Namelist
 type(mpl_type),intent(inout) :: mpl  ! MPI data
 
 ! Local variables
-integer :: iv,its,il,idir
+integer :: iv,its,il,idir,info
+logical :: ldatadir
 character(len=2) :: ivchar
 
 ! Check maximum sizes
@@ -1237,6 +1238,28 @@ if (nam%new_hdiag.or.nam%new_nicas.or.nam%check_adjoints.or.nam%check_pos_def.or
          call mpl%abort('wrong interpolation for fields regridding')
       end select
    end if
+end if
+
+! Check data directory existence
+if  ((nam%new_cortrack.or.nam%write_hdiag.or.nam%write_lct.or.nam%write_cmat.or.nam%write_nicas.or.nam%write_obsop &
+ & .or.nam%write_vbal.or.nam%check_dirac.or.nam%check_randomization.or.nam%sam_write.or.nam%sam_read.or.nam%var_full &
+ & .or.nam%write_grids).and.(trim(nam%datadir)/='.')) then
+   ! Work is done by the main processor
+   if (mpl%main) then
+      inquire(file=trim(nam%datadir),exist=ldatadir)
+      if (.not.ldatadir) then
+         call mpl%warning('data directory does not exist, BUMP will try to create it')
+         call execute_command_line('mkdir -p '//trim(nam%datadir),exitstat=info)
+         if (info==0) then
+            call mpl%warning('data directory creation successful')
+         else
+            call mpl%abort('data directory creation failed')
+         end if
+      end if
+   end if
+
+   ! Wait
+   call mpl%f_comm%barrier
 end if
 
 end subroutine nam_check

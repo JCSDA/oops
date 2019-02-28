@@ -46,6 +46,7 @@ list( APPEND qg_test_input
 
 list( APPEND qg_testoutput
   testoutput/3dvar.test
+  testoutput/3dvar.chvar.test
   testoutput/3dfgat.test
   testoutput/4densvar.test
   testoutput/4dvar.alpha.test
@@ -361,7 +362,7 @@ ecbuild_add_test( TARGET test_qg_3dvar_chvar
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_4dvar.x testinput/3dvar.chvar.yaml"
-                       testoutput/3dvar.test
+                       testoutput/3dvar.chvar.test
                   DEPENDS qg_4dvar.x )
 
 ecbuild_add_test( TARGET test_qg_3dfgat
