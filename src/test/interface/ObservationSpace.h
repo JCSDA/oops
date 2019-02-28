@@ -12,16 +12,15 @@
 #define TEST_INTERFACE_OBSERVATIONSPACE_H_
 
 #include <string>
+#include <vector>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/runs/Test.h"
 #include "test/interface/ObsTestsFixture.h"
@@ -35,8 +34,8 @@ template <typename MODEL> void testConstructor() {
   typedef ObsTestsFixture<MODEL> Test_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    BOOST_CHECK_EQUAL(Test_::obspace()[jj].windowStart(), Test_::tbgn());
-    BOOST_CHECK_EQUAL(Test_::obspace()[jj].windowEnd(),   Test_::tend());
+    EXPECT(Test_::obspace()[jj].windowStart() == Test_::tbgn());
+    EXPECT(Test_::obspace()[jj].windowEnd() ==   Test_::tend());
   }
 }
 
@@ -50,11 +49,10 @@ template <typename MODEL> class ObservationSpace : public oops::Test {
   std::string testid() const {return "test::ObservationSpace<" + MODEL::name() + ">";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/ObservationSpace");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("interface/ObservationSpace/testConstructor")
+      { testConstructor<MODEL>(); });
   }
 };
 

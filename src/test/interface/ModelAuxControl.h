@@ -12,16 +12,15 @@
 #define TEST_INTERFACE_MODELAUXCONTROL_H_
 
 #include <string>
+#include <vector>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/runs/Test.h"
@@ -64,10 +63,10 @@ template <typename MODEL> void testConstructor() {
   typedef oops::ModelAuxControl<MODEL>    ModelAux_;
 
   boost::scoped_ptr<ModelAux_> bias(new ModelAux_(Test_::resol(), Test_::config()));
-  BOOST_CHECK(bias.get());
+  EXPECT(bias.get());
 
   bias.reset();
-  BOOST_CHECK(!bias.get());
+  EXPECT(!bias.get());
 }
 
 // -----------------------------------------------------------------------------
@@ -79,12 +78,12 @@ template <typename MODEL> void testCopyConstructor() {
   boost::scoped_ptr<ModelAux_> bias(new ModelAux_(Test_::resol(), Test_::config()));
 
   boost::scoped_ptr<ModelAux_> other(new ModelAux_(*bias));
-  BOOST_CHECK(other.get());
+  EXPECT(other.get());
 
   other.reset();
-  BOOST_CHECK(!other.get());
+  EXPECT(!other.get());
 
-  BOOST_CHECK(bias.get());
+  EXPECT(bias.get());
 }
 
 // -----------------------------------------------------------------------------
@@ -96,17 +95,18 @@ template <typename MODEL> void testChangeRes() {
   boost::scoped_ptr<ModelAux_> bias(new ModelAux_(Test_::resol(), Test_::config()));
 
   boost::scoped_ptr<ModelAux_> other(new ModelAux_(Test_::resol(), *bias));
-  BOOST_CHECK(other.get());
+  EXPECT(other.get());
 
   other.reset();
-  BOOST_CHECK(!other.get());
+  EXPECT(!other.get());
 
-  BOOST_CHECK(bias.get());
+  EXPECT(bias.get());
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> class ModelAuxControl : public oops::Test {
+template <typename MODEL>
+class ModelAuxControl : public oops::Test {
  public:
   ModelAuxControl() {}
   virtual ~ModelAuxControl() {}
@@ -114,13 +114,14 @@ template <typename MODEL> class ModelAuxControl : public oops::Test {
   std::string testid() const {return "test::ModelAuxControl<" + MODEL::name() + ">";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/ModelAuxControl");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testCopyConstructor<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testChangeRes<MODEL>));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("interface/ModelAuxControl/testConstructor")
+      { testConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/ModelAuxControl/testCopyConstructor")
+      { testCopyConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/ModelAuxControl/testChangeRes")
+      { testChangeRes<MODEL>(); });
   }
 };
 

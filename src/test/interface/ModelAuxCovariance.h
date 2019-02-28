@@ -12,16 +12,15 @@
 #define TEST_INTERFACE_MODELAUXCOVARIANCE_H_
 
 #include <string>
+#include <vector>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxCovariance.h"
 #include "oops/runs/Test.h"
@@ -64,10 +63,10 @@ template <typename MODEL> void testConstructor() {
   typedef oops::ModelAuxCovariance<MODEL>    Covariance_;
 
   boost::scoped_ptr<Covariance_> bias(new Covariance_(Test_::config(), Test_::resol()));
-  BOOST_CHECK(bias.get());
+  EXPECT(bias.get());
 
   bias.reset();
-  BOOST_CHECK(!bias.get());
+  EXPECT(!bias.get());
 }
 
 // -----------------------------------------------------------------------------
@@ -79,7 +78,8 @@ template <typename MODEL> void testConstructor() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> class ModelAuxCovariance : public oops::Test {
+template <typename MODEL>
+class ModelAuxCovariance : public oops::Test {
  public:
   ModelAuxCovariance() {}
   virtual ~ModelAuxCovariance() {}
@@ -87,11 +87,10 @@ template <typename MODEL> class ModelAuxCovariance : public oops::Test {
   std::string testid() const {return "test::ModelAuxCovariance<" + MODEL::name() + ">";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/ModelAuxCovariance");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("interface/ModelAuxCovariance/testConstructor")
+      { testConstructor<MODEL>(); });
   }
 };
 

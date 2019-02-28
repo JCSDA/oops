@@ -14,13 +14,11 @@
 #include <string>
 #include <vector>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/scoped_ptr.hpp>
 
+#include "eckit/testing/Test.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/interface/ObsErrorCovariance.h"
 #include "oops/interface/ObsOperator.h"
@@ -47,16 +45,17 @@ template <typename MODEL> void testConstructor() {
     ObsOperator_ hop(Test_::obspace()[jj], conf[jj]);
     const eckit::LocalConfiguration rconf(conf[jj], "Covariance");
     boost::scoped_ptr<Covar_> R(new Covar_(rconf, Test_::obspace()[jj], hop.observed()));
-    BOOST_CHECK(R.get());
+    EXPECT(R.get());
 
     R.reset();
-    BOOST_CHECK(!R.get());
+    EXPECT(!R.get());
   }
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> class ObsErrorCovariance : public oops::Test {
+template <typename MODEL>
+class ObsErrorCovariance : public oops::Test {
  public:
   ObsErrorCovariance() {}
   virtual ~ObsErrorCovariance() {}
@@ -64,11 +63,10 @@ template <typename MODEL> class ObsErrorCovariance : public oops::Test {
   std::string testid() const {return "test::ObsErrorCovariance<" + MODEL::name() + ">";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/ObsErrorCovariance");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("interface/ObsErrorCovariance/testConstructor")
+      { testConstructor<MODEL>(); });
   }
 };
 

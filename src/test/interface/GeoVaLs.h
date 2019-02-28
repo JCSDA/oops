@@ -12,15 +12,13 @@
 #include <string>
 #include <vector>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Locations.h"
@@ -28,6 +26,8 @@
 #include "oops/runs/Test.h"
 #include "oops/util/dot_product.h"
 #include "test/TestEnvironment.h"
+
+using eckit::types::is_approximately_equal;
 
 namespace test {
 
@@ -80,10 +80,10 @@ template <typename MODEL> void testConstructor() {
 
     Locations_ locs(hop.locations(Test_::tbgn(), Test_::tend()));
     boost::scoped_ptr<GeoVaLs_> ov(new GeoVaLs_(locs, hop.variables()));
-    BOOST_CHECK(ov.get());
+    EXPECT(ov.get());
 
     ov.reset();
-    BOOST_CHECK(!ov.get());
+    EXPECT(!ov.get());
   }
 }
 
@@ -107,11 +107,11 @@ template <typename MODEL> void testUtils() {
 
     gval.random();
     const double zz1 = dot_product(gval, gval);
-    BOOST_CHECK(zz1 > 0.0);
+    EXPECT(zz1 > 0.0);
 
     gval.zero();
     const double zz2 = dot_product(gval, gval);
-    BOOST_CHECK_EQUAL(zz2, 0.0);
+    EXPECT(zz2 == 0.0);
   }
 }
 
@@ -138,13 +138,14 @@ template <typename MODEL> void testRead() {
 
     const double xx = gconf.getDouble("norm");
     const double zz = sqrt(dot_product(gval, gval));
-    BOOST_CHECK_CLOSE(xx, zz, tol);
+    EXPECT(is_approximately_equal(xx, zz, tol));
   }
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> class GeoVaLs : public oops::Test {
+template <typename MODEL>
+class GeoVaLs : public oops::Test {
  public:
   GeoVaLs() {}
   virtual ~GeoVaLs() {}
@@ -152,13 +153,12 @@ template <typename MODEL> class GeoVaLs : public oops::Test {
   std::string testid() const {return "test::GeoVaLs<" + MODEL::name() + ">";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/GeoVaLs");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
-//    ts->add(BOOST_TEST_CASE(&testUtils<MODEL>)); dh: turned off until ufo geovals allocation fix
-    ts->add(BOOST_TEST_CASE(&testRead<MODEL>));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("interface/GeoVaLs/testConstructor")
+      { testConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/GeoVaLs/testRead")
+      { testRead<MODEL>(); });
   }
 };
 

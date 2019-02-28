@@ -14,17 +14,15 @@
 #include <cmath>
 #include <iostream>
 #include <string>
+#include <vector>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
-
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxCovariance.h"
 #include "oops/interface/ObsAuxIncrement.h"
@@ -71,7 +69,7 @@ template <typename MODEL> void testObsAuxIncrementConstructor() {
 
   AuxIncr_ dx(Test_::config());
 
-  BOOST_CHECK_EQUAL(dx.norm(), 0.0);
+  EXPECT(dx.norm() == 0.0);
 }
 
 // -----------------------------------------------------------------------------
@@ -84,12 +82,12 @@ template <typename MODEL> void testObsAuxIncrementCopyConstructor() {
   ObsAuxIncrementFixture<MODEL>::covariance().randomize(dx1);
 
   AuxIncr_ dx2(dx1);
-  BOOST_CHECK(dx2.norm() > 0.0);
-  BOOST_CHECK_EQUAL(dx2.norm(), dx1.norm());
+  EXPECT(dx2.norm() > 0.0);
+  EXPECT(dx2.norm() == dx1.norm());
 
 // Check that the copy is equal to the original
   dx2 -= dx1;
-  BOOST_CHECK_EQUAL(dx2.norm(), 0.0);
+  EXPECT(dx2.norm() == 0.0);
 }
 
 // -----------------------------------------------------------------------------
@@ -102,12 +100,12 @@ template <typename MODEL> void testObsAuxIncrementChangeRes() {
   ObsAuxIncrementFixture<MODEL>::covariance().randomize(dx1);
 
   AuxIncr_ dx2(dx1, Test_::config());
-  BOOST_CHECK(dx2.norm() > 0.0);
-  BOOST_CHECK_EQUAL(dx2.norm(), dx1.norm());
+  EXPECT(dx2.norm() > 0.0);
+  EXPECT(dx2.norm() == dx1.norm());
 
 // Check that the copy is equal to the original
   dx2 -= dx1;
-  BOOST_CHECK_EQUAL(dx2.norm(), 0.0);
+  EXPECT(dx2.norm() == 0.0);
 }
 
 // -----------------------------------------------------------------------------
@@ -123,16 +121,16 @@ template <typename MODEL> void testObsAuxIncrementTriangle() {
 
 // test triangle inequality
   double dot1 = dx1.norm();
-  BOOST_CHECK(dot1 > 0.0);
+  EXPECT(dot1 > 0.0);
 
   double dot2 = dx2.norm();
-  BOOST_CHECK(dot2 > 0.0);
+  EXPECT(dot2 > 0.0);
 
   dx2 += dx1;
   double dot3 = dx2.norm();
-  BOOST_CHECK(dot3 > 0.0);
+  EXPECT(dot3 > 0.0);
 
-  BOOST_CHECK(dot3 <= dot1 + dot2);
+  EXPECT(dot3 <= dot1 + dot2);
 }
 
 // -----------------------------------------------------------------------------
@@ -150,7 +148,7 @@ template <typename MODEL> void testObsAuxIncrementOpPlusEq() {
   dx1 *= 2.0;
 
   dx2 -= dx1;
-  BOOST_CHECK_SMALL(dx2.norm(), 1e-8);
+  EXPECT(dx2.norm() < 1e-8);
 }
 
 // -----------------------------------------------------------------------------
@@ -168,7 +166,7 @@ template <typename MODEL> void testObsAuxIncrementDotProduct() {
   double zz1 = dot_product(dx1, dx2);
   double zz2 = dot_product(dx2, dx1);
 
-  BOOST_CHECK_EQUAL(zz1, zz2);
+  EXPECT(zz1 == zz2);
 }
 
 // -----------------------------------------------------------------------------
@@ -179,11 +177,11 @@ template <typename MODEL> void testObsAuxIncrementZero() {
 
   AuxIncr_ dx(Test_::config());
   ObsAuxIncrementFixture<MODEL>::covariance().randomize(dx);
-  BOOST_CHECK(dx.norm() > 0.0);
+  EXPECT(dx.norm() > 0.0);
 
 // test zero
   dx->zero();
-  BOOST_CHECK_EQUAL(dx.norm(), 0.0);
+  EXPECT(dx.norm() == 0.0);
 }
 
 // -----------------------------------------------------------------------------
@@ -203,30 +201,37 @@ template <typename MODEL> void testObsAuxIncrementAxpy() {
   dx2 -= dx1;
   dx2 -= dx1;
 
-  BOOST_CHECK_SMALL(dx2.norm(), 1e-8);
+  EXPECT(dx2.norm() < 1e-8);
 }
 
 // =============================================================================
 
-template <typename MODEL> class ObsAuxIncrement : public oops::Test {
+template <typename MODEL>
+class ObsAuxIncrement : public oops::Test {
  public:
   ObsAuxIncrement() {}
   virtual ~ObsAuxIncrement() {}
+
  private:
   std::string testid() const {return "test::ObsAuxIncrement<" + MODEL::name() + ">";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/ObsAuxIncrement");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testObsAuxIncrementConstructor<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testObsAuxIncrementCopyConstructor<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testObsAuxIncrementChangeRes<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testObsAuxIncrementTriangle<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testObsAuxIncrementOpPlusEq<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testObsAuxIncrementDotProduct<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testObsAuxIncrementAxpy<MODEL>));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("interface/ObsAuxIncrement/testObsAuxIncrementConstructor")
+      { testObsAuxIncrementConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/ObsAuxIncrement/testObsAuxIncrementCopyConstructor")
+      { testObsAuxIncrementCopyConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/ObsAuxIncrement/testObsAuxIncrementChangeRes")
+      { testObsAuxIncrementChangeRes<MODEL>(); });
+    ts.emplace_back(CASE("interface/ObsAuxIncrement/testObsAuxIncrementTriangle")
+      { testObsAuxIncrementTriangle<MODEL>(); });
+    ts.emplace_back(CASE("interface/ObsAuxIncrement/testObsAuxIncrementOpPlusEq")
+      { testObsAuxIncrementOpPlusEq<MODEL>(); });
+    ts.emplace_back(CASE("interface/ObsAuxIncrement/testObsAuxIncrementDotProduct")
+      { testObsAuxIncrementDotProduct<MODEL>(); });
+    ts.emplace_back(CASE("interface/ObsAuxIncrement/testObsAuxIncrementAxpy")
+      { testObsAuxIncrementAxpy<MODEL>(); });
   }
 };
 

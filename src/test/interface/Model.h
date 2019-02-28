@@ -14,17 +14,15 @@
 #include <cmath>
 #include <iostream>
 #include <string>
+#include <vector>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
-
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Model.h"
@@ -34,6 +32,8 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "test/TestEnvironment.h"
+
+using eckit::types::is_approximately_equal;
 
 namespace test {
 
@@ -89,7 +89,7 @@ template <typename MODEL> void testModelConstructor() {
   typedef ModelFixture<MODEL>   Test_;
 
   const util::Duration zero(0);
-  BOOST_CHECK(Test_::model().timeResolution() > zero);
+  EXPECT(Test_::model().timeResolution() > zero);
 }
 
 // -----------------------------------------------------------------------------
@@ -107,11 +107,11 @@ template <typename MODEL> void testModelNoForecast() {
 
   Test_::model().forecast(xx, Test_::bias(), zero, post);
 
-  BOOST_CHECK_EQUAL(xx.validTime(), vt);
-  BOOST_CHECK_EQUAL(xx.norm(), ininorm);
+  EXPECT(xx.validTime() == vt);
+  EXPECT(xx.norm() == ininorm);
 
 // Recomputing initial norm to make sure nothing bad happened
-  BOOST_CHECK_EQUAL(Test_::xref().norm(), ininorm);
+  EXPECT(Test_::xref().norm() == ininorm);
 }
 
 // -----------------------------------------------------------------------------
@@ -132,16 +132,17 @@ template <typename MODEL> void testModelForecast() {
 
   Test_::model().forecast(xx, Test_::bias(), len, post);
 
-  BOOST_CHECK_EQUAL(xx.validTime(), vt);
-  BOOST_CHECK_CLOSE(xx.norm(), fnorm, tol);
+  EXPECT(xx.validTime() == vt);
+  EXPECT(is_approximately_equal(xx.norm(), fnorm, tol));
 
 // Recomputing initial norm to make sure nothing bad happened
-  BOOST_CHECK_EQUAL(Test_::xref().norm(), ininorm);
+  EXPECT(Test_::xref().norm() == ininorm);
 }
 
 // =============================================================================
 
-template <typename MODEL> class Model : public oops::Test {
+template <typename MODEL>
+class Model : public oops::Test {
  public:
   Model() {}
   virtual ~Model() {}
@@ -149,13 +150,14 @@ template <typename MODEL> class Model : public oops::Test {
   std::string testid() const {return "test::Model<" + MODEL::name() + ">";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/Model");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testModelConstructor<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testModelNoForecast<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testModelForecast<MODEL>));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("interface/Model/testModelConstructor")
+      { testModelConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/Model/testModelNoForecasat")
+      { testModelNoForecast<MODEL>(); });
+    ts.emplace_back(CASE("interface/Model/testModelForecast")
+      { testModelForecast<MODEL>(); });
   }
 };
 

@@ -11,13 +11,11 @@
 #include <string>
 #include <vector>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/scoped_ptr.hpp>
 
+#include "eckit/testing/Test.h"
 #include "oops/interface/LinearObsOperator.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxIncrement.h"
@@ -27,6 +25,8 @@
 #include "oops/util/Logger.h"
 #include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"
+
+using eckit::types::is_approximately_equal;
 
 namespace test {
 
@@ -43,10 +43,10 @@ template <typename MODEL> void testConstructor() {
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     boost::scoped_ptr<LinearObsOperator_> ov(
       new LinearObsOperator_(Test_::obspace()[jj], conf[jj]));
-    BOOST_CHECK(ov.get());
+    EXPECT(ov.get());
 
     ov.reset();
-    BOOST_CHECK(!ov.get());
+    EXPECT(!ov.get());
   }
 }
 
@@ -89,12 +89,12 @@ template <typename MODEL> void testLinearity() {
     gv.zero();
     hoptl.simulateObsTL(gv, dy1, ybinc);
 
-    BOOST_CHECK_EQUAL(dy1.rms(), zero);
+    EXPECT(dy1.rms() == zero);
 
     gv.random();
     hoptl.simulateObsTL(gv, dy1, ybinc);
     dy1 *= coef;
-    BOOST_CHECK(dy1.rms() > zero);
+    EXPECT(dy1.rms() > zero);
 
     gv *= coef;
     ObsVector_ dy2(Test_::obspace()[jj], hop.observed());
@@ -102,7 +102,7 @@ template <typename MODEL> void testLinearity() {
 
     dy1 -= dy2;
 
-    BOOST_CHECK_SMALL(dy1.rms(), tol);
+    EXPECT(dy1.rms() < tol);
   }
 }
 
@@ -145,15 +145,15 @@ template <typename MODEL> void testAdjoint() {
     GeoVaLs_ gv2(gconf, hoptl.variables());
 
     gv1.random();
-    BOOST_REQUIRE(dot_product(gv1, gv1) > zero);
+    EXPECT(dot_product(gv1, gv1) > zero);  // BOOST_REQUIRE
     hoptl.simulateObsTL(gv1, dy1, ybinc);
-    BOOST_CHECK(dot_product(dy1, dy1) > zero);
+    EXPECT(dot_product(dy1, dy1) > zero);
 
     dy2.random();
-    BOOST_REQUIRE(dot_product(dy2, dy2) > zero);
+    EXPECT(dot_product(dy2, dy2) > zero);  // BOOST_REQUIRE
     gv2.zero();
     hoptl.simulateObsAD(gv2, dy2, ybinc);
-    BOOST_CHECK(dot_product(gv2, gv2) > zero);
+    EXPECT(dot_product(gv2, gv2) > zero);
 
     const double zz1 = dot_product(gv1, gv2);
     const double zz2 = dot_product(dy1, dy2);
@@ -161,9 +161,9 @@ template <typename MODEL> void testAdjoint() {
     oops::Log::debug() << "Adjoint test result: (<x,HTy>-<Hx,y>)/<Hx,y> = "
                        << (zz1-zz2)/zz2 << std::endl;
 
-    BOOST_CHECK(zz1 != zero);
-    BOOST_CHECK(zz2 != zero);
-    BOOST_CHECK_CLOSE(zz1, zz2, tol);
+    EXPECT(zz1 != zero);
+    EXPECT(zz2 != zero);
+    EXPECT(is_approximately_equal(zz1, zz2, tol));
   }
 }
 
@@ -232,13 +232,14 @@ template <typename MODEL> void testTangentLinear() {
       oops::Log::debug() << "Iter:" << jter << " ||(h(x+alpha*dx)-h(x))/h'(alpha*dx)||="
                          << test_norm << std::endl;
     }
-    BOOST_CHECK(y2.rms() < tol);
+    EXPECT(y2.rms() < tol);
   }
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> class LinearObsOperator : public oops::Test {
+template <typename MODEL>
+class LinearObsOperator : public oops::Test {
  public:
   LinearObsOperator() {}
   virtual ~LinearObsOperator() {}
@@ -246,13 +247,16 @@ template <typename MODEL> class LinearObsOperator : public oops::Test {
   std::string testid() const {return "test::LinearObsOperator<" + MODEL::name() + ">";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/LinearObsOperator");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testLinearity<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testTangentLinear<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testAdjoint<MODEL>));
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("interface/GeometryIterator/testConstructor")
+      { testConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/GeometryIterator/testLinearity")
+      { testLinearity<MODEL>(); });
+    ts.emplace_back(CASE("interface/GeometryIterator/testTangentLinear")
+      { testTangentLinear<MODEL>(); });
+    ts.emplace_back(CASE("interface/GeometryIterator/testAdjoint")
+      { testAdjoint<MODEL>(); });
   }
 };
 

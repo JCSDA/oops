@@ -16,16 +16,13 @@
 #include <string>
 #include <vector>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -35,6 +32,8 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
 #include "test/TestEnvironment.h"
+
+using eckit::types::is_approximately_equal;
 
 namespace test {
 
@@ -80,7 +79,7 @@ template <typename MODEL> void testIncrementConstructor() {
 
   Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
 
-  BOOST_CHECK_EQUAL(dx.norm(), 0.0);
+  EXPECT(dx.norm() == 0.0);
 }
 
 // -----------------------------------------------------------------------------
@@ -91,14 +90,14 @@ template <typename MODEL> void testIncrementCopyConstructor() {
 
   Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());
   dx1.random();
-  BOOST_CHECK(dx1.norm() > 0.0);
+  EXPECT(dx1.norm() > 0.0);
 
   Increment_ dx2(dx1);
-  BOOST_CHECK(dx2.norm() > 0.0);
+  EXPECT(dx2.norm() > 0.0);
 
 // Check that the copy is equal to the original
   dx2 -= dx1;
-  BOOST_CHECK_EQUAL(dx2.norm(), 0.0);
+  EXPECT(dx2.norm() == 0.0);
 }
 
 // -----------------------------------------------------------------------------
@@ -114,16 +113,16 @@ template <typename MODEL> void testIncrementTriangle() {
 
 // test triangle inequality
   double dot1 = dx1.norm();
-  BOOST_CHECK(dot1 > 0.0);
+  EXPECT(dot1 > 0.0);
 
   double dot2 = dx2.norm();
-  BOOST_CHECK(dot2 > 0.0);
+  EXPECT(dot2 > 0.0);
 
   dx2 += dx1;
   double dot3 = dx2.norm();
-  BOOST_CHECK(dot3 > 0.0);
+  EXPECT(dot3 > 0.0);
 
-  BOOST_CHECK(dot3 <= dot1 + dot2);
+  EXPECT(dot3 <= dot1 + dot2);
 }
 
 // -----------------------------------------------------------------------------
@@ -141,7 +140,7 @@ template <typename MODEL> void testIncrementOpPlusEq() {
   dx1 *= 2.0;
 
   dx2 -= dx1;
-  BOOST_CHECK_SMALL(dx2.norm(), 1e-8);
+  EXPECT(dx2.norm()< 1e-8);
 }
 
 // -----------------------------------------------------------------------------
@@ -159,7 +158,7 @@ template <typename MODEL> void testIncrementDotProduct() {
   double zz1 = dot_product(dx1, dx2);
   double zz2 = dot_product(dx2, dx1);
 
-  BOOST_CHECK_EQUAL(zz1, zz2);
+  EXPECT(zz1 == zz2);
 }
 
 // -----------------------------------------------------------------------------
@@ -170,11 +169,11 @@ template <typename MODEL> void testIncrementZero() {
 
   Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
   dx.random();
-  BOOST_CHECK(dx.norm() > 0.0);
+  EXPECT(dx.norm() > 0.0);
 
 // test zero
   dx->zero();
-  BOOST_CHECK_EQUAL(dx.norm(), 0.0);
+  EXPECT(dx.norm() == 0.0);
 }
 
 // -----------------------------------------------------------------------------
@@ -194,7 +193,7 @@ template <typename MODEL> void testIncrementAxpy() {
   dx2 -= dx1;
   dx2 -= dx1;
 
-  BOOST_CHECK_SMALL(dx2.norm(), 1e-8);
+  EXPECT(dx2.norm()< 1e-8);
 }
 
 // -----------------------------------------------------------------------------
@@ -263,9 +262,9 @@ template <typename MODEL> void testIncrementInterpAD() {
   oops::Log::debug() << "Adjoint test result: (<HTdg,dx>-<dg,Hdx>) = "
                        << zz1-zz2 << std::endl;
 
-  BOOST_CHECK(zz1 != 0.0);
-  BOOST_CHECK(zz2 != 0.0);
-  BOOST_CHECK_CLOSE(zz1, zz2, tol);
+  EXPECT(zz1 != 0.0);
+  EXPECT(zz2 != 0.0);
+  EXPECT(is_approximately_equal(zz1, zz2, tol));
 }
 
 // -----------------------------------------------------------------------------
@@ -288,36 +287,45 @@ template <typename MODEL> void testIncrementSerialize() {
   std::vector<double> incr(vect.begin() + 1, vect.end());  // exclude the first element (fld size)
   dx2.deserialize(incr);
 
-  BOOST_CHECK(dx1.norm() > 0.0);
-  BOOST_CHECK(dx2.norm() > 0.0);
-  BOOST_CHECK_EQUAL(dx2.validTime(), Test_::time());
+  EXPECT(dx1.norm() > 0.0);
+  EXPECT(dx2.norm() > 0.0);
+  EXPECT(dx2.validTime() == Test_::time());
 
   dx2 -= dx1;
-  BOOST_CHECK_EQUAL(dx2.norm(), 0.0);
+  EXPECT(dx2.norm() == 0.0);
 }
 
 // =============================================================================
 
-template <typename MODEL> class Increment : public oops::Test {
+template <typename MODEL>
+class Increment : public oops::Test {
  public:
   Increment() {}
   virtual ~Increment() {}
+
  private:
   std::string testid() const {return "test::Increment<" + MODEL::name() + ">";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/Increment");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testIncrementConstructor<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testIncrementCopyConstructor<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testIncrementTriangle<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testIncrementOpPlusEq<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testIncrementDotProduct<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testIncrementAxpy<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testIncrementInterpAD<MODEL>));
+    ts.emplace_back(CASE("interface/Increment/testIncrementConstructor")
+      { testIncrementConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementCopyConstructor")
+      { testIncrementCopyConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementTriangle")
+      { testIncrementTriangle<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementOpPlusEq")
+      { testIncrementOpPlusEq<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementDotProduct")
+      { testIncrementDotProduct<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementAxpy")
+      { testIncrementAxpy<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementInterpAD")
+      { testIncrementInterpAD<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementSerialize")
+      { testIncrementSerialize<MODEL>(); });
     // ts->add(BOOST_TEST_CASE(&testIncrementSerialize<MODEL>));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
   }
 };
 

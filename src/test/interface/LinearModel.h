@@ -19,15 +19,13 @@
 #include <string>
 #include <vector>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
-#include <boost/test/unit_test.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "oops/base/instantiateCovarFactory.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/PostProcessor.h"
@@ -47,6 +45,8 @@
 #include "oops/util/dot_product.h"
 #include "oops/util/Duration.h"
 #include "test/TestEnvironment.h"
+
+using eckit::types::is_approximately_equal;
 
 namespace test {
 
@@ -142,7 +142,7 @@ template <typename MODEL> void testLinearModelConstructor() {
   typedef LinearModelFixture<MODEL>   Test_;
 
   const util::Duration zero(0);
-  BOOST_CHECK(Test_::tlm().timeResolution() > zero);
+  EXPECT(Test_::tlm().timeResolution() > zero);
 }
 
 // -----------------------------------------------------------------------------
@@ -159,22 +159,22 @@ template <typename MODEL> void testLinearModelZeroLength() {
   Test_::covariance().randomize(dxref);
   ModelAuxIncr_ daux(Test_::dbias());
   const double ininorm = dxref.norm();
-  BOOST_CHECK(ininorm > 0.0);
+  EXPECT(ininorm > 0.0);
 
   Increment_ dx(Test_::resol(), Test_::ctlvars(), vt);
   Increment_ dxm(Test_::resol(), Test_::tlm().variables(), vt);
   dxm = dxref;
   Test_::tlm().forecastTL(dxm, daux, zero);
   dx = dxm;
-  BOOST_CHECK_EQUAL(dx.validTime(), vt);
-  BOOST_CHECK_EQUAL(dx.norm(), ininorm);
+  EXPECT(dx.validTime() == vt);
+  EXPECT(dx.norm() == ininorm);
 
   dxm.zero();
   dxm = dxref;
   Test_::tlm().forecastAD(dxm, daux, zero);
   dx = dxm;
-  BOOST_CHECK_EQUAL(dx.validTime(), vt);
-  BOOST_CHECK_EQUAL(dx.norm(), ininorm);
+  EXPECT(dx.validTime() == vt);
+  EXPECT(dx.norm() == ininorm);
 }
 
 // -----------------------------------------------------------------------------
@@ -187,24 +187,24 @@ template <typename MODEL> void testLinearModelZeroPert() {
   const util::Duration len(Test_::test().getString("fclength"));
   const util::DateTime t1(Test_::time());
   const util::DateTime t2(t1 + len);
-  BOOST_CHECK(t2 > t1);
+  EXPECT(t2 > t1);
 
   Increment_ dx(Test_::resol(), Test_::tlm().variables(), t1);
   ModelAuxIncr_ daux(Test_::dbias());
 
   dx.zero();
   daux.zero();
-  BOOST_CHECK_EQUAL(dx.norm(), 0.0);
+  EXPECT(dx.norm() == 0.0);
   Test_::tlm().forecastTL(dx, daux, len);
-  BOOST_CHECK_EQUAL(dx.validTime(), t2);
-  BOOST_CHECK_EQUAL(dx.norm(), 0.0);
+  EXPECT(dx.validTime() == t2);
+  EXPECT(dx.norm() == 0.0);
 
   dx.zero();
   daux.zero();
-  BOOST_CHECK_EQUAL(dx.norm(), 0.0);
+  EXPECT(dx.norm() == 0.0);
   Test_::tlm().forecastAD(dx, daux, len);
-  BOOST_CHECK_EQUAL(dx.validTime(), t1);
-  BOOST_CHECK_EQUAL(dx.norm(), 0.0);
+  EXPECT(dx.validTime() == t1);
+  EXPECT(dx.norm() == 0.0);
 }
 
 // -----------------------------------------------------------------------------
@@ -217,29 +217,29 @@ template <typename MODEL> void testLinearModelLinearity() {
   const util::Duration len(Test_::test().getString("fclength"));
   const util::DateTime t1(Test_::time());
   const util::DateTime t2(t1 + len);
-  BOOST_CHECK(t2 > t1);
+  EXPECT(t2 > t1);
   const double zz = 3.1415;
 
   Increment_ dx1(Test_::resol(), Test_::tlm().variables(), t1);
   Test_::covariance().randomize(dx1);
   ModelAuxIncr_ daux1(Test_::dbias());
-  BOOST_CHECK(dx1.norm() > 0.0);
+  EXPECT(dx1.norm() > 0.0);
 
   Increment_ dx2(dx1);
   ModelAuxIncr_ daux2(daux1);
 
   Test_::tlm().forecastTL(dx1, daux1, len);
-  BOOST_CHECK_EQUAL(dx1.validTime(), t2);
+  EXPECT(dx1.validTime() == t2);
   dx1 *= zz;
   daux1 *= zz;
 
   dx2 *= zz;
   daux2 *= zz;
   Test_::tlm().forecastTL(dx2, daux2, len);
-  BOOST_CHECK_EQUAL(dx2.validTime(), t2);
+  EXPECT(dx2.validTime() == t2);
 
   const double tol = Test_::test().getDouble("toleranceAD");
-  BOOST_CHECK_CLOSE(dx1.norm(), dx2.norm(), tol);
+  EXPECT(is_approximately_equal(dx1.norm(), dx2.norm(), tol));
 }
 
 // -----------------------------------------------------------------------------
@@ -252,11 +252,11 @@ template <typename MODEL> void testLinearApproximation() {
   const util::Duration len(Test_::test().getString("fclength"));
   const util::DateTime t1(Test_::time());
   const util::DateTime t2(t1 + len);
-  BOOST_CHECK(t2 > t1);
+  EXPECT(t2 > t1);
 
   Increment_ dx0(Test_::resol(), Test_::tlm().variables(), t1);
   Test_::covariance().randomize(dx0);
-  BOOST_CHECK(dx0.norm() > 0.0);
+  EXPECT(dx0.norm() > 0.0);
 
   Increment_ dx(dx0);
   Test_::tlm().forecastTL(dx, Test_::dbias(), len);
@@ -298,7 +298,7 @@ template <typename MODEL> void testLinearApproximation() {
   const double approx = *std::min_element(errors.begin(), errors.end());
   oops::Log::test() << "Test TL min error = " << approx << std::endl;
   const double tol = Test_::test().getDouble("toleranceTL");
-  BOOST_CHECK(approx < tol);
+  EXPECT(approx < tol);
 }
 
 // -----------------------------------------------------------------------------
@@ -311,55 +311,61 @@ template <typename MODEL> void testLinearModelAdjoint() {
   const util::Duration len(Test_::test().getString("fclength"));
   const util::DateTime t1(Test_::time());
   const util::DateTime t2(t1 + len);
-  BOOST_CHECK(t2 > t1);
+  EXPECT(t2 > t1);
 
   Increment_ dx11(Test_::resol(), Test_::tlm().variables(), t1);
   Test_::covariance().randomize(dx11);
   ModelAuxIncr_ daux1(Test_::dbias());
-  BOOST_CHECK(dx11.norm() > 0.0);
+  EXPECT(dx11.norm() > 0.0);
   Increment_ dx12(dx11);
   Test_::tlm().forecastTL(dx12, daux1, len);
-  BOOST_CHECK(dx12.norm() > 0.0);
-
+  EXPECT(dx12.norm() > 0.0);
   Increment_ dx22(Test_::resol(), Test_::tlm().variables(), t2);
   Test_::covariance().randomize(dx22);
   ModelAuxIncr_ daux2(Test_::dbias());
-  BOOST_CHECK(dx22.norm() > 0.0);
+  EXPECT(dx22.norm() > 0.0);
   Increment_ dx21(dx22);
   Test_::tlm().forecastAD(dx21, daux2, len);
-  BOOST_CHECK(dx21.norm() > 0.0);
+  EXPECT(dx21.norm() > 0.0);
 
-  BOOST_CHECK(dx11.norm() != dx22.norm());
-  BOOST_CHECK_EQUAL(dx11.validTime(), t1);
-  BOOST_CHECK_EQUAL(dx21.validTime(), t1);
-  BOOST_CHECK_EQUAL(dx12.validTime(), t2);
-  BOOST_CHECK_EQUAL(dx22.validTime(), t2);
+  EXPECT(dx11.norm() != dx22.norm());
+  EXPECT(dx11.validTime() == t1);
+  EXPECT(dx21.validTime() == t1);
+  EXPECT(dx12.validTime() == t2);
+  EXPECT(dx22.validTime() == t2);
 
   const double dot1 = dot_product(dx11, dx21);
   const double dot2 = dot_product(dx12, dx22);
   const double tol = Test_::test().getDouble("toleranceAD");
-  BOOST_CHECK_CLOSE(dot1, dot2, tol);
+  EXPECT(is_approximately_equal(dot1, dot2, tol));
 }
 
 // =============================================================================
 
-template <typename MODEL> class LinearModel : public oops::Test {
+template <typename MODEL>
+class LinearModel : public oops::Test {
  public:
   LinearModel() {}
   virtual ~LinearModel() {}
+
  private:
   std::string testid() const {return "test::LinearModel<" + MODEL::name() + ">";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/LinearModel");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testLinearModelConstructor<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testLinearModelZeroLength<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testLinearModelZeroPert<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testLinearModelLinearity<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testLinearApproximation<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testLinearModelAdjoint<MODEL>));
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("interface/GeometryIterator/testLinearModelConstructor")
+      { testLinearModelConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/GeometryIterator/testLinearModelZeroLength")
+      { testLinearModelZeroLength<MODEL>(); });
+    ts.emplace_back(CASE("interface/GeometryIterator/testLinearModelZeroPert")
+      { testLinearModelZeroPert<MODEL>(); });
+    ts.emplace_back(CASE("interface/GeometryIterator/testLinearModelLinearity")
+      { testLinearModelLinearity<MODEL>(); });
+    ts.emplace_back(CASE("interface/GeometryIterator/testLinearApproximation")
+      { testLinearApproximation<MODEL>(); });
+    ts.emplace_back(CASE("interface/GeometryIterator/testLinearModelAdjoint")
+      { testLinearModelAdjoint<MODEL>(); });
   }
 };
 

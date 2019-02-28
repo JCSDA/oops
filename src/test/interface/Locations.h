@@ -12,16 +12,15 @@
 #define TEST_INTERFACE_LOCATIONS_H_
 
 #include <string>
+#include <vector>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "oops/interface/Locations.h"
 #include "oops/runs/Test.h"
 #include "test/TestEnvironment.h"
@@ -35,10 +34,10 @@ template <typename MODEL> void testConstructor() {
 
   const eckit::LocalConfiguration conf(TestEnvironment::config(), "Locations");
   boost::scoped_ptr<Locations_> locs(new Locations_(conf));
-  BOOST_CHECK(locs.get());
+  EXPECT(locs.get());
 
   locs.reset();
-  BOOST_CHECK(!locs.get());
+  EXPECT(!locs.get());
 }
 
 // -----------------------------------------------------------------------------
@@ -48,21 +47,22 @@ template <typename MODEL> void testCopyConstructor() {
 
   const eckit::LocalConfiguration conf(TestEnvironment::config(), "Locations");
   boost::scoped_ptr<Locations_> locs(new Locations_(conf));
-  BOOST_CHECK(locs.get());
+  EXPECT(locs.get());
 
   boost::scoped_ptr<Locations_> other_locs(new Locations_(*locs));
-  BOOST_CHECK(other_locs.get());
+  EXPECT(other_locs.get());
 
   locs.reset();
-  BOOST_CHECK(!locs.get());
+  EXPECT(!locs.get());
 
   other_locs.reset();
-  BOOST_CHECK(!other_locs.get());
+  EXPECT(!other_locs.get());
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> class Locations : public oops::Test {
+template <typename MODEL>
+class Locations : public oops::Test {
  public:
   Locations() {}
   virtual ~Locations() {}
@@ -70,12 +70,12 @@ template <typename MODEL> class Locations : public oops::Test {
   std::string testid() const {return "test::Locations<" + MODEL::name() + ">";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/Locations");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testCopyConstructor<MODEL>));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("interface/Locations/testConstructor")
+      { testConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/Locations/testCopyConstructor")
+      { testCopyConstructor<MODEL>(); });
   }
 };
 

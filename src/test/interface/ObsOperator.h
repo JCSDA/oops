@@ -11,15 +11,13 @@
 #include <string>
 #include <vector>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Locations.h"
 #include "oops/interface/ObsAuxControl.h"
@@ -28,6 +26,8 @@
 #include "oops/runs/Test.h"
 #include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"
+
+using eckit::types::is_approximately_equal;
 
 namespace test {
 
@@ -43,10 +43,10 @@ template <typename MODEL> void testConstructor() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     boost::scoped_ptr<ObsOperator_> hop(new ObsOperator_(Test_::obspace()[jj], conf[jj]));
-    BOOST_CHECK(hop.get());
+    EXPECT(hop.get());
 
     hop.reset();
-    BOOST_CHECK(!hop.get());
+    EXPECT(!hop.get());
   }
 }
 
@@ -89,19 +89,20 @@ template <typename MODEL> void testSimulateObs() {
       const double zz = ovec_ref.rms();
       oops::Log::info() << "Vector difference between reference and computed: " <<
                            ovec_ref;
-      BOOST_CHECK_SMALL(zz, tol);
+      EXPECT(zz < tol);
     } else {
       // else compare h(x) norm to the norm from the config
       const double zz = ovec.rms();
       const double xx = conf[jj].getDouble("rmsequiv");
-      BOOST_CHECK_CLOSE(xx, zz, tol);
+      EXPECT(is_approximately_equal(xx, zz, tol));
     }
   }
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> class ObsOperator : public oops::Test {
+template <typename MODEL>
+class ObsOperator : public oops::Test {
  public:
   ObsOperator() {}
   virtual ~ObsOperator() {}
@@ -109,12 +110,12 @@ template <typename MODEL> class ObsOperator : public oops::Test {
   std::string testid() const {return "test::ObsOperator<" + MODEL::name() + ">";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/ObsOperator");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testSimulateObs<MODEL>));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("interface/ObsOperator/testConstructor")
+      { testConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/ObsOperator/testSimulateObs")
+      { testSimulateObs<MODEL>(); });
   }
 };
 

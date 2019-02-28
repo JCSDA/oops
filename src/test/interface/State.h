@@ -16,16 +16,13 @@
 #include <string>
 #include <vector>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
-
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/State.h"
@@ -34,6 +31,8 @@
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
 #include "test/TestEnvironment.h"
+
+using eckit::types::is_approximately_equal;
 
 namespace test {
 
@@ -81,24 +80,24 @@ template <typename MODEL> void testStateConstructors() {
   const oops::Variables vars(conf);
   boost::scoped_ptr<State_> xx1(new State_(Test_::resol(), vars, conf));
 
-  BOOST_CHECK(xx1.get());
+  EXPECT(xx1.get());
   const double norm1 = xx1->norm();
-  BOOST_CHECK_CLOSE(norm1, norm, tol);
-  BOOST_CHECK_EQUAL(xx1->validTime(), vt);
+  EXPECT(is_approximately_equal(norm1, norm, tol));
+  EXPECT(xx1->validTime() == vt);
 
 // Test copy constructor
   boost::scoped_ptr<State_> xx2(new State_(*xx1));
-  BOOST_CHECK(xx2.get());
-  BOOST_CHECK_CLOSE(xx2->norm(), norm, tol);
-  BOOST_CHECK_EQUAL(xx2->validTime(), vt);
+  EXPECT(xx2.get());
+  EXPECT(is_approximately_equal(xx2->norm(), norm, tol));
+  EXPECT(xx2->validTime() == vt);
 
 // Destruct copy
   xx2.reset();
-  BOOST_CHECK(!xx2.get());
+  EXPECT(!xx2.get());
 
 // Recompute initial norm to make sure nothing bad happened
   const double norm2 = xx1->norm();
-  BOOST_CHECK_EQUAL(norm1, norm2);
+  EXPECT(norm1 == norm2);
 }
 
 // -----------------------------------------------------------------------------
@@ -150,7 +149,7 @@ template <typename MODEL> void testStateInterpolation() {
   const State_ xx(Test_::resol(), statevars, confgen);
   const double norm = Test_::test().getDouble("norm-gen");
   const double tol = Test_::test().getDouble("tolerance");
-  BOOST_CHECK_CLOSE(xx.norm(), norm, tol);
+  EXPECT(is_approximately_equal(xx.norm(), norm, tol));
 
   // If the analytic initial conditions are not yet implemented
   // in the model, then bypass the interpolation test for now
@@ -191,7 +190,7 @@ template <typename MODEL> void testStateInterpolation() {
 
   // And check to see if the errors are within specified tolerance
   double interp_tol = Test_::test().getDouble("interp_tolerance");
-  BOOST_CHECK_SMALL(gval.norm(), interp_tol);
+  EXPECT(gval.norm() < interp_tol);
 
   // Each MODEL should define an appropriate GeoVaLs print() method that
   // writes information about the GeoVaLs object to the oops::Log::debug()
@@ -210,7 +209,8 @@ template <typename MODEL> void testStateInterpolation() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> class State : public oops::Test {
+template <typename MODEL>
+class State : public oops::Test {
  public:
   State() {}
   virtual ~State() {}
@@ -218,12 +218,12 @@ template <typename MODEL> class State : public oops::Test {
   std::string testid() const {return "test::State<" + MODEL::name() + ">";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/State");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testStateConstructors<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testStateInterpolation<MODEL>));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("interface/State/testStateConstructors")
+      { testStateConstructors<MODEL>(); });
+    ts.emplace_back(CASE("interface/State/testStateInterpolation")
+      { testStateInterpolation<MODEL>(); });
   }
 };
 

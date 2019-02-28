@@ -266,111 +266,111 @@ ecbuild_add_test( TARGET test_l95_geometry
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_geovals
-                  BOOST
                   SOURCES executables/TestGeoVaLs.cc
                   ARGS "testinput/interfaces.yaml"
+                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_state
-                  BOOST
                   SOURCES executables/TestState.cc
                   ARGS "testinput/interfaces.yaml"
+                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_modelaux
-                  BOOST
                   SOURCES executables/TestModelAuxControl.cc
                   ARGS "testinput/interfaces.yaml"
+                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_model
-                  BOOST
                   SOURCES executables/TestModel.cc
                   ARGS "testinput/interfaces.yaml"
+                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_increment
-                  BOOST
                   SOURCES executables/TestIncrement.cc
                   ARGS "testinput/interfaces.yaml"
+                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_errorcovariance
-                  BOOST
                   SOURCES executables/TestErrorCovariance.cc
                   ARGS "testinput/interfaces.yaml"
+                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_modelauxincrement
-                  BOOST
                   SOURCES executables/TestModelAuxIncrement.cc
                   ARGS "testinput/interfaces.yaml"
+                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_modelauxcovariance
-                  BOOST
                   SOURCES executables/TestModelAuxCovariance.cc
                   ARGS "testinput/interfaces.yaml"
+                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_linearmodel
-                  BOOST
                   SOURCES executables/TestLinearModel.cc
                   ARGS "testinput/interfaces.yaml"
+                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_observationspace
-                  BOOST
                   SOURCES executables/TestObservationSpace.cc
                   ARGS "testinput/interfaces.yaml"
+                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_obsvector
-                  BOOST
                   SOURCES executables/TestObsVector.cc
                   ARGS "testinput/interfaces.yaml"
+                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_obsoperator
-                  BOOST
                   SOURCES executables/TestObsOperator.cc
                   ARGS "testinput/interfaces.yaml"
+                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_linobsoperator
-                  BOOST
                   SOURCES executables/TestLinearObsOperator.cc
                   ARGS "testinput/interfaces.yaml"
+                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_obserrorcovar
-                  BOOST
                   SOURCES executables/TestObsErrorCovariance.cc
                   ARGS "testinput/interfaces.yaml"
+                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_obsaux
-                  BOOST
                   SOURCES executables/TestObsAuxControl.cc
                   ARGS "testinput/interfaces.yaml"
+                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_obsauxincrement
-                  BOOST
                   SOURCES executables/TestObsAuxIncrement.cc
                   ARGS "testinput/interfaces.yaml"
+                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_obsauxcovariance
-                  BOOST
                   SOURCES executables/TestObsAuxCovariance.cc
                   ARGS "testinput/interfaces.yaml"
+                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_localization
-                  BOOST
                   SOURCES executables/TestLocalization.cc
                   ARGS "testinput/interfaces.yaml"
+                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 # Test oops applications with lorenz95
