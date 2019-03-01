@@ -6,13 +6,13 @@
  */
 #include "model/instantiateQgChangeVarFactory.h"
 #include "model/QgTraits.h"
-#include "oops/runs/Moments.h"
+#include "oops/runs/EnsVariance.h"
 #include "oops/runs/Run.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
   qg::instantiateQgChangeVarFactory();
-  oops::Moments<qg::QgTraits> var;
+  oops::EnsVariance<qg::QgTraits> var;
   run.execute(var);
   return 0;
 }

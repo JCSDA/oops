@@ -58,8 +58,8 @@ ecbuild_add_executable( TARGET  qg_convertstate.x
                         LIBS    qg
                       )
 
-ecbuild_add_executable( TARGET  qg_moments.x
-                        SOURCES qgMoments.cc
+ecbuild_add_executable( TARGET  qg_ensvariance.x
+                        SOURCES qgEnsVariance.cc
                         LIBS    qg
 			)
 
