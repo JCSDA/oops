@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef OOPS_RUNS_MOMENTS_H_
-#define OOPS_RUNS_MOMENTS_H_
+#ifndef OOPS_RUNS_ENSVARIANCE_H_
+#define OOPS_RUNS_ENSVARIANCE_H_
 
 #include <string>
 #include <vector>
@@ -39,7 +39,6 @@ namespace oops {
     virtual ~EnsVariance() {}
     // -----------------------------------------------------------------------------
     int execute(const eckit::Configuration & fullConfig) const {
-
       // Setup Geometry
       const eckit::LocalConfiguration resolConfig(fullConfig, "Geometry");
       const Geometry_ resol(resolConfig);
@@ -51,12 +50,12 @@ namespace oops {
       // Setup background
       const eckit::LocalConfiguration bkgConfig(fullConfig, "Background");
       State_ xb(resol, vars, bkgConfig);
-      
+
       // Compute rescaled and transformed ensemble perturbations
       //        ens_k = K^-1 dx_k / (N-1)^0.5
       const eckit::LocalConfiguration ensConfig(fullConfig, "Ensemble");
       EnsemblePtr_ ens_k(new Ensemble_(xb.validTime(), ensConfig));
-      ens_k->linearize(xb, xb, resol); 
+      ens_k->linearize(xb, xb, resol);
       EnsemblesCollection_::getInstance().put(xb.validTime(), ens_k);
 
       // Get ensemble size
@@ -67,13 +66,13 @@ namespace oops {
       km1dx.zero();
       Increment_ sigb2(km1dx);
       sigb2.zero();
-	
+
       for (unsigned jj = 0; jj < nm; ++jj) {
-	km1dx = (*ens_k)[jj];
-	
+        km1dx = (*ens_k)[jj];
+
         // Accumulate km1dx^2
         km1dx.schur_product_with(km1dx);
-        sigb2 += km1dx;	
+        sigb2 += km1dx;
       }
       // Write variance to file
       const eckit::LocalConfiguration varianceout(fullConfig, "VarianceOut");
@@ -91,4 +90,4 @@ namespace oops {
 
 }  // namespace oops
 
-#endif  // OOPS_RUNS_MOMENTS_H_
+#endif  // OOPS_RUNS_ENSVARIANCE_H_
