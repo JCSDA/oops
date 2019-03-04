@@ -101,7 +101,12 @@ VariableChangeBase<MODEL> * VariableChangeFactory<MODEL>::create(const eckit::Co
                                                                  const Geometry_ & resol)
 {
   Log::trace() << "VariableChangeBase<MODEL>::create starting" << std::endl;
-  const std::string id = conf.getString("varchange");
+  std::string id;
+  if (conf.has("varchange")) {
+    id = conf.getString("varchange");
+  } else {
+    id = "Identity";
+  }
   typename std::map<std::string, VariableChangeFactory<MODEL>*>::iterator
     jerr = getMakers().find(id);
   if (jerr == getMakers().end()) {
