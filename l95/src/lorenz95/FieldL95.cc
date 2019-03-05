@@ -180,6 +180,7 @@ void FieldL95::field_from_ug(const oops::UnstructuredGrid & ug) {
 }
 // -----------------------------------------------------------------------------
 void FieldL95::read(std::ifstream & fin) {
+  fin.precision(std::numeric_limits<double>::digits10);
   for (int jj = 0; jj < resol_; ++jj) fin >> x_[jj];
 }
 // -----------------------------------------------------------------------------
