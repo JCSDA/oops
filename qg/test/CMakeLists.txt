@@ -22,6 +22,7 @@ list( APPEND qg_test_input
   testinput/dirac.qgcov.yaml
   testinput/dirac.bumploc.yaml
   testinput/enshofx.yaml
+  testinput/ensvariance.yaml
   testinput/parametersbump.cov.yaml
   testinput/parametersbump.lct.yaml
   testinput/parametersbump.loc.yaml
@@ -543,3 +544,8 @@ ecbuild_add_test( TARGET test_qg_convertstate
                   COMMAND ${CMAKE_BINARY_DIR}/bin/qg_convertstate.x
                   ARGS testinput/convertstate.yaml
                   DEPENDS qg_convertstate.x )
+
+ecbuild_add_test( TARGET test_qg_ensvariance
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_ensvariance.x
+                  ARGS testinput/ensvariance.yaml
+                  DEPENDS qg_ensvariance.x )

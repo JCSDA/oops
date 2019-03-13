@@ -229,6 +229,7 @@ oops/runs/Forecast.h
 oops/runs/GenEnsPertB.h
 oops/runs/HofX.h
 oops/runs/MakeObs.h
+oops/runs/EnsVariance.h
 oops/runs/Run.h
 oops/runs/Run.cc
 oops/runs/StaticBInit.h
