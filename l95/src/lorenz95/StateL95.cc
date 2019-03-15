@@ -52,9 +52,6 @@ StateL95::StateL95(const Resolution & resol, const oops::Variables &,
   oops::Log::trace() << "StateL95::StateL95 conf " << conf << std::endl;
   if (conf.has("filename")) {
     this->read(conf);
-    for (size_t ii=0; ii < fld_.resol(); ++ii) {
-            std::cout << "MSM " << std::setprecision(16) << fld_[ii] << std::endl;
-    }
   } else {
     fld_.generate(conf);
   }

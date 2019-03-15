@@ -77,7 +77,7 @@ StateTest:
   Variables: null
   date: '2010-01-01T03:00:00Z'
   interp_tolerance: 0.004
-  norm-file: 8.0258265954557615
+  norm-file: 8.025826422250747
   norm-gen: 8.12403840464
   tolerance: 1.0e-10
   values:
