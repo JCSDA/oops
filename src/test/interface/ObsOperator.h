@@ -21,7 +21,6 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/interface/GeoVaLs.h"
-#include "oops/interface/Locations.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsOperator.h"
 #include "oops/interface/ObsVector.h"
@@ -55,7 +54,6 @@ template <typename MODEL> void testConstructor() {
 template <typename MODEL> void testSimulateObs() {
   typedef ObsTestsFixture<MODEL> Test_;
   typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
-  typedef oops::Locations<MODEL>         Locations_;
   typedef oops::ObsAuxControl<MODEL>     ObsAuxCtrl_;
   typedef oops::ObsOperator<MODEL>       ObsOperator_;
   typedef oops::ObsVector<MODEL>         ObsVector_;
@@ -65,17 +63,23 @@ template <typename MODEL> void testSimulateObs() {
   obsconf.get("ObsTypes", conf);
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    // initialize observation operator (set variables requested from the model,
+    // variables simulated by the observation operator, other init)
     ObsOperator_ hop(Test_::obspace()[jj], conf[jj]);
+
+    // read geovals from the file
     eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    Locations_ locs(hop.locations(Test_::tbgn(), Test_::tend()));
     const GeoVaLs_ gval(gconf, hop.variables());
 
+    // initialize bias correction
     eckit::LocalConfiguration biasConf;
     conf[jj].get("ObsBias", biasConf);
     const ObsAuxCtrl_ ybias(biasConf);
 
+    // create obsvector to hold H(x)
     ObsVector_ ovec(Test_::obspace()[jj], hop.observed());
 
+    // call H(x), save result in the output file as @hofx
     hop.simulateObs(gval, ovec, ybias);
     ovec.save("hofx");
 
