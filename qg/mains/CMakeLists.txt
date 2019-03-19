@@ -57,3 +57,10 @@ ecbuild_add_executable( TARGET  qg_convertstate.x
                         SOURCES qgConvertState.cc
                         LIBS    qg
                       )
+
+ecbuild_add_executable( TARGET  qg_ensvariance.x
+                        SOURCES qgEnsVariance.cc
+                        LIBS    qg
+			)
+
+		      

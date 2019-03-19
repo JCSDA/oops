@@ -1,4 +1,21 @@
+resolution:
+  resol: '40'
 cost_function:
+  cost_type: 4D-Ens-Var
+  window_begin: '2010-01-01T03:00:00Z'
+  window_length: PT12H
+  window_sub: PT1H30M
+  varchange: Identity
+  Jo:
+    ObsTypes:
+    - Covariance:
+        covariance: diagonal
+      ObsData:
+        ObsDataIn:
+          filename: Data/l95.truth4d.2010-01-01T12:00:00Z.obt
+        ObsDataOut:
+          filename: Data/l95.4densvar.2010-01-01T12:00:00Z.obt
+      ObsType: Lorenz 95
   Jb:
     Background:
       state:
@@ -283,39 +300,6 @@ cost_function:
   - jcdfi:
       alpha: '1000.0'
       cutoff: PT3H
-  Jo:
-    ObsTypes:
-    - Covariance:
-        covariance: diagonal
-      ObsData:
-        ObsDataIn:
-          filename: Data/l95.truth4d.2010-01-01T12:00:00Z.obt
-        ObsDataOut:
-          filename: Data/l95.4densvar.2010-01-01T12:00:00Z.obt
-      ObsType: Lorenz 95
-  cost_type: 4D-Ens-Var
-  window_begin: '2010-01-01T03:00:00Z'
-  window_length: PT12H
-  window_sub: PT1H30M
-final:
-  diagnostics:
-    departures: oman
-  prints:
-    frequency: PT1H30M
-minimizer:
-  algorithm: DRIPCG
-model:
-  f: '8.0'
-  name: L95
-  tstep: PT1H30M
-output:
-  datadir: Data
-  exp: test
-  first: PT3H
-  frequency: PT06H
-  type: an
-resolution:
-  resol: '40'
 variational:
   iteration:
   - diagnostics:
@@ -344,3 +328,20 @@ variational:
     resolution:
       resol: '40'
     test: 'on'
+minimizer:
+  algorithm: DRIPCG
+final:
+  diagnostics:
+    departures: oman
+  prints:
+    frequency: PT1H30M
+model:
+  f: '8.0'
+  name: L95
+  tstep: PT1H30M
+output:
+  datadir: Data
+  exp: test
+  first: PT3H
+  frequency: PT6H
+  type: an

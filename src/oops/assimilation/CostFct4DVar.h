@@ -21,6 +21,7 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/StateInfo.h"
+#include "oops/base/VariableChangeBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -42,14 +43,15 @@ namespace oops {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL> class CostFct4DVar : public CostFunction<MODEL> {
-  typedef Increment<MODEL>            Increment_;
-  typedef ControlIncrement<MODEL>     CtrlInc_;
-  typedef ControlVariable<MODEL>      CtrlVar_;
-  typedef CostFunction<MODEL>         CostFct_;
-  typedef Geometry<MODEL>             Geometry_;
-  typedef State<MODEL>                State_;
-  typedef Model<MODEL>                Model_;
-  typedef LinearVariableChangeBase<MODEL> ChangeVar_;
+  typedef Increment<MODEL>                Increment_;
+  typedef ControlIncrement<MODEL>         CtrlInc_;
+  typedef ControlVariable<MODEL>          CtrlVar_;
+  typedef CostFunction<MODEL>             CostFct_;
+  typedef Geometry<MODEL>                 Geometry_;
+  typedef State<MODEL>                    State_;
+  typedef Model<MODEL>                    Model_;
+  typedef LinearVariableChangeBase<MODEL> LinVarCha_;
+  typedef VariableChangeBase<MODEL>       VarCha_;
 
  public:
   CostFct4DVar(const eckit::Configuration &, const Geometry_ &, const Model_ &);
@@ -79,7 +81,8 @@ template<typename MODEL> class CostFct4DVar : public CostFunction<MODEL> {
   util::DateTime windowBegin_;
   util::DateTime windowEnd_;
   const Variables ctlvars_;
-  boost::scoped_ptr<ChangeVar_> an2model_;
+  boost::scoped_ptr<VarCha_> an2model_;
+  boost::scoped_ptr<LinVarCha_> inc2model_;
 };
 
 // =============================================================================
@@ -87,7 +90,8 @@ template<typename MODEL> class CostFct4DVar : public CostFunction<MODEL> {
 template<typename MODEL>
 CostFct4DVar<MODEL>::CostFct4DVar(const eckit::Configuration & config,
                                   const Geometry_ & resol, const Model_ & model)
-  : CostFunction<MODEL>::CostFunction(config, resol, model), ctlvars_(config), an2model_()
+  : CostFunction<MODEL>::CostFunction(config, resol, model), ctlvars_(config),
+    an2model_(VariableChangeFactory<MODEL>::create(config, resol)), inc2model_()
 {
   Log::trace() << "CostFct4DVar:CostFct4DVar" << std::endl;
   windowLength_ = util::Duration(config.getString("window_length"));
@@ -132,9 +136,9 @@ void CostFct4DVar<MODEL>::runNL(CtrlVar_ & xx,
   ASSERT(xx.state().checkStatesNumber(1));
   ASSERT(xx.state()[0].validTime() == windowBegin_);
   State_ xm(xx.state()[0].geometry(), CostFct_::getModel().variables(), windowBegin_);
-  xm = xx.state()[0];
+  an2model_->changeVar(xx.state()[0], xm);
   CostFct_::getModel().forecast(xm, xx.modVar(), windowLength_, post);
-  xx.state()[0] = xm;
+  an2model_->changeVarInverse(xm, xx.state()[0]);
   ASSERT(xx.state()[0].validTime() == windowEnd_);
 }
 
@@ -146,10 +150,10 @@ void CostFct4DVar<MODEL>::doLinearize(const Geometry_ & resol,
                                       const CtrlVar_ & bg, const CtrlVar_ & fg) {
   Log::trace() << "CostFct4DVar::doLinearize start" << std::endl;
   eckit::LocalConfiguration conf(innerConf, "linearmodel");
-  an2model_.reset(LinearVariableChangeFactory<MODEL>::create(bg.state()[0], fg.state()[0],
+  inc2model_.reset(LinearVariableChangeFactory<MODEL>::create(bg.state()[0], fg.state()[0],
                                                              resol, conf));
-  an2model_->setInputVariables(ctlvars_);
-  an2model_->setOutputVariables(CostFct_::getTLM().variables());
+  inc2model_->setInputVariables(ctlvars_);
+  inc2model_->setOutputVariables(CostFct_::getTLM().variables());
   Log::trace() << "CostFct4DVar::doLinearize done" << std::endl;
 }
 
@@ -162,9 +166,9 @@ void CostFct4DVar<MODEL>::runTLM(CtrlInc_ & dx,
                                  const bool idModel) const {
   ASSERT(dx.state()[0].validTime() == windowBegin_);
   Increment_ dxmodel(dx.state()[0].geometry(), CostFct_::getTLM().variables(), windowBegin_);
-  an2model_->multiply(dx.state()[0], dxmodel);
+  inc2model_->multiply(dx.state()[0], dxmodel);
   CostFct_::getTLM().forecastTL(dxmodel, dx.modVar(), windowLength_, post, cost, idModel);
-  an2model_->multiplyInverse(dxmodel, dx.state()[0]);
+  inc2model_->multiplyInverse(dxmodel, dx.state()[0]);
   ASSERT(dx.state()[0].validTime() == windowEnd_);
 }
 
@@ -186,9 +190,9 @@ void CostFct4DVar<MODEL>::runADJ(CtrlInc_ & dx,
                                  const bool idModel) const {
   ASSERT(dx.state()[0].validTime() == windowEnd_);
   Increment_ dxmodel(dx.state()[0].geometry(), CostFct_::getTLM().variables(), windowEnd_);
-  an2model_->multiplyInverseAD(dx.state()[0], dxmodel);
+  inc2model_->multiplyInverseAD(dx.state()[0], dxmodel);
   CostFct_::getTLM().forecastAD(dxmodel, dx.modVar(), windowLength_, post, cost, idModel);
-  an2model_->multiplyAD(dxmodel, dx.state()[0]);
+  inc2model_->multiplyAD(dxmodel, dx.state()[0]);
   ASSERT(dx.state()[0].validTime() == windowBegin_);
 }
 

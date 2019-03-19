@@ -85,6 +85,7 @@ oops/base/GeoVaLsWriter.h
 oops/base/HybridCovariance.h
 oops/base/IdentityMatrix.h
 oops/base/LinearObsOperators.h
+oops/base/LinearVariableChangeBase.h
 oops/base/ModelBase.h
 oops/base/ModelSpaceCovarianceBase.h
 oops/base/ObsEnsemble.h
@@ -108,7 +109,7 @@ oops/base/StateEnsemble.h
 oops/base/StateInfo.h
 oops/base/StateWriter.h
 oops/base/TrajectorySaver.h
-oops/base/LinearVariableChangeBase.h
+oops/base/VariableChangeBase.h
 oops/base/Variables.h
 oops/base/Variables.cc
 oops/base/WeightedDiff.h
@@ -121,6 +122,7 @@ oops/base/instantiateObsFilterFactory.h
 
 oops/generic/ParametersBUMP.h
 oops/generic/ErrorCovarianceBUMP.h
+oops/generic/IdLinearVariableChange.h
 oops/generic/IdVariableChange.h
 oops/generic/LocalizationBUMP.h
 oops/generic/ObsErrorDiag.h
@@ -131,10 +133,10 @@ oops/generic/oobump_f.h
 oops/generic/oobump_mod.F90
 oops/generic/dcmip_initial_conditions_test_1_2_3_v5.f90
 oops/generic/dcmip_initial_conditions_test_4_v3.f90
-oops/generic/instantiateLinearVariableChangeFactory.h
 oops/generic/instantiateLocalizationFactory.h
 oops/generic/instantiateModelFactory.h
 oops/generic/instantiateObsErrorFactory.h
+oops/generic/instantiateVariableChangeFactories.h
 oops/generic/unstructured_grid_f.h
 oops/generic/unstructured_grid_mod.F90
 oops/generic/StatsVariableChange.h
@@ -193,6 +195,7 @@ oops/interface/Increment.h
 oops/interface/InterpolatorTraj.h
 oops/interface/LinearModel.h
 oops/interface/LinearObsOperator.h
+oops/interface/LinearVariableChange.h
 oops/interface/Localization.h
 oops/interface/LocalizationBase.h
 oops/interface/Locations.h
@@ -210,7 +213,7 @@ oops/interface/ObsOperator.h
 oops/interface/ObsVector.h
 oops/interface/ObservationSpace.h
 oops/interface/State.h
-oops/interface/LinearVariableChange.h
+oops/interface/VariableChange.h
 
 oops/parallel/mpi/mpi.h
 oops/parallel/mpi/mpi.cc
@@ -226,6 +229,7 @@ oops/runs/Forecast.h
 oops/runs/GenEnsPertB.h
 oops/runs/HofX.h
 oops/runs/MakeObs.h
+oops/runs/EnsVariance.h
 oops/runs/Run.h
 oops/runs/Run.cc
 oops/runs/StaticBInit.h
@@ -292,6 +296,7 @@ test/interface/ObsOperator.h
 test/interface/ObsTestsFixture.h
 test/interface/ObsVector.h
 test/interface/LinearVariableChange.h
+test/interface/VariableChange.h
 test/TestEnvironment.h
 test/util/Random.h
 test/util/Fortran.h

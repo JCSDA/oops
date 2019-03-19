@@ -25,7 +25,7 @@
 #include "eckit/testing/Test.h"
 #include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/Variables.h"
-#include "oops/generic/instantiateLinearVariableChangeFactory.h"
+#include "oops/generic/instantiateVariableChangeFactories.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
@@ -47,8 +47,7 @@ template <typename MODEL> class LinearVariableChangeFixture : private boost::non
   typedef util::DateTime                         DateTime_;
 
  public:
-  static std::vector<eckit::LocalConfiguration>
-                           & linvarchgconfs()   {return getInstance().linvarchgconfs_;}
+  static std::vector<eckit::LocalConfiguration> & confs() {return getInstance().confs_;}
   static const State_      & xx()               {return *getInstance().xx_;}
   static const Geometry_   & resol()            {return *getInstance().resol_;}
   static const DateTime_   & time()             {return *getInstance().time_;}
@@ -60,7 +59,7 @@ template <typename MODEL> class LinearVariableChangeFixture : private boost::non
   }
 
   LinearVariableChangeFixture<MODEL>() {
-    oops::instantiateLinearVariableChangeFactory<MODEL>();
+    oops::instantiateVariableChangeFactories<MODEL>();
 
     const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "Geometry");
     resol_.reset(new Geometry_(resolConfig));
@@ -71,12 +70,12 @@ template <typename MODEL> class LinearVariableChangeFixture : private boost::non
 
     time_.reset(new util::DateTime(xx_->validTime()));
 
-    TestEnvironment::config().get("LinearVariableChangeTests", linvarchgconfs_);
+    TestEnvironment::config().get("LinearVariableChangeTests", confs_);
   }
 
   ~LinearVariableChangeFixture<MODEL>() {}
 
-  std::vector<eckit::LocalConfiguration>             linvarchgconfs_;
+  std::vector<eckit::LocalConfiguration>             confs_;
   boost::scoped_ptr<const State_ >                   xx_;
   boost::scoped_ptr<const Geometry_>                 resol_;
   boost::scoped_ptr<const util::DateTime>            time_;
@@ -90,15 +89,15 @@ template <typename MODEL> void testLinearVariableChangeZero() {
   typedef oops::LinearVariableChangeBase<MODEL>    LinearVariableChange_;
   typedef oops::LinearVariableChangeFactory<MODEL> LinearVariableChangeFactory_;
 
-  for (std::size_t jj = 0; jj < Test_::linvarchgconfs().size(); ++jj) {
-    eckit::LocalConfiguration varinconf(Test_::linvarchgconfs()[jj], "inputVariables");
-    eckit::LocalConfiguration varoutconf(Test_::linvarchgconfs()[jj], "outputVariables");
+  for (std::size_t jj = 0; jj < Test_::confs().size(); ++jj) {
+    eckit::LocalConfiguration varinconf(Test_::confs()[jj], "inputVariables");
+    eckit::LocalConfiguration varoutconf(Test_::confs()[jj], "outputVariables");
     oops::Variables varin(varinconf);
     oops::Variables varout(varoutconf);
 
     boost::scoped_ptr<LinearVariableChange_> changevar(LinearVariableChangeFactory_::create(
                                       Test_::xx(), Test_::xx(),
-                                      Test_::resol(), Test_::linvarchgconfs()[jj]));
+                                      Test_::resol(), Test_::confs()[jj]));
 
     Increment_   dxin(Test_::resol(), varin,  Test_::time());
     Increment_ KTdxin(Test_::resol(), varout, Test_::time());
@@ -115,7 +114,7 @@ template <typename MODEL> void testLinearVariableChangeZero() {
     changevar->multiplyAD(dxin, KTdxin);
     EXPECT(KTdxin.norm() == 0.0);
 
-    const bool testinverse = Test_::linvarchgconfs()[jj].getBool("testinverse", true);
+    const bool testinverse = Test_::confs()[jj].getBool("testinverse", true);
     if (testinverse)
       {
         Increment_   KIdxin(Test_::resol(), varout, Test_::time());
@@ -142,15 +141,15 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
   typedef oops::LinearVariableChangeBase<MODEL>    LinearVariableChange_;
   typedef oops::LinearVariableChangeFactory<MODEL> LinearVariableChangeFactory_;
 
-  for (std::size_t jj = 0; jj < Test_::linvarchgconfs().size(); ++jj) {
-    eckit::LocalConfiguration varinconf(Test_::linvarchgconfs()[jj], "inputVariables");
-    eckit::LocalConfiguration varoutconf(Test_::linvarchgconfs()[jj], "outputVariables");
+  for (std::size_t jj = 0; jj < Test_::confs().size(); ++jj) {
+    eckit::LocalConfiguration varinconf(Test_::confs()[jj], "inputVariables");
+    eckit::LocalConfiguration varoutconf(Test_::confs()[jj], "outputVariables");
     oops::Variables varin(varinconf);
     oops::Variables varout(varoutconf);
 
     boost::scoped_ptr<LinearVariableChange_> changevar(LinearVariableChangeFactory_::create(
                                       Test_::xx(), Test_::xx(),
-                                      Test_::resol(), Test_::linvarchgconfs()[jj]));
+                                      Test_::resol(), Test_::confs()[jj]));
 
     Increment_   dxin(Test_::resol(), varin,  Test_::time());
     Increment_ KTdxin(Test_::resol(), varout, Test_::time());
@@ -177,7 +176,7 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
                       << (zz1-zz2)/zz2 << std::endl;
     const double tol = 1e-8;
     EXPECT(is_approximately_equal(zz1, zz2, tol));
-    const bool testinverse = Test_::linvarchgconfs()[jj].getBool("testinverse", true);
+    const bool testinverse = Test_::confs()[jj].getBool("testinverse", true);
     if (testinverse)
       {
         Increment_   invKdxin(Test_::resol(), varout, Test_::time());
@@ -210,21 +209,21 @@ template <typename MODEL> void testLinearVariableChangeInverse() {
   typedef oops::LinearVariableChangeBase<MODEL>    LinearVariableChange_;
   typedef oops::LinearVariableChangeFactory<MODEL> LinearVariableChangeFactory_;
 
-  for (std::size_t jj = 0; jj < Test_::linvarchgconfs().size(); ++jj) {
-    eckit::LocalConfiguration varinconf(Test_::linvarchgconfs()[jj], "inputVariables");
-    eckit::LocalConfiguration varoutconf(Test_::linvarchgconfs()[jj], "outputVariables");
+  for (std::size_t jj = 0; jj < Test_::confs().size(); ++jj) {
+    eckit::LocalConfiguration varinconf(Test_::confs()[jj], "inputVariables");
+    eckit::LocalConfiguration varoutconf(Test_::confs()[jj], "outputVariables");
     oops::Variables varin(varinconf);
     oops::Variables varout(varoutconf);
 
-    const double tol = Test_::linvarchgconfs()[jj].getDouble("toleranceInverse");
+    const double tol = Test_::confs()[jj].getDouble("toleranceInverse");
 
-    const bool testinverse = Test_::linvarchgconfs()[jj].getBool("testinverse", false);
+    const bool testinverse = Test_::confs()[jj].getBool("testinverse", false);
     if (testinverse)
       {
       oops::Log::info() << "Testing multiplyInverse" << std::endl;
       boost::scoped_ptr<LinearVariableChange_> changevar(LinearVariableChangeFactory_::create(
                                         Test_::xx(), Test_::xx(),
-                                        Test_::resol(), Test_::linvarchgconfs()[jj]));
+                                        Test_::resol(), Test_::confs()[jj]));
 
       Increment_    dxin(Test_::resol(), varin,  Test_::time());
       Increment_  KIdxin(Test_::resol(), varout, Test_::time());

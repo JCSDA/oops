@@ -11,9 +11,8 @@
 #include <ostream>
 #include <string>
 
-#include "oops/base/LinearVariableChangeBase.h"
+#include "oops/base/VariableChangeBase.h"
 #include "oops/interface/Geometry.h"
-#include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
 #include "oops/util/Printable.h"
 
@@ -25,25 +24,22 @@ namespace eckit {
 namespace oops {
 
 // -----------------------------------------------------------------------------
-/// Lorenz 95: no change of variable
+/// No change of variable
 
 template <typename MODEL>
-class IdVariableChange : public LinearVariableChangeBase<MODEL> {
+class IdVariableChange : public VariableChangeBase<MODEL> {
   typedef Geometry<MODEL>            Geometry_;
-  typedef Increment<MODEL>           Increment_;
   typedef State<MODEL>               State_;
  public:
   static const std::string classname() {return "oops::IdVariableChange";}
 
-  IdVariableChange(const State_ &, const State_ &, const Geometry_ &,
-                   const eckit::Configuration & conf): LinearVariableChangeBase<MODEL>(conf) {}
+  IdVariableChange(const Geometry_ &, const eckit::Configuration & conf)
+    : VariableChangeBase<MODEL>(conf) {}
   virtual ~IdVariableChange() {}
 
-/// Perform linear transforms
-  void multiply(const Increment_ & dx1, Increment_ & dx2) const {dx2 = dx1;}
-  void multiplyInverse(const Increment_ & dx1, Increment_ & dx2) const {dx2 = dx1;}
-  void multiplyAD(const Increment_ & dx1, Increment_ & dx2) const {dx2 = dx1;}
-  void multiplyInverseAD(const Increment_ & dx1, Increment_ & dx2) const {dx2 = dx1;}
+/// Perform identity change of variable
+  void changeVar(const State_ & x1, State_ & x2) const override {x2 = x1;}
+  void changeVarInverse(const State_ & x1, State_ & x2) const override {x2 = x1;}
 
  private:
   void print(std::ostream &) const override {}
