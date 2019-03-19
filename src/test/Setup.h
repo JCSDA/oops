@@ -22,15 +22,6 @@ struct Setup {
   }
 };
 
-#ifndef OOPS_TEST_NO_BOOST
-struct Setup {
-  Setup() {
-    eckit::Main::initialise(boost::unit_test::framework::master_test_suite().argc,
-                                boost::unit_test::framework::master_test_suite().argv);
-  }
-};
-#endif
-
 }  // namespace test
 
 #endif  // TEST_SETUP_H_

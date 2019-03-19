@@ -158,102 +158,85 @@ ecbuild_add_test( TARGET test_l95_makeobs4d12h
 ecbuild_add_test( TARGET test_l95_resolution
                   SOURCES lorenz95/Resolution.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_stateL95
                   SOURCES lorenz95/StateL95.cc lorenz95/TestConfig.h
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   ARGS "testinput/test.yaml"
                   LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_tlmL95
                   SOURCES lorenz95/TLML95.cc lorenz95/TestConfig.h
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   ARGS "testinput/test.yaml"
                   LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_ObsTable
                   SOURCES lorenz95/ObsTable.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_obsVec1D
                   SOURCES lorenz95/ObsVec1D.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_locsL95
                   SOURCES lorenz95/LocsL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_gomL95
                   SOURCES lorenz95/GomL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_observationL95
                   SOURCES lorenz95/ObservationL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_obsBias
                   SOURCES lorenz95/ObsBias.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_incrementL95
                   SOURCES lorenz95/IncrementL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_localizationMatrixL95
                   SOURCES lorenz95/LocalizationMatrixL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_modelBias
                   SOURCES lorenz95/ModelBias.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_modelBiasCorrection
                   SOURCES lorenz95/ModelBiasCorrection.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_modelBiasCovariance
                   SOURCES lorenz95/ModelBiasCovariance.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_modelL95
                   SOURCES lorenz95/ModelL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_obsBiasCorrection
                   SOURCES lorenz95/ObsBiasCorrection.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_obsBiasCovariance
                   SOURCES lorenz95/ObsBiasCovariance.cc lorenz95/TestConfig.h
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   ARGS "testinput/test.yaml"
                   LIBS    lorenz95 eckit)
 
@@ -262,115 +245,96 @@ ecbuild_add_test( TARGET test_l95_obsBiasCovariance
 ecbuild_add_test( TARGET test_l95_geometry
                   SOURCES executables/TestGeometry.cc
                   ARGS "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_geovals
                   SOURCES executables/TestGeoVaLs.cc
                   ARGS "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_state
                   SOURCES executables/TestState.cc
                   ARGS "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_modelaux
                   SOURCES executables/TestModelAuxControl.cc
                   ARGS "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_model
                   SOURCES executables/TestModel.cc
                   ARGS "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_increment
                   SOURCES executables/TestIncrement.cc
                   ARGS "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_errorcovariance
                   SOURCES executables/TestErrorCovariance.cc
                   ARGS "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_modelauxincrement
                   SOURCES executables/TestModelAuxIncrement.cc
                   ARGS "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_modelauxcovariance
                   SOURCES executables/TestModelAuxCovariance.cc
                   ARGS "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_linearmodel
                   SOURCES executables/TestLinearModel.cc
                   ARGS "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_observationspace
                   SOURCES executables/TestObservationSpace.cc
                   ARGS "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_obsvector
                   SOURCES executables/TestObsVector.cc
                   ARGS "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_obsoperator
                   SOURCES executables/TestObsOperator.cc
                   ARGS "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_linobsoperator
                   SOURCES executables/TestLinearObsOperator.cc
                   ARGS "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_obserrorcovar
                   SOURCES executables/TestObsErrorCovariance.cc
                   ARGS "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_obsaux
                   SOURCES executables/TestObsAuxControl.cc
                   ARGS "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_obsauxincrement
                   SOURCES executables/TestObsAuxIncrement.cc
                   ARGS "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_obsauxcovariance
                   SOURCES executables/TestObsAuxCovariance.cc
                   ARGS "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_localization
                   SOURCES executables/TestLocalization.cc
                   ARGS "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    lorenz95 )
 
 # Test oops applications with lorenz95

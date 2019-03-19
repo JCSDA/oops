@@ -15,10 +15,6 @@
 #include <string>
 #include <vector>
 
-#ifndef OOPS_TEST_NO_BOOST
-#include <boost/test/unit_test.hpp>
-#endif
-
 #include <boost/tokenizer.hpp>
 #include "eckit/config/Configuration.h"
 #include "eckit/parser/Tokenizer.h"
@@ -75,11 +71,7 @@ int Test::execute(const eckit::Configuration & config) const {
   Log::trace() << "Registering the unit tests" << std::endl;
   register_tests();
   Log::trace() << "Running the unit tests" << std::endl;
-  #ifndef OOPS_TEST_NO_BOOST
-  int result = boost::unit_test::unit_test_main(&init_unit_test, argc, argv);
-  #else
   int result = eckit::testing::run_tests(argc, argv, false);
-  #endif
   Log::trace() << "Finished running the unit tests" << std::endl;
   Log::error() << "Finished running the unit tests, result = " << result << std::endl;
 

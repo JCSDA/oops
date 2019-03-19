@@ -176,50 +176,42 @@ ecbuild_add_test( TARGET  test_qg_staticbinit
 ecbuild_add_test( TARGET  test_qg_geometry
                   SOURCES executables/TestGeometry.cc
                   ARGS    "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    qg )
 
 
 ecbuild_add_test( TARGET  test_qg_geometry_iterator
                   SOURCES executables/TestGeometryIterator.cc
                   ARGS    "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_geovals
                   SOURCES executables/TestGeoVaLs.cc
                   ARGS    "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_state
                   SOURCES executables/TestState.cc
                   ARGS    "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_modelaux
                   SOURCES executables/TestModelAuxControl.cc
                   ARGS    "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_model
                   SOURCES executables/TestModel.cc
                   ARGS    "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_increment
                   SOURCES executables/TestIncrement.cc
                   ARGS    "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_errorcovariance
                   SOURCES executables/TestErrorCovariance.cc
                   ARGS    "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    qg )
 
 #ecbuild_add_test( TARGET  test_qg_modelauxincrement
@@ -231,73 +223,61 @@ ecbuild_add_test( TARGET  test_qg_errorcovariance
 ecbuild_add_test( TARGET  test_qg_modelauxcovariance
                   SOURCES executables/TestModelAuxCovariance.cc
                   ARGS    "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_linearmodel
                   SOURCES executables/TestLinearModel.cc
                   ARGS    "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    qg )
 
 ecbuild_add_test( TARGET test_qg_locations
                   SOURCES executables/TestLocations.cc
                   ARGS "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    qg )
 
 ecbuild_add_test( TARGET test_qg_observationspace
                   SOURCES executables/TestObservationSpace.cc
                   ARGS "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    qg )
 
 ecbuild_add_test( TARGET test_qg_obsvector
                   SOURCES executables/TestObsVector.cc
                   ARGS "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_obsoperator
                   SOURCES executables/TestObsOperator.cc
                   ARGS    "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_linobsoperator
                   SOURCES executables/TestLinearObsOperator.cc
                   ARGS    "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    qg )
 
 ecbuild_add_test( TARGET test_qg_obserrorcovar
                   SOURCES executables/TestObsErrorCovariance.cc
                   ARGS "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_obsaux
                   SOURCES executables/TestObsAuxControl.cc
                   ARGS    "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_obsauxincrement
                   SOURCES executables/TestObsAuxIncrement.cc
                   ARGS    "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_obsauxcovariance
                   SOURCES executables/TestObsAuxCovariance.cc
                   ARGS    "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_localization
                   SOURCES executables/TestLocalization.cc
                   ARGS    "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    qg )
 
 # Application test_qg_linearvariablechange requires test_qg_parameters_bump_vbal output, which requires test_qg_genenspert output
@@ -327,7 +307,6 @@ ecbuild_add_test( TARGET  test_qg_linearvariablechange
                   MPI    1
                   SOURCES executables/TestLinearVariableChange.cc
                   ARGS    "testinput/interfaces.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    qg )
 
 # Test oops classes with QG
