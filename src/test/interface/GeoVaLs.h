@@ -127,7 +127,7 @@ template <typename MODEL> void testRead() {
   std::vector<eckit::LocalConfiguration> conf;
   obsconf.get("ObsTypes", conf);
 
-  const double tol = 1.0e-8;
+  const double tol = 1.0e-7;
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     ObsOperator_ hop(Test_::obspace()[jj], conf[jj]);
 
