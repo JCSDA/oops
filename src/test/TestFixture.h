@@ -13,14 +13,13 @@
 
 #pragma once
 
-#include "Setup.h"
 #include "oops/util/LibOOPS.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
-struct TestFixture : public Setup {
-  TestFixture() : Setup() {
+struct TestFixture  {
+  TestFixture() {
     // Common setup for every unit-test goes here
   }
 

@@ -323,9 +323,8 @@ class Increment : public oops::Test {
       { testIncrementAxpy<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementInterpAD")
       { testIncrementInterpAD<MODEL>(); });
-    ts.emplace_back(CASE("interface/Increment/testIncrementSerialize")
-      { testIncrementSerialize<MODEL>(); });
-    // ts->add(BOOST_TEST_CASE(&testIncrementSerialize<MODEL>));
+//    ts.emplace_back(CASE("interface/Increment/testIncrementSerialize")
+//      { testIncrementSerialize<MODEL>(); });
   }
 };
 
