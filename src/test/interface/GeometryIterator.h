@@ -30,7 +30,6 @@
 #include "oops/runs/Test.h"
 #include "test/TestEnvironment.h"
 
-using eckit::types::is_approximately_equal;
 
 namespace test {
 
@@ -103,7 +102,7 @@ template <typename MODEL> void testIterator() {
   oops::Log::debug() << n << " rms from iterator: " << rms << std::endl;
   oops::Log::debug() << "rms from config: " << rms_conf << std::endl;
 
-  EXPECT(is_approximately_equal(rms, rms_conf, tol));
+  EXPECT(oops::is_close(rms, rms_conf, tol));
 }
 
 // -----------------------------------------------------------------------------

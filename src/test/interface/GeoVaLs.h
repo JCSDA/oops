@@ -27,8 +27,6 @@
 #include "oops/util/dot_product.h"
 #include "test/TestEnvironment.h"
 
-using eckit::types::is_approximately_equal;
-
 namespace test {
 
 // -----------------------------------------------------------------------------
@@ -127,7 +125,7 @@ template <typename MODEL> void testRead() {
   std::vector<eckit::LocalConfiguration> conf;
   obsconf.get("ObsTypes", conf);
 
-  const double tol = 1.0e-7;
+  const double tol = 1.0e-9;
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     ObsOperator_ hop(Test_::obspace()[jj], conf[jj]);
 
@@ -138,7 +136,7 @@ template <typename MODEL> void testRead() {
 
     const double xx = gconf.getDouble("norm");
     const double zz = sqrt(dot_product(gval, gval));
-    EXPECT(is_approximately_equal(xx, zz, tol));
+    EXPECT(oops::is_close(xx, zz, tol));
   }
 }
 

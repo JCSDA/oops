@@ -35,8 +35,6 @@
 #include "oops/util/Logger.h"
 #include "test/TestEnvironment.h"
 
-using eckit::types::is_approximately_equal;
-
 namespace test {
 
 // -----------------------------------------------------------------------------
@@ -174,8 +172,8 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
                       << (zz1-zz2)/zz1 << std::endl;
     oops::Log::info() << "<dxout,KTdxin>-<Kdxout,dxin>/<Kdxout,dxin>="
                       << (zz1-zz2)/zz2 << std::endl;
-    const double tol = 1e-8;
-    EXPECT(is_approximately_equal(zz1, zz2, tol));
+    const double tol = 1e-10;
+    EXPECT(oops::is_close(zz1, zz2, tol));
     const bool testinverse = Test_::confs()[jj].getBool("testinverse", true);
     if (testinverse)
       {
@@ -194,7 +192,7 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
                       << (zz1-zz2)/zz1 << std::endl;
         oops::Log::info() << "<dxout,KinvTdxin>-<Kinvdxout,dxin>/<Kinvdxout,dxin>="
                       << (zz1-zz2)/zz2 << std::endl;
-        EXPECT(is_approximately_equal(zz1, zz2, tol));
+        EXPECT(oops::is_close(zz1, zz2, tol));
       } else {
       oops::Log::info() << "Not doing adjoint test for inverse" << std::endl;
     }

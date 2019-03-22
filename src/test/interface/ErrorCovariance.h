@@ -35,8 +35,6 @@
 #include "oops/util/Logger.h"
 #include "test/TestEnvironment.h"
 
-using eckit::types::is_approximately_equal;
-
 namespace test {
 
 // =============================================================================
@@ -172,7 +170,7 @@ template <typename MODEL> void testErrorCovarianceSym() {
   oops::Log::info() << "<dx,Bdy>-<Bdx,dy>/<Bdx,dy>="
                     <<  (zz1-zz2)/zz2 << std::endl;
   const double tol = Test_::test().getDouble("tolerance");
-  EXPECT(is_approximately_equal(zz1, zz2, tol));
+  EXPECT(oops::is_close(zz1, zz2, tol));
 }
 
 // =============================================================================

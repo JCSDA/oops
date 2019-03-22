@@ -33,8 +33,6 @@
 #include "oops/util/Duration.h"
 #include "test/TestEnvironment.h"
 
-using eckit::types::is_approximately_equal;
-
 namespace test {
 
 // =============================================================================
@@ -133,7 +131,7 @@ template <typename MODEL> void testModelForecast() {
   Test_::model().forecast(xx, Test_::bias(), len, post);
 
   EXPECT(xx.validTime() == vt);
-  EXPECT(is_approximately_equal(xx.norm(), fnorm, tol));
+  EXPECT(oops::is_close(xx.norm(), fnorm, tol));
 
 // Recomputing initial norm to make sure nothing bad happened
   EXPECT(Test_::xref().norm() == ininorm);

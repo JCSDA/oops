@@ -32,8 +32,6 @@
 #include "oops/util/Logger.h"
 #include "test/TestEnvironment.h"
 
-using eckit::types::is_approximately_equal;
-
 namespace test {
 
 // -----------------------------------------------------------------------------
@@ -82,13 +80,13 @@ template <typename MODEL> void testStateConstructors() {
 
   EXPECT(xx1.get());
   const double norm1 = xx1->norm();
-  EXPECT(is_approximately_equal(norm1, norm, tol));
+  EXPECT(oops::is_close(norm1, norm, tol));
   EXPECT(xx1->validTime() == vt);
 
 // Test copy constructor
   boost::scoped_ptr<State_> xx2(new State_(*xx1));
   EXPECT(xx2.get());
-  EXPECT(is_approximately_equal(xx2->norm(), norm, tol));
+  EXPECT(oops::is_close(xx2->norm(), norm, tol));
   EXPECT(xx2->validTime() == vt);
 
 // Destruct copy
@@ -149,7 +147,7 @@ template <typename MODEL> void testStateInterpolation() {
   const State_ xx(Test_::resol(), statevars, confgen);
   const double norm = Test_::test().getDouble("norm-gen");
   const double tol = Test_::test().getDouble("tolerance");
-  EXPECT(is_approximately_equal(xx.norm(), norm, tol));
+  EXPECT(oops::is_close(xx.norm(), norm, tol));
 
   // If the analytic initial conditions are not yet implemented
   // in the model, then bypass the interpolation test for now

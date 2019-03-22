@@ -11,6 +11,7 @@
 #ifndef OOPS_RUNS_TEST_H_
 #define OOPS_RUNS_TEST_H_
 
+#include <cmath>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -84,6 +85,11 @@ int Test::execute(const eckit::Configuration & config) const {
   return result;
 }
 // -----------------------------------------------------------------------------
+template< typename T >
+bool is_close(T a, T b, T epsilon) {
+  if (std::isnan(a) || std::isnan(b) || std::isinf(a) || std::isinf(b)) return false;
+  return eckit::types::is_approximately_equal(a , b, (abs(a) < abs(b) ? abs(b) : abs(a)) * epsilon);
+}
 }  // namespace oops
 #endif  // OOPS_RUNS_TEST_H_
 

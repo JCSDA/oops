@@ -46,8 +46,6 @@
 #include "oops/util/Duration.h"
 #include "test/TestEnvironment.h"
 
-using eckit::types::is_approximately_equal;
-
 namespace test {
 
 // =============================================================================
@@ -239,7 +237,7 @@ template <typename MODEL> void testLinearModelLinearity() {
   EXPECT(dx2.validTime() == t2);
 
   const double tol = Test_::test().getDouble("toleranceAD");
-  EXPECT(is_approximately_equal(dx1.norm(), dx2.norm(), tol));
+  EXPECT(oops::is_close(dx1.norm(), dx2.norm(), tol));
 }
 
 // -----------------------------------------------------------------------------
@@ -337,7 +335,7 @@ template <typename MODEL> void testLinearModelAdjoint() {
   const double dot1 = dot_product(dx11, dx21);
   const double dot2 = dot_product(dx12, dx22);
   const double tol = Test_::test().getDouble("toleranceAD");
-  EXPECT(is_approximately_equal(dot1, dot2, tol));
+  EXPECT(oops::is_close(dot1, dot2, tol));
 }
 
 // =============================================================================

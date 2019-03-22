@@ -26,8 +26,6 @@
 #include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"
 
-using eckit::types::is_approximately_equal;
-
 namespace test {
 
 // -----------------------------------------------------------------------------
@@ -181,7 +179,7 @@ template <typename MODEL> void testAdjoint() {
 
     EXPECT(zz1 != zero);
     EXPECT(zz2 != zero);
-    EXPECT(is_approximately_equal(zz1, zz2, tol));
+    EXPECT(oops::is_close(zz1, zz2, tol));
   }
 }
 

@@ -33,7 +33,6 @@
 #include "oops/util/dot_product.h"
 #include "test/TestEnvironment.h"
 
-using eckit::types::is_approximately_equal;
 
 namespace test {
 
@@ -264,7 +263,8 @@ template <typename MODEL> void testIncrementInterpAD() {
 
   EXPECT(zz1 != 0.0);
   EXPECT(zz2 != 0.0);
-  EXPECT(is_approximately_equal(zz1, zz2, tol));
+  std::cout << "TOL = " << tol << std::endl;
+  EXPECT(oops::is_close(zz1, zz2, tol));
 }
 
 // -----------------------------------------------------------------------------

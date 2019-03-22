@@ -4,7 +4,7 @@ Covariance:
   length_scale: 1.0
   standard_deviation: 0.6
 CovarianceTest:
-  tolerance: 1.0e-08
+  tolerance: 1.0e-10
 Geometry:
   resol: 40
 LinearModel:
@@ -16,11 +16,11 @@ LinearModel:
 LinearModelTest:
   fclength: PT48H
   testiterTL: 12
-  toleranceAD: 1.0e-12
+  toleranceAD: 1.0e-14
   toleranceTL: 1.0e-07
 LinearObsOpTest:
   testiterTL: '10'
-  toleranceAD: '1.0e-14'
+  toleranceAD: '1.0e-16'
   toleranceTL: '1.0e-14'
 Localization:
   length_scale: 1.0
@@ -39,7 +39,7 @@ ModelBiasCovariance:
 ModelTest:
   fclength: PT48H
   finalnorm: 7.938
-  tolerance: 0.005
+  tolerance: 0.00005
 ObsBias:
   bias: 0.3
 ObsBiasCovariance:
@@ -58,7 +58,7 @@ Observations:
         filename: Data/test.2010-01-02T00:00:00Z.obt
     ObsType: Lorenz 95
     rmsequiv: 8.02102185636578
-    tolerance: 1.0e-08
+    tolerance: 1.0e-10
 State:
   date: '2010-01-01T03:00:00Z'
   filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H
@@ -79,7 +79,7 @@ StateTest:
   interp_tolerance: 0.004
   norm-file: 8.025826422250747
   norm-gen: 8.12403840464
-  tolerance: 1.0e-10
+  tolerance: 1.0e-12
   values:
   - 6.042838
 TestDate: '2010-01-01T03:00:00Z'
