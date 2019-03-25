@@ -31,6 +31,7 @@ list( APPEND qg_test_input
   testinput/forecast.yaml
   testinput/genenspert.yaml
   testinput/hofx.yaml
+  testinput/hofx3d.yaml
   testinput/interfaces.yaml
   testinput/makeobs3d.yaml
   testinput/makeobs4d.yaml
@@ -75,6 +76,7 @@ list( APPEND qg_testoutput
   testoutput/forecast.test
   testoutput/genenspert.test
   testoutput/hofx.test
+  testoutput/hofx3d.test
   testoutput/makeobs3d.test
   testoutput/makeobs4d.test
   testoutput/makeobs4d12h.test
@@ -342,6 +344,13 @@ ecbuild_add_test( TARGET test_qg_hofx
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_hofx.x testinput/hofx.yaml"
                        testoutput/hofx.test
                   DEPENDS qg_hofx.x )
+
+ecbuild_add_test( TARGET test_qg_hofx3d
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_hofx3d.x testinput/hofx3d.yaml"
+                       testoutput/hofx3d.test
+                  DEPENDS qg_hofx3d.x )
 
 ecbuild_add_test( TARGET test_qg_enshofx
                   TYPE SCRIPT

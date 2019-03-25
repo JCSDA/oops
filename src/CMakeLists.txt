@@ -228,6 +228,7 @@ oops/runs/ExternalDFI.h
 oops/runs/Forecast.h
 oops/runs/GenEnsPertB.h
 oops/runs/HofX.h
+oops/runs/HofX3D.h
 oops/runs/MakeObs.h
 oops/runs/EnsVariance.h
 oops/runs/Run.h

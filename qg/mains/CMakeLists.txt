@@ -28,6 +28,11 @@ ecbuild_add_executable( TARGET  qg_hofx.x
                         LIBS    qg
                       )
 
+ecbuild_add_executable( TARGET  qg_hofx3d.x
+                        SOURCES qgHofX3D.cc
+                        LIBS    qg
+                      )
+
 ecbuild_add_executable( TARGET  qg_makeobs.x
                         SOURCES qgMakeObs.cc
                         LIBS    qg
