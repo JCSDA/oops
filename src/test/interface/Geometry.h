@@ -11,7 +11,6 @@
 #ifndef TEST_INTERFACE_GEOMETRY_H_
 #define TEST_INTERFACE_GEOMETRY_H_
 
-#include <memory>  // for std::unique_ptr
 #include <string>
 #include <vector>
 

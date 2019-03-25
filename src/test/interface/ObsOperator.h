@@ -91,7 +91,8 @@ template <typename MODEL> void testSimulateObs() {
       const double zz = ovec_ref.rms();
       oops::Log::info() << "Vector difference between reference and computed: " <<
                            ovec_ref;
-      EXPECT(zz < tol);
+      EXPECT(zz < 100*tol);  //  change tol from percent to actual value.
+                             //  tol used in is_close is relative
     } else {
       // else compare h(x) norm to the norm from the config
       const double zz = ovec.rms();

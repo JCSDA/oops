@@ -263,7 +263,6 @@ template <typename MODEL> void testIncrementInterpAD() {
 
   EXPECT(zz1 != 0.0);
   EXPECT(zz2 != 0.0);
-  std::cout << "TOL = " << tol << std::endl;
   EXPECT(oops::is_close(zz1, zz2, tol));
 }
 

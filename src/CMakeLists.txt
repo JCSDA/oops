@@ -366,5 +366,4 @@ ecbuild_add_test( TARGET oops_coding_norms
 ecbuild_add_test( TARGET test_util_random
                   SOURCES test/base/Random.cc
 		  ARGS    "test/testinput/random.yaml"
-                  DEFINITIONS OOPS_TEST_NO_BOOST
                   LIBS    oops )

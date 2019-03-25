@@ -30,7 +30,6 @@
 #include "oops/runs/Test.h"
 #include "test/TestEnvironment.h"
 
-
 namespace test {
 
 // -----------------------------------------------------------------------------

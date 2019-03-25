@@ -28,8 +28,6 @@
 #include "test/TestEnvironment.h"
 #include "test/util/Fortran.h"
 
-using eckit::types::is_approximately_equal;
-
 namespace test {
 
 // -----------------------------------------------------------------------------
@@ -71,20 +69,19 @@ void testCppRandom() {
 
   /*! Test uniform real distrubution 
    *  The tolerance is based on the precision of the data type, in this case <double>.  
-   *  However, we have to multiply this by 100 because boost wants the tolerance as 
-   *  a percentage.  We also have to take into account the magnitude of the number 
-   *  itself, which requires another multiplication.  This can potentially decrease 
+   *  We have to take into account the magnitude of the number 
+   *  itself, which requires a multiplication.  This can potentially decrease 
    *  the accuracy by one significant digit.  So, also include a safety factor sfac.
   */
   double sfac = 10;
-  double tol = 100 * sfac * std::numeric_limits<double>::epsilon();
+  double tol = sfac * std::numeric_limits<double>::epsilon();
   std::vector<double> real_range = Test_::test().getDoubleVector("uniform_real_range");
   util::UniformDistribution<double> x(N, real_range[0], real_range[1], seed);
   std::vector<double> x_check = Test_::test().getDoubleVector("uniform_real_answer");
   oops::Log::info() << "\nTesting oops::util::Random.h Uniform Real Distribution: \n"
                     << x << std::endl;
   for (std::size_t jj = 0; jj < N; ++jj)
-    EXPECT(is_approximately_equal(x[jj], x_check[jj],
+    EXPECT(oops::is_close(x[jj], x_check[jj],
                                                  tol * std::abs(x_check[jj])));
 
   /*! Test uniform integer distribution */
@@ -96,7 +93,7 @@ void testCppRandom() {
   for (std::size_t jj = 0; jj < N; ++jj) EXPECT(y[jj] == y_check[jj]);
 
   /*! Test normal distribution */
-  tol = 100 * sfac * std::numeric_limits<double>::epsilon();  // see comment above
+  tol = sfac * std::numeric_limits<double>::epsilon();  // see comment above
   double normal_mean = Test_::test().getDouble("normal_mean");
   double normal_sdev = Test_::test().getDouble("normal_sdev");
   util::NormalDistribution<double> z(N, normal_mean, normal_sdev, seed);
@@ -104,7 +101,7 @@ void testCppRandom() {
   oops::Log::info() << "\nTesting oops::util::Random.h Gaussian Distribution: \n"
                     << z << std::endl;
   for (std::size_t jj = 0; jj < N; ++jj)
-    EXPECT(is_approximately_equal(z[jj], z_check[jj],
+    EXPECT(oops::is_close(z[jj], z_check[jj],
                                                  tol * std::abs(z_check[jj])));
   }
 

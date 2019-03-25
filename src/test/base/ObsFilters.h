@@ -29,8 +29,6 @@
 #include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"
 
-using eckit::types::is_approximately_equal;
-
 namespace test {
 
 // -----------------------------------------------------------------------------
@@ -109,7 +107,7 @@ template <typename MODEL> void testFilters() {
       // else compare h(x) norm to the norm from the config
       const double zz = ovec.rms();
       const double xx = typeconfs[jj].getDouble("rmsequiv");
-      EXPECT(is_approximately_equal(xx, zz, tol));
+      EXPECT(oops::is_close(xx, zz, tol));
     }
   }
 }
