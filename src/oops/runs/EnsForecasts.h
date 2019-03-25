@@ -12,6 +12,7 @@
 #define OOPS_RUNS_ENSFORECASTS_H_
 
 #include <string>
+#include <vector>
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/PostProcessor.h"
@@ -29,10 +30,10 @@
 namespace oops {
 
 template <typename MODEL> class EnsForecast : public Application {
-  typedef Geometry<MODEL>            Geometry_;
-  typedef Model<MODEL>               Model_;
-  typedef ModelAuxControl<MODEL>      ModelAux_;
-  typedef State<MODEL>               State_;
+  typedef Geometry<MODEL>         Geometry_;
+  typedef Model<MODEL>            Model_;
+  typedef ModelAuxControl<MODEL>  ModelAux_;
+  typedef State<MODEL>            State_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -42,43 +43,50 @@ template <typename MODEL> class EnsForecast : public Application {
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
 //  Setup resolution
-    const eckit::Configuration resolConfig(fullConfig, "resolution");
+    const eckit::LocalConfiguration resolConfig(fullConfig, "resolution");
     const Geometry_ resol(resolConfig);
 
 //  Setup Model
-    const eckit::Configuration modelConfig(fullConfig, "model");
+    const eckit::LocalConfiguration modelConfig(fullConfig, "model");
     const Model_ model(resol, modelConfig);
 
-    unsigned nm = config.getElementSize("member");
-    for (unsigned jj = 0; jj < nm; ++jj) {
+    std::vector<eckit::LocalConfiguration> memberConf;
+    fullConfig.get("members", memberConf);
+    int members = memberConf.size();
+
+    for (int jm = 0; jm < members; ++jm) {
 //    Setup initial state
-      const eckit::Configuration initialConfig(fullConfig, "member", jj);
-      State_ xx(resol, model.variables(), initialConfig);
-      Log::test() << "Initial state: " << xx << std::endl;
+      State_ xx(resol, model.variables(), memberConf[jm]);
+      Log::test() << "Initial state " << jm << " : " << xx << std::endl;
 
 //    Setup augmented state
-      const ModelAux_ moderr(initialConfig);
+      const ModelAux_ moderr(resol, memberConf[jm]);
 
 //    Setup times
       const util::Duration fclength(fullConfig.getString("forecast_length"));
       const util::DateTime bgndate(xx.validTime());
       const util::DateTime enddate(bgndate + fclength);
-      Log::info() << "Running forecast " << jj << " from " << bgndate
+      Log::info() << "Running forecast " << jm << " from " << bgndate
                   << " to " << enddate << std::endl;
 
 //    Setup forecast outputs
       PostProcessor<State_> post;
 
-      const eckit::Configuration prtConfig(fullConfig, "prints", true);
+      eckit::LocalConfiguration prtConfig;
+      if (fullConfig.has("prints")) {
+        prtConfig = eckit::LocalConfiguration(fullConfig, "prints");
+      }
       post.enrollProcessor(new StateInfo<State_>("fc", prtConfig));
 
-      const eckit::Configuration outConfig(fullConfig, "output");
+      eckit::LocalConfiguration outConfig(fullConfig, "output");
+      outConfig.set("member", jm+1);
+
       post.enrollProcessor(new StateWriter<State_>(bgndate, outConfig));
 
 //    Run forecast
       model.forecast(xx, moderr, fclength, post);
 
-      Log::test() << "Final state " << jj << " : " << xx << std::endl;
+      Log::test() << "Final state " << jm << " : " << xx << std::endl;
     }
     return 0;
   }

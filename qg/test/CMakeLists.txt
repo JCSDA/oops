@@ -28,6 +28,7 @@ list( APPEND qg_test_input
   testinput/parametersbump.loc.yaml
   testinput/parametersbump.readloc.yaml
   testinput/parametersbump.vbal.yaml
+  testinput/ensforecast.yaml
   testinput/forecast.yaml
   testinput/genenspert.yaml
   testinput/hofx.yaml
@@ -73,6 +74,7 @@ list( APPEND qg_testoutput
   testoutput/parametersbump.loc.test
   testoutput/parametersbump.readloc.test
   testoutput/parametersbump.vbal.test
+  testoutput/ensforecast.test
   testoutput/forecast.test
   testoutput/genenspert.test
   testoutput/hofx.test
@@ -135,6 +137,13 @@ ecbuild_add_test( TARGET test_qg_forecast
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_forecast.x testinput/forecast.yaml"
                        testoutput/forecast.test
                   DEPENDS qg_forecast.x )
+
+ecbuild_add_test( TARGET test_qg_ensforecast
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_ensforecast.x testinput/ensforecast.yaml"
+                       testoutput/ensforecast.test
+                  DEPENDS qg_ensforecast.x )
 
 ecbuild_add_test( TARGET test_qg_makeobs3d
                   TYPE SCRIPT
