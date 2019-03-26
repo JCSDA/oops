@@ -61,7 +61,7 @@ template <typename MODEL> void testLinearity() {
 
   const double zero = 0.0;
   const double coef = 3.14;
-  const double tol = TestEnvironment::config().getDouble("LinearObsOpTest.toleranceAD");
+  const double tol = 1.0e-11;
   const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
   std::vector<eckit::LocalConfiguration> conf;
   obsconf.get("ObsTypes", conf);
