@@ -12,16 +12,15 @@
 #define TEST_INTERFACE_OBSAUXCONTROL_H_
 
 #include <string>
+#include <vector>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
+#include "eckit/testing/Test.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/runs/Test.h"
 #include "test/TestEnvironment.h"
@@ -55,10 +54,10 @@ template <typename MODEL> void testConstructor() {
   typedef oops::ObsAuxControl<MODEL>    ObsAux_;
 
   boost::scoped_ptr<ObsAux_> bias(new ObsAux_(Test_::config()));
-  BOOST_CHECK(bias.get());
+  EXPECT(bias.get());
 
   bias.reset();
-  BOOST_CHECK(!bias.get());
+  EXPECT(!bias.get());
 }
 
 // -----------------------------------------------------------------------------
@@ -70,17 +69,18 @@ template <typename MODEL> void testCopyConstructor() {
   boost::scoped_ptr<ObsAux_> bias(new ObsAux_(Test_::config()));
 
   boost::scoped_ptr<ObsAux_> other(new ObsAux_(*bias));
-  BOOST_CHECK(other.get());
+  EXPECT(other.get());
 
   other.reset();
-  BOOST_CHECK(!other.get());
+  EXPECT(!other.get());
 
-  BOOST_CHECK(bias.get());
+  EXPECT(bias.get());
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> class ObsAuxControl : public oops::Test {
+template <typename MODEL>
+class ObsAuxControl : public oops::Test {
  public:
   ObsAuxControl() {}
   virtual ~ObsAuxControl() {}
@@ -88,12 +88,12 @@ template <typename MODEL> class ObsAuxControl : public oops::Test {
   std::string testid() const {return "test::ObsAuxControl<" + MODEL::name() + ">";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/ObsAuxControl");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testCopyConstructor<MODEL>));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("interface/ObsAuxControl/testConstructor")
+      { testConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/ObsAuxControl/testCopyConstructor")
+      { testCopyConstructor<MODEL>(); });
   }
 };
 

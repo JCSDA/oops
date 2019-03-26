@@ -11,13 +11,11 @@
 #include <string>
 #include <vector>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/scoped_ptr.hpp>
 
+#include "eckit/testing/Test.h"
 #include "oops/interface/LinearObsOperator.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxIncrement.h"
@@ -43,10 +41,10 @@ template <typename MODEL> void testConstructor() {
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     boost::scoped_ptr<LinearObsOperator_> ov(
       new LinearObsOperator_(Test_::obspace()[jj], conf[jj]));
-    BOOST_CHECK(ov.get());
+    EXPECT(ov.get());
 
     ov.reset();
-    BOOST_CHECK(!ov.get());
+    EXPECT(!ov.get());
   }
 }
 
@@ -63,7 +61,7 @@ template <typename MODEL> void testLinearity() {
 
   const double zero = 0.0;
   const double coef = 3.14;
-  const double tol = TestEnvironment::config().getDouble("LinearObsOpTest.toleranceAD");
+  const double tol = 1.0e-11;
   const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
   std::vector<eckit::LocalConfiguration> conf;
   obsconf.get("ObsTypes", conf);
@@ -98,12 +96,12 @@ template <typename MODEL> void testLinearity() {
     // test rms(Hdx) = 0, when dx = 0
     dx.zero();
     hoptl.simulateObsTL(dx, dy1, ybinc);
-    BOOST_CHECK_EQUAL(dy1.rms(), zero);
+    EXPECT(dy1.rms() == zero);
 
     // test rms(Hdx) > 0, when dx is random
     dx.random();
     hoptl.simulateObsTL(dx, dy1, ybinc);
-    BOOST_CHECK(dy1.rms() > zero);
+    EXPECT(dy1.rms() > zero);
 
     // test k * H * dx ~ H * (k*dx)
     dy1 *= coef;
@@ -113,7 +111,7 @@ template <typename MODEL> void testLinearity() {
 
     dy1 -= dy2;
 
-    BOOST_CHECK_SMALL(dy1.rms(), tol);
+    EXPECT(dy1.rms()< tol);
   }
 }
 
@@ -162,16 +160,16 @@ template <typename MODEL> void testAdjoint() {
 
     // calculate dy1 = H dx1 (with random dx1)
     dx1.random();
-    BOOST_REQUIRE(dot_product(dx1, dx1) > zero);
+    EXPECT(dot_product(dx1, dx1) > zero);  //  BOOST_REQUIRE
     hoptl.simulateObsTL(dx1, dy1, ybinc);
-    BOOST_CHECK(dot_product(dy1, dy1) > zero);
+    EXPECT(dot_product(dy1, dy1) > zero);
 
     // calculate dx2 = HT dy2 (with random dy2)
     dy2.random();
-    BOOST_REQUIRE(dot_product(dy2, dy2) > zero);
+    EXPECT(dot_product(dy2, dy2) > zero);  //  BOOST_REQUIRE
     dx2.zero();
     hoptl.simulateObsAD(dx2, dy2, ybinc);
-    BOOST_CHECK(dot_product(dx2, dx2) > zero);
+    EXPECT(dot_product(dx2, dx2) > zero);
 
     const double zz1 = dot_product(dx1, dx2);
     const double zz2 = dot_product(dy1, dy2);
@@ -179,9 +177,9 @@ template <typename MODEL> void testAdjoint() {
     oops::Log::info() << "Adjoint test result: (<x,HTy>-<Hx,y>)/<Hx,y> = "
                        << (zz1-zz2)/zz2 << std::endl;
 
-    BOOST_CHECK(zz1 != zero);
-    BOOST_CHECK(zz2 != zero);
-    BOOST_CHECK_CLOSE(zz1, zz2, tol);
+    EXPECT(zz1 != zero);
+    EXPECT(zz2 != zero);
+    EXPECT(oops::is_close(zz1, zz2, tol));
   }
 }
 
@@ -255,13 +253,14 @@ template <typename MODEL> void testTangentLinear() {
       oops::Log::info() << "Iter:" << jter << " ||(h(x+alpha*dx)-h(x))/h'(alpha*dx)||="
                          << test_norm << std::endl;
     }
-    BOOST_CHECK(y2.rms() < tol);
+    EXPECT(y2.rms() < tol);
   }
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> class LinearObsOperator : public oops::Test {
+template <typename MODEL>
+class LinearObsOperator : public oops::Test {
  public:
   LinearObsOperator() {}
   virtual ~LinearObsOperator() {}
@@ -269,13 +268,16 @@ template <typename MODEL> class LinearObsOperator : public oops::Test {
   std::string testid() const {return "test::LinearObsOperator<" + MODEL::name() + ">";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/LinearObsOperator");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testLinearity<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testTangentLinear<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testAdjoint<MODEL>));
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("interface/GeometryIterator/testConstructor")
+      { testConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/GeometryIterator/testLinearity")
+      { testLinearity<MODEL>(); });
+    ts.emplace_back(CASE("interface/GeometryIterator/testTangentLinear")
+      { testTangentLinear<MODEL>(); });
+    ts.emplace_back(CASE("interface/GeometryIterator/testAdjoint")
+      { testAdjoint<MODEL>(); });
   }
 };
 

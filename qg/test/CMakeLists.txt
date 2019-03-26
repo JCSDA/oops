@@ -187,49 +187,42 @@ ecbuild_add_test( TARGET  test_qg_staticbinit
 # Test interface classes with QG
 
 ecbuild_add_test( TARGET  test_qg_geometry
-                  BOOST
                   SOURCES executables/TestGeometry.cc
                   ARGS    "testinput/interfaces.yaml"
                   LIBS    qg )
 
+
 ecbuild_add_test( TARGET  test_qg_geometry_iterator
-                  BOOST
                   SOURCES executables/TestGeometryIterator.cc
                   ARGS    "testinput/interfaces.yaml"
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_geovals
-                  BOOST
                   SOURCES executables/TestGeoVaLs.cc
                   ARGS    "testinput/interfaces.yaml"
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_state
-                  BOOST
                   SOURCES executables/TestState.cc
                   ARGS    "testinput/interfaces.yaml"
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_modelaux
-                  BOOST
                   SOURCES executables/TestModelAuxControl.cc
                   ARGS    "testinput/interfaces.yaml"
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_model
-                  BOOST
                   SOURCES executables/TestModel.cc
                   ARGS    "testinput/interfaces.yaml"
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_increment
-                  BOOST
                   SOURCES executables/TestIncrement.cc
                   ARGS    "testinput/interfaces.yaml"
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_errorcovariance
-                  BOOST
                   SOURCES executables/TestErrorCovariance.cc
                   ARGS    "testinput/interfaces.yaml"
                   LIBS    qg )
@@ -241,73 +234,61 @@ ecbuild_add_test( TARGET  test_qg_errorcovariance
 #                  LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_modelauxcovariance
-                  BOOST
                   SOURCES executables/TestModelAuxCovariance.cc
                   ARGS    "testinput/interfaces.yaml"
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_linearmodel
-                  BOOST
                   SOURCES executables/TestLinearModel.cc
                   ARGS    "testinput/interfaces.yaml"
                   LIBS    qg )
 
 ecbuild_add_test( TARGET test_qg_locations
-                  BOOST
                   SOURCES executables/TestLocations.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    qg )
 
 ecbuild_add_test( TARGET test_qg_observationspace
-                  BOOST
                   SOURCES executables/TestObservationSpace.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    qg )
 
 ecbuild_add_test( TARGET test_qg_obsvector
-                  BOOST
                   SOURCES executables/TestObsVector.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_obsoperator
-                  BOOST
                   SOURCES executables/TestObsOperator.cc
                   ARGS    "testinput/interfaces.yaml"
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_linobsoperator
-                  BOOST
                   SOURCES executables/TestLinearObsOperator.cc
                   ARGS    "testinput/interfaces.yaml"
                   LIBS    qg )
 
 ecbuild_add_test( TARGET test_qg_obserrorcovar
-                  BOOST
                   SOURCES executables/TestObsErrorCovariance.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_obsaux
-                  BOOST
                   SOURCES executables/TestObsAuxControl.cc
                   ARGS    "testinput/interfaces.yaml"
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_obsauxincrement
-                  BOOST
                   SOURCES executables/TestObsAuxIncrement.cc
                   ARGS    "testinput/interfaces.yaml"
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_obsauxcovariance
-                  BOOST
                   SOURCES executables/TestObsAuxCovariance.cc
                   ARGS    "testinput/interfaces.yaml"
                   LIBS    qg )
 
 ecbuild_add_test( TARGET  test_qg_localization
-                  BOOST
                   SOURCES executables/TestLocalization.cc
                   ARGS    "testinput/interfaces.yaml"
                   LIBS    qg )
@@ -337,7 +318,6 @@ ecbuild_add_test( TARGET test_qg_copy_vbal
 
 ecbuild_add_test( TARGET  test_qg_linearvariablechange
                   MPI    1
-                  BOOST
                   SOURCES executables/TestLinearVariableChange.cc
                   ARGS    "testinput/interfaces.yaml"
                   LIBS    qg )

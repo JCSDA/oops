@@ -156,219 +156,183 @@ ecbuild_add_test( TARGET test_l95_makeobs4d12h
 # Test lorenz95 internal classes
 
 ecbuild_add_test( TARGET test_l95_resolution
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/Resolution.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/Resolution.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_stateL95
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/StateL95.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/StateL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_tlmL95
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/TLML95.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/TLML95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_ObsTable
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/ObsTable.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/ObsTable.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_obsVec1D
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/ObsVec1D.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/ObsVec1D.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_locsL95
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/LocsL95.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/LocsL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_gomL95
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/GomL95.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/GomL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_observationL95
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/ObservationL95.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/ObservationL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_obsBias
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/ObsBias.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/ObsBias.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_incrementL95
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/IncrementL95.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/IncrementL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_localizationMatrixL95
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/LocalizationMatrixL95.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/LocalizationMatrixL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_modelBias
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/ModelBias.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/ModelBias.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_modelBiasCorrection
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/ModelBiasCorrection.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/ModelBiasCorrection.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_modelBiasCovariance
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/ModelBiasCovariance.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/ModelBiasCovariance.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_modelL95
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/ModelL95.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/ModelL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_obsBiasCorrection
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/ObsBiasCorrection.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/ObsBiasCorrection.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  LIBS    lorenz95 eckit)
 
 ecbuild_add_test( TARGET test_l95_obsBiasCovariance
-                  BOOST
-                  SOURCES lorenz95/test_main.cc lorenz95/ObsBiasCovariance.cc lorenz95/TestConfig.h
+                  SOURCES lorenz95/ObsBiasCovariance.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 )
+                  LIBS    lorenz95 eckit)
 
 # Test interface classes with lorenz95
 
 ecbuild_add_test( TARGET test_l95_geometry
-                  BOOST
                   SOURCES executables/TestGeometry.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_geovals
-                  BOOST
                   SOURCES executables/TestGeoVaLs.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_state
-                  BOOST
                   SOURCES executables/TestState.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_modelaux
-                  BOOST
                   SOURCES executables/TestModelAuxControl.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_model
-                  BOOST
                   SOURCES executables/TestModel.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_increment
-                  BOOST
                   SOURCES executables/TestIncrement.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_errorcovariance
-                  BOOST
                   SOURCES executables/TestErrorCovariance.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_modelauxincrement
-                  BOOST
                   SOURCES executables/TestModelAuxIncrement.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_modelauxcovariance
-                  BOOST
                   SOURCES executables/TestModelAuxCovariance.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_linearmodel
-                  BOOST
                   SOURCES executables/TestLinearModel.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_observationspace
-                  BOOST
                   SOURCES executables/TestObservationSpace.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_obsvector
-                  BOOST
                   SOURCES executables/TestObsVector.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_obsoperator
-                  BOOST
                   SOURCES executables/TestObsOperator.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_linobsoperator
-                  BOOST
                   SOURCES executables/TestLinearObsOperator.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_obserrorcovar
-                  BOOST
                   SOURCES executables/TestObsErrorCovariance.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_obsaux
-                  BOOST
                   SOURCES executables/TestObsAuxControl.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_obsauxincrement
-                  BOOST
                   SOURCES executables/TestObsAuxIncrement.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_obsauxcovariance
-                  BOOST
                   SOURCES executables/TestObsAuxCovariance.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_localization
-                  BOOST
                   SOURCES executables/TestLocalization.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    lorenz95 )

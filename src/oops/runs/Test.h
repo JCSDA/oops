@@ -11,14 +11,15 @@
 #ifndef OOPS_RUNS_TEST_H_
 #define OOPS_RUNS_TEST_H_
 
+#include <cmath>
 #include <cstring>
 #include <string>
 #include <vector>
 
-#include <boost/test/unit_test.hpp>
 #include <boost/tokenizer.hpp>
-
 #include "eckit/config/Configuration.h"
+#include "eckit/parser/Tokenizer.h"
+#include "eckit/testing/Test.h"
 #include "oops/runs/Application.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
@@ -27,7 +28,6 @@
 namespace oops {
 
 // -----------------------------------------------------------------------------
-
 class Test : public Application {
  public:
   Test() {}
@@ -72,7 +72,7 @@ int Test::execute(const eckit::Configuration & config) const {
   Log::trace() << "Registering the unit tests" << std::endl;
   register_tests();
   Log::trace() << "Running the unit tests" << std::endl;
-  int result = boost::unit_test::unit_test_main(&init_unit_test, argc, argv);
+  int result = eckit::testing::run_tests(argc, argv, false);
   Log::trace() << "Finished running the unit tests" << std::endl;
   Log::error() << "Finished running the unit tests, result = " << result << std::endl;
 
@@ -84,8 +84,12 @@ int Test::execute(const eckit::Configuration & config) const {
 // Return test status
   return result;
 }
-
 // -----------------------------------------------------------------------------
-
+template< typename T >
+bool is_close(T a, T b, T epsilon) {
+  if (std::isnan(a) || std::isnan(b) || std::isinf(a) || std::isinf(b)) return false;
+  return eckit::types::is_approximately_equal(a , b, (abs(a) < abs(b) ? abs(b) : abs(a)) * epsilon);
+}
 }  // namespace oops
 #endif  // OOPS_RUNS_TEST_H_
+

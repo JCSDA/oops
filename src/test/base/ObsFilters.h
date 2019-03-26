@@ -11,15 +11,13 @@
 #include <string>
 #include <vector>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "oops/base/ObsFilterBase.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Locations.h"
@@ -104,19 +102,20 @@ template <typename MODEL> void testFilters() {
       const double zz = ovec_ref.rms();
       oops::Log::info() << "Vector difference between reference and computed: " <<
                            ovec_ref;
-      BOOST_CHECK_SMALL(zz, tol);
+      EXPECT(zz< tol);
     } else {
       // else compare h(x) norm to the norm from the config
       const double zz = ovec.rms();
       const double xx = typeconfs[jj].getDouble("rmsequiv");
-      BOOST_CHECK_CLOSE(xx, zz, tol);
+      EXPECT(oops::is_close(xx, zz, tol));
     }
   }
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> class ObsFilters : public oops::Test {
+template <typename MODEL>
+class ObsFilters : public oops::Test {
  public:
   ObsFilters() {}
   virtual ~ObsFilters() {}
@@ -124,11 +123,10 @@ template <typename MODEL> class ObsFilters : public oops::Test {
   std::string testid() const {return "test::ObsFilters<" + MODEL::name() + ">";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("base/ObsFilters");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testFilters<MODEL>));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("base/ObsFilters/testFilters")
+      { testFilters<MODEL>(); });
   }
 };
 

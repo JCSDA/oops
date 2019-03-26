@@ -14,15 +14,18 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/test/unit_test.hpp>
 
 #include "./TestConfig.h"
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "lorenz95/ModelBias.h"
 #include "lorenz95/ModelBiasCorrection.h"
 #include "lorenz95/ModelBiasCovariance.h"
 #include "lorenz95/Resolution.h"
+#include "oops/util/Logger.h"
 #include "test/TestFixture.h"
+
+using eckit::types::is_approximately_equal;
 
 namespace test {
 
@@ -50,109 +53,108 @@ class ModBiasTestFixture : TestFixture {
   double bias2_;
 };
 // -----------------------------------------------------------------------------
-
+CASE("test_modelBias") {
+  ModBiasTestFixture fix;
 // -----------------------------------------------------------------------------
-BOOST_FIXTURE_TEST_SUITE(test_modelBias, ModBiasTestFixture)
-// -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelBias_constructor_bias) {
-    lorenz95::ModelBias mbias(*resol_, *biasconf_);
-    BOOST_CHECK_EQUAL(mbias.bias(), bias1_);
+  SECTION("test_modelBias_constructor_bias") {
+    lorenz95::ModelBias mbias(*fix.resol_, *fix.biasconf_);
+    EXPECT(mbias.bias() == fix.bias1_);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelBias_constructor_nobias) {
-    lorenz95::ModelBias mbias(*resol_, *nobias_);
+  SECTION("test_modelBias_constructor_nobias") {
+    lorenz95::ModelBias mbias(*fix.resol_, *fix.nobias_);
 
     // because the biasconf_ is empty when used,
     // the active_ flag is false and the bias_ value is 0.0
-    BOOST_CHECK_EQUAL(mbias.bias(), 0.0);
+    EXPECT(mbias.bias() == 0.0);
 }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelBias_constructor_active) {
-    lorenz95::ModelBias mbias1(*resol_, *biasconf_);
-    lorenz95::ModelBias mbias2(*resol_, mbias1);
-    BOOST_CHECK_EQUAL(mbias2.bias(), bias1_);
+  SECTION("test_modelBias_constructor_active") {
+    lorenz95::ModelBias mbias1(*fix.resol_, *fix.biasconf_);
+    lorenz95::ModelBias mbias2(*fix.resol_, mbias1);
+    EXPECT(mbias2.bias() == fix.bias1_);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelBias_constructor_inactive) {
-    lorenz95::ModelBias mbias1(*resol_, *nobias_);
-    lorenz95::ModelBias mbias2(*resol_, mbias1);
+  SECTION("test_modelBias_constructor_inactive") {
+    lorenz95::ModelBias mbias1(*fix.resol_, *fix.nobias_);
+    lorenz95::ModelBias mbias2(*fix.resol_, mbias1);
 
     // because the biasconf_ is empty when used,
     // the active_ flag is false and the bias_ value is 0.0
-    BOOST_CHECK_EQUAL(mbias2.bias(), 0.0);
+    EXPECT(mbias2.bias() == 0.0);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelBias_constructor_active_copy) {
-    lorenz95::ModelBias mbias1(*resol_, *biasconf_);
+  SECTION("test_modelBias_constructor_active_copy") {
+    lorenz95::ModelBias mbias1(*fix.resol_, *fix.biasconf_);
     lorenz95::ModelBias mbias2(mbias1, true);
-    BOOST_CHECK_EQUAL(mbias2.bias(), bias1_);
+    EXPECT(mbias2.bias() == fix.bias1_);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelBias_constructor_active_nocopy) {
-    lorenz95::ModelBias mbias1(*resol_, *biasconf_);
+  SECTION("test_modelBias_constructor_active_nocopy") {
+    lorenz95::ModelBias mbias1(*fix.resol_, *fix.biasconf_);
     lorenz95::ModelBias mbias2(mbias1, false);
 
     // because copy flag is set to false, bias is 0.0
-    BOOST_CHECK_EQUAL(mbias2.bias(), 0.0);
+    EXPECT(mbias2.bias() == 0.0);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelBias_constructor_inactive_copy) {
-    lorenz95::ModelBias mbias1(*resol_, *nobias_);
+  SECTION("test_modelBias_constructor_inactive_copy") {
+    lorenz95::ModelBias mbias1(*fix.resol_, *fix.nobias_);
     lorenz95::ModelBias mbias2(mbias1, true);
 
     // because the biasconf_ is empty when used,
     // the active_ flag is false and the bias_ value is 0.0
-    BOOST_CHECK_EQUAL(mbias2.bias(), 0.0);
+    EXPECT(mbias2.bias() == 0.0);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelBias_constructor_inactive_nocopy) {
-    lorenz95::ModelBias mbias1(*resol_, *nobias_);
+  SECTION("test_modelBias_constructor_inactive_nocopy") {
+    lorenz95::ModelBias mbias1(*fix.resol_, *fix.nobias_);
     lorenz95::ModelBias mbias2(mbias1, false);
-    BOOST_CHECK_EQUAL(mbias2.bias(), 0.0);
+    EXPECT(mbias2.bias() == 0.0);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelBias_destructor) {
+  SECTION("test_modelBias_destructor") {
     // not yet implemented
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelBias_classname) {
-    lorenz95::ModelBias mbias(*resol_, *biasconf_);
-    BOOST_CHECK_EQUAL(mbias.classname(), "lorenz95::ModelBias");
+  SECTION("test_modelBias_classname") {
+    lorenz95::ModelBias mbias(*fix.resol_, *fix.biasconf_);
+    EXPECT(mbias.classname() == "lorenz95::ModelBias");
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelBias_compound_assignment_active) {
-    lorenz95::ModelBias mbias(*resol_, *biasconf_);
+  SECTION("test_modelBias_compound_assignment_active") {
+    lorenz95::ModelBias mbias(*fix.resol_, *fix.biasconf_);
 
-    mbias += *dbias_;
+    mbias += *fix.dbias_;
 
-    BOOST_CHECK_EQUAL(mbias.bias(), bias1_ + bias2_);
+    EXPECT(mbias.bias() == fix.bias1_ + fix.bias2_);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelBias_compound_assignment_inactive) {
-    lorenz95::ModelBias mbias(*resol_, *nobias_);
+  SECTION("test_modelBias_compound_assignment_inactive") {
+    lorenz95::ModelBias mbias(*fix.resol_, *fix.nobias_);
 
-    mbias += *dbias_;
+    mbias += *fix.dbias_;
 
     // because the biasconf_ is empty,
     // mbias bias value is not modified from 0.0
-    BOOST_CHECK_EQUAL(mbias.bias(), 0.0);
+    EXPECT(mbias.bias() == 0.0);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelBias_bias) {
-    lorenz95::ModelBias mbias(*resol_, *biasconf_);
-    BOOST_CHECK_EQUAL(mbias.bias(), bias1_);
+  SECTION("test_modelBias_bias") {
+    lorenz95::ModelBias mbias(*fix.resol_, *fix.biasconf_);
+    EXPECT(mbias.bias() == fix.bias1_);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelBias_read) {
+  SECTION("test_modelBias_read") {
     // not yet implemented
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelBias_write) {
+  SECTION("test_modelBias_write") {
     // not yet implemented
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelBias_stream_output) {
-    lorenz95::ModelBias mbias(*resol_, *biasconf_);
+  SECTION("test_modelBias_stream_output") {
+    lorenz95::ModelBias mbias(*fix.resol_, *fix.biasconf_);
 
     // use the operator<< method to write the value to a file
     std::filebuf fb;
@@ -165,7 +167,7 @@ BOOST_FIXTURE_TEST_SUITE(test_modelBias, ModBiasTestFixture)
     // then read the value that was written to the file
     std::string inputString;
     std::string inputBias;
-    double testBias = bias1_;
+    double testBias = fix.bias1_;
     double bias = 0.0;
     int biasStartPos = 12;  // length of "ModelBias = " is 12
     std::ifstream inputFile(filename.c_str());
@@ -179,18 +181,22 @@ BOOST_FIXTURE_TEST_SUITE(test_modelBias, ModBiasTestFixture)
         bias = boost::lexical_cast<double>(inputBias);
       }
       catch(boost::bad_lexical_cast const&) {
-        BOOST_ERROR("operator<< incorrectly output a non-double");
+        oops::Log::error() << "operator<< incorrectly output a non-double" << std::endl;
       }
 
-      BOOST_CHECK_CLOSE(testBias, bias, 0.0001);
+      EXPECT(is_approximately_equal(testBias, bias, 0.0001));
     } else {
       // if we can't open the file then we can't
       // verify that the value was correctly written
-      BOOST_ERROR("operator<< functionality cannot be determined");
+      oops::Log::error() << "operator<< functionality cannot be determined" << std::endl;
     }
     inputFile.close();
   }
 // -----------------------------------------------------------------------------
-
-BOOST_AUTO_TEST_SUITE_END()
+}  //  CASE
+// -----------------------------------------------------------------------------
 }  // namespace test
+int main(int argc, char **argv)
+{
+    return eckit::testing::run_tests ( argc, argv );
+}

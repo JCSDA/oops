@@ -14,14 +14,12 @@
 #include <string>
 #include <vector>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
+#include "eckit/testing/Test.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/runs/Test.h"
@@ -77,10 +75,10 @@ template <typename MODEL> void testConstructor() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     boost::scoped_ptr<ObsVector_> ov(new ObsVector_(*Test_::obspace()[jj], Test_::observed(jj)));
-    BOOST_CHECK(ov.get());
+    EXPECT(ov.get());
 
     ov.reset();
-    BOOST_CHECK(!ov.get());
+    EXPECT(!ov.get());
   }
 }
 
@@ -94,12 +92,12 @@ template <typename MODEL> void testCopyConstructor() {
     boost::scoped_ptr<ObsVector_> ov(new ObsVector_(*Test_::obspace()[jj], Test_::observed(jj)));
 
     boost::scoped_ptr<ObsVector_> other(new ObsVector_(*ov));
-    BOOST_CHECK(other.get());
+    EXPECT(other.get());
 
     other.reset();
-    BOOST_CHECK(!other.get());
+    EXPECT(!other.get());
 
-    BOOST_CHECK(ov.get());
+    EXPECT(ov.get());
   }
 }
 
@@ -116,18 +114,19 @@ template <typename MODEL> void testNotZero() {
     ov.random();
 
     const double ovov2 = dot_product(ov, ov);
-    BOOST_CHECK(ovov2 > zero);
+    EXPECT(ovov2 > zero);
 
     ov.zero();
 
     const double zz = dot_product(ov, ov);
-    BOOST_CHECK(zz == zero);
+    EXPECT(zz == zero);
   }
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> class ObsVector : public oops::Test {
+template <typename MODEL>
+class ObsVector : public oops::Test {
  public:
   ObsVector() {}
   virtual ~ObsVector() {}
@@ -135,13 +134,14 @@ template <typename MODEL> class ObsVector : public oops::Test {
   std::string testid() const {return "test::ObsVector<" + MODEL::name() + ">";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/ObsVector");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testCopyConstructor<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testNotZero<MODEL>));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("interface/ObsVector/testConstructor")
+      { testConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/ObsVector/testCopyConstructor")
+      { testCopyConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/ObsVector/testNotZero")
+      { testNotZero<MODEL>(); });
   }
 };
 

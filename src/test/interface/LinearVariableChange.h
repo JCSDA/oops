@@ -16,15 +16,13 @@
 #include <string>
 #include <vector>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
-#include <boost/test/unit_test.hpp>
 
 #include "eckit/config/Configuration.h"
+#include "eckit/testing/Test.h"
 #include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/instantiateVariableChangeFactories.h"
@@ -107,12 +105,12 @@ template <typename MODEL> void testLinearVariableChangeZero() {
     // dxout = 0, check if K.dxout = 0
     dxout.zero();
     changevar->multiply(dxout, Kdxout);
-    BOOST_CHECK_EQUAL(Kdxout.norm(), 0.0);
+    EXPECT(Kdxout.norm() == 0.0);
 
     // dxin = 0, check if K^T.dxin = 0
     dxin.zero();
     changevar->multiplyAD(dxin, KTdxin);
-    BOOST_CHECK_EQUAL(KTdxin.norm(), 0.0);
+    EXPECT(KTdxin.norm() == 0.0);
 
     const bool testinverse = Test_::confs()[jj].getBool("testinverse", true);
     if (testinverse)
@@ -123,11 +121,11 @@ template <typename MODEL> void testLinearVariableChangeZero() {
         oops::Log::info() << "Doing zero test for inverse" << std::endl;
         dxout.zero();
         changevar->multiplyInverseAD(dxout, KTIdxout);
-        BOOST_CHECK_EQUAL(KTIdxout.norm(), 0.0);
+        EXPECT(KTIdxout.norm() == 0.0);
 
         dxin.zero();
         changevar->multiplyInverse(dxin, KIdxin);
-        BOOST_CHECK_EQUAL(KIdxin.norm(), 0.0);
+        EXPECT(KIdxin.norm() == 0.0);
       } else {
       oops::Log::info() << "Not doing zero test for inverse" << std::endl;
     }
@@ -174,8 +172,8 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
                       << (zz1-zz2)/zz1 << std::endl;
     oops::Log::info() << "<dxout,KTdxin>-<Kdxout,dxin>/<Kdxout,dxin>="
                       << (zz1-zz2)/zz2 << std::endl;
-    const double tol = 1e-8;
-    BOOST_CHECK_CLOSE(zz1, zz2, tol);
+    const double tol = 1e-10;
+    EXPECT(oops::is_close(zz1, zz2, tol));
     const bool testinverse = Test_::confs()[jj].getBool("testinverse", true);
     if (testinverse)
       {
@@ -194,7 +192,7 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
                       << (zz1-zz2)/zz1 << std::endl;
         oops::Log::info() << "<dxout,KinvTdxin>-<Kinvdxout,dxin>/<Kinvdxout,dxin>="
                       << (zz1-zz2)/zz2 << std::endl;
-        BOOST_CHECK_CLOSE(zz1, zz2, tol);
+        EXPECT(oops::is_close(zz1, zz2, tol));
       } else {
       oops::Log::info() << "Not doing adjoint test for inverse" << std::endl;
     }
@@ -240,17 +238,18 @@ template <typename MODEL> void testLinearVariableChangeInverse() {
       oops::Log::info() << "<x>, <KK^{-1}x>=" << zz1 << " " << zz2 << std::endl;
       oops::Log::info() << "<x>-<KK^{-1}x>=" << zz1-zz2 << std::endl;
 
-      BOOST_CHECK((zz1-zz2) < tol);
+      EXPECT((zz1-zz2) < tol);
     } else {
       oops::Log::info() << "multiplyInverse test not executed" << std::endl;
-      BOOST_CHECK(1.0 < 2.0);
+      EXPECT(1.0 < 2.0);
     }
   }
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> class LinearVariableChange : public oops::Test {
+template <typename MODEL>
+class LinearVariableChange : public oops::Test {
  public:
   LinearVariableChange() {}
   virtual ~LinearVariableChange() {}
@@ -258,13 +257,14 @@ template <typename MODEL> class LinearVariableChange : public oops::Test {
   std::string testid() const {return "test::LinearVariableChange<" + MODEL::name() + ">";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/LinearVariableChange");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testLinearVariableChangeZero<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testLinearVariableChangeAdjoint<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testLinearVariableChangeInverse<MODEL>));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("interface/LinearVariableChange/testLinearVariableChangeZero")
+      { testLinearVariableChangeZero<MODEL>(); });
+    ts.emplace_back(CASE("interface/LinearVariableChange/testLinearVariableChangeAdjoint")
+      { testLinearVariableChangeAdjoint<MODEL>(); });
+    ts.emplace_back(CASE("interface/LinearVariableChange/testLinearVariableChangeInverse")
+      { testLinearVariableChangeInverse<MODEL>(); });
   }
 };
 

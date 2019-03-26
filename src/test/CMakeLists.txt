@@ -1,11 +1,12 @@
 #include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
-ecbuild_add_test( TARGET  test_util.x
-                  BOOST
+ecbuild_add_test( TARGET  test_util_datetime
                   SOURCES util/DateTime.cc
-                          util/Duration.cc
-                          util/test_main.cc
-                  LIBS    oops )
+                  LIBS    oops eckit )
+
+ecbuild_add_test( TARGET  test_util_duration
+                  SOURCES util/Duration.cc
+                  LIBS    oops eckit )
 
 if( HAVE_FCTEST )
 add_fctest( TARGET  test_util_config_intfb.x

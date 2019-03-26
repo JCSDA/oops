@@ -11,10 +11,10 @@
 #include <iostream>
 
 #include <boost/scoped_ptr.hpp>
-#include <boost/test/unit_test.hpp>
 
 #include "./TestConfig.h"
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "lorenz95/ModelBiasCorrection.h"
 #include "lorenz95/ModelBiasCovariance.h"
 #include "lorenz95/Resolution.h"
@@ -37,81 +37,85 @@ class ModBiasCovTestFixture : TestFixture {
   boost::scoped_ptr<const eckit::LocalConfiguration> nobias_;
 };
 // -----------------------------------------------------------------------------
-
+CASE("test_modelBiasCovariance") {
+  ModBiasCovTestFixture f;
 // -----------------------------------------------------------------------------
-BOOST_FIXTURE_TEST_SUITE(test_modelBiasCovariance, ModBiasCovTestFixture)
-// -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelBiasCovariance_constructor_conf) {
-    lorenz95::ModelBiasCovariance bcovar(*covconf_, *resol_);
-    BOOST_CHECK_EQUAL(bcovar.active(), true);
+  SECTION("test_modelBiasCovariance_constructor_conf") {
+    lorenz95::ModelBiasCovariance bcovar(*f.covconf_, *f.resol_);
+    EXPECT(bcovar.active() == true);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelBiasCovariance_constructor_no_conf) {
-    lorenz95::ModelBiasCovariance bcovar(*nobias_, *resol_);
-    BOOST_CHECK_EQUAL(bcovar.active(), false);
+  SECTION("test_modelBiasCovariance_constructor_no_conf") {
+    lorenz95::ModelBiasCovariance bcovar(*f.nobias_, *f.resol_);
+    EXPECT(bcovar.active() == false);
 }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelBiasCovariance_linearize) {
+  SECTION("test_modelBiasCovariance_linearize") {
     // not yet implemented
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelBiasCovariance_multiply_active) {
+  SECTION("test_modelBiasCovariance_multiply_activei") {
     // construct the ModelBiasCorrection object
-    lorenz95::ModelBiasCovariance bcovar(*covconf_, *resol_);
-    lorenz95::ModelBiasCorrection dbias1(*resol_, *covconf_);
+    lorenz95::ModelBiasCovariance bcovar(*f.covconf_, *f.resol_);
+    lorenz95::ModelBiasCorrection dbias1(*f.resol_, *f.covconf_);
     dbias1.bias() = 2.0;
     lorenz95::ModelBiasCorrection dbias2(dbias1, true);
 
     bcovar.multiply(dbias1, dbias2);
 
-    double stdev = covconf_->getDouble("standard_deviation");
-    BOOST_CHECK_EQUAL(dbias2.bias(), dbias1.bias() * stdev * stdev);
+    double stdev = f.covconf_->getDouble("standard_deviation");
+    EXPECT(dbias2.bias() == dbias1.bias() * stdev * stdev);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelBiasCovariance_multiply_inactive) {
+  SECTION("test_modelBiasCovariance_multiply_inactive") {
     // construct the ModelBiasCorrection object
-    lorenz95::ModelBiasCovariance bcovar(*nobias_, *resol_);
-    lorenz95::ModelBiasCorrection dbias1(*resol_, *covconf_);
+    lorenz95::ModelBiasCovariance bcovar(*f.nobias_, *f.resol_);
+    lorenz95::ModelBiasCorrection dbias1(*f.resol_, *f.covconf_);
     dbias1.bias() = 2.0;
     lorenz95::ModelBiasCorrection dbias2(dbias1, true);
 
     bcovar.multiply(dbias1, dbias2);
 
     // because the covconf_ is empty, the bias is set to 0
-    BOOST_CHECK_EQUAL(dbias2.bias(), 0.0);
+    EXPECT(dbias2.bias() == 0.0);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelBiasCovariance_invMult_active) {
+  SECTION("test_modelBiasCovariance_invMult_active") {
     // construct the ModelBiasCorrection object
-    lorenz95::ModelBiasCovariance bcovar(*covconf_, *resol_);
-    lorenz95::ModelBiasCorrection dbias1(*resol_, *covconf_);
+    lorenz95::ModelBiasCovariance bcovar(*f.covconf_, *f.resol_);
+    lorenz95::ModelBiasCorrection dbias1(*f.resol_, *f.covconf_);
     dbias1.bias() = 2.0;
     lorenz95::ModelBiasCorrection dbias2(dbias1, true);
 
     bcovar.inverseMultiply(dbias1, dbias2);
 
-    double stdev = covconf_->getDouble("standard_deviation");
-    BOOST_CHECK_EQUAL(dbias2.bias(), dbias1.bias() *1.0 / (stdev * stdev));
+    double stdev = f.covconf_->getDouble("standard_deviation");
+    EXPECT(dbias2.bias() == dbias1.bias() *1.0 / (stdev * stdev));
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelBiasCovariance_invMult_inactive) {
+  SECTION("test_modelBiasCovariance_invMult_inactive") {
     // construct the ModelBiasCorrection object
-    lorenz95::ModelBiasCovariance bcovar(*nobias_, *resol_);
-    lorenz95::ModelBiasCorrection dbias1(*resol_, *covconf_);
+    lorenz95::ModelBiasCovariance bcovar(*f.nobias_, *f.resol_);
+    lorenz95::ModelBiasCorrection dbias1(*f.resol_, *f.covconf_);
     dbias1.bias() = 2.0;
     lorenz95::ModelBiasCorrection dbias2(dbias1, true);
 
     bcovar.inverseMultiply(dbias1, dbias2);
 
     // because the covconf_ is empty, the bias is set to 0
-    BOOST_CHECK_EQUAL(dbias2.bias(), 0.0);
+    EXPECT(dbias2.bias() == 0.0);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_modelBiasCovariance_active) {
-    lorenz95::ModelBiasCovariance bcovar(*covconf_, *resol_);
-    BOOST_CHECK_EQUAL(bcovar.active(), true);
+  SECTION("test_modelBiasCovariance_active") {
+    lorenz95::ModelBiasCovariance bcovar(*f.covconf_, *f.resol_);
+    EXPECT(bcovar.active() == true);
   }
 // -----------------------------------------------------------------------------
-
-BOOST_AUTO_TEST_SUITE_END()
+}  //  CASE
+// -----------------------------------------------------------------------------
 }  // namespace test
+int main(int argc, char **argv)
+{
+    return eckit::testing::run_tests ( argc, argv );
+}
+

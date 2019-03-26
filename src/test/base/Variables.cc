@@ -9,10 +9,14 @@
  */
 
 #include <string>
+#include <vector>
+
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
+
 #include <boost/scoped_ptr.hpp>
-#include <boost/test/unit_test.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "oops/base/Variables.h"
 #include "test/TestEnvironment.h"
 #include "test/TestFixture.h"
@@ -31,35 +35,38 @@ class VariablesFixture : TestFixture {
   boost::scoped_ptr<const eckit::LocalConfiguration> conf_;
 };
 // -----------------------------------------------------------------------------
-
+CASE("VariablesFixture") {
+  VariableFixture fix;
 // -----------------------------------------------------------------------------
-BOOST_FIXTURE_TEST_SUITE(test_Variables, VariablesFixture)
-// -----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(testConstructor) {
-  boost::scoped_ptr<oops::Variables> vars(new oops::Variables(*conf_));
-  BOOST_CHECK(vars.get());
+SECTION("testConstructor") {
+  boost::scoped_ptr<oops::Variables> vars(new oops::Variables(*fix.conf_));
+  EXPECT(vars.get());
 
   vars.reset();
-  BOOST_CHECK(!vars.get());
+  EXPECT(!vars.get());
 }
 
 // -----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(testCopyConstructor) {
-  boost::scoped_ptr<oops::Variables> vars(new oops::Variables(*conf_));
+SECTION("testCopyConstructor") {
+  boost::scoped_ptr<oops::Variables> vars(new oops::Variables(*fix.conf_));
 
   boost::scoped_ptr<oops::Variables> other(new oops::Variables(*vars));
-  BOOST_CHECK(other.get());
+  EXPECT(other.get());
 
   other.reset();
-  BOOST_CHECK(!other.get());
+  EXPECT(!other.get());
 
-  BOOST_CHECK(vars.get());
+  EXPECT(vars.get());
 }
 
 // -----------------------------------------------------------------------------
-BOOST_AUTO_TEST_SUITE_END()
+}  //  CASE
 // -----------------------------------------------------------------------------
 
 }  // namespace test
+int main(int argc, char **argv)
+{
+    return eckit::testing::run_tests ( argc, argv );
+}

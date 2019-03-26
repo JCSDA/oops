@@ -11,10 +11,10 @@
 #include <iostream>
 
 #include <boost/scoped_ptr.hpp>
-#include <boost/test/unit_test.hpp>
 
 #include "./TestConfig.h"
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "lorenz95/ObsBiasCorrection.h"
 #include "lorenz95/ObsBiasCovariance.h"
 #include "lorenz95/Resolution.h"
@@ -36,80 +36,83 @@ class ObsBiasTestFixture : TestFixture {
   boost::scoped_ptr<const eckit::LocalConfiguration> covconf_;
 };
 // -----------------------------------------------------------------------------
-
+CASE("test_obsBiasCovariance") {
+  ObsBiasTestFixture fix;
 // -----------------------------------------------------------------------------
-BOOST_FIXTURE_TEST_SUITE(test_obsBiasCovariance, ObsBiasTestFixture)
-// -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCovariance_constructor_conf) {
-    lorenz95::ObsBiasCovariance obcovar(*covconf_);
-    BOOST_CHECK_EQUAL(obcovar.active(), true);
+  SECTION("test_obsBiasCovariance_constructor_conf") {
+    lorenz95::ObsBiasCovariance obcovar(*fix.covconf_);
+    EXPECT(obcovar.active() == true);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCovariance_constructor_no_conf) {
-    lorenz95::ObsBiasCovariance obcovar(*nobias_);
-    BOOST_CHECK_EQUAL(obcovar.active(), false);
+  SECTION("test_obsBiasCovariance_constructor_no_conf") {
+    lorenz95::ObsBiasCovariance obcovar(*fix.nobias_);
+    EXPECT(obcovar.active() == false);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCovariance_destructor) {
+  SECTION("test_obsBiasCovariance_destructor") {
     // not yet implemented
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCovariance_linearize) {
+  SECTION("test_obsBiasCovariance_linearize") {
     // not yet implemented
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCovariance_multiply_active) {
-    lorenz95::ObsBiasCovariance obcovar(*covconf_);
+  SECTION("test_obsBiasCovariance_multiply_active") {
+    lorenz95::ObsBiasCovariance obcovar(*fix.covconf_);
 
-    lorenz95::ObsBiasCorrection db1(*covconf_);
+    lorenz95::ObsBiasCorrection db1(*fix.covconf_);
     db1.value() = 2.0;
-    lorenz95::ObsBiasCorrection db2(db1, *covconf_);
+    lorenz95::ObsBiasCorrection db2(db1, *fix.covconf_);
 
     obcovar.multiply(db1, db2);
 
-    const double stdev = covconf_->getDouble("standard_deviation");
-    BOOST_CHECK_EQUAL(db2.value(), db1.value() * stdev * stdev);
+    const double stdev = fix.covconf_->getDouble("standard_deviation");
+    EXPECT(db2.value() == db1.value() * stdev * stdev);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCovariance_multiply_inactive) {
-    lorenz95::ObsBiasCovariance obcovar(*nobias_);
+  SECTION("test_obsBiasCovariance_multiply_inactive") {
+    lorenz95::ObsBiasCovariance obcovar(*fix.nobias_);
 
-    lorenz95::ObsBiasCorrection db1(*nobias_);
+    lorenz95::ObsBiasCorrection db1(*fix.nobias_);
     db1.value() = 2.0;
-    lorenz95::ObsBiasCorrection db2(db1, *covconf_);
+    lorenz95::ObsBiasCorrection db2(db1, *fix.covconf_);
 
     obcovar.multiply(db1, db2);
 
     // because the OBC has empty config, the bias is set to 0.0
-    BOOST_CHECK_EQUAL(db2.value(), 0.0);
+    EXPECT(db2.value() == 0.0);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCovariance_invMult_active) {
-    lorenz95::ObsBiasCovariance obcovar(*covconf_);
+  SECTION("test_obsBiasCovariance_invMult_active") {
+    lorenz95::ObsBiasCovariance obcovar(*fix.covconf_);
 
-    lorenz95::ObsBiasCorrection db1(*covconf_);
+    lorenz95::ObsBiasCorrection db1(*fix.covconf_);
     db1.value() = 2.0;
-    lorenz95::ObsBiasCorrection db2(db1, *covconf_);
+    lorenz95::ObsBiasCorrection db2(db1, *fix.covconf_);
 
     obcovar.inverseMultiply(db1, db2);
 
-    const double stdev = covconf_->getDouble("standard_deviation");
-    BOOST_CHECK_EQUAL(db2.value(), db1.value() * 1.0 / (stdev * stdev));
+    const double stdev = fix.covconf_->getDouble("standard_deviation");
+    EXPECT(db2.value() == db1.value() * 1.0 / (stdev * stdev));
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_obsBiasCovariance_invMult_inactive) {
-    lorenz95::ObsBiasCovariance obcovar(*nobias_);
+  SECTION("test_obsBiasCovariance_invMult_inactive") {
+    lorenz95::ObsBiasCovariance obcovar(*fix.nobias_);
 
-    lorenz95::ObsBiasCorrection db1(*nobias_);
+    lorenz95::ObsBiasCorrection db1(*fix.nobias_);
     db1.value() = 2.0;
-    lorenz95::ObsBiasCorrection db2(db1, *covconf_);
+    lorenz95::ObsBiasCorrection db2(db1, *fix.covconf_);
 
     obcovar.inverseMultiply(db1, db2);
 
     // because the OBC has empty config, the bias is set to 0.0
-    BOOST_CHECK_EQUAL(db2.value(), 0.0);
+    EXPECT(db2.value() == 0.0);
   }
 // -----------------------------------------------------------------------------
-
-BOOST_AUTO_TEST_SUITE_END()
+}  //  CASE
+// -----------------------------------------------------------------------------
 }  // namespace test
+int main(int argc, char **argv)
+{
+    return eckit::testing::run_tests ( argc, argv );
+}

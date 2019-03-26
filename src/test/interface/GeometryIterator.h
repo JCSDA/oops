@@ -15,15 +15,13 @@
 #include <string>
 #include <vector>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
+#include "eckit/testing/Test.h"
 #include "oops/base/GridPoint.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
@@ -64,10 +62,10 @@ template <typename MODEL> void testConstructor() {
   Geometry_ geom(geomConfig);
 
   boost::scoped_ptr<GeometryIterator_> iter(new GeometryIterator_(geom.begin()));
-  BOOST_CHECK(iter.get());
+  EXPECT(iter.get());
 
   iter.reset();
-  BOOST_CHECK(!iter.get());
+  EXPECT(!iter.get());
 }
 
 // -----------------------------------------------------------------------------
@@ -103,7 +101,7 @@ template <typename MODEL> void testIterator() {
   oops::Log::debug() << n << " rms from iterator: " << rms << std::endl;
   oops::Log::debug() << "rms from config: " << rms_conf << std::endl;
 
-  BOOST_CHECK_CLOSE(rms, rms_conf, tol);
+  EXPECT(oops::is_close(rms, rms_conf, tol));
 }
 
 // -----------------------------------------------------------------------------
@@ -112,16 +110,17 @@ template <typename MODEL> class GeometryIterator : public oops::Test {
  public:
   GeometryIterator() {}
   virtual ~GeometryIterator() {}
+
  private:
   std::string testid() const {return "test::GeometryIterator<" + MODEL::name() + ">";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/GeometryIterator");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testIterator<MODEL>));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("interface/GeometryIterator/testConstructor")
+      { testConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/GeometryIterator/testIterator")
+      { testIterator<MODEL>(); });
   }
 };
 

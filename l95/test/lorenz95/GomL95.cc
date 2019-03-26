@@ -9,10 +9,10 @@
  */
 
 #include <boost/scoped_ptr.hpp>
-#include <boost/test/unit_test.hpp>
 
 #include "./TestConfig.h"
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "lorenz95/GomL95.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ObservationL95.h"
@@ -44,61 +44,64 @@ class GomTestFixture : TestFixture {
   boost::scoped_ptr<oops::Variables> novar_;
 };
 // -----------------------------------------------------------------------------
-
+CASE("test_GomL95") {
+  GomTestFixture fix;
 // -----------------------------------------------------------------------------
-BOOST_FIXTURE_TEST_SUITE(test_GomL95, GomTestFixture)
-// -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_GomL95_constructor) {
-    boost::scoped_ptr<lorenz95::GomL95> gom(new lorenz95::GomL95(*locs_, *novar_));
-    BOOST_CHECK(gom.get() != NULL);
+  SECTION("test_GomL95_constructor") {
+    boost::scoped_ptr<lorenz95::GomL95> gom(new lorenz95::GomL95(*fix.locs_, *fix.novar_));
+    EXPECT(gom.get() != NULL);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_GomL95_nobs) {
-    boost::scoped_ptr<lorenz95::GomL95> gom(new lorenz95::GomL95(*locs_, *novar_));
+  SECTION("test_GomL95_nobs") {
+    boost::scoped_ptr<lorenz95::GomL95> gom(new lorenz95::GomL95(*fix.locs_, *fix.novar_));
     size_t ref = 160;
-    BOOST_CHECK_EQUAL(gom->size(), ref);
+    EXPECT(gom->size() == ref);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_gomL95_classname) {
-    boost::scoped_ptr<lorenz95::GomL95> gom(new lorenz95::GomL95(*locs_, *novar_));
-    BOOST_CHECK_EQUAL(gom->classname(), "lorenz95::GomL95");
+  SECTION("test_gomL95_classname") {
+    boost::scoped_ptr<lorenz95::GomL95> gom(new lorenz95::GomL95(*fix.locs_, *fix.novar_));
+    EXPECT(gom->classname() == "lorenz95::GomL95");
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_gomL95_zero) {
-    boost::scoped_ptr<lorenz95::GomL95> gom(new lorenz95::GomL95(*locs_, *novar_));
+  SECTION("test_gomL95_zero") {
+    boost::scoped_ptr<lorenz95::GomL95> gom(new lorenz95::GomL95(*fix.locs_, *fix.novar_));
     gom->zero();
     for (size_t i = 0; i < gom->size(); ++i) {
-      BOOST_CHECK_EQUAL((*gom)[i], 0.0);
+      EXPECT((*gom)[i] == 0.0);
     }
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_gomL95_dot_product_with) {
-    boost::scoped_ptr<lorenz95::GomL95> gom1(new lorenz95::GomL95(*locs_, *novar_));
+  SECTION("test_gomL95_dot_product_with") {
+    boost::scoped_ptr<lorenz95::GomL95> gom1(new lorenz95::GomL95(*fix.locs_, *fix.novar_));
     gom1->zero();
-    boost::scoped_ptr<lorenz95::GomL95> gom2(new lorenz95::GomL95(*locs_, *novar_));
+    boost::scoped_ptr<lorenz95::GomL95> gom2(new lorenz95::GomL95(*fix.locs_, *fix.novar_));
     gom2->zero();
 
     double zz = gom1->dot_product_with(*gom2);
-    BOOST_CHECK_EQUAL(zz, 0.0);
+    EXPECT(zz == 0.0);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_gomL95_operator) {
-    boost::scoped_ptr<lorenz95::GomL95> gom1(new lorenz95::GomL95(*locs_, *novar_));
+  SECTION("test_gomL95_operator") {
+    boost::scoped_ptr<lorenz95::GomL95> gom1(new lorenz95::GomL95(*fix.locs_, *fix.novar_));
     gom1->zero();
-    boost::scoped_ptr<lorenz95::GomL95> gom2(new lorenz95::GomL95(*locs_, *novar_));
+    boost::scoped_ptr<lorenz95::GomL95> gom2(new lorenz95::GomL95(*fix.locs_, *fix.novar_));
     gom2->zero();
 
     (*gom1)[1] = 1.0;
     (*gom2)[3] = 1.0;
     double zz = gom1->dot_product_with(*gom2);
-    BOOST_CHECK_EQUAL(zz, 0.0);
+    EXPECT(zz == 0.0);
 
     (*gom1)[3] = 1.0;
     zz = gom1->dot_product_with(*gom2);
-    BOOST_CHECK_EQUAL(zz, 1.0);
+    EXPECT(zz == 1.0);
   }
 // -----------------------------------------------------------------------------
-BOOST_AUTO_TEST_SUITE_END()
+}  //  CASE
 // -----------------------------------------------------------------------------
 
 }  // namespace test
+int main(int argc, char **argv)
+{
+    return eckit::testing::run_tests ( argc, argv );
+}

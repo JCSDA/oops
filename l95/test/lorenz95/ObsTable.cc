@@ -9,10 +9,10 @@
  */
 
 #include <boost/scoped_ptr.hpp>
-#include <boost/test/unit_test.hpp>
 
 #include "./TestConfig.h"
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ObsTable.h"
 #include "test/TestFixture.h"
@@ -35,23 +35,25 @@ class ObsTableTestFixture : public TestFixture {
   boost::scoped_ptr<const util::DateTime> end_;
 };
 // -----------------------------------------------------------------------------
-
+CASE("test_ObsTable") {
+  ObsTableTestFixture fix;
 // -----------------------------------------------------------------------------
-BOOST_FIXTURE_TEST_SUITE(test_ObsTable, ObsTableTestFixture)
-// -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_ObsTable_constructor) {
-    boost::scoped_ptr<lorenz95::ObsTable> ot(new lorenz95::ObsTable(*testconf_, *bgn_, *end_));
-    BOOST_CHECK(ot.get() != NULL);
+  SECTION("test_ObsTable_constructor") {
+    boost::scoped_ptr<lorenz95::ObsTable>
+      ot(new lorenz95::ObsTable(*fix.testconf_, *fix.bgn_, *fix.end_));
+    EXPECT(ot.get() != NULL);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_ObsTable_nobs) {
-    boost::scoped_ptr<lorenz95::ObsTable> ot(new lorenz95::ObsTable(*testconf_, *bgn_, *end_));
+  SECTION("test_ObsTable_nobs") {
+    boost::scoped_ptr<lorenz95::ObsTable>
+      ot(new lorenz95::ObsTable(*fix.testconf_, *fix.bgn_, *fix.end_));
     const unsigned int nobs = 160;
-    BOOST_CHECK_EQUAL(ot->nobs(), nobs);
+    EXPECT(ot->nobs() == nobs);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_observationL95_put_get) {
-    boost::scoped_ptr<lorenz95::ObsTable> ot(new lorenz95::ObsTable(*testconf_, *bgn_, *end_));
+  SECTION("test_observationL95_put_get") {
+    boost::scoped_ptr<lorenz95::ObsTable>
+      ot(new lorenz95::ObsTable(*fix.testconf_, *fix.bgn_, *fix.end_));
 
     unsigned int nn = ot->nobs();
     std::vector<double> v1(nn);
@@ -63,44 +65,51 @@ BOOST_FIXTURE_TEST_SUITE(test_ObsTable, ObsTableTestFixture)
     std::vector<double> v2;
     ot->getdb("ObsTest", v2);
 
-    BOOST_CHECK_EQUAL(v2.size(), nn);
+    EXPECT(v2.size() == nn);
     for (unsigned int jj = 0; jj < nn; ++jj) {
-      BOOST_CHECK_EQUAL(v2[jj], v1[jj]);
+      EXPECT(v2[jj] == v1[jj]);
     }
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_observationL95_timeSelect) {
-    boost::scoped_ptr<lorenz95::ObsTable> ot(new lorenz95::ObsTable(*testconf_, *bgn_, *end_));
+  SECTION("test_observationL95_timeSelect") {
+    boost::scoped_ptr<lorenz95::ObsTable>
+      ot(new lorenz95::ObsTable(*fix.testconf_, *fix.bgn_, *fix.end_));
     util::DateTime t1("2010-01-01T09:00:00Z");
     util::DateTime t2("2010-01-01T21:00:00Z");
     std::vector<int> mask = ot->timeSelect(t1, t2);  // t1 not includede, t2 is
     const unsigned int size = 80;
-    BOOST_CHECK_EQUAL(mask.size(), size);
-    BOOST_CHECK_EQUAL(mask[0], 40);
-    BOOST_CHECK_EQUAL(mask[79], 119);
+    EXPECT(mask.size() == size);
+    EXPECT(mask[0] == 40);
+    EXPECT(mask[79] == 119);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_observationL95_locations) {
-    boost::scoped_ptr<lorenz95::ObsTable> ot(new lorenz95::ObsTable(*testconf_, *bgn_, *end_));
+  SECTION("test_observationL95_locations") {
+    boost::scoped_ptr<lorenz95::ObsTable>
+      ot(new lorenz95::ObsTable(*fix.testconf_, *fix.bgn_, *fix.end_));
     util::DateTime t1("2010-01-01T09:00:00Z");
     util::DateTime t2("2010-01-01T21:00:00Z");
     lorenz95::LocsL95 * locs = ot->locations(t1, t2);
     const size_t size = 80;
-    BOOST_CHECK_EQUAL(locs->size(), size);
+    EXPECT(locs->size() == size);
   }
 // -----------------------------------------------------------------------------
-  BOOST_AUTO_TEST_CASE(test_observationL95_distribute) {
+  SECTION("test_observationL95_distribute") {
     eckit::LocalConfiguration otconf;
     util::DateTime t1("2010-01-01T00:00:00Z");
     util::DateTime t2("2010-01-02T23:59:59Z");
-    boost::scoped_ptr<lorenz95::ObsTable> ot(new lorenz95::ObsTable(otconf, t1, t2));
+    boost::scoped_ptr<lorenz95::ObsTable>
+      ot(new lorenz95::ObsTable(otconf, t1, t2));
 
     // More complete test in makeobs* tests.
-    eckit::LocalConfiguration genconf(*obsconf_, "Generate");
+    eckit::LocalConfiguration genconf(*fix.obsconf_, "Generate");
 
     ot->generateDistribution(genconf);
   }
 // -----------------------------------------------------------------------------
-BOOST_AUTO_TEST_SUITE_END()
+}  //  CASE
 // -----------------------------------------------------------------------------
 }  // namespace test
+int main(int argc, char **argv)
+{
+    return eckit::testing::run_tests ( argc, argv );
+}

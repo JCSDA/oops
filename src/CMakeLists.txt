@@ -365,7 +365,6 @@ ecbuild_add_test( TARGET oops_coding_norms
                   ARGS --quiet --recursive ${CMAKE_CURRENT_SOURCE_DIR} )
 
 ecbuild_add_test( TARGET test_util_random
-                  BOOST
                   SOURCES test/base/Random.cc
 		  ARGS    "test/testinput/random.yaml"
                   LIBS    oops )

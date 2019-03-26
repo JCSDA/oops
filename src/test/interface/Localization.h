@@ -14,16 +14,15 @@
 #include <cmath>
 #include <iostream>
 #include <string>
+#include <vector>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
-#include <boost/test/unit_test.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/instantiateLocalizationFactory.h"
 #include "oops/interface/Geometry.h"
@@ -37,7 +36,8 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> class LocalizationFixture : private boost::noncopyable {
+template <typename MODEL>
+class LocalizationFixture : private boost::noncopyable {
   typedef oops::Localization<MODEL>   Localization_;
   typedef oops::Geometry<MODEL>       Geometry_;
 
@@ -84,9 +84,9 @@ template <typename MODEL> void testLocalizationZero() {
 
   Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
 
-  BOOST_CHECK_EQUAL(dx.norm(), 0.0);
+  EXPECT(dx.norm() == 0.0);
   Test_::localization().multiply(dx);
-  BOOST_CHECK_EQUAL(dx.norm(), 0.0);
+  EXPECT(dx.norm() == 0.0);
 }
 
 // -----------------------------------------------------------------------------
@@ -98,14 +98,14 @@ template <typename MODEL> void testLocalizationMultiply() {
   Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
   dx.random();
 
-  BOOST_CHECK(dx.norm() > 0.0);
+  EXPECT(dx.norm() > 0.0);
   Test_::localization().multiply(dx);
-  BOOST_CHECK(dx.norm() > 0.0);
+  EXPECT(dx.norm() > 0.0);
 }
 
 // -----------------------------------------------------------------------------
-
-template <typename MODEL> class Localization : public oops::Test {
+template <typename MODEL>
+class Localization : public oops::Test {
  public:
   Localization() {}
   virtual ~Localization() {}
@@ -113,12 +113,12 @@ template <typename MODEL> class Localization : public oops::Test {
   std::string testid() const {return "test::Localization<" + MODEL::name() + ">";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/Localization");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testLocalizationZero<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testLocalizationMultiply<MODEL>));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("interface/Localization/testLocalizationZero")
+      { testLocalizationZero<MODEL>(); });
+    ts.emplace_back(CASE("interface/Localization/testLocalizationMultiply")
+      { testLocalizationMultiply<MODEL>(); });
   }
 };
 
