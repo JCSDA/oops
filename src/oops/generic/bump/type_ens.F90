@@ -15,6 +15,7 @@ use type_geom, only: geom_type
 use type_io, only: io_type
 use type_mpl, only: mpl_type
 use type_nam, only: nam_type
+use type_rng, only: rng_type
 
 implicit none
 
@@ -236,19 +237,20 @@ end subroutine ens_apply_bens
 ! Subroutine: ens_cortrack
 ! Purpose: correlation tracker
 !----------------------------------------------------------------------
-subroutine ens_cortrack(ens,mpl,nam,geom,io)
+subroutine ens_cortrack(ens,mpl,rng,nam,geom,io)
 
 implicit none
 
 ! Passed variables
 class(ens_type),intent(in) :: ens   ! Ensemble
 type(mpl_type),intent(inout) :: mpl ! MPI data
+type(rng_type),intent(inout) :: rng ! Random number generator
 type(nam_type),intent(in) :: nam    ! Namelist
 type(geom_type),intent(in) :: geom  ! Geometry
 type(io_type),intent(in) :: io      ! I/O
 
 ! Local variable
-integer :: ic0a,ic0,jc0a,jc0,ie,its,ind(1)
+integer :: ic0a,ic0,il0,jc0a,jc0,ie,its,ind(2)
 integer :: proc_to_ic0a(mpl%nproc),iproc(1),nn_index(1)
 real(kind_real) :: dist,proc_to_val(mpl%nproc),lon,lat,val,var_dirac,nn_dist(1)
 real(kind_real) :: u(geom%nc0a,geom%nl0,nam%nts),v(geom%nc0a,geom%nl0,nam%nts),ffsq(geom%nc0a,geom%nl0,nam%nts)
@@ -289,43 +291,59 @@ if (nam%nv==3) then
       ! Find local maximum value and index
       write(mpl%info,'(a7,a)') '','Dirac point based on maximum wind speed'
       call mpl%flush
-      val = maxval(ffsq(:,1,1))
-      ind = maxloc(ffsq(:,1,1))
+      val = maxval(ffsq(:,:,1))
+      ind = maxloc(ffsq(:,:,1))
+      ic0a = ind(1)
+      il0 = ind(2)
       call mpl%f_comm%allgather(val,proc_to_val)
-      call mpl%f_comm%allgather(ind(1),proc_to_ic0a)
+      call mpl%f_comm%allgather(ic0a,proc_to_ic0a)
       iproc = maxloc(proc_to_val)
    else
       ! Find local minimum value and index
       write(mpl%info,'(a7,a)') '','Dirac point based on minimum wind speed'
       call mpl%flush
-      val = minval(ffsq(:,1,1))
-      ind = minloc(ffsq(:,1,1))
+      val = minval(ffsq(:,:,1))
+      ind = minloc(ffsq(:,:,1))
+      ic0a = ind(1)
+      il0 = ind(2)
       call mpl%f_comm%allgather(val,proc_to_val)
-      call mpl%f_comm%allgather(ind(1),proc_to_ic0a)
+      call mpl%f_comm%allgather(ic0a,proc_to_ic0a)
       iproc = minloc(proc_to_val)
    end if
+   call mpl%f_comm%broadcast(ic0a,iproc(1)-1)
+   call mpl%f_comm%broadcast(il0,iproc(1)-1)
 else
-   ! Define lon/lat
-   lon = 0.5*(minval(geom%lon)+maxval(geom%lon))
-   lat = 0.5*(minval(geom%lat)+maxval(geom%lat))
+   if (.false.) then
+      ! Define lon/lat at the domain center
+      lon = 0.5*(minval(geom%lon)+maxval(geom%lon))
+      lat = 0.5*(minval(geom%lat)+maxval(geom%lat))
 
-   ! Find nearest neighbor
-   call geom%kdtree%find_nearest_neighbors(mpl,lon,lat,1,nn_index,nn_dist)
+      ! Find nearest neighbor
+      call geom%kdtree%find_nearest_neighbors(mpl,lon,lat,1,nn_index,nn_dist)
+      ic0 = nn_index(1)
+   else
+      ! Random point
+      if (mpl%main) call rng%rand_integer(1,geom%nc0,ic0)
+      call mpl%f_comm%broadcast(ic0,mpl%ioproc-1)
+   end if
+   if (mpl%main) call rng%rand_integer(1,geom%nl0,il0)
+   call mpl%f_comm%broadcast(il0,mpl%ioproc-1)
 
    ! Broadcast dirac point
    ic0a = mpl%msv%vali
-   ic0 = nn_index(1)
    iproc(1) = geom%c0_to_proc(ic0)
    if (mpl%myproc==iproc(1)) ic0a = geom%c0_to_c0a(ic0)
    call mpl%f_comm%broadcast(ic0a,iproc(1)-1)
-   write(mpl%info,'(a10,a,i2,a,f6.1,a,f6.1)') '','Timeslot ',nam%timeslot(1),' ~> lon / lat: ', &
-    & lon*rad2deg,' / ',lat*rad2deg
+   lon = geom%lon(ic0)
+   lat = geom%lat(ic0)
+   write(mpl%info,'(a7,a,i2,a,e10.3,a,e10.3)') '','Timeslot ',nam%timeslot(1),' ~> lon / lat:       ', &
+ & lon*rad2deg,' / ',lat*rad2deg
    call mpl%flush
 end if
 
 ! Generate dirac field
 dirac = 0.0
-if (mpl%myproc==iproc(1)) dirac(ic0a,1,1) = 1.0
+if (mpl%myproc==iproc(1)) dirac(ic0a,il0,1) = 1.0
 
 ! Apply raw ensemble covariance
 cor = 0.0
@@ -352,9 +370,9 @@ do its=2,nam%nts-1
    do jc0a=1,geom%nc0a
       jc0 = geom%c0a_to_c0(jc0a)
       call sphere_dist(lon,lat,geom%lon(jc0),geom%lat(jc0),dist)
-      if (dist<nam%displ_rad) then
-         if (cor(jc0a,1,1,its)>val) then
-            val = cor(jc0a,1,1,its)
+      if (dist<nam%adv_rad) then
+         if (cor(jc0a,il0,1,its)>val) then
+            val = cor(jc0a,il0,1,its)
             ic0a = jc0a
          end if
       end if
@@ -365,20 +383,19 @@ do its=2,nam%nts-1
    if (mpl%myproc==iproc(1)) then
       ic0a = proc_to_ic0a(iproc(1))
       ic0 = geom%c0a_to_c0(ic0a)
-      lon = geom%lon(ic0)
-      lat = geom%lat(ic0)
-      val = cor(ic0a,1,1,its)
+      val = cor(ic0a,il0,1,its)
    end if
-   call mpl%f_comm%broadcast(lon,iproc(1)-1)
-   call mpl%f_comm%broadcast(lat,iproc(1)-1)
+   call mpl%f_comm%broadcast(ic0,iproc(1)-1)
+   lon = geom%lon(ic0)
+   lat = geom%lat(ic0)
    call mpl%f_comm%broadcast(val,iproc(1)-1)
-   write(mpl%info,'(a10,a,i2,a,f6.1,a,f6.1,a,f6.3)') '','Timeslot ',nam%timeslot(its),' ~> lon / lat / val: ', &
+   write(mpl%info,'(a7,a,i2,a,e10.3,a,e10.3,a,f6.1)') '','Timeslot ',nam%timeslot(its),' ~> lon / lat / val: ', &
  & lon*rad2deg,' / ',lat*rad2deg,' / ',val
    call mpl%flush
 
    ! Generate dirac field
    dirac = 0.0
-   if (mpl%myproc==iproc(1)) dirac(ic0a,1,its) = 1.0
+   if (mpl%myproc==iproc(1)) dirac(ic0a,il0,its) = 1.0
 
    ! Apply raw ensemble covariance
    cor = 0.0

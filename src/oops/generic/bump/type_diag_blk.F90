@@ -11,8 +11,7 @@ use netcdf
 !$ use omp_lib
 use tools_fit, only: fast_fit,ver_fill
 use tools_func, only: fit_diag,fit_diag_dble
-use tools_kinds, only: kind_real
-use tools_nc, only: ncfloat
+use tools_kinds, only: kind_real,nc_kind_real
 use tools_repro, only: sup
 use type_avg_blk, only: avg_blk_type
 use type_bpar, only: bpar_type
@@ -184,7 +183,7 @@ integer :: info,ncid,one_id,nc3_id,nl0r_id,nl0_1_id,nl0_2_id,disth_id,vunit_id
 integer :: raw_id,raw_zs_id,raw_coef_ens_id,raw_coef_sta_id,l0rl0_to_l0_id
 integer :: fit_id,fit_zs_id,fit_rh_id,fit_rv_id,fit_rv_rfac_id,fit_rv_coef_id
 integer :: il0,jl0r,jl0
-character(len=1024) :: subr = 'diag_blk_write'
+character(len=1024),parameter :: subr = 'diag_blk_write'
 
 ! Associate
 associate(ib=>diag_blk%ib,ic2a=>diag_blk%ic2a)
@@ -193,7 +192,7 @@ associate(ib=>diag_blk%ib,ic2a=>diag_blk%ic2a)
 info = nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_noclobber,nf90_64bit_offset),ncid)
 if (info==nf90_noerr) then
    ! Write namelist parameters
-   call nam%ncwrite(mpl,ncid)
+   call nam%write(mpl,ncid)
 else
    ! Open file
    call mpl%ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_write,ncid))
@@ -216,13 +215,13 @@ if (bpar%nl0rmax/=geom%nl0) then
    if (info/=nf90_noerr) call mpl%ncerr(subr,nf90_def_dim(ncid,'nl0_2',geom%nl0,nl0_2_id))
 end if
 info = nf90_inq_varid(ncid,'disth',disth_id)
-if (info/=nf90_noerr) call mpl%ncerr(subr,nf90_def_var(ncid,'disth',ncfloat,(/nc3_id/),disth_id))
+if (info/=nf90_noerr) call mpl%ncerr(subr,nf90_def_var(ncid,'disth',nc_kind_real,(/nc3_id/),disth_id))
 info = nf90_inq_varid(ncid,'vunit',vunit_id)
-if (info/=nf90_noerr) call mpl%ncerr(subr,nf90_def_var(ncid,'vunit',ncfloat,(/nl0_1_id/),vunit_id))
+if (info/=nf90_noerr) call mpl%ncerr(subr,nf90_def_var(ncid,'vunit',nc_kind_real,(/nl0_1_id/),vunit_id))
 if (mpl%msv%isanynotr(diag_blk%raw_coef_ens)) then
   info = nf90_inq_varid(ncid,trim(diag_blk%name)//'_raw_coef_ens',raw_coef_ens_id)
   if (info/=nf90_noerr) then
-     call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw_coef_ens',ncfloat,(/nl0_1_id/),raw_coef_ens_id))
+     call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw_coef_ens',nc_kind_real,(/nl0_1_id/),raw_coef_ens_id))
      call mpl%ncerr(subr,nf90_put_att(ncid,raw_coef_ens_id,'_FillValue',mpl%msv%valr))
   end if
 end if
@@ -230,13 +229,13 @@ if ((ic2a==0).or.nam%local_diag) then
    if (mpl%msv%isanynotr(diag_blk%raw)) then
       info = nf90_inq_varid(ncid,trim(diag_blk%name)//'_raw',raw_id)
       if (info/=nf90_noerr) then
-         call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw',ncfloat,(/nc3_id,nl0r_id,nl0_1_id/),raw_id))
+         call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw',nc_kind_real,(/nc3_id,nl0r_id,nl0_1_id/),raw_id))
          call mpl%ncerr(subr,nf90_put_att(ncid,raw_id,'_FillValue',mpl%msv%valr))
       end if
       if (bpar%nl0rmax/=geom%nl0) then
          info = nf90_inq_varid(ncid,trim(diag_blk%name)//'_raw_zs',raw_zs_id)
          if (info/=nf90_noerr) then
-            call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw_zs',ncfloat,(/nl0_2_id,nl0_1_id/),raw_zs_id))
+            call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw_zs',nc_kind_real,(/nl0_2_id,nl0_1_id/),raw_zs_id))
             call mpl%ncerr(subr,nf90_put_att(ncid,raw_zs_id,'_FillValue',mpl%msv%valr))
          end if
       end if
@@ -244,42 +243,42 @@ if ((ic2a==0).or.nam%local_diag) then
    if (mpl%msv%isnotr(diag_blk%raw_coef_sta)) then
       info = nf90_inq_varid(ncid,trim(diag_blk%name)//'_raw_coef_sta',raw_coef_sta_id)
       if (info/=nf90_noerr) then
-         call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw_coef_sta',ncfloat,(/one_id/),raw_coef_sta_id))
+         call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw_coef_sta',nc_kind_real,(/one_id/),raw_coef_sta_id))
          call mpl%ncerr(subr,nf90_put_att(ncid,raw_coef_sta_id,'_FillValue',mpl%msv%valr))
       end if
    end if
    if ((trim(nam%minim_algo)/='none').and.(mpl%msv%isanynotr(diag_blk%fit))) then
       info = nf90_inq_varid(ncid,trim(diag_blk%name)//'_fit',fit_id)
       if (info/=nf90_noerr) then
-         call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit',ncfloat,(/nc3_id,nl0r_id,nl0_1_id/),fit_id))
+         call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit',nc_kind_real,(/nc3_id,nl0r_id,nl0_1_id/),fit_id))
          call mpl%ncerr(subr,nf90_put_att(ncid,fit_id,'_FillValue',mpl%msv%valr))
       end if
       if (bpar%nl0rmax/=geom%nl0) then
          info = nf90_inq_varid(ncid,trim(diag_blk%name)//'_fit_zs',fit_zs_id)
          if (info/=nf90_noerr) then
-            call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_zs',ncfloat,(/nl0_2_id,nl0_1_id/),fit_zs_id))
+            call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_zs',nc_kind_real,(/nl0_2_id,nl0_1_id/),fit_zs_id))
             call mpl%ncerr(subr,nf90_put_att(ncid,fit_zs_id,'_FillValue',mpl%msv%valr))
          end if
       end if
       info = nf90_inq_varid(ncid,trim(diag_blk%name)//'_fit_rh',fit_rh_id)
       if (info/=nf90_noerr) then
-         call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rh',ncfloat,(/nl0_1_id/),fit_rh_id))
+         call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rh',nc_kind_real,(/nl0_1_id/),fit_rh_id))
          call mpl%ncerr(subr,nf90_put_att(ncid,fit_rh_id,'_FillValue',mpl%msv%valr))
       end if
       info = nf90_inq_varid(ncid,trim(diag_blk%name)//'_fit_rv',fit_rv_id)
       if (info/=nf90_noerr) then
-         call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rv',ncfloat,(/nl0_1_id/),fit_rv_id))
+         call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rv',nc_kind_real,(/nl0_1_id/),fit_rv_id))
          call mpl%ncerr(subr,nf90_put_att(ncid,fit_rv_id,'_FillValue',mpl%msv%valr))
       end if
       if (diag_blk%double_fit) then
          info = nf90_inq_varid(ncid,trim(diag_blk%name)//'_fit_rv_rfac',fit_rv_rfac_id)
          if (info/=nf90_noerr) then
-            call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rv_rfac',ncfloat,(/nl0_1_id/),fit_rv_rfac_id))
+            call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rv_rfac',nc_kind_real,(/nl0_1_id/),fit_rv_rfac_id))
             call mpl%ncerr(subr,nf90_put_att(ncid,fit_rv_rfac_id,'_FillValue',mpl%msv%valr))
          end if
          info = nf90_inq_varid(ncid,trim(diag_blk%name)//'_fit_rv_coef',fit_rv_coef_id)
          if (info/=nf90_noerr) then
-            call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rv_coef',ncfloat,(/nl0_1_id/),fit_rv_coef_id))
+            call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_fit_rv_coef',nc_kind_real,(/nl0_1_id/),fit_rv_coef_id))
             call mpl%ncerr(subr,nf90_put_att(ncid,fit_rv_coef_id,'_FillValue',mpl%msv%valr))
          end if
       end if
@@ -428,12 +427,13 @@ real(kind_real) :: alpha,alpha_opt,mse,mse_opt
 real(kind_real) :: vunit(geom%nl0),fit_rh(geom%nl0),fit_rv(geom%nl0)
 real(kind_real),allocatable :: rawv(:),distv(:),fit(:,:,:)
 type(minim_type) :: minim
+character(len=1024),parameter :: subr = 'diag_blk_fitting'
 
 ! Associate
 associate(ic2a=>diag_blk%ic2a,ib=>diag_blk%ib)
 
 ! Check
-if (trim(nam%minim_algo)=='none') call mpl%abort('cannot compute fit if minim_algo = none')
+if (trim(nam%minim_algo)=='none') call mpl%abort(subr,'cannot compute fit if minim_algo = none')
 
 ! Allocation
 allocate(rawv(bpar%nl0r(ib)))
@@ -574,7 +574,7 @@ if (any(mpl%msv%isnotr(diag_blk%fit_rh)).and.any(mpl%msv%isnotr(diag_blk%fit_rv)
             offset = offset+1
             minim%guess(offset+1) = diag_blk%fit_rv_coef(1)
             minim%binf(offset+1) = 0.0
-            minim%bsup(offset+1) = 10.0
+            minim%bsup(offset+1) = 20.0
             offset = offset+1
          end if
       else
@@ -589,7 +589,7 @@ if (any(mpl%msv%isnotr(diag_blk%fit_rh)).and.any(mpl%msv%isnotr(diag_blk%fit_rv)
             offset = offset+geom%nl0
             minim%guess(offset+1:offset+geom%nl0) = diag_blk%fit_rv_coef
             minim%binf(offset+1:offset+geom%nl0) = 0.0
-            minim%bsup(offset+1:offset+geom%nl0) = 10.0
+            minim%bsup(offset+1:offset+geom%nl0) = 20.0
             offset = offset+geom%nl0
          end if
       end if

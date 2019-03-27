@@ -14,7 +14,8 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/base/EnsemblesCollection.h"
+#include "oops/assimilation/Increment4D.h"
+#include "oops/assimilation/State4D.h"
 #include "oops/base/StateEnsemble.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
@@ -27,10 +28,10 @@ namespace oops {
   template <typename MODEL> class EnsVariance : public Application {
     typedef StateEnsemble<MODEL>                     Ensemble_;
     typedef boost::shared_ptr<StateEnsemble<MODEL> > EnsemblePtr_;
-    typedef EnsemblesCollection<MODEL>               EnsemblesCollection_;
     typedef Geometry<MODEL>                          Geometry_;
-    typedef Increment<MODEL>                         Increment_;
+    typedef Increment4D<MODEL>                       Increment4D_;
     typedef State<MODEL>                             State_;
+    typedef State4D<MODEL>                           State4D_;
 
    public:
     // -----------------------------------------------------------------------------
@@ -49,22 +50,33 @@ namespace oops {
 
       // Setup background
       const eckit::LocalConfiguration bkgConfig(fullConfig, "Background");
-      State_ xb(resol, vars, bkgConfig);
+      boost::scoped_ptr<State4D_> xx;
+      if (bkgConfig.has("state")) {
+        xx.reset(new State4D_(bkgConfig, vars, resol));
+      } else {
+        State_ xx3D(resol, vars, bkgConfig);
+        xx.reset(new State4D_(xx3D));
+      }
+
+      //  Setup timeslots
+      std::vector<util::DateTime> timeslots;
+      for (unsigned jsub = 0; jsub < (*xx).size(); ++jsub) {
+        timeslots.push_back((*xx)[jsub].validTime());
+      }
 
       // Compute rescaled and transformed ensemble perturbations
       //        ens_k = K^-1 dx_k / (N-1)^0.5
       const eckit::LocalConfiguration ensConfig(fullConfig, "Ensemble");
-      EnsemblePtr_ ens_k(new Ensemble_(xb.validTime(), ensConfig));
-      ens_k->linearize(xb, xb, resol);
-      EnsemblesCollection_::getInstance().put(xb.validTime(), ens_k);
+      EnsemblePtr_ ens_k(new Ensemble_(timeslots, ensConfig));
+      ens_k->linearize((*xx), (*xx), resol);
 
       // Get ensemble size
       unsigned nm = ens_k->size();
 
       // Compute ensemble standard deviation
-      Increment_ km1dx((*ens_k)[0]);
+      Increment4D_ km1dx((*ens_k)[0]);
       km1dx.zero();
-      Increment_ sigb2(km1dx);
+      Increment4D_ sigb2(km1dx);
       sigb2.zero();
 
       for (unsigned jj = 0; jj < nm; ++jj) {

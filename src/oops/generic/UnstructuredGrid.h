@@ -27,7 +27,7 @@ class UnstructuredGrid : public util::Printable,
  public:
   static const std::string classname() {return "oops::UnstructuredGrid";}
 
-  UnstructuredGrid();
+  explicit UnstructuredGrid(const int &, const int & = 1);
   ~UnstructuredGrid();
 
 // Will be useful for tests
@@ -43,6 +43,8 @@ class UnstructuredGrid : public util::Printable,
   void print(std::ostream &) const;
 
   int keyUGrid_;
+  int colocated_;
+  int nts_;
 };
 
 // -----------------------------------------------------------------------------

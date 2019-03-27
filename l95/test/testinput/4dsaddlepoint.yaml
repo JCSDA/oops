@@ -7,14 +7,14 @@ cost_function:
       - date: '2010-01-01T15:00:00Z'
         filename: Data/test.fc.2010-01-01T00:00:00Z.PT15H
     Covariance:
-    - covariance: L95Error
-      date: '2010-01-01T03:00:00Z'
-      length_scale: 1.0
-      standard_deviation: 0.6
-    - covariance: L95Error
-      date: '2010-01-01T15:00:00Z'
-      length_scale: 1.0
-      standard_deviation: 0.2
+      covariance: L95Error
+      covariance_time:
+      - date: '2010-01-01T03:00:00Z'
+        length_scale: 1.0
+        standard_deviation: 0.6
+      - date: '2010-01-01T15:00:00Z'
+        length_scale: 1.0
+        standard_deviation: 0.2
   Jc:
   - jcdfi:
       alpha: 100.0

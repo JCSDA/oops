@@ -23,11 +23,12 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
+#include "oops/base/Localization.h"
+#include "oops/base/StateEnsemble.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/instantiateLocalizationFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
-#include "oops/interface/Localization.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "test/TestEnvironment.h"
@@ -36,10 +37,11 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-class LocalizationFixture : private boost::noncopyable {
-  typedef oops::Localization<MODEL>   Localization_;
-  typedef oops::Geometry<MODEL>       Geometry_;
+template <typename MODEL> class LocalizationFixture : private boost::noncopyable {
+  typedef oops::Localization<MODEL>                     Localization_;
+  typedef oops::Geometry<MODEL>                         Geometry_;
+  typedef oops::StateEnsemble<MODEL>                    Ensemble_;
+  typedef boost::shared_ptr<oops::StateEnsemble<MODEL>> EnsemblePtr_;
 
  public:
   static const Geometry_       & resol()        {return *getInstance().resol_;}
@@ -64,8 +66,9 @@ class LocalizationFixture : private boost::noncopyable {
 
 //  Setup the localization matrix
     oops::instantiateLocalizationFactory<MODEL>();
+    EnsemblePtr_ ens(new Ensemble_());
     const eckit::LocalConfiguration conf(TestEnvironment::config(), "Localization");
-    local_.reset(new Localization_(*resol_, conf));
+    local_.reset(new Localization_(*resol_, ens, conf));
   }
 
   ~LocalizationFixture<MODEL>() {}
@@ -104,8 +107,8 @@ template <typename MODEL> void testLocalizationMultiply() {
 }
 
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-class Localization : public oops::Test {
+
+template <typename MODEL> class Localization : public oops::Test {
  public:
   Localization() {}
   virtual ~Localization() {}

@@ -74,9 +74,9 @@ class FieldL95 : public util::Printable {
   void interpAD(const LocsL95 &, const GomL95 &);
 
 /// Unstructured grid
-  void ug_coord(oops::UnstructuredGrid &, const int &) const;
+  void ug_coord(oops::UnstructuredGrid &) const;
   void field_to_ug(oops::UnstructuredGrid &, const int &) const;
-  void field_from_ug(const oops::UnstructuredGrid &);
+  void field_from_ug(const oops::UnstructuredGrid &, const int &);
 
 // Serialize - deserialize
   void serialize(std::vector<double> &) const;

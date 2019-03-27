@@ -55,8 +55,7 @@ template <typename MODEL> class GenEnsPertB : public Application {
     const Geometry_ resol(resolConfig);
 
 //  Setup variables
-    const eckit::LocalConfiguration varConfig(fullConfig, "variables");
-    const Variables vars(varConfig);
+    const Variables vars(fullConfig);
 
 //  Setup Model
     const eckit::LocalConfiguration modelConfig(fullConfig, "model");

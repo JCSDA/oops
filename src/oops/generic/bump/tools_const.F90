@@ -11,7 +11,6 @@ use tools_kinds, only: kind_real
 
 implicit none
 
-! Constants
 real(kind_real),parameter :: pi = acos(-1.0_kind_real)     ! Pi
 real(kind_real),parameter :: deg2rad = pi/180.0_kind_real  ! Degree to radian
 real(kind_real),parameter :: rad2deg = 180.0_kind_real/pi  ! Radian to degree

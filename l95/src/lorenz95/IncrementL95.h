@@ -81,9 +81,9 @@ class IncrementL95 : public util::Printable,
                    const GomL95 &, const Nothing &);
 
 /// Unstructured grid
-  void ug_coord(oops::UnstructuredGrid &, const int &) const;
+  void ug_coord(oops::UnstructuredGrid &) const;
   void field_to_ug(oops::UnstructuredGrid &, const int &) const;
-  void field_from_ug(const oops::UnstructuredGrid &);
+  void field_from_ug(const oops::UnstructuredGrid &, const int &);
 
 // Utilities
   void read(const eckit::Configuration &);
@@ -108,7 +108,6 @@ class IncrementL95 : public util::Printable,
 /// Serialize and deserialize
   void serialize(std::vector<double> &) const;
   void deserialize(const std::vector<double> &);
-
 
  private:
   void print(std::ostream &) const;

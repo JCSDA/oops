@@ -41,6 +41,7 @@ template<typename MODEL> class State4D : public util::Printable {
 
 /// The arguments define the number of sub-windows and the resolution
   State4D(const eckit::Configuration &, const Variables &, const Geometry_ &);
+  explicit State4D(const State_ &);
   explicit State4D(const State4D &);
   ~State4D();
 
@@ -54,6 +55,10 @@ template<typename MODEL> class State4D : public util::Printable {
   size_t size() const {return state4d_.size();}
   State_ & operator[](const int ii) {return state4d_[ii];}
   const State_ & operator[](const int ii) const {return state4d_[ii];}
+
+/// Accumulator
+  void zero();
+  void accumul(const double &, const State4D &);
 
  private:
   State4D & operator= (const State4D &);  // No assignment
@@ -77,6 +82,15 @@ State4D<MODEL>::State4D(const eckit::Configuration & config, const Variables & v
     Log::debug() << "State4D:State4D: read bg at " << js->validTime() << std::endl;
     state4d_.push_back(js);
   }
+  Log::trace() << "State4D constructed." << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+State4D<MODEL>::State4D(const State_ & state3d) {
+  State_ * js = new State_(state3d);
+  state4d_.push_back(js);
   Log::trace() << "State4D constructed." << std::endl;
 }
 
@@ -124,6 +138,31 @@ void State4D<MODEL>::write(const eckit::Configuration & config) const {
     js.write(confs[jsub]);
     ++jsub;
   }
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void State4D<MODEL>::zero() {
+  Log::trace() << "State4D<MODEL>::zero starting" << std::endl;
+  BOOST_FOREACH(State_ & js, state4d_) {
+    js.zero();
+  }
+  Log::trace() << "State4D<MODEL>::zero done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void State4D<MODEL>::accumul(const double & zz, const State4D & xx) {
+  Log::trace() << "State4D<MODEL>::accumul starting" << std::endl;
+  unsigned int jsub = 0;
+  BOOST_FOREACH(State_ & js, state4d_) {
+    Log::trace() << "State4D<MODEL>::accumul timeslot " << jsub << std::endl;
+    js.accumul(zz, xx[jsub]);
+    ++jsub;
+  }
+  Log::trace() << "State4D<MODEL>::accumul done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

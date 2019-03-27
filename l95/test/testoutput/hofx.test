@@ -4,4 +4,6 @@ Test     :  Min=7.0282, Max=8.19498, Average=7.97551
 Test     : Final state: 
 Test     :  Valid time: 2010-01-02T03:00:00Z
 Test     :  Min=6.34504, Max=9.44115, Average=7.96745
-Test     : H(x): Lorenz 95 nobs= 160 Min=6.34504, Max=9.44115, Average=7.97687
+Test     : H(x): 
+Test     : Lorenz 95 nobs= 160 Min=6.34504, Max=9.44115, Average=7.97687
+Test     : End H(x)

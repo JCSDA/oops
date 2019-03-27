@@ -155,16 +155,16 @@ void FieldsQG::diff(const FieldsQG & x1, const FieldsQG & x2) {
   qg_field_diff_incr_f90(keyFlds_, x1.keyFlds_, x2.keyFlds_);
 }
 // -----------------------------------------------------------------------------
-void FieldsQG::ug_coord(oops::UnstructuredGrid & ug, const int & colocated) const {
-  qg_field_ug_coord_f90(keyFlds_, ug.toFortran(), colocated);
+void FieldsQG::ug_coord(oops::UnstructuredGrid & ug) const {
+  qg_field_ug_coord_f90(keyFlds_, ug.toFortran());
 }
 // -----------------------------------------------------------------------------
-void FieldsQG::field_to_ug(oops::UnstructuredGrid & ug, const int & colocated) const {
-  qg_field_field_to_ug_f90(keyFlds_, ug.toFortran(), colocated);
+void FieldsQG::field_to_ug(oops::UnstructuredGrid & ug, const int & its) const {
+  qg_field_field_to_ug_f90(keyFlds_, ug.toFortran(), its);
 }
 // -----------------------------------------------------------------------------
-void FieldsQG::field_from_ug(const oops::UnstructuredGrid & ug) {
-  qg_field_field_from_ug_f90(keyFlds_, ug.toFortran());
+void FieldsQG::field_from_ug(const oops::UnstructuredGrid & ug, const int & its) {
+  qg_field_field_from_ug_f90(keyFlds_, ug.toFortran(), its);
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::read(const eckit::Configuration & config) {
@@ -245,14 +245,14 @@ void FieldsQG::serialize(std::vector<double> & vect)  const {
   vect.push_back(static_cast<double>(nf));
   vect.push_back(static_cast<double>(nl));
 
-// Allocate space for fld, xb and qb
+  // Allocate space for fld, xb and qb
   std::vector<double> v_fld(size_fld, 0);
 
-// Serialize the field
+  // Serialize the field
   qg_fields_serialize_f90(keyFlds_, static_cast<int>(v_fld.size()), v_fld.data());
   vect.insert(vect.end(), v_fld.begin(), v_fld.end());
 
-// Serialize the date and time
+  // Serialize the date and time
   time_.serialize(vect);
 }
 // -----------------------------------------------------------------------------
@@ -262,6 +262,5 @@ void FieldsQG::deserialize(const std::vector<double> & vect) {
   time_.deserialize(date_time);
   qg_fields_deserialize_f90(keyFlds_, vect.size(), vect.data());
 }
-
 // -----------------------------------------------------------------------------
 }  // namespace qg

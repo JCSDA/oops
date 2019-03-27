@@ -43,8 +43,9 @@ real(kind_real) :: th,thinv,dthinv,thtest
 real(kind_real) :: fit_rm,fit_rp,distmin
 real(kind_real) :: raw_tmp(n)
 logical :: valid
+character(len=1024),parameter :: subr = 'fast_fit'
 
-if (any(dist<0.0)) call mpl%abort('negative distance in fast_fit')
+if (any(dist<0.0)) call mpl%abort(subr,'negative distance in fast_fit')
 
 if (raw(iz)>0.0) then
    if (n>1) then
@@ -155,7 +156,7 @@ if (raw(iz)>0.0) then
 
          ! Check positivity
          if (inf(fit_r,0.0_kind_real)) then
-            call mpl%warning('negative fit_r in fast_fit')
+            call mpl%warning(subr,'negative fit_r in fast_fit')
             fit_r = 0.0
          end if
       else
@@ -197,8 +198,9 @@ real(kind_real),intent(inout) :: profile(n) ! Vertical profile
 ! Local variables
 integer :: i,j
 real(kind_real) :: kernel(n,n),distnorm,profile_init(n),norm
+character(len=1024),parameter :: subr = 'ver_smooth'
 
-if (rv<0.0) call mpl%abort('negative filtering support radius in ver_smooth')
+if (rv<0.0) call mpl%abort(subr,'negative filtering support radius in ver_smooth')
 
 if ((rv>0.0).and.mpl%msv%isanynotr(profile)) then
    ! Vertical smoothing kernel
@@ -249,6 +251,7 @@ real(kind_real),intent(inout) :: profile(n) ! Vertical profile
 ! Local variables
 integer :: i,j,iinf,isup
 real(kind_real) :: profile_init(n)
+character(len=1024),parameter :: subr = 'ver_fill'
 
 if (mpl%msv%isanynotr(profile)) then
    ! Initialization
@@ -278,7 +281,7 @@ if (mpl%msv%isanynotr(profile)) then
             ! Extrapolation with nearest inferior point
             profile(i) = profile(iinf)
          else
-            call mpl%abort('ver_fill failed')
+            call mpl%abort(subr,'ver_fill failed')
          end if
       end if
    end do

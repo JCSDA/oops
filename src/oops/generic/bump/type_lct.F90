@@ -39,6 +39,7 @@ contains
    procedure :: compute => lct_compute
    procedure :: filter => lct_filter
    procedure :: rmse => lct_rmse
+   procedure :: interp => lct_interp
    procedure :: write => lct_write
    procedure :: write_cor => lct_write_cor
 end type lct_type
@@ -190,6 +191,13 @@ call mpl%flush
 write(mpl%info,'(a)') '--- LCT RMSE'
 call mpl%flush
 call lct%rmse(mpl,nam,geom,bpar)
+
+! Interpolate LCT
+write(mpl%info,'(a)') '-------------------------------------------------------------------'
+call mpl%flush
+write(mpl%info,'(a)') '--- Interpolate LCT'
+call mpl%flush
+call lct%interp(mpl,nam,geom,bpar)
 
 if (nam%write_lct) then
    ! Write LCT
@@ -485,10 +493,10 @@ end do
 end subroutine lct_rmse
 
 !----------------------------------------------------------------------
-! Subroutine: lct_write
-! Purpose: interpolate and write LCT
+! Subroutine: lct_interp
+! Purpose: interpolate LCT
 !----------------------------------------------------------------------
-subroutine lct_write(lct,mpl,nam,geom,bpar,io)
+subroutine lct_interp(lct,mpl,nam,geom,bpar)
 
 implicit none
 
@@ -498,16 +506,14 @@ type(mpl_type),intent(inout) :: mpl     ! MPI data
 type(nam_type),intent(in) :: nam        ! Namelist
 type(geom_type),intent(in) :: geom      ! Geometry
 type(bpar_type),intent(in) :: bpar      ! Block parameters
-type(io_type),intent(in) :: io          ! I/O
 
 ! Local variables
-integer :: ib,iv,il0,il0i,ic1a,ic1,icomp,ic0a,iscales
+integer :: ib,il0,il0i,ic1a,ic1,icomp,ic0a,iscales
 real(kind_real) :: det,Lavg_tot,norm_tot
 real(kind_real) :: fld_c1a(lct%samp%nc1a,geom%nl0,2*4+1),fld_c1b(lct%samp%nc2b,geom%nl0),fld(geom%nc0a,geom%nl0,2*4+2)
 real(kind_real),allocatable :: D(:,:,:,:),coef(:,:,:)
 logical :: mask_c1a(lct%samp%nc1a,geom%nl0)
-character(len=1) :: iscaleschar
-character(len=1024) :: filename
+character(len=1024),parameter :: subr = 'lct_interp'
 
 ! Define mask
 do il0=1,geom%nl0
@@ -593,7 +599,7 @@ do ib=1,bpar%nb
                if (det>0.0) then
                   fld(ic0a,il0,2*4+2) = sqrt(sqrt(det))
                else
-                  call mpl%abort('non-valid horizontal diffusion tensor determinant, grid c0')
+                  call mpl%abort(subr,'non-valid horizontal diffusion tensor determinant, grid c0')
                end if
             end if
          end do
@@ -607,28 +613,50 @@ do ib=1,bpar%nb
       end do
 
       ! Copy output values
-      do il0=1,geom%nl0
-         do ic0a=1,geom%nc0a
-            if (geom%mask_c0a(ic0a,il0)) then
-               lct%blk(ib)%D11(ic0a,il0,iscales) = fld(ic0a,il0,1)
-               lct%blk(ib)%D22(ic0a,il0,iscales) = fld(ic0a,il0,2)
-               lct%blk(ib)%D33(ic0a,il0,iscales) = fld(ic0a,il0,3)
-               lct%blk(ib)%D12(ic0a,il0,iscales) = fld(ic0a,il0,4)
-               lct%blk(ib)%H11(ic0a,il0,iscales) = fld(ic0a,il0,4+1)
-               lct%blk(ib)%H22(ic0a,il0,iscales) = fld(ic0a,il0,4+2)
-               lct%blk(ib)%H33(ic0a,il0,iscales) = fld(ic0a,il0,4+3)
-               lct%blk(ib)%H12(ic0a,il0,iscales) = fld(ic0a,il0,4+4)
-               lct%blk(ib)%Dcoef(ic0a,il0,iscales) = fld(ic0a,il0,2*4+1)
-               lct%blk(ib)%DLh(ic0a,il0,iscales) = fld(ic0a,il0,2*4+2)
-            end if
-         end do
-      end do
+      lct%blk(ib)%D11(:,:,iscales) = fld(:,:,1)
+      lct%blk(ib)%D22(:,:,iscales) = fld(:,:,2)
+      lct%blk(ib)%D33(:,:,iscales) = fld(:,:,3)
+      lct%blk(ib)%D12(:,:,iscales) = fld(:,:,4)
+      lct%blk(ib)%H11(:,:,iscales) = fld(:,:,4+1)
+      lct%blk(ib)%H22(:,:,iscales) = fld(:,:,4+2)
+      lct%blk(ib)%H33(:,:,iscales) = fld(:,:,4+3)
+      lct%blk(ib)%H12(:,:,iscales) = fld(:,:,4+4)
+      lct%blk(ib)%Dcoef(:,:,iscales) = fld(:,:,2*4+1)
+      lct%blk(ib)%DLh(:,:,iscales) = fld(:,:,2*4+2)
+   end do
+end do
 
-      ! Write LCT
-      write(mpl%info,'(a13,a)') '','Write LCT'
-      call mpl%flush
-      filename = trim(nam%prefix)//'_lct'
-      iv = bpar%b_to_v2(ib)
+end subroutine lct_interp
+
+!----------------------------------------------------------------------
+! Subroutine: lct_write
+! Purpose: write LCT
+!----------------------------------------------------------------------
+subroutine lct_write(lct,mpl,nam,geom,bpar,io)
+
+implicit none
+
+! Passed variables
+class(lct_type),intent(inout) :: lct    ! LCT
+type(mpl_type),intent(inout) :: mpl     ! MPI data
+type(nam_type),intent(in) :: nam        ! Namelist
+type(geom_type),intent(in) :: geom      ! Geometry
+type(bpar_type),intent(in) :: bpar      ! Block parameters
+type(io_type),intent(in) :: io          ! I/O
+
+! Local variables
+integer :: ib,iv,iscales
+character(len=1) :: iscaleschar
+character(len=1024) :: filename
+character(len=1024),parameter :: subr = 'lct_write'
+
+! Set file name
+filename = trim(nam%prefix)//'_lct'
+
+do ib=1,bpar%nb
+   iv = bpar%b_to_v2(ib)
+   do iscales=1,lct%blk(ib)%nscales
+      ! Write fields
       write(iscaleschar,'(i1)') iscales
       call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_D11_'//iscaleschar,lct%blk(ib)%D11(:,:,iscales))
       call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_D22_'//iscaleschar,lct%blk(ib)%D22(:,:,iscales))
@@ -641,10 +669,6 @@ do ib=1,bpar%nb
       call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_coef_'//iscaleschar,lct%blk(ib)%Dcoef(:,:,iscales))
       call io%fld_write(mpl,nam,geom,filename,trim(nam%varname(iv))//'_Lh_'//iscaleschar,lct%blk(ib)%DLh(:,:,iscales))
    end do
-
-   ! Release memory
-   deallocate(D)
-   deallocate(coef)
 end do
 
 end subroutine lct_write

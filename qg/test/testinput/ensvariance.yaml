@@ -17,10 +17,8 @@ VarianceOut:
   exp: variance
   type: fc
   date: 2010-01-01T01:00:00Z
-
 Ensemble:
-  members: 5
-  state:
+  members:
   - date: 2010-01-01T01:00:00Z
     filename: Data/test.ens.1.2009-12-31T00:00:00Z.P1DT1H
   - date: 2010-01-01T01:00:00Z
@@ -32,8 +30,7 @@ Ensemble:
   - date: 2010-01-01T01:00:00Z
     filename: Data/test.ens.5.2009-12-31T00:00:00Z.P1DT1H
   variables:
-    variables:
-    - x
+  - x
   varchange: ChVarQG
   inputVariables:
     variables:

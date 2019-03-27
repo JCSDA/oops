@@ -17,13 +17,13 @@ Test     :   Resolution = 40, 20, Fields = 1, 2
 Test     :   Min=-29.5559, Max=11.1294, RMS=12.4465
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
-Test     : CostJb   : Nonlinear Jb = 2846.74
+Test     : CostJb   : Nonlinear Jb = 1936.18
 Test     : CostJo   : Nonlinear Jo = 816.962, nobs = 800, Jo/n = 1.0212, err = 0.4
 Test     : CostJo   : Nonlinear Jo = 238.053, nobs = 800, Jo/n = 0.297566, err = 0.6
 Test     : CostJo   : Nonlinear Jo = 37.4396, nobs = 400, Jo/n = 0.0935991, err = 1.2
 Test     : CostJcDFI: Nonlinear Jc = 17.113
 Test     : CostJcDFI: Nonlinear Jc = 14.1812
-Test     : CostFunction: Nonlinear J = 3970.49
+Test     : CostFunction: Nonlinear J = 3059.93
 Test     : SaddlePointMinimizer: reduction in residual norm = 0.201588
 Test     : CostFunction::addIncrement: Analysis: 
 Test     :   Valid time: 2010-01-01T00:00:00Z
@@ -36,10 +36,10 @@ Test     :   Resolution = 40, 20, Fields = 1, 2
 Test     :   Min=-29.3303, Max=11.1827, RMS=12.4482
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
-Test     : CostJb   : Nonlinear Jb = 223.417
+Test     : CostJb   : Nonlinear Jb = 146.593
 Test     : CostJo   : Nonlinear Jo = 156.1, nobs = 800, Jo/n = 0.195126, err = 0.4
 Test     : CostJo   : Nonlinear Jo = 62.1958, nobs = 800, Jo/n = 0.0777448, err = 0.6
 Test     : CostJo   : Nonlinear Jo = 12.3696, nobs = 400, Jo/n = 0.0309241, err = 1.2
 Test     : CostJcDFI: Nonlinear Jc = 13.0409
 Test     : CostJcDFI: Nonlinear Jc = 6.9752
-Test     : CostFunction: Nonlinear J = 474.099
+Test     : CostFunction: Nonlinear J = 397.275

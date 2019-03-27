@@ -1,14 +1,28 @@
 background:
   date: '2010-01-01T00:00:00Z'
   filename: Data/truth.fc.2009-12-15T00:00:00Z.P17D
-check_vbal: 1
-date: '2010-01-01T00:00:00Z'
-default_seed: 1
-diag_interp: bilin
-draw_type: random_uniform
+bump:
+  check_vbal: 1
+  default_seed: 1
+  method: cor
+  nc1: 400
+  nc2: 100
+  new_vbal: 1
+  nl0r: 2
+  nrep: 2
+  ntry: 3
+  prefix: bump_parametersbump.vbal
+  strategy: specific_univariate
+  vbal_block:
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  vbal_rad: 1000000.0
 ensemble:
-  members: '10'
-  state:
+  members:
   - date: '2010-01-01T00:00:00Z'
     filename: Data/test.ens.1.2009-12-31T00:00:00Z.P1D
   - date: '2010-01-01T00:00:00Z'
@@ -30,22 +44,13 @@ ensemble:
   - date: '2010-01-01T00:00:00Z'
     filename: Data/test.ens.10.2009-12-31T00:00:00Z.P1D
   variables:
-    variables:
-    - x
-    - q
-    - u
-    - v
-    - bc
+  - x
+  - q
+  - u
+  - v
+  - bc
 logging:
   categories: Info, Test, Warning, Error
-mask_type: none
-method: cor
-nc1: 400
-nc2: 100
-new_vbal: 1
-nl0r: 2
-nrep: 2
-ntry: 3
 output:
 - datadir: Data
   date: '2010-01-01T00:00:00Z'
@@ -67,24 +72,13 @@ output:
   exp: ens1u_0004
   parameter: ens1u_0004
   type: an
-prefix: bump_parametersbump.vbal
 resolution:
   bc: '1'
   nx: '40'
   ny: '20'
-strategy: specific_univariate
 variables:
-  variables:
-  - x
-  - q
-  - u
-  - v
-  - bc
-vbal_block:
-- 1
-- 1
-- 1
-- 1
-- 1
-- 1
-vbal_rad: 1000000.0
+- x
+- q
+- u
+- v
+- bc

@@ -12,7 +12,7 @@
 
 namespace oops {
 extern "C" {
-  void create_ug_f90(int &);
+  void create_ug_f90(int &, const int &, const int &);
   void delete_ug_f90(int &);
 }
 }  // namespace oops

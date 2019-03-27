@@ -3,11 +3,10 @@
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
 
-!>  Fortran module for handling generic BUMP
-
 module oobump_mod
 
 use config_mod
+use fckit_log_module,only: fckit_log
 use iso_c_binding
 use kinds
 use missing_values_mod
@@ -17,18 +16,19 @@ use unstructured_grid_mod
 
 implicit none
 
+private
+public :: oobump_type
+public :: oobump_registry
+public :: create_oobump, delete_oobump, get_oobump_colocated, get_oobump_nts, get_oobump_cv_size, add_oobump_member, &
+        & run_oobump_drivers,multiply_oobump_vbal, multiply_oobump_vbal_inv, multiply_oobump_vbal_ad,  &
+        & multiply_oobump_vbal_inv_ad,multiply_oobump_nicas, multiply_oobump_nicas_sqrt, multiply_oobump_nicas_sqrt_ad, &
+        & randomize_oobump_nicas, get_oobump_param, set_oobump_param, bump_read_conf
+! ------------------------------------------------------------------------------
 type oobump_type
+   integer :: colocated                   !> Colocated flag
    integer :: ngrid                       !> Number of instances of BUMP
    type(bump_type),allocatable :: bump(:) !> Instances of BUMP
 end type oobump_type
-
-private
-public oobump_type, create_oobump, delete_oobump, add_oobump_member, &
-     & multiply_oobump_vbal, multiply_oobump_vbal_inv, multiply_oobump_vbal_ad, multiply_oobump_vbal_inv_ad, &
-     & multiply_oobump_nicas, get_oobump_cv_size, multiply_oobump_nicas_sqrt, multiply_oobump_nicas_sqrt_ad, &
-     & randomize_oobump_nicas, run_oobump_drivers, bump_read_conf
-
-! ------------------------------------------------------------------------------
 
 #define LISTED_TYPE oobump_type
 
@@ -37,370 +37,30 @@ public oobump_type, create_oobump, delete_oobump, add_oobump_member, &
 
 !> Global registry
 type(registry_t) :: oobump_registry
-
 !-------------------------------------------------------------------------------
 contains
 !-------------------------------------------------------------------------------
-
 !> Linked list implementation
 #include "oops/util/linkedList_c.f"
-
-! ------------------------------------------------------------------------------
-!  C++ interfaces
-! ------------------------------------------------------------------------------
-
-subroutine create_oobump_c(key, idx, c_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub) bind(c, name='create_oobump_f90')
-implicit none
-integer(c_int), intent(inout) :: key
-integer(c_int), intent(in) :: idx
-type(c_ptr), intent(in) :: c_conf
-integer, intent(in) :: ens1_ne
-integer, intent(in) :: ens1_nsub
-integer, intent(in) :: ens2_ne
-integer, intent(in) :: ens2_nsub
-
-type(oobump_type), pointer :: self
-type(unstructured_grid), pointer :: ug
-
-! Initialize BUMP registry
-call oobump_registry%init()
-call oobump_registry%add(key)
-call oobump_registry%get(key, self)
-
-! Get unstructured grid
-call unstructured_grid_registry%get(idx, ug)
-
-! Create BUMP
-call create_oobump(self, ug, c_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub)
-
-end subroutine create_oobump_c
-
-! ------------------------------------------------------------------------------
-
-subroutine delete_oobump_c(key) bind(c, name='delete_oobump_f90')
-implicit none
-integer(c_int), intent(inout) :: key
-
-type(oobump_type), pointer :: self
-
-! Get BUMP
-call oobump_registry%get(key, self)
-
-! Delete BUMP
-call delete_oobump(self)
-
-! Delete registry key
-call oobump_registry%remove(key)
-
-end subroutine delete_oobump_c
-
-! ------------------------------------------------------------------------------
-
-subroutine add_oobump_member_c(key, idx, ie, iens) bind(c, name='add_oobump_member_f90')
-implicit none
-integer(c_int), intent(in) :: key
-integer(c_int), intent(in) :: idx
-integer, intent(in) :: ie
-integer, intent(in) :: iens
-
-type(oobump_type), pointer :: self
-type(unstructured_grid), pointer :: ug
-
-! Get BUMP
-call oobump_registry%get(key, self)
-
-! Get unstructured grid
-call unstructured_grid_registry%get(idx, ug)
-
-! Add BUMP member
-call add_oobump_member(self, ug, ie, iens)
-
-end subroutine add_oobump_member_c
-
-! ------------------------------------------------------------------------------
-
-subroutine run_oobump_drivers_c(key) bind(c, name='run_oobump_drivers_f90')
-implicit none
-integer(c_int), intent(in) :: key
-
-type(oobump_type), pointer :: self
-
-! Get BUMP
-call oobump_registry%get(key, self)
-
-! Run BUMP drivers
-call run_oobump_drivers(self)
-
-end subroutine run_oobump_drivers_c
-
-! ------------------------------------------------------------------------------
-
-subroutine multiply_oobump_vbal_c(key, idx) bind(c, name='multiply_oobump_vbal_f90')
-implicit none
-integer(c_int), intent(in) :: key
-integer(c_int), intent(in) :: idx
-
-type(oobump_type), pointer :: self
-type(unstructured_grid), pointer :: ug
-
-! Get BUMP
-call oobump_registry%get(key, self)
-
-! Get unstructured grid
-call unstructured_grid_registry%get(idx, ug)
-
-! Multiply
-call multiply_oobump_vbal(self, ug)
-
-end subroutine multiply_oobump_vbal_c
-
-! ------------------------------------------------------------------------------
-
-subroutine multiply_oobump_vbal_inv_c(key, idx) bind(c, name='multiply_oobump_vbal_inv_f90')
-implicit none
-integer(c_int), intent(in) :: key
-integer(c_int), intent(in) :: idx
-
-type(oobump_type), pointer :: self
-type(unstructured_grid), pointer :: ug
-
-! Get BUMP
-call oobump_registry%get(key, self)
-
-! Get unstructured grid
-call unstructured_grid_registry%get(idx, ug)
-
-! Multiply
-call multiply_oobump_vbal_inv(self, ug)
-
-end subroutine multiply_oobump_vbal_inv_c
-
-! ------------------------------------------------------------------------------
-
-subroutine multiply_oobump_vbal_ad_c(key, idx) bind(c, name='multiply_oobump_vbal_ad_f90')
-implicit none
-integer(c_int), intent(in) :: key
-integer(c_int), intent(in) :: idx
-
-type(oobump_type), pointer :: self
-type(unstructured_grid), pointer :: ug
-
-! Get BUMP
-call oobump_registry%get(key, self)
-
-! Get unstructured grid
-call unstructured_grid_registry%get(idx, ug)
-
-! Multiply
-call multiply_oobump_vbal_ad(self, ug)
-
-end subroutine multiply_oobump_vbal_ad_c
-
-! ------------------------------------------------------------------------------
-
-subroutine multiply_oobump_vbal_inv_ad_c(key, idx) bind(c, name='multiply_oobump_vbal_inv_ad_f90')
-implicit none
-integer(c_int), intent(in) :: key
-integer(c_int), intent(in) :: idx
-
-type(oobump_type), pointer :: self
-type(unstructured_grid), pointer :: ug
-
-! Get BUMP
-call oobump_registry%get(key, self)
-
-! Get unstructured grid
-call unstructured_grid_registry%get(idx, ug)
-
-! Multiply
-call multiply_oobump_vbal_inv_ad(self, ug)
-
-end subroutine multiply_oobump_vbal_inv_ad_c
-
-! ------------------------------------------------------------------------------
-
-subroutine multiply_oobump_nicas_c(key, idx) bind(c, name='multiply_oobump_nicas_f90')
-implicit none
-integer(c_int), intent(in) :: key
-integer(c_int), intent(in) :: idx
-
-type(oobump_type), pointer :: self
-type(unstructured_grid), pointer :: ug
-
-! Get BUMP
-call oobump_registry%get(key, self)
-
-! Get unstructured grid
-call unstructured_grid_registry%get(idx, ug)
-
-! Multiply
-call multiply_oobump_nicas(self, ug)
-
-end subroutine multiply_oobump_nicas_c
-
-! ------------------------------------------------------------------------------
-
-subroutine get_oobump_cv_size_c(key, n) bind(c, name='get_oobump_cv_size_f90')
-implicit none
-integer(c_int), intent(in) :: key
-integer(c_int), intent(out) :: n
-
-type(oobump_type), pointer :: self
-
-! Get BUMP
-call oobump_registry%get(key, self)
-
-! Get control variable size
-call get_oobump_cv_size(self, n)
-
-end subroutine get_oobump_cv_size_c
-
-! ------------------------------------------------------------------------------
-
-subroutine multiply_oobump_nicas_sqrt_c(key, cv, idx) bind(c, name='multiply_oobump_nicas_sqrt_f90')
-implicit none
-integer(c_int), intent(in) :: key
-real(c_double), intent(in) :: cv(:)
-integer(c_int), intent(in) :: idx
-
-type(oobump_type), pointer :: self
-type(unstructured_grid), pointer :: ug
-
-! Get BUMP
-call oobump_registry%get(key, self)
-
-! Get unstructured grid
-call unstructured_grid_registry%get(idx, ug)
-
-! Square-root multiply
-call multiply_oobump_nicas_sqrt(self, cv, ug)
-
-end subroutine multiply_oobump_nicas_sqrt_c
-
-! ------------------------------------------------------------------------------
-
-subroutine multiply_oobump_nicas_sqrt_ad_c(key, idx, cv) bind(c, name='multiply_oobump_nicas_sqrt_ad_f90')
-implicit none
-integer(c_int), intent(in) :: key
-integer(c_int), intent(in) :: idx
-real(c_double), intent(inout) :: cv(:)
-
-type(oobump_type), pointer :: self
-type(unstructured_grid), pointer :: ug
-
-! Get BUMP
-call oobump_registry%get(key, self)
-
-! Get unstructured grid
-call unstructured_grid_registry%get(idx, ug)
-
-! Square-root multiply
-call multiply_oobump_nicas_sqrt_ad(self, ug, cv)
-
-end subroutine multiply_oobump_nicas_sqrt_ad_c
-
-! ------------------------------------------------------------------------------
-
-subroutine randomize_oobump_nicas_c(key, idx) bind(c, name='randomize_oobump_nicas_f90')
-implicit none
-integer(c_int), intent(in) :: key
-integer(c_int), intent(in) :: idx
-
-type(oobump_type), pointer :: self
-type(unstructured_grid), pointer :: ug
-
-! Get BUMP
-call oobump_registry%get(key, self)
-
-! Get unstructured grid
-call unstructured_grid_registry%get(idx, ug)
-
-! Multiply
-call randomize_oobump_nicas(self, ug)
-
-end subroutine randomize_oobump_nicas_c
-
-! ------------------------------------------------------------------------------
-
-subroutine get_oobump_param_c(key, nstr, cstr, idx) bind(c, name='get_oobump_param_f90')
-implicit none
-integer(c_int), intent(in) :: key
-integer(c_int), intent(in) :: nstr
-character(kind=c_char), intent(in) :: cstr(nstr)
-integer(c_int), intent(in) :: idx
-
-type(oobump_type), pointer :: self
-type(unstructured_grid), pointer :: ug
-integer :: istr
-character(len=nstr) :: param
-
-! Get BUMP
-call oobump_registry%get(key, self)
-
-! Get unstructured grid
-call unstructured_grid_registry%get(idx, ug)
-
-! Copy string
-param = ''
-do istr=1,nstr
-   param = trim(param)//cstr(istr)
-end do
-
-! Get parameter
-call get_oobump_param(self, param, ug)
-
-end subroutine get_oobump_param_c
-
-! ------------------------------------------------------------------------------
-
-subroutine set_oobump_param_c(key, nstr, cstr, idx) bind(c, name='set_oobump_param_f90')
-implicit none
-integer(c_int), intent(in) :: key
-integer(c_int), intent(in) :: nstr
-character(kind=c_char), intent(in) :: cstr(nstr)
-integer(c_int), intent(in) :: idx
-
-type(oobump_type), pointer :: self
-type(unstructured_grid), pointer :: ug
-integer :: istr
-character(len=nstr) :: param
-
-! Get BUMP
-call oobump_registry%get(key, self)
-
-! Get unstructured grid
-call unstructured_grid_registry%get(idx, ug)
-
-! Copy string
-param = ''
-do istr=1,nstr
-   param = trim(param)//cstr(istr)
-end do
-
-! Set parameter
-call set_oobump_param(self, param, ug)
-
-end subroutine set_oobump_param_c
-
-! ------------------------------------------------------------------------------
-!  End C++ interfaces
-! ------------------------------------------------------------------------------
-
-subroutine create_oobump(self, ug, c_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub)
+!-------------------------------------------------------------------------------
+!> Create OOBUMP
+subroutine create_oobump(self, ug, conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub)
 
 implicit none
-type(oobump_type), intent(inout) :: self
-type(unstructured_grid), intent(in) :: ug
-type(c_ptr), intent(in) :: c_conf
-integer, intent(in) :: ens1_ne
-integer, intent(in) :: ens1_nsub
-integer, intent(in) :: ens2_ne
-integer, intent(in) :: ens2_nsub
+type(oobump_type), intent(inout) :: self  !< OOBUMP
+type(unstructured_grid), intent(in) :: ug !< Unstructured grid
+type(c_ptr), intent(in) :: conf           !< Configuration
+integer, intent(in) :: ens1_ne            !< First ensemble size
+integer, intent(in) :: ens1_nsub          !< Number of sub-ensembles in the first ensemble
+integer, intent(in) :: ens2_ne            !< Second ensemble size
+integer, intent(in) :: ens2_nsub          !< Number of sub-ensembles in the second ensemble
 
+! Local variables
 integer :: igrid
 real(kind_real) :: msvalr
 
 ! Allocation
+self%colocated = ug%colocated
 self%ngrid = ug%ngrid
 allocate(self%bump(self%ngrid))
 
@@ -409,21 +69,351 @@ do igrid=1,self%ngrid
    call self%bump(igrid)%nam%init
 
    ! Read JSON
-   call bump_read_conf(c_conf,self%bump(igrid))
+   call bump_read_conf(conf,self%bump(igrid))
+
+   ! Add suffix for multiple grid case
+   if (self%ngrid>1) write(self%bump(igrid)%nam%prefix,'(a,a,i2.2)') trim(self%bump(igrid)%nam%prefix),'_',igrid
 
    ! Get missing value
-   msvalr  = missing_value(1.0_kind_real)
+   msvalr = missing_value(1.0_kind_real)
 
    ! Online setup
    call self%bump(igrid)%setup_online(ug%grid(igrid)%nmga,ug%grid(igrid)%nl0,ug%grid(igrid)%nv,ug%grid(igrid)%nts, &
  & ug%grid(igrid)%lon,ug%grid(igrid)%lat,ug%grid(igrid)%area,ug%grid(igrid)%vunit,ug%grid(igrid)%lmask,ens1_ne=ens1_ne, &
- & ens1_nsub=ens1_nsub, ens2_ne=ens2_ne, ens2_nsub=ens2_nsub,msvalr=msvalr)
+ & ens1_nsub=ens1_nsub, ens2_ne=ens2_ne, ens2_nsub=ens2_nsub, msvalr=msvalr)
 end do
 
 end subroutine create_oobump
-
 !-------------------------------------------------------------------------------
+!> Delete OOBUMP
+subroutine delete_oobump(self)
 
+implicit none
+
+! Passed variables
+type(oobump_type), intent(inout) :: self !< OOBUMP
+
+! Local variables
+integer :: igrid
+
+! Release memory
+if (allocated(self%bump)) then
+   do igrid=1,self%ngrid  
+      call self%bump(igrid)%dealloc
+   end do
+   deallocate(self%bump)
+end if
+
+end subroutine delete_oobump
+!-------------------------------------------------------------------------------
+!> Get colocated flag
+subroutine get_oobump_colocated(self,colocated)
+
+implicit none
+
+! Passed variables
+type(oobump_type), intent(inout) :: self !< OOBUMP
+integer, intent(out) :: colocated        !< Colocated flag
+
+! Copy colocated
+colocated = self%colocated
+
+end subroutine get_oobump_colocated
+!-------------------------------------------------------------------------------
+!> Get number of timeslots
+subroutine get_oobump_nts(self,nts)
+
+implicit none
+
+! Passed variables
+type(oobump_type), intent(inout) :: self !< OOBUMP
+integer, intent(out) :: nts              !< Number of timeslots
+
+! Copy nts
+nts = self%bump(1)%nam%nts
+
+end subroutine get_oobump_nts
+!-------------------------------------------------------------------------------
+!> Get control variable size
+subroutine get_oobump_cv_size(self,n)
+
+implicit none
+
+! Passed variables
+type(oobump_type), intent(inout) :: self !< OOBUMP
+integer, intent(out) :: n                !< Control variable size
+
+! Local variables
+integer :: igrid,nn
+
+! Add control variable sizes for each grid
+n = 0
+do igrid=1,self%ngrid
+   call self%bump(igrid)%get_cv_size(nn)
+   n = n+nn
+end do
+
+end subroutine get_oobump_cv_size
+!-------------------------------------------------------------------------------
+!> Add ensemble member
+subroutine add_oobump_member(self,ug,ie,iens)
+
+implicit none
+
+! Passed variables
+type(oobump_type), intent(inout) :: self     !< OOBUMP
+type(unstructured_grid), intent(inout) :: ug !< Unstructured grid
+integer, intent(in) :: ie                    !< Ensemble member index
+integer, intent(in) :: iens                  !< Ensemble index
+
+! Local variables
+integer :: igrid
+
+! Add member
+do igrid=1,self%ngrid
+   call self%bump(igrid)%add_member(ug%grid(igrid)%fld,ie,iens)
+end do
+
+end subroutine add_oobump_member
+!-------------------------------------------------------------------------------
+!> Run OOBUMP drivers
+subroutine run_oobump_drivers(self)
+
+implicit none
+
+! Passed variables
+type(oobump_type), intent(inout) :: self !< OOBUMP
+
+! Local variables
+integer :: igrid
+
+! Run BUMP drivers
+do igrid=1,self%ngrid
+   call self%bump(igrid)%run_drivers
+end do
+
+end subroutine run_oobump_drivers
+!-------------------------------------------------------------------------------
+!> Multiplication by BUMP vertical balance operator
+subroutine multiply_oobump_vbal(self,ug)
+
+implicit none
+
+! Passed variables
+type(oobump_type), intent(inout) :: self     !< OOBUMP
+type(unstructured_grid), intent(inout) :: ug !< Unstructured grid
+
+! Local variables
+integer :: igrid
+
+! Apply vertical balance
+do igrid=1,self%ngrid
+   call self%bump(igrid)%apply_vbal(ug%grid(igrid)%fld)
+end do
+
+end subroutine multiply_oobump_vbal
+!-------------------------------------------------------------------------------
+!> Multiplication by BUMP vertical balance operator inverse
+subroutine multiply_oobump_vbal_inv(self,ug)
+
+implicit none
+
+! Passed variables
+type(oobump_type), intent(inout) :: self     !< OOBUMP
+type(unstructured_grid), intent(inout) :: ug !< Unstructured grid
+
+! Local variables
+integer :: igrid
+
+! Apply vertical balance, inverse
+do igrid=1,self%ngrid
+   call self%bump(igrid)%apply_vbal_inv(ug%grid(igrid)%fld)
+end do
+
+end subroutine multiply_oobump_vbal_inv
+!-------------------------------------------------------------------------------
+!> Multiplication by BUMP vertical balance operator adjoint
+subroutine multiply_oobump_vbal_ad(self,ug)
+
+implicit none
+
+! Passed variables
+type(oobump_type), intent(inout) :: self     !< OOBUMP
+type(unstructured_grid), intent(inout) :: ug !< Unstructured grid
+
+! Local variables
+integer :: igrid
+
+! Apply vertical balance, adjoint
+do igrid=1,self%ngrid
+   call self%bump(igrid)%apply_vbal_ad(ug%grid(igrid)%fld)
+end do
+
+end subroutine multiply_oobump_vbal_ad
+!-------------------------------------------------------------------------------
+!> Multiplication by BUMP vertical balance operator adjoint inverse
+subroutine multiply_oobump_vbal_inv_ad(self,ug)
+
+implicit none
+
+! Passed variables
+type(oobump_type), intent(inout) :: self     !< OOBUMP
+type(unstructured_grid), intent(inout) :: ug !< Unstructured grid
+
+! Local variables
+integer :: igrid
+
+! Apply vertical balance, inverse adjoint
+do igrid=1,self%ngrid
+   call self%bump(igrid)%apply_vbal_inv_ad(ug%grid(igrid)%fld)
+end do
+
+end subroutine multiply_oobump_vbal_inv_ad
+!-------------------------------------------------------------------------------
+!> Multiplication by BUMP NICAS operator
+subroutine multiply_oobump_nicas(self,ug)
+
+implicit none
+
+! Passed variables
+type(oobump_type), intent(inout) :: self     !< OOBUMP
+type(unstructured_grid), intent(inout) :: ug !< Unstructured grid
+
+! Local variables
+integer :: igrid
+
+! Apply NICAS
+do igrid=1,self%ngrid
+   call self%bump(igrid)%apply_nicas(ug%grid(igrid)%fld)
+end do
+
+end subroutine multiply_oobump_nicas
+!-------------------------------------------------------------------------------
+!> Multiplication by BUMP NICAS operator square-root
+subroutine multiply_oobump_nicas_sqrt(self,cv,ug)
+
+implicit none
+
+! Passed variables
+type(oobump_type), intent(inout) :: self     !< OOBUMP
+real(kind_real), intent(in) :: cv(:)         !< Control variable
+type(unstructured_grid), intent(inout) :: ug !< Unstructured grid
+
+! Local variables
+integer :: offset,igrid,nn
+
+! Allocation
+call allocate_unstructured_grid_field(ug)
+
+! Initialization
+offset = 0
+
+do igrid=1,self%ngrid
+   ! Get control variable size for this grid
+   call self%bump(igrid)%get_cv_size(nn)
+
+   ! Apply NICAS square-root
+   call self%bump(igrid)%apply_nicas_sqrt(cv(offset+1:offset+nn), ug%grid(igrid)%fld)
+
+   ! Update
+   offset = offset+nn
+end do
+
+end subroutine multiply_oobump_nicas_sqrt
+!-------------------------------------------------------------------------------
+!> Multiplication by BUMP NICAS operator square-root adjoint
+subroutine multiply_oobump_nicas_sqrt_ad(self,ug,cv)
+
+implicit none
+
+! Passed variables
+type(oobump_type), intent(inout) :: self  !< OOBUMP
+type(unstructured_grid), intent(in) :: ug !< Unstructured grid
+real(kind_real), intent(inout) :: cv(:)   !< Control variable
+
+! Local variables
+integer :: offset,igrid,nn
+
+! Initialization
+offset = 0
+
+do igrid=1,self%ngrid
+   ! Get control variable size for this grid
+   call self%bump(igrid)%get_cv_size(nn)
+
+   ! Apply NICAS square-root
+   call self%bump(igrid)%apply_nicas_sqrt_ad(ug%grid(igrid)%fld, cv(offset+1:offset+nn))
+
+   ! Update
+   offset = offset+nn
+end do
+
+end subroutine multiply_oobump_nicas_sqrt_ad
+!-------------------------------------------------------------------------------
+!> Randomize the BUMP NICAS operator
+subroutine randomize_oobump_nicas(self,ug)
+
+implicit none
+
+! Passed variables
+type(oobump_type), intent(inout) :: self   !< OOBUMP
+type(unstructured_grid), intent(out) :: ug !< Unstructured grid
+
+! Local variables
+integer :: igrid
+
+! Allocation
+call allocate_unstructured_grid_field(ug)
+
+! Randomize NICAS
+do igrid=1,self%ngrid
+   call self%bump(igrid)%randomize(ug%grid(igrid)%fld)
+end do
+
+end subroutine randomize_oobump_nicas
+!-------------------------------------------------------------------------------
+!> Get BUMP parameter
+subroutine get_oobump_param(self,param,ug)
+
+implicit none
+
+! Passed variables
+type(oobump_type), intent(inout) :: self     !< OOBUMP
+character(len=*), intent(in) :: param        !< Parameter name
+type(unstructured_grid), intent(inout) :: ug !< Unstructured grid
+
+! Local variables
+integer :: igrid
+
+! Allocation
+call allocate_unstructured_grid_field(ug)
+
+! Get parameter
+do igrid=1,self%ngrid
+   call self%bump(igrid)%get_parameter(param,ug%grid(igrid)%fld)
+end do
+
+end subroutine get_oobump_param
+!-------------------------------------------------------------------------------
+!> Set BUMP parameter
+subroutine set_oobump_param(self,param,ug)
+
+implicit none
+
+! Passed variables
+type(oobump_type), intent(inout) :: self  !< OOBUMP
+character(len=*),intent(in) :: param      !< Parameter name
+type(unstructured_grid), intent(in) :: ug !< Unstructured grid
+
+! Local variables
+integer :: igrid
+
+! Set parameter
+do igrid=1,self%ngrid
+   call self%bump(igrid)%set_parameter(param,ug%grid(igrid)%fld)
+end do
+
+end subroutine set_oobump_param
 !-------------------------------------------------------------------------------
 !> Read BUMP configuration
 subroutine bump_read_conf(conf,bump)
@@ -435,7 +425,7 @@ type(c_ptr), intent(in) :: conf        !< Configuration
 type(bump_type), intent(inout) :: bump !< BUMP
 
 ! Local variables
-integer :: n
+integer :: n,i
 integer,allocatable :: ivec(:)
 
 ! general_param
@@ -463,6 +453,7 @@ if (config_element_exists(conf,"write_nicas")) bump%nam%write_nicas = integer_to
 if (config_element_exists(conf,"new_obsop")) bump%nam%new_obsop = integer_to_logical(config_get_int(conf,"new_obsop"))
 if (config_element_exists(conf,"load_obsop")) bump%nam%load_obsop = integer_to_logical(config_get_int(conf,"load_obsop"))
 if (config_element_exists(conf,"write_obsop")) bump%nam%write_obsop = integer_to_logical(config_get_int(conf,"write_obsop"))
+if (config_element_exists(conf,"check_vbal")) bump%nam%check_vbal = integer_to_logical(config_get_int(conf,"check_vbal"))
 if (config_element_exists(conf,"check_adjoints")) &
  & bump%nam%check_adjoints = integer_to_logical(config_get_int(conf,"check_adjoints"))
 if (config_element_exists(conf,"check_pos_def")) &
@@ -500,7 +491,9 @@ if (config_element_exists(conf,"vbal_block")) then
   n = config_get_data_dimension(conf,"vbal_block")
   allocate(ivec(n))
   call config_get_int_vector(conf,"vbal_block",ivec)
-  bump%nam%vbal_block(1:n) = integer_to_logical_vector(ivec)
+  do i=1,n
+    bump%nam%vbal_block(i) = integer_to_logical(ivec(i))
+  end do
   deallocate(ivec)
 end if
 if (config_element_exists(conf,"vbal_rad")) bump%nam%vbal_rad = config_get_real(conf,"vbal_rad")
@@ -510,10 +503,10 @@ if (config_element_exists(conf,"var_niter")) bump%nam%var_niter = config_get_int
 if (config_element_exists(conf,"var_rhflt")) bump%nam%var_rhflt = config_get_real(conf,"var_rhflt")
 if (config_element_exists(conf,"local_diag")) bump%nam%local_diag = integer_to_logical(config_get_int(conf,"local_diag"))
 if (config_element_exists(conf,"local_rad")) bump%nam%local_rad = config_get_real(conf,"local_rad")
-if (config_element_exists(conf,"displ_diag")) bump%nam%displ_diag = integer_to_logical(config_get_int(conf,"displ_diag"))
-if (config_element_exists(conf,"displ_rad")) bump%nam%displ_rad = config_get_real(conf,"displ_rad")
-if (config_element_exists(conf,"displ_niter")) bump%nam%displ_niter = config_get_int(conf,"displ_niter")
-if (config_element_exists(conf,"displ_rhflt")) bump%nam%displ_rhflt = config_get_real(conf,"displ_rhflt")
+if (config_element_exists(conf,"adv_diag")) bump%nam%adv_diag = integer_to_logical(config_get_int(conf,"adv_diag"))
+if (config_element_exists(conf,"adv_rad")) bump%nam%adv_rad = config_get_real(conf,"adv_rad")
+if (config_element_exists(conf,"adv_niter")) bump%nam%adv_niter = config_get_int(conf,"adv_niter")
+if (config_element_exists(conf,"adv_rhflt")) bump%nam%adv_rhflt = config_get_real(conf,"adv_rhflt")
 
 ! fit_param
 if (config_element_exists(conf,"minim_algo")) bump%nam%minim_algo = config_get_string(conf,1024,"minim_algo")
@@ -521,7 +514,9 @@ if (config_element_exists(conf,"double_fit")) then
   n = config_get_data_dimension(conf,"double_fit")
   allocate(ivec(n))
   call config_get_int_vector(conf,"double_fit",ivec)
-  bump%nam%double_fit(1:n) = integer_to_logical_vector(ivec)
+  do i=1,n
+    bump%nam%double_fit(i) = integer_to_logical(ivec(i))
+  end do
   deallocate(ivec)
 end if
 if (config_element_exists(conf,"lhomh")) bump%nam%lhomh = integer_to_logical(config_get_int(conf,"lhomh"))
@@ -529,13 +524,17 @@ if (config_element_exists(conf,"lhomv")) bump%nam%lhomv = integer_to_logical(con
 if (config_element_exists(conf,"rvflt")) bump%nam%rvflt = config_get_real(conf,"rvflt")
 if (config_element_exists(conf,"lct_nscales")) bump%nam%lct_nscales = config_get_int(conf,"lct_nscales")
 if (config_element_exists(conf,"lct_diag")) then
-  allocate(ivec(config_get_data_dimension(conf,"lct_diag")))
+  n = config_get_data_dimension(conf,"lct_diag")
+  allocate(ivec(n))
   call config_get_int_vector(conf,"lct_diag",ivec)
-  bump%nam%lct_diag = integer_to_logical_vector(ivec)
+  do i=1,n
+    bump%nam%lct_diag(i) = integer_to_logical(ivec(i))
+  end do
   deallocate(ivec)
 end if
 
 ! nicas_param
+if (config_element_exists(conf,"nonunit_diag")) bump%nam%nonunit_diag = integer_to_logical(config_get_int(conf,"nonunit_diag"))
 if (config_element_exists(conf,"lsqrt")) bump%nam%lsqrt = integer_to_logical(config_get_int(conf,"lsqrt"))
 if (config_element_exists(conf,"resol")) bump%nam%resol = config_get_real(conf,"resol")
 if (config_element_exists(conf,"fast_sampling")) bump%nam%fast_sampling =  integer_to_logical(config_get_int(conf, &
@@ -544,7 +543,7 @@ if (config_element_exists(conf,"subsamp")) bump%nam%subsamp = config_get_string(
 if (config_element_exists(conf,"nicas_interp")) bump%nam%nicas_interp = config_get_string(conf,1024,"nicas_interp")
 if (config_element_exists(conf,"network")) bump%nam%network = integer_to_logical(config_get_int(conf,"network"))
 if (config_element_exists(conf,"mpicom")) bump%nam%mpicom = config_get_int(conf,"mpicom")
-if (config_element_exists(conf,"advmode")) bump%nam%advmode = config_get_int(conf,"advmode")
+if (config_element_exists(conf,"adv_mode")) bump%nam%adv_mode = config_get_int(conf,"adv_mode")
 if (config_element_exists(conf,"forced_radii")) bump%nam%forced_radii = integer_to_logical(config_get_int(conf,"forced_radii"))
 if (config_element_exists(conf,"rh")) bump%nam%rh = config_get_real(conf,"rh")
 if (config_element_exists(conf,"rv")) bump%nam%rv = config_get_real(conf,"rv")
@@ -606,7 +605,7 @@ function integer_to_logical(i)
 implicit none
 
 ! Passed variables
-integer,intent(in) :: i
+integer,intent(in) :: i ! Integer to transform
 
 ! Returned argument
 logical :: integer_to_logical
@@ -621,269 +620,4 @@ end if
 
 end function integer_to_logical
 !-------------------------------------------------------------------------------
-!> Convert integer to logical (vector
-function integer_to_logical_vector(i)
-
-implicit none
-
-! Passed variables
-integer,intent(in),dimension(:) :: i
-
-! Returned argument
-logical :: integer_to_logical_vector(size(i))
-
-! Local variables
-integer :: j
-
-do j=1,size(i)
-  if (i(j)==0) then
-    integer_to_logical_vector(j) = .false.
-  elseif (i(j)==1) then
-    integer_to_logical_vector(j) = .true.
-  else
-     call abor1_ftn('wrong integer in integer_to_logical_vector')
-  end if
-end do
-
-end function integer_to_logical_vector
-
-!-------------------------------------------------------------------------------
-
-subroutine delete_oobump(self)
-implicit none
-type(oobump_type), intent(inout) :: self
-integer :: igrid
-
-! Deallocate BUMP
-if (allocated(self%bump)) then
-   do igrid=1,self%ngrid  
-      call self%bump(igrid)%dealloc
-   end do
-   deallocate(self%bump)
-end if
-
-end subroutine delete_oobump
-
-!-------------------------------------------------------------------------------
-
-subroutine add_oobump_member(self,ug,ie,iens)
-implicit none
-type(oobump_type), intent(inout) :: self
-type(unstructured_grid), intent(inout) :: ug
-integer, intent(in) :: ie
-integer, intent(in) :: iens
-integer :: igrid
-
-! Add member
-do igrid=1,self%ngrid
-   call self%bump(igrid)%add_member(ug%grid(igrid)%fld,ie,iens)
-end do
-
-end subroutine add_oobump_member
-
-!-------------------------------------------------------------------------------
-
-subroutine run_oobump_drivers(self)
-implicit none
-type(oobump_type), intent(inout) :: self
-integer :: igrid
-
-! Run BUMP drivers
-do igrid=1,self%ngrid
-   call self%bump(igrid)%run_drivers
-end do
-
-end subroutine run_oobump_drivers
-
-!-------------------------------------------------------------------------------
-
-subroutine multiply_oobump_vbal(self,ug)
-implicit none
-type(oobump_type), intent(inout) :: self
-type(unstructured_grid), intent(inout) :: ug
-integer :: igrid
-
-! Apply vertical balance
-do igrid=1,self%ngrid
-   call self%bump(igrid)%apply_vbal(ug%grid(igrid)%fld)
-end do
-
-end subroutine multiply_oobump_vbal
-
-!-------------------------------------------------------------------------------
-
-subroutine multiply_oobump_vbal_inv(self,ug)
-implicit none
-type(oobump_type), intent(inout) :: self
-type(unstructured_grid), intent(inout) :: ug
-integer :: igrid
-
-! Apply vertical balance, inverse
-do igrid=1,self%ngrid
-   call self%bump(igrid)%apply_vbal_inv(ug%grid(igrid)%fld)
-end do
-
-end subroutine multiply_oobump_vbal_inv
-
-!-------------------------------------------------------------------------------
-
-subroutine multiply_oobump_vbal_ad(self,ug)
-implicit none
-type(oobump_type), intent(inout) :: self
-type(unstructured_grid), intent(inout) :: ug
-integer :: igrid
-
-! Apply vertical balance, adjoint
-do igrid=1,self%ngrid
-   call self%bump(igrid)%apply_vbal_ad(ug%grid(igrid)%fld)
-end do
-
-end subroutine multiply_oobump_vbal_ad
-
-!-------------------------------------------------------------------------------
-
-subroutine multiply_oobump_vbal_inv_ad(self,ug)
-implicit none
-type(oobump_type), intent(inout) :: self
-type(unstructured_grid), intent(inout) :: ug
-integer :: igrid
-
-! Apply vertical balance, inverse adjoint
-do igrid=1,self%ngrid
-   call self%bump(igrid)%apply_vbal_inv_ad(ug%grid(igrid)%fld)
-end do
-
-end subroutine multiply_oobump_vbal_inv_ad
-
-!-------------------------------------------------------------------------------
-
-subroutine multiply_oobump_nicas(self,ug)
-implicit none
-type(oobump_type), intent(inout) :: self
-type(unstructured_grid), intent(inout) :: ug
-integer :: igrid
-
-! Apply NICAS
-do igrid=1,self%ngrid
-   call self%bump(igrid)%apply_nicas(ug%grid(igrid)%fld)
-end do
-
-end subroutine multiply_oobump_nicas
-
-!-------------------------------------------------------------------------------
-
-subroutine get_oobump_cv_size(self,n)
-implicit none
-type(oobump_type), intent(inout) :: self
-integer, intent(out) :: n
-integer :: igrid,nn
-
-! Add control variable sizes for each grid
-n = 0
-do igrid=1,self%ngrid
-   call self%bump(igrid)%get_cv_size(nn)
-   n = n+nn
-end do
-
-end subroutine get_oobump_cv_size
-
-!-------------------------------------------------------------------------------
-
-subroutine multiply_oobump_nicas_sqrt(self,cv,ug)
-implicit none
-type(oobump_type), intent(inout) :: self
-real(kind_real), intent(in) :: cv(:)
-type(unstructured_grid), intent(inout) :: ug
-integer :: offset,igrid,nn
-
-! Initialization
-offset = 0
-
-do igrid=1,self%ngrid
-   ! Get control variable size for this grid
-   call self%bump(igrid)%get_cv_size(nn)
-
-   ! Apply NICAS square-root
-   call self%bump(igrid)%apply_nicas_sqrt(cv(offset+1:offset+nn), ug%grid(igrid)%fld)
-
-   ! Update
-   offset = offset+nn
-end do
-
-end subroutine multiply_oobump_nicas_sqrt
-
-!-------------------------------------------------------------------------------
-
-subroutine multiply_oobump_nicas_sqrt_ad(self,ug,cv)
-implicit none
-type(oobump_type), intent(inout) :: self
-type(unstructured_grid), intent(in) :: ug
-real(kind_real), intent(inout) :: cv(:)
-integer :: offset,igrid,nn
-
-! Initialization
-offset = 0
-
-do igrid=1,self%ngrid
-   ! Get control variable size for this grid
-   call self%bump(igrid)%get_cv_size(nn)
-
-   ! Apply NICAS square-root
-   call self%bump(igrid)%apply_nicas_sqrt_ad(ug%grid(igrid)%fld, cv(offset+1:offset+nn))
-
-   ! Update
-   offset = offset+nn
-end do
-
-end subroutine multiply_oobump_nicas_sqrt_ad
-
-!-------------------------------------------------------------------------------
-
-subroutine randomize_oobump_nicas(self,ug)
-implicit none
-type(oobump_type), intent(inout) :: self
-type(unstructured_grid), intent(out) :: ug
-integer :: igrid
-
-! Randomize NICAS
-do igrid=1,self%ngrid
-   call self%bump(igrid)%randomize(ug%grid(igrid)%fld)
-end do
-
-end subroutine randomize_oobump_nicas
-
-!-------------------------------------------------------------------------------
-
-subroutine get_oobump_param(self,param,ug)
-implicit none
-type(oobump_type), intent(inout) :: self
-character(len=*), intent(in) :: param
-type(unstructured_grid), intent(inout) :: ug
-integer :: igrid
-
-! Get parameter
-do igrid=1,self%ngrid
-   call self%bump(igrid)%get_parameter(param,ug%grid(igrid)%fld)
-end do
-
-end subroutine get_oobump_param
-
-!-------------------------------------------------------------------------------
-
-subroutine set_oobump_param(self,param,ug)
-implicit none
-type(oobump_type), intent(inout) :: self
-character(len=*),intent(in) :: param
-type(unstructured_grid), intent(in) :: ug
-integer :: igrid
-
-! Set parameter
-do igrid=1,self%ngrid
-   call self%bump(igrid)%set_parameter(param,ug%grid(igrid)%fld)
-end do
-
-end subroutine set_oobump_param
-
-!-------------------------------------------------------------------------------
-
 end module oobump_mod

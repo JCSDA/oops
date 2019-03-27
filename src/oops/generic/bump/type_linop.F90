@@ -9,8 +9,7 @@ module type_linop
 
 use netcdf
 !$ use omp_lib
-use tools_kinds, only: kind_real
-use tools_nc, only: ncfloat
+use tools_kinds, only: kind_real,nc_kind_real
 use tools_qsort, only: qsort
 use tools_repro, only: inf
 use type_geom, only: geom_type
@@ -163,7 +162,7 @@ integer,intent(in) :: ncid               ! NetCDF file ID
 ! Local variables
 integer :: info,nvec
 integer :: n_s_id,row_id,col_id,S_id,Svec_id
-character(len=1024) :: subr = 'linop_read'
+character(len=1024),parameter :: subr = 'linop_read'
 
 ! Get operator size
 info = nf90_inq_dimid(ncid,trim(linop%prefix)//'_n_s',n_s_id)
@@ -218,7 +217,7 @@ integer,intent(in) :: ncid            ! NetCDF file ID
 
 ! Local variables
 integer :: n_s_id,nvec_id,row_id,col_id,S_id,Svec_id
-character(len=1024) :: subr = 'linop_write'
+character(len=1024),parameter :: subr = 'linop_write'
 
 ! Start definition mode
 call mpl%ncerr(subr,nf90_redef(ncid))
@@ -238,9 +237,9 @@ if (linop%n_s>0) then
    call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_row',nf90_int,(/n_s_id/),row_id))
    call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_col',nf90_int,(/n_s_id/),col_id))
    if (linop%nvec>0) then
-      call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_Svec',ncfloat,(/n_s_id,nvec_id/),Svec_id))
+      call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_Svec',nc_kind_real,(/n_s_id,nvec_id/),Svec_id))
    else
-      call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_S',ncfloat,(/n_s_id/),S_id))
+      call mpl%ncerr(subr,nf90_def_var(ncid,trim(linop%prefix)//'_S',nc_kind_real,(/n_s_id/),S_id))
    end if
 
    ! End definition mode
@@ -276,6 +275,7 @@ type(mpl_type),intent(inout) :: mpl      ! MPI data
 ! Local variables
 integer :: row,i_s_s,i_s_e,n_s,i_s
 integer,allocatable :: order(:)
+character(len=1024),parameter :: subr = 'linop_reorder'
 
 if ((linop%n_s>0).and.(linop%n_s<reorder_max)) then
    ! Sort with respect to row
@@ -314,7 +314,7 @@ if ((linop%n_s>0).and.(linop%n_s<reorder_max)) then
       end if
    end do
 else
-   call mpl%warning('linear operator is too big, impossible to reorder')
+   call mpl%warning(subr,'linear operator is too big, impossible to reorder')
 end if
 
 end subroutine linop_reorder
@@ -340,22 +340,23 @@ logical,intent(in),optional :: msdst                ! Check for missing destinat
 integer :: i_s,i_dst
 logical :: lmssrc,lmsdst,valid
 logical,allocatable :: missing(:)
+character(len=1024),parameter :: subr = 'linop_apply'
 
 if (check_data) then
    ! Check linear operation
-   if (minval(linop%col)<1) call mpl%abort('col<1 for linear operation '//trim(linop%prefix))
-   if (maxval(linop%col)>linop%n_src) call mpl%abort('col>n_src for linear operation '//trim(linop%prefix))
-   if (minval(linop%row)<1) call mpl%abort('row<1 for linear operation '//trim(linop%prefix))
-   if (maxval(linop%row)>linop%n_dst) call mpl%abort('row>n_dst for linear operation '//trim(linop%prefix))
+   if (minval(linop%col)<1) call mpl%abort(subr,'col<1 for linear operation '//trim(linop%prefix))
+   if (maxval(linop%col)>linop%n_src) call mpl%abort(subr,'col>n_src for linear operation '//trim(linop%prefix))
+   if (minval(linop%row)<1) call mpl%abort(subr,'row<1 for linear operation '//trim(linop%prefix))
+   if (maxval(linop%row)>linop%n_dst) call mpl%abort(subr,'row>n_dst for linear operation '//trim(linop%prefix))
    if (present(ivec)) then
-      if (any(isnan(linop%Svec))) call mpl%abort('NaN in Svec for linear operation '//trim(linop%prefix))
+      if (any(isnan(linop%Svec))) call mpl%abort(subr,'NaN in Svec for linear operation '//trim(linop%prefix))
    else
-      if (any(isnan(linop%S))) call mpl%abort('NaN in S for linear operation '//trim(linop%prefix))
+      if (any(isnan(linop%S))) call mpl%abort(subr,'NaN in S for linear operation '//trim(linop%prefix))
    end if
 
    ! Check input
-   if (any(fld_src>huge(1.0))) call mpl%abort('Overflowing number in fld_src for linear operation '//trim(linop%prefix))
-   if (any(isnan(fld_src))) call mpl%abort('NaN in fld_src for linear operation '//trim(linop%prefix))
+   if (any(fld_src>huge(1.0))) call mpl%abort(subr,'Overflowing number in fld_src for linear operation '//trim(linop%prefix))
+   if (any(isnan(fld_src))) call mpl%abort(subr,'NaN in fld_src for linear operation '//trim(linop%prefix))
 end if
 
 ! Initialization
@@ -403,7 +404,7 @@ end if
 
 if (check_data) then
    ! Check output
-   if (any(isnan(fld_dst))) call mpl%abort('NaN in fld_dst for linear operation '//trim(linop%prefix))
+   if (any(isnan(fld_dst))) call mpl%abort(subr,'NaN in fld_dst for linear operation '//trim(linop%prefix))
 end if
 
 end subroutine linop_apply
@@ -425,22 +426,24 @@ integer,intent(in),optional :: ivec                 ! Index of the vector of lin
 
 ! Local variables
 integer :: i_s
+character(len=1024),parameter :: subr = 'linop_apply_ad'
 
 if (check_data) then
    ! Check linear operation
-   if (minval(linop%col)<1) call mpl%abort('col<1 for adjoint linear operation '//trim(linop%prefix))
-   if (maxval(linop%col)>linop%n_src) call mpl%abort('col>n_src for adjoint linear operation '//trim(linop%prefix))
-   if (minval(linop%row)<1) call mpl%abort('row<1 for adjoint linear operation '//trim(linop%prefix))
-   if (maxval(linop%row)>linop%n_dst) call mpl%abort('row>n_dst for adjoint linear operation '//trim(linop%prefix))
+   if (minval(linop%col)<1) call mpl%abort(subr,'col<1 for adjoint linear operation '//trim(linop%prefix))
+   if (maxval(linop%col)>linop%n_src) call mpl%abort(subr,'col>n_src for adjoint linear operation '//trim(linop%prefix))
+   if (minval(linop%row)<1) call mpl%abort(subr,'row<1 for adjoint linear operation '//trim(linop%prefix))
+   if (maxval(linop%row)>linop%n_dst) call mpl%abort(subr,'row>n_dst for adjoint linear operation '//trim(linop%prefix))
    if (present(ivec)) then
-      if (any(isnan(linop%Svec))) call mpl%abort('NaN in Svec for adjoint linear operation '//trim(linop%prefix))
+      if (any(isnan(linop%Svec))) call mpl%abort(subr,'NaN in Svec for adjoint linear operation '//trim(linop%prefix))
    else
-      if (any(isnan(linop%S))) call mpl%abort('NaN in S for adjoint linear operation '//trim(linop%prefix))
+      if (any(isnan(linop%S))) call mpl%abort(subr,'NaN in S for adjoint linear operation '//trim(linop%prefix))
    end if
 
    ! Check input
-   if (any(fld_dst>huge(1.0))) call mpl%abort('Overflowing number in fld_dst for adjoint linear operation '//trim(linop%prefix))
-   if (any(isnan(fld_dst))) call mpl%abort('NaN in fld_dst for adjoint linear operation '//trim(linop%prefix))
+   if (any(fld_dst>huge(1.0))) &
+ & call mpl%abort(subr,'Overflowing number in fld_dst for adjoint linear operation '//trim(linop%prefix))
+   if (any(isnan(fld_dst))) call mpl%abort(subr,'NaN in fld_dst for adjoint linear operation '//trim(linop%prefix))
 end if
 
 ! Initialization
@@ -457,7 +460,7 @@ end do
 
 if (check_data) then
    ! Check output
-   if (any(isnan(fld_src))) call mpl%abort('NaN in fld_src for adjoint linear operation '//trim(linop%prefix))
+   if (any(isnan(fld_src))) call mpl%abort(subr,'NaN in fld_src for adjoint linear operation '//trim(linop%prefix))
 end if
 
 end subroutine linop_apply_ad
@@ -479,22 +482,23 @@ integer,intent(in),optional :: ivec               ! Index of the vector of linea
 ! Local variables
 integer :: i_s,ithread
 real(kind_real) :: fld_arr(linop%n_dst,mpl%nthread)
+character(len=1024),parameter :: subr = 'linop_apply_sym'
 
 if (check_data) then
    ! Check linear operation
-   if (minval(linop%col)<1) call mpl%abort('col<1 for symmetric linear operation '//trim(linop%prefix))
-   if (maxval(linop%col)>linop%n_src) call mpl%abort('col>n_src for symmetric linear operation '//trim(linop%prefix))
-   if (minval(linop%row)<1) call mpl%abort('row<1 for symmetric linear operation '//trim(linop%prefix))
-   if (maxval(linop%row)>linop%n_src) call mpl%abort('row>n_dst for symmetric linear operation '//trim(linop%prefix))
+   if (minval(linop%col)<1) call mpl%abort(subr,'col<1 for symmetric linear operation '//trim(linop%prefix))
+   if (maxval(linop%col)>linop%n_src) call mpl%abort(subr,'col>n_src for symmetric linear operation '//trim(linop%prefix))
+   if (minval(linop%row)<1) call mpl%abort(subr,'row<1 for symmetric linear operation '//trim(linop%prefix))
+   if (maxval(linop%row)>linop%n_src) call mpl%abort(subr,'row>n_dst for symmetric linear operation '//trim(linop%prefix))
    if (present(ivec)) then
-      if (any(isnan(linop%Svec))) call mpl%abort('NaN in Svec for symmetric linear operation '//trim(linop%prefix))
+      if (any(isnan(linop%Svec))) call mpl%abort(subr,'NaN in Svec for symmetric linear operation '//trim(linop%prefix))
    else
-      if (any(isnan(linop%S))) call mpl%abort('NaN in S for symmetric linear operation '//trim(linop%prefix))
+      if (any(isnan(linop%S))) call mpl%abort(subr,'NaN in S for symmetric linear operation '//trim(linop%prefix))
    end if
 
    ! Check input
-   if (any(fld>huge(1.0))) call mpl%abort('Overflowing number in fld for symmetric linear operation '//trim(linop%prefix))
-   if (any(isnan(fld))) call mpl%abort('NaN in fld for symmetric linear operation '//trim(linop%prefix))
+   if (any(fld>huge(1.0))) call mpl%abort(subr,'Overflowing number in fld for symmetric linear operation '//trim(linop%prefix))
+   if (any(isnan(fld))) call mpl%abort(subr,'NaN in fld for symmetric linear operation '//trim(linop%prefix))
 end if
 
 ! Apply weights
@@ -523,7 +527,7 @@ end do
 
 if (check_data) then
    ! Check output
-   if (any(isnan(fld))) call mpl%abort('NaN in fld for symmetric linear operation '//trim(linop%prefix))
+   if (any(isnan(fld))) call mpl%abort(subr,'NaN in fld for symmetric linear operation '//trim(linop%prefix))
 end if
 
 end subroutine linop_apply_sym
@@ -712,6 +716,7 @@ real(kind_real) :: nn_dist(1),b(3)
 real(kind_real),allocatable :: area_polygon(:),area_polygon_new(:),natwgt(:),S(:)
 logical :: loop
 logical,allocatable :: missing(:)
+character(len=1024),parameter :: subr = 'linop_interp_from_mesh_kdtree'
 type(mesh_type) :: meshnew
 
 ! MPI splitting
@@ -730,7 +735,7 @@ elseif (trim(interp_type)=='natural') then
    allocate(natis(mesh%n))
    allocate(natwgt(nnatmax))
 else
-   call mpl%abort('wrong interpolation type')
+   call mpl%abort(subr,'wrong interpolation type')
 end if
 allocate(row(np*n_dst_loc(mpl%myproc)))
 allocate(col(np*n_dst_loc(mpl%myproc)))
@@ -880,7 +885,7 @@ end do
 do i_s=1,linop%n_s
    missing(linop%row(i_s)) = .false.
 end do
-if (any(missing)) call mpl%abort('missing destination points in interp_from_mesh_kdtree')
+if (any(missing)) call mpl%abort(subr,'missing destination points in interp_from_mesh_kdtree')
 
 ! Release memory
 if (trim(interp_type)=='natural') then
@@ -924,6 +929,7 @@ real(kind_real) :: renorm(geom%nc0)
 real(kind_real),allocatable :: lon_c1(:),lat_c1(:),lon_col(:),lat_col(:)
 logical :: test_c0(geom%nc0),mask_extra(nc1)
 logical,allocatable :: mask_c1(:),valid(:)
+character(len=1024),parameter :: subr = 'linop_interp_grid'
 
 if (.not.allocated(interp_base%row)) then
    ! Allocation
@@ -1033,7 +1039,7 @@ test_c0 = geom%mask_c0(:,il0i)
 do i_s=1,linop%n_s
    test_c0(linop%row(i_s)) = .false.
 end do
-if (any(test_c0)) call mpl%abort('error with the grid interpolation row')
+if (any(test_c0)) call mpl%abort(subr,'error with the grid interpolation row')
 
 ! Release memory
 deallocate(valid)
@@ -1130,6 +1136,7 @@ integer :: i_dst,i_s
 integer :: nn(1)
 real(kind_real) :: dum(1)
 logical :: missing(n_dst),lmask(n_dst),found
+character(len=1024),parameter :: subr = 'linop_interp_missing'
 type(linop_type) :: interp_tmp
 type(kdtree_type) :: kdtree
 
@@ -1152,7 +1159,7 @@ if (count(missing)>0) then
    elseif (trim(interp_type)=='natural') then
       interp_tmp%n_s = linop%n_s+40*count(missing)
    else
-      call mpl%abort('wrong interpolation')
+      call mpl%abort(subr,'wrong interpolation')
    end if
    call interp_tmp%alloc
 
@@ -1187,7 +1194,7 @@ if (count(missing)>0) then
                interp_tmp%S(interp_tmp%n_s) = linop%S(i_s)
             end if
          end do
-         if (.not.found) call mpl%abort('missing point not found')
+         if (.not.found) call mpl%abort(subr,'missing point not found')
       end if
    end do
 

@@ -199,16 +199,16 @@ void IncrementL95::getValuesAD(const LocsL95 & locs, const oops::Variables &,
 // -----------------------------------------------------------------------------
 /// Convert to/from unstructured grid
 // -----------------------------------------------------------------------------
-void IncrementL95::ug_coord(oops::UnstructuredGrid & ug, const int & colocated) const {
-  fld_.ug_coord(ug, colocated);
+void IncrementL95::ug_coord(oops::UnstructuredGrid & ug) const {
+  fld_.ug_coord(ug);
 }
 // -----------------------------------------------------------------------------
-void IncrementL95::field_to_ug(oops::UnstructuredGrid & ug, const int & colocated) const {
-  fld_.field_to_ug(ug, colocated);
+void IncrementL95::field_to_ug(oops::UnstructuredGrid & ug, const int & its) const {
+  fld_.field_to_ug(ug, its);
 }
 // -----------------------------------------------------------------------------
-void IncrementL95::field_from_ug(const oops::UnstructuredGrid & ug) {
-  fld_.field_from_ug(ug);
+void IncrementL95::field_from_ug(const oops::UnstructuredGrid & ug, const int & its) {
+  fld_.field_from_ug(ug, its);
 }
 // -----------------------------------------------------------------------------
 /// Serialize - deserialize

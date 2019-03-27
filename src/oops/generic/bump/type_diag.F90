@@ -12,8 +12,7 @@ use netcdf
 use tools_const, only: reqkm,rad2deg,pi
 use tools_fit, only: ver_smooth
 use tools_func, only: fit_diag,fit_diag_dble
-use tools_kinds, only: kind_real
-use tools_nc, only: ncfloat
+use tools_kinds, only: kind_real,nc_kind_real
 use type_avg, only: avg_type
 use type_bpar, only: bpar_type
 use type_diag_blk, only: diag_blk_type
@@ -136,10 +135,10 @@ type(io_type),intent(in) :: io         ! I/O
 type(samp_type),intent(in) :: samp     ! Sampling
 
 ! Local variables
-integer :: ib,i,ic2,il0,il0i,iproc,ic2a,ildw,n
+integer :: ib,i,ic2,ic0,il0,il0i,iproc,ic2a,ildw,n
 real(kind_real) :: fld_c2a(samp%nc2a,geom%nl0),fld_c2b(samp%nc2b,geom%nl0),fld_c0a(geom%nc0a,geom%nl0)
-character(len=7) :: lonchar,latchar
 character(len=1024) :: filename
+character(len=1024),parameter :: subr = 'diag_write'
 
 if (mpl%main) then
    filename = trim(nam%prefix)//'_diag.nc'
@@ -200,23 +199,25 @@ if ((trim(diag%prefix)/='cov').and.nam%local_diag) then
 end if
 
 do ildw=1,nam%nldwv
-   if (mpl%msv%isnoti(samp%nn_ldwv_index(ildw))) then
-      ic2 = samp%nn_ldwv_index(ildw)
-      iproc = samp%c2_to_proc(ic2)
+   ic0 = samp%ldwv_to_c0(ildw)
+   if (geom%mask_hor_c0(ic0)) then
+      iproc = geom%c0_to_proc(ic0)
       if (mpl%myproc==iproc) then
          ! Build file name
-         write(lonchar,'(f7.2)') nam%lon_ldwv(ildw)*rad2deg
-         write(latchar,'(f7.2)') nam%lat_ldwv(ildw)*rad2deg
-         filename = trim(nam%prefix)//'_diag_'//trim(adjustl(lonchar))//'-'//trim(adjustl(latchar))//'.nc'
+         filename = trim(nam%prefix)//'_diag_'//trim(nam%name_ldwv(ildw))//'.nc'
 
-         ! Find diagnostic point task
-         ic2a = samp%c2_to_c2a(ic2)
-         do ib=1,bpar%nbe
-            if (bpar%diag_block(ib)) call diag%blk(ic2a,ib)%write(mpl,nam,geom,bpar,filename)
+         ! Find diagnostic point
+         do ic2a=1,samp%nc2a
+            ic2 = samp%c2a_to_c2(ic2a)
+            if (samp%c2_to_c0(ic2)==ic0) then
+               do ib=1,bpar%nbe
+                  if (bpar%diag_block(ib)) call diag%blk(ic2a,ib)%write(mpl,nam,geom,bpar,filename)
+               end do
+            end if
          end do
       end if
    else
-      call mpl%warning('missing local profile')
+      call mpl%warning(subr,'missing local profile '//trim(nam%name_ldwv(ildw)))
    end if
 end do
 
@@ -496,8 +497,9 @@ do ib=1,bpar%nbe
              & diag%blk(0,ib)%fit_rv(il0),trim(mpl%black)//' '//trim(mpl%vunitchar)
                call mpl%flush
                if (diag%blk(0,ib)%double_fit) then
-                  write(mpl%info,'(a47,a,f10.2,a,f10.2,a)') 'cor. double fit:    ',trim(mpl%aqua),diag%blk(0,ib)%fit_rv_rfac(il0), &
-                & trim(mpl%black)//' / '//trim(mpl%aqua),diag%blk(0,ib)%fit_rv_coef(il0),trim(mpl%black)//' '//trim(mpl%vunitchar)
+                  write(mpl%info,'(a27,a,a,f10.2,a,f10.2,a)') '','cor. double fit:    ',trim(mpl%aqua), &
+                & diag%blk(0,ib)%fit_rv_rfac(il0),trim(mpl%black)//' / '//trim(mpl%aqua),diag%blk(0,ib)%fit_rv_coef(il0), &
+                & trim(mpl%black)
                   call mpl%flush
                end if
             end if
@@ -563,7 +565,6 @@ do ib=1,bpar%nbe
 
          ! Normalization
          call diag%blk(ic2a,ib)%normalization(mpl,geom,bpar,.true.)
-         if (trim(nam%method)=='loc_norm') diag%blk(ic2a,ib)%raw_coef_ens = 1.0
 
          ! Fitting
          if (bpar%fit_block(ib)) call diag%blk(ic2a,ib)%fitting(mpl,nam,geom,bpar,samp)
@@ -585,16 +586,9 @@ do ib=1,bpar%nbe
          end select
          if (bpar%fit_block(ib)) then
             if (mpl%msv%isnotr(diag%blk(0,ib)%fit_rh(il0))) then
-               select case (trim(nam%method))
-               case ('loc','hyb-avg','hyb-rnd','dual-ens')
-                  write(mpl%info,'(a47)') 'loc. support radii: '
-                  call mpl%flush(.false.)
-               case ('loc_norm')
-                  write(mpl%info,'(a13,a,i3,a4,a20)') '','Level: ',nam%levs(il0),' ~> ','loc. support radii: '
-                  call mpl%flush(.false.)
-               end select
-               write(mpl%info,'(a,f10.2,a,f10.2,a)') trim(mpl%aqua),diag%blk(0,ib)%fit_rh(il0)*reqkm, &
-             & trim(mpl%black)//' km  / '//trim(mpl%aqua),diag%blk(0,ib)%fit_rv(il0),trim(mpl%black)//' '//trim(mpl%vunitchar)
+               write(mpl%info,'(a27,a,a,f10.2,a,f10.2,a)') '','loc. support radii: ',trim(mpl%aqua), &
+             & diag%blk(0,ib)%fit_rh(il0)*reqkm,trim(mpl%black)//' km  / '//trim(mpl%aqua),diag%blk(0,ib)%fit_rv(il0), &
+             & trim(mpl%black)//' '//trim(mpl%vunitchar)
                call mpl%flush
             end if
          end if
@@ -672,8 +666,9 @@ do ib=1,bpar%nbe
          end if
          if (bpar%fit_block(ib)) then
             if (mpl%msv%isnotr(diag%blk(0,ib)%fit_rh(il0))) then
-               write(mpl%info,'(a48,a,f10.2,a,f10.2,a)') 'loc. support radii: ',trim(mpl%aqua),diag%blk(0,ib)%fit_rh(il0)*reqkm, &
-             & trim(mpl%black)//' km  / '//trim(mpl%aqua),diag%blk(0,ib)%fit_rv(il0),trim(mpl%black)//' '//trim(mpl%vunitchar)
+               write(mpl%info,'(a27,a,a,f10.2,a,f10.2,a)') '','loc. support radii: ',trim(mpl%aqua), &
+             & diag%blk(0,ib)%fit_rh(il0)*reqkm,trim(mpl%black)//' km  / '//trim(mpl%aqua),diag%blk(0,ib)%fit_rv(il0), &
+             & trim(mpl%black)//' '//trim(mpl%vunitchar)
                call mpl%flush
             end if
          end if
@@ -754,24 +749,24 @@ do ib=1,bpar%nbe
       ! Print results
       do il0=1,geom%nl0
          if (mpl%msv%isnotr(diag%blk(0,ib)%raw_coef_ens(il0))) then
-            write(mpl%info,'(a10,a,i3,a4,a21,a,f10.2,a)') '','Level: ',nam%levs(il0),' ~> ','loc. at class zero (HR): ', &
+            write(mpl%info,'(a13,a,i3,a4,a21,a,f10.2,a)') '','Level: ',nam%levs(il0),' ~> ','loc. at class zero (HR): ', &
           & trim(mpl%peach),diag%blk(0,ib)%raw_coef_ens(il0),trim(mpl%black)
             call mpl%flush
          end if
          if (mpl%msv%isnotr(diag%blk(0,ib)%raw_coef_ens(il0))) then
-            write(mpl%info,'(a45,a,f10.2,a)') 'loc. at class zero (LR): ',trim(mpl%peach),diag_lr%blk(0,ib)%raw_coef_ens(il0), &
-          & trim(mpl%black)
+            write(mpl%info,'(a27,a,a,f10.2,a)') '','loc. at class zero (LR): ',trim(mpl%peach), &
+          & diag_lr%blk(0,ib)%raw_coef_ens(il0),trim(mpl%black)
             call mpl%flush
          end if
          if (bpar%fit_block(ib)) then
             if (mpl%msv%isnotr(diag%blk(0,ib)%fit_rh(il0))) then
-               write(mpl%info,'(a45,a,f10.2,a,f10.2,a)') 'loc. support radii (HR): ',trim(mpl%aqua), &
+               write(mpl%info,'(a27,a,a,f10.2,a,f10.2,a)') '','loc. support radii (HR): ',trim(mpl%aqua), &
              & diag%blk(0,ib)%fit_rh(il0)*reqkm,trim(mpl%black)//' km  / '//trim(mpl%aqua),diag_lr%blk(0,ib)%fit_rv(il0), &
              & trim(mpl%black)//' '//trim(mpl%vunitchar)
                call mpl%flush
             end if
             if (mpl%msv%isnotr(diag_lr%blk(0,ib)%fit_rh(il0))) then
-               write(mpl%info,'(a45,a,f10.2,a,f10.2,a)') 'loc. support radii (LR): ',trim(mpl%aqua), &
+               write(mpl%info,'(a27,a,a,f10.2,a,f10.2,a)') '','loc. support radii (LR): ',trim(mpl%aqua), &
              & diag_lr%blk(0,ib)%fit_rh(il0)*reqkm,trim(mpl%black)//' km  / '//trim(mpl%aqua),diag_lr%blk(0,ib)%fit_rv(il0), &
              & trim(mpl%black)//' '//trim(mpl%vunitchar)
                call mpl%flush

@@ -84,10 +84,11 @@ logical,intent(in) :: lprt               ! Print key
 
 ! Local variables
 real(kind_real) :: guess(minim%nx)
+character(len=1024),parameter :: subr = 'minim_compute'
 
 ! Check
-if (minim%nx<=0) call mpl%abort('nx should be positive to minimize')
-if (minim%ny<=0) call mpl%abort('nx should be positive to minimize')
+if (minim%nx<=0) call mpl%abort(subr,'nx should be positive to minimize')
+if (minim%ny<=0) call mpl%abort(subr,'nx should be positive to minimize')
 
 ! Initialization
 guess = minim%guess
@@ -115,7 +116,7 @@ if (minim%f_min<minim%f_guess) then
    end if
 else
    minim%x = minim%guess
-   if (lprt) call mpl%warning('Minimizer '//trim(minim%algo)//' failed')
+   if (lprt) call mpl%warning(subr,'Minimizer '//trim(minim%algo)//' failed')
 end if
 
 end subroutine minim_compute
@@ -538,9 +539,10 @@ real(kind_real),intent(inout) :: x(minim%nx) ! Vector
 
 ! Local variables
 integer :: ix
+character(len=1024),parameter :: subr = 'minim_vt_inv'
 
 ! Inverse hyperbolic tangent of the linearly bounded variable
-if (any((x<minim%binf).or.(x>minim%bsup))) call mpl%abort('variable out of bounds in vt_inv')
+if (any((x<minim%binf).or.(x>minim%bsup))) call mpl%abort(subr,'variable out of bounds in vt_inv')
 do ix=1,minim%nx
    if (sup(minim%bsup(ix),minim%binf(ix))) then
       x(ix) = atanh(2.0*(x(ix)-minim%binf(ix))/(minim%bsup(ix)-minim%binf(ix))-1.0)

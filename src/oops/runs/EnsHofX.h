@@ -97,9 +97,10 @@ template <typename MODEL> class EnsHofX : public Application {
 //  Loop on all ensemble members
     for (unsigned jj = 0; jj < members.size(); ++jj) {
 //    Setup initial state for jj-th member
-      Log::info() << jj << " member initial configuration is:" << members[jj] << std::endl;
+      Log::info() << "Initial configuration for member " << jj << " is :" << members[jj]
+                  << std::endl;
       State_ xx(resol, model.variables(), members[jj]);
-      Log::test() << jj << " member initial state: " << xx << std::endl;
+      Log::test() << "Initial state for member " << jj << ":" << xx << std::endl;
 
 //    Setup augmented state
       ModelAux_ moderr(resol, members[jj]);
@@ -117,12 +118,13 @@ template <typename MODEL> class EnsHofX : public Application {
 
 //    Compute H(x)
       model.forecast(xx, moderr, winlen, post);
-      Log::info() << jj << " member: finished observation computation" << std::endl;
-      Log::test() << jj << " member final state: " << xx << std::endl;
+      Log::info() << "Finished observation computation for member " << jj << ":" << std::endl;
+      Log::test() << "Final state for member " << jj << ":" << xx << std::endl;
 
 //    Save H(x)
       boost::scoped_ptr<Observations_> yobs(pobs->release());
-      Log::test() << jj << " member H(x): " << *yobs << std::endl;
+      Log::test() << "H(x) for member " << jj << ":" << std::endl << *yobs
+                  << "End H(x) for member " << jj << std::endl;;
       obsens[jj] = *yobs;
       obsens[jj].save("hofx_"+std::to_string(jj+1));
     }

@@ -1397,7 +1397,7 @@ if (ug%colocated==1) then
   ug%grid(1)%nv = self%nf
 
   ! Set number of timeslots
-  ug%grid(1)%nts = 1
+  ug%grid(1)%nts = ug%nts
 else
   ! Not colocated
   do igrid=1,ug%ngrid
@@ -1411,7 +1411,7 @@ else
      ug%grid(igrid)%nv = self%nf
 
      ! Set number of timeslots
-     ug%grid(igrid)%nts = 1
+     ug%grid(igrid)%nts = ug%nts
   enddo
 end if
 
@@ -1419,17 +1419,13 @@ end subroutine ug_size
 
 ! ------------------------------------------------------------------------------
 
-subroutine ug_coord(self, ug, colocated)
+subroutine ug_coord(self, ug)
 use unstructured_grid_mod
 implicit none
 type(qg_field), intent(in) :: self
 type(unstructured_grid), intent(inout) :: ug
-integer, intent(in) :: colocated
 
 integer :: igrid,imga,jx,jy,jl
-
-! Copy colocated
-ug%colocated = colocated
 
 ! Define size
 call ug_size(self, ug)
@@ -1476,17 +1472,14 @@ end subroutine ug_coord
 
 ! ------------------------------------------------------------------------------
 
-subroutine field_to_ug(self, ug, colocated)
+subroutine field_to_ug(self, ug, its)
 use unstructured_grid_mod
 implicit none
 type(qg_field), intent(in) :: self
 type(unstructured_grid), intent(inout) :: ug
-integer, intent(in) :: colocated
+integer, intent(in) :: its
 
 integer :: igrid,imga,jx,jy,jl,jf,joff
-
-! Copy colocated
-ug%colocated = colocated
 
 ! Define size
 call ug_size(self, ug)
@@ -1504,7 +1497,7 @@ if (ug%colocated==1) then
       do jf=1,self%nf
         joff = (jf-1)*self%nl
         do jl=1,self%nl
-          ug%grid(1)%fld(imga,jl,jf,1) = self%gfld3d(jx,jy,joff+jl)
+          ug%grid(1)%fld(imga,jl,jf,its) = self%gfld3d(jx,jy,joff+jl)
         enddo
       enddo
     enddo
@@ -1519,7 +1512,7 @@ else
         do jf=1,self%nf
           joff = (jf-1)*self%nl
           do jl=1,self%nl
-            ug%grid(igrid)%fld(imga,jl,jf,1) = self%gfld3d(jx,jy,joff+jl)
+            ug%grid(igrid)%fld(imga,jl,jf,its) = self%gfld3d(jx,jy,joff+jl)
           enddo
         enddo
       enddo
@@ -1531,11 +1524,12 @@ end subroutine field_to_ug
 
 ! ------------------------------------------------------------------------------
 
-subroutine field_from_ug(self, ug)
+subroutine field_from_ug(self, ug, its)
 use unstructured_grid_mod
 implicit none
 type(qg_field), intent(inout) :: self
 type(unstructured_grid), intent(in) :: ug
+integer, intent(in) :: its
 
 integer :: igrid,imga,jx,jy,jl,jf,joff
 
@@ -1549,7 +1543,7 @@ if (ug%colocated==1) then
         do jf=1,self%nf
           joff = (jf-1)*self%nl
           do jl=1,self%nl
-            self%gfld3d(jx,jy,joff+jl) = ug%grid(1)%fld(imga,jl,jf,1)
+            self%gfld3d(jx,jy,joff+jl) = ug%grid(1)%fld(imga,jl,jf,its)
           enddo
         enddo
     enddo
@@ -1564,7 +1558,7 @@ else
           do jf=1,self%nf
             joff = (jf-1)*self%nl
             do jl=1,self%nl
-              self%gfld3d(jx,jy,joff+jl) = ug%grid(igrid)%fld(imga,jl,jf,1)
+              self%gfld3d(jx,jy,joff+jl) = ug%grid(igrid)%fld(imga,jl,jf,its)
             enddo
           enddo
       enddo

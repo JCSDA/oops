@@ -8,17 +8,17 @@ Test     :  Valid time: 2010-01-01T03:00:00Z
 Test     :  Min=7.64823, Max=8.66131, Average=8.00239
 Test     :  Valid time: 2010-01-01T15:00:00Z
 Test     :  Min=7.15295, Max=8.73264, Average=8.00507
-Test     : CostJb   : Nonlinear Jb = 2.41791
+Test     : CostJb   : Nonlinear Jb = 2.21613
 Test     : CostJo   : Nonlinear Jo = 0.622545, nobs = 160, Jo/n = 0.00389091, err = 0.4
 Test     : CostJcDFI: Nonlinear Jc = 0.423134
-Test     : CostFunction: Nonlinear J = 3.46359
+Test     : CostFunction: Nonlinear J = 3.26181
 Test     : SaddlePointMinimizer: reduction in residual norm = 0.190136
 Test     : CostFunction::addIncrement: Analysis: 
 Test     :  Valid time: 2010-01-01T03:00:00Z
 Test     :  Min=7.67415, Max=8.67593, Average=8.01204
 Test     :  Valid time: 2010-01-01T15:00:00Z
 Test     :  Min=7.15112, Max=8.74084, Average=8.01066
-Test     : CostJb   : Nonlinear Jb = 2.1101
+Test     : CostJb   : Nonlinear Jb = 2.10281
 Test     : CostJo   : Nonlinear Jo = 0.58027, nobs = 160, Jo/n = 0.00362669, err = 0.4
 Test     : CostJcDFI: Nonlinear Jc = 0.277679
-Test     : CostFunction: Nonlinear J = 2.96805
+Test     : CostFunction: Nonlinear J = 2.96075

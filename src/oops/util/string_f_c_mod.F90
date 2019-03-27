@@ -39,7 +39,6 @@ end subroutine f_c_string
 !> Convert Fortran vector of strings to allocatable C++ string buffer.
 
 subroutine f_c_string_vector(fstring_vec, cstring_vec)
-use fckit_log_module, only : fckit_log
 character(len=*), intent(in)               :: fstring_vec(:)
 character(kind=c_char, len=1), intent(inout) :: cstring_vec(:)
 integer :: ii,jj,idx

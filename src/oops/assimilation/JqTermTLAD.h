@@ -109,8 +109,9 @@ void JqTermTLAD<MODEL>::computeModelErrorTL(Increment4D_ & dx) {
   Log::trace() << "JqTermTLAD::computeModelErrorTL start" << std::endl;
 // Compute x_i - M(x_{i-1})
   for (unsigned jsub = 1; jsub < nsubwin_; ++jsub) {
-    dx[jsub] -= mxi_[jsub-1];
-    Log::info() << "JqTermTLAD: x_" << jsub << " - M(x_" << jsub-1 << ")" << dx[jsub] << std::endl;
+    int isub = jsub+dx.first();
+    dx[isub] -= mxi_[jsub-1];
+    Log::info() << "JqTermTLAD: x_" << jsub << " - M(x_" << jsub-1 << ")" << dx[isub] << std::endl;
   }
   mxi_.clear();
   Log::trace() << "JqTermTLAD::computeModelErrorTL done" << std::endl;
@@ -123,7 +124,8 @@ void JqTermTLAD<MODEL>::setupAD(const Increment4D_ & dx) {
   Log::trace() << "JqTermTLAD::setupAD start" << std::endl;
   xi_.clear();
   for (unsigned jsub = 0; jsub < nsubwin_; ++jsub) {
-    xi_.push_back(dx[jsub]);
+    int isub = jsub+dx.first();
+    xi_.push_back(dx[isub]);
   }
   current_ = nsubwin_;
   Log::trace() << "JqTermTLAD::setupAD done" << std::endl;

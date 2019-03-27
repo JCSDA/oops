@@ -7,6 +7,7 @@
 !----------------------------------------------------------------------
 module type_kdtree
 
+use tools_const, only: pi
 use tools_kdtree2, only: kdtree2,kdtree2_result,kdtree2_create,kdtree2_destroy, &
                        & kdtree2_n_nearest,kdtree2_r_count
 use tools_kinds, only: kind_real
@@ -51,6 +52,9 @@ type(mpl_type),intent(inout) :: mpl        ! MPI data
 integer,intent(in) :: n                    ! Number of points
 logical,intent(in),optional :: mask(n)     ! Mask
 
+! Local variables
+character(len=1024),parameter :: subr = 'kdtree_alloc'
+
 ! Allocation
 kdtree%n = n
 allocate(kdtree%mask(n))
@@ -66,7 +70,7 @@ end if
 kdtree%neff = count(kdtree%mask)
 
 ! Check size
-if (kdtree%neff<1) call mpl%abort('mask should have at least one valid point to create a kdtree')
+if (kdtree%neff<1) call mpl%abort(subr,'mask should have at least one valid point to create a kdtree')
 
 ! Allocation
 allocate(kdtree%from_eff(kdtree%neff))
@@ -169,10 +173,8 @@ real(kind_real),intent(out) :: nn_dist(nn) ! Neareast neighbors distance
 ! Local variables
 integer :: i,j,nid
 integer,allocatable :: order(:)
-real(kind_real) :: lontmp(1),lattmp(1)
-real(kind_real) :: qv(3)
+real(kind_real) :: lontmp(1),lattmp(1),qv(3)
 type(kdtree2_result) :: results(nn)
-
 
 ! Copy lon/lat
 lontmp(1) = lon
@@ -231,7 +233,7 @@ integer,intent(out) :: nn               ! Number of nearest neighbors found
 
 ! Local variables
 real(kind_real) :: lontmp(1),lattmp(1)
-real(kind_real) :: qv(3),brsq
+real(kind_real) :: qv(3),chordsq
 
 ! Copy lon/lat
 lontmp(1) = lon
@@ -240,11 +242,11 @@ lattmp(1) = lat
 ! Transform to cartesian coordinates
 call trans(mpl,1,lattmp,lontmp,qv(1),qv(2),qv(3))
 
-! Convert spherical radius to squared ball radius
-brsq = (1.0-cos(sr))**2+sin(sr)**2
+! Convert radius on sphere to chord squared
+chordsq = 4.0*sin(0.5*min(sr,pi))**2
 
 ! Count nearest neighbors
-nn = kdtree2_r_count(kdtree%tp,qv,brsq)
+nn = kdtree2_r_count(kdtree%tp,qv,chordsq)
 
 end subroutine kdtree_count_nearest_neighbors
 

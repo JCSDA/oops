@@ -1,7 +1,28 @@
-advmode: 0
 background:
   date: '2010-01-01T00:00:00Z'
   filename: Data/truth.fc.2009-12-15T00:00:00Z.P17D
+bump:
+  dc: 200000.0
+  default_seed: 1
+  diag_rhflt: 3000000.0
+  local_diag: 1
+  local_rad: 3000000.0
+  lsqrt: 1
+  method: hyb-rnd
+  minim_algo: hooke
+  mpicom: 2
+  nc1: 400
+  nc2: 100
+  nc3: 10
+  ne: 10
+  new_hdiag: 1
+  new_nicas: 1
+  nl0r: 2
+  nrep: 2
+  ntry: 3
+  prefix: bump_parametersbump.readloc
+  resol: 10.0
+  strategy: common
 covariance:
   covariance: QgError
   date: '2010-01-01T00:00:00Z'
@@ -10,15 +31,8 @@ covariance:
   pseudoens_size: 20
   standard_deviation: '1.8'
   vertical_correlation: '0.2'
-date: '2010-01-01T00:00:00Z'
-dc: 200000.0
-default_seed: 1
-diag_interp: bilin
-diag_rhflt: 3000000.0
-draw_type: random_uniform
 ensemble:
-  members: '10'
-  state:
+  members:
   - date: '2010-01-01T00:00:00Z'
     filename: Data/test.ens.1.2009-12-31T00:00:00Z.P1D
   - date: '2010-01-01T00:00:00Z'
@@ -40,8 +54,7 @@ ensemble:
   - date: '2010-01-01T00:00:00Z'
     filename: Data/test.ens.10.2009-12-31T00:00:00Z.P1D
   variables:
-    variables:
-    - x
+  - x
 input:
 - date: '2010-01-01T00:00:00Z'
   filename: Data/hyb_loc_rh.an.2010-01-01T00:00:00Z
@@ -49,27 +62,8 @@ input:
 - date: '2010-01-01T00:00:00Z'
   filename: Data/hyb_loc_rv.an.2010-01-01T00:00:00Z
   parameter: loc_rv
-local_diag: 1
-local_rad: 3000000.0
 logging:
   categories: Info, Test, Warning, Error
-lsqrt: 1
-mask_type: none
-method: hyb-rnd
-minim_algo: hooke
-mpicom: 2
-nc1: 400
-nc2: 100
-nc3: 10
-ne: 10
-new_hdiag: 1
-new_nicas: 1
-nicas_interp: bilin
-nl0r: 2
-nldwh: 0
-nldwv: 0
-nrep: 2
-ntry: 3
 output:
 - datadir: Data
   date: '2010-01-01T00:00:00Z'
@@ -91,14 +85,9 @@ output:
   exp: read_hyb_sta_coef
   parameter: hyb_coef
   type: an
-prefix: bump_parametersbump.readloc
-resol: 10.0
 resolution:
   bc: '1'
   nx: '40'
   ny: '20'
-rvflt: 0.0
-strategy: common
 variables:
-  variables:
   - x

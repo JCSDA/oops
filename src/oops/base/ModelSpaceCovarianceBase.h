@@ -39,10 +39,10 @@ namespace oops {
 /// Abstract base class for model space error covariances.
 template <typename MODEL>
 class ModelSpaceCovarianceBase {
-  typedef Geometry<MODEL>            Geometry_;
-  typedef State<MODEL>               State_;
-  typedef Increment<MODEL>           Increment_;
-  typedef LinearVariableChangeBase<MODEL>  LinearVariableChangeBase_;
+  typedef Geometry<MODEL>                                       Geometry_;
+  typedef State<MODEL>                                          State_;
+  typedef Increment<MODEL>                                      Increment_;
+  typedef LinearVariableChangeBase<MODEL>                       LinearVariableChangeBase_;
   typedef typename boost::ptr_vector<LinearVariableChangeBase_> ChvarVec_;
   typedef typename ChvarVec_::iterator iter_;
   typedef typename ChvarVec_::const_iterator icst_;
@@ -56,8 +56,8 @@ class ModelSpaceCovarianceBase {
 //  const LinearVariableChangeBase_ & getK(const unsigned & ii) const {return *chvars_[ii];}
 //  bool hasK() const { return (chvars_.size() == 0) ? false : true; }
 
-  void multiply(const Increment_ &, Increment_ &) const;
   void randomize(Increment_ &) const;
+  void multiply(const Increment_ &, Increment_ &) const;
   void inverseMultiply(const Increment_ &, Increment_ &) const;
 
  private:
@@ -161,6 +161,22 @@ ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(const State_ & bg, con
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
+void ModelSpaceCovarianceBase<MODEL>::randomize(Increment_ & dx) const {
+  // TODO(notguillaume): Generalize to non-square change of variable
+  if (chvars_.size()) {
+    this->doRandomize(dx);   // dx = C^1/2 dx
+    // K_N K_N-1 ... K_1
+    for (icst_ it = chvars_.begin(); it != chvars_.end(); ++it) {
+      dx = it->multiply(dx);  // dx = K_i dx
+    }
+  } else {
+    this->doRandomize(dx);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
 void ModelSpaceCovarianceBase<MODEL>::multiply(const Increment_ & dxi,
                                                Increment_ & dxo) const {
   if (chvars_.size()) {
@@ -183,22 +199,6 @@ void ModelSpaceCovarianceBase<MODEL>::multiply(const Increment_ & dxi,
     dxo = *dxchvarin;
   } else {
     this->doMultiply(dxi, dxo);
-  }
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-void ModelSpaceCovarianceBase<MODEL>::randomize(Increment_ & dx) const {
-  // TODO(notguillaume): Generalize to non-square change of variable
-  if (chvars_.size()) {
-    this->doRandomize(dx);   // dx = C^1/2 dx
-    // K_N K_N-1 ... K_1
-    for (icst_ ki = chvars_.begin(); ki != chvars_.end(); ++ki) {
-      dx = ki->multiply(dx);  // dx = K_i dx
-    }
-  } else {
-    this->doRandomize(dx);
   }
 }
 

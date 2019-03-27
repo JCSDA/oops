@@ -60,8 +60,9 @@ void JqTerm<MODEL>::computeModelError(const State4D_ & fg, Increment4D_ & dx) {
   Log::trace() << "JqTerm::computeModelError start" << std::endl;
 // Compute x_i - M(x_{i-1})
   for (unsigned jsub = 1; jsub < nsubwin_; ++jsub) {
-    dx[jsub].diff(fg[jsub], mxi_[jsub-1]);
-    Log::info() << "CostJbJq: x_" << jsub << " - M(x_" << jsub-1 << ")" << dx[jsub] << std::endl;
+    int isub = jsub+dx.first();
+    dx[isub].diff(fg[jsub], mxi_[jsub-1]);
+    Log::info() << "CostJbJq: x_" << jsub << " - M(x_" << jsub-1 << ")" << dx[isub] << std::endl;
   }
   mxi_.clear();
   Log::trace() << "JqTerm::computeModelError done" << std::endl;

@@ -20,4 +20,5 @@ output:
   type: ens
 resolution:
   resol: '40'
-variables: null
+variables:
+ - dummy

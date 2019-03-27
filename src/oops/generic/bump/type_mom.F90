@@ -212,7 +212,7 @@ do isub=1,ens%nsub
             ! Copy valid field points
             fld_1 = mpl%msv%valr
             fld_2 = mpl%msv%valr
-            if ((iv/=jv).and.(its/=jts).and.nam%displ_diag) then
+            if ((iv/=jv).and.(its/=jts).and.nam%adv_diag) then
                ! Interpolate zero separation points
                !$omp parallel do schedule(static) private(il0)
                do il0=1,geom%nl0

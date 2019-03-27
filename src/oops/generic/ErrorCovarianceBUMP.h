@@ -17,10 +17,13 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
+#include "oops/assimilation/GMRESR.h"
+#include "oops/assimilation/Increment4D.h"
 #include "oops/base/IdentityMatrix.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/oobump_f.h"
+#include "oops/generic/ParametersBUMP.h"
 #include "oops/generic/UnstructuredGrid.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -44,11 +47,15 @@ namespace oops {
 template <typename MODEL>
 class ErrorCovarianceBUMP : public oops::ModelSpaceCovarianceBase<MODEL>,
                             public util::Printable,
-                            private util::ObjectCounter<ErrorCovarianceBUMP<MODEL> >,
+                            private util::ObjectCounter<ErrorCovarianceBUMP<MODEL>>,
                             private boost::noncopyable {
-  typedef Geometry<MODEL>            Geometry_;
-  typedef Increment<MODEL>           Increment_;
-  typedef State<MODEL>               State_;
+  typedef Geometry<MODEL>                         Geometry_;
+  typedef Increment<MODEL>                        Increment_;
+  typedef Increment4D<MODEL>                      Increment4D_;
+  typedef State<MODEL>                            State_;
+  typedef ParametersBUMP<MODEL>                   Parameters_;
+  typedef StateEnsemble<MODEL>                    Ensemble_;
+  typedef boost::shared_ptr<StateEnsemble<MODEL>> EnsemblePtr_;
 
  public:
   static const std::string classname() {return "oops::ErrorCovarianceBUMP";}
@@ -66,8 +73,6 @@ class ErrorCovarianceBUMP : public oops::ModelSpaceCovarianceBase<MODEL>,
 
   void print(std::ostream &) const override;
 
-  const Variables vars_;
-  int colocated_;
   int keyBUMP_;
 };
 
@@ -78,46 +83,25 @@ ErrorCovarianceBUMP<MODEL>::ErrorCovarianceBUMP(const Geometry_ & resol,
                                                 const Variables & vars,
                                                 const eckit::Configuration & conf,
                                                 const State_ & xb, const State_ & fg)
-  : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, conf), vars_(vars), colocated_(1), keyBUMP_(0)
+  : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, conf), keyBUMP_(0)
 {
   Log::trace() << "ErrorCovarianceBUMP::ErrorCovarianceBUMP starting" << std::endl;
-  const eckit::Configuration * fconf = &conf;
 
-// Setup dummy increment
-  Increment_ dx(resol, vars_, fg.validTime());
+// Setup timeslots
+  std::vector<util::DateTime> timeslots;
+  timeslots.push_back(xb.validTime());
 
-// Define unstructured grid coordinates
-  UnstructuredGrid ug;
-  dx.ug_coord(ug, colocated_);
+// Setup ensemble of perturbations
+  EnsemblePtr_ ens(new Ensemble_());
 
-// Delete BUMP if present
-  if (keyBUMP_) delete_oobump_f90(keyBUMP_);
+// Setup pseudo ensemble
+  EnsemblePtr_ pseudo_ens(new Ensemble_());
 
-// Create BUMP
-  create_oobump_f90(keyBUMP_, ug.toFortran(), &fconf, 0, 1, 0, 1);
+// Setup parameters
+  Parameters_ param(resol, vars, timeslots, ens, pseudo_ens, conf);
 
-// Read data from files
-  if (conf.has("input")) {
-    std::vector<eckit::LocalConfiguration> inputConfigs;
-    conf.get("input", inputConfigs);
-    for (const auto & subconf : inputConfigs) {
-      dx.read(subconf);
-      dx.field_to_ug(ug, colocated_);
-      std::string param = subconf.getString("parameter");
-      const int nstr = param.size();
-      const char *cstr = param.c_str();
-      set_oobump_param_f90(keyBUMP_, nstr, cstr, ug.toFortran());
-    }
-  }
-
-// Run BUMP
-  run_oobump_drivers_f90(keyBUMP_);
-
-// Copy test
-  std::ifstream infile("bump.test");
-  std::string line;
-  while (std::getline(infile, line)) Log::test() << line << std::endl;
-  remove("bump.test");
+// Get key
+  keyBUMP_ = param.get_bump();
 
   Log::trace() << "ErrorCovarianceBUMP::ErrorCovarianceBUMP done" << std::endl;
 }
@@ -135,27 +119,44 @@ ErrorCovarianceBUMP<MODEL>::~ErrorCovarianceBUMP() {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void ErrorCovarianceBUMP<MODEL>::doMultiply(const Increment_ & dx1,
-                                            Increment_ & dx2) const {
+void ErrorCovarianceBUMP<MODEL>::randomize(Increment_ & dx) const {
+  Log::trace() << "ErrorCovarianceBUMP<MODEL>::randomize starting" << std::endl;
+  util::Timer timer(classname(), "randomize");
+  int colocated;
+  get_oobump_colocated_f90(keyBUMP_, colocated);
+  UnstructuredGrid ug(colocated);
+  dx.ug_coord(ug);
+  randomize_oobump_nicas_f90(keyBUMP_, ug.toFortran());
+  dx.field_from_ug(ug);
+  Log::trace() << "ErrorCovarianceBUMP<MODEL>::randomize done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void ErrorCovarianceBUMP<MODEL>::doMultiply(const Increment_ & dxi,
+                                            Increment_ & dxo) const {
   Log::trace() << "ErrorCovarianceBUMP<MODEL>::doMultiply starting" << std::endl;
   util::Timer timer(classname(), "doMultiply");
-  UnstructuredGrid ug;
-  dx1.field_to_ug(ug, colocated_);
+  int colocated;
+  get_oobump_colocated_f90(keyBUMP_, colocated);
+  UnstructuredGrid ug(colocated);
+  dxi.field_to_ug(ug);
   multiply_oobump_nicas_f90(keyBUMP_, ug.toFortran());
-  dx2.field_from_ug(ug);
+  dxo.field_from_ug(ug);
   Log::trace() << "ErrorCovarianceBUMP<MODEL>::doMultiply done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void ErrorCovarianceBUMP<MODEL>::doInverseMultiply(const Increment_ & dx1,
-                                                   Increment_ & dx2) const {
+void ErrorCovarianceBUMP<MODEL>::doInverseMultiply(const Increment_ & dxi,
+                                                   Increment_ & dxo) const {
   Log::trace() << "ErrorCovarianceBUMP<MODEL>::doInverseMultiply starting" << std::endl;
   util::Timer timer(classname(), "doInverseMultiply");
   IdentityMatrix<Increment_> Id;
-  dx2.zero();
-  GMRESR(dx2, dx1, *this, Id, 10, 1.0e-3);
+  dxo.zero();
+  GMRESR(dxo, dxi, *this, Id, 10, 1.0e-3);
   Log::trace() << "ErrorCovarianceBUMP<MODEL>::doInverseMultiply done" << std::endl;
 }
 

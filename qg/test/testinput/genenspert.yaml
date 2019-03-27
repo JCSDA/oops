@@ -27,5 +27,4 @@ resolution:
   nx: '40'
   ny: '20'
 variables:
-  variables:
-  - x
+- x

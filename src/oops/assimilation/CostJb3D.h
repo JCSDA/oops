@@ -153,9 +153,7 @@ void CostJb3D<MODEL>::Bmult(const Increment4D_ & dxin, Increment4D_ & dxout) con
 
 template<typename MODEL>
 void CostJb3D<MODEL>::Bminv(const Increment4D_ & dxin, Increment4D_ & dxout) const {
-  Log::warning() << "*** B inverse might not always exist ***" << std::endl;
   B_->inverseMultiply(dxin[0], dxout[0]);
-  Log::warning() << "*** B inverse might not always exist ***" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

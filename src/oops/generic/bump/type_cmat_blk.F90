@@ -51,8 +51,8 @@ type cmat_blk_type
    real(kind_real),allocatable :: H33(:,:)           ! LCT component 33
    real(kind_real),allocatable :: H12(:,:)           ! LCT component 12
    real(kind_real),allocatable :: Hcoef(:,:)         ! LCT scales coefficients
-   real(kind_real),allocatable :: displ_lon(:,:,:)   ! Displaced longitude
-   real(kind_real),allocatable :: displ_lat(:,:,:)   ! Displaced latitude
+   real(kind_real),allocatable :: adv_lon(:,:,:)     ! Advected longitude
+   real(kind_real),allocatable :: adv_lat(:,:,:)     ! Advected latitude
 contains
    procedure :: alloc => cmat_blk_alloc
    procedure :: dealloc => cmat_blk_dealloc
@@ -102,10 +102,10 @@ if (bpar%diag_block(ib)) then
    end if
 end if
 
-if ((ib==bpar%nbe).and.nam%displ_diag) then
+if ((ib==bpar%nbe).and.nam%adv_diag) then
    ! Allocation
-   allocate(cmat_blk%displ_lon(geom%nc0a,geom%nl0,nam%nts))
-   allocate(cmat_blk%displ_lat(geom%nc0a,geom%nl0,nam%nts))
+   allocate(cmat_blk%adv_lon(geom%nc0a,geom%nl0,nam%nts))
+   allocate(cmat_blk%adv_lat(geom%nc0a,geom%nl0,nam%nts))
 end if
 
 ! End associate
@@ -149,8 +149,8 @@ if (allocated(cmat_blk%H22)) deallocate(cmat_blk%H22)
 if (allocated(cmat_blk%H33)) deallocate(cmat_blk%H33)
 if (allocated(cmat_blk%H12)) deallocate(cmat_blk%H12)
 if (allocated(cmat_blk%Hcoef)) deallocate(cmat_blk%Hcoef)
-if (allocated(cmat_blk%displ_lon)) deallocate(cmat_blk%displ_lon)
-if (allocated(cmat_blk%displ_lat)) deallocate(cmat_blk%displ_lat)
+if (allocated(cmat_blk%adv_lon)) deallocate(cmat_blk%adv_lon)
+if (allocated(cmat_blk%adv_lat)) deallocate(cmat_blk%adv_lat)
 
 end subroutine cmat_blk_dealloc
 
@@ -192,8 +192,8 @@ if (allocated(cmat_blk%H22)) cmat_blk_copy%H22 = cmat_blk%H22
 if (allocated(cmat_blk%H33)) cmat_blk_copy%H33 = cmat_blk%H33
 if (allocated(cmat_blk%H12)) cmat_blk_copy%H12 = cmat_blk%H12
 if (allocated(cmat_blk%Hcoef)) cmat_blk_copy%Hcoef = cmat_blk%Hcoef
-if (allocated(cmat_blk%displ_lon)) cmat_blk_copy%displ_lon = cmat_blk%displ_lon
-if (allocated(cmat_blk%displ_lat)) cmat_blk_copy%displ_lat = cmat_blk%displ_lat
+if (allocated(cmat_blk%adv_lon)) cmat_blk_copy%adv_lon = cmat_blk%adv_lon
+if (allocated(cmat_blk%adv_lat)) cmat_blk_copy%adv_lat = cmat_blk%adv_lat
 
 end function cmat_blk_copy
 

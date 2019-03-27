@@ -8,8 +8,8 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef OOPS_GENERIC_INSTANTIATEVARIABLECHANGEFACTORIES_H_
-#define OOPS_GENERIC_INSTANTIATEVARIABLECHANGEFACTORIES_H_
+#ifndef OOPS_GENERIC_INSTANTIATEVARIABLECHANGEFACTORY_H_
+#define OOPS_GENERIC_INSTANTIATEVARIABLECHANGEFACTORY_H_
 
 #include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/VariableChangeBase.h"
@@ -20,7 +20,7 @@
 namespace oops {
 
 template <typename MODEL>
-void instantiateVariableChangeFactories() {
+void instantiateVariableChangeFactory() {
 // Nonlinear change of variables
   static VariableChangeMaker<MODEL, IdVariableChange<MODEL> > makerId_("Identity");
 
@@ -32,4 +32,4 @@ void instantiateVariableChangeFactories() {
 
 }  // namespace oops
 
-#endif  // OOPS_GENERIC_INSTANTIATEVARIABLECHANGEFACTORIES_H_
+#endif  // OOPS_GENERIC_INSTANTIATEVARIABLECHANGEFACTORY_H_

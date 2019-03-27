@@ -14,8 +14,7 @@ cost_function:
           maximum_condition_number: 1.0e6
           standard_deviation: '1.0'
           vertical_correlation: '0.4'
-        members: '10'
-        state:
+        members:
         - date: '2010-01-01T00:00:00Z'
           filename: Data/test.ens.1.2009-12-31T00:00:00Z.P1D
         - date: '2010-01-01T00:00:00Z'
@@ -37,8 +36,7 @@ cost_function:
         - date: '2010-01-01T00:00:00Z'
           filename: Data/test.ens.10.2009-12-31T00:00:00Z.P1D
         variables:
-          variables:
-          - x
+        - x
       ensemble_weight: '0.3'
       static:
         covariance: QgError
@@ -47,6 +45,7 @@ cost_function:
         maximum_condition_number: 1.0e6
         standard_deviation: '0.8'
         vertical_correlation: '0.2'
+      static_weight: '0.7'
   Jo:
     ObsTypes:
     - Covariance:

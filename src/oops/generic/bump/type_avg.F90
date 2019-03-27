@@ -544,7 +544,7 @@ do ib=1,bpar%nb
             ! Median filter to remove extreme values
             call samp%diag_filter(mpl,nam,geom,il0,'median',rhflt,m2)
 
-            ! Average filter to smooth displacement
+            ! Average filter to smooth values
             call samp%diag_filter(mpl,nam,geom,il0,'gc99',rhflt,m2)
 
             ! Compute product

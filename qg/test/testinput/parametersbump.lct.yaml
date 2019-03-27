@@ -1,15 +1,27 @@
 background:
   date: '2010-01-01T00:00:00Z'
   filename: Data/truth.fc.2009-12-15T00:00:00Z.P17D
-date: '2010-01-01T00:00:00Z'
-dc: 500000.0
-default_seed: 1
-diag_interp: bilin
-diag_rhflt: 3000000.0
-draw_type: random_uniform
+bump:
+  dc: 500000.0
+  default_seed: 1
+  diag_rhflt: 3000000.0
+  lct_diag:
+  - 1
+  lct_nscales: 1
+  method: cor
+  minim_algo: hooke
+  nc1: 100
+  nc2: 100
+  nc3: 50
+  ne: 10
+  new_lct: 1
+  nl0r: 2
+  nrep: 2
+  ntry: 3
+  prefix: bump_parametersbump.lct
+  strategy: specific_univariate
 ensemble:
-  members: '10'
-  state:
+  members:
   - date: '2010-01-01T00:00:00Z'
     filename: Data/test.ens.1.2009-12-31T00:00:00Z.P1D
   - date: '2010-01-01T00:00:00Z'
@@ -31,26 +43,9 @@ ensemble:
   - date: '2010-01-01T00:00:00Z'
     filename: Data/test.ens.10.2009-12-31T00:00:00Z.P1D
   variables:
-    variables:
-    - x
-lct_diag:
-- 1
-lct_nscales: 1
+  - x
 logging:
   categories: Info, Test, Warning, Error
-mask_type: none
-method: cor
-minim_algo: hooke
-nc1: 100
-nc2: 100
-nc3: 50
-ne: 10
-new_lct: 1
-nl0r: 2
-nldwh: 0
-nldwv: 0
-nrep: 2
-ntry: 3
 output:
 - datadir: Data
   date: '2010-01-01T00:00:00Z'
@@ -82,13 +77,9 @@ output:
   exp: DLh_1
   parameter: DLh_1
   type: an
-prefix: bump_parametersbump.lct
 resolution:
   bc: '1'
   nx: '40'
   ny: '20'
-rvflt: 0.0
-strategy: specific_univariate
 variables:
-  variables:
-  - x
+- x

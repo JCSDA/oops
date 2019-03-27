@@ -115,7 +115,7 @@ template <typename MODEL> class HofX : public Application {
 
 //  Save H(x)
     boost::scoped_ptr<Observations_> yobs(pobs->release());
-    Log::test() << "H(x): " << *yobs << std::endl;
+    Log::test() << "H(x): " << std::endl << *yobs << "End H(x)" << std::endl;
     yobs->save("hofx");
 
     return 0;

@@ -6,15 +6,13 @@ cost_function:
         filename: Data/example.fc.2009-12-31T00:00:00Z.P1D
     Covariance:
       covariance: ensemble
-      date: '2010-01-01T00:00:00Z'
       localization:
         horizontal_length_scale: 2e6
         localization: QG
         maximum_condition_number: 1.0e6
         standard_deviation: '1.0'
         vertical_correlation: '0.4'
-      members: '5'
-      state:
+      members:
       - date: '2010-01-01T00:00:00Z'
         filename: Data/test.ens.1.2009-12-31T00:00:00Z.P1D
       - date: '2010-01-01T00:00:00Z'
@@ -26,8 +24,7 @@ cost_function:
       - date: '2010-01-01T00:00:00Z'
         filename: Data/test.ens.5.2009-12-31T00:00:00Z.P1D
       variables:
-        variables:
-        - x
+      - x
   Jc:
   - jcdfi:
       alpha: '10.0'

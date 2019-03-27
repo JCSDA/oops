@@ -43,13 +43,14 @@ real(kind_real),intent(out) :: u(nn) ! Matrix square-root
 ! Local variables
 integer :: i,icol,ii,irow,j,k,kk,l,m
 real(kind_real) :: w,x
+character(len=1024),parameter :: subr = 'asa007_cholesky'
 
 ! Initialization
 ii = 0
 j = 1
 k = 0
 if (nn/=(n*(n+1))/2) then
-   call mpl%abort('wrong size in Cholesky decomposition')
+   call mpl%abort(subr,'wrong size in Cholesky decomposition')
 end if
 w = 0.0
 
@@ -77,7 +78,7 @@ do icol=1,n
          u(k) = w/u(l)
       else
          u(k) = 0.0
-         if (inf(abs(x*a(k)),w**2)) call mpl%abort('A is not positive semi-definite')
+         if (inf(abs(x*a(k)),w**2)) call mpl%abort(subr,'A is not positive semi-definite')
       end if
    end do
 
@@ -85,7 +86,7 @@ do icol=1,n
    if (infeq(abs(w),abs(eta*a(k)))) then
       u(k) = 0.0
    else
-      if (w<0.0) call mpl%abort('A is not positive semi-definite')
+      if (w<0.0) call mpl%abort(subr,'A is not positive semi-definite')
       u(k) = sqrt(w)
    end if
    j = j+icol
@@ -111,11 +112,12 @@ real(kind_real),intent(out) :: c(nn) ! Matrix inverse
 ! Local variables
 integer :: i,icol,irow,j,jcol,k,l,mdiag,ndiag,nrow
 real(kind_real) :: w(n),x
+character(len=1024),parameter :: subr = 'asa007_syminv'
 
 ! Initialization
 nrow = n
 if (nn/=(n*(n+1))/2) then
-   call mpl%abort('wrong size in Cholesky decomposition')
+   call mpl%abort(subr,'wrong size in Cholesky decomposition')
 end if
 w = 0.0
 

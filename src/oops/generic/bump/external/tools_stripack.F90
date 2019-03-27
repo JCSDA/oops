@@ -137,6 +137,7 @@ subroutine addnod ( mpl, nst, k, x, y, z, list, lptr, lend, lnew, ier )
   real ( kind_real ) x(k)
   real ( kind_real ) y(k)
   real ( kind_real ) z(k)
+  character(len=1024),parameter :: subr = 'addnod'
 
   kk = k
 
@@ -145,7 +146,7 @@ subroutine addnod ( mpl, nst, k, x, y, z, list, lptr, lend, lnew, ier )
     write ( *, '(a)' ) ' '
     write ( *, '(a)' ) 'ADDNOD - Fatal error!'
     write ( *, '(a)' ) '  K < 4.'
-    call mpl%abort('stop in stripack')
+    call mpl%abort(subr,'stop in stripack')
   end if
 !
 !  Initialization:
@@ -175,7 +176,7 @@ subroutine addnod ( mpl, nst, k, x, y, z, list, lptr, lend, lnew, ier )
     write ( *, '(a)' ) ' '
     write ( *, '(a)' ) 'ADDNOD - Fatal error!'
     write ( *, '(a)' ) '  The nodes are coplanar.'
-    call mpl%abort('stop in stripack')
+    call mpl%abort(subr,'stop in stripack')
   end if
 
   if ( i3 /= 0 ) then
@@ -187,7 +188,7 @@ subroutine addnod ( mpl, nst, k, x, y, z, list, lptr, lend, lnew, ier )
       write ( *, '(a)' ) ' '
       write ( *, '(a)' ) 'ADDNOD - Fatal error!'
       write ( *, '(a,i8,a,i8)' ) '  Node ', l, ' is equal to node ', k
-      call mpl%abort('stop in stripack')
+      call mpl%abort(subr,'stop in stripack')
     end if
 
     l = i2
@@ -197,7 +198,7 @@ subroutine addnod ( mpl, nst, k, x, y, z, list, lptr, lend, lnew, ier )
       write ( *, '(a)' ) ' '
       write ( *, '(a)' ) 'ADDNOD - Fatal error!'
       write ( *, '(a,i8,a,i8)' ) '  Node ', l, ' is equal to node ', k
-      call mpl%abort('stop in stripack')
+      call mpl%abort(subr,'stop in stripack')
     end if
 
     l = i3
@@ -206,7 +207,7 @@ subroutine addnod ( mpl, nst, k, x, y, z, list, lptr, lend, lnew, ier )
       write ( *, '(a)' ) ' '
       write ( *, '(a)' ) 'ADDNOD - Fatal error!'
       write ( *, '(a,i8,a,i8)' ) '  Node ', l, ' is equal to node ', k
-      call mpl%abort('stop in stripack')
+      call mpl%abort(subr,'stop in stripack')
     end if
 
     call intadd ( kk, i1, i2, i3, list, lptr, lend, lnew )
@@ -4223,6 +4224,7 @@ subroutine trmesh ( mpl, n, x, y, z, list, lptr, lend, lnew, near, next, dist, i
   real ( kind_real ) x(n)
   real ( kind_real ) y(n)
   real ( kind_real ) z(n)
+  character(len=1024),parameter :: subr = 'trmesh'
 
   nn = n
 
@@ -4231,7 +4233,7 @@ subroutine trmesh ( mpl, n, x, y, z, list, lptr, lend, lnew, near, next, dist, i
     write ( *, '(a)' ) ' '
     write ( *, '(a)' ) 'TRMESH - Fatal error!'
     write ( *, '(a)' ) '  N < 3.'
-    call mpl%abort('stop in stripack')
+    call mpl%abort(subr,'stop in stripack')
   end if
 !
 !  Initialize
@@ -4299,7 +4301,7 @@ subroutine trmesh ( mpl, n, x, y, z, list, lptr, lend, lnew, near, next, dist, i
     write ( *, '(a)' ) 'TRMESH - Fatal error!'
     write ( *, '(a)' ) '  The first 3 nodes are collinear.'
     write ( *, '(a)' ) '  Try reordering the data.'
-    call mpl%abort('stop in stripack')
+    call mpl%abort(subr,'stop in stripack')
 
   end if
 !
@@ -4376,7 +4378,7 @@ subroutine trmesh ( mpl, n, x, y, z, list, lptr, lend, lnew, near, next, dist, i
       write ( *, '(a)' ) ' '
       write ( *, '(a)' ) 'TRMESH - Fatal error!'
       write ( *, '(a,i8)' ) '  ADDNOD returned error code IER = ', ier
-      call mpl%abort('stop in stripack')
+      call mpl%abort(subr,'stop in stripack')
     end if
 !
 !  Remove K from the set of unprocessed nodes associated with NEAR(K).

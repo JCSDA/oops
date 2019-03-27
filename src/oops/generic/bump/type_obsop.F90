@@ -10,8 +10,7 @@ module type_obsop
 use netcdf
 use tools_const, only: pi,deg2rad,rad2deg,reqkm
 use tools_func, only: sphere_dist
-use tools_kinds, only: kind_real
-use tools_nc, only: ncfloat
+use tools_kinds, only: kind_real,nc_kind_real
 use tools_qsort, only: qsort
 use type_com, only: com_type
 use type_geom, only: geom_type
@@ -118,7 +117,7 @@ type(nam_type),intent(in) :: nam         ! Namelist
 ! Local variables
 integer :: ncid
 character(len=1024) :: filename
-character(len=1024) :: subr = 'obsop_read'
+character(len=1024),parameter :: subr = 'obsop_read'
 
 ! Create file
 write(filename,'(a,a,i4.4,a,i4.4,a)') trim(nam%prefix),'_obs_',mpl%nproc,'-',mpl%myproc,'.nc'
@@ -156,14 +155,14 @@ type(nam_type),intent(in) :: nam         ! Namelist
 ! Local variables
 integer :: ncid
 character(len=1024) :: filename
-character(len=1024) :: subr = 'obsop_write'
+character(len=1024),parameter :: subr = 'obsop_write'
 
 ! Create file
 write(filename,'(a,a,i4.4,a,i4.4,a)') trim(nam%prefix),'_obs_',mpl%nproc,'-',mpl%myproc,'.nc'
 call mpl%ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_clobber,nf90_64bit_offset),ncid))
 
 ! Write namelist parameters
-call nam%ncwrite(mpl,ncid)
+call nam%write(mpl,ncid)
 
 ! Write attributes
 call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,'nc0b',obsop%nc0b))
@@ -203,9 +202,10 @@ integer :: iobs,jobs,iproc,iobsa,nproc_max
 integer,allocatable :: order(:),obs_to_proc(:)
 real(kind_real),allocatable :: lonobs(:),latobs(:),list(:)
 logical :: valid
+character(len=1024),parameter :: subr = 'obsop_generate'
 
 ! Check observation number
-if (nam%nobs<1) call mpl%abort('nobs should be positive for offline observation operator')
+if (nam%nobs<1) call mpl%abort(subr,'nobs should be positive for offline observation operator')
 
 ! Allocation
 allocate(lonobs(nam%nobs))
@@ -231,7 +231,7 @@ call mpl%f_comm%broadcast(lonobs,mpl%ioproc-1)
 call mpl%f_comm%broadcast(latobs,mpl%ioproc-1)
 
 ! Split observations between processors
-if (test_no_obs.and.(mpl%nproc==1)) call mpl%abort('at least 2 MPI tasks required for test_no_obs')
+if (test_no_obs.and.(mpl%nproc==1)) call mpl%abort(subr,'at least 2 MPI tasks required for test_no_obs')
 if (mpl%main) then
    ! Allocation
    allocate(list(nam%nobs))
@@ -347,6 +347,7 @@ real(kind_real) :: N_max,C_max
 real(kind_real),allocatable :: lonobs(:),latobs(:),list(:)
 logical :: maskobsa(obsop%nobsa),lcheck_nc0b(geom%nc0)
 logical,allocatable :: maskobs(:)
+character(len=1024),parameter :: subr = 'obsop_run_obsop'
 type(fckit_mpi_status) :: status
 type(linop_type) :: hfull
 
@@ -584,7 +585,7 @@ case ('local','adjusted')
       call mpl%flush
    end if
 case default
-   call mpl%abort('wrong obsdis')
+   call mpl%abort(subr,'wrong obsdis')
 end select
 
 ! Allocation
@@ -887,6 +888,7 @@ real(kind_real) :: norm_tot,distmin_tot,proc_to_distmax(mpl%nproc),distsum_tot
 real(kind_real) :: lon(geom%nc0a,geom%nl0),lat(geom%nc0a,geom%nl0)
 real(kind_real) :: ylon(obsop%nobsa,geom%nl0),ylat(obsop%nobsa,geom%nl0)
 real(kind_real) :: dist(obsop%nobsa)
+character(len=1024),parameter :: subr = 'obsop_test_accuracy'
 
 ! Initialization
 do ic0a=1,geom%nc0a
@@ -962,7 +964,7 @@ if (norm_tot>0.0) then
    write(mpl%info,'(a10,a14,f10.2,a,f10.2,a)') '','Interpolation:',ylonmax*rad2deg,' deg. / ' ,ylatmax*rad2deg,' deg.'
    call mpl%flush
 else
-   call mpl%abort('all observations are out of the test windows')
+   call mpl%abort(subr,'all observations are out of the test windows')
 end if
 
 end subroutine obsop_test_accuracy

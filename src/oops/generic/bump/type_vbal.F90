@@ -11,8 +11,7 @@ use fckit_mpi_module, only: fckit_mpi_sum
 !$ use omp_lib
 use netcdf
 use tools_func, only: syminv
-use tools_kinds, only: kind_real
-use tools_nc, only: ncfloat
+use tools_kinds, only: kind_real,nc_kind_real
 use tools_repro, only: infeq
 use type_bpar, only: bpar_type
 use type_ens, only: ens_type
@@ -77,6 +76,7 @@ type(bpar_type),intent(in) :: bpar     ! Block parameters
 
 ! Local variables
 integer :: iv,jv
+character(len=1024),parameter :: subr = 'vbal_alloc'
 
 ! Find number of neighbors
 vbal%np = 0
@@ -87,7 +87,7 @@ elseif (trim(nam%diag_interp)=='natural') then
    ! Natural neighbors
    vbal%np = 40
 else
-   call mpl%abort('wrong interpolation type')
+   call mpl%abort(subr,'wrong interpolation type')
 end if
 
 ! Allocation
@@ -185,7 +185,7 @@ integer :: iv,jv
 integer :: ncid,np_id,nc0a_id,nc2b_id,nl0i_id,nl0_1_id,nl0_2_id,h_n_s_id,h_c2b_id,h_S_id,reg_id(nam%nv,nam%nv)
 integer :: nc0a_test,nl0i_test,nl0_1_test,nl0_2_test
 character(len=1024) :: filename
-character(len=1024),parameter :: subr='vbal_read'
+character(len=1024),parameter :: subr = 'vbal_read'
 
 ! Open file
 write(filename,'(a,a,i4.4,a,i4.4,a)') trim(nam%prefix),'_vbal_',mpl%nproc,'-',mpl%myproc,'.nc'
@@ -196,18 +196,18 @@ call mpl%ncerr(subr,nf90_inq_dimid(ncid,'np',np_id))
 call mpl%ncerr(subr,nf90_inquire_dimension(ncid,np_id,len=vbal%np))
 call mpl%ncerr(subr,nf90_inq_dimid(ncid,'nc0a',nc0a_id))
 call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nc0a_id,len=nc0a_test))
-if (nc0a_test/=geom%nc0a) call mpl%abort('wrong dimension when reading vbal')
+if (nc0a_test/=geom%nc0a) call mpl%abort(subr,'wrong dimension when reading vbal')
 call mpl%ncerr(subr,nf90_inq_dimid(ncid,'nc2b',nc2b_id))
 call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nc2b_id,len=vbal%samp%nc2b))
 call mpl%ncerr(subr,nf90_inq_dimid(ncid,'nl0i',nl0i_id))
 call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nl0i_id,len=nl0i_test))
-if (nl0i_test/=geom%nl0i) call mpl%abort('wrong dimension when reading vbal')
+if (nl0i_test/=geom%nl0i) call mpl%abort(subr,'wrong dimension when reading vbal')
 call mpl%ncerr(subr,nf90_inq_dimid(ncid,'nl0_1',nl0_1_id))
 call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nl0_1_id,len=nl0_1_test))
-if (nl0_1_test/=geom%nl0) call mpl%abort('wrong dimension when reading vbal')
+if (nl0_1_test/=geom%nl0) call mpl%abort(subr,'wrong dimension when reading vbal')
 call mpl%ncerr(subr,nf90_inq_dimid(ncid,'nl0_2',nl0_2_id))
 call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nl0_2_id,len=nl0_2_test))
-if (nl0_2_test/=geom%nl0) call mpl%abort('wrong dimension when reading vbal')
+if (nl0_2_test/=geom%nl0) call mpl%abort(subr,'wrong dimension when reading vbal')
 
 ! Allocation
 allocate(vbal%h_n_s(geom%nc0a,geom%nl0i))
@@ -267,14 +267,14 @@ integer :: iv,jv
 integer :: ncid,np_id,nc0a_id,nc2b_id,nl0i_id,nl0_1_id,nl0_2_id,h_n_s_id,h_c2b_id,h_S_id
 integer :: reg_id(nam%nv,nam%nv),auto_id(nam%nv,nam%nv),cross_id(nam%nv,nam%nv),auto_inv_id(nam%nv,nam%nv)
 character(len=1024) :: filename
-character(len=1024),parameter :: subr='vbal_write'
+character(len=1024),parameter :: subr = 'vbal_write'
 
 ! Create file
 write(filename,'(a,a,i4.4,a,i4.4,a)') trim(nam%prefix),'_vbal_',mpl%nproc,'-',mpl%myproc,'.nc'
 call mpl%ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_clobber,nf90_64bit_offset),ncid))
 
 ! Write namelist parameters
-call nam%ncwrite(mpl,ncid)
+call nam%write(mpl,ncid)
 
 ! Define dimensions
 call mpl%ncerr(subr,nf90_def_dim(ncid,'np',vbal%np,np_id))
@@ -289,18 +289,18 @@ call mpl%ncerr(subr,nf90_def_var(ncid,'h_n_s',nf90_int,(/nc0a_id,nl0i_id/),h_n_s
 call mpl%ncerr(subr,nf90_put_att(ncid,h_n_s_id,'_FillValue',mpl%msv%vali))
 call mpl%ncerr(subr,nf90_def_var(ncid,'h_c2b',nf90_int,(/np_id,nc0a_id,nl0i_id/),h_c2b_id))
 call mpl%ncerr(subr,nf90_put_att(ncid,h_c2b_id,'_FillValue',mpl%msv%vali))
-call mpl%ncerr(subr,nf90_def_var(ncid,'h_S',ncfloat,(/np_id,nc0a_id,nl0i_id/),h_S_id))
+call mpl%ncerr(subr,nf90_def_var(ncid,'h_S',nc_kind_real,(/np_id,nc0a_id,nl0i_id/),h_S_id))
 call mpl%ncerr(subr,nf90_put_att(ncid,h_S_id,'_FillValue',mpl%msv%valr))
 do iv=1,nam%nv
    do jv=1,nam%nv
       if (bpar%vbal_block(iv,jv)) then
-         call mpl%ncerr(subr,nf90_def_var(ncid,trim(vbal%blk(iv,jv)%name)//'_auto',ncfloat,(/nc2b_id,nl0_1_id,nl0_2_id/), &
+         call mpl%ncerr(subr,nf90_def_var(ncid,trim(vbal%blk(iv,jv)%name)//'_auto',nc_kind_real,(/nc2b_id,nl0_1_id,nl0_2_id/), &
        & auto_id(iv,jv)))
-         call mpl%ncerr(subr,nf90_def_var(ncid,trim(vbal%blk(iv,jv)%name)//'_cross',ncfloat,(/nc2b_id,nl0_1_id,nl0_2_id/), &
+         call mpl%ncerr(subr,nf90_def_var(ncid,trim(vbal%blk(iv,jv)%name)//'_cross',nc_kind_real,(/nc2b_id,nl0_1_id,nl0_2_id/), &
        & cross_id(iv,jv)))
-         call mpl%ncerr(subr,nf90_def_var(ncid,trim(vbal%blk(iv,jv)%name)//'_auto_inv',ncfloat,(/nc2b_id,nl0_1_id,nl0_2_id/), &
+         call mpl%ncerr(subr,nf90_def_var(ncid,trim(vbal%blk(iv,jv)%name)//'_auto_inv',nc_kind_real,(/nc2b_id,nl0_1_id,nl0_2_id/), &
        & auto_inv_id(iv,jv)))
-         call mpl%ncerr(subr,nf90_def_var(ncid,trim(vbal%blk(iv,jv)%name)//'_reg',ncfloat,(/nc2b_id,nl0_1_id,nl0_2_id/), &
+         call mpl%ncerr(subr,nf90_def_var(ncid,trim(vbal%blk(iv,jv)%name)//'_reg',nc_kind_real,(/nc2b_id,nl0_1_id,nl0_2_id/), &
        & reg_id(iv,jv)))
       end if
    end do

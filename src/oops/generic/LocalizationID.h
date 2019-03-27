@@ -8,19 +8,11 @@
 #ifndef OOPS_GENERIC_LOCALIZATIONID_H_
 #define OOPS_GENERIC_LOCALIZATIONID_H_
 
-#include <sstream>
-#include <string>
 #include <vector>
 
-#include <boost/scoped_ptr.hpp>
-
 #include "eckit/config/Configuration.h"
-#include "oops/base/EnsemblesCollection.h"
 #include "oops/base/StateEnsemble.h"
-#include "oops/base/Variables.h"
-#include "oops/interface/LocalizationBase.h"
-#include "oops/util/DateTime.h"
-#include "oops/util/Duration.h"
+#include "oops/generic/LocalizationGeneric.h"
 #include "oops/util/Logger.h"
 
 namespace eckit {
@@ -33,28 +25,38 @@ namespace oops {
 /// Identity localization matrix for fast testing
 
 template<typename MODEL>
-class LocalizationID : public LocalizationBase<MODEL> {
-  typedef typename MODEL::Geometry   Geometry_;
-  typedef typename MODEL::Increment  Increment_;
+class LocalizationID : public LocalizationGeneric<MODEL> {
+  typedef Geometry<MODEL>                         Geometry_;
+  typedef Increment<MODEL>                        Increment_;
+  typedef Increment4D<MODEL>                      Increment4D_;
+  typedef boost::shared_ptr<StateEnsemble<MODEL>> EnsemblePtr_;
 
  public:
-  LocalizationID(const Geometry_ &, const eckit::Configuration &);
+  LocalizationID(const Geometry_ &,
+                 const EnsemblePtr_,
+                 const eckit::Configuration &);
   ~LocalizationID();
 
   void multiply(Increment_ &) const;
+  void multiply(Increment4D_ &) const;
 
  private:
   void print(std::ostream &) const;
-  int keyLID_;
+  int cross_timeslot_;
 };
 
 // =============================================================================
 
 template<typename MODEL>
 LocalizationID<MODEL>::LocalizationID(const Geometry_ & resol,
+                                      const EnsemblePtr_ ens,
                                       const eckit::Configuration & conf)
-  : keyLID_(0)
+  : cross_timeslot_(0)
 {
+  if (conf.has("cross_timeslot")) {
+    cross_timeslot_ = conf.getInt("cross_timeslot");
+  }
+  ASSERT(cross_timeslot_ == 0 || cross_timeslot_ == 1);
   Log::trace() << "LocalizationID:LocalizationID constructed" << std::endl;
 }
 
@@ -70,6 +72,27 @@ LocalizationID<MODEL>::~LocalizationID() {
 template<typename MODEL>
 void LocalizationID<MODEL>::multiply(Increment_ & dx) const {
   Log::trace() << "LocalizationID:multiply starting" << std::endl;
+  Log::trace() << "LocalizationID:multiply done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void LocalizationID<MODEL>::multiply(Increment4D_ & dx) const {
+  Log::trace() << "LocalizationID:multiply starting" << std::endl;
+  if (cross_timeslot_ == 1) {
+    // Sum over timeslots
+    Increment_ dxtmp(dx[dx.first()]);
+    for (int isub = dx.first()+1; isub <= dx.last(); ++isub) {
+       dxtmp.axpy(1.0, dx[isub], false);
+    }
+
+    // Copy result to all timeslots
+    for (int isub = dx.first(); isub <= dx.last(); ++isub) {
+       dx[isub].zero();
+       dx[isub].axpy(1.0, dxtmp, false);
+    }
+  }
   Log::trace() << "LocalizationID:multiply done" << std::endl;
 }
 

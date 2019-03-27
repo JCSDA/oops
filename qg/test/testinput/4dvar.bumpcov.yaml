@@ -5,24 +5,22 @@ cost_function:
       - date: '2010-01-01T00:00:00Z'
         filename: Data/example.fc.2009-12-31T00:00:00Z.P1D
     Covariance:
-      advmode: 0
       covariance: BUMP
-      date: '2010-01-01T00:00:00Z'
-      default_seed: 1
-      forced_radii: 1
-      lsqrt: 1
-      method: cor
-      mpicom: 2
-      network: 0
-      new_nicas: 1
-      nicas_interp: bilin
-      nrep: 2
-      ntry: 3
-      prefix: bump_4dvar.bumpcov
-      resol: 10.0
-      rh: 3900000.0
-      rv: 2.407
-      strategy: common
+      bump:
+        default_seed: 1
+        forced_radii: 1
+        lsqrt: 1
+        method: cor
+        mpicom: 2
+        network: 0
+        new_nicas: 1
+        nrep: 2
+        ntry: 3
+        prefix: bump_4dvar.bumpcov
+        resol: 10.0
+        rh: 3900000.0
+        rv: 2.407
+        strategy: common
       variable_changes:
       - inputVariables:
           variables:

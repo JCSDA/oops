@@ -22,6 +22,8 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/CostJbState.h"
 #include "oops/assimilation/State4D.h"
+#include "oops/base/Variables.h"
+#include "oops/generic/UnstructuredGrid.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/util/DateTime.h"
@@ -50,20 +52,28 @@ template<typename MODEL> class Increment4D : public util::Printable {
 
 /// Constructor, destructor
   explicit Increment4D(const JbState_ &);
+  explicit Increment4D(const Increment_ &);
+  Increment4D(const Geometry_ &, const Variables &, const std::vector<util::DateTime> &);
   Increment4D(const Increment4D &, const bool copy = true);
   Increment4D(const Increment4D &, const eckit::Configuration &);
   Increment4D(const Geometry_ &, const Increment4D &);
   ~Increment4D();
 
+/// Interfacing
+  Increment_ & incr4d() {return *incr4d_;}
+  const Increment_ & incr4d() const {return *incr4d_;}
+
 /// Linear algebra operators
   void diff(const State4D_ &, const State4D_ &);
   void zero();
+  void dirac(std::vector<eckit::LocalConfiguration>);
   Increment4D & operator=(const Increment4D &);
   Increment4D & operator+=(const Increment4D &);
   Increment4D & operator-=(const Increment4D &);
   Increment4D & operator*=(const double);
-  void axpy(const double, const Increment4D &);
+  void axpy(const double, const Increment4D &, const bool check = true);
   double dot_product_with(const Increment4D &) const;
+  void schur_product_with(const Increment4D &);
 
 /// I/O and diagnostics
   void read(const eckit::Configuration &);
@@ -72,11 +82,17 @@ template<typename MODEL> class Increment4D : public util::Printable {
 /// Get geometry
   Geometry_ geometry() const {return this->get(first_).geometry();}
 
+/// Unstructured grid
+  void ug_coord(UnstructuredGrid &) const;
+  void field_to_ug(UnstructuredGrid &) const;
+  void field_from_ug(const UnstructuredGrid &);
+
 /// Get model space control variable
   Increment_ & operator[](const int ii) {return this->get(ii);}
   const Increment_ & operator[](const int ii) const {return this->get(ii);}
   int first() const {return first_;}
   int last() const {return last_;}
+  size_t size() const {return last_-first_+1;}
 
 /// To be removed
   void shift_forward();
@@ -106,6 +122,28 @@ Increment4D<MODEL>::Increment4D(const JbState_ & jb)
 {
   for (int jsub = 0; jsub <= last_; ++jsub) {
     Increment_ * incr = jb.newStateIncrement(jsub);
+    incr4d_.insert(jsub, incr);
+  }
+  Log::trace() << "Increment4D:Increment4D created." << std::endl;
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+Increment4D<MODEL>::Increment4D(const Increment_ & dx)
+  : incr4d_(), first_(0), last_(0)
+{
+  Increment_ * incr = new Increment_(dx);
+  incr4d_.insert(0, incr);
+  Log::trace() << "Increment4D:Increment4D created." << std::endl;
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+Increment4D<MODEL>::Increment4D(const Geometry_ & resol,
+                                const Variables & vars,
+                                const std::vector<util::DateTime> & timeslots)
+  : incr4d_(), first_(0), last_(timeslots.size() - 1)
+{
+  for (int jsub = 0; jsub <= last_; ++jsub) {
+    Increment_ * incr = new Increment_(resol, vars, timeslots[jsub]);
     incr4d_.insert(jsub, incr);
   }
   Log::trace() << "Increment4D:Increment4D created." << std::endl;
@@ -172,6 +210,19 @@ void Increment4D<MODEL>::zero() {
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
+void Increment4D<MODEL>::dirac(std::vector<eckit::LocalConfiguration> confs) {
+  this->zero();
+  for (const auto & conf : confs) {
+    const util::DateTime date(conf.getString("date"));
+    for (iter_ jsub = incr4d_.begin(); jsub != incr4d_.end(); ++jsub) {
+      if (date == jsub->second->validTime()) {
+        jsub->second->dirac(conf);
+      }
+    }
+  }
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
 void Increment4D<MODEL>::diff(const State4D_ & cv1, const State4D_ & cv2) {
   for (iter_ jsub = incr4d_.begin(); jsub != incr4d_.end(); ++jsub) {
     jsub->second->diff(cv1[jsub->first], cv2[jsub->first]);
@@ -209,9 +260,9 @@ Increment4D<MODEL> & Increment4D<MODEL>::operator*=(const double zz) {
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-void Increment4D<MODEL>::axpy(const double zz, const Increment4D & rhs) {
+void Increment4D<MODEL>::axpy(const double zz, const Increment4D & rhs, const bool check) {
   for (iter_ jsub = incr4d_.begin(); jsub != incr4d_.end(); ++jsub) {
-    jsub->second->axpy(zz, rhs[jsub->first]);
+    jsub->second->axpy(zz, rhs[jsub->first], check);
   }
 }
 // -----------------------------------------------------------------------------
@@ -234,6 +285,25 @@ void Increment4D<MODEL>::write(const eckit::Configuration & config) const {
   }
 }
 // -----------------------------------------------------------------------------
+template<typename MODEL>
+void Increment4D<MODEL>::ug_coord(UnstructuredGrid & ug) const {
+  incr4d_.begin()->second->ug_coord(ug);
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+void Increment4D<MODEL>::field_to_ug(UnstructuredGrid & ug) const {
+  for (icst_ jsub = incr4d_.begin(); jsub != incr4d_.end(); ++jsub) {
+    jsub->second->field_to_ug(ug, jsub->first);
+  }
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+void Increment4D<MODEL>::field_from_ug(const UnstructuredGrid & ug) {
+  for (iter_ jsub = incr4d_.begin(); jsub != incr4d_.end(); ++jsub) {
+    jsub->second->field_from_ug(ug, jsub->first);
+  }
+}
+// -----------------------------------------------------------------------------
 template <typename MODEL>
 void Increment4D<MODEL>::print(std::ostream & outs) const {
   for (icst_ jsub = incr4d_.begin(); jsub != incr4d_.end(); ++jsub) {
@@ -248,6 +318,13 @@ double Increment4D<MODEL>::dot_product_with(const Increment4D & x2) const {
     zz += dot_product(*jsub->second, x2[jsub->first]);
   }
   return zz;
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+void Increment4D<MODEL>::schur_product_with(const Increment4D & x2) {
+  for (iter_ jsub = incr4d_.begin(); jsub != incr4d_.end(); ++jsub) {
+    jsub->second->schur_product_with(x2[jsub->first]);
+  }
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>

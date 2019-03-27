@@ -21,6 +21,7 @@ list( APPEND qg_test_input
   testinput/dirac.bumpcov.yaml
   testinput/dirac.qgcov.yaml
   testinput/dirac.bumploc.yaml
+  testinput/dirac.noloc.yaml
   testinput/enshofx.yaml
   testinput/ensvariance.yaml
   testinput/parametersbump.cov.yaml
@@ -68,6 +69,7 @@ list( APPEND qg_testoutput
   testoutput/dirac.bumpcov.test
   testoutput/dirac.qgcov.test
   testoutput/dirac.bumploc.test
+  testoutput/dirac.noloc.test
   testoutput/enshofx.test
   testoutput/parametersbump.cov.test
   testoutput/parametersbump.lct.test
@@ -486,6 +488,14 @@ ecbuild_add_test( TARGET test_qg_dirac_bumploc
                        testoutput/dirac.bumploc.test
                   DEPENDS qg_dirac.x )
 
+ecbuild_add_test( TARGET test_qg_dirac_noloc
+                  MPI    1
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/qg_dirac.x testinput/dirac.noloc.yaml"
+                       testoutput/dirac.noloc.test
+                  DEPENDS qg_dirac.x )
+
 ecbuild_add_test( TARGET test_qg_dirac_qgcov
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
@@ -534,6 +544,7 @@ ecbuild_add_test( TARGET test_qg_dfi
 
 ecbuild_add_test( TARGET test_qg_4dvar_eda
                   MPI 4
+                  TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/qg_eda.x
                   ARGS testinput/4dvar.eda.pertobs.yaml
                   DEPENDS qg_eda.x )

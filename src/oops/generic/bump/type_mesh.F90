@@ -278,6 +278,7 @@ type(mpl_type),intent(inout) :: mpl    ! MPI data
 integer :: info,ia,it,i,i1,i2
 integer :: ltri(9,2*(mesh%n-2))
 character(len=6) :: notvalidchar
+character(len=1024),parameter :: subr = 'mesh_trlist'
 
 ! Create triangles list
 call trlist(mesh%n,mesh%list,mesh%lptr,mesh%lend,9,mesh%nt,ltri,info)
@@ -315,7 +316,7 @@ end do
 call mesh%check(mpl,mesh%valid)
 if (.not.all(mesh%valid)) then
    write(notvalidchar,'(i6)') count(.not.mesh%valid)
-   call mpl%warning('unvalid mesh at creation ('//notvalidchar//' points)')
+   call mpl%warning(subr,'unvalid mesh at creation ('//notvalidchar//' points)')
 end if
 
 end subroutine mesh_trlist
@@ -401,9 +402,10 @@ real(kind_real),intent(out) :: bdist ! Distance to boundary
 ! Local variables
 integer :: i
 real(kind_real) :: x(1),y(1),z(1),v(3),vf(3),vt(3),tlat,tlon,trad,dist_t1,dist_t2
+character(len=1024),parameter :: subr = 'mesh_find_bdist'
 
 ! Check
-if (mpl%msv%isi(mesh%nb)) call mpl%abort('boundary arcs have not been computed')
+if (mpl%msv%isi(mesh%nb)) call mpl%abort(subr,'boundary arcs have not been computed')
 
 ! Initialization
 bdist = huge(1.0)
@@ -459,6 +461,7 @@ integer :: it,i,iend,navg,j,ind_avg(40),ii
 real(kind_real) :: dum
 real(kind_real),allocatable :: a(:),b(:),c(:),cd(:),cp(:)
 logical :: validt(mesh%nt),lfix,init
+character(len=1024),parameter :: subr = 'mesh_check'
 
 !$omp parallel do schedule(static) private(it) firstprivate(a,b,c,cd,cp)
 do it=1,mesh%nt
@@ -523,7 +526,7 @@ if (lfix) then
                j = abs(mesh%list(iend))
                if (valid(j)) then
                   navg = navg+1
-                  if (navg>40) call mpl%abort('max. number of neighbors should be increased')
+                  if (navg>40) call mpl%abort(subr,'max. number of neighbors should be increased')
                   ind_avg(navg) = j
                end if
                iend = mesh%lptr(iend)
@@ -573,7 +576,7 @@ if (lfix) then
             write(mpl%info,'(a19,a,i6,a)') '','Triangle ',it,' of the mesh has been fixed sucessfully'
          else
             write(mpl%info,'(a19,a,i6,a)') '','Triangle ',it,' of the mesh failed to be fixed'
-            call mpl%abort('mesh%fix failed')
+            call mpl%abort(subr,'mesh%fix failed')
          end if
 
          ! Release memory

@@ -17,8 +17,10 @@
 #include <map>
 #include <string>
 #include <boost/noncopyable.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "eckit/config/Configuration.h"
+#include "oops/assimilation/Increment4D.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/util/abor1_cpp.h"
@@ -32,13 +34,15 @@ namespace oops {
 template<typename MODEL>
 class LocalizationBase : public util::Printable,
                          private boost::noncopyable {
-  typedef Increment<MODEL>        Increment_;
+  typedef Increment<MODEL>           Increment_;
+  typedef Increment4D<MODEL>         Increment4D_;
 
  public:
   LocalizationBase() {}
   virtual ~LocalizationBase() {}
 
-  void multiply(Increment_ &) const;
+  void doMultiply(Increment_ &) const;
+  void doMultiply(Increment4D_ &) const;
 
  private:
   virtual void multiply(typename MODEL::Increment &) const = 0;
@@ -107,9 +111,31 @@ LocalizationBase<MODEL>* LocalizationFactory<MODEL>::create(const Geometry_ & re
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void LocalizationBase<MODEL>::multiply(Increment_ & dx) const {
+void LocalizationBase<MODEL>::doMultiply(Increment_ & dx) const {
   Log::trace() << "LocalizationBase<MODEL>::multiply starting" << std::endl;
   this->multiply(dx.increment());
+  Log::trace() << "LocalizationBase<MODEL>::multiply done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+void LocalizationBase<MODEL>::doMultiply(Increment4D_ & dx) const {
+  Log::trace() << "LocalizationBase<MODEL>::multiply starting" << std::endl;
+  // Sum over timeslots
+  Increment_ dxtmp(dx[dx.first()]);
+  for (int isub = dx.first()+1; isub <= dx.last(); ++isub) {
+     dxtmp.axpy(1.0, dx[isub], false);
+  }
+
+  // Apply 3D localization
+  this->multiply(dxtmp.increment());
+
+  // Copy result to all timeslots
+  for (int isub = dx.first(); isub <= dx.last(); ++isub) {
+     dx[isub].zero();
+     dx[isub].axpy(1.0, dxtmp, false);
+  }
   Log::trace() << "LocalizationBase<MODEL>::multiply done" << std::endl;
 }
 

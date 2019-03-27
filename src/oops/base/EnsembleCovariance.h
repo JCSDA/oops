@@ -11,21 +11,21 @@
 #ifndef OOPS_BASE_ENSEMBLECOVARIANCE_H_
 #define OOPS_BASE_ENSEMBLECOVARIANCE_H_
 
+#include <vector>
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/GMRESR.h"
-#include "oops/base/EnsemblesCollection.h"
+#include "oops/assimilation/State4D.h"
 #include "oops/base/IdentityMatrix.h"
+#include "oops/base/Localization.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/StateEnsemble.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
-#include "oops/interface/Localization.h"
 #include "oops/interface/State.h"
 #include "oops/util/abor1_cpp.h"
-#include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
@@ -35,13 +35,13 @@ namespace oops {
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL> {
-  typedef StateEnsemble<MODEL>                     Ensemble_;
-  typedef boost::shared_ptr<StateEnsemble<MODEL> > EnsemblePtr_;
-  typedef EnsemblesCollection<MODEL>               EnsemblesCollection_;
-  typedef Geometry<MODEL>            Geometry_;
-  typedef Increment<MODEL>           Increment_;
-  typedef Localization<MODEL>        Localization_;
-  typedef State<MODEL>               State_;
+  typedef Geometry<MODEL>                         Geometry_;
+  typedef Increment<MODEL>                        Increment_;
+  typedef Localization<MODEL>                     Localization_;
+  typedef State<MODEL>                            State_;
+  typedef State4D<MODEL>                          State4D_;
+  typedef StateEnsemble<MODEL>                    Ensemble_;
+  typedef boost::shared_ptr<StateEnsemble<MODEL>> EnsemblePtr_;
 
  public:
   EnsembleCovariance(const Geometry_ &, const Variables &,
@@ -53,7 +53,7 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL> {
   void doMultiply(const Increment_ &, Increment_ &) const override;
   void doInverseMultiply(const Increment_ &, Increment_ &) const override;
 
-  const util::DateTime time_;
+  EnsemblePtr_ ens_;
   boost::scoped_ptr<Localization_> loc_;
 };
 
@@ -65,18 +65,19 @@ template<typename MODEL>
 EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Variables &,
                                               const eckit::Configuration & conf,
                                               const State_ & xb, const State_ & fg)
-  : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, conf),
-    time_(conf.getString("date")), loc_()
+  : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, conf), ens_(), loc_()
 {
   Log::trace() << "EnsembleCovariance::EnsembleCovariance start" << std::endl;
-// Compute the ensemble of perturbations at time of xb.
-  ASSERT(xb.validTime() == time_);
-  EnsemblePtr_ ens_k(new Ensemble_(xb.validTime(), conf));
-  ens_k->linearize(xb, fg, resol);
-  EnsemblesCollection_::getInstance().put(xb.validTime(), ens_k);
-
-  const eckit::LocalConfiguration confloc(conf, "localization");
-  loc_.reset(new Localization_(resol, confloc));
+  std::vector<util::DateTime> timeslots;
+  timeslots.push_back(xb.validTime());
+  State4D_ xb4D(xb);
+  State4D_ fg4D(fg);
+  ens_.reset(new Ensemble_(timeslots, conf));
+  ens_->linearize(xb4D, fg4D, resol);
+  if (conf.has("localization")) {
+    const eckit::LocalConfiguration confloc(conf, "localization");
+    loc_.reset(new Localization_(resol, ens_, confloc));
+  }
   Log::trace() << "EnsembleCovariance::EnsembleCovariance done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -88,20 +89,20 @@ EnsembleCovariance<MODEL>::~EnsembleCovariance() {
 template<typename MODEL>
 void EnsembleCovariance<MODEL>::doMultiply(const Increment_ & dxi,
                                            Increment_ & dxo) const {
-  EnsemblePtr_ e_k2 = EnsemblesCollection_::getInstance()[dxi.validTime()];
-  EnsemblePtr_ e_k1 = EnsemblesCollection_::getInstance()[dxo.validTime()];
-
-  // Apply to dxi the block B_k1k2 of the B matrix which contains the
-  // covariance of perturbations at time k1 with covariance at time k2
   dxo.zero();
-  for (unsigned int m = 0; m < e_k1->size(); ++m) {
-    Increment_ dx(dxi);
-    dx.schur_product_with((*e_k2)[m]);
-    loc_->multiply(dx);
-    dx.schur_product_with((*e_k1)[m]);
-
-    // We can't use '+=' , dxo and dx aren't at the same time (QG)
-    dxo.axpy(1.0, dx, false);
+  for (unsigned int ie = 0; ie < ens_->size(); ++ie) {
+    if (loc_) {
+      // Localized covariance matrix
+      Increment_ dx(dxi);
+      dx.schur_product_with((*ens_)[ie][0]);
+      loc_->multiply(dx);
+      dx.schur_product_with((*ens_)[ie][0]);
+      dxo.axpy(1.0, dx, false);
+    } else {
+      // Raw covariance matrix
+      double wgt = dxi.dot_product_with((*ens_)[ie][0]);
+      dxo.axpy(wgt, (*ens_)[ie][0], false);
+    }
   }
 }
 // -----------------------------------------------------------------------------

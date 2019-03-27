@@ -167,15 +167,15 @@ void FieldL95::interpAD(const LocsL95 & locs, const GomL95 & gom) {
   }
 }
 // -----------------------------------------------------------------------------
-void FieldL95::ug_coord(oops::UnstructuredGrid & ug, const int & colocated) const {
+void FieldL95::ug_coord(oops::UnstructuredGrid & ug) const {
   ABORT("FieldL95 unstructured grid setup not implemented.");
 }
 // -----------------------------------------------------------------------------
-void FieldL95::field_to_ug(oops::UnstructuredGrid & ug, const int & colocated) const {
+void FieldL95::field_to_ug(oops::UnstructuredGrid & ug, const int & its) const {
   ABORT("FieldL95 conversion to unstructured grid not implemented.");
 }
 // -----------------------------------------------------------------------------
-void FieldL95::field_from_ug(const oops::UnstructuredGrid & ug) {
+void FieldL95::field_from_ug(const oops::UnstructuredGrid & ug, const int & its) {
   ABORT("FieldL95 conversion from unstructured grid not implemented.");
 }
 // -----------------------------------------------------------------------------

@@ -14,4 +14,3 @@ ftest=$2.test.out
 $1 | tee ${flog} && \
 grep 'Test     : ' ${flog} > ${ftest} && \
 diff -s $2 ${ftest}
-

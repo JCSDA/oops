@@ -35,7 +35,8 @@ namespace lorenz95 {
 
 struct L95Traits {
   static std::string name() {return "Lorenz 95";}
-  static std::string nameCovar() {return "L95Error";}  // Won't work if more than one
+  static std::string nameCovar() {return "L95Error";}
+  static std::string nameCovar4D() {return "L95Error";}
 
   typedef lorenz95::Resolution             Geometry;
 

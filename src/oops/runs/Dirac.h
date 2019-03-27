@@ -13,16 +13,17 @@
 
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/instantiateCovarFactory.h"
+#include "oops/base/ModelSpaceCovariance4DBase.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateWriter.h"
 #include "oops/base/Variables.h"
-#include "oops/generic/UnstructuredGrid.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/Model.h"
@@ -36,12 +37,16 @@
 namespace oops {
 
 template <typename MODEL> class Dirac : public Application {
-  typedef Geometry<MODEL>            Geometry_;
-  typedef Model<MODEL>               Model_;
-  typedef ModelAuxControl<MODEL>      ModelAux_;
-  typedef Increment<MODEL>           Increment_;
-  typedef State<MODEL>               State_;
-  typedef Localization<MODEL>        Localization_;
+  typedef Geometry<MODEL>                         Geometry_;
+  typedef Model<MODEL>                            Model_;
+  typedef ModelAuxControl<MODEL>                  ModelAux_;
+  typedef Increment<MODEL>                        Increment_;
+  typedef Increment4D<MODEL>                      Increment4D_;
+  typedef State<MODEL>                            State_;
+  typedef State4D<MODEL>                          State4D_;
+  typedef Localization<MODEL>                     Localization_;
+  typedef StateEnsemble<MODEL>                    Ensemble_;
+  typedef boost::shared_ptr<StateEnsemble<MODEL>> EnsemblePtr_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -52,96 +57,131 @@ template <typename MODEL> class Dirac : public Application {
   virtual ~Dirac() {}
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
-//  Setup resolution
+    //  Setup resolution
     const eckit::LocalConfiguration resolConfig(fullConfig, "resolution");
     const Geometry_ resol(resolConfig);
-    Log::info() << "Setup resolution OK" << std::endl;
 
-//  Setup variables
-    const eckit::LocalConfiguration varConfig(fullConfig, "variables");
-    const Variables vars(varConfig);
-    Log::info() << "Setup variables OK" << std::endl;
+    //  Setup variables
+    const Variables vars(fullConfig);
 
-//  Setup initial state
-    const eckit::LocalConfiguration initialConfig(fullConfig, "initial");
-    const State_ xx(resol, vars, initialConfig);
-    Log::info() << "Setup initial state OK" << std::endl;
+    // Setup background state
+    const eckit::LocalConfiguration backgroundConfig(fullConfig, "initial");
+    boost::scoped_ptr<State4D_> xx;
+    bool l3d;
+    if (backgroundConfig.has("state")) {
+      xx.reset(new State4D_(backgroundConfig, vars, resol));
+      l3d = false;
+    } else {
+      State_ xx3D(resol, vars, backgroundConfig);
+      xx.reset(new State4D_(xx3D));
+      l3d = true;
+    }
 
-//  Setup time
-    const util::DateTime bgndate(xx.validTime());
-    Log::info() << "Setup times OK" << std::endl;
+    //  Setup timeslots
+    std::vector<util::DateTime> timeslots;
+    for (unsigned jsub = 0; jsub < (*xx).size(); ++jsub) {
+      timeslots.push_back((*xx)[jsub].validTime());
+    }
+    Log::info() << "Number of ensemble time-slots:" << timeslots.size() << std::endl;
 
-//  Setup Dirac and random increments
-    Increment_ dxdir(resol, vars, bgndate);
-    const eckit::LocalConfiguration diracConfig(fullConfig, "dirac");
-    dxdir.dirac(diracConfig);
-    Increment_ dxrnd(resol, vars, bgndate);
-    dxrnd.random();
-    Increment_ dxdirout(dxdir);
-    Increment_ dxrndout(dxrnd);
-    Increment_ x1(dxdir);
-    Increment_ x2(dxdir);
-    Increment_ x1save(dxdir);
-    Increment_ x2save(dxdir);
-    Log::info() << "Setup increments OK" << std::endl;
-
-//  Setup B matrix
+    // Apply B to Dirac
     const eckit::LocalConfiguration covarConfig(fullConfig, "Covariance");
-    boost::scoped_ptr< ModelSpaceCovarianceBase<MODEL> > B(CovarianceFactory<MODEL>::create(
-                                                           covarConfig, resol, vars, xx, xx));
-    Log::info() << "Setup full ensemble B matrix OK" << std::endl;
+    if (l3d) {
+      //  3D covariance
+      boost::scoped_ptr<ModelSpaceCovarianceBase<MODEL>> B(CovarianceFactory<MODEL>::create(
+        covarConfig, resol, vars, (*xx)[0], (*xx)[0]));
 
+      //  Setup Dirac
+      Increment_ dxdirin(resol, vars, timeslots[0]);
+      Increment_ dxdirout(resol, vars, timeslots[0]);
+      const eckit::LocalConfiguration diracConfig(fullConfig, "dirac");
+      dxdirin.dirac(diracConfig);
+
+      //  Apply 3D B matrix to Dirac increment
+      B->multiply(dxdirin, dxdirout);
+
+      //  Write increment
+      const eckit::LocalConfiguration output_B(fullConfig, "output_B");
+      dxdirout.write(output_B);
+      Log::test() << "Increment: " << std::endl << dxdirout << std::endl;
+    } else {
+      //  4D covariance
+      boost::scoped_ptr<ModelSpaceCovariance4DBase<MODEL>> B(Covariance4DFactory<MODEL>::create(
+        covarConfig, resol, vars, (*xx), (*xx)));
+
+      //  Setup Dirac
+      Increment4D_ dxdirin(resol, vars, timeslots);
+      Increment4D_ dxdirout(resol, vars, timeslots);
+      std::vector<eckit::LocalConfiguration> diracConfigs;
+      fullConfig.get("dirac", diracConfigs);
+      dxdirin.dirac(diracConfigs);
+
+      //  Apply 4D B matrix to Dirac increment
+      B->multiply(dxdirin, dxdirout);
+
+      //  Write increment
+      const eckit::LocalConfiguration output_B(fullConfig, "output_B");
+      dxdirout.write(output_B);
+      Log::test() << "Increment4D: " << std::endl << dxdirout << std::endl;
+    }
+
+    //  Setup localization
+    eckit::LocalConfiguration locConfig;
+    bool hasLoc(false);
     if (covarConfig.has("localization")) {
+      locConfig = eckit::LocalConfiguration(covarConfig, "localization");
+      hasLoc = true;
+    } else {
+      if (covarConfig.has("ensemble")) {
+        const eckit::LocalConfiguration ensConfig(covarConfig, "ensemble");
+        locConfig = eckit::LocalConfiguration(ensConfig, "localization");
+        hasLoc = true;
+      }
+    }
+
+    if (hasLoc) {
+      // Setup ensemble
+      EnsemblePtr_ ens(new Ensemble_(timeslots, covarConfig));
+      ens->linearize((*xx), (*xx), resol);
+
+      // Apply localization to Dirac
+      if (l3d) {
+        //  Setup Dirac
+        Increment_ dxdir(resol, vars, timeslots[0]);
+        const eckit::LocalConfiguration diracConfig(fullConfig, "dirac");
+        dxdir.dirac(diracConfig);
+
         //  Setup localization
-        const eckit::LocalConfiguration locConfig(covarConfig, "localization");
         boost::scoped_ptr<Localization_> loc_;
-        loc_.reset(new Localization_(resol, locConfig));
-        Log::trace() << "Setup localization OK" << std::endl;
+        loc_.reset(new Localization_(resol, ens, locConfig));
 
         //  Apply localization
-        loc_->multiply(dxdirout);
-        loc_->multiply(dxrndout);
-        Log::trace() << "Apply localization OK" << std::endl;
+        loc_->multiply(dxdir);
 
         //  Write increment
         const eckit::LocalConfiguration output_localization(fullConfig, "output_localization");
-        dxdirout.write(output_localization);
-        Log::trace() << "Write increment OK" << std::endl;
-        Log::test() << "Increment: " << dxrndout << std::endl;
+        dxdir.write(output_localization);
+        Log::test() << "Increment: " << std::endl << dxdir << std::endl;
+      } else {
+        //  Setup Dirac
+        Increment4D_ dxdir(resol, vars, timeslots);
+        std::vector<eckit::LocalConfiguration> diracConfigs;
+        fullConfig.get("dirac", diracConfigs);
+        dxdir.dirac(diracConfigs);
 
-        //  Test adjoint
-        x1.random();
-        x2.random();
-        x1save = x1;
-        x2save = x2;
-        loc_->multiply(x1);
-        loc_->multiply(x2);
-        double p1 = x1.dot_product_with(x2save);
-        double p2 = x2.dot_product_with(x1save);
-        Log::test() << "Adjoint test: " << p1 << " / " << p2 << std::endl;
+        //  Setup localization
+        boost::scoped_ptr<Localization_> loc_;
+        loc_.reset(new Localization_(resol, ens, locConfig));
+
+        //  Apply localization
+        loc_->multiply(dxdir);
+
+        //  Write increment
+        const eckit::LocalConfiguration output_localization(fullConfig, "output_localization");
+        dxdir.write(output_localization);
+        Log::test() << "Increment4D: " << std::endl << dxdir << std::endl;
+      }
     }
-
-//  Apply B matrix to Dirac increment
-    B->multiply(dxdir, dxdirout);
-    B->multiply(dxrnd, dxrndout);
-    Log::info() << "Apply B matrix OK" << std::endl;
-
-//  Write increment
-    const eckit::LocalConfiguration output_B(fullConfig, "output_B");
-    dxdirout.write(output_B);
-    Log::trace() << "Write increment OK" << std::endl;
-    Log::test() << "Increment: " << dxrndout << std::endl;
-
-//  Test adjoint
-    x1.random();
-    x2.random();
-    x1save = x1;
-    x2save = x2;
-    B->multiply(x1save, x1);
-    B->multiply(x2save, x2);
-    double p1 = x1.dot_product_with(x2save);
-    double p2 = x2.dot_product_with(x1save);
-    Log::test() << "Adjoint test: " << p1 << " / " << p2 << std::endl;
 
     return 0;
   }

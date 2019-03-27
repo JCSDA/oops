@@ -479,7 +479,6 @@ ecbuild_add_test( TARGET test_l95_3dfgat
                        testoutput/3dfgat.test
                   DEPENDS l95_4dvar.x )
 
-if( ${OOPS_SENSITIVE_TESTS} )
 ecbuild_add_test( TARGET test_l95_genenspert
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
@@ -514,7 +513,6 @@ ecbuild_add_test( TARGET test_l95_4densvar
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4densvar.yaml"
                        testoutput/4densvar.test
                   DEPENDS l95_4dvar.x )
-endif()
 
 ecbuild_add_test( TARGET test_l95_4dvar_eda
                   MPI 4

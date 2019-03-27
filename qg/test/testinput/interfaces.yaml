@@ -43,7 +43,19 @@ LinearObsOpTest:
   toleranceAD: '1.0e-10'
   toleranceTL: '1.0e-8'
 LinearVariableChangeTests:
-- check_vbal: 1
+- bump:
+    check_vbal: 1
+    load_vbal: 1
+    nl0r: 2
+    prefix: bump_interfaces
+    strategy: common
+    vbal_block:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
   inputVariables:
     variables:
     - x
@@ -51,8 +63,6 @@ LinearVariableChangeTests:
     - u
     - v
     - bc
-  load_vbal: 1
-  nl0r: 2
   outputVariables:
     variables:
     - x
@@ -60,8 +70,6 @@ LinearVariableChangeTests:
     - u
     - v
     - bc
-  prefix: bump_interfaces
-  strategy: common
   testinverse: '0'
   toleranceInverse: '1.0e-8'
   varchange: StatsVariableChange
@@ -72,13 +80,6 @@ LinearVariableChangeTests:
     - u
     - v
     - bc
-  vbal_block:
-  - 1
-  - 1
-  - 1
-  - 1
-  - 1
-  - 1
 Localization:
   horizontal_length_scale: 2e6
   localization: QG

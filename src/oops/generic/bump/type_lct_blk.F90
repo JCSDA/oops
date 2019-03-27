@@ -10,6 +10,7 @@ module type_lct_blk
 !$ use omp_lib
 use tools_func, only: lonlatmod,fit_lct,check_cond
 use tools_kinds, only: kind_real
+use tools_repro, only: inf,sup
 use type_bpar, only: bpar_type
 use type_geom, only: geom_type
 use type_minim, only: minim_type
@@ -295,8 +296,8 @@ do il0=1,geom%nl0
                do jc3=1,nam%nc3
                   if (dmask(jc3,jl0r)) then
                      distsq = dx(jc3,jl0r)**2+dy(jc3,jl0r)**2
-                     if ((lct_blk%raw(jc3,jl0r,ic1a,il0)>cor_min).and.(lct_blk%raw(jc3,jl0r,ic1a,il0)<1.0).and.(distsq>0.0))  &
-                   & Dh(jc3) = -distsq/(2.0*log(lct_blk%raw(jc3,jl0r,ic1a,il0)))
+                     if (sup(lct_blk%raw(jc3,jl0r,ic1a,il0),cor_min).and.inf(lct_blk%raw(jc3,jl0r,ic1a,il0),1.0_kind_real) &
+                   & .and.(distsq>0.0)) Dh(jc3) = -distsq/(2.0*log(lct_blk%raw(jc3,jl0r,ic1a,il0)))
                   end if
                end do
             end if
@@ -310,10 +311,11 @@ do il0=1,geom%nl0
          do jl0r=1,bpar%nl0r(ib)
             if (dmask(jc3,jl0r)) then
                distsq = dz(jc3,jl0r)**2
-               if ((lct_blk%raw(jc3,jl0r,ic1a,il0)>cor_min).and.(lct_blk%raw(jc3,jl0r,ic1a,il0)<1.0).and.(distsq>0.0)) &
-             & Dv(jl0r) = -distsq/(2.0*log(lct_blk%raw(jc3,jl0r,ic1a,il0)))
+               if (sup(lct_blk%raw(jc3,jl0r,ic1a,il0),cor_min).and.inf(lct_blk%raw(jc3,jl0r,ic1a,il0),1.0_kind_real) &
+             & .and.(distsq>0.0)) Dv(jl0r) = -distsq/(2.0*log(lct_blk%raw(jc3,jl0r,ic1a,il0)))
             end if
          end do
+         Dvbar = mpl%msv%valr
          if (bpar%nl0r(ib)>1) then
             if (count(mpl%msv%isnotr(Dv))>0) Dvbar = sum(Dv,mask=mpl%msv%isnotr(Dv))/real(count(mpl%msv%isnotr(Dv)),kind_real)
          else
@@ -381,7 +383,7 @@ do il0=1,geom%nl0
                   call check_cond(lct_blk%D(1,iscales,ic1a,il0),lct_blk%D(2,iscales,ic1a,il0),lct_blk%D(4,iscales,ic1a,il0),valid)
                   if (bpar%nl0r(ib)>1) valid = valid.and.(lct_blk%D(3,iscales,ic1a,il0)>0.0)
                   valid = valid.and.(lct_blk%coef(iscales,ic1a,il0)>0.0)
-                  if (lct_blk%nscales>1) valid = valid.and.(lct_blk%coef(iscales,ic1a,il0)<1.0)
+                  if (lct_blk%nscales>1) valid = valid.and.(inf(lct_blk%coef(iscales,ic1a,il0),1.0_kind_real))
                end if
             end do
             if (valid) then
@@ -410,6 +412,11 @@ do il0=1,geom%nl0
             lct_blk%coef(:,ic1a,il0) = mpl%msv%valr
             lct_blk%fit(:,:,ic1a,il0) = mpl%msv%valr
          end if
+      else
+         ! Missing values
+         lct_blk%D(:,:,ic1a,il0) = mpl%msv%valr
+         lct_blk%coef(:,ic1a,il0) = mpl%msv%valr
+         lct_blk%fit(:,:,ic1a,il0) = mpl%msv%valr
       end if
 
       ! Update

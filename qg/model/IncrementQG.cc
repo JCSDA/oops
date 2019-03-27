@@ -146,16 +146,16 @@ void IncrementQG::getValuesAD(const LocationsQG & locs, const oops::Variables & 
 // -----------------------------------------------------------------------------
 /// Unstructured grid
 // -----------------------------------------------------------------------------
-void IncrementQG::ug_coord(oops::UnstructuredGrid & ug, const int & colocated) const {
-  fields_->ug_coord(ug, colocated);
+void IncrementQG::ug_coord(oops::UnstructuredGrid & ug) const {
+  fields_->ug_coord(ug);
 }
 // -----------------------------------------------------------------------------
-void IncrementQG::field_to_ug(oops::UnstructuredGrid & ug, const int & colocated) const {
-  fields_->field_to_ug(ug, colocated);
+void IncrementQG::field_to_ug(oops::UnstructuredGrid & ug, const int & its) const {
+  fields_->field_to_ug(ug, its);
 }
 // -----------------------------------------------------------------------------
-void IncrementQG::field_from_ug(const oops::UnstructuredGrid & ug) {
-  fields_->field_from_ug(ug);
+void IncrementQG::field_from_ug(const oops::UnstructuredGrid & ug, const int & its) {
+  fields_->field_from_ug(ug, its);
 }
 // -----------------------------------------------------------------------------
 /// I/O and diagnostics

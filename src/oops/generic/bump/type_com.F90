@@ -9,8 +9,7 @@ module type_com
 
 use netcdf
 !$ use omp_lib
-use tools_kinds, only: kind_real
-use tools_nc, only: ncfloat
+use tools_kinds, only: kind_real,nc_kind_real
 use type_mpl, only: mpl_type
 use fckit_mpi_module, only: fckit_mpi_status
 
@@ -312,7 +311,7 @@ character(len=*),intent(in) :: prefix ! Communication prefix
 integer :: info
 integer :: nred_id,next_id,red_to_ext_id,nhalo_id,nexcl_id
 integer :: jhalocounts_id,jexclcounts_id,jhalodispls_id,jexcldispls_id,halo_id,excl_id
-character(len=1024) :: subr = 'com_read'
+character(len=1024),parameter :: subr = 'com_read'
 
 ! Copy prefix
 com%prefix = trim(prefix)
@@ -389,7 +388,7 @@ integer,intent(in) :: ncid          ! NetCDF file id
 integer :: info
 integer :: nproc_id,nred_id,next_id,red_to_ext_id,nhalo_id,nexcl_id
 integer :: jhalocounts_id,jexclcounts_id,jhalodispls_id,jexcldispls_id,halo_id,excl_id
-character(len=1024) :: subr = 'com_write'
+character(len=1024),parameter :: subr = 'com_write'
 
 ! Start definition mode
 call mpl%ncerr(subr,nf90_redef(ncid))

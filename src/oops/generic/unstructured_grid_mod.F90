@@ -3,8 +3,6 @@
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
 
-!>  Fortran module for handling generic unstructured grid
-
 module unstructured_grid_mod
 
 use iso_c_binding
@@ -12,14 +10,12 @@ use config_mod
 use kinds
 
 implicit none
+
 private
-public unstructured_grid, allocate_unstructured_grid_coord, allocate_unstructured_grid_field, &
-     & delete_unstructured_grid, unstructured_grid_registry
-
+public :: unstructured_grid
+public :: unstructured_grid_registry
+public :: create_ug,delete_ug,allocate_unstructured_grid_coord,allocate_unstructured_grid_field
 ! ------------------------------------------------------------------------------
-
-!>  Derived type containing the data
-
 type grid_type
   integer :: igrid                                 !> Index of the grid
   integer :: nmga                                  !> Number of gridpoints (on a given MPI task)
@@ -29,18 +25,17 @@ type grid_type
   real(kind=kind_real),allocatable :: lon(:)       !> Longitude (in degrees: -180 to 180)
   real(kind=kind_real),allocatable :: lat(:)       !> Latitude (in degrees: -90 to 90)
   real(kind=kind_real),allocatable :: area(:)      !> Area (in m^2)
-  real(kind=kind_real), allocatable :: vunit(:,:)  !> Vertical unit
+  real(kind=kind_real),allocatable :: vunit(:,:)   !> Vertical unit
   logical,allocatable :: lmask(:,:)                !> Mask
   real(kind=kind_real),allocatable :: fld(:,:,:,:) !> Data
 end type grid_type
 
 type unstructured_grid
-  integer :: colocated                            !> Colocation flag
-  integer :: ngrid                                !> Number of different grids
-  type(grid_type),allocatable :: grid(:)          !> Grid instance
+  integer :: colocated                             !> Colocation flag
+  integer :: nts                                   !> Number of timeslots
+  integer :: ngrid                                 !> Number of different grids
+  type(grid_type),allocatable :: grid(:)           !> Grid instance
 end type unstructured_grid
-
-! ------------------------------------------------------------------------------
 
 #define LISTED_TYPE unstructured_grid
 
@@ -49,46 +44,67 @@ end type unstructured_grid
 
 !> Global registry
 type(registry_t) :: unstructured_grid_registry
-
 !-------------------------------------------------------------------------------
 contains
 !-------------------------------------------------------------------------------
-
 !> Linked list implementation
 #include "oops/util/linkedList_c.f"
+!-------------------------------------------------------------------------------
+!> Create unstructured grid
+subroutine create_ug(self,colocated,nts)
 
-! ------------------------------------------------------------------------------
-!  C++ interfaces
-! ------------------------------------------------------------------------------
-
-subroutine create_ug_c(key) bind(c, name='create_ug_f90')
 implicit none
-integer(c_int), intent(inout) :: key
 
-call unstructured_grid_registry%init()
-call unstructured_grid_registry%add(key)
+! Passed variables
+type(unstructured_grid),intent(inout) :: self !< Unstructured grid
+integer,intent(in) :: colocated               !< Colocation flag
+integer,intent(in) :: nts                     !< Number of timeslots
 
-end subroutine
+! Set parameters
+if ((colocated==0).or.(colocated==1)) then
+   self%colocated = colocated
+else
+   call abor1_ftn('create_ug: wrong colocation flag')
+endif
+self%nts = nts
 
-! ------------------------------------------------------------------------------
+end subroutine create_ug
+!-------------------------------------------------------------------------------
+!> Delete unstructured grid
+subroutine delete_ug(self)
 
-subroutine delete_ug_c(key) bind(c, name='delete_ug_f90')
 implicit none
-integer(c_int), intent(inout) :: key
 
-type(unstructured_grid), pointer :: self
+! Passed variables
+type(unstructured_grid),intent(inout) :: self !< Unstructured grid
 
-call unstructured_grid_registry%get(key,self)
-call delete_unstructured_grid(self)
-call unstructured_grid_registry%remove(key)
+! Local variables
+integer :: igrid
 
-end subroutine
+! Release memory
+if (allocated(self%grid)) then
+  do igrid=1,self%ngrid
+    if (allocated(self%grid(igrid)%lon)) deallocate(self%grid(igrid)%lon)
+    if (allocated(self%grid(igrid)%lat)) deallocate(self%grid(igrid)%lat)
+    if (allocated(self%grid(igrid)%area)) deallocate(self%grid(igrid)%area)
+    if (allocated(self%grid(igrid)%vunit)) deallocate(self%grid(igrid)%vunit)
+    if (allocated(self%grid(igrid)%lmask)) deallocate(self%grid(igrid)%lmask)
+    if (allocated(self%grid(igrid)%fld)) deallocate(self%grid(igrid)%fld)
+  enddo
+  deallocate(self%grid)
+endif
 
+end subroutine delete_ug
 ! ------------------------------------------------------------------------------
-
+!> Allocate unstructured grid coordinates
 subroutine allocate_unstructured_grid_coord(self)
+
 implicit none
-type(unstructured_grid), intent(inout) :: self
+
+! Passed variables
+type(unstructured_grid),intent(inout) :: self !< Unstructured grid
+
+! Local variables
 integer :: igrid
 
 ! Allocation
@@ -101,44 +117,24 @@ do igrid=1,self%ngrid
 enddo
 
 end subroutine allocate_unstructured_grid_coord
-
 ! ------------------------------------------------------------------------------
-
+!> Allocate unstructured grid fields
 subroutine allocate_unstructured_grid_field(self)
+
 implicit none
-type(unstructured_grid), intent(inout) :: self
+
+! Passed variables
+type(unstructured_grid),intent(inout) :: self
+
+! Local variables
 integer :: igrid
 
 ! Allocation
 do igrid=1,self%ngrid
-   if (.not.allocated(self%grid(igrid)%fld)) allocate(self%grid(igrid)%fld(self%grid(igrid)%nmga,self%grid(igrid)%nl0, &
+   if (.not.allocated(self%grid(igrid)%fld)) allocate(self%grid(igrid)%fld(self%grid(igrid)%nmga,self%grid(igrid)%nl0,&
  & self%grid(igrid)%nv,self%grid(igrid)%nts))
 enddo
 
 end subroutine allocate_unstructured_grid_field
-
 !-------------------------------------------------------------------------------
-
-subroutine delete_unstructured_grid(self)
-implicit none
-type(unstructured_grid), intent(inout) :: self
-integer :: igrid
-
-! Release memory
-if (allocated(self%grid)) then
-   do igrid=1,self%ngrid
-      if (allocated(self%grid(igrid)%lon)) deallocate(self%grid(igrid)%lon)
-      if (allocated(self%grid(igrid)%lat)) deallocate(self%grid(igrid)%lat)
-      if (allocated(self%grid(igrid)%area)) deallocate(self%grid(igrid)%area)
-      if (allocated(self%grid(igrid)%vunit)) deallocate(self%grid(igrid)%vunit)
-      if (allocated(self%grid(igrid)%lmask)) deallocate(self%grid(igrid)%lmask)
-      if (allocated(self%grid(igrid)%fld)) deallocate(self%grid(igrid)%fld)
-   enddo
-   deallocate(self%grid)
-endif
-
-end subroutine delete_unstructured_grid
-
-!-------------------------------------------------------------------------------
-
 end module unstructured_grid_mod

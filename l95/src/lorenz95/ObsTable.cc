@@ -82,7 +82,7 @@ void ObsTable::putdb(const std::string & col, const std::vector<int> & vec) cons
 void ObsTable::putdb(const std::string & col, const std::vector<double> & vec) const {
   ASSERT(vec.size() == nobs());
   if (data_.find(col) != data_.end()) {
-    oops::Log::warning() << "ObsTable::putdb over-writing " << col << std::endl;
+    oops::Log::info() << "ObsTable::putdb over-writing " << col << std::endl;
   }
   data_.insert(std::pair<std::string, std::vector<double> >(col, vec));
 }

@@ -12,11 +12,11 @@ use netcdf
 use tools_const, only: rad2deg,reqkm,req
 use tools_func, only: lct_d2h,lct_h2r
 use tools_kinds, only: kind_real
+use type_adv, only: adv_type
 use type_avg, only: avg_type
 use type_bpar, only: bpar_type
 use type_cmat_blk, only: cmat_blk_type
 use type_diag, only: diag_type
-use type_displ, only: displ_type
 use type_ens, only: ens_type
 use type_geom, only: geom_type
 use type_hdiag, only: hdiag_type
@@ -215,7 +215,7 @@ type(io_type),intent(in) :: io         ! I/O
 integer :: ib,ncid,double_fit,anisotropic,its
 character(len=3) :: itschar
 character(len=1024) :: filename
-character(len=1024) :: subr = 'cmat_read'
+character(len=1024),parameter :: subr = 'cmat_read'
 
 ! Allocation
 call cmat%alloc(bpar,'cmat')
@@ -276,11 +276,11 @@ do ib=1,bpar%nbe
             call io%fld_read(mpl,nam,geom,filename,'H12',cmat%blk(ib)%H12)
          end if
       end if
-      if ((ib==bpar%nbe).and.nam%displ_diag) then
+      if ((ib==bpar%nbe).and.nam%adv_diag) then
          do its=1,nam%nts
             write(itschar,'(i2.2)') its
-            call io%fld_read(mpl,nam,geom,filename,'displ_lon_'//itschar,cmat%blk(ib)%displ_lon(:,:,its))
-            call io%fld_read(mpl,nam,geom,filename,'displ_lat_'//itschar,cmat%blk(ib)%displ_lat(:,:,its))
+            call io%fld_read(mpl,nam,geom,filename,'adv_lon_'//itschar,cmat%blk(ib)%adv_lon(:,:,its))
+            call io%fld_read(mpl,nam,geom,filename,'adv_lat_'//itschar,cmat%blk(ib)%adv_lat(:,:,its))
          end do
       end if
    end if
@@ -308,7 +308,7 @@ type(io_type),intent(in) :: io      ! I/O
 integer :: ib,ncid,its
 character(len=3) :: itschar
 character(len=1024) :: filename
-character(len=1024) :: subr = 'cmat_write'
+character(len=1024),parameter :: subr = 'cmat_write'
 
 do ib=1,bpar%nbe
    if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
@@ -334,11 +334,11 @@ do ib=1,bpar%nbe
             call io%fld_write(mpl,nam,geom,filename,'H12',cmat%blk(ib)%H12)
          end if
       end if
-      if ((ib==bpar%nbe).and.nam%displ_diag) then
+      if ((ib==bpar%nbe).and.nam%adv_diag) then
          do its=1,nam%nts
             write(itschar,'(i2.2)') its
-            call io%fld_write(mpl,nam,geom,filename,'displ_lon_'//itschar,cmat%blk(ib)%displ_lon(:,:,its))
-            call io%fld_write(mpl,nam,geom,filename,'displ_lat_'//itschar,cmat%blk(ib)%displ_lat(:,:,its))
+            call io%fld_write(mpl,nam,geom,filename,'adv_lon_'//itschar,cmat%blk(ib)%adv_lon(:,:,its))
+            call io%fld_write(mpl,nam,geom,filename,'adv_lat_'//itschar,cmat%blk(ib)%adv_lat(:,:,its))
          end do
       end if
 
@@ -382,6 +382,7 @@ type(hdiag_type),intent(in) :: hdiag   ! Hybrid diagnostics
 ! Local variables
 integer :: ib,n,i,il0,il0i,ic2a
 real(kind_real) :: fld_c2a(hdiag%samp%nc2a,geom%nl0,6),fld_c2b(hdiag%samp%nc2b,geom%nl0),fld_c0a(geom%nc0a,geom%nl0,6)
+character(len=1024),parameter :: subr = 'cmat_from_hdiag'
 
 ! Allocation
 call cmat%alloc(bpar,'cmat')
@@ -390,16 +391,16 @@ call cmat%alloc(bpar,'cmat')
 do ib=1,bpar%nbe
    if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
       select case (trim(nam%method))
-      case ('cor','cov')
+      case ('cor')
          cmat%blk(ib)%double_fit = hdiag%cor_1%blk(0,ib)%double_fit
-      case ('loc_norm','loc')
+      case ('loc')
          cmat%blk(ib)%double_fit = hdiag%loc_1%blk(0,ib)%double_fit
       case ('hyb-avg','hyb-rnd')
          cmat%blk(ib)%double_fit = hdiag%loc_2%blk(0,ib)%double_fit
       case ('dual-ens')
-         call mpl%abort('dual-ens not ready yet for C matrix')
+         call mpl%abort(subr,'dual-ens not ready yet for C matrix')
       case default
-         call mpl%abort('cmat not implemented yet for this method')
+         call mpl%abort(subr,'cmat not implemented yet for this method')
       end select
       cmat%blk(ib)%anisotropic = .false.
    end if
@@ -418,12 +419,8 @@ do ib=1,bpar%nbe
             if (cmat%blk(ib)%double_fit) n = n+2
             do ic2a=1,hdiag%samp%nc2a
                select case (trim(nam%method))
-               case ('cor','cov')
-                  if (trim(nam%method)=='cor') then
-                     fld_c2a(ic2a,:,1) = 1.0
-                  elseif (trim(nam%method)=='cov') then
-                     fld_c2a(ic2a,:,1) = hdiag%cor_1%blk(ic2a,ib)%raw_coef_ens
-                  end if
+               case ('cor')
+                  fld_c2a(ic2a,:,1) = hdiag%cor_1%blk(ic2a,ib)%raw_coef_ens
                   fld_c2a(ic2a,:,2) = 0.0
                   fld_c2a(ic2a,:,3) = hdiag%cor_1%blk(ic2a,ib)%fit_rh
                   fld_c2a(ic2a,:,4) = hdiag%cor_1%blk(ic2a,ib)%fit_rv
@@ -431,7 +428,7 @@ do ib=1,bpar%nbe
                      fld_c2a(ic2a,:,5) = hdiag%cor_1%blk(ic2a,ib)%fit_rv_rfac
                      fld_c2a(ic2a,:,6) = hdiag%cor_1%blk(ic2a,ib)%fit_rv_coef
                   end if
-               case ('loc_norm','loc')
+               case ('loc')
                   fld_c2a(ic2a,:,1) = hdiag%loc_1%blk(ic2a,ib)%raw_coef_ens
                   fld_c2a(ic2a,:,2) = 0.0
                   fld_c2a(ic2a,:,3) = hdiag%loc_1%blk(ic2a,ib)%fit_rh
@@ -450,9 +447,9 @@ do ib=1,bpar%nbe
                      fld_c2a(ic2a,:,6) = hdiag%loc_2%blk(ic2a,ib)%fit_rv_coef
                   end if
                case ('dual-ens')
-                  call mpl%abort('dual-ens not ready yet for C matrix')
+                  call mpl%abort(subr,'dual-ens not ready yet for C matrix')
                case default
-                  call mpl%abort('cmat not implemented yet for this method')
+                  call mpl%abort(subr,'cmat not implemented yet for this method')
                end select
             end do
 
@@ -486,12 +483,8 @@ do ib=1,bpar%nbe
             do il0=1,geom%nl0
                ! Copy data
                select case (trim(nam%method))
-               case ('cor','cov')
-                  if (trim(nam%method)=='cor') then
-                     cmat%blk(ib)%coef_ens(:,il0) = 1.0
-                  elseif (trim(nam%method)=='cov') then
-                     cmat%blk(ib)%coef_ens(:,il0) = hdiag%cor_1%blk(0,ib)%raw_coef_ens(il0)
-                  end if
+               case ('cor')
+                  cmat%blk(ib)%coef_ens(:,il0) = hdiag%cor_1%blk(0,ib)%raw_coef_ens(il0)
                   cmat%blk(ib)%wgt = sum(hdiag%cor_1%blk(0,ib)%raw_coef_ens)/real(geom%nl0,kind_real)
                   cmat%blk(ib)%coef_sta(:,il0) = 0.0
                   cmat%blk(ib)%rh(:,il0) = hdiag%cor_1%blk(0,ib)%fit_rh(il0)
@@ -500,7 +493,7 @@ do ib=1,bpar%nbe
                      cmat%blk(ib)%rv_rfac(:,il0) = hdiag%cor_1%blk(0,ib)%fit_rv_rfac(il0)
                      cmat%blk(ib)%rv_coef(:,il0) = hdiag%cor_1%blk(0,ib)%fit_rv_coef(il0)
                   end if
-               case ('loc_norm','loc')
+               case ('loc')
                   cmat%blk(ib)%coef_ens(:,il0) = hdiag%loc_1%blk(0,ib)%raw_coef_ens(il0)
                   cmat%blk(ib)%wgt = sum(hdiag%loc_1%blk(0,ib)%raw_coef_ens)/real(geom%nl0,kind_real)
                   cmat%blk(ib)%coef_sta(:,il0) = 0.0
@@ -521,9 +514,9 @@ do ib=1,bpar%nbe
                      cmat%blk(ib)%rv_coef(:,il0) = hdiag%loc_2%blk(0,ib)%fit_rv_coef(il0)
                   end if
                case ('dual-ens')
-                  call mpl%abort('dual-ens not ready yet for C matrix')
+                  call mpl%abort(subr,'dual-ens not ready yet for C matrix')
                case default
-                  call mpl%abort('cmat not implemented yet for this method')
+                  call mpl%abort(subr,'cmat not implemented yet for this method')
                end select
             end do
          end if
@@ -531,26 +524,24 @@ do ib=1,bpar%nbe
          ! Define weight only
          select case (trim(nam%method))
          case ('cor')
-            cmat%blk(ib)%wgt = 1.0
-         case ('cov')
             cmat%blk(ib)%wgt = sum(hdiag%cor_1%blk(0,ib)%raw_coef_ens)/real(geom%nl0,kind_real)
-         case ('loc_norm','loc')
+         case ('loc')
             cmat%blk(ib)%wgt = sum(hdiag%loc_1%blk(0,ib)%raw_coef_ens)/real(geom%nl0,kind_real)
          case ('hyb-avg','hyb-rnd')
             cmat%blk(ib)%wgt = sum(hdiag%loc_2%blk(0,ib)%raw_coef_ens)/real(geom%nl0,kind_real)
          case ('dual-ens')
-            call mpl%abort('dual-ens not ready yet for C matrix')
+            call mpl%abort(subr,'dual-ens not ready yet for C matrix')
          case default
-            call mpl%abort('cmat not implemented yet for this method')
+            call mpl%abort(subr,'cmat not implemented yet for this method')
          end select
       end if
    end if
 end do
 
-! Displacement
-if (nam%displ_diag) then
-   cmat%blk(bpar%nbe)%displ_lon = hdiag%samp%displ_lon
-   cmat%blk(bpar%nbe)%displ_lat = hdiag%samp%displ_lat
+! Advection
+if (nam%adv_diag) then
+   cmat%blk(bpar%nbe)%adv_lon = hdiag%samp%adv_lon
+   cmat%blk(bpar%nbe)%adv_lat = hdiag%samp%adv_lat
 end if
 
 end subroutine cmat_from_hdiag
@@ -573,6 +564,7 @@ type(lct_type),intent(in) :: lct       ! LCT
 
 ! Local variables
 integer :: ib,iv,jv,its,jts,iscales,il0,ic0a
+character(len=1024),parameter :: subr = 'cmat_from_lct'
 
 ! Allocation
 call cmat%alloc(bpar,'cmat')
@@ -596,9 +588,9 @@ do ib=1,bpar%nbe
       jv = bpar%b_to_v2(ib)
       its = bpar%b_to_ts1(ib)
       jts = bpar%b_to_ts2(ib)
-      if ((iv/=jv).or.(its/=jts)) call mpl%abort('only diagonal blocks for cmat_from_lct')
+      if ((iv/=jv).or.(its/=jts)) call mpl%abort(subr,'only diagonal blocks for cmat_from_lct')
 
-      if (lct%blk(ib)%nscales>1) call mpl%warning('only the first scale is used to define cmat from LCT')
+      if (lct%blk(ib)%nscales>1) call mpl%warning(subr,'only the first scale is used to define cmat from LCT')
       iscales = 1
 
       do il0=1,geom%nl0
@@ -646,6 +638,7 @@ type(bpar_type),intent(in) :: bpar     ! Block parameters
 
 ! Local variables
 integer :: ib,iv,jv,its,jts
+character(len=1024),parameter :: subr = 'cmat_from_nam'
 
 write(mpl%info,'(a)') '-------------------------------------------------------------------'
 call mpl%flush
@@ -674,7 +667,7 @@ do ib=1,bpar%nbe
       jv = bpar%b_to_v2(ib)
       its = bpar%b_to_ts1(ib)
       jts = bpar%b_to_ts2(ib)
-      if ((iv/=jv).or.(its/=jts)) call mpl%abort('only diagonal blocks for cmat_from_nam')
+      if ((iv/=jv).or.(its/=jts)) call mpl%abort(subr,'only diagonal blocks for cmat_from_nam')
 
       ! Copy support radii
       cmat%blk(ib)%rh = nam%rh

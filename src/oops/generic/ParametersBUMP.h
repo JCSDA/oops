@@ -19,14 +19,12 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
-#include "oops/base/EnsemblesCollection.h"
-#include "oops/base/instantiateCovarFactory.h"
+#include "oops/assimilation/Increment4D.h"
 #include "oops/base/StateEnsemble.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/oobump_f.h"
 #include "oops/generic/UnstructuredGrid.h"
-#include "oops/interface/ErrorCovariance.h"
-#include "oops/interface/LocalizationBase.h"
+#include "oops/interface/State.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -42,166 +40,130 @@ namespace oops {
 
 template<typename MODEL>
 class ParametersBUMP {
-  typedef ModelSpaceCovarianceBase<MODEL>       ErrorCovariance_;
-  typedef Geometry<MODEL>                       Geometry_;
-  typedef Increment<MODEL>                      Increment_;
-  typedef State<MODEL>                          State_;
-
-  typedef StateEnsemble<MODEL>                       Ensemble_;
-  typedef boost::shared_ptr<StateEnsemble<MODEL> >   EnsemblePtr_;
-  typedef EnsemblesCollection<MODEL>                 EnsemblesCollection_;
+  typedef Geometry<MODEL>                         Geometry_;
+  typedef Increment<MODEL>                        Increment_;
+  typedef Increment4D<MODEL>                      Increment4D_;
+  typedef State<MODEL>                            State_;
+  typedef boost::shared_ptr<StateEnsemble<MODEL>> EnsemblePtr_;
 
  public:
   static const std::string classname() {return "oops::ParametersBUMP";}
-  explicit ParametersBUMP(const eckit::Configuration &);
+  explicit ParametersBUMP(const Geometry_ &,
+                          const Variables &,
+                          const std::vector<util::DateTime> &,
+                          const EnsemblePtr_,
+                          const EnsemblePtr_,
+                          const eckit::Configuration &);
   ~ParametersBUMP();
 
-  void estimate() const;
+  int get_bump() const {return keyBUMP_;}
+  void clean_bump() const {delete_oobump_f90(keyBUMP_);}
   void write() const;
 
  private:
+  const Geometry_ resol_;
+  const Variables vars_;
+  std::vector<util::DateTime> timeslots_;
   const eckit::LocalConfiguration conf_;
-  int colocated_;
   int keyBUMP_;
 };
 
 // =============================================================================
 
 template<typename MODEL>
-ParametersBUMP<MODEL>::ParametersBUMP(const eckit::Configuration & conf)
-  : conf_(conf), colocated_(1), keyBUMP_(0)
+ParametersBUMP<MODEL>::ParametersBUMP(const Geometry_ & resol,
+                                      const Variables & vars,
+                                      const std::vector<util::DateTime> & timeslots,
+                                      const EnsemblePtr_ ens,
+                                      const EnsemblePtr_ pseudo_ens,
+                                      const eckit::Configuration & conf)
+  : resol_(resol), vars_(vars), timeslots_(timeslots), conf_(conf), keyBUMP_(0)
 {
   Log::trace() << "ParametersBUMP<MODEL>::ParametersBUMP construction starting" << std::endl;
   util::Timer timer(classname(), "ParametersBUMP");
 
-  const eckit::Configuration * fconf = &conf;
+// Setup BUMP configuration
+  const eckit::LocalConfiguration BUMPConfig(conf_, "bump");
+  const eckit::Configuration * fconf = &BUMPConfig;
 
-//  Setup resolution
-  const eckit::LocalConfiguration resolConfig(conf_, "resolution");
-  const Geometry_ resol(resolConfig);
-
-// Setup variables
-  const eckit::LocalConfiguration varConfig(conf_, "variables");
-  const Variables vars(varConfig);
-
-// Setup time
-  const util::DateTime date(conf_.getString("date"));
-
-// Setup background state
-  const eckit::LocalConfiguration backgroundConfig(conf_, "background");
-  State_ xx(resol, vars, backgroundConfig);
+// Setup colocation
+  int colocated = 1;
+  if (BUMPConfig.has("colocated")) colocated = BUMPConfig.getInt("colocated");
 
 // Setup dummy increment
-  Increment_ dx(resol, vars, date);
+  Increment4D_ dx(resol_, vars_, timeslots_);
 
 // Define unstructured grid coordinates
-  UnstructuredGrid ug;
-  dx.ug_coord(ug, colocated_);
+  UnstructuredGrid ug(colocated, timeslots_.size());
+  dx.ug_coord(ug);
 
-// Compute the ensemble of perturbations at time of xx
-  const eckit::LocalConfiguration ensembleConfig(conf_, "ensemble");
-  EnsemblePtr_ ens_ptr(new Ensemble_(xx.validTime(), ensembleConfig));
-  ens_ptr->linearize(xx, xx, resol);
-  EnsemblesCollection_::getInstance().put(xx.validTime(), ens_ptr);
-  int ens1_ne = ens_ptr->size();
+// Get ensemble size
+  int ens1_ne = ens->size();
 
-// Setup pseudo ensemble
-  boost::ptr_vector<Increment_> bkgens;
-  int ens2_ne = 0;
-  if (conf_.has("covariance")) {
-  // Setup background error covariance
-    const eckit::LocalConfiguration covarConfig(conf_, "covariance");
-    boost::scoped_ptr< ModelSpaceCovarianceBase<MODEL> >
-      cov(CovarianceFactory<MODEL>::create(covarConfig, resol, vars, xx, xx));
-
-  // Compute a pseudo ensemble using randomization
-    ens2_ne = covarConfig.getInt("pseudoens_size");
-    for (int ii = 0; ii < ens2_ne; ++ii) {
-      Increment_ * incr = new Increment_(resol, vars, date);
-      cov->randomize(*incr);
-      bkgens.push_back(incr);
-    }
-  }
+// Get pseudo-ensemble size
+  int ens2_ne = pseudo_ens->size();
 
 // Create BUMP
+  Log::info() << "Create BUMP" << std::endl;
   create_oobump_f90(keyBUMP_, ug.toFortran(), &fconf, ens1_ne, 1, ens2_ne, 1);
 
-// Copy ensemble members
-  const double rk = sqrt((static_cast<double>(ens1_ne) - 1.0));
+// Add ensemble members
+  Log::info() << "Add ensemble members" << std::endl;
   for (int ie = 0; ie < ens1_ne; ++ie) {
-    Log::info() << "Copy ensemble member " << ie+1 << " / "
-                 << ens1_ne << " to BUMP" << std::endl;
+    Log::info() << "   Copy ensemble member " << ie+1 << " / "
+                << ens1_ne << " to BUMP" << std::endl;
 
-    // Renormalize member
-    dx = (*ens_ptr)[ie];
+  // Copy member
+    dx = (*ens)[ie];
+
+  // Renormalize member
+    const double rk = sqrt((static_cast<double>(ens1_ne) - 1.0));
     dx *= rk;
 
-    // Define unstructured grid field
-    UnstructuredGrid ugmem;
-    dx.field_to_ug(ugmem, colocated_);
+  // Define unstructured grid field
+    dx.field_to_ug(ug);
 
-    // Copy field into BUMP ensemble
-    add_oobump_member_f90(keyBUMP_, ugmem.toFortran(), ie+1, bump::readEnsMember);
+  // Copy field into BUMP ensemble
+    add_oobump_member_f90(keyBUMP_, ug.toFortran(), ie+1, bump::readEnsMember);
   }
 
-// Copy pseudo-ensemble members
+// Add pseudo-ensemble members
+  Log::info() << "Add pseudo-ensemble members" << std::endl;
   for (int ie = 0; ie < ens2_ne; ++ie) {
-     Log::info() << "Copy pseudo ensemble member " << ie+1 << " / "
-                 << ens2_ne << " to BUMP" << std::endl;
+    Log::info() << "   Copy pseudo-ensemble member " << ie+1 << " / "
+                << ens2_ne << " to BUMP" << std::endl;
 
-    // Define unstructured grid field
-    UnstructuredGrid ugmem;
-    bkgens[ie].field_to_ug(ugmem, colocated_);
+  // Copy member
+    dx = (*pseudo_ens)[ie];
 
-    // Copy field into BUMP ensemble
-    add_oobump_member_f90(keyBUMP_, ugmem.toFortran(), ie+1, bump::readPseudoEnsMember);
+  // Define unstructured grid field
+    dx.field_to_ug(ug);
+
+  // Copy field into BUMP pseudo-ensemble
+    add_oobump_member_f90(keyBUMP_, ug.toFortran(), ie+1, bump::readPseudoEnsMember);
   }
-
-  Log::trace() << "ParametersBUMP:ParametersBUMP constructed" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-ParametersBUMP<MODEL>::~ParametersBUMP() {
-  Log::trace() << "ParametersBUMP<MODEL>::~ParametersBUMP destruction starting" << std::endl;
-  util::Timer timer(classname(), "~ParametersBUMP");
-  delete_oobump_f90(keyBUMP_);
-  Log::trace() << "ParametersBUMP:~ParametersBUMP destructed" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void ParametersBUMP<MODEL>::estimate() const {
-  Log::trace() << "ParametersBUMP::estimate starting" << std::endl;
-  util::Timer timer(classname(), "estimate");
 
 // Read data from files
+  Log::info() << "Read data from files" << std::endl;
   if (conf_.has("input")) {
-  //  Setup resolution
-    const eckit::LocalConfiguration resolConfig(conf_, "resolution");
-    const Geometry_ resol(resolConfig);
-
-  // Setup variables
-    const eckit::LocalConfiguration varConfig(conf_, "variables");
-    const Variables vars(varConfig);
-
-  // Setup time
-    const util::DateTime date(conf_.getString("date"));
-
-  // Setup dummy increment
-    Increment_ dx(resol, vars, date);
-    dx.zero();
-
-  // Setup unstructured grid
-    UnstructuredGrid ug;
-
+  // Set BUMP input parameters
     std::vector<eckit::LocalConfiguration> inputConfigs;
     conf_.get("input", inputConfigs);
     for (const auto & conf : inputConfigs) {
-      dx.read(conf);
-      dx.field_to_ug(ug, colocated_);
+    // Read parameter for the specified timeslot
+      const util::DateTime date(conf.getString("date"));
+      bool found = false;
+      dx.zero();
+      for (unsigned jsub = 0; jsub < timeslots_.size(); ++jsub) {
+        if (date == timeslots_[jsub]) {
+          found = true;
+          dx[dx.first()+jsub].read(conf);
+        }
+      }
+      ASSERT(found);
+      dx.field_to_ug(ug);
+
+    // Set parameter to BUMP
       std::string param = conf.getString("parameter");
       const int nstr = param.size();
       const char *cstr = param.c_str();
@@ -212,13 +174,22 @@ void ParametersBUMP<MODEL>::estimate() const {
 // Estimate parameters
   run_oobump_drivers_f90(keyBUMP_);
 
-// Copy test
-  std::ifstream infile("bump.test");
+// Copy BUMP test file
+  const std::string bump_test = BUMPConfig.getString("prefix") + ".test.0000";
+  std::ifstream infile(bump_test);
   std::string line;
-  while (std::getline(infile, line)) Log::test() << line << std::endl;
-  remove("bump.test");
+//  while (std::getline(infile, line)) Log::test() << line << std::endl;
 
-  Log::trace() << "ParametersBUMP:estimate done" << std::endl;
+  Log::trace() << "ParametersBUMP:ParametersBUMP constructed" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+ParametersBUMP<MODEL>::~ParametersBUMP() {
+  Log::trace() << "ParametersBUMP<MODEL>::~ParametersBUMP destruction starting" << std::endl;
+  util::Timer timer(classname(), "~ParametersBUMP");
+  Log::trace() << "ParametersBUMP:~ParametersBUMP destructed" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -228,36 +199,41 @@ void ParametersBUMP<MODEL>::write() const {
   Log::trace() << "ParametersBUMP::write starting" << std::endl;
   util::Timer timer(classname(), "write");
 
-//  Setup resolution
-  const eckit::LocalConfiguration resolConfig(conf_, "resolution");
-  const Geometry_ resol(resolConfig);
-
-// Setup variables
-  const eckit::LocalConfiguration varConfig(conf_, "variables");
-  const Variables vars(varConfig);
-
-// Setup time
-  const util::DateTime date(conf_.getString("date"));
 
 // Setup dummy increment
-  Increment_ dx(resol, vars, date);
+  Increment4D_ dx(resol_, vars_, timeslots_);
   dx.zero();
 
 // Setup unstructured grid
-  UnstructuredGrid ug;
-  dx.field_to_ug(ug, colocated_);
+  int colocated;
+  get_oobump_colocated_f90(keyBUMP_, colocated);
+  UnstructuredGrid ug(colocated, timeslots_.size());
+  dx.ug_coord(ug);
 
 // Write parameters
   std::vector<eckit::LocalConfiguration> outputConfigs;
   conf_.get("output", outputConfigs);
   for (const auto & conf : outputConfigs) {
+  // Get parameter from BUMP
     std::string param = conf.getString("parameter");
     const int nstr = param.size();
     const char *cstr = param.c_str();
     get_oobump_param_f90(keyBUMP_, nstr, cstr, ug.toFortran());
     dx.field_from_ug(ug);
-    dx.write(conf);
-    Log::test() << "Norm of " << param << ": " << dx.norm() << std::endl;
+
+  // Write parameter for the specified timeslot
+    const util::DateTime date(conf.getString("date"));
+    bool found = false;
+    for (unsigned jsub = 0; jsub < timeslots_.size(); ++jsub) {
+      int isub = jsub+dx.first();
+      if (date == timeslots_[jsub]) {
+        found = true;
+        dx[isub].write(conf);
+        Log::test() << "Norm of " << param << " at " << date << ": " << dx[isub].norm()
+                    << std::endl;
+      }
+    }
+    ASSERT(found);
   }
   Log::trace() << "ParametersBUMP::write done" << std::endl;
 }

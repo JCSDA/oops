@@ -7,14 +7,15 @@
 !----------------------------------------------------------------------
 module tools_kinds
 
-use,intrinsic :: iso_c_binding
+use iso_c_binding
+use netcdf, only: nf90_double
 
 implicit none
 
-! Real kind
-integer,parameter :: kind_real = c_double ! Real kind
+integer,parameter :: kind_real = c_double       ! Real kind
+integer,parameter :: nc_kind_real = nf90_double ! NetCDF real kind
 
 private
-public kind_real
+public kind_real,nc_kind_real
 
 end module tools_kinds

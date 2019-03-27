@@ -332,3 +332,4 @@ class Increment : public oops::Test {
 }  // namespace test
 
 #endif  // TEST_INTERFACE_INCREMENT_H_
+

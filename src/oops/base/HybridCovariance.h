@@ -50,6 +50,7 @@ class HybridCovariance : public ModelSpaceCovarianceBase<MODEL> {
   boost::scoped_ptr< ModelSpaceCovarianceBase<MODEL> > static_;
   boost::scoped_ptr< EnsembleCovariance<MODEL> >  ensemble_;
   double ensWeight_;
+  double staWeight_;
 };
 
 // =============================================================================
@@ -68,7 +69,9 @@ HybridCovariance<MODEL>::HybridCovariance(const Geometry_ & resol, const Variabl
   ensemble_.reset(new EnsembleCovariance<MODEL>(resol,  vars, ensConf, xb, fg));
 
   ensWeight_ = config.getDouble("ensemble_weight");
-  ASSERT(ensWeight_ > 0.0 && ensWeight_ <= 1.0);
+  ASSERT(ensWeight_ > 0.0);
+  staWeight_ = config.getDouble("static_weight");
+  ASSERT(staWeight_ > 0.0);
   Log::trace() << "HybridCovariance created." << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -80,7 +83,7 @@ HybridCovariance<MODEL>::~HybridCovariance() {
 template<typename MODEL>
 void HybridCovariance<MODEL>::doMultiply(const Increment_ & dxi, Increment_ & dxo) const {
   static_->multiply(dxi, dxo);
-  dxo *= (1.0-ensWeight_);
+  dxo *= staWeight_;
   Increment_ tmp(dxo);
   ensemble_->multiply(dxi, tmp);
   dxo.axpy(ensWeight_, tmp);

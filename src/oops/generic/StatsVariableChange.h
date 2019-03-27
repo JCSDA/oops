@@ -13,8 +13,10 @@
 #include <boost/noncopyable.hpp>
 #include "eckit/config/Configuration.h"
 #include "oops/base/LinearVariableChangeBase.h"
+#include "oops/base/StateEnsemble.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/oobump_f.h"
+#include "oops/generic/ParametersBUMP.h"
 #include "oops/generic/UnstructuredGrid.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -32,9 +34,13 @@ namespace oops {
 
 template <typename MODEL>
 class StatsVariableChange : public LinearVariableChangeBase<MODEL> {
-  typedef Geometry<MODEL>            Geometry_;
-  typedef Increment<MODEL>           Increment_;
-  typedef State<MODEL>               State_;
+  typedef Geometry<MODEL>                         Geometry_;
+  typedef Increment<MODEL>                        Increment_;
+  typedef State<MODEL>                            State_;
+  typedef State4D<MODEL>                          State4D_;
+  typedef ParametersBUMP<MODEL>                   Parameters_;
+  typedef StateEnsemble<MODEL>                    Ensemble_;
+  typedef boost::shared_ptr<StateEnsemble<MODEL>> EnsemblePtr_;
 
  public:
   static const std::string classname() {return "oops::StatsVariableChange";}
@@ -60,7 +66,6 @@ class StatsVariableChange : public LinearVariableChangeBase<MODEL> {
                      std::vector<std::string>& modelVarToCalcList,
                      std::vector<std::string>& varRegrByList);
 
-  int colocated_;
   int keyBUMP_;
 
   // StatsVarData populate(const varin_ , const varout_, const eckit::Configuration);
@@ -70,35 +75,36 @@ template<typename MODEL>
 StatsVariableChange<MODEL>::StatsVariableChange(const State_ & xb, const State_ &,
                                                 const Geometry_ & resol,
                                                 const eckit::Configuration & conf)
-  : LinearVariableChangeBase<MODEL>(conf), colocated_(1), keyBUMP_(0)
+  : LinearVariableChangeBase<MODEL>(conf), keyBUMP_(0)
 {
   Log::trace() << "StatsVariableChange<MODEL>::StatsVariableChange starting" << std::endl;
 
-  const eckit::Configuration * fconf = &conf;
-
 // Setup variables
-  std::cout << conf << std::endl;
   const eckit::LocalConfiguration varConfig(conf, "variables");
   const Variables vars(varConfig);
 
-// Setup dummy increment
-  Increment_ dx(resol, vars, xb.validTime());
+// Setup timeslots
+  std::vector<util::DateTime> timeslots;
+  timeslots.push_back(xb.validTime());
 
-// Define unstructured grid coordinates
-  UnstructuredGrid ug;
-  dx.ug_coord(ug, colocated_);
+// Set the ensemble of perturbations
+  EnsemblePtr_ ens(new Ensemble_());
 
-// Create BUMP
-  create_oobump_f90(keyBUMP_, ug.toFortran(), &fconf, 0, 1, 0, 1);
+// Setup pseudo ensemble
+  EnsemblePtr_ pseudo_ens(new Ensemble_());
 
-// Run BUMP
-  run_oobump_drivers_f90(keyBUMP_);
+// Setup parameters
+  Parameters_ param(resol, vars, timeslots, ens, pseudo_ens, conf);
 
-// Copy test
-  std::ifstream infile("bump.test");
+// Get key
+  keyBUMP_ = param.get_bump();
+
+// Copy BUMP test file
+  const eckit::LocalConfiguration BUMPConfig(conf, "bump");
+  const std::string bump_test = BUMPConfig.getString("prefix") + ".test.0000";
+  std::ifstream infile(bump_test);
   std::string line;
-  while (std::getline(infile, line)) Log::test() << line << std::endl;
-  remove("bump.test");
+//  while (std::getline(infile, line)) Log::test() << line << std::endl;
 
   Log::trace() << "StatsVariableChange<MODEL>::StatsVariableChange done" << std::endl;
 }
@@ -113,8 +119,10 @@ template<typename MODEL>
 void StatsVariableChange<MODEL>::multiply(const Increment_ & in, Increment_ & out) const {
   Log::trace() << "StatsVariableChange<MODEL>::multiply starting" << std::endl;
 
-  UnstructuredGrid ug;
-  in.field_to_ug(ug, colocated_);
+  int colocated;
+  get_oobump_colocated_f90(keyBUMP_, colocated);
+  UnstructuredGrid ug(colocated);
+  in.field_to_ug(ug);
   multiply_oobump_vbal_f90(keyBUMP_, ug.toFortran());
   out.field_from_ug(ug);
 
@@ -125,8 +133,10 @@ template<typename MODEL>
 void StatsVariableChange<MODEL>::multiplyInverse(const Increment_ & in, Increment_ & out) const {
   Log::trace() << "StatsVariableChange<MODEL>::multiplyInverse starting" << std::endl;
 
-  UnstructuredGrid ug;
-  in.field_to_ug(ug, colocated_);
+  int colocated;
+  get_oobump_colocated_f90(keyBUMP_, colocated);
+  UnstructuredGrid ug(colocated);
+  in.field_to_ug(ug);
   multiply_oobump_vbal_inv_f90(keyBUMP_, ug.toFortran());
   out.field_from_ug(ug);
 
@@ -137,8 +147,10 @@ template<typename MODEL>
 void StatsVariableChange<MODEL>::multiplyAD(const Increment_ & in, Increment_ & out) const {
   Log::trace() << "StatsVariableChange<MODEL>::multiplyAD starting" << std::endl;
 
-  UnstructuredGrid ug;
-  in.field_to_ug(ug, colocated_);
+  int colocated;
+  get_oobump_colocated_f90(keyBUMP_, colocated);
+  UnstructuredGrid ug(colocated);
+  in.field_to_ug(ug);
   multiply_oobump_vbal_ad_f90(keyBUMP_, ug.toFortran());
   out.field_from_ug(ug);
 
@@ -149,8 +161,10 @@ template<typename MODEL>
 void StatsVariableChange<MODEL>::multiplyInverseAD(const Increment_ & in, Increment_ & out) const {
   Log::trace() << "StatsVariableChange<MODEL>::multiplyInverseAD starting" << std::endl;
 
-  UnstructuredGrid ug;
-  in.field_to_ug(ug, colocated_);
+  int colocated;
+  get_oobump_colocated_f90(keyBUMP_, colocated);
+  UnstructuredGrid ug(colocated);
+  in.field_to_ug(ug);
   multiply_oobump_vbal_inv_ad_f90(keyBUMP_, ug.toFortran());
   out.field_from_ug(ug);
 

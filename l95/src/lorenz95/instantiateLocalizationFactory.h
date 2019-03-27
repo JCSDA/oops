@@ -15,7 +15,7 @@
 namespace lorenz95 {
 
 void instantiateLocalizationFactory() {
-  static oops::LocalizationMaker<L95Traits, LocalizationMatrixL95> makerWSpeed_("L95");
+  static oops::LocalizationMaker<L95Traits, LocalizationMatrixL95> makerL95_("L95");
 }
 
 }  // namespace lorenz95

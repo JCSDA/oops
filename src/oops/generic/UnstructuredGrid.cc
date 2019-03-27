@@ -12,8 +12,9 @@
 namespace oops {
 
 // -----------------------------------------------------------------------------
-UnstructuredGrid::UnstructuredGrid() : keyUGrid_(0) {
-  create_ug_f90(keyUGrid_);
+UnstructuredGrid::UnstructuredGrid(const int & colocated, const int & nts) : keyUGrid_(0),
+  colocated_(colocated), nts_(nts) {
+  create_ug_f90(keyUGrid_, colocated_, nts_);
 }
 // -----------------------------------------------------------------------------
 UnstructuredGrid::~UnstructuredGrid() {

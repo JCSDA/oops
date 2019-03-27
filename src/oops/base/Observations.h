@@ -142,7 +142,7 @@ void Observations<MODEL>::read(const std::string & name) {
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 void Observations<MODEL>::print(std::ostream & os) const {
-  for (std::size_t jj = 0; jj < obs_.size(); ++jj) os << obs_[jj];
+  for (std::size_t jj = 0; jj < obs_.size(); ++jj) os << obs_[jj] << std::endl;
 }
 // -----------------------------------------------------------------------------
 }  // namespace oops

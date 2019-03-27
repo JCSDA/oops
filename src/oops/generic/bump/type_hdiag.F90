@@ -8,10 +8,10 @@
 module type_hdiag
 
 use tools_kinds, only: kind_real
+use type_adv, only: adv_type
 use type_avg, only: avg_type
 use type_bpar, only: bpar_type
 use type_diag, only: diag_type
-use type_displ, only: displ_type
 use type_ens, only: ens_type
 use type_geom, only: geom_type
 use type_io, only: io_type
@@ -29,7 +29,7 @@ type hdiag_type
    type(avg_type) :: avg_2   ! Averaged statistics, second ensemble
    type(avg_type) :: avg_wgt ! Averaged statistics weights
    type(samp_type) :: samp   ! Sampling
-   type(displ_type) :: displ ! Displacement
+   type(adv_type) :: adv     ! Advection
    type(mom_type) :: mom_1   ! Moments, first ensemble
    type(mom_type) :: mom_2   ! Moments, second ensemble
    type(diag_type) :: cov_1  ! Covariance, first ensemble
@@ -65,7 +65,7 @@ call hdiag%avg_1%dealloc
 call hdiag%avg_2%dealloc
 call hdiag%avg_wgt%dealloc
 call hdiag%samp%dealloc
-call hdiag%displ%dealloc
+call hdiag%adv%dealloc
 call hdiag%mom_1%dealloc
 call hdiag%mom_2%dealloc
 call hdiag%cov_1%dealloc
@@ -115,7 +115,7 @@ write(mpl%info,'(a)') '--- Compute MPI distribution, halos A'
 call mpl%flush
 call hdiag%samp%compute_mpi_a(mpl,nam,geom)
 
-if (nam%new_lct.or.nam%local_diag.or.nam%displ_diag) then
+if (nam%new_lct.or.nam%local_diag.or.nam%adv_diag) then
    ! Compute MPI distribution, halos A-B
    write(mpl%info,'(a)') '-------------------------------------------------------------------'
    call mpl%flush
@@ -124,13 +124,13 @@ if (nam%new_lct.or.nam%local_diag.or.nam%displ_diag) then
    call hdiag%samp%compute_mpi_ab(mpl,nam,geom)
 end if
 
-if (nam%displ_diag) then
-   ! Compute displacement diagnostic
+if (nam%adv_diag) then
+   ! Compute advection diagnostic
    write(mpl%info,'(a)') '-------------------------------------------------------------------'
    call mpl%flush
-   write(mpl%info,'(a)') '--- Compute displacement diagnostic'
+   write(mpl%info,'(a)') '--- Compute advection diagnostic'
    call mpl%flush
-   call hdiag%displ%compute(mpl,nam,geom,hdiag%samp,ens1)
+   call hdiag%adv%compute(mpl,rng,nam,geom,hdiag%samp,ens1)
 end if
 
 ! Compute MPI distribution, halo C
@@ -140,7 +140,7 @@ write(mpl%info,'(a)') '--- Compute MPI distribution, halo C'
 call mpl%flush
 call hdiag%samp%compute_mpi_c(mpl,nam,geom)
 
-if ((nam%local_diag.or.nam%displ_diag).and.(nam%diag_rhflt>0.0)) then
+if ((nam%local_diag.or.nam%adv_diag).and.(nam%diag_rhflt>0.0)) then
    ! Compute MPI distribution, halo F
    write(mpl%info,'(a)') '-------------------------------------------------------------------'
    call mpl%flush
@@ -259,7 +259,7 @@ case ('hyb-avg','hyb-rnd','dual-ens')
 end select
 
 select case (trim(nam%method))
-case ('loc_norm','loc','hyb-avg','hyb-rnd','dual-ens')
+case ('loc','hyb-avg','hyb-rnd','dual-ens')
    ! Compute localization
    write(mpl%info,'(a)') '-------------------------------------------------------------------'
    call mpl%flush
@@ -300,8 +300,8 @@ if (nam%write_hdiag) then
    write(mpl%info,'(a)') '--- Write data'
    call mpl%flush
 
-   ! Displacement
-   if (nam%displ_diag) call hdiag%displ%write(mpl,nam,geom,hdiag%samp,trim(nam%prefix)//'_displ_diag.nc')
+   ! Advection
+   if (nam%adv_diag) call hdiag%adv%write(mpl,nam,geom,bpar,io,hdiag%samp)
 
    ! Full variances
    if (nam%var_full) then

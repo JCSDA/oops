@@ -7,18 +7,18 @@ cost_function:
       - date: '2010-01-01T12:00:00Z'
         filename: Data/example.fc.2009-12-31T00:00:00Z.P1DT12H
     Covariance:
-    - covariance: QgError
-      date: '2010-01-01T00:00:00Z'
-      horizontal_length_scale: 1e6
-      maximum_condition_number: 1.0e6
-      standard_deviation: '0.8'
-      vertical_correlation: '0.2'
-    - covariance: QgError
-      date: '2010-01-01T12:00:00Z'
-      horizontal_length_scale: 2e5
-      maximum_condition_number: 1.0e6
-      standard_deviation: '0.2'
-      vertical_correlation: '0.5'
+      covariance: QgError
+      covariance_time:
+      - date: '2010-01-01T00:00:00Z'
+        horizontal_length_scale: 1e6
+        maximum_condition_number: 1.0e6
+        standard_deviation: '0.8'
+        vertical_correlation: '0.2'
+      - date: '2010-01-01T12:00:00Z'
+        horizontal_length_scale: 2e5
+        maximum_condition_number: 1.0e6
+        standard_deviation: '0.2'
+        vertical_correlation: '0.5'
   Jc:
   - jcdfi:
       alpha: '10.0'

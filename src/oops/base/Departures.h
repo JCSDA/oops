@@ -211,7 +211,7 @@ void Departures<MODEL>::save(const std::string & name) const {
 template <typename MODEL>
 void Departures<MODEL>::print(std::ostream & os) const {
   for (std::size_t jj = 0; jj < dep_.size(); ++jj) {
-    os << *dep_[jj];
+    os << *dep_[jj] << std::endl;
   }
 }
 // -----------------------------------------------------------------------------

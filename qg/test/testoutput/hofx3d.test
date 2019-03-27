@@ -7,4 +7,6 @@ Test     :   Min=-9.80188, Max=16.0459, RMS=5.01516
 Test     :   Min=-9.71003, Max=9.54206, RMS=4.27135
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
-Test     : H(x): Stream nobs= 300 Min=-28.2383, Max=11.8283, Average=-3.75158Wind nobs= 160 Min=-8.92328, Max=13.7932, Average=0.694189WSpeed nobs= 300 Min=0, Max=13.8345, Average=2.95468
+Test     : H(x): Stream nobs= 300 Min=-28.2383, Max=11.8283, Average=-3.75158
+Test     : Wind nobs= 160 Min=-8.92328, Max=13.7932, Average=0.694189
+Test     : WSpeed nobs= 300 Min=0, Max=13.8345, Average=2.95468

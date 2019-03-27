@@ -9,8 +9,7 @@ module type_io
 
 use netcdf
 use tools_const, only: pi,deg2rad,rad2deg,reqkm
-use tools_kinds, only: kind_real
-use tools_nc, only: ncfloat
+use tools_kinds, only: kind_real,nc_kind_real
 use tools_qsort, only: qsort
 use type_com, only: com_type
 use type_geom, only: geom_type
@@ -106,7 +105,7 @@ real(kind_real),intent(out) :: fld(geom%nc0a,geom%nl0) ! Field
 integer :: ncid,fld_id,dum
 real(kind_real) :: fld_c0(geom%nc0,geom%nl0)
 character(len=1024) :: filename_proc
-character(len=1024) :: subr = 'fld_read'
+character(len=1024),parameter :: subr = 'io_fld_read'
 
 if (nam%field_io) then
    if (nam%split_io.and.(mpl%nproc>1)) then
@@ -142,7 +141,7 @@ if (nam%field_io) then
    end if
 else
    ! No field I/O
-   call mpl%abort('field/variable not read: '//trim(filename)//'/'//trim(varname))
+   call mpl%abort(subr,'field/variable not read: '//trim(filename)//'/'//trim(varname))
 end if
 
 ! Dummy call to avoid compilation warnings
@@ -173,7 +172,7 @@ integer :: ncid,nc0a_id,nc0_id,nl0_id,fld_id,lon_id,lat_id
 real(kind_real) :: fld_c0a(geom%nc0a,geom%nl0)
 real(kind_real),allocatable :: fld_c0(:,:),lon(:),lat(:)
 character(len=1024) :: filename_proc
-character(len=1024) :: subr = 'io_fld_write'
+character(len=1024),parameter :: subr = 'io_fld_write'
 
 if (nam%field_io) then
    ! Apply mask
@@ -194,7 +193,7 @@ if (nam%field_io) then
       info = nf90_create(trim(filename_proc),or(nf90_noclobber,nf90_64bit_offset),ncid)
       if (info==nf90_noerr) then
          ! Write namelist parameters
-         call nam%ncwrite(mpl,ncid)
+         call nam%write(mpl,ncid)
 
          ! Define attribute
          call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,'_FillValue',mpl%msv%valr))
@@ -213,19 +212,19 @@ if (nam%field_io) then
       if (info/=nf90_noerr) call mpl%ncerr(subr,nf90_def_dim(ncid,'nl0',geom%nl0,nl0_id))
       info = nf90_inq_varid(ncid,'lon',lon_id)
       if (info/=nf90_noerr) then
-         call mpl%ncerr(subr,nf90_def_var(ncid,'lon',ncfloat,(/nc0a_id/),lon_id))
+         call mpl%ncerr(subr,nf90_def_var(ncid,'lon',nc_kind_real,(/nc0a_id/),lon_id))
          call mpl%ncerr(subr,nf90_put_att(ncid,lon_id,'_FillValue',mpl%msv%valr))
          call mpl%ncerr(subr,nf90_put_att(ncid,lon_id,'unit','degrees_north'))
       end if
       info = nf90_inq_varid(ncid,'lat',lat_id)
       if (info/=nf90_noerr) then
-         call mpl%ncerr(subr,nf90_def_var(ncid,'lat',ncfloat,(/nc0a_id/),lat_id))
+         call mpl%ncerr(subr,nf90_def_var(ncid,'lat',nc_kind_real,(/nc0a_id/),lat_id))
          call mpl%ncerr(subr,nf90_put_att(ncid,lat_id,'_FillValue',mpl%msv%valr))
          call mpl%ncerr(subr,nf90_put_att(ncid,lat_id,'unit','degrees_east'))
       end if
       info = nf90_inq_varid(ncid,trim(varname),fld_id)
       if (info/=nf90_noerr) then
-         call mpl%ncerr(subr,nf90_def_var(ncid,trim(varname),ncfloat,(/nc0a_id,nl0_id/),fld_id))
+         call mpl%ncerr(subr,nf90_def_var(ncid,trim(varname),nc_kind_real,(/nc0a_id,nl0_id/),fld_id))
          call mpl%ncerr(subr,nf90_put_att(ncid,fld_id,'_FillValue',mpl%msv%valr))
       end if
 
@@ -263,7 +262,7 @@ if (nam%field_io) then
          info = nf90_create(trim(nam%datadir)//'/'//trim(filename)//'.nc',or(nf90_noclobber,nf90_64bit_offset),ncid)
          if (info==nf90_noerr) then
             ! Write namelist parameters
-            call nam%ncwrite(mpl,ncid)
+            call nam%write(mpl,ncid)
 
             ! Define attribute
             call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,'_FillValue',mpl%msv%valr))
@@ -282,19 +281,19 @@ if (nam%field_io) then
          if (info/=nf90_noerr) call mpl%ncerr(subr,nf90_def_dim(ncid,'nl0',geom%nl0,nl0_id))
          info = nf90_inq_varid(ncid,'lon',lon_id)
          if (info/=nf90_noerr) then
-            call mpl%ncerr(subr,nf90_def_var(ncid,'lon',ncfloat,(/nc0_id/),lon_id))
+            call mpl%ncerr(subr,nf90_def_var(ncid,'lon',nc_kind_real,(/nc0_id/),lon_id))
             call mpl%ncerr(subr,nf90_put_att(ncid,lon_id,'_FillValue',mpl%msv%valr))
             call mpl%ncerr(subr,nf90_put_att(ncid,lon_id,'unit','degrees_north'))
          end if
          info = nf90_inq_varid(ncid,'lat',lat_id)
          if (info/=nf90_noerr) then
-            call mpl%ncerr(subr,nf90_def_var(ncid,'lat',ncfloat,(/nc0_id/),lat_id))
+            call mpl%ncerr(subr,nf90_def_var(ncid,'lat',nc_kind_real,(/nc0_id/),lat_id))
             call mpl%ncerr(subr,nf90_put_att(ncid,lat_id,'_FillValue',mpl%msv%valr))
             call mpl%ncerr(subr,nf90_put_att(ncid,lat_id,'unit','degrees_east'))
          end if
          info = nf90_inq_varid(ncid,trim(varname),fld_id)
          if (info/=nf90_noerr) then
-            call mpl%ncerr(subr,nf90_def_var(ncid,trim(varname),ncfloat,(/nc0_id,nl0_id/),fld_id))
+            call mpl%ncerr(subr,nf90_def_var(ncid,trim(varname),nc_kind_real,(/nc0_id,nl0_id/),fld_id))
             call mpl%ncerr(subr,nf90_put_att(ncid,fld_id,'_FillValue',mpl%msv%valr))
          end if
 
@@ -326,7 +325,7 @@ if (nam%field_io) then
    if (nam%grid_output) call io%grid_write(mpl,nam,geom,filename,trim(varname)//'_gridded',fld)
 else
    ! No field I/O
-   call mpl%warning('field/variable not written: '//trim(filename)//'/'//trim(varname))
+   call mpl%warning(subr,'field/variable not written: '//trim(filename)//'/'//trim(varname))
 end if
 
 end subroutine io_fld_write
@@ -354,6 +353,7 @@ real(kind_real) :: dlon,dlat,nn_dist(1)
 real(kind_real),allocatable :: lon_og(:),lat_og(:)
 logical :: mask_c0(geom%nc0)
 logical,allocatable :: mask_lonlat(:),mask_og(:),lcheck_og(:),lcheck_c0b(:)
+character(len=1024),parameter :: subr = 'io_grid_init'
 type(linop_type) :: ogfull
 
 ! Grid size
@@ -404,7 +404,7 @@ do ilonlat_loc=1,nlonlat_loc(mpl%myproc)
    ! Check that the interpolation point is inside the domain
    call geom%mesh%inside(mpl,io%lon(ilon),io%lat(ilat),mask_lonlat(ilonlat))
 
-   if (mask_lonlat(ilonlat).and.(nam%mask_check.or.geom%mask_del)) then
+   if (mask_lonlat(ilonlat).and.nam%mask_check) then
       ! Find the nearest Sc0 point
       call geom%kdtree%find_nearest_neighbors(mpl,io%lon(ilon),io%lat(ilat),1,nn_index,nn_dist)
 
@@ -465,7 +465,7 @@ do i_s=1,ogfull%n_s
    iog = ogfull%row(i_s)
    io%og_to_proc(iog) = iproc
 end do
-if (mpl%msv%isanyi(io%og_to_proc)) call mpl%abort('some output grid points are not interpolated')
+if (mpl%msv%isanyi(io%og_to_proc)) call mpl%abort(subr,'some output grid points are not interpolated')
 do iproc=1,mpl%nproc
    io%proc_to_noga(iproc) = count(io%og_to_proc==iproc)
 end do
@@ -633,7 +633,7 @@ integer,allocatable :: oga_to_og(:)
 real(kind_real) :: fld_c0b(io%nc0b,geom%nl0)
 real(kind_real) :: fld_oga(io%noga,geom%nl0)
 real(kind_real),allocatable :: sbuf(:),rbuf(:),fld_grid(:,:,:),lon_gridded(:),lat_gridded(:)
-character(len=1024) :: subr = 'io_grid_write'
+character(len=1024),parameter :: subr = 'io_grid_write'
 type(fckit_mpi_status) :: status
 
 ! Halo extension and interpolation
@@ -714,7 +714,7 @@ if (mpl%main) then
    info = nf90_create(trim(nam%datadir)//'/'//trim(filename)//'.nc',or(nf90_noclobber,nf90_64bit_offset),ncid)
    if (info==nf90_noerr) then
       ! Write namelist parameters
-      call nam%ncwrite(mpl,ncid)
+      call nam%write(mpl,ncid)
 
       ! Define attribute
       call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,'_FillValue',mpl%msv%valr))
@@ -735,25 +735,25 @@ if (mpl%main) then
    if (info/=nf90_noerr) call mpl%ncerr(subr,nf90_def_dim(ncid,'nlev',geom%nl0,nlev_id))
    info = nf90_inq_varid(ncid,'lon_gridded',lon_gridded_id)
    if (info/=nf90_noerr) then
-      call mpl%ncerr(subr,nf90_def_var(ncid,'lon_gridded',ncfloat,(/nlon_gridded_id/),lon_gridded_id))
+      call mpl%ncerr(subr,nf90_def_var(ncid,'lon_gridded',nc_kind_real,(/nlon_gridded_id/),lon_gridded_id))
       call mpl%ncerr(subr,nf90_put_att(ncid,lon_gridded_id,'_FillValue',mpl%msv%valr))
       call mpl%ncerr(subr,nf90_put_att(ncid,lon_gridded_id,'unit','degrees_north'))
    end if
    info = nf90_inq_varid(ncid,'lat_gridded',lat_gridded_id)
    if (info/=nf90_noerr) then
-      call mpl%ncerr(subr,nf90_def_var(ncid,'lat_gridded',ncfloat,(/nlat_gridded_id/),lat_gridded_id))
+      call mpl%ncerr(subr,nf90_def_var(ncid,'lat_gridded',nc_kind_real,(/nlat_gridded_id/),lat_gridded_id))
       call mpl%ncerr(subr,nf90_put_att(ncid,lat_gridded_id,'_FillValue',mpl%msv%valr))
       call mpl%ncerr(subr,nf90_put_att(ncid,lat_gridded_id,'unit','degrees_east'))
    end if
    info = nf90_inq_varid(ncid,'lev',lev_id)
    if (info/=nf90_noerr) then
-      call mpl%ncerr(subr,nf90_def_var(ncid,'lev',ncfloat,(/nlev_id/),lev_id))
+      call mpl%ncerr(subr,nf90_def_var(ncid,'lev',nc_kind_real,(/nlev_id/),lev_id))
       call mpl%ncerr(subr,nf90_put_att(ncid,lev_id,'_FillValue',mpl%msv%valr))
       call mpl%ncerr(subr,nf90_put_att(ncid,lev_id,'unit','layer'))
    end if
    info = nf90_inq_varid(ncid,trim(varname),fld_id)
    if (info/=nf90_noerr) then
-      call mpl%ncerr(subr,nf90_def_var(ncid,trim(varname),ncfloat,(/nlon_gridded_id,nlat_gridded_id,nlev_id/),fld_id))
+      call mpl%ncerr(subr,nf90_def_var(ncid,trim(varname),nc_kind_real,(/nlon_gridded_id,nlat_gridded_id,nlev_id/),fld_id))
       call mpl%ncerr(subr,nf90_put_att(ncid,fld_id,'_FillValue',mpl%msv%valr))
    end if
 

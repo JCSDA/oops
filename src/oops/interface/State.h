@@ -75,7 +75,7 @@ class State : public util::Printable,
 
   GridPoint getPoint(const GeometryIterator_ & iter) const;
 
- protected:
+/// Accumulator
   void zero();
   void accumul(const double &, const State &);
 

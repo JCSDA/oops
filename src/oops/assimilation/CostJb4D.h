@@ -20,7 +20,7 @@
 #include "oops/assimilation/CostJbState.h"
 #include "oops/assimilation/Increment4D.h"
 #include "oops/assimilation/State4D.h"
-#include "oops/base/ModelSpaceCovarianceBase.h"
+#include "oops/base/ModelSpaceCovariance4DBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -84,12 +84,12 @@ template<typename MODEL> class CostJb4D : public CostJbState<MODEL> {
   void randomize(Increment4D_ &) const override;
 
 /// Create new increment (set to 0).
-  unsigned int nstates() const override {return B_.size();}
+  unsigned int nstates() const override {return xb_.size();}
   Increment_ * newStateIncrement(const unsigned int) const override;
 
  private:
   const State4D_ & xb_;
-  boost::ptr_vector< ModelSpaceCovarianceBase<MODEL> > B_;
+  boost::scoped_ptr<ModelSpaceCovariance4DBase<MODEL> > B_;
   const Variables ctlvars_;
   boost::scoped_ptr<const Geometry_> resol_;
   std::vector<util::DateTime> times_;
@@ -116,15 +116,10 @@ void CostJb4D<MODEL>::linearize(const State4D_ & fg, const Geometry_ & lowres) {
   ASSERT(fg.checkStatesNumber(xb_.size()));
   resol_.reset(new Geometry_(lowres));
   times_.clear();
-  B_.clear();
-  std::vector<eckit::LocalConfiguration> confs;
-  conf_.get("covariance_time", confs);
   for (unsigned jsub = 0; jsub < fg.size(); ++jsub) {
-    B_.push_back(CovarianceFactory<MODEL>::create(confs[jsub], lowres, ctlvars_,
-                                                  xb_[jsub], fg[jsub]));
     times_.push_back(fg[jsub].validTime());
   }
-  ASSERT(fg.checkStatesNumber(B_.size()));
+  B_.reset(Covariance4DFactory<MODEL>::create(conf_, lowres, ctlvars_, xb_, fg));
 }
 
 // -----------------------------------------------------------------------------
@@ -147,39 +142,21 @@ void CostJb4D<MODEL>::addGradient(const Increment4D_ & dxFG, Increment4D_ & grad
 
 template<typename MODEL>
 void CostJb4D<MODEL>::Bmult(const Increment4D_ & dxin, Increment4D_ & dxout) const {
-  for (unsigned k1 = 0; k1 < B_.size(); ++k1) {
-    // Apply the line k1 of the whole B matrix to the StateIncrement dxin
-    // Result is the part of dxout at time k1
-    dxout[k1].zero();
-    Increment_ dout(dxout[k1]);
-    for (unsigned k2 = 0; k2 < B_.size(); ++k2) {
-      // Apply to increment at time k2 the block B_k1k2 of the whole B matrix.
-      // We need an object B which is also at time k2
-      // Result "dout" is an increment at time k1
-      B_[k2].multiply(dxin[k2], dout);
-      dxout[k1] += dout;
-    }
-  }
+  B_->multiply(dxin, dxout);
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 void CostJb4D<MODEL>::Bminv(const Increment4D_ & dxin, Increment4D_ & dxout) const {
-  Log::warning() << "*** B inverse might not always exist ***" << std::endl;
-  for (unsigned jsub = 0; jsub < B_.size(); ++jsub) {
-    B_[jsub].inverseMultiply(dxin[jsub], dxout[jsub]);
-  }
-  Log::warning() << "*** B inverse might not always exist ***" << std::endl;
+  B_->inverseMultiply(dxin, dxout);
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 void CostJb4D<MODEL>::randomize(Increment4D_ & dx) const {
-  for (unsigned jsub = 0; jsub < B_.size(); ++jsub) {
-    B_[jsub].randomize(dx[jsub]);
-  }
+  B_->randomize(dx);
 }
 
 // -----------------------------------------------------------------------------

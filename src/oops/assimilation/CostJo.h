@@ -180,12 +180,13 @@ template<typename MODEL>
 double CostJo<MODEL>::finalize(const eckit::Configuration & conf) {
   Log::trace() << "CostJo::finalize start" << std::endl;
   boost::scoped_ptr<Observations_> yeqv(pobs_->release());
-  Log::info() << "Jo Observation Equivalent:" << *yeqv << std::endl;
+  Log::info() << "Jo Observation Equivalent:" << std::endl << *yeqv
+              << "End Jo Observation Equivalent";
 
   Rmat_.update();
 
   Departures_ ydep(*yeqv - yobs_);
-  Log::info() << "Jo Departures:" << ydep << std::endl;
+  Log::info() << "Jo Departures:" << std::endl << ydep << "End Jo Departures" << std::endl;
 
   Departures_ grad(ydep);
   Rmat_.inverseMultiply(grad);
@@ -222,10 +223,12 @@ template<typename MODEL>
 void CostJo<MODEL>::finalizeTraj() {
   Log::trace() << "CostJo::finalizeTraj start" << std::endl;
   boost::scoped_ptr<Observations_> yeqv(pobstlad_->release());
-  Log::info() << "Jo Traj Observation Equivalent:" << *yeqv << std::endl;
+  Log::info() << "Jo Traj Observation Equivalent:" << std::endl << *yeqv
+              << "End Jo Traj Observation Equivalent";
 
   Departures_ ydep(*yeqv - yobs_);
-  Log::info() << "Jo Traj Departures:" << ydep << std::endl;
+  Log::info() << "Jo Traj Departures:" << std::endl << ydep << "End Jo Traj Departures"
+              << std::endl;
 
   if (!gradFG_) {
     gradFG_.reset(new Departures_(ydep));

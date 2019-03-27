@@ -80,9 +80,9 @@ class FieldsQG : public util::Printable,
   void diff(const FieldsQG &, const FieldsQG &);
 
 // Unstructured grid
-  void ug_coord(oops::UnstructuredGrid &, const int &) const;
+  void ug_coord(oops::UnstructuredGrid &) const;
   void field_to_ug(oops::UnstructuredGrid &, const int &) const;
-  void field_from_ug(const oops::UnstructuredGrid &);
+  void field_from_ug(const oops::UnstructuredGrid &, const int &);
 
 // Utilities
   void read(const eckit::Configuration &);

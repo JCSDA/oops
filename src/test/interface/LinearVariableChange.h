@@ -25,7 +25,7 @@
 #include "eckit/testing/Test.h"
 #include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/Variables.h"
-#include "oops/generic/instantiateVariableChangeFactories.h"
+#include "oops/generic/instantiateVariableChangeFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
@@ -57,7 +57,7 @@ template <typename MODEL> class LinearVariableChangeFixture : private boost::non
   }
 
   LinearVariableChangeFixture<MODEL>() {
-    oops::instantiateVariableChangeFactories<MODEL>();
+    oops::instantiateVariableChangeFactory<MODEL>();
 
     const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "Geometry");
     resol_.reset(new Geometry_(resolConfig));

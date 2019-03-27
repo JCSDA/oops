@@ -38,6 +38,7 @@ namespace qg {
 struct QgTraits {
   static std::string name() {return "QG";}
   static std::string nameCovar() {return "QgError";}
+  static std::string nameCovar4D() {return "QgError";}
 
   typedef qg::GeometryQG            Geometry;
 

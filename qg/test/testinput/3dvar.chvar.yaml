@@ -26,19 +26,19 @@ cost_function:
       standard_deviation: 0.8
       vertical_correlation: 0.2
       variable_changes:
-      - varchange: StatsVariableChange
+      - bump:
+          prefix: bump_3dvar.chvar
+          strategy: common
+        varchange: StatsVariableChange
         inputVariables:
           variables:
           - x
         outputVariables:
           variables:
           - x
-        check_vbal: 1
         variables:
           variables:
           - x
-        prefix: bump_3dvar.chvar
-        strategy: common
   Jo:
     ObsTypes:
     - Covariance:

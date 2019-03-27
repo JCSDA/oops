@@ -570,13 +570,14 @@ type(mom_blk_type),intent(in) :: mom_lr_blk     ! Low-resolution moments block
 integer :: il0,jl0,jl0r,jc3,isub,jsub,ic1a,ic1,nc1amax,nc1a
 real(kind_real),allocatable :: list_m11lrm11(:,:,:)
 logical :: valid
+character(len=1024),parameter :: subr = 'avg_blk_compute_lr'
 
 ! Associate
 associate(ic2=>avg_blk_lr%ic2,ib=>avg_blk_lr%ib)
 
 if ((ic2==0).or.nam%local_diag) then
    ! Check number of sub-ensembles
-   if (avg_blk_lr%nsub/=avg_blk_lr%nsub) call mpl%abort('different number of sub-ensembles')
+   if (avg_blk_lr%nsub/=avg_blk_lr%nsub) call mpl%abort(subr,'different number of sub-ensembles')
 
    ! Average
    !$omp parallel do schedule(static) private(il0,jl0r,jl0,nc1amax,list_m11lrm11,jc3,nc1a,ic1a,ic1,valid,isub,jsub)

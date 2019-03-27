@@ -78,7 +78,6 @@ oops/base/DiagonalMatrix.h
 oops/base/DolphChebyshev.h
 oops/base/DolphChebyshev.cc
 oops/base/EnsembleCovariance.h
-oops/base/EnsemblesCollection.h
 oops/base/GeneralizedDepartures.h
 oops/base/GeoLocation.h
 oops/base/GeoVaLsWriter.h
@@ -86,6 +85,7 @@ oops/base/HybridCovariance.h
 oops/base/IdentityMatrix.h
 oops/base/LinearObsOperators.h
 oops/base/LinearVariableChangeBase.h
+oops/base/Localization.h
 oops/base/ModelBase.h
 oops/base/ModelSpaceCovarianceBase.h
 oops/base/ObsEnsemble.h
@@ -125,19 +125,23 @@ oops/generic/ErrorCovarianceBUMP.h
 oops/generic/IdLinearVariableChange.h
 oops/generic/IdVariableChange.h
 oops/generic/LocalizationBUMP.h
+oops/generic/LocalizationID.h
 oops/generic/ObsErrorDiag.h
 oops/generic/PseudoModel.h
 oops/generic/UnstructuredGrid.cc
 oops/generic/UnstructuredGrid.h
 oops/generic/oobump_f.h
+oops/generic/oobump_interface.F90
 oops/generic/oobump_mod.F90
 oops/generic/dcmip_initial_conditions_test_1_2_3_v5.f90
 oops/generic/dcmip_initial_conditions_test_4_v3.f90
 oops/generic/instantiateLocalizationFactory.h
 oops/generic/instantiateModelFactory.h
 oops/generic/instantiateObsErrorFactory.h
-oops/generic/instantiateVariableChangeFactories.h
+oops/generic/instantiateVariableChangeFactory.h
+oops/generic/LocalizationGeneric.h
 oops/generic/unstructured_grid_f.h
+oops/generic/unstructured_grid_interface.F90
 oops/generic/unstructured_grid_mod.F90
 oops/generic/StatsVariableChange.h
 
@@ -145,8 +149,8 @@ oops/generic/bump/tools_const.F90
 oops/generic/bump/tools_fit.F90
 oops/generic/bump/tools_func.F90
 oops/generic/bump/tools_kinds.F90
-oops/generic/bump/tools_nc.F90
 oops/generic/bump/tools_repro.F90
+oops/generic/bump/type_adv.F90
 oops/generic/bump/type_avg_blk.F90
 oops/generic/bump/type_avg.F90
 oops/generic/bump/type_bpar.F90
@@ -158,7 +162,6 @@ oops/generic/bump/type_cv_blk.F90
 oops/generic/bump/type_cv.F90
 oops/generic/bump/type_diag_blk.F90
 oops/generic/bump/type_diag.F90
-oops/generic/bump/type_displ.F90
 oops/generic/bump/type_ens.F90
 oops/generic/bump/type_geom.F90
 oops/generic/bump/type_hdiag.F90
@@ -196,7 +199,6 @@ oops/interface/InterpolatorTraj.h
 oops/interface/LinearModel.h
 oops/interface/LinearObsOperator.h
 oops/interface/LinearVariableChange.h
-oops/interface/Localization.h
 oops/interface/LocalizationBase.h
 oops/interface/Locations.h
 oops/interface/Model.h
@@ -291,12 +293,12 @@ oops/util/random_mod.F90
 test/base/ObsFilters.h
 test/interface/GeoVaLs.h
 test/interface/LinearObsOperator.h
+test/interface/LinearVariableChange.h
 test/interface/Locations.h
 test/interface/ObservationSpace.h
 test/interface/ObsOperator.h
 test/interface/ObsTestsFixture.h
 test/interface/ObsVector.h
-test/interface/LinearVariableChange.h
 test/interface/VariableChange.h
 test/TestEnvironment.h
 test/util/Random.h

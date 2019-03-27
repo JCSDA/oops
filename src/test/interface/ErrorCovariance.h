@@ -141,7 +141,7 @@ template <typename MODEL> void testErrorCovarianceInverse() {
       EXPECT(dx3.norm() > 0.0);
       dx3 -= dx1;
       const double tol = Test_::test().getDouble("tolerance");
-      EXPECT(dx3.norm() < tol);
+      EXPECT(dx3.norm()/dx1.norm() < tol);
     } else {
       return;
     }

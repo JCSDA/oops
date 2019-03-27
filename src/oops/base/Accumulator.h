@@ -25,6 +25,8 @@ template <typename MODEL, typename ACC, typename FLDS> class Accumulator : publi
   explicit Accumulator(const Geometry_ & resol, const Variables & vars,
                        const util::DateTime & vt)
     : ACC(resol, vars, vt) {ACC::zero();}
+  explicit Accumulator(const FLDS & dx)
+    : ACC(dx) {ACC::zero();}
   ~Accumulator() {}
 
   void accumul(const double & zz, const FLDS & xx) {ACC::accumul(zz, xx);}

@@ -97,11 +97,12 @@ class Increment : public oops::GeneralizedDepartures,
   Geometry_ geometry() const;
 
 /// Unstructured grid
-  void ug_coord(UnstructuredGrid &, const int &) const;
-  void field_to_ug(UnstructuredGrid &, const int &) const;
-  void field_from_ug(const UnstructuredGrid &);
+  void ug_coord(UnstructuredGrid &) const;
+  void field_to_ug(UnstructuredGrid &, const int & = 0) const;
+  void field_from_ug(const UnstructuredGrid &, const int & = 0);
 
 /// Serialize and deserialize
+  size_t serialSize() const;
   void serialize(std::vector<double> &) const;
   void deserialize(const std::vector<double> &);
 
@@ -370,30 +371,30 @@ Geometry<MODEL> Increment<MODEL>::geometry() const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void Increment<MODEL>::ug_coord(UnstructuredGrid & ug, const int & colocated) const {
+void Increment<MODEL>::ug_coord(UnstructuredGrid & ug) const {
   Log::trace() << "Increment<MODEL>::ug_coord starting" << std::endl;
   util::Timer timer(classname(), "ug_coord");
-  increment_->ug_coord(ug, colocated);
+  increment_->ug_coord(ug);
   Log::trace() << "Increment<MODEL>::ug_coord done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void Increment<MODEL>::field_to_ug(UnstructuredGrid & ug, const int & colocated) const {
+void Increment<MODEL>::field_to_ug(UnstructuredGrid & ug, const int & its) const {
   Log::trace() << "Increment<MODEL>::field_to_ug starting" << std::endl;
   util::Timer timer(classname(), "field_to_ug");
-  increment_->field_to_ug(ug, colocated);
+  increment_->field_to_ug(ug, its);
   Log::trace() << "Increment<MODEL>::field_to_ug done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void Increment<MODEL>::field_from_ug(const UnstructuredGrid & ug) {
+void Increment<MODEL>::field_from_ug(const UnstructuredGrid & ug, const int & its) {
   Log::trace() << "Increment<MODEL>::field_from_ug starting" << std::endl;
   util::Timer timer(classname(), "field_from_ug");
-  increment_->field_from_ug(ug);
+  increment_->field_from_ug(ug, its);
   Log::trace() << "Increment<MODEL>::field_from_ug done" << std::endl;
 }
 

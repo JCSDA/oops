@@ -1,22 +1,21 @@
 Covariance:
-  advmode: 0
+  bump:
+    default_seed: 1
+    forced_radii: 1
+    lsqrt: 1
+    method: cor
+    mpicom: 2
+    network: 0
+    new_nicas: 1
+    new_param: 1
+    nrep: 2
+    ntry: 3
+    prefix: bump_dirac.bumpcov
+    resol: 10.0
+    rh: 3900000.0
+    rv: 2.407
+    strategy: common
   covariance: BUMP
-  date: '2010-01-01T00:00:00Z'
-  default_seed: 1
-  forced_radii: 1
-  lsqrt: 1
-  mpicom: 2
-  network: 0
-  new_nicas: 1
-  new_param: 1
-  nicas_interp: bilin
-  nrep: 2
-  ntry: 3
-  prefix: bump_dirac.bumpcov
-  resol: 10.0
-  rh: 3900000.0
-  rv: 2.407
-  strategy: common
   variable_changes:
   - inputVariables:
       variables:
@@ -51,5 +50,4 @@ resolution:
   nx: '40'
   ny: '20'
 variables:
-  variables:
-  - x
+- x
