@@ -58,6 +58,7 @@ class ObsOperator : public util::Printable,
   const Variables & variables() const;  // Required input variables from Model
   const Variables & observed() const;   // Observed variables produced by H
   Locations_ locations(const util::DateTime &, const util::DateTime &) const;
+  const std::string & obstype() const {return oper_->obstype();}
 
  private:
   void print(std::ostream &) const;

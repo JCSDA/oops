@@ -41,6 +41,7 @@ class ObsOpBaseQG : public util::Printable,
 /// Other
   virtual const oops::Variables & variables() const = 0;  // Required from Model
   virtual LocationsQG * locations(const util::DateTime &, const util::DateTime &) const = 0;
+  virtual const std::string & obstype() const = 0;
 
  private:
   virtual void print(std::ostream &) const = 0;

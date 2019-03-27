@@ -52,6 +52,12 @@ LocationsQG * ObsOperatorQG::locations(const util::DateTime & t1, const util::Da
 
 // -----------------------------------------------------------------------------
 
+const std::string & ObsOperatorQG::obstype() const {
+  return oper_->obstype();
+}
+
+// -----------------------------------------------------------------------------
+
 void ObsOperatorQG::print(std::ostream & os) const {
   os << *oper_;
 }

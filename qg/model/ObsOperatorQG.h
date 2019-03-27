@@ -51,6 +51,7 @@ class ObsOperatorQG : public util::Printable,
   const oops::Variables & variables() const;  // Required input variables from Model
   const oops::Variables & observed() const {return obsv_;}   // Output variables produced by H
   LocationsQG * locations(const util::DateTime &, const util::DateTime &) const;
+  const std::string & obstype() const;
 
  private:
   void print(std::ostream &) const;

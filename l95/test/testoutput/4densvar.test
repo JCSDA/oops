@@ -1,5 +1,5 @@
 Test     : CostJb   : Nonlinear Jb = 0
-Test     : CostJo   : Nonlinear Jo = 14.0524, nobs = 80, Jo/n = 0.175655, err = 0.4
+Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 14.0524, nobs = 80, Jo/n = 0.175655, err = 0.4
 Test     : CostJcDFI: Nonlinear Jc = 0.41739
 Test     : CostFunction: Nonlinear J = 14.4698
 Test     : DRIPCGMinimizer: reduction in residual norm = 0.0362454
@@ -23,7 +23,7 @@ Test     :  Min=7.30383, Max=8.67101, Average=7.9828
 Test     :  Valid time: 2010-01-01T15:00:00Z
 Test     :  Min=7.32311, Max=8.72216, Average=7.98493
 Test     : CostJb   : Nonlinear Jb = 0.752573
-Test     : CostJo   : Nonlinear Jo = 0.173461, nobs = 80, Jo/n = 0.00216826, err = 0.4
+Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 0.173461, nobs = 80, Jo/n = 0.00216826, err = 0.4
 Test     : CostJcDFI: Nonlinear Jc = 0.159854
 Test     : CostFunction: Nonlinear J = 1.08589
 Test     : DRIPCGMinimizer: reduction in residual norm = 0.0195046
@@ -47,6 +47,6 @@ Test     :  Min=7.30081, Max=8.67106, Average=7.98288
 Test     :  Valid time: 2010-01-01T15:00:00Z
 Test     :  Min=7.32351, Max=8.72224, Average=7.985
 Test     : CostJb   : Nonlinear Jb = 0.752705
-Test     : CostJo   : Nonlinear Jo = 0.172622, nobs = 80, Jo/n = 0.00215778, err = 0.4
+Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 0.172622, nobs = 80, Jo/n = 0.00215778, err = 0.4
 Test     : CostJcDFI: Nonlinear Jc = 0.159686
 Test     : CostFunction: Nonlinear J = 1.08501

@@ -316,7 +316,8 @@ double CostJo<MODEL>::printJo(const Departures_ & dy, const Departures_ & grad) 
     const double zz = 0.5 * dot_product(dy[jj], grad[jj]);
     const unsigned nobs = grad[jj].nobs();
     if (nobs > 0) {
-      Log::test() << "CostJo   : Nonlinear Jo = " << zz
+      Log::test() << "CostJo   : Nonlinear Jo("
+                  << hop_[jj].obstype() << ") = " << zz
                   << ", nobs = " << nobs << ", Jo/n = " << zz/nobs
                   << ", err = " << Rmat_[jj].getRMSE() << std::endl;
     } else {
