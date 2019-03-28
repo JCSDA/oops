@@ -87,8 +87,15 @@ int Test::execute(const eckit::Configuration & config) const {
 // -----------------------------------------------------------------------------
 template< typename T >
 bool is_close(T a, T b, T epsilon) {
+  // if nan or inf values, always return false
   if (std::isnan(a) || std::isnan(b) || std::isinf(a) || std::isinf(b)) return false;
-  return eckit::types::is_approximately_equal(a , b, (abs(a) < abs(b) ? abs(b) : abs(a)) * epsilon);
+
+  // otherwise, create a relative tolerance that is of the same type as a and b
+  // (which is what is_approximately_equal wants) and call is_approximately_equal.
+  T AbsA = fabs(a);
+  T AbsB = fabs(b);
+  T EpsAB = (AbsA < AbsB ? AbsB : AbsA) * epsilon;  // greater of AbsA, AbsB times epsilon
+  return eckit::types::is_approximately_equal(a , b, EpsAB);
 }
 }  // namespace oops
 #endif  // OOPS_RUNS_TEST_H_
