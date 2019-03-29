@@ -46,18 +46,18 @@ class ObsWindQG : public ObsOpBaseQG,
   virtual ~ObsWindQG();
 
 // Obs Operators
-  void simulateObs(const GomQG &, ObsVecQG &, const ObsBias &) const;
+  void simulateObs(const GomQG &, ObsVecQG &, const ObsBias &) const override;
 
 // Other
   const oops::Variables & variables() const override {return varin_;}
-  LocationsQG * locations(const util::DateTime &, const util::DateTime &) const;
+  LocationsQG * locations(const util::DateTime &, const util::DateTime &) const override;
   const std::string & obstype() const {return obsname_;}
 
   int & toFortran() {return keyOperWind_;}
   const int & toFortran() const {return keyOperWind_;}
 
  private:
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
   F90hop keyOperWind_;
   const ObsSpaceQG & obsdb_;
   const oops::Variables varin_;

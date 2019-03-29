@@ -64,7 +64,7 @@ class TLML95: public oops::LinearModelBase<L95Traits>,
 /// Other utilities
   const util::Duration & timeResolution() const override {return tstep_;}
   const Resolution & resolution() const {return resol_;}
-  const oops::Variables & variables() const {return vars_;}
+  const oops::Variables & variables() const override {return vars_;}
 
  private:
   const ModelTrajectory * getTrajectory(const util::DateTime &) const;

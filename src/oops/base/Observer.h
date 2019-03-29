@@ -68,7 +68,7 @@ class Observer : public util::Printable, public PostBase<STATE> {
   void doInitialize(const STATE &, const util::DateTime &, const util::Duration &) override;
   void doProcessing(const STATE &) override;
   void doFinalize(const STATE &) override;
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
 
 // Obs operator
   const ObsOperators_ & hop_;

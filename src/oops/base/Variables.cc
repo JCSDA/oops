@@ -7,6 +7,7 @@
 
 #include "oops/base/Variables.h"
 
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -54,6 +55,9 @@ Variables::Variables(const Variables & other)
 Variables & Variables::operator+=(const Variables & rhs) {
   ASSERT(convention_ == rhs.convention_);
   vars_.insert(vars_.end(), rhs.vars_.begin(), rhs.vars_.end());
+  // remove duplicated variables
+  std::sort(vars_.begin(), vars_.end());
+  vars_.erase(std::unique(vars_.begin(), vars_.end() ), vars_.end());
   this->setConf();
   return *this;
 }

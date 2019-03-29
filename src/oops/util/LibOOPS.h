@@ -41,11 +41,11 @@ class LibOOPS : public eckit::system::Library {
   void finalise();
 
  protected:
-  const void* addr() const;
+  const void* addr() const override;
 
-  virtual std::string version() const;
+  std::string version() const override;
 
-  virtual std::string gitsha1(unsigned int count) const;
+  std::string gitsha1(unsigned int count) const override;
 
   mutable std::unique_ptr<eckit::Channel> infoChannel_;
   mutable std::unique_ptr<eckit::Channel> debugChannel_;
