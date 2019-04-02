@@ -56,6 +56,8 @@ class ObsTable : public oops::ObsSpaceBase,
   void random(std::vector<double> &) const;
   void printJo(const ObsVec1D &, const ObsVec1D &);
   unsigned int nobs() const {return times_.size();}
+  const std::vector<double> locations() const { return locations_; }
+  const std::vector<util::DateTime> times() const { return times_; }
 
  private:
   void print(std::ostream &) const;

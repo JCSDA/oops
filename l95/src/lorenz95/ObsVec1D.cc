@@ -17,14 +17,14 @@
 #include "eckit/config/Configuration.h"
 #include "eckit/exception/Exceptions.h"
 #include "lorenz95/GomL95.h"
-#include "lorenz95/ObsTable.h"
+#include "lorenz95/ObsTableView.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-ObsVec1D::ObsVec1D(const ObsTable & ot, const oops::Variables &): obsdb_(ot), data_(ot.nobs())
+ObsVec1D::ObsVec1D(ObsTableView & ot, const oops::Variables &): obsdb_(ot), data_(ot.nobs())
 {
   BOOST_FOREACH(double & val, data_) val = 0.0;
 }

@@ -16,7 +16,6 @@
 #include "eckit/config/Configuration.h"
 #include "lorenz95/GomL95.h"
 #include "lorenz95/ObsBias.h"
-#include "lorenz95/ObsTable.h"
 #include "lorenz95/ObsVec1D.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
@@ -26,7 +25,8 @@
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 
-ObservationL95::ObservationL95(const ObsTable & ot, const eckit::Configuration & conf)
+ObservationL95::ObservationL95(const ObsTableView & ot,
+                               const eckit::Configuration & conf)
   : obsdb_(ot), inputs_(conf), outputs_(conf)
 {}
 

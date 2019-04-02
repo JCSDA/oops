@@ -17,6 +17,7 @@
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/Resolution.h"
 
+#include "oops/base/GridPoint.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
@@ -27,6 +28,7 @@ namespace eckit {
 }
 
 namespace oops {
+  class GridPoint;
   class UnstructuredGrid;
   class Variables;
 }
@@ -34,6 +36,7 @@ namespace oops {
 namespace lorenz95 {
   class GomL95;
   class IncrementL95;
+  class Iterator;
   class LocsL95;
   class ModelBias;
   class ModelL95;
@@ -80,6 +83,8 @@ class StateL95 : public util::Printable,
   double norm () const {return fld_.rms();}
   const util::DateTime & validTime() const {return time_;}
   util::DateTime & validTime() {return time_;}
+
+  oops::GridPoint getPoint(const Iterator &) const;
 
 // For accumulator
   void zero();

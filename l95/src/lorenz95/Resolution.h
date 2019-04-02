@@ -15,9 +15,12 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
+#include "lorenz95/Iterator.h"
 #include "oops/util/Printable.h"
 
 namespace lorenz95 {
+
+class Iterator;
 
 // -----------------------------------------------------------------------------
 /// Handles resolution.
@@ -29,12 +32,10 @@ class Resolution : public util::Printable {
   Resolution(const Resolution & other): resol_(other.resol_) {}
   ~Resolution() {}
 
-  std::vector<double> getLats() const;
-  std::vector<double> getLons() const;
-  std::vector<double> getLevs() const;
-  std::vector<int> getMask(const int &) const;
-
   int npoints() const {return resol_;}
+
+  Iterator begin() const;
+  Iterator end() const;
 
  private:
   Resolution & operator=(const Resolution &);

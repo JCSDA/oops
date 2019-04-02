@@ -11,17 +11,18 @@
 #include <ostream>
 
 #include "eckit/config/LocalConfiguration.h"
+
 #include "oops/base/Variables.h"
 #include "oops/util/Printable.h"
 
 namespace lorenz95 {
   class GomL95;
-  class ObsTable;
+  class ObsTableView;
   class ObsVec1D;
 
 class ObsPreQC : public util::Printable {
  public:
-  ObsPreQC(ObsTable &, const eckit::Configuration &);
+  ObsPreQC(ObsTableView &, const eckit::Configuration &);
   ~ObsPreQC() {}
 
   void priorFilter(const GomL95 &) const {}

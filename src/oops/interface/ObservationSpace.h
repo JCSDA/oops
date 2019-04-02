@@ -16,7 +16,8 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "oops/interface/Locations.h"
+#include "oops/base/GeoDistance.h"
+#include "oops/base/GeoLocation.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -39,7 +40,6 @@ template <typename MODEL>
 class ObservationSpace : public util::Printable,
                          private boost::noncopyable,
                          private util::ObjectCounter<ObservationSpace<MODEL> > {
-  typedef Locations<MODEL>          Locations_;
   typedef typename MODEL::ObsSpace  ObsSpace_;
   typedef ObsVector<MODEL>          ObsVector_;
 
@@ -48,6 +48,8 @@ class ObservationSpace : public util::Printable,
 
   ObservationSpace(const eckit::Configuration &,
                    const util::DateTime &, const util::DateTime &);
+  ObservationSpace(const ObservationSpace &, const GeoLocation &,
+                   const GeoDistance &, const int &);
   ~ObservationSpace();
 
 /// Interfacing
@@ -76,6 +78,18 @@ ObservationSpace<MODEL>::ObservationSpace(const eckit::Configuration & conf,
   util::Timer timer(classname(), "ObservationSpace");
   obsdb_.reset(new ObsSpace_(conf, bgn, end));
   Log::trace() << "ObservationSpace<MODEL>::ObservationSpace done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+ObservationSpace<MODEL>::ObservationSpace(const ObservationSpace<MODEL> & os,
+     const GeoLocation & center, const GeoDistance & dist, const int & maxnum):
+         obsdb_() {
+  Log::trace() << "ObservationSpace<MODEL>::ObservationSpace (local) starting" << std::endl;
+  util::Timer timer(classname(), "ObservationSpace");
+  obsdb_.reset(new ObsSpace_(os.observationspace(), center, dist, maxnum));
+  Log::trace() << "ObservationSpace<MODEL>::ObservationSpace (local) done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

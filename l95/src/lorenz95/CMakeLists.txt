@@ -9,6 +9,8 @@ ecbuild_add_library( TARGET lorenz95
                          IncrementL95.cc
                          IncrementL95.h
                          instantiateLocalizationFactory.h
+                         Iterator.cc
+                         Iterator.h
                          L95Traits.h
                          LocsL95.cc
                          LocsL95.h
@@ -33,6 +35,8 @@ ecbuild_add_library( TARGET lorenz95
                          ObsPreQC.h
                          ObsTable.cc
                          ObsTable.h
+                         ObsTableView.cc
+                         ObsTableView.h
                          ObsVec1D.cc
                          ObsVec1D.h
                          ObservationL95.cc

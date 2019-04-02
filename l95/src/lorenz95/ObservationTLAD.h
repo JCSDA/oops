@@ -16,6 +16,8 @@
 
 #include <boost/noncopyable.hpp>
 
+#include "lorenz95/ObsTableView.h"
+
 #include "oops/base/Variables.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -29,7 +31,6 @@ namespace lorenz95 {
   class GomL95;
   class ObsBias;
   class ObsBiasCorrection;
-  class ObsTable;
   class ObsVec1D;
 
 /// Observation for Lorenz 95 model.
@@ -45,7 +46,7 @@ class ObservationTLAD : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::ObservationTLAD";}
 
-  ObservationTLAD(const ObsTable &, const eckit::Configuration &);
+  ObservationTLAD(const ObsTableView &, const eckit::Configuration &);
   ~ObservationTLAD();
 
 // Obs Operators

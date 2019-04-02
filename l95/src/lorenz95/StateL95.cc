@@ -12,6 +12,7 @@
 
 #include <fstream>
 #include <string>
+#include <vector>
 
 #include "eckit/config/Configuration.h"
 #include "lorenz95/FieldL95.h"
@@ -165,6 +166,16 @@ void StateL95::write(const eckit::Configuration & config) const {
 void StateL95::print(std::ostream & os) const {
   os << std::endl << " Valid time: " << time_;
   os << std::endl << fld_;
+}
+// -----------------------------------------------------------------------------
+oops::GridPoint StateL95::getPoint(const Iterator & i) const {
+  std::vector<std::string> vars;
+  vars.push_back("x");
+  std::vector<double> vals;
+  vals.push_back(fld_[i.index()]);
+  std::vector<int> varlens;
+  varlens.push_back(1);
+  return oops::GridPoint(oops::Variables(vars), vals, varlens);
 }
 // -----------------------------------------------------------------------------
 /// For accumulator

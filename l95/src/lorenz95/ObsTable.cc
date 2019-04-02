@@ -37,6 +37,7 @@ ObsTable::ObsTable(const eckit::Configuration & config,
                    const util::DateTime & bgn, const util::DateTime & end)
   : oops::ObsSpaceBase(config, bgn, end), winbgn_(bgn), winend_(end)
 {
+  oops::Log::trace() << "ObsTable::ObsTable starting" << std::endl;
   nameIn_.clear();
   nameOut_.clear();
   if (config.has("ObsData")) {
@@ -83,8 +84,10 @@ void ObsTable::putdb(const std::string & col, const std::vector<double> & vec) c
   ASSERT(vec.size() == nobs());
   if (data_.find(col) != data_.end()) {
     oops::Log::info() << "ObsTable::putdb over-writing " << col << std::endl;
+    data_[col] = vec;
+  } else {
+    data_.insert(std::pair<std::string, std::vector<double> >(col, vec));
   }
-  data_.insert(std::pair<std::string, std::vector<double> >(col, vec));
 }
 
 // -----------------------------------------------------------------------------
@@ -182,7 +185,7 @@ void ObsTable::generateDistribution(const eckit::Configuration & config) {
   }
   this->putdb("ObsError", obserr);
 
-  oops::Log::trace() << "ObsTable::generateDistribution done" << std::endl;
+  oops::Log::trace() << "ObsTable::generateDistribution done, nobs= " << nobs << std::endl;
 }
 
 // -----------------------------------------------------------------------------

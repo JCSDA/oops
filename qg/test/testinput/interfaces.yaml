@@ -12,18 +12,14 @@ Geometry:
   nx: '40'
   ny: '20'
 GeometryIterator:
-  Geometry:
-    bc: '1'
-    nx: '40'
-    ny: '20'
-  State:
-    date: '2009-12-31T00:00:00Z'
-    filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D
-    rms: '12.99933594566324'
-    tolerance: 1e-8
-    variables:
-    - x
-    - bc
+  rms: '12.99933594566324'
+  tolerance: 1e-8
+LocalObservationSpace:
+  GeoLocation:
+    lon: -10
+    lat: 10
+  GeoDistance:
+    distance: 100
 LinearModel:
   bottom_layer_depth: '4500.0'
   top_layer_depth: '5500.0'

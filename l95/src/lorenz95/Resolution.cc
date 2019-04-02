@@ -14,30 +14,14 @@
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-std::vector<double> Resolution::getLats() const {
-  std::vector<double> lats(resol_);
-  for (int jj = 0; jj < resol_; ++jj) lats[jj] = 0.0;
-  return lats;
+Iterator Resolution::begin() const {
+  return Iterator(*this, 0);
 }
 // -----------------------------------------------------------------------------
-std::vector<double> Resolution::getLons() const {
-  std::vector<double> lons(resol_);
-  double dx = 360.0 / resol_;
-  for (int jj = 0; jj < resol_; ++jj) lons[jj] = dx * jj;
-  return lons;
+Iterator Resolution::end() const {
+  return Iterator(*this, resol_);
 }
-// -----------------------------------------------------------------------------
-std::vector<double> Resolution::getLevs() const {
-  std::vector<double> levs(1);
-  levs[0] = 0.0;
-  return levs;
-}
-// -----------------------------------------------------------------------------
-std::vector<int> Resolution::getMask(const int &) const {
-  std::vector<int> mask(resol_);
-  for (int jj = 0; jj < resol_; ++jj) mask[jj] = 1;
-  return mask;
-}
+
 // -----------------------------------------------------------------------------
 
 }  // namespace lorenz95

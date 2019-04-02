@@ -15,7 +15,6 @@
 #include "eckit/config/Configuration.h"
 #include "lorenz95/GomL95.h"
 #include "lorenz95/ObsBiasCorrection.h"
-#include "lorenz95/ObsTable.h"
 #include "lorenz95/ObsVec1D.h"
 #include "oops/base/Variables.h"
 
@@ -23,7 +22,7 @@
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 
-ObservationTLAD::ObservationTLAD(const ObsTable &, const eckit::Configuration & conf)
+ObservationTLAD::ObservationTLAD(const ObsTableView &, const eckit::Configuration & conf)
   : inputs_(conf)
 {}
 

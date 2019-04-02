@@ -25,7 +25,7 @@ namespace oops {
 }
 
 namespace lorenz95 {
-  class ObsTable;
+  class ObsTableView;
 
 // -----------------------------------------------------------------------------
 /// Vector in observation space
@@ -38,7 +38,7 @@ class ObsVec1D : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::ObsVec1D";}
 
-  ObsVec1D(const ObsTable &, const oops::Variables &);
+  ObsVec1D(ObsTableView &, const oops::Variables &);
   ObsVec1D(const ObsVec1D &, const bool copy = true);
   ~ObsVec1D() {}
 
@@ -68,7 +68,7 @@ class ObsVec1D : public util::Printable,
  private:
   void print(std::ostream &) const;
 
-  const ObsTable & obsdb_;
+  ObsTableView & obsdb_;
   std::vector<double> data_;
 };
 //-----------------------------------------------------------------------------

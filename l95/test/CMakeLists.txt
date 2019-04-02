@@ -26,6 +26,7 @@ list( APPEND l95_test_input
   testinput/forecast.yaml
   testinput/genenspert.yaml
   testinput/hofx.yaml
+  testinput/localhofx.yaml
   testinput/interfaces.yaml
   testinput/makeobs3d.yaml
   testinput/makeobs4d.yaml
@@ -70,6 +71,7 @@ list( APPEND l95_testoutput
   testoutput/forecast.test
   testoutput/genenspert.test
   testoutput/hofx.test
+  testoutput/localhofx.test
   testoutput/makeobs3d.test
   testoutput/makeobs4d.test
   testoutput/makeobs4d12h.test
@@ -247,6 +249,12 @@ ecbuild_add_test( TARGET test_l95_geometry
                   ARGS "testinput/interfaces.yaml"
                   LIBS    lorenz95 )
 
+ecbuild_add_test( TARGET test_l95_geometry_iterator
+                  BOOST
+                  SOURCES executables/TestGeometryIterator.cc
+                  ARGS "testinput/interfaces.yaml"
+                  LIBS    lorenz95 )
+
 ecbuild_add_test( TARGET test_l95_geovals
                   SOURCES executables/TestGeoVaLs.cc
                   ARGS "testinput/interfaces.yaml"
@@ -294,6 +302,12 @@ ecbuild_add_test( TARGET test_l95_linearmodel
 
 ecbuild_add_test( TARGET test_l95_observationspace
                   SOURCES executables/TestObservationSpace.cc
+                  ARGS "testinput/interfaces.yaml"
+                  LIBS    lorenz95 )
+
+ecbuild_add_test( TARGET test_l95_localobsspace
+                  BOOST
+                  SOURCES executables/TestLocalObservationSpace.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    lorenz95 )
 
@@ -345,6 +359,13 @@ ecbuild_add_test( TARGET test_l95_hofx
                   ARGS "${CMAKE_BINARY_DIR}/bin/l95_hofx.x testinput/hofx.yaml"
                        testoutput/hofx.test
                   DEPENDS l95_hofx.x )
+
+ecbuild_add_test( TARGET test_l95_localhofx
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_localhofx.x testinput/localhofx.yaml"
+                       testoutput/localhofx.test
+                  DEPENDS l95_localhofx.x )
 
 ecbuild_add_test( TARGET test_l95_3dvar
                   TYPE SCRIPT

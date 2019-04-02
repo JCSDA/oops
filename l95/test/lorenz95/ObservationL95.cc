@@ -14,7 +14,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "lorenz95/ObservationL95.h"
-#include "lorenz95/ObsTable.h"
+#include "lorenz95/ObsTableView.h"
 #include "test/TestFixture.h"
 
 namespace test {
@@ -27,10 +27,10 @@ class ObsTestFixture : TestFixture {
     const util::DateTime bgn(conf.getString("window_begin"));
     const util::DateTime end(conf.getString("window_end"));
     const eckit::LocalConfiguration otconf(conf, "Observation");
-    ot_.reset(new lorenz95::ObsTable(otconf, bgn, end));
+    ot_.reset(new lorenz95::ObsTableView(otconf, bgn, end));
   }
   ~ObsTestFixture() {}
-  boost::scoped_ptr<lorenz95::ObsTable> ot_;
+  boost::scoped_ptr<lorenz95::ObsTableView> ot_;
 };
 // -----------------------------------------------------------------------------
 CASE("test_ObsL95") {

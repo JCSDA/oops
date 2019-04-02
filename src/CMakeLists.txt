@@ -79,6 +79,7 @@ oops/base/DolphChebyshev.h
 oops/base/DolphChebyshev.cc
 oops/base/EnsembleCovariance.h
 oops/base/GeneralizedDepartures.h
+oops/base/GeoDistance.h
 oops/base/GeoLocation.h
 oops/base/GeoVaLsWriter.h
 oops/base/HybridCovariance.h
@@ -227,9 +228,11 @@ oops/runs/EnsForecasts.h
 oops/runs/EnsHofX.h
 oops/runs/EstimateParams.h
 oops/runs/ExternalDFI.h
+oops/runs/FindLocalObs.h
 oops/runs/Forecast.h
 oops/runs/GenEnsPertB.h
 oops/runs/HofX.h
+oops/runs/LocalHofX.h
 oops/runs/HofX3D.h
 oops/runs/MakeObs.h
 oops/runs/EnsVariance.h

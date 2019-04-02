@@ -16,6 +16,7 @@
 #include "lorenz95/ErrorCovarianceL95.h"
 #include "lorenz95/GomL95.h"
 #include "lorenz95/IncrementL95.h"
+#include "lorenz95/Iterator.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ModelBias.h"
 #include "lorenz95/ModelBiasCorrection.h"
@@ -26,7 +27,7 @@
 #include "lorenz95/ObsBiasCovariance.h"
 #include "lorenz95/ObservationL95.h"
 #include "lorenz95/ObservationTLAD.h"
-#include "lorenz95/ObsTable.h"
+#include "lorenz95/ObsTableView.h"
 #include "lorenz95/ObsVec1D.h"
 #include "lorenz95/Resolution.h"
 #include "lorenz95/StateL95.h"
@@ -39,6 +40,7 @@ struct L95Traits {
   static std::string nameCovar4D() {return "L95Error";}
 
   typedef lorenz95::Resolution             Geometry;
+  typedef lorenz95::Iterator               GeometryIterator;
 
   typedef lorenz95::StateL95               State;
   typedef lorenz95::IncrementL95           Increment;
@@ -49,7 +51,7 @@ struct L95Traits {
   typedef lorenz95::ModelBiasCorrection    ModelAuxIncrement;
   typedef lorenz95::ModelBiasCovariance    ModelAuxCovariance;
 
-  typedef lorenz95::ObsTable               ObsSpace;
+  typedef lorenz95::ObsTableView           ObsSpace;
   typedef lorenz95::ObsVec1D               ObsVector;
 
   typedef lorenz95::ObservationL95         ObsOperator;

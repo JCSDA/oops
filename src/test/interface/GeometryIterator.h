@@ -33,32 +33,13 @@
 namespace test {
 
 // -----------------------------------------------------------------------------
-template <typename MODEL> class GeometryIteratorFixture : private boost::noncopyable {
- public:
-  static const eckit::Configuration & getConfig() {return *getInstance().conf_;}
-
- private:
-  static GeometryIteratorFixture<MODEL>& getInstance() {
-    static GeometryIteratorFixture<MODEL> theGeometryIteratorFixture;
-    return theGeometryIteratorFixture;
-  }
-
-  GeometryIteratorFixture() {
-    conf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "GeometryIterator"));
-  }
-
-  ~GeometryIteratorFixture() {}
-
-  boost::scoped_ptr<const eckit::LocalConfiguration> conf_;
-};
-// -----------------------------------------------------------------------------
 
 template <typename MODEL> void testConstructor() {
-  typedef oops::GeometryIterator<MODEL>        GeometryIterator_;
-  typedef oops::Geometry<MODEL>        Geometry_;
+  typedef oops::GeometryIterator<MODEL>   GeometryIterator_;
+  typedef oops::Geometry<MODEL>           Geometry_;
 
   const eckit::LocalConfiguration
-       geomConfig(GeometryIteratorFixture<MODEL>::getConfig(), "Geometry");
+       geomConfig(TestEnvironment::config(), "Geometry");
   Geometry_ geom(geomConfig);
 
   boost::scoped_ptr<GeometryIterator_> iter(new GeometryIterator_(geom.begin()));
@@ -76,16 +57,19 @@ template <typename MODEL> void testIterator() {
   typedef oops::State<MODEL>             State_;
 
   const eckit::LocalConfiguration
-       geomConfig(GeometryIteratorFixture<MODEL>::getConfig(), "Geometry");
-  const eckit::LocalConfiguration stateConfig(GeometryIteratorFixture<MODEL>::getConfig(), "State");
+       geomConfig(TestEnvironment::config(), "Geometry");
+  const eckit::LocalConfiguration
+       stateConfig(TestEnvironment::config(), "State");
 
   const oops::Variables vars(stateConfig);
 
   Geometry_ geom(geomConfig);
   State_ state(geom, vars, stateConfig);
 
-  const double rms_conf = stateConfig.getDouble("rms");
-  const double tol = stateConfig.getDouble("tolerance");
+  const eckit::LocalConfiguration
+        iterConfig(TestEnvironment::config(), "GeometryIterator");
+  const double rms_conf = iterConfig.getDouble("rms");
+  const double tol = iterConfig.getDouble("tolerance");
 
   double rms = 0;
   int n = 0;

@@ -12,7 +12,7 @@
 #include "eckit/config/Configuration.h"
 
 #include "lorenz95/L95Traits.h"
-#include "lorenz95/ObsTable.h"
+#include "lorenz95/ObsTableView.h"
 #include "lorenz95/ObsVec1D.h"
 #include "oops/interface/ObsFilter.h"
 
@@ -23,7 +23,8 @@ static oops::FilterMaker<L95Traits, oops::ObsFilter<L95Traits, ObsPreQC> >
   makerPreChk_("PreQC");
 // -----------------------------------------------------------------------------
 
-ObsPreQC::ObsPreQC(ObsTable & obsdb, const eckit::Configuration & config): novars_() {
+ObsPreQC::ObsPreQC(ObsTableView & obsdb, const eckit::Configuration & config)
+     : novars_() {
   const std::string qcname(config.getString("QCname"));
   const oops::Variables var(config.getStringVector("observed"));
   ObsVec1D qc(obsdb, var);
