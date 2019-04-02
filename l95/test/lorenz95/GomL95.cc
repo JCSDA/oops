@@ -18,6 +18,7 @@
 #include "lorenz95/ObservationL95.h"
 #include "lorenz95/ObsTable.h"
 #include "oops/base/Variables.h"
+#include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "test/TestFixture.h"
 

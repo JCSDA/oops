@@ -19,10 +19,9 @@
 #include "eckit/testing/Test.h"
 #include "lorenz95/ObsBias.h"
 #include "lorenz95/ObsBiasCorrection.h"
+#include "oops/runs/Test.h"
 #include "oops/util/Logger.h"
 #include "test/TestFixture.h"
-
-using eckit::types::is_approximately_equal;
 
 namespace test {
 
@@ -330,7 +329,7 @@ CASE("test_obsBiasCorrection") {
         oops::Log::error() << "operator<< incorrectly output a non-double" << std::endl;
       }
 
-      EXPECT(is_approximately_equal(fix.bias1_, bias, 0.0001));
+      EXPECT(oops::is_close(fix.bias1_, bias, 0.000001));
     } else {
       // if we can't open the file then we can't
       // verify that the value was correctly written

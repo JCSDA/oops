@@ -17,10 +17,9 @@
 #include "eckit/testing/Test.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ObsTable.h"
+#include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "test/TestFixture.h"
-
-using eckit::types::is_approximately_equal;
 
 namespace test {
 
@@ -60,7 +59,8 @@ CASE("test_LocsL95") {
     boost::scoped_ptr<lorenz95::LocsL95> locs(fix.ot_->locations(*fix.t1_, *fix.t2_));
     double pos = 0.0;
     for (size_t jj = 0; jj < locs->size(); ++jj) {
-      EXPECT(is_approximately_equal((*locs)[jj], pos, 0.000001));
+      EXPECT(oops::is_close((*locs)[jj], pos, 0.00000001));
+
       pos += 0.05;
       if (pos >= 1.0) pos=0.0;
     }

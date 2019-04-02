@@ -13,15 +13,13 @@
 #include <string>
 #include <vector>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
-#include <boost/test/unit_test.hpp>
 
 #include "eckit/config/Configuration.h"
+#include "eckit/testing/Test.h"
 #include "oops/base/VariableChangeBase.h"
 #include "oops/generic/instantiateVariableChangeFactories.h"
 #include "oops/interface/State.h"
@@ -72,11 +70,10 @@ template <typename MODEL> class VariableChange : public oops::Test {
   std::string testid() const {return "test::VariableChange<" + MODEL::name() + ">";}
 
   void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/VariableChange");
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testVariableChangeInverse<MODEL>));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("interface/VariableChange/testVariableChangeInverse")
+      { testVariableChangeInverse<MODEL>(); });
   }
 };
 

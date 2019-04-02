@@ -24,11 +24,10 @@
 #include "lorenz95/Resolution.h"
 #include "lorenz95/StateL95.h"
 #include "oops/base/Variables.h"
+#include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "test/TestFixture.h"
-
-using eckit::types::is_approximately_equal;
 
 namespace test {
 
@@ -115,9 +114,9 @@ CASE("test_IncrementL95") {
     inStream.close();
 
     for (int i = 0; i < fix.resol_->npoints(); ++i) {
-      EXPECT(is_approximately_equal((dx.getField())[i],
+      EXPECT(oops::is_close((dx.getField())[i],
                          doubleVec[i] - (doubleVec[i] + (doubleVec[i] * fact)),
-                         1.0e-6));
+                         1.0e-8));
     }
   }
 // -----------------------------------------------------------------------------

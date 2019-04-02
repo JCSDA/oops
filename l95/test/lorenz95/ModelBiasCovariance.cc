@@ -18,6 +18,7 @@
 #include "lorenz95/ModelBiasCorrection.h"
 #include "lorenz95/ModelBiasCovariance.h"
 #include "lorenz95/Resolution.h"
+#include "oops/runs/Test.h"
 #include "test/TestFixture.h"
 
 namespace test {

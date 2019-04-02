@@ -15,6 +15,7 @@
 #include "eckit/testing/Test.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ObsTable.h"
+#include "oops/runs/Test.h"
 #include "test/TestFixture.h"
 
 namespace test {

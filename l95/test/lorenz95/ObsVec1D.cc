@@ -19,9 +19,8 @@
 #include "lorenz95/ObsTableView.h"
 #include "lorenz95/ObsVec1D.h"
 #include "oops/base/Variables.h"
+#include "oops/runs/Test.h"
 #include "test/TestFixture.h"
-
-using eckit::types::is_approximately_equal;
 
 namespace test {
 
@@ -225,7 +224,7 @@ CASE("test_ObsVec1D") {
       check += (*ov2)(ii) * (*ov2)(ii);
     }
 
-    EXPECT(is_approximately_equal(result, check, 1.0e-8));
+    EXPECT(oops::is_close(result, check, 1.0e-10));
   }
 // -----------------------------------------------------------------------------
 }  //  CASE

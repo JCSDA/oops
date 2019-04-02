@@ -29,11 +29,10 @@
 #include "lorenz95/Resolution.h"
 #include "lorenz95/StateL95.h"
 #include "oops/base/Variables.h"
+#include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "test/TestFixture.h"
-
-using eckit::types::is_approximately_equal;
 
 namespace test {
 
@@ -215,19 +214,19 @@ CASE("test_StateL95") {
       idxEnd = input.find(",");
       inputTest = input.substr(idxStart + 1, (idxEnd - 1) - idxStart);
       inputDouble = boost::lexical_cast<double>(inputTest);
-      EXPECT(is_approximately_equal(inputDouble, min, 0.0001));
+      EXPECT(oops::is_close(inputDouble, min, 0.000001));
       // test max value
       idxStart = input.find("=", idxEnd);
       idxEnd = input.find(",", idxEnd + 1);
       inputTest = input.substr(idxStart + 1, (idxEnd - 1) - idxStart);
       inputDouble = boost::lexical_cast<double>(inputTest);
-      EXPECT(is_approximately_equal(inputDouble, max, 0.0001));
+      EXPECT(oops::is_close(inputDouble, max, 0.000001));
       // test avg value
 //      idxStart = input.find("=", idxEnd + 1);
 //      idxEnd = input.find(",", idxEnd + 1);
 //      inputTest = input.substr(idxStart + 1);
 //      inputDouble = boost::lexical_cast<double>(inputTest);
-//      EXPECT(is_approximately_equal(inputDouble, avg, 0.0001));
+//      EXPECT(oops::is_close(inputDouble, avg, 0.000001));
     } else {
       // if we can't open the file then we can't
       // verify that the value was correctly written
