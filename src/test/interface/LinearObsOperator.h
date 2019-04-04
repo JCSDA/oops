@@ -79,10 +79,8 @@ template <typename MODEL> void testLinearity() {
     const GeoVaLs_ gval(gconf, hop.variables());
 
     // initialize obs bias
-    eckit::LocalConfiguration biasConf;
-    conf[jj].get("ObsBias", biasConf);
-    const ObsAuxCtrl_ ybias(biasConf);
-    const ObsAuxIncr_ ybinc(biasConf);
+    const ObsAuxCtrl_ ybias(conf[jj]);
+    const ObsAuxIncr_ ybinc(conf[jj]);
 
     // set trajectory for TL/AD to be the geovals from the file
     hoptl.setTrajectory(gval, ybias);
@@ -145,10 +143,8 @@ template <typename MODEL> void testAdjoint() {
     const GeoVaLs_ gval(gconf, hop.variables());
 
     // initialize bias correction
-    eckit::LocalConfiguration biasConf;
-    conf[jj].get("ObsBias", biasConf);
-    const ObsAuxCtrl_ ybias(biasConf);
-    ObsAuxIncr_ ybinc(biasConf);
+    const ObsAuxCtrl_ ybias(conf[jj]);
+    ObsAuxIncr_ ybinc(conf[jj]);
 
     // set TL/AD trajectory to the geovals from the file
     hoptl.setTrajectory(gval, ybias);
@@ -216,10 +212,8 @@ template <typename MODEL> void testTangentLinear() {
     GeoVaLs_ x(gconf, hop.variables());
 
     // initialize obs bias
-    eckit::LocalConfiguration biasConf;
-    conf[jj].get("ObsBias", biasConf);
-    const ObsAuxCtrl_ ybias(biasConf);
-    const ObsAuxIncr_ ybinc(biasConf);
+    const ObsAuxCtrl_ ybias(conf[jj]);
+    const ObsAuxIncr_ ybinc(conf[jj]);
 
     // set TL trajectory to the geovals from the file
     hoptl.setTrajectory(x0, ybias);

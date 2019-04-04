@@ -53,9 +53,7 @@ template <typename MODEL> void testFilters() {
     Locations_ locs(hop.locations(Test_::tbgn(), Test_::tend()));
     const GeoVaLs_ gval(gconf, hop.variables());
 
-    eckit::LocalConfiguration biasConf;
-    typeconfs[jj].get("ObsBias", biasConf);
-    const ObsAuxCtrl_ ybias(biasConf);
+    const ObsAuxCtrl_ ybias(typeconfs[jj]);
 
     ObsVector_ ovec(Test_::obspace()[jj], hop.observed());
 

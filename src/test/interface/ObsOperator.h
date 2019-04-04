@@ -70,9 +70,7 @@ template <typename MODEL> void testSimulateObs() {
     const GeoVaLs_ gval(gconf, hop.variables());
 
     // initialize bias correction
-    eckit::LocalConfiguration biasConf;
-    conf[jj].get("ObsBias", biasConf);
-    const ObsAuxCtrl_ ybias(biasConf);
+    const ObsAuxCtrl_ ybias(conf[jj]);
 
     // create obsvector to hold H(x)
     ObsVector_ ovec(Test_::obspace()[jj], hop.observed());
