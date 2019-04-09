@@ -79,7 +79,6 @@ oops/base/DolphChebyshev.h
 oops/base/DolphChebyshev.cc
 oops/base/EnsembleCovariance.h
 oops/base/GeneralizedDepartures.h
-oops/base/GeoDistance.h
 oops/base/GeoLocation.h
 oops/base/GeoVaLsWriter.h
 oops/base/HybridCovariance.h

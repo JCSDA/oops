@@ -45,7 +45,7 @@ class ObsSpaces : public util::Printable,
   static const std::string classname() {return "oops::ObsSpaces";}
 
   ObsSpaces(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
-  ObsSpaces(const ObsSpaces &, const GeoLocation &, const GeoDistance &, const int &);
+  ObsSpaces(const ObsSpaces &, const GeoLocation &, const double &, const int &);
   ~ObsSpaces();
 
 /// Access
@@ -97,7 +97,7 @@ ObsSpaces<MODEL>::ObsSpaces(const eckit::Configuration & conf,
 
 template <typename MODEL>
 ObsSpaces<MODEL>::ObsSpaces(const ObsSpaces<MODEL> & obss, const GeoLocation & center,
-                            const GeoDistance & dist, const int & maxn)
+                            const double & dist, const int & maxn)
   : spaces_(0), types_(obss.types_), wbgn_(obss.wbgn_), wend_(obss.wend_)
 {
   for (std::size_t jj = 0; jj < obss.size(); ++jj) {

@@ -123,7 +123,7 @@ template <typename MODEL> class FindLocalObs : public Application {
     int max_nobs = localconfig.getInt("max_nobs");
     for (GeometryIterator_ i = resol.begin(); i != resol.end(); ++i) {
        // find all local observations around current gridpoint (*i) with dist and maxnum from config
-       ObsSpaces_ localobs(obsdb, *i, GeoDistance(dist), max_nobs);
+       ObsSpaces_ localobs(obsdb, *i, dist, max_nobs);
        Log::test() << *i << localobs << std::endl;
     }
 

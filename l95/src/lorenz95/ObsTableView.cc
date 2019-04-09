@@ -33,7 +33,7 @@ ObsTableView::ObsTableView(const eckit::Configuration & config,
 
 ObsTableView::ObsTableView(ObsTableView & obstable,
                            const oops::GeoLocation & center,
-                           const oops::GeoDistance & dist, const int & maxnum)
+                           const double & dist, const int & maxnum)
   :  obstable_(obstable.obstable_)
 {
   std::vector<double> locations = obstable.locations();
@@ -41,7 +41,7 @@ ObsTableView::ObsTableView(ObsTableView & obstable,
   for (unsigned int jj = 0; jj < obstable.nobs(); ++jj) {
     double curdist = std::abs(center.lon() - locations[jj]);
     curdist = std::min(curdist, 1.-curdist);
-    if ( curdist < dist.distance() ) {
+    if ( curdist < dist ) {
       localobs_.push_back(jj);
     }
   }

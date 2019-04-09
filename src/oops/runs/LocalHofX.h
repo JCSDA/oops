@@ -116,7 +116,7 @@ template <typename MODEL> class LocalHofX : public Application {
     for (std::size_t jj = 0; jj < centerconf.size(); ++jj) {
        centers.push_back(GeoLocation(centerconf[jj]));
        boost::shared_ptr<ObsSpaces_>
-          lobs(new ObsSpaces_(obsdb, centers[jj], GeoDistance(dist), max_nobs));
+          lobs(new ObsSpaces_(obsdb, centers[jj], dist, max_nobs));
        localobs.push_back(lobs);
        Log::test() << centers[jj] << *localobs[jj] << std::endl;
        //  Setup obs operator

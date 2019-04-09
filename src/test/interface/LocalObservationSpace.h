@@ -17,7 +17,6 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
-#include "oops/base/GeoDistance.h"
 #include "oops/base/GeoLocation.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/runs/Test.h"
@@ -39,7 +38,7 @@ template <typename MODEL> void testLocal() {
     eckit::LocalConfiguration geolocconf(localconf, "GeoLocation");
     const oops::GeoLocation center(geolocconf);
     eckit::LocalConfiguration distconf(localconf, "GeoDistance");
-    const oops::GeoDistance dist(distconf);
+    const double dist = distconf.getDouble("distance");
 
     ObsVector_ fullvec(*Test_::obspace()[jj], Test_::observed(jj));
     oops::Log::info() << "Full Obsvector: " << fullvec << std::endl;

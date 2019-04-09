@@ -16,7 +16,6 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "oops/base/GeoDistance.h"
 #include "oops/base/GeoLocation.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -49,7 +48,7 @@ class ObservationSpace : public util::Printable,
   ObservationSpace(const eckit::Configuration &,
                    const util::DateTime &, const util::DateTime &);
   ObservationSpace(const ObservationSpace &, const GeoLocation &,
-                   const GeoDistance &, const int &);
+                   const double &, const int &);
   ~ObservationSpace();
 
 /// Interfacing
@@ -84,7 +83,7 @@ ObservationSpace<MODEL>::ObservationSpace(const eckit::Configuration & conf,
 
 template <typename MODEL>
 ObservationSpace<MODEL>::ObservationSpace(const ObservationSpace<MODEL> & os,
-     const GeoLocation & center, const GeoDistance & dist, const int & maxnum):
+     const GeoLocation & center, const double & dist, const int & maxnum):
          obsdb_() {
   Log::trace() << "ObservationSpace<MODEL>::ObservationSpace (local) starting" << std::endl;
   util::Timer timer(classname(), "ObservationSpace");

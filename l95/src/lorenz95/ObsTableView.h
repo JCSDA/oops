@@ -14,7 +14,6 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "oops/base/GeoDistance.h"
 #include "oops/base/GeoLocation.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
@@ -40,7 +39,7 @@ class ObsTableView : public util::Printable,
 
   ObsTableView(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
   ObsTableView(ObsTableView &, const oops::GeoLocation &,
-               const oops::GeoDistance &, const int &);
+               const double &, const int &);
   ~ObsTableView();
 
   void putdb(const std::string &, const std::vector<int> &) const;
