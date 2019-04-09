@@ -56,11 +56,6 @@ if (NOT HAVE_LAPACK)
   ecbuild_error("LAPACK_LIBRARIES not defined")
 endif()
 
-# MPI
-ecbuild_find_mpi( COMPONENTS CXX Fortran REQUIRED )
-ecbuild_include_mpi()
-link_libraries(${MPI_CXX_LIBRARIES} ${MPI_Fortran_LIBRARIES})
-
 # OpenMP
 ecbuild_add_option( FEATURE OMP
                     DESCRIPTION "Support for OpenMP threaded parallelism"
@@ -92,7 +87,7 @@ include_directories( ${FCKIT_INCLUDE_DIRS} )
 # Export package info
 ################################################################################
 
-list( APPEND OOPS_TPLS LAPACK MPI NetCDF eckit fckit )
+list( APPEND OOPS_TPLS LAPACK NetCDF eckit fckit )
 
 set( OOPS_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/src
                        ${CMAKE_Fortran_MODULE_DIRECTORY} )
