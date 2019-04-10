@@ -21,6 +21,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/geometry/Point2.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
@@ -45,7 +46,7 @@ class ObsSpaces : public util::Printable,
   static const std::string classname() {return "oops::ObsSpaces";}
 
   ObsSpaces(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
-  ObsSpaces(const ObsSpaces &, const GeoLocation &, const double &, const int &);
+  ObsSpaces(const ObsSpaces &, const eckit::geometry::Point2 &, const double &, const int &);
   ~ObsSpaces();
 
 /// Access
@@ -96,7 +97,7 @@ ObsSpaces<MODEL>::ObsSpaces(const eckit::Configuration & conf,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-ObsSpaces<MODEL>::ObsSpaces(const ObsSpaces<MODEL> & obss, const GeoLocation & center,
+ObsSpaces<MODEL>::ObsSpaces(const ObsSpaces<MODEL> & obss, const eckit::geometry::Point2 & center,
                             const double & dist, const int & maxn)
   : spaces_(0), types_(obss.types_), wbgn_(obss.wbgn_), wend_(obss.wend_)
 {

@@ -16,8 +16,8 @@
 #include <boost/noncopyable.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/geometry/Point2.h"
 #include "eckit/testing/Test.h"
-#include "oops/base/GeoLocation.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/runs/Test.h"
 #include "test/interface/ObsVector.h"
@@ -36,7 +36,10 @@ template <typename MODEL> void testLocal() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     eckit::LocalConfiguration geolocconf(localconf, "GeoLocation");
-    const oops::GeoLocation center(geolocconf);
+    double lon = geolocconf.getDouble("lon");
+    double lat = geolocconf.getDouble("lat");
+
+    const eckit::geometry::Point2 center(lon, lat);
     eckit::LocalConfiguration distconf(localconf, "GeoDistance");
     const double dist = distconf.getDouble("distance");
 

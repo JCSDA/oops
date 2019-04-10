@@ -30,8 +30,8 @@ bool Iterator::operator!=(const Iterator & other) const {
 }
 
 // -----------------------------------------------------------------------------
-oops::GeoLocation Iterator::operator*() const {
-  return oops::GeoLocation(index_/static_cast<double>(res_), 0.0);
+eckit::geometry::Point2 Iterator::operator*() const {
+  return eckit::geometry::Point2(index_/static_cast<double>(res_), 0.0);
 }
 
 // -----------------------------------------------------------------------------

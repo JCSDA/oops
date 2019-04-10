@@ -54,10 +54,10 @@ bool GeometryQGIterator::operator!=(const GeometryQGIterator & other) const {
 
 // -----------------------------------------------------------------------------
 
-oops::GeoLocation GeometryQGIterator::operator*() const {
+eckit::geometry::Point2 GeometryQGIterator::operator*() const {
   double lat, lon;
   qg_geo_iter_current_f90(keyIter_, lat, lon);
-  return oops::GeoLocation(lat, lon);
+  return eckit::geometry::Point2(lat, lon);
 }
 
 // -----------------------------------------------------------------------------

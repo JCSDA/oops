@@ -16,7 +16,7 @@
 
 #include <boost/scoped_ptr.hpp>
 
-#include "oops/base/GeoLocation.h"
+#include "eckit/geometry/Point2.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -26,7 +26,8 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-class GeometryIterator: public std::iterator<std::forward_iterator_tag, GeoLocation>,
+class GeometryIterator: public std::iterator<std::forward_iterator_tag,
+                                             eckit::geometry::Point2>,
                         public util::Printable,
                         private util::ObjectCounter<GeometryIterator<MODEL>> {
   typedef typename MODEL::GeometryIterator GeometryIterator_;
@@ -40,7 +41,7 @@ class GeometryIterator: public std::iterator<std::forward_iterator_tag, GeoLocat
 
   bool operator==(const GeometryIterator&);
   bool operator!=(const GeometryIterator&);
-  GeoLocation operator*();
+  eckit::geometry::Point2 operator*();
   GeometryIterator operator++();
 
 /// Interfacing
@@ -108,12 +109,12 @@ bool GeometryIterator<MODEL>::operator!=(const GeometryIterator& other) {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-GeoLocation GeometryIterator<MODEL>::operator*() {
+eckit::geometry::Point2 GeometryIterator<MODEL>::operator*() {
   Log::trace() << "GeometryIterator<MODEL>::operator* starting" << std::endl;
   util::Timer timer(classname(), "operator*");
-  GeoLocation geoloc = *(*geometryiter_);
+  eckit::geometry::Point2 loc = *(*geometryiter_);
   Log::trace() << "GeometryIterator<MODEL>::operator* done" << std::endl;
-  return geoloc;
+  return loc;
 }
 
 // -----------------------------------------------------------------------------

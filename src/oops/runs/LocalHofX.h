@@ -109,16 +109,19 @@ template <typename MODEL> class LocalHofX : public Application {
 //  Get points for finding local obs
     std::vector<eckit::LocalConfiguration> centerconf;
     fullConfig.get("GeoLocations", centerconf);
-    std::vector<GeoLocation> centers;
+    std::vector<eckit::geometry::Point2> centers;
     std::vector<boost::shared_ptr<ObsSpaces_>> localobs;
     std::vector<boost::shared_ptr<ObsOperators_>> localhop;
     std::vector<boost::shared_ptr<Observer<MODEL, State_> >> pobs;
     for (std::size_t jj = 0; jj < centerconf.size(); ++jj) {
-       centers.push_back(GeoLocation(centerconf[jj]));
+       double lon = centerconf[jj].getDouble("lon");
+       double lat = centerconf[jj].getDouble("lat");
+       centers.push_back(eckit::geometry::Point2(lon, lat));
        boost::shared_ptr<ObsSpaces_>
           lobs(new ObsSpaces_(obsdb, centers[jj], dist, max_nobs));
        localobs.push_back(lobs);
-       Log::test() << centers[jj] << *localobs[jj] << std::endl;
+       Log::test() << "Local obs around: " << centers[jj] << std::endl;
+       Log::test() << *localobs[jj] << std::endl;
        //  Setup obs operator
        boost::shared_ptr<ObsOperators_> lhop(new ObsOperators_(*localobs[jj], obsconf));
        localhop.push_back(lhop);

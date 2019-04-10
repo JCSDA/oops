@@ -14,16 +14,13 @@
 #include <iterator>
 #include <string>
 
+#include "eckit/geometry/Point2.h"
+
 #include "model/GeometryQG.h"
 #include "model/QgFortran.h"
 
-#include "oops/base/GeoLocation.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
-
-namespace oops {
-  class GeoLocation;
-}
 
 namespace qg {
 
@@ -31,7 +28,7 @@ class GeometryQG;
 
 // -----------------------------------------------------------------------------
 class GeometryQGIterator: public std::iterator<std::forward_iterator_tag,
-                                               oops::GeoLocation>,
+                                               eckit::geometry::Point2>,
                           public util::Printable,
                           private util::ObjectCounter<GeometryQGIterator> {
  public:
@@ -43,7 +40,7 @@ class GeometryQGIterator: public std::iterator<std::forward_iterator_tag,
 
   bool operator==(const GeometryQGIterator &) const;
   bool operator!=(const GeometryQGIterator &) const;
-  oops::GeoLocation operator*() const;
+  eckit::geometry::Point2 operator*() const;
   GeometryQGIterator& operator++();
 
   F90iter & toFortran() {return keyIter_;}
