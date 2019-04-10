@@ -83,8 +83,9 @@ template <typename MODEL> class Variational : public Application {
     Log::trace() << "Variational: first guess has been set up" << std::endl;
 
 //  Perform Incremental Variational Assimilation
-    IncrementalAssimilation<MODEL>(xx, *J, fullConfig);
-    Log::trace() << "Variational: incremantal assimilation done" << std::endl;
+    int iouter = IncrementalAssimilation<MODEL>(xx, *J, fullConfig);
+    Log::info() << "Variational: incremantal assimilation done "
+                << iouter << " iterations." << std::endl;
 
 //  Save analysis and final diagnostics
     PostProcessor<State_> post;
@@ -92,7 +93,8 @@ template <typename MODEL> class Variational : public Application {
     const eckit::LocalConfiguration outConfig(fullConfig, "output");
     post.enrollProcessor(new StateWriter<State_>(winbgn, outConfig));
 
-    const eckit::LocalConfiguration finalConfig(fullConfig, "final");
+    eckit::LocalConfiguration finalConfig(fullConfig, "final");
+    finalConfig.set("iteration", iouter);
     if (finalConfig.has("prints")) {
       const eckit::LocalConfiguration prtConfig(finalConfig, "prints");
       post.enrollProcessor(new StateInfo<State_>("final", prtConfig));

@@ -46,12 +46,12 @@ template<typename MODEL> class CostTermBase {
   virtual ~CostTermBase() {}
 
 /// Initialize before nonlinear model integration.
-  virtual PostPtr_ initialize(const ControlVariable<MODEL> &) const = 0;
+  virtual PostPtr_ initialize(const ControlVariable<MODEL> &, const eckit::Configuration &) = 0;
   virtual PostPtrTLAD_ initializeTraj(const ControlVariable<MODEL> &,
                                       const Geometry_ &, const eckit::Configuration &) = 0;
 
 /// Finalize computation after nonlinear model integration.
-  virtual double finalize(const eckit::Configuration &) = 0;
+  virtual double finalize() = 0;
   virtual void finalizeTraj() = 0;
 
 /// Initialize before starting the TL run.

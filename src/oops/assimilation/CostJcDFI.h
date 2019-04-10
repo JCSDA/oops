@@ -59,13 +59,13 @@ template<typename MODEL> class CostJcDFI : public CostTermBase<MODEL> {
   virtual ~CostJcDFI() {}
 
 /// Initialize before nonlinear model integration.
-  boost::shared_ptr<PostBase<State_> > initialize(const CtrlVar_ &) const override;
-  boost::shared_ptr<PostBaseTLAD<MODEL> > initializeTraj(const CtrlVar_ &,
-                                                         const Geometry_ &,
+  boost::shared_ptr<PostBase<State_> > initialize(const CtrlVar_ &,
+                                                  const eckit::Configuration &) override;
+  boost::shared_ptr<PostBaseTLAD<MODEL> > initializeTraj(const CtrlVar_ &, const Geometry_ &,
                                                          const eckit::Configuration &) override;
 
 /// Finalize computation after nonlinear model integration.
-  double finalize(const eckit::Configuration &) override;
+  double finalize() override;
   void finalizeTraj() override;
 
 /// Initialize \f$ J_c\f$ before starting the TL run.
@@ -125,7 +125,7 @@ CostJcDFI<MODEL>::CostJcDFI(const eckit::Configuration & conf, const Geometry_ &
 
 template<typename MODEL>
 boost::shared_ptr<PostBase<State<MODEL> > >
-CostJcDFI<MODEL>::initialize(const CtrlVar_ &) const {
+CostJcDFI<MODEL>::initialize(const CtrlVar_ &, const eckit::Configuration &) {
   filter_.reset(new WeightedDiff<MODEL, Increment_, State_>(conf_, vt_, span_,
                                                             tstep_, resol_, *wfct_));
   return filter_;
@@ -134,7 +134,7 @@ CostJcDFI<MODEL>::initialize(const CtrlVar_ &) const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-double CostJcDFI<MODEL>::finalize(const eckit::Configuration &) {
+double CostJcDFI<MODEL>::finalize() {
   double zz = 0.5 * alpha_;
   boost::scoped_ptr<Increment_> dx(filter_->releaseDiff());
   zz *= dot_product(*dx, *dx);

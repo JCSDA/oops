@@ -27,8 +27,8 @@
 namespace oops {
 
 template<typename MODEL>
-void IncrementalAssimilation(ControlVariable<MODEL> & xx, CostFunction<MODEL> & J,
-                             const eckit::Configuration & config) {
+int IncrementalAssimilation(ControlVariable<MODEL> & xx, CostFunction<MODEL> & J,
+                            const eckit::Configuration & config) {
   typedef ControlIncrement<MODEL>    CtrlInc_;
   typedef Minimizer<MODEL>           Minimizer_;
   typedef State<MODEL>               State_;
@@ -46,9 +46,10 @@ void IncrementalAssimilation(ControlVariable<MODEL> & xx, CostFunction<MODEL> & 
   boost::scoped_ptr<Minimizer_> minim(MinFactory<MODEL>::create(minConf, J));
 
   for (unsigned jouter = 0; jouter < nouter; ++jouter) {
+    iterconfs[jouter].set("iteration", static_cast<int>(jouter));
 //  Get configuration for current outer iteration
     Log::info() << "IncrementalAssimilation: Configuration for outer iteration "
-              << jouter << ":\n" << iterconfs[jouter];
+                << jouter << ":\n" << iterconfs[jouter];
 
 //  Setup for the trajectory run
     PostProcessor<State_> post;
@@ -69,6 +70,7 @@ void IncrementalAssimilation(ControlVariable<MODEL> & xx, CostFunction<MODEL> & 
 //  Clean-up trajectory, etc...
     J.resetLinearization();
   }
+  return nouter;
 }
 
 }  // namespace oops

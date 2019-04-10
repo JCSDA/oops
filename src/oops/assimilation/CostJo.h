@@ -79,12 +79,13 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   virtual ~CostJo() {}
 
   /// Initialize \f$ J_o\f$ before starting the integration of the model.
-  boost::shared_ptr<PostBase<State_> > initialize(const CtrlVar_ &) const override;
+  boost::shared_ptr<PostBase<State_> > initialize(const CtrlVar_ &,
+                                                  const eckit::Configuration &) override;
   boost::shared_ptr<PostBaseTLAD_> initializeTraj(const CtrlVar_ &,
                                                   const Geometry_ &,
                                                   const eckit::Configuration &) override;
   /// Finalize \f$ J_o\f$ after the integration of the model.
-  double finalize(const eckit::Configuration &) override;
+  double finalize() override;
   void finalizeTraj() override;
 
   /// Initialize \f$ J_o\f$ before starting the TL run.
@@ -117,6 +118,9 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   Observations_ yobs_;
   ObsErrors_ Rmat_;
 
+  /// Configuration for current initialize/finalize pair
+  boost::scoped_ptr<eckit::LocalConfiguration> currentConf_;
+
   /// Gradient at first guess : \f$ R^{-1} (H(x_{fg})-y_{obs}) \f$.
   boost::scoped_ptr<Departures_> gradFG_;
 
@@ -139,7 +143,7 @@ CostJo<MODEL>::CostJo(const eckit::Configuration & joConf,
                       const util::Duration & tslot, const bool subwindows)
   : obsconf_(joConf), obspace_(obsconf_, winbgn, winend),
     hop_(obspace_, joConf), yobs_(obspace_, hop_), Rmat_(obsconf_, obspace_, hop_),
-    gradFG_(), pobs_(), tslot_(tslot),
+    currentConf_(), gradFG_(), pobs_(), tslot_(tslot),
     pobstlad_(), subwindows_(subwindows)
 {
   Log::trace() << "CostJo::CostJo start" << std::endl;
@@ -159,8 +163,9 @@ CostJo<MODEL>::CostJo(const eckit::Configuration & joConf,
 
 template<typename MODEL>
 boost::shared_ptr<PostBase<State<MODEL> > >
-CostJo<MODEL>::initialize(const CtrlVar_ & xx) const {
+CostJo<MODEL>::initialize(const CtrlVar_ & xx, const eckit::Configuration & conf) {
   Log::trace() << "CostJo::initialize start" << std::endl;
+  currentConf_.reset(new eckit::LocalConfiguration(conf));
   std::vector<ObsFilters_> filters_;  // should be controlled by outer loop
   std::vector<eckit::LocalConfiguration> typeconfs;
   obsconf_.get("ObsTypes", typeconfs);
@@ -177,11 +182,13 @@ CostJo<MODEL>::initialize(const CtrlVar_ & xx) const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-double CostJo<MODEL>::finalize(const eckit::Configuration & conf) {
+double CostJo<MODEL>::finalize() {
   Log::trace() << "CostJo::finalize start" << std::endl;
   boost::scoped_ptr<Observations_> yeqv(pobs_->release());
   Log::info() << "Jo Observation Equivalent:" << std::endl << *yeqv
               << "End Jo Observation Equivalent";
+  const std::string obsname = "hofx" + currentConf_->getString("iteration");
+  yeqv->save(obsname);
 
   Rmat_.update();
 
@@ -193,12 +200,13 @@ double CostJo<MODEL>::finalize(const eckit::Configuration & conf) {
 
   double zjo = this->printJo(ydep, grad);
 
-  if (conf.has("departures")) {
-    const std::string depname = conf.getString("departures");
+  if (currentConf_->has("diagnostics.departures")) {
+    const std::string depname = currentConf_->getString("diagnostics.departures");
     ydep.save(depname);
   }
 
   pobs_.reset();
+  currentConf_.reset();
   Log::trace() << "CostJo::finalize done" << std::endl;
   return zjo;
 }

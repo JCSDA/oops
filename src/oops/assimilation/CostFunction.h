@@ -246,7 +246,7 @@ double CostFunction<MODEL>::evaluate(const CtrlVar_ & fguess,
   JqTerm_ * jq = jb_->initialize(fguess);
   pp.enrollProcessor(jq);
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
-    pp.enrollProcessor(jterms_[jj].initialize(fguess));
+    pp.enrollProcessor(jterms_[jj].initialize(fguess, config));
   }
 
 // Run NL model
@@ -254,16 +254,12 @@ double CostFunction<MODEL>::evaluate(const CtrlVar_ & fguess,
   this->runNL(mfguess, pp);
 
 // Cost function value
-  eckit::LocalConfiguration diagnostic;
-  if (config.has("diagnostics")) {
-    diagnostic = eckit::LocalConfiguration(config, "diagnostics");
-  }
   double zzz = 0.0;
   costJb_ = jb_->finalize(jq);
   zzz += costJb_;
   costJoJc_ = 0.0;
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
-    costJoJc_ += jterms_[jj].finalize(diagnostic);
+    costJoJc_ += jterms_[jj].finalize();
   }
   zzz += costJoJc_;
   Log::test() << "CostFunction: Nonlinear J = " << zzz << std::endl;
