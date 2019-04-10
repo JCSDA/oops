@@ -74,6 +74,7 @@ include_directories( ${NETCDF_INCLUDE_DIR} )
 # eckit
 ecbuild_use_package( PROJECT eckit VERSION 0.18.0 REQUIRED )
 include_directories( ${ECKIT_INCLUDE_DIRS} )
+link_libraries( ${ECKIT_LIBRARIES} )
 
 if ( NOT ECKIT_HAVE_MPI )
   ecbuild_error("OOPS requested to build with MPI but eckit wasn't built with MPI: ECKIT_HAVE_MPI = ${ECKIT_HAVE_MPI}")
