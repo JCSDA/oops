@@ -22,8 +22,6 @@ use fckit_mpi_module, only: fckit_mpi_sum,fckit_mpi_min,fckit_mpi_max,fckit_mpi_
 
 implicit none
 
-logical,parameter :: test_no_obs = .false. ! Test observation operator with no observation on the last MPI task
-
 ! Observation operator data derived type
 type obsop_type
    ! Observations
@@ -50,7 +48,6 @@ contains
    procedure :: dealloc => obsop_dealloc
    procedure :: read => obsop_read
    procedure :: write => obsop_write
-   procedure :: generate => obsop_generate
    procedure :: from => obsop_from
    procedure :: run_obsop => obsop_run_obsop
    procedure :: run_obsop_tests => obsop_run_obsop_tests
@@ -120,8 +117,8 @@ character(len=1024) :: filename
 character(len=1024),parameter :: subr = 'obsop_read'
 
 ! Create file
-write(filename,'(a,a,i4.4,a,i4.4,a)') trim(nam%prefix),'_obs_',mpl%nproc,'-',mpl%myproc,'.nc'
-call mpl%ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_nowrite,ncid))
+write(filename,'(a,a,i4.4,a,i4.4)') trim(nam%prefix),'_obs_',mpl%nproc,'-',mpl%myproc
+call mpl%ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename)//'.nc',nf90_nowrite,ncid))
 
 ! Get attributes
 call mpl%ncerr(subr,nf90_get_att(ncid,nf90_global,'nc0b',obsop%nc0b))
@@ -158,8 +155,8 @@ character(len=1024) :: filename
 character(len=1024),parameter :: subr = 'obsop_write'
 
 ! Create file
-write(filename,'(a,a,i4.4,a,i4.4,a)') trim(nam%prefix),'_obs_',mpl%nproc,'-',mpl%myproc,'.nc'
-call mpl%ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_clobber,nf90_64bit_offset),ncid))
+write(filename,'(a,a,i4.4,a,i4.4)') trim(nam%prefix),'_obs_',mpl%nproc,'-',mpl%myproc
+call mpl%ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename)//'.nc',or(nf90_clobber,nf90_64bit_offset),ncid))
 
 ! Write namelist parameters
 call nam%write(mpl,ncid)
@@ -181,113 +178,6 @@ call obsop%com%write(mpl,ncid)
 call mpl%ncerr(subr,nf90_close(ncid))
 
 end subroutine obsop_write
-
-!----------------------------------------------------------------------
-! Subroutine: obsop_generate
-! Purpose: generate observations locations
-!----------------------------------------------------------------------
-subroutine obsop_generate(obsop,mpl,rng,nam,geom)
-
-implicit none
-
-! Passed variables
-class(obsop_type),intent(inout) :: obsop ! Observation operator data
-type(mpl_type),intent(inout) :: mpl      ! MPI data
-type(rng_type),intent(inout) :: rng      ! Random number generator
-type(nam_type),intent(in) :: nam         ! Namelist
-type(geom_type),intent(in) :: geom       ! Geometry
-
-! Local variables
-integer :: iobs,jobs,iproc,iobsa,nproc_max
-integer,allocatable :: order(:),obs_to_proc(:)
-real(kind_real),allocatable :: lonobs(:),latobs(:),list(:)
-logical :: valid
-character(len=1024),parameter :: subr = 'obsop_generate'
-
-! Check observation number
-if (nam%nobs<1) call mpl%abort(subr,'nobs should be positive for offline observation operator')
-
-! Allocation
-allocate(lonobs(nam%nobs))
-allocate(latobs(nam%nobs))
-allocate(obs_to_proc(nam%nobs))
-
-if (mpl%main) then
-   ! Generate random observation network
-   iobs=1
-   do while (iobs<=nam%nobs)
-      ! Generate observation
-      call rng%rand_real(-pi,pi,lonobs(iobs))
-      call rng%rand_real(-1.0_kind_real,1.0_kind_real,latobs(iobs))
-
-      ! Check if it is inside the domain
-      call geom%mesh%inside(mpl,lonobs(iobs),latobs(iobs),valid)
-      if (valid) iobs=iobs+1
-   end do
-end if
-
-! Broadcast data
-call mpl%f_comm%broadcast(lonobs,mpl%ioproc-1)
-call mpl%f_comm%broadcast(latobs,mpl%ioproc-1)
-
-! Split observations between processors
-if (test_no_obs.and.(mpl%nproc==1)) call mpl%abort(subr,'at least 2 MPI tasks required for test_no_obs')
-if (mpl%main) then
-   ! Allocation
-   allocate(list(nam%nobs))
-   allocate(order(nam%nobs))
-
-   ! Generate random order
-   call rng%rand_real(0.0_kind_real,1.0_kind_real,list)
-   call qsort(nam%nobs,list,order)
-
-   ! Split observations
-   iproc = 1
-   if (test_no_obs) then
-      nproc_max = mpl%nproc-1
-   else
-      nproc_max = mpl%nproc
-   end  if
-   do iobs=1,nam%nobs
-      jobs = order(iobs)
-      obs_to_proc(jobs) = iproc
-      iproc = iproc+1
-      if (iproc>nproc_max) iproc = 1
-   end do
-
-   ! Release memory
-   deallocate(list)
-   deallocate(order)
-end if
-
-! Broadcast
-call mpl%f_comm%broadcast(obs_to_proc,mpl%ioproc-1)
-obsop%nobsa = count(obs_to_proc==mpl%myproc)
-
-! Release memory
-call obsop%dealloc
-
-! Allocation
-allocate(obsop%lonobs(obsop%nobsa))
-allocate(obsop%latobs(obsop%nobsa))
-
-! Copy local observations
-iobsa = 0
-do iobs=1,nam%nobs
-   iproc = obs_to_proc(iobs)
-   if (mpl%myproc==iproc) then
-      iobsa = iobsa+1
-      obsop%lonobs(iobsa) = lonobs(iobs)
-      obsop%latobs(iobsa) = latobs(iobs)
-   end if
-end do
-
-! Release memory
-deallocate(lonobs)
-deallocate(latobs)
-deallocate(obs_to_proc)
-
-end subroutine obsop_generate
 
 !----------------------------------------------------------------------
 ! Subroutine: obsop_from
@@ -424,7 +314,7 @@ allocate(obs_to_obsa(obsop%nobs))
 hfull%prefix = 'o'
 write(mpl%info,'(a7,a)') '','Single level:'
 call mpl%flush
-call hfull%interp(mpl,geom%mesh,geom%kdtree,geom%nc0,geom%mask_hor_c0,obsop%nobs,lonobs,latobs,maskobs,nam%obsop_interp)
+call hfull%interp(mpl,geom%mesh,geom%tree,geom%nc0,geom%mask_hor_c0,obsop%nobs,lonobs,latobs,maskobs,nam%obsop_interp)
 
 ! Count interpolation points
 nop = 0
@@ -698,7 +588,7 @@ call mpl%flush
 ! Write observation operator
 if (nam%write_obsop) call obsop%write(mpl,nam)
 
-if (mpl%main) then
+if (mpl%main.and.nam%write_obsop) then
    ! Write scores
    if (mpl%nproc>1) then
       call mpl%newunit(lunit)

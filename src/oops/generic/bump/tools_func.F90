@@ -7,8 +7,9 @@
 !----------------------------------------------------------------------
 module tools_func
 
+use fckit_geometry_module, only: sphere_distance,sphere_lonlat2xyz,sphere_xyz2lonlat
 use tools_asa007, only: asa007_cholesky,asa007_syminv
-use tools_const, only: pi
+use tools_const, only: pi,deg2rad,rad2deg
 use tools_kinds, only: kind_real
 use tools_repro, only: inf,sup
 use type_mpl, only: mpl_type
@@ -19,11 +20,11 @@ real(kind_real),parameter :: gc2gau = 0.28            ! GC99 support radius to G
 real(kind_real),parameter :: gau2gc = 3.57            ! Gaussian Daley length-scale to GC99 support radius (empirical)
 real(kind_real),parameter :: Dmin = 1.0e-12_kind_real ! Minimum tensor diagonal value
 real(kind_real),parameter :: condmax = 1.0e2          ! Maximum tensor conditioning number
-integer,parameter :: M = 0                            ! Number of implicit itteration for the Matern function (Gaussian function if M = 0)
+integer,parameter :: M = 0                            ! Number of implicit iteration for the Matern function (Gaussian function if M = 0)
 
 private
 public :: gc2gau,gau2gc,Dmin,M
-public :: lonlatmod,sphere_dist,reduce_arc,vector_product,vector_triple_product,add,divide, &
+public :: lonlatmod,sphere_dist,reduce_arc,lonlat2xyz,xyz2lonlat,vector_product,vector_triple_product,add,divide, &
         & fit_diag,fit_diag_dble,gc99,fit_lct,lct_d2h,lct_h2r,lct_r2d,check_cond,cholesky,syminv
 
 contains
@@ -37,8 +38,8 @@ subroutine lonlatmod(lon,lat)
 implicit none
 
 ! Passed variables
-real(kind_real),intent(inout) :: lon ! Longitude
-real(kind_real),intent(inout) :: lat ! Latitude
+real(kind_real),intent(inout) :: lon ! Longitude (radians)
+real(kind_real),intent(inout) :: lat ! Latitude (radians)
 
 ! Check latitude bounds
 if (lat>0.5*pi) then
@@ -67,16 +68,14 @@ subroutine sphere_dist(lon_i,lat_i,lon_f,lat_f,dist)
 implicit none
 
 ! Passed variable
-real(kind_real),intent(in) :: lon_i ! Initial point longitude (radian)
-real(kind_real),intent(in) :: lat_i ! Initial point latitude (radian)
-real(kind_real),intent(in) :: lon_f ! Final point longitude (radian)
-real(kind_real),intent(in) :: lat_f ! Final point longilatitudetude (radian)
+real(kind_real),intent(in) :: lon_i ! Initial point longitude (radians)
+real(kind_real),intent(in) :: lat_i ! Initial point latitude (radians)
+real(kind_real),intent(in) :: lon_f ! Final point longitude (radians)
+real(kind_real),intent(in) :: lat_f ! Final point longilatitudetude (radians)
 real(kind_real),intent(out) :: dist ! Great-circle distance
 
-! Great-circle distance using Vincenty formula on the unit sphere
-dist = atan2(sqrt((cos(lat_f)*sin(lon_f-lon_i))**2 &
-     & +(cos(lat_i)*sin(lat_f)-sin(lat_i)*cos(lat_f)*cos(lon_f-lon_i))**2), &
-     & sin(lat_i)*sin(lat_f)+cos(lat_i)*cos(lat_f)*cos(lon_f-lon_i))
+! Call fckit
+dist = sphere_distance(lon_i*rad2deg,lat_i*rad2deg,lon_f*rad2deg,lat_f*rad2deg)
 
 end subroutine sphere_dist
 
@@ -89,10 +88,10 @@ subroutine reduce_arc(lon_i,lat_i,lon_f,lat_f,maxdist,dist)
 implicit none
 
 ! Passed variables
-real(kind_real),intent(in) :: lon_i    ! Initial point longitude
-real(kind_real),intent(in) :: lat_i    ! Initial point latitude
-real(kind_real),intent(inout) :: lon_f ! Final point longitude
-real(kind_real),intent(inout) :: lat_f ! Final point latitude
+real(kind_real),intent(in) :: lon_i    ! Initial point longitude (radians)
+real(kind_real),intent(in) :: lat_i    ! Initial point latitude (radians)
+real(kind_real),intent(inout) :: lon_f ! Final point longitude (radians)
+real(kind_real),intent(inout) :: lat_f ! Final point latitude (radians)
 real(kind_real),intent(in) :: maxdist  ! Maximum distance
 real(kind_real),intent(out) :: dist    ! Effective distance
 
@@ -116,6 +115,63 @@ if (sup(dist,maxdist)) then
 end if
 
 end subroutine reduce_arc
+
+!----------------------------------------------------------------------
+! Subroutine: lonlat2xyz
+! Purpose: convert longitude/latitude to cartesian coordinates
+!----------------------------------------------------------------------
+subroutine lonlat2xyz(mpl,lon,lat,x,y,z)
+
+implicit none
+
+! Passed variables
+type(mpl_type),intent(in) :: mpl  ! MPI data
+real(kind_real),intent(in) :: lon ! Longitude (radians)
+real(kind_real),intent(in) :: lat ! Latitude (radians)
+real(kind_real),intent(out) :: x  ! X coordinate
+real(kind_real),intent(out) :: y  ! Y coordinate
+real(kind_real),intent(out) :: z  ! Z coordinate
+
+if (mpl%msv%isnotr(lat).and.mpl%msv%isnotr(lon)) then
+   ! Call fckit
+   call sphere_lonlat2xyz(lon*rad2deg,lat*rad2deg,x,y,z)
+else
+   ! Missing values
+   x = mpl%msv%valr
+   y = mpl%msv%valr
+   z = mpl%msv%valr
+end if
+
+end subroutine lonlat2xyz
+
+!----------------------------------------------------------------------
+! Subroutine: xyz2lonlat
+! Purpose: convert longitude/latitude to cartesian coordinates
+!----------------------------------------------------------------------
+subroutine xyz2lonlat(mpl,x,y,z,lon,lat)
+
+implicit none
+
+! Passed variables
+type(mpl_type),intent(in) :: mpl   ! MPI data
+real(kind_real),intent(in) :: x    ! X coordinate
+real(kind_real),intent(in) :: y    ! Y coordinate
+real(kind_real),intent(in) :: z    ! Z coordinate
+real(kind_real),intent(out) :: lon ! Longitude (radians)
+real(kind_real),intent(out) :: lat ! Latitude (radians)
+
+if (mpl%msv%isnotr(x).and.mpl%msv%isnotr(y).and.mpl%msv%isnotr(z)) then
+   ! Call fckit
+   call sphere_xyz2lonlat(x,y,z,lon,lat)
+   lon = lon*deg2rad
+   lat = lat*deg2rad
+else
+   ! Missing values
+   lon = mpl%msv%valr
+   lat = mpl%msv%valr
+end if
+
+end subroutine xyz2lonlat
 
 !----------------------------------------------------------------------
 ! Subroutine: vector_product

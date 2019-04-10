@@ -306,6 +306,7 @@ if (nam%write_hdiag) then
    ! Full variances
    if (nam%var_full) then
       filename = trim(nam%prefix)//'_var_full'
+      call io%fld_write(mpl,nam,geom,filename,'vunit',geom%vunit_c0a)
       do ib=1,bpar%nb
          if (bpar%diag_block(ib)) call io%fld_write(mpl,nam,geom,filename,trim(bpar%blockname(ib))//'_var', &
        & sum(hdiag%mom_1%blk(ib)%m2full,dim=3)/real(hdiag%mom_1%blk(ib)%nsub,kind_real))

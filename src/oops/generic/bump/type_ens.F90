@@ -252,7 +252,7 @@ type(io_type),intent(in) :: io      ! I/O
 ! Local variable
 integer :: ic0a,ic0,il0,jc0a,jc0,ie,its,ind(2)
 integer :: proc_to_ic0a(mpl%nproc),iproc(1),nn_index(1)
-real(kind_real) :: dist,proc_to_val(mpl%nproc),lon,lat,val,var_dirac,nn_dist(1)
+real(kind_real) :: dist,proc_to_val(mpl%nproc),lon,lat,val,var_dirac
 real(kind_real) :: u(geom%nc0a,geom%nl0,nam%nts),v(geom%nc0a,geom%nl0,nam%nts),ffsq(geom%nc0a,geom%nl0,nam%nts)
 real(kind_real) :: var(geom%nc0a,geom%nl0,nam%nts),dirac(geom%nc0a,geom%nl0,nam%nts),cor(geom%nc0a,geom%nl0,nam%nv,nam%nts)
 character(len=2) :: timeslotchar
@@ -260,6 +260,7 @@ character(len=1024) :: filename
 
 ! File name
 filename = trim(nam%prefix)//'_cortrack'
+call io%fld_write(mpl,nam,geom,filename,'vunit',geom%vunit_c0a)
 
 ! Compute variance
 write(mpl%info,'(a7,a)') '','Compute variance'
@@ -319,7 +320,7 @@ else
       lat = 0.5*(minval(geom%lat)+maxval(geom%lat))
 
       ! Find nearest neighbor
-      call geom%kdtree%find_nearest_neighbors(mpl,lon,lat,1,nn_index,nn_dist)
+      call geom%tree%find_nearest_neighbors(lon,lat,1,nn_index)
       ic0 = nn_index(1)
    else
       ! Random point

@@ -172,8 +172,7 @@ do iv=1,nam%nv
                bpar%nicas_block(ib) = (iv==jv).and.(its==jts)
                bpar%cv_block(ib) = (ib==bpar%nbe)
             end select
-            bpar%fit_block(ib) = (bpar%nb==1).or.(bpar%diag_block(ib).and.(iv==jv).and.(its==jts) &
-                               & .and.(trim(nam%minim_algo)/='none'))
+            bpar%fit_block(ib) = bpar%diag_block(ib).and.(trim(nam%minim_algo)/='none')
             if (nam%local_diag) bpar%fit_block(ib) = bpar%fit_block(ib).and.bpar%nicas_block(ib)
 
             ! Blocks information

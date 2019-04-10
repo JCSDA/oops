@@ -13,7 +13,7 @@ use tools_func, only: sphere_dist,gc99
 use tools_kinds, only: kind_real
 use tools_qsort, only: qsort
 use tools_repro, only: inf,sup,infeq
-use type_kdtree, only: kdtree_type
+use type_tree, only: tree_type
 use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 
@@ -460,7 +460,7 @@ real(kind_real),allocatable :: sdist(:,:),nn_sdist(:)
 logical :: lfast
 logical,allocatable :: lmask(:),smask(:),rmask(:)
 character(len=1024),parameter :: subr = 'rng_initialize_sampling'
-type(kdtree_type) :: kdtree
+type(tree_type) :: tree
 
 if (mpl%main) then
    ! Check forced points
@@ -591,10 +591,10 @@ if (mpl%main) then
          do is=1+nfor,ns+nrep_eff
             if (is>2) then
                ! Allocation
-               call kdtree%alloc(mpl,n,mask=smask)
+               call tree%alloc(mpl,n,mask=smask)
 
                ! Initialization
-               call kdtree%init(mpl,lon,lat,sort=.false.)
+               call tree%init(lon,lat)
             end if
 
             ! Initialization
@@ -620,7 +620,7 @@ if (mpl%main) then
                      call sphere_dist(lon(ir),lat(ir),lon(ihor_tmp(1)),lat(ihor_tmp(1)),d)
                   else
                      ! Find nearest neighbor distance
-                     call kdtree%find_nearest_neighbors(mpl,lon(ir),lat(ir),1,nn_index(1:1),nn_dist(1:1))
+                     call tree%find_nearest_neighbors(lon(ir),lat(ir),1,nn_index(1:1),nn_dist(1:1))
                      d = nn_dist(1)**2/(rh(ir)**2+rh(nn_index(1))**2)
                   end if
 
@@ -633,8 +633,8 @@ if (mpl%main) then
                end if
             end do
 
-            ! Delete kdtree
-            if (is>2) call kdtree%dealloc
+            ! Delete tree
+            if (is>2) call tree%dealloc
 
             ! Add point to sampling
             if (irmax>0) then
@@ -680,16 +680,16 @@ if (mpl%main) then
          ! Remove closest points
          do irep=1,nrep_eff
             ! Allocation
-            call kdtree%alloc(mpl,ns+nrep_eff,mask=rmask)
+            call tree%alloc(mpl,ns+nrep_eff,mask=rmask)
 
             ! Initialization
-            call kdtree%init(mpl,lon_rep,lat_rep,sort=.false.)
+            call tree%init(lon_rep,lat_rep)
 
             ! Get minimum distance
             do is=1+nfor,ns+nrep_eff
                if (rmask(is)) then
                   ! Find nearest neighbor distance
-                  call kdtree%find_nearest_neighbors(mpl,lon(ihor_tmp(is)),lat(ihor_tmp(is)),2,nn_index,nn_dist)
+                  call tree%find_nearest_neighbors(lon(ihor_tmp(is)),lat(ihor_tmp(is)),2,nn_index,nn_dist)
                   if (nn_index(1)==is) then
                      dist(is) = nn_dist(2)
                   elseif (nn_index(2)==is) then
@@ -701,8 +701,8 @@ if (mpl%main) then
                end if
             end do
 
-            ! Delete kdtree
-            call kdtree%dealloc
+            ! Delete tree
+            call tree%dealloc
 
             ! Remove worst point
             distmin = huge(1.0)

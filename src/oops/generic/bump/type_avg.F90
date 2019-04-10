@@ -489,7 +489,7 @@ type(bpar_type),intent(in) :: bpar   ! Block parameters
 type(samp_type),intent(in) :: samp   ! Sampling
 
 ! Local variables
-integer :: n,ib,il0,ic2a,ic2,iter
+integer :: n,ib,il0,isub,ic2a,ic2,iter
 real(kind_real) :: P9,P20,P21
 real(kind_real) :: m2sq,m4,m2sqasy,rhflt,drhflt
 real(kind_real) :: m2_ini(samp%nc2a),m2(samp%nc2a),m2prod,m2prod_tot
@@ -510,86 +510,88 @@ do ib=1,bpar%nb
          write(mpl%info,'(a16,a,i3,a)') '','Level ',nam%levs(il0),':'
          call mpl%flush
 
-         ! Global averages
-         m2sq = 0.0
-         m4 = 0.0
-         do ic2=1,nam%nc2
-            m2sq = m2sq+sum(avg%blk(ic2,ib)%m2(il0,:)**2)/real(avg%nsub,kind_real)
-            if (.not.nam%gau_approx) m4 = m4+sum(avg%blk(ic2,ib)%m4(il0,:))/real(avg%nsub,kind_real)
-         end do
+         do isub=1,avg%nsub
+            ! Global sum
+            m2sq = 0.0
+            m4 = 0.0
+            do ic2=1,nam%nc2
+               m2sq = m2sq+avg%blk(ic2,ib)%m2(il0,isub)**2
+               if (.not.nam%gau_approx) m4 = m4+avg%blk(ic2,ib)%m4(il0,isub)
+            end do
 
-         ! Asymptotic statistics
-         if (nam%gau_approx) then
-            ! Gaussian approximation
-            m2sqasy = P21*m2sq
-         else
-            ! General case
-            m2sqasy = P20*m2sq+P9*m4
-         end if
-
-         ! Dichotomy initialization
-         do ic2a=1,samp%nc2a
-            ic2 = samp%c2a_to_c2(ic2a)
-            m2_ini(ic2a) = sum(avg%blk(ic2,ib)%m2(il0,:))/real(avg%nsub,kind_real)
-         end do
-         convergence = .true.
-         dichotomy = .false.
-         rhflt = nam%var_rhflt
-         drhflt = rhflt
-
-         do iter=1,nam%var_niter
-            ! Copy initial value
-            m2 = m2_ini
-
-            ! Median filter to remove extreme values
-            call samp%diag_filter(mpl,nam,geom,il0,'median',rhflt,m2)
-
-            ! Average filter to smooth values
-            call samp%diag_filter(mpl,nam,geom,il0,'gc99',rhflt,m2)
-
-            ! Compute product
-            m2prod = sum(m2*m2_ini)
-
-            ! Reduce product
-            call mpl%f_comm%allreduce(m2prod,m2prod_tot,fckit_mpi_sum())
-
-            ! Print result
-            write(mpl%info,'(a19,a,i2,a,f10.2,a,f10.2)') '','Iteration ',iter,': rhflt = ', &
-          & rhflt*reqkm,' km, difference = ',m2prod_tot-m2sqasy
-            call mpl%flush
-
-            ! Update support radius
-            if (m2prod_tot>m2sqasy) then
-               ! Increase filtering support radius
-               if (dichotomy) then
-                  drhflt = 0.5*drhflt
-                  rhflt = rhflt+drhflt
-               else
-                  convergence = .false.
-                  rhflt = rhflt+drhflt
-                  drhflt = 2.0*drhflt
-               end if
+            ! Asymptotic statistics
+            if (nam%gau_approx) then
+               ! Gaussian approximation
+               m2sqasy = P21*m2sq
             else
-               ! Convergence
-               convergence = .true.
-
-               ! Change dichotomy status
-               if (.not.dichotomy) then
-                  dichotomy = .true.
-                  drhflt = 0.5*drhflt
-               end if
-
-               ! Decrease filtering support radius
-               drhflt = 0.5*drhflt
-               rhflt = rhflt-drhflt
+               ! General case
+               m2sqasy = P20*m2sq+P9*m4
             end if
-         end do
 
-         ! Copy final result
-         avg%blk(0,ib)%m2flt(il0) = sum(avg%blk(0,ib)%m2(il0,:))/real(avg%nsub,kind_real)
-         do ic2a=1,samp%nc2a
-            ic2 = samp%c2a_to_c2(ic2a)
-            avg%blk(ic2,ib)%m2flt(il0) = m2(ic2a)
+            ! Dichotomy initialization
+            do ic2a=1,samp%nc2a
+               ic2 = samp%c2a_to_c2(ic2a)
+               m2_ini(ic2a) = avg%blk(ic2,ib)%m2(il0,isub)
+            end do
+            convergence = .true.
+            dichotomy = .false.
+            rhflt = nam%var_rhflt
+            drhflt = rhflt
+
+            do iter=1,nam%var_niter
+               ! Copy initial value
+               m2 = m2_ini
+
+               ! Median filter to remove extreme values
+               call samp%diag_filter(mpl,nam,geom,il0,'median',rhflt,m2)
+
+               ! Average filter to smooth values
+               call samp%diag_filter(mpl,nam,geom,il0,'gc99',rhflt,m2)
+
+               ! Compute product
+               m2prod = sum(m2*m2_ini)
+
+               ! Reduce product
+               call mpl%f_comm%allreduce(m2prod,m2prod_tot,fckit_mpi_sum())
+
+               ! Print result
+               write(mpl%info,'(a19,a,i2,a,f10.2,a,f10.2)') '','Iteration ',iter,': rhflt = ', &
+             & rhflt*reqkm,' km, difference = ',m2prod_tot-m2sqasy
+               call mpl%flush
+
+               ! Update support radius
+               if (m2prod_tot>m2sqasy) then
+                  ! Increase filtering support radius
+                  if (dichotomy) then
+                     drhflt = 0.5*drhflt
+                     rhflt = rhflt+drhflt
+                  else
+                     convergence = .false.
+                     rhflt = rhflt+drhflt
+                     drhflt = 2.0*drhflt
+                  end if
+               else
+                  ! Convergence
+                  convergence = .true.
+
+                  ! Change dichotomy status
+                  if (.not.dichotomy) then
+                     dichotomy = .true.
+                     drhflt = 0.5*drhflt
+                  end if
+
+                  ! Decrease filtering support radius
+                  drhflt = 0.5*drhflt
+                  rhflt = rhflt-drhflt
+               end if
+            end do
+
+            ! Copy final result
+            avg%blk(0,ib)%m2flt(il0,isub) = avg%blk(0,ib)%m2(il0,isub)
+            do ic2a=1,samp%nc2a
+               ic2 = samp%c2a_to_c2(ic2a)
+               avg%blk(ic2,ib)%m2flt(il0,isub) = m2(ic2a)
+            end do
          end do
       end do
    end if

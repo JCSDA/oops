@@ -17,7 +17,7 @@ use type_mpl, only: mpl_type
 implicit none
 
 private
-public :: addnod,areas,bnodes,crlist,inside,scoord,trans,trfind,trlist,trmesh
+public :: addnod,areas,bnodes,crlist,inside,trfind,trlist,trmesh
 
 contains
 
@@ -2832,71 +2832,6 @@ function nearnd ( p, ist, n, x, y, z, list, lptr, lend, al )
 
   return
 end function nearnd
-subroutine scoord ( px, py, pz, plat, plon, pnrm )
-
-!*****************************************************************************80
-!
-! Subroutine: scoord
-! Purpose: convert from Cartesian to spherical coordinates
-!
-!  Discussion:
-!
-!    This subroutine converts a point P from Cartesian (X,Y,Z) coordinates
-!    to spherical ( LATITUDE, LONGITUDE, RADIUS ) coordinates.
-!
-!  Modified:
-!
-!    16 June 2007
-!
-!  Author:
-!
-!    Robert Renka
-!
-!  Reference:
-!
-!    Robert Renka,
-!    Algorithm 772: STRIPACK,
-!    Delaunay Triangulation and Voronoi Diagram on the Surface of a Sphere,
-!    ACM Transactions on Mathematical Software,
-!    Volume 23, Number 3, September 1997, pages 416-434.
-!
-!  Parameters:
-!
-!    Input, real PX, PY, PZ, the coordinates of P.
-!
-!    Output, real PLAT, the latitude of P in the range -PI/2
-!    to PI/2, or 0 if PNRM = 0.
-!
-!    Output, real PLON, the longitude of P in the range -PI to PI,
-!    or 0 if P lies on the Z-axis.
-!
-!    Output, real PNRM, the magnitude (Euclidean norm) of P.
-!
-  implicit none
-
-  real(kind_real) plat
-  real(kind_real) plon
-  real(kind_real) pnrm
-  real(kind_real) px
-  real(kind_real) py
-  real(kind_real) pz
-
-  pnrm = sqrt ( px * px + py * py + pz * pz )
-
-  if ( abs(px)>0.0 .or. abs(py)>0.0 ) then
-    plon = atan2 ( py, px )
-  else
-    plon = 0.0
-  end if
-
-  if ( abs(pnrm)>0.0 ) then
-    plat = asin ( pz / pnrm )
-  else
-    plat = 0.0
-  end if
-
-  return
-end subroutine scoord
 subroutine swap ( in1, in2, io1, io2, list, lptr, lend, lp21 )
 
 !*****************************************************************************80
@@ -3114,91 +3049,6 @@ subroutine swptst ( n1, n2, n3, n4, x, y, z, output )
 
   return
 end subroutine swptst
-subroutine trans ( mpl, n, rlat, rlon, x, y, z )
-
-!*****************************************************************************80
-!
-! Subroutine: trans
-! Purpose: transform spherical coordinates to Cartesian coordinates
-!
-!  Discussion:
-!
-!    This subroutine transforms spherical coordinates into
-!    Cartesian coordinates on the unit sphere for input to
-!    TRMESH.  Storage for X and Y may coincide with
-!    storage for RLAT and RLON if the latter need not be saved.
-!
-!  Modified:
-!
-!    16 June 2007
-!
-!  Author:
-!
-!    Robert Renka
-!
-!  Reference:
-!
-!    Robert Renka,
-!    Algorithm 772: STRIPACK,
-!    Delaunay Triangulation and Voronoi Diagram on the Surface of a Sphere,
-!    ACM Transactions on Mathematical Software,
-!    Volume 23, Number 3, September 1997, pages 416-434.
-!
-!  Parameters:
-!
-!    Input, integer N, the number of nodes (points on the unit
-!    sphere) whose coordinates are to be transformed.
-!
-!    Input, real ( kind_real ) RLAT(N), latitudes of the nodes in radians.
-!
-!    Input, real ( kind_real ) RLON(N), longitudes of the nodes in radians.
-!
-!    Output, real ( kind_real ) X(N), Y(N), Z(N), the coordinates in the
-!    range -1 to 1.  X(I)**2 + Y(I)**2 + Z(I)**2 = 1 for I = 1 to N.
-!
-!  Local parameters:
-!
-!    COSPHI = cos(PHI)
-!    I =      DO-loop index
-!    NN =     Local copy of N
-!    PHI =    Latitude
-!    THETA =  Longitude
-!
-  implicit none
-
-  type(mpl_type),intent(inout) :: mpl
-  integer n
-
-  real ( kind_real ) cosphi
-  integer i
-  integer nn
-  real ( kind_real ) phi
-  real ( kind_real ) rlat(n)
-  real ( kind_real ) rlon(n)
-  real ( kind_real ) theta
-  real ( kind_real ) x(n)
-  real ( kind_real ) y(n)
-  real ( kind_real ) z(n)
-
-  nn = n
-
-  do i = 1, nn
-    if (mpl%msv%isnotr(rlat(i)).and.mpl%msv%isnotr(rlon(i))) then
-       phi = rlat(i)
-       theta = rlon(i)
-       cosphi = cos ( phi )
-       x(i) = cosphi * cos ( theta )
-       y(i) = cosphi * sin ( theta )
-       z(i) = sin ( phi )
-    else
-       x(i) = mpl%msv%valr
-       y(i) = mpl%msv%valr
-       z(i) = mpl%msv%valr
-    end if
-  end do
-
-  return
-end subroutine trans
 subroutine trfind ( nst, p, n, x, y, z, list, lptr, lend, b1, b2, b3, i1, &
   i2, i3 )
 

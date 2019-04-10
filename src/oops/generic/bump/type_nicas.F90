@@ -177,9 +177,8 @@ type(bpar_type),intent(in) :: bpar       ! Block parameters
 integer :: ib,il0i,il1,its,il0
 integer :: info,nl0_test,nc0a_test
 integer :: ncid,nl0_id,nc0a_id,nc1b_id,nl1_id,nsa_id,nsb_id,nc0d_id,nc0dinv_id
-integer :: sb_to_c1b_id,sb_to_l1_id
-integer :: sa_to_sc_id,sb_to_sc_id
-integer :: norm_id,coef_ens_id
+integer :: vlev_id,sb_to_c1b_id,sb_to_l1_id,sa_to_sc_id,sb_to_sc_id,norm_id,coef_ens_id
+integer :: vlev_int(geom%nl0)
 character(len=1024) :: filename
 character(len=1024),parameter :: subr = 'nicas_read'
 
@@ -189,8 +188,8 @@ call nicas%alloc(mpl,nam,bpar,'nicas')
 do ib=1,bpar%nbe
    if (bpar%B_block(ib)) then
       ! Open file and get dimensions
-      filename = trim(nam%prefix)//'_'//trim(nicas%blk(ib)%name)//'.nc'
-      call mpl%ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename),nf90_nowrite,ncid))
+      filename = trim(nam%prefix)//'_'//trim(nicas%blk(ib)%name)
+      call mpl%ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename)//'.nc',nf90_nowrite,ncid))
 
       ! Get dimensions
       call mpl%ncerr(subr,nf90_inq_dimid(ncid,'nl0',nl0_id))
@@ -233,6 +232,7 @@ do ib=1,bpar%nbe
 
       ! Allocation
       if (bpar%nicas_block(ib)) then
+         allocate(nicas%blk(ib)%vlev(geom%nl0))
          if (nicas%blk(ib)%nsb>0) allocate(nicas%blk(ib)%sb_to_c1b(nicas%blk(ib)%nsb))
          if (nicas%blk(ib)%nsb>0) allocate(nicas%blk(ib)%sb_to_l1(nicas%blk(ib)%nsb))
          if (nicas%blk(ib)%nsa>0) allocate(nicas%blk(ib)%sa_to_sc(nicas%blk(ib)%nsa))
@@ -249,6 +249,7 @@ do ib=1,bpar%nbe
 
       ! Get variable id
       if (bpar%nicas_block(ib)) then
+         call mpl%ncerr(subr,nf90_inq_varid(ncid,'vlev',vlev_id))
          if (nicas%blk(ib)%nsb>0) call mpl%ncerr(subr,nf90_inq_varid(ncid,'sb_to_c1b',sb_to_c1b_id))
          if (nicas%blk(ib)%nsb>0) call mpl%ncerr(subr,nf90_inq_varid(ncid,'sb_to_l1',sb_to_l1_id))
          if (nicas%blk(ib)%nsa>0) call mpl%ncerr(subr,nf90_inq_varid(ncid,'sa_to_sc',sa_to_sc_id))
@@ -259,6 +260,16 @@ do ib=1,bpar%nbe
 
       ! Read data
       if (bpar%nicas_block(ib)) then
+         call mpl%ncerr(subr,nf90_get_var(ncid,vlev_id,vlev_int))
+         do il0=1,geom%nl0
+            if (vlev_int(il0)==0) then
+               nicas%blk(ib)%vlev(il0) = .false.
+            elseif (vlev_int(il0)==1) then
+               nicas%blk(ib)%vlev(il0) = .true.
+            else
+               call mpl%abort(subr,'wrong vlev')
+            end if
+         end do
          if (nicas%blk(ib)%nsb>0) call mpl%ncerr(subr,nf90_get_var(ncid,sb_to_c1b_id,nicas%blk(ib)%sb_to_c1b))
          if (nicas%blk(ib)%nsb>0) call mpl%ncerr(subr,nf90_get_var(ncid,sb_to_l1_id,nicas%blk(ib)%sb_to_l1))
          if (nicas%blk(ib)%nsa>0) call mpl%ncerr(subr,nf90_get_var(ncid,sa_to_sc_id,nicas%blk(ib)%sa_to_sc))
@@ -321,17 +332,16 @@ type(bpar_type),intent(in) :: bpar    ! Block parameters
 ! Local variables
 integer :: ib,il0i,il1,its,il0
 integer :: ncid,nl0_id,nc0a_id,nc1b_id,nl1_id,nsa_id,nsb_id,nc0d_id,nc0dinv_id
-integer :: sb_to_c1b_id,sb_to_l1_id
-integer :: sa_to_sc_id,sb_to_sc_id
-integer :: norm_id,coef_ens_id
+integer :: vlev_id,sb_to_c1b_id,sb_to_l1_id,sa_to_sc_id,sb_to_sc_id,norm_id,coef_ens_id
+integer :: vlev_int(geom%nl0)
 character(len=1024) :: filename
 character(len=1024),parameter :: subr = 'nicas_write'
 
 do ib=1,bpar%nbe
    if (bpar%B_block(ib)) then
       ! Create file
-      filename = trim(nam%prefix)//'_'//trim(nicas%blk(ib)%name)//'.nc'
-      call mpl%ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_clobber,nf90_64bit_offset),ncid))
+      filename = trim(nam%prefix)//'_'//trim(nicas%blk(ib)%name)
+      call mpl%ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename)//'.nc',or(nf90_clobber,nf90_64bit_offset),ncid))
 
       ! Write namelist parameters
       call nam%write(mpl,ncid)
@@ -357,13 +367,13 @@ do ib=1,bpar%nbe
 
       ! Define variables
       if (bpar%nicas_block(ib)) then
+         call mpl%ncerr(subr,nf90_def_var(ncid,'vlev',nf90_int,(/nl0_id/),vlev_id))
          if (nicas%blk(ib)%nsb>0) call mpl%ncerr(subr,nf90_def_var(ncid,'sb_to_c1b',nf90_int,(/nsb_id/),sb_to_c1b_id))
          if (nicas%blk(ib)%nsb>0) call mpl%ncerr(subr,nf90_def_var(ncid,'sb_to_l1',nf90_int,(/nsb_id/),sb_to_l1_id))
          if (nicas%blk(ib)%nsa>0) call mpl%ncerr(subr,nf90_def_var(ncid,'sa_to_sc',nf90_int,(/nsa_id/),sa_to_sc_id))
          if (nicas%blk(ib)%nsb>0) call mpl%ncerr(subr,nf90_def_var(ncid,'sb_to_sc',nf90_int,(/nsb_id/),sb_to_sc_id))
          if (geom%nc0a>0) call mpl%ncerr(subr,nf90_def_var(ncid,'norm',nc_kind_real,(/nc0a_id,nl0_id/),norm_id))
          if (geom%nc0a>0) call mpl%ncerr(subr,nf90_def_var(ncid,'coef_ens',nc_kind_real,(/nc0a_id,nl0_id/),coef_ens_id))
-
          if (nicas%blk(ib)%nsa>0) call mpl%ncerr(subr,nf90_put_att(ncid,sa_to_sc_id,'_FillValue',mpl%msv%vali))
          if (nicas%blk(ib)%nsb>0) call mpl%ncerr(subr,nf90_put_att(ncid,sb_to_sc_id,'_FillValue',mpl%msv%vali))
          if (geom%nc0a>0) call mpl%ncerr(subr,nf90_put_att(ncid,norm_id,'_FillValue',mpl%msv%valr))
@@ -375,6 +385,14 @@ do ib=1,bpar%nbe
 
       ! Write variables
       if (bpar%nicas_block(ib)) then
+         do il0=1,geom%nl0
+            if (nicas%blk(ib)%vlev(il0)) then
+               vlev_int(il0) = 1
+            else
+               vlev_int(il0) = 0
+            end if
+         end do
+         call mpl%ncerr(subr,nf90_put_var(ncid,vlev_id,vlev_int))
          if (nicas%blk(ib)%nsb>0) call mpl%ncerr(subr,nf90_put_var(ncid,sb_to_c1b_id,nicas%blk(ib)%sb_to_c1b))
          if (nicas%blk(ib)%nsb>0) call mpl%ncerr(subr,nf90_put_var(ncid,sb_to_l1_id,nicas%blk(ib)%sb_to_l1))
          if (nicas%blk(ib)%nsa>0) call mpl%ncerr(subr,nf90_put_var(ncid,sa_to_sc_id,nicas%blk(ib)%sa_to_sc))
@@ -439,8 +457,8 @@ do ib=1,bpar%nbe
       allocate(lcheck(nicas%blk(ib)%nc1,nicas%blk(ib)%nl1))
 
       ! Create summary file
-      filename = trim(nam%prefix)//'_'//trim(nicas%blk(ib)%name)//'_summary.nc'
-      call mpl%ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename),or(nf90_clobber,nf90_64bit_offset),ncid))
+      filename = trim(nam%prefix)//'_'//trim(nicas%blk(ib)%name)//'_summary'
+      call mpl%ncerr(subr,nf90_create(trim(nam%datadir)//'/'//trim(filename)//'.nc',or(nf90_clobber,nf90_64bit_offset),ncid))
 
       ! Write namelist parameters
       call nam%write(mpl,ncid)
@@ -1941,6 +1959,7 @@ end if
 
 ! Write field
 filename = trim(nam%prefix)//'_dirac'
+call io%fld_write(mpl,nam,geom,filename,'vunit',geom%vunit_c0a)
 do its=1,nam%nts
    write(itschar,'(i2.2)') its
    do iv=1,nam%nv
@@ -2076,7 +2095,7 @@ type(bpar_type),intent(in) :: bpar       ! Block parameters
 type(io_type),intent(in) :: io           ! I/O
 
 ! Local variables
-integer :: ens1_ne,ens1_ne_offset,ens1_nsub,ic0a,ic0,ic0dir,ib,il0
+integer :: ens1_ne,ens1_nsub,ic0a,ic0,ic0dir,ib,il0
 real(kind_real) :: resol,dist,dist_min,dist_min_tot
 real(kind_real) :: fld(geom%nc0a,geom%nl0,nam%nv,nam%nts)
 logical :: local_diag
@@ -2093,7 +2112,6 @@ call nicas%dealloc
 prefix = nam%prefix
 method = nam%method
 ens1_ne = nam%ens1_ne
-ens1_ne_offset = nam%ens1_ne_offset
 ens1_nsub = nam%ens1_nsub
 local_diag = nam%local_diag
 resol = nam%resol
@@ -2102,7 +2120,6 @@ resol = nam%resol
 nam%prefix = trim(nam%prefix)//'_consistency-test'
 nam%method = 'cor'
 nam%ens1_ne = ne_rand
-nam%ens1_ne_offset = 0
 nam%ens1_nsub = 1
 nam%local_diag = .false.
 nam%resol = 12.0
@@ -2196,7 +2213,6 @@ end do
 nam%prefix = prefix
 nam%method = method
 nam%ens1_ne = ens1_ne
-nam%ens1_ne_offset = ens1_ne_offset
 nam%ens1_nsub = ens1_nsub
 nam%local_diag = local_diag
 nam%resol = resol

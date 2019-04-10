@@ -45,10 +45,8 @@ type bump_type
    type(obsop_type) :: obsop
    type(rng_type) :: rng
    type(vbal_type) :: vbal
-   logical :: close_listing
 contains
    procedure :: setup_online => bump_setup_online
-   procedure :: setup_generic => bump_setup_generic
    procedure :: run_drivers => bump_run_drivers
    procedure :: add_member => bump_add_member
    procedure :: apply_vbal => bump_apply_vbal
@@ -82,7 +80,7 @@ contains
 ! Subroutine: bump_setup_online
 ! Purpose: online setup
 !----------------------------------------------------------------------
-subroutine bump_setup_online(bump,nmga,nl0,nv,nts,lon,lat,area,vunit,lmask,ens1_ne,ens1_nsub,ens2_ne,ens2_nsub, &
+subroutine bump_setup_online(bump,nmga,nl0,nv,nts,lon,lat,area,vunit,gmask,smask,ens1_ne,ens1_nsub,ens2_ne,ens2_nsub, &
                            & nobs,lonobs,latobs,namelname,lunit,msvali,msvalr)
 
 implicit none
@@ -97,7 +95,8 @@ real(kind_real),intent(in) :: lon(nmga)           ! Longitude (in degrees: -180 
 real(kind_real),intent(in) :: lat(nmga)           ! Latitude (in degrees: -90 to 90)
 real(kind_real),intent(in) :: area(nmga)          ! Area (in m^2)
 real(kind_real),intent(in) :: vunit(nmga,nl0)     ! Vertical unit
-logical,intent(in) :: lmask(nmga,nl0)             ! Mask
+logical,intent(in) :: gmask(nmga,nl0)             ! Geometry mask
+logical,intent(in),optional :: smask(nmga,nl0)    ! Sampling mask
 integer,intent(in),optional :: ens1_ne            ! Ensemble 1 size
 integer,intent(in),optional :: ens1_nsub          ! Ensemble 1 number of sub-ensembles
 integer,intent(in),optional :: ens2_ne            ! Ensemble 2 size
@@ -143,24 +142,71 @@ if (present(ens2_ne)) lens2_nsub = ens2_nsub
 call bump%nam%setup_internal(nl0,nv,nts,lens1_ne,lens1_nsub,lens2_ne,lens2_nsub)
 
 ! Initialize listing
-if (present(lunit)) then
-   call bump%mpl%init_listing(bump%nam%prefix,bump%nam%model,bump%nam%verbosity,bump%nam%colorlog,lunit)
-   bump%close_listing = .false.
+bump%mpl%lunit = bump%mpl%msv%vali
+if (present(lunit)) bump%mpl%lunit = lunit
+bump%mpl%verbosity = bump%nam%verbosity
+if (bump%nam%colorlog) then
+   bump%mpl%black = char(27)//'[0;0m'
+   bump%mpl%green = char(27)//'[0;32m'
+   bump%mpl%peach = char(27)//'[1;91m'
+   bump%mpl%aqua = char(27)//'[1;36m'
+   bump%mpl%purple = char(27)//'[1;35m'
+   bump%mpl%err = char(27)//'[0;37;41;1m'
+   bump%mpl%wng = char(27)//'[0;37;42;1m'
 else
-   call bump%mpl%init_listing(bump%nam%prefix,bump%nam%model,bump%nam%verbosity,bump%nam%colorlog)
-   bump%close_listing = (trim(bump%nam%model)=='online').and.(.not.present(nobs))
+   bump%mpl%black = ' '
+   bump%mpl%green = ' '
+   bump%mpl%peach = ' '
+   bump%mpl%aqua = ' '
+   bump%mpl%purple = ' '
+   bump%mpl%err = ' '
+   bump%mpl%wng = ' '
 end if
 
-! Generic setup
-call bump%setup_generic
+
+! Header
+write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+call bump%mpl%flush
+write(bump%mpl%info,'(a)') '--- You are running the BUMP library ------------------------------'
+call bump%mpl%flush
+write(bump%mpl%info,'(a)') '--- Author: Benjamin Menetrier ------------------------------------'
+call bump%mpl%flush
+write(bump%mpl%info,'(a)') '--- Copyright © 2015-... UCAR, CERFACS, METEO-FRANCE and IRIT -----'
+call bump%mpl%flush
+
+! Check namelist parameters
+write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+call bump%mpl%flush
+write(bump%mpl%info,'(a)') '--- Check namelist parameters'
+call bump%mpl%flush
+call bump%nam%check(bump%mpl)
+call bump%nam%write(bump%mpl)
+
+! Write parallel setup
+write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+call bump%mpl%flush
+write(bump%mpl%info,'(a,i3,a,i2,a)') '--- Parallelization with ',bump%mpl%nproc,' MPI tasks and ', &
+ & bump%mpl%nthread,' OpenMP threads'
+call bump%mpl%flush
+
+! Initialize random number generator
+write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+call bump%mpl%flush
+write(bump%mpl%info,'(a)') '--- Initialize random number generator'
+call bump%mpl%flush
+call bump%rng%init(bump%mpl,bump%nam)
+
+! Initialize allocation flags
+bump%cmat%allocated = .false.
+bump%lct%allocated = .false.
+bump%nicas%allocated = .false.
 
 ! Initialize geometry
 write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
 call bump%mpl%flush
 write(bump%mpl%info,'(a)') '--- Initialize geometry'
 call bump%mpl%flush
-call bump%geom%setup_online(bump%mpl,nmga,nl0,lon,lat,area,vunit,lmask)
-call bump%geom%init(bump%mpl,bump%rng,bump%nam)
+call bump%geom%setup(bump%mpl,bump%rng,bump%nam,nmga,nl0,lon,lat,area,vunit,gmask)
 if (bump%nam%default_seed) call bump%rng%reseed(bump%mpl)
 
 if (bump%nam%grid_output) then
@@ -218,57 +264,13 @@ if ((bump%nam%ens1_ne>0).or.(bump%nam%ens2_ne>0)) then
    call bump%mpl%flush
 end if
 
+! Copy sampling mask
+if (present(smask)) then
+   allocate(bump%geom%smask_c0a(bump%geom%nc0a,bump%geom%nl0))
+   bump%geom%smask_c0a = smask(bump%geom%c0a_to_mga,:)
+end if
+
 end subroutine bump_setup_online
-
-!----------------------------------------------------------------------
-! Subroutine: bump_setup_generic
-! Purpose: generic setup
-!----------------------------------------------------------------------
-subroutine bump_setup_generic(bump)
-
-implicit none
-
-! Passed variables
-class(bump_type),intent(inout) :: bump ! BUMP
-
-! Header
-write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
-call bump%mpl%flush
-write(bump%mpl%info,'(a)') '--- You are running BUMP ------------------------------------------'
-call bump%mpl%flush
-write(bump%mpl%info,'(a)') '--- Author: Benjamin Menetrier ------------------------------------'
-call bump%mpl%flush
-write(bump%mpl%info,'(a)') '--- Copyright © 2015-... UCAR, CERFACS, METEO-FRANCE and IRIT -----'
-call bump%mpl%flush
-
-! Check namelist parameters
-write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
-call bump%mpl%flush
-write(bump%mpl%info,'(a)') '--- Check namelist parameters'
-call bump%mpl%flush
-call bump%nam%check(bump%mpl)
-call bump%nam%write(bump%mpl)
-
-! Write parallel setup
-write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
-call bump%mpl%flush
-write(bump%mpl%info,'(a,i3,a,i2,a)') '--- Parallelization with ',bump%mpl%nproc,' MPI tasks and ', &
- & bump%mpl%nthread,' OpenMP threads'
-call bump%mpl%flush
-
-! Initialize random number generator
-write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
-call bump%mpl%flush
-write(bump%mpl%info,'(a)') '--- Initialize random number generator'
-call bump%mpl%flush
-call bump%rng%init(bump%mpl,bump%nam)
-
-! Initialize allocation flags
-bump%cmat%allocated = .false.
-bump%lct%allocated = .false.
-bump%nicas%allocated = .false.
-
-end subroutine bump_setup_generic
 
 !----------------------------------------------------------------------
 ! Subroutine: bump_run_drivers
@@ -465,17 +467,6 @@ if (bump%nam%check_obsop) then
    call bump%mpl%flush
    call bump%obsop%run_obsop_tests(bump%mpl,bump%rng,bump%geom)
    if (bump%nam%default_seed) call bump%rng%reseed(bump%mpl)
-end if
-
-if (bump%close_listing) then
-   ! Close listings
-   write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
-   call bump%mpl%flush
-   write(bump%mpl%info,'(a)') '--- Close listings'
-   call bump%mpl%flush
-   write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
-   call bump%mpl%flush
-   call bump%mpl%close_listing
 end if
 
 end subroutine bump_run_drivers
@@ -1324,7 +1315,7 @@ integer :: iobs,nn_index_c0a(nn),i,nn_index_mga,il0
 
 do iobs=1,nobs
    ! Get neighbors indices and distances
-   call bump%geom%kdtree%find_nearest_neighbors(bump%mpl,lon(iobs),lat(iobs),nn,nn_index_c0a,nn_dist(:,iobs))
+   call bump%geom%tree%find_nearest_neighbors(lon(iobs),lat(iobs),nn,nn_index_c0a,nn_dist(:,iobs))
 
    do i=1,nn
       ! Convert indices
@@ -1362,7 +1353,7 @@ integer :: iobs,nn_index_c0a(nn),i,nn_index_mga
 
 do iobs=1,nobs
    ! Get neighbors indices and distances
-   call bump%geom%kdtree%find_nearest_neighbors(bump%mpl,lon(iobs),lat(iobs),nn,nn_index_c0a,nn_dist(:,iobs))
+   call bump%geom%tree%find_nearest_neighbors(lon(iobs),lat(iobs),nn,nn_index_c0a,nn_dist(:,iobs))
 
    do i=1,nn
       ! Convert indices

@@ -28,7 +28,7 @@ type nam_type
    ! general_param
    character(len=1024) :: datadir                       ! Data directory
    character(len=1024) :: prefix                        ! Files prefix
-   character(len=1024) :: model                         ! Model name ('aro', 'arp', 'fv3', 'gem', 'geos', 'gfs', 'ifs', 'mpas', 'nemo', 'res' or 'wrf')
+   character(len=1024) :: model                         ! Model name ('aro', 'arp', 'fv3', 'gem', 'geos', 'gfs', 'ifs', 'mpas', 'nemo', 'qg, 'res' or 'wrf')
    character(len=1024) :: verbosity                     ! Verbosity level ('all', 'main' or 'none')
    logical :: colorlog                                  ! Add colors to the log (for display on terminal)
    logical :: default_seed                              ! Default seed for random numbers
@@ -74,12 +74,10 @@ type nam_type
 
    ! ens1_param
    integer :: ens1_ne                                   ! Ensemble 1 size
-   integer :: ens1_ne_offset                            ! Ensemble 1 index offset
    integer :: ens1_nsub                                 ! Ensemble 1 sub-ensembles number
 
    ! ens2_param
    integer :: ens2_ne                                   ! Ensemble 2 size
-   integer :: ens2_ne_offset                            ! Ensemble 2 index offset
    integer :: ens2_nsub                                 ! Ensemble 2 sub-ensembles number
 
    ! sampling_param
@@ -193,7 +191,7 @@ class(nam_type),intent(out) :: nam ! Namelist
 integer :: iv,ildwv
 
 ! general_param default
-nam%datadir = '.'
+nam%datadir = 'bump'
 nam%prefix = ''
 nam%model = ''
 nam%verbosity = 'all'
@@ -243,12 +241,10 @@ nam%timeslot = 0
 
 ! ens1_param default
 nam%ens1_ne = 0
-nam%ens1_ne_offset = 0
 nam%ens1_nsub = 0
 
 ! ens2_param default
 nam%ens2_ne = 0
-nam%ens2_ne_offset = 0
 nam%ens2_nsub = 0
 
 ! sampling_param default
@@ -360,7 +356,7 @@ character(len=1024),parameter :: subr = 'nam_read'
 
 ! Namelist variables
 integer :: lunit
-integer :: nl,levs(nlmax),nv,nts,timeslot(ntsmax),ens1_ne,ens1_ne_offset,ens1_nsub,ens2_ne,ens2_ne_offset,ens2_nsub
+integer :: nl,levs(nlmax),nv,nts,timeslot(ntsmax),ens1_ne,ens1_nsub,ens2_ne,ens2_nsub
 integer :: nc1,nc2,ntry,nrep,nc3,nl0r,ne,var_niter,adv_niter,lct_nscales,mpicom,adv_mode,ndir,levdir(ndirmax),ivdir(ndirmax)
 integer :: itsdir(ndirmax),nobs,nldwh,il_ldwh(nlmax*nc3max),ic_ldwh(nlmax*nc3max),nldwv,ildwv
 logical :: colorlog,default_seed
@@ -384,8 +380,8 @@ namelist/driver_param/method,strategy,new_cortrack,new_vbal,load_vbal,write_vbal
                     & check_adjoints,check_pos_def,check_sqrt,check_dirac,check_randomization,check_consistency, &
                     & check_optimality,check_obsop
 namelist/model_param/nl,levs,logpres,nv,varname,addvar2d,nts,timeslot
-namelist/ens1_param/ens1_ne,ens1_ne_offset,ens1_nsub
-namelist/ens2_param/ens2_ne,ens2_ne_offset,ens2_nsub
+namelist/ens1_param/ens1_ne,ens1_nsub
+namelist/ens2_param/ens2_ne,ens2_nsub
 namelist/sampling_param/sam_write,sam_read,mask_type,mask_th,mask_check,draw_type,nc1,nc2,ntry,nrep,nc3,dc,nl0r
 namelist/diag_param/ne,gau_approx,vbal_block,vbal_rad,var_filter,var_full,var_niter,var_rhflt,local_diag,local_rad, &
                   & adv_diag,adv_rad,adv_niter,adv_rhflt
@@ -448,12 +444,10 @@ if (mpl%main) then
 
    ! ens1_param default
    ens1_ne = 0
-   ens1_ne_offset = 0
    ens1_nsub = 0
 
    ! ens2_param default
    ens2_ne = 0
-   ens2_ne_offset = 0
    ens2_nsub = 0
 
    ! sampling_param default
@@ -603,13 +597,11 @@ if (mpl%main) then
    ! ens1_param
    read(lunit,nml=ens1_param)
    nam%ens1_ne = ens1_ne
-   nam%ens1_ne_offset = ens1_ne_offset
    nam%ens1_nsub = ens1_nsub
 
    ! ens2_param
    read(lunit,nml=ens2_param)
    nam%ens2_ne = ens2_ne
-   nam%ens2_ne_offset = ens2_ne_offset
    nam%ens2_nsub = ens2_nsub
 
    ! sampling_param
@@ -776,12 +768,10 @@ call mpl%f_comm%broadcast(nam%timeslot,mpl%ioproc-1)
 
 ! ens1_param
 call mpl%f_comm%broadcast(nam%ens1_ne,mpl%ioproc-1)
-call mpl%f_comm%broadcast(nam%ens1_ne_offset,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%ens1_nsub,mpl%ioproc-1)
 
 ! ens2_param
 call mpl%f_comm%broadcast(nam%ens2_ne,mpl%ioproc-1)
-call mpl%f_comm%broadcast(nam%ens2_ne_offset,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%ens2_nsub,mpl%ioproc-1)
 
 ! sampling_param
@@ -889,28 +879,28 @@ integer,intent(in) :: ens2_nsub           ! Ensemble 2 size of sub-ensembles
 ! Local variables
 integer :: il,iv,its
 
-nam%model = 'online'
-nam%colorlog = .false.
-nam%nl = nl0
-do il=1,nam%nl
-   nam%levs(il) = il
-end do
-nam%logpres = .false.
-nam%nv = nv
-do iv=1,nam%nv
-   write(nam%varname(iv),'(a,i2.2)') 'var_',iv
-   nam%addvar2d(iv) = ''
-end do
-nam%nts = nts
-do its=1,nts
-   nam%timeslot(its) = its
-end do
-nam%ens1_ne = ens1_ne
-nam%ens1_ne_offset = 0
-nam%ens1_nsub = ens1_nsub
-nam%ens2_ne = ens2_ne
-nam%ens2_ne_offset = 0
-nam%ens2_nsub = ens2_nsub
+if (trim(nam%model)=='') then
+   nam%model = 'online'
+   nam%colorlog = .false.
+   nam%nl = nl0
+   do il=1,nam%nl
+      nam%levs(il) = il
+   end do
+   nam%logpres = .false.
+   nam%nv = nv
+   do iv=1,nam%nv
+      write(nam%varname(iv),'(a,i2.2)') 'var_',iv
+      nam%addvar2d(iv) = ''
+   end do
+   nam%nts = nts
+   do its=1,nts
+      nam%timeslot(its) = its
+   end do
+   nam%ens1_ne = ens1_ne
+   nam%ens1_nsub = ens1_nsub
+   nam%ens2_ne = ens2_ne
+   nam%ens2_nsub = ens2_nsub
+end if
 
 end subroutine nam_setup_internal
 
@@ -961,7 +951,7 @@ nam%grid_resol = nam%grid_resol/req
 if (trim(nam%datadir)=='') call mpl%abort(subr,'datadir not specified')
 if (trim(nam%prefix)=='') call mpl%abort(subr,'prefix not specified')
 select case (trim(nam%model))
-case ('aro','arp','fv3','gem','geos','gfs','ifs','mpas','nemo','online','res','wrf')
+case ('aro','arp','fv3','gem','geos','gfs','ifs','mpas','nemo','online','qg','res','wrf')
 case default
    call mpl%abort(subr,'wrong model')
 end select
@@ -1038,7 +1028,6 @@ end if
 
 ! Check ens1_param
 if (nam%new_cortrack.or.nam%new_vbal.or.nam%new_hdiag.or.nam%new_lct) then
-   if (nam%ens1_ne_offset<0) call mpl%abort(subr,'ens1_ne_offset should be non-negative')
    if (nam%ens1_nsub<1) call mpl%abort(subr,'ens1_nsub should be positive')
    if (mod(nam%ens1_ne,nam%ens1_nsub)/=0) call mpl%abort(subr,'ens1_nsub should be a divider of ens1_ne')
    if (nam%ens1_ne/nam%ens1_nsub<=3) call mpl%abort(subr,'ens1_ne/ens1_nsub should be larger than 3')
@@ -1048,7 +1037,6 @@ end if
 if (nam%new_hdiag) then
    select case (trim(nam%method))
    case ('hyb-rnd','dual-ens')
-      if (nam%ens2_ne_offset<0) call mpl%abort(subr,'ens2_ne_offset should be non-negative')
       if (nam%ens2_nsub<1) call mpl%abort(subr,'ens2_nsub should be non-negative')
       if (mod(nam%ens2_ne,nam%ens2_nsub)/=0) call mpl%abort(subr,'ens2_nsub should be a divider of ens2_ne')
       if (nam%ens2_ne/nam%ens2_nsub<=3) call mpl%abort(subr,'ens2_ne/ens2_nsub should be larger than 3')
@@ -1205,10 +1193,7 @@ end if
 ! Check obsop_param
 if (nam%new_obsop) then
    select case (trim(nam%obsdis))
-   case('')
-   case ('random','local','adjusted')
-      if (trim(nam%model)=='online') &
-    & call mpl%abort(subr,'modified distribution of observations only available for offline execution')
+   case('','random','local','adjusted')
    case default
       call mpl%abort(subr,'wrong observation distribution')
    end select
@@ -1373,7 +1358,6 @@ if (mpl%msv%isi(lncid)) then
    call mpl%flush
 end if
 call mpl%write(lncid,'ens1_ne',nam%ens1_ne)
-call mpl%write(lncid,'ens1_ne_offset',nam%ens1_ne_offset)
 call mpl%write(lncid,'ens1_nsub',nam%ens1_nsub)
 
 ! ens2_param
@@ -1382,7 +1366,6 @@ if (mpl%msv%isi(lncid)) then
    call mpl%flush
 end if
 call mpl%write(lncid,'ens2_ne',nam%ens2_ne)
-call mpl%write(lncid,'ens2_ne_offset',nam%ens2_ne_offset)
 call mpl%write(lncid,'ens2_nsub',nam%ens2_nsub)
 
 ! sampling_param

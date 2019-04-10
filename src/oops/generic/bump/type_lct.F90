@@ -648,10 +648,10 @@ type(io_type),intent(in) :: io          ! I/O
 integer :: ib,iv,iscales
 character(len=1) :: iscaleschar
 character(len=1024) :: filename
-character(len=1024),parameter :: subr = 'lct_write'
 
 ! Set file name
 filename = trim(nam%prefix)//'_lct'
+call io%fld_write(mpl,nam,geom,filename,'vunit',geom%vunit_c0a)
 
 do ib=1,bpar%nb
    iv = bpar%b_to_v2(ib)

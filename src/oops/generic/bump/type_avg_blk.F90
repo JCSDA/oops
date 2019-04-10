@@ -29,7 +29,7 @@ type avg_blk_type
    integer :: nsub                                       ! Sub-ensembles number
    real(kind_real),allocatable :: m2(:,:)                ! Variance
    real(kind_real),allocatable :: m4(:,:)                ! Fourth-order centered moment
-   real(kind_real),allocatable :: m2flt(:)               ! Filtered variance
+   real(kind_real),allocatable :: m2flt(:,:)             ! Filtered variance
    real(kind_real),allocatable :: nc1a(:,:,:)            ! Number of points in subset Sc1 on halo A
    real(kind_real),allocatable :: m11(:,:,:)             ! Covariance average
    real(kind_real),allocatable :: m11m11(:,:,:,:,:)      ! Product of covariances average
@@ -93,7 +93,7 @@ if (.not.allocated(avg_blk%nc1a)) then
       allocate(avg_blk%m2(geom%nl0,avg_blk%nsub))
       if (nam%var_filter) then
          if (.not.nam%gau_approx) allocate(avg_blk%m4(geom%nl0,avg_blk%nsub))
-         allocate(avg_blk%m2flt(geom%nl0))
+         allocate(avg_blk%m2flt(geom%nl0,avg_blk%nsub))
       end if
       allocate(avg_blk%m11(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0))
       allocate(avg_blk%m11m11(bpar%nc3(ib),bpar%nl0r(ib),geom%nl0,avg_blk%nsub,avg_blk%nsub))

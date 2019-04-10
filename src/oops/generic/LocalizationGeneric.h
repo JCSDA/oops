@@ -1,14 +1,9 @@
 /*
-* Copyright 2011 ECMWF
-*
-* This software was developed at ECMWF for evaluation
-* and may be used for academic and research purposes only.
-* The software is provided as is without any warranty.
-*
-* This software can be used, copied and modified but not
-* redistributed or sold. This notice must be reproduced
-* on each copy made.
-*/
+ * (C) Copyright 2019 UCAR
+ *
+ * This software is licensed under the terms of the Apache Licence Version 2.0
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ */
 
 #ifndef OOPS_GENERIC_LOCALIZATIONGENERIC_H_
 #define OOPS_GENERIC_LOCALIZATIONGENERIC_H_

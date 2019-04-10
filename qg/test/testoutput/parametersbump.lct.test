@@ -1,6 +1,6 @@
-Test     : Norm of D11_1 at 2010-01-01T00:00:00Z: 2.57743e+12
-Test     : Norm of D22_1 at 2010-01-01T00:00:00Z: 4.37249e+12
-Test     : Norm of D33_1 at 2010-01-01T00:00:00Z: 5.97614
+Test     : Norm of D11_1 at 2010-01-01T00:00:00Z: 2.61546e+12
+Test     : Norm of D22_1 at 2010-01-01T00:00:00Z: 4.3495e+12
+Test     : Norm of D33_1 at 2010-01-01T00:00:00Z: 5.95451
 Test     : Norm of D12_1 at 2010-01-01T00:00:00Z: 0
 Test     : Norm of Dcoef_1 at 2010-01-01T00:00:00Z: 1
-Test     : Norm of DLh_1 at 2010-01-01T00:00:00Z: 1.78057e+06
+Test     : Norm of DLh_1 at 2010-01-01T00:00:00Z: 1.78309e+06

@@ -316,7 +316,7 @@ ecbuild_add_test( TARGET test_qg_parameters_bump_vbal
 ecbuild_add_test( TARGET test_qg_copy_vbal
                   TYPE SCRIPT
                   COMMAND "ln"
-                  ARGS  -sf bump_parametersbump.vbal_vbal_0001-0001.nc bump_interfaces_vbal_0001-0001.nc )
+                  ARGS  -sf bump_parametersbump.vbal_vbal_0001-0001.nc bump/bump_interfaces_vbal_0001-0001.nc )
 
 ecbuild_add_test( TARGET  test_qg_linearvariablechange
                   MPI    1

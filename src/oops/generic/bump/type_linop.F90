@@ -13,7 +13,7 @@ use tools_kinds, only: kind_real,nc_kind_real
 use tools_qsort, only: qsort
 use tools_repro, only: inf
 use type_geom, only: geom_type
-use type_kdtree, only: kdtree_type
+use type_tree, only: tree_type
 use type_mesh, only: mesh_type
 use type_mpl, only: mpl_type
 use type_rng, only: rng_type
@@ -49,9 +49,9 @@ contains
    procedure :: add_op => linop_add_op
    procedure :: gather => linop_gather
    procedure :: linop_interp_from_lat_lon
-   procedure :: linop_interp_from_mesh_kdtree
+   procedure :: linop_interp_from_mesh_tree
    procedure :: linop_interp_grid
-   generic :: interp => linop_interp_from_lat_lon,linop_interp_from_mesh_kdtree,linop_interp_grid
+   generic :: interp => linop_interp_from_lat_lon,linop_interp_from_mesh_tree,linop_interp_grid
    procedure :: check_mask => linop_check_mask
    procedure :: interp_missing => linop_interp_missing
 end type linop_type
@@ -638,7 +638,7 @@ integer :: n_src_eff,i_src,i_src_eff
 integer,allocatable :: src_eff_to_src(:)
 real(kind_real),allocatable :: lon_src_eff(:),lat_src_eff(:)
 logical,allocatable :: mask_src_eff(:)
-type(kdtree_type) :: kdtree
+type(tree_type) :: tree
 type(mesh_type) :: mesh
 
 ! Count non-missing source points
@@ -664,14 +664,14 @@ mask_src_eff = .true.
 
 ! Allocation
 call mesh%alloc(n_src_eff)
-call kdtree%alloc(mpl,n_src_eff)
+call tree%alloc(mpl,n_src_eff)
 
 ! Initialization
 call mesh%init(mpl,rng,lon_src_eff,lat_src_eff)
-call kdtree%init(mpl,lon_src_eff,lat_src_eff)
+call tree%init(lon_src_eff,lat_src_eff)
 
 ! Compute interpolation
-call linop%interp(mpl,mesh,kdtree,n_src_eff,mask_src_eff,n_dst,lon_dst,lat_dst,mask_dst,interp_type)
+call linop%interp(mpl,mesh,tree,n_src_eff,mask_src_eff,n_dst,lon_dst,lat_dst,mask_dst,interp_type)
 
 ! Effective points conversion
 linop%n_src = n_src
@@ -683,15 +683,15 @@ deallocate(lon_src_eff)
 deallocate(lat_src_eff)
 deallocate(mask_src_eff)
 call mesh%dealloc
-call kdtree%dealloc
+call tree%dealloc
 
 end subroutine linop_interp_from_lat_lon
 
 !----------------------------------------------------------------------
-! Subroutine: linop_interp_from_mesh_kdtree
-! Purpose: compute horizontal interpolation from source mesh and kdtree
+! Subroutine: linop_interp_from_mesh_tree
+! Purpose: compute horizontal interpolation from source mesh and tree
 !----------------------------------------------------------------------
-subroutine linop_interp_from_mesh_kdtree(linop,mpl,mesh,kdtree,n_src,mask_src,n_dst,lon_dst,lat_dst,mask_dst,interp_type)
+subroutine linop_interp_from_mesh_tree(linop,mpl,mesh,tree,n_src,mask_src,n_dst,lon_dst,lat_dst,mask_dst,interp_type)
 
 implicit none
 
@@ -699,7 +699,7 @@ implicit none
 class(linop_type),intent(inout) :: linop     ! Linear operator
 type(mpl_type),intent(inout) :: mpl          ! MPI data
 type(mesh_type),intent(in) :: mesh           ! Mesh
-type(kdtree_type),intent(in) :: kdtree       ! KD-tree
+type(tree_type),intent(in) :: tree       ! KD-tree
 integer,intent(in) :: n_src                  ! Source size
 logical,intent(in) :: mask_src(n_src)        ! Source mask
 integer,intent(in) :: n_dst                  ! Destination size
@@ -716,7 +716,7 @@ real(kind_real) :: nn_dist(1),b(3)
 real(kind_real),allocatable :: area_polygon(:),area_polygon_new(:),natwgt(:),S(:)
 logical :: loop
 logical,allocatable :: missing(:)
-character(len=1024),parameter :: subr = 'linop_interp_from_mesh_kdtree'
+character(len=1024),parameter :: subr = 'linop_interp_from_mesh_tree'
 type(mesh_type) :: meshnew
 
 ! MPI splitting
@@ -760,7 +760,7 @@ do i_dst_loc=1,n_dst_loc(mpl%myproc)
 
    if (mask_dst(i_dst)) then
       ! Find nearest neighbor
-      call kdtree%find_nearest_neighbors(mpl,lon_dst(i_dst),lat_dst(i_dst),1,nn_index,nn_dist)
+      call tree%find_nearest_neighbors(lon_dst(i_dst),lat_dst(i_dst),1,nn_index,nn_dist)
 
       if (abs(nn_dist(1))>0.0) then
          ! Compute barycentric coordinates
@@ -885,7 +885,7 @@ end do
 do i_s=1,linop%n_s
    missing(linop%row(i_s)) = .false.
 end do
-if (any(missing)) call mpl%abort(subr,'missing destination points in interp_from_mesh_kdtree')
+if (any(missing)) call mpl%abort(subr,'missing destination points in interp_from_mesh_tree')
 
 ! Release memory
 if (trim(interp_type)=='natural') then
@@ -899,7 +899,7 @@ deallocate(col)
 deallocate(S)
 deallocate(missing)
 
-end subroutine linop_interp_from_mesh_kdtree
+end subroutine linop_interp_from_mesh_tree
 
 !----------------------------------------------------------------------
 ! Subroutine: linop_interp_grid
@@ -1134,11 +1134,10 @@ character(len=*),intent(in) :: interp_type   ! Interpolation type
 ! Local variables
 integer :: i_dst,i_s
 integer :: nn(1)
-real(kind_real) :: dum(1)
 logical :: missing(n_dst),lmask(n_dst),found
 character(len=1024),parameter :: subr = 'linop_interp_missing'
 type(linop_type) :: interp_tmp
-type(kdtree_type) :: kdtree
+type(tree_type) :: tree
 
 ! Find missing points
 missing = .false.
@@ -1173,15 +1172,15 @@ if (count(missing)>0) then
 
    ! Allocation
    lmask = mask_dst.and.(.not.missing)
-   call kdtree%alloc(mpl,n_dst,mask=lmask)
+   call tree%alloc(mpl,n_dst,mask=lmask)
 
    ! Initialization
-   call kdtree%init(mpl,lon_dst,lat_dst)
+   call tree%init(lon_dst,lat_dst)
 
    do i_dst=1,n_dst
       if (missing(i_dst)) then
          ! Compute nearest neighbor
-         call kdtree%find_nearest_neighbors(mpl,lon_dst(i_dst),lat_dst(i_dst),1,nn,dum)
+         call tree%find_nearest_neighbors(lon_dst(i_dst),lat_dst(i_dst),1,nn)
 
          ! Copy data
          found = .false.
@@ -1209,7 +1208,7 @@ if (count(missing)>0) then
    linop%S = interp_tmp%S(1:linop%n_s)
 
    ! Release memory
-   call kdtree%dealloc
+   call tree%dealloc
    call interp_tmp%dealloc
 end if
 

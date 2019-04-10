@@ -165,7 +165,6 @@ oops/generic/bump/type_ens.F90
 oops/generic/bump/type_geom.F90
 oops/generic/bump/type_hdiag.F90
 oops/generic/bump/type_io.F90
-oops/generic/bump/type_kdtree.F90
 oops/generic/bump/type_lct_blk.F90
 oops/generic/bump/type_lct.F90
 oops/generic/bump/type_linop.F90
@@ -181,11 +180,10 @@ oops/generic/bump/type_nicas.F90
 oops/generic/bump/type_obsop.F90
 oops/generic/bump/type_rng.F90
 oops/generic/bump/type_samp.F90
+oops/generic/bump/type_tree.F90
 oops/generic/bump/type_vbal_blk.F90
 oops/generic/bump/type_vbal.F90
 oops/generic/bump/external/tools_asa007.F90
-oops/generic/bump/external/tools_kdtree2.F90
-oops/generic/bump/external/tools_kdtree2_pq.F90
 oops/generic/bump/external/tools_qsort.F90
 oops/generic/bump/external/tools_stripack.F90
 
