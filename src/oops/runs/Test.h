@@ -95,8 +95,17 @@ bool is_close(T a, T b, T epsilon) {
   T AbsA = fabs(a);
   T AbsB = fabs(b);
   T EpsAB = (AbsA < AbsB ? AbsB : AbsA) * epsilon;  // greater of AbsA, AbsB times epsilon
-  return eckit::types::is_approximately_equal(a , b, EpsAB);
+  bool test_status = eckit::types::is_approximately_equal(a , b, EpsAB);
+  if (test_status) {
+    Log::info() << "difference between " << std::setprecision(12)
+      << a << " and " << b << " is less than " << EpsAB << std::endl;
+  } else {
+    Log::info() << "difference between " << std::setprecision(12)
+      << a << " and " << b << " exceeds " << EpsAB << std::endl;
+  }
+
+  return test_status;
 }
-}  // namespace oops
+  }  // namespace oops
 #endif  // OOPS_RUNS_TEST_H_
 
