@@ -88,6 +88,7 @@ oops/base/Localization.h
 oops/base/ModelBase.h
 oops/base/ModelSpaceCovarianceBase.h
 oops/base/ObsEnsemble.h
+oops/base/ObsErrorBase.h
 oops/base/ObsErrors.h
 oops/base/ObsFilterBase.h
 oops/base/ObsFilters.h
@@ -205,11 +206,11 @@ oops/interface/ModelAuxIncrement.h
 oops/interface/ObsAuxControl.h
 oops/interface/ObsAuxCovariance.h
 oops/interface/ObsAuxIncrement.h
-oops/interface/ObsErrorBase.h
 oops/interface/ObsErrorCovariance.h
 oops/interface/ObsFilter.h
 oops/interface/ObsOperator.h
 oops/interface/ObsVector.h
+oops/interface/ObsDataVector.h
 oops/interface/ObservationSpace.h
 oops/interface/State.h
 oops/interface/VariableChange.h

@@ -39,6 +39,7 @@ ecbuild_add_library( TARGET lorenz95
                          ObsTableView.h
                          ObsVec1D.cc
                          ObsVec1D.h
+                         ObsData1D.h
                          ObservationL95.cc
                          ObservationL95.h
                          ObservationTLAD.cc

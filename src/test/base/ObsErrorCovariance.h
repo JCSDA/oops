@@ -8,8 +8,8 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef TEST_INTERFACE_OBSERRORCOVARIANCE_H_
-#define TEST_INTERFACE_OBSERRORCOVARIANCE_H_
+#ifndef TEST_BASE_OBSERRORCOVARIANCE_H_
+#define TEST_BASE_OBSERRORCOVARIANCE_H_
 
 #include <string>
 #include <vector>
@@ -19,8 +19,8 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/testing/Test.h"
+#include "oops/base/ObsErrorBase.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
-#include "oops/interface/ObsErrorCovariance.h"
 #include "oops/interface/ObsOperator.h"
 #include "oops/runs/Test.h"
 #include "test/interface/ObsTestsFixture.h"
@@ -32,7 +32,7 @@ namespace test {
 
 template <typename MODEL> void testConstructor() {
   typedef ObsTestsFixture<MODEL>  Test_;
-  typedef oops::ObsErrorCovariance<MODEL>  Covar_;
+  typedef oops::ObsErrorBase<MODEL>  Covar_;
   typedef oops::ObsOperator<MODEL> ObsOperator_;
 
   oops::instantiateObsErrorFactory<MODEL>();
@@ -44,7 +44,8 @@ template <typename MODEL> void testConstructor() {
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     ObsOperator_ hop(Test_::obspace()[jj], conf[jj]);
     const eckit::LocalConfiguration rconf(conf[jj], "Covariance");
-    boost::scoped_ptr<Covar_> R(new Covar_(rconf, Test_::obspace()[jj], hop.observed()));
+    boost::scoped_ptr<Covar_> R(
+      oops::ObsErrorFactory<MODEL>::create(rconf, Test_::obspace()[jj], hop.observed()));
     EXPECT(R.get());
 
     R.reset();
@@ -70,8 +71,8 @@ class ObsErrorCovariance : public oops::Test {
   }
 };
 
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 }  // namespace test
 
-#endif  // TEST_INTERFACE_OBSERRORCOVARIANCE_H_
+#endif  // TEST_BASE_OBSERRORCOVARIANCE_H_

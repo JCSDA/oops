@@ -25,6 +25,7 @@
 #include "lorenz95/ObsBias.h"
 #include "lorenz95/ObsBiasCorrection.h"
 #include "lorenz95/ObsBiasCovariance.h"
+#include "lorenz95/ObsData1D.h"
 #include "lorenz95/ObservationL95.h"
 #include "lorenz95/ObservationTLAD.h"
 #include "lorenz95/ObsTableView.h"
@@ -53,6 +54,7 @@ struct L95Traits {
 
   typedef lorenz95::ObsTableView           ObsSpace;
   typedef lorenz95::ObsVec1D               ObsVector;
+  template <typename DATATYPE> using ObsDataVector = lorenz95::ObsData1D<DATATYPE>;
 
   typedef lorenz95::ObservationL95         ObsOperator;
   typedef lorenz95::ObservationTLAD        LinearObsOperator;

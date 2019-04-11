@@ -15,8 +15,11 @@
 #include <string>
 
 #include "eckit/config/Configuration.h"
+#include "oops/base/ObsErrorBase.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/ObsErrorBase.h"
+#include "oops/interface/ObsDataVector.h"
+#include "oops/interface/ObservationSpace.h"
+#include "oops/interface/ObsVector.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
@@ -26,11 +29,12 @@ namespace oops {
 
 template<typename MODEL>
 class ObsErrorDiag : public ObsErrorBase<MODEL> {
-  typedef typename MODEL::ObsSpace              ObsSpace_;
-  typedef typename MODEL::ObsVector             ObsVector_;
+  typedef ObservationSpace<MODEL>      ObsSpace_;
+  typedef ObsVector<MODEL>             ObsVector_;
+  typedef ObsDataVector<MODEL, int>    ObsVectorInt_;
 
  public:
-  ObsErrorDiag(const eckit::Configuration &, ObsSpace_ &, const Variables &);
+  ObsErrorDiag(const eckit::Configuration &, const ObsSpace_ &, const Variables &);
   ~ObsErrorDiag();
 
 /// Update after QC od other obs filters
@@ -51,6 +55,8 @@ class ObsErrorDiag : public ObsErrorBase<MODEL> {
  private:
   void print(std::ostream &) const;
 
+  const ObsSpace_ & obsdb_;
+  Variables observed_;
   ObsVector_ stddev_;
   ObsVector_ inverseVariance_;
   double pert_;
@@ -59,9 +65,10 @@ class ObsErrorDiag : public ObsErrorBase<MODEL> {
 // =============================================================================
 
 template<typename MODEL>
-ObsErrorDiag<MODEL>::ObsErrorDiag(const eckit::Configuration & conf, ObsSpace_ & obsgeom,
+ObsErrorDiag<MODEL>::ObsErrorDiag(const eckit::Configuration & conf, const ObsSpace_ & obsgeom,
                                   const Variables & observed)
-  : stddev_(obsgeom, observed), inverseVariance_(obsgeom, observed),
+  : obsdb_(obsgeom), observed_(observed),
+    stddev_(obsgeom, observed), inverseVariance_(obsgeom, observed),
     pert_(conf.getDouble("random_amplitude", 1.0))
 {
   stddev_.read("ObsError");
@@ -85,7 +92,7 @@ ObsErrorDiag<MODEL>::~ObsErrorDiag() {
 template<typename MODEL>
 void ObsErrorDiag<MODEL>::update() {
   stddev_.read("EffectiveError");
-  ObsVector_ qc(stddev_, false);
+  ObsVectorInt_ qc(obsdb_, observed_);
   qc.read("EffectiveQC");
   stddev_.mask(qc);
   stddev_.save("EffectiveError");

@@ -23,7 +23,6 @@
 #include "oops/assimilation/ControlVariable.h"
 #include "oops/assimilation/CostTermBase.h"
 #include "oops/base/Departures.h"
-#include "oops/base/LinearObsOperators.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
@@ -64,11 +63,10 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
   typedef ObsErrors<MODEL>           ObsErrors_;
   typedef ObsFilters<MODEL>          ObsFilters_;
-  typedef ObsOperators<MODEL>        ObsOperator_;
-  typedef ObsSpaces<MODEL>           ObsSpace_;
+  typedef ObsOperators<MODEL>        ObsOperators_;
+  typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef ObserverTLAD<MODEL>        ObserverTLAD_;
   typedef PostBaseTLAD<MODEL>        PostBaseTLAD_;
-  typedef LinearObsOperators<MODEL>  LinearObsOperator_;
 
  public:
   /// Construct \f$ J_o\f$ from \f$ R\f$ and \f$ y_{obs}\f$.
@@ -113,8 +111,8 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
 
  private:
   eckit::LocalConfiguration obsconf_;
-  ObsSpace_ obspace_;
-  ObsOperator_ hop_;
+  ObsSpaces_ obspace_;
+  ObsOperators_ hop_;
   Observations_ yobs_;
   ObsErrors_ Rmat_;
 

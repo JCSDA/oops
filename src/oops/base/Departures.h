@@ -19,11 +19,11 @@
 #include <boost/shared_ptr.hpp>
 
 #include "oops/base/GeneralizedDepartures.h"
+#include "oops/base/ObsErrorBase.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxIncrement.h"
-#include "oops/interface/ObsErrorBase.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"

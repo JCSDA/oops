@@ -20,6 +20,8 @@
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
+#include "lorenz95/ObsData1D.h"
+
 namespace oops {
   class Variables;
 }
@@ -55,7 +57,7 @@ class ObsVec1D : public util::Printable,
   void random();
   double dot_product_with(const ObsVec1D &) const;
   double rms() const;
-  void mask(const ObsVec1D &) {}
+  void mask(const ObsData1D<int> &) {}
 
   unsigned int nobs() const {return data_.size();}
   double & operator() (const unsigned int ii) {return data_[ii];}

@@ -10,7 +10,7 @@
 
 #include "model/QgTraits.h"
 #include "oops/runs/Run.h"
-#include "test/interface/ObsErrorCovariance.h"
+#include "test/base/ObsErrorCovariance.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);

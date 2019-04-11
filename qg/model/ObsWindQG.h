@@ -51,7 +51,7 @@ class ObsWindQG : public ObsOpBaseQG,
 // Other
   const oops::Variables & variables() const override {return varin_;}
   LocationsQG * locations(const util::DateTime &, const util::DateTime &) const override;
-  const std::string & obstype() const {return obsname_;}
+  const std::string & obstype() const override {return obsname_;}
 
   int & toFortran() {return keyOperWind_;}
   const int & toFortran() const {return keyOperWind_;}

@@ -235,7 +235,7 @@ oops::GridPoint FieldsQG::getPoint(const GeometryQGIterator & iter) const {
   return oops::GridPoint(vars_.toOopsVariables(), values, varlens);
 }
 // -----------------------------------------------------------------------------
-void FieldsQG::serialize(std::vector<double> & vect)  const {
+void FieldsQG::serialize(std::vector<double> & vect) const {
   int nx, ny, nf, nb, nl;
   qg_field_sizes_f90(keyFlds_, nx, ny, nf, nb, nl);
   int size_fld = nx * ny * nl * nf;

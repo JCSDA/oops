@@ -14,6 +14,7 @@
 #include <ostream>
 #include <string>
 
+#include "model/ObsDataQG.h"
 #include "model/QgFortran.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -50,7 +51,7 @@ class ObsVecQG : public util::Printable,
   void random();
   double dot_product_with(const ObsVecQG &) const;
   double rms() const;
-  void mask(const ObsVecQG &) {}
+  void mask(const ObsDataQG<int> &) {}
 
   unsigned int nobs() const;
 

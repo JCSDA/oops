@@ -18,10 +18,10 @@
 #include <boost/shared_ptr.hpp>
 
 #include "oops/base/Departures.h"
+#include "oops/base/ObsErrorBase.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
-#include "oops/interface/ObsErrorCovariance.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
@@ -35,7 +35,7 @@ class ObsErrors : public util::Printable,
                   private boost::noncopyable {
   typedef Departures<MODEL>          Departures_;
   typedef Observations<MODEL>        Observations_;
-  typedef ObsErrorCovariance<MODEL>  ObsError_;
+  typedef ObsErrorBase<MODEL>        ObsError_;
   typedef ObsOperators<MODEL>        ObsOperators_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef ObsVector<MODEL>           ObsVector_;
@@ -75,7 +75,8 @@ ObsErrors<MODEL>::ObsErrors(const eckit::Configuration & config,
   config.get("ObsTypes", obsconf);
   for (std::size_t jj = 0; jj < os.size(); ++jj) {
     eckit::LocalConfiguration conf(obsconf[jj], "Covariance");
-    boost::shared_ptr<ObsError_> tmp(new ObsError_(conf, os[jj], hop[jj].observed()));
+    boost::shared_ptr<ObsError_> tmp(
+      ObsErrorFactory<MODEL>::create(conf, os[jj], hop[jj].observed()));
     err_.push_back(tmp);
   }
 }

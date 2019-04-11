@@ -27,6 +27,7 @@
 #include "model/ObsBias.h"
 #include "model/ObsBiasCovariance.h"
 #include "model/ObsBiasIncrement.h"
+#include "model/ObsDataQG.h"
 #include "model/ObsOperatorQG.h"
 #include "model/ObsOperatorTLAD.h"
 #include "model/ObsSpaceQG.h"
@@ -57,6 +58,7 @@ struct QgTraits {
   typedef qg::ObsVecQG              ObsVector;
   typedef qg::ObsOperatorQG         ObsOperator;
   typedef qg::ObsOperatorTLAD       LinearObsOperator;
+  template <typename DATATYPE> using ObsDataVector = qg::ObsDataQG<DATATYPE>;
 
   typedef qg::ObsBias               ObsAuxControl;
   typedef qg::ObsBiasIncrement      ObsAuxIncrement;

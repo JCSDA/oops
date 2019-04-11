@@ -22,6 +22,7 @@
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Locations.h"
 #include "oops/interface/ObsAuxControl.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsOperator.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/runs/Test.h"
@@ -41,6 +42,7 @@ template <typename MODEL> void testFilters() {
   typedef oops::ObsFilterBase<MODEL>     ObsFilterBase_;
   typedef oops::ObsOperator<MODEL>       ObsOperator_;
   typedef oops::ObsVector<MODEL>         ObsVector_;
+  typedef oops::ObsDataVector<MODEL, int>  ObsVectorInt_;
 
   const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
   std::vector<eckit::LocalConfiguration> typeconfs;
@@ -86,7 +88,7 @@ template <typename MODEL> void testFilters() {
     }
 
 //  Mask out all the values that were QC-d out
-    ObsVector_ qc(ovec, false);
+    ObsVectorInt_ qc(Test_::obspace()[jj], hop.observed());
     qc.read(qcname);
     ovec.mask(qc);
 

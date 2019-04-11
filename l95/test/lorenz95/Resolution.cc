@@ -66,7 +66,7 @@ CASE("test_resolution") {
     fb.close();
 
     // then read the value that was written to the file
-    int inputInt;
+    int inputInt = 0;
     std::string input;
     std::ifstream inputFile(filename.c_str());
     if (inputFile.is_open()) {

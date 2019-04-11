@@ -8,8 +8,8 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef OOPS_INTERFACE_OBSERRORBASE_H_
-#define OOPS_INTERFACE_OBSERRORBASE_H_
+#ifndef OOPS_BASE_OBSERRORBASE_H_
+#define OOPS_BASE_OBSERRORBASE_H_
 
 #include <map>
 #include <string>
@@ -27,20 +27,12 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 /// Base class for observation error covariance matrices.
-/*!
- *  Base class for observation error covariance matrices.
- *  The interface for the observation error comprises two levels (ObsErrorCovariance
- *  and ObsErrorBase) because we want run time polymorphism.
- *  The ObsErrorCovariance does conversion of arguments to templated ObsVector and
- *  the tracing and timing. The ObsErrorBase does the conversion to model specific
- *  ObsVector.
- */
 
 template<typename MODEL>
 class ObsErrorBase : public util::Printable,
                      private boost::noncopyable {
-  typedef typename MODEL::ObsVector        ObsVector_;
-  typedef typename MODEL::ObsSpace         ObsSpace_;
+  typedef ObsVector<MODEL>        ObsVector_;
+  typedef ObservationSpace<MODEL> ObsSpace_;
 
  public:
   ObsErrorBase() {}
@@ -88,7 +80,7 @@ class ObsErrorMaker : public ObsErrorFactory<MODEL> {
   typedef ObservationSpace<MODEL> ObsSpace_;
   virtual ObsErrorBase<MODEL> * make(const eckit::Configuration & conf, const ObsSpace_ & obs,
                                      const Variables & vars)
-    { return new T(conf, obs.observationspace(), vars); }
+    { return new T(conf, obs, vars); }
  public:
   explicit ObsErrorMaker(const std::string & name) : ObsErrorFactory<MODEL>(name) {}
 };
@@ -126,4 +118,4 @@ ObsErrorBase<MODEL>* ObsErrorFactory<MODEL>::create(const eckit::Configuration &
 
 }  // namespace oops
 
-#endif  // OOPS_INTERFACE_OBSERRORBASE_H_
+#endif  // OOPS_BASE_OBSERRORBASE_H_

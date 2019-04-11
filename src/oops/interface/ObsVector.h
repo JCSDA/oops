@@ -18,6 +18,7 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "oops/base/Variables.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -40,6 +41,7 @@ template <typename MODEL>
 class ObsVector : public util::Printable,
                   private util::ObjectCounter<ObsVector<MODEL> > {
   typedef typename MODEL::ObsVector             ObsVector_;
+  typedef ObsDataVector<MODEL, int>             ObsVectorInt_;
 
  public:
   static const std::string classname() {return "oops::ObsVector";}
@@ -66,7 +68,7 @@ class ObsVector : public util::Printable,
   void random();
   double dot_product_with(const ObsVector &) const;
   double rms() const;
-  void mask(const ObsVector &);
+  void mask(const ObsVectorInt_ &);
 
 // I/O
   void read(const std::string &);
@@ -250,11 +252,11 @@ void ObsVector<MODEL>::print(std::ostream & os) const {
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-void ObsVector<MODEL>::mask(const ObsVector & qc) {
+void ObsVector<MODEL>::mask(const ObsVectorInt_ & qc) {
   Log::trace() << "ObsVector<MODEL>::mask starting" << std::endl;
   util::Timer timer(classname(), "mask");
 
-  data_->mask(*qc.data_);
+  data_->mask(qc.obsdatavector());
 
   Log::trace() << "ObsVector<MODEL>::mask done" << std::endl;
 }

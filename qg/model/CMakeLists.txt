@@ -33,6 +33,7 @@ ObsBiasCovariance.cc
 ObsBiasCovariance.h
 ObsBiasIncrement.cc
 ObsBiasIncrement.h
+ObsDataQG.h
 ObsHelpQG.cc
 ObsHelpQG.h
 ObsOpBaseQG.cc

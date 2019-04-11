@@ -13,13 +13,11 @@
 
 #include <string>
 
-#include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
-#include "oops/interface/ObsErrorBase.h"
+#include "oops/base/ObsErrorBase.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsVector.h"
-#include "oops/util/Printable.h"
 
 namespace eckit {
   class Configuration;
@@ -31,20 +29,11 @@ namespace oops {
 /// Observation error covariance matrix
 /*!
  *  This class provides the operations associated with the observation
- *  error covariance matrix. It wraps the actual observation error covariance
- *  which can be a model specific one or a generic one.
- *  The interface for the observation error comprises two levels (ObsErrorCovariance
- *  and ObsErrorBase) because we want run time polymorphism.
- *  The ObsErrorCovariance does conversion of arguments to templated ObsVector and
- *  the tracing and timing. The ObsErrorBase does the conversion to model specific
- *  ObsVector.
+ *  error covariance matrix. It wraps model specific observation error covariances.
  */
 
-template <typename MODEL>
-class ObsErrorCovariance : public util::Printable,
-                           private util::ObjectCounter<ObsErrorCovariance<MODEL> >,
-                           private boost::noncopyable {
-  typedef ObsErrorBase<MODEL>        ObsErrorBase_;
+template <typename MODEL, typename OBSERR>
+class ObsErrorCovariance : public oops::ObsErrorBase<MODEL> {
   typedef ObservationSpace<MODEL>    ObsSpace_;
   typedef ObsVector<MODEL>           ObsVector_;
 
@@ -69,90 +58,90 @@ class ObsErrorCovariance : public util::Printable,
 
  private:
   void print(std::ostream &) const;
-  boost::scoped_ptr<ObsErrorBase_> covar_;
+  boost::scoped_ptr<OBSERR> covar_;
 };
 
 // ====================================================================================
 
-template <typename MODEL>
-ObsErrorCovariance<MODEL>::ObsErrorCovariance(const eckit::Configuration & conf,
-                                              const ObsSpace_ & obsdb,
-                                              const Variables & obsvar) : covar_() {
-  Log::trace() << "ObsErrorCovariance<MODEL>::ObsErrorCovariance starting" << std::endl;
+template <typename MODEL, typename OBSERR>
+ObsErrorCovariance<MODEL, OBSERR>::ObsErrorCovariance(const eckit::Configuration & conf,
+                                                      const ObsSpace_ & obsdb,
+                                                      const Variables & obsvar) : covar_() {
+  Log::trace() << "ObsErrorCovariance<MODEL, OBSERR>::ObsErrorCovariance starting" << std::endl;
   util::Timer timer(classname(), "ObsErrorCovariance");
-  covar_.reset(ObsErrorFactory<MODEL>::create(conf, obsdb, obsvar));
-  Log::trace() << "ObsErrorCovariance<MODEL>::ObsErrorCovariance done" << std::endl;
+  covar_.reset(new OBSERR(conf, obsdb, obsvar));
+  Log::trace() << "ObsErrorCovariance<MODEL, OBSERR>::ObsErrorCovariance done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-ObsErrorCovariance<MODEL>::~ObsErrorCovariance() {
-  Log::trace() << "ObsErrorCovariance<MODEL>::~ObsErrorCovariance starting" << std::endl;
+template <typename MODEL, typename OBSERR>
+ObsErrorCovariance<MODEL, OBSERR>::~ObsErrorCovariance() {
+  Log::trace() << "ObsErrorCovariance<MODEL, OBSERR>::~ObsErrorCovariance starting" << std::endl;
   util::Timer timer(classname(), "~ObsErrorCovariance");
   covar_.reset();
-  Log::trace() << "ObsErrorCovariance<MODEL>::~ObsErrorCovariance done" << std::endl;
+  Log::trace() << "ObsErrorCovariance<MODEL, OBSERR>::~ObsErrorCovariance done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void ObsErrorCovariance<MODEL>::update() {
-  Log::trace() << "ObsErrorCovariance<MODEL>::update starting" << std::endl;
+template <typename MODEL, typename OBSERR>
+void ObsErrorCovariance<MODEL, OBSERR>::update() {
+  Log::trace() << "ObsErrorCovariance<MODEL, OBSERR>::update starting" << std::endl;
   util::Timer timer(classname(), "update");
   covar_->update();
-  Log::trace() << "ObsErrorCovariance<MODEL>::update done" << std::endl;
+  Log::trace() << "ObsErrorCovariance<MODEL, OBSERR>::update done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void ObsErrorCovariance<MODEL>::multiply(ObsVector_ & dy) const {
-  Log::trace() << "ObsErrorCovariance<MODEL>::multiply starting" << std::endl;
+template <typename MODEL, typename OBSERR>
+void ObsErrorCovariance<MODEL, OBSERR>::multiply(ObsVector_ & dy) const {
+  Log::trace() << "ObsErrorCovariance<MODEL, OBSERR>::multiply starting" << std::endl;
   util::Timer timer(classname(), "multiply");
   covar_->multiply(dy.obsvector());
-  Log::trace() << "ObsErrorCovariance<MODEL>::multiply done" << std::endl;
+  Log::trace() << "ObsErrorCovariance<MODEL, OBSERR>::multiply done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void ObsErrorCovariance<MODEL>::inverseMultiply(ObsVector_ & dy) const {
-  Log::trace() << "ObsErrorCovariance<MODEL>::inverseMultiply starting" << std::endl;
+template <typename MODEL, typename OBSERR>
+void ObsErrorCovariance<MODEL, OBSERR>::inverseMultiply(ObsVector_ & dy) const {
+  Log::trace() << "ObsErrorCovariance<MODEL, OBSERR>::inverseMultiply starting" << std::endl;
   util::Timer timer(classname(), "inverseMultiply");
   covar_->inverseMultiply(dy.obsvector());
-  Log::trace() << "ObsErrorCovariance<MODEL>::inverseMultiply done" << std::endl;
+  Log::trace() << "ObsErrorCovariance<MODEL, OBSERR>::inverseMultiply done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void ObsErrorCovariance<MODEL>::randomize(ObsVector_ & dy) const {
-  Log::trace() << "ObsErrorCovariance<MODEL>::randomize starting" << std::endl;
+template <typename MODEL, typename OBSERR>
+void ObsErrorCovariance<MODEL, OBSERR>::randomize(ObsVector_ & dy) const {
+  Log::trace() << "ObsErrorCovariance<MODEL, OBSERR>::randomize starting" << std::endl;
   util::Timer timer(classname(), "randomize");
   covar_->randomize(dy.obsvector());
-  Log::trace() << "ObsErrorCovariance<MODEL>::randomize done" << std::endl;
+  Log::trace() << "ObsErrorCovariance<MODEL, OBSERR>::randomize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-double ObsErrorCovariance<MODEL>::getRMSE() const {
-  Log::trace() << "ObsErrorCovariance<MODEL>::getRMSE starting" << std::endl;
+template <typename MODEL, typename OBSERR>
+double ObsErrorCovariance<MODEL, OBSERR>::getRMSE() const {
+  Log::trace() << "ObsErrorCovariance<MODEL, OBSERR>::getRMSE starting" << std::endl;
   util::Timer timer(classname(), "getRMSE");
   double zz = covar_->getRMSE();
-  Log::trace() << "ObsErrorCovariance<MODEL>::getRMSE done" << std::endl;
+  Log::trace() << "ObsErrorCovariance<MODEL, OBSERR>::getRMSE done" << std::endl;
   return zz;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ObsErrorCovariance<MODEL>::print(std::ostream & os) const {
-  Log::trace() << "ObsErrorCovariance<MODEL>::print starting" << std::endl;
+template<typename MODEL, typename OBSERR>
+void ObsErrorCovariance<MODEL, OBSERR>::print(std::ostream & os) const {
+  Log::trace() << "ObsErrorCovariance<MODEL, OBSERR>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
   os << *covar_;
-  Log::trace() << "ObsErrorCovariance<MODEL>::print done" << std::endl;
+  Log::trace() << "ObsErrorCovariance<MODEL, OBSERR>::print done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
