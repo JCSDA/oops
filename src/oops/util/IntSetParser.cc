@@ -45,7 +45,7 @@ std::set<int> parseIntSet(const std::string & str) {
 // split string by commas to get individual channels or ranges
   std::vector<std::string> ranges = splitString(str, ',');
 
-  for (int irange = 0; irange < ranges.size(); irange++) {
+  for (std::size_t irange = 0; irange < ranges.size(); irange++) {
     // split the element by dashes (in case it is a range)
     std::vector<std::string> range = splitString(ranges[irange], '-');
     ASSERT((range.size() == 1) || (range.size() == 2));
