@@ -23,8 +23,6 @@
 #include "oops/base/Departures.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
-#include "oops/interface/GeoVaLs.h"
-#include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
@@ -44,8 +42,6 @@ template<typename MODEL> class Observations;
 // -----------------------------------------------------------------------------
 template <typename MODEL> class Observations : public util::Printable {
   typedef Departures<MODEL>          Departures_;
-  typedef GeoVaLs<MODEL>             GeoVaLs_;
-  typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef ObsOperators<MODEL>        ObsOperators_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef ObsVector<MODEL>           ObsVector_;

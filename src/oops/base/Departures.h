@@ -19,11 +19,8 @@
 #include <boost/shared_ptr.hpp>
 
 #include "oops/base/GeneralizedDepartures.h"
-#include "oops/base/ObsErrorBase.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
-#include "oops/interface/GeoVaLs.h"
-#include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
@@ -48,9 +45,6 @@ template<typename MODEL> class Departures;
 template <typename MODEL>
 class Departures : public util::Printable,
                    public GeneralizedDepartures {
-  typedef GeoVaLs<MODEL>             GeoVaLs_;
-  typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
-  typedef ObsErrorBase<MODEL>        ObsErrorBase_;
   typedef ObsOperators<MODEL>        ObsOperators_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef ObsVector<MODEL>           ObsVector_;
