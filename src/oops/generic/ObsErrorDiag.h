@@ -37,9 +37,6 @@ class ObsErrorDiag : public ObsErrorBase<MODEL> {
   ObsErrorDiag(const eckit::Configuration &, const ObsSpace_ &, const Variables &);
   ~ObsErrorDiag();
 
-/// Update after QC od other obs filters
-  void update();
-
 /// Multiply a Departure by \f$R\f$
   void multiply(ObsVector_ &) const;
 
@@ -71,13 +68,13 @@ ObsErrorDiag<MODEL>::ObsErrorDiag(const eckit::Configuration & conf, const ObsSp
     stddev_(obsgeom, observed), inverseVariance_(obsgeom, observed),
     pert_(conf.getDouble("random_amplitude", 1.0))
 {
-  stddev_.read("ObsError");
-  stddev_.save("EffectiveError");
+  stddev_.read("EffectiveError");
 
   inverseVariance_ = stddev_;
   inverseVariance_ *= stddev_;
   inverseVariance_.invert();
-  Log::trace() << "ObsErrorDiag:ObsErrorDiag constructed" << std::endl;
+
+  Log::trace() << "ObsErrorDiag:ObsErrorDiag constructed nobs = " << stddev_.nobs() << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -85,23 +82,6 @@ ObsErrorDiag<MODEL>::ObsErrorDiag(const eckit::Configuration & conf, const ObsSp
 template<typename MODEL>
 ObsErrorDiag<MODEL>::~ObsErrorDiag() {
   Log::trace() << "ObsErrorDiag:~ObsErrorDiag destructed" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void ObsErrorDiag<MODEL>::update() {
-  stddev_.read("EffectiveError");
-  ObsVectorInt_ qc(obsdb_, observed_);
-  qc.read("EffectiveQC");
-  stddev_.mask(qc);
-  stddev_.save("EffectiveError");
-
-  inverseVariance_ = stddev_;
-  inverseVariance_ *= stddev_;
-  inverseVariance_.invert();
-
-  Log::trace() << "ObsErrorDiag:update nobs = " << stddev_.nobs() << std::endl;
 }
 
 // -----------------------------------------------------------------------------

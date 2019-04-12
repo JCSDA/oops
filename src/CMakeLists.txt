@@ -262,6 +262,8 @@ oops/util/duration_f.h
 oops/util/duration_f.cc
 oops/util/duration_mod.F90
 oops/util/formats.h
+oops/util/IntSetParser.cc
+oops/util/IntSetParser.h
 oops/util/kinds.F90
 oops/util/LibOOPS.h
 oops/util/LibOOPS.cc
@@ -276,7 +278,6 @@ oops/util/ObjectCountHelper.h
 oops/util/ObjectCountHelper.cc
 oops/util/Printable.h
 oops/util/PrintAdjTest.h
-oops/util/printStackTrace.h
 oops/util/set_err_trap.F90
 oops/util/signal_trap.c
 oops/util/string_f_c_mod.F90

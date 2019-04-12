@@ -21,7 +21,6 @@
 #include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
-#include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
@@ -44,7 +43,6 @@ template <typename MODEL> class HofX : public Application {
   typedef ModelAuxControl<MODEL>     ModelAux_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef Observations<MODEL>        Observations_;
-  typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsOperators<MODEL>        ObsOperators_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef State<MODEL>               State_;
@@ -100,12 +98,9 @@ template <typename MODEL> class HofX : public Application {
     ObsSpaces_ obsdb(obsconf, winbgn, winend);
     ObsOperators_ hop(obsdb, obsconf);
 
-//  Setup QC filters
-    std::vector<ObsFilters_> filters(obsdb.size());
-
 //  Setup Observer
     boost::shared_ptr<Observer<MODEL, State_> >
-      pobs(new Observer<MODEL, State_>(obsdb, hop, ybias, filters));
+      pobs(new Observer<MODEL, State_>(obsconf, obsdb, hop, ybias));
     post.enrollProcessor(pobs);
 
 //  Compute H(x)

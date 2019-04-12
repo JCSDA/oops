@@ -43,9 +43,6 @@ class ObsErrorCovariance : public oops::ObsErrorBase<MODEL> {
   ObsErrorCovariance(const eckit::Configuration &, const ObsSpace_ &, const Variables &);
   ~ObsErrorCovariance();
 
-/// Update after QC or other obs filters
-  void update();
-
 /// Multiply a Departure by \f$R\f$ and \f$R^{-1}\f$
   void multiply(ObsVector_ &) const;
   void inverseMultiply(ObsVector_ &) const;
@@ -81,16 +78,6 @@ ObsErrorCovariance<MODEL, OBSERR>::~ObsErrorCovariance() {
   util::Timer timer(classname(), "~ObsErrorCovariance");
   covar_.reset();
   Log::trace() << "ObsErrorCovariance<MODEL, OBSERR>::~ObsErrorCovariance done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL, typename OBSERR>
-void ObsErrorCovariance<MODEL, OBSERR>::update() {
-  Log::trace() << "ObsErrorCovariance<MODEL, OBSERR>::update starting" << std::endl;
-  util::Timer timer(classname(), "update");
-  covar_->update();
-  Log::trace() << "ObsErrorCovariance<MODEL, OBSERR>::update done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

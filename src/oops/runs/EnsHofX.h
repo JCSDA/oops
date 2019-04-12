@@ -19,7 +19,6 @@
 #include "oops/base/ObsEnsemble.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
-#include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
@@ -43,7 +42,6 @@ template <typename MODEL> class EnsHofX : public Application {
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef Observations<MODEL>        Observations_;
   typedef ObsEnsemble<MODEL>         ObsEnsemble_;
-  typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsOperators<MODEL>        ObsOperator_;
   typedef ObsSpaces<MODEL>           ObsSpace_;
   typedef State<MODEL>               State_;
@@ -83,9 +81,6 @@ template <typename MODEL> class EnsHofX : public Application {
     ObsSpace_ obsdb(obsconf, winbgn, winend);
     ObsOperator_ hop(obsdb, obsconf);
 
-//  Setup QC filters
-    std::vector<ObsFilters_> filters(obsdb.size());
-
 //  Setup initial states
     const eckit::LocalConfiguration initialConfig(fullConfig, "Initial Condition");
     std::vector<eckit::LocalConfiguration> members;
@@ -113,7 +108,7 @@ template <typename MODEL> class EnsHofX : public Application {
 
 //    Setup postprocessor: Observer
       boost::shared_ptr<Observer<MODEL, State_> >
-      pobs(new Observer<MODEL, State_>(obsdb, hop, ybias, filters));
+      pobs(new Observer<MODEL, State_>(obsconf, obsdb, hop, ybias));
       post.enrollProcessor(pobs);
 
 //    Compute H(x)

@@ -50,9 +50,6 @@ class ObsErrors : public util::Printable,
   std::size_t size() const {return err_.size();}
   const ObsError_ & operator[](const std::size_t ii) const {return *err_.at(ii);}
 
-/// Update, for example after QC
-  void update();
-
 /// Multiply a Departure by \f$R\f$ and \f$R^{-1}\f$
   void multiply(Departures_ &) const;
   void inverseMultiply(Departures_ &) const;
@@ -85,15 +82,6 @@ ObsErrors<MODEL>::ObsErrors(const eckit::Configuration & config,
 
 template <typename MODEL>
 ObsErrors<MODEL>::~ObsErrors() {}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-void ObsErrors<MODEL>::update() {
-  for (std::size_t jj = 0; jj < err_.size(); ++jj) {
-    err_[jj]->update();
-  }
-}
 
 // -----------------------------------------------------------------------------
 

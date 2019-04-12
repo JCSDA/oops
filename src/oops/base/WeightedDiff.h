@@ -24,7 +24,6 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
-#include "oops/util/printStackTrace.h"
 
 namespace oops {
 
@@ -118,7 +117,6 @@ void WeightedDiff<MODEL, INCR, FLDS>::doInitialize(const FLDS & xx,
 template <typename MODEL, typename INCR, typename FLDS>
 void WeightedDiff<MODEL, INCR, FLDS>::doProcessing(const FLDS & xx) {
   const util::DateTime now(xx.validTime());
-  printStackTrace();
   ASSERT(now > current_);
   if (((bgnleg_ < end_ && endleg_ > bgn_) || bgnleg_ == endleg_) &&
       (now != endleg_ || now == end_ || now == bgnleg_)) {

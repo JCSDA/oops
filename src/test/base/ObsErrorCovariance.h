@@ -22,6 +22,7 @@
 #include "oops/base/ObsErrorBase.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/interface/ObsOperator.h"
+#include "oops/interface/ObsVector.h"
 #include "oops/runs/Test.h"
 #include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"
@@ -33,7 +34,8 @@ namespace test {
 template <typename MODEL> void testConstructor() {
   typedef ObsTestsFixture<MODEL>  Test_;
   typedef oops::ObsErrorBase<MODEL>  Covar_;
-  typedef oops::ObsOperator<MODEL> ObsOperator_;
+  typedef oops::ObsOperator<MODEL>   ObsOperator_;
+  typedef oops::ObsVector<MODEL>     ObsVector_;
 
   oops::instantiateObsErrorFactory<MODEL>();
 
@@ -43,6 +45,11 @@ template <typename MODEL> void testConstructor() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     ObsOperator_ hop(Test_::obspace()[jj], conf[jj]);
+
+    ObsVector_ obserr(Test_::obspace()[jj], hop.observed());
+    obserr.read("ObsError");
+    obserr.save("EffectiveError");
+
     const eckit::LocalConfiguration rconf(conf[jj], "Covariance");
     boost::scoped_ptr<Covar_> R(
       oops::ObsErrorFactory<MODEL>::create(rconf, Test_::obspace()[jj], hop.observed()));

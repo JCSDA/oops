@@ -22,7 +22,7 @@ const float & missingValue(const float &) {
 }
 // -----------------------------------------------------------------------------
 const double & missingValue(const double &) {
-  static const float fmiss = std::numeric_limits<float>::lowest() * 0.99;
+  static const float fmiss = std::numeric_limits<float>::lowest() * 0.98;
   static const double dmiss = static_cast<double>(fmiss);
   return dmiss;
 }

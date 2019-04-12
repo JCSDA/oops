@@ -38,9 +38,6 @@ class ObsErrorBase : public util::Printable,
   ObsErrorBase() {}
   virtual ~ObsErrorBase() {}
 
-/// Update after obs filters
-  virtual void update() = 0;
-
 /// Multiply a Departure by \f$R\f$ and \f$R^{-1}\f$
   virtual void multiply(ObsVector_ &) const = 0;
   virtual void inverseMultiply(ObsVector_ &) const = 0;

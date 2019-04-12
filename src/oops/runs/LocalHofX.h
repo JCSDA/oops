@@ -18,7 +18,6 @@
 #include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
-#include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
@@ -43,7 +42,6 @@ template <typename MODEL> class LocalHofX : public Application {
   typedef ModelAuxControl<MODEL>     ModelAux_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef Observations<MODEL>        Observations_;
-  typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsOperators<MODEL>        ObsOperators_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef State<MODEL>               State_;
@@ -103,9 +101,6 @@ template <typename MODEL> class LocalHofX : public Application {
     double dist = localconfig.getDouble("distance");
     int max_nobs = localconfig.getInt("max_nobs");
 
-//  Setup QC filters
-    std::vector<ObsFilters_> filters(obsdb.size());
-
 //  Get points for finding local obs
     std::vector<eckit::LocalConfiguration> centerconf;
     fullConfig.get("GeoLocations", centerconf);
@@ -127,7 +122,7 @@ template <typename MODEL> class LocalHofX : public Application {
        localhop.push_back(lhop);
        //  Setup observer
        boost::shared_ptr<Observer<MODEL, State_>>
-          lpobs(new Observer<MODEL, State_>(*localobs[jj], *localhop[jj], ybias, filters));
+          lpobs(new Observer<MODEL, State_>(obsconf, *localobs[jj], *localhop[jj], ybias));
        pobs.push_back(lpobs);
        post.enrollProcessor(pobs[jj]);
     }

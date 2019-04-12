@@ -27,7 +27,6 @@
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
 #include "oops/base/ObserverTLAD.h"
-#include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
@@ -39,6 +38,7 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/missingValues.h"
 
 namespace oops {
 
@@ -62,7 +62,6 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   typedef Increment<MODEL>           Increment_;
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
   typedef ObsErrors<MODEL>           ObsErrors_;
-  typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsOperators<MODEL>        ObsOperators_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef ObserverTLAD<MODEL>        ObserverTLAD_;
@@ -114,7 +113,7 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   ObsSpaces_ obspace_;
   ObsOperators_ hop_;
   Observations_ yobs_;
-  ObsErrors_ Rmat_;
+  boost::scoped_ptr<ObsErrors_> Rmat_;
 
   /// Configuration for current initialize/finalize pair
   boost::scoped_ptr<eckit::LocalConfiguration> currentConf_;
@@ -140,21 +139,11 @@ CostJo<MODEL>::CostJo(const eckit::Configuration & joConf,
                       const util::DateTime & winbgn, const util::DateTime & winend,
                       const util::Duration & tslot, const bool subwindows)
   : obsconf_(joConf), obspace_(obsconf_, winbgn, winend),
-    hop_(obspace_, joConf), yobs_(obspace_, hop_), Rmat_(obsconf_, obspace_, hop_),
+    hop_(obspace_, joConf), yobs_(obspace_, hop_), Rmat_(),
     currentConf_(), gradFG_(), pobs_(), tslot_(tslot),
     pobstlad_(), subwindows_(subwindows)
 {
-  Log::trace() << "CostJo::CostJo start" << std::endl;
-  yobs_.read("ObsValue");
   Log::trace() << "CostJo::CostJo done" << std::endl;
-
-// Perturb observations according to obs error statistics
-  if (obsconf_.getBool("ObsPert", false)) {
-    Departures_ ypert_(obspace_, hop_);
-    Rmat_.randomize(ypert_);
-    yobs_ += ypert_;
-    Log::info() << "Perturbed observations: " << yobs_ << std::endl;
-  }
 }
 
 // -----------------------------------------------------------------------------
@@ -164,15 +153,11 @@ boost::shared_ptr<PostBase<State<MODEL> > >
 CostJo<MODEL>::initialize(const CtrlVar_ & xx, const eckit::Configuration & conf) {
   Log::trace() << "CostJo::initialize start" << std::endl;
   currentConf_.reset(new eckit::LocalConfiguration(conf));
-  std::vector<ObsFilters_> filters_;  // should be controlled by outer loop
-  std::vector<eckit::LocalConfiguration> typeconfs;
-  obsconf_.get("ObsTypes", typeconfs);
-  for (size_t jj = 0; jj < obspace_.size(); ++jj) {
-    typeconfs[jj].set("QCname", "EffectiveQC");
-    filters_.push_back(ObsFilters_(obspace_[jj], typeconfs[jj], hop_[jj].observed()));
-  }
-  pobs_.reset(new Observer<MODEL, State_>(obspace_, hop_, xx.obsVar(), filters_,
+  const int iterout = conf.getInt("iteration")+1;
+  obsconf_.set("iteration", iterout);
+  pobs_.reset(new Observer<MODEL, State_>(obsconf_, obspace_, hop_, xx.obsVar(),
                                           tslot_, subwindows_));
+  obsconf_.set("iteration", util::missingValue(iterout));
   Log::trace() << "CostJo::initialize done" << std::endl;
   return pobs_;
 }
@@ -185,16 +170,27 @@ double CostJo<MODEL>::finalize() {
   boost::scoped_ptr<Observations_> yeqv(pobs_->release());
   Log::info() << "Jo Observation Equivalent:" << std::endl << *yeqv
               << "End Jo Observation Equivalent";
-  const std::string obsname = "hofx" + currentConf_->getString("iteration");
+  const int iterout = currentConf_->getInt("iteration");
+  const std::string obsname = "hofx" + std::to_string(iterout);
   yeqv->save(obsname);
 
-  Rmat_.update();
+  Rmat_.reset(new ObsErrors_(obsconf_, obspace_, hop_));
+
+  yobs_.read("ObsValue");
+
+// Perturb observations according to obs error statistics
+  if (iterout == 0 && obsconf_.getBool("ObsPert", false)) {
+    Departures_ ypert_(obspace_, hop_);
+    Rmat_->randomize(ypert_);
+    yobs_ += ypert_;
+    Log::info() << "Perturbed observations: " << yobs_ << std::endl;
+  }
 
   Departures_ ydep(*yeqv - yobs_);
   Log::info() << "Jo Departures:" << std::endl << ydep << "End Jo Departures" << std::endl;
 
   Departures_ grad(ydep);
-  Rmat_.inverseMultiply(grad);
+  Rmat_->inverseMultiply(grad);
 
   double zjo = this->printJo(ydep, grad);
 
@@ -216,10 +212,12 @@ boost::shared_ptr<PostBaseTLAD<MODEL> >
 CostJo<MODEL>::initializeTraj(const CtrlVar_ & xx, const Geometry_ &,
                               const eckit::Configuration & conf) {
   Log::trace() << "CostJo::initializeTraj start" << std::endl;
-  std::vector<ObsFilters_> filters_(obspace_.size());
-  pobstlad_.reset(new ObserverTLAD_(obsconf_, obspace_, hop_, xx.obsVar(), filters_,
+  const int iterout = conf.getInt("iteration")+1;
+  obsconf_.set("iteration", -iterout);
+  pobstlad_.reset(new ObserverTLAD_(obsconf_, obspace_, hop_, xx.obsVar(),
                                     tslot_, subwindows_));
   Log::trace() << "CostJo::initializeTraj done" << std::endl;
+  obsconf_.set("iteration", util::missingValue(iterout));
   return pobstlad_;
 }
 
@@ -241,7 +239,7 @@ void CostJo<MODEL>::finalizeTraj() {
   } else {
     *gradFG_ = ydep;
   }
-  Rmat_.inverseMultiply(*gradFG_);
+  Rmat_->inverseMultiply(*gradFG_);
   Log::trace() << "CostJo::finalizeTraj done" << std::endl;
 }
 
@@ -276,7 +274,7 @@ template<typename MODEL>
 Departures<MODEL> * CostJo<MODEL>::multiplyCovar(const GeneralizedDepartures & v1) const {
   Log::trace() << "CostJo::multiplyCovar start" << std::endl;
   Departures_ * y1 = new Departures_(dynamic_cast<const Departures_ &>(v1));
-  Rmat_.multiply(*y1);
+  Rmat_->multiply(*y1);
   return y1;
 }
 
@@ -286,7 +284,7 @@ template<typename MODEL>
 Departures<MODEL> * CostJo<MODEL>::multiplyCoInv(const GeneralizedDepartures & v1) const {
   Log::trace() << "CostJo::multiplyCoInv start" << std::endl;
   Departures_ * y1 = new Departures_(dynamic_cast<const Departures_ &>(v1));
-  Rmat_.inverseMultiply(*y1);
+  Rmat_->inverseMultiply(*y1);
   return y1;
 }
 
@@ -325,7 +323,7 @@ double CostJo<MODEL>::printJo(const Departures_ & dy, const Departures_ & grad) 
       Log::test() << "CostJo   : Nonlinear Jo("
                   << hop_[jj].obstype() << ") = " << zz
                   << ", nobs = " << nobs << ", Jo/n = " << zz/nobs
-                  << ", err = " << Rmat_[jj].getRMSE() << std::endl;
+                  << ", err = " << (*Rmat_)[jj].getRMSE() << std::endl;
     } else {
       Log::test() << "CostJo   : Nonlinear Jo = " << zz << " --- No Observations" << std::endl;
       Log::warning() << "CostJo: No Observations!!!" << std::endl;
