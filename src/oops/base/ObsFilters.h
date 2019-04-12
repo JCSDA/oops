@@ -13,6 +13,7 @@
 #include <vector>
 
 #include <boost/noncopyable.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
@@ -56,8 +57,8 @@ class ObsFilters : public util::Printable,
   std::vector< boost::shared_ptr<ObsFilterBase_> > filters_;
   Variables geovars_;
 
-  boost::shared_ptr<ObsVector_> obserr_;
-  boost::shared_ptr<ObsVectorInt_> qcflags_;
+  boost::scoped_ptr<ObsVector_> obserr_;
+  boost::scoped_ptr<ObsVectorInt_> qcflags_;
 };
 
 // -----------------------------------------------------------------------------
@@ -69,24 +70,23 @@ ObsFilters<MODEL>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration &
   Log::trace() << "ObsFilters::ObsFilters starting " << conf << std::endl;
   const int iter = conf.getInt("iteration");
 
-// Initialize obs error values
-  if (iter == 0) {
-    ObsVector_ obserr(os, observed);
-    obserr.read("ObsError");
-    obserr.save("EffectiveError");
-  }
-
 // Get filters configuration
   std::vector<eckit::LocalConfiguration> confs;
   conf.get("ObsFilters", confs);
 
+// Initialize obs error values
+  if (iter == 0 || confs.size() > 0) {
+    ObsVector_ obserr(os, observed);
+    obserr.read("ObsError");
+    obserr.save("EffectiveError");
+
 // Prepare storage for QC flags using PreQC filter (all work done in filter constructor)
-  if (confs.size() > 0) {
     eckit::LocalConfiguration preconf;
     preconf.set("Filter", "PreQC");
     preconf.set("QCname", "EffectiveQC");
     preconf.set("observed", observed.variables());
     filters_.push_back(FilterFactory<MODEL>::create(os, preconf));
+
     obserr_.reset(new ObsVector_(os, observed));
     qcflags_.reset(new ObsVectorInt_(os, observed));
   }
@@ -118,15 +118,6 @@ ObsFilters<MODEL>::ObsFilters() : filters_(), geovars_(), obserr_(), qcflags_() 
 
 template <typename MODEL>
 ObsFilters<MODEL>::~ObsFilters() {
-  if (obserr_) {
-    obserr_->read("EffectiveError");
-    qcflags_->read("EffectiveQC");
-    obserr_->mask(*qcflags_);
-    obserr_->save("EffectiveError");
-  }
-
-  obserr_.reset();
-  qcflags_.reset();
   Log::trace() << "ObsFilters::~ObsFilters destructed" << std::endl;
 }
 
@@ -145,6 +136,14 @@ template<typename MODEL>
 void ObsFilters<MODEL>::postFilter(const ObsVector_ & ovec) const {
   for (std::size_t jj = 0; jj < filters_.size(); ++jj) {
     filters_.at(jj)->postFilter(ovec);
+  }
+
+// Save output from filters
+  if (obserr_) {
+    obserr_->read("EffectiveError");
+    qcflags_->read("EffectiveQC");
+    obserr_->mask(*qcflags_);
+    obserr_->save("EffectiveError");
   }
 }
 

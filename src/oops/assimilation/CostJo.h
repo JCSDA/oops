@@ -153,7 +153,7 @@ boost::shared_ptr<PostBase<State<MODEL> > >
 CostJo<MODEL>::initialize(const CtrlVar_ & xx, const eckit::Configuration & conf) {
   Log::trace() << "CostJo::initialize start" << std::endl;
   currentConf_.reset(new eckit::LocalConfiguration(conf));
-  const int iterout = conf.getInt("iteration")+1;
+  const int iterout = conf.getInt("iteration");
   obsconf_.set("iteration", iterout);
   pobs_.reset(new Observer<MODEL, State_>(obsconf_, obspace_, hop_, xx.obsVar(),
                                           tslot_, subwindows_));
