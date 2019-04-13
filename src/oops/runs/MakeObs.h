@@ -98,12 +98,13 @@ template <typename MODEL> class MakeObs : public Application {
     ObsAuxCtrl_ ybias(biasConf);
 
 //  Setup observations
-    const eckit::LocalConfiguration obsconf(fullConfig, "Observations");
+    eckit::LocalConfiguration obsconf(fullConfig, "Observations");
     Log::info() << "Observation configuration is:" << obsconf << std::endl;
     ObsSpaces_ obspace(obsconf, bgn, end);
     ObsOperators_ hop(obspace, obsconf);
 
 //  Setup Observer
+    obsconf.set("PreQC", "on");
     boost::shared_ptr<Observer<MODEL, State_> >
       pobs(new Observer<MODEL, State_>(obsconf, obspace, hop, ybias));
     post.enrollProcessor(pobs);

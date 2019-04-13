@@ -155,9 +155,11 @@ CostJo<MODEL>::initialize(const CtrlVar_ & xx, const eckit::Configuration & conf
   currentConf_.reset(new eckit::LocalConfiguration(conf));
   const int iterout = conf.getInt("iteration");
   obsconf_.set("iteration", iterout);
+  if (iterout == 0) obsconf_.set("PreQC", "on");
   pobs_.reset(new Observer<MODEL, State_>(obsconf_, obspace_, hop_, xx.obsVar(),
                                           tslot_, subwindows_));
   obsconf_.set("iteration", util::missingValue(iterout));
+  obsconf_.set("PreQC", "off");
   Log::trace() << "CostJo::initialize done" << std::endl;
   return pobs_;
 }

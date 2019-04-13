@@ -68,14 +68,9 @@ ObsFilters<MODEL>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration &
                               const Variables & observed)
   : filters_(), geovars_(), obserr_(), qcflags_() {
   Log::trace() << "ObsFilters::ObsFilters starting " << conf << std::endl;
-  const int iter = conf.getInt("iteration");
-
-// Get filters configuration
-  std::vector<eckit::LocalConfiguration> confs;
-  conf.get("ObsFilters", confs);
 
 // Initialize obs error values
-  if (iter == 0 || confs.size() > 0) {
+  if (conf.getString("PreQC", "off") == "on") {
     ObsVector_ obserr(os, observed);
     obserr.read("ObsError");
     obserr.save("EffectiveError");
@@ -86,10 +81,12 @@ ObsFilters<MODEL>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration &
     preconf.set("QCname", "EffectiveQC");
     preconf.set("observed", observed.variables());
     filters_.push_back(FilterFactory<MODEL>::create(os, preconf));
-
-    obserr_.reset(new ObsVector_(os, observed));
-    qcflags_.reset(new ObsVectorInt_(os, observed));
   }
+
+// Get filters configuration
+  std::vector<eckit::LocalConfiguration> confs;
+  conf.get("ObsFilters", confs);
+  const int iter = conf.getInt("iteration");
 
 // Create the filters
   for (std::size_t jj = 0; jj < confs.size(); ++jj) {
@@ -105,6 +102,11 @@ ObsFilters<MODEL>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration &
       geovars_ += tmp->requiredGeoVaLs();
       filters_.push_back(tmp);
     }
+  }
+
+  if (filters_.size() > 0) {
+    obserr_.reset(new ObsVector_(os, observed));
+    qcflags_.reset(new ObsVectorInt_(os, observed));
   }
   Log::trace() << "ObsFilters::ObsFilters done" << std::endl;
 }

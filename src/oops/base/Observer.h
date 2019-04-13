@@ -109,10 +109,12 @@ Observer<MODEL, STATE>::Observer(const eckit::Configuration & obsconf,
 
   const int iterout = obsconf.getInt("iteration", 0);
   if (iterout >= 0) {
+    const bool preqc = (obsconf.getString("PreQC", "off") == "on");
     std::vector<eckit::LocalConfiguration> typeconfs;
     obsconf.get("ObsTypes", typeconfs);
     for (size_t jj = 0; jj < obsdb.size(); ++jj) {
       typeconfs[jj].set("iteration", iterout);
+      if (preqc) typeconfs[jj].set("PreQC", "on");
       boost::shared_ptr<ObsFilters_> tmp(new ObsFilters_(obsdb[jj], typeconfs[jj],
                                                          hop_[jj].observed()));
       filters_.push_back(tmp);
