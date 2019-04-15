@@ -38,6 +38,8 @@ class Variables : public util::Printable {
   const std::string & operator[](const size_t kk) const {return vars_.at(kk);}
 
   bool has(const std::string &) const;
+  size_t find(const std::string &) const;
+
   const std::vector<std::string> & variables() const {return vars_;}
   const eckit::Configuration & toFortran() const {return fconf_;}  // to be removed
   const eckit::Configuration * toFortranBetter() const {return &conf_;}

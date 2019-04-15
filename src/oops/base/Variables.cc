@@ -74,6 +74,17 @@ bool Variables::has(const std::string & var) const {
 
 // -----------------------------------------------------------------------------
 
+size_t Variables::find(const std::string & var) const {
+  size_t ii = vars_.size();
+  for (size_t jj = 0; jj < vars_.size(); ++jj) {
+    if (vars_[jj] == var) ii = jj;
+  }
+  ASSERT(ii < vars_.size());
+  return ii;
+}
+
+// -----------------------------------------------------------------------------
+
 Variables::~Variables() {}
 
 // -----------------------------------------------------------------------------
