@@ -56,6 +56,25 @@ class ObsDataVector : public util::Printable,
 };
 
 // -----------------------------------------------------------------------------
+template<typename MODEL>
+bool compareFlags(const ObsDataVector<MODEL, int> & first,
+                  const ObsDataVector<MODEL, int> & second) {
+  Log::trace() << "compareFlags(ObsDataVector<MODEL, int>) starting" << std::endl;
+  bool compare = compareFlags(first.obsdatavector(), second.obsdatavector());
+  Log::trace() << "compareFlags(ObsDataVector<MODEL, int>) done" << std::endl;
+  return compare;
+}
+
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+size_t numZero(const ObsDataVector<MODEL, int> & data) {
+  Log::trace() << "numZero(ObsDataVector<MODEL, int>) starting" << std::endl;
+  size_t nzero = numZero(data.obsdatavector());
+  Log::trace() << "numZero(ObsDataVector<MODEL, int>) done" << std::endl;
+  return nzero;
+}
+
+// -----------------------------------------------------------------------------
 template <typename MODEL, typename DATATYPE>
 ObsDataVector<MODEL, DATATYPE>::ObsDataVector(const ObservationSpace<MODEL> & os,
                                               const Variables & vars): data_() {

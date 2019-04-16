@@ -20,7 +20,6 @@
 #include "eckit/testing/Test.h"
 #include "oops/base/ObsFilterBase.h"
 #include "oops/interface/GeoVaLs.h"
-#include "oops/interface/Locations.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsOperator.h"
@@ -37,7 +36,6 @@ namespace test {
 template <typename MODEL> void testFilters() {
   typedef ObsTestsFixture<MODEL> Test_;
   typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
-  typedef oops::Locations<MODEL>         Locations_;
   typedef oops::ObsAuxControl<MODEL>     ObsAuxCtrl_;
   typedef oops::ObsFilterBase<MODEL>     ObsFilterBase_;
   typedef oops::ObsOperator<MODEL>       ObsOperator_;
@@ -52,7 +50,6 @@ template <typename MODEL> void testFilters() {
 //  Would not need hop for this test if using precomputed geovals
     ObsOperator_ hop(Test_::obspace()[jj], typeconfs[jj]);
     eckit::LocalConfiguration gconf(typeconfs[jj], "GeoVaLs");
-    Locations_ locs(hop.locations(Test_::tbgn(), Test_::tend()));
     const GeoVaLs_ gval(gconf, hop.variables());
 
     const ObsAuxCtrl_ ybias(typeconfs[jj]);
@@ -79,6 +76,7 @@ template <typename MODEL> void testFilters() {
 //  Test filters
     for (std::size_t jf = 0; jf < filtconf.size(); ++jf) {
       filtconf[jf].set("QCname", qcname);
+      filtconf[jf].set("observed", hop.observed().variables());
       boost::shared_ptr<ObsFilterBase_> filter(
         oops::FilterFactory<MODEL>::create(Test_::obspace()[jj], filtconf[jf]));
 
@@ -87,27 +85,22 @@ template <typename MODEL> void testFilters() {
       filter->postFilter(ovec);
     }
 
-//  Mask out all the values that were QC-d out
+//  get QC marks from this run
     ObsVectorInt_ qc(Test_::obspace()[jj], hop.observed());
     qc.read(qcname);
-    ovec.mask(qc);
 
-    const double tol = typeconfs[jj].getDouble("tolerance");
-    if (typeconfs[jj].has("vecequiv")) {
-      // if reference h(x) is saved in file as a vector, read from file
-      // and compare the norm of difference to zero
-      ObsVector_ ovec_ref(ovec, false);
-      ovec_ref.read(typeconfs[jj].getString("vecequiv"));
-      ovec_ref -= ovec;
-      const double zz = ovec_ref.rms();
-      oops::Log::info() << "Vector difference between reference and computed: " <<
-                           ovec_ref;
-      EXPECT(zz< tol);
+    if (typeconfs[jj].has("qcBenchmark")) {
+      const std::string qcBenchmarkName = typeconfs[jj].getString("qcBenchmark");
+
+      ObsVectorInt_ qcBenchmark(Test_::obspace()[jj], hop.observed());
+      qcBenchmark.read(qcBenchmarkName);
+
+      bool same = compareFlags(qc, qcBenchmark);
+      EXPECT(same);
     } else {
-      // else compare h(x) norm to the norm from the config
-      const double zz = ovec.rms();
-      const double xx = typeconfs[jj].getDouble("rmsequiv");
-      EXPECT(oops::is_close(xx, zz, tol));
+      const int passedBenchmark = typeconfs[jj].getInt("passedBenchmark");
+      const int passed = numZero(qc);
+      EXPECT(passed == passedBenchmark);
     }
   }
 }
