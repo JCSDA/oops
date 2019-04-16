@@ -225,7 +225,7 @@ call bump%mpl%flush
 write(bump%mpl%info,'(a)') '--- Initialize block parameters'
 call bump%mpl%flush
 call bump%bpar%alloc(bump%nam,bump%geom)
-call bump%bpar%init(bump%nam,bump%geom)
+call bump%bpar%init(bump%mpl,bump%nam,bump%geom)
 
 ! Initialize ensemble 1
 write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
@@ -389,7 +389,7 @@ else
    end if
 end if
 
-if (allocated(bump%cmat%blk)) then
+if (bump%cmat%allocated.or.bump%nam%new_nicas) then
    ! Get C matrix from BUMP interface
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
    call bump%mpl%flush
@@ -431,14 +431,14 @@ elseif (bump%nam%load_nicas) then
    call bump%nicas%read(bump%mpl,bump%nam,bump%geom,bump%bpar)
 end if
 
-if (bump%nam%check_adjoints.or.bump%nam%check_pos_def.or.bump%nam%check_sqrt.or.bump%nam%check_dirac.or. &
- & bump%nam%check_randomization.or.bump%nam%check_consistency.or.bump%nam%check_optimality) then
+if (bump%nam%check_adjoints.or.bump%nam%check_pos_def.or.bump%nam%check_dirac.or.bump%nam%check_randomization.or. &
+ & bump%nam%check_consistency.or.bump%nam%check_optimality) then
    ! Run NICAS tests driver
    write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
    call bump%mpl%flush
    write(bump%mpl%info,'(a)') '--- Run NICAS tests driver'
    call bump%mpl%flush
-   call bump%nicas%run_nicas_tests(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%cmat,bump%ens1)
+   call bump%nicas%run_nicas_tests(bump%mpl,bump%rng,bump%nam,bump%geom,bump%bpar,bump%io,bump%ens1)
    if (bump%nam%default_seed) call bump%rng%reseed(bump%mpl)
 end if
 

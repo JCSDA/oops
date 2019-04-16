@@ -386,7 +386,7 @@ call geom%mesh%alloc(geom%nc0)
 call geom%mesh%init(mpl,rng,geom%lon,geom%lat)
 
 ! Compute boundary nodes
-call geom%mesh%bnodes(mpl)
+call geom%mesh%bnodes(mpl,nam%adv_diag)
 
 ! Check whether the mask is the same for all levels
 same_mask = .true.
@@ -797,6 +797,21 @@ class(geom_type),intent(in) :: geom                        ! Geometry
 type(mpl_type),intent(inout) :: mpl                        ! MPI data
 real(kind_real),intent(in) :: fld_c0a(geom%nc0a,geom%nl0)  ! Field on subset Sc0, halo A
 real(kind_real),intent(out) :: fld_mga(geom%nmga,geom%nl0) ! Field on model grid, halo A
+
+! Local variables
+integer :: ic0a,il0
+real(kind_real) :: fld_c0a_masked(geom%nc0a,geom%nl0)
+
+! Set masked values at missing value
+do il0=1,geom%nl0
+   do ic0a=1,geom%nc0a
+      if (geom%mask_c0a(ic0a,il0)) then
+         fld_c0a_masked(ic0a,il0) = fld_c0a(ic0a,il0)
+      else
+         fld_c0a_masked(ic0a,il0) = mpl%msv%valr
+      end if
+   end do
+end do
 
 if (geom%nc0==geom%nmg) then
    ! Model grid and subset Sc0 are identical

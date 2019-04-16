@@ -10,6 +10,7 @@ cost_function:
         date: '2010-01-01T00:00:00Z'
         localization:
           bump:
+            datadir: bump
             dc: 1000000.0
             default_seed: 1
             lsqrt: 1
@@ -26,7 +27,7 @@ cost_function:
             nl0r: 1
             nrep: 2
             ntry: 3
-            prefix: bump_4dhybridbump
+            prefix: 4dhybridbump
             resol: 10.0
             strategy: common
           timeslots:

@@ -222,7 +222,6 @@ contains
    procedure :: apply_adv_inv => nicas_blk_apply_adv_inv
    procedure :: test_adjoint => nicas_blk_test_adjoint
    procedure :: test_pos_def => nicas_blk_test_pos_def
-   procedure :: test_sqrt => nicas_blk_test_sqrt
    procedure :: test_dirac => nicas_blk_test_dirac
 end type nicas_blk_type
 
@@ -4141,71 +4140,6 @@ if (iter==nitermax+1) then
 end if
 
 end subroutine nicas_blk_test_pos_def
-
-!----------------------------------------------------------------------
-! Subroutine: nicas_blk_test_sqrt
-! Purpose: test full/square-root equivalence
-!----------------------------------------------------------------------
-subroutine nicas_blk_test_sqrt(nicas_blk,mpl,rng,nam,geom,bpar,io,cmat_blk)
-
-implicit none
-
-! Passed variables
-class(nicas_blk_type),intent(in) :: nicas_blk ! NICAS data block
-type(mpl_type),intent(inout) :: mpl           ! MPI data
-type(rng_type),intent(inout) :: rng           ! Random number generator
-type(nam_type),intent(inout) :: nam           ! Namelist
-type(geom_type),intent(in) :: geom            ! Geometry
-type(bpar_type),intent(in) :: bpar            ! Block parameters
-type(io_type),intent(in) :: io                ! I/O
-type(cmat_blk_type),intent(in) :: cmat_blk    ! C matrix data block
-
-! Local variables
-real(kind_real) :: fld(geom%nc0a,geom%nl0),fld_sqrt(geom%nc0a,geom%nl0)
-type(nicas_blk_type) :: nicas_blk_other
-
-! Associate
-associate(ib=>nicas_blk%ib)
-
-! Generate random field
-call rng%rand_real(-1.0_kind_real,1.0_kind_real,fld)
-fld_sqrt = fld
-
-! Apply NICAS, initial version
-if (nam%lsqrt) then
-   call nicas_blk%apply_from_sqrt(mpl,geom,fld_sqrt)
-else
-   call nicas_blk%apply(mpl,nam,geom,fld)
-end if
-
-! Switch lsqrt
-nam%lsqrt = .not.nam%lsqrt
-
-! Compute NICAS parameters
-call nicas_blk_other%compute_parameters(mpl,rng,nam,geom,cmat_blk)
-
-! Apply NICAS, other version
-if (nam%lsqrt) then
-   call nicas_blk_other%apply_from_sqrt(mpl,geom,fld_sqrt)
-else
-   ! Apply NICAS
-   call nicas_blk_other%apply(mpl,nam,geom,fld)
-end if
-
-! Compute dirac
-if (nam%check_dirac) call nicas_blk_other%test_dirac(mpl,nam,geom,bpar,io)
-
-! Reset lsqrt value
-nam%lsqrt = .not.nam%lsqrt
-
-! Print difference
-write(mpl%info,'(a7,a,f6.1,a)') '','NICAS full / square-root error:',sqrt(sum((fld_sqrt-fld)**2)/sum(fld**2))*100.0,'%'
-call mpl%flush
-
-! End associate
-end associate
-
-end subroutine nicas_blk_test_sqrt
 
 !----------------------------------------------------------------------
 ! Subroutine: nicas_blk_test_dirac

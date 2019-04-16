@@ -1,5 +1,6 @@
 Covariance:
   bump:
+    datadir: bump
     default_seed: 1
     forced_radii: 1
     lsqrt: 1
@@ -10,7 +11,7 @@ Covariance:
     new_param: 1
     nrep: 2
     ntry: 3
-    prefix: bump_dirac.bumpcov
+    prefix: dirac.bumpcov
     resol: 10.0
     rh: 3900000.0
     rv: 2.407

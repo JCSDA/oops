@@ -31,8 +31,10 @@ type lct_blk_type
    integer :: ib                                    ! Block index
    integer :: nscales                               ! Number of LCT scales
 
-   ! Correlation
+   ! Correlation/variances
    real(kind_real),allocatable :: raw(:,:,:,:)      ! Raw correlations
+   real(kind_real),allocatable :: m2(:,:)           ! Variances
+   real(kind_real),allocatable :: m2flt(:,:)        ! Filtered variances
 
    ! Diffusion data
    real(kind_real),allocatable :: D(:,:,:,:)        ! Diffusion components
@@ -55,6 +57,7 @@ type lct_blk_type
    real(kind_real),allocatable :: H12(:,:,:)        ! Local correlation tensor, component 12
    real(kind_real),allocatable :: Dcoef(:,:,:)      ! Tensor coefficient
    real(kind_real),allocatable :: DLh(:,:,:)        ! Tensor length-scale
+   real(kind_real),allocatable :: coef_ens(:,:)     ! Variances
 contains
    procedure :: alloc => lct_blk_alloc
    procedure :: dealloc => lct_blk_dealloc
@@ -89,6 +92,8 @@ lct_blk%nscales = nam%lct_nscales
 
 ! Allocation
 allocate(lct_blk%raw(nam%nc3,bpar%nl0r(ib),samp%nc1a,geom%nl0))
+allocate(lct_blk%m2(samp%nc1a,geom%nl0))
+allocate(lct_blk%m2flt(samp%nc1a,geom%nl0))
 allocate(lct_blk%D(4,lct_blk%nscales,samp%nc1a,geom%nl0))
 allocate(lct_blk%coef(lct_blk%nscales,samp%nc1a,geom%nl0))
 allocate(lct_blk%fit(nam%nc3,bpar%nl0r(ib),samp%nc1a,geom%nl0))
@@ -107,6 +112,7 @@ allocate(lct_blk%H33(geom%nc0a,geom%nl0,lct_blk%nscales))
 allocate(lct_blk%H12(geom%nc0a,geom%nl0,lct_blk%nscales))
 allocate(lct_blk%Dcoef(geom%nc0a,geom%nl0,lct_blk%nscales))
 allocate(lct_blk%DLh(geom%nc0a,geom%nl0,lct_blk%nscales))
+allocate(lct_blk%coef_ens(geom%nc0a,geom%nl0))
 
 end subroutine lct_blk_alloc
 
@@ -123,6 +129,8 @@ class(lct_blk_type),intent(inout) :: lct_blk ! LCT block
 
 ! Release memory
 if (allocated(lct_blk%raw)) deallocate(lct_blk%raw)
+if (allocated(lct_blk%m2)) deallocate(lct_blk%m2)
+if (allocated(lct_blk%m2flt)) deallocate(lct_blk%m2flt)
 if (allocated(lct_blk%D)) deallocate(lct_blk%D)
 if (allocated(lct_blk%coef)) deallocate(lct_blk%coef)
 if (allocated(lct_blk%fit)) deallocate(lct_blk%fit)
@@ -139,6 +147,7 @@ if (allocated(lct_blk%H33)) deallocate(lct_blk%H33)
 if (allocated(lct_blk%H12)) deallocate(lct_blk%H12)
 if (allocated(lct_blk%Dcoef)) deallocate(lct_blk%Dcoef)
 if (allocated(lct_blk%DLh)) deallocate(lct_blk%DLh)
+if (allocated(lct_blk%coef_ens)) deallocate(lct_blk%coef_ens)
 
 end subroutine lct_blk_dealloc
 
@@ -161,17 +170,20 @@ type(mom_blk_type),intent(in) :: mom_blk     ! Moments block
 ! Local variables
 integer :: jsub,il0,jl0r,jl0,jc3,ic1a,ic1
 real(kind_real) :: den
-real(kind_real),allocatable :: norm(:,:,:,:)
+real(kind_real),allocatable :: norm_raw(:,:,:,:),norm_m2(:,:)
 
 ! Associate
 associate(ib=>lct_blk%ib)
 
 ! Allocation
-allocate(norm(nam%nc3,bpar%nl0r(ib),samp%nc1a,geom%nl0))
+allocate(norm_raw(nam%nc3,bpar%nl0r(ib),samp%nc1a,geom%nl0))
+allocate(norm_m2(samp%nc1a,geom%nl0))
 
 ! Initialize
 lct_blk%raw = 0.0
-norm = 0.0
+lct_blk%m2 = 0.0
+norm_raw = 0.0
+norm_m2 = 0.0
 
 ! Sum over jsub
 do jsub=1,mom_blk%nsub
@@ -185,11 +197,20 @@ do jsub=1,mom_blk%nsub
                   den = mom_blk%m2_1(ic1a,jc3,il0,jsub)*mom_blk%m2_2(ic1a,jc3,jl0,jsub)
                   if (den>0.0) then
                      lct_blk%raw(jc3,jl0r,ic1a,il0) = lct_blk%raw(jc3,jl0r,ic1a,il0)+mom_blk%m11(ic1a,jc3,jl0r,il0,jsub)/sqrt(den)
-                     norm(jc3,jl0r,ic1a,il0) = norm(jc3,jl0r,ic1a,il0)+1.0
+                     norm_raw(jc3,jl0r,ic1a,il0) = norm_raw(jc3,jl0r,ic1a,il0)+1.0
                   end if
                end if
             end do
          end do
+      end do
+   end do
+   do il0=1,geom%nl0
+      do ic1a=1,samp%nc1a
+         ic1 = samp%c1a_to_c1(ic1a)
+         if (samp%c1l0_log(ic1,il0)) then
+            lct_blk%m2(ic1a,il0) = lct_blk%m2(ic1a,il0)+mom_blk%m2_1(ic1a,1,il0,jsub)
+            norm_m2(ic1a,il0) = norm_m2(ic1a,il0)+1.0
+         end if
       end do
    end do
 end do
@@ -201,16 +222,25 @@ do il0=1,geom%nl0
          do ic1a=1,samp%nc1a
             ic1 = samp%c1a_to_c1(ic1a)
             if (samp%c1l0_log(ic1,il0)) then
-               if (norm(jc3,jl0r,ic1a,il0)>0.0) lct_blk%raw(jc3,jl0r,ic1a,il0) = lct_blk%raw(jc3,jl0r,ic1a,il0) &
-             & /norm(jc3,jl0r,ic1a,il0)
+               if (norm_raw(jc3,jl0r,ic1a,il0)>0.0) lct_blk%raw(jc3,jl0r,ic1a,il0) = lct_blk%raw(jc3,jl0r,ic1a,il0) &
+             & /norm_raw(jc3,jl0r,ic1a,il0)
             end if
          end do
       end do
    end do
 end do
+do il0=1,geom%nl0
+   do ic1a=1,samp%nc1a
+      ic1 = samp%c1a_to_c1(ic1a)
+      if (samp%c1l0_log(ic1,il0)) then
+         if (norm_m2(ic1a,il0)>0.0) lct_blk%m2(ic1a,il0) = lct_blk%m2(ic1a,il0)/norm_m2(ic1a,il0)
+      end if
+   end do
+end do
 
 ! Release memory
-deallocate(norm)
+deallocate(norm_raw)
+deallocate(norm_m2)
 
 ! End associate
 end associate

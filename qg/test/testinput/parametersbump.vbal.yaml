@@ -3,6 +3,7 @@ background:
   filename: Data/truth.fc.2009-12-15T00:00:00Z.P17D
 bump:
   check_vbal: 1
+  datadir: bump
   default_seed: 1
   method: cor
   nc1: 400
@@ -11,7 +12,7 @@ bump:
   nl0r: 2
   nrep: 2
   ntry: 3
-  prefix: bump_parametersbump.vbal
+  prefix: parametersbump.vbal
   strategy: specific_univariate
   vbal_block:
   - 1

@@ -7,6 +7,7 @@ cost_function:
     Covariance:
       covariance: BUMP
       bump:
+        datadir: bump
         default_seed: 1
         forced_radii: 1
         lsqrt: 1
@@ -16,7 +17,7 @@ cost_function:
         new_nicas: 1
         nrep: 2
         ntry: 3
-        prefix: bump_4dvar.bumpcov
+        prefix: 4dvar.bumpcov
         resol: 10.0
         rh: 3900000.0
         rv: 2.407

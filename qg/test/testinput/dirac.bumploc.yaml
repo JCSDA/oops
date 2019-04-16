@@ -3,6 +3,7 @@ Covariance:
   date: '2010-01-01T00:00:00Z'
   localization:
     bump:
+      datadir: bump
       dc: 500000.0
       default_seed: 1
       lsqrt: 1
@@ -17,7 +18,7 @@ Covariance:
       nl0r: 2
       nrep: 2
       ntry: 3
-      prefix: bump_dirac.bumploc
+      prefix: dirac.bumploc
       resol: 10.0
       strategy: common
     localization: BUMP

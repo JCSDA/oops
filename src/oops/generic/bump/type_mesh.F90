@@ -331,17 +331,23 @@ end subroutine mesh_trlist
 ! Subroutine: mesh_bnodes
 ! Purpose: find boundary nodes
 !----------------------------------------------------------------------
-subroutine mesh_bnodes(mesh,mpl)
+subroutine mesh_bnodes(mesh,mpl,bdist)
 
 implicit none
 
 ! Passed variables
 class(mesh_type),intent(inout) :: mesh ! Mesh
 type(mpl_type),intent(inout) :: mpl    ! MPI data
+logical,intent(in),optional :: bdist   ! Find minimum distance a boundary arc
 
 ! Local variables
 integer :: i,bnd(mesh%n)
 real(kind_real) :: v1(3),v2(3)
+logical :: lbdist
+
+! Initialization
+lbdist = .false.
+if (present(bdist)) lbdist = bdist
 
 ! Find boundary nodes
 bnd = mpl%msv%vali
@@ -383,10 +389,12 @@ do i=1,mesh%nb
    call vector_product(v1,v2,mesh%barc_vp(:,i))
 end do
 
-! Find minimal distance to a boundary arc
-do i=1,mesh%n
-   call mesh%find_bdist(mpl,mesh%lon(i),mesh%lat(i),mesh%bdist(i))
-end do
+if (lbdist) then
+   ! Find minimal distance to a boundary arc
+   do i=1,mesh%n
+      call mesh%find_bdist(mpl,mesh%lon(i),mesh%lat(i),mesh%bdist(i))
+   end do
+end if
 
 end subroutine mesh_bnodes
 

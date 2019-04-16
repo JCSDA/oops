@@ -252,7 +252,7 @@ if (present(wgt)) lwgt = wgt
 ! Add value to cumul
 if (mpl%msv%isnotr(val)) then
    cumul = cumul+lwgt*val
-   num = num+1.0
+   num = num+lwgt
 end if
 
 end subroutine add

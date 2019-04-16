@@ -55,7 +55,6 @@ type nam_type
    logical :: check_vbal                                ! Test vertical balance inverse and adjoint
    logical :: check_adjoints                            ! Test NICAS adjoints
    logical :: check_pos_def                             ! Test NICAS positive definiteness
-   logical :: check_sqrt                                ! Test NICAS full/square-root equivalence
    logical :: check_dirac                               ! Test NICAS application on diracs
    logical :: check_randomization                       ! Test NICAS randomization
    logical :: check_consistency                         ! Test HDIAG-NICAS consistency
@@ -191,7 +190,7 @@ class(nam_type),intent(out) :: nam ! Namelist
 integer :: iv,ildwv
 
 ! general_param default
-nam%datadir = 'bump'
+nam%datadir = '.'
 nam%prefix = ''
 nam%model = ''
 nam%verbosity = 'all'
@@ -220,7 +219,6 @@ nam%write_obsop = .true.
 nam%check_vbal = .false.
 nam%check_adjoints = .false.
 nam%check_pos_def = .false.
-nam%check_sqrt = .false.
 nam%check_dirac = .false.
 nam%check_randomization = .false.
 nam%check_consistency = .false.
@@ -361,7 +359,7 @@ integer :: nc1,nc2,ntry,nrep,nc3,nl0r,ne,var_niter,adv_niter,lct_nscales,mpicom,
 integer :: itsdir(ndirmax),nobs,nldwh,il_ldwh(nlmax*nc3max),ic_ldwh(nlmax*nc3max),nldwv,ildwv
 logical :: colorlog,default_seed
 logical :: new_cortrack,new_vbal,load_vbal,write_vbal,new_hdiag,write_hdiag,new_lct,write_lct,load_cmat,write_cmat,new_nicas
-logical :: load_nicas,write_nicas,new_obsop,load_obsop,write_obsop,check_vbal,check_adjoints,check_pos_def,check_sqrt
+logical :: load_nicas,write_nicas,new_obsop,load_obsop,write_obsop,check_vbal,check_adjoints,check_pos_def
 logical :: check_dirac,check_randomization,check_consistency,check_optimality,check_obsop,logpres,sam_write,sam_read,mask_check
 logical :: vbal_block(nvmax*(nvmax-1)/2),var_filter,var_full,gau_approx,local_diag,adv_diag,double_fit(0:nvmax)
 logical :: lhomh,lhomv,lct_diag(nscalesmax),nonunit_diag,lsqrt,fast_sampling,network,forced_radii,write_grids,field_io,split_io
@@ -377,8 +375,7 @@ character(len=1024),dimension(nldwvmax) :: name_ldwv
 namelist/general_param/datadir,prefix,model,verbosity,colorlog,default_seed
 namelist/driver_param/method,strategy,new_cortrack,new_vbal,load_vbal,write_vbal,new_hdiag,write_hdiag,new_lct,write_lct, &
                     & load_cmat,write_cmat,new_nicas,load_nicas,write_nicas,new_obsop,load_obsop,write_obsop,check_vbal, &
-                    & check_adjoints,check_pos_def,check_sqrt,check_dirac,check_randomization,check_consistency, &
-                    & check_optimality,check_obsop
+                    & check_adjoints,check_pos_def,check_dirac,check_randomization,check_consistency,check_optimality,check_obsop
 namelist/model_param/nl,levs,logpres,nv,varname,addvar2d,nts,timeslot
 namelist/ens1_param/ens1_ne,ens1_nsub
 namelist/ens2_param/ens2_ne,ens2_nsub
@@ -423,7 +420,6 @@ if (mpl%main) then
    check_vbal = .false.
    check_adjoints = .false.
    check_pos_def = .false.
-   check_sqrt = .false.
    check_dirac = .false.
    check_randomization = .false.
    check_consistency = .false.
@@ -573,7 +569,6 @@ if (mpl%main) then
    nam%check_vbal = check_vbal
    nam%check_adjoints = check_adjoints
    nam%check_pos_def = check_pos_def
-   nam%check_sqrt = check_sqrt
    nam%check_dirac = check_dirac
    nam%check_randomization = check_randomization
    nam%check_consistency = check_consistency
@@ -749,7 +744,6 @@ call mpl%f_comm%broadcast(nam%write_obsop,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%check_vbal,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%check_adjoints,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%check_pos_def,mpl%ioproc-1)
-call mpl%f_comm%broadcast(nam%check_sqrt,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%check_dirac,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%check_randomization,mpl%ioproc-1)
 call mpl%f_comm%broadcast(nam%check_consistency,mpl%ioproc-1)
@@ -917,8 +911,7 @@ class(nam_type),intent(inout) :: nam ! Namelist
 type(mpl_type),intent(inout) :: mpl  ! MPI data
 
 ! Local variables
-integer :: iv,its,il,idir,ildwv,info
-logical :: ldatadir
+integer :: iv,its,il,idir,ildwv
 character(len=2) :: ivchar,ildwvchar
 character(len=1024),parameter :: subr = 'nam_check'
 
@@ -989,13 +982,10 @@ if (nam%new_obsop.and.nam%load_obsop) call mpl%abort(subr,'new_obsop and load_ob
 if (nam%new_hdiag.and.nam%check_consistency) call mpl%abort(subr,'new_hdiag and check_consistency are exclusive')
 if (nam%new_nicas.and.nam%check_consistency) call mpl%abort(subr,'new_nicas and check_consistency are exclusive')
 if (nam%check_vbal.and..not.(nam%new_vbal.or.nam%load_vbal)) call mpl%abort(subr,'check_vbal requires new_vbal or load_vbal')
-if (nam%new_nicas.and..not.(nam%new_hdiag.or.nam%new_lct.or.nam%load_cmat.or.nam%forced_radii)) &
- & call mpl%abort(subr,'new_nicas requires a C matrix')
 if (nam%check_adjoints.and..not.(nam%new_nicas.or.nam%load_nicas)) &
  & call mpl%abort(subr,'check_adjoints requires new_nicas or load_nicas')
 if (nam%check_pos_def.and..not.(nam%new_nicas.or.nam%load_nicas)) &
  & call mpl%abort(subr,'check_pos_def requires new_nicas or load_nicas')
-if (nam%check_sqrt.and..not.(nam%new_nicas.or.nam%load_nicas)) call mpl%abort(subr,'check_sqrt requires new_nicas or load_nicas')
 if (nam%check_dirac.and..not.(nam%new_nicas.or.nam%load_nicas)) call mpl%abort(subr,'check_dirac requires new_nicas or load_nicas')
 if (nam%check_randomization.and..not.(nam%new_nicas.or.nam%load_nicas)) &
  & call mpl%abort(subr,'check_randomization requires new_nicas or load_nicas')
@@ -1138,7 +1128,7 @@ if (nam%new_hdiag) then
 end if
 
 ! Check nicas_param
-if (nam%new_nicas.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_sqrt.or.nam%check_dirac.or.nam%check_randomization &
+if (nam%new_nicas.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_dirac.or.nam%check_randomization &
  & .or.nam%check_consistency.or.nam%check_optimality) then
    if (nam%lsqrt) then
       if (nam%mpicom==1) call mpl%abort(subr,'mpicom should be 2 for square-root application')
@@ -1236,7 +1226,7 @@ if (nam%new_hdiag.or.nam%new_lct) then
       call mpl%abort(subr,'wrong interpolation for diagnostics')
    end select
 end if
-if (nam%new_hdiag.or.nam%new_nicas.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_sqrt.or.nam%check_dirac &
+if (nam%new_hdiag.or.nam%new_nicas.or.nam%check_adjoints.or.nam%check_pos_def.or.nam%check_dirac &
  & .or.nam%check_randomization.or.nam%check_consistency.or.nam%check_optimality.or.nam%new_lct) then
    if (nam%grid_output) then
       if (.not.(nam%grid_resol>0.0)) call mpl%abort(subr,'grid_resol should be positive')
@@ -1246,28 +1236,6 @@ if (nam%new_hdiag.or.nam%new_nicas.or.nam%check_adjoints.or.nam%check_pos_def.or
          call mpl%abort(subr,'wrong interpolation for fields regridding')
       end select
    end if
-end if
-
-! Check data directory existence
-if  ((nam%new_cortrack.or.nam%write_hdiag.or.nam%write_lct.or.nam%write_cmat.or.nam%write_nicas.or.nam%write_obsop &
- & .or.nam%write_vbal.or.nam%check_dirac.or.nam%check_randomization.or.nam%sam_write.or.nam%sam_read.or.nam%var_full &
- & .or.nam%write_grids).and.(trim(nam%datadir)/='.')) then
-   ! Work is done by the main processor
-   if (mpl%main) then
-      inquire(file=trim(nam%datadir),exist=ldatadir)
-      if (.not.ldatadir) then
-         call mpl%warning(subr,'data directory does not exist, BUMP will try to create it')
-         call execute_command_line('mkdir -p '//trim(nam%datadir),exitstat=info)
-         if (info==0) then
-            call mpl%warning(subr,'data directory creation successful')
-         else
-            call mpl%abort(subr,'data directory creation failed')
-         end if
-      end if
-   end if
-
-   ! Wait
-   call mpl%f_comm%barrier
 end if
 
 end subroutine nam_check
@@ -1331,7 +1299,6 @@ call mpl%write(lncid,'write_obsop',nam%write_obsop)
 call mpl%write(lncid,'check_vbal',nam%check_vbal)
 call mpl%write(lncid,'check_adjoints',nam%check_adjoints)
 call mpl%write(lncid,'check_pos_def',nam%check_pos_def)
-call mpl%write(lncid,'check_sqrt',nam%check_sqrt)
 call mpl%write(lncid,'check_dirac',nam%check_dirac)
 call mpl%write(lncid,'check_randomization',nam%check_randomization)
 call mpl%write(lncid,'check_consistency',nam%check_consistency)

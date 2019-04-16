@@ -92,7 +92,7 @@ list( APPEND qg_testoutput
 # This line copies all files to binary dir
 #file( COPY ${qg_test_files} DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
 
-# Create Data directory for test input and symlink all files
+# Create data directory for test input and symlink all files
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput)
 foreach(FILENAME ${qg_test_input})
     execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
@@ -100,7 +100,7 @@ foreach(FILENAME ${qg_test_input})
            ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME} )
 endforeach(FILENAME)
 
-# Create Data directory for reference output and symlink all files
+# Create data directory for reference output and symlink all files
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testoutput)
 foreach(FILENAME ${qg_testoutput})
     execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
@@ -114,6 +114,12 @@ ecbuild_add_resources( TARGET   qg_test_scripts
                      )
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Data)
+
+# Create bump directory and links
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bump)
+execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
+      ${CMAKE_CURRENT_BINARY_DIR}/bump/parametersbump.vbal_vbal_0001-0001.nc
+      ${CMAKE_CURRENT_BINARY_DIR}/bump/interfaces_vbal_0001-0001.nc )
 
 #####################################################################
 
@@ -312,11 +318,6 @@ ecbuild_add_test( TARGET test_qg_parameters_bump_vbal
                   ARGS "${CMAKE_BINARY_DIR}/bin/qg_parameters.x testinput/parametersbump.vbal.yaml"
                        testoutput/parametersbump.vbal.test
                   DEPENDS qg_parameters.x )
-
-ecbuild_add_test( TARGET test_qg_copy_vbal
-                  TYPE SCRIPT
-                  COMMAND "ln"
-                  ARGS  -sf bump_parametersbump.vbal_vbal_0001-0001.nc bump/bump_interfaces_vbal_0001-0001.nc )
 
 ecbuild_add_test( TARGET  test_qg_linearvariablechange
                   MPI    1

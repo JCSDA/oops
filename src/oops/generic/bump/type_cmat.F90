@@ -39,6 +39,7 @@ contains
    procedure :: cmat_alloc
    procedure :: cmat_alloc_blk
    generic :: alloc => cmat_alloc,cmat_alloc_blk
+   procedure :: init => cmat_init
    procedure :: dealloc => cmat_dealloc
    procedure :: copy => cmat_copy
    procedure :: read => cmat_read
@@ -64,9 +65,9 @@ subroutine cmat_alloc(cmat,bpar,prefix)
 implicit none
 
 ! Passed variables
-class(cmat_type),intent(inout) :: cmat    ! C matrix
-type(bpar_type),intent(in) :: bpar        ! Block parameters
-character(len=*),intent(in) :: prefix     ! Prefix
+class(cmat_type),intent(inout) :: cmat ! C matrix
+type(bpar_type),intent(in) :: bpar     ! Block parameters
+character(len=*),intent(in) :: prefix  ! Prefix
 
 ! Local variables
 integer :: ib
@@ -79,7 +80,7 @@ if (.not.allocated(cmat%blk)) allocate(cmat%blk(bpar%nbe))
 
 ! Set block name
 do ib=1,bpar%nbe
-   cmat%blk(ib)%name = trim(prefix)//'_'//trim(bpar%blockname(ib))
+   if (bpar%B_block(ib).and.bpar%nicas_block(ib)) cmat%blk(ib)%name = trim(prefix)//'_'//trim(bpar%blockname(ib))
 end do
 
 end subroutine cmat_alloc
@@ -93,24 +94,54 @@ subroutine cmat_alloc_blk(cmat,nam,geom,bpar)
 implicit none
 
 ! Passed variables
-class(cmat_type),intent(inout) :: cmat    ! C matrix
-type(nam_type),intent(in) :: nam          ! Namelist
-type(geom_type),intent(in) :: geom        ! Geometry
-type(bpar_type),intent(in) :: bpar        ! Block parameters
+class(cmat_type),intent(inout) :: cmat ! C matrix
+type(nam_type),intent(in) :: nam       ! Namelist
+type(geom_type),intent(in) :: geom     ! Geometry
+type(bpar_type),intent(in) :: bpar     ! Block parameters
 
 ! Local variables
 integer :: ib
 
 ! Allocation
 do ib=1,bpar%nbe
-   cmat%blk(ib)%ib = ib
-   call cmat%blk(ib)%alloc(nam,geom,bpar)
+   if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
+      cmat%blk(ib)%ib = ib
+      call cmat%blk(ib)%alloc(nam,geom,bpar)
+   end if
 end do
 
 ! Update allocation flag
 cmat%allocated = .true.
 
 end subroutine cmat_alloc_blk
+
+!----------------------------------------------------------------------
+! Subroutine: cmat_init
+! Purpose: C matrix initialization
+!----------------------------------------------------------------------
+subroutine cmat_init(cmat,mpl,nam,bpar)
+
+implicit none
+
+! Passed variables
+class(cmat_type),intent(inout) :: cmat ! C matrix
+type(mpl_type),intent(in) :: mpl       ! MPI data
+type(nam_type),intent(in) :: nam       ! Namelist
+type(bpar_type),intent(in) :: bpar     ! Block parameters
+
+! Local variables
+integer :: ib
+
+! Initialize blocks
+do ib=1,bpar%nbe
+   if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
+      cmat%blk(ib)%double_fit = .false.
+      cmat%blk(ib)%anisotropic = .false.
+      call cmat%blk(ib)%init(mpl,nam,bpar)
+   end if
+end do
+
+end subroutine cmat_init
 
 !----------------------------------------------------------------------
 ! Subroutine: cmat_dealloc
@@ -274,6 +305,7 @@ do ib=1,bpar%nbe
             call io%fld_read(mpl,nam,geom,filename,'H22',cmat%blk(ib)%H22)
             call io%fld_read(mpl,nam,geom,filename,'H33',cmat%blk(ib)%H33)
             call io%fld_read(mpl,nam,geom,filename,'H12',cmat%blk(ib)%H12)
+            call io%fld_read(mpl,nam,geom,filename,'Hcoef',cmat%blk(ib)%Hcoef)
          end if
       end if
       if ((ib==bpar%nbe).and.nam%adv_diag) then
@@ -316,6 +348,9 @@ do ib=1,bpar%nbe
       filename = trim(nam%prefix)//'_'//trim(cmat%blk(ib)%name)
       call io%fld_write(mpl,nam,geom,filename,'vunit',geom%vunit_c0a)
 
+      ! Write vertical unit
+      call io%fld_write(mpl,nam,geom,filename,'vunit',geom%vunit_c0a)
+
       ! Write fields
       if (bpar%nicas_block(ib)) then
          call io%fld_write(mpl,nam,geom,filename,'coef_ens',cmat%blk(ib)%coef_ens)
@@ -333,6 +368,7 @@ do ib=1,bpar%nbe
             call io%fld_write(mpl,nam,geom,filename,'H22',cmat%blk(ib)%H22)
             call io%fld_write(mpl,nam,geom,filename,'H33',cmat%blk(ib)%H33)
             call io%fld_write(mpl,nam,geom,filename,'H12',cmat%blk(ib)%H12)
+            call io%fld_write(mpl,nam,geom,filename,'Hcoef',cmat%blk(ib)%Hcoef)
          end if
       end if
       if ((ib==bpar%nbe).and.nam%adv_diag) then
@@ -638,7 +674,7 @@ do ib=1,bpar%nbe
       end do
 
       ! Set coefficients
-      cmat%blk(ib)%coef_ens = 1.0
+      cmat%blk(ib)%coef_ens = lct%blk(ib)%coef_ens
       cmat%blk(ib)%coef_sta = 0.0
       cmat%blk(ib)%wgt = 1.0
    end if
@@ -727,6 +763,19 @@ type(bpar_type),intent(in) :: bpar     ! Block parameters
 ! Local variables
 integer :: ib,il0,ic0a
 logical :: import_standard(bpar%nbe),import_static(bpar%nbe),import_double_fit(bpar%nbe),import_anisotropic(bpar%nbe)
+
+if (.not.cmat%allocated) then
+   ! Allocation
+   call cmat%alloc(bpar,'cmat')
+   do ib=1,bpar%nbe
+      cmat%blk(ib)%double_fit = .false.
+      cmat%blk(ib)%anisotropic = .false.
+   end do
+   call cmat%alloc(nam,geom,bpar)
+
+   ! Initialization
+   call cmat%init(mpl,nam,bpar)
+end if
 
 do ib=1,bpar%nbe
    ! Initialization

@@ -179,7 +179,7 @@ type(bpar_type),intent(in) :: bpar             ! Block parameters
 character(len=*),intent(in) :: filename        ! File name
 
 ! Local variables
-integer :: info,ncid,one_id,nc3_id,nl0r_id,nl0_1_id,nl0_2_id,disth_id,vunit_id
+integer :: info,info_coord,ncid,one_id,nc3_id,nl0r_id,nl0_1_id,nl0_2_id,disth_id,vunit_id
 integer :: raw_id,raw_zs_id,raw_coef_ens_id,raw_coef_sta_id,l0rl0_to_l0_id
 integer :: fit_id,fit_zs_id,fit_rh_id,fit_rv_id,fit_rv_rfac_id,fit_rv_coef_id
 integer :: il0,jl0r,jl0
@@ -201,23 +201,19 @@ else
    call mpl%ncerr(subr,nf90_redef(ncid))
 end if
 
-! Define dimensions and variables if necessary
-info = nf90_inq_dimid(ncid,'one',one_id)
-if (info/=nf90_noerr) call mpl%ncerr(subr,nf90_def_dim(ncid,'one',1,one_id))
-info = nf90_inq_dimid(ncid,'nc3',nc3_id)
-if (info/=nf90_noerr) call mpl%ncerr(subr,nf90_def_dim(ncid,'nc3',nam%nc3,nc3_id))
-info = nf90_inq_dimid(ncid,'nl0r',nl0r_id)
-if (info/=nf90_noerr) call mpl%ncerr(subr,nf90_def_dim(ncid,'nl0r',bpar%nl0rmax,nl0r_id))
-info = nf90_inq_dimid(ncid,'nl0_1',nl0_1_id)
-if (info/=nf90_noerr) call mpl%ncerr(subr,nf90_def_dim(ncid,'nl0_1',geom%nl0,nl0_1_id))
-if (bpar%nl0rmax/=geom%nl0) then
-   info = nf90_inq_dimid(ncid,'nl0_2',nl0_2_id)
-   if (info/=nf90_noerr) call mpl%ncerr(subr,nf90_def_dim(ncid,'nl0_2',geom%nl0,nl0_2_id))
+! Define dimensions and coordinates if necessary
+one_id = mpl%ncdimcheck(subr,ncid,'one',1,.true.)
+nc3_id = mpl%ncdimcheck(subr,ncid,'nc3',nam%nc3,.true.)
+nl0r_id = mpl%ncdimcheck(subr,ncid,'nl0r',bpar%nl0rmax,.true.)
+nl0_1_id = mpl%ncdimcheck(subr,ncid,'nl0_1',geom%nl0,.true.)
+nl0_2_id = mpl%ncdimcheck(subr,ncid,'nl0_2',geom%nl0,.true.)
+info_coord = nf90_inq_varid(ncid,'disth',disth_id)
+if (info_coord/=nf90_noerr) then
+   call mpl%ncerr(subr,nf90_def_var(ncid,'disth',nc_kind_real,(/nc3_id/),disth_id))
+   call mpl%ncerr(subr,nf90_def_var(ncid,'vunit',nc_kind_real,(/nl0_1_id/),vunit_id))
 end if
-info = nf90_inq_varid(ncid,'disth',disth_id)
-if (info/=nf90_noerr) call mpl%ncerr(subr,nf90_def_var(ncid,'disth',nc_kind_real,(/nc3_id/),disth_id))
-info = nf90_inq_varid(ncid,'vunit',vunit_id)
-if (info/=nf90_noerr) call mpl%ncerr(subr,nf90_def_var(ncid,'vunit',nc_kind_real,(/nl0_1_id/),vunit_id))
+
+! Define variables if necessary
 if (mpl%msv%isanynotr(diag_blk%raw_coef_ens)) then
   info = nf90_inq_varid(ncid,trim(diag_blk%name)//'_raw_coef_ens',raw_coef_ens_id)
   if (info/=nf90_noerr) then
@@ -293,9 +289,13 @@ end if
 ! End definition mode
 call mpl%ncerr(subr,nf90_enddef(ncid))
 
+! Write coordinates if necessary
+if (info_coord/=nf90_noerr) then
+   call mpl%ncerr(subr,nf90_put_var(ncid,disth_id,geom%disth(1:nam%nc3)))
+   call mpl%ncerr(subr,nf90_put_var(ncid,vunit_id,sum(geom%vunit_c0,mask=geom%mask_c0,dim=1)/real(geom%nc0_mask,kind_real)))
+end if
+
 ! Write variables
-call mpl%ncerr(subr,nf90_put_var(ncid,disth_id,geom%disth(1:nam%nc3)))
-call mpl%ncerr(subr,nf90_put_var(ncid,vunit_id,sum(geom%vunit_c0,mask=geom%mask_c0,dim=1)/real(geom%nc0_mask,kind_real)))
 if (mpl%msv%isanynotr(diag_blk%raw_coef_ens)) call mpl%ncerr(subr,nf90_put_var(ncid,raw_coef_ens_id,diag_blk%raw_coef_ens))
 if ((ic2a==0).or.nam%local_diag) then
    if (mpl%msv%isanynotr(diag_blk%raw)) then

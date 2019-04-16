@@ -316,13 +316,13 @@ if ((ic2==0).or.nam%local_diag) then
                      if (.not.nam%gau_approx) avg_blk%m22(jc3,jl0r,il0,isub) = sum(list_m22(1:nc1a,isub))
                   end do
                   avg_blk%nc1a_cor(jc3,jl0r,il0) = real(count(mpl%msv%isnotr(list_cor(1:nc1a))),kind_real)
-                  if (avg_blk%nc1a_cor(jc3,jl0r,il0)>0.0) then
+                  if ((avg_blk%nc1a_cor(jc3,jl0r,il0)>0.0).and.mpl%msv%isanynotr(list_cor(1:nc1a))) then
                      avg_blk%cor(jc3,jl0r,il0) = sum(list_cor(1:nc1a),mask=mpl%msv%isnotr(list_cor(1:nc1a)))
                   else
-                     avg_blk%cor(jc3,jl0r,il0) = mpl%msv%valr
+                     avg_blk%cor(jc3,jl0r,il0) = 0.0
                   end if
                else
-                  ! Set to zero for this task (average over tasks will follow)
+                  ! Set to zero for this task
                   avg_blk%m11(jc3,jl0r,il0) = 0.0
                   do isub=1,avg_blk%nsub
                      do jsub=1,avg_blk%nsub
@@ -346,7 +346,7 @@ if ((ic2==0).or.nam%local_diag) then
       end do
       !$omp end parallel do
    else
-      ! Set to zero for this task (average over tasks will follow)
+      ! Set to zero for this task
       avg_blk%nc1a = 0
       avg_blk%m11 = 0.0
       avg_blk%m11m11 = 0.0

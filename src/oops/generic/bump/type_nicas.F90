@@ -56,7 +56,6 @@ contains
    procedure :: randomize => nicas_randomize
    procedure :: apply_bens => nicas_apply_bens
    procedure :: test_adjoint => nicas_test_adjoint
-   procedure :: test_sqrt => nicas_test_sqrt
    procedure :: test_dirac => nicas_test_dirac
    procedure :: test_randomization => nicas_test_randomization
    procedure :: test_consistency => nicas_test_consistency
@@ -589,7 +588,7 @@ end subroutine nicas_run_nicas
 ! Subroutine: nicas_run_nicas_tests
 ! Purpose: NICAS tests driver
 !----------------------------------------------------------------------
-subroutine nicas_run_nicas_tests(nicas,mpl,rng,nam,geom,bpar,io,cmat,ens)
+subroutine nicas_run_nicas_tests(nicas,mpl,rng,nam,geom,bpar,io,ens)
 
 implicit none
 
@@ -601,11 +600,11 @@ type(nam_type),intent(inout) :: nam       ! Namelist
 type(geom_type),intent(inout) :: geom     ! Geometry
 type(bpar_type),intent(in) :: bpar        ! Block parameters
 type(io_type),intent(in) :: io            ! I/O
-type(cmat_type),intent(in) :: cmat        ! C matrix data
 type(ens_type),intent(in) :: ens          ! Ensemble
 
 ! Local variables
-integer :: ib
+integer :: ib,info
+character(len=1024),parameter :: subr = 'nicas_run_nicas_tests'
 
 if (nam%check_adjoints) then
    ! Test adjoint
@@ -650,37 +649,16 @@ if (nam%check_pos_def) then
    end do
 end if
 
-if (nam%check_sqrt) then
-   ! Test NICAS full/square-root equivalence
-   write(mpl%info,'(a)') '-------------------------------------------------------------------'
-   call mpl%flush
-   write(mpl%info,'(a)') '--- Test NICAS full/square-root equivalence'
-   call mpl%flush
-
-   do ib=1,bpar%nbe
-      if (bpar%nicas_block(ib)) then
-         write(mpl%info,'(a)') '-------------------------------------------------------------------'
-         call mpl%flush
-         write(mpl%info,'(a)') '--- Block: '//trim(bpar%blockname(ib))
-         call mpl%flush
-         call nicas%blk(ib)%test_sqrt(mpl,rng,nam,geom,bpar,io,cmat%blk(ib))
-      end if
-   end do
-
-   ! Test NICAS full/square-root equivalence
-   write(mpl%info,'(a)') '-------------------------------------------------------------------'
-   call mpl%flush
-   write(mpl%info,'(a)') '--- Test NICAS full/square-root equivalence'
-   call mpl%flush
-   call nicas%test_sqrt(mpl,rng,nam,geom,bpar,io,cmat,ens)
-end if
-
 if (nam%check_dirac) then
    ! Apply NICAS to diracs
    write(mpl%info,'(a)') '-------------------------------------------------------------------'
    call mpl%flush
    write(mpl%info,'(a)') '--- Apply NICAS to diracs'
    call mpl%flush
+
+   ! Remove dirac file
+   call execute_command_line('rm -f '//trim(nam%datadir)//'/'//trim(nam%prefix)//'_dirac.nc',cmdstat=info)
+   if (info/=0) call mpl%abort(subr,'dirac file removal failed')
 
    do ib=1,bpar%nbe
       if (bpar%nicas_block(ib)) then
@@ -760,12 +738,12 @@ cv%n = 0
 cv%nbe = bpar%nbe
 
 do ib=1,bpar%nbe
-   if (bpar%cv_block(ib)) then
+   if (mpl%msv%isnoti(bpar%cv_block(ib))) then
       ! Copy block size
-      cv%blk(ib)%n = nicas%blk(ib)%nsa
+      cv%blk(ib)%n = nicas%blk(bpar%cv_block(ib))%nsa
 
       ! Update total size
-      cv%n = cv%n+nicas%blk(ib)%nsa
+      cv%n = cv%n+nicas%blk(bpar%cv_block(ib))%nsa
 
       if (.not.lgetsizeonly) then
          ! Allocation
@@ -805,7 +783,7 @@ call nicas%alloc_cv(mpl,bpar,cv)
 
 ! Random initialization
 do ib=1,bpar%nbe
-   if (bpar%cv_block(ib)) call rng%rand_gau(cv%blk(ib)%alpha)
+   if (mpl%msv%isnoti(bpar%cv_block(ib))) call rng%rand_gau(cv%blk(ib)%alpha)
 end do
 
 end subroutine nicas_random_cv
@@ -1046,7 +1024,7 @@ case ('specific_univariate')
             !$omp end parallel do
          end if
 
-         ! Apply specific NICAS (same for all timeslots)
+         ! Apply specific NICAS
          call nicas%blk(ib)%apply(mpl,nam,geom,fld(:,:,iv,its))
 
          if (nam%nonunit_diag) then
@@ -1182,11 +1160,11 @@ case ('common_univariate')
    allocate(fld_4d(geom%nc0a,geom%nl0,nam%nv))
 
    do ib=1,bpar%nb
-      if (bpar%cv_block(ib)) then
+      if (mpl%msv%isnoti(bpar%cv_block(ib))) then
          ! Variable index
          iv = bpar%b_to_v1(ib)
 
-         ! Apply specific NICAS (same for all timeslots)
+         ! Apply specific NICAS
          call nicas%blk(bpar%nbe)%apply_sqrt(mpl,geom,cv%blk(ib)%alpha,fld_4d(:,:,iv))
 
          if (nam%nonunit_diag) then
@@ -1242,11 +1220,11 @@ case ('common_weighted')
    call cholesky(mpl,nam%nv,wgt,wgt_u)
 
    do ib=1,bpar%nb
-      if (bpar%cv_block(ib)) then
+      if (mpl%msv%isnoti(bpar%cv_block(ib))) then
          ! Variable index
          iv = bpar%b_to_v1(ib)
 
-         ! Apply specific NICAS (same for all timeslots)
+         ! Apply specific NICAS
          call nicas%blk(bpar%nbe)%apply_sqrt(mpl,geom,cv%blk(ib)%alpha,fld_4d(:,:,iv))
 
          if (nam%nonunit_diag) then
@@ -1289,7 +1267,7 @@ case ('specific_univariate')
          iv = bpar%b_to_v1(ib)
          its = bpar%b_to_ts1(ib)
 
-         ! Apply specific NICAS (same for all timeslots)
+         ! Apply specific NICAS
          call nicas%blk(ib)%apply_sqrt(mpl,geom,cv%blk(ib)%alpha,fld(:,:,iv,its))
 
          if (nam%nonunit_diag) then
@@ -1312,7 +1290,7 @@ case ('specific_multivariate')
          iv = bpar%b_to_v1(ib)
          its = bpar%b_to_ts1(ib)
 
-         ! Apply specific NICAS (same for all timeslots)
+         ! Apply specific NICAS
          call nicas%blk(ib)%apply_sqrt(mpl,geom,cv%blk(bpar%nbe)%alpha,fld(:,:,iv,its))
 
          if (nam%nonunit_diag) then
@@ -1408,7 +1386,7 @@ case ('common_univariate')
    end do
 
    do ib=1,bpar%nb
-      if (bpar%cv_block(ib)) then
+      if (mpl%msv%isnoti(bpar%cv_block(ib))) then
          ! Variable index
          iv = bpar%b_to_v1(ib)
 
@@ -1417,15 +1395,15 @@ case ('common_univariate')
             !$omp parallel do schedule(static) private(il0,ic0a)
             do il0=1,geom%nl0
                do ic0a=1,geom%nc0a
-                  if (geom%mask_c0a(ic0a,il0)) fld_4d_tmp(ic0a,il0,iv) = fld_4d_tmp(ic0a,il0,iv) &
-                                                                       & *sqrt(nicas%blk(bpar%nbe)%coef_ens(ic0a,il0))
+                  if (geom%mask_c0a(ic0a,il0)) fld_4d(ic0a,il0,iv) = fld_4d(ic0a,il0,iv) &
+                                                                   & *sqrt(nicas%blk(bpar%nbe)%coef_ens(ic0a,il0))
                end do
             end do
             !$omp end parallel do
          end if
 
-         ! Apply specific NICAS (same for all timeslots)
-         call nicas%blk(bpar%nbe)%apply_sqrt_ad(mpl,geom,fld_4d_tmp(:,:,iv),cv%blk(ib)%alpha)
+         ! Apply specific NICAS
+         call nicas%blk(bpar%nbe)%apply_sqrt_ad(mpl,geom,fld_4d(:,:,iv),cv%blk(ib)%alpha)
       end if
    end do
 
@@ -1477,7 +1455,7 @@ case ('common_weighted')
    end do
 
    do ib=1,bpar%nb
-      if (bpar%cv_block(ib)) then
+      if (mpl%msv%isnoti(bpar%cv_block(ib))) then
          ! Variable index
          iv = bpar%b_to_v1(ib)
 
@@ -1493,7 +1471,7 @@ case ('common_weighted')
             !$omp end parallel do
          end if
 
-         ! Apply specific NICAS (same for all timeslots)
+         ! Apply specific NICAS
          call nicas%blk(bpar%nbe)%apply_sqrt_ad(mpl,geom,fld_4d_tmp(:,:,iv),cv%blk(ib)%alpha)
       end if
    end do
@@ -1523,7 +1501,7 @@ case ('specific_univariate')
             !$omp end parallel do
          end if
 
-         ! Apply specific NICAS (same for all timeslots)
+         ! Apply specific NICAS
          call nicas%blk(ib)%apply_sqrt_ad(mpl,geom,fld_5d(:,:,iv,its),cv%blk(ib)%alpha)
       end if
    end do
@@ -1552,7 +1530,7 @@ case ('specific_multivariate')
             !$omp end parallel do
          end if
 
-         ! Apply specific NICAS (same for all timeslots)
+         ! Apply specific NICAS
          call nicas%blk(ib)%apply_sqrt_ad(mpl,geom,fld_5d(:,:,iv,its),cv_tmp%blk(bpar%nbe)%alpha)
 
          ! Sum control variable
@@ -1786,129 +1764,6 @@ if (ens%ne>0) then
 end if
 
 end subroutine nicas_test_adjoint
-
-!----------------------------------------------------------------------
-! Subroutine: nicas_test_sqrt
-! Purpose: test full/square-root equivalence
-!----------------------------------------------------------------------
-subroutine nicas_test_sqrt(nicas,mpl,rng,nam,geom,bpar,io,cmat,ens)
-
-implicit none
-
-! Passed variables
-class(nicas_type),intent(in) :: nicas ! NICAS data
-type(mpl_type),intent(inout) :: mpl   ! MPI data
-type(rng_type),intent(inout) :: rng   ! Random number generator
-type(nam_type),intent(inout) :: nam   ! Namelist
-type(geom_type),intent(in) :: geom    ! Geometry
-type(bpar_type),intent(in) :: bpar    ! Block parameters
-type(io_type),intent(in) :: io        ! I/O
-type(cmat_type),intent(in) :: cmat    ! C matrix data
-type(ens_type),intent(in) :: ens      ! Ensemble
-
-! Local variables
-integer :: ib,iv
-real(kind_real) :: fld_loc(geom%nc0a,geom%nl0,nam%nv,nam%nts),fld_loc_sqrt(geom%nc0a,geom%nl0,nam%nv,nam%nts)
-real(kind_real),allocatable :: fld_bens(:,:,:,:),fld_bens_sqrt(:,:,:,:)
-character(len=1024) :: varname(nam%nv)
-type(nicas_type) :: nicas_other
-
-! Allocation
-if (ens%ne>0) then
-   allocate(fld_bens(geom%nc0a,geom%nl0,nam%nv,nam%nts))
-   allocate(fld_bens_sqrt(geom%nc0a,geom%nl0,nam%nv,nam%nts))
-end if
-
-! Generate random field
-call rng%rand_real(-1.0_kind_real,1.0_kind_real,fld_loc)
-fld_loc_sqrt = fld_loc
-if (ens%ne>0) then
-   call rng%rand_real(-1.0_kind_real,1.0_kind_real,fld_bens)
-   fld_bens_sqrt = fld_bens
-end if
-
-! Apply NICAS, initial version
-if (nam%lsqrt) then
-   call nicas%apply_from_sqrt(mpl,nam,geom,bpar,fld_loc_sqrt)
-else
-   call nicas%apply(mpl,nam,geom,bpar,fld_loc)
-end if
-if (ens%ne>0) then
-   if (nam%lsqrt) then
-      call nicas%apply_bens(mpl,nam,geom,bpar,ens,fld_bens_sqrt)
-   else
-      call nicas%apply_bens(mpl,nam,geom,bpar,ens,fld_bens)
-   end if
-end if
-
-! Switch lsqrt
-nam%lsqrt = .not.nam%lsqrt
-
-! Allocation
-call nicas_other%alloc(mpl,nam,bpar,'nicas_other')
-
-! Prepare nicas, other version
-do ib=1,bpar%nbe
-   if (bpar%nicas_block(ib)) then
-      ! Compute NICAS parameters
-      call nicas_other%blk(ib)%compute_parameters(mpl,rng,nam,geom,cmat%blk(ib))
-   end if
-
-   if (bpar%B_block(ib)) then
-      ! Copy weights
-      nicas_other%blk(ib)%wgt = cmat%blk(ib)%wgt
-      if (bpar%nicas_block(ib)) then
-         allocate(nicas_other%blk(ib)%coef_ens(geom%nc0a,geom%nl0))
-         nicas_other%blk(ib)%coef_ens = cmat%blk(ib)%coef_ens
-      end if
-   end if
-end do
-
-! Apply NICAS, other version
-if (nam%lsqrt) then
-   call nicas_other%apply_from_sqrt(mpl,nam,geom,bpar,fld_loc_sqrt)
-else
-   call nicas_other%apply(mpl,nam,geom,bpar,fld_loc)
-end if
-if (ens%ne>0) then
-   if (nam%lsqrt) then
-      call nicas_other%apply_bens(mpl,nam,geom,bpar,ens,fld_bens_sqrt)
-   else
-      call nicas_other%apply_bens(mpl,nam,geom,bpar,ens,fld_bens)
-   end if
-end if
-
-! Compute dirac
-do iv=1,nam%nv
-   varname(iv) = nam%varname(iv)
-   nam%varname(iv) = trim(varname(iv))//'_sqrt'
-end do
-if (nam%check_dirac) call nicas_other%test_dirac(mpl,nam,geom,bpar,io,ens)
-do iv=1,nam%nv
-   nam%varname(iv) = varname(iv)
-end do
-
-! Reset lsqrt value
-nam%lsqrt = .not.nam%lsqrt
-
-! Print difference
-write(mpl%info,'(a7,a,f6.1,a)') '','NICAS full / square-root error : ', &
- & sqrt(sum((fld_loc_sqrt-fld_loc)**2)/sum(fld_loc**2))*100.0,'%'
-call mpl%flush
-if (ens%ne>0) then
-   write(mpl%info,'(a7,a,f6.1,a)') '','Ensemble B full / square-root error:  ', &
- & sqrt(sum((fld_bens_sqrt-fld_bens)**2)/sum(fld_bens**2))*100.0,'%'
-   call mpl%flush
-end if
-
-! Release memory
-if (ens%ne>0) then
-   deallocate(fld_bens)
-   deallocate(fld_bens_sqrt)
-end if
-call nicas_other%dealloc
-
-end subroutine nicas_test_sqrt
 
 !----------------------------------------------------------------------
 ! Subroutine: nicas_test_dirac
@@ -2271,10 +2126,6 @@ call mpl%flush
 write(mpl%info,'(a)') '--- Randomize ensemble'
 call mpl%flush
 call nicas%randomize(mpl,rng,nam,geom,bpar,nam%ens1_ne,ens)
-
-! Copy sampling
-call execute_command_line('cp -f '//trim(nam%datadir)//'/'//trim(nam%prefix)//'_sampling.nc ' &
- & //trim(nam%datadir)//'/'//trim(nam%prefix)//'_optimality-test_sampling.nc')
 
 ! Save namelist variables
 prefix = nam%prefix

@@ -2,6 +2,7 @@ background:
   date: '2010-01-01T00:00:00Z'
   filename: Data/truth.fc.2009-12-15T00:00:00Z.P17D
 bump:
+  datadir: bump
   dc: 200000.0
   default_seed: 1
   diag_rhflt: 3000000.0
@@ -20,7 +21,7 @@ bump:
   nl0r: 2
   nrep: 2
   ntry: 3
-  prefix: bump_parametersbump.readloc
+  prefix: parametersbump.readloc
   resol: 10.0
   strategy: common
 covariance:

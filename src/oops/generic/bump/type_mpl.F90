@@ -68,6 +68,7 @@ contains
    procedure :: prog_init => mpl_prog_init
    procedure :: prog_print => mpl_prog_print
    procedure :: prog_final => mpl_prog_final
+   procedure :: ncdimcheck => mpl_ncdimcheck
    procedure :: ncerr => mpl_ncerr
    procedure :: update_tag => mpl_update_tag
    procedure :: bcast => mpl_bcast_string_1d
@@ -469,6 +470,66 @@ call mpl%flush(ladvance_flag)
 deallocate(mpl%done)
 
 end subroutine mpl_prog_final
+
+!----------------------------------------------------------------------
+! Subroutine: mpl_ncdimcheck
+! Purpose: check if NetCDF file dimension exists and has the right size
+!----------------------------------------------------------------------
+function mpl_ncdimcheck(mpl,subr,ncid,dimname,dimsize,mode) result (dimid)
+
+implicit none
+
+! Passed variables
+class(mpl_type),intent(inout) :: mpl   ! MPI data
+character(len=*),intent(in) :: subr    ! Calling subroutine
+integer,intent(in) :: ncid             ! NetCDF file ID
+character(len=*),intent(in) :: dimname ! Dimension name
+integer,intent(in) :: dimsize          ! Dimension size
+logical,intent(in) :: mode             ! Mode (.true.: create and return id if missing, abort if present but wrong size / .false.: return id if present and has right size, else return missing value)
+
+! Result
+integer :: dimid                       ! NetCDF dimension ID
+
+! Local variables
+integer :: info,dimsize_test
+
+! End definition mode
+if (mode) call mpl%ncerr(subr,nf90_enddef(ncid))
+
+! Get dimension ID
+info = nf90_inq_dimid(ncid,trim(dimname),dimid)
+
+if (info==nf90_noerr) then
+   ! Get dimension size
+   call mpl%ncerr(subr,nf90_inquire_dimension(ncid,dimid,len=dimsize_test))
+
+   if (dimsize_test==dimsize) then
+      ! Definition mode
+      if (mode) call mpl%ncerr(subr,nf90_redef(ncid))
+   else
+      ! Wrong dimension
+      if (mode) then
+         ! Abort
+         call mpl%abort(subr,'dimension '//trim(dimname)//' has a different size in file')
+      else
+         ! Return missing value
+         dimid = mpl%msv%vali
+      end if
+   end if
+else
+   if (mode) then
+      ! Definition mode
+      call mpl%ncerr(subr,nf90_redef(ncid))
+
+      ! Create dimension
+      call mpl%ncerr(subr,nf90_def_dim(ncid,trim(dimname),dimsize,dimid))
+   else
+      ! Return missing value
+      dimid = mpl%msv%vali
+   end if
+end if
+
+end function mpl_ncdimcheck
 
 !----------------------------------------------------------------------
 ! Subroutine: mpl_ncerr

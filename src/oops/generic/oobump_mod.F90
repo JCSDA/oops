@@ -458,7 +458,6 @@ if (config_element_exists(conf,"check_adjoints")) &
  & bump%nam%check_adjoints = integer_to_logical(config_get_int(conf,"check_adjoints"))
 if (config_element_exists(conf,"check_pos_def")) &
  & bump%nam%check_pos_def = integer_to_logical(config_get_int(conf,"check_pos_def"))
-if (config_element_exists(conf,"check_sqrt")) bump%nam%check_sqrt = integer_to_logical(config_get_int(conf,"check_sqrt"))
 if (config_element_exists(conf,"check_dirac")) bump%nam%check_dirac = integer_to_logical(config_get_int(conf,"check_dirac"))
 if (config_element_exists(conf,"check_randomization")) & 
  & bump%nam%check_randomization = integer_to_logical(config_get_int(conf,"check_randomization"))

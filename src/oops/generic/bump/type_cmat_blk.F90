@@ -55,6 +55,7 @@ type cmat_blk_type
    real(kind_real),allocatable :: adv_lat(:,:,:)     ! Advected latitude
 contains
    procedure :: alloc => cmat_blk_alloc
+   procedure :: init => cmat_blk_init
    procedure :: dealloc => cmat_blk_dealloc
    procedure :: copy => cmat_blk_copy
 end type cmat_blk_type
@@ -112,6 +113,55 @@ end if
 end associate
 
 end subroutine cmat_blk_alloc
+
+!----------------------------------------------------------------------
+! Subroutine: cmat_blk_init
+! Purpose: initialization
+!----------------------------------------------------------------------
+subroutine cmat_blk_init(cmat_blk,mpl,nam,bpar)
+
+implicit none
+
+! Passed variables
+class(cmat_blk_type),intent(inout) :: cmat_blk ! C matrix data block
+type(mpl_type),intent(in) :: mpl               ! MPI data
+type(nam_type),intent(in) :: nam               ! Namelist
+type(bpar_type),intent(in) :: bpar             ! Block parameters
+
+! Associate
+associate(ib=>cmat_blk%ib)
+
+if (bpar%diag_block(ib)) then
+   ! Initialization
+   cmat_blk%coef_ens = mpl%msv%valr
+   cmat_blk%coef_sta = mpl%msv%valr
+   cmat_blk%rh = mpl%msv%valr
+   cmat_blk%rv = mpl%msv%valr
+   if (cmat_blk%double_fit) then
+      cmat_blk%rv_rfac = mpl%msv%valr
+      cmat_blk%rv_coef = mpl%msv%valr
+   end if
+   cmat_blk%rhs = mpl%msv%valr
+   cmat_blk%rvs = mpl%msv%valr
+   if (cmat_blk%anisotropic) then
+      cmat_blk%H11 = mpl%msv%valr
+      cmat_blk%H22 = mpl%msv%valr
+      cmat_blk%H33 = mpl%msv%valr
+      cmat_blk%H12 = mpl%msv%valr
+      cmat_blk%Hcoef = mpl%msv%valr
+   end if
+end if
+
+if ((ib==bpar%nbe).and.nam%adv_diag) then
+   ! Initialization
+   cmat_blk%adv_lon = mpl%msv%valr
+   cmat_blk%adv_lat = mpl%msv%valr
+end if
+
+! End associate
+end associate
+
+end subroutine cmat_blk_init
 
 !----------------------------------------------------------------------
 ! Subroutine: cmat_blk_dealloc

@@ -73,10 +73,13 @@ template <typename MODEL> class EstimateParams : public Application {
     }
     Log::info() << "Number of ensemble time-slots:" << timeslots.size() << std::endl;
 
-    // Compute the ensemble of perturbations
-    const eckit::LocalConfiguration ensembleConfig(fullConfig, "ensemble");
-    EnsemblePtr_ ens(new Ensemble_(timeslots, ensembleConfig));
-    ens->linearize((*xx), (*xx), resol);
+    // Setup ensemble
+    EnsemblePtr_ ens(new Ensemble_());
+    if (fullConfig.has("ensemble")) {
+      const eckit::LocalConfiguration ensembleConfig(fullConfig, "ensemble");
+      ens.reset(new Ensemble_(timeslots, ensembleConfig));
+      ens->linearize((*xx), (*xx), resol);
+    }
 
     // Setup pseudo ensemble
     EnsemblePtr_ pseudo_ens(new Ensemble_());

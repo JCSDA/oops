@@ -244,8 +244,7 @@ logical,intent(out) :: new_sampling    ! Status flag
 
 ! Local variables
 integer :: il0,il0i,ic1,jc3,ic2
-integer :: nl0_test,nl0r_test,nc_test,nc1_test,nc2_test,nc2_1_test,nc2_2_test
-integer :: info,ncid,nl0_id,nc3_id,nc1_id,nc2_id,nc2_1_id,nc2_2_id
+integer :: info,ncid,nl0_id,nl0r_id,nc3_id,nc1_id,nc2_id,nc2_1_id,nc2_2_id
 integer :: c1_to_c0_id,c1l0_log_id,c1c3_to_c0_id,c1c3l0_log_id
 integer :: c2_to_c1_id,c2_to_c0_id,vbal_mask_id,local_mask_id,nn_c2_index_id,nn_c2_dist_id
 integer :: c1l0_logint(nam%nc1,geom%nl0),c1c3l0_logint(nam%nc1,nam%nc3,geom%nl0)
@@ -265,39 +264,22 @@ if (info/=nf90_noerr) then
 end if
 
 ! Check dimensions
-call mpl%ncerr(subr,nf90_inq_dimid(ncid,'nl0',nl0_id))
-call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nl0_id,len=nl0_test))
-call mpl%ncerr(subr,nf90_get_att(ncid,nf90_global,'nl0r',nl0r_test))
-call mpl%ncerr(subr,nf90_inq_dimid(ncid,'nc3',nc3_id))
-call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nc3_id,len=nc_test))
-call mpl%ncerr(subr,nf90_inq_dimid(ncid,'nc1',nc1_id))
-call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nc1_id,len=nc1_test))
+nl0_id = mpl%ncdimcheck(subr,ncid,'nl0',geom%nl0,.false.)
+nl0r_id = mpl%ncdimcheck(subr,ncid,'nl0r',bpar%nl0rmax,.false.)
+nc3_id = mpl%ncdimcheck(subr,ncid,'nc3',nam%nc3,.false.)
+nc1_id = mpl%ncdimcheck(subr,ncid,'nc1',nam%nc1,.false.)
 if (nam%new_lct.or.nam%local_diag.or.nam%adv_diag) then
-   info = nf90_inq_dimid(ncid,'nc2',nc2_id)
-   if (info==nf90_noerr) then
-      call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nc2_id,len=nc2_test))
-   else
-      call mpl%warning(subr,'cannot find nc2 when reading sampling, recomputing sampling')
-      call mpl%ncerr(subr,nf90_close(ncid))
-      new_sampling = .true.
-      return
-   end if
+   nc2_id = mpl%ncdimcheck(subr,ncid,'nc2',nam%nc2,.false.)
+else
+   nc2_id = 0
 end if
-if ((geom%nl0/=nl0_test).or.(bpar%nl0rmax/=nl0r_test).or.(nam%nc3/=nc_test).or.(nam%nc1/=nc1_test)) then
+if (mpl%msv%isi(nl0_id).or.mpl%msv%isi(nl0r_id).or.mpl%msv%isi(nc3_id).or.mpl%msv%isi(nc1_id) &
+ & .or.mpl%msv%isi(nc2_id)) then
    call mpl%warning(subr,'wrong dimension when reading sampling, recomputing sampling')
    call mpl%ncerr(subr,nf90_close(ncid))
    new_sampling = .true.
    return
 end if
-if (nam%new_lct.or.nam%local_diag.or.nam%adv_diag) then
-   if (nam%nc2/=nc2_test) then
-      call mpl%warning(subr,'wrong dimension when reading sampling, recomputing sampling')
-      call mpl%ncerr(subr,nf90_close(ncid))
-      new_sampling = .true.
-      return
-   end if
-end if
-
 write(mpl%info,'(a7,a)') '','Read sampling'
 call mpl%flush
 
@@ -360,11 +342,9 @@ if (nam%new_vbal.or.nam%new_lct.or.(nam%new_hdiag.and.(nam%local_diag.or.nam%adv
    end if
 
    ! Check dimensions
-   call mpl%ncerr(subr,nf90_inq_dimid(ncid,'nc1',nc1_id))
-   call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nc1_id,len=nc1_test))
-   call mpl%ncerr(subr,nf90_inq_dimid(ncid,'nc2',nc2_1_id))
-   call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nc2_1_id,len=nc2_1_test))
-   if ((nam%nc1/=nc1_test).or.(nam%nc2/=nc2_1_test)) then
+   nc1_id = mpl%ncdimcheck(subr,ncid,'nc1',nam%nc1,.false.)
+   nc2_id = mpl%ncdimcheck(subr,ncid,'nc2',nam%nc2,.false.)
+   if (mpl%msv%isi(nc1_id).or.mpl%msv%isi(nc2_2_id)) then
       call mpl%warning(subr,'wrong dimension when reading sampling, recomputing sampling')
       call mpl%ncerr(subr,nf90_close(ncid))
       new_sampling = .true.
@@ -442,11 +422,9 @@ if (nam%new_vbal.or.nam%new_lct.or.(nam%new_hdiag.and.(nam%local_diag.or.nam%adv
       end if
 
       ! Check dimensions
-      call mpl%ncerr(subr,nf90_inq_dimid(ncid,'nc2_1',nc2_1_id))
-      call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nc2_1_id,len=nc2_1_test))
-      call mpl%ncerr(subr,nf90_inq_dimid(ncid,'nc2_2',nc2_2_id))
-      call mpl%ncerr(subr,nf90_inquire_dimension(ncid,nc2_2_id,len=nc2_2_test))
-      if ((nam%nc2/=nc2_1_test).or.(nam%nc2/=nc2_2_test)) then
+      nc2_1_id = mpl%ncdimcheck(subr,ncid,'nc2_1',nam%nc2,.false.)
+      nc2_2_id = mpl%ncdimcheck(subr,ncid,'nc2_2',nam%nc2,.false.)
+      if (mpl%msv%isi(nc2_1_id).or.mpl%msv%isi(nc2_2_id)) then
          call mpl%warning(subr,'wrong dimension when reading sampling, recomputing sampling')
          call mpl%ncerr(subr,nf90_close(ncid))
          new_sampling = .true.
@@ -494,7 +472,7 @@ type(bpar_type),intent(in) :: bpar  ! Block parameters
 
 ! Local variables
 integer :: il0,il0i,ic1,jc3,ic2
-integer :: ncid,nl0_id,nc1_id,nc2_id,nc2_1_id,nc2_2_id,nc3_id
+integer :: ncid,nl0_id,nl0r_id,nc1_id,nc2_id,nc2_1_id,nc2_2_id,nc3_id
 integer :: lat_id,lon_id,smax_id,c1_to_c0_id,c1l0_log_id,c1c3_to_c0_id,c1c3l0_log_id
 integer :: c2_to_c1_id,c2_to_c0_id,vbal_mask_id,local_mask_id,nn_c2_index_id,nn_c2_dist_id
 integer :: c1l0_logint(nam%nc1,geom%nl0),c1c3l0_logint(nam%nc1,nam%nc3,geom%nl0)
@@ -516,7 +494,7 @@ call nam%write(mpl,ncid)
 
 ! Define dimensions
 call mpl%ncerr(subr,nf90_def_dim(ncid,'nl0',geom%nl0,nl0_id))
-call mpl%ncerr(subr,nf90_put_att(ncid,nf90_global,'nl0r',bpar%nl0rmax))
+call mpl%ncerr(subr,nf90_def_dim(ncid,'nl0r',bpar%nl0rmax,nl0r_id))
 call mpl%ncerr(subr,nf90_def_dim(ncid,'nc3',nam%nc3,nc3_id))
 call mpl%ncerr(subr,nf90_def_dim(ncid,'nc1',nam%nc1,nc1_id))
 if (nam%new_vbal.or.nam%new_lct.or.(nam%new_hdiag.and.(nam%local_diag.or.nam%adv_diag))) &

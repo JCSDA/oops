@@ -159,8 +159,7 @@ void StateEnsemble<MODEL>::linearize(const State4D_ & xb, const State4D_ & fg,
   }
   // TODO(Benjamin): one change of variable for each timeslot
 
-  // Read ensemble and compute mean
-  Accumulator<MODEL, State4D_, State4D_> bgmean(xb);
+  // Read ensemble
   std::vector<State4D_> ensemble;
   for (unsigned int ie = 0; ie < rank_; ++ie) {
     boost::scoped_ptr<State4D_> xx;
@@ -171,10 +170,13 @@ void StateEnsemble<MODEL>::linearize(const State4D_ & xb, const State4D_ & fg,
       xx.reset(new State4D_(xx3D));
     }
     ensemble.push_back((*xx));
+  }
 
-    // Compute ensemble mean
+  // Compute ensemble mean
+  Accumulator<MODEL, State4D_, State4D_> bgmean(ensemble[0]);
+  for (unsigned int ie = 0; ie < rank_; ++ie) {
     const double rr = 1.0/static_cast<double>(rank_);
-    bgmean.accumul(rr, (*xx));
+    bgmean.accumul(rr, ensemble[ie]);
   }
 
   const double rk = 1.0 / sqrt((static_cast<double>(rank_) - 1.0));

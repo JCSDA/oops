@@ -41,9 +41,10 @@ LinearObsOpTest:
 LinearVariableChangeTests:
 - bump:
     check_vbal: 1
+    datadir: bump
     load_vbal: 1
     nl0r: 2
-    prefix: bump_interfaces
+    prefix: interfaces
     strategy: common
     vbal_block:
     - 1

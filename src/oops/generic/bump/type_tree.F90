@@ -160,16 +160,15 @@ real(kind_real),intent(out),optional :: nn_dist(nn) ! Neareast neighbors distanc
 ! Local variables
 integer :: i,j,nid
 integer,allocatable :: order(:)
+real(kind_real) :: lnn_dist(nn)
 
 ! Find neighbors
 call kdtree_k_nearest_neighbors(tree%kd,lon*rad2deg,lat*rad2deg,nn,nn_index)
 
-if (present(nn_dist)) then
-   ! Compute distance
-   do i=1,nn
-      call sphere_dist(lon,lat,tree%lon(nn_index(i)),tree%lat(nn_index(i)),nn_dist(i))
-   end do
-end if
+! Compute distance
+do i=1,nn
+   call sphere_dist(lon,lat,tree%lon(nn_index(i)),tree%lat(nn_index(i)),lnn_dist(i))
+end do
 
 ! Transform indices
 nn_index = tree%from_eff(nn_index)
@@ -180,7 +179,7 @@ do while (i<nn)
    ! Count indistinguishable neighbors
    nid = 1
    do j=i+1,nn
-      if (abs(nn_dist(i)-nn_dist(j))<rth*nn_dist(i)) nid = nid+1
+      if (abs(lnn_dist(i)-lnn_dist(j))<rth*lnn_dist(i)) nid = nid+1
    end do
 
    ! Reorder
@@ -188,7 +187,7 @@ do while (i<nn)
       allocate(order(nid))
       call qsort(nid,nn_index(i:i+nid-1),order)
       do j=1,nid
-         nn_dist(i+j-1) = nn_dist(i+order(j)-1)
+         lnn_dist(i+j-1) = lnn_dist(i+order(j)-1)
       end do
       deallocate(order)
    end if
@@ -196,6 +195,9 @@ do while (i<nn)
    ! Update
    i = i+nid
 end do
+
+! Copy nn_dist if required
+if (present(nn_dist)) nn_dist = lnn_dist
 
 end subroutine tree_find_nearest_neighbors
 

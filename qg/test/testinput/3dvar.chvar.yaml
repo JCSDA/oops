@@ -27,7 +27,8 @@ cost_function:
       vertical_correlation: 0.2
       variable_changes:
       - bump:
-          prefix: bump_3dvar.chvar
+          datadir: bump
+          prefix: 3dvar.chvar
           strategy: common
         varchange: StatsVariableChange
         inputVariables:

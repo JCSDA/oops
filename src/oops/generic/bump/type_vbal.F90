@@ -189,7 +189,7 @@ character(len=1024),parameter :: subr = 'vbal_read'
 
 ! Open file
 write(filename,'(a,a,i4.4,a,i4.4)') trim(nam%prefix),'_vbal_',mpl%nproc,'-',mpl%myproc
-call mpl%ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename)//'.nc',or(nf90_clobber,nf90_64bit_offset),ncid))
+call mpl%ncerr(subr,nf90_open(trim(nam%datadir)//'/'//trim(filename)//'.nc',nf90_nowrite,ncid))
 
 ! Get dimensions
 call mpl%ncerr(subr,nf90_inq_dimid(ncid,'np',np_id))
