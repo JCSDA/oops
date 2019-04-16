@@ -21,10 +21,12 @@
 #include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
+#include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
+#include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Model.h"
 #include "oops/interface/ModelAuxControl.h"
@@ -43,9 +45,11 @@ template <typename MODEL> class HofX : public Application {
   typedef ModelAuxControl<MODEL>     ModelAux_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef Observations<MODEL>        Observations_;
-  typedef ObsOperators<MODEL>        ObsOperators_;
+  typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
+  typedef ObsOperators<MODEL>        ObsOperators_;
   typedef State<MODEL>               State_;
+  typedef boost::shared_ptr<ObsFilters_> PtrFilters_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -93,14 +97,26 @@ template <typename MODEL> class HofX : public Application {
     ObsAuxCtrl_ ybias(biasConf);
 
 //  Setup observations
-    eckit::LocalConfiguration obsconf(fullConfig, "Observations");
-    Log::debug() << "Observations configuration is:" << obsconf << std::endl;
-    ObsSpaces_ obsdb(obsconf, winbgn, winend);
-    ObsOperators_ hop(obsdb, obsconf);
+    const eckit::LocalConfiguration obsconf(fullConfig, "Observations");
+    Log::info() << "Observation configuration is:" << obsconf << std::endl;
+    ObsSpaces_ obspace(obsconf, winbgn, winend);
+    ObsOperators_ hop(obspace, obsconf);
+
+//  Setup QC filters
+    std::vector<eckit::LocalConfiguration> typeconfs;
+    obsconf.get("ObsTypes", typeconfs);
+    std::vector<PtrFilters_> filters;
+    for (size_t jj = 0; jj < obspace.size(); ++jj) {
+      typeconfs[jj].set("QCname", "PreQC");
+      typeconfs[jj].set("PreQC", "on");
+      typeconfs[jj].set("iteration", 0);
+      PtrFilters_ tmp(new ObsFilters_(obspace[jj], typeconfs[jj], hop[jj].observed()));
+      filters.push_back(tmp);
+    }
 
 //  Setup Observer
     boost::shared_ptr<Observer<MODEL, State_> >
-      pobs(new Observer<MODEL, State_>(obsdb, hop, ybias));
+      pobs(new Observer<MODEL, State_>(obspace, hop, ybias, filters));
     post.enrollProcessor(pobs);
 
 //  Compute H(x)
