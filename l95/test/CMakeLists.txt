@@ -250,7 +250,6 @@ ecbuild_add_test( TARGET test_l95_geometry
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_geometry_iterator
-                  BOOST
                   SOURCES executables/TestGeometryIterator.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    lorenz95 )
@@ -306,7 +305,6 @@ ecbuild_add_test( TARGET test_l95_observationspace
                   LIBS    lorenz95 )
 
 ecbuild_add_test( TARGET test_l95_localobsspace
-                  BOOST
                   SOURCES executables/TestLocalObservationSpace.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    lorenz95 )
