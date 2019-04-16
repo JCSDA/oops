@@ -122,7 +122,7 @@ template <typename MODEL> class LocalHofX : public Application {
        localhop.push_back(lhop);
        //  Setup observer
        boost::shared_ptr<Observer<MODEL, State_>>
-          lpobs(new Observer<MODEL, State_>(obsconf, *localobs[jj], *localhop[jj], ybias));
+          lpobs(new Observer<MODEL, State_>(*localobs[jj], *localhop[jj], ybias));
        pobs.push_back(lpobs);
        post.enrollProcessor(pobs[jj]);
     }

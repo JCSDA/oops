@@ -21,6 +21,7 @@
 #include "oops/base/Departures.h"
 #include "oops/base/LinearObsOperators.h"
 #include "oops/base/Observations.h"
+#include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBaseTLAD.h"
@@ -47,13 +48,16 @@ class ObserverTLAD : public PostBaseTLAD<MODEL> {
   typedef Observations<MODEL>        Observations_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
+  typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsOperators<MODEL>        ObsOperators_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef State<MODEL>               State_;
+  typedef boost::shared_ptr<ObsFilters_> PtrFilters_;
 
  public:
   ObserverTLAD(const eckit::Configuration &,
                const ObsSpaces_ &, const ObsOperators_ &, const ObsAuxCtrl_ &,
+               const std::vector<PtrFilters_>,
                const util::Duration & tslot = util::Duration(0), const bool subwin = false);
   ~ObserverTLAD() {}
 
@@ -109,10 +113,11 @@ ObserverTLAD<MODEL>::ObserverTLAD(const eckit::Configuration & config,
                                   const ObsSpaces_ & obsdb,
                                   const ObsOperators_ & hop,
                                   const ObsAuxCtrl_ & ybias,
+                                  const std::vector<PtrFilters_> filters,
                                   const util::Duration & tslot, const bool subwin)
   : PostBaseTLAD<MODEL>(obsdb.windowStart(), obsdb.windowEnd()),
     obspace_(obsdb), hop_(hop), hoptlad_(obspace_, config),
-    observer_(config, obspace_, hop, ybias, tslot, subwin),
+    observer_(obspace_, hop, ybias, filters, tslot, subwin),
     ydeptl_(), ybiastl_(), ydepad_(), ybiasad_(),
     winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
     bgn_(winbgn_), end_(winend_), hslot_(tslot/2), subwindows_(subwin)

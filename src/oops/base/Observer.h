@@ -52,11 +52,12 @@ class Observer : public PostBase<STATE>,
   typedef Observations<MODEL>        Observations_;
   typedef ObsOperators<MODEL>        ObsOperators_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
-  typedef std::vector<boost::shared_ptr<InterpolatorTraj_> > vspit;
+  typedef std::vector<boost::shared_ptr<InterpolatorTraj_> > type_vspit;
+  typedef boost::shared_ptr<ObsFilters_> PtrFilters_;
 
  public:
-  Observer(const eckit::Configuration &,
-           const ObsSpaces_ &, const ObsOperators_ &, const ObsAuxCtrl_ &,
+  Observer(const ObsSpaces_ &, const ObsOperators_ &, const ObsAuxCtrl_ &,
+           const std::vector<PtrFilters_> filters = std::vector<PtrFilters_>(0),
            const util::Duration & tslot = util::Duration(0), const bool subwin = false);
   ~Observer() {}
 
@@ -86,7 +87,7 @@ class Observer : public PostBase<STATE>,
   util::Duration hslot_;    //!< Half time slot
   const bool subwindows_;
 
-  std::vector<boost::shared_ptr<ObsFilters_> > filters_;
+  std::vector<PtrFilters_> filters_;
   std::vector<Variables> geovars_;  // Variables needed from model (through geovals)
   std::vector<boost::shared_ptr<GeoVaLs_> > gvals_;
 };
@@ -94,37 +95,25 @@ class Observer : public PostBase<STATE>,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename STATE>
-Observer<MODEL, STATE>::Observer(const eckit::Configuration & obsconf,
-                                 const ObsSpaces_ & obsdb,
+Observer<MODEL, STATE>::Observer(const ObsSpaces_ & obsdb,
                                  const ObsOperators_ & hop,
                                  const ObsAuxCtrl_ & ybias,
+                                 const std::vector<PtrFilters_> filters,
                                  const util::Duration & tslot, const bool swin)
   : PostBase<STATE>(), hop_(hop),
     yobs_(new Observations_(obsdb, hop_)), ybias_(ybias),
     winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
     bgn_(winbgn_), end_(winend_), hslot_(tslot/2), subwindows_(swin),
-    filters_(0), geovars_(hop_.size()), gvals_(0)
+    filters_(filters), geovars_(hop_.size()), gvals_(0)
 {
   Log::trace() << "Observer::Observer starting" << std::endl;
-
-  const int iterout = obsconf.getInt("iteration", 0);
-  if (iterout >= 0) {
-    const bool preqc = (obsconf.getString("PreQC", "off") == "on");
-    std::vector<eckit::LocalConfiguration> typeconfs;
-    obsconf.get("ObsTypes", typeconfs);
-    for (size_t jj = 0; jj < obsdb.size(); ++jj) {
-      typeconfs[jj].set("iteration", iterout);
-      if (preqc) typeconfs[jj].set("PreQC", "on");
-      boost::shared_ptr<ObsFilters_> tmp(new ObsFilters_(obsdb[jj], typeconfs[jj],
-                                                         hop_[jj].observed()));
-      filters_.push_back(tmp);
-    }
-  } else {
+  if (filters_.empty()) {
     for (size_t jj = 0; jj < obsdb.size(); ++jj) {
       boost::shared_ptr<ObsFilters_> tmp(new ObsFilters_());
       filters_.push_back(tmp);
     }
   }
+  ASSERT(filters_.size() == hop_.size());
 
   for (size_t jj = 0; jj < hop_.size(); ++jj) {
     geovars_[jj] += hop_[jj].variables();
@@ -182,7 +171,7 @@ void Observer<MODEL, STATE>::doProcessing(const STATE & xx) {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename STATE>
-void Observer<MODEL, STATE>::processTraj(const STATE & xx, vspit & traj) const {
+void Observer<MODEL, STATE>::processTraj(const STATE & xx, type_vspit & traj) const {
   Log::trace() << "Observer::processTraj start" << std::endl;
   util::DateTime t1(xx.validTime()-hslot_);
   util::DateTime t2(xx.validTime()+hslot_);

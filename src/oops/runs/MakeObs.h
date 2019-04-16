@@ -23,6 +23,7 @@
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
+#include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
@@ -47,9 +48,11 @@ template <typename MODEL> class MakeObs : public Application {
   typedef ModelAuxControl<MODEL>     ModelAux_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef Observations<MODEL>        Observations_;
+  typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef ObsOperators<MODEL>        ObsOperators_;
   typedef State<MODEL>               State_;
+  typedef boost::shared_ptr<ObsFilters_> PtrFilters_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -98,15 +101,26 @@ template <typename MODEL> class MakeObs : public Application {
     ObsAuxCtrl_ ybias(biasConf);
 
 //  Setup observations
-    eckit::LocalConfiguration obsconf(fullConfig, "Observations");
+    const eckit::LocalConfiguration obsconf(fullConfig, "Observations");
     Log::info() << "Observation configuration is:" << obsconf << std::endl;
     ObsSpaces_ obspace(obsconf, bgn, end);
     ObsOperators_ hop(obspace, obsconf);
 
+//  Setup QC filters
+    std::vector<eckit::LocalConfiguration> typeconfs;
+    obsconf.get("ObsTypes", typeconfs);
+    std::vector<PtrFilters_> filters;
+    for (size_t jj = 0; jj < obspace.size(); ++jj) {
+      typeconfs[jj].set("QCname", "PreQC");
+      typeconfs[jj].set("PreQC", "on");
+      typeconfs[jj].set("iteration", 0);
+      PtrFilters_ tmp(new ObsFilters_(obspace[jj], typeconfs[jj], hop[jj].observed()));
+      filters.push_back(tmp);
+    }
+
 //  Setup Observer
-    obsconf.set("PreQC", "on");
     boost::shared_ptr<Observer<MODEL, State_> >
-      pobs(new Observer<MODEL, State_>(obsconf, obspace, hop, ybias));
+      pobs(new Observer<MODEL, State_>(obspace, hop, ybias, filters));
     post.enrollProcessor(pobs);
 
 //  Run forecast and generate observations

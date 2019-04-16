@@ -99,7 +99,7 @@ template <typename MODEL> class FindLocalObs : public Application {
 
 //  Setup Observer
     boost::shared_ptr<Observer<MODEL, State_> >
-      pobs(new Observer<MODEL, State_>(obsconf, obsdb, hop, ybias));
+      pobs(new Observer<MODEL, State_>(obsdb, hop, ybias));
     post.enrollProcessor(pobs);
 
 //  Compute H(x)

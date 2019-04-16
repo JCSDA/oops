@@ -27,6 +27,7 @@
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
 #include "oops/base/ObserverTLAD.h"
+#include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
@@ -62,10 +63,12 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   typedef Increment<MODEL>           Increment_;
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
   typedef ObsErrors<MODEL>           ObsErrors_;
+  typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsOperators<MODEL>        ObsOperators_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef ObserverTLAD<MODEL>        ObserverTLAD_;
   typedef PostBaseTLAD<MODEL>        PostBaseTLAD_;
+  typedef boost::shared_ptr<ObsFilters_> PtrFilters_;
 
  public:
   /// Construct \f$ J_o\f$ from \f$ R\f$ and \f$ y_{obs}\f$.
@@ -152,14 +155,24 @@ template<typename MODEL>
 boost::shared_ptr<PostBase<State<MODEL> > >
 CostJo<MODEL>::initialize(const CtrlVar_ & xx, const eckit::Configuration & conf) {
   Log::trace() << "CostJo::initialize start" << std::endl;
+
   currentConf_.reset(new eckit::LocalConfiguration(conf));
-  const int iterout = conf.getInt("iteration");
-  obsconf_.set("iteration", iterout);
-  if (iterout == 0) obsconf_.set("PreQC", "on");
-  pobs_.reset(new Observer<MODEL, State_>(obsconf_, obspace_, hop_, xx.obsVar(),
+  const int iterout = currentConf_->getInt("iteration");
+
+  std::vector<PtrFilters_> filters_;  // should be controlled by outer loop
+
+  std::vector<eckit::LocalConfiguration> typeconfs;
+  obsconf_.get("ObsTypes", typeconfs);
+  for (size_t jj = 0; jj < obspace_.size(); ++jj) {
+    if (iterout == 0) typeconfs[jj].set("PreQC", "on");
+    typeconfs[jj].set("iteration", iterout);
+    typeconfs[jj].set("QCname", "EffectiveQC");
+    PtrFilters_ tmp(new ObsFilters_(obspace_[jj], typeconfs[jj], hop_[jj].observed()));
+    filters_.push_back(tmp);
+  }
+
+  pobs_.reset(new Observer<MODEL, State_>(obspace_, hop_, xx.obsVar(), filters_,
                                           tslot_, subwindows_));
-  obsconf_.set("iteration", util::missingValue(iterout));
-  obsconf_.set("PreQC", "off");
   Log::trace() << "CostJo::initialize done" << std::endl;
   return pobs_;
 }
@@ -214,12 +227,10 @@ boost::shared_ptr<PostBaseTLAD<MODEL> >
 CostJo<MODEL>::initializeTraj(const CtrlVar_ & xx, const Geometry_ &,
                               const eckit::Configuration & conf) {
   Log::trace() << "CostJo::initializeTraj start" << std::endl;
-  const int iterout = conf.getInt("iteration")+1;
-  obsconf_.set("iteration", -iterout);
-  pobstlad_.reset(new ObserverTLAD_(obsconf_, obspace_, hop_, xx.obsVar(),
+  std::vector<PtrFilters_> filters_;
+  pobstlad_.reset(new ObserverTLAD_(obsconf_, obspace_, hop_, xx.obsVar(), filters_,
                                     tslot_, subwindows_));
   Log::trace() << "CostJo::initializeTraj done" << std::endl;
-  obsconf_.set("iteration", util::missingValue(iterout));
   return pobstlad_;
 }
 
