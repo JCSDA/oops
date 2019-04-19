@@ -98,10 +98,10 @@ bool is_close(T a, T b, T epsilon) {
   bool test_status = eckit::types::is_approximately_equal(a , b, EpsAB);
   if (test_status) {
     Log::info() << "difference between " << std::setprecision(15)
-      << a << " and " << b << " is less than " << EpsAB << std::endl;
+      << a << " and " << b << " is less than " << EpsAB << " (PASS)" << std::endl;
   } else {
     Log::info() << "difference between " << std::setprecision(15)
-      << a << " and " << b << " exceeds " << EpsAB << std::endl;
+      << a << " and " << b << " exceeds " << EpsAB << " (FAIL)" << std::endl;
   }
 
   return test_status;
