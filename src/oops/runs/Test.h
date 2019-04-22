@@ -13,6 +13,7 @@
 
 #include <cmath>
 #include <cstring>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -96,12 +97,13 @@ bool is_close(T a, T b, T epsilon) {
   T AbsB = fabs(b);
   T EpsAB = (AbsA < AbsB ? AbsB : AbsA) * epsilon;  // greater of AbsA, AbsB times epsilon
   bool test_status = eckit::types::is_approximately_equal(a , b, EpsAB);
+  std::size_t num_digits = std::numeric_limits<T>::max_digits10;
   if (test_status) {
-    Log::info() << "difference between " << std::setprecision(12)
-      << a << " and " << b << " is less than " << EpsAB << std::endl;
+    Log::info() << "difference between " << std::setprecision(num_digits)
+      << a << " and " << b << " is less than " << EpsAB << " (PASS)" << std::endl;
   } else {
-    Log::info() << "difference between " << std::setprecision(12)
-      << a << " and " << b << " exceeds " << EpsAB << std::endl;
+    Log::info() << "difference between " << std::setprecision(num_digits)
+      << a << " and " << b << " exceeds " << EpsAB << " (FAIL)" << std::endl;
   }
 
   return test_status;
