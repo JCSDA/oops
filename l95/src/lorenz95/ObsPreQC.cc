@@ -9,28 +9,28 @@
 
 #include <string>
 
-#include "eckit/config/Configuration.h"
-
 #include "lorenz95/L95Traits.h"
+#include "lorenz95/ObsData1D.h"
 #include "lorenz95/ObsTableView.h"
-#include "lorenz95/ObsVec1D.h"
 #include "oops/interface/ObsFilter.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-static oops::FilterMaker<L95Traits, oops::ObsFilter<L95Traits, ObsPreQC> >
-  makerPreChk_("PreQC");
+static oops::FilterMaker<L95Traits, oops::ObsFilter<L95Traits, ObsPreQC> > makerPreChk_("PreQC");
 // -----------------------------------------------------------------------------
 
-ObsPreQC::ObsPreQC(ObsTableView & obsdb, const eckit::Configuration & config)
-     : novars_() {
-  const std::string qcname(config.getString("QCname"));
-  const oops::Variables var(config.getStringVector("observed"));
-  ObsVec1D qc(obsdb, var);
-  qc.save(qcname);
+ObsPreQC::ObsPreQC(ObsTableView & obsdb, const eckit::Configuration &,
+                   boost::shared_ptr<ObsData1D<int> >,
+                   boost::shared_ptr<ObsData1D<float> >) : novars_() {
+  if (!obsdb.has("PreQC")) {  // true in MakeObs
+    oops::Log::info() << "ObsPreQC::ObsPreQC generating PreQC" << std::endl;
+    ObsData1D<int> qc(obsdb, novars_);
+    qc.zero();
+    qc.save("PreQC");
+  }
 }
 
 // -----------------------------------------------------------------------------
-
 }  // namespace lorenz95
+

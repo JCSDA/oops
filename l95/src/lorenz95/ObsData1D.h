@@ -16,6 +16,7 @@
 #include "lorenz95/ObsTableView.h"
 #include "oops/base/Variables.h"
 #include "oops/util/Logger.h"
+#include "oops/util/missingValues.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
@@ -37,6 +38,7 @@ class ObsData1D : public util::Printable,
   ObsData1D & operator= (const ObsData1D &);
 
   void zero();
+  void mask(const ObsData1D<int> &);
 
   size_t nobs() const {return data_.size();}
   DATATYPE & operator[] (const size_t ii) {return data_.at(ii);}
@@ -52,6 +54,7 @@ class ObsData1D : public util::Printable,
   const ObsTableView & obsdb_;
   std::vector<DATATYPE> data_;
 };
+
 //-----------------------------------------------------------------------------
 
 template<typename DATATYPE>
@@ -77,6 +80,14 @@ template<typename DATATYPE>
 void ObsData1D<DATATYPE>::zero() {
   for (size_t jj = 0; jj < data_.size(); ++jj) {
     data_.at(jj) = static_cast<DATATYPE>(0);
+  }
+}
+// -----------------------------------------------------------------------------
+template<typename DATATYPE>
+void ObsData1D<DATATYPE>::mask(const ObsData1D<int> & mask) {
+  DATATYPE missing = util::missingValue(missing);;
+  for (size_t jj = 0; jj < data_.size(); ++jj) {
+    if (mask[jj]) data_.at(jj) = missing;
   }
 }
 // -----------------------------------------------------------------------------

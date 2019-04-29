@@ -80,6 +80,16 @@ void ObsTable::putdb(const std::string & col, const std::vector<int> & vec) cons
 
 // -----------------------------------------------------------------------------
 
+void ObsTable::putdb(const std::string & col, const std::vector<float> & vec) const {
+  std::vector<double> tmp(vec.size());
+  for (size_t jobs = 0; jobs < vec.size(); ++jobs) {
+    tmp[jobs] = static_cast<double>(vec[jobs]);
+  }
+  this->putdb(col, tmp);
+}
+
+// -----------------------------------------------------------------------------
+
 void ObsTable::putdb(const std::string & col, const std::vector<double> & vec) const {
   ASSERT(vec.size() == nobs());
   if (data_.find(col) != data_.end()) {
@@ -99,6 +109,18 @@ void ObsTable::getdb(const std::string & col, std::vector<int> & vec) const {
   vec.resize(nobs());
   for (size_t jobs = 0; jobs < nobs(); ++jobs) {
     vec[jobs] = lround(tmp[jobs]);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsTable::getdb(const std::string & col, std::vector<float> & vec) const {
+  std::vector<double> tmp;
+  this->getdb(col, tmp);
+
+  vec.resize(nobs());
+  for (size_t jobs = 0; jobs < nobs(); ++jobs) {
+    vec[jobs] = static_cast<float>(tmp[jobs]);
   }
 }
 

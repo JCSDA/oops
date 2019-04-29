@@ -12,6 +12,7 @@
 #include "oops/base/ObsFilterBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/util/dot_product.h"
@@ -26,9 +27,11 @@ class GeoVaLsWriter : public ObsFilterBase<MODEL> {
   typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef ObservationSpace<MODEL>    ObsSpace_;
   typedef ObsVector<MODEL>           ObsVector_;
+  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<MODEL, DATA> >;
 
  public:
-  GeoVaLsWriter(const ObsSpace_ &, const eckit::Configuration & conf): conf_(conf), geovars_() {}
+  GeoVaLsWriter(const ObsSpace_ &, const eckit::Configuration & conf,
+                ObsDataPtr_<int>, ObsDataPtr_<float>): conf_(conf), geovars_() {}
   ~GeoVaLsWriter() {}
 
   void priorFilter(const GeoVaLs_ & gv) const override {

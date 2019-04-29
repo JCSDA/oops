@@ -10,6 +10,8 @@
 
 #include <ostream>
 
+#include "boost/shared_ptr.hpp"
+
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Variables.h"
 #include "oops/util/Printable.h"
@@ -17,11 +19,13 @@
 namespace qg {
   class GomQG;
   class ObsSpaceQG;
+  template <typename DATATYPE> class ObsDataQG;
   class ObsVecQG;
 
 class ObsPreQC : public util::Printable {
  public:
-  ObsPreQC(ObsSpaceQG &, const eckit::Configuration &);
+  ObsPreQC(ObsSpaceQG &, const eckit::Configuration &,
+           boost::shared_ptr<ObsDataQG<int> >, boost::shared_ptr<ObsDataQG<float> >);
   ~ObsPreQC() {}
 
   void priorFilter(const GomQG &) const {}

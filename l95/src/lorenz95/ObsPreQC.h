@@ -8,7 +8,10 @@
 #ifndef LORENZ95_OBSPREQC_H_
 #define LORENZ95_OBSPREQC_H_
 
+#include <memory>
 #include <ostream>
+
+#include "boost/shared_ptr.hpp"
 
 #include "eckit/config/LocalConfiguration.h"
 
@@ -18,11 +21,15 @@
 namespace lorenz95 {
   class GomL95;
   class ObsTableView;
+  template <typename DATATYPE> class ObsData1D;
   class ObsVec1D;
+
+// Nothing to do here for the Lorenz model
 
 class ObsPreQC : public util::Printable {
  public:
-  ObsPreQC(ObsTableView &, const eckit::Configuration &);
+  ObsPreQC(ObsTableView &, const eckit::Configuration &,
+           boost::shared_ptr<ObsData1D<int> >, boost::shared_ptr<ObsData1D<float> >);
   ~ObsPreQC() {}
 
   void priorFilter(const GomL95 &) const {}

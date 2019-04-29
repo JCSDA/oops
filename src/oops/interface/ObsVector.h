@@ -41,7 +41,6 @@ template <typename MODEL>
 class ObsVector : public util::Printable,
                   private util::ObjectCounter<ObsVector<MODEL> > {
   typedef typename MODEL::ObsVector             ObsVector_;
-  typedef ObsDataVector<MODEL, int>             ObsVectorInt_;
 
  public:
   static const std::string classname() {return "oops::ObsVector";}
@@ -68,7 +67,6 @@ class ObsVector : public util::Printable,
   void random();
   double dot_product_with(const ObsVector &) const;
   double rms() const;
-  void mask(const ObsVectorInt_ &);
 
 // I/O
   void read(const std::string &);
@@ -252,18 +250,8 @@ void ObsVector<MODEL>::print(std::ostream & os) const {
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-void ObsVector<MODEL>::mask(const ObsVectorInt_ & qc) {
-  Log::trace() << "ObsVector<MODEL>::mask starting" << std::endl;
-  util::Timer timer(classname(), "mask");
-
-  data_->mask(qc.obsdatavector());
-
-  Log::trace() << "ObsVector<MODEL>::mask done" << std::endl;
-}
-// -----------------------------------------------------------------------------
-template <typename MODEL>
 void ObsVector<MODEL>::read(const std::string & name) {
-  Log::trace() << "ObsVector<MODEL>::read starting" << std::endl;
+  Log::trace() << "ObsVector<MODEL>::read starting " << name << std::endl;
   util::Timer timer(classname(), "read");
 
   data_->read(name);
@@ -273,7 +261,7 @@ void ObsVector<MODEL>::read(const std::string & name) {
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 void ObsVector<MODEL>::save(const std::string & name) const {
-  Log::trace() << "ObsVector<MODEL>::save starting";
+  Log::trace() << "ObsVector<MODEL>::save starting " << name << std::endl;
   util::Timer timer(classname(), "save");
 
   data_->save(name);

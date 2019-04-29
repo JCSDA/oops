@@ -40,7 +40,6 @@ template <typename MODEL> void testFilters() {
   typedef oops::ObsFilterBase<MODEL>     ObsFilterBase_;
   typedef oops::ObsOperator<MODEL>       ObsOperator_;
   typedef oops::ObsVector<MODEL>         ObsVector_;
-  typedef oops::ObsDataVector<MODEL, int>  ObsVectorInt_;
 
   const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
   std::vector<eckit::LocalConfiguration> typeconfs;
@@ -55,15 +54,18 @@ template <typename MODEL> void testFilters() {
     const ObsAuxCtrl_ ybias(typeconfs[jj]);
 
     ObsVector_ ovec(Test_::obspace()[jj], hop.observed());
+    boost::shared_ptr<oops::ObsDataVector<MODEL, float> >
+      obserr(new oops::ObsDataVector<MODEL, float>(Test_::obspace()[jj], hop.observed()));
+    obserr->read("ObsError");
+    boost::shared_ptr<oops::ObsDataVector<MODEL, int> >
+      qcflags(new oops::ObsDataVector<MODEL, int>  (Test_::obspace()[jj], hop.observed()));
 
 //  Prepare storage for QC flags using PreQC filter
-    const std::string qcname = "TestQC";
     eckit::LocalConfiguration preconf;
     preconf.set("Filter", "PreQC");
     preconf.set("observed", hop.observed().variables());
-    preconf.set("QCname", qcname);
-    boost::shared_ptr<ObsFilterBase_> preqc(  // All work is done in constructor
-      oops::FilterFactory<MODEL>::create(Test_::obspace()[jj], preconf));
+    boost::shared_ptr<ObsFilterBase_> preqc(
+      oops::FilterFactory<MODEL>::create(Test_::obspace()[jj], preconf, qcflags, obserr));
 
 //  Get filters configurations
     std::vector<eckit::LocalConfiguration> filtconf;
@@ -75,31 +77,27 @@ template <typename MODEL> void testFilters() {
 
 //  Test filters
     for (std::size_t jf = 0; jf < filtconf.size(); ++jf) {
-      filtconf[jf].set("QCname", qcname);
       filtconf[jf].set("observed", hop.observed().variables());
       boost::shared_ptr<ObsFilterBase_> filter(
-        oops::FilterFactory<MODEL>::create(Test_::obspace()[jj], filtconf[jf]));
+        oops::FilterFactory<MODEL>::create(Test_::obspace()[jj], filtconf[jf], qcflags, obserr));
 
       filter->priorFilter(gval);
       hop.simulateObs(gval, ovec, ybias);
       filter->postFilter(ovec);
     }
 
-//  get QC marks from this run
-    ObsVectorInt_ qc(Test_::obspace()[jj], hop.observed());
-    qc.read(qcname);
-
+//  Compare with known results
     if (typeconfs[jj].has("qcBenchmark")) {
       const std::string qcBenchmarkName = typeconfs[jj].getString("qcBenchmark");
 
-      ObsVectorInt_ qcBenchmark(Test_::obspace()[jj], hop.observed());
+      oops::ObsDataVector<MODEL, int> qcBenchmark(Test_::obspace()[jj], hop.observed());
       qcBenchmark.read(qcBenchmarkName);
 
-      bool same = compareFlags(qc, qcBenchmark);
+      bool same = compareFlags(*qcflags, qcBenchmark);
       EXPECT(same);
     } else {
       const int passedBenchmark = typeconfs[jj].getInt("passedBenchmark");
-      const int passed = numZero(qc);
+      const int passed = numZero(*qcflags);
       EXPECT(passed == passedBenchmark);
     }
   }

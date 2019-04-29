@@ -107,9 +107,6 @@ template <typename MODEL> class HofX : public Application {
     obsconf.get("ObsTypes", typeconfs);
     std::vector<PtrFilters_> filters;
     for (size_t jj = 0; jj < obspace.size(); ++jj) {
-      typeconfs[jj].set("QCname", "PreQC");
-      typeconfs[jj].set("PreQC", "on");
-      typeconfs[jj].set("iteration", 0);
       PtrFilters_ tmp(new ObsFilters_(obspace[jj], typeconfs[jj], hop[jj].observed()));
       filters.push_back(tmp);
     }

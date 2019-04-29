@@ -56,9 +56,31 @@ ObsTableView::~ObsTableView() {
 
 // -----------------------------------------------------------------------------
 
+bool ObsTableView::has(const std::string & col) const {
+  oops::Log::trace() << "ObsTableView::has" << std::endl;
+  return obstable_->has(col);
+}
+
+// -----------------------------------------------------------------------------
+
 void ObsTableView::putdb(const std::string & col, const std::vector<int> & vec) const {
   int missing;
   std::vector<int> fullvec(obstable_->nobs(), util::missingValue(missing));
+  if (obstable_->has(col)) {
+    obstable_->getdb(col, fullvec);
+  }
+  for (unsigned int i = 0; i < nobs(); i++) {
+    fullvec[localobs_[i]] = vec[i];
+  }
+  obstable_->putdb(col, fullvec);
+  oops::Log::trace() << "ObsTableView::putdb done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsTableView::putdb(const std::string & col, const std::vector<float> & vec) const {
+  float missing;
+  std::vector<float> fullvec(obstable_->nobs(), util::missingValue(missing));
   if (obstable_->has(col)) {
     obstable_->getdb(col, fullvec);
   }
@@ -88,6 +110,18 @@ void ObsTableView::putdb(const std::string & col, const std::vector<double> & ve
 
 void ObsTableView::getdb(const std::string & col, std::vector<int> & vec) const {
   std::vector<int> fullvec;
+  obstable_->getdb(col, fullvec);
+  vec.resize(nobs());
+  for (unsigned int i = 0; i < nobs(); i++) {
+    vec[i] = fullvec[localobs_[i]];
+  }
+  oops::Log::trace() << "ObsTableView::getdb done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsTableView::getdb(const std::string & col, std::vector<float> & vec) const {
+  std::vector<float> fullvec;
   obstable_->getdb(col, fullvec);
   vec.resize(nobs());
   for (unsigned int i = 0; i < nobs(); i++) {

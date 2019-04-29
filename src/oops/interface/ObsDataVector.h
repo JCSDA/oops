@@ -9,6 +9,7 @@
 #define OOPS_INTERFACE_OBSDATAVECTOR_H_
 
 #include <math.h>
+#include <memory>
 #include <ostream>
 #include <string>
 
@@ -41,9 +42,13 @@ class ObsDataVector : public util::Printable,
   ObsDataVec_ & obsdatavector() {return *data_;}
   const ObsDataVec_ & obsdatavector() const {return *data_;}
 
+  boost::shared_ptr<ObsDataVec_> obsdatavectorptr() {return data_;}
+  boost::shared_ptr<const ObsDataVec_> obsdatavectorptr() const {return data_;}
+
   ObsDataVector & operator = (const ObsDataVector &);
 
   void zero();
+  void mask(const ObsDataVector<MODEL, int> &);
   unsigned int nobs() const {return data_->nobs();}
 
 // I/O
@@ -52,27 +57,8 @@ class ObsDataVector : public util::Printable,
 
  private:
   void print(std::ostream &) const;
-  boost::scoped_ptr<ObsDataVec_> data_;
+  boost::shared_ptr<ObsDataVec_> data_;
 };
-
-// -----------------------------------------------------------------------------
-template<typename MODEL>
-bool compareFlags(const ObsDataVector<MODEL, int> & first,
-                  const ObsDataVector<MODEL, int> & second) {
-  Log::trace() << "compareFlags(ObsDataVector<MODEL, int>) starting" << std::endl;
-  bool compare = compareFlags(first.obsdatavector(), second.obsdatavector());
-  Log::trace() << "compareFlags(ObsDataVector<MODEL, int>) done" << std::endl;
-  return compare;
-}
-
-// -----------------------------------------------------------------------------
-template<typename MODEL>
-size_t numZero(const ObsDataVector<MODEL, int> & data) {
-  Log::trace() << "numZero(ObsDataVector<MODEL, int>) starting" << std::endl;
-  size_t nzero = numZero(data.obsdatavector());
-  Log::trace() << "numZero(ObsDataVector<MODEL, int>) done" << std::endl;
-  return nzero;
-}
 
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename DATATYPE>
@@ -118,6 +104,14 @@ void ObsDataVector<MODEL, DATATYPE>::zero() {
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename DATATYPE>
+void ObsDataVector<MODEL, DATATYPE>::mask(const ObsDataVector<MODEL, int> & qc) {
+  Log::trace() << "ObsDataVector<MODEL>::mask starting" << std::endl;
+  util::Timer timer(classname(), "mask");
+  data_->mask(qc.obsdatavector());
+  Log::trace() << "ObsDataVector<MODEL>::mask done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename MODEL, typename DATATYPE>
 void ObsDataVector<MODEL, DATATYPE>::print(std::ostream & os) const {
   Log::trace() << "ObsDataVector<MODEL, DATATYPE>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
@@ -127,7 +121,7 @@ void ObsDataVector<MODEL, DATATYPE>::print(std::ostream & os) const {
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename DATATYPE>
 void ObsDataVector<MODEL, DATATYPE>::read(const std::string & name) {
-  Log::trace() << "ObsDataVector<MODEL, DATATYPE>::read starting" << std::endl;
+  Log::trace() << "ObsDataVector<MODEL, DATATYPE>::read starting " << name << std::endl;
   util::Timer timer(classname(), "read");
   data_->read(name);
   Log::trace() << "ObsDataVector<MODEL, DATATYPE>::read done" << std::endl;
@@ -135,10 +129,27 @@ void ObsDataVector<MODEL, DATATYPE>::read(const std::string & name) {
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename DATATYPE>
 void ObsDataVector<MODEL, DATATYPE>::save(const std::string & name) const {
-  Log::trace() << "ObsDataVector<MODEL, DATATYPE>::save starting";
+  Log::trace() << "ObsDataVector<MODEL, DATATYPE>::save starting " << name << std::endl;
   util::Timer timer(classname(), "save");
   data_->save(name);
   Log::trace() << "ObsDataVector<MODEL, DATATYPE>::save done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+bool compareFlags(const ObsDataVector<MODEL, int> & first,
+                  const ObsDataVector<MODEL, int> & second) {
+  Log::trace() << "compareFlags(ObsDataVector<MODEL, int>) starting" << std::endl;
+  bool compare = compareFlags(first.obsdatavector(), second.obsdatavector());
+  Log::trace() << "compareFlags(ObsDataVector<MODEL, int>) done" << std::endl;
+  return compare;
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+size_t numZero(const ObsDataVector<MODEL, int> & data) {
+  Log::trace() << "numZero(ObsDataVector<MODEL, int>) starting" << std::endl;
+  size_t nzero = numZero(data.obsdatavector());
+  Log::trace() << "numZero(ObsDataVector<MODEL, int>) done" << std::endl;
+  return nzero;
 }
 // -----------------------------------------------------------------------------
 

@@ -45,8 +45,10 @@ class ObsTable : public oops::ObsSpaceBase,
   ~ObsTable();
 
   void putdb(const std::string &, const std::vector<int> &) const;
+  void putdb(const std::string &, const std::vector<float> &) const;
   void putdb(const std::string &, const std::vector<double> &) const;
   void getdb(const std::string &, std::vector<int> &) const;
+  void getdb(const std::string &, std::vector<float> &) const;
   void getdb(const std::string &, std::vector<double> &) const;
 
   bool has(const std::string & col) const;

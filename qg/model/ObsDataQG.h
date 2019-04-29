@@ -13,6 +13,8 @@
 #include <string>
 #include <vector>
 
+#include "model/ObsSpaceQG.h"
+#include "model/ObsVecQG.h"
 #include "model/QgFortran.h"
 #include "oops/base/Variables.h"
 #include "oops/util/Logger.h"
@@ -20,7 +22,6 @@
 #include "oops/util/Printable.h"
 
 namespace qg {
-  class ObsSpaceQG;
 
 // -----------------------------------------------------------------------------
 /// Data in observation space
@@ -38,6 +39,7 @@ class ObsDataQG : public util::Printable,
   ObsDataQG & operator= (const ObsDataQG &);
 
   void zero();
+  void mask(const ObsDataQG<int>);
 
 // I/O
   void read(const std::string &);
@@ -46,37 +48,46 @@ class ObsDataQG : public util::Printable,
  private:
   void print(std::ostream &) const;
 
-//  const ObsSpaceQG & obsdb_;
+  ObsVecQG data_;
 };
 //-----------------------------------------------------------------------------
 
 template<typename DATATYPE>
-ObsDataQG<DATATYPE>::ObsDataQG(const ObsSpaceQG &, const oops::Variables &) {
+ObsDataQG<DATATYPE>::ObsDataQG(const ObsSpaceQG & os, const oops::Variables & var): data_(os, var) {
 }
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>
-ObsDataQG<DATATYPE>::ObsDataQG(const ObsDataQG &) {
+ObsDataQG<DATATYPE>::ObsDataQG(const ObsDataQG & other): data_(other.data_) {
 }
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>
-ObsDataQG<DATATYPE> & ObsDataQG<DATATYPE>::operator= (const ObsDataQG &) {
+ObsDataQG<DATATYPE> & ObsDataQG<DATATYPE>::operator= (const ObsDataQG & rhs) {
+  data_ = rhs.data_;
   return *this;
 }
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>
 void ObsDataQG<DATATYPE>::zero() {
+  data_.zero();
 }
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>
-void ObsDataQG<DATATYPE>::read(const std::string &) {
+void ObsDataQG<DATATYPE>::mask(const ObsDataQG<int>) {
 }
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>
-void ObsDataQG<DATATYPE>::save(const std::string &) const {
+void ObsDataQG<DATATYPE>::read(const std::string & name) {
+  data_.read(name);
 }
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>
-void ObsDataQG<DATATYPE>::print(std::ostream &) const {
+void ObsDataQG<DATATYPE>::save(const std::string & name) const {
+  data_.save(name);
+}
+// -----------------------------------------------------------------------------
+template<typename DATATYPE>
+void ObsDataQG<DATATYPE>::print(std::ostream & os) const {
+  os << data_;
 }
 // -----------------------------------------------------------------------------
 }  // namespace qg

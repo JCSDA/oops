@@ -35,6 +35,7 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/ObsAuxIncrement.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/interface/State.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -69,6 +70,8 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   typedef ObserverTLAD<MODEL>        ObserverTLAD_;
   typedef PostBaseTLAD<MODEL>        PostBaseTLAD_;
   typedef boost::shared_ptr<ObsFilters_> PtrFilters_;
+  template <typename DATA> using ObsData_ = ObsDataVector<MODEL, DATA>;
+  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<MODEL, DATA> >;
 
  public:
   /// Construct \f$ J_o\f$ from \f$ R\f$ and \f$ y_{obs}\f$.
@@ -133,6 +136,10 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   /// Linearized observation operators.
   boost::shared_ptr<ObserverTLAD_> pobstlad_;
   const bool subwindows_;
+
+  /// Storage for QC flags and obs error
+  std::vector<ObsDataPtr_<float> > obserr_;
+  std::vector<ObsDataPtr_<int> > qcflags_;
 };
 
 // =============================================================================
@@ -144,8 +151,25 @@ CostJo<MODEL>::CostJo(const eckit::Configuration & joConf,
   : obsconf_(joConf), obspace_(obsconf_, winbgn, winend),
     hop_(obspace_, joConf), yobs_(obspace_, hop_), Rmat_(),
     currentConf_(), gradFG_(), pobs_(), tslot_(tslot),
-    pobstlad_(), subwindows_(subwindows)
+    pobstlad_(), subwindows_(subwindows), obserr_(), qcflags_()
 {
+  Log::trace() << "CostJo::CostJo start" << std::endl;
+  for (size_t jj = 0; jj < obspace_.size(); ++jj) {
+//  Allocate and read initial QC flags
+//    Todo: should be able to set the name from yaml
+    ObsDataPtr_<int> tmpqc(new ObsData_<int>(obspace_[jj], hop_[jj].observed()));
+    tmpqc->read("PreQC");
+    Log::debug() << "CostJo::initialize preqc: " << *tmpqc;
+    qcflags_.push_back(tmpqc);
+
+//  Allocate and read initial obs error
+//    Todo: should be able to set the name from yaml
+    ObsDataPtr_<float> tmperr(new ObsData_<float>(obspace_[jj], hop_[jj].observed()));
+    tmperr->read("ObsError");
+    Log::debug() << "CostJo::initialize obs error: " << *tmperr;
+    obserr_.push_back(tmperr);
+  }
+//    Todo: create class like Observations and Departures to hold ObsDataVectors???
   Log::trace() << "CostJo::CostJo done" << std::endl;
 }
 
@@ -166,8 +190,8 @@ CostJo<MODEL>::initialize(const CtrlVar_ & xx, const eckit::Configuration & conf
   for (size_t jj = 0; jj < obspace_.size(); ++jj) {
     if (iterout == 0) typeconfs[jj].set("PreQC", "on");
     typeconfs[jj].set("iteration", iterout);
-    typeconfs[jj].set("QCname", "EffectiveQC");
-    PtrFilters_ tmp(new ObsFilters_(obspace_[jj], typeconfs[jj], hop_[jj].observed()));
+    PtrFilters_ tmp(new ObsFilters_(obspace_[jj], typeconfs[jj], hop_[jj].observed(),
+                                    qcflags_[jj], obserr_[jj]));
     filters_.push_back(tmp);
   }
 
@@ -184,13 +208,25 @@ double CostJo<MODEL>::finalize() {
   Log::trace() << "CostJo::finalize start" << std::endl;
   boost::scoped_ptr<Observations_> yeqv(pobs_->release());
   Log::info() << "Jo Observation Equivalent:" << std::endl << *yeqv
-              << "End Jo Observation Equivalent";
+              << "End Jo Observation Equivalent" << std::endl;
   const int iterout = currentConf_->getInt("iteration");
-  const std::string obsname = "hofx" + std::to_string(iterout);
-  yeqv->save(obsname);
 
+// Sace current QC flags and obs error
+  const std::string obsname = "hofx" + std::to_string(iterout);
+  const std::string qcname  = "EffectiveQC" + std::to_string(iterout);
+  const std::string errname = "EffectiveError" + std::to_string(iterout);
+  yeqv->save(obsname);
+  for (size_t jj = 0; jj < obspace_.size(); ++jj) {
+    obserr_[jj]->mask(*qcflags_[jj]);
+    qcflags_[jj]->save(qcname);
+    obserr_[jj]->save(errname);
+    obserr_[jj]->save("EffectiveError");  // Obs error covariance is looking for that for now
+  }
+
+// Set observation error covariance
   Rmat_.reset(new ObsErrors_(obsconf_, obspace_, hop_));
 
+// Read observed values
   yobs_.read("ObsValue");
 
 // Perturb observations according to obs error statistics
@@ -201,9 +237,11 @@ double CostJo<MODEL>::finalize() {
     Log::info() << "Perturbed observations: " << yobs_ << std::endl;
   }
 
+// Compute departures
   Departures_ ydep(*yeqv - yobs_);
   Log::info() << "Jo Departures:" << std::endl << ydep << "End Jo Departures" << std::endl;
 
+// Compute Jo
   Departures_ grad(ydep);
   Rmat_->inverseMultiply(grad);
 
@@ -333,12 +371,12 @@ double CostJo<MODEL>::printJo(const Departures_ & dy, const Departures_ & grad) 
     const double zz = 0.5 * dot_product(dy[jj], grad[jj]);
     const unsigned nobs = grad[jj].nobs();
     if (nobs > 0) {
-      Log::test() << "CostJo   : Nonlinear Jo("
-                  << hop_[jj].obstype() << ") = " << zz
-                  << ", nobs = " << nobs << ", Jo/n = " << zz/nobs
+      Log::test() << "CostJo   : Nonlinear Jo(" << hop_[jj].obstype() << ") = "
+                  << zz << ", nobs = " << nobs << ", Jo/n = " << zz/nobs
                   << ", err = " << (*Rmat_)[jj].getRMSE() << std::endl;
     } else {
-      Log::test() << "CostJo   : Nonlinear Jo = " << zz << " --- No Observations" << std::endl;
+      Log::test() << "CostJo   : Nonlinear Jo(" << hop_[jj].obstype() << ") = "
+                  << zz << " --- No Observations" << std::endl;
       Log::warning() << "CostJo: No Observations!!!" << std::endl;
     }
     zjo += zz;

@@ -31,7 +31,6 @@ template<typename MODEL>
 class ObsErrorDiag : public ObsErrorBase<MODEL> {
   typedef ObservationSpace<MODEL>      ObsSpace_;
   typedef ObsVector<MODEL>             ObsVector_;
-  typedef ObsDataVector<MODEL, int>    ObsVectorInt_;
 
  public:
   ObsErrorDiag(const eckit::Configuration &, const ObsSpace_ &, const Variables &);

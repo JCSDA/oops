@@ -43,9 +43,12 @@ class ObsTableView : public util::Printable,
                const double &, const int &);
   ~ObsTableView();
 
+  bool has(const std::string &) const;
   void putdb(const std::string &, const std::vector<int> &) const;
+  void putdb(const std::string &, const std::vector<float> &) const;
   void putdb(const std::string &, const std::vector<double> &) const;
   void getdb(const std::string &, std::vector<int> &) const;
+  void getdb(const std::string &, std::vector<float> &) const;
   void getdb(const std::string &, std::vector<double> &) const;
 
   void random(std::vector<double> &) const;

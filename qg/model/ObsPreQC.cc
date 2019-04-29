@@ -9,25 +9,26 @@
 
 #include <string>
 
-#include "eckit/config/Configuration.h"
-
+#include "model/ObsDataQG.h"
 #include "model/ObsSpaceQG.h"
-#include "model/ObsVecQG.h"
 #include "model/QgTraits.h"
 #include "oops/interface/ObsFilter.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-static oops::FilterMaker<QgTraits, oops::ObsFilter<QgTraits, ObsPreQC> >
-  makerPreChk_("PreQC");
+static oops::FilterMaker<QgTraits, oops::ObsFilter<QgTraits, ObsPreQC> > makerPreChk_("PreQC");
 // -----------------------------------------------------------------------------
 
-ObsPreQC::ObsPreQC(ObsSpaceQG & obsdb, const eckit::Configuration & config): novars_() {
-  const std::string qcname(config.getString("QCname"));
-  const oops::Variables var(config.getStringVector("observed"));
-  ObsVecQG qc(obsdb, var);
-  qc.save(qcname);
+ObsPreQC::ObsPreQC(ObsSpaceQG & obsdb, const eckit::Configuration &,
+                   boost::shared_ptr<ObsDataQG<int> >,
+                   boost::shared_ptr<ObsDataQG<float> >) : novars_() {
+  if (!obsdb.has("PreQC")) {  // true in MakeObs
+    oops::Log::info() << "ObsPreQC::ObsPreQC generating PreQC" << std::endl;
+    ObsDataQG<int> qc(obsdb, novars_);
+    qc.zero();
+    qc.save("PreQC");
+  }
 }
 
 // -----------------------------------------------------------------------------
