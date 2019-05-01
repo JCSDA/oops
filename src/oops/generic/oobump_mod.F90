@@ -26,6 +26,7 @@ public :: create_oobump, delete_oobump, get_oobump_colocated, get_oobump_nts, ge
 ! ------------------------------------------------------------------------------
 type oobump_type
    integer :: colocated                   !> Colocated flag
+   integer :: separate_log                !> Separate log files for BUMP
    integer :: ngrid                       !> Number of instances of BUMP
    type(bump_type),allocatable :: bump(:) !> Instances of BUMP
 end type oobump_type
@@ -47,6 +48,8 @@ contains
 subroutine create_oobump(self, ug, conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub)
 
 implicit none
+
+! Passed variables
 type(oobump_type), intent(inout) :: self  !< OOBUMP
 type(unstructured_grid), intent(in) :: ug !< Unstructured grid
 type(c_ptr), intent(in) :: conf           !< Configuration
@@ -56,12 +59,18 @@ integer, intent(in) :: ens2_ne            !< Second ensemble size
 integer, intent(in) :: ens2_nsub          !< Number of sub-ensembles in the second ensemble
 
 ! Local variables
-integer :: igrid
+integer :: igrid, lunit, iproc, ifileunit
 real(kind_real) :: msvalr
+character(len=1024) :: filename
+
+! Initialization
+self%colocated = ug%colocated
+self%separate_log = 0
+lunit = -999
+if (config_element_exists(conf,"separate_log")) self%separate_log = config_get_int(conf,"separate_log")
+self%ngrid = ug%ngrid
 
 ! Allocation
-self%colocated = ug%colocated
-self%ngrid = ug%ngrid
 allocate(self%bump(self%ngrid))
 
 do igrid=1,self%ngrid
@@ -77,10 +86,37 @@ do igrid=1,self%ngrid
    ! Get missing value
    msvalr = missing_value(1.0_kind_real)
 
+   ! Open separate log files for BUMP
+   if (self%separate_log==1) then
+      ! Initialize MPI
+      call self%bump(igrid)%mpl%init
+
+      do iproc=1,self%bump(igrid)%mpl%nproc
+         if ((trim(self%bump(igrid)%nam%verbosity)=='all').or.((trim(self%bump(igrid)%nam%verbosity)=='main') &
+      & .and.(iproc==self%bump(igrid)%mpl%ioproc))) then
+            if (iproc==self%bump(igrid)%mpl%myproc) then
+               ! Find a free unit
+               call self%bump(igrid)%mpl%newunit(lunit)
+
+               ! Open listing file
+               write(filename,'(a,i4.4,a)') trim(self%bump(igrid)%nam%prefix)//'.',self%bump(igrid)%mpl%myproc-1,'.out'
+               inquire(file=filename,number=ifileunit)
+               if (ifileunit<0) then
+                  open(unit=lunit,file=trim(filename),action='write',status='replace')
+               else
+                  close(ifileunit)
+                  open(unit=lunit,file=trim(filename),action='write',status='replace')
+               end if
+            end if
+            call self%bump(igrid)%mpl%f_comm%barrier
+         end if
+      end do
+   end if
+
    ! Online setup
    call self%bump(igrid)%setup_online(ug%grid(igrid)%nmga,ug%grid(igrid)%nl0,ug%grid(igrid)%nv,ug%grid(igrid)%nts, &
  & ug%grid(igrid)%lon,ug%grid(igrid)%lat,ug%grid(igrid)%area,ug%grid(igrid)%vunit,ug%grid(igrid)%lmask,ens1_ne=ens1_ne, &
- & ens1_nsub=ens1_nsub, ens2_ne=ens2_ne, ens2_nsub=ens2_nsub, msvalr=msvalr)
+ & ens1_nsub=ens1_nsub,ens2_ne=ens2_ne,ens2_nsub=ens2_nsub,lunit=lunit,msvalr=msvalr)
 end do
 
 end subroutine create_oobump
@@ -96,11 +132,16 @@ type(oobump_type), intent(inout) :: self !< OOBUMP
 ! Local variables
 integer :: igrid
 
-! Release memory
 if (allocated(self%bump)) then
-   do igrid=1,self%ngrid  
+   do igrid=1,self%ngrid
+      ! Close log files
+      if ((self%separate_log==1).and.(self%bump(igrid)%mpl%lunit/=-999)) close(unit=self%bump(igrid)%mpl%lunit)
+
+      ! Release memory      
       call self%bump(igrid)%dealloc
    end do
+
+   ! Release memory
    deallocate(self%bump)
 end if
 
