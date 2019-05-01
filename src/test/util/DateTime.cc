@@ -26,7 +26,7 @@ namespace {
     std::string s1("2011-09-16T13:55:20Z");
     util::DateTime d1(s1);
     std::string s2(d1.toString());
-    EXPECT(s2, s1);
+    EXPECT(s2 == s1);
   }
 
 // -----------------------------------------------------------------------------

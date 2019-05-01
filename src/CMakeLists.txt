@@ -368,7 +368,37 @@ ecbuild_add_test( TARGET oops_coding_norms
                   COMMAND ${CMAKE_BINARY_DIR}/bin/cpplint.py
                   ARGS --quiet --recursive ${CMAKE_CURRENT_SOURCE_DIR} )
 
-ecbuild_add_test( TARGET test_util_random
+ecbuild_add_test( TARGET  test_util_random
                   SOURCES test/base/Random.cc
 		  ARGS    "test/testinput/random.yaml"
                   LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_datetime
+                  SOURCES test/util/DateTime.cc
+                  LIBS    oops eckit )
+
+ecbuild_add_test( TARGET  test_util_duration
+                  SOURCES test/util/Duration.cc
+                  LIBS    oops eckit )
+
+ecbuild_add_test( TARGET  test_util_intset_parser
+                  SOURCES test/util/IntSetParser.cc
+                  LIBS    oops eckit )
+
+if( HAVE_FCTEST )
+add_fctest( TARGET  test_util_config_intfb.x
+            SOURCES test/util/config.F90
+            CONDITION HAVE_FCTEST
+            LIBS    oops )
+
+add_fctest( TARGET  test_util_datetime_intfb.x
+            SOURCES test/util/datetime.F90
+            CONDITION HAVE_FCTEST
+            LIBS    oops )
+
+add_fctest( TARGET  test_util_duration_intfb.x
+            SOURCES test/util/duration.F90
+            CONDITION HAVE_FCTEST
+            LIBS    oops )
+endif()
+

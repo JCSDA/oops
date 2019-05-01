@@ -53,7 +53,7 @@ namespace {
   CASE("test_convert_to_string") {
     util::Duration dur(93939);
     std::string s("P1DT2H5M39S");
-    EXPECTL(dur.toString() == s);
+    EXPECT(dur.toString() == s);
   }
 
 // -----------------------------------------------------------------------------
