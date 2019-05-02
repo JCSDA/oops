@@ -70,10 +70,10 @@ ObsFilters<MODEL>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration &
   : filters_(), geovars_() {
   Log::trace() << "ObsFilters::ObsFilters starting " << conf << std::endl;
 
-// Prepapre QC
-  if (conf.getString("PreQC", "off") == "on") {
+// Prepare QC handling and statistics if QC flags present
+  if (qcflags) {
     eckit::LocalConfiguration preconf;
-    preconf.set("Filter", "PreQC");
+    preconf.set("Filter", "QCmanager");
     preconf.set("observed", observed.variables());
     filters_.push_back(FilterFactory<MODEL>::create(os, preconf, qcflags, obserr));
   }

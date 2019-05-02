@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  */
 
-#ifndef QG_MODEL_OBSPREQC_H_
-#define QG_MODEL_OBSPREQC_H_
+#ifndef QG_MODEL_QCMANAGER_H_
+#define QG_MODEL_QCMANAGER_H_
 
 #include <ostream>
 
@@ -22,11 +22,11 @@ namespace qg {
   template <typename DATATYPE> class ObsDataQG;
   class ObsVecQG;
 
-class ObsPreQC : public util::Printable {
+class QCmanager : public util::Printable {
  public:
-  ObsPreQC(ObsSpaceQG &, const eckit::Configuration &,
-           boost::shared_ptr<ObsDataQG<int> >, boost::shared_ptr<ObsDataQG<float> >);
-  ~ObsPreQC() {}
+  QCmanager(ObsSpaceQG &, const eckit::Configuration &,
+            boost::shared_ptr<ObsDataQG<int> >, boost::shared_ptr<ObsDataQG<float> >): novars_() {}
+  ~QCmanager() {}
 
   void priorFilter(const GomQG &) const {}
   void postFilter(const ObsVecQG &) const {}
@@ -40,4 +40,4 @@ class ObsPreQC : public util::Printable {
 
 }  // namespace qg
 
-#endif  // QG_MODEL_OBSPREQC_H_
+#endif  // QG_MODEL_QCMANAGER_H_

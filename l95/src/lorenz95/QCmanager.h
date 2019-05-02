@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  */
 
-#ifndef LORENZ95_OBSPREQC_H_
-#define LORENZ95_OBSPREQC_H_
+#ifndef LORENZ95_QCMANAGER_H_
+#define LORENZ95_QCMANAGER_H_
 
 #include <memory>
 #include <ostream>
@@ -26,11 +26,11 @@ namespace lorenz95 {
 
 // Nothing to do here for the Lorenz model
 
-class ObsPreQC : public util::Printable {
+class QCmanager : public util::Printable {
  public:
-  ObsPreQC(ObsTableView &, const eckit::Configuration &,
-           boost::shared_ptr<ObsData1D<int> >, boost::shared_ptr<ObsData1D<float> >);
-  ~ObsPreQC() {}
+  QCmanager(ObsTableView &, const eckit::Configuration &,
+           boost::shared_ptr<ObsData1D<int> >, boost::shared_ptr<ObsData1D<float> >): novars_() {}
+  ~QCmanager() {}
 
   void priorFilter(const GomL95 &) const {}
   void postFilter(const ObsVec1D &) const {}
@@ -44,4 +44,4 @@ class ObsPreQC : public util::Printable {
 
 }  // namespace lorenz95
 
-#endif  // LORENZ95_OBSPREQC_H_
+#endif  // LORENZ95_QCMANAGER_H_

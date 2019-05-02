@@ -31,8 +31,6 @@ ecbuild_add_library( TARGET lorenz95
                          ObsBiasCorrection.h
                          ObsBiasCovariance.cc
                          ObsBiasCovariance.h
-                         ObsPreQC.cc
-                         ObsPreQC.h
                          ObsTable.cc
                          ObsTable.h
                          ObsTableView.cc
@@ -44,6 +42,8 @@ ecbuild_add_library( TARGET lorenz95
                          ObservationL95.h
                          ObservationTLAD.cc
                          ObservationTLAD.h
+                         QCmanager.cc
+                         QCmanager.h
                          Resolution.cc
                          Resolution.h
                          StateL95.cc

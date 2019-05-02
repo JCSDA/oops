@@ -155,11 +155,8 @@ CostJo<MODEL>::CostJo(const eckit::Configuration & joConf,
 {
   Log::trace() << "CostJo::CostJo start" << std::endl;
   for (size_t jj = 0; jj < obspace_.size(); ++jj) {
-//  Allocate and read initial QC flags
-//    Todo: should be able to set the name from yaml
+//  Allocate QC flags
     ObsDataPtr_<int> tmpqc(new ObsData_<int>(obspace_[jj], hop_[jj].observed()));
-    tmpqc->read("PreQC");
-    Log::debug() << "CostJo::initialize preqc: " << *tmpqc;
     qcflags_.push_back(tmpqc);
 
 //  Allocate and read initial obs error
@@ -188,7 +185,6 @@ CostJo<MODEL>::initialize(const CtrlVar_ & xx, const eckit::Configuration & conf
   std::vector<eckit::LocalConfiguration> typeconfs;
   obsconf_.get("ObsTypes", typeconfs);
   for (size_t jj = 0; jj < obspace_.size(); ++jj) {
-    if (iterout == 0) typeconfs[jj].set("PreQC", "on");
     typeconfs[jj].set("iteration", iterout);
     PtrFilters_ tmp(new ObsFilters_(obspace_[jj], typeconfs[jj], hop_[jj].observed(),
                                     qcflags_[jj], obserr_[jj]));

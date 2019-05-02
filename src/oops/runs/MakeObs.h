@@ -106,14 +106,11 @@ template <typename MODEL> class MakeObs : public Application {
     ObsSpaces_ obspace(obsconf, bgn, end);
     ObsOperators_ hop(obspace, obsconf);
 
-//  Setup QC filters
+//  Setup filters (GeoVaLsWriter usually)
     std::vector<eckit::LocalConfiguration> typeconfs;
     obsconf.get("ObsTypes", typeconfs);
     std::vector<PtrFilters_> filters;
     for (size_t jj = 0; jj < obspace.size(); ++jj) {
-      typeconfs[jj].set("QCname", "PreQC");
-      typeconfs[jj].set("PreQC", "on");
-      typeconfs[jj].set("iteration", 0);
       PtrFilters_ tmp(new ObsFilters_(obspace[jj], typeconfs[jj], hop[jj].observed()));
       filters.push_back(tmp);
     }

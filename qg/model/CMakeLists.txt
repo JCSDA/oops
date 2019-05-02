@@ -44,8 +44,6 @@ ObsOperatorQG.cc
 ObsOperatorQG.h
 ObsOperatorTLAD.cc
 ObsOperatorTLAD.h
-ObsPreQC.cc
-ObsPreQC.h
 ObsSpaceQG.cc
 ObsSpaceQG.h
 ObsStreamQG.cc
@@ -62,6 +60,8 @@ ObsWindQG.cc
 ObsWindQG.h
 ObsWindTLAD.cc
 ObsWindTLAD.h
+QCmanager.cc
+QCmanager.h
 QgFortran.h
 QgTraits.h
 StateQG.cc

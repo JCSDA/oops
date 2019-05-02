@@ -60,9 +60,9 @@ template <typename MODEL> void testFilters() {
     boost::shared_ptr<oops::ObsDataVector<MODEL, int> >
       qcflags(new oops::ObsDataVector<MODEL, int>  (Test_::obspace()[jj], hop.observed()));
 
-//  Prepare storage for QC flags using PreQC filter
+//  Not using ObsFilters here so manual setup of QCmanager is needed
     eckit::LocalConfiguration preconf;
-    preconf.set("Filter", "PreQC");
+    preconf.set("Filter", "QCmanager");
     preconf.set("observed", hop.observed().variables());
     boost::shared_ptr<ObsFilterBase_> preqc(
       oops::FilterFactory<MODEL>::create(Test_::obspace()[jj], preconf, qcflags, obserr));
