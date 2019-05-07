@@ -83,8 +83,7 @@ template <typename MODEL> void testSimulateObs() {
     if (conf[jj].has("vecequiv")) {
       // if reference h(x) is saved in file as a vector, read from file
       // and compare the norm of difference to zero
-      ObsVector_ ovec_ref(ovec, false);
-      ovec_ref.read(conf[jj].getString("vecequiv"));
+      ObsVector_ ovec_ref(Test_::obspace()[jj], hop.observed(), conf[jj].getString("vecequiv"));
       ovec_ref -= ovec;
       const double zz = ovec_ref.rms();
       oops::Log::info() << "Vector difference between reference and computed: " <<

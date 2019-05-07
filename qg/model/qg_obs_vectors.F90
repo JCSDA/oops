@@ -82,6 +82,7 @@ self%ncol=nc
 self%nobs=no
 if (allocated(self%values)) deallocate(self%values)
 allocate(self%values(self%ncol,self%nobs))
+self%values(:,:) = 0.0_kind_real
 
 end subroutine obsvec_setup
 

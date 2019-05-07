@@ -32,7 +32,7 @@ class ObsDataQG : public util::Printable,
  public:
   static const std::string classname() {return "qg::ObsDataQG";}
 
-  ObsDataQG(const ObsSpaceQG &, const oops::Variables &);
+  ObsDataQG(const ObsSpaceQG &, const oops::Variables &, const std::string &);
   ObsDataQG(const ObsDataQG &);
   ~ObsDataQG() {}
 
@@ -42,7 +42,6 @@ class ObsDataQG : public util::Printable,
   void mask(const ObsDataQG<int>);
 
 // I/O
-  void read(const std::string &);
   void save(const std::string &) const;
 
  private:
@@ -53,7 +52,8 @@ class ObsDataQG : public util::Printable,
 //-----------------------------------------------------------------------------
 
 template<typename DATATYPE>
-ObsDataQG<DATATYPE>::ObsDataQG(const ObsSpaceQG & os, const oops::Variables & var): data_(os, var) {
+ObsDataQG<DATATYPE>::ObsDataQG(const ObsSpaceQG & os, const oops::Variables & var,
+                               const std::string & name): data_(os, var, name) {
 }
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>
@@ -73,11 +73,6 @@ void ObsDataQG<DATATYPE>::zero() {
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>
 void ObsDataQG<DATATYPE>::mask(const ObsDataQG<int>) {
-}
-// -----------------------------------------------------------------------------
-template<typename DATATYPE>
-void ObsDataQG<DATATYPE>::read(const std::string & name) {
-  data_.read(name);
 }
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>

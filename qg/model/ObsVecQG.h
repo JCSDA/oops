@@ -33,7 +33,8 @@ class ObsVecQG : public util::Printable,
  public:
   static const std::string classname() {return "qg::ObsVecQG";}
 
-  ObsVecQG(const ObsSpaceQG &, const oops::Variables &);
+  ObsVecQG(const ObsSpaceQG &, const oops::Variables &,
+           const std::string & name = "", const bool fail = true);
   ObsVecQG(const ObsVecQG &, const bool copy = true);
   ~ObsVecQG();
 
@@ -57,7 +58,6 @@ class ObsVecQG : public util::Printable,
   const int & toFortran() const {return keyOvec_;}
 
 // I/O
-  void read(const std::string &);
   void save(const std::string &) const;
 
  private:

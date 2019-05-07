@@ -51,7 +51,8 @@ class Departures : public util::Printable,
 
  public:
 // Constructors and destructor
-  Departures(const ObsSpaces_ &, const ObsOperators_ &);
+  Departures(const ObsSpaces_ &, const ObsOperators_ &,
+             const std::string name = "", const bool fail = true);
   explicit Departures(std::vector<boost::shared_ptr<ObsVector_> >);
   explicit Departures(const Departures &);
   ~Departures();
@@ -85,10 +86,12 @@ class Departures : public util::Printable,
 // =============================================================================
 
 template<typename MODEL>
-Departures<MODEL>::Departures(const ObsSpaces_ & obsgeom, const ObsOperators_ & hop): dep_(0)
+Departures<MODEL>::Departures(const ObsSpaces_ & obsgeom, const ObsOperators_ & hop,
+                              const std::string name, const bool fail): dep_(0)
 {
   for (std::size_t jj = 0; jj < obsgeom.size(); ++jj) {
-    boost::shared_ptr<ObsVector_> tmp(new ObsVector_(obsgeom[jj], hop[jj].observed()));
+    boost::shared_ptr<ObsVector_> tmp(new ObsVector_(obsgeom[jj], hop[jj].observed(),
+                                                     name, fail));
     dep_.push_back(tmp);
   }
   Log::trace() << "Departures created" << std::endl;

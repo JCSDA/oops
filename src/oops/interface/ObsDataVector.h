@@ -34,7 +34,7 @@ class ObsDataVector : public util::Printable,
  public:
   static const std::string classname() {return "oops::ObsDataVector";}
 
-  ObsDataVector(const ObservationSpace<MODEL> &, const Variables &);
+  ObsDataVector(const ObservationSpace<MODEL> &, const Variables &, const std::string name = "");
   explicit ObsDataVector(const ObsDataVector &);
   ~ObsDataVector();
 
@@ -52,7 +52,6 @@ class ObsDataVector : public util::Printable,
   unsigned int nobs() const {return data_->nobs();}
 
 // I/O
-  void read(const std::string &);
   void save(const std::string &) const;
 
  private:
@@ -63,10 +62,12 @@ class ObsDataVector : public util::Printable,
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename DATATYPE>
 ObsDataVector<MODEL, DATATYPE>::ObsDataVector(const ObservationSpace<MODEL> & os,
-                                              const Variables & vars): data_() {
+                                              const Variables & vars, const std::string name)
+  : data_()
+{
   Log::trace() << "ObsDataVector<MODEL, DATATYPE>::ObsDataVector starting" << std::endl;
   util::Timer timer(classname(), "ObsDataVector");
-  data_.reset(new ObsDataVec_(os.observationspace(), vars));
+  data_.reset(new ObsDataVec_(os.observationspace(), vars, name));
   Log::trace() << "ObsDataVector<MODEL, DATATYPE>::ObsDataVector done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -117,14 +118,6 @@ void ObsDataVector<MODEL, DATATYPE>::print(std::ostream & os) const {
   util::Timer timer(classname(), "print");
   os << *data_;
   Log::trace() << "ObsDataVector<MODEL, DATATYPE>::print done" << std::endl;
-}
-// -----------------------------------------------------------------------------
-template <typename MODEL, typename DATATYPE>
-void ObsDataVector<MODEL, DATATYPE>::read(const std::string & name) {
-  Log::trace() << "ObsDataVector<MODEL, DATATYPE>::read starting " << name << std::endl;
-  util::Timer timer(classname(), "read");
-  data_->read(name);
-  Log::trace() << "ObsDataVector<MODEL, DATATYPE>::read done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename DATATYPE>

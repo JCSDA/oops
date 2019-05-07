@@ -24,9 +24,14 @@
 
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-ObsVec1D::ObsVec1D(ObsTableView & ot, const oops::Variables &): obsdb_(ot), data_(ot.nobs())
+ObsVec1D::ObsVec1D(ObsTableView & ot, const oops::Variables &,
+                   const std::string & name, const bool fail)
+  : obsdb_(ot), data_(ot.nobs())
 {
   BOOST_FOREACH(double & val, data_) val = 0.0;
+  if (!name.empty()) {
+    if (fail || obsdb_.has(name)) obsdb_.getdb(name, data_);
+  }
 }
 // -----------------------------------------------------------------------------
 ObsVec1D::ObsVec1D(const ObsVec1D & other, const bool copy)
@@ -103,10 +108,6 @@ double ObsVec1D::rms() const {
   for (unsigned int jj = 0; jj < data_.size(); ++jj) zz += data_[jj] * data_[jj];
   zz = sqrt(zz/data_.size());
   return zz;
-}
-// -----------------------------------------------------------------------------
-void ObsVec1D::read(const std::string & name) {
-  obsdb_.getdb(name, data_);
 }
 // -----------------------------------------------------------------------------
 void ObsVec1D::save(const std::string & name) const {

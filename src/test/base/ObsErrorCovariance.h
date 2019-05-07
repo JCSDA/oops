@@ -46,8 +46,7 @@ template <typename MODEL> void testConstructor() {
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     ObsOperator_ hop(Test_::obspace()[jj], conf[jj]);
 
-    ObsVector_ obserr(Test_::obspace()[jj], hop.observed());
-    obserr.read("ObsError");
+    ObsVector_ obserr(Test_::obspace()[jj], hop.observed(), "ObsError");
     obserr.save("EffectiveError");
 
     const eckit::LocalConfiguration rconf(conf[jj], "Covariance");

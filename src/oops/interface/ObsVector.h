@@ -45,7 +45,8 @@ class ObsVector : public util::Printable,
  public:
   static const std::string classname() {return "oops::ObsVector";}
 
-  ObsVector(const ObservationSpace<MODEL> &, const Variables &);
+  ObsVector(const ObservationSpace<MODEL> &, const Variables &,
+            const std::string name = "", const bool fail = true);
   explicit ObsVector(const ObsVector &, const bool copy = true);
   ~ObsVector();
 
@@ -69,7 +70,6 @@ class ObsVector : public util::Printable,
   double rms() const;
 
 // I/O
-  void read(const std::string &);
   void save(const std::string &) const;
 
   unsigned int nobs() const {return data_->nobs();}
@@ -81,12 +81,12 @@ class ObsVector : public util::Printable,
 
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-ObsVector<MODEL>::ObsVector(const ObservationSpace<MODEL> & os,
-                            const Variables & vars): data_() {
-  Log::trace() << "ObsVector<MODEL>::ObsVector starting" << std::endl;
+ObsVector<MODEL>::ObsVector(const ObservationSpace<MODEL> & os, const Variables & vars,
+                            const std::string name, const bool fail): data_() {
+  Log::trace() << "ObsVector<MODEL>::ObsVector starting " << name << std::endl;
   util::Timer timer(classname(), "ObsVector");
 
-  data_.reset(new ObsVector_(os.observationspace(), vars));
+  data_.reset(new ObsVector_(os.observationspace(), vars, name, fail));
 
   Log::trace() << "ObsVector<MODEL>::ObsVector done" << std::endl;
 }
@@ -247,16 +247,6 @@ void ObsVector<MODEL>::print(std::ostream & os) const {
   os << *data_;
 
   Log::trace() << "ObsVector<MODEL>::print done" << std::endl;
-}
-// -----------------------------------------------------------------------------
-template <typename MODEL>
-void ObsVector<MODEL>::read(const std::string & name) {
-  Log::trace() << "ObsVector<MODEL>::read starting " << name << std::endl;
-  util::Timer timer(classname(), "read");
-
-  data_->read(name);
-
-  Log::trace() << "ObsVector<MODEL>::read done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>

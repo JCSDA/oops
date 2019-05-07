@@ -140,8 +140,7 @@ template <typename MODEL> class LocalHofX : public Application {
     }
 //  Read full H(x)
     ObsOperators_ hop(obsdb, obsconf);
-    Observations_ yobs(obsdb, hop);
-    yobs.read("hofx");
+    Observations_ yobs(obsdb, hop, "hofx");
     Log::test() << "H(x): " << yobs << std::endl;
     return 0;
   }

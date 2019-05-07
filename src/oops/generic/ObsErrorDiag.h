@@ -64,11 +64,9 @@ template<typename MODEL>
 ObsErrorDiag<MODEL>::ObsErrorDiag(const eckit::Configuration & conf, const ObsSpace_ & obsgeom,
                                   const Variables & observed)
   : obsdb_(obsgeom), observed_(observed),
-    stddev_(obsgeom, observed), inverseVariance_(obsgeom, observed),
+    stddev_(obsgeom, observed, "EffectiveError"), inverseVariance_(obsgeom, observed),
     pert_(conf.getDouble("random_amplitude", 1.0))
 {
-  stddev_.read("EffectiveError");
-
   inverseVariance_ = stddev_;
   inverseVariance_ *= stddev_;
   inverseVariance_.invert();

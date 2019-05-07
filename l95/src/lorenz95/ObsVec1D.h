@@ -40,7 +40,8 @@ class ObsVec1D : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::ObsVec1D";}
 
-  ObsVec1D(ObsTableView &, const oops::Variables &);
+  ObsVec1D(ObsTableView &, const oops::Variables &,
+           const std::string & name = "", const bool fail = true);
   ObsVec1D(const ObsVec1D &, const bool copy = true);
   ~ObsVec1D() {}
 
@@ -63,7 +64,6 @@ class ObsVec1D : public util::Printable,
   const double & operator() (const unsigned int ii) const {return data_[ii];}
 
 // I/O
-  void read(const std::string &);
   void save(const std::string &) const;
 
  private:

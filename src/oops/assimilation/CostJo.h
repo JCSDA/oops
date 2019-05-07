@@ -149,8 +149,8 @@ CostJo<MODEL>::CostJo(const eckit::Configuration & joConf,
                       const util::DateTime & winbgn, const util::DateTime & winend,
                       const util::Duration & tslot, const bool subwindows)
   : obsconf_(joConf), obspace_(obsconf_, winbgn, winend),
-    hop_(obspace_, joConf), yobs_(obspace_, hop_), Rmat_(),
-    currentConf_(), gradFG_(), pobs_(), tslot_(tslot),
+    hop_(obspace_, joConf), yobs_(obspace_, hop_, "ObsValue"),
+    Rmat_(), currentConf_(), gradFG_(), pobs_(), tslot_(tslot),
     pobstlad_(), subwindows_(subwindows), obserr_(), qcflags_()
 {
   Log::trace() << "CostJo::CostJo start" << std::endl;
@@ -160,13 +160,10 @@ CostJo<MODEL>::CostJo(const eckit::Configuration & joConf,
     qcflags_.push_back(tmpqc);
 
 //  Allocate and read initial obs error
-//    Todo: should be able to set the name from yaml
-    ObsDataPtr_<float> tmperr(new ObsData_<float>(obspace_[jj], hop_[jj].observed()));
-    tmperr->read("ObsError");
+    ObsDataPtr_<float> tmperr(new ObsData_<float>(obspace_[jj], hop_[jj].observed(), "ObsError"));
     Log::debug() << "CostJo::initialize obs error: " << *tmperr;
     obserr_.push_back(tmperr);
   }
-//    Todo: create class like Observations and Departures to hold ObsDataVectors???
   Log::trace() << "CostJo::CostJo done" << std::endl;
 }
 
@@ -221,9 +218,6 @@ double CostJo<MODEL>::finalize() {
 
 // Set observation error covariance
   Rmat_.reset(new ObsErrors_(obsconf_, obspace_, hop_));
-
-// Read observed values
-  yobs_.read("ObsValue");
 
 // Perturb observations according to obs error statistics
   if (iterout == 0 && obsconf_.getBool("ObsPert", false)) {

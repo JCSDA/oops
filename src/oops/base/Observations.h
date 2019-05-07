@@ -47,7 +47,7 @@ template <typename MODEL> class Observations : public util::Printable {
   typedef ObsVector<MODEL>           ObsVector_;
 
  public:
-  Observations(const ObsSpaces_ &, const ObsOperators_ &);
+  Observations(const ObsSpaces_ &, const ObsOperators_ &, const std::string name = "");
   explicit Observations(const Observations &);
   ~Observations();
   Observations & operator=(const Observations &);
@@ -63,7 +63,6 @@ template <typename MODEL> class Observations : public util::Printable {
 
 /// Save observations values
   void save(const std::string &) const;
-  void read(const std::string &);
 
  private:
   void print(std::ostream &) const;
@@ -74,10 +73,11 @@ template <typename MODEL> class Observations : public util::Printable {
 // =============================================================================
 
 template <typename MODEL>
-Observations<MODEL>::Observations(const ObsSpaces_ & obsdb, const ObsOperators_ & hop): obs_(0)
+Observations<MODEL>::Observations(const ObsSpaces_ & obsdb, const ObsOperators_ & hop,
+                                  const std::string name): obs_(0)
 {
   for (std::size_t jj = 0; jj < obsdb.size(); ++jj) {
-    obs_.push_back(new ObsVector_(obsdb[jj], hop[jj].observed()));
+    obs_.push_back(new ObsVector_(obsdb[jj], hop[jj].observed(), name));
   }
   Log::trace() << "Observations created" << std::endl;
 }
@@ -126,14 +126,6 @@ void Observations<MODEL>::save(const std::string & name) const {
   for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
     obs_[jj].save(name);
   }
-}
-// -----------------------------------------------------------------------------
-template <typename MODEL>
-void Observations<MODEL>::read(const std::string & name) {
-  for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
-    obs_[jj].read(name);
-  }
-  Log::trace() << "Observations:Observations have been read" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>

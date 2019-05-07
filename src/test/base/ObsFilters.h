@@ -54,9 +54,8 @@ template <typename MODEL> void testFilters() {
     const ObsAuxCtrl_ ybias(typeconfs[jj]);
 
     ObsVector_ ovec(Test_::obspace()[jj], hop.observed());
-    boost::shared_ptr<oops::ObsDataVector<MODEL, float> >
-      obserr(new oops::ObsDataVector<MODEL, float>(Test_::obspace()[jj], hop.observed()));
-    obserr->read("ObsError");
+    boost::shared_ptr<oops::ObsDataVector<MODEL, float> > obserr
+      (new oops::ObsDataVector<MODEL, float>(Test_::obspace()[jj], hop.observed(), "ObsError"));
     boost::shared_ptr<oops::ObsDataVector<MODEL, int> >
       qcflags(new oops::ObsDataVector<MODEL, int>  (Test_::obspace()[jj], hop.observed()));
 
@@ -90,8 +89,8 @@ template <typename MODEL> void testFilters() {
     if (typeconfs[jj].has("qcBenchmark")) {
       const std::string qcBenchmarkName = typeconfs[jj].getString("qcBenchmark");
 
-      oops::ObsDataVector<MODEL, int> qcBenchmark(Test_::obspace()[jj], hop.observed());
-      qcBenchmark.read(qcBenchmarkName);
+      oops::ObsDataVector<MODEL, int> qcBenchmark(Test_::obspace()[jj], hop.observed(),
+                                                  qcBenchmarkName);
 
       bool same = compareFlags(*qcflags, qcBenchmark);
       EXPECT(same);

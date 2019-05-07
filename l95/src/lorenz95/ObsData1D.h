@@ -31,7 +31,7 @@ class ObsData1D : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::ObsData1D";}
 
-  ObsData1D(const ObsTableView &, const oops::Variables &);
+  ObsData1D(const ObsTableView &, const oops::Variables &, const std::string &);
   ObsData1D(const ObsData1D &);
   ~ObsData1D() {}
 
@@ -45,7 +45,6 @@ class ObsData1D : public util::Printable,
   const DATATYPE & operator[] (const size_t ii) const {return data_.at(ii);}
 
 // I/O
-  void read(const std::string &);
   void save(const std::string &) const;
 
  private:
@@ -58,10 +57,12 @@ class ObsData1D : public util::Printable,
 //-----------------------------------------------------------------------------
 
 template<typename DATATYPE>
-ObsData1D<DATATYPE>::ObsData1D(const ObsTableView & ot, const oops::Variables &)
+ObsData1D<DATATYPE>::ObsData1D(const ObsTableView & ot, const oops::Variables &,
+                               const std::string & name)
   : obsdb_(ot), data_(ot.nobs())
 {
   this->zero();
+  if (!name.empty()) obsdb_.getdb(name, data_);
 }
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>
@@ -89,11 +90,6 @@ void ObsData1D<DATATYPE>::mask(const ObsData1D<int> & mask) {
   for (size_t jj = 0; jj < data_.size(); ++jj) {
     if (mask[jj]) data_.at(jj) = missing;
   }
-}
-// -----------------------------------------------------------------------------
-template<typename DATATYPE>
-void ObsData1D<DATATYPE>::read(const std::string & name) {
-  obsdb_.getdb(name, data_);
 }
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>
