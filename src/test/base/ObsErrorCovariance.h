@@ -44,7 +44,8 @@ template <typename MODEL> void testConstructor() {
   obsconf.get("ObsTypes", conf);
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    ObsOperator_ hop(Test_::obspace()[jj], conf[jj]);
+    eckit::LocalConfiguration obsopconf(conf[jj], "ObsOperator");
+    ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
 
     ObsVector_ obserr(Test_::obspace()[jj], hop.observed(), "ObsError");
     obserr.save("EffectiveError");

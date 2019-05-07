@@ -27,7 +27,7 @@ class ObsTableTestFixture : public TestFixture {
     obsconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "Observations"));
     bgn_.reset(new util::DateTime(obsconf_->getString("window_begin")));
     end_.reset(new util::DateTime(obsconf_->getString("window_end")));
-    testconf_.reset(new eckit::LocalConfiguration(*obsconf_, "Observation"));
+    testconf_.reset(new eckit::LocalConfiguration(*obsconf_, "Observation.ObsSpace"));
   }
   ~ObsTableTestFixture() {}
   boost::scoped_ptr<const eckit::LocalConfiguration> obsconf_;

@@ -34,7 +34,6 @@ list( APPEND l95_test_input
   testinput/makeobsbias.yaml
   testinput/test.yaml
   testinput/truth.yaml
-  testinput/test_op_obs.yaml
 )
 
 list( APPEND l95_test_data

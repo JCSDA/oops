@@ -1,12 +1,11 @@
 Observations: 
   ObsTypes: 
-  - ObsType: "Lorenz 95"
-    ObsData: 
+  - ObsOperator: {}
+    ObsSpace: 
       ObsDataIn: 
         filename: "Data/l95.truth4d.2010-01-02T00:00:00Z.obt"
       ObsDataOut: 
         filename: "Data/l95.localhofx.2010-01-02T00:00:00Z.obt"
-      obsvalue: ObsVal
 Localization: 
   distance: 0.3
   max_nobs: -1

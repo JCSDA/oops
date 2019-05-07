@@ -31,7 +31,7 @@ class ObsVecTestFixture : TestFixture {
     const eckit::LocalConfiguration conf(TestConfig::config(), "Observations");
     const util::DateTime bgn(conf.getString("window_begin"));
     const util::DateTime end(conf.getString("window_end"));
-    const eckit::LocalConfiguration otconf(conf, "Observation");
+    const eckit::LocalConfiguration otconf(conf, "Observation.ObsSpace");
     obstable_.reset(new lorenz95::ObsTableView(otconf, bgn, end));
     const std::vector<std::string> vv{"zz"};
     vars_.reset(new oops::Variables(vv));

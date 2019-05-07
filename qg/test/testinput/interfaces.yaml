@@ -108,13 +108,15 @@ Observations:
     GeoVaLs:
       filename: Data/qg.stream.gom
       norm: '356.985842472369'
-    ObsData:
+    ObsSpace:
       ObsDataIn:
         obsfile: Data/qg.truth4d.obt
       ObsDataOut:
         obsfile: Data/qg.test.obt
       ObsHandler: ObsHelpQG
-    ObsType: Stream
+      ObsType: Stream
+    ObsOperator:
+      ObsType: Stream
     rmsequiv: '12.62135549999'
     tolerance: '1.0e-8'
   - Covariance:
@@ -122,13 +124,15 @@ Observations:
     GeoVaLs:
       filename: Data/qg.wind.gom
       norm: '120.590296066919'
-    ObsData:
+    ObsSpace:
       ObsDataIn:
         obsfile: Data/qg.truth4d.obt
       ObsDataOut:
         obsfile: Data/qg.test.obt
       ObsHandler: ObsHelpQG
-    ObsType: Wind
+      ObsType: Wind
+    ObsOperator:
+      ObsType: Wind
     rmsequiv: '4.2635108047106'
     tolerance: '1.0e-8'
   - Covariance:
@@ -136,13 +140,15 @@ Observations:
     GeoVaLs:
       filename: Data/qg.wspeed.gom
       norm: '122.535512929154'
-    ObsData:
+    ObsSpace:
       ObsDataIn:
         obsfile: Data/qg.truth4d.obt
       ObsDataOut:
         obsfile: Data/qg.test.obt
       ObsHandler: ObsHelpQG
-    ObsType: WSpeed
+      ObsType: WSpeed
+    ObsOperator:
+      ObsType: WSpeed
     rmsequiv: '6.12677564645768'
     tolerance: '1.0e-8'
 State:

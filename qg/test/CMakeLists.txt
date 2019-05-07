@@ -41,7 +41,6 @@ list( APPEND qg_test_input
   testinput/makeobsbias.yaml
   testinput/test.yaml
   testinput/truth.yaml
-  testinput/test_op_obs.yaml
   testinput/analytic_init_fc.yaml
   testinput/static_binit.yml
   testinput/convertstate.yaml

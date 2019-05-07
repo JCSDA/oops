@@ -74,7 +74,8 @@ template <typename MODEL> void testConstructor() {
   obsconf.get("ObsTypes", conf);
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    ObsOperator_ hop(Test_::obspace()[jj], conf[jj]);
+    eckit::LocalConfiguration obsopconf(conf[jj], "ObsOperator");
+    ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
 
     Locations_ locs(hop.locations(Test_::tbgn(), Test_::tend()));
     boost::scoped_ptr<GeoVaLs_> ov(new GeoVaLs_(locs, hop.variables()));
@@ -98,7 +99,8 @@ template <typename MODEL> void testUtils() {
   obsconf.get("ObsTypes", conf);
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    ObsOperator_ hop(Test_::obspace()[jj], conf[jj]);
+    eckit::LocalConfiguration obsopconf(conf[jj], "ObsOperator");
+    ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
 
     Locations_ locs(hop.locations(Test_::tbgn(), Test_::tend()));
     GeoVaLs_ gval(locs, hop.variables());
@@ -127,7 +129,8 @@ template <typename MODEL> void testRead() {
 
   const double tol = 1.0e-9;
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    ObsOperator_ hop(Test_::obspace()[jj], conf[jj]);
+    eckit::LocalConfiguration obsopconf(conf[jj], "ObsOperator");
+    ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
 
     eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
     Locations_ locs(hop.locations(Test_::tbgn(), Test_::tend()));

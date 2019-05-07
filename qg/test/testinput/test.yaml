@@ -29,7 +29,7 @@ observations:
   Observation:
   - Covariance:
       covariance: diagonal
-    ObsData:
+    ObsSpace:
       ObsDataIn:
         obsfile: Data/qg.truth4d.obt
       ObsDataOut:
@@ -39,7 +39,7 @@ observations:
     ObsType: Stream
   - Covariance:
       covariance: diagonal
-    ObsData:
+    ObsSpace:
       ObsDataIn:
         obsfile: Data/qg.truth4d.obt
       ObsDataOut:
@@ -49,7 +49,7 @@ observations:
     ObsType: Wind
   - Covariance:
       covariance: diagonal
-    ObsData:
+    ObsSpace:
       ObsDataIn:
         obsfile: Data/qg.truth4d.obt
       ObsDataOut:
@@ -60,7 +60,7 @@ observations:
 obstypetest:
   Covariance:
     covariance: diagonal
-  ObsData:
+  ObsSpace:
     ObsDataIn:
       obsfile: Data/qg.truth4d.obt
     ObsDataOut:

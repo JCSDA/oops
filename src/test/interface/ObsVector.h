@@ -53,10 +53,11 @@ class ObsVecFixture : private boost::noncopyable {
     obsconf.get("ObsTypes", conf);
 
     for (std::size_t jj = 0; jj < conf.size(); ++jj) {
-      boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(conf[jj], bgn, end));
+      eckit::LocalConfiguration osconf(conf[jj], "ObsSpace");
+      boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(osconf, bgn, end));
       ospaces_.push_back(tmp);
       eckit::LocalConfiguration ObsDataInConf;
-      conf[jj].get("ObsData.ObsDataIn", ObsDataInConf);
+      osconf.get("ObsDataIn", ObsDataInConf);
       observed_.push_back(oops::Variables(ObsDataInConf));
     }
   }

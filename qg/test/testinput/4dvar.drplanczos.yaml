@@ -19,24 +19,30 @@ cost_function:
       vertical_correlation: 0.2
   Jo:
     ObsTypes:
-    - ObsType: Stream
-      ObsData:
+    - ObsOperator:
+        ObsType: Stream
+      ObsSpace:
+        ObsType: Stream
         ObsDataIn:
           obsfile: Data/qg.truth4d.obt
         ObsDataOut:
           obsfile: Data/qg.4dvar.drplanczos.obt
       Covariance:
         covariance: diagonal
-    - ObsType: Wind
-      ObsData:
+    - ObsOperator:
+        ObsType: Wind
+      ObsSpace:
+        ObsType: Wind
         ObsDataIn:
           obsfile: Data/qg.truth4d.obt
         ObsDataOut:
           obsfile: Data/qg.4dvar.drplanczos.obt
       Covariance:
         covariance: diagonal
-    - ObsType: WSpeed
-      ObsData:
+    - ObsOperator:
+        ObsType: WSpeed
+      ObsSpace:
+        ObsType: WSpeed
         ObsDataIn:
           obsfile: Data/qg.truth4d.obt
         ObsDataOut:

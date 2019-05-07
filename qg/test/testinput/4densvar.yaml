@@ -18,28 +18,34 @@ cost_function:
     ObsTypes:
     - Covariance:
         covariance: diagonal
-      ObsData:
+      ObsSpace:
         ObsDataIn:
           obsfile: Data/qg.truth4d12h.obt
         ObsDataOut:
           obsfile: Data/qg.4densvar.obt
-      ObsType: Stream
+        ObsType: Stream
+      ObsOperator:
+        ObsType: Stream
     - Covariance:
         covariance: diagonal
-      ObsData:
+      ObsSpace:
         ObsDataIn:
           obsfile: Data/qg.truth4d12h.obt
         ObsDataOut:
           obsfile: Data/qg.4densvar.obt
-      ObsType: Wind
+        ObsType: Wind
+      ObsOperator:
+        ObsType: Wind
     - Covariance:
         covariance: diagonal
-      ObsData:
+      ObsSpace:
         ObsDataIn:
           obsfile: Data/qg.truth4d12h.obt
         ObsDataOut:
           obsfile: Data/qg.4densvar.obt
-      ObsType: WSpeed
+        ObsType: WSpeed
+      ObsOperator:
+        ObsType: WSpeed
   Jb:
     Background:
       state:

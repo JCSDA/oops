@@ -26,10 +26,12 @@ Observations:
       obs_density: '100'
       obs_error: '0.4'
       obs_period: PT3H
-    ObsData:
+    ObsSpace:
       ObsDataOut:
         obsfile: Data/qg.biased.obt
-    ObsType: Stream
+      ObsType: Stream
+    ObsOperator:
+      ObsType: Stream
   - Generate:
       begin: PT6H
       nval: '2'
@@ -38,10 +40,12 @@ Observations:
       obs_density: '100'
       obs_error: '0.6'
       obs_period: PT6H
-    ObsData:
+    ObsSpace:
       ObsDataOut:
         obsfile: Data/qg.biased.obt
-    ObsType: Wind
+      ObsType: Wind
+    ObsOperator:
+      ObsType: Wind
   - Generate:
       begin: PT3H
       nval: '1'
@@ -50,9 +54,11 @@ Observations:
       obs_density: '100'
       obs_error: '1.2'
       obs_period: PT6H
-    ObsData:
+    ObsSpace:
       ObsDataOut:
         obsfile: Data/qg.biased.obt
-    ObsType: WSpeed
+      ObsType: WSpeed
+    ObsOperator:
+      ObsType: WSpeed
 prints:
   frequency: PT3H

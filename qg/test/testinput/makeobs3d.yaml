@@ -23,10 +23,12 @@ Observations:
       obs_density: '100'
       obs_error: '0.4'
       obs_period: PT1H
-    ObsData:
+    ObsSpace:
       ObsDataOut:
         obsfile: Data/qg.truth3d.obt
-    ObsType: Stream
+      ObsType: Stream
+    ObsOperator:
+      ObsType: Stream
   - Generate:
       begin: PT11H
       nval: '2'
@@ -35,10 +37,12 @@ Observations:
       obs_density: '100'
       obs_error: '0.6'
       obs_period: PT2H
-    ObsData:
+    ObsSpace:
       ObsDataOut:
         obsfile: Data/qg.truth3d.obt
-    ObsType: Wind
+      ObsType: Wind
+    ObsOperator:
+      ObsType: Wind
   - Generate:
       begin: PT10H
       nval: '1'
@@ -47,7 +51,9 @@ Observations:
       obs_density: '100'
       obs_error: '1.2'
       obs_period: PT2H
-    ObsData:
+    ObsSpace:
       ObsDataOut:
         obsfile: Data/qg.truth3d.obt
-    ObsType: WSpeed
+      ObsType: WSpeed
+    ObsOperator:
+      ObsType: WSpeed

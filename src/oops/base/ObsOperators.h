@@ -59,10 +59,11 @@ class ObsOperators : public util::Printable,
 template <typename MODEL>
 ObsOperators<MODEL>::ObsOperators(const ObsSpace_ & os, const eckit::Configuration & conf) : ops_(0)
 {
-  std::vector<eckit::LocalConfiguration> obsconf;
-  conf.get("ObsTypes", obsconf);
+  std::vector<eckit::LocalConfiguration> typeconf;
+  conf.get("ObsTypes", typeconf);
   for (std::size_t jobs = 0; jobs < os.size(); ++jobs) {
-    boost::shared_ptr<ObsOperator_> tmp(new ObsOperator_(os[jobs], obsconf[jobs]));
+    eckit::LocalConfiguration obsopconf(typeconf[jobs], "ObsOperator");
+    boost::shared_ptr<ObsOperator_> tmp(new ObsOperator_(os[jobs], obsopconf));
     ops_.push_back(tmp);
   }
 }

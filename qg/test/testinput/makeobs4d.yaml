@@ -23,13 +23,15 @@ Observations:
       obs_density: '100'
       obs_error: '0.4'
       obs_period: PT3H
-    ObsData:
+    ObsSpace:
       ObsDataOut:
         obsfile: Data/qg.truth4d.obt
+      ObsType: Stream
+    ObsOperator:
+      ObsType: Stream
     ObsFilters:
     - Filter: GOMsaver
       filename: Data/qg.stream.gom
-    ObsType: Stream
   - Generate:
       begin: PT6H
       nval: '2'
@@ -38,13 +40,15 @@ Observations:
       obs_density: '100'
       obs_error: '0.6'
       obs_period: PT6H
-    ObsData:
+    ObsSpace:
       ObsDataOut:
         obsfile: Data/qg.truth4d.obt
+      ObsType: Wind
+    ObsOperator:
+      ObsType: Wind
     ObsFilters:
     - Filter: GOMsaver
       filename: Data/qg.wind.gom
-    ObsType: Wind
   - Generate:
       begin: PT3H
       nval: '1'
@@ -53,12 +57,14 @@ Observations:
       obs_density: '100'
       obs_error: '1.2'
       obs_period: PT6H
-    ObsData:
+    ObsSpace:
       ObsDataOut:
         obsfile: Data/qg.truth4d.obt
+      ObsType: WSpeed
+    ObsOperator:
+      ObsType: WSpeed
     ObsFilters:
     - Filter: GOMsaver
       filename: Data/qg.wspeed.gom
-    ObsType: WSpeed
 prints:
   frequency: PT3H

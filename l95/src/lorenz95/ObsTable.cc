@@ -40,15 +40,12 @@ ObsTable::ObsTable(const eckit::Configuration & config,
   oops::Log::trace() << "ObsTable::ObsTable starting" << std::endl;
   nameIn_.clear();
   nameOut_.clear();
-  if (config.has("ObsData")) {
-    const eckit::LocalConfiguration dataConfig(config, "ObsData");
-    if (dataConfig.has("ObsDataIn")) {
-      nameIn_ = dataConfig.getString("ObsDataIn.filename");
-      otOpen(nameIn_);
-    }
-    if (dataConfig.has("ObsDataOut")) {
-      nameOut_ = dataConfig.getString("ObsDataOut.filename");
-    }
+  if (config.has("ObsDataIn")) {
+    nameIn_ = config.getString("ObsDataIn.filename");
+    otOpen(nameIn_);
+  }
+  if (config.has("ObsDataOut")) {
+    nameOut_ = config.getString("ObsDataOut.filename");
   }
   oops::Log::trace() << "ObsTable::ObsTable created nobs = " << nobs() << std::endl;
 }

@@ -12,9 +12,9 @@ Model:
   tstep: PT1H30M
 Observations:
   ObsTypes:
-  - ObsData:
+  - ObsSpace:
       ObsDataIn:
         filename: Data/l95.truth4d.2010-01-02T00:00:00Z.obt
       ObsDataOut:
         filename: Data/l95.hofx.2010-01-02T00:00:00Z.obt
-    ObsType: Lorenz 95
+    ObsOperator: {}

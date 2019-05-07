@@ -17,10 +17,10 @@ Observations:
       obs_density: '20'
       obs_error: '0.4'
       obs_frequency: PT3H
-    ObsData:
+    ObsSpace:
       ObsDataOut:
         filename: Data/l95.truth4d.2010-01-02T00:00:00Z.obt
+    ObsOperator: {}
     ObsFilters:
     - Filter: GOMsaver
       filename: Data/l95.gom
-    ObsType: Lorenz 95

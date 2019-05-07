@@ -29,28 +29,34 @@ cost_function:
     ObsTypes:
     - Covariance:
         covariance: diagonal
-      ObsData:
+      ObsSpace:
         ObsDataIn:
           obsfile: Data/qg.truth3d.obt
         ObsDataOut:
           obsfile: Data/qg.3dvar.obt
-      ObsType: Stream
+        ObsType: Stream
+      ObsOperator:
+        ObsType: Stream
     - Covariance:
         covariance: diagonal
-      ObsData:
+      ObsSpace:
         ObsDataIn:
           obsfile: Data/qg.truth3d.obt
         ObsDataOut:
           obsfile: Data/qg.3dvar.obt
-      ObsType: Wind
+        ObsType: Wind
+      ObsOperator:
+        ObsType: Wind
     - Covariance:
         covariance: diagonal
-      ObsData:
+      ObsSpace:
         ObsDataIn:
           obsfile: Data/qg.truth3d.obt
         ObsDataOut:
           obsfile: Data/qg.3dvar.obt
-      ObsType: WSpeed
+        ObsType: WSpeed
+      ObsOperator:
+        ObsType: WSpeed
 variational:
   iteration:
   - resolution:

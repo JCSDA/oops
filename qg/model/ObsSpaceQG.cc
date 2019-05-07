@@ -35,12 +35,12 @@ ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config,
   typedef std::map< std::string, ObsHelpQG * >::iterator otiter;
 
   std::string ofin("-");
-  if (config.has("ObsData.ObsDataIn")) {
-    ofin = config.getString("ObsData.ObsDataIn.obsfile");
+  if (config.has("ObsDataIn")) {
+    ofin = config.getString("ObsDataIn.obsfile");
   }
   std::string ofout("-");
-  if (config.has("ObsData.ObsDataOut")) {
-    ofout = config.getString("ObsData.ObsDataOut.obsfile");
+  if (config.has("ObsDataOut")) {
+    ofout = config.getString("ObsDataOut.obsfile");
   }
   oops::Log::trace() << "ObsSpaceQG: Obs files are: " << ofin << " and " << ofout << std::endl;
   ref_ = ofin + ofout;

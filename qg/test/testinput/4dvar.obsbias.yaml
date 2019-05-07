@@ -28,28 +28,34 @@ cost_function:
     ObsTypes:
     - Covariance:
         covariance: diagonal
-      ObsData:
+      ObsSpace:
         ObsDataIn:
           obsfile: Data/qg.biased.obt
         ObsDataOut:
           obsfile: Data/qg.4dobsbias.obt
-      ObsType: Stream
+        ObsType: Stream
+      ObsOperator:
+        ObsType: Stream
     - Covariance:
         covariance: diagonal
-      ObsData:
+      ObsSpace:
         ObsDataIn:
           obsfile: Data/qg.biased.obt
         ObsDataOut:
           obsfile: Data/qg.4dobsbias.obt
-      ObsType: Wind
+        ObsType: Wind
+      ObsOperator:
+        ObsType: Wind
     - Covariance:
         covariance: diagonal
-      ObsData:
+      ObsSpace:
         ObsDataIn:
           obsfile: Data/qg.biased.obt
         ObsDataOut:
           obsfile: Data/qg.4dobsbias.obt
-      ObsType: WSpeed
+        ObsType: WSpeed
+      ObsOperator:
+        ObsType: WSpeed
   cost_type: 4D-Var
   variables:
   - x

@@ -47,7 +47,9 @@ template <typename MODEL> void testFilters() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
 //  Would not need hop for this test if using precomputed geovals
-    ObsOperator_ hop(Test_::obspace()[jj], typeconfs[jj]);
+    eckit::LocalConfiguration obsopconf(typeconfs[jj], "ObsOperator");
+    ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
+
     eckit::LocalConfiguration gconf(typeconfs[jj], "GeoVaLs");
     const GeoVaLs_ gval(gconf, hop.variables());
 

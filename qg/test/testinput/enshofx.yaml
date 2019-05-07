@@ -24,23 +24,29 @@ Model:
   tstep: PT1H
 Observations:
   ObsTypes:
-  - ObsData:
+  - ObsSpace:
       ObsDataIn:
         obsfile: Data/qg.truth4d12h.obt
       ObsDataOut:
-        obsfile: Data/qg.enshofx.obt
-    ObsType: Stream
-  - ObsData:
+        obsfile: Data/qg.hofx.obt
+      ObsType: Stream
+    ObsOperator:
+      ObsType: Stream
+  - ObsSpace:
       ObsDataIn:
         obsfile: Data/qg.truth4d12h.obt
       ObsDataOut:
-        obsfile: Data/qg.enshofx.obt
-    ObsType: Wind
-  - ObsData:
+        obsfile: Data/qg.hofx.obt
+      ObsType: Wind
+    ObsOperator:
+      ObsType: Wind
+  - ObsSpace:
       ObsDataIn:
         obsfile: Data/qg.truth4d12h.obt
       ObsDataOut:
-        obsfile: Data/qg.enshofx.obt
-    ObsType: WSpeed
+        obsfile: Data/qg.hofx.obt
+      ObsType: WSpeed
+    ObsOperator:
+      ObsType: WSpeed
 Prints:
   frequency: PT3H

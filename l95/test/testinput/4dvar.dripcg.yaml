@@ -17,12 +17,12 @@ cost_function:
     ObsTypes:
     - Covariance:
         covariance: diagonal
-      ObsData:
+      ObsSpace:
         ObsDataIn:
           filename: Data/l95.truth4d.2010-01-02T00:00:00Z.obt
         ObsDataOut:
           filename: Data/l95.4dvar.dripcg.2010-01-02T00:00:00Z.obt
-      ObsType: Lorenz 95
+      ObsOperator: {}
   cost_type: 4D-Var
   window_begin: '2010-01-01T03:00:00Z'
   window_length: P1D

@@ -23,7 +23,6 @@ public :: qg_obsoper_registry
 
 !> Fortran derived type for stream function observations for the QG model
 type :: qg_obsoper
-  character(len=30) :: request
   integer :: ncol
 end type qg_obsoper
 
@@ -50,7 +49,6 @@ type(c_ptr), intent(in)    :: c_conf
 character(len=*), intent(in) :: svars(:)
 integer :: ncol
 
-self%request = config_get_string(c_conf, len(self%request), "ObsType")
 self%ncol = ncol
 
 end subroutine qg_oper_setup

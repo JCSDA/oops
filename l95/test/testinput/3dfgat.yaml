@@ -22,12 +22,12 @@ cost_function:
     ObsTypes:
     - Covariance:
         covariance: diagonal
-      ObsData:
+      ObsSpace:
         ObsDataIn:
           filename: Data/l95.truth3d.2010-01-02T00:00:00Z.obt
         ObsDataOut:
           filename: Data/l95.3dfgat.2010-01-02T00:00:00Z.obt
-      ObsType: Lorenz 95
+      ObsOperator: {}
 variational:
   iteration:
   - resolution:

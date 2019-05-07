@@ -31,7 +31,7 @@ class GomTestFixture : TestFixture {
     const eckit::LocalConfiguration conf(TestConfig::config(), "Observations");
     const util::DateTime bgn(conf.getString("window_begin"));
     const util::DateTime end(conf.getString("window_end"));
-    const eckit::LocalConfiguration otconf(conf, "Observation");
+    const eckit::LocalConfiguration otconf(conf, "Observation.ObsSpace");
     lorenz95::ObsTable ot(otconf, bgn, end);
     util::DateTime t1("2010-01-01T03:00:00Z");
     util::DateTime t2("2010-01-02T06:00:00Z");

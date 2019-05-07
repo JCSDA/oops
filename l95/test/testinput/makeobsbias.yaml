@@ -19,7 +19,7 @@ Observations:
       obs_density: '20'
       obs_error: '0.4'
       obs_frequency: PT3H
-    ObsData:
+    ObsSpace:
       ObsDataOut:
         filename: Data/l95.biased.2010-01-02T00:00:00Z.obt
-    ObsType: Lorenz 95
+    ObsOperator: {}

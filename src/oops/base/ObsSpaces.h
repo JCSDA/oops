@@ -63,7 +63,6 @@ class ObsSpaces : public util::Printable,
  private:
   void print(std::ostream &) const;
   std::vector<boost::shared_ptr<ObsSpace_> > spaces_;
-  std::map<std::string, std::size_t> types_;
   const util::DateTime wbgn_;
   const util::DateTime wend_;
 };
@@ -73,21 +72,20 @@ class ObsSpaces : public util::Printable,
 template <typename MODEL>
 ObsSpaces<MODEL>::ObsSpaces(const eckit::Configuration & conf,
                             const util::DateTime & bgn, const util::DateTime & end)
-  : spaces_(0), types_(), wbgn_(bgn), wend_(end)
+  : spaces_(0), wbgn_(bgn), wend_(end)
 {
   int member = conf.getInt("member", 0);
-  std::vector<eckit::LocalConfiguration> obsconf;
-  conf.get("ObsTypes", obsconf);
-  for (std::size_t jj = 0; jj < obsconf.size(); ++jj) {
-    if (member) obsconf[jj].set("member", member);
-    Log::debug() << "ObsSpaces::ObsSpaces : conf " << obsconf[jj] << std::endl;
-    const std::string otype = obsconf[jj].getString("ObsType");
-    types_[otype] = jj;
-    boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf[jj], bgn, end));
+  std::vector<eckit::LocalConfiguration> typeconfs;
+  conf.get("ObsTypes", typeconfs);
+  for (std::size_t jj = 0; jj < typeconfs.size(); ++jj) {
+    eckit::LocalConfiguration obsconf(typeconfs[jj], "ObsSpace");
+    if (member) obsconf.set("member", member);
+    Log::debug() << "ObsSpaces::ObsSpaces : conf " << obsconf << std::endl;
+    boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, bgn, end));
     spaces_.push_back(tmp);
 //  Generate locations etc... if required
-    if (obsconf[jj].has("Generate")) {
-      const eckit::LocalConfiguration gconf(obsconf[jj], "Generate");
+    if (typeconfs[jj].has("Generate")) {
+      const eckit::LocalConfiguration gconf(typeconfs[jj], "Generate");
       spaces_[jj]->generateDistribution(gconf);
     }
   }
@@ -99,7 +97,7 @@ ObsSpaces<MODEL>::ObsSpaces(const eckit::Configuration & conf,
 template <typename MODEL>
 ObsSpaces<MODEL>::ObsSpaces(const ObsSpaces<MODEL> & obss, const eckit::geometry::Point2 & center,
                             const double & dist, const int & maxn)
-  : spaces_(0), types_(obss.types_), wbgn_(obss.wbgn_), wend_(obss.wend_)
+  : spaces_(0), wbgn_(obss.wbgn_), wend_(obss.wend_)
 {
   for (std::size_t jj = 0; jj < obss.size(); ++jj) {
     boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obss[jj], center,

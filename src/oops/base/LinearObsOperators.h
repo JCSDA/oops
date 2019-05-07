@@ -62,10 +62,11 @@ class LinearObsOperators : public util::Printable,
 template <typename MODEL>
 LinearObsOperators<MODEL>::LinearObsOperators(const ObsSpace_ & os,
                                               const eckit::Configuration & conf) : ops_(0) {
-  std::vector<eckit::LocalConfiguration> obsconf;
-  conf.get("ObsTypes", obsconf);
+  std::vector<eckit::LocalConfiguration> typeconfs;
+  conf.get("ObsTypes", typeconfs);
   for (std::size_t jobs = 0; jobs < os.size(); ++jobs) {
-    boost::shared_ptr<LinearObsOperator_> tmp(new LinearObsOperator_(os[jobs], obsconf[jobs]));
+    eckit::LocalConfiguration obsopconf(typeconfs[jobs], "ObsOperator");
+    boost::shared_ptr<LinearObsOperator_> tmp(new LinearObsOperator_(os[jobs], obsopconf));
     ops_.push_back(tmp);
   }
 }

@@ -31,15 +31,15 @@ type(obs_data), pointer :: self
 character(len=max_string) :: fin, fout
 character(len=max_string+30) :: record
 
-if (config_element_exists(c_conf,"ObsData.ObsDataIn")) then
-  fin  = config_get_string(c_conf,max_string,"ObsData.ObsDataIn.obsfile")
+if (config_element_exists(c_conf,"ObsDataIn")) then
+  fin  = config_get_string(c_conf,max_string,"ObsDataIn.obsfile")
 else
   fin  = ""
 endif
 write(record,*)'qg_obs_setup: file in =',trim(fin)
 call fckit_log%info(record)
 
-fout = config_get_string(c_conf,max_string,"ObsData.ObsDataOut.obsfile")
+fout = config_get_string(c_conf,max_string,"ObsDataOut.obsfile")
 write(record,*)'qg_obs_setup: file out=',trim(fout)
 call fckit_log%info(record)
 

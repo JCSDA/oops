@@ -39,8 +39,9 @@ template <typename MODEL> void testConstructor() {
   obsconf.get("ObsTypes", conf);
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    eckit::LocalConfiguration obsopconf(conf[jj], "ObsOperator");
     boost::scoped_ptr<LinearObsOperator_> ov(
-      new LinearObsOperator_(Test_::obspace()[jj], conf[jj]));
+      new LinearObsOperator_(Test_::obspace()[jj], obsopconf));
     EXPECT(ov.get());
 
     ov.reset();
@@ -69,10 +70,11 @@ template <typename MODEL> void testLinearity() {
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     // initialize observation operator (set variables requested from the model,
     // variables simulated by the observation operator, other init)
-    ObsOperator_ hop(Test_::obspace()[jj], conf[jj]);
+    eckit::LocalConfiguration obsopconf(conf[jj], "ObsOperator");
+    ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
     // initialize TL/AD observation operator (set model variables for Jacobian),
     // other init)
-    LinearObsOperator_ hoptl(Test_::obspace()[jj], conf[jj]);
+    LinearObsOperator_ hoptl(Test_::obspace()[jj], obsopconf);
 
     // read geovals from the file
     const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
@@ -133,10 +135,11 @@ template <typename MODEL> void testAdjoint() {
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     // initialize observation operator (set variables requested from the model,
     // variables simulated by the observation operator, other init)
-    ObsOperator_ hop(Test_::obspace()[jj], conf[jj]);
+    eckit::LocalConfiguration obsopconf(conf[jj], "ObsOperator");
+    ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
     // initialize TL/AD observation operator (set model variables for Jacobian),
     // other init)
-    LinearObsOperator_ hoptl(Test_::obspace()[jj], conf[jj]);
+    LinearObsOperator_ hoptl(Test_::obspace()[jj], obsopconf);
 
     // read geovals from the file
     eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
@@ -201,10 +204,11 @@ template <typename MODEL> void testTangentLinear() {
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     // initialize observation operator (set variables requested from the model,
     // variables simulated by the observation operator, other init)
-    ObsOperator_ hop(Test_::obspace()[jj], conf[jj]);
+    eckit::LocalConfiguration obsopconf(conf[jj], "ObsOperator");
+    ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
     // initialize TL/AD observation operator (set model variables for Jacobian),
     // other init)
-    LinearObsOperator_ hoptl(Test_::obspace()[jj], conf[jj]);
+    LinearObsOperator_ hoptl(Test_::obspace()[jj], obsopconf);
 
     // read geovals from the file
     const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");

@@ -39,7 +39,8 @@ template <typename MODEL> void testConstructor() {
   obsconf.get("ObsTypes", conf);
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    boost::scoped_ptr<ObsOperator_> hop(new ObsOperator_(Test_::obspace()[jj], conf[jj]));
+    eckit::LocalConfiguration obsopconf(conf[jj], "ObsOperator");
+    boost::scoped_ptr<ObsOperator_> hop(new ObsOperator_(Test_::obspace()[jj], obsopconf));
     EXPECT(hop.get());
 
     hop.reset();
@@ -63,7 +64,8 @@ template <typename MODEL> void testSimulateObs() {
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     // initialize observation operator (set variables requested from the model,
     // variables simulated by the observation operator, other init)
-    ObsOperator_ hop(Test_::obspace()[jj], conf[jj]);
+    eckit::LocalConfiguration obsopconf(conf[jj], "ObsOperator");
+    ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
 
     // read geovals from the file
     eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
