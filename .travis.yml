@@ -1,0 +1,61 @@
+#======================================================================
+# Project settings
+#======================================================================
+# Only build master.
+branches:
+  only:
+    - develop
+
+language: cpp
+#======================================================================
+# Environment
+#======================================================================
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - gcc-8
+      - gfortran-8
+      - g++-8
+      - lcov
+
+#======================================================================
+# Build Matrix
+#======================================================================
+matrix:
+   include:
+     - os: linux
+       compiler: gcc
+       sudo: false
+       dist: trusty
+
+#======================================================================
+# Docker does not work on Mac
+#======================================================================
+services:
+  - docker
+
+#======================================================================
+# get docker image
+# FROM  jcsda/docker:latest
+#======================================================================
+before_install:
+  - REPO_SOURCE_DIR=${TRAVIS_BUILD_DIR}
+  - ls ${REPO_SOURCE_DIR}
+  - docker build -t jcsda/docker --build-arg=Dockerfile .  #Dockerfile handles ssh for mpi
+  - docker images
+  - docker run -d -t --name jcsda_container -v ${REPO_SOURCE_DIR}:/jcsda/src_repo jcsda/docker
+  - docker ps -a
+
+#======================================================================
+# Here are the run steps
+#======================================================================
+script:
+  - docker exec jcsda_container ls
+  - docker exec jcsda_container ls /jcsda/src_repo
+  - docker exec jcsda_container bash -c 'cp -r /jcsda/.openmpi/ ~/' 
+  - docker exec jcsda_container bash -c 'cd /build_repo && ecbuild /jcsda/src_repo' 
+  - docker exec jcsda_container bash -c 'cd /build_repo && make -j4'
+  - docker exec jcsda_container bash -c 'cd /build_repo && ctest'
