@@ -14,7 +14,7 @@ output:
   datadir: Data
   date: '2009-12-15T00:00:00Z'
   exp: truth
-  frequency: PT12H
+  frequency: PT6H
   type: fc
 prints:
   frequency: PT3H

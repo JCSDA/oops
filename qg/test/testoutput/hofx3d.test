@@ -1,12 +1,12 @@
 Test     : Initial state: 
-Test     :   Valid time: 2010-01-01T00:00:00Z
+Test     :   Valid time: 2010-01-01T06:00:00Z
 Test     :   Resolution = 40, 20, Fields = 4, 2
-Test     :   Min=-29.7988, Max=12.9629, RMS=12.6152
-Test     :   Min=-42.6962, Max=36.162, RMS=21.0688
-Test     :   Min=-9.80188, Max=16.0459, RMS=5.01516
-Test     :   Min=-9.71003, Max=9.54206, RMS=4.27135
+Test     :   Min=-30.1748, Max=12.463, RMS=12.7665
+Test     :   Min=-43.3969, Max=36.3123, RMS=21.0703
+Test     :   Min=-9.80642, Max=14.9172, RMS=4.99382
+Test     :   Min=-10.0623, Max=10.5337, RMS=4.24821
 Test     :   Min=-25.2, Max=0, RMS=12.9878
 Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
-Test     : H(x): Stream nobs= 300 Min=-28.2383, Max=11.8283, Average=-3.75158
-Test     : Wind nobs= 160 Min=-8.92328, Max=13.7932, Average=0.694189
-Test     : WSpeed nobs= 300 Min=0, Max=13.8345, Average=2.95468
+Test     : H(x): Stream nobs= 300 Min=-28.6449, Max=11.2508, Average=-7.88976
+Test     : Wind nobs= 160 Min=-9.62671, Max=13.166, Average=1.4198
+Test     : WSpeed nobs= 300 Min=1.25594, Max=13.1957, Average=6.13707

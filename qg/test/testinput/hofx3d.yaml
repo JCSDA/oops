@@ -1,13 +1,13 @@
 Assimilation Window:
-  Begin: '2009-12-31T18:00:00Z'
+  Begin: '2010-01-01T00:00:00Z'
   Length: PT12H
 Geometry:
   bc: '1'
   nx: '40'
   ny: '20'
 Initial Condition:
-  date: '2010-01-01T00:00:00Z'
-  filename: Data/truth.fc.2009-12-15T00:00:00Z.P17D
+  date: '2010-01-01T06:00:00Z'
+  filename: Data/truth.fc.2009-12-15T00:00:00Z.P17DT6H
   variables: ["x","q","u","v","bc"]
 Model:
   bottom_layer_depth: '4500.0'
