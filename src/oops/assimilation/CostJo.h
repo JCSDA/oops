@@ -231,6 +231,12 @@ double CostJo<MODEL>::finalize() {
   Departures_ ydep(*yeqv - yobs_);
   Log::info() << "Jo Departures:" << std::endl << ydep << "End Jo Departures" << std::endl;
 
+// Apply bias correction
+  Departures_ bias(obspace_, hop_, "ObsBias", false);
+  ydep -= bias;
+  Log::info() << "Jo Bias Corrected Departures:" << std::endl << ydep
+          << "End Jo Bias Corrected Departures" << std::endl;
+
 // Compute Jo
   Departures_ grad(ydep);
   Rmat_->inverseMultiply(grad);
@@ -274,6 +280,12 @@ void CostJo<MODEL>::finalizeTraj() {
   Departures_ ydep(*yeqv - yobs_);
   Log::info() << "Jo Traj Departures:" << std::endl << ydep << "End Jo Traj Departures"
               << std::endl;
+
+// Apply bias correction
+  Departures_ bias(obspace_, hop_, "ObsBias", false);
+  ydep -= bias;
+  Log::info() << "Jo Traj Bias Corrected Departures:" << std::endl << ydep
+          << "End Jo Traj Bias Corrected Departures" << std::endl;
 
   if (!gradFG_) {
     gradFG_.reset(new Departures_(ydep));
