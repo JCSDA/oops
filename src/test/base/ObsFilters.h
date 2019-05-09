@@ -13,12 +13,11 @@
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
-#include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
-#include "oops/base/ObsFilterBase.h"
+#include "oops/base/ObsFilters.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsDataVector.h"
@@ -37,7 +36,7 @@ template <typename MODEL> void testFilters() {
   typedef ObsTestsFixture<MODEL> Test_;
   typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
   typedef oops::ObsAuxControl<MODEL>     ObsAuxCtrl_;
-  typedef oops::ObsFilterBase<MODEL>     ObsFilterBase_;
+  typedef oops::ObsFilters<MODEL>        ObsFilters_;
   typedef oops::ObsOperator<MODEL>       ObsOperator_;
   typedef oops::ObsVector<MODEL>         ObsVector_;
 
@@ -46,7 +45,6 @@ template <typename MODEL> void testFilters() {
   obsconf.get("ObsTypes", typeconfs);
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-//  Would not need hop for this test if using precomputed geovals
     eckit::LocalConfiguration obsopconf(typeconfs[jj], "ObsOperator");
     ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
 
@@ -55,37 +53,20 @@ template <typename MODEL> void testFilters() {
 
     const ObsAuxCtrl_ ybias(typeconfs[jj]);
 
+//  Allocate memory for tests
     ObsVector_ ovec(Test_::obspace()[jj], hop.observed());
     boost::shared_ptr<oops::ObsDataVector<MODEL, float> > obserr
       (new oops::ObsDataVector<MODEL, float>(Test_::obspace()[jj], hop.observed(), "ObsError"));
     boost::shared_ptr<oops::ObsDataVector<MODEL, int> >
       qcflags(new oops::ObsDataVector<MODEL, int>  (Test_::obspace()[jj], hop.observed()));
 
-//  Not using ObsFilters here so manual setup of QCmanager is needed
-    eckit::LocalConfiguration preconf;
-    preconf.set("Filter", "QCmanager");
-    preconf.set("observed", hop.observed().variables());
-    boost::shared_ptr<ObsFilterBase_> preqc(
-      oops::FilterFactory<MODEL>::create(Test_::obspace()[jj], preconf, qcflags, obserr));
+//  Create filters
+    ObsFilters_ filters(Test_::obspace()[jj], typeconfs[jj], hop.observed(), qcflags, obserr);
 
-//  Get filters configurations
-    std::vector<eckit::LocalConfiguration> filtconf;
-    typeconfs[jj].get("ObsFilters", filtconf);
-    oops::Log::debug() << "test filt conf " << filtconf << std::endl;
-
-//  For the case when no filters are specified
+//  Run filters
+    filters.priorFilter(gval);
     hop.simulateObs(gval, ovec, ybias);
-
-//  Test filters
-    for (std::size_t jf = 0; jf < filtconf.size(); ++jf) {
-      filtconf[jf].set("observed", hop.observed().variables());
-      boost::shared_ptr<ObsFilterBase_> filter(
-        oops::FilterFactory<MODEL>::create(Test_::obspace()[jj], filtconf[jf], qcflags, obserr));
-
-      filter->priorFilter(gval);
-      hop.simulateObs(gval, ovec, ybias);
-      filter->postFilter(ovec);
-    }
+    filters.postFilter(ovec);
 
 //  Compare with known results
     if (typeconfs[jj].has("qcBenchmark")) {
