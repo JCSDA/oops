@@ -28,7 +28,7 @@ LinearModelTest:
   toleranceAD: 1.0e-14
   toleranceTL: 1.0e-07
 LinearObsOpTest:
-  testiterTL: '10'
+  coefTL: '0.1'
   toleranceAD: '1.0e-16'
   toleranceTL: '1.0e-14'
 Localization:

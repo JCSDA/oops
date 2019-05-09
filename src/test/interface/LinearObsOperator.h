@@ -199,7 +199,8 @@ template <typename MODEL> void testTangentLinear() {
   obsconf.get("ObsTypes", conf);
 
   const double tol = TestEnvironment::config().getDouble("LinearObsOpTest.toleranceTL");
-  const int iter = TestEnvironment::config().getDouble("LinearObsOpTest.testiterTL");
+  const double alpha = TestEnvironment::config().getDouble("LinearObsOpTest.coefTL", 0.1);
+  const int iter = TestEnvironment::config().getInt("LinearObsOpTest.testiterTL", 1);
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     // initialize observation operator (set variables requested from the model,
@@ -234,7 +235,6 @@ template <typename MODEL> void testTangentLinear() {
     GeoVaLs_ dx(gconf, hoptl.variables());
     dx.random();
 
-    double alpha = 0.1;
     for (int jter = 0; jter < iter; ++jter) {
       // x = x0 + alpha*dx
       dx *= alpha;
@@ -247,9 +247,10 @@ template <typename MODEL> void testTangentLinear() {
       // y3 = hoptl(alpha*dx)
       hoptl.simulateObsTL(dx, y3, ybinc);
       y2 -= y3;
+
       double test_norm = y2.rms();
-      oops::Log::info() << "Iter:" << jter << " ||(h(x+alpha*dx)-h(x))/h'(alpha*dx)||="
-                         << test_norm << std::endl;
+      oops::Log::info() << "Iter:" << jter << " ||(h(x+alpha*dx)-h(x)-h'*(alpha*dx))||="
+                        << test_norm << std::endl;
     }
     EXPECT(y2.rms() < tol);
   }

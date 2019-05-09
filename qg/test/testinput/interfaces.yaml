@@ -35,7 +35,7 @@ LinearModelTest:
   toleranceAD: '1.0e-12'
   toleranceTL: '1.0e-6'
 LinearObsOpTest:
-  testiterTL: '10'
+  coefTL: '1.e-4'
   toleranceAD: '1.0e-10'
   toleranceTL: '1.0e-8'
 LinearVariableChangeTests:
