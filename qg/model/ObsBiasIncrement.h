@@ -59,9 +59,10 @@ class ObsBiasIncrement : public util::Printable {
   const double & wind() const {return bias_[1];}
   const double & wspd() const {return bias_[3];}
 
-/// Serialize-Deserialize an ObsBiasIncrement
+/// Serialization
+  size_t serialSize() const;
   void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &);
+  void deserialize(const std::vector<double> &, size_t &);
 
  private:
   void print(std::ostream &) const;

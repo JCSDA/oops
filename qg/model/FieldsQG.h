@@ -43,14 +43,14 @@ namespace qg {
   class GomQG;
 
 // -----------------------------------------------------------------------------
-/// Class to represent a FieldSet for the QG model
+/// Class to represent a Fields for the QG model
 class FieldsQG : public util::Printable,
                  private util::ObjectCounter<FieldsQG> {
  public:
   static const std::string classname() {return "qg::FieldsQG";}
 
 // Constructors and basic operators
-  FieldsQG(const GeometryQG &, const oops::Variables &, const util::DateTime &);
+  FieldsQG(const GeometryQG &, const oops::Variables &, const bool &, const util::DateTime &);
   FieldsQG(const FieldsQG &, const GeometryQG &);
   FieldsQG(const FieldsQG &, const oops::Variables &);
   FieldsQG(const FieldsQG &, const bool);
@@ -86,7 +86,7 @@ class FieldsQG : public util::Printable,
 
 // Utilities
   void read(const eckit::Configuration &);
-  void analytic_init(const eckit::Configuration &, const GeometryQG &);
+  void analytic_init(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;
   double norm() const;
   boost::shared_ptr<const GeometryQG> geometry() const {return geom_;}
@@ -101,7 +101,7 @@ class FieldsQG : public util::Printable,
 
   oops::GridPoint getPoint(const GeometryQGIterator &) const;
 
-/// Serialize-Deserialize a FieldsQG
+/// Serialization
   void serialize(std::vector<double> &) const;
   void deserialize(const std::vector<double> &);
 
@@ -110,6 +110,7 @@ class FieldsQG : public util::Printable,
   F90flds keyFlds_;
   boost::shared_ptr<const GeometryQG> geom_;
   const VariablesQG vars_;
+  const bool lbc_;
   util::DateTime time_;
 };
 // -----------------------------------------------------------------------------

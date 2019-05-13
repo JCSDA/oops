@@ -1,27 +1,24 @@
 Test     : Initial state: 
 Test     :   Valid time: 2010-01-01T00:00:00Z
-Test     :   Resolution = 40, 20, Fields = 4, 2
-Test     :   Min=-27.7757, Max=10.5671, RMS=11.6447
-Test     :   Min=-42.1142, Max=36.4742, RMS=20.5856
-Test     :   Min=-8.66457, Max=12.2849, RMS=4.50983
-Test     :   Min=-7.52141, Max=7.69844, RMS=3.2983
-Test     :   Min=-25.2, Max=0, RMS=12.9878
-Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
+Test     :   Resolution = 40, 20, 2
+Test     :   Variable = streamfunction
+Test     :   Boundary conditions are activated
+Test     :   Scaling=  1e+08, Min=     -2.7784, Max=      1.0581, RMS=      1.1648
+Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
+Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
 Test     : Filtered state: 
 Test     :   Valid time: 2010-01-01T06:00:00Z
-Test     :   Resolution = 40, 20, Fields = 4, 2
-Test     :   Min=-27.1598, Max=10.1156, RMS=11.3795
-Test     :   Min=-43.0704, Max=36.1919, RMS=20.6384
-Test     :   Min=-8.08656, Max=11.0841, RMS=4.39794
-Test     :   Min=-7.36017, Max=7.9203, RMS=3.09132
-Test     :   Min=-25.2, Max=0, RMS=12.9878
-Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
+Test     :   Resolution = 40, 20, 2
+Test     :   Variable = streamfunction
+Test     :   Boundary conditions are activated
+Test     :   Scaling=  1e+08, Min=     -2.7182, Max=      1.0150, RMS=      1.1384
+Test     :   Scaling=  1e+08, Min=     -2.5200, Max=      0.0000, RMS=      1.2988
+Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
 Test     : Final state: 
 Test     :   Valid time: 2010-01-08T00:00:00Z
-Test     :   Resolution = 40, 20, Fields = 4, 2
-Test     :   Min=-24.5545, Max=6.47943, RMS=10.662
-Test     :   Min=-42.586, Max=36.3345, RMS=21.9651
-Test     :   Min=-6.00222, Max=10.8262, RMS=3.78498
-Test     :   Min=-7.7047, Max=5.37821, RMS=2.28699
-Test     :   Min=-25.2, Max=0, RMS=12.9878
-Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
+Test     :   Resolution = 40, 20, 2
+Test     :   Variable = streamfunction
+Test     :   Boundary conditions are activated
+Test     :   Scaling=  1e+08, Min=     -2.4576, Max=      0.6470, RMS=      1.0645
+Test     :   Scaling=  1e+08, Min=     -2.5200, Max=      0.0000, RMS=      1.2988
+Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811

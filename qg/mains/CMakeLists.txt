@@ -3,12 +3,12 @@ ecbuild_add_executable( TARGET  qg_dfi.x
                         LIBS    qg
                        )
 
-ecbuild_add_executable( TARGET  qg_enshofx.x
+ecbuild_add_executable( TARGET  qg_ens_hofx.x
                         SOURCES qgEnsHofX.cc
                         LIBS    qg
                        )
 
-ecbuild_add_executable( TARGET  qg_ensforecast.x
+ecbuild_add_executable( TARGET  qg_ens_forecast.x
                         SOURCES qgEnsForecast.cc
                         LIBS    qg
                        )
@@ -18,7 +18,7 @@ ecbuild_add_executable( TARGET  qg_forecast.x
                         LIBS    qg
                        )
 
-ecbuild_add_executable( TARGET  qg_genpert.x
+ecbuild_add_executable( TARGET  qg_gen_ens_pert_B.x
                         SOURCES qgGenEnsPertB.cc
                         LIBS    qg
                       )
@@ -38,7 +38,7 @@ ecbuild_add_executable( TARGET  qg_hofx3d.x
                         LIBS    qg
                       )
 
-ecbuild_add_executable( TARGET  qg_makeobs.x
+ecbuild_add_executable( TARGET  qg_make_obs.x
                         SOURCES qgMakeObs.cc
                         LIBS    qg
                       )
@@ -48,7 +48,7 @@ ecbuild_add_executable( TARGET  qg_dirac.x
                         LIBS    qg
                       )
 
-ecbuild_add_executable( TARGET  qg_parameters.x
+ecbuild_add_executable( TARGET  qg_estimate_parameters.x
                         SOURCES qgEstimateParams.cc
                         LIBS    qg
                       )
@@ -68,9 +68,7 @@ ecbuild_add_executable( TARGET  qg_convertstate.x
                         LIBS    qg
                       )
 
-ecbuild_add_executable( TARGET  qg_ensvariance.x
+ecbuild_add_executable( TARGET  qg_ens_variance.x
                         SOURCES qgEnsVariance.cc
                         LIBS    qg
-			)
-
-		      
+			)	      

@@ -65,6 +65,7 @@ class TlmIdQG: public oops::LinearModelBase<QgTraits>,
   void print(std::ostream &) const override;
 
 // Data
+  F90model keyConfig_;
   util::Duration tstep_;
   const GeometryQG resol_;
   const oops::Variables linvars_;

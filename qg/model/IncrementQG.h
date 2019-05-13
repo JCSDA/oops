@@ -110,13 +110,14 @@ class IncrementQG : public oops::GeneralizedDepartures,
 /// Other
   void accumul(const double &, const StateQG &);
 
-/// Serialize-Deserialize an IncrementQG
+/// Serialization
   void serialize(std::vector<double> &) const;
   void deserialize(const std::vector<double> &);
 
 /// Data
  private:
   void print(std::ostream &) const;
+  const bool lbc_ = false;
   boost::scoped_ptr<FieldsQG> fields_;
   boost::scoped_ptr<FieldsQG> stash_;
 };

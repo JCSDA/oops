@@ -147,6 +147,11 @@ template <typename MODEL> void testStateInterpolation() {
   const State_ xx(Test_::resol(), statevars, confgen);
   const double norm = Test_::test().getDouble("norm-gen");
   const double tol = Test_::test().getDouble("tolerance");
+
+  oops::Log::debug() << "xx.norm(): " << std::fixed << std::setprecision(8) << xx.norm()
+                     << std::endl;
+  oops::Log::debug() << "norm: " << std::fixed << std::setprecision(8) << norm << std::endl;
+
   EXPECT(oops::is_close(xx.norm(), norm, tol));
 
   // If the analytic initial conditions are not yet implemented

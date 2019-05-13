@@ -50,14 +50,10 @@ class ModelBiasIncrement : public util::Printable {
   void write(const eckit::Configuration &) const {}
   double norm() const {return 0.0;}
 
-/// Serialize and deserialize
-  void serialize(std::vector<double> & vect) const {
-    vect.push_back(0.0);
-    std::cout << "ModelBiasIncrement::serialize done" << std::endl;
-  }
-  void deserialize(const std::vector<double> &) {
-    std::cout << "ModelBiasIncrement::deserialize done" << std::endl;
-  }
+/// Serialization
+  size_t serialSize() {return 0;}
+  void serialize(std::vector<double> & vect) const {}
+  void deserialize(const std::vector<double> &, size_t & index) {}
 
  private:
   explicit ModelBiasIncrement(const ModelBiasCovariance &);

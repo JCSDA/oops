@@ -80,9 +80,10 @@ Localization<MODEL>::Localization(const Geometry_ & resol,
     if (conf.has("localization_time")) {
       // Specific localization for each time-slot
       std::vector<eckit::LocalConfiguration> confTime;
-      conf.get("covariance_time", confTime);
+      conf.get("localization_time", confTime);
       nsubwin_ = confTime.size();
       for (unsigned jsub = 0; jsub < nsubwin_; ++jsub) {
+        confTime[jsub].set("localization", conf.getString("localization"));
         locBase_.push_back(LocalizationFactory<MODEL>::create(resol, confTime[jsub]));
       }
     } else {

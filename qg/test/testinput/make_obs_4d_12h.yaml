@@ -1,0 +1,57 @@
+Assimilation Window:
+  Begin: 2010-01-01T00:00:00Z
+  End: 2010-01-01T12:00:00Z
+Geometry:
+  nx: 40
+  ny: 20
+  depths:
+  - 4500.0
+  - 5500.0
+Initial Condition:
+  date: 2010-01-01T00:00:00Z
+  filename: Data/truth.fc.2009-12-15T00:00:00Z.P17D
+Model:
+  name: QG
+  tstep: PT1H
+  variables:
+  - x
+Observations:
+  ObsTypes:
+  - Generate:
+      begin: PT2H
+      nval: 1
+      obs_density: 50
+      obs_error: 4.0e6
+      obs_period: PT2H
+    ObsOperator:
+      ObsType: Stream
+    ObsSpace:
+      ObsDataOut:
+        obsfile: Data/truth.obs4d_12h
+      ObsType: Stream
+  - Generate:
+      begin: PT1H
+      nval: 2
+      obs_density: 40
+      obs_error: 6.0
+      obs_period: PT6H
+    ObsOperator:
+      ObsType: Wind
+    ObsSpace:
+      ObsDataOut:
+        obsfile: Data/truth.obs4d_12h
+      ObsType: Wind
+  - Generate:
+      begin: PT1H
+      nval: 1
+      obs_density: 50
+      obs_error: 12.0
+      obs_period: PT2H
+    ObsOperator:
+      ObsType: WSpeed
+    ObsSpace:
+      ObsDataOut:
+        obsfile: Data/truth.obs4d_12h
+      ObsType: WSpeed
+prints:
+  frequency: PT3H

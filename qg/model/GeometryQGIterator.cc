@@ -20,27 +20,27 @@ namespace qg {
 // -----------------------------------------------------------------------------
 
 GeometryQGIterator::GeometryQGIterator(const GeometryQGIterator& iter) {
-  qg_geo_iter_clone_f90(keyIter_, iter.toFortran());
+  qg_geom_iter_clone_f90(keyIter_, iter.toFortran());
 }
 
 // -----------------------------------------------------------------------------
 
 GeometryQGIterator::GeometryQGIterator(const GeometryQG& geom, const int & index) {
-  qg_geo_iter_setup_f90(keyIter_, geom.toFortran(), index);
+  qg_geom_iter_setup_f90(keyIter_, geom.toFortran(), index);
 }
 
 
 // -----------------------------------------------------------------------------
 
 GeometryQGIterator::~GeometryQGIterator() {
-  qg_geo_iter_delete_f90(keyIter_);
+  qg_geom_iter_delete_f90(keyIter_);
 }
 
 // -----------------------------------------------------------------------------
 
 bool GeometryQGIterator::operator==(const GeometryQGIterator & other) const {
   int equals = 0;
-  qg_geo_iter_equals_f90(keyIter_, other.toFortran(), equals);
+  qg_geom_iter_equals_f90(keyIter_, other.toFortran(), equals);
   return (equals == 1);
 }
 
@@ -48,7 +48,7 @@ bool GeometryQGIterator::operator==(const GeometryQGIterator & other) const {
 
 bool GeometryQGIterator::operator!=(const GeometryQGIterator & other) const {
   int equals = 0;
-  qg_geo_iter_equals_f90(keyIter_, other.toFortran(), equals);
+  qg_geom_iter_equals_f90(keyIter_, other.toFortran(), equals);
   return (equals == 0);
 }
 
@@ -56,14 +56,14 @@ bool GeometryQGIterator::operator!=(const GeometryQGIterator & other) const {
 
 eckit::geometry::Point2 GeometryQGIterator::operator*() const {
   double lat, lon;
-  qg_geo_iter_current_f90(keyIter_, lat, lon);
+  qg_geom_iter_current_f90(keyIter_, lat, lon);
   return eckit::geometry::Point2(lat, lon);
 }
 
 // -----------------------------------------------------------------------------
 
 GeometryQGIterator& GeometryQGIterator::operator++() {
-  qg_geo_iter_next_f90(keyIter_);
+  qg_geom_iter_next_f90(keyIter_);
   return *this;
 }
 

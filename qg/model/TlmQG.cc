@@ -10,6 +10,7 @@
 
 #include "model/TlmQG.h"
 
+#include <iomanip>
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
@@ -31,20 +32,20 @@ static oops::LinearModelMaker<QgTraits, TlmQG> makerQGTLM_("QgTLM");
 TlmQG::TlmQG(const GeometryQG & resol, const eckit::Configuration & tlConf)
   : keyConfig_(0), tstep_(), resol_(resol), traj_(),
     lrmodel_(resol_, eckit::LocalConfiguration(tlConf, "trajectory")),
-    linvars_(std::vector<std::string>{"x", "q", "u", "v"})
+    linvars_(tlConf)
 {
   tstep_ = util::Duration(tlConf.getString("tstep"));
 
   const eckit::Configuration * configc = &tlConf;
-  qg_setup_f90(&configc, resol_.toFortran(), keyConfig_);
+  qg_model_setup_f90(keyConfig_, &configc);
 
   oops::Log::trace() << "TlmQG created" << std::endl;
 }
 // -----------------------------------------------------------------------------
 TlmQG::~TlmQG() {
-  qg_delete_f90(keyConfig_);
+  qg_model_delete_f90(keyConfig_);
   for (trajIter jtra = traj_.begin(); jtra != traj_.end(); ++jtra) {
-    qg_wipe_traj_f90(jtra->second);
+    qg_fields_delete_f90(jtra->second);
   }
   oops::Log::trace() << "TlmQG destructed" << std::endl;
 }
@@ -54,21 +55,10 @@ void TlmQG::setTrajectory(const StateQG & xx, StateQG & xlr, const ModelBias & b
   xlr.changeResolution(xx);
   int ftraj = lrmodel_.saveTrajectory(xlr, bias);
   traj_[xx.validTime()] = ftraj;
-
-// should be in print method
-  std::vector<double> zstat(15);
-  qg_traj_minmaxrms_f90(ftraj, zstat[0]);
-  oops::Log::debug() << "TlmQG trajectory at time " << xx.validTime() << std::endl;
-  for (unsigned int jj = 0; jj < 5; ++jj) {
-    oops::Log::debug() << "  Min=" << zstat[3*jj] << ", Max=" << zstat[3*jj+1]
-                       << ", RMS=" << zstat[3*jj+2] << std::endl;
-  }
-// should be in print method
 }
 // -----------------------------------------------------------------------------
 void TlmQG::initializeTL(IncrementQG & dx) const {
   ASSERT(dx.fields().isForModel(false));
-  qg_prepare_integration_tl_f90(keyConfig_, dx.fields().toFortran());
   oops::Log::debug() << "TlmQG::initializeTL" << dx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -80,7 +70,7 @@ void TlmQG::stepTL(IncrementQG & dx, const ModelBiasIncrement &) const {
   }
   ASSERT(dx.fields().isForModel(false));
   oops::Log::debug() << "TlmQG::stepTL fields in" << dx.fields() << std::endl;
-  qg_propagate_tl_f90(keyConfig_, dx.fields().toFortran(), itra->second);
+  qg_model_propagate_tl_f90(keyConfig_, itra->second, dx.fields().toFortran());
   oops::Log::debug() << "TlmQG::stepTL fields out" << dx.fields() << std::endl;
   dx.validTime() += tstep_;
 }
@@ -103,12 +93,11 @@ void TlmQG::stepAD(IncrementQG & dx, ModelBiasIncrement &) const {
   }
   ASSERT(dx.fields().isForModel(false));
   oops::Log::debug() << "TlmQG::stepAD fields in" << dx.fields() << std::endl;
-  qg_propagate_ad_f90(keyConfig_, dx.fields().toFortran(), itra->second);
+  qg_model_propagate_ad_f90(keyConfig_, itra->second, dx.fields().toFortran());
   oops::Log::debug() << "TlmQG::stepAD fields out" << dx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------
 void TlmQG::finalizeAD(IncrementQG & dx) const {
-  qg_prepare_integration_ad_f90(keyConfig_, dx.fields().toFortran());
   oops::Log::debug() << "TlmQG::finalizeAD" << dx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -119,6 +108,30 @@ void TlmQG::print(std::ostream & os) const {
     os << "QG TLM Trajectory: times are:";
     for (trajICst jtra = traj_.begin(); jtra != traj_.end(); ++jtra) {
       os << "  " << jtra->first;
+      int nx, ny, nz, nb, lq, lbc;
+      qg_fields_sizes_f90(jtra->second, nx, ny, nz, nb);
+      qg_fields_vars_f90(jtra->second, lq, lbc);
+      os << std::endl << "  Resolution = " << nx << ", " << ny << ", " << nz;
+      if (lq == 1) {
+        os << std::endl << "  Variable = potential vorticity";
+      } else {
+        os << std::endl << "  Variable = streamfunction";
+      }
+      if (lbc == 1) {
+        os << std::endl << "  Boundary conditions are activated";
+      } else {
+        os << std::endl << "  Boundary conditions are not activated";
+      }
+      std::vector<double> zstat(4*(1+nb));
+      qg_fields_gpnorm_f90(jtra->second, nb, zstat[0]);
+      for (int jj = 0; jj < 1+nb; ++jj) {
+        std::ios_base::fmtflags f(os.flags());
+        os << std::endl << "  Scaling=" << std::setprecision(4) << std::setw(7) << zstat[4*jj]
+           << ", Min=" << std::fixed << std::setprecision(4) << std::setw(12) << zstat[4*jj+1]
+           << ", Max=" << std::fixed << std::setprecision(4) << std::setw(12) <<zstat[4*jj+2]
+           << ", RMS=" << std::fixed << std::setprecision(4) << std::setw(12) <<zstat[4*jj+3];
+        os.flags(f);
+      }
     }
   }
 }

@@ -26,33 +26,33 @@ ErrorStdDevQG::ErrorStdDevQG(const StateQG &, const StateQG &,
   : keyFtnConfig_(0)
 {
   const eckit::Configuration * configc = &conf;
-  qg_bstddev_setup_f90(keyFtnConfig_, &configc);
+  qg_error_stddev_setup_f90(keyFtnConfig_, &configc);
   oops::Log::trace() << "ErrorStdDevQG created" << std::endl;
 }
 // -----------------------------------------------------------------------------
 ErrorStdDevQG::~ErrorStdDevQG() {
-  qg_bstddev_delete_f90(keyFtnConfig_);
+  qg_error_stddev_delete_f90(keyFtnConfig_);
   oops::Log::trace() << "ErrorStdDevQG destructed" << std::endl;
 }
 // -----------------------------------------------------------------------------
 void ErrorStdDevQG::multiply(const IncrementQG & dxin, IncrementQG & dxout) const {
-  qg_bstddev_mult_f90(keyFtnConfig_, dxin.fields().toFortran(),
-                                     dxout.fields().toFortran());
+  qg_error_stddev_mult_f90(keyFtnConfig_, dxin.fields().toFortran(),
+                           dxout.fields().toFortran());
 }
 // -----------------------------------------------------------------------------
 void ErrorStdDevQG::multiplyInverse(const IncrementQG & dxin, IncrementQG & dxout) const {
-  qg_bstddev_invmult_f90(keyFtnConfig_, dxin.fields().toFortran(),
-                                        dxout.fields().toFortran());
+  qg_error_stddev_inv_mult_f90(keyFtnConfig_, dxin.fields().toFortran(),
+                              dxout.fields().toFortran());
 }
 // -----------------------------------------------------------------------------
 void ErrorStdDevQG::multiplyAD(const IncrementQG & dxin, IncrementQG & dxout) const {
-  qg_bstddev_mult_f90(keyFtnConfig_, dxin.fields().toFortran(),
-                                     dxout.fields().toFortran());
+  qg_error_stddev_mult_f90(keyFtnConfig_, dxin.fields().toFortran(),
+                           dxout.fields().toFortran());
 }
 // -----------------------------------------------------------------------------
 void ErrorStdDevQG::multiplyInverseAD(const IncrementQG & dxin, IncrementQG & dxout) const {
-  qg_bstddev_invmult_f90(keyFtnConfig_, dxin.fields().toFortran(),
-                                        dxout.fields().toFortran());
+  qg_error_stddev_inv_mult_f90(keyFtnConfig_, dxin.fields().toFortran(),
+                              dxout.fields().toFortran());
 }
 // -----------------------------------------------------------------------------
 void ErrorStdDevQG::print(std::ostream & os) const {

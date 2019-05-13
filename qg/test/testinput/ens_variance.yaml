@@ -1,0 +1,38 @@
+Background:
+  date: 2010-01-01T00:00:00Z
+  filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1D
+Ensemble:
+  members:
+  - date: 2010-01-01T00:00:00Z
+    filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1D
+  - date: 2010-01-01T00:00:00Z
+    filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1D
+  - date: 2010-01-01T00:00:00Z
+    filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1D
+  - date: 2010-01-01T00:00:00Z
+    filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1D
+  - date: 2010-01-01T00:00:00Z
+    filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1D
+  variables:
+  - x
+  varchange: ChVarQG
+  inputVariables:
+    variables:
+    - x
+  outputVariables:
+    variables:
+    - x
+Geometry:
+  nx: 40
+  ny: 20
+  depths:
+  - 4500.0
+  - 5500.0
+Variables:
+  variables:
+  - x
+VarianceOut:
+  datadir: Data
+  exp: variance
+  type: fc
+  date: 2010-01-01T00:00:00Z

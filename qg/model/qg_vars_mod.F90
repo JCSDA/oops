@@ -6,77 +6,68 @@
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
-!> Fortran module to handle variables for the QG model
-
 module qg_vars_mod
 
-use iso_c_binding
 use config_mod
+use iso_c_binding
 
 implicit none
+
 private
-public :: qg_vars, qg_vars_create
-
+public :: nvmax,varnames
+public :: qg_vars,qg_vars_create
 ! ------------------------------------------------------------------------------
-!> Fortran derived type to represent QG model variables
-
 type :: qg_vars
-  integer :: nv
-  character(len=1), allocatable :: fldnames(:) !< Variable identifiers
-  logical :: lbc
+  logical :: lx  !< Streamfunction flag
+  logical :: lq  !< Potential vorticity flag
+  logical :: lu  !< Zonal wind flag
+  logical :: lv  !< Meridional wind flag
 end type qg_vars
 
-#define LISTED_TYPE qg_vars
-
-!> Linked list interface - defines registry_t type
-#include "oops/util/linkedList_i.f"
-
-!> Global registry
-type(registry_t) :: qg_vars_registry
-
+integer,parameter :: nvmax = 4                                                !< Number of possible variables
+character(len=1),dimension(nvmax),parameter :: varnames = (/'x','q','u','v'/) !< Possible variables names
 ! ------------------------------------------------------------------------------
 contains
 ! ------------------------------------------------------------------------------
-!> Linked list implementation
-#include "oops/util/linkedList_c.f"
-
+! Public
 ! ------------------------------------------------------------------------------
+!> Create variables
+subroutine qg_vars_create(self,kvars)
 
-subroutine qg_vars_create(self, kvars)
 implicit none
-type(qg_vars), intent(inout) :: self
-integer(c_int), dimension(*), intent(in) :: kvars
-integer :: ii, jj
 
-if (kvars(1)<1 .or. kvars(1)>5) call abor1_ftn ("qg_vars_create: error variables")
-if (kvars(kvars(1)+2)/=999) call abor1_ftn ("qg_vars_create: error check")
+! Passed variables
+type(qg_vars),intent(inout) :: self       !< Variables
+integer(c_int),intent(in) :: kvars(nvmax) !< Variable flags array
 
-self%lbc = .false.
-self%nv = 0
+! Local variables
+integer :: iv
 
-do jj=1,kvars(1)
-  ii=jj+1
-  if (kvars(ii)<1 .or. kvars(ii)>5) call abor1_ftn ("qg_vars_create: unknown index")
-  if (kvars(ii)==5) then
-    self%lbc = .true.
-  else
-    self%nv=self%nv+1
+! Check kvars
+if (any(kvars<0).or.any(kvars>1)) call abor1_ftn ('qg_vars_create: wrong kvars values')
+
+! Initialization
+self%lx = .false.
+self%lq = .false.
+self%lu = .false.
+self%lv = .false.
+
+! 3d fields
+do iv=1,nvmax
+  if (kvars(iv)==1) then
+    select case (varnames(iv))
+    case ('x')
+      self%lx = .true.
+    case ('q')
+      self%lq = .true.
+    case ('u')
+      self%lu = .true.
+    case ('v')
+      self%lv = .true.
+    endselect
   endif
 enddo
 
-allocate(self%fldnames(self%nv))
-
-ii = 0
-do jj=1,kvars(1)
-  if (kvars(jj+1)/=5) ii=ii+1
-  if (kvars(jj+1)==1) self%fldnames(ii)="x"
-  if (kvars(jj+1)==2) self%fldnames(ii)="q"
-  if (kvars(jj+1)==3) self%fldnames(ii)="u"
-  if (kvars(jj+1)==4) self%fldnames(ii)="v"
-enddo
-
 end subroutine qg_vars_create
-
 ! ------------------------------------------------------------------------------
-
 end module qg_vars_mod

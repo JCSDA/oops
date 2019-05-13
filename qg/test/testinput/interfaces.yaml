@@ -1,19 +1,20 @@
 Covariance:
   covariance: QgError
-  date: '2009-12-31T00:00:00Z'
-  horizontal_length_scale: 1e6
+  horizontal_length_scale: 1.0e6
   maximum_condition_number: 1.0e6
-  standard_deviation: '0.8'
-  vertical_correlation: '0.2'
+  standard_deviation: 8.0e6
+  vertical_length_scale: 2787.0
 CovarianceTest:
-  tolerance: '0.01'
+  tolerance: 0.06
 Geometry:
-  bc: '1'
-  nx: '40'
-  ny: '20'
+  nx: 40
+  ny: 20
+  depths:
+  - 4500.0
+  - 5500.0
 GeometryIterator:
-  rms: '12.99933594566324'
-  tolerance: 1e-8
+  rms: 130002019.68587324
+  tolerance: 1.0e-8
 LocalObservationSpace:
   GeoLocation:
     lon: -10
@@ -21,189 +22,149 @@ LocalObservationSpace:
   GeoDistance:
     distance: 100
 LinearModel:
-  bottom_layer_depth: '4500.0'
-  top_layer_depth: '5500.0'
   trajectory:
-    bottom_layer_depth: '4500.0'
-    top_layer_depth: '5500.0'
     tstep: PT1H
   tstep: PT1H
   version: QgTLM
+  variables:
+  - x
 LinearModelTest:
   fclength: PT24H
-  testiterTL: '12'
-  toleranceAD: '1.0e-12'
-  toleranceTL: '1.0e-6'
+  testiterTL: 12
+  toleranceAD: 1.0e-12
+  toleranceTL: 1.0e-6
 LinearObsOpTest:
-  coefTL: '1.e-4'
-  toleranceAD: '1.0e-10'
-  toleranceTL: '1.0e-8'
+  coefTL: 1.e-4
+  toleranceAD: 1.0e-10
+  toleranceTL: 1.0e-8
 LinearVariableChangeTests:
-- bump:
-    check_vbal: 1
-    datadir: bump
-    load_vbal: 1
-    nl0r: 2
-    prefix: interfaces
-    strategy: common
-    vbal_block:
-    - 1
-    - 1
-    - 1
-    - 1
-    - 1
-    - 1
-  inputVariables:
+- inputVariables:
     variables:
     - x
-    - q
-    - u
-    - v
-    - bc
   outputVariables:
     variables:
-    - x
     - q
-    - u
-    - v
-    - bc
-  testinverse: '0'
-  toleranceInverse: '1.0e-8'
-  varchange: StatsVariableChange
-  variables:
-    variables:
-    - x
-    - q
-    - u
-    - v
-    - bc
+  varchange: ChVarQG
+  toleranceInverse: 1.0e-8
 Localization:
-  horizontal_length_scale: 2e6
+  horizontal_length_scale: 2.0e6
   localization: QG
   maximum_condition_number: 1.0e6
-  standard_deviation: '1.0'
-  vertical_correlation: '0.4'
+  standard_deviation: 1.0
+  vertical_length_scale: 3694.0
 Locations: {}
 Model:
-  bottom_layer_depth: '4500.0'
   name: QG
-  top_layer_depth: '5500.0'
   tstep: PT1H
+  variables:
+  - x
 ModelBias: null
 ModelBiasCovariance: null
 ModelTest:
   fclength: PT24H
-  finalnorm: '13.965'
-  tolerance: '0.005'
+  finalnorm: 111108106.46165891
+  tolerance: 0.005
 ObsBias:
-  stream: '-1.0'
-  uwind: '1.0'
+  stream: -10.0
+  uwind: 10.0
 ObsBiasCovariance:
-  stream: '2.0'
-  uwind: '1.5'
+  stream: 2.0e7
+  uwind: 15.0
 Observations:
   ObsTypes:
   - Covariance:
       covariance: diagonal
     GeoVaLs:
-      filename: Data/qg.stream.gom
-      norm: '356.985842472369'
+      filename: Data/truth.obs4d_24h.stream.gom
+      norm: 3570668495.45861006
     ObsSpace:
       ObsDataIn:
-        obsfile: Data/qg.truth4d.obt
+        obsfile: Data/truth.obs4d_24h
       ObsDataOut:
-        obsfile: Data/qg.test.obt
+        obsfile: Data/interface.obs4d_24h
       ObsHandler: ObsHelpQG
       ObsType: Stream
     ObsOperator:
       ObsType: Stream
-    rmsequiv: '12.62135549999'
-    tolerance: '1.0e-8'
+    rmsequiv: 126242195.32539751
+    tolerance: 1.0e-8
   - Covariance:
       covariance: diagonal
     GeoVaLs:
-      filename: Data/qg.wind.gom
-      norm: '120.590296066919'
+      filename: Data/truth.obs4d_24h.wind.gom
+      norm: 1207.43821141
     ObsSpace:
       ObsDataIn:
-        obsfile: Data/qg.truth4d.obt
+        obsfile: Data/truth.obs4d_24h
       ObsDataOut:
-        obsfile: Data/qg.test.obt
+        obsfile: Data/interface.obs4d_24h
       ObsHandler: ObsHelpQG
       ObsType: Wind
     ObsOperator:
       ObsType: Wind
-    rmsequiv: '4.2635108047106'
-    tolerance: '1.0e-8'
+    rmsequiv: 42.68938736
+    tolerance: 1.0e-8
   - Covariance:
       covariance: diagonal
     GeoVaLs:
-      filename: Data/qg.wspeed.gom
-      norm: '122.535512929154'
+      filename: Data/truth.obs4d_24h.wspeed.gom
+      norm: 1226.64005213
     ObsSpace:
       ObsDataIn:
-        obsfile: Data/qg.truth4d.obt
+        obsfile: Data/truth.obs4d_24h
       ObsDataOut:
-        obsfile: Data/qg.test.obt
+        obsfile: Data/interface.obs4d_24h
       ObsHandler: ObsHelpQG
       ObsType: WSpeed
     ObsOperator:
       ObsType: WSpeed
-    rmsequiv: '6.12677564645768'
-    tolerance: '1.0e-8'
+    rmsequiv: 61.33200261
+    tolerance: 1.0e-8
 State:
-  date: '2009-12-31T00:00:00Z'
+  date: 2009-12-31T00:00:00Z
   filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D
   variables:
   - x
-  - bc
 StateTest:
   InterpTest:
     variables:
     - u
     - v
   Locations:
-    Nrandom: '8'
-    heights:
-    - '0.25'
-    - '0.75'
-    lats:
-    - '0.85'
-    - '0.4'
+    Nrandom: 8
     lons:
-    - '.1'
-    - '.75'
-    random_seed: '569021'
+    - -10.0
+    - 12.0
+    lats:
+    - 35.0
+    - 45.0
+    z:
+    - 5000
+    - 9000
   StateFile:
-    date: '2009-12-31T00:00:00Z'
+    date: 2009-12-31T00:00:00Z
     filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D
     variables:
     - x
-    - bc
   StateGenerate:
     analytic_init: large-vortices
-    bottom_layer_depth: '4500.0'
-    date: '2009-12-31T00:00:00Z'
-    top_layer_depth: '5500.0'
+    date: 2009-12-31T00:00:00Z
     variables:
     - x
-    - q
-    - u
-    - v
   Variables:
     variables:
     - x
-  date: '2009-12-31T00:00:00Z'
-  interp_tolerance: '0.04'
-  norm-file: '15.010355026'
-  norm-gen: '0.49999998633093556'
+  date: 2009-12-31T00:00:00Z
+  interp_tolerance: 0.04
+  norm-file: 123965819.83532093
+  norm-gen: 93608292.91696000
   tolerance: 1.0e-08
   values:
   - 6.042838
-TestDate: '2009-12-31T00:00:00Z'
+TestDate: 2009-12-31T00:00:00Z
 Variables:
   variables:
   - x
 test_framework_runtime_config: --log_level=test_suite
-window_begin: '2010-01-01T00:00:00Z'
-window_end: '2010-01-02T00:00:00Z'
+window_begin: 2010-01-01T00:00:00Z
+window_end: 2010-01-02T00:00:00Z

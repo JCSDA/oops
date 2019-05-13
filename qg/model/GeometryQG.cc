@@ -17,16 +17,15 @@ namespace qg {
 // -----------------------------------------------------------------------------
 GeometryQG::GeometryQG(const eckit::Configuration & conf) {
   const eckit::Configuration * configc = &conf;
-  qg_geo_setup_f90(keyGeom_, &configc);
+  qg_geom_setup_f90(keyGeom_, &configc);
 }
 // -----------------------------------------------------------------------------
 GeometryQG::GeometryQG(const GeometryQG & other) {
-  const int key_geo = other.keyGeom_;
-  qg_geo_clone_f90(key_geo, keyGeom_);
+  qg_geom_clone_f90(keyGeom_, other.keyGeom_);
 }
 // -----------------------------------------------------------------------------
 GeometryQG::~GeometryQG() {
-  qg_geo_delete_f90(keyGeom_);
+  qg_geom_delete_f90(keyGeom_);
 }
 // -----------------------------------------------------------------------------
 GeometryQGIterator GeometryQG::begin() const {
@@ -36,15 +35,23 @@ GeometryQGIterator GeometryQG::begin() const {
 GeometryQGIterator GeometryQG::end() const {
   int nx = 0;
   int ny = 0;
-  qg_geo_info_f90(keyGeom_, nx, ny);
+  int nz;
+  double deltax;
+  double deltay;
+  qg_geom_info_f90(keyGeom_, nx, ny, nz, deltax, deltay);
   return GeometryQGIterator(*this, nx*ny+1);
 }
 // -----------------------------------------------------------------------------
 void GeometryQG::print(std::ostream & os) const {
   int nx;
   int ny;
-  qg_geo_info_f90(keyGeom_, nx, ny);
-  os << "nx = " << nx << ", ny = " << ny;
+  int nz;
+  double deltax;
+  double deltay;
+  qg_geom_info_f90(keyGeom_, nx, ny, nz, deltax, deltay);
+  os << "Geometry:" << std::endl;
+  os << "nx = " << nx << ", ny = " << ny << ", nz = " << nz << std::endl;
+  os << "deltax = " << deltax << ", deltay = " << deltay << std::endl;
 }
 // -----------------------------------------------------------------------------
 }  // namespace qg

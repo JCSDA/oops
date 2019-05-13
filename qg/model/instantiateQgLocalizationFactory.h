@@ -18,7 +18,7 @@
 namespace qg {
 
 void instantiateQgLocalizationFactory() {
-  static oops::LocalizationMaker<qg::QgTraits, LocalizationMatrixQG> makerWSpeed_("QG");
+  static oops::LocalizationMaker<qg::QgTraits, LocalizationMatrixQG> makerQG_("QG");
 }
 
 }  // namespace qg

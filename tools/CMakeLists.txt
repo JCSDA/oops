@@ -1,6 +1,7 @@
 
 # Create Data directory for test input data
 list( APPEND test_files
+  bump_links.sh
   compare.sh
   cpplint.py
 )

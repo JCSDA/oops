@@ -1,8 +1,0 @@
-Test     : Increment: 
-Test     :   Valid time: 2010-01-01T00:00:00Z
-Test     :   Resolution = 40, 20, Fields = 1, 0
-Test     :   Min=-0.608684, Max=5.66178, RMS=1.45641
-Test     : Increment: 
-Test     :   Valid time: 2010-01-01T00:00:00Z
-Test     :   Resolution = 40, 20, Fields = 1, 0
-Test     :   Min=0.0286171, Max=1, RMS=0.500774

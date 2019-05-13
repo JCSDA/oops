@@ -103,7 +103,7 @@ template <typename MODEL> class Dirac : public Application {
       //  Write increment
       const eckit::LocalConfiguration output_B(fullConfig, "output_B");
       dxdirout.write(output_B);
-      Log::test() << "Increment: " << std::endl << dxdirout << std::endl;
+      Log::test() << "Increment: " << dxdirout << std::endl;
     } else {
       //  4D covariance
       boost::scoped_ptr<ModelSpaceCovariance4DBase<MODEL>> B(Covariance4DFactory<MODEL>::create(
@@ -122,26 +122,30 @@ template <typename MODEL> class Dirac : public Application {
       //  Write increment
       const eckit::LocalConfiguration output_B(fullConfig, "output_B");
       dxdirout.write(output_B);
-      Log::test() << "Increment4D: " << std::endl << dxdirout << std::endl;
+      Log::test() << "Increment4D: " << dxdirout << std::endl;
     }
 
-    //  Setup localization
+    //  Setup localization and ensemble configurations
     eckit::LocalConfiguration locConfig;
+    eckit::LocalConfiguration ensConfig;
     bool hasLoc(false);
     if (covarConfig.has("localization")) {
       locConfig = eckit::LocalConfiguration(covarConfig, "localization");
+      ensConfig = covarConfig;
       hasLoc = true;
     } else {
       if (covarConfig.has("ensemble")) {
-        const eckit::LocalConfiguration ensConfig(covarConfig, "ensemble");
-        locConfig = eckit::LocalConfiguration(ensConfig, "localization");
-        hasLoc = true;
+        ensConfig = eckit::LocalConfiguration(covarConfig, "ensemble");
+        if (ensConfig.has("localization")) {
+          locConfig = eckit::LocalConfiguration(ensConfig, "localization");
+          hasLoc = true;
+        }
       }
     }
 
     if (hasLoc) {
       // Setup ensemble
-      EnsemblePtr_ ens(new Ensemble_(timeslots, covarConfig));
+      EnsemblePtr_ ens(new Ensemble_(timeslots, ensConfig));
       ens->linearize((*xx), (*xx), resol);
 
       // Apply localization to Dirac
@@ -161,7 +165,7 @@ template <typename MODEL> class Dirac : public Application {
         //  Write increment
         const eckit::LocalConfiguration output_localization(fullConfig, "output_localization");
         dxdir.write(output_localization);
-        Log::test() << "Increment: " << std::endl << dxdir << std::endl;
+        Log::test() << "Increment: " << dxdir << std::endl;
       } else {
         //  Setup Dirac
         Increment4D_ dxdir(resol, vars, timeslots);
@@ -179,7 +183,7 @@ template <typename MODEL> class Dirac : public Application {
         //  Write increment
         const eckit::LocalConfiguration output_localization(fullConfig, "output_localization");
         dxdir.write(output_localization);
-        Log::test() << "Increment4D: " << std::endl << dxdir << std::endl;
+        Log::test() << "Increment4D: " << dxdir << std::endl;
       }
     }
 

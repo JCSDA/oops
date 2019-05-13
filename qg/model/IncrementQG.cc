@@ -37,7 +37,7 @@ namespace qg {
 // -----------------------------------------------------------------------------
 IncrementQG::IncrementQG(const GeometryQG & resol, const oops::Variables & vars,
                          const util::DateTime & vt)
-  : fields_(new FieldsQG(resol, vars, vt)), stash_()
+  : fields_(new FieldsQG(resol, vars, lbc_, vt)), stash_()
 {
   fields_->zero();
   oops::Log::trace() << "IncrementQG constructed." << std::endl;
@@ -168,16 +168,14 @@ void IncrementQG::write(const eckit::Configuration & files) const {
   fields_->write(files);
 }
 // -----------------------------------------------------------------------------
-/// Serialize - deserialize
+/// Serialization
 // -----------------------------------------------------------------------------
 void IncrementQG::serialize(std::vector<double> & vect) const {
-  oops::Log::trace() << "Serialize fieldsQG in IncrementQG.h" << std::endl;
   fields_->serialize(vect);
 }
 // -----------------------------------------------------------------------------
 void IncrementQG::deserialize(const std::vector<double> & vect) {
   fields_->deserialize(vect);
-  oops::Log::trace() << "IncrementQG deserialized." << std::endl;
 }
 // -----------------------------------------------------------------------------
 void IncrementQG::print(std::ostream & os) const {

@@ -1,0 +1,134 @@
+cost_function:
+  cost_type: 4D-Weak
+  Jb:
+    Background:
+      state:
+      - date: 2010-01-01T00:00:00Z
+        filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D
+      - date: 2010-01-01T12:00:00Z
+        filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H
+    Covariance:
+      covariance: QgError
+      covariance_time:
+      - horizontal_length_scale: 1.0e6
+        maximum_condition_number: 1.0e6
+        standard_deviation: 8.0e6
+        vertical_length_scale: 2787.0
+      - horizontal_length_scale: 2.0e5
+        maximum_condition_number: 1.0e6
+        standard_deviation: 2.0e6
+        vertical_length_scale: 4247.0
+  Jc:
+  - jcdfi:
+      alpha: 1.0e-13
+      cutoff: PT3H
+      ftime: 2010-01-01T06:00:00Z
+      span: PT12H
+      type: DolphChebyshev
+      variables:
+      - x
+  - jcdfi:
+      alpha: 1.0e-13
+      cutoff: PT3H
+      ftime: 2010-01-01T18:00:00Z
+      span: PT12H
+      type: DolphChebyshev
+      variables:
+      - x
+  Jo:
+    ObsTypes:
+    - Covariance:
+        covariance: diagonal
+      ObsOperator:
+        ObsType: Stream  
+      ObsSpace:
+        ObsDataIn:
+          obsfile: Data/truth.obs4d_24h
+        ObsDataOut:
+          obsfile: Data/4dvar_saddlepoint.obs4d_24h
+        ObsType: Stream
+    - Covariance:
+        covariance: diagonal
+      ObsOperator:
+        ObsType: Wind  
+      ObsSpace:
+        ObsDataIn:
+          obsfile: Data/truth.obs4d_24h
+        ObsDataOut:
+          obsfile: Data/4dvar_saddlepoint.obs4d_24h
+        ObsType: Wind
+    - Covariance:
+        covariance: diagonal
+      ObsOperator:
+        ObsType: WSpeed
+      ObsSpace:
+        ObsDataIn:
+          obsfile: Data/truth.obs4d_24h
+        ObsDataOut:
+          obsfile: Data/4dvar_saddlepoint.obs4d_24h
+        ObsType: WSpeed  
+  variables:
+  - x
+  window_begin: 2010-01-01T00:00:00Z
+  window_length: P1D
+  window_sub: PT12H
+final:
+  diagnostics:
+    departures: oman
+  prints:
+    frequency: PT1H
+minimizer:
+  algorithm: SaddlePoint
+model:
+  name: QG
+  tstep: PT1H
+  variables:
+  - x
+output:
+  datadir: Data
+  exp: 4dvar_saddlepoint
+  first: PT0S
+  frequency: PT6H
+  type: an
+resolution:
+  nx: 40
+  ny: 20
+  depths:
+  - 4500.0
+  - 5500.0
+variational:
+  iteration:
+  - diagnostics:
+      departures: ombg
+    gradient_norm_reduction: 1.0e-10
+    linearmodel:
+      trajectory:
+        tstep: PT1H
+      tstep: PT1H
+      varchange: Identity
+      variables:
+      - x  
+      version: QgTLM
+    ninner: 15
+    resolution:
+      nx: 40
+      ny: 20
+      depths:
+      - 4500.0
+      - 5500.0
+  - gradient_norm_reduction: 1.0e-10
+    linearmodel:
+      trajectory:
+        tstep: PT1H
+      tstep: PT1H
+      varchange: Identity
+      variables:
+      - x  
+      version: QgTLM
+    ninner: 30
+    resolution:
+      nx: 40
+      ny: 20
+      depths:
+      - 4500.0
+      - 5500.0

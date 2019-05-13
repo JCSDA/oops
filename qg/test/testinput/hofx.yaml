@@ -1,41 +1,43 @@
 Assimilation Window:
-  Begin: '2010-01-01T00:00:00Z'
+  Begin: 2010-01-01T00:00:00Z
   Length: PT12H
 Geometry:
-  bc: '1'
-  nx: '40'
-  ny: '20'
+  nx: 40
+  ny: 20
+  depths:
+  - 4500.0
+  - 5500.0
 Initial Condition:
-  date: '2010-01-01T00:00:00Z'
+  date: 2010-01-01T00:00:00Z
   filename: Data/truth.fc.2009-12-15T00:00:00Z.P17D
 Model:
-  bottom_layer_depth: '4500.0'
   name: QG
-  top_layer_depth: '5500.0'
   tstep: PT1H
+  variables:
+  - x
 Observations:
   ObsTypes:
   - ObsSpace:
       ObsDataIn:
-        obsfile: Data/qg.truth4d12h.obt
+        obsfile: Data/truth.obs4d_12h
       ObsDataOut:
-        obsfile: Data/qg.hofx.obt
+        obsfile: Data/hofx.obs4d_12h
       ObsType: Stream
     ObsOperator:
       ObsType: Stream
   - ObsSpace:
       ObsDataIn:
-        obsfile: Data/qg.truth4d12h.obt
+        obsfile: Data/truth.obs4d_12h
       ObsDataOut:
-        obsfile: Data/qg.hofx.obt
+        obsfile: Data/hofx.obs4d_12h
       ObsType: Wind
     ObsOperator:
       ObsType: Wind
   - ObsSpace:
       ObsDataIn:
-        obsfile: Data/qg.truth4d12h.obt
+        obsfile: Data/truth.obs4d_12h
       ObsDataOut:
-        obsfile: Data/qg.hofx.obt
+        obsfile: Data/hofx.obs4d_12h
       ObsType: WSpeed
     ObsOperator:
       ObsType: WSpeed

@@ -43,7 +43,7 @@ GomQG::GomQG(const LocationsQG & locs, const oops::Variables & var) {
 // Copy constructor
 GomQG::GomQG(const GomQG & other) {
   qg_gom_create_f90(keyGom_);
-  qg_gom_assign_f90(keyGom_, other.keyGom_);
+  qg_gom_copy_f90(keyGom_, other.keyGom_);
 }
 // -----------------------------------------------------------------------------
 GomQG::~GomQG() {
@@ -70,7 +70,7 @@ void GomQG::random() {
 // -----------------------------------------------------------------------------
 GomQG & GomQG::operator=(const GomQG & rhs) {
   const int keyGomRhs = rhs.keyGom_;
-  qg_gom_assign_f90(keyGom_, keyGomRhs);
+  qg_gom_copy_f90(keyGom_, keyGomRhs);
   return *this;
 }
 // -----------------------------------------------------------------------------
@@ -126,10 +126,15 @@ void GomQG::analytic_init(const LocationsQG & locs,
 // -----------------------------------------------------------------------------
 void GomQG::print(std::ostream & os) const {
   int nn;
-  double zmin, zmax, zavg;
-  qg_gom_minmaxavg_f90(keyGom_, nn, zmin, zmax, zavg);
-  os << " nobs= " << nn << " Min=" << zmin << ", Max=" << zmax << ", RMS="
-     << zavg << std::endl;
+  double scaling, zmin, zmax, zrms;
+  qg_gom_stats_f90(keyGom_, nn, scaling, zmin, zmax, zrms);
+  std::ios_base::fmtflags f(os.flags());
+  os << " nobs= " << nn
+     << ", Scaling=" << std::setprecision(4) << std::setw(7) << scaling
+     << ", Min=" << std::fixed << std::setprecision(4) << std::setw(12) << zmin
+     << ", Max=" << std::fixed << std::setprecision(4) << std::setw(12) << zmax
+     << ", RMS=" << std::fixed << std::setprecision(4) << std::setw(12) << zrms;
+  os.flags(f);
 
   // If the min value across all variables is positive, then this may be an
   // error measurement.  If so, print the location and variable where the

@@ -1,0 +1,33 @@
+Test     : CostJb   : Nonlinear Jb = 0
+Test     : CostJo   : Nonlinear Jo(Stream) = 15217.8, nobs = 600, Jo/n = 25.363, err = 4e+06
+Test     : CostJo   : Nonlinear Jo(Wind) = 1513.6, nobs = 600, Jo/n = 2.52266, err = 6
+Test     : CostJo   : Nonlinear Jo(WSpeed) = 215.835, nobs = 300, Jo/n = 0.71945, err = 12
+Test     : CostFunction: Nonlinear J = 16947.2
+Test     : DRIPCGMinimizer: reduction in residual norm = 0.122626
+Test     : CostFunction::addIncrement: Analysis: 
+Test     :   Valid time: 2010-01-01T12:00:00Z
+Test     :   Resolution = 40, 20, 2
+Test     :   Variable = streamfunction
+Test     :   Boundary conditions are activated
+Test     :   Scaling=  1e+08, Min=     -3.0069, Max=      1.0693, RMS=      1.2415
+Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
+Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     : CostJb   : Nonlinear Jb = 53.3
+Test     : CostJo   : Nonlinear Jo(Stream) = 138.5, nobs = 600, Jo/n = 0.2308, err = 4e+06
+Test     : CostJo   : Nonlinear Jo(Wind) = 159.9, nobs = 600, Jo/n = 0.2664, err = 6
+Test     : CostJo   : Nonlinear Jo(WSpeed) = 21.1, nobs = 300, Jo/n = 0.07034, err = 12
+Test     : CostFunction: Nonlinear J = 372.7
+Test     : DRIPCGMinimizer: reduction in residual norm = 0.5297
+Test     : CostFunction::addIncrement: Analysis: 
+Test     :   Valid time: 2010-01-01T12:00:00Z
+Test     :   Resolution = 40, 20, 2
+Test     :   Variable = streamfunction
+Test     :   Boundary conditions are activated
+Test     :   Scaling=  1e+08, Min=     -2.9907, Max=      1.0946, RMS=      1.2413
+Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
+Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     : CostJb   : Nonlinear Jb = 54.81
+Test     : CostJo   : Nonlinear Jo(Stream) = 108.7, nobs = 600, Jo/n = 0.1811, err = 4e+06
+Test     : CostJo   : Nonlinear Jo(Wind) = 84.25, nobs = 600, Jo/n = 0.1404, err = 6
+Test     : CostJo   : Nonlinear Jo(WSpeed) = 10.41, nobs = 300, Jo/n = 0.0347, err = 12
+Test     : CostFunction: Nonlinear J = 258.1

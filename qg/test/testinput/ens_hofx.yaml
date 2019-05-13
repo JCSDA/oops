@@ -1,0 +1,54 @@
+Assimilation Window:
+  Begin: 2010-01-01T00:00:00Z
+  Length: PT12H
+Geometry:
+  nx: 40
+  ny: 20
+  depths:
+  - 4500.0
+  - 5500.0
+Initial Condition:
+  state:
+  - date: 2010-01-01T00:00:00Z
+    filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1D
+  - date: 2010-01-01T00:00:00Z
+    filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1D
+  - date: 2010-01-01T00:00:00Z
+    filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1D
+  - date: 2010-01-01T00:00:00Z
+    filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1D
+  - date: 2010-01-01T00:00:00Z
+    filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1D
+Model:
+  name: QG
+  tstep: PT1H
+  variables:
+  - x
+Observations:
+  ObsTypes:
+  - ObsOperator:
+      ObsType: Stream
+    ObsSpace:
+      ObsDataIn:
+        obsfile: Data/truth.obs4d_12h
+      ObsDataOut:
+        obsfile: Data/ens_hofx.obs4d_12h
+      ObsType: Stream
+  - ObsOperator:
+      ObsType: Wind
+    ObsSpace:
+      ObsDataIn:
+        obsfile: Data/truth.obs4d_12h
+      ObsDataOut:
+        obsfile: Data/ens_hofx.obs4d_12h
+      ObsType: Wind
+  - ObsOperator:
+      ObsType: WSpeed
+    ObsSpace:
+      ObsDataIn:
+        obsfile: Data/truth.obs4d_12h
+      ObsDataOut:
+        obsfile: Data/ens_hofx.obs4d_12h
+      ObsType: WSpeed
+Prints:
+  frequency: PT3H

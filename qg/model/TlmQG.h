@@ -74,7 +74,7 @@ class TlmQG: public oops::LinearModelBase<QgTraits>,
   F90model keyConfig_;
   util::Duration tstep_;
   const GeometryQG resol_;
-  std::map< util::DateTime, F90traj> traj_;
+  std::map< util::DateTime, F90flds> traj_;
   const ModelQG lrmodel_;
   const oops::Variables linvars_;
 };

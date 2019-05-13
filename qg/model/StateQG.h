@@ -28,7 +28,6 @@ namespace eckit {
 }
 
 namespace oops {
-  class UnstructuredGrid;
   class Variables;
   class GridPoint;
 }
@@ -41,11 +40,6 @@ namespace qg {
   class Nothing;
 
 /// QG model state
-/*!
- * A State contains everything that is needed to propagate the state
- * forward in time.
- */
-
 // -----------------------------------------------------------------------------
 class StateQG : public util::Printable,
                 private util::ObjectCounter<StateQG> {
@@ -80,7 +74,6 @@ class StateQG : public util::Printable,
 /// Access to fields
   FieldsQG & fields() {return *fields_;}
   const FieldsQG & fields() const {return *fields_;}
-
   boost::shared_ptr<const GeometryQG> geometry() const {
     return fields_->geometry();
   }
@@ -88,11 +81,11 @@ class StateQG : public util::Printable,
 /// Other
   void zero();
   void accumul(const double &, const StateQG &);
-
   oops::GridPoint getPoint(const GeometryQGIterator &) const;
 
  private:
   void print(std::ostream &) const;
+  const bool lbc_ = true;
   boost::scoped_ptr<FieldsQG> fields_;
   boost::scoped_ptr<FieldsQG> stash_;
 };

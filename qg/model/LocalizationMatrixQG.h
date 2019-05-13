@@ -13,7 +13,9 @@
 
 #include <ostream>
 #include <string>
+#include <vector>
 
+#include <boost/ptr_container/ptr_vector.hpp>
 #include "eckit/config/Configuration.h"
 #include "oops/interface/LocalizationBase.h"
 #include "oops/util/ObjectCounter.h"

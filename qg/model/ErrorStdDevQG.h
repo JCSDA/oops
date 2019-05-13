@@ -53,7 +53,7 @@ class ErrorStdDevQG: public util::Printable {
  private:
   void print(std::ostream &) const override;
 
-  F90bstddev keyFtnConfig_;
+  F90error_stddev keyFtnConfig_;
 };
 // -----------------------------------------------------------------------------
 

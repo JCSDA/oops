@@ -6,29 +6,40 @@
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
-!> Fortran module handling geometry for the QG model
-
 module qg_geom_mod
 
-use iso_c_binding
-use qg_constants
 use config_mod
+use fckit_log_module,only: fckit_log
 use kinds
+use iso_c_binding
+use qg_constants_mod
+use qg_projection_mod
 
 implicit none
+
 private
 public :: qg_geom
 public :: qg_geom_registry
-
+public :: qg_geom_setup,qg_geom_clone,qg_geom_delete,qg_geom_info
 ! ------------------------------------------------------------------------------
-
-!> Fortran derived type to hold geometry data for the QG model
 type :: qg_geom
-  integer :: nx
-  integer :: ny
-  real(kind=kind_real),allocatable :: lat(:)
-  real(kind=kind_real),allocatable :: lon(:)
-  real(kind=kind_real),allocatable :: area(:,:)
+  integer :: nx                              !< Number of points in the zonal direction
+  integer :: ny                              !< Number of points in the meridional direction
+  integer :: nz                              !< Number of vertical levels
+  real(kind_real) :: deltax                  !< Zonal cell size
+  real(kind_real) :: deltay                  !< Meridional cell size
+  real(kind_real),allocatable :: x(:)        !< Zonal coordinate
+  real(kind_real),allocatable :: y(:)        !< Meridional coordinate
+  real(kind_real),allocatable :: z(:)        !< Altitude
+  real(kind_real),allocatable :: lat(:,:)    !< Latitude
+  real(kind_real),allocatable :: lon(:,:)    !< Longitude
+  real(kind_real),allocatable :: area(:,:)   !< Area
+  real(kind_real),allocatable :: f(:,:)      !< Coefficients of PV operator
+  real(kind_real),allocatable :: f_p(:,:)    !< Coefficients of PV operator, right eigenvectors
+  real(kind_real),allocatable :: f_pinv(:,:) !< Coefficients of PV operator, right eigenvectors inverse
+  real(kind_real),allocatable :: f_d(:)      !< Coefficients of PV operator, eigenvalues
+  real(kind_real),allocatable :: bet(:)      !< Beta coefficient
+  real(kind_real),allocatable :: heat(:,:)   !< Heating term
 end type qg_geom
 
 #define LISTED_TYPE qg_geom
@@ -38,109 +49,258 @@ end type qg_geom
 
 !> Global registry
 type(registry_t) :: qg_geom_registry
-
 ! ------------------------------------------------------------------------------
 contains
 ! ------------------------------------------------------------------------------
-
+! Public
+! ------------------------------------------------------------------------------
 !> Linked list implementation
 #include "oops/util/linkedList_c.f"
-
 ! ------------------------------------------------------------------------------
+!> Setup geometry
+subroutine qg_geom_setup(self,conf)
 
-subroutine c_qg_geo_setup(c_key_self, c_conf) bind(c,name='qg_geo_setup_f90')
-implicit none
-integer(c_int), intent(inout) :: c_key_self
-type(c_ptr), intent(in)    :: c_conf
+! Passed variables
+type(qg_geom),intent(inout) :: self !< Geometry
+type(c_ptr),intent(in) :: conf      !< Configuration
 
-integer :: ix,iy
-real(kind=kind_real) :: lat_center,lat_south, lat_north, lon_west, lon_east, full_area
-type(qg_geom), pointer :: self
+! Local variables
+integer :: ix,iy,iz,ix_c,iy_c,lwork,info
+integer,allocatable :: ipiv(:),ipivsave(:)
+real(kind_real) :: mapfac,distx,disty,f
+real(kind_real),allocatable :: depths(:),wi(:),vl(:,:),work(:)
+real(kind_real),allocatable :: fsave(:,:),vrlu(:,:),vrlusave(:,:)
+character(len=1024) :: htype,record
 
-call qg_geom_registry%init()
-call qg_geom_registry%add(c_key_self)
-call qg_geom_registry%get(c_key_self,self)
+! Get horizontal resolution data
+self%nx = config_get_int(conf,'nx')
+self%ny = config_get_int(conf,'ny')
 
-self%nx = config_get_int(c_conf, "nx")
-self%ny = config_get_int(c_conf, "ny")
+! Get number of levels
+self%nz = config_get_data_dimension(conf,'depths')
 
-! Allocate
-allocate(self%lon(self%nx))
-allocate(self%lat(self%ny))
+! Allocation
+allocate(depths(self%nz))
+allocate(self%x(self%nx))
+allocate(self%y(self%ny))
+allocate(self%z(self%nz))
+allocate(self%lon(self%nx,self%ny))
+allocate(self%lat(self%nx,self%ny))
 allocate(self%area(self%nx,self%ny))
+allocate(self%f(self%nz,self%nz))
+allocate(self%f_p(self%nz,self%nz))
+allocate(self%f_pinv(self%nz,self%nz))
+allocate(self%f_d(self%nz))
+allocate(self%bet(self%ny))
+allocate(self%heat(self%nx,self%ny))
+allocate(wi(self%nz))
+allocate(vl(self%nz,self%nz))
+allocate(fsave(self%nz,self%nz))
+allocate(vrlu(self%nz,self%nz))
+allocate(vrlusave(self%nz,self%nz))
+allocate(ipiv(self%nz))
+allocate(ipivsave(self%nz))
 
-! Define longitude/latitude
-lat_center = 0.0! asin(f0/(2.0*omega))
-lat_south = lat_center-0.5*domain_meridional/req   ! 28 deg S
-lat_north = lat_center+0.5*domain_meridional/req   ! 28 deg N
-lon_west = 0.0                                          ! 0 deg
-lon_east = lon_west+domain_zonal/(req*cos(lat_center))  ! 107 deg E
+! Get depths
+call config_get_double_vector(conf,'depths',depths)
+if (abs(sum(depths)-domain_depth)>1.0e-6) call abor1_ftn('specified depths should add up to domain_depth')
+
+! Define dx/dy
+self%deltax = domain_zonal/real(self%nx,kind_real)
+self%deltay = domain_meridional/real(self%ny+1,kind_real)
+
+! Print sizes and dx/dy
+write(record,'(a,i3,a,i3,a,i3)') 'qg_geom_create: nx/ny/nz = ',self%nx,' /',self%ny,' /',self%nz
+call fckit_log%info(record)
+write(record,'(a,f7.2,a,f7.2,a)') '                deltax/deltay = ',self%deltax*1.0e-3,' km / ',self%deltay*1.0e-3,' km'
+call fckit_log%info(record)
+
+! Define x/y
 do ix=1,self%nx
-   self%lon(ix) = lon_west+real(ix-1,kind=kind_real)/real(self%nx-1,kind=kind_real)*(lon_east-lon_west)
-end do
+  self%x(ix) = (real(ix,kind_real)-0.5)*self%deltax
+enddo
 do iy=1,self%ny
-   self%lat(iy) = lat_south+real(iy-1,kind=kind_real)/real(self%ny-1,kind=kind_real)*(lat_north-lat_south)
+  self%y(iy) = real(iy,kind_real)*self%deltay
+enddo
+
+! Define lon/lat/area
+do iy=1,self%ny
+  do ix=1,self%nx
+    call xy_to_lonlat(self%x(ix),self%y(iy),self%lon(ix,iy),self%lat(ix,iy),mapfac)
+    self%area(ix,iy) = self%deltax*self%deltay/mapfac
+  end do
 end do
 
-! Convert longitude/latitude to degrees
-self%lon = self%lon*180_kind_real/pi
-self%lat = self%lat*180_kind_real/pi
+! Set heights
+self%z(1) = 0.5*depths(1)
+do iz=2,self%nz
+  self%z(iz) = sum(depths(1:iz-1))+0.5*depths(iz)
+end do
 
-! Define area (approximate)
-full_area = domain_meridional*domain_zonal
-self%area = full_area/real(self%nx*self%ny,kind=kind_real)
+! Coefficients of PV operator
+self%f = 0.0
+do iz=1,self%nz
+  f = f0**2*real(self%nz-1,kind_real)/(g*dlogtheta*depths(iz))
+  if (iz>1) then
+    self%f(iz,iz-1) = f
+    self%f(iz,iz) = self%f(iz,iz)-f
+  end if
+  if (iz<self%nz) then
+    self%f(iz,iz+1) = f
+    self%f(iz,iz) = self%f(iz,iz)-f
+  end if
+enddo
 
-end subroutine c_qg_geo_setup
+! Compute eigendecomposition of ff
+fsave = self%f
+allocate(work(1))
+call dgeev('V','V',self%nz,fsave,self%nz,self%f_d,wi,vl,self%nz,self%f_p,self%nz,work,-1,info)
+if (info/=0) call abor1_ftn('error in dgeev, first pass')
+lwork = int(work(1))
+deallocate(work)
+allocate(work(lwork))
+fsave = self%f
+call dgeev('V','V',self%nz,fsave,self%nz,self%f_d,wi,vl,self%nz,self%f_p,self%nz,work,lwork,info)
+if (info/=0) call abor1_ftn('error in dgeev, second pass')
+deallocate(work)
 
+! Compute inverse of right eigenvectors of ff
+vrlu = self%f_p
+call dgetrf(self%nz,self%nz,vrlu,self%nz,ipiv,info)
+if (info/=0) call abor1_ftn('error in dgetrf')
+allocate(work(1))
+vrlusave = vrlu
+ipivsave = ipiv
+call dgetri(self%nz,vrlusave,self%nz,ipivsave,work,-1,info)
+if (info/=0) call abor1_ftn('error in dgetri, first pass')
+lwork = int(work(1))
+deallocate(work)
+allocate(work(lwork))
+self%f_pinv = vrlu
+ipivsave = ipiv
+call dgetri(self%nz,self%f_pinv,self%nz,ipivsave,work,lwork,info)
+if (info/=0) call abor1_ftn('error in dgetri, second pass')
+deallocate(work)
+
+! Beta coefficient
+do iy=1,self%ny
+  self%bet(iy) = real(iy-(self%ny+1)/2,kind_real)*self%deltay*bet0
+enddo
+
+! Set heating term 
+if (config_element_exists(conf,'heating')) then
+  htype = trim(config_get_string(conf,len(htype),'heating'))
+else
+  ! This default value is for backward compatibility
+  htype = 'gaussian'
+endif
+call fckit_log%info('qg_geom_setup: heating type = '//trim(htype))
+select case (trim(htype))
+case ('none')
+  ! No heating term
+  self%heat = 0.0
+case ('gaussian')
+  ! Gaussian source
+  ix_c = self%nx/4
+  iy_c = 3*self%ny/4
+  do iy=1,self%ny
+    do ix=1,self%nx
+      distx = abs(self%x(ix)-self%x(ix_c))
+      if (distx>0.5*domain_zonal) distx = domain_zonal-distx
+      disty = abs(self%y(iy)-self%y(iy_c))
+      self%heat(ix,iy) = heating_amplitude*exp(-(distx**2+disty**2)/heating_scale**2)
+    enddo
+  enddo
+case default
+  call abor1_ftn('qg_geom_setup: wrong heating type')
+endselect
+
+end subroutine qg_geom_setup
 ! ------------------------------------------------------------------------------
+!> Clone geometry
+subroutine qg_geom_clone(self,other)
 
-subroutine c_qg_geo_clone(c_key_self, c_key_other) bind(c,name='qg_geo_clone_f90')
-implicit none
-integer(c_int), intent(in   ) :: c_key_self
-integer(c_int), intent(inout) :: c_key_other
+! Passed variables
+type(qg_geom),intent(inout) :: self !< Geometry
+type(qg_geom),intent(in) :: other   !< Other geometry
 
-type(qg_geom), pointer :: self, other
+! Copy dimensions
+self%nx = other%nx
+self%ny = other%ny
+self%nz = other%nz
 
-call qg_geom_registry%add(c_key_other)
-call qg_geom_registry%get(c_key_other, other)
-call qg_geom_registry%get(c_key_self , self )
-other%nx = self%nx
-other%ny = self%ny
-allocate(other%lon(other%nx))
-allocate(other%lat(other%ny))
-allocate(other%area(other%nx,other%ny))
-other%lon = self%lon
-other%lat = self%lat
-other%area = self%area
+! Allocation
+allocate(self%x(self%nx))
+allocate(self%y(self%ny))
+allocate(self%z(self%nz))
+allocate(self%lon(self%nx,self%ny))
+allocate(self%lat(self%nx,self%ny))
+allocate(self%area(self%nx,self%ny))
+allocate(self%f(self%nz,self%nz))
+allocate(self%f_p(self%nz,self%nz))
+allocate(self%f_pinv(self%nz,self%nz))
+allocate(self%f_d(self%nz))
+allocate(self%bet(self%ny))
+allocate(self%heat(self%nx,self%ny))
 
-end subroutine c_qg_geo_clone
+! Copy data
+self%deltax = other%deltax
+self%deltay = other%deltay
+self%x = other%x
+self%y = other%y
+self%z = other%z
+self%lon = other%lon
+self%lat = other%lat
+self%area = other%area
+self%f = other%f
+self%f_p = other%f_p
+self%f_pinv = other%f_pinv
+self%f_d = other%f_d
+self%bet = other%bet
+self%heat = other%heat
 
+end subroutine qg_geom_clone
 ! ------------------------------------------------------------------------------
+!> Delete geometry
+subroutine qg_geom_delete(self)
 
-subroutine c_qg_geo_delete(c_key_self) bind(c,name='qg_geo_delete_f90')
+! Passed variables
+type(qg_geom),intent(inout) :: self !< Geometry
 
-implicit none
-integer(c_int), intent(inout) :: c_key_self     
+! Release memory
+deallocate(self%x)
+deallocate(self%y)
+deallocate(self%z)
+deallocate(self%lon)
+deallocate(self%lat)
+deallocate(self%area)
+deallocate(self%f)
+deallocate(self%f_p)
+deallocate(self%f_pinv)
+deallocate(self%f_d)
+deallocate(self%bet)
+deallocate(self%heat)
 
-call qg_geom_registry%remove(c_key_self)
-
-end subroutine c_qg_geo_delete
-
+end subroutine qg_geom_delete
 ! ------------------------------------------------------------------------------
+!> Get geometry info
+subroutine qg_geom_info(self,nx,ny,nz,deltax,deltay)
 
-subroutine c_qg_geo_info(c_key_self, c_nx, c_ny) bind(c,name='qg_geo_info_f90')
-implicit none
-integer(c_int), intent(in   ) :: c_key_self
-integer(c_int), intent(inout) :: c_nx
-integer(c_int), intent(inout) :: c_ny
-type(qg_geom), pointer :: self
+! Passed variables
+type(qg_geom),intent(in) :: self      !< Geometry
+integer,intent(out) :: nx             !< Number of points in the zonal direction
+integer,intent(out) :: ny             !< Number of points in the meridional direction
+integer,intent(out) :: nz             !< Number of vertical levels
+real(kind_real),intent(out) :: deltax !< Zonal cell size
+real(kind_real),intent(out) :: deltay !< Meridional cell size
 
-call qg_geom_registry%get(c_key_self , self )
-c_nx = self%nx
-c_ny = self%ny
+! Copy data
+nx = self%nx
+ny = self%ny
+nz = self%nz
+deltax = self%deltax
+deltay = self%deltay
 
-end subroutine c_qg_geo_info
-
+end subroutine qg_geom_info
 ! ------------------------------------------------------------------------------
-
 end module qg_geom_mod

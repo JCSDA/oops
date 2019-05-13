@@ -226,8 +226,8 @@ void ParametersBUMP<MODEL>::write() const {
       if (date == timeslots_[jsub]) {
         found = true;
         dx[isub].write(conf);
-        Log::test() << "Norm of " << param << " at " << date << ": " << dx[isub].norm()
-                    << std::endl;
+        Log::test() << "Norm of " << param << " at " << date << ": " << std::scientific
+                    << std::setprecision(3) << dx[isub].norm() << std::endl;
       }
     }
     ASSERT(found);

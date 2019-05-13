@@ -1,23 +1,21 @@
 Test     : Initial state: 
 Test     :   Valid time: 2010-01-01T00:00:00Z
-Test     :   Resolution = 40, 20, Fields = 4, 2
-Test     :   Min=-29.7988, Max=12.9629, RMS=12.6152
-Test     :   Min=-42.6962, Max=36.162, RMS=21.0688
-Test     :   Min=-9.80188, Max=16.0459, RMS=5.01516
-Test     :   Min=-9.71003, Max=9.54206, RMS=4.27135
-Test     :   Min=-25.2, Max=0, RMS=12.9878
-Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
+Test     :   Resolution = 40, 20, 2
+Test     :   Variable = streamfunction
+Test     :   Boundary conditions are activated
+Test     :   Scaling=  1e+08, Min=     -2.9799, Max=      1.2964, RMS=      1.2616
+Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
+Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
 Test     : Final state: 
 Test     :   Valid time: 2010-01-01T12:00:00Z
-Test     :   Resolution = 40, 20, Fields = 4, 2
-Test     :   Min=-29.4962, Max=11.0006, RMS=12.4853
-Test     :   Min=-41.0841, Max=38.0607, RMS=20.4377
-Test     :   Min=-9.35663, Max=13.0283, RMS=4.73687
-Test     :   Min=-9.12844, Max=9.71299, RMS=3.7726
-Test     :   Min=-25.2, Max=0, RMS=12.9878
-Test     :   Min=-42.4306, Max=36.45, RMS=28.1071
+Test     :   Resolution = 40, 20, 2
+Test     :   Variable = streamfunction
+Test     :   Boundary conditions are activated
+Test     :   Scaling=  1e+08, Min=     -2.9510, Max=      1.1005, RMS=      1.2490
+Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
+Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
 Test     : H(x): 
-Test     : Stream nobs= 300 Min=-28.281, Max=11.3653, Average=-7.87884
-Test     : Wind nobs= 160 Min=-9.13149, Max=13.5288, Average=1.41975
-Test     : WSpeed nobs= 300 Min=1.28211, Max=13.5728, Average=5.84825
+Test     : Stream nobs= 300 Scaling=  1e+07, Min=    -28.3009, Max=     11.3602, Average=     -7.8884
+Test     : Wind nobs= 160 Scaling=     10, Min=     -9.1361, Max=     13.5298, Average=      1.4189
+Test     : WSpeed nobs= 300 Scaling=     10, Min=      1.2860, Max=     13.5739, Average=      5.8531
 Test     : End H(x)

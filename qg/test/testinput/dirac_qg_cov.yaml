@@ -1,0 +1,32 @@
+Covariance:
+  covariance: QgError
+  horizontal_length_scale: 1.0e6
+  maximum_condition_number: 1.0e6
+  standard_deviation: 8.0e6
+  vertical_length_scale: 2787.0
+dirac:
+  ixdir: 
+  - 20
+  iydir:
+  - 10
+  izdir:
+  - 1
+initial:
+  date: 2010-01-01T12:00:00Z
+  filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H
+logging:
+  categories: Info, Test, Warning, Error
+model:
+  tstep: PT1H
+output_B:
+  datadir: Data
+  exp: dirac_qg_cov
+  type: an
+resolution:
+  nx: 40
+  ny: 20
+  depths:
+  - 4500.0
+  - 5500.0
+variables:
+- x

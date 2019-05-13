@@ -19,55 +19,39 @@
 namespace qg {
 
 // -------------------------------------------------------------------------
-/*! QG Locations Constructor with Configuration
- *
- * \details This constructor can be used to generate user-specified
- * and/or random locations for use with testStateInterpolation()
- *
- * To generate random locations, the relevant parameters specified in
- * **State.Locations** section of the config file are:
- *
- * * **lats** user-specified latitudes (degrees)
- * * **lons** user-specified longitudes (degrees)
- * * **heights** user-specified heights (normalized, from 0-1)
- * * **Nrandom** number of random locations desired
- * * **random_seed** (optional) random seed for reproducibility of results
- *
- * \date April, 2018 Created (M. Miesch, JCSDA)
- *
- * \warning latitudes and longitudes are converted to normalized locations
- * (between 0-1) based on on an assumed latitudinal extent of 180 degrees
- * and an assumed longitudinal extent of 360 degrees
- *
- * \sa qg::c_qg_loc_test() test::testStateInterpolation()
- *
- */
-
 LocationsQG::LocationsQG(const eckit::Configuration & config) {
   const eckit::Configuration * conf = &config;
-
-  qg_loc_create_f90(keyLoc_);
-
+  qg_locs_create_f90(keyLocs_);
   if (config.has("lats") || config.has("Nrandom")) {
-    std::vector<double> lats = config.getDoubleVector("lats");
     std::vector<double> lons = config.getDoubleVector("lons");
-    std::vector<double> zin  = config.getDoubleVector("heights");
+    std::vector<double> lats = config.getDoubleVector("lats");
+    std::vector<double> z  = config.getDoubleVector("z");
 
-    ASSERT(lats.size() == lons.size());
-    const unsigned int nloc = lats.size();
+    ASSERT(lons.size() == lats.size());
+    ASSERT(lons.size() == z.size());
+    const unsigned int nlocs = lons.size();
 
-    // Default to level 1 unless otherwise specified
-    std::vector<double> height(nloc, 0.25);
-
-    if (zin.size() > 0) {
-      for (unsigned int i=0; i < zin.size(); ++i) {
-        if (i >= nloc) break;
-        height[i] = zin[i];
-      }
-    }
-    qg_loc_test_f90(keyLoc_, &conf, nloc, &lats[0], &lons[0], &height[0]);
+    qg_locs_test_f90(keyLocs_, &conf, nlocs, &lons[0], &lats[0], &z[0]);
   }
 }
-
+// -------------------------------------------------------------------------
+int LocationsQG::size() const {
+  int nobs = 0;
+  qg_locs_nobs_f90(keyLocs_, nobs);
+  return nobs;
+}
+// -------------------------------------------------------------------------
+void LocationsQG::print(std::ostream & os) const {
+  int nobs = 0;
+  qg_locs_nobs_f90(keyLocs_, nobs);
+  double lon = 0.0;
+  double lat = 0.0;
+  double z = 0.0;
+  for (size_t jj=0; jj < static_cast<size_t>(nobs); ++jj) {
+    qg_locs_element_f90(keyLocs_, jj, lon, lat, z);
+    os << "location " << jj << std::setprecision(2) << ": lon = " << lon
+       << ", lat = " << lat << ", z = " << z << std::endl;
+  }
+}
 // -------------------------------------------------------------------------
 }  // namespace qg

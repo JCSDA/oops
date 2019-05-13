@@ -6,24 +6,21 @@
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
-!> Fortran module for streamfunction observations for the QG model
 module qg_obsoper_mod
 
-use iso_c_binding
 use config_mod
-use qg_vars_mod
+use iso_c_binding
 use kinds
 
 implicit none
+
 private
-public :: qg_obsoper, qg_oper_setup
+public :: qg_obsoper
 public :: qg_obsoper_registry
-
+public :: qg_oper_setup
 ! ------------------------------------------------------------------------------
-
-!> Fortran derived type for stream function observations for the QG model
 type :: qg_obsoper
-  integer :: ncol
+  integer :: ncol              !< Number of columns
 end type qg_obsoper
 
 #define LISTED_TYPE qg_obsoper
@@ -33,26 +30,25 @@ end type qg_obsoper
 
 !> Global registry
 type(registry_t) :: qg_obsoper_registry
-
 ! ------------------------------------------------------------------------------
 contains
 ! ------------------------------------------------------------------------------
 !> Linked list implementation
 #include "oops/util/linkedList_c.f"
-
 ! ------------------------------------------------------------------------------
+subroutine qg_oper_setup(self,conf,svars,ncol)
 
-subroutine qg_oper_setup(self, c_conf, svars, ncol)
 implicit none
-type(qg_obsoper), intent(inout) :: self
-type(c_ptr), intent(in)    :: c_conf
-character(len=*), intent(in) :: svars(:)
-integer :: ncol
 
+! Passed variables
+type(qg_obsoper),intent(inout) :: self  !< Observations
+type(c_ptr),intent(in) :: conf          !< Configuration
+character(len=*),intent(in) :: svars(:) !< Variables
+integer :: ncol                         !< Number of columns
+
+! Set number of columns
 self%ncol = ncol
 
 end subroutine qg_oper_setup
-
 ! ------------------------------------------------------------------------------
-
 end module qg_obsoper_mod

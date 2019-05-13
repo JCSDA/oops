@@ -131,6 +131,11 @@ template <typename MODEL> void testModelForecast() {
   Test_::model().forecast(xx, Test_::bias(), len, post);
 
   EXPECT(xx.validTime() == vt);
+
+  oops::Log::debug() << "xx.norm(): " << std::fixed << std::setprecision(8) << xx.norm()
+                     << std::endl;
+  oops::Log::debug() << "fnorm: " << std::fixed << std::setprecision(8) << fnorm << std::endl;
+
   EXPECT(oops::is_close(xx.norm(), fnorm, tol));
 
 // Recomputing initial norm to make sure nothing bad happened

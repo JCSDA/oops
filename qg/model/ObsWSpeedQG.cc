@@ -46,7 +46,7 @@ ObsWSpeedQG::~ObsWSpeedQG() {
 
 void ObsWSpeedQG::simulateObs(const GomQG & gom, ObsVecQG & ovec,
                               const ObsBias & bias) const {
-  qg_wspeed_eqv_f90(gom.toFortran(), ovec.toFortran(), bias.wspd());
+  qg_wspeed_equiv_f90(gom.toFortran(), ovec.toFortran(), bias.wspd());
 }
 
 // -----------------------------------------------------------------------------

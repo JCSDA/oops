@@ -1,0 +1,129 @@
+cost_function:
+  cost_type: 4D-Var
+  Jb:
+    Background:
+      state:
+      - date: 2010-01-01T00:00:00Z
+        filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D
+    Covariance:
+      bump:
+        datadir: bump
+        load_nicas: 1
+        method: cor
+        mpicom: 2
+        nonunit_diag: 1
+        prefix: 4dvar_drplanczos_bump
+        strategy: common
+      covariance: BUMP
+      timeslots:
+      - 2010-01-01T00:00:00Z
+  Jc:
+  - jcdfi:
+      alpha: 1.0e-13
+      cutoff: PT3H
+      type: DolphChebyshev
+      variables:
+      - x
+  Jo:
+    ObsTypes:
+    - Covariance:
+        covariance: diagonal
+      ObsOperator:
+        ObsType: Stream  
+      ObsSpace:
+        ObsDataIn:
+          obsfile: Data/truth.obs4d_24h
+        ObsDataOut:
+          obsfile: Data/4dvar_drplanczos_bump.obs4d_24h
+        ObsType: Stream
+    - Covariance:
+        covariance: diagonal
+      ObsOperator:
+        ObsType: Wind  
+      ObsSpace:
+        ObsDataIn:
+          obsfile: Data/truth.obs4d_24h
+        ObsDataOut:
+          obsfile: Data/4dvar_drplanczos_bump.obs4d_24h
+        ObsType: Wind
+    - Covariance:
+        covariance: diagonal
+      ObsOperator:
+        ObsType: WSpeed
+      ObsSpace:
+        ObsDataIn:
+          obsfile: Data/truth.obs4d_24h
+        ObsDataOut:
+          obsfile: Data/4dvar_drplanczos_bump.obs4d_24h
+        ObsType: WSpeed  
+  varchange: Identity
+  variables:
+  - x
+  window_begin: 2010-01-01T00:00:00Z
+  window_length: PT24H
+final:
+  diagnostics:
+    departures: oman
+  prints:
+    frequency: PT1H
+minimizer:
+  algorithm: DRPLanczos
+  preconditioner:
+    maxpairs: 3
+model:
+  name: QG
+  tstep: PT1H
+  variables:
+  - x
+output:
+  datadir: Data
+  exp: 4dvar_drplanczos_bump
+  first: PT0S
+  frequency: PT6H
+  type: an
+resolution:
+  nx: 40
+  ny: 20
+  depths:
+  - 4500.0
+  - 5500.0
+variational:
+  iteration:
+  - diagnostics:
+      departures: ombg
+    gradient_norm_reduction: 1.0e-10
+    linearmodel:
+      trajectory:
+        tstep: PT1H
+      tstep: PT1H
+      varchange: Identity
+      variables:
+      - x  
+      version: QgTLM
+    ninner: 10
+    resolution:
+      nx: 40
+      ny: 20
+      depths:
+      - 4500.0
+      - 5500.0
+    test: on
+  - diagnostics:
+      departures: ombg
+    gradient_norm_reduction: 1.0e-10
+    linearmodel:
+      trajectory:
+        tstep: PT1H
+      tstep: PT1H
+      varchange: Identity
+      variables:
+      - x  
+      version: QgTLM
+    ninner: 10
+    resolution:
+      nx: 40
+      ny: 20
+      depths:
+      - 4500.0
+      - 5500.0
+    test: on

@@ -18,7 +18,6 @@
 #include "eckit/config/Configuration.h"
 #include "model/GeometryQG.h"
 #include "model/QgFortran.h"
-#include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
@@ -50,8 +49,7 @@ class ErrorCovarianceQG : public util::Printable,
 
  private:
   void print(std::ostream &) const;
-  F90bmat keyFtnConfig_;
-  util::DateTime time_;
+  F90error_covariance keyConfig_;
 };
 // -----------------------------------------------------------------------------
 

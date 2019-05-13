@@ -30,9 +30,9 @@ ObsVecQG::ObsVecQG(const ObsSpaceQG & obsdb, const oops::Variables &,
 // -----------------------------------------------------------------------------
 ObsVecQG::ObsVecQG(const ObsVecQG & other, const bool copy)
   : obsdb_(other.obsdb_), keyOvec_(0) {
-  qg_obsvec_clone_f90(other.keyOvec_, keyOvec_);
+  qg_obsvec_clone_f90(keyOvec_, other.keyOvec_);
   if (copy) {
-    qg_obsvec_assign_f90(keyOvec_, other.keyOvec_);
+    qg_obsvec_copy_f90(keyOvec_, other.keyOvec_);
   } else {
     qg_obsvec_zero_f90(keyOvec_);
   }
@@ -44,7 +44,7 @@ ObsVecQG::~ObsVecQG() {
 // -----------------------------------------------------------------------------
 ObsVecQG & ObsVecQG::operator= (const ObsVecQG & rhs) {
   const int keyOvecRhs = rhs.keyOvec_;
-  qg_obsvec_assign_f90(keyOvec_, keyOvecRhs);
+  qg_obsvec_copy_f90(keyOvec_, keyOvecRhs);
   return *this;
 }
 // -----------------------------------------------------------------------------
@@ -115,10 +115,15 @@ void ObsVecQG::save(const std::string & name) const {
 }
 // -----------------------------------------------------------------------------
 void ObsVecQG::print(std::ostream & os) const {
-  double zmin, zmax, zavg;
-  qg_obsvec_minmaxavg_f90(keyOvec_, zmin, zmax, zavg);
+  double scaling, zmin, zmax, zavg;
+  qg_obsvec_stats_f90(keyOvec_, scaling, zmin, zmax, zavg);
+  std::ios_base::fmtflags f(os.flags());
   os << obsdb_.obsname() << " nobs= " << nobs()
-     << " Min=" << zmin << ", Max=" << zmax << ", Average=" << zavg;
+     << " Scaling=" << std::setprecision(4) << std::setw(7) << scaling
+     << ", Min=" << std::fixed << std::setprecision(4) << std::setw(12) << zmin
+     << ", Max=" << std::fixed << std::setprecision(4) << std::setw(12) << zmax
+     << ", Average=" << std::fixed << std::setprecision(4) << std::setw(12) << zavg;
+  os.flags(f);
 }
 // -----------------------------------------------------------------------------
 unsigned int ObsVecQG::nobs() const {

@@ -36,21 +36,24 @@ namespace qg {
 // -----------------------------------------------------------------------------
 StateQG::StateQG(const GeometryQG & resol, const oops::Variables & vars,
                  const util::DateTime & vt)
-  : fields_(new FieldsQG(resol, vars, vt)), stash_()
+  : fields_(new FieldsQG(resol, vars, lbc_, vt)), stash_()
 {
   oops::Log::trace() << "StateQG::StateQG created." << std::endl;
 }
 // -----------------------------------------------------------------------------
 StateQG::StateQG(const GeometryQG & resol, const oops::Variables & vars,
                  const eckit::Configuration & file)
-  : fields_(new FieldsQG(resol, vars, util::DateTime())), stash_()
+  : fields_(new FieldsQG(resol, vars, 1, util::DateTime())), stash_()
 {
   if (file.has("analytic_init")) {
-    fields_->analytic_init(file, resol);
+    fields_->analytic_init(file);
   } else if (file.has("read_from_file")) {
-    // read_from_file included for backwards compatability
-    (file.getInt("read_from_file") == 1) ?
-      fields_->read(file) : fields_->analytic_init(file, resol);
+    const int read_from_file = file.getInt("read_from_file");
+    if (read_from_file == 0) {
+       fields_->analytic_init(file);
+    } else if (read_from_file == 1) {
+      fields_->read(file);
+    }
   } else {
     fields_->read(file);
   }

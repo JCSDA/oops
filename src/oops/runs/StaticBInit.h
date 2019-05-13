@@ -17,12 +17,14 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/State.h"
 #include "oops/runs/Application.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 
   template <typename MODEL> class StaticBInit : public Application {
     typedef ModelSpaceCovarianceBase<MODEL>  Covariance_;
     typedef Geometry<MODEL>                  Geometry_;
+    typedef Increment<MODEL>                 Increment_;
     typedef State<MODEL>                     State_;
 
    public:
@@ -50,6 +52,11 @@ namespace oops {
       const eckit::LocalConfiguration covarconf(fullConfig, "Covariance");
       boost::scoped_ptr< Covariance_ >
        Bmat(CovarianceFactory<MODEL>::create(covarconf, resol, vars, xx, xx));
+
+      //  Randomize B matrix
+      Increment_ dx(resol, vars, xx.validTime());
+      Bmat->randomize(dx);
+      Log::test() << dx << std::endl;
 
       return 0;
     }

@@ -6,26 +6,32 @@
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
-!> Fortran module handling observation locations
-
 module qg_locs_mod
 
+use config_mod
+use fckit_log_module, only: fckit_log
 use iso_c_binding
-use qg_obs_vectors
 use kinds
+use random_mod
+use qg_constants_mod
+use qg_geom_mod
+use qg_obsvec_mod
+use qg_projection_mod
 
 implicit none
 private
-public :: qg_locs, qg_loc_setup
+public :: qg_locs
 public :: qg_locs_registry
-
+public :: qg_locs_test,qg_locs_delete,qg_locs_nobs,qg_locs_element,qg_locs_from_obsvec
 ! ------------------------------------------------------------------------------
+integer,parameter :: rseed = 1 !< Random seed (for reproducibility)
 
-!> Fortran derived type to hold observation locations
 type :: qg_locs
-  integer :: nloc
-  real(kind=kind_real), allocatable :: xyz(:,:)
-  integer, allocatable :: indx(:)
+  integer :: nlocs                      !< Number of locations
+  real(kind_real),allocatable :: lon(:) !< Longitudes
+  real(kind_real),allocatable :: lat(:) !< Latitudes
+  real(kind_real),allocatable :: z(:)   !< Altitudes
+  integer,allocatable :: indx(:)        !< Index
 end type qg_locs
 
 #define LISTED_TYPE qg_locs
@@ -35,223 +41,154 @@ end type qg_locs
 
 !> Global registry
 type(registry_t) :: qg_locs_registry
-
 ! ------------------------------------------------------------------------------
 contains
 ! ------------------------------------------------------------------------------
+! Public
+! ------------------------------------------------------------------------------
 !> Linked list implementation
 #include "oops/util/linkedList_c.f"
-
 ! ------------------------------------------------------------------------------
-
-subroutine c_qg_loc_create(c_key_locs) bind(c,name='qg_loc_create_f90')
-
-implicit none
-integer(c_int), intent(inout) :: c_key_locs
-
-call qg_locs_registry%init()
-call qg_locs_registry%add(c_key_locs)
-
-end subroutine c_qg_loc_create
-
-! ------------------------------------------------------------------------------
-!> Generate locations for interpolation test
-!!
-!! \details **c_qg_loc_test()** generates a list of user-specified and/or
-!! randomly-generated locations.  It was originally intended to be used with the
-!! test::testStateInterpolation() routine but it may also be adapted for other
-!! applications.  The user can specify a list of specific locations to be tested
-!! (optional) by setting the "lats" and "lons" items in the "StateTest" section
-!! of the config file.  Alternatively or in addition to these specific locations,
-!! the user may request that **Nrandom** random locations be generated.  If
-!! neither lats/lons nor Nrandom is specified in the config file, then two
-!! random locations are generated.
-!!
-!! \date April 2, 2018: Created (M. Miesch, JCSDA)
-!!
-!! \warning the **lats** and **lons** arrays in the input file are assumed to be
-!! degrees (for uniformity relative to other models).  These are converted to normalized
-!! x and y coordinates when they are stored in the LocationsQG object as defined here.
-!! The height specified in the input file is assumed to be normalized already, so
-!! it will take on a value between 0 and 1.
-!!
-!! \warning Since the interpolate() member function of State objects does not
-!! interpolate in height (z). the z coordinate as recorded in the LocationsQG object
-!! refers to an integer level of 1 or 2.  If the user does not explicitly specify
-!! the (normalized) height for each latitude and longitude in the config file,
-!! then the level is set to a default value of 1.
-!!
-!! \sa qg::LocationsQG
-!!
-subroutine c_qg_loc_test(c_key_locs,config,klocs,klats,klons,kz) bind(c,name='qg_loc_test_f90')
-use config_mod
-use random_mod  
-use fckit_log_module, only : fckit_log
+!> Generate test locations
+subroutine qg_locs_test(self,conf,klocs,klons,klats,kz)
   
 implicit none
-integer(c_int), intent(in) :: c_key_locs   !< key to F90 Locations object
-type(c_ptr)   , intent(in) :: config       !< Configuration (typically State.StateGenerate)
-integer(c_int), intent(in) :: klocs        !< Number of user-specified locations
-real(c_double), intent(in) :: klats(klocs) !< user-specified latitudes (degrees)
-real(c_double), intent(in) :: klons(klocs) !< user-specified longitudes (degrees)
-real(c_double), intent(in) :: kz(klocs)    !< user-specified heights (normalized between 0-1)
 
-type(qg_locs), pointer ::locs
-real(kind_real), allocatable :: xx(:), yy(:), rnum(:)
-integer :: nrand, nloc, i, jo, nseed
-integer(c_int32_t) :: rseed0
+! Passed variables
+type(qg_locs),intent(inout) :: self        !< Locations
+type(c_ptr),intent(in) :: conf             !< Configuration
+integer,intent(in) :: klocs                !< Number of user-specified locations
+real(kind_real),intent(in) :: klats(klocs) !< User-specified latitudes (degrees)
+real(kind_real),intent(in) :: klons(klocs) !< User-specified longitudes (degrees)
+real(kind_real),intent(in) :: kz(klocs)    !< User-specified altitudes (m)
 
-call fckit_log%warning("qg_locs_mod:qg_loc_test generating test locations")
+! Local variables
+real(kind_real),allocatable :: x(:),y(:)
+integer :: jobs
 
-if (config_element_exists(config,"Nrandom")) then
-   nrand = config_get_int(config,"Nrandom")
-else
-   nrand = 0
-endif
+! Get number of random locations
+self%nlocs = klocs
+if (config_element_exists(conf,'Nrandom')) self%nlocs = self%nlocs+config_get_int(conf,'Nrandom')
 
-if (klocs > 0) then
-   nloc = klocs + nrand
-else
-   nloc = nrand
-endif
+! Check number of locations
+if (self%nlocs<1) call abor1_ftn('qg_locs_test: no location')
 
-! pick 2 random locations if no locations are specified
-if (nloc < 1) then
-   nrand = 2
-   nloc = nrand
-endif
+! Allocation
+allocate(self%indx(self%nlocs))
+allocate(self%lon(self%nlocs))
+allocate(self%lat(self%nlocs))
+allocate(self%z(self%nlocs))
 
-allocate(xx(nloc),yy(nloc))
-
-!!
-!> \warning **qg_loc_test()** latitudes and longitudes are assumed to
-!! be in normalized coordinates between 0 and 1
-!!
-
-if (klocs > 0) then
-   xx(1:klocs) = klons(:)
-   yy(1:klocs) = klats(:)
-endif
-
-if (nrand > 0) then   
-   allocate(rnum(3*nrand))
-   if (config_element_exists(config,"random_seed")) then
-      ! read in the (optional) seed as a real for higher precision
-      ! included for reproducibility
-      rseed0 = config_get_real(config,"random_seed")
-      call uniform_distribution(rnum,0.0_kind_real,1.0_kind_real,rseed0)
-   else
-      call uniform_distribution(rnum,0.0_kind_real,1.0_kind_real)
-   endif
-
-   xx(klocs+1:nloc) = rnum(1:nrand)
-   yy(klocs+1:nloc) = rnum(nrand+1:2*nrand)
-endif
-
-! Now define the F90 locations object locs.  It's assumed that
-! this object already exists in the registry.
-call qg_locs_registry%get(c_key_locs,locs)
-
-locs%nloc=nloc
-
-! I think the index is simply the index of the locations array,
-! ranging from 1 to nloc
-allocate(locs%indx(nloc))
-
-! Now initialize the lat and lon
-allocate(locs%xyz(3,nloc))
-do jo=1,nloc
-   locs%xyz(1,jo)=xx(jo)
-   locs%xyz(2,jo)=yy(jo)
-   locs%indx(:)=jo
+! Index
+do jobs=1,self%nlocs
+   self%indx(jobs)=jobs
 enddo
 
-! The QG interpolation does not interpolate in height (z)
-! So just define z as the midpoint of the level in question, in meters
+! Copy specified locations
+if (klocs>0) then
+   self%lon(1:klocs) = klons
+   self%lat(1:klocs) = klats
+   self%z(1:klocs) = kz
+endif
 
-do jo=1,klocs
-   if (kz(jo) <= 0.5_kind_real) then
-      locs%xyz(3,jo) = 1.0_kind_real
-   else 
-      locs%xyz(3,jo) = 2.0_kind_real
-   endif
-enddo
+if (self%nlocs>klocs) then
+  ! Allocation
+  allocate(x(klocs+1:self%nlocs))
+  allocate(y(klocs+1:self%nlocs))
 
-do jo=klocs+1,nloc
-   i=2*nrand+jo-klocs
-   locs%xyz(3,jo) = int(rnum(i)*2.0_kind_real)+1 
-enddo
+  ! Generate random coordinates
+  call uniform_distribution(x(klocs+1:self%nlocs),0.0_kind_real,domain_zonal,rseed)
+  call uniform_distribution(y(klocs+1:self%nlocs),0.0_kind_real,domain_meridional,rseed)
+  call uniform_distribution(self%z(klocs+1:self%nlocs),0.0_kind_real,domain_depth,rseed)
 
-deallocate(xx,yy,rnum)
-
-end subroutine c_qg_loc_test
-
-! ------------------------------------------------------------------------------
-
-subroutine qg_loc_setup(self, lvec, kobs)
-implicit none
-type(qg_locs), intent(inout) :: self
-type(obs_vect), intent(in) :: lvec
-integer, intent(in) :: kobs(:)
-integer :: jc, jo
-
-self%nloc=lvec%nobs
-allocate(self%indx(self%nloc))
-self%indx(:) = kobs(:)
-allocate(self%xyz(3,self%nloc))
-do jo=1,self%nloc
-  do jc=1,3
-    self%xyz(jc,jo)=lvec%values(jc,jo)
+  ! Convert to lon/lat
+  do jobs=klocs+1,self%nlocs
+    call xy_to_lonlat(x(jobs),y(jobs),self%lon(jobs),self%lat(jobs))
   enddo
+endif
+
+end subroutine qg_locs_test
+! ------------------------------------------------------------------------------
+!> Delete locations
+subroutine qg_locs_delete(self)
+
+implicit none
+
+! Passed variables
+type(qg_locs),intent(inout) :: self !< Locations
+
+! Release memory
+if (allocated(self%lon)) deallocate(self%lon)
+if (allocated(self%lat)) deallocate(self%lat)
+if (allocated(self%z)) deallocate(self%z)
+
+end subroutine qg_locs_delete
+! ------------------------------------------------------------------------------
+!> Get number of observations
+subroutine qg_locs_nobs(self,kobs)
+
+implicit none
+
+! Passed variables
+type(qg_locs),intent(inout) :: self  !< Locations
+integer(c_int),intent(inout) :: kobs !< Number of observations
+
+! Get number of observations
+kobs = self%nlocs
+
+end subroutine qg_locs_nobs
+! ------------------------------------------------------------------------------
+!> Get location element coordinates
+subroutine qg_locs_element(self,iloc,lon,lat,z)
+
+implicit none
+
+! Passed variables
+type(qg_locs),intent(in) :: self     !< Locations
+integer,intent(in) :: iloc           !< Index
+real(kind_real),intent(inout) :: lon !< Longitude
+real(kind_real),intent(inout) :: lat !< Latitude
+real(kind_real),intent(inout) :: z   !< Altitude
+
+! Get location element coordinates
+lon = self%lon(iloc+1)
+lat = self%lat(iloc+1)
+z = self%z(iloc+1)
+
+end subroutine qg_locs_element
+! ------------------------------------------------------------------------------
+!> Setup locations from observation vector
+subroutine qg_locs_from_obsvec(self,ovec,kobs)
+
+implicit none
+
+! Passed variables
+type(qg_locs),intent(inout) :: self !< Locations
+type(qg_obsvec),intent(in) :: ovec  !< Observation vector
+integer,intent(in) :: kobs(:)       !< Observations index
+
+! Local variables
+integer :: jo
+
+! Get number of observations
+self%nlocs = ovec%nobs
+
+! Allocation
+allocate(self%indx(self%nlocs))
+allocate(self%lon(self%nlocs))
+allocate(self%lat(self%nlocs))
+allocate(self%z(self%nlocs))
+
+! Copy index
+self%indx(:) = kobs(:)
+
+! Copy coordinates
+do jo=1,self%nlocs
+  self%lon(jo) = ovec%values(1,jo)
+  self%lat(jo) = ovec%values(2,jo)
+  self%z(jo) = ovec%values(3,jo)
 enddo
 
-end subroutine qg_loc_setup
-
+end subroutine qg_locs_from_obsvec
 ! ------------------------------------------------------------------------------
-
-subroutine c_qg_loc_delete(key) bind(c,name='qg_loc_delete_f90')
-
-implicit none
-integer(c_int), intent(inout) :: key
-type(qg_locs), pointer :: self
-
-call qg_locs_registry%get(key,self)
-if (allocated(self%xyz)) deallocate(self%xyz)
-call qg_locs_registry%remove(key)
-
-end subroutine c_qg_loc_delete
-
-! ------------------------------------------------------------------------------
-
-subroutine c_qg_loc_nobs(key, kobs) bind(c,name='qg_loc_nobs_f90')
-
-implicit none
-integer(c_int), intent(in) :: key
-integer(c_int), intent(inout) :: kobs
-type(qg_locs), pointer :: self
-
-call qg_locs_registry%get(key,self)
-kobs = self%nloc
-
-end subroutine c_qg_loc_nobs
-
-! ------------------------------------------------------------------------------
-subroutine c_qg_loc_element(key,iloc,xyz) bind(c,name='qg_loc_element_f90')
-
-implicit none
-integer(c_int), intent(in)    :: key
-integer(c_int), intent(in)    :: iloc
-real(c_double), intent(inout) :: xyz(3)
-type(qg_locs), pointer :: self
-
-call qg_locs_registry%get(key,self)
-
-xyz(1) = self%xyz(2,iloc+1) ! latitude
-xyz(2) = self%xyz(1,iloc+1) ! longitude
-xyz(3) = self%xyz(3,iloc+1) ! height
-
-end subroutine c_qg_loc_element
-
-! ------------------------------------------------------------------------------
-
 end module qg_locs_mod

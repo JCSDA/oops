@@ -96,6 +96,10 @@ template <typename MODEL> void testSimulateObs() {
       // else compare h(x) norm to the norm from the config
       const double zz = ovec.rms();
       const double xx = conf[jj].getDouble("rmsequiv");
+
+      oops::Log::debug() << "zz: " << std::fixed << std::setprecision(8) << zz << std::endl;
+      oops::Log::debug() << "xx: " << std::fixed << std::setprecision(8) << xx << std::endl;
+
       EXPECT(oops::is_close(xx, zz, tol));
     }
   }

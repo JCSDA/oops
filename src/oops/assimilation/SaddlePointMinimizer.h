@@ -117,7 +117,9 @@ SaddlePointMinimizer<MODEL>::doMinimize(const eckit::Configuration & config) {
 
   CtrlInc_ * dx = new CtrlInc_(spdx.dx());
 
-  Log::test() << "SaddlePointMinimizer: reduction in residual norm = " << reduc << std::endl;
+  std::streamsize ss = Log::test().precision();
+  Log::test() << "SaddlePointMinimizer: reduction in residual norm = "
+              << std::setprecision(4) << reduc << std::setprecision(ss) << std::endl;
   Log::info() << "SaddlePointMinimizer output" << *dx << std::endl;
 
 //  *gradJb_ = dx.lambda().dx();

@@ -22,40 +22,25 @@
 
 namespace qg {
 
+// -----------------------------------------------------------------------------
 /// LocationsQG class to handle locations for QG model.
-
 class LocationsQG : public util::Printable,
                     private util::ObjectCounter<LocationsQG> {
  public:
   static const std::string classname() {return "qg::LocationsQG";}
 
-  explicit LocationsQG(const F90locs key) : keyLoc_(key) {}
-
+// Constructors and basic operators
+  explicit LocationsQG(const F90locs key) : keyLocs_(key) {}
   explicit LocationsQG(const eckit::Configuration &);
+  ~LocationsQG() {qg_locs_delete_f90(keyLocs_);}
 
-  ~LocationsQG() {qg_loc_delete_f90(keyLoc_);}
+// Utilities
+  int size() const;
+  int toFortran() const {return keyLocs_;}
 
-  size_t size() const {
-    int nobs;
-    qg_loc_nobs_f90(keyLoc_, nobs);
-    return nobs;
-  }
-
-  int toFortran() const {return keyLoc_;}
  private:
-  void print(std::ostream & os) const {
-    int nobs;
-    qg_loc_nobs_f90(keyLoc_, nobs);
-
-    std::vector<double> xyz(3);
-
-    for (size_t jj=0; jj < static_cast<size_t>(nobs); ++jj) {
-      qg_loc_element_f90(keyLoc_, jj, &xyz[0]);
-      os << "loc " << jj << std::setprecision(2) << ": x = " << xyz[0]
-         << ", y = " << xyz[1] << ", z = " << xyz[2] << std::endl;
-    }
-  }
-  F90locs keyLoc_;
+  void print(std::ostream &) const;
+  F90locs keyLocs_;
 };
 
 }  // namespace qg

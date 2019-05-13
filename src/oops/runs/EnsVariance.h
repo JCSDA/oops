@@ -89,6 +89,7 @@ namespace oops {
       // Write variance to file
       const eckit::LocalConfiguration varianceout(fullConfig, "VarianceOut");
       sigb2.write(varianceout);
+      Log::test() << "Variance: " << std::endl << sigb2 << std::endl;
 
       return 0;
     }

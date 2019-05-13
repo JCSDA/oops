@@ -35,7 +35,7 @@ ObsWSpeedTLAD::ObsWSpeedTLAD(const ObsSpaceQG & odb, const eckit::Configuration 
   const eckit::Configuration * configc = &config;
   qg_wspeed_setup_f90(keyOperWspeed_, &configc);
   const VariablesQG varqg(varin_);
-  qg_wspeed_gettraj_f90(keyOperWspeed_, odb.nobs(), varqg.toFortran(), traj_.toFortran());
+  qg_wspeed_gettraj_f90(odb.nobs(), varqg.toFortran(), traj_.toFortran());
   oops::Log::trace() << "ObsWSpeedTLAD created" << std::endl;
 }
 

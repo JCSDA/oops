@@ -13,7 +13,7 @@
 
 #include <string>
 
-#include "model/ChangeVar.h"
+#include "model/ChangeVarQG.h"
 #include "model/ErrorCovarianceQG.h"
 #include "model/GeometryQG.h"
 #include "model/GeometryQGIterator.h"

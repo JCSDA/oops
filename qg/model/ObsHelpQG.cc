@@ -47,6 +47,7 @@ void ObsHelpQG::putdb(const std::string & obsname, const std::string & col, cons
 void ObsHelpQG::getdb(const std::string & obsname, const std::string & col, int & keyFvec) const {
   oops::Log::trace() << "ObsHelpQG:getdb obsname = " << obsname << ", col = " << col << std::endl;
   qg_obsdb_get_f90(keyHelp_, obsname.size(), obsname.c_str(), col.size(), col.c_str(), keyFvec);
+  oops::Log::trace() << "ObsHelpQG:getdb done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

@@ -1,0 +1,4 @@
+Test     : Norm of loc_coef at 2010-01-01T12:00:00Z: 2.087e-01
+Test     : Norm of loc_rh at 2010-01-01T12:00:00Z: 2.435e+07
+Test     : Norm of loc_rv at 2010-01-01T12:00:00Z: 1.500e+04
+Test     : Norm of hyb_coef at 2010-01-01T12:00:00Z: 2.947e+00

@@ -129,22 +129,21 @@ double ObsBiasIncrement::norm() const {
   return zz;
 }
 // -----------------------------------------------------------------------------
+size_t ObsBiasIncrement::serialSize() const {
+  size_t nn = bias_.size();
+  return nn;
+}
+// -----------------------------------------------------------------------------
 void ObsBiasIncrement::serialize(std::vector<double> & vect) const {
-  double s_obs_bias = bias_.size();
-  double s_obs_act = active_.size();
-  vect.push_back(s_obs_bias + s_obs_act + 2);
-  vect.push_back(s_obs_bias);
   vect.insert(vect.end(), bias_.begin(), bias_.end());
-  vect.push_back(s_obs_act);
-  vect.insert(vect.end(), active_.begin(), active_.end());
   oops::Log::trace() << "ObsBiasIncrement::serialize done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-void ObsBiasIncrement::deserialize(const std::vector<double> & vect) {
-  unsigned int s_obs_bias = std::lround(vect[0]);
-  for (unsigned int jj = 0; jj < s_obs_bias; ++jj) bias_[jj] = vect[jj + 1];
-  unsigned int s_obs_act = std::lround(vect[s_obs_bias + 1]);
-  for (unsigned int jj = 0; jj < s_obs_act; ++jj) active_[jj] = vect[jj + s_obs_bias + 2];
+void ObsBiasIncrement::deserialize(const std::vector<double> & vect, size_t & index) {
+  for (unsigned int jj = 0; jj < bias_.size(); ++jj) {
+    bias_[jj] = vect[index];
+    ++index;
+  }
   oops::Log::trace() << "ObsBiasIncrement::deserialize done" << std::endl;
 }
 // -----------------------------------------------------------------------------

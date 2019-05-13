@@ -1,0 +1,29 @@
+forecast_length: P4D
+initial:
+  analytic_init: large-vortices
+  date: 2010-01-01T00:00:00Z
+  perturb: 0
+  variables:
+  - x
+model:
+  name: QG
+  tstep: PT10M
+  variables:
+  - x
+output:
+  datadir: Data
+  date: 2010-01-01T00:00:00Z
+  exp: large-vortices
+  frequency: PT12H
+  type: fc
+prints:
+  frequency: PT3H
+resolution:
+  nx: 40
+  ny: 20
+  depths:
+  - 4500.0
+  - 5500.0
+  heating: none
+variables:
+- x

@@ -61,7 +61,7 @@ class GomQG : public util::Printable,
 
  private:
   void print(std::ostream &) const;
-  F90goms keyGom_;
+  F90gom keyGom_;
 };
 
 }  // namespace qg

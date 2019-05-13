@@ -11,6 +11,7 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/Variables.h"
+#include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 
 namespace qg {
@@ -40,19 +41,27 @@ VariablesQG::VariablesQG(const eckit::Configuration & config)
 void VariablesQG::setF90(const std::vector<std::string> vars) {
   size_t nv = vars.size();
   oops::Log::debug() << "setF90 " << nv << " vars = " << vars << std::endl;
-  fvars_.resize(nv + 2);
-  fvars_[0] = nv;
+  fvars_.resize(4);
+  std::fill(fvars_.begin(), fvars_.end(), 0);
   for (size_t jj = 0; jj < nv; ++jj) {
-     int ii = 0;
-     if (vars[jj] == "x") ii = 1;
-     if (vars[jj] == "q") ii = 2;
-     if (vars[jj] == "u") ii = 3;
-     if (vars[jj] == "v") ii = 4;
-     if (vars[jj] == "bc") ii = 5;
-     ASSERT(ii > 0);
-     fvars_[jj+1] = ii;
+    if (vars[jj] == "x") {
+      fvars_[0] = 1;
+    } else {
+      if (vars[jj] == "q") {
+        fvars_[1] = 1;
+      } else {
+        if (vars[jj] == "u") {
+          fvars_[2] = 1;
+        } else {
+          if (vars[jj] == "v") {
+            fvars_[3] = 1;
+          } else {
+            ABORT("Wrong variable name");
+          }
+        }
+      }
+    }
   }
-  fvars_[nv+1] = 999;  // just for checking
   oops::Log::debug() << "setF90 " << nv << " fvars = " << fvars_ << std::endl;
 }
 

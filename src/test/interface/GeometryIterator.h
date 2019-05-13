@@ -82,8 +82,10 @@ template <typename MODEL> void testIterator() {
   }
   rms = sqrt(rms/n);
 
-  oops::Log::debug() << n << " rms from iterator: " << rms << std::endl;
-  oops::Log::debug() << "rms from config: " << rms_conf << std::endl;
+  oops::Log::debug() << n << " rms from iterator: " << std::fixed << std::setprecision(8)
+                     << rms << std::endl;
+  oops::Log::debug() << "rms from config: " << std::fixed << std::setprecision(8)
+                     << rms_conf << std::endl;
 
   EXPECT(oops::is_close(rms, rms_conf, tol));
 }
