@@ -1,5 +1,4 @@
 ---
-test_framework_runtime_config: "--log_level=test_suite"
 test_random:
   N: 5
   seed: 1234321

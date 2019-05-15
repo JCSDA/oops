@@ -93,6 +93,5 @@ StateTest:
   - 6.042838
 TestDate: '2010-01-01T03:00:00Z'
 Variables: null
-test_framework_runtime_config: --log_level=test_suite
 window_begin: '2010-01-01T03:00:00Z'
 window_end: '2010-01-02T03:00:00Z'

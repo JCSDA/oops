@@ -165,6 +165,5 @@ TestDate: 2009-12-31T00:00:00Z
 Variables:
   variables:
   - x
-test_framework_runtime_config: --log_level=test_suite
 window_begin: 2010-01-01T00:00:00Z
 window_end: 2010-01-02T00:00:00Z

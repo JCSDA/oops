@@ -47,19 +47,9 @@ int Test::execute(const eckit::Configuration & config) const {
 // Setup configuration for tests
   test::TestEnvironment::getInstance().setup(config);
 
-// Extract the runtime config for the tests from the config file.
-  std::string args = config.getString("test_framework_runtime_config");
-
 // Create a string version of argv
   std::vector<std::string> argvec;
   argvec.push_back(std::string("abcd"));
-
-  typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
-  boost::char_separator<char> sep(" \n\t");
-  tokenizer tok(args, sep);
-  for (tokenizer::iterator it = tok.begin(); it != tok.end(); ++it) {
-    argvec.push_back(*it);
-  }
 
 // Generate the argc and argv arguments for unit_test_main(...)
   int argc = argvec.size();
