@@ -29,14 +29,13 @@ namespace test {
 class ObsBiasTestFixture : TestFixture {
  public:
   ObsBiasTestFixture() {
-    biasconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "ObsBias"));
+    biasconf_.reset(new eckit::LocalConfiguration(TestConfig::config(),
+                                                  "Observations.Observation"));
     nobias_.reset(new eckit::LocalConfiguration());
-    covconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "Covariance"));
   }
   ~ObsBiasTestFixture() {}
   boost::scoped_ptr<const eckit::LocalConfiguration> biasconf_;
   boost::scoped_ptr<const eckit::LocalConfiguration> nobias_;
-  boost::scoped_ptr<const eckit::LocalConfiguration> covconf_;
 };
 // -----------------------------------------------------------------------------
 CASE("test_obsBias") {
@@ -44,7 +43,7 @@ CASE("test_obsBias") {
 // -----------------------------------------------------------------------------
   SECTION("test_obsBias_constructor_bias") {
     lorenz95::ObsBias ob(*fix.biasconf_);
-    EXPECT(ob.value() == fix.biasconf_->getDouble("bias"));
+    EXPECT(ob.value() == fix.biasconf_->getDouble("ObsBias.bias"));
   }
 // -----------------------------------------------------------------------------
   SECTION("test_obsBias_constructor_no_bias") {
@@ -55,7 +54,7 @@ CASE("test_obsBias") {
   SECTION("test_obsBias_copy_constructor_config_copy") {
     lorenz95::ObsBias ob1(*fix.biasconf_);
     lorenz95::ObsBias ob2(ob1, true);
-    EXPECT(ob2.value() == fix.biasconf_->getDouble("bias"));
+    EXPECT(ob2.value() == fix.biasconf_->getDouble("ObsBias.bias"));
   }
 // -----------------------------------------------------------------------------
   SECTION("test_obsBias_copy_constructor_config_no_copy") {
@@ -90,19 +89,19 @@ CASE("test_obsBias") {
     lorenz95::ObsBias ob(*fix.biasconf_);
 
     // construct an obsBiasCorrection object
-    lorenz95::ObsBiasCorrection obsBiasCorrection(*fix.covconf_);
+    lorenz95::ObsBiasCorrection obsBiasCorrection(*fix.biasconf_);
     obsBiasCorrection.value() = 3.14;
 
     ob += obsBiasCorrection;
 
-    EXPECT(ob.value() == fix.biasconf_->getDouble("bias") + 3.14);
+    EXPECT(ob.value() == fix.biasconf_->getDouble("ObsBias.bias") + 3.14);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_obsBias_compound_assignment_add_inactive") {
     lorenz95::ObsBias ob(*fix.nobias_);
 
     // construct an obsBiasCorrection object
-    lorenz95::ObsBiasCorrection obsBiasCorrection(*fix.covconf_);
+    lorenz95::ObsBiasCorrection obsBiasCorrection(*fix.biasconf_);
     obsBiasCorrection.value() = 3.14;
 
     ob += obsBiasCorrection;
@@ -113,7 +112,7 @@ CASE("test_obsBias") {
 // -----------------------------------------------------------------------------
   SECTION("test_obsBias_value") {
     lorenz95::ObsBias ob(*fix.biasconf_);
-    EXPECT(ob.value() == fix.biasconf_->getDouble("bias"));
+    EXPECT(ob.value() == fix.biasconf_->getDouble("ObsBias.bias"));
   }
 // -----------------------------------------------------------------------------
   SECTION("test_obsBias_read") {
@@ -138,7 +137,7 @@ CASE("test_obsBias") {
     // then read the value that was written to the file
     std::string inputString;
     std::string inputBias;
-    double testBias = fix.biasconf_->getDouble("bias");
+    double testBias = fix.biasconf_->getDouble("ObsBias.bias");
     double bias = 0.0;
     int biasStartPos = 10;  // length of "ObsBias = " is 10
     std::ifstream inputFile(filename.c_str());

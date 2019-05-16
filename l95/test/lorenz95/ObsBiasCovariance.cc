@@ -27,21 +27,20 @@ namespace test {
 class ObsBiasTestFixture : TestFixture {
  public:
   ObsBiasTestFixture() {
-    biasconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "ObsBias"));
+    biasconf_.reset(new eckit::LocalConfiguration(TestConfig::config(),
+                                                  "Observations.Observation"));
     nobias_.reset(new eckit::LocalConfiguration());
-    covconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "Covariance"));
   }
   ~ObsBiasTestFixture() {}
   boost::scoped_ptr<const eckit::LocalConfiguration> biasconf_;
   boost::scoped_ptr<const eckit::LocalConfiguration> nobias_;
-  boost::scoped_ptr<const eckit::LocalConfiguration> covconf_;
 };
 // -----------------------------------------------------------------------------
 CASE("test_obsBiasCovariance") {
   ObsBiasTestFixture fix;
 // -----------------------------------------------------------------------------
   SECTION("test_obsBiasCovariance_constructor_conf") {
-    lorenz95::ObsBiasCovariance obcovar(*fix.covconf_);
+    lorenz95::ObsBiasCovariance obcovar(*fix.biasconf_);
     EXPECT(obcovar.active() == true);
   }
 // -----------------------------------------------------------------------------
@@ -59,15 +58,16 @@ CASE("test_obsBiasCovariance") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_obsBiasCovariance_multiply_active") {
-    lorenz95::ObsBiasCovariance obcovar(*fix.covconf_);
+    lorenz95::ObsBiasCovariance obcovar(*fix.biasconf_);
 
-    lorenz95::ObsBiasCorrection db1(*fix.covconf_);
+    lorenz95::ObsBiasCorrection db1(*fix.biasconf_);
     db1.value() = 2.0;
-    lorenz95::ObsBiasCorrection db2(db1, *fix.covconf_);
+    lorenz95::ObsBiasCorrection db2(db1, *fix.biasconf_);
 
     obcovar.multiply(db1, db2);
 
-    const double stdev = fix.covconf_->getDouble("standard_deviation");
+    const double stdev =
+      fix.biasconf_->getDouble("ObsBiasCovariance.standard_deviation");
     EXPECT(db2.value() == db1.value() * stdev * stdev);
   }
 // -----------------------------------------------------------------------------
@@ -76,7 +76,7 @@ CASE("test_obsBiasCovariance") {
 
     lorenz95::ObsBiasCorrection db1(*fix.nobias_);
     db1.value() = 2.0;
-    lorenz95::ObsBiasCorrection db2(db1, *fix.covconf_);
+    lorenz95::ObsBiasCorrection db2(db1, *fix.biasconf_);
 
     obcovar.multiply(db1, db2);
 
@@ -85,15 +85,16 @@ CASE("test_obsBiasCovariance") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_obsBiasCovariance_invMult_active") {
-    lorenz95::ObsBiasCovariance obcovar(*fix.covconf_);
+    lorenz95::ObsBiasCovariance obcovar(*fix.biasconf_);
 
-    lorenz95::ObsBiasCorrection db1(*fix.covconf_);
+    lorenz95::ObsBiasCorrection db1(*fix.biasconf_);
     db1.value() = 2.0;
-    lorenz95::ObsBiasCorrection db2(db1, *fix.covconf_);
+    lorenz95::ObsBiasCorrection db2(db1, *fix.biasconf_);
 
     obcovar.inverseMultiply(db1, db2);
 
-    const double stdev = fix.covconf_->getDouble("standard_deviation");
+    const double stdev =
+      fix.biasconf_->getDouble("ObsBiasCovariance.standard_deviation");
     EXPECT(db2.value() == db1.value() * 1.0 / (stdev * stdev));
   }
 // -----------------------------------------------------------------------------
@@ -102,7 +103,7 @@ CASE("test_obsBiasCovariance") {
 
     lorenz95::ObsBiasCorrection db1(*fix.nobias_);
     db1.value() = 2.0;
-    lorenz95::ObsBiasCorrection db2(db1, *fix.covconf_);
+    lorenz95::ObsBiasCorrection db2(db1, *fix.biasconf_);
 
     obcovar.inverseMultiply(db1, db2);
 

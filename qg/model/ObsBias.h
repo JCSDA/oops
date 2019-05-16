@@ -15,7 +15,9 @@
 #include <string>
 #include <vector>
 #include <boost/noncopyable.hpp>
+#include <boost/scoped_ptr.hpp>
 
+#include "oops/base/Variables.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
@@ -50,6 +52,9 @@ class ObsBias : public util::Printable,
 
   const double & operator[](const unsigned int ii) const {return bias_[ii];}
 
+  /// Other
+  const oops::Variables & variables() const {return inputs_;}
+
   const double & stream() const {return bias_[0];}
   const double & wind() const {return bias_[1];}
   const double & wspd() const {return bias_[3];}
@@ -58,6 +63,7 @@ class ObsBias : public util::Printable,
   void print(std::ostream &) const;
   std::vector<double> bias_;
   bool active_;
+  const oops::Variables inputs_;
 };
 
 // -----------------------------------------------------------------------------

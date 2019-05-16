@@ -16,6 +16,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/instantiateObsFilterFactory.h"
+#include "oops/base/ObsAuxControls.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
 #include "oops/base/ObsOperators.h"
@@ -23,7 +24,6 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
 #include "oops/interface/Geometry.h"
-#include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/State.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
@@ -34,7 +34,7 @@ namespace oops {
 
 template <typename MODEL> class HofX3D : public Application {
   typedef Geometry<MODEL>            Geometry_;
-  typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
+  typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
   typedef Observations<MODEL>        Observations_;
   typedef ObsOperators<MODEL>        ObsOperators_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
@@ -78,15 +78,13 @@ template <typename MODEL> class HofX3D : public Application {
     post.enrollProcessor(new StateInfo<State_>("fc", prtConf));
 
 //  Setup observations
-    eckit::LocalConfiguration biasConf;
-    fullConfig.get("ObsBias", biasConf);
-    ObsAuxCtrl_ ybias(biasConf);
-
-//  Setup observations
     eckit::LocalConfiguration obsconf(fullConfig, "Observations");
     Log::debug() << "Observations configuration is:" << obsconf << std::endl;
     ObsSpaces_ obsdb(obsconf, winbgn, winend);
     ObsOperators_ hop(obsdb, obsconf);
+
+//  Setup observations bias
+    ObsAuxCtrls_ ybias(obsconf);
 
 //  Setup Observer
     boost::shared_ptr<Observer<MODEL, State_> >

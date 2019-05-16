@@ -64,12 +64,6 @@ ModelTest:
   fclength: PT24H
   finalnorm: 111108106.46165891
   tolerance: 0.005
-ObsBias:
-  stream: -10.0
-  uwind: 10.0
-ObsBiasCovariance:
-  stream: 2.0e7
-  uwind: 15.0
 Observations:
   ObsTypes:
   - Covariance:
@@ -86,7 +80,11 @@ Observations:
       ObsType: Stream
     ObsOperator:
       ObsType: Stream
-    rmsequiv: 126242195.32539751
+    ObsBias:
+      stream: '-10.0'
+    ObsBiasCovariance:
+      stream: '2.0e7'
+    rmsequiv: 126242201.30834891
     tolerance: 1.0e-8
   - Covariance:
       covariance: diagonal
@@ -102,7 +100,11 @@ Observations:
       ObsType: Wind
     ObsOperator:
       ObsType: Wind
-    rmsequiv: 42.68938736
+    ObsBias:
+      uwind: '10.0'
+    ObsBiasCovariance:
+      uwind: '15.0'
+    rmsequiv: 46.50040076384709
     tolerance: 1.0e-8
   - Covariance:
       covariance: diagonal

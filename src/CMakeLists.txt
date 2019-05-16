@@ -87,6 +87,9 @@ oops/base/LinearVariableChangeBase.h
 oops/base/Localization.h
 oops/base/ModelBase.h
 oops/base/ModelSpaceCovarianceBase.h
+oops/base/ObsAuxControls.h
+oops/base/ObsAuxCovariances.h
+oops/base/ObsAuxIncrements.h
 oops/base/ObsEnsemble.h
 oops/base/ObsErrorBase.h
 oops/base/ObsErrors.h

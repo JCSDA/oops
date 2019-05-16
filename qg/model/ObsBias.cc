@@ -17,19 +17,26 @@
 
 #include "eckit/config/Configuration.h"
 #include "model/ObsBiasIncrement.h"
+#include "oops/base/Variables.h"
 #include "oops/util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-ObsBias::ObsBias(const eckit::Configuration & conf) : bias_(ntypes, 0.0), active_(false) {
+ObsBias::ObsBias(const eckit::Configuration & conf)
+  : bias_(ntypes, 0.0), active_(false), inputs_() {
   oops::Log::info() << "ObsBias: conf = " << conf << std::endl;
-  active_ = conf.has("stream") || conf.has("uwind") || conf.has("vwind") || conf.has("wspeed");
+  eckit::LocalConfiguration biasconf;
+  if (conf.has("ObsBias")) {
+    conf.get("ObsBias", biasconf);
+    active_ = biasconf.has("stream") || biasconf.has("uwind") ||
+              biasconf.has("vwind") || biasconf.has("wspeed");
+  }
   if (active_) {
-    if (conf.has("stream")) bias_[0] = conf.getDouble("stream");
-    if (conf.has("uwind"))  bias_[1] = conf.getDouble("uwind");
-    if (conf.has("vwind"))  bias_[2] = conf.getDouble("vwind");
-    if (conf.has("wspeed")) bias_[3] = conf.getDouble("wspeed");
+    if (biasconf.has("stream")) bias_[0] = biasconf.getDouble("stream");
+    if (biasconf.has("uwind"))  bias_[1] = biasconf.getDouble("uwind");
+    if (biasconf.has("vwind"))  bias_[2] = biasconf.getDouble("vwind");
+    if (biasconf.has("wspeed")) bias_[3] = biasconf.getDouble("wspeed");
     std::string strn = "";
     for (unsigned int jj = 0; jj < ObsBias::ntypes; ++jj) {
       if (jj > 0) strn += ", ";
@@ -42,7 +49,7 @@ ObsBias::ObsBias(const eckit::Configuration & conf) : bias_(ntypes, 0.0), active
 }
 // -----------------------------------------------------------------------------
 ObsBias::ObsBias(const ObsBias & other, const bool copy)
-  : bias_(ntypes, 0.0), active_(other.active_)
+  : bias_(ntypes, 0.0), active_(other.active_), inputs_(other.inputs_)
 {
   if (active_ && copy) {
     for (unsigned int jj = 0; jj < ntypes; ++jj) bias_[jj] = other.bias_[jj];
@@ -59,8 +66,14 @@ ObsBias & ObsBias::operator+=(const ObsBiasIncrement & dx) {
 double ObsBias::norm() const {
   double zz = 0.0;
   if (active_) {
-    for (unsigned int jj = 0; jj < ntypes; ++jj) zz += bias_[jj]*bias_[jj];
-    zz = std::sqrt(zz/3.0);
+    double ztmp = 0.0;
+    std::size_t ii = 0;
+    for (unsigned int jj = 0; jj < ntypes; ++jj) {
+      ztmp = bias_[jj]*bias_[jj];
+      zz += ztmp;
+      if (ztmp > 0.0) ++ii;
+    }
+    zz = std::sqrt(zz/ii);
   }
   return zz;
 }

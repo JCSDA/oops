@@ -14,8 +14,8 @@
 #include <string>
 
 #include "eckit/config/Configuration.h"
+#include "eckit/config/LocalConfiguration.h"
 #include "lorenz95/ObsBias.h"
-#include "lorenz95/ObsBiasCovariance.h"
 #include "oops/util/Logger.h"
 
 // -----------------------------------------------------------------------------
@@ -24,7 +24,10 @@ namespace lorenz95 {
 ObsBiasCorrection::ObsBiasCorrection(const eckit::Configuration & conf)
   : bias_(0.0), active_(false)
 {
-  active_ = conf.has("standard_deviation");
+  if (conf.has("ObsBiasCovariance")) {
+    const eckit::LocalConfiguration covconf(conf, "ObsBiasCovariance");
+    active_ = covconf.has("standard_deviation");
+  }
   if (active_) {oops::Log::trace() << "ObsBiasCorrection::ObsBiasCorrection created." << std::endl;}
 }
 // -----------------------------------------------------------------------------

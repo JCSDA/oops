@@ -26,6 +26,7 @@ namespace eckit {
 }
 
 namespace oops {
+  class Variables;
 
 // -----------------------------------------------------------------------------
 
@@ -49,6 +50,9 @@ class ObsAuxControl : public util::Printable,
   void read(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;
   double norm() const;
+
+/// Other
+  const Variables & variables() const;
 
  private:
   ObsAuxControl & operator=(const ObsAuxControl &);
@@ -117,6 +121,16 @@ double ObsAuxControl<MODEL>::norm() const {
   double zz = aux_->norm();
   Log::trace() << "ObsAuxControl<MODEL>::norm done" << std::endl;
   return zz;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+const Variables & ObsAuxControl<MODEL>::variables() const {
+  Log::trace() << "ObsAuxControl<MODEL>::variables starting" << std::endl;
+  util::Timer timer(classname(), "variables");
+  Log::trace() << "ObsAuxControl<MODEL>::variables done" << std::endl;
+  return aux_->variables();
 }
 
 // -----------------------------------------------------------------------------

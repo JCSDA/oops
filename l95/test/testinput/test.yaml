@@ -7,10 +7,6 @@ ModelBias:
   bias: '0.2'
 ModelBiasCovariance:
   standard_deviation: '0.8'
-ObsBias:
-  bias: '0.3'
-ObsBiasCovariance:
-  standard_deviation: '0.5'
 Observations:
   Covariance:
     covariance: diagonal
@@ -26,6 +22,10 @@ Observations:
       ObsDataOut:
         filename: Data/test.2010-01-02T00:00:00Z.obt
     ObsOperator: {}
+    ObsBias:
+      bias: '0.3'
+    ObsBiasCovariance:
+      standard_deviation: '0.5'
   window_begin: '2010-01-01T03:00:00Z'
   window_end: '2010-01-02T03:00:00Z'
 example_tests:

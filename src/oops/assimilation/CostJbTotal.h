@@ -19,9 +19,9 @@
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/ControlVariable.h"
 #include "oops/assimilation/CostJbState.h"
+#include "oops/base/ObsAuxCovariances.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxCovariance.h"
-#include "oops/interface/ObsAuxCovariance.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
@@ -40,7 +40,7 @@ template<typename MODEL> class CostJbTotal {
   typedef JqTermTLAD<MODEL>          JqTermTLAD_;
   typedef Geometry<MODEL>            Geometry_;
   typedef ModelAuxCovariance<MODEL>  ModelAuxCovar_;
-  typedef ObsAuxCovariance<MODEL>    ObsAuxCovar_;
+  typedef ObsAuxCovariances<MODEL>   ObsAuxCovars_;
 
  public:
 /// Construct \f$ J_b\f$.
@@ -86,7 +86,7 @@ template<typename MODEL> class CostJbTotal {
   const Geometry_ & resolution() const {return *resol_;}
   const JbState_ & jbState() const {return *jb_;}
   const ModelAuxCovar_ & jbModBias() const {return jbModBias_;}
-  const ObsAuxCovar_ & jbObsBias() const {return jbObsBias_;}
+  const ObsAuxCovars_ & jbObsBias() const {return jbObsBias_;}
 
  private:
   double evaluate(const CtrlInc_ &) const;
@@ -94,7 +94,7 @@ template<typename MODEL> class CostJbTotal {
   const CtrlVar_ & xb_;
   boost::scoped_ptr<JbState_> jb_;
   ModelAuxCovar_ jbModBias_;
-  ObsAuxCovar_   jbObsBias_;
+  ObsAuxCovars_   jbObsBias_;
 
   const CtrlVar_ mutable * fg_;
 
@@ -111,8 +111,8 @@ template<typename MODEL>
 CostJbTotal<MODEL>::CostJbTotal(const CtrlVar_ & xb, JbState_ * jb,
                                 const eckit::Configuration & conf, const Geometry_ & resol)
   : xb_(xb), jb_(jb),
-    jbModBias_(conf.getSubConfiguration("ModelBiasCovariance"), resol),
-    jbObsBias_(conf.getSubConfiguration("ObsBiasCovariance")),
+    jbModBias_(conf.getSubConfiguration("Jb.ModelBiasCovariance"), resol),
+    jbObsBias_(eckit::LocalConfiguration(conf, "Jo")),
     dxFG_(0), resol_(0)
 {
   Log::trace() << "CostJbTotal contructed." << std::endl;

@@ -20,6 +20,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Departures.h"
 #include "oops/base/instantiateObsFilterFactory.h"
+#include "oops/base/ObsAuxControls.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
@@ -32,7 +33,6 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Model.h"
 #include "oops/interface/ModelAuxControl.h"
-#include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/State.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
@@ -46,7 +46,7 @@ template <typename MODEL> class MakeObs : public Application {
   typedef Geometry<MODEL>            Geometry_;
   typedef Model<MODEL>               Model_;
   typedef ModelAuxControl<MODEL>     ModelAux_;
-  typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
+  typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
   typedef Observations<MODEL>        Observations_;
   typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
@@ -96,15 +96,13 @@ template <typename MODEL> class MakeObs : public Application {
     post.enrollProcessor(new StateInfo<State_>("fc", prtConf));
 
 //  Setup observations
-    eckit::LocalConfiguration biasConf;
-    fullConfig.get("ObsBias", biasConf);
-    ObsAuxCtrl_ ybias(biasConf);
-
-//  Setup observations
     const eckit::LocalConfiguration obsconf(fullConfig, "Observations");
     Log::info() << "Observation configuration is:" << obsconf << std::endl;
     ObsSpaces_ obspace(obsconf, bgn, end);
     ObsOperators_ hop(obspace, obsconf);
+
+//  Setup observations bias
+    ObsAuxCtrls_ ybias(obsconf);
 
 //  Setup filters (GeoVaLsWriter usually)
     std::vector<eckit::LocalConfiguration> typeconfs;

@@ -2,9 +2,6 @@ cost_function:
   cost_type: 4D-Var
   Jb:
     Background:
-      ObsBias:
-        stream: 0.0
-        uwind: 0.0
       state:
       - date: 2010-01-01T00:00:00Z
         filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D
@@ -14,9 +11,6 @@ cost_function:
       maximum_condition_number: 1.0e6
       standard_deviation: 8.0e6
       vertical_length_scale: 2787.0
-    ObsBiasCovariance:
-      stream: 2.0e7
-      uwind: 15.0
   Jc:
   - jcdfi:
       alpha: 1.0e-13
@@ -36,6 +30,10 @@ cost_function:
         ObsDataOut:
           obsfile: Data/4dvar_obs_biased.obs4d_biased
         ObsType: Stream
+      ObsBias:
+        stream: 0.0
+      ObsBiasCovariance:
+        stream: '2.0e7'
     - Covariance:
         covariance: diagonal
       ObsOperator:
@@ -46,6 +44,10 @@ cost_function:
         ObsDataOut:
           obsfile: Data/4dvar_obs_biased.obs4d_biased
         ObsType: Wind
+      ObsBias:
+	      uwind: 0.0
+      ObsBiasCovariance:
+	      uwind: '15.0'
     - Covariance:
         covariance: diagonal
       ObsOperator:

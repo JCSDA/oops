@@ -12,10 +12,11 @@
 #define LORENZ95_OBSBIAS_H_
 
 #include <cmath>
-#include <iostream>
 #include <string>
 #include <boost/noncopyable.hpp>
+#include <boost/scoped_ptr.hpp>
 
+#include "oops/base/Variables.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
@@ -50,10 +51,14 @@ class ObsBias : public util::Printable,
   void write(const eckit::Configuration &) const {}
   double norm() const {return std::abs(bias_);}
 
+/// Other
+  const oops::Variables & variables() const {return inputs_;}
+
  private:
   void print(std::ostream &) const;
   double bias_;
   bool active_;
+  const oops::Variables inputs_;
 };
 
 // -----------------------------------------------------------------------------

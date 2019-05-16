@@ -18,6 +18,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "oops/base/LinearObsOperators.h"
+#include "oops/base/ObsAuxControls.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
@@ -26,7 +27,6 @@
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/InterpolatorTraj.h"
-#include "oops/interface/ObsAuxControl.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -47,7 +47,7 @@ class Observer : public PostBase<STATE>,
   typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef InterpolatorTraj<MODEL>    InterpolatorTraj_;
   typedef LinearObsOperators<MODEL>  LinearObsOperators_;
-  typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
+  typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
   typedef ObsFilters<MODEL>          ObsFilters_;
   typedef Observations<MODEL>        Observations_;
   typedef ObsOperators<MODEL>        ObsOperators_;
@@ -56,7 +56,7 @@ class Observer : public PostBase<STATE>,
   typedef boost::shared_ptr<ObsFilters_> PtrFilters_;
 
  public:
-  Observer(const ObsSpaces_ &, const ObsOperators_ &, const ObsAuxCtrl_ &,
+  Observer(const ObsSpaces_ &, const ObsOperators_ &, const ObsAuxCtrls_ &,
            const std::vector<PtrFilters_> filters = std::vector<PtrFilters_>(0),
            const util::Duration & tslot = util::Duration(0), const bool subwin = false);
   ~Observer() {}
@@ -78,7 +78,7 @@ class Observer : public PostBase<STATE>,
 
 // Data
   std::auto_ptr<Observations_> yobs_;
-  const ObsAuxCtrl_ & ybias_;
+  const ObsAuxCtrls_ & ybias_;
 
   util::DateTime winbgn_;   //!< Begining of assimilation window
   util::DateTime winend_;   //!< End of assimilation window
@@ -97,7 +97,7 @@ class Observer : public PostBase<STATE>,
 template <typename MODEL, typename STATE>
 Observer<MODEL, STATE>::Observer(const ObsSpaces_ & obsdb,
                                  const ObsOperators_ & hop,
-                                 const ObsAuxCtrl_ & ybias,
+                                 const ObsAuxCtrls_ & ybias,
                                  const std::vector<PtrFilters_> filters,
                                  const util::Duration & tslot, const bool swin)
   : PostBase<STATE>(), hop_(hop),
@@ -113,10 +113,11 @@ Observer<MODEL, STATE>::Observer(const ObsSpaces_ & obsdb,
       filters_.push_back(tmp);
     }
   }
-  ASSERT(filters_.size() == hop_.size());
+  ASSERT(filters_.size() == hop_.size() && ybias_.size() == hop_.size());
 
   for (size_t jj = 0; jj < hop_.size(); ++jj) {
     geovars_[jj] += hop_[jj].variables();
+    geovars_[jj] += ybias_[jj].variables();
     geovars_[jj] += filters_.at(jj)->requiredGeoVaLs();
   }
 
@@ -192,7 +193,7 @@ template <typename MODEL, typename STATE>
 void Observer<MODEL, STATE>::finalizeTraj(const STATE & xx, LinearObsOperators_ & htlad) {
   Log::trace() << "Observer::finalizeTraj start" << std::endl;
   for (size_t jj = 0; jj < htlad.size(); ++jj) {
-    htlad[jj].setTrajectory(*gvals_.at(jj), ybias_);
+    htlad[jj].setTrajectory(*gvals_.at(jj), ybias_[jj]);
   }
   this->doFinalize(xx);
   Log::trace() << "Observer::finalizeTraj done" << std::endl;
@@ -205,7 +206,7 @@ void Observer<MODEL, STATE>::doFinalize(const STATE &) {
   Log::trace() << "Observer::doFinalize start" << std::endl;
   for (size_t jj = 0; jj < hop_.size(); ++jj) {
     filters_.at(jj)->priorFilter(*gvals_.at(jj));
-    hop_[jj].simulateObs(*gvals_.at(jj), (*yobs_)[jj], ybias_);
+    hop_[jj].simulateObs(*gvals_.at(jj), (*yobs_)[jj], ybias_[jj]);
     filters_.at(jj)->postFilter((*yobs_)[jj]);
   }
   gvals_.clear();

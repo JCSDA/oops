@@ -13,7 +13,8 @@ Test     :   Boundary conditions are activated
 Test     :   Scaling=  1e+08, Min=     -2.9329, Max=      1.2837, RMS=      1.2328
 Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
 Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
-Test     : ObsBias = -1.45242e+07, 9.9034, 0, 0
+Test     : ObsBias = -1.45242e+07, 0, 0, 0
+Test     : ObsBias = 0, 9.9034, 0, 0
 Test     : CostJb   : Nonlinear Jb = 177.9
 Test     : CostJo   : Nonlinear Jo(Stream) = 1362, nobs = 800, Jo/n = 1.703, err = 4e+06
 Test     : CostJo   : Nonlinear Jo(Wind) = 340.6, nobs = 800, Jo/n = 0.4258, err = 6
@@ -29,7 +30,8 @@ Test     :   Boundary conditions are activated
 Test     :   Scaling=  1e+08, Min=     -2.9567, Max=      1.2805, RMS=      1.2434
 Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
 Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
-Test     : ObsBias = -1.22071e+07, 9.80426, 0, 0
+Test     : ObsBias = -1.22071e+07, 0, 0, 0
+Test     : ObsBias = 0, 9.80426, 0, 0
 Test     : CostJb   : Nonlinear Jb = 157.8
 Test     : CostJo   : Nonlinear Jo(Stream) = 279, nobs = 800, Jo/n = 0.3488, err = 4e+06
 Test     : CostJo   : Nonlinear Jo(Wind) = 80.4, nobs = 800, Jo/n = 0.1005, err = 6

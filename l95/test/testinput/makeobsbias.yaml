@@ -10,8 +10,6 @@ Model:
   f: '8.0'
   name: L95
   tstep: PT1H30M
-ObsBias:
-  bias: '0.6'
 Observations:
   ObsTypes:
   - Generate:
@@ -23,3 +21,5 @@ Observations:
       ObsDataOut:
         filename: Data/l95.biased.2010-01-02T00:00:00Z.obt
     ObsOperator: {}
+    ObsBias:
+      bias: '0.6'

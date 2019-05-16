@@ -51,7 +51,9 @@ template <typename MODEL> class ObsAuxIncrementFixture : private boost::noncopya
   }
 
   ObsAuxIncrementFixture<MODEL>() {
-    conf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "ObsBiasCovariance"));
+    std::vector<eckit::LocalConfiguration> osconf;
+    TestEnvironment::config().get("Observations.ObsTypes", osconf);
+    conf_.reset(new eckit::LocalConfiguration(osconf[0]));
     covar_.reset(new Covariance_(*conf_));
   }
 

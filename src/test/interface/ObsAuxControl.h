@@ -39,7 +39,9 @@ template <typename MODEL> class ObsAuxControlFixture : private boost::noncopyabl
   }
 
   ObsAuxControlFixture() {
-    conf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "ObsBias"));
+    std::vector<eckit::LocalConfiguration> osconf;
+    TestEnvironment::config().get("Observations.ObsTypes", osconf);
+    conf_.reset(new eckit::LocalConfiguration(osconf[0]));
   }
 
   ~ObsAuxControlFixture() {}

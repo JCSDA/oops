@@ -20,19 +20,22 @@
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-ObsBias::ObsBias(const eckit::Configuration & conf) : bias_(0.0), active_(false)
+ObsBias::ObsBias(const eckit::Configuration & conf)
+  : bias_(0.0), active_(false), inputs_()
 {
   oops::Log::trace() << "ObsBias::ObsBias conf is:" << conf << std::endl;
-  if (conf.has("bias")) {
-    bias_ = conf.getDouble("bias");
-    active_ = true;
-    oops::Log::info() << "ObsBias::ObsBias created, bias = " << bias_ << std::endl;
+  if (conf.has("ObsBias")) {
+    const eckit::LocalConfiguration biasconf(conf, "ObsBias");
+    if (biasconf.has("bias")) {
+      bias_ = biasconf.getDouble("bias");
+      active_ = true;
+      oops::Log::info() << "ObsBias::ObsBias created, bias = " << bias_ << std::endl;
+    }
   }
 }
 // -----------------------------------------------------------------------------
 ObsBias::ObsBias(const ObsBias & other, const bool copy)
-  : bias_(0.0), active_(other.active_)
-{
+  : bias_(0.0), active_(other.active_), inputs_(other.inputs_) {
   if (active_ && copy) bias_ = other.bias_;
 }
 // -----------------------------------------------------------------------------

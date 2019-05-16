@@ -15,9 +15,6 @@ Model:
   tstep: PT1H
   variables:
   - x
-ObsBias:
-  stream: -1.0e7
-  uwind: 10.0
 Observations:
   ObsTypes:
   - Generate:
@@ -32,6 +29,8 @@ Observations:
       ObsDataOut:
         obsfile: Data/truth.obs4d_biased
       ObsType: Stream
+    ObsBias:
+      stream: '-1.0e7'
   - Generate:
       begin: PT6H
       nval: 2
@@ -44,6 +43,8 @@ Observations:
       ObsDataOut:
         obsfile: Data/truth.obs4d_biased
       ObsType: Wind
+    ObsBias:
+      uwind: '10.0'
   - Generate:
       begin: PT3H
       nval: 1

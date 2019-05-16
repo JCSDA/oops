@@ -17,10 +17,10 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/assimilation/State4D.h"
+#include "oops/base/ObsAuxControls.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
-#include "oops/interface/ObsAuxControl.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
@@ -44,8 +44,8 @@ template<typename MODEL>
 class ControlVariable : public util::Printable,
                         private util::ObjectCounter<ControlVariable<MODEL> > {
   typedef Geometry<MODEL>            Geometry_;
-  typedef ModelAuxControl<MODEL>      ModelAux_;
-  typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
+  typedef ModelAuxControl<MODEL>     ModelAux_;
+  typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
   typedef State4D<MODEL>             State4D_;
 
  public:
@@ -70,16 +70,16 @@ class ControlVariable : public util::Printable,
   const ModelAux_ & modVar() const {return modbias_;}
 
 /// Get augmented observation control variable
-  ObsAuxCtrl_ & obsVar() {return obsbias_;}
-  const ObsAuxCtrl_ & obsVar() const {return obsbias_;}
+  ObsAuxCtrls_ & obsVar() {return obsbias_;}
+  const ObsAuxCtrls_ & obsVar() const {return obsbias_;}
 
  private:
   ControlVariable & operator= (const ControlVariable &);  // No assignment
   void print(std::ostream &) const;
 
   State4D_ state4d_;
-  ModelAux_ modbias_;  // not only for bias, better name?
-  ObsAuxCtrl_ obsbias_;  // not only for bias, better name?
+  ModelAux_ modbias_;     // not only for bias, better name?
+  ObsAuxCtrls_ obsbias_;  // not only for bias, better name?
 };
 
 // =============================================================================
@@ -87,9 +87,9 @@ class ControlVariable : public util::Printable,
 template<typename MODEL>
 ControlVariable<MODEL>::ControlVariable(const eckit::Configuration & conf,
                                         const Variables & vars, const Geometry_ & resol)
-  : state4d_(conf, vars, resol),
-    modbias_(resol, conf.getSubConfiguration("ModelBias")),
-    obsbias_(conf.getSubConfiguration("ObsBias"))
+  : state4d_(eckit::LocalConfiguration(conf, "Jb.Background"), vars, resol),
+    modbias_(resol, conf.getSubConfiguration("Jb.Background.ModelBias")),
+    obsbias_(eckit::LocalConfiguration(conf, "Jo"))
 {
   Log::trace() << "ControlVariable contructed" << std::endl;
 }

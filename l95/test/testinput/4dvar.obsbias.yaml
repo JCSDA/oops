@@ -1,8 +1,6 @@
 cost_function:
   Jb:
     Background:
-      ObsBias:
-        bias: '0.0'
       state:
       - date: '2010-01-01T03:00:00Z'
         filename: Data/test.fc.2010-01-01T00:00:00Z.PT3H
@@ -11,8 +9,6 @@ cost_function:
       date: '2010-01-01T03:00:00Z'
       length_scale: '1.0'
       standard_deviation: '0.6'
-    ObsBiasCovariance:
-      standard_deviation: '0.8'
   Jc:
   - jcdfi:
       alpha: '100.0'
@@ -27,6 +23,10 @@ cost_function:
         ObsDataOut:
           filename: Data/l95.4dvar.obsbias.2010-01-02T00:00:00Z.obt
       ObsOperator: {}
+      ObsBias:
+        bias: '0.0'
+      ObsBiasCovariance:
+        standard_deviation: '0.8'
   cost_type: 4D-Var
   window_begin: '2010-01-01T03:00:00Z'
   window_length: P1D

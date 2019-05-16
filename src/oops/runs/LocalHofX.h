@@ -11,11 +11,11 @@
 #include <string>
 #include <vector>
 
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/instantiateObsFilterFactory.h"
+#include "oops/base/ObsAuxControls.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
 #include "oops/base/ObsOperators.h"
@@ -26,7 +26,6 @@
 #include "oops/interface/GeometryIterator.h"
 #include "oops/interface/Model.h"
 #include "oops/interface/ModelAuxControl.h"
-#include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/State.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
@@ -40,7 +39,7 @@ template <typename MODEL> class LocalHofX : public Application {
   typedef GeometryIterator<MODEL>    GeometryIterator_;
   typedef Model<MODEL>               Model_;
   typedef ModelAuxControl<MODEL>     ModelAux_;
-  typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
+  typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
   typedef Observations<MODEL>        Observations_;
   typedef ObsOperators<MODEL>        ObsOperators_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
@@ -87,11 +86,6 @@ template <typename MODEL> class LocalHofX : public Application {
     post.enrollProcessor(new StateInfo<State_>("fc", prtConf));
 
 //  Setup observations
-    eckit::LocalConfiguration biasConf;
-    fullConfig.get("ObsBias", biasConf);
-    ObsAuxCtrl_ ybias(biasConf);
-
-//  Setup observations
     eckit::LocalConfiguration obsconf(fullConfig, "Observations");
     Log::debug() << "Observations configuration is:" << obsconf << std::endl;
     ObsSpaces_ obsdb(obsconf, winbgn, winend);
@@ -107,6 +101,7 @@ template <typename MODEL> class LocalHofX : public Application {
     std::vector<eckit::geometry::Point2> centers;
     std::vector<boost::shared_ptr<ObsSpaces_>> localobs;
     std::vector<boost::shared_ptr<ObsOperators_>> localhop;
+    std::vector<boost::shared_ptr<ObsAuxCtrls_>> localobias;
     std::vector<boost::shared_ptr<Observer<MODEL, State_> >> pobs;
     for (std::size_t jj = 0; jj < centerconf.size(); ++jj) {
        double lon = centerconf[jj].getDouble("lon");
@@ -120,9 +115,12 @@ template <typename MODEL> class LocalHofX : public Application {
        //  Setup obs operator
        boost::shared_ptr<ObsOperators_> lhop(new ObsOperators_(*localobs[jj], obsconf));
        localhop.push_back(lhop);
+       //  Setup obs bias<
+       boost::shared_ptr<ObsAuxCtrls_> lobias(new ObsAuxCtrls_(obsconf));
+       localobias.push_back(lobias);
        //  Setup observer
        boost::shared_ptr<Observer<MODEL, State_>>
-          lpobs(new Observer<MODEL, State_>(*localobs[jj], *localhop[jj], ybias));
+          lpobs(new Observer<MODEL, State_>(*localobs[jj], *localhop[jj], *localobias[jj]));
        pobs.push_back(lpobs);
        post.enrollProcessor(pobs[jj]);
     }

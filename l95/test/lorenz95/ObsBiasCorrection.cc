@@ -30,10 +30,9 @@ class ObsBiasTestFixture : TestFixture {
  public:
   ObsBiasTestFixture() {
     off_.reset(new eckit::LocalConfiguration());
-    conf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "ObsBiasCovariance"));
-    eckit::LocalConfiguration bconf(TestConfig::config(), "ObsBias");
-    obias_.reset(new lorenz95::ObsBias(bconf));
-    bias1_ = bconf.getDouble("bias");
+    conf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "Observations.Observation"));
+    obias_.reset(new lorenz95::ObsBias(*conf_));
+    bias1_ = conf_->getDouble("ObsBias.bias");
     bias2_ = 3.5 * bias1_;
     fact_ = 1.234;
   }

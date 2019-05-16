@@ -19,9 +19,9 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/assimilation/Increment4D.h"
+#include "oops/base/ObsAuxIncrements.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxIncrement.h"
-#include "oops/interface/ObsAuxIncrement.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -52,7 +52,7 @@ class ControlIncrement : public util::Printable,
   typedef Geometry<MODEL>          Geometry_;
   typedef Increment4D<MODEL>       Increment4D_;
   typedef ModelAuxIncrement<MODEL> ModelAuxIncr_;
-  typedef ObsAuxIncrement<MODEL>   ObsAuxIncr_;
+  typedef ObsAuxIncrements<MODEL>  ObsAuxIncrs_;
 
  public:
   static const std::string classname() {return "oops::ControlIncrement";}
@@ -89,8 +89,8 @@ class ControlIncrement : public util::Printable,
   const ModelAuxIncr_ & modVar() const {return modbias_;}
 
 /// Get augmented observation control variable
-  ObsAuxIncr_ & obsVar() {return obsbias_;}
-  const ObsAuxIncr_ & obsVar() const {return obsbias_;}
+  ObsAuxIncrs_ & obsVar() {return obsbias_;}
+  const ObsAuxIncrs_ & obsVar() const {return obsbias_;}
 
 /// Serialize and deserialize ControlIncrement
   std::vector<double> serialize() const;
@@ -100,7 +100,7 @@ class ControlIncrement : public util::Printable,
   void print(std::ostream &) const;
   Increment4D_  incrm4d_;
   ModelAuxIncr_ modbias_;   // not only for bias, better name?
-  ObsAuxIncr_   obsbias_;   // not only for bias, better name?
+  ObsAuxIncrs_  obsbias_;   // not only for bias, better name?
 };
 
 // =============================================================================

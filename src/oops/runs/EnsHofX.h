@@ -16,6 +16,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/instantiateObsFilterFactory.h"
+#include "oops/base/ObsAuxControls.h"
 #include "oops/base/ObsEnsemble.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
@@ -26,7 +27,6 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Model.h"
 #include "oops/interface/ModelAuxControl.h"
-#include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/State.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
@@ -39,7 +39,7 @@ template <typename MODEL> class EnsHofX : public Application {
   typedef Geometry<MODEL>            Geometry_;
   typedef Model<MODEL>               Model_;
   typedef ModelAuxControl<MODEL>     ModelAux_;
-  typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
+  typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
   typedef Observations<MODEL>        Observations_;
   typedef ObsEnsemble<MODEL>         ObsEnsemble_;
   typedef ObsOperators<MODEL>        ObsOperator_;
@@ -70,16 +70,14 @@ template <typename MODEL> class EnsHofX : public Application {
     const eckit::LocalConfiguration modelConfig(fullConfig, "Model");
     const Model_ model(resol, modelConfig);
 
-//  Setup observation bias
-    eckit::LocalConfiguration biasConf;
-    fullConfig.get("ObsBias", biasConf);
-    ObsAuxCtrl_ ybias(biasConf);
-
 //  Setup observations
     eckit::LocalConfiguration obsconf(fullConfig, "Observations");
     Log::debug() << "Observations configuration is:" << obsconf << std::endl;
     ObsSpace_ obsdb(obsconf, winbgn, winend);
     ObsOperator_ hop(obsdb, obsconf);
+
+//  Setup observation bias
+    ObsAuxCtrls_ ybias(obsconf);
 
 //  Setup initial states
     const eckit::LocalConfiguration initialConfig(fullConfig, "Initial Condition");

@@ -20,6 +20,8 @@
 #include "eckit/config/Configuration.h"
 #include "oops/base/Departures.h"
 #include "oops/base/LinearObsOperators.h"
+#include "oops/base/ObsAuxControls.h"
+#include "oops/base/ObsAuxIncrements.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
@@ -28,8 +30,6 @@
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/InterpolatorTraj.h"
-#include "oops/interface/ObsAuxControl.h"
-#include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/State.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -46,8 +46,8 @@ class ObserverTLAD : public PostBaseTLAD<MODEL> {
   typedef InterpolatorTraj<MODEL>    InterpolatorTraj_;
   typedef LinearObsOperators<MODEL>  LinearObsOperators_;
   typedef Observations<MODEL>        Observations_;
-  typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
-  typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
+  typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
+  typedef ObsAuxIncrements<MODEL>    ObsAuxIncrs_;
   typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsOperators<MODEL>        ObsOperators_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
@@ -56,15 +56,15 @@ class ObserverTLAD : public PostBaseTLAD<MODEL> {
 
  public:
   ObserverTLAD(const eckit::Configuration &,
-               const ObsSpaces_ &, const ObsOperators_ &, const ObsAuxCtrl_ &,
+               const ObsSpaces_ &, const ObsOperators_ &, const ObsAuxCtrls_ &,
                const std::vector<PtrFilters_>,
                const util::Duration & tslot = util::Duration(0), const bool subwin = false);
   ~ObserverTLAD() {}
 
   Observations_ * release() {return observer_.release();}
   Departures_ * releaseOutputFromTL() override {return ydeptl_.release();}
-  void setupTL(const ObsAuxIncr_ &);
-  void setupAD(boost::shared_ptr<const Departures_>, ObsAuxIncr_ &);
+  void setupTL(const ObsAuxIncrs_ &);
+  void setupAD(boost::shared_ptr<const Departures_>, ObsAuxIncrs_ &);
 
  private:
 // Methods
@@ -90,9 +90,9 @@ class ObserverTLAD : public PostBaseTLAD<MODEL> {
 
 // Data
   std::auto_ptr<Departures_> ydeptl_;
-  const ObsAuxIncr_ * ybiastl_;
+  const ObsAuxIncrs_ * ybiastl_;
   boost::shared_ptr<const Departures_> ydepad_;
-  ObsAuxIncr_ * ybiasad_;
+  ObsAuxIncrs_ * ybiasad_;
 
   util::DateTime winbgn_;   //!< Begining of assimilation window
   util::DateTime winend_;   //!< End of assimilation window
@@ -112,7 +112,7 @@ template <typename MODEL>
 ObserverTLAD<MODEL>::ObserverTLAD(const eckit::Configuration & config,
                                   const ObsSpaces_ & obsdb,
                                   const ObsOperators_ & hop,
-                                  const ObsAuxCtrl_ & ybias,
+                                  const ObsAuxCtrls_ & ybias,
                                   const std::vector<PtrFilters_> filters,
                                   const util::Duration & tslot, const bool subwin)
   : PostBaseTLAD<MODEL>(obsdb.windowStart(), obsdb.windowEnd()),
@@ -167,7 +167,7 @@ void ObserverTLAD<MODEL>::doFinalizeTraj(const State_ & xx) {
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-void ObserverTLAD<MODEL>::setupTL(const ObsAuxIncr_ & ybias) {
+void ObserverTLAD<MODEL>::setupTL(const ObsAuxIncrs_ & ybias) {
   Log::trace() << "ObserverTLAD::setupTL start" << std::endl;
   ydeptl_.reset(new Departures_(obspace_, hop_));
   ybiastl_ = &ybias;
@@ -223,7 +223,7 @@ template <typename MODEL>
 void ObserverTLAD<MODEL>::doFinalizeTL(const Increment_ &) {
   Log::trace() << "ObserverTLAD::doFinalizeTL start" << std::endl;
   for (std::size_t jj = 0; jj < hoptlad_.size(); ++jj) {
-    hoptlad_[jj].simulateObsTL(*gvals_.at(jj), (*ydeptl_)[jj], *ybiastl_);
+    hoptlad_[jj].simulateObsTL(*gvals_.at(jj), (*ydeptl_)[jj], (*ybiastl_)[jj]);
   }
   gvals_.clear();
   Log::trace() << "ObserverTLAD::doFinalizeTL done" << std::endl;
@@ -231,7 +231,7 @@ void ObserverTLAD<MODEL>::doFinalizeTL(const Increment_ &) {
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 void ObserverTLAD<MODEL>::setupAD(boost::shared_ptr<const Departures_> ydep,
-                                  ObsAuxIncr_ & ybias) {
+                                  ObsAuxIncrs_ & ybias) {
   Log::trace() << "ObserverTLAD::setupAD start" << std::endl;
   ydepad_ = ydep;
   ybiasad_ = &ybias;
@@ -259,7 +259,7 @@ void ObserverTLAD<MODEL>::doFirstAD(Increment_ & dx, const util::DateTime & bgn,
   for (std::size_t jj = 0; jj < hoptlad_.size(); ++jj) {
     boost::shared_ptr<GeoVaLs_>
       gom(new GeoVaLs_(hop_[jj].locations(bgn_, end_), hoptlad_.variables(jj)));
-    hoptlad_[jj].simulateObsAD(*gom, (*ydepad_)[jj], *ybiasad_);
+    hoptlad_[jj].simulateObsAD(*gom, (*ydepad_)[jj], (*ybiasad_)[jj]);
     gvals_.push_back(gom);
   }
   Log::trace() << "ObserverTLAD::doFirstAD done" << std::endl;

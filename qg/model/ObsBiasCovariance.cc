@@ -29,13 +29,14 @@ namespace qg {
 ObsBiasCovariance::ObsBiasCovariance(const eckit::Configuration & conf)
   : conf_(conf), variance_(ObsBias::ntypes, 0.0)
 {
-//  if (!conf.empty()) {
-    std::vector<double> zz(4, 0.0);
-    if (conf.has("stream")) zz[0] = conf.getDouble("stream");
-    if (conf.has("uwind"))  zz[1] = conf.getDouble("uwind");
-    if (conf.has("vwind"))  zz[2] = conf.getDouble("vwind");
-    if (conf.has("wspeed")) zz[3] = conf.getDouble("wspeed");
-
+  std::vector<double> zz(4, 0.0);
+  if (conf.has("ObsBiasCovariance")) {
+    const eckit::LocalConfiguration covconf(conf, "ObsBiasCovariance");
+    if (covconf.has("stream")) zz[0] = covconf.getDouble("stream");
+    if (covconf.has("uwind"))  zz[1] = covconf.getDouble("uwind");
+    if (covconf.has("vwind"))  zz[2] = covconf.getDouble("vwind");
+    if (covconf.has("wspeed")) zz[3] = covconf.getDouble("wspeed");
+  }
     std::string strn = "";
     for (unsigned int jj = 0; jj < ObsBias::ntypes; ++jj) {
       if (jj > 0) strn += ", ";

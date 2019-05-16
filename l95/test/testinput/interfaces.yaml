@@ -49,10 +49,6 @@ ModelTest:
   fclength: PT48H
   finalnorm: 7.938
   tolerance: 0.00005
-ObsBias:
-  bias: 0.3
-ObsBiasCovariance:
-  standard_deviation: 0.5
 Observations:
   ObsTypes:
   - Covariance:
@@ -66,7 +62,11 @@ Observations:
       ObsDataOut:
         filename: Data/test.2010-01-02T00:00:00Z.obt
     ObsOperator: {}
-    rmsequiv: 8.02102185636578
+    ObsBias:
+      bias: 0.3
+    ObsBiasCovariance:
+      standard_deviation: 0.5
+    rmsequiv: 8.3207407741318846
     tolerance: 1.0e-10
 State:
   date: '2010-01-01T03:00:00Z'

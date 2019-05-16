@@ -25,12 +25,15 @@ namespace lorenz95 {
 ObsBiasCovariance::ObsBiasCovariance(const eckit::Configuration & conf)
   : conf_(conf), variance_(0.0), active_(false)
 {
-  if (conf_.has("standard_deviation")) {
-    active_ = true;
-    const double zz = conf_.getDouble("standard_deviation");
-    variance_ = zz * zz;
-    ASSERT(variance_ > 0.0);
-    oops::Log::info() << "ObsBiasCovariance variance = " << variance_ << std::endl;
+  if (conf_.has("ObsBiasCovariance")) {
+    const eckit::LocalConfiguration covconf(conf_, "ObsBiasCovariance");
+    if (covconf.has("standard_deviation")) {
+      active_ = true;
+      const double zz = covconf.getDouble("standard_deviation");
+      variance_ = zz * zz;
+      ASSERT(variance_ > 0.0);
+      oops::Log::info() << "ObsBiasCovariance variance = " << variance_ << std::endl;
+    }
   }
 }
 // -----------------------------------------------------------------------------

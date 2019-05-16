@@ -26,10 +26,13 @@ namespace qg {
 ObsBiasIncrement::ObsBiasIncrement(const eckit::Configuration & conf)
   : bias_(ObsBias::ntypes, 0.0), active_(ObsBias::ntypes, false)
 {
-  active_[0] = conf.has("stream");
-  active_[1] = conf.has("uwind");
-  active_[2] = conf.has("vwind");
-  active_[3] = conf.has("wspeed");
+  if (conf.has("ObsBiasCovariance")) {
+    const eckit::LocalConfiguration covconf(conf, "ObsBiasCovariance");
+    active_[0] = covconf.has("stream");
+    active_[1] = covconf.has("uwind");
+    active_[2] = covconf.has("vwind");
+    active_[3] = covconf.has("wspeed");
+  }
   bool on = false;
   std::string strn = "";
   for (unsigned int jj = 0; jj < ObsBias::ntypes; ++jj) {
