@@ -15,10 +15,9 @@ addons:
     sources:
       - ubuntu-toolchain-r-test
     packages:
-      - gcc-8
-      - gfortran-8
-      - g++-8
-      - lcov
+      - gcc-7
+      - gfortran-7
+      - g++-7
 
 #======================================================================
 # Build Matrix
@@ -42,19 +41,35 @@ services:
 #======================================================================
 before_install:
   - REPO_SOURCE_DIR=${TRAVIS_BUILD_DIR}
-  - ls ${REPO_SOURCE_DIR}
-  - docker build -t jcsda/docker --build-arg=Dockerfile .  #Dockerfile handles ssh for mpi
+  - ls -ls ${REPO_SOURCE_DIR}
+
+  - find . -name \* -exec chmod 777 {} \; -print
+
+  - docker build -t jcsda/dockerl2 --build-arg=Dockerfile .  #Dockerfile handles ssh for mpi
   - docker images
-  - docker run -d -t --name jcsda_container -v ${REPO_SOURCE_DIR}:/jcsda/src_repo jcsda/docker
+  - docker run -d -t --name jcsda_container -v ${REPO_SOURCE_DIR}:/jcsda/src_repo jcsda/dockerl2
   - docker ps -a
 
 #======================================================================
 # Here are the run steps
 #======================================================================
 script:
-  - docker exec jcsda_container ls
-  - docker exec jcsda_container ls /jcsda/src_repo
   - docker exec jcsda_container bash -c 'cp -r /jcsda/.openmpi/ ~/' 
-  - docker exec jcsda_container bash -c 'cd /build_repo && ecbuild /jcsda/src_repo' 
-  - docker exec jcsda_container bash -c 'cd /build_repo && make -j4'
-  - docker exec jcsda_container bash -c 'cd /build_repo && ctest'
+##  use cmake with flags to generate test coverage reports
+  - docker exec jcsda_container bash -c 'cd /build_container && cmake -DCMAKE_MODULE_PATH=/usr/local/share/ecbuild/cmake/ -DCMAKE_BUILD_TYPE=Debug -DENABLE_GPROF=ON  /jcsda/src_repo' 
+  - docker exec jcsda_container bash -c 'cd /build_container && make -j4'
+  - docker exec jcsda_container bash -c 'cd /build_container && ctest'
+##  run lcov inside container
+  - docker exec jcsda_container bash -c 'cd /build_container && lcov --capture --directory . --output-file coverage.info'
+  - docker exec jcsda_container bash -c 'cd /build_container && lcov --remove coverage.info "/usr/*" --output-file coverage.info'  #  filter system-files 
+  - docker exec jcsda_container bash -c 'cd /build_container && lcov --list coverage.info'  #  debug info
+##  copy coverage report to shared volume btw container and Travis
+  - docker exec jcsda_container cp /build_container/coverage.info  /jcsda/src_repo/
+
+#======================================================================
+# CodeCov report
+#======================================================================
+after_success:
+  - bash <(curl -s https://codecov.io/bash) -t 3b511d7d-c15d-4ee5-8a1e-29c6d97d2032  -X gcov -f coverage.info  #  Token is not needed for publuc repo
+
+
