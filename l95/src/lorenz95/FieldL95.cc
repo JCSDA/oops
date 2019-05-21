@@ -196,13 +196,19 @@ double FieldL95::rms() const {
   return zz;
 }
 // -----------------------------------------------------------------------------
+size_t FieldL95::serialSize() const {
+  return resol_;
+}
+// -----------------------------------------------------------------------------
 void FieldL95::serialize(std::vector<double> & vect) const {
-  vect.push_back(x_.size() + 2);
   vect.insert(vect.end(), x_.begin(), x_.end());
 }
 // -----------------------------------------------------------------------------
-void FieldL95::deserialize(const std::vector<double> & vect) {
-  for (int ii = 0; ii < resol_; ++ii) x_[ii] = vect[ii];
+void FieldL95::deserialize(const std::vector<double> & vect, size_t & index) {
+  for (int ii = 0; ii < resol_; ++ii) {
+    x_[ii] = vect[index];
+    ++index;
+  }
 }
 // -----------------------------------------------------------------------------
 void FieldL95::print(std::ostream & os) const {

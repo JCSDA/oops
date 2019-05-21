@@ -87,12 +87,17 @@ double ObsBiasCorrection::dot_product_with(const ObsBiasCorrection & rhs) const 
   return zz;
 }
 // -----------------------------------------------------------------------------
+size_t ObsBiasCorrection::serialSize() const {
+  return 1;
+}
+// -----------------------------------------------------------------------------
 void ObsBiasCorrection::serialize(std::vector<double> & vect) const {
   vect.push_back(bias_);
 }
 // -----------------------------------------------------------------------------
-void ObsBiasCorrection::deserialize(const std::vector<double> & vect) {
-  if (!vect.empty()) bias_ = vect[0];
+void ObsBiasCorrection::deserialize(const std::vector<double> & vect, size_t & index) {
+  if (!vect.empty()) bias_ = vect.at(index);
+  ++index;
 }
 // -----------------------------------------------------------------------------
 void ObsBiasCorrection::print(std::ostream & os) const {

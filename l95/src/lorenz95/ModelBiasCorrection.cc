@@ -85,12 +85,17 @@ double ModelBiasCorrection::dot_product_with(const ModelBiasCorrection & rhs) co
   return zz;
 }
 // -----------------------------------------------------------------------------
+size_t ModelBiasCorrection::serialSize() const {
+  return 1;
+}
+// -----------------------------------------------------------------------------
 void ModelBiasCorrection::serialize(std::vector<double> & vect) const {
   vect.push_back(bias_);
 }
 // -----------------------------------------------------------------------------
-void ModelBiasCorrection::deserialize(const std::vector<double> & vect) {
-  if (!vect.empty()) bias_ = vect[0];
+void ModelBiasCorrection::deserialize(const std::vector<double> & vect, size_t & index) {
+  bias_ = vect.at(index);
+  ++index;
 }
 // -----------------------------------------------------------------------------
 void ModelBiasCorrection::print(std::ostream & os) const {

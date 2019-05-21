@@ -98,9 +98,10 @@ template<typename MODEL> class Increment4D : public util::Printable {
   void shift_forward();
   void shift_backward();
 
-/// Serialize-Deserialize an Increment4D
+/// Serialize and deserialize
+  size_t serialSize() const;
   void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &);
+  void deserialize(const std::vector<double> &, size_t &);
 
  private:
   Increment_ & get(const int);
@@ -351,29 +352,33 @@ void Increment4D<MODEL>::shift_backward() {
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-void Increment4D<MODEL>::serialize(std::vector<double> & vect) const {
+size_t Increment4D<MODEL>::serialSize() const {
+  size_t ss = 1;
   for (icst_ jsub = incr4d_.begin(); jsub != incr4d_.end(); ++jsub) {
-    jsub->second->serialize(vect);
+    ss += jsub->second->serialSize();
+    ++ss;
   }
-  Log::info() << "Increment4D::serialize done" << std::endl;
+  return ss;
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-void Increment4D<MODEL>::deserialize(const std::vector<double> & vect) {
-  int size_vec = 0;
-  int sum = 0;
-  int ii = 0;
-  int bgn = 0;
-
-  for (iter_ jsub = incr4d_.begin(); jsub != incr4d_.end(); ++jsub) {
-    sum += size_vec;
-    bgn = sum + 1 + ii;  // bgn = 1  for the first increment
-    size_vec = std::lround(vect[bgn - 1]);
-    std::vector<double> incr_ii(vect.begin() + bgn, vect.begin() + bgn + size_vec);
-    jsub->second->deserialize(incr_ii);
-    ++ii;
+void Increment4D<MODEL>::serialize(std::vector<double> & vect) const {
+  vect.push_back(-98765.4321);
+  for (icst_ jsub = incr4d_.begin(); jsub != incr4d_.end(); ++jsub) {
+    jsub->second->serialize(vect);
+    vect.push_back(-98765.4321);
   }
-  Log::info() << "Increment4D::deserialize done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+void Increment4D<MODEL>::deserialize(const std::vector<double> & vect, size_t & current) {
+  ASSERT(vect.at(current) == -98765.4321);
+  ++current;
+  for (iter_ jsub = incr4d_.begin(); jsub != incr4d_.end(); ++jsub) {
+    jsub->second->deserialize(vect, current);
+    ASSERT(vect.at(current) == -98765.4321);
+    ++current;
+  }
 }
 
 // -----------------------------------------------------------------------------

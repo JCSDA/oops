@@ -111,8 +111,9 @@ class IncrementQG : public oops::GeneralizedDepartures,
   void accumul(const double &, const StateQG &);
 
 /// Serialization
+  size_t serialSize() const;
   void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &);
+  void deserialize(const std::vector<double> &, size_t &);
 
 /// Data
  private:

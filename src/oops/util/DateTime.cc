@@ -305,15 +305,20 @@ std::size_t DateTime::timestamp() const {
 }
 
 // -----------------------------------------------------------------------------
+size_t DateTime::serialSize() const {
+  return 2;
+}
+// -----------------------------------------------------------------------------
 void DateTime::serialize(std::vector<double> & vect) const {
   vect.push_back(static_cast<double>(date_));
   vect.push_back(static_cast<double>(time_));
 }
 
 // -----------------------------------------------------------------------------
-void DateTime::deserialize(const std::vector<double> & vect) {
-  date_ = std::lround(vect[0]);
-  time_ = std::lround(vect[1]);
+void DateTime::deserialize(const std::vector<double> & vect, size_t & current) {
+  date_ = std::lround(vect.at(current));
+  time_ = std::lround(vect.at(current+1));
+  current += 2;
 }
 
 // -----------------------------------------------------------------------------

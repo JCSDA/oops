@@ -78,9 +78,10 @@ class FieldL95 : public util::Printable {
   void field_to_ug(oops::UnstructuredGrid &, const int &) const;
   void field_from_ug(const oops::UnstructuredGrid &, const int &);
 
-// Serialize - deserialize
+/// Serialize and deserialize
+  size_t serialSize() const;
   void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &);
+  void deserialize(const std::vector<double> &, size_t &);
 
  private:
   void print(std::ostream &) const;

@@ -156,7 +156,10 @@ double DRPLanczosMinimizer<MODEL>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_
     // v_{i+1} = ( pr_{i} + H^T R^{-1} H z_{i} ) - beta * v_{i-1}
     HtRinvH.multiply(zz, vv);
     vv += pr;
-    if (jiter > 0) vv.axpy(-beta, vvecs_[jiter-1]);
+
+    if (jiter > 0) {
+      vv.axpy(-beta, vvecs_[jiter-1]);
+    }
 
     // alpha_{i} = v_{i+1}^T z_{i}
     double alpha = dot_product(zz, vv);
@@ -208,6 +211,7 @@ double DRPLanczosMinimizer<MODEL>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_
     // J[du_{i}] = J[0] - 0.5 s_{i}^T Z_{i}^T r_{0}
     // Jb[du_{i}] = 0.5 s_{i}^T V_{i}^T Z_{i} s_{i}
     double costJ = costJ0;
+
     double costJb = costJ0Jb;
     for (int jj = 0; jj < jiter+1; ++jj) {
       costJ -= 0.5 * ss[jj] * dot_product(zvecs_[jj], rr);
@@ -234,6 +238,9 @@ double DRPLanczosMinimizer<MODEL>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_
       break;
     }
   }
+
+  dx.zero();
+  dxh.zero();
 
   // Calculate the solution (dxh = Binv dx)
   for (unsigned int jj = 0; jj < ss.size(); ++jj) {

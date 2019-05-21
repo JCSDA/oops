@@ -235,12 +235,32 @@ oops::GridPoint FieldsQG::getPoint(const GeometryQGIterator & iter) const {
   return oops::GridPoint(vars_.toOopsVariables(), values, varlens);
 }
 // -----------------------------------------------------------------------------
-void FieldsQG::serialize(std::vector<double> & vect)  const {
-  // Will be refactored for the BlockLanczos method
+size_t FieldsQG::serialSize() const {
+  size_t nn = 0;
+  int nx, ny, nz, nb;
+  qg_fields_sizes_f90(keyFlds_, nx, ny, nz, nb);
+  nn += nx * ny * nz + nb * nx * nz;
+  nn += time_.serialSize();
+  return nn;
 }
 // -----------------------------------------------------------------------------
-void FieldsQG::deserialize(const std::vector<double> & vect) {
-  // Will be refactored for the BlockLanczos method
+void FieldsQG::serialize(std::vector<double> & vect)  const {
+  int size_fld = this->serialSize() - 2;
+
+  // Allocate space for fld, xb and qb
+  std::vector<double> v_fld(size_fld, 0);
+
+  // Serialize the field
+  qg_fields_serialize_f90(keyFlds_, size_fld, v_fld.data());
+  vect.insert(vect.end(), v_fld.begin(), v_fld.end());
+
+  // Serialize the date and time
+  time_.serialize(vect);
+}
+// -----------------------------------------------------------------------------
+void FieldsQG::deserialize(const std::vector<double> & vect, size_t & index) {
+  qg_fields_deserialize_f90(keyFlds_, vect.size(), vect.data(), index);
+  time_.deserialize(vect, index);
 }
 // -----------------------------------------------------------------------------
 }  // namespace qg

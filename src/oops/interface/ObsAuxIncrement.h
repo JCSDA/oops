@@ -65,9 +65,10 @@ class ObsAuxIncrement : public util::Printable,
   void write(const eckit::Configuration &) const;
   double norm() const;
 
-/// Serialize-Deserialize an ObsAuxIncrement
+/// Serialize and deserialize
+  size_t serialSize() const;
   void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &);
+  void deserialize(const std::vector<double> &, size_t &);
 
  private:
   void print(std::ostream &) const;
@@ -219,6 +220,13 @@ double ObsAuxIncrement<MODEL>::norm() const {
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
+size_t ObsAuxIncrement<MODEL>::serialSize() const {
+  Log::trace() << "ObsAuxIncrement<MODEL>::serialSize" << std::endl;
+  util::Timer timer(classname(), "serialSize");
+  return aux_->serialSize();
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
 void ObsAuxIncrement<MODEL>::serialize(std::vector<double> & vect) const {
   Log::trace() << "ObsAuxIncrement<MODEL>::serialize starting" << std::endl;
   util::Timer timer(classname(), "serialize");
@@ -226,11 +234,11 @@ void ObsAuxIncrement<MODEL>::serialize(std::vector<double> & vect) const {
   Log::trace() << "ObsAuxIncrement<MODEL>::serialize done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>  // constructor to deserialize
-void ObsAuxIncrement<MODEL>::deserialize(const std::vector<double> & vect) {
+template<typename MODEL>
+void ObsAuxIncrement<MODEL>::deserialize(const std::vector<double> & vect, size_t & current) {
   Log::trace() << "ObsAuxIncrement<MODEL>::deserialize starting" << std::endl;
   util::Timer timer(classname(), "deserialize");
-  aux_->deserialize(vect);
+  aux_->deserialize(vect, current);
   Log::trace() << "ObsAuxIncrement<MODEL>::deserialize done" << std::endl;
 }
 // -----------------------------------------------------------------------------

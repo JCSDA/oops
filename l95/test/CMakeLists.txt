@@ -537,4 +537,3 @@ ecbuild_add_test( TARGET test_l95_4dvar_eda
                   COMMAND ${CMAKE_BINARY_DIR}/bin/l95_eda.x
                   ARGS testinput/4dvar.eda.pertobs.yaml
                   DEPENDS l95_eda.x )
-

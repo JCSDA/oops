@@ -67,9 +67,10 @@ class ModelAuxIncrement : public util::Printable,
   void write(const eckit::Configuration &) const;
   double norm() const;
 
-/// Serialize-Deserialize a ModelAuxIncrement
+/// Serialize and deserialize
+  size_t serialSize() const;
   void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &);
+  void deserialize(const std::vector<double> &, size_t &);
 
  private:
   void print(std::ostream &) const;
@@ -223,6 +224,13 @@ double ModelAuxIncrement<MODEL>::norm() const {
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
+size_t ModelAuxIncrement<MODEL>::serialSize() const {
+  Log::trace() << "ModelAuxIncrement<MODEL>::serialSize" << std::endl;
+  util::Timer timer(classname(), "serialSize");
+  return aux_->serialSize();
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
 void ModelAuxIncrement<MODEL>::serialize(std::vector<double> & vect) const {
   Log::trace() << "ModelAuxIncrement<MODEL>::serialize starting" << std::endl;
   util::Timer timer(classname(), "serialize");
@@ -231,10 +239,10 @@ void ModelAuxIncrement<MODEL>::serialize(std::vector<double> & vect) const {
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-void ModelAuxIncrement<MODEL>::deserialize(const std::vector<double> & vect) {
+void ModelAuxIncrement<MODEL>::deserialize(const std::vector<double> & vect, size_t & current) {
   Log::trace() << "ModelAuxIncrement<MODEL>::deserialize starting" << std::endl;
   util::Timer timer(classname(), "deserialize");
-  aux_->deserialize(vect);
+  aux_->deserialize(vect, current);
   Log::trace() << "ModelAuxIncrement<MODEL>::deserialize done" << std::endl;
 }
 // -----------------------------------------------------------------------------

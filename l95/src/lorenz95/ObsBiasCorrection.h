@@ -54,8 +54,9 @@ class ObsBiasCorrection : public util::Printable {
   const double & value() const {return bias_;}
 
 /// Serialize and deserialize
+  size_t serialSize() const;
   void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &);
+  void deserialize(const std::vector<double> &, size_t &);
 
  private:
   void print(std::ostream &) const;

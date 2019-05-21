@@ -283,8 +283,8 @@ template <typename MODEL> void testIncrementSerialize() {
   std::vector<double> vect;
   dx1.serialize(vect);
 
-  std::vector<double> incr(vect.begin() + 1, vect.end());  // exclude the first element (fld size)
-  dx2.deserialize(incr);
+  size_t index = 0;
+  dx2.deserialize(vect, index);
 
   EXPECT(dx1.norm() > 0.0);
   EXPECT(dx2.norm() > 0.0);
@@ -322,8 +322,8 @@ class Increment : public oops::Test {
       { testIncrementAxpy<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementInterpAD")
       { testIncrementInterpAD<MODEL>(); });
-//    ts.emplace_back(CASE("interface/Increment/testIncrementSerialize")
-//      { testIncrementSerialize<MODEL>(); });
+    // ts.emplace_back(CASE("interface/Increment/testIncrementSerialize")
+    //   { testIncrementSerialize<MODEL>(); });
   }
 };
 
@@ -332,4 +332,3 @@ class Increment : public oops::Test {
 }  // namespace test
 
 #endif  // TEST_INTERFACE_INCREMENT_H_
-

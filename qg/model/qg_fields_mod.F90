@@ -1,8 +1,8 @@
 ! (C) Copyright 2009-2016 ECMWF.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
-! In applying this licence, ECMWF does not waive the privileges and immunities 
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
@@ -93,15 +93,15 @@ self%geom => geom
 if (vars%lx.and.vars%lq) then
   call abor1_ftn('qg_fields_create: x and q cannot be set as fields together')
 elseif (vars%lu.or.vars%lv) then
-  call abor1_ftn('qg_fieldsçcreate: u and v cannot be set as fields') 
+  call abor1_ftn('qg_fieldsçcreate: u and v cannot be set as fields')
 elseif (vars%lx) then
   self%lq = .false.
 elseif (vars%lq) then
-  self%lq = .true. 
+  self%lq = .true.
 else
   write(record,*) 'qg_fields_create: vars%lx / vars%lq / vars%lu / vars%lv = ',vars%lx,'/',vars%lq,'/',vars%lu,'/',vars%lv
   call fckit_log%info(record)
-  call abor1_ftn('qg_fields_create: x or q should be set as fields') 
+  call abor1_ftn('qg_fields_create: x or q should be set as fields')
 endif
 
 ! Set boundaries
@@ -648,7 +648,7 @@ call qg_fields_check(fld)
 if (fld%lq) then
   q = fld%gfld3d
   lwq = .true.
-  if (fld%lbc) then   
+  if (fld%lbc) then
     call convert_q_to_x(fld%geom,q,fld%x_north,fld%x_south,x)
     lwx = .true.
   else
@@ -1442,7 +1442,7 @@ endif
 end subroutine qg_fields_serialize
 ! ------------------------------------------------------------------------------
 !> Deserialize fields
-subroutine qg_fields_deserialize(self,vsize,vect_fld)
+subroutine qg_fields_deserialize(self,vsize,vect_fld,index)
 
 implicit none
 
@@ -1450,17 +1450,18 @@ implicit none
 type(qg_fields),intent(inout) :: self         !< Fields
 integer,intent(in) :: vsize                   !< Size
 real(kind_real),intent(in) :: vect_fld(vsize) !< Vector
+integer,intent(inout) :: index                !< Index
 
 ! Local variables
-integer :: ix,iy,iz,ind
+integer :: ix,iy,iz
 
 ! 3d field
-ind = 1
+index = 1 + index
 do iz = 1,self%geom%nz
   do iy = 1,self%geom%ny
     do ix = 1,self%geom%nx
-      self%gfld3d(ix,iy,iz) = vect_fld(ind)
-      ind = ind+1
+      self%gfld3d(ix,iy,iz) = vect_fld(index)
+      index = index+1
     enddo
   enddo
 enddo
@@ -1468,18 +1469,20 @@ enddo
 ! Boundaries
 if (self%lbc) then
   do iz=1,self%geom%nz
-    ind = ind + 1
-    self%x_north(iz) = vect_fld(ind)
-    ind = ind + 1
-    self%x_south(iz) = vect_fld(ind)
+    index = index + 1
+    self%x_north(iz) = vect_fld(index)
+    index = index + 1
+    self%x_south(iz) = vect_fld(index)
     do ix=1,self%geom%nx
-      ind = ind + 1
-      self%q_north(ix,iz) = vect_fld(ind)
-      ind = ind + 1
-      self%q_south(ix,iz) = vect_fld(ind)
+      index = index + 1
+      self%q_north(ix,iz) = vect_fld(index)
+      index = index + 1
+      self%q_south(ix,iz) = vect_fld(index)
     enddo
   enddo
 endif
+
+index = index - 1
 
 end subroutine qg_fields_deserialize
 ! ------------------------------------------------------------------------------

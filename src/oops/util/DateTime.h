@@ -76,9 +76,10 @@ class DateTime {
   bool operator>=(const DateTime&) const;
   std::size_t timestamp() const;
 
-  // Serialize and Deserialize
+  // Serialize and deserialize
+  size_t serialSize() const;
   void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &);
+  void deserialize(const std::vector<double> &, size_t &);
 
  private:
 // -- Copy allowed

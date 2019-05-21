@@ -10,9 +10,12 @@
 
 #pragma once
 
+#include <Eigen/Dense>
+
 #include <vector>
 
 #include "eckit/mpi/Comm.h"
+#include "oops/util/abor1_cpp.h"
 
 namespace oops {
   namespace mpi {
@@ -20,19 +23,30 @@ namespace oops {
     const eckit::mpi::Comm& comm();
 
 //-------------------------------------------------------------------------------------------------
-// Send a receive any object with serialize/deserialize methods
+// allGather for eigen vectors
 //-------------------------------------------------------------------------------------------------
-    // Non blocking
+    void allGather(const Eigen::VectorXd &, std::vector<Eigen::VectorXd> &);
+
+//-------------------------------------------------------------------------------------------------
+// Send and receive objects with a serialize/deserialize method
+//-------------------------------------------------------------------------------------------------
+    // Non blocking DO NOT USE
     template<typename TYPE>
     eckit::mpi::Request iSend(const TYPE & sendbuf, int & source, int & tag) {
-      std::vector<double> v_sendbuf = sendbuf.serialize();
+      std::vector<double> v_sendbuf;
+      sendbuf.serialize(v_sendbuf);
       return(comm().iSend(v_sendbuf.data(), v_sendbuf.size(), source, tag));
+//    v_sendbuf gets deallocated here, potentially before it has been sent
+      ABORT("Bug in iSend");
     }
 
     template<typename TYPE>
-    eckit::mpi::Request iReceive(std::vector<double> & v_recv, TYPE & to_fill,
-                                 int & source, int & tag) {
-      eckit::mpi::Request request = comm().iReceive(v_recv.data(), v_recv.size(), source, tag);
+    eckit::mpi::Request iReceive(TYPE & to_fill, int & source, int & tag) {
+      size_t sz = to_fill.serialSize();
+      std::vector<double> v_recv(sz);
+      eckit::mpi::Request request = comm().iReceive(v_recv.data(), sz, source, tag);
+      ABORT("Bug in iReceive");
+//    v_recv has not been received at this point, it will be after wait
       to_fill.deserialize(v_recv);
       return request;
     }
@@ -40,14 +54,16 @@ namespace oops {
     // Blocking
     template<typename TYPE>
     void send(const TYPE & sendbuf, int & source, int & tag) {
-      std::vector<double> v_sendbuf = sendbuf.serialize();
+      std::vector<double> v_sendbuf;
+      sendbuf.serialize(v_sendbuf);
       comm().send(v_sendbuf.data(), v_sendbuf.size(), source, tag);
     }
 
     template<typename TYPE>
-    void receive(std::vector<double> & v_recv, TYPE & to_fill, int & source,
-                 int & tag) {
-      eckit::mpi::Status status = comm().receive(v_recv.data(), v_recv.size(), source, tag);
+    void receive(TYPE & to_fill, int & source, int & tag) {
+      size_t sz = to_fill.serialSize();
+      std::vector<double> v_recv(sz);
+      eckit::mpi::Status status = comm().receive(v_recv.data(), sz, source, tag);
       to_fill.deserialize(v_recv);
     }
 

@@ -3,6 +3,7 @@
 # User-defined parameters
 # ----------------------------------------------------------------------------------
 # Data directory
+
 datadir="/home/benjamin/build/ufo-bundle/oops/qg/test/Data"
 
 # File base

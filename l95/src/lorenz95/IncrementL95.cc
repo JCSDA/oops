@@ -213,16 +213,32 @@ void IncrementL95::field_from_ug(const oops::UnstructuredGrid & ug, const int & 
 // -----------------------------------------------------------------------------
 /// Serialize - deserialize
 // -----------------------------------------------------------------------------
-void IncrementL95::serialize(std::vector<double> & vect) const {
-  fld_.serialize(vect);
-  time_.serialize(vect);
+size_t IncrementL95::serialSize() const {
+  size_t nn = 3;
+  nn += fld_.serialSize();
+  nn += time_.serialSize();
+  return nn;
 }
 // -----------------------------------------------------------------------------
-void IncrementL95::deserialize(const std::vector<double> & vect) {
-  int size = vect.size();
-  fld_.deserialize(vect);
-  std::vector<double> date_time { vect[size - 2], vect[size - 1] };
-  time_.deserialize(date_time);
+void IncrementL95::serialize(std::vector<double> & vect) const {
+  vect.push_back(1000.0);
+  fld_.serialize(vect);
+  vect.push_back(2000.0);
+  time_.serialize(vect);
+  vect.push_back(3000.0);
+}
+// -----------------------------------------------------------------------------
+void IncrementL95::deserialize(const std::vector<double> & vect, size_t & index) {
+  size_t ii = index + this->serialSize();
+  ASSERT(vect.at(index) == 1000.0);
+  ++index;
+  fld_.deserialize(vect, index);
+  ASSERT(vect.at(index) == 2000.0);
+  ++index;
+  time_.deserialize(vect, index);
+  ASSERT(vect.at(index) == 3000.0);
+  ++index;
+  ASSERT(index == ii);
 }
 // -----------------------------------------------------------------------------
 

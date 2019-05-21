@@ -7,6 +7,7 @@ begin
 ; Parameters:
 ; -----------
 
+
 datadir = getenv("datadir")
 filebase = getenv("filebase")
 
@@ -86,8 +87,8 @@ end if
 ; -----------
 
 xyres = True
-xyres@gsnFrame = False  
-xyres@gsnDraw = False  
+xyres@gsnFrame = False
+xyres@gsnDraw = False
 xyres@tmXBLabelFontHeightF = 0.015
 xyres@tmYLLabelFontHeightF = 0.015
 xyres@xyLineThicknessF = 10.0
@@ -131,7 +132,7 @@ plot = new(2,graphic)
 output = datadir + "/fig/" + filebase + "_cost"
 wks_type = "png"
 wks_type@wkWidth = 2500
-wks_type@wkHeight = 2500 
+wks_type@wkHeight = 2500
 wks = gsn_open_wks(wks_type,output)
 gsn_define_colormap(wks,"BlAqGrYeOrReVi200")
 
@@ -167,7 +168,7 @@ plot(1) = gsn_csm_xy(wks,xouter,Jo_n,xyres)
 
 gsn_text_ndc(wks,filebase + " with " + nouter + " outer iterations",0.52,0.75,txres)
 
-gsn_panel(wks,plot,(/1,2/),resP) 
+gsn_panel(wks,plot,(/1,2/),resP)
 frame(wks)
 delete(wks)
 
@@ -179,18 +180,18 @@ if (cost_quad) then
    delete(xyres@tmXBValues)
    delete(xyres@tmXBLabels)
    delete(plot)
-   
+
    plot = new(nouter,graphic)
-   
+
    output = datadir + "/fig/" + filebase + "_cost_quad"
    wks_type = "png"
    wks_type@wkWidth = 2500
-   wks_type@wkHeight = 2500 
+   wks_type@wkHeight = 2500
    wks = gsn_open_wks(wks_type,output)
    gsn_define_colormap(wks,"BlAqGrYeOrReVi200")
 
    xyres@tiXAxisString = "Inner iteration"
-   xyres@trXMinF = 1  
+   xyres@trXMinF = 1
    xyres@tmXBMinorOn = False
    xyres@tmXTMinorOn = False
    xyres@tmXBMode = "Explicit"
@@ -213,13 +214,13 @@ if (cost_quad) then
       xyres@trYMaxF = 1.1*max(J_quad(:,0:ninner(iouter,0)-1,iouter))
       plot(iouter) = gsn_csm_xy(wks,xinner(0:ninner(iouter,0)-1),J_quad(:,0:ninner(iouter,0)-1,iouter),xyres)
    end do
-   
+
    gsn_text_ndc(wks,filebase + " with " + nouter + " outer iterations",0.52,0.75,txres)
-   
-   gsn_panel(wks,plot,(/1,nouter/),resP) 
+
+   gsn_panel(wks,plot,(/1,nouter/),resP)
    frame(wks)
    delete(wks)
-   
+
    system("mogrify -trim " + output + ".png")
 end if
 

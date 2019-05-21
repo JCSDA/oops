@@ -93,7 +93,8 @@ class ControlIncrement : public util::Printable,
   const ObsAuxIncrs_ & obsVar() const {return obsbias_;}
 
 /// Serialize and deserialize ControlIncrement
-  std::vector<double> serialize() const;
+  size_t serialSize() const;
+  void serialize(std::vector<double> &) const;
   void deserialize(const std::vector<double> &);
 
  private:
@@ -219,35 +220,48 @@ double ControlIncrement<MODEL>::dot_product_with(const ControlIncrement & x2) co
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-std::vector<double> ControlIncrement<MODEL>::serialize() const {
-  std::vector<double> vec;
+size_t ControlIncrement<MODEL>::serialSize() const {
+  size_t ss = 4;
+  ss += incrm4d_.serialSize();
+  ss += modbias_.serialSize();
+  ss += obsbias_.serialSize();
+  return ss;
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+void ControlIncrement<MODEL>::serialize(std::vector<double> & vec) const {
+  vec.reserve(this->serialSize());  // allocate memory to avoid reallocations
+
+  vec.push_back(-111.0);
   incrm4d_.serialize(vec);
-  vec.insert(vec.begin(), static_cast<double>(vec.size()));  // includes info+incr+time and date
-  vec.push_back(500.00);
+
+  vec.push_back(-222.0);
   modbias_.serialize(vec);
-  vec.push_back(500.00);
+
+  vec.push_back(-333.0);
   obsbias_.serialize(vec);
-  return vec;
+
+  vec.push_back(-444.0);
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 void ControlIncrement<MODEL>::deserialize(const std::vector<double> & vec) {
-  unsigned int s_incrm4d = std::lround(vec[0]);
-  unsigned int s_modbias = std::lround(vec[s_incrm4d + 2]);
-  unsigned int s_obsbias = std::lround(vec[s_incrm4d + s_modbias + 4]);
+  size_t ptr = 0;
+  ASSERT(vec.at(ptr) == -111.0);
+  ++ptr;
 
-  ASSERT(vec[s_incrm4d + 1] == 500);
-  ASSERT(vec[s_incrm4d + s_modbias + 3] == 500);
+  incrm4d_.deserialize(vec, ptr);
 
-  std::vector<double> vec_incrm4d(vec.begin() + 1, vec.begin() + 1 + s_incrm4d);
-  std::vector<double> vec_modbias(vec.begin() + s_incrm4d + 3,
-                                  vec.begin() + s_incrm4d + 3 + s_modbias);
-  std::vector<double> vec_obsbias(vec.begin() + s_incrm4d + s_modbias + 5,
-                                  vec.begin() + s_incrm4d + s_modbias + 5 + s_obsbias);
+  ASSERT(vec.at(ptr) == -222.0);
+  ++ptr;
 
-  incrm4d_.deserialize(vec_incrm4d);
-  modbias_.deserialize(vec_modbias);
-  obsbias_.deserialize(vec_obsbias);
+  modbias_.deserialize(vec, ptr);
+
+  ASSERT(vec.at(ptr) == -333.0);
+  ++ptr;
+
+  obsbias_.deserialize(vec, ptr);
+  ASSERT(vec.at(ptr) == -444.0);
 }
 // -----------------------------------------------------------------------------
 

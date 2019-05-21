@@ -102,8 +102,9 @@ class FieldsQG : public util::Printable,
   oops::GridPoint getPoint(const GeometryQGIterator &) const;
 
 /// Serialization
+  size_t serialSize() const;
   void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &);
+  void deserialize(const std::vector<double> &, size_t &);
 
  private:
   void print(std::ostream &) const;

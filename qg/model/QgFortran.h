@@ -127,7 +127,8 @@ extern "C" {
   void qg_fields_field_from_ug_f90(const F90flds &, const int &, const int &);
   void qg_fields_getpoint_f90(const F90flds&, const F90iter&, const int &, double &);
   void qg_fields_serialize_f90(const F90flds &, const std::size_t &, double[]);
-  void qg_fields_deserialize_f90(const F90flds &, const std::size_t &, const double[]);
+  void qg_fields_deserialize_f90(const F90flds &, const std::size_t &, const double[],
+                                 const std::size_t &);
 
 // -----------------------------------------------------------------------------
 //  Geometry
@@ -258,7 +259,7 @@ extern "C" {
   void qg_wspeed_gettraj_f90(const int &, const int *, F90gom &);
   void qg_wspeed_settraj_f90(const F90gom &, const F90gom &);
 
-// -----------------------------------------------------------------------------
 }
+
 }  // namespace qg
 #endif  // QG_MODEL_QGFORTRAN_H_

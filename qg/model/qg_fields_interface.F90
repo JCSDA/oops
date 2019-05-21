@@ -732,10 +732,11 @@ call qg_fields_registry%get(c_key_fld,fld)
 ! Call Fortran
 call qg_fields_serialize(fld,c_vsize,c_vect_fld)
 
+
 end subroutine qg_fields_serialize_c
 ! ------------------------------------------------------------------------------
 !> Deserialize fields
-subroutine qg_fields_deserialize_c(c_key_self,c_vsize,c_vect_fld) bind(c,name='qg_fields_deserialize_f90')
+subroutine qg_fields_deserialize_c(c_key_self,c_vsize,c_vect_fld,c_index) bind(c,name='qg_fields_deserialize_f90')
 
 implicit none
 
@@ -743,6 +744,7 @@ implicit none
 integer(c_int),intent(in) :: c_key_self          !< Fields
 integer(c_int),intent(in) :: c_vsize             !< Size
 real(c_double),intent(in) :: c_vect_fld(c_vsize) !< Vector
+integer(c_int), intent(inout):: c_index          !< Index
 
 ! Local variables
 type(qg_fields),pointer :: self
@@ -751,7 +753,7 @@ type(qg_fields),pointer :: self
 call qg_fields_registry%get(c_key_self,self)
 
 ! Call Fortran
-call qg_fields_deserialize(self,c_vsize,c_vect_fld)
+call qg_fields_deserialize(self,c_vsize,c_vect_fld,c_index)
 
 end subroutine qg_fields_deserialize_c
 ! ------------------------------------------------------------------------------

@@ -170,12 +170,17 @@ void IncrementQG::write(const eckit::Configuration & files) const {
 // -----------------------------------------------------------------------------
 /// Serialization
 // -----------------------------------------------------------------------------
+size_t IncrementQG::serialSize() const {
+  size_t nn = fields_->serialSize();
+  return nn;
+}
+// -----------------------------------------------------------------------------
 void IncrementQG::serialize(std::vector<double> & vect) const {
   fields_->serialize(vect);
 }
 // -----------------------------------------------------------------------------
-void IncrementQG::deserialize(const std::vector<double> & vect) {
-  fields_->deserialize(vect);
+void IncrementQG::deserialize(const std::vector<double> & vect, size_t & index) {
+  fields_->deserialize(vect, index);
 }
 // -----------------------------------------------------------------------------
 void IncrementQG::print(std::ostream & os) const {

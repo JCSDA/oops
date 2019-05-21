@@ -55,8 +55,8 @@ end if
 ; ----------
 
 res = True
-res@gsnDraw = False 
-res@gsnFrame = False 
+res@gsnDraw = False
+res@gsnFrame = False
 res@gsnMaximize = True
 res@gsnAddCyclic = False
 
@@ -79,8 +79,8 @@ res@tmYROn = False
 res@tmYLOn = False
 
 vres = True
-vres@gsnDraw = False 
-vres@gsnFrame = False 
+vres@gsnDraw = False
+vres@gsnFrame = False
 vres@gsnMaximize = True
 vres@gsnAddCyclic = False
 vres@vcGlyphStyle = "CurlyVector"
@@ -129,7 +129,7 @@ end if
 plot = new(nplot*dims(0),graphic)
 wks_type = "png"
 wks_type@wkWidth = 2500
-wks_type@wkHeight = 2500 
+wks_type@wkHeight = 2500
 
 if (difference.eq."true")
    output = datadir + "/fig/" + filebase + "-" + filebase_ref + "." + date
@@ -178,7 +178,7 @@ do iz=0,dims(0)-1
    end if
 end do
 
-gsn_panel(wks,plot,(/dims(0),nplot/),resP) 
+gsn_panel(wks,plot,(/dims(0),nplot/),resP)
 frame(wks)
 delete(wks)
 

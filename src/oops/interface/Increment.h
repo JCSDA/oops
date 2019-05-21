@@ -104,7 +104,7 @@ class Increment : public oops::GeneralizedDepartures,
 /// Serialize and deserialize
   size_t serialSize() const;
   void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &);
+  void deserialize(const std::vector<double> &, size_t &);
 
  private:
   void print(std::ostream &) const;
@@ -401,9 +401,18 @@ void Increment<MODEL>::field_from_ug(const UnstructuredGrid & ug, const int & it
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
+size_t Increment<MODEL>::serialSize() const {
+  Log::trace() << "Increment<MODEL>::serialSize" << std::endl;
+  util::Timer timer(classname(), "serialSize");
+  return increment_->serialSize();
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
 void Increment<MODEL>::serialize(std::vector<double> & vect) const {
   Log::trace() << "Increment<MODEL>::serialize starting" << std::endl;
-  util::Timer timer("oops::Increment", "serialize");
+  util::Timer timer(classname(), "serialize");
   increment_->serialize(vect);
   Log::trace() << "Increment<MODEL>::serialize done" << std::endl;
 }
@@ -411,10 +420,10 @@ void Increment<MODEL>::serialize(std::vector<double> & vect) const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void Increment<MODEL>::deserialize(const std::vector<double> & vect) {
+void Increment<MODEL>::deserialize(const std::vector<double> & vect, size_t & current) {
   Log::trace() << "Increment<MODEL>::Increment deserialize starting" << std::endl;
-  util::Timer timer(classname(), "Increment deserialize");
-  increment_->deserialize(vect);
+  util::Timer timer(classname(), "deserialize");
+  increment_->deserialize(vect, current);
   Log::trace() << "Increment<MODEL>::Increment deserialize done" << std::endl;
 }
 
