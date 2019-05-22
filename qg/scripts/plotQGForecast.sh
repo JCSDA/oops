@@ -3,10 +3,10 @@
 # User-defined parameters
 # ----------------------------------------------------------------------------------
 # Data directory
-datadir="/home/benjamin/build/ufo-bundle_develop/oops/qg/test/Data"
+datadir="${HOME}/build/ufo-bundle/oops/qg/test/Data"
 
 # File base
-filebase="example.fc"
+filebase="forecast.fc"
 
 # Date list
 declare -a datelist=("2009-12-31T00:00:00Z.PT0S"
