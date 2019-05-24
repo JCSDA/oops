@@ -52,8 +52,6 @@ class ErrorCovariance4DBUMP : public oops::ModelSpaceCovariance4DBase<MODEL>,
   typedef State<MODEL>                            State_;
   typedef State4D<MODEL>                          State4D_;
   typedef ParametersBUMP<MODEL>                   Parameters_;
-  typedef StateEnsemble<MODEL>                    Ensemble_;
-  typedef boost::shared_ptr<StateEnsemble<MODEL>> EnsemblePtr_;
 
  public:
   static const std::string classname() {return "oops::ErrorCovariance4DBUMP";}
@@ -88,14 +86,8 @@ ErrorCovariance4DBUMP<MODEL>::ErrorCovariance4DBUMP(const Geometry_ & resol,
     timeslots_.push_back(xb[jsub].validTime());
   }
 
-// Setup ensemble of perturbations
-  EnsemblePtr_ ens(new Ensemble_());
-
-// Setup pseudo ensemble
-  EnsemblePtr_ pseudo_ens(new Ensemble_());
-
 // Setup parameters
-  Parameters_ param(resol, vars, timeslots_, ens, pseudo_ens, conf);
+  Parameters_ param(resol, vars, timeslots_, conf);
 
 // Get key
   keyBUMP_ = param.get_bump();

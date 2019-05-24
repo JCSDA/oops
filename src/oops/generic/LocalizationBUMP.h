@@ -79,11 +79,8 @@ LocalizationBUMP<MODEL>::LocalizationBUMP(const Geometry_ & resol,
   }
   Log::info() << "Number of ensemble time-slots:" << timeslots.size() << std::endl;
 
-// Setup pseudo ensemble
-  EnsemblePtr_ pseudo_ens(new Ensemble_());
-
 // Setup parameters
-  Parameters_ param(resol, vars, timeslots, ens, pseudo_ens, conf);
+  Parameters_ param(resol, vars, timeslots, conf, ens);
 
 // Get key
   keyBUMP_ = param.get_bump();

@@ -50,7 +50,6 @@ template<typename MODEL> class StateEnsemble {
 
  public:
 /// Constructor
-  StateEnsemble();
   StateEnsemble(const Geometry_ & resol,
                 const Variables & vars,
                 const std::vector<util::DateTime> &,
@@ -88,15 +87,6 @@ template<typename MODEL> class StateEnsemble {
 };
 
 // ====================================================================================
-
-template<typename MODEL>
-StateEnsemble<MODEL>::StateEnsemble()
-  : rank_(0), resol_(), ensemblePerturbs_()
-{
-  Log::trace() << "StateEnsemble:contructor done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
 
 template<typename MODEL>
 StateEnsemble<MODEL>::StateEnsemble(const Geometry_ & resol,

@@ -13,7 +13,6 @@
 #include <boost/noncopyable.hpp>
 #include "eckit/config/Configuration.h"
 #include "oops/base/LinearVariableChangeBase.h"
-#include "oops/base/StateEnsemble.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/oobump_f.h"
 #include "oops/generic/ParametersBUMP.h"
@@ -39,8 +38,6 @@ class StatsVariableChange : public LinearVariableChangeBase<MODEL> {
   typedef State<MODEL>                            State_;
   typedef State4D<MODEL>                          State4D_;
   typedef ParametersBUMP<MODEL>                   Parameters_;
-  typedef StateEnsemble<MODEL>                    Ensemble_;
-  typedef boost::shared_ptr<StateEnsemble<MODEL>> EnsemblePtr_;
 
  public:
   static const std::string classname() {return "oops::StatsVariableChange";}
@@ -87,14 +84,8 @@ StatsVariableChange<MODEL>::StatsVariableChange(const State_ & xb, const State_ 
   std::vector<util::DateTime> timeslots;
   timeslots.push_back(xb.validTime());
 
-// Set the ensemble of perturbations
-  EnsemblePtr_ ens(new Ensemble_());
-
-// Setup pseudo ensemble
-  EnsemblePtr_ pseudo_ens(new Ensemble_());
-
 // Setup parameters
-  Parameters_ param(resol, vars, timeslots, ens, pseudo_ens, conf);
+  Parameters_ param(resol, vars, timeslots, conf);
 
 // Get key
   keyBUMP_ = param.get_bump();

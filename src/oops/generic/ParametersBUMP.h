@@ -45,12 +45,12 @@ class ParametersBUMP {
 
  public:
   static const std::string classname() {return "oops::ParametersBUMP";}
-  explicit ParametersBUMP(const Geometry_ &,
-                          const Variables &,
-                          const std::vector<util::DateTime> &,
-                          const EnsemblePtr_,
-                          const EnsemblePtr_,
-                          const eckit::Configuration &);
+  ParametersBUMP(const Geometry_ &,
+                 const Variables &,
+                 const std::vector<util::DateTime> &,
+                 const eckit::Configuration &,
+                 const EnsemblePtr_ ens = NULL,
+                 const EnsemblePtr_ pseudo_ens = NULL);
   ~ParametersBUMP();
 
   int get_bump() const {return keyBUMP_;}
@@ -71,9 +71,9 @@ template<typename MODEL>
 ParametersBUMP<MODEL>::ParametersBUMP(const Geometry_ & resol,
                                       const Variables & vars,
                                       const std::vector<util::DateTime> & timeslots,
+                                      const eckit::Configuration & conf,
                                       const EnsemblePtr_ ens,
-                                      const EnsemblePtr_ pseudo_ens,
-                                      const eckit::Configuration & conf)
+                                      const EnsemblePtr_ pseudo_ens)
   : resol_(resol), vars_(vars), timeslots_(timeslots), conf_(conf), keyBUMP_(0)
 {
   Log::trace() << "ParametersBUMP<MODEL>::ParametersBUMP construction starting" << std::endl;
@@ -94,11 +94,13 @@ ParametersBUMP<MODEL>::ParametersBUMP(const Geometry_ & resol,
   UnstructuredGrid ug(colocated, timeslots_.size());
   dx.ug_coord(ug);
 
-// Get ensemble size
-  int ens1_ne = ens->size();
+// Get ensemble size if ensemble is available
+  int ens1_ne = 0;
+  if (ens) ens1_ne = ens->size();
 
-// Get pseudo-ensemble size
-  int ens2_ne = pseudo_ens->size();
+// Get pseudo-ensemble size if pseudo-ensemble is available
+  int ens2_ne = 0;
+  if (pseudo_ens) ens2_ne = pseudo_ens->size();
 
 // Create BUMP
   Log::info() << "Create BUMP" << std::endl;

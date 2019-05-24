@@ -74,7 +74,7 @@ template <typename MODEL> class EstimateParams : public Application {
     Log::info() << "Number of ensemble time-slots:" << timeslots.size() << std::endl;
 
     // Setup ensemble
-    EnsemblePtr_ ens(new Ensemble_());
+    EnsemblePtr_ ens = NULL;
     if (fullConfig.has("ensemble")) {
       const eckit::LocalConfiguration ensembleConfig(fullConfig, "ensemble");
       ens.reset(new Ensemble_(timeslots, ensembleConfig));
@@ -82,7 +82,7 @@ template <typename MODEL> class EstimateParams : public Application {
     }
 
     // Setup pseudo ensemble
-    EnsemblePtr_ pseudo_ens(new Ensemble_());
+    EnsemblePtr_ pseudo_ens = NULL;
     if (fullConfig.has("covariance")) {
       const eckit::LocalConfiguration covarConfig(fullConfig, "covariance");
       int ens2_ne = covarConfig.getInt("pseudoens_size");
@@ -117,7 +117,7 @@ template <typename MODEL> class EstimateParams : public Application {
     }
 
     // Setup parameters
-    Parameters_ param(resol, vars, timeslots, ens, pseudo_ens, fullConfig);
+    Parameters_ param(resol, vars, timeslots, fullConfig, ens, pseudo_ens);
 
     // Write parameters
     param.write();

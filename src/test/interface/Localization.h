@@ -66,9 +66,8 @@ template <typename MODEL> class LocalizationFixture : private boost::noncopyable
 
 //  Setup the localization matrix
     oops::instantiateLocalizationFactory<MODEL>();
-    EnsemblePtr_ ens(new Ensemble_());
     const eckit::LocalConfiguration conf(TestEnvironment::config(), "Localization");
-    local_.reset(new Localization_(*resol_, ens, conf));
+    local_.reset(new Localization_(*resol_, NULL, conf));
   }
 
   ~LocalizationFixture<MODEL>() {}
