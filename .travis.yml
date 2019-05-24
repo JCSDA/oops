@@ -43,7 +43,7 @@ before_install:
   - REPO_SOURCE_DIR=${TRAVIS_BUILD_DIR}
   - ls -ls ${REPO_SOURCE_DIR}
 
-  - find . -name \* -exec chmod 777 {} \; -print
+  - find . -name \* -exec chmod 777 {} \;
 
   - docker build -t jcsda/dockerl2 --build-arg=Dockerfile .  #Dockerfile handles ssh for mpi
   - docker images
