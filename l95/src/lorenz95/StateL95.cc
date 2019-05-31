@@ -109,7 +109,7 @@ void StateL95::read(const eckit::Configuration & config) {
   const std::string filename(config.getString("filename"));
   oops::Log::trace() << "StateL95::read opening " << filename << std::endl;
   std::ifstream fin(filename.c_str());
-  if (!fin.is_open()) ABORT("StateL95::read: Error opening file");
+  if (!fin.is_open()) ABORT("StateL95::read: Error opening file: " + filename);
 
   int resol;
   fin >> resol;
@@ -152,7 +152,7 @@ void StateL95::write(const eckit::Configuration & config) const {
 
   oops::Log::trace() << "StateL95::write opening " << filename << std::endl;
   std::ofstream fout(filename.c_str());
-  if (!fout.is_open()) ABORT("StateL95::write: Error opening file");
+  if (!fout.is_open()) ABORT("StateL95::write: Error opening file: " + filename);
 
   fout << fld_.resol() << std::endl;
   fout << time_ << std::endl;

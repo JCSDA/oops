@@ -108,7 +108,7 @@ void GomL95::read(const eckit::Configuration & conf) {
   const std::string filename(conf.getString("filename"));
   oops::Log::trace() << "GomL95::read opening " << filename << std::endl;
   std::ifstream fin(filename.c_str());
-  if (!fin.is_open()) ABORT("GomL95::read: Error opening file");
+  if (!fin.is_open()) ABORT("GomL95::read: Error opening file: " + filename);
 
   size_t size;
   fin >> size;
@@ -130,7 +130,7 @@ void GomL95::write(const eckit::Configuration & conf) const {
   const std::string filename(conf.getString("filename"));
   oops::Log::trace() << "GomL95::write opening " << filename << std::endl;
   std::ofstream fout(filename.c_str());
-  if (!fout.is_open()) ABORT("GomL95::write: Error opening file");
+  if (!fout.is_open()) ABORT("GomL95::write: Error opening file: " + filename);
 
   fout << size_ << std::endl;
   for (size_t jj = 0; jj < size_; ++jj) fout << iobs_[jj] << " ";

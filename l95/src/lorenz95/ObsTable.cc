@@ -227,7 +227,7 @@ void ObsTable::printJo(const ObsVec1D & ydep, const ObsVec1D & grad) {
 void ObsTable::otOpen(const std::string & filename) {
   oops::Log::trace() << "ObsTable::ot_read starting" << std::endl;
   std::ifstream fin(filename.c_str());
-  if (!fin.is_open()) ABORT("ObsTable::otOpen: Error opening file");
+  if (!fin.is_open()) ABORT("ObsTable::otOpen: Error opening file: " + filename);
 
   int ncol, nobs;
   fin >> ncol;
@@ -271,7 +271,7 @@ void ObsTable::otOpen(const std::string & filename) {
 void ObsTable::otWrite(const std::string & filename) const {
   oops::Log::trace() << "ObsTable::otWrite writing " << filename << std::endl;
   std::ofstream fout(filename.c_str());
-  if (!fout.is_open()) ABORT("ObsTable::otWrite: Error opening file");
+  if (!fout.is_open()) ABORT("ObsTable::otWrite: Error opening file: " + filename);
 
   int ncol = data_.size();
   fout << ncol << std::endl;
