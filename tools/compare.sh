@@ -7,10 +7,7 @@
 # granted to it by virtue of its status as an intergovernmental organisation nor
 # does it submit to any jurisdiction.
 
-
-flog=$2.log.out
-ftest=$2.test.out
-
-$1 | tee ${flog} && \
-grep 'Test     : ' ${flog} > ${ftest} && \
-diff -s $2 ${ftest}
+output=$1
+ref=$2
+grep 'Test     : ' $output > $ref.out
+diff -s $ref $ref.out

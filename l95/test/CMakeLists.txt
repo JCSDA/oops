@@ -109,431 +109,761 @@ ecbuild_add_resources( TARGET   l95_test_scripts
                      )
 
 #####################################################################
-
-# Tests that create data other tests might use (should check what is really needed...)
-
-ecbuild_add_test( TARGET test_l95_truth
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_forecast.x testinput/truth.yaml"
-                       testoutput/truth.test
-                  DEPENDS l95_forecast.x )
-
-ecbuild_add_test( TARGET test_l95_forecast
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_forecast.x testinput/forecast.yaml"
-                        testoutput/forecast.test
-                  DEPENDS l95_forecast.x )
-
-ecbuild_add_test( TARGET test_l95_makeobs3d
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_makeobs.x testinput/makeobs3d.yaml"
-                       testoutput/makeobs3d.test
-                  DEPENDS l95_makeobs.x )
-
-ecbuild_add_test( TARGET test_l95_makeobs4d
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_makeobs.x testinput/makeobs4d.yaml"
-                       testoutput/makeobs4d.test
-                  DEPENDS l95_makeobs.x )
-
-ecbuild_add_test( TARGET test_l95_makeobsbias
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_makeobs.x testinput/makeobsbias.yaml"
-                       testoutput/makeobsbias.test
-                  DEPENDS l95_makeobs.x )
-
-ecbuild_add_test( TARGET test_l95_makeobs4d12h
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_makeobs.x testinput/makeobs4d12h.yaml"
-                       testoutput/makeobs4d12h.test
-                  DEPENDS l95_makeobs.x )
-
-# Test lorenz95 internal classes
+# internal tests
+#####################################################################
 
 ecbuild_add_test( TARGET test_l95_resolution
                   SOURCES lorenz95/Resolution.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 eckit)
+                  LIBS lorenz95 eckit )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_stateL95
                   SOURCES lorenz95/StateL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 eckit)
+                  LIBS lorenz95 eckit )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_tlmL95
                   SOURCES lorenz95/TLML95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 eckit)
+                  LIBS lorenz95 eckit )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_ObsTable
                   SOURCES lorenz95/ObsTable.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 eckit)
+                  LIBS lorenz95 eckit )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_obsVec1D
                   SOURCES lorenz95/ObsVec1D.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 eckit)
+                  LIBS lorenz95 eckit )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_locsL95
                   SOURCES lorenz95/LocsL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 eckit)
+                  LIBS lorenz95 eckit )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_gomL95
                   SOURCES lorenz95/GomL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 eckit)
+                  LIBS lorenz95 eckit )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_observationL95
                   SOURCES lorenz95/ObservationL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 eckit)
+                  LIBS lorenz95 eckit )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_obsBias
                   SOURCES lorenz95/ObsBias.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 eckit)
+                  LIBS lorenz95 eckit )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_incrementL95
                   SOURCES lorenz95/IncrementL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 eckit)
+                  LIBS lorenz95 eckit )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_localizationMatrixL95
                   SOURCES lorenz95/LocalizationMatrixL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 eckit)
+                  LIBS lorenz95 eckit )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_modelBias
                   SOURCES lorenz95/ModelBias.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 eckit)
+                  LIBS lorenz95 eckit )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_modelBiasCorrection
                   SOURCES lorenz95/ModelBiasCorrection.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 eckit)
+                  LIBS lorenz95 eckit )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_modelBiasCovariance
                   SOURCES lorenz95/ModelBiasCovariance.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 eckit)
+                  LIBS lorenz95 eckit )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_modelL95
                   SOURCES lorenz95/ModelL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 eckit)
+                  LIBS lorenz95 eckit )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_obsBiasCorrection
                   SOURCES lorenz95/ObsBiasCorrection.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 eckit)
+                  LIBS lorenz95 eckit )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_obsBiasCovariance
                   SOURCES lorenz95/ObsBiasCovariance.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
-                  LIBS    lorenz95 eckit)
+                  LIBS lorenz95 eckit )
 
-# Test interface classes with lorenz95
+#####################################################################
+# truth and makeobs4d are required for interface tests
+#####################################################################
+
+ecbuild_add_test( TARGET test_l95_truth_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_forecast.x
+                  ARGS testinput/truth.yaml testoutput/truth.log.out
+                  DEPENDS l95_forecast.x )
+
+ecbuild_add_test( TARGET test_l95_truth_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/truth.log.out testoutput/truth.test
+                  TEST_DEPENDS test_l95_truth_run )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_makeobs4d_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_makeobs.x
+                  ARGS testinput/makeobs4d.yaml testoutput/makeobs4d.log.out
+                  DEPENDS l95_makeobs.x
+                  TEST_DEPENDS test_l95_truth_run )
+
+ecbuild_add_test( TARGET test_l95_makeobs4d_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/makeobs4d.log.out testoutput/makeobs4d.test
+                  TEST_DEPENDS test_l95_makeobs4d_run )
+
+#####################################################################
+# interface tests
+#####################################################################
+
 
 ecbuild_add_test( TARGET test_l95_geometry
                   SOURCES executables/TestGeometry.cc
                   ARGS "testinput/interfaces.yaml"
-                  LIBS    lorenz95 )
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth_run )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_geometry_iterator
                   SOURCES executables/TestGeometryIterator.cc
                   ARGS "testinput/interfaces.yaml"
-                  LIBS    lorenz95 )
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth_run )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_geovals
                   SOURCES executables/TestGeoVaLs.cc
                   ARGS "testinput/interfaces.yaml"
-                  LIBS    lorenz95 )
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth_run )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_state
                   SOURCES executables/TestState.cc
                   ARGS "testinput/interfaces.yaml"
-                  LIBS    lorenz95 )
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth_run )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_modelaux
                   SOURCES executables/TestModelAuxControl.cc
                   ARGS "testinput/interfaces.yaml"
-                  LIBS    lorenz95 )
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth_run )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_model
                   SOURCES executables/TestModel.cc
                   ARGS "testinput/interfaces.yaml"
-                  LIBS    lorenz95 )
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth_run )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_increment
                   SOURCES executables/TestIncrement.cc
                   ARGS "testinput/interfaces.yaml"
-                  LIBS    lorenz95 )
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth_run )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_errorcovariance
                   SOURCES executables/TestErrorCovariance.cc
                   ARGS "testinput/interfaces.yaml"
-                  LIBS    lorenz95 )
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth_run )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_modelauxincrement
                   SOURCES executables/TestModelAuxIncrement.cc
                   ARGS "testinput/interfaces.yaml"
-                  LIBS    lorenz95 )
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth_run )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_modelauxcovariance
                   SOURCES executables/TestModelAuxCovariance.cc
                   ARGS "testinput/interfaces.yaml"
-                  LIBS    lorenz95 )
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth_run )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_linearmodel
                   SOURCES executables/TestLinearModel.cc
                   ARGS "testinput/interfaces.yaml"
-                  LIBS    lorenz95 )
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth_run )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_observationspace
                   SOURCES executables/TestObservationSpace.cc
                   ARGS "testinput/interfaces.yaml"
-                  LIBS    lorenz95 )
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth_run )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_localobsspace
                   SOURCES executables/TestLocalObservationSpace.cc
                   ARGS "testinput/interfaces.yaml"
-                  LIBS    lorenz95 )
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth_run )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_obsvector
                   SOURCES executables/TestObsVector.cc
                   ARGS "testinput/interfaces.yaml"
-                  LIBS    lorenz95 )
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth_run )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_obsoperator
                   SOURCES executables/TestObsOperator.cc
                   ARGS "testinput/interfaces.yaml"
-                  LIBS    lorenz95 )
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth_run )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_linobsoperator
                   SOURCES executables/TestLinearObsOperator.cc
                   ARGS "testinput/interfaces.yaml"
-                  LIBS    lorenz95 )
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth_run )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_obserrorcovar
                   SOURCES executables/TestObsErrorCovariance.cc
                   ARGS "testinput/interfaces.yaml"
-                  LIBS    lorenz95 )
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth_run )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_obsaux
                   SOURCES executables/TestObsAuxControl.cc
                   ARGS "testinput/interfaces.yaml"
-                  LIBS    lorenz95 )
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth_run )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_obsauxincrement
                   SOURCES executables/TestObsAuxIncrement.cc
                   ARGS "testinput/interfaces.yaml"
-                  LIBS    lorenz95 )
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth_run )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_obsauxcovariance
                   SOURCES executables/TestObsAuxCovariance.cc
                   ARGS "testinput/interfaces.yaml"
-                  LIBS    lorenz95 )
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth_run )
+
+#--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_localization
                   SOURCES executables/TestLocalization.cc
                   ARGS "testinput/interfaces.yaml"
-                  LIBS    lorenz95 )
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth_run )
 
-# Test oops applications with lorenz95
+#####################################################################
+# forecast-related tests
+#####################################################################
 
-ecbuild_add_test( TARGET test_l95_hofx
+ecbuild_add_test( TARGET test_l95_forecast_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_forecast.x
+                  ARGS testinput/forecast.yaml testoutput/forecast.log.out
+                  DEPENDS l95_forecast.x )
+
+ecbuild_add_test( TARGET test_l95_forecast_compare
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_hofx.x testinput/hofx.yaml"
-                       testoutput/hofx.test
-                  DEPENDS l95_hofx.x )
+                  ARGS testoutput/forecast.log.out testoutput/forecast.test
+                  TEST_DEPENDS test_l95_forecast_run )
 
-ecbuild_add_test( TARGET test_l95_localhofx
+#####################################################################
+# obs-related tests
+#####################################################################
+
+ecbuild_add_test( TARGET test_l95_makeobs3d_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_makeobs.x
+                  ARGS testinput/makeobs3d.yaml testoutput/makeobs3d.log.out
+                  DEPENDS l95_makeobs.x
+                  TEST_DEPENDS test_l95_truth_run )
+
+ecbuild_add_test( TARGET test_l95_makeobs3d_compare
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_localhofx.x testinput/localhofx.yaml"
-                       testoutput/localhofx.test
-                  DEPENDS l95_localhofx.x )
+                  ARGS testoutput/makeobs3d.log.out testoutput/makeobs3d.test
+                  TEST_DEPENDS test_l95_makeobs3d_run )
 
-ecbuild_add_test( TARGET test_l95_3dvar
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_makeobsbias_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_makeobs.x
+                  ARGS testinput/makeobsbias.yaml testoutput/makeobsbias.log.out
+                  DEPENDS l95_makeobs.x
+                  TEST_DEPENDS test_l95_truth_run )
+
+ecbuild_add_test( TARGET test_l95_makeobsbias_compare
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/3dvar.yaml"
-                       testoutput/3dvar.test
-                  DEPENDS l95_4dvar.x )
+                  ARGS testoutput/makeobsbias.log.out testoutput/makeobsbias.test
+                  TEST_DEPENDS test_l95_makeobsbias_run )
 
-ecbuild_add_test( TARGET test_l95_4dvar_drgmresr
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_makeobs4d12h_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_makeobs.x
+                  ARGS testinput/makeobs4d12h.yaml testoutput/makeobs4d12h.log.out
+                  DEPENDS l95_makeobs.x
+                  TEST_DEPENDS test_l95_truth_run )
+
+ecbuild_add_test( TARGET test_l95_makeobs4d12h_compare
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.drgmresr.yaml"
-                       testoutput/4dvar.drgmresr.test
-                  DEPENDS l95_4dvar.x )
+                  ARGS testoutput/makeobs4d12h.log.out testoutput/makeobs4d12h.test
+                  TEST_DEPENDS test_l95_makeobs4d12h_run )
 
-ecbuild_add_test( TARGET test_l95_4dvar_dripcg
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_hofx_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_hofx.x
+                  ARGS testinput/hofx.yaml testoutput/hofx.log.out
+                  DEPENDS l95_hofx.x
+                  TEST_DEPENDS test_l95_forecast_run test_l95_makeobs4d_run )
+
+ecbuild_add_test( TARGET test_l95_hofx_compare
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.dripcg.yaml"
-                       testoutput/4dvar.dripcg.test
-                  DEPENDS l95_4dvar.x )
+                  ARGS testoutput/hofx.log.out testoutput/hofx.test
+                  TEST_DEPENDS test_l95_hofx_run )
 
-ecbuild_add_test( TARGET test_l95_4dvar_dripcgqn
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_localhofx_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_localhofx.x
+                  ARGS testinput/localhofx.yaml testoutput/localhofx.log.out
+                  DEPENDS l95_localhofx.x
+                  TEST_DEPENDS test_l95_forecast_run test_l95_makeobs4d_run )
+
+ecbuild_add_test( TARGET test_l95_localhofx_compare
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.dripcgqn.yaml"
-                       testoutput/4dvar.dripcgqn.test
-                  DEPENDS l95_4dvar.x )
+                  ARGS testoutput/localhofx.log.out testoutput/localhofx.test
+                  TEST_DEPENDS test_l95_localhofx_run )
 
-ecbuild_add_test( TARGET test_l95_4dvar_drpcg
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.drpcg.yaml"
-                       testoutput/4dvar.drpcg.test
-                  DEPENDS l95_4dvar.x )
+#####################################################################
+# ensemble-related tests
+#####################################################################
 
-ecbuild_add_test( TARGET test_l95_4dvar_drpcgqn
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.drpcgqn.yaml"
-                       testoutput/4dvar.drpcgqn.test
-                  DEPENDS l95_4dvar.x )
-
-ecbuild_add_test( TARGET test_l95_4dvar_drplanczos
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.drplanczos.yaml"
-                       testoutput/4dvar.drplanczos.test
-                  DEPENDS l95_4dvar.x )
-
-ecbuild_add_test( TARGET test_l95_4dvar_drplanclmp
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.drplanclmp.yaml"
-                       testoutput/4dvar.drplanclmp.test
-                  DEPENDS l95_4dvar.x )
-
-ecbuild_add_test( TARGET test_l95_4dvar_gmresr
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.gmresr.yaml"
-                       testoutput/4dvar.gmresr.test
-                  DEPENDS l95_4dvar.x )
-
-ecbuild_add_test( TARGET test_l95_4dvar_ipcg
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.ipcg.yaml"
-                       testoutput/4dvar.ipcg.test
-                  DEPENDS l95_4dvar.x )
-
-ecbuild_add_test( TARGET test_l95_4dvar_pcg
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.pcg.yaml"
-                       testoutput/4dvar.pcg.test
-                  DEPENDS l95_4dvar.x )
-
-ecbuild_add_test( TARGET test_l95_4dvar_planczos
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.planczos.yaml"
-                       testoutput/4dvar.planczos.test
-                  DEPENDS l95_4dvar.x )
-
-ecbuild_add_test( TARGET test_l95_4dvar_rpcg
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.rpcg.yaml"
-                       testoutput/4dvar.rpcg.test
-                  DEPENDS l95_4dvar.x )
-
-ecbuild_add_test( TARGET test_l95_4dvar_rplanczos
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.rplanczos.yaml"
-                       testoutput/4dvar.rplanczos.test
-                  DEPENDS l95_4dvar.x )
-
-ecbuild_add_test( TARGET test_l95_4dvar_modbias
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.modbias.yaml"
-                       testoutput/4dvar.modbias.test
-                  DEPENDS l95_4dvar.x )
-
-ecbuild_add_test( TARGET test_l95_4dvar_forcing
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dforcing.yaml"
-                       testoutput/4dforcing.test
-                  DEPENDS l95_4dvar.x )
-
-ecbuild_add_test( TARGET test_l95_4dvar_saddlepoint
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dsaddlepoint.yaml"
-                       testoutput/4dsaddlepoint.test
-                  DEPENDS l95_4dvar.x )
-
-ecbuild_add_test( TARGET test_l95_4dvar_obsbias
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.obsbias.yaml"
-                       testoutput/4dvar.obsbias.test
-                  DEPENDS l95_4dvar.x )
-
-ecbuild_add_test( TARGET test_l95_3dfgat
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/3dfgat.yaml"
-                       testoutput/3dfgat.test
-                  DEPENDS l95_4dvar.x )
-
-ecbuild_add_test( TARGET test_l95_genenspert
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_genpert.x testinput/genenspert.yaml"
-                       testoutput/genenspert.test
+ecbuild_add_test( TARGET test_l95_genenspert_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_genpert.x
+                  ARGS testinput/genenspert.yaml testoutput/genenspert.log.out
                   DEPENDS l95_genpert.x )
 
-ecbuild_add_test( TARGET test_l95_enshofx
+ecbuild_add_test( TARGET test_l95_genenspert_compare
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_enshofx.x testinput/enshofx.yaml"
-                       testoutput/enshofx.test
-                  DEPENDS l95_enshofx.x )
+                  ARGS testoutput/genenspert.log.out testoutput/genenspert.test
+                  TEST_DEPENDS test_l95_genenspert_run )
 
-ecbuild_add_test( TARGET test_l95_alpha
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_enshofx_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_enshofx.x
+                  ARGS testinput/enshofx.yaml testoutput/enshofx.log.out
+                  DEPENDS l95_enshofx.x
+                  TEST_DEPENDS test_l95_genenspert_run test_l95_makeobs4d_run )
+
+ecbuild_add_test( TARGET test_l95_enshofx_compare
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dvar.alpha.yaml"
-                       testoutput/4dvar.alpha.test
-                  DEPENDS l95_4dvar.x )
+                  ARGS testoutput/enshofx.log.out testoutput/enshofx.test
+                  TEST_DEPENDS test_l95_enshofx_run )
 
-ecbuild_add_test( TARGET test_l95_4dvar_hybrid
+#####################################################################
+# 3d variational tests
+#####################################################################
+
+ecbuild_add_test( TARGET test_l95_3dvar_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_4dvar.x
+                  ARGS testinput/3dvar.yaml testoutput/3dvar.log.out
+                  DEPENDS l95_4dvar.x
+                  TEST_DEPENDS test_l95_forecast_run test_l95_makeobs3d_run )
+
+ecbuild_add_test( TARGET test_l95_3dvar_compare
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4dhybrid.yaml"
-                       testoutput/4dhybrid.test
-                  DEPENDS l95_4dvar.x )
+                  ARGS testoutput/3dvar.log.out testoutput/3dvar.test
+                  TEST_DEPENDS test_l95_3dvar_run )
 
-ecbuild_add_test( TARGET test_l95_4densvar
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_3dfgat_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_4dvar.x
+                  ARGS testinput/3dfgat.yaml testoutput/3dfgat.log.out
+                  DEPENDS l95_4dvar.x
+                  TEST_DEPENDS test_l95_forecast_run test_l95_makeobs3d_run )
+
+ecbuild_add_test( TARGET test_l95_3dfgat_compare
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS "${CMAKE_BINARY_DIR}/bin/l95_4dvar.x testinput/4densvar.yaml"
-                       testoutput/4densvar.test
-                  DEPENDS l95_4dvar.x )
+                  ARGS testoutput/3dfgat.log.out testoutput/3dfgat.test
+                  TEST_DEPENDS test_l95_3dfgat_run )
 
-ecbuild_add_test( TARGET test_l95_4dvar_eda
+#####################################################################
+# 4d variational tests
+#####################################################################
+
+ecbuild_add_test( TARGET test_l95_4dvar_drgmresr_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_4dvar.x
+                  ARGS testinput/4dvar.drgmresr.yaml testoutput/4dvar.drgmresr.log.out
+                  DEPENDS l95_4dvar.x
+                  TEST_DEPENDS test_l95_forecast_run test_l95_makeobs4d_run )
+
+ecbuild_add_test( TARGET test_l95_4dvar_drgmresr_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/4dvar.drgmresr.log.out testoutput/4dvar.drgmresr.test
+                  TEST_DEPENDS test_l95_4dvar_drgmresr_run )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_4dvar_dripcg_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_4dvar.x
+                  ARGS testinput/4dvar.dripcg.yaml testoutput/4dvar.dripcg.log.out
+                  DEPENDS l95_4dvar.x
+                  TEST_DEPENDS test_l95_forecast_run test_l95_makeobs4d_run )
+
+ecbuild_add_test( TARGET test_l95_4dvar_dripcg_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/4dvar.dripcg.log.out testoutput/4dvar.dripcg.test
+                  TEST_DEPENDS test_l95_4dvar_dripcg_run )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_4dvar_dripcgqn_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_4dvar.x
+                  ARGS testinput/4dvar.dripcgqn.yaml testoutput/4dvar.dripcgqn.log.out
+                  DEPENDS l95_4dvar.x
+                  TEST_DEPENDS test_l95_forecast_run test_l95_makeobs4d_run )
+
+ecbuild_add_test( TARGET test_l95_4dvar_dripcgqn_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/4dvar.dripcgqn.log.out testoutput/4dvar.dripcgqn.test
+                  TEST_DEPENDS test_l95_4dvar_dripcgqn_run )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_4dvar_drpcg_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_4dvar.x
+                  ARGS testinput/4dvar.drpcg.yaml testoutput/4dvar.drpcg.log.out
+                  DEPENDS l95_4dvar.x
+                  TEST_DEPENDS test_l95_forecast_run test_l95_makeobs4d_run )
+
+ecbuild_add_test( TARGET test_l95_4dvar_drpcg_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/4dvar.drpcg.log.out testoutput/4dvar.drpcg.test
+                  TEST_DEPENDS test_l95_4dvar_drpcg_run )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_4dvar_drpcgqn_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_4dvar.x
+                  ARGS testinput/4dvar.drpcgqn.yaml testoutput/4dvar.drpcgqn.log.out
+                  DEPENDS l95_4dvar.x
+                  TEST_DEPENDS test_l95_forecast_run test_l95_makeobs4d_run )
+
+ecbuild_add_test( TARGET test_l95_4dvar_drpcgqn_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/4dvar.drpcgqn.log.out testoutput/4dvar.drpcgqn.test
+                  TEST_DEPENDS test_l95_4dvar_drpcgqn_run )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_4dvar_drplanczos_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_4dvar.x
+                  ARGS testinput/4dvar.drplanczos.yaml testoutput/4dvar.drplanczos.log.out
+                  DEPENDS l95_4dvar.x
+                  TEST_DEPENDS test_l95_forecast_run test_l95_makeobs4d_run )
+
+ecbuild_add_test( TARGET test_l95_4dvar_drplanczos_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/4dvar.drplanczos.log.out testoutput/4dvar.drplanczos.test
+                  TEST_DEPENDS test_l95_4dvar_drplanczos_run )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_4dvar_drplanclmp_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_4dvar.x
+                  ARGS testinput/4dvar.drplanclmp.yaml testoutput/4dvar.drplanclmp.log.out
+                  DEPENDS l95_4dvar.x
+                  TEST_DEPENDS test_l95_forecast_run test_l95_makeobs4d_run )
+
+ecbuild_add_test( TARGET test_l95_4dvar_drplanclmp_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/4dvar.drplanclmp.log.out testoutput/4dvar.drplanclmp.test
+                  TEST_DEPENDS test_l95_4dvar_drplanclmp_run )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_4dvar_gmresr_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_4dvar.x
+                  ARGS testinput/4dvar.gmresr.yaml testoutput/4dvar.gmresr.log.out
+                  DEPENDS l95_4dvar.x
+                  TEST_DEPENDS test_l95_forecast_run test_l95_makeobs4d_run )
+
+ecbuild_add_test( TARGET test_l95_4dvar_gmresr_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/4dvar.gmresr.log.out testoutput/4dvar.gmresr.test
+                  TEST_DEPENDS test_l95_4dvar_gmresr_run )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_4dvar_ipcg_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_4dvar.x
+                  ARGS testinput/4dvar.ipcg.yaml testoutput/4dvar.ipcg.log.out
+                  DEPENDS l95_4dvar.x
+                  TEST_DEPENDS test_l95_forecast_run test_l95_makeobs4d_run )
+
+ecbuild_add_test( TARGET test_l95_4dvar_ipcg_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/4dvar.ipcg.log.out testoutput/4dvar.ipcg.test
+                  TEST_DEPENDS test_l95_4dvar_ipcg_run )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_4dvar_pcg_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_4dvar.x
+                  ARGS testinput/4dvar.pcg.yaml testoutput/4dvar.pcg.log.out
+                  DEPENDS l95_4dvar.x
+                  TEST_DEPENDS test_l95_forecast_run test_l95_makeobs4d_run )
+
+ecbuild_add_test( TARGET test_l95_4dvar_pcg_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/4dvar.pcg.log.out testoutput/4dvar.pcg.test
+                  TEST_DEPENDS test_l95_4dvar_pcg_run )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_4dvar_planczos_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_4dvar.x
+                  ARGS testinput/4dvar.planczos.yaml testoutput/4dvar.planczos.log.out
+                  DEPENDS l95_4dvar.x
+                  TEST_DEPENDS test_l95_forecast_run test_l95_makeobs4d_run )
+
+ecbuild_add_test( TARGET test_l95_4dvar_planczos_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/4dvar.planczos.log.out testoutput/4dvar.planczos.test
+                  TEST_DEPENDS test_l95_4dvar_planczos_run )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_4dvar_rpcg_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_4dvar.x
+                  ARGS testinput/4dvar.rpcg.yaml testoutput/4dvar.rpcg.log.out
+                  DEPENDS l95_4dvar.x
+                  TEST_DEPENDS test_l95_forecast_run test_l95_makeobs4d_run )
+
+ecbuild_add_test( TARGET test_l95_4dvar_rpcg_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/4dvar.rpcg.log.out testoutput/4dvar.rpcg.test
+                  TEST_DEPENDS test_l95_4dvar_rpcg_run )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_4dvar_rplanczos_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_4dvar.x
+                  ARGS testinput/4dvar.rplanczos.yaml testoutput/4dvar.rplanczos.log.out
+                  DEPENDS l95_4dvar.x
+                  TEST_DEPENDS test_l95_forecast_run test_l95_makeobs4d_run )
+
+ecbuild_add_test( TARGET test_l95_4dvar_rplanczos_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/4dvar.rplanczos.log.out testoutput/4dvar.rplanczos.test
+                  TEST_DEPENDS test_l95_4dvar_rplanczos_run )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_4dvar_modbias_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_4dvar.x
+                  ARGS testinput/4dvar.modbias.yaml testoutput/4dvar.modbias.log.out
+                  DEPENDS l95_4dvar.x
+                  TEST_DEPENDS test_l95_forecast_run test_l95_makeobs4d_run )
+
+ecbuild_add_test( TARGET test_l95_4dvar_modbias_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/4dvar.modbias.log.out testoutput/4dvar.modbias.test
+                  TEST_DEPENDS test_l95_4dvar_modbias_run )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_4dvar_forcing_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_4dvar.x
+                  ARGS testinput/4dforcing.yaml testoutput/4dforcing.log.out
+                  DEPENDS l95_4dvar.x
+                  TEST_DEPENDS test_l95_forecast_run test_l95_makeobs4d_run )
+
+ecbuild_add_test( TARGET test_l95_4dvar_forcing_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/4dforcing.log.out testoutput/4dforcing.test
+                  TEST_DEPENDS test_l95_4dvar_forcing_run )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_4dvar_saddlepoint_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_4dvar.x
+                  ARGS testinput/4dsaddlepoint.yaml testoutput/4dsaddlepoint.log.out
+                  DEPENDS l95_4dvar.x
+                  TEST_DEPENDS test_l95_forecast_run test_l95_makeobs4d_run )
+
+ecbuild_add_test( TARGET test_l95_4dvar_saddlepoint_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/4dsaddlepoint.log.out testoutput/4dsaddlepoint.test
+                  TEST_DEPENDS test_l95_4dvar_saddlepoint_run )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_4dvar_obsbias_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_4dvar.x
+                  ARGS testinput/4dvar.obsbias.yaml testoutput/4dvar.obsbias.log.out
+                  DEPENDS l95_4dvar.x
+                  TEST_DEPENDS test_l95_forecast_run test_l95_makeobsbias_run )
+
+ecbuild_add_test( TARGET test_l95_4dvar_obsbias_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/4dvar.obsbias.log.out testoutput/4dvar.obsbias.test
+                  TEST_DEPENDS test_l95_4dvar_obsbias_run )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_4dvar_alpha_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_4dvar.x
+                  ARGS testinput/4dvar.alpha.yaml testoutput/4dvar.alpha.log.out
+                  DEPENDS l95_4dvar.x
+                  TEST_DEPENDS test_l95_forecast_run test_l95_makeobs4d_run test_l95_genenspert_run)
+
+ecbuild_add_test( TARGET test_l95_4dvar_alpha_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/4dvar.alpha.log.out testoutput/4dvar.alpha.test
+                  TEST_DEPENDS test_l95_4dvar_alpha_run )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_4dvar_hybrid_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_4dvar.x
+                  ARGS testinput/4dhybrid.yaml testoutput/4dhybrid.log.out
+                  DEPENDS l95_4dvar.x
+                  TEST_DEPENDS test_l95_forecast_run test_l95_makeobs4d_run test_l95_genenspert_run)
+
+ecbuild_add_test( TARGET test_l95_4dvar_hybrid_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/4dhybrid.log.out testoutput/4dhybrid.test
+                  TEST_DEPENDS test_l95_4dvar_hybrid_run )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_4densvar_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_4dvar.x
+                  ARGS testinput/4densvar.yaml testoutput/4densvar.log.out
+                  DEPENDS l95_4dvar.x
+                  TEST_DEPENDS test_l95_forecast_run test_l95_makeobs4d12h_run test_l95_genenspert_run)
+
+ecbuild_add_test( TARGET test_l95_4densvar_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/4densvar.log.out testoutput/4densvar.test
+                  TEST_DEPENDS test_l95_4densvar_run )
+
+#####################################################################
+# EDA tests
+#####################################################################
+
+ecbuild_add_test( TARGET test_l95_4dvar_eda_run
                   MPI 4
                   COMMAND ${CMAKE_BINARY_DIR}/bin/l95_eda.x
                   ARGS testinput/4dvar.eda.pertobs.yaml
-                  DEPENDS l95_eda.x )
+                  DEPENDS l95_eda.x
+                  TEST_DEPENDS test_l95_forecast_run  test_l95_makeobs4d_run )

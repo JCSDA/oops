@@ -33,9 +33,14 @@ Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(
 // Initialize MPI
   oops::mpi::comm().communicator();
 
-// Get configuration file from command line
+// Get configuration file and optional output file from command line
   ASSERT(argc >= 2);
-  eckit::PathName configfile = argv[argc - 1];
+  eckit::PathName configfile = argv[1];
+  if (argc == 3) {
+    eckit::PathName outputfile;
+    outputfile = argv[2];
+    eckit::Log::addFile(outputfile);
+  }
 
 // Read configuration
   config_.reset(new eckit::YAMLConfiguration(configfile));
