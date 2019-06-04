@@ -18,9 +18,9 @@
 #include "oops/assimilation/GMRESR.h"
 #include "oops/assimilation/State4D.h"
 #include "oops/base/IdentityMatrix.h"
+#include "oops/base/IncrementEnsemble.h"
 #include "oops/base/Localization.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
-#include "oops/base/StateEnsemble.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -40,8 +40,8 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL> {
   typedef Localization<MODEL>                     Localization_;
   typedef State<MODEL>                            State_;
   typedef State4D<MODEL>                          State4D_;
-  typedef StateEnsemble<MODEL>                    Ensemble_;
-  typedef boost::shared_ptr<StateEnsemble<MODEL>> EnsemblePtr_;
+  typedef IncrementEnsemble<MODEL>                Ensemble_;
+  typedef boost::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
 
  public:
   EnsembleCovariance(const Geometry_ &, const Variables &,
@@ -68,12 +68,9 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
   : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, conf), ens_(), loc_()
 {
   Log::trace() << "EnsembleCovariance::EnsembleCovariance start" << std::endl;
-  std::vector<util::DateTime> timeslots;
-  timeslots.push_back(xb.validTime());
   State4D_ xb4D(xb);
   State4D_ fg4D(fg);
-  ens_.reset(new Ensemble_(timeslots, conf));
-  ens_->linearize(xb4D, fg4D, resol);
+  ens_.reset(new Ensemble_(conf, xb4D, fg4D, resol));
   if (conf.has("localization")) {
     const eckit::LocalConfiguration confloc(conf, "localization");
     loc_.reset(new Localization_(resol, ens_, confloc));

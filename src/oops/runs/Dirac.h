@@ -18,6 +18,7 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
+#include "oops/base/IncrementEnsemble.h"
 #include "oops/base/instantiateCovarFactory.h"
 #include "oops/base/ModelSpaceCovariance4DBase.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
@@ -45,8 +46,8 @@ template <typename MODEL> class Dirac : public Application {
   typedef State<MODEL>                            State_;
   typedef State4D<MODEL>                          State4D_;
   typedef Localization<MODEL>                     Localization_;
-  typedef StateEnsemble<MODEL>                    Ensemble_;
-  typedef boost::shared_ptr<StateEnsemble<MODEL>> EnsemblePtr_;
+  typedef IncrementEnsemble<MODEL>                Ensemble_;
+  typedef boost::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -145,8 +146,7 @@ template <typename MODEL> class Dirac : public Application {
 
     if (hasLoc) {
       // Setup ensemble
-      EnsemblePtr_ ens(new Ensemble_(timeslots, ensConfig));
-      ens->linearize((*xx), (*xx), resol);
+      EnsemblePtr_ ens(new Ensemble_(ensConfig, (*xx), (*xx), resol));
 
       // Apply localization to Dirac
       if (l3d) {

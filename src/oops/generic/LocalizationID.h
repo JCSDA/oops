@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
-#include "oops/base/StateEnsemble.h"
+#include "oops/base/IncrementEnsemble.h"
 #include "oops/generic/LocalizationGeneric.h"
 #include "oops/util/Logger.h"
 
@@ -29,7 +29,7 @@ class LocalizationID : public LocalizationGeneric<MODEL> {
   typedef Geometry<MODEL>                         Geometry_;
   typedef Increment<MODEL>                        Increment_;
   typedef Increment4D<MODEL>                      Increment4D_;
-  typedef boost::shared_ptr<StateEnsemble<MODEL>> EnsemblePtr_;
+  typedef boost::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
 
  public:
   LocalizationID(const Geometry_ &,

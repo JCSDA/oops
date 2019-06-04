@@ -19,9 +19,9 @@
 #include "oops/assimilation/Increment4D.h"
 #include "oops/assimilation/State4D.h"
 #include "oops/base/IdentityMatrix.h"
+#include "oops/base/IncrementEnsemble.h"
 #include "oops/base/Localization.h"
 #include "oops/base/ModelSpaceCovariance4DBase.h"
-#include "oops/base/StateEnsemble.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -40,8 +40,8 @@ class EnsembleCovariance4D : public ModelSpaceCovariance4DBase<MODEL> {
   typedef Increment4D<MODEL>                      Increment4D_;
   typedef Localization<MODEL>                     Localization_;
   typedef State4D<MODEL>                          State4D_;
-  typedef StateEnsemble<MODEL>                    Ensemble_;
-  typedef boost::shared_ptr<StateEnsemble<MODEL>> EnsemblePtr_;
+  typedef IncrementEnsemble<MODEL>                Ensemble_;
+  typedef boost::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
 
  public:
   EnsembleCovariance4D(const Geometry_ &, const Variables &,
@@ -68,12 +68,7 @@ EnsembleCovariance4D<MODEL>::EnsembleCovariance4D(const Geometry_ & resol, const
   : ModelSpaceCovariance4DBase<MODEL>(xb, fg, resol, conf), ens_(), loc_()
 {
   Log::trace() << "EnsembleCovariance4D::EnsembleCovariance4D start" << std::endl;
-  std::vector<util::DateTime> timeslots;
-  for (unsigned jsub = 0; jsub < xb.size(); ++jsub) {
-    timeslots.push_back(xb[jsub].validTime());
-  }
-  ens_.reset(new Ensemble_(timeslots, conf));
-  ens_->linearize(xb, fg, resol);
+  ens_.reset(new Ensemble_(conf, xb, fg, resol));
   if (conf.has("localization")) {
     const eckit::LocalConfiguration confloc(conf, "localization");
     loc_.reset(new Localization_(resol, ens_, confloc));

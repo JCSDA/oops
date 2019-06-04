@@ -17,7 +17,7 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/assimilation/Increment4D.h"
-#include "oops/base/StateEnsemble.h"
+#include "oops/base/IncrementEnsemble.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/oobump_f.h"
 #include "oops/generic/UnstructuredGrid.h"
@@ -41,7 +41,7 @@ class ParametersBUMP {
   typedef Increment<MODEL>                        Increment_;
   typedef Increment4D<MODEL>                      Increment4D_;
   typedef State<MODEL>                            State_;
-  typedef boost::shared_ptr<StateEnsemble<MODEL>> EnsemblePtr_;
+  typedef boost::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
 
  public:
   static const std::string classname() {return "oops::ParametersBUMP";}

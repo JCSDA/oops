@@ -16,7 +16,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/Increment4D.h"
 #include "oops/assimilation/State4D.h"
-#include "oops/base/StateEnsemble.h"
+#include "oops/base/IncrementEnsemble.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/State.h"
@@ -26,8 +26,8 @@
 namespace oops {
 
   template <typename MODEL> class EnsVariance : public Application {
-    typedef StateEnsemble<MODEL>                     Ensemble_;
-    typedef boost::shared_ptr<StateEnsemble<MODEL> > EnsemblePtr_;
+    typedef IncrementEnsemble<MODEL>                 Ensemble_;
+    typedef boost::shared_ptr<IncrementEnsemble<MODEL> > EnsemblePtr_;
     typedef Geometry<MODEL>                          Geometry_;
     typedef Increment4D<MODEL>                       Increment4D_;
     typedef State<MODEL>                             State_;
@@ -58,17 +58,10 @@ namespace oops {
         xx.reset(new State4D_(xx3D));
       }
 
-      //  Setup timeslots
-      std::vector<util::DateTime> timeslots;
-      for (unsigned jsub = 0; jsub < (*xx).size(); ++jsub) {
-        timeslots.push_back((*xx)[jsub].validTime());
-      }
-
       // Compute rescaled and transformed ensemble perturbations
       //        ens_k = K^-1 dx_k / (N-1)^0.5
       const eckit::LocalConfiguration ensConfig(fullConfig, "Ensemble");
-      EnsemblePtr_ ens_k(new Ensemble_(timeslots, ensConfig));
-      ens_k->linearize((*xx), (*xx), resol);
+      EnsemblePtr_ ens_k(new Ensemble_(ensConfig, (*xx), (*xx), resol));
 
       // Get ensemble size
       unsigned nm = ens_k->size();

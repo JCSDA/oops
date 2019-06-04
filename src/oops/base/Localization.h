@@ -18,7 +18,7 @@
 #include <boost/scoped_ptr.hpp>
 
 #include "oops/assimilation/Increment4D.h"
-#include "oops/base/StateEnsemble.h"
+#include "oops/base/IncrementEnsemble.h"
 #include "oops/generic/LocalizationGeneric.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -45,7 +45,7 @@ class Localization : public util::Printable,
   typedef Increment<MODEL>                        Increment_;
   typedef Increment4D<MODEL>                      Increment4D_;
   typedef Geometry<MODEL>                         Geometry_;
-  typedef boost::shared_ptr<StateEnsemble<MODEL>> EnsemblePtr_;
+  typedef boost::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
 
  public:
   static const std::string classname() {return "oops::Localization";}

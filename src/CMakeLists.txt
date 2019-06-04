@@ -82,6 +82,7 @@ oops/base/GeneralizedDepartures.h
 oops/base/GeoVaLsWriter.h
 oops/base/HybridCovariance.h
 oops/base/IdentityMatrix.h
+oops/base/IncrementEnsemble.h
 oops/base/LinearObsOperators.h
 oops/base/LinearVariableChangeBase.h
 oops/base/Localization.h
@@ -108,7 +109,6 @@ oops/base/PostProcessor.h
 oops/base/PostProcessorTLAD.h
 oops/base/PostTimer.h
 oops/base/PostTimer.cc
-oops/base/StateEnsemble.h
 oops/base/StateInfo.h
 oops/base/StateWriter.h
 oops/base/TrajectorySaver.h

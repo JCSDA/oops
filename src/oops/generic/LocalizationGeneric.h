@@ -17,7 +17,7 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/assimilation/Increment4D.h"
-#include "oops/base/StateEnsemble.h"
+#include "oops/base/IncrementEnsemble.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/util/abor1_cpp.h"
@@ -53,7 +53,7 @@ class LocalizationGeneric : public util::Printable,
 template <typename MODEL>
 class LocalizationGenericFactory {
   typedef Geometry<MODEL>                         Geometry_;
-  typedef boost::shared_ptr<StateEnsemble<MODEL>> EnsemblePtr_;
+  typedef boost::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
  public:
   static LocalizationGeneric<MODEL> * create(const Geometry_ &,
                                              const EnsemblePtr_,
@@ -76,7 +76,7 @@ class LocalizationGenericFactory {
 template<class MODEL, class T>
 class LocalizationGenericMaker : public LocalizationGenericFactory<MODEL> {
   typedef Geometry<MODEL>                         Geometry_;
-  typedef boost::shared_ptr<StateEnsemble<MODEL>> EnsemblePtr_;
+  typedef boost::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
   virtual LocalizationGeneric<MODEL> * make(const Geometry_ & resol,
                                             const EnsemblePtr_ ens,
                                             const eckit::Configuration & conf)

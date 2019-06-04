@@ -8,14 +8,14 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef OOPS_BASE_STATEENSEMBLE_H_
-#define OOPS_BASE_STATEENSEMBLE_H_
+#ifndef OOPS_BASE_INCREMENTENSEMBLE_H_
+#define OOPS_BASE_INCREMENTENSEMBLE_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #include <boost/ptr_container/ptr_vector.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/Increment4D.h"
@@ -27,8 +27,6 @@
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
 #include "oops/util/DateTime.h"
-#include "oops/util/dot_product.h"
-#include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
@@ -37,7 +35,7 @@ namespace oops {
 
 /// Ensemble
 
-template<typename MODEL> class StateEnsemble {
+template<typename MODEL> class IncrementEnsemble {
   typedef LinearVariableChangeBase<MODEL>  LinearVariableChangeBase_;
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
@@ -50,99 +48,77 @@ template<typename MODEL> class StateEnsemble {
 
  public:
 /// Constructor
-  StateEnsemble(const Geometry_ & resol,
-                const Variables & vars,
-                const std::vector<util::DateTime> &,
-                const int rank);
-  StateEnsemble(const std::vector<util::DateTime> &,
-                const eckit::Configuration &);
+  IncrementEnsemble(const Geometry_ & resol,
+                    const Variables & vars,
+                    const std::vector<util::DateTime> &,
+                    const int rank);
+  IncrementEnsemble(const eckit::Configuration &,
+                    const State4D_ &, const State4D_ &, const Geometry_ &);
 
 /// Destructor
-  virtual ~StateEnsemble() {}
+  virtual ~IncrementEnsemble() {}
 
   /// Accessors
   unsigned int size() const {
     return rank_;
   }
   Increment4D_ & operator[](const int ii) {
-    return ensemblePerturbs_[ii];
+    return *ensemblePerturbs_[ii];
   }
   const Increment4D_ & operator[](const int ii) const {
-    return ensemblePerturbs_[ii];
+    return *ensemblePerturbs_[ii];
   }
-
-  void linearize(const State4D_ &, const State4D_ &, const Geometry_ &);
 
   const Variables & controlVariables() const {return vars_;}
 
  private:
-  const eckit::LocalConfiguration config_;
-
   unsigned int rank_;
-  const std::vector<util::DateTime> timeslots_;
   const Variables vars_;
-  boost::scoped_ptr<const Geometry_> resol_;
-
-  boost::ptr_vector<Increment4D_> ensemblePerturbs_;
+  std::vector<std::unique_ptr<Increment4D_>> ensemblePerturbs_;
 };
 
 // ====================================================================================
 
 template<typename MODEL>
-StateEnsemble<MODEL>::StateEnsemble(const Geometry_ & resol,
-                                    const Variables & vars,
-                                    const std::vector<util::DateTime> & timeslots,
-                                    const int rank)
-  : rank_(rank), timeslots_(timeslots),
-    vars_(vars), resol_(), ensemblePerturbs_()
+IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol,
+                                            const Variables & vars,
+                                            const std::vector<util::DateTime> & timeslots,
+                                            const int rank)
+  : rank_(rank), vars_(vars), ensemblePerturbs_()
 {
-  resol_.reset(new Geometry_(resol));
   for (unsigned m = 0; m < rank_; ++m) {
-    Increment4D_ * dx = new Increment4D_(*resol_, vars_, timeslots_);
-    ensemblePerturbs_.push_back(dx);
+    Increment4D_ * dx = new Increment4D_(resol, vars_, timeslots);
+    ensemblePerturbs_.push_back(std::unique_ptr<Increment4D_>(dx));
   }
-  Log::trace() << "StateEnsemble:contructor done" << std::endl;
+  Log::trace() << "IncrementEnsemble:contructor done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-StateEnsemble<MODEL>::StateEnsemble(const std::vector<util::DateTime> & timeslots,
-                                    const eckit::Configuration & conf)
-  : config_(conf), rank_(0), timeslots_(timeslots),
-    vars_(conf), resol_(), ensemblePerturbs_()
+IncrementEnsemble<MODEL>::IncrementEnsemble(const eckit::Configuration & conf,
+                                            const State4D_ & xb, const State4D_ & fg,
+                                            const Geometry_ & resol)
+  : rank_(0), vars_(conf), ensemblePerturbs_()
 {
   // Get rank from config
   std::vector<eckit::LocalConfiguration> memberConfig;
-  config_.get("members", memberConfig);
+  conf.get("members", memberConfig);
   rank_ = memberConfig.size();
-  Log::trace() << "StateEnsemble:contructor done" << std::endl;
-}
 
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void StateEnsemble<MODEL>::linearize(const State4D_ & xb, const State4D_ & fg,
-                                     const Geometry_ & resol) {
-  // Check sizes
-  ASSERT(xb.size() == timeslots_.size());
-  ASSERT(fg.size() == timeslots_.size());
-  for (unsigned jsub = 0; jsub < timeslots_.size(); ++jsub) {
-     ASSERT(xb[jsub].validTime() == timeslots_[jsub]);
-     ASSERT(fg[jsub].validTime() == timeslots_[jsub]);
+  // Check sizes and fill in timeslots
+  ASSERT(xb.size() == fg.size());
+  std::vector<util::DateTime> timeslots(xb.size());
+  for (unsigned jsub = 0; jsub < xb.size(); ++jsub) {
+     ASSERT(xb[jsub].validTime() == fg[jsub].validTime());
+     timeslots[jsub] = xb[jsub].validTime();
   }
-  std::vector<eckit::LocalConfiguration> memberConfig;
-  config_.get("members", memberConfig);
-  ASSERT(memberConfig.size() == rank_);
-
-  // Set resolution
-  resol_.reset(new Geometry_(resol));
 
   // Setup change of variable
   ChvarVec_ chvars;
-  if (config_.has("variable_changes")) {
+  if (conf.has("variable_changes")) {
     std::vector<eckit::LocalConfiguration> chvarconfs;
-    config_.get("variable_changes", chvarconfs);
+    conf.get("variable_changes", chvarconfs);
     for (const auto & conf : chvarconfs) {
       chvars.push_back(LinearVariableChangeFactory<MODEL>::create(xb[0], fg[0], resol, conf));
     }
@@ -152,11 +128,11 @@ void StateEnsemble<MODEL>::linearize(const State4D_ & xb, const State4D_ & fg,
   // Read ensemble
   std::vector<State4D_> ensemble;
   for (unsigned int ie = 0; ie < rank_; ++ie) {
-    boost::scoped_ptr<State4D_> xx;
+    std::unique_ptr<State4D_> xx;
     if (memberConfig[ie].has("state")) {
-      xx.reset(new State4D_(memberConfig[ie], vars_, *resol_));
+      xx.reset(new State4D_(memberConfig[ie], vars_, resol));
     } else {
-      State_ xx3D(*resol_, vars_, memberConfig[ie]);
+      State_ xx3D(resol, vars_, memberConfig[ie]);
       xx.reset(new State4D_(xx3D));
     }
     ensemble.push_back((*xx));
@@ -172,11 +148,11 @@ void StateEnsemble<MODEL>::linearize(const State4D_ & xb, const State4D_ & fg,
   const double rk = 1.0 / sqrt((static_cast<double>(rank_) - 1.0));
   for (unsigned int ie = 0; ie < rank_; ++ie) {
     // Ensemble will be centered around ensemble mean
-    Increment4D_ dx(*resol_, vars_, timeslots_);
+    Increment4D_ dx(resol, vars_, timeslots);
     dx.diff(ensemble[ie], bgmean);
 
     // Apply inverse of the linear balance operator
-    for (unsigned jsub = 0; jsub < timeslots_.size(); ++jsub) {
+    for (unsigned jsub = 0; jsub < timeslots.size(); ++jsub) {
       // K_1^{-1} K_2^{-1} .. K_N^{-1}
       for (ircst_ it = chvars.rbegin(); it != chvars.rend(); ++it) {
         Increment_ dxchvarout = it->multiplyInverse(dx[jsub]);
@@ -185,14 +161,15 @@ void StateEnsemble<MODEL>::linearize(const State4D_ & xb, const State4D_ & fg,
     }
 
     Increment4D_ * dxunbalptr = new Increment4D_(dx);
-    ensemblePerturbs_.push_back(dxunbalptr);
+    ensemblePerturbs_.push_back(std::unique_ptr<Increment4D_>(dxunbalptr));
 
     // Rescale
-    ensemblePerturbs_[ie] *= rk;
+    *ensemblePerturbs_[ie] *= rk;
   }
+  Log::trace() << "IncrementEnsemble:contructor done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 }  // namespace oops
 
-#endif  // OOPS_BASE_STATEENSEMBLE_H_
+#endif  // OOPS_BASE_INCREMENTENSEMBLE_H_

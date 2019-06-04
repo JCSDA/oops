@@ -20,6 +20,7 @@
 #include "eckit/config/Configuration.h"
 #include "oops/assimilation/Increment4D.h"
 #include "oops/assimilation/State4D.h"
+#include "oops/base/IncrementEnsemble.h"
 #include "oops/base/instantiateCovarFactory.h"
 #include "oops/generic/ParametersBUMP.h"
 #include "oops/runs/Application.h"
@@ -34,8 +35,8 @@ template <typename MODEL> class EstimateParams : public Application {
   typedef State<MODEL>                            State_;
   typedef State4D<MODEL>                          State4D_;
   typedef ParametersBUMP<MODEL>                   Parameters_;
-  typedef StateEnsemble<MODEL>                    Ensemble_;
-  typedef boost::shared_ptr<StateEnsemble<MODEL>> EnsemblePtr_;
+  typedef IncrementEnsemble<MODEL>                Ensemble_;
+  typedef boost::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -77,8 +78,7 @@ template <typename MODEL> class EstimateParams : public Application {
     EnsemblePtr_ ens = NULL;
     if (fullConfig.has("ensemble")) {
       const eckit::LocalConfiguration ensembleConfig(fullConfig, "ensemble");
-      ens.reset(new Ensemble_(timeslots, ensembleConfig));
-      ens->linearize((*xx), (*xx), resol);
+      ens.reset(new Ensemble_(ensembleConfig, (*xx), (*xx), resol));
     }
 
     // Setup pseudo ensemble
