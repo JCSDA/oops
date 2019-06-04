@@ -197,6 +197,75 @@ template <typename MODEL> void testIncrementAxpy() {
 
 // -----------------------------------------------------------------------------
 
+template <typename MODEL> void testIncrementInterpTL() {
+  typedef IncrementFixture<MODEL>       Test_;
+  typedef oops::Increment<MODEL>        Increment_;
+  typedef oops::Locations<MODEL>        Locations_;
+  typedef oops::GeoVaLs<MODEL>          GeoVaLs_;
+  typedef oops::InterpolatorTraj<MODEL> InterpolatorTraj_;
+  typedef oops::State<MODEL>            State_;
+  typedef eckit::LocalConfiguration     LocalConf_;
+
+  // Check if "InterpTest" is present
+  if (!TestEnvironment::config().has("InterpTest")) {
+      oops::Log::warning() << "Bypassing test for tangent of interpolation";
+      return;
+  }
+
+  // Create Background
+  const LocalConf_ confstate(TestEnvironment::config(), "State");
+  const State_ xx(Test_::resol(), Test_::ctlvars(), confstate);
+
+  // Locations from config
+  const LocalConf_ configlocs(TestEnvironment::config(), "InterpTest.Locations");
+  const Locations_ locs(configlocs);
+
+  // Variables from config
+  const LocalConf_ configvars(TestEnvironment::config(), "InterpTest.GeoVaLs");
+  const oops::Variables vars(configvars);
+
+  // Setup Increments
+  Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
+
+  // Get tolerance and increment scaling
+  const double tol = TestEnvironment::config().getDouble("InterpTest.tolerance");
+  const double alpha = TestEnvironment::config().getDouble("InterpTest.coefTL", 1e-12);
+
+  // Call NL getvalues to setup and initialize trajectory
+  InterpolatorTraj_ traj;
+  GeoVaLs_ hofx(locs, vars);
+  xx.getValues(locs, vars, hofx, traj);
+
+  // Randomize increments
+  dx.random();
+  dx *= alpha;
+
+  // h(x+dx)
+  GeoVaLs_ hofxpdx(locs, vars);
+  State_ xpdx(xx);
+  xpdx = xx;
+  xpdx += dx;
+  xpdx.getValues(locs, vars, hofxpdx);
+
+  // Create geovals from locs and vars
+  GeoVaLs_ Hdx(locs, vars);
+
+  // Forward getValues (state to geovals)
+  dx.getValuesTL(locs, vars, Hdx, traj);
+
+  // Test if ||(h(x+alpha*dx)-h(x)-h'*(alpha*dx))||<tol
+  GeoVaLs_ testtl(hofxpdx);
+  testtl = hofxpdx;
+  testtl -= hofx;
+  testtl -= Hdx;
+  double test_norm = dot_product(testtl, testtl);
+  oops::Log::info() << " ||(h(x+alpha*dx)-h(x)-h'*(alpha*dx))||="
+                    << test_norm << std::endl;
+  EXPECT(test_norm < tol);
+}
+
+// -----------------------------------------------------------------------------
+
 template <typename MODEL> void testIncrementInterpAD() {
   typedef IncrementFixture<MODEL>       Test_;
   typedef oops::Increment<MODEL>        Increment_;
@@ -322,8 +391,10 @@ class Increment : public oops::Test {
       { testIncrementAxpy<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementInterpAD")
       { testIncrementInterpAD<MODEL>(); });
-    // ts.emplace_back(CASE("interface/Increment/testIncrementSerialize")
-    //   { testIncrementSerialize<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementInterpTL")
+      { testIncrementInterpTL<MODEL>(); });
+//    ts.emplace_back(CASE("interface/Increment/testIncrementSerialize")
+//      { testIncrementSerialize<MODEL>(); });
   }
 };
 
