@@ -10,15 +10,14 @@ cost_function:
     Covariance:
       covariance: QgError
       covariance_time:
-      - covariance: QgError
-        horizontal_length_scale: 1.0e6
+      - horizontal_length_scale: 2.2e6
         maximum_condition_number: 1.0e6
-        standard_deviation: 8.0e6
-        vertical_length_scale: 2787.0
-      - horizontal_length_scale: 2.0e5
+        standard_deviation: 1.8e7
+        vertical_length_scale: 15000.0
+      - horizontal_length_scale: 4.5e6
         maximum_condition_number: 1.0e6
-        standard_deviation: 2.0e6
-        vertical_length_scale: 4247.0
+        standard_deviation: 1.8e7
+        vertical_length_scale: 15000.0
   Jc:
   - jcdfi:
       alpha: 1.0e-14

@@ -1,204 +1,204 @@
 Test     : CostJb   : Nonlinear Jb = 0
-Test     : CostJo   : Nonlinear Jo(Stream) = 7600.76, nobs = 300, Jo/n = 25.3359, err = 4e+06
-Test     : CostJo   : Nonlinear Jo(Wind) = 383.932, nobs = 160, Jo/n = 2.39957, err = 6
-Test     : CostJo   : Nonlinear Jo(WSpeed) = 190.963, nobs = 300, Jo/n = 0.636543, err = 12
-Test     : CostJcDFI: Nonlinear Jc = 5.44765
-Test     : CostFunction: Nonlinear J = 8181.11
-Test     : DRPLanczosMinimizer: reduction in residual norm = 0.0180004
+Test     : CostJo   : Nonlinear Jo(Stream) = 3235.66, nobs = 300, Jo/n = 10.7855, err = 4e+06
+Test     : CostJo   : Nonlinear Jo(Wind) = 173.865, nobs = 160, Jo/n = 1.08665, err = 6
+Test     : CostJo   : Nonlinear Jo(WSpeed) = 102.483, nobs = 300, Jo/n = 0.34161, err = 12
+Test     : CostJcDFI: Nonlinear Jc = 16.3749
+Test     : CostFunction: Nonlinear J = 3528.38
+Test     : DRPLanczosMinimizer: reduction in residual norm = 0.0420452
 Test     : CostFunction::addIncrement: Analysis: 
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.1357, Max=      1.3202, RMS=      1.2695
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     :   Scaling=  1e+08, Min=     -4.9637, Max=      1.0116, RMS=      1.8721
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     :   Valid time: 2010-01-01T01:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.1332, Max=      1.2992, RMS=      1.2675
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     :   Scaling=  1e+08, Min=     -4.9271, Max=      1.0133, RMS=      1.8626
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     :   Valid time: 2010-01-01T02:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.1299, Max=      1.2788, RMS=      1.2655
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     :   Scaling=  1e+08, Min=     -4.8910, Max=      1.0143, RMS=      1.8536
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     :   Valid time: 2010-01-01T03:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.1256, Max=      1.2580, RMS=      1.2637
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     :   Scaling=  1e+08, Min=     -4.8547, Max=      1.0148, RMS=      1.8452
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     :   Valid time: 2010-01-01T04:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.1200, Max=      1.2362, RMS=      1.2619
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     :   Scaling=  1e+08, Min=     -4.8176, Max=      1.0148, RMS=      1.8373
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     :   Valid time: 2010-01-01T05:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.1130, Max=      1.2136, RMS=      1.2601
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     :   Scaling=  1e+08, Min=     -4.7878, Max=      1.0143, RMS=      1.8298
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     :   Valid time: 2010-01-01T06:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.1046, Max=      1.1907, RMS=      1.2580
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     :   Scaling=  1e+08, Min=     -4.7659, Max=      1.0137, RMS=      1.8225
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     :   Valid time: 2010-01-01T07:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.0948, Max=      1.1680, RMS=      1.2557
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     :   Scaling=  1e+08, Min=     -4.7395, Max=      1.0129, RMS=      1.8152
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     :   Valid time: 2010-01-01T08:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.0839, Max=      1.1461, RMS=      1.2531
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     :   Scaling=  1e+08, Min=     -4.7065, Max=      1.0120, RMS=      1.8079
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     :   Valid time: 2010-01-01T09:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.0718, Max=      1.1251, RMS=      1.2502
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     :   Scaling=  1e+08, Min=     -4.6661, Max=      1.0110, RMS=      1.8004
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     :   Valid time: 2010-01-01T10:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.0584, Max=      1.1050, RMS=      1.2469
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     :   Scaling=  1e+08, Min=     -4.6196, Max=      1.0101, RMS=      1.7927
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     :   Valid time: 2010-01-01T11:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.0459, Max=      1.0856, RMS=      1.2433
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     :   Scaling=  1e+08, Min=     -4.5833, Max=      1.0092, RMS=      1.7849
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.0355, Max=      1.0665, RMS=      1.2393
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
-Test     : CostJb   : Nonlinear Jb = 59.95
-Test     : CostJo   : Nonlinear Jo(Stream) = 87.38, nobs = 300, Jo/n = 0.2913, err = 4e+06
-Test     : CostJo   : Nonlinear Jo(Wind) = 59.72, nobs = 160, Jo/n = 0.3732, err = 6
-Test     : CostJo   : Nonlinear Jo(WSpeed) = 29.67, nobs = 300, Jo/n = 0.09889, err = 12
-Test     : CostJcDFI: Nonlinear Jc = 24.68
-Test     : CostFunction: Nonlinear J = 261.4
-Test     : DRPLanczosMinimizer: reduction in residual norm = 0.4315
+Test     :   Scaling=  1e+08, Min=     -4.5429, Max=      1.0085, RMS=      1.7771
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
+Test     : CostJb   : Nonlinear Jb = 51.49
+Test     : CostJo   : Nonlinear Jo(Stream) = 45.19, nobs = 300, Jo/n = 0.1506, err = 4e+06
+Test     : CostJo   : Nonlinear Jo(Wind) = 24.65, nobs = 160, Jo/n = 0.1541, err = 6
+Test     : CostJo   : Nonlinear Jo(WSpeed) = 17.12, nobs = 300, Jo/n = 0.05707, err = 12
+Test     : CostJcDFI: Nonlinear Jc = 19.37
+Test     : CostFunction: Nonlinear J = 157.8
+Test     : DRPLanczosMinimizer: reduction in residual norm = 0.29
 Test     : CostFunction::addIncrement: Analysis: 
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.1252, Max=      1.3179, RMS=      1.2719
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     :   Scaling=  1e+08, Min=     -4.9831, Max=      1.0152, RMS=      1.8772
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     :   Valid time: 2010-01-01T01:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.1200, Max=      1.2968, RMS=      1.2691
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     :   Scaling=  1e+08, Min=     -4.9445, Max=      1.0167, RMS=      1.8673
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     :   Valid time: 2010-01-01T02:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.1154, Max=      1.2756, RMS=      1.2665
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     :   Scaling=  1e+08, Min=     -4.9059, Max=      1.0176, RMS=      1.8579
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     :   Valid time: 2010-01-01T03:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.1101, Max=      1.2546, RMS=      1.2640
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     :   Scaling=  1e+08, Min=     -4.8666, Max=      1.0179, RMS=      1.8490
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     :   Valid time: 2010-01-01T04:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.1041, Max=      1.2328, RMS=      1.2617
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     :   Scaling=  1e+08, Min=     -4.8261, Max=      1.0177, RMS=      1.8405
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     :   Valid time: 2010-01-01T05:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.0972, Max=      1.2104, RMS=      1.2594
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     :   Scaling=  1e+08, Min=     -4.7888, Max=      1.0172, RMS=      1.8324
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     :   Valid time: 2010-01-01T06:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.0893, Max=      1.1879, RMS=      1.2569
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     :   Scaling=  1e+08, Min=     -4.7622, Max=      1.0165, RMS=      1.8244
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     :   Valid time: 2010-01-01T07:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.0806, Max=      1.1658, RMS=      1.2543
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     :   Scaling=  1e+08, Min=     -4.7307, Max=      1.0156, RMS=      1.8165
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     :   Valid time: 2010-01-01T08:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.0711, Max=      1.1446, RMS=      1.2515
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     :   Scaling=  1e+08, Min=     -4.6924, Max=      1.0146, RMS=      1.8085
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     :   Valid time: 2010-01-01T09:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.0607, Max=      1.1245, RMS=      1.2485
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     :   Scaling=  1e+08, Min=     -4.6464, Max=      1.0136, RMS=      1.8003
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     :   Valid time: 2010-01-01T10:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.0490, Max=      1.1053, RMS=      1.2451
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     :   Scaling=  1e+08, Min=     -4.6086, Max=      1.0126, RMS=      1.7918
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     :   Valid time: 2010-01-01T11:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.0356, Max=      1.0870, RMS=      1.2414
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     :   Scaling=  1e+08, Min=     -4.5687, Max=      1.0117, RMS=      1.7832
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -3.0258, Max=      1.0691, RMS=      1.2374
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
-Test     : CostJb   : Nonlinear Jb = 61.85
-Test     : CostJo   : Nonlinear Jo(Stream) = 59.14, nobs = 300, Jo/n = 0.1971, err = 4e+06
-Test     : CostJo   : Nonlinear Jo(Wind) = 34.08, nobs = 160, Jo/n = 0.213, err = 6
-Test     : CostJo   : Nonlinear Jo(WSpeed) = 17.9, nobs = 300, Jo/n = 0.05967, err = 12
-Test     : CostJcDFI: Nonlinear Jc = 22.17
-Test     : CostFunction: Nonlinear J = 195.1
+Test     :   Scaling=  1e+08, Min=     -4.5244, Max=      1.0110, RMS=      1.7747
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
+Test     : CostJb   : Nonlinear Jb = 60.34
+Test     : CostJo   : Nonlinear Jo(Stream) = 20.02, nobs = 300, Jo/n = 0.06673, err = 4e+06
+Test     : CostJo   : Nonlinear Jo(Wind) = 14.52, nobs = 160, Jo/n = 0.09075, err = 6
+Test     : CostJo   : Nonlinear Jo(WSpeed) = 8.066, nobs = 300, Jo/n = 0.02689, err = 12
+Test     : CostJcDFI: Nonlinear Jc = 18.89
+Test     : CostFunction: Nonlinear J = 121.8

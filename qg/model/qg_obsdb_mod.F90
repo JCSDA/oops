@@ -626,34 +626,10 @@ integer :: jobs,iobs,jstep
 real(kind_real) :: x(nlocs),y(nlocs),z(nlocs),lon(nlocs),lat(nlocs)
 type(datetime) :: now
 
-! Backward variables - BACKWARD
-integer :: ijk, intinv, ii, jj, kk, ij ! - BACKWARD
-real(kind_real) :: goldinv ! - BACKWARD
-
 ! Generate random locations
 call uniform_distribution(x,0.0_kind_real,domain_zonal,rseed)
 call uniform_distribution(y,0.0_kind_real,domain_meridional,rseed)
 call uniform_distribution(z,0.0_kind_real,domain_depth,rseed)
-
-goldinv = 0.5_kind_real*(sqrt(5.0_kind_real)-1.0_kind_real) ! 1/(golden ratio) ! - BACKWARD
-intinv = nint(goldinv*real(40*20*2,kind_real)) ! - BACKWARD
-ijk=0 ! - BACKWARD
-do jobs=1,nlocs ! - BACKWARD
-  ijk=ijk+intinv ! - BACKWARD
-  ijk=modulo(ijk,2*40*(20-2)) ! - BACKWARD
-  kk=ijk/(40*(20-2)) ! - BACKWARD
-  ij=ijk-kk*40*(20-2) ! - BACKWARD
-  jj=ij/40 ! - BACKWARD
-  ii=ij-jj*40 ! - BACKWARD
-  jj=jj+2 ! - BACKWARD
-  x(jobs)=(real(ii,kind_real)+0.5)*300000.0 ! - BACKWARD
-  y(jobs)=real(jj,kind_real)*300000.0 ! - BACKWARD
-  if (kk==0) then ! - BACKWARD
-    z(jobs) = 4500.0+0.5*5500.0 ! - BACKWARD
-  elseif (kk==1) then ! - BACKWARD
-    z(jobs) = 0.5*4500.0 ! - BACKWARD
-  end if ! - BACKWARD
-enddo ! - BACKWARD
 
 ! Convert to lon/lat
 do jobs=1,nlocs

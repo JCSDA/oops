@@ -7,9 +7,9 @@ cost_function:
         filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H
     Covariance:
       covariance: QgError
-      horizontal_length_scale: 1.0e6
+      horizontal_length_scale: 2.2e6
       maximum_condition_number: 1.0e6
-      standard_deviation: 8.0e6
+      standard_deviation: 1.8e7
       variable_changes:
       - inputVariables:
           variables:
@@ -18,7 +18,7 @@ cost_function:
           variables:
           - x
         varchange: ChVarQG
-      vertical_length_scale: 2787.0
+      vertical_length_scale: 15000.0
   Jo:
     ObsTypes:
     - Covariance:

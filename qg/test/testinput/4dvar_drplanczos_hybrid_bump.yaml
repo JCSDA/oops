@@ -48,10 +48,10 @@ cost_function:
       ensemble_weight: 0.707
       static:
         covariance: QgError
-        horizontal_length_scale: 1.0e6
+        horizontal_length_scale: 2.2e6
         maximum_condition_number: 1.0e6
-        standard_deviation: 8.0e6
-        vertical_length_scale: 2787.0
+        standard_deviation: 1.8e7
+        vertical_length_scale: 15000.0
       static_weight: 0.707
   Jc:
   - jcdfi:

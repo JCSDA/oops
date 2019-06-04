@@ -13,7 +13,7 @@ bump:
   ne: 10
   new_hdiag: 1
   new_nicas: 1
-  nl0r: 4
+  nl0r: 2
   ntry: 10
   prefix: parameters_bump_loc_3d
   resol: 8.0

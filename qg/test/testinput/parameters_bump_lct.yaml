@@ -16,7 +16,7 @@ bump:
   network: 1
   new_lct: 1
   new_nicas: 1
-  nl0r: 4
+  nl0r: 2
   ntry: 10
   prefix: parameters_bump_lct
   resol: 8.0

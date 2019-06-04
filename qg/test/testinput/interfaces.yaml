@@ -13,7 +13,7 @@ Geometry:
   - 4500.0
   - 5500.0
 GeometryIterator:
-  rms: 130002019.68587324
+  rms: 204926435.39777881
   tolerance: 1.0e-8
 LocalObservationSpace:
   GeoLocation:
@@ -47,11 +47,11 @@ LinearVariableChangeTests:
   varchange: ChVarQG
   toleranceInverse: 1.0e-8
 Localization:
-  horizontal_length_scale: 2.0e6
+  horizontal_length_scale: 4.0e6
   localization: QG
   maximum_condition_number: 1.0e6
   standard_deviation: 1.0
-  vertical_length_scale: 3694.0
+  vertical_length_scale: 30000.0
 Locations: {}
 Model:
   name: QG
@@ -62,7 +62,7 @@ ModelBias: null
 ModelBiasCovariance: null
 ModelTest:
   fclength: PT24H
-  finalnorm: 111108106.46165891
+  finalnorm: 170792839.48101598
   tolerance: 0.005
 Observations:
   ObsTypes:
@@ -70,7 +70,7 @@ Observations:
       covariance: diagonal
     GeoVaLs:
       filename: Data/truth.obs4d_24h.stream.gom
-      norm: 3570668495.45861006
+      norm: 5190236838.6347504
     ObsSpace:
       ObsDataIn:
         obsfile: Data/truth.obs4d_24h
@@ -84,13 +84,13 @@ Observations:
       stream: '-10.0'
     ObsBiasCovariance:
       stream: '2.0e7'
-    rmsequiv: 126242201.30834891
+    rmsequiv: 183502589.5028424
     tolerance: 1.0e-8
   - Covariance:
       covariance: diagonal
     GeoVaLs:
       filename: Data/truth.obs4d_24h.wind.gom
-      norm: 1207.43821141
+      norm: 1016.3608615365378
     ObsSpace:
       ObsDataIn:
         obsfile: Data/truth.obs4d_24h
@@ -104,13 +104,13 @@ Observations:
       uwind: '10.0'
     ObsBiasCovariance:
       uwind: '15.0'
-    rmsequiv: 46.50040076384709
+    rmsequiv: 39.644266100943696
     tolerance: 1.0e-8
   - Covariance:
       covariance: diagonal
     GeoVaLs:
       filename: Data/truth.obs4d_24h.wspeed.gom
-      norm: 1226.64005213
+      norm: 1169.499384622432
     ObsSpace:
       ObsDataIn:
         obsfile: Data/truth.obs4d_24h
@@ -120,7 +120,7 @@ Observations:
       ObsType: WSpeed
     ObsOperator:
       ObsType: WSpeed
-    rmsequiv: 61.33200261
+    rmsequiv: 58.474969231121605
     tolerance: 1.0e-8
 State:
   date: 2009-12-31T00:00:00Z
@@ -158,8 +158,8 @@ StateTest:
     - x
   date: 2009-12-31T00:00:00Z
   interp_tolerance: 0.04
-  norm-file: 123965819.83532093
-  norm-gen: 93608292.91696000
+  norm-file: 195415162.30387616
+  norm-gen: 148702024.11261204
   tolerance: 1.0e-08
   values:
   - 6.042838

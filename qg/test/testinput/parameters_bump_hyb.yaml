@@ -13,18 +13,18 @@ bump:
   ne: 10
   new_hdiag: 1
   new_nicas: 1
-  nl0r: 4
+  nl0r: 2
   ntry: 10
   prefix: parameters_bump_hyb
   resol: 8.0
   strategy: specific_univariate
 covariance:
   covariance: QgError
-  horizontal_length_scale: 1.0e6
+  horizontal_length_scale: 2.2e6
   maximum_condition_number: 1.0e6
-  pseudoens_size: 10
-  standard_deviation: 8.0e6
-  vertical_length_scale: 2787.0
+  pseudoens_size: 30
+  standard_deviation: 1.8e7
+  vertical_length_scale: 10000.0
 ensemble:
   members:
   - date: 2010-01-01T12:00:00Z

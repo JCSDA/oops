@@ -3,17 +3,17 @@ Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -2.9799, Max=      1.2964, RMS=      1.2616
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
+Test     :   Scaling=  1e+08, Min=     -5.1807, Max=      1.0739, RMS=      1.9152
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     : Final state: 
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -2.9510, Max=      1.1005, RMS=      1.2490
-Test     :   Scaling=  1e+08, Min=     -2.5200, Max=     -0.0000, RMS=      1.2988
-Test     :   Scaling=  0.001, Min=     -0.4243, Max=      0.3645, RMS=      0.2811
-Test     : Generated observation: Stream nobs= 300 Scaling=  1e+07, Min=    -28.3009, Max=     11.3602, Average=     -7.8884
-Test     : Generated observation: Wind nobs= 160 Scaling=     10, Min=     -9.1361, Max=     13.5298, Average=      1.4189
-Test     : Generated observation: WSpeed nobs= 300 Scaling=     10, Min=      1.2860, Max=     13.5739, Average=      5.8531
+Test     :   Scaling=  1e+08, Min=     -4.5859, Max=      1.0654, RMS=      1.7877
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
+Test     : Generated observation: Stream nobs= 300 Scaling=  1e+08, Min=     -5.6944, Max=      0.9062, Average=     -1.3204
+Test     : Generated observation: Wind nobs= 160 Scaling=     10, Min=     -8.3586, Max=     10.6728, Average=      1.0558
+Test     : Generated observation: WSpeed nobs= 300 Scaling=     10, Min=      0.8136, Max=     14.5219, Average=      4.9940

@@ -29,10 +29,8 @@ real(kind_real),parameter :: omega = 7.2921e-5_kind_real          !< Rotation ra
 real(kind_real),parameter :: g = 10.0_kind_real                   !< Gravity (m^2 s^{-2})
 
 ! Domain parameters
-real(kind_real),parameter :: domain_zonal = 12e6_kind_real        !< Model domain in zonal direction (m) - BACKWARD
-real(kind_real),parameter :: domain_meridional = 6.3e6_kind_real  !< Model domain in meridional direction (m)  - BACKWARD
-!real(kind_real),parameter :: domain_zonal = 2.0*pi*req            !< Model domain in zonal direction (m)
-!real(kind_real),parameter :: domain_meridional = 0.5*pi*req       !< Model domain in meridional direction (m)
+real(kind_real),parameter :: domain_zonal = 2.0*pi*req            !< Model domain in zonal direction (m)
+real(kind_real),parameter :: domain_meridional = 0.5*pi*req       !< Model domain in meridional direction (m)
 real(kind_real),parameter :: domain_depth = 1.0e4_kind_real       !< Model depth (m)
 real(kind_real),parameter :: f0 = 1.0e-4_kind_real                !< Coriolis parameter at the center of the domain
 real(kind_real),parameter :: bet0 = 1.5e-11_kind_real             !< Meridional gradient of f (s^{-1} m^{-1})
