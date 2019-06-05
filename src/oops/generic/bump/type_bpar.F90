@@ -174,9 +174,9 @@ do iv=1,nam%nv
                bpar%avg_block(ib) = (bpar%nbe==bpar%nb)
                bpar%B_block(ib) = (iv==jv).and.(its==jts)
                bpar%nicas_block(ib) = (iv==jv).and.(its==jts)
-               if (ib==bpar%nbe) bpar%cv_block(ib) = 1
+               if (ib==1) bpar%cv_block(ib) = 1
             end select
-            bpar%fit_block(ib) = bpar%diag_block(ib).and.(trim(nam%minim_algo)/='none')
+            bpar%fit_block(ib) = bpar%diag_block(ib).and.(iv==jv).and.(its==jts).and.(trim(nam%minim_algo)/='none')
             if (nam%local_diag) bpar%fit_block(ib) = bpar%fit_block(ib).and.bpar%nicas_block(ib)
 
             ! Blocks information
@@ -244,7 +244,6 @@ if (bpar%nbe>bpar%nb) then
       bpar%avg_block(ib) = .false.
       bpar%B_block(ib) = .false.
       bpar%nicas_block(ib) = .false.
-      bpar%cv_block(ib) = 1
    end select
    bpar%fit_block(ib) = bpar%diag_block(ib).and.(trim(nam%minim_algo)/='none')
    if (nam%local_diag) bpar%fit_block(ib) = bpar%fit_block(ib).and.bpar%nicas_block(ib)

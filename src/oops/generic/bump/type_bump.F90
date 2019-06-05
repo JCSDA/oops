@@ -112,6 +112,7 @@ real(kind_real),intent(in),optional :: msvalr     ! Missing value for reals
 ! Local variables
 integer :: lmsvali,lens1_ne,lens1_nsub,lens2_ne,lens2_nsub
 real(kind_real) :: lmsvalr
+logical :: lgmask(nmga,nl0)
 character(len=1024),parameter :: subr = 'bump_setup_online'
 
 ! Set missing values
@@ -163,7 +164,6 @@ else
    bump%mpl%wng = ' '
 end if
 
-
 ! Header
 write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
 call bump%mpl%flush
@@ -206,7 +206,8 @@ write(bump%mpl%info,'(a)') '----------------------------------------------------
 call bump%mpl%flush
 write(bump%mpl%info,'(a)') '--- Initialize geometry'
 call bump%mpl%flush
-call bump%geom%setup(bump%mpl,bump%rng,bump%nam,nmga,nl0,lon,lat,area,vunit,gmask)
+lgmask = gmask.or.bump%nam%nomask
+call bump%geom%setup(bump%mpl,bump%rng,bump%nam,nmga,nl0,lon,lat,area,vunit,lgmask)
 if (bump%nam%default_seed) call bump%rng%reseed(bump%mpl)
 
 if (bump%nam%grid_output) then
@@ -227,19 +228,27 @@ call bump%mpl%flush
 call bump%bpar%alloc(bump%nam,bump%geom)
 call bump%bpar%init(bump%mpl,bump%nam,bump%geom)
 
-! Initialize ensemble 1
-write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
-call bump%mpl%flush
-write(bump%mpl%info,'(a)') '--- Initialize ensemble 1'
-call bump%mpl%flush
-call bump%ens1%alloc(bump%nam,bump%geom,bump%nam%ens1_ne,bump%nam%ens1_nsub)
+if (bump%nam%ens1_ne>0) then
+   ! Initialize ensemble 1
+   write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   call bump%mpl%flush
+   write(bump%mpl%info,'(a)') '--- Initialize ensemble 1'
+   call bump%mpl%flush
+   call bump%ens1%alloc(bump%nam,bump%geom,bump%nam%ens1_ne,bump%nam%ens1_nsub)
+else
+   call bump%ens1%set_att(bump%nam%ens1_ne,bump%nam%ens1_nsub)
+end if
 
-! Initialize ensemble 2
-write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
-call bump%mpl%flush
-write(bump%mpl%info,'(a)') '--- Initialize ensemble 2'
-call bump%mpl%flush
-call bump%ens2%alloc(bump%nam,bump%geom,bump%nam%ens2_ne,bump%nam%ens2_nsub)
+if (bump%nam%ens2_ne>0) then
+   ! Initialize ensemble 2
+   write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   call bump%mpl%flush
+   write(bump%mpl%info,'(a)') '--- Initialize ensemble 2'
+   call bump%mpl%flush
+   call bump%ens2%alloc(bump%nam,bump%geom,bump%nam%ens2_ne,bump%nam%ens2_nsub)
+else
+   call bump%ens2%set_att(bump%nam%ens2_ne,bump%nam%ens2_nsub)
+end if
 
 if (present(nobs)) then
    ! Check arguments consistency
@@ -255,13 +264,6 @@ if (present(nobs)) then
    write(bump%mpl%info,'(a)') '--- Initialize observations locations'
    call bump%mpl%flush
    call bump%obsop%from(nobs,lonobs,latobs)
-end if
-
-if ((bump%nam%ens1_ne>0).or.(bump%nam%ens2_ne>0)) then
-   write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
-   call bump%mpl%flush
-   write(bump%mpl%info,'(a)') '--- Add members to BUMP ensembles'
-   call bump%mpl%flush
 end if
 
 ! Copy sampling mask
@@ -283,19 +285,23 @@ implicit none
 ! Passed variables
 class(bump_type),intent(inout) :: bump ! BUMP
 
-! Finalize ensemble 1
-write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
-call bump%mpl%flush
-write(bump%mpl%info,'(a)') '--- Finalize ensemble 1'
-call bump%mpl%flush
-call bump%ens1%remove_mean
+if (bump%nam%ens1_ne>0) then
+   ! Finalize ensemble 1
+   write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   call bump%mpl%flush
+   write(bump%mpl%info,'(a)') '--- Finalize ensemble 1'
+   call bump%mpl%flush
+   call bump%ens1%remove_mean
+end if
 
-! Finalize ensemble 2
-write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
-call bump%mpl%flush
-write(bump%mpl%info,'(a)') '--- Finalize ensemble 2'
-call bump%mpl%flush
-call bump%ens2%remove_mean
+if (bump%nam%ens2_ne>0) then
+   ! Finalize ensemble 2
+   write(bump%mpl%info,'(a)') '-------------------------------------------------------------------'
+   call bump%mpl%flush
+   write(bump%mpl%info,'(a)') '--- Finalize ensemble 2'
+   call bump%mpl%flush
+   call bump%ens2%remove_mean
+end if
 
 if (bump%nam%new_cortrack) then
    ! Run correlation tracker
@@ -304,6 +310,7 @@ if (bump%nam%new_cortrack) then
    write(bump%mpl%info,'(a)') '--- Run correlation tracker'
    call bump%mpl%flush
    call bump%ens1%cortrack(bump%mpl,bump%rng,bump%nam,bump%geom,bump%io)
+   if (bump%nam%default_seed) call bump%rng%reseed(bump%mpl)
 end if
 
 if (bump%nam%new_vbal) then

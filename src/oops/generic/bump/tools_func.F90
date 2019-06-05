@@ -11,7 +11,7 @@ use fckit_geometry_module, only: sphere_distance,sphere_lonlat2xyz,sphere_xyz2lo
 use tools_asa007, only: asa007_cholesky,asa007_syminv
 use tools_const, only: pi,deg2rad,rad2deg
 use tools_kinds, only: kind_real
-use tools_repro, only: inf,sup
+use tools_repro, only: inf,sup,infeq
 use type_mpl, only: mpl_type
 
 implicit none
@@ -19,13 +19,13 @@ implicit none
 real(kind_real),parameter :: gc2gau = 0.28            ! GC99 support radius to Gaussian Daley length-scale (empirical)
 real(kind_real),parameter :: gau2gc = 3.57            ! Gaussian Daley length-scale to GC99 support radius (empirical)
 real(kind_real),parameter :: Dmin = 1.0e-12_kind_real ! Minimum tensor diagonal value
-real(kind_real),parameter :: condmax = 1.0e2          ! Maximum tensor conditioning number
+real(kind_real),parameter :: condmax = 1.0e3          ! Maximum tensor conditioning number
 integer,parameter :: M = 0                            ! Number of implicit iteration for the Matern function (Gaussian function if M = 0)
 
 private
 public :: gc2gau,gau2gc,Dmin,M
 public :: lonlatmod,sphere_dist,reduce_arc,lonlat2xyz,xyz2lonlat,vector_product,vector_triple_product,add,divide, &
-        & fit_diag,fit_diag_dble,gc99,fit_lct,lct_d2h,lct_h2r,lct_r2d,check_cond,cholesky,syminv
+        & fit_diag,fit_diag_dble,gc99,fit_lct,lct_d2h,lct_h2r,lct_r2d,check_cond,cholesky,syminv,histogram
 
 contains
 
@@ -125,14 +125,21 @@ subroutine lonlat2xyz(mpl,lon,lat,x,y,z)
 implicit none
 
 ! Passed variables
-type(mpl_type),intent(in) :: mpl  ! MPI data
-real(kind_real),intent(in) :: lon ! Longitude (radians)
-real(kind_real),intent(in) :: lat ! Latitude (radians)
-real(kind_real),intent(out) :: x  ! X coordinate
-real(kind_real),intent(out) :: y  ! Y coordinate
-real(kind_real),intent(out) :: z  ! Z coordinate
+type(mpl_type),intent(inout) :: mpl ! MPI data
+real(kind_real),intent(in) :: lon   ! Longitude (radians)
+real(kind_real),intent(in) :: lat   ! Latitude (radians)
+real(kind_real),intent(out) :: x    ! X coordinate
+real(kind_real),intent(out) :: y    ! Y coordinate
+real(kind_real),intent(out) :: z    ! Z coordinate
+
+! Local variables
+character(len=1024),parameter :: subr = 'lonlat2xyz'
 
 if (mpl%msv%isnotr(lat).and.mpl%msv%isnotr(lon)) then
+   ! Check longitude/latitude
+   if (inf(lon,-pi).and.sup(lon,pi)) call mpl%abort(subr,'wrong longitude')
+   if (inf(lat,-0.5*pi).and.sup(lat,-0.5*pi)) call mpl%abort(subr,'wrong latitude')
+
    ! Call fckit
    call sphere_lonlat2xyz(lon*rad2deg,lat*rad2deg,x,y,z)
 else
@@ -669,7 +676,7 @@ end subroutine fit_lct
 
 !----------------------------------------------------------------------
 ! Subroutine: lct_d2h
-! Purpose: inversion from D (Daley tensor) to H (local correlation tensor)
+! Purpose: from D (Daley tensor) to H (local correlation tensor)
 !----------------------------------------------------------------------
 subroutine lct_d2h(mpl,D11,D22,D33,D12,H11,H22,H33,H12)
 
@@ -711,7 +718,7 @@ end subroutine lct_d2h
 
 !----------------------------------------------------------------------
 ! Subroutine: lct_h2r
-! Purpose: inversion from H (local correlation tensor) to support radii
+! Purpose: from H (local correlation tensor) to support radii
 !----------------------------------------------------------------------
 subroutine lct_h2r(mpl,H11,H22,H33,H12,rh,rv)
 
@@ -762,7 +769,7 @@ end subroutine lct_h2r
 
 !----------------------------------------------------------------------
 ! Subroutine: lct_r2d
-! Purpose: conversion from support radius to Daley tensor diagonal element
+! Purpose: from support radius to Daley tensor diagonal element
 !----------------------------------------------------------------------
 subroutine lct_r2d(r,D)
 
@@ -964,5 +971,71 @@ deallocate(apack)
 deallocate(cpack)
 
 end subroutine syminv
+
+!----------------------------------------------------------------------
+! Subroutine: histogram
+! Purpose: compute bins and histogram from a list of values
+!----------------------------------------------------------------------
+subroutine histogram(mpl,nlist,list,nbins,histmin,histmax,bins,hist)
+
+implicit none
+
+! Passed variables
+type(mpl_type),intent(inout) :: mpl          ! MPI data
+integer,intent(in) :: nlist                  ! List size
+real(kind_real),intent(in) :: list(nlist)    ! List
+integer,intent(in) :: nbins                  ! Number of bins
+real(kind_real),intent(in) :: histmin        ! Histogram minimum
+real(kind_real),intent(in) :: histmax        ! Histogram maximum
+real(kind_real),intent(out) :: bins(nbins+1) ! Bins
+real(kind_real),intent(out) :: hist(nbins)   ! Histogram
+
+! Local variables
+integer :: ibins,ilist
+real(kind_real) :: delta
+logical :: found
+character(len=1024) :: subr = 'histogram'
+
+! Check data
+if (nbins<=0) call mpl%abort(subr,'the number of bins should be positive')
+if (histmax>histmin) then
+   if (minval(list,mask=mpl%msv%isnotr(list))<histmin) call mpl%abort(subr,'values below histogram minimum')
+   if (maxval(list,mask=mpl%msv%isnotr(list))>histmax) call mpl%abort(subr,'values over histogram maximum')
+
+   ! Compute bins
+   delta = (histmax-histmin)/real(nbins,kind_real)
+   bins(1) = histmin
+   do ibins=2,nbins
+      bins(ibins) = histmin+real(ibins-1,kind_real)*delta
+   end do
+   bins(nbins+1) = histmax
+
+   ! Extend first and last bins
+   bins(1) = bins(1)-1.0e-6*delta
+   bins(nbins+1) = bins(nbins+1)+1.0e-6*delta
+
+   ! Compute histogram
+   hist = 0.0
+   do ilist=1,nlist
+      if (mpl%msv%isnotr(list(ilist))) then
+         ibins = 0
+         found = .false.
+         do while (.not.found)
+            ibins = ibins+1
+            if (ibins>nbins) call mpl%abort(subr,'bin not found')
+            if (infeq(bins(ibins),list(ilist)).and.inf(list(ilist),bins(ibins+1))) then
+               hist(ibins) = hist(ibins)+1.0
+               found = .true.
+            end if
+         end do
+      end if
+   end do
+   if (abs(sum(hist)-real(count(mpl%msv%isnotr(list)),kind_real))>0.5) &
+    & call mpl%abort(subr,'histogram sum is not equal to the number of valid elements')
+else
+   bins = mpl%msv%valr
+   hist = 0.0
+end if
+end subroutine histogram
 
 end module tools_func

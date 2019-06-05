@@ -18,7 +18,7 @@ use type_mpl, only: mpl_type
 
 implicit none
 
-! tree derived type
+! Tree derived type
 type tree_type
     integer :: n                          ! Data size
     integer :: neff                       ! Effective tree size

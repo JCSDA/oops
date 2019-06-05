@@ -24,11 +24,13 @@ type ens_type
    ! Attributes
    integer :: ne                                  ! Ensemble size
    integer :: nsub                                ! Number of sub-ensembles
+   logical :: allocated                           ! Allocation flag
 
    ! Data
    real(kind_real),allocatable :: fld(:,:,:,:,:)  ! Ensemble perturbation
    real(kind_real),allocatable :: mean(:,:,:,:,:) ! Ensemble mean
 contains
+   procedure :: set_att => ens_set_att
    procedure :: alloc => ens_alloc
    procedure :: dealloc => ens_dealloc
    procedure :: copy => ens_copy
@@ -42,6 +44,26 @@ private
 public :: ens_type
 
 contains
+
+!----------------------------------------------------------------------
+! Subroutine: ens_set_att
+! Purpose: set attributes
+!----------------------------------------------------------------------
+subroutine ens_set_att(ens,ne,nsub)
+
+implicit none
+
+! Passed variables
+class(ens_type),intent(inout) :: ens ! Ensemble
+integer,intent(in) :: ne             ! Ensemble size
+integer,intent(in) :: nsub           ! Number of sub-ensembles
+
+! Copy attributes
+ens%ne = ne
+ens%nsub = nsub
+ens%allocated = .false.
+
+end subroutine ens_set_att
 
 !----------------------------------------------------------------------
 ! Subroutine: ens_alloc
@@ -59,13 +81,13 @@ integer,intent(in) :: ne             ! Ensemble size
 integer,intent(in) :: nsub           ! Number of sub-ensembles
 
 ! Copy attributes
-ens%ne = ne
-ens%nsub = nsub
+call ens%set_att(ne,nsub)
 
 ! Allocation
 if (ne>0) then
    allocate(ens%fld(geom%nc0a,geom%nl0,nam%nv,nam%nts,ne))
    allocate(ens%mean(geom%nc0a,geom%nl0,nam%nv,nam%nts,nsub))
+   ens%allocated = .true.
 end if
 
 end subroutine ens_alloc
@@ -84,30 +106,27 @@ class(ens_type),intent(inout) :: ens ! Ensemble
 ! Release memory
 if (allocated(ens%fld)) deallocate(ens%fld)
 if (allocated(ens%mean)) deallocate(ens%mean)
+ens%allocated = .false.
 
 end subroutine ens_dealloc
 
 !----------------------------------------------------------------------
-! Function: ens_copy
+! Subroutine: ens_copy
 ! Purpose: copy
 !----------------------------------------------------------------------
-type(ens_type) function ens_copy(ens,nam,geom)
+subroutine ens_copy(ens_out,ens_in)
 
 implicit none
 
 ! Passed variables
-class(ens_type),intent(in) :: ens  ! Ensemble
-type(nam_type),intent(in) :: nam   ! Namelist
-type(geom_type),intent(in) :: geom ! Geometry
-
-! Allocate
-call ens_copy%alloc(nam,geom,ens%ne,ens%nsub)
+class(ens_type),intent(inout) :: ens_out ! Output ensemble
+type(ens_type),intent(in) :: ens_in      ! Input ensemble
 
 ! Copy data
-if (allocated(ens%fld)) ens_copy%fld = ens%fld
-if (allocated(ens%mean)) ens_copy%mean = ens%mean
+if (allocated(ens_in%fld)) ens_out%fld = ens_in%fld
+if (allocated(ens_in%mean)) ens_out%mean = ens_in%mean
 
-end function ens_copy
+end subroutine ens_copy
 
 !----------------------------------------------------------------------
 ! Subroutine: ens_remove_mean
@@ -123,7 +142,7 @@ class(ens_type),intent(inout) :: ens ! Ensemble
 ! Local variables
 integer :: isub,ie_sub,ie
 
-if (ens%ne>0) then
+if (ens%allocated) then
    ! Loop over sub-ensembles
    do isub=1,ens%nsub
       ! Compute mean
@@ -165,7 +184,7 @@ integer :: ie,its,iv,il0
 ! Allocation
 call ens%alloc(nam,geom,ne,1)
 
-if (ens%ne>0) then
+if (ens%allocated) then
    ! Copy
    do ie=1,ens%ne
       do its=1,nam%nts
@@ -228,7 +247,17 @@ do ie=1,nam%ens1_ne
    call mpl%dot_prod(pert,fld_copy,alpha)
 
    ! Schur product
-   fld = fld+alpha*pert
+   !$omp parallel do schedule(static) private(its,iv,il0,ic0a)
+   do its=1,nam%nts
+      do iv=1,nam%nv
+         do il0=1,geom%nl0
+            do ic0a=1,geom%nc0a
+               if (geom%mask_c0a(ic0a,il0)) fld(ic0a,il0,iv,its) = fld(ic0a,il0,iv,its)+alpha*pert(ic0a,il0,iv,its)
+            end do
+         end do
+      end do
+   end do
+   !$omp end parallel do
 end do
 
 end subroutine ens_apply_bens
@@ -257,6 +286,7 @@ real(kind_real) :: u(geom%nc0a,geom%nl0,nam%nts),v(geom%nc0a,geom%nl0,nam%nts),f
 real(kind_real) :: var(geom%nc0a,geom%nl0,nam%nts),dirac(geom%nc0a,geom%nl0,nam%nts),cor(geom%nc0a,geom%nl0,nam%nv,nam%nts)
 character(len=2) :: timeslotchar
 character(len=1024) :: filename
+character(len=1024),parameter :: subr = 'ens_cortrack'
 
 ! File name
 filename = trim(nam%prefix)//'_cortrack'
@@ -368,6 +398,7 @@ call io%fld_write(mpl,nam,geom,filename,'tracker_'//timeslotchar//'_1',cor(:,:,1
 do its=2,nam%nts-1
    ! Locate correlation maximum and index
    val = 0.0
+   ic0a = mpl%msv%vali
    do jc0a=1,geom%nc0a
       jc0 = geom%c0a_to_c0(jc0a)
       call sphere_dist(lon,lat,geom%lon(jc0),geom%lat(jc0),dist)
@@ -378,6 +409,7 @@ do its=2,nam%nts-1
          end if
       end if
    end do
+   if (mpl%msv%isi(ic0a)) call mpl%abort(subr,'cannot locate correlation maximum and index')
    call mpl%f_comm%allgather(val,proc_to_val)
    call mpl%f_comm%allgather(ic0a,proc_to_ic0a)
    iproc = maxloc(proc_to_val)

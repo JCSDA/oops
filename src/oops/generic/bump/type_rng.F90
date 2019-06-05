@@ -474,13 +474,29 @@ if (mpl%main) then
    if (nval==0) then
        call mpl%abort(subr,'empty mask in initialize sampling')
    elseif (nval<ns) then
-      call mpl%abort(subr,'ns greater that mask size in initialize_sampling')
+      call mpl%abort(subr,'ns greater than mask size in initialize_sampling')
    elseif (nval==ns) then
       write(mpl%info,'(a)') ' all points are used'
       call mpl%flush
+
+      ! Allocation
+      allocate(lmask(n))
+
+      ! Initialization
+      lmask = mask
       is = 0
+
+      ! Forced points
+      do ifor=1,nfor
+         is = is+1
+         ir = for(ifor)
+         ihor(ifor) = ir
+         lmask(ir) = .false.
+      end do
+
+      ! Other points
       do i=1,n
-         if (mask(i)) then
+         if (lmask(i)) then
             is = is+1
             ihor(is) = i
          end if
@@ -492,7 +508,7 @@ if (mpl%main) then
       end if
 
       ! Allocation
-      nrep_eff = min(nrep,n-ns)
+      nrep_eff = min(nrep,nval-ns)
       allocate(ihor_tmp(ns+nrep_eff))
       allocate(lmask(n))
       allocate(smask(n))
@@ -514,7 +530,7 @@ if (mpl%main) then
       lfast = .false.
       if (present(fast)) lfast = fast
 
-      ! Boundary nodes
+      ! Forced points
       do ifor=1,nfor
          ir = for(ifor)
          irval = mpl%msv%vali
@@ -547,7 +563,7 @@ if (mpl%main) then
          cdf_norm = 1.0/cdf(nval)
          cdf(1:nval) = cdf(1:nval)*cdf_norm
 
-         do is=1+nfor,ns+nrep
+         do is=1+nfor,ns+nrep_eff
             ! Generate random number
             call rng%rand_real(0.0_kind_real,1.0_kind_real,rr)
 

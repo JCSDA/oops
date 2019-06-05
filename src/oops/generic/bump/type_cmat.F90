@@ -41,7 +41,6 @@ contains
    generic :: alloc => cmat_alloc,cmat_alloc_blk
    procedure :: init => cmat_init
    procedure :: dealloc => cmat_dealloc
-   procedure :: copy => cmat_copy
    procedure :: read => cmat_read
    procedure :: write => cmat_write
    procedure :: from_hdiag => cmat_from_hdiag
@@ -169,62 +168,6 @@ end if
 cmat%allocated = .false.
 
 end subroutine cmat_dealloc
-
-!----------------------------------------------------------------------
-! Function: cmat_copy
-! Purpose: copy
-!----------------------------------------------------------------------
-type(cmat_type) function cmat_copy(cmat,nam,geom,bpar)
-
-implicit none
-
-! Passed variables
-class(cmat_type),intent(in) :: cmat ! C matrix
-type(nam_type),intent(in) :: nam    ! Namelist
-type(geom_type),intent(in) :: geom  ! Geometry
-type(bpar_type),intent(in) :: bpar  ! Block parameters
-
-! Local variables
-integer :: ib
-
-! Release memory
-call cmat_copy%dealloc
-
-! Allocation
-call cmat_copy%alloc(bpar,trim(cmat%prefix))
-
-! Copy attributes
-do ib=1,bpar%nbe
-   if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
-      cmat_copy%blk(ib)%double_fit = cmat%blk(ib)%double_fit
-      cmat_copy%blk(ib)%anisotropic = cmat%blk(ib)%anisotropic
-   end if
-end do
-
-! Allocation
-call cmat_copy%alloc(nam,geom,bpar)
-do ib=1,bpar%nbe
-   if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
-      if (allocated(cmat%blk(ib)%bump_coef_ens)) allocate(cmat_copy%blk(ib)%bump_coef_ens(geom%nc0a,geom%nl0))
-      if (allocated(cmat%blk(ib)%bump_coef_sta)) allocate(cmat_copy%blk(ib)%bump_coef_sta(geom%nc0a,geom%nl0))
-      if (allocated(cmat%blk(ib)%bump_rh)) allocate(cmat_copy%blk(ib)%bump_rh(geom%nc0a,geom%nl0))
-      if (allocated(cmat%blk(ib)%bump_rv)) allocate(cmat_copy%blk(ib)%bump_rv(geom%nc0a,geom%nl0))
-      if (allocated(cmat%blk(ib)%bump_rv_rfac)) allocate(cmat_copy%blk(ib)%bump_rv_rfac(geom%nc0a,geom%nl0))
-      if (allocated(cmat%blk(ib)%bump_rv_coef)) allocate(cmat_copy%blk(ib)%bump_rv_coef(geom%nc0a,geom%nl0))
-      if (allocated(cmat%blk(ib)%bump_D11)) allocate(cmat_copy%blk(ib)%bump_D11(geom%nc0a,geom%nl0))
-      if (allocated(cmat%blk(ib)%bump_D22)) allocate(cmat_copy%blk(ib)%bump_D22(geom%nc0a,geom%nl0))
-      if (allocated(cmat%blk(ib)%bump_D33)) allocate(cmat_copy%blk(ib)%bump_D33(geom%nc0a,geom%nl0))
-      if (allocated(cmat%blk(ib)%bump_D12)) allocate(cmat_copy%blk(ib)%bump_D12(geom%nc0a,geom%nl0))
-      if (allocated(cmat%blk(ib)%bump_Dcoef)) allocate(cmat_copy%blk(ib)%bump_Dcoef(geom%nc0a,geom%nl0))
-   end if
-end do
-
-! Copy
-do ib=1,bpar%nbe
-   if (bpar%B_block(ib).and.bpar%nicas_block(ib)) cmat_copy%blk(ib) = cmat%blk(ib)%copy()
-end do
-
-end function cmat_copy
 
 !----------------------------------------------------------------------
 ! Subroutine: cmat_read
@@ -417,7 +360,7 @@ type(bpar_type),intent(in) :: bpar     ! Block parameters
 type(hdiag_type),intent(in) :: hdiag   ! Hybrid diagnostics
 
 ! Local variables
-integer :: ib,n,i,il0,il0i,ic2a
+integer :: ib,n,i,il0,il0i,ic2a,ic0a
 real(kind_real) :: fld_c2a(hdiag%samp%nc2a,geom%nl0,6),fld_c2b(hdiag%samp%nc2b,geom%nl0),fld_c0a(geom%nc0a,geom%nl0,6)
 character(len=1024),parameter :: subr = 'cmat_from_hdiag'
 
@@ -445,6 +388,9 @@ end do
 
 ! Allocation
 call cmat%alloc(nam,geom,bpar)
+
+! Initialization
+call cmat%init(mpl,nam,bpar)
 
 ! Convolution parameters
 do ib=1,bpar%nbe
@@ -502,7 +448,7 @@ do ib=1,bpar%nbe
             do i=1,n
                ! Fill missing values
                do il0=1,geom%nl0
-                  call hdiag%samp%diag_fill(mpl,nam,geom,il0,fld_c2a(:,il0,i))
+                  call hdiag%samp%diag_fill(mpl,nam,fld_c2a(:,il0,i))
                end do
 
                ! Interpolate
@@ -581,6 +527,22 @@ do ib=1,bpar%nbe
                end select
             end do
          end if
+
+         ! Set mask
+         do il0=1,geom%nl0
+            do ic0a=1,geom%nc0a
+               if (.not.geom%mask_c0a(ic0a,il0)) then
+                  cmat%blk(ib)%coef_ens(ic0a,il0) = mpl%msv%valr
+                  cmat%blk(ib)%coef_sta(ic0a,il0) = mpl%msv%valr
+                  cmat%blk(ib)%rh(ic0a,il0) = mpl%msv%valr
+                  cmat%blk(ib)%rv(ic0a,il0) = mpl%msv%valr
+                  if (cmat%blk(ib)%double_fit) then
+                     cmat%blk(ib)%rv_rfac(ic0a,il0) = mpl%msv%valr
+                     cmat%blk(ib)%rv_coef(ic0a,il0) = mpl%msv%valr
+                  end if
+               end if
+            end do
+         end do
       else
          ! Define weight only
          select case (trim(nam%method))
@@ -640,6 +602,9 @@ end do
 
 ! Allocation
 call cmat%alloc(nam,geom,bpar)
+
+! Initialization
+call cmat%init(mpl,nam,bpar)
 
 ! Convolution parameters
 do ib=1,bpar%nbe
@@ -720,6 +685,9 @@ end do
 ! Allocation
 call cmat%alloc(nam,geom,bpar)
 
+! Initialization
+call cmat%init(mpl,nam,bpar)
+
 ! Convolution parameters
 do ib=1,bpar%nbe
    if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
@@ -732,9 +700,7 @@ do ib=1,bpar%nbe
 
       ! Copy support radii
       cmat%blk(ib)%rh = nam%rh
-      cmat%blk(ib)%rhs = nam%rh
       cmat%blk(ib)%rv = nam%rv
-      cmat%blk(ib)%rvs = nam%rv
 
       ! Set coefficients
       cmat%blk(ib)%coef_ens = 1.0
@@ -839,8 +805,6 @@ do ib=1,bpar%nbe
                   ! Copy support radii
                  call lct_h2r(mpl,cmat%blk(ib)%H11(ic0a,il0),cmat%blk(ib)%H22(ic0a,il0),cmat%blk(ib)%H33(ic0a,il0), &
                 & cmat%blk(ib)%H12(ic0a,il0),cmat%blk(ib)%rh(ic0a,il0),cmat%blk(ib)%rv(ic0a,il0))
-               else
-
                end if
             end do
          end do
@@ -871,22 +835,30 @@ type(bpar_type),intent(in) :: bpar        ! Block parameters
 
 ! Local variables
 integer :: ib,il0,ic0a
+real(kind_real) :: rhs,rvs
 
 ! Sampling parameters
 if (trim(nam%strategy)=='specific_multivariate') then
-   ! Initialization
-   cmat%blk(bpar%nbe)%rhs = huge(1.0)
-   cmat%blk(bpar%nbe)%rvs = huge(1.0)
-   do ib=1,bpar%nb
-      if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
+   do il0=1,geom%nl0
+      do ic0a=1,geom%nc0a
          ! Get minimum
-         do il0=1,geom%nl0
-            do ic0a=1,geom%nc0a
-               cmat%blk(bpar%nbe)%rhs(ic0a,il0) = min(cmat%blk(bpar%nbe)%rhs(ic0a,il0),cmat%blk(ib)%rh(ic0a,il0))
-               cmat%blk(bpar%nbe)%rvs(ic0a,il0) = min(cmat%blk(bpar%nbe)%rvs(ic0a,il0),cmat%blk(ib)%rv(ic0a,il0))
-            end do
+         rhs = huge(1.0)
+         rvs = huge(1.0)
+         do ib=1,bpar%nb
+            if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
+               rhs = min(rhs,cmat%blk(ib)%rh(ic0a,il0))
+               rvs = min(rvs,cmat%blk(ib)%rv(ic0a,il0))
+            end if
          end do
-      end if
+
+         ! Copy minimum
+         do ib=1,bpar%nb
+            if (bpar%B_block(ib).and.bpar%nicas_block(ib)) then
+               cmat%blk(ib)%rhs(ic0a,il0) = rhs
+               cmat%blk(ib)%rvs(ic0a,il0) = rvs
+            end if
+         end do
+      end do
    end do
 else
    ! Copy

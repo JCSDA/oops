@@ -111,40 +111,41 @@ if (allocated(linop%Svec)) deallocate(linop%Svec)
 end subroutine linop_dealloc
 
 !----------------------------------------------------------------------
-! Function: linop_copy
+! Subroutine: linop_copy
 ! Purpose: copy
 !----------------------------------------------------------------------
-type(linop_type) function linop_copy(linop)
+subroutine linop_copy(linop_out,linop_in)
 
 implicit none
 
 ! Passed variables
-class(linop_type),intent(in) :: linop ! Linear operator
+class(linop_type),intent(inout) :: linop_out ! Output linear operator
+type(linop_type),intent(in) :: linop_in      ! Input linear operator
 
 ! Release memory
-call linop_copy%dealloc
+call linop_out%dealloc
 
 ! Copy attributes
-linop_copy%prefix = linop%prefix
-linop_copy%n_src = linop%n_src
-linop_copy%n_dst = linop%n_dst
-linop_copy%n_s = linop%n_s
+linop_out%prefix = linop_in%prefix
+linop_out%n_src = linop_in%n_src
+linop_out%n_dst = linop_in%n_dst
+linop_out%n_s = linop_in%n_s
 
 ! Allocation
-call linop_copy%alloc(linop%nvec)
+call linop_out%alloc(linop_in%nvec)
 
 ! Copy data
-if (linop%n_s>0) then
-   linop_copy%row = linop%row
-   linop_copy%col = linop%col
-   if (linop_copy%nvec>0) then
-      linop_copy%Svec = linop%Svec
+if (linop_in%n_s>0) then
+   linop_out%row = linop_in%row
+   linop_out%col = linop_in%col
+   if (linop_out%nvec>0) then
+      linop_out%Svec = linop_in%Svec
    else
-      linop_copy%S = linop%S
+      linop_out%S = linop_in%S
    end if
 end if
 
-end function linop_copy
+end subroutine linop_copy
 
 !----------------------------------------------------------------------
 ! Subroutine: linop_read
@@ -554,7 +555,7 @@ type(linop_type) :: linop_tmp
 n_s = n_s+1
 if (n_s>linop%n_s) then
    ! Copy
-   linop_tmp = linop%copy()
+   call linop_tmp%copy(linop)
 
    ! Reallocate larger linear operation
    call linop%dealloc
@@ -788,7 +789,7 @@ do i_dst_loc=1,n_dst_loc(mpl%myproc)
                   ! Natural neighbors interpolation
 
                   ! Copy mesh
-                  meshnew = mesh%copy()
+                  call meshnew%copy(mesh)
 
                   ! Add a node
                   call meshnew%addnode(mpl,lon_dst(i_dst),lat_dst(i_dst))

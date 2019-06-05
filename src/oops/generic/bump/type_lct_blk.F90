@@ -10,7 +10,7 @@ module type_lct_blk
 !$ use omp_lib
 use tools_func, only: lonlatmod,fit_lct,check_cond
 use tools_kinds, only: kind_real
-use tools_repro, only: inf,sup
+use tools_repro, only: rth,inf,sup
 use type_bpar, only: bpar_type
 use type_geom, only: geom_type
 use type_minim, only: minim_type
@@ -193,8 +193,8 @@ do jsub=1,mom_blk%nsub
          do jc3=1,nam%nc3
             do ic1a=1,samp%nc1a
                ic1 = samp%c1a_to_c1(ic1a)
-               if (samp%c1l0_log(ic1,il0)) then
-                  den = mom_blk%m2_1(ic1a,jc3,il0,jsub)*mom_blk%m2_2(ic1a,jc3,jl0,jsub)
+               if (samp%c1l0_log(ic1,il0).and.samp%c1c3l0_log(ic1,jc3,jl0)) then
+                  den = mom_blk%m2_1(ic1a,il0,jsub)*mom_blk%m2_2(ic1a,jc3,jl0,jsub)
                   if (den>0.0) then
                      lct_blk%raw(jc3,jl0r,ic1a,il0) = lct_blk%raw(jc3,jl0r,ic1a,il0)+mom_blk%m11(ic1a,jc3,jl0r,il0,jsub)/sqrt(den)
                      norm_raw(jc3,jl0r,ic1a,il0) = norm_raw(jc3,jl0r,ic1a,il0)+1.0
@@ -208,7 +208,7 @@ do jsub=1,mom_blk%nsub
       do ic1a=1,samp%nc1a
          ic1 = samp%c1a_to_c1(ic1a)
          if (samp%c1l0_log(ic1,il0)) then
-            lct_blk%m2(ic1a,il0) = lct_blk%m2(ic1a,il0)+mom_blk%m2_1(ic1a,1,il0,jsub)
+            lct_blk%m2(ic1a,il0) = lct_blk%m2(ic1a,il0)+mom_blk%m2_1(ic1a,il0,jsub)
             norm_m2(ic1a,il0) = norm_m2(ic1a,il0)+1.0
          end if
       end do
@@ -268,7 +268,7 @@ integer :: il0,jl0r,jl0,ic1a,ic1,ic0,jc3,jc0,iscales,icomp
 real(kind_real) :: distsq,Dhbar,Dvbar,diag_rescale
 real(kind_real),allocatable :: Dh(:),Dv(:),dx(:,:),dy(:,:),dz(:,:)
 logical :: valid
-logical,allocatable :: dmask(:,:)
+logical,allocatable :: dmask(:,:),Dv_valid(:)
 type(minim_type) :: minim
 
 ! Associate
@@ -281,6 +281,7 @@ allocate(dx(nam%nc3,bpar%nl0r(ib)))
 allocate(dy(nam%nc3,bpar%nl0r(ib)))
 allocate(dz(nam%nc3,bpar%nl0r(ib)))
 allocate(dmask(nam%nc3,bpar%nl0r(ib)))
+allocate(Dv_valid(bpar%nl0r(ib)))
 minim%nx = lct_blk%nscales*4
 if (lct_blk%nscales>1) minim%nx = minim%nx+lct_blk%nscales-1
 minim%ny = nam%nc3*bpar%nl0r(ib)
@@ -337,17 +338,26 @@ do il0=1,geom%nl0
 
          ! Approximate homogeneous vertical length-scale
          Dv = mpl%msv%valr
+         Dv_valid = .false.
          jc3 = 1
          do jl0r=1,bpar%nl0r(ib)
             if (dmask(jc3,jl0r)) then
                distsq = dz(jc3,jl0r)**2
-               if (sup(lct_blk%raw(jc3,jl0r,ic1a,il0),cor_min).and.inf(lct_blk%raw(jc3,jl0r,ic1a,il0),1.0_kind_real) &
-             & .and.(distsq>0.0)) Dv(jl0r) = -distsq/(2.0*log(lct_blk%raw(jc3,jl0r,ic1a,il0)))
+               if (inf(abs(lct_blk%raw(jc3,jl0r,ic1a,il0)),1.0_kind_real).and.(distsq>0.0)) then
+                  if (lct_blk%raw(jc3,jl0r,ic1a,il0)>0.0) Dv(jl0r) = -distsq/(2.0*log(lct_blk%raw(jc3,jl0r,ic1a,il0)))
+                  Dv_valid(jl0r) = .true.
+               end if
             end if
          end do
          Dvbar = mpl%msv%valr
          if (bpar%nl0r(ib)>1) then
-            if (count(mpl%msv%isnotr(Dv))>0) Dvbar = sum(Dv,mask=mpl%msv%isnotr(Dv))/real(count(mpl%msv%isnotr(Dv)),kind_real)
+            if (count(Dv_valid)>0) then
+               if (count(mpl%msv%isnotr(Dv))>0) then
+                  Dvbar = sum(Dv,mask=mpl%msv%isnotr(Dv))/real(count(mpl%msv%isnotr(Dv)),kind_real)
+               else
+                  Dvbar = 1.0/rth
+               end if
+            end if
          else
              Dvbar = 0.0
          end if

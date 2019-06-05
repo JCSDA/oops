@@ -378,8 +378,11 @@ write(mpl%info,'(a)') '--- Compute MPI distribution, halos A-B'
 call mpl%flush
 call vbal%samp%compute_mpi_ab(mpl,nam,geom)
 
+! Allocation
+call ensu%alloc(nam,geom,ens%ne,ens%nsub)
+
 ! Copy ensemble
-ensu = ens%copy(nam,geom)
+call ensu%copy(ens)
 
 ! Allocation
 allocate(fld_1(vbal%samp%nc1a,geom%nl0))
@@ -452,12 +455,19 @@ do iv=1,nam%nv
                end do
                !$omp end parallel do
 
-               !$omp parallel do schedule(static) private(il0,jl0)
+               !$omp parallel do schedule(static) private(il0,jl0,ic1a,ic1)
                do il0=1,geom%nl0
                   do jl0=1,geom%nl0
-                     ! Covariance
-                     auto(:,jl0,il0,isub) = auto(:,jl0,il0,isub)+fld_2(:,il0)*fld_2(:,jl0)
-                     cross(:,jl0,il0,isub) = cross(:,jl0,il0,isub)+fld_1(:,il0)*fld_2(:,jl0)
+                     do ic1a=1,vbal%samp%nc1a
+                        ! Indice
+                        ic1 = vbal%samp%c1a_to_c1(ic1a)
+
+                        ! Covariance
+                        if (vbal%samp%c1l0_log(ic1,il0).and.vbal%samp%c1l0_log(ic1,jl0)) then
+                           auto(ic1a,jl0,il0,isub) = auto(ic1a,jl0,il0,isub)+fld_2(ic1a,il0)*fld_2(ic1a,jl0)
+                           cross(ic1a,jl0,il0,isub) = cross(ic1a,jl0,il0,isub)+fld_1(ic1a,il0)*fld_2(ic1a,jl0)
+                        end if
+                     end do
                   end do
                end do
                !$omp end parallel do
@@ -486,7 +496,7 @@ do iv=1,nam%nv
                      ic1 = vbal%samp%c1a_to_c1(ic1a)
 
                      ! Check validity
-                     valid = vbal%samp%c1l0_log(ic1,il0).and.vbal%samp%c1l0_log(ic1,jl0).and.vbal%samp%vbal_mask(ic1,ic2)
+                     valid = vbal%samp%c1l0_log(ic1,il0).and.vbal%samp%c1l0_log(ic1,jl0).and.vbal%samp%vbal_mask(ic1a,ic2)
 
                      if (valid) then
                         ! Update

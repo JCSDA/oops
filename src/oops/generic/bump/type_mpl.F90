@@ -1163,16 +1163,17 @@ end subroutine mpl_share_logical_4d
 ! Subroutine: mpl_glb_to_loc_index
 ! Purpose: communicate global index to local index
 !----------------------------------------------------------------------
-subroutine mpl_glb_to_loc_index(mpl,n_loc,loc_to_glb,n_glb,glb_to_loc)
+subroutine mpl_glb_to_loc_index(mpl,n_loc,loc_to_glb,n_glb,glb_to_loc,glb_to_proc)
 
 implicit none
 
 ! Passed variables
-class(mpl_type),intent(inout) :: mpl     ! MPI data
-integer,intent(in) :: n_loc              ! Local dimension
-integer,intent(in) :: loc_to_glb(n_loc)  ! Local to global index
-integer,intent(in) :: n_glb              ! Global dimension
-integer,intent(out) :: glb_to_loc(n_glb) ! Global to local index
+class(mpl_type),intent(inout) :: mpl               ! MPI data
+integer,intent(in) :: n_loc                        ! Local dimension
+integer,intent(in) :: loc_to_glb(n_loc)            ! Local to global index
+integer,intent(in) :: n_glb                        ! Global dimension
+integer,intent(out) :: glb_to_loc(n_glb)           ! Global to local index
+integer,intent(out),optional :: glb_to_proc(n_glb) ! Global to processor
 
 ! Local variables
 integer :: iproc,i_loc,n_loc_tmp
@@ -1180,6 +1181,10 @@ integer,allocatable :: loc_to_glb_tmp(:)
 type(fckit_mpi_status) :: status
 
 if (mpl%main) then
+   ! Initialization
+   glb_to_loc = mpl%msv%vali
+   if (present(glb_to_proc)) glb_to_proc = mpl%msv%vali
+
    do iproc=1,mpl%nproc
       if (iproc==mpl%ioproc) then
          ! Copy dimension
@@ -1200,9 +1205,10 @@ if (mpl%main) then
          call mpl%f_comm%receive(loc_to_glb_tmp,iproc-1,mpl%tag+1,status)
       end if
 
-      ! Fill glb_to_loc
+      ! Fill glb_to_loc and glb_to_proc if required
       do i_loc=1,n_loc_tmp
          glb_to_loc(loc_to_glb_tmp(i_loc)) = i_loc
+         if (present(glb_to_proc)) glb_to_proc(loc_to_glb_tmp(i_loc)) = iproc
       end do
 
       ! Release memory
@@ -1219,6 +1225,7 @@ call mpl%update_tag(2)
 
 ! Broadcast
 call mpl%f_comm%broadcast(glb_to_loc,mpl%ioproc-1)
+if (present(glb_to_proc)) call mpl%f_comm%broadcast(glb_to_proc,mpl%ioproc-1)
 
 end subroutine mpl_glb_to_loc_index
 
@@ -1380,12 +1387,12 @@ integer,intent(in) :: glb_to_proc(n_glb) ! Global index to task index
 integer,intent(in) :: glb_to_loc(n_glb)  ! Global index to local index
 logical,intent(in) :: bcast              ! Broadcast option
 real(kind_real),intent(out) :: glb(:)    ! Global array
-type(fckit_mpi_status) :: status
 
 ! Local variables
 integer :: iproc,jproc,i_glb,i_loc,n_loc_tmp
 real(kind_real),allocatable :: rbuf(:)
 character(len=1024),parameter :: subr = 'mpl_loc_to_glb_real_1d'
+type(fckit_mpi_status) :: status
 
 ! Check global array size
 if (mpl%main.or.bcast) then

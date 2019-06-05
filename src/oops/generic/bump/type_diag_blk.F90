@@ -35,6 +35,7 @@ type diag_blk_type
    logical :: double_fit                          ! Double fit flag
 
    real(kind_real),allocatable :: raw(:,:,:)      ! Raw diagnostic
+   real(kind_real),allocatable :: valid(:,:,:)    ! Number of valid couples
    real(kind_real),allocatable :: raw_coef_ens(:) ! Raw ensemble coefficient
    real(kind_real) :: raw_coef_sta                ! Raw static coefficient
    real(kind_real),allocatable :: fit(:,:,:)      ! Fit
@@ -93,6 +94,7 @@ diag_blk%double_fit = double_fit
 allocate(diag_blk%raw_coef_ens(geom%nl0))
 if ((ic2a==0).or.nam%local_diag) then
    allocate(diag_blk%raw(nam%nc3,bpar%nl0r(ib),geom%nl0))
+   allocate(diag_blk%valid(nam%nc3,bpar%nl0r(ib),geom%nl0))
    if (trim(nam%minim_algo)/='none') then
       allocate(diag_blk%fit(nam%nc3,bpar%nl0r(ib),geom%nl0))
       allocate(diag_blk%fit_rh(geom%nl0))
@@ -105,11 +107,12 @@ if ((ic2a==0).or.nam%local_diag) then
    end if
 end if
 
-! Intialization
+! Initialization
 diag_blk%raw_coef_ens = mpl%msv%valr
 diag_blk%raw_coef_sta = mpl%msv%valr
 if ((ic2a==0).or.nam%local_diag) then
    diag_blk%raw = mpl%msv%valr
+   diag_blk%valid = mpl%msv%valr
    if (trim(nam%minim_algo)/='none') then
       diag_blk%fit = mpl%msv%valr
       diag_blk%fit_rh = mpl%msv%valr
@@ -152,6 +155,7 @@ class(diag_blk_type),intent(inout) :: diag_blk ! Diagnostic block
 
 ! Release memory
 if (allocated(diag_blk%raw)) deallocate(diag_blk%raw)
+if (allocated(diag_blk%valid)) deallocate(diag_blk%valid)
 if (allocated(diag_blk%raw_coef_ens)) deallocate(diag_blk%raw_coef_ens)
 if (allocated(diag_blk%fit)) deallocate(diag_blk%fit)
 if (allocated(diag_blk%fit_rh)) deallocate(diag_blk%fit_rh)
@@ -180,7 +184,7 @@ character(len=*),intent(in) :: filename        ! File name
 
 ! Local variables
 integer :: info,info_coord,ncid,one_id,nc3_id,nl0r_id,nl0_1_id,nl0_2_id,disth_id,vunit_id
-integer :: raw_id,raw_zs_id,raw_coef_ens_id,raw_coef_sta_id,l0rl0_to_l0_id
+integer :: raw_id,valid_id,raw_zs_id,raw_coef_ens_id,raw_coef_sta_id,l0rl0_to_l0_id
 integer :: fit_id,fit_zs_id,fit_rh_id,fit_rv_id,fit_rv_rfac_id,fit_rv_coef_id
 integer :: il0,jl0r,jl0
 character(len=1024),parameter :: subr = 'diag_blk_write'
@@ -227,6 +231,11 @@ if ((ic2a==0).or.nam%local_diag) then
       if (info/=nf90_noerr) then
          call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_raw',nc_kind_real,(/nc3_id,nl0r_id,nl0_1_id/),raw_id))
          call mpl%ncerr(subr,nf90_put_att(ncid,raw_id,'_FillValue',mpl%msv%valr))
+      end if
+      info = nf90_inq_varid(ncid,trim(diag_blk%name)//'_valid',valid_id)
+      if (info/=nf90_noerr) then
+         call mpl%ncerr(subr,nf90_def_var(ncid,trim(diag_blk%name)//'_valid',nc_kind_real,(/nc3_id,nl0r_id,nl0_1_id/),valid_id))
+         call mpl%ncerr(subr,nf90_put_att(ncid,valid_id,'_FillValue',mpl%msv%valr))
       end if
       if (bpar%nl0rmax/=geom%nl0) then
          info = nf90_inq_varid(ncid,trim(diag_blk%name)//'_raw_zs',raw_zs_id)
@@ -292,7 +301,7 @@ call mpl%ncerr(subr,nf90_enddef(ncid))
 ! Write coordinates if necessary
 if (info_coord/=nf90_noerr) then
    call mpl%ncerr(subr,nf90_put_var(ncid,disth_id,geom%disth(1:nam%nc3)))
-   call mpl%ncerr(subr,nf90_put_var(ncid,vunit_id,sum(geom%vunit_c0,mask=geom%mask_c0,dim=1)/real(geom%nc0_mask,kind_real)))
+   call mpl%ncerr(subr,nf90_put_var(ncid,vunit_id,geom%vunitavg))
 end if
 
 ! Write variables
@@ -300,6 +309,7 @@ if (mpl%msv%isanynotr(diag_blk%raw_coef_ens)) call mpl%ncerr(subr,nf90_put_var(n
 if ((ic2a==0).or.nam%local_diag) then
    if (mpl%msv%isanynotr(diag_blk%raw)) then
       call mpl%ncerr(subr,nf90_put_var(ncid,raw_id,diag_blk%raw))
+      call mpl%ncerr(subr,nf90_put_var(ncid,valid_id,diag_blk%valid))
       if (bpar%nl0rmax/=geom%nl0) then
          do il0=1,geom%nl0
             do jl0r=1,bpar%nl0rmax
@@ -706,9 +716,11 @@ do il0=1,geom%nl0
          if (mpl%msv%isnotr(avg_blk%m11asysq(jc3,jl0r,il0)).and.mpl%msv%isnotr(avg_blk%m11sq(jc3,jl0r,il0))) then
             ! Compute localization
             diag_blk%raw(jc3,jl0r,il0) = avg_blk%m11asysq(jc3,jl0r,il0)/avg_blk%m11sq(jc3,jl0r,il0)
+            diag_blk%valid(jc3,jl0r,il0) = avg_blk%nc1a(jc3,jl0r,il0)
          else
             ! Missing value
             diag_blk%raw(jc3,jl0r,il0) = mpl%msv%valr
+            diag_blk%valid(jc3,jl0r,il0) = mpl%msv%valr
          end if
       end do
    end do
@@ -727,7 +739,7 @@ end subroutine diag_blk_localization
 ! Subroutine: diag_blk_hybridization
 ! Purpose: diag_blk hybridization
 !----------------------------------------------------------------------
-subroutine diag_blk_hybridization(diag_blk,mpl,geom,bpar,avg_blk,avg_sta_blk)
+subroutine diag_blk_hybridization(diag_blk,mpl,geom,bpar,avg_blk)
 
 implicit none
 
@@ -737,7 +749,6 @@ type(mpl_type),intent(inout) :: mpl            ! MPI data
 type(geom_type),intent(in) :: geom             ! Geometry
 type(bpar_type),intent(in) :: bpar             ! Block parameters
 type(avg_blk_type),intent(in) :: avg_blk       ! Averaged statistics block
-type(avg_blk_type),intent(in) :: avg_sta_blk   ! Static averaged statistics block
 
 ! Local variables
 integer :: il0,jl0r,jl0,jc3
@@ -754,12 +765,10 @@ do il0=1,geom%nl0
       jl0 = bpar%l0rl0b_to_l0(jl0r,il0,ib)
       do jc3=1,bpar%nc3(ib)
          if (mpl%msv%isnotr(avg_blk%m11asysq(jc3,jl0r,il0)).and.mpl%msv%isnotr(avg_blk%m11sq(jc3,jl0r,il0)) &
-       & .and.mpl%msv%isnotr(avg_sta_blk%m11sta(jc3,jl0r,il0)).and.mpl%msv%isnotr(avg_sta_blk%stasq(jc3,jl0r,il0))) then
+       & .and.mpl%msv%isnotr(avg_blk%m11sta(jc3,jl0r,il0)).and.mpl%msv%isnotr(avg_blk%stasq(jc3,jl0r,il0))) then
             wgt = geom%disth(jc3)*diag_blk%distv(jl0,il0)/real(bpar%nl0r(ib)+bpar%nc3(ib),kind_real)
-            num = num+wgt*(1.0-avg_blk%m11asysq(jc3,jl0r,il0)/avg_blk%m11sq(jc3,jl0r,il0)) &
-                & *avg_sta_blk%m11sta(jc3,jl0r,il0)
-            den = den+wgt*(avg_sta_blk%stasq(jc3,jl0r,il0)-avg_sta_blk%m11sta(jc3,jl0r,il0)**2 &
-                & /avg_blk%m11sq(jc3,jl0r,il0))
+            num = num+wgt*(1.0-avg_blk%m11asysq(jc3,jl0r,il0)/avg_blk%m11sq(jc3,jl0r,il0))*avg_blk%m11sta(jc3,jl0r,il0)
+            den = den+wgt*(avg_blk%stasq(jc3,jl0r,il0)-avg_blk%m11sta(jc3,jl0r,il0)**2/avg_blk%m11sq(jc3,jl0r,il0))
          end if
       end do
    end do
@@ -767,24 +776,32 @@ end do
 if ((num>0.0).and.(den>0.0)) then
    ! Valid numerator and denominator
    diag_blk%raw_coef_sta = num/den
+
+   !$omp parallel do schedule(static) private(il0,jl0r,jc3)
    do il0=1,geom%nl0
       do jl0r=1,bpar%nl0r(ib)
          do jc3=1,bpar%nc3(ib)
             if (mpl%msv%isnotr(avg_blk%m11asysq(jc3,jl0r,il0)).and.mpl%msv%isnotr(diag_blk%raw_coef_sta) &
-          & .and.mpl%msv%isnotr(avg_sta_blk%m11sta(jc3,jl0r,il0)).and.mpl%msv%isnotr(avg_blk%m11sq(jc3,jl0r,il0))) then
+          & .and.mpl%msv%isnotr(avg_blk%m11sta(jc3,jl0r,il0)).and.mpl%msv%isnotr(avg_blk%m11sq(jc3,jl0r,il0))) then
                ! Compute localization
                diag_blk%raw(jc3,jl0r,il0) = (avg_blk%m11asysq(jc3,jl0r,il0)-diag_blk%raw_coef_sta &
-                                          & *avg_sta_blk%m11sta(jc3,jl0r,il0))/avg_blk%m11sq(jc3,jl0r,il0)
+                                          & *avg_blk%m11sta(jc3,jl0r,il0))/avg_blk%m11sq(jc3,jl0r,il0)
+               diag_blk%valid(jc3,jl0r,il0) = avg_blk%nc1a(jc3,jl0r,il0)
 
                ! Lower bound
-               if (diag_blk%raw(jc3,jl0r,il0)<0.0) diag_blk%raw(jc3,jl0r,il0) = mpl%msv%valr
+               if (diag_blk%raw(jc3,jl0r,il0)<0.0) then
+                  diag_blk%raw(jc3,jl0r,il0) = mpl%msv%valr
+                  diag_blk%valid(jc3,jl0r,il0) = mpl%msv%valr
+               end if
             else
                ! Missing value
                diag_blk%raw(jc3,jl0r,il0) = mpl%msv%valr
+               diag_blk%valid(jc3,jl0r,il0) = mpl%msv%valr
             end if
          end do
       end do
    end do
+   !$omp end parallel do
 else
    ! Missing values
    diag_blk%raw_coef_sta = mpl%msv%valr
@@ -830,21 +847,25 @@ do il0=1,geom%nl0
    do jl0r=1,bpar%nl0r(ib)
       do jc3=1,bpar%nc3(ib)
          if (mpl%msv%isnotr(avg_blk%m11asysq(jc3,jl0r,il0)).and.mpl%msv%isnotr(avg_blk%m11sq(jc3,jl0r,il0)) &
-       & .and.mpl%msv%isnotr(avg_lr_blk%m11lrm11asy(jc3,jl0r,il0)).and.mpl%msv%isnotr(avg_lr_blk%m11lrm11(jc3,jl0r,il0)) &
-       & .and.mpl%msv%isnotr(avg_lr_blk%m11sq(jc3,jl0r,il0)).and.mpl%msv%isnotr(avg_lr_blk%m11lrm11asy(jc3,jl0r,il0))) then
+       & .and.mpl%msv%isnotr(avg_blk%m11lrm11asy(jc3,jl0r,il0)).and.mpl%msv%isnotr(avg_blk%m11lrm11(jc3,jl0r,il0)) &
+       & .and.mpl%msv%isnotr(avg_lr_blk%m11sq(jc3,jl0r,il0)).and.mpl%msv%isnotr(avg_blk%m11lrm11asy(jc3,jl0r,il0))) then
             num(jc3) = avg_blk%m11asysq(jc3,jl0r,il0)*avg_lr_blk%m11sq(jc3,jl0r,il0) &
-                    & -avg_lr_blk%m11lrm11asy(jc3,jl0r,il0)*avg_lr_blk%m11lrm11(jc3,jl0r,il0)
-            num_lr(jc3) = avg_lr_blk%m11lrm11asy(jc3,jl0r,il0)*avg_blk%m11sq(jc3,jl0r,il0) &
-                       & -avg_blk%m11asysq(jc3,jl0r,il0)*avg_lr_blk%m11lrm11(jc3,jl0r,il0)
-            den(jc3) = avg_blk%m11sq(jc3,jl0r,il0)*avg_lr_blk%m11sq(jc3,jl0r,il0)-avg_lr_blk%m11lrm11(jc3,jl0r,il0)**2
+                    & -avg_blk%m11lrm11asy(jc3,jl0r,il0)*avg_blk%m11lrm11(jc3,jl0r,il0)
+            num_lr(jc3) = avg_blk%m11lrm11asy(jc3,jl0r,il0)*avg_blk%m11sq(jc3,jl0r,il0) &
+                       & -avg_blk%m11asysq(jc3,jl0r,il0)*avg_blk%m11lrm11(jc3,jl0r,il0)
+            den(jc3) = avg_blk%m11sq(jc3,jl0r,il0)*avg_lr_blk%m11sq(jc3,jl0r,il0)-avg_blk%m11lrm11(jc3,jl0r,il0)**2
             if ((num(jc3)>0.0).and.(den(jc3)>0.0)) then
                ! Compute localization
                diag_blk%raw(jc3,jl0r,il0) = num(jc3)/den(jc3)
                diag_lr_blk%raw(jc3,jl0r,il0) = num_lr(jc3)/den(jc3)
+               diag_blk%valid(jc3,jl0r,il0) = avg_blk%nc1a(jc3,jl0r,il0)
+               diag_lr_blk%valid(jc3,jl0r,il0) = avg_blk%nc1a(jc3,jl0r,il0)
             else
                ! Missing value
                diag_blk%raw(jc3,jl0r,il0) = mpl%msv%valr
                diag_lr_blk%raw(jc3,jl0r,il0) = mpl%msv%valr
+               diag_blk%valid(jc3,jl0r,il0) = mpl%msv%valr
+               diag_lr_blk%valid(jc3,jl0r,il0) = mpl%msv%valr
             end if
          end if
       end do

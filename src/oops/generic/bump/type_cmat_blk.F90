@@ -57,7 +57,6 @@ contains
    procedure :: alloc => cmat_blk_alloc
    procedure :: init => cmat_blk_init
    procedure :: dealloc => cmat_blk_dealloc
-   procedure :: copy => cmat_blk_copy
 end type cmat_blk_type
 
 private
@@ -203,48 +202,5 @@ if (allocated(cmat_blk%adv_lon)) deallocate(cmat_blk%adv_lon)
 if (allocated(cmat_blk%adv_lat)) deallocate(cmat_blk%adv_lat)
 
 end subroutine cmat_blk_dealloc
-
-!----------------------------------------------------------------------
-! Subroutine: cmat_blk_copy
-! Purpose: copy
-!----------------------------------------------------------------------
-type(cmat_blk_type) function cmat_blk_copy(cmat_blk)
-
-implicit none
-
-! Passed variables
-class(cmat_blk_type),intent(in) :: cmat_blk ! C matrix data block
-
-! Copy data
-cmat_blk_copy%ib = cmat_blk%ib
-cmat_blk_copy%name = cmat_blk%name
-if (allocated(cmat_blk%bump_coef_ens)) cmat_blk_copy%bump_coef_ens = cmat_blk%bump_coef_ens
-if (allocated(cmat_blk%bump_coef_sta)) cmat_blk_copy%bump_coef_sta = cmat_blk%bump_coef_sta
-if (allocated(cmat_blk%bump_rh)) cmat_blk_copy%bump_rh = cmat_blk%bump_rh
-if (allocated(cmat_blk%bump_rv)) cmat_blk_copy%bump_rv = cmat_blk%bump_rv
-if (allocated(cmat_blk%bump_rv_rfac)) cmat_blk_copy%bump_rv_rfac = cmat_blk%bump_rv_rfac
-if (allocated(cmat_blk%bump_rv_coef)) cmat_blk_copy%bump_rv_coef = cmat_blk%bump_rv_coef
-if (allocated(cmat_blk%bump_D11)) cmat_blk_copy%bump_D11 = cmat_blk%bump_D11
-if (allocated(cmat_blk%bump_D22)) cmat_blk_copy%bump_D22 = cmat_blk%bump_D22
-if (allocated(cmat_blk%bump_D33)) cmat_blk_copy%bump_D33 = cmat_blk%bump_D33
-if (allocated(cmat_blk%bump_D12)) cmat_blk_copy%bump_D12 = cmat_blk%bump_D12
-if (allocated(cmat_blk%bump_Dcoef)) cmat_blk_copy%bump_Dcoef = cmat_blk%bump_Dcoef
-if (allocated(cmat_blk%coef_ens)) cmat_blk_copy%coef_ens = cmat_blk%coef_ens
-if (allocated(cmat_blk%coef_sta)) cmat_blk_copy%coef_sta = cmat_blk%coef_sta
-if (allocated(cmat_blk%rh)) cmat_blk_copy%rh = cmat_blk%rh
-if (allocated(cmat_blk%rv)) cmat_blk_copy%rv = cmat_blk%rv
-if (allocated(cmat_blk%rv_rfac)) cmat_blk_copy%rv_rfac = cmat_blk%rv_rfac
-if (allocated(cmat_blk%rv_coef)) cmat_blk_copy%rv_coef = cmat_blk%rv_coef
-if (allocated(cmat_blk%rhs)) cmat_blk_copy%rhs = cmat_blk%rhs
-if (allocated(cmat_blk%rvs)) cmat_blk_copy%rvs = cmat_blk%rvs
-if (allocated(cmat_blk%H11)) cmat_blk_copy%H11 = cmat_blk%H11
-if (allocated(cmat_blk%H22)) cmat_blk_copy%H22 = cmat_blk%H22
-if (allocated(cmat_blk%H33)) cmat_blk_copy%H33 = cmat_blk%H33
-if (allocated(cmat_blk%H12)) cmat_blk_copy%H12 = cmat_blk%H12
-if (allocated(cmat_blk%Hcoef)) cmat_blk_copy%Hcoef = cmat_blk%Hcoef
-if (allocated(cmat_blk%adv_lon)) cmat_blk_copy%adv_lon = cmat_blk%adv_lon
-if (allocated(cmat_blk%adv_lat)) cmat_blk_copy%adv_lat = cmat_blk%adv_lat
-
-end function cmat_blk_copy
 
 end module type_cmat_blk

@@ -97,10 +97,6 @@ type(io_type),intent(in) :: io             ! I/O
 type(ens_type),intent(in) :: ens1          ! Ensemble 1
 type(ens_type),intent(in),optional :: ens2 ! Ensemble 2
 
-! Local variables
-integer :: ib
-character(len=1024) :: filename
-
 ! Setup sampling
 write(mpl%info,'(a)') '-------------------------------------------------------------------'
 call mpl%flush
@@ -146,27 +142,48 @@ if ((nam%local_diag.or.nam%adv_diag).and.(nam%diag_rhflt>0.0)) then
    call mpl%flush
    write(mpl%info,'(a)') '--- Compute MPI distribution, halo F'
    call mpl%flush
-   call hdiag%samp%compute_mpi_f(mpl,nam,geom)
+   call hdiag%samp%compute_mpi_f(mpl,nam)
 end if
 
-! Compute sample moments
-write(mpl%info,'(a)') '-------------------------------------------------------------------'
-call mpl%flush
-write(mpl%info,'(a)') '--- Compute sample moments'
-call mpl%flush
-
-! Compute ensemble 1 sample moments
-write(mpl%info,'(a7,a)') '','Ensemble 1:'
-call mpl%flush
-call hdiag%mom_1%compute(mpl,nam,geom,bpar,hdiag%samp,ens1)
-
-select case(trim(nam%method))
-case ('hyb-rnd','dual-ens')
-   ! Compute randomized sample moments
-   write(mpl%info,'(a7,a)') '','Ensemble 2:'
+if (nam%new_mom) then
+   ! Compute sample moments
+   write(mpl%info,'(a)') '-------------------------------------------------------------------'
    call mpl%flush
-   call hdiag%mom_2%compute(mpl,nam,geom,bpar,hdiag%samp,ens2)
-end select
+   write(mpl%info,'(a)') '--- Compute sample moments'
+   call mpl%flush
+
+   ! Compute ensemble 1 sample moments
+   write(mpl%info,'(a7,a)') '','Ensemble 1:'
+   call mpl%flush
+   call hdiag%mom_1%compute(mpl,nam,geom,bpar,hdiag%samp,ens1,'mom_1')
+
+   select case(trim(nam%method))
+   case ('hyb-rnd','dual-ens')
+      ! Compute ensemble 2 sample moments
+      write(mpl%info,'(a7,a)') '','Ensemble 2:'
+      call mpl%flush
+      call hdiag%mom_2%compute(mpl,nam,geom,bpar,hdiag%samp,ens2,'mom_2')
+   end select
+elseif (nam%load_mom) then
+   ! Load sample moments
+   write(mpl%info,'(a)') '-------------------------------------------------------------------'
+   call mpl%flush
+   write(mpl%info,'(a)') '--- Load sample moments'
+   call mpl%flush
+
+   ! Load ensemble 1 sample moments
+   write(mpl%info,'(a7,a)') '','Ensemble 1'
+   call mpl%flush
+   call hdiag%mom_1%read(mpl,nam,geom,bpar,hdiag%samp,ens1,'mom_1')
+
+   select case(trim(nam%method))
+   case ('hyb-rnd','dual-ens')
+      ! Load ensemble 2 sample moments
+      write(mpl%info,'(a7,a)') '','Ensemble 2'
+      call mpl%flush
+      call hdiag%mom_2%read(mpl,nam,geom,bpar,hdiag%samp,ens2,'mom_2')
+   end select
+end if
 
 ! Compute statistics
 write(mpl%info,'(a)') '-------------------------------------------------------------------'
@@ -177,27 +194,31 @@ call mpl%flush
 ! Compute ensemble 1 statistics
 write(mpl%info,'(a7,a)') '','Ensemble 1:'
 call mpl%flush
-call hdiag%avg_1%compute(mpl,nam,geom,bpar,hdiag%samp,hdiag%mom_1,nam%ne)
+call hdiag%avg_1%compute(mpl,nam,geom,bpar,hdiag%samp,hdiag%mom_1,nam%ne,'avg_1')
 
 select case(trim(nam%method))
 case ('hyb-rnd','dual-ens')
    ! Compute ensemble 2 statistics
    write(mpl%info,'(a7,a)') '','Ensemble 2:'
    call mpl%flush
-   call hdiag%avg_2%compute(mpl,nam,geom,bpar,hdiag%samp,hdiag%mom_2,nam%ens2_ne)
+   call hdiag%avg_2%compute(mpl,nam,geom,bpar,hdiag%samp,hdiag%mom_2,nam%ens2_ne,'avg_2')
 case ('hyb-avg')
    ! Copy ensemble 1 statistics
-   hdiag%avg_2 = hdiag%avg_1%copy(nam,geom,bpar)
+   call hdiag%avg_2%alloc(nam,geom,bpar,nam%ens2_ne,nam%ens2_nsub,'avg_2')
+   call hdiag%avg_2%copy(hdiag%avg_1)
 end select
 
 select case (trim(nam%method))
 case ('hyb-avg','hyb-rnd','dual-ens')
-   ! Compute hybrid statistics
-   write(mpl%info,'(a)') '-------------------------------------------------------------------'
+   ! Compute cross-ensembles statistics
+   write(mpl%info,'(a7,a)') '','Cross-ensembles:'
    call mpl%flush
-   write(mpl%info,'(a)') '--- Compute hybrid statistics'
-   call mpl%flush
-   call hdiag%avg_2%compute_hyb(mpl,nam,geom,bpar,hdiag%samp,hdiag%mom_1,hdiag%mom_2,hdiag%avg_1)
+   select case (trim(nam%method))
+   case ('hyb-avg','hyb-rnd')
+      call hdiag%avg_1%compute_hyb(mpl,nam,geom,bpar,hdiag%avg_2)
+   case ('dual-ens')
+      call hdiag%avg_1%compute_deh(mpl,nam,geom,bpar,hdiag%samp,hdiag%mom_1,hdiag%mom_2)
+   end select
 end select
 
 if ((bpar%nbe>bpar%nb).and.bpar%diag_block(bpar%nbe)) then
@@ -206,10 +227,34 @@ if ((bpar%nbe>bpar%nb).and.bpar%diag_block(bpar%nbe)) then
    call mpl%flush
    write(mpl%info,'(a)') '--- Compute block-averaged statistics'
    call mpl%flush
-   hdiag%avg_wgt = hdiag%avg_1%copy_wgt(geom,bpar)
+
+   ! Copy weight
+   write(mpl%info,'(a7,a)') '','Copy weight'
+   call mpl%flush
+   call hdiag%avg_wgt%copy_wgt(geom,bpar,hdiag%avg_1)
+
+   ! Compute ensemble 1 block-averaged statistics
+   write(mpl%info,'(a7,a)') '','Ensemble 1:'
+   call mpl%flush
    call hdiag%avg_1%compute_bwavg(mpl,nam,geom,bpar,hdiag%avg_wgt)
-   if ((trim(nam%method)=='hyb-rnd').or.(trim(nam%method)=='dual-ens')) &
- & call hdiag%avg_2%compute_bwavg(mpl,nam,geom,bpar,hdiag%avg_wgt)
+
+   select case (trim(nam%method))
+   case ('hyb-avg','hyb-rnd','dual-ens')
+      ! Compute ensemble 2 block-averaged statistics
+      write(mpl%info,'(a7,a)') '','Ensemble 2:'
+      call mpl%flush
+      call hdiag%avg_2%compute_bwavg(mpl,nam,geom,bpar,hdiag%avg_wgt)
+
+      ! Compute cross-ensembles block-averaged statistics
+      write(mpl%info,'(a7,a)') '','Cross-ensembles:'
+      call mpl%flush
+      select case (trim(nam%method))
+      case ('hyb-avg','hyb-rnd')
+         call hdiag%avg_1%compute_bwavg_hyb(mpl,nam,geom,bpar,hdiag%avg_wgt)
+      case ('dual-ens')
+         call hdiag%avg_1%compute_bwavg_deh(mpl,nam,geom,bpar,hdiag%avg_wgt)
+      end select
+   end select
 end if
 
 write(mpl%info,'(a)') '-------------------------------------------------------------------'
@@ -279,7 +324,7 @@ case ('hyb-avg','hyb-rnd')
    call mpl%flush
    write(mpl%info,'(a7,a)') '','Ensemble 1 and 2:'
    call mpl%flush
-   call hdiag%loc_2%hybridization(mpl,nam,geom,bpar,io,hdiag%samp,hdiag%avg_1,hdiag%avg_2,'loc_hyb')
+   call hdiag%loc_2%hybridization(mpl,nam,geom,bpar,io,hdiag%samp,hdiag%avg_1,'loc_hyb')
 end select
 
 if (trim(nam%method)=='dual-ens') then
@@ -302,16 +347,6 @@ if (nam%write_hdiag) then
 
    ! Advection
    if (nam%adv_diag) call hdiag%adv%write(mpl,nam,geom,bpar,io,hdiag%samp)
-
-   ! Full variances
-   if (nam%var_full) then
-      filename = trim(nam%prefix)//'_var_full'
-      call io%fld_write(mpl,nam,geom,filename,'vunit',geom%vunit_c0a)
-      do ib=1,bpar%nb
-         if (bpar%diag_block(ib)) call io%fld_write(mpl,nam,geom,filename,trim(bpar%blockname(ib))//'_var', &
-       & sum(hdiag%mom_1%blk(ib)%m2full,dim=3)/real(hdiag%mom_1%blk(ib)%nsub,kind_real))
-      end do
-   end if
 end if
 
 end subroutine hdiag_run_hdiag

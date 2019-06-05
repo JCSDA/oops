@@ -4,33 +4,33 @@ Test     : CostJo   : Nonlinear Jo(Wind) = 1356.83, nobs = 800, Jo/n = 1.69604, 
 Test     : CostJo   : Nonlinear Jo(WSpeed) = 179.84, nobs = 400, Jo/n = 0.4496, err = 12
 Test     : CostJcDFI: Nonlinear Jc = 57.9613
 Test     : CostFunction: Nonlinear J = 12656.8
-Test     : DRPLanczosMinimizer: reduction in residual norm = 0.0166056
+Test     : DRPLanczosMinimizer: reduction in residual norm = 0.0166061
 Test     : CostFunction::addIncrement: Analysis: 
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -5.1789, Max=      1.0379, RMS=      1.8889
+Test     :   Scaling=  1e+08, Min=     -5.1778, Max=      1.0363, RMS=      1.8888
 Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
 Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
-Test     : CostJb   : Nonlinear Jb = 30.44
-Test     : CostJo   : Nonlinear Jo(Stream) = 463.6, nobs = 800, Jo/n = 0.5795, err = 4e+06
-Test     : CostJo   : Nonlinear Jo(Wind) = 154.9, nobs = 800, Jo/n = 0.1937, err = 6
-Test     : CostJo   : Nonlinear Jo(WSpeed) = 30.52, nobs = 400, Jo/n = 0.0763, err = 12
-Test     : CostJcDFI: Nonlinear Jc = 67.7
-Test     : CostFunction: Nonlinear J = 747.2
-Test     : DRPLanczosMinimizer: reduction in residual norm = 0.1387
+Test     : CostJb   : Nonlinear Jb = 30.62
+Test     : CostJo   : Nonlinear Jo(Stream) = 476.3, nobs = 800, Jo/n = 0.5954, err = 4e+06
+Test     : CostJo   : Nonlinear Jo(Wind) = 155.5, nobs = 800, Jo/n = 0.1943, err = 6
+Test     : CostJo   : Nonlinear Jo(WSpeed) = 30.93, nobs = 400, Jo/n = 0.07732, err = 12
+Test     : CostJcDFI: Nonlinear Jc = 66.86
+Test     : CostFunction: Nonlinear J = 760.2
+Test     : DRPLanczosMinimizer: reduction in residual norm = 0.1229
 Test     : CostFunction::addIncrement: Analysis: 
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -5.2397, Max=      1.0537, RMS=      1.9059
+Test     :   Scaling=  1e+08, Min=     -5.2390, Max=      1.0564, RMS=      1.9058
 Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
 Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
-Test     : CostJb   : Nonlinear Jb = 29.06
-Test     : CostJo   : Nonlinear Jo(Stream) = 93.65, nobs = 800, Jo/n = 0.1171, err = 4e+06
-Test     : CostJo   : Nonlinear Jo(Wind) = 68.63, nobs = 800, Jo/n = 0.08579, err = 6
-Test     : CostJo   : Nonlinear Jo(WSpeed) = 11.74, nobs = 400, Jo/n = 0.02936, err = 12
-Test     : CostJcDFI: Nonlinear Jc = 70.36
-Test     : CostFunction: Nonlinear J = 273.4
+Test     : CostJb   : Nonlinear Jb = 29.12
+Test     : CostJo   : Nonlinear Jo(Stream) = 96.55, nobs = 800, Jo/n = 0.1207, err = 4e+06
+Test     : CostJo   : Nonlinear Jo(Wind) = 67.7, nobs = 800, Jo/n = 0.08462, err = 6
+Test     : CostJo   : Nonlinear Jo(WSpeed) = 11.79, nobs = 400, Jo/n = 0.02947, err = 12
+Test     : CostJcDFI: Nonlinear Jc = 70.81
+Test     : CostFunction: Nonlinear J = 276

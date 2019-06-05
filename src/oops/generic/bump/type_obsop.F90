@@ -7,18 +7,19 @@
 !----------------------------------------------------------------------
 module type_obsop
 
+use fckit_mpi_module, only: fckit_mpi_sum,fckit_mpi_min,fckit_mpi_max,fckit_mpi_status
 use netcdf
-use tools_const, only: pi,deg2rad,rad2deg,reqkm
+use tools_const, only: pi,deg2rad,rad2deg,req,reqkm
 use tools_func, only: sphere_dist
 use tools_kinds, only: kind_real,nc_kind_real
 use tools_qsort, only: qsort
+use tools_repro, only: rth
 use type_com, only: com_type
 use type_geom, only: geom_type
 use type_linop, only: linop_type
 use type_mpl, only: mpl_type
 use type_nam, only: nam_type
 use type_rng, only: rng_type
-use fckit_mpi_module, only: fckit_mpi_sum,fckit_mpi_min,fckit_mpi_max,fckit_mpi_status
 
 implicit none
 
@@ -228,12 +229,12 @@ type(geom_type),intent(in) :: geom       ! Geometry
 
 ! Local variables
 integer :: offset,iobs,jobs,iobsa,iproc,i_s,ic0,ic0b,i,ic0a,delta,nres,ind(1),lunit,nobs_eff,nobsa_eff
-integer :: imin(1),imax(1),nmoves,imoves
+integer :: nn_index(1),imin(1),imax(1),nmoves,imoves
 integer :: proc_to_nobsa(mpl%nproc),proc_to_nobsa_eff(mpl%nproc),nobs_to_move(mpl%nproc),nobs_to_move_tmp(mpl%nproc)
 integer :: c0_to_c0b(geom%nc0),c0a_to_c0b(geom%nc0a)
 integer,allocatable :: nop(:),iop(:),srcproc(:,:),srcic0(:,:),order(:),obs_moved(:,:)
 integer,allocatable :: obs_to_proc(:),obs_to_obsa(:),c0b_to_c0(:)
-real(kind_real) :: N_max,C_max
+real(kind_real) :: nn_dist(1),N_max,C_max
 real(kind_real),allocatable :: lonobs(:),latobs(:),list(:)
 logical :: maskobsa(obsop%nobsa),lcheck_nc0b(geom%nc0)
 logical,allocatable :: maskobs(:)
@@ -244,6 +245,11 @@ type(linop_type) :: hfull
 ! Check whether observations are inside the mesh
 do iobsa=1,obsop%nobsa
    call geom%mesh%inside(mpl,obsop%lonobs(iobsa),obsop%latobs(iobsa),maskobsa(iobsa))
+   if (.not.maskobsa(iobsa)) then
+      ! Check for very close points
+      call geom%tree%find_nearest_neighbors(obsop%lonobs(iobsa),obsop%latobs(iobsa),1,nn_index,nn_dist)
+      if (nn_dist(1)<rth*req) maskobsa(iobsa) = .true.
+   end if
 end do
 nobsa_eff = count(maskobsa)
 
@@ -478,9 +484,15 @@ case default
    call mpl%abort(subr,'wrong obsdis')
 end select
 
+! Release memory
+deallocate(obsop%lonobs)
+deallocate(obsop%latobs)
+
 ! Allocation
 obsop%nobsa = count(obs_to_proc==mpl%myproc)
 allocate(obsop%obsa_to_obs(obsop%nobsa))
+allocate(obsop%lonobs(obsop%nobsa))
+allocate(obsop%latobs(obsop%nobsa))
 
 ! Fill proc_to_nobsa, obs_to_obsa and obsa_to_obs
 proc_to_nobsa = 0
@@ -497,6 +509,12 @@ do iobs=1,obsop%nobs
    iobsa = proc_to_nobsa(iproc)
    obs_to_obsa(iobs) = iobsa
    if (iproc==mpl%myproc) obsop%obsa_to_obs(iobsa) = iobs
+
+   ! Fill lonobs/latobs
+   if (iproc==mpl%myproc) then
+      obsop%lonobs(iobsa) = lonobs(iobs)
+      obsop%latobs(iobsa) = latobs(iobs)
+   end if
 end do
 
 ! Count number of local interpolation operations

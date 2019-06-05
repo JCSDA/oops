@@ -8,7 +8,7 @@
 module type_mesh
 
 !$ use omp_lib
-use tools_const, only: req
+use tools_const, only: pi,req
 use tools_func, only: sphere_dist,lonlat2xyz,xyz2lonlat,vector_product
 use tools_kinds, only: kind_real
 use tools_stripack, only: addnod,areas,bnodes,crlist,inside,trfind,trlist,trmesh
@@ -189,52 +189,53 @@ if (allocated(mesh%valid)) deallocate(mesh%valid)
 end subroutine mesh_dealloc
 
 !----------------------------------------------------------------------
-! Function: mesh_copy
+! Subroutine: mesh_copy
 ! Purpose: copy
 !----------------------------------------------------------------------
-type(mesh_type) function mesh_copy(mesh)
+subroutine mesh_copy(mesh_out,mesh_in)
 
 implicit none
 
 ! Passed variables
-class(mesh_type),intent(in) :: mesh ! Input mesh
+class(mesh_type),intent(inout) :: mesh_out ! Output mesh
+type(mesh_type),intent(in) :: mesh_in      ! Input mesh
 
 ! Release memory
-call mesh_copy%dealloc
+call mesh_out%dealloc
 
 ! Allocation
-call mesh_copy%alloc(mesh%n)
-if (allocated(mesh%bnd)) allocate(mesh_copy%bnd(mesh%nb))
-if (allocated(mesh%ltri)) allocate(mesh_copy%ltri(3,mesh%nt))
-if (allocated(mesh%larc)) allocate(mesh_copy%larc(2,mesh%na))
-if (allocated(mesh%bdist)) allocate(mesh_copy%bdist(mesh%n))
+call mesh_out%alloc(mesh_in%n)
+if (allocated(mesh_in%bnd)) allocate(mesh_out%bnd(mesh_in%nb))
+if (allocated(mesh_in%ltri)) allocate(mesh_out%ltri(3,mesh_in%nt))
+if (allocated(mesh_in%larc)) allocate(mesh_out%larc(2,mesh_in%na))
+if (allocated(mesh_in%bdist)) allocate(mesh_out%bdist(mesh_in%n))
 
 ! Copy data
-mesh_copy%order = mesh%order
-mesh_copy%order_inv = mesh%order_inv
-mesh_copy%lon = mesh%lon
-mesh_copy%lat = mesh%lat
-mesh_copy%x = mesh%x
-mesh_copy%y = mesh%y
-mesh_copy%z = mesh%z
-mesh_copy%list = mesh%list
-mesh_copy%lptr = mesh%lptr
-mesh_copy%lend = mesh%lend
-mesh_copy%lnew = mesh%lnew
-mesh_copy%nb = mesh%nb
-if (allocated(mesh%barc)) mesh_copy%barc = mesh%barc
-if (allocated(mesh%barc_lon)) mesh_copy%barc_lon = mesh%barc_lon
-if (allocated(mesh%barc_lat)) mesh_copy%barc_lat = mesh%barc_lat
-if (allocated(mesh%barc_dist)) mesh_copy%barc_dist = mesh%barc_dist
-if (allocated(mesh%barc_vp)) mesh_copy%barc_vp = mesh%barc_vp
-mesh_copy%nt = mesh%nt
-mesh_copy%na = mesh%na
-if (allocated(mesh%bnd)) mesh_copy%bnd = mesh%bnd
-if (allocated(mesh%ltri)) mesh_copy%ltri = mesh%ltri
-if (allocated(mesh%larc)) mesh_copy%larc = mesh%larc
-if (allocated(mesh%valid)) mesh_copy%valid = mesh%valid
+mesh_out%order = mesh_in%order
+mesh_out%order_inv = mesh_in%order_inv
+mesh_out%lon = mesh_in%lon
+mesh_out%lat = mesh_in%lat
+mesh_out%x = mesh_in%x
+mesh_out%y = mesh_in%y
+mesh_out%z = mesh_in%z
+mesh_out%list = mesh_in%list
+mesh_out%lptr = mesh_in%lptr
+mesh_out%lend = mesh_in%lend
+mesh_out%lnew = mesh_in%lnew
+mesh_out%nb = mesh_in%nb
+if (allocated(mesh_in%barc)) mesh_out%barc = mesh_in%barc
+if (allocated(mesh_in%barc_lon)) mesh_out%barc_lon = mesh_in%barc_lon
+if (allocated(mesh_in%barc_lat)) mesh_out%barc_lat = mesh_in%barc_lat
+if (allocated(mesh_in%barc_dist)) mesh_out%barc_dist = mesh_in%barc_dist
+if (allocated(mesh_in%barc_vp)) mesh_out%barc_vp = mesh_in%barc_vp
+mesh_out%nt = mesh_in%nt
+mesh_out%na = mesh_in%na
+if (allocated(mesh_in%bnd)) mesh_out%bnd = mesh_in%bnd
+if (allocated(mesh_in%ltri)) mesh_out%ltri = mesh_in%ltri
+if (allocated(mesh_in%larc)) mesh_out%larc = mesh_in%larc
+if (allocated(mesh_in%valid)) mesh_out%valid = mesh_in%valid
 
-end function mesh_copy
+end subroutine mesh_copy
 
 !----------------------------------------------------------------------
 ! Subroutine: mesh_store
@@ -394,6 +395,9 @@ if (lbdist) then
    do i=1,mesh%n
       call mesh%find_bdist(mpl,mesh%lon(i),mesh%lat(i),mesh%bdist(i))
    end do
+else
+   ! Missing
+   mesh%bdist = mpl%msv%valr
 end if
 
 end subroutine mesh_bnodes
@@ -422,7 +426,7 @@ character(len=1024),parameter :: subr = 'mesh_find_bdist'
 if (mpl%msv%isi(mesh%nb)) call mpl%abort(subr,'boundary arcs have not been computed')
 
 ! Initialization
-bdist = huge(1.0)
+bdist = pi
 
 if (mesh%nb>0) then
    ! Transform to cartesian coordinates

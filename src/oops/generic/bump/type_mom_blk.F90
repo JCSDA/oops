@@ -15,11 +15,10 @@ implicit none
 type mom_blk_type
    integer :: ne                                  ! Ensemble size
    integer :: nsub                                ! Number of sub-ensembles
-   real(kind_real),allocatable :: m2_1(:,:,:,:)   ! Variance
-   real(kind_real),allocatable :: m2_2(:,:,:,:)   ! Variance
+   real(kind_real),allocatable :: m2_1(:,:,:)     ! Variance for variable 1
+   real(kind_real),allocatable :: m2_2(:,:,:,:)   ! Variance for variable 2
    real(kind_real),allocatable :: m11(:,:,:,:,:)  ! Covariance
    real(kind_real),allocatable :: m22(:,:,:,:,:)  ! Fourth-order centered moment
-   real(kind_real),allocatable :: m2full(:,:,:)   ! Full variance
 end type mom_blk_type
 
 private

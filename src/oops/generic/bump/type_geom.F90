@@ -52,6 +52,7 @@ type geom_type
    logical,allocatable :: mask_ver_c0(:)         ! Union of vertical masks
    integer,allocatable :: nc0_mask(:)            ! Horizontal mask size on subset Sc0
    logical,allocatable :: smask_c0a(:,:)         ! Sampling mask on subset Sc0, halo A
+   real(kind_real),allocatable :: mdist(:,:)     ! Minimum distance to mask
 
    ! Mesh
    type(mesh_type) :: mesh                       ! Mesh
@@ -164,6 +165,7 @@ if (allocated(geom%mask_hor_c0a)) deallocate(geom%mask_hor_c0a)
 if (allocated(geom%mask_ver_c0)) deallocate(geom%mask_ver_c0)
 if (allocated(geom%nc0_mask)) deallocate(geom%nc0_mask)
 if (allocated(geom%smask_c0a)) deallocate(geom%smask_c0a)
+if (allocated(geom%mdist)) deallocate(geom%mdist)
 call geom%mesh%dealloc
 call geom%tree%dealloc
 if (allocated(geom%redundant)) deallocate(geom%redundant)
@@ -196,26 +198,27 @@ subroutine geom_setup(geom,mpl,rng,nam,nmga,nl0,lon,lat,area,vunit,lmask)
 implicit none
 
 ! Passed variables
-class(geom_type),intent(inout) :: geom        ! Geometry
-type(mpl_type),intent(inout) :: mpl           ! MPI data
-type(rng_type),intent(inout) :: rng           ! Random number generator
-type(nam_type),intent(in) :: nam              ! Namelist
-integer,intent(in) :: nmga                    ! Halo A size
-integer,intent(in) :: nl0                     ! Number of levels in subset Sl0
-real(kind_real),intent(in) :: lon(nmga)       ! Longitudes
-real(kind_real),intent(in) :: lat(nmga)       ! Latitudes
-real(kind_real),intent(in) :: area(nmga)      ! Area
-real(kind_real),intent(in) :: vunit(nmga,nl0) ! Vertical unit
-logical,intent(in) :: lmask(nmga,nl0)         ! Mask
+class(geom_type),intent(inout) :: geom         ! Geometry
+type(mpl_type),intent(inout) :: mpl            ! MPI data
+type(rng_type),intent(inout) :: rng            ! Random number generator
+type(nam_type),intent(in) :: nam               ! Namelists
+integer,intent(in) :: nmga                     ! Halo A size
+integer,intent(in) :: nl0                      ! Number of levels in subset Sl0
+real(kind_real),intent(in) :: lon(nmga)        ! Longitudes
+real(kind_real),intent(in) :: lat(nmga)        ! Latitudes
+real(kind_real),intent(in) :: area(nmga)       ! Area
+real(kind_real),intent(in) :: vunit(nmga,nl0)  ! Vertical unit
+logical,intent(in) :: lmask(nmga,nl0)          ! Mask
 
 ! Local variables
-integer :: ic0,jc0,kc0,i,j,k,ic0a,jc3,il0,offset,iproc,img,imga,iend,ibnda
+integer :: ic0,jc0,kc0,i,j,k,ic0a,jc3,il0,il0i,offset,iproc,img,imga,iend,ibnda,nn_index(1)
 integer,allocatable :: bnda_to_c0(:,:)
 real(kind_real) :: lat_arc(2),lon_arc(2),xbnda(2),ybnda(2),zbnda(2)
 real(kind_real),allocatable :: lon_mg(:),lat_mg(:),area_mg(:),vunit_mg(:,:),list(:)
 logical :: same_mask,init
 logical,allocatable :: lmask_mg(:,:)
 type(fckit_mpi_status) :: status
+type(tree_type) :: tree
 
 ! Copy geometry variables
 geom%nmga = nmga
@@ -242,7 +245,7 @@ allocate(geom%mga_to_mg(geom%nmga))
 
 ! Communication of model grid points
 if (mpl%main) then
-   ! Allocation
+   ! Receive data on ioproc
    offset = 0
    do iproc=1,mpl%nproc
       if (iproc==mpl%ioproc) then
@@ -255,7 +258,7 @@ if (mpl%main) then
             lmask_mg(offset+1:offset+geom%proc_to_nmga(iproc),il0) = lmask(:,il0)
          end do
       else
-         ! Receive data on ioproc
+         ! Receive data
          call mpl%f_comm%receive(lon_mg(offset+1:offset+geom%proc_to_nmga(iproc)),iproc-1,mpl%tag,status)
          call mpl%f_comm%receive(lat_mg(offset+1:offset+geom%proc_to_nmga(iproc)),iproc-1,mpl%tag+1,status)
          call mpl%f_comm%receive(area_mg(offset+1:offset+geom%proc_to_nmga(iproc)),iproc-1,mpl%tag+2,status)
@@ -266,7 +269,7 @@ if (mpl%main) then
          end do
       end if
 
-      !  Update offset
+      ! Update offset
       offset = offset+geom%proc_to_nmga(iproc)
    end do
 else
@@ -404,6 +407,28 @@ end if
 write(mpl%info,'(a7,a,i3)') '','Number of independent levels: ',geom%nl0i
 call mpl%flush
 
+! Define minimum distance to mask
+allocate(geom%mdist(geom%nc0,geom%nl0i))
+geom%mdist = pi
+do il0i=1,geom%nl0i
+   ! Check mask
+   if (any(.not.geom%mask_c0(:,il0i))) then
+      ! Allocation
+      call tree%alloc(mpl,geom%nc0,mask=.not.geom%mask_c0(:,il0i))
+
+      ! Initialization
+      call tree%init(geom%lon,geom%lat)
+
+      ! Find nearest neighbors
+      do ic0=1,geom%nc0
+         if (geom%mask_c0(ic0,il0i)) call tree%find_nearest_neighbors(geom%lon(ic0),geom%lat(ic0),1,nn_index,geom%mdist(ic0,il0i))
+      end do
+
+      ! Release memory
+      call tree%dealloc
+   end if
+end do
+
 ! Allocation
 call geom%tree%alloc(mpl,geom%nc0)
 
@@ -417,7 +442,7 @@ do jc3=1,nam%nc3
 end do
 
 ! Define dirac points
-if ((nam%check_dirac.or.nam%check_consistency).and.(nam%ndir>0)) call geom%define_dirac(mpl,nam)
+if (nam%check_dirac.and.(nam%ndir>0)) call geom%define_dirac(mpl,nam)
 
 if (nam%mask_check) then
    ! Allocation
@@ -488,15 +513,23 @@ if (nam%mask_check) then
 end if
 
 ! Print summary
-write(mpl%info,'(a10,a,f7.1,a,f7.1)') '','Min. / max. longitudes:',minval(geom%lon)*rad2deg,' / ',maxval(geom%lon)*rad2deg
+write(mpl%info,'(a7,a,f7.1,a,f7.1)') '','Min. / max. longitudes:',minval(geom%lon)*rad2deg,' / ',maxval(geom%lon)*rad2deg
 call mpl%flush
-write(mpl%info,'(a10,a,f7.1,a,f7.1)') '','Min. / max. latitudes: ',minval(geom%lat)*rad2deg,' / ',maxval(geom%lat)*rad2deg
+write(mpl%info,'(a7,a,f7.1,a,f7.1)') '','Min. / max. latitudes: ',minval(geom%lat)*rad2deg,' / ',maxval(geom%lat)*rad2deg
 call mpl%flush
-write(mpl%info,'(a10,a)') '','Unmasked area (% of Earth area) / masked points / vertical unit:'
+write(mpl%info,'(a7,a,f5.1,a)') '','Domain area (% of Earth area):',100.0*maxval(geom%area)/(4.0*pi),'%'
+call mpl%flush
+write(mpl%info,'(a7,a)') '','Valid points (% of total domain):'
 call mpl%flush
 do il0=1,geom%nl0
-   write(mpl%info,'(a13,a,i3,a,f5.1,a,f5.1,a,f12.1,a)') '','Level ',nam%levs(il0),' ~> ',geom%area(il0)/(4.0*pi)*100.0,'% / ', &
- & real(count(.not.geom%mask_c0(:,il0)),kind_real)/real(geom%nc0,kind_real)*100.0,'% / ',geom%vunitavg(il0),' vert. unit'
+   write(mpl%info,'(a10,a,i3,a,f5.1,a)') '','Level ',nam%levs(il0),' ~> ', &
+ & 100.0*real(count(geom%mask_c0(:,il0)),kind_real)/real(geom%nc0,kind_real),'%'
+   call mpl%flush
+end do
+write(mpl%info,'(a7,a)') '','Vertical unit:'
+call mpl%flush
+do il0=1,geom%nl0
+   write(mpl%info,'(a10,a,i3,a,e10.3,a)') '','Level ',nam%levs(il0),' ~> ',geom%vunitavg(il0),' vert. unit'
    call mpl%flush
 end do
 write(mpl%info,'(a7,a)') '','Distribution summary:'
