@@ -18,10 +18,6 @@
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
-namespace oops {
-  class Variables;
-}
-
 namespace qg {
   class ObsSpaceQG;
 
@@ -33,9 +29,9 @@ class ObsVecQG : public util::Printable,
  public:
   static const std::string classname() {return "qg::ObsVecQG";}
 
-  ObsVecQG(const ObsSpaceQG &, const oops::Variables &,
+  ObsVecQG(const ObsSpaceQG &,
            const std::string & name = "", const bool fail = true);
-  ObsVecQG(const ObsVecQG &, const bool copy = true);
+  ObsVecQG(const ObsVecQG &);
   ~ObsVecQG();
 
   ObsVecQG & operator = (const ObsVecQG &);

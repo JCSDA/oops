@@ -16,6 +16,7 @@
 #include <string>
 
 #include "oops/base/ObsSpaceBase.h"
+#include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Printable.h"
 
@@ -53,6 +54,8 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
     return new LocationsQG(key_locs);
   }
 
+  const oops::Variables & obsvariables() { return obsvars_; }
+
   void random(const int &, double *) const;
 
   void generateDistribution(const eckit::Configuration & conf) {
@@ -79,6 +82,8 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
   unsigned int nout_;
   const util::DateTime winbgn_;
   const util::DateTime winend_;
+
+  const oops::Variables obsvars_;
 
   static std::map < std::string, int > theObsFileCount_;
 };

@@ -43,7 +43,7 @@ class ObsFilters : public util::Printable,
   template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<MODEL, DATA> >;
 
  public:
-  ObsFilters(const ObsSpace_ &, const eckit::Configuration &, const Variables &,
+  ObsFilters(const ObsSpace_ &, const eckit::Configuration &,
              ObsDataPtr_<int> qcflags = ObsDataPtr_<int>(),
              ObsDataPtr_<float> obserr = ObsDataPtr_<float>());
   ObsFilters();
@@ -65,7 +65,6 @@ class ObsFilters : public util::Printable,
 
 template <typename MODEL>
 ObsFilters<MODEL>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration & conf,
-                              const Variables & observed,
                               ObsDataPtr_<int> qcflags, ObsDataPtr_<float> obserr)
   : filters_(), geovars_() {
   Log::trace() << "ObsFilters::ObsFilters starting " << conf << std::endl;
@@ -74,7 +73,6 @@ ObsFilters<MODEL>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration &
   if (qcflags) {
     eckit::LocalConfiguration preconf;
     preconf.set("Filter", "QCmanager");
-    preconf.set("observed", observed.variables());
     filters_.push_back(FilterFactory<MODEL>::create(os, preconf, qcflags, obserr));
   }
 
@@ -91,7 +89,6 @@ ObsFilters<MODEL>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration &
       apply = contains(iters, iter);
     }
     if (apply) {
-      confs[jj].set("observed", observed.variables());
       ObsFilterPtr_ tmp(FilterFactory<MODEL>::create(os, confs[jj], qcflags, obserr));
       geovars_ += tmp->requiredGeoVaLs();
       filters_.push_back(tmp);

@@ -59,7 +59,6 @@ class ObservationL95 : public util::Printable,
 
 // Other
   const oops::Variables & variables() const {return inputs_;}
-  const oops::Variables & observed() const {return outputs_;}
   LocsL95 * locations(const util::DateTime &, const util::DateTime &) const;
 
   const ObsTableView & table() const {return obsdb_;}
@@ -69,7 +68,6 @@ class ObservationL95 : public util::Printable,
   void print(std::ostream &) const;
   const ObsTableView & obsdb_;
   const oops::Variables inputs_;
-  const oops::Variables outputs_;
   const std::string obsname_ = "Lorenz 95";
 };
 

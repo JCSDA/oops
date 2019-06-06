@@ -17,6 +17,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/geometry/Point2.h"
+#include "oops/base/Variables.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -57,6 +58,8 @@ class ObservationSpace : public util::Printable,
 /// Assimilation window
   const util::DateTime & windowStart() const {return obsdb_->windowStart();}
   const util::DateTime & windowEnd() const {return obsdb_->windowEnd();}
+
+  const Variables & obsvariables() const;
 
 // Other
   void generateDistribution(const eckit::Configuration &);
@@ -106,6 +109,15 @@ void ObservationSpace<MODEL>::print(std::ostream & os) const {
   util::Timer timer(classname(), "print");
   os << *obsdb_;
   Log::trace() << "ObservationSpace<MODEL>::print done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+//
+template <typename MODEL>
+const Variables & ObservationSpace<MODEL>::obsvariables() const {
+  Log::trace() << "ObservationSpace<MODEL>::obsvariables starting" << std::endl;
+  util::Timer timer(classname(), "obsvariables");
+  return obsdb_->obsvariables();
 }
 
 // -----------------------------------------------------------------------------

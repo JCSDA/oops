@@ -88,7 +88,7 @@ template <typename MODEL> void testLinearity() {
     hoptl.setTrajectory(gval, ybias);
 
     // create obsvector
-    ObsVector_ dy1(Test_::obspace()[jj], hop.observed());
+    ObsVector_ dy1(Test_::obspace()[jj]);
 
     // create geovals
     GeoVaLs_ dx(gconf, hoptl.variables());
@@ -106,7 +106,7 @@ template <typename MODEL> void testLinearity() {
     // test k * H * dx ~ H * (k*dx)
     dy1 *= coef;
     dx  *= coef;
-    ObsVector_ dy2(Test_::obspace()[jj], hop.observed());
+    ObsVector_ dy2(Test_::obspace()[jj]);
     hoptl.simulateObsTL(dx, dy2, ybinc);
 
     dy1 -= dy2;
@@ -152,8 +152,8 @@ template <typename MODEL> void testAdjoint() {
     // set TL/AD trajectory to the geovals from the file
     hoptl.setTrajectory(gval, ybias);
 
-    ObsVector_ dy1(Test_::obspace()[jj], hop.observed());
-    ObsVector_ dy2(Test_::obspace()[jj], hop.observed());
+    ObsVector_ dy1(Test_::obspace()[jj]);
+    ObsVector_ dy2(Test_::obspace()[jj]);
     GeoVaLs_ dx1(gconf, hoptl.variables());
     GeoVaLs_ dx2(gconf, hoptl.variables());
 
@@ -224,9 +224,9 @@ template <typename MODEL> void testTangentLinear() {
     hoptl.setTrajectory(x0, ybias);
 
     // create obsvectors
-    ObsVector_ y1(Test_::obspace()[jj], hop.observed());
-    ObsVector_ y2(Test_::obspace()[jj], hop.observed());
-    ObsVector_ y3(Test_::obspace()[jj], hop.observed());
+    ObsVector_ y1(Test_::obspace()[jj]);
+    ObsVector_ y2(Test_::obspace()[jj]);
+    ObsVector_ y3(Test_::obspace()[jj]);
 
     // y1 = hop(x0)
     hop.simulateObs(x0, y1, ybias);

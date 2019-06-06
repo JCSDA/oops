@@ -21,7 +21,6 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/Departures.h"
-#include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/util/abor1_cpp.h"
@@ -42,13 +41,12 @@ template<typename MODEL> class Observations;
 // -----------------------------------------------------------------------------
 template <typename MODEL> class Observations : public util::Printable {
   typedef Departures<MODEL>          Departures_;
-  typedef ObsOperators<MODEL>        ObsOperators_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef ObsVector<MODEL>           ObsVector_;
 
  public:
-  Observations(const ObsSpaces_ &, const ObsOperators_ &, const std::string name = "");
-  explicit Observations(const Observations &);
+  explicit Observations(const ObsSpaces_ &, const std::string name = "");
+  Observations(const Observations &);
   ~Observations();
   Observations & operator=(const Observations &);
 
@@ -73,11 +71,11 @@ template <typename MODEL> class Observations : public util::Printable {
 // =============================================================================
 
 template <typename MODEL>
-Observations<MODEL>::Observations(const ObsSpaces_ & obsdb, const ObsOperators_ & hop,
+Observations<MODEL>::Observations(const ObsSpaces_ & obsdb,
                                   const std::string name): obs_(0)
 {
   for (std::size_t jj = 0; jj < obsdb.size(); ++jj) {
-    obs_.push_back(new ObsVector_(obsdb[jj], hop[jj].observed(), name));
+    obs_.push_back(new ObsVector_(obsdb[jj], name));
   }
   Log::trace() << "Observations created" << std::endl;
 }
@@ -106,7 +104,7 @@ std::vector<boost::shared_ptr<ObsVector<MODEL> > >
 Observations<MODEL>::operator-(const Observations & other) const {
   std::vector<boost::shared_ptr<ObsVector_> > out;
   for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
-    boost::shared_ptr<ObsVector_> ovec(new ObsVector_(obs_[jj], true));
+    boost::shared_ptr<ObsVector_> ovec(new ObsVector_(obs_[jj]));
     *ovec -= other.obs_[jj];
     out.push_back(ovec);
   }

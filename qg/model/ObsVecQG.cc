@@ -18,7 +18,7 @@
 
 namespace qg {
 // -----------------------------------------------------------------------------
-ObsVecQG::ObsVecQG(const ObsSpaceQG & obsdb, const oops::Variables &,
+ObsVecQG::ObsVecQG(const ObsSpaceQG & obsdb,
                    const std::string & name, const bool fail)
   : obsdb_(obsdb), keyOvec_(0)
 {
@@ -28,14 +28,10 @@ ObsVecQG::ObsVecQG(const ObsSpaceQG & obsdb, const oops::Variables &,
   }
 }
 // -----------------------------------------------------------------------------
-ObsVecQG::ObsVecQG(const ObsVecQG & other, const bool copy)
+ObsVecQG::ObsVecQG(const ObsVecQG & other)
   : obsdb_(other.obsdb_), keyOvec_(0) {
   qg_obsvec_clone_f90(keyOvec_, other.keyOvec_);
-  if (copy) {
-    qg_obsvec_copy_f90(keyOvec_, other.keyOvec_);
-  } else {
-    qg_obsvec_zero_f90(keyOvec_);
-  }
+  qg_obsvec_copy_f90(keyOvec_, other.keyOvec_);
 }
 // -----------------------------------------------------------------------------
 ObsVecQG::~ObsVecQG() {

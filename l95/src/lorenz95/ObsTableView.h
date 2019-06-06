@@ -16,6 +16,7 @@
 
 #include "eckit/geometry/Point2.h"
 
+#include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
 
@@ -60,6 +61,7 @@ class ObsTableView : public util::Printable,
 
   const util::DateTime & windowStart() const {return obstable_->windowStart();}
   const util::DateTime & windowEnd() const {return obstable_->windowEnd();}
+  const oops::Variables & obsvariables() const { return obstable_->obsvariables(); }
  private:
   void print(std::ostream &) const;
   boost::shared_ptr<ObsTable> obstable_;

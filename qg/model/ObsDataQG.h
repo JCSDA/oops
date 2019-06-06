@@ -53,7 +53,7 @@ class ObsDataQG : public util::Printable,
 
 template<typename DATATYPE>
 ObsDataQG<DATATYPE>::ObsDataQG(const ObsSpaceQG & os, const oops::Variables & var,
-                               const std::string & name): data_(os, var, name) {
+                               const std::string & name): data_(os, name) {
 }
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>

@@ -86,7 +86,7 @@ template <typename MODEL> class EnsHofX : public Application {
     Log::debug() << "EnsHofX: using " << members.size() << " states." << std::endl;
 
 //  Setup ObsEnsemble
-    ObsEnsemble_ obsens(obsdb, hop, members.size());
+    ObsEnsemble_ obsens(obsdb, members.size());
 //  Loop on all ensemble members
     for (unsigned jj = 0; jj < members.size(); ++jj) {
 //    Setup initial state for jj-th member

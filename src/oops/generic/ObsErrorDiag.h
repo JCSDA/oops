@@ -16,7 +16,6 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/ObsErrorBase.h"
-#include "oops/base/Variables.h"
 #include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsVector.h"
@@ -33,7 +32,7 @@ class ObsErrorDiag : public ObsErrorBase<MODEL> {
   typedef ObsVector<MODEL>             ObsVector_;
 
  public:
-  ObsErrorDiag(const eckit::Configuration &, const ObsSpace_ &, const Variables &);
+  ObsErrorDiag(const eckit::Configuration &, const ObsSpace_ &);
   ~ObsErrorDiag();
 
 /// Multiply a Departure by \f$R\f$
@@ -52,7 +51,6 @@ class ObsErrorDiag : public ObsErrorBase<MODEL> {
   void print(std::ostream &) const;
 
   const ObsSpace_ & obsdb_;
-  Variables observed_;
   ObsVector_ stddev_;
   ObsVector_ inverseVariance_;
   double pert_;
@@ -61,10 +59,9 @@ class ObsErrorDiag : public ObsErrorBase<MODEL> {
 // =============================================================================
 
 template<typename MODEL>
-ObsErrorDiag<MODEL>::ObsErrorDiag(const eckit::Configuration & conf, const ObsSpace_ & obsgeom,
-                                  const Variables & observed)
-  : obsdb_(obsgeom), observed_(observed),
-    stddev_(obsgeom, observed, "EffectiveError"), inverseVariance_(obsgeom, observed),
+ObsErrorDiag<MODEL>::ObsErrorDiag(const eckit::Configuration & conf, const ObsSpace_ & obsgeom)
+  : obsdb_(obsgeom),
+    stddev_(obsgeom, "EffectiveError"), inverseVariance_(obsgeom),
     pert_(conf.getDouble("random_amplitude", 1.0))
 {
   inverseVariance_ = stddev_;

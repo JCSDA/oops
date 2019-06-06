@@ -22,10 +22,6 @@
 
 #include "lorenz95/ObsData1D.h"
 
-namespace oops {
-  class Variables;
-}
-
 namespace lorenz95 {
   class ObsTableView;
 
@@ -40,9 +36,9 @@ class ObsVec1D : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::ObsVec1D";}
 
-  ObsVec1D(ObsTableView &, const oops::Variables &,
+  ObsVec1D(ObsTableView &,
            const std::string & name = "", const bool fail = true);
-  ObsVec1D(const ObsVec1D &, const bool copy = true);
+  ObsVec1D(const ObsVec1D &);
   ~ObsVec1D() {}
 
   ObsVec1D & operator= (const ObsVec1D &);

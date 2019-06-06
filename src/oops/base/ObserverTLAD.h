@@ -169,7 +169,7 @@ void ObserverTLAD<MODEL>::doFinalizeTraj(const State_ & xx) {
 template <typename MODEL>
 void ObserverTLAD<MODEL>::setupTL(const ObsAuxIncrs_ & ybias) {
   Log::trace() << "ObserverTLAD::setupTL start" << std::endl;
-  ydeptl_.reset(new Departures_(obspace_, hop_));
+  ydeptl_.reset(new Departures_(obspace_));
   ybiastl_ = &ybias;
   Log::trace() << "ObserverTLAD::setupTL done" << std::endl;
 }

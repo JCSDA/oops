@@ -29,7 +29,7 @@ std::map < std::string, int > ObsSpaceQG::theObsFileCount_;
 
 ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config,
                        const util::DateTime & bgn, const util::DateTime & end)
-  : oops::ObsSpaceBase(config, bgn, end), winbgn_(bgn), winend_(end)
+  : oops::ObsSpaceBase(config, bgn, end), winbgn_(bgn), winend_(end), obsvars_()
 {
   static std::map < std::string, ObsHelpQG * > theObsFileRegister_;
   typedef std::map< std::string, ObsHelpQG * >::iterator otiter;

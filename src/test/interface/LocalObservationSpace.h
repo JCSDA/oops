@@ -43,14 +43,14 @@ template <typename MODEL> void testLocal() {
     eckit::LocalConfiguration distconf(localconf, "GeoDistance");
     const double dist = distconf.getDouble("distance");
 
-    ObsVector_ fullvec(*Test_::obspace()[jj], Test_::observed(jj));
+    ObsVector_ fullvec(*Test_::obspace()[jj]);
     oops::Log::info() << "Full Obsvector: " << fullvec << std::endl;
 
     LocalObsSpace_ local(*Test_::obspace()[jj], center, dist, -1);
     oops::Log::info() << "Local obs within " << dist << " from " << center <<
                          ": " <<local << std::endl;
 
-    ObsVector_ localvec(local, Test_::observed(jj));
+    ObsVector_ localvec(local);
     oops::Log::info() << "Local Obsvector: " << localvec << std::endl;
   }
 }

@@ -54,14 +54,16 @@ template <typename MODEL> void testFilters() {
     const ObsAuxCtrl_ ybias(typeconfs[jj]);
 
 //  Allocate memory for tests
-    ObsVector_ ovec(Test_::obspace()[jj], hop.observed());
+    ObsVector_ ovec(Test_::obspace()[jj]);
     boost::shared_ptr<oops::ObsDataVector<MODEL, float> > obserr
-      (new oops::ObsDataVector<MODEL, float>(Test_::obspace()[jj], hop.observed(), "ObsError"));
+      (new oops::ObsDataVector<MODEL, float>(Test_::obspace()[jj],
+               Test_::obspace()[jj].obsvariables(), "ObsError"));
     boost::shared_ptr<oops::ObsDataVector<MODEL, int> >
-      qcflags(new oops::ObsDataVector<MODEL, int>  (Test_::obspace()[jj], hop.observed()));
+      qcflags(new oops::ObsDataVector<MODEL, int>  (Test_::obspace()[jj],
+               Test_::obspace()[jj].obsvariables()));
 
 //  Create filters
-    ObsFilters_ filters(Test_::obspace()[jj], typeconfs[jj], hop.observed(), qcflags, obserr);
+    ObsFilters_ filters(Test_::obspace()[jj], typeconfs[jj], qcflags, obserr);
 
 //  Run filters
     filters.priorFilter(gval);
@@ -72,8 +74,8 @@ template <typename MODEL> void testFilters() {
     if (typeconfs[jj].has("qcBenchmark")) {
       const std::string qcBenchmarkName = typeconfs[jj].getString("qcBenchmark");
 
-      oops::ObsDataVector<MODEL, int> qcBenchmark(Test_::obspace()[jj], hop.observed(),
-                                                  qcBenchmarkName);
+      oops::ObsDataVector<MODEL, int> qcBenchmark(Test_::obspace()[jj],
+                           Test_::obspace()[jj].obsvariables(), qcBenchmarkName);
 
       bool same = compareFlags(*qcflags, qcBenchmark);
       EXPECT(same);

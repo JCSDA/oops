@@ -36,7 +36,6 @@ class ObsVecFixture : private boost::noncopyable {
 
  public:
   static std::vector<boost::shared_ptr<ObsSpace_> > & obspace() {return getInstance().ospaces_;}
-  static oops::Variables & observed(const std::size_t ii) {return getInstance().observed_.at(ii);}
 
  private:
   static ObsVecFixture<MODEL>& getInstance() {
@@ -58,14 +57,12 @@ class ObsVecFixture : private boost::noncopyable {
       ospaces_.push_back(tmp);
       eckit::LocalConfiguration ObsDataInConf;
       osconf.get("ObsDataIn", ObsDataInConf);
-      observed_.push_back(oops::Variables(ObsDataInConf));
     }
   }
 
   ~ObsVecFixture() {}
 
   std::vector<boost::shared_ptr<ObsSpace_> > ospaces_;
-  std::vector<oops::Variables> observed_;
 };
 
 // -----------------------------------------------------------------------------
@@ -75,7 +72,7 @@ template <typename MODEL> void testConstructor() {
   typedef oops::ObsVector<MODEL>  ObsVector_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    boost::scoped_ptr<ObsVector_> ov(new ObsVector_(*Test_::obspace()[jj], Test_::observed(jj)));
+    boost::scoped_ptr<ObsVector_> ov(new ObsVector_(*Test_::obspace()[jj]));
     EXPECT(ov.get());
 
     ov.reset();
@@ -90,7 +87,7 @@ template <typename MODEL> void testCopyConstructor() {
   typedef oops::ObsVector<MODEL>  ObsVector_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    boost::scoped_ptr<ObsVector_> ov(new ObsVector_(*Test_::obspace()[jj], Test_::observed(jj)));
+    boost::scoped_ptr<ObsVector_> ov(new ObsVector_(*Test_::obspace()[jj]));
 
     boost::scoped_ptr<ObsVector_> other(new ObsVector_(*ov));
     EXPECT(other.get());
@@ -110,7 +107,7 @@ template <typename MODEL> void testNotZero() {
   const double zero = 0.0;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    ObsVector_ ov(*Test_::obspace()[jj], Test_::observed(jj));
+    ObsVector_ ov(*Test_::obspace()[jj]);
 
     ov.random();
 

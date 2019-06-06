@@ -149,18 +149,19 @@ CostJo<MODEL>::CostJo(const eckit::Configuration & joConf,
                       const util::DateTime & winbgn, const util::DateTime & winend,
                       const util::Duration & tslot, const bool subwindows)
   : obsconf_(joConf), obspace_(obsconf_, winbgn, winend),
-    hop_(obspace_, obsconf_), yobs_(obspace_, hop_, "ObsValue"),
+    hop_(obspace_, obsconf_), yobs_(obspace_, "ObsValue"),
     Rmat_(), currentConf_(), gradFG_(), pobs_(), tslot_(tslot),
     pobstlad_(), subwindows_(subwindows), obserr_(), qcflags_()
 {
   Log::trace() << "CostJo::CostJo start" << std::endl;
   for (size_t jj = 0; jj < obspace_.size(); ++jj) {
 //  Allocate QC flags
-    ObsDataPtr_<int> tmpqc(new ObsData_<int>(obspace_[jj], hop_[jj].observed()));
+    ObsDataPtr_<int> tmpqc(new ObsData_<int>(obspace_[jj], obspace_[jj].obsvariables()));
     qcflags_.push_back(tmpqc);
 
 //  Allocate and read initial obs error
-    ObsDataPtr_<float> tmperr(new ObsData_<float>(obspace_[jj], hop_[jj].observed(), "ObsError"));
+    ObsDataPtr_<float> tmperr(new ObsData_<float>(obspace_[jj],
+                               obspace_[jj].obsvariables(), "ObsError"));
     Log::debug() << "CostJo::initialize obs error: " << *tmperr;
     obserr_.push_back(tmperr);
   }
@@ -183,7 +184,7 @@ CostJo<MODEL>::initialize(const CtrlVar_ & xx, const eckit::Configuration & conf
   obsconf_.get("ObsTypes", typeconfs);
   for (size_t jj = 0; jj < obspace_.size(); ++jj) {
     typeconfs[jj].set("iteration", iterout);
-    PtrFilters_ tmp(new ObsFilters_(obspace_[jj], typeconfs[jj], hop_[jj].observed(),
+    PtrFilters_ tmp(new ObsFilters_(obspace_[jj], typeconfs[jj],
                                     qcflags_[jj], obserr_[jj]));
     filters_.push_back(tmp);
   }
@@ -217,11 +218,11 @@ double CostJo<MODEL>::finalize() {
   }
 
 // Set observation error covariance
-  Rmat_.reset(new ObsErrors_(obsconf_, obspace_, hop_));
+  Rmat_.reset(new ObsErrors_(obsconf_, obspace_));
 
 // Perturb observations according to obs error statistics
   if (iterout == 0 && obsconf_.getBool("ObsPert", false)) {
-    Departures_ ypert_(obspace_, hop_);
+    Departures_ ypert_(obspace_);
     Rmat_->randomize(ypert_);
     yobs_ += ypert_;
     Log::info() << "Perturbed observations: " << yobs_ << std::endl;
@@ -232,7 +233,7 @@ double CostJo<MODEL>::finalize() {
   Log::info() << "Jo Departures:" << std::endl << ydep << "End Jo Departures" << std::endl;
 
 // Apply bias correction
-  Departures_ bias(obspace_, hop_, "ObsBias", false);
+  Departures_ bias(obspace_, "ObsBias", false);
   ydep -= bias;
   Log::info() << "Jo Bias Corrected Departures:" << std::endl << ydep
           << "End Jo Bias Corrected Departures" << std::endl;
@@ -282,7 +283,7 @@ void CostJo<MODEL>::finalizeTraj() {
               << std::endl;
 
 // Apply bias correction
-  Departures_ bias(obspace_, hop_, "ObsBias", false);
+  Departures_ bias(obspace_, "ObsBias", false);
   ydep -= bias;
   Log::info() << "Jo Traj Bias Corrected Departures:" << std::endl << ydep
           << "End Jo Traj Bias Corrected Departures" << std::endl;
@@ -346,7 +347,7 @@ Departures<MODEL> * CostJo<MODEL>::multiplyCoInv(const GeneralizedDepartures & v
 template<typename MODEL>
 Departures<MODEL> * CostJo<MODEL>::newDualVector() const {
   Log::trace() << "CostJo::newDualVector start" << std::endl;
-  Departures_ * ydep = new Departures_(obspace_, hop_);
+  Departures_ * ydep = new Departures_(obspace_);
   ydep->zero();
   Log::trace() << "CostJo::newDualVector done" << std::endl;
   return ydep;

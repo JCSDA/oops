@@ -9,11 +9,13 @@
 
 #include <algorithm>
 #include <iostream>
+#include <set>
 #include <string>
 #include <vector>
 
 #include "eckit/config/Configuration.h"
 #include "oops/util/abor1_cpp.h"
+#include "oops/util/IntSetParser.h"
 #include "oops/util/Logger.h"
 
 // -----------------------------------------------------------------------------
@@ -30,7 +32,22 @@ Variables::Variables()
 Variables::Variables(const eckit::Configuration & conf)
   : convention_(""), vars_(0), conf_(), fconf_() {
   Log::trace() << "Variables::Variables start " << conf << std::endl;
-  conf.get("variables", vars_);
+  std::vector<std::string> vars;
+  conf.get("variables", vars);
+  // hack to read channels
+  if (conf.has("channels")) {
+    std::string chlist = conf.getString("channels");
+    std::set<int> channels = parseIntSet(chlist);
+    std::copy(channels.begin(), channels.end(), std::back_inserter(channels_));
+    // assuming the same channel subsetting applies to all variables
+    for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
+      for (size_t jch = 0; jch < channels_.size(); ++jch) {
+        vars_.push_back(vars[jvar]+"_"+std::to_string(channels_[jch]));
+      }
+    }
+  } else {
+    vars_ = vars;
+  }
   this->setConf();
   Log::trace() << "Variables::Variables done" << std::endl;
 }

@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "oops/base/ObsSpaceBase.h"
+#include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
 
@@ -60,7 +61,7 @@ class ObsTable : public oops::ObsSpaceBase,
   unsigned int nobs() const {return times_.size();}
   const std::vector<double> locations() const { return locations_; }
   const std::vector<util::DateTime> times() const { return times_; }
-
+  const oops::Variables & obsvariables() const { return obsvars_; }
  private:
   void print(std::ostream &) const;
   void otOpen(const std::string &);
@@ -73,6 +74,7 @@ class ObsTable : public oops::ObsSpaceBase,
   std::vector<double> locations_;
   mutable std::map<std::string, std::vector<double> > data_;
 
+  const oops::Variables obsvars_;
   std::string nameIn_;
   std::string nameOut_;
 };

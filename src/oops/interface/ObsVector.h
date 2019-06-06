@@ -17,7 +17,6 @@
 
 #include <boost/scoped_ptr.hpp>
 
-#include "oops/base/Variables.h"
 #include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/util/Logger.h"
@@ -45,9 +44,9 @@ class ObsVector : public util::Printable,
  public:
   static const std::string classname() {return "oops::ObsVector";}
 
-  ObsVector(const ObservationSpace<MODEL> &, const Variables &,
+  ObsVector(const ObservationSpace<MODEL> &,
             const std::string name = "", const bool fail = true);
-  explicit ObsVector(const ObsVector &, const bool copy = true);
+  explicit ObsVector(const ObsVector &);
   ~ObsVector();
 
 /// Interfacing
@@ -81,22 +80,22 @@ class ObsVector : public util::Printable,
 
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-ObsVector<MODEL>::ObsVector(const ObservationSpace<MODEL> & os, const Variables & vars,
+ObsVector<MODEL>::ObsVector(const ObservationSpace<MODEL> & os,
                             const std::string name, const bool fail): data_() {
   Log::trace() << "ObsVector<MODEL>::ObsVector starting " << name << std::endl;
   util::Timer timer(classname(), "ObsVector");
 
-  data_.reset(new ObsVector_(os.observationspace(), vars, name, fail));
+  data_.reset(new ObsVector_(os.observationspace(), name, fail));
 
   Log::trace() << "ObsVector<MODEL>::ObsVector done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-ObsVector<MODEL>::ObsVector(const ObsVector & other, const bool copy): data_() {
+ObsVector<MODEL>::ObsVector(const ObsVector & other): data_() {
   Log::trace() << "ObsVector<MODEL>::ObsVector starting" << std::endl;
   util::Timer timer(classname(), "ObsVector");
 
-  data_.reset(new ObsVector_(*other.data_, copy));
+  data_.reset(new ObsVector_(*other.data_));
 
   Log::trace() << "ObsVector<MODEL>::ObsVector done" << std::endl;
 }

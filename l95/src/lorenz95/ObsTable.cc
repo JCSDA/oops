@@ -35,7 +35,7 @@ namespace lorenz95 {
 
 ObsTable::ObsTable(const eckit::Configuration & config,
                    const util::DateTime & bgn, const util::DateTime & end)
-  : oops::ObsSpaceBase(config, bgn, end), winbgn_(bgn), winend_(end)
+  : oops::ObsSpaceBase(config, bgn, end), winbgn_(bgn), winend_(end), obsvars_()
 {
   oops::Log::trace() << "ObsTable::ObsTable starting" << std::endl;
   nameIn_.clear();

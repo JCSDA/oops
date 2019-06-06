@@ -75,7 +75,7 @@ template <typename MODEL> void testSimulateObs() {
     const ObsAuxCtrl_ ybias(conf[jj]);
 
     // create obsvector to hold H(x)
-    ObsVector_ ovec(Test_::obspace()[jj], hop.observed());
+    ObsVector_ ovec(Test_::obspace()[jj]);
 
     // call H(x), save result in the output file as @hofx
     hop.simulateObs(gval, ovec, ybias);
@@ -85,7 +85,7 @@ template <typename MODEL> void testSimulateObs() {
     if (conf[jj].has("vecequiv")) {
       // if reference h(x) is saved in file as a vector, read from file
       // and compare the norm of difference to zero
-      ObsVector_ ovec_ref(Test_::obspace()[jj], hop.observed(), conf[jj].getString("vecequiv"));
+      ObsVector_ ovec_ref(Test_::obspace()[jj], conf[jj].getString("vecequiv"));
       ovec_ref -= ovec;
       const double zz = ovec_ref.rms();
       oops::Log::info() << "Vector difference between reference and computed: " <<

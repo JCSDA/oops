@@ -11,7 +11,6 @@
 #include <boost/ptr_container/ptr_vector.hpp>
 
 #include "oops/base/Observations.h"
-#include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/util/Logger.h"
 
@@ -23,12 +22,11 @@ namespace oops {
 
 template<typename MODEL> class ObsEnsemble {
   typedef Observations<MODEL>        Observations_;
-  typedef ObsOperators<MODEL>        ObsOperators_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
 
  public:
 /// Constructor
-  ObsEnsemble(const ObsSpaces_ &, const ObsOperators_ &, const int &);
+  ObsEnsemble(const ObsSpaces_ &, const int &);
 
 /// Destructor
   virtual ~ObsEnsemble() {}
@@ -52,13 +50,12 @@ template<typename MODEL> class ObsEnsemble {
 // ====================================================================================
 
 template<typename MODEL>
-ObsEnsemble<MODEL>::ObsEnsemble(const ObsSpaces_ & os, const ObsOperators_ & hop,
-                                const int & rank)
+ObsEnsemble<MODEL>::ObsEnsemble(const ObsSpaces_ & os, const int & rank)
   : rank_(rank),
     ensemblePerturbs_()
 {
   for (unsigned i = 0; i < rank_; ++i) {
-    Observations_ * y = new Observations_(os, hop);
+    Observations_ * y = new Observations_(os);
     ensemblePerturbs_.push_back(y);
   }
   Log::trace() << "ObsEnsemble:contructor done" << std::endl;

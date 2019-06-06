@@ -101,7 +101,7 @@ Observer<MODEL, STATE>::Observer(const ObsSpaces_ & obsdb,
                                  const std::vector<PtrFilters_> filters,
                                  const util::Duration & tslot, const bool swin)
   : PostBase<STATE>(), hop_(hop),
-    yobs_(new Observations_(obsdb, hop_)), ybias_(ybias),
+    yobs_(new Observations_(obsdb)), ybias_(ybias),
     winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
     bgn_(winbgn_), end_(winend_), hslot_(tslot/2), subwindows_(swin),
     filters_(filters), geovars_(hop_.size()), gvals_(0)
