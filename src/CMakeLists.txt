@@ -101,8 +101,8 @@ oops/base/ObsSpaceBase.h
 oops/base/ObsSpaceBase.cc
 oops/base/ObsSpaces.h
 oops/base/Observations.h
-oops/base/Observer.h
-oops/base/ObserverTLAD.h
+oops/base/Observers.h
+oops/base/ObserversTLAD.h
 oops/base/PostBase.h
 oops/base/PostBaseTLAD.h
 oops/base/PostProcessor.h

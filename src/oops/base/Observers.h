@@ -8,8 +8,8 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef OOPS_BASE_OBSERVER_H_
-#define OOPS_BASE_OBSERVER_H_
+#ifndef OOPS_BASE_OBSERVERS_H_
+#define OOPS_BASE_OBSERVERS_H_
 
 #include <memory>
 #include <string>
@@ -42,7 +42,7 @@ namespace oops {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename STATE>
-class Observer : public PostBase<STATE>,
+class Observers : public PostBase<STATE>,
                  public util::Printable {
   typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef InterpolatorTraj<MODEL>    InterpolatorTraj_;
@@ -56,10 +56,10 @@ class Observer : public PostBase<STATE>,
   typedef boost::shared_ptr<ObsFilters_> PtrFilters_;
 
  public:
-  Observer(const ObsSpaces_ &, const ObsOperators_ &, const ObsAuxCtrls_ &,
+  Observers(const ObsSpaces_ &, const ObsOperators_ &, const ObsAuxCtrls_ &,
            const std::vector<PtrFilters_> filters = std::vector<PtrFilters_>(0),
            const util::Duration & tslot = util::Duration(0), const bool subwin = false);
-  ~Observer() {}
+  ~Observers() {}
 
   Observations_ * release() {return yobs_.release();}
 
@@ -77,7 +77,7 @@ class Observer : public PostBase<STATE>,
   const ObsOperators_ & hop_;
 
 // Data
-  std::auto_ptr<Observations_> yobs_;
+  std::unique_ptr<Observations_> yobs_;
   const ObsAuxCtrls_ & ybias_;
 
   util::DateTime winbgn_;   //!< Begining of assimilation window
@@ -95,7 +95,7 @@ class Observer : public PostBase<STATE>,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename STATE>
-Observer<MODEL, STATE>::Observer(const ObsSpaces_ & obsdb,
+Observers<MODEL, STATE>::Observers(const ObsSpaces_ & obsdb,
                                  const ObsOperators_ & hop,
                                  const ObsAuxCtrls_ & ybias,
                                  const std::vector<PtrFilters_> filters,
@@ -106,7 +106,7 @@ Observer<MODEL, STATE>::Observer(const ObsSpaces_ & obsdb,
     bgn_(winbgn_), end_(winend_), hslot_(tslot/2), subwindows_(swin),
     filters_(filters), geovars_(hop_.size()), gvals_(0)
 {
-  Log::trace() << "Observer::Observer starting" << std::endl;
+  Log::trace() << "Observers::Observers starting" << std::endl;
   if (filters_.empty()) {
     for (size_t jj = 0; jj < obsdb.size(); ++jj) {
       boost::shared_ptr<ObsFilters_> tmp(new ObsFilters_());
@@ -121,16 +121,16 @@ Observer<MODEL, STATE>::Observer(const ObsSpaces_ & obsdb,
     geovars_[jj] += filters_.at(jj)->requiredGeoVaLs();
   }
 
-  Log::trace() << "Observer::Observer done" << std::endl;
+  Log::trace() << "Observers::Observers done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename STATE>
-void Observer<MODEL, STATE>::doInitialize(const STATE & xx,
+void Observers<MODEL, STATE>::doInitialize(const STATE & xx,
                                           const util::DateTime & end,
                                           const util::Duration & tstep) {
-  Log::trace() << "Observer::doInitialize start" << std::endl;
+  Log::trace() << "Observers::doInitialize start" << std::endl;
   const util::DateTime bgn(xx.validTime());
   if (hslot_ == util::Duration(0)) hslot_ = tstep/2;
   if (subwindows_) {
@@ -149,14 +149,14 @@ void Observer<MODEL, STATE>::doInitialize(const STATE & xx,
     boost::shared_ptr<GeoVaLs_> tmp(new GeoVaLs_(hop_[jj].locations(bgn_, end_), geovars_[jj]));
     gvals_.push_back(tmp);
   }
-  Log::trace() << "Observer::doInitialize done" << std::endl;
+  Log::trace() << "Observers::doInitialize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename STATE>
-void Observer<MODEL, STATE>::doProcessing(const STATE & xx) {
-  Log::trace() << "Observer::doProcessing start" << std::endl;
+void Observers<MODEL, STATE>::doProcessing(const STATE & xx) {
+  Log::trace() << "Observers::doProcessing start" << std::endl;
   util::DateTime t1(xx.validTime()-hslot_);
   util::DateTime t2(xx.validTime()+hslot_);
   if (t1 < bgn_) t1 = bgn_;
@@ -166,14 +166,14 @@ void Observer<MODEL, STATE>::doProcessing(const STATE & xx) {
   for (size_t jj = 0; jj < hop_.size(); ++jj) {
     xx.getValues(hop_[jj].locations(t1, t2), geovars_[jj], *gvals_.at(jj));
   }
-  Log::trace() << "Observer::doProcessing done" << std::endl;
+  Log::trace() << "Observers::doProcessing done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename STATE>
-void Observer<MODEL, STATE>::processTraj(const STATE & xx, type_vspit & traj) const {
-  Log::trace() << "Observer::processTraj start" << std::endl;
+void Observers<MODEL, STATE>::processTraj(const STATE & xx, type_vspit & traj) const {
+  Log::trace() << "Observers::processTraj start" << std::endl;
   util::DateTime t1(xx.validTime()-hslot_);
   util::DateTime t2(xx.validTime()+hslot_);
   if (t1 < bgn_) t1 = bgn_;
@@ -184,42 +184,42 @@ void Observer<MODEL, STATE>::processTraj(const STATE & xx, type_vspit & traj) co
     xx.getValues(hop_[jj].locations(t1, t2), geovars_[jj], *gvals_.at(jj),
                  *traj.at(jj));
   }
-  Log::trace() << "Observer::processTraj done" << std::endl;
+  Log::trace() << "Observers::processTraj done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename STATE>
-void Observer<MODEL, STATE>::finalizeTraj(const STATE & xx, LinearObsOperators_ & htlad) {
-  Log::trace() << "Observer::finalizeTraj start" << std::endl;
+void Observers<MODEL, STATE>::finalizeTraj(const STATE & xx, LinearObsOperators_ & htlad) {
+  Log::trace() << "Observers::finalizeTraj start" << std::endl;
   for (size_t jj = 0; jj < htlad.size(); ++jj) {
     htlad[jj].setTrajectory(*gvals_.at(jj), ybias_[jj]);
   }
   this->doFinalize(xx);
-  Log::trace() << "Observer::finalizeTraj done" << std::endl;
+  Log::trace() << "Observers::finalizeTraj done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename STATE>
-void Observer<MODEL, STATE>::doFinalize(const STATE &) {
-  Log::trace() << "Observer::doFinalize start" << std::endl;
+void Observers<MODEL, STATE>::doFinalize(const STATE &) {
+  Log::trace() << "Observers::doFinalize start" << std::endl;
   for (size_t jj = 0; jj < hop_.size(); ++jj) {
     filters_.at(jj)->priorFilter(*gvals_.at(jj));
     hop_[jj].simulateObs(*gvals_.at(jj), (*yobs_)[jj], ybias_[jj]);
     filters_.at(jj)->postFilter((*yobs_)[jj]);
   }
   gvals_.clear();
-  Log::trace() << "Observer::doFinalize done" << std::endl;
+  Log::trace() << "Observers::doFinalize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename STATE>
-void Observer<MODEL, STATE>::print(std::ostream &) const {}
+void Observers<MODEL, STATE>::print(std::ostream &) const {}
 
 // -----------------------------------------------------------------------------
 
 }  // namespace oops
 
-#endif  // OOPS_BASE_OBSERVER_H_
+#endif  // OOPS_BASE_OBSERVERS_H_

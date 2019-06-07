@@ -23,7 +23,7 @@
 #include "oops/base/ObsAuxControls.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
-#include "oops/base/Observer.h"
+#include "oops/base/Observers.h"
 #include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
@@ -113,9 +113,9 @@ template <typename MODEL> class MakeObs : public Application {
       filters.push_back(tmp);
     }
 
-//  Setup Observer
-    boost::shared_ptr<Observer<MODEL, State_> >
-      pobs(new Observer<MODEL, State_>(obspace, hop, ybias, filters));
+//  Setup Observers
+    boost::shared_ptr<Observers<MODEL, State_> >
+      pobs(new Observers<MODEL, State_>(obspace, hop, ybias, filters));
     post.enrollProcessor(pobs);
 
 //  Run forecast and generate observations

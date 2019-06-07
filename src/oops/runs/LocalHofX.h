@@ -17,7 +17,7 @@
 #include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/ObsAuxControls.h"
 #include "oops/base/Observations.h"
-#include "oops/base/Observer.h"
+#include "oops/base/Observers.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
@@ -102,7 +102,7 @@ template <typename MODEL> class LocalHofX : public Application {
     std::vector<boost::shared_ptr<ObsSpaces_>> localobs;
     std::vector<boost::shared_ptr<ObsOperators_>> localhop;
     std::vector<boost::shared_ptr<ObsAuxCtrls_>> localobias;
-    std::vector<boost::shared_ptr<Observer<MODEL, State_> >> pobs;
+    std::vector<boost::shared_ptr<Observers<MODEL, State_> >> pobs;
     for (std::size_t jj = 0; jj < centerconf.size(); ++jj) {
        double lon = centerconf[jj].getDouble("lon");
        double lat = centerconf[jj].getDouble("lat");
@@ -119,8 +119,8 @@ template <typename MODEL> class LocalHofX : public Application {
        boost::shared_ptr<ObsAuxCtrls_> lobias(new ObsAuxCtrls_(obsconf));
        localobias.push_back(lobias);
        //  Setup observer
-       boost::shared_ptr<Observer<MODEL, State_>>
-          lpobs(new Observer<MODEL, State_>(*localobs[jj], *localhop[jj], *localobias[jj]));
+       boost::shared_ptr<Observers<MODEL, State_>>
+          lpobs(new Observers<MODEL, State_>(*localobs[jj], *localhop[jj], *localobias[jj]));
        pobs.push_back(lpobs);
        post.enrollProcessor(pobs[jj]);
     }

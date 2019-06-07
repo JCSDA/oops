@@ -25,8 +25,8 @@
 #include "oops/base/Departures.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
-#include "oops/base/Observer.h"
-#include "oops/base/ObserverTLAD.h"
+#include "oops/base/Observers.h"
+#include "oops/base/ObserversTLAD.h"
 #include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
@@ -49,7 +49,7 @@ namespace oops {
 /// Jo Cost Function
 /*!
  * The CostJo class encapsulates the Jo term of the cost function.
- * The Observer to be called during the model integration is managed
+ * The Observers to be called during the model integration is managed
  * inside the CostJo class.
  */
 
@@ -67,7 +67,7 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsOperators<MODEL>        ObsOperators_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
-  typedef ObserverTLAD<MODEL>        ObserverTLAD_;
+  typedef ObserversTLAD<MODEL>       ObserversTLAD_;
   typedef PostBaseTLAD<MODEL>        PostBaseTLAD_;
   typedef boost::shared_ptr<ObsFilters_> PtrFilters_;
   template <typename DATA> using ObsData_ = ObsDataVector<MODEL, DATA>;
@@ -127,14 +127,14 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   /// Gradient at first guess : \f$ R^{-1} (H(x_{fg})-y_{obs}) \f$.
   boost::scoped_ptr<Departures_> gradFG_;
 
-  /// Observer passed by \f$ J_o\f$ to the model during integration.
-  mutable boost::shared_ptr<Observer<MODEL, State_> > pobs_;
+  /// Observers passed by \f$ J_o\f$ to the model during integration.
+  mutable boost::shared_ptr<Observers<MODEL, State_> > pobs_;
 
   /// Time slot.
   const util::Duration tslot_;
 
   /// Linearized observation operators.
-  boost::shared_ptr<ObserverTLAD_> pobstlad_;
+  boost::shared_ptr<ObserversTLAD_> pobstlad_;
   const bool subwindows_;
 
   /// Storage for QC flags and obs error
@@ -189,7 +189,7 @@ CostJo<MODEL>::initialize(const CtrlVar_ & xx, const eckit::Configuration & conf
     filters_.push_back(tmp);
   }
 
-  pobs_.reset(new Observer<MODEL, State_>(obspace_, hop_, xx.obsVar(), filters_,
+  pobs_.reset(new Observers<MODEL, State_>(obspace_, hop_, xx.obsVar(), filters_,
                                           tslot_, subwindows_));
   Log::trace() << "CostJo::initialize done" << std::endl;
   return pobs_;
@@ -263,7 +263,7 @@ CostJo<MODEL>::initializeTraj(const CtrlVar_ & xx, const Geometry_ &,
                               const eckit::Configuration & conf) {
   Log::trace() << "CostJo::initializeTraj start" << std::endl;
   std::vector<PtrFilters_> filters_;
-  pobstlad_.reset(new ObserverTLAD_(obsconf_, obspace_, hop_, xx.obsVar(), filters_,
+  pobstlad_.reset(new ObserversTLAD_(obsconf_, obspace_, hop_, xx.obsVar(), filters_,
                                     tslot_, subwindows_));
   Log::trace() << "CostJo::initializeTraj done" << std::endl;
   return pobstlad_;

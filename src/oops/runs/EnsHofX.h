@@ -19,7 +19,7 @@
 #include "oops/base/ObsAuxControls.h"
 #include "oops/base/ObsEnsemble.h"
 #include "oops/base/Observations.h"
-#include "oops/base/Observer.h"
+#include "oops/base/Observers.h"
 #include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
@@ -104,9 +104,9 @@ template <typename MODEL> class EnsHofX : public Application {
       fullConfig.get("Prints", prtConf);
       post.enrollProcessor(new StateInfo<State_>("fc", prtConf));
 
-//    Setup postprocessor: Observer
-      boost::shared_ptr<Observer<MODEL, State_> >
-      pobs(new Observer<MODEL, State_>(obsdb, hop, ybias));
+//    Setup postprocessor: Observers
+      boost::shared_ptr<Observers<MODEL, State_> >
+      pobs(new Observers<MODEL, State_>(obsdb, hop, ybias));
       post.enrollProcessor(pobs);
 
 //    Compute H(x)

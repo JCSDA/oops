@@ -8,8 +8,8 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef OOPS_BASE_OBSERVERTLAD_H_
-#define OOPS_BASE_OBSERVERTLAD_H_
+#ifndef OOPS_BASE_OBSERVERSTLAD_H_
+#define OOPS_BASE_OBSERVERSTLAD_H_
 
 #include <memory>
 #include <vector>
@@ -39,7 +39,7 @@ namespace oops {
 /// Computes observation equivalent TL and AD to/from increments.
 
 template <typename MODEL>
-class ObserverTLAD : public PostBaseTLAD<MODEL> {
+class ObserversTLAD : public PostBaseTLAD<MODEL> {
   typedef Departures<MODEL>          Departures_;
   typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef Increment<MODEL>           Increment_;
@@ -55,11 +55,11 @@ class ObserverTLAD : public PostBaseTLAD<MODEL> {
   typedef boost::shared_ptr<ObsFilters_> PtrFilters_;
 
  public:
-  ObserverTLAD(const eckit::Configuration &,
+  ObserversTLAD(const eckit::Configuration &,
                const ObsSpaces_ &, const ObsOperators_ &, const ObsAuxCtrls_ &,
                const std::vector<PtrFilters_>,
                const util::Duration & tslot = util::Duration(0), const bool subwin = false);
-  ~ObserverTLAD() {}
+  ~ObserversTLAD() {}
 
   Observations_ * release() {return observer_.release();}
   Departures_ * releaseOutputFromTL() override {return ydeptl_.release();}
@@ -86,10 +86,10 @@ class ObserverTLAD : public PostBaseTLAD<MODEL> {
   const ObsSpaces_ & obspace_;
   const ObsOperators_ & hop_;
   LinearObsOperators_ hoptlad_;
-  Observer<MODEL, State_> observer_;
+  Observers<MODEL, State_> observer_;
 
 // Data
-  std::auto_ptr<Departures_> ydeptl_;
+  std::unique_ptr<Departures_> ydeptl_;
   const ObsAuxIncrs_ * ybiastl_;
   boost::shared_ptr<const Departures_> ydepad_;
   ObsAuxIncrs_ * ybiasad_;
@@ -109,7 +109,7 @@ class ObserverTLAD : public PostBaseTLAD<MODEL> {
 
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-ObserverTLAD<MODEL>::ObserverTLAD(const eckit::Configuration & config,
+ObserversTLAD<MODEL>::ObserversTLAD(const eckit::Configuration & config,
                                   const ObsSpaces_ & obsdb,
                                   const ObsOperators_ & hop,
                                   const ObsAuxCtrls_ & ybias,
@@ -122,13 +122,13 @@ ObserverTLAD<MODEL>::ObserverTLAD(const eckit::Configuration & config,
     winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
     bgn_(winbgn_), end_(winend_), hslot_(tslot/2), subwindows_(subwin)
 {
-  Log::trace() << "ObserverTLAD::ObserverTLAD" << std::endl;
+  Log::trace() << "ObserversTLAD::ObserversTLAD" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-void ObserverTLAD<MODEL>::doInitializeTraj(const State_ & xx,
+void ObserversTLAD<MODEL>::doInitializeTraj(const State_ & xx,
                const util::DateTime & end, const util::Duration & tstep) {
-  Log::trace() << "ObserverTLAD::doInitializeTraj start" << std::endl;
+  Log::trace() << "ObserversTLAD::doInitializeTraj start" << std::endl;
 
 // Create full trajectory object
   bintstep_ = tstep;
@@ -143,12 +143,12 @@ void ObserverTLAD<MODEL>::doInitializeTraj(const State_ & xx,
   }
 
   observer_.initialize(xx, end, tstep);
-  Log::trace() << "ObserverTLAD::doInitializeTraj done" << std::endl;
+  Log::trace() << "ObserversTLAD::doInitializeTraj done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-void ObserverTLAD<MODEL>::doProcessingTraj(const State_ & xx) {
-  Log::trace() << "ObserverTLAD::doProcessingTraj start" << std::endl;
+void ObserversTLAD<MODEL>::doProcessingTraj(const State_ & xx) {
+  Log::trace() << "ObserversTLAD::doProcessingTraj start" << std::endl;
 
   // Index for current bin
   int ib = (xx.validTime()-winbgn_).toSeconds() / bintstep_.toSeconds();
@@ -156,28 +156,28 @@ void ObserverTLAD<MODEL>::doProcessingTraj(const State_ & xx) {
   // Call nonlinear observer
   observer_.processTraj(xx, traj_[ib]);
 
-  Log::trace() << "ObserverTLAD::doProcessingTraj done" << std::endl;
+  Log::trace() << "ObserversTLAD::doProcessingTraj done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-void ObserverTLAD<MODEL>::doFinalizeTraj(const State_ & xx) {
-  Log::trace() << "ObserverTLAD::doFinalizeTraj start" << std::endl;
+void ObserversTLAD<MODEL>::doFinalizeTraj(const State_ & xx) {
+  Log::trace() << "ObserversTLAD::doFinalizeTraj start" << std::endl;
   observer_.finalizeTraj(xx, hoptlad_);
-  Log::trace() << "ObserverTLAD::doFinalizeTraj done" << std::endl;
+  Log::trace() << "ObserversTLAD::doFinalizeTraj done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-void ObserverTLAD<MODEL>::setupTL(const ObsAuxIncrs_ & ybias) {
-  Log::trace() << "ObserverTLAD::setupTL start" << std::endl;
+void ObserversTLAD<MODEL>::setupTL(const ObsAuxIncrs_ & ybias) {
+  Log::trace() << "ObserversTLAD::setupTL start" << std::endl;
   ydeptl_.reset(new Departures_(obspace_));
   ybiastl_ = &ybias;
-  Log::trace() << "ObserverTLAD::setupTL done" << std::endl;
+  Log::trace() << "ObserversTLAD::setupTL done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-void ObserverTLAD<MODEL>::doInitializeTL(const Increment_ & dx,
+void ObserversTLAD<MODEL>::doInitializeTL(const Increment_ & dx,
                    const util::DateTime & end, const util::Duration & tstep) {
-  Log::trace() << "ObserverTLAD::doInitializeTL start" << std::endl;
+  Log::trace() << "ObserversTLAD::doInitializeTL start" << std::endl;
   const util::DateTime bgn(dx.validTime());
   if (hslot_ == util::Duration(0)) hslot_ = tstep/2;
   if (subwindows_) {
@@ -197,12 +197,12 @@ void ObserverTLAD<MODEL>::doInitializeTL(const Increment_ & dx,
       gom(new GeoVaLs_(hop_[jj].locations(bgn_, end_), hoptlad_.variables(jj)));
     gvals_.push_back(gom);
   }
-  Log::trace() << "ObserverTLAD::doInitializeTL done" << std::endl;
+  Log::trace() << "ObserversTLAD::doInitializeTL done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-void ObserverTLAD<MODEL>::doProcessingTL(const Increment_ & dx) {
-  Log::trace() << "ObserverTLAD::doProcessingTL start" << std::endl;
+void ObserversTLAD<MODEL>::doProcessingTL(const Increment_ & dx) {
+  Log::trace() << "ObserversTLAD::doProcessingTL start" << std::endl;
   util::DateTime t1(dx.validTime()-hslot_);
   util::DateTime t2(dx.validTime()+hslot_);
   if (t1 < bgn_) t1 = bgn_;
@@ -216,32 +216,32 @@ void ObserverTLAD<MODEL>::doProcessingTL(const Increment_ & dx) {
     dx.getValuesTL(hop_[jj].locations(t1, t2), hoptlad_.variables(jj),
                    *gvals_.at(jj), *traj_.at(ib).at(jj));
   }
-  Log::trace() << "ObserverTLAD::doProcessingTL done" << std::endl;
+  Log::trace() << "ObserversTLAD::doProcessingTL done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-void ObserverTLAD<MODEL>::doFinalizeTL(const Increment_ &) {
-  Log::trace() << "ObserverTLAD::doFinalizeTL start" << std::endl;
+void ObserversTLAD<MODEL>::doFinalizeTL(const Increment_ &) {
+  Log::trace() << "ObserversTLAD::doFinalizeTL start" << std::endl;
   for (std::size_t jj = 0; jj < hoptlad_.size(); ++jj) {
     hoptlad_[jj].simulateObsTL(*gvals_.at(jj), (*ydeptl_)[jj], (*ybiastl_)[jj]);
   }
   gvals_.clear();
-  Log::trace() << "ObserverTLAD::doFinalizeTL done" << std::endl;
+  Log::trace() << "ObserversTLAD::doFinalizeTL done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-void ObserverTLAD<MODEL>::setupAD(boost::shared_ptr<const Departures_> ydep,
+void ObserversTLAD<MODEL>::setupAD(boost::shared_ptr<const Departures_> ydep,
                                   ObsAuxIncrs_ & ybias) {
-  Log::trace() << "ObserverTLAD::setupAD start" << std::endl;
+  Log::trace() << "ObserversTLAD::setupAD start" << std::endl;
   ydepad_ = ydep;
   ybiasad_ = &ybias;
-  Log::trace() << "ObserverTLAD::setupAD done" << std::endl;
+  Log::trace() << "ObserversTLAD::setupAD done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-void ObserverTLAD<MODEL>::doFirstAD(Increment_ & dx, const util::DateTime & bgn,
+void ObserversTLAD<MODEL>::doFirstAD(Increment_ & dx, const util::DateTime & bgn,
                                     const util::Duration & tstep) {
-  Log::trace() << "ObserverTLAD::doFirstAD start" << std::endl;
+  Log::trace() << "ObserversTLAD::doFirstAD start" << std::endl;
   if (hslot_ == util::Duration(0)) hslot_ = tstep/2;
   const util::DateTime end(dx.validTime());
   if (subwindows_) {
@@ -262,12 +262,12 @@ void ObserverTLAD<MODEL>::doFirstAD(Increment_ & dx, const util::DateTime & bgn,
     hoptlad_[jj].simulateObsAD(*gom, (*ydepad_)[jj], (*ybiasad_)[jj]);
     gvals_.push_back(gom);
   }
-  Log::trace() << "ObserverTLAD::doFirstAD done" << std::endl;
+  Log::trace() << "ObserversTLAD::doFirstAD done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-void ObserverTLAD<MODEL>::doProcessingAD(Increment_ & dx) {
-  Log::trace() << "ObserverTLAD::doProcessingAD start" << std::endl;
+void ObserversTLAD<MODEL>::doProcessingAD(Increment_ & dx) {
+  Log::trace() << "ObserversTLAD::doProcessingAD start" << std::endl;
   util::DateTime t1(dx.validTime()-hslot_);
   util::DateTime t2(dx.validTime()+hslot_);
   if (t1 < bgn_) t1 = bgn_;
@@ -281,17 +281,17 @@ void ObserverTLAD<MODEL>::doProcessingAD(Increment_ & dx) {
     dx.getValuesAD(hop_[jj].locations(t1, t2), hoptlad_.variables(jj),
                    *gvals_.at(jj), *traj_.at(ib).at(jj));
   }
-  Log::trace() << "ObserverTLAD::doProcessingAD done" << std::endl;
+  Log::trace() << "ObserversTLAD::doProcessingAD done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-void ObserverTLAD<MODEL>::doLastAD(Increment_ &) {
-  Log::trace() << "ObserverTLAD::doLastAD start" << std::endl;
+void ObserversTLAD<MODEL>::doLastAD(Increment_ &) {
+  Log::trace() << "ObserversTLAD::doLastAD start" << std::endl;
   gvals_.clear();
-  Log::trace() << "ObserverTLAD::doLastAD done" << std::endl;
+  Log::trace() << "ObserversTLAD::doLastAD done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 
 }  // namespace oops
 
-#endif  // OOPS_BASE_OBSERVERTLAD_H_
+#endif  // OOPS_BASE_OBSERVERSTLAD_H_
