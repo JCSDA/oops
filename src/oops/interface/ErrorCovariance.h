@@ -11,10 +11,10 @@
 #ifndef OOPS_INTERFACE_ERRORCOVARIANCE_H_
 #define OOPS_INTERFACE_ERRORCOVARIANCE_H_
 
+#include <memory>
 #include <string>
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/Variables.h"
@@ -67,7 +67,7 @@ class ErrorCovariance : public oops::ModelSpaceCovarianceBase<MODEL>,
 
   void print(std::ostream &) const override;
 
-  boost::scoped_ptr<Covariance_> covariance_;
+  std::unique_ptr<Covariance_> covariance_;
 };
 
 // =============================================================================

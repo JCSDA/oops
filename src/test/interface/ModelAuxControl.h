@@ -11,13 +11,13 @@
 #ifndef TEST_INTERFACE_MODELAUXCONTROL_H_
 #define TEST_INTERFACE_MODELAUXCONTROL_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
@@ -52,8 +52,8 @@ template <typename MODEL> class ModelAuxControlFixture : private boost::noncopya
 
   ~ModelAuxControlFixture() {}
 
-  boost::scoped_ptr<const eckit::LocalConfiguration>  conf_;
-  boost::scoped_ptr<Geometry_>     resol_;
+  std::unique_ptr<const eckit::LocalConfiguration>  conf_;
+  std::unique_ptr<Geometry_>     resol_;
 };
 
 // -----------------------------------------------------------------------------
@@ -62,7 +62,7 @@ template <typename MODEL> void testConstructor() {
   typedef ModelAuxControlFixture<MODEL>   Test_;
   typedef oops::ModelAuxControl<MODEL>    ModelAux_;
 
-  boost::scoped_ptr<ModelAux_> bias(new ModelAux_(Test_::resol(), Test_::config()));
+  std::unique_ptr<ModelAux_> bias(new ModelAux_(Test_::resol(), Test_::config()));
   EXPECT(bias.get());
 
   bias.reset();
@@ -75,9 +75,9 @@ template <typename MODEL> void testCopyConstructor() {
   typedef ModelAuxControlFixture<MODEL>   Test_;
   typedef oops::ModelAuxControl<MODEL>    ModelAux_;
 
-  boost::scoped_ptr<ModelAux_> bias(new ModelAux_(Test_::resol(), Test_::config()));
+  std::unique_ptr<ModelAux_> bias(new ModelAux_(Test_::resol(), Test_::config()));
 
-  boost::scoped_ptr<ModelAux_> other(new ModelAux_(*bias));
+  std::unique_ptr<ModelAux_> other(new ModelAux_(*bias));
   EXPECT(other.get());
 
   other.reset();
@@ -92,9 +92,9 @@ template <typename MODEL> void testChangeRes() {
   typedef ModelAuxControlFixture<MODEL>   Test_;
   typedef oops::ModelAuxControl<MODEL>    ModelAux_;
 
-  boost::scoped_ptr<ModelAux_> bias(new ModelAux_(Test_::resol(), Test_::config()));
+  std::unique_ptr<ModelAux_> bias(new ModelAux_(Test_::resol(), Test_::config()));
 
-  boost::scoped_ptr<ModelAux_> other(new ModelAux_(Test_::resol(), *bias));
+  std::unique_ptr<ModelAux_> other(new ModelAux_(Test_::resol(), *bias));
   EXPECT(other.get());
 
   other.reset();

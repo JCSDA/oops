@@ -12,6 +12,8 @@
 #define OOPS_ASSIMILATION_COSTFCT4DENSVAR_H_
 
 #include <map>
+#include <memory>
+
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/CostFunction.h"
@@ -88,8 +90,8 @@ template<typename MODEL> class CostFct4DEnsVar : public CostFunction<MODEL> {
   util::Duration zero_;
   unsigned int ncontrol_;
   const Variables ctlvars_;
-  boost::scoped_ptr<ChangeVar_> an2model_;
-  boost::scoped_ptr<ChangeVarTLAD_> inc2model_;
+  std::unique_ptr<ChangeVar_> an2model_;
+  std::unique_ptr<ChangeVarTLAD_> inc2model_;
 };
 
 // =============================================================================

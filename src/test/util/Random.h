@@ -12,13 +12,13 @@
 #include <cmath>
 #include <iostream>
 #include <limits>
+#include <memory>
 #include <string>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
@@ -49,7 +49,7 @@ class RandomFixture : private boost::noncopyable {
 
   ~RandomFixture() {}
 
-  boost::scoped_ptr<const eckit::LocalConfiguration> test_;
+  std::unique_ptr<const eckit::LocalConfiguration> test_;
 };
 
 // -----------------------------------------------------------------------------

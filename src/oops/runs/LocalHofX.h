@@ -8,6 +8,7 @@
 #ifndef OOPS_RUNS_LOCALHOFX_H_
 #define OOPS_RUNS_LOCALHOFX_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -126,7 +127,7 @@ template <typename MODEL> class LocalHofX : public Application {
 
 //  Save H(x)
     for (std::size_t jj = 0; jj < centerconf.size(); ++jj) {
-       boost::scoped_ptr<Observations_> yobs(pobs[jj]->release());
+       std::unique_ptr<Observations_> yobs(pobs[jj]->release());
        Log::test() << jj << " local H(x): " << *yobs << std::endl;
        yobs->save("hofx");
     }

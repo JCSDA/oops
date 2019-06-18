@@ -12,9 +12,9 @@
 #define OOPS_INTERFACE_GEOMETRYITERATOR_H_
 
 #include <iterator>
+#include <memory>
 #include <string>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/geometry/Point2.h"
 #include "oops/util/Logger.h"
@@ -50,7 +50,7 @@ class GeometryIterator: public std::iterator<std::forward_iterator_tag,
 
  private:
   void print(std::ostream &) const;
-  boost::scoped_ptr<GeometryIterator_> geometryiter_;
+  std::unique_ptr<GeometryIterator_> geometryiter_;
 };
 
 // -----------------------------------------------------------------------------

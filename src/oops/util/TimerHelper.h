@@ -11,13 +11,13 @@
 #ifndef OOPS_UTIL_TIMERHELPER_H_
 #define OOPS_UTIL_TIMERHELPER_H_
 
-// #include <chrono>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <string>
+// #include <chrono>
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 #include "oops/util/Printable.h"
 
 namespace util {
@@ -42,7 +42,7 @@ class TimerHelper : public util::Printable,
   bool on_;
   std::map< std::string, double > timers_;
   std::map< std::string, int > counts_;
-  boost::scoped_ptr<Timer> total_;
+  std::unique_ptr<Timer> total_;
 };
 
 // -----------------------------------------------------------------------------

@@ -9,13 +9,13 @@
 #define TEST_INTERFACE_GEOVALS_H_
 
 #include <cmath>
+#include <memory>
 #include <string>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
@@ -56,9 +56,9 @@ class GeoVaLsFixture : private boost::noncopyable {
 
   ~GeoVaLsFixture() {}
 
-  boost::scoped_ptr<const util::DateTime> tbgn_;
-  boost::scoped_ptr<const util::DateTime> tend_;
-  boost::scoped_ptr<ObsSpaces_> ospaces_;
+  std::unique_ptr<const util::DateTime> tbgn_;
+  std::unique_ptr<const util::DateTime> tend_;
+  std::unique_ptr<ObsSpaces_> ospaces_;
 };
 
 // -----------------------------------------------------------------------------
@@ -78,7 +78,7 @@ template <typename MODEL> void testConstructor() {
     ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
 
     Locations_ locs(hop.locations(Test_::tbgn(), Test_::tend()));
-    boost::scoped_ptr<GeoVaLs_> ov(new GeoVaLs_(locs, hop.variables()));
+    std::unique_ptr<GeoVaLs_> ov(new GeoVaLs_(locs, hop.variables()));
     EXPECT(ov.get());
 
     ov.reset();

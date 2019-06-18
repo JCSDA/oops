@@ -11,8 +11,8 @@
 #ifndef OOPS_BASE_ENSEMBLECOVARIANCE4D_H_
 #define OOPS_BASE_ENSEMBLECOVARIANCE4D_H_
 
+#include <memory>
 #include <vector>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/GMRESR.h"
@@ -54,7 +54,7 @@ class EnsembleCovariance4D : public ModelSpaceCovariance4DBase<MODEL> {
   void doInverseMultiply(const Increment4D_ &, Increment4D_ &) const override;
 
   EnsemblePtr_ ens_;
-  boost::scoped_ptr<Localization_> loc_;
+  std::unique_ptr<Localization_> loc_;
 };
 
 // =============================================================================

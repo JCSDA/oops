@@ -11,10 +11,10 @@
 #ifndef QG_MODEL_STATEQG_H_
 #define QG_MODEL_STATEQG_H_
 
+#include <memory>
 #include <ostream>
 #include <string>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "model/FieldsQG.h"
 #include "model/GeometryQGIterator.h"
@@ -86,8 +86,8 @@ class StateQG : public util::Printable,
  private:
   void print(std::ostream &) const;
   const bool lbc_ = true;
-  boost::scoped_ptr<FieldsQG> fields_;
-  boost::scoped_ptr<FieldsQG> stash_;
+  std::unique_ptr<FieldsQG> fields_;
+  std::unique_ptr<FieldsQG> stash_;
 };
 // -----------------------------------------------------------------------------
 

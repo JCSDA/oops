@@ -11,10 +11,10 @@
 #ifndef OOPS_RUNS_MAKEOBS_H_
 #define OOPS_RUNS_MAKEOBS_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
@@ -120,7 +120,7 @@ template <typename MODEL> class MakeObs : public Application {
     Log::test() << "Final state: " << xx << std::endl;
     Log::info() << "MakeObs: Finished observation generation." << std::endl;
 
-    boost::scoped_ptr<Observations_> yobs(pobs->release());
+    std::unique_ptr<Observations_> yobs(pobs->release());
     Log::info() << "Generated observation: " << *yobs << std::endl;
 
 //  Perturb observations

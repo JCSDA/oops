@@ -12,6 +12,7 @@
 #define OOPS_ASSIMILATION_COSTFCTWEAK_H_
 
 #include <map>
+#include <memory>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/CostFunction.h"
@@ -84,7 +85,7 @@ template<typename MODEL> class CostFctWeak : public CostFunction<MODEL> {
   unsigned int nsubwin_;
   bool tlforcing_;
   const Variables ctlvars_;
-  boost::scoped_ptr<ChangeVar_> an2model_;
+  std::unique_ptr<ChangeVar_> an2model_;
 };
 
 // =============================================================================

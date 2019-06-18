@@ -11,10 +11,10 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <sstream>
 
 #include <boost/lexical_cast.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "./TestConfig.h"
 #include "eckit/config/LocalConfiguration.h"
@@ -48,37 +48,37 @@ class StateTestFixture : TestFixture {
     vars_.reset(new oops::Variables(TestConfig::config()));
   }
   ~StateTestFixture() {}
-  boost::scoped_ptr<const eckit::LocalConfiguration> file_;
-  boost::scoped_ptr<lorenz95::Resolution> resol_;
+  std::unique_ptr<const eckit::LocalConfiguration> file_;
+  std::unique_ptr<lorenz95::Resolution> resol_;
   std::string date_str_;
-  boost::scoped_ptr<util::DateTime> time_;
-  boost::scoped_ptr<oops::Variables> vars_;
+  std::unique_ptr<util::DateTime> time_;
+  std::unique_ptr<oops::Variables> vars_;
 };
 // -----------------------------------------------------------------------------
 CASE("test_StateL95") {
   StateTestFixture fix;
 // -----------------------------------------------------------------------------
   SECTION("test_stateL95_constructor") {
-    boost::scoped_ptr<lorenz95::StateL95>
+    std::unique_ptr<lorenz95::StateL95>
       xx(new lorenz95::StateL95(*fix.resol_, *fix.vars_, *fix.time_));
     EXPECT(xx.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_stateL95_readin_constructor") {
-    boost::scoped_ptr<lorenz95::StateL95>
+    std::unique_ptr<lorenz95::StateL95>
       xx(new lorenz95::StateL95(*fix.resol_, *fix.vars_, *fix.file_));
     EXPECT(xx.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_stateL95_interpolation_constructor") {
     lorenz95::StateL95 xx1(*fix.resol_, *fix.vars_, *fix.time_);
-    boost::scoped_ptr<lorenz95::StateL95> xx2(new lorenz95::StateL95(*fix.resol_, xx1));
+    std::unique_ptr<lorenz95::StateL95> xx2(new lorenz95::StateL95(*fix.resol_, xx1));
     EXPECT(xx2.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_stateL95_copy_constructor") {
     lorenz95::StateL95 xx(*fix.resol_, *fix.vars_, *fix.time_);
-    boost::scoped_ptr<lorenz95::StateL95> xx2(new lorenz95::StateL95(xx));
+    std::unique_ptr<lorenz95::StateL95> xx2(new lorenz95::StateL95(xx));
     EXPECT(xx2.get() != NULL);
   }
 // -----------------------------------------------------------------------------

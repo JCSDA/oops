@@ -11,10 +11,10 @@
 #ifndef OOPS_ASSIMILATION_SADDLEPOINTMINIMIZER_H_
 #define OOPS_ASSIMILATION_SADDLEPOINTMINIMIZER_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
 
@@ -50,15 +50,15 @@ template<typename MODEL> class SaddlePointMinimizer : public Minimizer<MODEL> {
  public:
   const std::string classname() const override {return "SaddlePointMinimizer";}
   SaddlePointMinimizer(const eckit::Configuration &, const CostFct_ & J)
-    : Minimizer_(J), J_(J), gradJb_(0) {}
+    : Minimizer_(J), J_(J), gradJb_() {}
   ~SaddlePointMinimizer() {}
 
  private:
   CtrlInc_ * doMinimize(const eckit::Configuration &) override;
 
   const CostFct_ & J_;
-  boost::scoped_ptr<CtrlInc_> gradJb_;
-// Eigen  boost::scoped_ptr<LMP_> Pinv_;
+  std::unique_ptr<CtrlInc_> gradJb_;
+// Eigen  std::unique_ptr<LMP_> Pinv_;
   std::vector< SaddlePointVector<MODEL> > xyVEC_;
   std::vector< SaddlePointVector<MODEL> > pqVEC_;
 };
@@ -71,7 +71,7 @@ SaddlePointMinimizer<MODEL>::doMinimize(const eckit::Configuration & config) {
   int ninner = config.getInt("ninner");
   int gnreduc = config.getDouble("gradient_norm_reduction");
 
-//  if (gradJb_ == 0) gradJb_.reset(new CtrlInc_(J_.jb()));
+//  if (!gradJb_) gradJb_.reset(new CtrlInc_(J_.jb()));
 
   Log::info() << "SaddlePointMinimizer: max iter = " << ninner
               << ", requested norm reduction = " << gnreduc << std::endl;
@@ -90,7 +90,7 @@ SaddlePointMinimizer<MODEL>::doMinimize(const eckit::Configuration & config) {
   CtrlInc_ * tmp3 = new CtrlInc_(J_.jb().getFirstGuess());
   pdfg->dx(tmp3);
   for (unsigned jj = 0; jj < J_.nterms(); ++jj) {
-    boost::scoped_ptr<GeneralizedDepartures> ww(J_.jterm(jj).newGradientFG());
+    std::unique_ptr<GeneralizedDepartures> ww(J_.jterm(jj).newGradientFG());
     pdfg->append(J_.jterm(jj).multiplyCovar(*ww));
   }
   CtrlInc_ * tmp2 = new CtrlInc_(J_.jb());

@@ -8,7 +8,6 @@
 #ifndef LORENZ95_QCMANAGER_H_
 #define LORENZ95_QCMANAGER_H_
 
-#include <memory>
 #include <ostream>
 
 #include "boost/shared_ptr.hpp"

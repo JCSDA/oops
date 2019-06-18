@@ -12,10 +12,10 @@
 #define OOPS_INTERFACE_OBSAUXINCREMENT_H_
 
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/util/Logger.h"
@@ -72,7 +72,7 @@ class ObsAuxIncrement : public util::Printable,
 
  private:
   void print(std::ostream &) const;
-  boost::scoped_ptr<ObsAuxIncrement_> aux_;
+  std::unique_ptr<ObsAuxIncrement_> aux_;
 };
 
 // -----------------------------------------------------------------------------

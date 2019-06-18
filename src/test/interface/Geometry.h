@@ -11,13 +11,13 @@
 #ifndef TEST_INTERFACE_GEOMETRY_H_
 #define TEST_INTERFACE_GEOMETRY_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 
 #include "eckit/config/Configuration.h"
@@ -45,14 +45,14 @@ template <typename MODEL> class GeometryFixture : private boost::noncopyable {
 
   ~GeometryFixture() {}
 
-  boost::scoped_ptr<const eckit::LocalConfiguration> conf_;
+  std::unique_ptr<const eckit::LocalConfiguration> conf_;
 };
 
 // -----------------------------------------------------------------------------
 template <typename MODEL> void testConstructor() {
   typedef oops::Geometry<MODEL>        Geometry_;
 
-  boost::scoped_ptr<Geometry_> geom(new Geometry_(GeometryFixture<MODEL>::getConfig()));
+  std::unique_ptr<Geometry_> geom(new Geometry_(GeometryFixture<MODEL>::getConfig()));
 
   EXPECT(geom.get());
 
@@ -63,10 +63,10 @@ template <typename MODEL> void testConstructor() {
 // -----------------------------------------------------------------------------
 template <typename MODEL> void testCopyConstructor() {
   typedef oops::Geometry<MODEL>        Geometry_;
-  boost::scoped_ptr<Geometry_> geom(new Geometry_(GeometryFixture<MODEL>::getConfig()));
+  std::unique_ptr<Geometry_> geom(new Geometry_(GeometryFixture<MODEL>::getConfig()));
 
 
-  boost::scoped_ptr<Geometry_> other(new Geometry_(*geom));
+  std::unique_ptr<Geometry_> other(new Geometry_(*geom));
   EXPECT(other.get());
 
   other.reset();

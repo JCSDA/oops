@@ -11,6 +11,8 @@
 #ifndef OOPS_ASSIMILATION_COSTFCT3DVAR_H_
 #define OOPS_ASSIMILATION_COSTFCT3DVAR_H_
 
+#include <memory>
+
 #include "eckit/config/Configuration.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/CostJb3D.h"
@@ -79,8 +81,8 @@ template<typename MODEL> class CostFct3DVar : public CostFunction<MODEL> {
   util::DateTime windowHalf_;
   util::Duration zero_;
   const Variables ctlvars_;
-  boost::scoped_ptr<ChangeVar_> an2model_;
-  boost::scoped_ptr<ChangeVarTLAD_> inc2model_;
+  std::unique_ptr<ChangeVar_> an2model_;
+  std::unique_ptr<ChangeVarTLAD_> inc2model_;
 };
 
 // =============================================================================

@@ -8,10 +8,10 @@
 #ifndef TEST_INTERFACE_OBSTESTSFIXTURE_H_
 #define TEST_INTERFACE_OBSTESTSFIXTURE_H_
 
+#include <memory>
 #include <string>
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/ObsSpaces.h"
@@ -49,9 +49,9 @@ class ObsTestsFixture : private boost::noncopyable {
     return theObsTestsFixture;
   }
 
-  boost::scoped_ptr<const util::DateTime> tbgn_;
-  boost::scoped_ptr<const util::DateTime> tend_;
-  boost::scoped_ptr<ObsSpaces_> ospaces_;
+  std::unique_ptr<const util::DateTime> tbgn_;
+  std::unique_ptr<const util::DateTime> tend_;
+  std::unique_ptr<ObsSpaces_> ospaces_;
 };
 
 // -----------------------------------------------------------------------------

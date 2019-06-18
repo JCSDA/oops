@@ -11,9 +11,9 @@
 #ifndef OOPS_ASSIMILATION_COSTJBTOTAL_H_
 #define OOPS_ASSIMILATION_COSTJBTOTAL_H_
 
-#include<limits>
+#include <limits>
+#include <memory>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/ControlIncrement.h"
@@ -92,17 +92,17 @@ template<typename MODEL> class CostJbTotal {
   double evaluate(const CtrlInc_ &) const;
 
   const CtrlVar_ & xb_;
-  boost::scoped_ptr<JbState_> jb_;
+  std::unique_ptr<JbState_> jb_;
   ModelAuxCovar_ jbModBias_;
   ObsAuxCovars_   jbObsBias_;
 
   const CtrlVar_ mutable * fg_;
 
 /// First guess increment \f$x_0-x_b\f$ or more generally \f$ x_i-M(x_{i-1})\f$.
-  boost::scoped_ptr<CtrlInc_> dxFG_;
+  std::unique_ptr<CtrlInc_> dxFG_;
 
 /// Inner loop resolution
-  boost::scoped_ptr<Geometry_> resol_;
+  std::unique_ptr<Geometry_> resol_;
 };
 
 // =============================================================================
@@ -113,7 +113,7 @@ CostJbTotal<MODEL>::CostJbTotal(const CtrlVar_ & xb, JbState_ * jb,
   : xb_(xb), jb_(jb),
     jbModBias_(conf.getSubConfiguration("Jb.ModelBiasCovariance"), resol),
     jbObsBias_(eckit::LocalConfiguration(conf, "Jo")),
-    dxFG_(0), resol_(0)
+    dxFG_(), resol_()
 {
   Log::trace() << "CostJbTotal contructed." << std::endl;
 }

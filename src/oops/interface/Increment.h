@@ -11,6 +11,7 @@
 #ifndef OOPS_INTERFACE_INCREMENT_H_
 #define OOPS_INTERFACE_INCREMENT_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -108,7 +109,7 @@ class Increment : public oops::GeneralizedDepartures,
 
  private:
   void print(std::ostream &) const;
-  boost::scoped_ptr<Increment_> increment_;
+  std::unique_ptr<Increment_> increment_;
 };
 
 // -----------------------------------------------------------------------------

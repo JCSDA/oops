@@ -11,9 +11,9 @@
 #ifndef OOPS_ASSIMILATION_LBMINIMIZER_H_
 #define OOPS_ASSIMILATION_LBMINIMIZER_H_
 
+#include <memory>
 #include <string>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
 #include "oops/assimilation/BMatrix.h"
@@ -43,7 +43,7 @@ template<typename MODEL> class LBMinimizer : public Minimizer<MODEL> {
   typedef Minimizer<MODEL>        Minimizer_;
 
  public:
-  explicit LBMinimizer(const CostFct_ & J): Minimizer_(J), J_(J), gradJb_(0) {}
+  explicit LBMinimizer(const CostFct_ & J): Minimizer_(J), J_(J), gradJb_() {}
   ~LBMinimizer() {}
   const std::string classname() const override = 0;
 
@@ -53,7 +53,7 @@ template<typename MODEL> class LBMinimizer : public Minimizer<MODEL> {
                      const LBHessianMatrix_ &, const int, const double) = 0;
 
   const CostFct_ & J_;
-  boost::scoped_ptr<CtrlInc_> gradJb_;
+  std::unique_ptr<CtrlInc_> gradJb_;
 };
 
 // =============================================================================
@@ -63,10 +63,10 @@ ControlIncrement<MODEL> * LBMinimizer<MODEL>::doMinimize(const eckit::Configurat
   int ninner = config.getInt("ninner");
   double gnreduc = config.getDouble("gradient_norm_reduction");
 
-  if (gradJb_ == 0) {
-    gradJb_.reset(new CtrlInc_(J_.jb()));
-  } else {
+  if (gradJb_) {
     gradJb_.reset(new CtrlInc_(J_.jb().resolution(), *gradJb_));
+  } else {
+    gradJb_.reset(new CtrlInc_(J_.jb()));
   }
 
   Log::info() << std::endl;

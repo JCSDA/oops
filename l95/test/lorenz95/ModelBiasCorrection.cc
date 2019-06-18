@@ -10,9 +10,9 @@
 
 #include <fstream>
 #include <iostream>
+#include <memory>
 
 #include <boost/lexical_cast.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "./TestConfig.h"
 #include "eckit/config/LocalConfiguration.h"
@@ -39,9 +39,9 @@ class ModBiasTestFixture : TestFixture {
     fact_ = 1.2345;
   }
   ~ModBiasTestFixture() {}
-  boost::scoped_ptr<lorenz95::Resolution> resol_;
-  boost::scoped_ptr<const eckit::LocalConfiguration> conf_;
-  boost::scoped_ptr<const eckit::LocalConfiguration> nobias_;
+  std::unique_ptr<lorenz95::Resolution> resol_;
+  std::unique_ptr<const eckit::LocalConfiguration> conf_;
+  std::unique_ptr<const eckit::LocalConfiguration> nobias_;
   double bias1_;
   double bias2_;
   double fact_;
@@ -51,13 +51,13 @@ CASE("test_modelBiasCorrection") {
   ModBiasTestFixture fix;
 // -----------------------------------------------------------------------------
   SECTION("test_modelBiasCorrection_constructor_config") {
-    boost::scoped_ptr<lorenz95::ModelBiasCorrection> dx(
+    std::unique_ptr<lorenz95::ModelBiasCorrection> dx(
       new lorenz95::ModelBiasCorrection(*fix.resol_, *fix.conf_));
     EXPECT(dx.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_modelBiasCorrection_constructor_no_config") {
-    boost::scoped_ptr<lorenz95::ModelBiasCorrection> dx(
+    std::unique_ptr<lorenz95::ModelBiasCorrection> dx(
       new lorenz95::ModelBiasCorrection(*fix.resol_, *fix.nobias_));
     EXPECT(dx.get() != NULL);
 }

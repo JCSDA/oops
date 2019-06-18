@@ -12,11 +12,11 @@
 #define OOPS_ASSIMILATION_COSTFUNCTION_H_
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 #include <boost/noncopyable.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
@@ -119,8 +119,8 @@ template<typename MODEL> class CostFunction : private boost::noncopyable {
 // Data members
   const Geometry_ & resol_;
   const Model_ & model_;
-  boost::scoped_ptr<const CtrlVar_> xb_;
-  boost::scoped_ptr<JbTotal_> jb_;
+  std::unique_ptr<const CtrlVar_> xb_;
+  std::unique_ptr<JbTotal_> jb_;
   boost::ptr_vector<CostBase_> jterms_;
   boost::ptr_vector<LinearModel_> tlm_;
 

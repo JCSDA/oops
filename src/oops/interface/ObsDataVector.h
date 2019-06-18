@@ -13,7 +13,6 @@
 #include <ostream>
 #include <string>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "oops/base/Variables.h"
 #include "oops/interface/ObservationSpace.h"

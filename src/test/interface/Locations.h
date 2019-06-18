@@ -11,13 +11,13 @@
 #ifndef TEST_INTERFACE_LOCATIONS_H_
 #define TEST_INTERFACE_LOCATIONS_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
@@ -33,7 +33,7 @@ template <typename MODEL> void testConstructor() {
   typedef oops::Locations<MODEL>        Locations_;
 
   const eckit::LocalConfiguration conf(TestEnvironment::config(), "Locations");
-  boost::scoped_ptr<Locations_> locs(new Locations_(conf));
+  std::unique_ptr<Locations_> locs(new Locations_(conf));
   EXPECT(locs.get());
 
   locs.reset();
@@ -46,10 +46,10 @@ template <typename MODEL> void testCopyConstructor() {
   typedef oops::Locations<MODEL>        Locations_;
 
   const eckit::LocalConfiguration conf(TestEnvironment::config(), "Locations");
-  boost::scoped_ptr<Locations_> locs(new Locations_(conf));
+  std::unique_ptr<Locations_> locs(new Locations_(conf));
   EXPECT(locs.get());
 
-  boost::scoped_ptr<Locations_> other_locs(new Locations_(*locs));
+  std::unique_ptr<Locations_> other_locs(new Locations_(*locs));
   EXPECT(other_locs.get());
 
   locs.reset();

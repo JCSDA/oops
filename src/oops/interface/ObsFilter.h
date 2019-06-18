@@ -8,10 +8,10 @@
 #ifndef OOPS_INTERFACE_OBSFILTER_H_
 #define OOPS_INTERFACE_OBSFILTER_H_
 
+#include <memory>
 #include <string>
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
@@ -51,7 +51,7 @@ class ObsFilter : public ObsFilterBase<MODEL> {
  private:
   void print(std::ostream &) const override;
   const eckit::LocalConfiguration conf_;
-  boost::scoped_ptr<FILTER> ofilt_;
+  std::unique_ptr<FILTER> ofilt_;
 };
 
 // -----------------------------------------------------------------------------

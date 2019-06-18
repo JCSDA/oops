@@ -12,7 +12,6 @@
 #include <string>
 #include <vector>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/util/Printable.h"

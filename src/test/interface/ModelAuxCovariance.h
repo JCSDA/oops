@@ -11,13 +11,13 @@
 #ifndef TEST_INTERFACE_MODELAUXCOVARIANCE_H_
 #define TEST_INTERFACE_MODELAUXCOVARIANCE_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
@@ -52,8 +52,8 @@ template <typename MODEL> class ModelAuxCovarianceFixture : private boost::nonco
 
   ~ModelAuxCovarianceFixture() {}
 
-  boost::scoped_ptr<const eckit::LocalConfiguration>  conf_;
-  boost::scoped_ptr<Geometry_>     resol_;
+  std::unique_ptr<const eckit::LocalConfiguration>  conf_;
+  std::unique_ptr<Geometry_>     resol_;
 };
 
 // -----------------------------------------------------------------------------
@@ -62,7 +62,7 @@ template <typename MODEL> void testConstructor() {
   typedef ModelAuxCovarianceFixture<MODEL>   Test_;
   typedef oops::ModelAuxCovariance<MODEL>    Covariance_;
 
-  boost::scoped_ptr<Covariance_> bias(new Covariance_(Test_::config(), Test_::resol()));
+  std::unique_ptr<Covariance_> bias(new Covariance_(Test_::config(), Test_::resol()));
   EXPECT(bias.get());
 
   bias.reset();

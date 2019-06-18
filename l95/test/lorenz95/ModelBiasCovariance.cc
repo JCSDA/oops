@@ -9,8 +9,8 @@
  */
 
 #include <iostream>
+#include <memory>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "./TestConfig.h"
 #include "eckit/config/LocalConfiguration.h"
@@ -33,9 +33,9 @@ class ModBiasCovTestFixture : TestFixture {
     nobias_.reset(new eckit::LocalConfiguration());
   }
   ~ModBiasCovTestFixture() {}
-  boost::scoped_ptr<lorenz95::Resolution> resol_;
-  boost::scoped_ptr<const eckit::LocalConfiguration> covconf_;
-  boost::scoped_ptr<const eckit::LocalConfiguration> nobias_;
+  std::unique_ptr<lorenz95::Resolution> resol_;
+  std::unique_ptr<const eckit::LocalConfiguration> covconf_;
+  std::unique_ptr<const eckit::LocalConfiguration> nobias_;
 };
 // -----------------------------------------------------------------------------
 CASE("test_modelBiasCovariance") {

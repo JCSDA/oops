@@ -8,7 +8,7 @@
  * does it submit to any jurisdiction.
  */
 
-#include <boost/scoped_ptr.hpp>
+#include <memory>
 
 #include "./TestConfig.h"
 #include "eckit/config/LocalConfiguration.h"
@@ -29,15 +29,15 @@ class LocalizationMatrixFixture : TestFixture {
     cfg_.reset(new eckit::LocalConfiguration(cfg));
   }
   ~LocalizationMatrixFixture() {}
-  boost::scoped_ptr<lorenz95::Resolution> resol_;
-  boost::scoped_ptr<const eckit::LocalConfiguration> cfg_;
+  std::unique_ptr<lorenz95::Resolution> resol_;
+  std::unique_ptr<const eckit::LocalConfiguration> cfg_;
 };
 // -----------------------------------------------------------------------------
 CASE("test_localizationMatrixL95") {
   LocalizationMatrixFixture fix;
 // -----------------------------------------------------------------------------
   SECTION("test_localizationMatrixL95_constructor") {
-    boost::scoped_ptr<lorenz95::LocalizationMatrixL95> locmat(
+    std::unique_ptr<lorenz95::LocalizationMatrixL95> locmat(
         new lorenz95::LocalizationMatrixL95(*fix.resol_, *fix.cfg_));
 
     EXPECT(locmat.get() != NULL);

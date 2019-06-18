@@ -11,7 +11,7 @@
 #ifndef OOPS_ASSIMILATION_SADDLEPOINTVECTOR_H_
 #define OOPS_ASSIMILATION_SADDLEPOINTVECTOR_H_
 
-#include <boost/scoped_ptr.hpp>
+#include <memory>
 
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/DualVector.h"
@@ -58,8 +58,8 @@ template<typename MODEL> class SaddlePointVector {
   double dot_product_with(const SaddlePointVector &) const;
 
  private:
-  boost::scoped_ptr<Multipliers_> lambda_;
-  boost::scoped_ptr<CtrlInc_> dx_;
+  std::unique_ptr<Multipliers_> lambda_;
+  std::unique_ptr<CtrlInc_> dx_;
 };
 
 // =============================================================================

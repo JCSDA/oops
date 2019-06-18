@@ -8,12 +8,12 @@
 #ifndef TEST_INTERFACE_LINEAROBSOPERATOR_H_
 #define TEST_INTERFACE_LINEAROBSOPERATOR_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/testing/Test.h"
 #include "oops/interface/LinearObsOperator.h"
@@ -40,7 +40,7 @@ template <typename MODEL> void testConstructor() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     eckit::LocalConfiguration obsopconf(conf[jj], "ObsOperator");
-    boost::scoped_ptr<LinearObsOperator_> ov(
+    std::unique_ptr<LinearObsOperator_> ov(
       new LinearObsOperator_(Test_::obspace()[jj], obsopconf));
     EXPECT(ov.get());
 

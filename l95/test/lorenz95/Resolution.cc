@@ -10,9 +10,9 @@
 
 #include <fstream>
 #include <iostream>
+#include <memory>
 
 #include <boost/lexical_cast.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "./TestConfig.h"
 #include "eckit/config/LocalConfiguration.h"
@@ -31,30 +31,30 @@ class ResolutionTestFixture : TestFixture {
     testconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "resolution"));
   }
   ~ResolutionTestFixture() {}
-  boost::scoped_ptr<const eckit::LocalConfiguration> testconf_;
+  std::unique_ptr<const eckit::LocalConfiguration> testconf_;
 };
 // -----------------------------------------------------------------------------
 CASE("test_resolution") {
   ResolutionTestFixture fix;
 // -----------------------------------------------------------------------------
   SECTION("test_resolution_constructor") {
-    boost::scoped_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*fix.testconf_));
+    std::unique_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*fix.testconf_));
     EXPECT(resol.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_resolution_copy_constructor") {
-    boost::scoped_ptr<lorenz95::Resolution> xx(new lorenz95::Resolution(*fix.testconf_));
-    boost::scoped_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*xx));
+    std::unique_ptr<lorenz95::Resolution> xx(new lorenz95::Resolution(*fix.testconf_));
+    std::unique_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*xx));
     EXPECT(resol.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_resolution_get_npoints") {
-    boost::scoped_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*fix.testconf_));
+    std::unique_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*fix.testconf_));
     EXPECT(resol->npoints() == fix.testconf_->getInt("resol"));
   }
 // -----------------------------------------------------------------------------
   SECTION("test_resolution_stream_output") {
-    boost::scoped_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*fix.testconf_));
+    std::unique_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*fix.testconf_));
 
     // use the operator<< method to write the value to a file
 

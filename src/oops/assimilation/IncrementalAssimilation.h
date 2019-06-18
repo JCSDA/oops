@@ -11,8 +11,8 @@
 #ifndef OOPS_ASSIMILATION_INCREMENTALASSIMILATION_H_
 #define OOPS_ASSIMILATION_INCREMENTALASSIMILATION_H_
 
+#include <memory>
 #include <vector>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
 #include "oops/assimilation/ControlIncrement.h"
@@ -43,7 +43,7 @@ int IncrementalAssimilation(ControlVariable<MODEL> & xx, CostFunction<MODEL> & J
 // Setup minimizer
   eckit::LocalConfiguration minConf(config, "minimizer");
   minConf.set("nouter", static_cast<const int>(nouter));
-  boost::scoped_ptr<Minimizer_> minim(MinFactory<MODEL>::create(minConf, J));
+  std::unique_ptr<Minimizer_> minim(MinFactory<MODEL>::create(minConf, J));
 
   for (unsigned jouter = 0; jouter < nouter; ++jouter) {
     iterconfs[jouter].set("iteration", static_cast<int>(jouter));
@@ -62,7 +62,7 @@ int IncrementalAssimilation(ControlVariable<MODEL> & xx, CostFunction<MODEL> & J
     J.linearize(xx, iterconfs[jouter], post);
 
 //  Minimization
-    boost::scoped_ptr<CtrlInc_> dx(minim->minimize(iterconfs[jouter]));
+    std::unique_ptr<CtrlInc_> dx(minim->minimize(iterconfs[jouter]));
 
 //  Compute analysis in physical space
     J.addIncrement(xx, *dx);

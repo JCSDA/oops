@@ -13,13 +13,13 @@
 
 #include <cmath>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
@@ -59,8 +59,8 @@ template <typename MODEL> class StateFixture : private boost::noncopyable {
 
   ~StateFixture<MODEL>() {}
 
-  boost::scoped_ptr<const eckit::LocalConfiguration>  test_;
-  boost::scoped_ptr<Geometry_>     resol_;
+  std::unique_ptr<const eckit::LocalConfiguration>  test_;
+  std::unique_ptr<Geometry_>     resol_;
 };
 
 // -----------------------------------------------------------------------------
@@ -76,7 +76,7 @@ template <typename MODEL> void testStateConstructors() {
 // Test main constructor
   const eckit::LocalConfiguration conf(Test_::test(), "StateFile");
   const oops::Variables vars(conf);
-  boost::scoped_ptr<State_> xx1(new State_(Test_::resol(), vars, conf));
+  std::unique_ptr<State_> xx1(new State_(Test_::resol(), vars, conf));
 
   EXPECT(xx1.get());
   const double norm1 = xx1->norm();
@@ -84,7 +84,7 @@ template <typename MODEL> void testStateConstructors() {
   EXPECT(xx1->validTime() == vt);
 
 // Test copy constructor
-  boost::scoped_ptr<State_> xx2(new State_(*xx1));
+  std::unique_ptr<State_> xx2(new State_(*xx1));
   EXPECT(xx2.get());
   EXPECT(oops::is_close(xx2->norm(), norm, tol));
   EXPECT(xx2->validTime() == vt);

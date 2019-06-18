@@ -10,9 +10,9 @@
 
 #include <fstream>
 #include <iostream>
+#include <memory>
 
 #include <boost/lexical_cast.hpp>
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "./TestConfig.h"
@@ -44,10 +44,10 @@ class ModBiasTestFixture : TestFixture {
     dbias_->bias() = bias2_;
   }
   ~ModBiasTestFixture() {}
-  boost::scoped_ptr<lorenz95::Resolution> resol_;
-  boost::scoped_ptr<const eckit::LocalConfiguration> biasconf_;
-  boost::scoped_ptr<const eckit::LocalConfiguration> nobias_;
-  boost::scoped_ptr<lorenz95::ModelBiasCorrection> dbias_;
+  std::unique_ptr<lorenz95::Resolution> resol_;
+  std::unique_ptr<const eckit::LocalConfiguration> biasconf_;
+  std::unique_ptr<const eckit::LocalConfiguration> nobias_;
+  std::unique_ptr<lorenz95::ModelBiasCorrection> dbias_;
   double bias1_;
   double bias2_;
 };

@@ -13,7 +13,6 @@
 
 #include <cmath>
 #include <map>
-#include <boost/scoped_ptr.hpp>
 
 #include "oops/base/Accumulator.h"
 #include "oops/base/DolphChebyshev.h"

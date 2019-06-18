@@ -8,7 +8,7 @@
  * does it submit to any jurisdiction.
  */
 
-#include <boost/scoped_ptr.hpp>
+#include <memory>
 
 #include "./TestConfig.h"
 #include "eckit/config/LocalConfiguration.h"
@@ -31,20 +31,20 @@ class ObsTestFixture : TestFixture {
     ot_.reset(new lorenz95::ObsTableView(otconf, bgn, end));
   }
   ~ObsTestFixture() {}
-  boost::scoped_ptr<lorenz95::ObsTableView> ot_;
+  std::unique_ptr<lorenz95::ObsTableView> ot_;
 };
 // -----------------------------------------------------------------------------
 CASE("test_ObsL95") {
   ObsTestFixture fix;
 // -----------------------------------------------------------------------------
   SECTION("test_ObsL95_constructor") {
-    boost::scoped_ptr<lorenz95::ObservationL95>
+    std::unique_ptr<lorenz95::ObservationL95>
       obs(new lorenz95::ObservationL95(*fix.ot_, TestConfig::config()));
     EXPECT(obs.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_observationL95_classname") {
-    boost::scoped_ptr<lorenz95::ObservationL95>
+    std::unique_ptr<lorenz95::ObservationL95>
       obs(new lorenz95::ObservationL95(*fix.ot_, TestConfig::config()));
     EXPECT(obs->classname() == "lorenz95::ObservationL95");
   }

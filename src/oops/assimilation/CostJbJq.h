@@ -14,9 +14,6 @@
 #include <memory>
 #include <vector>
 
-#include <boost/ptr_container/ptr_vector.hpp>
-#include <boost/scoped_ptr.hpp>
-
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/CostJbState.h"
 #include "oops/assimilation/Increment4D.h"
@@ -88,12 +85,12 @@ template<typename MODEL> class CostJbJq : public CostJbState<MODEL> {
   Increment_ * newStateIncrement(const unsigned int) const override;
 
  private:
-  boost::scoped_ptr<ModelSpaceCovariance4DBase<MODEL> > B_;
+  std::unique_ptr<ModelSpaceCovariance4DBase<MODEL> > B_;
   const State4D_ & xb_;
   const util::Duration subwin_;
   const bool forcing_;
   const Variables ctlvars_;
-  boost::scoped_ptr<const Geometry_> resol_;
+  std::unique_ptr<const Geometry_> resol_;
   std::vector<util::DateTime> times_;
   const eckit::LocalConfiguration conf_;
 };

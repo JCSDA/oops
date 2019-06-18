@@ -9,6 +9,7 @@
 #ifndef OOPS_INTERFACE_MODEL_H_
 #define OOPS_INTERFACE_MODEL_H_
 
+#include <memory>
 #include <string>
 
 #include <boost/noncopyable.hpp>
@@ -61,7 +62,7 @@ class Model : public util::Printable,
   void finalize(State_ &) const;
   void print(std::ostream &) const;
 
-  boost::scoped_ptr<ModelBase_> model_;
+  std::unique_ptr<ModelBase_> model_;
 };
 
 // =============================================================================

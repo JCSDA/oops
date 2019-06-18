@@ -8,12 +8,12 @@
  * does it submit to any jurisdiction.
  */
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
@@ -32,7 +32,7 @@ class VariablesFixture : TestFixture {
 
   ~VariablesFixture() {}
 
-  boost::scoped_ptr<const eckit::LocalConfiguration> conf_;
+  std::unique_ptr<const eckit::LocalConfiguration> conf_;
 };
 // -----------------------------------------------------------------------------
 CASE("VariablesFixture") {
@@ -40,7 +40,7 @@ CASE("VariablesFixture") {
 // -----------------------------------------------------------------------------
 
 SECTION("testConstructor") {
-  boost::scoped_ptr<oops::Variables> vars(new oops::Variables(*fix.conf_));
+  std::unique_ptr<oops::Variables> vars(new oops::Variables(*fix.conf_));
   EXPECT(vars.get());
 
   vars.reset();
@@ -50,9 +50,9 @@ SECTION("testConstructor") {
 // -----------------------------------------------------------------------------
 
 SECTION("testCopyConstructor") {
-  boost::scoped_ptr<oops::Variables> vars(new oops::Variables(*fix.conf_));
+  std::unique_ptr<oops::Variables> vars(new oops::Variables(*fix.conf_));
 
-  boost::scoped_ptr<oops::Variables> other(new oops::Variables(*vars));
+  std::unique_ptr<oops::Variables> other(new oops::Variables(*vars));
   EXPECT(other.get());
 
   other.reset();

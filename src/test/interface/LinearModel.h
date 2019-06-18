@@ -16,13 +16,14 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include <memory>
 #include <string>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
@@ -121,17 +122,17 @@ template <typename MODEL> class LinearModelFixture : private boost::noncopyable 
 
   ~LinearModelFixture<MODEL>() {}
 
-  boost::scoped_ptr<const eckit::LocalConfiguration>   test_;
-  boost::scoped_ptr<const eckit::LocalConfiguration>   tlConf_;
-  boost::scoped_ptr<const Geometry_>       resol_;
-  boost::scoped_ptr<const util::DateTime>  time_;
-  boost::scoped_ptr<const oops::Variables> ctlvars_;
-  boost::scoped_ptr<const State_>          xref_;
-  boost::scoped_ptr<const Model_>          model_;
-  boost::scoped_ptr<const ModelAux_>       bias_;
-  boost::scoped_ptr<const ModelAuxIncr_>   dbias_;
-  boost::scoped_ptr<const Covariance_>     B_;
-  boost::scoped_ptr<const LinearModel_>    tlm_;
+  std::unique_ptr<const eckit::LocalConfiguration>   test_;
+  std::unique_ptr<const eckit::LocalConfiguration>   tlConf_;
+  std::unique_ptr<const Geometry_>       resol_;
+  std::unique_ptr<const util::DateTime>  time_;
+  std::unique_ptr<const oops::Variables> ctlvars_;
+  std::unique_ptr<const State_>          xref_;
+  std::unique_ptr<const Model_>          model_;
+  std::unique_ptr<const ModelAux_>       bias_;
+  std::unique_ptr<const ModelAuxIncr_>   dbias_;
+  std::unique_ptr<const Covariance_>     B_;
+  std::unique_ptr<const LinearModel_>    tlm_;
 };
 
 // =============================================================================

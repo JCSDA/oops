@@ -13,7 +13,7 @@
 
 #include <cmath>
 #include <map>
-#include <boost/scoped_ptr.hpp>
+#include <memory>
 
 #include "oops/base/Accumulator.h"
 #include "oops/base/DolphChebyshev.h"
@@ -51,7 +51,7 @@ class WeightedMean : public PostBase<FLDS> {
 
   void doProcessing(const FLDS &) override;
 
-  boost::scoped_ptr<WeightingFct> wfct_;
+  std::unique_ptr<WeightingFct> wfct_;
   std::map< util::DateTime, double > weights_;
 //  std::unique_ptr< Accumulator<MODEL, FLDS, FLDS> > avg_;
   Accumulator<MODEL, FLDS, FLDS> * avg_;

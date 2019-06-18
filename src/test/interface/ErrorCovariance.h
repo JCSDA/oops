@@ -13,13 +13,13 @@
 
 #include <cmath>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
 #include "eckit/testing/Test.h"
@@ -79,11 +79,11 @@ template <typename MODEL> class ErrorCovarianceFixture : private boost::noncopya
 
   ~ErrorCovarianceFixture<MODEL>() {}
 
-  boost::scoped_ptr<const eckit::LocalConfiguration>   test_;
-  boost::scoped_ptr<const Geometry_>       resol_;
-  boost::scoped_ptr<const oops::Variables> ctlvars_;
-  boost::scoped_ptr<const util::DateTime>  time_;
-  boost::scoped_ptr<Covariance_>           B_;
+  std::unique_ptr<const eckit::LocalConfiguration>   test_;
+  std::unique_ptr<const Geometry_>       resol_;
+  std::unique_ptr<const oops::Variables> ctlvars_;
+  std::unique_ptr<const util::DateTime>  time_;
+  std::unique_ptr<Covariance_>           B_;
 };
 
 // =============================================================================

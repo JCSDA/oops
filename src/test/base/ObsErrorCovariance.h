@@ -11,12 +11,12 @@
 #ifndef TEST_BASE_OBSERRORCOVARIANCE_H_
 #define TEST_BASE_OBSERRORCOVARIANCE_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/testing/Test.h"
 #include "oops/base/ObsErrorBase.h"
@@ -46,7 +46,7 @@ template <typename MODEL> void testConstructor() {
     obserr.save("EffectiveError");
 
     const eckit::LocalConfiguration rconf(conf[jj], "Covariance");
-    boost::scoped_ptr<Covar_> R(
+    std::unique_ptr<Covar_> R(
       oops::ObsErrorFactory<MODEL>::create(rconf, Test_::obspace()[jj]));
     EXPECT(R.get());
 

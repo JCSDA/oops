@@ -107,6 +107,11 @@ FilterFactory<MODEL>::create(const ObsSpace_ & os, const eckit::Configuration & 
     jloc = getMakers().find(id);
   if (jloc == getMakers().end()) {
     Log::error() << id << " does not exist in obs filter factory." << std::endl;
+    Log::error() << "Obs Filter Factory has " << getMakers().size() << " elements:" << std::endl;
+    for (typename std::map<std::string, FilterFactory<MODEL>*>::const_iterator
+         jj = getMakers().begin(); jj != getMakers().end(); ++jj) {
+       Log::error() << "A " << jj->first << " Filter" << std::endl;
+    }
     ABORT("Element does not exist in FilterFactory.");
   }
   boost::shared_ptr<ObsFilterBase<MODEL>> ptr(jloc->second->make(os, conf, flags, obserr));

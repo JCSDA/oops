@@ -11,11 +11,11 @@
 #ifndef OOPS_ASSIMILATION_COSTJO_H_
 #define OOPS_ASSIMILATION_COSTJO_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 #include <boost/noncopyable.hpp>
 #include <boost/pointer_cast.hpp>
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
@@ -114,13 +114,13 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   eckit::LocalConfiguration obsconf_;
   ObsSpaces_ obspace_;
   Observations_ yobs_;
-  boost::scoped_ptr<ObsErrors_> Rmat_;
+  std::unique_ptr<ObsErrors_> Rmat_;
 
   /// Configuration for current initialize/finalize pair
-  boost::scoped_ptr<eckit::LocalConfiguration> currentConf_;
+  std::unique_ptr<eckit::LocalConfiguration> currentConf_;
 
   /// Gradient at first guess : \f$ R^{-1} (H(x_{fg})-y_{obs}) \f$.
-  boost::scoped_ptr<Departures_> gradFG_;
+  std::unique_ptr<Departures_> gradFG_;
 
   /// Observers passed by \f$ J_o\f$ to the model during integration.
   mutable boost::shared_ptr<Observers<MODEL, State_> > pobs_;
@@ -195,7 +195,7 @@ CostJo<MODEL>::initialize(const CtrlVar_ & xx, const eckit::Configuration & conf
 template<typename MODEL>
 double CostJo<MODEL>::finalize() {
   Log::trace() << "CostJo::finalize start" << std::endl;
-  boost::scoped_ptr<Observations_> yeqv(pobs_->release());
+  std::unique_ptr<Observations_> yeqv(pobs_->release());
   Log::info() << "Jo Observation Equivalent:" << std::endl << *yeqv
               << "End Jo Observation Equivalent" << std::endl;
   const int iterout = currentConf_->getInt("iteration");
@@ -269,7 +269,7 @@ CostJo<MODEL>::initializeTraj(const CtrlVar_ & xx, const Geometry_ &,
 template<typename MODEL>
 void CostJo<MODEL>::finalizeTraj() {
   Log::trace() << "CostJo::finalizeTraj start" << std::endl;
-  boost::scoped_ptr<Observations_> yeqv(pobstlad_->release());
+  std::unique_ptr<Observations_> yeqv(pobstlad_->release());
   Log::info() << "Jo Traj Observation Equivalent:" << std::endl << *yeqv
               << "End Jo Traj Observation Equivalent";
 

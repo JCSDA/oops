@@ -11,11 +11,11 @@
 #ifndef OOPS_RUNS_DIRAC_H_
 #define OOPS_RUNS_DIRAC_H_
 
+#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/IncrementEnsemble.h"
@@ -67,7 +67,7 @@ template <typename MODEL> class Dirac : public Application {
 
     // Setup background state
     const eckit::LocalConfiguration backgroundConfig(fullConfig, "initial");
-    boost::scoped_ptr<State4D_> xx;
+    std::unique_ptr<State4D_> xx;
     bool l3d;
     if (backgroundConfig.has("state")) {
       xx.reset(new State4D_(backgroundConfig, vars, resol));
@@ -89,7 +89,7 @@ template <typename MODEL> class Dirac : public Application {
     const eckit::LocalConfiguration covarConfig(fullConfig, "Covariance");
     if (l3d) {
       //  3D covariance
-      boost::scoped_ptr<ModelSpaceCovarianceBase<MODEL>> B(CovarianceFactory<MODEL>::create(
+      std::unique_ptr<ModelSpaceCovarianceBase<MODEL>> B(CovarianceFactory<MODEL>::create(
         covarConfig, resol, vars, (*xx)[0], (*xx)[0]));
 
       //  Setup Dirac
@@ -107,7 +107,7 @@ template <typename MODEL> class Dirac : public Application {
       Log::test() << "Increment: " << dxdirout << std::endl;
     } else {
       //  4D covariance
-      boost::scoped_ptr<ModelSpaceCovariance4DBase<MODEL>> B(Covariance4DFactory<MODEL>::create(
+      std::unique_ptr<ModelSpaceCovariance4DBase<MODEL>> B(Covariance4DFactory<MODEL>::create(
         covarConfig, resol, vars, (*xx), (*xx)));
 
       //  Setup Dirac
@@ -156,7 +156,7 @@ template <typename MODEL> class Dirac : public Application {
         dxdir.dirac(diracConfig);
 
         //  Setup localization
-        boost::scoped_ptr<Localization_> loc_;
+        std::unique_ptr<Localization_> loc_;
         loc_.reset(new Localization_(resol, ens, locConfig));
 
         //  Apply localization
@@ -174,7 +174,7 @@ template <typename MODEL> class Dirac : public Application {
         dxdir.dirac(diracConfigs);
 
         //  Setup localization
-        boost::scoped_ptr<Localization_> loc_;
+        std::unique_ptr<Localization_> loc_;
         loc_.reset(new Localization_(resol, ens, locConfig));
 
         //  Apply localization

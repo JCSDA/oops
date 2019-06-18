@@ -12,7 +12,6 @@
 
 #include <mpi.h>
 #include <string>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/config/YAMLConfiguration.h"

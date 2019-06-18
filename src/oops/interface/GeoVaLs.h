@@ -11,10 +11,10 @@
 #ifndef OOPS_INTERFACE_GEOVALS_H_
 #define OOPS_INTERFACE_GEOVALS_H_
 
+#include <memory>
 #include <string>
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/Variables.h"
@@ -62,7 +62,7 @@ class GeoVaLs : public util::Printable,
 
  private:
   void print(std::ostream &) const;
-  boost::scoped_ptr<GeoVaLs_> gvals_;
+  std::unique_ptr<GeoVaLs_> gvals_;
 };
 
 // -----------------------------------------------------------------------------

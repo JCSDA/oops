@@ -12,6 +12,7 @@
 #define OOPS_BASE_MODELSPACECOVARIANCE4DBASE_H_
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 #include <boost/noncopyable.hpp>
@@ -170,9 +171,9 @@ void ModelSpaceCovariance4DBase<MODEL>::randomize(Increment4D_ & dx) const {
   if (chvars_.size()) {
     this->doRandomize(dx);   // dx = C^1/2 dx
     // K_N K_N-1 ... K_1
-    boost::scoped_ptr<Increment4D_> dxchvarin4D(new Increment4D_(dx, true));
+    std::unique_ptr<Increment4D_> dxchvarin4D(new Increment4D_(dx, true));
     for (int isub = dx.first(); isub <= dx.last(); ++isub) {
-      boost::scoped_ptr<Increment_> dxchvarin(new Increment_((*dxchvarin4D)[isub], true));
+      std::unique_ptr<Increment_> dxchvarin(new Increment_((*dxchvarin4D)[isub], true));
       for (icst_ it = chvars_.begin(); it != chvars_.end(); ++it) {
         Increment_ dxchvarout = it->multiply(*dxchvarin);
         dxchvarin.reset(new Increment_(dxchvarout));
@@ -193,9 +194,9 @@ void ModelSpaceCovariance4DBase<MODEL>::multiply(const Increment4D_ & dxi,
   ASSERT(dxi.last() == dxo.last());
   if (chvars_.size()) {
     // K_1^T K_2^T .. K_N^T
-    boost::scoped_ptr<Increment4D_> dxchvarin4D(new Increment4D_(dxi, true));
+    std::unique_ptr<Increment4D_> dxchvarin4D(new Increment4D_(dxi, true));
     for (int isub = dxi.first(); isub <= dxi.last(); ++isub) {
-      boost::scoped_ptr<Increment_> dxchvarin(new Increment_((*dxchvarin4D)[isub], true));
+      std::unique_ptr<Increment_> dxchvarin(new Increment_((*dxchvarin4D)[isub], true));
       for (ircst_ it = chvars_.rbegin(); it != chvars_.rend(); ++it) {
         Increment_ dxchvarout = it->multiplyAD(*dxchvarin);
         dxchvarin.reset(new Increment_(dxchvarout));
@@ -209,7 +210,7 @@ void ModelSpaceCovariance4DBase<MODEL>::multiply(const Increment4D_ & dxi,
     // K_N K_N-1 ... K_1
     dxchvarin4D.reset(new Increment4D_(dxchvarout4D));
     for (int isub = dxi.first(); isub <= dxi.last(); ++isub) {
-      boost::scoped_ptr<Increment_> dxchvarin(new Increment_((*dxchvarin4D)[isub], true));
+      std::unique_ptr<Increment_> dxchvarin(new Increment_((*dxchvarin4D)[isub], true));
       for (icst_ it = chvars_.begin(); it != chvars_.end(); ++it) {
         Increment_ dxchvarout = it->multiply(*dxchvarin);
         dxchvarin.reset(new Increment_(dxchvarout));
@@ -230,9 +231,9 @@ void ModelSpaceCovariance4DBase<MODEL>::inverseMultiply(const Increment4D_ & dxi
   ASSERT(dxi.last() == dxo.last());
   if (chvars_.size()) {
     // K_1^{-1} K_2^{-1} .. K_N^{-1}
-    boost::scoped_ptr<Increment4D_> dxchvarin4D(new Increment4D_(dxi, true));
+    std::unique_ptr<Increment4D_> dxchvarin4D(new Increment4D_(dxi, true));
     for (int isub = dxi.first(); isub <= dxi.last(); ++isub) {
-      boost::scoped_ptr<Increment_> dxchvarin(new Increment_((*dxchvarin4D)[isub], true));
+      std::unique_ptr<Increment_> dxchvarin(new Increment_((*dxchvarin4D)[isub], true));
       for (ircst_ it = chvars_.rbegin(); it != chvars_.rend(); ++it) {
         Increment_ dxchvarout = it->multiplyInverse(*dxchvarin);
         dxchvarin.reset(new Increment_(dxchvarout));
@@ -246,7 +247,7 @@ void ModelSpaceCovariance4DBase<MODEL>::inverseMultiply(const Increment4D_ & dxi
     // K_N^T^{-1} K_N-1^T^{-1} ... K_1^T^{-1}
     dxchvarin4D.reset(new Increment4D_(dxchvarout4D));
     for (int isub = dxi.first(); isub <= dxi.last(); ++isub) {
-      boost::scoped_ptr<Increment_> dxchvarin(new Increment_((*dxchvarin4D)[isub], true));
+      std::unique_ptr<Increment_> dxchvarin(new Increment_((*dxchvarin4D)[isub], true));
       for (icst_ it = chvars_.begin(); it != chvars_.end(); ++it) {
         Increment_ dxchvarout = it->multiplyInverseAD(*dxchvarin);
         dxchvarin.reset(new Increment_(dxchvarout));

@@ -11,8 +11,8 @@
 #ifndef OOPS_ASSIMILATION_DUALVECTOR_H_
 #define OOPS_ASSIMILATION_DUALVECTOR_H_
 
+#include <memory>
 #include <vector>
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "oops/assimilation/ControlIncrement.h"
@@ -65,7 +65,7 @@ template<typename MODEL> class DualVector {
  private:
   bool compatible(const DualVector & other) const;
 
-  boost::scoped_ptr<CtrlInc_>   dxjb_;
+  std::unique_ptr<CtrlInc_>   dxjb_;
   std::vector<boost::shared_ptr<Departures_> >    dxjo_;
   std::vector<boost::shared_ptr<Increment_> > dxjc_;
   std::vector<unsigned> ijo_;

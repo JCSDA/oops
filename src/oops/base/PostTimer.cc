@@ -11,6 +11,7 @@
 #include "oops/base/PostTimer.h"
 
 #include <algorithm>
+#include <memory>
 #include <string>
 #include <vector>
 #include <boost/tokenizer.hpp>
@@ -24,17 +25,17 @@
 namespace oops {
 // -----------------------------------------------------------------------------
 PostTimer::PostTimer()
-  : conf_(), freq_(0), bgn_(), end_(), start_(0), finish_(0), pptimes_() {}
+  : conf_(), freq_(0), bgn_(), end_(), start_(), finish_(), pptimes_() {}
 // -----------------------------------------------------------------------------
 PostTimer::PostTimer(const util::Duration & freq)
-  : conf_(), freq_(freq), bgn_(), end_(), start_(0), finish_(0), pptimes_() {}
+  : conf_(), freq_(freq), bgn_(), end_(), start_(), finish_(), pptimes_() {}
 // -----------------------------------------------------------------------------
 PostTimer::PostTimer(const eckit::Configuration & conf)
-  : conf_(conf), freq_(0), bgn_(), end_(), start_(0), finish_(0), pptimes_() {}
+  : conf_(conf), freq_(0), bgn_(), end_(), start_(), finish_(), pptimes_() {}
 // -----------------------------------------------------------------------------
 PostTimer::PostTimer(const util::DateTime & start, const eckit::Configuration & conf)
   : conf_(conf), freq_(0), bgn_(), end_(), start_(new util::DateTime(start)),
-    finish_(0), pptimes_()
+    finish_(), pptimes_()
 {}
 // -----------------------------------------------------------------------------
 PostTimer::PostTimer(const util::DateTime & start, const util::DateTime & finish,
@@ -45,12 +46,12 @@ PostTimer::PostTimer(const util::DateTime & start, const util::DateTime & finish
 void PostTimer::initialize(const util::DateTime & bgn, const util::DateTime & end,
                            const util::Duration &) {
   util::DateTime start(bgn);
-  if (start_ != 0) {
+  if (start_) {
     start = *start_;
   }
   bgn_ = start;
   util::DateTime finish(end);
-  if (finish_ != 0) {
+  if (finish_) {
     finish = *finish_;
   }
   end_ = finish;

@@ -14,10 +14,10 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 
@@ -53,7 +53,7 @@ class ConfigTestData {
 
   ~ConfigTestData() {}
 
-  boost::scoped_ptr<eckit::LocalConfiguration> conf_;
+  std::unique_ptr<eckit::LocalConfiguration> conf_;
 };
 
 // -----------------------------------------------------------------------------

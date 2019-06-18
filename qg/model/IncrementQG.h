@@ -11,11 +11,11 @@
 #ifndef QG_MODEL_INCREMENTQG_H_
 #define QG_MODEL_INCREMENTQG_H_
 
+#include <memory>
 #include <ostream>
 #include <string>
 #include <vector>
 
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "model/FieldsQG.h"
@@ -119,8 +119,8 @@ class IncrementQG : public oops::GeneralizedDepartures,
  private:
   void print(std::ostream &) const;
   const bool lbc_ = false;
-  boost::scoped_ptr<FieldsQG> fields_;
-  boost::scoped_ptr<FieldsQG> stash_;
+  std::unique_ptr<FieldsQG> fields_;
+  std::unique_ptr<FieldsQG> stash_;
 };
 // -----------------------------------------------------------------------------
 

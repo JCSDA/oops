@@ -63,7 +63,7 @@ namespace util {
     explicit Duration(const std::string &);
 
   // -- Destructor
-  //  ~Example() -- not required. This is a simple class.
+    ~Duration();
 
   // -- Methods
 

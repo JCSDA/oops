@@ -12,6 +12,7 @@
 #define OOPS_BASE_MODELSPACECOVARIANCEBASE_H_
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 #include <boost/noncopyable.hpp>
@@ -181,7 +182,7 @@ void ModelSpaceCovarianceBase<MODEL>::multiply(const Increment_ & dxi,
                                                Increment_ & dxo) const {
   if (chvars_.size()) {
     // K_1^T K_2^T .. K_N^T
-    boost::scoped_ptr<Increment_> dxchvarin(new Increment_(dxi));
+    std::unique_ptr<Increment_> dxchvarin(new Increment_(dxi));
     for (ircst_ it = chvars_.rbegin(); it != chvars_.rend(); ++it) {
       Increment_ dxchvarout = it->multiplyAD(*dxchvarin);
       dxchvarin.reset(new Increment_(dxchvarout));
@@ -209,7 +210,7 @@ void ModelSpaceCovarianceBase<MODEL>::inverseMultiply(const Increment_ & dxi,
                                                       Increment_ & dxo) const {
   if (chvars_.size()) {
     // K_1^{-1} K_2^{-1} .. K_N^{-1}
-    boost::scoped_ptr<Increment_> dxchvarin(new Increment_(dxi));
+    std::unique_ptr<Increment_> dxchvarin(new Increment_(dxi));
     for (ircst_ it = chvars_.rbegin(); it != chvars_.rend(); ++it) {
       Increment_ dxchvarout = it->multiplyInverse(*dxchvarin);
       dxchvarin.reset(new Increment_(dxchvarout));

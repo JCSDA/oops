@@ -16,7 +16,6 @@
 #include <string>
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "oops/base/LinearModelBase.h"
 #include "oops/base/Variables.h"

@@ -11,9 +11,9 @@
 #ifndef OOPS_RUNS_VARIATIONAL_H_
 #define OOPS_RUNS_VARIATIONAL_H_
 
+#include <memory>
 #include <string>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/ControlVariable.h"
@@ -75,7 +75,7 @@ template <typename MODEL> class Variational : public Application {
 
 //  Setup cost function
     const eckit::LocalConfiguration cfConf(fullConfig, "cost_function");
-    boost::scoped_ptr< CostFunction<MODEL> > J(CostFactory<MODEL>::create(cfConf, resol, model));
+    std::unique_ptr< CostFunction<MODEL> > J(CostFactory<MODEL>::create(cfConf, resol, model));
     Log::trace() << "Variational: cost function has been set up" << std::endl;
 
 //  Initialize first guess from background

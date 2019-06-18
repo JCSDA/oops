@@ -11,10 +11,10 @@
 #ifndef OOPS_INTERFACE_LINEAROBSOPERATOR_H_
 #define OOPS_INTERFACE_LINEAROBSOPERATOR_H_
 
+#include <memory>
 #include <string>
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
@@ -62,7 +62,7 @@ class LinearObsOperator : public util::Printable,
 
  private:
   void print(std::ostream &) const;
-  boost::scoped_ptr<LinearObsOper_> oper_;
+  std::unique_ptr<LinearObsOper_> oper_;
 };
 
 // -----------------------------------------------------------------------------

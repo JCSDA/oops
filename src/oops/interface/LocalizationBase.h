@@ -17,7 +17,6 @@
 #include <map>
 #include <string>
 #include <boost/noncopyable.hpp>
-#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "eckit/config/Configuration.h"
 #include "oops/assimilation/Increment4D.h"

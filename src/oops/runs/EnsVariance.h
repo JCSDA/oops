@@ -8,10 +8,10 @@
 #ifndef OOPS_RUNS_ENSVARIANCE_H_
 #define OOPS_RUNS_ENSVARIANCE_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/Increment4D.h"
@@ -50,7 +50,7 @@ namespace oops {
 
       // Setup background
       const eckit::LocalConfiguration bkgConfig(fullConfig, "Background");
-      boost::scoped_ptr<State4D_> xx;
+      std::unique_ptr<State4D_> xx;
       if (bkgConfig.has("state")) {
         xx.reset(new State4D_(bkgConfig, vars, resol));
       } else {

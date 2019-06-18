@@ -11,8 +11,9 @@
 #ifndef TEST_TESTENVIRONMENT_H_
 #define TEST_TESTENVIRONMENT_H_
 
+#include <memory>
+
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 
@@ -42,7 +43,7 @@ class TestEnvironment : private boost::noncopyable {
   TestEnvironment() {}
   ~TestEnvironment() {}
 
-  boost::scoped_ptr<const eckit::LocalConfiguration> config_;
+  std::unique_ptr<const eckit::LocalConfiguration> config_;
 };
 
 }  // namespace test

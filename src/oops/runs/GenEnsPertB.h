@@ -11,10 +11,10 @@
 #ifndef OOPS_RUNS_GENENSPERTB_H_
 #define OOPS_RUNS_GENENSPERTB_H_
 
+#include <memory>
 #include <sstream>
 #include <string>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/instantiateCovarFactory.h"
@@ -77,7 +77,7 @@ template <typename MODEL> class GenEnsPertB : public Application {
 
 //  Setup B matrix
     const eckit::LocalConfiguration covar(fullConfig, "Covariance");
-    boost::scoped_ptr< ModelSpaceCovarianceBase<MODEL> >
+    std::unique_ptr< ModelSpaceCovarianceBase<MODEL> >
       Bmat(CovarianceFactory<MODEL>::create(covar, resol, vars, xx, xx));
 
 //  Generate perturbed states

@@ -12,7 +12,8 @@
 #define OOPS_BASE_ERRORCOVARIANCE4D_H_
 
 #include <vector>
-#include <boost/scoped_ptr.hpp>
+
+#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/GMRESR.h"

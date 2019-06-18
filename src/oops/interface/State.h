@@ -11,9 +11,9 @@
 #ifndef OOPS_INTERFACE_STATE_H_
 #define OOPS_INTERFACE_STATE_H_
 
+#include <memory>
 #include <string>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/GridPoint.h"
@@ -81,7 +81,7 @@ class State : public util::Printable,
 
  private:
   void print(std::ostream &) const;
-  boost::scoped_ptr<State_> state_;
+  std::unique_ptr<State_> state_;
 };
 
 // =============================================================================

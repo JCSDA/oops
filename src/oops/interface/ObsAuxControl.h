@@ -12,9 +12,9 @@
 #define OOPS_INTERFACE_OBSAUXCONTROL_H_
 
 #include <iostream>
+#include <memory>
 #include <string>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -57,7 +57,7 @@ class ObsAuxControl : public util::Printable,
  private:
   ObsAuxControl & operator=(const ObsAuxControl &);
   void print(std::ostream &) const;
-  boost::scoped_ptr<ObsAuxControl_> aux_;
+  std::unique_ptr<ObsAuxControl_> aux_;
 };
 
 // =============================================================================

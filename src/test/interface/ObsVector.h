@@ -11,12 +11,12 @@
 #ifndef TEST_INTERFACE_OBSVECTOR_H_
 #define TEST_INTERFACE_OBSVECTOR_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/testing/Test.h"
@@ -72,7 +72,7 @@ template <typename MODEL> void testConstructor() {
   typedef oops::ObsVector<MODEL>  ObsVector_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    boost::scoped_ptr<ObsVector_> ov(new ObsVector_(*Test_::obspace()[jj]));
+    std::unique_ptr<ObsVector_> ov(new ObsVector_(*Test_::obspace()[jj]));
     EXPECT(ov.get());
 
     ov.reset();
@@ -87,9 +87,8 @@ template <typename MODEL> void testCopyConstructor() {
   typedef oops::ObsVector<MODEL>  ObsVector_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    boost::scoped_ptr<ObsVector_> ov(new ObsVector_(*Test_::obspace()[jj]));
-
-    boost::scoped_ptr<ObsVector_> other(new ObsVector_(*ov));
+    std::unique_ptr<ObsVector_> ov(new ObsVector_(*Test_::obspace()[jj]));
+    std::unique_ptr<ObsVector_> other(new ObsVector_(*ov));
     EXPECT(other.get());
 
     other.reset();

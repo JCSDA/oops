@@ -12,10 +12,10 @@
 #define OOPS_INTERFACE_MODELAUXINCREMENT_H_
 
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
@@ -74,7 +74,7 @@ class ModelAuxIncrement : public util::Printable,
 
  private:
   void print(std::ostream &) const;
-  boost::scoped_ptr<ModelAuxIncrement_> aux_;
+  std::unique_ptr<ModelAuxIncrement_> aux_;
 };
 
 // -----------------------------------------------------------------------------

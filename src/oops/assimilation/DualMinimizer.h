@@ -11,9 +11,9 @@
 #ifndef OOPS_ASSIMILATION_DUALMINIMIZER_H_
 #define OOPS_ASSIMILATION_DUALMINIMIZER_H_
 
+#include <memory>
 #include <string>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
 #include "oops/assimilation/BMatrix.h"
@@ -47,7 +47,7 @@ template<typename MODEL> class DualMinimizer : public Minimizer<MODEL> {
   typedef RinvMatrix<MODEL>          Rinv_;
 
  public:
-  explicit DualMinimizer(const CostFct_ & J): Minimizer_(J), J_(J), gradJb_(0) {}
+  explicit DualMinimizer(const CostFct_ & J): Minimizer_(J), J_(J), gradJb_() {}
   ~DualMinimizer() {}
   const std::string classname() const override = 0;
 
@@ -57,7 +57,7 @@ template<typename MODEL> class DualMinimizer : public Minimizer<MODEL> {
                        const int &, const double &, Dual_ &, const double &) = 0;
 
   const CostFct_ & J_;
-  boost::scoped_ptr<CtrlInc_> gradJb_;
+  std::unique_ptr<CtrlInc_> gradJb_;
 };
 
 // =============================================================================
@@ -73,10 +73,10 @@ ControlIncrement<MODEL> * DualMinimizer<MODEL>::doMinimize(const eckit::Configur
     runOnlineAdjTest = onlineDiag.getBool("onlineAdjTest");
   }
 
-  if (gradJb_ == 0) {
-    gradJb_.reset(new CtrlInc_(J_.jb()));
-  } else {
+  if (gradJb_) {
     gradJb_.reset(new CtrlInc_(J_.jb().resolution(), *gradJb_));
+  } else {
+    gradJb_.reset(new CtrlInc_(J_.jb()));
   }
 
   Log::info() << std::endl;

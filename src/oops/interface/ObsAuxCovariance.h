@@ -12,10 +12,10 @@
 #define OOPS_INTERFACE_OBSAUXCOVARIANCE_H_
 
 #include <iostream>
+#include <memory>
 #include <string>
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
 #include "oops/interface/ObsAuxControl.h"
@@ -53,7 +53,7 @@ class ObsAuxCovariance : public util::Printable,
 
  private:
   void print(std::ostream &) const;
-  boost::scoped_ptr<ObsAuxCovariance_> cov_;
+  std::unique_ptr<ObsAuxCovariance_> cov_;
 };
 
 // =============================================================================

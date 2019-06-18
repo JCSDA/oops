@@ -17,7 +17,6 @@
 #include <vector>
 
 #include <boost/ptr_container/ptr_vector.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/TriDiagSpectrum.h"

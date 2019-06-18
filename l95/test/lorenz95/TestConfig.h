@@ -11,9 +11,9 @@
 #ifndef L95_TEST_LORENZ95_TESTCONFIG_H_
 #define L95_TEST_LORENZ95_TESTCONFIG_H_
 
+#include <memory>
 #include <string>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/config/YAMLConfiguration.h"
@@ -43,7 +43,7 @@ class TestConfig {
   ~TestConfig() {}
 
  private:
-  boost::scoped_ptr<const eckit::YAMLConfiguration> config_;
+  std::unique_ptr<const eckit::YAMLConfiguration> config_;
 };
 
 // -----------------------------------------------------------------------------

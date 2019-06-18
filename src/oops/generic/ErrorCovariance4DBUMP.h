@@ -12,7 +12,6 @@
 #include <vector>
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "oops/assimilation/GMRESR.h"
 #include "oops/assimilation/Increment4D.h"

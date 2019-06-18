@@ -11,10 +11,10 @@
 #ifndef OOPS_INTERFACE_OBSOPERATOR_H_
 #define OOPS_INTERFACE_OBSOPERATOR_H_
 
+#include <memory>
 #include <string>
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
@@ -60,7 +60,7 @@ class ObsOperator : public util::Printable,
 
  private:
   void print(std::ostream &) const;
-  boost::scoped_ptr<ObsOperator_> oper_;
+  std::unique_ptr<ObsOperator_> oper_;
 };
 
 // -----------------------------------------------------------------------------

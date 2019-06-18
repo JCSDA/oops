@@ -10,9 +10,9 @@
 
 #include <fstream>
 #include <iostream>
+#include <memory>
 
 #include <boost/lexical_cast.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "./TestConfig.h"
 #include "eckit/config/LocalConfiguration.h"
@@ -37,12 +37,12 @@ class ObsBiasTestFixture : TestFixture {
     fact_ = 1.234;
   }
   ~ObsBiasTestFixture() {}
-  boost::scoped_ptr<const eckit::LocalConfiguration> off_;
-  boost::scoped_ptr<const eckit::LocalConfiguration> conf_;
+  std::unique_ptr<const eckit::LocalConfiguration> off_;
+  std::unique_ptr<const eckit::LocalConfiguration> conf_;
   double bias1_;
   double bias2_;
   double fact_;
-  boost::scoped_ptr<lorenz95::ObsBias> obias_;
+  std::unique_ptr<lorenz95::ObsBias> obias_;
 };
 
 // -----------------------------------------------------------------------------

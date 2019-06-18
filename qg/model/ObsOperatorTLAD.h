@@ -11,10 +11,10 @@
 #ifndef QG_MODEL_OBSOPERATORTLAD_H_
 #define QG_MODEL_OBSOPERATORTLAD_H_
 
+#include <memory>
 #include <string>
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "oops/util/Printable.h"
 
@@ -53,7 +53,7 @@ class ObsOperatorTLAD : public util::Printable,
 
  private:
   void print(std::ostream &) const;
-  boost::scoped_ptr<ObsOpBaseTLAD> oper_;
+  std::unique_ptr<ObsOpBaseTLAD> oper_;
 };
 
 // -----------------------------------------------------------------------------

@@ -15,7 +15,6 @@
 #include <string>
 #include <vector>
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "oops/base/Variables.h"
 #include "oops/util/ObjectCounter.h"

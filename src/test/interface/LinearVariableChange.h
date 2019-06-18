@@ -13,13 +13,13 @@
 
 #include <cmath>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
 #include "eckit/testing/Test.h"
@@ -74,9 +74,9 @@ template <typename MODEL> class LinearVariableChangeFixture : private boost::non
   ~LinearVariableChangeFixture<MODEL>() {}
 
   std::vector<eckit::LocalConfiguration>             confs_;
-  boost::scoped_ptr<const State_ >                   xx_;
-  boost::scoped_ptr<const Geometry_>                 resol_;
-  boost::scoped_ptr<const util::DateTime>            time_;
+  std::unique_ptr<const State_ >                   xx_;
+  std::unique_ptr<const Geometry_>                 resol_;
+  std::unique_ptr<const util::DateTime>            time_;
 };
 
 // -----------------------------------------------------------------------------
@@ -93,7 +93,7 @@ template <typename MODEL> void testLinearVariableChangeZero() {
     oops::Variables varin(varinconf);
     oops::Variables varout(varoutconf);
 
-    boost::scoped_ptr<LinearVariableChange_> changevar(LinearVariableChangeFactory_::create(
+    std::unique_ptr<LinearVariableChange_> changevar(LinearVariableChangeFactory_::create(
                                       Test_::xx(), Test_::xx(),
                                       Test_::resol(), Test_::confs()[jj]));
 
@@ -145,7 +145,7 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
     oops::Variables varin(varinconf);
     oops::Variables varout(varoutconf);
 
-    boost::scoped_ptr<LinearVariableChange_> changevar(LinearVariableChangeFactory_::create(
+    std::unique_ptr<LinearVariableChange_> changevar(LinearVariableChangeFactory_::create(
                                       Test_::xx(), Test_::xx(),
                                       Test_::resol(), Test_::confs()[jj]));
 
@@ -219,7 +219,7 @@ template <typename MODEL> void testLinearVariableChangeInverse() {
     if (testinverse)
       {
       oops::Log::info() << "Testing multiplyInverse" << std::endl;
-      boost::scoped_ptr<LinearVariableChange_> changevar(LinearVariableChangeFactory_::create(
+      std::unique_ptr<LinearVariableChange_> changevar(LinearVariableChangeFactory_::create(
                                         Test_::xx(), Test_::xx(),
                                         Test_::resol(), Test_::confs()[jj]));
 

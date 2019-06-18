@@ -11,8 +11,9 @@
 #ifndef OOPS_ASSIMILATION_COSTJCDFI_H_
 #define OOPS_ASSIMILATION_COSTJCDFI_H_
 
+#include <memory>
+
 #include <boost/pointer_cast.hpp>
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
@@ -93,11 +94,11 @@ template<typename MODEL> class CostJcDFI : public CostTermBase<MODEL> {
   util::DateTime vt_;
   util::Duration span_;
   double alpha_;
-  boost::scoped_ptr<WeightingFct> wfct_;
-  boost::scoped_ptr<Increment_> gradFG_;
+  std::unique_ptr<WeightingFct> wfct_;
+  std::unique_ptr<Increment_> gradFG_;
   const Geometry_ resol_;
   const util::Duration tstep_;
-  boost::scoped_ptr<Geometry_> tlres_;
+  std::unique_ptr<Geometry_> tlres_;
   util::Duration tlstep_;
   mutable boost::shared_ptr<WeightedDiff<MODEL, Increment_, State_> > filter_;
   mutable boost::shared_ptr<WeightedDiffTLAD<MODEL> > ftlad_;
@@ -136,7 +137,7 @@ CostJcDFI<MODEL>::initialize(const CtrlVar_ &, const eckit::Configuration &) {
 template<typename MODEL>
 double CostJcDFI<MODEL>::finalize() {
   double zz = 0.5 * alpha_;
-  boost::scoped_ptr<Increment_> dx(filter_->releaseDiff());
+  std::unique_ptr<Increment_> dx(filter_->releaseDiff());
   zz *= dot_product(*dx, *dx);
   Log::test() << "CostJcDFI: Nonlinear Jc = " << zz << std::endl;
   return zz;

@@ -8,7 +8,7 @@
  * does it submit to any jurisdiction.
  */
 
-#include <boost/scoped_ptr.hpp>
+#include <memory>
 
 #include "./TestConfig.h"
 #include "eckit/config/LocalConfiguration.h"
@@ -41,31 +41,31 @@ class GomTestFixture : TestFixture {
     novar_.reset(new oops::Variables(vconf));
   }
   ~GomTestFixture() {}
-  boost::scoped_ptr<lorenz95::LocsL95> locs_;
-  boost::scoped_ptr<oops::Variables> novar_;
+  std::unique_ptr<lorenz95::LocsL95> locs_;
+  std::unique_ptr<oops::Variables> novar_;
 };
 // -----------------------------------------------------------------------------
 CASE("test_GomL95") {
   GomTestFixture fix;
 // -----------------------------------------------------------------------------
   SECTION("test_GomL95_constructor") {
-    boost::scoped_ptr<lorenz95::GomL95> gom(new lorenz95::GomL95(*fix.locs_, *fix.novar_));
+    std::unique_ptr<lorenz95::GomL95> gom(new lorenz95::GomL95(*fix.locs_, *fix.novar_));
     EXPECT(gom.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_GomL95_nobs") {
-    boost::scoped_ptr<lorenz95::GomL95> gom(new lorenz95::GomL95(*fix.locs_, *fix.novar_));
+    std::unique_ptr<lorenz95::GomL95> gom(new lorenz95::GomL95(*fix.locs_, *fix.novar_));
     size_t ref = 160;
     EXPECT(gom->size() == ref);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_gomL95_classname") {
-    boost::scoped_ptr<lorenz95::GomL95> gom(new lorenz95::GomL95(*fix.locs_, *fix.novar_));
+    std::unique_ptr<lorenz95::GomL95> gom(new lorenz95::GomL95(*fix.locs_, *fix.novar_));
     EXPECT(gom->classname() == "lorenz95::GomL95");
   }
 // -----------------------------------------------------------------------------
   SECTION("test_gomL95_zero") {
-    boost::scoped_ptr<lorenz95::GomL95> gom(new lorenz95::GomL95(*fix.locs_, *fix.novar_));
+    std::unique_ptr<lorenz95::GomL95> gom(new lorenz95::GomL95(*fix.locs_, *fix.novar_));
     gom->zero();
     for (size_t i = 0; i < gom->size(); ++i) {
       EXPECT((*gom)[i] == 0.0);
@@ -73,9 +73,9 @@ CASE("test_GomL95") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_gomL95_dot_product_with") {
-    boost::scoped_ptr<lorenz95::GomL95> gom1(new lorenz95::GomL95(*fix.locs_, *fix.novar_));
+    std::unique_ptr<lorenz95::GomL95> gom1(new lorenz95::GomL95(*fix.locs_, *fix.novar_));
     gom1->zero();
-    boost::scoped_ptr<lorenz95::GomL95> gom2(new lorenz95::GomL95(*fix.locs_, *fix.novar_));
+    std::unique_ptr<lorenz95::GomL95> gom2(new lorenz95::GomL95(*fix.locs_, *fix.novar_));
     gom2->zero();
 
     double zz = gom1->dot_product_with(*gom2);
@@ -83,9 +83,9 @@ CASE("test_GomL95") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_gomL95_operator") {
-    boost::scoped_ptr<lorenz95::GomL95> gom1(new lorenz95::GomL95(*fix.locs_, *fix.novar_));
+    std::unique_ptr<lorenz95::GomL95> gom1(new lorenz95::GomL95(*fix.locs_, *fix.novar_));
     gom1->zero();
-    boost::scoped_ptr<lorenz95::GomL95> gom2(new lorenz95::GomL95(*fix.locs_, *fix.novar_));
+    std::unique_ptr<lorenz95::GomL95> gom2(new lorenz95::GomL95(*fix.locs_, *fix.novar_));
     gom2->zero();
 
     (*gom1)[1] = 1.0;

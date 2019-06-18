@@ -15,7 +15,6 @@
 #include <string>
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"

@@ -13,10 +13,10 @@
 
 #include <Eigen/Dense>
 #include <iostream>
+#include <memory>
 #include <vector>
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFctWeak.h"
@@ -85,7 +85,7 @@ class SaddlePointLMPMatrix : private boost::noncopyable {
   std::vector<SPVector_> pqVEC_;
   std::vector<LagVector_> RpVEC_;
   std::vector<CtrlInc_>   RqVEC_;
-  boost::scoped_ptr<SPVector_> spvecinit_;
+  std::unique_ptr<SPVector_> spvecinit_;
   int nvec_;
   Eigen::MatrixXd ZMat_;
   Eigen::MatrixXd FMat_;

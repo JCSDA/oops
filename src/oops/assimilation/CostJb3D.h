@@ -12,7 +12,6 @@
 #define OOPS_ASSIMILATION_COSTJB3D_H_
 
 #include <memory>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/CostJbState.h"
@@ -93,11 +92,11 @@ template<typename MODEL> class CostJb3D : public CostJbState<MODEL> {
 
  private:
   const State_ & xb_;
-  boost::scoped_ptr< ModelSpaceCovarianceBase<MODEL> > B_;
+  std::unique_ptr< ModelSpaceCovarianceBase<MODEL> > B_;
   const util::Duration winLength_;
   const Variables controlvars_;
-  boost::scoped_ptr<const Geometry_> resol_;
-  boost::scoped_ptr<const util::DateTime> time_;
+  std::unique_ptr<const Geometry_> resol_;
+  std::unique_ptr<const util::DateTime> time_;
   const eckit::LocalConfiguration conf_;
 };
 

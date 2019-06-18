@@ -10,7 +10,6 @@
 
 #include <memory>  //  for std::unique_ptr
 
-#include <boost/scoped_ptr.hpp>
 
 #include "./TestConfig.h"
 #include "eckit/config/LocalConfiguration.h"
@@ -36,27 +35,27 @@ class LocsTestFixture : TestFixture {
     t2_.reset(new util::DateTime("2010-01-02T00:00:00Z"));
   }
   ~LocsTestFixture() {}
-  boost::scoped_ptr<lorenz95::ObsTable> ot_;
-  boost::scoped_ptr<util::DateTime> t1_;
-  boost::scoped_ptr<util::DateTime> t2_;
+  std::unique_ptr<lorenz95::ObsTable> ot_;
+  std::unique_ptr<util::DateTime> t1_;
+  std::unique_ptr<util::DateTime> t2_;
 };
 // -----------------------------------------------------------------------------
 CASE("test_LocsL95") {
   LocsTestFixture fix;
 // -----------------------------------------------------------------------------
   SECTION("test_LocsL95_constructor") {
-    boost::scoped_ptr<lorenz95::LocsL95> locs(fix.ot_->locations(*fix.t1_, *fix.t2_));
+    std::unique_ptr<lorenz95::LocsL95> locs(fix.ot_->locations(*fix.t1_, *fix.t2_));
     EXPECT(locs.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_LocsL95_nobs") {
-    boost::scoped_ptr<lorenz95::LocsL95> locs(fix.ot_->locations(*fix.t1_, *fix.t2_));
+    std::unique_ptr<lorenz95::LocsL95> locs(fix.ot_->locations(*fix.t1_, *fix.t2_));
     size_t ref = 80;
     EXPECT(locs->size() == ref);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_LocsL95_operator") {
-    boost::scoped_ptr<lorenz95::LocsL95> locs(fix.ot_->locations(*fix.t1_, *fix.t2_));
+    std::unique_ptr<lorenz95::LocsL95> locs(fix.ot_->locations(*fix.t1_, *fix.t2_));
     double pos = 0.0;
     for (size_t jj = 0; jj < locs->size(); ++jj) {
       EXPECT(oops::is_close((*locs)[jj], pos, 0.00000001));

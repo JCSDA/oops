@@ -8,10 +8,10 @@
 #ifndef OOPS_INTERFACE_LINEARVARIABLECHANGE_H_
 #define OOPS_INTERFACE_LINEARVARIABLECHANGE_H_
 
+#include <memory>
 #include <string>
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/Variables.h"
@@ -53,7 +53,7 @@ class LinearVariableChange : public oops::LinearVariableChangeBase<MODEL> {
  private:
   void print(std::ostream &) const override;
 
-  boost::scoped_ptr<CHVAR> chvar_;
+  std::unique_ptr<CHVAR> chvar_;
 };
 
 // =============================================================================

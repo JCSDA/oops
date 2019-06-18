@@ -11,13 +11,13 @@
 #ifndef TEST_INTERFACE_OBSAUXCONTROL_H_
 #define TEST_INTERFACE_OBSAUXCONTROL_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
 #include "eckit/testing/Test.h"
@@ -46,7 +46,7 @@ template <typename MODEL> class ObsAuxControlFixture : private boost::noncopyabl
 
   ~ObsAuxControlFixture() {}
 
-  boost::scoped_ptr<const eckit::LocalConfiguration>  conf_;
+  std::unique_ptr<const eckit::LocalConfiguration>  conf_;
 };
 
 // -----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ template <typename MODEL> void testConstructor() {
   typedef ObsAuxControlFixture<MODEL>   Test_;
   typedef oops::ObsAuxControl<MODEL>    ObsAux_;
 
-  boost::scoped_ptr<ObsAux_> bias(new ObsAux_(Test_::config()));
+  std::unique_ptr<ObsAux_> bias(new ObsAux_(Test_::config()));
   EXPECT(bias.get());
 
   bias.reset();
@@ -68,9 +68,9 @@ template <typename MODEL> void testCopyConstructor() {
   typedef ObsAuxControlFixture<MODEL>   Test_;
   typedef oops::ObsAuxControl<MODEL>    ObsAux_;
 
-  boost::scoped_ptr<ObsAux_> bias(new ObsAux_(Test_::config()));
+  std::unique_ptr<ObsAux_> bias(new ObsAux_(Test_::config()));
 
-  boost::scoped_ptr<ObsAux_> other(new ObsAux_(*bias));
+  std::unique_ptr<ObsAux_> other(new ObsAux_(*bias));
   EXPECT(other.get());
 
   other.reset();

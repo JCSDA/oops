@@ -9,8 +9,8 @@
  */
 
 #include <iostream>
+#include <memory>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "./TestConfig.h"
 #include "eckit/config/LocalConfiguration.h"
@@ -32,8 +32,8 @@ class ObsBiasTestFixture : TestFixture {
     nobias_.reset(new eckit::LocalConfiguration());
   }
   ~ObsBiasTestFixture() {}
-  boost::scoped_ptr<const eckit::LocalConfiguration> biasconf_;
-  boost::scoped_ptr<const eckit::LocalConfiguration> nobias_;
+  std::unique_ptr<const eckit::LocalConfiguration> biasconf_;
+  std::unique_ptr<const eckit::LocalConfiguration> nobias_;
 };
 // -----------------------------------------------------------------------------
 CASE("test_obsBiasCovariance") {

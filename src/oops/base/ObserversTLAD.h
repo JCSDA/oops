@@ -14,7 +14,6 @@
 #include <memory>
 #include <vector>
 
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/Configuration.h"

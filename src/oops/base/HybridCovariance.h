@@ -11,7 +11,7 @@
 #ifndef OOPS_BASE_HYBRIDCOVARIANCE_H_
 #define OOPS_BASE_HYBRIDCOVARIANCE_H_
 
-#include <boost/scoped_ptr.hpp>
+#include <memory>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/GMRESR.h"
@@ -47,8 +47,8 @@ class HybridCovariance : public ModelSpaceCovarianceBase<MODEL> {
   void doMultiply(const Increment_ &, Increment_ &) const override;
   void doInverseMultiply(const Increment_ &, Increment_ &) const override;
 
-  boost::scoped_ptr< ModelSpaceCovarianceBase<MODEL> > static_;
-  boost::scoped_ptr< EnsembleCovariance<MODEL> >  ensemble_;
+  std::unique_ptr< ModelSpaceCovarianceBase<MODEL> > static_;
+  std::unique_ptr< EnsembleCovariance<MODEL> >  ensemble_;
   double ensWeight_;
   double staWeight_;
 };

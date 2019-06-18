@@ -12,7 +12,6 @@
 #define OOPS_ASSIMILATION_HTRINVHMATRIX_H_
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "oops/assimilation/ControlIncrement.h"

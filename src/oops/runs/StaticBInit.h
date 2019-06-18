@@ -8,6 +8,7 @@
 #ifndef OOPS_RUNS_STATICBINIT_H_
 #define OOPS_RUNS_STATICBINIT_H_
 
+#include <memory>
 #include <string>
 
 #include "eckit/config/LocalConfiguration.h"
@@ -50,7 +51,7 @@ namespace oops {
 
       //  Initialize static B matrix
       const eckit::LocalConfiguration covarconf(fullConfig, "Covariance");
-      boost::scoped_ptr< Covariance_ >
+      std::unique_ptr< Covariance_ >
        Bmat(CovarianceFactory<MODEL>::create(covarconf, resol, vars, xx, xx));
 
       //  Randomize B matrix

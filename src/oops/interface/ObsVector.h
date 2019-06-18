@@ -12,10 +12,10 @@
 #define OOPS_INTERFACE_OBSVECTOR_H_
 
 #include <math.h>
+#include <memory>
 #include <ostream>
 #include <string>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObservationSpace.h"
@@ -75,7 +75,7 @@ class ObsVector : public util::Printable,
 
  private:
   void print(std::ostream &) const;
-  boost::scoped_ptr<ObsVector_> data_;
+  std::unique_ptr<ObsVector_> data_;
 };
 
 // -----------------------------------------------------------------------------

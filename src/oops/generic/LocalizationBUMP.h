@@ -12,9 +12,6 @@
 #include <string>
 #include <vector>
 
-#include <boost/ptr_container/ptr_vector.hpp>
-#include <boost/scoped_ptr.hpp>
-
 #include "eckit/config/Configuration.h"
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/Variables.h"

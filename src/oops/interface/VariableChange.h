@@ -8,10 +8,10 @@
 #ifndef OOPS_INTERFACE_VARIABLECHANGE_H_
 #define OOPS_INTERFACE_VARIABLECHANGE_H_
 
+#include <memory>
 #include <string>
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "oops/base/VariableChangeBase.h"
 #include "oops/base/Variables.h"
@@ -48,7 +48,7 @@ class VariableChange : public oops::VariableChangeBase<MODEL> {
  private:
   void print(std::ostream &) const override;
 
-  boost::scoped_ptr<CHVAR> chvar_;
+  std::unique_ptr<CHVAR> chvar_;
 };
 
 // =============================================================================

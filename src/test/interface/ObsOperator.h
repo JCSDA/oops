@@ -8,13 +8,13 @@
 #ifndef TEST_INTERFACE_OBSOPERATOR_H_
 #define TEST_INTERFACE_OBSOPERATOR_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
@@ -40,7 +40,7 @@ template <typename MODEL> void testConstructor() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     eckit::LocalConfiguration obsopconf(conf[jj], "ObsOperator");
-    boost::scoped_ptr<ObsOperator_> hop(new ObsOperator_(Test_::obspace()[jj], obsopconf));
+    std::unique_ptr<ObsOperator_> hop(new ObsOperator_(Test_::obspace()[jj], obsopconf));
     EXPECT(hop.get());
 
     hop.reset();

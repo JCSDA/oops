@@ -9,6 +9,7 @@
 #define OOPS_BASE_VARIABLECHANGEBASE_H_
 
 #include <map>
+#include <memory>
 #include <string>
 #include <boost/noncopyable.hpp>
 
@@ -47,8 +48,8 @@ class VariableChangeBase : public util::Printable,
 
  private:
   virtual void print(std::ostream &) const = 0;
-  boost::scoped_ptr<Variables> varin_;
-  boost::scoped_ptr<Variables> varout_;
+  std::unique_ptr<Variables> varin_;
+  std::unique_ptr<Variables> varout_;
 };
 
 // -----------------------------------------------------------------------------

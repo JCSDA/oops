@@ -13,8 +13,6 @@
 #include <iostream>
 #include <memory>  //  for std::unique_ptr
 
-#include <boost/scoped_ptr.hpp>
-
 #include "./TestConfig.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
@@ -43,34 +41,34 @@ class IncrementTestFixture : TestFixture {
     vars_.reset(new oops::Variables(TestConfig::config()));
   }
   ~IncrementTestFixture() {}
-  boost::scoped_ptr<const eckit::LocalConfiguration> file_;
-  boost::scoped_ptr<lorenz95::Resolution> resol_;
+  std::unique_ptr<const eckit::LocalConfiguration> file_;
+  std::unique_ptr<lorenz95::Resolution> resol_;
   std::string date_str_;
-  boost::scoped_ptr<util::DateTime> time_;
-  boost::scoped_ptr<oops::Variables> vars_;
+  std::unique_ptr<util::DateTime> time_;
+  std::unique_ptr<oops::Variables> vars_;
 };
 // -----------------------------------------------------------------------------
 CASE("test_IncrementL95") {
   IncrementTestFixture fix;
 // -----------------------------------------------------------------------------
   SECTION("test_incrementL95_constructor") {
-    boost::scoped_ptr<lorenz95::IncrementL95>
+    std::unique_ptr<lorenz95::IncrementL95>
       dx(new lorenz95::IncrementL95(*fix.resol_, *fix.vars_, *fix.time_));
     EXPECT(dx.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_incrementL95_interpolation_constructor") {
-    boost::scoped_ptr<lorenz95::IncrementL95>
+    std::unique_ptr<lorenz95::IncrementL95>
       dx1(new lorenz95::IncrementL95(*fix.resol_, *fix.vars_, *fix.time_));
-    boost::scoped_ptr<lorenz95::IncrementL95>
+    std::unique_ptr<lorenz95::IncrementL95>
       dx2(new lorenz95::IncrementL95(*fix.resol_, *dx1));
     EXPECT(dx2.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_incrementL95_copy_constructor") {
-    boost::scoped_ptr<lorenz95::IncrementL95>
+    std::unique_ptr<lorenz95::IncrementL95>
       dx1(new lorenz95::IncrementL95(*fix.resol_, *fix.vars_, *fix.time_));
-    boost::scoped_ptr<lorenz95::IncrementL95> dx2(new lorenz95::IncrementL95(*dx1));
+    std::unique_ptr<lorenz95::IncrementL95> dx2(new lorenz95::IncrementL95(*dx1));
     EXPECT(dx2.get() != NULL);
   }
 // -----------------------------------------------------------------------------

@@ -11,6 +11,8 @@
 #ifndef OOPS_ASSIMILATION_LBHESSIANMATRIX_H_
 #define OOPS_ASSIMILATION_LBHESSIANMATRIX_H_
 
+#include <memory>
+
 #include <boost/noncopyable.hpp>
 
 #include "oops/assimilation/ControlIncrement.h"
@@ -70,7 +72,7 @@ template<typename MODEL> class LBHessianMatrix : private boost::noncopyable {
     j_.zeroAD(dw);
 //  Jo + Jc
     for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
-      boost::scoped_ptr<GeneralizedDepartures> ww(costtl.releaseOutputFromTL(iq+jj));
+      std::unique_ptr<GeneralizedDepartures> ww(costtl.releaseOutputFromTL(iq+jj));
       boost::shared_ptr<GeneralizedDepartures> zz(j_.jterm(jj).multiplyCoInv(*ww));
       costad.enrollProcessor(j_.jterm(jj).setupAD(zz, dw));
     }

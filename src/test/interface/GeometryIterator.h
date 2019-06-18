@@ -12,13 +12,13 @@
 #define TEST_INTERFACE_GEOMETRYITERATOR_H_
 
 #include <math.h>
+#include <memory>
 #include <string>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
 #include "eckit/testing/Test.h"
@@ -42,7 +42,7 @@ template <typename MODEL> void testConstructor() {
        geomConfig(TestEnvironment::config(), "Geometry");
   Geometry_ geom(geomConfig);
 
-  boost::scoped_ptr<GeometryIterator_> iter(new GeometryIterator_(geom.begin()));
+  std::unique_ptr<GeometryIterator_> iter(new GeometryIterator_(geom.begin()));
   EXPECT(iter.get());
 
   iter.reset();

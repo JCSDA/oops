@@ -11,10 +11,10 @@
 #ifndef OOPS_INTERFACE_LINEARMODEL_H_
 #define OOPS_INTERFACE_LINEARMODEL_H_
 
+#include <memory>
 #include <string>
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "oops/base/LinearModelBase.h"
 #include "oops/base/PostProcessor.h"
@@ -96,7 +96,7 @@ class LinearModel : public util::Printable,
 // diagnostics
   void print(std::ostream &) const;
 
-  boost::scoped_ptr<LinearModelBase_> tlm_;
+  std::unique_ptr<LinearModelBase_> tlm_;
 };
 
 // =============================================================================

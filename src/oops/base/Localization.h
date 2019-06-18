@@ -11,11 +11,12 @@
 #ifndef OOPS_BASE_LOCALIZATION_H_
 #define OOPS_BASE_LOCALIZATION_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "oops/assimilation/Increment4D.h"
 #include "oops/base/IncrementEnsemble.h"
@@ -62,7 +63,7 @@ class Localization : public util::Printable,
   void print(std::ostream &) const;
   unsigned nsubwin_;
   boost::ptr_vector<LocalizationBase_> locBase_;
-  boost::scoped_ptr<LocalizationGeneric_> locGen_;
+  std::unique_ptr<LocalizationGeneric_> locGen_;
 };
 
 // =============================================================================

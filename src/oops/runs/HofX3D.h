@@ -8,10 +8,10 @@
 #ifndef OOPS_RUNS_HOFX3D_H_
 #define OOPS_RUNS_HOFX3D_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
@@ -94,7 +94,7 @@ template <typename MODEL> class HofX3D : public Application {
     post.finalize(xx);
 
 //  Save H(x)
-    boost::scoped_ptr<Observations_> yobs(pobs->release());
+    std::unique_ptr<Observations_> yobs(pobs->release());
     Log::test() << "H(x): " << *yobs << std::endl;
     yobs->save("hofx");
 

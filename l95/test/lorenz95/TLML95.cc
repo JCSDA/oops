@@ -10,8 +10,8 @@
 
 #include <fstream>
 #include <iostream>
+#include <memory>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "./TestConfig.h"
 #include "eckit/config/LocalConfiguration.h"
@@ -43,16 +43,16 @@ class TlmTestFixture : TestFixture {
     tlconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "linearmodel"));
   }
   ~TlmTestFixture() {}
-  boost::scoped_ptr<lorenz95::ModelL95>   model_;
-  boost::scoped_ptr<lorenz95::Resolution> resol_;
-  boost::scoped_ptr<const eckit::LocalConfiguration> tlconf_;
+  std::unique_ptr<lorenz95::ModelL95>   model_;
+  std::unique_ptr<lorenz95::Resolution> resol_;
+  std::unique_ptr<const eckit::LocalConfiguration> tlconf_;
 };
 // -----------------------------------------------------------------------------
 CASE("test_tlmL95") {
   TlmTestFixture fix;
 // -----------------------------------------------------------------------------
   SECTION("test_tlmL95_constructor") {
-    boost::scoped_ptr<lorenz95::TLML95> tlm(new lorenz95::TLML95(*fix.resol_, *fix.tlconf_));
+    std::unique_ptr<lorenz95::TLML95> tlm(new lorenz95::TLML95(*fix.resol_, *fix.tlconf_));
     EXPECT(tlm.get() != NULL);
   }
 // -----------------------------------------------------------------------------
@@ -64,15 +64,15 @@ CASE("test_tlmL95") {
     std::string date_string("2014-09-12T09:35:00Z");
     util::DateTime dt(date_string);
     oops::Variables vars();
-    boost::scoped_ptr<lorenz95::StateL95> stateL95(new lorenz95::StateL95(*fix.resol_, vars, dt));
+    std::unique_ptr<lorenz95::StateL95> stateL95(new lorenz95::StateL95(*fix.resol_, vars, dt));
 
     // construct a ModelBias object
     boost::shared_ptr<const eckit::LocalConfiguration> biasCfg(new eckit::LocalConfiguration(TestConfig::config(), "ModelBias"));
-    boost::scoped_ptr<lorenz95::ModelBias> modelBias(new lorenz95::ModelBias(*biasCfg, *fix.resol_));
+    std::unique_ptr<lorenz95::ModelBias> modelBias(new lorenz95::ModelBias(*biasCfg, *fix.resol_));
 
     tlm.setTrajectory(*stateL95, *modelBias);
 
-    boost::scoped_ptr<lorenz95::ModelTrajectory> modelTraj(new lorenz95::ModelTrajectory(true));
+    std::unique_ptr<lorenz95::ModelTrajectory> modelTraj(new lorenz95::ModelTrajectory(true));
     oops::Log::error() << "PMC: getTraj result <" << tlm.getTrajectory(dt)->get(1) << ">" << std::endl;
     modelTraj->set(tlm.getTrajectory(dt)->get(1));
     //oops::Log::error() << "PMC: modelTraj 1st " << modelTraj->get(1)
@@ -88,17 +88,17 @@ CASE("test_tlmL95") {
     lorenz95::TLML95 tlm(*fix.resol_, *fix.tlconf_, *fix.model_);
 
     // construct a FieldL95 object
-    boost::scoped_ptr<lorenz95::FieldL95> fieldL95(new lorenz95::FieldL95(*fix.resol_));
+    std::unique_ptr<lorenz95::FieldL95> fieldL95(new lorenz95::FieldL95(*fix.resol_));
 
     // construct a datetime object
     std::string dateString("2014-10-08T11:25:45Z");
     util::DateTime dt(dateString);
 
     //construct a ModelBiasCorrection object
-    boost::scoped_ptr<const eckit::LocalConfiguration> covarCfg(new eckit::LocalConfiguration(TestConfig::config(), "Covariance"));
-    boost::scoped_ptr<lorenz95::ModelBiasCovariance> modelBiasCovariance(
+    std::unique_ptr<const eckit::LocalConfiguration> covarCfg(new eckit::LocalConfiguration(TestConfig::config(), "Covariance"));
+    std::unique_ptr<lorenz95::ModelBiasCovariance> modelBiasCovariance(
         new lorenz95::ModelBiasCovariance(*covarCfg, *fix.resol_));
-    boost::scoped_ptr<lorenz95::ModelBiasCorrection> modelBiasCorrection(
+    std::unique_ptr<lorenz95::ModelBiasCorrection> modelBiasCorrection(
         new lorenz95::ModelBiasCorrection(*modelBiasCovariance));
 
     tlm.stepTL(*fieldL95, dt, *modelBiasCorrection);

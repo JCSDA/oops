@@ -49,7 +49,7 @@ class DateTime {
            const int &, const int &, const int &);
 
 // -- Destructor
-  //  ~DateTime()  -- not required. This is a simple class.
+  ~DateTime();
 
 // -- Methods
 

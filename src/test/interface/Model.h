@@ -13,13 +13,13 @@
 
 #include <cmath>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
@@ -74,11 +74,11 @@ template <typename MODEL> class ModelFixture : private boost::noncopyable {
 
   ~ModelFixture<MODEL>() {}
 
-  boost::scoped_ptr<const eckit::LocalConfiguration>  test_;
-  boost::scoped_ptr<const Geometry_>     resol_;
-  boost::scoped_ptr<const State_>        xref_;
-  boost::scoped_ptr<const ModelAux_>     bias_;
-  boost::scoped_ptr<const Model_>        model_;
+  std::unique_ptr<const eckit::LocalConfiguration>  test_;
+  std::unique_ptr<const Geometry_>     resol_;
+  std::unique_ptr<const State_>        xref_;
+  std::unique_ptr<const ModelAux_>     bias_;
+  std::unique_ptr<const Model_>        model_;
 };
 
 // =============================================================================

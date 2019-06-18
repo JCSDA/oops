@@ -11,11 +11,11 @@
 #ifndef OOPS_RUNS_ESTIMATEPARAMS_H_
 #define OOPS_RUNS_ESTIMATEPARAMS_H_
 
+#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
 #include "oops/assimilation/Increment4D.h"
@@ -59,7 +59,7 @@ template <typename MODEL> class EstimateParams : public Application {
 
     // Setup background state
     const eckit::LocalConfiguration backgroundConfig(fullConfig, "background");
-    boost::scoped_ptr<State4D_> xx;
+    std::unique_ptr<State4D_> xx;
     if (backgroundConfig.has("state")) {
       xx.reset(new State4D_(backgroundConfig, vars, resol));
     } else {
@@ -89,7 +89,7 @@ template <typename MODEL> class EstimateParams : public Application {
       pseudo_ens.reset(new Ensemble_(resol, vars, timeslots, ens2_ne));
       if (timeslots.size() == 1) {
       // One time-slot only
-        boost::scoped_ptr<ModelSpaceCovarianceBase<MODEL>>
+        std::unique_ptr<ModelSpaceCovarianceBase<MODEL>>
           cov(CovarianceFactory<MODEL>::create(covarConfig, resol, vars, (*xx)[0], (*xx)[0]));
         for (int ie = 0; ie < ens2_ne; ++ie) {
           Log::info() << "Generate pseudo ensemble member " << ie+1 << " / "
@@ -102,7 +102,7 @@ template <typename MODEL> class EstimateParams : public Application {
         }
       } else {
         // Multiple time-slots
-        boost::scoped_ptr<ModelSpaceCovariance4DBase<MODEL>>
+        std::unique_ptr<ModelSpaceCovariance4DBase<MODEL>>
           cov(Covariance4DFactory<MODEL>::create(covarConfig, resol, vars, (*xx), (*xx)));
         for (int ie = 0; ie < ens2_ne; ++ie) {
           Log::info() << "Generate pseudo ensemble member " << ie+1 << " / "

@@ -11,9 +11,9 @@
 #ifndef OOPS_RUNS_EXTERNALDFI_H_
 #define OOPS_RUNS_EXTERNALDFI_H_
 
+#include <memory>
 #include <string>
 
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
@@ -89,7 +89,7 @@ template <typename MODEL> class ExternalDFI : public Application {
     model.forecast(xx, moderr, dfispan, pp);
 
 //  Retrieve initialized state
-    boost::scoped_ptr<State_> xdfi(pdfi->releaseMean());
+    std::unique_ptr<State_> xdfi(pdfi->releaseMean());
     Log::test() << "Filtered state: " << *xdfi << std::endl;
 
 //  Setup forecast outputs

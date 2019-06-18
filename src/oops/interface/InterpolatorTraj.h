@@ -8,10 +8,10 @@
 #ifndef OOPS_INTERFACE_INTERPOLATORTRAJ_H_
 #define OOPS_INTERFACE_INTERPOLATORTRAJ_H_
 
+#include <memory>
 #include <ostream>
 #include <string>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -41,7 +41,7 @@ class InterpolatorTraj : public util::Printable,
   InterpolatorTraj(const InterpolatorTraj &);
   InterpolatorTraj & operator=(const InterpolatorTraj &);
   void print(std::ostream &) const;
-  boost::scoped_ptr<InterpolatorTraj_> traj_;
+  std::unique_ptr<InterpolatorTraj_> traj_;
 };
 
 // -----------------------------------------------------------------------------

@@ -11,9 +11,9 @@
 #ifndef OOPS_INTERFACE_OBSERRORCOVARIANCE_H_
 #define OOPS_INTERFACE_OBSERRORCOVARIANCE_H_
 
+#include <memory>
 #include <string>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "oops/base/ObsErrorBase.h"
 #include "oops/interface/ObservationSpace.h"
@@ -55,7 +55,7 @@ class ObsErrorCovariance : public oops::ObsErrorBase<MODEL> {
 
  private:
   void print(std::ostream &) const;
-  boost::scoped_ptr<OBSERR> covar_;
+  std::unique_ptr<OBSERR> covar_;
 };
 
 // ====================================================================================

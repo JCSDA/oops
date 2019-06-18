@@ -12,10 +12,10 @@
 #define OOPS_INTERFACE_MODELAUXCOVARIANCE_H_
 
 #include <iostream>
+#include <memory>
 #include <string>
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
 #include "oops/interface/Geometry.h"
@@ -55,7 +55,7 @@ class ModelAuxCovariance : public util::Printable,
 
  private:
   void print(std::ostream &) const;
-  boost::scoped_ptr<ModelAuxCovariance_> cov_;
+  std::unique_ptr<ModelAuxCovariance_> cov_;
 };
 
 // =============================================================================

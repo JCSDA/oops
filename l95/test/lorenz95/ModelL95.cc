@@ -9,8 +9,8 @@
  */
 
 #include <iostream>
+#include <memory>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "./TestConfig.h"
 #include "eckit/config/LocalConfiguration.h"
@@ -37,15 +37,15 @@ class ModelTestFixture : TestFixture {
     nlconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "model"));
   }
   ~ModelTestFixture() {}
-  boost::scoped_ptr<lorenz95::Resolution> resol_;
-  boost::scoped_ptr<const eckit::LocalConfiguration> nlconf_;
+  std::unique_ptr<lorenz95::Resolution> resol_;
+  std::unique_ptr<const eckit::LocalConfiguration> nlconf_;
 };
 // -----------------------------------------------------------------------------
 CASE("test_modelL95") {
 ModelTestFixture fix;
 // -----------------------------------------------------------------------------
   SECTION("test_modelL95_constructor") {
-    boost::scoped_ptr<lorenz95::ModelL95> model(new lorenz95::ModelL95(*fix.resol_, *fix.nlconf_));
+    std::unique_ptr<lorenz95::ModelL95> model(new lorenz95::ModelL95(*fix.resol_, *fix.nlconf_));
     EXPECT(model != NULL);
   }
 // -----------------------------------------------------------------------------

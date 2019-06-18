@@ -8,10 +8,10 @@
 #ifndef OOPS_RUNS_ENSHOFX_H_
 #define OOPS_RUNS_ENSHOFX_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
@@ -112,7 +112,7 @@ template <typename MODEL> class EnsHofX : public Application {
       Log::test() << "Final state for member " << jj << ":" << xx << std::endl;
 
 //    Save H(x)
-      boost::scoped_ptr<Observations_> yobs(pobs->release());
+      std::unique_ptr<Observations_> yobs(pobs->release());
       Log::test() << "H(x) for member " << jj << ":" << std::endl << *yobs
                   << "End H(x) for member " << jj << std::endl;;
       obsens[jj] = *yobs;
