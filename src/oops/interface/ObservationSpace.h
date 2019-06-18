@@ -64,6 +64,7 @@ class ObservationSpace : public util::Printable,
 // Other
   void generateDistribution(const eckit::Configuration &);
   void printJo(const ObsVector_ &, const ObsVector_ &) const;
+  const std::string & obsname() const {return obsdb_->obsname();}
 
  private:
   void print(std::ostream &) const;

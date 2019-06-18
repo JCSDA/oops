@@ -19,7 +19,6 @@
 #include "oops/base/ObsAuxControls.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observers.h"
-#include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
@@ -42,7 +41,6 @@ template <typename MODEL> class FindLocalObs : public Application {
   typedef ModelAuxControl<MODEL>     ModelAux_;
   typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
   typedef Observations<MODEL>        Observations_;
-  typedef ObsOperators<MODEL>        ObsOperators_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef State<MODEL>               State_;
 
@@ -90,14 +88,13 @@ template <typename MODEL> class FindLocalObs : public Application {
     eckit::LocalConfiguration obsconf(fullConfig, "Observations");
     Log::debug() << "Observations configuration is:" << obsconf << std::endl;
     ObsSpaces_ obsdb(obsconf, winbgn, winend);
-    ObsOperators_ hop(obsdb, obsconf);
 
 //  Setup observations bias
     ObsAuxCtrls_ ybias(obsconf);
 
 //  Setup Observers
     boost::shared_ptr<Observers<MODEL, State_> >
-      pobs(new Observers<MODEL, State_>(obsdb, hop, ybias));
+      pobs(new Observers<MODEL, State_>(obsconf, obsdb, ybias));
     post.enrollProcessor(pobs);
 
 //  Compute H(x)

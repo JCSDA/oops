@@ -20,7 +20,6 @@
 #include "oops/base/ObsEnsemble.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observers.h"
-#include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
@@ -42,7 +41,6 @@ template <typename MODEL> class EnsHofX : public Application {
   typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
   typedef Observations<MODEL>        Observations_;
   typedef ObsEnsemble<MODEL>         ObsEnsemble_;
-  typedef ObsOperators<MODEL>        ObsOperator_;
   typedef ObsSpaces<MODEL>           ObsSpace_;
   typedef State<MODEL>               State_;
 
@@ -74,7 +72,6 @@ template <typename MODEL> class EnsHofX : public Application {
     eckit::LocalConfiguration obsconf(fullConfig, "Observations");
     Log::debug() << "Observations configuration is:" << obsconf << std::endl;
     ObsSpace_ obsdb(obsconf, winbgn, winend);
-    ObsOperator_ hop(obsdb, obsconf);
 
 //  Setup observation bias
     ObsAuxCtrls_ ybias(obsconf);
@@ -106,7 +103,7 @@ template <typename MODEL> class EnsHofX : public Application {
 
 //    Setup postprocessor: Observers
       boost::shared_ptr<Observers<MODEL, State_> >
-      pobs(new Observers<MODEL, State_>(obsdb, hop, ybias));
+      pobs(new Observers<MODEL, State_>(obsconf, obsdb, ybias));
       post.enrollProcessor(pobs);
 
 //    Compute H(x)

@@ -18,7 +18,6 @@
 #include "oops/base/ObsAuxControls.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observers.h"
-#include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
@@ -41,7 +40,6 @@ template <typename MODEL> class LocalHofX : public Application {
   typedef ModelAuxControl<MODEL>     ModelAux_;
   typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
   typedef Observations<MODEL>        Observations_;
-  typedef ObsOperators<MODEL>        ObsOperators_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef State<MODEL>               State_;
 
@@ -100,7 +98,6 @@ template <typename MODEL> class LocalHofX : public Application {
     fullConfig.get("GeoLocations", centerconf);
     std::vector<eckit::geometry::Point2> centers;
     std::vector<boost::shared_ptr<ObsSpaces_>> localobs;
-    std::vector<boost::shared_ptr<ObsOperators_>> localhop;
     std::vector<boost::shared_ptr<ObsAuxCtrls_>> localobias;
     std::vector<boost::shared_ptr<Observers<MODEL, State_> >> pobs;
     for (std::size_t jj = 0; jj < centerconf.size(); ++jj) {
@@ -112,15 +109,12 @@ template <typename MODEL> class LocalHofX : public Application {
        localobs.push_back(lobs);
        Log::test() << "Local obs around: " << centers[jj] << std::endl;
        Log::test() << *localobs[jj] << std::endl;
-       //  Setup obs operator
-       boost::shared_ptr<ObsOperators_> lhop(new ObsOperators_(*localobs[jj], obsconf));
-       localhop.push_back(lhop);
        //  Setup obs bias<
        boost::shared_ptr<ObsAuxCtrls_> lobias(new ObsAuxCtrls_(obsconf));
        localobias.push_back(lobias);
        //  Setup observer
        boost::shared_ptr<Observers<MODEL, State_>>
-          lpobs(new Observers<MODEL, State_>(*localobs[jj], *localhop[jj], *localobias[jj]));
+          lpobs(new Observers<MODEL, State_>(obsconf, *localobs[jj], *localobias[jj]));
        pobs.push_back(lpobs);
        post.enrollProcessor(pobs[jj]);
     }
@@ -137,7 +131,6 @@ template <typename MODEL> class LocalHofX : public Application {
        yobs->save("hofx");
     }
 //  Read full H(x)
-    ObsOperators_ hop(obsdb, obsconf);
     Observations_ yobs(obsdb, "hofx");
     Log::test() << "H(x): " << yobs << std::endl;
     return 0;

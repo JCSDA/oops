@@ -62,13 +62,11 @@ class ObservationL95 : public util::Printable,
   LocsL95 * locations(const util::DateTime &, const util::DateTime &) const;
 
   const ObsTableView & table() const {return obsdb_;}
-  const std::string & obstype() const {return obsname_;}
 
  private:
   void print(std::ostream &) const;
   const ObsTableView & obsdb_;
   const oops::Variables inputs_;
-  const std::string obsname_ = "Lorenz 95";
 };
 
 // -----------------------------------------------------------------------------

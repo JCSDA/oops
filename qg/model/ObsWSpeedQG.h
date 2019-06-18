@@ -51,7 +51,6 @@ class ObsWSpeedQG : public ObsOpBaseQG,
 // Other
   const oops::Variables & variables() const override {return varin_;}
   LocationsQG * locations(const util::DateTime &, const util::DateTime &) const override;
-  const std::string & obstype() const override {return obsname_;}
 
   int & toFortran() {return keyOperWspeed_;}
   const int & toFortran() const {return keyOperWspeed_;}
@@ -61,7 +60,6 @@ class ObsWSpeedQG : public ObsOpBaseQG,
   F90hop keyOperWspeed_;
   const ObsSpaceQG & obsdb_;
   const oops::Variables varin_;
-  const std::string obsname_ = "WSpeed";
 };
 // -----------------------------------------------------------------------------
 

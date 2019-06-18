@@ -25,7 +25,6 @@
 #include "oops/base/Observations.h"
 #include "oops/base/Observers.h"
 #include "oops/base/ObsFilters.h"
-#include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
@@ -50,7 +49,6 @@ template <typename MODEL> class MakeObs : public Application {
   typedef Observations<MODEL>        Observations_;
   typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
-  typedef ObsOperators<MODEL>        ObsOperators_;
   typedef State<MODEL>               State_;
   typedef boost::shared_ptr<ObsFilters_> PtrFilters_;
 
@@ -99,7 +97,6 @@ template <typename MODEL> class MakeObs : public Application {
     const eckit::LocalConfiguration obsconf(fullConfig, "Observations");
     Log::info() << "Observation configuration is:" << obsconf << std::endl;
     ObsSpaces_ obspace(obsconf, bgn, end);
-    ObsOperators_ hop(obspace, obsconf);
 
 //  Setup observations bias
     ObsAuxCtrls_ ybias(obsconf);
@@ -113,9 +110,9 @@ template <typename MODEL> class MakeObs : public Application {
       filters.push_back(tmp);
     }
 
-//  Setup Observers
+//  Setup Observer
     boost::shared_ptr<Observers<MODEL, State_> >
-      pobs(new Observers<MODEL, State_>(obspace, hop, ybias, filters));
+      pobs(new Observers<MODEL, State_>(obsconf, obspace, ybias, filters));
     post.enrollProcessor(pobs);
 
 //  Run forecast and generate observations

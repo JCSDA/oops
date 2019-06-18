@@ -62,6 +62,8 @@ class ObsTable : public oops::ObsSpaceBase,
   const std::vector<double> locations() const { return locations_; }
   const std::vector<util::DateTime> times() const { return times_; }
   const oops::Variables & obsvariables() const { return obsvars_; }
+  const std::string & obsname() const {return obsname_;}
+
  private:
   void print(std::ostream &) const;
   void otOpen(const std::string &);
@@ -77,6 +79,7 @@ class ObsTable : public oops::ObsSpaceBase,
   const oops::Variables obsvars_;
   std::string nameIn_;
   std::string nameOut_;
+  const std::string obsname_ = "Lorenz 95";
 };
 // -----------------------------------------------------------------------------
 }  // namespace lorenz95

@@ -57,7 +57,6 @@ class ObsOperator : public util::Printable,
 /// Other
   const Variables & variables() const;  // Required input variables from Model
   Locations_ locations(const util::DateTime &, const util::DateTime &) const;
-  const std::string & obstype() const {return oper_->obstype();}
 
  private:
   void print(std::ostream &) const;

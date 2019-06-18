@@ -24,12 +24,12 @@
 #include "oops/base/ObsAuxIncrements.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObsFilters.h"
-#include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBaseTLAD.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/InterpolatorTraj.h"
+#include "oops/interface/ObsOperator.h"
 #include "oops/interface/State.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -49,14 +49,14 @@ class ObserversTLAD : public PostBaseTLAD<MODEL> {
   typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
   typedef ObsAuxIncrements<MODEL>    ObsAuxIncrs_;
   typedef ObsFilters<MODEL>          ObsFilters_;
-  typedef ObsOperators<MODEL>        ObsOperators_;
+  typedef ObsOperator<MODEL>         ObsOperator_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef State<MODEL>               State_;
   typedef boost::shared_ptr<ObsFilters_> PtrFilters_;
 
  public:
   ObserversTLAD(const eckit::Configuration &,
-               const ObsSpaces_ &, const ObsOperators_ &, const ObsAuxCtrls_ &,
+               const ObsSpaces_ &, const ObsAuxCtrls_ &,
                const std::vector<PtrFilters_>,
                const util::Duration & tslot = util::Duration(0), const bool subwin = false);
   ~ObserversTLAD() {}
@@ -84,7 +84,7 @@ class ObserversTLAD : public PostBaseTLAD<MODEL> {
 
 // Obs operator
   const ObsSpaces_ & obspace_;
-  const ObsOperators_ & hop_;
+  std::vector<std::shared_ptr<ObsOperator_>> hop_;
   LinearObsOperators_ hoptlad_;
   Observers<MODEL, State_> observer_;
 
@@ -111,17 +111,25 @@ class ObserversTLAD : public PostBaseTLAD<MODEL> {
 template <typename MODEL>
 ObserversTLAD<MODEL>::ObserversTLAD(const eckit::Configuration & config,
                                   const ObsSpaces_ & obsdb,
-                                  const ObsOperators_ & hop,
                                   const ObsAuxCtrls_ & ybias,
                                   const std::vector<PtrFilters_> filters,
                                   const util::Duration & tslot, const bool subwin)
   : PostBaseTLAD<MODEL>(obsdb.windowStart(), obsdb.windowEnd()),
-    obspace_(obsdb), hop_(hop), hoptlad_(obspace_, config),
-    observer_(obspace_, hop, ybias, filters, tslot, subwin),
+    obspace_(obsdb), hop_(0), hoptlad_(obspace_, config),
+    observer_(config, obspace_, ybias, filters, tslot, subwin),
     ydeptl_(), ybiastl_(), ydepad_(), ybiasad_(),
     winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
     bgn_(winbgn_), end_(winend_), hslot_(tslot/2), subwindows_(subwin)
 {
+  // setup obsoperators
+  std::vector<eckit::LocalConfiguration> typeconf;
+  config.get("ObsTypes", typeconf);
+  for (std::size_t jobs = 0; jobs < obsdb.size(); ++jobs) {
+    eckit::LocalConfiguration obsopconf(typeconf[jobs], "ObsOperator");
+    std::shared_ptr<ObsOperator_> tmp(new ObsOperator_(obsdb[jobs], obsopconf));
+    hop_.push_back(tmp);
+  }
+
   Log::trace() << "ObserversTLAD::ObserversTLAD" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -194,7 +202,7 @@ void ObserversTLAD<MODEL>::doInitializeTL(const Increment_ & dx,
 
   for (std::size_t jj = 0; jj < hop_.size(); ++jj) {
     boost::shared_ptr<GeoVaLs_>
-      gom(new GeoVaLs_(hop_[jj].locations(bgn_, end_), hoptlad_.variables(jj)));
+      gom(new GeoVaLs_(hop_[jj]->locations(bgn_, end_), hoptlad_.variables(jj)));
     gvals_.push_back(gom);
   }
   Log::trace() << "ObserversTLAD::doInitializeTL done" << std::endl;
@@ -213,7 +221,7 @@ void ObserversTLAD<MODEL>::doProcessingTL(const Increment_ & dx) {
 
 // Get increment variables at obs locations
   for (std::size_t jj = 0; jj < hop_.size(); ++jj) {
-    dx.getValuesTL(hop_[jj].locations(t1, t2), hoptlad_.variables(jj),
+    dx.getValuesTL(hop_[jj]->locations(t1, t2), hoptlad_.variables(jj),
                    *gvals_.at(jj), *traj_.at(ib).at(jj));
   }
   Log::trace() << "ObserversTLAD::doProcessingTL done" << std::endl;
@@ -258,7 +266,7 @@ void ObserversTLAD<MODEL>::doFirstAD(Increment_ & dx, const util::DateTime & bgn
 
   for (std::size_t jj = 0; jj < hoptlad_.size(); ++jj) {
     boost::shared_ptr<GeoVaLs_>
-      gom(new GeoVaLs_(hop_[jj].locations(bgn_, end_), hoptlad_.variables(jj)));
+      gom(new GeoVaLs_(hop_[jj]->locations(bgn_, end_), hoptlad_.variables(jj)));
     hoptlad_[jj].simulateObsAD(*gom, (*ydepad_)[jj], (*ybiasad_)[jj]);
     gvals_.push_back(gom);
   }
@@ -278,7 +286,7 @@ void ObserversTLAD<MODEL>::doProcessingAD(Increment_ & dx) {
 
 // Adjoint of get increment variables at obs locations
   for (std::size_t jj = 0; jj < hop_.size(); ++jj) {
-    dx.getValuesAD(hop_[jj].locations(t1, t2), hoptlad_.variables(jj),
+    dx.getValuesAD(hop_[jj]->locations(t1, t2), hoptlad_.variables(jj),
                    *gvals_.at(jj), *traj_.at(ib).at(jj));
   }
   Log::trace() << "ObserversTLAD::doProcessingAD done" << std::endl;

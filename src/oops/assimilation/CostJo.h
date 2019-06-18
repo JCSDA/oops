@@ -28,13 +28,11 @@
 #include "oops/base/Observers.h"
 #include "oops/base/ObserversTLAD.h"
 #include "oops/base/ObsFilters.h"
-#include "oops/base/ObsOperators.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
 #include "oops/base/PostBaseTLAD.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
-#include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/ObsDataVector.h"
 #include "oops/interface/State.h"
 #include "oops/util/DateTime.h"
@@ -62,10 +60,8 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
   typedef Increment<MODEL>           Increment_;
-  typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
   typedef ObsErrors<MODEL>           ObsErrors_;
   typedef ObsFilters<MODEL>          ObsFilters_;
-  typedef ObsOperators<MODEL>        ObsOperators_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef ObserversTLAD<MODEL>       ObserversTLAD_;
   typedef PostBaseTLAD<MODEL>        PostBaseTLAD_;
@@ -117,7 +113,6 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
  private:
   eckit::LocalConfiguration obsconf_;
   ObsSpaces_ obspace_;
-  ObsOperators_ hop_;
   Observations_ yobs_;
   boost::scoped_ptr<ObsErrors_> Rmat_;
 
@@ -149,7 +144,7 @@ CostJo<MODEL>::CostJo(const eckit::Configuration & joConf,
                       const util::DateTime & winbgn, const util::DateTime & winend,
                       const util::Duration & tslot, const bool subwindows)
   : obsconf_(joConf), obspace_(obsconf_, winbgn, winend),
-    hop_(obspace_, obsconf_), yobs_(obspace_, "ObsValue"),
+    yobs_(obspace_, "ObsValue"),
     Rmat_(), currentConf_(), gradFG_(), pobs_(), tslot_(tslot),
     pobstlad_(), subwindows_(subwindows), obserr_(), qcflags_()
 {
@@ -189,7 +184,7 @@ CostJo<MODEL>::initialize(const CtrlVar_ & xx, const eckit::Configuration & conf
     filters_.push_back(tmp);
   }
 
-  pobs_.reset(new Observers<MODEL, State_>(obspace_, hop_, xx.obsVar(), filters_,
+  pobs_.reset(new Observers<MODEL, State_>(obsconf_, obspace_, xx.obsVar(), filters_,
                                           tslot_, subwindows_));
   Log::trace() << "CostJo::initialize done" << std::endl;
   return pobs_;
@@ -263,8 +258,8 @@ CostJo<MODEL>::initializeTraj(const CtrlVar_ & xx, const Geometry_ &,
                               const eckit::Configuration & conf) {
   Log::trace() << "CostJo::initializeTraj start" << std::endl;
   std::vector<PtrFilters_> filters_;
-  pobstlad_.reset(new ObserversTLAD_(obsconf_, obspace_, hop_, xx.obsVar(), filters_,
-                                    tslot_, subwindows_));
+  pobstlad_.reset(new ObserversTLAD_(obsconf_, obspace_, xx.obsVar(), filters_,
+                                     tslot_, subwindows_));
   Log::trace() << "CostJo::initializeTraj done" << std::endl;
   return pobstlad_;
 }
@@ -374,11 +369,11 @@ double CostJo<MODEL>::printJo(const Departures_ & dy, const Departures_ & grad) 
     const double zz = 0.5 * dot_product(dy[jj], grad[jj]);
     const unsigned nobs = grad[jj].nobs();
     if (nobs > 0) {
-      Log::test() << "CostJo   : Nonlinear Jo(" << hop_[jj].obstype() << ") = "
+      Log::test() << "CostJo   : Nonlinear Jo(" << obspace_[jj].obsname() << ") = "
                   << zz << ", nobs = " << nobs << ", Jo/n = " << zz/nobs
                   << ", err = " << (*Rmat_)[jj].getRMSE() << std::endl;
     } else {
-      Log::test() << "CostJo   : Nonlinear Jo(" << hop_[jj].obstype() << ") = "
+      Log::test() << "CostJo   : Nonlinear Jo(" << obspace_[jj].obsname() << ") = "
                   << zz << " --- No Observations" << std::endl;
       Log::warning() << "CostJo: No Observations!!!" << std::endl;
     }
