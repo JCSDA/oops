@@ -3,6 +3,7 @@
 list( APPEND test_files
   bump_links.sh
   compare.sh
+  compare.py
   cpplint.py
 )
 
