@@ -109,7 +109,7 @@ ErrorCovariance4DBUMP<MODEL>::~ErrorCovariance4DBUMP() {
 template<typename MODEL>
 void ErrorCovariance4DBUMP<MODEL>::doRandomize(Increment4D_ & dx) const {
   Log::trace() << "ErrorCovariance4DBUMP<MODEL>::doRandomize starting" << std::endl;
-  util::Timer timer(classname(), "randomize");
+  util::Timer timer(classname(), "doRandomize");
   int colocated;
   get_oobump_colocated_f90(keyBUMP_, colocated);
   UnstructuredGrid ug(colocated, timeslots_.size());

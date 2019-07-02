@@ -58,8 +58,6 @@ class ErrorCovarianceBUMP : public oops::ModelSpaceCovarianceBase<MODEL>,
                       const eckit::Configuration &, const State_ &, const State_ &);
   virtual ~ErrorCovarianceBUMP();
 
-  void randomize(Increment_ &) const;
-
  private:
   void doRandomize(Increment_ &) const override;
   void doMultiply(const Increment_ &, Increment_ &) const override;
@@ -107,16 +105,16 @@ ErrorCovarianceBUMP<MODEL>::~ErrorCovarianceBUMP() {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void ErrorCovarianceBUMP<MODEL>::randomize(Increment_ & dx) const {
-  Log::trace() << "ErrorCovarianceBUMP<MODEL>::randomize starting" << std::endl;
-  util::Timer timer(classname(), "randomize");
+void ErrorCovarianceBUMP<MODEL>::doRandomize(Increment_ & dx) const {
+  Log::trace() << "ErrorCovarianceBUMP<MODEL>::doRandomize starting" << std::endl;
+  util::Timer timer(classname(), "doRandomize");
   int colocated;
   get_oobump_colocated_f90(keyBUMP_, colocated);
   UnstructuredGrid ug(colocated);
   dx.ug_coord(ug);
   randomize_oobump_nicas_f90(keyBUMP_, ug.toFortran());
   dx.field_from_ug(ug);
-  Log::trace() << "ErrorCovarianceBUMP<MODEL>::randomize done" << std::endl;
+  Log::trace() << "ErrorCovarianceBUMP<MODEL>::doRandomize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -146,16 +144,6 @@ void ErrorCovarianceBUMP<MODEL>::doInverseMultiply(const Increment_ & dxi,
   dxo.zero();
   GMRESR(dxo, dxi, *this, Id, 10, 1.0e-3);
   Log::trace() << "ErrorCovarianceBUMP<MODEL>::doInverseMultiply done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void ErrorCovarianceBUMP<MODEL>::doRandomize(Increment_ & dx) const {
-  Log::trace() << "ErrorCovarianceBUMP<MODEL>::doRandomize starting" << std::endl;
-  util::Timer timer(classname(), "doRandomize");
-  dx.random();
-  Log::trace() << "ErrorCovarianceBUMP<MODEL>::doRandomize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

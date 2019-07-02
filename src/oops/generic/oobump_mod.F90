@@ -397,8 +397,8 @@ subroutine randomize_oobump_nicas(self,ug)
 implicit none
 
 ! Passed variables
-type(oobump_type), intent(inout) :: self   !< OOBUMP
-type(unstructured_grid), intent(out) :: ug !< Unstructured grid
+type(oobump_type), intent(inout) :: self     !< OOBUMP
+type(unstructured_grid), intent(inout) :: ug !< Unstructured grid
 
 ! Local variables
 integer :: igrid
