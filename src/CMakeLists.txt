@@ -286,6 +286,8 @@ oops/util/PrintAdjTest.h
 oops/util/set_err_trap.F90
 oops/util/signal_trap.c
 oops/util/string_f_c_mod.F90
+oops/util/string_f_c_interface.h
+oops/util/string_f_c_interface.cc
 oops/util/Timer.h
 oops/util/Timer.cc
 oops/util/TimerHelper.h
@@ -308,9 +310,11 @@ test/interface/ObsTestsFixture.h
 test/interface/ObsVector.h
 test/interface/VariableChange.h
 test/TestEnvironment.h
-test/util/Random.h
 test/util/Fortran.h
+test/util/Random.h
 test/util/random.F90
+test/util/FCString.h
+test/util/f_c_string.F90
 )
 
 # macro to create a symlink from src to dst
@@ -325,6 +329,7 @@ endfunction(CREATE_SYMLINK)
 # Link the oops test input files
 list( APPEND oops_test_input
   test/testinput/random.yaml
+  test/testinput/pushstringvector.yaml
 )
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test/testinput)
 CREATE_SYMLINK( ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${oops_test_input} )  
@@ -376,6 +381,11 @@ ecbuild_add_test( TARGET oops_coding_norms
 ecbuild_add_test( TARGET  test_util_random
                   SOURCES test/base/Random.cc
 		  ARGS    "test/testinput/random.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_pushstringvector
+                  SOURCES test/base/FCString.cc
+		  ARGS    "test/testinput/pushstringvector.yaml"
                   LIBS    oops )
 
 ecbuild_add_test( TARGET  test_util_datetime

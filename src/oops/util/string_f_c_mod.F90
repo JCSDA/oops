@@ -14,8 +14,31 @@ use, intrinsic :: iso_c_binding, only : c_char, c_null_char, c_horizontal_tab
 
 implicit none
 private
-public f_c_string, c_f_string, f_c_string_vector
+public f_c_string, c_f_string, f_c_push_string_vector, f_c_push_string_varlist
 
+!-------------------------------------------------------------------------------
+interface
+!-------------------------------------------------------------------------------
+
+subroutine c_push_string_to_vector(c_vec, vname) bind(C,name='push_string_to_vector_f')     
+   use, intrinsic :: iso_c_binding, only : c_ptr, c_char
+   implicit none
+   type(c_ptr), value :: c_vec !< pointer to C++ std::vector<std::string> Object
+   character(kind=c_char, len=1), intent(in) :: vname(*)      
+end subroutine c_push_string_to_vector
+
+subroutine c_push_string_to_varlist(c_var, vname) bind(C,name='push_string_to_varlist_f')     
+   use, intrinsic :: iso_c_binding, only : c_ptr, c_char
+   implicit none
+   type(c_ptr), value :: c_var !< pointer to C++ oops::Variables Object
+   character(kind=c_char, len=1), intent(in) :: vname(*)      
+end subroutine c_push_string_to_varlist
+
+end interface
+
+!-------------------------------------------------------------------------------
+! Fortran utilities
+!-------------------------------------------------------------------------------
 contains
 
 ! ------------------------------------------------------------------------------
@@ -36,35 +59,6 @@ cstring(len_trim(fstring)+1) = c_null_char
 end subroutine f_c_string
 
 ! ------------------------------------------------------------------------------
-!> Convert Fortran vector of strings to allocatable C++ string buffer.
-
-subroutine f_c_string_vector(fstring_vec, cstring_vec)
-character(len=*), intent(in)               :: fstring_vec(:)
-character(kind=c_char, len=1), intent(inout) :: cstring_vec(:)
-integer :: ii,jj,idx
-
-!> store string in buffer delineated by tabs
-idx=0
-do ii=1,size(fstring_vec)
-   do jj=1,len_trim(fstring_vec(ii))
-      idx=idx+1
-      if (idx > size(cstring_vec)) &
-          call abor1_ftn("oops/util::f_c_string_vector: string buffer too small")
-      cstring_vec(idx) = fstring_vec(ii)(jj:jj)
-   enddo
-   idx=idx+1
-   if (idx > size(cstring_vec)) &
-       call abor1_ftn("oops/util::f_c_string_vector: string buffer too small")
-   if (ii < size(fstring_vec)) then
-      cstring_vec(idx) = c_horizontal_tab
-   else
-      cstring_vec(idx) = c_null_char
-   endif
-enddo
-
-end subroutine f_c_string_vector
-
-! ------------------------------------------------------------------------------
 !> Convert C++ string to Fortran string.
 
 subroutine c_f_string(cstring, fstring)
@@ -82,6 +76,54 @@ enddo
 
 end subroutine c_f_string
 
+! ------------------------------------------------------------------------------
+!> Push a string vector from Fortran to a C++ std::vector<std::string> object
+!
+subroutine f_c_push_string_vector(c_vec, vnames)
+  use, intrinsic :: iso_c_binding, only : c_ptr, c_char
+  implicit none
+  type(c_ptr), value, intent(in) :: c_vec !< pointer to C++ std::vector<std::string> Object
+  character(len=*), intent(in) :: vnames(:)  !< names to be added to the variable list
+
+  character(kind=c_char,len=1), allocatable :: c_vname(:)
+  integer :: iname
+
+  do iname = 1, size(vnames)
+  
+     call f_c_string(trim(vnames(iname)), c_vname)
+
+     call c_push_string_to_vector(c_vec, c_vname)
+
+     deallocate(c_vname)
+     
+  end do
+
+end subroutine f_c_push_string_vector
+  
+! ------------------------------------------------------------------------------
+!> Push a string vector from Fortran to a C++ oops::Variables object
+!
+subroutine f_c_push_string_varlist(c_var, vnames)
+  use, intrinsic :: iso_c_binding, only : c_ptr, c_char
+  implicit none
+  type(c_ptr), value, intent(in) :: c_var !< pointer to C++ oops::Variables Object
+  character(len=*), intent(in) :: vnames(:)  !< names to be added to the variable list
+
+  character(kind=c_char,len=1), allocatable :: c_vname(:)
+  integer :: iname
+
+  do iname = 1, size(vnames)
+  
+     call f_c_string(trim(vnames(iname)), c_vname)
+
+     call c_push_string_to_varlist(c_var, c_vname)
+
+     deallocate(c_vname)
+     
+  end do
+
+end subroutine f_c_push_string_varlist
+  
 ! ------------------------------------------------------------------------------
 
 end module string_f_c_mod

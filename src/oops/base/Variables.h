@@ -43,6 +43,7 @@ class Variables : public util::Printable {
   const std::vector<int> & channels() const {return channels_;}
   const eckit::Configuration & toFortran() const {return fconf_;}  // to be removed
   const eckit::Configuration * toFortranBetter() const {return &conf_;}
+  void push_back(const std::string &);
 
  private:
   void print(std::ostream &) const;

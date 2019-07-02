@@ -1,0 +1,10 @@
+---
+test_f_c_string:
+
+  # push this vector from Fortran to C++
+  string_vec:
+     - "One"
+     - "two"
+     - "thrEE"
+     - "FOUR"
+     - "f_i_v_e"
