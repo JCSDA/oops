@@ -1,0 +1,44 @@
+Assimilation Window:
+  Begin: &date 2010-01-01T03:00:00Z
+  Length: P2D
+
+Geometry:
+  resol: 40
+
+Model:
+  f: 8.0
+  name: L95
+  tstep: PT1H30M
+
+Initial Condition:
+  state:
+  - date: *date
+    filename: Data/test.ens.1.2010-01-01T00:00:00Z.PT3H
+  - date: *date
+    filename: Data/test.ens.2.2010-01-01T00:00:00Z.PT3H
+  - date: *date
+    filename: Data/test.ens.3.2010-01-01T00:00:00Z.PT3H
+  - date: *date
+    filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT3H
+  - date: *date
+    filename: Data/test.ens.5.2010-01-01T00:00:00Z.PT3H
+
+Observations:
+  ObsTypes:
+  - Covariance:
+      covariance: diagonal
+    ObsSpace:
+      ObsDataIn:
+        filename: Data/l95.truth3d.2010-01-02T00:00:00Z.obt
+      ObsDataOut:
+        filename: Data/l95.letkf.2010-01-02T00:00:00Z.obt
+    ObsOperator: {}
+
+letkf:
+  - nothing
+
+output:
+  datadir: Data
+  date: *date
+  exp: letkf
+  type: ens

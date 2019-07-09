@@ -26,6 +26,7 @@ list( APPEND l95_test_input
   testinput/forecast.yaml
   testinput/genenspert.yaml
   testinput/hofx.yaml
+  testinput/letkf.yaml
   testinput/localhofx.yaml
   testinput/interfaces.yaml
   testinput/makeobs3d.yaml
@@ -70,6 +71,7 @@ list( APPEND l95_testoutput
   testoutput/forecast.test
   testoutput/genenspert.test
   testoutput/hofx.test
+  testoutput/letkf.test
   testoutput/localhofx.test
   testoutput/makeobs3d.test
   testoutput/makeobs4d.test
@@ -867,3 +869,19 @@ ecbuild_add_test( TARGET test_l95_4dvar_eda_run
                   ARGS testinput/4dvar.eda.pertobs.yaml
                   DEPENDS l95_eda.x
                   TEST_DEPENDS test_l95_forecast_run  test_l95_makeobs4d_run )
+
+#####################################################################
+# LETKF tests
+#####################################################################
+
+ecbuild_add_test( TARGET test_l95_letkf_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_letkf.x
+                  ARGS testinput/letkf.yaml testoutput/letkf.log.out
+                  DEPENDS l95_letkf.x
+                  TEST_DEPENDS test_l95_makeobs3d_run test_l95_genenspert_run)
+
+ecbuild_add_test( TARGET test_l95_letkf_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/letkf.log.out testoutput/letkf.test
+                  TEST_DEPENDS test_l95_letkf_run )

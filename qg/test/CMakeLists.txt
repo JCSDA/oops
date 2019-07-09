@@ -43,6 +43,7 @@ list( APPEND qg_test_input
   testinput/hofx.yaml
   testinput/hofx3d.yaml
   testinput/interfaces.yaml
+  testinput/letkf.yaml
   testinput/make_obs_3d.yaml
   testinput/make_obs_4d_12h.yaml
   testinput/make_obs_4d_24h.yaml
@@ -99,6 +100,7 @@ list( APPEND qg_testoutput
   testoutput/gen_ens_pert_B.test
   testoutput/hofx.test
   testoutput/hofx3d.test
+  testoutput/letkf.test
   testoutput/make_obs_3d.test
   testoutput/make_obs_4d_12h.test
   testoutput/make_obs_4d_24h.test
@@ -1163,3 +1165,19 @@ ecbuild_add_test( TARGET test_qg_eda_4dvar_pert_obs_run
                   ARGS testinput/eda_4dvar_pert_obs.yaml
                   DEPENDS qg_eda.x
                   TEST_DEPENDS test_qg_forecast_run  test_qg_make_obs_4d_24h_run )
+
+#####################################################################
+# LETKF tests
+#####################################################################
+
+ecbuild_add_test( TARGET test_qg_letkf_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_letkf.x
+                  ARGS testinput/letkf.yaml testoutput/letkf.log.out
+		  DEPENDS qg_letkf.x
+		  TEST_DEPENDS test_qg_make_obs_3d_run test_qg_gen_ens_pert_B_run)
+
+ecbuild_add_test( TARGET test_qg_letkf_compare		
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/letkf.log.out testoutput/letkf.test
+                  TEST_DEPENDS test_qg_letkf_run )

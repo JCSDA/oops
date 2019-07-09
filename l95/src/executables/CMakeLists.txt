@@ -18,6 +18,10 @@ ecbuild_add_executable( TARGET  l95_eda.x
                         SOURCES EDA.cc
                         LIBS    lorenz95 )
 
+ecbuild_add_executable( TARGET  l95_letkf.x
+                        SOURCES LETKF.cc
+                        LIBS    lorenz95)
+
 ecbuild_add_executable( TARGET  l95_makeobs.x
                         SOURCES MakeObs.cc
                         LIBS    lorenz95 )

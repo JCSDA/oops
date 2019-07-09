@@ -234,6 +234,7 @@ oops/runs/FindLocalObs.h
 oops/runs/Forecast.h
 oops/runs/GenEnsPertB.h
 oops/runs/HofX.h
+oops/runs/LETKF.h
 oops/runs/LocalHofX.h
 oops/runs/HofX3D.h
 oops/runs/MakeObs.h
