@@ -217,7 +217,7 @@ void CostFct3DVar<MODEL>::runADJ(CtrlInc_ & dx,
   ASSERT(dx.state()[0].validTime() == windowHalf_);
 
   Increment_ dxmodel(dx.state()[0].geometry(), CostFct_::getTLM().variables(), windowHalf_);
-  dxmodel.zero();
+  inc2model_->multiplyInverseAD(dx.state()[0], dxmodel);
 
   post.initialize(dxmodel, windowHalf_, windowLength_);
   cost.initializeAD(dxmodel, windowHalf_, windowLength_);

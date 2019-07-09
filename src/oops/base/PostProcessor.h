@@ -49,16 +49,21 @@ class PostProcessor {
 
   void initialize(const FLDS & xx, const util::DateTime & end,
                   const util::Duration & step) {
-    BOOST_FOREACH(boost::shared_ptr<PostBase_> jp, processors_)
+    BOOST_FOREACH(boost::shared_ptr<PostBase_> jp, processors_) {
       jp->initialize(xx, end, step);
+    }
   }
 
   void process(const FLDS & xx) {
-    BOOST_FOREACH(boost::shared_ptr<PostBase_> jp, processors_) jp->process(xx);
+    BOOST_FOREACH(boost::shared_ptr<PostBase_> jp, processors_) {
+      jp->process(xx);
+    }
   }
 
   void finalize(const FLDS & xx) {
-    BOOST_FOREACH(boost::shared_ptr<PostBase_> jp, processors_) jp->finalize(xx);
+    BOOST_FOREACH(boost::shared_ptr<PostBase_> jp, processors_) {
+      jp->finalize(xx);
+    }
   }
 
  private:

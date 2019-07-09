@@ -61,11 +61,15 @@ class PostProcessorTLAD {
   }
 
   void processTraj(const State_ & xx) {
-    BOOST_FOREACH(boost::shared_ptr<PostBaseTLAD_> jp, processors_) jp->processTraj(xx);
+    BOOST_FOREACH(boost::shared_ptr<PostBaseTLAD_> jp, processors_) {
+      jp->processTraj(xx);
+    }
   }
 
   void finalizeTraj(const State_ & xx) {
-    BOOST_FOREACH(boost::shared_ptr<PostBaseTLAD_> jp, processors_) jp->finalizeTraj(xx);
+    BOOST_FOREACH(boost::shared_ptr<PostBaseTLAD_> jp, processors_) {
+      jp->finalizeTraj(xx);
+    }
   }
 
 /// Tangent linear methods
@@ -77,11 +81,15 @@ class PostProcessorTLAD {
   }
 
   void processTL(const Increment_ & dx) {
-    BOOST_FOREACH(boost::shared_ptr<PostBaseTLAD_> jp, processors_) jp->processTL(dx);
+    BOOST_FOREACH(boost::shared_ptr<PostBaseTLAD_> jp, processors_) {
+      jp->processTL(dx);
+    }
   }
 
   void finalizeTL(const Increment_ & dx) {
-    BOOST_FOREACH(boost::shared_ptr<PostBaseTLAD_> jp, processors_) jp->finalizeTL(dx);
+    BOOST_FOREACH(boost::shared_ptr<PostBaseTLAD_> jp, processors_) {
+      jp->finalizeTL(dx);
+    }
   }
 
 /// Get TL dual space output
@@ -99,11 +107,15 @@ class PostProcessorTLAD {
   }
 
   void processAD(Increment_ & dx) {
-    BOOST_FOREACH(boost::shared_ptr<PostBaseTLAD_> jp, processors_) jp->processAD(dx);
+    BOOST_FOREACH(boost::shared_ptr<PostBaseTLAD_> jp, processors_) {
+      jp->processAD(dx);
+    }
   }
 
   void finalizeAD(Increment_ & dx) {
-    BOOST_FOREACH(boost::shared_ptr<PostBaseTLAD_> jp, processors_) jp->finalizeAD(dx);
+    BOOST_FOREACH(boost::shared_ptr<PostBaseTLAD_> jp, processors_) {
+      jp->finalizeAD(dx);
+    }
   }
 
  private:
