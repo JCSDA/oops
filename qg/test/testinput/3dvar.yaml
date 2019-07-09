@@ -85,8 +85,8 @@ variational:
       version: QgIdTLM
     ninner: 10
     resolution:
-      nx: 40
-      ny: 20
+      nx: 20
+      ny: 10
       depths:
       - 4500.0
       - 5500.0

@@ -148,11 +148,14 @@ void FieldsQG::changeResolution(const FieldsQG & other) {
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::add(const FieldsQG & rhs) {
-  qg_fields_add_incr_f90(keyFlds_, rhs.keyFlds_);
+  FieldsQG rhs_myres(rhs, *geom_);
+  qg_fields_add_incr_f90(keyFlds_, rhs_myres.keyFlds_);
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::diff(const FieldsQG & x1, const FieldsQG & x2) {
-  qg_fields_diff_incr_f90(keyFlds_, x1.keyFlds_, x2.keyFlds_);
+  FieldsQG x1_myres(x1, *geom_);
+  FieldsQG x2_myres(x2, *geom_);
+  qg_fields_diff_incr_f90(keyFlds_, x1_myres.keyFlds_, x2_myres.keyFlds_);
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::ug_coord(oops::UnstructuredGrid & ug) const {

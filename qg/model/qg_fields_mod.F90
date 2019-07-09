@@ -494,6 +494,9 @@ implicit none
 type(qg_fields),intent(inout) :: fld !< Fields
 type(qg_fields),intent(in)    :: rhs !< Right-hand side
 
+integer :: ix,iy,iz
+real(kind_real), allocatable, dimension(:,:,:) :: q1, q2
+
 ! Check fields
 call qg_fields_check(fld)
 call qg_fields_check(rhs)
@@ -503,8 +506,48 @@ if (fld%lq.eqv.rhs%lq) then
     ! Same resolution
     call qg_fields_copy(fld,rhs)
   else
-    ! TODO
-    call abor1_ftn('qg_fields_change_resol: not implemented yet')
+    do ix = 1,fld%geom%nx
+      do iy = 1,fld%geom%ny
+        do iz = 1,fld%geom%nz
+          call qg_interp_trilinear( rhs%geom,fld%geom%lon(ix,iy),fld%geom%lat(ix,iy),fld%geom%z(iz), &
+                                    rhs%gfld3d,fld%gfld3d(ix,iy,iz) )
+        enddo
+      enddo
+    enddo
+    if (fld%lbc) then
+      if (rhs%lbc) then
+        allocate(q1(rhs%geom%nx,rhs%geom%ny,rhs%geom%nz))
+        allocate(q2(fld%geom%nx,fld%geom%ny,fld%geom%nz))
+        do iy = 1,rhs%geom%ny
+          q1(:,iy,:) = rhs%q_south
+        enddo
+        do ix = 1,fld%geom%nx
+          do iz = 1,fld%geom%nz
+            call qg_interp_trilinear( rhs%geom,fld%geom%lon(ix,1),fld%geom%lat(ix,1),fld%geom%z(iz), &
+                                      q1,q2(ix,1,iz) )
+          enddo
+        enddo
+        fld%q_south = q2(:,1,:)
+        do iy = 1,rhs%geom%ny
+          q1(:,iy,:) = rhs%q_north
+        enddo
+        do ix = 1,fld%geom%nx
+          do iz = 1,fld%geom%nz
+            call qg_interp_trilinear( rhs%geom,fld%geom%lon(ix,1),fld%geom%lat(ix,1),fld%geom%z(iz), &
+                                      q1,q2(ix,1,iz) )
+          enddo
+        enddo
+        fld%q_north = q2(:,1,:)
+        deallocate(q1,q2)
+        fld%x_north = rhs%x_north
+        fld%x_south = rhs%x_south
+      else
+        fld%x_north = 0.0
+        fld%x_south = 0.0
+        fld%q_north = 0.0
+        fld%q_south = 0.0
+      endif
+    endif
   endif
 else
   call abor1_ftn('qg_fields_change_resol: different variables')
