@@ -50,6 +50,7 @@ class GomQG : public util::Printable,
   GomQG & operator*=(const double &);
   GomQG & operator+=(const GomQG &);
   GomQG & operator-=(const GomQG &);
+  GomQG & operator*=(const GomQG &);
   GomQG & operator/=(const GomQG &);
   double dot_product_with(const GomQG &) const;
   void read(const eckit::Configuration &);

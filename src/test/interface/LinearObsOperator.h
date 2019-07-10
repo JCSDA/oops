@@ -235,6 +235,9 @@ template <typename MODEL> void testTangentLinear() {
     GeoVaLs_ dx(gconf, hoptl.variables());
     dx.random();
 
+    // scale dx by x0
+    dx *= x0;
+
     for (int jter = 0; jter < iter; ++jter) {
       // x = x0 + alpha*dx
       dx *= alpha;

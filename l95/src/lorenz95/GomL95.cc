@@ -73,6 +73,12 @@ GomL95 & GomL95::operator-=(const GomL95 & rhs)
   return *this;
 }
 // -----------------------------------------------------------------------------
+GomL95 & GomL95::operator*=(const GomL95 & rhs)
+{
+  for (size_t jj = 0; jj < size_; ++jj) locval_[jj] *= rhs.locval_[jj];
+  return *this;
+}
+// -----------------------------------------------------------------------------
 GomL95 & GomL95::operator/=(const GomL95 & rhs)
 {
   for (size_t jj = 0; jj < size_; ++jj) locval_[jj] /= rhs.locval_[jj];

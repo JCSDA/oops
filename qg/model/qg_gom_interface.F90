@@ -240,6 +240,28 @@ call qg_gom_diff(self,other)
 
 end subroutine qg_gom_diff_c
 ! ------------------------------------------------------------------------------
+!> Schur product for GOM
+subroutine qg_gom_schurmult_c(c_key_self,c_key_other) bind(c,name='qg_gom_schurmult_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_self  !< GOM
+integer(c_int),intent(in) :: c_key_other !< Other GOM
+
+! Local variables
+type(qg_gom),pointer :: self
+type(qg_gom),pointer :: other
+
+! Interface
+call qg_gom_registry%get(c_key_self,self)
+call qg_gom_registry%get(c_key_other,other)
+
+! Call Fortran
+call qg_gom_schurmult(self,other)
+
+end subroutine qg_gom_schurmult_c
+! ------------------------------------------------------------------------------
 !> Schur division for GOM
 subroutine qg_gom_divide_c(c_key_self,c_key_other) bind(c,name='qg_gom_divide_f90')
 

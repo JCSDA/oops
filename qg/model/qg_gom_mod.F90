@@ -26,8 +26,8 @@ private
 public :: qg_gom
 public :: qg_gom_registry
 public :: qg_gom_setup,qg_gom_create,qg_gom_delete,qg_gom_copy,qg_gom_zero,qg_gom_abs,qg_gom_random,qg_gom_mult, &
-        & qg_gom_add,qg_gom_diff,qg_gom_divide,qg_gom_rms,qg_gom_dotprod,qg_gom_stats,qg_gom_maxloc,qg_gom_read_file, &
-        & qg_gom_write_file,qg_gom_analytic_init
+        & qg_gom_add,qg_gom_diff,qg_gom_schurmult,qg_gom_divide,qg_gom_rms,qg_gom_dotprod,qg_gom_stats,qg_gom_maxloc, &
+        & qg_gom_read_file, qg_gom_write_file,qg_gom_analytic_init
 ! ------------------------------------------------------------------------------
 type :: qg_gom
   integer :: nobs                             !< Number of observations
@@ -267,6 +267,27 @@ do jo=1,self%nobs
 enddo
 
 end subroutine qg_gom_diff
+! ------------------------------------------------------------------------------
+!> Schur product for GOM
+subroutine qg_gom_schurmult(self,other)
+
+implicit none
+
+! Passed variables
+type(qg_gom),intent(inout) :: self !< GOM
+type(qg_gom),intent(in) :: other   !< Other GOM
+
+! Local variables
+integer :: jo,jv
+
+! Add GOM
+do jo=1,self%nobs
+  do jv=1,self%nv
+    self%values(jv,jo) = self%values(jv,jo)*other%values(jv,jo)
+  enddo
+enddo
+
+end subroutine qg_gom_schurmult
 ! ------------------------------------------------------------------------------
 !> Schur division for GOM
 subroutine qg_gom_divide(self,other)
