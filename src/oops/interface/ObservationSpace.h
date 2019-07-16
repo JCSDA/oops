@@ -62,7 +62,6 @@ class ObservationSpace : public util::Printable,
   const Variables & obsvariables() const;
 
 // Other
-  void generateDistribution(const eckit::Configuration &);
   void printJo(const ObsVector_ &, const ObsVector_ &) const;
   const std::string & obsname() const {return obsdb_->obsname();}
 
@@ -119,16 +118,6 @@ const Variables & ObservationSpace<MODEL>::obsvariables() const {
   Log::trace() << "ObservationSpace<MODEL>::obsvariables starting" << std::endl;
   util::Timer timer(classname(), "obsvariables");
   return obsdb_->obsvariables();
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-void ObservationSpace<MODEL>::generateDistribution(const eckit::Configuration & conf) {
-  Log::trace() << "ObservationSpace<MODEL>::generateDistribution starting" << std::endl;
-  util::Timer timer(classname(), "generateDistribution");
-  obsdb_->generateDistribution(conf);
-  Log::trace() << "ObservationSpace<MODEL>::generateDistribution done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

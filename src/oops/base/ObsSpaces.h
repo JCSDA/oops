@@ -83,11 +83,6 @@ ObsSpaces<MODEL>::ObsSpaces(const eckit::Configuration & conf,
     Log::debug() << "ObsSpaces::ObsSpaces : conf " << obsconf << std::endl;
     boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, bgn, end));
     spaces_.push_back(tmp);
-//  Generate locations etc... if required
-    if (typeconfs[jj].has("Generate")) {
-      const eckit::LocalConfiguration gconf(typeconfs[jj], "Generate");
-      spaces_[jj]->generateDistribution(gconf);
-    }
   }
   ASSERT(spaces_.size() >0);
 }

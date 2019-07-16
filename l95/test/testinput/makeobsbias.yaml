@@ -12,14 +12,14 @@ Model:
   tstep: PT1H30M
 Observations:
   ObsTypes:
-  - Generate:
-      begin: PT3H
-      obs_density: '20'
-      obs_error: '0.4'
-      obs_frequency: PT3H
-    ObsSpace:
+  - ObsSpace:
       ObsDataOut:
         filename: Data/l95.biased.2010-01-02T00:00:00Z.obt
+      Generate:
+        begin: PT3H
+        obs_density: '20'
+        obs_error: '0.4'
+        obs_frequency: PT3H
     ObsOperator: {}
     ObsBias:
       bias: '0.6'

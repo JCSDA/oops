@@ -17,48 +17,48 @@ Model:
   - x
 Observations:
   ObsTypes:
-  - Generate:
-      begin: PT3H
-      nval: 1
-      obs_density: 100
-      obs_error: 4.0e6
-      obs_period: PT3H
-    ObsOperator:
+  - ObsOperator:
       ObsType: Stream
     ObsSpace:
       ObsDataOut:
         obsfile: Data/truth.obs4d_24h
       ObsType: Stream
+      Generate:
+        begin: PT3H
+        nval: 1
+        obs_density: 100
+        obs_error: 4.0e6
+        obs_period: PT3H
     ObsFilters:
     - Filter: GOMsaver
       filename: Data/truth.obs4d_24h.stream.gom
-  - Generate:
-      begin: PT6H
-      nval: 2
-      obs_density: 100
-      obs_error: 6.0
-      obs_period: PT6H
-    ObsOperator:
+  - ObsOperator:
       ObsType: Wind
     ObsSpace:
       ObsDataOut:
         obsfile: Data/truth.obs4d_24h
       ObsType: Wind
+      Generate:
+        begin: PT6H
+        nval: 2
+        obs_density: 100
+        obs_error: 6.0
+        obs_period: PT6H
     ObsFilters:
     - Filter: GOMsaver
       filename: Data/truth.obs4d_24h.wind.gom
-  - Generate:
-      begin: PT3H
-      nval: 1
-      obs_density: 100
-      obs_error: 12.0
-      obs_period: PT6H
-    ObsOperator:
+  - ObsOperator:
       ObsType: WSpeed
     ObsSpace:
       ObsDataOut:
         obsfile: Data/truth.obs4d_24h
       ObsType: WSpeed
+      Generate:
+        begin: PT3H
+        nval: 1
+        obs_density: 100
+        obs_error: 12.0
+        obs_period: PT6H
     ObsFilters:
     - Filter: GOMsaver
       filename: Data/truth.obs4d_24h.wspeed.gom

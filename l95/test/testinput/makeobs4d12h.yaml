@@ -12,12 +12,12 @@ Model:
   tstep: PT1H30M
 Observations:
   ObsTypes:
-  - Generate:
-      begin: PT1H30M
-      obs_density: '10'
-      obs_error: '0.4'
-      obs_frequency: PT1H30M
-    ObsSpace:
+  - ObsSpace:
       ObsDataOut:
         filename: Data/l95.truth4d.2010-01-01T12:00:00Z.obt
+      Generate:
+        begin: PT1H30M
+        obs_density: '10'
+        obs_error: '0.4'
+        obs_frequency: PT1H30M
     ObsOperator: {}

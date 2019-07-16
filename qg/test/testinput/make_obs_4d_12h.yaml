@@ -17,41 +17,41 @@ Model:
   - x
 Observations:
   ObsTypes:
-  - Generate:
-      begin: PT2H
-      nval: 1
-      obs_density: 50
-      obs_error: 4.0e6
-      obs_period: PT2H
-    ObsOperator:
+  - ObsOperator:
       ObsType: Stream
     ObsSpace:
       ObsDataOut:
         obsfile: Data/truth.obs4d_12h
       ObsType: Stream
-  - Generate:
-      begin: PT1H
-      nval: 2
-      obs_density: 40
-      obs_error: 6.0
-      obs_period: PT6H
-    ObsOperator:
+      Generate:
+        begin: PT2H
+        nval: 1
+        obs_density: 50
+        obs_error: 4.0e6
+        obs_period: PT2H
+  - ObsOperator:
       ObsType: Wind
     ObsSpace:
       ObsDataOut:
         obsfile: Data/truth.obs4d_12h
       ObsType: Wind
-  - Generate:
-      begin: PT1H
-      nval: 1
-      obs_density: 50
-      obs_error: 12.0
-      obs_period: PT2H
-    ObsOperator:
+      Generate:
+        begin: PT1H
+        nval: 2
+        obs_density: 40
+        obs_error: 6.0
+        obs_period: PT6H
+  - ObsOperator:
       ObsType: WSpeed
     ObsSpace:
       ObsDataOut:
         obsfile: Data/truth.obs4d_12h
       ObsType: WSpeed
+      Generate:
+        begin: PT1H
+        nval: 1
+        obs_density: 50
+        obs_error: 12.0
+        obs_period: PT2H
 prints:
   frequency: PT3H

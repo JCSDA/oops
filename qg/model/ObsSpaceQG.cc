@@ -80,6 +80,12 @@ ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config,
   if (obsname_ == "WSpeed") nvin_ = 2;
   if (obsname_ == "Wind") nvin_ = 2;
   ASSERT(nvin_ > 0);
+
+  //  Generate locations etc... if required
+  if (config.has("Generate")) {
+    const eckit::LocalConfiguration gconf(config, "Generate");
+    helper_->generateDistribution(gconf, obsname_, winbgn_, winend_, nobs_);
+  }
 }
 
 // -----------------------------------------------------------------------------

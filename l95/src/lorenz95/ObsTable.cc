@@ -44,6 +44,11 @@ ObsTable::ObsTable(const eckit::Configuration & config,
     nameIn_ = config.getString("ObsDataIn.filename");
     otOpen(nameIn_);
   }
+  //  Generate locations etc... if required
+  if (config.has("Generate")) {
+    const eckit::LocalConfiguration gconf(config, "Generate");
+    generateDistribution(gconf);
+  }
   if (config.has("ObsDataOut")) {
     nameOut_ = config.getString("ObsDataOut.filename");
   }
