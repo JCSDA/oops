@@ -148,49 +148,6 @@ oops/generic/unstructured_grid_interface.F90
 oops/generic/unstructured_grid_mod.F90
 oops/generic/StatsVariableChange.h
 
-oops/generic/bump/tools_const.F90
-oops/generic/bump/tools_fit.F90
-oops/generic/bump/tools_func.F90
-oops/generic/bump/tools_kinds.F90
-oops/generic/bump/tools_repro.F90
-oops/generic/bump/type_adv.F90
-oops/generic/bump/type_avg_blk.F90
-oops/generic/bump/type_avg.F90
-oops/generic/bump/type_bpar.F90
-oops/generic/bump/type_bump.F90
-oops/generic/bump/type_cmat_blk.F90
-oops/generic/bump/type_cmat.F90
-oops/generic/bump/type_com.F90
-oops/generic/bump/type_cv_blk.F90
-oops/generic/bump/type_cv.F90
-oops/generic/bump/type_diag_blk.F90
-oops/generic/bump/type_diag.F90
-oops/generic/bump/type_ens.F90
-oops/generic/bump/type_geom.F90
-oops/generic/bump/type_hdiag.F90
-oops/generic/bump/type_io.F90
-oops/generic/bump/type_lct_blk.F90
-oops/generic/bump/type_lct.F90
-oops/generic/bump/type_linop.F90
-oops/generic/bump/type_mesh.F90
-oops/generic/bump/type_minim.F90
-oops/generic/bump/type_mom_blk.F90
-oops/generic/bump/type_mom.F90
-oops/generic/bump/type_mpl.F90
-oops/generic/bump/type_msv.F90
-oops/generic/bump/type_nam.F90
-oops/generic/bump/type_nicas_blk.F90
-oops/generic/bump/type_nicas.F90
-oops/generic/bump/type_obsop.F90
-oops/generic/bump/type_rng.F90
-oops/generic/bump/type_samp.F90
-oops/generic/bump/type_tree.F90
-oops/generic/bump/type_vbal_blk.F90
-oops/generic/bump/type_vbal.F90
-oops/generic/bump/external/tools_asa007.F90
-oops/generic/bump/external/tools_qsort.F90
-oops/generic/bump/external/tools_stripack.F90
-
 oops/interface/ErrorCovariance.h
 oops/interface/Geometry.h
 oops/interface/GeometryIterator.h
@@ -369,7 +326,7 @@ ecbuild_add_library( TARGET     oops
                      SOURCES
                                 ${FORTRAN_BINDINGS}
                                 ${oops_src_files}
-                     LIBS       ${LAPACK_LIBRARIES} ${NETCDF_LIBRARIES} fckit eckit_mpi eckit
+                     LIBS       ${LAPACK_LIBRARIES} ${NETCDF_LIBRARIES} fckit eckit_mpi eckit bump
                      INSTALL_HEADERS LISTED
                      LINKER_LANGUAGE ${OOPS_LINKER_LANGUAGE}
                    )

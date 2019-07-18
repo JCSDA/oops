@@ -6,7 +6,8 @@
 module oobump_mod
 
 use config_mod
-use fckit_log_module,only: fckit_log
+use fckit_configuration_module, only: fckit_configuration
+use fckit_log_module, only: fckit_log
 use iso_c_binding
 use kinds
 use missing_values_mod
@@ -466,204 +467,14 @@ type(c_ptr), intent(in) :: conf        !< Configuration
 type(bump_type), intent(inout) :: bump !< BUMP
 
 ! Local variables
-integer :: n,i
-integer,allocatable :: ivec(:)
-character(len=1024),allocatable :: name_ldwv(:)
+type(fckit_configuration) :: fconf
 
-! general_param
-if (config_element_exists(conf,"datadir")) bump%nam%datadir = config_get_string(conf,1024,"datadir")
-if (config_element_exists(conf,"prefix")) bump%nam%prefix = config_get_string(conf,1024,"prefix")
-if (config_element_exists(conf,"verbosity")) bump%nam%verbosity = config_get_string(conf,1024,"verbosity")
-if (config_element_exists(conf,"default_seed")) bump%nam%default_seed = integer_to_logical(config_get_int(conf,"default_seed"))
+! Transform to fckit_configuration
+fconf = fckit_configuration(conf)
 
-! driver_param
-if (config_element_exists(conf,"method")) bump%nam%method = config_get_string(conf,1024,"method")
-if (config_element_exists(conf,"strategy")) bump%nam%strategy = config_get_string(conf,1024,"strategy")
-if (config_element_exists(conf,"new_cortrack")) bump%nam%new_cortrack = integer_to_logical(config_get_int(conf,"new_cortrack"))
-if (config_element_exists(conf,"new_vbal")) bump%nam%new_vbal = integer_to_logical(config_get_int(conf,"new_vbal"))
-if (config_element_exists(conf,"load_vbal")) bump%nam%load_vbal = integer_to_logical(config_get_int(conf,"load_vbal"))
-if (config_element_exists(conf,"write_vbal")) bump%nam%write_vbal = integer_to_logical(config_get_int(conf,"write_vbal"))
-if (config_element_exists(conf,"new_mom")) bump%nam%new_mom = integer_to_logical(config_get_int(conf,"new_mom"))
-if (config_element_exists(conf,"load_mom")) bump%nam%load_mom = integer_to_logical(config_get_int(conf,"load_mom"))
-if (config_element_exists(conf,"write_mom")) bump%nam%write_mom = integer_to_logical(config_get_int(conf,"write_mom"))
-if (config_element_exists(conf,"new_hdiag")) bump%nam%new_hdiag = integer_to_logical(config_get_int(conf,"new_hdiag"))
-if (config_element_exists(conf,"write_hdiag")) bump%nam%write_hdiag = integer_to_logical(config_get_int(conf,"write_hdiag"))
-if (config_element_exists(conf,"new_lct")) bump%nam%new_lct = integer_to_logical(config_get_int(conf,"new_lct"))
-if (config_element_exists(conf,"write_lct")) bump%nam%write_lct = integer_to_logical(config_get_int(conf,"write_lct"))
-if (config_element_exists(conf,"load_cmat")) bump%nam%load_cmat = integer_to_logical(config_get_int(conf,"load_cmat"))
-if (config_element_exists(conf,"write_cmat")) bump%nam%write_cmat = integer_to_logical(config_get_int(conf,"write_cmat"))
-if (config_element_exists(conf,"new_nicas")) bump%nam%new_nicas = integer_to_logical(config_get_int(conf,"new_nicas"))
-if (config_element_exists(conf,"load_nicas")) bump%nam%load_nicas = integer_to_logical(config_get_int(conf,"load_nicas"))
-if (config_element_exists(conf,"write_nicas")) bump%nam%write_nicas = integer_to_logical(config_get_int(conf,"write_nicas"))
-if (config_element_exists(conf,"new_obsop")) bump%nam%new_obsop = integer_to_logical(config_get_int(conf,"new_obsop"))
-if (config_element_exists(conf,"load_obsop")) bump%nam%load_obsop = integer_to_logical(config_get_int(conf,"load_obsop"))
-if (config_element_exists(conf,"write_obsop")) bump%nam%write_obsop = integer_to_logical(config_get_int(conf,"write_obsop"))
-if (config_element_exists(conf,"check_vbal")) bump%nam%check_vbal = integer_to_logical(config_get_int(conf,"check_vbal"))
-if (config_element_exists(conf,"check_adjoints")) &
- & bump%nam%check_adjoints = integer_to_logical(config_get_int(conf,"check_adjoints"))
-if (config_element_exists(conf,"check_pos_def")) &
- & bump%nam%check_pos_def = integer_to_logical(config_get_int(conf,"check_pos_def"))
-if (config_element_exists(conf,"check_dirac")) bump%nam%check_dirac = integer_to_logical(config_get_int(conf,"check_dirac"))
-if (config_element_exists(conf,"check_randomization")) & 
- & bump%nam%check_randomization = integer_to_logical(config_get_int(conf,"check_randomization"))
-if (config_element_exists(conf,"check_consistency")) &
- & bump%nam%check_consistency = integer_to_logical(config_get_int(conf,"check_consistency"))
-if (config_element_exists(conf,"check_optimality")) &
- & bump%nam%check_optimality = integer_to_logical(config_get_int(conf,"check_optimality"))
-if (config_element_exists(conf,"check_obsop")) &
- & bump%nam%check_obsop = integer_to_logical(config_get_int(conf,"check_obsop"))
-
-! model_param
-if (config_element_exists(conf,"nomask")) bump%nam%nomask = integer_to_logical(config_get_int(conf,"nomask"))
-
-! sampling_param
-if (config_element_exists(conf,"sam_read")) bump%nam%sam_read = integer_to_logical(config_get_int(conf,"sam_read"))
-if (config_element_exists(conf,"sam_write")) bump%nam%sam_write = integer_to_logical(config_get_int(conf,"sam_write"))
-if (config_element_exists(conf,"mask_type")) bump%nam%mask_type = config_get_string(conf,1024,"mask_type")
-if (config_element_exists(conf,"mask_lu")) bump%nam%mask_lu = config_get_string(conf,1024,"mask_lu")
-if (config_element_exists(conf,"mask_th")) bump%nam%mask_th = config_get_real(conf,"mask_th")
-if (config_element_exists(conf,"ncontig_th")) bump%nam%ncontig_th = config_get_int(conf,"ncontig_th")
-if (config_element_exists(conf,"mask_check")) bump%nam%mask_check = integer_to_logical(config_get_int(conf,"mask_check"))
-if (config_element_exists(conf,"draw_type")) bump%nam%draw_type = config_get_string(conf,1024,"draw_type")
-if (config_element_exists(conf,"Lcoast")) bump%nam%Lcoast = config_get_real(conf,"Lcoast")
-if (config_element_exists(conf,"rcoast")) bump%nam%rcoast = config_get_real(conf,"rcoast")
-if (config_element_exists(conf,"nc1")) bump%nam%nc1 = config_get_int(conf,"nc1")
-if (config_element_exists(conf,"nc2")) bump%nam%nc2 = config_get_int(conf,"nc2")
-if (config_element_exists(conf,"ntry")) bump%nam%ntry = config_get_int(conf,"ntry")
-if (config_element_exists(conf,"nrep")) bump%nam%nrep = config_get_int(conf,"nrep")
-if (config_element_exists(conf,"nc3")) bump%nam%nc3 = config_get_int(conf,"nc3")
-if (config_element_exists(conf,"dc")) bump%nam%dc = config_get_real(conf,"dc")
-if (config_element_exists(conf,"nl0r")) bump%nam%nl0r = config_get_int(conf,"nl0r")
-if (config_element_exists(conf,"irmax")) bump%nam%irmax = config_get_int(conf,"irmax")
-
-! diag_param
-if (config_element_exists(conf,"ne")) bump%nam%ne = config_get_int(conf,"ne")
-if (config_element_exists(conf,"gau_approx")) bump%nam%gau_approx = integer_to_logical(config_get_int(conf,"gau_approx"))
-if (config_element_exists(conf,"avg_nbins")) bump%nam%avg_nbins = config_get_int(conf,"avg_nbins")
-if (config_element_exists(conf,"vbal_block")) then
-  n = config_get_data_dimension(conf,"vbal_block")
-  allocate(ivec(n))
-  call config_get_int_vector(conf,"vbal_block",ivec)
-  do i=1,n
-    bump%nam%vbal_block(i) = integer_to_logical(ivec(i))
-  end do
-  deallocate(ivec)
-end if
-if (config_element_exists(conf,"vbal_rad")) bump%nam%vbal_rad = config_get_real(conf,"vbal_rad")
-if (config_element_exists(conf,"var_filter")) bump%nam%var_filter = integer_to_logical(config_get_int(conf,"var_filter"))
-if (config_element_exists(conf,"var_niter")) bump%nam%var_niter = config_get_int(conf,"var_niter")
-if (config_element_exists(conf,"var_rhflt")) bump%nam%var_rhflt = config_get_real(conf,"var_rhflt")
-if (config_element_exists(conf,"local_diag")) bump%nam%local_diag = integer_to_logical(config_get_int(conf,"local_diag"))
-if (config_element_exists(conf,"local_rad")) bump%nam%local_rad = config_get_real(conf,"local_rad")
-if (config_element_exists(conf,"adv_diag")) bump%nam%adv_diag = integer_to_logical(config_get_int(conf,"adv_diag"))
-if (config_element_exists(conf,"adv_rad")) bump%nam%adv_rad = config_get_real(conf,"adv_rad")
-if (config_element_exists(conf,"adv_niter")) bump%nam%adv_niter = config_get_int(conf,"adv_niter")
-if (config_element_exists(conf,"adv_rhflt")) bump%nam%adv_rhflt = config_get_real(conf,"adv_rhflt")
-
-! fit_param
-if (config_element_exists(conf,"minim_algo")) bump%nam%minim_algo = config_get_string(conf,1024,"minim_algo")
-if (config_element_exists(conf,"double_fit")) then
-  n = config_get_data_dimension(conf,"double_fit")
-  allocate(ivec(n))
-  call config_get_int_vector(conf,"double_fit",ivec)
-  do i=1,n
-    bump%nam%double_fit(i) = integer_to_logical(ivec(i))
-  end do
-  deallocate(ivec)
-end if
-if (config_element_exists(conf,"lhomh")) bump%nam%lhomh = integer_to_logical(config_get_int(conf,"lhomh"))
-if (config_element_exists(conf,"lhomv")) bump%nam%lhomv = integer_to_logical(config_get_int(conf,"lhomv"))
-if (config_element_exists(conf,"rvflt")) bump%nam%rvflt = config_get_real(conf,"rvflt")
-if (config_element_exists(conf,"lct_nscales")) bump%nam%lct_nscales = config_get_int(conf,"lct_nscales")
-if (config_element_exists(conf,"lct_diag")) then
-  n = config_get_data_dimension(conf,"lct_diag")
-  allocate(ivec(n))
-  call config_get_int_vector(conf,"lct_diag",ivec)
-  do i=1,n
-    bump%nam%lct_diag(i) = integer_to_logical(ivec(i))
-  end do
-  deallocate(ivec)
-end if
-
-! nicas_param
-if (config_element_exists(conf,"nonunit_diag")) bump%nam%nonunit_diag = integer_to_logical(config_get_int(conf,"nonunit_diag"))
-if (config_element_exists(conf,"lsqrt")) bump%nam%lsqrt = integer_to_logical(config_get_int(conf,"lsqrt"))
-if (config_element_exists(conf,"resol")) bump%nam%resol = config_get_real(conf,"resol")
-if (config_element_exists(conf,"fast_sampling")) bump%nam%fast_sampling =  integer_to_logical(config_get_int(conf, &
- & "fast_sampling"))
-if (config_element_exists(conf,"subsamp")) bump%nam%subsamp = config_get_string(conf,1024,"subsamp")
-if (config_element_exists(conf,"nicas_interp")) bump%nam%nicas_interp = config_get_string(conf,1024,"nicas_interp")
-if (config_element_exists(conf,"network")) bump%nam%network = integer_to_logical(config_get_int(conf,"network"))
-if (config_element_exists(conf,"mpicom")) bump%nam%mpicom = config_get_int(conf,"mpicom")
-if (config_element_exists(conf,"adv_mode")) bump%nam%adv_mode = config_get_int(conf,"adv_mode")
-if (config_element_exists(conf,"forced_radii")) bump%nam%forced_radii = integer_to_logical(config_get_int(conf,"forced_radii"))
-if (config_element_exists(conf,"rh")) bump%nam%rh = config_get_real(conf,"rh")
-if (config_element_exists(conf,"rv")) bump%nam%rv = config_get_real(conf,"rv")
-if (config_element_exists(conf,"write_grids")) bump%nam%write_grids = integer_to_logical(config_get_int(conf,"write_grids"))
-if (config_element_exists(conf,"ndir")) bump%nam%ndir = config_get_int(conf,"ndir")
-if (config_element_exists(conf,"londir")) then
-  n = config_get_data_dimension(conf,"londir")
-  call config_get_double_vector(conf,"londir",bump%nam%londir(1:n))
-end if
-if (config_element_exists(conf,"latdir")) then
-  n = config_get_data_dimension(conf,"latdir")
-  call config_get_double_vector(conf,"latdir",bump%nam%latdir(1:n))
-end if
-if (config_element_exists(conf,"levdir")) then
-  n = config_get_data_dimension(conf,"levdir")
-  call config_get_int_vector(conf,"levdir",bump%nam%levdir(1:n))
-end if
-if (config_element_exists(conf,"ivdir")) then
-  n = config_get_data_dimension(conf,"ivdir")
-  call config_get_int_vector(conf,"ivdir",bump%nam%ivdir(1:n))
-end if
-if (config_element_exists(conf,"itsdir")) then
-  n = config_get_data_dimension(conf,"itsdir")
-  call config_get_int_vector(conf,"itsdir",bump%nam%itsdir(1:n))
-end if
-
-! output_param
-if (config_element_exists(conf,"nldwv")) bump%nam%nldwv = config_get_int(conf,"nldwv")
-if (config_element_exists(conf,"lon_ldwv")) then
-  n = config_get_data_dimension(conf,"lon_ldwv")
-  call config_get_double_vector(conf,"lon_ldwv",bump%nam%lon_ldwv(1:n))
-end if
-if (config_element_exists(conf,"lat_ldwv")) then
-  n = config_get_data_dimension(conf,"lat_ldwv")
-  call config_get_double_vector(conf,"lat_ldwv",bump%nam%lat_ldwv(1:n))
-end if
-if (config_element_exists(conf,"name_ldwv")) then
-  n = config_get_data_dimension(conf,"name_ldwv")
-  name_ldwv = config_get_string_vector(conf,1024,"name_ldwv")
-  bump%nam%name_ldwv(1:n) = name_ldwv
-end if
-if (config_element_exists(conf,"diag_rhflt")) bump%nam%diag_rhflt = config_get_real(conf,"diag_rhflt")
-if (config_element_exists(conf,"diag_interp")) bump%nam%diag_interp = config_get_string(conf,1024,"diag_interp")
-if (config_element_exists(conf,"grid_output")) bump%nam%grid_output = integer_to_logical(config_get_int(conf,"grid_output"))
-if (config_element_exists(conf,"grid_resol")) bump%nam%grid_resol = config_get_real(conf,"grid_resol")
-if (config_element_exists(conf,"grid_interp")) bump%nam%grid_interp = config_get_string(conf,1024,"grid_interp")
+! Set BUMP namelist from fckit_configuration
+call bump%nam%from_conf(fconf)
 
 end subroutine bump_read_conf
-!-------------------------------------------------------------------------------
-!> Convert integer to logical
-function integer_to_logical(i)
-
-implicit none
-
-! Passed variables
-integer,intent(in) :: i ! Integer to transform
-
-! Returned argument
-logical :: integer_to_logical
-
-if (i==0) then
-   integer_to_logical = .false.
-elseif (i==1) then
-   integer_to_logical = .true.
-else
-   call abor1_ftn('wrong integer in integer_to_logical')
-end if
-
-end function integer_to_logical
 !-------------------------------------------------------------------------------
 end module oobump_mod
