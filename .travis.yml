@@ -59,7 +59,9 @@ before_install:
   - docker build -t jcsda/dockerl2 --build-arg=Dockerfile .  #Dockerfile handles ssh for mpi
   - date
   - docker images
-  - docker run -d -t --name jcsda_container -v ${REPO_SOURCE_DIR}/oops-bundle:/jcsda/src_repo jcsda/dockerl2
+# request codecov to detect CI environment to pass through to docker
+  - ci_env=`bash <(curl -s https://codecov.io/env)`
+  - docker run -d -t $ci_env --name jcsda_container -v ${REPO_SOURCE_DIR}/oops-bundle:/jcsda/src_repo jcsda/dockerl2
   - docker ps -a
   - date
 
@@ -78,10 +80,10 @@ script:
   - docker exec jcsda_container bash -c 'cd /build_container/oops && ctest'
   - date
 ##  run lcov inside container
-#Disable test coverage analysis
-#  - docker exec jcsda_container bash -c 'cd /build_container && lcov --capture --directory . --output-file coverage.info'
-#  - docker exec jcsda_container bash -c 'cd /build_container && lcov --remove coverage.info "/usr/*" --output-file coverage.info'  #  filter system-files 
-#  - docker exec jcsda_container bash -c 'cd /build_container && lcov --list coverage.info'  #  debug info
-#  - docker exec jcsda_container bash -c 'cd /build_container/oops && bash <(curl -s https://codecov.io/bash) -t 3b511d7d-c15d-4ee5-8a1e-29c6d97d2032  -X gcov -f coverage.info -R /jcsda/src_repo/oops/'
+  - docker exec jcsda_container bash -c 'cd /build_container/oops && lcov --capture --directory . --output-file coverage.info'
+  - docker exec jcsda_container bash -c 'cd /build_container/oops && lcov --remove coverage.info "/usr/*" --output-file coverage.info'  #  filter system-files 
+  - docker exec jcsda_container bash -c 'cd /build_container/oops && lcov --list coverage.info'  #  debug info
+  - docker exec jcsda_container bash -c 'cd /build_container/oops && bash <(curl -s https://codecov.io/bash) -t 3b511d7d-c15d-4ee5-8a1e-29c6d97d2032  -X gcov -f coverage.info -R /jcsda/src_repo/oops/'
+
 
 
