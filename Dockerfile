@@ -3,19 +3,6 @@ FROM  jcsda/docker:latest
 RUN touch /env.txt
 RUN printenv > /env.txt
 
-#build fckit
-RUN git clone https://github.com/JCSDA/fckit.git \
-    && cd fckit \
-    && git checkout develop \
-    && mkdir build \
-    && cd  build \
-    && ecbuild -build=Debug .. \
-    && make -j`nproc` \
-    && make install \
-    && cd ../../ \
-    && rm -fr ecbuild \
-    && rm -fr fckit
-
 #build lcov
 RUN cd /usr/local/src \
     && curl -L -O http://downloads.sourceforge.net/ltp/lcov-1.14.tar.gz \
