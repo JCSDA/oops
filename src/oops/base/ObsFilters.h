@@ -48,6 +48,7 @@ class ObsFilters : public util::Printable,
   ObsFilters();
   ~ObsFilters();
 
+  void preProcess() const;
   void priorFilter(const GeoVaLs_ &) const;
   void postFilter(const ObsVector_ &) const;
 
@@ -107,6 +108,15 @@ ObsFilters<MODEL>::ObsFilters() : filters_(), geovars_() {}
 template <typename MODEL>
 ObsFilters<MODEL>::~ObsFilters() {
   Log::trace() << "ObsFilters::~ObsFilters destructed" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void ObsFilters<MODEL>::preProcess() const {
+  for (std::size_t jj = 0; jj < filters_.size(); ++jj) {
+    filters_.at(jj)->preProcess();
+  }
 }
 
 // -----------------------------------------------------------------------------

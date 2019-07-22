@@ -28,6 +28,7 @@ class QCmanager : public util::Printable {
             boost::shared_ptr<ObsDataQG<int> >, boost::shared_ptr<ObsDataQG<float> >): novars_() {}
   ~QCmanager() {}
 
+  void preProcess() const {}
   void priorFilter(const GomQG &) const {}
   void postFilter(const ObsVecQG &) const {}
 

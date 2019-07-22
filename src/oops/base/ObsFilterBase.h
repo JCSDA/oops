@@ -38,6 +38,7 @@ class ObsFilterBase : public util::Printable,
   ObsFilterBase() {}
   virtual ~ObsFilterBase() {}
 
+  virtual void preProcess() const = 0;
   virtual void priorFilter(const GeoVaLs_ &) const = 0;
   virtual void postFilter(const ObsVector_ &) const = 0;
 

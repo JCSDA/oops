@@ -34,6 +34,8 @@ class GeoVaLsWriter : public ObsFilterBase<MODEL> {
                 ObsDataPtr_<int>, ObsDataPtr_<float>): conf_(conf), geovars_() {}
   ~GeoVaLsWriter() {}
 
+  void preProcess() const override {}
+
   void priorFilter(const GeoVaLs_ & gv) const override {
     const double zz = sqrt(dot_product(gv, gv));
     Log::debug() << "GeoVaLsWriter norm = " << zz << std::endl;

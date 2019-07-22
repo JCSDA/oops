@@ -43,6 +43,7 @@ class ObsFilter : public ObsFilterBase<MODEL> {
             ObsDataPtr_<int>, ObsDataPtr_<float>);
   ~ObsFilter();
 
+  void preProcess() const override;
   void priorFilter(const GeoVaLs_ &) const override;
   void postFilter(const ObsVector_ &) const override;
 
@@ -87,9 +88,19 @@ ObsFilter<MODEL, FILTER>::~ObsFilter() {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename FILTER>
+void ObsFilter<MODEL, FILTER>::preProcess() const {
+  Log::trace() << "ObsFilter<MODEL, FILTER>:: preProcess starting" << std::endl;
+  util::Timer timer(classname(), "preProcess");
+  ofilt_->preProcess();
+  Log::trace() << "ObsFilter<MODEL, FILTER>:: preProcess done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename FILTER>
 void ObsFilter<MODEL, FILTER>::priorFilter(const GeoVaLs_ & gv) const {
   Log::trace() << "ObsFilter<MODEL, FILTER>:: priorFilter starting" << std::endl;
-  util::Timer timer(classname(), "ObsFilter");
+  util::Timer timer(classname(), "priorFilter");
   ofilt_->priorFilter(gv.geovals());
   Log::trace() << "ObsFilter<MODEL, FILTER>:: priorFilter done" << std::endl;
 }
@@ -99,7 +110,7 @@ void ObsFilter<MODEL, FILTER>::priorFilter(const GeoVaLs_ & gv) const {
 template <typename MODEL, typename FILTER>
 void ObsFilter<MODEL, FILTER>::postFilter(const ObsVector_ & ov) const {
   Log::trace() << "ObsFilter<MODEL, FILTER>::postFilter starting" << std::endl;
-  util::Timer timer(classname(), "ObsFilter");
+  util::Timer timer(classname(), "postFilter");
   ofilt_->postFilter(ov.obsvector());
   Log::trace() << "ObsFilter<MODEL, FILTER>::postFilter done" << std::endl;
 }

@@ -66,6 +66,7 @@ template <typename MODEL> void testFilters() {
     ObsFilters_ filters(Test_::obspace()[jj], typeconfs[jj], qcflags, obserr);
 
 //  Run filters
+    filters.preProcess();
     filters.priorFilter(gval);
     hop.simulateObs(gval, ovec, ybias);
     filters.postFilter(ovec);

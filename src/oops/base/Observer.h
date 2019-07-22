@@ -112,6 +112,7 @@ void Observer<MODEL>::doInitialize(const State_ & xx,
                                    const util::DateTime & begin,
                                    const util::DateTime & end) {
   Log::trace() << "Observer::doInitialize start" << std::endl;
+  filters_->preProcess();
   gvals_.reset(new GeoVaLs_(hop_.locations(begin, end), geovars_));
   Log::trace() << "Observer::doInitialize done" << std::endl;
 }
