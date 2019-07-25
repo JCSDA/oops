@@ -44,8 +44,8 @@ endif()
 # Dependencies
 ################################################################################
 
-# Boost 
-# only boost headers 
+# Boost
+# only boost headers
 include_directories( ${Boost_INCLUDE_DIR} )
 
 # LAPACK
@@ -84,13 +84,18 @@ endif()
 ecbuild_use_package( PROJECT fckit VERSION 0.4.1 REQUIRED )
 include_directories( ${FCKIT_INCLUDE_DIRS} )
 
+# saber
+ecbuild_use_package( PROJECT saber VERSION 0.0.1 REQUIRED )
+include_directories( ${SABER_INCLUDE_DIRS} )
+
 ################################################################################
 # Export package info
 ################################################################################
 
-list( APPEND OOPS_TPLS LAPACK NetCDF eckit fckit )
+list( APPEND OOPS_TPLS LAPACK NetCDF eckit fckit saber )
 
-set( OOPS_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/src
+set( OOPS_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src
+                       ${CMAKE_CURRENT_BINARY_DIR}/src
                        ${CMAKE_Fortran_MODULE_DIRECTORY} )
 set( OOPS_LIBRARIES oops )
 

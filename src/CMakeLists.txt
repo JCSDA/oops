@@ -290,7 +290,7 @@ list( APPEND oops_test_input
   test/testinput/pushstringvector.yaml
 )
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test/testinput)
-CREATE_SYMLINK( ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${oops_test_input} )  
+CREATE_SYMLINK( ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${oops_test_input} )
 
 function(generate_fortran_bindings output filename)
 
@@ -326,7 +326,7 @@ ecbuild_add_library( TARGET     oops
                      SOURCES
                                 ${FORTRAN_BINDINGS}
                                 ${oops_src_files}
-                     LIBS       ${LAPACK_LIBRARIES} ${NETCDF_LIBRARIES} fckit eckit_mpi eckit bump
+                     LIBS       ${LAPACK_LIBRARIES} ${NETCDF_LIBRARIES} fckit eckit_mpi eckit saber
                      INSTALL_HEADERS LISTED
                      LINKER_LANGUAGE ${OOPS_LINKER_LANGUAGE}
                    )
@@ -338,12 +338,12 @@ ecbuild_add_test( TARGET oops_coding_norms
 
 ecbuild_add_test( TARGET  test_util_random
                   SOURCES test/base/Random.cc
-		  ARGS    "test/testinput/random.yaml"
+                  ARGS    "test/testinput/random.yaml"
                   LIBS    oops )
 
 ecbuild_add_test( TARGET  test_util_pushstringvector
                   SOURCES test/base/FCString.cc
-		  ARGS    "test/testinput/pushstringvector.yaml"
+                  ARGS    "test/testinput/pushstringvector.yaml"
                   LIBS    oops )
 
 ecbuild_add_test( TARGET  test_util_datetime
