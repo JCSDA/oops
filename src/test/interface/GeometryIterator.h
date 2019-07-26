@@ -11,8 +11,9 @@
 #ifndef TEST_INTERFACE_GEOMETRYITERATOR_H_
 #define TEST_INTERFACE_GEOMETRYITERATOR_H_
 
-#include <math.h>
+#include <cmath>
 #include <memory>
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -22,12 +23,14 @@
 
 #include "eckit/config/Configuration.h"
 #include "eckit/testing/Test.h"
+
 #include "oops/base/GridPoint.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/interface/State.h"
 #include "oops/runs/Test.h"
+
 #include "test/TestEnvironment.h"
 
 namespace test {

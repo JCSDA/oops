@@ -15,6 +15,14 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
+#include "eckit/exception/Exceptions.h"
+
+#include "oops/generic/UnstructuredGrid.h"
+#include "oops/util/abor1_cpp.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
+
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/GomL95.h"
 #include "lorenz95/IncrementL95.h"
@@ -24,11 +32,7 @@
 #include "lorenz95/ModelTrajectory.h"
 #include "lorenz95/Nothing.h"
 #include "lorenz95/Resolution.h"
-#include "oops/generic/UnstructuredGrid.h"
-#include "oops/util/abor1_cpp.h"
-#include "oops/util/DateTime.h"
-#include "oops/util/Duration.h"
-#include "oops/util/Logger.h"
+
 
 namespace oops {
   class Variables;

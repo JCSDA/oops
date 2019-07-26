@@ -11,6 +11,8 @@
 #include "lorenz95/LocsL95.h"
 
 #include "eckit/config/Configuration.h"
+#include "eckit/exception/Exceptions.h"
+
 #include "lorenz95/ObsTable.h"
 #include "oops/util/DateTime.h"
 

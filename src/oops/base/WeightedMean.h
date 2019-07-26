@@ -15,6 +15,8 @@
 #include <map>
 #include <memory>
 
+#include "eckit/exception/Exceptions.h"
+
 #include "oops/base/Accumulator.h"
 #include "oops/base/DolphChebyshev.h"
 #include "oops/base/PostBase.h"

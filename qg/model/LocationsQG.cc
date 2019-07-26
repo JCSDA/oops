@@ -13,6 +13,8 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
+#include "eckit/exception/Exceptions.h"
+
 #include "model/LocationsQG.h"
 #include "model/QgFortran.h"
 

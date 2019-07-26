@@ -10,6 +10,8 @@
 #include<vector>
 
 #include "eckit/config/Configuration.h"
+#include "eckit/types/Types.h"
+
 #include "oops/base/Variables.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"

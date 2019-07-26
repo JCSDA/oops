@@ -8,17 +8,20 @@
 #ifndef LORENZ95_OBSDATA1D_H_
 #define LORENZ95_OBSDATA1D_H_
 
-#include <math.h>
+#include <cmath>
 #include <ostream>
 #include <string>
 #include <vector>
 
-#include "lorenz95/ObsTableView.h"
+#include "eckit/exception/Exceptions.h"
+
 #include "oops/base/Variables.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
+
+#include "lorenz95/ObsTableView.h"
 
 namespace lorenz95 {
 

@@ -13,6 +13,8 @@
 #include <fstream>
 #include <string>
 
+#include "eckit/exception/Exceptions.h"
+
 #include "oops/generic/UnstructuredGrid.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"

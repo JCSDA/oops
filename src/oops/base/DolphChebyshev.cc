@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
+#include "eckit/exception/Exceptions.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 

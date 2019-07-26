@@ -37,11 +37,13 @@ integer,intent(in) :: length       !< Length
 type(datetime),intent(in) :: vdate !< Date and time
 
 ! Result
-character(len=length) :: genfilename
+character(len=2*length) :: genfilename
 
 ! Local variables
 integer :: lenfn
-character(len=length) :: fdbdir,expver,typ,validitydate,referencedate,sstep,prefix,mmb
+character(len=length) :: fdbdir,expver,typ,validitydate,referencedate,sstep,mmb
+character(len=2*length) :: prefix
+
 type(datetime) :: rdate
 type(duration) :: step
 

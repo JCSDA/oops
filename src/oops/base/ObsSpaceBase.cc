@@ -8,6 +8,7 @@
 #include "oops/base/ObsSpaceBase.h"
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/exception/Exceptions.h"
 
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"

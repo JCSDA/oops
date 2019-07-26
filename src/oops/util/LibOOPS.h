@@ -38,6 +38,7 @@ class LibOOPS : public eckit::system::Library {
   virtual eckit::Channel& statsChannel() const;
   virtual eckit::Channel& testChannel() const;
 
+  void initialise();
   void finalise();
 
  protected:

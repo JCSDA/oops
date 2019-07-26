@@ -104,7 +104,7 @@ namespace {
     util::Duration d1(s1);
     std::stringstream strm;
     strm << d1;
-    std::string(s2);
+    std::string s2;
     strm >> s2;
     EXPECT(s2 == s1);
   }

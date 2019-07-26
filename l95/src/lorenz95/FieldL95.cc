@@ -16,6 +16,8 @@
 #include <string>
 
 #include "eckit/config/Configuration.h"
+#include "eckit/exception/Exceptions.h"
+
 #include "lorenz95/GomL95.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/Resolution.h"

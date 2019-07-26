@@ -8,20 +8,23 @@
  * does it submit to any jurisdiction.
  */
 
-#include <vector>
-
 #include "model/TlmIdQG.h"
 
+#include <vector>
+
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/exception/Exceptions.h"
+
+#include "oops/util/abor1_cpp.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Logger.h"
+
 #include "model/GeometryQG.h"
 #include "model/IncrementQG.h"
 #include "model/ModelBiasIncrement.h"
 #include "model/QgFortran.h"
 #include "model/QgTraits.h"
 #include "model/StateQG.h"
-#include "oops/util/abor1_cpp.h"
-#include "oops/util/DateTime.h"
-#include "oops/util/Logger.h"
 
 namespace qg {
 // -----------------------------------------------------------------------------

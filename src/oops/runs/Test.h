@@ -13,17 +13,21 @@
 
 #include <cmath>
 #include <cstring>
+#include <iomanip>
 #include <limits>
 #include <string>
 #include <vector>
 
 #include <boost/tokenizer.hpp>
+
 #include "eckit/config/Configuration.h"
-#include "eckit/parser/Tokenizer.h"
 #include "eckit/testing/Test.h"
+#include "eckit/utils/Tokenizer.h"
+
 #include "oops/runs/Application.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
+
 #include "test/TestEnvironment.h"
 
 namespace oops {

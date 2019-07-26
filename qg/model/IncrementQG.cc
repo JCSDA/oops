@@ -16,6 +16,14 @@
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/exception/Exceptions.h"
+
+#include "oops/base/Variables.h"
+#include "oops/generic/UnstructuredGrid.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
+
 #include "model/ErrorCovarianceQG.h"
 #include "model/FieldsQG.h"
 #include "model/GeometryQG.h"
@@ -24,11 +32,6 @@
 #include "model/ModelBiasIncrement.h"
 #include "model/Nothing.h"
 #include "model/StateQG.h"
-#include "oops/base/Variables.h"
-#include "oops/generic/UnstructuredGrid.h"
-#include "oops/util/DateTime.h"
-#include "oops/util/Duration.h"
-#include "oops/util/Logger.h"
 
 namespace qg {
 

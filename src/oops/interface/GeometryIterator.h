@@ -15,8 +15,8 @@
 #include <memory>
 #include <string>
 
-
 #include "eckit/geometry/Point2.h"
+
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"

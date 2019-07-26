@@ -8,6 +8,7 @@
 #ifndef OOPS_GENERIC_PARAMETERSBUMP_H_
 #define OOPS_GENERIC_PARAMETERSBUMP_H_
 
+#include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -15,6 +16,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #include "eckit/config/Configuration.h"
+
 #include "oops/assimilation/Increment4D.h"
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/Variables.h"

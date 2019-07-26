@@ -14,6 +14,8 @@
 
 #include <boost/noncopyable.hpp>
 
+#include "eckit/exception/Exceptions.h"
+
 #include "oops/base/ModelBase.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"

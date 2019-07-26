@@ -14,6 +14,10 @@
 
 #include "eckit/config/Configuration.h"
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/exception/Exceptions.h"
+
+#include "oops/util/DateTime.h"
+#include "oops/util/Logger.h"
 
 #include "model/FieldsQG.h"
 #include "model/GeometryQG.h"
@@ -21,8 +25,6 @@
 #include "model/QgFortran.h"
 #include "model/StateQG.h"
 
-#include "oops/util/DateTime.h"
-#include "oops/util/Logger.h"
 
 namespace qg {
 // -----------------------------------------------------------------------------

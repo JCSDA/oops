@@ -11,7 +11,10 @@
 #include <map>
 #include <memory>
 #include <string>
+
 #include <boost/noncopyable.hpp>
+
+#include "eckit/exception/Exceptions.h"
 
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"

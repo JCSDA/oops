@@ -21,6 +21,8 @@
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/exception/Exceptions.h"
+
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ObsVec1D.h"
 #include "oops/util/abor1_cpp.h"

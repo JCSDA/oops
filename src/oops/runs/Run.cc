@@ -29,8 +29,8 @@ namespace oops {
 // -----------------------------------------------------------------------------
 
 Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(), timer_() {
-// Initialize MPI
-  oops::mpi::comm().communicator();
+  // Initialize MPI and LibOOPS variables that require eckit::Main
+  LibOOPS::instance().initialise();
 
 // Get configuration file and optional output file from command line
   ASSERT(argc >= 2);
@@ -55,10 +55,7 @@ Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(
 // -----------------------------------------------------------------------------
 
 Run::~Run() {
-  LibOOPS::instance().finalise();
-// This is included to address a bug in OpenMPI on Mac OS (seen for version 3.1.1)
-// see ECKIT issue 166
-  eckit::mpi::finaliseAllComms();
+  LibOOPS::instance().finalise();  // Finalize MPI and logs
 }
 
 // -----------------------------------------------------------------------------

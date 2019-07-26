@@ -10,9 +10,11 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <numeric>
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/types/Types.h"
 
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"

@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <string>
 
+#include "eckit/log/Log.h"
 #include "eckit/log/OStreamTarget.h"
 #include "eckit/log/PrefixTarget.h"
 #include "eckit/utils/Translator.h"
@@ -40,7 +41,7 @@ int getEnv(const std::string& env, int default_value) {
 
 static LibOOPS liboops;
 
-LibOOPS::LibOOPS() : Library("oops"), rank_(oops::mpi::comm().rank()),
+LibOOPS::LibOOPS() : Library("oops"), rank_(0),
                      debug_(false), predebug_("OOPS_DEBUG"),
                      trace_(false), pretrace_("OOPS_TRACE") {
   const int it = getEnv("OOPS_TRACE", 0);
@@ -64,17 +65,31 @@ LibOOPS& LibOOPS::instance() {
   return liboops;
 }
 
-void LibOOPS::finalise() {
-  eckit::Log::flush();
+/** Initialization of MPI and dependent variables.
+ * To be called in `main()` by constructor of `oops::Run`.  This method initializes MPI and 
+ * associated variables that must be initialized after static-init time, and only once `eckit::Main`
+ * has been created.
+ */
+void LibOOPS::initialise() {
+    rank_ = oops::mpi::comm().rank();
+}
 
-  // Make sure that these specialised channels that wrap eckit::Log::info() are
-  // destroyed before eckit::Log::info gets destroyed.
-  // Just in case someone still tries to log, we reset to empty channels.
-  infoChannel_.reset(new eckit::Channel());
-  debugChannel_.reset(new eckit::Channel());
-  traceChannel_.reset(new eckit::Channel());
-  statsChannel_.reset(new eckit::Channel());
-  testChannel_. reset(new eckit::Channel());
+/** Finalization of MPI and clearing of logs.
+ * To be called in on leaving `main()` by the destructor of `oops::Run`.
+ */
+void LibOOPS::finalise() {
+    eckit::Log::flush();
+
+    // Make sure that these specialised channels that wrap eckit::Log::info() are
+    // destroyed before eckit::Log::info gets destroyed.
+    // Just in case someone still tries to log, we reset to empty channels.
+    infoChannel_.reset(new eckit::Channel());
+    debugChannel_.reset(new eckit::Channel());
+    traceChannel_.reset(new eckit::Channel());
+    statsChannel_.reset(new eckit::Channel());
+    testChannel_. reset(new eckit::Channel());
+
+    eckit::mpi::finaliseAllComms();
 }
 
 const void* LibOOPS::addr() const {return this;}

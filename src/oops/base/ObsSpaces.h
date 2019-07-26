@@ -21,7 +21,9 @@
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/exception/Exceptions.h"
 #include "eckit/geometry/Point2.h"
+
 #include "oops/interface/ObservationSpace.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"

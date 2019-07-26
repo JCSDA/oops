@@ -14,10 +14,10 @@
 #include <memory>
 #include <string>
 
-
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/config/YAMLConfiguration.h"
 #include "eckit/exception/Exceptions.h"
+#include "eckit/filesystem/PathName.h"
 #include "eckit/runtime/Main.h"
 
 namespace test {

@@ -15,6 +15,8 @@
 #include <string>
 
 #include "eckit/config/Configuration.h"
+#include "eckit/exception/Exceptions.h"
+
 #include "lorenz95/ObsBiasCorrection.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Random.h"

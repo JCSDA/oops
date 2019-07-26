@@ -15,6 +15,8 @@
 #include <cmath>
 
 #include "eckit/config/Configuration.h"
+#include "eckit/exception/Exceptions.h"
+
 #include "lorenz95/IncrementL95.h"
 #include "lorenz95/Resolution.h"
 

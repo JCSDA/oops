@@ -20,6 +20,8 @@
 #include <boost/ptr_container/ptr_map.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/exception/Exceptions.h"
+
 #include "oops/assimilation/CostJbState.h"
 #include "oops/assimilation/State4D.h"
 #include "oops/base/Variables.h"
