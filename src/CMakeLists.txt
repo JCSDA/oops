@@ -102,6 +102,7 @@ oops/base/ObsSpaces.h
 oops/base/Observations.h
 oops/base/Observer.h
 oops/base/Observers.h
+oops/base/ObserverTLAD.h
 oops/base/ObserversTLAD.h
 oops/base/PostBase.h
 oops/base/PostBaseTLAD.h

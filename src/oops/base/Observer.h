@@ -148,6 +148,7 @@ template <typename MODEL>
 void Observer<MODEL>::finalizeTraj(const State_ & xx, LinearObsOperator_ & htlad) {
   Log::trace() << "Observer::finalizeTraj start" << std::endl;
   htlad.setTrajectory(*gvals_, ybias_);
+  this->doFinalize();
   Log::trace() << "Observer::finalizeTraj done" << std::endl;
 }
 

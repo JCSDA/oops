@@ -17,7 +17,6 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "oops/base/LinearObsOperators.h"
 #include "oops/base/ObsAuxControls.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
@@ -25,8 +24,6 @@
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/InterpolatorTraj.h"
-#include "oops/interface/ObsAuxControl.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -43,16 +40,13 @@ namespace oops {
 
 template <typename MODEL, typename STATE>
 class Observers : public PostBase<STATE>,
-                 public util::Printable {
+                  public util::Printable {
   typedef GeoVaLs<MODEL>             GeoVaLs_;
-  typedef InterpolatorTraj<MODEL>    InterpolatorTraj_;
-  typedef LinearObsOperators<MODEL>  LinearObsOperators_;
   typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
   typedef ObsFilters<MODEL>          ObsFilters_;
   typedef Observations<MODEL>        Observations_;
   typedef Observer<MODEL>            Observer_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
-  typedef std::vector<boost::shared_ptr<InterpolatorTraj_> > type_vspit;
   typedef boost::shared_ptr<ObsFilters_> PtrFilters_;
 
  public:
@@ -63,16 +57,12 @@ class Observers : public PostBase<STATE>,
 
   Observations_ * release() {return yobs_.release();}
 
-  void processTraj(const STATE &, std::vector<boost::shared_ptr<InterpolatorTraj_> > &) const;
-  void finalizeTraj(const STATE &, LinearObsOperators_ &);
-
  private:
 // Methods
   void doInitialize(const STATE &, const util::DateTime &, const util::Duration &) override;
   void doProcessing(const STATE &) override;
   void doFinalize(const STATE &) override;
   void print(std::ostream &) const override;
-
 
 // Data
   std::unique_ptr<Observations_> yobs_;
@@ -164,35 +154,6 @@ void Observers<MODEL, STATE>::doProcessing(const STATE & xx) {
     observers_[jj]->doProcessing(xx, t1, t2);
   }
   Log::trace() << "Observers::doProcessing done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL, typename STATE>
-void Observers<MODEL, STATE>::processTraj(const STATE & xx, type_vspit & traj) const {
-  Log::trace() << "Observers::processTraj start" << std::endl;
-  util::DateTime t1(xx.validTime()-hslot_);
-  util::DateTime t2(xx.validTime()+hslot_);
-  if (t1 < bgn_) t1 = bgn_;
-  if (t2 > end_) t2 = end_;
-
-// Get state variables at obs locations and trajectory
-  for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    observers_[jj]->processTraj(xx, t1, t2, *traj.at(jj));
-  }
-  Log::trace() << "Observers::processTraj done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL, typename STATE>
-void Observers<MODEL, STATE>::finalizeTraj(const STATE & xx, LinearObsOperators_ & htlad) {
-  Log::trace() << "Observers::finalizeTraj start" << std::endl;
-  for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    observers_[jj]->finalizeTraj(xx, htlad[jj]);
-  }
-  this->doFinalize(xx);
-  Log::trace() << "Observers::finalizeTraj done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

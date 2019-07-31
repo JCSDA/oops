@@ -18,17 +18,14 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/Departures.h"
-#include "oops/base/LinearObsOperators.h"
 #include "oops/base/ObsAuxControls.h"
 #include "oops/base/ObsAuxIncrements.h"
 #include "oops/base/Observations.h"
+#include "oops/base/ObserverTLAD.h"
 #include "oops/base/ObsFilters.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBaseTLAD.h"
-#include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Increment.h"
-#include "oops/interface/InterpolatorTraj.h"
-#include "oops/interface/ObsOperator.h"
 #include "oops/interface/State.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -42,13 +39,11 @@ class ObserversTLAD : public PostBaseTLAD<MODEL> {
   typedef Departures<MODEL>          Departures_;
   typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef Increment<MODEL>           Increment_;
-  typedef InterpolatorTraj<MODEL>    InterpolatorTraj_;
-  typedef LinearObsOperators<MODEL>  LinearObsOperators_;
   typedef Observations<MODEL>        Observations_;
   typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
   typedef ObsAuxIncrements<MODEL>    ObsAuxIncrs_;
+  typedef ObserverTLAD<MODEL>        ObserverTLAD_;
   typedef ObsFilters<MODEL>          ObsFilters_;
-  typedef ObsOperator<MODEL>         ObsOperator_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef State<MODEL>               State_;
   typedef boost::shared_ptr<ObsFilters_> PtrFilters_;
@@ -60,7 +55,7 @@ class ObserversTLAD : public PostBaseTLAD<MODEL> {
                const util::Duration & tslot = util::Duration(0), const bool subwin = false);
   ~ObserversTLAD() {}
 
-  Observations_ * release() {return observer_.release();}
+  Observations_ * release() {return yobs_.release();}
   Departures_ * releaseOutputFromTL() override {return ydeptl_.release();}
   void setupTL(const ObsAuxIncrs_ &);
   void setupAD(boost::shared_ptr<const Departures_>, ObsAuxIncrs_ &);
@@ -82,12 +77,11 @@ class ObserversTLAD : public PostBaseTLAD<MODEL> {
   void doLastAD(Increment_ &) override;
 
 // Obs operator
+  std::vector<std::shared_ptr<ObserverTLAD_>> observerstlad_;
   const ObsSpaces_ & obspace_;
-  std::vector<std::shared_ptr<ObsOperator_>> hop_;
-  LinearObsOperators_ hoptlad_;
-  Observers<MODEL, State_> observer_;
 
 // Data
+  std::unique_ptr<Observations_> yobs_;
   std::unique_ptr<Departures_> ydeptl_;
   const ObsAuxIncrs_ * ybiastl_;
   boost::shared_ptr<const Departures_> ydepad_;
@@ -97,13 +91,10 @@ class ObserversTLAD : public PostBaseTLAD<MODEL> {
   util::DateTime winend_;   //!< End of assimilation window
   util::DateTime bgn_;      //!< Begining of currently active observations
   util::DateTime end_;      //!< End of currently active observations
-  util::Duration hslot_;    //!< Half time slot
+  util::Duration hslot_, hslottraj_;    //!< Half time slot
   const bool subwindows_;
 
-  std::vector<std::vector<boost::shared_ptr<InterpolatorTraj_> > > traj_;
   util::Duration bintstep_;
-
-  std::vector<boost::shared_ptr<GeoVaLs_> > gvals_;
 };
 
 // -----------------------------------------------------------------------------
@@ -114,21 +105,20 @@ ObserversTLAD<MODEL>::ObserversTLAD(const eckit::Configuration & config,
                                   const std::vector<PtrFilters_> filters,
                                   const util::Duration & tslot, const bool subwin)
   : PostBaseTLAD<MODEL>(obsdb.windowStart(), obsdb.windowEnd()),
-    obspace_(obsdb), hop_(0), hoptlad_(obspace_, config),
-    observer_(config, obspace_, ybias, filters, tslot, subwin),
+    observerstlad_(), obspace_(obsdb),
+    yobs_(new Observations_(obspace_)),
     ydeptl_(), ybiastl_(), ydepad_(), ybiasad_(),
     winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
-    bgn_(winbgn_), end_(winend_), hslot_(tslot/2), subwindows_(subwin)
+    bgn_(winbgn_), end_(winend_), hslot_(tslot/2), hslottraj_(tslot/2), subwindows_(subwin)
 {
-  // setup obsoperators
+  // setup observers
   std::vector<eckit::LocalConfiguration> typeconf;
   config.get("ObsTypes", typeconf);
   for (std::size_t jobs = 0; jobs < obsdb.size(); ++jobs) {
-    eckit::LocalConfiguration obsopconf(typeconf[jobs], "ObsOperator");
-    std::shared_ptr<ObsOperator_> tmp(new ObsOperator_(obsdb[jobs], obsopconf));
-    hop_.push_back(tmp);
+    std::shared_ptr<ObserverTLAD_> tmp(new ObserverTLAD_(typeconf[jobs], obsdb[jobs],
+                                       ybias[jobs], (*yobs_)[jobs]));
+    observerstlad_.push_back(tmp);
   }
-
   Log::trace() << "ObserversTLAD::ObserversTLAD" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -136,48 +126,61 @@ template <typename MODEL>
 void ObserversTLAD<MODEL>::doInitializeTraj(const State_ & xx,
                const util::DateTime & end, const util::Duration & tstep) {
   Log::trace() << "ObserversTLAD::doInitializeTraj start" << std::endl;
-
 // Create full trajectory object
   bintstep_ = tstep;
   unsigned int nsteps = 1+(winend_-winbgn_).toSeconds() / bintstep_.toSeconds();
-  for (std::size_t ib = 0; ib < nsteps; ++ib) {
-    std::vector<boost::shared_ptr<InterpolatorTraj_> > obstraj;
-    for (std::size_t jj = 0; jj < obspace_.size(); ++jj) {
-      boost::shared_ptr<InterpolatorTraj_> traj(new InterpolatorTraj_());
-      obstraj.push_back(traj);
-    }
-    traj_.push_back(obstraj);
-  }
 
-  observer_.initialize(xx, end, tstep);
+  const util::DateTime bgn(xx.validTime());
+  if (hslottraj_ == util::Duration(0)) hslottraj_ = tstep/2;
+  if (subwindows_) {
+    if (bgn == end) {
+      bgn_ = bgn - hslottraj_;
+      end_ = end + hslottraj_;
+    } else {
+      bgn_ = bgn;
+      end_ = end;
+    }
+  }
+  if (bgn_ < winbgn_) bgn_ = winbgn_;
+  if (end_ > winend_) end_ = winend_;
+
+  for (std::size_t jj = 0; jj < observerstlad_.size(); ++jj) {
+    observerstlad_[jj]->doInitializeTraj(xx, bgn_, end_, nsteps);
+  }
   Log::trace() << "ObserversTLAD::doInitializeTraj done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 void ObserversTLAD<MODEL>::doProcessingTraj(const State_ & xx) {
   Log::trace() << "ObserversTLAD::doProcessingTraj start" << std::endl;
-
   // Index for current bin
   int ib = (xx.validTime()-winbgn_).toSeconds() / bintstep_.toSeconds();
 
-  // Call nonlinear observer
-  observer_.processTraj(xx, traj_[ib]);
+  util::DateTime t1(xx.validTime()-hslottraj_);
+  util::DateTime t2(xx.validTime()+hslottraj_);
+  if (t1 < bgn_) t1 = bgn_;
+  if (t2 > end_) t2 = end_;
 
+  for (std::size_t jj = 0; jj < observerstlad_.size(); ++jj) {
+    observerstlad_[jj]->doProcessingTraj(xx, t1, t2, ib);
+  }
   Log::trace() << "ObserversTLAD::doProcessingTraj done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 void ObserversTLAD<MODEL>::doFinalizeTraj(const State_ & xx) {
   Log::trace() << "ObserversTLAD::doFinalizeTraj start" << std::endl;
-  observer_.finalizeTraj(xx, hoptlad_);
+  for (std::size_t jj = 0; jj < observerstlad_.size(); ++jj) {
+    observerstlad_[jj]->doFinalizeTraj(xx);
+  }
   Log::trace() << "ObserversTLAD::doFinalizeTraj done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-void ObserversTLAD<MODEL>::setupTL(const ObsAuxIncrs_ & ybias) {
+void ObserversTLAD<MODEL>::setupTL(const ObsAuxIncrs_ & ybiastl) {
   Log::trace() << "ObserversTLAD::setupTL start" << std::endl;
   ydeptl_.reset(new Departures_(obspace_));
-  ybiastl_ = &ybias;
+  ybiastl_ = &ybiastl;
   Log::trace() << "ObserversTLAD::setupTL done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -199,10 +202,8 @@ void ObserversTLAD<MODEL>::doInitializeTL(const Increment_ & dx,
   if (bgn_ < winbgn_) bgn_ = winbgn_;
   if (end_ > winend_) end_ = winend_;
 
-  for (std::size_t jj = 0; jj < hop_.size(); ++jj) {
-    boost::shared_ptr<GeoVaLs_>
-      gom(new GeoVaLs_(hop_[jj]->locations(bgn_, end_), hoptlad_.variables(jj)));
-    gvals_.push_back(gom);
+  for (std::size_t jj = 0; jj < observerstlad_.size(); ++jj) {
+    observerstlad_[jj]->doInitializeTL(dx, bgn_, end_);
   }
   Log::trace() << "ObserversTLAD::doInitializeTL done" << std::endl;
 }
@@ -217,31 +218,27 @@ void ObserversTLAD<MODEL>::doProcessingTL(const Increment_ & dx) {
 
 // Index for current bin
   int ib = (dx.validTime()-winbgn_).toSeconds() / bintstep_.toSeconds();
-
-// Get increment variables at obs locations
-  for (std::size_t jj = 0; jj < hop_.size(); ++jj) {
-    dx.getValuesTL(hop_[jj]->locations(t1, t2), hoptlad_.variables(jj),
-                   *gvals_.at(jj), *traj_.at(ib).at(jj));
+  for (std::size_t jj = 0; jj < observerstlad_.size(); ++jj) {
+    observerstlad_[jj]->doProcessingTL(dx, t1, t2, ib);
   }
   Log::trace() << "ObserversTLAD::doProcessingTL done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-void ObserversTLAD<MODEL>::doFinalizeTL(const Increment_ &) {
+void ObserversTLAD<MODEL>::doFinalizeTL(const Increment_ & dx) {
   Log::trace() << "ObserversTLAD::doFinalizeTL start" << std::endl;
-  for (std::size_t jj = 0; jj < hoptlad_.size(); ++jj) {
-    hoptlad_[jj].simulateObsTL(*gvals_.at(jj), (*ydeptl_)[jj], (*ybiastl_)[jj]);
+  for (std::size_t jj = 0; jj < observerstlad_.size(); ++jj) {
+    observerstlad_[jj]->doFinalizeTL(dx, (*ydeptl_)[jj], (*ybiastl_)[jj]);
   }
-  gvals_.clear();
   Log::trace() << "ObserversTLAD::doFinalizeTL done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-void ObserversTLAD<MODEL>::setupAD(boost::shared_ptr<const Departures_> ydep,
-                                  ObsAuxIncrs_ & ybias) {
+void ObserversTLAD<MODEL>::setupAD(boost::shared_ptr<const Departures_> ydepad,
+                                   ObsAuxIncrs_ & ybiasad) {
   Log::trace() << "ObserversTLAD::setupAD start" << std::endl;
-  ydepad_ = ydep;
-  ybiasad_ = &ybias;
+  ydepad_  = ydepad;
+  ybiasad_ = &ybiasad;
   Log::trace() << "ObserversTLAD::setupAD done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -263,11 +260,8 @@ void ObserversTLAD<MODEL>::doFirstAD(Increment_ & dx, const util::DateTime & bgn
   if (bgn_ < winbgn_) bgn_ = winbgn_;
   if (end_ > winend_) end_ = winend_;
 
-  for (std::size_t jj = 0; jj < hoptlad_.size(); ++jj) {
-    boost::shared_ptr<GeoVaLs_>
-      gom(new GeoVaLs_(hop_[jj]->locations(bgn_, end_), hoptlad_.variables(jj)));
-    hoptlad_[jj].simulateObsAD(*gom, (*ydepad_)[jj], (*ybiasad_)[jj]);
-    gvals_.push_back(gom);
+  for (std::size_t jj = 0; jj < observerstlad_.size(); ++jj) {
+    observerstlad_[jj]->doFirstAD(dx, (*ydepad_)[jj], (*ybiasad_)[jj], bgn_, end_);
   }
   Log::trace() << "ObserversTLAD::doFirstAD done" << std::endl;
 }
@@ -283,18 +277,18 @@ void ObserversTLAD<MODEL>::doProcessingAD(Increment_ & dx) {
 // Index for current bin
   int ib = (dx.validTime()-winbgn_).toSeconds() / bintstep_.toSeconds();
 
-// Adjoint of get increment variables at obs locations
-  for (std::size_t jj = 0; jj < hop_.size(); ++jj) {
-    dx.getValuesAD(hop_[jj]->locations(t1, t2), hoptlad_.variables(jj),
-                   *gvals_.at(jj), *traj_.at(ib).at(jj));
+  for (std::size_t jj = 0; jj < observerstlad_.size(); ++jj) {
+    observerstlad_[jj]->doProcessingAD(dx, t1, t2, ib);
   }
   Log::trace() << "ObserversTLAD::doProcessingAD done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-void ObserversTLAD<MODEL>::doLastAD(Increment_ &) {
+void ObserversTLAD<MODEL>::doLastAD(Increment_ & dx) {
   Log::trace() << "ObserversTLAD::doLastAD start" << std::endl;
-  gvals_.clear();
+  for (std::size_t jj = 0; jj < observerstlad_.size(); ++jj) {
+    observerstlad_[jj]->doLastAD(dx);
+  }
   Log::trace() << "ObserversTLAD::doLastAD done" << std::endl;
 }
 // -----------------------------------------------------------------------------

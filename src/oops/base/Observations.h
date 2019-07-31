@@ -12,19 +12,14 @@
 #define OOPS_BASE_OBSERVATIONS_H_
 
 #include <cstddef>
+#include <memory>
 #include <ostream>
 #include <string>
 #include <vector>
 
-#include <boost/ptr_container/ptr_vector.hpp>
-#include <boost/shared_ptr.hpp>
-
-#include "eckit/config/Configuration.h"
 #include "oops/base/Departures.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/interface/ObsVector.h"
-#include "oops/util/abor1_cpp.h"
-#include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
 
@@ -52,11 +47,11 @@ template <typename MODEL> class Observations : public util::Printable {
 
 /// Access
   std::size_t size() const {return obs_.size();}
-  ObsVector_ & operator[](const std::size_t ii) {return obs_.at(ii);}
-  const ObsVector_ & operator[](const std::size_t ii) const {return obs_.at(ii);}
+  ObsVector_ & operator[](const std::size_t ii) {return *obs_.at(ii);}
+  const ObsVector_ & operator[](const std::size_t ii) const {return *obs_.at(ii);}
 
 /// Interactions with Departures
-  std::vector<boost::shared_ptr<ObsVector_> > operator-(const Observations & other) const;
+  std::vector<std::shared_ptr<ObsVector_> > operator-(const Observations & other) const;
   Observations & operator+=(const Departures_ &);
 
 /// Save observations values
@@ -65,7 +60,7 @@ template <typename MODEL> class Observations : public util::Printable {
  private:
   void print(std::ostream &) const;
 
-  boost::ptr_vector<ObsVector_> obs_;
+  std::vector<std::shared_ptr<ObsVector_> > obs_;
 };
 
 // =============================================================================
@@ -75,14 +70,20 @@ Observations<MODEL>::Observations(const ObsSpaces_ & obsdb,
                                   const std::string name): obs_(0)
 {
   for (std::size_t jj = 0; jj < obsdb.size(); ++jj) {
-    obs_.push_back(new ObsVector_(obsdb[jj], name));
+    std::shared_ptr<ObsVector_> tmp(new ObsVector_(obsdb[jj], name));
+    obs_.push_back(tmp);
   }
   Log::trace() << "Observations created" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-Observations<MODEL>::Observations(const Observations & other): obs_(other.obs_)
+Observations<MODEL>::Observations(const Observations & other): obs_(0)
 {
+// We want deep copy here
+  for (std::size_t jj = 0; jj < other.obs_.size(); ++jj) {
+    std::shared_ptr<ObsVector_> tmp(new ObsVector_(*other.obs_[jj]));
+    obs_.push_back(tmp);
+  }
   Log::trace() << "Observations copy-created" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -94,18 +95,18 @@ Observations<MODEL>::~Observations() {
 template <typename MODEL>
 Observations<MODEL> & Observations<MODEL>::operator=(const Observations & rhs) {
   for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
-    obs_[jj] = rhs.obs_[jj];
+    *obs_[jj] = *rhs.obs_[jj];
   }
   return *this;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-std::vector<boost::shared_ptr<ObsVector<MODEL> > >
+std::vector<std::shared_ptr<ObsVector<MODEL> > >
 Observations<MODEL>::operator-(const Observations & other) const {
-  std::vector<boost::shared_ptr<ObsVector_> > out;
+  std::vector<std::shared_ptr<ObsVector_> > out;
   for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
-    boost::shared_ptr<ObsVector_> ovec(new ObsVector_(obs_[jj]));
-    *ovec -= other.obs_[jj];
+    std::shared_ptr<ObsVector_> ovec(new ObsVector_(*obs_[jj]));
+    *ovec -= *other.obs_[jj];
     out.push_back(ovec);
   }
   return out;
@@ -114,7 +115,7 @@ Observations<MODEL>::operator-(const Observations & other) const {
 template <typename MODEL>
 Observations<MODEL> & Observations<MODEL>::operator+=(const Departures_ & dy) {
   for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
-    obs_[jj] += dy[jj];
+    *obs_[jj] += dy[jj];
   }
   return *this;
 }
@@ -122,13 +123,13 @@ Observations<MODEL> & Observations<MODEL>::operator+=(const Departures_ & dy) {
 template <typename MODEL>
 void Observations<MODEL>::save(const std::string & name) const {
   for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
-    obs_[jj].save(name);
+    obs_[jj]->save(name);
   }
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 void Observations<MODEL>::print(std::ostream & os) const {
-  for (std::size_t jj = 0; jj < obs_.size(); ++jj) os << obs_[jj] << std::endl;
+  for (std::size_t jj = 0; jj < obs_.size(); ++jj) os << *obs_[jj] << std::endl;
 }
 // -----------------------------------------------------------------------------
 }  // namespace oops

@@ -13,17 +13,14 @@
 
 #include <cstddef>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
-
-#include <boost/shared_ptr.hpp>
 
 #include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/interface/ObsVector.h"
-#include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
-#include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
 
@@ -51,7 +48,7 @@ class Departures : public util::Printable,
 // Constructors and destructor
   Departures(const ObsSpaces_ &,
              const std::string name = "", const bool fail = true);
-  explicit Departures(std::vector<boost::shared_ptr<ObsVector_> >);
+  explicit Departures(std::vector<std::shared_ptr<ObsVector_> >);
   explicit Departures(const Departures &);
   ~Departures();
 
@@ -59,7 +56,6 @@ class Departures : public util::Printable,
   std::size_t size() const {return dep_.size();}
   ObsVector_ & operator[](const std::size_t ii) {return *dep_.at(ii);}
   const ObsVector_ & operator[](const std::size_t ii) const {return *dep_.at(ii);}
-
 // Linear algebra operators
   Departures & operator=(const Departures &);
   Departures & operator+=(const Departures &);
@@ -78,7 +74,7 @@ class Departures : public util::Printable,
  private:
   void print(std::ostream &) const;
 
-  std::vector<boost::shared_ptr<ObsVector_> > dep_;
+  std::vector<std::shared_ptr<ObsVector_> > dep_;
 };
 
 // =============================================================================
@@ -88,14 +84,14 @@ Departures<MODEL>::Departures(const ObsSpaces_ & obsgeom,
                               const std::string name, const bool fail): dep_(0)
 {
   for (std::size_t jj = 0; jj < obsgeom.size(); ++jj) {
-    boost::shared_ptr<ObsVector_> tmp(new ObsVector_(obsgeom[jj], name, fail));
+    std::shared_ptr<ObsVector_> tmp(new ObsVector_(obsgeom[jj], name, fail));
     dep_.push_back(tmp);
   }
   Log::trace() << "Departures created" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-Departures<MODEL>::Departures(std::vector<boost::shared_ptr<ObsVector_> > val)
+Departures<MODEL>::Departures(std::vector<std::shared_ptr<ObsVector_> > val)
   : dep_(val)
 {
   Log::trace() << "Departures created" << std::endl;
@@ -106,7 +102,7 @@ Departures<MODEL>::Departures(const Departures & other): dep_(0)
 {
 // We want deep copy here
   for (std::size_t jj = 0; jj < other.dep_.size(); ++jj) {
-    boost::shared_ptr<ObsVector_> tmp(new ObsVector_(*other.dep_[jj]));
+    std::shared_ptr<ObsVector_> tmp(new ObsVector_(*other.dep_[jj]));
     dep_.push_back(tmp);
   }
   Log::trace() << "Departures copy-created" << std::endl;
