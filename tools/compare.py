@@ -80,7 +80,7 @@ def line_diff(line1,line2,lnum,ftol,idif):
         if (not adiff <= idif):
           lineerror=lineerror+1
           print("Integer mismatch at line "+str(lnum)+": ",\
-                int1a[0]+" not equal to "+int1a[0]," with max difference ", idif,\
+                int1a[0]+" not equal to "+int2a[0]," with max difference ", idif,\
                 ". Actual difference = ",adiff)
 
       #Compare if date
