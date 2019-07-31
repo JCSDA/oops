@@ -72,7 +72,7 @@ find_package( NetCDF REQUIRED )
 include_directories( ${NETCDF_INCLUDE_DIR} )
 
 # eckit
-ecbuild_use_package( PROJECT eckit VERSION 0.18.0 REQUIRED )
+ecbuild_use_package( PROJECT eckit VERSION 1.1.0 REQUIRED )
 include_directories( ${ECKIT_INCLUDE_DIRS} )
 link_libraries( ${ECKIT_LIBRARIES} )
 
