@@ -61,7 +61,11 @@ LibOOPS::LibOOPS() : Library("oops"), rank_(0),
 LibOOPS::~LibOOPS() {
 }
 
+  extern "C" {
+    void trap_sigfpe (void);
+  }
 LibOOPS& LibOOPS::instance() {
+    trap_sigfpe ();
   return liboops;
 }
 

@@ -7,9 +7,8 @@
 ! does it submit to any jurisdiction.
 
 SUBROUTINE SET_ERR_TRAP()
-INTEGER SIGNAL_TRAP, SIGS(1),IRES
+  external :: trap_sigfpe
 
-SIGS(1)  = 0
-IRES     = SIGNAL_TRAP(0, SIGS)
+  call trap_sigfpe()
 END SUBROUTINE SET_ERR_TRAP
 
