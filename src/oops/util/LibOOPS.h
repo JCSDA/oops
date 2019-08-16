@@ -39,6 +39,7 @@ class LibOOPS : public eckit::system::Library {
   virtual eckit::Channel& testChannel() const;
 
   void initialise();
+  void teeOutput(const std::string &);
   void finalise();
 
  protected:

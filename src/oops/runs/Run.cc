@@ -38,7 +38,7 @@ Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(
   if (argc == 3) {
     eckit::PathName outputfile;
     outputfile = argv[2];
-    eckit::Log::addFile(outputfile);
+    LibOOPS::instance().teeOutput(outputfile);
   }
 
 // Read configuration
