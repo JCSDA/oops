@@ -82,7 +82,7 @@ void LibOOPS::initialise() {
  */
 void LibOOPS::teeOutput(const std::string & fileprefix) {
   std::string teefile = fileprefix;
-  if (!rank_ == 0) {
+  if (rank_ != 0) {
     std::stringstream ss;
     ss << std::setw(6) << std::setfill('0') << rank_;
     teefile = teefile + "." + ss.str();
