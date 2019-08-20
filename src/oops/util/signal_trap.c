@@ -1,56 +1,63 @@
 #ifndef _AIX43
 
 #ifdef __APPLE__
-#include <xmmintrin.h> // Apple-specific signal handling
+#include <xmmintrin.h>  // Apple-specific signal handling
 #else
 // This is needed to get feenableexcept defined
 #define _GNU_SOURCE
 #endif
-#include <fenv.h>      // feenableexcept
-#include <signal.h>    // sigaction, siginfo_t
-#include <string.h>    // strerror
+#include <fenv.h>       // feenableexcept
+#include <signal.h>     // sigaction, siginfo_t
+#include <string.h>     // strerror
 #include <stdio.h>
-#include <errno.h>     // strerror(errno)
-#include <execinfo.h>  // backtrace*
-#include <stdlib.h>    // abort
-#include <unistd.h>    // stderr
+#include <errno.h>      // strerror(errno)
+#include <execinfo.h>   // backtrace*
+#include <stdlib.h>     // abort
+#include <unistd.h>     // stderr
 
-extern void trap_sigfpe (void);                        // user function traps SIGFPE
-extern void trap_sigfpe_ (void);                       // Fortran-callable
-extern void sigfpe_handler (int, siginfo_t *, void *); // called when relevant SIGFPE occurs
+extern void trap_sigfpe(void);                         // user function traps SIGFPE
+extern void trap_sigfpe_(void);                        // Fortran-callable
+extern void sigfpe_handler(int, siginfo_t *, void *);  // called when relevant SIGFPE occurs
+static int first = 1;
 
 // Fortran wrapper
-void trap_sigfpe_ (void)
+void trap_sigfpe_(void)
 {
-  trap_sigfpe ();
+  trap_sigfpe();
 }
 
 // This is the user function to enable handling of SIGFPE
-void trap_sigfpe (void)
+void trap_sigfpe(void)
 {
-  struct sigaction sig_action = {}; // passed to sigaction (init to empty)
+  int ret;
+  struct sigaction sig_action = {};  // passed to sigaction (init to empty)
 
+  if (first) {
+    first = 0;
 #ifdef __APPLE__
-  _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_INVALID);
-  _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_DIV_ZERO);
-  _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_OVERFLOW);
+    _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_INVALID);
+    _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_DIV_ZERO);
+    _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_OVERFLOW);
 #else
-  (void) feenableexcept (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+    if ((ret = feenableexcept (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)) == 0)
+      printf("Trapping of SIGFPE enabled\n");
+    else
+      printf("Call to feenableexcept returned %d\n", ret);
 #endif
 
-  sig_action.sa_flags = SA_SIGINFO;         // handler specified in sa_sigaction
-  sig_action.sa_sigaction = sigfpe_handler; // function name
-  sigemptyset (&sig_action.sa_mask);        // initialize mask
-  sigaddset (&sig_action.sa_mask, SIGFPE);  // disable another SIGFPE while one is being processed
-
-  if (sigaction (SIGFPE,  &sig_action, NULL) != 0) {
-    printf ("Call to sigaction failed: %s\n", strerror (errno));
+    sig_action.sa_flags = SA_SIGINFO;         // handler specified in sa_sigaction
+    sig_action.sa_sigaction = sigfpe_handler; // function name
+    sigemptyset(&sig_action.sa_mask);        // initialize mask
+    sigaddset(&sig_action.sa_mask, SIGFPE);  // disable another SIGFPE while one is being processed
+    
+    if (sigaction(SIGFPE,  &sig_action, NULL) != 0) {
+      printf("Call to sigaction failed: %s\n", strerror(errno));
+    }
   }
   return;
 }
-
 // This is the signal handler invoked when SIGFPE encountered
-void sigfpe_handler (int sig, siginfo_t *info, void *ucontext) {
+void sigfpe_handler(int sig, siginfo_t *info, void *ucontext) {
   static const int maxfuncs = 10;  // gather no more than 10 functions in the backtrace
   void *stack[maxfuncs];           // call stack
   size_t nfuncs;                   // number of functions returned by backtrace
@@ -59,31 +66,31 @@ void sigfpe_handler (int sig, siginfo_t *info, void *ucontext) {
 
   switch (info->si_code) {
   case FPE_INTDIV:
-    fprintf (stderr, "integer divide by zero\n");
+    fprintf(stderr, "integer divide by zero\n");
     break;
   case FPE_INTOVF:  // Cannot as yet get this one to trigger
-    fprintf (stderr, "integer overflow)\n");
+    fprintf(stderr, "integer overflow)\n");
     break;
   case FPE_FLTDIV:
-    fprintf (stderr, "floating-point divide by zero\n");
+    fprintf(stderr, "floating-point divide by zero\n");
     break;
   case FPE_FLTOVF:
-    fprintf (stderr, "floating-point overflow\n");
+    fprintf(stderr, "floating-point overflow\n");
     break;
   case FPE_FLTINV:
-    fprintf (stderr, "floating-point invalid operation\n");
+    fprintf(stderr, "floating-point invalid operation\n");
     break;
   case FPE_FLTSUB:  // Cannot as yet get this one to trigger
-    fprintf (stderr, "subscript out of range\n");
+    fprintf(stderr, "subscript out of range\n");
     break;
   default:
-    fprintf (stderr, "Arithmetic Exception\n");
+    fprintf(stderr, "Arithmetic Exception\n");
     break;
   }
 
-  nfuncs = backtrace (stack, maxfuncs);                    // generate a backtrace
-  backtrace_symbols_fd (&stack[0], nfuncs, STDERR_FILENO); // print the backtrace to stderr
-  abort ();                                                // exit
+  nfuncs = backtrace(stack, maxfuncs);                    // generate a backtrace
+  backtrace_symbols_fd(&stack[0], nfuncs, STDERR_FILENO); // print the backtrace to stderr
+  abort();                                                // exit
 }
 
 #else
