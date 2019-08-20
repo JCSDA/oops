@@ -13,6 +13,8 @@
 /// @date   December 2016
 
 #include <algorithm>
+#include <iomanip>
+#include <sstream>
 #include <string>
 
 #include "eckit/log/Log.h"
@@ -44,18 +46,6 @@ static LibOOPS liboops;
 LibOOPS::LibOOPS() : Library("oops"), rank_(0),
                      debug_(false), predebug_("OOPS_DEBUG"),
                      trace_(false), pretrace_("OOPS_TRACE") {
-  const int it = getEnv("OOPS_TRACE", 0);
-  if (it > 0 && rank_ == 0) trace_ = true;
-  if (it < 0) {
-    trace_ = true;
-    pretrace_ += "[" + std::to_string(rank_) + "]";
-  }
-  const int id = getEnv("OOPS_DEBUG", 0);
-  if (id > 0 && rank_ == 0) debug_ = true;
-  if (id < 0) {
-    debug_ = true;
-    predebug_ += "[" + std::to_string(rank_) + "]";
-  }
 }
 
 LibOOPS::~LibOOPS() {
@@ -75,7 +65,33 @@ LibOOPS& LibOOPS::instance() {
  * has been created.
  */
 void LibOOPS::initialise() {
-    rank_ = oops::mpi::comm().rank();
+  rank_ = oops::mpi::comm().rank();
+
+  const int it = getEnv("OOPS_TRACE", 0);
+  if (it > 0 && rank_ == 0) trace_ = true;
+  if (it < 0) {
+    trace_ = true;
+    pretrace_ += "[" + std::to_string(rank_) + "]";
+  }
+  const int id = getEnv("OOPS_DEBUG", 0);
+  if (id > 0 && rank_ == 0) debug_ = true;
+  if (id < 0) {
+    debug_ = true;
+    predebug_ += "[" + std::to_string(rank_) + "]";
+  }
+}
+
+/** Add a rank-dependent tee file
+ * To be called in `main()` by constructor of `oops::Run` when the outputfile argument is specified
+ */
+void LibOOPS::teeOutput(const std::string & fileprefix) {
+  std::string teefile = fileprefix;
+  if (rank_ != 0) {
+    std::stringstream ss;
+    ss << std::setw(6) << std::setfill('0') << rank_;
+    teefile = teefile + "." + ss.str();
+  }
+  eckit::Log::addFile(teefile);
 }
 
 /** Finalization of MPI and clearing of logs.
