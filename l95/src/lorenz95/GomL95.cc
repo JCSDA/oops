@@ -18,7 +18,7 @@
 
 #include "eckit/config/Configuration.h"
 #include "lorenz95/LocsL95.h"
-#include "lorenz95/ObsTable.h"
+#include "lorenz95/ObsTableView.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Random.h"
@@ -42,7 +42,8 @@ GomL95::GomL95(const LocsL95 & locs, const oops::Variables &)
 }
 // -----------------------------------------------------------------------------
 /*! Constructor with Configuration */
-GomL95::GomL95(const eckit::Configuration & conf, const oops::Variables &)
+GomL95::GomL95(const eckit::Configuration & conf,
+               const ObsTableView &, const oops::Variables &)
   : size_(0), iobs_(), locval_(), current_(0)
 {
     this->read(conf);

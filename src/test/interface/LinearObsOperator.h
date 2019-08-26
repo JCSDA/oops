@@ -78,7 +78,7 @@ template <typename MODEL> void testLinearity() {
 
     // read geovals from the file
     const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    const GeoVaLs_ gval(gconf, hop.variables());
+    const GeoVaLs_ gval(gconf, Test_::obspace()[jj], hop.variables());
 
     // initialize obs bias
     const ObsAuxCtrl_ ybias(conf[jj]);
@@ -91,7 +91,7 @@ template <typename MODEL> void testLinearity() {
     ObsVector_ dy1(Test_::obspace()[jj]);
 
     // create geovals
-    GeoVaLs_ dx(gconf, hoptl.variables());
+    GeoVaLs_ dx(gconf, Test_::obspace()[jj], hoptl.variables());
 
     // test rms(Hdx) = 0, when dx = 0
     dx.zero();
@@ -143,7 +143,7 @@ template <typename MODEL> void testAdjoint() {
 
     // read geovals from the file
     eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    const GeoVaLs_ gval(gconf, hop.variables());
+    const GeoVaLs_ gval(gconf, Test_::obspace()[jj], hop.variables());
 
     // initialize bias correction
     const ObsAuxCtrl_ ybias(conf[jj]);
@@ -154,8 +154,8 @@ template <typename MODEL> void testAdjoint() {
 
     ObsVector_ dy1(Test_::obspace()[jj]);
     ObsVector_ dy2(Test_::obspace()[jj]);
-    GeoVaLs_ dx1(gconf, hoptl.variables());
-    GeoVaLs_ dx2(gconf, hoptl.variables());
+    GeoVaLs_ dx1(gconf, Test_::obspace()[jj], hoptl.variables());
+    GeoVaLs_ dx2(gconf, Test_::obspace()[jj], hoptl.variables());
 
     // calculate dy1 = H dx1 (with random dx1)
     dx1.random();
@@ -213,8 +213,8 @@ template <typename MODEL> void testTangentLinear() {
 
     // read geovals from the file
     const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    const GeoVaLs_ x0(gconf, hop.variables());
-    GeoVaLs_ x(gconf, hop.variables());
+    const GeoVaLs_ x0(gconf, Test_::obspace()[jj], hop.variables());
+    GeoVaLs_ x(gconf, Test_::obspace()[jj], hop.variables());
 
     // initialize obs bias
     const ObsAuxCtrl_ ybias(conf[jj]);
@@ -232,7 +232,7 @@ template <typename MODEL> void testTangentLinear() {
     hop.simulateObs(x0, y1, ybias);
 
     // randomize dx
-    GeoVaLs_ dx(gconf, hoptl.variables());
+    GeoVaLs_ dx(gconf, Test_::obspace()[jj], hoptl.variables());
     dx.random();
 
     // scale dx by x0

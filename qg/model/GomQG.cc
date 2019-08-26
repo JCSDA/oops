@@ -14,6 +14,7 @@
 
 #include "eckit/config/Configuration.h"
 #include "model/LocationsQG.h"
+#include "model/ObsSpaceQG.h"
 #include "model/QgFortran.h"
 #include "model/VariablesQG.h"
 #include "oops/base/Variables.h"
@@ -32,7 +33,8 @@ GomQG::GomQG(const LocationsQG & locs, const oops::Variables & var) {
 // -----------------------------------------------------------------------------
 /*! QG GeoVaLs Constructor with Config */
 
-  GomQG::GomQG(const eckit::Configuration & config, const oops::Variables &)
+  GomQG::GomQG(const eckit::Configuration & config,
+               const ObsSpaceQG & ospace, const oops::Variables &)
 {
   qg_gom_create_f90(keyGom_);
 
