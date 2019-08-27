@@ -69,7 +69,7 @@ template <typename MODEL> void testSimulateObs() {
 
     // read geovals from the file
     eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    const GeoVaLs_ gval(gconf, hop.variables());
+    const GeoVaLs_ gval(gconf, Test_::obspace()[jj], hop.variables());
 
     // initialize bias correction
     const ObsAuxCtrl_ ybias(conf[jj]);

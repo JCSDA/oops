@@ -68,7 +68,7 @@ template <typename MODEL> void testFilters() {
 
 //  Run filters
     vars += filters.requiredGeoVaLs();
-    const GeoVaLs_ gval(gconf, vars);
+    const GeoVaLs_ gval(gconf, Test_::obspace()[jj], vars);
     filters.preProcess();
     filters.priorFilter(gval);
     hop.simulateObs(gval, ovec, ybias);
