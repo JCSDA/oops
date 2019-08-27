@@ -49,7 +49,8 @@ template <typename MODEL> void testFilters() {
     ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
 
     eckit::LocalConfiguration gconf(typeconfs[jj], "GeoVaLs");
-    const GeoVaLs_ gval(gconf, hop.variables());
+    oops::Variables vars;
+    vars += hop.variables();
 
     const ObsAuxCtrl_ ybias(typeconfs[jj]);
 
@@ -66,6 +67,8 @@ template <typename MODEL> void testFilters() {
     ObsFilters_ filters(Test_::obspace()[jj], typeconfs[jj], qcflags, obserr);
 
 //  Run filters
+    vars += filters.requiredGeoVaLs();
+    const GeoVaLs_ gval(gconf, vars);
     filters.preProcess();
     filters.priorFilter(gval);
     hop.simulateObs(gval, ovec, ybias);
