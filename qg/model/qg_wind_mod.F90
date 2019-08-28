@@ -8,7 +8,6 @@
 
 module qg_wind_mod
 
-use config_mod
 use kinds
 use iso_c_binding
 use qg_gom_mod

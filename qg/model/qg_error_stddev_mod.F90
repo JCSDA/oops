@@ -8,7 +8,7 @@
 
 module qg_error_stddev_mod
 
-use config_mod
+use fckit_configuration_module, only: fckit_configuration
 use iso_c_binding
 use kinds
 !$ use omp_lib
@@ -43,14 +43,14 @@ contains
 #include "oops/util/linkedList_c.f"
 ! ------------------------------------------------------------------------------
 !> Setup error standard deviation
-subroutine qg_error_stddev_setup(c_model,conf)
+subroutine qg_error_stddev_setup(f_conf,conf)
 
 ! Passed variables
-type(c_ptr),intent(in) :: c_model                  !< Configuration
+type(fckit_configuration),intent(in) :: f_conf     !< FCKIT configuration
 type(qg_error_stddev_config),intent(inout) :: conf !< Error standard deviation
 
 ! Get value
-conf%sigma = config_get_real(c_model,'standard_deviation')
+call f_conf%get_or_die("standard_deviation",conf%sigma)
 
 end subroutine qg_error_stddev_setup
 ! ------------------------------------------------------------------------------

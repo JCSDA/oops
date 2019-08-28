@@ -8,7 +8,6 @@
 
 module qg_geom_iter_interface
 
-use config_mod
 use iso_c_binding
 use kinds
 use qg_geom_iter_mod

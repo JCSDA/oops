@@ -8,7 +8,7 @@
 
 module qg_error_covariance_mod
 
-use config_mod
+use fckit_configuration_module, only: fckit_configuration
 use fckit_log_module, only: fckit_log
 use fft_mod
 use iso_c_binding
@@ -54,13 +54,13 @@ contains
 #include "oops/util/linkedList_c.f"
 ! ------------------------------------------------------------------------------
 !> Setup error covariance matrix
-subroutine qg_error_covariance_setup(self,conf,geom)
+subroutine qg_error_covariance_setup(self,f_conf,geom)
 
 implicit none
 
 ! Passed variables
 type(qg_error_covariance_config),intent(inout) :: self !< Error covariance configuration
-type(c_ptr),intent(in) :: conf                         !< Configuration
+type(fckit_configuration),intent(in) :: f_conf         !< FCKIT configuration
 type(qg_geom),intent(in) :: geom                       !< Geometry
 
 ! Local variables
@@ -76,10 +76,10 @@ type(qg_vars) :: vars
 type(qg_fields) :: fld_in,fld_out
 
 ! Get parameters
-self%sigma = config_get_real(conf,'standard_deviation')
-horizontal_length_scale = config_get_real(conf,'horizontal_length_scale')
-vertical_length_scale = config_get_real(conf,'vertical_length_scale')
-condition_number = config_get_real(conf,'maximum_condition_number')
+call f_conf%get_or_die("standard_deviation",self%sigma)
+call f_conf%get_or_die("horizontal_length_scale",horizontal_length_scale)
+call f_conf%get_or_die("vertical_length_scale",vertical_length_scale)
+call f_conf%get_or_die("maximum_condition_number",condition_number)
 
 ! Check nx
 if (mod(geom%nx,2)/=0) then

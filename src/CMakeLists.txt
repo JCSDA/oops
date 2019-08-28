@@ -360,11 +360,6 @@ ecbuild_add_test( TARGET  test_util_intset_parser
                   LIBS    oops eckit )
 
 if( HAVE_FCTEST )
-add_fctest( TARGET  test_util_config_intfb.x
-            SOURCES test/util/config.F90
-            CONDITION HAVE_FCTEST
-            LIBS    oops )
-
 add_fctest( TARGET  test_util_datetime_intfb.x
             SOURCES test/util/datetime.F90
             CONDITION HAVE_FCTEST

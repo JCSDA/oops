@@ -8,7 +8,7 @@
 
 module qg_locs_mod
 
-use config_mod
+use fckit_configuration_module, only: fckit_configuration
 use fckit_log_module, only: fckit_log
 use iso_c_binding
 use kinds
@@ -50,25 +50,28 @@ contains
 #include "oops/util/linkedList_c.f"
 ! ------------------------------------------------------------------------------
 !> Generate test locations
-subroutine qg_locs_test(self,conf,klocs,klons,klats,kz)
+subroutine qg_locs_test(self,f_conf,klocs,klons,klats,kz)
   
 implicit none
 
 ! Passed variables
-type(qg_locs),intent(inout) :: self        !< Locations
-type(c_ptr),intent(in) :: conf             !< Configuration
-integer,intent(in) :: klocs                !< Number of user-specified locations
-real(kind_real),intent(in) :: klats(klocs) !< User-specified latitudes (degrees)
-real(kind_real),intent(in) :: klons(klocs) !< User-specified longitudes (degrees)
-real(kind_real),intent(in) :: kz(klocs)    !< User-specified altitudes (m)
+type(qg_locs),intent(inout) :: self            !< Locations
+type(fckit_configuration),intent(in) :: f_conf !< FCKIT configuration
+integer,intent(in) :: klocs                    !< Number of user-specified locations
+real(kind_real),intent(in) :: klats(klocs)     !< User-specified latitudes (degrees)
+real(kind_real),intent(in) :: klons(klocs)     !< User-specified longitudes (degrees)
+real(kind_real),intent(in) :: kz(klocs)        !< User-specified altitudes (m)
 
 ! Local variables
+integer :: jobs,Nrandom
 real(kind_real),allocatable :: x(:),y(:)
-integer :: jobs
 
 ! Get number of random locations
 self%nlocs = klocs
-if (config_element_exists(conf,'Nrandom')) self%nlocs = self%nlocs+config_get_int(conf,'Nrandom')
+if (f_conf%has("Nrandom")) then
+  call f_conf%get_or_die("Nrandom",Nrandom)
+  self%nlocs = self%nlocs+Nrandom
+end if
 
 ! Check number of locations
 if (self%nlocs<1) call abor1_ftn('qg_locs_test: no location')

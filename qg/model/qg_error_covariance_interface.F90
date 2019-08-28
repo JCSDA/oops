@@ -8,6 +8,7 @@
 
 module qg_error_covariance_interface
 
+use fckit_configuration_module, only: fckit_configuration
 use fckit_log_module, only: fckit_log
 use iso_c_binding
 use kinds
@@ -34,17 +35,19 @@ type(c_ptr),intent(in) :: c_conf           !< Configuration
 integer(c_int),intent(in) :: c_key_geom    !< Geometry
 
 ! Local variables
+type(fckit_configuration) :: f_conf
 type(qg_error_covariance_config),pointer :: self
 type(qg_geom),pointer :: geom
 
 ! Interface
+f_conf = fckit_configuration(c_conf)
 call qg_geom_registry%get(c_key_geom,geom)
 call qg_error_covariance_registry%init()
 call qg_error_covariance_registry%add(c_key_self)
 call qg_error_covariance_registry%get(c_key_self,self)
 
 ! Call Fortran
-call qg_error_covariance_setup(self,c_conf,geom)
+call qg_error_covariance_setup(self,f_conf,geom)
 
 end subroutine qg_error_covariance_setup_c
 ! ------------------------------------------------------------------------------

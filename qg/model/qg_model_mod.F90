@@ -8,8 +8,8 @@
 
 module qg_model_mod
 
-use config_mod
 use duration_mod
+use fckit_configuration_module, only: fckit_configuration
 use fckit_log_module,only: fckit_log
 use iso_c_binding
 use kinds
@@ -50,21 +50,23 @@ contains
 #include "oops/util/linkedList_c.f"
 ! ------------------------------------------------------------------------------
 !> Setup model
-subroutine qg_model_setup(self,conf)
+subroutine qg_model_setup(self,f_conf)
 
 implicit none
 
 ! Passed variables
-type(qg_model_config),intent(inout) :: self !< Model configuration
-type(c_ptr),intent(in) :: conf              !< Configuration
+type(qg_model_config),intent(inout) :: self    !< Model configuration
+type(fckit_configuration),intent(in) :: f_conf !< FCKIT configuration
 
 ! Local variables
 type(duration) :: dtstep
 character(len=20) :: ststep
 character(len=160) :: record
+character(len=:),allocatable :: str
 
 ! Define time step
-ststep = config_get_string(conf,len(ststep),'tstep')
+call f_conf%get_or_die("tstep",str)
+ststep = str
 dtstep = trim(ststep)
 self%dt = duration_seconds(dtstep)
 write(record,*) 'qg_model_setup: dt = ',self%dt

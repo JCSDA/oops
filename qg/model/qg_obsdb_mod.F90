@@ -8,9 +8,9 @@
 
 module qg_obsdb_mod
 
-use config_mod
 use datetime_mod
 use duration_mod
+use fckit_configuration_module, only: fckit_configuration
 use fckit_log_module, only: fckit_log
 use iso_c_binding
 use kinds
@@ -70,27 +70,30 @@ contains
 #include "oops/util/linkedList_c.f"
 ! ------------------------------------------------------------------------------
 !> Setup observation data
-subroutine qg_obsdb_setup(self,conf)
+subroutine qg_obsdb_setup(self,f_conf)
 
 implicit none
 
 ! Passed variables
-type(qg_obsdb),intent(inout) :: self !< Observation data
-type(c_ptr),intent(in) :: conf       !< Configuration
+type(qg_obsdb),intent(inout) :: self           !< Observation data
+type(fckit_configuration),intent(in) :: f_conf !< FCKIT configuration
 
 ! Local variables
 character(len=1024) :: fin,fout
+character(len=:),allocatable :: str
 
 ! Input file
-if (config_element_exists(conf,'ObsDataIn')) then
-  fin = config_get_string(conf,1024,'ObsDataIn.obsfile')
+if (f_conf%has("ObsDataIn")) then
+  call f_conf%get_or_die("ObsDataIn.obsfile",str)
+  fin = str
 else
   fin = ''
 endif
 call fckit_log%info('qg_obsdb_setup: file in = '//trim(fin))
 
 ! Output file
-fout = config_get_string(conf,1024,'ObsDataOut.obsfile')
+call f_conf%get_or_die("ObsDataOut.obsfile",str)
+fout = str
 call fckit_log%info('qg_obsdb_setup: file out = '//trim(fout))
 
 ! Set attributes
@@ -302,18 +305,18 @@ deallocate(mobs)
 end subroutine qg_obsdb_locations
 ! ------------------------------------------------------------------------------
 !> Generate observation data
-subroutine qg_obsdb_generate(self,grp,conf,bgn,step,ktimes,kobs)
+subroutine qg_obsdb_generate(self,grp,f_conf,bgn,step,ktimes,kobs)
 
 implicit none
 
 ! Passed variables
-type(qg_obsdb),intent(inout) :: self !< Observation data
-character(len=*),intent(in) :: grp   !< Group
-type(c_ptr),intent(in) :: conf       !< Configuration
-type(datetime),intent(in) :: bgn     !< Start time
-type(duration),intent(in) :: step    !< Time-step
-integer,intent(in) :: ktimes         !< Number of time-slots
-integer,intent(inout) :: kobs        !< Number of observations
+type(qg_obsdb),intent(inout) :: self           !< Observation data
+character(len=*),intent(in) :: grp             !< Group
+type(fckit_configuration),intent(in) :: f_conf !< FCKIT configuration
+type(datetime),intent(in) :: bgn               !< Start time
+type(duration),intent(in) :: step              !< Time-step
+integer,intent(in) :: ktimes                   !< Number of time-slots
+integer,intent(inout) :: kobs                  !< Number of observations
 
 ! Local variables
 integer :: nlev,nlocs
@@ -322,7 +325,7 @@ type(datetime),allocatable :: times(:)
 type(qg_obsvec) :: obsloc,obserr
 
 ! Get number of observations
-nlocs = config_get_int(conf,'obs_density');
+call f_conf%get_or_die("obs_density",nlocs)
 kobs = nlocs*ktimes
 
 ! Allocation
@@ -335,8 +338,8 @@ call qg_obsdb_generate_locations(nlocs,ktimes,bgn,step,times,obsloc)
 call qg_obsdb_create(self,trim(grp),times,obsloc)
 
 ! Create observation error
-err = config_get_real(conf,'obs_error')
-nlev = config_get_int(conf,'nval')
+call f_conf%get_or_die("obs_error",err)
+call f_conf%get_or_die("nval",nlev)
 call qg_obsvec_setup(obserr,nlev,kobs)
 obserr%values(:,:) = err
 call qg_obsdb_put(self,trim(grp),'ObsError',obserr)

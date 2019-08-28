@@ -8,7 +8,7 @@
 
 module qg_obsdb_interface
 
-use config_mod
+use fckit_configuration_module, only: fckit_configuration
 use datetime_mod
 use duration_mod
 use fckit_log_module, only: fckit_log
@@ -32,15 +32,17 @@ integer(c_int),intent(inout) :: c_key_self !< Observation data
 type(c_ptr),intent(in)    :: c_conf        !< Configuration
 
 ! Local variables
+type(fckit_configuration) :: f_conf
 type(qg_obsdb),pointer :: self
 
 ! Interface
+f_conf = fckit_configuration(c_conf)
 call qg_obsdb_registry%init()
 call qg_obsdb_registry%add(c_key_self)
 call qg_obsdb_registry%get(c_key_self,self)
 
 ! Call Fortran
-call qg_obsdb_setup(self,c_conf)
+call qg_obsdb_setup(self,f_conf)
 
 end subroutine qg_obsdb_setup_c
 ! ------------------------------------------------------------------------------
@@ -203,19 +205,21 @@ integer(c_int),intent(in) :: ktimes                      !< Number of time-slots
 integer(c_int),intent(inout) :: kobs                     !< Number of observations
 
 ! Mocal variables
+type(fckit_configuration) :: f_conf
 type(qg_obsdb),pointer :: self
 character(len=lgrp) :: grp
 type(datetime) :: bgn
 type(duration) :: step
 
 ! Interface
+f_conf = fckit_configuration(c_conf)
 call qg_obsdb_registry%get(c_key_self,self)
 call c_f_string(c_grp,grp)
 call c_f_datetime(c_bgn,bgn)
 call c_f_duration(c_step,step)
 
 ! Call Fortran
-call qg_obsdb_generate(self,grp,c_conf,bgn,step,ktimes,kobs)
+call qg_obsdb_generate(self,grp,f_conf,bgn,step,ktimes,kobs)
 
 end subroutine qg_obsdb_generate_c
 ! ------------------------------------------------------------------------------

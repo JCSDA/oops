@@ -8,7 +8,7 @@
 
 module qg_locs_interface
 
-use config_mod
+use fckit_configuration_module, only: fckit_configuration
 use fckit_log_module, only: fckit_log
 use iso_c_binding
 use kinds
@@ -51,13 +51,15 @@ real(c_double),intent(in) :: klons(klocs) !< User-specified longitudes (degrees)
 real(c_double),intent(in) :: kz(klocs)    !< User-specified altitudes (m)
 
 ! Local variables
+type(fckit_configuration) :: f_conf
 type(qg_locs),pointer :: self
 
 ! Interface
+f_conf = fckit_configuration(c_conf)
 call qg_locs_registry%get(c_key_self,self)
 
 ! Call Fortran
-call qg_locs_test(self,c_conf,klocs,klons,klats,kz)
+call qg_locs_test(self,f_conf,klocs,klons,klats,kz)
 
 end subroutine qg_locs_test_c
 ! ------------------------------------------------------------------------------

@@ -8,7 +8,7 @@
 
 module qg_tools_mod
 
-use config_mod
+use fckit_configuration_module, only: fckit_configuration
 use datetime_mod
 use duration_mod
 use iso_c_binding
@@ -27,14 +27,14 @@ real(kind_real),parameter :: utop = 58.0_kind_real !< Zonal wind at the top (m/s
 contains
 ! ------------------------------------------------------------------------------
 !> Generate filename
-function genfilename(conf,length,vdate)
+function genfilename(f_conf,length,vdate)
 
 implicit none
 
 ! Passed variables
-type(c_ptr),intent(in) :: conf     !< Configuration
-integer,intent(in) :: length       !< Length
-type(datetime),intent(in) :: vdate !< Date and time
+type(fckit_configuration),intent(in) :: f_conf !< FCKIT configuration
+integer,intent(in) :: length                   !< Length
+type(datetime),intent(in) :: vdate             !< Date and time
 
 ! Result
 character(len=2*length) :: genfilename
@@ -43,18 +43,23 @@ character(len=2*length) :: genfilename
 integer :: lenfn
 character(len=length) :: fdbdir,expver,typ,validitydate,referencedate,sstep,mmb
 character(len=2*length) :: prefix
+character(len=:),allocatable :: str
 
 type(datetime) :: rdate
 type(duration) :: step
 
 ! Get configuration parameters
-fdbdir = config_get_string(conf,len(fdbdir),'datadir')
-expver = config_get_string(conf,len(expver),'exp')
-typ = config_get_string(conf,len(typ),'type')
+call f_conf%get_or_die("datadir",str)
+fdbdir = str
+call f_conf%get_or_die("exp",str)
+expver = str
+call f_conf%get_or_die("type",str)
+typ = str
 
 ! Ensemble case
 if (typ=='ens') then
-  mmb = config_get_string(conf,len(mmb),'member')
+  call f_conf%get_or_die("member",str)
+  mmb = str
   lenfn = len_trim(fdbdir) + 1 + len_trim(expver) + 1 + len_trim(typ) + 1 + len_trim(mmb)
   prefix = trim(fdbdir) // '/' // trim(expver) // '.' // trim(typ) // '.' // trim(mmb)
 else
@@ -64,7 +69,8 @@ endif
 
 ! Forecast / ensemble cases
 if ((typ=='fc').or.(typ=='ens')) then
-  referencedate = config_get_string(conf,len(referencedate),'date')
+  call f_conf%get_or_die("date",str)
+  referencedate = str
   call datetime_to_string(vdate,validitydate)
   call datetime_create(trim(referencedate),rdate)
   call datetime_diff(vdate,rdate,step)

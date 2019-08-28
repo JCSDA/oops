@@ -6,7 +6,6 @@
 module unstructured_grid_mod
 
 use iso_c_binding
-use config_mod
 use kinds
 
 implicit none
