@@ -19,23 +19,25 @@
 
 namespace lorenz95 {
   class GomL95;
-  class ObsTableView;
   template <typename DATATYPE> class ObsData1D;
+  class ObsTableView;
+  class ObsDiags1D;
   class ObsVec1D;
 
 // Nothing to do here for the Lorenz model
 
 class QCmanager : public util::Printable {
  public:
-  QCmanager(ObsTableView &, const eckit::Configuration &,
-           boost::shared_ptr<ObsData1D<int> >, boost::shared_ptr<ObsData1D<float> >): novars_() {}
+  QCmanager(const ObsTableView &, const eckit::Configuration &,
+            boost::shared_ptr<ObsData1D<int> >, boost::shared_ptr<ObsData1D<float> >): novars_() {}
   ~QCmanager() {}
 
   void preProcess() const {}
   void priorFilter(const GomL95 &) const {}
-  void postFilter(const ObsVec1D &) const {}
+  void postFilter(const ObsVec1D &, const ObsDiags1D &) const {}
 
   const oops::Variables & requiredGeoVaLs() const {return novars_;}
+  const oops::Variables & requiredHdiagnostics() const {return novars_;}
 
  private:
   void print(std::ostream &) const {}

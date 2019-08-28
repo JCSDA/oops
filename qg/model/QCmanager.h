@@ -18,21 +18,23 @@
 
 namespace qg {
   class GomQG;
-  class ObsSpaceQG;
   template <typename DATATYPE> class ObsDataQG;
+  class ObsDiagsQG;
+  class ObsSpaceQG;
   class ObsVecQG;
 
 class QCmanager : public util::Printable {
  public:
-  QCmanager(ObsSpaceQG &, const eckit::Configuration &,
+  QCmanager(const ObsSpaceQG &, const eckit::Configuration &,
             boost::shared_ptr<ObsDataQG<int> >, boost::shared_ptr<ObsDataQG<float> >): novars_() {}
   ~QCmanager() {}
 
   void preProcess() const {}
   void priorFilter(const GomQG &) const {}
-  void postFilter(const ObsVecQG &) const {}
+  void postFilter(const ObsVecQG &, const ObsDiagsQG &) const {}
 
   const oops::Variables & requiredGeoVaLs() const {return novars_;}
+  const oops::Variables & requiredHdiagnostics() const {return novars_;}
 
  private:
   void print(std::ostream &) const {}

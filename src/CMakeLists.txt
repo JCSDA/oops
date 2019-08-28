@@ -167,6 +167,7 @@ oops/interface/ModelAuxIncrement.h
 oops/interface/ObsAuxControl.h
 oops/interface/ObsAuxCovariance.h
 oops/interface/ObsAuxIncrement.h
+oops/interface/ObsDiagnostics.h
 oops/interface/ObsErrorCovariance.h
 oops/interface/ObsFilter.h
 oops/interface/ObsOperator.h

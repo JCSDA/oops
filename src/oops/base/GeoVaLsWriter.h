@@ -13,6 +13,7 @@
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsDataVector.h"
+#include "oops/interface/ObsDiagnostics.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/util/dot_product.h"
@@ -25,13 +26,14 @@ namespace oops {
 template <typename MODEL>
 class GeoVaLsWriter : public ObsFilterBase<MODEL> {
   typedef GeoVaLs<MODEL>             GeoVaLs_;
+  typedef ObsDiagnostics<MODEL>      ObsDiags_;
   typedef ObservationSpace<MODEL>    ObsSpace_;
   typedef ObsVector<MODEL>           ObsVector_;
   template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<MODEL, DATA> >;
 
  public:
   GeoVaLsWriter(const ObsSpace_ &, const eckit::Configuration & conf,
-                ObsDataPtr_<int>, ObsDataPtr_<float>): conf_(conf), geovars_() {}
+                ObsDataPtr_<int>, ObsDataPtr_<float>): conf_(conf), novars_() {}
   ~GeoVaLsWriter() {}
 
   void preProcess() const override {}
@@ -42,13 +44,15 @@ class GeoVaLsWriter : public ObsFilterBase<MODEL> {
     gv.write(conf_);
   }
 
-  void postFilter(const ObsVector_ &) const override {}
+  void postFilter(const ObsVector_ &, const ObsDiags_ &) const override {}
 
-  const Variables & requiredGeoVaLs() const override {return geovars_;};
+  const Variables & requiredGeoVaLs() const override {return novars_;};
+  const Variables & requiredHdiagnostics() const override {return novars_;};
 
  private:
   const eckit::LocalConfiguration conf_;
-  const Variables geovars_;  // could be used to determine what needs saving
+  const Variables novars_;  // could be used to determine what needs saving
+
   void print(std::ostream &) const override;
 };
 

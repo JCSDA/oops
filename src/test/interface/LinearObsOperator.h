@@ -16,9 +16,11 @@
 
 
 #include "eckit/testing/Test.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/LinearObsOperator.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxIncrement.h"
+#include "oops/interface/ObsDiagnostics.h"
 #include "oops/interface/ObsOperator.h"
 #include "oops/runs/Test.h"
 #include "oops/util/dot_product.h"
@@ -188,6 +190,7 @@ template <typename MODEL> void testTangentLinear() {
   // Test  ||(hop(x+alpha*dx)-hop(x)) - hoptl(alpha*dx)|| < tol
   typedef ObsTestsFixture<MODEL>         Test_;
   typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
+  typedef oops::ObsDiagnostics<MODEL>    ObsDiags_;
   typedef oops::ObsAuxControl<MODEL>     ObsAuxCtrl_;
   typedef oops::ObsAuxIncrement<MODEL>   ObsAuxIncr_;
   typedef oops::LinearObsOperator<MODEL> LinearObsOperator_;
@@ -228,8 +231,12 @@ template <typename MODEL> void testTangentLinear() {
     ObsVector_ y2(Test_::obspace()[jj]);
     ObsVector_ y3(Test_::obspace()[jj]);
 
+    // create obsdatavector to hold diags (empty)
+    oops::Variables diagvars;
+    ObsDiags_ ydiag(Test_::obspace()[jj], diagvars);
+
     // y1 = hop(x0)
-    hop.simulateObs(x0, y1, ybias);
+    hop.simulateObs(x0, y1, ybias, ydiag);
 
     // randomize dx
     GeoVaLs_ dx(gconf, Test_::obspace()[jj], hoptl.variables());
@@ -245,7 +252,7 @@ template <typename MODEL> void testTangentLinear() {
       x += dx;
 
       // y2 = hop(x0+alpha*dx)
-      hop.simulateObs(x, y2, ybias);
+      hop.simulateObs(x, y2, ybias, ydiag);
       y2 -= y1;
       // y3 = hoptl(alpha*dx)
       hoptl.simulateObsTL(dx, y3, ybinc);

@@ -36,6 +36,7 @@ namespace lorenz95 {
   class GomL95;
   class LocsL95;
   class ObsBias;
+  class ObsDiags1D;
   class ObsVec1D;
 
 /// Observation for Lorenz 95 model.
@@ -55,7 +56,7 @@ class ObservationL95 : public util::Printable,
   ~ObservationL95();
 
 // Obs Operators
-  void simulateObs(const GomL95 &, ObsVec1D &, const ObsBias &) const;
+  void simulateObs(const GomL95 &, ObsVec1D &, const ObsBias &, ObsDiags1D &) const;
 
 // Other
   const oops::Variables & variables() const {return inputs_;}

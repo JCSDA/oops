@@ -53,6 +53,7 @@ class ObsSpaces : public util::Printable,
 
 /// Access
   std::size_t size() const {return spaces_.size();}
+  ObsSpace_ & operator[](const std::size_t ii) {return *spaces_.at(ii);}
   const ObsSpace_ & operator[](const std::size_t ii) const {return *spaces_.at(ii);}
 
 /// Assimilation window

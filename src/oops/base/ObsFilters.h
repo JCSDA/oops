@@ -20,6 +20,7 @@
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsDataVector.h"
+#include "oops/interface/ObsDiagnostics.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/util/IntSetParser.h"
@@ -35,6 +36,7 @@ template <typename MODEL>
 class ObsFilters : public util::Printable,
                    private boost::noncopyable {
   typedef GeoVaLs<MODEL>            GeoVaLs_;
+  typedef ObsDiagnostics<MODEL>     ObsDiags_;
   typedef ObsFilterBase<MODEL>      ObsFilterBase_;
   typedef ObservationSpace<MODEL>   ObsSpace_;
   typedef ObsVector<MODEL>          ObsVector_;
@@ -50,15 +52,17 @@ class ObsFilters : public util::Printable,
 
   void preProcess() const;
   void priorFilter(const GeoVaLs_ &) const;
-  void postFilter(const ObsVector_ &) const;
+  void postFilter(const ObsVector_ &, const ObsDiags_ &) const;
 
   const Variables & requiredGeoVaLs() const {return geovars_;}
+  const Variables & requiredHdiagnostics() const {return diagvars_;}
 
  private:
   void print(std::ostream &) const;
 
   std::vector<ObsFilterPtr_> filters_;
   Variables geovars_;
+  Variables diagvars_;
 };
 
 // -----------------------------------------------------------------------------
@@ -66,7 +70,7 @@ class ObsFilters : public util::Printable,
 template <typename MODEL>
 ObsFilters<MODEL>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration & conf,
                               ObsDataPtr_<int> qcflags, ObsDataPtr_<float> obserr)
-  : filters_(), geovars_() {
+  : filters_(), geovars_(), diagvars_() {
   Log::trace() << "ObsFilters::ObsFilters starting " << conf << std::endl;
 
 // Prepare QC handling and statistics if QC flags present
@@ -91,6 +95,7 @@ ObsFilters<MODEL>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration &
     if (apply) {
       ObsFilterPtr_ tmp(FilterFactory<MODEL>::create(os, confs[jj], qcflags, obserr));
       geovars_ += tmp->requiredGeoVaLs();
+      diagvars_ += tmp->requiredHdiagnostics();
       filters_.push_back(tmp);
     }
   }
@@ -101,7 +106,7 @@ ObsFilters<MODEL>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration &
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-ObsFilters<MODEL>::ObsFilters() : filters_(), geovars_() {}
+ObsFilters<MODEL>::ObsFilters() : filters_(), geovars_(), diagvars_() {}
 
 // -----------------------------------------------------------------------------
 
@@ -131,9 +136,9 @@ void ObsFilters<MODEL>::priorFilter(const GeoVaLs_ & gv) const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void ObsFilters<MODEL>::postFilter(const ObsVector_ & ovec) const {
+void ObsFilters<MODEL>::postFilter(const ObsVector_ & hofx, const ObsDiags_ & diags) const {
   for (std::size_t jj = 0; jj < filters_.size(); ++jj) {
-    filters_.at(jj)->postFilter(ovec);
+    filters_.at(jj)->postFilter(hofx, diags);
   }
 }
 

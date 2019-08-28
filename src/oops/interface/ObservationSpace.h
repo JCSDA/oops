@@ -53,7 +53,7 @@ class ObservationSpace : public util::Printable,
   ~ObservationSpace();
 
 /// Interfacing
-  ObsSpace_ & observationspace() const {return *obsdb_;}
+  ObsSpace_ & observationspace() const {return *obsdb_;}  // const problem? YT
 
 /// Assimilation window
   const util::DateTime & windowStart() const {return obsdb_->windowStart();}

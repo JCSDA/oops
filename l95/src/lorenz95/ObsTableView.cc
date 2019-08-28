@@ -33,7 +33,7 @@ ObsTableView::ObsTableView(const eckit::Configuration & config,
 
 // -----------------------------------------------------------------------------
 
-ObsTableView::ObsTableView(ObsTableView & obstable,
+ObsTableView::ObsTableView(const ObsTableView & obstable,
                            const eckit::geometry::Point2 & center,
                            const double & dist, const int & maxnum)
   :  obstable_(obstable.obstable_)

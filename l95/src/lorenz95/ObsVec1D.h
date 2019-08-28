@@ -36,8 +36,7 @@ class ObsVec1D : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::ObsVec1D";}
 
-  ObsVec1D(ObsTableView &,
-           const std::string & name = "", const bool fail = true);
+  explicit ObsVec1D(const ObsTableView &, const std::string & name = "", const bool fail = true);
   ObsVec1D(const ObsVec1D &);
   ~ObsVec1D() {}
 
@@ -65,7 +64,7 @@ class ObsVec1D : public util::Printable,
  private:
   void print(std::ostream &) const;
 
-  ObsTableView & obsdb_;
+  const ObsTableView & obsdb_;
   std::vector<double> data_;
 };
 //-----------------------------------------------------------------------------
