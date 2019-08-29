@@ -159,7 +159,8 @@ template <typename MODEL>
 void Observer<MODEL>::doFinalize() {
   Log::trace() << "Observer::doFinalize start" << std::endl;
   filters_->priorFilter(*gvals_);
-  ObsDiags_ ydiags(obsdb_, filters_->requiredHdiagnostics());
+  ObsDiags_ ydiags(obsdb_, hop_.locations(obsdb_.windowStart(), obsdb_.windowEnd()),
+                   filters_->requiredHdiagnostics());
   hop_.simulateObs(*gvals_, yobs_, ybias_, ydiags);
   filters_->postFilter(yobs_, ydiags);
   Log::trace() << "Observer::doFinalize done" << std::endl;

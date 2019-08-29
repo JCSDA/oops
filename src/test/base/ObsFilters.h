@@ -74,7 +74,10 @@ template <typename MODEL> void testFilters() {
     filters.priorFilter(gval);
 
 //  Collect hofx diagnostics
-    ObsDiags_ diags(Test_::obspace()[jj], filters.requiredHdiagnostics());
+    ObsDiags_ diags(Test_::obspace()[jj],
+                    hop.locations(Test_::obspace()[jj].windowStart(),
+                                  Test_::obspace()[jj].windowEnd()),
+                    filters.requiredHdiagnostics());
 
     hop.simulateObs(gval, hofx, ybias, diags);
     filters.postFilter(hofx, diags);

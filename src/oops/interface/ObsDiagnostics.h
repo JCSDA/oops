@@ -15,6 +15,7 @@
 #include <boost/noncopyable.hpp>
 
 #include "oops/base/Variables.h"
+#include "oops/interface/Locations.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -29,12 +30,14 @@ template <typename MODEL>
 class ObsDiagnostics : public util::Printable,
                        private boost::noncopyable,
                        private util::ObjectCounter<ObsDiagnostics<MODEL> > {
-  typedef typename MODEL::ObsDiagnostics  ObsDiags_;
+  typedef typename MODEL::ObsDiagnostics   ObsDiags_;
+  typedef ObservationSpace<MODEL>          ObsSpace_;
+  typedef Locations<MODEL>                 Locations_;
 
  public:
   static const std::string classname() {return "oops::ObsDiagnostics";}
 
-  ObsDiagnostics(const ObservationSpace<MODEL> &, const Variables &);
+  ObsDiagnostics(const ObsSpace_ &, const Locations_ &, const Variables &);
   ~ObsDiagnostics();
 
 /// Interfacing
@@ -51,12 +54,12 @@ class ObsDiagnostics : public util::Printable,
 
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-ObsDiagnostics<MODEL>::ObsDiagnostics(const ObservationSpace<MODEL> & os,
+ObsDiagnostics<MODEL>::ObsDiagnostics(const ObsSpace_ & os, const Locations_ & locs,
                                       const Variables & vars) : diags_()
 {
   Log::trace() << "ObsDiagnostics<MODEL>::ObsDiagnostics starting" << std::endl;
   util::Timer timer(classname(), "ObsDiagnostics");
-  diags_.reset(new ObsDiags_(os.observationspace(), vars));
+  diags_.reset(new ObsDiags_(os.observationspace(), locs.locations(), vars));
   Log::trace() << "ObsDiagnostics<MODEL>::ObsDiagnostics done" << std::endl;
 }
 // -----------------------------------------------------------------------------

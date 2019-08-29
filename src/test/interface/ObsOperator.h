@@ -82,7 +82,10 @@ template <typename MODEL> void testSimulateObs() {
 
     // create diagnostics to hold HofX diags (empty)
     oops::Variables diagvars;
-    ObsDiags_ diags(Test_::obspace()[jj], diagvars);
+    ObsDiags_ diags(Test_::obspace()[jj],
+                    hop.locations(Test_::obspace()[jj].windowStart(),
+                                  Test_::obspace()[jj].windowEnd()),
+                    diagvars);
 
     // call H(x), save result in the output file as @hofx
     hop.simulateObs(gval, hofx, ybias, diags);

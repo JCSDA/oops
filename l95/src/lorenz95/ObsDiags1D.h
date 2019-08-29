@@ -17,12 +17,13 @@
 #include "lorenz95/ObsTableView.h"
 
 namespace lorenz95 {
+  class LocsL95;
 
 // -----------------------------------------------------------------------------
 
 class ObsDiags1D : public util::Printable {
  public:
-  ObsDiags1D(const ObsTableView &, const oops::Variables &) {}
+  ObsDiags1D(const ObsTableView &, const LocsL95 &, const oops::Variables &) {}
   ~ObsDiags1D() {}
 
 // I/O

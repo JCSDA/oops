@@ -16,12 +16,13 @@
 #include "oops/util/Printable.h"
 
 namespace qg {
+  class LocationsQG;
 
 // -----------------------------------------------------------------------------
 
 class ObsDiagsQG : public util::Printable {
  public:
-  ObsDiagsQG(const ObsSpaceQG &, const oops::Variables &) {}
+  ObsDiagsQG(const ObsSpaceQG &, const LocationsQG &, const oops::Variables &) {}
   ~ObsDiagsQG() {}
 
 // I/O
