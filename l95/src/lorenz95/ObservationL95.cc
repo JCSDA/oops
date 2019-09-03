@@ -16,6 +16,7 @@
 #include "eckit/config/Configuration.h"
 #include "lorenz95/GomL95.h"
 #include "lorenz95/ObsBias.h"
+#include "lorenz95/ObsDiags1D.h"
 #include "lorenz95/ObsVec1D.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
@@ -37,7 +38,7 @@ ObservationL95::~ObservationL95() {}
 // -----------------------------------------------------------------------------
 
 void ObservationL95::simulateObs(const GomL95 & gom, ObsVec1D & ovec,
-                                 const ObsBias & bias) const {
+                                 const ObsBias & bias, ObsDiags1D &) const {
   for (size_t jj = 0; jj < gom.size(); ++jj) {
     const int ii = gom.getindx(jj);
     ovec(ii) = gom[jj] + bias.value();

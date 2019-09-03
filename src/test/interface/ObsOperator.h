@@ -18,8 +18,10 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
+#include "oops/interface/ObsDiagnostics.h"
 #include "oops/interface/ObsOperator.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/runs/Test.h"
@@ -53,6 +55,7 @@ template <typename MODEL> void testConstructor() {
 template <typename MODEL> void testSimulateObs() {
   typedef ObsTestsFixture<MODEL> Test_;
   typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
+  typedef oops::ObsDiagnostics<MODEL>    ObsDiags_;
   typedef oops::ObsAuxControl<MODEL>     ObsAuxCtrl_;
   typedef oops::ObsOperator<MODEL>       ObsOperator_;
   typedef oops::ObsVector<MODEL>         ObsVector_;
@@ -75,26 +78,32 @@ template <typename MODEL> void testSimulateObs() {
     const ObsAuxCtrl_ ybias(conf[jj]);
 
     // create obsvector to hold H(x)
-    ObsVector_ ovec(Test_::obspace()[jj]);
+    ObsVector_ hofx(Test_::obspace()[jj]);
+
+    // create diagnostics to hold HofX diags (empty)
+    oops::Variables diagvars;
+    ObsDiags_ diags(Test_::obspace()[jj],
+                    hop.locations(Test_::obspace()[jj].windowStart(),
+                                  Test_::obspace()[jj].windowEnd()),
+                    diagvars);
 
     // call H(x), save result in the output file as @hofx
-    hop.simulateObs(gval, ovec, ybias);
-    ovec.save("hofx");
+    hop.simulateObs(gval, hofx, ybias, diags);
+    hofx.save("hofx");
 
     const double tol = conf[jj].getDouble("tolerance");
     if (conf[jj].has("vecequiv")) {
       // if reference h(x) is saved in file as a vector, read from file
       // and compare the norm of difference to zero
-      ObsVector_ ovec_ref(Test_::obspace()[jj], conf[jj].getString("vecequiv"));
-      ovec_ref -= ovec;
-      const double zz = ovec_ref.rms();
-      oops::Log::info() << "Vector difference between reference and computed: " <<
-                           ovec_ref;
+      ObsVector_ obsref(Test_::obspace()[jj], conf[jj].getString("vecequiv"));
+      obsref -= hofx;
+      const double zz = obsref.rms();
+      oops::Log::info() << "Vector difference between reference and computed: " << obsref;
       EXPECT(zz < 100*tol);  //  change tol from percent to actual value.
                              //  tol used in is_close is relative
     } else {
       // else compare h(x) norm to the norm from the config
-      const double zz = ovec.rms();
+      const double zz = hofx.rms();
       const double xx = conf[jj].getDouble("rmsequiv");
 
       oops::Log::debug() << "zz: " << std::fixed << std::setprecision(8) << zz << std::endl;

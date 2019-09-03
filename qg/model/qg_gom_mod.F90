@@ -8,7 +8,7 @@
 
 module qg_gom_mod
 
-use config_mod
+use fckit_configuration_module, only: fckit_configuration
 use fckit_log_module, only: fckit_log
 use iso_c_binding
 use kinds
@@ -434,23 +434,25 @@ iloc = mxloc(2)
 end subroutine qg_gom_maxloc
 ! ------------------------------------------------------------------------------
 !> Read GOM from file
-subroutine qg_gom_read_file(self,conf)
+subroutine qg_gom_read_file(self,f_conf)
 
 implicit none
 
 ! Passed variables
-type(qg_gom),intent(inout) :: self !< GOM
-type(c_ptr),intent(in) :: conf     !< Configuration
+type(qg_gom),intent(inout) :: self             !< GOM
+type(fckit_configuration),intent(in) :: f_conf !< FCKIT configuration
 
 ! Local variables
 integer :: ncid,nobs_id,nv_id,indx_id,values_id
 character(len=1024) :: filename
+character(len=:),allocatable :: str
 
 ! Check allocation
 if (self%lalloc) call abor1_ftn('qg_gom_read_file: gom alredy allocated')
 
 ! Get filename
-filename = trim(config_get_string(conf,len(filename),'filename'))
+call f_conf%get_or_die("filename",str)
+filename = str
 call fckit_log%info('qg_gom_read_file: reading '//trim(filename))
 
 ! Open NetCDF file
@@ -494,23 +496,25 @@ call ncerr(nf90_close(ncid))
 end subroutine qg_gom_read_file
 ! ------------------------------------------------------------------------------
 !> Write GOM to file
-subroutine qg_gom_write_file(self,conf)
+subroutine qg_gom_write_file(self,f_conf)
 
 implicit none
 
 ! Passed variables
 type(qg_gom),intent(inout) :: self !< GOM
-type(c_ptr),intent(in) :: conf     !< Configuration
+type(fckit_configuration),intent(in) :: f_conf !< FCKIT configuration
 
 ! Local variables
 integer :: ncid,nobs_id,nv_id,indx_id,values_id
 character(len=1024) :: filename
+character(len=:),allocatable :: str
 
 ! Check allocation
 if (.not.self%lalloc) call abor1_ftn('qg_gom_write_file: gom not allocated')
 
 ! Set filename
-filename = trim(config_get_string(conf,len(filename),'filename'))
+call f_conf%get_or_die("filename",str)
+filename = str
 call fckit_log%info('qg_gom_write_file: writing '//trim(filename))
 
 ! Create NetCDF file
@@ -545,25 +549,27 @@ call ncerr(nf90_close(ncid))
 end subroutine qg_gom_write_file
 ! ------------------------------------------------------------------------------
 !> GOM analytic initialization
-subroutine qg_gom_analytic_init(self,locs,conf)
+subroutine qg_gom_analytic_init(self,locs,f_conf)
 
 implicit none
 
 ! Passed variables
-type(qg_gom),intent(inout) :: self  !< GOM
-type(qg_locs),intent(inout) :: locs !< Locations
-type(c_ptr),intent(in)    :: conf   !< Configuration
+type(qg_gom),intent(inout) :: self             !< GOM
+type(qg_locs),intent(inout) :: locs            !< Locations
+type(fckit_configuration),intent(in) :: f_conf !< FCKIT configuration
 
 ! Local variables
 integer :: iloc
 real(kind_real) :: x,y
 character(len=30) :: ic
+character(len=:),allocatable :: str
 
 ! Check allocation
 if (.not. self%lalloc) call abor1_ftn('qg_gom_analytic init: gom not allocated')
 
 ! Get analytic configuration
-ic = config_get_string(conf,len(ic),'analytic_init')
+call f_conf%get_or_die("analytic_init",str)
+ic = str
 call fckit_log%info('qg_gom_analytic_init: ic = '//trim(ic))
 do iloc=1,locs%nlocs
   select case (trim(ic))

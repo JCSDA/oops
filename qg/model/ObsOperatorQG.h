@@ -32,6 +32,7 @@ namespace qg {
   class GomQG;
   class LocationsQG;
   class ObsBias;
+  class ObsDiagsQG;
   class ObsOpBaseQG;
   class ObsSpaceQG;
   class ObsVecQG;
@@ -45,7 +46,7 @@ class ObsOperatorQG : public util::Printable,
   ~ObsOperatorQG();
 
 /// Obs Operator
-  void simulateObs(const GomQG &, ObsVecQG &, const ObsBias &) const;
+  void simulateObs(const GomQG &, ObsVecQG &, const ObsBias &, ObsDiagsQG &) const;
 
 /// Other
   const oops::Variables & variables() const;  // Required input variables from Model

@@ -8,7 +8,7 @@
 
 module qg_wind_interface
 
-use config_mod
+use fckit_configuration_module, only: fckit_configuration
 use iso_c_binding
 use qg_gom_mod
 use qg_obsoper_mod
@@ -31,16 +31,18 @@ integer(c_int),intent(inout) :: c_key_self !< Wind observations
 type(c_ptr),intent(in) :: c_conf           !< Configuration
 
 ! Local variables
+type(fckit_configuration) :: f_conf
 type(qg_obsoper),pointer :: self
 character(len=1) :: svars(2) = (/'u','v'/)
 
 ! Interface
+f_conf = fckit_configuration(c_conf)
 call qg_obsoper_registry%init()
 call qg_obsoper_registry%add(c_key_self)
 call qg_obsoper_registry%get(c_key_self,self)
 
 ! Call Fortran
-call qg_oper_setup(self,c_conf,svars,2)
+call qg_oper_setup(self,f_conf,svars,2)
 
 end subroutine qg_wind_setup_c
 ! ------------------------------------------------------------------------------

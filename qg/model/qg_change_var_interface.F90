@@ -8,7 +8,6 @@
 
 module qg_change_var_interface
 
-use config_mod
 use iso_c_binding
 use qg_change_var_mod
 use qg_fields_mod

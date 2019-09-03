@@ -8,7 +8,6 @@
 
 module qg_vars_mod
 
-use config_mod
 use iso_c_binding
 
 implicit none

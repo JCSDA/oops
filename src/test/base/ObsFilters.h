@@ -21,6 +21,7 @@
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsDataVector.h"
+#include "oops/interface/ObsDiagnostics.h"
 #include "oops/interface/ObsOperator.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/runs/Test.h"
@@ -35,6 +36,7 @@ namespace test {
 template <typename MODEL> void testFilters() {
   typedef ObsTestsFixture<MODEL> Test_;
   typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
+  typedef oops::ObsDiagnostics<MODEL>    ObsDiags_;
   typedef oops::ObsAuxControl<MODEL>     ObsAuxCtrl_;
   typedef oops::ObsFilters<MODEL>        ObsFilters_;
   typedef oops::ObsOperator<MODEL>       ObsOperator_;
@@ -55,14 +57,13 @@ template <typename MODEL> void testFilters() {
     const ObsAuxCtrl_ ybias(typeconfs[jj]);
 
 //  Allocate memory for tests
-    ObsVector_ ovec(Test_::obspace()[jj]);
+    ObsVector_ hofx(Test_::obspace()[jj]);
     boost::shared_ptr<oops::ObsDataVector<MODEL, float> > obserr
       (new oops::ObsDataVector<MODEL, float>(Test_::obspace()[jj],
                Test_::obspace()[jj].obsvariables(), "ObsError"));
     boost::shared_ptr<oops::ObsDataVector<MODEL, int> >
       qcflags(new oops::ObsDataVector<MODEL, int>  (Test_::obspace()[jj],
                Test_::obspace()[jj].obsvariables()));
-
 //  Create filters
     ObsFilters_ filters(Test_::obspace()[jj], typeconfs[jj], qcflags, obserr);
 
@@ -71,8 +72,15 @@ template <typename MODEL> void testFilters() {
     const GeoVaLs_ gval(gconf, Test_::obspace()[jj], vars);
     filters.preProcess();
     filters.priorFilter(gval);
-    hop.simulateObs(gval, ovec, ybias);
-    filters.postFilter(ovec);
+
+//  Collect hofx diagnostics
+    ObsDiags_ diags(Test_::obspace()[jj],
+                    hop.locations(Test_::obspace()[jj].windowStart(),
+                                  Test_::obspace()[jj].windowEnd()),
+                    filters.requiredHdiagnostics());
+
+    hop.simulateObs(gval, hofx, ybias, diags);
+    filters.postFilter(hofx, diags);
 
 //  Compare with known results
     if (typeconfs[jj].has("qcBenchmark")) {

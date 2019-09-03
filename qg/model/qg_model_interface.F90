@@ -8,6 +8,7 @@
 
 module qg_model_interface
 
+use fckit_configuration_module, only: fckit_configuration
 use fckit_log_module, only: fckit_log
 use iso_c_binding
 use qg_fields_mod
@@ -31,15 +32,17 @@ integer(c_int),intent(inout) :: c_key_self !< Model configuration
 type(c_ptr),intent(in)    :: c_conf        !< Configuration
 
 ! Local variables
+type(fckit_configuration) :: f_conf
 type(qg_model_config),pointer :: self
 
 ! Interface
+f_conf = fckit_configuration(c_conf)
 call qg_model_registry%init()
 call qg_model_registry%add(c_key_self)
 call qg_model_registry%get(c_key_self,self)
 
 ! Call Fortran
-call qg_model_setup(self,c_conf)
+call qg_model_setup(self,f_conf)
    
 end subroutine qg_model_setup_c
 ! ------------------------------------------------------------------------------

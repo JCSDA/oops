@@ -24,7 +24,7 @@
 
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-ObsVec1D::ObsVec1D(ObsTableView & ot,
+ObsVec1D::ObsVec1D(const ObsTableView & ot,
                    const std::string & name, const bool fail)
   : obsdb_(ot), data_(ot.nobs())
 {

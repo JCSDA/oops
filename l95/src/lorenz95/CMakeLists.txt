@@ -31,6 +31,7 @@ ecbuild_add_library( TARGET lorenz95
                          ObsBiasCorrection.h
                          ObsBiasCovariance.cc
                          ObsBiasCovariance.h
+                         ObsDiags1D.h
                          ObsTable.cc
                          ObsTable.h
                          ObsTableView.cc

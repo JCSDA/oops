@@ -8,7 +8,7 @@
 
 module qg_geom_mod
 
-use config_mod
+use fckit_configuration_module, only: fckit_configuration
 use fckit_log_module,only: fckit_log
 use kinds
 use iso_c_binding
@@ -58,26 +58,25 @@ contains
 #include "oops/util/linkedList_c.f"
 ! ------------------------------------------------------------------------------
 !> Setup geometry
-subroutine qg_geom_setup(self,conf)
+subroutine qg_geom_setup(self,f_conf)
 
 ! Passed variables
-type(qg_geom),intent(inout) :: self !< Geometry
-type(c_ptr),intent(in) :: conf      !< Configuration
+type(qg_geom),intent(inout) :: self            !< Geometry
+type(fckit_configuration),intent(in) :: f_conf !< FCKIT configuration
 
 ! Local variables
 integer :: ix,iy,iz,ix_c,iy_c,lwork,info
 integer,allocatable :: ipiv(:),ipivsave(:)
 real(kind_real) :: mapfac,distx,disty,f
-real(kind_real),allocatable :: depths(:),wi(:),vl(:,:),work(:)
+real(kind_real),allocatable :: real_array(:),depths(:),wi(:),vl(:,:),work(:)
 real(kind_real),allocatable :: fsave(:,:),vrlu(:,:),vrlusave(:,:)
 character(len=1024) :: htype,record
+character(len=:),allocatable :: str
 
 ! Get horizontal resolution data
-self%nx = config_get_int(conf,'nx')
-self%ny = config_get_int(conf,'ny')
-
-! Get number of levels
-self%nz = config_get_data_dimension(conf,'depths')
+call f_conf%get_or_die("nx",self%nx)
+call f_conf%get_or_die("ny",self%ny)
+self%nz = f_conf%get_size("depths")
 
 ! Allocation
 allocate(depths(self%nz))
@@ -102,8 +101,8 @@ allocate(ipiv(self%nz))
 allocate(ipivsave(self%nz))
 
 ! Get depths
-call config_get_double_vector(conf,'depths',depths)
-if (abs(sum(depths)-domain_depth)>1.0e-6) call abor1_ftn('specified depths should add up to domain_depth')
+call f_conf%get_or_die("depths",real_array)
+depths = real_array
 
 ! Define dx/dy
 self%deltax = domain_zonal/real(self%nx,kind_real)
@@ -188,8 +187,9 @@ do iy=1,self%ny
 enddo
 
 ! Set heating term 
-if (config_element_exists(conf,'heating')) then
-  htype = trim(config_get_string(conf,len(htype),'heating'))
+if (f_conf%has("heating")) then
+  call f_conf%get_or_die("heating",str)
+  htype = str
 else
   ! This default value is for backward compatibility
   htype = 'gaussian'

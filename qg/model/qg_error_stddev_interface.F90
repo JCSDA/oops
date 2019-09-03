@@ -8,6 +8,7 @@
 
 module qg_error_stddev_interface
 
+use fckit_configuration_module, only: fckit_configuration
 use iso_c_binding
 use kinds
 use qg_error_stddev_mod
@@ -27,15 +28,17 @@ integer(c_int),intent(inout) :: c_key_self !< Error standard deviation structure
 type(c_ptr),intent(in) :: c_conf           !< Configuration
 
 ! Local variables
+type(fckit_configuration) :: f_conf
 type(qg_error_stddev_config),pointer :: self
 
 ! Interface
+f_conf = fckit_configuration(c_conf)
 call qg_error_stddev_registry%init()
 call qg_error_stddev_registry%add(c_key_self)
 call qg_error_stddev_registry%get(c_key_self,self)
 
 ! Call Fortran
-call qg_error_stddev_setup(c_conf,self)
+call qg_error_stddev_setup(f_conf,self)
 
 end subroutine qg_error_stddev_setup_c
 ! ------------------------------------------------------------------------------

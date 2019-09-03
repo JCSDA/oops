@@ -28,6 +28,7 @@
 #include "model/ObsBiasCovariance.h"
 #include "model/ObsBiasIncrement.h"
 #include "model/ObsDataQG.h"
+#include "model/ObsDiagsQG.h"
 #include "model/ObsOperatorQG.h"
 #include "model/ObsOperatorTLAD.h"
 #include "model/ObsSpaceQG.h"
@@ -63,6 +64,8 @@ struct QgTraits {
   typedef qg::ObsBias               ObsAuxControl;
   typedef qg::ObsBiasIncrement      ObsAuxIncrement;
   typedef qg::ObsBiasCovariance     ObsAuxCovariance;
+
+  typedef qg::ObsDiagsQG            ObsDiagnostics;
 
   typedef qg::GomQG                 GeoVaLs;
   typedef qg::LocationsQG           Locations;

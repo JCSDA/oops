@@ -5,7 +5,6 @@
 
 module oobump_mod
 
-use config_mod
 use fckit_configuration_module, only: fckit_configuration
 use fckit_log_module, only: fckit_log
 use iso_c_binding
@@ -46,18 +45,18 @@ contains
 #include "oops/util/linkedList_c.f"
 !-------------------------------------------------------------------------------
 !> Create OOBUMP
-subroutine create_oobump(self, ug, conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub)
+subroutine create_oobump(self, ug, f_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub)
 
 implicit none
 
 ! Passed variables
-type(oobump_type), intent(inout) :: self  !< OOBUMP
-type(unstructured_grid), intent(in) :: ug !< Unstructured grid
-type(c_ptr), intent(in) :: conf           !< Configuration
-integer, intent(in) :: ens1_ne            !< First ensemble size
-integer, intent(in) :: ens1_nsub          !< Number of sub-ensembles in the first ensemble
-integer, intent(in) :: ens2_ne            !< Second ensemble size
-integer, intent(in) :: ens2_nsub          !< Number of sub-ensembles in the second ensemble
+type(oobump_type), intent(inout) :: self       !< OOBUMP
+type(unstructured_grid), intent(in) :: ug      !< Unstructured grid
+type(fckit_configuration),intent(in) :: f_conf !< FCKIT configuration
+integer, intent(in) :: ens1_ne                 !< First ensemble size
+integer, intent(in) :: ens1_nsub               !< Number of sub-ensembles in the first ensemble
+integer, intent(in) :: ens2_ne                 !< Second ensemble size
+integer, intent(in) :: ens2_nsub               !< Number of sub-ensembles in the second ensemble
 
 ! Local variables
 integer :: igrid, lunit, iproc, ifileunit
@@ -68,7 +67,7 @@ character(len=1024) :: filename
 self%colocated = ug%colocated
 self%separate_log = 0
 lunit = -999
-if (config_element_exists(conf,"separate_log")) self%separate_log = config_get_int(conf,"separate_log")
+if (f_conf%has("separate_log")) call f_conf%get_or_die("separate_log",self%separate_log)
 self%ngrid = ug%ngrid
 
 ! Allocation
@@ -79,7 +78,7 @@ do igrid=1,self%ngrid
    call self%bump(igrid)%nam%init
 
    ! Read JSON
-   call bump_read_conf(conf,self%bump(igrid))
+   call bump_read_conf(f_conf,self%bump(igrid))
 
    ! Add suffix for multiple grid case
    if (self%ngrid>1) write(self%bump(igrid)%nam%prefix,'(a,a,i2.2)') trim(self%bump(igrid)%nam%prefix),'_',igrid
@@ -458,22 +457,16 @@ end do
 end subroutine set_oobump_param
 !-------------------------------------------------------------------------------
 !> Read BUMP configuration
-subroutine bump_read_conf(conf,bump)
+subroutine bump_read_conf(f_conf,bump)
 
 implicit none
 
 ! Passed variables
-type(c_ptr), intent(in) :: conf        !< Configuration
-type(bump_type), intent(inout) :: bump !< BUMP
+type(fckit_configuration),intent(in) :: f_conf !< FCKIT configuration
+type(bump_type), intent(inout) :: bump         !< BUMP
 
-! Local variables
-type(fckit_configuration) :: fconf
-
-! Transform to fckit_configuration
-fconf = fckit_configuration(conf)
-
-! Set BUMP namelist from fckit_configuration
-call bump%nam%from_conf(fconf)
+! Set BUMP namelist
+call bump%nam%from_conf(f_conf)
 
 end subroutine bump_read_conf
 !-------------------------------------------------------------------------------

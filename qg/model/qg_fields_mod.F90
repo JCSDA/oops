@@ -8,7 +8,7 @@
 
 module qg_fields_mod
 
-use config_mod
+use fckit_configuration_module, only: fckit_configuration
 use datetime_mod
 use duration_mod
 use fckit_log_module,only: fckit_log
@@ -197,13 +197,13 @@ endif
 end subroutine qg_fields_zero
 ! ------------------------------------------------------------------------------
 !> Set fields to Diracs
-subroutine qg_fields_dirac(self,conf)
+subroutine qg_fields_dirac(self,f_conf)
 
 implicit none
 
 ! Passed variables
-type(qg_fields),intent(inout) :: self !< Fields
-type(c_ptr),intent(in) :: conf        !< Configuration
+type(qg_fields),intent(inout) :: self          !< Fields
+type(fckit_configuration),intent(in) :: f_conf !< FCKIT configuration
 
 ! Local variables
 integer :: ndir,idir
@@ -213,8 +213,8 @@ integer,allocatable :: ixdir(:),iydir(:),izdir(:)
 call qg_fields_check(self)
 
 ! Get Diracs size
-ndir = config_get_data_dimension(conf,'ixdir')
-if ((config_get_data_dimension(conf,'iydir')/=ndir).or.(config_get_data_dimension(conf,'izdir')/=ndir)) &
+ndir = f_conf%get_size('ixdir')
+if ((f_conf%get_size('iydir')/=ndir).or.(f_conf%get_size('izdir')/=ndir)) &
  & call abor1_ftn('qg_fields_dirac: inconsistent sizes for ixdir, iydir and izdir')
 
 ! Allocation
@@ -223,9 +223,9 @@ allocate(iydir(ndir))
 allocate(izdir(ndir))
 
 ! Get Diracs positions
-call config_get_int_vector(conf,'ixdir',ixdir)
-call config_get_int_vector(conf,'iydir',iydir)
-call config_get_int_vector(conf,'izdir',izdir)
+call f_conf%get_or_die("ixdir",ixdir)
+call f_conf%get_or_die("iydir",iydir)
+call f_conf%get_or_die("izdir",izdir)
 
 ! Check Diracs positions
 if (any(ixdir<1).or.any(ixdir>self%geom%nx)) call abor1_ftn('qg_fields_dirac: invalid ixdir')
@@ -556,14 +556,14 @@ endif
 end subroutine qg_fields_change_resol
 ! ------------------------------------------------------------------------------
 !> Read fields from file
-subroutine qg_fields_read_file(fld,conf,vdate)
+subroutine qg_fields_read_file(fld,f_conf,vdate)
 
 implicit none
 
 ! Passed variables
-type(qg_fields),intent(inout) :: fld  !< Fields
-type(c_ptr),intent(in) :: conf        !< Configuration
-type(datetime),intent(inout) :: vdate !< Date and time
+type(qg_fields),intent(inout) :: fld           !< Fields
+type(fckit_configuration),intent(in) :: f_conf !< FCKIT configuration
+type(datetime),intent(inout) :: vdate          !< Date and time
 
 ! Local variables
 integer :: iread,nx,ny,nz,bc
@@ -571,23 +571,25 @@ integer :: ncid,nx_id,ny_id,nz_id,gfld3d_id,x_north_id,x_south_id,q_north_id,q_s
 logical :: lbc
 character(len=20) :: sdate
 character(len=1024) :: record,filename
+character(len=:),allocatable :: str
 
 ! Check field
 call qg_fields_check(fld)
 
 ! Check whether the field should be invented or read from file
 iread = 1
-if (config_element_exists(conf,'read_from_file')) iread = config_get_int(conf,'read_from_file')
+if (f_conf%has("read_from_file")) call f_conf%get_or_die("read_from_file",iread) 
 
 if (iread==0) then
   ! Invent field
   call fckit_log%warning('qg_fields_read_file: inventing field')
-  call qg_fields_analytic_init(fld,conf,vdate)
+  call qg_fields_analytic_init(fld,f_conf,vdate)
 else
   ! Read field from file
 
   ! Get filename
-  filename = config_get_string(conf,len(filename),'filename')
+  call f_conf%get_or_die("filename",str)
+  filename = str
   call fckit_log%info('qg_fields_read_file: opening '//trim(filename))
 
   ! Initialize field
@@ -665,14 +667,14 @@ call qg_fields_check(fld)
 end subroutine qg_fields_read_file
 ! ------------------------------------------------------------------------------
 !> Write fields to file
-subroutine qg_fields_write_file(fld,conf,vdate)
+subroutine qg_fields_write_file(fld,f_conf,vdate)
 
 implicit none
 
 ! Passed variables
-type(qg_fields),intent(in) :: fld  !< Fields
-type(c_ptr),intent(in) :: conf     !< Configuration
-type(datetime),intent(in) :: vdate !< Date and time
+type(qg_fields),intent(in) :: fld              !< Fields
+type(fckit_configuration),intent(in) :: f_conf !< FCKIT configuration
+type(datetime),intent(in) :: vdate             !< Date and time
 
 ! Local variables
 integer :: ncid,nx_id,ny_id,nz_id,lon_id,lat_id,z_id,area_id,heat_id,x_id,q_id,u_id,v_id
@@ -717,7 +719,7 @@ else
 endif
 
 ! Set filename
-filename = genfilename(conf,800,vdate)
+filename = genfilename(f_conf,800,vdate)
 call fckit_log%info('qg_fields_write_file: writing '//trim(filename))
 
 ! Set date
@@ -798,31 +800,34 @@ call ncerr(nf90_close(ncid))
 end subroutine qg_fields_write_file
 ! ------------------------------------------------------------------------------
 !> Analytic initialization of fields
-subroutine qg_fields_analytic_init(fld,config,vdate)
+subroutine qg_fields_analytic_init(fld,f_conf,vdate)
 
 implicit none
 
 ! Passed variables
-type(qg_fields),intent(inout) :: fld   !< Fields
-type(c_ptr),intent(in)       :: config !< Configuration
-type(datetime),intent(inout) :: vdate  !< Date and time
+type(qg_fields),intent(inout) :: fld           !< Fields
+type(fckit_configuration),intent(in) :: f_conf !< FCKIT configuration
+type(datetime),intent(inout) :: vdate          !< Date and time
 
 ! Local variables
 integer :: ix,iy,iz
 real(kind_real),allocatable :: x(:,:,:),q(:,:,:)
 character(len=30) :: ic
 character(len=20) :: sdate
+character(len=:),allocatable :: str
 
 ! Check configuration
-if (config_element_exists(config,'analytic_init')) then
-  ic = trim(config_get_string(config,len(ic),'analytic_init'))
+if (f_conf%has("analytic_init")) then
+  call f_conf%get_or_die("analytic_init",str)
+  ic = str
 else
   ic = 'baroclinic-instability'
 endif
 call fckit_log%warning('qg_fields_analytic_init: '//trim(ic))
 
 ! Set date
-sdate = config_get_string(config,len(sdate),'date')
+call f_conf%get_or_die("date",str)
+sdate = str
 call fckit_log%info('qg_fields_analytic_init: validity date is '//sdate)
 call datetime_set(sdate,vdate)
 

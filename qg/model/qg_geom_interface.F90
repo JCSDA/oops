@@ -8,7 +8,7 @@
 
 module qg_geom_interface
 
-use config_mod
+use fckit_configuration_module, only: fckit_configuration
 use fckit_log_module,only: fckit_log
 use kinds
 use iso_c_binding
@@ -28,15 +28,17 @@ integer(c_int),intent(inout) :: c_key_self !< Geometry
 type(c_ptr),intent(in) :: c_conf           !< Configuration
 
 ! Local variables
+type(fckit_configuration) :: f_conf
 type(qg_geom),pointer :: self
 
 ! Interface
+f_conf = fckit_configuration(c_conf)
 call qg_geom_registry%init()
 call qg_geom_registry%add(c_key_self)
 call qg_geom_registry%get(c_key_self,self)
 
 ! Call Fortran
-call qg_geom_setup(self,c_conf)
+call qg_geom_setup(self,f_conf)
 
 end subroutine qg_geom_setup_c
 ! ------------------------------------------------------------------------------

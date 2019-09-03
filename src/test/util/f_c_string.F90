@@ -9,8 +9,8 @@
 
 module test_f_c_string
 
+use fckit_configuration_module, only: fckit_configuration
 use, intrinsic :: iso_c_binding
-use config_mod
 use kinds
 use string_f_c_mod
 use fckit_log_module, only : fckit_log
@@ -33,8 +33,13 @@ type(c_ptr), intent(in), value :: vec
 type(c_ptr), intent(in), value :: var
 
 character(len=max_string), allocatable :: fort_vec(:)
+character(kind=c_char,len=max_string),allocatable :: char_array(:)
+type(fckit_configuration) :: f_conf
+integer(c_size_t),parameter :: csize = max_string
 
-fort_vec = config_get_string_vector(c_conf, max_string, "string_vec")
+f_conf = fckit_configuration(c_conf)
+call f_conf%get_or_die("string_vec",csize,char_array)
+fort_vec = char_array
 
 call f_c_push_string_vector(vec, fort_vec)
 

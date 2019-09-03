@@ -14,6 +14,7 @@
 #include "model/GomQG.h"
 #include "model/LocationsQG.h"
 #include "model/ObsBias.h"
+#include "model/ObsDiagsQG.h"
 #include "model/ObsOpBaseQG.h"
 #include "model/ObsSpaceQG.h"
 #include "model/ObsVecQG.h"
@@ -34,7 +35,8 @@ ObsOperatorQG::~ObsOperatorQG() {}
 
 // -----------------------------------------------------------------------------
 
-void ObsOperatorQG::simulateObs(const GomQG & gvals, ObsVecQG & yy, const ObsBias & bias) const {
+void ObsOperatorQG::simulateObs(const GomQG & gvals, ObsVecQG & yy, const ObsBias & bias,
+                                ObsDiagsQG &) const {
   oper_->simulateObs(gvals, yy, bias);
 }
 

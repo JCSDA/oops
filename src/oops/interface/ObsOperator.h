@@ -19,6 +19,7 @@
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
+#include "oops/interface/ObsDiagnostics.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/util/DateTime.h"
@@ -37,6 +38,7 @@ class ObsOperator : public util::Printable,
                     private util::ObjectCounter<ObsOperator<MODEL> > {
   typedef typename MODEL::ObsOperator  ObsOperator_;
   typedef GeoVaLs<MODEL>               GeoVaLs_;
+  typedef ObsDiagnostics<MODEL>        ObsDiags_;
   typedef Locations<MODEL>             Locations_;
   typedef ObsAuxControl<MODEL>         ObsAuxControl_;
   typedef ObsVector<MODEL>             ObsVector_;
@@ -49,7 +51,7 @@ class ObsOperator : public util::Printable,
   ~ObsOperator();
 
 /// Obs Operator
-  void simulateObs(const GeoVaLs_ &, ObsVector_ &, const ObsAuxControl_ &) const;
+  void simulateObs(const GeoVaLs_ &, ObsVector_ &, const ObsAuxControl_ &, ObsDiags_ &) const;
 
 /// Interfacing
   const ObsOperator_ & obsoperator() const {return *oper_;}
@@ -88,10 +90,10 @@ ObsOperator<MODEL>::~ObsOperator() {
 
 template <typename MODEL>
 void ObsOperator<MODEL>::simulateObs(const GeoVaLs_ & gvals, ObsVector_ & yy,
-                                     const ObsAuxControl_ & aux) const {
+                                     const ObsAuxControl_ & aux, ObsDiags_ & ydiag) const {
   Log::trace() << "ObsOperator<MODEL>::simulateObs starting" << std::endl;
   util::Timer timer(classname(), "simulateObs");
-  oper_->simulateObs(gvals.geovals(), yy.obsvector(), aux.obsauxcontrol());
+  oper_->simulateObs(gvals.geovals(), yy.obsvector(), aux.obsauxcontrol(), ydiag.obsdiagnostics());
   Log::trace() << "ObsOperator<MODEL>::simulateObs done" << std::endl;
 }
 

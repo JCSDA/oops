@@ -20,6 +20,7 @@
 #include "oops/interface/InterpolatorTraj.h"
 #include "oops/interface/LinearObsOperator.h"
 #include "oops/interface/ObsAuxControl.h"
+#include "oops/interface/ObsDiagnostics.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsOperator.h"
 #include "oops/interface/ObsVector.h"
@@ -39,6 +40,7 @@ namespace oops {
 template <typename MODEL>
 class Observer : public util::Printable {
   typedef GeoVaLs<MODEL>             GeoVaLs_;
+  typedef ObsDiagnostics<MODEL>      ObsDiags_;
   typedef InterpolatorTraj<MODEL>    InterpolatorTraj_;
   typedef LinearObsOperator<MODEL>   LinearObsOperator_;
   typedef ObservationSpace<MODEL>    ObsSpace_;
@@ -70,6 +72,7 @@ class Observer : public util::Printable {
   ObsOperator_ hop_;
 
 // Data
+  const ObsSpace_ & obsdb_;
   ObsVector_ & yobs_;
   const ObsAuxCtrl_ & ybias_;
 
@@ -81,13 +84,11 @@ class Observer : public util::Printable {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-Observer<MODEL>::Observer(const eckit::Configuration & conf,
-                          const ObsSpace_ & obsdb,
-                          const ObsAuxCtrl_ & ybias,
-                          ObsVector_ & yobs,
+Observer<MODEL>::Observer(const eckit::Configuration & conf, const ObsSpace_ & obsdb,
+                          const ObsAuxCtrl_ & ybias, ObsVector_ & yobs,
                           const PtrFilters_ filters)
   : hop_(obsdb, eckit::LocalConfiguration(conf, "ObsOperator")),
-    yobs_(yobs), ybias_(ybias), filters_(filters)
+    obsdb_(obsdb), yobs_(yobs), ybias_(ybias), filters_(filters)
 {
   Log::trace() << "Observer::Observer starting" << std::endl;
   geovars_ += hop_.variables();
@@ -158,8 +159,10 @@ template <typename MODEL>
 void Observer<MODEL>::doFinalize() {
   Log::trace() << "Observer::doFinalize start" << std::endl;
   filters_->priorFilter(*gvals_);
-  hop_.simulateObs(*gvals_, yobs_, ybias_);
-  filters_->postFilter(yobs_);
+  ObsDiags_ ydiags(obsdb_, hop_.locations(obsdb_.windowStart(), obsdb_.windowEnd()),
+                   filters_->requiredHdiagnostics());
+  hop_.simulateObs(*gvals_, yobs_, ybias_, ydiags);
+  filters_->postFilter(yobs_, ydiags);
   Log::trace() << "Observer::doFinalize done" << std::endl;
 }
 

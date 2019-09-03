@@ -5,7 +5,7 @@
 
 module oobump_interface
 
-use config_mod
+use fckit_configuration_module, only: fckit_configuration
 use iso_c_binding
 use kinds
 use missing_values_mod
@@ -35,17 +35,19 @@ integer(c_int), intent(in) :: ens2_ne         !< Second ensemble size
 integer(c_int), intent(in) :: ens2_nsub       !< Number of sub-ensembles in the second ensemble
 
 ! Local variables
+type(fckit_configuration) :: f_conf
 type(oobump_type), pointer :: self
 type(unstructured_grid), pointer :: ug
 
 ! Interface
+f_conf = fckit_configuration(c_conf)
 call oobump_registry%init()
 call oobump_registry%add(c_key_oobump)
 call oobump_registry%get(c_key_oobump, self)
 call unstructured_grid_registry%get(c_key_ug, ug)
 
 ! Call Fortran
-call create_oobump(self, ug, c_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub)
+call create_oobump(self, ug, f_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub)
 
 end subroutine create_oobump_c
 ! ------------------------------------------------------------------------------

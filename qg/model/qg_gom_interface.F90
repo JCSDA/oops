@@ -8,7 +8,7 @@
 
 module qg_gom_interface
 
-use config_mod
+use fckit_configuration_module, only: fckit_configuration
 use iso_c_binding
 use qg_geom_mod
 use qg_gom_mod
@@ -382,13 +382,15 @@ integer(c_int),intent(in) :: c_key_self !< GOM
 type(c_ptr),intent(in) :: c_conf        !< Configuration
 
 ! Local variables
+type(fckit_configuration) :: f_conf
 type(qg_gom),pointer :: self
 
 ! Interface
+f_conf = fckit_configuration(c_conf)
 call qg_gom_registry%get(c_key_self,self)
 
 ! Call Fortran
-call qg_gom_read_file(self,c_conf)
+call qg_gom_read_file(self,f_conf)
 
 end subroutine qg_gom_read_file_c
 ! ------------------------------------------------------------------------------
@@ -402,13 +404,15 @@ integer(c_int),intent(in) :: c_key_self !< GOM
 type(c_ptr),intent(in) :: c_conf        !< Configuration
 
 ! Local variables
+type(fckit_configuration) :: f_conf
 type(qg_gom),pointer :: self
 
 ! Interface
+f_conf = fckit_configuration(c_conf)
 call qg_gom_registry%get(c_key_self,self)
 
 ! Call Fortran
-call qg_gom_write_file(self,c_conf)
+call qg_gom_write_file(self,f_conf)
 
 end subroutine qg_gom_write_file_c
 ! ------------------------------------------------------------------------------
@@ -423,15 +427,17 @@ integer(c_int),intent(in) :: c_key_locs !< Locations
 type(c_ptr),intent(in)    :: c_conf     !< Configuration
 
 ! Local variables
+type(fckit_configuration) :: f_conf
 type(qg_gom),pointer :: self
 type(qg_locs),pointer :: locs
 
 ! Interface
+f_conf = fckit_configuration(c_conf)
 call qg_gom_registry%get(c_key_self,self)
 call qg_locs_registry%get(c_key_locs,locs)
 
 ! Call Fortran
-call qg_gom_analytic_init(self,locs,c_conf)
+call qg_gom_analytic_init(self,locs,f_conf)
 
 end subroutine qg_gom_analytic_init_c
 ! ------------------------------------------------------------------------------

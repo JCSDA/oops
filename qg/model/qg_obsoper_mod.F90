@@ -8,7 +8,7 @@
 
 module qg_obsoper_mod
 
-use config_mod
+use fckit_configuration_module, only: fckit_configuration
 use iso_c_binding
 use kinds
 
@@ -36,15 +36,15 @@ contains
 !> Linked list implementation
 #include "oops/util/linkedList_c.f"
 ! ------------------------------------------------------------------------------
-subroutine qg_oper_setup(self,conf,svars,ncol)
+subroutine qg_oper_setup(self,f_conf,svars,ncol)
 
 implicit none
 
 ! Passed variables
-type(qg_obsoper),intent(inout) :: self  !< Observations
-type(c_ptr),intent(in) :: conf          !< Configuration
-character(len=*),intent(in) :: svars(:) !< Variables
-integer :: ncol                         !< Number of columns
+type(qg_obsoper),intent(inout) :: self         !< Observations
+type(fckit_configuration),intent(in) :: f_conf !< FCKIT configuration
+character(len=*),intent(in) :: svars(:)        !< Variables
+integer :: ncol                                !< Number of columns
 
 ! Set number of columns
 self%ncol = ncol

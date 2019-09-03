@@ -9,7 +9,6 @@
 !> Fortran module to handle wind speed observations for the QG model
 module qg_wspeed_mod
 
-use config_mod
 use kinds
 use iso_c_binding
 use qg_gom_mod

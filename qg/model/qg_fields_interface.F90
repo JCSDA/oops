@@ -9,6 +9,7 @@
 module qg_fields_interface
 
 use datetime_mod
+use fckit_configuration_module, only: fckit_configuration
 use iso_c_binding
 use kinds
 use unstructured_grid_mod
@@ -130,13 +131,15 @@ integer(c_int),intent(in) :: c_key_self !< Fields
 type(c_ptr),intent(in) :: c_conf        !< Configuration
 
 ! Local variables
+type(fckit_configuration) :: f_conf
 type(qg_fields),pointer :: self
 
 ! Interface
+f_conf = fckit_configuration(c_conf)
 call qg_fields_registry%get(c_key_self,self)
 
 ! Call Fortran
-call qg_fields_dirac(self,c_conf)
+call qg_fields_dirac(self,f_conf)
 
 end subroutine qg_fields_dirac_c
 ! ------------------------------------------------------------------------------
@@ -391,15 +394,17 @@ type(c_ptr),intent(in)    :: c_conf    !< Configuration
 type(c_ptr),intent(inout) :: c_dt      !< Date and time
 
 ! Local variables
+type(fckit_configuration) :: f_conf
 type(qg_fields),pointer :: fld
 type(datetime) :: fdate
 
 ! Interface
+f_conf = fckit_configuration(c_conf)
 call qg_fields_registry%get(c_key_fld,fld)
 call c_f_datetime(c_dt,fdate)
 
 ! Call Fortran
-call qg_fields_read_file(fld,c_conf,fdate)
+call qg_fields_read_file(fld,f_conf,fdate)
 
 end subroutine qg_fields_read_file_c
 ! ------------------------------------------------------------------------------
@@ -414,15 +419,17 @@ type(c_ptr),intent(in) :: c_conf       !< Configuration
 type(c_ptr),intent(in) :: c_dt         !< Date and time
 
 ! Local variables
+type(fckit_configuration) :: f_conf
 type(qg_fields),pointer :: fld
 type(datetime) :: fdate
 
 ! Interface
+f_conf = fckit_configuration(c_conf)
 call qg_fields_registry%get(c_key_fld,fld)
 call c_f_datetime(c_dt,fdate)
 
 ! Call Fortran
-call qg_fields_write_file(fld,c_conf,fdate)
+call qg_fields_write_file(fld,f_conf,fdate)
 
 end subroutine qg_fields_write_file_c
 ! ------------------------------------------------------------------------------
@@ -437,14 +444,17 @@ type(c_ptr),intent(in)    :: c_conf    !< Configuration
 type(c_ptr),intent(inout) :: c_dt      !< Date and time
 
 ! Local variables
+type(fckit_configuration) :: f_conf
 type(qg_fields),pointer :: fld
 type(datetime) :: fdate
 
+! Interface
+f_conf = fckit_configuration(c_conf)
 call qg_fields_registry%get(c_key_fld,fld)
 call c_f_datetime(c_dt,fdate)
 
 ! Call Fortran
- call qg_fields_analytic_init(fld,c_conf,fdate)
+ call qg_fields_analytic_init(fld,f_conf,fdate)
 
 end subroutine qg_fields_analytic_init_c
 ! ------------------------------------------------------------------------------

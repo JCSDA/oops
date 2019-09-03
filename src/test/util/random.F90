@@ -9,8 +9,8 @@
 
 module test_random
 
+use fckit_configuration_module, only: fckit_configuration
 use, intrinsic :: iso_c_binding
-use config_mod
 use kinds
 use random_mod
 use fckit_log_module, only : fckit_log
@@ -31,16 +31,19 @@ implicit none
 type(c_ptr), intent(in) :: c_conf
 integer :: n, seed, i
 real(c_double) :: range(2)
-real(c_double), allocatable :: x(:), x_check(:)
+real(c_double), allocatable :: x(:), x_check(:), real_array(:)
 real(c_double) :: minv, maxv, tol, err
 character(len=*), parameter :: myname_="test_uniform_real"
 character(max_string) :: err_msg, ans
+type(fckit_configuration) :: f_conf
 
-n = config_get_int(c_conf, "N")
-seed = config_get_int(c_conf, "seed")
+f_conf = fckit_configuration(c_conf)
+call f_conf%get_or_die("N",n)
+call f_conf%get_or_die("seed",seed)
 
-if (size(config_get_string_vector(c_conf, max_string, "uniform_real_range")) == 2) then
-   call config_get_double_vector(c_conf, "uniform_real_range", range, [0.0_kind_real,1.0_kind_real])
+if (f_conf%get_size("uniform_real_range") == 2) then
+   call f_conf%get_or_die("uniform_real_range",real_array)
+   range = real_array
    minv = range(1)
    maxv = range(2)
 else
@@ -60,9 +63,10 @@ do i = 1, n
    call fckit_log%info("   - " // adjustl(ans))
 enddo
 
-if (size(config_get_string_vector(c_conf, max_string, "uniform_real_answer_f")) == n) then
+if (f_conf%get_size("uniform_real_answer_f") == n) then
    allocate(x_check(n))
-   call config_get_double_vector(c_conf, "uniform_real_answer_f", x_check)
+   call f_conf%get_or_die("uniform_real_answer_f",real_array)
+   x_check = real_array
 else
    write(err_msg,*) myname_ // "error reading answer"
    call abor1_ftn(err_msg)
@@ -97,16 +101,19 @@ implicit none
 type(c_ptr), intent(in) :: c_conf
 integer :: n, seed, i
 integer(c_int32_t) :: range(2)
-integer(c_int32_t), allocatable :: x(:), x_check(:)
+integer(c_int32_t), allocatable :: x(:), x_check(:), integer_array(:)
 integer(c_int32_t) :: minv, maxv
 character(len=*), parameter :: myname_="test_uniform_int"
 character(max_string) :: err_msg, ans
+type(fckit_configuration) :: f_conf
 
-n = config_get_int(c_conf, "N")
-seed = config_get_int(c_conf, "seed")
+f_conf = fckit_configuration(c_conf)
+call f_conf%get_or_die("N",n)
+call f_conf%get_or_die("seed",seed)
 
-if (size(config_get_string_vector(c_conf, max_string, "uniform_int_range")) == 2) then
-   call config_get_int_vector(c_conf, "uniform_int_range", range, [1,100])
+if (f_conf%get_size("uniform_int_range") == 2) then
+   call f_conf%get_or_die("uniform_int_range",integer_array)
+   range = integer_array
    minv = range(1)
    maxv = range(2)
 else
@@ -126,9 +133,10 @@ do i = 1, n
    call fckit_log%info("   - " // adjustl(ans))
 enddo
 
-if (size(config_get_string_vector(c_conf, max_string, "uniform_int_answer_f")) == n) then
+if (f_conf%get_size("uniform_int_answer_f") == n) then
    allocate(x_check(n))
-   call config_get_int_vector(c_conf, "uniform_int_answer_f", x_check)
+   call f_conf%get_or_die("uniform_int_answer_f",integer_array)
+   x_check = integer_array
 else
    write(err_msg,*) myname_ // "error reading answer"
    call abor1_ftn(err_msg)
@@ -158,15 +166,19 @@ implicit none
 type(c_ptr), intent(in) :: c_conf
 integer :: n, seed, i
 real(c_double) :: mean, sdev, tol, err
-real(c_double), allocatable :: x(:), x_check(:)
+real(c_double), allocatable :: x(:), x_check(:), real_array(:)
 character(len=*), parameter :: myname_="test_normal_real"
 character(max_string) :: err_msg, ans
+type(fckit_configuration) :: f_conf
 
-n = config_get_int(c_conf, "N")
-seed = config_get_int(c_conf, "seed")
+f_conf = fckit_configuration(c_conf)
+call f_conf%get_or_die("N",n)
+call f_conf%get_or_die("seed",seed)
 
-mean = config_get_real(c_conf, "normal_mean",0.0_kind_real)
-sdev = config_get_real(c_conf, "normal_sdev",1.0_kind_real)
+mean = 0.0
+if (f_conf%has("normal_mean")) call f_conf%get_or_die("normal_mean",mean)
+sdev = 1.0
+if (f_conf%has("normal_sdev")) call f_conf%get_or_die("normal_sdev",sdev)
 
 !> Compute random vector
 allocate(x(n))
@@ -180,9 +192,10 @@ do i = 1, n
    call fckit_log%info("   - " // adjustl(ans))
 enddo
 
-if (size(config_get_string_vector(c_conf, max_string, "normal_answer_f")) == n) then
+if (f_conf%get_size("normal_answer_f") == n) then
    allocate(x_check(n))
-   call config_get_double_vector(c_conf, "normal_answer_f", x_check)
+   call f_conf%get_or_die("normal_answer_f",real_array)
+   x_check = real_array
 else
    write(err_msg,*) myname_ // "error reading answer"
    call abor1_ftn(err_msg)

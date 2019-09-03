@@ -7,8 +7,8 @@
 
 module variables_mod
 
+use fckit_configuration_module, only: fckit_configuration
 use iso_c_binding
-use config_mod
 
 implicit none
 private
@@ -26,16 +26,18 @@ contains
 
 ! ------------------------------------------------------------------------------
 
-subroutine oops_vars_create(c_vars,self)
+subroutine oops_vars_create(f_conf,self)
 implicit none
 
-type(c_ptr),     intent(in)    :: c_vars
-type(oops_vars), intent(inout) :: self
+type(fckit_configuration),intent(in) :: f_conf !< FCKIT configuration
+type(oops_vars), intent(inout) :: self         !< OOPS variables
 
 character(len=1023) :: varlist
+character(len=:),allocatable :: str
 
 ! Get long comma seperated list of variables
-varlist = config_get_string(c_vars,len(varlist),"variables")
+call f_conf%get_or_die("variables",str)
+varlist = str
 
 ! Count number of commas
 self%nv = 1 + count(transfer(varlist, 'a', len(varlist)) == ",")

@@ -19,6 +19,7 @@
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsDataVector.h"
+#include "oops/interface/ObsDiagnostics.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/util/dot_product.h"
@@ -31,6 +32,7 @@ namespace oops {
 template <typename MODEL, typename FILTER>
 class ObsFilter : public ObsFilterBase<MODEL> {
   typedef GeoVaLs<MODEL>             GeoVaLs_;
+  typedef ObsDiagnostics<MODEL>      ObsDiags_;
   typedef ObservationSpace<MODEL>    ObsSpace_;
   typedef ObsVector<MODEL>           ObsVector_;
   template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<MODEL, DATA> >;
@@ -45,9 +47,10 @@ class ObsFilter : public ObsFilterBase<MODEL> {
 
   void preProcess() const override;
   void priorFilter(const GeoVaLs_ &) const override;
-  void postFilter(const ObsVector_ &) const override;
+  void postFilter(const ObsVector_ &, const ObsDiags_ &) const override;
 
   const Variables & requiredGeoVaLs() const override;
+  const Variables & requiredHdiagnostics() const override;
 
  private:
   void print(std::ostream &) const override;
@@ -108,10 +111,10 @@ void ObsFilter<MODEL, FILTER>::priorFilter(const GeoVaLs_ & gv) const {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename FILTER>
-void ObsFilter<MODEL, FILTER>::postFilter(const ObsVector_ & ov) const {
+void ObsFilter<MODEL, FILTER>::postFilter(const ObsVector_ & ov, const ObsDiags_ & dv) const {
   Log::trace() << "ObsFilter<MODEL, FILTER>::postFilter starting" << std::endl;
   util::Timer timer(classname(), "postFilter");
-  ofilt_->postFilter(ov.obsvector());
+  ofilt_->postFilter(ov.obsvector(), dv.obsdiagnostics());
   Log::trace() << "ObsFilter<MODEL, FILTER>::postFilter done" << std::endl;
 }
 
@@ -121,6 +124,14 @@ template <typename MODEL, typename FILTER>
 const Variables & ObsFilter<MODEL, FILTER>::requiredGeoVaLs() const {
   Log::trace() << "ObsFilter::requiredGeoVaLs" << std::endl;
   return ofilt_->requiredGeoVaLs();
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename FILTER>
+const Variables & ObsFilter<MODEL, FILTER>::requiredHdiagnostics() const {
+  Log::trace() << "ObsFilter::requiredHdiagnostics" << std::endl;
+  return ofilt_->requiredHdiagnostics();
 }
 
 // -----------------------------------------------------------------------------
