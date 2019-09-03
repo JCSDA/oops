@@ -15,7 +15,7 @@ namespace oops {
   std::set<int> parseIntSet(const std::string &);
 
   template<typename TT>
-  bool contains(std::set<TT> & set, const TT & elem) {
+  bool contains(const std::set<TT> & set, const TT & elem) {
     return set.find(elem) != set.end();
   }
 }  // namespace oops

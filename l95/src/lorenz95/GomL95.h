@@ -25,7 +25,7 @@ namespace oops {
 
 namespace lorenz95 {
   class LocsL95;
-  class ObsTable;
+  class ObsTableView;
 
 /// GomL95 class to handle locations for L95 model.
 
@@ -35,7 +35,8 @@ class GomL95 : public util::Printable,
   static const std::string classname() {return "lorenz95::GomL95";}
 
   GomL95(const LocsL95 &, const oops::Variables &);
-  GomL95(const eckit::Configuration &, const oops::Variables &);
+  GomL95(const eckit::Configuration &, const ObsTableView &,
+         const oops::Variables &);
   explicit GomL95(const GomL95 &);
   ~GomL95();
 
