@@ -101,10 +101,7 @@ void ObserverTLAD<MODEL>::doInitializeTraj(const State_ & xx,
                const util::DateTime & begin, const util::DateTime & end, const int & nsteps) {
   Log::trace() << "ObserverTLAD::doInitializeTraj start" << std::endl;
 // Create full trajectory object
-  for (std::size_t ib = 0; ib < nsteps; ++ib) {
-    boost::shared_ptr<InterpolatorTraj_> traj(new InterpolatorTraj_());
-    traj_.push_back(traj);
-  }
+  for (int ib = 0; ib < nsteps; ++ib) { traj_.emplace_back(new InterpolatorTraj_()); }
   observer_.doInitialize(xx, begin, end);
   Log::trace() << "ObserverTLAD::doInitializeTraj done" << std::endl;
 }
