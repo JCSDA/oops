@@ -19,7 +19,7 @@ module DateTimeTestFixture
   type(c_ptr) :: ptr1 = c_null_ptr
   type(c_ptr) :: ptr2 = c_null_ptr
 
-  include 'util/datetime.intfb.h'
+  include 'oops/util/datetime.intfb.h'
 end module
 
 TESTSUITE_WITH_FIXTURE(datetime_intfb, DateTimeTestFixture)

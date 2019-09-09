@@ -88,6 +88,11 @@ include_directories( ${FCKIT_INCLUDE_DIRS} )
 ecbuild_use_package( PROJECT saber VERSION 0.0.1 REQUIRED )
 include_directories( ${SABER_INCLUDE_DIRS} )
 
+# fctest
+ecbuild_add_option( FEATURE FCTEST  DEFAULT ${ENABLE_TESTS}
+                    DESCRIPTION "Fortran Unit Testing Framework"
+                    REQUIRED_PACKAGES "PROJECT fckit" )
+
 ################################################################################
 # Export package info
 ################################################################################
