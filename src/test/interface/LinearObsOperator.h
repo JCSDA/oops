@@ -84,7 +84,7 @@ template <typename MODEL> void testLinearity() {
 
     // initialize obs bias
     const ObsAuxCtrl_ ybias(conf[jj]);
-    const ObsAuxIncr_ ybinc(conf[jj]);
+    ObsAuxIncr_ ybinc(conf[jj]);
 
     // set trajectory for TL/AD to be the geovals from the file
     hoptl.setTrajectory(gval, ybias);
@@ -95,19 +95,22 @@ template <typename MODEL> void testLinearity() {
     // create geovals
     GeoVaLs_ dx(gconf, Test_::obspace()[jj], hoptl.variables());
 
-    // test rms(Hdx) = 0, when dx = 0
+    // test rms(H * (dx, ybinc)) = 0, when dx = 0
     dx.zero();
+    ybinc.zero();
     hoptl.simulateObsTL(dx, dy1, ybinc);
     EXPECT(dy1.rms() == zero);
 
-    // test rms(Hdx) > 0, when dx is random
+    // test rms(H * (dx, ybinc)) > 0, when dx is random
     dx.random();
+    ybinc.random();
     hoptl.simulateObsTL(dx, dy1, ybinc);
     EXPECT(dy1.rms() > zero);
 
-    // test k * H * dx ~ H * (k*dx)
+    // test k * H * (dx, ybinc) ~ H * (k*dx, k*ybinc)
     dy1 *= coef;
     dx  *= coef;
+    ybinc *= coef;
     ObsVector_ dy2(Test_::obspace()[jj]);
     hoptl.simulateObsTL(dx, dy2, ybinc);
 
@@ -149,7 +152,8 @@ template <typename MODEL> void testAdjoint() {
 
     // initialize bias correction
     const ObsAuxCtrl_ ybias(conf[jj]);
-    ObsAuxIncr_ ybinc(conf[jj]);
+    ObsAuxIncr_ ybinc1(conf[jj]);  // TL
+    ObsAuxIncr_ ybinc2(conf[jj]);  // AD
 
     // set TL/AD trajectory to the geovals from the file
     hoptl.setTrajectory(gval, ybias);
@@ -159,20 +163,22 @@ template <typename MODEL> void testAdjoint() {
     GeoVaLs_ dx1(gconf, Test_::obspace()[jj], hoptl.variables());
     GeoVaLs_ dx2(gconf, Test_::obspace()[jj], hoptl.variables());
 
-    // calculate dy1 = H dx1 (with random dx1)
+    // calculate dy1 = H (dx1, ybinc1) (with random dx1, and random ybinc1)
     dx1.random();
     EXPECT(dot_product(dx1, dx1) > zero);  //  BOOST_REQUIRE
-    hoptl.simulateObsTL(dx1, dy1, ybinc);
+    ybinc1.random();
+    hoptl.simulateObsTL(dx1, dy1, ybinc1);
     EXPECT(dot_product(dy1, dy1) > zero);
 
-    // calculate dx2 = HT dy2 (with random dy2)
+    // calculate (dx2, ybinc2) = HT dy2 (with random dy2)
     dy2.random();
     EXPECT(dot_product(dy2, dy2) > zero);  //  BOOST_REQUIRE
     dx2.zero();
-    hoptl.simulateObsAD(dx2, dy2, ybinc);
+    ybinc2.zero();
+    hoptl.simulateObsAD(dx2, dy2, ybinc2);
     EXPECT(dot_product(dx2, dx2) > zero);
 
-    const double zz1 = dot_product(dx1, dx2);
+    const double zz1 = dot_product(dx1, dx2) + dot_product(ybinc1, ybinc2);
     const double zz2 = dot_product(dy1, dy2);
 
     oops::Log::info() << "Adjoint test result: (<x,HTy>-<Hx,y>)/<Hx,y> = "

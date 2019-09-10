@@ -287,6 +287,14 @@ void Minimizer<MODEL>::adjModelTest(const Ht_ & Ht,
   J_.jb().randomize(dx1);
   J_.jb().randomize(dx2);
 
+/* zero out modvar and obsvar
+   since only model is being tested
+*/
+  dx1.obsVar().zero();
+  dx1.modVar().zero();
+  dx2.obsVar().zero();
+  dx2.modVar().zero();
+
 // run TL
   Dual_ dummy;
   CtrlInc_ mdx1(dx1);

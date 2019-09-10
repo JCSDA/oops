@@ -17,6 +17,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "lorenz95/ObsBias.h"
 #include "oops/util/Logger.h"
+#include "oops/util/Random.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
@@ -51,6 +52,15 @@ void ObsBiasCorrection::diff(const ObsBias & b1, const ObsBias & b2) {
 // -----------------------------------------------------------------------------
 void ObsBiasCorrection::zero() {
   bias_ = 0.0;
+}
+// -----------------------------------------------------------------------------
+void ObsBiasCorrection::random() {
+  if (active_) {
+    util::NormalDistribution<double> x(1, 0.0, 1.0, 5);
+    bias_ = x[0];
+  } else {
+    bias_ = 0.0;
+  }
 }
 // -----------------------------------------------------------------------------
 ObsBiasCorrection & ObsBiasCorrection::operator=(const ObsBiasCorrection & rhs) {

@@ -288,6 +288,8 @@ void CostJbTotal<MODEL>::multiplyBinv(const CtrlInc_ & dxin, CtrlInc_ & dxout) c
 template<typename MODEL>
 void CostJbTotal<MODEL>::randomize(CtrlInc_ & dx) const {
   jb_->randomize(dx.state());
+  jbModBias_.randomize(dx.modVar());
+  jbObsBias_.randomize(dx.obsVar());
 }
 
 // -----------------------------------------------------------------------------

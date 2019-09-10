@@ -17,7 +17,7 @@ module DurationTestFixture
   
   type(c_ptr) :: ptr = c_null_ptr
   
-  include 'util/duration.intfb.h'
+  include 'oops/util/duration.intfb.h'
 end module
 
 TESTSUITE_WITH_FIXTURE(duration_intfb, DurationTestFixture)
