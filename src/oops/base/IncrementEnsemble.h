@@ -34,7 +34,6 @@ namespace oops {
 // -----------------------------------------------------------------------------
 
 /// Ensemble
-
 template<typename MODEL> class IncrementEnsemble {
   typedef LinearVariableChangeBase<MODEL>  LinearVariableChangeBase_;
   typedef Geometry<MODEL>            Geometry_;
@@ -47,7 +46,7 @@ template<typename MODEL> class IncrementEnsemble {
   typedef typename ChvarVec_::const_reverse_iterator ircst_;
 
  public:
-/// Constructor
+  /// Constructor
   IncrementEnsemble(const Geometry_ & resol,
                     const Variables & vars,
                     const std::vector<util::DateTime> &,
@@ -55,7 +54,7 @@ template<typename MODEL> class IncrementEnsemble {
   IncrementEnsemble(const eckit::Configuration &,
                     const State4D_ &, const State4D_ &, const Geometry_ &);
 
-/// Destructor
+  /// Destructor
   virtual ~IncrementEnsemble() {}
 
   /// Accessors
@@ -69,7 +68,12 @@ template<typename MODEL> class IncrementEnsemble {
     return *ensemblePerturbs_[ii];
   }
 
+  /// Control variables
   const Variables & controlVariables() const {return vars_;}
+
+  /// Release / reset
+  void releaseMember();
+  void resetMember(const Increment4D_ &);
 
  private:
   unsigned int rank_;
@@ -170,6 +174,22 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const eckit::Configuration & conf,
 }
 
 // -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void IncrementEnsemble<MODEL>::releaseMember() {
+  ensemblePerturbs_.erase(ensemblePerturbs_.begin());
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void IncrementEnsemble<MODEL>::resetMember(const Increment4D_ & dx) {
+  Increment4D_ * dxptr = new Increment4D_(dx);
+  ensemblePerturbs_.push_back(std::unique_ptr<Increment4D_>(dxptr));
+}
+
+// -----------------------------------------------------------------------------
+
 }  // namespace oops
 
 #endif  // OOPS_BASE_INCREMENTENSEMBLE_H_

@@ -157,6 +157,30 @@ call add_oobump_member(self, ug, ie, iens)
 
 end subroutine add_oobump_member_c
 ! ------------------------------------------------------------------------------
+!> Remove ensemble member
+subroutine remove_oobump_member_c(c_key_oobump, c_key_ug, ie, iens) bind(c, name='remove_oobump_member_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int), intent(in) :: c_key_oobump !< OOBUMP
+integer(c_int), intent(in) :: c_key_ug     !< Unstructured grid
+integer(c_int), intent(in) :: ie           !< Ensemble member index
+integer(c_int), intent(in) :: iens         !< Ensemble index
+
+! Local variables
+type(oobump_type), pointer :: self
+type(unstructured_grid), pointer :: ug
+
+! Interface
+call oobump_registry%get(c_key_oobump, self)
+call unstructured_grid_registry%get(c_key_ug, ug)
+
+! Call Fortran
+call remove_oobump_member(self, ug, ie, iens)
+
+end subroutine remove_oobump_member_c
+! ------------------------------------------------------------------------------
 !> Run BUMP drivers
 subroutine run_oobump_drivers_c(c_key_oobump) bind(c, name='run_oobump_drivers_f90')
 

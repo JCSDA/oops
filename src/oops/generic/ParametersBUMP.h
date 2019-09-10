@@ -88,6 +88,10 @@ ParametersBUMP<MODEL>::ParametersBUMP(const Geometry_ & resol,
   int colocated = 1;
   if (BUMPConfig.has("colocated")) colocated = BUMPConfig.getInt("colocated");
 
+// Setup members release
+  int release_members = 1;
+  if (BUMPConfig.has("release_members")) release_members = BUMPConfig.getInt("release_members");
+
 // Setup dummy increment
   Increment4D_ dx(resol_, vars_, timeslots_);
 
@@ -107,40 +111,64 @@ ParametersBUMP<MODEL>::ParametersBUMP(const Geometry_ & resol,
   Log::info() << "Create BUMP" << std::endl;
   create_oobump_f90(keyBUMP_, ug.toFortran(), &fconf, ens1_ne, 1, ens2_ne, 1);
 
-// Add ensemble members
-  Log::info() << "Add ensemble members" << std::endl;
+// Transfer/copy ensemble members to BUMP
+  if (release_members == 1) {
+    Log::info() << "Transfer ensemble members to BUMP" << std::endl;
+  } else {
+    Log::info() << "Copy ensemble members to BUMP" << std::endl;
+  }
   for (int ie = 0; ie < ens1_ne; ++ie) {
-    Log::info() << "   Copy ensemble member " << ie+1 << " / "
-                << ens1_ne << " to BUMP" << std::endl;
+    Log::info() << "   Member " << ie+1 << " / " << ens1_ne << std::endl;;
 
   // Copy member
-    dx = (*ens)[ie];
+    if (release_members == 1) {
+      dx = (*ens)[0];
+    } else {
+      dx = (*ens)[ie];
+    }
 
   // Renormalize member
     const double rk = sqrt((static_cast<double>(ens1_ne) - 1.0));
     dx *= rk;
 
-  // Define unstructured grid field
+  // Define unstructured grid
     dx.field_to_ug(ug);
 
-  // Copy field into BUMP ensemble
+  // Copy data to BUMP
     add_oobump_member_f90(keyBUMP_, ug.toFortran(), ie+1, bump::readEnsMember);
+
+    if (release_members == 1) {
+    // Release ensemble member
+      ens->releaseMember();
+    }
   }
 
-// Add pseudo-ensemble members
-  Log::info() << "Add pseudo-ensemble members" << std::endl;
+// Transfer/copy pseudo-ensemble members to BUMP
+  if (release_members == 1) {
+    Log::info() << "Transfer pseudo-ensemble members to BUMP" << std::endl;
+  } else {
+    Log::info() << "Copy pseudo-ensemble members to BUMP" << std::endl;
+  }
   for (int ie = 0; ie < ens2_ne; ++ie) {
-    Log::info() << "   Copy pseudo-ensemble member " << ie+1 << " / "
-                << ens2_ne << " to BUMP" << std::endl;
+    Log::info() << "   Member " << ie+1 << " / " << ens2_ne << std::endl;
 
   // Copy member
-    dx = (*pseudo_ens)[ie];
+    if (release_members == 1) {
+      dx = (*pseudo_ens)[0];
+    } else {
+      dx = (*pseudo_ens)[ie];
+    }
 
-  // Define unstructured grid field
+  // Define unstructured grid
     dx.field_to_ug(ug);
 
-  // Copy field into BUMP pseudo-ensemble
+  // Copy data to BUMP
     add_oobump_member_f90(keyBUMP_, ug.toFortran(), ie+1, bump::readPseudoEnsMember);
+
+    if (release_members == 1) {
+    // Release ensemble member
+      pseudo_ens->releaseMember();
+    }
   }
 
 // Read data from files
@@ -174,11 +202,37 @@ ParametersBUMP<MODEL>::ParametersBUMP(const Geometry_ & resol,
 // Estimate parameters
   run_oobump_drivers_f90(keyBUMP_);
 
-// Copy BUMP test file
-  const std::string bump_test = BUMPConfig.getString("prefix") + ".test.0000";
-  std::ifstream infile(bump_test);
-  std::string line;
-//  while (std::getline(infile, line)) Log::test() << line << std::endl;
+  if (release_members == 1) {
+  // Transfer ensemble members from BUMP
+    Log::info() << "Transfer ensemble members from BUMP" << std::endl;
+    for (int ie = 0; ie < ens1_ne; ++ie) {
+      Log::info() << "   Member " << ie+1 << " / " << ens1_ne << std::endl;
+
+    // Copy data from BUMP
+      remove_oobump_member_f90(keyBUMP_, ug.toFortran(), ie+1, bump::readEnsMember);
+
+    // Reset ensemble member
+      dx.field_from_ug(ug);
+      ens->resetMember(dx);
+
+    // Renormalize member
+      const double rk = 1.0/sqrt((static_cast<double>(ens1_ne) - 1.0));
+      (*ens)[ie] *= rk;
+    }
+
+  // Transfer pseudo-ensemble members from BUMP
+    Log::info() << "Transfer pseudo-ensemble members from BUMP" << std::endl;
+    for (int ie = 0; ie < ens2_ne; ++ie) {
+      Log::info() << "   Member " << ie+1 << " / " << ens2_ne << std::endl;
+
+    // Copy data from BUMP
+      remove_oobump_member_f90(keyBUMP_, ug.toFortran(), ie+1, bump::readPseudoEnsMember);
+
+    // Reset pseudo-ensemble member
+      dx.field_from_ug(ug);
+      pseudo_ens->resetMember(dx);
+    }
+  }
 
   Log::trace() << "ParametersBUMP:ParametersBUMP constructed" << std::endl;
 }
