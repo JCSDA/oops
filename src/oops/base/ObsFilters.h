@@ -54,8 +54,8 @@ class ObsFilters : public util::Printable,
   void priorFilter(const GeoVaLs_ &) const;
   void postFilter(const ObsVector_ &, const ObsDiags_ &) const;
 
-  const Variables & requiredGeoVaLs() const {return geovars_;}
-  const Variables & requiredHdiagnostics() const {return diagvars_;}
+  Variables requiredGeoVaLs() const {return geovars_;}
+  Variables requiredHdiagnostics() const {return diagvars_;}
 
  private:
   void print(std::ostream &) const;

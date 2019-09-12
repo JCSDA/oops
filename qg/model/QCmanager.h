@@ -33,8 +33,8 @@ class QCmanager : public util::Printable {
   void priorFilter(const GomQG &) const {}
   void postFilter(const ObsVecQG &, const ObsDiagsQG &) const {}
 
-  const oops::Variables & requiredGeoVaLs() const {return novars_;}
-  const oops::Variables & requiredHdiagnostics() const {return novars_;}
+  oops::Variables requiredGeoVaLs() const {return novars_;}
+  oops::Variables requiredHdiagnostics() const {return novars_;}
 
  private:
   void print(std::ostream &) const {}
