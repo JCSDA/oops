@@ -232,6 +232,9 @@ oops/util/IntSetParser.h
 oops/util/kinds.F90
 oops/util/LibOOPS.h
 oops/util/LibOOPS.cc
+oops/util/liboops_f.h
+oops/util/liboops_f.cc
+oops/util/liboops_mod.F90
 oops/util/Logger.h
 oops/util/missing_values_f.cc
 oops/util/missing_values_f.h
