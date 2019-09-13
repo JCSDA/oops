@@ -10,44 +10,44 @@
 interface
 !-------------------------------------------------------------------------------
 
-subroutine c_random_uniform_float(length, minv, maxv, seed, vect) &
+subroutine c_random_uniform_float(length, minv, maxv, seed, csort, vect) &
                                   bind(C,name='random_uniform_float_f')     
    use, intrinsic :: iso_c_binding, only : c_size_t, c_int32_t, c_float
    implicit none
-   integer(c_size_t), intent(in) :: length
+   integer(c_size_t), intent(in) :: length, csort
    real(c_float), intent(in) :: minv, maxv   
    integer(c_int32_t) :: seed
    real(c_float), intent(inout) :: vect(length)
       
 end subroutine c_random_uniform_float
 
-subroutine c_random_uniform_double(length, minv, maxv, seed, vect) &
+subroutine c_random_uniform_double(length, minv, maxv, seed, csort, vect) &
                                    bind(C,name='random_uniform_double_f')     
    use, intrinsic :: iso_c_binding, only : c_size_t, c_int32_t, c_double
    implicit none
-   integer(c_size_t), intent(in) :: length
+   integer(c_size_t), intent(in) :: length, csort
    real(c_double), intent(in) :: minv, maxv   
    integer(c_int32_t) :: seed
    real(c_double), intent(inout) :: vect(length)
       
 end subroutine c_random_uniform_double
 
-subroutine c_random_uniform_int(length, minv, maxv, seed, vect) &
+subroutine c_random_uniform_int(length, minv, maxv, seed, csort, vect) &
                                 bind(C,name='random_uniform_int_f')     
    use, intrinsic :: iso_c_binding, only : c_size_t, c_int32_t
    implicit none
-   integer(c_size_t), intent(in) :: length
+   integer(c_size_t), intent(in) :: length, csort
    integer(c_int32_t), intent(in) :: minv, maxv   
    integer(c_int32_t) :: seed
    integer(c_int32_t), intent(inout) :: vect(length)
       
 end subroutine c_random_uniform_int
 
-subroutine c_random_uniform_long(length, minv, maxv, seed, vect) &
+subroutine c_random_uniform_long(length, minv, maxv, seed, csort, vect) &
                                  bind(C,name='random_uniform_long_f')     
    use, intrinsic :: iso_c_binding, only : c_size_t, c_int32_t, c_int64_t
    implicit none
-   integer(c_size_t), intent(in) :: length
+   integer(c_size_t), intent(in) :: length, csort
    integer(c_int64_t), intent(in) :: minv, maxv   
    integer(c_int32_t) :: seed
    integer(c_int64_t), intent(inout) :: vect(length)
