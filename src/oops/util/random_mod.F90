@@ -41,13 +41,14 @@ end interface normal_distribution
 contains
 !-------------------------------------------------------------------------------
 
-subroutine uniform_float_distribution(x, minv, maxv, seed)
+subroutine uniform_float_distribution(x, minv, maxv, seed, sort)
   implicit none
   real(c_float), intent(inout)  :: x(:)  !< Array that will contain the result
   real(c_float), intent(in)     :: minv  !< minimum value of range
   real(c_float), intent(in)     :: maxv  !< minimum value of range
   integer, intent(in), optional :: seed  !< random seed
-  integer(c_size_t) :: length
+  logical, intent(in), optional :: sort  !< optionally sort from low to high
+  integer(c_size_t) :: length, csort
   integer(c_int32_t) :: cseed
   real(kind_real) :: rseed
   
@@ -58,17 +59,28 @@ subroutine uniform_float_distribution(x, minv, maxv, seed)
      call random_number(rseed)
      cseed = int(1000*rseed,c_int32_t)
   endif
-  call c_random_uniform_float(length,minv,maxv,cseed,x)
+
+  if (present(sort)) then
+     if (sort) then
+        csort = 1
+     else
+        csort = 0
+     endif
+  else
+     csort = 0
+  endif
+  call c_random_uniform_float(length,minv,maxv,cseed,csort,x)
   
 end subroutine uniform_float_distribution
 
-subroutine uniform_double_distribution(x, minv, maxv, seed)
+subroutine uniform_double_distribution(x, minv, maxv, seed, sort)
   implicit none
   real(c_double), intent(inout)  :: x(:)  !< Array that will contain the result
   real(c_double), intent(in)     :: minv  !< minimum value of range
   real(c_double), intent(in)     :: maxv  !< minimum value of range
   integer, intent(in), optional  :: seed  !< random seed
-  integer(c_size_t) :: length
+  logical, intent(in), optional :: sort  !< optionally sort from low to high
+  integer(c_size_t) :: length, csort
   integer(c_int32_t) :: cseed
   real(kind_real) :: rseed
   
@@ -79,17 +91,28 @@ subroutine uniform_double_distribution(x, minv, maxv, seed)
      call random_number(rseed)
      cseed = int(1000*rseed,c_int32_t)
   endif
-  call c_random_uniform_double(length,minv,maxv,cseed,x)
+
+  if (present(sort)) then
+     if (sort) then
+        csort = 1
+     else
+        csort = 0
+     endif
+  else
+     csort = 0
+  endif
+  call c_random_uniform_double(length,minv,maxv,cseed,csort,x)
   
 end subroutine uniform_double_distribution
   
-subroutine uniform_int_distribution(x, minv, maxv, seed)
+subroutine uniform_int_distribution(x, minv, maxv, seed, sort)
   implicit none
   integer(c_int32_t), intent(inout) :: x(:)  !< Array that will contain the result
   integer(c_int32_t), intent(in)    :: minv  !< minimum value of range
   integer(c_int32_t), intent(in)    :: maxv  !< minimum value of range
   integer, intent(in), optional     :: seed  !< random seed
-  integer(c_size_t) :: length
+  logical, intent(in), optional     :: sort  !< optionally sort from low to high
+  integer(c_size_t) :: length, csort
   integer(c_int32_t) :: cseed
   real(kind_real) :: rseed
   
@@ -100,17 +123,28 @@ subroutine uniform_int_distribution(x, minv, maxv, seed)
      call random_number(rseed)
      cseed = int(1000*rseed,c_int32_t)
   endif
-  call c_random_uniform_int(length,minv,maxv,cseed,x)
+
+  if (present(sort)) then
+     if (sort) then
+        csort = 1
+     else
+        csort = 0
+     endif
+  else
+     csort = 0
+  endif
+  call c_random_uniform_int(length,minv,maxv,cseed,csort,x)
   
 end subroutine uniform_int_distribution
   
-subroutine uniform_long_distribution(x, minv, maxv, seed)
+subroutine uniform_long_distribution(x, minv, maxv, seed, sort)
   implicit none
   integer(c_int64_t), intent(inout) :: x(:)  !< Array that will contain the result
   integer(c_int64_t), intent(in)    :: minv  !< minimum value of range
   integer(c_int64_t), intent(in)    :: maxv  !< minimum value of range
   integer, intent(in), optional     :: seed  !< random seed
-  integer(c_size_t) :: length
+  logical, intent(in), optional     :: sort  !< optionally sort from low to high
+  integer(c_size_t) :: length, csort
   integer(c_int32_t) :: cseed
   real(kind_real) :: rseed
   
@@ -121,7 +155,17 @@ subroutine uniform_long_distribution(x, minv, maxv, seed)
      call random_number(rseed)
      cseed = int(1000*rseed,c_int32_t)
   endif
-  call c_random_uniform_long(length,minv,maxv,cseed,x)
+
+  if (present(sort)) then
+     if (sort) then
+        csort = 1
+     else
+        csort = 0
+     endif
+  else
+     csort = 0
+  endif
+  call c_random_uniform_long(length,minv,maxv,cseed,csort,x)
   
 end subroutine uniform_long_distribution
   

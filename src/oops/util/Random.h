@@ -9,6 +9,7 @@
 #ifndef OOPS_UTIL_RANDOM_H_
 #define OOPS_UTIL_RANDOM_H_
 
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -41,6 +42,7 @@ class Random : public util::Printable {
  public:
   const datatype & operator[](const std::size_t ii) const {return data_[ii];}
   std::vector<datatype> data() {return data_;}
+  void sort() {std::sort(data_.begin(), data_.end());}
 
  protected:
   Random(size_t N, unsigned int seed): N_(N), seed_(seed) {data_.reserve(N);}

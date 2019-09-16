@@ -46,8 +46,8 @@ class GeoVaLsWriter : public ObsFilterBase<MODEL> {
 
   void postFilter(const ObsVector_ &, const ObsDiags_ &) const override {}
 
-  const Variables & requiredGeoVaLs() const override {return novars_;};
-  const Variables & requiredHdiagnostics() const override {return novars_;};
+  Variables requiredGeoVaLs() const override {return novars_;};
+  Variables requiredHdiagnostics() const override {return novars_;};
 
  private:
   const eckit::LocalConfiguration conf_;

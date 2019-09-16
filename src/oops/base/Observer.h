@@ -17,8 +17,6 @@
 #include "oops/base/ObsFilters.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
-#include "oops/interface/InterpolatorTraj.h"
-#include "oops/interface/LinearObsOperator.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsDiagnostics.h"
 #include "oops/interface/ObservationSpace.h"
@@ -41,8 +39,6 @@ template <typename MODEL>
 class Observer : public util::Printable {
   typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef ObsDiagnostics<MODEL>      ObsDiags_;
-  typedef InterpolatorTraj<MODEL>    InterpolatorTraj_;
-  typedef LinearObsOperator<MODEL>   LinearObsOperator_;
   typedef ObservationSpace<MODEL>    ObsSpace_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef ObsFilters<MODEL>          ObsFilters_;
@@ -56,10 +52,6 @@ class Observer : public util::Printable {
            ObsVector_ &,
            const PtrFilters_ filters = PtrFilters_(new ObsFilters_()));
   ~Observer();
-
-  void processTraj(const State_ &, const util::DateTime &, const util::DateTime &,
-                   InterpolatorTraj_ &) const;
-  void finalizeTraj(const State_ &, LinearObsOperator_ &);
 
   void doInitialize(const State_ &, const util::DateTime &, const util::DateTime &);
   void doProcessing(const State_ &, const util::DateTime &, const util::DateTime &);
@@ -128,29 +120,6 @@ void Observer<MODEL>::doProcessing(const State_ & xx,
 // Get state variables at obs locations
   xx.getValues(hop_.locations(t1, t2), geovars_, *gvals_);
   Log::trace() << "Observer::doProcessing done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-void Observer<MODEL>::processTraj(const State_ & xx,
-                                  const util::DateTime & t1,
-                                  const util::DateTime & t2,
-                                  InterpolatorTraj_ & traj) const {
-  Log::trace() << "Observer::processTraj start" << std::endl;
-// Get state variables at obs locations and trajectory
-  xx.getValues(hop_.locations(t1, t2), geovars_, *gvals_, traj);
-  Log::trace() << "Observer::processTraj done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-void Observer<MODEL>::finalizeTraj(const State_ & xx, LinearObsOperator_ & htlad) {
-  Log::trace() << "Observer::finalizeTraj start" << std::endl;
-  htlad.setTrajectory(*gvals_, ybias_);
-  this->doFinalize();
-  Log::trace() << "Observer::finalizeTraj done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

@@ -29,7 +29,6 @@ namespace eckit {
 
 namespace oops {
   class GridPoint;
-  class UnstructuredGrid;
   class Variables;
 }
 

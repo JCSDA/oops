@@ -20,7 +20,7 @@ private
 public :: oobump_type
 public :: oobump_registry
 public :: create_oobump, delete_oobump, get_oobump_colocated, get_oobump_nts, get_oobump_cv_size, add_oobump_member, &
-        & run_oobump_drivers,multiply_oobump_vbal, multiply_oobump_vbal_inv, multiply_oobump_vbal_ad,  &
+        & remove_oobump_member,run_oobump_drivers,multiply_oobump_vbal, multiply_oobump_vbal_inv, multiply_oobump_vbal_ad,  &
         & multiply_oobump_vbal_inv_ad,multiply_oobump_nicas, multiply_oobump_nicas_sqrt, multiply_oobump_nicas_sqrt_ad, &
         & randomize_oobump_nicas, get_oobump_param, set_oobump_param, bump_read_conf
 ! ------------------------------------------------------------------------------
@@ -216,6 +216,27 @@ do igrid=1,self%ngrid
 end do
 
 end subroutine add_oobump_member
+!-------------------------------------------------------------------------------
+!> Remove ensemble member
+subroutine remove_oobump_member(self,ug,ie,iens)
+
+implicit none
+
+! Passed variables
+type(oobump_type), intent(inout) :: self     !< OOBUMP
+type(unstructured_grid), intent(inout) :: ug !< Unstructured grid
+integer, intent(in) :: ie                    !< Ensemble member index
+integer, intent(in) :: iens                  !< Ensemble index
+
+! Local variables
+integer :: igrid
+
+! Remove member
+do igrid=1,self%ngrid
+   call self%bump(igrid)%remove_member(ug%grid(igrid)%fld,ie,iens)
+end do
+
+end subroutine remove_oobump_member
 !-------------------------------------------------------------------------------
 !> Run OOBUMP drivers
 subroutine run_oobump_drivers(self)

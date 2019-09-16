@@ -90,13 +90,6 @@ StatsVariableChange<MODEL>::StatsVariableChange(const State_ & xb, const State_ 
 // Get key
   keyBUMP_ = param.get_bump();
 
-// Copy BUMP test file
-  const eckit::LocalConfiguration BUMPConfig(conf, "bump");
-  const std::string bump_test = BUMPConfig.getString("prefix") + ".test.0000";
-  std::ifstream infile(bump_test);
-  std::string line;
-//  while (std::getline(infile, line)) Log::test() << line << std::endl;
-
   Log::trace() << "StatsVariableChange<MODEL>::StatsVariableChange done" << std::endl;
 }
 

@@ -23,6 +23,7 @@
 #include "oops/interface/LinearObsOperator.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxIncrement.h"
+#include "oops/interface/ObsDiagnostics.h"
 #include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsOperator.h"
 #include "oops/interface/ObsVector.h"
@@ -42,6 +43,7 @@ class ObserverTLAD {
   typedef LinearObsOperator<MODEL>   LinearObsOperator_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
+  typedef ObsDiagnostics<MODEL>      ObsDiags_;
   typedef ObsOperator<MODEL>         ObsOperator_;
   typedef ObservationSpace<MODEL>    ObsSpace_;
   typedef ObsVector<MODEL>           ObsVector_;
@@ -72,10 +74,14 @@ class ObserverTLAD {
   void doLastAD(Increment_ &);
 
  private:
+  const ObsSpace_ & obsdb_;
 // Obs operator
   ObsOperator_ hop_;
   LinearObsOperator_ hoptlad_;
-  Observer<MODEL> observer_;
+
+  ObsVector_ & yobs_;
+  const ObsAuxCtrl_ & ybias_;
+  Variables geovars_;
 
 // Data
   std::vector<boost::shared_ptr<InterpolatorTraj_> > traj_;
@@ -89,10 +95,12 @@ ObserverTLAD<MODEL>::ObserverTLAD(const eckit::Configuration & config,
                                   const ObsSpace_ & obsdb,
                                   const ObsAuxCtrl_ & ybias,
                                   ObsVector_ & yobs)
-  : hop_(obsdb, eckit::LocalConfiguration(config, "ObsOperator")),
+  : obsdb_(obsdb), hop_(obsdb, eckit::LocalConfiguration(config, "ObsOperator")),
     hoptlad_(obsdb, eckit::LocalConfiguration(config, "ObsOperator")),
-    observer_(config, obsdb, ybias, yobs), traj_(0), gvals_()
+    yobs_(yobs), ybias_(ybias), geovars_(), traj_(0), gvals_()
 {
+  geovars_ += hop_.variables();
+  geovars_ += ybias_.variables();
   Log::trace() << "ObserverTLAD::ObserverTLAD" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -102,7 +110,7 @@ void ObserverTLAD<MODEL>::doInitializeTraj(const State_ & xx,
   Log::trace() << "ObserverTLAD::doInitializeTraj start" << std::endl;
 // Create full trajectory object
   for (int ib = 0; ib < nsteps; ++ib) { traj_.emplace_back(new InterpolatorTraj_()); }
-  observer_.doInitialize(xx, begin, end);
+  gvals_.reset(new GeoVaLs_(hop_.locations(begin, end), geovars_));
   Log::trace() << "ObserverTLAD::doInitializeTraj done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -110,15 +118,20 @@ template <typename MODEL>
 void ObserverTLAD<MODEL>::doProcessingTraj(const State_ & xx, const util::DateTime & t1,
                                            const util::DateTime & t2, const int & ib) {
   Log::trace() << "ObserverTLAD::doProcessingTraj start" << std::endl;
-// Call nonlinear observer
-  observer_.processTraj(xx, t1, t2, *traj_.at(ib));
+// Call nonlinear getValues
+  xx.getValues(hop_.locations(t1, t2), geovars_, *gvals_, *traj_.at(ib));
   Log::trace() << "ObserverTLAD::doProcessingTraj done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 void ObserverTLAD<MODEL>::doFinalizeTraj(const State_ & xx) {
   Log::trace() << "ObserverTLAD::doFinalizeTraj start" << std::endl;
-  observer_.finalizeTraj(xx, hoptlad_);
+  hoptlad_.setTrajectory(*gvals_, ybias_);
+  oops::Variables novars;
+  ObsDiags_ ydiags(obsdb_, hop_.locations(obsdb_.windowStart(), obsdb_.windowEnd()),
+                   novars);
+  hop_.simulateObs(*gvals_, yobs_, ybias_, ydiags);
+  gvals_.reset();
   Log::trace() << "ObserverTLAD::doFinalizeTraj done" << std::endl;
 }
 // -----------------------------------------------------------------------------

@@ -232,6 +232,9 @@ oops/util/IntSetParser.h
 oops/util/kinds.F90
 oops/util/LibOOPS.h
 oops/util/LibOOPS.cc
+oops/util/liboops_f.h
+oops/util/liboops_f.cc
+oops/util/liboops_mod.F90
 oops/util/Logger.h
 oops/util/missing_values_f.cc
 oops/util/missing_values_f.h
@@ -258,6 +261,7 @@ oops/util/random_f.h
 oops/util/random_f.cc
 oops/util/random_mod.F90
 oops/util/variables_mod.f90
+oops/util/bump_interpolation_mod.F90
 
 test/base/ObsFilters.h
 test/interface/GeoVaLs.h
@@ -275,6 +279,7 @@ test/util/Random.h
 test/util/random.F90
 test/util/FCString.h
 test/util/f_c_string.F90
+test/util/interpolator_interface.F90
 )
 
 # macro to create a symlink from src to dst
@@ -290,6 +295,7 @@ endfunction(CREATE_SYMLINK)
 list( APPEND oops_test_input
   test/testinput/random.yaml
   test/testinput/pushstringvector.yaml
+  test/testinput/interp_interface.yaml
 )
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test/testinput)
 CREATE_SYMLINK( ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${oops_test_input} )
@@ -361,14 +367,27 @@ ecbuild_add_test( TARGET  test_util_intset_parser
                   LIBS    oops eckit )
 
 if( HAVE_FCTEST )
+
 add_fctest( TARGET  test_util_datetime_intfb.x
             SOURCES test/util/datetime.F90
+            LINKER_LANGUAGE Fortran
             CONDITION HAVE_FCTEST
+            LINKER_LANGUAGE Fortran
             LIBS    oops )
 
 add_fctest( TARGET  test_util_duration_intfb.x
             SOURCES test/util/duration.F90
+            LINKER_LANGUAGE Fortran
             CONDITION HAVE_FCTEST
             LIBS    oops )
+
+add_fctest( TARGET  test_util_interp_interface.x
+            SOURCES test/util/interpolator_interface.F90
+            ARGS -config test/testinput/interp_interface.yaml
+            CONDITION HAVE_FCTEST
+            LINKER_LANGUAGE Fortran
+            LIBS    oops )
+
 endif()
+
 

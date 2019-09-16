@@ -49,8 +49,8 @@ class ObsFilter : public ObsFilterBase<MODEL> {
   void priorFilter(const GeoVaLs_ &) const override;
   void postFilter(const ObsVector_ &, const ObsDiags_ &) const override;
 
-  const Variables & requiredGeoVaLs() const override;
-  const Variables & requiredHdiagnostics() const override;
+  Variables requiredGeoVaLs() const override;
+  Variables requiredHdiagnostics() const override;
 
  private:
   void print(std::ostream &) const override;
@@ -121,7 +121,7 @@ void ObsFilter<MODEL, FILTER>::postFilter(const ObsVector_ & ov, const ObsDiags_
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename FILTER>
-const Variables & ObsFilter<MODEL, FILTER>::requiredGeoVaLs() const {
+Variables ObsFilter<MODEL, FILTER>::requiredGeoVaLs() const {
   Log::trace() << "ObsFilter::requiredGeoVaLs" << std::endl;
   return ofilt_->requiredGeoVaLs();
 }
@@ -129,7 +129,7 @@ const Variables & ObsFilter<MODEL, FILTER>::requiredGeoVaLs() const {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename FILTER>
-const Variables & ObsFilter<MODEL, FILTER>::requiredHdiagnostics() const {
+Variables ObsFilter<MODEL, FILTER>::requiredHdiagnostics() const {
   Log::trace() << "ObsFilter::requiredHdiagnostics" << std::endl;
   return ofilt_->requiredHdiagnostics();
 }

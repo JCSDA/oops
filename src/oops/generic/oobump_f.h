@@ -22,6 +22,7 @@ extern "C" {
   void get_oobump_nts_f90(const int &, int &);
   void get_oobump_cv_size_f90(const int &, int &);
   void add_oobump_member_f90(const int &, const int &, const int &, const int &);
+  void remove_oobump_member_f90(const int &, const int &, const int &, const int &);
   void run_oobump_drivers_f90(const int &);
   void multiply_oobump_vbal_f90(const int &, const int &);
   void multiply_oobump_vbal_inv_f90(const int &, const int &);
