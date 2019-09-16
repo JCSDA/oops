@@ -1,3 +1,13 @@
+/*
+ * (C) Copyright 2009-2016 ECMWF.
+ *
+ * This software is licensed under the terms of the Apache Licence Version 2.0
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
+ * granted to it by virtue of its status as an intergovernmental organisation nor
+ * does it submit to any jurisdiction.
+ */
+
 #ifndef _AIX43
 
 #ifdef __APPLE__
@@ -6,13 +16,13 @@
 // This is needed to get feenableexcept defined
 #define _GNU_SOURCE
 #endif
-#include <fenv.h>       // feenableexcept
-#include <signal.h>     // sigaction, siginfo_t
-#include <string.h>     // strerror
-#include <stdio.h>
 #include <errno.h>      // strerror(errno)
 #include <execinfo.h>   // backtrace*
+#include <fenv.h>       // feenableexcept
+#include <signal.h>     // sigaction, siginfo_t
+#include <stdio.h>
 #include <stdlib.h>     // abort
+#include <string.h>     // strerror
 #include <unistd.h>     // stderr
 
 extern void trap_sigfpe(void);                         // user function traps SIGFPE
@@ -45,11 +55,11 @@ void trap_sigfpe(void)
       printf("Call to feenableexcept returned %d\n", ret);
 #endif
 
-    sig_action.sa_flags = SA_SIGINFO;         // handler specified in sa_sigaction
-    sig_action.sa_sigaction = sigfpe_handler; // function name
-    sigemptyset(&sig_action.sa_mask);        // initialize mask
-    sigaddset(&sig_action.sa_mask, SIGFPE);  // disable another SIGFPE while one is being processed
-    
+    sig_action.sa_flags = SA_SIGINFO;          // handler specified in sa_sigaction
+    sig_action.sa_sigaction = sigfpe_handler;  // function name
+    sigemptyset(&sig_action.sa_mask);          // initialize mask
+    sigaddset(&sig_action.sa_mask, SIGFPE);    // disable SIGFPE while another is being processed
+
     if (sigaction(SIGFPE,  &sig_action, NULL) != 0) {
       printf("Call to sigaction failed: %s\n", strerror(errno));
     }
@@ -88,23 +98,13 @@ void sigfpe_handler(int sig, siginfo_t *info, void *ucontext) {
     break;
   }
 
-  nfuncs = backtrace(stack, maxfuncs);                    // generate a backtrace
-  backtrace_symbols_fd(&stack[0], nfuncs, STDERR_FILENO); // print the backtrace to stderr
-  abort();                                                // exit
+  nfuncs = backtrace(stack, maxfuncs);                     // generate a backtrace
+  backtrace_symbols_fd(&stack[0], nfuncs, STDERR_FILENO);  // print the backtrace to stderr
+  abort();                                                 // exit
 }
 
 #else
 // _AIX43 is defined
-
-/*
- * (C) Copyright 2009-2016 ECMWF.
- *
- * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
- * In applying this licence, ECMWF does not waive the privileges and immunities
- * granted to it by virtue of its status as an intergovernmental organisation nor
- * does it submit to any jurisdiction.
- */
 
 
 #include <errno.h>
