@@ -15,15 +15,16 @@
 #else
 // This is needed to get feenableexcept defined
 #define _GNU_SOURCE
-#endif
 #include <errno.h>      // strerror(errno)
-#include <execinfo.h>   // backtrace*
-#include <fenv.h>       // feenableexcept
 #include <signal.h>     // sigaction, siginfo_t
 #include <stdio.h>
+#include <unistd.h>     // stderr
+#endif
+
+#include <execinfo.h>   // backtrace*
+#include <fenv.h>       // feenableexcept
 #include <stdlib.h>     // abort
 #include <string.h>     // strerror
-#include <unistd.h>     // stderr
 
 extern void trap_sigfpe(void);                         // user function traps SIGFPE
 extern void trap_sigfpe_(void);                        // Fortran-callable
@@ -107,13 +108,9 @@ void sigfpe_handler(int sig, siginfo_t *info, void *ucontext) {
 // _AIX43 is defined
 
 
-#include <errno.h>
 #include <fptrap.h>
 #include <memory.h>
-#include <signal.h>
-#include <stdio.h>
 #include <sys/time.h>
-#include <unistd.h>
 
 #define ALARM_CALL 2*60
 
