@@ -38,6 +38,7 @@ class ObsVec1D : public util::Printable,
 
   explicit ObsVec1D(const ObsTableView &, const std::string & name = "", const bool fail = true);
   ObsVec1D(const ObsVec1D &);
+  ObsVec1D(const ObsTableView &, const ObsVec1D &);
   ~ObsVec1D() {}
 
   ObsVec1D & operator= (const ObsVec1D &);

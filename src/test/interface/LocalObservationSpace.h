@@ -35,23 +35,38 @@ template <typename MODEL> void testLocal() {
   const eckit::LocalConfiguration localconf(TestEnvironment::config(), "LocalObservationSpace");
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    // get center (for localization) from yaml
     eckit::LocalConfiguration geolocconf(localconf, "GeoLocation");
     double lon = geolocconf.getDouble("lon");
     double lat = geolocconf.getDouble("lat");
-
     const eckit::geometry::Point2 center(lon, lat);
+
+    // get distance from yaml
     eckit::LocalConfiguration distconf(localconf, "GeoDistance");
     const double dist = distconf.getDouble("distance");
 
-    ObsVector_ fullvec(*Test_::obspace()[jj]);
+    const std::string varname = localconf.getString("varname");
+
+    // initialize full ObsVector for a specified variable
+    ObsVector_ fullvec(*Test_::obspace()[jj], varname);
     oops::Log::info() << "Full Obsvector: " << fullvec << std::endl;
 
-    LocalObsSpace_ local(*Test_::obspace()[jj], center, dist, -1);
+    // initialize local observation space
+    LocalObsSpace_ localobs(*Test_::obspace()[jj], center, dist, -1);
     oops::Log::info() << "Local obs within " << dist << " from " << center <<
-                         ": " <<local << std::endl;
+                         ": " << localobs << std::endl;
 
-    ObsVector_ localvec(local);
-    oops::Log::info() << "Local Obsvector: " << localvec << std::endl;
+    // intialize local obsvector by reading specified variable from local obsspace
+    ObsVector_ localvec1(localobs, varname);
+    oops::Log::info() << "Local Obsvector from Local Obsspace: " << localvec1 << std::endl;
+    // initialize local obsvector from full obsvector using local obsspace
+    ObsVector_ localvec2(localobs, fullvec);
+    oops::Log::info() << "Local ObsVector from full ObsVector: " << localvec2 << std::endl;
+    // check that the two are equal
+    EXPECT(localvec1.nobs() == localvec2.nobs());
+    localvec2 -= localvec1;
+    const double rms = dot_product(localvec2, localvec2);
+    EXPECT(rms == 0);
   }
 }
 

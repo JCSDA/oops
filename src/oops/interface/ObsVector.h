@@ -47,6 +47,7 @@ class ObsVector : public util::Printable,
   ObsVector(const ObservationSpace<MODEL> &,
             const std::string name = "", const bool fail = true);
   explicit ObsVector(const ObsVector &);
+  ObsVector(const ObservationSpace<MODEL> &, const ObsVector &);
   ~ObsVector();
 
 /// Interfacing
@@ -96,6 +97,16 @@ ObsVector<MODEL>::ObsVector(const ObsVector & other): data_() {
   util::Timer timer(classname(), "ObsVector");
 
   data_.reset(new ObsVector_(*other.data_));
+
+  Log::trace() << "ObsVector<MODEL>::ObsVector done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename MODEL>
+ObsVector<MODEL>::ObsVector(const ObservationSpace<MODEL> & os, const ObsVector & other) {
+  Log::trace() << "ObsVector<MODEL>::ObsVector starting" << std::endl;
+  util::Timer timer(classname(), "ObsVector");
+
+  data_.reset(new ObsVector_(os.observationspace(), other.obsvector()));
 
   Log::trace() << "ObsVector<MODEL>::ObsVector done" << std::endl;
 }

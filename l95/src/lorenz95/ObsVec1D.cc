@@ -40,6 +40,13 @@ ObsVec1D::ObsVec1D(const ObsVec1D & other)
   data_ = other.data_;
 }
 // -----------------------------------------------------------------------------
+ObsVec1D::ObsVec1D(const ObsTableView & ot, const ObsVec1D & other)
+  : obsdb_(ot), data_(ot.nobs()) {
+  for (size_t ii = 0; ii < ot.nobs(); ++ii) {
+    data_[ii] = other(ot.index(ii));
+  }
+}
+// -----------------------------------------------------------------------------
 ObsVec1D & ObsVec1D::operator= (const ObsVec1D & rhs) {
   ASSERT(data_.size() == rhs.data_.size());
   data_ = rhs.data_;

@@ -16,6 +16,7 @@ LocalObservationSpace:
     lat: 0
   GeoDistance:
     distance: 0.2
+  varname:  ObsValue
 LinearModel:
   trajectory:
     f: 8.0
