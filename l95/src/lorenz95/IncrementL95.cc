@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2017-2019 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -185,6 +186,22 @@ void IncrementL95::write(const eckit::Configuration & config) const {
 void IncrementL95::print(std::ostream & os) const {
   os << std::endl << " Valid time: " << time_;
   os << std::endl << fld_;
+}
+// -----------------------------------------------------------------------------
+oops::GridPoint IncrementL95::getPoint(const Iterator & i) const {
+  std::vector<std::string> vars;
+  vars.push_back("x");
+  std::vector<double> vals;
+  vals.push_back(fld_[i.index()]);
+  std::vector<int> varlens;
+  varlens.push_back(1);
+  return oops::GridPoint(oops::Variables(vars), vals, varlens);
+}
+// -----------------------------------------------------------------------------
+void IncrementL95::setPoint(const oops::GridPoint & gp, const Iterator & i) {
+  std::vector<double> vals;
+  vals = gp.getVals();
+  fld_[i.index()] = vals[0];
 }
 // -----------------------------------------------------------------------------
 /// Get increment values at obs locations
