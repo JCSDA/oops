@@ -35,6 +35,7 @@ class Variables : public util::Printable {
 
   size_t size() const {return vars_.size();}
   const std::string & operator[](const size_t kk) const {return vars_.at(kk);}
+  bool operator==(const Variables &) const;
 
   bool has(const std::string &) const;
   size_t find(const std::string &) const;

@@ -84,6 +84,14 @@ Variables & Variables::operator+=(const Variables & rhs) {
 
 // -----------------------------------------------------------------------------
 
+bool Variables::operator==(const Variables & rhs) const {
+  return convention_ == rhs.convention_
+    && vars_ == rhs.vars_
+    && channels_ == rhs.channels_;
+}
+
+// -----------------------------------------------------------------------------
+
 bool Variables::has(const std::string & var) const {
   bool found = false;
   for (size_t jj = 0; jj < vars_.size(); ++jj) {
