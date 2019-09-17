@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2017-2019 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -20,7 +21,9 @@
 
 #include "model/FieldsQG.h"
 #include "model/GeometryQG.h"
+#include "model/GeometryQGIterator.h"
 #include "oops/base/GeneralizedDepartures.h"
+#include "oops/base/GridPoint.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Duration.h"
@@ -32,6 +35,7 @@ namespace eckit {
 }
 
 namespace oops {
+  class GridPoint;
   class UnstructuredGrid;
   class Variables;
 }
@@ -39,6 +43,7 @@ namespace oops {
 namespace qg {
   class GomQG;
   class LocationsQG;
+  class GeometryQG;
   class ModelBiasIncrement;
   class ErrorCovarianceQG;
   class StateQG;
@@ -109,6 +114,7 @@ class IncrementQG : public oops::GeneralizedDepartures,
 
 /// Other
   void accumul(const double &, const StateQG &);
+  oops::GridPoint getPoint(const GeometryQGIterator &) const;
 
 /// Serialization
   size_t serialSize() const;

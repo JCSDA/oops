@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2017-2019 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -178,6 +179,12 @@ oops::GridPoint StateL95::getPoint(const Iterator & i) const {
   std::vector<int> varlens;
   varlens.push_back(1);
   return oops::GridPoint(oops::Variables(vars), vals, varlens);
+}
+// -----------------------------------------------------------------------------
+void StateL95::setPoint(const oops::GridPoint & gp, const Iterator & i) {
+    std::vector<double> vals;
+    vals = gp.getVals();
+    fld_[i.index()] = vals[0];
 }
 // -----------------------------------------------------------------------------
 /// For accumulator

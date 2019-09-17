@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2017-2019 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -16,9 +17,11 @@
 #include <vector>
 
 #include "lorenz95/FieldL95.h"
+#include "lorenz95/Iterator.h"
 #include "lorenz95/Resolution.h"
 
 #include "oops/base/GeneralizedDepartures.h"
+#include "oops/base/GridPoint.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
@@ -29,6 +32,7 @@ namespace eckit {
 }
 
 namespace oops {
+  class GridPoint;
   class UnstructuredGrid;
   class Variables;
 }
@@ -92,6 +96,9 @@ class IncrementL95 : public util::Printable,
   const util::DateTime & validTime() const {return time_;}
   util::DateTime & validTime() {return time_;}
   void updateTime(const util::Duration & dt) {time_ += dt;}
+
+  oops::GridPoint getPoint(const Iterator &) const;
+  void setPoint(const oops::GridPoint &, const Iterator &);
 
 /// Access to data
   const FieldL95 & getField() const {return fld_;}

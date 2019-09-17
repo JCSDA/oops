@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2017-2019 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -74,6 +75,7 @@ class State : public util::Printable,
   Geometry_ geometry() const;
 
   GridPoint getPoint(const GeometryIterator_ & iter) const;
+  void setPoint(const GridPoint & gp, const GeometryIterator_ & iter);
 
 /// Accumulator
   void zero();
@@ -255,6 +257,17 @@ GridPoint State<MODEL>::getPoint(const GeometryIterator_ & iter) const {
   GridPoint gp = state_->getPoint(iter.geometryiter());
   Log::trace() << "State<MODEL>::getPoint done" << std::endl;
   return gp;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void State<MODEL>::setPoint(const GridPoint & gp,
+                            const GeometryIterator_ & iter) {
+  Log::trace() << "State<MODEL>::setPoint starting" << std::endl;
+  util::Timer timer(classname(), "setPoint");
+  state_->setPoint(gp, iter.geometryiter());
+  Log::trace() << "State<MODEL>::setPoint done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

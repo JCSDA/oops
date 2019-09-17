@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2017-2019 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -19,6 +20,7 @@
 #include "oops/base/Variables.h"
 #include "oops/generic/UnstructuredGrid.h"
 #include "oops/interface/Geometry.h"
+#include "oops/interface/GeometryIterator.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/InterpolatorTraj.h"
 #include "oops/interface/Locations.h"
@@ -44,6 +46,7 @@ class Increment : public oops::GeneralizedDepartures,
                   private util::ObjectCounter<Increment<MODEL> > {
   typedef typename MODEL::Increment  Increment_;
   typedef Geometry<MODEL>            Geometry_;
+  typedef GeometryIterator<MODEL>    GeometryIterator_;
   typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef InterpolatorTraj<MODEL>    InterpolatorTraj_;
   typedef Locations<MODEL>           Locations_;
@@ -93,6 +96,9 @@ class Increment : public oops::GeneralizedDepartures,
   void read(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;
   double norm() const;
+
+  GridPoint getPoint(const GeometryIterator_ & iter) const;
+  void setPoint(const GridPoint & gp, const GeometryIterator_ & iter);
 
 /// Get geometry
   Geometry_ geometry() const;
@@ -325,6 +331,27 @@ void Increment<MODEL>::accumul(const double & zz, const State_ & xx) {
   util::Timer timer(classname(), "accumul");
   increment_->accumul(zz, xx.state());
   Log::trace() << "Increment<MODEL>::accumul done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+GridPoint Increment<MODEL>::getPoint(const GeometryIterator_ & iter) const {
+  Log::trace() << "Increment<MODEL>::getPoint starting" << std::endl;
+  util::Timer timer(classname(), "getPoint");
+  GridPoint gp = increment_->getPoint(iter.geometryiter());
+  Log::trace() << "Increment<MODEL>::getPoint done" << std::endl;
+  return gp;
+}
+
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+void Increment<MODEL>::setPoint(const GridPoint & gp,
+                                const GeometryIterator_ & iter) {
+  Log::trace() << "Increment<MODEL>::setPoint starting" << std::endl;
+  util::Timer timer(classname(), "setPoint");
+  increment_->setPoint(gp, iter.geometryiter());
+  Log::trace() << "Increment<MODEL>::setPoint done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
