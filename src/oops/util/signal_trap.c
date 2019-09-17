@@ -15,16 +15,16 @@
 #else
 // This is needed to get feenableexcept defined
 #define _GNU_SOURCE
-#include <errno.h>      // strerror(errno)
-#include <signal.h>     // sigaction, siginfo_t
-#include <stdio.h>
-#include <unistd.h>     // stderr
+#include <fenv.h>       // feenableexcept
 #endif
 
+#include <errno.h>      // strerror(errno)
 #include <execinfo.h>   // backtrace*
-#include <fenv.h>       // feenableexcept
+#include <signal.h>     // sigaction, siginfo_t
+#include <stdio.h>
 #include <stdlib.h>     // abort
 #include <string.h>     // strerror
+#include <unistd.h>     // stderr
 
 extern void trap_sigfpe(void);                         // user function traps SIGFPE
 extern void trap_sigfpe_(void);                        // Fortran-callable
