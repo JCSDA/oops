@@ -59,6 +59,7 @@ class ObsTableView : public util::Printable,
   LocsL95 * locations(const util::DateTime & t1, const util::DateTime & t2) const;
   void printJo(const ObsVec1D &, const ObsVec1D &);
 
+  size_t index(const size_t ii) const {return localobs_[ii];}
   const std::string & obsname() const {return obstable_->obsname();}
 
   const util::DateTime & windowStart() const {return obstable_->windowStart();}
@@ -67,7 +68,7 @@ class ObsTableView : public util::Printable,
  private:
   void print(std::ostream &) const;
   boost::shared_ptr<ObsTable> obstable_;
-  std::vector<int> localobs_;
+  std::vector<size_t> localobs_;
 };
 // -----------------------------------------------------------------------------
 }  // namespace lorenz95

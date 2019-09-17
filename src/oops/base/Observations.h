@@ -42,6 +42,7 @@ template <typename MODEL> class Observations : public util::Printable {
  public:
   explicit Observations(const ObsSpaces_ &, const std::string name = "");
   Observations(const Observations &);
+  Observations(const ObsSpaces_ &, const Observations &);
   ~Observations();
   Observations & operator=(const Observations &);
 
@@ -85,6 +86,16 @@ Observations<MODEL>::Observations(const Observations & other): obs_(0)
     obs_.push_back(tmp);
   }
   Log::trace() << "Observations copy-created" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename MODEL>
+Observations<MODEL>::Observations(const ObsSpaces_ & obsdb,
+                                  const Observations & other): obs_(0) {
+  for (std::size_t jj = 0; jj < other.obs_.size(); ++jj) {
+    std::shared_ptr<ObsVector_> tmp(new ObsVector_(obsdb[jj], *other.obs_[jj]));
+    obs_.push_back(tmp);
+  }
+  Log::trace() << "Local observations created" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>

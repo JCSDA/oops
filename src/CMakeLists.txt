@@ -80,6 +80,8 @@ oops/base/DolphChebyshev.cc
 oops/base/EnsembleCovariance.h
 oops/base/GeneralizedDepartures.h
 oops/base/GeoVaLsWriter.h
+oops/base/GridPoint.h
+oops/base/GridPoint.cc
 oops/base/HybridCovariance.h
 oops/base/IdentityMatrix.h
 oops/base/IncrementEnsemble.h

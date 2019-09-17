@@ -50,6 +50,7 @@ class Departures : public util::Printable,
              const std::string name = "", const bool fail = true);
   explicit Departures(std::vector<std::shared_ptr<ObsVector_> >);
   explicit Departures(const Departures &);
+  Departures(const ObsSpaces_ &, const Departures &);
   ~Departures();
 
 /// Access
@@ -106,6 +107,16 @@ Departures<MODEL>::Departures(const Departures & other): dep_(0)
     dep_.push_back(tmp);
   }
   Log::trace() << "Departures copy-created" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+Departures<MODEL>::Departures(const ObsSpaces_ & obsdb,
+                              const Departures & other): dep_(0) {
+  for (std::size_t jj = 0; jj < other.dep_.size(); ++jj) {
+    std::shared_ptr<ObsVector_> tmp(new ObsVector_(obsdb[jj], *other.dep_[jj]));
+    dep_.push_back(tmp);
+  }
+  Log::trace() << "Local Departures created" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
