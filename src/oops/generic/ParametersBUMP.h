@@ -89,7 +89,7 @@ ParametersBUMP<MODEL>::ParametersBUMP(const Geometry_ & resol,
   if (BUMPConfig.has("colocated")) colocated = BUMPConfig.getInt("colocated");
 
 // Setup members release
-  int release_members = 1;
+  int release_members = 0;
   if (BUMPConfig.has("release_members")) release_members = BUMPConfig.getInt("release_members");
 
 // Setup dummy increment
