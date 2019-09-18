@@ -68,6 +68,7 @@ class Departures : public util::Printable,
   void invert();
   void axpy(const double &, const Departures &);
   double dot_product_with(const Departures &) const;
+  double rms() const;
 
 /// Save departures values
   void save(const std::string &) const;
@@ -201,6 +202,16 @@ double Departures<MODEL>::dot_product_with(const Departures & other) const {
   }
   return zz;
 }
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+double Departures<MODEL>::rms() const {
+  int nobs = 0;
+  for (std::size_t jj = 0; jj < dep_.size(); ++jj) {
+    nobs += dep_[jj]->nobs();
+  }
+  return sqrt(dot_product_with(*this) / nobs);
+}
+
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 void Departures<MODEL>::save(const std::string & name) const {
