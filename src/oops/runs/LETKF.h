@@ -260,10 +260,8 @@ template <typename MODEL> class LETKF : public Application {
     Log::test() << "analysis y - H(x): " << std::endl << oman << std::endl;
 
     // display overall background/analysis RMS stats
-    double rms_bkg = sqrt(ombg.dot_product_with(ombg) / ombg.size());
-    double rms_ana = sqrt(oman.dot_product_with(oman) / oman.size());
-    Log::test() << "ombg RMS: " << rms_bkg << std::endl
-                << "oman RMS: " << rms_ana << std::endl;
+    Log::test() << "ombg RMS: " << ombg.rms() << std::endl
+                << "oman RMS: " << oman.rms() << std::endl;
 
     return 0;
   }

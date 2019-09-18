@@ -102,5 +102,5 @@ Test     : analysis y - H(x):
 Test     : Stream nobs= 300 Scaling=  1e+06, Min=    -34.0406, Max=     65.1172, Average=      1.2414
 Test     : Wind nobs= 160 Scaling=      1, Min=    -37.6985, Max=     23.5728, Average=     -1.4729
 Test     : WSpeed nobs= 300 Scaling=      1, Min=    -29.5862, Max=     35.4206, Average=      4.5609
-Test     : ombg RMS: 1.953e+08
-Test     : oman RMS: 1.745e+08
+Test     : ombg RMS: 1.227e+07
+Test     : oman RMS: 1.097e+07

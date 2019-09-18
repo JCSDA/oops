@@ -44,5 +44,5 @@ Test     : H(x) ensemble analysis mean:
 Test     : Lorenz 95 nobs= 120 Min=6.82713, Max=8.45154, Average=7.88868
 Test     : analysis y - H(x): 
 Test     : Lorenz 95 nobs= 120 Min=-0.642676, Max=1.52204, Average=0.122706
-Test     : ombg RMS: 5.4963
-Test     : oman RMS: 4.46575
+Test     : ombg RMS: 0.501741
+Test     : oman RMS: 0.407666
