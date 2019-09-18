@@ -18,6 +18,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Departures.h"
+#include "oops/base/DeparturesEnsemble.h"
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/ObsAuxControls.h"
@@ -50,14 +51,15 @@ namespace oops {
  * filter. Physica D: Nonlinear Phenomena, 230(1-2), 112-126.
  */
 template <typename MODEL> class LETKF : public Application {
-  typedef ModelAuxControl<MODEL>  ModelAux_;
-  typedef Departures<MODEL>        Departures_;
-  typedef Geometry<MODEL>          Geometry_;
-  typedef Increment<MODEL>         Increment_;
-  typedef Model<MODEL>             Model_;
-  typedef ObsAuxControls<MODEL>    ObsAuxCtrls_;
-  typedef ObsEnsemble<MODEL>       ObsEnsemble_;
-  typedef ObsErrors<MODEL>         ObsErrors_;
+  typedef ModelAuxControl<MODEL>    ModelAux_;
+  typedef Departures<MODEL>         Departures_;
+  typedef DeparturesEnsemble<MODEL> DeparturesEnsemble_;
+  typedef Geometry<MODEL>           Geometry_;
+  typedef Increment<MODEL>          Increment_;
+  typedef Model<MODEL>              Model_;
+  typedef ObsAuxControls<MODEL>     ObsAuxCtrls_;
+  typedef ObsEnsemble<MODEL>        ObsEnsemble_;
+  typedef ObsErrors<MODEL>          ObsErrors_;
   typedef ObsSpaces<MODEL>         ObsSpaces_;
   typedef Observations<MODEL>      Observations_;
   typedef State<MODEL>             State_;
@@ -180,21 +182,11 @@ template <typename MODEL> class LETKF : public Application {
     // TODO(Travis)
 
     // calculate H(x) ensemble mean
-    // TODO(Travis) this should be pulled out and added as a method to ObsEnsemble
-    Observations_ yb_mean(obsens[0]);
-    for (unsigned jj = 1; jj < obsens.size(); ++jj) {
-      Departures_ d(obsens[jj] - yb_mean);
-      d *= 1.0/(jj+1.0);
-      yb_mean += d;
-    }
+    Observations_ yb_mean(obsens.mean());
     Log::test() << "H(x) ensemble background mean: " << std::endl << yb_mean << std::endl;
 
     // calculate H(x) ensemble perturbations
-    // TODO(Travis) pull this out into a DepartureEnsemble class
-    std::vector< std::unique_ptr<Departures_> > ens_Yb;
-    for (unsigned jj = 0; jj < obsens.size(); ++jj) {
-      ens_Yb.push_back(std::unique_ptr<Departures_> (new Departures_(obsens[jj] - yb_mean)));
-    }
+    DeparturesEnsemble_ ens_Yb(obsens, yb_mean);
 
     // calculate obs departures
     Departures_ ombg(yobs - yb_mean);
@@ -259,13 +251,7 @@ template <typename MODEL> class LETKF : public Application {
     }
 
     // calcualate H(x) ensemble analysis mean
-    // TODO(Travis) this should be pulled out and added as a method to ObsEnsemble
-    Observations_ ya_mean(obsens[0]);
-    for (unsigned jj = 1; jj < obsens.size(); ++jj) {
-      Departures_ d(obsens[jj] - ya_mean);
-      d *= 1.0/(jj+1.0);
-      ya_mean += d;
-    }
+    Observations_ ya_mean(obsens.mean());
     Log::test() << "H(x) ensemble analysis mean: " << std::endl << ya_mean << std::endl;
 
     // calculate analysis obs departures
@@ -310,7 +296,7 @@ template <typename MODEL> class LETKF : public Application {
   static const Eigen::MatrixXd calcTrans(
                                   const eckit::Configuration &conf,
                                   const Departures_ & dy,
-                                  const std::vector< std::unique_ptr<Departures_> > & Yb,
+                                  const DeparturesEnsemble_ & Yb,
                                   const ObsErrors<MODEL> & R) {
     unsigned int nbv = Yb.size();  // number of ensemble members
     double infl = 1.0;    // TODO(Travis): read multiplicative inflation from config
@@ -322,10 +308,10 @@ template <typename MODEL> class LETKF : public Application {
     // only lower triangular half is filled)
     // work = Y^T R^-1 Y + (nbv-1)/infl I
     for (unsigned jj=0; jj < nbv; ++jj) {
-      Departures_ Cj(*Yb[jj]);
+      Departures_ Cj(Yb[jj]);
       R.inverseMultiply(Cj);
       for (unsigned ii=jj; ii < nbv; ++ii) {
-        work(ii, jj) = Cj.dot_product_with(*Yb[ii]);
+        work(ii, jj) = Cj.dot_product_with(Yb[ii]);
       }
       work(jj, jj) += (nbv-1.0) / infl;
     }
@@ -350,7 +336,7 @@ template <typename MODEL> class LETKF : public Application {
     Departures_ Rinvdy(dy);
     R.inverseMultiply(Rinvdy);
     for (unsigned jj=0; jj < nbv; ++jj) {
-      wa(jj) = Yb[jj]->dot_product_with(Rinvdy);
+      wa(jj) = Yb[jj].dot_product_with(Rinvdy);
     }
     wa = work * wa;
 

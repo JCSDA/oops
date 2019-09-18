@@ -74,6 +74,7 @@ oops/assimilation/rotmat.h
 
 oops/base/Accumulator.h
 oops/base/Departures.h
+oops/base/DeparturesEnsemble.h
 oops/base/DiagonalMatrix.h
 oops/base/DolphChebyshev.h
 oops/base/DolphChebyshev.cc
