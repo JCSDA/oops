@@ -723,6 +723,30 @@ call qg_fields_getpoint(fld,iter,c_nval,c_vals)
 
 end subroutine qg_fields_getpoint_c
 ! ------------------------------------------------------------------------------
+!> Set points for the fields
+subroutine qg_fields_setpoint_c(c_key_fld,c_key_iter,c_nval,c_vals) bind(c,name='qg_fields_setpoint_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_fld         !< Fields
+integer(c_int),intent(in) :: c_key_iter        !< Geometry iterator
+integer(c_int),intent(in) :: c_nval            !< Number of values
+real(c_double),intent(in) :: c_vals(c_nval)    !< Values
+
+! Local variables
+type(qg_fields),pointer :: fld
+type(qg_geom_iter),pointer :: iter
+
+! Interface
+call qg_fields_registry%get(c_key_fld,fld)
+call qg_geom_iter_registry%get(c_key_iter,iter)
+
+! Call Fortran
+call qg_fields_setpoint(fld,iter,c_nval,c_vals)
+
+end subroutine qg_fields_setpoint_c
+! ------------------------------------------------------------------------------
 !> Serialize fields
 subroutine qg_fields_serialize_c(c_key_fld,c_vsize,c_vect_fld) bind(c,name='qg_fields_serialize_f90')
 

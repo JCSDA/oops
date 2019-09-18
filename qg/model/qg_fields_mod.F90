@@ -41,7 +41,7 @@ public :: qg_fields_create,qg_fields_create_from_other,qg_fields_delete,qg_field
         & qg_fields_dot_prod,qg_fields_add_incr,qg_fields_diff_incr,qg_fields_change_resol,qg_fields_read_file, &
         & qg_fields_write_file,qg_fields_analytic_init,qg_fields_gpnorm,qg_fields_rms,qg_fields_sizes,qg_fields_vars, &
         & qg_fields_interp,qg_fields_interp_tl,qg_fields_interp_ad,qg_fields_ug_coord,qg_fields_field_to_ug, &
-        & qg_fields_field_from_ug,qg_fields_getpoint,qg_fields_serialize,qg_fields_deserialize, &
+        & qg_fields_field_from_ug,qg_fields_getpoint,qg_fields_setpoint,qg_fields_serialize,qg_fields_deserialize, &
         & qg_fields_check,qg_fields_check_resolution,qg_fields_check_variables
 ! ------------------------------------------------------------------------------
 integer,parameter :: rseed = 7 !< Random seed (for reproducibility)
@@ -1445,6 +1445,36 @@ endif
 vals = fld%gfld3d(iter%ilon,iter%ilat,:)
 
 end subroutine qg_fields_getpoint
+! ------------------------------------------------------------------------------
+!> Set fields values at a specified gridpoint
+subroutine qg_fields_setpoint(fld,iter,nval,vals)
+
+implicit none
+
+! Passed variables
+type(qg_fields),intent(inout) :: fld           !< Fields
+type(qg_geom_iter),intent(in) :: iter       !< Geometry iterator
+integer,intent(in) :: nval                  !< Number of values
+real(kind_real),intent(in) :: vals(nval)    !< Values
+
+! Local variables
+character(len=1024) :: record
+
+! Check
+if ((fld%geom%nx/=iter%geom%nx).or.(fld%geom%ny/=iter%geom%ny).or.(fld%geom%nz/=iter%geom%nz)) then
+  write(record,*) 'qg_fields_getpoint: resolution inconsistency,',fld%geom%nx,'/',fld%geom%ny,'/',fld%geom%nz, &
+& ' and ',iter%geom%nx,'/',iter%geom%ny,'/',iter%geom%nz
+  call abor1_ftn(record)
+endif
+if (fld%geom%nz/=nval) then
+  write(record,*) 'qg_fields_getpoint: array sizes are different:',fld%geom%nz,'/',nval
+  call abor1_ftn(record)
+endif
+
+! Set values
+fld%gfld3d(iter%ilon,iter%ilat,:) = vals
+
+end subroutine qg_fields_setpoint
 ! ------------------------------------------------------------------------------
 !> Serialize fields
 subroutine qg_fields_serialize(fld,vsize,vect_fld)

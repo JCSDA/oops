@@ -28,9 +28,10 @@
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
-#include "oops/interface/State.h"
+#include "oops/interface/Increment.h"
 #include "oops/runs/Test.h"
 
+#include "test/interface/Increment.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
@@ -54,43 +55,38 @@ template <typename MODEL> void testConstructor() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testIterator() {
+template <typename MODEL> void testGetSetPoint() {
   typedef oops::Geometry<MODEL>          Geometry_;
   typedef oops::GeometryIterator<MODEL>  GeometryIterator_;
-  typedef oops::State<MODEL>             State_;
+  typedef oops::Increment<MODEL>         Increment_;
+  typedef IncrementFixture<MODEL>        Test_;
 
   const eckit::LocalConfiguration
        geomConfig(TestEnvironment::config(), "Geometry");
-  const eckit::LocalConfiguration
-       stateConfig(TestEnvironment::config(), "State");
-
-  const oops::Variables vars(stateConfig);
-
   Geometry_ geom(geomConfig);
-  State_ state(geom, vars, stateConfig);
+
+  // randomize increment dx1
+  Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());
+  dx1.random();
+  oops::Log::info() << "Increment dx1 (random): " << dx1 << std::endl;
+  // zero out increment dx2
+  Increment_ dx2(Test_::resol(), Test_::ctlvars(), Test_::time());
+  dx2.zero();
+  oops::Log::info() << "Increment dx2 (zero): " << dx2 << std::endl;
 
   const eckit::LocalConfiguration
         iterConfig(TestEnvironment::config(), "GeometryIterator");
-  const double rms_conf = iterConfig.getDouble("rms");
-  const double tol = iterConfig.getDouble("tolerance");
 
-  double rms = 0;
-  int n = 0;
-  for (GeometryIterator_ i = geom.begin(); i != geom.end(); ++i, ++n) {
-    oops::GridPoint gp = state.getPoint(i);
+  for (GeometryIterator_ i = geom.begin(); i != geom.end(); ++i) {
+    // get value for i-th gridpoint from dx1
+    oops::GridPoint gp = dx1.getPoint(i);
     oops::Log::debug() << *i << gp << std::endl;
-    std::vector<double> vals = gp.getVals();
-    rms += std::inner_product(vals.begin(), vals.end(), vals.begin(), 0.) /
-                  vals.size();
+    dx2.setPoint(gp, i);
   }
-  rms = sqrt(rms/n);
-
-  oops::Log::debug() << n << " rms from iterator: " << std::fixed << std::setprecision(8)
-                     << rms << std::endl;
-  oops::Log::debug() << "rms from config: " << std::fixed << std::setprecision(8)
-                     << rms_conf << std::endl;
-
-  EXPECT(oops::is_close(rms, rms_conf, tol));
+  oops::Log::info() << "Increment dx2 after dx2=dx1 (at every point): " << dx2 << std::endl;
+  // compare two increments
+  dx2 -= dx1;
+  EXPECT(dx2.norm() == 0.0);
 }
 
 // -----------------------------------------------------------------------------
@@ -108,8 +104,8 @@ template <typename MODEL> class GeometryIterator : public oops::Test {
 
     ts.emplace_back(CASE("interface/GeometryIterator/testConstructor")
       { testConstructor<MODEL>(); });
-    ts.emplace_back(CASE("interface/GeometryIterator/testIterator")
-      { testIterator<MODEL>(); });
+    ts.emplace_back(CASE("interface/GeometryIterator/testGetSetPoint")
+      { testGetSetPoint<MODEL>(); });
   }
 };
 

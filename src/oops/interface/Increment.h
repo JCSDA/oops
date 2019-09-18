@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "oops/base/GeneralizedDepartures.h"
+#include "oops/base/GridPoint.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/UnstructuredGrid.h"
 #include "oops/interface/Geometry.h"

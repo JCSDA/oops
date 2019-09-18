@@ -196,5 +196,9 @@ oops::GridPoint IncrementQG::getPoint(const GeometryQGIterator & iter) const {
   return fields_->getPoint(iter);
 }
 // -----------------------------------------------------------------------------
+void IncrementQG::setPoint(const oops::GridPoint & values, const GeometryQGIterator & iter) {
+  fields_->setPoint(values, iter);
+}
+// -----------------------------------------------------------------------------
 
 }  // namespace qg

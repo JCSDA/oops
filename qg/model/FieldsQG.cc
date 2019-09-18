@@ -238,6 +238,11 @@ oops::GridPoint FieldsQG::getPoint(const GeometryQGIterator & iter) const {
   return oops::GridPoint(vars_.toOopsVariables(), values, varlens);
 }
 // -----------------------------------------------------------------------------
+void FieldsQG::setPoint(const oops::GridPoint & x, const GeometryQGIterator & iter) {
+  const std::vector<double> vals = x.getVals();
+  qg_fields_setpoint_f90(keyFlds_, iter.toFortran(), vals.size(), vals[0]);
+}
+// -----------------------------------------------------------------------------
 size_t FieldsQG::serialSize() const {
   size_t nn = 0;
   int nx, ny, nz, nb;

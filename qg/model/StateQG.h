@@ -17,8 +17,6 @@
 
 
 #include "model/FieldsQG.h"
-#include "model/GeometryQGIterator.h"
-#include "oops/base/GridPoint.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -29,7 +27,6 @@ namespace eckit {
 
 namespace oops {
   class Variables;
-  class GridPoint;
 }
 
 namespace qg {
@@ -81,7 +78,6 @@ class StateQG : public util::Printable,
 /// Other
   void zero();
   void accumul(const double &, const StateQG &);
-  oops::GridPoint getPoint(const GeometryQGIterator &) const;
 
  private:
   void print(std::ostream &) const;

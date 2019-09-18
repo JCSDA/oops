@@ -100,6 +100,7 @@ class FieldsQG : public util::Printable,
   bool isForModel(const bool &) const;
 
   oops::GridPoint getPoint(const GeometryQGIterator &) const;
+  void setPoint(const oops::GridPoint &, const GeometryQGIterator &);
 
 /// Serialization
   size_t serialSize() const;
