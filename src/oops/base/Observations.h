@@ -58,6 +58,11 @@ template <typename MODEL> class Observations : public util::Printable {
 /// Save observations values
   void save(const std::string &) const;
 
+/// Accumulator
+  void zero();
+  void accumul(const Observations &);
+  Observations & operator*=(const double);
+
  private:
   void print(std::ostream &) const;
 
@@ -136,6 +141,28 @@ void Observations<MODEL>::save(const std::string & name) const {
   for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
     obs_[jj]->save(name);
   }
+}
+// -----------------------------------------------------------------------------
+template <typename MODEL>
+void Observations<MODEL>::zero() {
+  for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
+    obs_[jj]->zero();
+  }
+}
+// -----------------------------------------------------------------------------
+template <typename MODEL>
+void Observations<MODEL>::accumul(const Observations & y) {
+  for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
+    *obs_[jj] += y[jj];
+  }
+}
+// -----------------------------------------------------------------------------
+template <typename MODEL>
+Observations<MODEL> & Observations<MODEL>::operator *=(const double factor) {
+  for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
+    *obs_[jj] *= factor;
+  }
+  return *this;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>

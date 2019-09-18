@@ -115,6 +115,7 @@ class IncrementQG : public oops::GeneralizedDepartures,
 /// Other
   void accumul(const double &, const StateQG &);
   oops::GridPoint getPoint(const GeometryQGIterator &) const;
+  void setPoint(const oops::GridPoint &, const GeometryQGIterator &);
 
 /// Serialization
   size_t serialSize() const;

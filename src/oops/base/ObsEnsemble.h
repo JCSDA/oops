@@ -8,7 +8,8 @@
 #ifndef OOPS_BASE_OBSENSEMBLE_H_
 #define OOPS_BASE_OBSENSEMBLE_H_
 
-#include <boost/ptr_container/ptr_vector.hpp>
+#include <memory>
+#include <vector>
 
 #include "oops/base/Observations.h"
 #include "oops/base/ObsSpaces.h"
@@ -26,42 +27,54 @@ template<typename MODEL> class ObsEnsemble {
 
  public:
 /// Constructor
-  ObsEnsemble(const ObsSpaces_ &, const int &);
+  ObsEnsemble(const ObsSpaces_ &, const unsigned int &);
 
 /// Destructor
   virtual ~ObsEnsemble() {}
 
   /// Accessors
   unsigned int size() const {
-    return rank_;
+    return ensemble_.size();
   }
   Observations_ & operator[](const int ii) {
-    return ensemblePerturbs_[ii];
+    return *ensemble_[ii];
   }
   const Observations_ & operator[](const int ii) const {
-    return ensemblePerturbs_[ii];
+    return *ensemble_[ii];
   }
 
+  Observations_ mean() const;
+
  private:
-  unsigned int rank_;
-  boost::ptr_vector<Observations_> ensemblePerturbs_;
+  const ObsSpaces_ & obsdb_;
+  std::vector<std::shared_ptr<Observations_>> ensemble_;
 };
 
 // ====================================================================================
 
 template<typename MODEL>
-ObsEnsemble<MODEL>::ObsEnsemble(const ObsSpaces_ & os, const int & rank)
-  : rank_(rank),
-    ensemblePerturbs_()
+ObsEnsemble<MODEL>::ObsEnsemble(const ObsSpaces_ & obsdb, const unsigned int & ns)
+  : obsdb_(obsdb), ensemble_()
 {
-  for (unsigned i = 0; i < rank_; ++i) {
-    Observations_ * y = new Observations_(os);
-    ensemblePerturbs_.push_back(y);
+  for (unsigned i = 0; i < ns ; ++i) {
+    std::shared_ptr<Observations_> y(new Observations_(obsdb_));
+    ensemble_.push_back(y);
   }
   Log::trace() << "ObsEnsemble:contructor done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
+
+template<typename MODEL>
+Observations<MODEL> ObsEnsemble<MODEL>::mean() const {
+  Observations_ mean_obs(obsdb_);
+  mean_obs.zero();
+  for (unsigned ii = 0; ii < ensemble_.size(); ++ii) {
+    mean_obs.accumul(*ensemble_[ii]);
+  }
+  mean_obs *= 1.0/static_cast<float>(ensemble_.size());
+  return mean_obs;
+}
 
 }  // namespace oops
 

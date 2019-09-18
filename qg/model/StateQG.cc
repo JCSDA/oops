@@ -144,9 +144,5 @@ void StateQG::zero() {
 void StateQG::accumul(const double & zz, const StateQG & xx) {
   fields_->axpy(zz, *xx.fields_);
 }
-// -----------------------------------------------------------------------------
-oops::GridPoint StateQG::getPoint(const GeometryQGIterator & iter) const {
-  return fields_->getPoint(iter);
-}
 
 }  // namespace qg
