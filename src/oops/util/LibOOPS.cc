@@ -52,10 +52,10 @@ LibOOPS::~LibOOPS() {
 }
 
   extern "C" {
-    void trap_sigfpe (void);
+    void trap_sigfpe(void);
   }
 LibOOPS& LibOOPS::instance() {
-    trap_sigfpe ();
+    trap_sigfpe();
   return liboops;
 }
 
