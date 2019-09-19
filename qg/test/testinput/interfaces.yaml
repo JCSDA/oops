@@ -12,9 +12,6 @@ Geometry:
   depths:
   - 4500.0
   - 5500.0
-GeometryIterator:
-  rms: 204926435.39777881
-  tolerance: 1.0e-8
 LocalObservationSpace:
   GeoLocation:
     lon: -10

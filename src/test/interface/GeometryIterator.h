@@ -11,15 +11,11 @@
 #ifndef TEST_INTERFACE_GEOMETRYITERATOR_H_
 #define TEST_INTERFACE_GEOMETRYITERATOR_H_
 
-#include <cmath>
 #include <memory>
-#include <numeric>
 #include <string>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
-
-#include <boost/noncopyable.hpp>
 
 #include "eckit/config/Configuration.h"
 #include "eckit/testing/Test.h"
@@ -74,13 +70,11 @@ template <typename MODEL> void testGetSetPoint() {
   dx2.zero();
   oops::Log::info() << "Increment dx2 (zero): " << dx2 << std::endl;
 
-  const eckit::LocalConfiguration
-        iterConfig(TestEnvironment::config(), "GeometryIterator");
-
   for (GeometryIterator_ i = geom.begin(); i != geom.end(); ++i) {
     // get value for i-th gridpoint from dx1
     oops::GridPoint gp = dx1.getPoint(i);
     oops::Log::debug() << *i << gp << std::endl;
+    // set this value for i-th gridpoint in dx2
     dx2.setPoint(gp, i);
   }
   oops::Log::info() << "Increment dx2 after dx2=dx1 (at every point): " << dx2 << std::endl;
