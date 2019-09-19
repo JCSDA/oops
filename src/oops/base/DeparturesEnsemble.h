@@ -32,7 +32,8 @@ template<typename MODEL> class DeparturesEnsemble {
  public:
 /// Constructor
   explicit DeparturesEnsemble(const ObsEnsemble_ &);
-  explicit DeparturesEnsemble(const ObsEnsemble_ &, const Observations_ &);
+  DeparturesEnsemble(const ObsEnsemble_ &, const Observations_ &);
+  DeparturesEnsemble(const ObsSpaces_ &, const DeparturesEnsemble &);
 
 /// Destructor
   virtual ~DeparturesEnsemble() {}
@@ -70,6 +71,19 @@ DeparturesEnsemble<MODEL>::DeparturesEnsemble(const ObsEnsemble_ & ens,
     ensemblePerturbs_.push_back(y);
   }
   Log::trace() << "DeparturesEnsemble:contructor done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+DeparturesEnsemble<MODEL>::DeparturesEnsemble(const ObsSpaces_ & obsdb,
+                                              const DeparturesEnsemble & other)
+  : ensemblePerturbs_() {
+  for (std::size_t jj = 0; jj < other.size(); ++jj) {
+    std::shared_ptr<Departures_> tmp(new Departures_(obsdb, other[jj]));
+    ensemblePerturbs_.push_back(tmp);
+  }
+  Log::trace() << "Local DeparturesEnsemble created" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
