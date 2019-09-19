@@ -16,7 +16,7 @@ Model:
   - x
 
 Initial Condition:
-  state:
+  members:
   - date: *date
     filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1D
   - date: *date

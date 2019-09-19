@@ -113,6 +113,7 @@ oops/base/PostProcessor.h
 oops/base/PostProcessorTLAD.h
 oops/base/PostTimer.h
 oops/base/PostTimer.cc
+oops/base/StateEnsemble.h
 oops/base/StateInfo.h
 oops/base/StateWriter.h
 oops/base/TrajectorySaver.h

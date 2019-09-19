@@ -27,6 +27,7 @@
 #include "oops/base/Observations.h"
 #include "oops/base/Observers.h"
 #include "oops/base/ObsSpaces.h"
+#include "oops/base/StateEnsemble.h"
 #include "oops/base/StateInfo.h"
 #include "oops/base/StateWriter.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
@@ -60,9 +61,10 @@ template <typename MODEL> class LETKF : public Application {
   typedef ObsAuxControls<MODEL>     ObsAuxCtrls_;
   typedef ObsEnsemble<MODEL>        ObsEnsemble_;
   typedef ObsErrors<MODEL>          ObsErrors_;
-  typedef ObsSpaces<MODEL>         ObsSpaces_;
-  typedef Observations<MODEL>      Observations_;
-  typedef State<MODEL>             State_;
+  typedef ObsSpaces<MODEL>          ObsSpaces_;
+  typedef Observations<MODEL>       Observations_;
+  typedef State<MODEL>              State_;
+  typedef StateEnsemble<MODEL>      StateEnsemble_;
   template <typename DATA> using ObsData_ = ObsDataVector<MODEL, DATA>;
   template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<MODEL, DATA> >;
 
@@ -118,24 +120,14 @@ template <typename MODEL> class LETKF : public Application {
 
     // Get initial state configurations
     const eckit::LocalConfiguration initialConfig(fullConfig, "Initial Condition");
-    std::vector<eckit::LocalConfiguration> memberConfig;
-    initialConfig.get("state", memberConfig);
-    Log::debug() << "LETKF using " << memberConfig.size() << " members." << std::endl;
 
     // Loop over all ensemble members
-    // TODO(Travis) use a StateEnsemble class
-    ObsEnsemble_ obsens(obsdb, memberConfig.size());
-    std::vector< std::shared_ptr<State_> > ens_xx;
-    for (unsigned jj = 0; jj < memberConfig.size(); ++jj) {
-      // Setup initial state
+    StateEnsemble_ ens_xx(resol, model.variables(), initialConfig);
+    ObsEnsemble_ obsens(obsdb, ens_xx.size());
+    for (unsigned jj = 0; jj < ens_xx.size(); ++jj) {
       // TODO(Travis) change the way input file name is specified, make
       //  more similar to how the output ens config is done
-      Log::info() << std::endl << "Initial configuration for member " << jj+1 << " is: "
-                  << memberConfig[jj] << std::endl;
-      std::shared_ptr<State_> xx( new State_(resol, model.variables(), memberConfig[jj]));
-      ModelAux_ moderr(resol, memberConfig[jj]);
-      Log::test() << "Initial state for member " << jj+1 << ":" << *xx << std::endl;
-      ens_xx.push_back(xx);
+      Log::test() << "Initial state for member " << jj+1 << ":" << ens_xx[jj] << std::endl;
 
       // setup postprocessor: observers
       // TODO(Travis) obs filters not currently being used here, need to be added
@@ -146,9 +138,9 @@ template <typename MODEL> class LETKF : public Application {
 
       // compute H(x)
       // TODO(Travis) this is the 3D LETKF case, need to add model forecast for 4D LETKF
-      post.initialize(*xx, winhalf, winlen);
-      post.process(*xx);
-      post.finalize(*xx);
+      post.initialize(ens_xx[jj], winhalf, winlen);
+      post.process(ens_xx[jj]);
+      post.finalize(ens_xx[jj]);
 
       // save H(x)
       std::unique_ptr<Observations_> yeqv(pobs->release());
@@ -158,12 +150,7 @@ template <typename MODEL> class LETKF : public Application {
     }
 
     // calculate background mean
-    // TODO(Travis) make changes to IncrementEnsemble class so we can use that instead
-    Accumulator<MODEL, State_, State_> bkg_mean(*ens_xx[0]);
-    for (unsigned jj = 0; jj < ens_xx.size(); ++jj) {
-      const double rr = 1.0/ens_xx.size();
-      bkg_mean.accumul(rr, *ens_xx[jj]);
-    }
+    State_ bkg_mean(ens_xx.mean());
     Log::test() << "Background mean :" << bkg_mean << std::endl;
 
     // calculate background ensemble perturbations
@@ -172,7 +159,7 @@ template <typename MODEL> class LETKF : public Application {
     for (unsigned jj = 0; jj < ens_xx.size(); ++jj) {
       std::shared_ptr<Increment_> dx (new Increment_(resol, model.variables(),
                                                      bkg_mean.validTime()));
-      dx->diff(*ens_xx[jj], bkg_mean);
+      dx->diff(ens_xx[jj], bkg_mean);
       bkg_pert.push_back(dx);
     }
 
@@ -216,8 +203,8 @@ template <typename MODEL> class LETKF : public Application {
 
     // calculate final analysis states
     for (unsigned jj = 0; jj < ens_xx.size(); ++jj) {
-      *ens_xx[jj] = bkg_mean;
-      *ens_xx[jj] += (*ana_pert[jj]);
+      ens_xx[jj] = bkg_mean;
+      ens_xx[jj] += (*ana_pert[jj]);
     }
 
     // TODO(Travis) optionally save analysis mean / standard deviation
@@ -226,12 +213,12 @@ template <typename MODEL> class LETKF : public Application {
     for (unsigned jj=0; jj < obsens.size(); ++jj) {
       eckit::LocalConfiguration outConfig(fullConfig, "output");
       outConfig.set("member", jj+1.0);
-      ens_xx[jj]->write(outConfig);
+      ens_xx[jj].write(outConfig);
     }
 
     // calculate oman
     // TODO(Travis) redundant code with the previous H(x) loop... simplify this
-    for (unsigned jj = 0; jj < memberConfig.size(); ++jj) {
+    for (unsigned jj = 0; jj < ens_xx.size(); ++jj) {
       // setup postprocessor: observers
       PostProcessor<State_> post;
       boost::shared_ptr<Observers<MODEL, State_> >
@@ -239,9 +226,9 @@ template <typename MODEL> class LETKF : public Application {
       post.enrollProcessor(pobs);
 
       // compute H(x)
-      post.initialize(*ens_xx[jj], winhalf, winlen);
-      post.process(*ens_xx[jj]);
-      post.finalize(*ens_xx[jj]);
+      post.initialize(ens_xx[jj], winhalf, winlen);
+      post.process(ens_xx[jj]);
+      post.finalize(ens_xx[jj]);
 
       // save H(x)
       std::unique_ptr<Observations_> yeqv(pobs->release());

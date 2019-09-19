@@ -11,7 +11,7 @@ Model:
   tstep: PT1H30M
 
 Initial Condition:
-  state:
+  members:
   - date: *date
     filename: Data/test.ens.1.2010-01-01T00:00:00Z.PT3H
   - date: *date
