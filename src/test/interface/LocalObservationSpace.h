@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2017-2018 UCAR
+ * (C) Copyright 2017-2019 UCAR
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -13,8 +13,6 @@
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
-#include <boost/noncopyable.hpp>
-
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/geometry/Point2.h"
 #include "eckit/testing/Test.h"
@@ -27,7 +25,41 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testLocal() {
+template <typename MODEL> void testLocalObsSpace() {
+  typedef ObsVecFixture<MODEL> Test_;
+  typedef oops::ObservationSpace<MODEL>       LocalObsSpace_;
+  typedef oops::ObsVector<MODEL>              ObsVector_;
+
+  const eckit::LocalConfiguration localconf(TestEnvironment::config(), "LocalObservationSpace");
+
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    // get center (for localization) from yaml
+    eckit::LocalConfiguration geolocconf(localconf, "GeoLocation");
+    double lon = geolocconf.getDouble("lon");
+    double lat = geolocconf.getDouble("lat");
+    const eckit::geometry::Point2 center(lon, lat);
+
+    // get distance from yaml
+    eckit::LocalConfiguration distconf(localconf, "GeoDistance");
+    const double dist = distconf.getDouble("distance");
+
+    // initialize local observation space
+    LocalObsSpace_ localobs(*Test_::obspace()[jj], center, dist, -1);
+    oops::Log::info() << "Local obs within " << dist << " from " << center <<
+                         ": " << localobs << std::endl;
+
+    const int ref_nobs = localconf.getInt("reference nobs");
+
+    // test that local nobs is equal to the reference value
+    ObsVector_ localvec(localobs);
+    const int nobs = localvec.nobs();
+    EXPECT(nobs == ref_nobs);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testLocalObsVector() {
   typedef ObsVecFixture<MODEL> Test_;
   typedef oops::ObservationSpace<MODEL>       LocalObsSpace_;
   typedef oops::ObsVector<MODEL>              ObsVector_;
@@ -81,9 +113,10 @@ template <typename MODEL> class LocalObservationSpace : public oops::Test {
 
   void register_tests() const {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
-
-    ts.emplace_back(CASE("interface/LocalObservationSpace/testLocal")
-      { testLocal<MODEL>(); });
+    ts.emplace_back(CASE("interface/LocalObservationSpace/testLocalObsSpace")
+      { testLocalObsSpace<MODEL>(); });
+    ts.emplace_back(CASE("interface/LocalObservationSpace/testLocalObsVector")
+      { testLocalObsVector<MODEL>(); });
   }
 };
 

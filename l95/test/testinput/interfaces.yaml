@@ -7,9 +7,6 @@ CovarianceTest:
   tolerance: 1.0e-10
 Geometry:
   resol: 40
-GeometryIterator:
-  rms: 8.0258264222507467
-  tolerance: 1.0e-10
 LocalObservationSpace:
   GeoLocation:
     lon: 0.5
@@ -17,6 +14,7 @@ LocalObservationSpace:
   GeoDistance:
     distance: 0.2
   varname:  ObsValue
+  reference nobs: 64
 LinearModel:
   trajectory:
     f: 8.0
