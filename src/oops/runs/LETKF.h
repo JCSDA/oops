@@ -19,6 +19,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
+#include "oops/base/GridPoint.h"
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/ObsAuxControls.h"
@@ -32,6 +33,7 @@
 #include "oops/base/StateWriter.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/interface/Geometry.h"
+#include "oops/interface/GeometryIterator.h"
 #include "oops/interface/Model.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
@@ -56,6 +58,7 @@ template <typename MODEL> class LETKF : public Application {
   typedef Departures<MODEL>         Departures_;
   typedef DeparturesEnsemble<MODEL> DeparturesEnsemble_;
   typedef Geometry<MODEL>           Geometry_;
+  typedef GeometryIterator<MODEL>   GeometryIterator_;
   typedef Increment<MODEL>          Increment_;
   typedef Model<MODEL>              Model_;
   typedef ObsAuxControls<MODEL>     ObsAuxCtrls_;
@@ -180,26 +183,33 @@ template <typename MODEL> class LETKF : public Application {
     ombg.save("ombg");
     Log::test() << "background y - H(x): " << std::endl << ombg << std::endl;
 
-    // run the LETKF solver
-    // TODO(Travis) put this inside a geometry iterator loop and run
-    //  once for each gridpoint, with obs localization
-    Log::info() << "Beginning core LETKF solver..." << std::endl;
-    const eckit::LocalConfiguration letkfConfig(fullConfig, "letkf");
-    const Eigen::MatrixXd trans = calcTrans(letkfConfig, ombg, ens_Yb, rmat);
-    Log::info() << "LETKF solver completed." << std::endl;
-
-    // use the transform matrix to calculate the analysis perturbations
+    // initialize empty analysis perturbations
     std::vector<std::shared_ptr<Increment_> > ana_pert;
     for (unsigned jj=0; jj < obsens.size(); ++jj) {
-      std::shared_ptr<Increment_> dx(new Increment_(*bkg_pert[0]));
-      (*dx) *= trans(0, jj);
-      for (unsigned ii=1; ii < obsens.size(); ++ii) {
-        Increment_ dx2 = *bkg_pert[ii];
-        dx2 *= trans(ii, jj);
-        (*dx) += dx2;
-      }
+      std::shared_ptr<Increment_> dx(new Increment_(*bkg_pert[0], false));
       ana_pert.push_back(dx);
     }
+
+    // run the LETKF solver at each gridpoint
+    Log::info() << "Beginning core LETKF solver..." << std::endl;
+    const eckit::LocalConfiguration letkfConfig(fullConfig, "letkf");
+    for (GeometryIterator_ i = resol.begin(); i != resol.end(); ++i) {
+      // TODO(Travis) Next step is to use localized observations
+      const Eigen::MatrixXd trans = calcTrans(letkfConfig, ombg, ens_Yb, rmat);
+
+      // use the transform matrix to calculate the analysis perturbations
+      for (unsigned jj=0; jj < obsens.size(); ++jj) {
+        GridPoint gp = bkg_pert[0]->getPoint(i);
+        gp *= trans(0, jj);
+        for (unsigned ii=1; ii < obsens.size(); ++ii) {
+          GridPoint gp2 = bkg_pert[ii]->getPoint(i);
+          gp2 *= trans(ii, jj);
+          gp += gp2;
+        }
+        ana_pert[jj]->setPoint(gp, i);
+      }
+    }
+    Log::info() << "LETKF solver completed." << std::endl;
 
     // calculate final analysis states
     for (unsigned jj = 0; jj < ens_xx.size(); ++jj) {
