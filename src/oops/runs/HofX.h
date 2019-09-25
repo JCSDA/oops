@@ -20,6 +20,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/ObsAuxControls.h"
+#include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observers.h"
 #include "oops/base/ObsFilters.h"
@@ -44,10 +45,13 @@ template <typename MODEL> class HofX : public Application {
   typedef ModelAuxControl<MODEL>     ModelAux_;
   typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
   typedef Observations<MODEL>        Observations_;
+  typedef ObsErrors<MODEL>           ObsErrors_;
   typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef State<MODEL>               State_;
   typedef boost::shared_ptr<ObsFilters_> PtrFilters_;
+  template <typename DATA> using ObsData_ = ObsDataVector<MODEL, DATA>;
+  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsData_<DATA> >;
 
  public:
 // -----------------------------------------------------------------------------
@@ -91,7 +95,7 @@ template <typename MODEL> class HofX : public Application {
 
 //  Setup observations
     const eckit::LocalConfiguration obsconf(fullConfig, "Observations");
-    Log::info() << "Observation configuration is:" << obsconf << std::endl;
+    Log::info() << "Observations configuration is:" << obsconf << std::endl;
     ObsSpaces_ obspace(obsconf, winbgn, winend);
 
 //  Setup observations bias
@@ -100,9 +104,21 @@ template <typename MODEL> class HofX : public Application {
 //  Setup QC filters
     std::vector<eckit::LocalConfiguration> typeconfs;
     obsconf.get("ObsTypes", typeconfs);
+    std::vector<ObsDataPtr_<int> > qcflags_;
+    std::vector<ObsDataPtr_<float> > obserr_;
     std::vector<PtrFilters_> filters;
+
     for (size_t jj = 0; jj < obspace.size(); ++jj) {
-      PtrFilters_ tmp(new ObsFilters_(obspace[jj], typeconfs[jj]));
+//    Allocate QC flags
+      ObsDataPtr_<int> tmpqc(new ObsData_<int>(obspace[jj], obspace[jj].obsvariables()));
+      qcflags_.push_back(tmpqc);
+
+//    Allocate and read initial obs error
+      ObsDataPtr_<float> tmperr(new ObsData_<float>(obspace[jj],
+                                obspace[jj].obsvariables(), "ObsError"));
+      obserr_.push_back(tmperr);
+
+      PtrFilters_ tmp(new ObsFilters_(obspace[jj], typeconfs[jj], qcflags_[jj], obserr_[jj]));
       filters.push_back(tmp);
     }
 
@@ -116,10 +132,18 @@ template <typename MODEL> class HofX : public Application {
     Log::info() << "HofX: Finished observation computation." << std::endl;
     Log::test() << "Final state: " << xx << std::endl;
 
+//  Save QC flags
+    for (size_t jj = 0; jj < obspace.size(); ++jj) {
+      qcflags_[jj]->save("EffectiveQC");
+      obserr_[jj]->save("EffectiveError");
+    }
+
 //  Save H(x)
     std::unique_ptr<Observations_> yobs(pobs->release());
     Log::test() << "H(x): " << std::endl << *yobs << "End H(x)" << std::endl;
     yobs->save("hofx");
+
+    post.clear();
 
     return 0;
   }
