@@ -72,7 +72,6 @@ template <typename MODEL> void testFilters() {
     const GeoVaLs_ gval(gconf, Test_::obspace()[jj], vars);
     filters.preProcess();
     filters.priorFilter(gval);
-
 //  Collect hofx diagnostics
     ObsDiags_ diags(Test_::obspace()[jj],
                     hop.locations(Test_::obspace()[jj].windowStart(),
@@ -81,6 +80,8 @@ template <typename MODEL> void testFilters() {
 
     hop.simulateObs(gval, hofx, ybias, diags);
     filters.postFilter(hofx, diags);
+    qcflags->save("EffectiveQC");
+    obserr->save("EffectiveError");
 
 //  Compare with known results
     if (typeconfs[jj].has("qcBenchmark")) {
