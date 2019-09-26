@@ -6,6 +6,7 @@
 module oobump_interface
 
 use fckit_configuration_module, only: fckit_configuration
+use fckit_mpi_module, only: fckit_mpi_comm
 use iso_c_binding
 use kinds
 use missing_values_mod
@@ -38,6 +39,8 @@ integer(c_int), intent(in) :: ens2_nsub       !< Number of sub-ensembles in the 
 type(fckit_configuration) :: f_conf
 type(oobump_type), pointer :: self
 type(unstructured_grid), pointer :: ug
+type(fckit_mpi_comm) :: f_comm
+integer :: mpi_comm
 
 ! Interface
 f_conf = fckit_configuration(c_conf)
@@ -46,8 +49,12 @@ call oobump_registry%add(c_key_oobump)
 call oobump_registry%get(c_key_oobump, self)
 call unstructured_grid_registry%get(c_key_ug, ug)
 
+! Get MPI communicator (use default comm now, could use a specific name in the future) 
+f_comm = fckit_mpi_comm()
+mpi_comm = f_comm%communicator()
+
 ! Call Fortran
-call create_oobump(self, ug, f_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub)
+call create_oobump(self, ug, f_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub, mpi_comm)
 
 end subroutine create_oobump_c
 ! ------------------------------------------------------------------------------

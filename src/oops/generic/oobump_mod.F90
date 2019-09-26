@@ -45,7 +45,7 @@ contains
 #include "oops/util/linkedList_c.f"
 !-------------------------------------------------------------------------------
 !> Create OOBUMP
-subroutine create_oobump(self, ug, f_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub)
+subroutine create_oobump(self, ug, f_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub, mpi_comm)
 
 implicit none
 
@@ -57,6 +57,7 @@ integer, intent(in) :: ens1_ne                 !< First ensemble size
 integer, intent(in) :: ens1_nsub               !< Number of sub-ensembles in the first ensemble
 integer, intent(in) :: ens2_ne                 !< Second ensemble size
 integer, intent(in) :: ens2_nsub               !< Number of sub-ensembles in the second ensemble
+integer,intent(in) :: mpi_comm                 ! MPI communicator
 
 ! Local variables
 integer :: igrid, lunit, iproc, ifileunit
@@ -89,11 +90,11 @@ do igrid=1,self%ngrid
    ! Open separate log files for BUMP
    if (self%separate_log==1) then
       ! Initialize MPI
-      call self%bump(igrid)%mpl%init
+      call self%bump(igrid)%mpl%init(mpi_comm)
 
       do iproc=1,self%bump(igrid)%mpl%nproc
          if ((trim(self%bump(igrid)%nam%verbosity)=='all').or.((trim(self%bump(igrid)%nam%verbosity)=='main') &
-      & .and.(iproc==self%bump(igrid)%mpl%ioproc))) then
+      & .and.(iproc==self%bump(igrid)%mpl%rootproc))) then
             if (iproc==self%bump(igrid)%mpl%myproc) then
                ! Find a free unit
                call self%bump(igrid)%mpl%newunit(lunit)
