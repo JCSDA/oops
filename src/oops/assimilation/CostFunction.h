@@ -98,8 +98,8 @@ template<typename MODEL> class CostFunction : private boost::noncopyable {
 /// Access terms of the cost function other than \f$ J_b\f$
   const CostBase_ & jterm(const unsigned ii) const {return jterms_[ii];}
   unsigned nterms() const {return jterms_.size();}
-  const double getCostJb() const {return costJb_;}
-  const double getCostJoJc() const {return costJoJc_;}
+  double getCostJb() const {return costJb_;}
+  double getCostJoJc() const {return costJoJc_;}
 
  protected:
   void setupTerms(const eckit::Configuration &);
