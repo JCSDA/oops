@@ -51,11 +51,11 @@ LibOOPS::LibOOPS() : Library("oops"), rank_(0),
 LibOOPS::~LibOOPS() {
 }
 
-  extern "C" {
-    void trap_sigfpe(void);
-  }
+extern "C" {
+  void trap_sigfpe(void);
+}
+  
 LibOOPS& LibOOPS::instance() {
-    trap_sigfpe();
   return liboops;
 }
 
@@ -79,6 +79,7 @@ void LibOOPS::initialise() {
     debug_ = true;
     predebug_ += "[" + std::to_string(rank_) + "]";
   }
+  trap_sigfpe();
 }
 
 /** Add a rank-dependent tee file

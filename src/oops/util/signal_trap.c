@@ -29,7 +29,6 @@
 extern void trap_sigfpe(void);                         // user function traps SIGFPE
 extern void trap_sigfpe_(void);                        // Fortran-callable
 extern void sigfpe_handler(int, siginfo_t *, void *);  // called when relevant SIGFPE occurs
-static int first = 1;
 
 // Fortran wrapper
 void trap_sigfpe_(void)
@@ -43,36 +42,41 @@ void trap_sigfpe(void)
   int ret;
   struct sigaction sig_action = {};  // passed to sigaction (init to empty)
 
-  if (first) {
-    first = 0;
 #ifdef __APPLE__
-    _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_INVALID);
-    _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_DIV_ZERO);
-    _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_OVERFLOW);
+  _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_INVALID);
+  _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_DIV_ZERO);
+  _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_OVERFLOW);
 #else
-    if ((ret = feenableexcept (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)) == 0)
-      printf("Trapping of SIGFPE enabled\n");
-    else
-      printf("Call to feenableexcept returned %d\n", ret);
+  if ((ret = feenableexcept (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)) == 0) {
+    //      oops::Log::info() << "Call to sigaction failed: " << std::endl;
+    printf("Trapping of SIGFPE enabled\n");
+  } else {
+    printf("Call to feenableexcept returned %d\n", ret);
+  }
 #endif
 
-    sig_action.sa_flags = SA_SIGINFO;          // handler specified in sa_sigaction
-    sig_action.sa_sigaction = sigfpe_handler;  // function name
-    sigemptyset(&sig_action.sa_mask);          // initialize mask
-    sigaddset(&sig_action.sa_mask, SIGFPE);    // disable SIGFPE while another is being processed
+  sig_action.sa_flags = SA_SIGINFO;          // handler specified in sa_sigaction
+  sig_action.sa_sigaction = sigfpe_handler;  // function name
+  sigemptyset(&sig_action.sa_mask);          // initialize mask
+  sigaddset(&sig_action.sa_mask, SIGFPE);    // disable SIGFPE while another is being processed
 
-    if (sigaction(SIGFPE,  &sig_action, NULL) != 0) {
-      printf("Call to sigaction failed: %s\n", strerror(errno));
-    }
+  if (sigaction(SIGFPE, &sig_action, NULL) != 0) {
+    //      oops::Log::error() << "Call to sigaction failed: " << strerror(errno) << std::endl;
+    printf("Call to sigaction failed: %s\n", strerror(errno));
   }
   return;
 }
+
 // This is the signal handler invoked when SIGFPE encountered
 void sigfpe_handler(int sig, siginfo_t *info, void *ucontext) {
   static const int maxfuncs = 10;  // gather no more than 10 functions in the backtrace
   void *stack[maxfuncs];           // call stack
   size_t nfuncs;                   // number of functions returned by backtrace
+  int myrank;
 
+  //  myrank = eckit::mpi::comm().rank();
+  //  std::cerr() << "Caught SIGFPE: [" << myrank << "]" << std::endl;
+  //  std::cout() << "Caught SIGFPE: [" << myrank << "]" << std::endl;
   fprintf(stderr, "Caught SIGFPE: ");
 
   switch (info->si_code) {
