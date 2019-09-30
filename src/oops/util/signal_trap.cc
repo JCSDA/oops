@@ -9,8 +9,6 @@
 #ifdef __APPLE__
 #include <xmmintrin.h>  // Apple-specific signal handling
 #else
-// This is needed to get feenableexcept defined
-// #define _GNU_SOURCE
 #include <cfenv>       // feenableexcept
 #endif
 
@@ -25,8 +23,8 @@
 extern void trap_sigfpe(void);                         // user function traps SIGFPE
 extern void sigfpe_handler(int, siginfo_t *, void *);  // called when relevant SIGFPE occurs
 
-// #define LOGIT_STDOUT cout
-// #define LOGIT_STDERR cerr
+// #define LOGIT_STDOUT std::cout
+// #define LOGIT_STDERR std::cerr
 #define LOGIT_STDOUT oops::Log::info()
 #define LOGIT_STDERR oops::Log::error()
 
@@ -66,8 +64,6 @@ void sigfpe_handler(int sig, siginfo_t *info, void *ucontext) {
   size_t n;                        // iterator over nfuncs
 
   //  myrank = eckit::mpi::comm().rank();
-  //  std::cerr() << "Caught SIGFPE: [" << myrank << "]" << std::endl;
-  //  std::cout() << "Caught SIGFPE: [" << myrank << "]" << std::endl;
   LOGIT_STDERR << "Caught SIGFPE: " << std::endl;
 
   switch (info->si_code) {
