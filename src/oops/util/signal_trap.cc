@@ -31,7 +31,6 @@ extern void sigfpe_handler(int, siginfo_t *, void *);  // called when relevant S
 // This is the user function to enable handling of SIGFPE
 void trap_sigfpe(void)
 {
-  int ret;
   struct sigaction sig_action = {};  // passed to sigaction (init to empty)
 
 #ifdef __APPLE__
@@ -39,6 +38,7 @@ void trap_sigfpe(void)
   _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_DIV_ZERO);
   _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_OVERFLOW);
 #else
+  int ret;
   if ((ret = feenableexcept (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)) != 0)
     LOGIT_STDERR << "Call to feenableexcept returned" << ret << std::endl;
 #endif
