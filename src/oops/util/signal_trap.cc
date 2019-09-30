@@ -56,8 +56,9 @@ void trap_sigfpe(void)
 }
 
 // This is the signal handler invoked when SIGFPE encountered
+// Arguments "sig" and "ucontext" are required but unused here
 void sigfpe_handler(int sig, siginfo_t *info, void *ucontext) {
-  static const int maxfuncs = 20;  // gather no more than 10 functions in the backtrace
+  static const int maxfuncs = 50;  // gather no more than this many functions in the backtrace
   void *stack[maxfuncs];           // call stack
   char **stacknames;               // backtrace function names
   size_t nfuncs;                   // number of functions returned by backtrace
@@ -71,7 +72,7 @@ void sigfpe_handler(int sig, siginfo_t *info, void *ucontext) {
     LOGIT_STDERR << "integer divide by zero" << std::endl;
     break;
   case FPE_INTOVF:  // Cannot as yet get this one to trigger
-    LOGIT_STDERR << "integer overflow)" << std::endl;
+    LOGIT_STDERR << "integer overflow" << std::endl;
     break;
   case FPE_FLTDIV:
     LOGIT_STDERR << "floating-point divide by zero" << std::endl;
