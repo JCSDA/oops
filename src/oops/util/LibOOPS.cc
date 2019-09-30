@@ -25,6 +25,8 @@
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/util/LibOOPS.h"
 
+extern void trap_sigfpe(void);
+
 namespace oops {
 
 //------------------------------------------------------------------------------
@@ -51,10 +53,6 @@ LibOOPS::LibOOPS() : Library("oops"), rank_(0),
 LibOOPS::~LibOOPS() {
 }
 
-extern "C" {
-  void trap_sigfpe(void);
-}
-  
 LibOOPS& LibOOPS::instance() {
   return liboops;
 }
