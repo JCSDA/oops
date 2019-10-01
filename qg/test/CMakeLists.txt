@@ -278,6 +278,14 @@ ecbuild_add_test( TARGET test_qg_observation_space
 
 #--------------------------------------------------------------------
 
+ecbuild_add_test( TARGET test_qg_localobservation_space
+                  SOURCES executables/TestLocalObservationSpace.cc
+                  ARGS "testinput/interfaces.yaml"
+                  LIBS    qg
+                  TEST_DEPENDS test_qg_make_obs_4d_24h_run )
+
+#--------------------------------------------------------------------
+
 ecbuild_add_test( TARGET test_qg_obs_vector
                   SOURCES executables/TestObsVector.cc
                   ARGS "testinput/interfaces.yaml"

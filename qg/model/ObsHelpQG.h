@@ -1,6 +1,7 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ * (C) Copyright 2017-2019 UCAR.
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  * In applying this licence, ECMWF does not waive the privileges and immunities 
@@ -12,8 +13,11 @@
 #define QG_MODEL_OBSHELPQG_H_
 
 #include <string>
+#include <vector>
 
 #include <boost/noncopyable.hpp>
+
+#include "eckit/config/LocalConfiguration.h"
 
 #include "model/QgFortran.h"
 #include "oops/util/ObjectCounter.h"
@@ -36,20 +40,24 @@ class ObsHelpQG : private boost::noncopyable,
   ~ObsHelpQG();
 
   void getdb(const std::string &, const std::string &, int & keyOvec) const;
+  void getdb(const std::string &, const std::string &,
+             const std::vector<int> &, int & keyOvec) const;
   void putdb(const std::string &, const std::string &, const int & keyOvec);
 
   bool has(const std::string &, const std::string &) const;
 
   F90locs locations(const std::string &, const util::DateTime &, const util::DateTime &) const;
   void generateDistribution(const eckit::Configuration &, const std::string &,
-                            const util::DateTime &, const util::DateTime &, unsigned int &);
-  int nobs(const std::string &) const;
+                            const util::DateTime &, const util::DateTime &);
+  unsigned int nobs(const std::string &) const;
+  const eckit::Configuration & getConfig() const { return config_; }
 
   int & toFortran() {return keyHelp_;}
   const int & toFortran() const {return keyHelp_;}
 
  private:
   F90odb keyHelp_;
+  const eckit::LocalConfiguration config_;
 };
 
 }  // namespace qg

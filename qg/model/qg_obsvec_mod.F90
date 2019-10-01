@@ -1,5 +1,6 @@
 ! (C) Copyright 2009-2016 ECMWF.
-! 
+! (C) Copyright 2017-2019 UCAR.
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
 ! In applying this licence, ECMWF does not waive the privileges and immunities 
@@ -19,7 +20,7 @@ public :: qg_obsvec
 public :: qg_obsvec_registry
 public :: qg_obsvec_setup,qg_obsvec_clone,qg_obsvec_delete,qg_obsvec_copy,qg_obsvec_zero,qg_obsvec_mul_scal,qg_obsvec_add, &
         & qg_obsvec_sub,qg_obsvec_mul,qg_obsvec_div,qg_obsvec_axpy,qg_obsvec_invert,qg_obsvec_random,qg_obsvec_dotprod, &
-        & qg_obsvec_stats,qg_obsvec_nobs
+        & qg_obsvec_stats,qg_obsvec_nobs,qg_obsvec_copy_local
 ! ------------------------------------------------------------------------------
 interface
   subroutine qg_obsvec_random_i(odb,nn,zz) bind(c,name='qg_obsvec_random_f')
@@ -133,6 +134,38 @@ endif
 self%values = other%values
 
 end subroutine qg_obsvec_copy
+! ------------------------------------------------------------------------------
+!> Copy a local subset of the observation vector
+subroutine qg_obsvec_copy_local(self,other,idx)
+
+implicit none
+
+! Passed variables
+type(qg_obsvec),intent(inout) :: self !< Observation vector
+type(qg_obsvec),intent(in) :: other   !< Other observation vector
+integer,intent(in) :: idx(:)
+
+! local variables
+integer :: i
+
+if ((other%nlev/=self%nlev).or.(size(idx)/=self%nobs)) then
+  ! Release memory
+  deallocate(self%values)
+
+  ! Set sizes
+  self%nlev = other%nlev
+  self%nobs = size(idx)
+
+  ! Allocation
+  allocate(self%values(self%nlev,self%nobs))
+endif
+
+! Copy data
+do i = 1,self%nobs
+  self%values(:,i) = other%values(:,idx(i)+1)
+enddo
+
+end subroutine qg_obsvec_copy_local
 ! ------------------------------------------------------------------------------
 !> Set observation vector to zero
 subroutine qg_obsvec_zero(self)

@@ -1,5 +1,6 @@
 ! (C) Copyright 2009-2016 ECMWF.
-! 
+! (C) Copyright 2017-2019 UCAR.
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
 ! In applying this licence, ECMWF does not waive the privileges and immunities 
@@ -105,6 +106,29 @@ call qg_obsvec_registry%get(c_key_other,other)
 call qg_obsvec_copy(self,other)
 
 end subroutine qg_obsvec_copy_c
+! ------------------------------------------------------------------------------
+!> Copy a local subset of the observation vector
+subroutine qg_obsvec_copy_local_c(c_key_self,c_key_other, c_idxsize,c_idx) bind(c,name='qg_obsvec_copy_local_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_self  !< Observation vector
+integer(c_int),intent(in) :: c_key_other !< Other observation vector
+integer(c_int),intent(in) :: c_idxsize
+integer(c_int),intent(in) :: c_idx(c_idxsize)
+
+! Local variables
+type(qg_obsvec),pointer :: self,other
+
+! Interface
+call qg_obsvec_registry%get(c_key_self,self)
+call qg_obsvec_registry%get(c_key_other,other)
+
+! Call Fortran
+call qg_obsvec_copy_local(self,other,c_idx)
+
+end subroutine qg_obsvec_copy_local_c
 ! ------------------------------------------------------------------------------
 !> Set observation vector to zero
 subroutine qg_obsvec_zero_c(c_key_self) bind(c,name='qg_obsvec_zero_f90')
