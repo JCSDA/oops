@@ -115,17 +115,18 @@ def line_diff(line1,line2,lnum,ftol,idif):
                 int1a[0]," not equal to ",flt2a[0]," with max relative difference ", ftol,\
                 " Actual relative difference = ",rdiff)
 
-
-      #Exit with error if check has failed
+      #Exit with error if check has failed      
       if found == 0:
-        print("In looping through line elements did not match either non numeric, float, date or integer. Error at line"\
-               +str(lnum),". Trying to compare \'"+sline1[n]+"\' and \'"+sline2[n]+"\'")
-        exit(1)
+        if sline1[n] != sline2[n]:
+          print("In looping through line elements did not match either non numeric, float, date or integer. Error at line "\
+                +str(lnum),". Trying to compare \'"+sline1[n]+"\' and \'"+sline2[n]+"\'")
+          exit(1)
 
       if found > 1:
-        print("In looping through line elements matched multipe of non numeric, float, date and integer. Error at line "\
-               +str(lnum)+". Trying to compare \'"+sline1[n]+"\' and \'"+sline2[n]+"\'")
-        exit(1)
+        if sline1[n] != sline2[n]:
+          print("In looping through line elements matched multipe of non numeric, float, date and integer. Error at line "\
+                +str(lnum)+". Trying to compare \'"+sline1[n]+"\' and \'"+sline2[n]+"\'")
+          exit(1)
 
   return lineerror
 
