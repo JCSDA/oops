@@ -38,6 +38,8 @@ class ObsDiagnostics : public util::Printable,
   static const std::string classname() {return "oops::ObsDiagnostics";}
 
   ObsDiagnostics(const ObsSpace_ &, const Locations_ &, const Variables &);
+  ObsDiagnostics(const eckit::Configuration &, const ObsSpace_ &, const Variables &);
+
   ~ObsDiagnostics();
 
 /// Interfacing
@@ -60,6 +62,16 @@ ObsDiagnostics<MODEL>::ObsDiagnostics(const ObsSpace_ & os, const Locations_ & l
   Log::trace() << "ObsDiagnostics<MODEL>::ObsDiagnostics starting" << std::endl;
   util::Timer timer(classname(), "ObsDiagnostics");
   diags_.reset(new ObsDiags_(os.observationspace(), locs.locations(), vars));
+  Log::trace() << "ObsDiagnostics<MODEL>::ObsDiagnostics done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename MODEL>
+ObsDiagnostics<MODEL>::ObsDiagnostics(const eckit::Configuration & conf, const ObsSpace_ & os,
+                                      const Variables & vars) : diags_()
+{
+  Log::trace() << "ObsDiagnostics<MODEL>::ObsDiagnostics starting" << std::endl;
+  util::Timer timer(classname(), "ObsDiagnostics");
+  diags_.reset(new ObsDiags_(conf, os.observationspace(), vars));
   Log::trace() << "ObsDiagnostics<MODEL>::ObsDiagnostics done" << std::endl;
 }
 // -----------------------------------------------------------------------------
