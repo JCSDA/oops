@@ -200,7 +200,7 @@ integer(c_int),intent(in) :: lgrp                        !< Group size
 character(kind=c_char,len=1),intent(in) :: c_grp(lgrp+1) !< Group name
 type(c_ptr),intent(in) :: c_t1                           !< Time 1
 type(c_ptr),intent(in) :: c_t2                           !< Time 2
-integer(c_int),intent(in) :: c_key_locs                  !< Locations
+integer(c_int),intent(inout) :: c_key_locs               !< Locations
 
 ! Local variables
 type(qg_obsdb),pointer :: self

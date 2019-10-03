@@ -62,8 +62,8 @@ subroutine qg_fields_create_from_other_c(c_key_self,c_key_other) bind(c,name='qg
 implicit none
 
 ! Passed variables
-integer(c_int),intent(in) :: c_key_self  !< Fields
-integer(c_int),intent(in) :: c_key_other !< Other fields
+integer(c_int),intent(inout) :: c_key_self  !< Fields
+integer(c_int),intent(in)    :: c_key_other !< Other fields
 
 ! Local variables
 type(qg_fields),pointer :: self
