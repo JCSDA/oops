@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2017-2019 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -199,6 +200,9 @@ extern "C" {
   void qg_obsdb_delete_f90(F90odb &);
   void qg_obsdb_get_f90(const F90odb &, const int &, const char *,
                         const int &, const char *, const F90ovec &);
+  void qg_obsdb_get_local_f90(const F90odb &, const int &, const char *,
+                              const int &, const char *, const int &, const int *,
+                              const F90ovec &);
   void qg_obsdb_put_f90(const F90odb &, const int &, const char *,
                         const int &, const char *, const F90ovec &);
   void qg_obsdb_has_f90(const F90odb &, const int &, const char *,
@@ -219,6 +223,7 @@ extern "C" {
   void qg_obsvec_clone_f90(F90ovec &, const F90ovec &);
   void qg_obsvec_delete_f90(F90ovec &);
   void qg_obsvec_copy_f90(const F90ovec &, const F90ovec &);
+  void qg_obsvec_copy_local_f90(const F90ovec &, const F90ovec &, const int &, const int *);
   void qg_obsvec_zero_f90(const F90ovec &);
   void qg_obsvec_mul_scal_f90(const F90ovec &, const double &);
   void qg_obsvec_add_f90(const F90ovec &, const F90ovec &);

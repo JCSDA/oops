@@ -1,5 +1,6 @@
 ! (C) Copyright 2009-2016 ECMWF.
-! 
+! (C) Copyright 2017-2019 UCAR.
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
 ! In applying this licence, ECMWF does not waive the privileges and immunities 
@@ -94,9 +95,41 @@ call c_f_string(c_col,col)
 call qg_obsvec_registry%get(c_key_ovec,ovec)
 
 ! Call Fortran
-call qg_obsdb_get(self,trim(grp),trim(col),ovec)
+call qg_obsdb_get(self,trim(grp),trim(col),ovec,.false.)
 
 end subroutine qg_obsdb_get_c
+! ------------------------------------------------------------------------------
+!> Get observations data for a local subset
+subroutine qg_obsdb_get_local_c(c_key_self,lgrp,c_grp,lcol,c_col,c_idxsize,c_idx,&
+                                c_key_ovec) bind(c,name='qg_obsdb_get_local_f90')
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_self                  !< Observation data
+integer(c_int),intent(in) :: lgrp                        !< Group size
+character(kind=c_char,len=1),intent(in) :: c_grp(lgrp+1) !< Group name
+integer(c_int),intent(in) :: lcol                        !< Column size
+character(kind=c_char,len=1),intent(in) :: c_col(lcol+1) !< Column name
+integer(c_int),intent(in) :: c_key_ovec                  !< Observation vector
+integer(c_int),intent(in) :: c_idxsize                   !< size of local obs index vector
+integer(c_int),intent(in) :: c_idx(c_idxsize)            !< Index vector for local obs
+
+! Local variables
+type(qg_obsdb),pointer :: self
+type(qg_obsvec),pointer :: ovec
+character(len=lgrp) :: grp
+character(len=lcol) :: col
+
+! Interface
+call qg_obsdb_registry%get(c_key_self,self)
+call c_f_string(c_grp,grp)
+call c_f_string(c_col,col)
+call qg_obsvec_registry%get(c_key_ovec,ovec)
+
+! Call Fortran
+call qg_obsdb_get(self,trim(grp),trim(col),ovec,.true.,c_idx)
+
+end subroutine qg_obsdb_get_local_c
 ! ------------------------------------------------------------------------------
 !> Put observation data
 subroutine qg_obsdb_put_c(c_key_self,lgrp,c_grp,lcol,c_col,c_key_ovec) bind(c,name='qg_obsdb_put_f90')
@@ -167,7 +200,7 @@ integer(c_int),intent(in) :: lgrp                        !< Group size
 character(kind=c_char,len=1),intent(in) :: c_grp(lgrp+1) !< Group name
 type(c_ptr),intent(in) :: c_t1                           !< Time 1
 type(c_ptr),intent(in) :: c_t2                           !< Time 2
-integer(c_int),intent(in) :: c_key_locs                  !< Locations
+integer(c_int),intent(inout) :: c_key_locs               !< Locations
 
 ! Local variables
 type(qg_obsdb),pointer :: self

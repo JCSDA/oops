@@ -47,56 +47,81 @@ template <typename MODEL> void testFilters() {
   obsconf.get("ObsTypes", typeconfs);
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    eckit::LocalConfiguration obsopconf(typeconfs[jj], "ObsOperator");
-    ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
-
-    eckit::LocalConfiguration gconf(typeconfs[jj], "GeoVaLs");
-    oops::Variables vars;
-    vars += hop.variables();
-
-    const ObsAuxCtrl_ ybias(typeconfs[jj]);
-
-//  Allocate memory for tests
-    ObsVector_ hofx(Test_::obspace()[jj]);
+/// init QC and error
     boost::shared_ptr<oops::ObsDataVector<MODEL, float> > obserr
       (new oops::ObsDataVector<MODEL, float>(Test_::obspace()[jj],
                Test_::obspace()[jj].obsvariables(), "ObsError"));
     boost::shared_ptr<oops::ObsDataVector<MODEL, int> >
       qcflags(new oops::ObsDataVector<MODEL, int>  (Test_::obspace()[jj],
                Test_::obspace()[jj].obsvariables()));
-//  Create filters
+
+//  Create filters and run preProcess
     ObsFilters_ filters(Test_::obspace()[jj], typeconfs[jj], qcflags, obserr);
-
-//  Run filters
-    vars += filters.requiredGeoVaLs();
-    const GeoVaLs_ gval(gconf, Test_::obspace()[jj], vars);
     filters.preProcess();
-    filters.priorFilter(gval);
-//  Collect hofx diagnostics
-    ObsDiags_ diags(Test_::obspace()[jj],
-                    hop.locations(Test_::obspace()[jj].windowStart(),
-                                  Test_::obspace()[jj].windowEnd()),
-                    filters.requiredHdiagnostics());
 
-    hop.simulateObs(gval, hofx, ybias, diags);
-    filters.postFilter(hofx, diags);
+/// call priorFilter and postFilter if hofx is available
+    oops::Variables geovars = filters.requiredGeoVaLs();
+    oops::Variables diagvars = filters.requiredHdiagnostics();
+    if (typeconfs[jj].has("HofX")) {
+///   read GeoVaLs from file if required
+      if (geovars.size() > 0) {
+        const eckit::LocalConfiguration gconf(typeconfs[jj], "GeoVaLs");
+        const GeoVaLs_ gval(gconf, Test_::obspace()[jj], geovars);
+        filters.priorFilter(gval);
+      } else {
+        oops::Log::info() << "Filters don't require geovals, priorFilter not called" << std::endl;
+      }
+///   read H(x) and ObsDiags from file
+      oops::Log::info() << "HofX section specified, reading HofX from file" << std::endl;
+      const std::string hofxgroup = typeconfs[jj].getString("HofX");
+      ObsVector_ hofx(Test_::obspace()[jj], hofxgroup);
+      eckit::LocalConfiguration obsdiagconf;
+      if (diagvars.size() > 0) {
+        obsdiagconf = eckit::LocalConfiguration(typeconfs[jj], "ObsDiag");
+        oops::Log::info() << "ObsDiag section speciifed, reading ObsDiag from file" << std::endl;
+      }
+      const ObsDiags_ diags(obsdiagconf, Test_::obspace()[jj], diagvars);
+      filters.postFilter(hofx, diags);
+    } else if (typeconfs[jj].has("ObsOperator")) {
+///   read GeoVaLs, compute H(x) and ObsDiags
+      oops::Log::info() << "ObsOperator section specified, computing HofX" << std::endl;
+      const eckit::LocalConfiguration obsopconf(typeconfs[jj], "ObsOperator");
+      ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
+      const ObsAuxCtrl_ ybias(typeconfs[jj]);
+      ObsVector_ hofx(Test_::obspace()[jj]);
+      oops::Variables vars;
+      vars += hop.variables();
+      vars += filters.requiredGeoVaLs();
+      const eckit::LocalConfiguration gconf(typeconfs[jj], "GeoVaLs");
+      const GeoVaLs_ gval(gconf, Test_::obspace()[jj], vars);
+      ObsDiags_ diags(Test_::obspace()[jj],
+                      hop.locations(Test_::obspace()[jj].windowStart(),
+                                    Test_::obspace()[jj].windowEnd()),
+                      filters.requiredHdiagnostics());
+      filters.priorFilter(gval);
+      hop.simulateObs(gval, hofx, ybias, diags);
+      filters.postFilter(hofx, diags);
+    } else if (geovars.size() > 0) {
+///   Only call priorFilter
+      const eckit::LocalConfiguration gconf(typeconfs[jj], "GeoVaLs");
+      const GeoVaLs_ gval(gconf, Test_::obspace()[jj], geovars);
+      filters.priorFilter(gval);
+      oops::Log::info() << "HofX or ObsOperator sections not provided for filters, " <<
+                           "postFilter not called" << std::endl;
+    } else {
+///   no need to run priorFilter or postFilter
+      oops::Log::info() << "GeoVaLs not required, HofX or ObsOperator sections not " <<
+                           "provided for filters, only preProcess was called" << std::endl;
+    }
+
     qcflags->save("EffectiveQC");
-    obserr->save("EffectiveError");
+    const std::string errname = "EffectiveError";
+    obserr->save(errname);
 
 //  Compare with known results
-    if (typeconfs[jj].has("qcBenchmark")) {
-      const std::string qcBenchmarkName = typeconfs[jj].getString("qcBenchmark");
-
-      oops::ObsDataVector<MODEL, int> qcBenchmark(Test_::obspace()[jj],
-                           Test_::obspace()[jj].obsvariables(), qcBenchmarkName);
-
-      bool same = compareFlags(*qcflags, qcBenchmark);
-      EXPECT(same);
-    } else {
-      const int passedBenchmark = typeconfs[jj].getInt("passedBenchmark");
-      const int passed = numZero(*qcflags);
-      EXPECT(passed == passedBenchmark);
-    }
+    const int passedBenchmark = typeconfs[jj].getInt("passedBenchmark");
+    const int passed = numZero(*qcflags);
+    EXPECT(passed == passedBenchmark);
   }
 }
 

@@ -17,7 +17,9 @@ LocalObservationSpace:
     lon: -10
     lat: 10
   GeoDistance:
-    distance: 100
+    distance: 4e6
+  reference nobs: 172
+  varname: ObsValue
 LinearModel:
   trajectory:
     tstep: PT1H

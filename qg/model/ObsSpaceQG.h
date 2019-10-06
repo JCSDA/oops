@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2017-2019 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -12,8 +13,12 @@
 #define QG_MODEL_OBSSPACEQG_H_
 
 #include <map>
+#include <memory>
 #include <ostream>
 #include <string>
+#include <vector>
+
+#include "eckit/geometry/Point2.h"
 
 #include "oops/base/ObsSpaceBase.h"
 #include "oops/base/Variables.h"
@@ -36,14 +41,12 @@ namespace qg {
 class ObsSpaceQG : public oops::ObsSpaceBase {
  public:
   ObsSpaceQG(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
+  ObsSpaceQG(const ObsSpaceQG &, const eckit::geometry::Point2 &,
+             const double &, const int &);
   ~ObsSpaceQG();
 
-  void getdb(const std::string & col, int & keyData) const {
-    helper_->getdb(obsname_, col, keyData);
-  }
-  void putdb(const std::string & col, const int & keyData) const {
-    helper_->putdb(obsname_, col, keyData);
-  }
+  void getdb(const std::string &, int &) const;
+  void putdb(const std::string &, const int &) const;
 
   bool has(const std::string & col) const {
     return helper_->has(obsname_, col);
@@ -59,33 +62,37 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
   void random(const int &, double *) const;
 
   void generateDistribution(const eckit::Configuration & conf) {
-    helper_->generateDistribution(conf, obsname_, winbgn_, winend_, nobs_);
+    helper_->generateDistribution(conf, obsname_, winbgn_, winend_);
   }
 
   void printJo(const ObsVecQG &, const ObsVecQG &);
 
-  int nobs() const {return nobs_;}
-  int nvin() const {return nvin_;}
-  int nout() const {return nout_;}
+  const int nobs() const;
+  const int nout() const {return nout_;}
   const std::string & obsname() const {return obsname_;}
 
   int & toFortran() {return helper_->toFortran();}
   const int & toFortran() const {return helper_->toFortran();}
 
+  const std::vector<int> localobs() const { return localobs_;}
+
  private:
   void print(std::ostream &) const;
-  std::string ref_;
-  mutable ObsHelpQG * helper_;
+
+  std::shared_ptr<ObsHelpQG> helper_;
   std::string obsname_;
   unsigned int nobs_;
-  unsigned int nvin_;
   unsigned int nout_;
   const util::DateTime winbgn_;
   const util::DateTime winend_;
-
   const oops::Variables obsvars_;
 
-  static std::map < std::string, int > theObsFileCount_;
+  static std::map < std::string, std::shared_ptr<ObsHelpQG> > theObsFileRegister_;
+  static int theObsFileCount_;
+
+  // variables for dealing with local subsetting of observations
+  std::vector<int> localobs_;
+  bool isLocal_;
 };
 
 }  // namespace qg

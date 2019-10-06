@@ -12,7 +12,7 @@
 
 !> Initialize the linked list
 subroutine init_(self)
- class(registry_t) :: self
+ class(registry_t), intent(inout) :: self
 
  !set count to zero and allocate the head of the list
  if(.not.self%l_init.or..not.associated(self%head)) then
@@ -25,8 +25,8 @@ end subroutine
 
 !> Add element to the linked list
 subroutine add_(self,key)
- class(registry_t) :: self
- integer           :: key
+ class(registry_t), intent(inout) :: self
+ integer, intent(inout)           :: key
 
  type(node_t), pointer :: next
 
@@ -45,9 +45,9 @@ end subroutine
 
 !> Fetch element of the linked list by key
 subroutine get_(self,key,ptr)
- class(registry_t)           :: self
- integer                     :: key
- type (LISTED_TYPE), pointer :: ptr
+ class(registry_t), intent(in) :: self
+ integer, intent(in)           :: key
+ type (LISTED_TYPE), pointer   :: ptr
 
  type(node_t), pointer :: next
 
@@ -63,12 +63,13 @@ subroutine get_(self,key,ptr)
    exit
   endif
  enddo
+ if (.not.associated(ptr)) call abor1_ftn("registry_t%get_: key not found")
 end subroutine
 
 !> Remove element of the linked list
 subroutine remove_(self,key)
- class(registry_t) :: self
- integer           :: key
+ class(registry_t), intent(inout) :: self
+ integer, intent(inout)           :: key
 
  type(node_t), pointer :: prev
  type(node_t), pointer :: next
@@ -98,7 +99,7 @@ end subroutine
 
 !> Finalize the linked list, deallocate all nodes
 subroutine finalize_(self)
- class(registry_t) :: self
+ class(registry_t), intent(inout) :: self
  type(node_t), pointer :: current
  type(node_t), pointer :: next
 
@@ -109,4 +110,25 @@ subroutine finalize_(self)
   next => next%next
   deallocate(current)
  enddo
+end subroutine
+
+!> linkedlist generic setup
+subroutine registry_setup_(self, c_key_self, ptr)
+  class(registry_t), intent(inout) :: self
+  integer, intent(inout) :: c_key_self
+  type (LISTED_TYPE), pointer :: ptr
+
+  call self%init()
+  call self%add(c_key_self)
+  call self%get(c_key_self, ptr)
+end subroutine
+
+!> linkedlist generic delete
+subroutine registry_delete_(self, c_key_self, ptr)
+  class(registry_t), intent(inout) :: self
+  integer, intent(inout) :: c_key_self
+  type (LISTED_TYPE), pointer :: ptr
+
+  call self%get(c_key_self, ptr)
+  call self%remove(c_key_self)
 end subroutine

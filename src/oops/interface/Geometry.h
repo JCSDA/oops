@@ -97,8 +97,8 @@ template <typename MODEL>
 GeometryIterator<MODEL> Geometry<MODEL>::begin() const {
   Log::trace() << "Geometry<MODEL>::begin starting" << std::endl;
   util::Timer timer(classname(), "begin");
-  return GeometryIterator_(geom_->begin());
   Log::trace() << "Geometry<MODEL>::begin done" << std::endl;
+  return GeometryIterator_(geom_->begin());
 }
 
 // -----------------------------------------------------------------------------
@@ -107,8 +107,8 @@ template <typename MODEL>
 GeometryIterator<MODEL> Geometry<MODEL>::end() const {
   Log::trace() << "Geometry<MODEL>::end starting" << std::endl;
   util::Timer timer(classname(), "end");
-  return GeometryIterator_(geom_->end());
   Log::trace() << "Geometry<MODEL>::end done" << std::endl;
+  return GeometryIterator_(geom_->end());
 }
 
 // -----------------------------------------------------------------------------
