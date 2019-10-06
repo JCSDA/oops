@@ -32,29 +32,33 @@ template <typename MODEL> void testLocalObsSpace() {
 
   const eckit::LocalConfiguration localconf(TestEnvironment::config(), "LocalObservationSpace");
 
+  // get center (for localization) from yaml
+  eckit::LocalConfiguration geolocconf(localconf, "GeoLocation");
+  double lon = geolocconf.getDouble("lon");
+  double lat = geolocconf.getDouble("lat");
+  const eckit::geometry::Point2 center(lon, lat);
+
+  // get distance from yaml
+  eckit::LocalConfiguration distconf(localconf, "GeoDistance");
+  const double dist = distconf.getDouble("distance");
+
+  int totalNobs = 0;
+
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    // get center (for localization) from yaml
-    eckit::LocalConfiguration geolocconf(localconf, "GeoLocation");
-    double lon = geolocconf.getDouble("lon");
-    double lat = geolocconf.getDouble("lat");
-    const eckit::geometry::Point2 center(lon, lat);
-
-    // get distance from yaml
-    eckit::LocalConfiguration distconf(localconf, "GeoDistance");
-    const double dist = distconf.getDouble("distance");
-
     // initialize local observation space
     LocalObsSpace_ localobs(*Test_::obspace()[jj], center, dist, -1);
     oops::Log::info() << "Local obs within " << dist << " from " << center <<
                          ": " << localobs << std::endl;
 
-    const int ref_nobs = localconf.getInt("reference nobs");
-
-    // test that local nobs is equal to the reference value
+    // count local nobs
     ObsVector_ localvec(localobs);
-    const int nobs = localvec.nobs();
-    EXPECT(nobs == ref_nobs);
+    ObsVector_ globvec(*Test_::obspace()[jj]);
+    totalNobs += localvec.nobs();
   }
+
+  // test that local nobs is equal to the reference value
+  const int ref_nobs = localconf.getInt("reference nobs");
+  EXPECT(totalNobs == ref_nobs);
 }
 
 // -----------------------------------------------------------------------------

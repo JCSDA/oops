@@ -10,11 +10,11 @@
 
 !> Node of a linked list
 type :: node_t
-integer           :: key
+  integer           :: key
   type(LISTED_TYPE) :: element
 
   type(node_t), pointer  :: next => NULL()
-end type node_t
+end type
 
 !> Registry type
 type :: registry_t
@@ -28,4 +28,6 @@ contains
   procedure :: add => add_
   procedure :: get => get_
   procedure :: remove => remove_
-end type registry_t
+  procedure :: setup => registry_setup_
+  procedure :: delete => registry_delete_
+end type

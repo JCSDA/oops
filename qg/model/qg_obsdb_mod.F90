@@ -1,5 +1,6 @@
 ! (C) Copyright 2009-2016 ECMWF.
-! 
+! (C) Copyright 2017-2019 UCAR.
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
 ! In applying this licence, ECMWF does not waive the privileges and immunities 
@@ -142,7 +143,7 @@ enddo
 end subroutine qg_obsdb_delete
 ! ------------------------------------------------------------------------------
 !> Get observation data
-subroutine qg_obsdb_get(self,grp,col,ovec)
+subroutine qg_obsdb_get(self,grp,col,ovec,local,idx)
 
 implicit none
 
@@ -151,6 +152,8 @@ type(qg_obsdb),intent(in) :: self     !< Observation data
 character(len=*),intent(in) :: grp    !< Group
 character(len=*),intent(in) :: col    !< Column
 type(qg_obsvec),intent(inout) :: ovec !< Observation vector
+logical,intent(in) :: local           !< whether local subsetting is to be done
+integer,intent(in),optional :: idx(:) !< subset of indices to get
 
 ! Local variables
 type(group_data),pointer :: jgrp
@@ -158,8 +161,8 @@ type(column_data),pointer :: jcol
 integer :: jobs,jlev
 
 ! Print Group and column
-call fckit_log%info('qg_obsdb_get: grp = '//trim(grp))
-call fckit_log%info('qg_obsdb_get: col = '//trim(col))
+call fckit_log%debug('qg_obsdb_get: grp = '//trim(grp))
+call fckit_log%debug('qg_obsdb_get: col = '//trim(col))
 
 ! Find observation group
 call qg_obsdb_find_group(self,grp,jgrp)
@@ -179,14 +182,32 @@ if (.not.associated(jcol)) call abor1_ftn('qg_obsdb_get: obs column not found')
 
 ! Get observation data
 if (allocated(ovec%values)) deallocate(ovec%values)
-ovec%nobs = jgrp%nobs
 ovec%nlev = jcol%nlev
-allocate(ovec%values(ovec%nlev,ovec%nobs))
-do jobs=1,jgrp%nobs
-  do jlev=1,jcol%nlev
-    ovec%values(jlev,jobs) = jcol%values(jlev,jobs)
+if (local) then
+  ! if local subset, but desired subset is zero length, return empty vector.
+  if ( .not. present(idx)) then
+    ovec%nobs = 0
+  else
+    ovec%nobs = size(idx)
+  endif
+
+  ! get only a subset of the obs
+  allocate(ovec%values(ovec%nlev,ovec%nobs))
+  do jobs=1,ovec%nobs
+    do jlev=1,jcol%nlev
+      ovec%values(jlev,jobs) = jcol%values(jlev,idx(jobs)+1)
+    enddo
   enddo
-enddo
+else
+  ! get all the obs
+  ovec%nobs = jgrp%nobs
+  allocate(ovec%values(ovec%nlev,ovec%nobs))
+  do jobs=1,jgrp%nobs
+    do jlev=1,jcol%nlev
+      ovec%values(jlev,jobs) = jcol%values(jlev,jobs)
+    enddo
+  enddo
+end if
 
 end subroutine qg_obsdb_get
 ! ------------------------------------------------------------------------------
