@@ -7,6 +7,7 @@ module oobump_mod
 
 use fckit_configuration_module, only: fckit_configuration
 use fckit_log_module, only: fckit_log
+use fckit_mpi_module, only: fckit_mpi_comm
 use iso_c_binding
 use kinds
 use missing_values_mod
@@ -45,7 +46,7 @@ contains
 #include "oops/util/linkedList_c.f"
 !-------------------------------------------------------------------------------
 !> Create OOBUMP
-subroutine create_oobump(self, ug, f_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub, mpi_comm)
+subroutine create_oobump(self, ug, f_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub, f_comm)
 
 implicit none
 
@@ -57,7 +58,7 @@ integer, intent(in) :: ens1_ne                 !< First ensemble size
 integer, intent(in) :: ens1_nsub               !< Number of sub-ensembles in the first ensemble
 integer, intent(in) :: ens2_ne                 !< Second ensemble size
 integer, intent(in) :: ens2_nsub               !< Number of sub-ensembles in the second ensemble
-integer,intent(in) :: mpi_comm                 ! MPI communicator
+type(fckit_mpi_comm),intent(in) :: f_comm      !< FCKIT MPI communicator wrapper
 
 ! Local variables
 integer :: igrid, lunit, iproc, ifileunit
@@ -90,7 +91,7 @@ do igrid=1,self%ngrid
    ! Open separate log files for BUMP
    if (self%separate_log==1) then
       ! Initialize MPI
-      call self%bump(igrid)%mpl%init(mpi_comm)
+      call self%bump(igrid)%mpl%init(f_comm)
 
       do iproc=1,self%bump(igrid)%mpl%nproc
          if ((trim(self%bump(igrid)%nam%verbosity)=='all').or.((trim(self%bump(igrid)%nam%verbosity)=='main') &
@@ -115,7 +116,7 @@ do igrid=1,self%ngrid
    end if
 
    ! Online setup
-   call self%bump(igrid)%setup_online(ug%grid(igrid)%nmga,ug%grid(igrid)%nl0,ug%grid(igrid)%nv,ug%grid(igrid)%nts, &
+   call self%bump(igrid)%setup_online(f_comm,ug%grid(igrid)%nmga,ug%grid(igrid)%nl0,ug%grid(igrid)%nv,ug%grid(igrid)%nts, &
  & ug%grid(igrid)%lon,ug%grid(igrid)%lat,ug%grid(igrid)%area,ug%grid(igrid)%vunit,ug%grid(igrid)%lmask,ens1_ne=ens1_ne, &
  & ens1_nsub=ens1_nsub,ens2_ne=ens2_ne,ens2_nsub=ens2_nsub,lunit=lunit,msvalr=msvalr)
 end do
