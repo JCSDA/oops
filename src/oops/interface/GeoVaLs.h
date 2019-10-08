@@ -19,7 +19,7 @@
 #include "eckit/config/Configuration.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Locations.h"
-#include "oops/interface/ObservationSpace.h"
+#include "oops/interface/ObsSpace.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Timer.h"
@@ -31,7 +31,7 @@ template <typename MODEL>
 class GeoVaLs : public util::Printable,
                 private util::ObjectCounter<GeoVaLs<MODEL> > {
   typedef typename MODEL::GeoVaLs          GeoVaLs_;
-  typedef ObservationSpace<MODEL>          ObsSpace_;
+  typedef ObsSpace<MODEL>                  ObsSpace_;
   typedef Locations<MODEL>                 Locations_;
 
  public:
@@ -87,7 +87,7 @@ template <typename MODEL>
   : gvals_() {
   Log::trace() << "GeoVaLs<MODEL>::GeoVaLs read starting" << std::endl;
   util::Timer timer(classname(), "GeoVaLs");
-  gvals_.reset(new GeoVaLs_(conf, ospace.observationspace(), vars));
+  gvals_.reset(new GeoVaLs_(conf, ospace.obsspace(), vars));
   Log::trace() << "GeoVaLs<MODEL>::GeoVaLs read done" << std::endl;
 }
 
@@ -169,9 +169,9 @@ GeoVaLs<MODEL> & GeoVaLs<MODEL>::operator*=(const GeoVaLs & rhs) {
 // -----------------------------------------------------------------------------
 /*! GeoVaLs Normalization Operator
  *
- * This is a normalization operator that first computes the normalization 
- * factor for each variable based on the rms amplitude of that variable across 
- * all locations in the reference GeoVaLs object (rhs).  Then each element of 
+ * This is a normalization operator that first computes the normalization
+ * factor for each variable based on the rms amplitude of that variable across
+ * all locations in the reference GeoVaLs object (rhs).  Then each element of
  * the input GeoVals object (*this) is divided by these normalization factors.
  */
 
@@ -259,21 +259,21 @@ void GeoVaLs<MODEL>::write(const eckit::Configuration & conf) const {
 /*! \brief GeoVaLs Analytic Initialization
  *
  * \details **analytic_init()** was introduced in May, 2018 (initially as a
- * constructor) for use with the interpolation test.  The interpolation test 
- * requires an initialization of a GeoVaLs object based on the same analytic 
+ * constructor) for use with the interpolation test.  The interpolation test
+ * requires an initialization of a GeoVaLs object based on the same analytic
  * formulae used for the State initialization (see test::TestStateInterpolation()
  * for further information).  This in turn requires information about the
  * vertical profile in addition to the latitude and longitude positional
  * information in the Locations object.  Currently, this information
  * about the vertical profile is obtained from an existing GeoVaLs object
- * (passed as *other*) that represents the output of the State::interpolate()   
+ * (passed as *other*) that represents the output of the State::interpolate()
  * method.  The State.StateGenerate section of the configuration file is
- * also passed to this constructor to provide further information required 
+ * also passed to this constructor to provide further information required
  * for the analytic initialization.
  *
- * \date May, 2018: created as a constructor (M. Miesch, JCSDA) 
+ * \date May, 2018: created as a constructor (M. Miesch, JCSDA)
  * \date June, 2018: moved to a method (M. Miesch, JCSDA)
- *  
+ *
  * \sa test::TestStateInterpolation()
  */
 

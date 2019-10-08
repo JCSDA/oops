@@ -18,7 +18,7 @@
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsDiagnostics.h"
-#include "oops/interface/ObservationSpace.h"
+#include "oops/interface/ObsSpace.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Printable.h"
@@ -56,7 +56,7 @@ class ObsFilterBase : public util::Printable,
 /// ObsFilter Factory
 template <typename MODEL>
 class FilterFactory {
-  typedef ObservationSpace<MODEL>    ObsSpace_;
+  typedef ObsSpace<MODEL>    ObsSpace_;
   template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<MODEL, DATA> >;
  public:
   static boost::shared_ptr<ObsFilterBase<MODEL>> create(const ObsSpace_ &,
@@ -79,7 +79,7 @@ class FilterFactory {
 
 template<class MODEL, class T>
 class FilterMaker : public FilterFactory<MODEL> {
-  typedef ObservationSpace<MODEL>    ObsSpace_;
+  typedef ObsSpace<MODEL>    ObsSpace_;
   template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<MODEL, DATA> >;
   virtual ObsFilterBase<MODEL> * make(const ObsSpace_ & os, const eckit::Configuration & conf,
                                       ObsDataPtr_<int> & flags, ObsDataPtr_<float> & obserr)

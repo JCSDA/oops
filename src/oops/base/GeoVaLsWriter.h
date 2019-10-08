@@ -1,8 +1,8 @@
 /*
- * (C) Copyright 2017-2018 UCAR
- * 
+ * (C) Copyright 2017-2019 UCAR
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
 #ifndef OOPS_BASE_GEOVALSWRITER_H_
@@ -14,7 +14,7 @@
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsDiagnostics.h"
-#include "oops/interface/ObservationSpace.h"
+#include "oops/interface/ObsSpace.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
@@ -27,7 +27,7 @@ template <typename MODEL>
 class GeoVaLsWriter : public ObsFilterBase<MODEL> {
   typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef ObsDiagnostics<MODEL>      ObsDiags_;
-  typedef ObservationSpace<MODEL>    ObsSpace_;
+  typedef ObsSpace<MODEL>            ObsSpace_;
   typedef ObsVector<MODEL>           ObsVector_;
   template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<MODEL, DATA> >;
 

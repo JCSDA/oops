@@ -1,8 +1,8 @@
 /*
  * (C) Copyright 2018  UCAR
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
 #ifndef OOPS_INTERFACE_OBSDATAVECTOR_H_
@@ -15,7 +15,7 @@
 
 
 #include "oops/base/Variables.h"
-#include "oops/interface/ObservationSpace.h"
+#include "oops/interface/ObsSpace.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -33,7 +33,7 @@ class ObsDataVector : public util::Printable,
  public:
   static const std::string classname() {return "oops::ObsDataVector";}
 
-  ObsDataVector(const ObservationSpace<MODEL> &, const Variables &, const std::string name = "");
+  ObsDataVector(const ObsSpace<MODEL> &, const Variables &, const std::string name = "");
   explicit ObsDataVector(const ObsDataVector &);
   ~ObsDataVector();
 
@@ -60,13 +60,13 @@ class ObsDataVector : public util::Printable,
 
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename DATATYPE>
-ObsDataVector<MODEL, DATATYPE>::ObsDataVector(const ObservationSpace<MODEL> & os,
+ObsDataVector<MODEL, DATATYPE>::ObsDataVector(const ObsSpace<MODEL> & os,
                                               const Variables & vars, const std::string name)
   : data_()
 {
   Log::trace() << "ObsDataVector<MODEL, DATATYPE>::ObsDataVector starting" << std::endl;
   util::Timer timer(classname(), "ObsDataVector");
-  data_.reset(new ObsDataVec_(os.observationspace(), vars, name));
+  data_.reset(new ObsDataVec_(os.obsspace(), vars, name));
   Log::trace() << "ObsDataVector<MODEL, DATATYPE>::ObsDataVector done" << std::endl;
 }
 // -----------------------------------------------------------------------------

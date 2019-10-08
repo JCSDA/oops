@@ -19,8 +19,8 @@
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsDiagnostics.h"
-#include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsOperator.h"
+#include "oops/interface/ObsSpace.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/interface/State.h"
 #include "oops/util/DateTime.h"
@@ -39,7 +39,7 @@ template <typename MODEL>
 class Observer : public util::Printable {
   typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef ObsDiagnostics<MODEL>      ObsDiags_;
-  typedef ObservationSpace<MODEL>    ObsSpace_;
+  typedef ObsSpace<MODEL>            ObsSpace_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsOperator<MODEL>         ObsOperator_;

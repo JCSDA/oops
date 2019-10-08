@@ -1,12 +1,12 @@
 /*
  * (C) Copyright 2017-2019 UCAR
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef TEST_INTERFACE_LOCALOBSERVATIONSPACE_H_
-#define TEST_INTERFACE_LOCALOBSERVATIONSPACE_H_
+#ifndef TEST_INTERFACE_LOCALOBSSPACE_H_
+#define TEST_INTERFACE_LOCALOBSSPACE_H_
 
 #include <string>
 #include <vector>
@@ -16,7 +16,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/geometry/Point2.h"
 #include "eckit/testing/Test.h"
-#include "oops/interface/ObservationSpace.h"
+#include "oops/interface/ObsSpace.h"
 #include "oops/runs/Test.h"
 #include "test/interface/ObsVector.h"
 #include "test/TestEnvironment.h"
@@ -27,10 +27,10 @@ namespace test {
 
 template <typename MODEL> void testLocalObsSpace() {
   typedef ObsVecFixture<MODEL> Test_;
-  typedef oops::ObservationSpace<MODEL>       LocalObsSpace_;
+  typedef oops::ObsSpace<MODEL>               LocalObsSpace_;
   typedef oops::ObsVector<MODEL>              ObsVector_;
 
-  const eckit::LocalConfiguration localconf(TestEnvironment::config(), "LocalObservationSpace");
+  const eckit::LocalConfiguration localconf(TestEnvironment::config(), "LocalObsSpace");
 
   // get center (for localization) from yaml
   eckit::LocalConfiguration geolocconf(localconf, "GeoLocation");
@@ -65,10 +65,10 @@ template <typename MODEL> void testLocalObsSpace() {
 
 template <typename MODEL> void testLocalObsVector() {
   typedef ObsVecFixture<MODEL> Test_;
-  typedef oops::ObservationSpace<MODEL>       LocalObsSpace_;
+  typedef oops::ObsSpace<MODEL>               LocalObsSpace_;
   typedef oops::ObsVector<MODEL>              ObsVector_;
 
-  const eckit::LocalConfiguration localconf(TestEnvironment::config(), "LocalObservationSpace");
+  const eckit::LocalConfiguration localconf(TestEnvironment::config(), "LocalObsSpace");
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     // get center (for localization) from yaml
@@ -108,18 +108,18 @@ template <typename MODEL> void testLocalObsVector() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> class LocalObservationSpace : public oops::Test {
+template <typename MODEL> class LocalObsSpace : public oops::Test {
  public:
-  LocalObservationSpace() {}
-  virtual ~LocalObservationSpace() {}
+  LocalObsSpace() {}
+  virtual ~LocalObsSpace() {}
  private:
-  std::string testid() const {return "test::LocalObservationSpace<" + MODEL::name() + ">";}
+  std::string testid() const {return "test::LocalObsSpace<" + MODEL::name() + ">";}
 
   void register_tests() const {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
-    ts.emplace_back(CASE("interface/LocalObservationSpace/testLocalObsSpace")
+    ts.emplace_back(CASE("interface/LocalObsSpace/testLocalObsSpace")
       { testLocalObsSpace<MODEL>(); });
-    ts.emplace_back(CASE("interface/LocalObservationSpace/testLocalObsVector")
+    ts.emplace_back(CASE("interface/LocalObsSpace/testLocalObsVector")
       { testLocalObsVector<MODEL>(); });
   }
 };
@@ -128,4 +128,4 @@ template <typename MODEL> class LocalObservationSpace : public oops::Test {
 
 }  // namespace test
 
-#endif  // TEST_INTERFACE_LOCALOBSERVATIONSPACE_H_
+#endif  // TEST_INTERFACE_LOCALOBSSPACE_H_

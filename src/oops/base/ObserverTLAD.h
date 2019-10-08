@@ -24,8 +24,8 @@
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/ObsDiagnostics.h"
-#include "oops/interface/ObservationSpace.h"
 #include "oops/interface/ObsOperator.h"
+#include "oops/interface/ObsSpace.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/interface/State.h"
 #include "oops/util/DateTime.h"
@@ -45,7 +45,7 @@ class ObserverTLAD {
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
   typedef ObsDiagnostics<MODEL>      ObsDiags_;
   typedef ObsOperator<MODEL>         ObsOperator_;
-  typedef ObservationSpace<MODEL>    ObsSpace_;
+  typedef ObsSpace<MODEL>            ObsSpace_;
   typedef ObsVector<MODEL>           ObsVector_;
   typedef State<MODEL>               State_;
 

@@ -177,7 +177,7 @@ oops/interface/ObsFilter.h
 oops/interface/ObsOperator.h
 oops/interface/ObsVector.h
 oops/interface/ObsDataVector.h
-oops/interface/ObservationSpace.h
+oops/interface/ObsSpace.h
 oops/interface/State.h
 oops/interface/VariableChange.h
 
@@ -272,7 +272,7 @@ test/interface/GeoVaLs.h
 test/interface/LinearObsOperator.h
 test/interface/LinearVariableChange.h
 test/interface/Locations.h
-test/interface/ObservationSpace.h
+test/interface/ObsSpace.h
 test/interface/ObsOperator.h
 test/interface/ObsTestsFixture.h
 test/interface/ObsVector.h

@@ -17,7 +17,7 @@
 #include "eckit/config/Configuration.h"
 #include "oops/base/ObsErrorBase.h"
 #include "oops/interface/ObsDataVector.h"
-#include "oops/interface/ObservationSpace.h"
+#include "oops/interface/ObsSpace.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/util/Logger.h"
 
@@ -28,7 +28,7 @@ namespace oops {
 
 template<typename MODEL>
 class ObsErrorDiag : public ObsErrorBase<MODEL> {
-  typedef ObservationSpace<MODEL>      ObsSpace_;
+  typedef ObsSpace<MODEL>              ObsSpace_;
   typedef ObsVector<MODEL>             ObsVector_;
 
  public:

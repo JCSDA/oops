@@ -1,8 +1,8 @@
 /*
  * (C) Copyright 2018  UCAR
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
 #ifndef OOPS_INTERFACE_OBSDIAGNOSTICS_H_
@@ -16,7 +16,7 @@
 
 #include "oops/base/Variables.h"
 #include "oops/interface/Locations.h"
-#include "oops/interface/ObservationSpace.h"
+#include "oops/interface/ObsSpace.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -31,7 +31,7 @@ class ObsDiagnostics : public util::Printable,
                        private boost::noncopyable,
                        private util::ObjectCounter<ObsDiagnostics<MODEL> > {
   typedef typename MODEL::ObsDiagnostics   ObsDiags_;
-  typedef ObservationSpace<MODEL>          ObsSpace_;
+  typedef ObsSpace<MODEL>                  ObsSpace_;
   typedef Locations<MODEL>                 Locations_;
 
  public:
@@ -61,7 +61,7 @@ ObsDiagnostics<MODEL>::ObsDiagnostics(const ObsSpace_ & os, const Locations_ & l
 {
   Log::trace() << "ObsDiagnostics<MODEL>::ObsDiagnostics starting" << std::endl;
   util::Timer timer(classname(), "ObsDiagnostics");
-  diags_.reset(new ObsDiags_(os.observationspace(), locs.locations(), vars));
+  diags_.reset(new ObsDiags_(os.obsspace(), locs.locations(), vars));
   Log::trace() << "ObsDiagnostics<MODEL>::ObsDiagnostics done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ ObsDiagnostics<MODEL>::ObsDiagnostics(const eckit::Configuration & conf, const O
 {
   Log::trace() << "ObsDiagnostics<MODEL>::ObsDiagnostics starting" << std::endl;
   util::Timer timer(classname(), "ObsDiagnostics");
-  diags_.reset(new ObsDiags_(conf, os.observationspace(), vars));
+  diags_.reset(new ObsDiags_(conf, os.obsspace(), vars));
   Log::trace() << "ObsDiagnostics<MODEL>::ObsDiagnostics done" << std::endl;
 }
 // -----------------------------------------------------------------------------

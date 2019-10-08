@@ -20,7 +20,7 @@
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxIncrement.h"
-#include "oops/interface/ObservationSpace.h"
+#include "oops/interface/ObsSpace.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
@@ -40,7 +40,7 @@ class LinearObsOperator : public util::Printable,
   typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef ObsAuxControl<MODEL>       ObsAuxControl_;
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncrement_;
-  typedef ObservationSpace<MODEL>    ObsSpace_;
+  typedef ObsSpace<MODEL>            ObsSpace_;
   typedef ObsVector<MODEL>           ObsVector_;
 
  public:
@@ -72,7 +72,7 @@ LinearObsOperator<MODEL>::LinearObsOperator(const ObsSpace_ & os,
                                             const eckit::Configuration & config): oper_() {
   Log::trace() << "LinearObsOperator<MODEL>::LinearObsOperator starting" << std::endl;
   util::Timer timer(classname(), "LinearObsOperator");
-  oper_.reset(new LinearObsOper_(os.observationspace(), config));
+  oper_.reset(new LinearObsOper_(os.obsspace(), config));
   Log::trace() << "LinearObsOperator<MODEL>::LinearObsOperator done" << std::endl;
 }
 
