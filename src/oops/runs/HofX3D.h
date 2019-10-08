@@ -27,6 +27,7 @@
 #include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/State.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -48,7 +49,7 @@ template <typename MODEL> class HofX3D : public Application {
 
  public:
 // -----------------------------------------------------------------------------
-  HofX3D() {
+  explicit HofX3D(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {
     instantiateObsFilterFactory<MODEL>();
   }
 // -----------------------------------------------------------------------------
@@ -65,7 +66,7 @@ template <typename MODEL> class HofX3D : public Application {
 
 //  Setup resolution
     const eckit::LocalConfiguration resolConfig(fullConfig, "Geometry");
-    const Geometry_ resol(resolConfig);
+    const Geometry_ resol(resolConfig, this->getComm());
 
 //  Setup initial state
     const eckit::LocalConfiguration initialConfig(fullConfig, "Initial Condition");

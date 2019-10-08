@@ -24,6 +24,7 @@
 #include "lorenz95/Resolution.h"
 #include "lorenz95/StateL95.h"
 #include "lorenz95/TLML95.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -37,7 +38,7 @@ class TlmTestFixture : TestFixture {
  public:
   TlmTestFixture() {
     eckit::LocalConfiguration res(TestConfig::config(), "resolution");
-    resol_.reset(new lorenz95::Resolution(res));
+    resol_.reset(new lorenz95::Resolution(res, oops::mpi::comm()));
     eckit::LocalConfiguration mod(TestConfig::config(), "model");
     model_.reset(new lorenz95::ModelL95(*resol_, mod));
     tlconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "linearmodel"));
@@ -124,7 +125,7 @@ CASE("test_tlmL95") {
 // -----------------------------------------------------------------------------
   SECTION("test_tlmL95_get_resolution") {
     eckit::LocalConfiguration rescf(TestConfig::config(), "resolution");
-    lorenz95::Resolution resol(rescf);
+    lorenz95::Resolution resol(rescf, oops::mpi::comm());
     lorenz95::TLML95 tlm(*fix.resol_, *fix.tlconf_);
     EXPECT(tlm.resolution().npoints() == resol.npoints());
   }

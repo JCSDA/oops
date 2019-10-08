@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -25,6 +25,7 @@
 #include "oops/interface/Model.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
@@ -41,14 +42,14 @@ template <typename MODEL> class ExternalDFI : public Application {
 
  public:
 // -----------------------------------------------------------------------------
-  ExternalDFI() {}
+  explicit ExternalDFI(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {}
 // -----------------------------------------------------------------------------
   virtual ~ExternalDFI() {}
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
 //  Setup resolution
     const eckit::LocalConfiguration resolConfig(fullConfig, "resolution");
-    const Geometry_ resol(resolConfig);
+    const Geometry_ resol(resolConfig, this->getComm());
 
 //  Setup Model
     const eckit::LocalConfiguration modelConfig(fullConfig, "model");

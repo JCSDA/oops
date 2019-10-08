@@ -20,6 +20,7 @@
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/State.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
 
@@ -35,14 +36,14 @@ namespace oops {
 
    public:
     // -----------------------------------------------------------------------------
-    EnsVariance() {}
+    explicit EnsVariance(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {}
     // -----------------------------------------------------------------------------
     virtual ~EnsVariance() {}
     // -----------------------------------------------------------------------------
     int execute(const eckit::Configuration & fullConfig) const {
       // Setup Geometry
       const eckit::LocalConfiguration resolConfig(fullConfig, "Geometry");
-      const Geometry_ resol(resolConfig);
+      const Geometry_ resol(resolConfig, this->getComm());
 
       // Setup variables
       const eckit::LocalConfiguration varConfig(fullConfig, "Variables");

@@ -17,6 +17,7 @@
 #include "oops/generic/instantiateVariableChangeFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/State.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -32,7 +33,7 @@ template <typename MODEL> class ConvertState : public Application {
 
  public:
 // -------------------------------------------------------------------------------------------------
-  ConvertState() {
+  explicit ConvertState(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {
     instantiateVariableChangeFactory<MODEL>();
   }
 // -------------------------------------------------------------------------------------------------
@@ -41,10 +42,10 @@ template <typename MODEL> class ConvertState : public Application {
   int execute(const eckit::Configuration & fullConfig) const {
 //  Setup resolution for intput and output
     const eckit::LocalConfiguration inputResolConfig(fullConfig, "inputresolution");
-    const Geometry_ resol1(inputResolConfig);
+    const Geometry_ resol1(inputResolConfig, this->getComm());
 
     const eckit::LocalConfiguration outputResolConfig(fullConfig, "outputresolution");
-    const Geometry_ resol2(outputResolConfig);
+    const Geometry_ resol2(outputResolConfig, this->getComm());
 
 //  Read state
     const eckit::LocalConfiguration inputConfig(fullConfig, "input");

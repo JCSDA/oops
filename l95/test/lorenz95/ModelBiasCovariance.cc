@@ -18,6 +18,7 @@
 #include "lorenz95/ModelBiasCorrection.h"
 #include "lorenz95/ModelBiasCovariance.h"
 #include "lorenz95/Resolution.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "test/TestFixture.h"
 
@@ -28,7 +29,7 @@ class ModBiasCovTestFixture : TestFixture {
  public:
   ModBiasCovTestFixture() {
     eckit::LocalConfiguration res(TestConfig::config(), "resolution");
-    resol_.reset(new lorenz95::Resolution(res));
+    resol_.reset(new lorenz95::Resolution(res, oops::mpi::comm()));
     covconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "ModelBiasCovariance"));
     nobias_.reset(new eckit::LocalConfiguration());
   }
@@ -119,4 +120,3 @@ int main(int argc, char **argv)
 {
     return eckit::testing::run_tests ( argc, argv );
 }
-

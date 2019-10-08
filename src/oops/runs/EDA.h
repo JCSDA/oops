@@ -22,7 +22,7 @@ namespace oops {
 template<typename MODEL> class EDA : public Application {
  public:
 // -----------------------------------------------------------------------------
-  EDA() {}
+  explicit EDA(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {}
 // -----------------------------------------------------------------------------
   virtual ~EDA() {}
 // -----------------------------------------------------------------------------

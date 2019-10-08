@@ -22,6 +22,7 @@
 #include "lorenz95/Resolution.h"
 #include "lorenz95/StateL95.h"
 #include "oops/base/Variables.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
@@ -35,7 +36,7 @@ class IncrementTestFixture : TestFixture {
   IncrementTestFixture() {
     file_.reset(new eckit::LocalConfiguration(TestConfig::config(), "state"));
     eckit::LocalConfiguration res(TestConfig::config(), "resolution");
-    resol_.reset(new lorenz95::Resolution(res));
+    resol_.reset(new lorenz95::Resolution(res, oops::mpi::comm()));
     date_str_ = file_->getString("date");
     time_.reset(new util::DateTime(date_str_));
     vars_.reset(new oops::Variables(TestConfig::config()));

@@ -15,12 +15,13 @@
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-GeometryQG::GeometryQG(const eckit::Configuration & conf) {
+GeometryQG::GeometryQG(const eckit::Configuration & conf,
+                       const eckit::mpi::Comm & comm) : comm_(comm) {
   const eckit::Configuration * configc = &conf;
   qg_geom_setup_f90(keyGeom_, &configc);
 }
 // -----------------------------------------------------------------------------
-GeometryQG::GeometryQG(const GeometryQG & other) {
+GeometryQG::GeometryQG(const GeometryQG & other) : comm_(other.comm_) {
   qg_geom_clone_f90(keyGeom_, other.keyGeom_);
 }
 // -----------------------------------------------------------------------------

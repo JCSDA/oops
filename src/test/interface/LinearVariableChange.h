@@ -29,6 +29,7 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
@@ -60,7 +61,7 @@ template <typename MODEL> class LinearVariableChangeFixture : private boost::non
     oops::instantiateVariableChangeFactory<MODEL>();
 
     const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "Geometry");
-    resol_.reset(new Geometry_(resolConfig));
+    resol_.reset(new Geometry_(resolConfig, oops::mpi::comm()));
 
     const oops::Variables vars(eckit::LocalConfiguration(TestEnvironment::config(), "State"));
     const eckit::LocalConfiguration fgconf(TestEnvironment::config(), "State");

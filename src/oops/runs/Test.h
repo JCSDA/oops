@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -24,6 +24,7 @@
 #include "eckit/testing/Test.h"
 #include "eckit/utils/Tokenizer.h"
 
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
@@ -35,7 +36,7 @@ namespace oops {
 // -----------------------------------------------------------------------------
 class Test : public Application {
  public:
-  Test() {}
+  explicit Test(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {}
   virtual ~Test() {}
   int execute(const eckit::Configuration & config) const;
  private:
@@ -104,4 +105,3 @@ bool is_close(T a, T b, T epsilon) {
 }
   }  // namespace oops
 #endif  // OOPS_RUNS_TEST_H_
-

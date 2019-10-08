@@ -20,6 +20,7 @@
 #include "lorenz95/ModelL95.h"
 #include "lorenz95/ModelTrajectory.h"
 #include "lorenz95/Resolution.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -33,7 +34,7 @@ class ModelTestFixture : TestFixture {
  public:
   ModelTestFixture() {
     eckit::LocalConfiguration res(TestConfig::config(), "resolution");
-    resol_.reset(new lorenz95::Resolution(res));
+    resol_.reset(new lorenz95::Resolution(res, oops::mpi::comm()));
     nlconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "model"));
   }
   ~ModelTestFixture() {}

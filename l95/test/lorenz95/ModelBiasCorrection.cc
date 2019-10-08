@@ -20,6 +20,7 @@
 #include "lorenz95/ModelBias.h"
 #include "lorenz95/ModelBiasCorrection.h"
 #include "lorenz95/Resolution.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Logger.h"
 #include "test/TestFixture.h"
@@ -31,7 +32,7 @@ class ModBiasTestFixture : TestFixture {
  public:
   ModBiasTestFixture() {
     eckit::LocalConfiguration res(TestConfig::config(), "resolution");
-    resol_.reset(new lorenz95::Resolution(res));
+    resol_.reset(new lorenz95::Resolution(res, oops::mpi::comm()));
     conf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "ModelBiasCovariance"));
     nobias_.reset(new eckit::LocalConfiguration());
     bias1_ = TestConfig::config().getDouble("ModelBias.bias");
