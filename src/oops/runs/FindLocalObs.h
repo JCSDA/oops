@@ -27,6 +27,7 @@
 #include "oops/interface/Model.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -46,7 +47,7 @@ template <typename MODEL> class FindLocalObs : public Application {
 
  public:
 // -----------------------------------------------------------------------------
-  FindLocalObs() {
+  explicit FindLocalObs(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {
     instantiateObsFilterFactory<MODEL>();
   }
 // -----------------------------------------------------------------------------
@@ -62,7 +63,7 @@ template <typename MODEL> class FindLocalObs : public Application {
 
 //  Setup resolution
     const eckit::LocalConfiguration resolConfig(fullConfig, "Geometry");
-    const Geometry_ resol(resolConfig);
+    const Geometry_ resol(resolConfig, this->getComm());
 
 //  Setup Model
     const eckit::LocalConfiguration modelConfig(fullConfig, "Model");

@@ -37,6 +37,7 @@
 #include "oops/interface/Model.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -74,7 +75,7 @@ template <typename MODEL> class LETKF : public Application {
  public:
 // -----------------------------------------------------------------------------
 
-  LETKF() {
+  explicit LETKF(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {
     instantiateObsErrorFactory<MODEL>();
     instantiateObsFilterFactory<MODEL>();
   }
@@ -96,7 +97,7 @@ template <typename MODEL> class LETKF : public Application {
 
     // Setup resolution
     const eckit::LocalConfiguration resolConfig(fullConfig, "Geometry");
-    const Geometry_ resol(resolConfig);
+    const Geometry_ resol(resolConfig, this->getComm());
 
     // Setup model
     const eckit::LocalConfiguration modelConfig(fullConfig, "Model");

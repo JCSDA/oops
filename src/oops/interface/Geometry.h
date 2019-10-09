@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -16,6 +16,8 @@
 #include <vector>
 
 #include <boost/shared_ptr.hpp>
+
+#include "eckit/mpi/Comm.h"
 
 #include "oops/interface/GeometryIterator.h"
 #include "oops/util/Logger.h"
@@ -40,7 +42,7 @@ class Geometry : public util::Printable,
  public:
   static const std::string classname() {return "oops::Geometry";}
 
-  explicit Geometry(const eckit::Configuration &);
+  Geometry(const eckit::Configuration &, const eckit::mpi::Comm &);
   Geometry(const Geometry &);
   explicit Geometry(boost::shared_ptr<const Geometry_>);
   ~Geometry();
@@ -51,6 +53,8 @@ class Geometry : public util::Printable,
   GeometryIterator_ begin() const;
   GeometryIterator_ end()   const;
 
+  const eckit::mpi::Comm & getComm() const {return geom_->getComm();}
+
  private:
   Geometry & operator=(const Geometry &);
   void print(std::ostream &) const;
@@ -60,10 +64,11 @@ class Geometry : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-Geometry<MODEL>::Geometry(const eckit::Configuration & conf): geom_() {
+Geometry<MODEL>::Geometry(const eckit::Configuration & conf,
+                          const eckit::mpi::Comm & comm): geom_() {
   Log::trace() << "Geometry<MODEL>::Geometry starting" << std::endl;
   util::Timer timer(classname(), "Geometry");
-  geom_.reset(new Geometry_(conf));
+  geom_.reset(new Geometry_(conf, comm));
   Log::trace() << "Geometry<MODEL>::Geometry done" << std::endl;
 }
 

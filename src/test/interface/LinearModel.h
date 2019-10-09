@@ -41,6 +41,7 @@
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/ModelAuxIncrement.h"
 #include "oops/interface/State.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
@@ -84,7 +85,7 @@ template <typename MODEL> class LinearModelFixture : private boost::noncopyable 
     const util::Duration len(test_->getString("fclength"));
 
     const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "Geometry");
-    resol_.reset(new Geometry_(resolConfig));
+    resol_.reset(new Geometry_(resolConfig, oops::mpi::comm()));
 
     const eckit::LocalConfiguration varConfig(TestEnvironment::config(), "Variables");
     ctlvars_.reset(new oops::Variables(varConfig));

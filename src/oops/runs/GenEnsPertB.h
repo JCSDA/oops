@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -27,6 +27,7 @@
 #include "oops/interface/Model.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -43,7 +44,7 @@ template <typename MODEL> class GenEnsPertB : public Application {
 
  public:
 // -----------------------------------------------------------------------------
-  GenEnsPertB() {
+  explicit GenEnsPertB(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {
     instantiateCovarFactory<MODEL>();
   }
 // -----------------------------------------------------------------------------
@@ -52,7 +53,7 @@ template <typename MODEL> class GenEnsPertB : public Application {
   int execute(const eckit::Configuration & fullConfig) const {
 //  Setup resolution
     const eckit::LocalConfiguration resolConfig(fullConfig, "resolution");
-    const Geometry_ resol(resolConfig);
+    const Geometry_ resol(resolConfig, this->getComm());
 
 //  Setup variables
     const Variables vars(fullConfig);

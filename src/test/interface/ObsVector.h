@@ -20,7 +20,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/testing/Test.h"
-#include "oops/interface/ObservationSpace.h"
+#include "oops/interface/ObsSpace.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/runs/Test.h"
 #include "oops/util/dot_product.h"
@@ -32,7 +32,7 @@ namespace test {
 
 template <typename MODEL>
 class ObsVecFixture : private boost::noncopyable {
-  typedef oops::ObservationSpace<MODEL>  ObsSpace_;
+  typedef oops::ObsSpace<MODEL>  ObsSpace_;
 
  public:
   static std::vector<boost::shared_ptr<ObsSpace_> > & obspace() {return getInstance().ospaces_;}

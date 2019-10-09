@@ -270,16 +270,16 @@ ecbuild_add_test( TARGET test_qg_locations
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_observation_space
-                  SOURCES executables/TestObservationSpace.cc
+ecbuild_add_test( TARGET test_qg_obsspace
+                  SOURCES executables/TestObsSpace.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    qg
                   TEST_DEPENDS test_qg_make_obs_4d_24h_run )
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_localobservation_space
-                  SOURCES executables/TestLocalObservationSpace.cc
+ecbuild_add_test( TARGET test_qg_localobsspace
+                  SOURCES executables/TestLocalObsSpace.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    qg
                   TEST_DEPENDS test_qg_make_obs_4d_24h_run )
@@ -1181,10 +1181,10 @@ ecbuild_add_test( TARGET test_qg_eda_4dvar_pert_obs_run
 ecbuild_add_test( TARGET test_qg_letkf_run
                   COMMAND ${CMAKE_BINARY_DIR}/bin/qg_letkf.x
                   ARGS testinput/letkf.yaml testoutput/letkf.log.out
-		  DEPENDS qg_letkf.x
-		  TEST_DEPENDS test_qg_make_obs_3d_run test_qg_gen_ens_pert_B_run)
+          DEPENDS qg_letkf.x
+          TEST_DEPENDS test_qg_make_obs_3d_run test_qg_gen_ens_pert_B_run)
 
-ecbuild_add_test( TARGET test_qg_letkf_compare		
+ecbuild_add_test( TARGET test_qg_letkf_compare
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS testoutput/letkf.log.out testoutput/letkf.test

@@ -18,6 +18,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "lorenz95/Resolution.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Logger.h"
 #include "test/TestFixture.h"
@@ -38,23 +39,27 @@ CASE("test_resolution") {
   ResolutionTestFixture fix;
 // -----------------------------------------------------------------------------
   SECTION("test_resolution_constructor") {
-    std::unique_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*fix.testconf_));
+    std::unique_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*fix.testconf_,
+                                                                         oops::mpi::comm()));
     EXPECT(resol.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_resolution_copy_constructor") {
-    std::unique_ptr<lorenz95::Resolution> xx(new lorenz95::Resolution(*fix.testconf_));
+    std::unique_ptr<lorenz95::Resolution> xx(new lorenz95::Resolution(*fix.testconf_,
+                                                                      oops::mpi::comm()));
     std::unique_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*xx));
     EXPECT(resol.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_resolution_get_npoints") {
-    std::unique_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*fix.testconf_));
+    std::unique_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*fix.testconf_,
+                                                                          oops::mpi::comm()));
     EXPECT(resol->npoints() == fix.testconf_->getInt("resol"));
   }
 // -----------------------------------------------------------------------------
   SECTION("test_resolution_stream_output") {
-    std::unique_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*fix.testconf_));
+    std::unique_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*fix.testconf_,
+                                                                         oops::mpi::comm()));
 
     // use the operator<< method to write the value to a file
 

@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -17,7 +17,7 @@
 #include <boost/noncopyable.hpp>
 #include "eckit/config/Configuration.h"
 
-#include "oops/interface/ObservationSpace.h"
+#include "oops/interface/ObsSpace.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
@@ -31,7 +31,7 @@ template<typename MODEL>
 class ObsErrorBase : public util::Printable,
                      private boost::noncopyable {
   typedef ObsVector<MODEL>        ObsVector_;
-  typedef ObservationSpace<MODEL> ObsSpace_;
+  typedef ObsSpace<MODEL>         ObsSpace_;
 
  public:
   ObsErrorBase() {}
@@ -53,7 +53,7 @@ class ObsErrorBase : public util::Printable,
 /// ObsErrorFactory Factory
 template <typename MODEL>
 class ObsErrorFactory {
-  typedef ObservationSpace<MODEL> ObsSpace_;
+  typedef ObsSpace<MODEL> ObsSpace_;
  public:
   static ObsErrorBase<MODEL> * create(const eckit::Configuration &, const ObsSpace_ &);
   virtual ~ObsErrorFactory() { getMakers().clear(); }
@@ -71,7 +71,7 @@ class ObsErrorFactory {
 
 template<class MODEL, class T>
 class ObsErrorMaker : public ObsErrorFactory<MODEL> {
-  typedef ObservationSpace<MODEL> ObsSpace_;
+  typedef ObsSpace<MODEL> ObsSpace_;
   virtual ObsErrorBase<MODEL> * make(const eckit::Configuration & conf,
                                      const ObsSpace_ & obs)
     { return new T(conf, obs); }

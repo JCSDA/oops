@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -18,7 +18,7 @@
 
 
 #include "oops/interface/ObsDataVector.h"
-#include "oops/interface/ObservationSpace.h"
+#include "oops/interface/ObsSpace.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -44,10 +44,10 @@ class ObsVector : public util::Printable,
  public:
   static const std::string classname() {return "oops::ObsVector";}
 
-  ObsVector(const ObservationSpace<MODEL> &,
+  ObsVector(const ObsSpace<MODEL> &,
             const std::string name = "", const bool fail = true);
   explicit ObsVector(const ObsVector &);
-  ObsVector(const ObservationSpace<MODEL> &, const ObsVector &);
+  ObsVector(const ObsSpace<MODEL> &, const ObsVector &);
   ~ObsVector();
 
 /// Interfacing
@@ -81,12 +81,12 @@ class ObsVector : public util::Printable,
 
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-ObsVector<MODEL>::ObsVector(const ObservationSpace<MODEL> & os,
+ObsVector<MODEL>::ObsVector(const ObsSpace<MODEL> & os,
                             const std::string name, const bool fail): data_() {
   Log::trace() << "ObsVector<MODEL>::ObsVector starting " << name << std::endl;
   util::Timer timer(classname(), "ObsVector");
 
-  data_.reset(new ObsVector_(os.observationspace(), name, fail));
+  data_.reset(new ObsVector_(os.obsspace(), name, fail));
 
   Log::trace() << "ObsVector<MODEL>::ObsVector done" << std::endl;
 }
@@ -102,11 +102,11 @@ ObsVector<MODEL>::ObsVector(const ObsVector & other): data_() {
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-ObsVector<MODEL>::ObsVector(const ObservationSpace<MODEL> & os, const ObsVector & other) {
+ObsVector<MODEL>::ObsVector(const ObsSpace<MODEL> & os, const ObsVector & other) {
   Log::trace() << "ObsVector<MODEL>::ObsVector starting" << std::endl;
   util::Timer timer(classname(), "ObsVector");
 
-  data_.reset(new ObsVector_(os.observationspace(), other.obsvector()));
+  data_.reset(new ObsVector_(os.obsspace(), other.obsvector()));
 
   Log::trace() << "ObsVector<MODEL>::ObsVector done" << std::endl;
 }

@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -24,7 +24,7 @@
 #include "eckit/exception/Exceptions.h"
 #include "eckit/geometry/Point2.h"
 
-#include "oops/interface/ObservationSpace.h"
+#include "oops/interface/ObsSpace.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -42,7 +42,7 @@ class ObsSpaces : public util::Printable,
                   private boost::noncopyable,
                   private util::ObjectCounter<ObsSpaces<MODEL> > {
   typedef Departures<MODEL>         Departures_;
-  typedef ObservationSpace<MODEL>   ObsSpace_;
+  typedef ObsSpace<MODEL>           ObsSpace_;
 
  public:
   static const std::string classname() {return "oops::ObsSpaces";}

@@ -12,7 +12,7 @@ Geometry:
   depths:
   - 4500.0
   - 5500.0
-LocalObservationSpace:
+LocalObsSpace:
   GeoLocation:
     lon: -10
     lat: 10

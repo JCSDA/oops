@@ -19,7 +19,7 @@
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsDiagnostics.h"
-#include "oops/interface/ObservationSpace.h"
+#include "oops/interface/ObsSpace.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
@@ -32,7 +32,7 @@ template <typename MODEL, typename FILTER>
 class ObsFilter : public ObsFilterBase<MODEL> {
   typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef ObsDiagnostics<MODEL>      ObsDiags_;
-  typedef ObservationSpace<MODEL>    ObsSpace_;
+  typedef ObsSpace<MODEL>            ObsSpace_;
   typedef ObsVector<MODEL>           ObsVector_;
   template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<MODEL, DATA> >;
   template <typename DATA> using ObsDataVec_ = typename MODEL::template ObsDataVector<DATA>;
@@ -73,7 +73,7 @@ ObsFilter<MODEL, FILTER>::ObsFilter(const ObsSpace_ & os,
   if (flags) qc = flags->obsdatavectorptr();
   if (obserr) oberr = obserr->obsdatavectorptr();
 
-  ofilt_.reset(new FILTER(os.observationspace(), conf, qc, oberr));
+  ofilt_.reset(new FILTER(os.obsspace(), conf, qc, oberr));
   Log::trace() << "ObsFilter<MODEL, FILTER>::ObsFilter Configuration done" << std::endl;
 }
 

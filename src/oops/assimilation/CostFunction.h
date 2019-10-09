@@ -276,7 +276,7 @@ double CostFunction<MODEL>::linearize(const CtrlVar_ & fguess,
   Log::trace() << "CostFunction::linearize start" << std::endl;
 // Inner loop resolution
   const eckit::LocalConfiguration resConf(innerConf, "resolution");
-  const Geometry_ lowres(resConf);
+  const Geometry_ lowres(resConf, resol_.getComm());
 
 // Setup trajectory for terms of cost function
   PostProcessorTLAD<MODEL> pptraj;

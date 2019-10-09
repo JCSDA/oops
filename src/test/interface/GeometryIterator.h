@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -25,6 +25,7 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/interface/Increment.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 
 #include "test/interface/Increment.h"
@@ -40,7 +41,7 @@ template <typename MODEL> void testConstructor() {
 
   const eckit::LocalConfiguration
        geomConfig(TestEnvironment::config(), "Geometry");
-  Geometry_ geom(geomConfig);
+  Geometry_ geom(geomConfig, oops::mpi::comm());
 
   std::unique_ptr<GeometryIterator_> iter(new GeometryIterator_(geom.begin()));
   EXPECT(iter.get());
@@ -59,7 +60,7 @@ template <typename MODEL> void testGetSetPoint() {
 
   const eckit::LocalConfiguration
        geomConfig(TestEnvironment::config(), "Geometry");
-  Geometry_ geom(geomConfig);
+  Geometry_ geom(geomConfig, oops::mpi::comm());
 
   // randomize increment dx1
   Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());

@@ -353,8 +353,8 @@ ecbuild_add_test( TARGET test_l95_linearmodel
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_l95_observationspace
-                  SOURCES executables/TestObservationSpace.cc
+ecbuild_add_test( TARGET test_l95_obsspace
+                  SOURCES executables/TestObsSpace.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth_run )
@@ -362,7 +362,7 @@ ecbuild_add_test( TARGET test_l95_observationspace
 #--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_l95_localobsspace
-                  SOURCES executables/TestLocalObservationSpace.cc
+                  SOURCES executables/TestLocalObsSpace.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth_run )

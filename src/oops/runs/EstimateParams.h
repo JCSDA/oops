@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -23,6 +23,7 @@
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/instantiateCovarFactory.h"
 #include "oops/generic/ParametersBUMP.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/Logger.h"
 
@@ -41,7 +42,7 @@ template <typename MODEL> class EstimateParams : public Application {
  public:
 // -----------------------------------------------------------------------------
   static const std::string classname() {return "oops::EstimateParams";}
-  EstimateParams() {
+  explicit EstimateParams(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {
     instantiateCovarFactory<MODEL>();
   }
 // -----------------------------------------------------------------------------
@@ -52,7 +53,7 @@ template <typename MODEL> class EstimateParams : public Application {
 
     //  Setup resolution
     const eckit::LocalConfiguration resolConfig(fullConfig, "resolution");
-    const Geometry_ resol(resolConfig);
+    const Geometry_ resol(resolConfig, this->getComm());
 
     // Setup variables
     const Variables vars(fullConfig);

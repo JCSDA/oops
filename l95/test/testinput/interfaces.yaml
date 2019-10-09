@@ -7,7 +7,7 @@ CovarianceTest:
   tolerance: 1.0e-10
 Geometry:
   resol: 40
-LocalObservationSpace:
+LocalObsSpace:
   GeoLocation:
     lon: 0.5
     lat: 0

@@ -15,6 +15,7 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -29,17 +30,17 @@ template <typename MODEL> class DiffStates : public Application {
 
  public:
 // -----------------------------------------------------------------------------
-  DiffStates() {}
+  explicit DiffStates(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {}
 // -----------------------------------------------------------------------------
   virtual ~DiffStates() {}
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
 //  Setup resolution
     const eckit::LocalConfiguration stateResolConf(fullConfig, "stateResol");
-    const Geometry_ stateResol(stateResolConf);
+    const Geometry_ stateResol(stateResolConf, this->getComm());
 
     const eckit::LocalConfiguration incResolConf(fullConfig, "incrementResol");
-    const Geometry_ incResol(incResolConf);
+    const Geometry_ incResol(incResolConf, this->getComm());
 
 //  Read first state
     const eckit::LocalConfiguration stateConf1(fullConfig, "state1");
