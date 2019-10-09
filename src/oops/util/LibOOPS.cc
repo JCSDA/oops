@@ -80,7 +80,7 @@ void LibOOPS::initialise() {
   const int do_trapfpe = getEnv("OOPS_TRAPFPE", 0);
   int do_abortfpe;
   if (do_trapfpe) {
-    // If SIGFPE trapping is enabled, default is to abort. Use caution trapping but not aborting: 
+    // If SIGFPE trapping is enabled, default is to abort. Use caution trapping but not aborting:
     // It can possibly result in gargantuan output to stderr
     do_abortfpe = getEnv("OOPS_ABORTFPE", 1);
     trap_sigfpe(do_abortfpe);
