@@ -25,7 +25,7 @@
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/util/LibOOPS.h"
 
-extern void trap_sigfpe(void);
+extern void trap_sigfpe(const int);
 
 namespace oops {
 
@@ -77,7 +77,14 @@ void LibOOPS::initialise() {
     debug_ = true;
     predebug_ += "[" + std::to_string(rank_) + "]";
   }
-  trap_sigfpe();
+  const int do_trapfpe = getEnv("OOPS_TRAPFPE", 0);
+  int do_abortfpe;
+  if (do_trapfpe) {
+    // If SIGFPE trapping is enabled, default is to abort. Use caution trapping but not aborting: 
+    // It can possibly result in gargantuan output to stderr
+    do_abortfpe = getEnv("OOPS_ABORTFPE", 1);
+    trap_sigfpe(do_abortfpe);
+  }
 }
 
 /** Add a rank-dependent tee file

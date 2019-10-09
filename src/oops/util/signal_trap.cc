@@ -20,8 +20,11 @@
 #include <iostream>    // cout, cerr
 #include "oops/util/Logger.h"  // required for oops::Log
 
-extern void trap_sigfpe(void);                         // user function traps SIGFPE
-extern void sigfpe_handler(int, siginfo_t *, void *);  // called when relevant SIGFPE occurs
+void trap_sigfpe(const int);                    // user function traps SIGFPE
+void sigfpe_handler(int, siginfo_t *, void *);  // called when relevant SIGFPE occurs
+
+// Global bool required here because sa.sigaction function does not provide it
+static int do_abort;  // Whether to abort on SIGFPE
 
 // #define LOGIT_STDOUT std::cout
 // #define LOGIT_STDERR std::cerr
@@ -29,10 +32,11 @@ extern void sigfpe_handler(int, siginfo_t *, void *);  // called when relevant S
 #define LOGIT_STDERR oops::Log::error()
 
 // This is the user function to enable handling of SIGFPE
-void trap_sigfpe(void)
+void trap_sigfpe(const int abortflg)
 {
   struct sigaction sig_action = {};  // passed to sigaction (init to empty)
 
+  do_abort = abortflg;
 #ifdef __APPLE__
   _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_INVALID);
   _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_DIV_ZERO);
@@ -65,7 +69,7 @@ void sigfpe_handler(int sig, siginfo_t *info, void *ucontext) {
   size_t n;                        // iterator over nfuncs
 
   //  myrank = eckit::mpi::comm().rank();
-  LOGIT_STDERR << "Caught SIGFPE: " << std::endl;
+  LOGIT_STDERR << "Caught SIGFPE: ";
 
   switch (info->si_code) {
   case FPE_INTDIV:
@@ -91,11 +95,13 @@ void sigfpe_handler(int sig, siginfo_t *info, void *ucontext) {
     break;
   }
 
-  nfuncs = backtrace(stack, maxfuncs);                // number of functions in the backtrace
-  stacknames = backtrace_symbols(&stack[0], nfuncs);  // generate the backtrace names from symbols
-  // Loop through the callstack, printing the backtrace
-  for (n = 0; n < nfuncs; ++n) {
-    LOGIT_STDERR << stacknames[n] << std::endl;
+  if (do_abort) {
+    nfuncs = backtrace(stack, maxfuncs);                // number of functions in the backtrace
+    stacknames = backtrace_symbols(&stack[0], nfuncs);  // generate the backtrace names from symbols
+    // Loop through the callstack, printing the backtrace
+    for (n = 0; n < nfuncs; ++n) {
+      LOGIT_STDERR << stacknames[n] << std::endl;
+    }
+    abort();                                            // exit
   }
-  abort();                                            // exit
 }
