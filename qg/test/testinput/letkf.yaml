@@ -61,6 +61,10 @@ Observations:
     Covariance:
       covariance: diagonal
 
+Localization:
+  distance: 5e6
+  max_nobs: -1
+
 letkf:
   - nothing
 

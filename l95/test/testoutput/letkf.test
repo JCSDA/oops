@@ -31,18 +31,18 @@ Test     : Lorenz 95 nobs= 120 Min=6.79027, Max=8.59671, Average=7.89068
 Test     : background y - H(x): 
 Test     : Lorenz 95 nobs= 120 Min=-1.0209, Max=1.82614, Average=0.120706
 Test     : H(x) for member 1:
-Test     : Lorenz 95 nobs= 120 Min=6.82413, Max=8.58594, Average=7.91177
+Test     : Lorenz 95 nobs= 120 Min=6.90917, Max=8.68679, Average=7.97803
 Test     : H(x) for member 2:
-Test     : Lorenz 95 nobs= 120 Min=6.80883, Max=8.51705, Average=7.89276
+Test     : Lorenz 95 nobs= 120 Min=6.83003, Max=8.46136, Average=7.95204
 Test     : H(x) for member 3:
-Test     : Lorenz 95 nobs= 120 Min=6.80535, Max=8.45003, Average=7.88317
+Test     : Lorenz 95 nobs= 120 Min=6.53472, Max=8.54567, Average=7.93035
 Test     : H(x) for member 4:
-Test     : Lorenz 95 nobs= 120 Min=6.77955, Max=8.36832, Average=7.88499
+Test     : Lorenz 95 nobs= 120 Min=6.61033, Max=8.77701, Average=7.92702
 Test     : H(x) for member 5:
-Test     : Lorenz 95 nobs= 120 Min=6.91781, Max=8.58848, Average=7.87072
+Test     : Lorenz 95 nobs= 120 Min=6.51758, Max=8.70223, Average=7.91617
 Test     : H(x) ensemble analysis mean: 
-Test     : Lorenz 95 nobs= 120 Min=6.82713, Max=8.45154, Average=7.88868
+Test     : Lorenz 95 nobs= 120 Min=6.68037, Max=8.62143, Average=7.94072
 Test     : analysis y - H(x): 
-Test     : Lorenz 95 nobs= 120 Min=-0.642676, Max=1.52204, Average=0.122706
+Test     : Lorenz 95 nobs= 120 Min=-0.540836, Max=0.815521, Average=0.0706696
 Test     : ombg RMS: 0.501741
-Test     : oman RMS: 0.407666
+Test     : oman RMS: 0.224831

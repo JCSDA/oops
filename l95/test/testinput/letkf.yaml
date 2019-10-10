@@ -34,6 +34,10 @@ Observations:
         filename: Data/l95.letkf.2010-01-02T00:00:00Z.obt
     ObsOperator: {}
 
+Localization:
+  distance: .1
+  max_nobs: -1
+
 letkf:
   - nothing
 
