@@ -191,12 +191,25 @@ template <typename MODEL> class LETKF : public Application {
       ana_pert.push_back(dx);
     }
 
+    // get the LETKF parameters used here
+    // NOTE: "letkf" is actually empty for now, parameters for inflation and such
+    //  will go here eventually
+    const eckit::LocalConfiguration letkfConfig(fullConfig, "letkf");
+    const eckit::LocalConfiguration locConfig(fullConfig, "Localization");
+    double locDist = locConfig.getDouble("distance");
+    int locMaxNobs = locConfig.getInt("max_nobs");
+
     // run the LETKF solver at each gridpoint
     Log::info() << "Beginning core LETKF solver..." << std::endl;
-    const eckit::LocalConfiguration letkfConfig(fullConfig, "letkf");
     for (GeometryIterator_ i = resol.begin(); i != resol.end(); ++i) {
-      // TODO(Travis) Next step is to use localized observations
-      const Eigen::MatrixXd trans = calcTrans(letkfConfig, ombg, ens_Yb, rmat);
+      // create the local subset of observations
+      ObsSpaces_ local_obs(obsdb, *i, locDist, locMaxNobs);
+      Departures_ local_ombg(local_obs, ombg);
+      DeparturesEnsemble_ local_ens_Yb(local_obs, ens_Yb);
+      ObsErrors_ local_rmat(obsConfig, local_obs);
+
+      // Calculate the LETKF transform matrix
+      const Eigen::MatrixXd trans = calcTrans(letkfConfig, local_ombg, local_ens_Yb, local_rmat);
 
       // use the transform matrix to calculate the analysis perturbations
       for (unsigned jj=0; jj < obsens.size(); ++jj) {
