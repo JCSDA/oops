@@ -250,8 +250,7 @@ oops/util/ObjectCountHelper.h
 oops/util/ObjectCountHelper.cc
 oops/util/Printable.h
 oops/util/PrintAdjTest.h
-oops/util/set_err_trap.F90
-oops/util/signal_trap.c
+oops/util/signal_trap.cc
 oops/util/string_f_c_mod.F90
 oops/util/string_f_c_interface.h
 oops/util/string_f_c_interface.cc
