@@ -152,7 +152,7 @@ ObsSpaceQG::~ObsSpaceQG() {
 }
 
 // -----------------------------------------------------------------------------
-const int ObsSpaceQG::nobs() const {
+int ObsSpaceQG::nobs() const {
   if ( isLocal_ ) {
     return localobs_.size();
   } else {

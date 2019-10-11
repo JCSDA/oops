@@ -67,8 +67,8 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
 
   void printJo(const ObsVecQG &, const ObsVecQG &);
 
-  const int nobs() const;
-  const int nout() const {return nout_;}
+  int nobs() const;
+  int nout() const {return nout_;}
   const std::string & obsname() const {return obsname_;}
 
   int & toFortran() {return helper_->toFortran();}
