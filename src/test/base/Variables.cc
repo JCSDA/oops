@@ -1,72 +1,17 @@
 /*
- * (C) Copyright 2009-2016 ECMWF.
- * 
+ * (C) Copyright 2019 UCAR
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
- * granted to it by virtue of its status as an intergovernmental organisation nor
- * does it submit to any jurisdiction.
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ *
  */
 
-#include <memory>
-#include <string>
-#include <vector>
+#include "oops/runs/Run.h"
+#include "test/base/Variables.h"
 
-#define ECKIT_TESTING_SELF_REGISTER_CASES 0
-
-
-#include "eckit/config/LocalConfiguration.h"
-#include "eckit/testing/Test.h"
-#include "oops/base/Variables.h"
-#include "test/TestEnvironment.h"
-#include "test/TestFixture.h"
-
-namespace test {
-
-// -----------------------------------------------------------------------------
-class VariablesFixture : TestFixture {
- public:
-  VariablesFixture() {
-    conf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "Variables"));
-  }
-
-  ~VariablesFixture() {}
-
-  std::unique_ptr<const eckit::LocalConfiguration> conf_;
-};
-// -----------------------------------------------------------------------------
-CASE("VariablesFixture") {
-  VariableFixture fix;
-// -----------------------------------------------------------------------------
-
-SECTION("testConstructor") {
-  std::unique_ptr<oops::Variables> vars(new oops::Variables(*fix.conf_));
-  EXPECT(vars.get());
-
-  vars.reset();
-  EXPECT(!vars.get());
-}
-
-// -----------------------------------------------------------------------------
-
-SECTION("testCopyConstructor") {
-  std::unique_ptr<oops::Variables> vars(new oops::Variables(*fix.conf_));
-
-  std::unique_ptr<oops::Variables> other(new oops::Variables(*vars));
-  EXPECT(other.get());
-
-  other.reset();
-  EXPECT(!other.get());
-
-  EXPECT(vars.get());
-}
-
-// -----------------------------------------------------------------------------
-}  //  CASE
-// -----------------------------------------------------------------------------
-
-}  // namespace test
-int main(int argc, char **argv)
-{
-    return eckit::testing::run_tests ( argc, argv );
+int main(int argc,  char ** argv) {
+  oops::Run run(argc, argv);
+  test::Variables tests;
+  run.execute(tests);
+  return 0;
 }

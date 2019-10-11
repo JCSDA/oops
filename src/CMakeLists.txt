@@ -299,6 +299,7 @@ list( APPEND oops_test_input
   test/testinput/random.yaml
   test/testinput/pushstringvector.yaml
   test/testinput/interp_interface.yaml
+  test/testinput/variables.yaml
 )
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test/testinput)
 CREATE_SYMLINK( ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${oops_test_input} )
@@ -346,6 +347,11 @@ ecbuild_add_test( TARGET oops_coding_norms
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/cpplint.py
                   ARGS --quiet --recursive ${CMAKE_CURRENT_SOURCE_DIR} )
+
+ecbuild_add_test( TARGET  test_oops_base_variables
+                  SOURCES test/base/Variables.cc
+                  ARGS    "test/testinput/variables.yaml"
+                  LIBS    oops )
 
 ecbuild_add_test( TARGET  test_util_random
                   SOURCES test/base/Random.cc
