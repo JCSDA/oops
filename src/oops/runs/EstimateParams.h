@@ -123,9 +123,6 @@ template <typename MODEL> class EstimateParams : public Application {
     // Write parameters
     param.write();
 
-    // Clean BUMP
-    param.clean_bump();
-
     return 0;
   }
 // -----------------------------------------------------------------------------

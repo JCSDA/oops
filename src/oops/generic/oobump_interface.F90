@@ -22,7 +22,7 @@ private
 contains
 !-------------------------------------------------------------------------------
 !> Create OOBUMP
-subroutine create_oobump_c(c_key_oobump, c_key_ug, c_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub) bind(c, name='create_oobump_f90')
+subroutine oobump_create_c(c_key_oobump, c_key_ug, c_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub) bind(c, name='oobump_create_f90')
 
 implicit none
 
@@ -52,12 +52,12 @@ call unstructured_grid_registry%get(c_key_ug, ug)
 f_comm = fckit_mpi_comm()
 
 ! Call Fortran
-call create_oobump(self, ug, f_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub, f_comm)
+call oobump_create(self, ug, f_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub, f_comm)
 
-end subroutine create_oobump_c
+end subroutine oobump_create_c
 ! ------------------------------------------------------------------------------
 !> Delete OOBUMP
-subroutine delete_oobump_c(c_key_oobump) bind(c, name='delete_oobump_f90')
+subroutine oobump_delete_c(c_key_oobump) bind(c, name='oobump_delete_f90')
 
 implicit none
 
@@ -71,15 +71,15 @@ type(oobump_type), pointer :: self
 call oobump_registry%get(c_key_oobump, self)
 
 ! Delete OOBUMP
-call delete_oobump(self)
+call oobump_delete(self)
 
 ! Clean interface
 call oobump_registry%remove(c_key_oobump)
 
-end subroutine delete_oobump_c
+end subroutine oobump_delete_c
 ! ------------------------------------------------------------------------------
 !> Get colocated flag
-subroutine get_oobump_colocated_c(c_key_oobump, colocated) bind(c, name='get_oobump_colocated_f90')
+subroutine oobump_get_colocated_c(c_key_oobump, colocated) bind(c, name='oobump_get_colocated_f90')
 
 implicit none
 
@@ -94,12 +94,12 @@ type(oobump_type), pointer :: self
 call oobump_registry%get(c_key_oobump, self)
 
 ! Call Fortran
-call get_oobump_colocated(self, colocated)
+call oobump_get_colocated(self, colocated)
 
-end subroutine get_oobump_colocated_c
+end subroutine oobump_get_colocated_c
 ! ------------------------------------------------------------------------------
 !> Get number of timeslots
-subroutine get_oobump_nts_c(c_key_oobump, nts) bind(c, name='get_oobump_nts_f90')
+subroutine oobump_get_nts_c(c_key_oobump, nts) bind(c, name='oobump_get_nts_f90')
 
 implicit none
 
@@ -114,12 +114,12 @@ type(oobump_type), pointer :: self
 call oobump_registry%get(c_key_oobump, self)
 
 ! Call Fortran
-call get_oobump_nts(self, nts)
+call oobump_get_nts(self, nts)
 
-end subroutine get_oobump_nts_c
+end subroutine oobump_get_nts_c
 ! ------------------------------------------------------------------------------
 !> Get control variable size
-subroutine get_oobump_cv_size_c(c_key_oobump, n) bind(c, name='get_oobump_cv_size_f90')
+subroutine oobump_get_cv_size_c(c_key_oobump, n) bind(c, name='oobump_get_cv_size_f90')
 
 implicit none
 
@@ -134,12 +134,12 @@ type(oobump_type), pointer :: self
 call oobump_registry%get(c_key_oobump, self)
 
 ! Call Fortran
-call get_oobump_cv_size(self, n)
+call oobump_get_cv_size(self, n)
 
-end subroutine get_oobump_cv_size_c
+end subroutine oobump_get_cv_size_c
 ! ------------------------------------------------------------------------------
 !> Add ensemble member
-subroutine add_oobump_member_c(c_key_oobump, c_key_ug, ie, iens) bind(c, name='add_oobump_member_f90')
+subroutine oobump_add_member_c(c_key_oobump, c_key_ug, ie, iens) bind(c, name='oobump_add_member_f90')
 
 implicit none
 
@@ -158,12 +158,12 @@ call oobump_registry%get(c_key_oobump, self)
 call unstructured_grid_registry%get(c_key_ug, ug)
 
 ! Call Fortran
-call add_oobump_member(self, ug, ie, iens)
+call oobump_add_member(self, ug, ie, iens)
 
-end subroutine add_oobump_member_c
+end subroutine oobump_add_member_c
 ! ------------------------------------------------------------------------------
 !> Remove ensemble member
-subroutine remove_oobump_member_c(c_key_oobump, c_key_ug, ie, iens) bind(c, name='remove_oobump_member_f90')
+subroutine oobump_remove_member_c(c_key_oobump, c_key_ug, ie, iens) bind(c, name='oobump_remove_member_f90')
 
 implicit none
 
@@ -182,12 +182,12 @@ call oobump_registry%get(c_key_oobump, self)
 call unstructured_grid_registry%get(c_key_ug, ug)
 
 ! Call Fortran
-call remove_oobump_member(self, ug, ie, iens)
+call oobump_remove_member(self, ug, ie, iens)
 
-end subroutine remove_oobump_member_c
+end subroutine oobump_remove_member_c
 ! ------------------------------------------------------------------------------
 !> Run BUMP drivers
-subroutine run_oobump_drivers_c(c_key_oobump) bind(c, name='run_oobump_drivers_f90')
+subroutine oobump_run_drivers_c(c_key_oobump) bind(c, name='oobump_run_drivers_f90')
 
 implicit none
 
@@ -201,12 +201,12 @@ type(oobump_type), pointer :: self
 call oobump_registry%get(c_key_oobump, self)
 
 ! Call Fortran
-call run_oobump_drivers(self)
+call oobump_run_drivers(self)
 
-end subroutine run_oobump_drivers_c
+end subroutine oobump_run_drivers_c
 ! ------------------------------------------------------------------------------
 !> Multiplication by BUMP vertical balance operator
-subroutine multiply_oobump_vbal_c(c_key_oobump, c_key_ug) bind(c, name='multiply_oobump_vbal_f90')
+subroutine oobump_multiply_vbal_c(c_key_oobump, c_key_ug) bind(c, name='oobump_multiply_vbal_f90')
 
 implicit none
 
@@ -223,12 +223,12 @@ call oobump_registry%get(c_key_oobump, self)
 call unstructured_grid_registry%get(c_key_ug, ug)
 
 ! Call Fortran
-call multiply_oobump_vbal(self, ug)
+call oobump_multiply_vbal(self, ug)
 
-end subroutine multiply_oobump_vbal_c
+end subroutine oobump_multiply_vbal_c
 ! ------------------------------------------------------------------------------
 !> Multiplication by BUMP vertical balance operator inverse
-subroutine multiply_oobump_vbal_inv_c(c_key_oobump, c_key_ug) bind(c, name='multiply_oobump_vbal_inv_f90')
+subroutine oobump_multiply_vbal_inv_c(c_key_oobump, c_key_ug) bind(c, name='oobump_multiply_vbal_inv_f90')
 
 implicit none
 
@@ -245,12 +245,12 @@ call oobump_registry%get(c_key_oobump, self)
 call unstructured_grid_registry%get(c_key_ug, ug)
 
 ! Call Fortran
-call multiply_oobump_vbal_inv(self, ug)
+call oobump_multiply_vbal_inv(self, ug)
 
-end subroutine multiply_oobump_vbal_inv_c
+end subroutine oobump_multiply_vbal_inv_c
 ! ------------------------------------------------------------------------------
 !> Multiplication by BUMP vertical balance operator adjoint
-subroutine multiply_oobump_vbal_ad_c(c_key_oobump, c_key_ug) bind(c, name='multiply_oobump_vbal_ad_f90')
+subroutine oobump_multiply_vbal_ad_c(c_key_oobump, c_key_ug) bind(c, name='oobump_multiply_vbal_ad_f90')
 
 implicit none
 
@@ -267,12 +267,12 @@ call oobump_registry%get(c_key_oobump, self)
 call unstructured_grid_registry%get(c_key_ug, ug)
 
 ! Call Fortran
-call multiply_oobump_vbal_ad(self, ug)
+call oobump_multiply_vbal_ad(self, ug)
 
-end subroutine multiply_oobump_vbal_ad_c
+end subroutine oobump_multiply_vbal_ad_c
 ! ------------------------------------------------------------------------------
 !> Multiplication by BUMP vertical balance operator adjoint inverse
-subroutine multiply_oobump_vbal_inv_ad_c(c_key_oobump, c_key_ug) bind(c, name='multiply_oobump_vbal_inv_ad_f90')
+subroutine oobump_multiply_vbal_inv_ad_c(c_key_oobump, c_key_ug) bind(c, name='oobump_multiply_vbal_inv_ad_f90')
 
 implicit none
 
@@ -289,12 +289,12 @@ call oobump_registry%get(c_key_oobump, self)
 call unstructured_grid_registry%get(c_key_ug, ug)
 
 ! Call Fortran
-call multiply_oobump_vbal_inv_ad(self, ug)
+call oobump_multiply_vbal_inv_ad(self, ug)
 
-end subroutine multiply_oobump_vbal_inv_ad_c
+end subroutine oobump_multiply_vbal_inv_ad_c
 ! ------------------------------------------------------------------------------
 !> Multiplication by BUMP NICAS operator
-subroutine multiply_oobump_nicas_c(c_key_oobump, c_key_ug) bind(c, name='multiply_oobump_nicas_f90')
+subroutine oobump_multiply_nicas_c(c_key_oobump, c_key_ug) bind(c, name='oobump_multiply_nicas_f90')
 
 implicit none
 
@@ -311,12 +311,12 @@ call oobump_registry%get(c_key_oobump, self)
 call unstructured_grid_registry%get(c_key_ug, ug)
 
 ! Call Fortran
-call multiply_oobump_nicas(self, ug)
+call oobump_multiply_nicas(self, ug)
 
-end subroutine multiply_oobump_nicas_c
+end subroutine oobump_multiply_nicas_c
 ! ------------------------------------------------------------------------------
 !> Multiplication by BUMP NICAS operator square-root
-subroutine multiply_oobump_nicas_sqrt_c(c_key_oobump, cv, c_key_ug) bind(c, name='multiply_oobump_nicas_sqrt_f90')
+subroutine oobump_multiply_nicas_sqrt_c(c_key_oobump, cv, c_key_ug) bind(c, name='oobump_multiply_nicas_sqrt_f90')
 
 implicit none
 
@@ -334,12 +334,12 @@ call oobump_registry%get(c_key_oobump, self)
 call unstructured_grid_registry%get(c_key_ug, ug)
 
 ! Call Fortran
-call multiply_oobump_nicas_sqrt(self, cv, ug)
+call oobump_multiply_nicas_sqrt(self, cv, ug)
 
-end subroutine multiply_oobump_nicas_sqrt_c
+end subroutine oobump_multiply_nicas_sqrt_c
 ! ------------------------------------------------------------------------------
 !> Multiplication by BUMP NICAS operator square-root adjoint
-subroutine multiply_oobump_nicas_sqrt_ad_c(c_key_oobump, c_key_ug, cv) bind(c, name='multiply_oobump_nicas_sqrt_ad_f90')
+subroutine oobump_multiply_nicas_sqrt_ad_c(c_key_oobump, c_key_ug, cv) bind(c, name='oobump_multiply_nicas_sqrt_ad_f90')
 
 implicit none
 
@@ -357,12 +357,12 @@ call oobump_registry%get(c_key_oobump, self)
 call unstructured_grid_registry%get(c_key_ug, ug)
 
 ! Call Fortran
-call multiply_oobump_nicas_sqrt_ad(self, ug, cv)
+call oobump_multiply_nicas_sqrt_ad(self, ug, cv)
 
-end subroutine multiply_oobump_nicas_sqrt_ad_c
+end subroutine oobump_multiply_nicas_sqrt_ad_c
 ! ------------------------------------------------------------------------------
 !> Randomize the BUMP NICAS operator
-subroutine randomize_oobump_nicas_c(c_key_oobump, c_key_ug) bind(c, name='randomize_oobump_nicas_f90')
+subroutine oobump_randomize_nicas_c(c_key_oobump, c_key_ug) bind(c, name='oobump_randomize_nicas_f90')
 
 implicit none
 
@@ -379,12 +379,12 @@ call oobump_registry%get(c_key_oobump, self)
 call unstructured_grid_registry%get(c_key_ug, ug)
 
 ! Call Fortran
-call randomize_oobump_nicas(self, ug)
+call oobump_randomize_nicas(self, ug)
 
-end subroutine randomize_oobump_nicas_c
+end subroutine oobump_randomize_nicas_c
 ! ------------------------------------------------------------------------------
 !> Get BUMP parameter
-subroutine get_oobump_param_c(c_key_oobump, nstr, cstr, c_key_ug) bind(c, name='get_oobump_param_f90')
+subroutine oobump_get_param_c(c_key_oobump, nstr, cstr, c_key_ug) bind(c, name='oobump_get_param_f90')
 
 implicit none
 
@@ -409,12 +409,12 @@ do istr=1,nstr
 end do
 
 ! Call Fortran
-call get_oobump_param(self, param, ug)
+call oobump_get_param(self, param, ug)
 
-end subroutine get_oobump_param_c
+end subroutine oobump_get_param_c
 ! ------------------------------------------------------------------------------
 !> Set BUMP parameter
-subroutine set_oobump_param_c(c_key_oobump, nstr, cstr, c_key_ug) bind(c, name='set_oobump_param_f90')
+subroutine oobump_set_param_c(c_key_oobump, nstr, cstr, c_key_ug) bind(c, name='oobump_set_param_f90')
 
 implicit none
 
@@ -439,8 +439,8 @@ do istr=1,nstr
 end do
 
 ! Call Fortran
-call set_oobump_param(self, param, ug)
+call oobump_set_param(self, param, ug)
 
-end subroutine set_oobump_param_c
+end subroutine oobump_set_param_c
 ! ------------------------------------------------------------------------------
 end module oobump_interface

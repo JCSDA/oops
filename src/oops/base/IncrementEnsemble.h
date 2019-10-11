@@ -149,7 +149,6 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const eckit::Configuration & conf,
     bgmean.accumul(rr, ensemble[ie]);
   }
 
-  const double rk = 1.0 / sqrt((static_cast<double>(rank_) - 1.0));
   for (unsigned int ie = 0; ie < rank_; ++ie) {
     // Ensemble will be centered around ensemble mean
     Increment4D_ dx(resol, vars_, timeslots);
@@ -166,9 +165,6 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const eckit::Configuration & conf,
 
     Increment4D_ * dxunbalptr = new Increment4D_(dx);
     ensemblePerturbs_.push_back(std::unique_ptr<Increment4D_>(dxunbalptr));
-
-    // Rescale
-    *ensemblePerturbs_[ie] *= rk;
   }
   Log::trace() << "IncrementEnsemble:contructor done" << std::endl;
 }

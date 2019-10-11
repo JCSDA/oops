@@ -135,6 +135,7 @@ oops/generic/IdVariableChange.h
 oops/generic/LocalizationBUMP.h
 oops/generic/LocalizationID.h
 oops/generic/ObsErrorDiag.h
+oops/generic/OoBump.h
 oops/generic/PseudoModel.h
 oops/generic/UnstructuredGrid.cc
 oops/generic/UnstructuredGrid.h

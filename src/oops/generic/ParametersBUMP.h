@@ -9,6 +9,7 @@
 #define OOPS_GENERIC_PARAMETERSBUMP_H_
 
 #include <fstream>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -20,7 +21,7 @@
 #include "oops/assimilation/Increment4D.h"
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/Variables.h"
-#include "oops/generic/oobump_f.h"
+#include "oops/generic/OoBump.h"
 #include "oops/generic/UnstructuredGrid.h"
 #include "oops/interface/State.h"
 #include "oops/util/DateTime.h"
@@ -38,10 +39,10 @@ namespace oops {
 
 template<typename MODEL>
 class ParametersBUMP {
-  typedef Geometry<MODEL>                         Geometry_;
-  typedef Increment<MODEL>                        Increment_;
-  typedef Increment4D<MODEL>                      Increment4D_;
-  typedef State<MODEL>                            State_;
+  typedef Geometry<MODEL>                             Geometry_;
+  typedef Increment<MODEL>                            Increment_;
+  typedef Increment4D<MODEL>                          Increment4D_;
+  typedef State<MODEL>                                State_;
   typedef boost::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
 
  public:
@@ -54,8 +55,7 @@ class ParametersBUMP {
                  const EnsemblePtr_ pseudo_ens = NULL);
   ~ParametersBUMP();
 
-  int get_bump() const {return keyBUMP_;}
-  void clean_bump() const {delete_oobump_f90(keyBUMP_);}
+  OoBump & getOoBump() {return *ooBump_;}
   void write() const;
 
  private:
@@ -63,7 +63,7 @@ class ParametersBUMP {
   const Variables vars_;
   std::vector<util::DateTime> timeslots_;
   const eckit::LocalConfiguration conf_;
-  int keyBUMP_;
+  std::unique_ptr<OoBump> ooBump_;
 };
 
 // =============================================================================
@@ -75,14 +75,13 @@ ParametersBUMP<MODEL>::ParametersBUMP(const Geometry_ & resol,
                                       const eckit::Configuration & conf,
                                       const EnsemblePtr_ ens,
                                       const EnsemblePtr_ pseudo_ens)
-  : resol_(resol), vars_(vars), timeslots_(timeslots), conf_(conf), keyBUMP_(0)
+  : resol_(resol), vars_(vars), timeslots_(timeslots), conf_(conf), ooBump_()
 {
   Log::trace() << "ParametersBUMP<MODEL>::ParametersBUMP construction starting" << std::endl;
   util::Timer timer(classname(), "ParametersBUMP");
 
 // Setup BUMP configuration
   const eckit::LocalConfiguration BUMPConfig(conf_, "bump");
-  const eckit::Configuration * fconf = &BUMPConfig;
 
 // Setup colocation
   int colocated = 1;
@@ -109,7 +108,7 @@ ParametersBUMP<MODEL>::ParametersBUMP(const Geometry_ & resol,
 
 // Create BUMP
   Log::info() << "Create BUMP" << std::endl;
-  create_oobump_f90(keyBUMP_, ug.toFortran(), &fconf, ens1_ne, 1, ens2_ne, 1);
+  ooBump_.reset(new OoBump(ug, BUMPConfig, ens1_ne, 1, ens2_ne, 1));
 
 // Transfer/copy ensemble members to BUMP
   if (release_members == 1) {
@@ -127,15 +126,11 @@ ParametersBUMP<MODEL>::ParametersBUMP(const Geometry_ & resol,
       dx = (*ens)[ie];
     }
 
-  // Renormalize member
-    const double rk = sqrt((static_cast<double>(ens1_ne) - 1.0));
-    dx *= rk;
-
   // Define unstructured grid
     dx.field_to_ug(ug);
 
   // Copy data to BUMP
-    add_oobump_member_f90(keyBUMP_, ug.toFortran(), ie+1, bump::readEnsMember);
+    ooBump_->addMember(ug, ie);
 
     if (release_members == 1) {
     // Release ensemble member
@@ -163,7 +158,7 @@ ParametersBUMP<MODEL>::ParametersBUMP(const Geometry_ & resol,
     dx.field_to_ug(ug);
 
   // Copy data to BUMP
-    add_oobump_member_f90(keyBUMP_, ug.toFortran(), ie+1, bump::readPseudoEnsMember);
+    ooBump_->addPseudoMember(ug, ie);
 
     if (release_members == 1) {
     // Release ensemble member
@@ -193,14 +188,12 @@ ParametersBUMP<MODEL>::ParametersBUMP(const Geometry_ & resol,
 
     // Set parameter to BUMP
       std::string param = conf.getString("parameter");
-      const int nstr = param.size();
-      const char *cstr = param.c_str();
-      set_oobump_param_f90(keyBUMP_, nstr, cstr, ug.toFortran());
+      ooBump_->setParam(param, ug);
     }
   }
 
 // Estimate parameters
-  run_oobump_drivers_f90(keyBUMP_);
+  ooBump_->runDrivers();
 
   if (release_members == 1) {
   // Transfer ensemble members from BUMP
@@ -209,15 +202,11 @@ ParametersBUMP<MODEL>::ParametersBUMP(const Geometry_ & resol,
       Log::info() << "   Member " << ie+1 << " / " << ens1_ne << std::endl;
 
     // Copy data from BUMP
-      remove_oobump_member_f90(keyBUMP_, ug.toFortran(), ie+1, bump::readEnsMember);
+      ooBump_->removeMember(ug, ie);
 
     // Reset ensemble member
       dx.field_from_ug(ug);
       ens->resetMember(dx);
-
-    // Renormalize member
-      const double rk = 1.0/sqrt((static_cast<double>(ens1_ne) - 1.0));
-      (*ens)[ie] *= rk;
     }
 
   // Transfer pseudo-ensemble members from BUMP
@@ -226,7 +215,7 @@ ParametersBUMP<MODEL>::ParametersBUMP(const Geometry_ & resol,
       Log::info() << "   Member " << ie+1 << " / " << ens2_ne << std::endl;
 
     // Copy data from BUMP
-      remove_oobump_member_f90(keyBUMP_, ug.toFortran(), ie+1, bump::readPseudoEnsMember);
+      ooBump_->removePseudoMember(ug, ie);
 
     // Reset pseudo-ensemble member
       dx.field_from_ug(ug);
@@ -259,9 +248,7 @@ void ParametersBUMP<MODEL>::write() const {
   dx.zero();
 
 // Setup unstructured grid
-  int colocated;
-  get_oobump_colocated_f90(keyBUMP_, colocated);
-  UnstructuredGrid ug(colocated, timeslots_.size());
+  UnstructuredGrid ug(ooBump_->getColocated(), timeslots_.size());
   dx.ug_coord(ug);
 
 // Write parameters
@@ -270,9 +257,7 @@ void ParametersBUMP<MODEL>::write() const {
   for (const auto & conf : outputConfigs) {
   // Get parameter from BUMP
     std::string param = conf.getString("parameter");
-    const int nstr = param.size();
-    const char *cstr = param.c_str();
-    get_oobump_param_f90(keyBUMP_, nstr, cstr, ug.toFortran());
+    ooBump_->getParam(param, ug);
     dx.field_from_ug(ug);
 
   // Write parameter for the specified timeslot

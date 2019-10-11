@@ -69,7 +69,7 @@ endif()
 # NetCDF
 set( NETCDF_F90 ON CACHE BOOL "Compile with Fortran NetCDF" )
 find_package( NetCDF REQUIRED )
-include_directories( ${NETCDF_INCLUDE_DIR} )
+include_directories( ${NETCDF_INCLUDE_DIRS} )
 
 # eckit
 ecbuild_use_package( PROJECT eckit VERSION 1.1.0 REQUIRED )
@@ -97,7 +97,7 @@ ecbuild_add_option( FEATURE FCTEST  DEFAULT ${ENABLE_TESTS}
 # Export package info
 ################################################################################
 
-list( APPEND OOPS_TPLS LAPACK NetCDF eckit fckit saber )
+list( APPEND OOPS_TPLS LAPACK eckit fckit saber )
 
 set( OOPS_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src
                        ${CMAKE_CURRENT_BINARY_DIR}/src

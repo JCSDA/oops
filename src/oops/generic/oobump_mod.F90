@@ -20,16 +20,16 @@ implicit none
 private
 public :: oobump_type
 public :: oobump_registry
-public :: create_oobump, delete_oobump, get_oobump_colocated, get_oobump_nts, get_oobump_cv_size, add_oobump_member, &
-        & remove_oobump_member,run_oobump_drivers,multiply_oobump_vbal, multiply_oobump_vbal_inv, multiply_oobump_vbal_ad,  &
-        & multiply_oobump_vbal_inv_ad,multiply_oobump_nicas, multiply_oobump_nicas_sqrt, multiply_oobump_nicas_sqrt_ad, &
-        & randomize_oobump_nicas, get_oobump_param, set_oobump_param, bump_read_conf
+public :: oobump_create, oobump_delete, oobump_get_colocated, oobump_get_nts, oobump_get_cv_size, oobump_add_member, &
+        & oobump_remove_member, oobump_run_drivers, oobump_multiply_vbal, oobump_multiply_vbal_inv, oobump_multiply_vbal_ad, &
+        & oobump_multiply_vbal_inv_ad, oobump_multiply_nicas, oobump_multiply_nicas_sqrt, oobump_multiply_nicas_sqrt_ad, &
+        & oobump_randomize_nicas, oobump_get_param, oobump_set_param, bump_read_conf
 ! ------------------------------------------------------------------------------
 type oobump_type
-   integer :: colocated                   !> Colocated flag
-   integer :: separate_log                !> Separate log files for BUMP
-   integer :: ngrid                       !> Number of instances of BUMP
-   type(bump_type),allocatable :: bump(:) !> Instances of BUMP
+   integer :: colocated                    !> Colocated flag
+   integer :: separate_log                 !> Separate log files for BUMP
+   integer :: ngrid                        !> Number of instances of BUMP
+   type(bump_type), allocatable :: bump(:) !> Instances of BUMP
 end type oobump_type
 
 #define LISTED_TYPE oobump_type
@@ -46,7 +46,7 @@ contains
 #include "oops/util/linkedList_c.f"
 !-------------------------------------------------------------------------------
 !> Create OOBUMP
-subroutine create_oobump(self, ug, f_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub, f_comm)
+subroutine oobump_create(self, ug, f_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub, f_comm)
 
 implicit none
 
@@ -121,10 +121,10 @@ do igrid=1,self%ngrid
  & ens1_nsub=ens1_nsub,ens2_ne=ens2_ne,ens2_nsub=ens2_nsub,lunit=lunit,msvalr=msvalr)
 end do
 
-end subroutine create_oobump
+end subroutine oobump_create
 !-------------------------------------------------------------------------------
 !> Delete OOBUMP
-subroutine delete_oobump(self)
+subroutine oobump_delete(self)
 
 implicit none
 
@@ -147,10 +147,10 @@ if (allocated(self%bump)) then
    deallocate(self%bump)
 end if
 
-end subroutine delete_oobump
+end subroutine oobump_delete
 !-------------------------------------------------------------------------------
 !> Get colocated flag
-subroutine get_oobump_colocated(self,colocated)
+subroutine oobump_get_colocated(self,colocated)
 
 implicit none
 
@@ -161,10 +161,10 @@ integer, intent(out) :: colocated        !< Colocated flag
 ! Copy colocated
 colocated = self%colocated
 
-end subroutine get_oobump_colocated
+end subroutine oobump_get_colocated
 !-------------------------------------------------------------------------------
 !> Get number of timeslots
-subroutine get_oobump_nts(self,nts)
+subroutine oobump_get_nts(self,nts)
 
 implicit none
 
@@ -175,10 +175,10 @@ integer, intent(out) :: nts              !< Number of timeslots
 ! Copy nts
 nts = self%bump(1)%nam%nts
 
-end subroutine get_oobump_nts
+end subroutine oobump_get_nts
 !-------------------------------------------------------------------------------
 !> Get control variable size
-subroutine get_oobump_cv_size(self,n)
+subroutine oobump_get_cv_size(self,n)
 
 implicit none
 
@@ -196,10 +196,10 @@ do igrid=1,self%ngrid
    n = n+nn
 end do
 
-end subroutine get_oobump_cv_size
+end subroutine oobump_get_cv_size
 !-------------------------------------------------------------------------------
 !> Add ensemble member
-subroutine add_oobump_member(self,ug,ie,iens)
+subroutine oobump_add_member(self,ug,ie,iens)
 
 implicit none
 
@@ -217,10 +217,10 @@ do igrid=1,self%ngrid
    call self%bump(igrid)%add_member(ug%grid(igrid)%fld,ie,iens)
 end do
 
-end subroutine add_oobump_member
+end subroutine oobump_add_member
 !-------------------------------------------------------------------------------
 !> Remove ensemble member
-subroutine remove_oobump_member(self,ug,ie,iens)
+subroutine oobump_remove_member(self,ug,ie,iens)
 
 implicit none
 
@@ -238,10 +238,10 @@ do igrid=1,self%ngrid
    call self%bump(igrid)%remove_member(ug%grid(igrid)%fld,ie,iens)
 end do
 
-end subroutine remove_oobump_member
+end subroutine oobump_remove_member
 !-------------------------------------------------------------------------------
 !> Run OOBUMP drivers
-subroutine run_oobump_drivers(self)
+subroutine oobump_run_drivers(self)
 
 implicit none
 
@@ -256,10 +256,10 @@ do igrid=1,self%ngrid
    call self%bump(igrid)%run_drivers
 end do
 
-end subroutine run_oobump_drivers
+end subroutine oobump_run_drivers
 !-------------------------------------------------------------------------------
 !> Multiplication by BUMP vertical balance operator
-subroutine multiply_oobump_vbal(self,ug)
+subroutine oobump_multiply_vbal(self,ug)
 
 implicit none
 
@@ -275,10 +275,10 @@ do igrid=1,self%ngrid
    call self%bump(igrid)%apply_vbal(ug%grid(igrid)%fld)
 end do
 
-end subroutine multiply_oobump_vbal
+end subroutine oobump_multiply_vbal
 !-------------------------------------------------------------------------------
 !> Multiplication by BUMP vertical balance operator inverse
-subroutine multiply_oobump_vbal_inv(self,ug)
+subroutine oobump_multiply_vbal_inv(self,ug)
 
 implicit none
 
@@ -294,10 +294,10 @@ do igrid=1,self%ngrid
    call self%bump(igrid)%apply_vbal_inv(ug%grid(igrid)%fld)
 end do
 
-end subroutine multiply_oobump_vbal_inv
+end subroutine oobump_multiply_vbal_inv
 !-------------------------------------------------------------------------------
 !> Multiplication by BUMP vertical balance operator adjoint
-subroutine multiply_oobump_vbal_ad(self,ug)
+subroutine oobump_multiply_vbal_ad(self,ug)
 
 implicit none
 
@@ -313,10 +313,10 @@ do igrid=1,self%ngrid
    call self%bump(igrid)%apply_vbal_ad(ug%grid(igrid)%fld)
 end do
 
-end subroutine multiply_oobump_vbal_ad
+end subroutine oobump_multiply_vbal_ad
 !-------------------------------------------------------------------------------
 !> Multiplication by BUMP vertical balance operator adjoint inverse
-subroutine multiply_oobump_vbal_inv_ad(self,ug)
+subroutine oobump_multiply_vbal_inv_ad(self,ug)
 
 implicit none
 
@@ -332,10 +332,10 @@ do igrid=1,self%ngrid
    call self%bump(igrid)%apply_vbal_inv_ad(ug%grid(igrid)%fld)
 end do
 
-end subroutine multiply_oobump_vbal_inv_ad
+end subroutine oobump_multiply_vbal_inv_ad
 !-------------------------------------------------------------------------------
 !> Multiplication by BUMP NICAS operator
-subroutine multiply_oobump_nicas(self,ug)
+subroutine oobump_multiply_nicas(self,ug)
 
 implicit none
 
@@ -351,10 +351,10 @@ do igrid=1,self%ngrid
    call self%bump(igrid)%apply_nicas(ug%grid(igrid)%fld)
 end do
 
-end subroutine multiply_oobump_nicas
+end subroutine oobump_multiply_nicas
 !-------------------------------------------------------------------------------
 !> Multiplication by BUMP NICAS operator square-root
-subroutine multiply_oobump_nicas_sqrt(self,cv,ug)
+subroutine oobump_multiply_nicas_sqrt(self,cv,ug)
 
 implicit none
 
@@ -383,10 +383,10 @@ do igrid=1,self%ngrid
    offset = offset+nn
 end do
 
-end subroutine multiply_oobump_nicas_sqrt
+end subroutine oobump_multiply_nicas_sqrt
 !-------------------------------------------------------------------------------
 !> Multiplication by BUMP NICAS operator square-root adjoint
-subroutine multiply_oobump_nicas_sqrt_ad(self,ug,cv)
+subroutine oobump_multiply_nicas_sqrt_ad(self,ug,cv)
 
 implicit none
 
@@ -412,10 +412,10 @@ do igrid=1,self%ngrid
    offset = offset+nn
 end do
 
-end subroutine multiply_oobump_nicas_sqrt_ad
+end subroutine oobump_multiply_nicas_sqrt_ad
 !-------------------------------------------------------------------------------
 !> Randomize the BUMP NICAS operator
-subroutine randomize_oobump_nicas(self,ug)
+subroutine oobump_randomize_nicas(self,ug)
 
 implicit none
 
@@ -434,10 +434,10 @@ do igrid=1,self%ngrid
    call self%bump(igrid)%randomize(ug%grid(igrid)%fld)
 end do
 
-end subroutine randomize_oobump_nicas
+end subroutine oobump_randomize_nicas
 !-------------------------------------------------------------------------------
 !> Get BUMP parameter
-subroutine get_oobump_param(self,param,ug)
+subroutine oobump_get_param(self,param,ug)
 
 implicit none
 
@@ -457,10 +457,10 @@ do igrid=1,self%ngrid
    call self%bump(igrid)%get_parameter(param,ug%grid(igrid)%fld)
 end do
 
-end subroutine get_oobump_param
+end subroutine oobump_get_param
 !-------------------------------------------------------------------------------
 !> Set BUMP parameter
-subroutine set_oobump_param(self,param,ug)
+subroutine oobump_set_param(self,param,ug)
 
 implicit none
 
@@ -477,7 +477,7 @@ do igrid=1,self%ngrid
    call self%bump(igrid)%set_parameter(param,ug%grid(igrid)%fld)
 end do
 
-end subroutine set_oobump_param
+end subroutine oobump_set_param
 !-------------------------------------------------------------------------------
 !> Read BUMP configuration
 subroutine bump_read_conf(f_conf,bump)

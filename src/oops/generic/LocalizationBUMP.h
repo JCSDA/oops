@@ -8,6 +8,7 @@
 #ifndef OOPS_GENERIC_LOCALIZATIONBUMP_H_
 #define OOPS_GENERIC_LOCALIZATIONBUMP_H_
 
+#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -16,7 +17,7 @@
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/LocalizationGeneric.h"
-#include "oops/generic/oobump_f.h"
+#include "oops/generic/OoBump.h"
 #include "oops/generic/ParametersBUMP.h"
 #include "oops/generic/UnstructuredGrid.h"
 #include "oops/util/DateTime.h"
@@ -52,7 +53,7 @@ template<typename MODEL> class LocalizationBUMP : public LocalizationGeneric<MOD
  private:
   void print(std::ostream &) const;
 
-  int keyBUMP_;
+  std::unique_ptr<OoBump> ooBump_;
   std::vector<util::DateTime> timeslots_;
 };
 
@@ -62,7 +63,7 @@ template<typename MODEL>
 LocalizationBUMP<MODEL>::LocalizationBUMP(const Geometry_ & resol,
                                           const EnsemblePtr_ ens,
                                           const eckit::Configuration & conf)
-  : keyBUMP_(0)
+  : ooBump_()
 {
 // Setup variables
   const Variables vars(conf);
@@ -79,8 +80,8 @@ LocalizationBUMP<MODEL>::LocalizationBUMP(const Geometry_ & resol,
 // Setup parameters
   Parameters_ param(resol, vars, timeslots, conf, ens);
 
-// Get key
-  keyBUMP_ = param.get_bump();
+// Transfer OoBump pointer
+  ooBump_.reset(new OoBump(param.getOoBump()));
 
   Log::trace() << "LocalizationBUMP:LocalizationBUMP constructed" << std::endl;
 }
@@ -89,7 +90,6 @@ LocalizationBUMP<MODEL>::LocalizationBUMP(const Geometry_ & resol,
 
 template<typename MODEL>
 LocalizationBUMP<MODEL>::~LocalizationBUMP() {
-  delete_oobump_f90(keyBUMP_);
   Log::trace() << "LocalizationBUMP:~LocalizationBUMP destructed" << std::endl;
 }
 
@@ -98,11 +98,9 @@ LocalizationBUMP<MODEL>::~LocalizationBUMP() {
 template<typename MODEL>
 void LocalizationBUMP<MODEL>::multiply(Increment_ & dx) const {
   Log::trace() << "LocalizationBUMP:multiply starting" << std::endl;
-  int colocated;
-  get_oobump_colocated_f90(keyBUMP_, colocated);
-  UnstructuredGrid ug(colocated);
+  UnstructuredGrid ug(ooBump_->getColocated());
   dx.field_to_ug(ug);
-  multiply_oobump_nicas_f90(keyBUMP_, ug.toFortran());
+  ooBump_->multiplyNicas(ug);
   dx.field_from_ug(ug);
   Log::trace() << "LocalizationBUMP:multiply done" << std::endl;
 }
@@ -112,13 +110,9 @@ void LocalizationBUMP<MODEL>::multiply(Increment_ & dx) const {
 template<typename MODEL>
 void LocalizationBUMP<MODEL>::multiply(Increment4D_ & dx) const {
   Log::trace() << "LocalizationBUMP:multiply starting" << std::endl;
-  int colocated;
-  get_oobump_colocated_f90(keyBUMP_, colocated);
-  int nts;
-  get_oobump_nts_f90(keyBUMP_, nts);
-  UnstructuredGrid ug(colocated, nts);
+  UnstructuredGrid ug(ooBump_->getColocated(), ooBump_->getNts());
   dx.field_to_ug(ug);
-  multiply_oobump_nicas_f90(keyBUMP_, ug.toFortran());
+  ooBump_->multiplyNicas(ug);
   dx.field_from_ug(ug);
   Log::trace() << "LocalizationBUMP:multiply done" << std::endl;
 }

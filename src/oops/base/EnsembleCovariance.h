@@ -101,6 +101,8 @@ void EnsembleCovariance<MODEL>::doMultiply(const Increment_ & dxi,
       dxo.axpy(wgt, (*ens_)[ie][0], false);
     }
   }
+  const double rk = 1.0/(static_cast<double>(ens_->size()) - 1.0);
+  dxo *= rk;
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
