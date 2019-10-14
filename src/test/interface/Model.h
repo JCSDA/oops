@@ -36,7 +36,7 @@
 
 namespace test {
 
-// =============================================================================
+// =================================================================================================
 
 template <typename MODEL> class ModelFixture : private boost::noncopyable {
   typedef oops::Geometry<MODEL>        Geometry_;
@@ -82,7 +82,7 @@ template <typename MODEL> class ModelFixture : private boost::noncopyable {
   std::unique_ptr<const Model_>        model_;
 };
 
-// =============================================================================
+// =================================================================================================
 
 template <typename MODEL> void testModelConstructor() {
   typedef ModelFixture<MODEL>   Test_;
@@ -91,7 +91,7 @@ template <typename MODEL> void testModelConstructor() {
   EXPECT(Test_::model().timeResolution() > zero);
 }
 
-// -----------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 
 template <typename MODEL> void testModelNoForecast() {
   typedef ModelFixture<MODEL>   Test_;
@@ -113,7 +113,7 @@ template <typename MODEL> void testModelNoForecast() {
   EXPECT(Test_::xref().norm() == ininorm);
 }
 
-// -----------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 
 template <typename MODEL> void testModelForecast() {
   typedef ModelFixture<MODEL>   Test_;
@@ -143,7 +143,57 @@ template <typename MODEL> void testModelForecast() {
   EXPECT(Test_::xref().norm() == ininorm);
 }
 
-// =============================================================================
+// -------------------------------------------------------------------------------------------------
+
+template <typename MODEL> void testModelReForecast() {
+  typedef ModelFixture<MODEL>   Test_;
+  typedef oops::State<MODEL>    State_;
+
+  const bool testreforecast = Test_::test().getBool("testreforecast", true);
+
+  if (testreforecast) {
+    // Forecast duration
+    const util::Duration len(Test_::test().getString("fclength"));
+
+    const double ininorm = Test_::xref().norm();
+
+    // Initial states
+    State_ xx1(Test_::xref());
+    State_ xx2(Test_::xref());
+
+    // Time at forecast end
+    const util::DateTime vt(xx1.validTime()+len);
+
+    oops::PostProcessor<State_> post;
+
+    // Forecast 1
+    Test_::model().forecast(xx1, Test_::bias(), len, post);
+
+    // Forecast 2
+    Test_::model().forecast(xx2, Test_::bias(), len, post);
+
+    // Check forecasts ran to expected time
+    EXPECT(xx1.validTime() == vt);
+    EXPECT(xx2.validTime() == vt);
+
+    // Print the final norms
+    oops::Log::debug() << "xx1.norm(): " << std::fixed << std::setprecision(8) << xx1.norm()
+                       << std::endl;
+    oops::Log::debug() << "xx2.norm(): " << std::fixed << std::setprecision(8) << xx2.norm()
+                       << std::endl;
+
+    // Pass or fail condition
+    EXPECT(xx1.norm() == xx2.norm());
+
+    // Recomputing initial norm to make sure nothing bad happened
+    EXPECT(Test_::xref().norm() == ininorm);
+  } else {
+    // Dummy test
+    EXPECT(0.0 == 0.0);
+  }
+}
+
+// =================================================================================================
 
 template <typename MODEL>
 class Model : public oops::Test {
@@ -162,10 +212,12 @@ class Model : public oops::Test {
       { testModelNoForecast<MODEL>(); });
     ts.emplace_back(CASE("interface/Model/testModelForecast")
       { testModelForecast<MODEL>(); });
+    ts.emplace_back(CASE("interface/Model/testModelReForecast")
+      { testModelReForecast<MODEL>(); });
   }
 };
 
-// =============================================================================
+// =================================================================================================
 
 }  // namespace test
 
