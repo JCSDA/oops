@@ -14,7 +14,7 @@ use, intrinsic :: iso_c_binding, only : c_char, c_null_char, c_horizontal_tab
 
 implicit none
 private
-public f_c_string, c_f_string, f_c_push_string_vector, f_c_push_string_varlist
+public f_c_string, c_f_string, f_c_push_string_vector
 
 !-------------------------------------------------------------------------------
 interface
@@ -26,13 +26,6 @@ subroutine c_push_string_to_vector(c_vec, vname) bind(C,name='push_string_to_vec
    type(c_ptr), value :: c_vec !< pointer to C++ std::vector<std::string> Object
    character(kind=c_char, len=1), intent(in) :: vname(*)      
 end subroutine c_push_string_to_vector
-
-subroutine c_push_string_to_varlist(c_var, vname) bind(C,name='push_string_to_varlist_f')     
-   use, intrinsic :: iso_c_binding, only : c_ptr, c_char
-   implicit none
-   type(c_ptr), value :: c_var !< pointer to C++ oops::Variables Object
-   character(kind=c_char, len=1), intent(in) :: vname(*)      
-end subroutine c_push_string_to_varlist
 
 end interface
 
@@ -99,30 +92,6 @@ subroutine f_c_push_string_vector(c_vec, vnames)
   end do
 
 end subroutine f_c_push_string_vector
-  
-! ------------------------------------------------------------------------------
-!> Push a string vector from Fortran to a C++ oops::Variables object
-!
-subroutine f_c_push_string_varlist(c_var, vnames)
-  use, intrinsic :: iso_c_binding, only : c_ptr, c_char
-  implicit none
-  type(c_ptr), value, intent(in) :: c_var !< pointer to C++ oops::Variables Object
-  character(len=*), intent(in) :: vnames(:)  !< names to be added to the variable list
-
-  character(kind=c_char,len=1), allocatable :: c_vname(:)
-  integer :: iname
-
-  do iname = 1, size(vnames)
-  
-     call f_c_string(trim(vnames(iname)), c_vname)
-
-     call c_push_string_to_varlist(c_var, c_vname)
-
-     deallocate(c_vname)
-     
-  end do
-
-end subroutine f_c_push_string_varlist
   
 ! ------------------------------------------------------------------------------
 

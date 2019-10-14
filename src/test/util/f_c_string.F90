@@ -26,11 +26,10 @@ contains
 !> Pass a string vector from Fortran to C++
 !
   
-subroutine c_test_push_string_vector(c_conf,vec,var) bind(c,name='test_push_string_vector_f')
+subroutine c_test_push_string_vector(c_conf,vec) bind(c,name='test_push_string_vector_f')
 implicit none
 type(c_ptr), intent(in) :: c_conf
 type(c_ptr), intent(in), value :: vec
-type(c_ptr), intent(in), value :: var
 
 character(len=max_string), allocatable :: fort_vec(:)
 character(kind=c_char,len=max_string),allocatable :: char_array(:)
@@ -42,8 +41,6 @@ call f_conf%get_or_die("string_vec",csize,char_array)
 fort_vec = char_array
 
 call f_c_push_string_vector(vec, fort_vec)
-
-call f_c_push_string_varlist(var, fort_vec)
 
 end subroutine c_test_push_string_vector
 

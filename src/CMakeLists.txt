@@ -120,6 +120,9 @@ oops/base/TrajectorySaver.h
 oops/base/VariableChangeBase.h
 oops/base/Variables.h
 oops/base/Variables.cc
+oops/base/variables_f.cc
+oops/base/variables_f.h
+oops/base/variables_mod.F90
 oops/base/WeightedDiff.h
 oops/base/WeightedDiffTLAD.h
 oops/base/WeightedMean.h
@@ -382,7 +385,6 @@ add_fctest( TARGET  test_util_datetime_intfb.x
             SOURCES test/util/datetime.F90
             LINKER_LANGUAGE Fortran
             CONDITION HAVE_FCTEST
-            LINKER_LANGUAGE Fortran
             LIBS    oops )
 
 add_fctest( TARGET  test_util_duration_intfb.x

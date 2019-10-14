@@ -22,7 +22,6 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
-#include "oops/base/Variables.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Random.h"
@@ -67,8 +66,7 @@ void testPushStringVector() {
   const eckit::Configuration * config = &Test_::test();
 
   std::vector<std::string> vec;
-  oops::Variables var;
-  test_push_string_vector_f(&config, vec, var);
+  test_push_string_vector_f(&config, vec);
 
   // retrieve directly from config file for comparison
   std::vector<std::string> vec_check(config->getStringVector("string_vec"));
@@ -76,11 +74,6 @@ void testPushStringVector() {
   EXPECT(vec.size() == vec_check.size());
   for (std::size_t jj = 0; jj < vec_check.size(); ++jj) {
     EXPECT(vec[jj] == vec_check[jj]);
-  }
-
-  EXPECT(var.variables().size() == vec_check.size());
-  for (std::size_t jj = 0; jj < vec_check.size(); ++jj) {
-    EXPECT(var[jj] == vec_check[jj]);
   }
 }
 

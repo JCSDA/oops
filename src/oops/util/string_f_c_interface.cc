@@ -5,11 +5,9 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  */
 
-#include <memory>
 #include <string>
 #include <vector>
 
-#include "oops/base/Variables.h"
 #include "oops/util/string_f_c_interface.h"
 
 namespace oops {
@@ -17,9 +15,6 @@ namespace oops {
 // -----------------------------------------------------------------------------
   void push_string_to_vector_f(std::vector<std::string> & vec, const char * vname) {
     vec.push_back(std::string(vname));
-  }
-  void push_string_to_varlist_f(oops::Variables & var, const char * vname) {
-    var.push_back(std::string(vname));
   }
 
 // -----------------------------------------------------------------------------
