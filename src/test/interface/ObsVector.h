@@ -22,6 +22,7 @@
 #include "eckit/testing/Test.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/interface/ObsVector.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/dot_product.h"
 #include "test/TestEnvironment.h"
@@ -53,7 +54,7 @@ class ObsVecFixture : private boost::noncopyable {
 
     for (std::size_t jj = 0; jj < conf.size(); ++jj) {
       eckit::LocalConfiguration osconf(conf[jj], "ObsSpace");
-      boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(osconf, bgn, end));
+      boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(osconf, oops::mpi::comm(), bgn, end));
       ospaces_.push_back(tmp);
       eckit::LocalConfiguration ObsDataInConf;
       osconf.get("ObsDataIn", ObsDataInConf);

@@ -20,7 +20,7 @@ namespace oops {
 int ObsSpaceBase::instances_ = 0;
 // -----------------------------------------------------------------------------
 
-ObsSpaceBase::ObsSpaceBase(const eckit::Configuration & conf,
+ObsSpaceBase::ObsSpaceBase(const eckit::Configuration & conf, const eckit::mpi::Comm & comm,
                            const util::DateTime & bgn, const util::DateTime & end)
   : winbgn_(bgn), winend_(end), instance_(++instances_) {
 //
@@ -45,4 +45,3 @@ ObsSpaceBase::ObsSpaceBase(const eckit::Configuration & conf,
 // -----------------------------------------------------------------------------
 
 }  // namespace oops
-

@@ -88,7 +88,7 @@ template <typename MODEL> class LocalHofX : public Application {
 //  Setup observations
     eckit::LocalConfiguration obsconf(fullConfig, "Observations");
     Log::debug() << "Observations configuration is:" << obsconf << std::endl;
-    ObsSpaces_ obsdb(obsconf, winbgn, winend);
+    ObsSpaces_ obsdb(obsconf, this->getComm(), winbgn, winend);
 
 //  Read localization parameters
     eckit::LocalConfiguration localconfig(fullConfig, "Localization");

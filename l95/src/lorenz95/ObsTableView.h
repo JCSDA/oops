@@ -15,6 +15,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/geometry/Point2.h"
+#include "eckit/mpi/Comm.h"
 
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
@@ -39,7 +40,8 @@ class ObsTableView : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::ObsTableView";}
 
-  ObsTableView(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
+  ObsTableView(const eckit::Configuration &, const eckit::mpi::Comm &,
+               const util::DateTime &, const util::DateTime &);
   ObsTableView(const ObsTableView &, const eckit::geometry::Point2 &,
                const double &, const int &);
   ~ObsTableView();

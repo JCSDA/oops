@@ -18,6 +18,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/geometry/Point2.h"
+#include "eckit/mpi/Comm.h"
 #include "oops/base/Variables.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -47,7 +48,7 @@ class ObsSpace : public util::Printable,
  public:
   static const std::string classname() {return "oops::ObsSpace";}
 
-  ObsSpace(const eckit::Configuration &,
+  ObsSpace(const eckit::Configuration &, const eckit::mpi::Comm &,
            const util::DateTime &, const util::DateTime &);
   ObsSpace(const ObsSpace &, const eckit::geometry::Point2 &,
            const double &, const int &);
@@ -75,11 +76,12 @@ class ObsSpace : public util::Printable,
 
 template <typename MODEL>
 ObsSpace<MODEL>::ObsSpace(const eckit::Configuration & conf,
+                          const eckit::mpi::Comm & comm,
                           const util::DateTime & bgn,
                           const util::DateTime & end) : obsdb_() {
   Log::trace() << "ObsSpace<MODEL>::ObsSpace starting" << std::endl;
   util::Timer timer(classname(), "ObsSpace");
-  obsdb_.reset(new ObsSpace_(conf, bgn, end));
+  obsdb_.reset(new ObsSpace_(conf, comm, bgn, end));
   Log::trace() << "ObsSpace<MODEL>::ObsSpace done" << std::endl;
 }
 

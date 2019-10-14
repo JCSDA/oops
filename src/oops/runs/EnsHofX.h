@@ -72,7 +72,7 @@ template <typename MODEL> class EnsHofX : public Application {
 //  Setup observations
     eckit::LocalConfiguration obsconf(fullConfig, "Observations");
     Log::debug() << "Observations configuration is:" << obsconf << std::endl;
-    ObsSpace_ obsdb(obsconf, winbgn, winend);
+    ObsSpace_ obsdb(obsconf, this->getComm(), winbgn, winend);
 
 //  Setup observation bias
     ObsAuxCtrls_ ybias(obsconf);

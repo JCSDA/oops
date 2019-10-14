@@ -1,8 +1,8 @@
 /*
  * (C) Copyright 2017-2018 UCAR
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
 #ifndef TEST_INTERFACE_OBSTESTSFIXTURE_H_
@@ -15,6 +15,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/ObsSpaces.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
@@ -39,7 +40,7 @@ class ObsTestsFixture : private boost::noncopyable {
     tend_.reset(new util::DateTime(TestEnvironment::config().getString("window_end")));
 
     const eckit::LocalConfiguration conf(TestEnvironment::config(), "Observations");
-    ospaces_.reset(new ObsSpaces_(conf, *tbgn_, *tend_));
+    ospaces_.reset(new ObsSpaces_(conf, oops::mpi::comm(), *tbgn_, *tend_));
   }
 
   ~ObsTestsFixture() {}

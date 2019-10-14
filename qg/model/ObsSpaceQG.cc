@@ -31,10 +31,10 @@ std::map < std::string, std::shared_ptr<ObsHelpQG> > ObsSpaceQG::theObsFileRegis
 int ObsSpaceQG::theObsFileCount_ = 0;
 // -----------------------------------------------------------------------------
 
-ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config,
+ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
                        const util::DateTime & bgn, const util::DateTime & end)
-  : oops::ObsSpaceBase(config, bgn, end), winbgn_(bgn), winend_(end), obsvars_(),
-    isLocal_(false)
+  : oops::ObsSpaceBase(config, comm, bgn, end), winbgn_(bgn), winend_(end), obsvars_(),
+    isLocal_(false), comm_(comm)
 {
   typedef std::map< std::string, std::shared_ptr<ObsHelpQG> >::iterator otiter;
 
@@ -92,10 +92,11 @@ ObsSpaceQG::ObsSpaceQG(const ObsSpaceQG & obsdb,
                        const eckit::geometry::Point2 & refPoint,
                        const double & dist,
                        const int & nobs)
-  : oops::ObsSpaceBase(obsdb.helper_->getConfig(), obsdb.windowStart(), obsdb.windowEnd()),
+  : oops::ObsSpaceBase(obsdb.helper_->getConfig(), obsdb.getComm(),
+                       obsdb.windowStart(), obsdb.windowEnd()),
     helper_(obsdb.helper_), obsname_(obsdb.obsname_), nout_(obsdb.nout_),
     winbgn_(obsdb.winbgn_), winend_(obsdb.winend_), obsvars_(obsdb.obsvars_),
-    localobs_(), isLocal_(true)
+    localobs_(), isLocal_(true), comm_(obsdb.comm_)
 {
   oops::Log::trace() << "ObsSpaceQG for LocalObs starting" << std::endl;
 

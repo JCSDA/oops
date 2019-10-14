@@ -23,6 +23,7 @@
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Locations.h"
 #include "oops/interface/ObsOperator.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/dot_product.h"
 #include "test/TestEnvironment.h"
@@ -51,7 +52,7 @@ class GeoVaLsFixture : private boost::noncopyable {
     tend_.reset(new util::DateTime(TestEnvironment::config().getString("window_end")));
 
     const eckit::LocalConfiguration conf(TestEnvironment::config(), "Observations");
-    ospaces_.reset(new ObsSpaces_(conf, *tbgn_, *tend_));
+    ospaces_.reset(new ObsSpaces_(conf, oops::mpi::comm(), *tbgn_, *tend_));
   }
 
   ~GeoVaLsFixture() {}

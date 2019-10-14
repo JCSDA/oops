@@ -21,7 +21,7 @@
 namespace qg {
 
 // -------------------------------------------------------------------------
-LocationsQG::LocationsQG(const eckit::Configuration & config) {
+LocationsQG::LocationsQG(const eckit::Configuration & config, const eckit::mpi::Comm &) {
   const eckit::Configuration * conf = &config;
   qg_locs_create_f90(keyLocs_);
   if (config.has("lats") || config.has("Nrandom")) {

@@ -16,6 +16,8 @@
 #include <string>
 #include <vector>
 
+#include "eckit/mpi/Comm.h"
+
 #include "model/QgFortran.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -31,7 +33,7 @@ class LocationsQG : public util::Printable,
 
 // Constructors and basic operators
   explicit LocationsQG(const F90locs key) : keyLocs_(key) {}
-  explicit LocationsQG(const eckit::Configuration &);
+  LocationsQG(const eckit::Configuration &, const eckit::mpi::Comm &);
   ~LocationsQG() {qg_locs_delete_f90(keyLocs_);}
 
 // Utilities

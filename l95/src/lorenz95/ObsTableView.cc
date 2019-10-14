@@ -22,9 +22,9 @@
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 
-ObsTableView::ObsTableView(const eckit::Configuration & config,
+ObsTableView::ObsTableView(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
                            const util::DateTime & bgn, const util::DateTime & end)
-  : obstable_(new ObsTable(config, bgn, end)),
+  : obstable_(new ObsTable(config, comm, bgn, end)),
     localobs_(obstable_->nobs())
 {
   std::iota(localobs_.begin(), localobs_.end(), 0);

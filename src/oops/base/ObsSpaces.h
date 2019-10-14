@@ -23,6 +23,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 #include "eckit/geometry/Point2.h"
+#include "eckit/mpi/Comm.h"
 
 #include "oops/interface/ObsSpace.h"
 #include "oops/util/DateTime.h"
@@ -47,7 +48,8 @@ class ObsSpaces : public util::Printable,
  public:
   static const std::string classname() {return "oops::ObsSpaces";}
 
-  ObsSpaces(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
+  ObsSpaces(const eckit::Configuration &, const eckit::mpi::Comm &,
+            const util::DateTime &, const util::DateTime &);
   ObsSpaces(const ObsSpaces &, const eckit::geometry::Point2 &, const double &, const int &);
   ~ObsSpaces();
 
@@ -73,18 +75,19 @@ class ObsSpaces : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-ObsSpaces<MODEL>::ObsSpaces(const eckit::Configuration & conf,
+ObsSpaces<MODEL>::ObsSpaces(const eckit::Configuration & conf, const eckit::mpi::Comm & comm,
                             const util::DateTime & bgn, const util::DateTime & end)
   : spaces_(0), wbgn_(bgn), wend_(end)
 {
-  int member = conf.getInt("member", 0);
+  const int mymember = conf.getInt("member", 0);
+  bool members = conf.has("member");
   std::vector<eckit::LocalConfiguration> typeconfs;
   conf.get("ObsTypes", typeconfs);
   for (std::size_t jj = 0; jj < typeconfs.size(); ++jj) {
     eckit::LocalConfiguration obsconf(typeconfs[jj], "ObsSpace");
-    if (member) obsconf.set("member", member);
+    if (members) obsconf.set("member", mymember);
     Log::debug() << "ObsSpaces::ObsSpaces : conf " << obsconf << std::endl;
-    boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, bgn, end));
+    boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, comm, bgn, end));
     spaces_.push_back(tmp);
   }
   ASSERT(spaces_.size() >0);

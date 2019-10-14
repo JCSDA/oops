@@ -37,6 +37,7 @@
 #include "oops/interface/LinearModel.h"
 #include "oops/interface/Model.h"
 #include "oops/interface/State.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
@@ -105,6 +106,7 @@ template<typename MODEL> class CostFunction : private boost::noncopyable {
   void setupTerms(const eckit::Configuration &);
   const Model_ & getModel() const {return model_;}
   const LinearModel_ & getTLM(const unsigned isub = 0) const {return tlm_[isub];}
+  const eckit::mpi::Comm & getComm() const {return resol_.getComm();}
 
  private:
   virtual void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_>&) const = 0;

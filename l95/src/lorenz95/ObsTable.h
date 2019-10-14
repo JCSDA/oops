@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include "eckit/mpi/Comm.h"
 #include "oops/base/ObsSpaceBase.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
@@ -42,7 +43,8 @@ class ObsTable : public oops::ObsSpaceBase,
  public:
   static const std::string classname() {return "lorenz95::ObsTable";}
 
-  ObsTable(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
+  ObsTable(const eckit::Configuration &, const eckit::mpi::Comm &,
+           const util::DateTime &, const util::DateTime &);
   ~ObsTable();
 
   void putdb(const std::string &, const std::vector<int> &) const;

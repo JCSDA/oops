@@ -85,7 +85,7 @@ template <typename MODEL> class HofX3D : public Application {
 //  Setup observations
     const eckit::LocalConfiguration obsconf(fullConfig, "Observations");
     Log::info() << "Observations configuration is:" << obsconf << std::endl;
-    ObsSpaces_ obspace(obsconf, winbgn, winend);
+    ObsSpaces_ obspace(obsconf, this->getComm(), winbgn, winend);
 
 //  Setup observations bias
     ObsAuxCtrls_ ybias(obsconf);

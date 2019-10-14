@@ -28,11 +28,12 @@ namespace test {
 // -----------------------------------------------------------------------------
 class ResolutionTestFixture : TestFixture {
  public:
-  ResolutionTestFixture() {
+  ResolutionTestFixture() : comm_(oops::mpi::comm()) {
     testconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "resolution"));
   }
   ~ResolutionTestFixture() {}
   std::unique_ptr<const eckit::LocalConfiguration> testconf_;
+  const eckit::mpi::Comm & comm_;
 };
 // -----------------------------------------------------------------------------
 CASE("test_resolution") {
@@ -40,26 +41,26 @@ CASE("test_resolution") {
 // -----------------------------------------------------------------------------
   SECTION("test_resolution_constructor") {
     std::unique_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*fix.testconf_,
-                                                                         oops::mpi::comm()));
+                                                                         fix.comm_));
     EXPECT(resol.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_resolution_copy_constructor") {
     std::unique_ptr<lorenz95::Resolution> xx(new lorenz95::Resolution(*fix.testconf_,
-                                                                      oops::mpi::comm()));
+                                                                      fix.comm_));
     std::unique_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*xx));
     EXPECT(resol.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_resolution_get_npoints") {
     std::unique_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*fix.testconf_,
-                                                                          oops::mpi::comm()));
+                                                                          fix.comm_));
     EXPECT(resol->npoints() == fix.testconf_->getInt("resol"));
   }
 // -----------------------------------------------------------------------------
   SECTION("test_resolution_stream_output") {
     std::unique_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*fix.testconf_,
-                                                                         oops::mpi::comm()));
+                                                                         fix.comm_));
 
     // use the operator<< method to write the value to a file
 

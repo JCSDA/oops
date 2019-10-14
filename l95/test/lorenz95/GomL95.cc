@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -18,6 +18,7 @@
 #include "lorenz95/ObservationL95.h"
 #include "lorenz95/ObsTable.h"
 #include "oops/base/Variables.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "test/TestFixture.h"
@@ -32,7 +33,7 @@ class GomTestFixture : TestFixture {
     const util::DateTime bgn(conf.getString("window_begin"));
     const util::DateTime end(conf.getString("window_end"));
     const eckit::LocalConfiguration otconf(conf, "Observation.ObsSpace");
-    lorenz95::ObsTable ot(otconf, bgn, end);
+    lorenz95::ObsTable ot(otconf, oops::mpi::comm(), bgn, end);
     util::DateTime t1("2010-01-01T03:00:00Z");
     util::DateTime t2("2010-01-02T06:00:00Z");
     locs_.reset(ot.locations(t1, t2));

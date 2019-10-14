@@ -125,7 +125,8 @@ CostJbJq<MODEL> * CostFctWeak<MODEL>::newJb(const eckit::Configuration & jbConf,
 
 template <typename MODEL>
 CostJo<MODEL> * CostFctWeak<MODEL>::newJo(const eckit::Configuration & joConf) const {
-  return new CostJo<MODEL>(joConf, windowBegin_, windowEnd_, util::Duration(0), true);
+  return new CostJo<MODEL>(joConf, this->getComm(), windowBegin_, windowEnd_,
+                           util::Duration(0), true);
 }
 
 // -----------------------------------------------------------------------------

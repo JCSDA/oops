@@ -166,7 +166,7 @@ template <typename MODEL> void testStateInterpolation() {
   // section of the config file and use it to define a Locations object
   // The user can optionally also request Nrandom random locations
   const eckit::LocalConfiguration confloc(Test_::test(), "Locations");
-  const Locations_ locs(confloc);
+  const Locations_ locs(confloc, oops::mpi::comm());
 
   // Extract the user-defined list of variables to interpolate,
   // from the "StateTest.InterpTest" section of the config file, and

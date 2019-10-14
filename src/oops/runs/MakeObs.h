@@ -97,7 +97,7 @@ template <typename MODEL> class MakeObs : public Application {
 //  Setup observations
     const eckit::LocalConfiguration obsconf(fullConfig, "Observations");
     Log::info() << "Observation configuration is:" << obsconf << std::endl;
-    ObsSpaces_ obspace(obsconf, bgn, end);
+    ObsSpaces_ obspace(obsconf, this->getComm(), bgn, end);
 
 //  Setup observations bias
     ObsAuxCtrls_ ybias(obsconf);

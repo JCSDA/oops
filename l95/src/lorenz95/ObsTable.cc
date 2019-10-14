@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -35,9 +35,9 @@
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 
-ObsTable::ObsTable(const eckit::Configuration & config,
+ObsTable::ObsTable(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
                    const util::DateTime & bgn, const util::DateTime & end)
-  : oops::ObsSpaceBase(config, bgn, end), winbgn_(bgn), winend_(end), obsvars_()
+  : oops::ObsSpaceBase(config, comm, bgn, end), winbgn_(bgn), winend_(end), obsvars_()
 {
   oops::Log::trace() << "ObsTable::ObsTable starting" << std::endl;
   nameIn_.clear();

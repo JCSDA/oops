@@ -15,6 +15,7 @@
 #include "eckit/testing/Test.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ObsTable.h"
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "test/TestFixture.h"
 
@@ -23,7 +24,7 @@ namespace test {
 // -----------------------------------------------------------------------------
 class ObsTableTestFixture : public TestFixture {
  public:
-  ObsTableTestFixture() {
+  ObsTableTestFixture() : comm_(oops::mpi::comm()) {
     obsconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "Observations"));
     bgn_.reset(new util::DateTime(obsconf_->getString("window_begin")));
     end_.reset(new util::DateTime(obsconf_->getString("window_end")));
@@ -34,6 +35,7 @@ class ObsTableTestFixture : public TestFixture {
   std::unique_ptr<const eckit::LocalConfiguration> testconf_;
   std::unique_ptr<const util::DateTime> bgn_;
   std::unique_ptr<const util::DateTime> end_;
+  const eckit::mpi::Comm & comm_;
 };
 // -----------------------------------------------------------------------------
 CASE("test_ObsTable") {
@@ -41,20 +43,20 @@ CASE("test_ObsTable") {
 // -----------------------------------------------------------------------------
   SECTION("test_ObsTable_constructor") {
     std::unique_ptr<lorenz95::ObsTable>
-      ot(new lorenz95::ObsTable(*fix.testconf_, *fix.bgn_, *fix.end_));
+      ot(new lorenz95::ObsTable(*fix.testconf_, fix.comm_, *fix.bgn_, *fix.end_));
     EXPECT(ot.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_ObsTable_nobs") {
     std::unique_ptr<lorenz95::ObsTable>
-      ot(new lorenz95::ObsTable(*fix.testconf_, *fix.bgn_, *fix.end_));
+      ot(new lorenz95::ObsTable(*fix.testconf_, fix.comm_, *fix.bgn_, *fix.end_));
     const unsigned int nobs = 160;
     EXPECT(ot->nobs() == nobs);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_observationL95_put_get") {
     std::unique_ptr<lorenz95::ObsTable>
-      ot(new lorenz95::ObsTable(*fix.testconf_, *fix.bgn_, *fix.end_));
+      ot(new lorenz95::ObsTable(*fix.testconf_, fix.comm_, *fix.bgn_, *fix.end_));
 
     unsigned int nn = ot->nobs();
     std::vector<double> v1(nn);
@@ -74,7 +76,7 @@ CASE("test_ObsTable") {
 // -----------------------------------------------------------------------------
   SECTION("test_observationL95_timeSelect") {
     std::unique_ptr<lorenz95::ObsTable>
-      ot(new lorenz95::ObsTable(*fix.testconf_, *fix.bgn_, *fix.end_));
+      ot(new lorenz95::ObsTable(*fix.testconf_, fix.comm_, *fix.bgn_, *fix.end_));
     util::DateTime t1("2010-01-01T09:00:00Z");
     util::DateTime t2("2010-01-01T21:00:00Z");
     std::vector<int> mask = ot->timeSelect(t1, t2);  // t1 not includede, t2 is
@@ -86,7 +88,7 @@ CASE("test_ObsTable") {
 // -----------------------------------------------------------------------------
   SECTION("test_observationL95_locations") {
     std::unique_ptr<lorenz95::ObsTable>
-      ot(new lorenz95::ObsTable(*fix.testconf_, *fix.bgn_, *fix.end_));
+      ot(new lorenz95::ObsTable(*fix.testconf_, fix.comm_, *fix.bgn_, *fix.end_));
     util::DateTime t1("2010-01-01T09:00:00Z");
     util::DateTime t2("2010-01-01T21:00:00Z");
     lorenz95::LocsL95 * locs = ot->locations(t1, t2);
@@ -99,7 +101,7 @@ CASE("test_ObsTable") {
     util::DateTime t1("2010-01-01T00:00:00Z");
     util::DateTime t2("2010-01-02T23:59:59Z");
     std::unique_ptr<lorenz95::ObsTable>
-      ot(new lorenz95::ObsTable(otconf, t1, t2));
+      ot(new lorenz95::ObsTable(otconf, fix.comm_, t1, t2));
 
     // More complete test in makeobs* tests.
     eckit::LocalConfiguration genconf(*fix.obsconf_, "Generate");

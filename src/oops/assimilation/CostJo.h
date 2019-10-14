@@ -71,7 +71,8 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
 
  public:
   /// Construct \f$ J_o\f$ from \f$ R\f$ and \f$ y_{obs}\f$.
-  CostJo(const eckit::Configuration &, const util::DateTime &, const util::DateTime &,
+  CostJo(const eckit::Configuration &, const eckit::mpi::Comm &,
+         const util::DateTime &, const util::DateTime &,
          const util::Duration &, const bool subwindows = false);
 
   /// Destructor
@@ -140,10 +141,10 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
 // =============================================================================
 
 template<typename MODEL>
-CostJo<MODEL>::CostJo(const eckit::Configuration & joConf,
+CostJo<MODEL>::CostJo(const eckit::Configuration & joConf, const eckit::mpi::Comm & comm,
                       const util::DateTime & winbgn, const util::DateTime & winend,
                       const util::Duration & tslot, const bool subwindows)
-  : obsconf_(joConf), obspace_(obsconf_, winbgn, winend),
+  : obsconf_(joConf), obspace_(obsconf_, comm, winbgn, winend),
     yobs_(obspace_, "ObsValue"),
     Rmat_(), currentConf_(), gradFG_(), pobs_(), tslot_(tslot),
     pobstlad_(), subwindows_(subwindows), obserr_(), qcflags_()

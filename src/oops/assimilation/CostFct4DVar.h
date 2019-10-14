@@ -117,7 +117,7 @@ CostJb3D<MODEL> * CostFct4DVar<MODEL>::newJb(const eckit::Configuration & jbConf
 
 template <typename MODEL>
 CostJo<MODEL> * CostFct4DVar<MODEL>::newJo(const eckit::Configuration & joConf) const {
-  return new CostJo<MODEL>(joConf, windowBegin_, windowEnd_, util::Duration(0));
+  return new CostJo<MODEL>(joConf, this->getComm(), windowBegin_, windowEnd_, util::Duration(0));
 }
 
 // -----------------------------------------------------------------------------

@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -28,7 +28,7 @@ LocsL95::LocsL95(const std::vector<int> & indx, const std::vector<double> & locs
 
 // -----------------------------------------------------------------------------
 
-LocsL95::LocsL95(const eckit::Configuration & conf) : indx_(), locs_() {
+LocsL95::LocsL95(const eckit::Configuration & conf, const eckit::mpi::Comm &) : indx_(), locs_() {
   conf.get("positions", locs_);
   for (size_t jj = 0; jj < locs_.size(); ++jj) {
     ASSERT(locs_.at(jj) >= 0.0 && locs_.at(jj) <= 1.0);

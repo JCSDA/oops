@@ -106,7 +106,7 @@ template <typename MODEL> class LETKF : public Application {
     // Setup observations
     const eckit::LocalConfiguration obsConfig(fullConfig, "Observations");
     Log::debug() << "Observation configuration is: " << obsConfig << std::endl;
-    ObsSpaces_ obsdb(obsConfig, winbgn, winend);
+    ObsSpaces_ obsdb(obsConfig, this->getComm(), winbgn, winend);
     ObsAuxCtrls_ ybias(obsConfig);
     Observations_ yobs(obsdb, "ObsValue");
 

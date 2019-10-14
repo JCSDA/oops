@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "eckit/geometry/Point2.h"
+#include "eckit/mpi/Comm.h"
 
 #include "oops/base/ObsSpaceBase.h"
 #include "oops/base/Variables.h"
@@ -40,7 +41,8 @@ namespace qg {
 
 class ObsSpaceQG : public oops::ObsSpaceBase {
  public:
-  ObsSpaceQG(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
+  ObsSpaceQG(const eckit::Configuration &, const eckit::mpi::Comm &,
+             const util::DateTime &, const util::DateTime &);
   ObsSpaceQG(const ObsSpaceQG &, const eckit::geometry::Point2 &,
              const double &, const int &);
   ~ObsSpaceQG();
@@ -76,6 +78,8 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
 
   const std::vector<int> localobs() const { return localobs_;}
 
+  const eckit::mpi::Comm & getComm() const {return comm_;}
+
  private:
   void print(std::ostream &) const;
 
@@ -93,6 +97,7 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
   // variables for dealing with local subsetting of observations
   std::vector<int> localobs_;
   bool isLocal_;
+  const eckit::mpi::Comm & comm_;
 };
 
 }  // namespace qg

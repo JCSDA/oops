@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -14,6 +14,8 @@
 #include <string>
 
 #include <boost/shared_ptr.hpp>
+
+#include "eckit/mpi/Comm.h"
 
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -37,7 +39,7 @@ class Locations : public util::Printable,
   static const std::string classname() {return "oops::Locations";}
 
   explicit Locations(const Locations_ *);
-  explicit Locations(const eckit::Configuration &);
+  Locations(const eckit::Configuration &, const eckit::mpi::Comm &);
   Locations(const Locations &);
   ~Locations();
 
@@ -60,10 +62,10 @@ Locations<MODEL>::Locations(const Locations_ * locs) : locs_(locs)
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-Locations<MODEL>::Locations(const eckit::Configuration & conf) {
+Locations<MODEL>::Locations(const eckit::Configuration & conf, const eckit::mpi::Comm & comm) {
   Log::trace() << "Locations<MODEL>::Locations starting" << std::endl;
   util::Timer timer(classname(), "Locations");
-  locs_.reset(new Locations_(conf));
+  locs_.reset(new Locations_(conf, comm));
   Log::trace() << "Locations<MODEL>::Locations done" << std::endl;
 }
 

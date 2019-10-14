@@ -219,7 +219,7 @@ template <typename MODEL> void testIncrementInterpTL() {
 
   // Locations from config
   const LocalConf_ configlocs(TestEnvironment::config(), "InterpTest.Locations");
-  const Locations_ locs(configlocs);
+  const Locations_ locs(configlocs, oops::mpi::comm());
 
   // Variables from config
   const LocalConf_ configvars(TestEnvironment::config(), "InterpTest.GeoVaLs");
@@ -288,7 +288,7 @@ template <typename MODEL> void testIncrementInterpAD() {
 
   // Locations from config
   const LocalConf_ configlocs(TestEnvironment::config(), "InterpTest.Locations");
-  const Locations_ locs(configlocs);
+  const Locations_ locs(configlocs, oops::mpi::comm());
 
   // Variables from config
   const LocalConf_ configvars(TestEnvironment::config(), "InterpTest.GeoVaLs");

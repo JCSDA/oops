@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -127,7 +127,7 @@ CostJb4D<MODEL> * CostFct4DEnsVar<MODEL>::newJb(const eckit::Configuration & jbC
 
 template <typename MODEL>
 CostJo<MODEL> * CostFct4DEnsVar<MODEL>::newJo(const eckit::Configuration & joConf) const {
-  return new CostJo<MODEL>(joConf, windowBegin_, windowEnd_, windowSub_, true);
+  return new CostJo<MODEL>(joConf, this->getComm(), windowBegin_, windowEnd_, windowSub_, true);
 }
 
 // -----------------------------------------------------------------------------
