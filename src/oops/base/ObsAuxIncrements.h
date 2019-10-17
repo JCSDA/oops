@@ -1,6 +1,6 @@
 /*
  * (C) Copyright 2017-2019 UCAR
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
@@ -57,9 +57,10 @@ class ObsAuxIncrements : public util::Printable {
   void write(const eckit::Configuration &) const;
   double norm() const;
 
-/// Serialize-Deserialize an ObsAuxIncrements
+/// Serialize-Deserialize
+  size_t serialSize() const;
   void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &);
+  void deserialize(const std::vector<double>, size_t &);
 
  private:
   void print(std::ostream &) const;
@@ -236,18 +237,32 @@ double ObsAuxIncrements<MODEL>::norm() const {
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
+size_t ObsAuxIncrements<MODEL>::serialSize() const {
+  Log::trace() << "ObsAuxIncrements<MODEL>::serialSize starting" << std::endl;
+  size_t ss = 0;
+  for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) {
+    ss += auxs_[jobs]->serialSize();
+  }
+  Log::trace() << "ObsAuxIncrements<MODEL>::serialSize done" << std::endl;
+  return ss;
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
 void ObsAuxIncrements<MODEL>::serialize(std::vector<double> & vect) const {
   Log::trace() << "ObsAuxIncrements<MODEL>::serialize starting" << std::endl;
   for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) auxs_[jobs]->serialize(vect);
   Log::trace() << "ObsAuxIncrements<MODEL>::serialize done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>  // constructor to deserialize
-void ObsAuxIncrements<MODEL>::deserialize(const std::vector<double> & vect) {
+template<typename MODEL>
+void ObsAuxIncrements<MODEL>::deserialize(const std::vector<double> vect, size_t & index) {
   Log::trace() << "ObsAuxIncrements<MODEL>::deserialize starting" << std::endl;
-  for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) auxs_[jobs]->deserialize(vect);
+  for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) {
+    auxs_[jobs]->deserialize(vect, index);
+  }
   Log::trace() << "ObsAuxIncrements<MODEL>::deserialize done" << std::endl;
 }
+
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 void ObsAuxIncrements<MODEL>::print(std::ostream & os) const {
