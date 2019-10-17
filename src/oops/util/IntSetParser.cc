@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "eckit/exception/Exceptions.h"
+#include "oops/util/abor1_cpp.h"
 
 namespace oops {
 
@@ -24,12 +25,35 @@ namespace oops {
 std::vector<std::string> splitString(const std::string& str, char delim)
 {
   std::vector<std::string> result;
-  std::stringstream s(str);
+  std::istringstream s(str);
   std::string substr;
   while (std::getline(s, substr, delim)) {
     result.push_back(substr);
   }
   return result;
+}
+
+// -----------------------------------------------------------------------------
+
+/// Function to convert string to channel number. String to integer conversion in standard
+//  routines (eg, std::stoi) will sometimes abort when non-numeric characers are
+//  in the input string instead of throwing an invalid_argument exception. This routine
+//  checks for non-numeric characters and returns a -1 (channel numbers should be positive)
+//  if such characters exist. The blank (' ') is included in the find_first_not_of below
+//  since the splitString routine (above) is deliminting only on a comma (',') which leaves
+//  blanks in its result.
+
+int stringToChanNum(const std::string& str) {
+  // Abort if input string contains non-valid characters
+  if (str.find_first_not_of("0123456789 ") != std::string::npos) {
+    std::string ErrMsg = "Input string contains non-numeric characters";
+    ABORT(ErrMsg);
+  }
+
+  int chnum;
+  std::istringstream ss(str);
+  ss >> chnum;
+  return chnum;
 }
 
 // -----------------------------------------------------------------------------
@@ -52,11 +76,11 @@ std::set<int> parseIntSet(const std::string & str) {
     // add a single channel
     if (range.size() == 1) {
       // add a single channel
-      channels.insert(std::stoi(range[0]));
+      channels.insert(stringToChanNum(range[0]));
     } else if (range.size() == 2) {
       // add a range
-      int start = std::stoi(range[0]);
-      int stop  = std::stoi(range[1]);
+      int start = stringToChanNum(range[0]);
+      int stop  = stringToChanNum(range[1]);
       for (int ch = start; ch <= stop; ch++) {
         channels.insert(ch);
       }

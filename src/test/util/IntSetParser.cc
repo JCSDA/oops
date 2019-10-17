@@ -18,15 +18,6 @@ namespace {
 
 // -----------------------------------------------------------------------------
 
-  CASE("test_get_channels_invalid") {
-    std::string chlist = "abracadabra";
-
-    std::set<int> channels;
-    EXPECT_THROWS(channels = oops::parseIntSet(chlist));
-  }
-
-// -----------------------------------------------------------------------------
-
   CASE("test_get_channels_empty") {
     std::string chlist = "";
     std::set<int> expected{};
