@@ -16,7 +16,7 @@ namespace eckit {
 namespace oops {
 extern "C" {
   void oobump_create_f90(int &, const int &, const eckit::Configuration * const *, const int &,
-                         const int &, const int &, const int &);
+                         const int &, const int &, const int &, const int &, const char *);
   void oobump_delete_f90(const int &);
   void oobump_get_colocated_f90(const int &, int &);
   void oobump_get_nts_f90(const int &, int &);

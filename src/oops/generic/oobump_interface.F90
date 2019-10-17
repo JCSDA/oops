@@ -1,7 +1,7 @@
 ! (C) Copyright 2017 UCAR
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 
 module oobump_interface
 
@@ -12,7 +12,7 @@ use kinds
 use missing_values_mod
 use oobump_mod
 use type_bump, only: bump_type
-use type_nam, only: nvmax,nlmax,nc3max,nscalesmax,ndirmax,nldwvmax 
+use type_nam, only: nvmax,nlmax,nc3max,nscalesmax,ndirmax,nldwvmax
 use unstructured_grid_mod
 
 implicit none
@@ -22,23 +22,28 @@ private
 contains
 !-------------------------------------------------------------------------------
 !> Create OOBUMP
-subroutine oobump_create_c(c_key_oobump, c_key_ug, c_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub) bind(c, name='oobump_create_f90')
+subroutine oobump_create_c(c_key_oobump, c_key_ug, c_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub, &
+  & lc_name, c_name) bind(c, name='oobump_create_f90')
 
+use string_f_c_mod
 implicit none
 
 ! Passed variables
-integer(c_int), intent(inout) :: c_key_oobump !< OOBUMP
-integer(c_int), intent(in) :: c_key_ug        !< Unstructured grid
-type(c_ptr), intent(in) :: c_conf             !< Configuration
-integer(c_int), intent(in) :: ens1_ne         !< First ensemble size
-integer(c_int), intent(in) :: ens1_nsub       !< Number of sub-ensembles in the first ensemble
-integer(c_int), intent(in) :: ens2_ne         !< Second ensemble size
-integer(c_int), intent(in) :: ens2_nsub       !< Number of sub-ensembles in the second ensemble
+integer(c_int), intent(inout) :: c_key_oobump                 !< OOBUMP
+integer(c_int), intent(in) :: c_key_ug                        !< Unstructured grid
+type(c_ptr), intent(in) :: c_conf                             !< Configuration
+integer(c_int), intent(in) :: ens1_ne                         !< First ensemble size
+integer(c_int), intent(in) :: ens1_nsub                       !< Number of sub-ensembles in the first ensemble
+integer(c_int), intent(in) :: ens2_ne                         !< Second ensemble size
+integer(c_int), intent(in) :: ens2_nsub                       !< Number of sub-ensembles in the second ensemble
+integer(c_int), intent(in) :: lc_name                         !< Communicator name length
+character(kind=c_char,len=1), intent(in) :: c_name(lc_name+1) !< Communicator name
 
 ! Local variables
 type(fckit_configuration) :: f_conf
 type(oobump_type), pointer :: self
 type(unstructured_grid), pointer :: ug
+character(len=lc_name) :: f_name
 type(fckit_mpi_comm) :: f_comm
 
 ! Interface
@@ -48,8 +53,9 @@ call oobump_registry%add(c_key_oobump)
 call oobump_registry%get(c_key_oobump, self)
 call unstructured_grid_registry%get(c_key_ug, ug)
 
-! Get MPI communicator (use default comm now, could use a specific name in the future) 
-f_comm = fckit_mpi_comm()
+! Get MPI communicator
+call c_f_string(c_name, f_name)
+f_comm = fckit_mpi_comm(f_name)
 
 ! Call Fortran
 call oobump_create(self, ug, f_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub, f_comm)

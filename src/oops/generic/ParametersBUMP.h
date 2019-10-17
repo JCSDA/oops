@@ -108,7 +108,7 @@ ParametersBUMP<MODEL>::ParametersBUMP(const Geometry_ & resol,
 
 // Create BUMP
   Log::info() << "Create BUMP" << std::endl;
-  ooBump_.reset(new OoBump(ug, BUMPConfig, ens1_ne, 1, ens2_ne, 1));
+  ooBump_.reset(new OoBump(ug, BUMPConfig, resol.getComm(), ens1_ne, 1, ens2_ne, 1));
 
 // Transfer/copy ensemble members to BUMP
   if (release_members == 1) {

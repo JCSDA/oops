@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
+#include "eckit/mpi/Comm.h"
 #include "oops/generic/oobump_f.h"
 #include "oops/generic/UnstructuredGrid.h"
 #include "oops/util/Logger.h"
@@ -29,6 +30,7 @@ namespace oops {
 class OoBump : private boost::noncopyable {
  public:
   OoBump(const UnstructuredGrid &, const eckit::LocalConfiguration,
+         const eckit::mpi::Comm &,
          const int &, const int &, const int &, const int &);
   explicit OoBump(OoBump &);
   ~OoBump();
@@ -60,11 +62,12 @@ class OoBump : private boost::noncopyable {
 
 // -----------------------------------------------------------------------------
 OoBump::OoBump(const UnstructuredGrid & ug, const eckit::LocalConfiguration conf,
+               const eckit::mpi::Comm & comm,
                const int & ens1_ne, const int & ens1_nsub,
                const int & ens2_ne, const int & ens2_nsub) : keyOoBump_(0) {
   const eckit::Configuration * fconf = &conf;
   oobump_create_f90(keyOoBump_, ug.toFortran(), &fconf, ens1_ne, ens1_nsub,
-                    ens2_ne, ens2_nsub);
+                    ens2_ne, ens2_nsub, comm.name().size(), comm.name().c_str());
 }
 // -----------------------------------------------------------------------------
 OoBump::OoBump(OoBump & other) : keyOoBump_(other.getKey()) {
