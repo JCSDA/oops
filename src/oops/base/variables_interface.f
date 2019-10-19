@@ -29,12 +29,23 @@ end function c_variables_size
 
 !-------------------------------------------------------------------------------
 
-subroutine c_variables_getvariable(vars, jj, lcname, cname) bind (C,name='variables_getvariable_f')
+subroutine c_variables_getvariablelength(vars, jj, lcname) bind (C,name='variables_getvariablelength_f')
   use, intrinsic :: iso_c_binding
   implicit none
   type(c_ptr), value :: vars
   integer(c_size_t),intent(in) :: jj
-  integer(c_size_t),intent(in) :: lcname
+  integer(c_size_t),intent(inout) :: lcname
+end subroutine c_variables_getvariablelength
+
+!-------------------------------------------------------------------------------
+
+subroutine c_variables_getvariable(vars, jj, lcname, lfname, cname) bind (C,name='variables_getvariable_f')
+  use, intrinsic :: iso_c_binding
+  implicit none
+  type(c_ptr), value :: vars
+  integer(c_size_t),intent(in) :: jj
+  integer(c_size_t),intent(inout) :: lcname
+  integer(c_size_t),intent(in) :: lfname    
   character(kind=c_char,len=1), intent(inout) :: cname(*)
 end subroutine c_variables_getvariable
 

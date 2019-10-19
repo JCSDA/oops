@@ -21,7 +21,9 @@ namespace oops {
 extern "C" {
   void variables_push_back_f(oops::Variables &, const char *);
   size_t variables_size_f(const oops::Variables &);
-  void variables_getvariable_f(const oops::Variables &, const size_t &, const size_t &, char *);
+  void variables_getvariablelength_f(const oops::Variables &, const size_t &, size_t &);
+  void variables_getvariable_f(const oops::Variables &, const size_t &, size_t &,
+                               const size_t &, char *);
 }
 
 }  // namespace oops

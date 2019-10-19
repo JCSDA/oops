@@ -105,10 +105,11 @@ function variable(this, jj) result(varname)
   integer(c_size_t) :: lcname
   character(kind=c_char,len=1), allocatable :: cname(:)
 
-  lcname = len(varname)
-  allocate(cname(lcname+1))
   ! Fortran indices start from 1, C++ indices start from 0
-  call c_variables_getvariable(this%ptr, int(jj-1, c_size_t), lcname, cname)
+  call c_variables_getvariablelength(this%ptr, int(jj-1, c_size_t), lcname)  
+  allocate(cname(lcname+1))
+  call c_variables_getvariable(this%ptr, int(jj-1, c_size_t), lcname, &
+                               int(size(cname), c_size_t), cname)
   call c_f_string(cname, varname)
   deallocate(cname)
 
