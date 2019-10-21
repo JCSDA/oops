@@ -21,6 +21,7 @@ oops/assimilation/CostTermBase.h
 oops/assimilation/DRGMRESRMinimizer.h
 oops/assimilation/DRIPCGMinimizer.h
 oops/assimilation/DRPCGMinimizer.h
+oops/assimilation/DRPFOMMinimizer.h
 oops/assimilation/DRPLanczosMinimizer.h
 oops/assimilation/DRMinimizer.h
 oops/assimilation/DualMinimizer.h
@@ -35,7 +36,7 @@ oops/assimilation/HBHtMatrix.h
 oops/assimilation/LBGMRESRMinimizer.h
 oops/assimilation/LBHessianMatrix.h
 oops/assimilation/LBMinimizer.h
-oops/assimilation/BMatrix.h
+oops/assimilation/linsysteigen.h
 oops/assimilation/HMatrix.h
 oops/assimilation/HessianMatrix.h
 oops/assimilation/HtMatrix.h
@@ -67,6 +68,7 @@ oops/assimilation/SpectralLMP.h
 oops/assimilation/State4D.h
 oops/assimilation/TriDiagSolve.h
 oops/assimilation/TriDiagSpectrum.h
+oops/assimilation/UpHessSolve.h
 oops/assimilation/UpTriSolve.h
 oops/assimilation/instantiateCostFactory.h
 oops/assimilation/instantiateMinFactory.h
@@ -79,6 +81,8 @@ oops/base/DiagonalMatrix.h
 oops/base/DolphChebyshev.h
 oops/base/DolphChebyshev.cc
 oops/base/EnsembleCovariance.h
+oops/base/EnsembleCovariance4D.h
+oops/base/ErrorCovariance4D.h
 oops/base/GeneralizedDepartures.h
 oops/base/GeoVaLsWriter.h
 oops/base/GridPoint.h
@@ -86,11 +90,13 @@ oops/base/GridPoint.cc
 oops/base/HybridCovariance.h
 oops/base/IdentityMatrix.h
 oops/base/IncrementEnsemble.h
+oops/base/LinearModelBase.h
 oops/base/LinearObsOperators.h
 oops/base/LinearVariableChangeBase.h
 oops/base/Localization.h
 oops/base/ModelBase.h
 oops/base/ModelSpaceCovarianceBase.h
+oops/base/ModelSpaceCovariance4DBase.h
 oops/base/ObsAuxControls.h
 oops/base/ObsAuxCovariances.h
 oops/base/ObsAuxIncrements.h
@@ -133,8 +139,10 @@ oops/base/instantiateObsFilterFactory.h
 
 oops/generic/ParametersBUMP.h
 oops/generic/ErrorCovarianceBUMP.h
+oops/generic/ErrorCovariance4DBUMP.h
 oops/generic/IdLinearVariableChange.h
 oops/generic/IdVariableChange.h
+oops/generic/LinearModelId.h
 oops/generic/LocalizationBUMP.h
 oops/generic/LocalizationID.h
 oops/generic/ObsErrorDiag.h
@@ -150,6 +158,7 @@ oops/generic/dcmip_initial_conditions_test_4_v3.f90
 oops/generic/instantiateLocalizationFactory.h
 oops/generic/instantiateModelFactory.h
 oops/generic/instantiateObsErrorFactory.h
+oops/generic/instantiateTlmFactory.h
 oops/generic/instantiateVariableChangeFactory.h
 oops/generic/LocalizationGeneric.h
 oops/generic/unstructured_grid_f.h
@@ -271,14 +280,22 @@ oops/util/variables_mod.f90
 oops/util/bump_interpolation_mod.F90
 
 test/base/ObsFilters.h
+test/interface/ErrorCovariance.h
+test/interface/Geometry.h
 test/interface/GeoVaLs.h
+test/interface/Increment.h
+test/interface/LinearModel.h
 test/interface/LinearObsOperator.h
 test/interface/LinearVariableChange.h
 test/interface/Locations.h
+test/interface/LocalObsSpace.h
+test/interface/Model.h
+test/interface/ModelAuxControl.h
 test/interface/ObsSpace.h
 test/interface/ObsOperator.h
 test/interface/ObsTestsFixture.h
 test/interface/ObsVector.h
+test/interface/State.h
 test/interface/VariableChange.h
 test/TestEnvironment.h
 test/util/Fortran.h
@@ -287,6 +304,12 @@ test/util/random.F90
 test/util/FCString.h
 test/util/f_c_string.F90
 test/util/interpolator_interface.F90
+)
+
+list (APPEND oops_fheader_files
+
+oops/util/linkedList_c.f
+oops/util/linkedList_i.f
 )
 
 # macro to create a symlink from src to dst
@@ -344,6 +367,7 @@ ecbuild_add_library( TARGET     oops
                                 ${oops_src_files}
                      LIBS       ${LAPACK_LIBRARIES} ${NETCDF_LIBRARIES} fckit eckit_mpi eckit saber
                      INSTALL_HEADERS LISTED
+                     TEMPLATES ${oops_fheader_files}
                      LINKER_LANGUAGE ${OOPS_LINKER_LANGUAGE}
                    )
 

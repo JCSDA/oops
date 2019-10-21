@@ -21,6 +21,7 @@ set( CMAKE_DIRECTORY_LABELS "oops" )
 set( ECBUILD_DEFAULT_BUILD_TYPE Release )
 set( ENABLE_OS_TESTS           OFF CACHE BOOL "Disable OS tests" FORCE )
 set( ENABLE_LARGE_FILE_SUPPORT OFF CACHE BOOL "Disable testing of large file support" FORCE )
+set( ENABLE_OOPS_TOYMODELS     ON  CACHE BOOL "building and testing of L95/QG models" )
 
 include( ecbuild_system NO_POLICY_SCOPE )
 
@@ -129,8 +130,10 @@ add_subdirectory( Documents )
 
 # Build example applications: these show how to use OOPS but are not part of OOPS
 
-add_subdirectory( l95 )
-add_subdirectory( qg )
+if (ENABLE_OOPS_TOYMODELS)
+  add_subdirectory( l95 )
+  add_subdirectory( qg )
+endif()
 
 ecbuild_dont_pack ( FILES .pydevproject .project .cproject oops.sublime-project .settings )
 
