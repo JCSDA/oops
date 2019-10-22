@@ -18,6 +18,7 @@
 #include <limits>
 #include <sstream>
 #include <string>
+#include <boost/lexical_cast.hpp>
 
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/dateFunctions.h"
@@ -111,15 +112,17 @@ void DateTime::stringToYYYYMMDDhhmmss(const std::string & str,
 
 int DateTime::eatChars(std::istream & is, int nchars) const {
   // consume nchars characters from the stream and interpret as an integer
-  std::string str;
-  for (int i = 0; i < nchars; ++i) {
-    str.append(1, static_cast<char>(is.get()));
-  }
+  if (nchars < 0) ABORT("Cannot read a negative number of characters.");
+  std::string str((size_t) nchars, '\0');
+  is.get(&str[0], nchars+1);  // nchars+1 because istream.get reads (count-1) chars.
 
-  std::istringstream mys(str);
-  int ret;
-  mys >> ret;
-  if (mys.fail()) {failBadFormat(str);}
+  int ret = 0;
+  try {
+    ret = boost::lexical_cast<int>(str);
+  }
+  catch (boost::bad_lexical_cast&) {
+    failBadFormat(str);
+  }
   return ret;
 }
 
