@@ -50,6 +50,13 @@ template <typename MODEL> class ModelFixture : private boost::noncopyable {
   static const State_       & xref()  {return *getInstance().xref_;}
   static const ModelAux_    & bias()  {return *getInstance().bias_;}
   static const Model_       & model() {return *getInstance().model_;}
+  static void reset() {
+    getInstance().xref_.reset();
+    getInstance().bias_.reset();
+    getInstance().model_.reset();
+    getInstance().resol_.reset();
+    getInstance().test_.reset();
+  }
 
  private:
   static ModelFixture<MODEL>& getInstance() {
@@ -199,7 +206,7 @@ template <typename MODEL>
 class Model : public oops::Test {
  public:
   Model() {}
-  virtual ~Model() {}
+  virtual ~Model() {ModelFixture<MODEL>::reset();}
  private:
   std::string testid() const {return "test::Model<" + MODEL::name() + ">";}
 
