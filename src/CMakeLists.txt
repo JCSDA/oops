@@ -91,7 +91,6 @@ oops/base/HybridCovariance.h
 oops/base/IdentityMatrix.h
 oops/base/IncrementEnsemble.h
 oops/base/LinearModelBase.h
-oops/base/LinearObsOperators.h
 oops/base/LinearVariableChangeBase.h
 oops/base/Localization.h
 oops/base/ModelBase.h
