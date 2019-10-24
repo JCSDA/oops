@@ -65,7 +65,10 @@ LinearObsOperators<MODEL>::LinearObsOperators(const ObsSpace_ & os,
   std::vector<eckit::LocalConfiguration> typeconfs;
   conf.get("ObsTypes", typeconfs);
   for (std::size_t jobs = 0; jobs < os.size(); ++jobs) {
-    eckit::LocalConfiguration obsopconf(typeconfs[jobs], "ObsOperator");
+    // Use ObsOperator section of yaml unless LinearObsOperator is specified
+    std::string confname = "ObsOperator";
+    if (typeconfs[jobs].has("LinearObsOperator")) confname = "LinearObsOperator";
+    eckit::LocalConfiguration obsopconf(typeconfs[jobs], confname);
     boost::shared_ptr<LinearObsOperator_> tmp(new LinearObsOperator_(os[jobs], obsopconf));
     ops_.push_back(tmp);
   }

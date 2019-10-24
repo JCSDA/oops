@@ -96,7 +96,7 @@ ObserverTLAD<MODEL>::ObserverTLAD(const eckit::Configuration & config,
                                   const ObsAuxCtrl_ & ybias,
                                   ObsVector_ & yobs)
   : obsdb_(obsdb), hop_(obsdb, eckit::LocalConfiguration(config, "ObsOperator")),
-    hoptlad_(obsdb, eckit::LocalConfiguration(config, "ObsOperator")),
+    hoptlad_(obsdb, eckit::LocalConfiguration(config, "LinearObsOperator")),
     yobs_(yobs), ybias_(ybias), geovars_(), traj_(0), gvals_()
 {
   geovars_ += hop_.variables();

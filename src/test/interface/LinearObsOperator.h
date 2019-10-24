@@ -41,9 +41,12 @@ template <typename MODEL> void testConstructor() {
   obsconf.get("ObsTypes", conf);
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    eckit::LocalConfiguration obsopconf(conf[jj], "ObsOperator");
+    // Use ObsOperator section of yaml unless LinearObsOperator is specified
+    std::string confname = "ObsOperator";
+    if (conf[jj].has("LinearObsOperator")) confname = "LinearObsOperator";
+    eckit::LocalConfiguration linobsopconf(conf[jj], confname);
     std::unique_ptr<LinearObsOperator_> ov(
-      new LinearObsOperator_(Test_::obspace()[jj], obsopconf));
+      new LinearObsOperator_(Test_::obspace()[jj], linobsopconf));
     EXPECT(ov.get());
 
     ov.reset();
@@ -76,7 +79,11 @@ template <typename MODEL> void testLinearity() {
     ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
     // initialize TL/AD observation operator (set model variables for Jacobian),
     // other init)
-    LinearObsOperator_ hoptl(Test_::obspace()[jj], obsopconf);
+    // Use ObsOperator section of yaml unless LinearObsOperator is specified
+    std::string confname = "ObsOperator";
+    if (conf[jj].has("LinearObsOperator")) confname = "LinearObsOperator";
+    eckit::LocalConfiguration linobsopconf(conf[jj], confname);
+    LinearObsOperator_ hoptl(Test_::obspace()[jj], linobsopconf);
 
     // read geovals from the file
     const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
@@ -144,7 +151,11 @@ template <typename MODEL> void testAdjoint() {
     ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
     // initialize TL/AD observation operator (set model variables for Jacobian),
     // other init)
-    LinearObsOperator_ hoptl(Test_::obspace()[jj], obsopconf);
+    // Use ObsOperator section of yaml unless LinearObsOperator is specified
+    std::string confname = "ObsOperator";
+    if (conf[jj].has("LinearObsOperator")) confname = "LinearObsOperator";
+    eckit::LocalConfiguration linobsopconf(conf[jj], confname);
+    LinearObsOperator_ hoptl(Test_::obspace()[jj], linobsopconf);
 
     // read geovals from the file
     eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
@@ -218,7 +229,11 @@ template <typename MODEL> void testTangentLinear() {
     ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
     // initialize TL/AD observation operator (set model variables for Jacobian),
     // other init)
-    LinearObsOperator_ hoptl(Test_::obspace()[jj], obsopconf);
+    // Use ObsOperator section of yaml unless LinearObsOperator is specified
+    std::string confname = "ObsOperator";
+    if (conf[jj].has("LinearObsOperator")) confname = "LinearObsOperator";
+    eckit::LocalConfiguration linobsopconf(conf[jj], confname);
+    LinearObsOperator_ hoptl(Test_::obspace()[jj], linobsopconf);
 
     // read geovals from the file
     const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
