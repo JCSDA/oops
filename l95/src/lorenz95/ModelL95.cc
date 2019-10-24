@@ -88,9 +88,14 @@ void ModelL95::stepRK(FieldL95 & xx, const ModelBias & bias,
 
 // -----------------------------------------------------------------------------
 
+#ifdef __INTEL_COMPILER
+#pragma optimize("", off)
+#endif
 void ModelL95::tendencies(const FieldL95 & xx, const double & bias,
                           FieldL95 & dx) const {
   const int nn = resol_.npoints();
+  // intel 19 is doing some agressive optimization of this loop that
+  // is modifying the solution.
   for (int jj = 0; jj < nn; ++jj) {
     int jm2 = jj - 2;
     int jm1 = jj - 1;
@@ -102,6 +107,9 @@ void ModelL95::tendencies(const FieldL95 & xx, const double & bias,
     dx[jj] = dt_ * dxdt;
   }
 }
+#ifdef __INTEL_COMPILER
+#pragma optimize("", on)
+#endif
 
 // -----------------------------------------------------------------------------
 

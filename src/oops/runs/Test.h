@@ -52,17 +52,11 @@ int Test::execute(const eckit::Configuration & config) const {
 // Setup configuration for tests
   test::TestEnvironment::getInstance().setup(config);
 
-// Create a string version of argv
-  std::vector<std::string> argvec;
-  argvec.push_back(std::string("abcd"));
-
 // Generate the argc and argv arguments for unit_test_main(...)
-  int argc = argvec.size();
+  int argc = 1;
   char * argv[argc];
-  for (int i = 0; i < argc; ++i) {
-    argv[i] = new char[argvec[i].size()+1];
-    strcpy(argv[i], argvec[i].c_str());
-  }
+  char dummy[] = "abcde";
+  argv[0] = dummy;
 
 // Run the tests
   Log::trace() << "Registering the unit tests" << std::endl;
@@ -71,11 +65,6 @@ int Test::execute(const eckit::Configuration & config) const {
   int result = eckit::testing::run_tests(argc, argv, false);
   Log::trace() << "Finished running the unit tests" << std::endl;
   Log::error() << "Finished running the unit tests, result = " << result << std::endl;
-
-// Tidy up
-  for (int i = 0; i < argc; ++i) {
-    delete [] argv[i];
-  }
 
 // Return test status
   return result;

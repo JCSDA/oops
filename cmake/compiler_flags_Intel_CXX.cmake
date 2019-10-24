@@ -29,6 +29,12 @@ set( CMAKE_CXX_FLAGS_RELEASE     "-O3" )
 set( CMAKE_CXX_FLAGS_DEBUG       "-O0 -g -traceback -fp-trap=common" )
 
 ####################################################################
+# RELEASE WITH DEBUG INFO (DEFAULT)
+####################################################################
+
+set( CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-O2 -g -DNDEBUG" )
+
+####################################################################
 # BIT REPRODUCIBLE FLAGS
 ####################################################################
 

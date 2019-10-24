@@ -139,6 +139,11 @@ void TLML95::stepAD(IncrementL95 & xx, ModelBiasCorrection & bias) const {
   xx.getField() += zz;
 }
 // -----------------------------------------------------------------------------
+// intel 19 tries to aggressive optimize these functions in a way that leads
+// to memory violations.  So, turn off optimizations.
+#ifdef __INTEL_COMPILER
+#pragma optimize("", off)
+#endif
 void TLML95::tendenciesTL(const FieldL95 & xx, const double & bias,
                           const FieldL95 & xtraj, FieldL95 & dx) const {
   const int nn = resol_.npoints();
@@ -176,6 +181,9 @@ void TLML95::tendenciesAD(FieldL95 & xx, double & bias,
     bias -= dxdt;
   }
 }
+#ifdef __INTEL_COMPILER
+#pragma optimize("", on)
+#endif
 // -----------------------------------------------------------------------------
 void TLML95::print(std::ostream & os) const {
   os << "TLML95: resol = " << resol_ << ", tstep = " << tstep_;
