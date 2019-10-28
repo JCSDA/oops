@@ -39,7 +39,7 @@ class ObsSpaceBase : public util::Printable,
   const util::DateTime & windowStart() const {return winbgn_;}
   const util::DateTime & windowEnd() const {return winend_;}
 
-  const int64_t getSeed() const {return seed_;}
+  int64_t getSeed() const {return seed_;}
 
  private:
   static int instances_;
