@@ -104,6 +104,7 @@ template<typename MODEL> class CostFunction : private boost::noncopyable {
 
  protected:
   void setupTerms(const eckit::Configuration &);
+  void setupTerms(const eckit::Configuration &, const State_ &);
   const Model_ & getModel() const {return model_;}
   const LinearModel_ & getTLM(const unsigned isub = 0) const {return tlm_[isub];}
   const eckit::mpi::Comm & getComm() const {return resol_.getComm();}
@@ -223,6 +224,34 @@ void CostFunction<MODEL>::setupTerms(const eckit::Configuration & config) {
 // Jb
   const eckit::LocalConfiguration jbConf(config, "Jb");
   xb_.reset(new CtrlVar_(config, anvars_, resol_));
+  jb_.reset(new JbTotal_(*xb_, this->newJb(jbConf, resol_, *xb_), config, resol_));
+  Log::trace() << "CostFunction::setupTerms Jb added" << std::endl;
+
+// Other constraints
+  std::vector<eckit::LocalConfiguration> jcs;
+  config.get("Jc", jcs);
+  for (size_t jj = 0; jj < jcs.size(); ++jj) {
+    CostTermBase<MODEL> * jc = this->newJc(jcs[jj], resol_);
+    jterms_.push_back(jc);
+  }
+  Log::trace() << "CostFunction::setupTerms done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void CostFunction<MODEL>::setupTerms(const eckit::Configuration & config, const State_ & statein) {
+  Log::trace() << "CostFunction::setupTerms start" << std::endl;
+
+// Jo
+  eckit::LocalConfiguration joconf(config, "Jo");
+  CostJo<MODEL> * jo = this->newJo(joconf);
+  jterms_.push_back(jo);
+  Log::trace() << "CostFunction::setupTerms Jo added" << std::endl;
+
+// Jb
+  const eckit::LocalConfiguration jbConf(config, "Jb");
+  xb_.reset(new CtrlVar_(config, statein));
   jb_.reset(new JbTotal_(*xb_, this->newJb(jbConf, resol_, *xb_), config, resol_));
   Log::trace() << "CostFunction::setupTerms Jb added" << std::endl;
 

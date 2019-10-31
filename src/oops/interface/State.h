@@ -51,6 +51,7 @@ class State : public util::Printable,
   State(const Geometry_ &, const Variables &, const eckit::Configuration &);
   State(const Geometry_ &, const State &);
   State(const State &);
+  explicit State(const State_ &);
   ~State();
   State & operator=(const State &);  // Is that used anywhere?
 
@@ -124,6 +125,17 @@ State<MODEL>::State(const State & other) : state_()
   util::Timer timer(classname(), "State");
   state_.reset(new State_(*other.state_));
   Log::trace() << "State<MODEL>::State copy done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+State<MODEL>::State(const State_ & other) : state_()
+{
+  Log::trace() << "State<MODEL>::State starting copy from derived state" << std::endl;
+  util::Timer timer(classname(), "State");
+  state_.reset(new State_(other));
+  Log::trace() << "State<MODEL>::State copy from derived state done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

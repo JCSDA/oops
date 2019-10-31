@@ -21,6 +21,7 @@
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
+#include "oops/interface/State.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
@@ -47,12 +48,14 @@ class ControlVariable : public util::Printable,
   typedef ModelAuxControl<MODEL>     ModelAux_;
   typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
   typedef State4D<MODEL>             State4D_;
+  typedef State<MODEL>               State_;
 
  public:
   static const std::string classname() {return "oops::ControlVariable";}
 
 /// The arguments define the number of sub-windows and the resolution
   ControlVariable(const eckit::Configuration &, const Variables &, const Geometry_ &);
+  ControlVariable(const eckit::Configuration &, const State_ &);
   explicit ControlVariable(const ControlVariable &);
   ~ControlVariable();
 
@@ -89,6 +92,18 @@ ControlVariable<MODEL>::ControlVariable(const eckit::Configuration & conf,
                                         const Variables & vars, const Geometry_ & resol)
   : state4d_(eckit::LocalConfiguration(conf, "Jb.Background"), vars, resol),
     modbias_(resol, conf.getSubConfiguration("Jb.Background.ModelBias")),
+    obsbias_(eckit::LocalConfiguration(conf, "Jo"))
+{
+  Log::trace() << "ControlVariable contructed" << std::endl;
+}
+
+// =============================================================================
+
+template<typename MODEL>
+ControlVariable<MODEL>::ControlVariable(const eckit::Configuration & conf,
+                                        const State_ & statein)
+  : state4d_(statein),
+    modbias_(statein.geometry(), conf.getSubConfiguration("Jb.Background.ModelBias")),
     obsbias_(eckit::LocalConfiguration(conf, "Jo"))
 {
   Log::trace() << "ControlVariable contructed" << std::endl;
