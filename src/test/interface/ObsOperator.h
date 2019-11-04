@@ -80,8 +80,9 @@ template <typename MODEL> void testSimulateObs() {
     // create obsvector to hold H(x)
     ObsVector_ hofx(Test_::obspace()[jj]);
 
-    // create diagnostics to hold HofX diags (empty)
+    // create diagnostics to hold HofX diags
     oops::Variables diagvars;
+    diagvars += ybias.requiredHdiagnostics();
     ObsDiags_ diags(Test_::obspace()[jj],
                     hop.locations(Test_::obspace()[jj].windowStart(),
                                   Test_::obspace()[jj].windowEnd()),

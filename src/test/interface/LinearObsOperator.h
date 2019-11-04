@@ -252,8 +252,9 @@ template <typename MODEL> void testTangentLinear() {
     ObsVector_ y2(Test_::obspace()[jj]);
     ObsVector_ y3(Test_::obspace()[jj]);
 
-    // create obsdatavector to hold diags (empty)
+    // create obsdatavector to hold diags
     oops::Variables diagvars;
+    diagvars += ybias.requiredHdiagnostics();
     ObsDiags_ ydiag(Test_::obspace()[jj],
                     hop.locations(Test_::obspace()[jj].windowStart(),
                                   Test_::obspace()[jj].windowEnd()),

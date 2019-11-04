@@ -51,13 +51,15 @@ class ObsBias : public util::Printable,
   double norm() const {return std::abs(bias_);}
 
 /// Other
-  const oops::Variables & variables() const {return inputs_;}
+  const oops::Variables & requiredGeoVaLs() const {return geovars_;}
+  const oops::Variables & requiredHdiagnostics() const {return hdiags_;}
 
  private:
   void print(std::ostream &) const;
   double bias_;
   bool active_;
-  const oops::Variables inputs_;
+  const oops::Variables geovars_;
+  const oops::Variables hdiags_;
 };
 
 // -----------------------------------------------------------------------------

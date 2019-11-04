@@ -21,7 +21,7 @@
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 ObsBias::ObsBias(const eckit::Configuration & conf)
-  : bias_(0.0), active_(false), inputs_()
+  : bias_(0.0), active_(false), geovars_(), hdiags_()
 {
   oops::Log::trace() << "ObsBias::ObsBias conf is:" << conf << std::endl;
   if (conf.has("ObsBias")) {
@@ -35,7 +35,8 @@ ObsBias::ObsBias(const eckit::Configuration & conf)
 }
 // -----------------------------------------------------------------------------
 ObsBias::ObsBias(const ObsBias & other, const bool copy)
-  : bias_(0.0), active_(other.active_), inputs_(other.inputs_) {
+  : bias_(0.0), active_(other.active_),
+    geovars_(other.geovars_), hdiags_(other.hdiags_) {
   if (active_ && copy) bias_ = other.bias_;
 }
 // -----------------------------------------------------------------------------

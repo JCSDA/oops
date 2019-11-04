@@ -84,7 +84,7 @@ Observer<MODEL>::Observer(const eckit::Configuration & conf, const ObsSpace_ & o
 {
   Log::trace() << "Observer::Observer starting" << std::endl;
   geovars_ += hop_.variables();
-  geovars_ += ybias_.variables();
+  geovars_ += ybias_.requiredGeoVaLs();
   geovars_ += filters_->requiredGeoVaLs();
   Log::trace() << "Observer::Observer done" << std::endl;
 }
@@ -128,8 +128,10 @@ template <typename MODEL>
 void Observer<MODEL>::doFinalize() {
   Log::trace() << "Observer::doFinalize start" << std::endl;
   filters_->priorFilter(*gvals_);
-  ObsDiags_ ydiags(obsdb_, hop_.locations(obsdb_.windowStart(), obsdb_.windowEnd()),
-                   filters_->requiredHdiagnostics());
+  oops::Variables vars;
+  vars += filters_->requiredHdiagnostics();
+  vars += ybias_.requiredHdiagnostics();
+  ObsDiags_ ydiags(obsdb_, hop_.locations(obsdb_.windowStart(), obsdb_.windowEnd()), vars);
   hop_.simulateObs(*gvals_, yobs_, ybias_, ydiags);
   filters_->postFilter(yobs_, ydiags);
   Log::trace() << "Observer::doFinalize done" << std::endl;

@@ -13,7 +13,13 @@ module kinds
   implicit none
 
   private
-  public kind_real
+  public kind_float, kind_real, kind_single, kind_quad, kind_int, kind_long
   
-  integer, parameter :: kind_real=c_double
+  integer, parameter :: kind_single = c_float
+  integer, parameter :: kind_float = kind_single
+  integer, parameter :: kind_real   = c_double
+  integer, parameter :: kind_quad   = c_long_double
+
+  integer, parameter :: kind_int    = c_int
+  integer, parameter :: kind_long   = c_long
 end module kinds

@@ -52,7 +52,8 @@ class ObsBias : public util::Printable,
   const double & operator[](const unsigned int ii) const {return bias_[ii];}
 
   /// Other
-  const oops::Variables & variables() const {return inputs_;}
+  const oops::Variables & requiredGeoVaLs() const {return geovars_;}
+  const oops::Variables & requiredHdiagnostics() const {return hdiags_;}
 
   const double & stream() const {return bias_[0];}
   const double & wind() const {return bias_[1];}
@@ -62,7 +63,8 @@ class ObsBias : public util::Printable,
   void print(std::ostream &) const;
   std::vector<double> bias_;
   bool active_;
-  const oops::Variables inputs_;
+  const oops::Variables geovars_;
+  const oops::Variables hdiags_;
 };
 
 // -----------------------------------------------------------------------------

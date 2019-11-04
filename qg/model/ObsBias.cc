@@ -24,7 +24,7 @@
 namespace qg {
 // -----------------------------------------------------------------------------
 ObsBias::ObsBias(const eckit::Configuration & conf)
-  : bias_(ntypes, 0.0), active_(false), inputs_() {
+  : bias_(ntypes, 0.0), active_(false), geovars_(), hdiags_() {
   oops::Log::info() << "ObsBias: conf = " << conf << std::endl;
   eckit::LocalConfiguration biasconf;
   if (conf.has("ObsBias")) {
@@ -49,7 +49,8 @@ ObsBias::ObsBias(const eckit::Configuration & conf)
 }
 // -----------------------------------------------------------------------------
 ObsBias::ObsBias(const ObsBias & other, const bool copy)
-  : bias_(ntypes, 0.0), active_(other.active_), inputs_(other.inputs_)
+  : bias_(ntypes, 0.0), active_(other.active_),
+    geovars_(other.geovars_), hdiags_(other.hdiags_)
 {
   if (active_ && copy) {
     for (unsigned int jj = 0; jj < ntypes; ++jj) bias_[jj] = other.bias_[jj];

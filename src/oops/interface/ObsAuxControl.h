@@ -52,7 +52,8 @@ class ObsAuxControl : public util::Printable,
   double norm() const;
 
 /// Other
-  const Variables & variables() const;
+  const Variables & requiredGeoVaLs() const;
+  const Variables & requiredHdiagnostics() const;
 
  private:
   ObsAuxControl & operator=(const ObsAuxControl &);
@@ -126,11 +127,21 @@ double ObsAuxControl<MODEL>::norm() const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-const Variables & ObsAuxControl<MODEL>::variables() const {
-  Log::trace() << "ObsAuxControl<MODEL>::variables starting" << std::endl;
-  util::Timer timer(classname(), "variables");
-  Log::trace() << "ObsAuxControl<MODEL>::variables done" << std::endl;
-  return aux_->variables();
+const Variables & ObsAuxControl<MODEL>::requiredGeoVaLs() const {
+  Log::trace() << "ObsAuxControl<MODEL>::requiredGeoVaLs starting" << std::endl;
+  util::Timer timer(classname(), "requiredGeoVaLs");
+  Log::trace() << "ObsAuxControl<MODEL>::requiredGeoVaLs done" << std::endl;
+  return aux_->requiredGeoVaLs();
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+const Variables & ObsAuxControl<MODEL>::requiredHdiagnostics() const {
+  Log::trace() << "ObsAuxControl<MODEL>::requiredHdiagnostics starting" << std::endl;
+  util::Timer timer(classname(), "requiredHdiagnostics");
+  Log::trace() << "ObsAuxControl<MODEL>::requiredHdiagnostics done" << std::endl;
+  return aux_->requiredHdiagnostics();
 }
 
 // -----------------------------------------------------------------------------
