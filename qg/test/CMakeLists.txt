@@ -37,6 +37,7 @@ list( APPEND qg_test_input
   testinput/eda_4dvar_pert_obs.yaml
   testinput/ens_forecast.yaml
   testinput/ens_hofx.yaml
+  testinput/ens_recenter.yaml
   testinput/ens_variance.yaml
   testinput/forecast.yaml
   testinput/gen_ens_pert_B.yaml
@@ -95,6 +96,7 @@ list( APPEND qg_testoutput
 #  testoutput/eda_4dvar_pert_obs.test
   testoutput/ens_forecast.test
   testoutput/ens_hofx.test
+  testoutput/ens_recenter.test
   testoutput/ens_variance.test
   testoutput/forecast.test
   testoutput/gen_ens_pert_B.test
@@ -526,6 +528,21 @@ ecbuild_add_test( TARGET test_qg_ens_variance_compare
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS testoutput/ens_variance.log.out testoutput/ens_variance.test
                   TEST_DEPENDS test_qg_ens_variance_run )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_qg_ens_recenter_run
+                  OMP    2
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_ens_recenter.x
+                  ARGS testinput/ens_recenter.yaml testoutput/ens_recenter.log.out
+                  DEPENDS qg_ens_recenter.x
+                  TEST_DEPENDS test_qg_gen_ens_pert_B_run )
+
+ecbuild_add_test( TARGET test_qg_ens_recenter_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/ens_recenter.log.out testoutput/ens_recenter.test
+                  TEST_DEPENDS test_qg_ens_recenter_run )
 
 #####################################################################
 # other tests

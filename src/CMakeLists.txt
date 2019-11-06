@@ -203,6 +203,7 @@ oops/runs/DiffStates.h
 oops/runs/Dirac.h
 oops/runs/EnsForecasts.h
 oops/runs/EnsHofX.h
+oops/runs/EnsRecenter.h
 oops/runs/EstimateParams.h
 oops/runs/ExternalDFI.h
 oops/runs/FindLocalObs.h
@@ -424,5 +425,3 @@ add_fctest( TARGET  test_util_interp_interface.x
             LIBS    oops )
 
 endif()
-
-
