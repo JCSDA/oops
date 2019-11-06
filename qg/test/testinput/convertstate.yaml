@@ -10,13 +10,15 @@ outputresolution:
   depths:
   - 4500.0
   - 5500.0
-input:
-  date: 2010-01-01T09:00:00Z
-  filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT9H
-  variables: 
+inputVariables:
+  variables:
   - x
-output:
-  date: 2010-01-01T09:00:00Z
-  datadir: Data
-  exp: convert
-  type: fc
+states:
+- input:
+    date: 2010-01-01T09:00:00Z
+    filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT9H
+  output:
+    date: 2010-01-01T09:00:00Z
+    datadir: Data
+    exp: convert
+    type: fc

@@ -47,38 +47,50 @@ template <typename MODEL> class ConvertState : public Application {
     const eckit::LocalConfiguration outputResolConfig(fullConfig, "outputresolution");
     const Geometry_ resol2(outputResolConfig, this->getComm());
 
-//  Read state
-    const eckit::LocalConfiguration inputConfig(fullConfig, "input");
-    const std::vector<std::string> vi = inputConfig.getStringVector("variables");
-    oops::Variables vars(vi);
-    State_ xx1(resol1, vars, inputConfig);
-    Log::test() << "Input state: " << xx1 << std::endl;
-
-//  Change resolution
-    State_ xx2(resol2, xx1);
-
-//  New variables if any
+//  Input and output variables
+    const std::vector<std::string> vi = fullConfig.getStringVector("inputVariables.variables");
+    oops::Variables varsi(vi);
     const std::vector<std::string> vo = fullConfig.getStringVector("outputVariables.variables", vi);
-    oops::Variables varsnew(vo);
+    oops::Variables varso(vo);
 
-//  New state with variables after variable change
-    State_ xx3(resol2, varsnew, xx2.validTime());
-
-//  Perform transform
+//  Variable transform, identity if not specified in config
     std::unique_ptr<VariableChange_> changevar(VariableChangeFactory_::create(fullConfig, resol2));
     bool inverse = fullConfig.getBool("doinverse", false);
-    if (!inverse) {
-      changevar->changeVar(xx2, xx3);
-    } else {
-      changevar->changeVarInverse(xx2, xx3);
+
+//  List of input and output states
+    std::vector<eckit::LocalConfiguration> statesConf;
+    fullConfig.get("states", statesConf);
+    int nstates = statesConf.size();
+
+//  Loop over states
+    for (int jm = 0; jm < nstates; ++jm) {
+//    Print output
+      Log::info() << "Converting state " << jm+1 << " of " << nstates << std::endl;
+
+//    Read state
+      const eckit::LocalConfiguration inputConfig(statesConf[jm], "input");
+      State_ xxi(resol1, varsi, inputConfig);
+      Log::test() << "Input state: " << xxi << std::endl;
+
+//    Copy and change resolution
+      State_ xx(resol2, xxi);
+
+//    New state with variables after variable change
+      State_ xxo(resol2, varso, xxi.validTime());
+
+//    Variable transform
+      if (!inverse) {
+        changevar->changeVar(xx, xxo);
+      } else {
+        changevar->changeVarInverse(xx, xxo);
+      }
+
+//    Write state
+      const eckit::LocalConfiguration outputConfig(statesConf[jm], "output");
+      xxo.write(outputConfig);
+
+      Log::test() << "Output state: " << xxo << std::endl;
     }
-
-//  Write state
-    const eckit::LocalConfiguration outputConfig(fullConfig, "output");
-    xx3.write(outputConfig);
-
-    Log::test() << "Output state: " << xx3 << std::endl;
-
     return 0;
   }
 // -------------------------------------------------------------------------------------------------
