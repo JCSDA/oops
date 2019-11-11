@@ -24,6 +24,7 @@ contains
 
   procedure, public :: nvars
   procedure, public :: variable
+  procedure, public :: varlist
 end type
 
 interface oops_variables
@@ -115,6 +116,22 @@ function variable(this, jj) result(varname)
 
 end function variable
 
+!-------------------------------------------------------------------------------
+
+function varlist(this)
+  implicit none
+
+  class(oops_variables), intent(in) :: this
+  character(MAXVARLEN), allocatable :: varlist(:)
+  integer :: jj
+
+  allocate(varlist(this%nvars()))
+  
+  do jj = 1, this%nvars()
+     varlist(jj) = this%variable(jj)
+  enddo  
+
+end function varlist
 !-------------------------------------------------------------------------------
 
 end module oops_variables_mod
