@@ -121,9 +121,8 @@ template <typename MODEL> void testLinearity() {
     ObsVector_ dy2(Test_::obspace()[jj]);
     hoptl.simulateObsTL(dx, dy2, ybinc);
 
-    dy1 -= dy2;
-
-    EXPECT(dy1.rms()< tol);
+    dy2 -= dy1;
+    EXPECT(dy2.rms() / dy1.rms() < tol);
   }
 }
 
