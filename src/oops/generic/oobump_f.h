@@ -8,6 +8,8 @@
 #ifndef OOPS_GENERIC_OOBUMP_F_H_
 #define OOPS_GENERIC_OOBUMP_F_H_
 
+#include "eckit/mpi/Comm.h"
+
 // Forward declarations
 namespace eckit {
   class Configuration;
@@ -16,7 +18,7 @@ namespace eckit {
 namespace oops {
 extern "C" {
   void oobump_create_f90(int &, const int &, const eckit::Configuration * const *, const int &,
-                         const int &, const int &, const int &, const int &, const char *);
+                         const int &, const int &, const int &, const eckit::mpi::Comm *);
   void oobump_delete_f90(const int &);
   void oobump_get_colocated_f90(const int &, int &);
   void oobump_get_nts_f90(const int &, int &);

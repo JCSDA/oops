@@ -67,7 +67,7 @@ OoBump::OoBump(const UnstructuredGrid & ug, const eckit::LocalConfiguration conf
                const int & ens2_ne, const int & ens2_nsub) : keyOoBump_(0) {
   const eckit::Configuration * fconf = &conf;
   oobump_create_f90(keyOoBump_, ug.toFortran(), &fconf, ens1_ne, ens1_nsub,
-                    ens2_ne, ens2_nsub, comm.name().size(), comm.name().c_str());
+                    ens2_ne, ens2_nsub, &comm);
 }
 // -----------------------------------------------------------------------------
 OoBump::OoBump(OoBump & other) : keyOoBump_(other.getKey()) {

@@ -23,28 +23,25 @@ contains
 !-------------------------------------------------------------------------------
 !> Create OOBUMP
 subroutine oobump_create_c(c_key_oobump, c_key_ug, c_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub, &
-  & lc_name, c_name) bind(c, name='oobump_create_f90')
+  & c_comm) bind(c, name='oobump_create_f90')
 
-use string_f_c_mod
 implicit none
 
 ! Passed variables
-integer(c_int), intent(inout) :: c_key_oobump                 !< OOBUMP
-integer(c_int), intent(in) :: c_key_ug                        !< Unstructured grid
-type(c_ptr), intent(in) :: c_conf                             !< Configuration
-integer(c_int), intent(in) :: ens1_ne                         !< First ensemble size
-integer(c_int), intent(in) :: ens1_nsub                       !< Number of sub-ensembles in the first ensemble
-integer(c_int), intent(in) :: ens2_ne                         !< Second ensemble size
-integer(c_int), intent(in) :: ens2_nsub                       !< Number of sub-ensembles in the second ensemble
-integer(c_int), intent(in) :: lc_name                         !< Communicator name length
-character(kind=c_char,len=1), intent(in) :: c_name(lc_name+1) !< Communicator name
+integer(c_int), intent(inout)  :: c_key_oobump    !< OOBUMP
+integer(c_int), intent(in)     :: c_key_ug        !< Unstructured grid
+type(c_ptr), intent(in)        :: c_conf          !< Configuration
+integer(c_int), intent(in)     :: ens1_ne         !< First ensemble size
+integer(c_int), intent(in)     :: ens1_nsub       !< Number of sub-ensembles in the first ensemble
+integer(c_int), intent(in)     :: ens2_ne         !< Second ensemble size
+integer(c_int), intent(in)     :: ens2_nsub       !< Number of sub-ensembles in the second ensemble
+type(c_ptr), value, intent(in) :: c_comm
 
 ! Local variables
-type(fckit_configuration) :: f_conf
-type(oobump_type), pointer :: self
+type(fckit_configuration)        :: f_conf
+type(oobump_type), pointer       :: self
 type(unstructured_grid), pointer :: ug
-character(len=lc_name) :: f_name
-type(fckit_mpi_comm) :: f_comm
+type(fckit_mpi_comm)             :: f_comm
 
 ! Interface
 f_conf = fckit_configuration(c_conf)
@@ -54,8 +51,7 @@ call oobump_registry%get(c_key_oobump, self)
 call unstructured_grid_registry%get(c_key_ug, ug)
 
 ! Get MPI communicator
-call c_f_string(c_name, f_name)
-f_comm = fckit_mpi_comm(f_name)
+f_comm = fckit_mpi_comm(c_comm)
 
 ! Call Fortran
 call oobump_create(self, ug, f_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub, f_comm)
