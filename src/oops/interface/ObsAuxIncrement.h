@@ -53,7 +53,6 @@ class ObsAuxIncrement : public util::Printable,
 /// Linear algebra operators
   void diff(const ObsAuxControl_ &, const ObsAuxControl_ &);
   void zero();
-  void random();
   ObsAuxIncrement & operator=(const ObsAuxIncrement &);
   ObsAuxIncrement & operator+=(const ObsAuxIncrement &);
   ObsAuxIncrement & operator-=(const ObsAuxIncrement &);
@@ -140,14 +139,6 @@ void ObsAuxIncrement<MODEL>::zero() {
   util::Timer timer(classname(), "zero");
   aux_->zero();
   Log::trace() << "ObsAuxIncrement<MODEL>::zero done" << std::endl;
-}
-// -----------------------------------------------------------------------------
-template<typename MODEL>
-void ObsAuxIncrement<MODEL>::random() {
-  Log::trace() << "ObsAuxIncrement<MODEL>::random starting" << std::endl;
-  util::Timer timer(classname(), "random");
-  aux_->random();
-  Log::trace() << "ObsAuxIncrement<MODEL>::random done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>

@@ -41,6 +41,7 @@ class ObsBias : public util::Printable,
   ~ObsBias() {}
 
   ObsBias & operator+=(const ObsBiasCorrection &);
+  ObsBias & operator=(const ObsBias &);
 
   const double & value() const {return bias_;}
   double & value() {return bias_;}

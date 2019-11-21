@@ -45,6 +45,11 @@ ObsBias & ObsBias::operator+=(const ObsBiasCorrection & dx) {
   return *this;
 }
 // -----------------------------------------------------------------------------
+ObsBias & ObsBias::operator=(const ObsBias & rhs) {
+  if (active_) bias_ = rhs.bias_;
+  return *this;
+}
+// -----------------------------------------------------------------------------
 void ObsBias::print(std::ostream & os) const {
   if (active_) {os << std::endl << "ObsBias = " << bias_;}
 }

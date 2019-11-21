@@ -38,7 +38,6 @@ class ObsBiasCorrection : public util::Printable {
 /// Linear algebra operators
   void diff(const ObsBias &, const ObsBias &);
   void zero();
-  void random();
   ObsBiasCorrection & operator=(const ObsBiasCorrection &);
   ObsBiasCorrection & operator+=(const ObsBiasCorrection &);
   ObsBiasCorrection & operator-=(const ObsBiasCorrection &);

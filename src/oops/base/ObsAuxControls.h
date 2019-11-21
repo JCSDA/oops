@@ -43,8 +43,9 @@ class ObsAuxControls : public util::Printable {
   void write(const eckit::Configuration &) const;
   double norm() const;
 
- private:
   ObsAuxControls & operator=(const ObsAuxControls &);
+
+ private:
   void print(std::ostream &) const;
   std::vector<boost::shared_ptr<ObsAuxControl_> > auxs_;
 };

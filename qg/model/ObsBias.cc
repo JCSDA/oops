@@ -64,6 +64,13 @@ ObsBias & ObsBias::operator+=(const ObsBiasIncrement & dx) {
   return *this;
 }
 // -----------------------------------------------------------------------------
+ObsBias & ObsBias::operator=(const ObsBias & rhs) {
+  if (active_) {
+    for (unsigned int jj = 0; jj < ntypes; ++jj) bias_[jj] = rhs.bias_[jj];
+  }
+  return *this;
+}
+// -----------------------------------------------------------------------------
 double ObsBias::norm() const {
   double zz = 0.0;
   if (active_) {

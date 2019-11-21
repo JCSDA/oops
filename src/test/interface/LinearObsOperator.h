@@ -19,6 +19,7 @@
 #include "oops/base/Variables.h"
 #include "oops/interface/LinearObsOperator.h"
 #include "oops/interface/ObsAuxControl.h"
+#include "oops/interface/ObsAuxCovariance.h"
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/ObsDiagnostics.h"
 #include "oops/interface/ObsOperator.h"
@@ -61,6 +62,7 @@ template <typename MODEL> void testLinearity() {
   typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
   typedef oops::ObsAuxControl<MODEL>     ObsAuxCtrl_;
   typedef oops::ObsAuxIncrement<MODEL>   ObsAuxIncr_;
+  typedef oops::ObsAuxCovariance<MODEL>  ObsAuxCov_;
   typedef oops::ObsOperator<MODEL>       ObsOperator_;
   typedef oops::LinearObsOperator<MODEL> LinearObsOperator_;
   typedef oops::ObsVector<MODEL>         ObsVector_;
@@ -93,6 +95,9 @@ template <typename MODEL> void testLinearity() {
     const ObsAuxCtrl_ ybias(conf[jj]);
     ObsAuxIncr_ ybinc(conf[jj]);
 
+     // initialize Obs. Bias Covariance
+    const ObsAuxCov_ Bobsbias(conf[jj]);
+
     // set trajectory for TL/AD to be the geovals from the file
     hoptl.setTrajectory(gval, ybias);
 
@@ -110,7 +115,7 @@ template <typename MODEL> void testLinearity() {
 
     // test rms(H * (dx, ybinc)) > 0, when dx is random
     dx.random();
-    ybinc.random();
+    Bobsbias.randomize(ybinc);
     hoptl.simulateObsTL(dx, dy1, ybinc);
     EXPECT(dy1.rms() > zero);
 
@@ -135,6 +140,7 @@ template <typename MODEL> void testAdjoint() {
   typedef oops::LinearObsOperator<MODEL> LinearObsOperator_;
   typedef oops::ObsAuxControl<MODEL>     ObsAuxCtrl_;
   typedef oops::ObsAuxIncrement<MODEL>   ObsAuxIncr_;
+  typedef oops::ObsAuxCovariance<MODEL>  ObsAuxCov_;
   typedef oops::ObsVector<MODEL>         ObsVector_;
 
   const double zero = 0.0;
@@ -165,6 +171,9 @@ template <typename MODEL> void testAdjoint() {
     ObsAuxIncr_ ybinc1(conf[jj]);  // TL
     ObsAuxIncr_ ybinc2(conf[jj]);  // AD
 
+    // initialize Obs. Bias Covariance
+    const ObsAuxCov_ Bobsbias(conf[jj]);
+
     // set TL/AD trajectory to the geovals from the file
     hoptl.setTrajectory(gval, ybias);
 
@@ -176,7 +185,7 @@ template <typename MODEL> void testAdjoint() {
     // calculate dy1 = H (dx1, ybinc1) (with random dx1, and random ybinc1)
     dx1.random();
     EXPECT(dot_product(dx1, dx1) > zero);  //  BOOST_REQUIRE
-    ybinc1.random();
+    Bobsbias.randomize(ybinc1);
     hoptl.simulateObsTL(dx1, dy1, ybinc1);
     EXPECT(dot_product(dy1, dy1) > zero);
 
@@ -209,6 +218,7 @@ template <typename MODEL> void testTangentLinear() {
   typedef oops::ObsDiagnostics<MODEL>    ObsDiags_;
   typedef oops::ObsAuxControl<MODEL>     ObsAuxCtrl_;
   typedef oops::ObsAuxIncrement<MODEL>   ObsAuxIncr_;
+  typedef oops::ObsAuxCovariance<MODEL>  ObsAuxCov_;
   typedef oops::LinearObsOperator<MODEL> LinearObsOperator_;
   typedef oops::ObsOperator<MODEL>       ObsOperator_;
   typedef oops::ObsVector<MODEL>         ObsVector_;
@@ -239,12 +249,15 @@ template <typename MODEL> void testTangentLinear() {
     const GeoVaLs_ x0(gconf, Test_::obspace()[jj], hop.variables());
     GeoVaLs_ x(gconf, Test_::obspace()[jj], hop.variables());
 
-    // initialize obs bias
-    const ObsAuxCtrl_ ybias(conf[jj]);
-    const ObsAuxIncr_ ybinc(conf[jj]);
+    // initialize obs bias from file
+    const ObsAuxCtrl_ ybias0(conf[jj]);
+    ObsAuxCtrl_ ybias(conf[jj]);
 
-    // set TL trajectory to the geovals from the file
-    hoptl.setTrajectory(x0, ybias);
+    // initialize Obs. Bias Covariance
+    const ObsAuxCov_ Bobsbias(conf[jj]);
+
+    // set TL trajectory to the geovals and the bias coeff. from the files
+    hoptl.setTrajectory(x0, ybias0);
 
     // create obsvectors
     ObsVector_ y1(Test_::obspace()[jj]);
@@ -253,18 +266,20 @@ template <typename MODEL> void testTangentLinear() {
 
     // create obsdatavector to hold diags
     oops::Variables diagvars;
-    diagvars += ybias.requiredHdiagnostics();
+    diagvars += ybias0.requiredHdiagnostics();
     ObsDiags_ ydiag(Test_::obspace()[jj],
                     hop.locations(Test_::obspace()[jj].windowStart(),
                                   Test_::obspace()[jj].windowEnd()),
                     diagvars);
 
-    // y1 = hop(x0)
-    hop.simulateObs(x0, y1, ybias, ydiag);
+    // y1 = hop(x0, ybias0)
+    hop.simulateObs(x0, y1, ybias0, ydiag);
 
-    // randomize dx
+    // randomize dx and ybinc
     GeoVaLs_ dx(gconf, Test_::obspace()[jj], hoptl.variables());
     dx.random();
+    ObsAuxIncr_ ybinc(conf[jj]);
+    Bobsbias.randomize(ybinc);
 
     // scale dx by x0
     dx *= x0;
@@ -274,11 +289,15 @@ template <typename MODEL> void testTangentLinear() {
       dx *= alpha;
       x = x0;
       x += dx;
+      // ybias = ybias0 + alpha*ybinc
+      ybinc *= alpha;
+      ybias = ybias0;
+      ybias += ybinc;
 
-      // y2 = hop(x0+alpha*dx)
+      // y2 = hop(x0+alpha*dx, ybias0+alpha*ybinc)
       hop.simulateObs(x, y2, ybias, ydiag);
       y2 -= y1;
-      // y3 = hoptl(alpha*dx)
+      // y3 = hoptl(alpha*dx, alpha*ybinc)
       hoptl.simulateObsTL(dx, y3, ybinc);
       y2 -= y3;
 

@@ -151,7 +151,7 @@ GeoVaLs<MODEL> & GeoVaLs<MODEL>::operator-=(const GeoVaLs & rhs) {
   Log::trace() << "GeoVaLs<MODEL>::-=(GeoVaLs, GeoVaLs) starting" << std::endl;
   util::Timer timer(classname(), "operator-=");
   *gvals_ -= *rhs.gvals_;
-  Log::trace() << "GeoVaLs<MODEL>::+= done" << std::endl;
+  Log::trace() << "GeoVaLs<MODEL>::-= done" << std::endl;
   return *this;
 }
 
@@ -162,7 +162,7 @@ GeoVaLs<MODEL> & GeoVaLs<MODEL>::operator*=(const GeoVaLs & rhs) {
   Log::trace() << "GeoVaLs<MODEL>::*=(GeoVaLs, GeoVaLs) starting" << std::endl;
   util::Timer timer(classname(), "operator*=(schur)");
   *gvals_ *= *rhs.gvals_;
-  Log::trace() << "GeoVaLs<MODEL>::+= done" << std::endl;
+  Log::trace() << "GeoVaLs<MODEL>::*= done" << std::endl;
   return *this;
 }
 
@@ -180,7 +180,7 @@ GeoVaLs<MODEL> & GeoVaLs<MODEL>::operator/=(const GeoVaLs & rhs) {
   Log::trace() << "GeoVaLs<MODEL>::/=(GeoVaLs, GeoVaLs) starting" << std::endl;
   util::Timer timer(classname(), "operator/=");
   *gvals_ /= *rhs.gvals_;
-  Log::trace() << "GeoVaLs<MODEL>::+= done" << std::endl;
+  Log::trace() << "GeoVaLs<MODEL>::/= done" << std::endl;
   return *this;
 }
 

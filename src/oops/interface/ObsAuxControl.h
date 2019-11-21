@@ -55,8 +55,9 @@ class ObsAuxControl : public util::Printable,
   const Variables & requiredGeoVaLs() const;
   const Variables & requiredHdiagnostics() const;
 
- private:
   ObsAuxControl & operator=(const ObsAuxControl &);
+
+ private:
   void print(std::ostream &) const;
   std::unique_ptr<ObsAuxControl_> aux_;
 };
@@ -142,6 +143,16 @@ const Variables & ObsAuxControl<MODEL>::requiredHdiagnostics() const {
   util::Timer timer(classname(), "requiredHdiagnostics");
   Log::trace() << "ObsAuxControl<MODEL>::requiredHdiagnostics done" << std::endl;
   return aux_->requiredHdiagnostics();
+}
+
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+ObsAuxControl<MODEL> & ObsAuxControl<MODEL>::operator=(const ObsAuxControl & rhs) {
+  Log::trace() << "ObsAuxControl<MODEL>::operator= starting" << std::endl;
+  util::Timer timer(classname(), "operator=");
+  *aux_ = *rhs.aux_;
+  Log::trace() << "ObsAuxControl<MODEL>::operator= done" << std::endl;
+  return *this;
 }
 
 // -----------------------------------------------------------------------------

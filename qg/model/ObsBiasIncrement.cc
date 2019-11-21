@@ -19,7 +19,6 @@
 #include "model/ObsBias.h"
 #include "model/ObsBiasCovariance.h"
 #include "oops/util/Logger.h"
-#include "oops/util/Random.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {
@@ -81,12 +80,6 @@ void ObsBiasIncrement::diff(const ObsBias & b1, const ObsBias & b2) {
 // -----------------------------------------------------------------------------
 void ObsBiasIncrement::zero() {
   for (unsigned int jj = 0; jj < ObsBias::ntypes; ++jj) bias_[jj] = 0.0;
-}
-// -----------------------------------------------------------------------------
-void ObsBiasIncrement::random() {
-  util::NormalDistribution<double> x(ObsBias::ntypes, 0.0, 1.0, 5);
-  for (unsigned int jj = 0; jj < ObsBias::ntypes; ++jj) bias_[jj] = x[jj];
-  this->makePassive();
 }
 // -----------------------------------------------------------------------------
 ObsBiasIncrement & ObsBiasIncrement::operator=(const ObsBiasIncrement & rhs) {
