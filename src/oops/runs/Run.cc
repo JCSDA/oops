@@ -10,7 +10,6 @@
 
 #include "oops/runs/Run.h"
 
-#include <mpi.h>
 #include <string>
 
 #include "eckit/config/LocalConfiguration.h"

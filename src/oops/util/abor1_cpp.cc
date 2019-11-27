@@ -13,19 +13,20 @@
 #include <cstdlib>
 #include <string>
 
+#include "oops/parallel/mpi/mpi.h"
 #include "oops/util/Logger.h"
 
 namespace util {
 void abor1_cpp(const std::string & cderror) {
   oops::Log::error() << cderror << std::endl;
-  exit(EXIT_FAILURE);
+  oops::mpi::comm().abort(EXIT_FAILURE);
 }
 
 void abor1_cpp(const std::string & cderror, const std::string & file,
                int line) {
   oops::Log::error() << "ABORT: " << cderror << std::endl;
   oops::Log::error() << "       in file '" << file << "', line " << line << std::endl;
-  exit(EXIT_FAILURE);
+  oops::mpi::comm().abort(EXIT_FAILURE);
 }
 
 void abor1_cpp_(const char cderror[]) {

@@ -85,7 +85,6 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
 
   std::shared_ptr<ObsHelpQG> helper_;
   std::string obsname_;
-  unsigned int nobs_;
   unsigned int nout_;
   const util::DateTime winbgn_;
   const util::DateTime winend_;

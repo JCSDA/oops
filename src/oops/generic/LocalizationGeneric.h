@@ -8,7 +8,6 @@
 #ifndef OOPS_GENERIC_LOCALIZATIONGENERIC_H_
 #define OOPS_GENERIC_LOCALIZATIONGENERIC_H_
 
-#include <mpi.h>
 #include <map>
 #include <string>
 #include <vector>

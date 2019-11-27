@@ -13,7 +13,6 @@
 #ifndef OOPS_INTERFACE_LOCALIZATIONBASE_H_
 #define OOPS_INTERFACE_LOCALIZATIONBASE_H_
 
-#include <mpi.h>
 #include <map>
 #include <string>
 #include <boost/noncopyable.hpp>
