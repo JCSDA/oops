@@ -3,10 +3,10 @@ Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are not activated
-Test     :   Scaling=  1e+13, Min=     -6.5980, Max=     37.3793, RMS=      6.1988
+Test     :   Scaling=  1e+13, Min=     -6.6777, Max=     37.6437, RMS=      6.3132
 Test     : Increment: 
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are not activated
-Test     :   Scaling=      1, Min=      0.0000, Max=      1.0000, RMS=      0.3968
+Test     :   Scaling=      1, Min=      0.0000, Max=      1.0000, RMS=      0.4138
