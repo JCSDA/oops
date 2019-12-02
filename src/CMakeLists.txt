@@ -139,6 +139,7 @@ oops/base/instantiateObsFilterFactory.h
 oops/generic/ParametersBUMP.h
 oops/generic/ErrorCovarianceBUMP.h
 oops/generic/ErrorCovariance4DBUMP.h
+oops/generic/ErrorCovarianceGSIRF.h
 oops/generic/IdLinearVariableChange.h
 oops/generic/IdVariableChange.h
 oops/generic/LinearModelId.h

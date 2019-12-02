@@ -19,6 +19,7 @@
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/generic/ErrorCovariance4DBUMP.h"
 #include "oops/generic/ErrorCovarianceBUMP.h"
+#include "oops/generic/ErrorCovarianceGSIRF.h"
 #include "oops/generic/instantiateLocalizationFactory.h"
 #include "oops/interface/ErrorCovariance.h"
 
@@ -28,6 +29,7 @@ template <typename MODEL> void instantiateCovarFactory() {
   static CovarMaker<MODEL, EnsembleCovariance<MODEL> >  makerEnsemble_("ensemble");
   static CovarMaker<MODEL, HybridCovariance<MODEL> >    makerHybrid_("hybrid");
   static CovarMaker<MODEL, ErrorCovarianceBUMP<MODEL> > makerBUMP_("BUMP");
+  static CovarMaker<MODEL, ErrorCovarianceGSIRF<MODEL> > makerGSIRF_("GSIRF");
   static CovarMaker<MODEL, ErrorCovariance<MODEL> >     makerModel_(MODEL::nameCovar());
 
   static Covar4DMaker<MODEL, EnsembleCovariance4D<MODEL> >  makerEnsemble4D_("ensemble");
