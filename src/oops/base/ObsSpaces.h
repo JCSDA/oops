@@ -51,6 +51,8 @@ class ObsSpaces : public util::Printable,
   ObsSpaces(const eckit::Configuration &, const eckit::mpi::Comm &,
             const util::DateTime &, const util::DateTime &);
   ObsSpaces(const ObsSpaces &, const eckit::geometry::Point2 &, const double &, const int &);
+  explicit ObsSpaces(const boost::shared_ptr<ObsSpace_> &);
+  explicit ObsSpaces(const ObsSpaces &);
   ~ObsSpaces();
 
 /// Access
@@ -108,6 +110,23 @@ ObsSpaces<MODEL>::ObsSpaces(const ObsSpaces<MODEL> & obss, const eckit::geometry
   ASSERT(spaces_.size() == obss.size());
 }
 
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+ObsSpaces<MODEL>::ObsSpaces(const boost::shared_ptr<ObsSpace_> & obss)
+  : spaces_(0), wbgn_(obss->windowStart()), wend_(obss->windowEnd())
+{
+  spaces_.push_back(obss);
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+ObsSpaces<MODEL>::ObsSpaces(const ObsSpaces & other)
+  : spaces_(other.spaces_), wbgn_(other.wbgn_), wend_(other.wend_)
+{
+  Log::trace() << "ObsSpaces copied" << std::endl;
+}
 
 // -----------------------------------------------------------------------------
 

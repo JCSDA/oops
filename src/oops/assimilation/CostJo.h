@@ -75,6 +75,10 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
          const util::DateTime &, const util::DateTime &,
          const util::Duration &, const bool subwindows = false);
 
+  CostJo(const eckit::Configuration &, const util::DateTime &, const util::DateTime &,
+         const util::Duration &, const ObsSpaces_ &,
+         const bool subwindows = false);
+
   /// Destructor
   virtual ~CostJo() {}
 
@@ -145,6 +149,34 @@ CostJo<MODEL>::CostJo(const eckit::Configuration & joConf, const eckit::mpi::Com
                       const util::DateTime & winbgn, const util::DateTime & winend,
                       const util::Duration & tslot, const bool subwindows)
   : obsconf_(joConf), obspace_(obsconf_, comm, winbgn, winend),
+    yobs_(obspace_, "ObsValue"),
+    Rmat_(), currentConf_(), gradFG_(), pobs_(), tslot_(tslot),
+    pobstlad_(), subwindows_(subwindows), obserr_(), qcflags_()
+{
+  Log::trace() << "CostJo::CostJo start" << std::endl;
+  for (size_t jj = 0; jj < obspace_.size(); ++jj) {
+//  Allocate QC flags
+    ObsDataPtr_<int> tmpqc(new ObsData_<int>(obspace_[jj], obspace_[jj].obsvariables()));
+    qcflags_.push_back(tmpqc);
+
+//  Allocate and read initial obs error
+    ObsDataPtr_<float> tmperr(new ObsData_<float>(obspace_[jj],
+                               obspace_[jj].obsvariables(), "ObsError"));
+    Log::debug() << "CostJo::initialize obs error: " << *tmperr;
+    obserr_.push_back(tmperr);
+  }
+  Log::trace() << "CostJo::CostJo done" << std::endl;
+}
+
+// =============================================================================
+
+template<typename MODEL>
+CostJo<MODEL>::CostJo(const eckit::Configuration & joConf,
+                      const util::DateTime & winbgn, const util::DateTime & winend,
+                      const util::Duration & tslot,
+                      const ObsSpaces_ & localobs,
+                      const bool subwindows)
+  : obsconf_(joConf), obspace_(localobs),
     yobs_(obspace_, "ObsValue"),
     Rmat_(), currentConf_(), gradFG_(), pobs_(), tslot_(tslot),
     pobstlad_(), subwindows_(subwindows), obserr_(), qcflags_()

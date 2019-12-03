@@ -52,6 +52,8 @@ class ObsSpace : public util::Printable,
            const util::DateTime &, const util::DateTime &);
   ObsSpace(const ObsSpace &, const eckit::geometry::Point2 &,
            const double &, const int &);
+  ObsSpace(const ObsSpace_ &, const eckit::geometry::Point2 &,
+                   const double &, const int &);
   ~ObsSpace();
 
 /// Interfacing
@@ -95,6 +97,18 @@ ObsSpace<MODEL>::ObsSpace(const ObsSpace<MODEL> & os,
   util::Timer timer(classname(), "ObsSpace");
   obsdb_.reset(new ObsSpace_(os.obsspace(), center, dist, maxnum));
   Log::trace() << "ObsSpace<MODEL>::ObsSpace (local) done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+ObsSpace<MODEL>::ObsSpace(const ObsSpace_ & os,
+     const eckit::geometry::Point2 & center, const double & dist, const int & maxnum):
+         obsdb_() {
+  Log::trace() << "ObsSpace<MODEL>::ObsSpace (local) derived state starting" << std::endl;
+  util::Timer timer(classname(), "ObsSpace");
+  obsdb_.reset(new ObsSpace_(os, center, dist, maxnum));
+  Log::trace() << "ObsSpace<MODEL>::ObsSpace (local) derived state done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
