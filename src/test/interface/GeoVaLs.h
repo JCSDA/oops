@@ -26,6 +26,7 @@
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/dot_product.h"
+#include "oops/util/Logger.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
@@ -99,20 +100,78 @@ template <typename MODEL> void testUtils() {
   std::vector<eckit::LocalConfiguration> conf;
   obsconf.get("ObsTypes", conf);
 
+  const double tol = 1e-6;
+
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     eckit::LocalConfiguration obsopconf(conf[jj], "ObsOperator");
     ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
 
+    eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
     Locations_ locs(hop.locations(Test_::tbgn(), Test_::tend()));
-    GeoVaLs_ gval(locs, hop.variables());
+
+    GeoVaLs_ gval(gconf, Test_::obspace()[jj], hop.variables());
+
+    const double zz = dot_product(gval, gval);
+
+    oops::Log::trace() << "Testing copy constructor (=) " << std::endl;
+
+    GeoVaLs_ gval2 = gval;
+
+    double zz0 = dot_product(gval2, gval2);
+
+    EXPECT(zz0 == zz);
+
+    oops::Log::trace() << "Testing *= double" << std::endl;
+
+    gval2 *= 2.0;
+
+    const double zz1 = dot_product(gval2, gval2);
+
+    EXPECT(zz1/zz - 4.0 < tol);
+
+    oops::Log::trace() << "Testing += GeoVals" << std::endl;
+
+    gval2 += gval;
+
+    const double zz2 = dot_product(gval2, gval2);
+
+    EXPECT(zz2/zz - 9.0  < tol);
+
+    oops::Log::trace() << "Testing -= GeoVals" << std::endl;
+
+    gval2 -= gval;
+
+    const double zz3 = dot_product(gval2, gval2);
+
+    EXPECT(zz3/zz - 4.0  < tol);
+
+    oops::Log::trace() << "Testing *= GeoVals" << std::endl;
+
+    gval2 = gval;
+
+    gval2 *= gval;
+
+    GeoVaLs_ gval3 = gval2;
+
+    gval3 *= gval;
+
+    const double zz4 = dot_product(gval2, gval2);
+
+    const double zz5 = dot_product(gval3, gval);
+
+    EXPECT(zz4/zz5 - 1.0  < tol);
+
+    oops::Log::trace() << "Testing random" << std::endl;
 
     gval.random();
-    const double zz1 = dot_product(gval, gval);
-    EXPECT(zz1 > 0.0);
+    const double zz6 = dot_product(gval, gval);
+    EXPECT(zz6 > 0.0);
+
+    oops::Log::trace() << "Testing zero" << std::endl;
 
     gval.zero();
-    const double zz2 = dot_product(gval, gval);
-    EXPECT(zz2 == 0.0);
+    const double zz7 = dot_product(gval, gval);
+    EXPECT(zz7 == 0.0);
   }
 }
 
@@ -163,6 +222,8 @@ class GeoVaLs : public oops::Test {
 
     ts.emplace_back(CASE("interface/GeoVaLs/testConstructor")
       { testConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/GeoVaLs/testUtils")
+      { testUtils<MODEL>(); });
     ts.emplace_back(CASE("interface/GeoVaLs/testRead")
       { testRead<MODEL>(); });
   }

@@ -40,15 +40,14 @@ class GomL95 : public util::Printable,
   explicit GomL95(const GomL95 &);
   ~GomL95();
 
-  void abs();
   void zero();
   void random();
-  double norm() const;
+  double rms() const;
+  double normalizedrms(const GomL95 &) const;
   GomL95 & operator*=(const double &);
   GomL95 & operator+=(const GomL95 &);
   GomL95 & operator-=(const GomL95 &);
   GomL95 & operator*=(const GomL95 &);
-  GomL95 & operator/=(const GomL95 &);
   double dot_product_with(const GomL95 &) const;
   void read(const eckit::Configuration &);
   void analytic_init(const LocsL95 &, const eckit::Configuration &);

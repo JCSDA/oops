@@ -52,14 +52,17 @@ GomQG::~GomQG() {
   qg_gom_delete_f90(keyGom_);
 }
 // -----------------------------------------------------------------------------
-void GomQG::abs() {
-  qg_gom_abs_f90(keyGom_);
-}
-// -----------------------------------------------------------------------------
-double GomQG::norm() const {
+double GomQG::rms() const {
   double zz;
   qg_gom_rms_f90(keyGom_, zz);
   return zz;
+}
+// -----------------------------------------------------------------------------
+double GomQG::normalizedrms(const GomQG & rhs) const {
+  double zz;
+  GomQG temp_GomQG(*this);
+  qg_gom_divide_f90(temp_GomQG.keyGom_, rhs.keyGom_);
+  return temp_GomQG.rms();
 }
 // -----------------------------------------------------------------------------
 void GomQG::zero() {
@@ -93,11 +96,6 @@ GomQG & GomQG::operator-=(const GomQG & other) {
 // -----------------------------------------------------------------------------
 GomQG & GomQG::operator*=(const GomQG & other) {
   qg_gom_schurmult_f90(keyGom_, other.keyGom_);
-  return *this;
-}
-// -----------------------------------------------------------------------------
-GomQG & GomQG::operator/=(const GomQG & other) {
-  qg_gom_divide_f90(keyGom_, other.keyGom_);
   return *this;
 }
 // -----------------------------------------------------------------------------

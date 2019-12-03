@@ -189,12 +189,10 @@ template <typename MODEL> void testStateInterpolation() {
   gval -= ref;
 
   // Compute the normalized error
-  gval.abs();
-  gval /= ref;
 
   // And check to see if the errors are within specified tolerance
   double interp_tol = Test_::test().getDouble("interp_tolerance");
-  EXPECT(gval.norm() < interp_tol);
+  EXPECT(gval.normalizedrms(ref)  < interp_tol);
 
   // Each MODEL should define an appropriate GeoVaLs print() method that
   // writes information about the GeoVaLs object to the oops::Log::debug()

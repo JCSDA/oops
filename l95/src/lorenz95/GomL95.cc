@@ -80,24 +80,20 @@ GomL95 & GomL95::operator*=(const GomL95 & rhs)
   return *this;
 }
 // -----------------------------------------------------------------------------
-GomL95 & GomL95::operator/=(const GomL95 & rhs)
-{
-  for (size_t jj = 0; jj < size_; ++jj) locval_[jj] /= rhs.locval_[jj];
-  return *this;
-}
-// -----------------------------------------------------------------------------
-void GomL95::abs() {
-  for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = std::abs(locval_[jj]);
-}
-// -----------------------------------------------------------------------------
 void GomL95::zero() {
   for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = 0.0;
 }
 // -----------------------------------------------------------------------------
-double GomL95::norm() const {
+double GomL95::rms() const {
   double xnorm(0.0);
   for (size_t jj = 0; jj < size_; ++jj) xnorm += locval_[jj] * locval_[jj];
   return sqrt(xnorm/static_cast<double>(size_));
+}
+// -----------------------------------------------------------------------------
+double GomL95::normalizedrms(const GomL95 & rhs) const {
+  GomL95 temp_gv(*this);
+  for (size_t jj = 0; jj < size_; ++jj) temp_gv.locval_[jj] /= rhs.locval_[jj];
+  return temp_gv.rms();
 }
 // -----------------------------------------------------------------------------
 void GomL95::random() {
