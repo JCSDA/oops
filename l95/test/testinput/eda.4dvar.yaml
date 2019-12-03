@@ -1,4 +1,4 @@
-EDA:
+EnsembleApplication:
   members: 4
 cost_function:
   cost_type: 4D-Var
@@ -21,7 +21,7 @@ cost_function:
         ObsDataIn:
           filename: Data/l95.truth4d.2010-01-02T00:00:00Z.obt
         ObsDataOut:
-          filename: Data/l95.eda.2010-01-02T00:00:00Z.obt  # should depend on member
+          filename: Data/%{member}%.eda.4dvar.2010-01-02T00:00:00Z.obt
       Covariance:
         covariance: diagonal
         random_amplitude: 0.2
@@ -42,7 +42,7 @@ model:
   tstep: PT1H30M
 output:
   datadir: Data
-  exp: test
+  exp: %{member}%.eda.4dvar
   first: PT3H
   frequency: PT06H
   type: an

@@ -30,6 +30,9 @@
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Random.h"
+#include "oops/util/stringFunctions.h"
+
+namespace sf = util::stringfunctions;
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
@@ -53,6 +56,7 @@ ObsTable::ObsTable(const eckit::Configuration & config, const eckit::mpi::Comm &
   }
   if (config.has("ObsDataOut")) {
     nameOut_ = config.getString("ObsDataOut.filename");
+    sf::swapNameMember(config, nameOut_);
   }
   oops::Log::trace() << "ObsTable::ObsTable created nobs = " << nobs() << std::endl;
 }

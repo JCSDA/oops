@@ -202,8 +202,10 @@ oops/runs/Application.h
 oops/runs/ConvertState.h
 oops/runs/DiffStates.h
 oops/runs/Dirac.h
+oops/runs/EDA.h
 oops/runs/EnsForecasts.h
 oops/runs/EnsHofX.h
+oops/runs/EnsVariance.h
 oops/runs/EnsRecenter.h
 oops/runs/EstimateParams.h
 oops/runs/ExternalDFI.h
@@ -215,7 +217,6 @@ oops/runs/LETKF.h
 oops/runs/LocalHofX.h
 oops/runs/HofX3D.h
 oops/runs/MakeObs.h
-oops/runs/EnsVariance.h
 oops/runs/Run.h
 oops/runs/Run.cc
 oops/runs/StaticBInit.h
@@ -268,6 +269,9 @@ oops/util/signal_trap.cc
 oops/util/string_f_c_mod.F90
 oops/util/string_f_c_interface.h
 oops/util/string_f_c_interface.cc
+oops/util/string_utils.F90
+oops/util/stringFunctions.cc
+oops/util/stringFunctions.h
 oops/util/Timer.h
 oops/util/Timer.cc
 oops/util/TimerHelper.h

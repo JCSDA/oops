@@ -77,7 +77,8 @@ State4D<MODEL>::State4D(const eckit::Configuration & config, const Variables & v
   Log::debug() << "State4D: reading " << files.size() << " states." << std::endl;
 
   for (size_t jsub = 0; jsub < files.size(); ++jsub) {
-    Log::debug() << "State4D:reading" << files[jsub] << std::endl;
+    if (config.has("member")) files[jsub].set("member", config.getInt("member"));
+    Log::debug() << "State4D: reading " << files[jsub] << std::endl;
     State_ * js = new State_(resol, vars, files[jsub]);
     Log::debug() << "State4D:State4D: read bg at " << js->validTime() << std::endl;
     state4d_.push_back(js);

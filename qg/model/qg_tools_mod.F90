@@ -1,8 +1,8 @@
 ! (C) Copyright 2009-2016 ECMWF.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
-! In applying this licence, ECMWF does not waive the privileges and immunities 
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
@@ -28,6 +28,7 @@ contains
 ! ------------------------------------------------------------------------------
 !> Generate filename
 function genfilename(f_conf,length,vdate)
+use string_utils
 
 implicit none
 
@@ -50,8 +51,10 @@ type(duration) :: step
 
 ! Get configuration parameters
 call f_conf%get_or_die("datadir",str)
+call swap_name_member(f_conf, str)
 fdbdir = str
 call f_conf%get_or_die("exp",str)
+call swap_name_member(f_conf, str)
 expver = str
 call f_conf%get_or_die("type",str)
 typ = str

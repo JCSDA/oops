@@ -1,0 +1,97 @@
+EnsembleApplication:
+  members: 4
+cost_function:
+  cost_type: 4D-Var
+  Jb:
+    Background:
+      state:
+      - date: 2010-01-01T09:00:00Z
+        filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT9H
+    Covariance:
+      covariance: QgError
+      horizontal_length_scale: 2.2e6
+      maximum_condition_number: 1.0e6
+      standard_deviation: 1.8e7
+      vertical_length_scale: 15000.0
+  Jo:
+    ObsTypes:
+    - Covariance:
+        covariance: diagonal
+        random_amplitude: 0.4
+      ObsOperator:
+        ObsType: Stream
+      ObsSpace:
+        ObsDataIn:
+          obsfile: Data/truth.obs3d
+        ObsDataOut:
+          obsfile: Data/%{member}%.eda_3dfgat.obs3d
+        ObsType: Stream
+    - Covariance:
+        covariance: diagonal
+        random_amplitude: 0.5
+      ObsOperator:
+        ObsType: Wind
+      ObsSpace:
+        ObsDataIn:
+          obsfile: Data/truth.obs3d
+        ObsDataOut:
+          obsfile: Data/%{member}%.eda_3dfgat.obs3d
+        ObsType: Wind
+    - Covariance:
+        covariance: diagonal
+        random_amplitude: 0.2
+      ObsOperator:
+        ObsType: WSpeed
+      ObsSpace:
+        ObsDataIn:
+          obsfile: Data/truth.obs3d
+        ObsDataOut:
+          obsfile: Data/%{member}%.eda_3dfgat.obs3d
+        ObsType: WSpeed
+  variables:
+  - x
+  window_begin: 2010-01-01T09:00:00Z
+  window_length: PT6H
+final:
+  diagnostics:
+    departures: oman
+minimizer:
+  algorithm: DRIPCG
+model:
+  name: QG
+  tstep: PT1H
+  variables:
+  - x
+output:
+  datadir: Data
+  exp: %{member}%.eda_3dfgat
+  first: PT3H
+  frequency: PT6H
+  type: an
+resolution:
+  nx: 40
+  ny: 20
+  depths:
+  - 4500.0
+  - 5500.0
+variational:
+  iteration:
+  - diagnostics:
+      departures: ombg
+    gradient_norm_reduction: 1.0e-10
+    linearmodel:
+      trajectory:
+        tstep: PT1H
+      tstep: PT6H
+      varchange: Identity
+      variables:
+      - x
+      version: QgIdTLM
+    ninner: 10
+    resolution:
+      nx: 40
+      ny: 20
+      depths:
+      - 4500.0
+      - 5500.0
+    test: on

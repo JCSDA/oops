@@ -32,10 +32,12 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/stringFunctions.h"
 
 namespace oops {
   class Variables;
 }
+namespace sf = util::stringfunctions;
 
 namespace lorenz95 {
 
@@ -109,7 +111,8 @@ StateL95 & StateL95::operator+=(const IncrementL95 & dx) {
 /// Utilities
 // -----------------------------------------------------------------------------
 void StateL95::read(const eckit::Configuration & config) {
-  const std::string filename(config.getString("filename"));
+  std::string filename(config.getString("filename"));
+  sf::swapNameMember(config, filename);
   oops::Log::trace() << "StateL95::read opening " << filename << std::endl;
   std::ifstream fin(filename.c_str());
   if (!fin.is_open()) ABORT("StateL95::read: Error opening file: " + filename);
@@ -152,6 +155,8 @@ void StateL95::write(const eckit::Configuration & config) const {
   if (type == "an") {
     filename += "."+time_.toString();
   }
+
+  sf::swapNameMember(config, filename);
 
   oops::Log::trace() << "StateL95::write opening " << filename << std::endl;
   std::ofstream fout(filename.c_str());

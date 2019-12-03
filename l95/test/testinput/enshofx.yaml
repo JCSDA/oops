@@ -1,3 +1,5 @@
+EnsembleApplication:
+  members: 10
 Assimilation Window:
   Begin: '2010-01-01T03:00:00Z'
   Length: P1D
@@ -35,5 +37,5 @@ Observations:
       ObsDataIn:
         filename: Data/l95.truth4d.2010-01-02T00:00:00Z.obt
       ObsDataOut:
-        filename: Data/l95.enshofx.2010-01-02T00:00:00Z.obt
+        filename: Data/%{member}%.enshofx.2010-01-02T00:00:00Z.obt
     ObsOperator: {}

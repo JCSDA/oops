@@ -2,8 +2,8 @@
 ! (C) Copyright 2017-2019 UCAR.
 !
 ! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
-! In applying this licence, ECMWF does not waive the privileges and immunities 
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
@@ -72,6 +72,7 @@ contains
 ! ------------------------------------------------------------------------------
 !> Setup observation data
 subroutine qg_obsdb_setup(self,f_conf)
+use string_utils
 
 implicit none
 
@@ -94,6 +95,8 @@ call fckit_log%info('qg_obsdb_setup: file in = '//trim(fin))
 
 ! Output file
 call f_conf%get_or_die("ObsDataOut.obsfile",str)
+call swap_name_member(f_conf, str)
+
 fout = str
 call fckit_log%info('qg_obsdb_setup: file out = '//trim(fout))
 
@@ -294,7 +297,7 @@ endif
 end subroutine qg_obsdb_has
 ! ------------------------------------------------------------------------------
 !> Get locations from observation data
-subroutine qg_obsdb_locations(self,grp,t1,t2,locs) 
+subroutine qg_obsdb_locations(self,grp,t1,t2,locs)
 
 implicit none
 
@@ -428,7 +431,7 @@ call ncerr(nf90_inquire_dimension(ncid,ngrp_id,len=self%ngrp))
 ! Get variables ids
 call ncerr(nf90_inq_varid(ncid,'grpname',grpname_id))
 
-do igrp=1,self%ngrp 
+do igrp=1,self%ngrp
   ! Allocation
   if (igrp==1) then
     allocate(self%grphead)

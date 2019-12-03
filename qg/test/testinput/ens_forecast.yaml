@@ -1,3 +1,5 @@
+EnsembleApplication:
+  members: 2
 forecast_length: P2D
 members:
   - date: 2009-12-31T00:00:00Z
@@ -12,7 +14,7 @@ model:
 output:
   datadir: Data
   date: 2009-12-31T00:00:00Z
-  exp: forecast
+  exp: %{member}%.ensforecast
   frequency: PT1H
   type: fc
 prints:

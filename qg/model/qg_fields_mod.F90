@@ -557,6 +557,7 @@ end subroutine qg_fields_change_resol
 ! ------------------------------------------------------------------------------
 !> Read fields from file
 subroutine qg_fields_read_file(fld,f_conf,vdate)
+use string_utils
 
 implicit none
 
@@ -578,7 +579,7 @@ call qg_fields_check(fld)
 
 ! Check whether the field should be invented or read from file
 iread = 1
-if (f_conf%has("read_from_file")) call f_conf%get_or_die("read_from_file",iread) 
+if (f_conf%has("read_from_file")) call f_conf%get_or_die("read_from_file",iread)
 
 if (iread==0) then
   ! Invent field
@@ -589,6 +590,7 @@ else
 
   ! Get filename
   call f_conf%get_or_die("filename",str)
+  call swap_name_member(f_conf, str)
   filename = str
   call fckit_log%info('qg_fields_read_file: opening '//trim(filename))
 

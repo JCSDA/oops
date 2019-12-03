@@ -22,6 +22,7 @@
 #include "oops/util/dot_product.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/stringFunctions.h"
 
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/GomL95.h"
@@ -34,6 +35,7 @@
 namespace oops {
   class Variables;
 }
+namespace sf = util::stringfunctions;
 
 namespace lorenz95 {
 
@@ -135,7 +137,8 @@ void IncrementL95::accumul(const double & zz, const StateL95 & xx) {
 /// Utilities
 // -----------------------------------------------------------------------------
 void IncrementL95::read(const eckit::Configuration & config) {
-  const std::string filename(config.getString("filename"));
+  std::string filename(config.getString("filename"));
+  sf::swapNameMember(config, filename);
   oops::Log::trace() << "IncrementL95::read opening " << filename << std::endl;
   std::ifstream fin(filename.c_str());
   if (!fin.is_open()) ABORT("IncrementL95::read: Error opening file: " + filename);
@@ -169,6 +172,7 @@ void IncrementL95::write(const eckit::Configuration & config) const {
   filename += "."+antime.toString();
   const util::Duration step = time_ - antime;
   filename += "."+step.toString();
+  sf::swapNameMember(config, filename);
 
   oops::Log::trace() << "IncrementL95::write opening " << filename << std::endl;
   std::ofstream fout(filename.c_str());

@@ -234,9 +234,11 @@ template <typename MODEL> class LETKF : public Application {
     // TODO(Travis) optionally save analysis mean / standard deviation
 
     // save the analysis ensemble
+    int mymember;
     for (unsigned jj=0; jj < obsens.size(); ++jj) {
+      mymember = jj+1;
       eckit::LocalConfiguration outConfig(fullConfig, "output");
-      outConfig.set("member", jj+1.0);
+      outConfig.set("member", mymember);
       ens_xx[jj].write(outConfig);
     }
 

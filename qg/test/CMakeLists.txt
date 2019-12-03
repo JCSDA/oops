@@ -34,7 +34,9 @@ list( APPEND qg_test_input
   testinput/dirac_qg_loc_3d.yaml
   testinput/dirac_qg_loc_4d.yaml
   testinput/dirac_no_loc.yaml
-  testinput/eda_4dvar_pert_obs.yaml
+  testinput/eda_3dfgat.yaml
+  testinput/eda_3dvar.yaml
+  testinput/eda_4dvar.yaml
   testinput/ens_forecast.yaml
   testinput/ens_hofx.yaml
   testinput/ens_recenter.yaml
@@ -93,7 +95,7 @@ list( APPEND qg_testoutput
   testoutput/dirac_qg_loc_3d.test
   testoutput/dirac_qg_loc_4d.test
   testoutput/dirac_no_loc.test
-#  testoutput/eda_4dvar_pert_obs.test
+#  testoutput/eda_4dvar.test
   testoutput/ens_forecast.test
   testoutput/ens_hofx.test
   testoutput/ens_recenter.test
@@ -487,32 +489,32 @@ ecbuild_add_test( TARGET test_qg_gen_ens_pert_B_compare
 #--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_qg_ens_forecast_run
-                  OMP    2
+                  MPI    2
                   COMMAND ${CMAKE_BINARY_DIR}/bin/qg_ens_forecast.x
                   ARGS testinput/ens_forecast.yaml testoutput/ens_forecast.log.out
                   DEPENDS qg_ens_forecast.x
                   TEST_DEPENDS test_qg_forecast_run )
 
-ecbuild_add_test( TARGET test_qg_ens_forecast_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/ens_forecast.log.out testoutput/ens_forecast.test
-                  TEST_DEPENDS test_qg_ens_forecast_run )
+#ecbuild_add_test( TARGET test_qg_ens_forecast_compare
+#                  TYPE SCRIPT
+#                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+#                  ARGS testoutput/ens_forecast.log.out testoutput/ens_forecast.test
+#                  TEST_DEPENDS test_qg_ens_forecast_run )
 
 #--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_qg_ens_hofx_run
-                  OMP    2
+                  MPI    5
                   COMMAND ${CMAKE_BINARY_DIR}/bin/qg_ens_hofx.x
                   ARGS testinput/ens_hofx.yaml testoutput/ens_hofx.log.out
                   DEPENDS qg_ens_hofx.x
                   TEST_DEPENDS test_qg_gen_ens_pert_B_run test_qg_make_obs_4d_12h_run )
 
-ecbuild_add_test( TARGET test_qg_ens_hofx_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/ens_hofx.log.out testoutput/ens_hofx.test
-                  TEST_DEPENDS test_qg_ens_hofx_run )
+#ecbuild_add_test( TARGET test_qg_ens_hofx_compare
+#                  TYPE SCRIPT
+#                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+#                  ARGS testoutput/ens_hofx.log.out testoutput/ens_hofx.test
+#                  TEST_DEPENDS test_qg_ens_hofx_run )
 
 #--------------------------------------------------------------------
 
@@ -1184,10 +1186,24 @@ ecbuild_add_test( TARGET test_qg_4dvar_saddlepoint_compare
 # EDA tests
 #####################################################################
 
-ecbuild_add_test( TARGET test_qg_eda_4dvar_pert_obs_run
+ecbuild_add_test( TARGET test_qg_eda_3dfgat
                   MPI    4
                   COMMAND ${CMAKE_BINARY_DIR}/bin/qg_eda.x
-                  ARGS testinput/eda_4dvar_pert_obs.yaml
+                  ARGS testinput/eda_3dfgat.yaml
+                  DEPENDS qg_eda.x
+                  TEST_DEPENDS test_qg_forecast_run  test_qg_make_obs_4d_24h_run )
+
+ecbuild_add_test( TARGET test_qg_eda_3dvar
+                  MPI    4
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_eda.x
+                  ARGS testinput/eda_3dvar.yaml
+                  DEPENDS qg_eda.x
+                  TEST_DEPENDS test_qg_forecast_run  test_qg_make_obs_4d_24h_run )
+
+ecbuild_add_test( TARGET test_qg_eda_4dvar
+                  MPI    4
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_eda.x
+                  ARGS testinput/eda_4dvar.yaml
                   DEPENDS qg_eda.x
                   TEST_DEPENDS test_qg_forecast_run  test_qg_make_obs_4d_24h_run )
 

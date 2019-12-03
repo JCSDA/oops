@@ -1,82 +1,72 @@
-EDA:
+EnsembleApplication:
   members: 4
 cost_function:
-  cost_type: 4D-Var
+  cost_type: 3D-Var
   Jb:
     Background:
       state:
-      - date: 2010-01-01T00:00:00Z
-        filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D
+      - date: 2010-01-01T12:00:00Z
+        filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H
     Covariance:
       covariance: QgError
       horizontal_length_scale: 2.2e6
       maximum_condition_number: 1.0e6
       standard_deviation: 1.8e7
       vertical_length_scale: 15000.0
-  Jc:
-  - jcdfi:
-      alpha: 1.0e-13
-      cutoff: PT3H
-      type: DolphChebyshev
-      variables:
-      - x  
   Jo:
     ObsTypes:
-    - ObsOperator:
-        ObsType: Stream
-      ObsSpace:
-        ObsType: Stream
-        ObsDataIn:
-          obsfile: Data/truth.obs4d_24h
-        ObsDataOut:
-          obsfile: Data/eda_4dvar_pert_obs.obs4d_24h
-      Covariance:
+    - Covariance:
         covariance: diagonal
         random_amplitude: 0.4
-    - ObsOperator:
-        ObsType: Wind
+      ObsOperator:
+        ObsType: Stream
       ObsSpace:
-        ObsType: Wind
         ObsDataIn:
-          obsfile: Data/truth.obs4d_24h
+          obsfile: Data/truth.obs3d
         ObsDataOut:
-          obsfile: Data/eda_4dvar_pert_obs.obs4d_24h
-      Covariance:
+          obsfile: Data/%{member}%.eda_3dvar.obs3d
+        ObsType: Stream
+    - Covariance:
         covariance: diagonal
         random_amplitude: 0.5
-    - ObsOperator:
-        ObsType: WSpeed
+      ObsOperator:
+        ObsType: Wind
       ObsSpace:
-        ObsType: WSpeed
         ObsDataIn:
-          obsfile: Data/truth.obs4d_24h
+          obsfile: Data/truth.obs3d
         ObsDataOut:
-          obsfile: Data/eda_4dvar_pert_obs.obs4d_24h
-      Covariance:
+          obsfile: Data/%{member}%.eda_3dvar.obs3d
+        ObsType: Wind
+    - Covariance:
         covariance: diagonal
         random_amplitude: 0.2
+      ObsOperator:
+        ObsType: WSpeed
+      ObsSpace:
+        ObsDataIn:
+          obsfile: Data/truth.obs3d
+        ObsDataOut:
+          obsfile: Data/%{member}%.eda_3dvar.obs3d
+        ObsType: WSpeed
+  varchange: Identity
   variables:
-  - x  
-  window_begin: 2010-01-01T00:00:00Z
-  window_length: P1D
+  - x
+  window_begin: 2010-01-01T09:00:00Z
+  window_length: PT6H
 final:
   diagnostics:
     departures: oman
-  prints:
-    frequency: PT1H
 minimizer:
-  algorithm: DRPLanczos
-  preconditioner:
-    maxpairs: 3
+  algorithm: DRIPCG
 model:
   name: QG
   tstep: PT1H
   variables:
-  - x  
+  - x
 output:
   datadir: Data
-  exp: eda_4dvar_pert_obs
-  first: PT0S
+  exp: %{member}%.eda_3dvar
+  first: PT3H
   frequency: PT6H
   type: an
 resolution:
@@ -93,18 +83,18 @@ variational:
     linearmodel:
       trajectory:
         tstep: PT1H
-      tstep: PT1H
+      tstep: PT6H
       varchange: Identity
       variables:
-      - x  
-      version: QgTLM
+      - x
+      version: QgIdTLM
     ninner: 10
     resolution:
-      nx: 40
-      ny: 20
+      nx: 20
+      ny: 10
       depths:
       - 4500.0
-      - 5500.0   
+      - 5500.0
     test: on
   - diagnostics:
       departures: ombg
@@ -112,16 +102,16 @@ variational:
     linearmodel:
       trajectory:
         tstep: PT1H
-      tstep: PT1H
+      tstep: PT6H
       varchange: Identity
       variables:
-      - x  
-      version: QgTLM
+      - x
+      version: QgIdTLM
     ninner: 10
     resolution:
       nx: 40
       ny: 20
       depths:
       - 4500.0
-      - 5500.0   
+      - 5500.0
     test: on

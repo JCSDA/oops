@@ -15,6 +15,8 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
+#include "eckit/config/LocalConfiguration.h"
+#include "eckit/mpi/Comm.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
 #include "oops/base/StateWriter.h"
@@ -24,6 +26,7 @@
 #include "oops/interface/State.h"
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Application.h"
+#include "oops/runs/Forecast.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -43,52 +46,35 @@ template <typename MODEL> class EnsForecast : public Application {
   virtual ~EnsForecast() {}
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
-//  Setup resolution
-    const eckit::LocalConfiguration resolConfig(fullConfig, "resolution");
-    const Geometry_ resol(resolConfig, this->getComm());
-
-//  Setup Model
-    const eckit::LocalConfiguration modelConfig(fullConfig, "model");
-    const Model_ model(resol, modelConfig);
-
     std::vector<eckit::LocalConfiguration> memberConf;
     fullConfig.get("members", memberConf);
-    int members = memberConf.size();
 
-    for (int jm = 0; jm < members; ++jm) {
-//    Setup initial state
-      State_ xx(resol, model.variables(), memberConf[jm]);
-      Log::test() << "Initial state " << jm << " : " << xx << std::endl;
+// Create  the communicator for each member, named comm_member_{i}
+    const int members = fullConfig.getInt("EnsembleApplication.members");
+    const int ntasks = oops::mpi::comm().size();
+    const int mytask = oops::mpi::comm().rank();
+    const int tasks_per_member = ntasks / members;
+    const int mymember = mytask / tasks_per_member + 1;
+    ASSERT(ntasks%members == 0);
 
-//    Setup augmented state
-      const ModelAux_ moderr(resol, memberConf[jm]);
+    std::string commNameStr = "comm_member_" + std::to_string(mymember);
+    char const *commName = commNameStr.c_str();
+    eckit::mpi::Comm & commMember = eckit::mpi::comm().split(mymember, commName);
 
-//    Setup times
-      const util::Duration fclength(fullConfig.getString("forecast_length"));
-      const util::DateTime bgndate(xx.validTime());
-      const util::DateTime enddate(bgndate + fclength);
-      Log::info() << "Running forecast " << jm << " from " << bgndate
-                  << " to " << enddate << std::endl;
+    Log::info() << members << " EnsForecast members handled by " << ntasks
+                << " total MPI tasks and " << tasks_per_member << " MPI tasks per member"
+                << std::endl;
 
-//    Setup forecast outputs
-      PostProcessor<State_> post;
+// Add the useful info in the eckit configuration
+    eckit::LocalConfiguration config(fullConfig);
+    config.set("output.member", mymember);  // To write analysis in different files
+    config.set("initial", memberConf[mymember-1]);
 
-      eckit::LocalConfiguration prtConfig;
-      if (fullConfig.has("prints")) {
-        prtConfig = eckit::LocalConfiguration(fullConfig, "prints");
-      }
-      post.enrollProcessor(new StateInfo<State_>("fc", prtConfig));
+    Log::debug() << "EnsForecast config for member 0 = " << config << std::endl;
 
-      eckit::LocalConfiguration outConfig(fullConfig, "output");
-      outConfig.set("member", jm+1);
+    Forecast<MODEL> fc(commMember);
+    fc.execute(config);
 
-      post.enrollProcessor(new StateWriter<State_>(bgndate, outConfig));
-
-//    Run forecast
-      model.forecast(xx, moderr, fclength, post);
-
-      Log::test() << "Final state " << jm << " : " << xx << std::endl;
-    }
     return 0;
   }
 // -----------------------------------------------------------------------------

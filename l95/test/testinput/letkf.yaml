@@ -44,5 +44,5 @@ letkf:
 output:
   datadir: Data
   date: *date
-  exp: letkf
-  type: ens
+  exp: letkf.%{member}%
+  type: an

@@ -15,6 +15,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/mpi/Comm.h"
 #include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/ObsAuxControls.h"
 #include "oops/base/ObsEnsemble.h"
@@ -29,6 +30,7 @@
 #include "oops/interface/State.h"
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Application.h"
+#include "oops/runs/HofX.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -54,71 +56,36 @@ template <typename MODEL> class EnsHofX : public Application {
   virtual ~EnsHofX() {}
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
-//  Setup observation window
-    const eckit::LocalConfiguration windowConf(fullConfig, "Assimilation Window");
-    const util::Duration winlen(windowConf.getString("Length"));
-    const util::DateTime winbgn(windowConf.getString("Begin"));
-    const util::DateTime winend(winbgn + winlen);
-    Log::info() << "Observation window is:" << windowConf << std::endl;
-
-//  Setup resolution
-    const eckit::LocalConfiguration resolConfig(fullConfig, "Geometry");
-    const Geometry_ resol(resolConfig, this->getComm());
-
-//  Setup Model
-    const eckit::LocalConfiguration modelConfig(fullConfig, "Model");
-    const Model_ model(resol, modelConfig);
-
-//  Setup observations
-    eckit::LocalConfiguration obsconf(fullConfig, "Observations");
-    Log::debug() << "Observations configuration is:" << obsconf << std::endl;
-    ObsSpace_ obsdb(obsconf, this->getComm(), winbgn, winend);
-
-//  Setup observation bias
-    ObsAuxCtrls_ ybias(obsconf);
-
 //  Setup initial states
     const eckit::LocalConfiguration initialConfig(fullConfig, "Initial Condition");
-    std::vector<eckit::LocalConfiguration> members;
-    initialConfig.get("state", members);
-    Log::debug() << "EnsHofX: using " << members.size() << " states." << std::endl;
+    std::vector<eckit::LocalConfiguration> memberConf;
+    initialConfig.get("state", memberConf);
+    Log::debug() << "EnsHofX: using " << memberConf.size() << " states." << std::endl;
 
-//  Setup ObsEnsemble
-    ObsEnsemble_ obsens(obsdb, members.size());
-//  Loop on all ensemble members
-    for (unsigned jj = 0; jj < members.size(); ++jj) {
-//    Setup initial state for jj-th member
-      Log::info() << "Initial configuration for member " << jj << " is :" << members[jj]
-                  << std::endl;
-      State_ xx(resol, model.variables(), members[jj]);
-      Log::test() << "Initial state for member " << jj << ":" << xx << std::endl;
+  // Create  the communicator for each member, named comm_member_{i}
+    const int members = fullConfig.getInt("EnsembleApplication.members");
+    const int ntasks = oops::mpi::comm().size();
+    const int mytask = oops::mpi::comm().rank();
+    const int tasks_per_member = ntasks / members;
+    const int mymember = mytask / tasks_per_member + 1;
+    ASSERT(ntasks%members == 0);
 
-//    Setup augmented state
-      ModelAux_ moderr(resol, members[jj]);
+    std::string commNameStr = "comm_member_" + std::to_string(mymember);
+    char const *commName = commNameStr.c_str();
+    eckit::mpi::Comm & commMember = eckit::mpi::comm().split(mymember, commName);
 
-//    Setup postprocessor: forecast outputs
-      PostProcessor<State_> post;
-      eckit::LocalConfiguration prtConf;
-      fullConfig.get("Prints", prtConf);
-      post.enrollProcessor(new StateInfo<State_>("fc", prtConf));
+    Log::info() << members << " EnsHofx members handled by " << ntasks << " total MPI tasks and "
+                << tasks_per_member << " MPI tasks per member" << std::endl;
 
-//    Setup postprocessor: Observers
-      boost::shared_ptr<Observers<MODEL, State_> >
-      pobs(new Observers<MODEL, State_>(obsconf, obsdb, ybias));
-      post.enrollProcessor(pobs);
+  // Add the useful info in the eckit configuration
+    eckit::LocalConfiguration config(fullConfig);
+    config.set("Observations.member", mymember);
+    config.set("Initial Condition", memberConf[mymember-1]);
 
-//    Compute H(x)
-      model.forecast(xx, moderr, winlen, post);
-      Log::info() << "Finished observation computation for member " << jj << ":" << std::endl;
-      Log::test() << "Final state for member " << jj << ":" << xx << std::endl;
+    Log::debug() << "EnsHofX config for member 0 = " << config << std::endl;
 
-//    Save H(x)
-      std::unique_ptr<Observations_> yobs(pobs->release());
-      Log::test() << "H(x) for member " << jj << ":" << std::endl << *yobs
-                  << "End H(x) for member " << jj << std::endl;;
-      obsens[jj] = *yobs;
-      obsens[jj].save("hofx_"+std::to_string(jj+1));
-    }
+    HofX<MODEL> hofx(commMember);
+    hofx.execute(config);
 
     return 0;
   }

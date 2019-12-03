@@ -1,3 +1,5 @@
+EnsembleApplication:
+  members: 5
 Assimilation Window:
   Begin: 2010-01-01T00:00:00Z
   Length: PT12H
@@ -32,7 +34,7 @@ Observations:
       ObsDataIn:
         obsfile: Data/truth.obs4d_12h
       ObsDataOut:
-        obsfile: Data/ens_hofx.obs4d_12h
+        obsfile: Data/%{member}%.ens_hofx.obs4d_12h
       ObsType: Stream
   - ObsOperator:
       ObsType: Wind
@@ -40,7 +42,7 @@ Observations:
       ObsDataIn:
         obsfile: Data/truth.obs4d_12h
       ObsDataOut:
-        obsfile: Data/ens_hofx.obs4d_12h
+        obsfile: Data/%{member}%.ens_hofx.obs4d_12h
       ObsType: Wind
   - ObsOperator:
       ObsType: WSpeed
@@ -48,7 +50,7 @@ Observations:
       ObsDataIn:
         obsfile: Data/truth.obs4d_12h
       ObsDataOut:
-        obsfile: Data/ens_hofx.obs4d_12h
+        obsfile: Data/%{member}%.ens_hofx.obs4d_12h
       ObsType: WSpeed
 Prints:
   frequency: PT3H

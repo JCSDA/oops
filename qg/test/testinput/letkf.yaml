@@ -49,7 +49,7 @@ Observations:
         obsfile: Data/letkf.obs4d_12h
       ObsType: Wind
     Covariance:
-      covariance: diagonal      
+      covariance: diagonal
   - ObsOperator:
       ObsType: WSpeed
     ObsSpace:
@@ -71,5 +71,5 @@ letkf:
 output:
   datadir: Data
   date: *date
-  exp: letkf
-  type: ens
+  exp: letkf.%{member}%
+  type: an
