@@ -51,12 +51,18 @@ endif()
 # only boost headers
 include_directories( ${Boost_INCLUDE_DIR} )
 
-# LAPACK
-ecbuild_add_option( FEATURE LAPACK
-                    DESCRIPTION "Linear Algebra PACKage"
-                    REQUIRED_PACKAGES "LAPACK REQUIRED" )
-if (NOT HAVE_LAPACK)
-  ecbuild_error("LAPACK_LIBRARIES not defined")
+# MKL / LAPACK
+# Default: use MKL as LAPACK implementation.
+# Set -DENABLE_MKL=Off to disable use of MKL and prefer LAPACK
+
+ecbuild_add_option( FEATURE MKL
+                    DESCRIPTION "MKL linear algebra library"
+                    REQUIRED_PACKAGES MKL )
+
+if( HAVE_MKL )
+    set( LAPACK_LIBRARIES ${MKL_LIBRARIES} )
+else()
+    find_package( LAPACK REQUIRED )
 endif()
 
 # OpenMP
@@ -99,8 +105,6 @@ ecbuild_add_option( FEATURE FCTEST  DEFAULT ${ENABLE_TESTS}
 ################################################################################
 # Export package info
 ################################################################################
-
-list( APPEND OOPS_TPLS LAPACK eckit fckit saber )
 
 set( OOPS_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src
                        ${CMAKE_CURRENT_BINARY_DIR}/src
