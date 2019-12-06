@@ -245,6 +245,7 @@ oops/util/duration.intfb.h
 oops/util/duration_f.h
 oops/util/duration_f.cc
 oops/util/duration_mod.F90
+oops/util/Expect.h
 oops/util/formats.h
 oops/util/IntSetParser.cc
 oops/util/IntSetParser.h
@@ -283,6 +284,14 @@ oops/util/random_f.cc
 oops/util/random_mod.F90
 oops/util/variables_mod.f90
 oops/util/bump_interpolation_mod.F90
+
+oops/util/parameters/OptionalParameter.h
+oops/util/parameters/Parameter.h
+oops/util/parameters/ParameterBase.cc
+oops/util/parameters/ParameterBase.h
+oops/util/parameters/Parameters.cc
+oops/util/parameters/Parameters.h
+oops/util/parameters/ParameterTraits.h
 
 test/base/ObsFilters.h
 test/interface/ErrorCovariance.h
@@ -332,6 +341,7 @@ list( APPEND oops_test_input
   test/testinput/pushstringvector.yaml
   test/testinput/interp_interface.yaml
   test/testinput/variables.yaml
+  test/testinput/parameters.yaml
 )
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test/testinput)
 CREATE_SYMLINK( ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${oops_test_input} )
@@ -394,6 +404,11 @@ ecbuild_add_test( TARGET  test_util_random
 ecbuild_add_test( TARGET  test_util_pushstringvector
                   SOURCES test/base/FCString.cc
                   ARGS    "test/testinput/pushstringvector.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_parameters
+                  SOURCES test/base/Parameters.cc
+                  ARGS    "test/testinput/parameters.yaml"
                   LIBS    oops )
 
 ecbuild_add_test( TARGET  test_util_datetime
