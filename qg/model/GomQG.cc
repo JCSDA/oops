@@ -59,7 +59,6 @@ double GomQG::rms() const {
 }
 // -----------------------------------------------------------------------------
 double GomQG::normalizedrms(const GomQG & rhs) const {
-  double zz;
   GomQG temp_GomQG(*this);
   qg_gom_divide_f90(temp_GomQG.keyGom_, rhs.keyGom_);
   return temp_GomQG.rms();

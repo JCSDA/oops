@@ -26,7 +26,6 @@
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
-#include "oops/util/Timer.h"
 
 namespace eckit {
   class Configuration;
@@ -163,7 +162,6 @@ template<typename MODEL>
 void LinearModelBase<MODEL>::setTrajectory(const State_ & xx, State_ & xlr,
                                           const ModelAux_ & maux) {
   Log::trace() << "LinearModelBase<MODEL>::setTrajectory starting" << std::endl;
-  util::Timer timer(classname(), "setTrajectory");
   this->setTrajectory(xx.state(), xlr.state(), maux.modelauxcontrol());
   Log::trace() << "LinearModelBase<MODEL>::setTrajectory done" << std::endl;
 }
@@ -173,7 +171,6 @@ void LinearModelBase<MODEL>::setTrajectory(const State_ & xx, State_ & xlr,
 template<typename MODEL>
 void LinearModelBase<MODEL>::initializeTL(Increment_ & dx) const {
   Log::trace() << "LinearModelBase<MODEL>::initializeTL starting" << std::endl;
-  util::Timer timer(classname(), "initializeTL");
   this->initializeTL(dx.increment());
   Log::trace() << "LinearModelBase<MODEL>::initializeTL done" << std::endl;
 }
@@ -183,7 +180,6 @@ void LinearModelBase<MODEL>::initializeTL(Increment_ & dx) const {
 template<typename MODEL>
 void LinearModelBase<MODEL>::stepTL(Increment_ & dx, const ModelAuxIncr_ & merr) const {
   Log::trace() << "LinearModelBase<MODEL>::stepTL starting" << std::endl;
-  util::Timer timer(classname(), "stepTL");
   this->stepTL(dx.increment(), merr.modelauxincrement());
   Log::trace() << "LinearModelBase<MODEL>::stepTL done" << std::endl;
 }
@@ -193,7 +189,6 @@ void LinearModelBase<MODEL>::stepTL(Increment_ & dx, const ModelAuxIncr_ & merr)
 template<typename MODEL>
 void LinearModelBase<MODEL>::finalizeTL(Increment_ & dx) const {
   Log::trace() << "LinearModelBase<MODEL>::finalizeTL starting" << std::endl;
-  util::Timer timer(classname(), "finalizeTL");
   this->finalizeTL(dx.increment());
   Log::trace() << "LinearModelBase<MODEL>::finalizeTL done" << std::endl;
 }
@@ -203,7 +198,6 @@ void LinearModelBase<MODEL>::finalizeTL(Increment_ & dx) const {
 template<typename MODEL>
 void LinearModelBase<MODEL>::initializeAD(Increment_ & dx) const {
   Log::trace() << "LinearModelBase<MODEL>::initializeAD starting" << std::endl;
-  util::Timer timer(classname(), "initializeAD");
   this->initializeAD(dx.increment());
   Log::trace() << "LinearModelBase<MODEL>::initializeAD done" << std::endl;
 }
@@ -213,7 +207,6 @@ void LinearModelBase<MODEL>::initializeAD(Increment_ & dx) const {
 template<typename MODEL>
 void LinearModelBase<MODEL>::stepAD(Increment_ & dx, ModelAuxIncr_ & merr) const {
   Log::trace() << "LinearModelBase<MODEL>::stepAD starting" << std::endl;
-  util::Timer timer(classname(), "stepAD");
   this->stepAD(dx.increment(), merr.modelauxincrement());
   Log::trace() << "LinearModelBase<MODEL>::stepAD done" << std::endl;
 }
@@ -223,7 +216,6 @@ void LinearModelBase<MODEL>::stepAD(Increment_ & dx, ModelAuxIncr_ & merr) const
 template<typename MODEL>
 void LinearModelBase<MODEL>::finalizeAD(Increment_ & dx) const {
   Log::trace() << "LinearModelBase<MODEL>::finalizeAD starting" << std::endl;
-  util::Timer timer(classname(), "finalizeAD");
   this->finalizeAD(dx.increment());
   Log::trace() << "LinearModelBase<MODEL>::finalizeAD done" << std::endl;
 }

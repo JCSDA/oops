@@ -135,7 +135,6 @@ void LinearModel<MODEL>::forecastTL(Increment_ & dx, const ModelAuxIncr_ & mctl,
                                     PostProcessorTLAD<MODEL> cost,
                                     const bool idmodel) const {
   Log::trace() << "LinearModel<MODEL>::forecastTL starting" << std::endl;
-  util::Timer timer(classname(), "forecastTL");
 
   const util::DateTime end(dx.validTime() + len);
   const util::Duration tstep(tlm_->timeResolution());
@@ -176,7 +175,6 @@ void LinearModel<MODEL>::forecastAD(Increment_ & dx, ModelAuxIncr_ & mctl,
                                     PostProcessorTLAD<MODEL> cost,
                                     const bool idmodel) const {
   Log::trace() << "LinearModel<MODEL>::forecastAD starting" << std::endl;
-  util::Timer timer(classname(), "forecastAD");
 
   const util::DateTime bgn(dx.validTime() - len);
   const util::Duration tstep(tlm_->timeResolution());

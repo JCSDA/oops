@@ -21,7 +21,6 @@
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
-#include "oops/util/Timer.h"
 
 namespace eckit {
   class Configuration;
@@ -134,7 +133,6 @@ ModelBase<MODEL> * ModelFactory<MODEL>::create(const Geometry_ & geom,
 template<typename MODEL>
 void ModelBase<MODEL>::initialize(State_ & xx) const {
   Log::trace() << "ModelBase<MODEL>::initialize starting" << std::endl;
-  util::Timer timer(classname(), "initialize");
   this->initialize(xx.state());
   Log::trace() << "ModelBase<MODEL>::initialize done" << std::endl;
 }
@@ -144,7 +142,6 @@ void ModelBase<MODEL>::initialize(State_ & xx) const {
 template<typename MODEL>
 void ModelBase<MODEL>::step(State_ & xx, const ModelAux_ & merr) const {
   Log::trace() << "ModelBase<MODEL>::step starting" << std::endl;
-  util::Timer timer(classname(), "step");
   this->step(xx.state(), merr.modelauxcontrol());
   Log::trace() << "ModelBase<MODEL>::step done" << std::endl;
 }
@@ -154,7 +151,6 @@ void ModelBase<MODEL>::step(State_ & xx, const ModelAux_ & merr) const {
 template<typename MODEL>
 void ModelBase<MODEL>::finalize(State_ & xx) const {
   Log::trace() << "ModelBase<MODEL>::finalize starting" << std::endl;
-  util::Timer timer(classname(), "finalize");
   this->finalize(xx.state());
   Log::trace() << "ModelBase<MODEL>::finalize done" << std::endl;
 }

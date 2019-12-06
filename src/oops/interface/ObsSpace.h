@@ -53,7 +53,7 @@ class ObsSpace : public util::Printable,
   ObsSpace(const ObsSpace &, const eckit::geometry::Point2 &,
            const double &, const int &);
   ObsSpace(const ObsSpace_ &, const eckit::geometry::Point2 &,
-                   const double &, const int &);
+           const double &, const int &);
   ~ObsSpace();
 
 /// Interfacing
@@ -115,7 +115,10 @@ ObsSpace<MODEL>::ObsSpace(const ObsSpace_ & os,
 
 template <typename MODEL>
 ObsSpace<MODEL>::~ObsSpace() {
-  Log::trace() << "ObsSpace<MODEL>::~ObsSpace" << std::endl;
+  Log::trace() << "ObsSpace<MODEL>::~ObsSpace starting" << std::endl;
+  util::Timer timer(classname(), "~ObsSpace");
+  obsdb_.reset();
+  Log::trace() << "ObsSpace<MODEL>::~ObsSpace done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
