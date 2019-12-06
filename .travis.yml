@@ -35,8 +35,12 @@ before_install:
   - git checkout $BRANCH || echo "No branch named $BRANCH in saber repo"
   - cd $REPO_SOURCE_DIR  
 
+#  atlas
+  - git clone -b 0.18.1 https://github.com/ECMWF/atlas oops-bundle/atlas
+
 #  clone the testing branch of oops
   - git clone -b $BRANCH https://github.com/jcsda/oops.git ${REPO_SOURCE_DIR}/oops-bundle/oops 
+
 
 
 #  do no switch to develop branch by removing 
