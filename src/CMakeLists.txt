@@ -380,7 +380,7 @@ ecbuild_add_library( TARGET     oops
                      SOURCES
                                 ${FORTRAN_BINDINGS}
                                 ${oops_src_files}
-                     LIBS       ${LAPACK_LIBRARIES} ${NETCDF_LIBRARIES} fckit eckit_mpi eckit saber
+                     LIBS       ${LAPACK_LIBRARIES} ${NETCDF_LIBRARIES} Eigen3::Eigen fckit eckit_mpi eckit saber
                      INSTALL_HEADERS LISTED
                      TEMPLATES ${oops_fheader_files}
                      LINKER_LANGUAGE ${OOPS_LINKER_LANGUAGE}

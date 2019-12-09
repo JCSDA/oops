@@ -80,6 +80,9 @@ set( NETCDF_F90 ON CACHE BOOL "Compile with Fortran NetCDF" )
 find_package( NetCDF REQUIRED )
 include_directories( ${NETCDF_INCLUDE_DIRS} )
 
+# Eigen3
+find_package( Eigen3 REQUIRED NO_MODULE )
+
 # eckit
 ecbuild_use_package( PROJECT eckit VERSION 1.1.0 REQUIRED )
 include_directories( ${ECKIT_INCLUDE_DIRS} )
