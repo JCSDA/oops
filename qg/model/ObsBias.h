@@ -26,6 +26,7 @@ namespace eckit {
 
 namespace qg {
   class ObsBiasIncrement;
+  class ObsSpaceQG;
 
 /// Class to handle observation bias parameters.
 
@@ -38,7 +39,7 @@ class ObsBias : public util::Printable,
   static const unsigned int ntypes = 4;
   static const std::string classname() {return "qg::ObsBias";}
 
-  explicit ObsBias(const eckit::Configuration &);
+  ObsBias(const ObsSpaceQG &, const eckit::Configuration &);
   ObsBias(const ObsBias &, const bool);
   ~ObsBias() {}
 

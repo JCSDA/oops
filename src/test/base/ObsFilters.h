@@ -87,7 +87,7 @@ template <typename MODEL> void testFilters() {
       oops::Log::info() << "ObsOperator section specified, computing HofX" << std::endl;
       const eckit::LocalConfiguration obsopconf(typeconfs[jj], "ObsOperator");
       ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
-      const ObsAuxCtrl_ ybias(typeconfs[jj]);
+      const ObsAuxCtrl_ ybias(Test_::obspace()[jj], typeconfs[jj]);
       ObsVector_ hofx(Test_::obspace()[jj]);
       oops::Variables vars;
       vars += hop.variables();

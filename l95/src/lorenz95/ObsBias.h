@@ -25,6 +25,7 @@ namespace eckit {
 
 namespace lorenz95 {
   class ObsBiasCorrection;
+  class ObsTableView;
 
 /// Class to handle observation bias parameters.
 
@@ -36,7 +37,7 @@ class ObsBias : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::ObsBias";}
 
-  explicit ObsBias(const eckit::Configuration &);
+  ObsBias(const ObsTableView &, const eckit::Configuration &);
   ObsBias(const ObsBias &, const bool);
   ~ObsBias() {}
 

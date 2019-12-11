@@ -109,7 +109,7 @@ class ControlIncrement : public util::Printable,
 template<typename MODEL>
 ControlIncrement<MODEL>::ControlIncrement(const JbTotal_ & jb)
   : incrm4d_(jb.jbState()), modbias_(jb.resolution(), jb.jbModBias().config()),
-    obsbias_(jb.jbObsBias().config())
+    obsbias_(jb.jbObsBias().obspaces(), jb.jbObsBias().config())
 {
   Log::trace() << "ControlIncrement:ControlIncrement created." << std::endl;
 }

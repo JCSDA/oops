@@ -22,6 +22,7 @@ namespace eckit {
 
 namespace qg {
   class ObsBias;
+  class ObsSpaceQG;
 
 // -----------------------------------------------------------------------------
 
@@ -29,7 +30,7 @@ class ObsBiasIncrement : public util::Printable {
  public:
 /// Constructor, destructor
   ObsBiasIncrement();
-  explicit ObsBiasIncrement(const eckit::Configuration &);
+  ObsBiasIncrement(const ObsSpaceQG &, const eckit::Configuration &);
   ObsBiasIncrement(const ObsBiasIncrement &, const bool copy = true);
   ObsBiasIncrement(const ObsBiasIncrement &, const eckit::Configuration &);
   ~ObsBiasIncrement() {}

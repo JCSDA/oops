@@ -100,7 +100,7 @@ template <typename MODEL> class HofX : public Application {
     ObsSpaces_ obspace(obsconf, this->getComm(), winbgn, winend);
 
 //  Setup observations bias
-    ObsAuxCtrls_ ybias(obsconf);
+    ObsAuxCtrls_ ybias(obspace, obsconf);
 
 //  Setup QC filters
     std::vector<eckit::LocalConfiguration> typeconfs;

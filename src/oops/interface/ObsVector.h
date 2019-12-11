@@ -16,7 +16,6 @@
 #include <ostream>
 #include <string>
 
-
 #include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/util/Logger.h"

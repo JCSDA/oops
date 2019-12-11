@@ -26,6 +26,7 @@ namespace eckit {
 namespace lorenz95 {
   class ObsBias;
   class ObsBiasCorrection;
+  class ObsTableView;
 
 // -----------------------------------------------------------------------------
 
@@ -36,7 +37,7 @@ class ObsBiasCovariance : public util::Printable,
   static const std::string classname() {return "lorenz95::ObsBiasCovariance";}
 
 /// Constructor, destructor
-  explicit ObsBiasCovariance(const eckit::Configuration &);
+  ObsBiasCovariance(const ObsTableView &, const eckit::Configuration &);
   ~ObsBiasCovariance() {}
 
 /// Linear algebra operators

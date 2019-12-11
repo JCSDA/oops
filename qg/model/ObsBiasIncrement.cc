@@ -23,7 +23,7 @@
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-ObsBiasIncrement::ObsBiasIncrement(const eckit::Configuration & conf)
+ObsBiasIncrement::ObsBiasIncrement(const ObsSpaceQG &, const eckit::Configuration & conf)
   : bias_(ObsBias::ntypes, 0.0), active_(ObsBias::ntypes, false)
 {
   if (conf.has("ObsBiasCovariance")) {

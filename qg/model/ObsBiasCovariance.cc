@@ -26,7 +26,7 @@
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-ObsBiasCovariance::ObsBiasCovariance(const eckit::Configuration & conf)
+ObsBiasCovariance::ObsBiasCovariance(const ObsSpaceQG &, const eckit::Configuration & conf)
   : conf_(conf), variance_(ObsBias::ntypes, 0.0)
 {
   std::vector<double> zz(4, 0.0);

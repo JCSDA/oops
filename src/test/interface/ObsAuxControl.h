@@ -23,60 +23,47 @@
 #include "eckit/testing/Test.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/runs/Test.h"
+#include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
-template <typename MODEL> class ObsAuxControlFixture : private boost::noncopyable {
- public:
-  static const eckit::Configuration & config() {return *getInstance().conf_;}
-
- private:
-  static ObsAuxControlFixture<MODEL>& getInstance() {
-    static ObsAuxControlFixture<MODEL> theObsAuxControlFixture;
-    return theObsAuxControlFixture;
-  }
-
-  ObsAuxControlFixture() {
-    std::vector<eckit::LocalConfiguration> osconf;
-    TestEnvironment::config().get("Observations.ObsTypes", osconf);
-    conf_.reset(new eckit::LocalConfiguration(osconf[0]));
-  }
-
-  ~ObsAuxControlFixture() {}
-
-  std::unique_ptr<const eckit::LocalConfiguration>  conf_;
-};
-
-// -----------------------------------------------------------------------------
 
 template <typename MODEL> void testConstructor() {
-  typedef ObsAuxControlFixture<MODEL>   Test_;
+  typedef ObsTestsFixture<MODEL>  Test_;
   typedef oops::ObsAuxControl<MODEL>    ObsAux_;
 
-  std::unique_ptr<ObsAux_> bias(new ObsAux_(Test_::config()));
-  EXPECT(bias.get());
+  std::vector<eckit::LocalConfiguration> oconf;
+  Test_::config().get("ObsTypes", oconf);
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    std::unique_ptr<ObsAux_> bias(new ObsAux_(Test_::obspace()[jj], oconf[jj]));
+    EXPECT(bias.get());
 
-  bias.reset();
-  EXPECT(!bias.get());
+    bias.reset();
+    EXPECT(!bias.get());
+  }
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL> void testCopyConstructor() {
-  typedef ObsAuxControlFixture<MODEL>   Test_;
+  typedef ObsTestsFixture<MODEL>  Test_;
   typedef oops::ObsAuxControl<MODEL>    ObsAux_;
 
-  std::unique_ptr<ObsAux_> bias(new ObsAux_(Test_::config()));
+  std::vector<eckit::LocalConfiguration> oconf;
+  Test_::config().get("ObsTypes", oconf);
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    std::unique_ptr<ObsAux_> bias(new ObsAux_(Test_::obspace()[jj], oconf[jj]));
 
-  std::unique_ptr<ObsAux_> other(new ObsAux_(*bias));
-  EXPECT(other.get());
+    std::unique_ptr<ObsAux_> other(new ObsAux_(*bias));
+    EXPECT(other.get());
 
-  other.reset();
-  EXPECT(!other.get());
+    other.reset();
+    EXPECT(!other.get());
 
-  EXPECT(bias.get());
+    EXPECT(bias.get());
+  }
 }
 
 // -----------------------------------------------------------------------------

@@ -23,7 +23,7 @@
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-ObsBias::ObsBias(const eckit::Configuration & conf)
+ObsBias::ObsBias(const ObsSpaceQG &, const eckit::Configuration & conf)
   : bias_(ntypes, 0.0), active_(false), geovars_(), hdiags_() {
   oops::Log::info() << "ObsBias: conf = " << conf << std::endl;
   eckit::LocalConfiguration biasconf;

@@ -15,6 +15,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "oops/base/ObsAuxControls.h"
+#include "oops/base/ObsSpaces.h"
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
@@ -27,12 +28,13 @@ template <typename MODEL>
 class ObsAuxIncrements : public util::Printable {
   typedef ObsAuxIncrement<MODEL>               ObsAuxIncrement_;
   typedef ObsAuxControls<MODEL>                ObsAuxControls_;
+  typedef ObsSpaces<MODEL>           ObsSpaces_;
 
  public:
   static const std::string classname() {return "oops::ObsAuxIncrements";}
 
 /// Constructor, destructor
-  explicit ObsAuxIncrements(const eckit::Configuration &);
+  ObsAuxIncrements(const ObsSpaces_ &, const eckit::Configuration &);
   ObsAuxIncrements(const ObsAuxIncrements &, const bool copy = true);
   ObsAuxIncrements(const ObsAuxIncrements &, const eckit::Configuration &);
   ~ObsAuxIncrements();
@@ -83,14 +85,13 @@ ObsAuxControls<MODEL> & operator+=(ObsAuxControls<MODEL> & xx, const ObsAuxIncre
 // =============================================================================
 
 template<typename MODEL>
-ObsAuxIncrements<MODEL>::ObsAuxIncrements(const eckit::Configuration & conf)
+ObsAuxIncrements<MODEL>::ObsAuxIncrements(const ObsSpaces_ & odb, const eckit::Configuration & conf)
   : auxs_(0)
 {
   std::vector<eckit::LocalConfiguration> obsconf;
   conf.get("ObsTypes", obsconf);
   for (std::size_t jobs = 0; jobs < obsconf.size(); ++jobs) {
-    boost::shared_ptr<ObsAuxIncrement_>
-          tmp(new ObsAuxIncrement_(obsconf[jobs]));
+    boost::shared_ptr<ObsAuxIncrement_> tmp(new ObsAuxIncrement_(odb[jobs], obsconf[jobs]));
     auxs_.push_back(tmp);
   }
 }

@@ -223,8 +223,8 @@ void CostFunction<MODEL>::setupTerms(const eckit::Configuration & config) {
 
 // Jb
   const eckit::LocalConfiguration jbConf(config, "Jb");
-  xb_.reset(new CtrlVar_(config, anvars_, resol_));
-  jb_.reset(new JbTotal_(*xb_, this->newJb(jbConf, resol_, *xb_), config, resol_));
+  xb_.reset(new CtrlVar_(config, anvars_, resol_, jo->obspaces()));
+  jb_.reset(new JbTotal_(*xb_, this->newJb(jbConf, resol_, *xb_), config, resol_, jo->obspaces()));
   Log::trace() << "CostFunction::setupTerms Jb added" << std::endl;
 
 // Other constraints
@@ -252,7 +252,7 @@ void CostFunction<MODEL>::setupTerms(const eckit::Configuration & config, const 
 // Jb
   const eckit::LocalConfiguration jbConf(config, "Jb");
   xb_.reset(new CtrlVar_(config, statein));
-  jb_.reset(new JbTotal_(*xb_, this->newJb(jbConf, resol_, *xb_), config, resol_));
+  jb_.reset(new JbTotal_(*xb_, this->newJb(jbConf, resol_, *xb_), config, resol_, jo->obspaces()));
   Log::trace() << "CostFunction::setupTerms Jb added" << std::endl;
 
 // Other constraints

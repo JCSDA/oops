@@ -16,8 +16,8 @@
 #include <string>
 #include <vector>
 
-
 #include "oops/interface/ObsAuxControl.h"
+#include "oops/interface/ObsSpace.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -41,7 +41,7 @@ class ObsAuxIncrement : public util::Printable,
   static const std::string classname() {return "oops::ObsAuxIncrement";}
 
 /// Constructor, destructor
-  explicit ObsAuxIncrement(const eckit::Configuration &);
+  ObsAuxIncrement(const ObsSpace<MODEL> &, const eckit::Configuration &);
   ObsAuxIncrement(const ObsAuxIncrement &, const bool copy = true);
   ObsAuxIncrement(const ObsAuxIncrement &, const eckit::Configuration &);
   ~ObsAuxIncrement();
@@ -89,11 +89,12 @@ ObsAuxControl<MODEL> & operator+=(ObsAuxControl<MODEL> & xx, const ObsAuxIncreme
 // =============================================================================
 
 template<typename MODEL>
-ObsAuxIncrement<MODEL>::ObsAuxIncrement(const eckit::Configuration & conf) : aux_()
+ObsAuxIncrement<MODEL>::ObsAuxIncrement(const ObsSpace<MODEL> & os,
+                                        const eckit::Configuration & conf) : aux_()
 {
   Log::trace() << "ObsAuxIncrement<MODEL>::ObsAuxIncrement starting" << std::endl;
   util::Timer timer(classname(), "ObsAuxIncrement");
-  aux_.reset(new ObsAuxIncrement_(conf));
+  aux_.reset(new ObsAuxIncrement_(os.obsspace(), conf));
   Log::trace() << "ObsAuxIncrement<MODEL>::ObsAuxIncrement done" << std::endl;
 }
 // -----------------------------------------------------------------------------

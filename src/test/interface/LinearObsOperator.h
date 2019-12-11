@@ -92,11 +92,11 @@ template <typename MODEL> void testLinearity() {
     const GeoVaLs_ gval(gconf, Test_::obspace()[jj], hop.variables());
 
     // initialize obs bias
-    const ObsAuxCtrl_ ybias(conf[jj]);
-    ObsAuxIncr_ ybinc(conf[jj]);
+    const ObsAuxCtrl_ ybias(Test_::obspace()[jj], conf[jj]);
+    ObsAuxIncr_ ybinc(Test_::obspace()[jj], conf[jj]);
 
      // initialize Obs. Bias Covariance
-    const ObsAuxCov_ Bobsbias(conf[jj]);
+    const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], conf[jj]);
 
     // set trajectory for TL/AD to be the geovals from the file
     hoptl.setTrajectory(gval, ybias);
@@ -167,12 +167,12 @@ template <typename MODEL> void testAdjoint() {
     const GeoVaLs_ gval(gconf, Test_::obspace()[jj], hop.variables());
 
     // initialize bias correction
-    const ObsAuxCtrl_ ybias(conf[jj]);
-    ObsAuxIncr_ ybinc1(conf[jj]);  // TL
-    ObsAuxIncr_ ybinc2(conf[jj]);  // AD
+    const ObsAuxCtrl_ ybias(Test_::obspace()[jj], conf[jj]);
+    ObsAuxIncr_ ybinc1(Test_::obspace()[jj], conf[jj]);  // TL
+    ObsAuxIncr_ ybinc2(Test_::obspace()[jj], conf[jj]);  // AD
 
     // initialize Obs. Bias Covariance
-    const ObsAuxCov_ Bobsbias(conf[jj]);
+    const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], conf[jj]);
 
     // set TL/AD trajectory to the geovals from the file
     hoptl.setTrajectory(gval, ybias);
@@ -250,11 +250,11 @@ template <typename MODEL> void testTangentLinear() {
     GeoVaLs_ x(gconf, Test_::obspace()[jj], hop.variables());
 
     // initialize obs bias from file
-    const ObsAuxCtrl_ ybias0(conf[jj]);
-    ObsAuxCtrl_ ybias(conf[jj]);
+    const ObsAuxCtrl_ ybias0(Test_::obspace()[jj], conf[jj]);
+    ObsAuxCtrl_ ybias(Test_::obspace()[jj], conf[jj]);
 
     // initialize Obs. Bias Covariance
-    const ObsAuxCov_ Bobsbias(conf[jj]);
+    const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], conf[jj]);
 
     // set TL trajectory to the geovals and the bias coeff. from the files
     hoptl.setTrajectory(x0, ybias0);
@@ -278,7 +278,7 @@ template <typename MODEL> void testTangentLinear() {
     // randomize dx and ybinc
     GeoVaLs_ dx(gconf, Test_::obspace()[jj], hoptl.variables());
     dx.random();
-    ObsAuxIncr_ ybinc(conf[jj]);
+    ObsAuxIncr_ ybinc(Test_::obspace()[jj], conf[jj]);
     Bobsbias.randomize(ybinc);
 
     // scale dx by x0

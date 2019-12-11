@@ -17,8 +17,10 @@
 #include "eckit/geometry/Point2.h"
 #include "eckit/testing/Test.h"
 #include "oops/interface/ObsSpace.h"
+#include "oops/interface/ObsVector.h"
 #include "oops/runs/Test.h"
-#include "test/interface/ObsVector.h"
+#include "oops/util/dot_product.h"
+#include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
@@ -26,7 +28,7 @@ namespace test {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL> void testLocalObsSpace() {
-  typedef ObsVecFixture<MODEL> Test_;
+  typedef ObsTestsFixture<MODEL> Test_;
   typedef oops::ObsSpace<MODEL>               LocalObsSpace_;
   typedef oops::ObsVector<MODEL>              ObsVector_;
 
@@ -46,13 +48,13 @@ template <typename MODEL> void testLocalObsSpace() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     // initialize local observation space
-    LocalObsSpace_ localobs(*Test_::obspace()[jj], center, dist, -1);
+    LocalObsSpace_ localobs(Test_::obspace()[jj], center, dist, -1);
     oops::Log::info() << "Local obs within " << dist << " from " << center <<
                          ": " << localobs << std::endl;
 
     // count local nobs
     ObsVector_ localvec(localobs);
-    ObsVector_ globvec(*Test_::obspace()[jj]);
+    ObsVector_ globvec(Test_::obspace()[jj]);
     totalNobs += localvec.nobs();
   }
 
@@ -64,7 +66,7 @@ template <typename MODEL> void testLocalObsSpace() {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL> void testLocalObsVector() {
-  typedef ObsVecFixture<MODEL> Test_;
+  typedef ObsTestsFixture<MODEL> Test_;
   typedef oops::ObsSpace<MODEL>               LocalObsSpace_;
   typedef oops::ObsVector<MODEL>              ObsVector_;
 
@@ -84,11 +86,11 @@ template <typename MODEL> void testLocalObsVector() {
     const std::string varname = localconf.getString("varname");
 
     // initialize full ObsVector for a specified variable
-    ObsVector_ fullvec(*Test_::obspace()[jj], varname);
+    ObsVector_ fullvec(Test_::obspace()[jj], varname);
     oops::Log::info() << "Full Obsvector: " << fullvec << std::endl;
 
     // initialize local observation space
-    LocalObsSpace_ localobs(*Test_::obspace()[jj], center, dist, -1);
+    LocalObsSpace_ localobs(Test_::obspace()[jj], center, dist, -1);
     oops::Log::info() << "Local obs within " << dist << " from " << center <<
                          ": " << localobs << std::endl;
 

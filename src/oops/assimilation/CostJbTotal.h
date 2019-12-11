@@ -20,6 +20,7 @@
 #include "oops/assimilation/ControlVariable.h"
 #include "oops/assimilation/CostJbState.h"
 #include "oops/base/ObsAuxCovariances.h"
+#include "oops/base/ObsSpaces.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxCovariance.h"
 #include "oops/util/Logger.h"
@@ -41,10 +42,12 @@ template<typename MODEL> class CostJbTotal {
   typedef Geometry<MODEL>            Geometry_;
   typedef ModelAuxCovariance<MODEL>  ModelAuxCovar_;
   typedef ObsAuxCovariances<MODEL>   ObsAuxCovars_;
+  typedef ObsSpaces<MODEL>           ObsSpaces_;
 
  public:
 /// Construct \f$ J_b\f$.
-  CostJbTotal(const CtrlVar_ &, JbState_ *, const eckit::Configuration &, const Geometry_ &);
+  CostJbTotal(const CtrlVar_ &, JbState_ *, const eckit::Configuration &,
+              const Geometry_ &, const ObsSpaces_ & odb);
 
 /// Destructor
   ~CostJbTotal() {}
@@ -94,7 +97,7 @@ template<typename MODEL> class CostJbTotal {
   const CtrlVar_ & xb_;
   std::unique_ptr<JbState_> jb_;
   ModelAuxCovar_ jbModBias_;
-  ObsAuxCovars_   jbObsBias_;
+  ObsAuxCovars_  jbObsBias_;
 
   const CtrlVar_ mutable * fg_;
 
@@ -109,10 +112,11 @@ template<typename MODEL> class CostJbTotal {
 
 template<typename MODEL>
 CostJbTotal<MODEL>::CostJbTotal(const CtrlVar_ & xb, JbState_ * jb,
-                                const eckit::Configuration & conf, const Geometry_ & resol)
+                                const eckit::Configuration & conf,
+                                const Geometry_ & resol, const ObsSpaces_ & odb)
   : xb_(xb), jb_(jb),
     jbModBias_(conf.getSubConfiguration("Jb.ModelBiasCovariance"), resol),
-    jbObsBias_(eckit::LocalConfiguration(conf, "Jo")),
+    jbObsBias_(odb, eckit::LocalConfiguration(conf, "Jo")),
     dxFG_(), resol_()
 {
   Log::trace() << "CostJbTotal contructed." << std::endl;

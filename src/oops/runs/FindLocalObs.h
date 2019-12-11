@@ -91,7 +91,7 @@ template <typename MODEL> class FindLocalObs : public Application {
     ObsSpaces_ obsdb(obsconf, this->getComm(), winbgn, winend);
 
 //  Setup observations bias
-    ObsAuxCtrls_ ybias(obsconf);
+    ObsAuxCtrls_ ybias(obsdb, obsconf);
 
 //  Setup Observers
     boost::shared_ptr<Observers<MODEL, State_> >

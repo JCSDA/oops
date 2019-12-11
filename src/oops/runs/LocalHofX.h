@@ -112,7 +112,7 @@ template <typename MODEL> class LocalHofX : public Application {
        Log::test() << "Local obs around: " << centers[jj] << std::endl;
        Log::test() << *localobs[jj] << std::endl;
        //  Setup obs bias<
-       boost::shared_ptr<ObsAuxCtrls_> lobias(new ObsAuxCtrls_(obsconf));
+       boost::shared_ptr<ObsAuxCtrls_> lobias(new ObsAuxCtrls_(obsdb, obsconf));
        localobias.push_back(lobias);
        //  Setup observer
        boost::shared_ptr<Observers<MODEL, State_>>

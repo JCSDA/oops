@@ -18,6 +18,7 @@
 #include "eckit/config/Configuration.h"
 #include "oops/base/ObsAuxControls.h"
 #include "oops/base/ObsAuxIncrements.h"
+#include "oops/base/ObsSpaces.h"
 #include "oops/interface/ObsAuxCovariance.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
@@ -32,11 +33,12 @@ class ObsAuxCovariances : public util::Printable,
   typedef ObsAuxCovariance<MODEL>    ObsAuxCovariance_;
   typedef ObsAuxControls<MODEL>      ObsAuxControls_;
   typedef ObsAuxIncrements<MODEL>    ObsAuxIncrements_;
+  typedef ObsSpaces<MODEL>           ObsSpaces_;
 
  public:
   static const std::string classname() {return "oops::ObsAuxCovariances";}
 
-  explicit ObsAuxCovariances(const eckit::Configuration &);
+  ObsAuxCovariances(const ObsSpaces_ &, const eckit::Configuration &);
   ~ObsAuxCovariances();
 
 /// Operators
@@ -46,25 +48,27 @@ class ObsAuxCovariances : public util::Printable,
   void randomize(ObsAuxIncrements_ &) const;
 
   const eckit::LocalConfiguration & config() const {return conf_;}
+  const ObsSpaces_ & obspaces() const {return odb_;}
 
  private:
   void print(std::ostream &) const;
   std::vector<boost::shared_ptr<ObsAuxCovariance_> > cov_;
+  const ObsSpaces_ & odb_;
   const eckit::LocalConfiguration conf_;
 };
 
 // =============================================================================
 
 template<typename MODEL>
-ObsAuxCovariances<MODEL>::ObsAuxCovariances(const eckit::Configuration & conf)
-  : cov_(0), conf_(conf)
+ObsAuxCovariances<MODEL>::ObsAuxCovariances(const ObsSpaces_ & odb,
+                                            const eckit::Configuration & conf)
+  : cov_(0), odb_(odb), conf_(conf)
 {
   Log::trace() << "ObsAuxCovariances<MODEL>::ObsAuxCovariances starting" << std::endl;
   std::vector<eckit::LocalConfiguration> obsconf;
   conf.get("ObsTypes", obsconf);
   for (std::size_t jobs = 0; jobs < obsconf.size(); ++jobs) {
-    boost::shared_ptr<ObsAuxCovariance_>
-        tmp(new ObsAuxCovariance_(obsconf[jobs]));
+    boost::shared_ptr<ObsAuxCovariance_> tmp(new ObsAuxCovariance_(odb[jobs], obsconf[jobs]));
     cov_.push_back(tmp);
   }
   Log::trace() << "ObsAuxCovariances<MODEL>::ObsAuxCovariances done" << std::endl;

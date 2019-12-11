@@ -100,7 +100,7 @@ template <typename MODEL> class MakeObs : public Application {
     ObsSpaces_ obspace(obsconf, this->getComm(), bgn, end);
 
 //  Setup observations bias
-    ObsAuxCtrls_ ybias(obsconf);
+    ObsAuxCtrls_ ybias(obspace, obsconf);
 
 //  Setup filters (GeoVaLsWriter usually)
     std::vector<eckit::LocalConfiguration> typeconfs;

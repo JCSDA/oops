@@ -172,13 +172,6 @@ ecbuild_add_test( TARGET test_l95_observationL95
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_l95_obsBias
-                  SOURCES lorenz95/ObsBias.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 eckit )
-
-#--------------------------------------------------------------------
-
 ecbuild_add_test( TARGET test_l95_incrementL95
                   SOURCES lorenz95/IncrementL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
@@ -216,20 +209,6 @@ ecbuild_add_test( TARGET test_l95_modelBiasCovariance
 
 ecbuild_add_test( TARGET test_l95_modelL95
                   SOURCES lorenz95/ModelL95.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 eckit )
-
-#--------------------------------------------------------------------
-
-ecbuild_add_test( TARGET test_l95_obsBiasCorrection
-                  SOURCES lorenz95/ObsBiasCorrection.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 eckit )
-
-#--------------------------------------------------------------------
-
-ecbuild_add_test( TARGET test_l95_obsBiasCovariance
-                  SOURCES lorenz95/ObsBiasCovariance.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"
                   LIBS lorenz95 eckit )
 
@@ -411,16 +390,16 @@ ecbuild_add_test( TARGET test_l95_obsaux
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_l95_obsauxincrement
-                  SOURCES executables/TestObsAuxIncrement.cc
+ecbuild_add_test( TARGET test_l95_obsauxcovariance
+                  SOURCES executables/TestObsAuxCovariance.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth_run )
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_l95_obsauxcovariance
-                  SOURCES executables/TestObsAuxCovariance.cc
+ecbuild_add_test( TARGET test_l95_obsauxincrement
+                  SOURCES executables/TestObsAuxIncrement.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth_run )

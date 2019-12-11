@@ -14,6 +14,7 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include "oops/base/ObsSpaces.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
@@ -24,12 +25,13 @@ namespace oops {
 
 template <typename MODEL>
 class ObsAuxControls : public util::Printable {
-  typedef ObsAuxControl<MODEL>        ObsAuxControl_;
+  typedef ObsAuxControl<MODEL>       ObsAuxControl_;
+  typedef ObsSpaces<MODEL>           ObsSpaces_;
 
  public:
   static const std::string classname() {return "oops::ObsAuxControls";}
 
-  explicit ObsAuxControls(const eckit::Configuration &);
+  ObsAuxControls(const ObsSpaces_ &, const eckit::Configuration &);
   explicit ObsAuxControls(const ObsAuxControls &, const bool copy = true);
   ~ObsAuxControls();
 
@@ -53,14 +55,13 @@ class ObsAuxControls : public util::Printable {
 // =============================================================================
 
 template<typename MODEL>
-ObsAuxControls<MODEL>::ObsAuxControls(const eckit::Configuration & conf)
+ObsAuxControls<MODEL>::ObsAuxControls(const ObsSpaces_ & odb, const eckit::Configuration & conf)
   : auxs_(0)
 {
   std::vector<eckit::LocalConfiguration> obsconf;
   conf.get("ObsTypes", obsconf);
   for (std::size_t jobs = 0; jobs < obsconf.size(); ++jobs) {
-    boost::shared_ptr<ObsAuxControl_>
-          tmp(new ObsAuxControl_(obsconf[jobs]));
+    boost::shared_ptr<ObsAuxControl_> tmp(new ObsAuxControl_(odb[jobs], obsconf[jobs]));
     auxs_.push_back(tmp);
   }
 }

@@ -15,7 +15,7 @@
 #include <memory>
 #include <string>
 
-
+#include "oops/interface/ObsSpace.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -38,7 +38,7 @@ class ObsAuxControl : public util::Printable,
  public:
   static const std::string classname() {return "oops::ObsAuxControl";}
 
-  explicit ObsAuxControl(const eckit::Configuration &);
+  ObsAuxControl(const ObsSpace<MODEL> &, const eckit::Configuration &);
   explicit ObsAuxControl(const ObsAuxControl &, const bool copy = true);
   ~ObsAuxControl();
 
@@ -65,11 +65,12 @@ class ObsAuxControl : public util::Printable,
 // =============================================================================
 
 template<typename MODEL>
-ObsAuxControl<MODEL>::ObsAuxControl(const eckit::Configuration & conf) : aux_()
+ObsAuxControl<MODEL>::ObsAuxControl(const ObsSpace<MODEL> & os,
+                                    const eckit::Configuration & conf) : aux_()
 {
   Log::trace() << "ObsAuxControl<MODEL>::ObsAuxControl starting" << std::endl;
   util::Timer timer(classname(), "ObsAuxControl");
-  aux_.reset(new ObsAuxControl_(conf));
+  aux_.reset(new ObsAuxControl_(os.obsspace(), conf));
   Log::trace() << "ObsAuxControl<MODEL>::ObsAuxControl done" << std::endl;
 }
 

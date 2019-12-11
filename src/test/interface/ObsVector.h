@@ -20,60 +20,22 @@
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/testing/Test.h"
-#include "oops/interface/ObsSpace.h"
 #include "oops/interface/ObsVector.h"
-#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/dot_product.h"
+#include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-class ObsVecFixture : private boost::noncopyable {
-  typedef oops::ObsSpace<MODEL>  ObsSpace_;
-
- public:
-  static std::vector<boost::shared_ptr<ObsSpace_> > & obspace() {return getInstance().ospaces_;}
-
- private:
-  static ObsVecFixture<MODEL>& getInstance() {
-    static ObsVecFixture<MODEL> theObsVecFixture;
-    return theObsVecFixture;
-  }
-
-  ObsVecFixture(): ospaces_() {
-    util::DateTime bgn((TestEnvironment::config().getString("window_begin")));
-    util::DateTime end((TestEnvironment::config().getString("window_end")));
-
-    const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
-    std::vector<eckit::LocalConfiguration> conf;
-    obsconf.get("ObsTypes", conf);
-
-    for (std::size_t jj = 0; jj < conf.size(); ++jj) {
-      eckit::LocalConfiguration osconf(conf[jj], "ObsSpace");
-      boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(osconf, oops::mpi::comm(), bgn, end));
-      ospaces_.push_back(tmp);
-      eckit::LocalConfiguration ObsDataInConf;
-      osconf.get("ObsDataIn", ObsDataInConf);
-    }
-  }
-
-  ~ObsVecFixture() {}
-
-  std::vector<boost::shared_ptr<ObsSpace_> > ospaces_;
-};
-
-// -----------------------------------------------------------------------------
-
 template <typename MODEL> void testConstructor() {
-  typedef ObsVecFixture<MODEL>  Test_;
+  typedef ObsTestsFixture<MODEL>  Test_;
   typedef oops::ObsVector<MODEL>  ObsVector_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    std::unique_ptr<ObsVector_> ov(new ObsVector_(*Test_::obspace()[jj]));
+    std::unique_ptr<ObsVector_> ov(new ObsVector_(Test_::obspace()[jj]));
     EXPECT(ov.get());
 
     ov.reset();
@@ -84,11 +46,11 @@ template <typename MODEL> void testConstructor() {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL> void testCopyConstructor() {
-  typedef ObsVecFixture<MODEL>  Test_;
+  typedef ObsTestsFixture<MODEL>  Test_;
   typedef oops::ObsVector<MODEL>  ObsVector_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    std::unique_ptr<ObsVector_> ov(new ObsVector_(*Test_::obspace()[jj]));
+    std::unique_ptr<ObsVector_> ov(new ObsVector_(Test_::obspace()[jj]));
     std::unique_ptr<ObsVector_> other(new ObsVector_(*ov));
     EXPECT(other.get());
 
@@ -102,12 +64,12 @@ template <typename MODEL> void testCopyConstructor() {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL> void testNotZero() {
-  typedef ObsVecFixture<MODEL>  Test_;
+  typedef ObsTestsFixture<MODEL>  Test_;
   typedef oops::ObsVector<MODEL>  ObsVector_;
   const double zero = 0.0;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    ObsVector_ ov(*Test_::obspace()[jj]);
+    ObsVector_ ov(Test_::obspace()[jj]);
 
     ov.random();
 

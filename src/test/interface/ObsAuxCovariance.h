@@ -22,43 +22,26 @@
 #include "eckit/config/Configuration.h"
 #include "oops/interface/ObsAuxCovariance.h"
 #include "oops/runs/Test.h"
+#include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
-template <typename MODEL> class ObsAuxCovarianceFixture : private boost::noncopyable {
- public:
-  static const eckit::Configuration & config() {return *getInstance().conf_;}
-
- private:
-  static ObsAuxCovarianceFixture<MODEL>& getInstance() {
-    static ObsAuxCovarianceFixture<MODEL> theObsAuxCovarianceFixture;
-    return theObsAuxCovarianceFixture;
-  }
-
-  ObsAuxCovarianceFixture() {
-    std::vector<eckit::LocalConfiguration> osconf;
-    TestEnvironment::config().get("Observations.ObsTypes", osconf);
-    conf_.reset(new eckit::LocalConfiguration(osconf[0]));
-  }
-
-  ~ObsAuxCovarianceFixture() {}
-
-  std::unique_ptr<const eckit::LocalConfiguration>  conf_;
-};
-
-// -----------------------------------------------------------------------------
 
 template <typename MODEL> void testConstructor() {
-  typedef ObsAuxCovarianceFixture<MODEL>   Test_;
+  typedef ObsTestsFixture<MODEL>  Test_;
   typedef oops::ObsAuxCovariance<MODEL>    Covariance_;
 
-  std::unique_ptr<Covariance_> bias(new Covariance_(Test_::config()));
-  EXPECT(bias.get());
+  std::vector<eckit::LocalConfiguration> oconf;
+  Test_::config().get("ObsTypes", oconf);
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    std::unique_ptr<Covariance_> bias(new Covariance_(Test_::obspace()[jj], oconf[jj]));
+    EXPECT(bias.get());
 
-  bias.reset();
-  EXPECT(!bias.get());
+    bias.reset();
+    EXPECT(!bias.get());
+  }
 }
 
 // -----------------------------------------------------------------------------

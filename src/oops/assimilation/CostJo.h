@@ -114,6 +114,7 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
 
   /// Print Jo
   double printJo(const Departures_ &, const Departures_ &) const;
+  const ObsSpaces_ & obspaces() const {return obspace_;}
 
  private:
   eckit::LocalConfiguration obsconf_;

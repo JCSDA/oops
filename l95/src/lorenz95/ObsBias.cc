@@ -20,7 +20,7 @@
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-ObsBias::ObsBias(const eckit::Configuration & conf)
+ObsBias::ObsBias(const ObsTableView &, const eckit::Configuration & conf)
   : bias_(0.0), active_(false), geovars_(), hdiags_()
 {
   oops::Log::trace() << "ObsBias::ObsBias conf is:" << conf << std::endl;

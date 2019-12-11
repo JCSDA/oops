@@ -75,7 +75,7 @@ template <typename MODEL> void testSimulateObs() {
     const GeoVaLs_ gval(gconf, Test_::obspace()[jj], hop.variables());
 
     // initialize bias correction
-    const ObsAuxCtrl_ ybias(conf[jj]);
+    const ObsAuxCtrl_ ybias(Test_::obspace()[jj], conf[jj]);
 
     // create obsvector to hold H(x)
     ObsVector_ hofx(Test_::obspace()[jj]);

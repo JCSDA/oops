@@ -20,6 +20,7 @@
 #include "eckit/config/Configuration.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxIncrement.h"
+#include "oops/interface/ObsSpace.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -40,7 +41,7 @@ class ObsAuxCovariance : public util::Printable,
  public:
   static const std::string classname() {return "oops::ObsAuxCovariance";}
 
-  explicit ObsAuxCovariance(const eckit::Configuration &);
+  ObsAuxCovariance(const ObsSpace<MODEL> &, const eckit::Configuration &);
   ~ObsAuxCovariance();
 
 /// Operators
@@ -59,11 +60,12 @@ class ObsAuxCovariance : public util::Printable,
 // =============================================================================
 
 template<typename MODEL>
-ObsAuxCovariance<MODEL>::ObsAuxCovariance(const eckit::Configuration & conf) : cov_()
+ObsAuxCovariance<MODEL>::ObsAuxCovariance(const ObsSpace<MODEL> & os,
+                                          const eckit::Configuration & conf) : cov_()
 {
   Log::trace() << "ObsAuxCovariance<MODEL>::ObsAuxCovariance starting" << std::endl;
   util::Timer timer(classname(), "ObsAuxCovariance");
-  cov_.reset(new ObsAuxCovariance_(conf));
+  cov_.reset(new ObsAuxCovariance_(os.obsspace(), conf));
   Log::trace() << "ObsAuxCovariance<MODEL>::ObsAuxCovariance done" << std::endl;
 }
 

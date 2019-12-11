@@ -23,6 +23,7 @@
 namespace qg {
   class ObsBias;
   class ObsBiasIncrement;
+  class ObsSpaceQG;
 
 // -----------------------------------------------------------------------------
 
@@ -33,7 +34,7 @@ class ObsBiasCovariance : public util::Printable,
   static const std::string classname() {return "qg::ObsBiasCovariance";}
 
 /// Constructor, destructor
-  explicit ObsBiasCovariance(const eckit::Configuration &);
+  ObsBiasCovariance(const ObsSpaceQG &, const eckit::Configuration &);
   ~ObsBiasCovariance() {}
 
 /// Linear algebra operators

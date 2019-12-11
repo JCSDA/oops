@@ -24,7 +24,7 @@
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-ObsBiasCovariance::ObsBiasCovariance(const eckit::Configuration & conf)
+ObsBiasCovariance::ObsBiasCovariance(const ObsTableView &, const eckit::Configuration & conf)
   : conf_(conf), variance_(0.0), active_(false)
 {
   if (conf_.has("ObsBiasCovariance")) {
