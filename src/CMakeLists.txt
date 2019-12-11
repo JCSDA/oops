@@ -293,7 +293,6 @@ oops/util/parameters/Parameters.cc
 oops/util/parameters/Parameters.h
 oops/util/parameters/ParameterTraits.h
 
-test/base/ObsFilters.h
 test/interface/ErrorCovariance.h
 test/interface/Geometry.h
 test/interface/GeoVaLs.h
