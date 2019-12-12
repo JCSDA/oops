@@ -282,7 +282,6 @@ oops/util/Random.h
 oops/util/random_f.h
 oops/util/random_f.cc
 oops/util/random_mod.F90
-oops/util/variables_mod.f90
 oops/util/bump_interpolation_mod.F90
 
 oops/util/parameters/OptionalParameter.h

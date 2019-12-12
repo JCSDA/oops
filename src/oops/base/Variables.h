@@ -42,8 +42,6 @@ class Variables : public util::Printable {
 
   const std::vector<std::string> & variables() const {return vars_;}
   const std::vector<int> & channels() const {return channels_;}
-  const eckit::Configuration & toFortran() const {return fconf_;}  // to be removed
-  const eckit::Configuration * toFortranBetter() const {return &conf_;}
   void push_back(const std::string &);
 
  private:
@@ -53,8 +51,6 @@ class Variables : public util::Printable {
   std::string convention_;
   std::vector<std::string> vars_;
   std::vector<int> channels_;        // channel indices
-  eckit::LocalConfiguration conf_;
-  eckit::LocalConfiguration fconf_;  // Until we can read vector of strings from fortran
 };
 
 // -----------------------------------------------------------------------------

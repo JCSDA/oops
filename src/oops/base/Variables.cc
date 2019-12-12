@@ -26,14 +26,14 @@ namespace oops {
 // -----------------------------------------------------------------------------
 
 Variables::Variables()
-  : convention_(""), vars_(0), conf_(), fconf_() {
+  : convention_(""), vars_(0) {
   Log::trace() << "Variables::Variables" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 Variables::Variables(const eckit::Configuration & conf)
-  : convention_(""), vars_(0), conf_(), fconf_() {
+  : convention_(""), vars_(0) {
   Log::trace() << "Variables::Variables start " << conf << std::endl;
   std::vector<std::string> vars;
   conf.get("variables", vars);
@@ -51,23 +51,21 @@ Variables::Variables(const eckit::Configuration & conf)
   } else {
     vars_ = vars;
   }
-  this->setConf();
   Log::trace() << "Variables::Variables done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 Variables::Variables(const std::vector<std::string> & vars, const std::string & conv)
-  : convention_(conv), vars_(vars), conf_(), fconf_() {
+  : convention_(conv), vars_(vars) {
   Log::trace() << "Variables::Variables start " << vars << std::endl;
-  this->setConf();
   Log::trace() << "Variables::Variables done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 Variables::Variables(const Variables & other)
-  : convention_(other.convention_), vars_(other.vars_), conf_(other.conf_), fconf_(other.fconf_)
+  : convention_(other.convention_), vars_(other.vars_)
 {}
 
 // -----------------------------------------------------------------------------
@@ -78,7 +76,6 @@ Variables & Variables::operator+=(const Variables & rhs) {
   // remove duplicated variables
   std::sort(vars_.begin(), vars_.end());
   vars_.erase(std::unique(vars_.begin(), vars_.end() ), vars_.end());
-  this->setConf();
   return *this;
 }
 
@@ -115,7 +112,6 @@ size_t Variables::find(const std::string & var) const {
 
 void Variables::push_back(const std::string & vname) {
   vars_.push_back(vname);
-  this->setConf();
 }
 
 // -----------------------------------------------------------------------------
@@ -131,21 +127,6 @@ void Variables::print(std::ostream & os) const {
     os << vars_[jj];
   }
   if (!convention_.empty()) os << " (" << convention_ << ")";
-}
-
-// -----------------------------------------------------------------------------
-
-void Variables::setConf() {
-  conf_.set("nvars", vars_.size());
-  conf_.set("variables", vars_);
-
-  std::string svars = "";
-  for (size_t jj = 0; jj < vars_.size(); ++jj) {
-    if (jj > 0) svars += ", ";
-    svars += vars_[jj];
-  }
-  fconf_.set("nvars", vars_.size());
-  fconf_.set("variables", svars);
 }
 
 // -----------------------------------------------------------------------------
