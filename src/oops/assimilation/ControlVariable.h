@@ -58,7 +58,8 @@ class ControlVariable : public util::Printable,
 /// The arguments define the number of sub-windows and the resolution
   ControlVariable(const eckit::Configuration &, const Variables &,
                   const Geometry_ &, const ObsSpaces_ &);
-  ControlVariable(const eckit::Configuration &, const State_ &);
+  ControlVariable(const eckit::Configuration &, const State_ &,
+                  const ObsSpaces_ &);
   explicit ControlVariable(const ControlVariable &);
   ~ControlVariable();
 
@@ -105,10 +106,11 @@ ControlVariable<MODEL>::ControlVariable(const eckit::Configuration & conf,
 
 template<typename MODEL>
 ControlVariable<MODEL>::ControlVariable(const eckit::Configuration & conf,
-                                        const State_ & statein)
+                                        const State_ & statein,
+                                        const ObsSpaces_ & odb)
   : state4d_(statein),
     modbias_(statein.geometry(), conf.getSubConfiguration("Jb.Background.ModelBias")),
-    obsbias_(eckit::LocalConfiguration(conf, "Jo"))
+    obsbias_(odb, eckit::LocalConfiguration(conf, "Jo"))
 {
   Log::trace() << "ControlVariable contructed" << std::endl;
 }

@@ -251,7 +251,7 @@ void CostFunction<MODEL>::setupTerms(const eckit::Configuration & config, const 
 
 // Jb
   const eckit::LocalConfiguration jbConf(config, "Jb");
-  xb_.reset(new CtrlVar_(config, statein));
+  xb_.reset(new CtrlVar_(config, statein, jo->obspaces()));
   jb_.reset(new JbTotal_(*xb_, this->newJb(jbConf, resol_, *xb_), config, resol_, jo->obspaces()));
   Log::trace() << "CostFunction::setupTerms Jb added" << std::endl;
 
