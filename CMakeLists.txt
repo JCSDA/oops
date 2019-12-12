@@ -81,7 +81,9 @@ find_package( NetCDF REQUIRED )
 include_directories( ${NETCDF_INCLUDE_DIRS} )
 
 # Eigen3
-find_package( Eigen3 REQUIRED NO_MODULE )
+find_package( Eigen3 REQUIRED NO_MODULE HINTS
+              $ENV{Eigen3_ROOT} $ENV{EIGEN3_ROOT} $ENV{Eigen_ROOT} $ENV{EIGEN_ROOT}
+              $ENV{Eigen3_PATH} $ENV{EIGEN3_PATH} $ENV{Eigen_PATH} $ENV{EIGEN_PATH} )
 
 # eckit
 ecbuild_use_package( PROJECT eckit VERSION 1.1.0 REQUIRED )

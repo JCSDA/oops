@@ -1,0 +1,7 @@
+# oops-import.cmake
+# find_dependency calls for OOPS target dependencies
+
+include(CMakeFindDependencyMacro)
+find_dependency( Eigen3 REQUIRED NO_MODULE HINTS
+                 $ENV{Eigen3_ROOT} $ENV{EIGEN3_ROOT} $ENV{Eigen_ROOT} $ENV{EIGEN_ROOT}
+                 $ENV{Eigen3_PATH} $ENV{EIGEN3_PATH} $ENV{Eigen_PATH} $ENV{EIGEN_PATH} )
