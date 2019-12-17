@@ -40,7 +40,6 @@ namespace oops {
 
 template <typename MODEL>
 class ObsSpace : public util::Printable,
-                 private boost::noncopyable,
                  private util::ObjectCounter<ObsSpace<MODEL> > {
   typedef typename MODEL::ObsSpace  ObsSpace_;
   typedef ObsVector<MODEL>          ObsVector_;
@@ -54,6 +53,7 @@ class ObsSpace : public util::Printable,
            const double &, const int &);
   ObsSpace(const ObsSpace_ &, const eckit::geometry::Point2 &,
            const double &, const int &);
+  explicit ObsSpace(const ObsSpace_ &);
   ~ObsSpace();
 
 /// Interfacing
@@ -71,6 +71,7 @@ class ObsSpace : public util::Printable,
 
  private:
   void print(std::ostream &) const;
+
   boost::shared_ptr<ObsSpace_> obsdb_;
 };
 
@@ -109,6 +110,16 @@ ObsSpace<MODEL>::ObsSpace(const ObsSpace_ & os,
   util::Timer timer(classname(), "ObsSpace");
   obsdb_.reset(new ObsSpace_(os, center, dist, maxnum));
   Log::trace() << "ObsSpace<MODEL>::ObsSpace (local) derived state done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+ObsSpace<MODEL>::ObsSpace(const ObsSpace_ & other) : obsdb_() {
+  Log::trace() << "ObsSpace<MODEL>::ObsSpace starting" << std::endl;
+  util::Timer timer(classname(), "ObsSpace");
+  obsdb_ = other.obsdb_;
+  Log::trace() << "ObsSpace<MODEL>::ObsSpace done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

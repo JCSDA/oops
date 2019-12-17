@@ -15,8 +15,6 @@
 #include <string>
 #include <vector>
 
-#include <boost/shared_ptr.hpp>
-
 #include "oops/base/ObsAuxControls.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
@@ -65,6 +63,7 @@ class Observers : public PostBase<STATE>,
   void print(std::ostream &) const override;
 
 // Data
+  ObsSpaces_ obspace_;
   std::unique_ptr<Observations_> yobs_;
 
   util::DateTime winbgn_;   //!< Begining of assimilation window
@@ -86,7 +85,7 @@ Observers<MODEL, STATE>::Observers(const eckit::Configuration & conf,
                                    const std::vector<PtrFilters_> filters,
                                    const util::Duration & tslot, const bool swin)
   : PostBase<STATE>(),
-    yobs_(new Observations_(obsdb)),
+    obspace_(obsdb), yobs_(new Observations_(obsdb)),
     winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
     bgn_(winbgn_), end_(winend_), hslot_(tslot/2), subwindows_(swin),
     observers_(0)

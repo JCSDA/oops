@@ -53,6 +53,8 @@ class ObsFilter : public ObsFilterBase<MODEL> {
 
  private:
   void print(std::ostream &) const override;
+
+  ObsSpace_ obsdb_;
   const eckit::LocalConfiguration conf_;
   std::unique_ptr<FILTER> ofilt_;
 };
@@ -63,7 +65,7 @@ template <typename MODEL, typename FILTER>
 ObsFilter<MODEL, FILTER>::ObsFilter(const ObsSpace_ & os,
                                     const eckit::Configuration & conf,
                                     ObsDataPtr_<int> flags, ObsDataPtr_<float> obserr)
-  : conf_(conf), ofilt_()
+  : obsdb_(os), conf_(conf), ofilt_()
 {
   Log::trace() << "ObsFilter<MODEL, FILTER>::ObsFilter Configuration starting" << std::endl;
   util::Timer timer(classname(), "ObsFilter");
@@ -73,7 +75,7 @@ ObsFilter<MODEL, FILTER>::ObsFilter(const ObsSpace_ & os,
   if (flags) qc = flags->obsdatavectorptr();
   if (obserr) oberr = obserr->obsdatavectorptr();
 
-  ofilt_.reset(new FILTER(os.obsspace(), conf, qc, oberr));
+  ofilt_.reset(new FILTER(obsdb_.obsspace(), conf, qc, oberr));
   Log::trace() << "ObsFilter<MODEL, FILTER>::ObsFilter Configuration done" << std::endl;
 }
 

@@ -144,8 +144,6 @@ template <typename MODEL> class HofX : public Application {
     Log::test() << "H(x): " << std::endl << *yobs << "End H(x)" << std::endl;
     yobs->save("hofx");
 
-    post.clear();
-
     return 0;
   }
 // -----------------------------------------------------------------------------

@@ -14,8 +14,6 @@
 #include <memory>
 #include <vector>
 
-#include <boost/shared_ptr.hpp>
-
 #include "eckit/config/Configuration.h"
 #include "oops/base/Departures.h"
 #include "oops/base/ObsAuxControls.h"
@@ -50,9 +48,9 @@ class ObserversTLAD : public PostBaseTLAD<MODEL> {
 
  public:
   ObserversTLAD(const eckit::Configuration &,
-               const ObsSpaces_ &, const ObsAuxCtrls_ &,
-               const std::vector<PtrFilters_>,
-               const util::Duration & tslot = util::Duration(0), const bool subwin = false);
+                const ObsSpaces_ &, const ObsAuxCtrls_ &,
+                const std::vector<PtrFilters_>,
+                const util::Duration & tslot = util::Duration(0), const bool subwin = false);
   ~ObserversTLAD() {}
 
   Observations_ * release() {return yobs_.release();}
@@ -78,9 +76,9 @@ class ObserversTLAD : public PostBaseTLAD<MODEL> {
 
 // Obs operator
   std::vector<std::shared_ptr<ObserverTLAD_>> observerstlad_;
-  const ObsSpaces_ & obspace_;
 
 // Data
+  ObsSpaces_ obspace_;
   std::unique_ptr<Observations_> yobs_;
   std::unique_ptr<Departures_> ydeptl_;
   const ObsAuxIncrs_ * ybiastl_;

@@ -13,12 +13,10 @@
 
 #include <cstddef>
 #include <map>
+#include <memory>
 #include <ostream>
 #include <string>
 #include <vector>
-
-#include <boost/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
@@ -40,7 +38,6 @@ namespace oops {
 
 template <typename MODEL>
 class ObsSpaces : public util::Printable,
-                  private boost::noncopyable,
                   private util::ObjectCounter<ObsSpaces<MODEL> > {
   typedef Departures<MODEL>         Departures_;
   typedef ObsSpace<MODEL>           ObsSpace_;
@@ -51,7 +48,7 @@ class ObsSpaces : public util::Printable,
   ObsSpaces(const eckit::Configuration &, const eckit::mpi::Comm &,
             const util::DateTime &, const util::DateTime &);
   ObsSpaces(const ObsSpaces &, const eckit::geometry::Point2 &, const double &, const int &);
-  explicit ObsSpaces(const boost::shared_ptr<ObsSpace_> &);
+  explicit ObsSpaces(const std::shared_ptr<ObsSpace_> &);
   explicit ObsSpaces(const ObsSpaces &);
   ~ObsSpaces();
 
@@ -69,7 +66,8 @@ class ObsSpaces : public util::Printable,
 
  private:
   void print(std::ostream &) const;
-  std::vector<boost::shared_ptr<ObsSpace_> > spaces_;
+
+  std::vector<std::shared_ptr<ObsSpace_> > spaces_;
   const util::DateTime wbgn_;
   const util::DateTime wend_;
 };
@@ -89,7 +87,7 @@ ObsSpaces<MODEL>::ObsSpaces(const eckit::Configuration & conf, const eckit::mpi:
     eckit::LocalConfiguration obsconf(typeconfs[jj], "ObsSpace");
     if (members) obsconf.set("member", mymember);
     Log::debug() << "ObsSpaces::ObsSpaces : conf " << obsconf << std::endl;
-    boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, comm, bgn, end));
+    std::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, comm, bgn, end));
     spaces_.push_back(tmp);
   }
   ASSERT(spaces_.size() >0);
@@ -103,8 +101,7 @@ ObsSpaces<MODEL>::ObsSpaces(const ObsSpaces<MODEL> & obss, const eckit::geometry
   : spaces_(0), wbgn_(obss.wbgn_), wend_(obss.wend_)
 {
   for (std::size_t jj = 0; jj < obss.size(); ++jj) {
-    boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obss[jj], center,
-        dist, maxn));
+    std::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obss[jj], center, dist, maxn));
     spaces_.push_back(tmp);
   }
   ASSERT(spaces_.size() == obss.size());
@@ -113,11 +110,9 @@ ObsSpaces<MODEL>::ObsSpaces(const ObsSpaces<MODEL> & obss, const eckit::geometry
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-ObsSpaces<MODEL>::ObsSpaces(const boost::shared_ptr<ObsSpace_> & obss)
-  : spaces_(0), wbgn_(obss->windowStart()), wend_(obss->windowEnd())
-{
-  spaces_.push_back(obss);
-}
+ObsSpaces<MODEL>::ObsSpaces(const std::shared_ptr<ObsSpace_> & obss)
+  : spaces_(obss), wbgn_(obss->windowStart()), wend_(obss->windowEnd())
+{}
 
 // -----------------------------------------------------------------------------
 

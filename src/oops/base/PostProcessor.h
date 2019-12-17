@@ -66,10 +66,6 @@ class PostProcessor {
     }
   }
 
-  void clear() {
-    processors_.clear();
-  }
-
  private:
   std::vector< boost::shared_ptr<PostBase_> > processors_;
   PostProcessor operator= (const PostProcessor &);
