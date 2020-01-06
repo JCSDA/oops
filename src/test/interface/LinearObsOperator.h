@@ -87,13 +87,15 @@ template <typename MODEL> void testLinearity() {
     eckit::LocalConfiguration linobsopconf(conf[jj], confname);
     LinearObsOperator_ hoptl(Test_::obspace()[jj], linobsopconf);
 
-    // read geovals from the file
-    const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    const GeoVaLs_ gval(gconf, Test_::obspace()[jj], hop.variables());
-
     // initialize obs bias
     const ObsAuxCtrl_ ybias(Test_::obspace()[jj], conf[jj]);
     ObsAuxIncr_ ybinc(Test_::obspace()[jj], conf[jj]);
+
+    // read geovals from the file
+    const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
+    oops::Variables hopvars = hop.variables();
+    hopvars += ybias.requiredGeoVaLs();
+    const GeoVaLs_ gval(gconf, Test_::obspace()[jj], hopvars);
 
      // initialize Obs. Bias Covariance
     const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], conf[jj]);
@@ -162,10 +164,6 @@ template <typename MODEL> void testAdjoint() {
     eckit::LocalConfiguration linobsopconf(conf[jj], confname);
     LinearObsOperator_ hoptl(Test_::obspace()[jj], linobsopconf);
 
-    // read geovals from the file
-    eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    const GeoVaLs_ gval(gconf, Test_::obspace()[jj], hop.variables());
-
     // initialize bias correction
     const ObsAuxCtrl_ ybias(Test_::obspace()[jj], conf[jj]);
     ObsAuxIncr_ ybinc1(Test_::obspace()[jj], conf[jj]);  // TL
@@ -173,6 +171,12 @@ template <typename MODEL> void testAdjoint() {
 
     // initialize Obs. Bias Covariance
     const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], conf[jj]);
+
+    // read geovals from the file
+    eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
+    oops::Variables hopvars = hop.variables();
+    hopvars += ybias.requiredGeoVaLs();
+    const GeoVaLs_ gval(gconf, Test_::obspace()[jj], hopvars);
 
     // set TL/AD trajectory to the geovals from the file
     hoptl.setTrajectory(gval, ybias);
@@ -244,17 +248,19 @@ template <typename MODEL> void testTangentLinear() {
     eckit::LocalConfiguration linobsopconf(conf[jj], confname);
     LinearObsOperator_ hoptl(Test_::obspace()[jj], linobsopconf);
 
-    // read geovals from the file
-    const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    const GeoVaLs_ x0(gconf, Test_::obspace()[jj], hop.variables());
-    GeoVaLs_ x(gconf, Test_::obspace()[jj], hop.variables());
-
     // initialize obs bias from file
     const ObsAuxCtrl_ ybias0(Test_::obspace()[jj], conf[jj]);
     ObsAuxCtrl_ ybias(Test_::obspace()[jj], conf[jj]);
 
     // initialize Obs. Bias Covariance
     const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], conf[jj]);
+
+    // read geovals from the file
+    const eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
+    oops::Variables hopvars = hop.variables();
+    hopvars += ybias0.requiredGeoVaLs();
+    const GeoVaLs_ x0(gconf, Test_::obspace()[jj], hopvars);
+    GeoVaLs_ x(gconf, Test_::obspace()[jj], hopvars);
 
     // set TL trajectory to the geovals and the bias coeff. from the files
     hoptl.setTrajectory(x0, ybias0);

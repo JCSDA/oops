@@ -33,7 +33,7 @@ Variables::Variables()
 // -----------------------------------------------------------------------------
 
 Variables::Variables(const eckit::Configuration & conf)
-  : convention_(""), vars_(0) {
+  : convention_(""), vars_(0), channels_(0) {
   Log::trace() << "Variables::Variables start " << conf << std::endl;
   std::vector<std::string> vars;
   conf.get("variables", vars);
@@ -64,8 +64,21 @@ Variables::Variables(const std::vector<std::string> & vars, const std::string & 
 
 // -----------------------------------------------------------------------------
 
+Variables::Variables(const std::vector<std::string> & vars, const std::vector<int> channels)
+  : convention_(""), vars_(0), channels_(channels) {
+  Log::trace() << "Variables::Variables start " << vars << " @ " << channels << std::endl;
+  for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
+    for (size_t jch = 0; jch < channels_.size(); ++jch) {
+      vars_.push_back(vars[jvar]+"_"+std::to_string(channels_[jch]));
+    }
+  }
+  Log::trace() << "Variables::Variables done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
 Variables::Variables(const Variables & other)
-  : convention_(other.convention_), vars_(other.vars_)
+  : convention_(other.convention_), vars_(other.vars_), channels_(other.channels_)
 {}
 
 // -----------------------------------------------------------------------------
@@ -73,9 +86,13 @@ Variables::Variables(const Variables & other)
 Variables & Variables::operator+=(const Variables & rhs) {
   ASSERT(convention_ == rhs.convention_);
   vars_.insert(vars_.end(), rhs.vars_.begin(), rhs.vars_.end());
-  // remove duplicated variables
+  // revisit late, should we add channels this way ?
+  channels_.insert(channels_.end(), rhs.channels_.begin(), rhs.channels_.end());
+  // remove duplicated variables and channels
   std::sort(vars_.begin(), vars_.end());
   vars_.erase(std::unique(vars_.begin(), vars_.end() ), vars_.end());
+  std::sort(channels_.begin(), channels_.end());
+  channels_.erase(std::unique(channels_.begin(), channels_.end() ), channels_.end());
   return *this;
 }
 

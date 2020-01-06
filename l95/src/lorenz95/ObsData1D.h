@@ -89,7 +89,7 @@ void ObsData1D<DATATYPE>::zero() {
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>
 void ObsData1D<DATATYPE>::mask(const ObsData1D<int> & mask) {
-  DATATYPE missing = util::missingValue(missing);;
+  DATATYPE missing = util::missingValue(missing);
   for (size_t jj = 0; jj < data_.size(); ++jj) {
     if (mask[jj]) data_.at(jj) = missing;
   }

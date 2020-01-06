@@ -21,6 +21,7 @@
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsDiagnostics.h"
 #include "oops/interface/ObsOperator.h"
 #include "oops/interface/ObsVector.h"
@@ -70,12 +71,14 @@ template <typename MODEL> void testSimulateObs() {
     eckit::LocalConfiguration obsopconf(conf[jj], "ObsOperator");
     ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
 
-    // read geovals from the file
-    eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    const GeoVaLs_ gval(gconf, Test_::obspace()[jj], hop.variables());
-
     // initialize bias correction
     const ObsAuxCtrl_ ybias(Test_::obspace()[jj], conf[jj]);
+
+    // read geovals from the file
+    eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
+    oops::Variables hopvars = hop.variables();
+    hopvars += ybias.requiredGeoVaLs();
+    const GeoVaLs_ gval(gconf, Test_::obspace()[jj], hopvars);
 
     // create obsvector to hold H(x)
     ObsVector_ hofx(Test_::obspace()[jj]);
@@ -91,6 +94,12 @@ template <typename MODEL> void testSimulateObs() {
     // call H(x), save result in the output file as @hofx
     hop.simulateObs(gval, hofx, ybias, diags);
     hofx.save("hofx");
+
+    // apply bias correction if it is required
+    if (conf[jj].has("ObsBias")) {
+      const ObsVector_ bias(Test_::obspace()[jj], "ObsBias", false);
+      hofx += bias;
+    }
 
     const double tol = conf[jj].getDouble("tolerance");
     if (conf[jj].has("vecequiv")) {

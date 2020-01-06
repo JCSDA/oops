@@ -31,6 +31,11 @@ void testConstructor() {
   std::unique_ptr<oops::Variables> vars(new oops::Variables());
   EXPECT(vars.get());
 
+  const std::vector<std::string> varnames{"bt", "emiss"};
+  const std::vector<int> channels{1, 2, 3, 4};
+  std::unique_ptr<oops::Variables> other(new oops::Variables(varnames, channels));
+  EXPECT(other.get());
+
   vars.reset();
   EXPECT(!vars.get());
 }

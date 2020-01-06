@@ -55,6 +55,7 @@ class ObsAuxControl : public util::Printable,
   const Variables & requiredGeoVaLs() const;
   const Variables & requiredHdiagnostics() const;
 
+/// Operator
   ObsAuxControl & operator=(const ObsAuxControl &);
 
  private:

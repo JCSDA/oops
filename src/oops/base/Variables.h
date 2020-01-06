@@ -27,6 +27,7 @@ class Variables : public util::Printable {
   Variables();
   explicit Variables(const eckit::Configuration &);
   explicit Variables(const std::vector<std::string> &, const std::string & conv = "");
+  Variables(const std::vector<std::string> &, const std::vector<int>);
 
   ~Variables();
 
