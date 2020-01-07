@@ -36,9 +36,9 @@ class OptionalParameter : public ParameterBase {
     }
   }
 
-  boost::optional<T> value() const { return value_; }
+  const boost::optional<T> &value() const { return value_; }
 
-  operator boost::optional<T>() const { return value_; }
+  operator const boost::optional<T> &() const { return value_; }
 
  private:
   std::string name_;

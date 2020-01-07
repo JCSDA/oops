@@ -31,9 +31,9 @@ class Parameter : public ParameterBase {
     }
   }
 
-  T value() const { return value_; }
+  const T &value() const { return value_; }
 
-  operator T() const { return value_; }
+  operator const T &() const { return value_; }
 
  private:
   std::string name_;
