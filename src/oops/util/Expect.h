@@ -10,6 +10,10 @@
 
 #include <sstream>
 
+// Recent versions of the JCSDA fork of eckit define the EXPECT_EQUAL macro in eckit/testing/Test.h.
+// This definition is repeated below for compatibility with older versions of eckit.
+#ifndef EXPECT_EQUAL
+
 // IMPORTANT: To use the macro below, it is also necessary to include "eckit/testing/Test.h",
 // after defining ECKIT_TESTING_SELF_REGISTER_CASES if needed.
 
@@ -23,5 +27,7 @@
             throw eckit::testing::TestException(str.str(), Here()); \
         } \
     } while (false)
+
+#endif  // EXPECT_EQUAL
 
 #endif  // OOPS_UTIL_EXPECT_H_
