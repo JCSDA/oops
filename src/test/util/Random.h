@@ -23,6 +23,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "oops/runs/Test.h"
+#include "oops/util/Expect.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Random.h"
 #include "test/TestEnvironment.h"
@@ -103,7 +104,16 @@ void testCppRandom() {
   for (std::size_t jj = 0; jj < N; ++jj)
     EXPECT(oops::is_close(z[jj], z_check[jj],
                                                  tol * std::abs(z_check[jj])));
-  }
+
+  /*! Test the shuffling algorithm */
+  std::vector<int> shuffled_vector(N);
+  std::iota(shuffled_vector.begin(), shuffled_vector.end(), 0);
+  util::shuffle(shuffled_vector.begin(), shuffled_vector.end(), seed);
+  std::vector<int> shuffled_vector_check = Test_::test().getIntVector("shuffle_answer");
+  oops::Log::info() << "\nTesting oops::util::Random.h shuffle: \n"
+                    << shuffled_vector << std::endl;
+  EXPECT_EQUAL(shuffled_vector, shuffled_vector_check);
+}
 
 // -----------------------------------------------------------------------------
 /*! Test Fortran implementation of random number generators

@@ -48,3 +48,11 @@ test_random:
     - -2.476405111509744
     - 1.567678116899274
     - 1.036506786606617
+
+  # test of random shuffle
+  shuffle_answer:
+    - 4
+    - 2
+    - 3
+    - 0
+    - 1

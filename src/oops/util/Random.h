@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <iostream>
 #include <string>
+#include <utility>
 #include <vector>
 #include <boost/random.hpp>
 #include "oops/util/abor1_cpp.h"
@@ -185,6 +186,44 @@ class NormalDistribution : public Random<datatype> {
   datatype mean_;
   datatype sdev_;
 };
+
+// -----------------------------------------------------------------------------
+/*! \brief Shuffle (reorder randomly) a range of elements.
+ *
+ * The C++ standard doesn't require all STL implementations of std::shuffle to produce the same
+ * results. This function provides a concrete implementation based on an example given on
+ * https://en.cppreference.com/w/cpp/algorithm/random_shuffle, itself very similar to libc++'s
+ * implementation.
+
+ * \param[in] begin
+ *   A random-access iterator addressing the position of the first element in the range to be
+ *   shuffled.
+ * \param[in] end
+ *   A random-access iterator addressing the position one past the last element in the range to be
+ *   shuffled.
+ * \param[in] seed
+ *   Seed with which the random-number generator used by the shuffling algorithm will be
+ *   initialized. If omitted, a seed will be generated based on the current (calendar) time.
+ *   NOTE: the generator created in the first call to a specific instantiation of shuffle() in a
+ *   program is reused in all its successive calls. Seeds specified in the second and later calls to
+ *   an instantiation of shuffle() are therefore ignored.
+ */
+template<class RandomIt>
+void shuffle(RandomIt begin, RandomIt end,
+             unsigned int seed = static_cast<std::uint32_t>(std::time(nullptr)))
+{
+    typedef typename std::iterator_traits<RandomIt>::difference_type diff_t;
+    typedef boost::random::uniform_int_distribution<diff_t> distr_t;
+    typedef typename distr_t::param_type param_t;
+
+    static boost::random::mt19937 generator(seed);
+
+    distr_t distribution;
+    diff_t n = end - begin;
+    for (diff_t i = n - 1; i > 0; --i) {
+        std::swap(begin[i], begin[distribution(generator, param_t(0, i))]);
+    }
+}
 
 // ------------------------------------------------------------------------------
 
