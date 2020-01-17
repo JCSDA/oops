@@ -49,6 +49,7 @@ endif()
 
 # Boost
 # only boost headers
+find_package( Boost 1.64.0 REQUIRED)
 include_directories( ${Boost_INCLUDE_DIR} )
 
 # MKL / LAPACK
