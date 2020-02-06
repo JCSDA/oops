@@ -260,6 +260,7 @@ oops/util/Logger.h
 oops/util/missing_values_f.cc
 oops/util/missing_values_f.h
 oops/util/missing_values_mod.F90
+oops/util/netcdf_utils_mod.f90
 oops/util/missingValues.cc
 oops/util/missingValues.h
 oops/util/ObjectCounter.h
@@ -284,6 +285,7 @@ oops/util/Timer.h
 oops/util/TimerHelper.cc
 oops/util/TimerHelper.h
 oops/util/utilNamespaceDoc.h
+oops/util/unstructured_interpolation_mod.f90
 
 oops/util/parameters/OptionalParameter.h
 oops/util/parameters/Parameter.h

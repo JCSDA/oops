@@ -14,14 +14,14 @@ use fckit_configuration_module, only: fckit_configuration
 
 implicit none
 private
-public swap_name_member
+public swap_name_member, replace_string
 
-!-------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------------------------
 ! Fortran utilities
-!-------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------------------------
 contains
 
-! ------------------------------------------------------------------------------
+! --------------------------------------------------------------------------------------------------
 !> Changes the string '%{member}%' to 'mem{i}'
 
 subroutine swap_name_member(f_conf, str)
@@ -47,7 +47,30 @@ end if
 
 end subroutine swap_name_member
 
+!---------------------------------------------------------------------------------------------------
 
-! ------------------------------------------------------------------------------
+function replace_string (inputstr, search, replace) result(outputstr)
+
+implicit none
+character(len=*), intent(in) :: inputstr
+character(len=*), intent(in) :: search
+character(len=*), intent(in) :: replace
+character(len(inputstr)+100) :: outputstr
+
+! Locals
+integer :: i, nt, nr
+
+outputstr = inputstr
+nt = len_trim(search)
+nr = len_trim(replace)
+
+do
+  i = index(outputstr,search(:nt)) ; if (i == 0) exit
+  outputstr = outputstr(:i-1) // replace(:nr) // outputstr(i+nt:)
+end do
+
+end function replace_string
+
+! --------------------------------------------------------------------------------------------------
 
 end module string_utils
