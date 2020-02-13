@@ -18,3 +18,48 @@ error_in_opt_duration_parameter:
   opt_duration_parameter: ABCDEF
 error_in_fruit_parameter:
   fruit_parameter: ABCDEF
+# Commented because eckit fails to parse quoted key names
+#map_parameter_yaml_style_quoted_keys:
+#  int_to_float_map:
+#    "5": 1.5
+#    "7": 3
+#  string_to_duration_map:
+#    "day": PT16H
+#    "night": PT8H
+#  float_or_int_to_float_map_1:
+#    "6": 2.5
+#    "8": 4
+#  duration_or_string_to_duration_map_1:
+#    "day": PT14H
+#    "night": PT10H
+#  float_or_int_to_float_map_2: 3.5
+#  duration_or_string_to_duration_map_2: PT12H
+map_parameter_yaml_style_unquoted_keys:
+  int_to_float_map:
+    5: 1.5
+    7: 3
+  string_to_duration_map:
+    day: PT16H
+    night: PT8H
+  float_or_int_to_float_map_1:
+    6: 2.5
+    8: 4
+  duration_or_string_to_duration_map_1:
+    day: PT14H
+    night: PT10H
+  float_or_int_to_float_map_2: 3.5
+  duration_or_string_to_duration_map_2: PT12H
+map_parameter_json_style_quoted_keys:
+  int_to_float_map: { "5": 1.5, "7": 3 }
+  string_to_duration_map: { "day": PT16H, "night": PT8H }
+  float_or_int_to_float_map_1: { "6": 2.5, "8": 4 }
+  duration_or_string_to_duration_map_1: { "day": PT14H, "night": PT10H }
+  float_or_int_to_float_map_2: 3.5
+  duration_or_string_to_duration_map_2: PT12H
+map_parameter_json_style_unquoted_keys:
+  int_to_float_map: { 5: 1.5, 7: 3 }
+  string_to_duration_map: { day: PT16H, night: PT8H }
+  float_or_int_to_float_map_1: { 6: 2.5, 8: 4 }
+  duration_or_string_to_duration_map_1: { day: PT14H, night: PT10H }
+  float_or_int_to_float_map_2: 3.5
+  duration_or_string_to_duration_map_2: PT12H

@@ -8,12 +8,9 @@
 #ifndef TEST_UTIL_PARAMETERS_H_
 #define TEST_UTIL_PARAMETERS_H_
 
-#include <iomanip>
-#include <memory>
+#include <map>
 #include <string>
 #include <vector>
-
-#include <boost/make_shared.hpp>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
@@ -27,6 +24,8 @@
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/ParameterTraits.h"
+#include "oops/util/parameters/ParameterTraitsMap.h"
+#include "oops/util/parameters/ParameterTraitsScalarOrMap.h"
 
 namespace test {
 
@@ -69,6 +68,26 @@ class MyParameters : public oops::Parameters {
   oops::OptionalParameter<util::DateTime> optDateTimeParameter{"opt_date_time_parameter", this};
   oops::OptionalParameter<util::Duration> optDurationParameter{"opt_duration_parameter", this};
   oops::Parameter<Fruit> fruitParameter{"fruit_parameter", Fruit::ORANGE, this};
+};
+
+class MyMapParameters : public oops::Parameters {
+ public:
+  oops::Parameter<std::map<int, float>> intToFloatMapParameter{
+      "int_to_float_map", std::map<int, float>(), this};
+  oops::Parameter<std::map<std::string, util::Duration>> stringToDurationMapParameter{
+      "string_to_duration_map", std::map<std::string, util::Duration>(), this};
+
+  oops::Parameter<util::ScalarOrMap<int, float>> floatOrIntToFloatMapParameter1{
+      "float_or_int_to_float_map_1", util::ScalarOrMap<int, float>(), this};
+  oops::Parameter<util::ScalarOrMap<std::string, util::Duration>>
+    durationOrStringToDurationMapParameter1{"duration_or_string_to_duration_map_1",
+                                            util::ScalarOrMap<std::string, util::Duration>(), this};
+
+  oops::Parameter<util::ScalarOrMap<int, float>> floatOrIntToFloatMapParameter2{
+      "float_or_int_to_float_map_2", util::ScalarOrMap<int, float>(), this};
+  oops::Parameter<util::ScalarOrMap<std::string, util::Duration>>
+    durationOrStringToDurationMapParameter2{"duration_or_string_to_duration_map_2",
+                                            util::ScalarOrMap<std::string, util::Duration>(), this};
 };
 
 void testDefaultValues() {
@@ -148,6 +167,89 @@ void testIncorrectValueOfEnumParameter() {
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
 }
 
+void testMapParameters(const MyMapParameters &params) {
+  // Map parameters
+  EXPECT_EQUAL(params.intToFloatMapParameter.value().at(5),
+               1.5f);
+  EXPECT_EQUAL(params.intToFloatMapParameter.value().at(7),
+               3.0f);
+  EXPECT(params.intToFloatMapParameter.value().find(123456) ==
+         params.intToFloatMapParameter.value().end());
+
+  EXPECT_EQUAL(params.stringToDurationMapParameter.value().at("day"),
+               util::Duration("PT16H"));
+  EXPECT_EQUAL(params.stringToDurationMapParameter.value().at("night"),
+               util::Duration("PT8H"));
+  EXPECT(params.stringToDurationMapParameter.value().find("abcdef") ==
+         params.stringToDurationMapParameter.value().end());
+
+  // Scalar-or-map parameters set to maps
+  EXPECT_NOT(params.floatOrIntToFloatMapParameter1.value().isScalar());
+  EXPECT_EQUAL(params.floatOrIntToFloatMapParameter1.value().at(6),
+               2.5f);
+  EXPECT_EQUAL(params.floatOrIntToFloatMapParameter1.value().at(8),
+               4.0f);
+  EXPECT_NOT(params.floatOrIntToFloatMapParameter1.value().contains(1));
+
+  EXPECT_NOT(params.durationOrStringToDurationMapParameter1.value().isScalar());
+  EXPECT_EQUAL(params.durationOrStringToDurationMapParameter1.value().at("day"),
+               util::Duration("PT14H"));
+  EXPECT_EQUAL(params.durationOrStringToDurationMapParameter1.value().at("night"),
+               util::Duration("PT10H"));
+  EXPECT_NOT(params.durationOrStringToDurationMapParameter1.value().contains("abcdef"));
+
+  // Scalar-or-map parameters set to scalars
+  EXPECT(params.floatOrIntToFloatMapParameter2.value().isScalar());
+  EXPECT_EQUAL(params.floatOrIntToFloatMapParameter2.value().at(6),
+               3.5f);
+  EXPECT_EQUAL(params.floatOrIntToFloatMapParameter2.value().at(8),
+               3.5f);
+  EXPECT(params.floatOrIntToFloatMapParameter2.value().contains(123456));
+  EXPECT_EQUAL(params.floatOrIntToFloatMapParameter2.value().at(123456),
+               3.5f);
+
+  EXPECT(params.durationOrStringToDurationMapParameter2.value().isScalar());
+  EXPECT_EQUAL(params.durationOrStringToDurationMapParameter2.value().at("day"),
+               util::Duration("PT12H"));
+  EXPECT_EQUAL(params.durationOrStringToDurationMapParameter2.value().at("night"),
+               util::Duration("PT12H"));
+  EXPECT(params.durationOrStringToDurationMapParameter2.value().contains("abcdef"));
+  EXPECT_EQUAL(params.durationOrStringToDurationMapParameter2.value().at("abcdef"),
+               util::Duration("PT12H"));
+}
+
+void testMapParametersYamlStyleQuotedKeys() {
+  MyMapParameters params;
+  const eckit::LocalConfiguration conf(TestEnvironment::config(),
+                                       "map_parameter_yaml_style_quoted_keys");
+  params.deserialize(conf);
+  testMapParameters(params);
+}
+
+void testMapParametersYamlStyleUnquotedKeys() {
+  MyMapParameters params;
+  const eckit::LocalConfiguration conf(TestEnvironment::config(),
+                                       "map_parameter_yaml_style_unquoted_keys");
+  params.deserialize(conf);
+  testMapParameters(params);
+}
+
+void testMapParametersJsonStyleQuotedKeys() {
+  MyMapParameters params;
+  const eckit::LocalConfiguration conf(TestEnvironment::config(),
+                                       "map_parameter_json_style_quoted_keys");
+  params.deserialize(conf);
+  testMapParameters(params);
+}
+
+void testMapParametersJsonStyleUnquotedKeys() {
+  MyMapParameters params;
+  const eckit::LocalConfiguration conf(TestEnvironment::config(),
+                                       "map_parameter_json_style_unquoted_keys");
+  params.deserialize(conf);
+  testMapParameters(params);
+}
+
 class Parameters : public oops::Test {
  private:
   std::string testid() const override {return "test::Parameters";}
@@ -179,6 +281,21 @@ class Parameters : public oops::Test {
     ts.emplace_back(CASE("util/Parameters/incorrectValueOfEnumParameter") {
                       testIncorrectValueOfEnumParameter();
                     });
+    // Test fails because of a bug in the eckit YAML parser
+    // ts.emplace_back(CASE("util/Parameters/mapParametersYamlStyleQuotedKeys") {
+    //                   testMapParametersYamlStyleQuotedKeys();
+    //                 });
+    // Test fails because of a bug in the eckit YAML parser
+    // ts.emplace_back(CASE("util/Parameters/mapParametersYamlStyleUnquotedKeys") {
+    //                   testMapParametersYamlStyleUnquotedKeys();
+    //                 });
+    ts.emplace_back(CASE("util/Parameters/mapParametersJsonStyleQuotedKeys") {
+                      testMapParametersJsonStyleQuotedKeys();
+                    });
+    // Test fails because of a bug in the eckit YAML parser
+    // ts.emplace_back(CASE("util/Parameters/mapParametersJsonStyleUnquotedKeys") {
+    //                   testMapParametersJsonStyleUnquotedKeys();
+    //                 });
   }
 };
 

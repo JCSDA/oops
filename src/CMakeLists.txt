@@ -273,6 +273,7 @@ oops/util/random_f.h
 oops/util/random_mod.F90
 oops/util/Random.h
 oops/util/random.intfb.h
+oops/util/ScalarOrMap.h
 oops/util/signal_trap.cc
 oops/util/string_f_c_interface.cc
 oops/util/string_f_c_interface.h
@@ -294,6 +295,8 @@ oops/util/parameters/ParameterBase.h
 oops/util/parameters/Parameters.cc
 oops/util/parameters/Parameters.h
 oops/util/parameters/ParameterTraits.h
+oops/util/parameters/ParameterTraitsMap.h
+oops/util/parameters/ParameterTraitsScalarOrMap.h
 
 test/TestEnvironment.h
 test/TestFixture.h
@@ -329,6 +332,8 @@ test/util/random.F90
 test/util/FCString.h
 test/util/f_c_string.F90
 test/util/interpolator_interface.F90
+test/util/Parameters.h
+test/util/ScalarOrMap.h
 )
 
 list (APPEND oops_fheader_files
@@ -352,6 +357,7 @@ list( APPEND oops_test_input
   test/testinput/interp_interface.yaml
   test/testinput/variables.yaml
   test/testinput/parameters.yaml
+  test/testinput/empty.yaml
 )
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test/testinput)
 CREATE_SYMLINK( ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${oops_test_input} )
@@ -432,6 +438,11 @@ ecbuild_add_test( TARGET  test_util_duration
 ecbuild_add_test( TARGET  test_util_intset_parser
                   SOURCES test/util/IntSetParser.cc
                   LIBS    oops eckit )
+
+ecbuild_add_test( TARGET  test_util_scalarormap
+                  SOURCES test/util/ScalarOrMap.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
 
 if( HAVE_FCTEST )
 
