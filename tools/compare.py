@@ -139,7 +139,7 @@ ftol = float(sys.argv[3])
 idif = int(sys.argv[4])
 
 # Write grep results to a new file
-file_runref = open(str(sys.argv[1])+".ref","a")
+file_runref = open(str(sys.argv[1])+".ref","w")
 
 # Read reference file
 lines_ref = file_ref.readlines()
