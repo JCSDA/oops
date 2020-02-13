@@ -250,6 +250,8 @@ oops/util/Expect.h
 oops/util/formats.h
 oops/util/IntSetParser.cc
 oops/util/IntSetParser.h
+oops/util/IsAnyPointInVolumeInterior.h
+oops/util/IsPointInVolumeInterior.h
 oops/util/kinds.F90
 oops/util/liboops_f.cc
 oops/util/liboops_f.h
@@ -327,6 +329,7 @@ test/interface/State.h
 test/interface/VariableChange.h
 
 test/util/Fortran.h
+test/util/IsAnyPointInVolumeInterior.h
 test/util/Random.h
 test/util/random.F90
 test/util/FCString.h
@@ -425,6 +428,11 @@ ecbuild_add_test( TARGET  test_util_pushstringvector
 ecbuild_add_test( TARGET  test_util_parameters
                   SOURCES test/base/Parameters.cc
                   ARGS    "test/testinput/parameters.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_isanypointinvolumeinterior
+                  SOURCES test/util/IsAnyPointInVolumeInterior.cc
+                  ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
 ecbuild_add_test( TARGET  test_util_datetime
