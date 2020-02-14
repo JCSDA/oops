@@ -21,6 +21,7 @@ list( APPEND l95_test_input
   testinput/4dsaddlepoint.yaml
   testinput/4dhybrid.yaml
   testinput/4densvar.yaml
+  testinput/diffstates.yaml
   testinput/eda.3dfgat.yaml
   testinput/eda.3dvar.yaml
   testinput/eda.4dvar.yaml
@@ -69,6 +70,7 @@ list( APPEND l95_testoutput
   testoutput/4dvar.planczos.test
   testoutput/4dvar.rpcg.test
   testoutput/4dvar.rplanczos.test
+  testoutput/diffstates.test
   testoutput/enshofx.test
   testoutput/forecast.test
   testoutput/genenspert.test
@@ -865,6 +867,21 @@ ecbuild_add_test( TARGET test_l95_eda_4dvar
                   ARGS testinput/eda.4dvar.yaml
                   DEPENDS l95_eda.x
                   TEST_DEPENDS test_l95_forecast_run  test_l95_makeobs4d_run )
+
+#####################################################################
+# state-related tests
+#####################################################################
+
+ecbuild_add_test( TARGET test_l95_diffstates_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_diffstates.x
+                  ARGS testinput/diffstates.yaml testoutput/diffstates.log.out
+                  DEPENDS l95_eda.x )
+
+ecbuild_add_test( TARGET test_l95_diffstates_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/diffstates.log.out testoutput/diffstates.test
+                  TEST_DEPENDS test_l95_diffstates_run )
 
 #####################################################################
 # LETKF tests

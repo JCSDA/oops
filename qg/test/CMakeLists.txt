@@ -24,6 +24,7 @@ list( APPEND qg_test_input
   testinput/analytic_forecast.yaml
   testinput/convertstate.yaml
   testinput/dfi.yaml
+  testinput/diffstates.yaml
   testinput/dirac_bump_cov.yaml
   testinput/dirac_bump_hyb.yaml
   testinput/dirac_bump_lct.yaml
@@ -85,6 +86,7 @@ list( APPEND qg_testoutput
   testoutput/4dvar_saddlepoint.test
   testoutput/analytic_forecast.test
   testoutput/dfi.test
+  testoutput/diffstates.test
   testoutput/dirac_bump_cov.test
   testoutput/dirac_bump_hyb.test
   testoutput/dirac_bump_lct.test
@@ -545,6 +547,7 @@ ecbuild_add_test( TARGET test_qg_ens_recenter_compare
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS testoutput/ens_recenter.log.out testoutput/ens_recenter.test
                   TEST_DEPENDS test_qg_ens_recenter_run )
+
 
 #####################################################################
 # other tests
@@ -1206,6 +1209,21 @@ ecbuild_add_test( TARGET test_qg_eda_4dvar
                   ARGS testinput/eda_4dvar.yaml
                   DEPENDS qg_eda.x
                   TEST_DEPENDS test_qg_forecast_run  test_qg_make_obs_4d_24h_run )
+
+#####################################################################
+# state-related tests
+#####################################################################
+
+ecbuild_add_test( TARGET test_qg_diffstates_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_diffstates.x
+                  ARGS testinput/diffstates.yaml testoutput/diffstates.log.out
+                  DEPENDS qg_eda.x )
+
+ecbuild_add_test( TARGET test_qg_diffstates_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/diffstates.log.out testoutput/diffstates.test
+                  TEST_DEPENDS test_qg_diffstates_run )
 
 #####################################################################
 # LETKF tests

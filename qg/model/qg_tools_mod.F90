@@ -82,8 +82,8 @@ if ((typ=='fc').or.(typ=='ens')) then
   genfilename = trim(prefix)//'.'//trim(referencedate)//'.'// trim(sstep)
 endif
 
-! Analysis case
-if (typ=='an') then
+! Analysis or increment case
+if ((typ=='an').or.(typ=='in')) then
   call datetime_to_string(vdate,validitydate)
   lenfn = lenfn+1+len_trim(validitydate)
   genfilename = trim(prefix)//'.'//trim(validitydate)

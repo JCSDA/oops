@@ -43,6 +43,11 @@ ecbuild_add_executable( TARGET  qg_make_obs.x
                         LIBS    qg
                       )
 
+ecbuild_add_executable( TARGET  qg_diffstates.x
+                        SOURCES qgDiffStates.cc
+                        LIBS    qg
+                      )
+
 ecbuild_add_executable( TARGET  qg_dirac.x
                         SOURCES qgDirac.cc
                         LIBS    qg

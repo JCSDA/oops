@@ -1,0 +1,9 @@
+Test     : Input state 1: 
+Test     :  Valid time: 2010-01-02T00:00:00Z
+Test     :  Min=6.75743, Max=9.07983, Average=8.00599
+Test     : Input state 2: 
+Test     :  Valid time: 2010-01-02T00:00:00Z
+Test     :  Min=6.62809, Max=9.33637, Average=7.99819
+Test     : Output increment: 
+Test     :  Valid time: 2010-01-02T00:00:00Z
+Test     :  Min=-0.25654, Max=0.18467, Average=0.00779827
