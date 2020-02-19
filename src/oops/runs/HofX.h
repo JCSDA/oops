@@ -23,7 +23,6 @@
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observers.h"
-#include "oops/base/ObsFilters.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
@@ -47,10 +46,8 @@ template <typename MODEL> class HofX : public Application {
   typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
   typedef Observations<MODEL>        Observations_;
   typedef ObsErrors<MODEL>           ObsErrors_;
-  typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef State<MODEL>               State_;
-  typedef boost::shared_ptr<ObsFilters_> PtrFilters_;
   template <typename DATA> using ObsData_ = ObsDataVector<MODEL, DATA>;
   template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsData_<DATA> >;
 
@@ -102,12 +99,9 @@ template <typename MODEL> class HofX : public Application {
 //  Setup observations bias
     ObsAuxCtrls_ ybias(obspace, obsconf);
 
-//  Setup QC filters
-    std::vector<eckit::LocalConfiguration> typeconfs;
-    obsconf.get("ObsTypes", typeconfs);
+//  Setup QC flags and obs errors
     std::vector<ObsDataPtr_<int> > qcflags_;
     std::vector<ObsDataPtr_<float> > obserr_;
-    std::vector<PtrFilters_> filters;
 
     for (size_t jj = 0; jj < obspace.size(); ++jj) {
 //    Allocate QC flags
@@ -118,14 +112,11 @@ template <typename MODEL> class HofX : public Application {
       ObsDataPtr_<float> tmperr(new ObsData_<float>(obspace[jj],
                                 obspace[jj].obsvariables(), "ObsError"));
       obserr_.push_back(tmperr);
-
-      PtrFilters_ tmp(new ObsFilters_(obspace[jj], typeconfs[jj], qcflags_[jj], obserr_[jj]));
-      filters.push_back(tmp);
     }
 
 //  Setup Observers
     boost::shared_ptr<Observers<MODEL, State_> >
-      pobs(new Observers<MODEL, State_>(obsconf, obspace, ybias, filters));
+      pobs(new Observers<MODEL, State_>(obsconf, obspace, ybias, qcflags_, obserr_));
     post.enrollProcessor(pobs);
 
 //  Compute H(x)

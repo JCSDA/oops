@@ -18,10 +18,10 @@
 #include "oops/base/ObsAuxControls.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
-#include "oops/base/ObsFilters.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
 #include "oops/base/Variables.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -41,15 +41,15 @@ class Observers : public PostBase<STATE>,
                   public util::Printable {
   typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
-  typedef ObsFilters<MODEL>          ObsFilters_;
   typedef Observations<MODEL>        Observations_;
   typedef Observer<MODEL>            Observer_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
-  typedef boost::shared_ptr<ObsFilters_> PtrFilters_;
-
+  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<MODEL, DATA> >;
+  template <typename DATA> using ObsDataVectors_ = std::vector<ObsDataPtr_<DATA> >;
  public:
-  Observers(const eckit::Configuration &, const ObsSpaces_ &, const ObsAuxCtrls_ &,
-            const std::vector<PtrFilters_> filters = std::vector<PtrFilters_>(0),
+  Observers(const eckit::Configuration &, const ObsSpaces_ & obsdb, const ObsAuxCtrls_ &,
+            ObsDataVectors_<int> = ObsDataVectors_<int>(),
+            ObsDataVectors_<float> = ObsDataVectors_<float>(),
             const util::Duration & tslot = util::Duration(0), const bool subwin = false);
   ~Observers() {}
 
@@ -82,7 +82,8 @@ template <typename MODEL, typename STATE>
 Observers<MODEL, STATE>::Observers(const eckit::Configuration & conf,
                                    const ObsSpaces_ & obsdb,
                                    const ObsAuxCtrls_ & ybias,
-                                   const std::vector<PtrFilters_> filters,
+                                   ObsDataVectors_<int> qcflags,
+                                   ObsDataVectors_<float> obserr,
                                    const util::Duration & tslot, const bool swin)
   : PostBase<STATE>(),
     obspace_(obsdb), yobs_(new Observations_(obsdb)),
@@ -94,18 +95,19 @@ Observers<MODEL, STATE>::Observers(const eckit::Configuration & conf,
 
   std::vector<eckit::LocalConfiguration> typeconf;
   conf.get("ObsTypes", typeconf);
-  if (filters.empty()) {
+  observers_.reserve(obsdb.size());
+  if (qcflags.size() == obsdb.size() && obserr.size() == obsdb.size()) {
     for (size_t jj = 0; jj < obsdb.size(); ++jj) {
-      std::shared_ptr<Observer_> tmp(new Observer_(typeconf[jj], obsdb[jj],
-                                         ybias[jj], (*yobs_)[jj]));
-      observers_.push_back(tmp);
+      observers_.emplace_back(new Observer_(typeconf[jj], obsdb[jj],
+                                  ybias[jj], (*yobs_)[jj], qcflags[jj], obserr[jj]));
+    }
+  } else if (qcflags.size() == 0 && obserr.size() == 0) {
+    for (size_t jj = 0; jj < obsdb.size(); ++jj) {
+      observers_.emplace_back(new Observer_(typeconf[jj], obsdb[jj],
+                                  ybias[jj], (*yobs_)[jj]));
     }
   } else {
-    for (size_t jj = 0; jj < obsdb.size(); ++jj) {
-      std::shared_ptr<Observer_> tmp(new Observer_(typeconf[jj], obsdb[jj], ybias[jj], (*yobs_)[jj],
-                                                     filters[jj]));
-      observers_.push_back(tmp);
-    }
+    ABORT("Observers: have to provide qcflags and obserrs for all or none of the ObsTypes");
   }
 
   Log::trace() << "Observers::Observers done" << std::endl;

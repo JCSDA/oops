@@ -20,7 +20,6 @@
 #include "oops/base/ObsAuxIncrements.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObserverTLAD.h"
-#include "oops/base/ObsFilters.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBaseTLAD.h"
 #include "oops/interface/Increment.h"
@@ -41,15 +40,12 @@ class ObserversTLAD : public PostBaseTLAD<MODEL> {
   typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
   typedef ObsAuxIncrements<MODEL>    ObsAuxIncrs_;
   typedef ObserverTLAD<MODEL>        ObserverTLAD_;
-  typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef State<MODEL>               State_;
-  typedef boost::shared_ptr<ObsFilters_> PtrFilters_;
 
  public:
   ObserversTLAD(const eckit::Configuration &,
                 const ObsSpaces_ &, const ObsAuxCtrls_ &,
-                const std::vector<PtrFilters_>,
                 const util::Duration & tslot = util::Duration(0), const bool subwin = false);
   ~ObserversTLAD() {}
 
@@ -100,7 +96,6 @@ template <typename MODEL>
 ObserversTLAD<MODEL>::ObserversTLAD(const eckit::Configuration & config,
                                   const ObsSpaces_ & obsdb,
                                   const ObsAuxCtrls_ & ybias,
-                                  const std::vector<PtrFilters_> filters,
                                   const util::Duration & tslot, const bool subwin)
   : PostBaseTLAD<MODEL>(obsdb.windowStart(), obsdb.windowEnd()),
     observerstlad_(), obspace_(obsdb),

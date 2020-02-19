@@ -24,7 +24,6 @@
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observers.h"
-#include "oops/base/ObsFilters.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
@@ -48,10 +47,8 @@ template <typename MODEL> class MakeObs : public Application {
   typedef ModelAuxControl<MODEL>     ModelAux_;
   typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
   typedef Observations<MODEL>        Observations_;
-  typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef State<MODEL>               State_;
-  typedef boost::shared_ptr<ObsFilters_> PtrFilters_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -102,18 +99,9 @@ template <typename MODEL> class MakeObs : public Application {
 //  Setup observations bias
     ObsAuxCtrls_ ybias(obspace, obsconf);
 
-//  Setup filters (GeoVaLsWriter usually)
-    std::vector<eckit::LocalConfiguration> typeconfs;
-    obsconf.get("ObsTypes", typeconfs);
-    std::vector<PtrFilters_> filters;
-    for (size_t jj = 0; jj < obspace.size(); ++jj) {
-      PtrFilters_ tmp(new ObsFilters_(obspace[jj], typeconfs[jj]));
-      filters.push_back(tmp);
-    }
-
 //  Setup Observer
     boost::shared_ptr<Observers<MODEL, State_> >
-      pobs(new Observers<MODEL, State_>(obsconf, obspace, ybias, filters));
+      pobs(new Observers<MODEL, State_>(obsconf, obspace, ybias));
     post.enrollProcessor(pobs);
 
 //  Run forecast and generate observations

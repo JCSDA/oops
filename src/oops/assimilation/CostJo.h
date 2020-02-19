@@ -27,7 +27,6 @@
 #include "oops/base/Observations.h"
 #include "oops/base/Observers.h"
 #include "oops/base/ObserversTLAD.h"
-#include "oops/base/ObsFilters.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
 #include "oops/base/PostBaseTLAD.h"
@@ -61,11 +60,9 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   typedef State<MODEL>               State_;
   typedef Increment<MODEL>           Increment_;
   typedef ObsErrors<MODEL>           ObsErrors_;
-  typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef ObserversTLAD<MODEL>       ObserversTLAD_;
   typedef PostBaseTLAD<MODEL>        PostBaseTLAD_;
-  typedef boost::shared_ptr<ObsFilters_> PtrFilters_;
   template <typename DATA> using ObsData_ = ObsDataVector<MODEL, DATA>;
   template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<MODEL, DATA> >;
 
@@ -207,18 +204,13 @@ CostJo<MODEL>::initialize(const CtrlVar_ & xx, const eckit::Configuration & conf
   currentConf_.reset(new eckit::LocalConfiguration(conf));
   const int iterout = currentConf_->getInt("iteration");
 
-  std::vector<PtrFilters_> filters_;  // should be controlled by outer loop
-
   std::vector<eckit::LocalConfiguration> typeconfs;
   obsconf_.get("ObsTypes", typeconfs);
   for (size_t jj = 0; jj < obspace_.size(); ++jj) {
     typeconfs[jj].set("iteration", iterout);
-    PtrFilters_ tmp(new ObsFilters_(obspace_[jj], typeconfs[jj],
-                                    qcflags_[jj], obserr_[jj]));
-    filters_.push_back(tmp);
   }
 
-  pobs_.reset(new Observers<MODEL, State_>(obsconf_, obspace_, xx.obsVar(), filters_,
+  pobs_.reset(new Observers<MODEL, State_>(obsconf_, obspace_, xx.obsVar(), qcflags_, obserr_,
                                           tslot_, subwindows_));
   Log::trace() << "CostJo::initialize done" << std::endl;
   return pobs_;
@@ -291,9 +283,7 @@ boost::shared_ptr<PostBaseTLAD<MODEL> >
 CostJo<MODEL>::initializeTraj(const CtrlVar_ & xx, const Geometry_ &,
                               const eckit::Configuration & conf) {
   Log::trace() << "CostJo::initializeTraj start" << std::endl;
-  std::vector<PtrFilters_> filters_;
-  pobstlad_.reset(new ObserversTLAD_(obsconf_, obspace_, xx.obsVar(), filters_,
-                                     tslot_, subwindows_));
+  pobstlad_.reset(new ObserversTLAD_(obsconf_, obspace_, xx.obsVar(), tslot_, subwindows_));
   Log::trace() << "CostJo::initializeTraj done" << std::endl;
   return pobstlad_;
 }
