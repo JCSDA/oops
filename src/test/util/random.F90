@@ -53,7 +53,7 @@ endif
 
 !> Compute random vector
 allocate(x(n))
-call uniform_distribution(x, minv, maxv, seed)
+call uniform_distribution(x, minv, maxv, seed, reset=.true.)
 
 ! write result for inclusion in config file
 err_msg = achar(10) // myname_ // " Testing oops::util::random.F90 Uniform Real Distribution: " 
@@ -63,9 +63,9 @@ do i = 1, n
    call fckit_log%info("   - " // adjustl(ans))
 enddo
 
-if (f_conf%get_size("uniform_real_answer_f") == n) then
+if (f_conf%get_size("uniform_real_answer") == n) then
    allocate(x_check(n))
-   call f_conf%get_or_die("uniform_real_answer_f",real_array)
+   call f_conf%get_or_die("uniform_real_answer",real_array)
    x_check = real_array
 else
    write(err_msg,*) myname_ // "error reading answer"
@@ -123,7 +123,7 @@ endif
 
 !> Compute random vector
 allocate(x(n))
-call uniform_distribution(x, minv, maxv, seed)
+call uniform_distribution(x, minv, maxv, seed, reset=.true.)
 
 ! write result for inclusion in config file
 err_msg = achar(10) // myname_ // " Testing oops::util::random.F90 Uniform Int Distribution: " 
@@ -133,9 +133,9 @@ do i = 1, n
    call fckit_log%info("   - " // adjustl(ans))
 enddo
 
-if (f_conf%get_size("uniform_int_answer_f") == n) then
+if (f_conf%get_size("uniform_int_answer") == n) then
    allocate(x_check(n))
-   call f_conf%get_or_die("uniform_int_answer_f",integer_array)
+   call f_conf%get_or_die("uniform_int_answer",integer_array)
    x_check = integer_array
 else
    write(err_msg,*) myname_ // "error reading answer"
@@ -182,7 +182,7 @@ if (f_conf%has("normal_sdev")) call f_conf%get_or_die("normal_sdev",sdev)
 
 !> Compute random vector
 allocate(x(n))
-call normal_distribution(x, mean, sdev, seed)
+call normal_distribution(x, mean, sdev, seed, reset = .true.)
 
 ! write result for inclusion in config file
 err_msg = achar(10) // myname_ // " Testing oops::util::random.F90 Normal Distribution: " 
@@ -192,9 +192,9 @@ do i = 1, n
    call fckit_log%info("   - " // adjustl(ans))
 enddo
 
-if (f_conf%get_size("normal_answer_f") == n) then
+if (f_conf%get_size("normal_answer") == n) then
    allocate(x_check(n))
-   call f_conf%get_or_die("normal_answer_f",real_array)
+   call f_conf%get_or_die("normal_answer",real_array)
    x_check = real_array
 else
    write(err_msg,*) myname_ // "error reading answer"
