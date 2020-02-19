@@ -93,16 +93,19 @@ Observers<MODEL, STATE>::Observers(const eckit::Configuration & conf,
 {
   Log::trace() << "Observers::Observers starting" << std::endl;
 
+  const int iterout = conf.getInt("iteration", 0);
   std::vector<eckit::LocalConfiguration> typeconf;
   conf.get("ObsTypes", typeconf);
   observers_.reserve(obsdb.size());
   if (qcflags.size() == obsdb.size() && obserr.size() == obsdb.size()) {
     for (size_t jj = 0; jj < obsdb.size(); ++jj) {
+      typeconf[jj].set("iteration", iterout);
       observers_.emplace_back(new Observer_(typeconf[jj], obsdb[jj],
                                   ybias[jj], (*yobs_)[jj], qcflags[jj], obserr[jj]));
     }
   } else if (qcflags.size() == 0 && obserr.size() == 0) {
     for (size_t jj = 0; jj < obsdb.size(); ++jj) {
+      typeconf[jj].set("iteration", iterout);
       observers_.emplace_back(new Observer_(typeconf[jj], obsdb[jj],
                                   ybias[jj], (*yobs_)[jj]));
     }

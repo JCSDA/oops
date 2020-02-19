@@ -203,13 +203,7 @@ CostJo<MODEL>::initialize(const CtrlVar_ & xx, const eckit::Configuration & conf
 
   currentConf_.reset(new eckit::LocalConfiguration(conf));
   const int iterout = currentConf_->getInt("iteration");
-
-  std::vector<eckit::LocalConfiguration> typeconfs;
-  obsconf_.get("ObsTypes", typeconfs);
-  for (size_t jj = 0; jj < obspace_.size(); ++jj) {
-    typeconfs[jj].set("iteration", iterout);
-  }
-
+  obsconf_.set("iteration", iterout);
   pobs_.reset(new Observers<MODEL, State_>(obsconf_, obspace_, xx.obsVar(), qcflags_, obserr_,
                                           tslot_, subwindows_));
   Log::trace() << "CostJo::initialize done" << std::endl;
