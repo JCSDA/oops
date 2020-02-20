@@ -277,6 +277,7 @@ oops/util/Random.h
 oops/util/random.intfb.h
 oops/util/ScalarOrMap.h
 oops/util/signal_trap.cc
+oops/util/sqr.h
 oops/util/string_f_c_interface.cc
 oops/util/string_f_c_interface.h
 oops/util/string_f_c_mod.F90
