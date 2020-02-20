@@ -53,7 +53,7 @@ class Observers : public PostBase<STATE>,
             const util::Duration & tslot = util::Duration(0), const bool subwin = false);
   ~Observers() {}
 
-  Observations_ * release() {return yobs_.release();}
+  const Observations_ & hofx() {return yobs_;}
 
  private:
 // Methods
@@ -64,7 +64,7 @@ class Observers : public PostBase<STATE>,
 
 // Data
   ObsSpaces_ obspace_;
-  std::unique_ptr<Observations_> yobs_;
+  Observations_ yobs_;
 
   util::DateTime winbgn_;   //!< Begining of assimilation window
   util::DateTime winend_;   //!< End of assimilation window
@@ -86,7 +86,7 @@ Observers<MODEL, STATE>::Observers(const eckit::Configuration & conf,
                                    ObsDataVectors_<float> obserr,
                                    const util::Duration & tslot, const bool swin)
   : PostBase<STATE>(),
-    obspace_(obsdb), yobs_(new Observations_(obsdb)),
+    obspace_(obsdb), yobs_(obsdb),
     winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
     bgn_(winbgn_), end_(winend_), hslot_(tslot/2), subwindows_(swin),
     observers_(0)
@@ -101,13 +101,13 @@ Observers<MODEL, STATE>::Observers(const eckit::Configuration & conf,
     for (size_t jj = 0; jj < obsdb.size(); ++jj) {
       typeconf[jj].set("iteration", iterout);
       observers_.emplace_back(new Observer_(typeconf[jj], obsdb[jj],
-                                  ybias[jj], (*yobs_)[jj], qcflags[jj], obserr[jj]));
+                                  ybias[jj], yobs_[jj], qcflags[jj], obserr[jj]));
     }
   } else if (qcflags.size() == 0 && obserr.size() == 0) {
     for (size_t jj = 0; jj < obsdb.size(); ++jj) {
       typeconf[jj].set("iteration", iterout);
       observers_.emplace_back(new Observer_(typeconf[jj], obsdb[jj],
-                                  ybias[jj], (*yobs_)[jj]));
+                                  ybias[jj], yobs_[jj]));
     }
   } else {
     ABORT("Observers: have to provide qcflags and obserrs for all or none of the ObsTypes");

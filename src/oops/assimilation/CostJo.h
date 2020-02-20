@@ -215,8 +215,8 @@ CostJo<MODEL>::initialize(const CtrlVar_ & xx, const eckit::Configuration & conf
 template<typename MODEL>
 double CostJo<MODEL>::finalize() {
   Log::trace() << "CostJo::finalize start" << std::endl;
-  std::unique_ptr<Observations_> yeqv(pobs_->release());
-  Log::info() << "Jo Observation Equivalent:" << std::endl << *yeqv
+  const Observations_ & yeqv = pobs_->hofx();
+  Log::info() << "Jo Observation Equivalent:" << std::endl << yeqv
               << "End Jo Observation Equivalent" << std::endl;
   const int iterout = currentConf_->getInt("iteration");
 
@@ -224,7 +224,7 @@ double CostJo<MODEL>::finalize() {
   const std::string obsname = "hofx" + std::to_string(iterout);
   const std::string qcname  = "EffectiveQC" + std::to_string(iterout);
   const std::string errname = "EffectiveError" + std::to_string(iterout);
-  yeqv->save(obsname);
+  yeqv.save(obsname);
   for (size_t jj = 0; jj < obspace_.size(); ++jj) {
     obserr_[jj]->mask(*qcflags_[jj]);
     qcflags_[jj]->save(qcname);
@@ -244,7 +244,7 @@ double CostJo<MODEL>::finalize() {
   }
 
 // Compute departures
-  Departures_ ydep(*yeqv - yobs_);
+  Departures_ ydep(yeqv - yobs_);
   Log::info() << "Jo Departures:" << std::endl << ydep << "End Jo Departures" << std::endl;
 
 // Apply bias correction

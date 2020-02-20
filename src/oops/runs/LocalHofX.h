@@ -128,9 +128,9 @@ template <typename MODEL> class LocalHofX : public Application {
 
 //  Save H(x)
     for (std::size_t jj = 0; jj < centerconf.size(); ++jj) {
-       std::unique_ptr<Observations_> yobs(pobs[jj]->release());
-       Log::test() << jj << " local H(x): " << *yobs << std::endl;
-       yobs->save("hofx");
+       const Observations_ & yobs = pobs[jj]->hofx();
+       Log::test() << jj << " local H(x): " << yobs << std::endl;
+       yobs.save("hofx");
     }
 //  Read full H(x)
     Observations_ yobs(obsdb, "hofx");

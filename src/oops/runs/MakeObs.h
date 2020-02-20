@@ -109,8 +109,8 @@ template <typename MODEL> class MakeObs : public Application {
     Log::test() << "Final state: " << xx << std::endl;
     Log::info() << "MakeObs: Finished observation generation." << std::endl;
 
-    std::unique_ptr<Observations_> yobs(pobs->release());
-    Log::info() << "Generated observation: " << *yobs << std::endl;
+    Observations_ yobs = pobs->hofx();
+    Log::info() << "Generated observation: " << yobs << std::endl;
 
 //  Perturb observations
     if (obsconf.has("obspert")) {
@@ -119,15 +119,15 @@ template <typename MODEL> class MakeObs : public Application {
       matR.randomize(ypert);
       double opert = obsconf.getDouble("obspert");
       ypert *= opert;
-      *yobs += ypert;
-      Log::info() << "Perturbed observation: " << *yobs << std::endl;
+      yobs += ypert;
+      Log::info() << "Perturbed observation: " << yobs << std::endl;
     }
 
 //  Save observations
-    for (std::size_t jj = 0; jj < yobs->size(); ++jj) {
-      Log::test() << "Generated observation: " << (*yobs)[jj] << std::endl;
+    for (std::size_t jj = 0; jj < yobs.size(); ++jj) {
+      Log::test() << "Generated observation: " << yobs[jj] << std::endl;
     }
-    yobs->save("ObsValue");
+    yobs.save("ObsValue");
 
     return 0;
   }

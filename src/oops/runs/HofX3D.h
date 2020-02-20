@@ -119,9 +119,9 @@ template <typename MODEL> class HofX3D : public Application {
     }
 
 //  Save H(x)
-    std::unique_ptr<Observations_> yobs(pobs->release());
-    Log::test() << "H(x): " << *yobs << std::endl;
-    yobs->save("hofx");
+    const Observations_ yobs = pobs->hofx();
+    Log::test() << "H(x): " << yobs << std::endl;
+    yobs.save("hofx");
 
     return 0;
   }

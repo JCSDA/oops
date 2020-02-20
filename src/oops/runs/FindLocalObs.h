@@ -104,9 +104,9 @@ template <typename MODEL> class FindLocalObs : public Application {
     Log::test() << "Final state: " << xx << std::endl;
 
 //  Save H(x)
-    std::unique_ptr<Observations_> yobs(pobs->release());
-    Log::test() << "H(x): " << *yobs << std::endl;
-    yobs->save("hofx");
+    const Observations_ & yobs = pobs->hofx();
+    Log::test() << "H(x): " << yobs << std::endl;
+    yobs.save("hofx");
 
 //  Iterate over all gridpoints and find local observations (do nothing else for now):
     eckit::LocalConfiguration localconfig(fullConfig, "Localization");

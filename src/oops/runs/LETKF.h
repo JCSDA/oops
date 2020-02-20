@@ -147,10 +147,10 @@ template <typename MODEL> class LETKF : public Application {
       post.finalize(ens_xx[jj]);
 
       // save H(x)
-      std::unique_ptr<Observations_> yeqv(pobs->release());
-      Log::test() << "H(x) for member " << jj+1 << ":" << std::endl << *yeqv << std::endl;
-      yeqv->save("hofx0_"+std::to_string(jj+1));
-      obsens[jj] = *yeqv;
+      const Observations_ & yeqv = pobs->hofx();
+      Log::test() << "H(x) for member " << jj+1 << ":" << std::endl << yeqv << std::endl;
+      yeqv.save("hofx0_"+std::to_string(jj+1));
+      obsens[jj] = yeqv;
     }
 
     // calculate background mean
@@ -257,10 +257,10 @@ template <typename MODEL> class LETKF : public Application {
       post.finalize(ens_xx[jj]);
 
       // save H(x)
-      std::unique_ptr<Observations_> yeqv(pobs->release());
-      Log::test() << "H(x) for member " << jj+1 << ":" << std::endl << *yeqv << std::endl;
-      yeqv->save("hofx1_"+std::to_string(jj+1));
-      obsens[jj] = *yeqv;
+      const Observations_ & yeqv = pobs->hofx();
+      Log::test() << "H(x) for member " << jj+1 << ":" << std::endl << yeqv << std::endl;
+      yeqv.save("hofx1_"+std::to_string(jj+1));
+      obsens[jj] = yeqv;
     }
 
     // calcualate H(x) ensemble analysis mean
