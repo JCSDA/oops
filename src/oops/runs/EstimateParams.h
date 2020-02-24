@@ -60,26 +60,17 @@ template <typename MODEL> class EstimateParams : public Application {
 
     // Setup background state
     const eckit::LocalConfiguration backgroundConfig(fullConfig, "background");
-    std::unique_ptr<State4D_> xx;
-    if (backgroundConfig.has("state")) {
-      xx.reset(new State4D_(backgroundConfig, vars, resol));
-    } else {
-      State_ xx3D(resol, vars, backgroundConfig);
-      xx.reset(new State4D_(xx3D));
-    }
+    State4D_ xx(resol, vars, backgroundConfig);
 
     //  Setup timeslots
-    std::vector<util::DateTime> timeslots;
-    for (unsigned jsub = 0; jsub < (*xx).size(); ++jsub) {
-      timeslots.push_back((*xx)[jsub].validTime());
-    }
+    std::vector<util::DateTime> timeslots = xx.validTimes();
     Log::info() << "Number of ensemble time-slots:" << timeslots.size() << std::endl;
 
     // Setup ensemble
     EnsemblePtr_ ens = NULL;
     if (fullConfig.has("ensemble")) {
       const eckit::LocalConfiguration ensembleConfig(fullConfig, "ensemble");
-      ens.reset(new Ensemble_(ensembleConfig, (*xx), (*xx), resol));
+      ens.reset(new Ensemble_(ensembleConfig, xx, xx, resol));
     }
 
     // Setup pseudo ensemble
@@ -91,7 +82,7 @@ template <typename MODEL> class EstimateParams : public Application {
       if (timeslots.size() == 1) {
       // One time-slot only
         std::unique_ptr<ModelSpaceCovarianceBase<MODEL>>
-          cov(CovarianceFactory<MODEL>::create(covarConfig, resol, vars, (*xx)[0], (*xx)[0]));
+          cov(CovarianceFactory<MODEL>::create(covarConfig, resol, vars, xx[0], xx[0]));
         for (int ie = 0; ie < ens2_ne; ++ie) {
           Log::info() << "Generate pseudo ensemble member " << ie+1 << " / "
                       << ens2_ne << std::endl;
@@ -104,7 +95,7 @@ template <typename MODEL> class EstimateParams : public Application {
       } else {
         // Multiple time-slots
         std::unique_ptr<ModelSpaceCovariance4DBase<MODEL>>
-          cov(Covariance4DFactory<MODEL>::create(covarConfig, resol, vars, (*xx), (*xx)));
+          cov(Covariance4DFactory<MODEL>::create(covarConfig, resol, vars, xx, xx));
         for (int ie = 0; ie < ens2_ne; ++ie) {
           Log::info() << "Generate pseudo ensemble member " << ie+1 << " / "
                       << ens2_ne << std::endl;

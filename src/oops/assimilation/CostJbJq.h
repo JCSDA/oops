@@ -116,10 +116,7 @@ template<typename MODEL>
 void CostJbJq<MODEL>::linearize(const State4D_ & fg, const Geometry_ & lowres) {
   ASSERT(fg.checkStatesNumber(xb_.size()));
   resol_.reset(new Geometry_(lowres));
-  times_.clear();
-  for (unsigned jsub = 0; jsub < fg.size(); ++jsub) {
-    times_.push_back(fg[jsub].validTime());
-  }
+  times_ = fg.validTimes();
   const eckit::LocalConfiguration covConf(conf_, "Covariance");
   B_.reset(Covariance4DFactory<MODEL>::create(covConf, lowres, ctlvars_,
                                               xb_, fg));

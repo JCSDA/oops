@@ -113,10 +113,7 @@ template<typename MODEL>
 void CostJb4D<MODEL>::linearize(const State4D_ & fg, const Geometry_ & lowres) {
   ASSERT(fg.checkStatesNumber(xb_.size()));
   resol_.reset(new Geometry_(lowres));
-  times_.clear();
-  for (unsigned jsub = 0; jsub < fg.size(); ++jsub) {
-    times_.push_back(fg[jsub].validTime());
-  }
+  times_ = fg.validTimes();
   B_.reset(Covariance4DFactory<MODEL>::create(conf_, lowres, ctlvars_, xb_, fg));
 }
 

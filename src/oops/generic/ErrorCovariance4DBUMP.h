@@ -67,8 +67,8 @@ class ErrorCovariance4DBUMP : public oops::ModelSpaceCovariance4DBase<MODEL>,
 
   void print(std::ostream &) const override;
 
-  std::vector<util::DateTime> timeslots_;
   std::unique_ptr<OoBump> ooBump_;
+  std::vector<util::DateTime> timeslots_;
 };
 
 // =============================================================================
@@ -78,14 +78,10 @@ ErrorCovariance4DBUMP<MODEL>::ErrorCovariance4DBUMP(const Geometry_ & resol,
                                                     const Variables & vars,
                                                     const eckit::Configuration & conf,
                                                     const State4D_ & xb, const State4D_ & fg)
-  : ModelSpaceCovariance4DBase<MODEL>(xb, fg, resol, conf), ooBump_()
+  : ModelSpaceCovariance4DBase<MODEL>(xb, fg, resol, conf), ooBump_(),
+    timeslots_(xb.validTimes())
 {
   Log::trace() << "ErrorCovariance4DBUMP::ErrorCovariance4DBUMP starting" << std::endl;
-
-//  Setup timeslots
-  for (unsigned jsub = 0; jsub < xb.size(); ++jsub) {
-    timeslots_.push_back(xb[jsub].validTime());
-  }
 
 // Setup parameters
   Parameters_ param(resol, vars, timeslots_, conf);

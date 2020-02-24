@@ -15,10 +15,10 @@
 #include <ostream>
 #include <string>
 #include <vector>
-#include <boost/foreach.hpp>
-#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/exception/Exceptions.h"
+
 #include "oops/interface/Geometry.h"
 #include "oops/interface/State.h"
 #include "oops/util/Logger.h"
@@ -40,10 +40,8 @@ template<typename MODEL> class State4D : public util::Printable {
   static const std::string classname() {return "State4D";}
 
 /// The arguments define the number of sub-windows and the resolution
-  State4D(const eckit::Configuration &, const Variables &, const Geometry_ &);
+  State4D(const Geometry_ &, const Variables &, const eckit::Configuration &);
   explicit State4D(const State_ &);
-  explicit State4D(const State4D &);
-  ~State4D();
 
 /// I/O and diagnostics
   void read(const eckit::Configuration &);
@@ -56,32 +54,36 @@ template<typename MODEL> class State4D : public util::Printable {
   State_ & operator[](const int ii) {return state4d_[ii];}
   const State_ & operator[](const int ii) const {return state4d_[ii];}
 
+  Geometry_ geometry() const { return state4d_[0].geometry(); }
+  const std::vector<util::DateTime> validTimes() const;
+
 /// Accumulator
   void zero();
   void accumul(const double &, const State4D &);
 
  private:
-  State4D & operator= (const State4D &);  // No assignment
   void print(std::ostream &) const;
 
-  boost::ptr_vector<State_> state4d_;
+  std::vector<State_> state4d_;
 };
 
 // =============================================================================
 
 template<typename MODEL>
-State4D<MODEL>::State4D(const eckit::Configuration & config, const Variables & vars,
-                        const Geometry_ & resol) {
-  std::vector<eckit::LocalConfiguration> files;
-  config.get("state", files);
-  Log::debug() << "State4D: reading " << files.size() << " states." << std::endl;
-
-  for (size_t jsub = 0; jsub < files.size(); ++jsub) {
-    if (config.has("member")) files[jsub].set("member", config.getInt("member"));
-    Log::debug() << "State4D: reading " << files[jsub] << std::endl;
-    State_ * js = new State_(resol, vars, files[jsub]);
-    Log::debug() << "State4D:State4D: read bg at " << js->validTime() << std::endl;
-    state4d_.push_back(js);
+State4D<MODEL>::State4D(const Geometry_ & resol, const Variables & vars,
+                        const eckit::Configuration & config) {
+  // 4D state:
+  if (config.has("state")) {
+    std::vector<eckit::LocalConfiguration> confs;
+    config.get("state", confs);
+    state4d_.reserve(confs.size());
+    for (auto & conf : confs) {
+      if (config.has("member")) conf.set("member", config.getInt("member"));
+      state4d_.emplace_back(resol, vars, conf);
+    }
+  } else {
+  // 3D state:
+    state4d_.emplace_back(resol, vars, config);
   }
   Log::trace() << "State4D constructed." << std::endl;
 }
@@ -90,39 +92,26 @@ State4D<MODEL>::State4D(const eckit::Configuration & config, const Variables & v
 
 template<typename MODEL>
 State4D<MODEL>::State4D(const State_ & state3d) {
-  State_ * js = new State_(state3d);
-  state4d_.push_back(js);
+  state4d_.emplace_back(state3d);
   Log::trace() << "State4D constructed." << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-State4D<MODEL>::State4D(const State4D & other) {
-  BOOST_FOREACH(const State_ & js, other.state4d_)
-    state4d_.push_back(new State_(js));
-  Log::trace() << "State4D copied." << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-State4D<MODEL>::~State4D() {
-  Log::trace() << "State4D destructed." << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
 void State4D<MODEL>::read(const eckit::Configuration & config) {
-  std::vector<eckit::LocalConfiguration> confs;
-  config.get("state", confs);
-  ASSERT(state4d_.size() == confs.size());
-  unsigned jsub = 0;
-  BOOST_FOREACH(State_ & js, state4d_) {
-    Log::debug() << "State4D:read" << confs[jsub] << std::endl;
-    js.read(confs[jsub]);
-    ++jsub;
+  // 4D state
+  if (config.has("state")) {
+    std::vector<eckit::LocalConfiguration> confs;
+    config.get("state", confs);
+    ASSERT(state4d_.size() == confs.size());
+    for (size_t ii = 0; ii < state4d_.size(); ++ii) {
+      state4d_[ii].read(confs[ii]);;
+    }
+  } else {
+  // 3D state
+    ASSERT(state4d_.size() == 1);
+    state4d_[0].read(config);
   }
 }
 
@@ -130,15 +119,31 @@ void State4D<MODEL>::read(const eckit::Configuration & config) {
 
 template<typename MODEL>
 void State4D<MODEL>::write(const eckit::Configuration & config) const {
-  std::vector<eckit::LocalConfiguration> confs;
-  config.get("state", confs);
-  ASSERT(state4d_.size() == confs.size());
-  unsigned int jsub = 0;
-  BOOST_FOREACH(const State_ & js, state4d_) {
-    Log::debug() << "State4D:write" << confs[jsub] << std::endl;
-    js.write(confs[jsub]);
-    ++jsub;
+  // 4D state
+  if (config.has("state")) {
+    std::vector<eckit::LocalConfiguration> confs;
+    config.get("state", confs);
+    ASSERT(state4d_.size() == confs.size());
+    for (size_t ii = 0; ii < state4d_.size(); ++ii) {
+      state4d_[ii].write(confs[ii]);
+    }
+  } else {
+  // 3D state
+    ASSERT(state4d_.size() == 1);
+    state4d_[0].write(config);
   }
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+const std::vector<util::DateTime> State4D<MODEL>::validTimes() const {
+  std::vector<util::DateTime> times;
+  times.reserve(state4d_.size());
+  for (const State_ & state : state4d_) {
+    times.push_back(state.validTime());
+  }
+  return times;
 }
 
 // -----------------------------------------------------------------------------
@@ -146,8 +151,8 @@ void State4D<MODEL>::write(const eckit::Configuration & config) const {
 template<typename MODEL>
 void State4D<MODEL>::zero() {
   Log::trace() << "State4D<MODEL>::zero starting" << std::endl;
-  BOOST_FOREACH(State_ & js, state4d_) {
-    js.zero();
+  for (State_ & state : state4d_) {
+    state.zero();
   }
   Log::trace() << "State4D<MODEL>::zero done" << std::endl;
 }
@@ -157,11 +162,9 @@ void State4D<MODEL>::zero() {
 template<typename MODEL>
 void State4D<MODEL>::accumul(const double & zz, const State4D & xx) {
   Log::trace() << "State4D<MODEL>::accumul starting" << std::endl;
-  unsigned int jsub = 0;
-  BOOST_FOREACH(State_ & js, state4d_) {
-    Log::trace() << "State4D<MODEL>::accumul timeslot " << jsub << std::endl;
-    js.accumul(zz, xx[jsub]);
-    ++jsub;
+  ASSERT(xx.size() == state4d_.size());
+  for (size_t ii = 0; ii < state4d_.size(); ++ii) {
+    state4d_[ii].accumul(zz, xx[ii]);
   }
   Log::trace() << "State4D<MODEL>::accumul done" << std::endl;
 }
@@ -170,8 +173,8 @@ void State4D<MODEL>::accumul(const double & zz, const State4D & xx) {
 
 template <typename MODEL>
 void State4D<MODEL>::print(std::ostream & outs) const {
-  BOOST_FOREACH(const State_ & js, state4d_) {
-    outs << js << std::endl;
+  for (const State_ & state : state4d_) {
+    outs << state << std::endl;
   }
 }
 
@@ -180,8 +183,8 @@ void State4D<MODEL>::print(std::ostream & outs) const {
 template<typename MODEL>
 double State4D<MODEL>::norm() const {
   double zn = 0.0;
-  BOOST_FOREACH(const State_ & js, state4d_) {
-    double zz = js.norm();
+  for (const State_ & state : state4d_) {
+    double zz = state.norm();
     zn += zz * zz;
   }
   return sqrt(zn);

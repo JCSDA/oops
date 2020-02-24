@@ -57,7 +57,6 @@ template<typename MODEL> class Increment4D : public util::Printable {
   explicit Increment4D(const Increment_ &);
   Increment4D(const Geometry_ &, const Variables &, const std::vector<util::DateTime> &);
   Increment4D(const Increment4D &, const bool copy = true);
-  Increment4D(const Increment4D &, const eckit::Configuration &);
   Increment4D(const Geometry_ &, const Increment4D &);
   ~Increment4D();
 
@@ -118,7 +117,16 @@ template<typename MODEL> class Increment4D : public util::Printable {
 };
 
 // =============================================================================
-
+template <typename MODEL>
+State4D<MODEL> & operator+=(State4D<MODEL> & xx, const Increment4D<MODEL> & dx) {
+  Log::trace() << "operator+=(State4D, Increment4D) starting" << std::endl;
+  for (size_t ii = 0; ii < xx.size(); ++ii) {
+    xx[ii] += dx[ii];
+  }
+  Log::trace() << "operator+=(State4D, Increment4D) done" << std::endl;
+  return xx;
+}
+// ----------------------------------------------------------------------------
 template<typename MODEL>
 Increment4D<MODEL>::Increment4D(const JbState_ & jb)
   : incr4d_(), first_(0), last_(jb.nstates() - 1)
@@ -164,17 +172,6 @@ Increment4D<MODEL>::Increment4D(const Increment4D & other, const bool copy)
   Log::trace() << "Increment4D:Increment4D copied." << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-Increment4D<MODEL>::Increment4D(const Increment4D & other, const eckit::Configuration & tlConf)
-  : incr4d_(), first_(other.first_), last_(other.last_)
-{
-  for (icst_ jsub = other.incr4d_.begin(); jsub != other.incr4d_.end(); ++jsub) {
-    int isub = jsub->first;
-    Increment_ * tmp = new Increment_(*jsub->second);
-    incr4d_.insert(isub, tmp);
-  }
-  Log::trace() << "Increment4D:Increment4D copied." << std::endl;
-}
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 Increment4D<MODEL>::Increment4D(const Geometry_ & geom, const Increment4D & other)

@@ -17,6 +17,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/assimilation/State4D.h"
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
 #include "oops/base/GridPoint.h"
@@ -61,6 +62,7 @@ template <typename MODEL> class LETKF : public Application {
   typedef Geometry<MODEL>           Geometry_;
   typedef GeometryIterator<MODEL>   GeometryIterator_;
   typedef Increment<MODEL>          Increment_;
+  typedef IncrementEnsemble<MODEL>  IncrementEnsemble_;
   typedef Model<MODEL>              Model_;
   typedef ObsAuxControls<MODEL>     ObsAuxCtrls_;
   typedef ObsEnsemble<MODEL>        ObsEnsemble_;
@@ -68,6 +70,7 @@ template <typename MODEL> class LETKF : public Application {
   typedef ObsSpaces<MODEL>          ObsSpaces_;
   typedef Observations<MODEL>       Observations_;
   typedef State<MODEL>              State_;
+  typedef State4D<MODEL>            State4D_;
   typedef StateEnsemble<MODEL>      StateEnsemble_;
   template <typename DATA> using ObsData_ = ObsDataVector<MODEL, DATA>;
   template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<MODEL, DATA> >;
@@ -142,9 +145,9 @@ template <typename MODEL> class LETKF : public Application {
 
       // compute H(x)
       // TODO(Travis) this is the 3D LETKF case, need to add model forecast for 4D LETKF
-      post.initialize(ens_xx[jj], winhalf, winlen);
-      post.process(ens_xx[jj]);
-      post.finalize(ens_xx[jj]);
+      post.initialize(ens_xx[jj][0], winhalf, winlen);
+      post.process(ens_xx[jj][0]);
+      post.finalize(ens_xx[jj][0]);
 
       // save H(x)
       const Observations_ & yeqv = pobs->hofx();
@@ -154,18 +157,11 @@ template <typename MODEL> class LETKF : public Application {
     }
 
     // calculate background mean
-    State_ bkg_mean(ens_xx.mean());
+    State4D_ bkg_mean = ens_xx.mean();
     Log::test() << "Background mean :" << bkg_mean << std::endl;
 
     // calculate background ensemble perturbations
-    // TODO(Travis) use the IncrementEnsemble class
-    std::vector<std::shared_ptr<Increment_> > bkg_pert;
-    for (unsigned jj = 0; jj < ens_xx.size(); ++jj) {
-      std::shared_ptr<Increment_> dx (new Increment_(resol, model.variables(),
-                                                     bkg_mean.validTime()));
-      dx->diff(ens_xx[jj], bkg_mean);
-      bkg_pert.push_back(dx);
-    }
+    IncrementEnsemble_ bkg_pert(ens_xx, bkg_mean, model.variables());
 
     // TODO(Travis) optionally save the background mean / standard deviation
 
@@ -185,11 +181,7 @@ template <typename MODEL> class LETKF : public Application {
     Log::test() << "background y - H(x): " << std::endl << ombg << std::endl;
 
     // initialize empty analysis perturbations
-    std::vector<std::shared_ptr<Increment_> > ana_pert;
-    for (unsigned jj=0; jj < obsens.size(); ++jj) {
-      std::shared_ptr<Increment_> dx(new Increment_(*bkg_pert[0], false));
-      ana_pert.push_back(dx);
-    }
+    IncrementEnsemble_ ana_pert(resol, model.variables(), ens_xx[0].validTimes(), bkg_pert.size());
 
     // get the LETKF parameters used here
     // NOTE: "letkf" is actually empty for now, parameters for inflation and such
@@ -212,15 +204,18 @@ template <typename MODEL> class LETKF : public Application {
       const Eigen::MatrixXd trans = calcTrans(letkfConfig, local_ombg, local_ens_Yb, local_rmat);
 
       // use the transform matrix to calculate the analysis perturbations
-      for (unsigned jj=0; jj < obsens.size(); ++jj) {
-        GridPoint gp = bkg_pert[0]->getPoint(i);
-        gp *= trans(0, jj);
-        for (unsigned ii=1; ii < obsens.size(); ++ii) {
-          GridPoint gp2 = bkg_pert[ii]->getPoint(i);
-          gp2 *= trans(ii, jj);
-          gp += gp2;
+      // loop over times (no time localization for now)
+      for (unsigned itime=0; itime < bkg_pert[0].size(); ++itime) {
+        for (unsigned jj=0; jj < obsens.size(); ++jj) {
+          GridPoint gp = bkg_pert[0][itime].getPoint(i);
+          gp *= trans(0, jj);
+          for (unsigned ii=1; ii < obsens.size(); ++ii) {
+            GridPoint gp2 = bkg_pert[ii][itime].getPoint(i);
+            gp2 *= trans(ii, jj);
+            gp += gp2;
+          }
+          ana_pert[jj][itime].setPoint(gp, i);
         }
-        ana_pert[jj]->setPoint(gp, i);
       }
     }
     Log::info() << "LETKF solver completed." << std::endl;
@@ -228,7 +223,7 @@ template <typename MODEL> class LETKF : public Application {
     // calculate final analysis states
     for (unsigned jj = 0; jj < ens_xx.size(); ++jj) {
       ens_xx[jj] = bkg_mean;
-      ens_xx[jj] += (*ana_pert[jj]);
+      ens_xx[jj] += ana_pert[jj];
     }
 
     // TODO(Travis) optionally save analysis mean / standard deviation
@@ -252,9 +247,9 @@ template <typename MODEL> class LETKF : public Application {
       post.enrollProcessor(pobs);
 
       // compute H(x)
-      post.initialize(ens_xx[jj], winhalf, winlen);
-      post.process(ens_xx[jj]);
-      post.finalize(ens_xx[jj]);
+      post.initialize(ens_xx[jj][0], winhalf, winlen);
+      post.process(ens_xx[jj][0]);
+      post.finalize(ens_xx[jj][0]);
 
       // save H(x)
       const Observations_ & yeqv = pobs->hofx();

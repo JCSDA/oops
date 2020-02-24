@@ -95,7 +95,7 @@ template<typename MODEL>
 ControlVariable<MODEL>::ControlVariable(const eckit::Configuration & conf,
                                         const Variables & vars, const Geometry_ & resol,
                                         const ObsSpaces_ & odb)
-  : state4d_(eckit::LocalConfiguration(conf, "Jb.Background"), vars, resol),
+  : state4d_(resol, vars, eckit::LocalConfiguration(conf, "Jb.Background")),
     modbias_(resol, conf.getSubConfiguration("Jb.Background.ModelBias")),
     obsbias_(odb, eckit::LocalConfiguration(conf, "Jo"))
 {

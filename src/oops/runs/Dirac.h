@@ -68,30 +68,18 @@ template <typename MODEL> class Dirac : public Application {
 
     // Setup background state
     const eckit::LocalConfiguration backgroundConfig(fullConfig, "initial");
-    std::unique_ptr<State4D_> xx;
-    bool l3d;
-    if (backgroundConfig.has("state")) {
-      xx.reset(new State4D_(backgroundConfig, vars, resol));
-      l3d = false;
-    } else {
-      State_ xx3D(resol, vars, backgroundConfig);
-      xx.reset(new State4D_(xx3D));
-      l3d = true;
-    }
+    State4D_ xx(resol, vars, backgroundConfig);
 
     //  Setup timeslots
-    std::vector<util::DateTime> timeslots;
-    for (unsigned jsub = 0; jsub < (*xx).size(); ++jsub) {
-      timeslots.push_back((*xx)[jsub].validTime());
-    }
+    std::vector<util::DateTime> timeslots = xx.validTimes();
     Log::info() << "Number of ensemble time-slots:" << timeslots.size() << std::endl;
 
     // Apply B to Dirac
     const eckit::LocalConfiguration covarConfig(fullConfig, "Covariance");
-    if (l3d) {
+    if (xx.size() == 1) {
       //  3D covariance
       std::unique_ptr<ModelSpaceCovarianceBase<MODEL>> B(CovarianceFactory<MODEL>::create(
-        covarConfig, resol, vars, (*xx)[0], (*xx)[0]));
+        covarConfig, resol, vars, xx[0], xx[0]));
 
       //  Setup Dirac
       Increment_ dxdirin(resol, vars, timeslots[0]);
@@ -109,7 +97,7 @@ template <typename MODEL> class Dirac : public Application {
     } else {
       //  4D covariance
       std::unique_ptr<ModelSpaceCovariance4DBase<MODEL>> B(Covariance4DFactory<MODEL>::create(
-        covarConfig, resol, vars, (*xx), (*xx)));
+        covarConfig, resol, vars, xx, xx));
 
       //  Setup Dirac
       Increment4D_ dxdirin(resol, vars, timeslots);
@@ -147,10 +135,10 @@ template <typename MODEL> class Dirac : public Application {
 
     if (hasLoc) {
       // Setup ensemble
-      EnsemblePtr_ ens(new Ensemble_(ensConfig, (*xx), (*xx), resol));
+      EnsemblePtr_ ens(new Ensemble_(ensConfig, xx, xx, resol));
 
       // Apply localization to Dirac
-      if (l3d) {
+      if (xx.size() == 1) {
         //  Setup Dirac
         Increment_ dxdir(resol, vars, timeslots[0]);
         const eckit::LocalConfiguration diracConfig(fullConfig, "dirac");

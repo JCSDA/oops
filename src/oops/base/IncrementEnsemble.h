@@ -11,8 +11,8 @@
 #ifndef OOPS_BASE_INCREMENTENSEMBLE_H_
 #define OOPS_BASE_INCREMENTENSEMBLE_H_
 
-#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <boost/ptr_container/ptr_vector.hpp>
@@ -22,10 +22,10 @@
 #include "oops/assimilation/State4D.h"
 #include "oops/base/Accumulator.h"
 #include "oops/base/LinearVariableChangeBase.h"
+#include "oops/base/StateEnsemble.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
-#include "oops/interface/State.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
@@ -33,12 +33,12 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-/// Ensemble
+/// \brief Ensemble of 4D inrements
 template<typename MODEL> class IncrementEnsemble {
   typedef LinearVariableChangeBase<MODEL>  LinearVariableChangeBase_;
   typedef Geometry<MODEL>            Geometry_;
-  typedef State<MODEL>               State_;
   typedef State4D<MODEL>             State4D_;
+  typedef StateEnsemble<MODEL>       StateEnsemble_;
   typedef Increment<MODEL>           Increment_;
   typedef Increment4D<MODEL>         Increment4D_;
 
@@ -51,21 +51,22 @@ template<typename MODEL> class IncrementEnsemble {
                     const Variables & vars,
                     const std::vector<util::DateTime> &,
                     const int rank);
+  /// \brief construct ensemble of perturbations as \p ens - \p mean; holding
+  //         \p vars variables
+  IncrementEnsemble(const StateEnsemble_ & ens, const State4D_ & mean,
+                    const Variables & vars);
   IncrementEnsemble(const eckit::Configuration &,
                     const State4D_ &, const State4D_ &, const Geometry_ &);
 
-  /// Destructor
-  virtual ~IncrementEnsemble() {}
-
   /// Accessors
   unsigned int size() const {
-    return rank_;
+    return ensemblePerturbs_.size();
   }
   Increment4D_ & operator[](const int ii) {
-    return *ensemblePerturbs_[ii];
+    return ensemblePerturbs_[ii];
   }
   const Increment4D_ & operator[](const int ii) const {
-    return *ensemblePerturbs_[ii];
+    return ensemblePerturbs_[ii];
   }
 
   /// Control variables
@@ -76,9 +77,8 @@ template<typename MODEL> class IncrementEnsemble {
   void resetMember(const Increment4D_ &);
 
  private:
-  unsigned int rank_;
   const Variables vars_;
-  std::vector<std::unique_ptr<Increment4D_>> ensemblePerturbs_;
+  std::vector<Increment4D_> ensemblePerturbs_;
 };
 
 // ====================================================================================
@@ -88,13 +88,29 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol,
                                             const Variables & vars,
                                             const std::vector<util::DateTime> & timeslots,
                                             const int rank)
-  : rank_(rank), vars_(vars), ensemblePerturbs_()
+  : vars_(vars), ensemblePerturbs_()
 {
-  for (unsigned m = 0; m < rank_; ++m) {
-    Increment4D_ * dx = new Increment4D_(resol, vars_, timeslots);
-    ensemblePerturbs_.push_back(std::unique_ptr<Increment4D_>(dx));
+  ensemblePerturbs_.reserve(rank);
+  for (unsigned m = 0; m < rank; ++m) {
+    ensemblePerturbs_.emplace_back(resol, vars_, timeslots);
   }
   Log::trace() << "IncrementEnsemble:contructor done" << std::endl;
+}
+
+// ====================================================================================
+
+template<typename MODEL>
+IncrementEnsemble<MODEL>::IncrementEnsemble(const StateEnsemble_ & ensemble,
+                                            const State4D_ & mean, const Variables & vars)
+  : vars_(vars), ensemblePerturbs_()
+{
+  ensemblePerturbs_.reserve(ensemble.size());
+  for (size_t ii = 0; ii < ensemble.size(); ++ii) {
+    ensemblePerturbs_.emplace_back(ensemble[ii].geometry(), vars,
+                                   ensemble[ii].validTimes());
+    ensemblePerturbs_[ii].diff(ensemble[ii], mean);
+  }
+  Log::trace() << "IncrementEnsemble:contructor(StateEnsemble) done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -103,12 +119,11 @@ template<typename MODEL>
 IncrementEnsemble<MODEL>::IncrementEnsemble(const eckit::Configuration & conf,
                                             const State4D_ & xb, const State4D_ & fg,
                                             const Geometry_ & resol)
-  : rank_(0), vars_(conf), ensemblePerturbs_()
+  : vars_(conf), ensemblePerturbs_()
 {
   // Get rank from config
   std::vector<eckit::LocalConfiguration> memberConfig;
   conf.get("members", memberConfig);
-  rank_ = memberConfig.size();
 
   // Check sizes and fill in timeslots
   ASSERT(xb.size() == fg.size());
@@ -130,26 +145,11 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const eckit::Configuration & conf,
   // TODO(Benjamin): one change of variable for each timeslot
 
   // Read ensemble
-  std::vector<State4D_> ensemble;
-  for (unsigned int ie = 0; ie < rank_; ++ie) {
-    std::unique_ptr<State4D_> xx;
-    if (memberConfig[ie].has("state")) {
-      xx.reset(new State4D_(memberConfig[ie], vars_, resol));
-    } else {
-      State_ xx3D(resol, vars_, memberConfig[ie]);
-      xx.reset(new State4D_(xx3D));
-    }
-    ensemble.push_back((*xx));
-  }
+  StateEnsemble_ ensemble(resol, vars_, conf);
+  State4D_ bgmean = ensemble.mean();
 
-  // Compute ensemble mean
-  Accumulator<MODEL, State4D_, State4D_> bgmean(ensemble[0]);
-  for (unsigned int ie = 0; ie < rank_; ++ie) {
-    const double rr = 1.0/static_cast<double>(rank_);
-    bgmean.accumul(rr, ensemble[ie]);
-  }
-
-  for (unsigned int ie = 0; ie < rank_; ++ie) {
+  ensemblePerturbs_.reserve(ensemble.size());
+  for (unsigned int ie = 0; ie < ensemble.size(); ++ie) {
     // Ensemble will be centered around ensemble mean
     Increment4D_ dx(resol, vars_, timeslots);
     dx.diff(ensemble[ie], bgmean);
@@ -163,8 +163,7 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const eckit::Configuration & conf,
       }
     }
 
-    Increment4D_ * dxunbalptr = new Increment4D_(dx);
-    ensemblePerturbs_.push_back(std::unique_ptr<Increment4D_>(dxunbalptr));
+    ensemblePerturbs_.emplace_back(std::move(dx));
   }
   Log::trace() << "IncrementEnsemble:contructor done" << std::endl;
 }
@@ -180,8 +179,7 @@ void IncrementEnsemble<MODEL>::releaseMember() {
 
 template<typename MODEL>
 void IncrementEnsemble<MODEL>::resetMember(const Increment4D_ & dx) {
-  Increment4D_ * dxptr = new Increment4D_(dx);
-  ensemblePerturbs_.push_back(std::unique_ptr<Increment4D_>(dxptr));
+  ensemblePerturbs_.emplace_back(dx);
 }
 
 // -----------------------------------------------------------------------------

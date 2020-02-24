@@ -51,18 +51,12 @@ namespace oops {
 
       // Setup background
       const eckit::LocalConfiguration bkgConfig(fullConfig, "Background");
-      std::unique_ptr<State4D_> xx;
-      if (bkgConfig.has("state")) {
-        xx.reset(new State4D_(bkgConfig, vars, resol));
-      } else {
-        State_ xx3D(resol, vars, bkgConfig);
-        xx.reset(new State4D_(xx3D));
-      }
+      State4D_ xx(resol, vars, bkgConfig);
 
       // Compute transformed ensemble perturbations
       //        ens_k = K^-1 dx_k
       const eckit::LocalConfiguration ensConfig(fullConfig, "Ensemble");
-      EnsemblePtr_ ens_k(new Ensemble_(ensConfig, (*xx), (*xx), resol));
+      EnsemblePtr_ ens_k(new Ensemble_(ensConfig, xx, xx, resol));
 
       // Get ensemble size
       unsigned nm = ens_k->size();
