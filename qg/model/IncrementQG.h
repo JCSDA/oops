@@ -19,9 +19,14 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include "atlas/field/FieldSet.h"
+
+#include "eckit/config/LocalConfiguration.h"
+
 #include "model/FieldsQG.h"
 #include "model/GeometryQG.h"
 #include "model/GeometryQGIterator.h"
+
 #include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/GridPoint.h"
 #include "oops/util/DateTime.h"
@@ -36,7 +41,6 @@ namespace eckit {
 
 namespace oops {
   class GridPoint;
-  class UnstructuredGrid;
   class Variables;
 }
 
@@ -99,10 +103,10 @@ class IncrementQG : public oops::GeneralizedDepartures,
   util::DateTime & validTime() {return fields_->time();}
   void updateTime(const util::Duration & dt) {fields_->time() += dt;}
 
-/// Unstructured grid
-  void ug_coord(oops::UnstructuredGrid &) const;
-  void field_to_ug(oops::UnstructuredGrid &, const int &) const;
-  void field_from_ug(const oops::UnstructuredGrid &, const int &);
+/// ATLAS FieldSet
+  void setAtlas(atlas::FieldSet *) const;
+  void toAtlas(atlas::FieldSet *) const;
+  void fromAtlas(atlas::FieldSet *);
 
 /// Access to fields
   FieldsQG & fields() {return *fields_;}

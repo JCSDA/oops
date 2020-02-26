@@ -22,7 +22,6 @@
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/OoBump.h"
-#include "oops/generic/UnstructuredGrid.h"
 #include "oops/interface/State.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -42,6 +41,7 @@ class ParametersBUMP {
   typedef Geometry<MODEL>                             Geometry_;
   typedef Increment<MODEL>                            Increment_;
   typedef Increment4D<MODEL>                          Increment4D_;
+  typedef OoBump<MODEL>                               OoBump_;
   typedef State<MODEL>                                State_;
   typedef boost::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
 
@@ -55,7 +55,7 @@ class ParametersBUMP {
                  const EnsemblePtr_ pseudo_ens = NULL);
   ~ParametersBUMP();
 
-  OoBump & getOoBump() {return *ooBump_;}
+  OoBump_ & getOoBump() {return *ooBump_;}
   void write() const;
 
  private:
@@ -63,7 +63,7 @@ class ParametersBUMP {
   const Variables vars_;
   std::vector<util::DateTime> timeslots_;
   const eckit::LocalConfiguration conf_;
-  std::unique_ptr<OoBump> ooBump_;
+  std::unique_ptr<OoBump_> ooBump_;
 };
 
 // =============================================================================
@@ -83,20 +83,9 @@ ParametersBUMP<MODEL>::ParametersBUMP(const Geometry_ & resol,
 // Setup BUMP configuration
   const eckit::LocalConfiguration BUMPConfig(conf_, "bump");
 
-// Setup colocation
-  int colocated = 1;
-  if (BUMPConfig.has("colocated")) colocated = BUMPConfig.getInt("colocated");
-
 // Setup members release
   int release_members = 0;
   if (BUMPConfig.has("release_members")) release_members = BUMPConfig.getInt("release_members");
-
-// Setup dummy increment
-  Increment4D_ dx(resol_, vars_, timeslots_);
-
-// Define unstructured grid coordinates
-  UnstructuredGrid ug(colocated, timeslots_.size());
-  dx.ug_coord(ug);
 
 // Get ensemble size if ensemble is available
   int ens1_ne = 0;
@@ -108,7 +97,7 @@ ParametersBUMP<MODEL>::ParametersBUMP(const Geometry_ & resol,
 
 // Create BUMP
   Log::info() << "Create BUMP" << std::endl;
-  ooBump_.reset(new OoBump(ug, BUMPConfig, resol.getComm(), ens1_ne, 1, ens2_ne, 1));
+  ooBump_.reset(new OoBump_(resol, vars, timeslots, BUMPConfig, ens1_ne, 1, ens2_ne, 1));
 
 // Transfer/copy ensemble members to BUMP
   if (release_members == 1) {
@@ -119,6 +108,9 @@ ParametersBUMP<MODEL>::ParametersBUMP(const Geometry_ & resol,
   for (int ie = 0; ie < ens1_ne; ++ie) {
     Log::info() << "   Member " << ie+1 << " / " << ens1_ne << std::endl;;
 
+  // Setup increment
+    Increment4D_ dx(resol_, vars_, timeslots_);
+
   // Copy member
     if (release_members == 1) {
       dx = (*ens)[0];
@@ -126,11 +118,8 @@ ParametersBUMP<MODEL>::ParametersBUMP(const Geometry_ & resol,
       dx = (*ens)[ie];
     }
 
-  // Define unstructured grid
-    dx.field_to_ug(ug);
-
   // Copy data to BUMP
-    ooBump_->addMember(ug, ie);
+    ooBump_->addMember(dx, ie);
 
     if (release_members == 1) {
     // Release ensemble member
@@ -147,6 +136,9 @@ ParametersBUMP<MODEL>::ParametersBUMP(const Geometry_ & resol,
   for (int ie = 0; ie < ens2_ne; ++ie) {
     Log::info() << "   Member " << ie+1 << " / " << ens2_ne << std::endl;
 
+  // Setup increment
+    Increment4D_ dx(resol_, vars_, timeslots_);
+
   // Copy member
     if (release_members == 1) {
       dx = (*pseudo_ens)[0];
@@ -154,11 +146,8 @@ ParametersBUMP<MODEL>::ParametersBUMP(const Geometry_ & resol,
       dx = (*pseudo_ens)[ie];
     }
 
-  // Define unstructured grid
-    dx.field_to_ug(ug);
-
   // Copy data to BUMP
-    ooBump_->addPseudoMember(ug, ie);
+    ooBump_->addPseudoMember(dx, ie);
 
     if (release_members == 1) {
     // Release ensemble member
@@ -172,11 +161,16 @@ ParametersBUMP<MODEL>::ParametersBUMP(const Geometry_ & resol,
   // Set BUMP input parameters
     std::vector<eckit::LocalConfiguration> inputConfigs;
     conf_.get("input", inputConfigs);
+
     for (const auto & conf : inputConfigs) {
     // Read parameter for the specified timeslot
       const util::DateTime date(conf.getString("date"));
       bool found = false;
+
+    // Setup increment
+      Increment4D_ dx(resol_, vars_, timeslots_);
       dx.zero();
+
       for (unsigned jsub = 0; jsub < timeslots_.size(); ++jsub) {
         if (date == timeslots_[jsub]) {
           found = true;
@@ -184,11 +178,10 @@ ParametersBUMP<MODEL>::ParametersBUMP(const Geometry_ & resol,
         }
       }
       ASSERT(found);
-      dx.field_to_ug(ug);
 
     // Set parameter to BUMP
       std::string param = conf.getString("parameter");
-      ooBump_->setParam(param, ug);
+      ooBump_->setParam(param, dx);
     }
   }
 
@@ -201,11 +194,14 @@ ParametersBUMP<MODEL>::ParametersBUMP(const Geometry_ & resol,
     for (int ie = 0; ie < ens1_ne; ++ie) {
       Log::info() << "   Member " << ie+1 << " / " << ens1_ne << std::endl;
 
+
+    // Setup dummy increment
+      Increment4D_ dx(resol_, vars_, timeslots_);
+
     // Copy data from BUMP
-      ooBump_->removeMember(ug, ie);
+      ooBump_->removeMember(dx, ie);
 
     // Reset ensemble member
-      dx.field_from_ug(ug);
       ens->resetMember(dx);
     }
 
@@ -214,11 +210,13 @@ ParametersBUMP<MODEL>::ParametersBUMP(const Geometry_ & resol,
     for (int ie = 0; ie < ens2_ne; ++ie) {
       Log::info() << "   Member " << ie+1 << " / " << ens2_ne << std::endl;
 
+    // Setup dummy increment
+      Increment4D_ dx(resol_, vars_, timeslots_);
+
     // Copy data from BUMP
-      ooBump_->removePseudoMember(ug, ie);
+      ooBump_->removePseudoMember(dx, ie);
 
     // Reset pseudo-ensemble member
-      dx.field_from_ug(ug);
       pseudo_ens->resetMember(dx);
     }
   }
@@ -242,23 +240,17 @@ void ParametersBUMP<MODEL>::write() const {
   Log::trace() << "ParametersBUMP::write starting" << std::endl;
   util::Timer timer(classname(), "write");
 
-
-// Setup dummy increment
-  Increment4D_ dx(resol_, vars_, timeslots_);
-  dx.zero();
-
-// Setup unstructured grid
-  UnstructuredGrid ug(ooBump_->getColocated(), timeslots_.size());
-  dx.ug_coord(ug);
-
 // Write parameters
   std::vector<eckit::LocalConfiguration> outputConfigs;
   conf_.get("output", outputConfigs);
   for (const auto & conf : outputConfigs) {
+  // Setup dummy increment
+    Increment4D_ dx(resol_, vars_, timeslots_);
+    dx.zero();
+
   // Get parameter from BUMP
     std::string param = conf.getString("parameter");
-    ooBump_->getParam(param, ug);
-    dx.field_from_ug(ug);
+    ooBump_->getParam(param, dx);
 
   // Write parameter for the specified timeslot
     const util::DateTime date(conf.getString("date"));

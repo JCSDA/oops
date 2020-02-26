@@ -12,12 +12,13 @@
 #include <string>
 #include <vector>
 #include <boost/noncopyable.hpp>
+
 #include "eckit/config/Configuration.h"
+
 #include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/OoBump.h"
 #include "oops/generic/ParametersBUMP.h"
-#include "oops/generic/UnstructuredGrid.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
@@ -36,6 +37,7 @@ template <typename MODEL>
 class StatsVariableChange : public LinearVariableChangeBase<MODEL> {
   typedef Geometry<MODEL>                         Geometry_;
   typedef Increment<MODEL>                        Increment_;
+  typedef OoBump<MODEL>                           OoBump_;
   typedef State<MODEL>                            State_;
   typedef State4D<MODEL>                          State4D_;
   typedef ParametersBUMP<MODEL>                   Parameters_;
@@ -64,7 +66,7 @@ class StatsVariableChange : public LinearVariableChangeBase<MODEL> {
                      std::vector<std::string>& modelVarToCalcList,
                      std::vector<std::string>& varRegrByList);
 
-  std::unique_ptr<OoBump> ooBump_;
+  std::unique_ptr<OoBump_> ooBump_;
 
   // StatsVarData populate(const varin_ , const varout_, const eckit::Configuration);
 };
@@ -89,7 +91,7 @@ StatsVariableChange<MODEL>::StatsVariableChange(const State_ & xb, const State_ 
   Parameters_ param(resol, vars, timeslots, conf);
 
 // Transfer OoBump pointer
-  ooBump_.reset(new OoBump(param.getOoBump()));
+  ooBump_.reset(new OoBump_(param.getOoBump()));
 
   Log::trace() << "StatsVariableChange<MODEL>::StatsVariableChange done" << std::endl;
 }
@@ -105,10 +107,7 @@ template<typename MODEL>
 void StatsVariableChange<MODEL>::multiply(const Increment_ & in, Increment_ & out) const {
   Log::trace() << "StatsVariableChange<MODEL>::multiply starting" << std::endl;
 
-  UnstructuredGrid ug(ooBump_->getColocated());
-  in.field_to_ug(ug);
-  ooBump_->multiplyVbal(ug);
-  out.field_from_ug(ug);
+  ooBump_->multiplyVbal(in, out);
 
   Log::trace() << "StatsVariableChange<MODEL>::multiply done" << std::endl;
 }
@@ -117,10 +116,7 @@ template<typename MODEL>
 void StatsVariableChange<MODEL>::multiplyInverse(const Increment_ & in, Increment_ & out) const {
   Log::trace() << "StatsVariableChange<MODEL>::multiplyInverse starting" << std::endl;
 
-  UnstructuredGrid ug(ooBump_->getColocated());
-  in.field_to_ug(ug);
-  ooBump_->multiplyVbalInv(ug);
-  out.field_from_ug(ug);
+  ooBump_->multiplyVbalInv(in, out);
 
   Log::trace() << "StatsVariableChange<MODEL>::multiplyInverse done" << std::endl;
 }
@@ -129,10 +125,7 @@ template<typename MODEL>
 void StatsVariableChange<MODEL>::multiplyAD(const Increment_ & in, Increment_ & out) const {
   Log::trace() << "StatsVariableChange<MODEL>::multiplyAD starting" << std::endl;
 
-  UnstructuredGrid ug(ooBump_->getColocated());
-  in.field_to_ug(ug);
-  ooBump_->multiplyVbalAd(ug);
-  out.field_from_ug(ug);
+  ooBump_->multiplyVbalAd(in, out);
 
   Log::trace() << "StatsVariableChange<MODEL>::multiplyAD done" << std::endl;
 }
@@ -141,10 +134,7 @@ template<typename MODEL>
 void StatsVariableChange<MODEL>::multiplyInverseAD(const Increment_ & in, Increment_ & out) const {
   Log::trace() << "StatsVariableChange<MODEL>::multiplyInverseAD starting" << std::endl;
 
-  UnstructuredGrid ug(ooBump_->getColocated());
-  in.field_to_ug(ug);
-  ooBump_->multiplyVbalInvAd(ug);
-  out.field_from_ug(ug);
+  ooBump_->multiplyVbalInvAd(in, out);
 
   Log::trace() << "StatsVariableChange<MODEL>::multiplyInverseAD done" << std::endl;
 }

@@ -16,11 +16,12 @@
 #include <utility>
 #include <vector>
 
+#include "atlas/field/FieldSet.h"
+
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/base/Variables.h"
-#include "oops/generic/UnstructuredGrid.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -148,18 +149,18 @@ void IncrementQG::getValuesAD(const LocationsQG & locs, const oops::Variables & 
   fields_->getValuesAD(locs, vars, cols);
 }
 // -----------------------------------------------------------------------------
-/// Unstructured grid
+/// ATLAS FieldSet
 // -----------------------------------------------------------------------------
-void IncrementQG::ug_coord(oops::UnstructuredGrid & ug) const {
-  fields_->ug_coord(ug);
+void IncrementQG::setAtlas(atlas::FieldSet * afieldset) const {
+  fields_->setAtlas(afieldset);
 }
 // -----------------------------------------------------------------------------
-void IncrementQG::field_to_ug(oops::UnstructuredGrid & ug, const int & its) const {
-  fields_->field_to_ug(ug, its);
+void IncrementQG::toAtlas(atlas::FieldSet * afieldset) const {
+  fields_->toAtlas(afieldset);
 }
 // -----------------------------------------------------------------------------
-void IncrementQG::field_from_ug(const oops::UnstructuredGrid & ug, const int & its) {
-  fields_->field_from_ug(ug, its);
+void IncrementQG::fromAtlas(atlas::FieldSet * afieldset) {
+  fields_->fromAtlas(afieldset);
 }
 // -----------------------------------------------------------------------------
 /// I/O and diagnostics

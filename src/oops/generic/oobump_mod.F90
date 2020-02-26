@@ -5,31 +5,31 @@
 
 module oobump_mod
 
+use atlas_module
+use datetime_mod
 use fckit_configuration_module, only: fckit_configuration
 use fckit_log_module, only: fckit_log
 use fckit_mpi_module, only: fckit_mpi_comm
 use iso_c_binding
 use kinds
 use missing_values_mod
+use oops_variables_mod
 use type_bump, only: bump_type
 use type_nam, only: nvmax,nlmax,nc3max,nscalesmax,ndirmax,nldwvmax 
-use unstructured_grid_mod
 
 implicit none
 
 private
 public :: oobump_type
 public :: oobump_registry
-public :: oobump_create, oobump_delete, oobump_get_colocated, oobump_get_nts, oobump_get_cv_size, oobump_add_member, &
-        & oobump_remove_member, oobump_run_drivers, oobump_multiply_vbal, oobump_multiply_vbal_inv, oobump_multiply_vbal_ad, &
-        & oobump_multiply_vbal_inv_ad, oobump_multiply_nicas, oobump_multiply_nicas_sqrt, oobump_multiply_nicas_sqrt_ad, &
-        & oobump_randomize_nicas, oobump_get_param, oobump_set_param, bump_read_conf
+public :: oobump_create, oobump_delete, oobump_get_cv_size, oobump_add_member, oobump_remove_member, oobump_run_drivers, &
+        & oobump_multiply_vbal, oobump_multiply_vbal_inv, oobump_multiply_vbal_ad, oobump_multiply_vbal_inv_ad, &
+        & oobump_multiply_nicas, oobump_multiply_nicas_sqrt, oobump_multiply_nicas_sqrt_ad, &
+        & oobump_randomize_nicas, oobump_get_param, oobump_set_param
 ! ------------------------------------------------------------------------------
 type oobump_type
-   integer :: colocated                    !> Colocated flag
-   integer :: separate_log                 !> Separate log files for BUMP
-   integer :: ngrid                        !> Number of instances of BUMP
-   type(bump_type), allocatable :: bump(:) !> Instances of BUMP
+   integer :: separate_log !> Separate log files for BUMP
+   type(bump_type) :: bump !> Instances of BUMP
 end type oobump_type
 
 #define LISTED_TYPE oobump_type
@@ -46,80 +46,98 @@ contains
 #include "oops/util/linkedList_c.f"
 !-------------------------------------------------------------------------------
 !> Create OOBUMP
-subroutine oobump_create(self, ug, f_conf, ens1_ne, ens1_nsub, ens2_ne, ens2_nsub, f_comm)
+subroutine oobump_create(self, f_comm, afunctionspace, afieldset, fconf, fgrid, &
+ & ens1_ne, ens1_nsub, ens2_ne, ens2_nsub)
 
 implicit none
 
 ! Passed variables
-type(oobump_type), intent(inout) :: self       !< OOBUMP
-type(unstructured_grid), intent(in) :: ug      !< Unstructured grid
-type(fckit_configuration),intent(in) :: f_conf !< FCKIT configuration
-integer, intent(in) :: ens1_ne                 !< First ensemble size
-integer, intent(in) :: ens1_nsub               !< Number of sub-ensembles in the first ensemble
-integer, intent(in) :: ens2_ne                 !< Second ensemble size
-integer, intent(in) :: ens2_nsub               !< Number of sub-ensembles in the second ensemble
-type(fckit_mpi_comm),intent(in) :: f_comm      !< FCKIT MPI communicator wrapper
+type(oobump_type), intent(inout) :: self                !< OOBUMP
+type(fckit_mpi_comm),intent(in) :: f_comm               !< FCKIT MPI communicator wrapper
+type(atlas_functionspace), intent(in) :: afunctionspace !< ATLAS function space
+type(atlas_fieldset), intent(in) :: afieldset           !< ATLAS fieldset
+type(fckit_configuration),intent(in) :: fconf           !< FCKIT configuration
+type(fckit_configuration),intent(in) :: fgrid           !< FCKIT grid configuration
+integer, intent(in) :: ens1_ne                          !< First ensemble size
+integer, intent(in) :: ens1_nsub                        !< Number of sub-ensembles in the first ensemble
+integer, intent(in) :: ens2_ne                          !< Second ensemble size
+integer, intent(in) :: ens2_nsub                        !< Number of sub-ensembles in the second ensemble
 
 ! Local variables
-integer :: igrid, lunit, iproc, ifileunit
+integer :: lunit, grid_index, iproc, ifileunit
 real(kind_real) :: msvalr
+integer(c_size_t),parameter :: csize = 1024
 character(len=1024) :: filename
+character(len=:),allocatable :: str
+character(kind=c_char,len=1024),allocatable :: char_array(:)
 
 ! Initialization
-self%colocated = ug%colocated
 self%separate_log = 0
 lunit = -999
-if (f_conf%has("separate_log")) call f_conf%get_or_die("separate_log",self%separate_log)
-self%ngrid = ug%ngrid
+if (fconf%has("separate_log")) call fconf%get_or_die("separate_log",self%separate_log)
 
-! Allocation
-allocate(self%bump(self%ngrid))
+! Initialize namelist
+call self%bump%nam%init
 
-do igrid=1,self%ngrid
-   ! Initialize namelist
-   call self%bump(igrid)%nam%init
+! Read configuration
+call self%bump%nam%from_conf(fconf)
 
-   ! Read JSON
-   call bump_read_conf(f_conf,self%bump(igrid))
+! Get missing value
+msvalr = missing_value(1.0_kind_real)
 
-   ! Add suffix for multiple grid case
-   if (self%ngrid>1) write(self%bump(igrid)%nam%prefix,'(a,a,i2.2)') trim(self%bump(igrid)%nam%prefix),'_',igrid
+! Get grid index
+call fgrid%get_or_die("grid_index", grid_index)
 
-   ! Get missing value
-   msvalr = missing_value(1.0_kind_real)
+! Get number of levels
+call fgrid%get_or_die("nl", self%bump%nam%nl)
 
-   ! Open separate log files for BUMP
-   if (self%separate_log==1) then
-      ! Initialize MPI
-      call self%bump(igrid)%mpl%init(f_comm)
+! Get variables
+call fgrid%get_or_die("variables",csize,char_array)
+self%bump%nam%nv = size(char_array)
+self%bump%nam%varname(1:self%bump%nam%nv) = char_array(1:self%bump%nam%nv)
 
-      do iproc=1,self%bump(igrid)%mpl%nproc
-         if ((trim(self%bump(igrid)%nam%verbosity)=='all').or.((trim(self%bump(igrid)%nam%verbosity)=='main') &
-      & .and.(iproc==self%bump(igrid)%mpl%rootproc))) then
-            if (iproc==self%bump(igrid)%mpl%myproc) then
-               ! Find a free unit
-               call self%bump(igrid)%mpl%newunit(lunit)
+! Get timeslots
+call fgrid%get_or_die("timeslots",csize,char_array)
+self%bump%nam%nts = size(char_array)
+self%bump%nam%timeslot(1:self%bump%nam%nts) = char_array(1:self%bump%nam%nts)
 
-               ! Open listing file
-               write(filename,'(a,i4.4,a)') trim(self%bump(igrid)%nam%prefix)//'.',self%bump(igrid)%mpl%myproc-1,'.out'
-               inquire(file=filename,number=ifileunit)
-               if (ifileunit<0) then
-                  open(unit=lunit,file=trim(filename),action='write',status='replace')
-               else
-                  close(ifileunit)
-                  open(unit=lunit,file=trim(filename),action='write',status='replace')
-               end if
+! Get 2D level
+call fgrid%get_or_die("lev2d",str)
+self%bump%nam%lev2d = str
+
+! Add suffix for multiple grid case
+write(self%bump%nam%prefix,'(a,a,i2.2)') trim(self%bump%nam%prefix),'_',grid_index
+
+! Open separate log files for BUMP
+if (self%separate_log==1) then
+   ! Initialize MPI
+   call self%bump%mpl%init(f_comm)
+
+   do iproc=1,self%bump%mpl%nproc
+      if ((trim(self%bump%nam%verbosity)=='all').or.((trim(self%bump%nam%verbosity)=='main') &
+   & .and.(iproc==self%bump%mpl%rootproc))) then
+         if (iproc==self%bump%mpl%myproc) then
+            ! Find a free unit
+            call self%bump%mpl%newunit(lunit)
+
+            ! Open listing file
+            write(filename,'(a,i4.4,a)') trim(self%bump%nam%prefix)//'.',self%bump%mpl%myproc-1,'.out'
+            inquire(file=filename,number=ifileunit)
+            if (ifileunit<0) then
+               open(unit=lunit,file=trim(filename),action='write',status='replace')
+            else
+               close(ifileunit)
+               open(unit=lunit,file=trim(filename),action='write',status='replace')
             end if
-            call self%bump(igrid)%mpl%f_comm%barrier
          end if
-      end do
-   end if
+         call self%bump%mpl%f_comm%barrier
+      end if
+   end do
+end if
 
-   ! Online setup
-   call self%bump(igrid)%setup_online(f_comm,ug%grid(igrid)%nmga,ug%grid(igrid)%nl0,ug%grid(igrid)%nv,ug%grid(igrid)%nts, &
- & ug%grid(igrid)%lon,ug%grid(igrid)%lat,ug%grid(igrid)%area,ug%grid(igrid)%vunit,ug%grid(igrid)%lmask,ens1_ne=ens1_ne, &
- & ens1_nsub=ens1_nsub,ens2_ne=ens2_ne,ens2_nsub=ens2_nsub,lunit=lunit,msvalr=msvalr)
-end do
+! Setup BUMP
+call self%bump%setup(f_comm,afunctionspace,afieldset,ens1_ne=ens1_ne,ens1_nsub=ens1_nsub,ens2_ne=ens2_ne,ens2_nsub=ens2_nsub, &
+ & lunit=lunit,msvalr=msvalr)
 
 end subroutine oobump_create
 !-------------------------------------------------------------------------------
@@ -131,51 +149,13 @@ implicit none
 ! Passed variables
 type(oobump_type), intent(inout) :: self !< OOBUMP
 
-! Local variables
-integer :: igrid
+! Close log files
+if ((self%separate_log==1).and.(self%bump%mpl%lunit/=-999)) close(unit=self%bump%mpl%lunit)
 
-if (allocated(self%bump)) then
-   do igrid=1,self%ngrid
-      ! Close log files
-      if ((self%separate_log==1).and.(self%bump(igrid)%mpl%lunit/=-999)) close(unit=self%bump(igrid)%mpl%lunit)
-
-      ! Release memory      
-      call self%bump(igrid)%dealloc
-   end do
-
-   ! Release memory
-   deallocate(self%bump)
-end if
+! Release memory      
+call self%bump%dealloc
 
 end subroutine oobump_delete
-!-------------------------------------------------------------------------------
-!> Get colocated flag
-subroutine oobump_get_colocated(self,colocated)
-
-implicit none
-
-! Passed variables
-type(oobump_type), intent(inout) :: self !< OOBUMP
-integer, intent(out) :: colocated        !< Colocated flag
-
-! Copy colocated
-colocated = self%colocated
-
-end subroutine oobump_get_colocated
-!-------------------------------------------------------------------------------
-!> Get number of timeslots
-subroutine oobump_get_nts(self,nts)
-
-implicit none
-
-! Passed variables
-type(oobump_type), intent(inout) :: self !< OOBUMP
-integer, intent(out) :: nts              !< Number of timeslots
-
-! Copy nts
-nts = self%bump(1)%nam%nts
-
-end subroutine oobump_get_nts
 !-------------------------------------------------------------------------------
 !> Get control variable size
 subroutine oobump_get_cv_size(self,n)
@@ -186,57 +166,40 @@ implicit none
 type(oobump_type), intent(inout) :: self !< OOBUMP
 integer, intent(out) :: n                !< Control variable size
 
-! Local variables
-integer :: igrid,nn
-
-! Add control variable sizes for each grid
-n = 0
-do igrid=1,self%ngrid
-   call self%bump(igrid)%get_cv_size(nn)
-   n = n+nn
-end do
+! Get control variable size
+call self%bump%get_cv_size(n)
 
 end subroutine oobump_get_cv_size
 !-------------------------------------------------------------------------------
 !> Add ensemble member
-subroutine oobump_add_member(self,ug,ie,iens)
+subroutine oobump_add_member(self,afieldset,ie,iens)
 
 implicit none
 
 ! Passed variables
-type(oobump_type), intent(inout) :: self     !< OOBUMP
-type(unstructured_grid), intent(inout) :: ug !< Unstructured grid
-integer, intent(in) :: ie                    !< Ensemble member index
-integer, intent(in) :: iens                  !< Ensemble index
-
-! Local variables
-integer :: igrid
+type(oobump_type), intent(inout) :: self         !< OOBUMP
+type(atlas_fieldset), intent(inout) :: afieldset !< ATLAS fieldset
+integer, intent(in) :: ie                        !< Ensemble member index
+integer, intent(in) :: iens                      !< Ensemble index
 
 ! Add member
-do igrid=1,self%ngrid
-   call self%bump(igrid)%add_member(ug%grid(igrid)%fld,ie,iens)
-end do
+call self%bump%add_member(afieldset,ie,iens)
 
 end subroutine oobump_add_member
 !-------------------------------------------------------------------------------
 !> Remove ensemble member
-subroutine oobump_remove_member(self,ug,ie,iens)
+subroutine oobump_remove_member(self,afieldset,ie,iens)
 
 implicit none
 
 ! Passed variables
-type(oobump_type), intent(inout) :: self     !< OOBUMP
-type(unstructured_grid), intent(inout) :: ug !< Unstructured grid
-integer, intent(in) :: ie                    !< Ensemble member index
-integer, intent(in) :: iens                  !< Ensemble index
-
-! Local variables
-integer :: igrid
+type(oobump_type), intent(inout) :: self         !< OOBUMP
+type(atlas_fieldset), intent(inout) :: afieldset !< ATLAS fieldset
+integer, intent(in) :: ie                        !< Ensemble member index
+integer, intent(in) :: iens                      !< Ensemble index
 
 ! Remove member
-do igrid=1,self%ngrid
-   call self%bump(igrid)%remove_member(ug%grid(igrid)%fld,ie,iens)
-end do
+call self%bump%remove_member(afieldset,ie,iens)
 
 end subroutine oobump_remove_member
 !-------------------------------------------------------------------------------
@@ -248,249 +211,153 @@ implicit none
 ! Passed variables
 type(oobump_type), intent(inout) :: self !< OOBUMP
 
-! Local variables
-integer :: igrid
-
 ! Run BUMP drivers
-do igrid=1,self%ngrid
-   call self%bump(igrid)%run_drivers
-end do
+call self%bump%run_drivers
 
 end subroutine oobump_run_drivers
 !-------------------------------------------------------------------------------
 !> Multiplication by BUMP vertical balance operator
-subroutine oobump_multiply_vbal(self,ug)
+subroutine oobump_multiply_vbal(self,afieldset)
 
 implicit none
 
 ! Passed variables
-type(oobump_type), intent(inout) :: self     !< OOBUMP
-type(unstructured_grid), intent(inout) :: ug !< Unstructured grid
-
-! Local variables
-integer :: igrid
+type(oobump_type), intent(inout) :: self         !< OOBUMP
+type(atlas_fieldset), intent(inout) :: afieldset !< ATLAS fieldset
 
 ! Apply vertical balance
-do igrid=1,self%ngrid
-   call self%bump(igrid)%apply_vbal(ug%grid(igrid)%fld)
-end do
+call self%bump%apply_vbal(afieldset)
 
 end subroutine oobump_multiply_vbal
 !-------------------------------------------------------------------------------
 !> Multiplication by BUMP vertical balance operator inverse
-subroutine oobump_multiply_vbal_inv(self,ug)
+subroutine oobump_multiply_vbal_inv(self,afieldset)
 
 implicit none
 
 ! Passed variables
-type(oobump_type), intent(inout) :: self     !< OOBUMP
-type(unstructured_grid), intent(inout) :: ug !< Unstructured grid
-
-! Local variables
-integer :: igrid
+type(oobump_type), intent(inout) :: self         !< OOBUMP
+type(atlas_fieldset), intent(inout) :: afieldset !< ATLAS fieldset
 
 ! Apply vertical balance, inverse
-do igrid=1,self%ngrid
-   call self%bump(igrid)%apply_vbal_inv(ug%grid(igrid)%fld)
-end do
+call self%bump%apply_vbal_inv(afieldset)
 
 end subroutine oobump_multiply_vbal_inv
 !-------------------------------------------------------------------------------
 !> Multiplication by BUMP vertical balance operator adjoint
-subroutine oobump_multiply_vbal_ad(self,ug)
+subroutine oobump_multiply_vbal_ad(self,afieldset)
 
 implicit none
 
 ! Passed variables
-type(oobump_type), intent(inout) :: self     !< OOBUMP
-type(unstructured_grid), intent(inout) :: ug !< Unstructured grid
-
-! Local variables
-integer :: igrid
+type(oobump_type), intent(inout) :: self         !< OOBUMP
+type(atlas_fieldset), intent(inout) :: afieldset !< ATLAS fieldset
 
 ! Apply vertical balance, adjoint
-do igrid=1,self%ngrid
-   call self%bump(igrid)%apply_vbal_ad(ug%grid(igrid)%fld)
-end do
+call self%bump%apply_vbal_ad(afieldset)
 
 end subroutine oobump_multiply_vbal_ad
 !-------------------------------------------------------------------------------
 !> Multiplication by BUMP vertical balance operator adjoint inverse
-subroutine oobump_multiply_vbal_inv_ad(self,ug)
+subroutine oobump_multiply_vbal_inv_ad(self,afieldset)
 
 implicit none
 
 ! Passed variables
-type(oobump_type), intent(inout) :: self     !< OOBUMP
-type(unstructured_grid), intent(inout) :: ug !< Unstructured grid
-
-! Local variables
-integer :: igrid
+type(oobump_type), intent(inout) :: self         !< OOBUMP
+type(atlas_fieldset), intent(inout) :: afieldset !< ATLAS fieldset
 
 ! Apply vertical balance, inverse adjoint
-do igrid=1,self%ngrid
-   call self%bump(igrid)%apply_vbal_inv_ad(ug%grid(igrid)%fld)
-end do
+call self%bump%apply_vbal_inv_ad(afieldset)
 
 end subroutine oobump_multiply_vbal_inv_ad
 !-------------------------------------------------------------------------------
 !> Multiplication by BUMP NICAS operator
-subroutine oobump_multiply_nicas(self,ug)
+subroutine oobump_multiply_nicas(self,afieldset)
 
 implicit none
 
 ! Passed variables
-type(oobump_type), intent(inout) :: self     !< OOBUMP
-type(unstructured_grid), intent(inout) :: ug !< Unstructured grid
-
-! Local variables
-integer :: igrid
+type(oobump_type), intent(inout) :: self         !< OOBUMP
+type(atlas_fieldset), intent(inout) :: afieldset !< ATLAS fieldset
 
 ! Apply NICAS
-do igrid=1,self%ngrid
-   call self%bump(igrid)%apply_nicas(ug%grid(igrid)%fld)
-end do
+call self%bump%apply_nicas(afieldset)
 
 end subroutine oobump_multiply_nicas
 !-------------------------------------------------------------------------------
 !> Multiplication by BUMP NICAS operator square-root
-subroutine oobump_multiply_nicas_sqrt(self,cv,ug)
+subroutine oobump_multiply_nicas_sqrt(self,cv,afieldset)
 
 implicit none
 
 ! Passed variables
-type(oobump_type), intent(inout) :: self     !< OOBUMP
-real(kind_real), intent(in) :: cv(:)         !< Control variable
-type(unstructured_grid), intent(inout) :: ug !< Unstructured grid
+type(oobump_type), intent(inout) :: self         !< OOBUMP
+real(kind_real), intent(in) :: cv(:)             !< Control variable
+type(atlas_fieldset), intent(inout) :: afieldset !< ATLAS fieldset
 
-! Local variables
-integer :: offset,igrid,nn
-
-! Allocation
-call allocate_unstructured_grid_field(ug)
-
-! Initialization
-offset = 0
-
-do igrid=1,self%ngrid
-   ! Get control variable size for this grid
-   call self%bump(igrid)%get_cv_size(nn)
-
-   ! Apply NICAS square-root
-   call self%bump(igrid)%apply_nicas_sqrt(cv(offset+1:offset+nn), ug%grid(igrid)%fld)
-
-   ! Update
-   offset = offset+nn
-end do
+! Apply NICAS square-root
+call self%bump%apply_nicas_sqrt(cv, afieldset)
 
 end subroutine oobump_multiply_nicas_sqrt
 !-------------------------------------------------------------------------------
 !> Multiplication by BUMP NICAS operator square-root adjoint
-subroutine oobump_multiply_nicas_sqrt_ad(self,ug,cv)
+subroutine oobump_multiply_nicas_sqrt_ad(self,afieldset,cv)
 
 implicit none
 
 ! Passed variables
-type(oobump_type), intent(inout) :: self  !< OOBUMP
-type(unstructured_grid), intent(in) :: ug !< Unstructured grid
-real(kind_real), intent(inout) :: cv(:)   !< Control variable
+type(oobump_type), intent(inout) :: self         !< OOBUMP
+type(atlas_fieldset), intent(inout) :: afieldset !< ATLAS fieldset
+real(kind_real), intent(inout) :: cv(:)          !< Control variable
 
-! Local variables
-integer :: offset,igrid,nn
-
-! Initialization
-offset = 0
-
-do igrid=1,self%ngrid
-   ! Get control variable size for this grid
-   call self%bump(igrid)%get_cv_size(nn)
-
-   ! Apply NICAS square-root
-   call self%bump(igrid)%apply_nicas_sqrt_ad(ug%grid(igrid)%fld, cv(offset+1:offset+nn))
-
-   ! Update
-   offset = offset+nn
-end do
+! Apply NICAS square-root
+call self%bump%apply_nicas_sqrt_ad(afieldset, cv)
 
 end subroutine oobump_multiply_nicas_sqrt_ad
 !-------------------------------------------------------------------------------
 !> Randomize the BUMP NICAS operator
-subroutine oobump_randomize_nicas(self,ug)
+subroutine oobump_randomize_nicas(self,afieldset)
 
 implicit none
 
 ! Passed variables
-type(oobump_type), intent(inout) :: self     !< OOBUMP
-type(unstructured_grid), intent(inout) :: ug !< Unstructured grid
-
-! Local variables
-integer :: igrid
-
-! Allocation
-call allocate_unstructured_grid_field(ug)
+type(oobump_type), intent(inout) :: self         !< OOBUMP
+type(atlas_fieldset), intent(inout) :: afieldset !< ATLAS fieldset
 
 ! Randomize NICAS
-do igrid=1,self%ngrid
-   call self%bump(igrid)%randomize(ug%grid(igrid)%fld)
-end do
+call self%bump%randomize(afieldset)
 
 end subroutine oobump_randomize_nicas
 !-------------------------------------------------------------------------------
 !> Get BUMP parameter
-subroutine oobump_get_param(self,param,ug)
+subroutine oobump_get_param(self,param,afieldset)
 
 implicit none
 
 ! Passed variables
-type(oobump_type), intent(inout) :: self     !< OOBUMP
-character(len=*), intent(in) :: param        !< Parameter name
-type(unstructured_grid), intent(inout) :: ug !< Unstructured grid
-
-! Local variables
-integer :: igrid
-
-! Allocation
-call allocate_unstructured_grid_field(ug)
+type(oobump_type), intent(inout) :: self         !< OOBUMP
+character(len=*), intent(in) :: param            !< Parameter name
+type(atlas_fieldset), intent(inout) :: afieldset !< ATLAS fieldset
 
 ! Get parameter
-do igrid=1,self%ngrid
-   call self%bump(igrid)%get_parameter(param,ug%grid(igrid)%fld)
-end do
+call self%bump%get_parameter(param,afieldset)
 
 end subroutine oobump_get_param
 !-------------------------------------------------------------------------------
 !> Set BUMP parameter
-subroutine oobump_set_param(self,param,ug)
+subroutine oobump_set_param(self,param,afieldset)
 
 implicit none
 
 ! Passed variables
-type(oobump_type), intent(inout) :: self  !< OOBUMP
-character(len=*),intent(in) :: param      !< Parameter name
-type(unstructured_grid), intent(in) :: ug !< Unstructured grid
-
-! Local variables
-integer :: igrid
+type(oobump_type), intent(inout) :: self         !< OOBUMP
+character(len=*), intent(in) :: param            !< Parameter name
+type(atlas_fieldset), intent(inout) :: afieldset !< ATLAS fieldset
 
 ! Set parameter
-do igrid=1,self%ngrid
-   call self%bump(igrid)%set_parameter(param,ug%grid(igrid)%fld)
-end do
+call self%bump%set_parameter(param,afieldset)
 
 end subroutine oobump_set_param
-!-------------------------------------------------------------------------------
-!> Read BUMP configuration
-subroutine bump_read_conf(f_conf,bump)
-
-implicit none
-
-! Passed variables
-type(fckit_configuration),intent(in) :: f_conf !< FCKIT configuration
-type(bump_type), intent(inout) :: bump         !< BUMP
-
-! Set BUMP namelist
-call bump%nam%from_conf(f_conf)
-
-end subroutine bump_read_conf
 !-------------------------------------------------------------------------------
 end module oobump_mod

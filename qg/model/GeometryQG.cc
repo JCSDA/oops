@@ -8,7 +8,13 @@
  * does it submit to any jurisdiction.
  */
 
+#include "atlas/field.h"
+#include "atlas/functionspace.h"
+#include "atlas/grid.h"
+#include "atlas/util/Config.h"
+
 #include "eckit/config/Configuration.h"
+
 #include "model/GeometryQG.h"
 #include "model/QgFortran.h"
 
@@ -19,10 +25,49 @@ GeometryQG::GeometryQG(const eckit::Configuration & conf,
                        const eckit::mpi::Comm & comm) : comm_(comm) {
   const eckit::Configuration * configc = &conf;
   qg_geom_setup_f90(keyGeom_, &configc);
+
+  // Create ATLAS grid configuration
+  const atlas::util::Config atlasConfig;
+  const eckit::Configuration * fconf = &atlasConfig;
+  qg_geom_create_atlas_grid_conf_f90(keyGeom_, &fconf);
+
+  // Create ATLAS grid
+  atlas::StructuredGrid atlasStructuredGrid(atlasConfig);
+
+  // Create ATLAS function space
+  atlasFunctionSpace_.reset(new atlas::functionspace::StructuredColumns(atlasStructuredGrid,
+                            atlas::option::halo(0)));
+
+  // Set ATLAS function space pointer in Fortran
+  qg_geom_set_atlas_functionspace_pointer_f90(keyGeom_, atlasFunctionSpace_.get()->get());
+
+  // Fill ATLAS fieldset
+  atlasFieldSet_.reset(new atlas::FieldSet());
+  qg_geom_fill_atlas_fieldset_f90(keyGeom_, atlasFieldSet_.get()->get());
+
+  // Set ATLAS fieldset pointer in Fortran
+  qg_geom_set_atlas_fieldset_pointer_f90(keyGeom_, atlasFieldSet_.get()->get());
 }
 // -----------------------------------------------------------------------------
 GeometryQG::GeometryQG(const GeometryQG & other) : comm_(other.comm_) {
   qg_geom_clone_f90(keyGeom_, other.keyGeom_);
+
+  // Copy ATLAS function space
+  atlasFunctionSpace_.reset(new atlas::functionspace::StructuredColumns(
+                            other.atlasFunctionSpace_->grid(), atlas::option::halo(0)));
+
+  // Set ATLAS function space pointer in Fortran
+  qg_geom_set_atlas_functionspace_pointer_f90(keyGeom_, atlasFunctionSpace_.get()->get());
+
+  // Copy ATLAS fieldset
+  atlasFieldSet_.reset(new atlas::FieldSet());
+  for (int jfield = 0; jfield < other.atlasFieldSet_->size(); ++jfield) {
+    atlas::Field atlasField = other.atlasFieldSet_->field(jfield);
+    atlasFieldSet_->add(atlasField);
+  }
+
+  // Set ATLAS fieldset pointer in Fortran
+  qg_geom_set_atlas_fieldset_pointer_f90(keyGeom_, atlasFieldSet_.get()->get());
 }
 // -----------------------------------------------------------------------------
 GeometryQG::~GeometryQG() {

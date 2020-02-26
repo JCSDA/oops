@@ -5,35 +5,42 @@
 
 module unstructured_grid_mod
 
+use atlas_module
+use fckit_configuration_module, only: fckit_configuration
+use datetime_mod
 use iso_c_binding
 use kinds
+use oops_variables_mod
 
 implicit none
 
 private
 public :: unstructured_grid
 public :: unstructured_grid_registry
-public :: create_ug,delete_ug,allocate_unstructured_grid_coord,allocate_unstructured_grid_field
+public :: create_ug,delete_ug,ug_create_atlas_grid_conf,ug_fill_atlas_fieldset,ug_set_atlas,ug_to_atlas,ug_from_atlas
+public :: allocate_unstructured_grid_coord,allocate_unstructured_grid_field
 ! ------------------------------------------------------------------------------
 type grid_type
-  integer :: igrid                                 !> Index of the grid
-  integer :: nmga                                  !> Number of gridpoints (on a given MPI task)
-  integer :: nl0                                   !> Number of levels
-  integer :: nv                                    !> Number of variables
-  integer :: nts                                   !> Number of timeslots
-  real(kind=kind_real),allocatable :: lon(:)       !> Longitude (in degrees: -180 to 180)
-  real(kind=kind_real),allocatable :: lat(:)       !> Latitude (in degrees: -90 to 90)
-  real(kind=kind_real),allocatable :: area(:)      !> Area (in m^2)
-  real(kind=kind_real),allocatable :: vunit(:,:)   !> Vertical unit
-  logical,allocatable :: lmask(:,:)                !> Mask
-  real(kind=kind_real),allocatable :: fld(:,:,:,:) !> Data
+  integer :: igrid                                        !> Index of the grid
+  integer :: nmga                                         !> Number of gridpoints (on a given MPI task)
+  integer :: nl0                                          !> Number of levels
+  integer :: nv                                           !> Number of variables
+  integer :: nts                                          !> Number of timeslots
+  real(kind=kind_real),allocatable :: lon(:)              !> Longitude (in degrees: -180 to 180)
+  real(kind=kind_real),allocatable :: lat(:)              !> Latitude (in degrees: -90 to 90)
+  real(kind=kind_real),allocatable :: area(:)             !> Area (in m^2)
+  real(kind=kind_real),allocatable :: vunit(:,:)          !> Vertical unit
+  logical,allocatable :: lmask(:,:)                       !> Mask
+  real(kind=kind_real),allocatable :: fld(:,:,:,:)        !> Data
 end type grid_type
 
 type unstructured_grid
-  integer :: colocated                             !> Colocation flag
-  integer :: nts                                   !> Number of timeslots
-  integer :: ngrid                                 !> Number of different grids
-  type(grid_type),allocatable :: grid(:)           !> Grid instance
+  integer :: colocated                                    !> Colocation flag
+  integer :: nts                                          !> Number of timeslots
+  integer :: ngrid                                        !> Number of different grids
+  type(grid_type),allocatable :: grid(:)                  !> Grid instance
+  type(atlas_functionspace_nodecolumns) :: afunctionspace !< ATLAS function space
+  type(atlas_fieldset) :: afieldset                       !< ATLAS fieldset
 end type unstructured_grid
 
 #define LISTED_TYPE unstructured_grid
@@ -56,15 +63,13 @@ implicit none
 
 ! Passed variables
 type(unstructured_grid),intent(inout) :: self !< Unstructured grid
-integer,intent(in) :: colocated               !< Colocation flag
+integer,intent(in) :: colocated               !< Colocated flag
 integer,intent(in) :: nts                     !< Number of timeslots
 
-! Set parameters
-if ((colocated==0).or.(colocated==1)) then
-   self%colocated = colocated
-else
-   call abor1_ftn('create_ug: wrong colocation flag')
-endif
+! Set colocated flag
+self%colocated = colocated
+
+! Set number of timeslots
 self%nts = nts
 
 end subroutine create_ug
@@ -92,8 +97,201 @@ if (allocated(self%grid)) then
   enddo
   deallocate(self%grid)
 endif
+call self%afunctionspace%final()
+call self%afieldset%final()
 
 end subroutine delete_ug
+! ------------------------------------------------------------------------------
+!> Create ATLAS grid configuration from unstructured grid
+subroutine ug_create_atlas_grid_conf(self,fconf)
+
+! Passed variables
+type(unstructured_grid),intent(inout) :: self    !< Unstructured grid
+type(fckit_configuration),intent(inout) :: fconf !< ATLAS grid configuration
+
+! Local variables
+integer :: imga
+real(kind_real),parameter :: pi = 4.d0*atan(1.0)
+real(kind_real),parameter :: rad2deg = 180.0/pi
+real(kind_real) :: x(self%grid(1)%nmga),y(self%grid(1)%nmga)
+
+! Create unstructured grid configuration
+do imga=1,self%grid(1)%nmga
+  x(imga) = self%grid(1)%lon(imga)
+  y(imga) = self%grid(1)%lat(imga)
+end do
+
+! Create ATLAS grid configuration
+call fconf%set("type","unstructured")
+call fconf%set("x",x)
+call fconf%set("y",y)
+
+end subroutine ug_create_atlas_grid_conf
+! ------------------------------------------------------------------------------
+!> Fill ATLAS fieldset from unstructured grid
+subroutine ug_fill_atlas_fieldset(self,afieldset)
+
+! Passed variables
+type(unstructured_grid),intent(inout) :: self                      !< Unstructured grid
+type(atlas_fieldset),intent(inout) :: afieldset                    !< ATLAS fieldset
+
+! Local variables
+integer :: imga,il0
+integer,pointer :: int_ptr_2(:,:)
+real(kind_real),pointer :: real_ptr_1(:),real_ptr_2(:,:)
+type(atlas_field) :: afield
+
+! Add area
+afield = self%afunctionspace%create_field(name='area',kind=atlas_real(kind_real),levels=0)
+call afield%data(real_ptr_1)
+real_ptr_1(1:self%grid(1)%nmga) = self%grid(1)%area
+call afieldset%add(afield)
+call afield%final()
+
+! Add vertical unit
+afield = self%afunctionspace%create_field(name='vunit',kind=atlas_real(kind_real),levels=self%grid(1)%nl0)
+call afield%data(real_ptr_2)
+real_ptr_2(1:self%grid(1)%nl0,1:self%grid(1)%nmga) = transpose(self%grid(1)%vunit)
+call afieldset%add(afield)
+call afield%final()
+
+! Add geometry mask
+afield = self%afunctionspace%create_field(name='gmask',kind=atlas_integer(kind_int),levels=self%grid(1)%nl0)
+call afield%data(int_ptr_2)
+do il0=1,self%grid(1)%nl0
+  do imga=1,self%grid(1)%nmga
+    if (self%grid(1)%lmask(imga,il0)) then
+      int_ptr_2(il0,imga) = 1
+    else
+      int_ptr_2(il0,imga) = 0
+    endif
+  enddo
+enddo
+call afieldset%add(afield)
+call afield%final()
+
+end subroutine ug_fill_atlas_fieldset
+! ------------------------------------------------------------------------------
+!> Set ATLAS fieldset
+subroutine ug_set_atlas(self,afieldset)
+
+implicit none
+
+! Passed variables
+type(unstructured_grid),intent(in) :: self             !< Unstructured grid
+type(atlas_fieldset),intent(inout) :: afieldset        !< ATLAS fieldset
+
+! Local variables
+integer :: iv,its,igrid
+character(len=1024) :: fieldname
+type(atlas_field) :: afield
+
+! Copy fields
+do igrid=1,self%ngrid
+  do its=1,self%nts
+    do iv=1,self%grid(igrid)%nv
+      ! Get or create field
+      write(fieldname,'(a,i2.2,a,i2.2)') 'var_',iv,'_',its
+      if (afieldset%has_field(trim(fieldname))) then
+        ! Get field
+        afield = afieldset%field(trim(fieldname))
+      else
+        ! Create field
+        afield = self%afunctionspace%create_field(name=trim(fieldname),kind=atlas_real(kind_real),levels=self%grid(igrid)%nl0)
+
+        ! Add field
+        call afieldset%add(afield)
+      endif
+
+      ! Release pointer
+      call afield%final()
+    enddo
+  enddo
+enddo
+
+end subroutine ug_set_atlas
+! ------------------------------------------------------------------------------
+!> Unstructured grid to ATLAS fieldset
+subroutine ug_to_atlas(self,afieldset)
+
+implicit none
+
+! Passed variables
+type(unstructured_grid),intent(in) :: self             !< Unstructured grid
+type(atlas_fieldset),intent(inout) :: afieldset        !< ATLAS fieldset
+
+! Local variables
+integer :: iv,its,igrid
+real(kind_real),pointer :: real_ptr_2(:,:)
+character(len=1024) :: fieldname
+type(atlas_field) :: afield
+
+! Copy fields
+do igrid=1,self%ngrid
+  do its=1,self%nts
+    do iv=1,self%grid(igrid)%nv
+      ! Get or create field
+      write(fieldname,'(a,i2.2,a,i2.2)') 'var_',iv,'_',its
+      if (afieldset%has_field(trim(fieldname))) then
+        ! Get field
+        afield = afieldset%field(trim(fieldname))
+      else
+        ! Create field
+        afield = self%afunctionspace%create_field(name=trim(fieldname),kind=atlas_real(kind_real),levels=self%grid(igrid)%nl0)
+
+        ! Add field
+        call afieldset%add(afield)
+      endif
+
+      ! Copy data
+      call afield%data(real_ptr_2)
+      real_ptr_2(1:self%grid(igrid)%nl0,1:self%grid(igrid)%nmga) = transpose(self%grid(igrid)%fld(:,:,iv,its))
+
+      ! Release pointer
+      call afield%final()
+    enddo
+  enddo
+enddo
+
+end subroutine ug_to_atlas
+! ------------------------------------------------------------------------------
+!> Convert ATLAS fieldset to unstructured grid
+subroutine ug_from_atlas(self,afieldset)
+
+implicit none
+
+! Passed variables
+type(unstructured_grid),intent(inout) :: self   !< Unstructured grid
+type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
+
+! Local variables
+integer :: iv,its,igrid
+real(kind_real),pointer :: real_ptr_2(:,:)
+character(len=1024) :: fieldname
+type(atlas_field) :: afield
+
+! Allocation
+call allocate_unstructured_grid_field(self)
+
+! Copy fields
+do igrid=1,self%ngrid
+  do its=1,self%nts
+    do iv=1,self%grid(igrid)%nv
+      ! Get field
+      write(fieldname,'(a,i2.2,a,i2.2)') 'var_',iv,'_',its
+      afield = afieldset%field(trim(fieldname))
+
+      ! Copy data
+      call afield%data(real_ptr_2)
+      self%grid(igrid)%fld(:,:,iv,its) = transpose(real_ptr_2(1:self%grid(igrid)%nl0,1:self%grid(igrid)%nmga))
+
+      ! Release pointer
+      call afield%final()
+    enddo
+  enddo
+enddo
+
+end subroutine ug_from_atlas
 ! ------------------------------------------------------------------------------
 !> Allocate unstructured grid coordinates
 subroutine allocate_unstructured_grid_coord(self)

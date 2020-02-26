@@ -21,7 +21,6 @@
 #include "oops/base/Variables.h"
 #include "oops/generic/OoBump.h"
 #include "oops/generic/ParametersBUMP.h"
-#include "oops/generic/UnstructuredGrid.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
@@ -39,7 +38,7 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-/// Model space error covariance on generic unstructured grid
+/// Model space error covariance with BUMP
 
 template <typename MODEL>
 class ErrorCovarianceBUMP : public oops::ModelSpaceCovarianceBase<MODEL>,
@@ -49,6 +48,7 @@ class ErrorCovarianceBUMP : public oops::ModelSpaceCovarianceBase<MODEL>,
   typedef Geometry<MODEL>                         Geometry_;
   typedef Increment<MODEL>                        Increment_;
   typedef Increment4D<MODEL>                      Increment4D_;
+  typedef OoBump<MODEL>                           OoBump_;
   typedef State<MODEL>                            State_;
   typedef ParametersBUMP<MODEL>                   Parameters_;
 
@@ -66,7 +66,7 @@ class ErrorCovarianceBUMP : public oops::ModelSpaceCovarianceBase<MODEL>,
 
   void print(std::ostream &) const override;
 
-  std::unique_ptr<OoBump> ooBump_;
+  std::unique_ptr<OoBump_> ooBump_;
 };
 
 // =============================================================================
@@ -88,7 +88,7 @@ ErrorCovarianceBUMP<MODEL>::ErrorCovarianceBUMP(const Geometry_ & resol,
   Parameters_ param(resol, vars, timeslots, conf);
 
 // Transfer OoBump pointer
-  ooBump_.reset(new OoBump(param.getOoBump()));
+  ooBump_.reset(new OoBump_(param.getOoBump()));
 
   Log::trace() << "ErrorCovarianceBUMP::ErrorCovarianceBUMP done" << std::endl;
 }
@@ -108,10 +108,7 @@ template<typename MODEL>
 void ErrorCovarianceBUMP<MODEL>::doRandomize(Increment_ & dx) const {
   Log::trace() << "ErrorCovarianceBUMP<MODEL>::doRandomize starting" << std::endl;
   util::Timer timer(classname(), "doRandomize");
-  UnstructuredGrid ug(ooBump_->getColocated());
-  dx.ug_coord(ug);
-  ooBump_->randomizeNicas(ug);
-  dx.field_from_ug(ug);
+  ooBump_->randomizeNicas(dx);
   Log::trace() << "ErrorCovarianceBUMP<MODEL>::doRandomize done" << std::endl;
 }
 
@@ -122,10 +119,7 @@ void ErrorCovarianceBUMP<MODEL>::doMultiply(const Increment_ & dxi,
                                             Increment_ & dxo) const {
   Log::trace() << "ErrorCovarianceBUMP<MODEL>::doMultiply starting" << std::endl;
   util::Timer timer(classname(), "doMultiply");
-  UnstructuredGrid ug(ooBump_->getColocated());
-  dxi.field_to_ug(ug);
-  ooBump_->multiplyNicas(ug);
-  dxo.field_from_ug(ug);
+  ooBump_->multiplyNicas(dxi, dxo);
   Log::trace() << "ErrorCovarianceBUMP<MODEL>::doMultiply done" << std::endl;
 }
 

@@ -36,7 +36,7 @@ before_install:
   - cd $REPO_SOURCE_DIR  
 
 #  atlas
-  - git clone -b 0.18.1 https://github.com/ECMWF/atlas oops-bundle/atlas
+  - git clone https://github.com/JCSDA/atlas.git  ${REPO_SOURCE_DIR}/oops-bundle/atlas 
 
 #  clone the testing branch of oops
   - git clone -b $BRANCH https://github.com/jcsda/oops.git ${REPO_SOURCE_DIR}/oops-bundle/oops 

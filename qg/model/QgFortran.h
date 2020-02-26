@@ -14,9 +14,16 @@
 
 #include <vector>
 
+#include "atlas/field.h"
+#include "atlas/functionspace.h"
+
 // Forward declarations
 namespace eckit {
   class Configuration;
+}
+
+namespace oops {
+  class Variables;
 }
 
 namespace util {
@@ -123,9 +130,12 @@ extern "C" {
   void qg_fields_interp_f90(const F90flds &, const F90locs &, const F90vars *, const F90gom &);
   void qg_fields_interp_tl_f90(const F90flds &, const F90locs &, const F90vars *, const F90gom &);
   void qg_fields_interp_ad_f90(const F90flds &, const F90locs &, const F90vars *, const F90gom &);
-  void qg_fields_ug_coord_f90(const F90flds &, const int &);
-  void qg_fields_field_to_ug_f90(const F90flds &, const int &, const int &);
-  void qg_fields_field_from_ug_f90(const F90flds &, const int &, const int &);
+  void qg_fields_set_atlas_f90(const F90flds &, const F90vars *, const util::DateTime * const *,
+                               atlas::field::FieldSetImpl *);
+  void qg_fields_to_atlas_f90(const F90flds &, const F90vars *, const util::DateTime * const *,
+                              atlas::field::FieldSetImpl *);
+  void qg_fields_from_atlas_f90(const F90flds &, const F90vars *, const util::DateTime * const *,
+                                atlas::field::FieldSetImpl *);
   void qg_fields_getpoint_f90(const F90flds&, const F90iter&, const int &, double &);
   void qg_fields_setpoint_f90(const F90flds&, const F90iter&, const int &, const double &);
   void qg_fields_serialize_f90(const F90flds &, const std::size_t &, double[]);
@@ -136,6 +146,12 @@ extern "C" {
 //  Geometry
 // -----------------------------------------------------------------------------
   void qg_geom_setup_f90(F90geom &, const eckit::Configuration * const *);
+  void qg_geom_create_atlas_grid_conf_f90(const F90geom &, const eckit::Configuration * const *);
+  void qg_geom_set_atlas_functionspace_pointer_f90(const F90geom &,
+                                                   atlas::functionspace::FunctionSpaceImpl *);
+  void qg_geom_fill_atlas_fieldset_f90(const F90geom &, atlas::field::FieldSetImpl *);
+  void qg_geom_set_atlas_fieldset_pointer_f90(const F90geom &,
+                                              atlas::field::FieldSetImpl *);
   void qg_geom_clone_f90(F90geom &, const F90geom &);
   void qg_geom_info_f90(const F90geom &, int &, int &, int &, double &, double &);
   void qg_geom_delete_f90(F90geom &);

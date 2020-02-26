@@ -14,12 +14,12 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
+
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/LocalizationGeneric.h"
 #include "oops/generic/OoBump.h"
 #include "oops/generic/ParametersBUMP.h"
-#include "oops/generic/UnstructuredGrid.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -37,6 +37,7 @@ template<typename MODEL> class LocalizationBUMP : public LocalizationGeneric<MOD
   typedef Geometry<MODEL>                         Geometry_;
   typedef Increment<MODEL>                        Increment_;
   typedef Increment4D<MODEL>                      Increment4D_;
+  typedef OoBump<MODEL>                           OoBump_;
   typedef ParametersBUMP<MODEL>                   Parameters_;
   typedef IncrementEnsemble<MODEL>                Ensemble_;
   typedef boost::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
@@ -53,7 +54,7 @@ template<typename MODEL> class LocalizationBUMP : public LocalizationGeneric<MOD
  private:
   void print(std::ostream &) const;
 
-  std::unique_ptr<OoBump> ooBump_;
+  std::unique_ptr<OoBump_> ooBump_;
   std::vector<util::DateTime> timeslots_;
 };
 
@@ -81,7 +82,7 @@ LocalizationBUMP<MODEL>::LocalizationBUMP(const Geometry_ & resol,
   Parameters_ param(resol, vars, timeslots, conf, ens);
 
 // Transfer OoBump pointer
-  ooBump_.reset(new OoBump(param.getOoBump()));
+  ooBump_.reset(new OoBump_(param.getOoBump()));
 
   Log::trace() << "LocalizationBUMP:LocalizationBUMP constructed" << std::endl;
 }
@@ -98,10 +99,7 @@ LocalizationBUMP<MODEL>::~LocalizationBUMP() {
 template<typename MODEL>
 void LocalizationBUMP<MODEL>::multiply(Increment_ & dx) const {
   Log::trace() << "LocalizationBUMP:multiply starting" << std::endl;
-  UnstructuredGrid ug(ooBump_->getColocated());
-  dx.field_to_ug(ug);
-  ooBump_->multiplyNicas(ug);
-  dx.field_from_ug(ug);
+  ooBump_->multiplyNicas(dx);
   Log::trace() << "LocalizationBUMP:multiply done" << std::endl;
 }
 
@@ -110,10 +108,7 @@ void LocalizationBUMP<MODEL>::multiply(Increment_ & dx) const {
 template<typename MODEL>
 void LocalizationBUMP<MODEL>::multiply(Increment4D_ & dx) const {
   Log::trace() << "LocalizationBUMP:multiply starting" << std::endl;
-  UnstructuredGrid ug(ooBump_->getColocated(), ooBump_->getNts());
-  dx.field_to_ug(ug);
-  ooBump_->multiplyNicas(ug);
-  dx.field_from_ug(ug);
+  ooBump_->multiplyNicas(dx);
   Log::trace() << "LocalizationBUMP:multiply done" << std::endl;
 }
 

@@ -19,13 +19,17 @@
 
 #include <boost/ptr_container/ptr_map.hpp>
 
+#include "atlas/field/FieldSet.h"
+
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/assimilation/CostJbState.h"
 #include "oops/assimilation/State4D.h"
 #include "oops/base/Variables.h"
+#if !ATLASIFIED
 #include "oops/generic/UnstructuredGrid.h"
+#endif
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/util/DateTime.h"
@@ -83,10 +87,17 @@ template<typename MODEL> class Increment4D : public util::Printable {
 /// Get geometry
   Geometry_ geometry() const {return this->get(first_).geometry();}
 
+#if ATLASIFIED
+/// ATLAS FieldSet
+  void setAtlas(atlas::FieldSet *) const;
+  void toAtlas(atlas::FieldSet *) const;
+  void fromAtlas(atlas::FieldSet *);
+#else
 /// Unstructured grid
   void ug_coord(UnstructuredGrid &) const;
   void field_to_ug(UnstructuredGrid &) const;
   void field_from_ug(const UnstructuredGrid &);
+#endif
 
 /// Get model space control variable
   Increment_ & operator[](const int ii) {return this->get(ii);}
@@ -285,24 +296,51 @@ void Increment4D<MODEL>::write(const eckit::Configuration & config) const {
   }
 }
 // -----------------------------------------------------------------------------
+#if ATLASIFIED
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+void Increment4D<MODEL>::setAtlas(atlas::FieldSet * afieldset) const {
+  for (icst_ jsub = incr4d_.begin(); jsub != incr4d_.end(); ++jsub) {
+    jsub->second->setAtlas(afieldset);
+  }
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+void Increment4D<MODEL>::toAtlas(atlas::FieldSet * afieldset) const {
+  for (icst_ jsub = incr4d_.begin(); jsub != incr4d_.end(); ++jsub) {
+    jsub->second->toAtlas(afieldset);
+  }
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+void Increment4D<MODEL>::fromAtlas(atlas::FieldSet * afieldset) {
+  for (iter_ jsub = incr4d_.begin(); jsub != incr4d_.end(); ++jsub) {
+    jsub->second->fromAtlas(afieldset);
+  }
+}
+// -----------------------------------------------------------------------------
+#else
+// -----------------------------------------------------------------------------
 template<typename MODEL>
 void Increment4D<MODEL>::ug_coord(UnstructuredGrid & ug) const {
-  incr4d_.begin()->second->ug_coord(ug);
+  incr4d_.begin()->second->increment().ug_coord(ug);
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 void Increment4D<MODEL>::field_to_ug(UnstructuredGrid & ug) const {
   for (icst_ jsub = incr4d_.begin(); jsub != incr4d_.end(); ++jsub) {
-    jsub->second->field_to_ug(ug, jsub->first);
+    jsub->second->increment().field_to_ug(ug, jsub->first);
   }
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 void Increment4D<MODEL>::field_from_ug(const UnstructuredGrid & ug) {
   for (iter_ jsub = incr4d_.begin(); jsub != incr4d_.end(); ++jsub) {
-    jsub->second->field_from_ug(ug, jsub->first);
+    jsub->second->increment().field_from_ug(ug, jsub->first);
   }
 }
+// -----------------------------------------------------------------------------
+#endif
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 void Increment4D<MODEL>::print(std::ostream & outs) const {

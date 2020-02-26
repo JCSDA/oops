@@ -8,11 +8,12 @@
 
 module qg_fields_interface
 
+use atlas_module
 use datetime_mod
 use fckit_configuration_module, only: fckit_configuration
 use iso_c_binding
 use kinds
-use unstructured_grid_mod
+use oops_variables_mod
 use qg_fields_mod
 use qg_geom_mod
 use qg_geom_iter_mod
@@ -627,77 +628,89 @@ call qg_fields_interp_ad(fld,locs,vars,gom)
 
 end subroutine qg_fields_interp_ad_c
 ! ------------------------------------------------------------------------------
-!> Define unstructured grid coordinates from fields
-subroutine qg_fields_ug_coord_c(c_key_fld,c_key_ug) bind (c,name='qg_fields_ug_coord_f90')
+!> Create ATLAS fields
+subroutine qg_fields_set_atlas_c(c_key_fld,c_vars,c_dt,c_afieldset) bind (c,name='qg_fields_set_atlas_f90')
 
 implicit none
 
 ! Passed variables
-integer(c_int),intent(in) :: c_key_fld   !< Fields
-integer(c_int),intent(in) :: c_key_ug    !< Unstructured grid
+integer(c_int),intent(in) :: c_key_fld           !< Fields
+integer(c_int),dimension(*),intent(in) :: c_vars !< List of variables
+type(c_ptr),intent(in) :: c_dt                   !< Date and time
+type(c_ptr),intent(in),value :: c_afieldset      !< ATLAS fieldset pointer
 
 ! Local variables
 type(qg_fields),pointer :: fld
-type(unstructured_grid),pointer :: ug
+type(qg_vars) :: vars
+type(datetime) :: fdate
+type(atlas_fieldset) :: afieldset
 
 ! Interface
 call qg_fields_registry%get(c_key_fld,fld)
-call unstructured_grid_registry%get(c_key_ug,ug)
+call qg_vars_create(vars,c_vars)
+call c_f_datetime(c_dt,fdate)
+afieldset = atlas_fieldset(c_afieldset)
 
 ! Call Fortran
-call qg_fields_ug_coord(fld,ug)
+call qg_fields_set_atlas(fld,vars,fdate,afieldset)
 
-end subroutine qg_fields_ug_coord_c
+end subroutine qg_fields_set_atlas_c
 ! ------------------------------------------------------------------------------
-!> Convert fields to unstructured grid
-subroutine qg_fields_field_to_ug_c(c_key_fld,c_key_ug,c_its) bind (c,name='qg_fields_field_to_ug_f90')
+!> Convert fields to ATLAS
+subroutine qg_fields_to_atlas_c(c_key_fld,c_vars,c_dt,c_afieldset) bind (c,name='qg_fields_to_atlas_f90')
 
 implicit none
 
 ! Passed variables
-integer(c_int),intent(in) :: c_key_fld !< Fields
-integer(c_int),intent(in) :: c_key_ug  !< Unstructured grid
-integer(c_int),intent(in) :: c_its     !< Timeslot index
+integer(c_int),intent(in) :: c_key_fld           !< Fields
+integer(c_int),dimension(*),intent(in) :: c_vars !< List of variables
+type(c_ptr),intent(in) :: c_dt                   !< Date and time
+type(c_ptr),intent(in),value :: c_afieldset      !< ATLAS fieldset pointer
 
 ! Local variables
 type(qg_fields),pointer :: fld
-type(unstructured_grid),pointer :: ug
-integer :: its
+type(qg_vars) :: vars
+type(datetime) :: fdate
+type(atlas_fieldset) :: afieldset
 
 ! Interface
 call qg_fields_registry%get(c_key_fld,fld)
-call unstructured_grid_registry%get(c_key_ug,ug)
-its = c_its+1
+call qg_vars_create(vars,c_vars)
+call c_f_datetime(c_dt,fdate)
+afieldset = atlas_fieldset(c_afieldset)
 
 ! Call Fortran
-call qg_fields_field_to_ug(fld,ug,its)
+call qg_fields_to_atlas(fld,vars,fdate,afieldset)
 
-end subroutine qg_fields_field_to_ug_c
+end subroutine qg_fields_to_atlas_c
 ! ------------------------------------------------------------------------------
-!> Get fields from unstructured grid
-subroutine qg_fields_field_from_ug_c(c_key_fld,c_key_ug,c_its) bind (c,name='qg_fields_field_from_ug_f90')
+!> Get fields from ATLAS
+subroutine qg_fields_from_atlas_c(c_key_fld,c_vars,c_dt,c_afieldset) bind (c,name='qg_fields_from_atlas_f90')
 
 implicit none
 
 ! Passed variables
-integer(c_int),intent(in) :: c_key_fld   !< Fields
-integer(c_int),intent(in) :: c_key_ug    !< Unstructured grid
-integer(c_int),intent(in) :: c_its     !< Timeslot index
+integer(c_int),intent(in) :: c_key_fld           !< Fields
+integer(c_int),dimension(*),intent(in) :: c_vars !< List of variables
+type(c_ptr),intent(inout) :: c_dt                !< Date and time
+type(c_ptr),intent(in),value :: c_afieldset      !< ATLAS fieldset pointer
 
 ! Local variables
 type(qg_fields),pointer :: fld
-type(unstructured_grid),pointer :: ug
-integer :: its
+type(qg_vars) :: vars
+type(datetime) :: fdate
+type(atlas_fieldset) :: afieldset
 
 ! Interface
 call qg_fields_registry%get(c_key_fld,fld)
-call unstructured_grid_registry%get(c_key_ug,ug)
-its = c_its+1
+call qg_vars_create(vars,c_vars)
+call c_f_datetime(c_dt,fdate)
+afieldset = atlas_fieldset(c_afieldset)
 
 ! Call Fortran
-call qg_fields_field_from_ug(fld,ug,its)
+call qg_fields_from_atlas(fld,vars,fdate,afieldset)
 
-end subroutine qg_fields_field_from_ug_c
+end subroutine qg_fields_from_atlas_c
 ! ------------------------------------------------------------------------------
 !> Get points from fields
 subroutine qg_fields_getpoint_c(c_key_fld,c_key_iter,c_nval,c_vals) bind(c,name='qg_fields_getpoint_f90')

@@ -99,6 +99,10 @@ endif()
 ecbuild_use_package( PROJECT fckit VERSION 0.4.1 REQUIRED )
 include_directories( ${FCKIT_INCLUDE_DIRS} )
 
+# atlas
+ecbuild_use_package( PROJECT atlas VERSION 0.18.1 REQUIRED )
+include_directories( ${ATLAS_INCLUDE_DIRS} )
+
 # saber
 ecbuild_use_package( PROJECT saber VERSION 0.0.1 REQUIRED )
 include_directories( ${SABER_INCLUDE_DIRS} )
@@ -111,6 +115,8 @@ ecbuild_add_option( FEATURE FCTEST  DEFAULT ${ENABLE_TESTS}
 ################################################################################
 # Export package info
 ################################################################################
+
+list( APPEND OOPS_TPLS LAPACK eckit fckit atlas atlas_f saber )
 
 set( OOPS_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src
                        ${CMAKE_CURRENT_BINARY_DIR}/src

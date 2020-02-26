@@ -8,12 +8,19 @@
 #ifndef OOPS_GENERIC_UNSTRUCTUREDGRID_H_
 #define OOPS_GENERIC_UNSTRUCTUREDGRID_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #include <boost/noncopyable.hpp>
 
-#include "eckit/config/Configuration.h"
+#include "atlas/field.h"
+#include "atlas/functionspace.h"
+
+#include "eckit/config/LocalConfiguration.h"
+
+#include "oops/base/Variables.h"
+#include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
@@ -27,7 +34,8 @@ class UnstructuredGrid : public util::Printable,
  public:
   static const std::string classname() {return "oops::UnstructuredGrid";}
 
-  explicit UnstructuredGrid(const int &, const int & = 1);
+  explicit UnstructuredGrid(const int &, const int &);
+  explicit UnstructuredGrid(UnstructuredGrid &);
   ~UnstructuredGrid();
 
 // Will be useful for tests
@@ -39,12 +47,21 @@ class UnstructuredGrid : public util::Printable,
   int & toFortran() {return keyUGrid_;}
   const int & toFortran() const {return keyUGrid_;}
 
+/// ATLAS-related methods
+  void defineGeometry();
+  void defineGrids(std::vector<eckit::LocalConfiguration> &) const;
+  atlas::FunctionSpace * atlasFunctionSpace() const {return atlasFunctionSpace_.get();}
+  atlas::FieldSet * atlasFieldSet() const {return atlasFieldSet_.get();}
+  void setAtlas(atlas::FieldSet *) const;
+  void toAtlas(atlas::FieldSet *) const;
+  void fromAtlas(atlas::FieldSet *);
+
  private:
   void print(std::ostream &) const;
 
   int keyUGrid_;
-  int colocated_;
-  int nts_;
+  std::unique_ptr<atlas::FunctionSpace> atlasFunctionSpace_;
+  std::unique_ptr<atlas::FieldSet> atlasFieldSet_;
 };
 
 // -----------------------------------------------------------------------------

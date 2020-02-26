@@ -8,6 +8,7 @@
 
 module qg_fields_mod
 
+use atlas_module
 use fckit_configuration_module, only: fckit_configuration
 use datetime_mod
 use duration_mod
@@ -17,6 +18,7 @@ use kinds
 use missing_values_mod
 use netcdf
 !$ use omp_lib
+use oops_variables_mod
 use qg_constants_mod
 use qg_convert_q_to_x_mod
 use qg_convert_x_to_q_mod
@@ -29,7 +31,6 @@ use qg_locs_mod
 use qg_tools_mod
 use qg_vars_mod
 use random_mod
-use unstructured_grid_mod
 
 implicit none
 
@@ -40,9 +41,9 @@ public :: qg_fields_create,qg_fields_create_from_other,qg_fields_delete,qg_field
         & qg_fields_copy,qg_fields_self_add,qg_fields_self_sub,qg_fields_self_mul,qg_fields_axpy,qg_fields_self_schur, &
         & qg_fields_dot_prod,qg_fields_add_incr,qg_fields_diff_incr,qg_fields_change_resol,qg_fields_read_file, &
         & qg_fields_write_file,qg_fields_analytic_init,qg_fields_gpnorm,qg_fields_rms,qg_fields_sizes,qg_fields_vars, &
-        & qg_fields_interp,qg_fields_interp_tl,qg_fields_interp_ad,qg_fields_ug_coord,qg_fields_field_to_ug, &
-        & qg_fields_field_from_ug,qg_fields_getpoint,qg_fields_setpoint,qg_fields_serialize,qg_fields_deserialize, &
-        & qg_fields_check,qg_fields_check_resolution,qg_fields_check_variables
+        & qg_fields_interp,qg_fields_interp_tl,qg_fields_interp_ad,qg_fields_set_atlas,qg_fields_to_atlas, qg_fields_from_atlas, &
+        & qg_fields_getpoint,qg_fields_setpoint,qg_fields_serialize,qg_fields_deserialize, qg_fields_check, &
+        & qg_fields_check_resolution,qg_fields_check_variables
 ! ------------------------------------------------------------------------------
 integer,parameter :: rseed = 7 !< Random seed (for reproducibility)
 
@@ -1234,189 +1235,174 @@ endif
 
 end subroutine qg_fields_interp_ad
 ! ------------------------------------------------------------------------------
-!> Define unstructured grid sizes from field
-subroutine qg_fields_ug_size(self,ug)
+!> Set ATLAS field
+subroutine qg_fields_set_atlas(self,vars,vdate,afieldset)
 
 implicit none
 
 ! Passed variables
-type(qg_fields),intent(in) :: self          !< Fields
-type(unstructured_grid),intent(inout) :: ug !< Unstructured grid
+type(qg_fields),intent(in) :: self              !< Fields
+type(qg_vars),intent(in) :: vars                !< Variables
+type(datetime),intent(in) :: vdate              !< Date and time
+type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
 
 ! Local variables
-integer :: igrid
+character(len=20) :: sdate
+character(len=1024) :: fieldname
+type(atlas_field) :: afield
 
-! Set number of grids
-if (ug%colocated==1) then
-   ! Colocatd
-   ug%ngrid = 1
-elseif (ug%colocated==0) then
-   ! Not colocated (test for 2D variable)
-   ug%ngrid = 2
+! Set date
+call datetime_to_string(vdate,sdate)
+
+! Get or create field
+if (vars%lx) fieldname = 'x_'//sdate
+if (vars%lq) fieldname = 'q_'//sdate
+if (afieldset%has_field(trim(fieldname))) then
+  ! Get afield
+  afield = afieldset%field(trim(fieldname))
+else
+  ! Create field
+  afield = self%geom%afunctionspace%create_field(name=trim(fieldname),kind=atlas_real(kind_real),levels=self%geom%nz)
+
+  ! Add field
+  call afieldset%add(afield)
 end if
 
-! Allocate grid instances
-if (.not.allocated(ug%grid)) allocate(ug%grid(ug%ngrid))
+! Release pointer
+call afield%final()
 
-! Set local number of points
-ug%grid(1)%nmga = self%geom%nx*self%geom%ny
-
-! Set number of levels
-ug%grid(1)%nl0 = self%geom%nz
-
-! Set number of variables
-ug%grid(1)%nv = 1
-
-! Set number of timeslots
-ug%grid(1)%nts = ug%nts
-
-if (ug%colocated==0) then
-  ! Test for 2D variable
-
-  ! Set local number of points
-  ug%grid(2)%nmga = self%geom%nx*self%geom%ny
-
-  ! Set number of levels
-  ug%grid(2)%nl0 = 1
-
-  ! Set number of variables
-  ug%grid(2)%nv = 1
-
-  ! Set number of timeslots
-  ug%grid(2)%nts = ug%nts
-endif
-
-end subroutine qg_fields_ug_size
-
+end subroutine qg_fields_set_atlas
 ! ------------------------------------------------------------------------------
-!> Define unstructured grid coordinates from fields
-subroutine qg_fields_ug_coord(self,ug)
+!> Convert fields to ATLAS
+subroutine qg_fields_to_atlas(self,vars,vdate,afieldset)
 
 implicit none
 
 ! Passed variables
-type(qg_fields),intent(in) :: self          !< Fields
-type(unstructured_grid),intent(inout) :: ug !< Unstructured grid
+type(qg_fields),intent(in) :: self              !< Fields
+type(qg_vars),intent(in) :: vars                !< Variables
+type(datetime),intent(in) :: vdate              !< Date and time
+type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
 
 ! Local variables
-integer :: igrid,imga,ix,iy,iz
+integer :: iv,i,j,k,node
+integer(kind_int),pointer :: int_ptr_1(:),int_ptr_2(:,:)
+real(kind_real) :: gfld3d(self%geom%nx,self%geom%ny,self%geom%nz)
+real(kind_real),pointer :: real_ptr_1(:),real_ptr_2(:,:)
+character(len=20) :: sdate
+character(len=1024) :: fieldname
+type(atlas_field) :: afield
 
-! Define size
-call qg_fields_ug_size(self,ug)
+! Set date
+call datetime_to_string(vdate,sdate)
 
-! Allocate unstructured grid coordinates
-call allocate_unstructured_grid_coord(ug)
-
-! Define coordinates
-imga = 0
-do iy=1,self%geom%ny
-  do ix=1,self%geom%nx
-    imga = imga+1
-    ug%grid(1)%lon(imga) = self%geom%lon(ix,iy)
-    ug%grid(1)%lat(imga) = self%geom%lat(ix,iy)
-    ug%grid(1)%area(imga) = self%geom%area(ix,iy)
-    do iz=1,self%geom%nz
-      ug%grid(1)%vunit(imga,iz) = self%geom%z(iz)
-      ug%grid(1)%lmask(imga,iz) = .true.
-    enddo
-  enddo
-enddo
-
-if (ug%colocated==0) then
-  ! Test for 2D variable
-  imga = 0
-  do iy=1,self%geom%ny
-    do ix=1,self%geom%nx
-        imga = imga+1
-        ug%grid(2)%lon(imga) = self%geom%lon(ix,iy)
-        ug%grid(2)%lat(imga) = self%geom%lat(ix,iy)
-        ug%grid(2)%area(imga) = self%geom%area(ix,iy)
-        ug%grid(2)%vunit(imga,1) = self%geom%z(1)
-        ug%grid(2)%lmask(imga,1) = .true.
-     enddo
-  enddo
-endif
-
-end subroutine qg_fields_ug_coord
-! ------------------------------------------------------------------------------
-!> Convert fields to unstructured grid
-subroutine qg_fields_field_to_ug(self,ug,its)
-
-implicit none
-
-! Passed variables
-type(qg_fields),intent(in) :: self          !< Fields
-type(unstructured_grid),intent(inout) :: ug !< Unstructured grid
-integer,intent(in) :: its                   !< Timeslot index
-
-! Local variables
-integer :: igrid,imga,ix,iy
-
-! Define size
-call qg_fields_ug_size(self,ug)
-
-! Allocate unstructured grid field
-call allocate_unstructured_grid_field(ug)
-
-! Copy field
-imga = 0
-do iy=1,self%geom%ny
-  do ix=1,self%geom%nx
-    imga = imga+1
-    ug%grid(1)%fld(imga,:,1,its) = self%gfld3d(ix,iy,:)
-  enddo
-enddo
-
-if (ug%colocated==0) then
-  ! Test for 2D variable
-  imga = 0
-  do iy=1,self%geom%ny
-    do ix=1,self%geom%nx
-      imga = imga+1
-      ug%grid(2)%fld(imga,1,1,its) = self%gfld3d(ix,iy,1)
-    enddo
-  enddo
-endif
-
-end subroutine qg_fields_field_to_ug
-! ------------------------------------------------------------------------------
-!> Get fields from1 unstructured grid
-subroutine qg_fields_field_from_ug(self,ug,its)
-
-implicit none
-
-! Passed variables
-type(qg_fields),intent(inout) :: self    !< Fields
-type(unstructured_grid),intent(in) :: ug !< Unstructured grid
-integer,intent(in) :: its                !< Timeslot index
-
-! Local variables
-integer :: igrid,imga,ix,iy,iz
-
-! Copy field
-imga = 0
-do iy=1,self%geom%ny
-  do ix=1,self%geom%nx
-    imga = imga+1
-    self%gfld3d(ix,iy,:) = ug%grid(1)%fld(imga,:,1,its)
-  enddo
-enddo
-
-if (ug%colocated==0) then
-  ! Test for 2D variable
-  imga = 0
-  do iy=1,self%geom%ny
-    do ix=1,self%geom%nx
-      imga = imga+1
-      self%gfld3d(ix,iy,1) = ug%grid(2)%fld(imga,1,1,its)
-      do iz=2,self%geom%nz
-        self%gfld3d(ix,iy,iz) = missing_value(1.0_kind_real)
-      enddo
-    enddo
-  enddo
+! Get variable
+if (vars%lx) then
+  if (self%lq) then
+    call convert_q_to_x(self%geom,self%gfld3d,self%x_north,self%x_south,gfld3d)
+  else
+    gfld3d = self%gfld3d
+  end if
+end if
+if (vars%lq) then
+  if (self%lq) then
+    gfld3d = self%gfld3d
+  else
+    call convert_x_to_q(self%geom,self%gfld3d,self%x_north,self%x_south,gfld3d)
+  end if
 end if
 
-end subroutine qg_fields_field_from_ug
+! Get or create field
+if (vars%lx) fieldname = 'x_'//sdate
+if (vars%lq) fieldname = 'q_'//sdate
+if (afieldset%has_field(trim(fieldname))) then
+  ! Get afield
+  afield = afieldset%field(trim(fieldname))
+else
+  ! Create field
+  afield = self%geom%afunctionspace%create_field(name=trim(fieldname),kind=atlas_real(kind_real),levels=self%geom%nz)
+
+  ! Add field
+  call afieldset%add(afield)
+end if
+
+! Copy field
+call afield%data(real_ptr_2)
+do k=1,self%geom%nz
+  node = 0
+  do j=self%geom%afunctionspace%j_begin(),self%geom%afunctionspace%j_end()
+    do i=self%geom%afunctionspace%i_begin(j),self%geom%afunctionspace%i_end(j)
+      node = node+1
+      real_ptr_2(k,node) = gfld3d(i,j,k)
+    enddo
+  enddo
+enddo
+
+! Release pointer
+call afield%final()
+
+end subroutine qg_fields_to_atlas
+! ------------------------------------------------------------------------------
+!> Get fields from ATLAS
+subroutine qg_fields_from_atlas(self,vars,vdate,afieldset)
+
+implicit none
+
+! Passed variables
+type(qg_fields),intent(inout) :: self           !< Fields
+type(qg_vars),intent(in) :: vars                !< Variables
+type(datetime),intent(in) :: vdate              !< Date and time
+type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
+
+! Local variables
+integer :: i,j,k,node
+real(kind_real) :: gfld3d(self%geom%nx,self%geom%ny,self%geom%nz)
+real(kind_real),pointer :: real_ptr_1(:),real_ptr_2(:,:)
+character(len=1) :: cgrid
+character(len=20) :: sdate
+character(len=1024) :: fieldname
+type(atlas_field) :: afield
+
+! Set date
+call datetime_to_string(vdate,sdate)
+
+! Get field
+if (vars%lx) fieldname = 'x_'//sdate
+if (vars%lq) fieldname = 'q_'//sdate
+afield = afieldset%field(trim(fieldname))
+
+! Copy field
+call afield%data(real_ptr_2)
+do k=1,self%geom%nz
+  node = 0
+  do j=1,self%geom%ny
+    do i=1,self%geom%nx
+      node = node+1
+      gfld3d(i,j,k) = real_ptr_2(k,node)
+    enddo
+  enddo
+enddo
+
+! Get variable
+if (vars%lx) then
+  if (self%lq) then
+    call convert_x_to_q(self%geom,gfld3d,self%x_north,self%x_south,self%gfld3d)
+  else
+    self%gfld3d = gfld3d
+  end if
+end if
+if (vars%lq) then
+  if (self%lq) then
+    self%gfld3d = gfld3d
+  else
+    call convert_x_to_q(self%geom,gfld3d,self%x_north,self%x_south,self%gfld3d)
+  end if
+end if
+
+! Release pointer
+call afield%final()
+
+end subroutine qg_fields_from_atlas
 ! ------------------------------------------------------------------------------
 !> Get points from fields
 subroutine qg_fields_getpoint(fld,iter,nval,vals)
@@ -1454,10 +1440,10 @@ subroutine qg_fields_setpoint(fld,iter,nval,vals)
 implicit none
 
 ! Passed variables
-type(qg_fields),intent(inout) :: fld           !< Fields
-type(qg_geom_iter),intent(in) :: iter       !< Geometry iterator
-integer,intent(in) :: nval                  !< Number of values
-real(kind_real),intent(in) :: vals(nval)    !< Values
+type(qg_fields),intent(inout) :: fld     !< Fields
+type(qg_geom_iter),intent(in) :: iter    !< Geometry iterator
+integer,intent(in) :: nval               !< Number of values
+real(kind_real),intent(in) :: vals(nval) !< Values
 
 ! Local variables
 character(len=1024) :: record

@@ -16,16 +16,23 @@
 #include <string>
 #include <vector>
 
+#include "atlas/array.h"
+#include "atlas/field/Field.h"
+#include "atlas/field/FieldSet.h"
+#include "atlas/util/Metadata.h"
+
 #include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/GridPoint.h"
 #include "oops/base/Variables.h"
-#include "oops/generic/UnstructuredGrid.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/InterpolatorTraj.h"
 #include "oops/interface/Locations.h"
 #include "oops/interface/State.h"
+#if !ATLASIFIED
+#include "oops/generic/UnstructuredGrid.h"
+#endif
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
@@ -104,10 +111,17 @@ class Increment : public oops::GeneralizedDepartures,
 /// Get geometry
   Geometry_ geometry() const;
 
+#if ATLASIFIED
+/// ATLAS FieldSet
+  void setAtlas(atlas::FieldSet *) const;
+  void toAtlas(atlas::FieldSet *) const;
+  void fromAtlas(atlas::FieldSet *);
+#else
 /// Unstructured grid
   void ug_coord(UnstructuredGrid &) const;
   void field_to_ug(UnstructuredGrid &, const int & = 0) const;
   void field_from_ug(const UnstructuredGrid &, const int & = 0);
+#endif
 
 /// Serialize and deserialize
   size_t serialSize() const;
@@ -396,7 +410,39 @@ Geometry<MODEL> Increment<MODEL>::geometry() const {
   Log::trace() << "Increment<MODEL>::geometry done" << std::endl;
   return geom;
 }
+// -----------------------------------------------------------------------------
+#if ATLASIFIED
+// -----------------------------------------------------------------------------
 
+template<typename MODEL>
+void Increment<MODEL>::setAtlas(atlas::FieldSet * afieldset) const {
+  Log::trace() << "Increment<MODEL>::setAtlas starting" << std::endl;
+  util::Timer timer(classname(), "setAtlas");
+  increment_->setAtlas(afieldset);
+  Log::trace() << "Increment<MODEL>::setAtlas done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::toAtlas(atlas::FieldSet * afieldset) const {
+  Log::trace() << "Increment<MODEL>::toAtlas starting" << std::endl;
+  util::Timer timer(classname(), "toAtlas");
+  increment_->toAtlas(afieldset);
+  Log::trace() << "Increment<MODEL>::toAtlas done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::fromAtlas(atlas::FieldSet * afieldset) {
+  Log::trace() << "Increment<MODEL>::fromAtlas starting" << std::endl;
+  util::Timer timer(classname(), "fromAtlas");
+  increment_->fromAtlas(afieldset);
+  Log::trace() << "Increment<MODEL>::fromAtlas done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+#else
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
@@ -427,6 +473,8 @@ void Increment<MODEL>::field_from_ug(const UnstructuredGrid & ug, const int & it
   Log::trace() << "Increment<MODEL>::field_from_ug done" << std::endl;
 }
 
+// -----------------------------------------------------------------------------
+#endif
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>

@@ -17,6 +17,9 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include "atlas/field/FieldSet.h"
+#include "atlas/functionspace/FunctionSpace.h"
+
 #include "eckit/mpi/Comm.h"
 
 #include "oops/interface/GeometryIterator.h"
@@ -54,6 +57,10 @@ class Geometry : public util::Printable,
   GeometryIterator_ end()   const;
 
   const eckit::mpi::Comm & getComm() const {return geom_->getComm();}
+#if ATLASIFIED
+  atlas::FunctionSpace * atlasFunctionSpace() const {return geom_->atlasFunctionSpace();}
+  atlas::FieldSet * atlasFieldSet() const {return geom_->atlasFieldSet();}
+#endif
 
  private:
   Geometry & operator=(const Geometry &);

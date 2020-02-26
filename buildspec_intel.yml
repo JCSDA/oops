@@ -104,7 +104,7 @@ phases:
       - ls
 
       # atlas
-      - git clone -b 0.18.1 https://github.com/ECMWF/atlas oops-bundle/atlas
+      - git clone https://$GIT_USER:$GIT_PASS@github.com/jcsda/atlas oops-bundle/atlas
       - ls
 
       - pwd

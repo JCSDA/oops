@@ -8,6 +8,7 @@
 
 module qg_geom_interface
 
+use atlas_module
 use fckit_configuration_module, only: fckit_configuration
 use fckit_log_module,only: fckit_log
 use kinds
@@ -42,6 +43,81 @@ call qg_geom_setup(self,f_conf)
 
 end subroutine qg_geom_setup_c
 ! ------------------------------------------------------------------------------
+!> Create ATLAS grid configuration
+subroutine qg_geom_create_atlas_grid_conf_c(c_key_self,c_conf) bind(c,name='qg_geom_create_atlas_grid_conf_f90')
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_self !< Geometry
+type(c_ptr), intent(in) :: c_conf       !< Grid configuration
+
+! Local variables
+type(qg_geom),pointer :: self
+type(fckit_configuration) :: f_conf
+
+! Interface
+call qg_geom_registry%get(c_key_self,self)
+f_conf = fckit_configuration(c_conf)
+
+! Call Fortran
+call qg_geom_create_atlas_grid_conf(self,f_conf)
+
+end subroutine qg_geom_create_atlas_grid_conf_c
+! ------------------------------------------------------------------------------
+!> Set ATLAS function space pointer
+subroutine qg_geom_set_atlas_functionspace_pointer_c(c_key_self,c_afunctionspace) &
+ & bind(c,name='qg_geom_set_atlas_functionspace_pointer_f90')
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_self          !< Geometry
+type(c_ptr),intent(in),value :: c_afunctionspace !< ATLAS function space pointer
+
+! Local variables
+type(qg_geom),pointer :: self
+
+! Interface
+call qg_geom_registry%get(c_key_self,self)
+self%afunctionspace = atlas_functionspace_structuredcolumns(c_afunctionspace)
+
+end subroutine qg_geom_set_atlas_functionspace_pointer_c
+! ------------------------------------------------------------------------------
+!> Fill ATLAS fieldset
+subroutine qg_geom_fill_atlas_fieldset_c(c_key_self,c_afieldset) &
+ & bind(c,name='qg_geom_fill_atlas_fieldset_f90')
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_self     !< Geometry
+type(c_ptr),intent(in),value :: c_afieldset !< ATLAS fieldset pointer
+
+! Local variables
+type(qg_geom),pointer :: self
+type(atlas_fieldset) :: afieldset
+
+! Interface
+call qg_geom_registry%get(c_key_self,self)
+afieldset = atlas_fieldset(c_afieldset)
+
+! Call Fortran
+call qg_geom_fill_atlas_fieldset(self,afieldset)
+
+end subroutine qg_geom_fill_atlas_fieldset_c
+! ------------------------------------------------------------------------------
+!> Set ATLAS function space pointer
+subroutine qg_geom_set_atlas_fieldset_pointer_c(c_key_self,c_afieldset) &
+ & bind(c,name='qg_geom_set_atlas_fieldset_pointer_f90')
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_self     !< Geometry
+type(c_ptr),intent(in),value :: c_afieldset !< ATLAS fieldset pointer
+
+! Local variables
+type(qg_geom),pointer :: self
+
+! Interface
+call qg_geom_registry%get(c_key_self,self)
+self%afieldset = atlas_fieldset(c_afieldset)
+
+end subroutine qg_geom_set_atlas_fieldset_pointer_c
+! ------------------------------------------------------------------------------
 !> Clone geometry
 subroutine qg_geom_clone_c(c_key_self,c_key_other) bind(c,name='qg_geom_clone_f90')
 
@@ -62,7 +138,6 @@ call qg_geom_registry%get(c_key_self ,self )
 call qg_geom_clone(self,other)
 
 end subroutine qg_geom_clone_c
-
 ! ------------------------------------------------------------------------------
 !> Delete geometry
 subroutine qg_geom_delete_c(c_key_self) bind(c,name='qg_geom_delete_f90')

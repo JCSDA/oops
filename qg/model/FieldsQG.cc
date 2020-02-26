@@ -16,14 +16,18 @@
 #include <string>
 #include <vector>
 
+#include "atlas/field/FieldSet.h"
+
 #include "eckit/config/Configuration.h"
+#include "eckit/config/LocalConfiguration.h"
+
 #include "model/GeometryQG.h"
 #include "model/GomQG.h"
 #include "model/LocationsQG.h"
 #include "model/QgFortran.h"
 #include "model/VariablesQG.h"
+
 #include "oops/base/Variables.h"
-#include "oops/generic/UnstructuredGrid.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
@@ -158,16 +162,19 @@ void FieldsQG::diff(const FieldsQG & x1, const FieldsQG & x2) {
   qg_fields_diff_incr_f90(keyFlds_, x1_myres.keyFlds_, x2_myres.keyFlds_);
 }
 // -----------------------------------------------------------------------------
-void FieldsQG::ug_coord(oops::UnstructuredGrid & ug) const {
-  qg_fields_ug_coord_f90(keyFlds_, ug.toFortran());
+void FieldsQG::setAtlas(atlas::FieldSet * afieldset) const {
+  const util::DateTime * dtp = &time_;
+  qg_fields_set_atlas_f90(keyFlds_, vars_.toFortran(), &dtp, afieldset->get());
 }
 // -----------------------------------------------------------------------------
-void FieldsQG::field_to_ug(oops::UnstructuredGrid & ug, const int & its) const {
-  qg_fields_field_to_ug_f90(keyFlds_, ug.toFortran(), its);
+void FieldsQG::toAtlas(atlas::FieldSet * afieldset) const {
+  const util::DateTime * dtp = &time_;
+  qg_fields_to_atlas_f90(keyFlds_, vars_.toFortran(), &dtp, afieldset->get());
 }
 // -----------------------------------------------------------------------------
-void FieldsQG::field_from_ug(const oops::UnstructuredGrid & ug, const int & its) {
-  qg_fields_field_from_ug_f90(keyFlds_, ug.toFortran(), its);
+void FieldsQG::fromAtlas(atlas::FieldSet * afieldset) {
+  const util::DateTime * dtp = &time_;
+  qg_fields_from_atlas_f90(keyFlds_, vars_.toFortran(), &dtp, afieldset->get());
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::read(const eckit::Configuration & config) {
