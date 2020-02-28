@@ -67,8 +67,8 @@ class ErrorCovariance4DBUMP : public oops::ModelSpaceCovariance4DBase<MODEL>,
 
   void print(std::ostream &) const override;
 
-  std::vector<util::DateTime> timeslots_;
   std::unique_ptr<OoBump_> ooBump_;
+  std::vector<util::DateTime> timeslots_;
 };
 
 // =============================================================================
