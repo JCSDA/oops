@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -91,7 +91,7 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol,
   : vars_(vars), ensemblePerturbs_()
 {
   ensemblePerturbs_.reserve(rank);
-  for (unsigned m = 0; m < rank; ++m) {
+  for (int m = 0; m < rank; ++m) {
     ensemblePerturbs_.emplace_back(resol, vars_, timeslots);
   }
   Log::trace() << "IncrementEnsemble:contructor done" << std::endl;

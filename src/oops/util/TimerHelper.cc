@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -108,7 +108,7 @@ void TimerHelper::print(std::ostream & os) const {
         stats[jt->first].fill(jt->second);
       }
 //    Task 0 receives stats from other tasks
-      for (int from = 1; from < ntasks; ++from) {
+      for (size_t from = 1; from < ntasks; ++from) {
         eckit::mpi::Status st = eckit::mpi::comm().probe(from, tag);
         size_t size = eckit::mpi::comm().getCount<char>(st);
         eckit::ResizableBuffer bufr(size);
