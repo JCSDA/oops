@@ -26,10 +26,8 @@ class ScalarOrMap {
 
   typedef std::map<Key, Value> Map;
 
-  /// Creates a container storing an empty map.
-  ScalarOrMap()
-    : isScalar_(false)
-  {}
+  /// Default creates a container storing an empty map.
+  ScalarOrMap() = default;
 
   /// Creates a container storing the map \p map.
   explicit ScalarOrMap(Map map)
@@ -126,7 +124,7 @@ class ScalarOrMap {
 
  private:
   bool isScalar_ = false;
-  Value scalar_;
+  Value scalar_ = {};
   std::map<Key, Value> map_;
 };
 }  // namespace util
