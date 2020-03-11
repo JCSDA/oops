@@ -77,7 +77,7 @@ lunit = -999
 if (fconf%has("separate_log")) call fconf%get_or_die("separate_log",self%separate_log)
 
 ! Initialize namelist
-call self%bump%nam%init
+call self%bump%nam%init(f_comm%size())
 
 ! Read configuration
 call self%bump%nam%from_conf(fconf)

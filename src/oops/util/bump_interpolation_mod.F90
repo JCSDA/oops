@@ -162,15 +162,17 @@ end subroutine delete_bump_field_
 !> init that takes bump_grid objects as input
 !!
   
-subroutine bint_grid_init_(self, config, in_grid, out_grid)
+subroutine bint_grid_init_(self, comm, config, in_grid, out_grid)
   use fckit_configuration_module, only : fckit_configuration
+  use fckit_mpi_module, only: fckit_mpi_comm
   use iso_c_binding, only : c_char
   class(bump_interpolator), intent(inout) :: self
   class(bump_grid), intent(in)  :: in_grid, out_grid
   class(fckit_configuration), intent(in) :: config
+  class(fckit_mpi_comm), intent(in) :: comm
   character(kind=c_char,len=:), allocatable :: string_buffer
 
-  call self%bump%nam%init
+  call self%bump%nam%init(comm%size())
 
   if (config%has("prefix")) then
      call config%get_or_die("prefix",string_buffer)
@@ -192,10 +194,12 @@ end subroutine bint_grid_init_
 !!
 !! init option that takes input and output grids as 2D latitude and
 !! longitude arrays
-subroutine bint_latlon_init_(self, config, lat_in, lon_in, lat_out, lon_out)
+subroutine bint_latlon_init_(self, comm, config, lat_in, lon_in, lat_out, lon_out)
   use fckit_configuration_module, only : fckit_configuration
+  use fckit_mpi_module, only : fckit_mpi_comm
   class(bump_interpolator), intent(inout) :: self
   class(fckit_configuration), intent(in) :: config
+  class(fckit_mpi_comm), intent(in) :: comm
   real(kind_real), intent(in) :: lat_in(:,:), lon_in(:,:)
   real(kind_real), intent(in) :: lat_out(:,:), lon_out(:,:)
   type(bump_grid) :: in_grid, out_grid
@@ -203,7 +207,7 @@ subroutine bint_latlon_init_(self, config, lat_in, lon_in, lat_out, lon_out)
   call in_grid%create(lat_in, lon_in)
   call out_grid%create(lat_out, lon_out)
 
-  call self%init(config, in_grid, out_grid)
+  call self%init(comm, config, in_grid, out_grid)
 
   call in_grid%delete()
   call out_grid%delete()

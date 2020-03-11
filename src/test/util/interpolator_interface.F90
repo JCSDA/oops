@@ -47,6 +47,7 @@ use random_mod
 
 type(bump_interpolator) :: interpolator
 type(fckit_configuration) :: config
+type(fckit_mpi_comm) :: comm
 real(kind_real), parameter :: lat_range(2) = (/ -90, 90 /)
 real(kind_real), parameter :: lon_range(2) = (/ 0, 360 /)
 integer, parameter :: rseed = 8
@@ -64,6 +65,8 @@ type(bump_grid) :: grid1, grid2
 type(bump_field) :: infield, outfield
 
 call fckit_log%info("Starting test_interpolator_apply")
+
+comm = fckit_mpi_comm()
 
 call fckit_resource("-config", "", filename)
 config = fckit_YAMLConfiguration(fckit_pathname(filename))
@@ -105,7 +108,7 @@ enddo
 ! grid init
 call grid1%create(lat1, lon1)
 call grid2%create(lat2, lon2)
-call interpolator%init(config, grid1, grid2)
+call interpolator%init(comm, config, grid1, grid2)
 
 ! grid apply
 call infield%create(field1)
@@ -115,7 +118,7 @@ call outfield%result(field2_grid)
 
 !------------------------
 ! latlon init and apply
-call interpolator%init(config, lat1, lon1, lat2, lon2)
+call interpolator%init(comm, config, lat1, lon1, lat2, lon2)
 call interpolator%apply(field1, field2_latlon)
 
 !------------------------
