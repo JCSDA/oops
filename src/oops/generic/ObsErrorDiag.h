@@ -47,12 +47,13 @@ class ObsErrorDiag : public ObsErrorBase<MODEL> {
 /// Get mean error for Jo table
   double getRMSE() const {return stddev_.rms();}
 
+ protected:
+  ObsVector_ stddev_;
+  ObsVector_ inverseVariance_;
+
  private:
   void print(std::ostream &) const;
 
-  const ObsSpace_ & obsdb_;
-  ObsVector_ stddev_;
-  ObsVector_ inverseVariance_;
   double pert_;
 };
 
@@ -60,8 +61,7 @@ class ObsErrorDiag : public ObsErrorBase<MODEL> {
 
 template<typename MODEL>
 ObsErrorDiag<MODEL>::ObsErrorDiag(const eckit::Configuration & conf, const ObsSpace_ & obsgeom)
-  : obsdb_(obsgeom),
-    stddev_(obsgeom, "EffectiveError"), inverseVariance_(obsgeom),
+  : stddev_(obsgeom, "EffectiveError"), inverseVariance_(obsgeom),
     pert_(conf.getDouble("random_amplitude", 1.0))
 {
   inverseVariance_ = stddev_;
@@ -109,6 +109,7 @@ void ObsErrorDiag<MODEL>::print(std::ostream & os) const {
 }
 
 // -----------------------------------------------------------------------------
+
 
 }  // namespace oops
 

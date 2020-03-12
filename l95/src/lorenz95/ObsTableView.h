@@ -67,10 +67,13 @@ class ObsTableView : public util::Printable,
   const util::DateTime & windowStart() const {return obstable_->windowStart();}
   const util::DateTime & windowEnd() const {return obstable_->windowEnd();}
   const oops::Variables & obsvariables() const { return obstable_->obsvariables(); }
+  const std::vector<double> & obsdist() const {return obsdist_;}
  private:
   void print(std::ostream &) const;
   boost::shared_ptr<ObsTable> obstable_;
   std::vector<size_t> localobs_;
+  bool isLocal_;
+  std::vector<double> obsdist_;
 };
 // -----------------------------------------------------------------------------
 }  // namespace lorenz95

@@ -12,12 +12,14 @@
 #define OOPS_GENERIC_INSTANTIATEOBSERRORFACTORY_H_
 
 #include "oops/base/ObsErrorBase.h"
+#include "oops/generic/LocalObsErrorDiag.h"
 #include "oops/generic/ObsErrorDiag.h"
 
 namespace oops {
 
 template <typename MODEL> void instantiateObsErrorFactory() {
   static ObsErrorMaker<MODEL, ObsErrorDiag<MODEL> > makerDiag_("diagonal");
+  static ObsErrorMaker<MODEL, LocalObsErrorDiag<MODEL> > makerLocalDiag_("localized diagonal");
 }
 
 }  // namespace oops

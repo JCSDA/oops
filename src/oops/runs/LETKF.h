@@ -123,7 +123,6 @@ template <typename MODEL> class LETKF : public Application {
       Log::info() << "initialize obs error: " << *tmperr << std::endl;
       obserr[jj]->save("EffectiveError");
     }
-    ObsErrors_ rmat(obsConfig, obsdb);
 
     // Get initial state configurations
     const eckit::LocalConfiguration initialConfig(fullConfig, "Initial Condition");
@@ -197,6 +196,7 @@ template <typename MODEL> class LETKF : public Application {
       ObsSpaces_ local_obs(obsdb, *i, locDist, locMaxNobs);
       Departures_ local_ombg(local_obs, ombg);
       DeparturesEnsemble_ local_ens_Yb(local_obs, ens_Yb);
+      // create local obs errors
       ObsErrors_ local_rmat(obsConfig, local_obs);
 
       // Calculate the LETKF transform matrix
@@ -301,7 +301,7 @@ template <typename MODEL> class LETKF : public Application {
                                   const eckit::Configuration &conf,
                                   const Departures_ & dy,
                                   const DeparturesEnsemble_ & Yb,
-                                  const ObsErrors<MODEL> & R) {
+                                  const ObsErrors_ & R) {
     unsigned int nbv = Yb.size();  // number of ensemble members
     double infl = 1.0;    // TODO(Travis): read multiplicative inflation from config
 

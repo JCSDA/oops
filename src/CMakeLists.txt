@@ -111,6 +111,7 @@ oops/base/ObserversTLAD.h
 oops/base/ObserverTLAD.h
 oops/base/ObsFilterBase.h
 oops/base/ObsFilters.h
+oops/base/ObsLocalizationBase.h
 oops/base/ObsSpaceBase.cc
 oops/base/ObsSpaceBase.h
 oops/base/ObsSpaces.h
@@ -141,6 +142,8 @@ oops/generic/dcmip_initial_conditions_test_4_v3.f90
 oops/generic/ErrorCovariance4DBUMP.h
 oops/generic/ErrorCovarianceBUMP.h
 oops/generic/ErrorCovarianceGSIRF.h
+oops/generic/gc99.h
+oops/generic/gc99.cc
 oops/generic/IdLinearVariableChange.h
 oops/generic/IdVariableChange.h
 oops/generic/instantiateLocalizationFactory.h
@@ -152,6 +155,7 @@ oops/generic/LinearModelId.h
 oops/generic/LocalizationBUMP.h
 oops/generic/LocalizationGeneric.h
 oops/generic/LocalizationID.h
+oops/generic/LocalObsErrorDiag.h
 oops/generic/ObsErrorDiag.h
 oops/generic/oobump_f.h
 oops/generic/oobump_interface.F90
@@ -188,6 +192,7 @@ oops/interface/ObsDataVector.h
 oops/interface/ObsDiagnostics.h
 oops/interface/ObsErrorCovariance.h
 oops/interface/ObsFilter.h
+oops/interface/ObsLocalization.h
 oops/interface/ObsOperator.h
 oops/interface/ObsSpace.h
 oops/interface/ObsVector.h
@@ -430,6 +435,10 @@ ecbuild_add_test( TARGET  test_util_parameters
                   SOURCES test/base/Parameters.cc
                   ARGS    "test/testinput/parameters.yaml"
                   LIBS    oops )
+
+ecbuild_add_test( TARGET  test_generic_gc99
+                  SOURCES test/generic/gc99.cc
+                  LIBS    oops eckit )
 
 ecbuild_add_test( TARGET  test_util_isanypointinvolumeinterior
                   SOURCES test/util/IsAnyPointInVolumeInterior.cc

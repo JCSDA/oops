@@ -26,7 +26,10 @@ Initial Condition:
 Observations:
   ObsTypes:
   - Covariance:
-      covariance: diagonal
+      covariance: localized diagonal
+      Localization:
+        localization: Gaspari-Cohn
+        lengthscale: .1
     ObsSpace:
       ObsDataIn:
         filename: Data/l95.truth3d.2010-01-02T00:00:00Z.obt
