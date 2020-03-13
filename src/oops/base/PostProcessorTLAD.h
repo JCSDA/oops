@@ -13,7 +13,6 @@
 
 #include <vector>
 
-#include <boost/foreach.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "oops/base/GeneralizedDepartures.h"
@@ -55,19 +54,19 @@ class PostProcessorTLAD {
 /// Set linearization state
   void initializeTraj(const State_ & xx, const util::DateTime & end,
                       const util::Duration & step) {
-    BOOST_FOREACH(boost::shared_ptr<PostBaseTLAD_> jp, processors_) {
+    for (auto & jp : processors_) {
       jp->initializeTraj(xx, end, step);
     }
   }
 
   void processTraj(const State_ & xx) {
-    BOOST_FOREACH(boost::shared_ptr<PostBaseTLAD_> jp, processors_) {
+    for (auto & jp : processors_) {
       jp->processTraj(xx);
     }
   }
 
   void finalizeTraj(const State_ & xx) {
-    BOOST_FOREACH(boost::shared_ptr<PostBaseTLAD_> jp, processors_) {
+    for (auto & jp : processors_) {
       jp->finalizeTraj(xx);
     }
   }
@@ -75,19 +74,19 @@ class PostProcessorTLAD {
 /// Tangent linear methods
   void initializeTL(const Increment_ & dx, const util::DateTime & end,
                     const util::Duration & step) {
-    BOOST_FOREACH(boost::shared_ptr<PostBaseTLAD_> jp, processors_) {
+    for (auto & jp : processors_) {
       jp->initializeTL(dx, end, step);
     }
   }
 
   void processTL(const Increment_ & dx) {
-    BOOST_FOREACH(boost::shared_ptr<PostBaseTLAD_> jp, processors_) {
+    for (auto & jp : processors_) {
       jp->processTL(dx);
     }
   }
 
   void finalizeTL(const Increment_ & dx) {
-    BOOST_FOREACH(boost::shared_ptr<PostBaseTLAD_> jp, processors_) {
+    for (auto & jp : processors_) {
       jp->finalizeTL(dx);
     }
   }
@@ -101,19 +100,19 @@ class PostProcessorTLAD {
 /// Adjoint methods
   void initializeAD(Increment_ & dx, const util::DateTime & bgn,
                     const util::Duration & step) {
-    BOOST_FOREACH(boost::shared_ptr<PostBaseTLAD_> jp, processors_) {
+    for (auto & jp : processors_) {
       jp->initializeAD(dx, bgn, step);
     }
   }
 
   void processAD(Increment_ & dx) {
-    BOOST_FOREACH(boost::shared_ptr<PostBaseTLAD_> jp, processors_) {
+    for (auto & jp : processors_) {
       jp->processAD(dx);
     }
   }
 
   void finalizeAD(Increment_ & dx) {
-    BOOST_FOREACH(boost::shared_ptr<PostBaseTLAD_> jp, processors_) {
+    for (auto & jp : processors_) {
       jp->finalizeAD(dx);
     }
   }
