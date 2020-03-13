@@ -161,15 +161,26 @@ select case (wtype)
       enddo
 
       !Barycentric weights
-      bsw = 0.0_kind_real
-      do jj = 1,nn
-        bsw = bsw + (bw(jj) / nn_dist(n,jj))
-      enddo
-
       self%interp_w(n,:) = 0.0_kind_real
-      do jj = 1,nn
-        self%interp_w(n,jj) = ( bw(jj) / nn_dist(n,jj) ) / bsw
-      enddo
+      if (minval(nn_dist(n,:)) < 1e-10) then
+        
+        ! special case if very close to one grid point
+        jj = minloc(nn_dist(n,:),dim=1)
+        self%interp_w(n,jj) = 1.0_kind_real
+      
+      else
+
+        !otherwise continue with the normal algorithm
+        bsw = 0.0_kind_real
+        do jj = 1,nn
+          bsw = bsw + (bw(jj) / nn_dist(n,jj))
+        enddo
+
+        do jj = 1,nn
+          self%interp_w(n,jj) = ( bw(jj) / nn_dist(n,jj) ) / bsw
+        enddo
+      end if
+
     enddo
 
     deallocate(bw)
