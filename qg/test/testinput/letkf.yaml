@@ -66,7 +66,9 @@ Localization:
   max_nobs: -1
 
 letkf:
-  - nothing
+  inflation:
+    rtpp: 0.5
+    mult: 1.1
 
 output:
   datadir: Data

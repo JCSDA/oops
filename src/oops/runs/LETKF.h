@@ -182,9 +182,16 @@ template <typename MODEL> class LETKF : public Application {
     IncrementEnsemble_ ana_pert(resol, model.variables(), ens_xx[0].validTimes(), bkg_pert.size());
 
     // get the LETKF parameters used here
-    // NOTE: "letkf" is actually empty for now, parameters for inflation and such
-    //  will go here eventually
+    // make sure rtpp inflation is within range
     const eckit::LocalConfiguration letkfConfig(fullConfig, "letkf");
+    double rtppCoeff = letkfConfig.getDouble("inflation.rtpp", 0.0);
+    if (rtppCoeff > 0.0 && rtppCoeff <= 1.0) {
+      Log::info() << "RTPP inflation will be applied with rtppCoeff=" << rtppCoeff << std::endl;
+    } else {
+      Log::info() << "RTPP inflation is not applied rtppCoeff is out of bounds (0,1], rtppCoeff="
+                  << rtppCoeff << std::endl;
+    }
+    // get localization parameters
     const eckit::LocalConfiguration locConfig(fullConfig, "Localization");
     double locDist = locConfig.getDouble("distance");
     int locMaxNobs = locConfig.getInt("max_nobs");
@@ -303,7 +310,7 @@ template <typename MODEL> class LETKF : public Application {
                                   const DeparturesEnsemble_ & Yb,
                                   const ObsErrors_ & R) {
     unsigned int nbv = Yb.size();  // number of ensemble members
-    double infl = 1.0;    // TODO(Travis): read multiplicative inflation from config
+    double infl = conf.getDouble("inflation.mult", 1.0);
 
     Eigen::MatrixXd work(nbv, nbv);
     Eigen::MatrixXd trans;
@@ -334,6 +341,15 @@ template <typename MODEL> class LETKF : public Application {
     trans = eivec
       * ((nbv-1) * eival.array().inverse()).sqrt().matrix().asDiagonal()
       * eivec.transpose();
+
+    // RTPP: Relaxation to prior perturbation.
+    // delta_xa'(iens)=rtppCoeff*delta_xb'(iens)+(1-rtppCoeff)*delta_xa'(iens)
+    // RTPP is done on Wa before the ensemble mean translation is introduced
+    double rtppCoeff = conf.getDouble("inflation.rtpp", 0.0);
+    if (rtppCoeff > 0.0 && rtppCoeff <= 1.0) {
+      trans = (1.-rtppCoeff)*trans;
+      trans.diagonal() = Eigen::VectorXd::Constant(nbv, rtppCoeff)+trans.diagonal();
+    }
 
     // wa = Pa Yb^T R^-1 dy
     Eigen::VectorXd wa(nbv);

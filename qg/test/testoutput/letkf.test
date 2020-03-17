@@ -75,32 +75,32 @@ Test     : Stream nobs= 300 Scaling=  1e+05, Min=   -341.3083, Max=    732.3492,
 Test     : Wind nobs= 160 Scaling=      1, Min=    -43.8541, Max=     22.5876, Average=     -1.6652
 Test     : WSpeed nobs= 300 Scaling=      1, Min=    -30.3993, Max=     41.0551, Average=      3.6941
 Test     : H(x) for member 1:
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4527, Max=      0.7407, Average=     -1.3380
-Test     : Wind nobs= 160 Scaling=     10, Min=    -12.1886, Max=     10.4989, Average=      1.0928
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.8862, Max=     11.9803, Average=      4.6881
+Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4763, Max=      0.7265, Average=     -1.3246
+Test     : Wind nobs= 160 Scaling=     10, Min=    -13.5231, Max=     10.3592, Average=      1.0710
+Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.4873, Max=     11.8127, Average=      4.7292
 Test     : H(x) for member 2:
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4494, Max=      0.7462, Average=     -1.3368
-Test     : Wind nobs= 160 Scaling=     10, Min=    -12.4680, Max=     10.5419, Average=      1.0803
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.8045, Max=     12.1205, Average=      4.6875
+Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4257, Max=      0.7668, Average=     -1.3243
+Test     : Wind nobs= 160 Scaling=     10, Min=    -13.1337, Max=     10.3565, Average=      1.0599
+Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.6215, Max=     12.7248, Average=      4.7426
 Test     : H(x) for member 3:
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4541, Max=      0.7256, Average=     -1.3404
-Test     : Wind nobs= 160 Scaling=     10, Min=    -12.1292, Max=     10.5499, Average=      1.0954
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.7782, Max=     12.0398, Average=      4.6685
+Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4861, Max=      0.6945, Average=     -1.3582
+Test     : Wind nobs= 160 Scaling=     10, Min=    -11.6464, Max=     10.5874, Average=      1.1099
+Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.5897, Max=     11.8908, Average=      4.7018
 Test     : H(x) for member 4:
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4521, Max=      0.7411, Average=     -1.3382
-Test     : Wind nobs= 160 Scaling=     10, Min=    -12.5065, Max=     10.6374, Average=      1.0843
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.9212, Max=     11.9539, Average=      4.6856
+Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4641, Max=      0.7566, Average=     -1.3332
+Test     : Wind nobs= 160 Scaling=     10, Min=    -12.8722, Max=     10.9041, Average=      1.0461
+Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.9422, Max=     12.0366, Average=      4.7320
 Test     : H(x) for member 5:
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4462, Max=      0.7371, Average=     -1.3396
-Test     : Wind nobs= 160 Scaling=     10, Min=    -11.8272, Max=     10.5738, Average=      1.1121
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.7051, Max=     11.9481, Average=      4.6741
+Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4023, Max=      0.7470, Average=     -1.3526
+Test     : Wind nobs= 160 Scaling=     10, Min=     -9.9822, Max=     10.5982, Average=      1.1763
+Test     : WSpeed nobs= 300 Scaling=     10, Min=      1.1666, Max=     11.6058, Average=      4.6519
 Test     : H(x) ensemble analysis mean: 
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4509, Max=      0.7381, Average=     -1.3386
-Test     : Wind nobs= 160 Scaling=     10, Min=    -12.2239, Max=     10.5604, Average=      1.0930
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.8606, Max=     12.0085, Average=      4.6808
+Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4509, Max=      0.7383, Average=     -1.3386
+Test     : Wind nobs= 160 Scaling=     10, Min=    -12.2315, Max=     10.5611, Average=      1.0927
+Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.9724, Max=     12.0142, Average=      4.7115
 Test     : analysis y - H(x): 
-Test     : Stream nobs= 300 Scaling=  1e+06, Min=    -28.7331, Max=     62.4918, Average=      1.8220
-Test     : Wind nobs= 160 Scaling=      1, Min=    -57.2321, Max=     48.0078, Average=     -0.3715
-Test     : WSpeed nobs= 300 Scaling=      1, Min=    -33.0609, Max=     48.0244, Average=      3.1319
+Test     : Stream nobs= 300 Scaling=  1e+06, Min=    -28.7416, Max=     62.4989, Average=      1.8208
+Test     : Wind nobs= 160 Scaling=      1, Min=    -57.2419, Max=     48.0844, Average=     -0.3683
+Test     : WSpeed nobs= 300 Scaling=      1, Min=    -33.1596, Max=     43.5637, Average=      2.8245
 Test     : ombg RMS: 1.227e+07
-Test     : oman RMS: 8.952e+06
+Test     : oman RMS: 8.95e+06
