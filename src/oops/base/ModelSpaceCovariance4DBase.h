@@ -83,7 +83,7 @@ class Covariance4DFactory {
   static ModelSpaceCovariance4DBase<MODEL> * create(const eckit::Configuration &,
                                                     const Geometry_ &, const Variables &,
                                                     const State4D_ &, const State4D_ &);
-  virtual ~Covariance4DFactory() { getMakers().clear(); }
+  virtual ~Covariance4DFactory() = default;
  protected:
   explicit Covariance4DFactory(const std::string &);
  private:

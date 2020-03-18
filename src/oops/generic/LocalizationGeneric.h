@@ -56,7 +56,7 @@ class LocalizationGenericFactory {
   static LocalizationGeneric<MODEL> * create(const Geometry_ &,
                                              const EnsemblePtr_,
                                              const eckit::Configuration &);
-  virtual ~LocalizationGenericFactory() { getMakers().clear(); }
+  virtual ~LocalizationGenericFactory() = default;
  protected:
   explicit LocalizationGenericFactory(const std::string &);
  private:

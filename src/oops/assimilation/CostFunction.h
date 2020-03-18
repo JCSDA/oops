@@ -142,7 +142,7 @@ class CostFactory {
  public:
   static CostFunction<MODEL> * create(const eckit::Configuration &,
                                       const Geometry_ &, const Model_ &);
-  virtual ~CostFactory() { getMakers().clear(); }
+  virtual ~CostFactory() = default;
 
  protected:
   explicit CostFactory(const std::string &);

@@ -55,7 +55,7 @@ class LocalizationFactory {
   typedef Geometry<MODEL> Geometry_;
  public:
   static LocalizationBase<MODEL> * create(const Geometry_ &, const eckit::Configuration &);
-  virtual ~LocalizationFactory() { getMakers().clear(); }
+  virtual ~LocalizationFactory() = default;
  protected:
   explicit LocalizationFactory(const std::string &);
  private:

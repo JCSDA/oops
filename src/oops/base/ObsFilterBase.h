@@ -63,7 +63,7 @@ class FilterFactory {
                                                         const eckit::Configuration &,
                                                     ObsDataPtr_<int> flags = ObsDataPtr_<int>(),
                                                  ObsDataPtr_<float> obserr = ObsDataPtr_<float>());
-  virtual ~FilterFactory() { getMakers().clear(); }
+  virtual ~FilterFactory() = default;
  protected:
   explicit FilterFactory(const std::string &);
  private:

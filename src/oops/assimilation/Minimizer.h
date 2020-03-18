@@ -369,7 +369,7 @@ class MinFactory {
   typedef CostFunction<MODEL>        CostFct_;
  public:
   static Minimizer<MODEL> * create(const eckit::Configuration &, const CostFct_ &);
-  virtual ~MinFactory() { getMakers().clear(); }
+  virtual ~MinFactory() = default;
  protected:
   explicit MinFactory(const std::string &);
  private:

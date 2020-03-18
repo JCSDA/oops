@@ -56,7 +56,7 @@ class ObsErrorFactory {
   typedef ObsSpace<MODEL> ObsSpace_;
  public:
   static ObsErrorBase<MODEL> * create(const eckit::Configuration &, const ObsSpace_ &);
-  virtual ~ObsErrorFactory() { getMakers().clear(); }
+  virtual ~ObsErrorFactory() = default;
  protected:
   explicit ObsErrorFactory(const std::string &);
  private:

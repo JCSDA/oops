@@ -74,7 +74,7 @@ class LinearVariableChangeFactory {
   static LinearVariableChangeBase<MODEL> * create(const State_ &, const State_ &,
                                                   const Geometry_ &,
                                                   const eckit::Configuration &);
-  virtual ~LinearVariableChangeFactory() { getMakers().clear(); }
+  virtual ~LinearVariableChangeFactory() = default;
  protected:
   explicit LinearVariableChangeFactory(const std::string &);
  private:

@@ -76,8 +76,7 @@ class ModelFactory {
   typedef Geometry<MODEL>   Geometry_;
  public:
   static ModelBase<MODEL> * create(const Geometry_ &, const eckit::Configuration &);
-//  virtual ~ModelFactory() { getMakers().clear(); }
-  virtual ~ModelFactory() {}
+  virtual ~ModelFactory() = default;
  protected:
   explicit ModelFactory(const std::string &);
  private:

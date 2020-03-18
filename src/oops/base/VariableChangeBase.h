@@ -60,7 +60,7 @@ class VariableChangeFactory {
   typedef Geometry<MODEL>   Geometry_;
  public:
   static VariableChangeBase<MODEL> * create(const eckit::Configuration &, const Geometry_ &);
-  virtual ~VariableChangeFactory() { getMakers().clear(); }
+  virtual ~VariableChangeFactory() = default;
  protected:
   explicit VariableChangeFactory(const std::string &);
  private:

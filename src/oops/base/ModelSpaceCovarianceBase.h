@@ -81,7 +81,7 @@ class CovarianceFactory {
   static ModelSpaceCovarianceBase<MODEL> * create(const eckit::Configuration &,
                                                   const Geometry_ &, const Variables &,
                                                   const State_ &, const State_ &);
-  virtual ~CovarianceFactory() { getMakers().clear(); }
+  virtual ~CovarianceFactory() = default;
  protected:
   explicit CovarianceFactory(const std::string &);
  private:
