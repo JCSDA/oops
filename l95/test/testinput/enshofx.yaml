@@ -1,8 +1,8 @@
 EnsembleApplication:
   members: 10
 Assimilation Window:
-  Begin: '2010-01-01T03:00:00Z'
-  Length: P1D
+  window_begin: '2010-01-01T03:00:00Z'
+  window_length: P1D
 Geometry:
   resol: '40'
 Initial Condition:

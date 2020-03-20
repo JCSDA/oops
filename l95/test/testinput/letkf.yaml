@@ -1,6 +1,6 @@
 Assimilation Window:
-  Begin: &date 2010-01-01T03:00:00Z
-  Length: P2D
+  window_begin: &date 2010-01-01T03:00:00Z
+  window_length: P2D
 
 Geometry:
   resol: 40

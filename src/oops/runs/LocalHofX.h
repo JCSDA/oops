@@ -56,8 +56,8 @@ template <typename MODEL> class LocalHofX : public Application {
   int execute(const eckit::Configuration & fullConfig) const {
 //  Setup observation window
     const eckit::LocalConfiguration windowConf(fullConfig, "Assimilation Window");
-    const util::Duration winlen(windowConf.getString("Length"));
-    const util::DateTime winbgn(windowConf.getString("Begin"));
+    const util::Duration winlen(windowConf.getString("window_length"));
+    const util::DateTime winbgn(windowConf.getString("window_begin"));
     const util::DateTime winend(winbgn + winlen);
     Log::info() << "Observation window is:" << windowConf << std::endl;
 

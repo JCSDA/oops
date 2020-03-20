@@ -1,15 +1,16 @@
 Assimilation Window:
-  Begin: 2010-01-01T00:00:00Z
-  Length: PT12H
+  window_begin: 2010-01-01T00:00:00Z
+  window_length: PT12H
 Geometry:
   nx: 40
   ny: 20
   depths:
   - 4500.0
   - 5500.0
-Initial Condition:
-  date: 2010-01-01T06:00:00Z
-  filename: Data/truth.fc.2009-12-15T00:00:00Z.P17DT6H
+Forecasts:
+  state:
+  - date: 2010-01-01T06:00:00Z
+    filename: Data/truth.fc.2009-12-15T00:00:00Z.P17DT6H
   variables:
   - x
 Model:

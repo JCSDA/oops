@@ -1,6 +1,6 @@
 Assimilation Window:
-  Begin: &date 2010-01-01T00:00:00Z
-  Length: PT24H
+  window_begin: &date 2010-01-01T00:00:00Z
+  window_length: PT24H
 
 Geometry:
   nx: 40

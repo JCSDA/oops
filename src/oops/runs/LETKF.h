@@ -92,8 +92,8 @@ template <typename MODEL> class LETKF : public Application {
   int execute(const eckit::Configuration & fullConfig) const {
     // Setup observation window
     const eckit::LocalConfiguration windowConfig(fullConfig, "Assimilation Window");
-    const util::Duration winlen(windowConfig.getString("Length"));
-    const util::DateTime winbgn(windowConfig.getString("Begin"));
+    const util::Duration winlen(windowConfig.getString("window_length"));
+    const util::DateTime winbgn(windowConfig.getString("window_begin"));
     const util::DateTime winend(winbgn + winlen);
     const util::DateTime winhalf = winbgn + winlen/2;
     Log::debug() << "Observation window is: " << windowConfig << std::endl;

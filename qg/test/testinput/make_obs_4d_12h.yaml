@@ -1,6 +1,6 @@
 Assimilation Window:
-  Begin: 2010-01-01T00:00:00Z
-  End: 2010-01-01T12:00:00Z
+  window_begin: 2010-01-01T00:00:00Z
+  window_length: PT12H
 Geometry:
   nx: 40
   ny: 20

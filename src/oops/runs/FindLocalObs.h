@@ -8,24 +8,18 @@
 #ifndef OOPS_RUNS_FINDLOCALOBS_H_
 #define OOPS_RUNS_FINDLOCALOBS_H_
 
-#include <memory>
 #include <string>
-#include <vector>
-
-#include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/assimilation/CalcHofX.h"
 #include "oops/base/instantiateObsFilterFactory.h"
-#include "oops/base/ObsAuxControls.h"
 #include "oops/base/Observations.h"
-#include "oops/base/Observers.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/interface/Model.h"
-#include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Application.h"
@@ -39,8 +33,6 @@ template <typename MODEL> class FindLocalObs : public Application {
   typedef Geometry<MODEL>            Geometry_;
   typedef GeometryIterator<MODEL>    GeometryIterator_;
   typedef Model<MODEL>               Model_;
-  typedef ModelAuxControl<MODEL>     ModelAux_;
-  typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
   typedef Observations<MODEL>        Observations_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef State<MODEL>               State_;
@@ -56,27 +48,23 @@ template <typename MODEL> class FindLocalObs : public Application {
   int execute(const eckit::Configuration & fullConfig) const {
 //  Setup observation window
     const eckit::LocalConfiguration windowConf(fullConfig, "Assimilation Window");
-    const util::Duration winlen(windowConf.getString("Length"));
-    const util::DateTime winbgn(windowConf.getString("Begin"));
+    const util::Duration winlen(windowConf.getString("window_length"));
+    const util::DateTime winbgn(windowConf.getString("window_begin"));
     const util::DateTime winend(winbgn + winlen);
     Log::info() << "Observation window is:" << windowConf << std::endl;
 
-//  Setup resolution
-    const eckit::LocalConfiguration resolConfig(fullConfig, "Geometry");
-    const Geometry_ resol(resolConfig, this->getComm());
+//  Setup geometry
+    const eckit::LocalConfiguration geometryConfig(fullConfig, "Geometry");
+    const Geometry_ geometry(geometryConfig, this->getComm());
 
 //  Setup Model
     const eckit::LocalConfiguration modelConfig(fullConfig, "Model");
-    const Model_ model(resol, modelConfig);
+    const Model_ model(geometry, modelConfig);
 
 //  Setup initial state
     const eckit::LocalConfiguration initialConfig(fullConfig, "Initial Condition");
-    Log::info() << "Initial configuration is:" << initialConfig << std::endl;
-    State_ xx(resol, model.variables(), initialConfig);
+    State_ xx(geometry, model.variables(), initialConfig);
     Log::test() << "Initial state: " << xx << std::endl;
-
-//  Setup augmented state
-    ModelAux_ moderr(resol, initialConfig);
 
 //  Setup forecast outputs
     PostProcessor<State_> post;
@@ -87,24 +75,12 @@ template <typename MODEL> class FindLocalObs : public Application {
 
 //  Setup observations
     eckit::LocalConfiguration obsconf(fullConfig, "Observations");
-    Log::debug() << "Observations configuration is:" << obsconf << std::endl;
-    ObsSpaces_ obsdb(obsconf, this->getComm(), winbgn, winend);
+    ObsSpaces_ obspace(obsconf, this->getComm(), winbgn, winend);
 
-//  Setup observations bias
-    ObsAuxCtrls_ ybias(obsdb, obsconf);
-
-//  Setup Observers
-    boost::shared_ptr<Observers<MODEL, State_> >
-      pobs(new Observers<MODEL, State_>(obsconf, obsdb, ybias));
-    post.enrollProcessor(pobs);
-
-//  Compute H(x)
-    model.forecast(xx, moderr, winlen, post);
-    Log::info() << "FindLocalObs: Finished observation computation." << std::endl;
-    Log::test() << "Final state: " << xx << std::endl;
+    CalcHofX<MODEL> hofx(obspace, geometry, fullConfig);
+    const Observations_ & yobs = hofx.compute(model, xx, post);
 
 //  Save H(x)
-    const Observations_ & yobs = pobs->hofx();
     Log::test() << "H(x): " << yobs << std::endl;
     yobs.save("hofx");
 
@@ -112,12 +88,11 @@ template <typename MODEL> class FindLocalObs : public Application {
     eckit::LocalConfiguration localconfig(fullConfig, "Localization");
     double dist = localconfig.getDouble("distance");
     int max_nobs = localconfig.getInt("max_nobs");
-    for (GeometryIterator_ i = resol.begin(); i != resol.end(); ++i) {
+    for (GeometryIterator_ i = geometry.begin(); i != geometry.end(); ++i) {
        // find all local observations around current gridpoint (*i) with dist and maxnum from config
-       ObsSpaces_ localobs(obsdb, *i, dist, max_nobs);
+       ObsSpaces_ localobs(obspace, *i, dist, max_nobs);
        Log::test() << *i << localobs << std::endl;
     }
-
 
     return 0;
   }

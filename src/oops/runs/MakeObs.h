@@ -11,26 +11,20 @@
 #ifndef OOPS_RUNS_MAKEOBS_H_
 #define OOPS_RUNS_MAKEOBS_H_
 
-#include <memory>
 #include <string>
-#include <vector>
-
-#include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/assimilation/CalcHofX.h"
 #include "oops/base/Departures.h"
 #include "oops/base/instantiateObsFilterFactory.h"
-#include "oops/base/ObsAuxControls.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
-#include "oops/base/Observers.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Model.h"
-#include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Application.h"
@@ -44,9 +38,8 @@ template <typename MODEL> class MakeObs : public Application {
   typedef Departures<MODEL>          Departures_;
   typedef Geometry<MODEL>            Geometry_;
   typedef Model<MODEL>               Model_;
-  typedef ModelAuxControl<MODEL>     ModelAux_;
-  typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
   typedef Observations<MODEL>        Observations_;
+  typedef ObsErrors<MODEL>           ObsErrors_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef State<MODEL>               State_;
 
@@ -62,27 +55,23 @@ template <typename MODEL> class MakeObs : public Application {
   int execute(const eckit::Configuration & fullConfig) const {
 //  Setup observation window
     const eckit::LocalConfiguration windowConf(fullConfig, "Assimilation Window");
-    const util::DateTime bgn(windowConf.getString("Begin"));
-    const util::DateTime end(windowConf.getString("End"));
-    const util::Duration fclen(end - bgn);
+    const util::DateTime winbgn(windowConf.getString("window_begin"));
+    const util::Duration winlen(windowConf.getString("window_length"));
+    const util::DateTime winend(winbgn + winlen);
     Log::info() << "Observation window is:" << windowConf << std::endl;
 
-//  Setup resolution
-    const eckit::LocalConfiguration resolConfig(fullConfig, "Geometry");
-    const Geometry_ resol(resolConfig, this->getComm());
+//  Setup geometry
+    const eckit::LocalConfiguration geometryConfig(fullConfig, "Geometry");
+    const Geometry_ geometry(geometryConfig, this->getComm());
 
 //  Setup Model
     const eckit::LocalConfiguration modelConfig(fullConfig, "Model");
-    const Model_ model(resol, modelConfig);
+    const Model_ model(geometry, modelConfig);
 
 //  Setup initial "true" state
     const eckit::LocalConfiguration initialConfig(fullConfig, "Initial Condition");
-    Log::info() << "Initial configuration is:" << initialConfig << std::endl;
-    State_ xx(resol, model.variables(), initialConfig);
+    State_ xx(geometry, model.variables(), initialConfig);
     Log::test() << "Initial state: " << xx << std::endl;
-
-//  Setup augmented state
-    ModelAux_ moderr(resol, initialConfig);
 
 //  Setup forecast outputs
     PostProcessor<State_> post;
@@ -93,29 +82,19 @@ template <typename MODEL> class MakeObs : public Application {
 
 //  Setup observations
     const eckit::LocalConfiguration obsconf(fullConfig, "Observations");
-    Log::info() << "Observation configuration is:" << obsconf << std::endl;
-    ObsSpaces_ obspace(obsconf, this->getComm(), bgn, end);
+    ObsSpaces_ obspace(obsconf, this->getComm(), winbgn, winend);
 
-//  Setup observations bias
-    ObsAuxCtrls_ ybias(obspace, obsconf);
+    CalcHofX<MODEL> hofx(obspace, geometry, fullConfig);
+    Observations_ yobs = hofx.compute(model, xx, post);
 
-//  Setup Observer
-    boost::shared_ptr<Observers<MODEL, State_> >
-      pobs(new Observers<MODEL, State_>(obsconf, obspace, ybias));
-    post.enrollProcessor(pobs);
-
-//  Run forecast and generate observations
-    model.forecast(xx, moderr, fclen, post);
     Log::test() << "Final state: " << xx << std::endl;
-    Log::info() << "MakeObs: Finished observation generation." << std::endl;
 
-    Observations_ yobs = pobs->hofx();
     Log::info() << "Generated observation: " << yobs << std::endl;
 
 //  Perturb observations
     if (obsconf.has("obspert")) {
       Departures_ ypert(obspace);
-      ObsErrors<MODEL> matR(obsconf, obspace);
+      ObsErrors_ matR(obsconf, obspace);
       matR.randomize(ypert);
       double opert = obsconf.getDouble("obspert");
       ypert *= opert;

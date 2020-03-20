@@ -460,9 +460,9 @@ ecbuild_add_test( TARGET test_qg_hofx_compare
 
 ecbuild_add_test( TARGET test_qg_hofx3d_run
                   OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_hofx3d.x
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_hofx_nomodel.x
                   ARGS testinput/hofx3d.yaml testoutput/hofx3d.log.out
-                  DEPENDS qg_hofx3d.x
+                  DEPENDS qg_hofx_nomodel.x
                   TEST_DEPENDS test_qg_make_obs_4d_12h_run )
 
 ecbuild_add_test( TARGET test_qg_hofx3d_compare

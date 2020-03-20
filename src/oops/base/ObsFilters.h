@@ -73,16 +73,16 @@ ObsFilters<MODEL>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration &
   : filters_(), geovars_(), diagvars_() {
   Log::trace() << "ObsFilters::ObsFilters starting " << conf << std::endl;
 
-// Prepare QC handling and statistics if QC flags present
-  if (qcflags) {
+// Get filters configuration
+  std::vector<eckit::LocalConfiguration> confs;
+  conf.get("ObsFilters", confs);
+
+// Prepare QC handling and statistics if any filters are present
+  if (confs.size() > 0) {
     eckit::LocalConfiguration preconf;
     preconf.set("Filter", "QCmanager");
     filters_.push_back(FilterFactory<MODEL>::create(os, preconf, qcflags, obserr));
   }
-
-// Get filters configuration
-  std::vector<eckit::LocalConfiguration> confs;
-  conf.get("ObsFilters", confs);
 
 // Create the filters
   for (std::size_t jj = 0; jj < confs.size(); ++jj) {

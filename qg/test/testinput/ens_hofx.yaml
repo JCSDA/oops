@@ -1,8 +1,8 @@
 EnsembleApplication:
   members: 5
 Assimilation Window:
-  Begin: 2010-01-01T00:00:00Z
-  Length: PT12H
+  window_begin: 2010-01-01T00:00:00Z
+  window_length: PT12H
 Geometry:
   nx: 40
   ny: 20

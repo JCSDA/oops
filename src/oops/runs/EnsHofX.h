@@ -8,45 +8,19 @@
 #ifndef OOPS_RUNS_ENSHOFX_H_
 #define OOPS_RUNS_ENSHOFX_H_
 
-#include <memory>
 #include <string>
 #include <vector>
 
-#include <boost/shared_ptr.hpp>
-
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/mpi/Comm.h"
-#include "oops/base/instantiateObsFilterFactory.h"
-#include "oops/base/ObsAuxControls.h"
-#include "oops/base/ObsEnsemble.h"
-#include "oops/base/Observations.h"
-#include "oops/base/Observers.h"
-#include "oops/base/ObsSpaces.h"
-#include "oops/base/PostProcessor.h"
-#include "oops/base/StateInfo.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Model.h"
-#include "oops/interface/ModelAuxControl.h"
-#include "oops/interface/State.h"
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/runs/HofX.h"
-#include "oops/util/DateTime.h"
-#include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
 
 template <typename MODEL> class EnsHofX : public Application {
-  typedef Geometry<MODEL>            Geometry_;
-  typedef Model<MODEL>               Model_;
-  typedef ModelAuxControl<MODEL>     ModelAux_;
-  typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
-  typedef Observations<MODEL>        Observations_;
-  typedef ObsEnsemble<MODEL>         ObsEnsemble_;
-  typedef ObsSpaces<MODEL>           ObsSpace_;
-  typedef State<MODEL>               State_;
-
  public:
 // -----------------------------------------------------------------------------
   explicit EnsHofX(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {

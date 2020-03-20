@@ -29,6 +29,7 @@ list( APPEND l95_test_input
   testinput/forecast.yaml
   testinput/genenspert.yaml
   testinput/hofx.yaml
+  testinput/hofx_nomodel.yaml
   testinput/letkf.yaml
   testinput/localhofx.yaml
   testinput/interfaces.yaml
@@ -486,6 +487,20 @@ ecbuild_add_test( TARGET test_l95_hofx_compare
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS testoutput/hofx.log.out testoutput/hofx.test
                   TEST_DEPENDS test_l95_hofx_run )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_hofx_nomodel_run
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_hofx_nomodel.x
+                  ARGS testinput/hofx_nomodel.yaml testoutput/hofx_nomodel.log.out
+                  DEPENDS l95_hofx_nomodel.x
+                  TEST_DEPENDS test_l95_forecast_run test_l95_makeobs4d_run )
+
+ecbuild_add_test( TARGET test_l95_hofx_nomodel_compare
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS testoutput/hofx_nomodel.log.out testoutput/hofx.test
+                  TEST_DEPENDS test_l95_hofx_nomodel_run )
 
 #--------------------------------------------------------------------
 

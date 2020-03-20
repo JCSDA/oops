@@ -3,6 +3,7 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 list( APPEND oops_src_files
 
 oops/assimilation/BMatrix.h
+oops/assimilation/CalcHofX.h
 oops/assimilation/ControlIncrement.h
 oops/assimilation/ControlVariable.h
 oops/assimilation/CostFct3DVar.h
@@ -218,7 +219,7 @@ oops/runs/FindLocalObs.h
 oops/runs/Forecast.h
 oops/runs/GenEnsPertB.h
 oops/runs/HofX.h
-oops/runs/HofX3D.h
+oops/runs/HofXNoModel.h
 oops/runs/LETKF.h
 oops/runs/LocalHofX.h
 oops/runs/MakeObs.h
