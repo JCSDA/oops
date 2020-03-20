@@ -253,6 +253,7 @@ oops/util/Duration.cc
 oops/util/Duration.h
 oops/util/duration.intfb.h
 oops/util/Expect.h
+oops/util/FloatCompare.h
 oops/util/formats.h
 oops/util/IntSetParser.cc
 oops/util/IntSetParser.h
@@ -344,6 +345,7 @@ test/util/f_c_string.F90
 test/util/interpolator_interface.F90
 test/util/Parameters.h
 test/util/ScalarOrMap.h
+test/util/FloatCompare.h
 )
 
 list (APPEND oops_fheader_files
@@ -460,6 +462,11 @@ ecbuild_add_test( TARGET  test_util_intset_parser
 
 ecbuild_add_test( TARGET  test_util_scalarormap
                   SOURCES test/util/ScalarOrMap.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_floatcompare
+                  SOURCES test/util/FloatCompare.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 

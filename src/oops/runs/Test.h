@@ -26,6 +26,7 @@
 
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Application.h"
+#include "oops/util/FloatCompare.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
 
@@ -69,28 +70,6 @@ int Test::execute(const eckit::Configuration & config) const {
 // Return test status
   return result;
 }
-// -----------------------------------------------------------------------------
-template< typename T >
-bool is_close(T a, T b, T epsilon) {
-  // if nan or inf values, always return false
-  if (std::isnan(a) || std::isnan(b) || std::isinf(a) || std::isinf(b)) return false;
 
-  // otherwise, create a relative tolerance that is of the same type as a and b
-  // (which is what is_approximately_equal wants) and call is_approximately_equal.
-  T AbsA = fabs(a);
-  T AbsB = fabs(b);
-  T EpsAB = (AbsA < AbsB ? AbsB : AbsA) * epsilon;  // greater of AbsA, AbsB times epsilon
-  bool test_status = eckit::types::is_approximately_equal(a , b, EpsAB);
-  std::size_t num_digits = std::numeric_limits<T>::max_digits10;
-  if (test_status) {
-    Log::info() << "difference between " << std::setprecision(num_digits)
-      << a << " and " << b << " is less than " << EpsAB << " (PASS)" << std::endl;
-  } else {
-    Log::info() << "difference between " << std::setprecision(num_digits)
-      << a << " and " << b << " exceeds " << EpsAB << " (FAIL)" << std::endl;
-  }
-
-  return test_status;
-}
-  }  // namespace oops
+}  // namespace oops
 #endif  // OOPS_RUNS_TEST_H_
