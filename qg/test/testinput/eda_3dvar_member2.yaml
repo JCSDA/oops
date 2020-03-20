@@ -1,5 +1,5 @@
 EnsembleApplication:
-  members: 4
+  current_member: 2
 cost_function:
   cost_type: 3D-Var
   Jb:

@@ -36,7 +36,7 @@ list( APPEND qg_test_input
   testinput/dirac_qg_loc_4d.yaml
   testinput/dirac_no_loc.yaml
   testinput/eda_3dfgat.yaml
-  testinput/eda_3dvar.yaml
+  testinput/eda_3dvar_member2.yaml
   testinput/eda_4dvar.yaml
   testinput/ens_forecast.yaml
   testinput/ens_hofx.yaml
@@ -1196,10 +1196,10 @@ ecbuild_add_test( TARGET test_qg_eda_3dfgat
                   DEPENDS qg_eda.x
                   TEST_DEPENDS test_qg_forecast_run  test_qg_make_obs_4d_24h_run )
 
-ecbuild_add_test( TARGET test_qg_eda_3dvar
-                  MPI    4
+ecbuild_add_test( TARGET test_qg_eda_3dvar_member2
+                  MPI    1
                   COMMAND ${CMAKE_BINARY_DIR}/bin/qg_eda.x
-                  ARGS testinput/eda_3dvar.yaml
+                  ARGS testinput/eda_3dvar_member2.yaml
                   DEPENDS qg_eda.x
                   TEST_DEPENDS test_qg_forecast_run  test_qg_make_obs_4d_24h_run )
 

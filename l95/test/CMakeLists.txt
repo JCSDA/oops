@@ -24,7 +24,7 @@ list( APPEND l95_test_input
   testinput/diffstates.yaml
   testinput/eda.3dfgat.yaml
   testinput/eda.3dvar.yaml
-  testinput/eda.4dvar.yaml
+  testinput/eda.4dvar.member3.yaml
   testinput/enshofx.yaml
   testinput/forecast.yaml
   testinput/genenspert.yaml
@@ -876,10 +876,10 @@ ecbuild_add_test( TARGET test_l95_eda_3dvar
                   DEPENDS l95_eda.x
                   TEST_DEPENDS test_l95_forecast_run  test_l95_makeobs4d_run )
 
-ecbuild_add_test( TARGET test_l95_eda_4dvar
-                  MPI 4
+ecbuild_add_test( TARGET test_l95_eda_4dvar_member3
+                  MPI 1
                   COMMAND ${CMAKE_BINARY_DIR}/bin/l95_eda.x
-                  ARGS testinput/eda.4dvar.yaml
+                  ARGS testinput/eda.4dvar.member3.yaml
                   DEPENDS l95_eda.x
                   TEST_DEPENDS test_l95_forecast_run  test_l95_makeobs4d_run )
 

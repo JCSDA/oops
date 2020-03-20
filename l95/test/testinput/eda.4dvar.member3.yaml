@@ -1,5 +1,5 @@
 EnsembleApplication:
-  members: 4
+  current_member: 3
 cost_function:
   cost_type: 4D-Var
   window_begin: 2010-01-01T03:00:00Z
