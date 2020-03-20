@@ -16,7 +16,6 @@
 #include "eckit/exception/Exceptions.h"
 #include "eckit/utils/StringTools.h"
 #include "oops/util/parameters/ParameterTraits.h"
-#include "oops/util/parameters/ParameterTraitsMap.h"
 #include "oops/util/ScalarOrMap.h"
 
 namespace oops {
@@ -26,7 +25,7 @@ namespace oops {
 /// \note Maps need to be written in the JSON style; see the documentation of
 /// ParameterTraits<std::map<Key, Value>> for more details.
 template <typename Key, typename Value>
-struct ParameterTraits<util::ScalarOrMap<Key, Value>>
+struct ParameterTraits<util::ScalarOrMap<Key, Value>, std::false_type>
 {
   static boost::optional<util::ScalarOrMap<Key, Value>> get(
       const eckit::Configuration &config, const std::string& name) {

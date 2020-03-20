@@ -24,7 +24,6 @@
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/ParameterTraits.h"
-#include "oops/util/parameters/ParameterTraitsMap.h"
 #include "oops/util/parameters/ParameterTraitsScalarOrMap.h"
 
 namespace test {
@@ -59,6 +58,12 @@ struct ParameterTraits<test::Fruit> {
 
 namespace test {
 
+class RangeParameters : public oops::Parameters {
+ public:
+  oops::Parameter<float> minParameter{"min", 0.0f, this};
+  oops::Parameter<float> maxParameter{"max", 0.0f, this};
+};
+
 class MyParameters : public oops::Parameters {
  public:
   oops::Parameter<float> floatParameter{"float_parameter", 1.5f, this};
@@ -68,6 +73,9 @@ class MyParameters : public oops::Parameters {
   oops::OptionalParameter<util::DateTime> optDateTimeParameter{"opt_date_time_parameter", this};
   oops::OptionalParameter<util::Duration> optDurationParameter{"opt_duration_parameter", this};
   oops::Parameter<Fruit> fruitParameter{"fruit_parameter", Fruit::ORANGE, this};
+  oops::Parameter<RangeParameters> rangeParameter{"range_parameter", {}, this};
+  oops::Parameter<std::vector<int>> intParameters{"int_parameters", {}, this};
+  oops::Parameter<std::vector<RangeParameters>> rangeParameters{"range_parameters", {}, this};
 };
 
 class MyMapParameters : public oops::Parameters {
@@ -102,6 +110,10 @@ void testDefaultValues() {
   EXPECT(params.optDateTimeParameter.value() == boost::none);
   EXPECT(params.optDurationParameter.value() == boost::none);
   EXPECT(params.fruitParameter == Fruit::ORANGE);
+  EXPECT(params.rangeParameter.value().minParameter == 0.0f);
+  EXPECT(params.rangeParameter.value().maxParameter == 0.0f);
+  EXPECT(params.intParameters.value().empty());
+  EXPECT(params.rangeParameters.value().empty());
 
   const eckit::LocalConfiguration emptyConf(conf, "empty");
   params.deserialize(emptyConf);
@@ -113,6 +125,10 @@ void testDefaultValues() {
   EXPECT(params.optDateTimeParameter.value() == boost::none);
   EXPECT(params.optDurationParameter.value() == boost::none);
   EXPECT(params.fruitParameter == Fruit::ORANGE);
+  EXPECT(params.rangeParameter.value().minParameter == 0.0f);
+  EXPECT(params.rangeParameter.value().maxParameter == 0.0f);
+  EXPECT(params.intParameters.value().empty());
+  EXPECT(params.rangeParameters.value().empty());
 }
 
 void testCorrectValues() {
@@ -130,6 +146,14 @@ void testCorrectValues() {
   EXPECT(params.optDurationParameter.value() != boost::none);
   EXPECT_EQUAL(params.optDurationParameter.value().get(), util::Duration("PT01H02M03S"));
   EXPECT(params.fruitParameter == Fruit::APPLE);
+  EXPECT(params.rangeParameter.value().minParameter == 7.0f);
+  EXPECT(params.rangeParameter.value().maxParameter == 8.5f);
+  EXPECT(params.intParameters.value() == std::vector<int>({1, 2}));
+  EXPECT(params.rangeParameters.value().size() == 2);
+  EXPECT(params.rangeParameters.value()[0].minParameter == 9.0f);
+  EXPECT(params.rangeParameters.value()[0].maxParameter == 10.0f);
+  EXPECT(params.rangeParameters.value()[1].minParameter == 11.0f);
+  EXPECT(params.rangeParameters.value()[1].maxParameter == 12.0f);
 }
 
 void testIncorrectValueOfFloatParameter() {
@@ -165,6 +189,20 @@ void testIncorrectValueOfEnumParameter() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "error_in_fruit_parameter");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
+}
+
+void testIncorrectValueOfIntParameters() {
+  MyParameters params;
+  const eckit::LocalConfiguration conf(TestEnvironment::config(),
+                                       "error_in_int_parameters");
+  EXPECT_THROWS_AS(params.deserialize(conf), eckit::Exception);
+}
+
+void testIncorrectValueOfRangeParameters() {
+  MyParameters params;
+  const eckit::LocalConfiguration conf(TestEnvironment::config(),
+                                       "error_in_range_parameters");
+  EXPECT_THROWS_AS(params.deserialize(conf), eckit::Exception);
 }
 
 void testMapParameters(const MyMapParameters &params) {
@@ -280,6 +318,12 @@ class Parameters : public oops::Test {
     //                 });
     ts.emplace_back(CASE("util/Parameters/incorrectValueOfEnumParameter") {
                       testIncorrectValueOfEnumParameter();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testIncorrectValueOfIntParameters") {
+                      testIncorrectValueOfIntParameters();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testIncorrectValueOfRangeParameters") {
+                      testIncorrectValueOfRangeParameters();
                     });
     // Test fails because of a bug in the eckit YAML parser
     // ts.emplace_back(CASE("util/Parameters/mapParametersYamlStyleQuotedKeys") {

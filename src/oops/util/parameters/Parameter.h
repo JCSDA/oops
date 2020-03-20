@@ -17,6 +17,13 @@
 namespace oops {
 
 /// \brief A parameter with a default value.
+///
+/// \note Before declaring a variable of type Parameter<T> where T is something else than a plain
+/// old type (int, float etc.), std::map, std::string, std::vector, util::DateTime, util::Duration
+/// or a class derived from ParameterBase, check if there is a dedicated ParameterTraits*.h header
+/// containing the specialization of ParameterTraits for type T. If so, include it before the
+/// variable declaration. (The "main" ParameterTraits.h header only contains specializations of
+/// ParameterTraits for the types listed above).
 template <typename T>
 class Parameter : public ParameterBase {
  public:

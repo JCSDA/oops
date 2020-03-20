@@ -305,7 +305,6 @@ oops/util/parameters/ParameterBase.h
 oops/util/parameters/Parameters.cc
 oops/util/parameters/Parameters.h
 oops/util/parameters/ParameterTraits.h
-oops/util/parameters/ParameterTraitsMap.h
 oops/util/parameters/ParameterTraitsScalarOrMap.h
 
 test/TestEnvironment.h
