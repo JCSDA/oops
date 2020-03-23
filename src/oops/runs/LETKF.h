@@ -17,26 +17,22 @@
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/assimilation/CalcHofX.h"
 #include "oops/assimilation/State4D.h"
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
 #include "oops/base/GridPoint.h"
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/instantiateObsFilterFactory.h"
-#include "oops/base/ObsAuxControls.h"
 #include "oops/base/ObsEnsemble.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
-#include "oops/base/Observers.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/StateEnsemble.h"
-#include "oops/base/StateInfo.h"
-#include "oops/base/StateWriter.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/interface/Model.h"
-#include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Application.h"
@@ -56,7 +52,6 @@ namespace oops {
  * filter. Physica D: Nonlinear Phenomena, 230(1-2), 112-126.
  */
 template <typename MODEL> class LETKF : public Application {
-  typedef ModelAuxControl<MODEL>    ModelAux_;
   typedef Departures<MODEL>         Departures_;
   typedef DeparturesEnsemble<MODEL> DeparturesEnsemble_;
   typedef Geometry<MODEL>           Geometry_;
@@ -64,7 +59,6 @@ template <typename MODEL> class LETKF : public Application {
   typedef Increment<MODEL>          Increment_;
   typedef IncrementEnsemble<MODEL>  IncrementEnsemble_;
   typedef Model<MODEL>              Model_;
-  typedef ObsAuxControls<MODEL>     ObsAuxCtrls_;
   typedef ObsEnsemble<MODEL>        ObsEnsemble_;
   typedef ObsErrors<MODEL>          ObsErrors_;
   typedef ObsSpaces<MODEL>          ObsSpaces_;
@@ -72,8 +66,6 @@ template <typename MODEL> class LETKF : public Application {
   typedef State<MODEL>              State_;
   typedef State4D<MODEL>            State4D_;
   typedef StateEnsemble<MODEL>      StateEnsemble_;
-  template <typename DATA> using ObsData_ = ObsDataVector<MODEL, DATA>;
-  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<MODEL, DATA> >;
 
  public:
 // -----------------------------------------------------------------------------
@@ -110,19 +102,7 @@ template <typename MODEL> class LETKF : public Application {
     const eckit::LocalConfiguration obsConfig(fullConfig, "Observations");
     Log::debug() << "Observation configuration is: " << obsConfig << std::endl;
     ObsSpaces_ obsdb(obsConfig, this->getComm(), winbgn, winend);
-    ObsAuxCtrls_ ybias(obsdb, obsConfig);
     Observations_ yobs(obsdb, "ObsValue");
-
-    // Setup initial obs error / qc
-    // TODO(Travis) setup QC flags as well
-    std::vector<ObsDataPtr_<float> > obserr;
-    for (unsigned jj=0; jj < obsdb.size(); ++jj) {
-      ObsDataPtr_<float> tmperr(new ObsData_<float>(
-        obsdb[jj], obsdb[jj].obsvariables(), "ObsError"));
-      obserr.push_back(tmperr);
-      Log::info() << "initialize obs error: " << *tmperr << std::endl;
-      obserr[jj]->save("EffectiveError");
-    }
 
     // Get initial state configurations
     const eckit::LocalConfiguration initialConfig(fullConfig, "Initial Condition");
@@ -130,28 +110,25 @@ template <typename MODEL> class LETKF : public Application {
     // Loop over all ensemble members
     StateEnsemble_ ens_xx(resol, model.variables(), initialConfig);
     ObsEnsemble_ obsens(obsdb, ens_xx.size());
+
+    // Initialize observer
+    CalcHofX<MODEL> hofx(obsdb, resol, fullConfig);
     for (unsigned jj = 0; jj < ens_xx.size(); ++jj) {
       // TODO(Travis) change the way input file name is specified, make
       //  more similar to how the output ens config is done
       Log::test() << "Initial state for member " << jj+1 << ":" << ens_xx[jj] << std::endl;
 
-      // setup postprocessor: observers
-      // TODO(Travis) obs filters not currently being used here, need to be added
-      PostProcessor<State_> post;
-      boost::shared_ptr<Observers<MODEL, State_> >
-      pobs(new Observers<MODEL, State_> (obsConfig, obsdb, ybias));
-      post.enrollProcessor(pobs);
-
-      // compute H(x)
-      // TODO(Travis) this is the 3D LETKF case, need to add model forecast for 4D LETKF
-      post.initialize(ens_xx[jj][0], winhalf, winlen);
-      post.process(ens_xx[jj][0]);
-      post.finalize(ens_xx[jj][0]);
-
-      // save H(x)
-      obsens[jj] = pobs->hofx();
+      // compute and save H(x)
+      obsens[jj] = hofx.compute(ens_xx[jj]);
       Log::test() << "H(x) for member " << jj+1 << ":" << std::endl << obsens[jj] << std::endl;
       obsens[jj].save("hofx0_"+std::to_string(jj+1));
+    }
+    // TODO(someone) still need to use QC flags (mask obsens)
+    // QC flags and Obs errors are set to that of the last
+    // ensemble member (those obs errors will be used in the assimilation)
+    for (size_t jobs = 0; jobs < obsdb.size(); ++jobs) {
+      hofx.qcFlags(jobs).save("EffectiveQC");
+      hofx.obsErrors(jobs).save("EffectiveError");
     }
 
     // calculate background mean
@@ -162,9 +139,6 @@ template <typename MODEL> class LETKF : public Application {
     IncrementEnsemble_ bkg_pert(ens_xx, bkg_mean, model.variables());
 
     // TODO(Travis) optionally save the background mean / standard deviation
-
-    // obs filters
-    // TODO(Travis)
 
     // calculate H(x) ensemble mean
     Observations_ yb_mean(obsens.mean());
@@ -244,21 +218,9 @@ template <typename MODEL> class LETKF : public Application {
     }
 
     // calculate oman
-    // TODO(Travis) redundant code with the previous H(x) loop... simplify this
     for (unsigned jj = 0; jj < ens_xx.size(); ++jj) {
-      // setup postprocessor: observers
-      PostProcessor<State_> post;
-      boost::shared_ptr<Observers<MODEL, State_> >
-      pobs(new Observers<MODEL, State_> (obsConfig, obsdb, ybias));
-      post.enrollProcessor(pobs);
-
-      // compute H(x)
-      post.initialize(ens_xx[jj][0], winhalf, winlen);
-      post.process(ens_xx[jj][0]);
-      post.finalize(ens_xx[jj][0]);
-
-      // save H(x)
-      obsens[jj] = pobs->hofx();
+      // compute and save H(x)
+      obsens[jj] = hofx.compute(ens_xx[jj]);
       Log::test() << "H(x) for member " << jj+1 << ":" << std::endl << obsens[jj] << std::endl;
       obsens[jj].save("hofx1_"+std::to_string(jj+1));
     }

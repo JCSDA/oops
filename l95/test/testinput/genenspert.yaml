@@ -3,7 +3,7 @@ Covariance:
   date: '2010-01-01T00:00:00Z'
   length_scale: '1.0'
   standard_deviation: '0.6'
-forecast_length: PT15H
+forecast_length: PT27H
 initial:
   date: '2010-01-01T00:00:00Z'
   filename: Data/test.an.2010-01-01T00:00:00Z.l95

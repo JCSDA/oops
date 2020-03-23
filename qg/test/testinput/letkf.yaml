@@ -1,6 +1,6 @@
 Assimilation Window:
-  window_begin: &date 2010-01-01T00:00:00Z
-  window_length: PT24H
+  window_begin: &date_bgn 2010-01-01T00:00:00Z
+  window_length: PT12H
 
 Geometry:
   nx: 40
@@ -15,18 +15,44 @@ Model:
   variables:
   - x
 
+# update (and use for H(x) 3 states at 00Z, 06Z & 12Z
 Initial Condition:
   members:
-  - date: *date
-    filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1D
-  - date: *date
-    filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1D
-  - date: *date
-    filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1D
-  - date: *date
-    filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1D
-  - date: *date
-    filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1D
+  - state:
+    - date: *date_bgn
+      filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1D
+    - date: &date_mid 2010-01-01T06:00:00Z
+      filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT6H
+    - date: &date_end 2010-01-01T12:00:00Z
+      filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT12H
+  - state:
+    - date: *date_bgn
+      filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1D
+    - date: *date_mid
+      filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1DT6H
+    - date: *date_end
+      filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1DT12H
+  - state:
+    - date: *date_bgn
+      filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1D
+    - date: *date_mid
+      filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1DT6H
+    - date: *date_end
+      filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1DT12H
+  - state:
+    - date: *date_bgn
+      filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1D
+    - date: *date_mid
+      filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT6H
+    - date: *date_end
+      filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT12H
+  - state:
+    - date: *date_bgn
+      filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1D
+    - date: *date_mid
+      filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1DT6H
+    - date: *date_end
+      filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1DT12H
 
 Observations:
   ObsTypes:
@@ -71,7 +97,16 @@ letkf:
     mult: 1.1
 
 output:
-  datadir: Data
-  date: *date
-  exp: letkf.%{member}%
-  type: an
+  state:
+  - datadir: Data
+    date: *date_bgn
+    exp: letkf.bgn.%{member}%
+    type: an
+  - datadir: Data
+    date: *date_mid
+    exp: letkf.mid.%{member}%
+    type: an
+  - datadir: Data
+    date: *date_end
+    exp: letkf.end.%{member}%
+    type: an

@@ -6,10 +6,24 @@ Test     :   Boundary conditions are activated
 Test     :   Scaling=  1e+08, Min=     -4.7030, Max=      0.9333, RMS=      1.8437
 Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
 Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
+Test     :   Valid time: 2010-01-01T06:00:00Z
+Test     :   Resolution = 40, 20, 2
+Test     :   Variable = streamfunction
+Test     :   Boundary conditions are activated
+Test     :   Scaling=  1e+08, Min=     -4.5492, Max=      1.1027, RMS=      1.7951
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
+Test     :   Valid time: 2010-01-01T12:00:00Z
+Test     :   Resolution = 40, 20, 2
+Test     :   Variable = streamfunction
+Test     :   Boundary conditions are activated
+Test     :   Scaling=  1e+08, Min=     -4.4224, Max=      1.2418, RMS=      1.7584
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     : H(x) for member 1:
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4020, Max=      0.7022, Average=     -1.2866
-Test     : Wind nobs= 160 Scaling=     10, Min=    -10.8829, Max=      9.5123, Average=      1.1792
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.2660, Max=     12.6346, Average=      4.7231
+Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4020, Max=      0.8695, Average=     -1.2080
+Test     : Wind nobs= 160 Scaling=     10, Min=    -12.3724, Max=      9.5123, Average=      1.1752
+Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.1600, Max=     12.6346, Average=      4.6914
 Test     : Initial state for member 2:
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, 2
@@ -18,10 +32,24 @@ Test     :   Boundary conditions are activated
 Test     :   Scaling=  1e+08, Min=     -4.6931, Max=      0.9933, RMS=      1.7976
 Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
 Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
+Test     :   Valid time: 2010-01-01T06:00:00Z
+Test     :   Resolution = 40, 20, 2
+Test     :   Variable = streamfunction
+Test     :   Boundary conditions are activated
+Test     :   Scaling=  1e+08, Min=     -4.5020, Max=      0.9853, RMS=      1.7427
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
+Test     :   Valid time: 2010-01-01T12:00:00Z
+Test     :   Resolution = 40, 20, 2
+Test     :   Variable = streamfunction
+Test     :   Boundary conditions are activated
+Test     :   Scaling=  1e+08, Min=     -4.3426, Max=      0.9810, RMS=      1.6992
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     : H(x) for member 2:
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.3042, Max=      0.7774, Average=     -1.2872
-Test     : Wind nobs= 160 Scaling=     10, Min=     -9.8243, Max=      9.4639, Average=      1.1695
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.7536, Max=     14.4618, Average=      4.7076
+Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.3042, Max=      0.8908, Average=     -1.2262
+Test     : Wind nobs= 160 Scaling=     10, Min=    -10.5436, Max=      9.4639, Average=      1.1232
+Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.3163, Max=     14.4618, Average=      4.6283
 Test     : Initial state for member 3:
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, 2
@@ -30,10 +58,24 @@ Test     :   Boundary conditions are activated
 Test     :   Scaling=  1e+08, Min=     -4.9074, Max=      1.0042, RMS=      1.8589
 Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
 Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
+Test     :   Valid time: 2010-01-01T06:00:00Z
+Test     :   Resolution = 40, 20, 2
+Test     :   Variable = streamfunction
+Test     :   Boundary conditions are activated
+Test     :   Scaling=  1e+08, Min=     -4.6561, Max=      1.0048, RMS=      1.8093
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
+Test     :   Valid time: 2010-01-01T12:00:00Z
+Test     :   Resolution = 40, 20, 2
+Test     :   Variable = streamfunction
+Test     :   Boundary conditions are activated
+Test     :   Scaling=  1e+08, Min=     -4.4601, Max=      1.0169, RMS=      1.7665
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     : H(x) for member 3:
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4203, Max=      0.6534, Average=     -1.3514
-Test     : Wind nobs= 160 Scaling=     10, Min=     -7.1882, Max=      9.9178, Average=      1.2545
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.4582, Max=     12.6672, Average=      4.5594
+Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4203, Max=      0.8474, Average=     -1.2861
+Test     : Wind nobs= 160 Scaling=     10, Min=     -7.8772, Max=      9.9178, Average=      1.2338
+Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.4582, Max=     12.6672, Average=      4.5105
 Test     : Initial state for member 4:
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, 2
@@ -42,10 +84,24 @@ Test     :   Boundary conditions are activated
 Test     :   Scaling=  1e+08, Min=     -4.7276, Max=      0.9481, RMS=      1.7978
 Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
 Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
+Test     :   Valid time: 2010-01-01T06:00:00Z
+Test     :   Resolution = 40, 20, 2
+Test     :   Variable = streamfunction
+Test     :   Boundary conditions are activated
+Test     :   Scaling=  1e+08, Min=     -4.5080, Max=      0.9857, RMS=      1.7375
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
+Test     :   Valid time: 2010-01-01T12:00:00Z
+Test     :   Resolution = 40, 20, 2
+Test     :   Variable = streamfunction
+Test     :   Boundary conditions are activated
+Test     :   Scaling=  1e+08, Min=     -4.3446, Max=      1.0277, RMS=      1.6981
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     : H(x) for member 4:
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.3782, Max=      0.7620, Average=     -1.3036
-Test     : Wind nobs= 160 Scaling=     10, Min=     -9.2618, Max=     10.4635, Average=      1.1380
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.6995, Max=     13.0207, Average=      4.6417
+Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.3782, Max=      0.8705, Average=     -1.2265
+Test     : Wind nobs= 160 Scaling=     10, Min=     -9.7651, Max=     10.6205, Average=      1.1342
+Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.0348, Max=     13.0207, Average=      4.6108
 Test     : Initial state for member 5:
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, 2
@@ -54,10 +110,24 @@ Test     :   Boundary conditions are activated
 Test     :   Scaling=  1e+08, Min=     -4.7215, Max=      0.9905, RMS=      1.8304
 Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
 Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
+Test     :   Valid time: 2010-01-01T06:00:00Z
+Test     :   Resolution = 40, 20, 2
+Test     :   Variable = streamfunction
+Test     :   Boundary conditions are activated
+Test     :   Scaling=  1e+08, Min=     -4.4705, Max=      0.9627, RMS=      1.7467
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
+Test     :   Valid time: 2010-01-01T12:00:00Z
+Test     :   Resolution = 40, 20, 2
+Test     :   Variable = streamfunction
+Test     :   Boundary conditions are activated
+Test     :   Scaling=  1e+08, Min=     -4.3100, Max=      0.9588, RMS=      1.6904
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     : H(x) for member 5:
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.2606, Max=      0.7469, Average=     -1.3411
-Test     : Wind nobs= 160 Scaling=     10, Min=     -6.1524, Max=      9.9153, Average=      1.3705
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.6251, Max=     12.1559, Average=      4.4910
+Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.2606, Max=      0.7697, Average=     -1.2415
+Test     : Wind nobs= 160 Scaling=     10, Min=     -6.4074, Max=      9.9153, Average=      1.3381
+Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.5641, Max=     12.1559, Average=      4.4377
 Test     : Background mean :
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, 2
@@ -66,41 +136,55 @@ Test     :   Boundary conditions are activated
 Test     :   Scaling=  1e+08, Min=     -4.7486, Max=      0.9657, RMS=      1.8216
 Test     :   Scaling=  1e+08, Min=     -4.0032, Max=      0.0000, RMS=      2.0632
 Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
+Test     :   Valid time: 2010-01-01T06:00:00Z
+Test     :   Resolution = 40, 20, 2
+Test     :   Variable = streamfunction
+Test     :   Boundary conditions are activated
+Test     :   Scaling=  1e+08, Min=     -4.5279, Max=      0.9305, RMS=      1.7609
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=      0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
+Test     :   Valid time: 2010-01-01T12:00:00Z
+Test     :   Resolution = 40, 20, 2
+Test     :   Variable = streamfunction
+Test     :   Boundary conditions are activated
+Test     :   Scaling=  1e+08, Min=     -4.3566, Max=      0.9538, RMS=      1.7157
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=      0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
 Test     : H(x) ensemble background mean: 
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.3531, Max=      0.7284, Average=     -1.3140
-Test     : Wind nobs= 160 Scaling=     10, Min=     -8.2640, Max=      9.8546, Average=      1.2223
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      1.2060, Max=     12.9881, Average=      4.6246
+Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.3531, Max=      0.8496, Average=     -1.2376
+Test     : Wind nobs= 160 Scaling=     10, Min=     -9.3325, Max=      9.8546, Average=      1.2009
+Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.6109, Max=     12.9881, Average=      4.5757
 Test     : background y - H(x): 
-Test     : Stream nobs= 300 Scaling=  1e+05, Min=   -341.3083, Max=    732.3492, Average=     -6.3976
-Test     : Wind nobs= 160 Scaling=      1, Min=    -43.8541, Max=     22.5876, Average=     -1.6652
-Test     : WSpeed nobs= 300 Scaling=      1, Min=    -30.3993, Max=     41.0551, Average=      3.6941
+Test     : Stream nobs= 300 Scaling=  1e+06, Min=    -42.1833, Max=     37.8450, Average=     -8.2739
+Test     : Wind nobs= 160 Scaling=      1, Min=    -37.8979, Max=     19.0936, Average=     -1.4507
+Test     : WSpeed nobs= 300 Scaling=      1, Min=    -27.8210, Max=     32.2979, Average=      4.1823
 Test     : H(x) for member 1:
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4763, Max=      0.7265, Average=     -1.3246
-Test     : Wind nobs= 160 Scaling=     10, Min=    -13.5231, Max=     10.3592, Average=      1.0710
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.4873, Max=     11.8127, Average=      4.7292
+Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4486, Max=      0.9183, Average=     -1.2800
+Test     : Wind nobs= 160 Scaling=     10, Min=     -9.6559, Max=     10.8809, Average=      1.1563
+Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.3355, Max=     12.1541, Average=      4.6685
 Test     : H(x) for member 2:
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4257, Max=      0.7668, Average=     -1.3243
-Test     : Wind nobs= 160 Scaling=     10, Min=    -13.1337, Max=     10.3565, Average=      1.0599
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.6215, Max=     12.7248, Average=      4.7426
+Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.3983, Max=      0.9307, Average=     -1.2890
+Test     : Wind nobs= 160 Scaling=     10, Min=     -8.3423, Max=     10.7805, Average=      1.1252
+Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.5873, Max=     13.0865, Average=      4.6272
 Test     : H(x) for member 3:
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4861, Max=      0.6945, Average=     -1.3582
-Test     : Wind nobs= 160 Scaling=     10, Min=    -11.6464, Max=     10.5874, Average=      1.1099
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.5897, Max=     11.8908, Average=      4.7018
+Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4582, Max=      0.9037, Average=     -1.3205
+Test     : Wind nobs= 160 Scaling=     10, Min=     -9.1028, Max=     11.1267, Average=      1.1876
+Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.5230, Max=     12.2001, Average=      4.6677
 Test     : H(x) for member 4:
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4641, Max=      0.7566, Average=     -1.3332
-Test     : Wind nobs= 160 Scaling=     10, Min=    -12.8722, Max=     10.9041, Average=      1.0461
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.9422, Max=     12.0366, Average=      4.7320
+Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4362, Max=      0.9177, Average=     -1.2892
+Test     : Wind nobs= 160 Scaling=     10, Min=     -8.4658, Max=     11.8730, Average=      1.1356
+Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.1949, Max=     12.3519, Average=      4.6564
 Test     : H(x) for member 5:
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4023, Max=      0.7470, Average=     -1.3526
-Test     : Wind nobs= 160 Scaling=     10, Min=     -9.9822, Max=     10.5982, Average=      1.1763
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      1.1666, Max=     11.6058, Average=      4.6519
+Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.3753, Max=      0.8596, Average=     -1.2972
+Test     : Wind nobs= 160 Scaling=     10, Min=     -8.3380, Max=     11.2014, Average=      1.2450
+Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.7960, Max=     11.8936, Average=      4.5836
 Test     : H(x) ensemble analysis mean: 
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4509, Max=      0.7383, Average=     -1.3386
-Test     : Wind nobs= 160 Scaling=     10, Min=    -12.2315, Max=     10.5611, Average=      1.0927
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.9724, Max=     12.0142, Average=      4.7115
+Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4233, Max=      0.9060, Average=     -1.2952
+Test     : Wind nobs= 160 Scaling=     10, Min=     -8.5660, Max=     11.1725, Average=      1.1699
+Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.8757, Max=     12.3372, Average=      4.6407
 Test     : analysis y - H(x): 
-Test     : Stream nobs= 300 Scaling=  1e+06, Min=    -28.7416, Max=     62.4989, Average=      1.8208
-Test     : Wind nobs= 160 Scaling=      1, Min=    -57.2419, Max=     48.0844, Average=     -0.3683
-Test     : WSpeed nobs= 300 Scaling=      1, Min=    -33.1596, Max=     43.5637, Average=      2.8245
-Test     : ombg RMS: 1.227e+07
-Test     : oman RMS: 8.95e+06
+Test     : Stream nobs= 300 Scaling=  1e+06, Min=    -33.2617, Max=     25.8983, Average=     -2.5176
+Test     : Wind nobs= 160 Scaling=      1, Min=    -31.2169, Max=     22.3790, Average=     -1.1411
+Test     : WSpeed nobs= 300 Scaling=      1, Min=    -27.3667, Max=     44.2157, Average=      3.5329
+Test     : ombg RMS: 1.105e+07
+Test     : oman RMS: 6.689e+06

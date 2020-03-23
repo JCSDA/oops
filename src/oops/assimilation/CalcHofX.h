@@ -65,6 +65,10 @@ class CalcHofX {
   const ObsData_<float> & obsErrors(const size_t ii) const {return *(obserr_[ii]);}
 
  private:
+/// \brief helper method to initialize qc flags and observer
+  void initObserver();
+
+  const eckit::LocalConfiguration obsconf_;  // configuration for observer
   const ObsSpaces_ & obspaces_;              // ObsSpaces used in H(x)
   const Geometry_ &  geometry_;              // Model Geometry
   ObsAuxCtrls_       ybias_;                 // obs bias
@@ -82,17 +86,18 @@ class CalcHofX {
 template <typename MODEL>
 CalcHofX<MODEL>::CalcHofX(const ObsSpaces_ & obspaces, const Geometry_ & geometry,
                           const eckit::LocalConfiguration & config) :
+  obsconf_(config.getSubConfiguration("Observations")),
   obspaces_(obspaces), geometry_(geometry),
   ybias_(obspaces_, config.getSubConfiguration("Observations")),
   moderr_(geometry_, config.getSubConfiguration("Initial Condition")),
   winbgn_(config.getString("Assimilation Window.window_begin")),
-  winlen_(config.getString("Assimilation Window.window_length"))
-{
-//  Setup QC filters
-  const eckit::LocalConfiguration obsconf(config, "Observations");
-  std::vector<eckit::LocalConfiguration> typeconfs;
-  obsconf.get("ObsTypes", typeconfs);
+  winlen_(config.getString("Assimilation Window.window_length")) {}
 
+// -----------------------------------------------------------------------------
+template <typename MODEL>
+void CalcHofX<MODEL>::initObserver() {
+  qcflags_.clear();
+  obserr_.clear();
   qcflags_.reserve(obspaces_.size());
   obserr_.reserve(obspaces_.size());
   for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
@@ -103,9 +108,8 @@ CalcHofX<MODEL>::CalcHofX(const ObsSpaces_ & obspaces, const Geometry_ & geometr
     obserr_.emplace_back(boost::make_shared<ObsData_<float>>(obspaces_[jj],
                             obspaces_[jj].obsvariables(), "ObsError"));
   }
-
 //  Setup Observers
-  pobs_.reset(new Observers<MODEL, State_>(obsconf, obspaces_, ybias_, qcflags_, obserr_));
+  pobs_.reset(new Observers<MODEL, State_>(obsconf_, obspaces_, ybias_, qcflags_, obserr_));
   oops::Log::trace() << "CalcHofX<MODEL>::CalcHofX created" << std::endl;
 }
 
@@ -116,6 +120,7 @@ const Observations<MODEL> & CalcHofX<MODEL>::compute(const Model_ & model, State
                                                      PostProcessor_ & post) {
   oops::Log::trace() << "CalcHofX<MODEL>::compute (model) start" << std::endl;
 
+  this->initObserver();
 //  run the model and compute H(x)
   post.enrollProcessor(pobs_);
   model.forecast(xx, moderr_, winlen_, post);
@@ -129,6 +134,8 @@ const Observations<MODEL> & CalcHofX<MODEL>::compute(const Model_ & model, State
 template <typename MODEL>
 const Observations<MODEL> & CalcHofX<MODEL>::compute(const State4D_ & xx) {
   oops::Log::trace() << "CalcHofX<MODEL>::compute (state4D) start" << std::endl;
+
+  this->initObserver();
   size_t nstates = xx.size();
   util::DateTime winend = winbgn_ + winlen_;
   util::Duration tstep = winlen_;   // for a single state

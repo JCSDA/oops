@@ -1,6 +1,6 @@
 Assimilation Window:
-  window_begin: &date 2010-01-01T03:00:00Z
-  window_length: P2D
+  window_begin: 2010-01-01T21:00:00Z
+  window_length: PT6H
 
 Geometry:
   resol: 40
@@ -10,18 +10,19 @@ Model:
   name: L95
   tstep: PT1H30M
 
+# use 3D for middle of the window
 Initial Condition:
   members:
+  - date: &date 2010-01-02T00:00:00Z
+    filename: Data/test.ens.1.2010-01-01T00:00:00Z.P1D
   - date: *date
-    filename: Data/test.ens.1.2010-01-01T00:00:00Z.PT3H
+    filename: Data/test.ens.2.2010-01-01T00:00:00Z.P1D
   - date: *date
-    filename: Data/test.ens.2.2010-01-01T00:00:00Z.PT3H
+    filename: Data/test.ens.3.2010-01-01T00:00:00Z.P1D
   - date: *date
-    filename: Data/test.ens.3.2010-01-01T00:00:00Z.PT3H
+    filename: Data/test.ens.4.2010-01-01T00:00:00Z.P1D
   - date: *date
-    filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT3H
-  - date: *date
-    filename: Data/test.ens.5.2010-01-01T00:00:00Z.PT3H
+    filename: Data/test.ens.5.2010-01-01T00:00:00Z.P1D
 
 Observations:
   ObsTypes:

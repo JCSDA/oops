@@ -1,48 +1,48 @@
 Test     : Initial state for member 1:
-Test     :  Valid time: 2010-01-01T03:00:00Z
-Test     :  Min=6.77563, Max=9.58375, Average=8.05758
+Test     :  Valid time: 2010-01-02T00:00:00Z
+Test     :  Min=3.53609, Max=11.1974, Average=7.90978
 Test     : H(x) for member 1:
-Test     : Lorenz 95 nobs= 120 Min=6.77563, Max=9.58375, Average=8.05758
+Test     : Lorenz 95 nobs= 120 Min=3.53609, Max=11.1974, Average=7.90978
 Test     : Initial state for member 2:
-Test     :  Valid time: 2010-01-01T03:00:00Z
-Test     :  Min=6.65478, Max=9.15492, Average=7.92347
+Test     :  Valid time: 2010-01-02T00:00:00Z
+Test     :  Min=3.77507, Max=11.1844, Average=7.75047
 Test     : H(x) for member 2:
-Test     : Lorenz 95 nobs= 120 Min=6.65478, Max=9.15492, Average=7.92347
+Test     : Lorenz 95 nobs= 120 Min=3.77507, Max=11.1844, Average=7.75047
 Test     : Initial state for member 3:
-Test     :  Valid time: 2010-01-01T03:00:00Z
-Test     :  Min=6.68284, Max=8.6424, Average=7.86167
+Test     :  Valid time: 2010-01-02T00:00:00Z
+Test     :  Min=5.36882, Max=10.844, Average=7.80576
 Test     : H(x) for member 3:
-Test     : Lorenz 95 nobs= 120 Min=6.68284, Max=8.6424, Average=7.86167
+Test     : Lorenz 95 nobs= 120 Min=5.36882, Max=10.844, Average=7.80576
 Test     : Initial state for member 4:
-Test     :  Valid time: 2010-01-01T03:00:00Z
-Test     :  Min=6.31785, Max=9.21326, Average=7.85972
+Test     :  Valid time: 2010-01-02T00:00:00Z
+Test     :  Min=4.14639, Max=11.6734, Average=7.76001
 Test     : H(x) for member 4:
-Test     : Lorenz 95 nobs= 120 Min=6.31785, Max=9.21326, Average=7.85972
+Test     : Lorenz 95 nobs= 120 Min=4.14639, Max=11.6734, Average=7.76001
 Test     : Initial state for member 5:
-Test     :  Valid time: 2010-01-01T03:00:00Z
-Test     :  Min=6.73481, Max=9.69558, Average=7.75098
+Test     :  Valid time: 2010-01-02T00:00:00Z
+Test     :  Min=3.17563, Max=10.8183, Average=7.60243
 Test     : H(x) for member 5:
-Test     : Lorenz 95 nobs= 120 Min=6.73481, Max=9.69558, Average=7.75098
+Test     : Lorenz 95 nobs= 120 Min=3.17563, Max=10.8183, Average=7.60243
 Test     : Background mean :
-Test     :  Valid time: 2010-01-01T03:00:00Z
-Test     :  Min=6.79027, Max=8.59671, Average=7.89068
+Test     :  Valid time: 2010-01-02T00:00:00Z
+Test     :  Min=5.25199, Max=9.50208, Average=7.76569
 Test     : H(x) ensemble background mean: 
-Test     : Lorenz 95 nobs= 120 Min=6.79027, Max=8.59671, Average=7.89068
+Test     : Lorenz 95 nobs= 120 Min=5.25199, Max=9.50208, Average=7.76569
 Test     : background y - H(x): 
-Test     : Lorenz 95 nobs= 120 Min=-1.0209, Max=1.82614, Average=0.120706
+Test     : Lorenz 95 nobs= 120 Min=-1.48379, Max=2.74405, Average=0.2457
 Test     : H(x) for member 1:
-Test     : Lorenz 95 nobs= 120 Min=7.08564, Max=9.11202, Average=8.09467
+Test     : Lorenz 95 nobs= 120 Min=6.68364, Max=9.53009, Average=8.06591
 Test     : H(x) for member 2:
-Test     : Lorenz 95 nobs= 120 Min=7.15163, Max=8.77578, Average=8.01142
+Test     : Lorenz 95 nobs= 120 Min=5.96123, Max=9.4737, Average=7.97953
 Test     : H(x) for member 3:
-Test     : Lorenz 95 nobs= 120 Min=6.36824, Max=8.70846, Average=7.97338
+Test     : Lorenz 95 nobs= 120 Min=6.32321, Max=9.85722, Average=8.00665
 Test     : H(x) for member 4:
-Test     : Lorenz 95 nobs= 120 Min=6.48453, Max=9.31621, Average=7.96651
+Test     : Lorenz 95 nobs= 120 Min=5.34389, Max=10.856, Average=7.98602
 Test     : H(x) for member 5:
-Test     : Lorenz 95 nobs= 120 Min=6.52459, Max=8.91762, Average=7.90543
+Test     : Lorenz 95 nobs= 120 Min=5.88289, Max=9.31501, Average=7.90348
 Test     : H(x) ensemble analysis mean: 
-Test     : Lorenz 95 nobs= 120 Min=6.72293, Max=8.76237, Average=7.99028
+Test     : Lorenz 95 nobs= 120 Min=6.73044, Max=9.19002, Average=7.98832
 Test     : analysis y - H(x): 
-Test     : Lorenz 95 nobs= 120 Min=-0.434311, Max=0.674582, Average=0.0211088
-Test     : ombg RMS: 0.501741
-Test     : oman RMS: 0.146135
+Test     : Lorenz 95 nobs= 120 Min=-0.265703, Max=0.441464, Average=0.0230717
+Test     : ombg RMS: 0.864096
+Test     : oman RMS: 0.146322
