@@ -23,7 +23,6 @@
 #include "oops/base/ModelSpaceCovariance4DBase.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/PostProcessor.h"
-#include "oops/base/StateWriter.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"

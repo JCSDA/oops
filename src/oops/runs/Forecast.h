@@ -74,7 +74,7 @@ template <typename MODEL> class Forecast : public Application {
     post.enrollProcessor(new StateInfo<State_>("fc", prtConfig));
 
     const eckit::LocalConfiguration outConfig(fullConfig, "output");
-    post.enrollProcessor(new StateWriter<State_>(bgndate, outConfig));
+    post.enrollProcessor(new StateWriter<State_>(outConfig));
 
 //  Run forecast
     model.forecast(xx, moderr, fclength, post);

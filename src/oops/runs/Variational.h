@@ -92,7 +92,7 @@ template <typename MODEL> class Variational : public Application {
     PostProcessor<State_> post;
     const util::DateTime winbgn(cfConf.getString("window_begin"));
     const eckit::LocalConfiguration outConfig(fullConfig, "output");
-    post.enrollProcessor(new StateWriter<State_>(winbgn, outConfig));
+    post.enrollProcessor(new StateWriter<State_>(outConfig));
 
     eckit::LocalConfiguration finalConfig(fullConfig, "final");
     finalConfig.set("iteration", iouter);

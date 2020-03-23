@@ -17,6 +17,7 @@
 #include <boost/noncopyable.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/base/PostTimerParameters.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 
@@ -32,19 +33,14 @@ namespace oops {
 class PostTimer : private boost::noncopyable {
  public:
   PostTimer();
-  explicit PostTimer(const util::Duration &);
   explicit PostTimer(const eckit::Configuration &);
-  PostTimer(const util::DateTime &, const eckit::Configuration &);
   PostTimer(const util::DateTime &, const util::DateTime &, const util::Duration &);
-  ~PostTimer() {}
 
-  void initialize(const util::DateTime &, const util::DateTime &,
-                  const util::Duration &);
+  void initialize(const util::DateTime &, const util::DateTime &);
   bool itIsTime(const util::DateTime &);
 
  private:
-  const eckit::LocalConfiguration conf_;
-  util::Duration freq_;
+  PostTimerParameters options_;
   util::DateTime bgn_;
   util::DateTime end_;
   std::unique_ptr<util::DateTime> start_;

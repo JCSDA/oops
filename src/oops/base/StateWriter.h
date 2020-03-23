@@ -25,8 +25,8 @@ namespace oops {
 
 template <typename FLDS> class StateWriter : public PostBase<FLDS> {
  public:
-  StateWriter(const util::DateTime & start, const eckit::Configuration & conf):
-    PostBase<FLDS>(start, conf), ppConfig_(conf) {}
+  explicit StateWriter(const eckit::Configuration & conf):
+    PostBase<FLDS>(conf), ppConfig_(conf) {}
   ~StateWriter() {}
 
  private:

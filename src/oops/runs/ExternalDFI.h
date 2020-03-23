@@ -95,7 +95,7 @@ template <typename MODEL> class ExternalDFI : public Application {
 
 //  Setup forecast outputs
     const eckit::LocalConfiguration outConfig(fullConfig, "output");
-    post.enrollProcessor(new StateWriter<State_>(bgndate, outConfig));
+    post.enrollProcessor(new StateWriter<State_>(outConfig));
 
 //  Run forecast from initialized state
     const util::Duration fclen = fclength - dfispan/2;

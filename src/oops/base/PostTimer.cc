@@ -14,7 +14,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <boost/tokenizer.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/util/abor1_cpp.h"
@@ -25,26 +24,26 @@
 namespace oops {
 // -----------------------------------------------------------------------------
 PostTimer::PostTimer()
-  : conf_(), freq_(0), bgn_(), end_(), start_(), finish_(), pptimes_() {}
-// -----------------------------------------------------------------------------
-PostTimer::PostTimer(const util::Duration & freq)
-  : conf_(), freq_(freq), bgn_(), end_(), start_(), finish_(), pptimes_() {}
+  : options_(), bgn_(), end_(), start_(), finish_() {}
 // -----------------------------------------------------------------------------
 PostTimer::PostTimer(const eckit::Configuration & conf)
-  : conf_(conf), freq_(0), bgn_(), end_(), start_(), finish_(), pptimes_() {}
-// -----------------------------------------------------------------------------
-PostTimer::PostTimer(const util::DateTime & start, const eckit::Configuration & conf)
-  : conf_(conf), freq_(0), bgn_(), end_(), start_(new util::DateTime(start)),
-    finish_(), pptimes_()
-{}
+  : options_(), bgn_(), end_(), start_(), finish_() {
+  options_.deserialize(conf);
+}
 // -----------------------------------------------------------------------------
 PostTimer::PostTimer(const util::DateTime & start, const util::DateTime & finish,
                      const util::Duration & freq)
-  : conf_(), freq_(freq), bgn_(), end_(), start_(new util::DateTime(start)),
-    finish_(new util::DateTime(finish)), pptimes_() {}
+  : options_(), bgn_(), end_(),
+    start_(new util::DateTime(start)), finish_(new util::DateTime(finish)) {
+  // setup config with passed frequency to init the options
+  eckit::LocalConfiguration conf;
+  conf.set("frequency", freq.toString());
+  options_.deserialize(conf);
+}
 // -----------------------------------------------------------------------------
-void PostTimer::initialize(const util::DateTime & bgn, const util::DateTime & end,
-                           const util::Duration &) {
+void PostTimer::initialize(const util::DateTime & bgn, const util::DateTime & end) {
+  // TODO(someone): this can be simplified after weak-constraint subwindow
+  // refactoring (start_ and finish_ can be removed; bgn_ and end_ changed to ptr)
   util::DateTime start(bgn);
   if (start_) {
     start = *start_;
@@ -55,41 +54,31 @@ void PostTimer::initialize(const util::DateTime & bgn, const util::DateTime & en
     finish = *finish_;
   }
   end_ = finish;
-
-// User specified configuration
-// User specified frequency and start
-  if (conf_.has("frequency"))
-    freq_ = util::Duration(conf_.getString("frequency"));
-  if (conf_.has("first")) {
-    const util::Duration first(conf_.getString("first"));
-    bgn_ += first;
-  }
-// User specified steps
-  if (conf_.has("steps")) {
-    const std::string steps = conf_.getString("steps");
-    boost::tokenizer<> tok(steps);
-    for (boost::tokenizer<>::iterator it = tok.begin(); it != tok.end(); ++it) {
-      const util::Duration step(*it);
-      const util::DateTime tt = start+step;
-      if (bgn <= tt && tt <= end) pptimes_.push_back(tt);
-    }
-  }
+  // increase bgn_ value if needed
+  bgn_ += options_.first;
 }
 // -----------------------------------------------------------------------------
 bool PostTimer::itIsTime(const util::DateTime & now) {
   bool doit = false;
+
+  const util::Duration & freq = options_.frequency;
+  const std::vector<util::DateTime> & steps = options_.steps;
+
   if (now >= bgn_ && now <= end_) {
-    doit = (freq_.toSeconds() == 0 && pptimes_.empty());
-    if (!doit && freq_.toSeconds() > 0) {
+    // use at every step, and no prespecified steps?
+    doit = (freq.toSeconds() == 0 && steps.empty());
+    // frequency specified?
+    if (!doit && freq.toSeconds() > 0) {
       const util::Duration dt = now - bgn_;
-      doit = (dt >= util::Duration(0) && dt % freq_ == 0);
+      doit = (dt >= util::Duration(0) && dt % freq == 0);
     }
-    if (!doit && !pptimes_.empty()) {
-      std::vector<util::DateTime>::iterator it;
-      it = find(pptimes_.begin(), pptimes_.end(), now);
-      doit = (it != pptimes_.end());
+    // steps are prespecified?
+    if (!doit && !steps.empty()) {
+      auto it = find(steps.begin(), steps.end(), now);
+      doit = (it != steps.end());
     }
   }
+
   Log::trace() << "In PostTimer:itIsTime, time = " << now << ", doit = " << doit << std::endl;
   return doit;
 }

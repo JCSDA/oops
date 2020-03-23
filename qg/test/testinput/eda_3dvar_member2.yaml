@@ -66,7 +66,6 @@ model:
 output:
   datadir: Data
   exp: %{member}%.eda_3dvar
-  first: PT3H
   frequency: PT6H
   type: an
 resolution:

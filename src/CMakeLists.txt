@@ -122,6 +122,7 @@ oops/base/PostProcessor.h
 oops/base/PostProcessorTLAD.h
 oops/base/PostTimer.cc
 oops/base/PostTimer.h
+oops/base/PostTimerParameters.h
 oops/base/StateEnsemble.h
 oops/base/StateInfo.h
 oops/base/StateWriter.h
@@ -422,6 +423,11 @@ ecbuild_add_test( TARGET  test_oops_base_variables
                   SOURCES test/base/Variables.cc
                   ARGS    "test/testinput/variables.yaml"
                   LIBS    oops )
+
+ecbuild_add_test( TARGET  test_base_posttimer
+                  SOURCES test/base/PostTimer.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops eckit)
 
 ecbuild_add_test( TARGET  test_util_random
                   SOURCES test/base/Random.cc

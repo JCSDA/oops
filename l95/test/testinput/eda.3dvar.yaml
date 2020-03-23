@@ -62,6 +62,5 @@ final:
 output:
   datadir: Data
   exp: %{member}%.eda.3dvar
-  first: PT3H
   frequency: PT6H
   type: an

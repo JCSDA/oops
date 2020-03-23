@@ -98,7 +98,7 @@ template <typename MODEL> class GenEnsPertB : public Application {
       eckit::LocalConfiguration outConfig(fullConfig, "output");
       outConfig.set("member", jm+1);
 
-      post.enrollProcessor(new StateWriter<State_>(bgndate, outConfig));
+      post.enrollProcessor(new StateWriter<State_>(outConfig));
 
 //    Run forecast
       model.forecast(xp, moderr, fclength, post);

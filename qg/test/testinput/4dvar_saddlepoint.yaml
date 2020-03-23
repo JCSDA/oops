@@ -87,7 +87,6 @@ model:
 output:
   datadir: Data
   exp: 4dvar_saddlepoint
-  first: PT0S
   frequency: PT6H
   type: an
 resolution:

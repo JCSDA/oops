@@ -61,7 +61,6 @@ model:
 output:
   datadir: Data
   exp: 3dvar
-  first: PT3H
   frequency: PT6H
   type: an
 resolution:

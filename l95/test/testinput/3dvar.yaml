@@ -59,6 +59,5 @@ final:
 output:
   datadir: Data
   exp: test
-  first: PT3H
   frequency: PT6H
   type: an

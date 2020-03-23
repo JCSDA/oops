@@ -50,7 +50,7 @@ class PostBaseTLAD : private boost::noncopyable {
 /// Set linearization state
   void initializeTraj(const State_ & xx, const util::DateTime & end,
                       const util::Duration & step) {
-    timer_.initialize(xx.validTime(), end, step);
+    timer_.initialize(xx.validTime(), end);
     this->doInitializeTraj(xx, end, step);
   }
 
@@ -65,7 +65,7 @@ class PostBaseTLAD : private boost::noncopyable {
 /// Tangent linear methods
   void initializeTL(const Increment_ & dx, const util::DateTime & end,
                     const util::Duration & step) {
-    timer_.initialize(dx.validTime(), end, step);
+    timer_.initialize(dx.validTime(), end);
     this->doInitializeTL(dx, end, step);
   }
 
@@ -83,7 +83,7 @@ class PostBaseTLAD : private boost::noncopyable {
 /// Adjoint methods
   void initializeAD(Increment_ & dx, const util::DateTime & bgn,
                     const util::Duration & step) {
-    timer_.initialize(bgn, dx.validTime(), step);
+    timer_.initialize(bgn, dx.validTime());
     this->doFirstAD(dx, bgn, step);
   }
 
