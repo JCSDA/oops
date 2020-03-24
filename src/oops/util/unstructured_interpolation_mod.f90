@@ -81,8 +81,8 @@ self%nn = nn
 self%ngrid_in = ngrid_in
 self%ngrid_out = ngrid_out
 self%comm = comm
-allocate(self%interp_w(self%ngrid_out,self%nn))
-allocate(self%interp_i(self%ngrid_out,self%nn))
+allocate(self%interp_w(self%nn,self%ngrid_out))
+allocate(self%interp_i(self%nn,self%ngrid_out))
 
 ! Get input grid proc counts and displacement
 call input_grid_share(self%comm, self%ngrid_in, self%rcvcnt, self%displs)
@@ -117,20 +117,21 @@ kd = kdtree_create(ngrid_in_glo,lons_in_glo,lats_in_glo)
 
 ! Loop over observations
 ! ----------------------
-allocate(nn_dist(ngrid_out,nn))
+allocate(nn_dist(nn,ngrid_out))
 
 do n = 1,ngrid_out
 
   ! Get nearest neighbours
-  call kdtree_k_nearest_neighbors(kd, lons_out_loc(n), lats_out(n), self%nn, self%interp_i(n,:))
+  call kdtree_k_nearest_neighbors(kd, lons_out_loc(n), lats_out(n), self%nn, self%interp_i(:,n))
 
   ! Compute distances
   do kk = 1, nn
-    nindex = self%interp_i(n, kk)
-    nn_dist(n, kk) = sphere_distance(lons_out_loc(n), lats_out(n), lons_in_glo(nindex), lats_in_glo(nindex))
+    nindex = self%interp_i(kk,n)
+    nn_dist(kk,n) = sphere_distance(lons_out_loc(n), lats_out(n), lons_in_glo(nindex), lats_in_glo(nindex))
   enddo
 
 enddo
+
 
 ! Set weights based on user choice
 ! --------------------------------
@@ -148,10 +149,10 @@ select case (wtype)
       bw(:) = 0.0_kind_real
       do jj = 1, nn
         wprod = 1.0_kind_real
+        index1 = self%interp_i(jj,n)
         do kk = 1, nn
           if (jj.ne.kk) then
-            index1 = self%interp_i(n,jj)
-            index2 = self%interp_i(n,kk)
+            index2 = self%interp_i(kk,n)
             dist = sphere_distance(lons_in_glo(index1),lats_in_glo(index1),&
                                    lons_in_glo(index2),lats_in_glo(index2))
             wprod = wprod * dist
@@ -161,23 +162,23 @@ select case (wtype)
       enddo
 
       !Barycentric weights
-      self%interp_w(n,:) = 0.0_kind_real
-      if (minval(nn_dist(n,:)) < 1e-10) then
-        
+      self%interp_w(:,n) = 0.0_kind_real
+      if (minval(nn_dist(:,n)) < 1e-10) then
+
         ! special case if very close to one grid point
-        jj = minloc(nn_dist(n,:),dim=1)
-        self%interp_w(n,jj) = 1.0_kind_real
-      
+        jj = minloc(nn_dist(:,n),dim=1)
+        self%interp_w(jj,n) = 1.0_kind_real
+
       else
 
         !otherwise continue with the normal algorithm
         bsw = 0.0_kind_real
         do jj = 1,nn
-          bsw = bsw + (bw(jj) / nn_dist(n,jj))
+          bsw = bsw + (bw(jj) / nn_dist(jj,n))
         enddo
 
         do jj = 1,nn
-          self%interp_w(n,jj) = ( bw(jj) / nn_dist(n,jj) ) / bsw
+          self%interp_w(jj,n) = ( bw(jj) / nn_dist(jj,n) ) / bsw
         enddo
       end if
 
@@ -228,8 +229,8 @@ call nccheck ( nf90_inq_dimid(ncid, "nn", varid), "nf90_inq_dimid nn" )
 call nccheck ( nf90_inquire_dimension(ncid, varid, len = self%nn), "nf90_inquire_dimension nn" )
 
 ! Allocate arrays
-allocate(self%interp_w(self%ngrid_out,self%nn))
-allocate(self%interp_i(self%ngrid_out,self%nn))
+allocate(self%interp_w(self%nn,self%ngrid_out))
+allocate(self%interp_i(self%nn,self%ngrid_out))
 
 ! Get the interpolation weights and indices
 ! ----------------------------------------
@@ -262,7 +263,7 @@ subroutine apply(self, field_in, field_out, field_nn_out )
 class(unstrc_interp),           intent(in)  :: self                                 ! Myself
 real(kind=kind_real),           intent(in)  :: field_in(self%ngrid_in)              ! Input field
 real(kind=kind_real),           intent(out) :: field_out(self%ngrid_out)            ! Result of interpolation
-real(kind=kind_real), optional, intent(out) :: field_nn_out(self%ngrid_out,self%nn) ! Neighbours
+real(kind=kind_real), optional, intent(out) :: field_nn_out(self%nn,self%ngrid_out) ! Neighbours
 
 !Locals
 integer :: n, kk
@@ -274,10 +275,10 @@ allocate(field_in_glo(sum(self%rcvcnt)))
 call self%comm%allgather(field_in,field_in_glo,self%ngrid_in,self%rcvcnt,self%displs)
 
 ! Get output neighbours
-allocate(field_nn(self%ngrid_out,self%nn))
-do kk = 1, self%nn
-  do n = 1, self%ngrid_out
-    field_nn(n,kk) = field_in_glo(self%interp_i(n,kk))
+allocate(field_nn(self%nn,self%ngrid_out))
+do n = 1, self%ngrid_out
+  do kk = 1, self%nn
+    field_nn(kk,n) = field_in_glo(self%interp_i(kk,n))
   enddo
 enddo
 
@@ -289,7 +290,7 @@ deallocate(field_in_glo)
 do n = 1, self%ngrid_out
   field_out(n) = 0.0_kind_real
   do kk = 1, self%nn
-    field_out(n) = field_out(n) + self%interp_w(n,kk) * field_nn(n,kk)
+    field_out(n) = field_out(n) + self%interp_w(kk,n) * field_nn(kk,n)
   enddo
 enddo
 
@@ -317,7 +318,7 @@ allocate(field_in_glo(self%ngrid_in_glo))
 field_in_glo = 0.0
 do n = 1, self%ngrid_out
   do kk = 1, self%nn
-     field_in_glo(self%interp_i(n,kk)) = field_in_glo(self%interp_i(n,kk)) +  self%interp_w(n,kk)*field_out(n)
+     field_in_glo(self%interp_i(kk,n)) = field_in_glo(self%interp_i(kk,n)) +  self%interp_w(kk,n)*field_out(n)
   enddo
 enddo
 
@@ -358,8 +359,8 @@ call nccheck( nf90_def_dim(ncid, "ngrid_out", self%ngrid_out, no_dimid), "nf90_d
 call nccheck( nf90_def_dim(ncid, "nn",        self%nn,        nn_dimid), "nf90_def_dim nn"  )
 
 ! Define variables
-call nccheck( nf90_def_var(ncid, "interp_weights", NF90_DOUBLE, (/ no_dimid, nn_dimid /), vc(1)), "nf90_def_var interp_weights" );
-call nccheck( nf90_def_var(ncid, "interp_indices", NF90_INT,    (/ no_dimid, nn_dimid /), vc(2)), "nf90_def_var interp_indices" );
+call nccheck( nf90_def_var(ncid, "interp_weights", NF90_DOUBLE, (/ nn_dimid, no_dimid /), vc(1)), "nf90_def_var interp_weights" );
+call nccheck( nf90_def_var(ncid, "interp_indices", NF90_INT,    (/ nn_dimid, no_dimid /), vc(2)), "nf90_def_var interp_indices" );
 
 ! End define
 call nccheck( nf90_enddef(ncid), "nf90_enddef" )
