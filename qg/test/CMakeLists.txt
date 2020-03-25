@@ -1217,7 +1217,8 @@ ecbuild_add_test( TARGET test_qg_eda_4dvar
 ecbuild_add_test( TARGET test_qg_diffstates_run
                   COMMAND ${CMAKE_BINARY_DIR}/bin/qg_diffstates.x
                   ARGS testinput/diffstates.yaml testoutput/diffstates.log.out
-                  DEPENDS qg_eda.x )
+                  DEPENDS qg_eda.x
+                  TEST_DEPENDS test_qg_eda_3dvar_member2  test_qg_eda_4dvar )
 
 ecbuild_add_test( TARGET test_qg_diffstates_compare
                   TYPE SCRIPT

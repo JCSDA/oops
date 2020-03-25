@@ -890,7 +890,8 @@ ecbuild_add_test( TARGET test_l95_eda_4dvar_member3
 ecbuild_add_test( TARGET test_l95_diffstates_run
                   COMMAND ${CMAKE_BINARY_DIR}/bin/l95_diffstates.x
                   ARGS testinput/diffstates.yaml testoutput/diffstates.log.out
-                  DEPENDS l95_eda.x )
+                  DEPENDS l95_eda.x
+                  TEST_DEPENDS test_l95_eda_3dvar  test_l95_eda_4dvar_member3 )
 
 ecbuild_add_test( TARGET test_l95_diffstates_compare
                   TYPE SCRIPT
