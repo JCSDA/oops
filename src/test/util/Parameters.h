@@ -25,6 +25,7 @@
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/ParameterTraits.h"
 #include "oops/util/parameters/ParameterTraitsScalarOrMap.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 namespace test {
 
@@ -72,6 +73,8 @@ class MyParameters : public oops::Parameters {
   oops::OptionalParameter<float> optFloatParameter{"opt_float_parameter", this};
   oops::OptionalParameter<util::DateTime> optDateTimeParameter{"opt_date_time_parameter", this};
   oops::OptionalParameter<util::Duration> optDurationParameter{"opt_duration_parameter", this};
+  oops::RequiredParameter<float> reqFloatParameter{"req_float_parameter", this};
+  oops::RequiredParameter<util::Duration> reqDurationParameter{"req_duration_parameter", this};
   oops::Parameter<Fruit> fruitParameter{"fruit_parameter", Fruit::ORANGE, this};
   oops::Parameter<RangeParameters> rangeParameter{"range_parameter", {}, this};
   oops::Parameter<std::vector<int>> intParameters{"int_parameters", {}, this};
@@ -104,26 +107,33 @@ void testDefaultValues() {
   MyParameters params;
 
   EXPECT_EQUAL(params.floatParameter, 1.5f);
+  EXPECT_EQUAL(params.floatParameter.value(), 1.5f);
   EXPECT_EQUAL(params.intParameter, 2);
   EXPECT(params.boolParameter);
   EXPECT(params.optFloatParameter.value() == boost::none);
   EXPECT(params.optDateTimeParameter.value() == boost::none);
   EXPECT(params.optDurationParameter.value() == boost::none);
+  EXPECT_THROWS_AS(params.reqFloatParameter.value(), boost::bad_optional_access);
+  EXPECT_THROWS_AS(params.reqDurationParameter.value(), boost::bad_optional_access);
   EXPECT(params.fruitParameter == Fruit::ORANGE);
   EXPECT(params.rangeParameter.value().minParameter == 0.0f);
   EXPECT(params.rangeParameter.value().maxParameter == 0.0f);
   EXPECT(params.intParameters.value().empty());
   EXPECT(params.rangeParameters.value().empty());
 
-  const eckit::LocalConfiguration emptyConf(conf, "empty");
-  params.deserialize(emptyConf);
+  const eckit::LocalConfiguration minimalConf(conf, "minimal");
+  params.deserialize(minimalConf);
 
   EXPECT_EQUAL(params.floatParameter, 1.5f);
+  EXPECT_EQUAL(params.floatParameter.value(), 1.5f);
   EXPECT_EQUAL(params.intParameter, 2);
   EXPECT(params.boolParameter);
   EXPECT(params.optFloatParameter.value() == boost::none);
   EXPECT(params.optDateTimeParameter.value() == boost::none);
   EXPECT(params.optDurationParameter.value() == boost::none);
+  EXPECT_EQUAL(params.reqFloatParameter, 3.0f);
+  EXPECT_EQUAL(params.reqFloatParameter.value(), 3.0f);
+  EXPECT_EQUAL(params.reqDurationParameter.value(), util::Duration("PT1H"));
   EXPECT(params.fruitParameter == Fruit::ORANGE);
   EXPECT(params.rangeParameter.value().minParameter == 0.0f);
   EXPECT(params.rangeParameter.value().maxParameter == 0.0f);
@@ -137,6 +147,7 @@ void testCorrectValues() {
   params.deserialize(fullConf);
 
   EXPECT_EQUAL(params.floatParameter, 3.5f);
+  EXPECT_EQUAL(params.floatParameter.value(), 3.5f);
   EXPECT_EQUAL(params.intParameter, 4);
   EXPECT(!params.boolParameter);
   EXPECT(params.optFloatParameter.value() != boost::none);
@@ -145,6 +156,9 @@ void testCorrectValues() {
   EXPECT_EQUAL(params.optDateTimeParameter.value().get(), util::DateTime(2010, 2, 3, 4, 5, 6));
   EXPECT(params.optDurationParameter.value() != boost::none);
   EXPECT_EQUAL(params.optDurationParameter.value().get(), util::Duration("PT01H02M03S"));
+  EXPECT_EQUAL(params.reqFloatParameter, 6.0f);
+  EXPECT_EQUAL(params.reqFloatParameter.value(), 6.0f);
+  EXPECT_EQUAL(params.reqDurationParameter.value(), util::Duration("PT06H30M"));
   EXPECT(params.fruitParameter == Fruit::APPLE);
   EXPECT(params.rangeParameter.value().minParameter == 7.0f);
   EXPECT(params.rangeParameter.value().maxParameter == 8.5f);
@@ -203,6 +217,20 @@ void testIncorrectValueOfRangeParameters() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "error_in_range_parameters");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::Exception);
+}
+
+void testMissingRequiredFloatParameter() {
+  MyParameters params;
+  const eckit::LocalConfiguration conf(TestEnvironment::config(),
+                                       "missing_req_float_parameter");
+  EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
+}
+
+void testMissingRequiredDurationParameter() {
+  MyParameters params;
+  const eckit::LocalConfiguration conf(TestEnvironment::config(),
+                                       "missing_req_duration_parameter");
+  EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
 }
 
 void testMapParameters(const MyMapParameters &params) {
@@ -324,6 +352,12 @@ class Parameters : public oops::Test {
                     });
     ts.emplace_back(CASE("util/Parameters/testIncorrectValueOfRangeParameters") {
                       testIncorrectValueOfRangeParameters();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testMissingRequiredFloatParameter") {
+                      testMissingRequiredFloatParameter();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testMissingRequiredDurationParameter") {
+                      testMissingRequiredDurationParameter();
                     });
     // Test fails because of a bug in the eckit YAML parser
     // ts.emplace_back(CASE("util/Parameters/mapParametersYamlStyleQuotedKeys") {

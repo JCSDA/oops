@@ -1,5 +1,6 @@
-empty:
-  # Nothing to see here
+minimal:
+  req_float_parameter: 3
+  req_duration_parameter: PT1H
 full:
   float_parameter: 3.5
   int_parameter: 4
@@ -7,6 +8,8 @@ full:
   opt_float_parameter: 5.5
   opt_date_time_parameter: 2010-02-03T04:05:06Z
   opt_duration_parameter: PT01H02M03S
+  req_float_parameter: 6
+  req_duration_parameter: PT06H30M
   fruit_parameter: apple
   range_parameter:
     min: 7
@@ -19,18 +22,36 @@ full:
       max: 12
 error_in_float_parameter:
   float_parameter: ABCDEF
+  req_float_parameter: 3
+  req_duration_parameter: PT1H
 error_in_opt_float_parameter:
   opt_float_parameter: ABCDEF
+  req_float_parameter: 3
+  req_duration_parameter: PT1H
 error_in_opt_date_time_parameter:
   opt_date_time_parameter: ABCDEF
+  req_float_parameter: 3
+  req_duration_parameter: PT1H
 error_in_opt_duration_parameter:
   opt_duration_parameter: ABCDEF
+  req_float_parameter: 3
+  req_duration_parameter: PT1H
 error_in_fruit_parameter:
   fruit_parameter: ABCDEF
+  req_float_parameter: 3
+  req_duration_parameter: PT1H
 error_in_int_parameters:
   int_parameters: ABCDEF
+  req_float_parameter: 3
+  req_duration_parameter: PT1H
 error_in_range_parameters:
   range_parameters: ABCDEF
+  req_float_parameter: 3
+  req_duration_parameter: PT1H
+missing_req_float_parameter:
+  req_duration_parameter: PT1H
+missing_req_duration_parameter:
+  req_float_parameter: 3
 # Commented because eckit fails to parse quoted key names
 #map_parameter_yaml_style_quoted_keys:
 #  int_to_float_map:
