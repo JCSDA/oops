@@ -249,7 +249,7 @@ double CostJo<MODEL>::finalize() {
 
 // Apply bias correction
   Departures_ bias(obspace_, "ObsBias", false);
-  ydep -= bias;
+  ydep += bias;
   Log::info() << "Jo Bias Corrected Departures:" << std::endl << ydep
           << "End Jo Bias Corrected Departures" << std::endl;
 
@@ -297,7 +297,7 @@ void CostJo<MODEL>::finalizeTraj() {
 
 // Apply bias correction
   Departures_ bias(obspace_, "ObsBias", false);
-  ydep -= bias;
+  ydep += bias;
   Log::info() << "Jo Traj Bias Corrected Departures:" << std::endl << ydep
           << "End Jo Traj Bias Corrected Departures" << std::endl;
 

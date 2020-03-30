@@ -88,6 +88,9 @@ template <typename MODEL> class Variational : public Application {
     Log::info() << "Variational: incremental assimilation done "
                 << iouter << " iterations." << std::endl;
 
+//  Save ObsAux
+    xx.obsVar().write(cfConf);
+
 //  Save analysis and final diagnostics
     PostProcessor<State_> post;
     const util::DateTime winbgn(cfConf.getString("window_begin"));
