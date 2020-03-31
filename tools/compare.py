@@ -150,17 +150,17 @@ lines_ref = file_ref.readlines()
 rennm = re.compile('(^\D+[\d]*[\D]*$)')
 
 # Regex: #[ABC][-]12.34[e[+-]12][,] (combination of string and flaot, e.g. MAX=123.123e-07,
-reflt = re.compile('(^[\D]*?[-]?\d*\.\d*[e]?[+-]?[\d]*[\,]?$)')   #[ABC][-]12.34[e[+-]12][,]
+reflt = re.compile('(^[\D]*?[-]?\d+\.\d+(?:[e][+-]?[\d]+)?[\,]?$)')   #[ABC][-]12.34[e[+-]12][,]
 
 # Regex: #[-]12345[,] (combination of integer and comma, e.g. 123,
-reint = re.compile('(^[-]?\d*[\,]?$)')
+reint = re.compile('(^[-]?\d+[\,]?$)')
 
 # Regex: #YYYY-MM-DDTHH:MN:SSZ[:] (date with potential semi-colon)
-redat = re.compile('(^\d{4}\D{1}\d{2}\D{1}\d{2}\D{1}\d{2}\D{1}\d{2}\D{1}\d{2}\D{1}[\:]?$)')
+redat = re.compile('(^\d{4}[-]\d{2}[-]\d{2}[T]\d{2}[:]\d{2}[:]\d{2}[Z][\:]?$)')
 
 # Sub extractions to convert combination of string and number to just number
-reflte = re.compile('([+-]?\d*\.\d*[e]?[+-]?[\d]*)')      #Float extraction (MAX=123.123e-07, -> 123.123e-07)
-reinte = re.compile('([+-]?\d*)')                         #Integer extraction (123, -> 123)
+reflte = re.compile('([+-]?\d+\.\d+(?:[e][+-]?[\d]+)?)')      #Float extraction (MAX=123.123e-07, -> 123.123e-07)
+reinte = re.compile('([+-]?\d+)')                         #Integer extraction (123, -> 123)
 
 
 # Loop through the run file and search on test string
