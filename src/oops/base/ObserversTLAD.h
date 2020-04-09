@@ -52,7 +52,7 @@ class ObserversTLAD : public PostBaseTLAD<MODEL> {
   Observations_ * release() {return yobs_.release();}
   Departures_ * releaseOutputFromTL() override {return ydeptl_.release();}
   void setupTL(const ObsAuxIncrs_ &);
-  void setupAD(boost::shared_ptr<const Departures_>, ObsAuxIncrs_ &);
+  void setupAD(std::shared_ptr<const Departures_>, ObsAuxIncrs_ &);
 
  private:
 // Methods
@@ -78,7 +78,7 @@ class ObserversTLAD : public PostBaseTLAD<MODEL> {
   std::unique_ptr<Observations_> yobs_;
   std::unique_ptr<Departures_> ydeptl_;
   const ObsAuxIncrs_ * ybiastl_;
-  boost::shared_ptr<const Departures_> ydepad_;
+  std::shared_ptr<const Departures_> ydepad_;
   ObsAuxIncrs_ * ybiasad_;
 
   util::DateTime winbgn_;   //!< Begining of assimilation window
@@ -231,7 +231,7 @@ void ObserversTLAD<MODEL>::doFinalizeTL(const Increment_ & dx) {
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-void ObserversTLAD<MODEL>::setupAD(boost::shared_ptr<const Departures_> ydepad,
+void ObserversTLAD<MODEL>::setupAD(std::shared_ptr<const Departures_> ydepad,
                                    ObsAuxIncrs_ & ybiasad) {
   Log::trace() << "ObserversTLAD::setupAD start" << std::endl;
   ydepad_  = ydepad;

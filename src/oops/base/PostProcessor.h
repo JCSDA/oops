@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include "oops/base/PostBase.h"
 
@@ -37,12 +37,12 @@ class PostProcessor {
 
   void enrollProcessor(PostBase_ * pp) {
     if (pp != 0) {
-      boost::shared_ptr<PostBase_> sp(pp);
+      std::shared_ptr<PostBase_> sp(pp);
       processors_.push_back(sp);
     }
   }
 
-  void enrollProcessor(boost::shared_ptr<PostBase_> pp) {
+  void enrollProcessor(std::shared_ptr<PostBase_> pp) {
     if (pp != 0) processors_.push_back(pp);
   }
 
@@ -66,7 +66,7 @@ class PostProcessor {
   }
 
  private:
-  std::vector< boost::shared_ptr<PostBase_> > processors_;
+  std::vector< std::shared_ptr<PostBase_> > processors_;
   PostProcessor operator= (const PostProcessor &);
 };
 

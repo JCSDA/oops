@@ -12,10 +12,9 @@
 #ifndef OOPS_INTERFACE_OBSSPACE_H_
 #define OOPS_INTERFACE_OBSSPACE_H_
 
+#include <memory>
 #include <ostream>
 #include <string>
-
-#include <boost/shared_ptr.hpp>
 
 #include "eckit/geometry/Point2.h"
 #include "eckit/mpi/Comm.h"
@@ -72,7 +71,7 @@ class ObsSpace : public util::Printable,
  private:
   void print(std::ostream &) const;
 
-  boost::shared_ptr<ObsSpace_> obsdb_;
+  std::shared_ptr<ObsSpace_> obsdb_;
 };
 
 // -----------------------------------------------------------------------------

@@ -11,9 +11,8 @@
 #ifndef OOPS_INTERFACE_LOCATIONS_H_
 #define OOPS_INTERFACE_LOCATIONS_H_
 
+#include <memory>
 #include <string>
-
-#include <boost/shared_ptr.hpp>
 
 #include "eckit/mpi/Comm.h"
 
@@ -48,7 +47,7 @@ class Locations : public util::Printable,
 
  private:
   void print(std::ostream &) const;
-  boost::shared_ptr<const Locations_> locs_;
+  std::shared_ptr<const Locations_> locs_;
 };
 
 // -----------------------------------------------------------------------------

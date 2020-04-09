@@ -14,8 +14,8 @@
 #include <memory>
 #include <string>
 #include <vector>
+
 #include <boost/noncopyable.hpp>
-#include <boost/pointer_cast.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
@@ -80,21 +80,21 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   virtual ~CostJo() {}
 
   /// Initialize \f$ J_o\f$ before starting the integration of the model.
-  boost::shared_ptr<PostBase<State_> > initialize(const CtrlVar_ &,
-                                                  const eckit::Configuration &) override;
-  boost::shared_ptr<PostBaseTLAD_> initializeTraj(const CtrlVar_ &,
-                                                  const Geometry_ &,
-                                                  const eckit::Configuration &) override;
+  std::shared_ptr<PostBase<State_> > initialize(const CtrlVar_ &,
+                                                const eckit::Configuration &) override;
+  std::shared_ptr<PostBaseTLAD_> initializeTraj(const CtrlVar_ &,
+                                                const Geometry_ &,
+                                                const eckit::Configuration &) override;
   /// Finalize \f$ J_o\f$ after the integration of the model.
   double finalize() override;
   void finalizeTraj() override;
 
   /// Initialize \f$ J_o\f$ before starting the TL run.
-  boost::shared_ptr<PostBaseTLAD_> setupTL(const CtrlInc_ &) const override;
+  std::shared_ptr<PostBaseTLAD_> setupTL(const CtrlInc_ &) const override;
 
   /// Initialize \f$ J_o\f$ before starting the AD run.
-  boost::shared_ptr<PostBaseTLAD_> setupAD(
-           boost::shared_ptr<const GeneralizedDepartures>, CtrlInc_ &) const override;
+  std::shared_ptr<PostBaseTLAD_> setupAD(
+           std::shared_ptr<const GeneralizedDepartures>, CtrlInc_ &) const override;
 
   /// Multiply by \f$ R\f$ and \f$ R^{-1}\f$.
   Departures_ * multiplyCovar(const GeneralizedDepartures &) const override;
@@ -126,13 +126,13 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   std::unique_ptr<Departures_> gradFG_;
 
   /// Observers passed by \f$ J_o\f$ to the model during integration.
-  mutable boost::shared_ptr<Observers<MODEL, State_> > pobs_;
+  mutable std::shared_ptr<Observers<MODEL, State_> > pobs_;
 
   /// Time slot.
   const util::Duration tslot_;
 
   /// Linearized observation operators.
-  boost::shared_ptr<ObserversTLAD_> pobstlad_;
+  std::shared_ptr<ObserversTLAD_> pobstlad_;
   const bool subwindows_;
 
   /// Storage for QC flags and obs error
@@ -197,7 +197,7 @@ CostJo<MODEL>::CostJo(const eckit::Configuration & joConf,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-boost::shared_ptr<PostBase<State<MODEL> > >
+std::shared_ptr<PostBase<State<MODEL> > >
 CostJo<MODEL>::initialize(const CtrlVar_ & xx, const eckit::Configuration & conf) {
   Log::trace() << "CostJo::initialize start" << std::endl;
 
@@ -273,7 +273,7 @@ double CostJo<MODEL>::finalize() {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-boost::shared_ptr<PostBaseTLAD<MODEL> >
+std::shared_ptr<PostBaseTLAD<MODEL> >
 CostJo<MODEL>::initializeTraj(const CtrlVar_ & xx, const Geometry_ &,
                               const eckit::Configuration & conf) {
   Log::trace() << "CostJo::initializeTraj start" << std::endl;
@@ -313,7 +313,7 @@ void CostJo<MODEL>::finalizeTraj() {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-boost::shared_ptr<PostBaseTLAD<MODEL> > CostJo<MODEL>::setupTL(const CtrlInc_ & dx) const {
+std::shared_ptr<PostBaseTLAD<MODEL> > CostJo<MODEL>::setupTL(const CtrlInc_ & dx) const {
   Log::trace() << "CostJo::setupTL start" << std::endl;
   ASSERT(pobstlad_);
   pobstlad_->setupTL(dx.obsVar());
@@ -324,12 +324,12 @@ boost::shared_ptr<PostBaseTLAD<MODEL> > CostJo<MODEL>::setupTL(const CtrlInc_ & 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-boost::shared_ptr<PostBaseTLAD<MODEL> > CostJo<MODEL>::setupAD(
-                               boost::shared_ptr<const GeneralizedDepartures> pv,
+std::shared_ptr<PostBaseTLAD<MODEL> > CostJo<MODEL>::setupAD(
+                               std::shared_ptr<const GeneralizedDepartures> pv,
                                CtrlInc_ & dx) const {
   Log::trace() << "CostJo::setupAD start" << std::endl;
   ASSERT(pobstlad_);
-  boost::shared_ptr<const Departures_> dy = boost::dynamic_pointer_cast<const Departures_>(pv);
+  std::shared_ptr<const Departures_> dy = std::dynamic_pointer_cast<const Departures_>(pv);
   pobstlad_->setupAD(dy, dx.obsVar());
   Log::trace() << "CostJo::setupAD done" << std::endl;
   return pobstlad_;

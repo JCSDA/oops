@@ -13,7 +13,6 @@
 
 #include <memory>
 #include <vector>
-#include <boost/shared_ptr.hpp>
 
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/base/Departures.h"
@@ -48,7 +47,7 @@ template<typename MODEL> class DualVector {
 
 // Store and retrieve other elements (takes ownership)
   void append(GeneralizedDepartures *);
-  boost::shared_ptr<const GeneralizedDepartures> getv(const unsigned) const;
+  std::shared_ptr<const GeneralizedDepartures> getv(const unsigned) const;
 
 // Linear algebra
   DualVector & operator=(const DualVector &);
@@ -66,8 +65,8 @@ template<typename MODEL> class DualVector {
   bool compatible(const DualVector & other) const;
 
   std::unique_ptr<CtrlInc_>   dxjb_;
-  std::vector<boost::shared_ptr<Departures_> >    dxjo_;
-  std::vector<boost::shared_ptr<Increment_> > dxjc_;
+  std::vector<std::shared_ptr<Departures_> >    dxjo_;
+  std::vector<std::shared_ptr<Increment_> > dxjc_;
   std::vector<unsigned> ijo_;
   std::vector<unsigned> ijc_;
   unsigned size_;
@@ -84,11 +83,11 @@ DualVector<MODEL>::DualVector(const DualVector & other)
     dxjb_.reset(new CtrlInc_(*other.dxjb_));
   }
   for (unsigned jj = 0; jj < other.dxjo_.size(); ++jj) {
-    boost::shared_ptr<Departures_> pd(new Departures_(*other.dxjo_[jj]));
+    std::shared_ptr<Departures_> pd(new Departures_(*other.dxjo_[jj]));
     dxjo_.push_back(pd);
   }
   for (unsigned jj = 0; jj < other.dxjc_.size(); ++jj) {
-    boost::shared_ptr<Increment_> pi(new Increment_(*other.dxjc_[jj]));
+    std::shared_ptr<Increment_> pi(new Increment_(*other.dxjc_[jj]));
     dxjc_.push_back(pi);
   }
 }
@@ -108,13 +107,13 @@ void DualVector<MODEL>::append(GeneralizedDepartures * pv) {
 // Since there is no duck-typing in C++, we do it manually.
   Increment_ * pi = dynamic_cast<Increment_*>(pv);
   if (pi != 0) {
-    boost::shared_ptr<Increment_> si(pi);
+    std::shared_ptr<Increment_> si(pi);
     dxjc_.push_back(si);
     ijc_.push_back(size_);
   }
   Departures_ * pd = dynamic_cast<Departures_*>(pv);
   if (pd != 0) {
-    boost::shared_ptr<Departures_> sd(pd);
+    std::shared_ptr<Departures_> sd(pd);
     dxjo_.push_back(sd);
     ijo_.push_back(size_);
   }
@@ -123,10 +122,10 @@ void DualVector<MODEL>::append(GeneralizedDepartures * pv) {
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-boost::shared_ptr<const GeneralizedDepartures>
+std::shared_ptr<const GeneralizedDepartures>
 DualVector<MODEL>::getv(const unsigned ii) const {
   ASSERT(ii < size_);
-  boost::shared_ptr<const GeneralizedDepartures> pv;
+  std::shared_ptr<const GeneralizedDepartures> pv;
   for (unsigned jj = 0; jj < ijo_.size(); ++jj) {
     if (ijo_[jj] == ii) pv = dxjo_[jj];
   }

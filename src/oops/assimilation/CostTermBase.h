@@ -11,7 +11,7 @@
 #ifndef OOPS_ASSIMILATION_COSTTERMBASE_H_
 #define OOPS_ASSIMILATION_COSTTERMBASE_H_
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/ControlVariable.h"
@@ -38,8 +38,8 @@ template<typename MODEL> class CostTermBase {
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
   typedef Increment<MODEL>           Increment_;
-  typedef boost::shared_ptr<PostBase<State_> >    PostPtr_;
-  typedef boost::shared_ptr<PostBaseTLAD<MODEL> > PostPtrTLAD_;
+  typedef std::shared_ptr<PostBase<State_> >    PostPtr_;
+  typedef std::shared_ptr<PostBaseTLAD<MODEL> > PostPtrTLAD_;
 
  public:
 /// Destructor
@@ -58,7 +58,7 @@ template<typename MODEL> class CostTermBase {
   virtual PostPtrTLAD_ setupTL(const ControlIncrement<MODEL> &) const = 0;
 
 /// Initialize before starting the AD run.
-  virtual PostPtrTLAD_ setupAD(boost::shared_ptr<const GeneralizedDepartures>,
+  virtual PostPtrTLAD_ setupAD(std::shared_ptr<const GeneralizedDepartures>,
                                ControlIncrement<MODEL> &) const = 0;
 
 /// Multiply by covariance (or weight) matrix and its inverse.

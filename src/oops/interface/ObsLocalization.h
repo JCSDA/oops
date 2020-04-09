@@ -11,8 +11,6 @@
 #include <memory>
 #include <string>
 
-#include <boost/shared_ptr.hpp>
-
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/ObsLocalizationBase.h"
 #include "oops/interface/ObsSpace.h"

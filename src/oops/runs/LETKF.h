@@ -13,9 +13,6 @@
 #include <string>
 #include <vector>
 
-#include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
-
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/CalcHofX.h"
 #include "oops/assimilation/State4D.h"

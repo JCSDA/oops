@@ -17,7 +17,6 @@
 #include <vector>
 #include <boost/noncopyable.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
-#include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/ControlIncrement.h"
@@ -350,7 +349,7 @@ void CostFunction<MODEL>::computeGradientFG(CtrlInc_ & grad) const {
   this->zeroAD(grad);
 
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
-    boost::shared_ptr<const GeneralizedDepartures> tmp(jterms_[jj].newGradientFG());
+    std::shared_ptr<const GeneralizedDepartures> tmp(jterms_[jj].newGradientFG());
     costad.enrollProcessor(jterms_[jj].setupAD(tmp, grad));
   }
 

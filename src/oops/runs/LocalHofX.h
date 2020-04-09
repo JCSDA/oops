@@ -12,8 +12,6 @@
 #include <string>
 #include <vector>
 
-#include <boost/shared_ptr.hpp>
-
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/ObsAuxControls.h"
@@ -99,23 +97,23 @@ template <typename MODEL> class LocalHofX : public Application {
     std::vector<eckit::LocalConfiguration> centerconf;
     fullConfig.get("GeoLocations", centerconf);
     std::vector<eckit::geometry::Point2> centers;
-    std::vector<boost::shared_ptr<ObsSpaces_>> localobs;
-    std::vector<boost::shared_ptr<ObsAuxCtrls_>> localobias;
-    std::vector<boost::shared_ptr<Observers<MODEL, State_> >> pobs;
+    std::vector<std::shared_ptr<ObsSpaces_>> localobs;
+    std::vector<std::shared_ptr<ObsAuxCtrls_>> localobias;
+    std::vector<std::shared_ptr<Observers<MODEL, State_> >> pobs;
     for (std::size_t jj = 0; jj < centerconf.size(); ++jj) {
        double lon = centerconf[jj].getDouble("lon");
        double lat = centerconf[jj].getDouble("lat");
        centers.push_back(eckit::geometry::Point2(lon, lat));
-       boost::shared_ptr<ObsSpaces_>
+       std::shared_ptr<ObsSpaces_>
           lobs(new ObsSpaces_(obsdb, centers[jj], dist, max_nobs));
        localobs.push_back(lobs);
        Log::test() << "Local obs around: " << centers[jj] << std::endl;
        Log::test() << *localobs[jj] << std::endl;
        //  Setup obs bias<
-       boost::shared_ptr<ObsAuxCtrls_> lobias(new ObsAuxCtrls_(obsdb, obsconf));
+       std::shared_ptr<ObsAuxCtrls_> lobias(new ObsAuxCtrls_(obsdb, obsconf));
        localobias.push_back(lobias);
        //  Setup observer
-       boost::shared_ptr<Observers<MODEL, State_>>
+       std::shared_ptr<Observers<MODEL, State_>>
           lpobs(new Observers<MODEL, State_>(obsconf, *localobs[jj], *localobias[jj]));
        pobs.push_back(lpobs);
        post.enrollProcessor(pobs[jj]);

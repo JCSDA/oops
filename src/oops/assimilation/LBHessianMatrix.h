@@ -73,7 +73,7 @@ template<typename MODEL> class LBHessianMatrix : private boost::noncopyable {
 //  Jo + Jc
     for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
       std::unique_ptr<GeneralizedDepartures> ww(costtl.releaseOutputFromTL(iq+jj));
-      boost::shared_ptr<GeneralizedDepartures> zz(j_.jterm(jj).multiplyCoInv(*ww));
+      std::shared_ptr<GeneralizedDepartures> zz(j_.jterm(jj).multiplyCoInv(*ww));
       costad.enrollProcessor(j_.jterm(jj).setupAD(zz, dw));
     }
 

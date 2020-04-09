@@ -77,7 +77,7 @@ class CalcHofX {
   const util::Duration winlen_;
   std::vector<ObsDataPtr_<int> > qcflags_;   // QC flags
   std::vector<ObsDataPtr_<float> > obserr_;  // Obs Errors
-  boost::shared_ptr<Observers<MODEL, State_> > pobs_;   // Observer
+  std::shared_ptr<Observers<MODEL, State_> > pobs_;   // Observer
 };
 
 

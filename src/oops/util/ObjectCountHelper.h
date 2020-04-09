@@ -12,11 +12,11 @@
 #define OOPS_UTIL_OBJECTCOUNTHELPER_H_
 
 #include <map>
+#include <memory>
 #include <ostream>
 #include <string>
 
 #include <boost/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
 #include "oops/util/Printable.h"
 
 namespace util {
@@ -28,14 +28,14 @@ class ObjectCountHelper : public util::Printable,
  public:
   static void start();
   static void stop();
-  static boost::shared_ptr<ObjectCountHelper> create(const std::string &);
+  static std::shared_ptr<ObjectCountHelper> create(const std::string &);
 
   ~ObjectCountHelper();
   void oneMore();
   void oneLess();
 
  private:
-  static std::map< std::string, boost::shared_ptr<ObjectCountHelper> > * counters_;
+  static std::map< std::string, std::shared_ptr<ObjectCountHelper> > * counters_;
 
   explicit ObjectCountHelper(const std::string &);
   void print(std::ostream &) const;

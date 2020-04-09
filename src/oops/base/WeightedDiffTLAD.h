@@ -13,7 +13,7 @@
 
 #include <cmath>
 #include <map>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Accumulator.h"
@@ -56,7 +56,7 @@ class WeightedDiffTLAD : public PostBaseTLAD<MODEL> {
   Increment_ * releaseDiff() {return wdiff_.releaseDiff();}
   Increment_ * releaseOutputFromTL() override;
   void setupTL(const Geometry_ &);
-  void setupAD(boost::shared_ptr<const Increment_>);
+  void setupAD(std::shared_ptr<const Increment_>);
 
  private:
   void doInitializeTraj(const State_ &,
@@ -77,7 +77,7 @@ class WeightedDiffTLAD : public PostBaseTLAD<MODEL> {
   WeightingFct & wfct_;
   WeightedDiff<MODEL, Increment_, State_> wdiff_;
   std::map< util::DateTime, double > weights_;
-  boost::shared_ptr<const Increment_> forcing_;
+  std::shared_ptr<const Increment_> forcing_;
   Accumulator<MODEL, Increment_, Increment_> * avg_;  // Should be unique_ptr
   double sum_;
   bool linit_;
@@ -196,7 +196,7 @@ Increment<MODEL> * WeightedDiffTLAD<MODEL>::releaseOutputFromTL() {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void WeightedDiffTLAD<MODEL>::setupAD(boost::shared_ptr<const Increment_> forcing) {
+void WeightedDiffTLAD<MODEL>::setupAD(std::shared_ptr<const Increment_> forcing) {
   Log::trace() << "WeightedDiffTLAD::setupAD start" << std::endl;
   forcing_ = forcing;
   Log::trace() << "WeightedDiffTLAD::setupAD done" << std::endl;

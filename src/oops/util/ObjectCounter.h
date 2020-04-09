@@ -11,7 +11,7 @@
 #ifndef OOPS_UTIL_OBJECTCOUNTER_H_
 #define OOPS_UTIL_OBJECTCOUNTER_H_
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include "oops/util/ObjectCountHelper.h"
 
@@ -32,7 +32,7 @@ class ObjectCounter {
     {count_->oneLess();}
 
  private:
-  boost::shared_ptr<ObjectCountHelper> count_;
+  std::shared_ptr<ObjectCountHelper> count_;
 };
 
 // -----------------------------------------------------------------------------

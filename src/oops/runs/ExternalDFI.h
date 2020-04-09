@@ -14,8 +14,6 @@
 #include <memory>
 #include <string>
 
-#include <boost/shared_ptr.hpp>
-
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
@@ -82,7 +80,7 @@ template <typename MODEL> class ExternalDFI : public Application {
     const eckit::LocalConfiguration dfiConf(fullConfig, "dfi");
     const util::Duration dfispan(dfiConf.getString("filter_span"));
     const util::DateTime dfitime(bgndate+dfispan/2);
-    boost::shared_ptr< WeightedMean<MODEL, State_> >
+    std::shared_ptr< WeightedMean<MODEL, State_> >
       pdfi(new WeightedMean<MODEL, State_>(dfitime, dfispan, resol, dfiConf));
     pp.enrollProcessor(pdfi);
 

@@ -21,13 +21,13 @@ namespace util {
 
 // -----------------------------------------------------------------------------
 
-std::map<std::string, boost::shared_ptr<ObjectCountHelper> > * ObjectCountHelper::counters_ = 0;
+std::map<std::string, std::shared_ptr<ObjectCountHelper> > * ObjectCountHelper::counters_ = 0;
 
 // -----------------------------------------------------------------------------
 
 void ObjectCountHelper::start() {
   ASSERT(!counters_);
-  counters_ = new std::map < std::string, boost::shared_ptr<ObjectCountHelper> >();
+  counters_ = new std::map < std::string, std::shared_ptr<ObjectCountHelper> >();
   ASSERT(counters_);
   oops::Log::stats() << "ObjectCountHelper started." << std::endl;
 }
@@ -36,7 +36,7 @@ void ObjectCountHelper::start() {
 
 void ObjectCountHelper::stop() {
   ASSERT(counters_);
-  typedef std::map<std::string, boost::shared_ptr<ObjectCountHelper> >::iterator it;
+  typedef std::map<std::string, std::shared_ptr<ObjectCountHelper> >::iterator it;
   oops::Log::stats() << " " << std::endl;
   oops::Log::stats() << "----------------------------------------------------------------------"
                      << std::endl;
@@ -55,10 +55,10 @@ void ObjectCountHelper::stop() {
 
 // -----------------------------------------------------------------------------
 
-boost::shared_ptr<ObjectCountHelper> ObjectCountHelper::create(const std::string & cname) {
+std::shared_ptr<ObjectCountHelper> ObjectCountHelper::create(const std::string & cname) {
   if (!counters_) ObjectCountHelper::start();  // Happens in unit tests...
-  boost::shared_ptr<ObjectCountHelper> pcount;
-  typedef std::map<std::string, boost::shared_ptr<ObjectCountHelper> >::iterator it;
+  std::shared_ptr<ObjectCountHelper> pcount;
+  typedef std::map<std::string, std::shared_ptr<ObjectCountHelper> >::iterator it;
   it jj = counters_->find(cname);
   if (jj == counters_->end()) {
     pcount.reset(new ObjectCountHelper(cname));

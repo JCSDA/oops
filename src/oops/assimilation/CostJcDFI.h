@@ -13,9 +13,6 @@
 
 #include <memory>
 
-#include <boost/pointer_cast.hpp>
-#include <boost/shared_ptr.hpp>
-
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/ControlVariable.h"
@@ -60,21 +57,21 @@ template<typename MODEL> class CostJcDFI : public CostTermBase<MODEL> {
   virtual ~CostJcDFI() {}
 
 /// Initialize before nonlinear model integration.
-  boost::shared_ptr<PostBase<State_> > initialize(const CtrlVar_ &,
-                                                  const eckit::Configuration &) override;
-  boost::shared_ptr<PostBaseTLAD<MODEL> > initializeTraj(const CtrlVar_ &, const Geometry_ &,
-                                                         const eckit::Configuration &) override;
+  std::shared_ptr<PostBase<State_> > initialize(const CtrlVar_ &,
+                                                const eckit::Configuration &) override;
+  std::shared_ptr<PostBaseTLAD<MODEL> > initializeTraj(const CtrlVar_ &, const Geometry_ &,
+                                                       const eckit::Configuration &) override;
 
 /// Finalize computation after nonlinear model integration.
   double finalize() override;
   void finalizeTraj() override;
 
 /// Initialize \f$ J_c\f$ before starting the TL run.
-  boost::shared_ptr<PostBaseTLAD_> setupTL(const CtrlInc_ &) const override;
+  std::shared_ptr<PostBaseTLAD_> setupTL(const CtrlInc_ &) const override;
 
 /// Initialize \f$ J_c\f$ before starting the AD run.
-  boost::shared_ptr<PostBaseTLAD_> setupAD(
-           boost::shared_ptr<const GeneralizedDepartures>, CtrlInc_ &) const override;
+  std::shared_ptr<PostBaseTLAD_> setupAD(
+           std::shared_ptr<const GeneralizedDepartures>, CtrlInc_ &) const override;
 
 /// Multiply by \f$ C\f$ and \f$ C^{-1}\f$.
   Increment_ * multiplyCovar(const GeneralizedDepartures &) const override;
@@ -100,8 +97,8 @@ template<typename MODEL> class CostJcDFI : public CostTermBase<MODEL> {
   const util::Duration tstep_;
   std::unique_ptr<Geometry_> tlres_;
   util::Duration tlstep_;
-  mutable boost::shared_ptr<WeightedDiff<MODEL, Increment_, State_> > filter_;
-  mutable boost::shared_ptr<WeightedDiffTLAD<MODEL> > ftlad_;
+  mutable std::shared_ptr<WeightedDiff<MODEL, Increment_, State_> > filter_;
+  mutable std::shared_ptr<WeightedDiffTLAD<MODEL> > ftlad_;
 };
 
 // =============================================================================
@@ -125,7 +122,7 @@ CostJcDFI<MODEL>::CostJcDFI(const eckit::Configuration & conf, const Geometry_ &
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-boost::shared_ptr<PostBase<State<MODEL> > >
+std::shared_ptr<PostBase<State<MODEL> > >
 CostJcDFI<MODEL>::initialize(const CtrlVar_ &, const eckit::Configuration &) {
   filter_.reset(new WeightedDiff<MODEL, Increment_, State_>(conf_, vt_, span_,
                                                             tstep_, resol_, *wfct_));
@@ -146,7 +143,7 @@ double CostJcDFI<MODEL>::finalize() {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-boost::shared_ptr<PostBaseTLAD<MODEL> >
+std::shared_ptr<PostBaseTLAD<MODEL> >
 CostJcDFI<MODEL>::initializeTraj(const CtrlVar_ &, const Geometry_ & tlres,
                                  const eckit::Configuration & innerConf) {
   tlres_.reset(new Geometry_(tlres));
@@ -175,7 +172,7 @@ Increment<MODEL> * CostJcDFI<MODEL>::newDualVector() const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-boost::shared_ptr<PostBaseTLAD<MODEL> >
+std::shared_ptr<PostBaseTLAD<MODEL> >
 CostJcDFI<MODEL>::setupTL(const CtrlInc_ &) const {
   ftlad_->setupTL(*tlres_);
   return ftlad_;
@@ -184,11 +181,11 @@ CostJcDFI<MODEL>::setupTL(const CtrlInc_ &) const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-boost::shared_ptr<PostBaseTLAD<MODEL> >
-CostJcDFI<MODEL>::setupAD(boost::shared_ptr<const GeneralizedDepartures> pv,
+std::shared_ptr<PostBaseTLAD<MODEL> >
+CostJcDFI<MODEL>::setupAD(std::shared_ptr<const GeneralizedDepartures> pv,
                           CtrlInc_ &) const {
-  boost::shared_ptr<const Increment_>
-    dx = boost::dynamic_pointer_cast<const Increment_>(pv);
+  std::shared_ptr<const Increment_>
+    dx = std::dynamic_pointer_cast<const Increment_>(pv);
   ftlad_->setupAD(dx);
   return ftlad_;
 }

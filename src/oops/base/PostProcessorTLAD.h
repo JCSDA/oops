@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/PostBaseTLAD.h"
@@ -42,12 +42,12 @@ class PostProcessorTLAD {
 
   void enrollProcessor(PostBaseTLAD_ * pp) {
     if (pp != 0) {
-      boost::shared_ptr<PostBaseTLAD_> sp(pp);
+      std::shared_ptr<PostBaseTLAD_> sp(pp);
       processors_.push_back(sp);
     }
   }
 
-  void enrollProcessor(boost::shared_ptr<PostBaseTLAD_> pp) {
+  void enrollProcessor(std::shared_ptr<PostBaseTLAD_> pp) {
     if (pp != 0) processors_.push_back(pp);
   }
 
@@ -118,7 +118,7 @@ class PostProcessorTLAD {
   }
 
  private:
-  std::vector< boost::shared_ptr<PostBaseTLAD_> > processors_;
+  std::vector< std::shared_ptr<PostBaseTLAD_> > processors_;
   PostProcessorTLAD operator= (const PostProcessorTLAD &);
 };
 

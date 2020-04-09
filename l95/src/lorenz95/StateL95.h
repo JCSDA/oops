@@ -15,6 +15,8 @@
 #include <ostream>
 #include <string>
 
+#include <boost/shared_ptr.hpp>
+
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/Resolution.h"
 
