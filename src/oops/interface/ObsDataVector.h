@@ -13,6 +13,7 @@
 #include <ostream>
 #include <string>
 
+#include <boost/shared_ptr.hpp>
 
 #include "oops/base/Variables.h"
 #include "oops/interface/ObsSpace.h"
