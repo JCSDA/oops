@@ -60,7 +60,8 @@ LocalObsErrorDiag<MODEL>::LocalObsErrorDiag
 
 template<typename MODEL>
 void LocalObsErrorDiag<MODEL>::print(std::ostream & os) const {
-  os << "LocalObsErrorDiag<MODEL>::print not implemeted yet";
+  os << "Localized diagonal observation error covariance, inverse variances: "
+     << this->inverseVariance_ << std::endl;
 }
 
 

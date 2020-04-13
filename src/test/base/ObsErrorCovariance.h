@@ -17,7 +17,6 @@
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
-
 #include "eckit/testing/Test.h"
 #include "oops/base/ObsErrorBase.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
@@ -29,9 +28,9 @@
 namespace test {
 
 // -----------------------------------------------------------------------------
-
+/// Tests creation and destruction of ObsErrorCovariances
 template <typename MODEL> void testConstructor() {
-  typedef ObsTestsFixture<MODEL>  Test_;
+  typedef ObsTestsFixture<MODEL>     Test_;
   typedef oops::ObsErrorBase<MODEL>  Covar_;
   typedef oops::ObsVector<MODEL>     ObsVector_;
 
@@ -56,6 +55,52 @@ template <typename MODEL> void testConstructor() {
 }
 
 // -----------------------------------------------------------------------------
+/// Tests that \f$R*R^{-1}*dy = dy\f$ and \f$R^{-1}*R*dy = dy\f$
+template <typename MODEL> void testMultiplies() {
+  typedef ObsTestsFixture<MODEL>     Test_;
+  typedef oops::ObsErrorBase<MODEL>  Covar_;
+  typedef oops::ObsVector<MODEL>     ObsVector_;
+
+  oops::instantiateObsErrorFactory<MODEL>();
+
+  const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
+  std::vector<eckit::LocalConfiguration> conf;
+  obsconf.get("ObsTypes", conf);
+
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    ObsVector_ obserr(Test_::obspace()[jj], "ObsError");
+    obserr.save("EffectiveError");
+
+    const eckit::LocalConfiguration rconf(conf[jj], "Covariance");
+    std::unique_ptr<Covar_> R(
+      oops::ObsErrorFactory<MODEL>::create(rconf, Test_::obspace()[jj]));
+
+    // RMSE should be equal to the rms that was read from the file
+    EXPECT(oops::is_close(R->getRMSE(), obserr.rms(), 1.e-10));
+
+    // create random vector dy and its copies dy1, dy2
+    ObsVector_ dy(Test_::obspace()[jj]);
+    dy.random();
+    ObsVector_ dy1(dy);
+    ObsVector_ dy2(dy);
+    oops::Log::info() << "Random vector dy: " << dy << std::endl;
+
+    R->multiply(dy1);
+    R->inverseMultiply(dy1);
+    // dy1 = R^{-1}*R*dy
+    oops::Log::info() << "R^{-1}*R*dy: " << dy1 << std::endl;
+    EXPECT(oops::is_close(dy1.rms(), dy.rms(), 1.e-10));
+
+    R->inverseMultiply(dy2);
+    R->multiply(dy2);
+    // dy2 = R*R^P-1}*dy
+    oops::Log::info() << "R*R^{-1}*dy: " << dy2 << std::endl;
+    EXPECT(oops::is_close(dy2.rms(), dy.rms(), 1.e-10));
+  }
+}
+
+
+// -----------------------------------------------------------------------------
 
 template <typename MODEL>
 class ObsErrorCovariance : public oops::Test {
@@ -70,6 +115,8 @@ class ObsErrorCovariance : public oops::Test {
 
     ts.emplace_back(CASE("interface/ObsErrorCovariance/testConstructor")
       { testConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/ObsErrorCovariance/testMultiplies")
+      { testMultiplies<MODEL>(); });
   }
 };
 

@@ -11,45 +11,41 @@
 #ifndef OOPS_BASE_OBSERRORS_H_
 #define OOPS_BASE_OBSERRORS_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #include <boost/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
 
 #include "oops/base/Departures.h"
 #include "oops/base/ObsErrorBase.h"
-#include "oops/base/Observations.h"
 #include "oops/base/ObsSpaces.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
 
 namespace oops {
 
 // -----------------------------------------------------------------------------
-
+/// \biref Container for ObsErrors for all observation types that are used in DA
 template <typename MODEL>
 class ObsErrors : public util::Printable,
                   private boost::noncopyable {
   typedef Departures<MODEL>          Departures_;
-  typedef Observations<MODEL>        Observations_;
   typedef ObsErrorBase<MODEL>        ObsError_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
-  typedef ObsVector<MODEL>           ObsVector_;
 
  public:
   static const std::string classname() {return "oops::ObsErrors";}
 
   ObsErrors(const eckit::Configuration &, const ObsSpaces_ &);
-  ~ObsErrors();
 
-/// Access
-  std::size_t size() const {return err_.size();}
-  const ObsError_ & operator[](const std::size_t ii) const {return *err_.at(ii);}
+/// Accessor and size
+  size_t size() const {return err_.size();}
+  const ObsError_ & operator[](const size_t ii) const {return *err_.at(ii);}
 
-/// Multiply a Departure by \f$R\f$ and \f$R^{-1}\f$
+/// Multiply a Departure by \f$R\f$
   void multiply(Departures_ &) const;
+/// Multiply a Departure by \f$R^{-1}\f$
   void inverseMultiply(Departures_ &) const;
 
 /// Generate random perturbation
@@ -57,35 +53,27 @@ class ObsErrors : public util::Printable,
 
  private:
   void print(std::ostream &) const;
-  std::vector<boost::shared_ptr<ObsError_> > err_;
+  std::vector<std::unique_ptr<ObsError_> > err_;
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
 ObsErrors<MODEL>::ObsErrors(const eckit::Configuration & config,
-                            const ObsSpaces_ & os) : err_(0)
-{
+                            const ObsSpaces_ & os) : err_() {
   std::vector<eckit::LocalConfiguration> obsconf;
   config.get("ObsTypes", obsconf);
-  for (std::size_t jj = 0; jj < os.size(); ++jj) {
+  for (size_t jj = 0; jj < os.size(); ++jj) {
     eckit::LocalConfiguration conf(obsconf[jj], "Covariance");
-    boost::shared_ptr<ObsError_> tmp(
-      ObsErrorFactory<MODEL>::create(conf, os[jj]));
-    err_.push_back(tmp);
+    err_.emplace_back(ObsErrorFactory<MODEL>::create(conf, os[jj]));
   }
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-ObsErrors<MODEL>::~ObsErrors() {}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
 void ObsErrors<MODEL>::multiply(Departures_ & dy) const {
-  for (std::size_t jj = 0; jj < err_.size(); ++jj) {
+  for (size_t jj = 0; jj < err_.size(); ++jj) {
     err_[jj]->multiply(dy[jj]);
   }
 }
@@ -94,7 +82,7 @@ void ObsErrors<MODEL>::multiply(Departures_ & dy) const {
 
 template <typename MODEL>
 void ObsErrors<MODEL>::inverseMultiply(Departures_ & dy) const {
-  for (std::size_t jj = 0; jj < err_.size(); ++jj) {
+  for (size_t jj = 0; jj < err_.size(); ++jj) {
     err_[jj]->inverseMultiply(dy[jj]);
   }
 }
@@ -103,7 +91,7 @@ void ObsErrors<MODEL>::inverseMultiply(Departures_ & dy) const {
 
 template <typename MODEL>
 void ObsErrors<MODEL>::randomize(Departures_ & dy) const {
-  for (std::size_t jj = 0; jj < err_.size(); ++jj) {
+  for (size_t jj = 0; jj < err_.size(); ++jj) {
     err_[jj]->randomize(dy[jj]);
   }
 }
@@ -112,7 +100,7 @@ void ObsErrors<MODEL>::randomize(Departures_ & dy) const {
 
 template<typename MODEL>
 void ObsErrors<MODEL>::print(std::ostream & os) const {
-  for (std::size_t jj = 0; jj < err_.size(); ++jj) os << *err_[jj];
+  for (size_t jj = 0; jj < err_.size(); ++jj) os << *err_[jj];
 }
 
 // -----------------------------------------------------------------------------
