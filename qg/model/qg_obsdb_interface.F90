@@ -30,7 +30,7 @@ implicit none
 
 ! Passed variables
 integer(c_int),intent(inout) :: c_key_self !< Observation data
-type(c_ptr),intent(in)    :: c_conf        !< Configuration
+type(c_ptr),value,intent(in) :: c_conf        !< Configuration
 
 ! Local variables
 type(fckit_configuration) :: f_conf
@@ -198,8 +198,8 @@ implicit none
 integer(c_int),intent(in) :: c_key_self                  !< Observation data
 integer(c_int),intent(in) :: lgrp                        !< Group size
 character(kind=c_char,len=1),intent(in) :: c_grp(lgrp+1) !< Group name
-type(c_ptr),intent(in) :: c_t1                           !< Time 1
-type(c_ptr),intent(in) :: c_t2                           !< Time 2
+type(c_ptr),value,intent(in) :: c_t1                     !< Time 1
+type(c_ptr),value,intent(in) :: c_t2                     !< Time 2
 integer(c_int),intent(inout) :: c_key_locs               !< Locations
 
 ! Local variables
@@ -231,9 +231,9 @@ implicit none
 integer(c_int),intent(in) :: c_key_self                  !< Observation data
 integer(c_int),intent(in) :: lgrp                        !< Group size
 character(kind=c_char,len=1),intent(in) :: c_grp(lgrp+1) !< Group name
-type(c_ptr),intent(in) :: c_conf                         !< Configuration
-type(c_ptr),intent(in) :: c_bgn                          !< Start time
-type(c_ptr),intent(in) :: c_step                         !< Time-step
+type(c_ptr),value,intent(in) :: c_conf                   !< Configuration
+type(c_ptr),value,intent(in) :: c_bgn                    !< Start time
+type(c_ptr),value,intent(in) :: c_step                   !< Time-step
 integer(c_int),intent(in) :: ktimes                      !< Number of time-slots
 integer(c_int),intent(inout) :: kobs                     !< Number of observations
 

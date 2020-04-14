@@ -25,8 +25,7 @@ ErrorStdDevQG::ErrorStdDevQG(const StateQG &, const StateQG &,
                              const GeometryQG &, const eckit::Configuration & conf)
   : keyFtnConfig_(0)
 {
-  const eckit::Configuration * configc = &conf;
-  qg_error_stddev_setup_f90(keyFtnConfig_, &configc);
+  qg_error_stddev_setup_f90(keyFtnConfig_, conf);
   oops::Log::trace() << "ErrorStdDevQG created" << std::endl;
 }
 // -----------------------------------------------------------------------------

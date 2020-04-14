@@ -82,7 +82,7 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Error covariance
 // -----------------------------------------------------------------------------
-  void qg_error_covariance_setup_f90(F90error_covariance &, const eckit::Configuration * const *,
+  void qg_error_covariance_setup_f90(F90error_covariance &, const eckit::Configuration &,
                                      const F90geom &);
   void qg_error_covariance_delete_f90(F90error_covariance &);
   void qg_error_covariance_mult_f90(const F90error_covariance &, const F90flds &, const F90flds &);
@@ -93,7 +93,7 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Error standard deviation
 // -----------------------------------------------------------------------------
-  void qg_error_stddev_setup_f90(F90error_stddev &, const eckit::Configuration * const *);
+  void qg_error_stddev_setup_f90(F90error_stddev &, const eckit::Configuration &);
   void qg_error_stddev_delete_f90(F90error_stddev &);
   void qg_error_stddev_mult_f90(const F90error_stddev &, const F90flds &, const F90flds &);
   void qg_error_stddev_inv_mult_f90(const F90error_stddev &, const F90flds &, const F90flds &);
@@ -105,7 +105,7 @@ extern "C" {
   void qg_fields_create_from_other_f90(F90flds &, const F90flds &);
   void qg_fields_delete_f90(F90flds &);
   void qg_fields_zero_f90(const F90flds &);
-  void qg_fields_dirac_f90(const F90flds &, const eckit::Configuration * const *);
+  void qg_fields_dirac_f90(const F90flds &, const eckit::Configuration &);
   void qg_fields_random_f90(const F90flds &);
   void qg_fields_copy_f90(const F90flds &, const F90flds &);
   void qg_fields_self_add_f90(const F90flds &, const F90flds &);
@@ -117,12 +117,12 @@ extern "C" {
   void qg_fields_add_incr_f90(const F90flds &, const F90flds &);
   void qg_fields_diff_incr_f90(const F90flds &, const F90flds &, const F90flds &);
   void qg_fields_change_resol_f90(const F90flds &, const F90flds &);
-  void qg_fields_read_file_f90(const F90flds &, const eckit::Configuration * const *,
-                              util::DateTime * const *);
-  void qg_fields_write_file_f90(const F90flds &, const eckit::Configuration * const *,
-                               const util::DateTime * const *);
-  void qg_fields_analytic_init_f90(const F90flds &, const eckit::Configuration * const *,
-                                  util::DateTime * const *);
+  void qg_fields_read_file_f90(const F90flds &, const eckit::Configuration &,
+                               util::DateTime &);
+  void qg_fields_write_file_f90(const F90flds &, const eckit::Configuration &,
+                                const util::DateTime &);
+  void qg_fields_analytic_init_f90(const F90flds &, const eckit::Configuration &,
+                                   util::DateTime &);
   void qg_fields_gpnorm_f90(const F90flds &, const int &, double &);
   void qg_fields_rms_f90(const F90flds &, double &);
   void qg_fields_sizes_f90(const F90flds &, int &, int &, int &, int &);
@@ -130,11 +130,11 @@ extern "C" {
   void qg_fields_interp_f90(const F90flds &, const F90locs &, const F90vars *, const F90gom &);
   void qg_fields_interp_tl_f90(const F90flds &, const F90locs &, const F90vars *, const F90gom &);
   void qg_fields_interp_ad_f90(const F90flds &, const F90locs &, const F90vars *, const F90gom &);
-  void qg_fields_set_atlas_f90(const F90flds &, const F90vars *, const util::DateTime * const *,
+  void qg_fields_set_atlas_f90(const F90flds &, const F90vars *, const util::DateTime &,
                                atlas::field::FieldSetImpl *);
-  void qg_fields_to_atlas_f90(const F90flds &, const F90vars *, const util::DateTime * const *,
+  void qg_fields_to_atlas_f90(const F90flds &, const F90vars *, const util::DateTime &,
                               atlas::field::FieldSetImpl *);
-  void qg_fields_from_atlas_f90(const F90flds &, const F90vars *, const util::DateTime * const *,
+  void qg_fields_from_atlas_f90(const F90flds &, const F90vars *, util::DateTime &,
                                 atlas::field::FieldSetImpl *);
   void qg_fields_getpoint_f90(const F90flds&, const F90iter&, const int &, double &);
   void qg_fields_setpoint_f90(const F90flds&, const F90iter&, const int &, const double &);
@@ -145,8 +145,8 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Geometry
 // -----------------------------------------------------------------------------
-  void qg_geom_setup_f90(F90geom &, const eckit::Configuration * const *);
-  void qg_geom_create_atlas_grid_conf_f90(const F90geom &, const eckit::Configuration * const *);
+  void qg_geom_setup_f90(F90geom &, const eckit::Configuration &);
+  void qg_geom_create_atlas_grid_conf_f90(const F90geom &, const eckit::Configuration &);
   void qg_geom_set_atlas_functionspace_pointer_f90(const F90geom &,
                                                    atlas::functionspace::FunctionSpaceImpl *);
   void qg_geom_fill_atlas_fieldset_f90(const F90geom &, atlas::field::FieldSetImpl *);
@@ -185,16 +185,16 @@ extern "C" {
   void qg_gom_dotprod_f90(const F90gom &, const F90gom &, double &);
   void qg_gom_stats_f90(const F90gom &, int &, double &, double &, double &, double &);
   void qg_gom_maxloc_f90(const F90gom &, double &, int &, int &);
-  void qg_gom_read_file_f90(const F90gom &, const eckit::Configuration * const *);
-  void qg_gom_write_file_f90(const F90gom &, const eckit::Configuration * const *);
+  void qg_gom_read_file_f90(const F90gom &, const eckit::Configuration &);
+  void qg_gom_write_file_f90(const F90gom &, const eckit::Configuration &);
   void qg_gom_analytic_init_f90(const F90gom &, const F90locs &,
-                                const eckit::Configuration * const *);
+                                const eckit::Configuration &);
 
 // -----------------------------------------------------------------------------
 //  Locations
 // -----------------------------------------------------------------------------
   void qg_locs_create_f90(F90locs &);
-  void qg_locs_test_f90(const F90locs &, const eckit::Configuration * const *,
+  void qg_locs_test_f90(const F90locs &, const eckit::Configuration &,
                         const int &, const double *, const double *, const double*);
   void qg_locs_delete_f90(F90locs &);
   void qg_locs_nobs_f90(const F90locs &, int &);
@@ -203,7 +203,7 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Model
 // -----------------------------------------------------------------------------
-  void qg_model_setup_f90(F90model &, const eckit::Configuration * const *);
+  void qg_model_setup_f90(F90model &, const eckit::Configuration &);
   void qg_model_delete_f90(F90model &);
   void qg_model_propagate_f90(const F90model &, const F90flds &);
   void qg_model_propagate_tl_f90(const F90model &, const F90flds &, const F90flds &);
@@ -212,7 +212,7 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Observation Handler
 // -----------------------------------------------------------------------------
-  void qg_obsdb_setup_f90(F90odb &, const eckit::Configuration * const *);
+  void qg_obsdb_setup_f90(F90odb &, const eckit::Configuration &);
   void qg_obsdb_delete_f90(F90odb &);
   void qg_obsdb_get_f90(const F90odb &, const int &, const char *,
                         const int &, const char *, const F90ovec &);
@@ -224,11 +224,11 @@ extern "C" {
   void qg_obsdb_has_f90(const F90odb &, const int &, const char *,
                         const int &, const char *, int &);
   void qg_obsdb_locations_f90(const F90odb &, const int &, const char *,
-                              const util::DateTime * const *, const util::DateTime * const *,
+                              const util::DateTime &, const util::DateTime &,
                               F90locs &);
   void qg_obsdb_generate_f90(const F90odb &, const int &, const char *,
-                             const eckit::Configuration * const *, const util::DateTime * const *,
-                             const util::Duration * const *, const int &, int &);
+                             const eckit::Configuration &, const util::DateTime &,
+                             const util::Duration &, const int &, int &);
   void qg_obsdb_nobs_f90(const F90odb &, const int &, const char *, int &);
   void qg_obsoper_inputs_f90(const F90hop &, F90vars *);
 
@@ -256,7 +256,7 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Streamfunction observations
 // -----------------------------------------------------------------------------
-  void qg_stream_setup_f90(F90hop &, const eckit::Configuration * const *);
+  void qg_stream_setup_f90(F90hop &, const eckit::Configuration &);
   void qg_stream_delete_f90(F90hop &);
   void qg_stream_equiv_f90(const F90gom &, const F90ovec &, const double &);
   void qg_stream_equiv_tl_f90(const F90gom &, const F90ovec &, const double &);
@@ -265,7 +265,7 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Wind observations
 // -----------------------------------------------------------------------------
-  void qg_wind_setup_f90(F90hop &, const eckit::Configuration * const *);
+  void qg_wind_setup_f90(F90hop &, const eckit::Configuration &);
   void qg_wind_delete_f90(F90hop &);
   void qg_wind_equiv_f90(const F90gom &, F90ovec &, const double &);
   void qg_wind_equiv_tl_f90(const F90gom &, const F90ovec &, const double &);
@@ -274,7 +274,7 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Wind speed observations
 // -----------------------------------------------------------------------------
-  void qg_wspeed_setup_f90(F90hop &, const eckit::Configuration * const *);
+  void qg_wspeed_setup_f90(F90hop &, const eckit::Configuration &);
   void qg_wspeed_delete_f90(F90hop &);
   void qg_wspeed_equiv_f90(const F90gom &, const F90ovec &, const double &);
   void qg_wspeed_equiv_tl_f90(const F90gom &, const F90ovec &, const F90gom &, const double &);

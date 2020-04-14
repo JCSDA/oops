@@ -31,7 +31,7 @@ implicit none
 
 ! Passed variables
 integer(c_int),intent(inout) :: c_key_self !< Error covariance configuration
-type(c_ptr),intent(in) :: c_conf           !< Configuration
+type(c_ptr),value,intent(in) :: c_conf     !< Configuration
 integer(c_int),intent(in) :: c_key_geom    !< Geometry
 
 ! Local variables

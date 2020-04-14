@@ -25,7 +25,7 @@ subroutine qg_error_stddev_setup_c(c_key_self,c_conf) bind (c,name='qg_error_std
 
 ! Passed variables
 integer(c_int),intent(inout) :: c_key_self !< Error standard deviation structure
-type(c_ptr),intent(in) :: c_conf           !< Configuration
+type(c_ptr),value,intent(in) :: c_conf     !< Configuration
 
 ! Local variables
 type(fckit_configuration) :: f_conf

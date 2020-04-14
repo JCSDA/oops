@@ -44,7 +44,7 @@ implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_self   !< Locations
-type(c_ptr),intent(in) :: c_conf          !< Configuration
+type(c_ptr),value,intent(in) :: c_conf    !< Configuration
 integer(c_int),intent(in) :: klocs        !< Number of user-specified locations
 real(c_double),intent(in) :: klats(klocs) !< User-specified latitudes (degrees)
 real(c_double),intent(in) :: klons(klocs) !< User-specified longitudes (degrees)

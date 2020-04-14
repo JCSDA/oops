@@ -26,7 +26,7 @@ subroutine qg_geom_setup_c(c_key_self,c_conf) bind(c,name='qg_geom_setup_f90')
 
 ! Passed variables
 integer(c_int),intent(inout) :: c_key_self !< Geometry
-type(c_ptr),intent(in) :: c_conf           !< Configuration
+type(c_ptr),value,intent(in) :: c_conf     !< Configuration
 
 ! Local variables
 type(fckit_configuration) :: f_conf
@@ -48,7 +48,7 @@ subroutine qg_geom_create_atlas_grid_conf_c(c_key_self,c_conf) bind(c,name='qg_g
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_self !< Geometry
-type(c_ptr), intent(in) :: c_conf       !< Grid configuration
+type(c_ptr),value,intent(in) :: c_conf  !< Grid configuration
 
 ! Local variables
 type(qg_geom),pointer :: self

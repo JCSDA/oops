@@ -125,8 +125,7 @@ void FieldsQG::random() {
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::dirac(const eckit::Configuration & config) {
-  const eckit::Configuration * conf = &config;
-  qg_fields_dirac_f90(keyFlds_, &conf);
+  qg_fields_dirac_f90(keyFlds_, config);
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::getValues(const LocationsQG & locs, const oops::Variables & vars,
@@ -163,36 +162,27 @@ void FieldsQG::diff(const FieldsQG & x1, const FieldsQG & x2) {
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::setAtlas(atlas::FieldSet * afieldset) const {
-  const util::DateTime * dtp = &time_;
-  qg_fields_set_atlas_f90(keyFlds_, vars_.toFortran(), &dtp, afieldset->get());
+  qg_fields_set_atlas_f90(keyFlds_, vars_.toFortran(), time_, afieldset->get());
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::toAtlas(atlas::FieldSet * afieldset) const {
-  const util::DateTime * dtp = &time_;
-  qg_fields_to_atlas_f90(keyFlds_, vars_.toFortran(), &dtp, afieldset->get());
+  qg_fields_to_atlas_f90(keyFlds_, vars_.toFortran(), time_, afieldset->get());
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::fromAtlas(atlas::FieldSet * afieldset) {
-  const util::DateTime * dtp = &time_;
-  qg_fields_from_atlas_f90(keyFlds_, vars_.toFortran(), &dtp, afieldset->get());
+  qg_fields_from_atlas_f90(keyFlds_, vars_.toFortran(), time_, afieldset->get());
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::read(const eckit::Configuration & config) {
-  const eckit::Configuration * conf = &config;
-  util::DateTime * dtp = &time_;
-  qg_fields_read_file_f90(keyFlds_, &conf, &dtp);
+  qg_fields_read_file_f90(keyFlds_, config, time_);
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::analytic_init(const eckit::Configuration & config) {
-  const eckit::Configuration * conf = &config;
-  util::DateTime * dtp = &time_;
-  qg_fields_analytic_init_f90(keyFlds_, &conf, &dtp);
+  qg_fields_analytic_init_f90(keyFlds_, config, time_);
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::write(const eckit::Configuration & config) const {
-  const eckit::Configuration * conf = &config;
-  const util::DateTime * dtp = &time_;
-  qg_fields_write_file_f90(keyFlds_, &conf, &dtp);
+  qg_fields_write_file_f90(keyFlds_, config, time_);
 }
 // -----------------------------------------------------------------------------
 double FieldsQG::norm() const {

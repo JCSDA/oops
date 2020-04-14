@@ -16,7 +16,6 @@
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/util/abor1_cpp.h"
-#include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
 #include "model/GeometryQG.h"
@@ -34,8 +33,7 @@ TlmIdQG::TlmIdQG(const GeometryQG & resol, const eckit::Configuration & tlConf)
   : keyConfig_(0), tstep_(), resol_(resol), linvars_(tlConf)
 {
   tstep_ = util::Duration(tlConf.getString("tstep"));
-  const eckit::Configuration * configc = &tlConf;
-  qg_model_setup_f90(keyConfig_, &configc);
+  qg_model_setup_f90(keyConfig_, tlConf);
 
   oops::Log::trace() << "TlmIdQG created" << std::endl;
 }

@@ -37,9 +37,7 @@ GomQG::GomQG(const LocationsQG & locs, const oops::Variables & var) {
                const ObsSpaceQG & ospace, const oops::Variables &)
 {
   qg_gom_create_f90(keyGom_);
-
-  const eckit::Configuration * conp = &config;
-  qg_gom_read_file_f90(keyGom_, &conp);
+  qg_gom_read_file_f90(keyGom_, config);
 }
 // -----------------------------------------------------------------------------
 // Copy constructor
@@ -105,13 +103,11 @@ double GomQG::dot_product_with(const GomQG & other) const {
 }
 // -----------------------------------------------------------------------------
 void GomQG::read(const eckit::Configuration & config) {
-  const eckit::Configuration * conf = &config;
-  qg_gom_read_file_f90(keyGom_, &conf);
+  qg_gom_read_file_f90(keyGom_, config);
 }
 // -----------------------------------------------------------------------------
 void GomQG::write(const eckit::Configuration & config) const {
-  const eckit::Configuration * conf = &config;
-  qg_gom_write_file_f90(keyGom_, &conf);
+  qg_gom_write_file_f90(keyGom_, config);
 }
 // -----------------------------------------------------------------------------
 /*! \brief GomQG Analytic Initialization
@@ -123,9 +119,8 @@ void GomQG::write(const eckit::Configuration & config) const {
 void GomQG::analytic_init(const LocationsQG & locs,
                           const eckit::Configuration & config) {
   // Optionally replace values with analytic init
-  const eckit::Configuration * conp = &config;
   if (config.has("analytic_init"))
-    qg_gom_analytic_init_f90(keyGom_, locs.toFortran(), &conp);
+    qg_gom_analytic_init_f90(keyGom_, locs.toFortran(), config);
 }
 // -----------------------------------------------------------------------------
 void GomQG::print(std::ostream & os) const {

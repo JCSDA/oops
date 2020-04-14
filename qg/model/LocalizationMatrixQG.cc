@@ -20,8 +20,7 @@ namespace qg {
 // -----------------------------------------------------------------------------
 LocalizationMatrixQG::LocalizationMatrixQG(const GeometryQG & resol,
                                            const eckit::Configuration & config) {
-  const eckit::Configuration * configc = &config;
-  qg_error_covariance_setup_f90(keyLocal_, &configc, resol.toFortran());
+  qg_error_covariance_setup_f90(keyLocal_, config, resol.toFortran());
 }
 // -----------------------------------------------------------------------------
 LocalizationMatrixQG::~LocalizationMatrixQG() {

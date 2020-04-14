@@ -39,8 +39,7 @@ TlmQG::TlmQG(const GeometryQG & resol, const eckit::Configuration & tlConf)
 {
   tstep_ = util::Duration(tlConf.getString("tstep"));
 
-  const eckit::Configuration * configc = &tlConf;
-  qg_model_setup_f90(keyConfig_, &configc);
+  qg_model_setup_f90(keyConfig_, tlConf);
 
   oops::Log::trace() << "TlmQG created" << std::endl;
 }

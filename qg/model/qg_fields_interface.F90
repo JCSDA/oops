@@ -129,7 +129,7 @@ implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_self !< Fields
-type(c_ptr),intent(in) :: c_conf        !< Configuration
+type(c_ptr),value,intent(in) :: c_conf  !< Configuration
 
 ! Local variables
 type(fckit_configuration) :: f_conf
@@ -390,9 +390,9 @@ subroutine qg_fields_read_file_c(c_key_fld,c_conf,c_dt) bind(c,name='qg_fields_r
 implicit none
 
 ! Passed variables
-integer(c_int),intent(in) :: c_key_fld !< Fields
-type(c_ptr),intent(in)    :: c_conf    !< Configuration
-type(c_ptr),intent(inout) :: c_dt      !< Date and time
+integer(c_int),intent(in) :: c_key_fld  !< Fields
+type(c_ptr),value,intent(in) :: c_conf  !< Configuration
+type(c_ptr),value,intent(in) :: c_dt    !< Date and time
 
 ! Local variables
 type(fckit_configuration) :: f_conf
@@ -416,8 +416,8 @@ implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_fld !< Fields
-type(c_ptr),intent(in) :: c_conf       !< Configuration
-type(c_ptr),intent(in) :: c_dt         !< Date and time
+type(c_ptr),value,intent(in) :: c_conf !< Configuration
+type(c_ptr),value,intent(in) :: c_dt   !< Date and time
 
 ! Local variables
 type(fckit_configuration) :: f_conf
@@ -440,9 +440,9 @@ subroutine qg_fields_analytic_init_c(c_key_fld,c_conf,c_dt) bind(c,name='qg_fiel
 implicit none
 
 ! Passed variables
-integer(c_int),intent(in) :: c_key_fld !< Fields
-type(c_ptr),intent(in)    :: c_conf    !< Configuration
-type(c_ptr),intent(inout) :: c_dt      !< Date and time
+integer(c_int),intent(in) :: c_key_fld  !< Fields
+type(c_ptr),value,intent(in) :: c_conf  !< Configuration
+type(c_ptr),value,intent(in) :: c_dt !< Date and time
 
 ! Local variables
 type(fckit_configuration) :: f_conf
@@ -636,7 +636,7 @@ implicit none
 ! Passed variables
 integer(c_int),intent(in) :: c_key_fld           !< Fields
 integer(c_int),dimension(*),intent(in) :: c_vars !< List of variables
-type(c_ptr),intent(in) :: c_dt                   !< Date and time
+type(c_ptr),value,intent(in) :: c_dt             !< Date and time
 type(c_ptr),intent(in),value :: c_afieldset      !< ATLAS fieldset pointer
 
 ! Local variables
@@ -664,7 +664,7 @@ implicit none
 ! Passed variables
 integer(c_int),intent(in) :: c_key_fld           !< Fields
 integer(c_int),dimension(*),intent(in) :: c_vars !< List of variables
-type(c_ptr),intent(in) :: c_dt                   !< Date and time
+type(c_ptr),value,intent(in) :: c_dt             !< Date and time
 type(c_ptr),intent(in),value :: c_afieldset      !< ATLAS fieldset pointer
 
 ! Local variables
@@ -692,7 +692,7 @@ implicit none
 ! Passed variables
 integer(c_int),intent(in) :: c_key_fld           !< Fields
 integer(c_int),dimension(*),intent(in) :: c_vars !< List of variables
-type(c_ptr),intent(inout) :: c_dt                !< Date and time
+type(c_ptr),value,intent(in) :: c_dt             !< Date and time
 type(c_ptr),intent(in),value :: c_afieldset      !< ATLAS fieldset pointer
 
 ! Local variables

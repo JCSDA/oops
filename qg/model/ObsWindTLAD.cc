@@ -31,8 +31,7 @@ static ObsOpTLADMaker<ObsWindTLAD> makerWindTL_("Wind");
 ObsWindTLAD::ObsWindTLAD(const ObsSpaceQG &, const eckit::Configuration & config)
   : keyOperWind_(0), varin_(std::vector<std::string>{"u", "v"})
 {
-  const eckit::Configuration * configc = &config;
-  qg_wind_setup_f90(keyOperWind_, &configc);
+  qg_wind_setup_f90(keyOperWind_, config);
   oops::Log::trace() << "ObsWindTLAD created" << std::endl;
 }
 

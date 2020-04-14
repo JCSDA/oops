@@ -28,7 +28,7 @@ implicit none
 
 ! Passed variables
 integer(c_int),intent(inout) :: c_key_self !< Wind observations
-type(c_ptr),intent(in) :: c_conf           !< Configuration
+type(c_ptr),value,intent(in) :: c_conf     !< Configuration
 
 ! Local variables
 type(fckit_configuration) :: f_conf

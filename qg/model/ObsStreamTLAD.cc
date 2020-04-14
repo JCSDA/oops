@@ -31,8 +31,7 @@ static ObsOpTLADMaker<ObsStreamTLAD> makerStreamTL_("Stream");
 ObsStreamTLAD::ObsStreamTLAD(const ObsSpaceQG &, const eckit::Configuration & config)
   : keyOperStrm_(0), varin_(std::vector<std::string>{"x"})
 {
-  const eckit::Configuration * configc = &config;
-  qg_stream_setup_f90(keyOperStrm_, &configc);
+  qg_stream_setup_f90(keyOperStrm_, config);
   oops::Log::trace() << "ObsStreamTLAD created" << std::endl;
 }
 

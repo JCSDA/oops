@@ -25,8 +25,7 @@ namespace qg {
 
 ObsHelpQG::ObsHelpQG(const eckit::Configuration & config)
   : config_(config) {
-  const eckit::Configuration * configc = &config;
-  qg_obsdb_setup_f90(keyHelp_, &configc);
+  qg_obsdb_setup_f90(keyHelp_, config);
   oops::Log::trace() << "ObsHelpQG constructed" << std::endl;
 }
 
@@ -75,10 +74,8 @@ bool ObsHelpQG::has(const std::string & obsname, const std::string & col) const 
 
 F90locs ObsHelpQG::locations(const std::string & obsname,
                              const util::DateTime & t1, const util::DateTime & t2) const {
-  const util::DateTime * p1 = &t1;
-  const util::DateTime * p2 = &t2;
   F90locs key_locs;
-  qg_obsdb_locations_f90(keyHelp_, obsname.size(), obsname.c_str(), &p1, &p2, key_locs);
+  qg_obsdb_locations_f90(keyHelp_, obsname.size(), obsname.c_str(), t1, t2, key_locs);
   return key_locs;
 }
 
@@ -88,7 +85,6 @@ void ObsHelpQG::generateDistribution(const eckit::Configuration & config,
                                      const std::string & obsname,
                                      const util::DateTime & t1,
                                      const util::DateTime & t2) {
-  const eckit::Configuration * configc = &config;
   const util::Duration first(config.getString("begin"));
   const util::DateTime start(t1 + first);
   const util::Duration freq(config.getString("obs_period"));
@@ -98,11 +94,9 @@ void ObsHelpQG::generateDistribution(const eckit::Configuration & config,
     ++nobstimes;
     now += freq;
   }
-  const util::DateTime * bgn = &start;
-  const util::Duration * stp = &freq;
   int iobs;
-  qg_obsdb_generate_f90(keyHelp_, obsname.size(), obsname.c_str(), &configc,
-                        &bgn, &stp, nobstimes, iobs);
+  qg_obsdb_generate_f90(keyHelp_, obsname.size(), obsname.c_str(), config,
+                        start, freq, nobstimes, iobs);
 }
 
 // -----------------------------------------------------------------------------

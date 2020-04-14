@@ -23,13 +23,11 @@ namespace qg {
 // -----------------------------------------------------------------------------
 GeometryQG::GeometryQG(const eckit::Configuration & conf,
                        const eckit::mpi::Comm & comm) : comm_(comm) {
-  const eckit::Configuration * configc = &conf;
-  qg_geom_setup_f90(keyGeom_, &configc);
+  qg_geom_setup_f90(keyGeom_, conf);
 
   // Create ATLAS grid configuration
   const atlas::util::Config atlasConfig;
-  const eckit::Configuration * fconf = &atlasConfig;
-  qg_geom_create_atlas_grid_conf_f90(keyGeom_, &fconf);
+  qg_geom_create_atlas_grid_conf_f90(keyGeom_, atlasConfig);
 
   // Create ATLAS grid
   atlas::StructuredGrid atlasStructuredGrid(atlasConfig);

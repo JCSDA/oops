@@ -16,7 +16,6 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 
-#include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
 #include "model/FieldsQG.h"
@@ -35,8 +34,7 @@ ModelQG::ModelQG(const GeometryQG & resol, const eckit::Configuration & model)
 {
   oops::Log::trace() << "ModelQG::ModelQG" << std::endl;
   tstep_ = util::Duration(model.getString("tstep"));
-  const eckit::Configuration * configc = &model;
-  qg_model_setup_f90(keyConfig_, &configc);
+  qg_model_setup_f90(keyConfig_, model);
   oops::Log::trace() << "ModelQG created" << std::endl;
 }
 // -----------------------------------------------------------------------------
