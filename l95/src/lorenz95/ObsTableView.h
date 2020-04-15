@@ -72,7 +72,6 @@ class ObsTableView : public util::Printable,
   void print(std::ostream &) const;
   boost::shared_ptr<ObsTable> obstable_;
   std::vector<size_t> localobs_;
-  bool isLocal_;
   std::vector<double> obsdist_;
 };
 // -----------------------------------------------------------------------------

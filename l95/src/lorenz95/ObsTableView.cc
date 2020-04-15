@@ -25,7 +25,7 @@ namespace lorenz95 {
 ObsTableView::ObsTableView(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
                            const util::DateTime & bgn, const util::DateTime & end)
   : obstable_(new ObsTable(config, comm, bgn, end)),
-    localobs_(obstable_->nobs()), isLocal_(false), obsdist_(obstable_->nobs(), 0.0)
+    localobs_(obstable_->nobs()), obsdist_(obstable_->nobs(), 0.0)
 {
   std::iota(localobs_.begin(), localobs_.end(), 0);
   oops::Log::trace() << "ObsTableView::ObsTableView created nobs = " << nobs() << std::endl;
@@ -36,9 +36,7 @@ ObsTableView::ObsTableView(const eckit::Configuration & config, const eckit::mpi
 ObsTableView::ObsTableView(const ObsTableView & obstable,
                            const eckit::geometry::Point2 & center,
                            const double & dist, const int & maxnum)
-  :  obstable_(obstable.obstable_),
-     localobs_(), isLocal_(true),
-     obsdist_()
+  :  obstable_(obstable.obstable_), localobs_(), obsdist_()
 {
   std::vector<double> locations = obstable.locations();
   oops::Log::debug() << "locations: " << locations << std::endl;
