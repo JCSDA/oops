@@ -1,7 +1,6 @@
 
 # Create Data directory for test input data
 list( APPEND oops_tool_files
-  bump_links.sh
   compare.sh
   compare.py
   cpplint.py

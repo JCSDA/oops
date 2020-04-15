@@ -141,9 +141,6 @@ oops/base/WeightingFct.h
 
 oops/generic/dcmip_initial_conditions_test_1_2_3_v5.f90
 oops/generic/dcmip_initial_conditions_test_4_v3.f90
-oops/generic/ErrorCovariance4DBUMP.h
-oops/generic/ErrorCovarianceBUMP.h
-oops/generic/ErrorCovarianceGSIRF.h
 oops/generic/gc99.h
 oops/generic/gc99.cc
 oops/generic/IdLinearVariableChange.h
@@ -154,18 +151,10 @@ oops/generic/instantiateObsErrorFactory.h
 oops/generic/instantiateTlmFactory.h
 oops/generic/instantiateVariableChangeFactory.h
 oops/generic/LinearModelId.h
-oops/generic/LocalizationBUMP.h
 oops/generic/LocalizationGeneric.h
-oops/generic/LocalizationID.h
 oops/generic/LocalObsErrorDiag.h
 oops/generic/ObsErrorDiag.h
-oops/generic/oobump_f.h
-oops/generic/oobump_interface.F90
-oops/generic/oobump_mod.F90
-oops/generic/OoBump.h
-oops/generic/ParametersBUMP.h
 oops/generic/PseudoModel.h
-oops/generic/StatsVariableChange.h
 oops/generic/unstructured_grid_f.h
 oops/generic/unstructured_grid_interface.F90
 oops/generic/unstructured_grid_mod.F90
@@ -214,7 +203,6 @@ oops/runs/EnsForecasts.h
 oops/runs/EnsHofX.h
 oops/runs/EnsRecenter.h
 oops/runs/EnsVariance.h
-oops/runs/EstimateParams.h
 oops/runs/ExternalDFI.h
 oops/runs/FindLocalObs.h
 oops/runs/Forecast.h
@@ -233,7 +221,6 @@ oops/runs/Variational.h
 oops/util/abor1_cpp.cc
 oops/util/abor1_cpp.h
 oops/util/abor1_ftn.F90
-oops/util/bump_interpolation_mod.F90
 oops/util/config_f.cc
 oops/util/config_f.h
 oops/util/config_mod.F90
@@ -320,7 +307,6 @@ test/interface/Increment.h
 test/interface/LinearModel.h
 test/interface/LinearObsOperator.h
 test/interface/LinearVariableChange.h
-test/interface/Localization.h
 test/interface/LocalObsSpace.h
 test/interface/Locations.h
 test/interface/Model.h
@@ -343,7 +329,7 @@ test/util/Random.h
 test/util/random.F90
 test/util/FCString.h
 test/util/f_c_string.F90
-test/util/interpolator_interface.F90
+#test/util/interpolator_interface.F90
 test/util/Parameters.h
 test/util/ScalarOrMap.h
 test/util/FloatCompare.h
@@ -409,7 +395,7 @@ ecbuild_add_library( TARGET     oops
                      SOURCES
                                 ${FORTRAN_BINDINGS}
                                 ${oops_src_files}
-                     LIBS       ${LAPACK_LIBRARIES} ${NETCDF_LIBRARIES} Eigen3::Eigen fckit eckit_mpi eckit atlas atlas_f saber
+                     LIBS       ${LAPACK_LIBRARIES} ${NETCDF_LIBRARIES} Eigen3::Eigen fckit eckit_mpi eckit atlas atlas_f
                      INSTALL_HEADERS LISTED
                      TEMPLATES ${oops_fheader_files}
                      LINKER_LANGUAGE ${OOPS_LINKER_LANGUAGE}
@@ -490,11 +476,11 @@ add_fctest( TARGET  test_util_duration_intfb.x
             CONDITION HAVE_FCTEST
             LIBS    oops )
 
-add_fctest( TARGET  test_util_interp_interface.x
-            SOURCES test/util/interpolator_interface.F90
-            ARGS -config test/testinput/interp_interface.yaml
-            CONDITION HAVE_FCTEST
-            LINKER_LANGUAGE Fortran
-            LIBS    oops )
+#add_fctest( TARGET  test_util_interp_interface.x
+#            SOURCES test/util/interpolator_interface.F90
+#            ARGS -config test/testinput/interp_interface.yaml
+#            CONDITION HAVE_FCTEST
+#            LINKER_LANGUAGE Fortran
+#            LIBS    oops )
 
 endif()

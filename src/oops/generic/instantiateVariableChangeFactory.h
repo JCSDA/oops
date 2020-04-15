@@ -15,7 +15,6 @@
 #include "oops/base/VariableChangeBase.h"
 #include "oops/generic/IdLinearVariableChange.h"
 #include "oops/generic/IdVariableChange.h"
-#include "oops/generic/StatsVariableChange.h"
 
 namespace oops {
 
@@ -25,8 +24,6 @@ void instantiateVariableChangeFactory() {
   static VariableChangeMaker<MODEL, IdVariableChange<MODEL> > makerId_("Identity");
 
 // Linear change of variables
-  static LinearVariableChangeMaker<MODEL, StatsVariableChange<MODEL> >
-                        makerStatsVarChange_("StatsVariableChange");
   static LinearVariableChangeMaker<MODEL, IdLinearVariableChange<MODEL> > makerIdLin_("Identity");
 }
 

@@ -11,15 +11,9 @@
 #ifndef OOPS_GENERIC_INSTANTIATELOCALIZATIONFACTORY_H_
 #define OOPS_GENERIC_INSTANTIATELOCALIZATIONFACTORY_H_
 
-#include "oops/generic/LocalizationBUMP.h"
-#include "oops/generic/LocalizationGeneric.h"
-#include "oops/generic/LocalizationID.h"
-
 namespace oops {
 
 template <typename MODEL> void instantiateLocalizationFactory() {
-  static LocalizationGenericMaker<MODEL, LocalizationBUMP<MODEL> > makerBUMP_("BUMP");
-  static LocalizationGenericMaker<MODEL, LocalizationID<MODEL> > makerID_("ID");
 }
 
 }  // namespace oops

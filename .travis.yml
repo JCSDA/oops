@@ -25,28 +25,28 @@ before_install:
 #======================================================================
 # Clone all repos
 #======================================================================
-  - pwd 
   - git clone https://github.com/jcsda/oops-bundle.git ${REPO_SOURCE_DIR}/oops-bundle
-  - git clone  https://github.com/jcsda/fckit.git ${REPO_SOURCE_DIR}/oops-bundle/fckit
+  - cd ${REPO_SOURCE_DIR}/oops-bundle
+  - git checkout $BRANCH || echo "No branch named $BRANCH in oops-bundle repo"
+  - cd $REPO_SOURCE_DIR
 
-#  checkout for the same branch name in saber
-  - git clone https://github.com/jcsda/saber.git ${REPO_SOURCE_DIR}/oops-bundle/saber
-  - cd ${REPO_SOURCE_DIR}/oops-bundle/saber
-  - git checkout $BRANCH || echo "No branch named $BRANCH in saber repo"
-  - cd $REPO_SOURCE_DIR  
+  - git clone https://github.com/jcsda/fckit.git ${REPO_SOURCE_DIR}/oops-bundle/fckit
+  - cd ${REPO_SOURCE_DIR}/oops-bundle/fckit
+  - git checkout $BRANCH || echo "No branch named $BRANCH in fckit repo"
+  - cd $REPO_SOURCE_DIR
 
-#  atlas
-  - git clone https://github.com/JCSDA/atlas.git  ${REPO_SOURCE_DIR}/oops-bundle/atlas 
+  - git clone https://github.com/JCSDA/atlas.git ${REPO_SOURCE_DIR}/oops-bundle/atlas
+  - cd ${REPO_SOURCE_DIR}/oops-bundle/atlas
+  - git checkout $BRANCH || echo "No branch named $BRANCH in atlas repo"
+  - cd $REPO_SOURCE_DIR
 
 #  clone the testing branch of oops
   - git clone -b $BRANCH https://github.com/jcsda/oops.git ${REPO_SOURCE_DIR}/oops-bundle/oops 
 
-
-
 #  do no switch to develop branch by removing 
 #  develop UPDATE in CMakeLists.txt in oops-bundle
 
-  - cd oops-bundle
+  - cd ${REPO_SOURCE_DIR}/oops-bundle
   - sed -i 's/BRANCH develop UPDATE//' CMakeLists.txt
   - cat CMakeLists.txt
   - cd ${REPO_SOURCE_DIR}

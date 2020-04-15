@@ -77,8 +77,7 @@ else()
 endif()
 
 # NetCDF
-set( NETCDF_F90 ON CACHE BOOL "Compile with Fortran NetCDF" )
-find_package( NetCDF REQUIRED )
+find_package( NetCDF REQUIRED COMPONENTS C Fortran )
 include_directories( ${NETCDF_INCLUDE_DIRS} )
 
 # Eigen3
@@ -103,10 +102,6 @@ include_directories( ${FCKIT_INCLUDE_DIRS} )
 ecbuild_use_package( PROJECT atlas VERSION 0.18.1 REQUIRED )
 include_directories( ${ATLAS_INCLUDE_DIRS} )
 
-# saber
-ecbuild_use_package( PROJECT saber VERSION 0.0.1 REQUIRED )
-include_directories( ${SABER_INCLUDE_DIRS} )
-
 # fctest
 ecbuild_add_option( FEATURE FCTEST  DEFAULT ${ENABLE_TESTS}
                     DESCRIPTION "Fortran Unit Testing Framework"
@@ -116,7 +111,7 @@ ecbuild_add_option( FEATURE FCTEST  DEFAULT ${ENABLE_TESTS}
 # Export package info
 ################################################################################
 
-list( APPEND OOPS_TPLS LAPACK eckit fckit atlas atlas_f saber )
+list( APPEND OOPS_TPLS LAPACK eckit fckit atlas atlas_f )
 
 set( OOPS_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src
                        ${CMAKE_CURRENT_BINARY_DIR}/src

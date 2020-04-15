@@ -1,20 +1,9 @@
 Covariance:
-  covariance: BUMP
-  bump:
-    datadir: bump
-    default_seed: 1
-    forced_radii: 1
-    rh: 1000.0e3
-    rv: 5000.0
-    method: cor
-    mpicom: 2
-    new_nicas: 1
-    nl0r: 1
-    ntry: 3
-    nrep: 2
-    prefix: static_b_init
-    resol: 10.0
-    strategy: specific_univariate
+  covariance: QgError
+  horizontal_length_scale: 2.2e6
+  maximum_condition_number: 1.0e6
+  standard_deviation: 1.8e7
+  vertical_length_scale: 15000.0
 Geometry:
   nx: 40
   ny: 20

@@ -1,21 +1,15 @@
-list( APPEND qg_test_input
+list( APPEND qg_testinput
   testinput/3densvar.yaml
-  testinput/3densvar_bump.yaml
   testinput/3dvar.yaml
-  testinput/3dvar_bump.yaml
   testinput/3dvar_change_var.yaml
   testinput/3dvar_hybrid.yaml
-  testinput/3dvar_hybrid_bump.yaml
   testinput/3dfgat.yaml
   testinput/4densvar.yaml
-  testinput/4densvar_bump.yaml
   testinput/4dvar_dripcg.yaml
   testinput/4dvar_drpcg_lmp.yaml
   testinput/4dvar_drpfom.yaml
   testinput/4dvar_drplanczos.yaml
-  testinput/4dvar_drplanczos_bump.yaml
   testinput/4dvar_drplanczos_hybrid.yaml
-  testinput/4dvar_drplanczos_hybrid_bump.yaml
   testinput/4dvar_forcing.yaml
   testinput/4dvar_ipcg.yaml
   testinput/4dvar_obs_biased.yaml
@@ -25,15 +19,10 @@ list( APPEND qg_test_input
   testinput/convertstate.yaml
   testinput/dfi.yaml
   testinput/diffstates.yaml
-  testinput/dirac_bump_cov.yaml
-  testinput/dirac_bump_hyb.yaml
-  testinput/dirac_bump_lct.yaml
-  testinput/dirac_bump_loc_3d.yaml
-  testinput/dirac_bump_loc_4d.yaml
-  testinput/dirac_qg_cov.yaml
-  testinput/dirac_qg_hyb.yaml
-  testinput/dirac_qg_loc_3d.yaml
-  testinput/dirac_qg_loc_4d.yaml
+  testinput/dirac_cov.yaml
+  testinput/dirac_hyb.yaml
+  testinput/dirac_loc_3d.yaml
+  testinput/dirac_loc_4d.yaml
   testinput/dirac_no_loc.yaml
   testinput/eda_3dfgat.yaml
   testinput/eda_3dvar_member2.yaml
@@ -52,33 +41,22 @@ list( APPEND qg_test_input
   testinput/make_obs_4d_12h.yaml
   testinput/make_obs_4d_24h.yaml
   testinput/make_obs_4d_biased.yaml
-  testinput/parameters_bump_cov.yaml
-  testinput/parameters_bump_hyb.yaml
-  testinput/parameters_bump_lct.yaml
-  testinput/parameters_bump_loc_3d.yaml
-  testinput/parameters_bump_loc_4d.yaml
   testinput/static_b_init.yaml
   testinput/truth.yaml
 )
 
 list( APPEND qg_testoutput
   testoutput/3densvar.test
-  testoutput/3densvar_bump.test
   testoutput/3dvar.test
-  testoutput/3dvar_bump.test
   testoutput/3dvar_change_var.test
   testoutput/3dvar_hybrid.test
-  testoutput/3dvar_hybrid_bump.test
   testoutput/3dfgat.test
   testoutput/4densvar.test
-  testoutput/4densvar_bump.test
   testoutput/4dvar_dripcg.test
   testoutput/4dvar_drpcg_lmp.test
   testoutput/4dvar_drpfom.test
   testoutput/4dvar_drplanczos.test
-  testoutput/4dvar_drplanczos_bump.test
   testoutput/4dvar_drplanczos_hybrid.test
-  testoutput/4dvar_drplanczos_hybrid_bump.test
   testoutput/4dvar_forcing.test
   testoutput/4dvar_ipcg.test
   testoutput/4dvar_obs_biased.test
@@ -87,15 +65,10 @@ list( APPEND qg_testoutput
   testoutput/analytic_forecast.test
   testoutput/dfi.test
   testoutput/diffstates.test
-  testoutput/dirac_bump_cov.test
-  testoutput/dirac_bump_hyb.test
-  testoutput/dirac_bump_lct.test
-  testoutput/dirac_bump_loc_3d.test
-  testoutput/dirac_bump_loc_4d.test
-  testoutput/dirac_qg_cov.test
-  testoutput/dirac_qg_hyb.test
-  testoutput/dirac_qg_loc_3d.test
-  testoutput/dirac_qg_loc_4d.test
+  testoutput/dirac_cov.test
+  testoutput/dirac_hyb.test
+  testoutput/dirac_loc_3d.test
+  testoutput/dirac_loc_4d.test
   testoutput/dirac_no_loc.test
 #  testoutput/eda_4dvar.test
   testoutput/ens_forecast.test
@@ -111,18 +84,13 @@ list( APPEND qg_testoutput
   testoutput/make_obs_4d_12h.test
   testoutput/make_obs_4d_24h.test
   testoutput/make_obs_4d_biased.test
-  testoutput/parameters_bump_cov.test
-  testoutput/parameters_bump_hyb.test
-  testoutput/parameters_bump_lct.test
-  testoutput/parameters_bump_loc_3d.test
-  testoutput/parameters_bump_loc_4d.test
   testoutput/static_b_init.test
   testoutput/truth.test
 )
 
 # Create data directory for test input and symlink all files
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput)
-foreach(FILENAME ${qg_test_input})
+foreach(FILENAME ${qg_testinput})
     execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
            ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}
            ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME} )
@@ -138,11 +106,10 @@ endforeach(FILENAME)
 
 ecbuild_add_resources( TARGET   qg_test_scripts
                        SOURCES_PACK
-                       ${qg_test_input}
+                       ${qg_testinput}
                      )
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Data)
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bump)
 
 #####################################################################
 # truth and make_obs_4d_24h are required for interface tests
@@ -592,243 +559,66 @@ ecbuild_add_test( TARGET test_qg_convertstate_run
                   TEST_DEPENDS test_qg_forecast_run )
 
 #####################################################################
-# BUMP parameters tests
-#####################################################################
-
-ecbuild_add_test( TARGET test_qg_parameters_bump_cov_run
-                  MPI    1
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_estimate_parameters.x
-                  ARGS testinput/parameters_bump_cov.yaml testoutput/parameters_bump_cov.log.out
-                  DEPENDS qg_estimate_parameters.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_gen_ens_pert_B_run )
-
-ecbuild_add_test( TARGET test_qg_parameters_bump_cov_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/parameters_bump_cov.log.out testoutput/parameters_bump_cov.test
-                  TEST_DEPENDS test_qg_parameters_bump_cov_run )
-
-#--------------------------------------------------------------------
-
-ecbuild_add_test( TARGET test_qg_parameters_bump_hyb_run
-                  MPI    1
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_estimate_parameters.x
-                  ARGS testinput/parameters_bump_hyb.yaml testoutput/parameters_bump_hyb.log.out
-                  DEPENDS qg_estimate_parameters.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_gen_ens_pert_B_run )
-
-ecbuild_add_test( TARGET test_qg_parameters_bump_hyb_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/parameters_bump_hyb.log.out testoutput/parameters_bump_hyb.test
-                  TEST_DEPENDS test_qg_parameters_bump_hyb_run )
-
-#--------------------------------------------------------------------
-
-ecbuild_add_test( TARGET test_qg_parameters_bump_lct_run
-                  MPI    1
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_estimate_parameters.x
-                  ARGS testinput/parameters_bump_lct.yaml testoutput/parameters_bump_lct.log.out
-                  DEPENDS qg_estimate_parameters.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_gen_ens_pert_B_run )
-
-ecbuild_add_test( TARGET test_qg_parameters_bump_lct_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/parameters_bump_lct.log.out testoutput/parameters_bump_lct.test
-                  TEST_DEPENDS test_qg_parameters_bump_lct_run )
-
-#--------------------------------------------------------------------
-
-ecbuild_add_test( TARGET test_qg_parameters_bump_loc_3d_run
-                  MPI    1
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_estimate_parameters.x
-                  ARGS testinput/parameters_bump_loc_3d.yaml testoutput/parameters_bump_loc_3d.log.out
-                  DEPENDS qg_estimate_parameters.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_gen_ens_pert_B_run )
-
-ecbuild_add_test( TARGET test_qg_parameters_bump_loc_3d_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/parameters_bump_loc_3d.log.out testoutput/parameters_bump_loc_3d.test
-                  TEST_DEPENDS test_qg_parameters_bump_loc_3d_run )
-
-#--------------------------------------------------------------------
-
-ecbuild_add_test( TARGET test_qg_parameters_bump_loc_4d_run
-                  MPI    1
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_estimate_parameters.x
-                  ARGS testinput/parameters_bump_loc_4d.yaml testoutput/parameters_bump_loc_4d.log.out
-                  DEPENDS qg_estimate_parameters.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_gen_ens_pert_B_run )
-
-ecbuild_add_test( TARGET test_qg_parameters_bump_loc_4d_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/parameters_bump_loc_4d.log.out testoutput/parameters_bump_loc_4d.test
-                  TEST_DEPENDS test_qg_parameters_bump_loc_4d_run )
-
-#####################################################################
-# BUMP links
-#####################################################################
-
-ecbuild_add_test( TARGET test_qg_bump_links
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/bump_links.sh
-                  TEST_DEPENDS test_qg_parameters_bump_cov_run
-                               test_qg_parameters_bump_hyb_run
-                               test_qg_parameters_bump_lct_run
-                               test_qg_parameters_bump_loc_3d_run
-                               test_qg_parameters_bump_loc_4d_run )
-
-#####################################################################
-# BUMP dirac tests
-#####################################################################
-
-ecbuild_add_test( TARGET test_qg_dirac_bump_cov_run
-                  MPI    1
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_dirac.x
-                  ARGS testinput/dirac_bump_cov.yaml testoutput/dirac_bump_cov.log.out
-                  DEPENDS qg_dirac.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_bump_links )
-
-ecbuild_add_test( TARGET test_qg_dirac_bump_cov_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/dirac_bump_cov.log.out testoutput/dirac_bump_cov.test
-                  TEST_DEPENDS test_qg_dirac_bump_cov_run )
-
-#--------------------------------------------------------------------
-
-ecbuild_add_test( TARGET test_qg_dirac_bump_hyb_run
-                  MPI    1
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_dirac.x
-                  ARGS testinput/dirac_bump_hyb.yaml testoutput/dirac_bump_hyb.log.out
-                  DEPENDS qg_dirac.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_gen_ens_pert_B_run test_qg_bump_links )
-
-ecbuild_add_test( TARGET test_qg_dirac_bump_hyb_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/dirac_bump_hyb.log.out testoutput/dirac_bump_hyb.test
-                  TEST_DEPENDS test_qg_dirac_bump_hyb_run )
-
-#--------------------------------------------------------------------
-
-ecbuild_add_test( TARGET test_qg_dirac_bump_lct_run
-                  MPI    1
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_dirac.x
-                  ARGS testinput/dirac_bump_lct.yaml testoutput/dirac_bump_lct.log.out
-                  DEPENDS qg_dirac.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_gen_ens_pert_B_run test_qg_bump_links )
-
-ecbuild_add_test( TARGET test_qg_dirac_bump_lct_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/dirac_bump_lct.log.out testoutput/dirac_bump_lct.test
-                  TEST_DEPENDS test_qg_dirac_bump_lct_run )
-
-#--------------------------------------------------------------------
-
-ecbuild_add_test( TARGET test_qg_dirac_bump_loc_3d_run
-                  MPI    1
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_dirac.x
-                  ARGS testinput/dirac_bump_loc_3d.yaml testoutput/dirac_bump_loc_3d.log.out
-                  DEPENDS qg_dirac.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_gen_ens_pert_B_run test_qg_bump_links )
-
-ecbuild_add_test( TARGET test_qg_dirac_bump_loc_3d_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/dirac_bump_loc_3d.log.out testoutput/dirac_bump_loc_3d.test
-                  TEST_DEPENDS test_qg_dirac_bump_loc_3d_run )
-
-#--------------------------------------------------------------------
-
-ecbuild_add_test( TARGET test_qg_dirac_bump_loc_4d_run
-                  MPI    1
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_dirac.x
-                  ARGS testinput/dirac_bump_loc_4d.yaml testoutput/dirac_bump_loc_4d.log.out
-                  DEPENDS qg_dirac.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_gen_ens_pert_B_run test_qg_bump_links )
-
-ecbuild_add_test( TARGET test_qg_dirac_bump_loc_4d_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/dirac_bump_loc_4d.log.out testoutput/dirac_bump_loc_4d.test
-                  TEST_DEPENDS test_qg_dirac_bump_loc_4d_run )
-
-#####################################################################
 # QG dirac tests
 #####################################################################
 
-ecbuild_add_test( TARGET test_qg_dirac_qg_cov_run
+ecbuild_add_test( TARGET test_qg_dirac_cov_run
                   OMP    2
                   COMMAND ${CMAKE_BINARY_DIR}/bin/qg_dirac.x
-                  ARGS testinput/dirac_qg_cov.yaml testoutput/dirac_qg_cov.log.out
+                  ARGS testinput/dirac_cov.yaml testoutput/dirac_cov.log.out
                   DEPENDS qg_dirac.x
                   TEST_DEPENDS test_qg_forecast_run )
 
-ecbuild_add_test( TARGET test_qg_dirac_qg_cov_compare
+ecbuild_add_test( TARGET test_qg_dirac_cov_compare
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/dirac_qg_cov.log.out testoutput/dirac_qg_cov.test
-                  TEST_DEPENDS test_qg_dirac_qg_cov_run )
+                  ARGS testoutput/dirac_cov.log.out testoutput/dirac_cov.test
+                  TEST_DEPENDS test_qg_dirac_cov_run )
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_dirac_qg_hyb_run
+ecbuild_add_test( TARGET test_qg_dirac_hyb_run
                   OMP    2
                   COMMAND ${CMAKE_BINARY_DIR}/bin/qg_dirac.x
-                  ARGS testinput/dirac_qg_hyb.yaml testoutput/dirac_qg_hyb.log.out
+                  ARGS testinput/dirac_hyb.yaml testoutput/dirac_hyb.log.out
                   DEPENDS qg_dirac.x
                   TEST_DEPENDS test_qg_forecast_run test_qg_gen_ens_pert_B_run )
 
-ecbuild_add_test( TARGET test_qg_dirac_qg_hyb_compare
+ecbuild_add_test( TARGET test_qg_dirac_hyb_compare
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/dirac_qg_hyb.log.out testoutput/dirac_qg_hyb.test
-                  TEST_DEPENDS test_qg_dirac_qg_hyb_run )
+                  ARGS testoutput/dirac_hyb.log.out testoutput/dirac_hyb.test
+                  TEST_DEPENDS test_qg_dirac_hyb_run )
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_dirac_qg_loc_3d_run
+ecbuild_add_test( TARGET test_qg_dirac_loc_3d_run
                   OMP    2
                   COMMAND ${CMAKE_BINARY_DIR}/bin/qg_dirac.x
-                  ARGS testinput/dirac_qg_loc_3d.yaml testoutput/dirac_qg_loc_3d.log.out
+                  ARGS testinput/dirac_loc_3d.yaml testoutput/dirac_loc_3d.log.out
                   DEPENDS qg_dirac.x
                   TEST_DEPENDS test_qg_forecast_run test_qg_gen_ens_pert_B_run )
 
-ecbuild_add_test( TARGET test_qg_dirac_qg_loc_3d_compare
+ecbuild_add_test( TARGET test_qg_dirac_loc_3d_compare
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/dirac_qg_loc_3d.log.out testoutput/dirac_qg_loc_3d.test
-                  TEST_DEPENDS test_qg_dirac_qg_loc_3d_run )
+                  ARGS testoutput/dirac_loc_3d.log.out testoutput/dirac_loc_3d.test
+                  TEST_DEPENDS test_qg_dirac_loc_3d_run )
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_dirac_qg_loc_4d_run
+ecbuild_add_test( TARGET test_qg_dirac_loc_4d_run
                   OMP    2
                   COMMAND ${CMAKE_BINARY_DIR}/bin/qg_dirac.x
-                  ARGS testinput/dirac_qg_loc_4d.yaml testoutput/dirac_qg_loc_4d.log.out
+                  ARGS testinput/dirac_loc_4d.yaml testoutput/dirac_loc_4d.log.out
                   DEPENDS qg_dirac.x
                   TEST_DEPENDS test_qg_forecast_run test_qg_gen_ens_pert_B_run )
 
-ecbuild_add_test( TARGET test_qg_dirac_qg_loc_4d_compare
+ecbuild_add_test( TARGET test_qg_dirac_loc_4d_compare
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/dirac_qg_loc_4d.log.out testoutput/dirac_qg_loc_4d.test
-                  TEST_DEPENDS test_qg_dirac_qg_loc_4d_run )
+                  ARGS testoutput/dirac_loc_4d.log.out testoutput/dirac_loc_4d.test
+                  TEST_DEPENDS test_qg_dirac_loc_4d_run )
 
 #--------------------------------------------------------------------
 
@@ -864,22 +654,6 @@ ecbuild_add_test( TARGET test_qg_3densvar_compare
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_3densvar_bump_run
-                  MPI    1
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_4dvar.x
-                  ARGS testinput/3densvar_bump.yaml testoutput/3densvar_bump.log.out
-                  DEPENDS qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_gen_ens_pert_B_run test_qg_make_obs_3d_run test_qg_bump_links )
-
-ecbuild_add_test( TARGET test_qg_3densvar_bump_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/3densvar_bump.log.out testoutput/3densvar_bump.test
-                  TEST_DEPENDS test_qg_3densvar_bump_run )
-
-#--------------------------------------------------------------------
-
 ecbuild_add_test( TARGET test_qg_3dvar_run
                   OMP    2
                   COMMAND ${CMAKE_BINARY_DIR}/bin/qg_4dvar.x
@@ -892,22 +666,6 @@ ecbuild_add_test( TARGET test_qg_3dvar_compare
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS testoutput/3dvar.log.out testoutput/3dvar.test
                   TEST_DEPENDS test_qg_3dvar_run )
-
-#--------------------------------------------------------------------
-
-ecbuild_add_test( TARGET test_qg_3dvar_bump_run
-                  MPI    1
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_4dvar.x
-                  ARGS testinput/3dvar_bump.yaml testoutput/3dvar_bump.log.out
-                  DEPENDS qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_make_obs_3d_run test_qg_bump_links )
-
-ecbuild_add_test( TARGET test_qg_3dvar_bump_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/3dvar_bump.log.out testoutput/3dvar_bump.test
-                  TEST_DEPENDS test_qg_3dvar_bump_run )
 
 #--------------------------------------------------------------------
 
@@ -941,22 +699,6 @@ ecbuild_add_test( TARGET test_qg_3dvar_hybrid_compare
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_3dvar_hybrid_bump_run
-                  MPI    1
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_4dvar.x
-                  ARGS testinput/3dvar_hybrid_bump.yaml testoutput/3dvar_hybrid_bump.log.out
-                  DEPENDS qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_gen_ens_pert_B_run test_qg_make_obs_3d_run test_qg_bump_links )
-
-ecbuild_add_test( TARGET test_qg_3dvar_hybrid_bump_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/3dvar_hybrid_bump.log.out testoutput/3dvar_hybrid_bump.test
-                  TEST_DEPENDS test_qg_3dvar_hybrid_bump_run )
-
-#--------------------------------------------------------------------
-
 ecbuild_add_test( TARGET test_qg_3dfgat_run
                   OMP    2
                   COMMAND ${CMAKE_BINARY_DIR}/bin/qg_4dvar.x
@@ -986,22 +728,6 @@ ecbuild_add_test( TARGET test_qg_4densvar_compare
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS testoutput/4densvar.log.out testoutput/4densvar.test
                   TEST_DEPENDS test_qg_4densvar_run )
-
-#--------------------------------------------------------------------
-
-ecbuild_add_test( TARGET test_qg_4densvar_bump_run
-                  MPI    1
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_4dvar.x
-                  ARGS testinput/4densvar_bump.yaml testoutput/4densvar_bump.log.out
-                  DEPENDS qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_gen_ens_pert_B_run test_qg_make_obs_4d_12h_run test_qg_bump_links )
-
-ecbuild_add_test( TARGET test_qg_4densvar_bump_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/4densvar_bump.log.out testoutput/4densvar_bump.test
-                  TEST_DEPENDS test_qg_4densvar_bump_run )
 
 #--------------------------------------------------------------------
 
@@ -1065,22 +791,6 @@ ecbuild_add_test( TARGET test_qg_4dvar_drplanczos_compare
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_4dvar_drplanczos_bump_run
-                  MPI    1
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_4dvar.x
-                  ARGS testinput/4dvar_drplanczos_bump.yaml testoutput/4dvar_drplanczos_bump.log.out
-                  DEPENDS qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_make_obs_4d_24h_run test_qg_bump_links )
-
-ecbuild_add_test( TARGET test_qg_4dvar_drplanczos_bump_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/4dvar_drplanczos_bump.log.out testoutput/4dvar_drplanczos_bump.test
-                  TEST_DEPENDS test_qg_4dvar_drplanczos_bump_run )
-
-#--------------------------------------------------------------------
-
 ecbuild_add_test( TARGET test_qg_4dvar_drplanczos_hybrid_run
                   OMP    2
                   COMMAND ${CMAKE_BINARY_DIR}/bin/qg_4dvar.x
@@ -1093,22 +803,6 @@ ecbuild_add_test( TARGET test_qg_4dvar_drplanczos_hybrid_compare
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
                   ARGS testoutput/4dvar_drplanczos_hybrid.log.out testoutput/4dvar_drplanczos_hybrid.test
                   TEST_DEPENDS test_qg_4dvar_drplanczos_hybrid_run )
-
-#--------------------------------------------------------------------
-
-ecbuild_add_test( TARGET test_qg_4dvar_drplanczos_hybrid_bump_run
-                  MPI    1
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_4dvar.x
-                  ARGS testinput/4dvar_drplanczos_hybrid_bump.yaml testoutput/4dvar_drplanczos_hybrid_bump.log.out
-                  DEPENDS qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_gen_ens_pert_B_run test_qg_make_obs_4d_24h_run test_qg_bump_links )
-
-ecbuild_add_test( TARGET test_qg_4dvar_drplanczos_hybrid_bump_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/4dvar_drplanczos_hybrid_bump.log.out testoutput/4dvar_drplanczos_hybrid_bump.test
-                  TEST_DEPENDS test_qg_4dvar_drplanczos_hybrid_bump_run )
 
 #--------------------------------------------------------------------
 
