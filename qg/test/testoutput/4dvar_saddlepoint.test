@@ -28,7 +28,7 @@ Test     : CostJo   : Nonlinear Jo(WSpeed) = 179.8, nobs = 400, Jo/n = 0.4496, e
 Test     : CostJcDFI: Nonlinear Jc = 16.37
 Test     : CostJcDFI: Nonlinear Jc = 13.07
 Test     : CostFunction: Nonlinear J = 1.263e+04
-Test     : SaddlePointMinimizer: reduction in residual norm = 2.295e-13
+Test     : SaddlePointMinimizer: reduction in residual norm = 2.296e-13
 Test     : CostFunction::addIncrement: Analysis: 
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, 2

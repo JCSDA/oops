@@ -48,19 +48,13 @@ void UnstructuredGrid::random() {
 }
 // -----------------------------------------------------------------------------
 void UnstructuredGrid::defineGeometry() {
-  // Create ATLAS grid configuration
-  const atlas::util::Config atlasConfig;
-  const eckit::Configuration * fconf = &atlasConfig;
-  ug_create_atlas_grid_conf_f90(keyUGrid_, &fconf);
-  atlas::UnstructuredGrid atlasUnstructuredGrid(atlasConfig);
-
-  // Create mesh
-  atlas::MeshGenerator atlasMeshGenerator("no_connectivity");
-  atlas::Mesh atlasMesh = atlasMeshGenerator.generate(atlasUnstructuredGrid);
+  // Set ATLAS lon/lat field
+  atlasFieldSet_.reset(new atlas::FieldSet());
+  ug_set_atlas_lonlat_f90(keyUGrid_, atlasFieldSet_->get());
+  atlas::Field atlasField = atlasFieldSet_->field("lonlat");
 
   // Create ATLAS function space
-  atlasFunctionSpace_.reset(new atlas::functionspace::NodeColumns(atlasMesh,
-                            atlas::option::halo(0)));
+  atlasFunctionSpace_.reset(new atlas::functionspace::PointCloud(atlasField));
 
   // Set ATLAS function space pointer in Fortran
   ug_set_atlas_functionspace_pointer_f90(keyUGrid_, atlasFunctionSpace_->get());

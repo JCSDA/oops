@@ -81,6 +81,9 @@ phases:
 
       # atlas
       - git clone https://$GIT_USER:$GIT_PASS@github.com/jcsda/atlas oops-bundle/atlas
+      - cd oops-bundle/atlas
+      - git checkout $CODEBUILD_GIT_BRANCH || echo "No branch named $CODEBUILD_GIT_BRANCH in atlas repo"
+      - cd $CODEBUILD_SRC_DIR
       - ls
      
       - mv oops-bundle /jcsda/

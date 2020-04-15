@@ -11,8 +11,6 @@
 #include "atlas/field/FieldSet.h"
 #include "atlas/functionspace/detail/FunctionSpaceImpl.h"
 
-#include "eckit/config/Configuration.h"
-
 #include "oops/util/DateTime.h"
 
 namespace oops {
@@ -21,7 +19,7 @@ extern "C" {
   void delete_ug_f90(int &);
   void ug_get_ngrid_f90(const int &, int &);
   void ug_get_dims_f90(const int &, const int &, int &, int &, int &);
-  void ug_create_atlas_grid_conf_f90(const int &, const eckit::Configuration * const *);
+  void ug_set_atlas_lonlat_f90(const int &, atlas::field::FieldSetImpl *);
   void ug_set_atlas_functionspace_pointer_f90(const int &,
                                               atlas::functionspace::FunctionSpaceImpl *);
   void ug_fill_atlas_fieldset_f90(const int &, atlas::field::FieldSetImpl *);

@@ -6,7 +6,6 @@
 module unstructured_grid_interface
 
 use atlas_module
-use fckit_configuration_module, only: fckit_configuration
 use iso_c_binding
 use unstructured_grid_mod
 
@@ -108,27 +107,27 @@ nts = self%nts
 
 end subroutine ug_get_dims_c
 ! ------------------------------------------------------------------------------
-!> Create ATLAS grid configuration from unstructured grid
-subroutine ug_create_atlas_grid_conf_c(key,c_grid) bind(c,name='ug_create_atlas_grid_conf_f90')
+!> Set ATLAS grid lon/lat in fieldset
+subroutine ug_set_atlas_lonlat_c(key,c_afieldset) bind(c,name='ug_set_atlas_lonlat_f90')
 
 implicit none
 
 ! Passed variables
-integer(c_int),intent(in) :: key !< Unstructured grid
-type(c_ptr),intent(in) :: c_grid !< ATLAS grid configuration
+integer(c_int),intent(in) :: key            !< Unstructured grid
+type(c_ptr),intent(in),value :: c_afieldset !< ATLAS fieldset pointer
 
 ! Local variables
 type(unstructured_grid),pointer :: self
-type(fckit_configuration) :: f_grid
+type(atlas_fieldset) :: afieldset
 
 ! Interface
 call unstructured_grid_registry%get(key,self)
-f_grid = fckit_configuration(c_grid)
+afieldset = atlas_fieldset(c_afieldset)
 
 ! Call Fortran
-call ug_create_atlas_grid_conf(self,f_grid)
+call ug_set_atlas_lonlat(self,afieldset)
 
-end subroutine ug_create_atlas_grid_conf_c
+end subroutine ug_set_atlas_lonlat_c
 ! ------------------------------------------------------------------------------
 !> Set ATLAS function space pointer
 subroutine ug_set_atlas_functionspace_pointer_c(key,c_afunctionspace) bind(c,name='ug_set_atlas_functionspace_pointer_f90')
@@ -142,7 +141,7 @@ type(unstructured_grid),pointer :: self
 
 ! Interface
 call unstructured_grid_registry%get(key,self)
-self%afunctionspace = atlas_functionspace_nodecolumns(c_afunctionspace)
+self%afunctionspace = atlas_functionspace_pointcloud(c_afunctionspace)
 
 end subroutine ug_set_atlas_functionspace_pointer_c
 ! ------------------------------------------------------------------------------

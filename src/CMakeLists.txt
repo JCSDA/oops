@@ -329,7 +329,6 @@ test/util/Random.h
 test/util/random.F90
 test/util/FCString.h
 test/util/f_c_string.F90
-#test/util/interpolator_interface.F90
 test/util/Parameters.h
 test/util/ScalarOrMap.h
 test/util/FloatCompare.h
@@ -475,12 +474,5 @@ add_fctest( TARGET  test_util_duration_intfb.x
             LINKER_LANGUAGE Fortran
             CONDITION HAVE_FCTEST
             LIBS    oops )
-
-#add_fctest( TARGET  test_util_interp_interface.x
-#            SOURCES test/util/interpolator_interface.F90
-#            ARGS -config test/testinput/interp_interface.yaml
-#            CONDITION HAVE_FCTEST
-#            LINKER_LANGUAGE Fortran
-#            LIBS    oops )
 
 endif()

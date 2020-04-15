@@ -233,7 +233,8 @@ type(fckit_configuration) :: xspace,yspace
 ! Create xspace configuration
 xspace = fckit_configuration()
 call xspace%set("type","linear")
-call xspace%set("N",self%nx)
+!call xspace%set("N",self%nx) ! TODO: should be uncommented when Willem's bugfix is implemented in ATLAS
+call xspace%set("N[]",spread(self%nx,1,self%ny)) ! TODO: should be removed then
 call xspace%set("start",self%lon(1,1))
 call xspace%set("end",self%lon(self%nx,1))
 call xspace%set("endpoint",.true.)
