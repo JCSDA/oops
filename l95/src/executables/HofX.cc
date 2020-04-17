@@ -15,6 +15,5 @@
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
   oops::HofX<lorenz95::L95Traits> hofx;
-  run.execute(hofx);
-  return 0;
+  return run.execute(hofx);
 }

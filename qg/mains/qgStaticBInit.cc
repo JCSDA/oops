@@ -12,6 +12,5 @@
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
   oops::StaticBInit<qg::QgTraits> bmat;
-  run.execute(bmat);
-  return 0;
+  return run.execute(bmat);
 }

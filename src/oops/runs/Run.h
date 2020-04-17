@@ -30,7 +30,7 @@ class Run : public eckit::Main {
  public:
   Run(int argc, char** argv);
   virtual ~Run();
-  void execute(const Application &);
+  int execute(const Application &);
 
  protected:
   const eckit::Configuration & config() const {return *config_;}

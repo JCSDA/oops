@@ -15,7 +15,6 @@
 int main(const int argc, const char ** argv) {
   oops::Run run(argc, argv);
   test::ModelIncrement<qg::QgTraits> tests;
-  run.execute(tests);
-  return 0;
+  return run.execute(tests);
 }
 

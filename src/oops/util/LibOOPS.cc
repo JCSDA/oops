@@ -100,10 +100,10 @@ void LibOOPS::teeOutput(const std::string & fileprefix) {
   eckit::Log::addFile(teefile);
 }
 
-/** Finalization of MPI and clearing of logs.
+/** Clears logs and finalises MPI (unless \p finaliseMPI is false).
  * To be called in on leaving `main()` by the destructor of `oops::Run`.
  */
-void LibOOPS::finalise() {
+void LibOOPS::finalise(bool finaliseMPI) {
     eckit::Log::flush();
 
     // Make sure that these specialised channels that wrap eckit::Log::info() are
@@ -115,7 +115,8 @@ void LibOOPS::finalise() {
     statsChannel_.reset(new eckit::Channel());
     testChannel_. reset(new eckit::Channel());
 
-    eckit::mpi::finaliseAllComms();
+    if (finaliseMPI)
+      eckit::mpi::finaliseAllComms();
 }
 
 const void* LibOOPS::addr() const {return this;}

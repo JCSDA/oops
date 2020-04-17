@@ -14,6 +14,5 @@ int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
   lorenz95::instantiateLocalizationFactory();
   oops::EDA<lorenz95::L95Traits> eda;
-  run.execute(eda);
-  return 0;
+  return run.execute(eda);
 }

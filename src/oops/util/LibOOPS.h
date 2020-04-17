@@ -40,7 +40,7 @@ class LibOOPS : public eckit::system::Library {
 
   void initialise();
   void teeOutput(const std::string &);
-  void finalise();
+  void finalise(bool finaliseMPI = true);
 
  protected:
   const void* addr() const override;

@@ -12,6 +12,5 @@
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
   oops::DiffStates<lorenz95::L95Traits> ds;
-  run.execute(ds);
-  return 0;
+  return run.execute(ds);
 }

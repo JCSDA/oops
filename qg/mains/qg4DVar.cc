@@ -19,6 +19,5 @@ int main(int argc,  char ** argv) {
   qg::instantiateQgChangeVarFactory();
   qg::instantiateQgLocalizationFactory();
   oops::Variational<qg::QgTraits> var;
-  run.execute(var);
-  return 0;
+  return run.execute(var);
 }

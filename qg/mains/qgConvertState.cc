@@ -14,6 +14,5 @@ int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
   qg::instantiateQgChangeVarFactory();
   oops::ConvertState<qg::QgTraits> cs;
-  run.execute(cs);
-  return 0;
+  return run.execute(cs);
 }

@@ -60,7 +60,7 @@ Run::~Run() {
 
 // -----------------------------------------------------------------------------
 
-void Run::execute(const Application & app) {
+int Run::execute(const Application & app) {
   int status = 1;
   Log::info() << "Run: Starting " << app << std::endl;
   try {
@@ -88,7 +88,7 @@ void Run::execute(const Application & app) {
   util::TimerHelper::stop();
 
   Log::info() << "Run: Finishing " << app << " with status = " << status << std::endl;
-  if (status) ::exit(status);
+  return status;
 }
 
 // -----------------------------------------------------------------------------

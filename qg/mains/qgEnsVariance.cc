@@ -13,6 +13,5 @@ int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
   qg::instantiateQgChangeVarFactory();
   oops::EnsVariance<qg::QgTraits> var;
-  run.execute(var);
-  return 0;
+  return run.execute(var);
 }

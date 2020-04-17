@@ -17,6 +17,5 @@ int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
   lorenz95::instantiateLocalizationFactory();
   oops::Variational<lorenz95::L95Traits> var;
-  run.execute(var);
-  return 0;
+  return run.execute(var);
 }

@@ -12,6 +12,5 @@
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
   oops::LETKF<qg::QgTraits> letkf;
-  run.execute(letkf);
-  return 0;
+  return run.execute(letkf);
 }

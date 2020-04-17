@@ -19,6 +19,5 @@ int main(int argc,  char ** argv) {
   qg::instantiateQgChangeVarFactory();
   qg::instantiateQgLocalizationFactory();
   oops::Dirac<qg::QgTraits> dir;
-  run.execute(dir);
-  return 0;
+  return run.execute(dir);
 }

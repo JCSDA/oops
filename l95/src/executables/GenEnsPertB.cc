@@ -15,6 +15,5 @@
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
   oops::GenEnsPertB<lorenz95::L95Traits> ensgen;
-  run.execute(ensgen);
-  return 0;
+  return run.execute(ensgen);
 }

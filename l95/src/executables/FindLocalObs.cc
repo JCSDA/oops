@@ -12,6 +12,5 @@
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
   oops::FindLocalObs<lorenz95::L95Traits> findlocalobs;
-  run.execute(findlocalobs);
-  return 0;
+  return run.execute(findlocalobs);
 }
