@@ -58,13 +58,11 @@ class GomL95 : public util::Printable,
   const double & operator[](const int ii) const {return locval_[ii];}
   double & operator[](const int ii) {return locval_[ii];}
   int getindx(const int il) const {return iobs_[il];}
-  int & current() const {return current_;}
 
  private:
   size_t size_;
   std::vector<int> iobs_;
   std::vector<double> locval_;
-  mutable int current_;
 };
 
 }  // namespace lorenz95

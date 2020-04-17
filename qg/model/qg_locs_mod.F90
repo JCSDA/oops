@@ -1,8 +1,8 @@
 ! (C) Copyright 2009-2016 ECMWF.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
-! In applying this licence, ECMWF does not waive the privileges and immunities 
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
@@ -17,12 +17,14 @@ use qg_constants_mod
 use qg_geom_mod
 use qg_obsvec_mod
 use qg_projection_mod
+use datetime_mod
+use duration_mod
 
 implicit none
 private
 public :: qg_locs
 public :: qg_locs_registry
-public :: qg_locs_test,qg_locs_delete,qg_locs_nobs,qg_locs_element,qg_locs_from_obsvec
+public :: qg_locs_test,qg_locs_delete,qg_locs_copy,qg_locs_nobs,qg_locs_element
 ! ------------------------------------------------------------------------------
 integer,parameter :: rseed = 1 !< Random seed (for reproducibility)
 
@@ -31,6 +33,7 @@ type :: qg_locs
   real(kind_real),allocatable :: lon(:) !< Longitudes
   real(kind_real),allocatable :: lat(:) !< Latitudes
   real(kind_real),allocatable :: z(:)   !< Altitudes
+  type(datetime), allocatable :: times(:) !< times
   integer,allocatable :: indx(:)        !< Index
 end type qg_locs
 
@@ -51,7 +54,7 @@ contains
 ! ------------------------------------------------------------------------------
 !> Generate test locations
 subroutine qg_locs_test(self,f_conf,klocs,klons,klats,kz)
-  
+
 implicit none
 
 ! Passed variables
@@ -65,6 +68,9 @@ real(kind_real),intent(in) :: kz(klocs)        !< User-specified altitudes (m)
 ! Local variables
 integer :: jobs,Nrandom
 real(kind_real),allocatable :: x(:),y(:)
+character(len=:), allocatable :: str
+type(datetime) :: window_begin, window_end
+type(duration) :: window_len, dt
 
 ! Get number of random locations
 self%nlocs = klocs
@@ -110,7 +116,51 @@ if (self%nlocs>klocs) then
   enddo
 endif
 
+if (f_conf%has("window_end")) then
+   call f_conf%get_or_die("window_begin",str)
+   call datetime_create(str, window_begin)
+   call f_conf%get_or_die("window_end",str)
+   call datetime_create(str, window_end)
+   call datetime_diff(window_end, window_begin, window_len)
+   allocate(self%times(self%nlocs))
+   do jobs = 1,self%nlocs
+     self%times(jobs) = window_begin
+     dt = jobs * duration_seconds(window_len) / self%nlocs
+     call datetime_update(self%times(jobs), dt)
+   enddo
+endif
+
 end subroutine qg_locs_test
+! ------------------------------------------------------------------------------
+!> Copy locations
+subroutine qg_locs_copy(self, other)
+
+implicit none
+
+! Passed variables
+type(qg_locs),intent(inout) :: self !< Locations
+type(qg_locs),intent(in)    :: other
+
+! Release memory
+if (allocated(self%lon)) deallocate(self%lon)
+if (allocated(self%lat)) deallocate(self%lat)
+if (allocated(self%z)) deallocate(self%z)
+if (allocated(self%times)) deallocate(self%times)
+if (allocated(self%indx)) deallocate(self%indx)
+self%nlocs = other%nlocs
+allocate(self%lon(self%nlocs))
+allocate(self%lat(self%nlocs))
+allocate(self%z(self%nlocs))
+allocate(self%times(self%nlocs))
+allocate(self%indx(self%nlocs))
+self%lon = other%lon
+self%lat = other%lat
+self%z = other%z
+self%times = other%times
+self%indx = other%indx
+
+end subroutine qg_locs_copy
+
 ! ------------------------------------------------------------------------------
 !> Delete locations
 subroutine qg_locs_delete(self)
@@ -124,6 +174,8 @@ type(qg_locs),intent(inout) :: self !< Locations
 if (allocated(self%lon)) deallocate(self%lon)
 if (allocated(self%lat)) deallocate(self%lat)
 if (allocated(self%z)) deallocate(self%z)
+if (allocated(self%times)) deallocate(self%times)
+if (allocated(self%indx)) deallocate(self%indx)
 
 end subroutine qg_locs_delete
 ! ------------------------------------------------------------------------------
@@ -159,39 +211,5 @@ lat = self%lat(iloc+1)
 z = self%z(iloc+1)
 
 end subroutine qg_locs_element
-! ------------------------------------------------------------------------------
-!> Setup locations from observation vector
-subroutine qg_locs_from_obsvec(self,ovec,kobs)
-
-implicit none
-
-! Passed variables
-type(qg_locs),intent(inout) :: self !< Locations
-type(qg_obsvec),intent(in) :: ovec  !< Observation vector
-integer,intent(in) :: kobs(:)       !< Observations index
-
-! Local variables
-integer :: jo
-
-! Get number of observations
-self%nlocs = ovec%nobs
-
-! Allocation
-allocate(self%indx(self%nlocs))
-allocate(self%lon(self%nlocs))
-allocate(self%lat(self%nlocs))
-allocate(self%z(self%nlocs))
-
-! Copy index
-self%indx(:) = kobs(:)
-
-! Copy coordinates
-do jo=1,self%nlocs
-  self%lon(jo) = ovec%values(1,jo)
-  self%lat(jo) = ovec%values(2,jo)
-  self%z(jo) = ovec%values(3,jo)
-enddo
-
-end subroutine qg_locs_from_obsvec
 ! ------------------------------------------------------------------------------
 end module qg_locs_mod

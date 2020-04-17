@@ -128,24 +128,6 @@ void FieldsQG::dirac(const eckit::Configuration & config) {
   qg_fields_dirac_f90(keyFlds_, config);
 }
 // -----------------------------------------------------------------------------
-void FieldsQG::getValues(const LocationsQG & locs, const oops::Variables & vars,
-                         GomQG & gom) const {
-  const VariablesQG varqg(vars);
-  qg_fields_interp_f90(keyFlds_, locs.toFortran(), varqg.toFortran(), gom.toFortran());
-}
-// -----------------------------------------------------------------------------
-void FieldsQG::getValuesTL(const LocationsQG & locs, const oops::Variables & vars,
-                           GomQG & gom) const {
-  const VariablesQG varqg(vars);
-  qg_fields_interp_tl_f90(keyFlds_, locs.toFortran(), varqg.toFortran(), gom.toFortran());
-}
-// -----------------------------------------------------------------------------
-void FieldsQG::getValuesAD(const LocationsQG & locs, const oops::Variables & vars,
-                           const GomQG & gom) {
-  const VariablesQG varqg(vars);
-  qg_fields_interp_ad_f90(keyFlds_, locs.toFortran(), varqg.toFortran(), gom.toFortran());
-}
-// -----------------------------------------------------------------------------
 void FieldsQG::changeResolution(const FieldsQG & other) {
   qg_fields_change_resol_f90(keyFlds_, other.keyFlds_);
 }

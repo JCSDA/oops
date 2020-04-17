@@ -20,9 +20,6 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
-#include "oops/interface/GeoVaLs.h"
-#include "oops/interface/InterpolatorTraj.h"
-#include "oops/interface/Locations.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -39,9 +36,6 @@ class State : public util::Printable,
               private util::ObjectCounter<State<MODEL> > {
   typedef typename MODEL::State      State_;
   typedef Geometry<MODEL>            Geometry_;
-  typedef GeoVaLs<MODEL>             GeoVaLs_;
-  typedef InterpolatorTraj<MODEL>    InterpolatorTraj_;
-  typedef Locations<MODEL>           Locations_;
 
  public:
   static const std::string classname() {return "oops::State";}
@@ -58,10 +52,6 @@ class State : public util::Printable,
 /// Interfacing
   State_ & state() {return *state_;}
   const State_ & state() const {return *state_;}
-
-/// Get state values at observation locations
-  void getValues(const Locations_ &, const Variables &, GeoVaLs_ &) const;
-  void getValues(const Locations_ &, const Variables &, GeoVaLs_ &, InterpolatorTraj_ &) const;
 
 /// Time
   const util::DateTime validTime() const {return state_->validTime();}
@@ -157,28 +147,6 @@ State<MODEL> & State<MODEL>::operator=(const State & rhs) {
   *state_ = *rhs.state_;
   Log::trace() << "State<MODEL>::operator= done" << std::endl;
   return *this;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void State<MODEL>::getValues(const Locations_ & locs, const Variables & vars,
-                             GeoVaLs_ & gvals) const {
-  Log::trace() << "State<MODEL>::getValues starting" << std::endl;
-  util::Timer timer(classname(), "getValues");
-  state_->getValues(locs.locations(), vars, gvals.geovals());
-  Log::trace() << "State<MODEL>::getValues done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void State<MODEL>::getValues(const Locations_ & locs, const Variables & vars,
-                             GeoVaLs_ & gvals, InterpolatorTraj_ & traj) const {
-  Log::trace() << "State<MODEL>::getValues traj starting" << std::endl;
-  util::Timer timer(classname(), "getValues");
-  state_->getValues(locs.locations(), vars, gvals.geovals(), traj.interpolatortraj());
-  Log::trace() << "State<MODEL>::getValues traj done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

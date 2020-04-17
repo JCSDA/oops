@@ -26,9 +26,6 @@
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
-#include "oops/interface/GeoVaLs.h"
-#include "oops/interface/InterpolatorTraj.h"
-#include "oops/interface/Locations.h"
 #include "oops/interface/State.h"
 #if !ATLASIFIED
 #include "oops/generic/UnstructuredGrid.h"
@@ -55,9 +52,6 @@ class Increment : public oops::GeneralizedDepartures,
   typedef typename MODEL::Increment  Increment_;
   typedef Geometry<MODEL>            Geometry_;
   typedef GeometryIterator<MODEL>    GeometryIterator_;
-  typedef GeoVaLs<MODEL>             GeoVaLs_;
-  typedef InterpolatorTraj<MODEL>    InterpolatorTraj_;
-  typedef Locations<MODEL>           Locations_;
   typedef State<MODEL>               State_;
 
  public:
@@ -72,12 +66,6 @@ class Increment : public oops::GeneralizedDepartures,
 /// Interfacing
   Increment_ & increment() {return *increment_;}
   const Increment_ & increment() const {return *increment_;}
-
-/// Get increment values at observation locations
-  void getValuesTL(const Locations_ &, const Variables &,
-                   GeoVaLs_ &, const InterpolatorTraj_ &) const;
-  void getValuesAD(const Locations_ &, const Variables &,
-                   const GeoVaLs_ &, const InterpolatorTraj_ &);
 
 /// Interactions with State
   void diff(const State_ &, const State_ &);
@@ -189,28 +177,6 @@ Increment<MODEL>::~Increment() {
   util::Timer timer(classname(), "~Increment");
   increment_.reset();
   Log::trace() << "Increment<MODEL>::~Increment done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void Increment<MODEL>::getValuesTL(const Locations_ & loc, const Variables & vars,
-                                   GeoVaLs_ & gvals, const InterpolatorTraj_ & traj) const {
-  Log::trace() << "Increment<MODEL>::getValuesTL starting" << std::endl;
-  util::Timer timer(classname(), "getValuesTL");
-  increment_->getValuesTL(loc.locations(), vars, gvals.geovals(), traj.interpolatortraj());
-  Log::trace() << "Increment<MODEL>::getValuesTL done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void Increment<MODEL>::getValuesAD(const Locations_ & loc, const Variables & vars,
-                                   const GeoVaLs_ & gvals, const InterpolatorTraj_ & traj) {
-  Log::trace() << "Increment<MODEL>::getValuesAD starting" << std::endl;
-  util::Timer timer(classname(), "getValuesAD");
-  increment_->getValuesAD(loc.locations(), vars, gvals.geovals(), traj.interpolatortraj());
-  Log::trace() << "Increment<MODEL>::getValuesAD done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

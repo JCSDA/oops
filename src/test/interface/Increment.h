@@ -26,7 +26,6 @@
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
-#include "oops/interface/InterpolatorTraj.h"
 #include "oops/interface/State.h"
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Test.h"
@@ -198,146 +197,6 @@ template <typename MODEL> void testIncrementAxpy() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testIncrementInterpTL() {
-  typedef IncrementFixture<MODEL>       Test_;
-  typedef oops::Increment<MODEL>        Increment_;
-  typedef oops::Locations<MODEL>        Locations_;
-  typedef oops::GeoVaLs<MODEL>          GeoVaLs_;
-  typedef oops::InterpolatorTraj<MODEL> InterpolatorTraj_;
-  typedef oops::State<MODEL>            State_;
-  typedef eckit::LocalConfiguration     LocalConf_;
-
-  // Check if "InterpTest" is present
-  if (!TestEnvironment::config().has("InterpTest")) {
-      oops::Log::warning() << "Bypassing test for tangent of interpolation";
-      return;
-  }
-
-  // Create Background
-  const LocalConf_ confstate(TestEnvironment::config(), "State");
-  const State_ xx(Test_::resol(), Test_::ctlvars(), confstate);
-
-  // Locations from config
-  const LocalConf_ configlocs(TestEnvironment::config(), "InterpTest.Locations");
-  const Locations_ locs(configlocs, oops::mpi::comm());
-
-  // Variables from config
-  const LocalConf_ configvars(TestEnvironment::config(), "InterpTest.GeoVaLs");
-  const oops::Variables vars(configvars);
-
-  // Setup Increments
-  Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
-
-  // Get tolerance and increment scaling
-  const double tol = TestEnvironment::config().getDouble("InterpTest.tolerance");
-  const double alpha = TestEnvironment::config().getDouble("InterpTest.coefTL", 1e-12);
-
-  // Call NL getvalues to setup and initialize trajectory
-  InterpolatorTraj_ traj;
-  GeoVaLs_ hofx(locs, vars);
-  xx.getValues(locs, vars, hofx, traj);
-
-  // Randomize increments
-  dx.random();
-  dx *= alpha;
-
-  // h(x+dx)
-  GeoVaLs_ hofxpdx(locs, vars);
-  State_ xpdx(xx);
-  xpdx = xx;
-  xpdx += dx;
-  xpdx.getValues(locs, vars, hofxpdx);
-
-  // Create geovals from locs and vars
-  GeoVaLs_ Hdx(locs, vars);
-
-  // Forward getValues (state to geovals)
-  dx.getValuesTL(locs, vars, Hdx, traj);
-
-  // Test if ||(h(x+alpha*dx)-h(x)-h'*(alpha*dx))||<tol
-  GeoVaLs_ testtl(hofxpdx);
-  testtl = hofxpdx;
-  testtl -= hofx;
-  testtl -= Hdx;
-  double test_norm = dot_product(testtl, testtl);
-  oops::Log::info() << " ||(h(x+alpha*dx)-h(x)-h'*(alpha*dx))||="
-                    << test_norm << std::endl;
-  EXPECT(test_norm < tol);
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL> void testIncrementInterpAD() {
-  typedef IncrementFixture<MODEL>       Test_;
-  typedef oops::Increment<MODEL>        Increment_;
-  typedef oops::Locations<MODEL>        Locations_;
-  typedef oops::GeoVaLs<MODEL>          GeoVaLs_;
-  typedef oops::InterpolatorTraj<MODEL> InterpolatorTraj_;
-  typedef oops::State<MODEL>            State_;
-  typedef eckit::LocalConfiguration     LocalConf_;
-
-  // Check if "InterpTest" is present
-  if (!TestEnvironment::config().has("InterpTest")) {
-      oops::Log::warning() << "Bypassing test for adjoint of interpolation";
-      return;
-  }
-
-  // Create Background
-  const LocalConf_ confstate(TestEnvironment::config(), "State");
-  const State_ xx(Test_::resol(), Test_::ctlvars(), confstate);
-
-  // Locations from config
-  const LocalConf_ configlocs(TestEnvironment::config(), "InterpTest.Locations");
-  const Locations_ locs(configlocs, oops::mpi::comm());
-
-  // Variables from config
-  const LocalConf_ configvars(TestEnvironment::config(), "InterpTest.GeoVaLs");
-  const oops::Variables vars(configvars);
-
-  // Setup Increments
-  Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
-  Increment_ Htdg(dx);
-  Htdg.zero();
-
-  // Get tolerance of dot product test
-  const double tol = TestEnvironment::config().getDouble("InterpTest.tolerance");
-
-  // Call NL getvalues to setup and initialize trajectory
-  InterpolatorTraj_ traj;
-  GeoVaLs_ hofx(locs, vars);
-  xx.getValues(locs, vars, hofx, traj);
-
-  // Randomize increments
-  dx.random();
-
-  // Create geovals from locs and vars
-  GeoVaLs_ Hdx(locs, vars);
-
-  // Forward getValues (state to geovals)
-  dx.getValuesTL(locs, vars, Hdx, traj);
-
-  // Setup and randomize geoval increments
-  GeoVaLs_ dg(Hdx);
-  dg.zero();
-  dg.random();
-
-  // Backward getValues (geovals to state)
-  Htdg.getValuesAD(locs, vars, dg, traj);
-
-  // Check adjoint: <Htdg,dx>=<dg,Hdx>
-  double zz1 = dot_product(Htdg, dx);
-  double zz2 = dot_product(dg, Hdx);
-
-  oops::Log::debug() << "Adjoint test result: (<HTdg,dx>-<dg,Hdx>) = "
-                       << zz1-zz2 << std::endl;
-
-  EXPECT(zz1 != 0.0);
-  EXPECT(zz2 != 0.0);
-  EXPECT(oops::is_close(zz1, zz2, tol));
-}
-
-// -----------------------------------------------------------------------------
-
 template <typename MODEL> void testIncrementSerialize() {
   typedef IncrementFixture<MODEL>   Test_;
   typedef oops::Increment<MODEL>    Increment_;
@@ -390,10 +249,6 @@ class Increment : public oops::Test {
       { testIncrementDotProduct<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementAxpy")
       { testIncrementAxpy<MODEL>(); });
-    ts.emplace_back(CASE("interface/Increment/testIncrementInterpAD")
-      { testIncrementInterpAD<MODEL>(); });
-    ts.emplace_back(CASE("interface/Increment/testIncrementInterpTL")
-      { testIncrementInterpTL<MODEL>(); });
 //    ts.emplace_back(CASE("interface/Increment/testIncrementSerialize")
 //      { testIncrementSerialize<MODEL>(); });
   }

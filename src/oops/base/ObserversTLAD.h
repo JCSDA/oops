@@ -87,8 +87,8 @@ class ObserversTLAD : public PostBaseTLAD<MODEL> {
   util::DateTime end_;      //!< End of currently active observations
   util::Duration hslot_, hslottraj_;    //!< Half time slot
   const bool subwindows_;
-
-  util::Duration bintstep_;
+  unsigned int nwindows_;   //!< number of subwindows (default 1)
+  util::Duration winlen_;   //!< length of subwindow (default winend_-winbgn_)
 };
 
 // -----------------------------------------------------------------------------
@@ -102,7 +102,8 @@ ObserversTLAD<MODEL>::ObserversTLAD(const eckit::Configuration & config,
     yobs_(new Observations_(obspace_)),
     ydeptl_(), ybiastl_(), ydepad_(), ybiasad_(),
     winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
-    bgn_(winbgn_), end_(winend_), hslot_(tslot/2), hslottraj_(tslot/2), subwindows_(subwin)
+    bgn_(winbgn_), end_(winend_), hslot_(tslot/2), hslottraj_(tslot/2),
+    subwindows_(subwin), nwindows_(1), winlen_(winend_-winbgn_)
 {
   // setup observers
   std::vector<eckit::LocalConfiguration> typeconf;
@@ -124,8 +125,6 @@ void ObserversTLAD<MODEL>::doInitializeTraj(const State_ & xx,
                const util::DateTime & end, const util::Duration & tstep) {
   Log::trace() << "ObserversTLAD::doInitializeTraj start" << std::endl;
 // Create full trajectory object
-  bintstep_ = tstep;
-  unsigned int nsteps = 1+(winend_-winbgn_).toSeconds() / bintstep_.toSeconds();
 
   const util::DateTime bgn(xx.validTime());
   if (hslottraj_ == util::Duration(0)) hslottraj_ = tstep/2;
@@ -137,12 +136,14 @@ void ObserversTLAD<MODEL>::doInitializeTraj(const State_ & xx,
       bgn_ = bgn;
       end_ = end;
     }
+    winlen_ = end_ - bgn_;
+    nwindows_ = (winend_-winbgn_).toSeconds() / winlen_.toSeconds();
   }
   if (bgn_ < winbgn_) bgn_ = winbgn_;
   if (end_ > winend_) end_ = winend_;
 
   for (std::size_t jj = 0; jj < observerstlad_.size(); ++jj) {
-    observerstlad_[jj]->doInitializeTraj(xx, bgn_, end_, nsteps);
+    observerstlad_[jj]->doInitializeTraj(xx, bgn_, winlen_, nwindows_);
   }
   Log::trace() << "ObserversTLAD::doInitializeTraj done" << std::endl;
 }
@@ -150,16 +151,15 @@ void ObserversTLAD<MODEL>::doInitializeTraj(const State_ & xx,
 template <typename MODEL>
 void ObserversTLAD<MODEL>::doProcessingTraj(const State_ & xx) {
   Log::trace() << "ObserversTLAD::doProcessingTraj start" << std::endl;
-  // Index for current bin
-  int ib = (xx.validTime()-winbgn_).toSeconds() / bintstep_.toSeconds();
-
   util::DateTime t1(xx.validTime()-hslottraj_);
   util::DateTime t2(xx.validTime()+hslottraj_);
   if (t1 < bgn_) t1 = bgn_;
   if (t2 > end_) t2 = end_;
 
+  int iwin = (t1-winbgn_).toSeconds() / winlen_.toSeconds();
+
   for (std::size_t jj = 0; jj < observerstlad_.size(); ++jj) {
-    observerstlad_[jj]->doProcessingTraj(xx, t1, t2, ib);
+    observerstlad_[jj]->doProcessingTraj(xx, t1, t2, iwin);
   }
   Log::trace() << "ObserversTLAD::doProcessingTraj done" << std::endl;
 }
@@ -214,9 +214,9 @@ void ObserversTLAD<MODEL>::doProcessingTL(const Increment_ & dx) {
   if (t2 > end_) t2 = end_;
 
 // Index for current bin
-  int ib = (dx.validTime()-winbgn_).toSeconds() / bintstep_.toSeconds();
+  unsigned int iwin = (t1 - winbgn_).toSeconds() / winlen_.toSeconds();
   for (std::size_t jj = 0; jj < observerstlad_.size(); ++jj) {
-    observerstlad_[jj]->doProcessingTL(dx, t1, t2, ib);
+    observerstlad_[jj]->doProcessingTL(dx, t1, t2, iwin);
   }
   Log::trace() << "ObserversTLAD::doProcessingTL done" << std::endl;
 }
@@ -271,11 +271,10 @@ void ObserversTLAD<MODEL>::doProcessingAD(Increment_ & dx) {
   if (t1 < bgn_) t1 = bgn_;
   if (t2 > end_) t2 = end_;
 
-// Index for current bin
-  int ib = (dx.validTime()-winbgn_).toSeconds() / bintstep_.toSeconds();
-
+// Index for current window
+  unsigned int iwin = (t1 - winbgn_).toSeconds() / winlen_.toSeconds();
   for (std::size_t jj = 0; jj < observerstlad_.size(); ++jj) {
-    observerstlad_[jj]->doProcessingAD(dx, t1, t2, ib);
+    observerstlad_[jj]->doProcessingAD(dx, t1, t2, iwin);
   }
   Log::trace() << "ObserversTLAD::doProcessingAD done" << std::endl;
 }

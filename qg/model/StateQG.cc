@@ -30,7 +30,6 @@
 #include "model/LocationsQG.h"
 #include "model/ModelBias.h"
 #include "model/ModelQG.h"
-#include "model/Nothing.h"
 
 
 namespace qg {
@@ -90,18 +89,6 @@ StateQG & StateQG::operator=(const StateQG & rhs) {
   ASSERT(fields_);
   *fields_ = *rhs.fields_;
   return *this;
-}
-// -----------------------------------------------------------------------------
-/// Get state values at observation locations
-// -----------------------------------------------------------------------------
-void StateQG::getValues(const LocationsQG & locs, const oops::Variables & vars,
-                        GomQG & cols) const {
-  fields_->getValues(locs, vars, cols);
-}
-// -----------------------------------------------------------------------------
-void StateQG::getValues(const LocationsQG & locs, const oops::Variables & vars,
-                        GomQG & cols, Nothing &) const {
-  fields_->getValues(locs, vars, cols);
 }
 // -----------------------------------------------------------------------------
 /// Interpolate full fields

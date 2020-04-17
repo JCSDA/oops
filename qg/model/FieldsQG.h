@@ -73,11 +73,6 @@ class FieldsQG : public util::Printable,
   void dirac(const eckit::Configuration &);
   void random();
 
-// Get fields values at given location
-  void getValues(const LocationsQG &, const oops::Variables &, GomQG &) const;
-  void getValuesTL(const LocationsQG &, const oops::Variables &, GomQG &) const;
-  void getValuesAD(const LocationsQG &, const oops::Variables &, const GomQG &);
-
 // Interpolate full fields
   void changeResolution(const FieldsQG &);
   void add(const FieldsQG &);

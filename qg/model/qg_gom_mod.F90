@@ -40,6 +40,7 @@ type :: qg_gom
   integer,allocatable :: indx(:)              !< Observations index
   real(kind_real), allocatable :: values(:,:) !< Observations values
   logical :: lalloc                           !< Allocation flag
+  type(qg_vars) :: vars
 end type qg_gom
 
 #define LISTED_TYPE qg_gom
@@ -95,6 +96,7 @@ if (vars%lv) then
 else
   self%iv = 0
 endif
+self%vars = vars
 
 ! Allocation
 allocate(self%indx(self%nobs))
@@ -152,7 +154,7 @@ self%iu = other%iu
 self%iv = other%iv
 self%nv = other%nv
 self%used = other%used
-
+self%vars = other%vars
 ! Allocation
 if (.not.self%lalloc) then
    allocate(self%values(self%nv,self%nobs))

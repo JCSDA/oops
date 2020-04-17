@@ -146,29 +146,6 @@ void FieldL95::random() {
   for (int jj = 0; jj < resol_; ++jj) x_[jj] = xx[jj];
 }
 // -----------------------------------------------------------------------------
-void FieldL95::interp(const LocsL95 & locs, GomL95 & gom) const {
-  const double dres = static_cast<double>(resol_);
-  for (size_t jobs = 0; jobs < locs.size(); ++jobs) {
-    int ii = round(locs[jobs] * dres);
-    ASSERT(ii >= 0 && ii <= resol_);
-    if (ii == resol_) ii = 0;
-    gom[gom.current()+jobs] = x_[ii];
-  }
-  gom.current() += locs.size();
-}
-// -----------------------------------------------------------------------------
-void FieldL95::interpAD(const LocsL95 & locs, const GomL95 & gom) {
-  const double dres = static_cast<double>(resol_);
-  if (gom.current() == 0) gom.current() = gom.size();
-  gom.current() -= locs.size();
-  for (size_t jobs = 0; jobs < locs.size(); ++jobs) {
-    int ii = round(locs[jobs] * dres);
-    ASSERT(ii >= 0 && ii <= resol_);
-    if (ii == resol_) ii = 0;
-    x_[ii] += gom[gom.current()+jobs];
-  }
-}
-// -----------------------------------------------------------------------------
 void FieldL95::ug_coord(oops::UnstructuredGrid & ug) const {
   ABORT("FieldL95 unstructured grid setup not implemented.");
 }

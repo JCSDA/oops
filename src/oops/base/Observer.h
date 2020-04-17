@@ -17,6 +17,7 @@
 #include "oops/base/ObsFilters.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
+#include "oops/interface/GetValues.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsDiagnostics.h"
@@ -41,6 +42,7 @@ class Observer : public util::Printable {
   typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef ObsDiagnostics<MODEL>      ObsDiags_;
   typedef ObsSpace<MODEL>            ObsSpace_;
+  typedef GetValues<MODEL>           GetValues_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef ObsFilters<MODEL>          ObsFilters_;
   typedef ObsOperator<MODEL>         ObsOperator_;
@@ -71,6 +73,7 @@ class Observer : public util::Printable {
 
   ObsFilters_ filters_;
   Variables geovars_;  // Variables needed from model (through geovals)
+  std::unique_ptr<GetValues_> getvals_;
   std::shared_ptr<GeoVaLs_> gvals_;
 };
 
@@ -107,6 +110,7 @@ void Observer<MODEL>::doInitialize(const State_ & xx,
                                    const util::DateTime & end) {
   Log::trace() << "Observer::doInitialize start" << std::endl;
   filters_.preProcess();
+  getvals_.reset(new GetValues_(xx.geometry(), hop_.locations(begin, end)));
   gvals_.reset(new GeoVaLs_(hop_.locations(begin, end), geovars_));
   Log::trace() << "Observer::doInitialize done" << std::endl;
 }
@@ -119,7 +123,7 @@ void Observer<MODEL>::doProcessing(const State_ & xx,
                                    const util::DateTime & t2) {
   Log::trace() << "Observer::doProcessing start" << std::endl;
 // Get state variables at obs locations
-  xx.getValues(hop_.locations(t1, t2), geovars_, *gvals_);
+  getvals_->fillGeoVaLs(xx, t1, t2, *gvals_);
   Log::trace() << "Observer::doProcessing done" << std::endl;
 }
 

@@ -20,19 +20,23 @@ namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
 
-LocsL95::LocsL95(const std::vector<int> & indx, const std::vector<double> & locs)
-  : indx_(indx), locs_(locs)
+LocsL95::LocsL95(const std::vector<int> & indx, const std::vector<double> & locs,
+                 const std::vector<util::DateTime> & times)
+  : indx_(indx), locs_(locs), times_(times)
 {
   ASSERT(indx_.size() == locs_.size());
 }
 
 // -----------------------------------------------------------------------------
 
-LocsL95::LocsL95(const eckit::Configuration & conf, const eckit::mpi::Comm &) : indx_(), locs_() {
+LocsL95::LocsL95(const eckit::Configuration & conf, const eckit::mpi::Comm &)
+  : indx_(), locs_(), times_() {
   conf.get("positions", locs_);
+  const util::DateTime time(conf.getString("time"));
   for (size_t jj = 0; jj < locs_.size(); ++jj) {
     ASSERT(locs_.at(jj) >= 0.0 && locs_.at(jj) <= 1.0);
     indx_.push_back(jj + 1);
+    times_.push_back(time);
   }
 }
 

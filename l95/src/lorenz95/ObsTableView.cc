@@ -196,11 +196,13 @@ LocsL95 * ObsTableView::locations(const util::DateTime & t1, const util::DateTim
   // set up locations
   const unsigned int nobs_t = mask.size();
   std::vector<double> locs(nobs_t);
+  std::vector<util::DateTime> times(nobs_t);
   for (unsigned int i = 0; i < nobs_t; i++) {
     locs[i] = all_locs[localobs_[mask[i]]];
+    times[i] = all_times[localobs_[mask[i]]];
   }
   oops::Log::trace() << "ObsTableView::locations done" << std::endl;
-  return new LocsL95(mask, locs);
+  return new LocsL95(mask, locs, times);
 }
 
 // -----------------------------------------------------------------------------

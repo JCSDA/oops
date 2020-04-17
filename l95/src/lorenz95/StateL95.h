@@ -40,7 +40,6 @@ namespace lorenz95 {
   class ModelBias;
   class ModelL95;
   class ModelTrajectory;
-  class Nothing;
 
 /// L95 model state
 /*!
@@ -61,10 +60,6 @@ class StateL95 : public util::Printable,
   StateL95(const StateL95 &);
   virtual ~StateL95();
   StateL95 & operator=(const StateL95 &);
-
-/// Get state values at obs locations
-  void getValues(const LocsL95 &, const oops::Variables &, GomL95 &) const;
-  void getValues(const LocsL95 &, const oops::Variables &, GomL95 &, Nothing &) const;
 
 /// Interactions with increments
   StateL95 & operator+=(const IncrementL95 &);

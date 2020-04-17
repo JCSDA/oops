@@ -69,10 +69,6 @@ class FieldL95 : public util::Printable {
   std::vector<double> & asVector() {return x_;}
   const std::vector<double> & asVector() const {return x_;}
 
-/// Interpolate to given location
-  void interp(const LocsL95 &, GomL95 &) const;
-  void interpAD(const LocsL95 &, const GomL95 &);
-
 /// Unstructured grid
   void ug_coord(oops::UnstructuredGrid &) const;
   void field_to_ug(oops::UnstructuredGrid &, const int &) const;

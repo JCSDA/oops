@@ -31,7 +31,7 @@ namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
 GomL95::GomL95(const LocsL95 & locs, const oops::Variables &)
-  : size_(0), iobs_(), locval_(), current_(0)
+  : size_(0), iobs_(), locval_()
 {
   oops::Log::trace() << "GomL95::GomL95 starting " << std::endl;
   size_ = locs.size();
@@ -44,13 +44,13 @@ GomL95::GomL95(const LocsL95 & locs, const oops::Variables &)
 /*! Constructor with Configuration */
 GomL95::GomL95(const eckit::Configuration & conf,
                const ObsTableView &, const oops::Variables &)
-  : size_(0), iobs_(), locval_(), current_(0)
+  : size_(0), iobs_(), locval_()
 {
     this->read(conf);
 }
 // -----------------------------------------------------------------------------
 GomL95::GomL95(const GomL95 & other)
-  : size_(other.size_), iobs_(other.iobs_), locval_(other.locval_), current_(0)
+  : size_(other.size_), iobs_(other.iobs_), locval_(other.locval_)
 {
   oops::Log::trace() << "GomL95::GomL95 copied" << std::endl;
 }

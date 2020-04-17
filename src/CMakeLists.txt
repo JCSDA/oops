@@ -165,8 +165,9 @@ oops/interface/ErrorCovariance.h
 oops/interface/Geometry.h
 oops/interface/GeometryIterator.h
 oops/interface/GeoVaLs.h
+oops/interface/GetValues.h
 oops/interface/Increment.h
-oops/interface/InterpolatorTraj.h
+oops/interface/LinearGetValues.h
 oops/interface/LinearModel.h
 oops/interface/LinearObsOperator.h
 oops/interface/LinearVariableChange.h
@@ -303,7 +304,9 @@ test/interface/ErrorCovariance.h
 test/interface/Geometry.h
 test/interface/GeometryIterator.h
 test/interface/GeoVaLs.h
+test/interface/GetValues.h
 test/interface/Increment.h
+test/interface/LinearGetValues.h
 test/interface/LinearModel.h
 test/interface/LinearObsOperator.h
 test/interface/LinearVariableChange.h

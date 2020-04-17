@@ -4,6 +4,10 @@ ecbuild_add_library( TARGET lorenz95
                          ErrorCovarianceL95.h
                          FieldL95.cc
                          FieldL95.h
+                         GetValuesL95.cc
+                         GetValuesL95.h
+                         GetValuesTLAD.cc
+                         GetValuesTLAD.h
                          GomL95.cc
                          GomL95.h
                          IncrementL95.cc
@@ -24,7 +28,6 @@ ecbuild_add_library( TARGET lorenz95
                          ModelL95.cc
                          ModelTrajectory.cc
                          ModelTrajectory.h
-                         Nothing.h
                          ObsBias.cc
                          ObsBias.h
                          ObsBiasCorrection.cc

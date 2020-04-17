@@ -50,6 +50,8 @@ typedef int F90locs;
 typedef int F90gom;
 // Fields key type
 typedef int F90flds;
+// GetValues key type
+typedef int F90getvalues;
 // Error covariance key type
 typedef int F90error_covariance;
 // Error standard deviation key type
@@ -127,9 +129,6 @@ extern "C" {
   void qg_fields_rms_f90(const F90flds &, double &);
   void qg_fields_sizes_f90(const F90flds &, int &, int &, int &, int &);
   void qg_fields_vars_f90(const F90flds &, int &, int &);
-  void qg_fields_interp_f90(const F90flds &, const F90locs &, const F90vars *, const F90gom &);
-  void qg_fields_interp_tl_f90(const F90flds &, const F90locs &, const F90vars *, const F90gom &);
-  void qg_fields_interp_ad_f90(const F90flds &, const F90locs &, const F90vars *, const F90gom &);
   void qg_fields_set_atlas_f90(const F90flds &, const F90vars *, const util::DateTime &,
                                atlas::field::FieldSetImpl *);
   void qg_fields_to_atlas_f90(const F90flds &, const F90vars *, const util::DateTime &,
@@ -141,6 +140,20 @@ extern "C" {
   void qg_fields_serialize_f90(const F90flds &, const std::size_t &, double[]);
   void qg_fields_deserialize_f90(const F90flds &, const std::size_t &, const double[],
                                  const std::size_t &);
+// -----------------------------------------------------------------------------
+//  GetValues
+// -----------------------------------------------------------------------------
+  void qg_getvalues_create_f90(F90getvalues &, const F90geom &, const F90locs &);
+  void qg_getvalues_delete_f90(F90getvalues &);
+  void qg_getvalues_interp_f90(const F90getvalues &, const F90flds &,
+                               const util::DateTime &,
+                               const util::DateTime &, const F90gom &);
+  void qg_getvalues_interp_tl_f90(const F90getvalues &, const F90flds &,
+                                  const util::DateTime &,
+                                  const util::DateTime &, const F90gom &);
+  void qg_getvalues_interp_ad_f90(const F90getvalues &, const F90flds &,
+                                  const util::DateTime &,
+                                  const util::DateTime &, const F90gom &);
 
 // -----------------------------------------------------------------------------
 //  Geometry

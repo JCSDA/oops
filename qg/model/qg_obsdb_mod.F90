@@ -309,22 +309,45 @@ type(datetime),intent(in) :: t2     !< Time 2
 type(qg_locs),intent(inout) :: locs !< Locations
 
 ! Local variables
-integer :: nobs
-integer,allocatable :: mobs(:)
+integer :: nlocs, jo
+integer,allocatable :: indx(:)
 character(len=8),parameter :: col = 'Location'
-type(qg_obsvec) :: ovec
+type(group_data),pointer :: jgrp
+type(column_data),pointer :: jcol
 
 ! Count observations
-call qg_obsdb_count_time(self,grp,t1,t2,nobs)
-allocate(mobs(nobs))
-call qg_obsdb_count_indx(self,grp,t1,t2,mobs)
-call qg_obsdb_time_get(self,grp,col,t1,t2,ovec)
+call qg_obsdb_count_time(self,grp,t1,t2,nlocs)
+allocate(indx(nlocs))
+call qg_obsdb_count_indx(self,grp,t1,t2,indx)
 
-! Get locations
-call qg_locs_from_obsvec(locs,ovec,mobs)
+! Find observation group
+call qg_obsdb_find_group(self,grp,jgrp)
+if (.not.associated(jgrp)) call abor1_ftn('qg_obsdb_locations: obs group not found')
 
-deallocate(ovec%values)
-deallocate(mobs)
+! Find observation column
+call qg_obsdb_find_column(jgrp,col,jcol)
+if (.not.associated(jcol)) call abor1_ftn('qg_obsdb_locations: obs column not found')
+
+! Set number of observations
+locs%nlocs = nlocs
+
+! Allocation
+call qg_locs_delete(locs)
+allocate(locs%lon(nlocs))
+allocate(locs%lat(nlocs))
+allocate(locs%z(nlocs))
+allocate(locs%times(nlocs))
+allocate(locs%indx(nlocs))
+locs%indx = indx
+! Copy coordinates
+do jo = 1,nlocs
+  locs%lon(jo) = jcol%values(1,indx(jo))
+  locs%lat(jo) = jcol%values(2,indx(jo))
+  locs%z(jo) = jcol%values(3,indx(jo))
+  locs%times(jo) = jgrp%times(indx(jo))
+enddo
+
+deallocate(indx)
 
 end subroutine qg_obsdb_locations
 ! ------------------------------------------------------------------------------
@@ -732,57 +755,6 @@ enddo
 self%ngrp = self%ngrp+1
 
 end subroutine qg_obsdb_create
-! ------------------------------------------------------------------------------
-!> Get observation data time
-subroutine qg_obsdb_time_get(self,grp,col,t1,t2,ovec)
-
-implicit none
-
-! Passed variables
-type(qg_obsdb),intent(in) :: self     !< Observation data
-character(len=*),intent(in) :: grp    !< Group
-character(len=*),intent(in) :: col    !< Column
-type(datetime),intent(in) :: t1       !< Time 1
-type(datetime),intent(in) :: t2       !< Time 2
-type(qg_obsvec),intent(inout) :: ovec !< Observation vector
-
-! Local variables
-type(group_data),pointer :: jgrp
-type(column_data),pointer :: jcol
-integer :: jobs,jlev,iobs
-
-! Find observation group
-call qg_obsdb_find_group(self,grp,jgrp)
-if (.not.associated(jgrp)) call abor1_ftn('qg_obsdb_time_get: obs group not found')
-
-! Find observation column
-call qg_obsdb_find_column(jgrp,col,jcol)
-if (.not.associated(jcol)) call abor1_ftn('qg_obsdb_time_get: obs column not found')
-
-! Time selection
-iobs = 0
-do jobs=1,jgrp%nobs
-  if ((t1<jgrp%times(jobs)).and.(jgrp%times(jobs)<=t2)) iobs = iobs+1
-enddo
-
-! Get data
-if ((ovec%nobs/=iobs).or.(ovec%nlev/=jcol%nlev)) then
-  if (allocated(ovec%values)) deallocate(ovec%values)
-  ovec%nobs = iobs
-  ovec%nlev = jcol%nlev
-  allocate(ovec%values(ovec%nlev,ovec%nobs))
-endif
-iobs = 0
-do jobs=1,jgrp%nobs
-  if ((t1<jgrp%times(jobs)).and.(jgrp%times(jobs)<=t2)) then
-    iobs = iobs+1
-    do jlev=1,jcol%nlev
-      ovec%values(jlev,iobs) = jcol%values(jlev,jobs)
-    enddo
-  endif
-enddo
-
-end subroutine qg_obsdb_time_get
 ! ------------------------------------------------------------------------------
 !> Get observation data size between times
 subroutine qg_obsdb_count_time(self,grp,t1,t2,kobs)

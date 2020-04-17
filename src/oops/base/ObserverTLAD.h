@@ -19,7 +19,7 @@
 #include "eckit/config/Configuration.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Increment.h"
-#include "oops/interface/InterpolatorTraj.h"
+#include "oops/interface/LinearGetValues.h"
 #include "oops/interface/LinearObsOperator.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxIncrement.h"
@@ -39,7 +39,7 @@ template <typename MODEL>
 class ObserverTLAD {
   typedef GeoVaLs<MODEL>             GeoVaLs_;
   typedef Increment<MODEL>           Increment_;
-  typedef InterpolatorTraj<MODEL>    InterpolatorTraj_;
+  typedef LinearGetValues<MODEL>     LinearGetValues_;
   typedef LinearObsOperator<MODEL>   LinearObsOperator_;
   typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
   typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
@@ -56,7 +56,7 @@ class ObserverTLAD {
   ~ObserverTLAD() {}
 
   void doInitializeTraj(const State_ &,
-                        const util::DateTime &, const util::DateTime &, const int &);
+                        const util::DateTime &, const util::Duration &, const int &);
   void doProcessingTraj(const State_ &, const util::DateTime &,
                         const util::DateTime &, const int &);
   void doFinalizeTraj(const State_ &);
@@ -79,13 +79,12 @@ class ObserverTLAD {
   ObsOperator_ hop_;
   LinearObsOperator_ hoptlad_;
 
+// Data
   ObsVector_ & yobs_;
   const ObsAuxCtrl_ & ybias_;
   Variables geovars_;
 
-// Data
-  std::vector<boost::shared_ptr<InterpolatorTraj_> > traj_;
-
+  std::vector<std::unique_ptr<LinearGetValues_>> lingetvals_;
   std::shared_ptr<GeoVaLs_> gvals_;
 };
 
@@ -97,7 +96,7 @@ ObserverTLAD<MODEL>::ObserverTLAD(const eckit::Configuration & config,
                                   ObsVector_ & yobs)
   : obsdb_(obsdb), hop_(obsdb, eckit::LocalConfiguration(config, "ObsOperator")),
     hoptlad_(obsdb, eckit::LocalConfiguration(config, "LinearObsOperator")),
-    yobs_(yobs), ybias_(ybias), geovars_(), traj_(0), gvals_()
+    yobs_(yobs), ybias_(ybias), geovars_(), lingetvals_(), gvals_()
 {
   geovars_ += hop_.variables();
   geovars_ += ybias_.requiredGeoVaLs();
@@ -106,20 +105,27 @@ ObserverTLAD<MODEL>::ObserverTLAD(const eckit::Configuration & config,
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 void ObserverTLAD<MODEL>::doInitializeTraj(const State_ & xx,
-               const util::DateTime & begin, const util::DateTime & end, const int & nsteps) {
+               const util::DateTime & begin, const util::Duration & winlen, const int & nwin) {
   Log::trace() << "ObserverTLAD::doInitializeTraj start" << std::endl;
-// Create full trajectory object
-  for (int ib = 0; ib < nsteps; ++ib) { traj_.emplace_back(new InterpolatorTraj_()); }
+  util::DateTime bgn = begin;
+  util::DateTime end = bgn + winlen;
+  // create one LinearGetValues per subwindow
+  for (int iwin = 0; iwin < nwin; ++iwin) {
+    lingetvals_.emplace_back(new LinearGetValues_(xx.geometry(),
+                                 hop_.locations(bgn, end)));
+    bgn = end;
+    end = end + winlen;
+  }
   gvals_.reset(new GeoVaLs_(hop_.locations(begin, end), geovars_));
   Log::trace() << "ObserverTLAD::doInitializeTraj done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 void ObserverTLAD<MODEL>::doProcessingTraj(const State_ & xx, const util::DateTime & t1,
-                                           const util::DateTime & t2, const int & ib) {
+                                           const util::DateTime & t2, const int & iwin) {
   Log::trace() << "ObserverTLAD::doProcessingTraj start" << std::endl;
 // Call nonlinear getValues
-  xx.getValues(hop_.locations(t1, t2), geovars_, *gvals_, *traj_.at(ib));
+  lingetvals_[iwin]->setTrajectory(xx, t1, t2, *gvals_);
   Log::trace() << "ObserverTLAD::doProcessingTraj done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -148,11 +154,10 @@ void ObserverTLAD<MODEL>::doInitializeTL(const Increment_ & dx,
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 void ObserverTLAD<MODEL>::doProcessingTL(const Increment_ & dx, const util::DateTime & t1,
-                                         const util::DateTime & t2, const int & ib) {
+                                         const util::DateTime & t2, const int & iwin) {
   Log::trace() << "ObserverTLAD::doProcessingTL start" << std::endl;
 // Get increment variables at obs locations
-  dx.getValuesTL(hop_.locations(t1, t2), hoptlad_.variables(),
-                 *gvals_, *traj_.at(ib));
+  lingetvals_[iwin]->fillGeoVaLsTL(dx, t1, t2, *gvals_);
   Log::trace() << "ObserverTLAD::doProcessingTL done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -178,11 +183,10 @@ void ObserverTLAD<MODEL>::doFirstAD(Increment_ & dx, const ObsVector_ & ydepad,
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 void ObserverTLAD<MODEL>::doProcessingAD(Increment_ & dx, const util::DateTime & t1,
-                                         const util::DateTime & t2, const int & ib) {
+                                         const util::DateTime & t2, const int & iwin) {
   Log::trace() << "ObserverTLAD::doProcessingAD start" << std::endl;
 // Adjoint of get increment variables at obs locations
-  dx.getValuesAD(hop_.locations(t1, t2), hoptlad_.variables(),
-                 *gvals_, *traj_.at(ib));
+  lingetvals_[iwin]->fillGeoVaLsAD(dx, t1, t2, *gvals_);
   Log::trace() << "ObserverTLAD::doProcessingAD done" << std::endl;
 }
 // -----------------------------------------------------------------------------

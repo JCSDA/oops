@@ -32,7 +32,6 @@
 #include "model/GomQG.h"
 #include "model/LocationsQG.h"
 #include "model/ModelBiasIncrement.h"
-#include "model/Nothing.h"
 #include "model/StateQG.h"
 
 namespace qg {
@@ -135,18 +134,6 @@ void IncrementQG::random() {
 // -----------------------------------------------------------------------------
 void IncrementQG::dirac(const eckit::Configuration & config) {
   fields_->dirac(config);
-}
-// -----------------------------------------------------------------------------
-/// Get increment values at observation locations
-// -----------------------------------------------------------------------------
-void IncrementQG::getValuesTL(const LocationsQG & locs, const oops::Variables & vars,
-                              GomQG & cols, const Nothing &) const {
-  fields_->getValuesTL(locs, vars, cols);
-}
-// -----------------------------------------------------------------------------
-void IncrementQG::getValuesAD(const LocationsQG & locs, const oops::Variables & vars,
-                              const GomQG & cols, const Nothing &) {
-  fields_->getValuesAD(locs, vars, cols);
 }
 // -----------------------------------------------------------------------------
 /// ATLAS FieldSet

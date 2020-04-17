@@ -152,8 +152,12 @@ LocsL95 * ObsTable::locations(const util::DateTime & t1, const util::DateTime & 
   std::vector<int> olist = timeSelect(t1, t2);
   const int nobs = olist.size();
   std::vector<double> locs(nobs);
-  for (int jobs = 0; jobs < nobs; ++jobs) locs[jobs]=locations_[olist[jobs]];
-  return new LocsL95(olist, locs);
+  std::vector<util::DateTime> times(nobs);
+  for (int jobs = 0; jobs < nobs; ++jobs) {
+    locs[jobs] = locations_[olist[jobs]];
+    times[jobs] = times_[olist[jobs]];
+  }
+  return new LocsL95(olist, locs, times);
 }
 
 // -----------------------------------------------------------------------------

@@ -14,6 +14,8 @@
 #include <string>
 
 #include "lorenz95/ErrorCovarianceL95.h"
+#include "lorenz95/GetValuesL95.h"
+#include "lorenz95/GetValuesTLAD.h"
 #include "lorenz95/GomL95.h"
 #include "lorenz95/IncrementL95.h"
 #include "lorenz95/Iterator.h"
@@ -21,7 +23,6 @@
 #include "lorenz95/ModelBias.h"
 #include "lorenz95/ModelBiasCorrection.h"
 #include "lorenz95/ModelBiasCovariance.h"
-#include "lorenz95/Nothing.h"
 #include "lorenz95/ObsBias.h"
 #include "lorenz95/ObsBiasCorrection.h"
 #include "lorenz95/ObsBiasCovariance.h"
@@ -47,7 +48,9 @@ struct L95Traits {
   typedef lorenz95::StateL95               State;
   typedef lorenz95::IncrementL95           Increment;
   typedef lorenz95::ErrorCovarianceL95     Covariance;
-  typedef lorenz95::Nothing                InterpolatorTraj;
+
+  typedef lorenz95::GetValuesL95           GetValues;
+  typedef lorenz95::GetValuesTLAD          LinearGetValues;
 
   typedef lorenz95::ModelBias              ModelAuxControl;
   typedef lorenz95::ModelBiasCorrection    ModelAuxIncrement;
