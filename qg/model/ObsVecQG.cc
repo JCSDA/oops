@@ -25,7 +25,7 @@ ObsVecQG::ObsVecQG(const ObsSpaceQG & obsdb,
                    const std::string & name, const bool fail)
   : obsdb_(obsdb), keyOvec_(0)
 {
-  qg_obsvec_setup_f90(keyOvec_, obsdb.nout(), obsdb.nobs());
+  qg_obsvec_setup_f90(keyOvec_, obsdb.obsvariables().size(), obsdb.nobs());
   if (!name.empty()) {
     if (fail || obsdb_.has(name)) obsdb_.getdb(name, keyOvec_);
   }
@@ -40,7 +40,7 @@ ObsVecQG::ObsVecQG(const ObsVecQG & other)
 ObsVecQG::ObsVecQG(const ObsSpaceQG & obsdb, const ObsVecQG & other)
   : obsdb_(obsdb), keyOvec_(0)
 {
-  qg_obsvec_setup_f90(keyOvec_, obsdb.nout(), obsdb.nobs());
+  qg_obsvec_setup_f90(keyOvec_, obsdb.obsvariables().size(), obsdb.nobs());
   qg_obsvec_copy_local_f90(keyOvec_, other.keyOvec_, obsdb.localobs().size(),
                            obsdb.localobs().data());
 }
@@ -104,7 +104,7 @@ void ObsVecQG::invert() {
 }
 // -----------------------------------------------------------------------------
 void ObsVecQG::random() {
-  qg_obsvec_random_f90(&obsdb_, keyOvec_);
+  qg_obsvec_random_f90(obsdb_, keyOvec_);
 }
 // -----------------------------------------------------------------------------
 double ObsVecQG::dot_product_with(const ObsVecQG & other) const {

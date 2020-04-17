@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2017-2018 UCAR
+ * (C) Copyright 2017-2020 UCAR
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -12,7 +12,7 @@ namespace qg {
   class ObsSpaceQG;
 
 extern "C" {
-  void qg_obsvec_random_f(const ObsSpaceQG *, const int &, double *);
+  void qg_obsvec_random_f(const ObsSpaceQG &, const int &, double *);
 }
 
 }  // namespace qg

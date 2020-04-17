@@ -12,7 +12,6 @@
 #include "model/ObsSpaceQG.h"
 
 #include <map>
-#include <random>
 #include <string>
 
 #include "eckit/config/Configuration.h"
@@ -20,23 +19,25 @@
 #include "eckit/geometry/Sphere.h"
 
 #include "oops/util/abor1_cpp.h"
+#include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
-#include "oops/util/Random.h"
 
 #include "model/ObsVecQG.h"
 
 namespace qg {
 // -----------------------------------------------------------------------------
-std::map < std::string, std::shared_ptr<ObsHelpQG> > ObsSpaceQG::theObsFileRegister_;
+// initialization for the static map
+std::map < std::string, F90odb > ObsSpaceQG::theObsFileRegister_;
 int ObsSpaceQG::theObsFileCount_ = 0;
+
 // -----------------------------------------------------------------------------
 
 ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
                        const util::DateTime & bgn, const util::DateTime & end)
-  : oops::ObsSpaceBase(config, comm, bgn, end), winbgn_(bgn), winend_(end), obsvars_(),
-    isLocal_(false), comm_(comm)
+  : oops::ObsSpaceBase(config, comm, bgn, end), obsname_(config.getString("ObsType")),
+    winbgn_(bgn), winend_(end), obsvars_(), isLocal_(false), comm_(comm)
 {
-  typedef std::map< std::string, std::shared_ptr<ObsHelpQG> >::iterator otiter;
+  typedef std::map< std::string, F90odb >::iterator otiter;
 
   std::string ofin("-");
   if (config.has("ObsDataIn")) {
@@ -56,33 +57,38 @@ ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config, const eckit::mpi::Co
   if ( it == theObsFileRegister_.end() ) {
     // Open new file
     oops::Log::trace() << "ObsSpaceQG::getHelper: " << "Opening " << ref << std::endl;
-    helper_ = std::shared_ptr<ObsHelpQG>(new ObsHelpQG(config));
-    theObsFileRegister_[ref] = helper_;
+    qg_obsdb_setup_f90(key_, config);
+    theObsFileRegister_[ref] = key_;
   } else {
     // File already open
     oops::Log::trace() << "ObsSpaceQG::getHelper: " << ref << " already opened." << std::endl;
-    helper_ = it->second;
+    key_ = it->second;
   }
   theObsFileCount_++;
 
-  obsname_ = config.getString("ObsType");
-
-  // Very UGLY!!!
-  nout_ = 0;
-  if (obsname_ == "Stream") nout_ = 1;
-  if (obsname_ == "WSpeed") nout_ = 1;
-  if (obsname_ == "Wind") nout_ = 2;
-  ASSERT(nout_ > 0);
-  unsigned int nvin = 0;
-  if (obsname_ == "Stream") nvin = 1;
-  if (obsname_ == "WSpeed") nvin = 2;
-  if (obsname_ == "Wind") nvin = 2;
-  ASSERT(nvin > 0);
+  // Set variables simulated for different obstypes
+  if (obsname_ == "Stream") obsvars_.push_back("Stream");
+  if (obsname_ == "WSpeed") obsvars_.push_back("WSpeed");
+  if (obsname_ == "Wind") {
+    obsvars_.push_back("Uwind");
+    obsvars_.push_back("Vwind");
+  }
 
   //  Generate locations etc... if required
   if (config.has("Generate")) {
     const eckit::LocalConfiguration gconf(config, "Generate");
-    helper_->generateDistribution(gconf, obsname_, winbgn_, winend_);
+    const util::Duration first(gconf.getString("begin"));
+    const util::DateTime start(winbgn_ + first);
+    const util::Duration freq(gconf.getString("obs_period"));
+    int nobstimes = 0;
+    util::DateTime now(start);
+    while (now <= winend_) {
+      ++nobstimes;
+      now += freq;
+    }
+    int iobs;
+    qg_obsdb_generate_f90(key_, obsname_.size(), obsname_.c_str(), gconf,
+                          start, freq, nobstimes, iobs);
   }
 }
 
@@ -92,19 +98,22 @@ ObsSpaceQG::ObsSpaceQG(const ObsSpaceQG & obsdb,
                        const eckit::geometry::Point2 & refPoint,
                        const double & dist,
                        const int & nobs)
-  : oops::ObsSpaceBase(obsdb.helper_->getConfig(), obsdb.getComm(),
+  : oops::ObsSpaceBase(eckit::LocalConfiguration(), obsdb.comm_,
                        obsdb.windowStart(), obsdb.windowEnd()),
-    helper_(obsdb.helper_), obsname_(obsdb.obsname_), nout_(obsdb.nout_),
+    key_(obsdb.key_), obsname_(obsdb.obsname_),
     winbgn_(obsdb.winbgn_), winend_(obsdb.winend_), obsvars_(obsdb.obsvars_),
     localobs_(), isLocal_(true), comm_(obsdb.comm_)
 {
   oops::Log::trace() << "ObsSpaceQG for LocalObs starting" << std::endl;
-
-  F90locs globalLocs = helper_->locations(obsdb.obsname(), winbgn_, winend_);
-  for (size_t jj = 0; jj < helper_->nobs(obsname_); ++jj) {
+  F90locs key_locs;
+  int iobs;
+  // get number of obs
+  qg_obsdb_nobs_f90(key_, obsname_.size(), obsname_.c_str(), iobs);
+  // get locations of all obs
+  qg_obsdb_locations_f90(key_, obsname_.size(), obsname_.c_str(), winbgn_, winend_, key_locs);
+  for (size_t jj = 0; jj < iobs; ++jj) {
     double lat, lon, z;
-    qg_locs_element_f90(globalLocs, jj, lon, lat, z);
-
+    qg_locs_element_f90(key_locs, jj, lon, lat, z);
     eckit::geometry::Point2 obsPoint(lon, lat);
     double localDist = eckit::geometry::Sphere::distance(6.371e6, refPoint, obsPoint);
     if (localDist < dist) localobs_.push_back(jj);
@@ -114,56 +123,73 @@ ObsSpaceQG::ObsSpaceQG(const ObsSpaceQG & obsdb,
 
 // -----------------------------------------------------------------------------
 
+ObsSpaceQG::~ObsSpaceQG() {
+  if ( !isLocal_ ) {
+    ASSERT(theObsFileCount_ > 0);
+    theObsFileCount_--;
+    if (theObsFileCount_ == 0) {
+      theObsFileRegister_.clear();
+      qg_obsdb_delete_f90(key_);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 void ObsSpaceQG::getdb(const std::string & col, int & keyData) const {
   if ( isLocal_ ) {
-    helper_->getdb(obsname_, col, localobs_, keyData);
+    qg_obsdb_get_local_f90(key_, obsname_.size(), obsname_.c_str(), col.size(),
+                         col.c_str(), localobs_.size(), localobs_.data(), keyData);
   } else {
-    helper_->getdb(obsname_, col, keyData);
+    qg_obsdb_get_f90(key_, obsname_.size(), obsname_.c_str(), col.size(), col.c_str(), keyData);
   }
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpaceQG::putdb(const std::string & col, const int & keyData) const {
+  // not implemented for local ObsSpace
   ASSERT(isLocal_ == false);
-  helper_->putdb(obsname_, col, keyData);
+  qg_obsdb_put_f90(key_, obsname_.size(), obsname_.c_str(), col.size(), col.c_str(), keyData);
 }
 
 // -----------------------------------------------------------------------------
 
-void ObsSpaceQG::random(const int & nn, double * xx) const {
-  static util::NormalDistribution<double> dist(nn, 0.0, 1.0, getSeed());
-  for (int jj = 0; jj < nn; ++jj) xx[jj] = dist[jj];
+bool ObsSpaceQG::has(const std::string & col) const {
+  int ii;
+  qg_obsdb_has_f90(key_, obsname_.size(), obsname_.c_str(), col.size(), col.c_str(), ii);
+  return ii;
 }
 
 // -----------------------------------------------------------------------------
 
-void ObsSpaceQG::printJo(const ObsVecQG & dy, const ObsVecQG & grad) {
+LocationsQG * ObsSpaceQG::locations(const util::DateTime & t1, const util::DateTime & t2) const {
+  F90locs key_locs;
+  qg_obsdb_locations_f90(key_, obsname_.size(), obsname_.c_str(), t1, t2, key_locs);
+  return new LocationsQG(key_locs);
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsSpaceQG::printJo(const ObsVecQG & dy, const ObsVecQG & grad) const {
   oops::Log::info() << "ObsSpaceQG::printJo not implemented" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-ObsSpaceQG::~ObsSpaceQG() {
-  if ( !isLocal_ ) {
-    ASSERT(theObsFileCount_ > 0);
-    theObsFileCount_--;
-    if (theObsFileCount_ == 0) theObsFileRegister_.clear();
-  }
-}
-
-// -----------------------------------------------------------------------------
 int ObsSpaceQG::nobs() const {
   if ( isLocal_ ) {
     return localobs_.size();
   } else {
-    return helper_->nobs(obsname_);
+    int iobs;
+    qg_obsdb_nobs_f90(key_, obsname_.size(), obsname_.c_str(), iobs);
+    return iobs;
   }
 }
 // -----------------------------------------------------------------------------
 
 void ObsSpaceQG::print(std::ostream & os) const {
-  os << "ObsSpaceQG::print not implemented";
+  os << "ObsSpace for " << obsname_ << ", " << this->nobs() << " obs" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
