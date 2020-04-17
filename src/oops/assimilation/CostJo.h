@@ -254,10 +254,14 @@ double CostJo<MODEL>::finalize() {
           << "End Jo Bias Corrected Departures" << std::endl;
 
 // Compute Jo
-  Departures_ grad(ydep);
-  Rmat_->inverseMultiply(grad);
+  if (!gradFG_) {
+    gradFG_.reset(new Departures_(ydep));
+  } else {
+    *gradFG_ = ydep;
+  }
+  Rmat_->inverseMultiply(*gradFG_);
 
-  double zjo = this->printJo(ydep, grad);
+  double zjo = this->printJo(ydep, *gradFG_);
 
   if (currentConf_->has("diagnostics.departures")) {
     const std::string depname = currentConf_->getString("diagnostics.departures");
@@ -286,27 +290,6 @@ CostJo<MODEL>::initializeTraj(const CtrlVar_ & xx, const Geometry_ &,
 
 template<typename MODEL>
 void CostJo<MODEL>::finalizeTraj() {
-  Log::trace() << "CostJo::finalizeTraj start" << std::endl;
-  std::unique_ptr<Observations_> yeqv(pobstlad_->release());
-  Log::info() << "Jo Traj Observation Equivalent:" << std::endl << *yeqv
-              << "End Jo Traj Observation Equivalent";
-
-  Departures_ ydep(*yeqv - yobs_);
-  Log::info() << "Jo Traj Departures:" << std::endl << ydep << "End Jo Traj Departures"
-              << std::endl;
-
-// Apply bias correction
-  Departures_ bias(obspace_, "ObsBias", false);
-  ydep += bias;
-  Log::info() << "Jo Traj Bias Corrected Departures:" << std::endl << ydep
-          << "End Jo Traj Bias Corrected Departures" << std::endl;
-
-  if (!gradFG_) {
-    gradFG_.reset(new Departures_(ydep));
-  } else {
-    *gradFG_ = ydep;
-  }
-  Rmat_->inverseMultiply(*gradFG_);
   Log::trace() << "CostJo::finalizeTraj done" << std::endl;
 }
 

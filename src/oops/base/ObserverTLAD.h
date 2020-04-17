@@ -51,8 +51,7 @@ class ObserverTLAD {
 
  public:
   ObserverTLAD(const eckit::Configuration &,
-               const ObsSpace_ &, const ObsAuxCtrl_ &,
-               ObsVector_ &);
+               const ObsSpace_ &, const ObsAuxCtrl_ &);
   ~ObserverTLAD() {}
 
   void doInitializeTraj(const State_ &,
@@ -79,8 +78,6 @@ class ObserverTLAD {
   ObsOperator_ hop_;
   LinearObsOperator_ hoptlad_;
 
-// Data
-  ObsVector_ & yobs_;
   const ObsAuxCtrl_ & ybias_;
   Variables geovars_;
 
@@ -92,11 +89,10 @@ class ObserverTLAD {
 template <typename MODEL>
 ObserverTLAD<MODEL>::ObserverTLAD(const eckit::Configuration & config,
                                   const ObsSpace_ & obsdb,
-                                  const ObsAuxCtrl_ & ybias,
-                                  ObsVector_ & yobs)
+                                  const ObsAuxCtrl_ & ybias)
   : obsdb_(obsdb), hop_(obsdb, eckit::LocalConfiguration(config, "ObsOperator")),
     hoptlad_(obsdb, eckit::LocalConfiguration(config, "LinearObsOperator")),
-    yobs_(yobs), ybias_(ybias), geovars_(), lingetvals_(), gvals_()
+    ybias_(ybias), geovars_(), lingetvals_(), gvals_()
 {
   geovars_ += hop_.variables();
   geovars_ += ybias_.requiredGeoVaLs();
@@ -133,13 +129,6 @@ template <typename MODEL>
 void ObserverTLAD<MODEL>::doFinalizeTraj(const State_ & xx) {
   Log::trace() << "ObserverTLAD::doFinalizeTraj start" << std::endl;
   hoptlad_.setTrajectory(*gvals_, ybias_);
-  oops::Variables vars;
-  vars += ybias_.requiredHdiagnostics();
-  ObsDiags_ ydiags(obsdb_,
-                   hop_.locations(obsdb_.windowStart(),
-                                  obsdb_.windowEnd()),
-                   vars);
-  hop_.simulateObs(*gvals_, yobs_, ybias_, ydiags);
   gvals_.reset();
   Log::trace() << "ObserverTLAD::doFinalizeTraj done" << std::endl;
 }

@@ -49,7 +49,6 @@ class ObserversTLAD : public PostBaseTLAD<MODEL> {
                 const util::Duration & tslot = util::Duration(0), const bool subwin = false);
   ~ObserversTLAD() {}
 
-  Observations_ * release() {return yobs_.release();}
   Departures_ * releaseOutputFromTL() override {return ydeptl_.release();}
   void setupTL(const ObsAuxIncrs_ &);
   void setupAD(std::shared_ptr<const Departures_>, ObsAuxIncrs_ &);
@@ -75,7 +74,6 @@ class ObserversTLAD : public PostBaseTLAD<MODEL> {
 
 // Data
   ObsSpaces_ obspace_;
-  std::unique_ptr<Observations_> yobs_;
   std::unique_ptr<Departures_> ydeptl_;
   const ObsAuxIncrs_ * ybiastl_;
   std::shared_ptr<const Departures_> ydepad_;
@@ -99,7 +97,6 @@ ObserversTLAD<MODEL>::ObserversTLAD(const eckit::Configuration & config,
                                   const util::Duration & tslot, const bool subwin)
   : PostBaseTLAD<MODEL>(obsdb.windowStart(), obsdb.windowEnd()),
     observerstlad_(), obspace_(obsdb),
-    yobs_(new Observations_(obspace_)),
     ydeptl_(), ybiastl_(), ydepad_(), ybiasad_(),
     winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
     bgn_(winbgn_), end_(winend_), hslot_(tslot/2), hslottraj_(tslot/2),
@@ -114,7 +111,7 @@ ObserversTLAD<MODEL>::ObserversTLAD(const eckit::Configuration & config,
       typeconf[jobs].set("LinearObsOperator", typeconf[jobs].getSubConfiguration("ObsOperator"));
     }
     std::shared_ptr<ObserverTLAD_> tmp(new ObserverTLAD_(typeconf[jobs], obsdb[jobs],
-                                       ybias[jobs], (*yobs_)[jobs]));
+                                       ybias[jobs]));
     observerstlad_.push_back(tmp);
   }
   Log::trace() << "ObserversTLAD::ObserversTLAD" << std::endl;
