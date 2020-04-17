@@ -69,7 +69,7 @@ template <typename MODEL> class AddIncrement : public Application {
     const eckit::LocalConfiguration outputConfig(fullConfig, "output");
     xx.write(outputConfig);
 
-    Log::test() << "State plus increment: " << dx << std::endl;
+    Log::test() << "State plus increment: " << xx << std::endl;
 
     return 0;
   }
