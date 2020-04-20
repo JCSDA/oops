@@ -326,6 +326,8 @@ test/interface/ObsVector.h
 test/interface/State.h
 test/interface/VariableChange.h
 
+test/parallel/mpi/mpi.h
+
 test/util/Fortran.h
 test/util/IsAnyPointInVolumeInterior.h
 test/util/Random.h
@@ -359,6 +361,7 @@ list( APPEND oops_test_input
   test/testinput/variables.yaml
   test/testinput/parameters.yaml
   test/testinput/empty.yaml
+  test/testinput/mpi.yaml
 )
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test/testinput)
 CREATE_SYMLINK( ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${oops_test_input} )
@@ -462,6 +465,12 @@ ecbuild_add_test( TARGET  test_util_scalarormap
 ecbuild_add_test( TARGET  test_util_floatcompare
                   SOURCES test/util/FloatCompare.cc
                   ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_parallel_mpi_mpi
+                  MPI     4
+                  SOURCES test/parallel/mpi/mpi.cc
+                  ARGS    "test/testinput/mpi.yaml"
                   LIBS    oops )
 
 if( HAVE_FCTEST )

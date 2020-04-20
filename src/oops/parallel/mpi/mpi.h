@@ -27,6 +27,38 @@ namespace oops {
 //-------------------------------------------------------------------------------------------------
     void allGather(const Eigen::VectorXd &, std::vector<Eigen::VectorXd> &);
 
+    /// \brief A wrapper around the MPI *all gather* operation for serializable types.
+    ///
+    /// The *all gather* operation gathers data from all tasks and delivers the combined data to all
+    /// tasks. This wrapper performs that operation for collections of non-primitive types that
+    /// nevertheless support the OOPS serialization interface, i.e. provide the functions
+    ///
+    ///     void serialize(std::vector<double> &vect) const;
+    ///     void deserialize(const std::vector<double> &vect, size_t &current);
+    ///
+    /// An example of such a type is util::DateTime.
+    ///
+    /// \param comm
+    ///   Communicator.
+    /// \param first, last
+    ///   Range of values to be delivered from this task to all other tasks.
+    /// \param recvbuf
+    ///   Output iterator to the beginning of the range to receive the combined data from all tasks.
+    template <typename CIter, typename Iter>
+    void allGathervUsingSerialize(const eckit::mpi::Comm &comm, CIter first, CIter last,
+                                  Iter recvbuf) {
+      std::vector<double> serializedLocalData;
+      for (CIter it = first; it != last; ++it)
+        it->serialize(serializedLocalData);
+
+      eckit::mpi::Buffer<double> buffer(comm.size());
+      comm.allGatherv(serializedLocalData.begin(), serializedLocalData.end(), buffer);
+
+      size_t numDeserializedDoubles = 0;
+      for (Iter it = recvbuf; numDeserializedDoubles != buffer.buffer.size(); ++it)
+        it->deserialize(buffer.buffer, numDeserializedDoubles);
+    }
+
 //-------------------------------------------------------------------------------------------------
 // Send and receive objects with a serialize/deserialize method
 //-------------------------------------------------------------------------------------------------
