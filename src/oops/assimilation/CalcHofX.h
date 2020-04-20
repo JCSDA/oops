@@ -52,7 +52,7 @@ class CalcHofX {
 
  public:
 /// \brief Initializes Observers
-  CalcHofX(const ObsSpaces_ &, const Geometry_ &, const eckit::LocalConfiguration &);
+  CalcHofX(const ObsSpaces_ &, const Geometry_ &, const eckit::Configuration &);
 
 /// \brief Computes 4D H(x) (running the model)
   const Observations_ & compute(const Model_ &, State_ &, PostProcessor_ &);
@@ -85,7 +85,7 @@ class CalcHofX {
 
 template <typename MODEL>
 CalcHofX<MODEL>::CalcHofX(const ObsSpaces_ & obspaces, const Geometry_ & geometry,
-                          const eckit::LocalConfiguration & config) :
+                          const eckit::Configuration & config) :
   obsconf_(config.getSubConfiguration("Observations")),
   obspaces_(obspaces), geometry_(geometry),
   ybias_(obspaces_, config.getSubConfiguration("Observations")),
