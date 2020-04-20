@@ -72,8 +72,6 @@ TlmIdQG.cc
 TlmIdQG.h
 TlmQG.cc
 TlmQG.h
-VariablesQG.cc
-VariablesQG.h
 fft_f.cc
 fft_f.h
 fft_mod.F90
@@ -117,7 +115,6 @@ qg_projection_mod.F90
 qg_stream_interface.F90
 qg_stream_mod.F90
 qg_tools_mod.F90
-qg_vars_mod.F90
 qg_wind_interface.F90
 qg_wind_mod.F90
 qg_wspeed_interface.F90

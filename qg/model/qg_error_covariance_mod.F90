@@ -17,7 +17,7 @@ use kinds
 use qg_constants_mod
 use qg_fields_mod
 use qg_geom_mod
-use qg_vars_mod
+use oops_variables_mod
 use random_mod
 
 implicit none
@@ -64,7 +64,7 @@ type(fckit_configuration),intent(in) :: f_conf         !< FCKIT configuration
 type(qg_geom),intent(in) :: geom                       !< Geometry
 
 ! Local variables
-integer :: ix,iy,jy,ky,iz,jz,kz,info,kvars(nvmax+1)
+integer :: ix,iy,jy,ky,iz,jz,kz,info
 real(kind_real) :: horizontal_length_scale,vertical_length_scale
 real(kind_real) :: distx,condition_number,threshold
 real(kind_real),allocatable :: struct_fn(:),workx(:)
@@ -72,7 +72,6 @@ real(kind_real),allocatable :: evalsy(:),worky(:),evectsy(:,:),revalsy(:)
 real(kind_real),allocatable :: evalsz(:),workz(:),evectsz(:,:),revalsz(:)
 real(kind_real),allocatable :: norm(:,:)
 character(len=160) :: record
-type(qg_vars) :: vars
 type(qg_fields) :: fld_in,fld_out
 
 ! Get parameters
@@ -190,11 +189,8 @@ do jz=1,geom%nz
 enddo
 
 ! Compute normalization factor
-kvars = 0
-kvars(1) = 1
-call qg_vars_create(vars,kvars)
-call qg_fields_create(fld_in,geom,vars,.false.)
-call qg_fields_create(fld_out,geom,vars,.false.)
+call qg_fields_create_default(fld_in,geom,.false.)
+call qg_fields_create_default(fld_out,geom,.false.)
 self%norm = 1.0
 do iz=1,geom%nz
   do iy=1,geom%ny

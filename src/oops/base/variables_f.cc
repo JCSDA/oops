@@ -52,5 +52,8 @@ void variables_getvariable_f(const oops::Variables & vars, const size_t & jj,
 }
 
 // -----------------------------------------------------------------------------
+bool variables_has_f(const oops::Variables & vars, const char * vname) {
+  return vars.has(std::string(vname));
+}
 
 }  // namespace oops

@@ -16,7 +16,6 @@
 #include "model/LocationsQG.h"
 #include "model/ObsSpaceQG.h"
 #include "model/QgFortran.h"
-#include "model/VariablesQG.h"
 #include "oops/base/Variables.h"
 #include "oops/util/Logger.h"
 
@@ -24,11 +23,9 @@ namespace qg {
 
 // -----------------------------------------------------------------------------
 GomQG::GomQG(const LocationsQG & locs, const oops::Variables & var) {
-  const VariablesQG varqg(var);
-
   // gom_setup just creates and allocates the GeoVaLs object without filling
   // in values
-  qg_gom_setup_f90(keyGom_, locs.toFortran(), varqg.toFortran());
+  qg_gom_setup_f90(keyGom_, locs.toFortran(), var);
 }
 // -----------------------------------------------------------------------------
 /*! QG GeoVaLs Constructor with Config */

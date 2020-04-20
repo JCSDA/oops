@@ -24,6 +24,7 @@ extern "C" {
   void variables_getvariablelength_f(const oops::Variables &, const size_t &, size_t &);
   void variables_getvariable_f(const oops::Variables &, const size_t &, size_t &,
                                const size_t &, char *);
+  bool variables_has_f(const oops::Variables & vars, const char *);
 }
 
 }  // namespace oops

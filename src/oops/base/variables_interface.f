@@ -50,6 +50,16 @@ subroutine c_variables_getvariable(vars, jj, lcname, lfname, cname) bind (C,name
 end subroutine c_variables_getvariable
 
 !-------------------------------------------------------------------------------
+
+logical*1 function c_variables_has(vars, str) bind(C, name='variables_has_f')
+  use, intrinsic :: iso_c_binding
+  implicit none
+
+  type(c_ptr), value :: vars
+  character(kind=c_char,len=1), intent(in) :: str(*)
+end function c_variables_has
+
+!-------------------------------------------------------------------------------
 end interface
 !-------------------------------------------------------------------------------
 

@@ -13,7 +13,7 @@ use iso_c_binding
 use qg_geom_mod
 use qg_gom_mod
 use qg_locs_mod
-use qg_vars_mod
+use oops_variables_mod
 
 implicit none
 
@@ -29,19 +29,19 @@ implicit none
 ! Passed variables
 integer(c_int),intent(inout) :: c_key_self       !< GOM
 integer(c_int),intent(inout) :: c_key_locs       !< Locations
-integer(c_int),dimension(*),intent(in) :: c_vars !< Variables
+type(c_ptr),value,intent(in) :: c_vars !< Variables
 
 ! Local variables
 type(qg_gom),pointer :: self
 type(qg_locs),pointer :: locs
-type(qg_vars) :: vars
+type(oops_variables) :: vars
 
 ! Interface
 call qg_gom_registry%init()
 call qg_gom_registry%add(c_key_self)
 call qg_gom_registry%get(c_key_self,self)
 call qg_locs_registry%get(c_key_locs,locs)
-call qg_vars_create(vars,c_vars)
+vars = oops_variables(c_vars)
 
 ! Call Fortran
 call qg_gom_setup(self,locs%indx,vars)

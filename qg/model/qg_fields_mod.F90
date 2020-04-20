@@ -29,7 +29,7 @@ use qg_gom_mod
 use qg_interp_mod
 use qg_locs_mod
 use qg_tools_mod
-use qg_vars_mod
+use oops_variables_mod
 use random_mod
 
 implicit none
@@ -37,7 +37,8 @@ implicit none
 private
 public :: qg_fields
 public :: qg_fields_registry
-public :: qg_fields_create,qg_fields_create_from_other,qg_fields_delete,qg_fields_zero,qg_fields_dirac,qg_fields_random, &
+public :: qg_fields_create,qg_fields_create_default,qg_fields_create_from_other,qg_fields_delete, &
+        & qg_fields_zero,qg_fields_dirac,qg_fields_random, &
         & qg_fields_copy,qg_fields_self_add,qg_fields_self_sub,qg_fields_self_mul,qg_fields_axpy,qg_fields_self_schur, &
         & qg_fields_dot_prod,qg_fields_add_incr,qg_fields_diff_incr,qg_fields_change_resol,qg_fields_read_file, &
         & qg_fields_write_file,qg_fields_analytic_init,qg_fields_gpnorm,qg_fields_rms,qg_fields_sizes,qg_fields_vars, &
@@ -81,7 +82,7 @@ implicit none
 ! Passed variables
 type(qg_fields),intent(inout) :: self   !< Fields
 type(qg_geom),target,intent(in) :: geom !< Geometry
-type(qg_vars),intent(in) :: vars        !< Variables
+type(oops_variables),intent(in) :: vars !< Variables
 logical,intent(in) :: lbc               !< Boundaries flag
 
 ! Local variables
@@ -91,17 +92,15 @@ character(len=1024) :: record
 self%geom => geom
 
 ! Set variables
-if (vars%lx.and.vars%lq) then
+if (vars%has('x') .and. vars%has('q')) then
   call abor1_ftn('qg_fields_create: x and q cannot be set as fields together')
-elseif (vars%lu.or.vars%lv) then
+elseif (vars%has('u') .or. vars%has('v')) then
   call abor1_ftn('qg_fieldsçcreate: u and v cannot be set as fields')
-elseif (vars%lx) then
+elseif (vars%has('x')) then
   self%lq = .false.
-elseif (vars%lq) then
+elseif (vars%has('q')) then
   self%lq = .true.
 else
-  write(record,*) 'qg_fields_create: vars%lx / vars%lq / vars%lu / vars%lv = ',vars%lx,'/',vars%lq,'/',vars%lu,'/',vars%lv
-  call fckit_log%info(record)
   call abor1_ftn('qg_fields_create: x or q should be set as fields')
 endif
 
@@ -124,6 +123,45 @@ endif
 call qg_fields_zero(self)
 
 end subroutine qg_fields_create
+
+!> Create fields from geometry (x)
+subroutine qg_fields_create_default(self,geom,lbc)
+
+implicit none
+
+! Passed variables
+type(qg_fields),intent(inout) :: self   !< Fields
+type(qg_geom),target,intent(in) :: geom !< Geometry
+logical,intent(in) :: lbc               !< Boundaries flag
+
+! Local variables
+character(len=1024) :: record
+
+! Associate geometry
+self%geom => geom
+
+! Set variables
+self%lq = .false.
+
+! Set boundaries
+self%lbc = lbc
+
+! Allocate 3d field
+allocate(self%gfld3d(self%geom%nx,self%geom%ny,self%geom%nz))
+
+! Allocate boundaries
+if (self%lbc) then
+  ! Allocation
+  allocate(self%x_north(self%geom%nz))
+  allocate(self%x_south(self%geom%nz))
+  allocate(self%q_north(self%geom%nx,self%geom%nz))
+  allocate(self%q_south(self%geom%nx,self%geom%nz))
+endif
+
+! Initialize
+call qg_fields_zero(self)
+
+end subroutine qg_fields_create_default
 ! ------------------------------------------------------------------------------
 !> Create fields from another one
 subroutine qg_fields_create_from_other(self,other)
@@ -1052,7 +1090,7 @@ implicit none
 
 ! Passed variables
 type(qg_fields),intent(in) :: self              !< Fields
-type(qg_vars),intent(in) :: vars                !< Variables
+type(oops_variables),intent(in) :: vars         !< Variables
 type(datetime),intent(in) :: vdate              !< Date and time
 type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
 
@@ -1065,8 +1103,8 @@ type(atlas_field) :: afield
 call datetime_to_string(vdate,sdate)
 
 ! Get or create field
-if (vars%lx) fieldname = 'x_'//sdate
-if (vars%lq) fieldname = 'q_'//sdate
+if (vars%has('x')) fieldname = 'x_'//sdate
+if (vars%has('q')) fieldname = 'q_'//sdate
 if (afieldset%has_field(trim(fieldname))) then
   ! Get afield
   afield = afieldset%field(trim(fieldname))
@@ -1090,7 +1128,7 @@ implicit none
 
 ! Passed variables
 type(qg_fields),intent(in) :: self              !< Fields
-type(qg_vars),intent(in) :: vars                !< Variables
+type(oops_variables),intent(in) :: vars         !< Variables
 type(datetime),intent(in) :: vdate              !< Date and time
 type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
 
@@ -1107,14 +1145,14 @@ type(atlas_field) :: afield
 call datetime_to_string(vdate,sdate)
 
 ! Get variable
-if (vars%lx) then
+if (vars%has('x')) then
   if (self%lq) then
     call convert_q_to_x(self%geom,self%gfld3d,self%x_north,self%x_south,gfld3d)
   else
     gfld3d = self%gfld3d
   end if
 end if
-if (vars%lq) then
+if (vars%has('q')) then
   if (self%lq) then
     gfld3d = self%gfld3d
   else
@@ -1123,8 +1161,8 @@ if (vars%lq) then
 end if
 
 ! Get or create field
-if (vars%lx) fieldname = 'x_'//sdate
-if (vars%lq) fieldname = 'q_'//sdate
+if (vars%has('x')) fieldname = 'x_'//sdate
+if (vars%has('q')) fieldname = 'q_'//sdate
 if (afieldset%has_field(trim(fieldname))) then
   ! Get afield
   afield = afieldset%field(trim(fieldname))
@@ -1160,7 +1198,7 @@ implicit none
 
 ! Passed variables
 type(qg_fields),intent(inout) :: self           !< Fields
-type(qg_vars),intent(in) :: vars                !< Variables
+type(oops_variables),intent(in) :: vars         !< Variables
 type(datetime),intent(in) :: vdate              !< Date and time
 type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
 
@@ -1177,8 +1215,8 @@ type(atlas_field) :: afield
 call datetime_to_string(vdate,sdate)
 
 ! Get field
-if (vars%lx) fieldname = 'x_'//sdate
-if (vars%lq) fieldname = 'q_'//sdate
+if (vars%has('x')) fieldname = 'x_'//sdate
+if (vars%has('q')) fieldname = 'q_'//sdate
 afield = afieldset%field(trim(fieldname))
 
 ! Copy field
@@ -1194,14 +1232,14 @@ do k=1,self%geom%nz
 enddo
 
 ! Get variable
-if (vars%lx) then
+if (vars%has('x')) then
   if (self%lq) then
     call convert_x_to_q(self%geom,gfld3d,self%x_north,self%x_south,self%gfld3d)
   else
     self%gfld3d = gfld3d
   end if
 end if
-if (vars%lq) then
+if (vars%has('q')) then
   if (self%lq) then
     self%gfld3d = gfld3d
   else

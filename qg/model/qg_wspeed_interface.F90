@@ -13,8 +13,8 @@ use iso_c_binding
 use qg_gom_mod
 use qg_obsoper_mod
 use qg_obsvec_mod
-use qg_vars_mod
 use qg_wspeed_mod
+use oops_variables_mod
 
 implicit none
 
@@ -139,18 +139,18 @@ implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_nobs              !< Number of observations
-integer(c_int),dimension(*),intent(in) :: c_vars !< Variables
+type(c_ptr),value,intent(in) :: c_vars           !< Variables
 integer(c_int),intent(inout) :: c_key_traj       !< GOM trajectory
 
 ! Local variables
-type(qg_vars) :: vars
+type(oops_variables) :: vars
 type(qg_gom),pointer :: traj
 
 ! Interface
-call qg_vars_create(vars,c_vars)
 call qg_gom_registry%init()
 call qg_gom_registry%add(c_key_traj)
 call qg_gom_registry%get(c_key_traj,traj)
+vars = oops_variables(c_vars)
 
 ! Call Fortran
 call qg_wspeed_gettraj(c_nobs,vars,traj)

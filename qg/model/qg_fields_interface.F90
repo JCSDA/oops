@@ -13,13 +13,12 @@ use datetime_mod
 use fckit_configuration_module, only: fckit_configuration
 use iso_c_binding
 use kinds
-use oops_variables_mod
 use qg_fields_mod
 use qg_geom_mod
 use qg_geom_iter_mod
 use qg_gom_mod
 use qg_locs_mod
-use qg_vars_mod
+use oops_variables_mod
 
 implicit none
 
@@ -35,13 +34,13 @@ implicit none
 ! Passed variables
 integer(c_int),intent(inout) :: c_key_self       !< Fields
 integer(c_int),intent(in) :: c_key_geom          !< Geometry
-integer(c_int),dimension(*),intent(in) :: c_vars !< List of variables
+type(c_ptr),value,intent(in) :: c_vars           !< List of variables
 logical(c_bool),intent(in) :: c_lbc              !< Boundaries flag
 
 ! Local variables
 type(qg_fields),pointer :: self
 type(qg_geom),pointer :: geom
-type(qg_vars) :: vars
+type(oops_variables) :: vars
 logical :: lbc
 
 ! Interface
@@ -49,7 +48,7 @@ call qg_fields_registry%init()
 call qg_fields_registry%add(c_key_self)
 call qg_fields_registry%get(c_key_self,self)
 call qg_geom_registry%get(c_key_geom,geom)
-call qg_vars_create(vars,c_vars)
+vars = oops_variables(c_vars)
 lbc = c_lbc
 
 ! Call Fortran
@@ -551,19 +550,19 @@ implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_fld           !< Fields
-integer(c_int),dimension(*),intent(in) :: c_vars !< List of variables
+type(c_ptr),value,intent(in) :: c_vars           !< List of variables
 type(c_ptr),value,intent(in) :: c_dt             !< Date and time
 type(c_ptr),intent(in),value :: c_afieldset      !< ATLAS fieldset pointer
 
 ! Local variables
 type(qg_fields),pointer :: fld
-type(qg_vars) :: vars
+type(oops_variables) :: vars
 type(datetime) :: fdate
 type(atlas_fieldset) :: afieldset
 
 ! Interface
 call qg_fields_registry%get(c_key_fld,fld)
-call qg_vars_create(vars,c_vars)
+vars = oops_variables(c_vars)
 call c_f_datetime(c_dt,fdate)
 afieldset = atlas_fieldset(c_afieldset)
 
@@ -579,19 +578,19 @@ implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_fld           !< Fields
-integer(c_int),dimension(*),intent(in) :: c_vars !< List of variables
+type(c_ptr),value,intent(in) :: c_vars           !< List of variables
 type(c_ptr),value,intent(in) :: c_dt             !< Date and time
 type(c_ptr),intent(in),value :: c_afieldset      !< ATLAS fieldset pointer
 
 ! Local variables
 type(qg_fields),pointer :: fld
-type(qg_vars) :: vars
+type(oops_variables) :: vars
 type(datetime) :: fdate
 type(atlas_fieldset) :: afieldset
 
 ! Interface
 call qg_fields_registry%get(c_key_fld,fld)
-call qg_vars_create(vars,c_vars)
+vars = oops_variables(c_vars)
 call c_f_datetime(c_dt,fdate)
 afieldset = atlas_fieldset(c_afieldset)
 
@@ -607,19 +606,19 @@ implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_fld           !< Fields
-integer(c_int),dimension(*),intent(in) :: c_vars !< List of variables
+type(c_ptr),value,intent(in) :: c_vars           !< List of variables
 type(c_ptr),value,intent(in) :: c_dt             !< Date and time
 type(c_ptr),intent(in),value :: c_afieldset      !< ATLAS fieldset pointer
 
 ! Local variables
 type(qg_fields),pointer :: fld
-type(qg_vars) :: vars
+type(oops_variables) :: vars
 type(datetime) :: fdate
 type(atlas_fieldset) :: afieldset
 
 ! Interface
 call qg_fields_registry%get(c_key_fld,fld)
-call qg_vars_create(vars,c_vars)
+vars = oops_variables(c_vars)
 call c_f_datetime(c_dt,fdate)
 afieldset = atlas_fieldset(c_afieldset)
 

@@ -25,6 +25,8 @@ contains
   procedure, public :: nvars
   procedure, public :: variable
   procedure, public :: varlist
+
+  procedure, public :: has
 end type
 
 interface oops_variables
@@ -133,5 +135,20 @@ function varlist(this)
 
 end function varlist
 !-------------------------------------------------------------------------------
+
+logical function has(this, var)
+  use iso_c_binding, only: c_char
+  use string_f_c_mod
+  implicit none
+
+  class(oops_variables), intent(in) :: this
+  character(*), intent(in) :: var
+
+  character(kind=c_char,len=1), allocatable :: c_var(:)
+
+  call f_c_string(trim(var), c_var)
+  has = c_variables_has(this%ptr, c_var)
+  deallocate(c_var)
+end function has
 
 end module oops_variables_mod

@@ -25,7 +25,6 @@
 #include "model/GomQG.h"
 #include "model/LocationsQG.h"
 #include "model/QgFortran.h"
-#include "model/VariablesQG.h"
 
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
@@ -38,7 +37,7 @@ FieldsQG::FieldsQG(const GeometryQG & geom, const oops::Variables & vars,
                    const bool & lbc, const util::DateTime & time):
   geom_(new GeometryQG(geom)), vars_(vars), lbc_(lbc), time_(time)
 {
-  qg_fields_create_f90(keyFlds_, geom_->toFortran(), vars_.toFortran(), lbc_);
+  qg_fields_create_f90(keyFlds_, geom_->toFortran(), vars_, lbc_);
 }
 // -----------------------------------------------------------------------------
 FieldsQG::FieldsQG(const FieldsQG & other, const bool copy)
@@ -60,7 +59,7 @@ FieldsQG::FieldsQG(const FieldsQG & other)
 FieldsQG::FieldsQG(const FieldsQG & other, const GeometryQG & geom)
   : geom_(new GeometryQG(geom)), vars_(other.vars_), lbc_(other.lbc_), time_(other.time_)
 {
-  qg_fields_create_f90(keyFlds_, geom_->toFortran(), vars_.toFortran(), lbc_);
+  qg_fields_create_f90(keyFlds_, geom_->toFortran(), vars_, lbc_);
   qg_fields_change_resol_f90(keyFlds_, other.keyFlds_);
 }
 // -----------------------------------------------------------------------------
@@ -68,7 +67,7 @@ FieldsQG::FieldsQG(const FieldsQG & other, const oops::Variables & vars)
   : geom_(other.geom_), vars_(vars), lbc_(other.lbc_), time_(other.time_)
 {
 // TODO(Benjamin): delete that ?
-  qg_fields_create_f90(keyFlds_, geom_->toFortran(), vars_.toFortran(), lbc_);
+  qg_fields_create_f90(keyFlds_, geom_->toFortran(), vars_, lbc_);
   qg_fields_copy_f90(keyFlds_, other.keyFlds_);
 }
 // -----------------------------------------------------------------------------
@@ -144,15 +143,15 @@ void FieldsQG::diff(const FieldsQG & x1, const FieldsQG & x2) {
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::setAtlas(atlas::FieldSet * afieldset) const {
-  qg_fields_set_atlas_f90(keyFlds_, vars_.toFortran(), time_, afieldset->get());
+  qg_fields_set_atlas_f90(keyFlds_, vars_, time_, afieldset->get());
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::toAtlas(atlas::FieldSet * afieldset) const {
-  qg_fields_to_atlas_f90(keyFlds_, vars_.toFortran(), time_, afieldset->get());
+  qg_fields_to_atlas_f90(keyFlds_, vars_, time_, afieldset->get());
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::fromAtlas(atlas::FieldSet * afieldset) {
-  qg_fields_from_atlas_f90(keyFlds_, vars_.toFortran(), time_, afieldset->get());
+  qg_fields_from_atlas_f90(keyFlds_, vars_, time_, afieldset->get());
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::read(const eckit::Configuration & config) {
@@ -214,7 +213,7 @@ oops::GridPoint FieldsQG::getPoint(const GeometryQGIterator & iter) const {
   std::vector<int> varlens(1, nz);
   std::vector<double> values(nz);
   qg_fields_getpoint_f90(keyFlds_, iter.toFortran(), nz, values[0]);
-  return oops::GridPoint(vars_.toOopsVariables(), values, varlens);
+  return oops::GridPoint(vars_, values, varlens);
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::setPoint(const oops::GridPoint & x, const GeometryQGIterator & iter) {

@@ -23,7 +23,6 @@
 
 #include "model/GeometryQG.h"
 #include "model/GeometryQGIterator.h"
-#include "model/VariablesQG.h"
 
 #include "oops/base/GridPoint.h"
 #include "oops/base/Variables.h"
@@ -110,7 +109,7 @@ class FieldsQG : public util::Printable,
   void print(std::ostream &) const;
   F90flds keyFlds_;
   boost::shared_ptr<const GeometryQG> geom_;
-  const VariablesQG vars_;
+  const oops::Variables vars_;
   const bool lbc_;
   util::DateTime time_;
 };

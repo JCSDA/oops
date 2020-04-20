@@ -13,12 +13,12 @@ use fckit_log_module, only: fckit_log
 use iso_c_binding
 use kinds
 use netcdf
+use oops_variables_mod
 use qg_constants_mod
 use qg_geom_mod
 use qg_locs_mod
 use qg_projection_mod
 use qg_tools_mod
-use qg_vars_mod
 use random_mod
 
 implicit none
@@ -40,7 +40,6 @@ type :: qg_gom
   integer,allocatable :: indx(:)              !< Observations index
   real(kind_real), allocatable :: values(:,:) !< Observations values
   logical :: lalloc                           !< Allocation flag
-  type(qg_vars) :: vars
 end type qg_gom
 
 #define LISTED_TYPE qg_gom
@@ -66,37 +65,33 @@ implicit none
 ! Passed variables
 type(qg_gom),intent(inout) :: self !< GOM
 integer,intent(in) :: kobs(:)      !< Observations index
-type(qg_vars),intent(in) :: vars   !< Variables
+type(oops_variables),intent(in) :: vars !< Variables
+
+integer :: ivar
 
 ! Set attributes
 self%nobs = size(kobs)
 self%used = 0
 self%nv = 0
-if (vars%lx) then
-  self%nv = self%nv+1
-  self%ix = self%nv
-else
-  self%ix = 0
-endif
-if (vars%lq) then
-  self%nv = self%nv+1
-  self%iq = self%nv
-else
-  self%iq = 0
-endif
-if (vars%lu) then
-  self%nv = self%nv+1
-  self%iu = self%nv
-else
-  self%iu = 0
-endif
-if (vars%lv) then
-  self%nv = self%nv+1
-  self%iv = self%nv
-else
-  self%iv = 0
-endif
-self%vars = vars
+self%ix = 0; self%iq = 0; self%iu = 0; self%iv = 0
+do ivar = 1, vars%nvars()
+  if (vars%variable(ivar) == 'x') then
+    self%nv = self%nv+1
+    self%ix = self%nv
+  endif
+  if (vars%variable(ivar) == 'q') then
+    self%nv = self%nv+1
+    self%iq = self%nv
+  endif
+  if (vars%variable(ivar) == 'u') then
+    self%nv = self%nv+1
+    self%iu = self%nv
+  endif
+  if (vars%variable(ivar) == 'v') then
+    self%nv = self%nv+1
+    self%iv = self%nv
+  endif
+enddo
 
 ! Allocation
 allocate(self%indx(self%nobs))
@@ -154,7 +149,6 @@ self%iu = other%iu
 self%iv = other%iv
 self%nv = other%nv
 self%used = other%used
-self%vars = other%vars
 ! Allocation
 if (.not.self%lalloc) then
    allocate(self%values(self%nv,self%nobs))

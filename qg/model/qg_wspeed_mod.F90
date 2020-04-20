@@ -14,7 +14,7 @@ use iso_c_binding
 use qg_gom_mod
 use qg_obsoper_mod
 use qg_obsvec_mod
-use qg_vars_mod
+use oops_variables_mod
 
 implicit none
 
@@ -115,7 +115,7 @@ implicit none
 
 ! Passed variables
 integer,intent(in) :: nobs        !< Number of observations
-type(qg_vars),intent(in) :: vars  !< Variables
+type(oops_variables),intent(in) :: vars  !< Variables
 type(qg_gom),intent(inout) ::traj !< GOM trajectory
 
 ! Local variables

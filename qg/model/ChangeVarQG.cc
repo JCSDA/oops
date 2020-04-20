@@ -13,15 +13,16 @@
 #include "eckit/config/Configuration.h"
 #include "model/GeometryQG.h"
 #include "model/StateQG.h"
+#include "oops/base/Variables.h"
 #include "oops/util/Logger.h"
 
 namespace qg {
 // -----------------------------------------------------------------------------
 ChangeVarQG::ChangeVarQG(const GeometryQG & resol, const eckit::Configuration & conf) {
   oops::Log::trace() << "ChangeVarQG::ChangeVarQG start" << std::endl;
-  const VariablesQG vars_in(eckit::LocalConfiguration(conf, "inputVariables"));
-  const VariablesQG vars_out(eckit::LocalConfiguration(conf, "outputVariables"));
-  qg_change_var_setup_f90(keyConfig_, vars_in.toFortran(), vars_out.toFortran());
+  const oops::Variables vars_in(eckit::LocalConfiguration(conf, "inputVariables"));
+  const oops::Variables vars_out(eckit::LocalConfiguration(conf, "outputVariables"));
+  qg_change_var_setup_f90(keyConfig_, vars_in, vars_out);
   oops::Log::trace() << "ChangeVarQG::ChangeVarQG done" << std::endl;
 }
 // -----------------------------------------------------------------------------

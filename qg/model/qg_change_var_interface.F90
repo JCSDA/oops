@@ -12,7 +12,7 @@ use iso_c_binding
 use qg_change_var_mod
 use qg_fields_mod
 use qg_geom_mod
-use qg_vars_mod
+use oops_variables_mod
 
 implicit none
 
@@ -27,19 +27,19 @@ implicit none
 
 ! Passed variables
 integer(c_int),intent(inout) :: c_key_self           !< Variable change
-integer(c_int),dimension(*),intent(in) :: c_vars_in  !< Input variables
-integer(c_int),dimension(*),intent(in) :: c_vars_out !< Output variables
+type(c_ptr),value,intent(in) :: c_vars_in  !< Input variables
+type(c_ptr),value,intent(in) :: c_vars_out !< Output variables
 
 ! Local variable
 type(qg_change_var_config),pointer :: self
-type(qg_vars) :: vars_in,vars_out
+type(oops_variables) :: vars_in,vars_out
 
 ! Interface
 call qg_change_var_registry%init()
 call qg_change_var_registry%add(c_key_self)
 call qg_change_var_registry%get(c_key_self,self)
-call qg_vars_create(vars_in,c_vars_in)
-call qg_vars_create(vars_out,c_vars_out)
+vars_in = oops_variables(c_vars_in)
+vars_out = oops_variables(c_vars_out)
 
 ! Call Fortran
 call qg_change_var_setup(self,vars_in,vars_out)

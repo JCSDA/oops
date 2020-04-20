@@ -19,7 +19,6 @@
 #include "model/ObsSpaceQG.h"
 #include "model/ObsVecQG.h"
 #include "model/QgFortran.h"
-#include "model/VariablesQG.h"
 #include "oops/base/Variables.h"
 #include "oops/util/Logger.h"
 
@@ -33,8 +32,7 @@ ObsWSpeedTLAD::ObsWSpeedTLAD(const ObsSpaceQG & odb, const eckit::Configuration 
   : keyOperWspeed_(0), traj_(), varin_(std::vector<std::string>{"u", "v"})
 {
   qg_wspeed_setup_f90(keyOperWspeed_, config);
-  const VariablesQG varqg(varin_);
-  qg_wspeed_gettraj_f90(odb.nobs(), varqg.toFortran(), traj_.toFortran());
+  qg_wspeed_gettraj_f90(odb.nobs(), varin_, traj_.toFortran());
   oops::Log::trace() << "ObsWSpeedTLAD created" << std::endl;
 }
 

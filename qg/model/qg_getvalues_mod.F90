@@ -93,12 +93,6 @@ real(kind_real),allocatable :: x(:,:,:),q(:,:,:),u(:,:,:),v(:,:,:)
 ! Check field
 call qg_fields_check(fld)
 
-! Check gom%vars/gom consistency
-if (gom%vars%lx.neqv.(gom%ix>0)) call abor1_ftn ('qg_getvalues_interp: inconsistent gom%vars and gom')
-if (gom%vars%lq.neqv.(gom%iq>0)) call abor1_ftn ('qg_getvalues_interp: inconsistent gom%vars and gom')
-if (gom%vars%lu.neqv.(gom%iu>0)) call abor1_ftn ('qg_getvalues_interp: inconsistent gom%vars and gom')
-if (gom%vars%lv.neqv.(gom%iv>0)) call abor1_ftn ('qg_getvalues_interp: inconsistent gom%vars and gom')
-
 ! Allocation
 allocate(x(fld%geom%nx,fld%geom%ny,fld%geom%nz))
 allocate(q(fld%geom%nx,fld%geom%ny,fld%geom%nz))
@@ -111,26 +105,26 @@ if (fld%lq) then
 else
   x = fld%gfld3d
 endif
-if (gom%vars%lx.or.gom%vars%lu.or.gom%vars%lv) then
+if (gom%ix /= 0.or.gom%iu /= 0.or.gom%iv /= 0) then
   if (fld%lq) call convert_q_to_x(fld%geom,q,fld%x_north,fld%x_south,x)
 endif
-if (gom%vars%lq) then
+if (gom%iq /= 0) then
   if (.not.fld%lq) call convert_x_to_q(fld%geom,x,fld%x_north,fld%x_south,q)
 endif
-if (gom%vars%lu.or.gom%vars%lv) call convert_x_to_uv(fld%geom,x,fld%x_north,fld%x_south,u,v)
+if (gom%iu /= 0.or.gom%iv /= 0) call convert_x_to_uv(fld%geom,x,fld%x_north,fld%x_south,u,v)
 
 !$omp parallel do schedule(static) private(jloc)
 do jloc=1,self%locs%nlocs
   ! Check if current obs is in this time frame (t1,t2]
   if (t1 < self%locs%times(jloc) .and. self%locs%times(jloc) <= t2) then
     ! Interpolate variables
-    if (gom%vars%lx) call qg_interp_trilinear(fld%geom,self%locs%lon(jloc),self%locs%lat(jloc), &
+    if (gom%ix /= 0) call qg_interp_trilinear(fld%geom,self%locs%lon(jloc),self%locs%lat(jloc), &
     &                                     self%locs%z(jloc),x,gom%values(gom%ix,jloc))
-    if (gom%vars%lq) call qg_interp_trilinear(fld%geom,self%locs%lon(jloc),self%locs%lat(jloc), &
+    if (gom%iq /= 0) call qg_interp_trilinear(fld%geom,self%locs%lon(jloc),self%locs%lat(jloc), &
     &                                     self%locs%z(jloc),q,gom%values(gom%iq,jloc))
-    if (gom%vars%lu) call qg_interp_trilinear(fld%geom,self%locs%lon(jloc),self%locs%lat(jloc), &
+    if (gom%iu /= 0) call qg_interp_trilinear(fld%geom,self%locs%lon(jloc),self%locs%lat(jloc), &
     &                                     self%locs%z(jloc),u,gom%values(gom%iu,jloc))
-    if (gom%vars%lv) call qg_interp_trilinear(fld%geom,self%locs%lon(jloc),self%locs%lat(jloc), &
+    if (gom%iv /= 0) call qg_interp_trilinear(fld%geom,self%locs%lon(jloc),self%locs%lat(jloc), &
     &                                     self%locs%z(jloc),v,gom%values(gom%iv,jloc))
   endif
 enddo
@@ -156,12 +150,6 @@ real(kind_real),allocatable :: x(:,:,:),q(:,:,:),u(:,:,:),v(:,:,:)
 ! Check field
 call qg_fields_check(fld)
 
-! Check gom%vars/gom consistency
-if (gom%vars%lx.neqv.(gom%ix>0)) call abor1_ftn ('qg_getvalues_interp: inconsistent gom%vars and gom')
-if (gom%vars%lq.neqv.(gom%iq>0)) call abor1_ftn ('qg_getvalues_interp: inconsistent gom%vars and gom')
-if (gom%vars%lu.neqv.(gom%iu>0)) call abor1_ftn ('qg_getvalues_interp: inconsistent gom%vars and gom')
-if (gom%vars%lv.neqv.(gom%iv>0)) call abor1_ftn ('qg_getvalues_interp: inconsistent gom%vars and gom')
-
 ! Allocation
 allocate(x(fld%geom%nx,fld%geom%ny,fld%geom%nz))
 allocate(q(fld%geom%nx,fld%geom%ny,fld%geom%nz))
@@ -174,26 +162,26 @@ if (fld%lq) then
 else
   x = fld%gfld3d
 endif
-if (gom%vars%lx.or.gom%vars%lu.or.gom%vars%lv) then
+if (gom%ix /= 0.or.gom%iu /= 0.or.gom%iv /= 0) then
   if (fld%lq) call convert_q_to_x_tl(fld%geom,q,x)
 endif
-if (gom%vars%lq) then
+if (gom%iq /= 0) then
   if (.not.fld%lq) call convert_x_to_q_tl(fld%geom,x,q)
 endif
-if (gom%vars%lu.or.gom%vars%lv) call convert_x_to_uv_tl(fld%geom,x,u,v)
+if (gom%iu /= 0.or.gom%iv /= 0) call convert_x_to_uv_tl(fld%geom,x,u,v)
 
 !$omp parallel do schedule(static) private(jloc)
 do jloc=1,self%locs%nlocs
   ! Check if current obs is in this time frame (t1,t2]
   if (t1 < self%locs%times(jloc) .and. self%locs%times(jloc) <= t2) then
     ! Interpolate variables
-    if (gom%vars%lx) call qg_interp_trilinear(fld%geom,self%locs%lon(jloc),self%locs%lat(jloc), &
+    if (gom%ix /= 0) call qg_interp_trilinear(fld%geom,self%locs%lon(jloc),self%locs%lat(jloc), &
     &                                     self%locs%z(jloc),x,gom%values(gom%ix,jloc))
-    if (gom%vars%lq) call qg_interp_trilinear(fld%geom,self%locs%lon(jloc),self%locs%lat(jloc), &
+    if (gom%iq /= 0) call qg_interp_trilinear(fld%geom,self%locs%lon(jloc),self%locs%lat(jloc), &
     &                                     self%locs%z(jloc),q,gom%values(gom%iq,jloc))
-    if (gom%vars%lu) call qg_interp_trilinear(fld%geom,self%locs%lon(jloc),self%locs%lat(jloc), &
+    if (gom%iu /= 0) call qg_interp_trilinear(fld%geom,self%locs%lon(jloc),self%locs%lat(jloc), &
     &                                     self%locs%z(jloc),u,gom%values(gom%iu,jloc))
-    if (gom%vars%lv) call qg_interp_trilinear(fld%geom,self%locs%lon(jloc),self%locs%lat(jloc), &
+    if (gom%iv /= 0) call qg_interp_trilinear(fld%geom,self%locs%lon(jloc),self%locs%lat(jloc), &
     &                                     self%locs%z(jloc),v,gom%values(gom%iv,jloc))
   endif
 enddo
@@ -219,12 +207,6 @@ real(kind_real),allocatable :: x(:,:,:),q(:,:,:),u(:,:,:),v(:,:,:)
 ! Check field
 call qg_fields_check(fld)
 
-! Check gom%vars/gom consistency
-if (gom%vars%lx.neqv.(gom%ix>0)) call abor1_ftn ('qg_getvalues_interp: inconsistent gom%vars and gom')
-if (gom%vars%lq.neqv.(gom%iq>0)) call abor1_ftn ('qg_getvalues_interp: inconsistent gom%vars and gom')
-if (gom%vars%lu.neqv.(gom%iu>0)) call abor1_ftn ('qg_getvalues_interp: inconsistent gom%vars and gom')
-if (gom%vars%lv.neqv.(gom%iv>0)) call abor1_ftn ('qg_getvalues_interp: inconsistent gom%vars and gom')
-
 ! Allocation
 allocate(x(fld%geom%nx,fld%geom%ny,fld%geom%nz))
 allocate(q(fld%geom%nx,fld%geom%ny,fld%geom%nz))
@@ -241,23 +223,23 @@ do jloc=self%locs%nlocs,1,-1
   ! Check if current obs is in this time frame (t1,t2]
   if (t1 < self%locs%times(jloc) .and. self%locs%times(jloc) <= t2) then
     ! Interpolate variables
-    if (gom%vars%lx) call qg_interp_trilinear_ad(fld%geom,self%locs%lon(jloc),self%locs%lat(jloc), &
+    if (gom%ix /= 0) call qg_interp_trilinear_ad(fld%geom,self%locs%lon(jloc),self%locs%lat(jloc), &
     &                                        self%locs%z(jloc),gom%values(gom%ix,jloc),x)
-    if (gom%vars%lq) call qg_interp_trilinear_ad(fld%geom,self%locs%lon(jloc),self%locs%lat(jloc), &
+    if (gom%iq /= 0) call qg_interp_trilinear_ad(fld%geom,self%locs%lon(jloc),self%locs%lat(jloc), &
     &                                        self%locs%z(jloc),gom%values(gom%iq,jloc),q)
-    if (gom%vars%lu) call qg_interp_trilinear_ad(fld%geom,self%locs%lon(jloc),self%locs%lat(jloc), &
+    if (gom%iu /= 0) call qg_interp_trilinear_ad(fld%geom,self%locs%lon(jloc),self%locs%lat(jloc), &
     &                                        self%locs%z(jloc),gom%values(gom%iu,jloc),u)
-    if (gom%vars%lv) call qg_interp_trilinear_ad(fld%geom,self%locs%lon(jloc),self%locs%lat(jloc), &
+    if (gom%iv /= 0) call qg_interp_trilinear_ad(fld%geom,self%locs%lon(jloc),self%locs%lat(jloc), &
     &                                        self%locs%z(jloc),gom%values(gom%iv,jloc),v)
   endif
 enddo
 
 ! Get variables
-if (gom%vars%lu.or.gom%vars%lv) call convert_x_to_uv_ad(fld%geom,u,v,x)
-if (gom%vars%lq) then
+if (gom%iu /= 0.or.gom%iv /= 0) call convert_x_to_uv_ad(fld%geom,u,v,x)
+if (gom%iq /= 0) then
   if (.not.fld%lq) call convert_x_to_q_ad(fld%geom,q,x)
 endif
-if (gom%vars%lx.or.gom%vars%lu.or.gom%vars%lv) then
+if (gom%ix /= 0.or.gom%iu /= 0.or.gom%iv /= 0) then
   if (fld%lq) call convert_q_to_x_ad(fld%geom,x,q)
 endif
 if (fld%lq) then

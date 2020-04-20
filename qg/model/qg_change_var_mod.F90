@@ -11,7 +11,7 @@ module qg_change_var_mod
 use qg_convert_q_to_x_mod
 use qg_convert_x_to_q_mod
 use qg_fields_mod
-use qg_vars_mod
+use oops_variables_mod
 
 implicit none
 
@@ -46,17 +46,18 @@ implicit none
 
 ! Passed variables
 type(qg_change_var_config),intent(inout) :: self !< Variable change
-type(qg_vars),intent(in) :: vars_in              !< Input variables
-type(qg_vars),intent(in) :: vars_out             !< Output variables
+type(oops_variables),intent(in) :: vars_in       !< Input variables
+type(oops_variables),intent(in) :: vars_out      !< Output variables
 
 ! Check
-if (vars_in%lx.and.vars_out%lx) then
+if ((vars_in%nvars() /= 1) .or. (vars_out%nvars() /= 1)) then
+  call abor1_ftn('qg_change_var_setup: wrong change of variable')
+endif
+if (vars_in%variable(1) == vars_out%variable(1)) then
   self%varchange = 'identity'
-elseif (vars_in%lq.and.vars_out%lq) then
-  self%varchange = 'identity'
-elseif (vars_in%lx.and.vars_out%lq) then
+elseif ((vars_in%variable(1) == 'x') .and. (vars_out%variable(1) == 'q')) then
   self%varchange = 'q_to_x'
-elseif (vars_in%lq.and.vars_out%lx) then
+elseif ((vars_in%variable(1) == 'q') .and. (vars_out%variable(1) == 'x')) then
   self%varchange = 'x_to_q'
 else
   call abor1_ftn('qg_change_var_setup: wrong change of variable')

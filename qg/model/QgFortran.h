@@ -42,8 +42,6 @@ typedef int F90geom;
 typedef int F90iter;
 // Model key type
 typedef int F90model;
-// Variables key type
-typedef int F90vars;
 // Locations key type
 typedef int F90locs;
 // Gom key type
@@ -75,7 +73,7 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Change of variable
 // -----------------------------------------------------------------------------
-  void qg_change_var_setup_f90(F90chvar &, const F90vars *, const F90vars *);
+  void qg_change_var_setup_f90(F90chvar &, const oops::Variables &, const oops::Variables &);
   void qg_change_var_f90(const F90chvar &, const F90flds &, const F90flds &);
   void qg_change_var_inv_f90(const F90chvar &, const F90flds &, const F90flds &);
   void qg_change_var_ad_f90(const F90chvar &, const F90flds &, const F90flds &);
@@ -103,7 +101,7 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Fields
 // -----------------------------------------------------------------------------
-  void qg_fields_create_f90(F90flds &, const F90geom &, const F90vars *, const bool &);
+  void qg_fields_create_f90(F90flds &, const F90geom &, const oops::Variables &, const bool &);
   void qg_fields_create_from_other_f90(F90flds &, const F90flds &);
   void qg_fields_delete_f90(F90flds &);
   void qg_fields_zero_f90(const F90flds &);
@@ -129,11 +127,11 @@ extern "C" {
   void qg_fields_rms_f90(const F90flds &, double &);
   void qg_fields_sizes_f90(const F90flds &, int &, int &, int &, int &);
   void qg_fields_vars_f90(const F90flds &, int &, int &);
-  void qg_fields_set_atlas_f90(const F90flds &, const F90vars *, const util::DateTime &,
+  void qg_fields_set_atlas_f90(const F90flds &, const oops::Variables &, const util::DateTime &,
                                atlas::field::FieldSetImpl *);
-  void qg_fields_to_atlas_f90(const F90flds &, const F90vars *, const util::DateTime &,
+  void qg_fields_to_atlas_f90(const F90flds &, const oops::Variables &, const util::DateTime &,
                               atlas::field::FieldSetImpl *);
-  void qg_fields_from_atlas_f90(const F90flds &, const F90vars *, util::DateTime &,
+  void qg_fields_from_atlas_f90(const F90flds &, const oops::Variables &, const util::DateTime &,
                                 atlas::field::FieldSetImpl *);
   void qg_fields_getpoint_f90(const F90flds&, const F90iter&, const int &, double &);
   void qg_fields_setpoint_f90(const F90flds&, const F90iter&, const int &, const double &);
@@ -182,7 +180,7 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Local Values (GOM)
 // -----------------------------------------------------------------------------
-  void qg_gom_setup_f90(F90gom &, const F90locs &, const F90vars *);
+  void qg_gom_setup_f90(F90gom &, const F90locs &, const oops::Variables &);
   void qg_gom_create_f90(F90gom &);
   void qg_gom_delete_f90(F90gom &);
   void qg_gom_copy_f90(const F90gom &, const F90gom &);
@@ -243,7 +241,7 @@ extern "C" {
                              const eckit::Configuration &, const util::DateTime &,
                              const util::Duration &, const int &, int &);
   void qg_obsdb_nobs_f90(const F90odb &, const int &, const char *, int &);
-  void qg_obsoper_inputs_f90(const F90hop &, F90vars *);
+  void qg_obsoper_inputs_f90(const F90hop &, oops::Variables &);
 
 // -----------------------------------------------------------------------------
 //  Observation vector
@@ -292,7 +290,7 @@ extern "C" {
   void qg_wspeed_equiv_f90(const F90gom &, const F90ovec &, const double &);
   void qg_wspeed_equiv_tl_f90(const F90gom &, const F90ovec &, const F90gom &, const double &);
   void qg_wspeed_equiv_ad_f90(const F90gom &, const F90ovec &, const F90gom &, double &);
-  void qg_wspeed_gettraj_f90(const int &, const int *, F90gom &);
+  void qg_wspeed_gettraj_f90(const int &, const oops::Variables &, F90gom &);
   void qg_wspeed_settraj_f90(const F90gom &, const F90gom &);
 
 }
