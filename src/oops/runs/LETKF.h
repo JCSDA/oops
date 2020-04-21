@@ -142,7 +142,10 @@ template <typename MODEL> class LETKF : public Application {
     Log::test() << "H(x) ensemble background mean: " << std::endl << yb_mean << std::endl;
 
     // calculate H(x) ensemble perturbations
-    DeparturesEnsemble_ ens_Yb(obsens, yb_mean);
+    DeparturesEnsemble_ ens_Yb(obsdb, obsens.size());
+    for (size_t iens = 0; iens < obsens.size(); ++iens) {
+      ens_Yb[iens] = obsens[iens] - yb_mean;
+    }
 
     // calculate obs departures
     Departures_ ombg(yobs - yb_mean);

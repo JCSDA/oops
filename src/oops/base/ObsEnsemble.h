@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2018 UCAR
+ * (C) Copyright 2018-2020 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -8,7 +8,6 @@
 #ifndef OOPS_BASE_OBSENSEMBLE_H_
 #define OOPS_BASE_OBSENSEMBLE_H_
 
-#include <memory>
 #include <vector>
 
 #include "oops/base/Observations.h"
@@ -18,49 +17,39 @@
 namespace oops {
 
 // -----------------------------------------------------------------------------
-
-/// Ensemble
-
+/// \brief Ensemble of observations (can hold ensemble of H(x))
 template<typename MODEL> class ObsEnsemble {
   typedef Observations<MODEL>        Observations_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
 
  public:
-/// Constructor
-  ObsEnsemble(const ObsSpaces_ &, const unsigned int &);
+  /// Create ensemble of empty Observations size \p nens
+  ObsEnsemble(const ObsSpaces_ &, const size_t & nens);
 
-/// Destructor
-  virtual ~ObsEnsemble() {}
+  /// Accessors and size
+  size_t size() const {return ensemble_.size();}
+  Observations_ & operator[](const size_t ii) {return ensemble_[ii];}
+  const Observations_ & operator[](const size_t ii) const { return ensemble_[ii];}
 
-  /// Accessors
-  unsigned int size() const {
-    return ensemble_.size();
-  }
-  Observations_ & operator[](const int ii) {
-    return *ensemble_[ii];
-  }
-  const Observations_ & operator[](const int ii) const {
-    return *ensemble_[ii];
-  }
-
+  /// Compute ensemble mean
   Observations_ mean() const;
 
  private:
-  const ObsSpaces_ & obsdb_;
-  std::vector<std::shared_ptr<Observations_>> ensemble_;
+  const ObsSpaces_ & obsdb_;             // ObsSpaces used for creating ensemble members
+  std::vector<Observations_> ensemble_;  // ensemble members
 };
 
 // ====================================================================================
 
 template<typename MODEL>
-ObsEnsemble<MODEL>::ObsEnsemble(const ObsSpaces_ & obsdb, const unsigned int & ns)
+ObsEnsemble<MODEL>::ObsEnsemble(const ObsSpaces_ & obsdb, const size_t & nens)
   : obsdb_(obsdb), ensemble_()
 {
-  for (unsigned i = 0; i < ns ; ++i) {
-    std::shared_ptr<Observations_> y(new Observations_(obsdb_));
-    ensemble_.push_back(y);
+  ensemble_.reserve(nens);
+  for (size_t iens = 0; iens < nens ; ++iens) {
+    ensemble_.emplace_back(obsdb_);
   }
-  Log::trace() << "ObsEnsemble:contructor done" << std::endl;
+  Log::trace() << "ObsEnsemble created" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -69,10 +58,11 @@ template<typename MODEL>
 Observations<MODEL> ObsEnsemble<MODEL>::mean() const {
   Observations_ mean_obs(obsdb_);
   mean_obs.zero();
-  for (unsigned ii = 0; ii < ensemble_.size(); ++ii) {
-    mean_obs.accumul(*ensemble_[ii]);
+  for (const auto & yy : ensemble_) {
+    mean_obs.accumul(yy);
   }
   mean_obs *= 1.0/static_cast<float>(ensemble_.size());
+  Log::trace() << "ObsEnsemble::mean done" << std::endl;
   return mean_obs;
 }
 
