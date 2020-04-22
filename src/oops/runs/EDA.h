@@ -76,9 +76,7 @@ int execute(const eckit::Configuration & fullConfig) const {
   Log::debug() << "EDA config for member 0 = " << config << std::endl;
 
   Variational<MODEL> var(commMember);
-  var.execute(config);
-
-  return 0;
+  return var.execute(config);
 }
 // -----------------------------------------------------------------------------
  private:

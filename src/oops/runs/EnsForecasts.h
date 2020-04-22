@@ -89,9 +89,7 @@ template <typename MODEL> class EnsForecast : public Application {
     Log::debug() << "EnsForecast config for member 0 = " << config << std::endl;
 
     Forecast<MODEL> fc(commMember);
-    fc.execute(config);
-
-    return 0;
+    return fc.execute(config);
   }
 // -----------------------------------------------------------------------------
  private:

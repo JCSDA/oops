@@ -76,9 +76,7 @@ template <typename MODEL> class EnsHofX : public Application {
     Log::debug() << "EnsHofX config for member 0 = " << config << std::endl;
 
     HofX<MODEL> hofx(commMember);
-    hofx.execute(config);
-
-    return 0;
+    return hofx.execute(config);
   }
 // -----------------------------------------------------------------------------
  private:
