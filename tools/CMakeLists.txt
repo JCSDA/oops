@@ -4,6 +4,7 @@ list( APPEND oops_tool_files
   compare.sh
   compare.py
   cpplint.py
+  test_wrapper.sh
 )
 
 foreach(FILENAME ${oops_tool_files})

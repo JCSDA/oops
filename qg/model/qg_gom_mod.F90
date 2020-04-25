@@ -383,25 +383,26 @@ real(kind_real),intent(inout) :: pmax    !< Maximum value
 real(kind_real),intent(inout) :: prms    !< RMS
 
 ! Local variables
-real(kind_real) :: expo
-
-! Compute GOM stats
-kobs = self%nobs
-pmin = minval(self%values)
-pmax = maxval(self%values)
-prms = sqrt(sum(self%values**2)/real(self%nobs*self%nv,kind_real))
+real(kind_real) :: expo,scalinginv,svalues(self%nv,self%nobs)
+character(len=1024) :: msg
 
 ! Scaling
-if (abs(prms)>0.0) then
-  expo = aint(log(abs(prms))/log(10.0_kind_real))
+if (maxval(abs(self%values))>0.0) then
+  expo = aint(log(maxval(abs(self%values)))/log(10.0_kind_real))-1
   scaling = 10.0**expo
 else
   scaling = 1.0
 endif
-pmin = pmin/scaling
-pmax = pmax/scaling
-prms = prms/scaling
+scalinginv = 1.0/scaling
 
+! Scale values
+svalues = self%values*scalinginv
+
+! Compute GOM stats
+kobs = self%nobs
+pmin = minval(svalues)
+pmax = maxval(svalues)
+prms = sqrt(sum(svalues**2)/real(self%nobs*self%nv,kind_real))
 
 end subroutine qg_gom_stats
 ! ------------------------------------------------------------------------------

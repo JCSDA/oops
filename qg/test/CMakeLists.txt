@@ -117,32 +117,21 @@ file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Data)
 # truth and make_obs_4d_24h are required for interface tests
 #####################################################################
 
-ecbuild_add_test( TARGET test_qg_truth_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_forecast.x
-                  ARGS testinput/truth.yaml testoutput/truth.log.out
-                  DEPENDS qg_forecast.x )
-
-ecbuild_add_test( TARGET test_qg_truth_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/truth.log.out testoutput/truth.test
-                  TEST_DEPENDS test_qg_truth_run )
-
+oops_add_test( TESTNAME truth
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/truth.yaml
+               EXENAME qg_forecast.x
+               COMPARE)
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_make_obs_4d_24h_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_make_obs.x
-                  ARGS testinput/make_obs_4d_24h.yaml testoutput/make_obs_4d_24h.log.out
-                  DEPENDS qg_make_obs.x
-                  TEST_DEPENDS test_qg_truth_run )
-
-ecbuild_add_test( TARGET test_qg_make_obs_4d_24h_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/make_obs_4d_24h.log.out testoutput/make_obs_4d_24h.test
-                  TEST_DEPENDS test_qg_make_obs_4d_24h_run )
+oops_add_test( TESTNAME make_obs_4d_24h
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/make_obs_4d_24h.yaml
+               EXENAME  qg_make_obs.x
+               TEST_DEPENDS test_qg_truth
+               COMPARE)
 
 #####################################################################
 # interface tests
@@ -352,126 +341,83 @@ ecbuild_add_test( TARGET  test_qg_lineargetvalues
 # forecast-related tests
 #####################################################################
 
-ecbuild_add_test( TARGET test_qg_analytic_forecast_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_forecast.x
-                  ARGS testinput/analytic_forecast.yaml testoutput/analytic_forecast.log.out
-                  DEPENDS qg_forecast.x )
-
-ecbuild_add_test( TARGET test_qg_analytic_forecast_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/analytic_forecast.log.out testoutput/analytic_forecast.test
-                  TEST_DEPENDS test_qg_analytic_forecast_run )
+oops_add_test( TESTNAME analytic_forecast
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/analytic_forecast.yaml
+               EXENAME  qg_forecast.x
+               COMPARE)
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_forecast_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_forecast.x
-                  ARGS testinput/forecast.yaml testoutput/forecast.log.out
-                  DEPENDS qg_forecast.x
-                  TEST_DEPENDS test_qg_truth_run )
-
-ecbuild_add_test( TARGET test_qg_forecast_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/forecast.log.out testoutput/forecast.test
-                  TEST_DEPENDS test_qg_forecast_run )
+oops_add_test( TESTNAME forecast
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/forecast.yaml
+               EXENAME  qg_forecast.x
+               TEST_DEPENDS test_qg_truth
+               COMPARE)
 
 #####################################################################
 # obs-related tests
 #####################################################################
 
-ecbuild_add_test( TARGET test_qg_make_obs_3d_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_make_obs.x
-                  ARGS testinput/make_obs_3d.yaml testoutput/make_obs_3d.log.out
-                  DEPENDS qg_make_obs.x
-                  TEST_DEPENDS test_qg_truth_run )
-
-ecbuild_add_test( TARGET test_qg_make_obs_3d_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/make_obs_3d.log.out testoutput/make_obs_3d.test
-                  TEST_DEPENDS test_qg_make_obs_3d_run )
+oops_add_test( TESTNAME make_obs_3d
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/make_obs_3d.yaml
+               EXENAME  qg_make_obs.x
+               TEST_DEPENDS test_qg_truth
+               COMPARE)
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_make_obs_4d_12h_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_make_obs.x
-                  ARGS testinput/make_obs_4d_12h.yaml testoutput/make_obs_4d_12h.log.out
-                  DEPENDS qg_make_obs.x
-                  TEST_DEPENDS test_qg_truth_run )
-
-ecbuild_add_test( TARGET test_qg_make_obs_4d_12h_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/make_obs_4d_12h.log.out testoutput/make_obs_4d_12h.test
-                  TEST_DEPENDS test_qg_make_obs_4d_12h_run )
+oops_add_test( TESTNAME make_obs_4d_12h
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/make_obs_4d_12h.yaml
+               EXENAME  qg_make_obs.x
+               TEST_DEPENDS test_qg_truth
+               COMPARE)
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_make_obs_4d_biased_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_make_obs.x
-                  ARGS testinput/make_obs_4d_biased.yaml testoutput/make_obs_4d_biased.log.out
-                  DEPENDS qg_make_obs.x
-                  TEST_DEPENDS test_qg_truth_run )
-
-ecbuild_add_test( TARGET test_qg_make_obs_4d_biased_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/make_obs_4d_biased.log.out testoutput/make_obs_4d_biased.test
-                  TEST_DEPENDS test_qg_make_obs_4d_biased_run )
-
+oops_add_test( TESTNAME make_obs_4d_biased
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/make_obs_4d_biased.yaml
+               EXENAME  qg_make_obs.x
+               TEST_DEPENDS test_qg_truth
+               COMPARE)
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_hofx_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_hofx.x
-                  ARGS testinput/hofx.yaml testoutput/hofx.log.out
-                  DEPENDS qg_hofx.x
-                  TEST_DEPENDS test_qg_make_obs_4d_12h_run )
-
-ecbuild_add_test( TARGET test_qg_hofx_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/hofx.log.out testoutput/hofx.test
-                  TEST_DEPENDS test_qg_hofx_run )
-
+oops_add_test( TESTNAME hofx
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/hofx.yaml
+               EXENAME  qg_hofx.x
+               TEST_DEPENDS test_qg_make_obs_4d_12h
+               COMPARE)
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_hofx3d_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_hofx_nomodel.x
-                  ARGS testinput/hofx3d.yaml testoutput/hofx3d.log.out
-                  DEPENDS qg_hofx_nomodel.x
-                  TEST_DEPENDS test_qg_make_obs_4d_12h_run )
-
-ecbuild_add_test( TARGET test_qg_hofx3d_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/hofx3d.log.out testoutput/hofx3d.test
-                  TEST_DEPENDS test_qg_hofx3d_run )
-
+oops_add_test( TESTNAME hofx3d
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/hofx3d.yaml
+               EXENAME  qg_hofx_nomodel.x
+               TEST_DEPENDS test_qg_make_obs_4d_12h
+               COMPARE)
 #####################################################################
 # ensemble-related tests
 #####################################################################
 
-ecbuild_add_test( TARGET test_qg_gen_ens_pert_B_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_gen_ens_pert_B.x
-                  ARGS testinput/gen_ens_pert_B.yaml testoutput/gen_ens_pert_B.log.out
-                  DEPENDS qg_gen_ens_pert_B.x
-                  TEST_DEPENDS test_qg_truth_run )
-
-ecbuild_add_test( TARGET test_qg_gen_ens_pert_B_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/gen_ens_pert_B.log.out testoutput/gen_ens_pert_B.test
-                  TEST_DEPENDS test_qg_gen_ens_pert_B_run )
+oops_add_test( TESTNAME gen_ens_pert_B
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/gen_ens_pert_B.yaml
+               EXENAME  qg_gen_ens_pert_B.x
+               TEST_DEPENDS test_qg_truth
+               COMPARE)
 
 #--------------------------------------------------------------------
 
@@ -505,68 +451,43 @@ ecbuild_add_test( TARGET test_qg_ens_hofx_run
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_ens_variance_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_ens_variance.x
-                  ARGS testinput/ens_variance.yaml testoutput/ens_variance.log.out
-                  DEPENDS qg_ens_variance.x
-                  TEST_DEPENDS test_qg_gen_ens_pert_B_run )
-
-ecbuild_add_test( TARGET test_qg_ens_variance_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/ens_variance.log.out testoutput/ens_variance.test
-                  TEST_DEPENDS test_qg_ens_variance_run )
-
+oops_add_test( TESTNAME ens_variance
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/ens_variance.yaml
+               EXENAME  qg_ens_variance.x
+               TEST_DEPENDS test_qg_gen_ens_pert_B
+               COMPARE)
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_ens_recenter_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_ens_recenter.x
-                  ARGS testinput/ens_recenter.yaml testoutput/ens_recenter.log.out
-                  DEPENDS qg_ens_recenter.x
-                  TEST_DEPENDS test_qg_gen_ens_pert_B_run )
-
-ecbuild_add_test( TARGET test_qg_ens_recenter_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/ens_recenter.log.out testoutput/ens_recenter.test
-                  TEST_DEPENDS test_qg_ens_recenter_run )
-
-
+oops_add_test( TESTNAME ens_recenter
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/ens_recenter.yaml
+               EXENAME  qg_ens_recenter.x
+               TEST_DEPENDS test_qg_gen_ens_pert_B
+               COMPARE)
 #####################################################################
 # other tests
 #####################################################################
 
-ecbuild_add_test( TARGET test_qg_static_b_init_run
-                  MPI    1
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_staticbinit.x
-                  ARGS testinput/static_b_init.yaml testoutput/static_b_init.log.out
-                  DEPENDS qg_staticbinit.x
-                  TEST_DEPENDS test_qg_truth_run )
-
-ecbuild_add_test( TARGET test_qg_static_b_init_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/static_b_init.log.out testoutput/static_b_init.test
-                  TEST_DEPENDS test_qg_static_b_init_run )
-
+oops_add_test( TESTNAME static_b_init
+               MODELNAME qg
+               MPI 1
+               OMP 2
+               YAMLNAME testinput/static_b_init.yaml
+               EXENAME  qg_staticbinit.x
+               TEST_DEPENDS test_qg_truth
+               COMPARE)
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_dfi_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_dfi.x
-                  ARGS testinput/dfi.yaml testoutput/dfi.log.out
-                  DEPENDS qg_dfi.x
-                  TEST_DEPENDS test_qg_forecast_run )
-
-ecbuild_add_test( TARGET test_qg_dfi_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/dfi.log.out testoutput/dfi.test
-                  TEST_DEPENDS test_qg_dfi_run )
-
+oops_add_test( TESTNAME dfi
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/dfi.yaml
+               EXENAME  qg_dfi.x
+               TEST_DEPENDS test_qg_forecast
+               COMPARE)
 #--------------------------------------------------------------------
 
 ecbuild_add_test( TARGET test_qg_convertstate_run
@@ -580,322 +501,214 @@ ecbuild_add_test( TARGET test_qg_convertstate_run
 # QG dirac tests
 #####################################################################
 
-ecbuild_add_test( TARGET test_qg_dirac_cov_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_dirac.x
-                  ARGS testinput/dirac_cov.yaml testoutput/dirac_cov.log.out
-                  DEPENDS qg_dirac.x
-                  TEST_DEPENDS test_qg_forecast_run )
-
-ecbuild_add_test( TARGET test_qg_dirac_cov_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/dirac_cov.log.out testoutput/dirac_cov.test
-                  TEST_DEPENDS test_qg_dirac_cov_run )
+oops_add_test( TESTNAME dirac_cov
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/dirac_cov.yaml
+               EXENAME  qg_dirac.x
+               TEST_DEPENDS test_qg_forecast
+               COMPARE)
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_dirac_hyb_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_dirac.x
-                  ARGS testinput/dirac_hyb.yaml testoutput/dirac_hyb.log.out
-                  DEPENDS qg_dirac.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_gen_ens_pert_B_run )
-
-ecbuild_add_test( TARGET test_qg_dirac_hyb_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/dirac_hyb.log.out testoutput/dirac_hyb.test
-                  TEST_DEPENDS test_qg_dirac_hyb_run )
+oops_add_test( TESTNAME dirac_hyb
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/dirac_hyb.yaml
+               EXENAME  qg_dirac.x
+               TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B
+               COMPARE)
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_dirac_loc_3d_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_dirac.x
-                  ARGS testinput/dirac_loc_3d.yaml testoutput/dirac_loc_3d.log.out
-                  DEPENDS qg_dirac.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_gen_ens_pert_B_run )
-
-ecbuild_add_test( TARGET test_qg_dirac_loc_3d_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/dirac_loc_3d.log.out testoutput/dirac_loc_3d.test
-                  TEST_DEPENDS test_qg_dirac_loc_3d_run )
+oops_add_test( TESTNAME dirac_loc_3d
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/dirac_loc_3d.yaml
+               EXENAME  qg_dirac.x
+               TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B
+               COMPARE)
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_dirac_loc_4d_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_dirac.x
-                  ARGS testinput/dirac_loc_4d.yaml testoutput/dirac_loc_4d.log.out
-                  DEPENDS qg_dirac.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_gen_ens_pert_B_run )
-
-ecbuild_add_test( TARGET test_qg_dirac_loc_4d_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/dirac_loc_4d.log.out testoutput/dirac_loc_4d.test
-                  TEST_DEPENDS test_qg_dirac_loc_4d_run )
+oops_add_test( TESTNAME dirac_loc_4d
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/dirac_loc_4d.yaml
+               EXENAME  qg_dirac.x
+               TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B
+               COMPARE)
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_dirac_no_loc_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_dirac.x
-                  ARGS testinput/dirac_no_loc.yaml testoutput/dirac_no_loc.log.out
-                  DEPENDS qg_dirac.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_gen_ens_pert_B_run )
-
-ecbuild_add_test( TARGET test_qg_dirac_no_loc_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/dirac_no_loc.log.out testoutput/dirac_no_loc.test
-                  TEST_DEPENDS test_qg_dirac_no_loc_run )
+oops_add_test( TESTNAME dirac_no_loc
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/dirac_no_loc.yaml
+               EXENAME  qg_dirac.x
+               TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B
+               COMPARE)
 
 #####################################################################
 # 3d variational tests
 #####################################################################
 
-ecbuild_add_test( TARGET test_qg_3densvar_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_4dvar.x
-                  ARGS testinput/3densvar.yaml testoutput/3densvar.log.out
-                  DEPENDS qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_gen_ens_pert_B_run test_qg_make_obs_3d_run )
-
-ecbuild_add_test( TARGET test_qg_3densvar_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/3densvar.log.out testoutput/3densvar.test
-                  TEST_DEPENDS test_qg_3densvar_run )
+oops_add_test( TESTNAME 3densvar
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/3densvar.yaml
+               EXENAME  qg_4dvar.x
+               TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_3d
+               COMPARE)
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_3dvar_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_4dvar.x
-                  ARGS testinput/3dvar.yaml testoutput/3dvar.log.out
-                  DEPENDS qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_make_obs_3d_run )
-
-ecbuild_add_test( TARGET test_qg_3dvar_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/3dvar.log.out testoutput/3dvar.test
-                  TEST_DEPENDS test_qg_3dvar_run )
+oops_add_test( TESTNAME 3dvar
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/3dvar.yaml
+               EXENAME  qg_4dvar.x
+               TEST_DEPENDS test_qg_forecast test_qg_make_obs_3d
+               COMPARE)
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_3dvar_change_var_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_4dvar.x
-                  ARGS testinput/3dvar_change_var.yaml testoutput/3dvar_change_var.log.out
-                  DEPENDS qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_gen_ens_pert_B_run test_qg_make_obs_3d_run )
-
-ecbuild_add_test( TARGET test_qg_3dvar_change_var_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/3dvar_change_var.log.out testoutput/3dvar_change_var.test
-                  TEST_DEPENDS test_qg_3dvar_change_var_run )
+oops_add_test( TESTNAME 3dvar_change_var
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/3dvar_change_var.yaml
+               EXENAME  qg_4dvar.x
+               TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_3d
+               COMPARE)
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_3dvar_hybrid_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_4dvar.x
-                  ARGS testinput/3dvar_hybrid.yaml testoutput/3dvar_hybrid.log.out
-                  DEPENDS qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_gen_ens_pert_B_run test_qg_make_obs_3d_run )
-
-ecbuild_add_test( TARGET test_qg_3dvar_hybrid_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/3dvar_hybrid.log.out testoutput/3dvar_hybrid.test
-                  TEST_DEPENDS test_qg_3dvar_hybrid_run )
+oops_add_test( TESTNAME 3dvar_hybrid
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/3dvar_hybrid.yaml
+               EXENAME  qg_4dvar.x
+               TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_3d
+               COMPARE)
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_3dfgat_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_4dvar.x
-                  ARGS testinput/3dfgat.yaml testoutput/3dfgat.log.out
-                  DEPENDS qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_make_obs_3d_run )
-
-ecbuild_add_test( TARGET test_qg_3dfgat_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/3dfgat.log.out testoutput/3dfgat.test
-                  TEST_DEPENDS test_qg_3dfgat_run )
+oops_add_test( TESTNAME 3dfgat
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/3dfgat.yaml
+               EXENAME  qg_4dvar.x
+               TEST_DEPENDS test_qg_forecast test_qg_make_obs_3d
+               COMPARE)
 
 #####################################################################
 # 4d variational tests
 #####################################################################
 
-ecbuild_add_test( TARGET test_qg_4densvar_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_4dvar.x
-                  ARGS testinput/4densvar.yaml testoutput/4densvar.log.out
-                  DEPENDS qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_gen_ens_pert_B_run test_qg_make_obs_4d_12h_run )
-
-ecbuild_add_test( TARGET test_qg_4densvar_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/4densvar.log.out testoutput/4densvar.test
-                  TEST_DEPENDS test_qg_4densvar_run )
+oops_add_test( TESTNAME 4densvar
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/4densvar.yaml
+               EXENAME  qg_4dvar.x
+               TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_4d_12h
+               COMPARE)
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_4dvar_dripcg_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_4dvar.x
-                  ARGS testinput/4dvar_dripcg.yaml testoutput/4dvar_dripcg.log.out
-                  DEPENDS qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_make_obs_4d_24h_run )
-
-ecbuild_add_test( TARGET test_qg_4dvar_dripcg_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/4dvar_dripcg.log.out testoutput/4dvar_dripcg.test
-                  TEST_DEPENDS test_qg_4dvar_dripcg_run )
+oops_add_test( TESTNAME 4dvar_dripcg
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/4dvar_dripcg.yaml
+               EXENAME  qg_4dvar.x
+               TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h
+               COMPARE)
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_4dvar_drpcg_lmp_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_4dvar.x
-                  ARGS testinput/4dvar_drpcg_lmp.yaml testoutput/4dvar_drpcg_lmp.log.out
-                  DEPENDS qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_make_obs_4d_24h_run )
-
-ecbuild_add_test( TARGET test_qg_4dvar_drpcg_lmp_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/4dvar_drpcg_lmp.log.out testoutput/4dvar_drpcg_lmp.test
-                  TEST_DEPENDS test_qg_4dvar_drpcg_lmp_run )
+oops_add_test( TESTNAME 4dvar_drpcg_lmp
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/4dvar_drpcg_lmp.yaml
+               EXENAME  qg_4dvar.x
+               TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h
+               COMPARE)
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_4dvar_drpfom_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_4dvar.x
-                  ARGS testinput/4dvar_drpfom.yaml testoutput/4dvar_drpfom.log.out
-                  DEPENDS qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_make_obs_4d_24h_run )
+oops_add_test( TESTNAME 4dvar_drpfom
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/4dvar_drpfom.yaml
+               EXENAME  qg_4dvar.x
+               TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h
+               COMPARE)
+#--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_4dvar_drpfom_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/4dvar_drpfom.log.out testoutput/4dvar_drpfom.test
-                  TEST_DEPENDS test_qg_4dvar_drpfom_run )
+oops_add_test( TESTNAME 4dvar_drplanczos
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/4dvar_drplanczos.yaml
+               EXENAME  qg_4dvar.x
+               TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h
+               COMPARE)
+#--------------------------------------------------------------------
+
+oops_add_test( TESTNAME 4dvar_drplanczos_hybrid
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/4dvar_drplanczos_hybrid.yaml
+               EXENAME  qg_4dvar.x
+               TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_4d_24h
+               COMPARE)
+#--------------------------------------------------------------------
+
+oops_add_test( TESTNAME 4dvar_forcing
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/4dvar_forcing.yaml
+               EXENAME  qg_4dvar.x
+               TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h
+               COMPARE)
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_4dvar_drplanczos_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_4dvar.x
-                  ARGS testinput/4dvar_drplanczos.yaml testoutput/4dvar_drplanczos.log.out
-                  DEPENDS qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_make_obs_4d_24h_run )
-
-ecbuild_add_test( TARGET test_qg_4dvar_drplanczos_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/4dvar_drplanczos.log.out testoutput/4dvar_drplanczos.test
-                  TEST_DEPENDS test_qg_4dvar_drplanczos_run )
+oops_add_test( TESTNAME 4dvar_ipcg
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/4dvar_ipcg.yaml
+               EXENAME  qg_4dvar.x
+               TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h
+               COMPARE)
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_4dvar_drplanczos_hybrid_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_4dvar.x
-                  ARGS testinput/4dvar_drplanczos_hybrid.yaml testoutput/4dvar_drplanczos_hybrid.log.out
-                  DEPENDS qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_gen_ens_pert_B_run test_qg_make_obs_4d_24h_run )
-
-ecbuild_add_test( TARGET test_qg_4dvar_drplanczos_hybrid_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/4dvar_drplanczos_hybrid.log.out testoutput/4dvar_drplanczos_hybrid.test
-                  TEST_DEPENDS test_qg_4dvar_drplanczos_hybrid_run )
+oops_add_test( TESTNAME 4dvar_obs_biased
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/4dvar_obs_biased.yaml
+               EXENAME  qg_4dvar.x
+               TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_biased
+               COMPARE)
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_4dvar_forcing_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_4dvar.x
-                  ARGS testinput/4dvar_forcing.yaml testoutput/4dvar_forcing.log.out
-                  DEPENDS qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_make_obs_4d_24h_run )
-
-ecbuild_add_test( TARGET test_qg_4dvar_forcing_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/4dvar_forcing.log.out testoutput/4dvar_forcing.test
-                  TEST_DEPENDS test_qg_4dvar_forcing_run )
+oops_add_test( TESTNAME 4dvar_rpcg
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/4dvar_rpcg.yaml
+               EXENAME  qg_4dvar.x
+               TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h
+               COMPARE)
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_qg_4dvar_ipcg_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_4dvar.x
-                  ARGS testinput/4dvar_ipcg.yaml testoutput/4dvar_ipcg.log.out
-                  DEPENDS qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast_run test_qg_make_obs_4d_24h_run )
-
-ecbuild_add_test( TARGET test_qg_4dvar_ipcg_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/4dvar_ipcg.log.out testoutput/4dvar_ipcg.test
-                  TEST_DEPENDS test_qg_4dvar_ipcg_run )
-
-#--------------------------------------------------------------------
-
-ecbuild_add_test( TARGET test_qg_4dvar_obs_biased_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_4dvar.x
-                  ARGS testinput/4dvar_obs_biased.yaml testoutput/4dvar_obs_biased.log.out
-                  DEPENDS qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast_run  test_qg_make_obs_4d_biased_run )
-
-ecbuild_add_test( TARGET test_qg_4dvar_obs_biased_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/4dvar_obs_biased.log.out testoutput/4dvar_obs_biased.test
-                  TEST_DEPENDS test_qg_4dvar_obs_biased_run )
-
-#--------------------------------------------------------------------
-
-ecbuild_add_test( TARGET test_qg_4dvar_rpcg_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_4dvar.x
-                  ARGS testinput/4dvar_rpcg.yaml testoutput/4dvar_rpcg.log.out
-                  DEPENDS qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast_run  test_qg_make_obs_4d_24h_run )
-
-ecbuild_add_test( TARGET test_qg_4dvar_rpcg_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/4dvar_rpcg.log.out testoutput/4dvar_rpcg.test
-                  TEST_DEPENDS test_qg_4dvar_rpcg_run )
-
-#--------------------------------------------------------------------
-
-ecbuild_add_test( TARGET test_qg_4dvar_saddlepoint_run
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_4dvar.x
-                  ARGS testinput/4dvar_saddlepoint.yaml testoutput/4dvar_saddlepoint.log.out
-                  DEPENDS qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast_run  test_qg_make_obs_4d_24h_run )
-
-ecbuild_add_test( TARGET test_qg_4dvar_saddlepoint_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/4dvar_saddlepoint.log.out testoutput/4dvar_saddlepoint.test
-                  TEST_DEPENDS test_qg_4dvar_saddlepoint_run )
+oops_add_test( TESTNAME 4dvar_saddlepoint
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/4dvar_saddlepoint.yaml
+               EXENAME  qg_4dvar.x
+               TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h
+               COMPARE)
 
 #####################################################################
 # EDA tests
@@ -926,30 +739,21 @@ ecbuild_add_test( TARGET test_qg_eda_4dvar
 # state-related tests
 #####################################################################
 
-ecbuild_add_test( TARGET test_qg_diffstates_run
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_diffstates.x
-                  ARGS testinput/diffstates.yaml testoutput/diffstates.log.out
-                  DEPENDS qg_eda.x
-                  TEST_DEPENDS test_qg_eda_3dvar_member2  test_qg_eda_4dvar )
-
-ecbuild_add_test( TARGET test_qg_diffstates_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/diffstates.log.out testoutput/diffstates.test
-                  TEST_DEPENDS test_qg_diffstates_run )
+oops_add_test( TESTNAME diffstates
+               MODELNAME qg
+               YAMLNAME testinput/diffstates.yaml
+               EXENAME  qg_diffstates.x
+               TEST_DEPENDS test_qg_eda_3dvar_member2  test_qg_eda_4dvar 
+               DEPENDS qg_eda.x
+               COMPARE)
 
 #####################################################################
 # LETKF tests
 #####################################################################
 
-ecbuild_add_test( TARGET test_qg_letkf_run
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_letkf.x
-                  ARGS testinput/letkf.yaml testoutput/letkf.log.out
-          DEPENDS qg_letkf.x
-          TEST_DEPENDS test_qg_make_obs_3d_run test_qg_gen_ens_pert_B_run)
-
-ecbuild_add_test( TARGET test_qg_letkf_compare
-                  TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-                  ARGS testoutput/letkf.log.out testoutput/letkf.test
-                  TEST_DEPENDS test_qg_letkf_run )
+oops_add_test( TESTNAME letkf
+               MODELNAME qg
+               YAMLNAME testinput/letkf.yaml
+               EXENAME  qg_letkf.x
+               TEST_DEPENDS test_qg_make_obs_3d test_qg_gen_ens_pert_B
+               COMPARE)
