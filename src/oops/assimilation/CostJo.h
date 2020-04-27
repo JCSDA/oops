@@ -30,9 +30,9 @@
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
 #include "oops/base/PostBaseTLAD.h"
+#include "oops/base/QCData.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
-#include "oops/interface/ObsDataVector.h"
 #include "oops/interface/State.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -63,8 +63,7 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef ObserversTLAD<MODEL>       ObserversTLAD_;
   typedef PostBaseTLAD<MODEL>        PostBaseTLAD_;
-  template <typename DATA> using ObsData_ = ObsDataVector<MODEL, DATA>;
-  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<MODEL, DATA> >;
+  typedef QCData<MODEL>              QCData_;
 
  public:
   /// Construct \f$ J_o\f$ from \f$ R\f$ and \f$ y_{obs}\f$.
@@ -136,8 +135,7 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   const bool subwindows_;
 
   /// Storage for QC flags and obs error
-  std::vector<ObsDataPtr_<float> > obserr_;
-  std::vector<ObsDataPtr_<int> > qcflags_;
+  QCData_ qc_;
 };
 
 // =============================================================================
@@ -149,20 +147,8 @@ CostJo<MODEL>::CostJo(const eckit::Configuration & joConf, const eckit::mpi::Com
   : obsconf_(joConf), obspace_(obsconf_, comm, winbgn, winend),
     yobs_(obspace_, "ObsValue"),
     Rmat_(), currentConf_(), gradFG_(), pobs_(), tslot_(tslot),
-    pobstlad_(), subwindows_(subwindows), obserr_(), qcflags_()
+    pobstlad_(), subwindows_(subwindows), qc_(obspace_)
 {
-  Log::trace() << "CostJo::CostJo start" << std::endl;
-  for (size_t jj = 0; jj < obspace_.size(); ++jj) {
-//  Allocate QC flags
-    ObsDataPtr_<int> tmpqc(new ObsData_<int>(obspace_[jj], obspace_[jj].obsvariables()));
-    qcflags_.push_back(tmpqc);
-
-//  Allocate and read initial obs error
-    ObsDataPtr_<float> tmperr(new ObsData_<float>(obspace_[jj],
-                               obspace_[jj].obsvariables(), "ObsError"));
-    Log::debug() << "CostJo::initialize obs error: " << *tmperr;
-    obserr_.push_back(tmperr);
-  }
   Log::trace() << "CostJo::CostJo done" << std::endl;
 }
 
@@ -177,20 +163,8 @@ CostJo<MODEL>::CostJo(const eckit::Configuration & joConf,
   : obsconf_(joConf), obspace_(localobs),
     yobs_(obspace_, "ObsValue"),
     Rmat_(), currentConf_(), gradFG_(), pobs_(), tslot_(tslot),
-    pobstlad_(), subwindows_(subwindows), obserr_(), qcflags_()
+    pobstlad_(), subwindows_(subwindows), qc_(obspaces)
 {
-  Log::trace() << "CostJo::CostJo start" << std::endl;
-  for (size_t jj = 0; jj < obspace_.size(); ++jj) {
-//  Allocate QC flags
-    ObsDataPtr_<int> tmpqc(new ObsData_<int>(obspace_[jj], obspace_[jj].obsvariables()));
-    qcflags_.push_back(tmpqc);
-
-//  Allocate and read initial obs error
-    ObsDataPtr_<float> tmperr(new ObsData_<float>(obspace_[jj],
-                               obspace_[jj].obsvariables(), "ObsError"));
-    Log::debug() << "CostJo::initialize obs error: " << *tmperr;
-    obserr_.push_back(tmperr);
-  }
   Log::trace() << "CostJo::CostJo done" << std::endl;
 }
 
@@ -204,8 +178,8 @@ CostJo<MODEL>::initialize(const CtrlVar_ & xx, const eckit::Configuration & conf
   currentConf_.reset(new eckit::LocalConfiguration(conf));
   const int iterout = currentConf_->getInt("iteration");
   obsconf_.set("iteration", iterout);
-  pobs_.reset(new Observers<MODEL, State_>(obsconf_, obspace_, xx.obsVar(), qcflags_, obserr_,
-                                          tslot_, subwindows_));
+  pobs_.reset(new Observers<MODEL, State_>(obsconf_, obspace_, xx.obsVar(), qc_,
+                                           tslot_, subwindows_));
   Log::trace() << "CostJo::initialize done" << std::endl;
   return pobs_;
 }
@@ -226,10 +200,10 @@ double CostJo<MODEL>::finalize() {
   const std::string errname = "EffectiveError" + std::to_string(iterout);
   yeqv.save(obsname);
   for (size_t jj = 0; jj < obspace_.size(); ++jj) {
-    obserr_[jj]->mask(*qcflags_[jj]);
-    qcflags_[jj]->save(qcname);
-    obserr_[jj]->save(errname);
-    obserr_[jj]->save("EffectiveError");  // Obs error covariance is looking for that for now
+    qc_.obsErrors(jj)->mask(*qc_.qcFlags(jj));
+    qc_.qcFlags(jj)->save(qcname);
+    qc_.obsErrors(jj)->save(errname);
+    qc_.obsErrors(jj)->save("EffectiveError");  // Obs error covariance is looking for that for now
   }
 
 // Set observation error covariance

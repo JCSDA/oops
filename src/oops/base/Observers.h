@@ -20,8 +20,8 @@
 #include "oops/base/Observer.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
+#include "oops/base/QCData.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/ObsDataVector.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -44,12 +44,10 @@ class Observers : public PostBase<STATE>,
   typedef Observations<MODEL>        Observations_;
   typedef Observer<MODEL>            Observer_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
-  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<MODEL, DATA> >;
-  template <typename DATA> using ObsDataVectors_ = std::vector<ObsDataPtr_<DATA> >;
+  typedef QCData<MODEL>              QCData_;
  public:
   Observers(const eckit::Configuration &, const ObsSpaces_ & obsdb, const ObsAuxCtrls_ &,
-            ObsDataVectors_<int> = ObsDataVectors_<int>(),
-            ObsDataVectors_<float> = ObsDataVectors_<float>(),
+            QCData_ &,
             const util::Duration & tslot = util::Duration(0), const bool subwin = false);
   ~Observers() {}
 
@@ -82,8 +80,7 @@ template <typename MODEL, typename STATE>
 Observers<MODEL, STATE>::Observers(const eckit::Configuration & conf,
                                    const ObsSpaces_ & obsdb,
                                    const ObsAuxCtrls_ & ybias,
-                                   ObsDataVectors_<int> qcflags,
-                                   ObsDataVectors_<float> obserr,
+                                   QCData_ & qc,
                                    const util::Duration & tslot, const bool swin)
   : PostBase<STATE>(),
     obspace_(obsdb), yobs_(obsdb),
@@ -97,22 +94,11 @@ Observers<MODEL, STATE>::Observers(const eckit::Configuration & conf,
   std::vector<eckit::LocalConfiguration> typeconf;
   conf.get("ObsTypes", typeconf);
   observers_.reserve(obsdb.size());
-  if (qcflags.size() == obsdb.size() && obserr.size() == obsdb.size()) {
-    for (size_t jj = 0; jj < obsdb.size(); ++jj) {
-      typeconf[jj].set("iteration", iterout);
-      observers_.emplace_back(new Observer_(typeconf[jj], obsdb[jj],
-                                  ybias[jj], yobs_[jj], qcflags[jj], obserr[jj]));
-    }
-  } else if (qcflags.size() == 0 && obserr.size() == 0) {
-    for (size_t jj = 0; jj < obsdb.size(); ++jj) {
-      typeconf[jj].set("iteration", iterout);
-      observers_.emplace_back(new Observer_(typeconf[jj], obsdb[jj],
-                                  ybias[jj], yobs_[jj]));
-    }
-  } else {
-    ABORT("Observers: have to provide qcflags and obserrs for all or none of the ObsTypes");
+  for (size_t jj = 0; jj < obsdb.size(); ++jj) {
+    typeconf[jj].set("iteration", iterout);
+    observers_.emplace_back(new Observer_(typeconf[jj], obsdb[jj],
+                                ybias[jj], yobs_[jj], qc.qcFlags(jj), qc.obsErrors(jj)));
   }
-
   Log::trace() << "Observers::Observers done" << std::endl;
 }
 

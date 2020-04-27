@@ -19,6 +19,7 @@
 #include "oops/base/Observers.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
+#include "oops/base/QCData.h"
 #include "oops/base/StateInfo.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
@@ -41,6 +42,7 @@ template <typename MODEL> class LocalHofX : public Application {
   typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
   typedef Observations<MODEL>        Observations_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
+  typedef QCData<MODEL>              QCData_;
   typedef State<MODEL>               State_;
 
  public:
@@ -112,9 +114,10 @@ template <typename MODEL> class LocalHofX : public Application {
        //  Setup obs bias<
        std::shared_ptr<ObsAuxCtrls_> lobias(new ObsAuxCtrls_(obsdb, obsconf));
        localobias.push_back(lobias);
+       QCData_ qc(*localobs[jj]);
        //  Setup observer
        std::shared_ptr<Observers<MODEL, State_>>
-          lpobs(new Observers<MODEL, State_>(obsconf, *localobs[jj], *localobias[jj]));
+          lpobs(new Observers<MODEL, State_>(obsconf, *localobs[jj], *localobias[jj], qc));
        pobs.push_back(lpobs);
        post.enrollProcessor(pobs[jj]);
     }

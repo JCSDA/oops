@@ -123,6 +123,7 @@ oops/base/PostProcessorTLAD.h
 oops/base/PostTimer.cc
 oops/base/PostTimer.h
 oops/base/PostTimerParameters.h
+oops/base/QCData.h
 oops/base/StateEnsemble.h
 oops/base/StateInfo.h
 oops/base/StateWriter.h

@@ -22,6 +22,7 @@
 #include "oops/base/Observers.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
+#include "oops/base/QCData.h"
 #include "oops/base/StateInfo.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Model.h"
@@ -47,8 +48,8 @@ class CalcHofX {
   typedef State<MODEL>               State_;
   typedef State4D<MODEL>             State4D_;
   typedef PostProcessor<State_>      PostProcessor_;
+  typedef QCData<MODEL>              QCData_;
   template <typename DATA> using ObsData_ = ObsDataVector<MODEL, DATA>;
-  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsData_<DATA> >;
 
  public:
 /// \brief Initializes Observers
@@ -60,9 +61,9 @@ class CalcHofX {
   const Observations_ & compute(const State4D_ &);
 
 /// \brief accessor to QC flag
-  const ObsData_<int> & qcFlags(const size_t ii) const {return *(qcflags_[ii]);}
+  const ObsData_<int> & qcFlags(const size_t ii) const {return *(qc_->qcFlags(ii));}
 /// \brief accessor to Obs errors
-  const ObsData_<float> & obsErrors(const size_t ii) const {return *(obserr_[ii]);}
+  const ObsData_<float> & obsErrors(const size_t ii) const {return *(qc_->obsErrors(ii));}
 
  private:
 /// \brief helper method to initialize qc flags and observer
@@ -75,8 +76,7 @@ class CalcHofX {
   ModelAux_          moderr_;                // model bias
   const util::DateTime winbgn_;              // window for assimilation
   const util::Duration winlen_;
-  std::vector<ObsDataPtr_<int> > qcflags_;   // QC flags
-  std::vector<ObsDataPtr_<float> > obserr_;  // Obs Errors
+  std::unique_ptr<QCData_> qc_;              // QC-related (flags and obserrors)
   std::shared_ptr<Observers<MODEL, State_> > pobs_;   // Observer
 };
 
@@ -96,21 +96,9 @@ CalcHofX<MODEL>::CalcHofX(const ObsSpaces_ & obspaces, const Geometry_ & geometr
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 void CalcHofX<MODEL>::initObserver() {
-  qcflags_.clear();
-  obserr_.clear();
-  qcflags_.reserve(obspaces_.size());
-  obserr_.reserve(obspaces_.size());
-  for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
-//  Allocate QC flags
-    qcflags_.emplace_back(boost::make_shared<ObsData_<int>>(obspaces_[jj],
-                            obspaces_[jj].obsvariables()));
-//  Allocate and read initial obs error
-    obserr_.emplace_back(boost::make_shared<ObsData_<float>>(obspaces_[jj],
-                            obspaces_[jj].obsvariables(), "ObsError"));
-  }
+  qc_.reset(new QCData_(obspaces_));
 //  Setup Observers
-  pobs_.reset(new Observers<MODEL, State_>(obsconf_, obspaces_, ybias_, qcflags_, obserr_));
-  oops::Log::trace() << "CalcHofX<MODEL>::CalcHofX created" << std::endl;
+  pobs_.reset(new Observers<MODEL, State_>(obsconf_, obspaces_, ybias_, *qc_));
 }
 
 // -----------------------------------------------------------------------------
