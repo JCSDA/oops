@@ -206,7 +206,6 @@ oops/runs/EnsHofX.h
 oops/runs/EnsRecenter.h
 oops/runs/EnsVariance.h
 oops/runs/ExternalDFI.h
-oops/runs/FindLocalObs.h
 oops/runs/Forecast.h
 oops/runs/GenEnsPertB.h
 oops/runs/HofX.h

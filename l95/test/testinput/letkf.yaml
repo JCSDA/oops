@@ -5,13 +5,8 @@ Assimilation Window:
 Geometry:
   resol: 40
 
-Model:
-  f: 8.0
-  name: L95
-  tstep: PT1H30M
-
 # use 3D for middle of the window
-Initial Condition:
+Background:
   members:
   - date: &date 2010-01-02T00:00:00Z
     filename: Data/test.ens.1.2010-01-01T00:00:00Z.P1D
@@ -37,10 +32,6 @@ Observations:
       ObsDataOut:
         filename: Data/l95.letkf.2010-01-02T00:00:00Z.obt
     ObsOperator: {}
-
-Localization:
-  distance: .1
-  max_nobs: -1
 
 letkf:
   inflation:

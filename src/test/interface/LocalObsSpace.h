@@ -40,16 +40,15 @@ template <typename MODEL> void testLocalObsSpace() {
   double lat = geolocconf.getDouble("lat");
   const eckit::geometry::Point2 center(lon, lat);
 
-  // get distance from yaml
-  eckit::LocalConfiguration distconf(localconf, "GeoDistance");
-  const double dist = distconf.getDouble("distance");
+  // get localization info from yaml
+  eckit::LocalConfiguration locconf(localconf, "Localization");
 
   int totalNobs = 0;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     // initialize local observation space
-    LocalObsSpace_ localobs(Test_::obspace()[jj], center, dist, -1);
-    oops::Log::info() << "Local obs within " << dist << " from " << center <<
+    LocalObsSpace_ localobs(Test_::obspace()[jj], center, locconf);
+    oops::Log::info() << "Local obs within " << locconf << " from " << center <<
                          ": " << localobs << std::endl;
 
     // count local nobs
@@ -79,9 +78,8 @@ template <typename MODEL> void testLocalObsVector() {
     double lat = geolocconf.getDouble("lat");
     const eckit::geometry::Point2 center(lon, lat);
 
-    // get distance from yaml
-    eckit::LocalConfiguration distconf(localconf, "GeoDistance");
-    const double dist = distconf.getDouble("distance");
+    // get localization info from yaml
+    eckit::LocalConfiguration locconf(localconf, "Localization");
 
     const std::string varname = localconf.getString("varname");
 
@@ -90,8 +88,8 @@ template <typename MODEL> void testLocalObsVector() {
     oops::Log::info() << "Full Obsvector: " << fullvec << std::endl;
 
     // initialize local observation space
-    LocalObsSpace_ localobs(Test_::obspace()[jj], center, dist, -1);
-    oops::Log::info() << "Local obs within " << dist << " from " << center <<
+    LocalObsSpace_ localobs(Test_::obspace()[jj], center, locconf);
+    oops::Log::info() << "Local obs within " << locconf << " from " << center <<
                          ": " << localobs << std::endl;
 
     // intialize local obsvector by reading specified variable from local obsspace

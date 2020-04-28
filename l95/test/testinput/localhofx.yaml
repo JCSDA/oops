@@ -6,9 +6,9 @@ Observations:
         filename: "Data/l95.truth4d.2010-01-02T00:00:00Z.obt"
       ObsDataOut: 
         filename: "Data/l95.localhofx.2010-01-02T00:00:00Z.obt"
-Localization: 
-  distance: 0.3
-  max_nobs: -1
+    Covariance:
+      Localization:
+        lengthscale: 0.3
 GeoLocations:
 - GeoLocation:
   lon: 0.5

@@ -11,8 +11,8 @@ LocalObsSpace:
   GeoLocation:
     lon: 0.5
     lat: 0
-  GeoDistance:
-    distance: 0.2
+  Localization:
+    lengthscale: 0.2
   varname:  ObsValue
   reference nobs: 64
 LinearModel:

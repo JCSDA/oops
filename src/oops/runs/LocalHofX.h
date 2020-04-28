@@ -90,11 +90,6 @@ template <typename MODEL> class LocalHofX : public Application {
     Log::debug() << "Observations configuration is:" << obsconf << std::endl;
     ObsSpaces_ obsdb(obsconf, this->getComm(), winbgn, winend);
 
-//  Read localization parameters
-    eckit::LocalConfiguration localconfig(fullConfig, "Localization");
-    double dist = localconfig.getDouble("distance");
-    int max_nobs = localconfig.getInt("max_nobs");
-
 //  Get points for finding local obs
     std::vector<eckit::LocalConfiguration> centerconf;
     fullConfig.get("GeoLocations", centerconf);
@@ -107,7 +102,7 @@ template <typename MODEL> class LocalHofX : public Application {
        double lat = centerconf[jj].getDouble("lat");
        centers.push_back(eckit::geometry::Point2(lon, lat));
        std::shared_ptr<ObsSpaces_>
-          lobs(new ObsSpaces_(obsdb, centers[jj], dist, max_nobs));
+          lobs(new ObsSpaces_(obsdb, centers[jj], obsconf));
        localobs.push_back(lobs);
        Log::test() << "Local obs around: " << centers[jj] << std::endl;
        Log::test() << *localobs[jj] << std::endl;

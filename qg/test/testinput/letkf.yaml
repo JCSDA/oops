@@ -9,14 +9,9 @@ Geometry:
   - 4500.0
   - 5500.0
 
-Model:
-  name: QG
-  tstep: PT1H
-  variables:
-  - x
-
 # update (and use for H(x) 3 states at 00Z, 06Z & 12Z
-Initial Condition:
+Background:
+  variables: [x]
   members:
   - state:
     - date: *date_bgn
@@ -66,6 +61,8 @@ Observations:
       ObsType: Stream
     Covariance:
       covariance: diagonal
+      Localization:
+        lengthscale: 5e6
   - ObsOperator:
       ObsType: Wind
     ObsSpace:
@@ -76,6 +73,8 @@ Observations:
       ObsType: Wind
     Covariance:
       covariance: diagonal
+      Localization:
+        lengthscale: 5e6
   - ObsOperator:
       ObsType: WSpeed
     ObsSpace:
@@ -86,10 +85,8 @@ Observations:
       ObsType: WSpeed
     Covariance:
       covariance: diagonal
-
-Localization:
-  distance: 5e6
-  max_nobs: -1
+      Localization:
+        lengthscale: 5e6
 
 letkf:
   inflation:

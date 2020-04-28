@@ -47,7 +47,8 @@ class ObsSpaces : public util::Printable,
 
   ObsSpaces(const eckit::Configuration &, const eckit::mpi::Comm &,
             const util::DateTime &, const util::DateTime &);
-  ObsSpaces(const ObsSpaces &, const eckit::geometry::Point2 &, const double &, const int &);
+  ObsSpaces(const ObsSpaces &, const eckit::geometry::Point2 &,
+            const eckit::Configuration &);
   explicit ObsSpaces(const std::shared_ptr<ObsSpace_> &);
   explicit ObsSpaces(const ObsSpaces &);
   ~ObsSpaces();
@@ -97,11 +98,14 @@ ObsSpaces<MODEL>::ObsSpaces(const eckit::Configuration & conf, const eckit::mpi:
 
 template <typename MODEL>
 ObsSpaces<MODEL>::ObsSpaces(const ObsSpaces<MODEL> & obss, const eckit::geometry::Point2 & center,
-                            const double & dist, const int & maxn)
+                            const eckit::Configuration & conf)
   : spaces_(0), wbgn_(obss.wbgn_), wend_(obss.wend_)
 {
+  std::vector<eckit::LocalConfiguration> typeconfs;
+  conf.get("ObsTypes", typeconfs);
   for (std::size_t jj = 0; jj < obss.size(); ++jj) {
-    std::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obss[jj], center, dist, maxn));
+    eckit::LocalConfiguration locconf(typeconfs[jj], "Covariance.Localization");
+    std::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obss[jj], center, locconf));
     spaces_.push_back(tmp);
   }
   ASSERT(spaces_.size() == obss.size());

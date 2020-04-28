@@ -96,8 +96,7 @@ ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config, const eckit::mpi::Co
 
 ObsSpaceQG::ObsSpaceQG(const ObsSpaceQG & obsdb,
                        const eckit::geometry::Point2 & refPoint,
-                       const double & dist,
-                       const int & nobs)
+                       const eckit::Configuration & conf)
   : oops::ObsSpaceBase(eckit::LocalConfiguration(), obsdb.comm_,
                        obsdb.windowStart(), obsdb.windowEnd()),
     key_(obsdb.key_), obsname_(obsdb.obsname_),
@@ -105,6 +104,7 @@ ObsSpaceQG::ObsSpaceQG(const ObsSpaceQG & obsdb,
     localobs_(), isLocal_(true), comm_(obsdb.comm_)
 {
   oops::Log::trace() << "ObsSpaceQG for LocalObs starting" << std::endl;
+  const double dist = conf.getDouble("lengthscale");
   F90locs key_locs;
   int iobs;
   // get number of obs

@@ -43,7 +43,7 @@ class ObsTableView : public util::Printable,
   ObsTableView(const eckit::Configuration &, const eckit::mpi::Comm &,
                const util::DateTime &, const util::DateTime &);
   ObsTableView(const ObsTableView &, const eckit::geometry::Point2 &,
-               const double &, const int &);
+               const eckit::Configuration &);
   ~ObsTableView();
 
   bool has(const std::string &) const;

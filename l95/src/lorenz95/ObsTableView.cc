@@ -35,10 +35,11 @@ ObsTableView::ObsTableView(const eckit::Configuration & config, const eckit::mpi
 
 ObsTableView::ObsTableView(const ObsTableView & obstable,
                            const eckit::geometry::Point2 & center,
-                           const double & dist, const int & maxnum)
+                           const eckit::Configuration & conf)
   :  obstable_(obstable.obstable_), localobs_(), obsdist_()
 {
   std::vector<double> locations = obstable.locations();
+  const double dist = conf.getDouble("lengthscale");
   oops::Log::debug() << "locations: " << locations << std::endl;
   for (unsigned int jj = 0; jj < obstable.nobs(); ++jj) {
     double curdist = std::abs(center[0] - locations[jj]);

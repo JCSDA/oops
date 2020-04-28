@@ -1,7 +1,3 @@
-ecbuild_add_executable( TARGET  l95_findlocalobs.x
-                        SOURCES FindLocalObs.cc
-                        LIBS    lorenz95 )
-
 ecbuild_add_executable( TARGET  l95_forecast.x
                         SOURCES Forecast.cc
                         LIBS    lorenz95 )

@@ -29,7 +29,6 @@
 #include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
-#include "oops/interface/Model.h"
 #include "oops/interface/State.h"
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Application.h"
@@ -55,7 +54,6 @@ template <typename MODEL> class LETKF : public Application {
   typedef GeometryIterator<MODEL>   GeometryIterator_;
   typedef Increment<MODEL>          Increment_;
   typedef IncrementEnsemble<MODEL>  IncrementEnsemble_;
-  typedef Model<MODEL>              Model_;
   typedef ObsEnsemble<MODEL>        ObsEnsemble_;
   typedef ObsErrors<MODEL>          ObsErrors_;
   typedef ObsSpaces<MODEL>          ObsSpaces_;
@@ -91,21 +89,18 @@ template <typename MODEL> class LETKF : public Application {
     const eckit::LocalConfiguration resolConfig(fullConfig, "Geometry");
     const Geometry_ resol(resolConfig, this->getComm());
 
-    // Setup model
-    const eckit::LocalConfiguration modelConfig(fullConfig, "Model");
-    const Model_ model(resol, modelConfig);
-
     // Setup observations
     const eckit::LocalConfiguration obsConfig(fullConfig, "Observations");
     Log::debug() << "Observation configuration is: " << obsConfig << std::endl;
     ObsSpaces_ obsdb(obsConfig, this->getComm(), winbgn, winend);
     Observations_ yobs(obsdb, "ObsValue");
 
-    // Get initial state configurations
-    const eckit::LocalConfiguration initialConfig(fullConfig, "Initial Condition");
+    // Get background configurations
+    const eckit::LocalConfiguration bgConfig(fullConfig, "Background");
+    const Variables statevars(bgConfig);
 
     // Loop over all ensemble members
-    StateEnsemble_ ens_xx(resol, model.variables(), initialConfig);
+    StateEnsemble_ ens_xx(resol, statevars, bgConfig);
     ObsEnsemble_ obsens(obsdb, ens_xx.size());
 
     // Initialize observer
@@ -133,7 +128,7 @@ template <typename MODEL> class LETKF : public Application {
     Log::test() << "Background mean :" << bkg_mean << std::endl;
 
     // calculate background ensemble perturbations
-    IncrementEnsemble_ bkg_pert(ens_xx, bkg_mean, model.variables());
+    IncrementEnsemble_ bkg_pert(ens_xx, bkg_mean, statevars);
 
     // TODO(Travis) optionally save the background mean / standard deviation
 
@@ -153,7 +148,7 @@ template <typename MODEL> class LETKF : public Application {
     Log::test() << "background y - H(x): " << std::endl << ombg << std::endl;
 
     // initialize empty analysis perturbations
-    IncrementEnsemble_ ana_pert(resol, model.variables(), ens_xx[0].validTimes(), bkg_pert.size());
+    IncrementEnsemble_ ana_pert(resol, statevars, ens_xx[0].validTimes(), bkg_pert.size());
 
     // get the LETKF parameters used here
     // make sure rtpp inflation is within range
@@ -165,16 +160,11 @@ template <typename MODEL> class LETKF : public Application {
       Log::info() << "RTPP inflation is not applied rtppCoeff is out of bounds (0,1], rtppCoeff="
                   << rtppCoeff << std::endl;
     }
-    // get localization parameters
-    const eckit::LocalConfiguration locConfig(fullConfig, "Localization");
-    double locDist = locConfig.getDouble("distance");
-    int locMaxNobs = locConfig.getInt("max_nobs");
-
     // run the LETKF solver at each gridpoint
     Log::info() << "Beginning core LETKF solver..." << std::endl;
     for (GeometryIterator_ i = resol.begin(); i != resol.end(); ++i) {
       // create the local subset of observations
-      ObsSpaces_ local_obs(obsdb, *i, locDist, locMaxNobs);
+      ObsSpaces_ local_obs(obsdb, *i, obsConfig);
       Departures_ local_ombg(local_obs, ombg);
       DeparturesEnsemble_ local_ens_Yb(local_obs, ens_Yb);
       // create local obs errors
