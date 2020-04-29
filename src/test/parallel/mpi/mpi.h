@@ -36,7 +36,7 @@ class TestParameters : public oops::Parameters {
 };
 
 CASE("parallel/mpi/mpi/allGathervUsingSerialize") {
-  const eckit::LocalConfiguration &conf = TestEnvironment::config();
+  const eckit::Configuration &conf = TestEnvironment::config();
   const eckit::mpi::Comm &comm = oops::mpi::comm();
 
   TestParameters localParams;
