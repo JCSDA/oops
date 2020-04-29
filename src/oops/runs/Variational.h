@@ -61,22 +61,13 @@ template <typename MODEL> class Variational : public Application {
   virtual ~Variational() {}
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
-//  Setup resolution
-    const eckit::LocalConfiguration resolConfig(fullConfig, "resolution");
-    const Geometry_ resol(resolConfig, this->getComm());
-
-//  Setup Model
-    const eckit::LocalConfiguration modelConfig(fullConfig, "model");
-    const Model_ model(resol, modelConfig);
-    Log::trace() << "Variational: model has been set up" << std::endl;
-
 /// The background is constructed inside the cost function because its valid
 /// time within the assimilation window can be different (3D-Var vs. 4D-Var),
 /// it can be 3D or 4D (strong vs weak constraint), etc...
 
 //  Setup cost function
     const eckit::LocalConfiguration cfConf(fullConfig, "cost_function");
-    std::unique_ptr< CostFunction<MODEL> > J(CostFactory<MODEL>::create(cfConf, resol, model));
+    std::unique_ptr<CostFunction<MODEL>> J(CostFactory<MODEL>::create(fullConfig, this->getComm()));
     Log::trace() << "Variational: cost function has been set up" << std::endl;
 
 //  Initialize first guess from background
@@ -87,9 +78,6 @@ template <typename MODEL> class Variational : public Application {
     int iouter = IncrementalAssimilation<MODEL>(xx, *J, fullConfig);
     Log::info() << "Variational: incremental assimilation done "
                 << iouter << " iterations." << std::endl;
-
-//  Save ObsAux
-    xx.obsVar().write(cfConf);
 
 //  Save analysis and final diagnostics
     PostProcessor<State_> post;
@@ -105,6 +93,9 @@ template <typename MODEL> class Variational : public Application {
     }
 
     J->evaluate(xx, finalConfig, post);
+
+//  Save ObsAux
+    xx.obsVar().write(cfConf);
 
     return 0;
   }

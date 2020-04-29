@@ -15,6 +15,7 @@
 #include <memory>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/mpi/Comm.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/CostJbJq.h"
 #include "oops/assimilation/CostJcDFI.h"
@@ -24,7 +25,6 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/StateInfo.h"
-#include "oops/base/VariableChangeBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -52,10 +52,9 @@ template<typename MODEL> class CostFctWeak : public CostFunction<MODEL> {
   typedef State<MODEL>               State_;
   typedef Model<MODEL>               Model_;
   typedef LinearVariableChangeBase<MODEL> LinVarCha_;
-  typedef VariableChangeBase<MODEL>       VarCha_;
 
  public:
-  CostFctWeak(const eckit::Configuration &, const Geometry_ &, const Model_ &);
+  CostFctWeak(const eckit::Configuration &, const eckit::mpi::Comm &);
   ~CostFctWeak() {}
 
   void runTLM(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
@@ -80,6 +79,7 @@ template<typename MODEL> class CostFctWeak : public CostFunction<MODEL> {
   void doLinearize(const Geometry_ &, const eckit::Configuration &,
                    const CtrlVar_ &, const CtrlVar_ &) override;
 
+  eckit::LocalConfiguration config_;
   util::Duration windowLength_;
   util::DateTime windowBegin_;
   util::DateTime windowEnd_;
@@ -87,7 +87,6 @@ template<typename MODEL> class CostFctWeak : public CostFunction<MODEL> {
   unsigned int nsubwin_;
   bool tlforcing_;
   const Variables ctlvars_;
-  std::unique_ptr<VarCha_> an2model_;
   std::unique_ptr<LinVarCha_> inc2model_;
 };
 
@@ -95,24 +94,23 @@ template<typename MODEL> class CostFctWeak : public CostFunction<MODEL> {
 
 template<typename MODEL>
 CostFctWeak<MODEL>::CostFctWeak(const eckit::Configuration & config,
-                                const Geometry_ & resol, const Model_ & model)
-  : CostFunction<MODEL>::CostFunction(config, resol, model),
-    tlforcing_(false), ctlvars_(config),
-    an2model_(VariableChangeFactory<MODEL>::create(config, resol)), inc2model_()
+                                const eckit::mpi::Comm & comm)
+  : CostFunction<MODEL>::CostFunction(config, comm), config_(config, "cost_function"),
+    tlforcing_(false), ctlvars_(config_), inc2model_()
 {
-  windowLength_ = util::Duration(config.getString("window_length"));
-  windowBegin_ = util::DateTime(config.getString("window_begin"));
+  windowLength_ = util::Duration(config_.getString("window_length"));
+  windowBegin_ = util::DateTime(config_.getString("window_begin"));
   windowEnd_ = windowBegin_ + windowLength_;
-  windowSub_ = util::Duration(config.getString("window_sub"));
+  windowSub_ = util::Duration(config_.getString("window_sub"));
 
   nsubwin_ = windowLength_.toSeconds() / windowSub_.toSeconds();
   ASSERT(windowLength_.toSeconds() == windowSub_.toSeconds()*nsubwin_);
 
-  if (config.has("tlforcing")) {
-    if (config.getString("tlforcing") == "on") tlforcing_ = true;
+  if (config_.has("tlforcing")) {
+    if (config_.getString("tlforcing") == "on") tlforcing_ = true;
   }
 
-  this->setupTerms(config);
+  this->setupTerms(config_);
   Log::trace() << "CostFctWeak constructed" << std::endl;
 }
 
@@ -154,9 +152,9 @@ void CostFctWeak<MODEL>::runNL(CtrlVar_ & xx,
     util::DateTime end(bgn + windowSub_);
 
     ASSERT(xx.state()[jsub].validTime() == bgn);
-    an2model_->changeVar(xx.state()[jsub], xm);
+    this->an2model(xx.state()[jsub], xm);
     CostFct_::getModel().forecast(xm, xx.modVar(), windowSub_, post);
-    an2model_->changeVarInverse(xm, xx.state()[jsub]);
+    this->model2an(xm, xx.state()[jsub]);
     ASSERT(xx.state()[jsub].validTime() == end);
   }
 }

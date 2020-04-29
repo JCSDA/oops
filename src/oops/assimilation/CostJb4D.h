@@ -24,7 +24,6 @@
 #include "oops/interface/Increment.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
-#include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
@@ -49,8 +48,7 @@ template<typename MODEL> class CostJb4D : public CostJbState<MODEL> {
 
  public:
 /// Construct \f$ J_b\f$.
-  CostJb4D(const eckit::Configuration &, const Geometry_ &, const Variables &,
-           const util::Duration &, const State4D_ &);
+  CostJb4D(const eckit::Configuration &, const Geometry_ &, const Variables &, const State4D_ &);
 
 /// Destructor
   virtual ~CostJb4D() {}
@@ -101,7 +99,7 @@ template<typename MODEL> class CostJb4D : public CostJbState<MODEL> {
 
 template<typename MODEL>
 CostJb4D<MODEL>::CostJb4D(const eckit::Configuration & config, const Geometry_ &,
-                          const Variables & ctlvars, const util::Duration &, const State4D_ & xb)
+                          const Variables & ctlvars, const State4D_ & xb)
   : xb_(xb), B_(), ctlvars_(ctlvars), resol_(), times_(), conf_(config, "Covariance")
 {
   Log::trace() << "CostJb4D contructed." << std::endl;

@@ -19,6 +19,7 @@
 #include <boost/ptr_container/ptr_vector.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/mpi/Comm.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/ControlVariable.h"
 #include "oops/assimilation/CostJbState.h"
@@ -31,6 +32,7 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/TrajectorySaver.h"
+#include "oops/base/VariableChangeBase.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/LinearModel.h"
@@ -65,9 +67,10 @@ template<typename MODEL> class CostFunction : private boost::noncopyable {
   typedef LinearModel<MODEL>         LinearModel_;
   typedef State<MODEL>               State_;
   typedef Increment<MODEL>           Increment_;
+  typedef VariableChangeBase<MODEL>  VarCha_;
 
  public:
-  CostFunction(const eckit::Configuration &, const Geometry_ &, const Model_ &);
+  CostFunction(const eckit::Configuration &, const eckit::mpi::Comm &);
   virtual ~CostFunction() {}
 
   double evaluate(const CtrlVar_ &,
@@ -104,9 +107,11 @@ template<typename MODEL> class CostFunction : private boost::noncopyable {
  protected:
   void setupTerms(const eckit::Configuration &);
   void setupTerms(const eckit::Configuration &, const State_ &);
-  const Model_ & getModel() const {return model_;}
+  const Model_ & getModel() const {return *model_;}
   const LinearModel_ & getTLM(const unsigned isub = 0) const {return tlm_[isub];}
   const eckit::mpi::Comm & getComm() const {return resol_.getComm();}
+  void an2model(const State_ & xa, State_ & xm) const {an2model_->changeVar(xa, xm);}
+  void model2an(const State_ & xm, State_ & xa) const {an2model_->changeVarInverse(xm, xa);}
 
  private:
   virtual void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_>&) const = 0;
@@ -119,12 +124,13 @@ template<typename MODEL> class CostFunction : private boost::noncopyable {
                            const CtrlVar_ &, const CtrlVar_ &) = 0;
 
 // Data members
-  const Geometry_ & resol_;
-  const Model_ & model_;
+  const Geometry_ resol_;
+  std::unique_ptr<Model_> model_;
   std::unique_ptr<const CtrlVar_> xb_;
   std::unique_ptr<JbTotal_> jb_;
   boost::ptr_vector<CostBase_> jterms_;
   boost::ptr_vector<LinearModel_> tlm_;
+  std::unique_ptr<VarCha_> an2model_;
 
   mutable double costJb_;
   mutable double costJoJc_;
@@ -136,18 +142,14 @@ template<typename MODEL> class CostFunction : private boost::noncopyable {
 /// Cost Function Factory
 template <typename MODEL>
 class CostFactory {
-  typedef Geometry<MODEL>            Geometry_;
-  typedef Model<MODEL>               Model_;
  public:
-  static CostFunction<MODEL> * create(const eckit::Configuration &,
-                                      const Geometry_ &, const Model_ &);
+  static CostFunction<MODEL> * create(const eckit::Configuration &, const eckit::mpi::Comm &);
   virtual ~CostFactory() = default;
 
  protected:
   explicit CostFactory(const std::string &);
  private:
-  virtual CostFunction<MODEL> * make(const eckit::Configuration &,
-                                     const Geometry_ &, const Model_ &) = 0;
+  virtual CostFunction<MODEL> * make(const eckit::Configuration &, const eckit::mpi::Comm &) = 0;
   static std::map < std::string, CostFactory<MODEL> * > & getMakers() {
     static std::map < std::string, CostFactory<MODEL> * > makers_;
     return makers_;
@@ -156,12 +158,10 @@ class CostFactory {
 
 template<class MODEL, class FCT>
 class CostMaker : public CostFactory<MODEL> {
-  typedef Geometry<MODEL>            Geometry_;
-  typedef Model<MODEL>               Model_;
  private:
   CostFunction<MODEL> * make(const eckit::Configuration & config,
-                             const Geometry_ & resol, const Model_ & model) override
-    {return new FCT(config, resol, model);}
+                             const eckit::mpi::Comm & comm) override
+    {return new FCT(config, comm);}
  public:
   explicit CostMaker(const std::string & name) : CostFactory<MODEL>(name) {}
 };
@@ -184,8 +184,8 @@ CostFactory<MODEL>::CostFactory(const std::string & name) {
 
 template <typename MODEL>
 CostFunction<MODEL>* CostFactory<MODEL>::create(const eckit::Configuration & config,
-                                                const Geometry_ & resol, const Model_ & model) {
-  std::string id = config.getString("cost_type");
+                                                const eckit::mpi::Comm & comm) {
+  std::string id = config.getString("cost_function.cost_type");
   Log::trace() << "Variational Assimilation Type=" << id << std::endl;
   typename std::map<std::string, CostFactory<MODEL>*>::iterator j = getMakers().find(id);
   if (j == getMakers().end()) {
@@ -193,7 +193,7 @@ CostFunction<MODEL>* CostFactory<MODEL>::create(const eckit::Configuration & con
     ABORT("Element does not exist in CostFactory.");
   }
   Log::trace() << "CostFactory::create found cost function type" << std::endl;
-  return (*j).second->make(config, resol, model);
+  return (*j).second->make(config, comm);
 }
 
 // -----------------------------------------------------------------------------
@@ -202,9 +202,21 @@ CostFunction<MODEL>* CostFactory<MODEL>::create(const eckit::Configuration & con
 
 template<typename MODEL>
 CostFunction<MODEL>::CostFunction(const eckit::Configuration & config,
-                                  const Geometry_ & resol, const Model_ & model)
-  : resol_(resol), model_(model), jb_(), jterms_(), tlm_(), anvars_(config)
+                                  const eckit::mpi::Comm & comm)
+  : resol_(eckit::LocalConfiguration(config, "resolution"), comm),
+    model_(), jb_(), jterms_(), tlm_(), an2model_(),
+    anvars_(eckit::LocalConfiguration(config, "cost_function"))
 {
+  Log::info() << "CostFunction: analysis variables: " << anvars_ << std::endl;
+
+// Setup Model
+  const eckit::LocalConfiguration modelConfig(config, "model");
+  model_.reset(new Model_(resol_, modelConfig));
+  Log::info() << "CostFunction: model variables: " << model_->variables() << std::endl;
+
+  const eckit::LocalConfiguration conf(config, "cost_function");
+  an2model_.reset(VariableChangeFactory<MODEL>::create(conf , resol_));
+
   Log::trace() << "CostFunction:created" << std::endl;
 }
 
