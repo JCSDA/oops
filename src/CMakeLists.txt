@@ -300,6 +300,8 @@ oops/util/parameters/RequiredParameter.h
 test/TestEnvironment.h
 test/TestFixture.h
 
+test/base/ObsErrorCovariance.h
+
 test/interface/ErrorCovariance.h
 test/interface/Geometry.h
 test/interface/GeometryIterator.h
