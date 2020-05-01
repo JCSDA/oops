@@ -15,6 +15,12 @@ phases:
       - echo $CODEBUILD_WEBHOOK_EVENT
       - echo $CODEBUILD_RESOLVED_SOURCE_VERSION
 
+      - pwd
+      - ls
+      - git rev-parse --abbrev-ref HEAD
+      - push_branch="$(git rev-parse --abbrev-ref HEAD)"
+      - echo $push_branch
+
       - if [ "$CODEBUILD_WEBHOOK_EVENT" = "PULL_REQUEST_MERGED" ];
         then export CODEBUILD_GIT_BRANCH="develop";
         echo "Merging to develop";
@@ -74,7 +80,7 @@ phases:
       - ls
       - ecbuild /jcsda/oops-bundle/
       - cd oops
-      - make
+      - make -j4
 
       - export BUILD_STATUS="0"
       - echo $BUILD_STATUS
@@ -87,8 +93,8 @@ phases:
       - echo $BUILD_STATUS
 
       - cd /build_container/oops 
-      - ctest 
-
+      - ctest
+  
   post_build:
     commands:
       - echo Executing post_build phase

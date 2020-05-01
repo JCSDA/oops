@@ -86,6 +86,7 @@ list( APPEND l95_testoutput
   testoutput/makeobs4d12h.test
   testoutput/makeobsbias.test
   testoutput/truth.test
+  testoutput/CTestCostData.txt.test
 )
 
 
@@ -746,5 +747,4 @@ oops_add_test( TESTNAME letkf
                EXENAME l95_letkf.x
                COMPARE
                TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
-
 

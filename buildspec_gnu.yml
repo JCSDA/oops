@@ -103,7 +103,7 @@ phases:
         && export CXX=mpicxx
         && ecbuild /jcsda/oops-bundle/
         && cd oops
-        && make"
+        && make -j4"
 
       - export BUILD_STATUS="0"
       - echo $BUILD_STATUS
@@ -121,8 +121,8 @@ phases:
         && export CC=mpicc
         && export CXX=mpicxx
         && cd oops
-        && ctest" 
-
+        && ctest"
+ 
   post_build:
     commands:
       - echo Executing post_build phase

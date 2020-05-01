@@ -4,6 +4,7 @@ list( APPEND oops_tool_files
   compare.sh
   compare.py
   cpplint.py
+  run_time_test.py
   test_wrapper.sh
 )
 
