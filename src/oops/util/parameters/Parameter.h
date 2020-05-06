@@ -8,10 +8,12 @@
 #ifndef OOPS_UTIL_PARAMETERS_PARAMETER_H_
 #define OOPS_UTIL_PARAMETERS_PARAMETER_H_
 
+#include <set>
 #include <string>
 
 #include "eckit/config/Configuration.h"
 #include "oops/util/parameters/ParameterBase.h"
+#include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/ParameterTraits.h"
 
 namespace oops {
@@ -31,10 +33,11 @@ class Parameter : public ParameterBase {
     : ParameterBase(parent), name_(name), value_(defaultValue)
   {}
 
-  void deserialize(const eckit::Configuration &config) override {
+  void deserialize(const eckit::Configuration &config, std::set<std::string> &usedKeys) override {
     boost::optional<T> newValue = ParameterTraits<T>::get(config, name_);
     if (newValue != boost::none) {
       value_ = newValue.get();
+      usedKeys.insert(name_);
     }
   }
 

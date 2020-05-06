@@ -8,6 +8,7 @@
 #ifndef OOPS_UTIL_PARAMETERS_REQUIREDPARAMETER_H_
 #define OOPS_UTIL_PARAMETERS_REQUIREDPARAMETER_H_
 
+#include <set>
 #include <string>
 
 #include <boost/optional.hpp>
@@ -26,15 +27,13 @@ class RequiredParameter : public ParameterBase {
     : ParameterBase(parent), name_(name)
   {}
 
-  /// \brief Load the parameter's value from \p config.
-  ///
-  /// An exception is thrown if \p config does not contain a key matching the parameter's name.
-  void deserialize(const eckit::Configuration &config) override {
+  void deserialize(const eckit::Configuration &config, std::set<std::string> &usedKeys) override {
     boost::optional<T> newValue = ParameterTraits<T>::get(config, name_);
     if (newValue == boost::none) {
       throw eckit::BadParameter("Mandatory parameter '" + name_ + "' not found", Here());
     }
     value_ = newValue;
+    usedKeys.insert(name_);
   }
 
   /// \brief Returns the stored value.

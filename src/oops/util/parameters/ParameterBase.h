@@ -8,6 +8,9 @@
 #ifndef OOPS_UTIL_PARAMETERS_PARAMETERBASE_H_
 #define OOPS_UTIL_PARAMETERS_PARAMETERBASE_H_
 
+#include <set>
+#include <string>
+
 namespace eckit {
   class Configuration;
 }
@@ -24,8 +27,10 @@ class ParameterBase {
 
   virtual ~ParameterBase() {}
 
-  /// \brief Load the parameter's value from \p config, if present.
-  virtual void deserialize(const eckit::Configuration &config) = 0;
+  /// \brief Load the parameter's value from \p config , if present.
+  ///
+  /// Names of any keys in \p config accessed during deserialization are added to \p usedKeys.
+  virtual void deserialize(const eckit::Configuration &config, std::set<std::string> &usedKeys) = 0;
 };
 
 }  // namespace oops

@@ -8,6 +8,7 @@
 #ifndef OOPS_UTIL_PARAMETERS_OPTIONALPARAMETER_H_
 #define OOPS_UTIL_PARAMETERS_OPTIONALPARAMETER_H_
 
+#include <set>
 #include <string>
 
 #include <boost/optional.hpp>
@@ -29,10 +30,11 @@ class OptionalParameter : public ParameterBase {
     : ParameterBase(parent), name_(name)
   {}
 
-  void deserialize(const eckit::Configuration &config) override {
+  void deserialize(const eckit::Configuration &config, std::set<std::string> &usedKeys) override {
     boost::optional<T> newValue = ParameterTraits<T>::get(config, name_);
     if (newValue != boost::none) {
       value_ = newValue;
+      usedKeys.insert(name_);
     }
   }
 

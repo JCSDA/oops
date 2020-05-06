@@ -9,6 +9,7 @@
 #define OOPS_UTIL_PARAMETERS_PARAMETERTRAITS_H_
 
 #include <map>
+#include <set>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -28,12 +29,12 @@ namespace oops {
 /// \brief Traits dictating how parameters of type T are extracted from eckit::Configuration
 /// objects.
 template <typename T,
-          typename IsTDerivedFromParameterBase =
+          typename IsTDerivedFromParameters =
           typename std::integral_constant<bool,
-                                          std::is_convertible<T*, ParameterBase*>::value>::type>
+                                          std::is_convertible<T*, Parameters*>::value>::type>
 struct ParameterTraits;
 
-/// \brief Generic implementation for types not derived from ParameterBase.
+/// \brief Generic implementation for types not derived from Parameters.
 template <typename T>
 struct ParameterTraits<T, std::false_type>
 {
@@ -53,12 +54,11 @@ struct ParameterTraits<T, std::false_type>
   }
 };
 
-/// \brief Specialization for types derived from ParameterBase.
+/// \brief Specialization for types derived from Parameters.
 template <typename T>
 struct ParameterTraits<T, std::true_type>
 {
-  static boost::optional<T> get(const eckit::Configuration &config,
-                                const std::string& name) {
+  static boost::optional<T> get(const eckit::Configuration &config, const std::string& name) {
     if (config.has(name)) {
       T value;
       value.deserialize(config.getSubConfiguration(name));

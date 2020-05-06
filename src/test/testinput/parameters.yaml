@@ -1,6 +1,10 @@
 minimal:
   req_float_parameter: 3
   req_duration_parameter: PT1H
+manual_registration:
+  req_float_parameter: 3
+  req_duration_parameter: PT1H
+  req_duration_parameter_manually_registered: PT1H
 full:
   float_parameter: 3.5
   int_parameter: 4
@@ -20,6 +24,34 @@ full:
       max: 10
     - min: 11
       max: 12
+misspelled_float:
+  float_parometer: 3.5
+misspelled_int:
+  int_parometer: 4
+misspelled_bool:
+  bool_parometer: false
+misspelled_dt:
+  opt_date_time_parometer: 2010-02-03T04:05:06Z
+misspelled_dur:
+  opt_duration_parometer: PT01H02M03S
+misspelled_fruit:
+  fruit_parometer: apple
+misspelled_ints:
+  int_parometers: [1, 2]
+misspelled_nested_param:
+  range_parameter:
+    min: 7
+    mox: 8.5
+misspelled_nested_params:
+  range_parameters:
+    - mon: 9
+      max: 10
+    - min: 11
+      max: 12
+misspelled_nesting_param:
+  ronge_parameter:
+    min: 7
+    max: 8.5
 error_in_float_parameter:
   float_parameter: ABCDEF
   req_float_parameter: 3
