@@ -252,7 +252,7 @@ ecbuild_add_test( TARGET test_l95_geometry
                   SOURCES executables/TestGeometry.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth_run )
+                  TEST_DEPENDS test_l95_truth )
 
 #--------------------------------------------------------------------
 
@@ -260,7 +260,7 @@ ecbuild_add_test( TARGET test_l95_geometry_iterator
                   SOURCES executables/TestGeometryIterator.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth_run )
+                  TEST_DEPENDS test_l95_truth )
 
 #--------------------------------------------------------------------
 
@@ -268,7 +268,7 @@ ecbuild_add_test( TARGET test_l95_geovals
                   SOURCES executables/TestGeoVaLs.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth_run )
+                  TEST_DEPENDS test_l95_truth )
 
 #--------------------------------------------------------------------
 
@@ -276,7 +276,7 @@ ecbuild_add_test( TARGET test_l95_state
                   SOURCES executables/TestState.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth_run )
+                  TEST_DEPENDS test_l95_truth )
 
 #--------------------------------------------------------------------
 
@@ -284,7 +284,7 @@ ecbuild_add_test( TARGET test_l95_modelaux
                   SOURCES executables/TestModelAuxControl.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth_run )
+                  TEST_DEPENDS test_l95_truth )
 
 #--------------------------------------------------------------------
 
@@ -292,7 +292,7 @@ ecbuild_add_test( TARGET test_l95_model
                   SOURCES executables/TestModel.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth_run )
+                  TEST_DEPENDS test_l95_truth )
 
 #--------------------------------------------------------------------
 
@@ -300,7 +300,7 @@ ecbuild_add_test( TARGET test_l95_increment
                   SOURCES executables/TestIncrement.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth_run )
+                  TEST_DEPENDS test_l95_truth )
 
 #--------------------------------------------------------------------
 
@@ -308,7 +308,7 @@ ecbuild_add_test( TARGET test_l95_errorcovariance
                   SOURCES executables/TestErrorCovariance.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth_run )
+                  TEST_DEPENDS test_l95_truth )
 
 #--------------------------------------------------------------------
 
@@ -316,7 +316,7 @@ ecbuild_add_test( TARGET test_l95_modelauxincrement
                   SOURCES executables/TestModelAuxIncrement.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth_run )
+                  TEST_DEPENDS test_l95_truth )
 
 #--------------------------------------------------------------------
 
@@ -324,7 +324,7 @@ ecbuild_add_test( TARGET test_l95_modelauxcovariance
                   SOURCES executables/TestModelAuxCovariance.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth_run )
+                  TEST_DEPENDS test_l95_truth )
 
 #--------------------------------------------------------------------
 
@@ -332,7 +332,7 @@ ecbuild_add_test( TARGET test_l95_linearmodel
                   SOURCES executables/TestLinearModel.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth_run )
+                  TEST_DEPENDS test_l95_truth )
 
 #--------------------------------------------------------------------
 
@@ -340,7 +340,7 @@ ecbuild_add_test( TARGET test_l95_obsspace
                   SOURCES executables/TestObsSpace.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth_run )
+                  TEST_DEPENDS test_l95_truth )
 
 #--------------------------------------------------------------------
 
@@ -348,7 +348,7 @@ ecbuild_add_test( TARGET test_l95_localobsspace
                   SOURCES executables/TestLocalObsSpace.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth_run )
+                  TEST_DEPENDS test_l95_truth )
 
 #--------------------------------------------------------------------
 
@@ -356,7 +356,7 @@ ecbuild_add_test( TARGET test_l95_obsvector
                   SOURCES executables/TestObsVector.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth_run )
+                  TEST_DEPENDS test_l95_truth )
 
 #--------------------------------------------------------------------
 
@@ -364,7 +364,7 @@ ecbuild_add_test( TARGET test_l95_obsoperator
                   SOURCES executables/TestObsOperator.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth_run )
+                  TEST_DEPENDS test_l95_truth )
 
 #--------------------------------------------------------------------
 
@@ -372,7 +372,7 @@ ecbuild_add_test( TARGET test_l95_linobsoperator
                   SOURCES executables/TestLinearObsOperator.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth_run )
+                  TEST_DEPENDS test_l95_truth )
 
 #--------------------------------------------------------------------
 
@@ -380,7 +380,7 @@ ecbuild_add_test( TARGET test_l95_obserrorcovar
                   SOURCES executables/TestObsErrorCovariance.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth_run )
+                  TEST_DEPENDS test_l95_truth )
 
 #--------------------------------------------------------------------
 
@@ -388,7 +388,7 @@ ecbuild_add_test( TARGET test_l95_obsaux
                   SOURCES executables/TestObsAuxControl.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth_run )
+                  TEST_DEPENDS test_l95_truth )
 
 #--------------------------------------------------------------------
 
@@ -396,7 +396,7 @@ ecbuild_add_test( TARGET test_l95_obsauxcovariance
                   SOURCES executables/TestObsAuxCovariance.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth_run )
+                  TEST_DEPENDS test_l95_truth )
 
 #--------------------------------------------------------------------
 
@@ -404,7 +404,7 @@ ecbuild_add_test( TARGET test_l95_obsauxincrement
                   SOURCES executables/TestObsAuxIncrement.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth_run )
+                  TEST_DEPENDS test_l95_truth )
 
 #--------------------------------------------------------------------
 
@@ -412,7 +412,7 @@ ecbuild_add_test( TARGET test_l95_localization
                   SOURCES executables/TestLocalization.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth_run )
+                  TEST_DEPENDS test_l95_truth )
 
 #####################################################################
 # forecast-related tests
@@ -492,18 +492,12 @@ oops_add_test( TESTNAME genenspert
 
 #--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_l95_enshofx_run
+ecbuild_add_test( TARGET test_l95_enshofx
                   MPI 10
                   COMMAND ${CMAKE_BINARY_DIR}/bin/l95_enshofx.x
                   ARGS testinput/enshofx.yaml testoutput/enshofx.log.out
                   DEPENDS l95_enshofx.x
-                  TEST_DEPENDS test_l95_genenspert_run test_l95_makeobs4d_run )
-
-#ecbuild_add_test( TARGET test_l95_enshofx_compare
-#                  TYPE SCRIPT
-#                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
-#                  ARGS testoutput/enshofx.log.out testoutput/enshofx.test
-#                  TEST_DEPENDS test_l95_enshofx_run )
+                  TEST_DEPENDS test_l95_genenspert test_l95_makeobs4d )
 
 #####################################################################
 # 3d variational tests
@@ -710,21 +704,21 @@ ecbuild_add_test( TARGET test_l95_eda_3dfgat
                   COMMAND ${CMAKE_BINARY_DIR}/bin/l95_eda.x
                   ARGS testinput/eda.3dfgat.yaml
                   DEPENDS l95_eda.x
-                  TEST_DEPENDS test_l95_forecast_run  test_l95_makeobs4d_run )
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
 ecbuild_add_test( TARGET test_l95_eda_3dvar
                   MPI 4
                   COMMAND ${CMAKE_BINARY_DIR}/bin/l95_eda.x
                   ARGS testinput/eda.3dvar.yaml
                   DEPENDS l95_eda.x
-                  TEST_DEPENDS test_l95_forecast_run  test_l95_makeobs4d_run )
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
 ecbuild_add_test( TARGET test_l95_eda_4dvar_member3
                   MPI 1
                   COMMAND ${CMAKE_BINARY_DIR}/bin/l95_eda.x
                   ARGS testinput/eda.4dvar.member3.yaml
                   DEPENDS l95_eda.x
-                  TEST_DEPENDS test_l95_forecast_run  test_l95_makeobs4d_run )
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 #####################################################################
 # state-related tests
