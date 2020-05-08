@@ -13,15 +13,10 @@ runfile=$4
 reffile=$5
 ftol=$6
 idif=$7
-nmpi=$8
+mpicmd=$8
 
 # Run Test
-if [[ ${nmpi} -gt 0 ]]; then
-    cmd="${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${nmpi} ${exename} ${yamlname} testoutput/${runfile}"
-else
-    cmd="${exename} ${yamlname} testoutput/${runfile}"
-fi
-
+cmd="${mpicmd} ${exename} ${yamlname} testoutput/${runfile}"
 echo ${cmd}
 eval ${cmd}
 
