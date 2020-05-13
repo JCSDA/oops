@@ -20,7 +20,7 @@
 #include "oops/assimilation/State4D.h"
 #include "oops/base/IdentityMatrix.h"
 #include "oops/base/IncrementEnsemble.h"
-#include "oops/base/Localization.h"
+#include "oops/base/LocalizationBase.h"
 #include "oops/base/ModelSpaceCovariance4DBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
@@ -38,7 +38,7 @@ class EnsembleCovariance4D : public ModelSpaceCovariance4DBase<MODEL> {
   typedef Geometry<MODEL>                           Geometry_;
   typedef Increment<MODEL>                          Increment_;
   typedef Increment4D<MODEL>                        Increment4D_;
-  typedef Localization<MODEL>                       Localization_;
+  typedef LocalizationBase<MODEL>                   Localization_;
   typedef State4D<MODEL>                            State4D_;
   typedef IncrementEnsemble<MODEL>                  Ensemble_;
   typedef std::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
@@ -71,7 +71,7 @@ EnsembleCovariance4D<MODEL>::EnsembleCovariance4D(const Geometry_ & resol, const
   ens_.reset(new Ensemble_(conf, xb, fg, resol));
   if (conf.has("localization")) {
     const eckit::LocalConfiguration confloc(conf, "localization");
-    loc_.reset(new Localization_(resol, ens_, confloc));
+    loc_ = LocalizationFactory<MODEL>::create(resol, ens_, confloc);
   }
   Log::trace() << "EnsembleCovariance4D::EnsembleCovariance4D done" << std::endl;
 }

@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2020-2020 UCAR
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -46,10 +47,6 @@ LocalizationMatrixL95::LocalizationMatrixL95(const Resolution & resol,
     coefs_[jj] = std::real(four[jj]);
   }
 }
-
-// -----------------------------------------------------------------------------
-
-LocalizationMatrixL95::~LocalizationMatrixL95() {}
 
 // -----------------------------------------------------------------------------
 

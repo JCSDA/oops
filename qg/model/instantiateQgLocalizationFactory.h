@@ -13,12 +13,13 @@
 
 #include "model/LocalizationMatrixQG.h"
 #include "model/QgTraits.h"
-#include "oops/interface/LocalizationBase.h"
+#include "oops/interface/Localization.h"
 
 namespace qg {
 
 void instantiateQgLocalizationFactory() {
-  static oops::LocalizationMaker<qg::QgTraits, LocalizationMatrixQG> makerQG_("QG");
+  static oops::LocalizationMaker<qg::QgTraits,
+               oops::Localization<qg::QgTraits, LocalizationMatrixQG> > makerQG_("QG");
 }
 
 }  // namespace qg

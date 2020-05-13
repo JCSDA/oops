@@ -45,7 +45,7 @@ template <typename MODEL> class Dirac : public Application {
   typedef Increment4D<MODEL>                        Increment4D_;
   typedef State<MODEL>                              State_;
   typedef State4D<MODEL>                            State4D_;
-  typedef Localization<MODEL>                       Localization_;
+  typedef LocalizationBase<MODEL>                   Localization_;
   typedef IncrementEnsemble<MODEL>                  Ensemble_;
   typedef std::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
 
@@ -144,8 +144,8 @@ template <typename MODEL> class Dirac : public Application {
         dxdir.dirac(diracConfig);
 
         //  Setup localization
-        std::unique_ptr<Localization_> loc_;
-        loc_.reset(new Localization_(resol, ens, locConfig));
+        std::unique_ptr<Localization_> loc_ =
+                LocalizationFactory<MODEL>::create(resol, ens, locConfig);
 
         //  Apply localization
         loc_->multiply(dxdir);
@@ -162,8 +162,8 @@ template <typename MODEL> class Dirac : public Application {
         dxdir.dirac(diracConfigs);
 
         //  Setup localization
-        std::unique_ptr<Localization_> loc_;
-        loc_.reset(new Localization_(resol, ens, locConfig));
+        std::unique_ptr<Localization_> loc_ =
+                    LocalizationFactory<MODEL>::create(resol, ens, locConfig);
 
         //  Apply localization
         loc_->multiply(dxdir);

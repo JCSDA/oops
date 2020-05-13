@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2020-2020 UCAR
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -16,8 +17,8 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
-#include "oops/interface/LocalizationBase.h"
 #include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
 
 #include "model/GeometryQG.h"
 #include "model/QgFortran.h"
@@ -31,7 +32,7 @@ namespace qg {
 /// Localization matrix for QG model.
 
 // -----------------------------------------------------------------------------
-class LocalizationMatrixQG: public oops::LocalizationBase<QgTraits>,
+class LocalizationMatrixQG: public util::Printable,
                             private util::ObjectCounter<LocalizationMatrixQG> {
  public:
   static const std::string classname() {return "qg::LocalizationMatrixQG";}
@@ -42,7 +43,7 @@ class LocalizationMatrixQG: public oops::LocalizationBase<QgTraits>,
   void multiply(IncrementQG &) const;
 
  private:
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
   F90lclz keyLocal_;
 };
 // -----------------------------------------------------------------------------

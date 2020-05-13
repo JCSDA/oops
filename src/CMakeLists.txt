@@ -95,7 +95,7 @@ oops/base/instantiateCovarFactory.h
 oops/base/instantiateObsFilterFactory.h
 oops/base/LinearModelBase.h
 oops/base/LinearVariableChangeBase.h
-oops/base/Localization.h
+oops/base/LocalizationBase.h
 oops/base/ModelBase.h
 oops/base/ModelSpaceCovariance4DBase.h
 oops/base/ModelSpaceCovarianceBase.h
@@ -152,7 +152,7 @@ oops/generic/instantiateObsErrorFactory.h
 oops/generic/instantiateTlmFactory.h
 oops/generic/instantiateVariableChangeFactory.h
 oops/generic/LinearModelId.h
-oops/generic/LocalizationGeneric.h
+oops/generic/LocalizationID.h
 oops/generic/LocalObsErrorDiag.h
 oops/generic/ObsErrorDiag.h
 oops/generic/PseudoModel.h
@@ -172,7 +172,7 @@ oops/interface/LinearGetValues.h
 oops/interface/LinearModel.h
 oops/interface/LinearObsOperator.h
 oops/interface/LinearVariableChange.h
-oops/interface/LocalizationBase.h
+oops/interface/Localization.h
 oops/interface/Locations.h
 oops/interface/Model.h
 oops/interface/ModelAuxControl.h

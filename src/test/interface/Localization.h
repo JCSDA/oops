@@ -24,7 +24,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "oops/base/IncrementEnsemble.h"
-#include "oops/base/Localization.h"
+#include "oops/base/LocalizationBase.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/instantiateLocalizationFactory.h"
 #include "oops/interface/Geometry.h"
@@ -39,7 +39,7 @@ namespace test {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL> class LocalizationFixture : private boost::noncopyable {
-  typedef oops::Localization<MODEL>                     Localization_;
+  typedef oops::LocalizationBase<MODEL>                 Localization_;
   typedef oops::Geometry<MODEL>                         Geometry_;
   typedef oops::IncrementEnsemble<MODEL>                Ensemble_;
   typedef boost::shared_ptr<oops::IncrementEnsemble<MODEL>> EnsemblePtr_;
@@ -68,7 +68,7 @@ template <typename MODEL> class LocalizationFixture : private boost::noncopyable
 //  Setup the localization matrix
     oops::instantiateLocalizationFactory<MODEL>();
     const eckit::LocalConfiguration conf(TestEnvironment::config(), "Localization");
-    local_.reset(new Localization_(*resol_, NULL, conf));
+    local_ = oops::LocalizationFactory<MODEL>::create(*resol_, NULL, conf);
   }
 
   ~LocalizationFixture<MODEL>() {}
