@@ -53,8 +53,8 @@ void ObsOperatorTLAD::simulateObsAD(GomQG & gvals, const ObsVecQG & yy,
 
 // -----------------------------------------------------------------------------
 
-const oops::Variables & ObsOperatorTLAD::variables() const {
-  return oper_->variables();
+const oops::Variables & ObsOperatorTLAD::requiredVars() const {
+  return oper_->requiredVars();
 }
 
 // -----------------------------------------------------------------------------

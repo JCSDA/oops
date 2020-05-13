@@ -48,7 +48,7 @@ class ObsStreamTLAD : public ObsOpBaseTLAD,
   void simulateObsAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &) const override;
 
 // Other
-  const oops::Variables & variables() const override {return varin_;}
+  const oops::Variables & requiredVars() const override {return varin_;}
 
   int & toFortran() {return keyOperStrm_;}
   const int & toFortran() const {return keyOperStrm_;}

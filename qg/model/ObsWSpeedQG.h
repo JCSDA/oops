@@ -49,7 +49,7 @@ class ObsWSpeedQG : public ObsOpBaseQG,
   void simulateObs(const GomQG &, ObsVecQG &, const ObsBias &) const override;
 
 // Other
-  const oops::Variables & variables() const override {return varin_;}
+  const oops::Variables & requiredVars() const override {return varin_;}
   LocationsQG * locations(const util::DateTime &, const util::DateTime &) const override;
 
   int & toFortran() {return keyOperWspeed_;}

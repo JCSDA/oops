@@ -48,7 +48,7 @@ class ObsWindTLAD : public ObsOpBaseTLAD,
   void simulateObsAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &) const override;
 
 // Other
-  const oops::Variables & variables() const override {return varin_;}
+  const oops::Variables & requiredVars() const override {return varin_;}
 
   int & toFortran() {return keyOperWind_;}
   const int & toFortran() const {return keyOperWind_;}

@@ -57,7 +57,7 @@ class ObsOperator : public util::Printable,
   const ObsOperator_ & obsoperator() const {return *oper_;}
 
 /// Other
-  const Variables & variables() const;  // Required input variables from Model
+  const Variables & requiredVars() const;  // Required input variables from Model
   Locations_ locations(const util::DateTime &, const util::DateTime &) const;
 
  private:
@@ -100,10 +100,10 @@ void ObsOperator<MODEL>::simulateObs(const GeoVaLs_ & gvals, ObsVector_ & yy,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-const Variables & ObsOperator<MODEL>::variables() const {
-  Log::trace() << "ObsOperator<MODEL>::variables starting" << std::endl;
-  util::Timer timer(classname(), "variables");
-  return oper_->variables();
+const Variables & ObsOperator<MODEL>::requiredVars() const {
+  Log::trace() << "ObsOperator<MODEL>::requiredVars starting" << std::endl;
+  util::Timer timer(classname(), "requiredVars");
+  return oper_->requiredVars();
 }
 
 // -----------------------------------------------------------------------------

@@ -55,7 +55,7 @@ class ObservationTLAD : public util::Printable,
   void simulateObsAD(GomL95 &, const ObsVec1D &, ObsBiasCorrection &) const;
 
 // Other
-  const oops::Variables & variables() const {return inputs_;}
+  const oops::Variables & requiredVars() const {return inputs_;}
 
  private:
   void print(std::ostream &) const;

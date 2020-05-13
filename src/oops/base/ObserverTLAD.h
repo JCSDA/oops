@@ -94,8 +94,8 @@ ObserverTLAD<MODEL>::ObserverTLAD(const eckit::Configuration & config,
     hoptlad_(obsdb, eckit::LocalConfiguration(config, "LinearObsOperator")),
     ybias_(ybias), geovars_(), lingetvals_(), gvals_()
 {
-  geovars_ += hop_.variables();
-  geovars_ += ybias_.requiredGeoVaLs();
+  geovars_ += hop_.requiredVars();
+  geovars_ += ybias_.requiredVars();
   Log::trace() << "ObserverTLAD::ObserverTLAD" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -137,7 +137,7 @@ template <typename MODEL>
 void ObserverTLAD<MODEL>::doInitializeTL(const Increment_ & dx,
                    const util::DateTime & begin, const util::DateTime & end) {
   Log::trace() << "ObserverTLAD::doInitializeTL start" << std::endl;
-  gvals_.reset(new GeoVaLs_(hop_.locations(begin, end), hoptlad_.variables()));
+  gvals_.reset(new GeoVaLs_(hop_.locations(begin, end), hoptlad_.requiredVars()));
   Log::trace() << "ObserverTLAD::doInitializeTL done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -165,7 +165,7 @@ void ObserverTLAD<MODEL>::doFirstAD(Increment_ & dx, const ObsVector_ & ydepad,
                                     const util::DateTime & begin,
                                     const util::DateTime & end) {
   Log::trace() << "ObserverTLAD::doFirstAD start" << std::endl;
-  gvals_.reset(new GeoVaLs_(hop_.locations(begin, end), hoptlad_.variables()));
+  gvals_.reset(new GeoVaLs_(hop_.locations(begin, end), hoptlad_.requiredVars()));
   hoptlad_.simulateObsAD(*gvals_, ydepad, ybiasad);
   Log::trace() << "ObserverTLAD::doFirstAD done" << std::endl;
 }

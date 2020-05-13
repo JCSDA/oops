@@ -59,7 +59,7 @@ class ObservationL95 : public util::Printable,
   void simulateObs(const GomL95 &, ObsVec1D &, const ObsBias &, ObsDiags1D &) const;
 
 // Other
-  const oops::Variables & variables() const {return inputs_;}
+  const oops::Variables & requiredVars() const {return inputs_;}
   LocsL95 * locations(const util::DateTime &, const util::DateTime &) const;
 
   const ObsTableView & table() const {return obsdb_;}

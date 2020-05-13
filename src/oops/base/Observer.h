@@ -87,9 +87,9 @@ Observer<MODEL>::Observer(const eckit::Configuration & conf, const ObsSpace_ & o
     obsdb_(obsdb), yobs_(yobs), ybias_(ybias), filters_(obsdb, conf, qcflags, obserr)
 {
   Log::trace() << "Observer::Observer starting" << std::endl;
-  geovars_ += hop_.variables();
-  geovars_ += ybias_.requiredGeoVaLs();
-  geovars_ += filters_.requiredGeoVaLs();
+  geovars_ += hop_.requiredVars();
+  geovars_ += ybias_.requiredVars();
+  geovars_ += filters_.requiredVars();
   Log::trace() << "Observer::Observer done" << std::endl;
 }
 

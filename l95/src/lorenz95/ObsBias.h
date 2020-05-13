@@ -53,7 +53,7 @@ class ObsBias : public util::Printable,
   double norm() const {return std::abs(bias_);}
 
 /// Other
-  const oops::Variables & requiredGeoVaLs() const {return geovars_;}
+  const oops::Variables & requiredVars() const {return geovars_;}
   const oops::Variables & requiredHdiagnostics() const {return hdiags_;}
 
  private:

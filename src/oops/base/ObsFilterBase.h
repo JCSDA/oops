@@ -44,7 +44,7 @@ class ObsFilterBase : public util::Printable,
   virtual void priorFilter(const GeoVaLs_ &) const = 0;
   virtual void postFilter(const ObsVector_ &, const ObsDiags_ &) const = 0;
 
-  virtual Variables requiredGeoVaLs() const = 0;
+  virtual Variables requiredVars() const = 0;
   virtual Variables requiredHdiagnostics() const = 0;
 
  private:

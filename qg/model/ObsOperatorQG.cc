@@ -42,8 +42,8 @@ void ObsOperatorQG::simulateObs(const GomQG & gvals, ObsVecQG & yy, const ObsBia
 
 // -----------------------------------------------------------------------------
 
-const oops::Variables & ObsOperatorQG::variables() const {
-  return oper_->variables();
+const oops::Variables & ObsOperatorQG::requiredVars() const {
+  return oper_->requiredVars();
 }
 
 // -----------------------------------------------------------------------------

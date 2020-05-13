@@ -54,7 +54,7 @@ class ObsFilters : public util::Printable,
   void priorFilter(const GeoVaLs_ &) const;
   void postFilter(const ObsVector_ &, const ObsDiags_ &) const;
 
-  Variables requiredGeoVaLs() const {return geovars_;}
+  Variables requiredVars() const {return geovars_;}
   Variables requiredHdiagnostics() const {return diagvars_;}
 
  private:
@@ -94,7 +94,7 @@ ObsFilters<MODEL>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration &
     }
     if (apply) {
       ObsFilterPtr_ tmp(FilterFactory<MODEL>::create(os, confs[jj], qcflags, obserr));
-      geovars_ += tmp->requiredGeoVaLs();
+      geovars_ += tmp->requiredVars();
       diagvars_ += tmp->requiredHdiagnostics();
       filters_.push_back(tmp);
     }

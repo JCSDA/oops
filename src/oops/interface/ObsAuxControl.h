@@ -52,7 +52,7 @@ class ObsAuxControl : public util::Printable,
   double norm() const;
 
 /// Other
-  const Variables & requiredGeoVaLs() const;
+  const Variables & requiredVars() const;
   const Variables & requiredHdiagnostics() const;
 
 /// Operator
@@ -130,11 +130,11 @@ double ObsAuxControl<MODEL>::norm() const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-const Variables & ObsAuxControl<MODEL>::requiredGeoVaLs() const {
-  Log::trace() << "ObsAuxControl<MODEL>::requiredGeoVaLs starting" << std::endl;
-  util::Timer timer(classname(), "requiredGeoVaLs");
-  Log::trace() << "ObsAuxControl<MODEL>::requiredGeoVaLs done" << std::endl;
-  return aux_->requiredGeoVaLs();
+const Variables & ObsAuxControl<MODEL>::requiredVars() const {
+  Log::trace() << "ObsAuxControl<MODEL>::requiredVars starting" << std::endl;
+  util::Timer timer(classname(), "requiredVars");
+  Log::trace() << "ObsAuxControl<MODEL>::requiredVars done" << std::endl;
+  return aux_->requiredVars();
 }
 
 // -----------------------------------------------------------------------------

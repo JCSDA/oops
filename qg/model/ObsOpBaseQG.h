@@ -39,7 +39,7 @@ class ObsOpBaseQG : public util::Printable,
   virtual void simulateObs(const GomQG &, ObsVecQG &, const ObsBias &) const = 0;
 
 /// Other
-  virtual const oops::Variables & variables() const = 0;  // Required from Model
+  virtual const oops::Variables & requiredVars() const = 0;  // Required from Model
   virtual LocationsQG * locations(const util::DateTime &, const util::DateTime &) const = 0;
 
  private:

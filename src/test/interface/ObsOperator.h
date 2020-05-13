@@ -76,8 +76,8 @@ template <typename MODEL> void testSimulateObs() {
 
     // read geovals from the file
     eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
-    oops::Variables hopvars = hop.variables();
-    hopvars += ybias.requiredGeoVaLs();
+    oops::Variables hopvars = hop.requiredVars();
+    hopvars += ybias.requiredVars();
     const GeoVaLs_ gval(gconf, Test_::obspace()[jj], hopvars);
 
     // create obsvector to hold H(x)

@@ -58,7 +58,7 @@ class LinearObsOperator : public util::Printable,
   void simulateObsAD(GeoVaLs_ &, const ObsVector_ &, ObsAuxIncrement_ &) const;
 
 /// Other
-  const Variables & variables() const;  // Required inputs variables from LinearModel
+  const Variables & requiredVars() const;  // Required inputs variables from LinearModel
 
  private:
   void print(std::ostream &) const;
@@ -121,10 +121,10 @@ void LinearObsOperator<MODEL>::simulateObsAD(GeoVaLs_ & gvals, const ObsVector_ 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-const Variables & LinearObsOperator<MODEL>::variables() const {
-  Log::trace() << "LinearObsOperator<MODEL>::variables starting" << std::endl;
-  util::Timer timer(classname(), "variables");
-  return oper_->variables();
+const Variables & LinearObsOperator<MODEL>::requiredVars() const {
+  Log::trace() << "LinearObsOperator<MODEL>::requiredVars starting" << std::endl;
+  util::Timer timer(classname(), "requiredVars");
+  return oper_->requiredVars();
 }
 
 // -----------------------------------------------------------------------------

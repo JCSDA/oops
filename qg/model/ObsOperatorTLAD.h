@@ -49,7 +49,7 @@ class ObsOperatorTLAD : public util::Printable,
   void simulateObsAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &) const;
 
 /// Other
-  const oops::Variables & variables() const;  // Required inputs variables from Model
+  const oops::Variables & requiredVars() const;  // Required inputs requiredVars from Model
 
  private:
   void print(std::ostream &) const;

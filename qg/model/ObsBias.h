@@ -54,7 +54,7 @@ class ObsBias : public util::Printable,
   const double & operator[](const unsigned int ii) const {return bias_[ii];}
 
   /// Other
-  const oops::Variables & requiredGeoVaLs() const {return geovars_;}
+  const oops::Variables & requiredVars() const {return geovars_;}
   const oops::Variables & requiredHdiagnostics() const {return hdiags_;}
 
   const double & stream() const {return bias_[0];}

@@ -41,7 +41,7 @@ class ObsOpBaseTLAD : public util::Printable,
   virtual void simulateObsAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &) const = 0;
 
 /// Other
-  virtual const oops::Variables & variables() const = 0;  // Required from Model
+  virtual const oops::Variables & requiredVars() const = 0;  // Required from Model
 
  private:
   virtual void print(std::ostream &) const = 0;

@@ -49,7 +49,7 @@ class ObsOperatorQG : public util::Printable,
   void simulateObs(const GomQG &, ObsVecQG &, const ObsBias &, ObsDiagsQG &) const;
 
 /// Other
-  const oops::Variables & variables() const;  // Required input variables from Model
+  const oops::Variables & requiredVars() const;  // Required input requiredVars from Model
   LocationsQG * locations(const util::DateTime &, const util::DateTime &) const;
 
  private:
