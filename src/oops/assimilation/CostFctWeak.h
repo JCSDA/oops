@@ -25,6 +25,7 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/StateInfo.h"
+#include "oops/base/VariableChangeBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -51,6 +52,7 @@ template<typename MODEL> class CostFctWeak : public CostFunction<MODEL> {
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
   typedef Model<MODEL>               Model_;
+  typedef VariableChangeBase<MODEL>  VarCha_;
   typedef LinearVariableChangeBase<MODEL> LinVarCha_;
 
  public:
@@ -78,15 +80,19 @@ template<typename MODEL> class CostFctWeak : public CostFunction<MODEL> {
   CostTermBase<MODEL> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
   void doLinearize(const Geometry_ &, const eckit::Configuration &,
                    const CtrlVar_ &, const CtrlVar_ &) override;
+  const Geometry_ & geometry() const override {return resol_;}
 
-  eckit::LocalConfiguration config_;
   util::Duration windowLength_;
   util::DateTime windowBegin_;
   util::DateTime windowEnd_;
   util::Duration windowSub_;
   unsigned int nsubwin_;
+  const eckit::mpi::Comm & comm_;
+  Geometry_ resol_;
+  Model_ model_;
   bool tlforcing_;
   const Variables ctlvars_;
+  std::unique_ptr<VarCha_> an2model_;
   std::unique_ptr<LinVarCha_> inc2model_;
 };
 
@@ -95,22 +101,27 @@ template<typename MODEL> class CostFctWeak : public CostFunction<MODEL> {
 template<typename MODEL>
 CostFctWeak<MODEL>::CostFctWeak(const eckit::Configuration & config,
                                 const eckit::mpi::Comm & comm)
-  : CostFunction<MODEL>::CostFunction(config, comm), config_(config, "cost_function"),
-    tlforcing_(false), ctlvars_(config_), inc2model_()
+  : CostFunction<MODEL>::CostFunction(config), comm_(comm),
+    resol_(eckit::LocalConfiguration(config, "resolution"), comm),
+    model_(resol_, eckit::LocalConfiguration(config, "model")),
+    tlforcing_(false), ctlvars_(config), an2model_(), inc2model_()
 {
-  windowLength_ = util::Duration(config_.getString("window_length"));
-  windowBegin_ = util::DateTime(config_.getString("window_begin"));
+  windowLength_ = util::Duration(config.getString("window_length"));
+  windowBegin_ = util::DateTime(config.getString("window_begin"));
   windowEnd_ = windowBegin_ + windowLength_;
-  windowSub_ = util::Duration(config_.getString("window_sub"));
+  windowSub_ = util::Duration(config.getString("window_sub"));
 
   nsubwin_ = windowLength_.toSeconds() / windowSub_.toSeconds();
   ASSERT(windowLength_.toSeconds() == windowSub_.toSeconds()*nsubwin_);
 
-  if (config_.has("tlforcing")) {
-    if (config_.getString("tlforcing") == "on") tlforcing_ = true;
+  if (config.has("tlforcing")) {
+    if (config.getString("tlforcing") == "on") tlforcing_ = true;
   }
 
-  this->setupTerms(config_);
+  this->setupTerms(config);
+
+  an2model_.reset(VariableChangeFactory<MODEL>::create(config, resol_));
+
   Log::trace() << "CostFctWeak constructed" << std::endl;
 }
 
@@ -127,8 +138,7 @@ CostJbJq<MODEL> * CostFctWeak<MODEL>::newJb(const eckit::Configuration & jbConf,
 
 template <typename MODEL>
 CostJo<MODEL> * CostFctWeak<MODEL>::newJo(const eckit::Configuration & joConf) const {
-  return new CostJo<MODEL>(joConf, this->getComm(), windowBegin_, windowEnd_,
-                           util::Duration(0), true);
+  return new CostJo<MODEL>(joConf, comm_, windowBegin_, windowEnd_, util::Duration(0), true);
 }
 
 // -----------------------------------------------------------------------------
@@ -146,15 +156,15 @@ CostTermBase<MODEL> * CostFctWeak<MODEL>::newJc(const eckit::Configuration & jcC
 template <typename MODEL>
 void CostFctWeak<MODEL>::runNL(CtrlVar_ & xx,
                                PostProcessor<State_> & post) const {
-  State_ xm(xx.state()[0].geometry(), CostFct_::getModel().variables(), windowBegin_);
+  State_ xm(xx.state()[0].geometry(), model_.variables(), windowBegin_);
   for (unsigned int jsub = 0; jsub < nsubwin_; ++jsub) {
     util::DateTime bgn(windowBegin_ + jsub*windowSub_);
     util::DateTime end(bgn + windowSub_);
 
     ASSERT(xx.state()[jsub].validTime() == bgn);
-    this->an2model(xx.state()[jsub], xm);
-    CostFct_::getModel().forecast(xm, xx.modVar(), windowSub_, post);
-    this->model2an(xm, xx.state()[jsub]);
+    an2model_->changeVar(xx.state()[jsub], xm);
+    model_.forecast(xm, xx.modVar(), windowSub_, post);
+    an2model_->changeVarInverse(xm, xx.state()[jsub]);
     ASSERT(xx.state()[jsub].validTime() == end);
   }
 }

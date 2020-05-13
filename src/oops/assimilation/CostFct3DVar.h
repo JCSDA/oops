@@ -22,6 +22,7 @@
 #include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
+#include "oops/base/VariableChangeBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -50,6 +51,7 @@ template<typename MODEL> class CostFct3DVar : public CostFunction<MODEL> {
   typedef Geometry<MODEL>             Geometry_;
   typedef State<MODEL>                State_;
   typedef Model<MODEL>                Model_;
+  typedef VariableChangeBase<MODEL>   ChangeVar_;
   typedef LinearVariableChangeBase<MODEL> ChangeVarTLAD_;
 
  public:
@@ -73,14 +75,17 @@ template<typename MODEL> class CostFct3DVar : public CostFunction<MODEL> {
   CostTermBase<MODEL> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
   void doLinearize(const Geometry_ &, const eckit::Configuration &,
                    const CtrlVar_ &, const CtrlVar_ &) override;
+  const Geometry_ & geometry() const override {return resol_;}
 
-  eckit::LocalConfiguration config_;
   util::Duration windowLength_;
   util::DateTime windowBegin_;
   util::DateTime windowEnd_;
   util::DateTime windowHalf_;
-  util::Duration zero_;
+  const eckit::mpi::Comm & comm_;
+  Geometry_ resol_;
+  Model_ model_;  // Only needed to get model variables, to be removed
   const Variables ctlvars_;
+  std::unique_ptr<ChangeVar_> an2model_;
   std::unique_ptr<ChangeVarTLAD_> inc2model_;
 };
 
@@ -89,16 +94,24 @@ template<typename MODEL> class CostFct3DVar : public CostFunction<MODEL> {
 template<typename MODEL>
 CostFct3DVar<MODEL>::CostFct3DVar(const eckit::Configuration & config,
                                   const eckit::mpi::Comm & comm)
-  : CostFunction<MODEL>::CostFunction(config, comm),
-    config_(config, "cost_function"),
-    windowLength_(), windowHalf_(), zero_(0), ctlvars_(config_), inc2model_()
+  : CostFunction<MODEL>::CostFunction(config),
+    windowLength_(), windowHalf_(), comm_(comm),
+    resol_(eckit::LocalConfiguration(config, "resolution"), comm),
+    model_(resol_, eckit::LocalConfiguration(config, "model")),
+    ctlvars_(config), an2model_(), inc2model_()
 {
   Log::trace() << "CostFct3DVar::CostFct3DVar start" << std::endl;
-  windowLength_ = util::Duration(config_.getString("window_length"));
-  windowBegin_ = util::DateTime(config_.getString("window_begin"));
+  windowLength_ = util::Duration(config.getString("window_length"));
+  windowBegin_ = util::DateTime(config.getString("window_begin"));
   windowEnd_ = windowBegin_ + windowLength_;
   windowHalf_ = windowBegin_ + windowLength_/2;
-  this->setupTerms(config_);
+
+  this->setupTerms(config);  // Background is read here
+
+  an2model_.reset(VariableChangeFactory<MODEL>::create(config, resol_));
+
+  Log::info() << "3DVar: model variables: " << model_.variables() << std::endl;
+  Log::info() << "3DVar window: begin = " << windowBegin_ << ", end = " << windowEnd_ << std::endl;
   Log::trace() << "CostFct3DVar::CostFct3DVar done" << std::endl;
 }
 
@@ -110,7 +123,7 @@ CostJb3D<MODEL> * CostFct3DVar<MODEL>::newJb(const eckit::Configuration & jbConf
                                              const CtrlVar_ & xb) const {
   Log::trace() << "CostFct3DVar::newJb" << std::endl;
   ASSERT(xb.state().checkStatesNumber(1));
-  return new CostJb3D<MODEL>(jbConf, resol, ctlvars_, zero_, xb.state()[0]);
+  return new CostJb3D<MODEL>(jbConf, resol, ctlvars_, util::Duration(0), xb.state()[0]);
 }
 
 // -----------------------------------------------------------------------------
@@ -118,7 +131,7 @@ CostJb3D<MODEL> * CostFct3DVar<MODEL>::newJb(const eckit::Configuration & jbConf
 template <typename MODEL>
 CostJo<MODEL> * CostFct3DVar<MODEL>::newJo(const eckit::Configuration & joConf) const {
   Log::trace() << "CostFct3DVar::newJo" << std::endl;
-  return new CostJo<MODEL>(joConf, this->getComm(), windowBegin_, windowEnd_, windowLength_);
+  return new CostJo<MODEL>(joConf, comm_, windowBegin_, windowEnd_, windowLength_);
 }
 
 // -----------------------------------------------------------------------------
@@ -139,9 +152,9 @@ void CostFct3DVar<MODEL>::runNL(CtrlVar_ & xx, PostProcessor<State_> & post) con
   Log::trace() << "CostFct3DVar::runNL start" << std::endl;
   ASSERT(xx.state().checkStatesNumber(1));
   ASSERT(xx.state()[0].validTime() == windowHalf_);
-  State_ xm(xx.state()[0].geometry(), CostFct_::getModel().variables(), windowHalf_);
+  State_ xm(xx.state()[0].geometry(), model_.variables(), windowHalf_);
 
-  this->an2model(xx.state()[0], xm);
+  an2model_->changeVar(xx.state()[0], xm);
 
   post.initialize(xm, windowHalf_, windowLength_);
   post.process(xm);

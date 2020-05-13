@@ -24,6 +24,7 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/StateInfo.h"
+#include "oops/base/VariableChangeBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -52,6 +53,7 @@ template<typename MODEL> class CostFct4DVar : public CostFunction<MODEL> {
   typedef Geometry<MODEL>                 Geometry_;
   typedef State<MODEL>                    State_;
   typedef Model<MODEL>                    Model_;
+  typedef VariableChangeBase<MODEL>       VarCha_;
   typedef LinearVariableChangeBase<MODEL> LinVarCha_;
 
  public:
@@ -77,12 +79,16 @@ template<typename MODEL> class CostFct4DVar : public CostFunction<MODEL> {
   CostTermBase<MODEL> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
   void doLinearize(const Geometry_ &, const eckit::Configuration &,
                    const CtrlVar_ &, const CtrlVar_ &) override;
+  const Geometry_ & geometry() const override {return resol_;}
 
-  eckit::LocalConfiguration config_;
   util::Duration windowLength_;
   util::DateTime windowBegin_;
   util::DateTime windowEnd_;
+  const eckit::mpi::Comm & comm_;
+  Geometry_ resol_;
+  Model_ model_;
   const Variables ctlvars_;
+  std::unique_ptr<VarCha_> an2model_;
   std::unique_ptr<LinVarCha_> inc2model_;
 };
 
@@ -91,14 +97,17 @@ template<typename MODEL> class CostFct4DVar : public CostFunction<MODEL> {
 template<typename MODEL>
 CostFct4DVar<MODEL>::CostFct4DVar(const eckit::Configuration & config,
                                   const eckit::mpi::Comm & comm)
-  : CostFunction<MODEL>::CostFunction(config, comm), config_(config, "cost_function"),
-    ctlvars_(config_), inc2model_()
+  : CostFunction<MODEL>::CostFunction(config), comm_(comm),
+    resol_(eckit::LocalConfiguration(config, "resolution"), comm),
+    model_(resol_, eckit::LocalConfiguration(config, "model")),
+    ctlvars_(config), an2model_(), inc2model_()
 {
   Log::trace() << "CostFct4DVar:CostFct4DVar" << std::endl;
-  windowLength_ = util::Duration(config_.getString("window_length"));
-  windowBegin_ = util::DateTime(config_.getString("window_begin"));
+  windowLength_ = util::Duration(config.getString("window_length"));
+  windowBegin_ = util::DateTime(config.getString("window_begin"));
   windowEnd_ = windowBegin_ + windowLength_;
-  this->setupTerms(config_);
+  this->setupTerms(config);
+  an2model_.reset(VariableChangeFactory<MODEL>::create(config, resol_));
   Log::trace() << "CostFct4DVar constructed" << std::endl;
 }
 
@@ -116,7 +125,7 @@ CostJb3D<MODEL> * CostFct4DVar<MODEL>::newJb(const eckit::Configuration & jbConf
 
 template <typename MODEL>
 CostJo<MODEL> * CostFct4DVar<MODEL>::newJo(const eckit::Configuration & joConf) const {
-  return new CostJo<MODEL>(joConf, this->getComm(), windowBegin_, windowEnd_, util::Duration(0));
+  return new CostJo<MODEL>(joConf, comm_, windowBegin_, windowEnd_, util::Duration(0));
 }
 
 // -----------------------------------------------------------------------------
@@ -135,10 +144,10 @@ template <typename MODEL>
 void CostFct4DVar<MODEL>::runNL(CtrlVar_ & xx, PostProcessor<State_> & post) const {
   ASSERT(xx.state().checkStatesNumber(1));
   ASSERT(xx.state()[0].validTime() == windowBegin_);
-  State_ xm(xx.state()[0].geometry(), CostFct_::getModel().variables(), windowBegin_);
-  this->an2model(xx.state()[0], xm);
-  CostFct_::getModel().forecast(xm, xx.modVar(), windowLength_, post);
-  this->model2an(xm, xx.state()[0]);
+  State_ xm(xx.state()[0].geometry(), model_.variables(), windowBegin_);
+  an2model_->changeVar(xx.state()[0], xm);
+  model_.forecast(xm, xx.modVar(), windowLength_, post);
+  an2model_->changeVarInverse(xm, xx.state()[0]);
   ASSERT(xx.state()[0].validTime() == windowEnd_);
 }
 

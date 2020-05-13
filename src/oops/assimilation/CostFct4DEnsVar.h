@@ -26,6 +26,7 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/StateInfo.h"
+#include "oops/base/VariableChangeBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -56,6 +57,7 @@ template<typename MODEL> class CostFct4DEnsVar : public CostFunction<MODEL> {
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
   typedef Model<MODEL>               Model_;
+  typedef VariableChangeBase<MODEL>  ChangeVar_;
   typedef LinearVariableChangeBase<MODEL> ChangeVarTLAD_;
 
  public:
@@ -81,14 +83,18 @@ template<typename MODEL> class CostFct4DEnsVar : public CostFunction<MODEL> {
   CostTermBase<MODEL> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
   void doLinearize(const Geometry_ &, const eckit::Configuration &,
                    const CtrlVar_ &, const CtrlVar_ &) override;
+  const Geometry_ & geometry() const override {return resol_;}
 
-  eckit::LocalConfiguration config_;
   util::Duration windowLength_;
   util::DateTime windowBegin_;
   util::DateTime windowEnd_;
   util::Duration windowSub_;
+  const eckit::mpi::Comm & comm_;
+  Geometry_ resol_;
+  Model_ model_;
   unsigned int ncontrol_;
   const Variables ctlvars_;
+  std::unique_ptr<ChangeVar_> an2model_;
   std::unique_ptr<ChangeVarTLAD_> inc2model_;
 };
 
@@ -97,18 +103,23 @@ template<typename MODEL> class CostFct4DEnsVar : public CostFunction<MODEL> {
 template<typename MODEL>
 CostFct4DEnsVar<MODEL>::CostFct4DEnsVar(const eckit::Configuration & config,
                                         const eckit::mpi::Comm & comm)
-  : CostFunction<MODEL>::CostFunction(config, comm), config_(config, "cost_function"),
-    ctlvars_(config_), inc2model_()
+  : CostFunction<MODEL>::CostFunction(config), comm_(comm),
+    resol_(eckit::LocalConfiguration(config, "resolution"), comm),
+    model_(resol_, eckit::LocalConfiguration(config, "model")),
+    ctlvars_(config), an2model_(), inc2model_()
 {
-  windowLength_ = util::Duration(config_.getString("window_length"));
-  windowBegin_ = util::DateTime(config_.getString("window_begin"));
+  windowLength_ = util::Duration(config.getString("window_length"));
+  windowBegin_ = util::DateTime(config.getString("window_begin"));
   windowEnd_ = windowBegin_ + windowLength_;
-  windowSub_ = util::Duration(config_.getString("window_sub"));
+  windowSub_ = util::Duration(config.getString("window_sub"));
 
   ncontrol_ = windowLength_.toSeconds() / windowSub_.toSeconds();
   ASSERT(windowLength_.toSeconds() == windowSub_.toSeconds()*ncontrol_);
 
-  this->setupTerms(config_);
+  this->setupTerms(config);
+
+  an2model_.reset(VariableChangeFactory<MODEL>::create(config, resol_));
+
   Log::trace() << "CostFct4DEnsVar constructed" << std::endl;
 }
 
@@ -125,7 +136,7 @@ CostJb4D<MODEL> * CostFct4DEnsVar<MODEL>::newJb(const eckit::Configuration & jbC
 
 template <typename MODEL>
 CostJo<MODEL> * CostFct4DEnsVar<MODEL>::newJo(const eckit::Configuration & joConf) const {
-  return new CostJo<MODEL>(joConf, this->getComm(), windowBegin_, windowEnd_, windowSub_, true);
+  return new CostJo<MODEL>(joConf, comm_, windowBegin_, windowEnd_, windowSub_, true);
 }
 
 // -----------------------------------------------------------------------------
@@ -143,13 +154,13 @@ CostTermBase<MODEL> * CostFct4DEnsVar<MODEL>::newJc(const eckit::Configuration &
 template <typename MODEL>
 void CostFct4DEnsVar<MODEL>::runNL(CtrlVar_ & xx,
                                    PostProcessor<State_> & post) const {
-  State_ xm(xx.state()[0].geometry(), CostFct_::getModel().variables(), windowBegin_);
+  State_ xm(xx.state()[0].geometry(), model_.variables(), windowBegin_);
   post.initialize(xm, windowEnd_, windowSub_);
   for (unsigned int jsub = 0; jsub <= ncontrol_; ++jsub) {
     util::DateTime now(windowBegin_ + jsub*windowSub_);
     ASSERT(xx.state()[jsub].validTime() == now);
 
-    this->an2model(xx.state()[jsub], xm);
+    an2model_->changeVar(xx.state()[jsub], xm);
     post.process(xm);
   }
   post.finalize(xm);
