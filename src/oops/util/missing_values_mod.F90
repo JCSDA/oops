@@ -19,7 +19,7 @@ public missing_value
 !-------------------------------------------------------------------------------
 interface
 !-------------------------------------------------------------------------------
-real(kind=c_double) function c_missing_value_flt() bind(C,name='missing_value_flt_f')
+real(kind=c_float) function c_missing_value_flt() bind(C,name='missing_value_flt_f')
   use, intrinsic :: iso_c_binding
   implicit none
 end function c_missing_value_flt

@@ -489,4 +489,10 @@ add_fctest( TARGET  test_util_duration_intfb.x
             CONDITION HAVE_FCTEST
             LIBS    oops )
 
+add_fctest( TARGET  test_util_missing_values_f.x
+            SOURCES test/util/missing_values.F90
+            LINKER_LANGUAGE Fortran
+            CONDITION HAVE_FCTEST
+            LIBS    oops )
+
 endif()
