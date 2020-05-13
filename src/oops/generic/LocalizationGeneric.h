@@ -9,6 +9,7 @@
 #define OOPS_GENERIC_LOCALIZATIONGENERIC_H_
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 #include <boost/noncopyable.hpp>
@@ -50,8 +51,8 @@ class LocalizationGeneric : public util::Printable,
 /// LocalizationGenericFactory Factory
 template <typename MODEL>
 class LocalizationGenericFactory {
-  typedef Geometry<MODEL>                         Geometry_;
-  typedef boost::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
+  typedef Geometry<MODEL>                           Geometry_;
+  typedef std::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
  public:
   static LocalizationGeneric<MODEL> * create(const Geometry_ &,
                                              const EnsemblePtr_,
@@ -73,8 +74,8 @@ class LocalizationGenericFactory {
 
 template<class MODEL, class T>
 class LocalizationGenericMaker : public LocalizationGenericFactory<MODEL> {
-  typedef Geometry<MODEL>                         Geometry_;
-  typedef boost::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
+  typedef Geometry<MODEL>                           Geometry_;
+  typedef std::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
   virtual LocalizationGeneric<MODEL> * make(const Geometry_ & resol,
                                             const EnsemblePtr_ ens,
                                             const eckit::Configuration & conf)

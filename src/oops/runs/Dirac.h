@@ -38,16 +38,16 @@
 namespace oops {
 
 template <typename MODEL> class Dirac : public Application {
-  typedef Geometry<MODEL>                         Geometry_;
-  typedef Model<MODEL>                            Model_;
-  typedef ModelAuxControl<MODEL>                  ModelAux_;
-  typedef Increment<MODEL>                        Increment_;
-  typedef Increment4D<MODEL>                      Increment4D_;
-  typedef State<MODEL>                            State_;
-  typedef State4D<MODEL>                          State4D_;
-  typedef Localization<MODEL>                     Localization_;
-  typedef IncrementEnsemble<MODEL>                Ensemble_;
-  typedef boost::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
+  typedef Geometry<MODEL>                           Geometry_;
+  typedef Model<MODEL>                              Model_;
+  typedef ModelAuxControl<MODEL>                    ModelAux_;
+  typedef Increment<MODEL>                          Increment_;
+  typedef Increment4D<MODEL>                        Increment4D_;
+  typedef State<MODEL>                              State_;
+  typedef State4D<MODEL>                            State4D_;
+  typedef Localization<MODEL>                       Localization_;
+  typedef IncrementEnsemble<MODEL>                  Ensemble_;
+  typedef std::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
 
  public:
 // -----------------------------------------------------------------------------

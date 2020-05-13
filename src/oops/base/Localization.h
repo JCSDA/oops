@@ -41,12 +41,12 @@ template <typename MODEL>
 class Localization : public util::Printable,
                      private boost::noncopyable,
                      private util::ObjectCounter<Localization<MODEL>> {
-  typedef LocalizationBase<MODEL>                 LocalizationBase_;
-  typedef LocalizationGeneric<MODEL>              LocalizationGeneric_;
-  typedef Increment<MODEL>                        Increment_;
-  typedef Increment4D<MODEL>                      Increment4D_;
-  typedef Geometry<MODEL>                         Geometry_;
-  typedef boost::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
+  typedef LocalizationBase<MODEL>                   LocalizationBase_;
+  typedef LocalizationGeneric<MODEL>                LocalizationGeneric_;
+  typedef Increment<MODEL>                          Increment_;
+  typedef Increment4D<MODEL>                        Increment4D_;
+  typedef Geometry<MODEL>                           Geometry_;
+  typedef std::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
 
  public:
   static const std::string classname() {return "oops::Localization";}

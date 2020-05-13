@@ -35,13 +35,13 @@ namespace oops {
 // -----------------------------------------------------------------------------
 template <typename MODEL>
 class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL> {
-  typedef Geometry<MODEL>                         Geometry_;
-  typedef Increment<MODEL>                        Increment_;
-  typedef Localization<MODEL>                     Localization_;
-  typedef State<MODEL>                            State_;
-  typedef State4D<MODEL>                          State4D_;
-  typedef IncrementEnsemble<MODEL>                Ensemble_;
-  typedef boost::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
+  typedef Geometry<MODEL>                           Geometry_;
+  typedef Increment<MODEL>                          Increment_;
+  typedef Localization<MODEL>                       Localization_;
+  typedef State<MODEL>                              State_;
+  typedef State4D<MODEL>                            State4D_;
+  typedef IncrementEnsemble<MODEL>                  Ensemble_;
+  typedef std::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
 
  public:
   EnsembleCovariance(const Geometry_ &, const Variables &,
