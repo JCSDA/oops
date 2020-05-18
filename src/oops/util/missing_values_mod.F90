@@ -19,6 +19,16 @@ public missing_value
 !-------------------------------------------------------------------------------
 interface
 !-------------------------------------------------------------------------------
+integer(kind=c_int32_t) function c_missing_value_int32() bind(C,name='missing_value_int32_f')
+  use, intrinsic :: iso_c_binding
+  implicit none
+end function c_missing_value_int32
+!-------------------------------------------------------------------------------
+integer(kind=c_int64_t) function c_missing_value_int64() bind(C,name='missing_value_int64_f')
+  use, intrinsic :: iso_c_binding
+  implicit none
+end function c_missing_value_int64
+!-------------------------------------------------------------------------------
 real(kind=c_float) function c_missing_value_flt() bind(C,name='missing_value_flt_f')
   use, intrinsic :: iso_c_binding
   implicit none
@@ -37,8 +47,8 @@ end interface
 !>  Return the missing value indicator
 
 interface missing_value
-!  module procedure missing_value_int32
-!  module procedure missing_value_int64
+  module procedure missing_value_int32
+  module procedure missing_value_int64
   module procedure missing_value_float
   module procedure missing_value_double
 !  module procedure missing_value_kind_real
@@ -46,6 +56,22 @@ end interface
    
 !-------------------------------------------------------------------------------
 contains
+!-------------------------------------------------------------------------------
+
+integer(c_int32_t) function missing_value_int32(imvi)
+  implicit none
+  integer(c_int32_t), intent(in) :: imvi
+  missing_value_int32 = c_missing_value_int32()
+end function missing_value_int32
+
+!-------------------------------------------------------------------------------
+
+integer(c_int64_t) function missing_value_int64(imvi)
+  implicit none
+  integer(c_int64_t), intent(in) :: imvi
+  missing_value_int64 = c_missing_value_int64()
+end function missing_value_int64
+
 !-------------------------------------------------------------------------------
 
 real(c_float) function missing_value_float(fmvi)

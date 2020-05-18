@@ -12,6 +12,16 @@
 namespace util {
 
 // -----------------------------------------------------------------------------
+int32_t missing_value_int32_f() {
+  const int32_t miss = util::missingValue(miss);
+  return miss;
+}
+// -----------------------------------------------------------------------------
+int64_t missing_value_int64_f() {
+  const int64_t miss = util::missingValue(miss);
+  return miss;
+}
+// -----------------------------------------------------------------------------
 float missing_value_flt_f() {
   const float miss = util::missingValue(miss);
   return miss;

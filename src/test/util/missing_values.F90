@@ -16,7 +16,7 @@ TESTSUITE_FINALIZE
 END_TESTSUITE_FINALIZE
 
 !> Test the single- and double-precision overloads of missing_value().
-TEST(test_missing_values)
+TEST(test_real_missing_values)
   use iso_c_binding
   use missing_values_mod
   implicit none
@@ -31,6 +31,24 @@ TEST(test_missing_values)
   CHECK(missing_float < -1e30)
   CHECK(missing_double < -1d30)
   CHECK(missing_float /= missing_double)
+END_TEST
+
+!> Test the int32_t and int64_t overloads of missing_value().
+TEST(test_int_missing_values)
+  use iso_c_binding
+  use missing_values_mod
+  implicit none
+  integer(c_int32_t) :: missing_int32_t
+  integer(c_int64_t) :: missing_int64_t
+
+  missing_int32_t = missing_value(missing_int32_t)
+  missing_int64_t = missing_value(missing_int64_t)
+
+  CHECK(missing_int32_t /= 0)
+  CHECK(missing_int64_t /= 0)
+  CHECK(missing_int32_t < -1000000)
+  CHECK(missing_int64_t < -1000000)
+  CHECK(missing_int64_t < missing_int32_t)
 END_TEST
 
 END_TESTSUITE
