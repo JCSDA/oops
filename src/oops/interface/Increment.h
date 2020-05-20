@@ -22,7 +22,7 @@
 #include "atlas/util/Metadata.h"
 
 #include "oops/base/GeneralizedDepartures.h"
-#include "oops/base/GridPoint.h"
+#include "oops/base/LocalIncrement.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
@@ -93,8 +93,8 @@ class Increment : public oops::GeneralizedDepartures,
   void write(const eckit::Configuration &) const;
   double norm() const;
 
-  GridPoint getPoint(const GeometryIterator_ & iter) const;
-  void setPoint(const GridPoint & gp, const GeometryIterator_ & iter);
+  LocalIncrement getLocal(const GeometryIterator_ & iter) const;
+  void setLocal(const LocalIncrement & gp, const GeometryIterator_ & iter);
 
 /// Get geometry
   Geometry_ geometry() const;
@@ -317,22 +317,22 @@ void Increment<MODEL>::accumul(const double & zz, const State_ & xx) {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-GridPoint Increment<MODEL>::getPoint(const GeometryIterator_ & iter) const {
-  Log::trace() << "Increment<MODEL>::getPoint starting" << std::endl;
-  util::Timer timer(classname(), "getPoint");
-  GridPoint gp = increment_->getPoint(iter.geometryiter());
-  Log::trace() << "Increment<MODEL>::getPoint done" << std::endl;
+LocalIncrement Increment<MODEL>::getLocal(const GeometryIterator_ & iter) const {
+  Log::trace() << "Increment<MODEL>::getLocal starting" << std::endl;
+  util::Timer timer(classname(), "getLocal");
+  LocalIncrement gp = increment_->getLocal(iter.geometryiter());
+  Log::trace() << "Increment<MODEL>::getLocal done" << std::endl;
   return gp;
 }
 
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-void Increment<MODEL>::setPoint(const GridPoint & gp,
+void Increment<MODEL>::setLocal(const LocalIncrement & gp,
                                 const GeometryIterator_ & iter) {
-  Log::trace() << "Increment<MODEL>::setPoint starting" << std::endl;
-  util::Timer timer(classname(), "setPoint");
-  increment_->setPoint(gp, iter.geometryiter());
-  Log::trace() << "Increment<MODEL>::setPoint done" << std::endl;
+  Log::trace() << "Increment<MODEL>::setLocal starting" << std::endl;
+  util::Timer timer(classname(), "setLocal");
+  increment_->setLocal(gp, iter.geometryiter());
+  Log::trace() << "Increment<MODEL>::setLocal done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

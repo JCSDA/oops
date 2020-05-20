@@ -28,7 +28,7 @@
 #include "model/GeometryQGIterator.h"
 
 #include "oops/base/GeneralizedDepartures.h"
-#include "oops/base/GridPoint.h"
+#include "oops/base/LocalIncrement.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Duration.h"
@@ -40,7 +40,7 @@ namespace eckit {
 }
 
 namespace oops {
-  class GridPoint;
+  class LocalIncrement;
   class Variables;
 }
 
@@ -111,8 +111,8 @@ class IncrementQG : public oops::GeneralizedDepartures,
 
 /// Other
   void accumul(const double &, const StateQG &);
-  oops::GridPoint getPoint(const GeometryQGIterator &) const;
-  void setPoint(const oops::GridPoint &, const GeometryQGIterator &);
+  oops::LocalIncrement getLocal(const GeometryQGIterator &) const;
+  void setLocal(const oops::LocalIncrement &, const GeometryQGIterator &);
 
 /// Serialization
   size_t serialSize() const;

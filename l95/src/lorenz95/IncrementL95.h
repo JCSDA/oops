@@ -23,7 +23,7 @@
 #include "lorenz95/Resolution.h"
 
 #include "oops/base/GeneralizedDepartures.h"
-#include "oops/base/GridPoint.h"
+#include "oops/base/LocalIncrement.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
@@ -34,7 +34,7 @@ namespace eckit {
 }
 
 namespace oops {
-  class GridPoint;
+  class LocalIncrement;
   class UnstructuredGrid;
   class Variables;
 }
@@ -92,8 +92,8 @@ class IncrementL95 : public util::Printable,
   util::DateTime & validTime() {return time_;}
   void updateTime(const util::Duration & dt) {time_ += dt;}
 
-  oops::GridPoint getPoint(const Iterator &) const;
-  void setPoint(const oops::GridPoint &, const Iterator &);
+  oops::LocalIncrement getLocal(const Iterator &) const;
+  void setLocal(const oops::LocalIncrement &, const Iterator &);
 
 /// Access to data
   const FieldL95 & getField() const {return fld_;}

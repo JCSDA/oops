@@ -20,7 +20,7 @@
 #include "eckit/config/Configuration.h"
 #include "eckit/testing/Test.h"
 
-#include "oops/base/GridPoint.h"
+#include "oops/base/LocalIncrement.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
@@ -52,7 +52,7 @@ template <typename MODEL> void testConstructor() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testGetSetPoint() {
+template <typename MODEL> void testGetSetLocal() {
   typedef oops::Geometry<MODEL>          Geometry_;
   typedef oops::GeometryIterator<MODEL>  GeometryIterator_;
   typedef oops::Increment<MODEL>         Increment_;
@@ -73,10 +73,10 @@ template <typename MODEL> void testGetSetPoint() {
 
   for (GeometryIterator_ i = geom.begin(); i != geom.end(); ++i) {
     // get value for i-th gridpoint from dx1
-    oops::GridPoint gp = dx1.getPoint(i);
+    oops::LocalIncrement gp = dx1.getLocal(i);
     oops::Log::debug() << *i << gp << std::endl;
     // set this value for i-th gridpoint in dx2
-    dx2.setPoint(gp, i);
+    dx2.setLocal(gp, i);
   }
   oops::Log::info() << "Increment dx2 after dx2=dx1 (at every point): " << dx2 << std::endl;
   // compare two increments
@@ -99,8 +99,8 @@ template <typename MODEL> class GeometryIterator : public oops::Test {
 
     ts.emplace_back(CASE("interface/GeometryIterator/testConstructor")
       { testConstructor<MODEL>(); });
-    ts.emplace_back(CASE("interface/GeometryIterator/testGetSetPoint")
-      { testGetSetPoint<MODEL>(); });
+    ts.emplace_back(CASE("interface/GeometryIterator/testGetSetLocal")
+      { testGetSetLocal<MODEL>(); });
   }
 };
 

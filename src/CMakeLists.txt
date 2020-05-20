@@ -41,11 +41,14 @@ oops/assimilation/HtRinvHMatrix.h
 oops/assimilation/Increment4D.h
 oops/assimilation/IncrementalAssimilation.h
 oops/assimilation/instantiateCostFactory.h
+oops/assimilation/instantiateLETKFSolverFactory.h
 oops/assimilation/instantiateMinFactory.h
 oops/assimilation/IPCG.h
 oops/assimilation/IPCGMinimizer.h
 oops/assimilation/JqTerm.h
 oops/assimilation/JqTermTLAD.h
+oops/assimilation/LETKFSolverBase.h
+oops/assimilation/LETKFSolverOOPS.h
 oops/assimilation/LBGMRESRMinimizer.h
 oops/assimilation/LBHessianMatrix.h
 oops/assimilation/LBMinimizer.h
@@ -86,8 +89,8 @@ oops/base/EnsembleCovariance4D.h
 oops/base/ErrorCovariance4D.h
 oops/base/GeneralizedDepartures.h
 oops/base/GeoVaLsWriter.h
-oops/base/GridPoint.cc
-oops/base/GridPoint.h
+oops/base/LocalIncrement.cc
+oops/base/LocalIncrement.h
 oops/base/HybridCovariance.h
 oops/base/IdentityMatrix.h
 oops/base/IncrementEnsemble.h

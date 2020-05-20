@@ -207,16 +207,16 @@ bool FieldsQG::isForModel(const bool & nonlinear) const {
   return ok;
 }
 // -----------------------------------------------------------------------------
-oops::GridPoint FieldsQG::getPoint(const GeometryQGIterator & iter) const {
+oops::LocalIncrement FieldsQG::getLocal(const GeometryQGIterator & iter) const {
   int nx, ny, nz, nb;
   qg_fields_sizes_f90(keyFlds_, nx, ny, nz, nb);
   std::vector<int> varlens(1, nz);
   std::vector<double> values(nz);
   qg_fields_getpoint_f90(keyFlds_, iter.toFortran(), nz, values[0]);
-  return oops::GridPoint(vars_, values, varlens);
+  return oops::LocalIncrement(vars_, values, varlens);
 }
 // -----------------------------------------------------------------------------
-void FieldsQG::setPoint(const oops::GridPoint & x, const GeometryQGIterator & iter) {
+void FieldsQG::setLocal(const oops::LocalIncrement & x, const GeometryQGIterator & iter) {
   const std::vector<double> vals = x.getVals();
   qg_fields_setpoint_f90(keyFlds_, iter.toFortran(), vals.size(), vals[0]);
 }

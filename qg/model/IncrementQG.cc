@@ -180,12 +180,12 @@ void IncrementQG::print(std::ostream & os) const {
   os << *fields_;
 }
 // -----------------------------------------------------------------------------
-oops::GridPoint IncrementQG::getPoint(const GeometryQGIterator & iter) const {
-  return fields_->getPoint(iter);
+oops::LocalIncrement IncrementQG::getLocal(const GeometryQGIterator & iter) const {
+  return fields_->getLocal(iter);
 }
 // -----------------------------------------------------------------------------
-void IncrementQG::setPoint(const oops::GridPoint & values, const GeometryQGIterator & iter) {
-  fields_->setPoint(values, iter);
+void IncrementQG::setLocal(const oops::LocalIncrement & values, const GeometryQGIterator & iter) {
+  fields_->setLocal(values, iter);
 }
 // -----------------------------------------------------------------------------
 

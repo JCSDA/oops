@@ -24,7 +24,7 @@
 #include "model/GeometryQG.h"
 #include "model/GeometryQGIterator.h"
 
-#include "oops/base/GridPoint.h"
+#include "oops/base/LocalIncrement.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -38,7 +38,7 @@ namespace eckit {
 
 namespace oops {
   class Variables;
-  class GridPoint;
+  class LocalIncrement;
 }
 
 namespace qg {
@@ -97,8 +97,8 @@ class FieldsQG : public util::Printable,
 
   bool isForModel(const bool &) const;
 
-  oops::GridPoint getPoint(const GeometryQGIterator &) const;
-  void setPoint(const oops::GridPoint &, const GeometryQGIterator &);
+  oops::LocalIncrement getLocal(const GeometryQGIterator &) const;
+  void setLocal(const oops::LocalIncrement &, const GeometryQGIterator &);
 
 /// Serialization
   size_t serialSize() const;

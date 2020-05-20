@@ -15,10 +15,11 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/CalcHofX.h"
+#include "oops/assimilation/instantiateLETKFSolverFactory.h"
+#include "oops/assimilation/LETKFSolverBase.h"
 #include "oops/assimilation/State4D.h"
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
-#include "oops/base/GridPoint.h"
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/ObsEnsemble.h"
@@ -54,6 +55,7 @@ template <typename MODEL> class LETKF : public Application {
   typedef GeometryIterator<MODEL>   GeometryIterator_;
   typedef Increment<MODEL>          Increment_;
   typedef IncrementEnsemble<MODEL>  IncrementEnsemble_;
+  typedef LETKFSolverBase<MODEL>    LETKFSolver_;
   typedef ObsEnsemble<MODEL>        ObsEnsemble_;
   typedef ObsErrors<MODEL>          ObsErrors_;
   typedef ObsSpaces<MODEL>          ObsSpaces_;
@@ -66,6 +68,7 @@ template <typename MODEL> class LETKF : public Application {
 // -----------------------------------------------------------------------------
 
   explicit LETKF(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {
+    instantiateLETKFSolverFactory<MODEL>();
     instantiateObsErrorFactory<MODEL>();
     instantiateObsFilterFactory<MODEL>();
   }
@@ -99,13 +102,14 @@ template <typename MODEL> class LETKF : public Application {
     const eckit::LocalConfiguration bgConfig(fullConfig, "Background");
     const Variables statevars(bgConfig);
 
-    // Loop over all ensemble members
+    // Read all ensemble members
     StateEnsemble_ ens_xx(resol, statevars, bgConfig);
-    ObsEnsemble_ obsens(obsdb, ens_xx.size());
+    const size_t nens = ens_xx.size();
+    ObsEnsemble_ obsens(obsdb, nens);
 
     // Initialize observer
     CalcHofX<MODEL> hofx(obsdb, resol, fullConfig);
-    for (unsigned jj = 0; jj < ens_xx.size(); ++jj) {
+    for (size_t jj = 0; jj < nens; ++jj) {
       // TODO(Travis) change the way input file name is specified, make
       //  more similar to how the output ens config is done
       Log::test() << "Initial state for member " << jj+1 << ":" << ens_xx[jj] << std::endl;
@@ -137,8 +141,8 @@ template <typename MODEL> class LETKF : public Application {
     Log::test() << "H(x) ensemble background mean: " << std::endl << yb_mean << std::endl;
 
     // calculate H(x) ensemble perturbations
-    DeparturesEnsemble_ ens_Yb(obsdb, obsens.size());
-    for (size_t iens = 0; iens < obsens.size(); ++iens) {
+    DeparturesEnsemble_ ens_Yb(obsdb, nens);
+    for (size_t iens = 0; iens < nens; ++iens) {
       ens_Yb[iens] = obsens[iens] - yb_mean;
     }
 
@@ -150,16 +154,10 @@ template <typename MODEL> class LETKF : public Application {
     // initialize empty analysis perturbations
     IncrementEnsemble_ ana_pert(resol, statevars, ens_xx[0].validTimes(), bkg_pert.size());
 
-    // get the LETKF parameters used here
-    // make sure rtpp inflation is within range
-    const eckit::LocalConfiguration letkfConfig(fullConfig, "letkf");
-    double rtppCoeff = letkfConfig.getDouble("inflation.rtpp", 0.0);
-    if (rtppCoeff > 0.0 && rtppCoeff <= 1.0) {
-      Log::info() << "RTPP inflation will be applied with rtppCoeff=" << rtppCoeff << std::endl;
-    } else {
-      Log::info() << "RTPP inflation is not applied rtppCoeff is out of bounds (0,1], rtppCoeff="
-                  << rtppCoeff << std::endl;
-    }
+    // set up solver
+    std::unique_ptr<LETKFSolver_> localSolver =
+         LETKFSolverFactory<MODEL>::create(fullConfig, nens);
+
     // run the LETKF solver at each gridpoint
     Log::info() << "Beginning core LETKF solver..." << std::endl;
     for (GeometryIterator_ i = resol.begin(); i != resol.end(); ++i) {
@@ -170,37 +168,29 @@ template <typename MODEL> class LETKF : public Application {
       // create local obs errors
       ObsErrors_ local_rmat(obsConfig, local_obs);
 
-      // Calculate the LETKF transform matrix
-      const Eigen::MatrixXd trans = calcTrans(letkfConfig, local_ombg, local_ens_Yb, local_rmat);
-
-      // use the transform matrix to calculate the analysis perturbations
-      // loop over times (no time localization for now)
-      for (unsigned itime=0; itime < bkg_pert[0].size(); ++itime) {
-        for (unsigned jj=0; jj < obsens.size(); ++jj) {
-          GridPoint gp = bkg_pert[0][itime].getPoint(i);
-          gp *= trans(0, jj);
-          for (unsigned ii=1; ii < obsens.size(); ++ii) {
-            GridPoint gp2 = bkg_pert[ii][itime].getPoint(i);
-            gp2 *= trans(ii, jj);
-            gp += gp2;
-          }
-          ana_pert[jj][itime].setPoint(gp, i);
-        }
-      }
+      localSolver->measurementUpdate(local_ombg, local_ens_Yb, local_rmat,
+                                    bkg_pert, i, ana_pert);
     }
     Log::info() << "LETKF solver completed." << std::endl;
 
     // calculate final analysis states
-    for (unsigned jj = 0; jj < ens_xx.size(); ++jj) {
+    for (size_t jj = 0; jj < nens; ++jj) {
       ens_xx[jj] = bkg_mean;
       ens_xx[jj] += ana_pert[jj];
     }
 
-    // TODO(Travis) optionally save analysis mean / standard deviation
+    // TODO(Travis) optionally save analysis standard deviation
+
+    // save the analysis mean
+    State4D_ ana_mean = ens_xx.mean();   // calculate analysis mean
+    Log::info() << "Analysis mean :" << ana_mean << std::endl;
+    eckit::LocalConfiguration outConfig(fullConfig, "output");
+    outConfig.set("member", 0);
+    ana_mean.write(outConfig);
 
     // save the analysis ensemble
-    int mymember;
-    for (unsigned jj=0; jj < obsens.size(); ++jj) {
+    size_t mymember;
+    for (size_t jj=0; jj < nens; ++jj) {
       mymember = jj+1;
       eckit::LocalConfiguration outConfig(fullConfig, "output");
       outConfig.set("member", mymember);
@@ -208,7 +198,7 @@ template <typename MODEL> class LETKF : public Application {
     }
 
     // calculate oman
-    for (unsigned jj = 0; jj < ens_xx.size(); ++jj) {
+    for (size_t jj = 0; jj < nens; ++jj) {
       // compute and save H(x)
       obsens[jj] = hofx.compute(ens_xx[jj]);
       Log::test() << "H(x) for member " << jj+1 << ":" << std::endl << obsens[jj] << std::endl;
@@ -238,85 +228,6 @@ template <typename MODEL> class LETKF : public Application {
     return "oops::LETKF<" + MODEL::name() + ">";
   }
 
-// -----------------------------------------------------------------------------
-
-/// Calculate the transform matrix to go from background to analysis perturbations
-/*!
- * @param  conf  The LETKF portion of the yaml configuration file
- * @param  dy    Observation departures from background
- * @param  Yb    Background ensemble perturbations in observation space
- * @param  R     Observation error
- *
- * The following steps are performed to calculate the transform matix, \f$ T \f$
- *
- * - \f$ work = Y_b^T R^{-1} Y_b + (k-1)/\rho \f$
- * - eigenvector decomposition of \f$ work \f$. (used in the next two steps)
- * - \f$ \tilde{P_a}= [ work]^{-1}\f$
- * - \f$ W_a = [ (k-1) \tilde{P_a} ]^{1/2}\f$
- * - \f$ \bar{w_a} = \tilde{P_a} Y_b^T R^{-1} \delta y \f$
- * - \f$ \bar{w_a} \f$ is added to each column of \f$ W_a \f$ to form \f$ T \f$
- */
-  static const Eigen::MatrixXd calcTrans(
-                                  const eckit::Configuration &conf,
-                                  const Departures_ & dy,
-                                  const DeparturesEnsemble_ & Yb,
-                                  const ObsErrors_ & R) {
-    unsigned int nbv = Yb.size();  // number of ensemble members
-    double infl = conf.getDouble("inflation.mult", 1.0);
-
-    Eigen::MatrixXd work(nbv, nbv);
-    Eigen::MatrixXd trans;
-
-    // fill in the work matrix (note that since the matrix is symmetric,
-    // only lower triangular half is filled)
-    // work = Y^T R^-1 Y + (nbv-1)/infl I
-    for (unsigned jj=0; jj < nbv; ++jj) {
-      Departures_ Cj(Yb[jj]);
-      R.inverseMultiply(Cj);
-      for (unsigned ii=jj; ii < nbv; ++ii) {
-        work(ii, jj) = Cj.dot_product_with(Yb[ii]);
-      }
-      work(jj, jj) += (nbv-1.0) / infl;
-    }
-
-    // eigenvalues and eigenvectors of the above matrix
-    Eigen::VectorXd eival(nbv);
-    Eigen::MatrixXd eivec(nbv, nbv);
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(work);
-    eival = es.eigenvalues().real();
-    eivec = es.eigenvectors().real();
-
-    // Pa   = [ Yb^T R^-1 Yb + (nbv-1)/infl I ] ^-1
-    work = eivec * eival.cwiseInverse().asDiagonal() * eivec.transpose();
-
-    // Wa = sqrt[ (nbv-1) Pa ]
-    trans = eivec
-      * ((nbv-1) * eival.array().inverse()).sqrt().matrix().asDiagonal()
-      * eivec.transpose();
-
-    // RTPP: Relaxation to prior perturbation.
-    // delta_xa'(iens)=rtppCoeff*delta_xb'(iens)+(1-rtppCoeff)*delta_xa'(iens)
-    // RTPP is done on Wa before the ensemble mean translation is introduced
-    double rtppCoeff = conf.getDouble("inflation.rtpp", 0.0);
-    if (rtppCoeff > 0.0 && rtppCoeff <= 1.0) {
-      trans = (1.-rtppCoeff)*trans;
-      trans.diagonal() = Eigen::VectorXd::Constant(nbv, rtppCoeff)+trans.diagonal();
-    }
-
-    // wa = Pa Yb^T R^-1 dy
-    Eigen::VectorXd wa(nbv);
-    Departures_ Rinvdy(dy);
-    R.inverseMultiply(Rinvdy);
-    for (unsigned jj=0; jj < nbv; ++jj) {
-      wa(jj) = Yb[jj].dot_product_with(Rinvdy);
-    }
-    wa = work * wa;
-
-    // add wa to each column of Wa to get T
-    trans.colwise() += wa;
-
-    return trans;
-  }
 // -----------------------------------------------------------------------------
 };
 
