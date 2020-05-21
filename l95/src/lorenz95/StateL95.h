@@ -76,6 +76,7 @@ class StateL95 : public util::Printable,
   void write(const eckit::Configuration &) const;
   double norm () const {return fld_.rms();}
   const util::DateTime & validTime() const {return time_;}
+  void updateTime(const util::Duration & dt) {time_ += dt;}
   util::DateTime & validTime() {return time_;}
 
 // For accumulator

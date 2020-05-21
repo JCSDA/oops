@@ -26,8 +26,6 @@
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
-#include "oops/interface/Model.h"
-#include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Application.h"
@@ -39,8 +37,6 @@ namespace oops {
 
 template <typename MODEL> class Dirac : public Application {
   typedef Geometry<MODEL>                           Geometry_;
-  typedef Model<MODEL>                              Model_;
-  typedef ModelAuxControl<MODEL>                    ModelAux_;
   typedef Increment<MODEL>                          Increment_;
   typedef Increment4D<MODEL>                        Increment4D_;
   typedef State<MODEL>                              State_;

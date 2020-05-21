@@ -147,6 +147,7 @@ oops/generic/dcmip_initial_conditions_test_1_2_3_v5.f90
 oops/generic/dcmip_initial_conditions_test_4_v3.f90
 oops/generic/gc99.h
 oops/generic/gc99.cc
+oops/generic/IdentityModel.h
 oops/generic/IdLinearVariableChange.h
 oops/generic/IdVariableChange.h
 oops/generic/instantiateLocalizationFactory.h

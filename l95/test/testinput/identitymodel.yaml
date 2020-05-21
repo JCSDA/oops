@@ -1,0 +1,14 @@
+Geometry:
+  resol: 40
+Model:
+  name: Identity
+  tstep: PT1H30M
+  variables: ['x']
+ModelBias: {}
+ModelTest:
+  fclength: PT48H
+  finalnorm: 8.026
+  tolerance: 0.00005
+State:
+  date: '2010-01-01T03:00:00Z'
+  filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H

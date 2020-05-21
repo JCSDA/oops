@@ -17,28 +17,14 @@
 #include "eckit/config/Configuration.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/mpi/Comm.h"
-#include "oops/base/PostProcessor.h"
-#include "oops/base/StateInfo.h"
-#include "oops/base/StateWriter.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Model.h"
-#include "oops/interface/ModelAuxControl.h"
-#include "oops/interface/State.h"
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/runs/Forecast.h"
-#include "oops/util/DateTime.h"
-#include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
 
 template <typename MODEL> class EnsForecast : public Application {
-  typedef Geometry<MODEL>         Geometry_;
-  typedef Model<MODEL>            Model_;
-  typedef ModelAuxControl<MODEL>  ModelAux_;
-  typedef State<MODEL>            State_;
-
  public:
 // -----------------------------------------------------------------------------
   explicit EnsForecast(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {}

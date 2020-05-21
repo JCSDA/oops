@@ -55,6 +55,7 @@ class State : public util::Printable,
 
 /// Time
   const util::DateTime validTime() const {return state_->validTime();}
+  void updateTime(const util::Duration & dt) {state_->updateTime(dt);}
 
 /// I/O and diagnostics
   void read(const eckit::Configuration &);

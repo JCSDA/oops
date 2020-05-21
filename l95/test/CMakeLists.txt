@@ -29,9 +29,12 @@ list( APPEND l95_test_input
   testinput/eda.4dvar.member3.yaml
   testinput/enshofx.yaml
   testinput/forecast.yaml
+  testinput/forecast_pseudomodel.yaml
+  testinput/forecast_identitymodel.yaml
   testinput/genenspert.yaml
   testinput/hofx.yaml
   testinput/hofx_nomodel.yaml
+  testinput/identitymodel.yaml
   testinput/letkf.yaml
   testinput/localhofx.yaml
   testinput/interfaces.yaml
@@ -39,6 +42,7 @@ list( APPEND l95_test_input
   testinput/makeobs4d.yaml
   testinput/makeobs4d12h.yaml
   testinput/makeobsbias.yaml
+  testinput/pseudomodel.yaml
   testinput/test.yaml
   testinput/truth.yaml
 )
@@ -76,6 +80,8 @@ list( APPEND l95_testoutput
   testoutput/diffstates.test
   testoutput/enshofx.test
   testoutput/forecast.test
+  testoutput/forecast_pseudomodel.test
+  testoutput/forecast_identitymodel.test
   testoutput/genenspert.test
   testoutput/hofx.test
   testoutput/hofx.nomodel.test
@@ -223,6 +229,7 @@ ecbuild_add_test( TARGET test_l95_modelL95
                   ARGS "testinput/test.yaml"
                   LIBS lorenz95 eckit )
 
+
 #####################################################################
 # truth and makeobs4d are required for interface tests
 #####################################################################
@@ -296,6 +303,21 @@ ecbuild_add_test( TARGET test_l95_model
 
 #--------------------------------------------------------------------
 
+ecbuild_add_test( TARGET test_l95_pseudomodel
+                  SOURCES executables/TestModel.cc
+                  ARGS "testinput/pseudomodel.yaml"
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_identitymodel
+                  SOURCES executables/TestModel.cc
+                  ARGS "testinput/identitymodel.yaml"
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth )
+
+#--------------------------------------------------------------------
 ecbuild_add_test( TARGET test_l95_increment
                   SOURCES executables/TestIncrement.cc
                   ARGS "testinput/interfaces.yaml"
@@ -421,6 +443,18 @@ ecbuild_add_test( TARGET test_l95_localization
 oops_add_test( TESTNAME forecast
                MODELNAME l95
                YAMLNAME testinput/forecast.yaml
+               EXENAME l95_forecast.x
+               COMPARE )
+
+oops_add_test( TESTNAME forecast_pseudomodel
+               MODELNAME l95
+               YAMLNAME testinput/forecast_pseudomodel.yaml
+               EXENAME l95_forecast.x
+               COMPARE )
+
+oops_add_test( TESTNAME forecast_identitymodel
+               MODELNAME l95
+               YAMLNAME testinput/forecast_identitymodel.yaml
                EXENAME l95_forecast.x
                COMPARE )
 
