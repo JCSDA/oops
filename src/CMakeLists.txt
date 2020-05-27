@@ -226,6 +226,7 @@ oops/runs/Variational.h
 oops/util/abor1_cpp.cc
 oops/util/abor1_cpp.h
 oops/util/abor1_ftn.F90
+oops/util/CompareNVectors.h
 oops/util/config_f.cc
 oops/util/config_f.h
 oops/util/config_mod.F90
@@ -343,6 +344,7 @@ test/util/f_c_string.F90
 test/util/Parameters.h
 test/util/ScalarOrMap.h
 test/util/FloatCompare.h
+test/util/CompareNVectors.h
 )
 
 list (APPEND oops_fheader_files
@@ -478,6 +480,12 @@ ecbuild_add_test( TARGET  test_parallel_mpi_mpi
                   SOURCES test/parallel/mpi/mpi.cc
                   ARGS    "test/testinput/mpi.yaml"
                   LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_comparenvectors
+                  SOURCES test/util/CompareNVectors.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
 
 if( HAVE_FCTEST )
 

@@ -26,6 +26,7 @@
 
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Application.h"
+#include "oops/util/CompareNVectors.h"
 #include "oops/util/FloatCompare.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
