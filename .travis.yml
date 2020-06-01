@@ -32,13 +32,13 @@ before_install:
 
   - git clone https://github.com/jcsda/fckit.git ${REPO_SOURCE_DIR}/oops-bundle/fckit
   - cd ${REPO_SOURCE_DIR}/oops-bundle/fckit
-  - git checkout $BRANCH || echo "No branch named $BRANCH in fckit repo"
+  - git checkout $BRANCH || echo "No branch named $BRANCH in atlas repo"; git checkout release-stable
   - cd $REPO_SOURCE_DIR
 
 #  checkout for the same branch name in atlas
   - git clone https://github.com/jcsda/atlas.git ${REPO_SOURCE_DIR}/oops-bundle/atlas
   - cd ${REPO_SOURCE_DIR}/oops-bundle/atlas
-  - git checkout $BRANCH || echo "No branch named $BRANCH in atlas repo"
+  - git checkout $BRANCH || echo "No branch named $BRANCH in atlas repo"; git checkout release-stable
   - cd $REPO_SOURCE_DIR
 
 #  clone the testing branch of oops
@@ -61,6 +61,7 @@ before_install:
 #======================================================================
   - cd ${REPO_SOURCE_DIR}/oops-bundle/oops
   - date
+  - cd CI
   - docker build -t jcsda/dockerl2 --build-arg=Dockerfile .  #Dockerfile handles ssh for mpi
   - date
   - docker images
@@ -84,8 +85,9 @@ script:
   - date
   - docker exec jcsda_container bash -c 'cd /build_container/oops && ctest'
   - date
+#disable code coverage until lcov issue is fixed
 ##  run lcov inside container
-  - docker exec jcsda_container bash -c 'cd /build_container/oops && lcov --capture --directory . --output-file coverage.info'
-  - docker exec jcsda_container bash -c 'cd /build_container/oops && lcov --remove coverage.info "/usr/*" --output-file coverage.info'  #  filter system-files 
-  - docker exec jcsda_container bash -c 'cd /build_container/oops && lcov --list coverage.info'  #  debug info
-  - docker exec jcsda_container bash -c 'cd /build_container/oops && bash <(curl -s https://codecov.io/bash) -t 3b511d7d-c15d-4ee5-8a1e-29c6d97d2032  -X gcov -f coverage.info -R /jcsda/src_repo/oops/'
+#  - docker exec jcsda_container bash -c 'cd /build_container/oops && lcov --capture --directory . --output-file coverage.info'
+#  - docker exec jcsda_container bash -c 'cd /build_container/oops && lcov --remove coverage.info "/usr/*" --output-file coverage.info'  #  filter system-files 
+#  - docker exec jcsda_container bash -c 'cd /build_container/oops && lcov --list coverage.info'  #  debug info
+#  - docker exec jcsda_container bash -c 'cd /build_container/oops && bash <(curl -s https://codecov.io/bash) -t 3b511d7d-c15d-4ee5-8a1e-29c6d97d2032  -X gcov -f coverage.info -R /jcsda/src_repo/oops/'

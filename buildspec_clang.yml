@@ -38,11 +38,11 @@ phases:
       - cd CI
 
       # oops
-      - ./clone.sh $GIT_USER $GIT_PASS oops $CODEBUILD_GIT_BRANCH oops /jcsda/oops-bundle
+      - ./clone.sh $GIT_USER $GIT_PASS oops $CODEBUILD_GIT_BRANCH oops /jcsda/oops-bundle develop
       # fckit
-      - ./clone.sh $GIT_USER $GIT_PASS fckit $CODEBUILD_GIT_BRANCH fckit /jcsda/oops-bundle
+      - ./clone.sh $GIT_USER $GIT_PASS fckit $CODEBUILD_GIT_BRANCH fckit /jcsda/oops-bundle release-stable
       # atlas
-      - ./clone.sh $GIT_USER $GIT_PASS atlas $CODEBUILD_GIT_BRANCH atlas /jcsda/oops-bundle
+      - ./clone.sh $GIT_USER $GIT_PASS atlas $CODEBUILD_GIT_BRANCH atlas /jcsda/oops-bundle release-stable
      
       - cd /jcsda/oops-bundle
       - ls
