@@ -111,6 +111,17 @@ template <typename MODEL> void testSimulateObs() {
       oops::Log::info() << "Vector difference between reference and computed: " << obsref;
       EXPECT(zz < 100*tol);  //  change tol from percent to actual value.
                              //  tol used in is_close is relative
+    } else if (conf[jj].has("normequiv")) {
+      // if reference h(x) is saved in file as a vector, read from file
+      // and compare the difference, normalised by the reference values to zero
+      ObsVector_ obsref(Test_::obspace()[jj], conf[jj].getString("normequiv"));
+      obsref -= hofx;
+      obsref /= hofx;
+      const double zz = obsref.rms();
+      oops::Log::info() << "Normalised vector difference between reference and computed: "
+                        << obsref;
+      EXPECT(zz < 100*tol);  //  change tol from percent to actual value.
+                             //  tol used in is_close is relative
     } else {
       // else compare h(x) norm to the norm from the config
       const double zz = hofx.rms();
