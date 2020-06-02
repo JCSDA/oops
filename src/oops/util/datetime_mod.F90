@@ -20,7 +20,7 @@ public datetime, datetime_create, datetime_set, datetime_delete, &
      & assignment(=), c_f_datetime, f_c_datetime, datetime_to_string, &
      & operator(<), operator(<=), operator(>=), operator(>), &
      & datetime_update, datetime_diff, &
-     & datetime_to_ifs, datetime_from_ifs
+     & datetime_to_ifs, datetime_from_ifs, datetime_to_YYYYMMDDhhmmss
 
 !>  Derived type encapsulating a C++ DateTime pointer.
 
@@ -167,6 +167,19 @@ call c_datetime_string(fdt%ptr, cstring)
 call c_f_string(cstring, fstring)
 
 end subroutine datetime_to_string
+
+!-------------------------------------------------------------------------------
+
+!> Extract individual date and time components
+
+subroutine datetime_to_yyyymmddhhmmss(fdt, year, month, day, hour, minute, second)
+implicit none
+type(datetime), intent(in)       :: fdt
+integer(kind=c_int), intent(out) :: year, month, day, hour, minute, second
+
+call c_datetime_to_yyyymmddhhmmss(fdt%ptr, year, month, day, hour, minute, second)
+
+end subroutine datetime_to_yyyymmddhhmmss
 
 !-------------------------------------------------------------------------------
 

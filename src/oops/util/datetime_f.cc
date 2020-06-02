@@ -52,6 +52,14 @@ void datetime_string_f(const util::DateTime * dd, char cstr[21]) {
 
 // -----------------------------------------------------------------------------
 
+void datetime_to_yyyymmddhhmmss_f(const util::DateTime *dt,
+                                  int & year, int & month, int & day,
+                                  int & hour, int & minute, int & second) {
+  dt->toYYYYMMDDhhmmss(year, month, day, hour, minute, second);
+}
+
+// -----------------------------------------------------------------------------
+
 void datetime_getints_f(const util::DateTime * dt, int64_t & date, int & time) {
   int yy, mm, dd, hh, nn, ss;
   dt->toYYYYMMDDhhmmss(yy, mm, dd, hh, nn, ss);

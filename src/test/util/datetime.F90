@@ -251,4 +251,26 @@ TEST(test_datetime_from_ifs)
   CHECK_EQUAL(fstring, "2016-07-02T21:34:56Z")
 END_TEST
 
+!> Test datetime_to_yyyymmddhhmmss.
+!! Extraction of individual date and time components from DateTime
+TEST(test_datetime_to_yyyymmddhhmmss)
+  use, intrinsic :: iso_c_binding
+  use datetime_mod
+  implicit none
+  character(len=20) :: fstring
+  type(datetime) :: fdt
+  integer(kind=c_int) :: year, month, day, hour, minute, second
+
+  fstring="2016-08-02T12:34:56Z"
+  call datetime_create(fstring, fdt)
+  call datetime_to_yyyymmddhhmmss(fdt, year, month, day, hour, minute, second)
+
+  CHECK_EQUAL(year, 2016)
+  CHECK_EQUAL(month, 8)
+  CHECK_EQUAL(day, 2)
+  CHECK_EQUAL(hour, 12)
+  CHECK_EQUAL(minute, 34)
+  CHECK_EQUAL(second, 56)
+END_TEST
+
 END_TESTSUITE

@@ -24,6 +24,9 @@ extern "C" {
   void datetime_set_f(const char str[], util::DateTime *);
   void datetime_destruct_f(util::DateTime *);
   void datetime_string_f(const util::DateTime *, char str[21]);
+  void datetime_to_yyyymmddhhmmss_f(const util::DateTime *dt,
+                                    int & year, int & month, int & day,
+                                    int & hour, int & minute, int & second);
   void datetime_getints_f(const util::DateTime *, int64_t &, int &);
   void datetime_setints_f(util::DateTime *, const int64_t &, const int &);
   int64_t datetime_diff_f(const util::DateTime *, const util::DateTime *);
