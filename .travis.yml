@@ -86,9 +86,5 @@ script:
   - date
   - docker exec jcsda_container bash -c 'cd /build_container/oops && ctest'
   - date
-#disable code coverage until lcov issue is fixed
-##  run lcov inside container
-#  - docker exec jcsda_container bash -c 'cd /build_container/oops && lcov --capture --directory . --output-file coverage.info'
-#  - docker exec jcsda_container bash -c 'cd /build_container/oops && lcov --remove coverage.info "/usr/*" --output-file coverage.info'  #  filter system-files 
-#  - docker exec jcsda_container bash -c 'cd /build_container/oops && lcov --list coverage.info'  #  debug info
-#  - docker exec jcsda_container bash -c 'cd /build_container/oops && bash <(curl -s https://codecov.io/bash) -t 3b511d7d-c15d-4ee5-8a1e-29c6d97d2032  -X gcov -f coverage.info -R /jcsda/src_repo/oops/'
+#upload to codecov
+  - docker exec jcsda_container bash -c 'cd /build_container/oops && bash <(curl -s https://codecov.io/bash) -t 3b511d7d-c15d-4ee5-8a1e-29c6d97d2032'
