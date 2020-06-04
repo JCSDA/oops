@@ -67,6 +67,7 @@ before_install:
   - docker images
 # request codecov to detect CI environment to pass through to docker
   - ci_env=`bash <(curl -s https://codecov.io/env)`
+  - echo $ci_env
   - docker run -d -t $ci_env --name jcsda_container -v ${REPO_SOURCE_DIR}/oops-bundle:/jcsda/src_repo jcsda/dockerl2
   - docker ps -a
   - date
