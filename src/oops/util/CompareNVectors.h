@@ -16,9 +16,9 @@ namespace oops {
   /// This is the base case for one vector.
   template <typename T>
     bool anyVectorEmpty(const std::vector <T> &vec)
-    {
-      return vec.empty();
-    }
+  {
+    return vec.empty();
+  }
 
   /// \brief Tests whether at least one vector is empty.
   /// This is the recursive case that accepts an arbitrary number of vectors
@@ -34,18 +34,18 @@ namespace oops {
   /// This is the trivial base case for one vector. The result always evaluates to true.
   template <typename T>
     bool allVectorsSameSize(const std::vector <T> &vec)
-    {
-      return true;
-    }
+  {
+    return true;
+  }
 
   /// \brief Tests whether all vectors have the same size.
   /// This is the base case for two vectors.
   template <typename T1, typename T2>
     bool allVectorsSameSize(const std::vector <T1> &vec1,
                             const std::vector <T2> &vec2)
-    {
-      return vec1.size() == vec2.size();
-    }
+  {
+    return vec1.size() == vec2.size();
+  }
 
   /// \brief Tests whether all vectors have the same size.
   /// This is the recursive case that accepts an arbitrary number of vectors
@@ -57,6 +57,46 @@ namespace oops {
                             const Args&... vecs)
   {
     return vec1.size() == vec2.size() && allVectorsSameSize(vec1, vecs...);
+  }
+
+  /// \brief Tests whether all vectors have an expected size (N).
+  /// This is the base case for one vector.
+  template <typename T>
+    bool allVectorsExpectedSize(const size_t &N,
+                                const std::vector <T> &vec)
+  {
+    return vec.size() == N;
+  }
+
+  /// \brief Tests whether all vectors have an expected size (N).
+  /// This is the recursive case that accepts an arbitrary number of vectors
+  /// using a variadic template.
+  template <typename T, typename... Args>
+    bool allVectorsExpectedSize(const size_t &N,
+                                const std::vector <T> &vec,
+                                const Args&... vecs)
+  {
+    return vec.size() == N && allVectorsExpectedSize(N, vecs...);
+  }
+
+  /// \brief Tests whether all filled (non-empty) vectors have an expected size (N).
+  /// This is the base case for one vector.
+  template <typename T>
+    bool allNonEmptyVectorsExpectedSize(const size_t &N,
+                                        const std::vector <T> &vec)
+  {
+    return vec.empty() || vec.size() == N;
+  }
+
+  /// \brief Tests whether all filled (non-empty) vectors have an expected size (N).
+  /// This is the recursive case that accepts an arbitrary number of vectors
+  /// using a variadic template.
+  template <typename T, typename... Args>
+    bool allNonEmptyVectorsExpectedSize(const size_t &N,
+                                        const std::vector <T> &vec,
+                                        const Args&... vecs)
+  {
+    return (vec.empty() || vec.size() == N) && allNonEmptyVectorsExpectedSize(N, vecs...);
   }
 }  // namespace oops
 #endif  // OOPS_UTIL_COMPARENVECTORS_H_

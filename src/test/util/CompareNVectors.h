@@ -26,10 +26,10 @@ namespace test {
   void testEmpty()
   {
     // Vectors used in testing
-    std::vector <size_t> vEmpty {};
-    std::vector <int> v1 {1, 2, 3};
-    std::vector <float> v2 {1.0, 2.0, 3.0};
-    std::vector <std::string> v3 {"1", "2", "3"};
+    const std::vector <size_t> vEmpty {};
+    const std::vector <int> v1 {1, 2, 3};
+    const std::vector <float> v2 {1.0, 2.0, 3.0};
+    const std::vector <std::string> v3 {"1", "2", "3"};
 
     // Tests with one empty vector
     EXPECT(oops::anyVectorEmpty(vEmpty));
@@ -60,12 +60,12 @@ namespace test {
   void testSameSize()
   {
     // Vectors used in testing
-    std::vector <int> v1a {1};
-    std::vector <float> v1b {1.0};
-    std::vector <std::string> v1c {"1"};
-    std::vector <int> v2a {1, 2};
-    std::vector <float> v2b {1.0, 2.0};
-    std::vector <std::string> v2c {"1", "2"};
+    const std::vector <int> v1a {1};
+    const std::vector <float> v1b {1.0};
+    const std::vector <std::string> v1c {"1"};
+    const std::vector <int> v2a {1, 2};
+    const std::vector <float> v2b {1.0, 2.0};
+    const std::vector <std::string> v2c {"1", "2"};
 
     // Vectors of length 1
     EXPECT(oops::allVectorsSameSize(v1a));
@@ -87,12 +87,101 @@ namespace test {
     EXPECT_NOT(oops::allVectorsSameSize(v2a, v2b, v2c, v1a));
   }
 
+  void testExpectedSize()
+  {
+    // Vectors used in testing
+    const std::vector <size_t> vEmpty {};
+    const std::vector <int> v1a {1};
+    const std::vector <float> v1b {1.0};
+    const std::vector <std::string> v1c {"1"};
+    const std::vector <int> v2a {1, 2};
+    const std::vector <float> v2b {1.0, 2.0};
+    const std::vector <std::string> v2c {"1", "2"};
+
+    // Expected vector size (N)
+    const size_t N = 2;
+
+    // Vectors of length 2
+    EXPECT(oops::allVectorsExpectedSize(N, v2a));
+    EXPECT(oops::allVectorsExpectedSize(N, v2a, v2b));
+    EXPECT(oops::allVectorsExpectedSize(N, v2a, v2b, v2c));
+
+    // Empty vector
+    EXPECT_NOT(oops::allVectorsExpectedSize(N, vEmpty));
+
+    // Vectors of length 1
+    EXPECT_NOT(oops::allVectorsExpectedSize(N, v1a));
+    EXPECT_NOT(oops::allVectorsExpectedSize(N, v1a, v1b));
+    EXPECT_NOT(oops::allVectorsExpectedSize(N, v1a, v1c));
+
+    // Vectors of different lengths
+    EXPECT_NOT(oops::allVectorsExpectedSize(N, v2a, vEmpty));
+    EXPECT_NOT(oops::allVectorsExpectedSize(N, v2a, v1a, vEmpty));
+    EXPECT_NOT(oops::allVectorsExpectedSize(N, v2a, vEmpty, vEmpty));
+    EXPECT_NOT(oops::allVectorsExpectedSize(N, vEmpty, v2a, vEmpty, v2b, vEmpty, v2c));
+  }
+
+  void testNonEmptyExpectedSize()
+  {
+    // Vectors used in testing
+    const std::vector <size_t> vEmpty {};
+    const std::vector <int> v1a {1};
+    const std::vector <float> v1b {1.0};
+    const std::vector <std::string> v1c {"1"};
+    const std::vector <int> v2a {1, 2};
+    const std::vector <float> v2b {1.0, 2.0};
+    const std::vector <std::string> v2c {"1", "2"};
+
+    // Expected vector size (N)
+    const size_t N = 2;
+
+    // Vectors of length 2
+    EXPECT(oops::allNonEmptyVectorsExpectedSize(N, v2a));
+    EXPECT(oops::allNonEmptyVectorsExpectedSize(N, v2a, v2b));
+    EXPECT(oops::allNonEmptyVectorsExpectedSize(N, v2a, v2b, v2c));
+
+    // Empty vector
+    EXPECT(oops::allNonEmptyVectorsExpectedSize(N, vEmpty));
+
+    // Vectors either of length 2 or empty
+    EXPECT(oops::allNonEmptyVectorsExpectedSize(N, v2a, vEmpty));
+    EXPECT(oops::allNonEmptyVectorsExpectedSize(N, v2a, vEmpty, vEmpty));
+    EXPECT(oops::allNonEmptyVectorsExpectedSize(N, vEmpty, v2a, vEmpty, v2b, vEmpty, v2c));
+
+    // Vectors of length 1
+    EXPECT_NOT(oops::allNonEmptyVectorsExpectedSize(N, v1a));
+    EXPECT_NOT(oops::allNonEmptyVectorsExpectedSize(N, v1a, v1b));
+    EXPECT_NOT(oops::allNonEmptyVectorsExpectedSize(N, v1a, v1c));
+
+    // Vectors either of length 1 or empty
+    EXPECT_NOT(oops::allNonEmptyVectorsExpectedSize(N, v1a, vEmpty));
+    EXPECT_NOT(oops::allNonEmptyVectorsExpectedSize(N, v1a, vEmpty, vEmpty));
+    EXPECT_NOT(oops::allNonEmptyVectorsExpectedSize(N, v1a, vEmpty, v1c, vEmpty));
+
+    // Vectors of different lengths
+    EXPECT_NOT(oops::allNonEmptyVectorsExpectedSize(N, v1a, v2a));
+    EXPECT_NOT(oops::allNonEmptyVectorsExpectedSize(N, v2a, v1a));
+    EXPECT_NOT(oops::allNonEmptyVectorsExpectedSize(N, v1a, v2a, vEmpty));
+    EXPECT_NOT(oops::allNonEmptyVectorsExpectedSize(N, v2a, v1a, vEmpty));
+    EXPECT_NOT(oops::allNonEmptyVectorsExpectedSize(N, v1a, v2a, v2b));
+    EXPECT_NOT(oops::allNonEmptyVectorsExpectedSize(N, v2a, v1a, v2b));
+    EXPECT_NOT(oops::allNonEmptyVectorsExpectedSize(N, v2a, vEmpty, v2b, vEmpty, v1a));
+  }
+
   CASE("util/CompareNVectors/empty") {
     testEmpty();
   }
 
   CASE("util/CompareNVectors/sameSize") {
     testSameSize();
+  }
+
+  CASE("util/CompareNVectors/expectedSize") {
+    testExpectedSize();
+  }
+
+  CASE("util/CompareNVectors/nonEmptyExpectedSize") {
+    testNonEmptyExpectedSize();
   }
 
 class CompareNVectors : public oops::Test {
