@@ -108,7 +108,6 @@ qg_obsdb_interface.F90
 qg_obsdb_mod.F90
 qg_obsvec_interface.F90
 qg_obsvec_mod.F90
-qg_obsoper_mod.F90
 qg_obsvec_random_f.h
 qg_obsvec_random_f.cc
 qg_projection_mod.F90

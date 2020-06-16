@@ -56,8 +56,6 @@ typedef int F90error_covariance;
 typedef int F90error_stddev;
 // Observation vector key type
 typedef int F90ovec;
-// Obs operator key type
-typedef int F90hop;
 // Observation data base type
 typedef int F90odb;
 // Localization matrix
@@ -241,7 +239,6 @@ extern "C" {
                              const eckit::Configuration &, const util::DateTime &,
                              const util::Duration &, const int &, int &);
   void qg_obsdb_nobs_f90(const F90odb &, const int &, const char *, int &);
-  void qg_obsoper_inputs_f90(const F90hop &, oops::Variables &);
 
 // -----------------------------------------------------------------------------
 //  Observation vector
@@ -267,8 +264,6 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Streamfunction observations
 // -----------------------------------------------------------------------------
-  void qg_stream_setup_f90(F90hop &, const eckit::Configuration &);
-  void qg_stream_delete_f90(F90hop &);
   void qg_stream_equiv_f90(const F90gom &, const F90ovec &, const double &);
   void qg_stream_equiv_tl_f90(const F90gom &, const F90ovec &, const double &);
   void qg_stream_equiv_ad_f90(const F90gom &, const F90ovec &, double &);
@@ -276,8 +271,6 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Wind observations
 // -----------------------------------------------------------------------------
-  void qg_wind_setup_f90(F90hop &, const eckit::Configuration &);
-  void qg_wind_delete_f90(F90hop &);
   void qg_wind_equiv_f90(const F90gom &, F90ovec &, const double &);
   void qg_wind_equiv_tl_f90(const F90gom &, const F90ovec &, const double &);
   void qg_wind_equiv_ad_f90(const F90gom &, const F90ovec &, double &);
@@ -285,8 +278,6 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Wind speed observations
 // -----------------------------------------------------------------------------
-  void qg_wspeed_setup_f90(F90hop &, const eckit::Configuration &);
-  void qg_wspeed_delete_f90(F90hop &);
   void qg_wspeed_equiv_f90(const F90gom &, const F90ovec &, const double &);
   void qg_wspeed_equiv_tl_f90(const F90gom &, const F90ovec &, const F90gom &, const double &);
   void qg_wspeed_equiv_ad_f90(const F90gom &, const F90ovec &, const F90gom &, double &);

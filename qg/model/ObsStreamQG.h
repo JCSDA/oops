@@ -14,8 +14,6 @@
 #include <ostream>
 #include <string>
 
-#include <boost/shared_ptr.hpp>
-
 #include "model/ObsOpBaseQG.h"
 #include "model/ObsSpaceQG.h"
 #include "model/QgTraits.h"
@@ -30,7 +28,6 @@ namespace eckit {
 namespace qg {
   class GomQG;
   class ObsBias;
-  class ObsBiasIncrement;
   class ObsVecQG;
 
 // -----------------------------------------------------------------------------
@@ -42,7 +39,6 @@ class ObsStreamQG : public ObsOpBaseQG,
   static const std::string classname() {return "qg::ObsStreamQG";}
 
   ObsStreamQG(const ObsSpaceQG &, const eckit::Configuration &);
-  virtual ~ObsStreamQG();
 
 // Obs Operator
   void simulateObs(const GomQG &, ObsVecQG &, const ObsBias &) const override;
@@ -51,12 +47,8 @@ class ObsStreamQG : public ObsOpBaseQG,
   const oops::Variables & requiredVars() const override {return varin_;}
   LocationsQG * locations(const util::DateTime &, const util::DateTime &) const override;
 
-  int & toFortran() {return keyOperStrm_;}
-  const int & toFortran() const {return keyOperStrm_;}
-
  private:
   void print(std::ostream &) const override;
-  F90hop keyOperStrm_;
   const ObsSpaceQG & obsdb_;
   const oops::Variables varin_;
 };

@@ -14,8 +14,6 @@
 #include <ostream>
 #include <string>
 
-#include <boost/shared_ptr.hpp>
-
 #include "model/ObsOpBaseQG.h"
 #include "model/ObsSpaceQG.h"
 #include "model/QgTraits.h"
@@ -31,7 +29,6 @@ namespace qg {
   class GomQG;
   class LocationsQG;
   class ObsBias;
-  class ObsBiasIncrement;
   class ObsVecQG;
 
 // -----------------------------------------------------------------------------
@@ -43,7 +40,6 @@ class ObsWindQG : public ObsOpBaseQG,
   static const std::string classname() {return "qg::ObsWindQG";}
 
   ObsWindQG(const ObsSpaceQG &, const eckit::Configuration &);
-  virtual ~ObsWindQG();
 
 // Obs Operators
   void simulateObs(const GomQG &, ObsVecQG &, const ObsBias &) const override;
@@ -52,12 +48,8 @@ class ObsWindQG : public ObsOpBaseQG,
   const oops::Variables & requiredVars() const override {return varin_;}
   LocationsQG * locations(const util::DateTime &, const util::DateTime &) const override;
 
-  int & toFortran() {return keyOperWind_;}
-  const int & toFortran() const {return keyOperWind_;}
-
  private:
   void print(std::ostream &) const override;
-  F90hop keyOperWind_;
   const ObsSpaceQG & obsdb_;
   const oops::Variables varin_;
 };

@@ -27,17 +27,9 @@ static ObsOpMaker<ObsStreamQG> makerStream_("Stream");
 // -----------------------------------------------------------------------------
 
 ObsStreamQG::ObsStreamQG(const ObsSpaceQG & odb, const eckit::Configuration & config)
-  : keyOperStrm_(0), obsdb_(odb), varin_(std::vector<std::string>{"x"})
+  : obsdb_(odb), varin_(std::vector<std::string>{"x"})
 {
-  qg_stream_setup_f90(keyOperStrm_, config);
   oops::Log::trace() << "ObsStreamQG created." << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-ObsStreamQG::~ObsStreamQG() {
-  qg_stream_delete_f90(keyOperStrm_);
-  oops::Log::trace() << "ObsStreamQG destructed." << std::endl;
 }
 
 // -----------------------------------------------------------------------------

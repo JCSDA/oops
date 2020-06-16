@@ -32,8 +32,7 @@ class ObsVecQG;
 class ObsOpBaseQG : public util::Printable,
                     private boost::noncopyable {
  public:
-  ObsOpBaseQG() {}
-  virtual ~ObsOpBaseQG() {}
+  ObsOpBaseQG() = default;
 
 /// Obs Operator
   virtual void simulateObs(const GomQG &, ObsVecQG &, const ObsBias &) const = 0;
@@ -52,7 +51,7 @@ class ObsOpBaseQG : public util::Printable,
 class ObsOpFactory {
  public:
   static ObsOpBaseQG * create(const ObsSpaceQG &, const eckit::Configuration &);
-  virtual ~ObsOpFactory() { getMakers().clear(); }
+  virtual ~ObsOpFactory() = default;
  protected:
   explicit ObsOpFactory(const std::string &);
  private:

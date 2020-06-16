@@ -13,8 +13,6 @@
 
 #include <string>
 
-#include <boost/shared_ptr.hpp>
-
 #include "model/GomQG.h"
 #include "model/ObsOpBaseTLAD.h"
 #include "oops/base/Variables.h"
@@ -40,7 +38,6 @@ class ObsWSpeedTLAD : public ObsOpBaseTLAD,
   static const std::string classname() {return "qg::ObsWSpeedTLAD";}
 
   ObsWSpeedTLAD(const ObsSpaceQG &, const eckit::Configuration &);
-  virtual ~ObsWSpeedTLAD();
 
 // Obs Operators
   void setTrajectory(const GomQG &, const ObsBias &) override;
@@ -50,12 +47,8 @@ class ObsWSpeedTLAD : public ObsOpBaseTLAD,
 // Other
   const oops::Variables & requiredVars() const override {return varin_;}
 
-  int & toFortran() {return keyOperWspeed_;}
-  const int & toFortran() const {return keyOperWspeed_;}
-
  private:
   void print(std::ostream &) const override;
-  F90hop keyOperWspeed_;
   GomQG traj_;
   const oops::Variables varin_;
 };

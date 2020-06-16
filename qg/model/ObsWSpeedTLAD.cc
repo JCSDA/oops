@@ -29,17 +29,10 @@ static ObsOpTLADMaker<ObsWSpeedTLAD> makerWSpeedTL_("WSpeed");
 // -----------------------------------------------------------------------------
 
 ObsWSpeedTLAD::ObsWSpeedTLAD(const ObsSpaceQG & odb, const eckit::Configuration & config)
-  : keyOperWspeed_(0), traj_(), varin_(std::vector<std::string>{"u", "v"})
+  : traj_(), varin_(std::vector<std::string>{"u", "v"})
 {
-  qg_wspeed_setup_f90(keyOperWspeed_, config);
   qg_wspeed_gettraj_f90(odb.nobs(), varin_, traj_.toFortran());
   oops::Log::trace() << "ObsWSpeedTLAD created" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-ObsWSpeedTLAD::~ObsWSpeedTLAD() {
-  oops::Log::trace() << "ObsWSpeedTLAD destructed" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

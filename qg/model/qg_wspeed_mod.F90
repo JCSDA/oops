@@ -12,7 +12,6 @@ module qg_wspeed_mod
 use kinds
 use iso_c_binding
 use qg_gom_mod
-use qg_obsoper_mod
 use qg_obsvec_mod
 use oops_variables_mod
 

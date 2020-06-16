@@ -32,8 +32,7 @@ class ObsVecQG;
 class ObsOpBaseTLAD : public util::Printable,
                       private boost::noncopyable {
  public:
-  ObsOpBaseTLAD() {}
-  virtual ~ObsOpBaseTLAD() {}
+  ObsOpBaseTLAD() = default;
 
 /// Obs Operator
   virtual void setTrajectory(const GomQG &, const ObsBias &) = 0;
@@ -53,7 +52,7 @@ class ObsOpBaseTLAD : public util::Printable,
 class ObsOpTLADFactory {
  public:
   static ObsOpBaseTLAD * create(const ObsSpaceQG &, const eckit::Configuration &);
-  virtual ~ObsOpTLADFactory() { getMakers().clear(); }
+  virtual ~ObsOpTLADFactory() = default;
  protected:
   explicit ObsOpTLADFactory(const std::string &);
  private:

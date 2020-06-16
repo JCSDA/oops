@@ -28,16 +28,9 @@ static ObsOpMaker<ObsWindQG>   makerWind_("Wind");
 // -----------------------------------------------------------------------------
 
 ObsWindQG::ObsWindQG(const ObsSpaceQG & odb, const eckit::Configuration & config)
-  : keyOperWind_(0), obsdb_(odb), varin_(std::vector<std::string>{"u", "v"})
+  : obsdb_(odb), varin_(std::vector<std::string>{"u", "v"})
 {
-  qg_wind_setup_f90(keyOperWind_, config);
   oops::Log::trace() << "ObsWindQG created." << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-ObsWindQG::~ObsWindQG() {
-  qg_wind_delete_f90(keyOperWind_);
 }
 
 // -----------------------------------------------------------------------------

@@ -28,17 +28,9 @@ static ObsOpMaker<ObsWSpeedQG> makerWSpeed_("WSpeed");
 // -----------------------------------------------------------------------------
 
 ObsWSpeedQG::ObsWSpeedQG(const ObsSpaceQG & odb, const eckit::Configuration & config)
-  : keyOperWspeed_(0), obsdb_(odb), varin_(std::vector<std::string>{"u", "v"})
+  : obsdb_(odb), varin_(std::vector<std::string>{"u", "v"})
 {
-  qg_wspeed_setup_f90(keyOperWspeed_, config);
   oops::Log::trace() << "ObsWSpeedQG created." << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-ObsWSpeedQG::~ObsWSpeedQG() {
-  qg_wspeed_delete_f90(keyOperWspeed_);
-  oops::Log::trace() << "ObsWSpeedQG destructed" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

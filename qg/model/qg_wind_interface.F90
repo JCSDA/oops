@@ -11,7 +11,6 @@ module qg_wind_interface
 use fckit_configuration_module, only: fckit_configuration
 use iso_c_binding
 use qg_gom_mod
-use qg_obsoper_mod
 use qg_obsvec_mod
 use qg_wind_mod
 
@@ -20,44 +19,6 @@ implicit none
 private
 ! ------------------------------------------------------------------------------
 contains
-! ------------------------------------------------------------------------------
-!> Setup wind observations
-subroutine qg_wind_setup_c(c_key_self,c_conf) bind(c,name='qg_wind_setup_f90')
-
-implicit none
-
-! Passed variables
-integer(c_int),intent(inout) :: c_key_self !< Wind observations
-type(c_ptr),value,intent(in) :: c_conf     !< Configuration
-
-! Local variables
-type(fckit_configuration) :: f_conf
-type(qg_obsoper),pointer :: self
-character(len=1) :: svars(2) = (/'u','v'/)
-
-! Interface
-f_conf = fckit_configuration(c_conf)
-call qg_obsoper_registry%init()
-call qg_obsoper_registry%add(c_key_self)
-call qg_obsoper_registry%get(c_key_self,self)
-
-! Call Fortran
-call qg_oper_setup(self,f_conf,svars,2)
-
-end subroutine qg_wind_setup_c
-! ------------------------------------------------------------------------------
-!> Delete wind observations
-subroutine qg_wind_delete_c(c_key_self) bind(c,name='qg_wind_delete_f90')
-
-implicit none
-
-! Passed variables
-integer(c_int),intent(inout) :: c_key_self
-
-! Clear interface
-call qg_obsoper_registry%remove(c_key_self)
-
-end subroutine qg_wind_delete_c
 ! ------------------------------------------------------------------------------
 !> Get equivalent for wind
 subroutine qg_wind_equiv_c(c_key_gom,c_key_hofx,c_bias) bind(c,name='qg_wind_equiv_f90')
