@@ -696,6 +696,7 @@ oops_add_test( TESTNAME 4dvar_saddlepoint
                YAMLNAME testinput/4dvar_saddlepoint.yaml
                EXENAME  qg_4dvar.x
                TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h
+               CTOL 0.0000000001
                COMPARE)
 
 #####################################################################
