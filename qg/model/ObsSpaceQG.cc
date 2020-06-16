@@ -111,7 +111,7 @@ ObsSpaceQG::ObsSpaceQG(const ObsSpaceQG & obsdb,
   qg_obsdb_nobs_f90(key_, obsname_.size(), obsname_.c_str(), iobs);
   // get locations of all obs
   qg_obsdb_locations_f90(key_, obsname_.size(), obsname_.c_str(), winbgn_, winend_, key_locs);
-  for (size_t jj = 0; jj < iobs; ++jj) {
+  for (int jj = 0; jj < iobs; ++jj) {
     double lat, lon, z;
     qg_locs_element_f90(key_locs, jj, lon, lat, z);
     eckit::geometry::Point2 obsPoint(lon, lat);
