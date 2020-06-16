@@ -8,6 +8,7 @@
 #ifndef LORENZ95_OBSTABLEVIEW_H_
 #define LORENZ95_OBSTABLEVIEW_H_
 
+#include <memory>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -58,7 +59,7 @@ class ObsTableView : public util::Printable,
   unsigned int nobs() const;
   std::vector<double> locations() const;
   void generateDistribution(const eckit::Configuration &);
-  LocsL95 * locations(const util::DateTime & t1, const util::DateTime & t2) const;
+  std::unique_ptr<LocsL95> locations(const util::DateTime & t1, const util::DateTime & t2) const;
   void printJo(const ObsVec1D &, const ObsVec1D &);
 
   size_t index(const size_t ii) const {return localobs_[ii];}

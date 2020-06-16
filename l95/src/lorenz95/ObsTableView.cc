@@ -184,7 +184,8 @@ void ObsTableView::generateDistribution(const eckit::Configuration & conf) {
 
 // -----------------------------------------------------------------------------
 
-LocsL95 * ObsTableView::locations(const util::DateTime & t1, const util::DateTime & t2) const {
+std::unique_ptr<LocsL95> ObsTableView::locations(const util::DateTime & t1,
+                         const util::DateTime & t2) const {
   // get times and locations from the obsspace
   std::vector<util::DateTime> all_times = obstable_->times();
   std::vector<double> all_locs = obstable_->locations();
@@ -203,7 +204,7 @@ LocsL95 * ObsTableView::locations(const util::DateTime & t1, const util::DateTim
     times[i] = all_times[localobs_[mask[i]]];
   }
   oops::Log::trace() << "ObsTableView::locations done" << std::endl;
-  return new LocsL95(mask, locs, times);
+  return std::unique_ptr<LocsL95>(new LocsL95(mask, locs, times));
 }
 
 // -----------------------------------------------------------------------------

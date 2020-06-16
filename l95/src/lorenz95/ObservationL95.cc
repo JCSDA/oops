@@ -47,7 +47,8 @@ void ObservationL95::simulateObs(const GomL95 & gom, ObsVec1D & ovec,
 
 // -----------------------------------------------------------------------------
 
-LocsL95 * ObservationL95::locations(const util::DateTime & t1, const util::DateTime & t2) const {
+std::unique_ptr<LocsL95> ObservationL95::locations(const util::DateTime & t1,
+                         const util::DateTime & t2) const {
   return obsdb_.locations(t1, t2);
 }
 

@@ -11,6 +11,7 @@
 #ifndef LORENZ95_OBSERVATIONL95_H_
 #define LORENZ95_OBSERVATIONL95_H_
 
+#include <memory>
 #include <ostream>
 #include <string>
 
@@ -60,7 +61,7 @@ class ObservationL95 : public util::Printable,
 
 // Other
   const oops::Variables & requiredVars() const {return inputs_;}
-  LocsL95 * locations(const util::DateTime &, const util::DateTime &) const;
+  std::unique_ptr<LocsL95> locations(const util::DateTime &, const util::DateTime &) const;
 
   const ObsTableView & table() const {return obsdb_;}
 

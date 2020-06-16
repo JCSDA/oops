@@ -11,6 +11,7 @@
 #ifndef QG_MODEL_OBSWINDQG_H_
 #define QG_MODEL_OBSWINDQG_H_
 
+#include <memory>
 #include <ostream>
 #include <string>
 
@@ -46,7 +47,8 @@ class ObsWindQG : public ObsOpBaseQG,
 
 // Other
   const oops::Variables & requiredVars() const override {return varin_;}
-  LocationsQG * locations(const util::DateTime &, const util::DateTime &) const override;
+  std::unique_ptr<LocationsQG> locations(const util::DateTime &,
+                               const util::DateTime &) const override;
 
  private:
   void print(std::ostream &) const override;

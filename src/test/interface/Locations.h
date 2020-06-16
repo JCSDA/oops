@@ -43,25 +43,6 @@ template <typename MODEL> void testConstructor() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testCopyConstructor() {
-  typedef oops::Locations<MODEL>        Locations_;
-
-  const eckit::LocalConfiguration conf(TestEnvironment::config(), "Locations");
-  std::unique_ptr<Locations_> locs(new Locations_(conf, oops::mpi::comm()));
-  EXPECT(locs.get());
-
-  std::unique_ptr<Locations_> other_locs(new Locations_(*locs));
-  EXPECT(other_locs.get());
-
-  locs.reset();
-  EXPECT(!locs.get());
-
-  other_locs.reset();
-  EXPECT(!other_locs.get());
-}
-
-// -----------------------------------------------------------------------------
-
 template <typename MODEL>
 class Locations : public oops::Test {
  public:
@@ -75,8 +56,6 @@ class Locations : public oops::Test {
 
     ts.emplace_back(CASE("interface/Locations/testConstructor")
       { testConstructor<MODEL>(); });
-    ts.emplace_back(CASE("interface/Locations/testCopyConstructor")
-      { testCopyConstructor<MODEL>(); });
   }
 };
 

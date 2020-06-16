@@ -9,6 +9,7 @@
 #define QG_MODEL_OBSOPBASEQG_H_
 
 #include <map>
+#include <memory>
 #include <string>
 
 #include <boost/noncopyable.hpp>
@@ -39,7 +40,8 @@ class ObsOpBaseQG : public util::Printable,
 
 /// Other
   virtual const oops::Variables & requiredVars() const = 0;  // Required from Model
-  virtual LocationsQG * locations(const util::DateTime &, const util::DateTime &) const = 0;
+  virtual std::unique_ptr<LocationsQG> locations(const util::DateTime &,
+                                       const util::DateTime &) const = 0;
 
  private:
   virtual void print(std::ostream &) const = 0;

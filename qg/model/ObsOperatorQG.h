@@ -50,7 +50,7 @@ class ObsOperatorQG : public util::Printable,
 
 /// Other
   const oops::Variables & requiredVars() const;  // Required input requiredVars from Model
-  LocationsQG * locations(const util::DateTime &, const util::DateTime &) const;
+  std::unique_ptr<LocationsQG> locations(const util::DateTime &, const util::DateTime &) const;
 
  private:
   void print(std::ostream &) const;

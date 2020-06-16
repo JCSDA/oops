@@ -13,6 +13,7 @@
 #define QG_MODEL_OBSSPACEQG_H_
 
 #include <map>
+#include <memory>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -59,7 +60,8 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
   bool has(const std::string & col) const;
 
   /// create locations between times (\p t1, \p t2]
-  LocationsQG * locations(const util::DateTime & t1, const util::DateTime & t2) const;
+  std::unique_ptr<LocationsQG> locations(const util::DateTime & t1,
+                               const util::DateTime & t2) const;
 
   void printJo(const ObsVecQG &, const ObsVecQG &) const;
 

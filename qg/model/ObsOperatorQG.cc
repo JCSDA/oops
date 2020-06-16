@@ -48,7 +48,8 @@ const oops::Variables & ObsOperatorQG::requiredVars() const {
 
 // -----------------------------------------------------------------------------
 
-LocationsQG * ObsOperatorQG::locations(const util::DateTime & t1, const util::DateTime & t2) const {
+std::unique_ptr<LocationsQG> ObsOperatorQG::locations(const util::DateTime & t1,
+                             const util::DateTime & t2) const {
   return oper_->locations(t1, t2);
 }
 

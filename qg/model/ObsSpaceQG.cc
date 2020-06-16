@@ -163,10 +163,11 @@ bool ObsSpaceQG::has(const std::string & col) const {
 
 // -----------------------------------------------------------------------------
 
-LocationsQG * ObsSpaceQG::locations(const util::DateTime & t1, const util::DateTime & t2) const {
+std::unique_ptr<LocationsQG> ObsSpaceQG::locations(const util::DateTime & t1,
+                             const util::DateTime & t2) const {
   F90locs key_locs;
   qg_obsdb_locations_f90(key_, obsname_.size(), obsname_.c_str(), t1, t2, key_locs);
-  return new LocationsQG(key_locs);
+  return std::unique_ptr<LocationsQG>(new LocationsQG(key_locs));
 }
 
 // -----------------------------------------------------------------------------
