@@ -227,10 +227,6 @@ oops/util/abor1_cpp.cc
 oops/util/abor1_cpp.h
 oops/util/abor1_ftn.F90
 oops/util/CompareNVectors.h
-oops/util/config_f.cc
-oops/util/config_f.h
-oops/util/config_mod.F90
-oops/util/config.intfb.h
 oops/util/dateFunctions.cc
 oops/util/dateFunctions.h
 oops/util/datetime_f.cc
