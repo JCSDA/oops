@@ -378,5 +378,28 @@ call qg_obsvec_registry%get(c_key_self,self)
 call qg_obsvec_nobs(self,kobs)
 
 end subroutine qg_obsvec_nobs_c
+
+! ------------------------------------------------------------------------------
+!> Get observation value at iob location
+subroutine qg_obsvec_getat_c(c_key_self,iob,val) bind(c,name='qg_obsvec_getat_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_self !< Observation vector
+integer(c_int),intent(in) :: iob     !< Observation index
+real(c_double),intent(out):: val    !< ob. value
+
+! Local vector
+type(qg_obsvec),pointer :: self
+
+! Interface
+call qg_obsvec_registry%get(c_key_self,self)
+
+! Call Fortran
+call qg_obsvec_getat(self,iob,val)
+
+end subroutine qg_obsvec_getat_c
+
 ! ------------------------------------------------------------------------------
 end module qg_obsvec_interface

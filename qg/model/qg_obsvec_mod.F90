@@ -20,7 +20,7 @@ public :: qg_obsvec
 public :: qg_obsvec_registry
 public :: qg_obsvec_setup,qg_obsvec_clone,qg_obsvec_delete,qg_obsvec_copy,qg_obsvec_zero,qg_obsvec_mul_scal,qg_obsvec_add, &
         & qg_obsvec_sub,qg_obsvec_mul,qg_obsvec_div,qg_obsvec_axpy,qg_obsvec_invert,qg_obsvec_random,qg_obsvec_dotprod, &
-        & qg_obsvec_stats,qg_obsvec_nobs,qg_obsvec_copy_local
+        & qg_obsvec_stats,qg_obsvec_nobs,qg_obsvec_copy_local,qg_obsvec_getat
 ! ------------------------------------------------------------------------------
 interface
   subroutine qg_obsvec_random_i(odb,nn,zz) bind(c,name='qg_obsvec_random_f')
@@ -395,5 +395,26 @@ integer,intent(inout) :: kobs      !< Observation vector size
 kobs = self%nobs*self%nlev
 
 end subroutine qg_obsvec_nobs
+
+! ------------------------------------------------------------------------------
+!> Get value from observation vector at location (iob)
+subroutine qg_obsvec_getat(self,iob,val)
+
+implicit none
+
+! Passed variables
+type(qg_obsvec),intent(in) :: self !< Observation vector
+integer,intent(in) :: iob          !< index into observation vector
+real(kind_real), intent(out) :: val!< returned value
+
+integer :: i1, i2
+
+i1 = iob / self%nobs + 1
+i2 = iob - self%nobs*(i1-1) + 1
+! Retrieve obs. value from vector
+val = self%values(i1,i2)
+
+end subroutine qg_obsvec_getat
+
 ! ------------------------------------------------------------------------------
 end module qg_obsvec_mod

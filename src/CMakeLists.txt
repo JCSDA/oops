@@ -47,8 +47,10 @@ oops/assimilation/IPCG.h
 oops/assimilation/IPCGMinimizer.h
 oops/assimilation/JqTerm.h
 oops/assimilation/JqTermTLAD.h
+oops/assimilation/LETKFSolver.h
 oops/assimilation/LETKFSolverBase.h
 oops/assimilation/LETKFSolverOOPS.h
+oops/assimilation/LETKFSolverParameters.h
 oops/assimilation/LBGMRESRMinimizer.h
 oops/assimilation/LBHessianMatrix.h
 oops/assimilation/LBMinimizer.h

@@ -26,6 +26,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/LETKFSolverBase.h"
+#include "oops/assimilation/LETKFSolverParameters.h"
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
 #include "oops/base/IncrementEnsemble.h"
@@ -33,39 +34,8 @@
 #include "oops/base/ObsErrors.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/util/Logger.h"
-#include "oops/util/parameters/Parameter.h"
-#include "oops/util/parameters/Parameters.h"
 
 namespace oops {
-
-/// Parameters for LETKF inflation
-class LETKFOOPSInflationParameters : public Parameters {
- public:
-  // multiplicative prior inflation Pf'=mult*Pf
-  Parameter<double> mult{"mult", 1.0, this};
-
-  // RTPP: Relaxation to prior perturbation.
-  // delta_xa'(iens)=rtppCoeff*delta_xb'(iens)+(1-rtppCoeff)*delta_xa'(iens)
-  //
-  // Zhang, F., C. Snyder, and J. Sun, 2004: Tests of an ensemble
-  // Kalman Filter for convective-scale data assim-imilation:
-  // Impact of initial estimate and observations.
-  // Mon. Wea. Rev., 132, 1238-1253.
-  Parameter<double> rtpp{"rtpp", 0.0, this};
-
-  // Relaxation to prior spread
-  // not implemented in this driver
-  Parameter<double> rtps{"rtps", 0.0, this};
-
-  bool dortpp() const { return rtpp > 0.0 && rtpp <= 1.0; }
-  bool dortps() const { return rtps > 0.0 && rtps <= 1.0; }
-};
-
-/// LETKF parameters
-class LETKFSolverOOPSParameters : public Parameters {
- public:
-  Parameter<LETKFOOPSInflationParameters> infl{"letkf.inflation", {}, this};
-};
 
 template <typename MODEL>
 class LETKFSolverOOPS : public LETKFSolverBase<MODEL> {
@@ -88,7 +58,7 @@ class LETKFSolverOOPS : public LETKFSolverBase<MODEL> {
   void applyWeights(const IncrementEnsemble_ &, IncrementEnsemble_ &,
                     const GeometryIterator_ &) override;
 
-  LETKFSolverOOPSParameters options_;
+  LETKFSolverParameters options_;
   Eigen::MatrixXd Wa_;     // transformation matrix for ens. perts. Xa_=Xf*Wa
   Eigen::MatrixXd trans_;  // transformation matrix for ens. perts. Xa_=Xf*Wa+Xf*wa
   Eigen::VectorXd wa_;     // transformation matrix for ens. mean xa_=xf*wa
@@ -110,10 +80,12 @@ LETKFSolverOOPS<MODEL>::LETKFSolverOOPS(const eckit::Configuration & config,
   // read and parse options
   options_.deserialize(config);
 
+  Log::info() << "Using OOPS implementation of LETKF" << std::endl;
+
   Log::info() << "Multiplicative inflation multCoeff=" <<
                     options_.infl.value().mult << std::endl;
 
-  const LETKFOOPSInflationParameters & inflopt = options_.infl;
+  const LETKFInflationParameters & inflopt = options_.infl;
   if (inflopt.dortpp()) {
       Log::info() << "RTPP inflation will be applied with rtppCoeff=" <<
                       inflopt.rtpp << std::endl;
@@ -144,7 +116,7 @@ void LETKFSolverOOPS<MODEL>::computeWeights(const Departures_ & dy,
                                             const DeparturesEnsemble_ & Yb,
                                             const ObsErrors_ & R) {
   // compute transformation matrix, save in Wa_, wa_, and trans_
-  const LETKFOOPSInflationParameters & inflopt = options_.infl;
+  const LETKFInflationParameters & inflopt = options_.infl;
   double infl = inflopt.mult;
   // fill in the work matrix (note that since the matrix is symmetric,
   // only lower triangular half is filled)

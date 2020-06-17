@@ -52,6 +52,9 @@ class ObsErrorDiag : public ObsErrorBase<MODEL> {
 /// Get mean error for Jo table
   double getRMSE() const override {return stddev_.rms();}
 
+/// Return inverseVariance
+  const ObsVector_ & inverseVariance() const {return inverseVariance_;}
+
  protected:
   ObsVector_ stddev_;
   ObsVector_ inverseVariance_;

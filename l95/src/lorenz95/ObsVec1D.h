@@ -48,6 +48,9 @@ class ObsVec1D : public util::Printable,
   ObsVec1D & operator*= (const ObsVec1D &);
   ObsVec1D & operator/= (const ObsVec1D &);
 
+  const double & operator[](const std::size_t ii) const {return data_[ii];}
+  double & operator[](const std::size_t ii) {return data_[ii];}
+
   void zero();
   void axpy(const double &, const ObsVec1D &);
   void invert();
@@ -56,8 +59,6 @@ class ObsVec1D : public util::Printable,
   double rms() const;
 
   unsigned int nobs() const {return data_.size();}
-  double & operator() (const unsigned int ii) {return data_[ii];}
-  const double & operator() (const unsigned int ii) const {return data_[ii];}
 
 // I/O
   void save(const std::string &) const;

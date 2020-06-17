@@ -61,6 +61,9 @@ class ObsVector : public util::Printable,
   ObsVector & operator*= (const ObsVector &);
   ObsVector & operator/= (const ObsVector &);
 
+// accessors for data local PE
+  double operator[](const size_t ii) const {return (*data_)[ii];}
+
   void zero();
   void axpy(const double &, const ObsVector &);
   void invert();

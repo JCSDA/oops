@@ -8,14 +8,15 @@
 #ifndef OOPS_ASSIMILATION_INSTANTIATELETKFSOLVERFACTORY_H_
 #define OOPS_ASSIMILATION_INSTANTIATELETKFSOLVERFACTORY_H_
 
+#include "oops/assimilation/LETKFSolver.h"
 #include "oops/assimilation/LETKFSolverBase.h"
 #include "oops/assimilation/LETKFSolverOOPS.h"
 
 namespace oops {
 
 template <typename MODEL> void instantiateLETKFSolverFactory() {
-//  static LETKFSolverMaker<MODEL, LETKFSolver<MODEL> > maker2_("LETKF");
-  static LETKFSolverMaker<MODEL, LETKFSolverOOPS<MODEL> > maker1_("LETKF_OOPS");
+  static LETKFSolverMaker<MODEL, LETKFSolver<MODEL> > makerLETKF_("LETKF");
+  static LETKFSolverMaker<MODEL, LETKFSolverOOPS<MODEL> > makerLETKFnoEigen_("LETKF_OOPS");
 }
 
 }  // namespace oops

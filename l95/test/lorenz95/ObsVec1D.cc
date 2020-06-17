@@ -46,7 +46,7 @@ CASE("test_ObsVec1D") {
     std::unique_ptr<lorenz95::ObsVec1D> ov(new lorenz95::ObsVec1D(*fix.obstable_));
     EXPECT(ov.get() != NULL);
     for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
-      EXPECT((*ov)(ii) == 0.0);
+      EXPECT((*ov)[ii] == 0.0);
     }
   }
 // -----------------------------------------------------------------------------
@@ -59,7 +59,7 @@ CASE("test_ObsVec1D") {
     std::unique_ptr<lorenz95::ObsVec1D>
       ov(new lorenz95::ObsVec1D(*fix.obstable_, "ObsValue"));
     for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
-      EXPECT((*ov)(ii) != 0.0);
+      EXPECT((*ov)[ii] != 0.0);
     }
   }
 // -----------------------------------------------------------------------------
@@ -69,7 +69,7 @@ CASE("test_ObsVec1D") {
     std::unique_ptr<lorenz95::ObsVec1D> ov2(new lorenz95::ObsVec1D(*ov1));
 
     for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
-      EXPECT((*ov2)(ii) == (*ov1)(ii));
+      EXPECT((*ov2)[ii] == (*ov1)[ii]);
     }
   }
 // -----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ CASE("test_ObsVec1D") {
     *ov2 = *ov1;
 
     for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
-      EXPECT((*ov2)(ii) == (*ov1)(ii));
+      EXPECT((*ov2)[ii] == (*ov1)[ii]);
     }
   }
 // -----------------------------------------------------------------------------
@@ -101,7 +101,7 @@ CASE("test_ObsVec1D") {
     *ov2 *= mult;
 
     for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
-      EXPECT((*ov2)(ii) == (*ov1)(ii) * mult);
+      EXPECT((*ov2)[ii] == (*ov1)[ii] * mult);
     }
   }
 // -----------------------------------------------------------------------------
@@ -113,7 +113,7 @@ CASE("test_ObsVec1D") {
     *ov1 += *ov2;
 
     for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
-      EXPECT((*ov1)(ii) == (*ov2)(ii) + (*ov2)(ii));
+      EXPECT((*ov1)[ii] == (*ov2)[ii] + (*ov2)[ii]);
     }
   }
 // -----------------------------------------------------------------------------
@@ -125,7 +125,7 @@ CASE("test_ObsVec1D") {
     *ov1 -= *ov2;
 
     for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
-      EXPECT((*ov1)(ii) == 0.0);
+      EXPECT((*ov1)[ii] == 0.0);
     }
   }
 // -----------------------------------------------------------------------------
@@ -137,7 +137,7 @@ CASE("test_ObsVec1D") {
     *ov1 *= *ov2;
 
     for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
-      EXPECT((*ov1)(ii) == (*ov2)(ii) * (*ov2)(ii));
+      EXPECT((*ov1)[ii] == (*ov2)[ii] * (*ov2)[ii]);
     }
   }
 // -----------------------------------------------------------------------------
@@ -149,7 +149,7 @@ CASE("test_ObsVec1D") {
     *ov1 /= *ov2;
 
     for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
-      EXPECT((*ov1)(ii) == 1.0);
+      EXPECT((*ov1)[ii] == 1.0);
     }
   }
 // -----------------------------------------------------------------------------
@@ -160,7 +160,7 @@ CASE("test_ObsVec1D") {
     ov->zero();
 
     for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
-      EXPECT((*ov)(ii) == 0.0);
+      EXPECT((*ov)[ii] == 0.0);
     }
   }
 // -----------------------------------------------------------------------------
@@ -174,7 +174,7 @@ CASE("test_ObsVec1D") {
     ov1->axpy(mult, *ov2);
 
     for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
-      EXPECT((*ov1)(ii) == (*ov2)(ii) + mult * (*ov2)(ii));
+      EXPECT((*ov1)[ii] == (*ov2)[ii] + mult * (*ov2)[ii]);
     }
   }
 // -----------------------------------------------------------------------------
@@ -186,7 +186,7 @@ CASE("test_ObsVec1D") {
     ov1->invert();
 
     for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
-      EXPECT((*ov1)(ii) == 1.0 / (*ov2)(ii));
+      EXPECT((*ov1)[ii] == 1.0 / (*ov2)[ii]);
     }
   }
 // -----------------------------------------------------------------------------
@@ -196,7 +196,7 @@ CASE("test_ObsVec1D") {
     ov->random();
 
     for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
-      EXPECT((*ov)(ii) != 0);
+      EXPECT((*ov)[ii] != 0);
     }
   }
 // -----------------------------------------------------------------------------
@@ -209,7 +209,7 @@ CASE("test_ObsVec1D") {
 
     double check = 0.0;
     for (unsigned int ii = 0; ii < fix.obstable_->nobs(); ++ii) {
-      check += (*ov2)(ii) * (*ov2)(ii);
+      check += (*ov2)[ii] * (*ov2)[ii];
     }
 
     EXPECT(oops::is_close(result, check, 1.0e-10));

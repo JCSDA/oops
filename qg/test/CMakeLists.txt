@@ -258,6 +258,22 @@ ecbuild_add_test( TARGET test_qg_obs_vector
 
 #--------------------------------------------------------------------
 
+ecbuild_add_test( TARGET test_qg_departures_ensemble
+                  SOURCES executables/TestDeparturesEnsemble.cc
+                  ARGS "testinput/interfaces.yaml"
+                  LIBS    qg
+                  TEST_DEPENDS test_qg_make_obs_4d_24h )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_qg_departures
+                  SOURCES executables/TestDepartures.cc
+                  ARGS "testinput/interfaces.yaml"
+                  LIBS    qg
+                  TEST_DEPENDS test_qg_make_obs_4d_24h )
+
+#--------------------------------------------------------------------
+
 ecbuild_add_test( TARGET  test_qg_obs_operator
                   SOURCES executables/TestObsOperator.cc
                   ARGS    "testinput/interfaces.yaml"

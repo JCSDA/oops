@@ -8,6 +8,7 @@
 #ifndef OOPS_BASE_DEPARTURESENSEMBLE_H_
 #define OOPS_BASE_DEPARTURESENSEMBLE_H_
 
+#include <Eigen/Dense>
 #include <vector>
 
 #include "oops/base/Departures.h"
@@ -33,6 +34,9 @@ template<typename MODEL> class DeparturesEnsemble {
   size_t size() const {return ensemblePerturbs_.size();}
   Departures_ & operator[](const size_t ii) {return ensemblePerturbs_[ii];}
   const Departures_ & operator[](const size_t ii) const {return ensemblePerturbs_[ii];}
+
+/// pack ensemble of dep. as contiguous block of memory
+  Eigen::MatrixXd packEigen() const;
 
  private:
   std::vector<Departures_> ensemblePerturbs_;   // ensemble perturbations
@@ -61,6 +65,21 @@ DeparturesEnsemble<MODEL>::DeparturesEnsemble(const ObsSpaces_ & local,
     ensemblePerturbs_.emplace_back(local, dep);
   }
   Log::trace() << "Local DeparturesEnsemble created" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+Eigen::MatrixXd DeparturesEnsemble<MODEL>::packEigen() const {
+  std::size_t myNobs = ensemblePerturbs_[0].nobs();
+  std::size_t myNens = ensemblePerturbs_.size();
+
+  Eigen::MatrixXd depEns(myNens, myNobs);
+  for (std::size_t iens = 0; iens < myNens; ++iens) {
+    depEns.row(iens) = ensemblePerturbs_[iens].packEigen();
+  }
+  Log::trace() << "DeparturesEnsemble::packEigen() completed" << std::endl;
+  return depEns;
 }
 
 // -----------------------------------------------------------------------------

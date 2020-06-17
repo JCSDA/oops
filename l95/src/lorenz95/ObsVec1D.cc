@@ -43,7 +43,7 @@ ObsVec1D::ObsVec1D(const ObsVec1D & other)
 ObsVec1D::ObsVec1D(const ObsTableView & ot, const ObsVec1D & other)
   : obsdb_(ot), data_(ot.nobs()) {
   for (size_t ii = 0; ii < ot.nobs(); ++ii) {
-    data_[ii] = other(ot.index(ii));
+    data_[ii] = other[ot.index(ii)];
   }
 }
 // -----------------------------------------------------------------------------

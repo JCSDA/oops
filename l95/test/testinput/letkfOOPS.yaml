@@ -34,9 +34,9 @@ Observations:
     ObsOperator: {}
 
 letkf:
-  solver: LETKF
+  solver: LETKF_OOPS
   inflation:
-    rtps: 0.5
+    rtps: 0.0
     rtpp: 0.5
     mult: 1.1
 

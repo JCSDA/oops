@@ -45,6 +45,9 @@ class ObsErrorBase : public util::Printable,
 /// Generate random perturbation in \p dy
   virtual void randomize(ObsVector_ & dy) const = 0;
 
+/// Return inverseVariance
+  virtual const ObsVector_ & inverseVariance() const = 0;
+
 /// Get mean error for Jo table
   virtual double getRMSE() const = 0;
 };

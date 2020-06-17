@@ -42,6 +42,7 @@ class ObsVecQG : public util::Printable,
   ObsVecQG & operator-= (const ObsVecQG &);
   ObsVecQG & operator*= (const ObsVecQG &);
   ObsVecQG & operator/= (const ObsVecQG &);
+  double operator[](const size_t ii) const;
 
   void zero();
   void axpy(const double &, const ObsVecQG &);

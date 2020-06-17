@@ -89,6 +89,12 @@ ObsVecQG & ObsVecQG::operator/= (const ObsVecQG & rhs) {
   return *this;
 }
 // -----------------------------------------------------------------------------
+double ObsVecQG::operator[] (const size_t ii) const {
+  double val;
+  qg_obsvec_getat_f90(keyOvec_, ii, val);
+  return val;
+}
+// -----------------------------------------------------------------------------
 void ObsVecQG::zero() {
   qg_obsvec_zero_f90(keyOvec_);
 }

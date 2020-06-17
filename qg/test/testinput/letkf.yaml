@@ -89,7 +89,7 @@ Observations:
         lengthscale: 5e6
 
 letkf:
-  solver: LETKF_OOPS
+  solver: LETKF
   inflation:
     rtpp: 0.5
     mult: 1.1

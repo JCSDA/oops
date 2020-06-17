@@ -41,7 +41,7 @@ void ObservationL95::simulateObs(const GomL95 & gom, ObsVec1D & ovec,
                                  const ObsBias & bias, ObsDiags1D &) const {
   for (size_t jj = 0; jj < gom.size(); ++jj) {
     const int ii = gom.getindx(jj);
-    ovec(ii) = gom[jj] + bias.value();
+    ovec[ii] = gom[jj] + bias.value();
   }
 }
 

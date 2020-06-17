@@ -35,6 +35,7 @@ list( APPEND l95_test_input
   testinput/hofx.yaml
   testinput/hofx_nomodel.yaml
   testinput/identitymodel.yaml
+  testinput/letkfOOPS.yaml
   testinput/letkf.yaml
   testinput/localhofx.yaml
   testinput/interfaces.yaml
@@ -86,6 +87,7 @@ list( APPEND l95_testoutput
   testoutput/hofx.test
   testoutput/hofx.nomodel.test
   testoutput/letkf.test
+  testoutput/letkf_oops.test
   testoutput/localhofx.test
   testoutput/makeobs3d.test
   testoutput/makeobs4d.test
@@ -254,7 +256,6 @@ oops_add_test( TESTNAME makeobs4d
 # interface tests
 #####################################################################
 
-
 ecbuild_add_test( TARGET test_l95_geometry
                   SOURCES executables/TestGeometry.cc
                   ARGS "testinput/interfaces.yaml"
@@ -376,6 +377,22 @@ ecbuild_add_test( TARGET test_l95_localobsspace
 
 ecbuild_add_test( TARGET test_l95_obsvector
                   SOURCES executables/TestObsVector.cc
+                  ARGS "testinput/interfaces.yaml"
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_departures_ensemble
+                  SOURCES executables/TestDeparturesEnsemble.cc
+                  ARGS "testinput/interfaces.yaml"
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth )
+
+#--------------------------------------------------------------------
+
+ecbuild_add_test( TARGET test_l95_departures
+                  SOURCES executables/TestDepartures.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
@@ -768,6 +785,13 @@ oops_add_test( TESTNAME diffstates
 #####################################################################
 # LETKF tests
 #####################################################################
+
+oops_add_test( TESTNAME letkf_oops
+               MODELNAME l95
+               YAMLNAME testinput/letkfOOPS.yaml
+               EXENAME l95_letkf.x
+               COMPARE
+               TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
 
 oops_add_test( TESTNAME letkf
                MODELNAME l95

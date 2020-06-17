@@ -50,4 +50,9 @@ namespace oops {
     return *this;
   }
 
+  void LocalIncrement::setVals(std::vector<double> & valsIn) {
+    ASSERT(vals_.size() == valsIn.size());
+    vals_ = valsIn;
+  }
+
 }  // namespace oops

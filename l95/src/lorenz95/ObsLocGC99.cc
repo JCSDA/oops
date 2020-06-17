@@ -40,7 +40,7 @@ void ObsLocGC99::multiply(ObsVec1D & dy) const {
   double  gc;
   for (unsigned int ii=0; ii < dy.nobs(); ++ii) {
     gc = oops::gc99(obsdist[ii]/rscale_);
-    dy(ii) = dy(ii)*gc;
+    dy[ii] = dy[ii]*gc;
   }
 }
 

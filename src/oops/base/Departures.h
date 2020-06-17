@@ -11,6 +11,7 @@
 #ifndef OOPS_BASE_DEPARTURES_H_
 #define OOPS_BASE_DEPARTURES_H_
 
+#include <Eigen/Dense>
 #include <cstddef>
 #include <iostream>
 #include <string>
@@ -62,11 +63,15 @@ class Departures : public util::Printable,
   Departures & operator*=(const Departures &);
   Departures & operator/=(const Departures &);
   void zero();
+  void random();
   void invert();
   void axpy(const double &, const Departures &);
   double dot_product_with(const Departures &) const;
   double rms() const;
   size_t nobs() const;
+
+/// Pack operators
+  Eigen::MatrixXd  packEigen() const;   // pack departures as a 1D Eigen vector
 
 /// Save departures values
   void save(const std::string &) const;
@@ -149,6 +154,13 @@ void Departures<MODEL>::zero() {
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
+void Departures<MODEL>::random() {
+  for (size_t jj = 0; jj < dep_.size(); ++jj) {
+    dep_[jj].random();
+  }
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
 void Departures<MODEL>::invert() {
   for (size_t jj = 0; jj < dep_.size(); ++jj) {
     dep_[jj].invert();
@@ -183,6 +195,18 @@ size_t Departures<MODEL>::nobs() const {
     nobs += dep_[jj].nobs();
   }
   return nobs;
+}
+// -----------------------------------------------------------------------------
+template <typename MODEL>
+Eigen::MatrixXd Departures<MODEL>::packEigen() const {
+  Eigen::MatrixXd data1d(1, this->nobs());
+  int i = 0;
+  for (size_t idep = 0; idep < dep_.size(); ++idep) {
+    for (size_t iob = 0; iob < dep_[idep].nobs(); ++iob) {
+      data1d(0, i++) = dep_[idep][iob];
+    }
+  }
+  return data1d;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL>

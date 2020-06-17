@@ -260,6 +260,7 @@ extern "C" {
   void qg_obsvec_dotprod_f90(const F90ovec &, const F90ovec &, double &);
   void qg_obsvec_stats_f90(const F90ovec &, double &, double &, double &, double &);
   void qg_obsvec_nobs_f90(const F90ovec &, int &);
+  void qg_obsvec_getat_f90(const F90ovec &, const int &, double &);
 
 // -----------------------------------------------------------------------------
 //  Streamfunction observations
