@@ -31,7 +31,7 @@ before_install:
   - cd $REPO_SOURCE_DIR
 
 
-  - if [ "$BRANCH" = "develop"];
+  - if [ "$BRANCH" = "develop" ];
     then export BRANCH_FORK="release-stable";
     else export BRANCH_FORK=$BRANCH;
     fi
