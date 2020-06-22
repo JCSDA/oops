@@ -8,7 +8,7 @@
 
 module qg_geom_interface
 
-use atlas_module
+use atlas_module, only: atlas_fieldset, atlas_functionspace_structuredcolumns
 use fckit_configuration_module, only: fckit_configuration
 use fckit_log_module,only: fckit_log
 use kinds

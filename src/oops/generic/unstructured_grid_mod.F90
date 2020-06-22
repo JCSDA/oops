@@ -5,7 +5,7 @@
 
 module unstructured_grid_mod
 
-use atlas_module
+use atlas_module, only: atlas_field, atlas_fieldset, atlas_integer, atlas_real, atlas_functionspace_pointcloud
 use datetime_mod
 use iso_c_binding
 use kinds

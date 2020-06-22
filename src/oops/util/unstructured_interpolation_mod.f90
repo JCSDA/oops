@@ -5,6 +5,8 @@
 
 module unstructured_interpolation_mod
 
+use atlas_module, only: atlas_geometry, atlas_indexkdtree
+
 use netcdf
 
 use kinds
@@ -12,8 +14,6 @@ use string_utils, only: replace_string
 use netcdf_utils_mod, only: nccheck
 
 use fckit_mpi_module,      only: fckit_mpi_comm, fckit_mpi_sum
-use fckit_geometry_module, only: sphere_distance
-use fckit_kdtree_module,   only: kdtree,kdtree_create,kdtree_destroy,kdtree_k_nearest_neighbors
 
 implicit none
 private
@@ -61,7 +61,8 @@ real(kind=kind_real), intent(in)    :: lats_out(ngrid_out) ! Output grid latitid
 real(kind=kind_real), intent(in)    :: lons_out(ngrid_out) ! Output grid longitude in degrees
 
 !Locals
-type(kdtree) :: kd
+type(atlas_indexkdtree) :: kd
+type(atlas_geometry) :: ageometry
 integer :: j, n, jj, kk, ngrid_in_glo
 integer :: index1, index2, nindex
 real(kind=kind_real) :: dist, wprod, bsw
@@ -112,8 +113,12 @@ allocate(lons_in_glo(ngrid_in_glo))
 call comm%allgather(lats_in    ,lats_in_glo,ngrid_in,self%rcvcnt,self%displs)
 call comm%allgather(lons_in_loc,lons_in_glo,ngrid_in,self%rcvcnt,self%displs)
 
+! Create UnitSphere geometry
+ageometry = atlas_geometry("UnitSphere")
+
 ! Create KDTree
-kd = kdtree_create(ngrid_in_glo,lons_in_glo,lats_in_glo)
+kd = atlas_indexkdtree(ageometry)
+call kd%build(ngrid_in_glo,lons_in_glo,lats_in_glo)
 
 ! Loop over observations
 ! ----------------------
@@ -122,12 +127,12 @@ allocate(nn_dist(nn,ngrid_out))
 do n = 1,ngrid_out
 
   ! Get nearest neighbours
-  call kdtree_k_nearest_neighbors(kd, lons_out_loc(n), lats_out(n), self%nn, self%interp_i(:,n))
+  call kd%closestPoints(lons_out_loc(n), lats_out(n), self%nn, self%interp_i(:,n))
 
   ! Compute distances
   do kk = 1, nn
     nindex = self%interp_i(kk,n)
-    nn_dist(kk,n) = sphere_distance(lons_out_loc(n), lats_out(n), lons_in_glo(nindex), lats_in_glo(nindex))
+    nn_dist(kk,n) = ageometry%distance(lons_out_loc(n), lats_out(n), lons_in_glo(nindex), lats_in_glo(nindex))
   enddo
 
 enddo
@@ -153,8 +158,8 @@ select case (wtype)
         do kk = 1, nn
           if (jj.ne.kk) then
             index2 = self%interp_i(kk,n)
-            dist = sphere_distance(lons_in_glo(index1),lats_in_glo(index1),&
-                                   lons_in_glo(index2),lats_in_glo(index2))
+            dist = ageometry%distance(lons_in_glo(index1),lats_in_glo(index1),&
+                                      lons_in_glo(index2),lats_in_glo(index2))
             wprod = wprod * dist
           endif
         enddo
@@ -192,7 +197,7 @@ select case (wtype)
 end select
 
 !Deallocate
-call kdtree_destroy(kd)
+call kd%final()
 deallocate(nn_dist)
 deallocate(lats_in_glo, lons_in_glo)
 

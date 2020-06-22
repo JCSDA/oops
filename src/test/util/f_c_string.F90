@@ -31,14 +31,11 @@ implicit none
 type(c_ptr), intent(in) :: c_conf
 type(c_ptr), intent(in), value :: vec
 
-character(len=max_string), allocatable :: fort_vec(:)
-character(kind=c_char,len=max_string),allocatable :: char_array(:)
+character(len=:), allocatable :: fort_vec(:)
 type(fckit_configuration) :: f_conf
-integer(c_size_t),parameter :: csize = max_string
 
 f_conf = fckit_configuration(c_conf)
-call f_conf%get_or_die("string_vec",csize,char_array)
-fort_vec = char_array
+call f_conf%get_or_die("string_vec",fort_vec)
 
 call f_c_push_string_vector(vec, fort_vec)
 

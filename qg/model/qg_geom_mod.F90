@@ -8,7 +8,7 @@
 
 module qg_geom_mod
 
-use atlas_module
+use atlas_module, only: atlas_field, atlas_fieldset, atlas_real, atlas_functionspace_structuredcolumns
 use fckit_configuration_module, only: fckit_configuration
 use fckit_log_module,only: fckit_log
 use kinds
@@ -233,8 +233,7 @@ type(fckit_configuration) :: xspace,yspace
 ! Create xspace configuration
 xspace = fckit_configuration()
 call xspace%set("type","linear")
-!call xspace%set("N",self%nx) ! TODO: should be uncommented when Willem's bugfix is implemented in ATLAS
-call xspace%set("N[]",spread(self%nx,1,self%ny)) ! TODO: should be removed then
+call xspace%set("N",self%nx)
 call xspace%set("start",self%lon(1,1))
 call xspace%set("end",self%lon(self%nx,1))
 call xspace%set("endpoint",.true.)
@@ -329,8 +328,8 @@ self%f_pinv = other%f_pinv
 self%f_d = other%f_d
 self%bet = other%bet
 self%heat = other%heat
-self%afunctionspace = atlas_functionspace_nodecolumns(other%afunctionspace%c_ptr())
-self%afieldset = atlas_functionspace_nodecolumns(other%afieldset%c_ptr())
+self%afunctionspace = atlas_functionspace_structuredcolumns(other%afunctionspace%c_ptr())
+self%afieldset = atlas_fieldset(other%afieldset%c_ptr())
 
 end subroutine qg_geom_clone
 ! ------------------------------------------------------------------------------

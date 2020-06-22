@@ -8,7 +8,7 @@
 
 module qg_fields_interface
 
-use atlas_module
+use atlas_module, only: atlas_fieldset
 use datetime_mod
 use fckit_configuration_module, only: fckit_configuration
 use iso_c_binding
