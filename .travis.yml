@@ -94,4 +94,6 @@ script:
   - docker exec jcsda_container bash -c 'cd /build_container/oops && ctest'
   - date
 #upload to codecov
-  - docker exec jcsda_container bash -c 'cd /build_container/oops && bash <(curl -s https://codecov.io/bash) -t 3b511d7d-c15d-4ee5-8a1e-29c6d97d2032'
+  - docker exec jcsda_container bash -c 'cd /build_container/oops && ls'
+  - docker exec jcsda_container bash -c 'cd /build_container/oops && bash <(curl -s https://codecov.io/bash) -t 3b511d7d-c15d-4ee5-8a1e-29c6d97d2032 -R /jcsda/src_repo/oops/'
+
