@@ -10,10 +10,11 @@ phases:
     commands:
       - echo Executing install phase
       - echo $CODEBUILD_WEBHOOK_TRIGGER
-      - echo $CODEBUILD_WEBHOOK_BASE_REF
       - echo $CODEBUILD_WEBHOOK_ACTOR_ACCOUNT_ID
       - echo $CODEBUILD_WEBHOOK_EVENT
       - echo $CODEBUILD_RESOLVED_SOURCE_VERSION
+      - echo $CODEBUILD_WEBHOOK_HEAD_REF
+      - echo $CODEBUILD_WEBHOOK_BASE_REF
 
       - if [ "$CODEBUILD_WEBHOOK_EVENT" = "PULL_REQUEST_MERGED" ];
         then export CODEBUILD_GIT_BRANCH="develop";
