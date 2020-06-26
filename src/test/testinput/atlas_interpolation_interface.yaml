@@ -1,0 +1,8 @@
+---
+test_interpolation_interface:
+    interpolator: "atlas"
+    nlevels: 3
+    NRandom: 18
+    Seed: 675839
+    tolerance: 1.e-3
+    skip_adjoint_test: true

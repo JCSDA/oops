@@ -96,6 +96,7 @@ oops/base/LocalIncrement.h
 oops/base/HybridCovariance.h
 oops/base/IdentityMatrix.h
 oops/base/IncrementEnsemble.h
+oops/base/InterpolatorBase.h
 oops/base/instantiateCovarFactory.h
 oops/base/instantiateObsFilterFactory.h
 oops/base/LinearModelBase.h
@@ -165,6 +166,8 @@ oops/generic/unstructured_grid_interface.F90
 oops/generic/unstructured_grid_mod.F90
 oops/generic/UnstructuredGrid.cc
 oops/generic/UnstructuredGrid.h
+oops/generic/InterpolatorAtlas.h
+oops/generic/InterpolatorAtlas.cc
 
 oops/interface/ErrorCovariance.h
 oops/interface/Geometry.h
@@ -331,6 +334,8 @@ test/interface/VariableChange.h
 
 test/parallel/mpi/mpi.h
 
+test/generic/InterpolationInterface.h
+
 test/util/Fortran.h
 test/util/IsAnyPointInVolumeInterior.h
 test/util/Random.h
@@ -361,7 +366,7 @@ endfunction(CREATE_SYMLINK)
 list( APPEND oops_test_input
   test/testinput/random.yaml
   test/testinput/pushstringvector.yaml
-  test/testinput/interp_interface.yaml
+  test/testinput/atlas_interpolation_interface.yaml
   test/testinput/variables.yaml
   test/testinput/parameters.yaml
   test/testinput/empty.yaml
@@ -475,6 +480,11 @@ ecbuild_add_test( TARGET  test_parallel_mpi_mpi
                   MPI     4
                   SOURCES test/parallel/mpi/mpi.cc
                   ARGS    "test/testinput/mpi.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_oops_atlas_interpolation_interface
+                  SOURCES test/generic/InterpolationInterface.cc
+                  ARGS    "test/testinput/atlas_interpolation_interface.yaml"
                   LIBS    oops )
 
 ecbuild_add_test( TARGET  test_util_comparenvectors
