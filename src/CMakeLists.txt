@@ -152,13 +152,11 @@ oops/generic/gc99.cc
 oops/generic/IdentityModel.h
 oops/generic/IdLinearVariableChange.h
 oops/generic/IdVariableChange.h
-oops/generic/instantiateLocalizationFactory.h
 oops/generic/instantiateModelFactory.h
 oops/generic/instantiateObsErrorFactory.h
 oops/generic/instantiateTlmFactory.h
 oops/generic/instantiateVariableChangeFactory.h
 oops/generic/LinearModelId.h
-oops/generic/LocalizationID.h
 oops/generic/LocalObsErrorDiag.h
 oops/generic/ObsErrorDiag.h
 oops/generic/PseudoModel.h

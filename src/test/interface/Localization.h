@@ -26,7 +26,6 @@
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/LocalizationBase.h"
 #include "oops/base/Variables.h"
-#include "oops/generic/instantiateLocalizationFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/parallel/mpi/mpi.h"
@@ -66,7 +65,6 @@ template <typename MODEL> class LocalizationFixture : private boost::noncopyable
     time_.reset(new util::DateTime(TestEnvironment::config().getString("TestDate")));
 
 //  Setup the localization matrix
-    oops::instantiateLocalizationFactory<MODEL>();
     const eckit::LocalConfiguration conf(TestEnvironment::config(), "Localization");
     local_ = oops::LocalizationFactory<MODEL>::create(*resol_, NULL, conf);
   }

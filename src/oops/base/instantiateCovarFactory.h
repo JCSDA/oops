@@ -17,7 +17,6 @@
 #include "oops/base/HybridCovariance.h"
 #include "oops/base/ModelSpaceCovariance4DBase.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
-#include "oops/generic/instantiateLocalizationFactory.h"
 #include "oops/interface/ErrorCovariance.h"
 
 namespace oops {
@@ -29,8 +28,6 @@ template <typename MODEL> void instantiateCovarFactory() {
 
   static Covar4DMaker<MODEL, EnsembleCovariance4D<MODEL> >  makerEnsemble4D_("ensemble");
   static Covar4DMaker<MODEL, ErrorCovariance4D<MODEL> >     makerModel4D_(MODEL::nameCovar4D());
-
-  instantiateLocalizationFactory<MODEL>();
 }
 
 }  // namespace oops
