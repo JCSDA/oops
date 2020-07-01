@@ -61,6 +61,7 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   typedef Increment<MODEL>           Increment_;
   typedef ObsErrors<MODEL>           ObsErrors_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
+  typedef Observers<MODEL>           Observers_;
   typedef ObserversTLAD<MODEL>       ObserversTLAD_;
   typedef PostBaseTLAD<MODEL>        PostBaseTLAD_;
   typedef QCData<MODEL>              QCData_;
@@ -125,7 +126,7 @@ template<typename MODEL> class CostJo : public CostTermBase<MODEL>,
   std::unique_ptr<Departures_> gradFG_;
 
   /// Observers passed by \f$ J_o\f$ to the model during integration.
-  mutable std::shared_ptr<Observers<MODEL, State_> > pobs_;
+  mutable std::shared_ptr<Observers_> pobs_;
 
   /// Time slot.
   const util::Duration tslot_;
@@ -178,8 +179,7 @@ CostJo<MODEL>::initialize(const CtrlVar_ & xx, const eckit::Configuration & conf
   currentConf_.reset(new eckit::LocalConfiguration(conf));
   const int iterout = currentConf_->getInt("iteration");
   obsconf_.set("iteration", iterout);
-  pobs_.reset(new Observers<MODEL, State_>(obsconf_, obspace_, xx.obsVar(), qc_,
-                                           tslot_, subwindows_));
+  pobs_.reset(new Observers_(obsconf_, obspace_, xx.obsVar(), qc_, tslot_, subwindows_));
   Log::trace() << "CostJo::initialize done" << std::endl;
   return pobs_;
 }

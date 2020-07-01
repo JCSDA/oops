@@ -21,11 +21,10 @@
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
 #include "oops/base/QCData.h"
-#include "oops/base/Variables.h"
+#include "oops/interface/State.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
-#include "oops/util/Printable.h"
 
 namespace oops {
 
@@ -36,15 +35,15 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL, typename STATE>
-class Observers : public PostBase<STATE>,
-                  public util::Printable {
-  typedef GeoVaLs<MODEL>             GeoVaLs_;
+template <typename MODEL>
+class Observers : public PostBase<State<MODEL>> {
   typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
   typedef Observations<MODEL>        Observations_;
   typedef Observer<MODEL>            Observer_;
   typedef ObsSpaces<MODEL>           ObsSpaces_;
   typedef QCData<MODEL>              QCData_;
+  typedef State<MODEL>               State_;
+
  public:
   Observers(const eckit::Configuration &, const ObsSpaces_ & obsdb, const ObsAuxCtrls_ &,
             QCData_ &,
@@ -55,10 +54,9 @@ class Observers : public PostBase<STATE>,
 
  private:
 // Methods
-  void doInitialize(const STATE &, const util::DateTime &, const util::Duration &) override;
-  void doProcessing(const STATE &) override;
-  void doFinalize(const STATE &) override;
-  void print(std::ostream &) const override;
+  void doInitialize(const State_ &, const util::DateTime &, const util::Duration &) override;
+  void doProcessing(const State_ &) override;
+  void doFinalize(const State_ &) override;
 
 // Data
   ObsSpaces_ obspace_;
@@ -76,13 +74,11 @@ class Observers : public PostBase<STATE>,
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL, typename STATE>
-Observers<MODEL, STATE>::Observers(const eckit::Configuration & conf,
-                                   const ObsSpaces_ & obsdb,
-                                   const ObsAuxCtrls_ & ybias,
-                                   QCData_ & qc,
-                                   const util::Duration & tslot, const bool swin)
-  : PostBase<STATE>(),
+template <typename MODEL>
+Observers<MODEL>::Observers(const eckit::Configuration & conf, const ObsSpaces_ & obsdb,
+                            const ObsAuxCtrls_ & ybias, QCData_ & qc,
+                            const util::Duration & tslot, const bool swin)
+  : PostBase<State_>(),
     obspace_(obsdb), yobs_(obsdb),
     winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
     bgn_(winbgn_), end_(winend_), hslot_(tslot/2), subwindows_(swin),
@@ -104,10 +100,9 @@ Observers<MODEL, STATE>::Observers(const eckit::Configuration & conf,
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL, typename STATE>
-void Observers<MODEL, STATE>::doInitialize(const STATE & xx,
-                                          const util::DateTime & end,
-                                          const util::Duration & tstep) {
+template <typename MODEL>
+void Observers<MODEL>::doInitialize(const State_ & xx, const util::DateTime & end,
+                                    const util::Duration & tstep) {
   Log::trace() << "Observers::doInitialize start" << std::endl;
   const util::DateTime bgn(xx.validTime());
   if (hslot_ == util::Duration(0)) hslot_ = tstep/2;
@@ -131,8 +126,8 @@ void Observers<MODEL, STATE>::doInitialize(const STATE & xx,
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL, typename STATE>
-void Observers<MODEL, STATE>::doProcessing(const STATE & xx) {
+template <typename MODEL>
+void Observers<MODEL>::doProcessing(const State_ & xx) {
   Log::trace() << "Observers::doProcessing start" << std::endl;
   util::DateTime t1(xx.validTime()-hslot_);
   util::DateTime t2(xx.validTime()+hslot_);
@@ -148,19 +143,14 @@ void Observers<MODEL, STATE>::doProcessing(const STATE & xx) {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL, typename STATE>
-void Observers<MODEL, STATE>::doFinalize(const STATE &) {
+template <typename MODEL>
+void Observers<MODEL>::doFinalize(const State_ &) {
   Log::trace() << "Observers::doFinalize start" << std::endl;
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
     observers_[jj]->doFinalize();
   }
   Log::trace() << "Observers::doFinalize done" << std::endl;
 }
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL, typename STATE>
-void Observers<MODEL, STATE>::print(std::ostream &) const {}
 
 // -----------------------------------------------------------------------------
 

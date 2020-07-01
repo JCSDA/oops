@@ -77,7 +77,7 @@ class CalcHofX {
   const util::DateTime winbgn_;              // window for assimilation
   const util::Duration winlen_;
   std::unique_ptr<QCData_> qc_;              // QC-related (flags and obserrors)
-  std::shared_ptr<Observers<MODEL, State_> > pobs_;   // Observer
+  std::shared_ptr<Observers<MODEL> > pobs_;  // Observer
 };
 
 
@@ -98,7 +98,7 @@ template <typename MODEL>
 void CalcHofX<MODEL>::initObserver() {
   qc_.reset(new QCData_(obspaces_));
 //  Setup Observers
-  pobs_.reset(new Observers<MODEL, State_>(obsconf_, obspaces_, ybias_, *qc_));
+  pobs_.reset(new Observers<MODEL>(obsconf_, obspaces_, ybias_, *qc_));
 }
 
 // -----------------------------------------------------------------------------
