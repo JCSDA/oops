@@ -53,7 +53,7 @@ class ObsErrorDiag : public ObsErrorBase<MODEL> {
   double getRMSE() const override {return stddev_.rms();}
 
 /// Return inverseVariance
-  const ObsVector_ & inverseVariance() const {return inverseVariance_;}
+  const ObsVector_ & inverseVariance() const override {return inverseVariance_;}
 
  protected:
   ObsVector_ stddev_;
