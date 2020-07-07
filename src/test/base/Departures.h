@@ -26,9 +26,9 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testDepartures() {
-  typedef ObsTestsFixture<MODEL>     Test_;
-  typedef oops::Departures<MODEL>    Departures_;
+template <typename OBS> void testDepartures() {
+  typedef ObsTestsFixture<OBS>     Test_;
+  typedef oops::Departures<OBS>    Departures_;
 
   Departures_ y(Test_::obspace());
   Departures_ y2(Test_::obspace());
@@ -59,17 +59,17 @@ template <typename MODEL> void testDepartures() {
   EXPECT(oops::is_close(ref_rms, rms, 1.e-14));
 }
 
-template <typename MODEL> class Departures : public oops::Test {
+template <typename OBS> class Departures : public oops::Test {
  public:
   Departures() {}
   virtual ~Departures() {}
  private:
-  std::string testid() const {return "test::Departures<" + MODEL::name() + ">";}
+  std::string testid() const {return "test::Departures<" + OBS::name() + ">";}
 
   void register_tests() const {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
     ts.emplace_back(CASE("base/Departures/testDepartures")
-      { testDepartures<MODEL>(); });
+      { testDepartures<OBS>(); });
   }
 };
 

@@ -26,13 +26,13 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename OBS>
 class ObsDiagnostics : public util::Printable,
                        private boost::noncopyable,
-                       private util::ObjectCounter<ObsDiagnostics<MODEL> > {
-  typedef typename MODEL::ObsDiagnostics   ObsDiags_;
-  typedef ObsSpace<MODEL>                  ObsSpace_;
-  typedef Locations<MODEL>                 Locations_;
+                       private util::ObjectCounter<ObsDiagnostics<OBS> > {
+  typedef typename OBS::ObsDiagnostics   ObsDiags_;
+  typedef ObsSpace<OBS>                  ObsSpace_;
+  typedef Locations<OBS>                 Locations_;
 
  public:
   static const std::string classname() {return "oops::ObsDiagnostics";}
@@ -55,48 +55,48 @@ class ObsDiagnostics : public util::Printable,
 };
 
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-ObsDiagnostics<MODEL>::ObsDiagnostics(const ObsSpace_ & os, const Locations_ & locs,
+template <typename OBS>
+ObsDiagnostics<OBS>::ObsDiagnostics(const ObsSpace_ & os, const Locations_ & locs,
                                       const Variables & vars) : diags_()
 {
-  Log::trace() << "ObsDiagnostics<MODEL>::ObsDiagnostics starting" << std::endl;
+  Log::trace() << "ObsDiagnostics<OBS>::ObsDiagnostics starting" << std::endl;
   util::Timer timer(classname(), "ObsDiagnostics");
   diags_.reset(new ObsDiags_(os.obsspace(), locs.locations(), vars));
-  Log::trace() << "ObsDiagnostics<MODEL>::ObsDiagnostics done" << std::endl;
+  Log::trace() << "ObsDiagnostics<OBS>::ObsDiagnostics done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-ObsDiagnostics<MODEL>::ObsDiagnostics(const eckit::Configuration & conf, const ObsSpace_ & os,
+template <typename OBS>
+ObsDiagnostics<OBS>::ObsDiagnostics(const eckit::Configuration & conf, const ObsSpace_ & os,
                                       const Variables & vars) : diags_()
 {
-  Log::trace() << "ObsDiagnostics<MODEL>::ObsDiagnostics starting" << std::endl;
+  Log::trace() << "ObsDiagnostics<OBS>::ObsDiagnostics starting" << std::endl;
   util::Timer timer(classname(), "ObsDiagnostics");
   diags_.reset(new ObsDiags_(conf, os.obsspace(), vars));
-  Log::trace() << "ObsDiagnostics<MODEL>::ObsDiagnostics done" << std::endl;
+  Log::trace() << "ObsDiagnostics<OBS>::ObsDiagnostics done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-ObsDiagnostics<MODEL>::~ObsDiagnostics() {
-  Log::trace() << "ObsDiagnostics<MODEL>::~ObsDiagnostics starting" << std::endl;
+template <typename OBS>
+ObsDiagnostics<OBS>::~ObsDiagnostics() {
+  Log::trace() << "ObsDiagnostics<OBS>::~ObsDiagnostics starting" << std::endl;
   util::Timer timer(classname(), "~ObsDiagnostics");
   diags_.reset();
-  Log::trace() << "ObsDiagnostics<MODEL>::~ObsDiagnostics done" << std::endl;
+  Log::trace() << "ObsDiagnostics<OBS>::~ObsDiagnostics done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void ObsDiagnostics<MODEL>::save(const std::string & name) const {
-  Log::trace() << "ObsDiagnostics<MODEL, DATATYPE>::save starting " << name << std::endl;
+template <typename OBS>
+void ObsDiagnostics<OBS>::save(const std::string & name) const {
+  Log::trace() << "ObsDiagnostics<OBS, DATATYPE>::save starting " << name << std::endl;
   util::Timer timer(classname(), "save");
   diags_->save(name);
-  Log::trace() << "ObsDiagnostics<MODEL, DATATYPE>::save done" << std::endl;
+  Log::trace() << "ObsDiagnostics<OBS, DATATYPE>::save done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void ObsDiagnostics<MODEL>::print(std::ostream & os) const {
-  Log::trace() << "ObsDiagnostics<MODEL>::print starting" << std::endl;
+template <typename OBS>
+void ObsDiagnostics<OBS>::print(std::ostream & os) const {
+  Log::trace() << "ObsDiagnostics<OBS>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
   os << *diags_;
-  Log::trace() << "ObsDiagnostics<MODEL>::print done" << std::endl;
+  Log::trace() << "ObsDiagnostics<OBS>::print done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 

@@ -32,17 +32,17 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename OBS>
 class GeoVaLsFixture : private boost::noncopyable {
-  typedef oops::ObsSpaces<MODEL>  ObsSpaces_;
+  typedef oops::ObsSpaces<OBS>  ObsSpaces_;
 
  public:
   static ObsSpaces_         & obspace() {return *getInstance().ospaces_;}
   static eckit::LocalConfiguration conf(const size_t ii) {return getInstance().confs_[ii];}
 
  private:
-  static GeoVaLsFixture<MODEL>& getInstance() {
-    static GeoVaLsFixture<MODEL> theGeoVaLsFixture;
+  static GeoVaLsFixture<OBS>& getInstance() {
+    static GeoVaLsFixture<OBS> theGeoVaLsFixture;
     return theGeoVaLsFixture;
   }
 
@@ -64,9 +64,9 @@ class GeoVaLsFixture : private boost::noncopyable {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testConstructor() {
-  typedef GeoVaLsFixture<MODEL>   Test_;
-  typedef oops::GeoVaLs<MODEL>    GeoVaLs_;
+template <typename OBS> void testConstructor() {
+  typedef GeoVaLsFixture<OBS>   Test_;
+  typedef oops::GeoVaLs<OBS>    GeoVaLs_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     eckit::LocalConfiguration gconf(Test_::conf(jj), "GeoVaLs");
@@ -81,9 +81,9 @@ template <typename MODEL> void testConstructor() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testUtils() {
-  typedef GeoVaLsFixture<MODEL>   Test_;
-  typedef oops::GeoVaLs<MODEL>    GeoVaLs_;
+template <typename OBS> void testUtils() {
+  typedef GeoVaLsFixture<OBS>   Test_;
+  typedef oops::GeoVaLs<OBS>    GeoVaLs_;
 
   const double tol = 1e-6;
 
@@ -158,9 +158,9 @@ template <typename MODEL> void testUtils() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testRead() {
-  typedef GeoVaLsFixture<MODEL> Test_;
-  typedef oops::GeoVaLs<MODEL>  GeoVaLs_;
+template <typename OBS> void testRead() {
+  typedef GeoVaLsFixture<OBS> Test_;
+  typedef oops::GeoVaLs<OBS>  GeoVaLs_;
 
   const double tol = 1.0e-9;
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
@@ -180,23 +180,23 @@ template <typename MODEL> void testRead() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename OBS>
 class GeoVaLs : public oops::Test {
  public:
   GeoVaLs() {}
   virtual ~GeoVaLs() {}
  private:
-  std::string testid() const {return "test::GeoVaLs<" + MODEL::name() + ">";}
+  std::string testid() const {return "test::GeoVaLs<" + OBS::name() + ">";}
 
   void register_tests() const {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/GeoVaLs/testConstructor")
-      { testConstructor<MODEL>(); });
+      { testConstructor<OBS>(); });
     ts.emplace_back(CASE("interface/GeoVaLs/testUtils")
-      { testUtils<MODEL>(); });
+      { testUtils<OBS>(); });
     ts.emplace_back(CASE("interface/GeoVaLs/testRead")
-      { testRead<MODEL>(); });
+      { testRead<OBS>(); });
   }
 };
 

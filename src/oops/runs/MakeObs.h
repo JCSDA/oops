@@ -34,20 +34,20 @@
 
 namespace oops {
 
-template <typename MODEL> class MakeObs : public Application {
-  typedef Departures<MODEL>          Departures_;
+template <typename MODEL, typename OBS> class MakeObs : public Application {
+  typedef Departures<OBS>            Departures_;
   typedef Geometry<MODEL>            Geometry_;
   typedef Model<MODEL>               Model_;
-  typedef Observations<MODEL>        Observations_;
-  typedef ObsErrors<MODEL>           ObsErrors_;
-  typedef ObsSpaces<MODEL>           ObsSpaces_;
+  typedef Observations<OBS>          Observations_;
+  typedef ObsErrors<OBS>             ObsErrors_;
+  typedef ObsSpaces<OBS>             ObsSpaces_;
   typedef State<MODEL>               State_;
 
  public:
 // -----------------------------------------------------------------------------
   explicit MakeObs(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {
-    instantiateObsErrorFactory<MODEL>();
-    instantiateObsFilterFactory<MODEL>();
+    instantiateObsErrorFactory<OBS>();
+    instantiateObsFilterFactory<OBS>();
   }
 // -----------------------------------------------------------------------------
   virtual ~MakeObs() {}
@@ -84,7 +84,7 @@ template <typename MODEL> class MakeObs : public Application {
     const eckit::LocalConfiguration obsconf(fullConfig, "Observations");
     ObsSpaces_ obspace(obsconf, this->getComm(), winbgn, winend);
 
-    CalcHofX<MODEL> hofx(obspace, geometry, fullConfig);
+    CalcHofX<MODEL, OBS> hofx(obspace, geometry, fullConfig);
     Observations_ yobs = hofx.compute(model, xx, post);
 
     Log::test() << "Final state: " << xx << std::endl;
@@ -113,7 +113,7 @@ template <typename MODEL> class MakeObs : public Application {
 // -----------------------------------------------------------------------------
  private:
   std::string appname() const {
-    return "oops::MakeObs<" + MODEL::name() + ">";
+    return "oops::MakeObs<" + MODEL::name() + ", " + OBS::name() + ">";
   }
 // -----------------------------------------------------------------------------
 };

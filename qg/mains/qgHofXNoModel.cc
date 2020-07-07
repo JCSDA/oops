@@ -11,6 +11,6 @@
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  oops::HofXNoModel<qg::QgTraits> hofx;
+  oops::HofXNoModel<qg::QgTraits, qg::QgObsTraits> hofx;
   return run.execute(hofx);
 }

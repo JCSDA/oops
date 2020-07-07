@@ -70,11 +70,11 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> class DRPLanczosMinimizer : public DRMinimizer<MODEL> {
-  typedef BMatrix<MODEL>             Bmat_;
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef HtRinvHMatrix<MODEL>       HtRinvH_;
+template<typename MODEL, typename OBS> class DRPLanczosMinimizer : public DRMinimizer<MODEL, OBS> {
+  typedef BMatrix<MODEL, OBS>             Bmat_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef HtRinvHMatrix<MODEL, OBS>       HtRinvH_;
 
  public:
   const std::string classname() const override {return "DRPLanczosMinimizer";}
@@ -96,16 +96,16 @@ template<typename MODEL> class DRPLanczosMinimizer : public DRMinimizer<MODEL> {
 
 // =============================================================================
 
-template<typename MODEL>
-DRPLanczosMinimizer<MODEL>::DRPLanczosMinimizer(const eckit::Configuration & conf,
+template<typename MODEL, typename OBS>
+DRPLanczosMinimizer<MODEL, OBS>::DRPLanczosMinimizer(const eckit::Configuration & conf,
                                                 const CostFct_ & J)
-  : DRMinimizer<MODEL>(J), lmp_(conf),
+  : DRMinimizer<MODEL, OBS>(J), lmp_(conf),
     hvecs_(), vvecs_(), zvecs_(), alphas_(), betas_() {}
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-double DRPLanczosMinimizer<MODEL>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_ & rr,
+template<typename MODEL, typename OBS>
+double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_ & rr,
                                         const Bmat_ & B, const HtRinvH_ & HtRinvH,
                                         const double costJ0Jb, const double costJ0JoJc,
                                         const int maxiter, const double tolerance) {

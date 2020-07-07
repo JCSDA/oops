@@ -11,6 +11,6 @@
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  test::GetValues<qg::QgTraits> tests;
+  test::GetValues<qg::QgTraits, qg::QgObsTraits> tests;
   return run.execute(tests);
 }

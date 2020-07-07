@@ -31,17 +31,17 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename OBS>
 class ObsAuxIncrement : public util::Printable,
-                        private util::ObjectCounter<ObsAuxIncrement<MODEL> > {
-  typedef typename MODEL::ObsAuxIncrement     ObsAuxIncrement_;
-  typedef ObsAuxControl<MODEL>       ObsAuxControl_;
+                        private util::ObjectCounter<ObsAuxIncrement<OBS> > {
+  typedef typename OBS::ObsAuxIncrement     ObsAuxIncrement_;
+  typedef ObsAuxControl<OBS>       ObsAuxControl_;
 
  public:
   static const std::string classname() {return "oops::ObsAuxIncrement";}
 
 /// Constructor, destructor
-  ObsAuxIncrement(const ObsSpace<MODEL> &, const eckit::Configuration &);
+  ObsAuxIncrement(const ObsSpace<OBS> &, const eckit::Configuration &);
   ObsAuxIncrement(const ObsAuxIncrement &, const bool copy = true);
   ObsAuxIncrement(const ObsAuxIncrement &, const eckit::Configuration &);
   ~ObsAuxIncrement();
@@ -77,8 +77,8 @@ class ObsAuxIncrement : public util::Printable,
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-ObsAuxControl<MODEL> & operator+=(ObsAuxControl<MODEL> & xx, const ObsAuxIncrement<MODEL> & dx) {
+template <typename OBS>
+ObsAuxControl<OBS> & operator+=(ObsAuxControl<OBS> & xx, const ObsAuxIncrement<OBS> & dx) {
   Log::trace() << "operator+=(ObsAuxControl, ObsAuxIncrement) starting" << std::endl;
   util::Timer timer("oops::ObsAuxIncrement", "operator+=ObsAuxControl");
   xx.obsauxcontrol() += dx.obsauxincrement();
@@ -88,167 +88,167 @@ ObsAuxControl<MODEL> & operator+=(ObsAuxControl<MODEL> & xx, const ObsAuxIncreme
 
 // =============================================================================
 
-template<typename MODEL>
-ObsAuxIncrement<MODEL>::ObsAuxIncrement(const ObsSpace<MODEL> & os,
+template<typename OBS>
+ObsAuxIncrement<OBS>::ObsAuxIncrement(const ObsSpace<OBS> & os,
                                         const eckit::Configuration & conf) : aux_()
 {
-  Log::trace() << "ObsAuxIncrement<MODEL>::ObsAuxIncrement starting" << std::endl;
+  Log::trace() << "ObsAuxIncrement<OBS>::ObsAuxIncrement starting" << std::endl;
   util::Timer timer(classname(), "ObsAuxIncrement");
   aux_.reset(new ObsAuxIncrement_(os.obsspace(), conf));
-  Log::trace() << "ObsAuxIncrement<MODEL>::ObsAuxIncrement done" << std::endl;
+  Log::trace() << "ObsAuxIncrement<OBS>::ObsAuxIncrement done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-ObsAuxIncrement<MODEL>::ObsAuxIncrement(const ObsAuxIncrement & other,
+template<typename OBS>
+ObsAuxIncrement<OBS>::ObsAuxIncrement(const ObsAuxIncrement & other,
                                         const bool copy) : aux_()
 {
-  Log::trace() << "ObsAuxIncrement<MODEL>::ObsAuxIncrement copy starting" << std::endl;
+  Log::trace() << "ObsAuxIncrement<OBS>::ObsAuxIncrement copy starting" << std::endl;
   util::Timer timer(classname(), "ObsAuxIncrement");
   aux_.reset(new ObsAuxIncrement_(*other.aux_, copy));
-  Log::trace() << "ObsAuxIncrement<MODEL>::ObsAuxIncrement copy done" << std::endl;
+  Log::trace() << "ObsAuxIncrement<OBS>::ObsAuxIncrement copy done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-ObsAuxIncrement<MODEL>::ObsAuxIncrement(const ObsAuxIncrement & other,
+template<typename OBS>
+ObsAuxIncrement<OBS>::ObsAuxIncrement(const ObsAuxIncrement & other,
                                         const eckit::Configuration & conf) : aux_()
 {
-  Log::trace() << "ObsAuxIncrement<MODEL>::ObsAuxIncrement interpolated starting" << std::endl;
+  Log::trace() << "ObsAuxIncrement<OBS>::ObsAuxIncrement interpolated starting" << std::endl;
   util::Timer timer(classname(), "ObsAuxIncrement");
   aux_.reset(new ObsAuxIncrement_(*other.aux_, conf));
-  Log::trace() << "ObsAuxIncrement<MODEL>::ObsAuxIncrement interpolated done" << std::endl;
+  Log::trace() << "ObsAuxIncrement<OBS>::ObsAuxIncrement interpolated done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-ObsAuxIncrement<MODEL>::~ObsAuxIncrement() {
-  Log::trace() << "ObsAuxIncrement<MODEL>::~ObsAuxIncrement starting" << std::endl;
+template<typename OBS>
+ObsAuxIncrement<OBS>::~ObsAuxIncrement() {
+  Log::trace() << "ObsAuxIncrement<OBS>::~ObsAuxIncrement starting" << std::endl;
   util::Timer timer(classname(), "~ObsAuxIncrement");
   aux_.reset();
-  Log::trace() << "ObsAuxIncrement<MODEL>::~ObsAuxIncrement done" << std::endl;
+  Log::trace() << "ObsAuxIncrement<OBS>::~ObsAuxIncrement done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void ObsAuxIncrement<MODEL>::diff(const ObsAuxControl_ & x1, const ObsAuxControl_ & x2) {
-  Log::trace() << "ObsAuxIncrement<MODEL>::diff starting" << std::endl;
+template<typename OBS>
+void ObsAuxIncrement<OBS>::diff(const ObsAuxControl_ & x1, const ObsAuxControl_ & x2) {
+  Log::trace() << "ObsAuxIncrement<OBS>::diff starting" << std::endl;
   util::Timer timer(classname(), "diff");
   aux_->diff(x1.obsauxcontrol(), x2.obsauxcontrol());
-  Log::trace() << "ObsAuxIncrement<MODEL>::diff done" << std::endl;
+  Log::trace() << "ObsAuxIncrement<OBS>::diff done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void ObsAuxIncrement<MODEL>::zero() {
-  Log::trace() << "ObsAuxIncrement<MODEL>::zero starting" << std::endl;
+template<typename OBS>
+void ObsAuxIncrement<OBS>::zero() {
+  Log::trace() << "ObsAuxIncrement<OBS>::zero starting" << std::endl;
   util::Timer timer(classname(), "zero");
   aux_->zero();
-  Log::trace() << "ObsAuxIncrement<MODEL>::zero done" << std::endl;
+  Log::trace() << "ObsAuxIncrement<OBS>::zero done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-ObsAuxIncrement<MODEL> & ObsAuxIncrement<MODEL>::operator=(const ObsAuxIncrement & rhs) {
-  Log::trace() << "ObsAuxIncrement<MODEL>::operator= starting" << std::endl;
+template<typename OBS>
+ObsAuxIncrement<OBS> & ObsAuxIncrement<OBS>::operator=(const ObsAuxIncrement & rhs) {
+  Log::trace() << "ObsAuxIncrement<OBS>::operator= starting" << std::endl;
   util::Timer timer(classname(), "operator=");
   *aux_ = *rhs.aux_;
-  Log::trace() << "ObsAuxIncrement<MODEL>::operator= done" << std::endl;
+  Log::trace() << "ObsAuxIncrement<OBS>::operator= done" << std::endl;
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-ObsAuxIncrement<MODEL> & ObsAuxIncrement<MODEL>::operator+=(const ObsAuxIncrement & rhs) {
-  Log::trace() << "ObsAuxIncrement<MODEL>::operator+= starting" << std::endl;
+template<typename OBS>
+ObsAuxIncrement<OBS> & ObsAuxIncrement<OBS>::operator+=(const ObsAuxIncrement & rhs) {
+  Log::trace() << "ObsAuxIncrement<OBS>::operator+= starting" << std::endl;
   util::Timer timer(classname(), "operator+=");
   *aux_ += *rhs.aux_;
-  Log::trace() << "ObsAuxIncrement<MODEL>::operator+= done" << std::endl;
+  Log::trace() << "ObsAuxIncrement<OBS>::operator+= done" << std::endl;
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-ObsAuxIncrement<MODEL> & ObsAuxIncrement<MODEL>::operator-=(const ObsAuxIncrement & rhs) {
-  Log::trace() << "ObsAuxIncrement<MODEL>::operator-= starting" << std::endl;
+template<typename OBS>
+ObsAuxIncrement<OBS> & ObsAuxIncrement<OBS>::operator-=(const ObsAuxIncrement & rhs) {
+  Log::trace() << "ObsAuxIncrement<OBS>::operator-= starting" << std::endl;
   util::Timer timer(classname(), "operator-=");
   *aux_ -= *rhs.aux_;
-  Log::trace() << "ObsAuxIncrement<MODEL>::operator-= done" << std::endl;
+  Log::trace() << "ObsAuxIncrement<OBS>::operator-= done" << std::endl;
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-ObsAuxIncrement<MODEL> & ObsAuxIncrement<MODEL>::operator*=(const double & zz) {
-  Log::trace() << "ObsAuxIncrement<MODEL>::operator*= starting" << std::endl;
+template<typename OBS>
+ObsAuxIncrement<OBS> & ObsAuxIncrement<OBS>::operator*=(const double & zz) {
+  Log::trace() << "ObsAuxIncrement<OBS>::operator*= starting" << std::endl;
   util::Timer timer(classname(), "operator*=");
   *aux_ *= zz;
-  Log::trace() << "ObsAuxIncrement<MODEL>::operator*= done" << std::endl;
+  Log::trace() << "ObsAuxIncrement<OBS>::operator*= done" << std::endl;
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void ObsAuxIncrement<MODEL>::axpy(const double & zz, const ObsAuxIncrement & dx) {
-  Log::trace() << "ObsAuxIncrement<MODEL>::axpy starting" << std::endl;
+template<typename OBS>
+void ObsAuxIncrement<OBS>::axpy(const double & zz, const ObsAuxIncrement & dx) {
+  Log::trace() << "ObsAuxIncrement<OBS>::axpy starting" << std::endl;
   util::Timer timer(classname(), "axpy");
   aux_->axpy(zz, *dx.aux_);
-  Log::trace() << "ObsAuxIncrement<MODEL>::axpy done" << std::endl;
+  Log::trace() << "ObsAuxIncrement<OBS>::axpy done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-double ObsAuxIncrement<MODEL>::dot_product_with(const ObsAuxIncrement & dx) const {
-  Log::trace() << "ObsAuxIncrement<MODEL>::dot_product_with starting" << std::endl;
+template<typename OBS>
+double ObsAuxIncrement<OBS>::dot_product_with(const ObsAuxIncrement & dx) const {
+  Log::trace() << "ObsAuxIncrement<OBS>::dot_product_with starting" << std::endl;
   util::Timer timer(classname(), "dot_product_with");
   double zz = aux_->dot_product_with(*dx.aux_);
-  Log::trace() << "ObsAuxIncrement<MODEL>::dot_product_with done" << std::endl;
+  Log::trace() << "ObsAuxIncrement<OBS>::dot_product_with done" << std::endl;
   return zz;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void ObsAuxIncrement<MODEL>::read(const eckit::Configuration & conf) {
-  Log::trace() << "ObsAuxIncrement<MODEL>::read starting" << std::endl;
+template<typename OBS>
+void ObsAuxIncrement<OBS>::read(const eckit::Configuration & conf) {
+  Log::trace() << "ObsAuxIncrement<OBS>::read starting" << std::endl;
   util::Timer timer(classname(), "read");
   aux_->read(conf);
-  Log::trace() << "ObsAuxIncrement<MODEL>::read done" << std::endl;
+  Log::trace() << "ObsAuxIncrement<OBS>::read done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void ObsAuxIncrement<MODEL>::write(const eckit::Configuration & conf) const {
-  Log::trace() << "ObsAuxIncrement<MODEL>::write starting" << std::endl;
+template<typename OBS>
+void ObsAuxIncrement<OBS>::write(const eckit::Configuration & conf) const {
+  Log::trace() << "ObsAuxIncrement<OBS>::write starting" << std::endl;
   util::Timer timer(classname(), "write");
   aux_->write(conf);
-  Log::trace() << "ObsAuxIncrement<MODEL>::write done" << std::endl;
+  Log::trace() << "ObsAuxIncrement<OBS>::write done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-double ObsAuxIncrement<MODEL>::norm() const {
-  Log::trace() << "ObsAuxIncrement<MODEL>::norm starting" << std::endl;
+template<typename OBS>
+double ObsAuxIncrement<OBS>::norm() const {
+  Log::trace() << "ObsAuxIncrement<OBS>::norm starting" << std::endl;
   util::Timer timer(classname(), "norm");
   double zz = aux_->norm();
-  Log::trace() << "ObsAuxIncrement<MODEL>::norm done" << std::endl;
+  Log::trace() << "ObsAuxIncrement<OBS>::norm done" << std::endl;
   return zz;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-size_t ObsAuxIncrement<MODEL>::serialSize() const {
-  Log::trace() << "ObsAuxIncrement<MODEL>::serialSize" << std::endl;
+template<typename OBS>
+size_t ObsAuxIncrement<OBS>::serialSize() const {
+  Log::trace() << "ObsAuxIncrement<OBS>::serialSize" << std::endl;
   util::Timer timer(classname(), "serialSize");
   return aux_->serialSize();
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void ObsAuxIncrement<MODEL>::serialize(std::vector<double> & vect) const {
-  Log::trace() << "ObsAuxIncrement<MODEL>::serialize starting" << std::endl;
+template<typename OBS>
+void ObsAuxIncrement<OBS>::serialize(std::vector<double> & vect) const {
+  Log::trace() << "ObsAuxIncrement<OBS>::serialize starting" << std::endl;
   util::Timer timer(classname(), "serialize");
   aux_->serialize(vect);
-  Log::trace() << "ObsAuxIncrement<MODEL>::serialize done" << std::endl;
+  Log::trace() << "ObsAuxIncrement<OBS>::serialize done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void ObsAuxIncrement<MODEL>::deserialize(const std::vector<double> & vect, size_t & current) {
-  Log::trace() << "ObsAuxIncrement<MODEL>::deserialize starting" << std::endl;
+template<typename OBS>
+void ObsAuxIncrement<OBS>::deserialize(const std::vector<double> & vect, size_t & current) {
+  Log::trace() << "ObsAuxIncrement<OBS>::deserialize starting" << std::endl;
   util::Timer timer(classname(), "deserialize");
   aux_->deserialize(vect, current);
-  Log::trace() << "ObsAuxIncrement<MODEL>::deserialize done" << std::endl;
+  Log::trace() << "ObsAuxIncrement<OBS>::deserialize done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void ObsAuxIncrement<MODEL>::print(std::ostream & os) const {
-  Log::trace() << "ObsAuxIncrement<MODEL>::print starting" << std::endl;
+template<typename OBS>
+void ObsAuxIncrement<OBS>::print(std::ostream & os) const {
+  Log::trace() << "ObsAuxIncrement<OBS>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
   os << *aux_;
-  Log::trace() << "ObsAuxIncrement<MODEL>::print done" << std::endl;
+  Log::trace() << "ObsAuxIncrement<OBS>::print done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 

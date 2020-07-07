@@ -27,7 +27,6 @@
 #include "oops/util/Logger.h"
 
 namespace oops {
-  template<typename MODEL> class ControlIncrement;
   template<typename MODEL> class JqTerm;
   template<typename MODEL> class JqTermTLAD;
 
@@ -43,7 +42,6 @@ template<typename MODEL> class CostJb4D : public CostJbState<MODEL> {
   typedef Increment<MODEL>           Increment_;
   typedef State4D<MODEL>             State4D_;
   typedef Increment4D<MODEL>         Increment4D_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
   typedef Geometry<MODEL>            Geometry_;
 
  public:

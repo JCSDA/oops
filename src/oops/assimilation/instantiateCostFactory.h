@@ -19,11 +19,11 @@
 
 namespace oops {
 
-template <typename MODEL> void instantiateCostFactory() {
-  static CostMaker<MODEL, CostFct3DVar<MODEL> >    maker3DVar_("3D-Var");
-  static CostMaker<MODEL, CostFct4DVar<MODEL> >    maker4DVar_("4D-Var");
-  static CostMaker<MODEL, CostFct4DEnsVar<MODEL> > maker4DEns_("4D-Ens-Var");
-  static CostMaker<MODEL, CostFctWeak<MODEL> >     maker4Weak_("4D-Weak");
+template <typename MODEL, typename OBS> void instantiateCostFactory() {
+  static CostMaker<MODEL, OBS, CostFct3DVar<MODEL, OBS> >    maker3DVar_("3D-Var");
+  static CostMaker<MODEL, OBS, CostFct4DVar<MODEL, OBS> >    maker4DVar_("4D-Var");
+  static CostMaker<MODEL, OBS, CostFct4DEnsVar<MODEL, OBS> > maker4DEns_("4D-Ens-Var");
+  static CostMaker<MODEL, OBS, CostFctWeak<MODEL, OBS> >     maker4Weak_("4D-Weak");
 }
 
 }  // namespace oops

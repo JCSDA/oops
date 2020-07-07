@@ -23,13 +23,13 @@
 namespace oops {
 
 /// \brief Base class for LETKF-type solvers
-template <typename MODEL>
+template <typename MODEL, typename OBS>
 class LETKFSolverBase {
-  typedef Departures<MODEL>         Departures_;
-  typedef DeparturesEnsemble<MODEL> DeparturesEnsemble_;
+  typedef Departures<OBS>           Departures_;
+  typedef DeparturesEnsemble<OBS>   DeparturesEnsemble_;
   typedef GeometryIterator<MODEL>   GeometryIterator_;
   typedef IncrementEnsemble<MODEL>  IncrementEnsemble_;
-  typedef ObsErrors<MODEL>          ObsErrors_;
+  typedef ObsErrors<OBS>            ObsErrors_;
 
  public:
   LETKFSolverBase() {}
@@ -50,8 +50,8 @@ class LETKFSolverBase {
 };
 
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void LETKFSolverBase<MODEL>::measurementUpdate(const Departures_ & dy,
+template <typename MODEL, typename OBS>
+void LETKFSolverBase<MODEL, OBS>::measurementUpdate(const Departures_ & dy,
                                                const DeparturesEnsemble_ & Yb,
                                                const ObsErrors_ & R,
                                                const IncrementEnsemble_ & bkg_pert,
@@ -76,36 +76,36 @@ void LETKFSolverBase<MODEL>::measurementUpdate(const Departures_ & dy,
 // =============================================================================
 
 /// \brief factory for LETKF solvers
-template <typename MODEL>
+template <typename MODEL, typename OBS>
 class LETKFSolverFactory {
  public:
-  static std::unique_ptr<LETKFSolverBase<MODEL>> create(const eckit::Configuration &,
+  static std::unique_ptr<LETKFSolverBase<MODEL, OBS>> create(const eckit::Configuration &,
                                                         size_t);
   virtual ~LETKFSolverFactory() = default;
  protected:
   explicit LETKFSolverFactory(const std::string &);
  private:
-  virtual LETKFSolverBase<MODEL> * make(const eckit::Configuration &, size_t) = 0;
-  static std::map < std::string, LETKFSolverFactory<MODEL> * > & getMakers() {
-    static std::map < std::string, LETKFSolverFactory<MODEL> * > makers_;
+  virtual LETKFSolverBase<MODEL, OBS> * make(const eckit::Configuration &, size_t) = 0;
+  static std::map < std::string, LETKFSolverFactory<MODEL, OBS> * > & getMakers() {
+    static std::map < std::string, LETKFSolverFactory<MODEL, OBS> * > makers_;
     return makers_;
   }
 };
 
 // -----------------------------------------------------------------------------
 
-template<class MODEL, class T>
-class LETKFSolverMaker : public LETKFSolverFactory<MODEL> {
-  virtual LETKFSolverBase<MODEL> * make(const eckit::Configuration & conf, size_t nens)
+template<class MODEL, class OBS, class T>
+class LETKFSolverMaker : public LETKFSolverFactory<MODEL, OBS> {
+  virtual LETKFSolverBase<MODEL, OBS> * make(const eckit::Configuration & conf, size_t nens)
     { return new T(conf, nens); }
  public:
-  explicit LETKFSolverMaker(const std::string & name) : LETKFSolverFactory<MODEL>(name) {}
+  explicit LETKFSolverMaker(const std::string & name) : LETKFSolverFactory<MODEL, OBS>(name) {}
 };
 
 // =============================================================================
 
-template <typename MODEL>
-LETKFSolverFactory<MODEL>::LETKFSolverFactory(const std::string & name) {
+template <typename MODEL, typename OBS>
+LETKFSolverFactory<MODEL, OBS>::LETKFSolverFactory(const std::string & name) {
   if (getMakers().find(name) != getMakers().end()) {
     Log::error() << name << " already registered in LETKF solver factory." << std::endl;
     ABORT("Element already registered in LETKFSolverFactory.");
@@ -115,24 +115,24 @@ LETKFSolverFactory<MODEL>::LETKFSolverFactory(const std::string & name) {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-std::unique_ptr<LETKFSolverBase<MODEL>>
-LETKFSolverFactory<MODEL>::create(const eckit::Configuration & conf, size_t nens) {
-  Log::trace() << "LETKFSolverBase<MODEL>::create starting" << std::endl;
+template <typename MODEL, typename OBS>
+std::unique_ptr<LETKFSolverBase<MODEL, OBS>>
+LETKFSolverFactory<MODEL, OBS>::create(const eckit::Configuration & conf, size_t nens) {
+  Log::trace() << "LETKFSolverBase<MODEL, OBS>::create starting" << std::endl;
   const std::string id = conf.getString("letkf.solver");
-  typename std::map<std::string, LETKFSolverFactory<MODEL>*>::iterator
+  typename std::map<std::string, LETKFSolverFactory<MODEL, OBS>*>::iterator
     jloc = getMakers().find(id);
   if (jloc == getMakers().end()) {
     Log::error() << id << " does not exist in LETKF solver factory." << std::endl;
     Log::error() << "LETKF solver Factory has " << getMakers().size() << " elements:" << std::endl;
-    for (typename std::map<std::string, LETKFSolverFactory<MODEL>*>::const_iterator
+    for (typename std::map<std::string, LETKFSolverFactory<MODEL, OBS>*>::const_iterator
          jj = getMakers().begin(); jj != getMakers().end(); ++jj) {
        Log::error() << "A " << jj->first << " LETKFSolver" << std::endl;
     }
     ABORT("Element does not exist in LETKFSolverFactory.");
   }
-  std::unique_ptr<LETKFSolverBase<MODEL>> ptr(jloc->second->make(conf, nens));
-  Log::trace() << "LETKFSolverBase<MODEL>::create done" << std::endl;
+  std::unique_ptr<LETKFSolverBase<MODEL, OBS>> ptr(jloc->second->make(conf, nens));
+  Log::trace() << "LETKFSolverBase<MODEL, OBS>::create done" << std::endl;
   return ptr;
 }
 

@@ -26,7 +26,7 @@
 
 namespace oops {
 
-template<typename MODEL> class Observations;
+template<typename OBS> class Observations;
 
 /// Difference between two observation vectors.
 /*!
@@ -38,11 +38,11 @@ template<typename MODEL> class Observations;
  */
 
 // -----------------------------------------------------------------------------
-template <typename MODEL>
+template <typename OBS>
 class Departures : public util::Printable,
                    public GeneralizedDepartures {
-  typedef ObsSpaces<MODEL>           ObsSpaces_;
-  typedef ObsVector<MODEL>           ObsVector_;
+  typedef ObsSpaces<OBS>           ObsSpaces_;
+  typedef ObsVector<OBS>           ObsVector_;
 
  public:
 /// \brief create Departures for all obs (read from ObsSpace if name is specified)
@@ -85,8 +85,8 @@ class Departures : public util::Printable,
 
 // =============================================================================
 
-template<typename MODEL>
-Departures<MODEL>::Departures(const ObsSpaces_ & obsdb,
+template<typename OBS>
+Departures<OBS>::Departures(const ObsSpaces_ & obsdb,
                               const std::string & name, const bool fail): dep_()
 {
   dep_.reserve(obsdb.size());
@@ -96,8 +96,8 @@ Departures<MODEL>::Departures(const ObsSpaces_ & obsdb,
   Log::trace() << "Departures created" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-Departures<MODEL>::Departures(const ObsSpaces_ & obsdb,
+template<typename OBS>
+Departures<OBS>::Departures(const ObsSpaces_ & obsdb,
                               const Departures & other): dep_() {
   dep_.reserve(obsdb.size());
   for (size_t jj = 0; jj < other.dep_.size(); ++jj) {
@@ -106,76 +106,76 @@ Departures<MODEL>::Departures(const ObsSpaces_ & obsdb,
   Log::trace() << "Local Departures created" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-Departures<MODEL> & Departures<MODEL>::operator+=(const Departures & rhs) {
+template<typename OBS>
+Departures<OBS> & Departures<OBS>::operator+=(const Departures & rhs) {
   for (size_t jj = 0; jj < dep_.size(); ++jj) {
     dep_[jj] += rhs[jj];
   }
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-Departures<MODEL> & Departures<MODEL>::operator-=(const Departures & rhs) {
+template<typename OBS>
+Departures<OBS> & Departures<OBS>::operator-=(const Departures & rhs) {
   for (size_t jj = 0; jj < dep_.size(); ++jj) {
     dep_[jj] -= rhs[jj];
   }
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-Departures<MODEL> & Departures<MODEL>::operator*=(const double & zz) {
+template<typename OBS>
+Departures<OBS> & Departures<OBS>::operator*=(const double & zz) {
   for (size_t jj = 0; jj < dep_.size(); ++jj) {
     dep_[jj] *= zz;
   }
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-Departures<MODEL> & Departures<MODEL>::operator*=(const Departures & rhs) {
+template<typename OBS>
+Departures<OBS> & Departures<OBS>::operator*=(const Departures & rhs) {
   for (size_t jj = 0; jj < dep_.size(); ++jj) {
     dep_[jj] *= rhs[jj];
   }
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-Departures<MODEL> & Departures<MODEL>::operator/=(const Departures & rhs) {
+template<typename OBS>
+Departures<OBS> & Departures<OBS>::operator/=(const Departures & rhs) {
   for (size_t jj = 0; jj < dep_.size(); ++jj) {
     dep_[jj] /= rhs[jj];
   }
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void Departures<MODEL>::zero() {
+template<typename OBS>
+void Departures<OBS>::zero() {
   for (size_t jj = 0; jj < dep_.size(); ++jj) {
     dep_[jj].zero();
   }
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void Departures<MODEL>::random() {
+template<typename OBS>
+void Departures<OBS>::random() {
   for (size_t jj = 0; jj < dep_.size(); ++jj) {
     dep_[jj].random();
   }
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void Departures<MODEL>::invert() {
+template<typename OBS>
+void Departures<OBS>::invert() {
   for (size_t jj = 0; jj < dep_.size(); ++jj) {
     dep_[jj].invert();
   }
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void Departures<MODEL>::axpy(const double & zz, const Departures & rhs) {
+template<typename OBS>
+void Departures<OBS>::axpy(const double & zz, const Departures & rhs) {
   for (size_t jj = 0; jj < dep_.size(); ++jj) {
     dep_[jj].axpy(zz, rhs[jj]);
   }
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-double Departures<MODEL>::dot_product_with(const Departures & other) const {
+template<typename OBS>
+double Departures<OBS>::dot_product_with(const Departures & other) const {
   double zz = 0.0;
   for (size_t jj = 0; jj < dep_.size(); ++jj) {
     zz += dot_product(dep_[jj], other[jj]);
@@ -183,13 +183,13 @@ double Departures<MODEL>::dot_product_with(const Departures & other) const {
   return zz;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-double Departures<MODEL>::rms() const {
+template<typename OBS>
+double Departures<OBS>::rms() const {
   return sqrt(dot_product_with(*this) / this->nobs());
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-size_t Departures<MODEL>::nobs() const {
+template<typename OBS>
+size_t Departures<OBS>::nobs() const {
   size_t nobs = 0;
   for (size_t jj = 0; jj < dep_.size(); ++jj) {
     nobs += dep_[jj].nobs();
@@ -197,8 +197,8 @@ size_t Departures<MODEL>::nobs() const {
   return nobs;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-Eigen::MatrixXd Departures<MODEL>::packEigen() const {
+template <typename OBS>
+Eigen::MatrixXd Departures<OBS>::packEigen() const {
   Eigen::MatrixXd data1d(1, this->nobs());
   int i = 0;
   for (size_t idep = 0; idep < dep_.size(); ++idep) {
@@ -209,15 +209,15 @@ Eigen::MatrixXd Departures<MODEL>::packEigen() const {
   return data1d;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void Departures<MODEL>::save(const std::string & name) const {
+template <typename OBS>
+void Departures<OBS>::save(const std::string & name) const {
   for (size_t jj = 0; jj < dep_.size(); ++jj) {
     dep_[jj].save(name);
   }
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void Departures<MODEL>::print(std::ostream & os) const {
+template <typename OBS>
+void Departures<OBS>::print(std::ostream & os) const {
   for (size_t jj = 0; jj < dep_.size(); ++jj) {
     os << dep_[jj] << std::endl;
   }

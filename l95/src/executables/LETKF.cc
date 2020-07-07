@@ -11,6 +11,6 @@
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  oops::LETKF<lorenz95::L95Traits> letkf;
+  oops::LETKF<lorenz95::L95Traits, lorenz95::L95ObsTraits> letkf;
   return run.execute(letkf);
 }

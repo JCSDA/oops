@@ -29,12 +29,12 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 /// Tests creation and destruction of ObsErrorCovariances
-template <typename MODEL> void testConstructor() {
-  typedef ObsTestsFixture<MODEL>     Test_;
-  typedef oops::ObsErrorBase<MODEL>  Covar_;
-  typedef oops::ObsVector<MODEL>     ObsVector_;
+template <typename OBS> void testConstructor() {
+  typedef ObsTestsFixture<OBS>     Test_;
+  typedef oops::ObsErrorBase<OBS>  Covar_;
+  typedef oops::ObsVector<OBS>     ObsVector_;
 
-  oops::instantiateObsErrorFactory<MODEL>();
+  oops::instantiateObsErrorFactory<OBS>();
 
   const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
   std::vector<eckit::LocalConfiguration> conf;
@@ -46,7 +46,7 @@ template <typename MODEL> void testConstructor() {
 
     const eckit::LocalConfiguration rconf(conf[jj], "Covariance");
     std::unique_ptr<Covar_> R(
-      oops::ObsErrorFactory<MODEL>::create(rconf, Test_::obspace()[jj]));
+      oops::ObsErrorFactory<OBS>::create(rconf, Test_::obspace()[jj]));
     EXPECT(R.get());
 
     R.reset();
@@ -56,12 +56,12 @@ template <typename MODEL> void testConstructor() {
 
 // -----------------------------------------------------------------------------
 /// Tests that \f$R*R^{-1}*dy = dy\f$ and \f$R^{-1}*R*dy = dy\f$
-template <typename MODEL> void testMultiplies() {
-  typedef ObsTestsFixture<MODEL>     Test_;
-  typedef oops::ObsErrorBase<MODEL>  Covar_;
-  typedef oops::ObsVector<MODEL>     ObsVector_;
+template <typename OBS> void testMultiplies() {
+  typedef ObsTestsFixture<OBS>     Test_;
+  typedef oops::ObsErrorBase<OBS>  Covar_;
+  typedef oops::ObsVector<OBS>     ObsVector_;
 
-  oops::instantiateObsErrorFactory<MODEL>();
+  oops::instantiateObsErrorFactory<OBS>();
 
   const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
   std::vector<eckit::LocalConfiguration> conf;
@@ -73,7 +73,7 @@ template <typename MODEL> void testMultiplies() {
 
     const eckit::LocalConfiguration rconf(conf[jj], "Covariance");
     std::unique_ptr<Covar_> R(
-      oops::ObsErrorFactory<MODEL>::create(rconf, Test_::obspace()[jj]));
+      oops::ObsErrorFactory<OBS>::create(rconf, Test_::obspace()[jj]));
 
     // RMSE should be equal to the rms that was read from the file
     EXPECT(oops::is_close(R->getRMSE(), obserr.rms(), 1.e-10));
@@ -102,21 +102,21 @@ template <typename MODEL> void testMultiplies() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename OBS>
 class ObsErrorCovariance : public oops::Test {
  public:
   ObsErrorCovariance() {}
   virtual ~ObsErrorCovariance() {}
  private:
-  std::string testid() const {return "test::ObsErrorCovariance<" + MODEL::name() + ">";}
+  std::string testid() const {return "test::ObsErrorCovariance<" + OBS::name() + ">";}
 
   void register_tests() const {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/ObsErrorCovariance/testConstructor")
-      { testConstructor<MODEL>(); });
+      { testConstructor<OBS>(); });
     ts.emplace_back(CASE("interface/ObsErrorCovariance/testMultiplies")
-      { testMultiplies<MODEL>(); });
+      { testMultiplies<OBS>(); });
   }
 };
 

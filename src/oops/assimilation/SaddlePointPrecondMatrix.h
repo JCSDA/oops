@@ -29,13 +29,12 @@ namespace oops {
    */
 
 // -----------------------------------------------------------------------------
-template<typename MODEL>
+template<typename MODEL, typename OBS>
 class SaddlePointPrecondMatrix : private boost::noncopyable {
-  typedef Increment<MODEL>           Increment_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef CostFctWeak<MODEL>         CostFctWeak_;
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef SaddlePointVector<MODEL>   SPVector_;
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef CostFctWeak<MODEL, OBS>         CostFctWeak_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef SaddlePointVector<MODEL, OBS>   SPVector_;
 
  public:
   explicit SaddlePointPrecondMatrix(const CostFct_ & j);
@@ -51,16 +50,16 @@ class SaddlePointPrecondMatrix : private boost::noncopyable {
 
 // =============================================================================
 
-template<typename MODEL>
-SaddlePointPrecondMatrix<MODEL>::SaddlePointPrecondMatrix(const CostFct_ & j)
+template<typename MODEL, typename OBS>
+SaddlePointPrecondMatrix<MODEL, OBS>::SaddlePointPrecondMatrix(const CostFct_ & j)
   : j_(dynamic_cast<const CostFctWeak_ &>(j)),
     idmodel_(false)
 {}
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void SaddlePointPrecondMatrix<MODEL>::multiply(const SPVector_ & x,
+template<typename MODEL, typename OBS>
+void SaddlePointPrecondMatrix<MODEL, OBS>::multiply(const SPVector_ & x,
                                                SPVector_ & z) const {
   z.lambda().clear();
   z.lambda().dx(new CtrlInc_(j_.jb()));
@@ -84,8 +83,8 @@ void SaddlePointPrecondMatrix<MODEL>::multiply(const SPVector_ & x,
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void SaddlePointPrecondMatrix<MODEL>::Lhatinv(const CtrlInc_ & xx, CtrlInc_ & zz,
+template<typename MODEL, typename OBS>
+void SaddlePointPrecondMatrix<MODEL, OBS>::Lhatinv(const CtrlInc_ & xx, CtrlInc_ & zz,
                                               const int norder) const {
 // Approximate L=I + (I-L) + (I-L)^2 + ... + (I-L)^norder
   CtrlInc_ ww(xx);
@@ -99,8 +98,8 @@ void SaddlePointPrecondMatrix<MODEL>::Lhatinv(const CtrlInc_ & xx, CtrlInc_ & zz
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void SaddlePointPrecondMatrix<MODEL>::Lhatinvt(const CtrlInc_ & xx, CtrlInc_ & zz,
+template<typename MODEL, typename OBS>
+void SaddlePointPrecondMatrix<MODEL, OBS>::Lhatinvt(const CtrlInc_ & xx, CtrlInc_ & zz,
                                                const int norder) const {
 // Approximate L'=I + (I-L') + (I-L')^2 + ... + (I-L')^norder
   CtrlInc_ ww(xx);

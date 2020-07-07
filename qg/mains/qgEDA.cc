@@ -15,6 +15,6 @@ int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
   qg::instantiateQgChangeVarFactory();
   qg::instantiateQgLocalizationFactory();
-  oops::EDA<qg::QgTraits> eda;
+  oops::EDA<qg::QgTraits, qg::QgObsTraits> eda;
   return run.execute(eda);
 }

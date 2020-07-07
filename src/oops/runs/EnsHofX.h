@@ -20,11 +20,11 @@
 
 namespace oops {
 
-template <typename MODEL> class EnsHofX : public Application {
+template <typename MODEL, typename OBS> class EnsHofX : public Application {
  public:
 // -----------------------------------------------------------------------------
   explicit EnsHofX(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {
-    instantiateObsFilterFactory<MODEL>();
+    instantiateObsFilterFactory<OBS>();
   }
 // -----------------------------------------------------------------------------
   virtual ~EnsHofX() {}
@@ -75,13 +75,13 @@ template <typename MODEL> class EnsHofX : public Application {
 
     Log::debug() << "EnsHofX config for member 0 = " << config << std::endl;
 
-    HofX<MODEL> hofx(commMember);
+    HofX<MODEL, OBS> hofx(commMember);
     return hofx.execute(config);
   }
 // -----------------------------------------------------------------------------
  private:
   std::string appname() const {
-    return "oops::EnsHofX<" + MODEL::name() + ">";
+    return "oops::EnsHofX<" + MODEL::name() + ", " + OBS::name() + ">";
   }
 // -----------------------------------------------------------------------------
 };

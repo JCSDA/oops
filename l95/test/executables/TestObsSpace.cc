@@ -14,7 +14,7 @@
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  test::ObsSpace<lorenz95::L95Traits> tests;
+  test::ObsSpace<lorenz95::L95ObsTraits> tests;
   return run.execute(tests);
 }
 

@@ -36,23 +36,23 @@ namespace test {
 
 // =============================================================================
 
-template <typename MODEL> class ObsAuxIncrementFixture : private boost::noncopyable {
-  typedef ObsTestsFixture<MODEL>  Test_;
-  typedef oops::ObsAuxCovariance<MODEL> Covariance_;
-  typedef oops::ObsAuxControl<MODEL>    ObsAux_;
-  typedef oops::ObsAuxIncrement<MODEL>  AuxIncr_;
+template <typename OBS> class ObsAuxIncrementFixture : private boost::noncopyable {
+  typedef ObsTestsFixture<OBS>  Test_;
+  typedef oops::ObsAuxCovariance<OBS> Covariance_;
+  typedef oops::ObsAuxControl<OBS>    ObsAux_;
+  typedef oops::ObsAuxIncrement<OBS>  AuxIncr_;
 
  public:
   static const eckit::Configuration & config(const size_t ii) {return getInstance().conf_.at(ii);}
   static const Covariance_    & covariance(const size_t ii) {return *getInstance().covar_.at(ii);}
 
  private:
-  static ObsAuxIncrementFixture<MODEL>& getInstance() {
-    static ObsAuxIncrementFixture<MODEL> theObsAuxIncrementFixture;
+  static ObsAuxIncrementFixture<OBS>& getInstance() {
+    static ObsAuxIncrementFixture<OBS> theObsAuxIncrementFixture;
     return theObsAuxIncrementFixture;
   }
 
-  ObsAuxIncrementFixture<MODEL>() {
+  ObsAuxIncrementFixture<OBS>() {
     Test_::config().get("ObsTypes", conf_);
     for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
       std::shared_ptr<Covariance_> tmp(new Covariance_(Test_::obspace()[jj], conf_[jj]));
@@ -60,7 +60,7 @@ template <typename MODEL> class ObsAuxIncrementFixture : private boost::noncopya
     }
   }
 
-  ~ObsAuxIncrementFixture<MODEL>() {}
+  ~ObsAuxIncrementFixture<OBS>() {}
 
   std::vector<eckit::LocalConfiguration> conf_;
   std::vector<std::shared_ptr<Covariance_> > covar_;
@@ -68,10 +68,10 @@ template <typename MODEL> class ObsAuxIncrementFixture : private boost::noncopya
 
 // =============================================================================
 
-template <typename MODEL> void testObsAuxIncrementConstructor() {
-  typedef ObsTestsFixture<MODEL>  Test_;
-  typedef ObsAuxIncrementFixture<MODEL>   AuxTest_;
-  typedef oops::ObsAuxIncrement<MODEL>    AuxIncr_;
+template <typename OBS> void testObsAuxIncrementConstructor() {
+  typedef ObsTestsFixture<OBS>  Test_;
+  typedef ObsAuxIncrementFixture<OBS>   AuxTest_;
+  typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     AuxIncr_ dx(Test_::obspace()[jj], AuxTest_::config(jj));
@@ -81,15 +81,15 @@ template <typename MODEL> void testObsAuxIncrementConstructor() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testObsAuxIncrementCopyConstructor() {
-  typedef ObsTestsFixture<MODEL>  Test_;
-  typedef ObsAuxIncrementFixture<MODEL>   AuxTest_;
-  typedef oops::ObsAuxIncrement<MODEL>    AuxIncr_;
+template <typename OBS> void testObsAuxIncrementCopyConstructor() {
+  typedef ObsTestsFixture<OBS>  Test_;
+  typedef ObsAuxIncrementFixture<OBS>   AuxTest_;
+  typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     if (AuxTest_::config(jj).has("ObsBias")) {
       AuxIncr_ dx1(Test_::obspace()[jj], AuxTest_::config(jj));
-      ObsAuxIncrementFixture<MODEL>::covariance(jj).randomize(dx1);
+      ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx1);
 
       AuxIncr_ dx2(dx1);
       EXPECT(dx2.norm() > 0.0);
@@ -104,15 +104,15 @@ template <typename MODEL> void testObsAuxIncrementCopyConstructor() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testObsAuxIncrementChangeRes() {
-  typedef ObsTestsFixture<MODEL>  Test_;
-  typedef ObsAuxIncrementFixture<MODEL>   AuxTest_;
-  typedef oops::ObsAuxIncrement<MODEL>    AuxIncr_;
+template <typename OBS> void testObsAuxIncrementChangeRes() {
+  typedef ObsTestsFixture<OBS>  Test_;
+  typedef ObsAuxIncrementFixture<OBS>   AuxTest_;
+  typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     if (AuxTest_::config(jj).has("ObsBias")) {
       AuxIncr_ dx1(Test_::obspace()[jj], AuxTest_::config(jj));
-      ObsAuxIncrementFixture<MODEL>::covariance(jj).randomize(dx1);
+      ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx1);
 
       AuxIncr_ dx2(dx1, AuxTest_::config(jj));
       EXPECT(dx2.norm() > 0.0);
@@ -127,17 +127,17 @@ template <typename MODEL> void testObsAuxIncrementChangeRes() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testObsAuxIncrementTriangle() {
-  typedef ObsTestsFixture<MODEL>  Test_;
-  typedef ObsAuxIncrementFixture<MODEL>   AuxTest_;
-  typedef oops::ObsAuxIncrement<MODEL>    AuxIncr_;
+template <typename OBS> void testObsAuxIncrementTriangle() {
+  typedef ObsTestsFixture<OBS>  Test_;
+  typedef ObsAuxIncrementFixture<OBS>   AuxTest_;
+  typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     if (AuxTest_::config(jj).has("ObsBias")) {
       AuxIncr_ dx1(Test_::obspace()[jj], AuxTest_::config(jj));
-      ObsAuxIncrementFixture<MODEL>::covariance(jj).randomize(dx1);
+      ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx1);
       AuxIncr_ dx2(Test_::obspace()[jj], AuxTest_::config(jj));
-      ObsAuxIncrementFixture<MODEL>::covariance(jj).randomize(dx2);
+      ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx2);
 
 //    test triangle inequality
       double dot1 = dx1.norm();
@@ -157,14 +157,14 @@ template <typename MODEL> void testObsAuxIncrementTriangle() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testObsAuxIncrementOpPlusEq() {
-  typedef ObsTestsFixture<MODEL>  Test_;
-  typedef ObsAuxIncrementFixture<MODEL>   AuxTest_;
-  typedef oops::ObsAuxIncrement<MODEL>    AuxIncr_;
+template <typename OBS> void testObsAuxIncrementOpPlusEq() {
+  typedef ObsTestsFixture<OBS>  Test_;
+  typedef ObsAuxIncrementFixture<OBS>   AuxTest_;
+  typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     AuxIncr_ dx1(Test_::obspace()[jj], AuxTest_::config(jj));
-    ObsAuxIncrementFixture<MODEL>::covariance(jj).randomize(dx1);
+    ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx1);
     AuxIncr_ dx2(dx1);
 
 //  test *= and +=
@@ -178,16 +178,16 @@ template <typename MODEL> void testObsAuxIncrementOpPlusEq() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testObsAuxIncrementDotProduct() {
-  typedef ObsTestsFixture<MODEL>  Test_;
-  typedef ObsAuxIncrementFixture<MODEL>   AuxTest_;
-  typedef oops::ObsAuxIncrement<MODEL>    AuxIncr_;
+template <typename OBS> void testObsAuxIncrementDotProduct() {
+  typedef ObsTestsFixture<OBS>  Test_;
+  typedef ObsAuxIncrementFixture<OBS>   AuxTest_;
+  typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     AuxIncr_ dx1(Test_::obspace()[jj], AuxTest_::config(jj));
-    ObsAuxIncrementFixture<MODEL>::covariance(jj).randomize(dx1);
+    ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx1);
     AuxIncr_ dx2(Test_::obspace()[jj], AuxTest_::config(jj));
-    ObsAuxIncrementFixture<MODEL>::covariance(jj).randomize(dx2);
+    ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx2);
 
 //  test symmetry of dot product
     double zz1 = dot_product(dx1, dx2);
@@ -199,14 +199,14 @@ template <typename MODEL> void testObsAuxIncrementDotProduct() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testObsAuxIncrementZero() {
-  typedef ObsTestsFixture<MODEL>  Test_;
-  typedef ObsAuxIncrementFixture<MODEL>   AuxTest_;
-  typedef oops::ObsAuxIncrement<MODEL>    AuxIncr_;
+template <typename OBS> void testObsAuxIncrementZero() {
+  typedef ObsTestsFixture<OBS>  Test_;
+  typedef ObsAuxIncrementFixture<OBS>   AuxTest_;
+  typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     AuxIncr_ dx(Test_::obspace()[jj], AuxTest_::config(jj));
-    ObsAuxIncrementFixture<MODEL>::covariance(jj).randomize(dx);
+    ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx);
     EXPECT(dx.norm() > 0.0);
 
 //  test zero
@@ -217,14 +217,14 @@ template <typename MODEL> void testObsAuxIncrementZero() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testObsAuxIncrementAxpy() {
-  typedef ObsTestsFixture<MODEL>  Test_;
-  typedef ObsAuxIncrementFixture<MODEL>   AuxTest_;
-  typedef oops::ObsAuxIncrement<MODEL>    AuxIncr_;
+template <typename OBS> void testObsAuxIncrementAxpy() {
+  typedef ObsTestsFixture<OBS>  Test_;
+  typedef ObsAuxIncrementFixture<OBS>   AuxTest_;
+  typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     AuxIncr_ dx1(Test_::obspace()[jj], AuxTest_::config(jj));
-    ObsAuxIncrementFixture<MODEL>::covariance(jj).randomize(dx1);
+    ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx1);
 
 //  test axpy
     AuxIncr_ dx2(dx1);
@@ -240,32 +240,32 @@ template <typename MODEL> void testObsAuxIncrementAxpy() {
 
 // =============================================================================
 
-template <typename MODEL>
+template <typename OBS>
 class ObsAuxIncrement : public oops::Test {
  public:
   ObsAuxIncrement() {}
   virtual ~ObsAuxIncrement() {}
 
  private:
-  std::string testid() const {return "test::ObsAuxIncrement<" + MODEL::name() + ">";}
+  std::string testid() const {return "test::ObsAuxIncrement<" + OBS::name() + ">";}
 
   void register_tests() const {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/ObsAuxIncrement/testObsAuxIncrementConstructor")
-      { testObsAuxIncrementConstructor<MODEL>(); });
+      { testObsAuxIncrementConstructor<OBS>(); });
     ts.emplace_back(CASE("interface/ObsAuxIncrement/testObsAuxIncrementCopyConstructor")
-      { testObsAuxIncrementCopyConstructor<MODEL>(); });
+      { testObsAuxIncrementCopyConstructor<OBS>(); });
     ts.emplace_back(CASE("interface/ObsAuxIncrement/testObsAuxIncrementChangeRes")
-      { testObsAuxIncrementChangeRes<MODEL>(); });
+      { testObsAuxIncrementChangeRes<OBS>(); });
     ts.emplace_back(CASE("interface/ObsAuxIncrement/testObsAuxIncrementTriangle")
-      { testObsAuxIncrementTriangle<MODEL>(); });
+      { testObsAuxIncrementTriangle<OBS>(); });
     ts.emplace_back(CASE("interface/ObsAuxIncrement/testObsAuxIncrementOpPlusEq")
-      { testObsAuxIncrementOpPlusEq<MODEL>(); });
+      { testObsAuxIncrementOpPlusEq<OBS>(); });
     ts.emplace_back(CASE("interface/ObsAuxIncrement/testObsAuxIncrementDotProduct")
-      { testObsAuxIncrementDotProduct<MODEL>(); });
+      { testObsAuxIncrementDotProduct<OBS>(); });
     ts.emplace_back(CASE("interface/ObsAuxIncrement/testObsAuxIncrementAxpy")
-      { testObsAuxIncrementAxpy<MODEL>(); });
+      { testObsAuxIncrementAxpy<OBS>(); });
   }
 };
 

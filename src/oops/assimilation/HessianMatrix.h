@@ -17,7 +17,6 @@
 #include "oops/assimilation/CostFunction.h"
 #include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/PostProcessorTLAD.h"
-#include "oops/interface/Increment.h"
 #include "oops/util/PrintAdjTest.h"
 
 namespace oops {
@@ -30,11 +29,10 @@ namespace oops {
  *  matrix which includes all the terms of the cost function.
  */
 
-template<typename MODEL> class HessianMatrix : private boost::noncopyable {
-  typedef Increment<MODEL>           Increment_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef JqTermTLAD<MODEL>          JqTermTLAD_;
+template<typename MODEL, typename OBS> class HessianMatrix : private boost::noncopyable {
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef JqTermTLAD<MODEL>               JqTermTLAD_;
 
  public:
   explicit HessianMatrix(const CostFct_ & j,
@@ -50,15 +48,15 @@ template<typename MODEL> class HessianMatrix : private boost::noncopyable {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-HessianMatrix<MODEL>::HessianMatrix(const CostFct_ & j, const bool test)
+template<typename MODEL, typename OBS>
+HessianMatrix<MODEL, OBS>::HessianMatrix(const CostFct_ & j, const bool test)
   : j_(j), test_(test), iter_(0)
 {}
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void HessianMatrix<MODEL>::multiply(const CtrlInc_ & dx, CtrlInc_ & dz) const {
+template<typename MODEL, typename OBS>
+void HessianMatrix<MODEL, OBS>::multiply(const CtrlInc_ & dx, CtrlInc_ & dz) const {
 // Increment counter
   iter_++;
 
@@ -92,8 +90,8 @@ void HessianMatrix<MODEL>::multiply(const CtrlInc_ & dx, CtrlInc_ & dz) const {
 
   j_.zeroAD(dw);
 
-  DualVector<MODEL> ww;
-  DualVector<MODEL> zz;
+  DualVector<MODEL, OBS> ww;
+  DualVector<MODEL, OBS> zz;
 
 // Jo + Jc
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {

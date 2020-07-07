@@ -27,12 +27,12 @@
 namespace oops {
 
 // -----------------------------------------------------------------------------
-template <typename MODEL>
+template <typename OBS>
 class GeoVaLs : public util::Printable,
-                private util::ObjectCounter<GeoVaLs<MODEL> > {
-  typedef typename MODEL::GeoVaLs          GeoVaLs_;
-  typedef ObsSpace<MODEL>                  ObsSpace_;
-  typedef Locations<MODEL>                 Locations_;
+                private util::ObjectCounter<GeoVaLs<OBS> > {
+  typedef typename OBS::GeoVaLs          GeoVaLs_;
+  typedef ObsSpace<OBS>                  ObsSpace_;
+  typedef Locations<OBS>                 Locations_;
 
  public:
   static const std::string classname() {return "oops::GeoVaLs";}
@@ -70,172 +70,172 @@ class GeoVaLs : public util::Printable,
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-GeoVaLs<MODEL>::GeoVaLs(const Locations_ & locs, const Variables & vars) : gvals_() {
-  Log::trace() << "GeoVaLs<MODEL>::GeoVaLs starting" << std::endl;
+template <typename OBS>
+GeoVaLs<OBS>::GeoVaLs(const Locations_ & locs, const Variables & vars) : gvals_() {
+  Log::trace() << "GeoVaLs<OBS>::GeoVaLs starting" << std::endl;
   util::Timer timer(classname(), "GeoVaLs");
   gvals_.reset(new GeoVaLs_(locs.locations(), vars));
-  Log::trace() << "GeoVaLs<MODEL>::GeoVaLs done" << std::endl;
+  Log::trace() << "GeoVaLs<OBS>::GeoVaLs done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-  GeoVaLs<MODEL>::GeoVaLs(const eckit::Configuration & conf,
+template <typename OBS>
+  GeoVaLs<OBS>::GeoVaLs(const eckit::Configuration & conf,
                           const ObsSpace_ & ospace, const Variables & vars)
   : gvals_() {
-  Log::trace() << "GeoVaLs<MODEL>::GeoVaLs read starting" << std::endl;
+  Log::trace() << "GeoVaLs<OBS>::GeoVaLs read starting" << std::endl;
   util::Timer timer(classname(), "GeoVaLs");
   gvals_.reset(new GeoVaLs_(conf, ospace.obsspace(), vars));
-  Log::trace() << "GeoVaLs<MODEL>::GeoVaLs read done" << std::endl;
+  Log::trace() << "GeoVaLs<OBS>::GeoVaLs read done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-GeoVaLs<MODEL>::GeoVaLs(const GeoVaLs & other): gvals_() {
-  Log::trace() << "GeoVaLs<MODEL>::GeoVaLs starting" << std::endl;
+template <typename OBS>
+GeoVaLs<OBS>::GeoVaLs(const GeoVaLs & other): gvals_() {
+  Log::trace() << "GeoVaLs<OBS>::GeoVaLs starting" << std::endl;
   util::Timer timer(classname(), "GeoVaLs");
   gvals_.reset(new GeoVaLs_(*other.gvals_));
-  Log::trace() << "ObsVector<MODEL>::GeoVaLs done" << std::endl;
+  Log::trace() << "ObsVector<OBS>::GeoVaLs done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-GeoVaLs<MODEL>::~GeoVaLs() {
-  Log::trace() << "GeoVaLs<MODEL>::~GeoVaLs starting" << std::endl;
+template <typename OBS>
+GeoVaLs<OBS>::~GeoVaLs() {
+  Log::trace() << "GeoVaLs<OBS>::~GeoVaLs starting" << std::endl;
   util::Timer timer(classname(), "~GeoVaLs");
   gvals_.reset();
-  Log::trace() << "GeoVaLs<MODEL>::~GeoVaLs done" << std::endl;
+  Log::trace() << "GeoVaLs<OBS>::~GeoVaLs done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-double GeoVaLs<MODEL>::dot_product_with(const GeoVaLs & other) const {
-  Log::trace() << "GeoVaLs<MODEL>::dot_product_with starting" << std::endl;
+template <typename OBS>
+double GeoVaLs<OBS>::dot_product_with(const GeoVaLs & other) const {
+  Log::trace() << "GeoVaLs<OBS>::dot_product_with starting" << std::endl;
   util::Timer timer(classname(), "dot_product_with");
   double zz = gvals_->dot_product_with(*other.gvals_);
-  Log::trace() << "GeoVaLs<MODEL>::dot_product_with done" << std::endl;
+  Log::trace() << "GeoVaLs<OBS>::dot_product_with done" << std::endl;
   return zz;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-GeoVaLs<MODEL> & GeoVaLs<MODEL>::operator=(const GeoVaLs & rhs) {
-  Log::trace() << "GeoVaLs<MODEL>::operator= starting" << std::endl;
+template <typename OBS>
+GeoVaLs<OBS> & GeoVaLs<OBS>::operator=(const GeoVaLs & rhs) {
+  Log::trace() << "GeoVaLs<OBS>::operator= starting" << std::endl;
   util::Timer timer(classname(), "operator=");
   *gvals_ = *rhs.gvals_;
-  Log::trace() << "GeovaLs<MODEL>::operator= done" << std::endl;
+  Log::trace() << "GeovaLs<OBS>::operator= done" << std::endl;
   return *this;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-GeoVaLs<MODEL> & GeoVaLs<MODEL>::operator+=(const GeoVaLs & rhs) {
-  Log::trace() << "GeoVaLs<MODEL>::+=(GeoVaLs, GeoVaLs) starting" << std::endl;
+template <typename OBS>
+GeoVaLs<OBS> & GeoVaLs<OBS>::operator+=(const GeoVaLs & rhs) {
+  Log::trace() << "GeoVaLs<OBS>::+=(GeoVaLs, GeoVaLs) starting" << std::endl;
   util::Timer timer(classname(), "operator+=");
   *gvals_ += *rhs.gvals_;
-  Log::trace() << "GeoVaLs<MODEL>::+= done" << std::endl;
+  Log::trace() << "GeoVaLs<OBS>::+= done" << std::endl;
   return *this;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-GeoVaLs<MODEL> & GeoVaLs<MODEL>::operator-=(const GeoVaLs & rhs) {
-  Log::trace() << "GeoVaLs<MODEL>::-=(GeoVaLs, GeoVaLs) starting" << std::endl;
+template <typename OBS>
+GeoVaLs<OBS> & GeoVaLs<OBS>::operator-=(const GeoVaLs & rhs) {
+  Log::trace() << "GeoVaLs<OBS>::-=(GeoVaLs, GeoVaLs) starting" << std::endl;
   util::Timer timer(classname(), "operator-=");
   *gvals_ -= *rhs.gvals_;
-  Log::trace() << "GeoVaLs<MODEL>::-= done" << std::endl;
+  Log::trace() << "GeoVaLs<OBS>::-= done" << std::endl;
   return *this;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-GeoVaLs<MODEL> & GeoVaLs<MODEL>::operator*=(const GeoVaLs & rhs) {
-  Log::trace() << "GeoVaLs<MODEL>::*=(GeoVaLs, GeoVaLs) starting" << std::endl;
+template <typename OBS>
+GeoVaLs<OBS> & GeoVaLs<OBS>::operator*=(const GeoVaLs & rhs) {
+  Log::trace() << "GeoVaLs<OBS>::*=(GeoVaLs, GeoVaLs) starting" << std::endl;
   util::Timer timer(classname(), "operator*=(schur)");
   *gvals_ *= *rhs.gvals_;
-  Log::trace() << "GeoVaLs<MODEL>::*= done" << std::endl;
+  Log::trace() << "GeoVaLs<OBS>::*= done" << std::endl;
   return *this;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-GeoVaLs<MODEL> & GeoVaLs<MODEL>::operator*=(const double & zz) {
-  Log::trace() << "GeoVaLs<MODEL>::operator*= starting" << std::endl;
+template<typename OBS>
+GeoVaLs<OBS> & GeoVaLs<OBS>::operator*=(const double & zz) {
+  Log::trace() << "GeoVaLs<OBS>::operator*= starting" << std::endl;
   util::Timer timer(classname(), "operator*=");
   *gvals_ *= zz;
-  Log::trace() << "GeoVaLs<MODEL>::operator*= done" << std::endl;
+  Log::trace() << "GeoVaLs<OBS>::operator*= done" << std::endl;
   return *this;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-double GeoVaLs<MODEL>::rms() const {
-  Log::trace() << "GeoVaLs<MODEL>::rms starting" << std::endl;
+template <typename OBS>
+double GeoVaLs<OBS>::rms() const {
+  Log::trace() << "GeoVaLs<OBS>::rms starting" << std::endl;
   util::Timer timer(classname(), "rms");
   double zz = gvals_->rms();
-  Log::trace() << "GeoVaLs<MODEL>::rms done" << std::endl;
+  Log::trace() << "GeoVaLs<OBS>::rms done" << std::endl;
   return zz;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-double GeoVaLs<MODEL>::normalizedrms(const GeoVaLs & rhs) const {
-  Log::trace() << "GeoVaLs<MODEL>::normalizedrms starting" << std::endl;
+template <typename OBS>
+double GeoVaLs<OBS>::normalizedrms(const GeoVaLs & rhs) const {
+  Log::trace() << "GeoVaLs<OBS>::normalizedrms starting" << std::endl;
   util::Timer timer(classname(), "normalizedrms");
   double zz = gvals_->normalizedrms(*rhs.gvals_);
-  Log::trace() << "GeoVaLs<MODEL>::normalizedrms done" << std::endl;
+  Log::trace() << "GeoVaLs<OBS>::normalizedrms done" << std::endl;
   return zz;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void GeoVaLs<MODEL>::zero() {
-  Log::trace() << "GeoVaLs<MODEL>::zero starting" << std::endl;
+template <typename OBS>
+void GeoVaLs<OBS>::zero() {
+  Log::trace() << "GeoVaLs<OBS>::zero starting" << std::endl;
   util::Timer timer(classname(), "zero");
   gvals_->zero();
-  Log::trace() << "GeoVaLs<MODEL>::zero done" << std::endl;
+  Log::trace() << "GeoVaLs<OBS>::zero done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void GeoVaLs<MODEL>::random() {
-  Log::trace() << "GeoVaLs<MODEL>::random starting" << std::endl;
+template <typename OBS>
+void GeoVaLs<OBS>::random() {
+  Log::trace() << "GeoVaLs<OBS>::random starting" << std::endl;
   util::Timer timer(classname(), "random");
   gvals_->random();
-  Log::trace() << "GeoVaLs<MODEL>::random done" << std::endl;
+  Log::trace() << "GeoVaLs<OBS>::random done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void GeoVaLs<MODEL>::read(const eckit::Configuration & conf) {
-  Log::trace() << "GeoVaLs<MODEL>::read starting" << std::endl;
+template<typename OBS>
+void GeoVaLs<OBS>::read(const eckit::Configuration & conf) {
+  Log::trace() << "GeoVaLs<OBS>::read starting" << std::endl;
   util::Timer timer(classname(), "read");
   gvals_->read(conf);
-  Log::trace() << "GeoVaLs<MODEL>::read done" << std::endl;
+  Log::trace() << "GeoVaLs<OBS>::read done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void GeoVaLs<MODEL>::write(const eckit::Configuration & conf) const {
-  Log::trace() << "GeoVaLs<MODEL>::write starting" << std::endl;
+template<typename OBS>
+void GeoVaLs<OBS>::write(const eckit::Configuration & conf) const {
+  Log::trace() << "GeoVaLs<OBS>::write starting" << std::endl;
   util::Timer timer(classname(), "write");
   gvals_->write(conf);
-  Log::trace() << "GeoVaLs<MODEL>::write done" << std::endl;
+  Log::trace() << "GeoVaLs<OBS>::write done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -260,23 +260,23 @@ void GeoVaLs<MODEL>::write(const eckit::Configuration & conf) const {
  * \sa test::TestStateInterpolation()
  */
 
-template <typename MODEL>
-  void GeoVaLs<MODEL>::analytic_init(const Locations_ & locs,
+template <typename OBS>
+  void GeoVaLs<OBS>::analytic_init(const Locations_ & locs,
                           const eckit::Configuration & conf) {
-  Log::trace() << "GeoVaLs<MODEL>::GeoVaLs analytic init starting" << std::endl;
+  Log::trace() << "GeoVaLs<OBS>::GeoVaLs analytic init starting" << std::endl;
   util::Timer timer(classname(), "GeoVaLs");
   gvals_->analytic_init(locs.locations(), conf);
-  Log::trace() << "GeoVaLs<MODEL>::GeoVaLs analytic init done" << std::endl;
+  Log::trace() << "GeoVaLs<OBS>::GeoVaLs analytic init done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void GeoVaLs<MODEL>::print(std::ostream & os) const {
-  Log::trace() << "GeoVaLs<MODEL>::print starting" << std::endl;
+template<typename OBS>
+void GeoVaLs<OBS>::print(std::ostream & os) const {
+  Log::trace() << "GeoVaLs<OBS>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
   os << *gvals_;
-  Log::trace() << "GeoVaLs<MODEL>::print done" << std::endl;
+  Log::trace() << "GeoVaLs<OBS>::print done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

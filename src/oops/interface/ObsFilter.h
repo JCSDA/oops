@@ -28,14 +28,14 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL, typename FILTER>
-class ObsFilter : public ObsFilterBase<MODEL> {
-  typedef GeoVaLs<MODEL>             GeoVaLs_;
-  typedef ObsDiagnostics<MODEL>      ObsDiags_;
-  typedef ObsSpace<MODEL>            ObsSpace_;
-  typedef ObsVector<MODEL>           ObsVector_;
-  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<MODEL, DATA> >;
-  template <typename DATA> using ObsDataVec_ = typename MODEL::template ObsDataVector<DATA>;
+template <typename OBS, typename FILTER>
+class ObsFilter : public ObsFilterBase<OBS> {
+  typedef GeoVaLs<OBS>             GeoVaLs_;
+  typedef ObsDiagnostics<OBS>      ObsDiags_;
+  typedef ObsSpace<OBS>            ObsSpace_;
+  typedef ObsVector<OBS>           ObsVector_;
+  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<OBS, DATA> >;
+  template <typename DATA> using ObsDataVec_ = typename OBS::template ObsDataVector<DATA>;
 
  public:
   static const std::string classname() {return "oops::ObsFilter";}
@@ -61,13 +61,13 @@ class ObsFilter : public ObsFilterBase<MODEL> {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL, typename FILTER>
-ObsFilter<MODEL, FILTER>::ObsFilter(const ObsSpace_ & os,
+template <typename OBS, typename FILTER>
+ObsFilter<OBS, FILTER>::ObsFilter(const ObsSpace_ & os,
                                     const eckit::Configuration & conf,
                                     ObsDataPtr_<int> flags, ObsDataPtr_<float> obserr)
   : obsdb_(os), conf_(conf), ofilt_()
 {
-  Log::trace() << "ObsFilter<MODEL, FILTER>::ObsFilter Configuration starting" << std::endl;
+  Log::trace() << "ObsFilter<OBS, FILTER>::ObsFilter Configuration starting" << std::endl;
   util::Timer timer(classname(), "ObsFilter");
 
   boost::shared_ptr<ObsDataVec_<int> > qc;
@@ -76,69 +76,69 @@ ObsFilter<MODEL, FILTER>::ObsFilter(const ObsSpace_ & os,
   if (obserr) oberr = obserr->obsdatavectorptr();
 
   ofilt_.reset(new FILTER(obsdb_.obsspace(), conf, qc, oberr));
-  Log::trace() << "ObsFilter<MODEL, FILTER>::ObsFilter Configuration done" << std::endl;
+  Log::trace() << "ObsFilter<OBS, FILTER>::ObsFilter Configuration done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL, typename FILTER>
-ObsFilter<MODEL, FILTER>::~ObsFilter() {
-  Log::trace() << "ObsFilter<MODEL, FILTER>::~ObsFilter starting" << std::endl;
+template <typename OBS, typename FILTER>
+ObsFilter<OBS, FILTER>::~ObsFilter() {
+  Log::trace() << "ObsFilter<OBS, FILTER>::~ObsFilter starting" << std::endl;
   util::Timer timer(classname(), "~ObsFilter");
   ofilt_.reset();
-  Log::trace() << "ObsFilter<MODEL, FILTER>::~ObsFilter done" << std::endl;
+  Log::trace() << "ObsFilter<OBS, FILTER>::~ObsFilter done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL, typename FILTER>
-void ObsFilter<MODEL, FILTER>::preProcess() const {
-  Log::trace() << "ObsFilter<MODEL, FILTER>:: preProcess starting" << std::endl;
+template <typename OBS, typename FILTER>
+void ObsFilter<OBS, FILTER>::preProcess() const {
+  Log::trace() << "ObsFilter<OBS, FILTER>:: preProcess starting" << std::endl;
   util::Timer timer(classname(), "preProcess");
   ofilt_->preProcess();
-  Log::trace() << "ObsFilter<MODEL, FILTER>:: preProcess done" << std::endl;
+  Log::trace() << "ObsFilter<OBS, FILTER>:: preProcess done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL, typename FILTER>
-void ObsFilter<MODEL, FILTER>::priorFilter(const GeoVaLs_ & gv) const {
-  Log::trace() << "ObsFilter<MODEL, FILTER>:: priorFilter starting" << std::endl;
+template <typename OBS, typename FILTER>
+void ObsFilter<OBS, FILTER>::priorFilter(const GeoVaLs_ & gv) const {
+  Log::trace() << "ObsFilter<OBS, FILTER>:: priorFilter starting" << std::endl;
   util::Timer timer(classname(), "priorFilter");
   ofilt_->priorFilter(gv.geovals());
-  Log::trace() << "ObsFilter<MODEL, FILTER>:: priorFilter done" << std::endl;
+  Log::trace() << "ObsFilter<OBS, FILTER>:: priorFilter done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL, typename FILTER>
-void ObsFilter<MODEL, FILTER>::postFilter(const ObsVector_ & ov, const ObsDiags_ & dv) const {
-  Log::trace() << "ObsFilter<MODEL, FILTER>::postFilter starting" << std::endl;
+template <typename OBS, typename FILTER>
+void ObsFilter<OBS, FILTER>::postFilter(const ObsVector_ & ov, const ObsDiags_ & dv) const {
+  Log::trace() << "ObsFilter<OBS, FILTER>::postFilter starting" << std::endl;
   util::Timer timer(classname(), "postFilter");
   ofilt_->postFilter(ov.obsvector(), dv.obsdiagnostics());
-  Log::trace() << "ObsFilter<MODEL, FILTER>::postFilter done" << std::endl;
+  Log::trace() << "ObsFilter<OBS, FILTER>::postFilter done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL, typename FILTER>
-Variables ObsFilter<MODEL, FILTER>::requiredVars() const {
+template <typename OBS, typename FILTER>
+Variables ObsFilter<OBS, FILTER>::requiredVars() const {
   Log::trace() << "ObsFilter::requiredVars" << std::endl;
   return ofilt_->requiredVars();
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL, typename FILTER>
-Variables ObsFilter<MODEL, FILTER>::requiredHdiagnostics() const {
+template <typename OBS, typename FILTER>
+Variables ObsFilter<OBS, FILTER>::requiredHdiagnostics() const {
   Log::trace() << "ObsFilter::requiredHdiagnostics" << std::endl;
   return ofilt_->requiredHdiagnostics();
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL, typename FILTER>
-void ObsFilter<MODEL, FILTER>::print(std::ostream & os) const {
+template <typename OBS, typename FILTER>
+void ObsFilter<OBS, FILTER>::print(std::ostream & os) const {
   os << "ObsFilter " << conf_;
 }
 

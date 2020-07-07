@@ -32,17 +32,17 @@
 
 namespace oops {
 
-template <typename MODEL> class HofX : public Application {
+template <typename MODEL, typename OBS> class HofX : public Application {
   typedef Geometry<MODEL>            Geometry_;
   typedef Model<MODEL>               Model_;
-  typedef Observations<MODEL>        Observations_;
-  typedef ObsSpaces<MODEL>           ObsSpaces_;
+  typedef Observations<OBS>          Observations_;
+  typedef ObsSpaces<OBS>             ObsSpaces_;
   typedef State<MODEL>               State_;
 
  public:
 // -----------------------------------------------------------------------------
   explicit HofX(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {
-    instantiateObsFilterFactory<MODEL>();
+    instantiateObsFilterFactory<OBS>();
   }
 // -----------------------------------------------------------------------------
   virtual ~HofX() {}
@@ -81,7 +81,7 @@ template <typename MODEL> class HofX : public Application {
     ObsSpaces_ obspace(obsconf, this->getComm(), winbgn, winend);
 
 //  Setup and run observer
-    CalcHofX<MODEL> hofx(obspace, geometry, fullConfig);
+    CalcHofX<MODEL, OBS> hofx(obspace, geometry, fullConfig);
     const Observations_ & yobs = hofx.compute(model, xx, post);
     for (size_t jj = 0; jj < obspace.size(); ++jj) {
       hofx.qcFlags(jj).save("EffectiveQC");
@@ -99,7 +99,7 @@ template <typename MODEL> class HofX : public Application {
 // -----------------------------------------------------------------------------
  private:
   std::string appname() const {
-    return "oops::HofX<" + MODEL::name() + ">";
+    return "oops::HofX<" + MODEL::name() + ", " + OBS::name() + ">";
   }
 // -----------------------------------------------------------------------------
 };

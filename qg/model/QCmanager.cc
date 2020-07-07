@@ -16,6 +16,7 @@
 
 namespace qg {
 // -----------------------------------------------------------------------------
-static oops::FilterMaker<QgTraits, oops::ObsFilter<QgTraits, QCmanager> > makerPreChk_("QCmanager");
+static oops::FilterMaker<QgObsTraits,
+       oops::ObsFilter<QgObsTraits, QCmanager> > makerPreChk_("QCmanager");
 // -----------------------------------------------------------------------------
 }  // namespace qg

@@ -24,11 +24,11 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename OBS>
 class ObsAuxIncrements : public util::Printable {
-  typedef ObsAuxIncrement<MODEL>               ObsAuxIncrement_;
-  typedef ObsAuxControls<MODEL>                ObsAuxControls_;
-  typedef ObsSpaces<MODEL>           ObsSpaces_;
+  typedef ObsAuxIncrement<OBS>     ObsAuxIncrement_;
+  typedef ObsAuxControls<OBS>      ObsAuxControls_;
+  typedef ObsSpaces<OBS>           ObsSpaces_;
 
  public:
   static const std::string classname() {return "oops::ObsAuxIncrements";}
@@ -71,8 +71,8 @@ class ObsAuxIncrements : public util::Printable {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-ObsAuxControls<MODEL> & operator+=(ObsAuxControls<MODEL> & xx, const ObsAuxIncrements<MODEL> & dx) {
+template <typename OBS>
+ObsAuxControls<OBS> & operator+=(ObsAuxControls<OBS> & xx, const ObsAuxIncrements<OBS> & dx) {
   Log::trace() << "operator+=(ObsAuxControls, ObsAuxIncrements) starting" << std::endl;
   ASSERT(xx.size() == dx.size());
   for (std::size_t jobs = 0; jobs < xx.size(); ++jobs) {
@@ -84,8 +84,8 @@ ObsAuxControls<MODEL> & operator+=(ObsAuxControls<MODEL> & xx, const ObsAuxIncre
 
 // =============================================================================
 
-template<typename MODEL>
-ObsAuxIncrements<MODEL>::ObsAuxIncrements(const ObsSpaces_ & odb, const eckit::Configuration & conf)
+template<typename OBS>
+ObsAuxIncrements<OBS>::ObsAuxIncrements(const ObsSpaces_ & odb, const eckit::Configuration & conf)
   : auxs_(0)
 {
   std::vector<eckit::LocalConfiguration> obsconf;
@@ -96,177 +96,177 @@ ObsAuxIncrements<MODEL>::ObsAuxIncrements(const ObsSpaces_ & odb, const eckit::C
   }
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-ObsAuxIncrements<MODEL>::ObsAuxIncrements(const ObsAuxIncrements & other, const bool copy)
+template<typename OBS>
+ObsAuxIncrements<OBS>::ObsAuxIncrements(const ObsAuxIncrements & other, const bool copy)
   : auxs_(other.size())
 {
-  Log::trace() << "ObsAuxIncrements<MODEL>::ObsAuxIncrements copy starting" << std::endl;
+  Log::trace() << "ObsAuxIncrements<OBS>::ObsAuxIncrements copy starting" << std::endl;
   ASSERT(size() == other.size());
   for (std::size_t jobs = 0; jobs < other.size(); ++jobs) {
     auxs_[jobs].reset(new ObsAuxIncrement_(other[jobs], copy));
   }
-  Log::trace() << "ObsAuxIncrements<MODEL>::ObsAuxIncrements copy done" << std::endl;
+  Log::trace() << "ObsAuxIncrements<OBS>::ObsAuxIncrements copy done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-ObsAuxIncrements<MODEL>::ObsAuxIncrements(const ObsAuxIncrements & other,
+template<typename OBS>
+ObsAuxIncrements<OBS>::ObsAuxIncrements(const ObsAuxIncrements & other,
                                         const eckit::Configuration & conf) : auxs_(other.size())
 {
-  Log::trace() << "ObsAuxIncrements<MODEL>::ObsAuxIncrements interpolated starting" << std::endl;
+  Log::trace() << "ObsAuxIncrements<OBS>::ObsAuxIncrements interpolated starting" << std::endl;
   std::vector<eckit::LocalConfiguration> obsconf;
   ASSERT(size() == other.size());
   for (std::size_t jobs = 0; jobs < other.size(); ++jobs) {
     auxs_[jobs].reset(new ObsAuxIncrement_(other[jobs]));
   }
-  Log::trace() << "ObsAuxIncrements<MODEL>::ObsAuxIncrements interpolated done" << std::endl;
+  Log::trace() << "ObsAuxIncrements<OBS>::ObsAuxIncrements interpolated done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-ObsAuxIncrements<MODEL>::~ObsAuxIncrements() {
-  Log::trace() << "ObsAuxIncrements<MODEL>::~ObsAuxIncrements starting" << std::endl;
+template<typename OBS>
+ObsAuxIncrements<OBS>::~ObsAuxIncrements() {
+  Log::trace() << "ObsAuxIncrements<OBS>::~ObsAuxIncrements starting" << std::endl;
   for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) auxs_[jobs].reset();
-  Log::trace() << "ObsAuxIncrements<MODEL>::~ObsAuxIncrements done" << std::endl;
+  Log::trace() << "ObsAuxIncrements<OBS>::~ObsAuxIncrements done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void ObsAuxIncrements<MODEL>::diff(const ObsAuxControls_ & x1, const ObsAuxControls_ & x2) {
-  Log::trace() << "ObsAuxIncrements<MODEL>::diff starting" << std::endl;
+template<typename OBS>
+void ObsAuxIncrements<OBS>::diff(const ObsAuxControls_ & x1, const ObsAuxControls_ & x2) {
+  Log::trace() << "ObsAuxIncrements<OBS>::diff starting" << std::endl;
   ASSERT(x1.size() == x2.size() &&  size() == x2.size());
   for (std::size_t jobs = 0; jobs < size(); ++jobs) {
     auxs_[jobs]->diff(x1[jobs], x2[jobs]);
   }
-  Log::trace() << "ObsAuxIncrements<MODEL>::diff done" << std::endl;
+  Log::trace() << "ObsAuxIncrements<OBS>::diff done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void ObsAuxIncrements<MODEL>::zero() {
-  Log::trace() << "ObsAuxIncrements<MODEL>::zero starting" << std::endl;
+template<typename OBS>
+void ObsAuxIncrements<OBS>::zero() {
+  Log::trace() << "ObsAuxIncrements<OBS>::zero starting" << std::endl;
   for (std::size_t jobs = 0; jobs < size(); ++jobs) {
     auxs_[jobs]->zero();
   }
-  Log::trace() << "ObsAuxIncrements<MODEL>::zero done" << std::endl;
+  Log::trace() << "ObsAuxIncrements<OBS>::zero done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-ObsAuxIncrements<MODEL> & ObsAuxIncrements<MODEL>::operator=(const ObsAuxIncrements & rhs) {
-  Log::trace() << "ObsAuxIncrements<MODEL>::operator= starting" << std::endl;
+template<typename OBS>
+ObsAuxIncrements<OBS> & ObsAuxIncrements<OBS>::operator=(const ObsAuxIncrements & rhs) {
+  Log::trace() << "ObsAuxIncrements<OBS>::operator= starting" << std::endl;
   ASSERT(size() == rhs.size());
   for (std::size_t jobs = 0; jobs < size(); ++jobs) {
     *auxs_[jobs] = rhs[jobs];
   }
-  Log::trace() << "ObsAuxIncrements<MODEL>::operator= done" << std::endl;
+  Log::trace() << "ObsAuxIncrements<OBS>::operator= done" << std::endl;
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-ObsAuxIncrements<MODEL> & ObsAuxIncrements<MODEL>::operator+=(const ObsAuxIncrements & rhs) {
-  Log::trace() << "ObsAuxIncrements<MODEL>::operator+= starting" << std::endl;
+template<typename OBS>
+ObsAuxIncrements<OBS> & ObsAuxIncrements<OBS>::operator+=(const ObsAuxIncrements & rhs) {
+  Log::trace() << "ObsAuxIncrements<OBS>::operator+= starting" << std::endl;
   ASSERT(size() == rhs.size());
   for (std::size_t jobs = 0; jobs < size(); ++jobs) {
     *auxs_[jobs] += rhs[jobs];
   }
-  Log::trace() << "ObsAuxIncrements<MODEL>::operator+= done" << std::endl;
+  Log::trace() << "ObsAuxIncrements<OBS>::operator+= done" << std::endl;
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-ObsAuxIncrements<MODEL> & ObsAuxIncrements<MODEL>::operator-=(const ObsAuxIncrements & rhs) {
-  Log::trace() << "ObsAuxIncrements<MODEL>::operator-= starting" << std::endl;
+template<typename OBS>
+ObsAuxIncrements<OBS> & ObsAuxIncrements<OBS>::operator-=(const ObsAuxIncrements & rhs) {
+  Log::trace() << "ObsAuxIncrements<OBS>::operator-= starting" << std::endl;
   ASSERT(size() == rhs.size());
   for (std::size_t jobs = 0; jobs < size(); ++jobs) {
     *auxs_[jobs] -= rhs[jobs];
   }
-  Log::trace() << "ObsAuxIncrements<MODEL>::operator-= done" << std::endl;
+  Log::trace() << "ObsAuxIncrements<OBS>::operator-= done" << std::endl;
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-ObsAuxIncrements<MODEL> & ObsAuxIncrements<MODEL>::operator*=(const double & zz) {
-  Log::trace() << "ObsAuxIncrements<MODEL>::operator*= starting" << std::endl;
+template<typename OBS>
+ObsAuxIncrements<OBS> & ObsAuxIncrements<OBS>::operator*=(const double & zz) {
+  Log::trace() << "ObsAuxIncrements<OBS>::operator*= starting" << std::endl;
   for (std::size_t jobs = 0; jobs < size(); ++jobs) {
     *auxs_[jobs] *= zz;
   }
-  Log::trace() << "ObsAuxIncrements<MODEL>::operator*= done" << std::endl;
+  Log::trace() << "ObsAuxIncrements<OBS>::operator*= done" << std::endl;
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void ObsAuxIncrements<MODEL>::axpy(const double & zz, const ObsAuxIncrements & dx) {
-  Log::trace() << "ObsAuxIncrements<MODEL>::axpy starting" << std::endl;
+template<typename OBS>
+void ObsAuxIncrements<OBS>::axpy(const double & zz, const ObsAuxIncrements & dx) {
+  Log::trace() << "ObsAuxIncrements<OBS>::axpy starting" << std::endl;
   ASSERT(size() == dx.size());
   for (std::size_t jobs = 0; jobs < size(); ++jobs) {
     auxs_[jobs]->axpy(zz, dx[jobs]);
   }
-  Log::trace() << "ObsAuxIncrements<MODEL>::axpy done" << std::endl;
+  Log::trace() << "ObsAuxIncrements<OBS>::axpy done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-double ObsAuxIncrements<MODEL>::dot_product_with(const ObsAuxIncrements & dx) const {
-  Log::trace() << "ObsAuxIncrements<MODEL>::dot_product_with starting" << std::endl;
+template<typename OBS>
+double ObsAuxIncrements<OBS>::dot_product_with(const ObsAuxIncrements & dx) const {
+  Log::trace() << "ObsAuxIncrements<OBS>::dot_product_with starting" << std::endl;
   ASSERT(size() == dx.size());
   double zz = static_cast<double>(0.0);
   for (std::size_t jobs = 0; jobs < size(); ++jobs) {
     zz += auxs_[jobs]->dot_product_with(dx[jobs]);
   }
-  Log::trace() << "ObsAuxIncrements<MODEL>::dot_product_with done" << std::endl;
+  Log::trace() << "ObsAuxIncrements<OBS>::dot_product_with done" << std::endl;
   return zz;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void ObsAuxIncrements<MODEL>::read(const eckit::Configuration & conf) {
-  Log::trace() << "ObsAuxIncrements<MODEL>::read starting" << std::endl;
+template<typename OBS>
+void ObsAuxIncrements<OBS>::read(const eckit::Configuration & conf) {
+  Log::trace() << "ObsAuxIncrements<OBS>::read starting" << std::endl;
   for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) auxs_[jobs]->read(conf);
-  Log::trace() << "ObsAuxIncrements<MODEL>::read done" << std::endl;
+  Log::trace() << "ObsAuxIncrements<OBS>::read done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void ObsAuxIncrements<MODEL>::write(const eckit::Configuration & conf) const {
-  Log::trace() << "ObsAuxIncrements<MODEL>::write starting" << std::endl;
+template<typename OBS>
+void ObsAuxIncrements<OBS>::write(const eckit::Configuration & conf) const {
+  Log::trace() << "ObsAuxIncrements<OBS>::write starting" << std::endl;
   for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) auxs_[jobs]->write(conf);
-  Log::trace() << "ObsAuxIncrements<MODEL>::write done" << std::endl;
+  Log::trace() << "ObsAuxIncrements<OBS>::write done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-double ObsAuxIncrements<MODEL>::norm() const {
-  Log::trace() << "ObsAuxIncrements<MODEL>::norm starting" << std::endl;
+template<typename OBS>
+double ObsAuxIncrements<OBS>::norm() const {
+  Log::trace() << "ObsAuxIncrements<OBS>::norm starting" << std::endl;
   double zz = static_cast<double>(0.0);
   for (std::size_t jobs = 0; jobs < size(); ++jobs) {
     zz += auxs_[jobs]->norm();
   }
-  Log::trace() << "ObsAuxIncrements<MODEL>::norm done" << std::endl;
+  Log::trace() << "ObsAuxIncrements<OBS>::norm done" << std::endl;
   return zz;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-size_t ObsAuxIncrements<MODEL>::serialSize() const {
-  Log::trace() << "ObsAuxIncrements<MODEL>::serialSize starting" << std::endl;
+template<typename OBS>
+size_t ObsAuxIncrements<OBS>::serialSize() const {
+  Log::trace() << "ObsAuxIncrements<OBS>::serialSize starting" << std::endl;
   size_t ss = 0;
   for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) {
     ss += auxs_[jobs]->serialSize();
   }
-  Log::trace() << "ObsAuxIncrements<MODEL>::serialSize done" << std::endl;
+  Log::trace() << "ObsAuxIncrements<OBS>::serialSize done" << std::endl;
   return ss;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void ObsAuxIncrements<MODEL>::serialize(std::vector<double> & vect) const {
-  Log::trace() << "ObsAuxIncrements<MODEL>::serialize starting" << std::endl;
+template<typename OBS>
+void ObsAuxIncrements<OBS>::serialize(std::vector<double> & vect) const {
+  Log::trace() << "ObsAuxIncrements<OBS>::serialize starting" << std::endl;
   for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) auxs_[jobs]->serialize(vect);
-  Log::trace() << "ObsAuxIncrements<MODEL>::serialize done" << std::endl;
+  Log::trace() << "ObsAuxIncrements<OBS>::serialize done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void ObsAuxIncrements<MODEL>::deserialize(const std::vector<double> vect, size_t & index) {
-  Log::trace() << "ObsAuxIncrements<MODEL>::deserialize starting" << std::endl;
+template<typename OBS>
+void ObsAuxIncrements<OBS>::deserialize(const std::vector<double> vect, size_t & index) {
+  Log::trace() << "ObsAuxIncrements<OBS>::deserialize starting" << std::endl;
   for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) {
     auxs_[jobs]->deserialize(vect, index);
   }
-  Log::trace() << "ObsAuxIncrements<MODEL>::deserialize done" << std::endl;
+  Log::trace() << "ObsAuxIncrements<OBS>::deserialize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void ObsAuxIncrements<MODEL>::print(std::ostream & os) const {
+template<typename OBS>
+void ObsAuxIncrements<OBS>::print(std::ostream & os) const {
   for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) os << *auxs_[jobs];
 }
 // -----------------------------------------------------------------------------

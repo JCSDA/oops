@@ -40,19 +40,19 @@ namespace oops {
  * control variable.
  */
 
-template<typename MODEL> class CostJbTotal;
+template<typename MODEL, typename OBS> class CostJbTotal;
 
-template<typename MODEL> class ControlIncrement;
+template<typename MODEL, typename OBS> class ControlIncrement;
 
 // -----------------------------------------------------------------------------
-template<typename MODEL>
+template<typename MODEL, typename OBS>
 class ControlIncrement : public util::Printable,
-                         private util::ObjectCounter<ControlIncrement<MODEL> > {
-  typedef CostJbTotal<MODEL>       JbTotal_;
+                         private util::ObjectCounter<ControlIncrement<MODEL, OBS> > {
+  typedef CostJbTotal<MODEL, OBS>  JbTotal_;
   typedef Geometry<MODEL>          Geometry_;
   typedef Increment4D<MODEL>       Increment4D_;
   typedef ModelAuxIncrement<MODEL> ModelAuxIncr_;
-  typedef ObsAuxIncrements<MODEL>  ObsAuxIncrs_;
+  typedef ObsAuxIncrements<OBS>    ObsAuxIncrs_;
 
  public:
   static const std::string classname() {return "oops::ControlIncrement";}
@@ -106,24 +106,24 @@ class ControlIncrement : public util::Printable,
 
 // =============================================================================
 
-template<typename MODEL>
-ControlIncrement<MODEL>::ControlIncrement(const JbTotal_ & jb)
+template<typename MODEL, typename OBS>
+ControlIncrement<MODEL, OBS>::ControlIncrement(const JbTotal_ & jb)
   : incrm4d_(jb.jbState()), modbias_(jb.resolution(), jb.jbModBias().config()),
     obsbias_(jb.jbObsBias().obspaces(), jb.jbObsBias().config())
 {
   Log::trace() << "ControlIncrement:ControlIncrement created." << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-ControlIncrement<MODEL>::ControlIncrement(const ControlIncrement & other, const bool copy)
+template<typename MODEL, typename OBS>
+ControlIncrement<MODEL, OBS>::ControlIncrement(const ControlIncrement & other, const bool copy)
   : incrm4d_(other.incrm4d_, copy), modbias_(other.modbias_, copy),
     obsbias_(other.obsbias_, copy)
 {
   Log::trace() << "ControlIncrement:ControlIncrement copied." << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-ControlIncrement<MODEL>::ControlIncrement(const ControlIncrement & other,
+template<typename MODEL, typename OBS>
+ControlIncrement<MODEL, OBS>::ControlIncrement(const ControlIncrement & other,
                                           const eckit::Configuration & tlConf)
   : incrm4d_(other.incrm4d_, tlConf), modbias_(other.modbias_, tlConf),
     obsbias_(other.obsbias_, tlConf)
@@ -131,8 +131,8 @@ ControlIncrement<MODEL>::ControlIncrement(const ControlIncrement & other,
   Log::trace() << "ControlIncrement:ControlIncrement copied." << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-ControlIncrement<MODEL>::ControlIncrement(const Geometry_ & geom,
+template<typename MODEL, typename OBS>
+ControlIncrement<MODEL, OBS>::ControlIncrement(const Geometry_ & geom,
                                           const ControlIncrement & other)
   : incrm4d_(geom, other.incrm4d_), modbias_(other.modbias_, true),
     obsbias_(other.obsbias_, true)
@@ -140,78 +140,78 @@ ControlIncrement<MODEL>::ControlIncrement(const Geometry_ & geom,
   Log::trace() << "ControlIncrement:ControlIncrement copied." << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-ControlIncrement<MODEL>::~ControlIncrement() {}
+template<typename MODEL, typename OBS>
+ControlIncrement<MODEL, OBS>::~ControlIncrement() {}
 // -----------------------------------------------------------------------------
-template<typename MODEL> ControlIncrement<MODEL> &
-ControlIncrement<MODEL>::operator=(const ControlIncrement & rhs) {
+template<typename MODEL, typename OBS> ControlIncrement<MODEL, OBS> &
+ControlIncrement<MODEL, OBS>::operator=(const ControlIncrement & rhs) {
   incrm4d_ = rhs.incrm4d_;
   modbias_ = rhs.modbias_;
   obsbias_ = rhs.obsbias_;
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL> ControlIncrement<MODEL> &
-ControlIncrement<MODEL>::operator+=(const ControlIncrement & rhs) {
+template<typename MODEL, typename OBS> ControlIncrement<MODEL, OBS> &
+ControlIncrement<MODEL, OBS>::operator+=(const ControlIncrement & rhs) {
   incrm4d_ += rhs.incrm4d_;
   modbias_ += rhs.modbias_;
   obsbias_ += rhs.obsbias_;
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL> ControlIncrement<MODEL> &
-ControlIncrement<MODEL>::operator-=(const ControlIncrement & rhs) {
+template<typename MODEL, typename OBS> ControlIncrement<MODEL, OBS> &
+ControlIncrement<MODEL, OBS>::operator-=(const ControlIncrement & rhs) {
   incrm4d_ -= rhs.incrm4d_;
   modbias_ -= rhs.modbias_;
   obsbias_ -= rhs.obsbias_;
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-ControlIncrement<MODEL> & ControlIncrement<MODEL>::operator*=(const double zz) {
+template<typename MODEL, typename OBS>
+ControlIncrement<MODEL, OBS> & ControlIncrement<MODEL, OBS>::operator*=(const double zz) {
   incrm4d_ *= zz;
   modbias_ *= zz;
   obsbias_ *= zz;
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void ControlIncrement<MODEL>::zero() {
+template<typename MODEL, typename OBS>
+void ControlIncrement<MODEL, OBS>::zero() {
   incrm4d_.zero();
   modbias_.zero();
   obsbias_.zero();
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void ControlIncrement<MODEL>::axpy(const double zz, const ControlIncrement & rhs) {
+template<typename MODEL, typename OBS>
+void ControlIncrement<MODEL, OBS>::axpy(const double zz, const ControlIncrement & rhs) {
   incrm4d_.axpy(zz, rhs.incrm4d_);
   modbias_.axpy(zz, rhs.modbias_);
   obsbias_.axpy(zz, rhs.obsbias_);
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void ControlIncrement<MODEL>::read(const eckit::Configuration & config) {
+template<typename MODEL, typename OBS>
+void ControlIncrement<MODEL, OBS>::read(const eckit::Configuration & config) {
   incrm4d_.read(config);
   modbias_.read(config);
   obsbias_.read(config);
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void ControlIncrement<MODEL>::write(const eckit::Configuration & config) const {
+template<typename MODEL, typename OBS>
+void ControlIncrement<MODEL, OBS>::write(const eckit::Configuration & config) const {
   incrm4d_.write(config);
   modbias_.write(config);
   obsbias_.write(config);
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void ControlIncrement<MODEL>::print(std::ostream & outs) const {
+template <typename MODEL, typename OBS>
+void ControlIncrement<MODEL, OBS>::print(std::ostream & outs) const {
   outs << incrm4d_;
   outs << modbias_;
   outs << obsbias_;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-double ControlIncrement<MODEL>::dot_product_with(const ControlIncrement & x2) const {
+template<typename MODEL, typename OBS>
+double ControlIncrement<MODEL, OBS>::dot_product_with(const ControlIncrement & x2) const {
   double zz = 0.0;
   zz += dot_product(incrm4d_, x2.incrm4d_);
   zz += dot_product(modbias_, x2.modbias_);
@@ -219,8 +219,8 @@ double ControlIncrement<MODEL>::dot_product_with(const ControlIncrement & x2) co
   return zz;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-size_t ControlIncrement<MODEL>::serialSize() const {
+template<typename MODEL, typename OBS>
+size_t ControlIncrement<MODEL, OBS>::serialSize() const {
   size_t ss = 4;
   ss += incrm4d_.serialSize();
   ss += modbias_.serialSize();
@@ -228,8 +228,8 @@ size_t ControlIncrement<MODEL>::serialSize() const {
   return ss;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void ControlIncrement<MODEL>::serialize(std::vector<double> & vec) const {
+template<typename MODEL, typename OBS>
+void ControlIncrement<MODEL, OBS>::serialize(std::vector<double> & vec) const {
   vec.reserve(this->serialSize());  // allocate memory to avoid reallocations
 
   vec.push_back(-111.0);
@@ -244,8 +244,8 @@ void ControlIncrement<MODEL>::serialize(std::vector<double> & vec) const {
   vec.push_back(-444.0);
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void ControlIncrement<MODEL>::deserialize(const std::vector<double> & vec) {
+template<typename MODEL, typename OBS>
+void ControlIncrement<MODEL, OBS>::deserialize(const std::vector<double> & vec) {
   size_t ptr = 0;
   ASSERT(vec.at(ptr) == -111.0);
   ++ptr;

@@ -28,13 +28,13 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 /// \biref Container for ObsErrors for all observation types that are used in DA
-template <typename MODEL>
+template <typename OBS>
 class ObsErrors : public util::Printable,
                   private boost::noncopyable {
-  typedef Departures<MODEL>          Departures_;
-  typedef ObsErrorBase<MODEL>        ObsError_;
-  typedef ObsSpaces<MODEL>           ObsSpaces_;
-  typedef ObsVector<MODEL>           ObsVector_;
+  typedef Departures<OBS>          Departures_;
+  typedef ObsErrorBase<OBS>        ObsError_;
+  typedef ObsSpaces<OBS>           ObsSpaces_;
+  typedef ObsVector<OBS>           ObsVector_;
 
  public:
   static const std::string classname() {return "oops::ObsErrors";}
@@ -63,21 +63,21 @@ class ObsErrors : public util::Printable,
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-ObsErrors<MODEL>::ObsErrors(const eckit::Configuration & config,
+template <typename OBS>
+ObsErrors<OBS>::ObsErrors(const eckit::Configuration & config,
                             const ObsSpaces_ & os) : err_() {
   std::vector<eckit::LocalConfiguration> obsconf;
   config.get("ObsTypes", obsconf);
   for (size_t jj = 0; jj < os.size(); ++jj) {
     eckit::LocalConfiguration conf(obsconf[jj], "Covariance");
-    err_.emplace_back(ObsErrorFactory<MODEL>::create(conf, os[jj]));
+    err_.emplace_back(ObsErrorFactory<OBS>::create(conf, os[jj]));
   }
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void ObsErrors<MODEL>::multiply(Departures_ & dy) const {
+template <typename OBS>
+void ObsErrors<OBS>::multiply(Departures_ & dy) const {
   for (size_t jj = 0; jj < err_.size(); ++jj) {
     err_[jj]->multiply(dy[jj]);
   }
@@ -85,8 +85,8 @@ void ObsErrors<MODEL>::multiply(Departures_ & dy) const {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void ObsErrors<MODEL>::inverseMultiply(Departures_ & dy) const {
+template <typename OBS>
+void ObsErrors<OBS>::inverseMultiply(Departures_ & dy) const {
   for (size_t jj = 0; jj < err_.size(); ++jj) {
     err_[jj]->inverseMultiply(dy[jj]);
   }
@@ -94,8 +94,8 @@ void ObsErrors<MODEL>::inverseMultiply(Departures_ & dy) const {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void ObsErrors<MODEL>::randomize(Departures_ & dy) const {
+template <typename OBS>
+void ObsErrors<OBS>::randomize(Departures_ & dy) const {
   for (size_t jj = 0; jj < err_.size(); ++jj) {
     err_[jj]->randomize(dy[jj]);
   }
@@ -103,8 +103,8 @@ void ObsErrors<MODEL>::randomize(Departures_ & dy) const {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-Eigen::MatrixXd ObsErrors<MODEL>::packInverseVarianceEigen() const {
+template <typename OBS>
+Eigen::MatrixXd ObsErrors<OBS>::packInverseVarianceEigen() const {
   // compute nobs accross all obs errors
   int nobs = 0;
   for (size_t iov = 0; iov < err_.size(); ++iov) {
@@ -126,8 +126,8 @@ Eigen::MatrixXd ObsErrors<MODEL>::packInverseVarianceEigen() const {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ObsErrors<MODEL>::print(std::ostream & os) const {
+template<typename OBS>
+void ObsErrors<OBS>::print(std::ostream & os) const {
   for (size_t jj = 0; jj < err_.size(); ++jj) os << *err_[jj];
 }
 

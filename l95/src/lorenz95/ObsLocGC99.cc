@@ -18,8 +18,8 @@
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
-static oops::ObsLocalizationMaker<L95Traits,
-              oops::ObsLocalization<L95Traits, ObsLocGC99>> makerGC_("Gaspari-Cohn");
+static oops::ObsLocalizationMaker<L95ObsTraits,
+              oops::ObsLocalization<L95ObsTraits, ObsLocGC99>> makerGC_("Gaspari-Cohn");
 
 // -----------------------------------------------------------------------------
 

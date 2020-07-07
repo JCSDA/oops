@@ -30,18 +30,18 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename OBS>
 class ObsAuxCovariance : public util::Printable,
                          private boost::noncopyable,
-                         private util::ObjectCounter<ObsAuxCovariance<MODEL> > {
-  typedef typename MODEL::ObsAuxCovariance    ObsAuxCovariance_;
-  typedef ObsAuxControl<MODEL>       ObsAuxControl_;
-  typedef ObsAuxIncrement<MODEL>     ObsAuxIncrement_;
+                         private util::ObjectCounter<ObsAuxCovariance<OBS> > {
+  typedef typename OBS::ObsAuxCovariance    ObsAuxCovariance_;
+  typedef ObsAuxControl<OBS>       ObsAuxControl_;
+  typedef ObsAuxIncrement<OBS>     ObsAuxIncrement_;
 
  public:
   static const std::string classname() {return "oops::ObsAuxCovariance";}
 
-  ObsAuxCovariance(const ObsSpace<MODEL> &, const eckit::Configuration &);
+  ObsAuxCovariance(const ObsSpace<OBS> &, const eckit::Configuration &);
   ~ObsAuxCovariance();
 
 /// Operators
@@ -59,75 +59,75 @@ class ObsAuxCovariance : public util::Printable,
 
 // =============================================================================
 
-template<typename MODEL>
-ObsAuxCovariance<MODEL>::ObsAuxCovariance(const ObsSpace<MODEL> & os,
+template<typename OBS>
+ObsAuxCovariance<OBS>::ObsAuxCovariance(const ObsSpace<OBS> & os,
                                           const eckit::Configuration & conf) : cov_()
 {
-  Log::trace() << "ObsAuxCovariance<MODEL>::ObsAuxCovariance starting" << std::endl;
+  Log::trace() << "ObsAuxCovariance<OBS>::ObsAuxCovariance starting" << std::endl;
   util::Timer timer(classname(), "ObsAuxCovariance");
   cov_.reset(new ObsAuxCovariance_(os.obsspace(), conf));
-  Log::trace() << "ObsAuxCovariance<MODEL>::ObsAuxCovariance done" << std::endl;
+  Log::trace() << "ObsAuxCovariance<OBS>::ObsAuxCovariance done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-ObsAuxCovariance<MODEL>::~ObsAuxCovariance() {
-  Log::trace() << "ObsAuxCovariance<MODEL>::~ObsAuxCovariance starting" << std::endl;
+template<typename OBS>
+ObsAuxCovariance<OBS>::~ObsAuxCovariance() {
+  Log::trace() << "ObsAuxCovariance<OBS>::~ObsAuxCovariance starting" << std::endl;
   util::Timer timer(classname(), "~ObsAuxCovariance");
   cov_.reset();
-  Log::trace() << "ObsAuxCovariance<MODEL>::~ObsAuxCovariance done" << std::endl;
+  Log::trace() << "ObsAuxCovariance<OBS>::~ObsAuxCovariance done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ObsAuxCovariance<MODEL>::linearize(const ObsAuxControl_ & xx) {
-  Log::trace() << "ObsAuxCovariance<MODEL>::linearize starting" << std::endl;
+template<typename OBS>
+void ObsAuxCovariance<OBS>::linearize(const ObsAuxControl_ & xx) {
+  Log::trace() << "ObsAuxCovariance<OBS>::linearize starting" << std::endl;
   util::Timer timer(classname(), "linearize");
   cov_->linearize(xx.obsauxcontrol());
-  Log::trace() << "ObsAuxCovariance<MODEL>::linearize done" << std::endl;
+  Log::trace() << "ObsAuxCovariance<OBS>::linearize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ObsAuxCovariance<MODEL>::multiply(const ObsAuxIncrement_ & dx1, ObsAuxIncrement_ & dx2) const {
-  Log::trace() << "ObsAuxCovariance<MODEL>::multiply starting" << std::endl;
+template<typename OBS>
+void ObsAuxCovariance<OBS>::multiply(const ObsAuxIncrement_ & dx1, ObsAuxIncrement_ & dx2) const {
+  Log::trace() << "ObsAuxCovariance<OBS>::multiply starting" << std::endl;
   util::Timer timer(classname(), "multiply");
   cov_->multiply(dx1.obsauxincrement(), dx2.obsauxincrement());
-  Log::trace() << "ObsAuxCovariance<MODEL>::multiply done" << std::endl;
+  Log::trace() << "ObsAuxCovariance<OBS>::multiply done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ObsAuxCovariance<MODEL>::inverseMultiply(const ObsAuxIncrement_ & dx1,
+template<typename OBS>
+void ObsAuxCovariance<OBS>::inverseMultiply(const ObsAuxIncrement_ & dx1,
                                               ObsAuxIncrement_ & dx2) const {
-  Log::trace() << "ObsAuxCovariance<MODEL>::inverseMultiply starting" << std::endl;
+  Log::trace() << "ObsAuxCovariance<OBS>::inverseMultiply starting" << std::endl;
   util::Timer timer(classname(), "inverseMultiply");
   cov_->inverseMultiply(dx1.obsauxincrement(), dx2.obsauxincrement());
-  Log::trace() << "ObsAuxCovariance<MODEL>::inverseMultiply done" << std::endl;
+  Log::trace() << "ObsAuxCovariance<OBS>::inverseMultiply done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ObsAuxCovariance<MODEL>::randomize(ObsAuxIncrement_ & dx) const {
-  Log::trace() << "ObsAuxCovariance<MODEL>::randomize starting" << std::endl;
+template<typename OBS>
+void ObsAuxCovariance<OBS>::randomize(ObsAuxIncrement_ & dx) const {
+  Log::trace() << "ObsAuxCovariance<OBS>::randomize starting" << std::endl;
   util::Timer timer(classname(), "randomize");
   cov_->randomize(dx.obsauxincrement());
-  Log::trace() << "ObsAuxCovariance<MODEL>::randomize done" << std::endl;
+  Log::trace() << "ObsAuxCovariance<OBS>::randomize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ObsAuxCovariance<MODEL>::print(std::ostream & os) const {
-  Log::trace() << "ObsAuxCovariance<MODEL>::print starting" << std::endl;
+template<typename OBS>
+void ObsAuxCovariance<OBS>::print(std::ostream & os) const {
+  Log::trace() << "ObsAuxCovariance<OBS>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
   os << *cov_;
-  Log::trace() << "ObsAuxCovariance<MODEL>::print done" << std::endl;
+  Log::trace() << "ObsAuxCovariance<OBS>::print done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

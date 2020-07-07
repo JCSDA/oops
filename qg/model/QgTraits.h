@@ -57,6 +57,10 @@ struct QgTraits {
   typedef qg::ModelBias             ModelAuxControl;
   typedef qg::ModelBiasIncrement    ModelAuxIncrement;
   typedef qg::ModelBiasCovariance   ModelAuxCovariance;
+};
+
+struct QgObsTraits {
+  static std::string name() {return "QG obs";}
 
   typedef qg::ObsSpaceQG            ObsSpace;
   typedef qg::ObsVecQG              ObsVector;

@@ -37,18 +37,18 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename MODEL, typename OBS>
 class Observer : public util::Printable {
-  typedef GeoVaLs<MODEL>             GeoVaLs_;
-  typedef ObsDiagnostics<MODEL>      ObsDiags_;
-  typedef ObsSpace<MODEL>            ObsSpace_;
-  typedef GetValues<MODEL>           GetValues_;
-  typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
-  typedef ObsFilters<MODEL>          ObsFilters_;
-  typedef ObsOperator<MODEL>         ObsOperator_;
-  typedef ObsVector<MODEL>           ObsVector_;
-  typedef State<MODEL>               State_;
-  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<MODEL, DATA> >;
+  typedef GeoVaLs<OBS>             GeoVaLs_;
+  typedef ObsDiagnostics<OBS>      ObsDiags_;
+  typedef ObsSpace<OBS>            ObsSpace_;
+  typedef GetValues<MODEL, OBS>    GetValues_;
+  typedef ObsAuxControl<OBS>       ObsAuxCtrl_;
+  typedef ObsFilters<OBS>          ObsFilters_;
+  typedef ObsOperator<OBS>         ObsOperator_;
+  typedef ObsVector<OBS>           ObsVector_;
+  typedef State<MODEL>             State_;
+  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<OBS, DATA> >;
 
  public:
   Observer(const eckit::Configuration &, const ObsSpace_ &, const ObsAuxCtrl_ &,
@@ -79,8 +79,8 @@ class Observer : public util::Printable {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-Observer<MODEL>::Observer(const eckit::Configuration & conf, const ObsSpace_ & obsdb,
+template <typename MODEL, typename OBS>
+Observer<MODEL, OBS>::Observer(const eckit::Configuration & conf, const ObsSpace_ & obsdb,
                           const ObsAuxCtrl_ & ybias, ObsVector_ & yobs,
                           ObsDataPtr_<int> qcflags, ObsDataPtr_<float> obserr)
   : hop_(obsdb, eckit::LocalConfiguration(conf, "ObsOperator")),
@@ -95,8 +95,8 @@ Observer<MODEL>::Observer(const eckit::Configuration & conf, const ObsSpace_ & o
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-Observer<MODEL>::~Observer() {
+template <typename MODEL, typename OBS>
+Observer<MODEL, OBS>::~Observer() {
   Log::trace() << "Observer::~Observer starting" << std::endl;
   gvals_.reset();
   Log::trace() << "Observer::~Observer done" << std::endl;
@@ -104,8 +104,8 @@ Observer<MODEL>::~Observer() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void Observer<MODEL>::doInitialize(const State_ & xx,
+template <typename MODEL, typename OBS>
+void Observer<MODEL, OBS>::doInitialize(const State_ & xx,
                                    const util::DateTime & begin,
                                    const util::DateTime & end) {
   Log::trace() << "Observer::doInitialize start" << std::endl;
@@ -117,8 +117,8 @@ void Observer<MODEL>::doInitialize(const State_ & xx,
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void Observer<MODEL>::doProcessing(const State_ & xx,
+template <typename MODEL, typename OBS>
+void Observer<MODEL, OBS>::doProcessing(const State_ & xx,
                                    const util::DateTime & t1,
                                    const util::DateTime & t2) {
   Log::trace() << "Observer::doProcessing start" << std::endl;
@@ -129,8 +129,8 @@ void Observer<MODEL>::doProcessing(const State_ & xx,
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void Observer<MODEL>::doFinalize() {
+template <typename MODEL, typename OBS>
+void Observer<MODEL, OBS>::doFinalize() {
   Log::trace() << "Observer::doFinalize start" << std::endl;
   filters_.priorFilter(*gvals_);
   oops::Variables vars;
@@ -144,8 +144,8 @@ void Observer<MODEL>::doFinalize() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void Observer<MODEL>::print(std::ostream &) const {}
+template <typename MODEL, typename OBS>
+void Observer<MODEL, OBS>::print(std::ostream &) const {}
 
 // -----------------------------------------------------------------------------
 

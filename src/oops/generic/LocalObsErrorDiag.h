@@ -28,10 +28,10 @@ namespace oops {
 //  the rest of the methods are not overriden; ObsErrorDiag methods would be used
 //  instead
 
-template<typename MODEL>
-class LocalObsErrorDiag : public ObsErrorDiag<MODEL> {
-  typedef ObsLocalizationBase<MODEL>   ObsLocalization_;
-  typedef ObsSpace<MODEL>              ObsSpace_;
+template<typename OBS>
+class LocalObsErrorDiag : public ObsErrorDiag<OBS> {
+  typedef ObsLocalizationBase<OBS>   ObsLocalization_;
+  typedef ObsSpace<OBS>              ObsSpace_;
 
  public:
 /// Initialize and inflate local R for obs. localization
@@ -43,23 +43,23 @@ class LocalObsErrorDiag : public ObsErrorDiag<MODEL> {
 
 // =============================================================================
 
-template<typename MODEL>
-LocalObsErrorDiag<MODEL>::LocalObsErrorDiag
+template<typename OBS>
+LocalObsErrorDiag<OBS>::LocalObsErrorDiag
     (const eckit::Configuration & conf, const ObsSpace_ & obsdb)
-  : ObsErrorDiag<MODEL>(conf, obsdb)
+  : ObsErrorDiag<OBS>(conf, obsdb)
 {
 // if Localization section is available; localize covariances
   if (conf.has("Localization")) {
     eckit::LocalConfiguration locconf(conf, "Localization");
-    std::unique_ptr<ObsLocalization_> loc(ObsLocalizationFactory<MODEL>::create(locconf, obsdb));
+    std::unique_ptr<ObsLocalization_> loc(ObsLocalizationFactory<OBS>::create(locconf, obsdb));
     loc->multiply(this->inverseVariance_);
   }
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void LocalObsErrorDiag<MODEL>::print(std::ostream & os) const {
+template<typename OBS>
+void LocalObsErrorDiag<OBS>::print(std::ostream & os) const {
   os << "Localized diagonal observation error covariance, inverse variances: "
      << this->inverseVariance_ << std::endl;
 }

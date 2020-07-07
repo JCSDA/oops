@@ -35,19 +35,19 @@ namespace oops {
 
 /// Computes observation equivalent TL and AD to/from increments.
 
-template <typename MODEL>
+template <typename MODEL, typename OBS>
 class ObserverTLAD {
-  typedef GeoVaLs<MODEL>             GeoVaLs_;
-  typedef Increment<MODEL>           Increment_;
-  typedef LinearGetValues<MODEL>     LinearGetValues_;
-  typedef LinearObsOperator<MODEL>   LinearObsOperator_;
-  typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
-  typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
-  typedef ObsDiagnostics<MODEL>      ObsDiags_;
-  typedef ObsOperator<MODEL>         ObsOperator_;
-  typedef ObsSpace<MODEL>            ObsSpace_;
-  typedef ObsVector<MODEL>           ObsVector_;
-  typedef State<MODEL>               State_;
+  typedef GeoVaLs<OBS>                 GeoVaLs_;
+  typedef Increment<MODEL>             Increment_;
+  typedef LinearGetValues<MODEL, OBS>  LinearGetValues_;
+  typedef LinearObsOperator<OBS>       LinearObsOperator_;
+  typedef ObsAuxControl<OBS>           ObsAuxCtrl_;
+  typedef ObsAuxIncrement<OBS>         ObsAuxIncr_;
+  typedef ObsDiagnostics<OBS>          ObsDiags_;
+  typedef ObsOperator<OBS>             ObsOperator_;
+  typedef ObsSpace<OBS>                ObsSpace_;
+  typedef ObsVector<OBS>               ObsVector_;
+  typedef State<MODEL>                 State_;
 
  public:
   ObserverTLAD(const eckit::Configuration &,
@@ -86,8 +86,8 @@ class ObserverTLAD {
 };
 
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-ObserverTLAD<MODEL>::ObserverTLAD(const eckit::Configuration & config,
+template <typename MODEL, typename OBS>
+ObserverTLAD<MODEL, OBS>::ObserverTLAD(const eckit::Configuration & config,
                                   const ObsSpace_ & obsdb,
                                   const ObsAuxCtrl_ & ybias)
   : obsdb_(obsdb), hop_(obsdb, eckit::LocalConfiguration(config, "ObsOperator")),
@@ -99,8 +99,8 @@ ObserverTLAD<MODEL>::ObserverTLAD(const eckit::Configuration & config,
   Log::trace() << "ObserverTLAD::ObserverTLAD" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void ObserverTLAD<MODEL>::doInitializeTraj(const State_ & xx,
+template <typename MODEL, typename OBS>
+void ObserverTLAD<MODEL, OBS>::doInitializeTraj(const State_ & xx,
                const util::DateTime & begin, const util::Duration & winlen, const int & nwin) {
   Log::trace() << "ObserverTLAD::doInitializeTraj start" << std::endl;
   util::DateTime bgn = begin;
@@ -116,8 +116,8 @@ void ObserverTLAD<MODEL>::doInitializeTraj(const State_ & xx,
   Log::trace() << "ObserverTLAD::doInitializeTraj done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void ObserverTLAD<MODEL>::doProcessingTraj(const State_ & xx, const util::DateTime & t1,
+template <typename MODEL, typename OBS>
+void ObserverTLAD<MODEL, OBS>::doProcessingTraj(const State_ & xx, const util::DateTime & t1,
                                            const util::DateTime & t2, const int & iwin) {
   Log::trace() << "ObserverTLAD::doProcessingTraj start" << std::endl;
 // Call nonlinear getValues
@@ -125,24 +125,24 @@ void ObserverTLAD<MODEL>::doProcessingTraj(const State_ & xx, const util::DateTi
   Log::trace() << "ObserverTLAD::doProcessingTraj done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void ObserverTLAD<MODEL>::doFinalizeTraj(const State_ & xx) {
+template <typename MODEL, typename OBS>
+void ObserverTLAD<MODEL, OBS>::doFinalizeTraj(const State_ & xx) {
   Log::trace() << "ObserverTLAD::doFinalizeTraj start" << std::endl;
   hoptlad_.setTrajectory(*gvals_, ybias_);
   gvals_.reset();
   Log::trace() << "ObserverTLAD::doFinalizeTraj done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void ObserverTLAD<MODEL>::doInitializeTL(const Increment_ & dx,
+template <typename MODEL, typename OBS>
+void ObserverTLAD<MODEL, OBS>::doInitializeTL(const Increment_ & dx,
                    const util::DateTime & begin, const util::DateTime & end) {
   Log::trace() << "ObserverTLAD::doInitializeTL start" << std::endl;
   gvals_.reset(new GeoVaLs_(hop_.locations(begin, end), hoptlad_.requiredVars()));
   Log::trace() << "ObserverTLAD::doInitializeTL done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void ObserverTLAD<MODEL>::doProcessingTL(const Increment_ & dx, const util::DateTime & t1,
+template <typename MODEL, typename OBS>
+void ObserverTLAD<MODEL, OBS>::doProcessingTL(const Increment_ & dx, const util::DateTime & t1,
                                          const util::DateTime & t2, const int & iwin) {
   Log::trace() << "ObserverTLAD::doProcessingTL start" << std::endl;
 // Get increment variables at obs locations
@@ -150,8 +150,8 @@ void ObserverTLAD<MODEL>::doProcessingTL(const Increment_ & dx, const util::Date
   Log::trace() << "ObserverTLAD::doProcessingTL done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void ObserverTLAD<MODEL>::doFinalizeTL(const Increment_ &, ObsVector_ & ydeptl,
+template <typename MODEL, typename OBS>
+void ObserverTLAD<MODEL, OBS>::doFinalizeTL(const Increment_ &, ObsVector_ & ydeptl,
                                        const ObsAuxIncr_ & ybiastl) {
   Log::trace() << "ObserverTLAD::doFinalizeTL start" << std::endl;
   hoptlad_.simulateObsTL(*gvals_, ydeptl, ybiastl);
@@ -159,8 +159,8 @@ void ObserverTLAD<MODEL>::doFinalizeTL(const Increment_ &, ObsVector_ & ydeptl,
   Log::trace() << "ObserverTLAD::doFinalizeTL done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void ObserverTLAD<MODEL>::doFirstAD(Increment_ & dx, const ObsVector_ & ydepad,
+template <typename MODEL, typename OBS>
+void ObserverTLAD<MODEL, OBS>::doFirstAD(Increment_ & dx, const ObsVector_ & ydepad,
                                     ObsAuxIncr_ & ybiasad,
                                     const util::DateTime & begin,
                                     const util::DateTime & end) {
@@ -170,8 +170,8 @@ void ObserverTLAD<MODEL>::doFirstAD(Increment_ & dx, const ObsVector_ & ydepad,
   Log::trace() << "ObserverTLAD::doFirstAD done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void ObserverTLAD<MODEL>::doProcessingAD(Increment_ & dx, const util::DateTime & t1,
+template <typename MODEL, typename OBS>
+void ObserverTLAD<MODEL, OBS>::doProcessingAD(Increment_ & dx, const util::DateTime & t1,
                                          const util::DateTime & t2, const int & iwin) {
   Log::trace() << "ObserverTLAD::doProcessingAD start" << std::endl;
 // Adjoint of get increment variables at obs locations
@@ -179,8 +179,8 @@ void ObserverTLAD<MODEL>::doProcessingAD(Increment_ & dx, const util::DateTime &
   Log::trace() << "ObserverTLAD::doProcessingAD done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void ObserverTLAD<MODEL>::doLastAD(Increment_ &) {
+template <typename MODEL, typename OBS>
+void ObserverTLAD<MODEL, OBS>::doLastAD(Increment_ &) {
   Log::trace() << "ObserverTLAD::doLastAD start" << std::endl;
   gvals_.reset();
   Log::trace() << "ObserverTLAD::doLastAD done" << std::endl;

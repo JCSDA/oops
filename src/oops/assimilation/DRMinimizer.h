@@ -41,12 +41,12 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> class DRMinimizer : public Minimizer<MODEL> {
-  typedef BMatrix<MODEL>             Bmat_;
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef HtRinvHMatrix<MODEL>       HtRinvH_;
-  typedef Minimizer<MODEL>           Minimizer_;
+template<typename MODEL, typename OBS> class DRMinimizer : public Minimizer<MODEL, OBS> {
+  typedef BMatrix<MODEL, OBS>             Bmat_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef HtRinvHMatrix<MODEL, OBS>       HtRinvH_;
+  typedef Minimizer<MODEL, OBS>           Minimizer_;
 
  public:
   explicit DRMinimizer(const CostFct_ & J): Minimizer_(J), J_(J), gradJb_(), costJ0Jb_(0) {}
@@ -68,8 +68,9 @@ template<typename MODEL> class DRMinimizer : public Minimizer<MODEL> {
 
 // =============================================================================
 
-template<typename MODEL>
-ControlIncrement<MODEL> * DRMinimizer<MODEL>::doMinimize(const eckit::Configuration & config) {
+template<typename MODEL, typename OBS>
+ControlIncrement<MODEL, OBS> *
+DRMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
   int ninner = config.getInt("ninner");
   double gnreduc = config.getDouble("gradient_norm_reduction");
 

@@ -30,8 +30,8 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testConstructor() {
-  typedef oops::Locations<MODEL>        Locations_;
+template <typename OBS> void testConstructor() {
+  typedef oops::Locations<OBS>        Locations_;
 
   const eckit::LocalConfiguration conf(TestEnvironment::config(), "Locations");
   std::unique_ptr<Locations_> locs(new Locations_(conf, oops::mpi::comm()));
@@ -43,19 +43,19 @@ template <typename MODEL> void testConstructor() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename OBS>
 class Locations : public oops::Test {
  public:
   Locations() {}
   virtual ~Locations() {}
  private:
-  std::string testid() const {return "test::Locations<" + MODEL::name() + ">";}
+  std::string testid() const {return "test::Locations<" + OBS::name() + ">";}
 
   void register_tests() const {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/Locations/testConstructor")
-      { testConstructor<MODEL>(); });
+      { testConstructor<OBS>(); });
   }
 };
 

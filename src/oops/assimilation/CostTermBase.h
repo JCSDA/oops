@@ -34,7 +34,7 @@ namespace oops {
  * Abstract base class for the terms of the cost function.
  */
 
-template<typename MODEL> class CostTermBase {
+template<typename MODEL, typename OBS> class CostTermBase {
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
   typedef Increment<MODEL>           Increment_;
@@ -46,8 +46,9 @@ template<typename MODEL> class CostTermBase {
   virtual ~CostTermBase() {}
 
 /// Initialize before nonlinear model integration.
-  virtual PostPtr_ initialize(const ControlVariable<MODEL> &, const eckit::Configuration &) = 0;
-  virtual PostPtrTLAD_ initializeTraj(const ControlVariable<MODEL> &,
+  virtual PostPtr_ initialize(const ControlVariable<MODEL, OBS> &,
+                              const eckit::Configuration &) = 0;
+  virtual PostPtrTLAD_ initializeTraj(const ControlVariable<MODEL, OBS> &,
                                       const Geometry_ &, const eckit::Configuration &) = 0;
 
 /// Finalize computation after nonlinear model integration.
@@ -55,11 +56,11 @@ template<typename MODEL> class CostTermBase {
   virtual void finalizeTraj() = 0;
 
 /// Initialize before starting the TL run.
-  virtual PostPtrTLAD_ setupTL(const ControlIncrement<MODEL> &) const = 0;
+  virtual PostPtrTLAD_ setupTL(const ControlIncrement<MODEL, OBS> &) const = 0;
 
 /// Initialize before starting the AD run.
   virtual PostPtrTLAD_ setupAD(std::shared_ptr<const GeneralizedDepartures>,
-                               ControlIncrement<MODEL> &) const = 0;
+                               ControlIncrement<MODEL, OBS> &) const = 0;
 
 /// Multiply by covariance (or weight) matrix and its inverse.
   virtual GeneralizedDepartures * multiplyCovar(const GeneralizedDepartures &) const = 0;

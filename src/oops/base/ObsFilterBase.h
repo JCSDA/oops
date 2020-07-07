@@ -29,12 +29,12 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename OBS>
 class ObsFilterBase : public util::Printable,
                       private boost::noncopyable {
-  typedef GeoVaLs<MODEL>             GeoVaLs_;
-  typedef ObsDiagnostics<MODEL>      ObsDiags_;
-  typedef ObsVector<MODEL>           ObsVector_;
+  typedef GeoVaLs<OBS>             GeoVaLs_;
+  typedef ObsDiagnostics<OBS>      ObsDiags_;
+  typedef ObsVector<OBS>           ObsVector_;
 
  public:
   ObsFilterBase() {}
@@ -54,12 +54,12 @@ class ObsFilterBase : public util::Printable,
 // =============================================================================
 
 /// ObsFilter Factory
-template <typename MODEL>
+template <typename OBS>
 class FilterFactory {
-  typedef ObsSpace<MODEL>    ObsSpace_;
-  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<MODEL, DATA> >;
+  typedef ObsSpace<OBS>    ObsSpace_;
+  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<OBS, DATA> >;
  public:
-  static boost::shared_ptr<ObsFilterBase<MODEL>> create(const ObsSpace_ &,
+  static boost::shared_ptr<ObsFilterBase<OBS>> create(const ObsSpace_ &,
                                                         const eckit::Configuration &,
                                                     ObsDataPtr_<int> flags = ObsDataPtr_<int>(),
                                                  ObsDataPtr_<float> obserr = ObsDataPtr_<float>());
@@ -67,31 +67,31 @@ class FilterFactory {
  protected:
   explicit FilterFactory(const std::string &);
  private:
-  virtual ObsFilterBase<MODEL> * make(const ObsSpace_ &, const eckit::Configuration &,
+  virtual ObsFilterBase<OBS> * make(const ObsSpace_ &, const eckit::Configuration &,
                                       ObsDataPtr_<int> &, ObsDataPtr_<float> &) = 0;
-  static std::map < std::string, FilterFactory<MODEL> * > & getMakers() {
-    static std::map < std::string, FilterFactory<MODEL> * > makers_;
+  static std::map < std::string, FilterFactory<OBS> * > & getMakers() {
+    static std::map < std::string, FilterFactory<OBS> * > makers_;
     return makers_;
   }
 };
 
 // -----------------------------------------------------------------------------
 
-template<class MODEL, class T>
-class FilterMaker : public FilterFactory<MODEL> {
-  typedef ObsSpace<MODEL>    ObsSpace_;
-  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<MODEL, DATA> >;
-  virtual ObsFilterBase<MODEL> * make(const ObsSpace_ & os, const eckit::Configuration & conf,
+template<class OBS, class T>
+class FilterMaker : public FilterFactory<OBS> {
+  typedef ObsSpace<OBS>    ObsSpace_;
+  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<OBS, DATA> >;
+  virtual ObsFilterBase<OBS> * make(const ObsSpace_ & os, const eckit::Configuration & conf,
                                       ObsDataPtr_<int> & flags, ObsDataPtr_<float> & obserr)
     { return new T(os, conf, flags, obserr); }
  public:
-  explicit FilterMaker(const std::string & name) : FilterFactory<MODEL>(name) {}
+  explicit FilterMaker(const std::string & name) : FilterFactory<OBS>(name) {}
 };
 
 // =============================================================================
 
-template <typename MODEL>
-FilterFactory<MODEL>::FilterFactory(const std::string & name) {
+template <typename OBS>
+FilterFactory<OBS>::FilterFactory(const std::string & name) {
   if (getMakers().find(name) != getMakers().end()) {
     Log::error() << name << " already registered in obs filter factory." << std::endl;
     ABORT("Element already registered in FilterFactory.");
@@ -101,25 +101,25 @@ FilterFactory<MODEL>::FilterFactory(const std::string & name) {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-boost::shared_ptr<ObsFilterBase<MODEL>>
-FilterFactory<MODEL>::create(const ObsSpace_ & os, const eckit::Configuration & conf,
+template <typename OBS>
+boost::shared_ptr<ObsFilterBase<OBS>>
+FilterFactory<OBS>::create(const ObsSpace_ & os, const eckit::Configuration & conf,
                              ObsDataPtr_<int> flags, ObsDataPtr_<float> obserr) {
-  Log::trace() << "ObsFilterBase<MODEL>::create starting" << std::endl;
+  Log::trace() << "ObsFilterBase<OBS>::create starting" << std::endl;
   const std::string id = conf.getString("Filter");
-  typename std::map<std::string, FilterFactory<MODEL>*>::iterator
+  typename std::map<std::string, FilterFactory<OBS>*>::iterator
     jloc = getMakers().find(id);
   if (jloc == getMakers().end()) {
     Log::error() << id << " does not exist in obs filter factory." << std::endl;
     Log::error() << "Obs Filter Factory has " << getMakers().size() << " elements:" << std::endl;
-    for (typename std::map<std::string, FilterFactory<MODEL>*>::const_iterator
+    for (typename std::map<std::string, FilterFactory<OBS>*>::const_iterator
          jj = getMakers().begin(); jj != getMakers().end(); ++jj) {
        Log::error() << "A " << jj->first << " Filter" << std::endl;
     }
     ABORT("Element does not exist in FilterFactory.");
   }
-  boost::shared_ptr<ObsFilterBase<MODEL>> ptr(jloc->second->make(os, conf, flags, obserr));
-  Log::trace() << "ObsFilterBase<MODEL>::create done" << std::endl;
+  boost::shared_ptr<ObsFilterBase<OBS>> ptr(jloc->second->make(os, conf, flags, obserr));
+  Log::trace() << "ObsFilterBase<OBS>::create done" << std::endl;
   return ptr;
 }
 

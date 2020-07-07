@@ -31,10 +31,10 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 /// \brief Locations of observations for observation operator
-template <typename MODEL>
+template <typename OBS>
 class Locations : public util::Printable,
-                  private util::ObjectCounter<Locations<MODEL> > {
-  typedef typename MODEL::Locations             Locations_;
+                  private util::ObjectCounter<Locations<OBS> > {
+  typedef typename OBS::Locations             Locations_;
  public:
   static const std::string classname() {return "oops::Locations";}
 
@@ -60,58 +60,58 @@ class Locations : public util::Printable,
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-Locations<MODEL>::Locations(std::unique_ptr<Locations_> locs) : locs_(std::move(locs)) {
-  Log::trace() << "Locations<MODEL>::Locations constructed" << std::endl;
+template <typename OBS>
+Locations<OBS>::Locations(std::unique_ptr<Locations_> locs) : locs_(std::move(locs)) {
+  Log::trace() << "Locations<OBS>::Locations constructed" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-Locations<MODEL>::Locations(const eckit::Configuration & conf, const eckit::mpi::Comm & comm) {
-  Log::trace() << "Locations<MODEL>::Locations starting" << std::endl;
+template <typename OBS>
+Locations<OBS>::Locations(const eckit::Configuration & conf, const eckit::mpi::Comm & comm) {
+  Log::trace() << "Locations<OBS>::Locations starting" << std::endl;
   util::Timer timer(classname(), "Locations");
   locs_.reset(new Locations_(conf, comm));
-  Log::trace() << "Locations<MODEL>::Locations done" << std::endl;
+  Log::trace() << "Locations<OBS>::Locations done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-Locations<MODEL>::~Locations() {
-  Log::trace() << "Locations<MODEL>::~Locations starting" << std::endl;
+template <typename OBS>
+Locations<OBS>::~Locations() {
+  Log::trace() << "Locations<OBS>::~Locations starting" << std::endl;
   util::Timer timer(classname(), "~Locations");
   locs_.reset();
-  Log::trace() << "Locations<MODEL>::~Locations done" << std::endl;
+  Log::trace() << "Locations<OBS>::~Locations done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-Locations<MODEL>::Locations(Locations && other): locs_(std::move(other.locs_)) {
+template <typename OBS>
+Locations<OBS>::Locations(Locations && other): locs_(std::move(other.locs_)) {
   util::Timer timer(classname(), "Locations");
-  Log::trace() << "Locations<MODEL> moved" << std::endl;
+  Log::trace() << "Locations<OBS> moved" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-Locations<MODEL> & Locations<MODEL>::operator=(Locations<MODEL> && other) {
-  Log::trace() << "Locations<MODEL>::operator= starting" << std::endl;
+template <typename OBS>
+Locations<OBS> & Locations<OBS>::operator=(Locations<OBS> && other) {
+  Log::trace() << "Locations<OBS>::operator= starting" << std::endl;
   util::Timer timer(classname(), "operator=");
   locs_ = std::move(other.locs_);
-  Log::trace() << "Locations<MODEL>::operator= done" << std::endl;
+  Log::trace() << "Locations<OBS>::operator= done" << std::endl;
   return *this;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void Locations<MODEL>::print(std::ostream & os) const {
-  Log::trace() << "Locations<MODEL>::print starting" << std::endl;
+template<typename OBS>
+void Locations<OBS>::print(std::ostream & os) const {
+  Log::trace() << "Locations<OBS>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
   os << *locs_;
-  Log::trace() << "Locations<MODEL>::print done" << std::endl;
+  Log::trace() << "Locations<OBS>::print done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

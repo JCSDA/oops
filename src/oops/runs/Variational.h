@@ -41,7 +41,7 @@
 
 namespace oops {
 
-template <typename MODEL> class Variational : public Application {
+template <typename MODEL, typename OBS> class Variational : public Application {
   typedef Geometry<MODEL>            Geometry_;
   typedef Model<MODEL>               Model_;
   typedef State<MODEL>               State_;
@@ -49,11 +49,11 @@ template <typename MODEL> class Variational : public Application {
  public:
 // -----------------------------------------------------------------------------
   explicit Variational(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {
-    instantiateCostFactory<MODEL>();
+    instantiateCostFactory<MODEL, OBS>();
     instantiateCovarFactory<MODEL>();
-    instantiateMinFactory<MODEL>();
-    instantiateObsErrorFactory<MODEL>();
-    instantiateObsFilterFactory<MODEL>();
+    instantiateMinFactory<MODEL, OBS>();
+    instantiateObsErrorFactory<OBS>();
+    instantiateObsFilterFactory<OBS>();
     instantiateTlmFactory<MODEL>();
     instantiateVariableChangeFactory<MODEL>();
   }
@@ -75,15 +75,16 @@ template <typename MODEL> class Variational : public Application {
     cfConf.set("model", mconf);       // move   model    inside cost_function
 //  ------------------ Temporary until yaml files are modified -----------------
 
-    std::unique_ptr<CostFunction<MODEL>> J(CostFactory<MODEL>::create(cfConf, this->getComm()));
+    std::unique_ptr<CostFunction<MODEL, OBS>>
+      J(CostFactory<MODEL, OBS>::create(cfConf, this->getComm()));
     Log::trace() << "Variational: cost function has been set up" << std::endl;
 
 //  Initialize first guess from background
-    ControlVariable<MODEL> xx(J->jb().getBackground());
+    ControlVariable<MODEL, OBS> xx(J->jb().getBackground());
     Log::trace() << "Variational: first guess has been set up" << std::endl;
 
 //  Perform Incremental Variational Assimilation
-    int iouter = IncrementalAssimilation<MODEL>(xx, *J, fullConfig);
+    int iouter = IncrementalAssimilation<MODEL, OBS>(xx, *J, fullConfig);
     Log::info() << "Variational: incremental assimilation done "
                 << iouter << " iterations." << std::endl;
 
@@ -110,7 +111,7 @@ template <typename MODEL> class Variational : public Application {
 // -----------------------------------------------------------------------------
  private:
   std::string appname() const {
-    return "oops::Variational<" + MODEL::name() + ">";
+    return "oops::Variational<" + MODEL::name() + ", " + OBS::name() + ">";
   }
 // -----------------------------------------------------------------------------
 };

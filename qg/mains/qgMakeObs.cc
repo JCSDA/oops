@@ -14,6 +14,6 @@
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  oops::MakeObs<qg::QgTraits> mkobs;
+  oops::MakeObs<qg::QgTraits, qg::QgObsTraits> mkobs;
   return run.execute(mkobs);
 }

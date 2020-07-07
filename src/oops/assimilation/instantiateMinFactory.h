@@ -31,22 +31,22 @@
 
 namespace oops {
 
-template <typename MODEL> void instantiateMinFactory() {
-  static MinMaker<MODEL, DRGMRESRMinimizer<MODEL> >     makerDRGMRESR_("DRGMRESR");
-  static MinMaker<MODEL, DRIPCGMinimizer<MODEL> >       makerDRIPCG_("DRIPCG");
-  static MinMaker<MODEL, GMRESRMinimizer<MODEL> >       makerGMRESR_("GMRESR");
-  static MinMaker<MODEL, IPCGMinimizer<MODEL> >         makerIPCG_("IPCG");
-  static MinMaker<MODEL, SaddlePointMinimizer<MODEL> >  makerSADDLE_("SaddlePoint");
-  static MinMaker<MODEL, RPCGMinimizer<MODEL> >         makerRPCG_("RPCG");
-  static MinMaker<MODEL, DRPCGMinimizer<MODEL> >        makerDRPCG_("DRPCG");
-  static MinMaker<MODEL, DRPFOMMinimizer<MODEL> >       makerDRPFOM_("DRPFOM");
-  static MinMaker<MODEL, LBGMRESRMinimizer<MODEL> >     makerBDRPCG_("LBGMRESR");
-  static MinMaker<MODEL, DRPLanczosMinimizer<MODEL> >   makerDRPLanczos_("DRPLanczos");
-  static MinMaker<MODEL, PCGMinimizer<MODEL> >          makerPCG_("PCG");
-  static MinMaker<MODEL, PLanczosMinimizer<MODEL> >     makerPLanczos_("PLanczos");
-  static MinMaker<MODEL, RPLanczosMinimizer<MODEL> >    makerRPLanczos_("RPLanczos");
-  static MinMaker<MODEL, MINRESMinimizer<MODEL> >       makerMINRES_("MINRES");
-  static MinMaker<MODEL, FGMRESMinimizer<MODEL> >       makerFGMRES_("FGMRES");
+template <typename MODEL, typename OBS> void instantiateMinFactory() {
+  static MinMaker<MODEL, OBS, DRGMRESRMinimizer<MODEL, OBS> >     makerDRGMRESR_("DRGMRESR");
+  static MinMaker<MODEL, OBS, DRIPCGMinimizer<MODEL, OBS> >       makerDRIPCG_("DRIPCG");
+  static MinMaker<MODEL, OBS, GMRESRMinimizer<MODEL, OBS> >       makerGMRESR_("GMRESR");
+  static MinMaker<MODEL, OBS, IPCGMinimizer<MODEL, OBS> >         makerIPCG_("IPCG");
+  static MinMaker<MODEL, OBS, SaddlePointMinimizer<MODEL, OBS> >  makerSADDLE_("SaddlePoint");
+  static MinMaker<MODEL, OBS, RPCGMinimizer<MODEL, OBS> >         makerRPCG_("RPCG");
+  static MinMaker<MODEL, OBS, DRPCGMinimizer<MODEL, OBS> >        makerDRPCG_("DRPCG");
+  static MinMaker<MODEL, OBS, DRPFOMMinimizer<MODEL, OBS> >       makerDRPFOM_("DRPFOM");
+  static MinMaker<MODEL, OBS, LBGMRESRMinimizer<MODEL, OBS> >     makerBDRPCG_("LBGMRESR");
+  static MinMaker<MODEL, OBS, DRPLanczosMinimizer<MODEL, OBS> >   makerDRPLanczos_("DRPLanczos");
+  static MinMaker<MODEL, OBS, PCGMinimizer<MODEL, OBS> >          makerPCG_("PCG");
+  static MinMaker<MODEL, OBS, PLanczosMinimizer<MODEL, OBS> >     makerPLanczos_("PLanczos");
+  static MinMaker<MODEL, OBS, RPLanczosMinimizer<MODEL, OBS> >    makerRPLanczos_("RPLanczos");
+  static MinMaker<MODEL, OBS, MINRESMinimizer<MODEL, OBS> >       makerMINRES_("MINRES");
+  static MinMaker<MODEL, OBS, FGMRESMinimizer<MODEL, OBS> >       makerFGMRES_("FGMRES");
 }
 
 }  // namespace oops

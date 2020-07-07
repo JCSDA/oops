@@ -27,13 +27,13 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename OBS>
 class ObsAuxCovariances : public util::Printable,
                           private boost::noncopyable {
-  typedef ObsAuxCovariance<MODEL>    ObsAuxCovariance_;
-  typedef ObsAuxControls<MODEL>      ObsAuxControls_;
-  typedef ObsAuxIncrements<MODEL>    ObsAuxIncrements_;
-  typedef ObsSpaces<MODEL>           ObsSpaces_;
+  typedef ObsAuxCovariance<OBS>    ObsAuxCovariance_;
+  typedef ObsAuxControls<OBS>      ObsAuxControls_;
+  typedef ObsAuxIncrements<OBS>    ObsAuxIncrements_;
+  typedef ObsSpaces<OBS>           ObsSpaces_;
 
  public:
   static const std::string classname() {return "oops::ObsAuxCovariances";}
@@ -59,89 +59,89 @@ class ObsAuxCovariances : public util::Printable,
 
 // =============================================================================
 
-template<typename MODEL>
-ObsAuxCovariances<MODEL>::ObsAuxCovariances(const ObsSpaces_ & odb,
+template<typename OBS>
+ObsAuxCovariances<OBS>::ObsAuxCovariances(const ObsSpaces_ & odb,
                                             const eckit::Configuration & conf)
   : cov_(0), odb_(odb), conf_(conf)
 {
-  Log::trace() << "ObsAuxCovariances<MODEL>::ObsAuxCovariances starting" << std::endl;
+  Log::trace() << "ObsAuxCovariances<OBS>::ObsAuxCovariances starting" << std::endl;
   std::vector<eckit::LocalConfiguration> obsconf;
   conf.get("ObsTypes", obsconf);
   for (std::size_t jobs = 0; jobs < obsconf.size(); ++jobs) {
     boost::shared_ptr<ObsAuxCovariance_> tmp(new ObsAuxCovariance_(odb[jobs], obsconf[jobs]));
     cov_.push_back(tmp);
   }
-  Log::trace() << "ObsAuxCovariances<MODEL>::ObsAuxCovariances done" << std::endl;
+  Log::trace() << "ObsAuxCovariances<OBS>::ObsAuxCovariances done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-ObsAuxCovariances<MODEL>::~ObsAuxCovariances() {
-  Log::trace() << "ObsAuxCovariances<MODEL>::~ObsAuxCovariances starting" << std::endl;
+template<typename OBS>
+ObsAuxCovariances<OBS>::~ObsAuxCovariances() {
+  Log::trace() << "ObsAuxCovariances<OBS>::~ObsAuxCovariances starting" << std::endl;
   for (std::size_t jobs = 0; jobs < cov_.size(); ++jobs) {
     cov_[jobs].reset();
   }
-  Log::trace() << "ObsAuxCovariances<MODEL>::~ObsAuxCovariances done" << std::endl;
+  Log::trace() << "ObsAuxCovariances<OBS>::~ObsAuxCovariances done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ObsAuxCovariances<MODEL>::linearize(const ObsAuxControls_ & xx) {
-  Log::trace() << "ObsAuxCovariances<MODEL>::linearize starting" << std::endl;
+template<typename OBS>
+void ObsAuxCovariances<OBS>::linearize(const ObsAuxControls_ & xx) {
+  Log::trace() << "ObsAuxCovariances<OBS>::linearize starting" << std::endl;
   ASSERT(cov_.size() == xx.size());
   for (std::size_t jobs = 0; jobs < xx.size(); ++jobs) {
     cov_[jobs]->linearize(xx[jobs]);
   }
-  Log::trace() << "ObsAuxCovariances<MODEL>::linearize done" << std::endl;
+  Log::trace() << "ObsAuxCovariances<OBS>::linearize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ObsAuxCovariances<MODEL>::multiply(const ObsAuxIncrements_ & dx1,
+template<typename OBS>
+void ObsAuxCovariances<OBS>::multiply(const ObsAuxIncrements_ & dx1,
                                        ObsAuxIncrements_ & dx2) const {
-  Log::trace() << "ObsAuxCovariances<MODEL>::multiply starting" << std::endl;
+  Log::trace() << "ObsAuxCovariances<OBS>::multiply starting" << std::endl;
   ASSERT(dx1.size() == dx2.size() && cov_.size() == dx1.size());
   for (std::size_t jobs = 0; jobs < dx1.size(); ++jobs) {
     cov_[jobs]->multiply(dx1[jobs], dx2[jobs]);
   }
-  Log::trace() << "ObsAuxCovariances<MODEL>::multiply done" << std::endl;
+  Log::trace() << "ObsAuxCovariances<OBS>::multiply done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ObsAuxCovariances<MODEL>::inverseMultiply(const ObsAuxIncrements_ & dx1,
+template<typename OBS>
+void ObsAuxCovariances<OBS>::inverseMultiply(const ObsAuxIncrements_ & dx1,
                                               ObsAuxIncrements_ & dx2) const {
-  Log::trace() << "ObsAuxCovariances<MODEL>::inverseMultiply starting" << std::endl;
+  Log::trace() << "ObsAuxCovariances<OBS>::inverseMultiply starting" << std::endl;
   ASSERT(dx1.size() == dx2.size() && cov_.size() == dx1.size());
   for (std::size_t jobs = 0; jobs < dx1.size(); ++jobs) {
     cov_[jobs]->inverseMultiply(dx1[jobs], dx2[jobs]);
   }
-  Log::trace() << "ObsAuxCovariances<MODEL>::inverseMultiply done" << std::endl;
+  Log::trace() << "ObsAuxCovariances<OBS>::inverseMultiply done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ObsAuxCovariances<MODEL>::randomize(ObsAuxIncrements_ & dx) const {
-  Log::trace() << "ObsAuxCovariances<MODEL>::randomize starting" << std::endl;
+template<typename OBS>
+void ObsAuxCovariances<OBS>::randomize(ObsAuxIncrements_ & dx) const {
+  Log::trace() << "ObsAuxCovariances<OBS>::randomize starting" << std::endl;
   ASSERT(cov_.size() == dx.size());
   for (std::size_t jobs = 0; jobs < dx.size(); ++jobs) {
     cov_[jobs]->randomize(dx[jobs]);
   }
-  Log::trace() << "ObsAuxCovariances<MODEL>::randomize done" << std::endl;
+  Log::trace() << "ObsAuxCovariances<OBS>::randomize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ObsAuxCovariances<MODEL>::print(std::ostream & os) const {
-  Log::trace() << "ObsAuxCovariances<MODEL>::print starting" << std::endl;
+template<typename OBS>
+void ObsAuxCovariances<OBS>::print(std::ostream & os) const {
+  Log::trace() << "ObsAuxCovariances<OBS>::print starting" << std::endl;
   for (std::size_t jobs = 0; jobs < cov_.size(); ++jobs) os << *cov_.at(jobs) << " ";
-  Log::trace() << "ObsAuxCovariances<MODEL>::print done" << std::endl;
+  Log::trace() << "ObsAuxCovariances<OBS>::print done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

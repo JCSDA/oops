@@ -64,15 +64,15 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> class RPCGMinimizer : public DualMinimizer<MODEL> {
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef DualVector<MODEL>          Dual_;
-  typedef HBHtMatrix<MODEL>          HBHt_;
-  typedef RinvMatrix<MODEL>          Rinv_;
+template<typename MODEL, typename OBS> class RPCGMinimizer : public DualMinimizer<MODEL, OBS> {
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef DualVector<MODEL, OBS>          Dual_;
+  typedef HBHtMatrix<MODEL, OBS>          HBHt_;
+  typedef RinvMatrix<MODEL, OBS>          Rinv_;
 
  public:
   const std::string classname() const override {return "RPCGMinimizer";}
-  RPCGMinimizer(const eckit::Configuration &, const CostFct_ & J): DualMinimizer<MODEL>(J) {}
+  RPCGMinimizer(const eckit::Configuration &, const CostFct_ & J): DualMinimizer<MODEL, OBS>(J) {}
   ~RPCGMinimizer() {}
 
  private:
@@ -82,8 +82,8 @@ template<typename MODEL> class RPCGMinimizer : public DualMinimizer<MODEL> {
 
 // =============================================================================
 
-template<typename MODEL>
-double RPCGMinimizer<MODEL>::solve(Dual_ & vv, double & vvp, Dual_ & rr,
+template<typename MODEL, typename OBS>
+double RPCGMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & rr,
                                    const HBHt_ & HBHt, const Rinv_ & Rinv,
                                    const int & maxiter, const double & tolerance,
                                    Dual_ & dy, const double & sigma) {

@@ -37,19 +37,19 @@ namespace oops {
 
 /// \brief Computes observation operator (while running model, or with State4D)
 
-template <typename MODEL>
+template <typename MODEL, typename OBS>
 class CalcHofX {
   typedef Geometry<MODEL>            Geometry_;
   typedef Model<MODEL>               Model_;
   typedef ModelAuxControl<MODEL>     ModelAux_;
-  typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
-  typedef Observations<MODEL>        Observations_;
-  typedef ObsSpaces<MODEL>           ObsSpaces_;
+  typedef ObsAuxControls<OBS>        ObsAuxCtrls_;
+  typedef Observations<OBS>          Observations_;
+  typedef ObsSpaces<OBS>             ObsSpaces_;
   typedef State<MODEL>               State_;
   typedef State4D<MODEL>             State4D_;
   typedef PostProcessor<State_>      PostProcessor_;
-  typedef QCData<MODEL>              QCData_;
-  template <typename DATA> using ObsData_ = ObsDataVector<MODEL, DATA>;
+  typedef QCData<OBS>                QCData_;
+  template <typename DATA> using ObsData_ = ObsDataVector<OBS, DATA>;
 
  public:
 /// \brief Initializes Observers
@@ -77,14 +77,14 @@ class CalcHofX {
   const util::DateTime winbgn_;              // window for assimilation
   const util::Duration winlen_;
   std::unique_ptr<QCData_> qc_;              // QC-related (flags and obserrors)
-  std::shared_ptr<Observers<MODEL> > pobs_;  // Observer
+  std::shared_ptr<Observers<MODEL, OBS> > pobs_;  // Observer
 };
 
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-CalcHofX<MODEL>::CalcHofX(const ObsSpaces_ & obspaces, const Geometry_ & geometry,
+template <typename MODEL, typename OBS>
+CalcHofX<MODEL, OBS>::CalcHofX(const ObsSpaces_ & obspaces, const Geometry_ & geometry,
                           const eckit::Configuration & config) :
   obsconf_(config.getSubConfiguration("Observations")),
   obspaces_(obspaces), geometry_(geometry),
@@ -94,34 +94,34 @@ CalcHofX<MODEL>::CalcHofX(const ObsSpaces_ & obspaces, const Geometry_ & geometr
   winlen_(config.getString("Assimilation Window.window_length")) {}
 
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void CalcHofX<MODEL>::initObserver() {
+template <typename MODEL, typename OBS>
+void CalcHofX<MODEL, OBS>::initObserver() {
   qc_.reset(new QCData_(obspaces_));
 //  Setup Observers
-  pobs_.reset(new Observers<MODEL>(obsconf_, obspaces_, ybias_, *qc_));
+  pobs_.reset(new Observers<MODEL, OBS>(obsconf_, obspaces_, ybias_, *qc_));
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-const Observations<MODEL> & CalcHofX<MODEL>::compute(const Model_ & model, State_ & xx,
+template <typename MODEL, typename OBS>
+const Observations<OBS> & CalcHofX<MODEL, OBS>::compute(const Model_ & model, State_ & xx,
                                                      PostProcessor_ & post) {
-  oops::Log::trace() << "CalcHofX<MODEL>::compute (model) start" << std::endl;
+  oops::Log::trace() << "CalcHofX<MODEL, OBS>::compute (model) start" << std::endl;
 
   this->initObserver();
 //  run the model and compute H(x)
   post.enrollProcessor(pobs_);
   model.forecast(xx, moderr_, winlen_, post);
 
-  oops::Log::trace() << "CalcHofX<MODEL>::compute (model) done" << std::endl;
+  oops::Log::trace() << "CalcHofX<MODEL, OBS>::compute (model) done" << std::endl;
   return pobs_->hofx();
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-const Observations<MODEL> & CalcHofX<MODEL>::compute(const State4D_ & xx) {
-  oops::Log::trace() << "CalcHofX<MODEL>::compute (state4D) start" << std::endl;
+template <typename MODEL, typename OBS>
+const Observations<OBS> & CalcHofX<MODEL, OBS>::compute(const State4D_ & xx) {
+  oops::Log::trace() << "CalcHofX<MODEL, OBS>::compute (state4D) start" << std::endl;
 
   this->initObserver();
   size_t nstates = xx.size();
@@ -146,7 +146,7 @@ const Observations<MODEL> & CalcHofX<MODEL>::compute(const State4D_ & xx) {
   }
   pobs_->finalize(xx[nstates-1]);
 
-  oops::Log::trace() << "CalcHofX<MODEL>::compute (state4D) done" << std::endl;
+  oops::Log::trace() << "CalcHofX<MODEL, OBS>::compute (state4D) done" << std::endl;
   return pobs_->hofx();
 }
 

@@ -25,10 +25,10 @@ namespace oops {
 // -----------------------------------------------------------------------------
 /// Base class for generic localizations
 
-template<typename MODEL>
+template<typename OBS>
 class ObsLocalizationBase : public util::Printable,
                             private boost::noncopyable {
-  typedef ObsVector<MODEL> ObsVector_;
+  typedef ObsVector<OBS> ObsVector_;
  public:
   ObsLocalizationBase() {}
   virtual ~ObsLocalizationBase() {}
@@ -39,40 +39,40 @@ class ObsLocalizationBase : public util::Printable,
 // =============================================================================
 
 /// ObsLocalizationFactory Factory
-template <typename MODEL>
+template <typename OBS>
 class ObsLocalizationFactory {
-  typedef ObsSpace<MODEL>                         ObsSpace_;
+  typedef ObsSpace<OBS>                         ObsSpace_;
  public:
-  static std::unique_ptr<ObsLocalizationBase<MODEL>> create(const eckit::Configuration &,
+  static std::unique_ptr<ObsLocalizationBase<OBS>> create(const eckit::Configuration &,
                                                             const ObsSpace_ &);
  protected:
   explicit ObsLocalizationFactory(const std::string &);
  private:
-  virtual ObsLocalizationBase<MODEL> * make(const eckit::Configuration &,
+  virtual ObsLocalizationBase<OBS> * make(const eckit::Configuration &,
                                             const ObsSpace_ &) = 0;
-  static std::map < std::string, ObsLocalizationFactory<MODEL> * > & getMakers() {
-    static std::map < std::string, ObsLocalizationFactory<MODEL> * > makers_;
+  static std::map < std::string, ObsLocalizationFactory<OBS> * > & getMakers() {
+    static std::map < std::string, ObsLocalizationFactory<OBS> * > makers_;
     return makers_;
   }
 };
 
 // -----------------------------------------------------------------------------
 
-template<class MODEL, class T>
-class ObsLocalizationMaker : public ObsLocalizationFactory<MODEL> {
-  typedef ObsSpace<MODEL>                         ObsSpace_;
-  virtual ObsLocalizationBase<MODEL> * make(const eckit::Configuration & conf,
+template<class OBS, class T>
+class ObsLocalizationMaker : public ObsLocalizationFactory<OBS> {
+  typedef ObsSpace<OBS>                         ObsSpace_;
+  virtual ObsLocalizationBase<OBS> * make(const eckit::Configuration & conf,
                                             const ObsSpace_ & obsspace)
     { return new T(conf, obsspace); }
  public:
   explicit ObsLocalizationMaker(const std::string & name) :
-    ObsLocalizationFactory<MODEL>(name) {}
+    ObsLocalizationFactory<OBS>(name) {}
 };
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-ObsLocalizationFactory<MODEL>::ObsLocalizationFactory(const std::string & name) {
+template <typename OBS>
+ObsLocalizationFactory<OBS>::ObsLocalizationFactory(const std::string & name) {
   if (getMakers().find(name) != getMakers().end()) {
     Log::error() << name << " already registered in generic localization factory." << std::endl;
     ABORT("Element already registered in ObsLocalizationFactory.");
@@ -82,19 +82,19 @@ ObsLocalizationFactory<MODEL>::ObsLocalizationFactory(const std::string & name) 
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-std::unique_ptr<ObsLocalizationBase<MODEL>> ObsLocalizationFactory<MODEL>::create(
+template <typename OBS>
+std::unique_ptr<ObsLocalizationBase<OBS>> ObsLocalizationFactory<OBS>::create(
                               const eckit::Configuration & conf, const ObsSpace_ & obsspace) {
-  Log::trace() << "ObsLocalizationBase<MODEL>::create starting" << std::endl;
+  Log::trace() << "ObsLocalizationBase<OBS>::create starting" << std::endl;
   const std::string id = conf.getString("localization");
-  typename std::map<std::string, ObsLocalizationFactory<MODEL>*>::iterator
+  typename std::map<std::string, ObsLocalizationFactory<OBS>*>::iterator
     jloc = getMakers().find(id);
   if (jloc == getMakers().end()) {
     Log::error() << id << " does not exist in obs localization factory." << std::endl;
     ABORT("Element does not exist in ObsLocalizationFactory.");
   }
-  std::unique_ptr<ObsLocalizationBase<MODEL>> ptr(jloc->second->make(conf, obsspace));
-  Log::trace() << "ObsLocalizationBase<MODEL>::create done" << std::endl;
+  std::unique_ptr<ObsLocalizationBase<OBS>> ptr(jloc->second->make(conf, obsspace));
+  Log::trace() << "ObsLocalizationBase<OBS>::create done" << std::endl;
   return ptr;
 }
 

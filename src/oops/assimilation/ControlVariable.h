@@ -39,16 +39,16 @@ namespace oops {
  * and reduce the number of arguments to be passed around.
  */
 
-template<typename MODEL> class ControlVariable;
+template<typename MODEL, typename OBS> class ControlVariable;
 
 // -----------------------------------------------------------------------------
-template<typename MODEL>
+template<typename MODEL, typename OBS>
 class ControlVariable : public util::Printable,
-                        private util::ObjectCounter<ControlVariable<MODEL> > {
+                        private util::ObjectCounter<ControlVariable<MODEL, OBS> > {
   typedef Geometry<MODEL>            Geometry_;
   typedef ModelAuxControl<MODEL>     ModelAux_;
-  typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
-  typedef ObsSpaces<MODEL>           ObsSpaces_;
+  typedef ObsAuxControls<OBS>        ObsAuxCtrls_;
+  typedef ObsSpaces<OBS>             ObsSpaces_;
   typedef State4D<MODEL>             State4D_;
   typedef State<MODEL>               State_;
 
@@ -91,8 +91,8 @@ class ControlVariable : public util::Printable,
 
 // =============================================================================
 
-template<typename MODEL>
-ControlVariable<MODEL>::ControlVariable(const eckit::Configuration & conf,
+template<typename MODEL, typename OBS>
+ControlVariable<MODEL, OBS>::ControlVariable(const eckit::Configuration & conf,
                                         const Variables & vars, const Geometry_ & resol,
                                         const ObsSpaces_ & odb)
   : state4d_(resol, vars, eckit::LocalConfiguration(conf, "Jb.Background")),
@@ -104,8 +104,8 @@ ControlVariable<MODEL>::ControlVariable(const eckit::Configuration & conf,
 
 // =============================================================================
 
-template<typename MODEL>
-ControlVariable<MODEL>::ControlVariable(const eckit::Configuration & conf,
+template<typename MODEL, typename OBS>
+ControlVariable<MODEL, OBS>::ControlVariable(const eckit::Configuration & conf,
                                         const State_ & statein,
                                         const ObsSpaces_ & odb)
   : state4d_(statein),
@@ -117,8 +117,8 @@ ControlVariable<MODEL>::ControlVariable(const eckit::Configuration & conf,
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-ControlVariable<MODEL>::ControlVariable(const ControlVariable & other)
+template<typename MODEL, typename OBS>
+ControlVariable<MODEL, OBS>::ControlVariable(const ControlVariable & other)
   : state4d_(other.state4d_), modbias_(other.modbias_), obsbias_(other.obsbias_)
 {
   Log::trace() << "ControlVariable copied" << std::endl;
@@ -126,15 +126,15 @@ ControlVariable<MODEL>::ControlVariable(const ControlVariable & other)
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-ControlVariable<MODEL>::~ControlVariable() {
+template<typename MODEL, typename OBS>
+ControlVariable<MODEL, OBS>::~ControlVariable() {
   Log::trace() << "ControlVariable destructed" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ControlVariable<MODEL>::read(const eckit::Configuration & config) {
+template<typename MODEL, typename OBS>
+void ControlVariable<MODEL, OBS>::read(const eckit::Configuration & config) {
   state4d_.read(config);
   modbias_.read(config);
   obsbias_.read(config);
@@ -142,8 +142,8 @@ void ControlVariable<MODEL>::read(const eckit::Configuration & config) {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ControlVariable<MODEL>::write(const eckit::Configuration & config) const {
+template<typename MODEL, typename OBS>
+void ControlVariable<MODEL, OBS>::write(const eckit::Configuration & config) const {
   state4d_.write(config);
   modbias_.write(config);
   obsbias_.write(config);
@@ -151,8 +151,8 @@ void ControlVariable<MODEL>::write(const eckit::Configuration & config) const {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void ControlVariable<MODEL>::print(std::ostream & outs) const {
+template <typename MODEL, typename OBS>
+void ControlVariable<MODEL, OBS>::print(std::ostream & outs) const {
   outs << state4d_;
   outs << modbias_;
   outs << obsbias_;
@@ -160,8 +160,8 @@ void ControlVariable<MODEL>::print(std::ostream & outs) const {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-double ControlVariable<MODEL>::norm() const {
+template<typename MODEL, typename OBS>
+double ControlVariable<MODEL, OBS>::norm() const {
   double zz = state4d_.norm();
   double zn = zz * zz;
   zz = modbias_.norm();

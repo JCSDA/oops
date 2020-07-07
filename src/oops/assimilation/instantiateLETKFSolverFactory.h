@@ -14,9 +14,9 @@
 
 namespace oops {
 
-template <typename MODEL> void instantiateLETKFSolverFactory() {
-  static LETKFSolverMaker<MODEL, LETKFSolver<MODEL> > makerLETKF_("LETKF");
-  static LETKFSolverMaker<MODEL, LETKFSolverOOPS<MODEL> > makerLETKFnoEigen_("LETKF_OOPS");
+template <typename MODEL, typename OBS> void instantiateLETKFSolverFactory() {
+  static LETKFSolverMaker<MODEL, OBS, LETKFSolver<MODEL, OBS> > makerLETKF_("LETKF");
+  static LETKFSolverMaker<MODEL, OBS, LETKFSolverOOPS<MODEL, OBS> > makerLETKF2_("LETKF_OOPS");
 }
 
 }  // namespace oops

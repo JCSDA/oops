@@ -30,12 +30,12 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> class PrimalMinimizer : public Minimizer<MODEL> {
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef BMatrix<MODEL>             Bmat_;
-  typedef HessianMatrix<MODEL>       Hessian_;
-  typedef Minimizer<MODEL>           Minimizer_;
+template<typename MODEL, typename OBS> class PrimalMinimizer : public Minimizer<MODEL, OBS> {
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef BMatrix<MODEL, OBS>             Bmat_;
+  typedef HessianMatrix<MODEL, OBS>       Hessian_;
+  typedef Minimizer<MODEL, OBS>           Minimizer_;
 
  public:
   explicit PrimalMinimizer(const CostFct_ & J): Minimizer_(J), J_(J) {}
@@ -53,8 +53,9 @@ template<typename MODEL> class PrimalMinimizer : public Minimizer<MODEL> {
 
 // =============================================================================
 
-template<typename MODEL>
-ControlIncrement<MODEL> * PrimalMinimizer<MODEL>::doMinimize(const eckit::Configuration & config) {
+template<typename MODEL, typename OBS>
+ControlIncrement<MODEL, OBS> *
+PrimalMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
   int ninner = config.getInt("ninner");
   double gnreduc = config.getDouble("gradient_norm_reduction");
 

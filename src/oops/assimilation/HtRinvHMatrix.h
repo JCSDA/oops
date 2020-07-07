@@ -17,7 +17,6 @@
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/DualVector.h"
 #include "oops/base/PostProcessorTLAD.h"
-#include "oops/interface/Increment.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/formats.h"
 #include "oops/util/Logger.h"
@@ -33,10 +32,9 @@ namespace oops {
  *  operators for the other terms of the cost function.
  */
 
-template<typename MODEL> class HtRinvHMatrix : private boost::noncopyable {
-  typedef Increment<MODEL>           Increment_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef CostFunction<MODEL>        CostFct_;
+template<typename MODEL, typename OBS> class HtRinvHMatrix : private boost::noncopyable {
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
 
  public:
   explicit HtRinvHMatrix(const CostFct_ & j, const bool test = false);
@@ -51,15 +49,15 @@ template<typename MODEL> class HtRinvHMatrix : private boost::noncopyable {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-HtRinvHMatrix<MODEL>::HtRinvHMatrix(const CostFct_ & j, const bool test)
+template<typename MODEL, typename OBS>
+HtRinvHMatrix<MODEL, OBS>::HtRinvHMatrix(const CostFct_ & j, const bool test)
   : j_(j), test_(test), iter_(0)
 {}
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void HtRinvHMatrix<MODEL>::multiply(const CtrlInc_ & dx, CtrlInc_ & dz) const {
+template<typename MODEL, typename OBS>
+void HtRinvHMatrix<MODEL, OBS>::multiply(const CtrlInc_ & dx, CtrlInc_ & dz) const {
 // Increment counter
   iter_++;
 
@@ -77,8 +75,8 @@ void HtRinvHMatrix<MODEL>::multiply(const CtrlInc_ & dx, CtrlInc_ & dz) const {
   j_.zeroAD(dz);
   PostProcessorTLAD<MODEL> costad;
 
-  DualVector<MODEL> ww;
-  DualVector<MODEL> zz;
+  DualVector<MODEL, OBS> ww;
+  DualVector<MODEL, OBS> zz;
 
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
     ww.append(costtl.releaseOutputFromTL(jj));

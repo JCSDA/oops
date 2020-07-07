@@ -25,9 +25,9 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename OBS>
 class ObsTestsFixture : private boost::noncopyable {
-  typedef oops::ObsSpaces<MODEL>  ObsSpaces_;
+  typedef oops::ObsSpaces<OBS>  ObsSpaces_;
 
  public:
   static const util::DateTime & tbgn() {return *getInstance().tbgn_;}
@@ -45,8 +45,8 @@ class ObsTestsFixture : private boost::noncopyable {
 
   ~ObsTestsFixture() {}
 
-  static ObsTestsFixture<MODEL>& getInstance() {
-    static ObsTestsFixture<MODEL> theObsTestsFixture;
+  static ObsTestsFixture<OBS>& getInstance() {
+    static ObsTestsFixture<OBS> theObsTestsFixture;
     return theObsTestsFixture;
   }
 

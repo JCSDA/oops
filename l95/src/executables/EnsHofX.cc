@@ -14,6 +14,6 @@
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  oops::EnsHofX<lorenz95::L95Traits> enshofx;
+  oops::EnsHofX<lorenz95::L95Traits, lorenz95::L95ObsTraits> enshofx;
   return run.execute(enshofx);
 }

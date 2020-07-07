@@ -14,6 +14,6 @@
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  oops::HofX<qg::QgTraits> hofx;
+  oops::HofX<qg::QgTraits, qg::QgObsTraits> hofx;
   return run.execute(hofx);
 }

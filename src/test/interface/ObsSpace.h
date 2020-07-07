@@ -30,8 +30,8 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testConstructor() {
-  typedef ObsTestsFixture<MODEL> Test_;
+template <typename OBS> void testConstructor() {
+  typedef ObsTestsFixture<OBS> Test_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     EXPECT(Test_::obspace()[jj].windowStart() == Test_::tbgn());
@@ -41,18 +41,18 @@ template <typename MODEL> void testConstructor() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> class ObsSpace : public oops::Test {
+template <typename OBS> class ObsSpace : public oops::Test {
  public:
   ObsSpace() {}
   virtual ~ObsSpace() {}
  private:
-  std::string testid() const {return "test::ObsSpace<" + MODEL::name() + ">";}
+  std::string testid() const {return "test::ObsSpace<" + OBS::name() + ">";}
 
   void register_tests() const {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/ObsSpace/testConstructor")
-      { testConstructor<MODEL>(); });
+      { testConstructor<OBS>(); });
   }
 };
 

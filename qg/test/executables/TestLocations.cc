@@ -11,7 +11,7 @@
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  test::Locations<qg::QgTraits> tests;
+  test::Locations<qg::QgObsTraits> tests;
   return run.execute(tests);
 }
 

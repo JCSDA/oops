@@ -69,15 +69,15 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> class DRGMRESRMinimizer : public DRMinimizer<MODEL> {
-  typedef BMatrix<MODEL>             Bmat_;
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef HtRinvHMatrix<MODEL>       HtRinvH_;
+template<typename MODEL, typename OBS> class DRGMRESRMinimizer : public DRMinimizer<MODEL, OBS> {
+  typedef BMatrix<MODEL, OBS>             Bmat_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef HtRinvHMatrix<MODEL, OBS>       HtRinvH_;
 
  public:
   const std::string classname() const override {return "DRGMRESRMinimizer";}
-  DRGMRESRMinimizer(const eckit::Configuration &, const CostFct_ & J): DRMinimizer<MODEL>(J) {}
+  DRGMRESRMinimizer(const eckit::Configuration &, const CostFct_ & J): DRMinimizer<MODEL, OBS>(J) {}
   ~DRGMRESRMinimizer() {}
  private:
   double solve(CtrlInc_ &, CtrlInc_ &, CtrlInc_ &, const Bmat_ &, const HtRinvH_ &,
@@ -86,8 +86,8 @@ template<typename MODEL> class DRGMRESRMinimizer : public DRMinimizer<MODEL> {
 
 // =============================================================================
 
-template<typename MODEL>
-double DRGMRESRMinimizer<MODEL>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_ & rr,
+template<typename MODEL, typename OBS>
+double DRGMRESRMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_ & rr,
                                       const Bmat_ & B, const HtRinvH_ & HtRinvH,
                                       const double costJ0Jb, const double costJ0JoJc,
                                       const int maxiter, const double tolerance) {

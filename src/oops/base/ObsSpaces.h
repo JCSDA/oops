@@ -36,11 +36,11 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename OBS>
 class ObsSpaces : public util::Printable,
-                  private util::ObjectCounter<ObsSpaces<MODEL> > {
-  typedef Departures<MODEL>         Departures_;
-  typedef ObsSpace<MODEL>           ObsSpace_;
+                  private util::ObjectCounter<ObsSpaces<OBS> > {
+  typedef Departures<OBS>         Departures_;
+  typedef ObsSpace<OBS>           ObsSpace_;
 
  public:
   static const std::string classname() {return "oops::ObsSpaces";}
@@ -75,8 +75,8 @@ class ObsSpaces : public util::Printable,
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-ObsSpaces<MODEL>::ObsSpaces(const eckit::Configuration & conf, const eckit::mpi::Comm & comm,
+template <typename OBS>
+ObsSpaces<OBS>::ObsSpaces(const eckit::Configuration & conf, const eckit::mpi::Comm & comm,
                             const util::DateTime & bgn, const util::DateTime & end)
   : spaces_(0), wbgn_(bgn), wend_(end)
 {
@@ -96,8 +96,8 @@ ObsSpaces<MODEL>::ObsSpaces(const eckit::Configuration & conf, const eckit::mpi:
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-ObsSpaces<MODEL>::ObsSpaces(const ObsSpaces<MODEL> & obss, const eckit::geometry::Point2 & center,
+template <typename OBS>
+ObsSpaces<OBS>::ObsSpaces(const ObsSpaces<OBS> & obss, const eckit::geometry::Point2 & center,
                             const eckit::Configuration & conf)
   : spaces_(0), wbgn_(obss.wbgn_), wend_(obss.wend_)
 {
@@ -113,15 +113,15 @@ ObsSpaces<MODEL>::ObsSpaces(const ObsSpaces<MODEL> & obss, const eckit::geometry
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-ObsSpaces<MODEL>::ObsSpaces(const std::shared_ptr<ObsSpace_> & obss)
+template <typename OBS>
+ObsSpaces<OBS>::ObsSpaces(const std::shared_ptr<ObsSpace_> & obss)
   : spaces_(obss), wbgn_(obss->windowStart()), wend_(obss->windowEnd())
 {}
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-ObsSpaces<MODEL>::ObsSpaces(const ObsSpaces & other)
+template <typename OBS>
+ObsSpaces<OBS>::ObsSpaces(const ObsSpaces & other)
   : spaces_(other.spaces_), wbgn_(other.wbgn_), wend_(other.wend_)
 {
   Log::trace() << "ObsSpaces copied" << std::endl;
@@ -129,13 +129,13 @@ ObsSpaces<MODEL>::ObsSpaces(const ObsSpaces & other)
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-ObsSpaces<MODEL>::~ObsSpaces() {}
+template <typename OBS>
+ObsSpaces<OBS>::~ObsSpaces() {}
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void ObsSpaces<MODEL>::print(std::ostream & os) const {
+template <typename OBS>
+void ObsSpaces<OBS>::print(std::ostream & os) const {
   for (std::size_t jj = 0; jj < spaces_.size(); ++jj) {
     os << *spaces_[jj];
   }
@@ -143,8 +143,8 @@ void ObsSpaces<MODEL>::print(std::ostream & os) const {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void ObsSpaces<MODEL>::printJo(const Departures_ & dy, const Departures_ & grad) const {
+template <typename OBS>
+void ObsSpaces<OBS>::printJo(const Departures_ & dy, const Departures_ & grad) const {
   for (std::size_t jj = 0; jj < spaces_.size(); ++jj) {
     spaces_[jj]->printJo(dy[jj], grad[jj]);
   }

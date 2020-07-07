@@ -65,15 +65,16 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> class RPLanczosMinimizer : public DualMinimizer<MODEL> {
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef DualVector<MODEL>          Dual_;
-  typedef HBHtMatrix<MODEL>          HBHt_;
-  typedef RinvMatrix<MODEL>          Rinv_;
+template<typename MODEL, typename OBS> class RPLanczosMinimizer : public DualMinimizer<MODEL, OBS> {
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef DualVector<MODEL, OBS>          Dual_;
+  typedef HBHtMatrix<MODEL, OBS>          HBHt_;
+  typedef RinvMatrix<MODEL, OBS>          Rinv_;
 
  public:
   const std::string classname() const override {return "RPLanczosMinimizer";}
-  RPLanczosMinimizer(const eckit::Configuration &, const CostFct_ & J): DualMinimizer<MODEL>(J) {}
+  RPLanczosMinimizer(const eckit::Configuration &, const CostFct_ & J)
+    : DualMinimizer<MODEL, OBS>(J) {}
   ~RPLanczosMinimizer() {}
 
  private:
@@ -83,8 +84,8 @@ template<typename MODEL> class RPLanczosMinimizer : public DualMinimizer<MODEL> 
 
 // =============================================================================
 
-template<typename MODEL>
-double RPLanczosMinimizer<MODEL>::solve(Dual_ & vv, double & vvp, Dual_ & rr,
+template<typename MODEL, typename OBS>
+double RPLanczosMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & rr,
                                         const HBHt_ & HBHt, const Rinv_ & Rinv,
                                         const int & maxiter, const double & tolerance,
                                         Dual_ & dy, const double & sigma) {

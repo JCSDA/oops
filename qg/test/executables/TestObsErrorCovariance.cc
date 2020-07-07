@@ -14,7 +14,7 @@
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  test::ObsErrorCovariance<qg::QgTraits> tests;
+  test::ObsErrorCovariance<qg::QgObsTraits> tests;
   return run.execute(tests);
 }
 

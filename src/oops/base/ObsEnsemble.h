@@ -18,9 +18,9 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 /// \brief Ensemble of observations (can hold ensemble of H(x))
-template<typename MODEL> class ObsEnsemble {
-  typedef Observations<MODEL>        Observations_;
-  typedef ObsSpaces<MODEL>           ObsSpaces_;
+template<typename OBS> class ObsEnsemble {
+  typedef Observations<OBS>        Observations_;
+  typedef ObsSpaces<OBS>           ObsSpaces_;
 
  public:
   /// Create ensemble of empty Observations size \p nens
@@ -41,8 +41,8 @@ template<typename MODEL> class ObsEnsemble {
 
 // ====================================================================================
 
-template<typename MODEL>
-ObsEnsemble<MODEL>::ObsEnsemble(const ObsSpaces_ & obsdb, const size_t & nens)
+template<typename OBS>
+ObsEnsemble<OBS>::ObsEnsemble(const ObsSpaces_ & obsdb, const size_t & nens)
   : obsdb_(obsdb), ensemble_()
 {
   ensemble_.reserve(nens);
@@ -54,8 +54,8 @@ ObsEnsemble<MODEL>::ObsEnsemble(const ObsSpaces_ & obsdb, const size_t & nens)
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-Observations<MODEL> ObsEnsemble<MODEL>::mean() const {
+template<typename OBS>
+Observations<OBS> ObsEnsemble<OBS>::mean() const {
   Observations_ mean_obs(obsdb_);
   mean_obs.zero();
   for (const auto & yy : ensemble_) {

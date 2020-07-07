@@ -32,16 +32,16 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename OBS>
 class ObsFilters : public util::Printable,
                    private boost::noncopyable {
-  typedef GeoVaLs<MODEL>            GeoVaLs_;
-  typedef ObsDiagnostics<MODEL>     ObsDiags_;
-  typedef ObsFilterBase<MODEL>      ObsFilterBase_;
-  typedef ObsSpace<MODEL>           ObsSpace_;
-  typedef ObsVector<MODEL>          ObsVector_;
-  typedef boost::shared_ptr<ObsFilterBase<MODEL> >  ObsFilterPtr_;
-  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<MODEL, DATA> >;
+  typedef GeoVaLs<OBS>            GeoVaLs_;
+  typedef ObsDiagnostics<OBS>     ObsDiags_;
+  typedef ObsFilterBase<OBS>      ObsFilterBase_;
+  typedef ObsSpace<OBS>           ObsSpace_;
+  typedef ObsVector<OBS>          ObsVector_;
+  typedef boost::shared_ptr<ObsFilterBase<OBS> >  ObsFilterPtr_;
+  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<OBS, DATA> >;
 
  public:
   ObsFilters(const ObsSpace_ &, const eckit::Configuration &,
@@ -67,8 +67,8 @@ class ObsFilters : public util::Printable,
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-ObsFilters<MODEL>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration & conf,
+template <typename OBS>
+ObsFilters<OBS>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration & conf,
                               ObsDataPtr_<int> qcflags, ObsDataPtr_<float> obserr)
   : filters_(), geovars_(), diagvars_() {
   Log::trace() << "ObsFilters::ObsFilters starting " << conf << std::endl;
@@ -81,7 +81,7 @@ ObsFilters<MODEL>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration &
   if (confs.size() > 0) {
     eckit::LocalConfiguration preconf;
     preconf.set("Filter", "QCmanager");
-    filters_.push_back(FilterFactory<MODEL>::create(os, preconf, qcflags, obserr));
+    filters_.push_back(FilterFactory<OBS>::create(os, preconf, qcflags, obserr));
   }
 
 // Create the filters
@@ -93,7 +93,7 @@ ObsFilters<MODEL>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration &
       apply = contains(iters, iter);
     }
     if (apply) {
-      ObsFilterPtr_ tmp(FilterFactory<MODEL>::create(os, confs[jj], qcflags, obserr));
+      ObsFilterPtr_ tmp(FilterFactory<OBS>::create(os, confs[jj], qcflags, obserr));
       geovars_ += tmp->requiredVars();
       diagvars_ += tmp->requiredHdiagnostics();
       filters_.push_back(tmp);
@@ -105,20 +105,20 @@ ObsFilters<MODEL>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration &
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-ObsFilters<MODEL>::ObsFilters() : filters_(), geovars_(), diagvars_() {}
+template <typename OBS>
+ObsFilters<OBS>::ObsFilters() : filters_(), geovars_(), diagvars_() {}
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-ObsFilters<MODEL>::~ObsFilters() {
+template <typename OBS>
+ObsFilters<OBS>::~ObsFilters() {
   Log::trace() << "ObsFilters::~ObsFilters destructed" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ObsFilters<MODEL>::preProcess() const {
+template<typename OBS>
+void ObsFilters<OBS>::preProcess() const {
   for (std::size_t jj = 0; jj < filters_.size(); ++jj) {
     filters_.at(jj)->preProcess();
   }
@@ -126,8 +126,8 @@ void ObsFilters<MODEL>::preProcess() const {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ObsFilters<MODEL>::priorFilter(const GeoVaLs_ & gv) const {
+template<typename OBS>
+void ObsFilters<OBS>::priorFilter(const GeoVaLs_ & gv) const {
   for (std::size_t jj = 0; jj < filters_.size(); ++jj) {
     filters_.at(jj)->priorFilter(gv);
   }
@@ -135,8 +135,8 @@ void ObsFilters<MODEL>::priorFilter(const GeoVaLs_ & gv) const {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ObsFilters<MODEL>::postFilter(const ObsVector_ & hofx, const ObsDiags_ & diags) const {
+template<typename OBS>
+void ObsFilters<OBS>::postFilter(const ObsVector_ & hofx, const ObsDiags_ & diags) const {
   for (std::size_t jj = 0; jj < filters_.size(); ++jj) {
     filters_.at(jj)->postFilter(hofx, diags);
   }
@@ -144,8 +144,8 @@ void ObsFilters<MODEL>::postFilter(const ObsVector_ & hofx, const ObsDiags_ & di
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void ObsFilters<MODEL>::print(std::ostream & os) const {
+template <typename OBS>
+void ObsFilters<OBS>::print(std::ostream & os) const {
   os << "ObsFilters: " << filters_.size() << " elements:" << std::endl;
   for (std::size_t jj = 0; jj < filters_.size(); ++jj) {
     os << *filters_.at(jj) << std::endl;

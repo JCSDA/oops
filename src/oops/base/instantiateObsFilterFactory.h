@@ -13,8 +13,8 @@
 
 namespace oops {
 
-template <typename MODEL> void instantiateObsFilterFactory() {
-  static FilterMaker<MODEL, GeoVaLsWriter<MODEL> >   makerGVWriter_("GOMsaver");
+template <typename OBS> void instantiateObsFilterFactory() {
+  static FilterMaker<OBS, GeoVaLsWriter<OBS> >   makerGVWriter_("GOMsaver");
 }
 
 }  // namespace oops

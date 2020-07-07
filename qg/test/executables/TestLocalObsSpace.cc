@@ -11,6 +11,6 @@
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  test::LocalObsSpace<qg::QgTraits> tests;
+  test::LocalObsSpace<qg::QgObsTraits> tests;
   return run.execute(tests);
 }

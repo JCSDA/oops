@@ -33,9 +33,9 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testConstructor() {
-  typedef ObsTestsFixture<MODEL>  Test_;
-  typedef oops::LinearObsOperator<MODEL>  LinearObsOperator_;
+template <typename OBS> void testConstructor() {
+  typedef ObsTestsFixture<OBS>  Test_;
+  typedef oops::LinearObsOperator<OBS>  LinearObsOperator_;
 
   const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
   std::vector<eckit::LocalConfiguration> conf;
@@ -57,15 +57,15 @@ template <typename MODEL> void testConstructor() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testLinearity() {
-  typedef ObsTestsFixture<MODEL>         Test_;
-  typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
-  typedef oops::ObsAuxControl<MODEL>     ObsAuxCtrl_;
-  typedef oops::ObsAuxIncrement<MODEL>   ObsAuxIncr_;
-  typedef oops::ObsAuxCovariance<MODEL>  ObsAuxCov_;
-  typedef oops::ObsOperator<MODEL>       ObsOperator_;
-  typedef oops::LinearObsOperator<MODEL> LinearObsOperator_;
-  typedef oops::ObsVector<MODEL>         ObsVector_;
+template <typename OBS> void testLinearity() {
+  typedef ObsTestsFixture<OBS>         Test_;
+  typedef oops::GeoVaLs<OBS>           GeoVaLs_;
+  typedef oops::ObsAuxControl<OBS>     ObsAuxCtrl_;
+  typedef oops::ObsAuxIncrement<OBS>   ObsAuxIncr_;
+  typedef oops::ObsAuxCovariance<OBS>  ObsAuxCov_;
+  typedef oops::ObsOperator<OBS>       ObsOperator_;
+  typedef oops::LinearObsOperator<OBS> LinearObsOperator_;
+  typedef oops::ObsVector<OBS>         ObsVector_;
 
   const double zero = 0.0;
   const double coef = 3.14;
@@ -135,15 +135,15 @@ template <typename MODEL> void testLinearity() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testAdjoint() {
-  typedef ObsTestsFixture<MODEL> Test_;
-  typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
-  typedef oops::ObsOperator<MODEL>       ObsOperator_;
-  typedef oops::LinearObsOperator<MODEL> LinearObsOperator_;
-  typedef oops::ObsAuxControl<MODEL>     ObsAuxCtrl_;
-  typedef oops::ObsAuxIncrement<MODEL>   ObsAuxIncr_;
-  typedef oops::ObsAuxCovariance<MODEL>  ObsAuxCov_;
-  typedef oops::ObsVector<MODEL>         ObsVector_;
+template <typename OBS> void testAdjoint() {
+  typedef ObsTestsFixture<OBS> Test_;
+  typedef oops::GeoVaLs<OBS>           GeoVaLs_;
+  typedef oops::ObsOperator<OBS>       ObsOperator_;
+  typedef oops::LinearObsOperator<OBS> LinearObsOperator_;
+  typedef oops::ObsAuxControl<OBS>     ObsAuxCtrl_;
+  typedef oops::ObsAuxIncrement<OBS>   ObsAuxIncr_;
+  typedef oops::ObsAuxCovariance<OBS>  ObsAuxCov_;
+  typedef oops::ObsVector<OBS>         ObsVector_;
 
   const double zero = 0.0;
   const double tol = TestEnvironment::config().getDouble("LinearObsOpTest.toleranceAD");
@@ -215,17 +215,17 @@ template <typename MODEL> void testAdjoint() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testTangentLinear() {
+template <typename OBS> void testTangentLinear() {
   // Test  ||(hop(x+alpha*dx)-hop(x)) - hoptl(alpha*dx)|| < tol
-  typedef ObsTestsFixture<MODEL>         Test_;
-  typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
-  typedef oops::ObsDiagnostics<MODEL>    ObsDiags_;
-  typedef oops::ObsAuxControl<MODEL>     ObsAuxCtrl_;
-  typedef oops::ObsAuxIncrement<MODEL>   ObsAuxIncr_;
-  typedef oops::ObsAuxCovariance<MODEL>  ObsAuxCov_;
-  typedef oops::LinearObsOperator<MODEL> LinearObsOperator_;
-  typedef oops::ObsOperator<MODEL>       ObsOperator_;
-  typedef oops::ObsVector<MODEL>         ObsVector_;
+  typedef ObsTestsFixture<OBS>         Test_;
+  typedef oops::GeoVaLs<OBS>           GeoVaLs_;
+  typedef oops::ObsDiagnostics<OBS>    ObsDiags_;
+  typedef oops::ObsAuxControl<OBS>     ObsAuxCtrl_;
+  typedef oops::ObsAuxIncrement<OBS>   ObsAuxIncr_;
+  typedef oops::ObsAuxCovariance<OBS>  ObsAuxCov_;
+  typedef oops::LinearObsOperator<OBS> LinearObsOperator_;
+  typedef oops::ObsOperator<OBS>       ObsOperator_;
+  typedef oops::ObsVector<OBS>         ObsVector_;
 
   const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
   std::vector<eckit::LocalConfiguration> conf;
@@ -317,25 +317,25 @@ template <typename MODEL> void testTangentLinear() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename OBS>
 class LinearObsOperator : public oops::Test {
  public:
   LinearObsOperator() {}
   virtual ~LinearObsOperator() {}
  private:
-  std::string testid() const {return "test::LinearObsOperator<" + MODEL::name() + ">";}
+  std::string testid() const {return "test::LinearObsOperator<" + OBS::name() + ">";}
 
   void register_tests() const {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/GeometryIterator/testConstructor")
-      { testConstructor<MODEL>(); });
+      { testConstructor<OBS>(); });
     ts.emplace_back(CASE("interface/GeometryIterator/testLinearity")
-      { testLinearity<MODEL>(); });
+      { testLinearity<OBS>(); });
     ts.emplace_back(CASE("interface/GeometryIterator/testTangentLinear")
-      { testTangentLinear<MODEL>(); });
+      { testTangentLinear<OBS>(); });
     ts.emplace_back(CASE("interface/GeometryIterator/testAdjoint")
-      { testAdjoint<MODEL>(); });
+      { testAdjoint<OBS>(); });
   }
 };
 

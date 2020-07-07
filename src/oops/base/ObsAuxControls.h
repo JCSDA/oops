@@ -23,10 +23,10 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename OBS>
 class ObsAuxControls : public util::Printable {
-  typedef ObsAuxControl<MODEL>       ObsAuxControl_;
-  typedef ObsSpaces<MODEL>           ObsSpaces_;
+  typedef ObsAuxControl<OBS>       ObsAuxControl_;
+  typedef ObsSpaces<OBS>           ObsSpaces_;
 
  public:
   static const std::string classname() {return "oops::ObsAuxControls";}
@@ -54,8 +54,8 @@ class ObsAuxControls : public util::Printable {
 
 // =============================================================================
 
-template<typename MODEL>
-ObsAuxControls<MODEL>::ObsAuxControls(const ObsSpaces_ & odb, const eckit::Configuration & conf)
+template<typename OBS>
+ObsAuxControls<OBS>::ObsAuxControls(const ObsSpaces_ & odb, const eckit::Configuration & conf)
   : auxs_(0)
 {
   std::vector<eckit::LocalConfiguration> obsconf;
@@ -68,49 +68,49 @@ ObsAuxControls<MODEL>::ObsAuxControls(const ObsSpaces_ & odb, const eckit::Confi
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-ObsAuxControls<MODEL>::ObsAuxControls(const ObsAuxControls & other, const bool copy)
+template<typename OBS>
+ObsAuxControls<OBS>::ObsAuxControls(const ObsAuxControls & other, const bool copy)
   : auxs_(other.size())
 {
-  Log::trace() << "ObsAuxControls<MODEL>::ObsAuxControls copy starting" << std::endl;
+  Log::trace() << "ObsAuxControls<OBS>::ObsAuxControls copy starting" << std::endl;
   for (std::size_t jobs = 0; jobs < other.size(); ++jobs) {
     auxs_[jobs].reset(new ObsAuxControl_(other[jobs], copy));
   }
-  Log::trace() << "ObsAuxControls<MODEL>::ObsAuxControls copy done" << std::endl;
+  Log::trace() << "ObsAuxControls<OBS>::ObsAuxControls copy done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-ObsAuxControls<MODEL>::~ObsAuxControls() {
-  Log::trace() << "ObsAuxControls<MODEL>::~ObsAuxControls starting" << std::endl;
+template<typename OBS>
+ObsAuxControls<OBS>::~ObsAuxControls() {
+  Log::trace() << "ObsAuxControls<OBS>::~ObsAuxControls starting" << std::endl;
   for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) auxs_[jobs].reset();
-  Log::trace() << "ObsAuxControls<MODEL>::~ObsAuxControls done" << std::endl;
+  Log::trace() << "ObsAuxControls<OBS>::~ObsAuxControls done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ObsAuxControls<MODEL>::read(const eckit::Configuration & conf) {
-  Log::trace() << "ObsAuxControls<MODEL>::read starting" << std::endl;
+template<typename OBS>
+void ObsAuxControls<OBS>::read(const eckit::Configuration & conf) {
+  Log::trace() << "ObsAuxControls<OBS>::read starting" << std::endl;
   for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) auxs_[jobs]->read(conf);
-  Log::trace() << "ObsAuxControls<MODEL>::read done" << std::endl;
+  Log::trace() << "ObsAuxControls<OBS>::read done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ObsAuxControls<MODEL>::write(const eckit::Configuration & conf) const {
-  Log::trace() << "ObsAuxControls<MODEL>::write starting" << std::endl;
+template<typename OBS>
+void ObsAuxControls<OBS>::write(const eckit::Configuration & conf) const {
+  Log::trace() << "ObsAuxControls<OBS>::write starting" << std::endl;
   for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) auxs_[jobs]->write(conf);
-  Log::trace() << "ObsAuxControls<MODEL>::write done" << std::endl;
+  Log::trace() << "ObsAuxControls<OBS>::write done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-double ObsAuxControls<MODEL>::norm() const {
-  Log::trace() << "ObsAuxControls<MODEL>::norm starting" << std::endl;
+template<typename OBS>
+double ObsAuxControls<OBS>::norm() const {
+  Log::trace() << "ObsAuxControls<OBS>::norm starting" << std::endl;
   double zz =  static_cast<double>(0.0);
   std::size_t ii = 0;
   double norm;
@@ -121,14 +121,14 @@ double ObsAuxControls<MODEL>::norm() const {
       ++ii;
     }
   }
-  Log::trace() << "ObsAuxControls<MODEL>::norm done" << std::endl;
+  Log::trace() << "ObsAuxControls<OBS>::norm done" << std::endl;
   return std::sqrt(zz/ii);
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ObsAuxControls<MODEL>::print(std::ostream & os) const {
+template<typename OBS>
+void ObsAuxControls<OBS>::print(std::ostream & os) const {
   for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) os << *auxs_[jobs];
 }
 

@@ -49,15 +49,15 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> class CostFct4DEnsVar : public CostFunction<MODEL> {
-  typedef Increment<MODEL>           Increment_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef ControlVariable<MODEL>     CtrlVar_;
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef Geometry<MODEL>            Geometry_;
-  typedef State<MODEL>               State_;
-  typedef Model<MODEL>               Model_;
-  typedef VariableChangeBase<MODEL>  ChangeVar_;
+template<typename MODEL, typename OBS> class CostFct4DEnsVar : public CostFunction<MODEL, OBS> {
+  typedef Increment<MODEL>                Increment_;
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef ControlVariable<MODEL, OBS>     CtrlVar_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef Geometry<MODEL>                 Geometry_;
+  typedef State<MODEL>                    State_;
+  typedef Model<MODEL>                    Model_;
+  typedef VariableChangeBase<MODEL>       ChangeVar_;
   typedef LinearVariableChangeBase<MODEL> ChangeVarTLAD_;
 
  public:
@@ -79,8 +79,8 @@ template<typename MODEL> class CostFct4DEnsVar : public CostFunction<MODEL> {
 
   CostJb4D<MODEL>     * newJb(const eckit::Configuration &, const Geometry_ &,
                               const CtrlVar_ &) const override;
-  CostJo<MODEL>       * newJo(const eckit::Configuration &) const override;
-  CostTermBase<MODEL> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
+  CostJo<MODEL, OBS>       * newJo(const eckit::Configuration &) const override;
+  CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
   void doLinearize(const Geometry_ &, const eckit::Configuration &,
                    const CtrlVar_ &, const CtrlVar_ &) override;
   const Geometry_ & geometry() const override {return resol_;}
@@ -100,10 +100,10 @@ template<typename MODEL> class CostFct4DEnsVar : public CostFunction<MODEL> {
 
 // =============================================================================
 
-template<typename MODEL>
-CostFct4DEnsVar<MODEL>::CostFct4DEnsVar(const eckit::Configuration & config,
+template<typename MODEL, typename OBS>
+CostFct4DEnsVar<MODEL, OBS>::CostFct4DEnsVar(const eckit::Configuration & config,
                                         const eckit::mpi::Comm & comm)
-  : CostFunction<MODEL>::CostFunction(config), comm_(comm),
+  : CostFunction<MODEL, OBS>::CostFunction(config), comm_(comm),
     resol_(eckit::LocalConfiguration(config, "resolution"), comm),
     model_(resol_, eckit::LocalConfiguration(config, "model")),
     ctlvars_(config), an2model_(), inc2model_()
@@ -125,8 +125,8 @@ CostFct4DEnsVar<MODEL>::CostFct4DEnsVar(const eckit::Configuration & config,
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-CostJb4D<MODEL> * CostFct4DEnsVar<MODEL>::newJb(const eckit::Configuration & jbConf,
+template <typename MODEL, typename OBS>
+CostJb4D<MODEL> * CostFct4DEnsVar<MODEL, OBS>::newJb(const eckit::Configuration & jbConf,
                                                 const Geometry_ & resol,
                                                 const CtrlVar_ & xb) const {
   return new CostJb4D<MODEL>(jbConf, resol, ctlvars_, xb.state());
@@ -134,25 +134,25 @@ CostJb4D<MODEL> * CostFct4DEnsVar<MODEL>::newJb(const eckit::Configuration & jbC
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-CostJo<MODEL> * CostFct4DEnsVar<MODEL>::newJo(const eckit::Configuration & joConf) const {
-  return new CostJo<MODEL>(joConf, comm_, windowBegin_, windowEnd_, windowSub_, true);
+template <typename MODEL, typename OBS>
+CostJo<MODEL, OBS> * CostFct4DEnsVar<MODEL, OBS>::newJo(const eckit::Configuration & joConf) const {
+  return new CostJo<MODEL, OBS>(joConf, comm_, windowBegin_, windowEnd_, windowSub_, true);
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-CostTermBase<MODEL> * CostFct4DEnsVar<MODEL>::newJc(const eckit::Configuration & jcConf,
+template <typename MODEL, typename OBS>
+CostTermBase<MODEL, OBS> * CostFct4DEnsVar<MODEL, OBS>::newJc(const eckit::Configuration & jcConf,
                                                     const Geometry_ & resol) const {
   const eckit::LocalConfiguration jcdfi(jcConf, "jcdfi");
   const util::DateTime vt(windowBegin_ + windowLength_/2);
-  return new CostJcDFI<MODEL>(jcdfi, resol, vt, windowLength_, windowSub_);
+  return new CostJcDFI<MODEL, OBS>(jcdfi, resol, vt, windowLength_, windowSub_);
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void CostFct4DEnsVar<MODEL>::runNL(CtrlVar_ & xx,
+template <typename MODEL, typename OBS>
+void CostFct4DEnsVar<MODEL, OBS>::runNL(CtrlVar_ & xx,
                                    PostProcessor<State_> & post) const {
   State_ xm(xx.state()[0].geometry(), model_.variables(), windowBegin_);
   post.initialize(xm, windowEnd_, windowSub_);
@@ -168,8 +168,8 @@ void CostFct4DEnsVar<MODEL>::runNL(CtrlVar_ & xx,
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostFct4DEnsVar<MODEL>::doLinearize(const Geometry_ & resol,
+template<typename MODEL, typename OBS>
+void CostFct4DEnsVar<MODEL, OBS>::doLinearize(const Geometry_ & resol,
                                          const eckit::Configuration & innerConf,
                                          const CtrlVar_ & bg, const CtrlVar_ & fg) {
   Log::trace() << "CostFct4DEnsVar::doLinearize start" << std::endl;
@@ -183,8 +183,8 @@ void CostFct4DEnsVar<MODEL>::doLinearize(const Geometry_ & resol,
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void CostFct4DEnsVar<MODEL>::runTLM(CtrlInc_ & dx,
+template <typename MODEL, typename OBS>
+void CostFct4DEnsVar<MODEL, OBS>::runTLM(CtrlInc_ & dx,
                                     PostProcessorTLAD<MODEL> & cost,
                                     PostProcessor<Increment_> post,
                                     const bool) const {
@@ -207,8 +207,8 @@ void CostFct4DEnsVar<MODEL>::runTLM(CtrlInc_ & dx,
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void CostFct4DEnsVar<MODEL>::zeroAD(CtrlInc_ & dx) const {
+template <typename MODEL, typename OBS>
+void CostFct4DEnsVar<MODEL, OBS>::zeroAD(CtrlInc_ & dx) const {
   util::DateTime now(windowBegin_);
   for (unsigned int jsub = 0; jsub <= ncontrol_; ++jsub) {
     dx.state()[jsub].zero(now);
@@ -220,8 +220,8 @@ void CostFct4DEnsVar<MODEL>::zeroAD(CtrlInc_ & dx) const {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void CostFct4DEnsVar<MODEL>::runADJ(CtrlInc_ & dx,
+template <typename MODEL, typename OBS>
+void CostFct4DEnsVar<MODEL, OBS>::runADJ(CtrlInc_ & dx,
                                     PostProcessorTLAD<MODEL> & cost,
                                     PostProcessor<Increment_> post,
                                     const bool) const {
@@ -246,8 +246,8 @@ void CostFct4DEnsVar<MODEL>::runADJ(CtrlInc_ & dx,
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostFct4DEnsVar<MODEL>::addIncr(CtrlVar_ & xx, const CtrlInc_ & dx,
+template<typename MODEL, typename OBS>
+void CostFct4DEnsVar<MODEL, OBS>::addIncr(CtrlVar_ & xx, const CtrlInc_ & dx,
                                      PostProcessor<Increment_> &) const {
   for (unsigned jsub = 0; jsub <= ncontrol_; ++jsub) {
     xx.state()[jsub] += dx.state()[jsub];

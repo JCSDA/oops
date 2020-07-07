@@ -43,16 +43,16 @@ namespace test {
 
 // =================================================================================================
 
-template <typename MODEL> class LinearGetValuesFixture : private boost::noncopyable {
-  typedef eckit::LocalConfiguration     LocalConfig_;
-  typedef oops::GeoVaLs<MODEL>          GeoVaLs_;
-  typedef oops::Geometry<MODEL>         Geometry_;
-  typedef oops::GetValues<MODEL>        GetValues_;
-  typedef oops::LinearGetValues<MODEL>  LinearGetValues_;
-  typedef oops::Locations<MODEL>        Locations_;
-  typedef oops::State<MODEL>            State_;
-  typedef oops::Variables               Variables_;
-  typedef util::DateTime                DateTime_;
+template <typename MODEL, typename OBS> class LinearGetValuesFixture : private boost::noncopyable {
+  typedef eckit::LocalConfiguration           LocalConfig_;
+  typedef oops::GeoVaLs<OBS>                 GeoVaLs_;
+  typedef oops::Geometry<MODEL>              Geometry_;
+  typedef oops::GetValues<MODEL, OBS>        GetValues_;
+  typedef oops::LinearGetValues<MODEL, OBS>  LinearGetValues_;
+  typedef oops::Locations<OBS>               Locations_;
+  typedef oops::State<MODEL>                 State_;
+  typedef oops::Variables                    Variables_;
+  typedef util::DateTime                     DateTime_;
 
  public:
   static const DateTime_         & time()            {return *getInstance().time_;}
@@ -69,12 +69,12 @@ template <typename MODEL> class LinearGetValuesFixture : private boost::noncopya
   static const Variables_        & geovalvars()      {return *getInstance().geovalvars_;}
 
  private:
-  static LinearGetValuesFixture<MODEL>& getInstance() {
-    static LinearGetValuesFixture<MODEL> theLinearGetValuesFixture;
+  static LinearGetValuesFixture<MODEL, OBS>& getInstance() {
+    static LinearGetValuesFixture<MODEL, OBS> theLinearGetValuesFixture;
     return theLinearGetValuesFixture;
   }
 
-  LinearGetValuesFixture<MODEL>() {
+  LinearGetValuesFixture<MODEL, OBS>() {
     testconf_.reset(new LocalConfig_(TestEnvironment::config(), "LinearGetValuesTest"));
 
     // Geometry
@@ -115,7 +115,7 @@ template <typename MODEL> class LinearGetValuesFixture : private boost::noncopya
     lineargetvalues_->setTrajectory(*state_, *timebeg_, *timeend_, gvtraj);
   }
 
-  ~LinearGetValuesFixture<MODEL>() {}
+  ~LinearGetValuesFixture<MODEL, OBS>() {}
 
   std::unique_ptr<const DateTime_>        time_;
   std::unique_ptr<const DateTime_>        timebeg_;
@@ -133,9 +133,9 @@ template <typename MODEL> class LinearGetValuesFixture : private boost::noncopya
 
 // =================================================================================================
 
-template <typename MODEL> void testLinearGetValuesConstructor() {
-  typedef LinearGetValuesFixture<MODEL>  Test_;
-  typedef oops::LinearGetValues<MODEL>   LinearGetValues_;
+template <typename MODEL, typename OBS> void testLinearGetValuesConstructor() {
+  typedef LinearGetValuesFixture<MODEL, OBS>  Test_;
+  typedef oops::LinearGetValues<MODEL, OBS>   LinearGetValues_;
 
   std::unique_ptr<const LinearGetValues_> lineargetvalues(new LinearGetValues_(Test_::resol(),
                                                                                Test_::locs()));
@@ -147,10 +147,10 @@ template <typename MODEL> void testLinearGetValuesConstructor() {
 
 // -------------------------------------------------------------------------------------------------
 
-template <typename MODEL> void testLinearGetValuesZeroPert() {
-  typedef LinearGetValuesFixture<MODEL>  Test_;
-  typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
-  typedef oops::Increment<MODEL>         Increment_;
+template <typename MODEL, typename OBS> void testLinearGetValuesZeroPert() {
+  typedef LinearGetValuesFixture<MODEL, OBS>  Test_;
+  typedef oops::GeoVaLs<OBS>                  GeoVaLs_;
+  typedef oops::Increment<MODEL>              Increment_;
 
   Increment_ dx(Test_::resol(), Test_::statevars(), Test_::time());
   dx.zero();
@@ -172,10 +172,10 @@ template <typename MODEL> void testLinearGetValuesZeroPert() {
 
 // -------------------------------------------------------------------------------------------------
 
-template <typename MODEL> void testLinearGetValuesLinearity() {
-  typedef LinearGetValuesFixture<MODEL>  Test_;
-  typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
-  typedef oops::Increment<MODEL>         Increment_;
+template <typename MODEL, typename OBS> void testLinearGetValuesLinearity() {
+  typedef LinearGetValuesFixture<MODEL, OBS>  Test_;
+  typedef oops::GeoVaLs<OBS>                  GeoVaLs_;
+  typedef oops::Increment<MODEL>              Increment_;
 
   const double zz = 3.1415;
 
@@ -204,11 +204,11 @@ template <typename MODEL> void testLinearGetValuesLinearity() {
 
 // -------------------------------------------------------------------------------------------------
 
-template <typename MODEL> void testLinearGetValuesLinearApproximation() {
-  typedef LinearGetValuesFixture<MODEL>  Test_;
-  typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
-  typedef oops::Increment<MODEL>         Increment_;
-  typedef oops::State<MODEL>             State_;
+template <typename MODEL, typename OBS> void testLinearGetValuesLinearApproximation() {
+  typedef LinearGetValuesFixture<MODEL, OBS>  Test_;
+  typedef oops::GeoVaLs<OBS>                  GeoVaLs_;
+  typedef oops::Increment<MODEL>              Increment_;
+  typedef oops::State<MODEL>                  State_;
 
   const unsigned int ntest = Test_::testconf().getInt("numiterTL", 10);
   double zz = Test_::testconf().getDouble("firstmulTL", 1.0e-2);
@@ -266,10 +266,10 @@ template <typename MODEL> void testLinearGetValuesLinearApproximation() {
 
 // -------------------------------------------------------------------------------------------------
 
-template <typename MODEL> void testLinearGetValuesAdjoint() {
-  typedef LinearGetValuesFixture<MODEL>  Test_;
-  typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
-  typedef oops::Increment<MODEL>         Increment_;
+template <typename MODEL, typename OBS> void testLinearGetValuesAdjoint() {
+  typedef LinearGetValuesFixture<MODEL, OBS>  Test_;
+  typedef oops::GeoVaLs<OBS>                  GeoVaLs_;
+  typedef oops::Increment<MODEL>              Increment_;
 
   Increment_ dx_in(Test_::resol(), Test_::statevars(), Test_::time());
   Increment_ dx_ou(Test_::resol(), Test_::statevars(), Test_::time());
@@ -303,28 +303,29 @@ template <typename MODEL> void testLinearGetValuesAdjoint() {
 
 // =================================================================================================
 
-template <typename MODEL>
+template <typename MODEL, typename OBS>
 class LinearGetValues : public oops::Test {
  public:
   LinearGetValues() {}
   virtual ~LinearGetValues() {}
 
  private:
-  std::string testid() const {return "test::LinearGetValues<" + MODEL::name() + ">";}
+  std::string testid() const {return "test::LinearGetValues<" + MODEL::name() + ", "
+                                                              + OBS::name() + ">";}
 
   void register_tests() const {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/GeometryIterator/testLinearGetValuesConstructor")
-      { testLinearGetValuesConstructor<MODEL>(); });
+      { testLinearGetValuesConstructor<MODEL, OBS>(); });
     ts.emplace_back(CASE("interface/GeometryIterator/testLinearGetValuesZeroPert")
-      { testLinearGetValuesZeroPert<MODEL>(); });
+      { testLinearGetValuesZeroPert<MODEL, OBS>(); });
     ts.emplace_back(CASE("interface/GeometryIterator/testLinearGetValuesLinearity")
-      { testLinearGetValuesLinearity<MODEL>(); });
+      { testLinearGetValuesLinearity<MODEL, OBS>(); });
     ts.emplace_back(CASE("interface/GeometryIterator/testLinearGetValuesLinearApproximation")
-      { testLinearGetValuesLinearApproximation<MODEL>(); });
+      { testLinearGetValuesLinearApproximation<MODEL, OBS>(); });
     ts.emplace_back(CASE("interface/GeometryIterator/testLinearGetValuesAdjoint")
-      { testLinearGetValuesAdjoint<MODEL>(); });
+      { testLinearGetValuesAdjoint<MODEL, OBS>(); });
   }
 };
 

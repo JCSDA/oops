@@ -37,14 +37,14 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> class DualMinimizer : public Minimizer<MODEL> {
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef BMatrix<MODEL>             Bmat_;
-  typedef DualVector<MODEL>          Dual_;
-  typedef HBHtMatrix<MODEL>          HBHt_;
-  typedef Minimizer<MODEL>           Minimizer_;
-  typedef RinvMatrix<MODEL>          Rinv_;
+template<typename MODEL, typename OBS> class DualMinimizer : public Minimizer<MODEL, OBS> {
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef BMatrix<MODEL, OBS>             Bmat_;
+  typedef DualVector<MODEL, OBS>          Dual_;
+  typedef HBHtMatrix<MODEL, OBS>          HBHt_;
+  typedef Minimizer<MODEL, OBS>           Minimizer_;
+  typedef RinvMatrix<MODEL, OBS>          Rinv_;
 
  public:
   explicit DualMinimizer(const CostFct_ & J): Minimizer_(J), J_(J), gradJb_() {}
@@ -62,8 +62,9 @@ template<typename MODEL> class DualMinimizer : public Minimizer<MODEL> {
 
 // =============================================================================
 
-template<typename MODEL>
-ControlIncrement<MODEL> * DualMinimizer<MODEL>::doMinimize(const eckit::Configuration & config) {
+template<typename MODEL, typename OBS>
+ControlIncrement<MODEL, OBS> *
+DualMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
   int ninner = config.getInt("ninner");
   double gnreduc = config.getDouble("gradient_norm_reduction");
 
@@ -87,8 +88,8 @@ ControlIncrement<MODEL> * DualMinimizer<MODEL>::doMinimize(const eckit::Configur
   const Bmat_ B(J_);
   const HBHt_ HBHt(J_, runOnlineAdjTest);
   const Rinv_ Rinv(J_);
-  const HMatrix<MODEL> H(J_);
-  const HtMatrix<MODEL> Ht(J_);
+  const HMatrix<MODEL, OBS> H(J_);
+  const HtMatrix<MODEL, OBS> Ht(J_);
 
 // Define minimisation starting point in dual space
   Dual_ vv;

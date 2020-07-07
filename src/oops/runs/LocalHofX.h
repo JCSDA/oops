@@ -34,21 +34,21 @@
 
 namespace oops {
 
-template <typename MODEL> class LocalHofX : public Application {
+template <typename MODEL, typename OBS> class LocalHofX : public Application {
   typedef Geometry<MODEL>            Geometry_;
   typedef GeometryIterator<MODEL>    GeometryIterator_;
   typedef Model<MODEL>               Model_;
   typedef ModelAuxControl<MODEL>     ModelAux_;
-  typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
-  typedef Observations<MODEL>        Observations_;
-  typedef ObsSpaces<MODEL>           ObsSpaces_;
-  typedef QCData<MODEL>              QCData_;
+  typedef ObsAuxControls<OBS>        ObsAuxCtrls_;
+  typedef Observations<OBS>          Observations_;
+  typedef ObsSpaces<OBS>             ObsSpaces_;
+  typedef QCData<OBS>                QCData_;
   typedef State<MODEL>               State_;
 
  public:
 // -----------------------------------------------------------------------------
   explicit LocalHofX(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {
-    instantiateObsFilterFactory<MODEL>();
+    instantiateObsFilterFactory<OBS>();
   }
 // -----------------------------------------------------------------------------
   virtual ~LocalHofX() {}
@@ -96,7 +96,7 @@ template <typename MODEL> class LocalHofX : public Application {
     std::vector<eckit::geometry::Point2> centers;
     std::vector<std::shared_ptr<ObsSpaces_>> localobs;
     std::vector<std::shared_ptr<ObsAuxCtrls_>> localobias;
-    std::vector<std::shared_ptr<Observers<MODEL> >> pobs;
+    std::vector<std::shared_ptr<Observers<MODEL, OBS> >> pobs;
     for (std::size_t jj = 0; jj < centerconf.size(); ++jj) {
        double lon = centerconf[jj].getDouble("lon");
        double lat = centerconf[jj].getDouble("lat");
@@ -111,8 +111,8 @@ template <typename MODEL> class LocalHofX : public Application {
        localobias.push_back(lobias);
        QCData_ qc(*localobs[jj]);
        //  Setup observer
-       std::shared_ptr<Observers<MODEL>>
-          lpobs(new Observers<MODEL>(obsconf, *localobs[jj], *localobias[jj], qc));
+       std::shared_ptr<Observers<MODEL, OBS>>
+          lpobs(new Observers<MODEL, OBS>(obsconf, *localobs[jj], *localobias[jj], qc));
        pobs.push_back(lpobs);
        post.enrollProcessor(pobs[jj]);
     }
@@ -136,7 +136,7 @@ template <typename MODEL> class LocalHofX : public Application {
 // -----------------------------------------------------------------------------
  private:
   std::string appname() const {
-    return "oops::LocalHofX<" + MODEL::name() + ">";
+    return "oops::LocalHofX<" + MODEL::name() + ", " + OBS::name() + ">";
   }
 // -----------------------------------------------------------------------------
 };

@@ -23,13 +23,13 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-class GeoVaLsWriter : public ObsFilterBase<MODEL> {
-  typedef GeoVaLs<MODEL>             GeoVaLs_;
-  typedef ObsDiagnostics<MODEL>      ObsDiags_;
-  typedef ObsSpace<MODEL>            ObsSpace_;
-  typedef ObsVector<MODEL>           ObsVector_;
-  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<MODEL, DATA> >;
+template <typename OBS>
+class GeoVaLsWriter : public ObsFilterBase<OBS> {
+  typedef GeoVaLs<OBS>             GeoVaLs_;
+  typedef ObsDiagnostics<OBS>      ObsDiags_;
+  typedef ObsSpace<OBS>            ObsSpace_;
+  typedef ObsVector<OBS>           ObsVector_;
+  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<OBS, DATA> >;
 
  public:
   GeoVaLsWriter(const ObsSpace_ &, const eckit::Configuration & conf,
@@ -58,8 +58,8 @@ class GeoVaLsWriter : public ObsFilterBase<MODEL> {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void GeoVaLsWriter<MODEL>::print(std::ostream & os) const {
+template <typename OBS>
+void GeoVaLsWriter<OBS>::print(std::ostream & os) const {
   os << "GeoVaLsWriter: " << conf_;
 }
 

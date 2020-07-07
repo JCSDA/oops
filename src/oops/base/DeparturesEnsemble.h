@@ -20,9 +20,9 @@ namespace oops {
 // -----------------------------------------------------------------------------
 
 /// \brief Ensemble of Departures (can hold ensemble perturbations in the observation space)
-template<typename MODEL> class DeparturesEnsemble {
-  typedef Departures<MODEL>          Departures_;
-  typedef ObsSpaces<MODEL>           ObsSpaces_;
+template<typename OBS> class DeparturesEnsemble {
+  typedef Departures<OBS>          Departures_;
+  typedef ObsSpaces<OBS>           ObsSpaces_;
  public:
   /// Creates ensemble of empty Departures size \p nens
   DeparturesEnsemble(const ObsSpaces_ &, const size_t nens);
@@ -44,8 +44,8 @@ template<typename MODEL> class DeparturesEnsemble {
 
 // ====================================================================================
 
-template<typename MODEL>
-DeparturesEnsemble<MODEL>::DeparturesEnsemble(const ObsSpaces_ & obsdb, const size_t nens)
+template<typename OBS>
+DeparturesEnsemble<OBS>::DeparturesEnsemble(const ObsSpaces_ & obsdb, const size_t nens)
       : ensemblePerturbs_() {
   ensemblePerturbs_.reserve(nens);
   for (size_t iens = 0; iens < nens; ++iens) {
@@ -56,8 +56,8 @@ DeparturesEnsemble<MODEL>::DeparturesEnsemble(const ObsSpaces_ & obsdb, const si
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-DeparturesEnsemble<MODEL>::DeparturesEnsemble(const ObsSpaces_ & local,
+template<typename OBS>
+DeparturesEnsemble<OBS>::DeparturesEnsemble(const ObsSpaces_ & local,
                                               const DeparturesEnsemble & other)
       : ensemblePerturbs_() {
   ensemblePerturbs_.reserve(other.size());
@@ -69,8 +69,8 @@ DeparturesEnsemble<MODEL>::DeparturesEnsemble(const ObsSpaces_ & local,
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-Eigen::MatrixXd DeparturesEnsemble<MODEL>::packEigen() const {
+template<typename OBS>
+Eigen::MatrixXd DeparturesEnsemble<OBS>::packEigen() const {
   std::size_t myNobs = ensemblePerturbs_[0].nobs();
   std::size_t myNens = ensemblePerturbs_.size();
 

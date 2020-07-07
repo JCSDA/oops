@@ -15,7 +15,8 @@
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-static oops::FilterMaker<L95Traits, oops::ObsFilter<L95Traits, QCmanager> > makerQCm_("QCmanager");
+static oops::FilterMaker<L95ObsTraits,
+       oops::ObsFilter<L95ObsTraits, QCmanager> > makerQCm_("QCmanager");
 // -----------------------------------------------------------------------------
 }  // namespace lorenz95
 

@@ -30,10 +30,10 @@ namespace oops {
  */
 
 // -----------------------------------------------------------------------------
-template<typename MODEL> class DualVector {
-  typedef Increment<MODEL>           Increment_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef Departures<MODEL>          Departures_;
+template<typename MODEL, typename OBS> class DualVector {
+  typedef Increment<MODEL>                Increment_;
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef Departures<OBS>                 Departures_;
 
  public:
   DualVector(): dxjb_(), dxjo_(), dxjc_(), ijo_(), ijc_(), size_(0) {}
@@ -74,8 +74,8 @@ template<typename MODEL> class DualVector {
 
 // =============================================================================
 
-template<typename MODEL>
-DualVector<MODEL>::DualVector(const DualVector & other)
+template<typename MODEL, typename OBS>
+DualVector<MODEL, OBS>::DualVector(const DualVector & other)
   : dxjb_(), dxjo_(), dxjc_(),
     ijo_(other.ijo_), ijc_(other.ijc_), size_(other.size_)
 {
@@ -92,8 +92,8 @@ DualVector<MODEL>::DualVector(const DualVector & other)
   }
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void DualVector<MODEL>::clear() {
+template<typename MODEL, typename OBS>
+void DualVector<MODEL, OBS>::clear() {
   dxjb_.reset();
   dxjo_.clear();
   dxjc_.clear();
@@ -102,8 +102,8 @@ void DualVector<MODEL>::clear() {
   size_ = 0;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void DualVector<MODEL>::append(GeneralizedDepartures * pv) {
+template<typename MODEL, typename OBS>
+void DualVector<MODEL, OBS>::append(GeneralizedDepartures * pv) {
 // Since there is no duck-typing in C++, we do it manually.
   Increment_ * pi = dynamic_cast<Increment_*>(pv);
   if (pi != 0) {
@@ -121,9 +121,9 @@ void DualVector<MODEL>::append(GeneralizedDepartures * pv) {
   ++size_;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
+template<typename MODEL, typename OBS>
 std::shared_ptr<const GeneralizedDepartures>
-DualVector<MODEL>::getv(const unsigned ii) const {
+DualVector<MODEL, OBS>::getv(const unsigned ii) const {
   ASSERT(ii < size_);
   std::shared_ptr<const GeneralizedDepartures> pv;
   for (unsigned jj = 0; jj < ijo_.size(); ++jj) {
@@ -136,8 +136,8 @@ DualVector<MODEL>::getv(const unsigned ii) const {
   return pv;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-DualVector<MODEL> & DualVector<MODEL>::operator=(const DualVector & rhs) {
+template<typename MODEL, typename OBS>
+DualVector<MODEL, OBS> & DualVector<MODEL, OBS>::operator=(const DualVector & rhs) {
   ASSERT(this->compatible(rhs));
   if (dxjb_ != 0) {
     *dxjb_ = *rhs.dxjb_;
@@ -151,8 +151,8 @@ DualVector<MODEL> & DualVector<MODEL>::operator=(const DualVector & rhs) {
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-DualVector<MODEL> & DualVector<MODEL>::operator+=(const DualVector & rhs) {
+template<typename MODEL, typename OBS>
+DualVector<MODEL, OBS> & DualVector<MODEL, OBS>::operator+=(const DualVector & rhs) {
   ASSERT(this->compatible(rhs));
   if (dxjb_ != 0) {
     *dxjb_ += *rhs.dxjb_;
@@ -166,8 +166,8 @@ DualVector<MODEL> & DualVector<MODEL>::operator+=(const DualVector & rhs) {
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-DualVector<MODEL> & DualVector<MODEL>::operator-=(const DualVector & rhs) {
+template<typename MODEL, typename OBS>
+DualVector<MODEL, OBS> & DualVector<MODEL, OBS>::operator-=(const DualVector & rhs) {
   ASSERT(this->compatible(rhs));
   if (dxjb_ != 0) {
     *dxjb_ -= *rhs.dxjb_;
@@ -181,8 +181,8 @@ DualVector<MODEL> & DualVector<MODEL>::operator-=(const DualVector & rhs) {
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-DualVector<MODEL> & DualVector<MODEL>::operator*=(const double zz) {
+template<typename MODEL, typename OBS>
+DualVector<MODEL, OBS> & DualVector<MODEL, OBS>::operator*=(const double zz) {
   if (dxjb_ != 0) {
     *dxjb_ *= zz;
   }
@@ -195,8 +195,8 @@ DualVector<MODEL> & DualVector<MODEL>::operator*=(const double zz) {
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void DualVector<MODEL>::zero() {
+template<typename MODEL, typename OBS>
+void DualVector<MODEL, OBS>::zero() {
   if (dxjb_ != 0) {
     dxjb_->zero();
   }
@@ -208,8 +208,8 @@ void DualVector<MODEL>::zero() {
   }
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void DualVector<MODEL>::axpy(const double zz, const DualVector & rhs) {
+template<typename MODEL, typename OBS>
+void DualVector<MODEL, OBS>::axpy(const double zz, const DualVector & rhs) {
   ASSERT(this->compatible(rhs));
   if (dxjb_ != 0) {
     dxjb_->axpy(zz, *rhs.dxjb_);
@@ -222,8 +222,8 @@ void DualVector<MODEL>::axpy(const double zz, const DualVector & rhs) {
   }
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-double DualVector<MODEL>::dot_product_with(const DualVector & x2) const {
+template<typename MODEL, typename OBS>
+double DualVector<MODEL, OBS>::dot_product_with(const DualVector & x2) const {
   ASSERT(this->compatible(x2));
   double zz = 0.0;
   if (dxjb_ != 0) {
@@ -238,8 +238,8 @@ double DualVector<MODEL>::dot_product_with(const DualVector & x2) const {
   return zz;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-bool DualVector<MODEL>::compatible(const DualVector & other) const {
+template<typename MODEL, typename OBS>
+bool DualVector<MODEL, OBS>::compatible(const DualVector & other) const {
   bool lcheck = (dxjb_ == 0) == (other.dxjb_ == 0)
              && (dxjo_.size() == other.dxjo_.size())
              && (dxjc_.size() == other.dxjc_.size());

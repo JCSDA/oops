@@ -37,13 +37,13 @@
 
 namespace oops {
 
-template <typename MODEL>
-class LETKFSolverOOPS : public LETKFSolverBase<MODEL> {
-  typedef Departures<MODEL>         Departures_;
-  typedef DeparturesEnsemble<MODEL> DeparturesEnsemble_;
+template <typename MODEL, typename OBS>
+class LETKFSolverOOPS : public LETKFSolverBase<MODEL, OBS> {
+  typedef Departures<OBS>           Departures_;
+  typedef DeparturesEnsemble<OBS>   DeparturesEnsemble_;
   typedef GeometryIterator<MODEL>   GeometryIterator_;
   typedef IncrementEnsemble<MODEL>  IncrementEnsemble_;
-  typedef ObsErrors<MODEL>          ObsErrors_;
+  typedef ObsErrors<OBS>            ObsErrors_;
 
  public:
   /// Constructor (allocates Wa, wa, saves options from the config)
@@ -74,8 +74,8 @@ class LETKFSolverOOPS : public LETKFSolverBase<MODEL> {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-LETKFSolverOOPS<MODEL>::LETKFSolverOOPS(const eckit::Configuration & config,
+template <typename MODEL, typename OBS>
+LETKFSolverOOPS<MODEL, OBS>::LETKFSolverOOPS(const eckit::Configuration & config,
                                         size_t nens) : nens_(nens) {
   // read and parse options
   options_.deserialize(config);
@@ -111,8 +111,8 @@ LETKFSolverOOPS<MODEL>::LETKFSolverOOPS(const eckit::Configuration & config,
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void LETKFSolverOOPS<MODEL>::computeWeights(const Departures_ & dy,
+template <typename MODEL, typename OBS>
+void LETKFSolverOOPS<MODEL, OBS>::computeWeights(const Departures_ & dy,
                                             const DeparturesEnsemble_ & Yb,
                                             const ObsErrors_ & R) {
   // compute transformation matrix, save in Wa_, wa_, and trans_
@@ -165,8 +165,8 @@ void LETKFSolverOOPS<MODEL>::computeWeights(const Departures_ & dy,
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void LETKFSolverOOPS<MODEL>::applyWeights(const IncrementEnsemble_ & bkg_pert,
+template <typename MODEL, typename OBS>
+void LETKFSolverOOPS<MODEL, OBS>::applyWeights(const IncrementEnsemble_ & bkg_pert,
                                           IncrementEnsemble_ & ana_pert,
                                           const GeometryIterator_ & i) {
 // apply Wa_, wa_ (here combined in the trans_ matrix)

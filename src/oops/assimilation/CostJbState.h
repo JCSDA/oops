@@ -24,7 +24,6 @@ namespace util {
 namespace oops {
 
 // Forward declaration
-  template<typename MODEL> class ControlIncrement;
   template<typename MODEL> class Increment4D;
   template<typename MODEL> class State4D;
   template<typename MODEL> class JqTerm;
@@ -40,7 +39,6 @@ namespace oops {
 
 template<typename MODEL> class CostJbState : private boost::noncopyable {
   typedef Increment<MODEL>           Increment_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
   typedef State4D<MODEL>             State4D_;
   typedef Increment4D<MODEL>         Increment4D_;
   typedef Geometry<MODEL>            Geometry_;

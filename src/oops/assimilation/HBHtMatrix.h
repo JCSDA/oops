@@ -17,7 +17,6 @@
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/DualVector.h"
 #include "oops/base/PostProcessorTLAD.h"
-#include "oops/interface/Increment.h"
 #include "oops/util/PrintAdjTest.h"
 
 namespace oops {
@@ -30,11 +29,10 @@ namespace oops {
  *  operators for the other terms of the cost function.
  */
 
-template<typename MODEL> class HBHtMatrix : private boost::noncopyable {
-  typedef Increment<MODEL>           Increment_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef DualVector<MODEL>          Dual_;
+template<typename MODEL, typename OBS> class HBHtMatrix : private boost::noncopyable {
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef DualVector<MODEL, OBS>          Dual_;
 
  public:
   explicit HBHtMatrix(const CostFct_ & j,
@@ -50,16 +48,16 @@ template<typename MODEL> class HBHtMatrix : private boost::noncopyable {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-HBHtMatrix<MODEL>::HBHtMatrix(const CostFct_ & j,
+template<typename MODEL, typename OBS>
+HBHtMatrix<MODEL, OBS>::HBHtMatrix(const CostFct_ & j,
                               const bool test)
   : j_(j), test_(test), iter_(0)
 {}
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void HBHtMatrix<MODEL>::multiply(const Dual_ & dy, Dual_ & dz) const {
+template<typename MODEL, typename OBS>
+void HBHtMatrix<MODEL, OBS>::multiply(const Dual_ & dy, Dual_ & dz) const {
 // Increment counter
   iter_++;
 

@@ -32,10 +32,10 @@ class ObsErrorDiagParameters : public Parameters {
 
 // -----------------------------------------------------------------------------
 /// \brief Diagonal observation error covariance matrix.
-template<typename MODEL>
-class ObsErrorDiag : public ObsErrorBase<MODEL> {
-  typedef ObsSpace<MODEL>              ObsSpace_;
-  typedef ObsVector<MODEL>             ObsVector_;
+template<typename OBS>
+class ObsErrorDiag : public ObsErrorBase<OBS> {
+  typedef ObsSpace<OBS>              ObsSpace_;
+  typedef ObsVector<OBS>             ObsVector_;
 
  public:
   ObsErrorDiag(const eckit::Configuration &, const ObsSpace_ &);
@@ -66,8 +66,8 @@ class ObsErrorDiag : public ObsErrorBase<MODEL> {
 
 // =============================================================================
 
-template<typename MODEL>
-ObsErrorDiag<MODEL>::ObsErrorDiag(const eckit::Configuration & conf, const ObsSpace_ & obsgeom)
+template<typename OBS>
+ObsErrorDiag<OBS>::ObsErrorDiag(const eckit::Configuration & conf, const ObsSpace_ & obsgeom)
   : stddev_(obsgeom, "EffectiveError"), inverseVariance_(obsgeom)
 {
   options_.deserialize(conf);
@@ -79,22 +79,22 @@ ObsErrorDiag<MODEL>::ObsErrorDiag(const eckit::Configuration & conf, const ObsSp
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ObsErrorDiag<MODEL>::multiply(ObsVector_ & dy) const {
+template<typename OBS>
+void ObsErrorDiag<OBS>::multiply(ObsVector_ & dy) const {
   dy /= inverseVariance_;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ObsErrorDiag<MODEL>::inverseMultiply(ObsVector_ & dy) const {
+template<typename OBS>
+void ObsErrorDiag<OBS>::inverseMultiply(ObsVector_ & dy) const {
   dy *= inverseVariance_;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ObsErrorDiag<MODEL>::randomize(ObsVector_ & dy) const {
+template<typename OBS>
+void ObsErrorDiag<OBS>::randomize(ObsVector_ & dy) const {
   dy.random();
   dy *= stddev_;
   dy *= options_.pert;
@@ -102,8 +102,8 @@ void ObsErrorDiag<MODEL>::randomize(ObsVector_ & dy) const {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ObsErrorDiag<MODEL>::print(std::ostream & os) const {
+template<typename OBS>
+void ObsErrorDiag<OBS>::print(std::ostream & os) const {
   os << "Diagonal observation error covariance, inverse variances: "
      << inverseVariance_ << std::endl;
 }

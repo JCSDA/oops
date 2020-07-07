@@ -20,7 +20,7 @@
 
 namespace oops {
 
-template<typename MODEL> class EDA : public Application {
+template<typename MODEL, typename OBS> class EDA : public Application {
  public:
 // -----------------------------------------------------------------------------
   explicit EDA(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {}
@@ -75,13 +75,13 @@ int execute(const eckit::Configuration & fullConfig) const {
 
   Log::debug() << "EDA config for member 0 = " << config << std::endl;
 
-  Variational<MODEL> var(commMember);
+  Variational<MODEL, OBS> var(commMember);
   return var.execute(config);
 }
 // -----------------------------------------------------------------------------
  private:
   std::string appname() const {
-    return "oops::EDA<" + MODEL::name() + ">";
+    return "oops::EDA<" + MODEL::name() + ", " + OBS::name() + ">";
   }
 // -----------------------------------------------------------------------------
 };

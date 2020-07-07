@@ -30,9 +30,9 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testConstructor() {
-  typedef ObsTestsFixture<MODEL>  Test_;
-  typedef oops::ObsVector<MODEL>  ObsVector_;
+template <typename OBS> void testConstructor() {
+  typedef ObsTestsFixture<OBS>  Test_;
+  typedef oops::ObsVector<OBS>  ObsVector_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     std::unique_ptr<ObsVector_> ov(new ObsVector_(Test_::obspace()[jj]));
@@ -45,9 +45,9 @@ template <typename MODEL> void testConstructor() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testCopyConstructor() {
-  typedef ObsTestsFixture<MODEL>  Test_;
-  typedef oops::ObsVector<MODEL>  ObsVector_;
+template <typename OBS> void testCopyConstructor() {
+  typedef ObsTestsFixture<OBS>  Test_;
+  typedef oops::ObsVector<OBS>  ObsVector_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     std::unique_ptr<ObsVector_> ov(new ObsVector_(Test_::obspace()[jj]));
@@ -63,9 +63,9 @@ template <typename MODEL> void testCopyConstructor() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testNotZero() {
-  typedef ObsTestsFixture<MODEL>  Test_;
-  typedef oops::ObsVector<MODEL>  ObsVector_;
+template <typename OBS> void testNotZero() {
+  typedef ObsTestsFixture<OBS>  Test_;
+  typedef oops::ObsVector<OBS>  ObsVector_;
   const double zero = 0.0;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
@@ -85,23 +85,23 @@ template <typename MODEL> void testNotZero() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename OBS>
 class ObsVector : public oops::Test {
  public:
   ObsVector() {}
   virtual ~ObsVector() {}
  private:
-  std::string testid() const {return "test::ObsVector<" + MODEL::name() + ">";}
+  std::string testid() const {return "test::ObsVector<" + OBS::name() + ">";}
 
   void register_tests() const {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/ObsVector/testConstructor")
-      { testConstructor<MODEL>(); });
+      { testConstructor<OBS>(); });
     ts.emplace_back(CASE("interface/ObsVector/testCopyConstructor")
-      { testCopyConstructor<MODEL>(); });
+      { testCopyConstructor<OBS>(); });
     ts.emplace_back(CASE("interface/ObsVector/testNotZero")
-      { testNotZero<MODEL>(); });
+      { testNotZero<OBS>(); });
   }
 };
 

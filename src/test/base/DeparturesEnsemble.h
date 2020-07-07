@@ -29,9 +29,9 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testDeparturesEnsemble() {
-  typedef ObsTestsFixture<MODEL>            Test_;
-  typedef oops::DeparturesEnsemble<MODEL>   DeparturesEnsemble_;
+template <typename OBS> void testDeparturesEnsemble() {
+  typedef ObsTestsFixture<OBS>            Test_;
+  typedef oops::DeparturesEnsemble<OBS>   DeparturesEnsemble_;
 
   // tests depaturesEnsemle.packEigen()
   // test verifies that computing rms by-hand on the packed array agrees with
@@ -56,17 +56,17 @@ template <typename MODEL> void testDeparturesEnsemble() {
   }
 }
 
-template <typename MODEL> class DeparturesEnsemble : public oops::Test {
+template <typename OBS> class DeparturesEnsemble : public oops::Test {
  public:
   DeparturesEnsemble() {}
   virtual ~DeparturesEnsemble() {}
  private:
-  std::string testid() const {return "test::DeparturesEnsemble<" + MODEL::name() + ">";}
+  std::string testid() const {return "test::DeparturesEnsemble<" + OBS::name() + ">";}
 
   void register_tests() const {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
     ts.emplace_back(CASE("base/DeparturesEnsemble/testDeparturesEnsemble")
-      { testDeparturesEnsemble<MODEL>(); });
+      { testDeparturesEnsemble<OBS>(); });
   }
 };
 

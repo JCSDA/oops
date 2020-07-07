@@ -40,12 +40,12 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> class SaddlePointMinimizer : public Minimizer<MODEL> {
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef Minimizer<MODEL>           Minimizer_;
-  typedef DualVector<MODEL>          Multipliers_;
-// Eigen   typedef SaddlePointLMPMatrix<MODEL>  LMP_;
+template<typename MODEL, typename OBS> class SaddlePointMinimizer : public Minimizer<MODEL, OBS> {
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef Minimizer<MODEL, OBS>           Minimizer_;
+  typedef DualVector<MODEL, OBS>          Multipliers_;
+// Eigen   typedef SaddlePointLMPMatrix<MODEL, OBS>  LMP_;
 
  public:
   const std::string classname() const override {return "SaddlePointMinimizer";}
@@ -59,15 +59,15 @@ template<typename MODEL> class SaddlePointMinimizer : public Minimizer<MODEL> {
   const CostFct_ & J_;
   std::unique_ptr<CtrlInc_> gradJb_;
 // Eigen  std::unique_ptr<LMP_> Pinv_;
-  std::vector< SaddlePointVector<MODEL> > xyVEC_;
-  std::vector< SaddlePointVector<MODEL> > pqVEC_;
+  std::vector< SaddlePointVector<MODEL, OBS> > xyVEC_;
+  std::vector< SaddlePointVector<MODEL, OBS> > pqVEC_;
 };
 
 // =============================================================================
 
-template<typename MODEL>
-ControlIncrement<MODEL> *
-SaddlePointMinimizer<MODEL>::doMinimize(const eckit::Configuration & config) {
+template<typename MODEL, typename OBS>
+ControlIncrement<MODEL, OBS> *
+SaddlePointMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
   int ninner = config.getInt("ninner");
   int gnreduc = config.getDouble("gradient_norm_reduction");
 
@@ -83,7 +83,7 @@ SaddlePointMinimizer<MODEL>::doMinimize(const eckit::Configuration & config) {
     pdxx->append(J_.jterm(jj).newDualVector());
   }
   CtrlInc_ * tmp1 = new CtrlInc_(J_.jb());
-  SaddlePointVector<MODEL> spdx(tmp1, pdxx);
+  SaddlePointVector<MODEL, OBS> spdx(tmp1, pdxx);
 
 // Compute RHS
   Multipliers_ * pdfg = new Multipliers_();
@@ -94,14 +94,14 @@ SaddlePointMinimizer<MODEL>::doMinimize(const eckit::Configuration & config) {
     pdfg->append(J_.jterm(jj).multiplyCovar(*ww));
   }
   CtrlInc_ * tmp2 = new CtrlInc_(J_.jb());
-  SaddlePointVector<MODEL> rhs(tmp2, pdfg);
+  SaddlePointVector<MODEL, OBS> rhs(tmp2, pdfg);
   rhs *= -1.0;
 
 // Define the matrices
-  SaddlePointMatrix<MODEL> A(J_);
+  SaddlePointMatrix<MODEL, OBS> A(J_);
 
 // Inexact constraint preconditioner
-  SaddlePointPrecondMatrix<MODEL> Pinv(J_);
+  SaddlePointPrecondMatrix<MODEL, OBS> Pinv(J_);
 
 // Initialize the limited memory preconditioner
 // Eigen  if (!Pinv_.get()) {

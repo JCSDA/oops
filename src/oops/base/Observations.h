@@ -31,10 +31,10 @@ namespace oops {
  */
 
 // -----------------------------------------------------------------------------
-template <typename MODEL> class Observations : public util::Printable {
-  typedef Departures<MODEL>          Departures_;
-  typedef ObsSpaces<MODEL>           ObsSpaces_;
-  typedef ObsVector<MODEL>           ObsVector_;
+template <typename OBS> class Observations : public util::Printable {
+  typedef Departures<OBS>          Departures_;
+  typedef ObsSpaces<OBS>           ObsSpaces_;
+  typedef ObsVector<OBS>           ObsVector_;
 
  public:
 /// \brief create Observations for all obs (read from ObsSpace if name is specified)
@@ -76,8 +76,8 @@ template <typename MODEL> class Observations : public util::Printable {
 
 // =============================================================================
 
-template <typename MODEL>
-Observations<MODEL>::Observations(const ObsSpaces_ & obsdb,
+template <typename OBS>
+Observations<OBS>::Observations(const ObsSpaces_ & obsdb,
                                   const std::string & name): obsdb_(obsdb), obs_()
 {
   obs_.reserve(obsdb.size());
@@ -87,8 +87,8 @@ Observations<MODEL>::Observations(const ObsSpaces_ & obsdb,
   Log::trace() << "Observations created" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-Observations<MODEL>::Observations(const ObsSpaces_ & obsdb,
+template <typename OBS>
+Observations<OBS>::Observations(const ObsSpaces_ & obsdb,
                                   const Observations & other): obsdb_(obsdb), obs_() {
   obs_.reserve(obsdb.size());
   for (std::size_t jj = 0; jj < other.size(); ++jj) {
@@ -97,33 +97,33 @@ Observations<MODEL>::Observations(const ObsSpaces_ & obsdb,
   Log::trace() << "Local observations created" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-Observations<MODEL>::Observations(const Observations & other)
+template <typename OBS>
+Observations<OBS>::Observations(const Observations & other)
 : obsdb_(other.obsdb_), obs_(other.obs_) {}
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-Observations<MODEL>::Observations(Observations && other)
+template <typename OBS>
+Observations<OBS>::Observations(Observations && other)
 : obsdb_(other.obsdb_), obs_(std::move(other.obs_)) {}
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-Observations<MODEL> & Observations<MODEL>::operator=(const Observations & other) {
+template <typename OBS>
+Observations<OBS> & Observations<OBS>::operator=(const Observations & other) {
 // only allow assignment for Observations created from the same ObsSpaces
   ASSERT(&obsdb_ == &other.obsdb_);
   obs_ = other.obs_;
   return *this;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-Observations<MODEL> & Observations<MODEL>::operator=(Observations && other) {
+template <typename OBS>
+Observations<OBS> & Observations<OBS>::operator=(Observations && other) {
 // only allow assignment for Observations created from the same ObsSpaces
   ASSERT(&obsdb_ == &other.obsdb_);
   obs_ = std::move(other.obs_);
   return *this;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-Departures<MODEL> Observations<MODEL>::operator-(const Observations & other) const {
+template <typename OBS>
+Departures<OBS> Observations<OBS>::operator-(const Observations & other) const {
   Departures_ diff(obsdb_);
   for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
     diff[jj]  = obs_[jj];
@@ -132,45 +132,45 @@ Departures<MODEL> Observations<MODEL>::operator-(const Observations & other) con
   return diff;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-Observations<MODEL> & Observations<MODEL>::operator+=(const Departures_ & dy) {
+template <typename OBS>
+Observations<OBS> & Observations<OBS>::operator+=(const Departures_ & dy) {
   for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
     obs_[jj] += dy[jj];
   }
   return *this;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void Observations<MODEL>::save(const std::string & name) const {
+template <typename OBS>
+void Observations<OBS>::save(const std::string & name) const {
   for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
     obs_[jj].save(name);
   }
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void Observations<MODEL>::zero() {
+template <typename OBS>
+void Observations<OBS>::zero() {
   for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
     obs_[jj].zero();
   }
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void Observations<MODEL>::accumul(const Observations & y) {
+template <typename OBS>
+void Observations<OBS>::accumul(const Observations & y) {
   for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
     obs_[jj] += y[jj];
   }
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-Observations<MODEL> & Observations<MODEL>::operator *=(const double factor) {
+template <typename OBS>
+Observations<OBS> & Observations<OBS>::operator *=(const double factor) {
   for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
     obs_[jj] *= factor;
   }
   return *this;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void Observations<MODEL>::print(std::ostream & os) const {
+template <typename OBS>
+void Observations<OBS>::print(std::ostream & os) const {
   for (std::size_t jj = 0; jj < obs_.size(); ++jj) os << obs_[jj] << std::endl;
 }
 // -----------------------------------------------------------------------------

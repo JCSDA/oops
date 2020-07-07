@@ -70,11 +70,11 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> class DRIPCGMinimizer : public DRMinimizer<MODEL> {
-  typedef BMatrix<MODEL>             Bmat_;
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef HtRinvHMatrix<MODEL>       HtRinvH_;
+template<typename MODEL, typename OBS> class DRIPCGMinimizer : public DRMinimizer<MODEL, OBS> {
+  typedef BMatrix<MODEL, OBS>             Bmat_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef HtRinvHMatrix<MODEL, OBS>       HtRinvH_;
 
  public:
   const std::string classname() const override {return "DRIPCGMinimizer";}
@@ -90,15 +90,15 @@ template<typename MODEL> class DRIPCGMinimizer : public DRMinimizer<MODEL> {
 
 // =============================================================================
 
-template<typename MODEL>
-DRIPCGMinimizer<MODEL>::DRIPCGMinimizer(const eckit::Configuration & conf, const CostFct_ & J)
-  : DRMinimizer<MODEL>(J), lmp_(conf)
+template<typename MODEL, typename OBS>
+DRIPCGMinimizer<MODEL, OBS>::DRIPCGMinimizer(const eckit::Configuration & conf, const CostFct_ & J)
+  : DRMinimizer<MODEL, OBS>(J), lmp_(conf)
 {}
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-double DRIPCGMinimizer<MODEL>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_ & rr,
+template<typename MODEL, typename OBS>
+double DRIPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_ & rr,
                                     const Bmat_ & B, const HtRinvH_ & HtRinvH,
                                     const double costJ0Jb, const double costJ0JoJc,
                                     const int maxiter, const double tolerance) {

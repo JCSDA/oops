@@ -32,16 +32,16 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename OBS>
 class LinearObsOperator : public util::Printable,
                           private boost::noncopyable,
-                          private util::ObjectCounter<LinearObsOperator<MODEL> > {
-  typedef typename MODEL::LinearObsOperator  LinearObsOper_;
-  typedef GeoVaLs<MODEL>             GeoVaLs_;
-  typedef ObsAuxControl<MODEL>       ObsAuxControl_;
-  typedef ObsAuxIncrement<MODEL>     ObsAuxIncrement_;
-  typedef ObsSpace<MODEL>            ObsSpace_;
-  typedef ObsVector<MODEL>           ObsVector_;
+                          private util::ObjectCounter<LinearObsOperator<OBS> > {
+  typedef typename OBS::LinearObsOperator  LinearObsOper_;
+  typedef GeoVaLs<OBS>             GeoVaLs_;
+  typedef ObsAuxControl<OBS>       ObsAuxControl_;
+  typedef ObsAuxIncrement<OBS>     ObsAuxIncrement_;
+  typedef ObsSpace<OBS>            ObsSpace_;
+  typedef ObsVector<OBS>           ObsVector_;
 
  public:
   static const std::string classname() {return "oops::LinearObsOperator";}
@@ -67,74 +67,74 @@ class LinearObsOperator : public util::Printable,
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-LinearObsOperator<MODEL>::LinearObsOperator(const ObsSpace_ & os,
+template <typename OBS>
+LinearObsOperator<OBS>::LinearObsOperator(const ObsSpace_ & os,
                                             const eckit::Configuration & config): oper_() {
-  Log::trace() << "LinearObsOperator<MODEL>::LinearObsOperator starting" << std::endl;
+  Log::trace() << "LinearObsOperator<OBS>::LinearObsOperator starting" << std::endl;
   util::Timer timer(classname(), "LinearObsOperator");
   oper_.reset(new LinearObsOper_(os.obsspace(), config));
-  Log::trace() << "LinearObsOperator<MODEL>::LinearObsOperator done" << std::endl;
+  Log::trace() << "LinearObsOperator<OBS>::LinearObsOperator done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-LinearObsOperator<MODEL>::~LinearObsOperator() {
-  Log::trace() << "LinearObsOperator<MODEL>::~LinearObsOperator starting" << std::endl;
+template <typename OBS>
+LinearObsOperator<OBS>::~LinearObsOperator() {
+  Log::trace() << "LinearObsOperator<OBS>::~LinearObsOperator starting" << std::endl;
   util::Timer timer(classname(), "~LinearObsOperator");
   oper_.reset();
-  Log::trace() << "LinearObsOperator<MODEL>::~LinearObsOperator done" << std::endl;
+  Log::trace() << "LinearObsOperator<OBS>::~LinearObsOperator done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void LinearObsOperator<MODEL>::setTrajectory(const GeoVaLs_ & gvals, const ObsAuxControl_ & aux) {
-  Log::trace() << "LinearObsOperator<MODEL>::setTrajectory starting" << std::endl;
+template <typename OBS>
+void LinearObsOperator<OBS>::setTrajectory(const GeoVaLs_ & gvals, const ObsAuxControl_ & aux) {
+  Log::trace() << "LinearObsOperator<OBS>::setTrajectory starting" << std::endl;
   util::Timer timer(classname(), "setTrajectory");
   oper_->setTrajectory(gvals.geovals(), aux.obsauxcontrol());
-  Log::trace() << "LinearObsOperator<MODEL>::setTrajectory done" << std::endl;
+  Log::trace() << "LinearObsOperator<OBS>::setTrajectory done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void LinearObsOperator<MODEL>::simulateObsTL(const GeoVaLs_ & gvals, ObsVector_ & yy,
+template <typename OBS>
+void LinearObsOperator<OBS>::simulateObsTL(const GeoVaLs_ & gvals, ObsVector_ & yy,
                                              const ObsAuxIncrement_ & aux) const {
-  Log::trace() << "LinearObsOperator<MODEL>::simulateObsTL starting" << std::endl;
+  Log::trace() << "LinearObsOperator<OBS>::simulateObsTL starting" << std::endl;
   util::Timer timer(classname(), "simulateObsTL");
   oper_->simulateObsTL(gvals.geovals(), yy.obsvector(), aux.obsauxincrement());
-  Log::trace() << "LinearObsOperator<MODEL>::simulateObsTL done" << std::endl;
+  Log::trace() << "LinearObsOperator<OBS>::simulateObsTL done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void LinearObsOperator<MODEL>::simulateObsAD(GeoVaLs_ & gvals, const ObsVector_ & yy,
+template <typename OBS>
+void LinearObsOperator<OBS>::simulateObsAD(GeoVaLs_ & gvals, const ObsVector_ & yy,
                                              ObsAuxIncrement_ & aux) const {
-  Log::trace() << "LinearObsOperator<MODEL>::simulateObsAD starting" << std::endl;
+  Log::trace() << "LinearObsOperator<OBS>::simulateObsAD starting" << std::endl;
   util::Timer timer(classname(), "simulateObsAD");
   oper_->simulateObsAD(gvals.geovals(), yy.obsvector(), aux.obsauxincrement());
-  Log::trace() << "LinearObsOperator<MODEL>::simulateObsAD done" << std::endl;
+  Log::trace() << "LinearObsOperator<OBS>::simulateObsAD done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-const Variables & LinearObsOperator<MODEL>::requiredVars() const {
-  Log::trace() << "LinearObsOperator<MODEL>::requiredVars starting" << std::endl;
+template <typename OBS>
+const Variables & LinearObsOperator<OBS>::requiredVars() const {
+  Log::trace() << "LinearObsOperator<OBS>::requiredVars starting" << std::endl;
   util::Timer timer(classname(), "requiredVars");
   return oper_->requiredVars();
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void LinearObsOperator<MODEL>::print(std::ostream & os) const {
-  Log::trace() << "LinearObsOperator<MODEL>::print starting" << std::endl;
+template<typename OBS>
+void LinearObsOperator<OBS>::print(std::ostream & os) const {
+  Log::trace() << "LinearObsOperator<OBS>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
   os << *oper_;
-  Log::trace() << "LinearObsOperator<MODEL>::print done" << std::endl;
+  Log::trace() << "LinearObsOperator<OBS>::print done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

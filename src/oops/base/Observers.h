@@ -35,13 +35,14 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename MODEL, typename OBS>
 class Observers : public PostBase<State<MODEL>> {
-  typedef ObsAuxControls<MODEL>      ObsAuxCtrls_;
-  typedef Observations<MODEL>        Observations_;
-  typedef Observer<MODEL>            Observer_;
-  typedef ObsSpaces<MODEL>           ObsSpaces_;
-  typedef QCData<MODEL>              QCData_;
+  typedef GeoVaLs<OBS>             GeoVaLs_;
+  typedef ObsAuxControls<OBS>      ObsAuxCtrls_;
+  typedef Observations<OBS>        Observations_;
+  typedef Observer<MODEL, OBS>     Observer_;
+  typedef ObsSpaces<OBS>           ObsSpaces_;
+  typedef QCData<OBS>              QCData_;
   typedef State<MODEL>               State_;
 
  public:
@@ -74,10 +75,10 @@ class Observers : public PostBase<State<MODEL>> {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-Observers<MODEL>::Observers(const eckit::Configuration & conf, const ObsSpaces_ & obsdb,
-                            const ObsAuxCtrls_ & ybias, QCData_ & qc,
-                            const util::Duration & tslot, const bool swin)
+template <typename MODEL, typename OBS>
+Observers<MODEL, OBS>::Observers(const eckit::Configuration & conf, const ObsSpaces_ & obsdb,
+                                 const ObsAuxCtrls_ & ybias, QCData_ & qc,
+                                 const util::Duration & tslot, const bool swin)
   : PostBase<State_>(),
     obspace_(obsdb), yobs_(obsdb),
     winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
@@ -100,9 +101,9 @@ Observers<MODEL>::Observers(const eckit::Configuration & conf, const ObsSpaces_ 
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void Observers<MODEL>::doInitialize(const State_ & xx, const util::DateTime & end,
-                                    const util::Duration & tstep) {
+template <typename MODEL, typename OBS>
+void Observers<MODEL, OBS>::doInitialize(const State_ & xx, const util::DateTime & end,
+                                         const util::Duration & tstep) {
   Log::trace() << "Observers::doInitialize start" << std::endl;
   const util::DateTime bgn(xx.validTime());
   if (hslot_ == util::Duration(0)) hslot_ = tstep/2;
@@ -126,8 +127,8 @@ void Observers<MODEL>::doInitialize(const State_ & xx, const util::DateTime & en
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void Observers<MODEL>::doProcessing(const State_ & xx) {
+template <typename MODEL, typename OBS>
+void Observers<MODEL, OBS>::doProcessing(const State_ & xx) {
   Log::trace() << "Observers::doProcessing start" << std::endl;
   util::DateTime t1(xx.validTime()-hslot_);
   util::DateTime t2(xx.validTime()+hslot_);
@@ -143,8 +144,8 @@ void Observers<MODEL>::doProcessing(const State_ & xx) {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void Observers<MODEL>::doFinalize(const State_ &) {
+template <typename MODEL, typename OBS>
+void Observers<MODEL, OBS>::doFinalize(const State_ &) {
   Log::trace() << "Observers::doFinalize start" << std::endl;
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
     observers_[jj]->doFinalize();

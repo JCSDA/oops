@@ -40,13 +40,13 @@ namespace oops {
  * Digital filter based constraint term for the cost function.
  */
 
-template<typename MODEL> class CostJcDFI : public CostTermBase<MODEL> {
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef ControlVariable<MODEL>     CtrlVar_;
-  typedef Geometry<MODEL>            Geometry_;
-  typedef Increment<MODEL>           Increment_;
-  typedef PostBaseTLAD<MODEL>        PostBaseTLAD_;
-  typedef State<MODEL>               State_;
+template<typename MODEL, typename OBS> class CostJcDFI : public CostTermBase<MODEL, OBS> {
+  typedef ControlIncrement<MODEL, OBS>  CtrlInc_;
+  typedef ControlVariable<MODEL, OBS>   CtrlVar_;
+  typedef Geometry<MODEL>               Geometry_;
+  typedef Increment<MODEL>              Increment_;
+  typedef PostBaseTLAD<MODEL>           PostBaseTLAD_;
+  typedef State<MODEL>                  State_;
 
  public:
 /// Construct \f$ J_c\f$.
@@ -103,8 +103,8 @@ template<typename MODEL> class CostJcDFI : public CostTermBase<MODEL> {
 
 // =============================================================================
 
-template<typename MODEL>
-CostJcDFI<MODEL>::CostJcDFI(const eckit::Configuration & conf, const Geometry_ & resol,
+template<typename MODEL, typename OBS>
+CostJcDFI<MODEL, OBS>::CostJcDFI(const eckit::Configuration & conf, const Geometry_ & resol,
                             const util::DateTime & vt, const util::Duration & span,
                             const util::Duration & tstep)
   : conf_(conf), vt_(vt), span_(span), alpha_(0), wfct_(), gradFG_(),
@@ -121,9 +121,9 @@ CostJcDFI<MODEL>::CostJcDFI(const eckit::Configuration & conf, const Geometry_ &
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
+template<typename MODEL, typename OBS>
 std::shared_ptr<PostBase<State<MODEL> > >
-CostJcDFI<MODEL>::initialize(const CtrlVar_ &, const eckit::Configuration &) {
+CostJcDFI<MODEL, OBS>::initialize(const CtrlVar_ &, const eckit::Configuration &) {
   filter_.reset(new WeightedDiff<MODEL, Increment_, State_>(conf_, vt_, span_,
                                                             tstep_, resol_, *wfct_));
   return filter_;
@@ -131,8 +131,8 @@ CostJcDFI<MODEL>::initialize(const CtrlVar_ &, const eckit::Configuration &) {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-double CostJcDFI<MODEL>::finalize() {
+template<typename MODEL, typename OBS>
+double CostJcDFI<MODEL, OBS>::finalize() {
   double zz = 0.5 * alpha_;
   std::unique_ptr<Increment_> dx(filter_->releaseDiff());
   zz *= dot_product(*dx, *dx);
@@ -142,9 +142,9 @@ double CostJcDFI<MODEL>::finalize() {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
+template<typename MODEL, typename OBS>
 std::shared_ptr<PostBaseTLAD<MODEL> >
-CostJcDFI<MODEL>::initializeTraj(const CtrlVar_ &, const Geometry_ & tlres,
+CostJcDFI<MODEL, OBS>::initializeTraj(const CtrlVar_ &, const Geometry_ & tlres,
                                  const eckit::Configuration & innerConf) {
   tlres_.reset(new Geometry_(tlres));
   tlstep_ = util::Duration(innerConf.getString("linearmodel.tstep"));
@@ -154,16 +154,16 @@ CostJcDFI<MODEL>::initializeTraj(const CtrlVar_ &, const Geometry_ & tlres,
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostJcDFI<MODEL>::finalizeTraj() {
+template<typename MODEL, typename OBS>
+void CostJcDFI<MODEL, OBS>::finalizeTraj() {
   gradFG_.reset(ftlad_->releaseDiff());
   *gradFG_ *= alpha_;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-Increment<MODEL> * CostJcDFI<MODEL>::newDualVector() const {
+template<typename MODEL, typename OBS>
+Increment<MODEL> * CostJcDFI<MODEL, OBS>::newDualVector() const {
   const Variables vars(conf_);
   Increment_ * dx = new Increment_(*tlres_, vars, vt_);
   return dx;
@@ -171,18 +171,18 @@ Increment<MODEL> * CostJcDFI<MODEL>::newDualVector() const {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
+template<typename MODEL, typename OBS>
 std::shared_ptr<PostBaseTLAD<MODEL> >
-CostJcDFI<MODEL>::setupTL(const CtrlInc_ &) const {
+CostJcDFI<MODEL, OBS>::setupTL(const CtrlInc_ &) const {
   ftlad_->setupTL(*tlres_);
   return ftlad_;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
+template<typename MODEL, typename OBS>
 std::shared_ptr<PostBaseTLAD<MODEL> >
-CostJcDFI<MODEL>::setupAD(std::shared_ptr<const GeneralizedDepartures> pv,
+CostJcDFI<MODEL, OBS>::setupAD(std::shared_ptr<const GeneralizedDepartures> pv,
                           CtrlInc_ &) const {
   std::shared_ptr<const Increment_>
     dx = std::dynamic_pointer_cast<const Increment_>(pv);
@@ -192,8 +192,8 @@ CostJcDFI<MODEL>::setupAD(std::shared_ptr<const GeneralizedDepartures> pv,
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-Increment<MODEL> * CostJcDFI<MODEL>::multiplyCovar(const GeneralizedDepartures & dv1) const {
+template<typename MODEL, typename OBS>
+Increment<MODEL> * CostJcDFI<MODEL, OBS>::multiplyCovar(const GeneralizedDepartures & dv1) const {
   const Increment_ & dx1 = dynamic_cast<const Increment_ &>(dv1);
   Increment_ * dx2 = new Increment_(dx1);
   const double za = 1.0/alpha_;
@@ -203,8 +203,8 @@ Increment<MODEL> * CostJcDFI<MODEL>::multiplyCovar(const GeneralizedDepartures &
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-Increment<MODEL> * CostJcDFI<MODEL>::multiplyCoInv(const GeneralizedDepartures & dv1) const {
+template<typename MODEL, typename OBS>
+Increment<MODEL> * CostJcDFI<MODEL, OBS>::multiplyCoInv(const GeneralizedDepartures & dv1) const {
   const Increment_ & dx1 = dynamic_cast<const Increment_ &>(dv1);
   Increment_ * dx2 = new Increment_(dx1);
   *dx2 *= alpha_;
@@ -213,8 +213,8 @@ Increment<MODEL> * CostJcDFI<MODEL>::multiplyCoInv(const GeneralizedDepartures &
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostJcDFI<MODEL>::resetLinearization() {
+template<typename MODEL, typename OBS>
+void CostJcDFI<MODEL, OBS>::resetLinearization() {
   gradFG_.reset();
   ftlad_.reset();
 }

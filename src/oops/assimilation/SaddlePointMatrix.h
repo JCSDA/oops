@@ -18,7 +18,6 @@
 #include "oops/assimilation/DualVector.h"
 #include "oops/assimilation/SaddlePointVector.h"
 #include "oops/base/PostProcessorTLAD.h"
-#include "oops/interface/Increment.h"
 
 namespace oops {
   template<typename MODEL> class JqTermTLAD;
@@ -29,12 +28,11 @@ namespace oops {
  *  method. This class defines objects that apply the saddle-point matrix.
  */
 
-template<typename MODEL>
+template<typename MODEL, typename OBS>
 class SaddlePointMatrix : private boost::noncopyable {
-  typedef Increment<MODEL>           Increment_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef SaddlePointVector<MODEL>   SPVector_;
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef SaddlePointVector<MODEL, OBS>   SPVector_;
   typedef JqTermTLAD<MODEL>          JqTermTLAD_;
 
  public:
@@ -47,8 +45,8 @@ class SaddlePointMatrix : private boost::noncopyable {
 
 // =============================================================================
 
-template<typename MODEL>
-void SaddlePointMatrix<MODEL>::multiply(const SPVector_ & x,
+template<typename MODEL, typename OBS>
+void SaddlePointMatrix<MODEL, OBS>::multiply(const SPVector_ & x,
                                         SPVector_ & z) const {
   CtrlInc_ ww(j_.jb());
 
@@ -83,7 +81,7 @@ void SaddlePointMatrix<MODEL>::multiply(const SPVector_ & x,
   }
 
 // Diagonal block
-  DualVector<MODEL> diag;
+  DualVector<MODEL, OBS> diag;
   diag.dx(new CtrlInc_(j_.jb()));
   j_.jb().multiplyB(x.lambda().dx(), diag.dx());
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {

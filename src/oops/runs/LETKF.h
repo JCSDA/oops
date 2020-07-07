@@ -48,29 +48,29 @@ namespace oops {
  * assimilation for spatiotemporal chaos: A local ensemble transform Kalman
  * filter. Physica D: Nonlinear Phenomena, 230(1-2), 112-126.
  */
-template <typename MODEL> class LETKF : public Application {
-  typedef Departures<MODEL>         Departures_;
-  typedef DeparturesEnsemble<MODEL> DeparturesEnsemble_;
-  typedef Geometry<MODEL>           Geometry_;
-  typedef GeometryIterator<MODEL>   GeometryIterator_;
-  typedef Increment<MODEL>          Increment_;
-  typedef IncrementEnsemble<MODEL>  IncrementEnsemble_;
-  typedef LETKFSolverBase<MODEL>    LETKFSolver_;
-  typedef ObsEnsemble<MODEL>        ObsEnsemble_;
-  typedef ObsErrors<MODEL>          ObsErrors_;
-  typedef ObsSpaces<MODEL>          ObsSpaces_;
-  typedef Observations<MODEL>       Observations_;
-  typedef State<MODEL>              State_;
-  typedef State4D<MODEL>            State4D_;
-  typedef StateEnsemble<MODEL>      StateEnsemble_;
+template <typename MODEL, typename OBS> class LETKF : public Application {
+  typedef Departures<OBS>              Departures_;
+  typedef DeparturesEnsemble<OBS>      DeparturesEnsemble_;
+  typedef Geometry<MODEL>              Geometry_;
+  typedef GeometryIterator<MODEL>      GeometryIterator_;
+  typedef Increment<MODEL>             Increment_;
+  typedef IncrementEnsemble<MODEL>     IncrementEnsemble_;
+  typedef LETKFSolverBase<MODEL, OBS>  LETKFSolver_;
+  typedef ObsEnsemble<OBS>             ObsEnsemble_;
+  typedef ObsErrors<OBS>               ObsErrors_;
+  typedef ObsSpaces<OBS>               ObsSpaces_;
+  typedef Observations<OBS>            Observations_;
+  typedef State<MODEL>                 State_;
+  typedef State4D<MODEL>               State4D_;
+  typedef StateEnsemble<MODEL>         StateEnsemble_;
 
  public:
 // -----------------------------------------------------------------------------
 
   explicit LETKF(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {
-    instantiateLETKFSolverFactory<MODEL>();
-    instantiateObsErrorFactory<MODEL>();
-    instantiateObsFilterFactory<MODEL>();
+    instantiateLETKFSolverFactory<MODEL, OBS>();
+    instantiateObsErrorFactory<OBS>();
+    instantiateObsFilterFactory<OBS>();
   }
 
 // -----------------------------------------------------------------------------
@@ -108,7 +108,7 @@ template <typename MODEL> class LETKF : public Application {
     ObsEnsemble_ obsens(obsdb, nens);
 
     // Initialize observer
-    CalcHofX<MODEL> hofx(obsdb, resol, fullConfig);
+    CalcHofX<MODEL, OBS> hofx(obsdb, resol, fullConfig);
     for (size_t jj = 0; jj < nens; ++jj) {
       // TODO(Travis) change the way input file name is specified, make
       //  more similar to how the output ens config is done
@@ -156,7 +156,7 @@ template <typename MODEL> class LETKF : public Application {
 
     // set up solver
     std::unique_ptr<LETKFSolver_> localSolver =
-         LETKFSolverFactory<MODEL>::create(fullConfig, nens);
+         LETKFSolverFactory<MODEL, OBS>::create(fullConfig, nens);
 
     // run the LETKF solver at each gridpoint
     Log::info() << "Beginning core LETKF solver..." << std::endl;
@@ -225,7 +225,7 @@ template <typename MODEL> class LETKF : public Application {
 
  private:
   std::string appname() const {
-    return "oops::LETKF<" + MODEL::name() + ">";
+    return "oops::LETKF<" + MODEL::name() + ", " + OBS::name() + ">";
   }
 
 // -----------------------------------------------------------------------------

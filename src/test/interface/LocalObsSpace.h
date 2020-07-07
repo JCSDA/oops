@@ -27,10 +27,10 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testLocalObsSpace() {
-  typedef ObsTestsFixture<MODEL> Test_;
-  typedef oops::ObsSpace<MODEL>               LocalObsSpace_;
-  typedef oops::ObsVector<MODEL>              ObsVector_;
+template <typename OBS> void testLocalObsSpace() {
+  typedef ObsTestsFixture<OBS> Test_;
+  typedef oops::ObsSpace<OBS>               LocalObsSpace_;
+  typedef oops::ObsVector<OBS>              ObsVector_;
 
   const eckit::LocalConfiguration localconf(TestEnvironment::config(), "LocalObsSpace");
 
@@ -64,10 +64,10 @@ template <typename MODEL> void testLocalObsSpace() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testLocalObsVector() {
-  typedef ObsTestsFixture<MODEL> Test_;
-  typedef oops::ObsSpace<MODEL>               LocalObsSpace_;
-  typedef oops::ObsVector<MODEL>              ObsVector_;
+template <typename OBS> void testLocalObsVector() {
+  typedef ObsTestsFixture<OBS> Test_;
+  typedef oops::ObsSpace<OBS>               LocalObsSpace_;
+  typedef oops::ObsVector<OBS>              ObsVector_;
 
   const eckit::LocalConfiguration localconf(TestEnvironment::config(), "LocalObsSpace");
 
@@ -108,19 +108,19 @@ template <typename MODEL> void testLocalObsVector() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> class LocalObsSpace : public oops::Test {
+template <typename OBS> class LocalObsSpace : public oops::Test {
  public:
   LocalObsSpace() {}
   virtual ~LocalObsSpace() {}
  private:
-  std::string testid() const {return "test::LocalObsSpace<" + MODEL::name() + ">";}
+  std::string testid() const {return "test::LocalObsSpace<" + OBS::name() + ">";}
 
   void register_tests() const {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
     ts.emplace_back(CASE("interface/LocalObsSpace/testLocalObsSpace")
-      { testLocalObsSpace<MODEL>(); });
+      { testLocalObsSpace<OBS>(); });
     ts.emplace_back(CASE("interface/LocalObsSpace/testLocalObsVector")
-      { testLocalObsVector<MODEL>(); });
+      { testLocalObsVector<OBS>(); });
   }
 };
 

@@ -28,14 +28,14 @@ namespace oops {
 /// \brief sets trajectory and computes TL and AD for GetValues
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename MODEL, typename OBS>
 class LinearGetValues : public util::Printable,
-                        private util::ObjectCounter<LinearGetValues<MODEL> > {
+                        private util::ObjectCounter<LinearGetValues<MODEL, OBS> > {
   typedef typename MODEL::LinearGetValues  LinearGetValues_;
   typedef Geometry<MODEL>            Geometry_;
-  typedef GeoVaLs<MODEL>             GeoVaLs_;
+  typedef GeoVaLs<OBS>               GeoVaLs_;
   typedef Increment<MODEL>           Increment_;
-  typedef Locations<MODEL>           Locations_;
+  typedef Locations<OBS>             Locations_;
   typedef State<MODEL>               State_;
 
  public:
@@ -68,67 +68,67 @@ class LinearGetValues : public util::Printable,
 /// Constructor, destructor
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-LinearGetValues<MODEL>::LinearGetValues(const Geometry_ & resol,
+template<typename MODEL, typename OBS>
+LinearGetValues<MODEL, OBS>::LinearGetValues(const Geometry_ & resol,
                                         const Locations_ & loc) : lingetvalues_()
 {
-  Log::trace() << "LinearGetValues<MODEL>::LinearGetValues starting" << std::endl;
+  Log::trace() << "LinearGetValues<MODEL, OBS>::LinearGetValues starting" << std::endl;
   util::Timer timer(classname(), "LinearGetValues");
   lingetvalues_.reset(new LinearGetValues_(resol.geometry(), loc.locations()));
-  Log::trace() << "LinearGetValues<MODEL>::LinearGetValues done" << std::endl;
+  Log::trace() << "LinearGetValues<MODEL, OBS>::LinearGetValues done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-LinearGetValues<MODEL>::~LinearGetValues() {
-  Log::trace() << "LinearGetValues<MODEL>::~LinearGetValues starting" << std::endl;
+template<typename MODEL, typename OBS>
+LinearGetValues<MODEL, OBS>::~LinearGetValues() {
+  Log::trace() << "LinearGetValues<MODEL, OBS>::~LinearGetValues starting" << std::endl;
   util::Timer timer(classname(), "~LinearGetValues");
   lingetvalues_.reset();
-  Log::trace() << "LinearGetValues<MODEL>::~LinearGetValues done" << std::endl;
+  Log::trace() << "LinearGetValues<MODEL, OBS>::~LinearGetValues done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void LinearGetValues<MODEL>::setTrajectory(const State_ & state, const util::DateTime & t1,
+template<typename MODEL, typename OBS>
+void LinearGetValues<MODEL, OBS>::setTrajectory(const State_ & state, const util::DateTime & t1,
                                            const util::DateTime & t2, GeoVaLs_ & gvals) {
-  Log::trace() << "LinearGetValues<MODEL>::setTrajectory starting" << std::endl;
+  Log::trace() << "LinearGetValues<MODEL, OBS>::setTrajectory starting" << std::endl;
   util::Timer timer(classname(), "setTrajectory");
   lingetvalues_->setTrajectory(state.state(), t1, t2, gvals.geovals());
-  Log::trace() << "LinearGetValues<MODEL>::setTrajectory done" << std::endl;
+  Log::trace() << "LinearGetValues<MODEL, OBS>::setTrajectory done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void LinearGetValues<MODEL>::fillGeoVaLsTL(const Increment_ & inc, const util::DateTime & t1,
+template<typename MODEL, typename OBS>
+void LinearGetValues<MODEL, OBS>::fillGeoVaLsTL(const Increment_ & inc, const util::DateTime & t1,
                                            const util::DateTime & t2, GeoVaLs_ & gvals) const {
-  Log::trace() << "LinearGetValues<MODEL>::fillGeoVaLsTL starting" << std::endl;
+  Log::trace() << "LinearGetValues<MODEL, OBS>::fillGeoVaLsTL starting" << std::endl;
   util::Timer timer(classname(), "fillGeoVaLsTL");
   lingetvalues_->fillGeoVaLsTL(inc.increment(), t1, t2, gvals.geovals());
-  Log::trace() << "LinearGetValues<MODEL>::fillGeoVaLsTL done" << std::endl;
+  Log::trace() << "LinearGetValues<MODEL, OBS>::fillGeoVaLsTL done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void LinearGetValues<MODEL>::fillGeoVaLsAD(Increment_ & inc, const util::DateTime & t1,
+template<typename MODEL, typename OBS>
+void LinearGetValues<MODEL, OBS>::fillGeoVaLsAD(Increment_ & inc, const util::DateTime & t1,
                                      const util::DateTime & t2, const GeoVaLs_ & gvals) const {
-  Log::trace() << "LinearGetValues<MODEL>::fillGeoVaLsAD starting" << std::endl;
+  Log::trace() << "LinearGetValues<MODEL, OBS>::fillGeoVaLsAD starting" << std::endl;
   util::Timer timer(classname(), "fillGeoVaLsAD");
   lingetvalues_->fillGeoVaLsAD(inc.increment(), t1, t2, gvals.geovals());
-  Log::trace() << "LinearGetValues<MODEL>::fillGeoVaLsAD done" << std::endl;
+  Log::trace() << "LinearGetValues<MODEL, OBS>::fillGeoVaLsAD done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void LinearGetValues<MODEL>::print(std::ostream & os) const {
-  Log::trace() << "LinearGetValues<MODEL>::print starting" << std::endl;
+template<typename MODEL, typename OBS>
+void LinearGetValues<MODEL, OBS>::print(std::ostream & os) const {
+  Log::trace() << "LinearGetValues<MODEL, OBS>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
   os << *lingetvalues_;
-  Log::trace() << "LinearGetValues<MODEL>::print done" << std::endl;
+  Log::trace() << "LinearGetValues<MODEL, OBS>::print done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

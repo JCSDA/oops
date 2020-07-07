@@ -33,16 +33,16 @@ namespace oops {
 
 /// Total Jb cost function for all components of the control variable.
 
-template<typename MODEL> class CostJbTotal {
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef ControlVariable<MODEL>     CtrlVar_;
-  typedef CostJbState<MODEL>         JbState_;
-  typedef JqTerm<MODEL>              JqTerm_;
-  typedef JqTermTLAD<MODEL>          JqTermTLAD_;
-  typedef Geometry<MODEL>            Geometry_;
-  typedef ModelAuxCovariance<MODEL>  ModelAuxCovar_;
-  typedef ObsAuxCovariances<MODEL>   ObsAuxCovars_;
-  typedef ObsSpaces<MODEL>           ObsSpaces_;
+template<typename MODEL, typename OBS> class CostJbTotal {
+  typedef ControlIncrement<MODEL, OBS>  CtrlInc_;
+  typedef ControlVariable<MODEL, OBS>   CtrlVar_;
+  typedef CostJbState<MODEL>            JbState_;
+  typedef JqTerm<MODEL>                 JqTerm_;
+  typedef JqTermTLAD<MODEL>             JqTermTLAD_;
+  typedef Geometry<MODEL>               Geometry_;
+  typedef ModelAuxCovariance<MODEL>     ModelAuxCovar_;
+  typedef ObsAuxCovariances<OBS>        ObsAuxCovars_;
+  typedef ObsSpaces<OBS>                ObsSpaces_;
 
  public:
 /// Construct \f$ J_b\f$.
@@ -110,8 +110,8 @@ template<typename MODEL> class CostJbTotal {
 
 // =============================================================================
 
-template<typename MODEL>
-CostJbTotal<MODEL>::CostJbTotal(const CtrlVar_ & xb, JbState_ * jb,
+template<typename MODEL, typename OBS>
+CostJbTotal<MODEL, OBS>::CostJbTotal(const CtrlVar_ & xb, JbState_ * jb,
                                 const eckit::Configuration & conf,
                                 const Geometry_ & resol, const ObsSpaces_ & odb)
   : xb_(xb), jb_(jb),
@@ -124,8 +124,8 @@ CostJbTotal<MODEL>::CostJbTotal(const CtrlVar_ & xb, JbState_ * jb,
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-JqTerm<MODEL> * CostJbTotal<MODEL>::initialize(const CtrlVar_ & fg) const {
+template<typename MODEL, typename OBS>
+JqTerm<MODEL> * CostJbTotal<MODEL, OBS>::initialize(const CtrlVar_ & fg) const {
   fg_ = &fg;
   JqTerm_ * jqnl = jb_->initializeJq();
   return jqnl;
@@ -133,8 +133,8 @@ JqTerm<MODEL> * CostJbTotal<MODEL>::initialize(const CtrlVar_ & fg) const {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-double CostJbTotal<MODEL>::finalize(JqTerm_ * jqnl) const {
+template<typename MODEL, typename OBS>
+double CostJbTotal<MODEL, OBS>::finalize(JqTerm_ * jqnl) const {
   ASSERT(fg_);
   CtrlInc_ dx(*this);
 
@@ -155,8 +155,8 @@ double CostJbTotal<MODEL>::finalize(JqTerm_ * jqnl) const {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-JqTermTLAD<MODEL> * CostJbTotal<MODEL>::initializeTraj(const CtrlVar_ & fg,
+template<typename MODEL, typename OBS>
+JqTermTLAD<MODEL> * CostJbTotal<MODEL, OBS>::initializeTraj(const CtrlVar_ & fg,
                                                        const Geometry_ & resol) {
   fg_ = &fg;
   resol_.reset(new Geometry_(resol));
@@ -172,8 +172,8 @@ JqTermTLAD<MODEL> * CostJbTotal<MODEL>::initializeTraj(const CtrlVar_ & fg,
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostJbTotal<MODEL>::finalizeTraj(JqTermTLAD_ * jqlin) {
+template<typename MODEL, typename OBS>
+void CostJbTotal<MODEL, OBS>::finalizeTraj(JqTermTLAD_ * jqlin) {
   ASSERT(fg_);
 // Compute and save first guess increment.
   dxFG_.reset(new CtrlInc_(*this));
@@ -191,8 +191,8 @@ void CostJbTotal<MODEL>::finalizeTraj(JqTermTLAD_ * jqlin) {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-double CostJbTotal<MODEL>::evaluate(const CtrlInc_ & dx) const {
+template<typename MODEL, typename OBS>
+double CostJbTotal<MODEL, OBS>::evaluate(const CtrlInc_ & dx) const {
   CtrlInc_ gg(*this);
   this->multiplyBinv(dx, gg);
 
@@ -219,8 +219,8 @@ double CostJbTotal<MODEL>::evaluate(const CtrlInc_ & dx) const {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostJbTotal<MODEL>::addGradientFG(CtrlInc_ & grad) const {
+template<typename MODEL, typename OBS>
+void CostJbTotal<MODEL, OBS>::addGradientFG(CtrlInc_ & grad) const {
   CtrlInc_ gg(grad, false);
   this->multiplyBinv(*dxFG_, gg);
   grad += gg;
@@ -228,8 +228,8 @@ void CostJbTotal<MODEL>::addGradientFG(CtrlInc_ & grad) const {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostJbTotal<MODEL>::addGradientFG(CtrlInc_ & grad, CtrlInc_ & gradJb) const {
+template<typename MODEL, typename OBS>
+void CostJbTotal<MODEL, OBS>::addGradientFG(CtrlInc_ & grad, CtrlInc_ & gradJb) const {
   jb_->addGradient(dxFG_->state(), grad.state(), gradJb.state());
   grad.modVar() += gradJb.modVar();
   grad.obsVar() += gradJb.obsVar();
@@ -237,16 +237,16 @@ void CostJbTotal<MODEL>::addGradientFG(CtrlInc_ & grad, CtrlInc_ & gradJb) const
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-JqTermTLAD<MODEL> * CostJbTotal<MODEL>::initializeTL() const {
+template<typename MODEL, typename OBS>
+JqTermTLAD<MODEL> * CostJbTotal<MODEL, OBS>::initializeTL() const {
   JqTermTLAD_ * jqtl = jb_->initializeJqTL();
   return jqtl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostJbTotal<MODEL>::finalizeTL(JqTermTLAD_ * jqtl, const CtrlInc_ & bgns,
+template<typename MODEL, typename OBS>
+void CostJbTotal<MODEL, OBS>::finalizeTL(JqTermTLAD_ * jqtl, const CtrlInc_ & bgns,
                                     CtrlInc_ & dx) const {
   dx = bgns;
   if (jqtl) jqtl->computeModelErrorTL(dx.state());
@@ -254,8 +254,8 @@ void CostJbTotal<MODEL>::finalizeTL(JqTermTLAD_ * jqtl, const CtrlInc_ & bgns,
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-JqTermTLAD<MODEL> * CostJbTotal<MODEL>::initializeAD(CtrlInc_ & bgns,
+template<typename MODEL, typename OBS>
+JqTermTLAD<MODEL> * CostJbTotal<MODEL, OBS>::initializeAD(CtrlInc_ & bgns,
                                                    const CtrlInc_ & dx) const {
   JqTermTLAD_ * jqad = jb_->initializeJqAD(dx.state());
   bgns += dx;
@@ -264,15 +264,15 @@ JqTermTLAD<MODEL> * CostJbTotal<MODEL>::initializeAD(CtrlInc_ & bgns,
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostJbTotal<MODEL>::finalizeAD(JqTermTLAD_ * jqad) const {
+template<typename MODEL, typename OBS>
+void CostJbTotal<MODEL, OBS>::finalizeAD(JqTermTLAD_ * jqad) const {
   if (jqad) jqad->clear();
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostJbTotal<MODEL>::multiplyB(const CtrlInc_ & dxin, CtrlInc_ & dxout) const {
+template<typename MODEL, typename OBS>
+void CostJbTotal<MODEL, OBS>::multiplyB(const CtrlInc_ & dxin, CtrlInc_ & dxout) const {
   jb_->Bmult(dxin.state(), dxout.state());
   jbModBias_.multiply(dxin.modVar(), dxout.modVar());
   jbObsBias_.multiply(dxin.obsVar(), dxout.obsVar());
@@ -280,8 +280,8 @@ void CostJbTotal<MODEL>::multiplyB(const CtrlInc_ & dxin, CtrlInc_ & dxout) cons
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostJbTotal<MODEL>::multiplyBinv(const CtrlInc_ & dxin, CtrlInc_ & dxout) const {
+template<typename MODEL, typename OBS>
+void CostJbTotal<MODEL, OBS>::multiplyBinv(const CtrlInc_ & dxin, CtrlInc_ & dxout) const {
   jb_->Bminv(dxin.state(), dxout.state());
   jbModBias_.inverseMultiply(dxin.modVar(), dxout.modVar());
   jbObsBias_.inverseMultiply(dxin.obsVar(), dxout.obsVar());
@@ -289,8 +289,8 @@ void CostJbTotal<MODEL>::multiplyBinv(const CtrlInc_ & dxin, CtrlInc_ & dxout) c
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostJbTotal<MODEL>::randomize(CtrlInc_ & dx) const {
+template<typename MODEL, typename OBS>
+void CostJbTotal<MODEL, OBS>::randomize(CtrlInc_ & dx) const {
   jb_->randomize(dx.state());
   jbModBias_.randomize(dx.modVar());
   jbObsBias_.randomize(dx.obsVar());

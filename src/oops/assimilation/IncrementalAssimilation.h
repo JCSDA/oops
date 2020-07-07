@@ -26,12 +26,12 @@
 
 namespace oops {
 
-template<typename MODEL>
-int IncrementalAssimilation(ControlVariable<MODEL> & xx, CostFunction<MODEL> & J,
+template<typename MODEL, typename OBS>
+int IncrementalAssimilation(ControlVariable<MODEL, OBS> & xx, CostFunction<MODEL, OBS> & J,
                             const eckit::Configuration & config) {
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef Minimizer<MODEL>           Minimizer_;
-  typedef State<MODEL>               State_;
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef Minimizer<MODEL, OBS>           Minimizer_;
+  typedef State<MODEL>                    State_;
 
 // Setup outer loop
   std::vector<eckit::LocalConfiguration> iterconfs;
@@ -43,7 +43,7 @@ int IncrementalAssimilation(ControlVariable<MODEL> & xx, CostFunction<MODEL> & J
 // Setup minimizer
   eckit::LocalConfiguration minConf(config, "minimizer");
   minConf.set("nouter", static_cast<const int>(nouter));
-  std::unique_ptr<Minimizer_> minim(MinFactory<MODEL>::create(minConf, J));
+  std::unique_ptr<Minimizer_> minim(MinFactory<MODEL, OBS>::create(minConf, J));
 
   for (unsigned jouter = 0; jouter < nouter; ++jouter) {
     iterconfs[jouter].set("iteration", static_cast<int>(jouter));

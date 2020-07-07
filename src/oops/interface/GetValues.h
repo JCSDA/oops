@@ -27,13 +27,13 @@ namespace oops {
 /// \brief Gets values from model State to observation locations (fills GeoVaLs)
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename MODEL, typename OBS>
 class GetValues : public util::Printable,
-                  private util::ObjectCounter<GetValues<MODEL> > {
+                  private util::ObjectCounter<GetValues<MODEL, OBS> > {
   typedef typename MODEL::GetValues  GetValues_;
   typedef Geometry<MODEL>            Geometry_;
-  typedef GeoVaLs<MODEL>             GeoVaLs_;
-  typedef Locations<MODEL>           Locations_;
+  typedef GeoVaLs<OBS>               GeoVaLs_;
+  typedef Locations<OBS>             Locations_;
   typedef State<MODEL>               State_;
 
  public:
@@ -58,44 +58,44 @@ class GetValues : public util::Printable,
 
 // =============================================================================
 
-template<typename MODEL>
-GetValues<MODEL>::GetValues(const Geometry_ & resol, const Locations_ & locs) : getvalues_()
+template<typename MODEL, typename OBS>
+GetValues<MODEL, OBS>::GetValues(const Geometry_ & resol, const Locations_ & locs) : getvalues_()
 {
-  Log::trace() << "GetValues<MODEL>::GetValues starting" << std::endl;
+  Log::trace() << "GetValues<MODEL, OBS>::GetValues starting" << std::endl;
   util::Timer timer(classname(), "GetValues");
   getvalues_.reset(new GetValues_(resol.geometry(), locs.locations()));
-  Log::trace() << "GetValues<MODEL>::GetValues done" << std::endl;
+  Log::trace() << "GetValues<MODEL, OBS>::GetValues done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-GetValues<MODEL>::~GetValues() {
-  Log::trace() << "GetValues<MODEL>::~GetValues starting" << std::endl;
+template<typename MODEL, typename OBS>
+GetValues<MODEL, OBS>::~GetValues() {
+  Log::trace() << "GetValues<MODEL, OBS>::~GetValues starting" << std::endl;
   util::Timer timer(classname(), "~GetValues");
   getvalues_.reset();
-  Log::trace() << "GetValues<MODEL>::~GetValues done" << std::endl;
+  Log::trace() << "GetValues<MODEL, OBS>::~GetValues done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void GetValues<MODEL>::fillGeoVaLs(const State_ & state, const util::DateTime & t1,
+template<typename MODEL, typename OBS>
+void GetValues<MODEL, OBS>::fillGeoVaLs(const State_ & state, const util::DateTime & t1,
                                    const util::DateTime & t2, GeoVaLs_ & gvals) const {
-  Log::trace() << "GetValues<MODEL>::fillGeoVaLs starting" << std::endl;
+  Log::trace() << "GetValues<MODEL, OBS>::fillGeoVaLs starting" << std::endl;
   util::Timer timer(classname(), "fillGeoVaLs");
   getvalues_->fillGeoVaLs(state.state(), t1, t2, gvals.geovals());
-  Log::trace() << "GetValues<MODEL>::fillGeoVaLs done" << std::endl;
+  Log::trace() << "GetValues<MODEL, OBS>::fillGeoVaLs done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void GetValues<MODEL>::print(std::ostream & os) const {
-  Log::trace() << "GetValues<MODEL>::print starting" << std::endl;
+template<typename MODEL, typename OBS>
+void GetValues<MODEL, OBS>::print(std::ostream & os) const {
+  Log::trace() << "GetValues<MODEL, OBS>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
   os << *getvalues_;
-  Log::trace() << "GetValues<MODEL>::print done" << std::endl;
+  Log::trace() << "GetValues<MODEL, OBS>::print done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

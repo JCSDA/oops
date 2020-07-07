@@ -14,6 +14,6 @@
 
 int main(int argc, char ** argv) {
   oops::Run run(argc, argv);
-  oops::MakeObs<lorenz95::L95Traits> mkobs;
+  oops::MakeObs<lorenz95::L95Traits, lorenz95::L95ObsTraits> mkobs;
   return run.execute(mkobs);
 }

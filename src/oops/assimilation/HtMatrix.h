@@ -30,14 +30,14 @@ namespace oops {
  *  for the other terms of the cost function.
  */
 
-template<typename MODEL> class HtMatrix : private boost::noncopyable {
-  typedef CostFunction<MODEL>  CostFct_;
-  typedef Increment<MODEL>     Increment_;
+template<typename MODEL, typename OBS> class HtMatrix : private boost::noncopyable {
+  typedef CostFunction<MODEL, OBS>  CostFct_;
+  typedef Increment<MODEL>          Increment_;
 
  public:
   explicit HtMatrix(const CostFct_ & j): j_(j) {}
 
-  void multiply(const DualVector<MODEL> & dy, ControlIncrement<MODEL> & dx,
+  void multiply(const DualVector<MODEL, OBS> & dy, ControlIncrement<MODEL, OBS> & dx,
                 const bool idModel = false) const {
     PostProcessor<Increment_> post;
     PostProcessorTLAD<MODEL> cost;

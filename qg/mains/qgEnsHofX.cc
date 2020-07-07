@@ -14,6 +14,6 @@
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  oops::EnsHofX<qg::QgTraits> enshofx;
+  oops::EnsHofX<qg::QgTraits, qg::QgObsTraits> enshofx;
   return run.execute(enshofx);
 }

@@ -29,9 +29,9 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testConstructor() {
-  typedef ObsTestsFixture<MODEL>  Test_;
-  typedef oops::ObsAuxCovariance<MODEL>    Covariance_;
+template <typename OBS> void testConstructor() {
+  typedef ObsTestsFixture<OBS>  Test_;
+  typedef oops::ObsAuxCovariance<OBS>    Covariance_;
 
   std::vector<eckit::LocalConfiguration> oconf;
   Test_::config().get("ObsTypes", oconf);
@@ -53,19 +53,19 @@ template <typename MODEL> void testConstructor() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename OBS>
 class ObsAuxCovariance : public oops::Test {
  public:
   ObsAuxCovariance() {}
   virtual ~ObsAuxCovariance() {}
  private:
-  std::string testid() const {return "test::ObsAuxCovariance<" + MODEL::name() + ">";}
+  std::string testid() const {return "test::ObsAuxCovariance<" + OBS::name() + ">";}
 
   void register_tests() const {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/ObsAuxCovariance/testConstructor")
-      { testConstructor<MODEL>(); });
+      { testConstructor<OBS>(); });
   }
 };
 

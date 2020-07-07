@@ -17,9 +17,9 @@
 
 namespace oops {
 
-template <typename MODEL> void instantiateObsErrorFactory() {
-  static ObsErrorMaker<MODEL, ObsErrorDiag<MODEL> > makerDiag_("diagonal");
-  static ObsErrorMaker<MODEL, LocalObsErrorDiag<MODEL> > makerLocalDiag_("localized diagonal");
+template <typename OBS> void instantiateObsErrorFactory() {
+  static ObsErrorMaker<OBS, ObsErrorDiag<OBS> > makerDiag_("diagonal");
+  static ObsErrorMaker<OBS, LocalObsErrorDiag<OBS> > makerLocalDiag_("localized diagonal");
 }
 
 }  // namespace oops

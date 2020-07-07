@@ -21,10 +21,10 @@ namespace oops {
 
 /// \brief container for QC-related things (flags & obserrors)
 
-template <typename MODEL>
+template <typename OBS>
 class QCData {
-  typedef ObsSpaces<MODEL>           ObsSpaces_;
-  template <typename DATA> using ObsData_ = ObsDataVector<MODEL, DATA>;
+  typedef ObsSpaces<OBS>           ObsSpaces_;
+  template <typename DATA> using ObsData_ = ObsDataVector<OBS, DATA>;
   template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsData_<DATA> >;
 
  public:
@@ -44,8 +44,8 @@ class QCData {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-QCData<MODEL>::QCData(const ObsSpaces_ & obspaces) {
+template <typename OBS>
+QCData<OBS>::QCData(const ObsSpaces_ & obspaces) {
   qcflags_.reserve(obspaces.size());
   obserr_.reserve(obspaces.size());
   for (size_t jj = 0; jj < obspaces.size(); ++jj) {

@@ -55,17 +55,17 @@ namespace oops {
  * of the variational data assimilation cost function.
  */
 
-template<typename MODEL> class CostFunction : private boost::noncopyable {
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef ControlVariable<MODEL>     CtrlVar_;
-  typedef CostJbTotal<MODEL>         JbTotal_;
-  typedef CostTermBase<MODEL>        CostBase_;
-  typedef JqTerm<MODEL>              JqTerm_;
-  typedef JqTermTLAD<MODEL>          JqTermTLAD_;
-  typedef Geometry<MODEL>            Geometry_;
-  typedef LinearModel<MODEL>         LinearModel_;
-  typedef State<MODEL>               State_;
-  typedef Increment<MODEL>           Increment_;
+template<typename MODEL, typename OBS> class CostFunction : private boost::noncopyable {
+  typedef ControlIncrement<MODEL, OBS>  CtrlInc_;
+  typedef ControlVariable<MODEL, OBS>   CtrlVar_;
+  typedef CostJbTotal<MODEL, OBS>       JbTotal_;
+  typedef CostTermBase<MODEL, OBS>      CostBase_;
+  typedef JqTerm<MODEL>                 JqTerm_;
+  typedef JqTermTLAD<MODEL>             JqTermTLAD_;
+  typedef Geometry<MODEL>               Geometry_;
+  typedef LinearModel<MODEL>            LinearModel_;
+  typedef State<MODEL>                  State_;
+  typedef Increment<MODEL>              Increment_;
 
  public:
   explicit CostFunction(const eckit::Configuration &);
@@ -112,8 +112,9 @@ template<typename MODEL> class CostFunction : private boost::noncopyable {
 
   virtual CostJbState<MODEL>  * newJb(const eckit::Configuration &, const Geometry_ &,
                                       const CtrlVar_ &) const = 0;
-  virtual CostJo<MODEL>       * newJo(const eckit::Configuration &) const = 0;
-  virtual CostTermBase<MODEL> * newJc(const eckit::Configuration &, const Geometry_ &) const = 0;
+  virtual CostJo<MODEL, OBS>       * newJo(const eckit::Configuration &) const = 0;
+  virtual CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &,
+                                           const Geometry_ &) const = 0;
   virtual void doLinearize(const Geometry_ &, const eckit::Configuration &,
                            const CtrlVar_ &, const CtrlVar_ &) = 0;
   virtual const Geometry_ & geometry() const = 0;
@@ -131,30 +132,31 @@ template<typename MODEL> class CostFunction : private boost::noncopyable {
 // -----------------------------------------------------------------------------
 
 /// Cost Function Factory
-template <typename MODEL>
+template <typename MODEL, typename OBS>
 class CostFactory {
  public:
-  static CostFunction<MODEL> * create(const eckit::Configuration &, const eckit::mpi::Comm &);
+  static CostFunction<MODEL, OBS> * create(const eckit::Configuration &, const eckit::mpi::Comm &);
   virtual ~CostFactory() = default;
 
  protected:
   explicit CostFactory(const std::string &);
  private:
-  virtual CostFunction<MODEL> * make(const eckit::Configuration &, const eckit::mpi::Comm &) = 0;
-  static std::map < std::string, CostFactory<MODEL> * > & getMakers() {
-    static std::map < std::string, CostFactory<MODEL> * > makers_;
+  virtual CostFunction<MODEL, OBS> * make(const eckit::Configuration &,
+                                          const eckit::mpi::Comm &) = 0;
+  static std::map < std::string, CostFactory<MODEL, OBS> * > & getMakers() {
+    static std::map < std::string, CostFactory<MODEL, OBS> * > makers_;
     return makers_;
   }
 };
 
-template<class MODEL, class FCT>
-class CostMaker : public CostFactory<MODEL> {
+template<class MODEL, class OBS, class FCT>
+class CostMaker : public CostFactory<MODEL, OBS> {
  private:
-  CostFunction<MODEL> * make(const eckit::Configuration & config,
+  CostFunction<MODEL, OBS> * make(const eckit::Configuration & config,
                              const eckit::mpi::Comm & comm) override
     {return new FCT(config, comm);}
  public:
-  explicit CostMaker(const std::string & name) : CostFactory<MODEL>(name) {}
+  explicit CostMaker(const std::string & name) : CostFactory<MODEL, OBS>(name) {}
 };
 
 // =============================================================================
@@ -162,8 +164,8 @@ class CostMaker : public CostFactory<MODEL> {
 //  Factory
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-CostFactory<MODEL>::CostFactory(const std::string & name) {
+template <typename MODEL, typename OBS>
+CostFactory<MODEL, OBS>::CostFactory(const std::string & name) {
   if (getMakers().find(name) != getMakers().end()) {
     Log::error() << name << " already registered in cost function factory." << std::endl;
     ABORT("Element already registered in CostFactory.");
@@ -173,12 +175,12 @@ CostFactory<MODEL>::CostFactory(const std::string & name) {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-CostFunction<MODEL>* CostFactory<MODEL>::create(const eckit::Configuration & config,
+template <typename MODEL, typename OBS>
+CostFunction<MODEL, OBS>* CostFactory<MODEL, OBS>::create(const eckit::Configuration & config,
                                                 const eckit::mpi::Comm & comm) {
   std::string id = config.getString("cost_type");
   Log::trace() << "Variational Assimilation Type=" << id << std::endl;
-  typename std::map<std::string, CostFactory<MODEL>*>::iterator j = getMakers().find(id);
+  typename std::map<std::string, CostFactory<MODEL, OBS>*>::iterator j = getMakers().find(id);
   if (j == getMakers().end()) {
     Log::error() << id << " does not exist in cost function factory." << std::endl;
     ABORT("Element does not exist in CostFactory.");
@@ -191,20 +193,20 @@ CostFunction<MODEL>* CostFactory<MODEL>::create(const eckit::Configuration & con
 //  Cost Function
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-CostFunction<MODEL>::CostFunction(const eckit::Configuration & config)
+template<typename MODEL, typename OBS>
+CostFunction<MODEL, OBS>::CostFunction(const eckit::Configuration & config)
   : jb_(), jterms_(), tlm_()
 {}
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostFunction<MODEL>::setupTerms(const eckit::Configuration & config) {
+template<typename MODEL, typename OBS>
+void CostFunction<MODEL, OBS>::setupTerms(const eckit::Configuration & config) {
   Log::trace() << "CostFunction::setupTerms start" << std::endl;
 
 // Jo
   eckit::LocalConfiguration joconf(config, "Jo");
-  CostJo<MODEL> * jo = this->newJo(joconf);
+  CostJo<MODEL, OBS> * jo = this->newJo(joconf);
   jterms_.push_back(jo);
   Log::trace() << "CostFunction::setupTerms Jo added" << std::endl;
 
@@ -221,7 +223,7 @@ void CostFunction<MODEL>::setupTerms(const eckit::Configuration & config) {
   std::vector<eckit::LocalConfiguration> jcs;
   config.get("Jc", jcs);
   for (size_t jj = 0; jj < jcs.size(); ++jj) {
-    CostTermBase<MODEL> * jc = this->newJc(jcs[jj], this->geometry());
+    CostTermBase<MODEL, OBS> * jc = this->newJc(jcs[jj], this->geometry());
     jterms_.push_back(jc);
   }
   Log::trace() << "CostFunction::setupTerms done" << std::endl;
@@ -229,13 +231,14 @@ void CostFunction<MODEL>::setupTerms(const eckit::Configuration & config) {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostFunction<MODEL>::setupTerms(const eckit::Configuration & config, const State_ & statein) {
+template<typename MODEL, typename OBS>
+void CostFunction<MODEL, OBS>::setupTerms(const eckit::Configuration & config,
+                                          const State_ & statein) {
   Log::trace() << "CostFunction::setupTerms start" << std::endl;
 
 // Jo
   eckit::LocalConfiguration joconf(config, "Jo");
-  CostJo<MODEL> * jo = this->newJo(joconf);
+  CostJo<MODEL, OBS> * jo = this->newJo(joconf);
   jterms_.push_back(jo);
   Log::trace() << "CostFunction::setupTerms Jo added" << std::endl;
 
@@ -250,7 +253,7 @@ void CostFunction<MODEL>::setupTerms(const eckit::Configuration & config, const 
   std::vector<eckit::LocalConfiguration> jcs;
   config.get("Jc", jcs);
   for (size_t jj = 0; jj < jcs.size(); ++jj) {
-    CostTermBase<MODEL> * jc = this->newJc(jcs[jj], this->geometry());
+    CostTermBase<MODEL, OBS> * jc = this->newJc(jcs[jj], this->geometry());
     jterms_.push_back(jc);
   }
   Log::trace() << "CostFunction::setupTerms done" << std::endl;
@@ -258,8 +261,8 @@ void CostFunction<MODEL>::setupTerms(const eckit::Configuration & config, const 
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-double CostFunction<MODEL>::evaluate(const CtrlVar_ & fguess,
+template<typename MODEL, typename OBS>
+double CostFunction<MODEL, OBS>::evaluate(const CtrlVar_ & fguess,
                                      const eckit::Configuration & config,
                                      PostProcessor<State_> post) {
   Log::trace() << "CostFunction::evaluate start" << std::endl;
@@ -291,8 +294,8 @@ double CostFunction<MODEL>::evaluate(const CtrlVar_ & fguess,
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-double CostFunction<MODEL>::linearize(const CtrlVar_ & fguess,
+template<typename MODEL, typename OBS>
+double CostFunction<MODEL, OBS>::linearize(const CtrlVar_ & fguess,
                                       const eckit::Configuration & innerConf,
                                       PostProcessor<State_> post) {
   Log::trace() << "CostFunction::linearize start" << std::endl;
@@ -333,8 +336,8 @@ double CostFunction<MODEL>::linearize(const CtrlVar_ & fguess,
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostFunction<MODEL>::computeGradientFG(CtrlInc_ & grad) const {
+template<typename MODEL, typename OBS>
+void CostFunction<MODEL, OBS>::computeGradientFG(CtrlInc_ & grad) const {
   Log::trace() << "CostFunction::computeGradientFG start" << std::endl;
   PostProcessor<Increment_> pp;
   PostProcessorTLAD<MODEL> costad;
@@ -351,8 +354,8 @@ void CostFunction<MODEL>::computeGradientFG(CtrlInc_ & grad) const {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostFunction<MODEL>::addIncrement(CtrlVar_ & xx, const CtrlInc_ & dx,
+template<typename MODEL, typename OBS>
+void CostFunction<MODEL, OBS>::addIncrement(CtrlVar_ & xx, const CtrlInc_ & dx,
                                        PostProcessor<Increment_> post) const {
   Log::trace() << "CostFunction::addIncrement start" << std::endl;
   Log::info() << "CostFunction::addIncrement: First guess:" << xx << std::endl;
@@ -369,8 +372,8 @@ void CostFunction<MODEL>::addIncrement(CtrlVar_ & xx, const CtrlInc_ & dx,
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostFunction<MODEL>::resetLinearization() {
+template<typename MODEL, typename OBS>
+void CostFunction<MODEL, OBS>::resetLinearization() {
   Log::trace() << "CostFunction::resetLinearization start" << std::endl;
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
     jterms_[jj].resetLinearization();

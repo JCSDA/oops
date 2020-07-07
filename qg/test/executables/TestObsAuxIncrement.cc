@@ -14,7 +14,7 @@
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  test::ObsAuxIncrement<qg::QgTraits> tests;
+  test::ObsAuxIncrement<qg::QgObsTraits> tests;
   return run.execute(tests);
 }
 

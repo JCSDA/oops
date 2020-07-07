@@ -33,9 +33,9 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testConstructor() {
-  typedef ObsTestsFixture<MODEL> Test_;
-  typedef oops::ObsOperator<MODEL>       ObsOperator_;
+template <typename OBS> void testConstructor() {
+  typedef ObsTestsFixture<OBS> Test_;
+  typedef oops::ObsOperator<OBS>       ObsOperator_;
 
   const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
   std::vector<eckit::LocalConfiguration> conf;
@@ -53,13 +53,13 @@ template <typename MODEL> void testConstructor() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testSimulateObs() {
-  typedef ObsTestsFixture<MODEL> Test_;
-  typedef oops::GeoVaLs<MODEL>           GeoVaLs_;
-  typedef oops::ObsDiagnostics<MODEL>    ObsDiags_;
-  typedef oops::ObsAuxControl<MODEL>     ObsAuxCtrl_;
-  typedef oops::ObsOperator<MODEL>       ObsOperator_;
-  typedef oops::ObsVector<MODEL>         ObsVector_;
+template <typename OBS> void testSimulateObs() {
+  typedef ObsTestsFixture<OBS> Test_;
+  typedef oops::GeoVaLs<OBS>           GeoVaLs_;
+  typedef oops::ObsDiagnostics<OBS>    ObsDiags_;
+  typedef oops::ObsAuxControl<OBS>     ObsAuxCtrl_;
+  typedef oops::ObsOperator<OBS>       ObsOperator_;
+  typedef oops::ObsVector<OBS>         ObsVector_;
 
   const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
   std::vector<eckit::LocalConfiguration> conf;
@@ -137,21 +137,21 @@ template <typename MODEL> void testSimulateObs() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename OBS>
 class ObsOperator : public oops::Test {
  public:
   ObsOperator() {}
   virtual ~ObsOperator() {}
  private:
-  std::string testid() const {return "test::ObsOperator<" + MODEL::name() + ">";}
+  std::string testid() const {return "test::ObsOperator<" + OBS::name() + ">";}
 
   void register_tests() const {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/ObsOperator/testConstructor")
-      { testConstructor<MODEL>(); });
+      { testConstructor<OBS>(); });
     ts.emplace_back(CASE("interface/ObsOperator/testSimulateObs")
-      { testSimulateObs<MODEL>(); });
+      { testSimulateObs<OBS>(); });
   }
 };
 

@@ -11,6 +11,6 @@
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  oops::LocalHofX<lorenz95::L95Traits> localhofx;
+  oops::LocalHofX<lorenz95::L95Traits, lorenz95::L95ObsTraits> localhofx;
   return run.execute(localhofx);
 }

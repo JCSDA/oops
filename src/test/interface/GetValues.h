@@ -41,14 +41,14 @@ namespace test {
 
 // =================================================================================================
 
-template <typename MODEL> class GetValuesFixture : private boost::noncopyable {
-  typedef eckit::LocalConfiguration  LocalConfig_;
-  typedef oops::GeoVaLs<MODEL>       GeoVaLs_;
-  typedef oops::Geometry<MODEL>      Geometry_;
-  typedef oops::GetValues<MODEL>     GetValues_;
-  typedef oops::Locations<MODEL>     Locations_;
-  typedef oops::Variables            Variables_;
-  typedef util::DateTime             DateTime_;
+template <typename MODEL, typename OBS> class GetValuesFixture : private boost::noncopyable {
+  typedef eckit::LocalConfiguration    LocalConfig_;
+  typedef oops::GeoVaLs<OBS>           GeoVaLs_;
+  typedef oops::Geometry<MODEL>        Geometry_;
+  typedef oops::GetValues<MODEL, OBS>  GetValues_;
+  typedef oops::Locations<OBS>         Locations_;
+  typedef oops::Variables              Variables_;
+  typedef util::DateTime               DateTime_;
 
  public:
   static const DateTime_         & timebeg()         {return *getInstance().timebeg_;}
@@ -61,12 +61,12 @@ template <typename MODEL> class GetValuesFixture : private boost::noncopyable {
   static const Variables_        & geovalvars()      {return *getInstance().geovalvars_;}
 
  private:
-  static GetValuesFixture<MODEL>& getInstance() {
-    static GetValuesFixture<MODEL> theGetValuesFixture;
+  static GetValuesFixture<MODEL, OBS>& getInstance() {
+    static GetValuesFixture<MODEL, OBS> theGetValuesFixture;
     return theGetValuesFixture;
   }
 
-  GetValuesFixture<MODEL>() {
+  GetValuesFixture<MODEL, OBS>() {
     testconf_.reset(new LocalConfig_(TestEnvironment::config(), "GetValuesTest"));
 
     // Geometry
@@ -92,7 +92,7 @@ template <typename MODEL> class GetValuesFixture : private boost::noncopyable {
     getvalues_.reset(new GetValues_(*resol_, *locs_));
   }
 
-  ~GetValuesFixture<MODEL>() {}
+  ~GetValuesFixture<MODEL, OBS>() {}
 
   std::unique_ptr<const DateTime_>        timebeg_;
   std::unique_ptr<const DateTime_>        timeend_;
@@ -106,9 +106,9 @@ template <typename MODEL> class GetValuesFixture : private boost::noncopyable {
 
 // =================================================================================================
 
-template <typename MODEL> void testGetValuesConstructor() {
-  typedef GetValuesFixture<MODEL>  Test_;
-  typedef oops::GetValues<MODEL>   GetValues_;
+template <typename MODEL, typename OBS> void testGetValuesConstructor() {
+  typedef GetValuesFixture<MODEL, OBS>  Test_;
+  typedef oops::GetValues<MODEL, OBS>   GetValues_;
 
   std::unique_ptr<const GetValues_> GetValues(new GetValues_(Test_::resol(), Test_::locs()));
   EXPECT(GetValues.get());
@@ -119,9 +119,9 @@ template <typename MODEL> void testGetValuesConstructor() {
 
 // -------------------------------------------------------------------------------------------------
 
-template <typename MODEL> void testGetValuesMultiWindow() {
-  typedef GetValuesFixture<MODEL>    Test_;
-  typedef oops::GeoVaLs<MODEL>       GeoVaLs_;
+template <typename MODEL, typename OBS> void testGetValuesMultiWindow() {
+  typedef GetValuesFixture<MODEL, OBS>    Test_;
+  typedef oops::GeoVaLs<OBS>              GeoVaLs_;
   typedef oops::State<MODEL>         State_;
 
   const util::Duration windowlength = Test_::timeend() - Test_::timebeg();
@@ -183,10 +183,10 @@ template <typename MODEL> void testGetValuesMultiWindow() {
  * selected in the "State.StateGenerate" section of the config file.
  */
 
-template <typename MODEL> void testGetValuesInterpolation() {
-  typedef GetValuesFixture<MODEL>    Test_;
-  typedef oops::State<MODEL>         State_;
-  typedef oops::GeoVaLs<MODEL>       GeoVaLs_;
+template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
+  typedef GetValuesFixture<MODEL, OBS>    Test_;
+  typedef oops::State<MODEL>              State_;
+  typedef oops::GeoVaLs<OBS>              GeoVaLs_;
 
   const eckit::LocalConfiguration confgen(Test_::testconf(), "StateGenerate");
   const oops::Variables statevars(confgen);
@@ -224,24 +224,24 @@ template <typename MODEL> void testGetValuesInterpolation() {
 
 // =================================================================================================
 
-template <typename MODEL>
+template <typename MODEL, typename OBS>
 class GetValues : public oops::Test {
  public:
   GetValues() {}
   virtual ~GetValues() {}
 
  private:
-  std::string testid() const {return "test::GetValues<" + MODEL::name() + ">";}
+  std::string testid() const {return "test::GetValues<" + MODEL::name() + ", " + OBS::name() + ">";}
 
   void register_tests() const {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/GeometryIterator/testGetValuesConstructor")
-      { testGetValuesConstructor<MODEL>(); });
+      { testGetValuesConstructor<MODEL, OBS>(); });
     ts.emplace_back(CASE("interface/GeometryIterator/testGetValuesMultiWindow")
-      { testGetValuesMultiWindow<MODEL>(); });
+      { testGetValuesMultiWindow<MODEL, OBS>(); });
     ts.emplace_back(CASE("interface/GeometryIterator/testGetValuesInterpolation")
-      { testGetValuesInterpolation<MODEL>(); });
+      { testGetValuesInterpolation<MODEL, OBS>(); });
   }
 };
 

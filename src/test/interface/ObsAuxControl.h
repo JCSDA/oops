@@ -30,9 +30,9 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testConstructor() {
-  typedef ObsTestsFixture<MODEL>  Test_;
-  typedef oops::ObsAuxControl<MODEL>    ObsAux_;
+template <typename OBS> void testConstructor() {
+  typedef ObsTestsFixture<OBS>  Test_;
+  typedef oops::ObsAuxControl<OBS>    ObsAux_;
 
   std::vector<eckit::LocalConfiguration> oconf;
   Test_::config().get("ObsTypes", oconf);
@@ -47,9 +47,9 @@ template <typename MODEL> void testConstructor() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> void testCopyConstructor() {
-  typedef ObsTestsFixture<MODEL>  Test_;
-  typedef oops::ObsAuxControl<MODEL>    ObsAux_;
+template <typename OBS> void testCopyConstructor() {
+  typedef ObsTestsFixture<OBS>  Test_;
+  typedef oops::ObsAuxControl<OBS>    ObsAux_;
 
   std::vector<eckit::LocalConfiguration> oconf;
   Test_::config().get("ObsTypes", oconf);
@@ -68,21 +68,21 @@ template <typename MODEL> void testCopyConstructor() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename OBS>
 class ObsAuxControl : public oops::Test {
  public:
   ObsAuxControl() {}
   virtual ~ObsAuxControl() {}
  private:
-  std::string testid() const {return "test::ObsAuxControl<" + MODEL::name() + ">";}
+  std::string testid() const {return "test::ObsAuxControl<" + OBS::name() + ">";}
 
   void register_tests() const {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/ObsAuxControl/testConstructor")
-      { testConstructor<MODEL>(); });
+      { testConstructor<OBS>(); });
     ts.emplace_back(CASE("interface/ObsAuxControl/testCopyConstructor")
-      { testCopyConstructor<MODEL>(); });
+      { testCopyConstructor<OBS>(); });
   }
 };
 

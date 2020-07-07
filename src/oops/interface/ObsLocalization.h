@@ -21,10 +21,10 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL, typename LOC>
-class ObsLocalization : public ObsLocalizationBase<MODEL> {
-  typedef ObsSpace<MODEL>            ObsSpace_;
-  typedef ObsVector<MODEL>           ObsVector_;
+template <typename OBS, typename LOC>
+class ObsLocalization : public ObsLocalizationBase<OBS> {
+  typedef ObsSpace<OBS>            ObsSpace_;
+  typedef ObsVector<OBS>           ObsVector_;
 
  public:
   static const std::string classname() {return "oops::ObsLocalization";}
@@ -42,42 +42,42 @@ class ObsLocalization : public ObsLocalizationBase<MODEL> {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL, typename LOC>
-ObsLocalization<MODEL, LOC>::ObsLocalization(const eckit::Configuration & conf,
+template <typename OBS, typename LOC>
+ObsLocalization<OBS, LOC>::ObsLocalization(const eckit::Configuration & conf,
                                              const ObsSpace_ & os)
   : obsloc_()
 {
-  Log::trace() << "ObsLocalization<MODEL, LOC>::ObsLocalization Configuration starting" <<
+  Log::trace() << "ObsLocalization<OBS, LOC>::ObsLocalization Configuration starting" <<
                   std::endl;
   util::Timer timer(classname(), "ObsLocalization");
   obsloc_.reset(new LOC(conf, os.obsspace()));
-  Log::trace() << "ObsLocalization<MODEL, LOC>::ObsLocalization Configuration done" << std::endl;
+  Log::trace() << "ObsLocalization<OBS, LOC>::ObsLocalization Configuration done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL, typename LOC>
-ObsLocalization<MODEL, LOC>::~ObsLocalization() {
-  Log::trace() << "ObsLocalization<MODEL, LOC>::~ObsLocalization starting" << std::endl;
+template <typename OBS, typename LOC>
+ObsLocalization<OBS, LOC>::~ObsLocalization() {
+  Log::trace() << "ObsLocalization<OBS, LOC>::~ObsLocalization starting" << std::endl;
   util::Timer timer(classname(), "~ObsLocalization");
   obsloc_.reset();
-  Log::trace() << "ObsLocalization<MODEL, LOC>::~ObsLocalization done" << std::endl;
+  Log::trace() << "ObsLocalization<OBS, LOC>::~ObsLocalization done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL, typename LOC>
-void ObsLocalization<MODEL, LOC>::multiply(ObsVector_ & dy) const {
-  Log::trace() << "ObsLocalization<MODEL, LOC>:: preProcess starting" << std::endl;
+template <typename OBS, typename LOC>
+void ObsLocalization<OBS, LOC>::multiply(ObsVector_ & dy) const {
+  Log::trace() << "ObsLocalization<OBS, LOC>:: preProcess starting" << std::endl;
   util::Timer timer(classname(), "preProcess");
   obsloc_->multiply(dy.obsvector());
-  Log::trace() << "ObsLocalization<MODEL, LOC>:: preProcess done" << std::endl;
+  Log::trace() << "ObsLocalization<OBS, LOC>:: preProcess done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL, typename LOC>
-void ObsLocalization<MODEL, LOC>::print(std::ostream & os) const {
+template <typename OBS, typename LOC>
+void ObsLocalization<OBS, LOC>::print(std::ostream & os) const {
   os << "ObsLocalization " << *obsloc_;
 }
 

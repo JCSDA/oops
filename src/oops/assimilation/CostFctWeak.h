@@ -44,15 +44,15 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> class CostFctWeak : public CostFunction<MODEL> {
-  typedef Increment<MODEL>           Increment_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef ControlVariable<MODEL>     CtrlVar_;
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef Geometry<MODEL>            Geometry_;
-  typedef State<MODEL>               State_;
-  typedef Model<MODEL>               Model_;
-  typedef VariableChangeBase<MODEL>  VarCha_;
+template<typename MODEL, typename OBS> class CostFctWeak : public CostFunction<MODEL, OBS> {
+  typedef Increment<MODEL>                Increment_;
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef ControlVariable<MODEL, OBS>     CtrlVar_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef Geometry<MODEL>                 Geometry_;
+  typedef State<MODEL>                    State_;
+  typedef Model<MODEL>                    Model_;
+  typedef VariableChangeBase<MODEL>       VarCha_;
   typedef LinearVariableChangeBase<MODEL> LinVarCha_;
 
  public:
@@ -76,8 +76,8 @@ template<typename MODEL> class CostFctWeak : public CostFunction<MODEL> {
 
   CostJbJq<MODEL>     * newJb(const eckit::Configuration &, const Geometry_ &,
                               const CtrlVar_ &) const override;
-  CostJo<MODEL>       * newJo(const eckit::Configuration &) const override;
-  CostTermBase<MODEL> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
+  CostJo<MODEL, OBS>       * newJo(const eckit::Configuration &) const override;
+  CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
   void doLinearize(const Geometry_ &, const eckit::Configuration &,
                    const CtrlVar_ &, const CtrlVar_ &) override;
   const Geometry_ & geometry() const override {return resol_;}
@@ -98,10 +98,10 @@ template<typename MODEL> class CostFctWeak : public CostFunction<MODEL> {
 
 // =============================================================================
 
-template<typename MODEL>
-CostFctWeak<MODEL>::CostFctWeak(const eckit::Configuration & config,
+template<typename MODEL, typename OBS>
+CostFctWeak<MODEL, OBS>::CostFctWeak(const eckit::Configuration & config,
                                 const eckit::mpi::Comm & comm)
-  : CostFunction<MODEL>::CostFunction(config), comm_(comm),
+  : CostFunction<MODEL, OBS>::CostFunction(config), comm_(comm),
     resol_(eckit::LocalConfiguration(config, "resolution"), comm),
     model_(resol_, eckit::LocalConfiguration(config, "model")),
     tlforcing_(false), ctlvars_(config), an2model_(), inc2model_()
@@ -127,8 +127,8 @@ CostFctWeak<MODEL>::CostFctWeak(const eckit::Configuration & config,
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-CostJbJq<MODEL> * CostFctWeak<MODEL>::newJb(const eckit::Configuration & jbConf,
+template <typename MODEL, typename OBS>
+CostJbJq<MODEL> * CostFctWeak<MODEL, OBS>::newJb(const eckit::Configuration & jbConf,
                                             const Geometry_ & resol,
                                             const CtrlVar_ & xb) const {
   return new CostJbJq<MODEL>(jbConf, resol, ctlvars_, windowSub_, xb.state(), tlforcing_);
@@ -136,25 +136,25 @@ CostJbJq<MODEL> * CostFctWeak<MODEL>::newJb(const eckit::Configuration & jbConf,
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-CostJo<MODEL> * CostFctWeak<MODEL>::newJo(const eckit::Configuration & joConf) const {
-  return new CostJo<MODEL>(joConf, comm_, windowBegin_, windowEnd_, util::Duration(0), true);
+template <typename MODEL, typename OBS>
+CostJo<MODEL, OBS> * CostFctWeak<MODEL, OBS>::newJo(const eckit::Configuration & joConf) const {
+  return new CostJo<MODEL, OBS>(joConf, comm_, windowBegin_, windowEnd_, util::Duration(0), true);
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-CostTermBase<MODEL> * CostFctWeak<MODEL>::newJc(const eckit::Configuration & jcConf,
+template <typename MODEL, typename OBS>
+CostTermBase<MODEL, OBS> * CostFctWeak<MODEL, OBS>::newJc(const eckit::Configuration & jcConf,
                                                 const Geometry_ & resol) const {
   const eckit::LocalConfiguration jcdfi(jcConf, "jcdfi");
   const util::DateTime vt(windowBegin_ + windowLength_/2);
-  return new CostJcDFI<MODEL>(jcdfi, resol, vt, windowLength_);
+  return new CostJcDFI<MODEL, OBS>(jcdfi, resol, vt, windowLength_);
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void CostFctWeak<MODEL>::runNL(CtrlVar_ & xx,
+template <typename MODEL, typename OBS>
+void CostFctWeak<MODEL, OBS>::runNL(CtrlVar_ & xx,
                                PostProcessor<State_> & post) const {
   State_ xm(xx.state()[0].geometry(), model_.variables(), windowBegin_);
   for (unsigned int jsub = 0; jsub < nsubwin_; ++jsub) {
@@ -171,8 +171,8 @@ void CostFctWeak<MODEL>::runNL(CtrlVar_ & xx,
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostFctWeak<MODEL>::doLinearize(const Geometry_ & resol,
+template<typename MODEL, typename OBS>
+void CostFctWeak<MODEL, OBS>::doLinearize(const Geometry_ & resol,
                                      const eckit::Configuration & innerConf,
                                      const CtrlVar_ & bg, const CtrlVar_ & fg) {
   Log::trace() << "CostFctWeak::doLinearize start" << std::endl;
@@ -186,8 +186,8 @@ void CostFctWeak<MODEL>::doLinearize(const Geometry_ & resol,
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void CostFctWeak<MODEL>::runTLM(CtrlInc_ & dx,
+template <typename MODEL, typename OBS>
+void CostFctWeak<MODEL, OBS>::runTLM(CtrlInc_ & dx,
                                 PostProcessorTLAD<MODEL> & cost,
                                 PostProcessor<Increment_> post,
                                 const bool idModel) const {
@@ -208,8 +208,8 @@ void CostFctWeak<MODEL>::runTLM(CtrlInc_ & dx,
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void CostFctWeak<MODEL>::runTLM(CtrlInc_ & dx, const bool idModel) const {
+template <typename MODEL, typename OBS>
+void CostFctWeak<MODEL, OBS>::runTLM(CtrlInc_ & dx, const bool idModel) const {
   PostProcessor<Increment_> post;
   PostProcessorTLAD<MODEL> cost;
   ASSERT(!tlforcing_);
@@ -236,8 +236,8 @@ void CostFctWeak<MODEL>::runTLM(CtrlInc_ & dx, const bool idModel) const {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void CostFctWeak<MODEL>::zeroAD(CtrlInc_ & dx) const {
+template <typename MODEL, typename OBS>
+void CostFctWeak<MODEL, OBS>::zeroAD(CtrlInc_ & dx) const {
   for (int jsub = dx.state().first(); jsub <= dx.state().last(); ++jsub) {
     util::DateTime end(windowBegin_ + (jsub+1)*windowSub_);
     dx.state()[jsub].zero(end);
@@ -248,8 +248,8 @@ void CostFctWeak<MODEL>::zeroAD(CtrlInc_ & dx) const {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void CostFctWeak<MODEL>::runADJ(CtrlInc_ & dx,
+template <typename MODEL, typename OBS>
+void CostFctWeak<MODEL, OBS>::runADJ(CtrlInc_ & dx,
                                 PostProcessorTLAD<MODEL> & cost,
                                 PostProcessor<Increment_> post,
                                 const bool idModel) const {
@@ -269,8 +269,8 @@ void CostFctWeak<MODEL>::runADJ(CtrlInc_ & dx,
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void CostFctWeak<MODEL>::runADJ(CtrlInc_ & dx, const bool idModel) const {
+template <typename MODEL, typename OBS>
+void CostFctWeak<MODEL, OBS>::runADJ(CtrlInc_ & dx, const bool idModel) const {
   PostProcessor<Increment_> post;
   PostProcessorTLAD<MODEL> cost;
   ASSERT(!tlforcing_);
@@ -297,8 +297,8 @@ void CostFctWeak<MODEL>::runADJ(CtrlInc_ & dx, const bool idModel) const {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostFctWeak<MODEL>::addIncr(CtrlVar_ & xx, const CtrlInc_ & dx,
+template<typename MODEL, typename OBS>
+void CostFctWeak<MODEL, OBS>::addIncr(CtrlVar_ & xx, const CtrlInc_ & dx,
                                  PostProcessor<Increment_> & post) const {
   if (tlforcing_) {
     Increment_ xi(dx.state()[0]);

@@ -55,6 +55,10 @@ struct L95Traits {
   typedef lorenz95::ModelBias              ModelAuxControl;
   typedef lorenz95::ModelBiasCorrection    ModelAuxIncrement;
   typedef lorenz95::ModelBiasCovariance    ModelAuxCovariance;
+};
+
+struct L95ObsTraits {
+  static std::string name() {return "Lorenz 95 Obs";}
 
   typedef lorenz95::ObsTableView           ObsSpace;
   typedef lorenz95::ObsVec1D               ObsVector;

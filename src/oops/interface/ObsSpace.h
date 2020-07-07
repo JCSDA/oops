@@ -37,11 +37,11 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename OBS>
 class ObsSpace : public util::Printable,
-                 private util::ObjectCounter<ObsSpace<MODEL> > {
-  typedef typename MODEL::ObsSpace  ObsSpace_;
-  typedef ObsVector<MODEL>          ObsVector_;
+                 private util::ObjectCounter<ObsSpace<OBS> > {
+  typedef typename OBS::ObsSpace  ObsSpace_;
+  typedef ObsVector<OBS>          ObsVector_;
 
  public:
   static const std::string classname() {return "oops::ObsSpace";}
@@ -76,88 +76,88 @@ class ObsSpace : public util::Printable,
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-ObsSpace<MODEL>::ObsSpace(const eckit::Configuration & conf,
+template <typename OBS>
+ObsSpace<OBS>::ObsSpace(const eckit::Configuration & conf,
                           const eckit::mpi::Comm & comm,
                           const util::DateTime & bgn,
                           const util::DateTime & end) : obsdb_() {
-  Log::trace() << "ObsSpace<MODEL>::ObsSpace starting" << std::endl;
+  Log::trace() << "ObsSpace<OBS>::ObsSpace starting" << std::endl;
   util::Timer timer(classname(), "ObsSpace");
   obsdb_.reset(new ObsSpace_(conf, comm, bgn, end));
-  Log::trace() << "ObsSpace<MODEL>::ObsSpace done" << std::endl;
+  Log::trace() << "ObsSpace<OBS>::ObsSpace done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-ObsSpace<MODEL>::ObsSpace(const ObsSpace<MODEL> & os,
+template <typename OBS>
+ObsSpace<OBS>::ObsSpace(const ObsSpace<OBS> & os,
                           const eckit::geometry::Point2 & center,
                           const eckit::Configuration & conf) : obsdb_() {
-  Log::trace() << "ObsSpace<MODEL>::ObsSpace (local) starting" << std::endl;
+  Log::trace() << "ObsSpace<OBS>::ObsSpace (local) starting" << std::endl;
   util::Timer timer(classname(), "ObsSpace");
   obsdb_.reset(new ObsSpace_(os.obsspace(), center, conf));
-  Log::trace() << "ObsSpace<MODEL>::ObsSpace (local) done" << std::endl;
+  Log::trace() << "ObsSpace<OBS>::ObsSpace (local) done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-ObsSpace<MODEL>::ObsSpace(const ObsSpace_ & os,
+template <typename OBS>
+ObsSpace<OBS>::ObsSpace(const ObsSpace_ & os,
      const eckit::geometry::Point2 & center, const eckit::Configuration & conf):
          obsdb_() {
-  Log::trace() << "ObsSpace<MODEL>::ObsSpace (local) derived state starting" << std::endl;
+  Log::trace() << "ObsSpace<OBS>::ObsSpace (local) derived state starting" << std::endl;
   util::Timer timer(classname(), "ObsSpace");
   obsdb_.reset(new ObsSpace_(os, center, conf));
-  Log::trace() << "ObsSpace<MODEL>::ObsSpace (local) derived state done" << std::endl;
+  Log::trace() << "ObsSpace<OBS>::ObsSpace (local) derived state done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-ObsSpace<MODEL>::ObsSpace(const ObsSpace_ & other) : obsdb_() {
-  Log::trace() << "ObsSpace<MODEL>::ObsSpace starting" << std::endl;
+template <typename OBS>
+ObsSpace<OBS>::ObsSpace(const ObsSpace_ & other) : obsdb_() {
+  Log::trace() << "ObsSpace<OBS>::ObsSpace starting" << std::endl;
   util::Timer timer(classname(), "ObsSpace");
   obsdb_ = other.obsdb_;
-  Log::trace() << "ObsSpace<MODEL>::ObsSpace done" << std::endl;
+  Log::trace() << "ObsSpace<OBS>::ObsSpace done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-ObsSpace<MODEL>::~ObsSpace() {
-  Log::trace() << "ObsSpace<MODEL>::~ObsSpace starting" << std::endl;
+template <typename OBS>
+ObsSpace<OBS>::~ObsSpace() {
+  Log::trace() << "ObsSpace<OBS>::~ObsSpace starting" << std::endl;
   util::Timer timer(classname(), "~ObsSpace");
   obsdb_.reset();
-  Log::trace() << "ObsSpace<MODEL>::~ObsSpace done" << std::endl;
+  Log::trace() << "ObsSpace<OBS>::~ObsSpace done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void ObsSpace<MODEL>::print(std::ostream & os) const {
-  Log::trace() << "ObsSpace<MODEL>::print starting" << std::endl;
+template <typename OBS>
+void ObsSpace<OBS>::print(std::ostream & os) const {
+  Log::trace() << "ObsSpace<OBS>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
   os << *obsdb_;
-  Log::trace() << "ObsSpace<MODEL>::print done" << std::endl;
+  Log::trace() << "ObsSpace<OBS>::print done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 //
-template <typename MODEL>
-const Variables & ObsSpace<MODEL>::obsvariables() const {
-  Log::trace() << "ObsSpace<MODEL>::obsvariables starting" << std::endl;
+template <typename OBS>
+const Variables & ObsSpace<OBS>::obsvariables() const {
+  Log::trace() << "ObsSpace<OBS>::obsvariables starting" << std::endl;
   util::Timer timer(classname(), "obsvariables");
   return obsdb_->obsvariables();
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void ObsSpace<MODEL>::printJo(const ObsVector_ & dy, const ObsVector_ & grad) const {
-  Log::trace() << "ObsSpace<MODEL>::printJo starting" << std::endl;
+template <typename OBS>
+void ObsSpace<OBS>::printJo(const ObsVector_ & dy, const ObsVector_ & grad) const {
+  Log::trace() << "ObsSpace<OBS>::printJo starting" << std::endl;
   util::Timer timer(classname(), "printJo");
   obsdb_->printJo(dy.obsvector(), grad.obsvector());
-  Log::trace() << "ObsSpace<MODEL>::printJo done" << std::endl;
+  Log::trace() << "ObsSpace<OBS>::printJo done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

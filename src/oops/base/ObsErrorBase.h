@@ -27,11 +27,11 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 /// \brief Base class for observation error covariance matrices.
-template<typename MODEL>
+template<typename OBS>
 class ObsErrorBase : public util::Printable,
                      private boost::noncopyable {
-  typedef ObsVector<MODEL>        ObsVector_;
-  typedef ObsSpace<MODEL>         ObsSpace_;
+  typedef ObsVector<OBS>        ObsVector_;
+  typedef ObsSpace<OBS>         ObsSpace_;
 
  public:
   ObsErrorBase() = default;
@@ -55,39 +55,39 @@ class ObsErrorBase : public util::Printable,
 // =============================================================================
 
 /// ObsErrorFactory Factory
-template <typename MODEL>
+template <typename OBS>
 class ObsErrorFactory {
-  typedef ObsSpace<MODEL> ObsSpace_;
+  typedef ObsSpace<OBS> ObsSpace_;
  public:
-  static std::unique_ptr<ObsErrorBase<MODEL> > create(const eckit::Configuration &,
+  static std::unique_ptr<ObsErrorBase<OBS> > create(const eckit::Configuration &,
                                                       const ObsSpace_ &);
   virtual ~ObsErrorFactory() = default;
  protected:
   explicit ObsErrorFactory(const std::string &);
  private:
-  virtual ObsErrorBase<MODEL> * make(const eckit::Configuration &, const ObsSpace_ &) = 0;
-  static std::map < std::string, ObsErrorFactory<MODEL> * > & getMakers() {
-    static std::map < std::string, ObsErrorFactory<MODEL> * > makers_;
+  virtual ObsErrorBase<OBS> * make(const eckit::Configuration &, const ObsSpace_ &) = 0;
+  static std::map < std::string, ObsErrorFactory<OBS> * > & getMakers() {
+    static std::map < std::string, ObsErrorFactory<OBS> * > makers_;
     return makers_;
   }
 };
 
 // -----------------------------------------------------------------------------
 
-template<class MODEL, class T>
-class ObsErrorMaker : public ObsErrorFactory<MODEL> {
-  typedef ObsSpace<MODEL> ObsSpace_;
-  virtual ObsErrorBase<MODEL> * make(const eckit::Configuration & conf,
+template<class OBS, class T>
+class ObsErrorMaker : public ObsErrorFactory<OBS> {
+  typedef ObsSpace<OBS> ObsSpace_;
+  virtual ObsErrorBase<OBS> * make(const eckit::Configuration & conf,
                                      const ObsSpace_ & obs)
     { return new T(conf, obs); }
  public:
-  explicit ObsErrorMaker(const std::string & name) : ObsErrorFactory<MODEL>(name) {}
+  explicit ObsErrorMaker(const std::string & name) : ObsErrorFactory<OBS>(name) {}
 };
 
 // =============================================================================
 
-template <typename MODEL>
-ObsErrorFactory<MODEL>::ObsErrorFactory(const std::string & name) {
+template <typename OBS>
+ObsErrorFactory<OBS>::ObsErrorFactory(const std::string & name) {
   if (getMakers().find(name) != getMakers().end()) {
     Log::error() << name << " already registered in observation error factory." << std::endl;
     ABORT("Element already registered in ObsErrorFactory.");
@@ -97,19 +97,19 @@ ObsErrorFactory<MODEL>::ObsErrorFactory(const std::string & name) {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-std::unique_ptr<ObsErrorBase<MODEL>>
-ObsErrorFactory<MODEL>::create(const eckit::Configuration & conf, const ObsSpace_ & obs) {
-  Log::trace() << "ObsErrorBase<MODEL>::create starting" << std::endl;
+template <typename OBS>
+std::unique_ptr<ObsErrorBase<OBS>>
+ObsErrorFactory<OBS>::create(const eckit::Configuration & conf, const ObsSpace_ & obs) {
+  Log::trace() << "ObsErrorBase<OBS>::create starting" << std::endl;
   const std::string id = conf.getString("covariance");
-  typename std::map<std::string, ObsErrorFactory<MODEL>*>::iterator
+  typename std::map<std::string, ObsErrorFactory<OBS>*>::iterator
     jerr = getMakers().find(id);
   if (jerr == getMakers().end()) {
     Log::error() << id << " does not exist in observation error factory." << std::endl;
     ABORT("Element does not exist in ObsErrorFactory.");
   }
-  std::unique_ptr<ObsErrorBase<MODEL>> ptr(jerr->second->make(conf, obs));
-  Log::trace() << "ObsErrorBase<MODEL>::create done" << std::endl;
+  std::unique_ptr<ObsErrorBase<OBS>> ptr(jerr->second->make(conf, obs));
+  Log::trace() << "ObsErrorBase<OBS>::create done" << std::endl;
   return ptr;
 }
 
