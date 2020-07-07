@@ -17,12 +17,13 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
+
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
-#include "model/GeometryQG.h"
-#include "model/QgFortran.h"
-#include "model/QgTraits.h"
+#include "oops/qg/GeometryQG.h"
+#include "oops/qg/QgFortran.h"
+#include "oops/qg/QgTraits.h"
 
 // Forward declarations
 namespace qg {

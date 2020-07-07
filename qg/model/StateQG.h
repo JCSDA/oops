@@ -15,11 +15,11 @@
 #include <ostream>
 #include <string>
 
-
-#include "model/FieldsQG.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
+
+#include "oops/qg/FieldsQG.h"
 
 namespace eckit {
   class Configuration;

@@ -122,8 +122,26 @@ qg_wspeed_mod.F90
 
 ecbuild_add_library( TARGET   qg
                      SOURCES  ${oops_qg_src_files}
-                     LIBS     oops ${LAPACK_LIBRARIES}
+                     PUBLIC_LIBS     oops
+                     HEADER_DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/qg
                      INSTALL_HEADERS LISTED
-                     LINKER_LANGUAGE ${OOPS_LINKER_LANGUAGE}
-                    )
+                     LINKER_LANGUAGE CXX )
 
+target_compile_definitions(qg PUBLIC ATLASIFIED=1)
+
+#Configure include directory layout for build-tree to match install-tree
+set(QG_BUILD_DIR_INCLUDE_PATH ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/include)
+add_custom_target(qg_headers ALL COMMAND ${CMAKE_COMMAND} -E make_directory "${QG_BUILD_DIR_INCLUDE_PATH}/oops"
+                                    COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR} ${QG_BUILD_DIR_INCLUDE_PATH}/oops/qg)
+add_dependencies(qg qg_headers)
+target_include_directories(qg PUBLIC $<BUILD_INTERFACE:${QG_BUILD_DIR_INCLUDE_PATH}>
+                                         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
+                                         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../..>)
+
+#Fortran module output directory for build interface
+set(QG_MODULE_DIR module/${PROJECT_NAME}/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_Fortran_COMPILER_VERSION}/qg)
+set_target_properties(qg PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/${QG_MODULE_DIR})
+install(DIRECTORY ${CMAKE_BINARY_DIR}/${QG_MODULE_DIR}/ DESTINATION ${QG_MODULE_DIR})
+target_include_directories(qg INTERFACE
+                                $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/${QG_MODULE_DIR}>
+                                $<INSTALL_INTERFACE:${QG_MODULE_DIR}>)

@@ -23,10 +23,6 @@
 
 #include "eckit/config/LocalConfiguration.h"
 
-#include "model/FieldsQG.h"
-#include "model/GeometryQG.h"
-#include "model/GeometryQGIterator.h"
-
 #include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/LocalIncrement.h"
 #include "oops/util/DateTime.h"
@@ -34,6 +30,10 @@
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
+
+#include "oops/qg/FieldsQG.h"
+#include "oops/qg/GeometryQG.h"
+#include "oops/qg/GeometryQGIterator.h"
 
 namespace eckit {
   class Configuration;

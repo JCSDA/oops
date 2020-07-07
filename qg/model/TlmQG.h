@@ -23,9 +23,9 @@
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
-#include "model/ModelQG.h"
-#include "model/QgFortran.h"
-#include "model/QgTraits.h"
+#include "oops/qg/ModelQG.h"
+#include "oops/qg/QgFortran.h"
+#include "oops/qg/QgTraits.h"
 
 // Forward declarations
 namespace eckit {

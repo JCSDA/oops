@@ -11,9 +11,10 @@
 #include <ostream>
 #include <string>
 
-#include "model/ObsSpaceQG.h"
 #include "oops/base/Variables.h"
 #include "oops/util/Printable.h"
+
+#include "oops/qg/ObsSpaceQG.h"
 
 namespace qg {
   class LocationsQG;

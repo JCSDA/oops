@@ -11,8 +11,9 @@
 #include <ostream>
 #include <string>
 
-#include "model/QgFortran.h"
 #include "oops/util/Printable.h"
+
+#include "oops/qg/QgFortran.h"
 
 // Forward declarations
 namespace eckit {

@@ -15,9 +15,10 @@
 #include <string>
 #include <vector>
 
-#include "model/QgFortran.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
+
+#include "oops/qg/QgFortran.h"
 
 namespace oops {
   class Variables;

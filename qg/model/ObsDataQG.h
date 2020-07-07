@@ -13,13 +13,14 @@
 #include <string>
 #include <vector>
 
-#include "model/ObsSpaceQG.h"
-#include "model/ObsVecQG.h"
-#include "model/QgFortran.h"
 #include "oops/base/Variables.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
+
+#include "oops/qg/ObsSpaceQG.h"
+#include "oops/qg/ObsVecQG.h"
+#include "oops/qg/QgFortran.h"
 
 namespace qg {
 

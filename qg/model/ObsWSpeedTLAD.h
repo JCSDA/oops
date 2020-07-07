@@ -13,10 +13,11 @@
 
 #include <string>
 
-#include "model/GomQG.h"
-#include "model/ObsOpBaseTLAD.h"
 #include "oops/base/Variables.h"
 #include "oops/util/ObjectCounter.h"
+
+#include "oops/qg/GomQG.h"
+#include "oops/qg/ObsOpBaseTLAD.h"
 
 // Forward declarations
 namespace eckit {

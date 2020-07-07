@@ -15,11 +15,12 @@
 #include <ostream>
 #include <string>
 
-#include "model/ObsOpBaseQG.h"
-#include "model/ObsSpaceQG.h"
-#include "model/QgTraits.h"
 #include "oops/base/Variables.h"
 #include "oops/util/ObjectCounter.h"
+
+#include "oops/qg/ObsOpBaseQG.h"
+#include "oops/qg/ObsSpaceQG.h"
+#include "oops/qg/QgTraits.h"
 
 // Forward declarations
 namespace eckit {

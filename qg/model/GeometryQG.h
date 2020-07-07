@@ -21,10 +21,11 @@
 
 #include "eckit/mpi/Comm.h"
 
-#include "model/GeometryQGIterator.h"
-#include "model/QgFortran.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
+
+#include "oops/qg/GeometryQGIterator.h"
+#include "oops/qg/QgFortran.h"
 
 namespace eckit {
   class Configuration;

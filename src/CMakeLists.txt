@@ -300,7 +300,9 @@ oops/util/parameters/Parameters.h
 oops/util/parameters/ParameterTraits.h
 oops/util/parameters/ParameterTraitsScalarOrMap.h
 oops/util/parameters/RequiredParameter.h
+)
 
+list( APPEND oops_test_src_files
 test/TestEnvironment.h
 test/TestFixture.h
 
@@ -362,7 +364,7 @@ function(CREATE_SYMLINK src dst)
         endforeach(FILENAME)
 endfunction(CREATE_SYMLINK)
 
-# Link the oops test input files
+# oops test input files
 list( APPEND oops_test_input
   test/testinput/random.yaml
   test/testinput/pushstringvector.yaml
@@ -405,19 +407,56 @@ function(generate_fortran_bindings output filename)
   set_source_files_properties(${outfile} PROPERTIES GENERATED TRUE)
 endfunction()
 
-ecbuild_add_library( TARGET     oops
-                     SOURCES
-                                ${FORTRAN_BINDINGS}
+ecbuild_add_library( TARGET     ${PROJECT_NAME}
+                     SOURCES    ${FORTRAN_BINDINGS}
                                 ${oops_src_files}
-                     LIBS       ${LAPACK_LIBRARIES} ${NETCDF_LIBRARIES} Eigen3::Eigen fckit eckit_mpi eckit atlas atlas_f
                      INSTALL_HEADERS LISTED
-                     TEMPLATES ${oops_fheader_files}
-                     LINKER_LANGUAGE ${OOPS_LINKER_LANGUAGE}
-                   )
+                     HEADER_DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+                     LINKER_LANGUAGE CXX )
+
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/oops/util/linkedList_i.f
+               ${CMAKE_CURRENT_SOURCE_DIR}/oops/util/linkedList_c.f
+               DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/oops/util )
+
+target_sources( ${PROJECT_NAME} PRIVATE ${oops_test_src_files})
+install( DIRECTORY test DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/oops FILES_MATCHING PATTERN "*.h")
+
+target_compile_features( ${PROJECT_NAME} PUBLIC cxx_std_14 )
+if(OpenMP_FOUND)
+    target_link_libraries( ${PROJECT_NAME} PUBLIC OpenMP::OpenMP_Fortran OpenMP::OpenMP_CXX )
+endif()
+target_link_libraries( ${PROJECT_NAME} PUBLIC NetCDF::NetCDF_Fortran ) # For utils/netcdf_utils_mod
+target_link_libraries( ${PROJECT_NAME} PUBLIC MPI::MPI_Fortran MPI::MPI_CXX )
+target_link_libraries( ${PROJECT_NAME} PUBLIC ${LAPACK_LIBRARIES} )
+target_link_libraries( ${PROJECT_NAME} PUBLIC Eigen3::Eigen )
+target_link_libraries( ${PROJECT_NAME} PUBLIC eckit )
+target_link_libraries( ${PROJECT_NAME} PUBLIC fckit )
+target_link_libraries( ${PROJECT_NAME} PUBLIC atlas_f )
+
+#Configure include directory layout for build-tree to match install-tree
+set(OOPS_BUILD_DIR_INCLUDE_PATH ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/include)
+add_custom_target(oops_test_headers ALL COMMAND ${CMAKE_COMMAND} -E make_directory ${OOPS_BUILD_DIR_INCLUDE_PATH}/oops
+                                           COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/test ${OOPS_BUILD_DIR_INCLUDE_PATH}/oops/test)
+add_dependencies(oops oops_test_headers)
+
+target_include_directories(${PROJECT_NAME} INTERFACE
+                                $<BUILD_INTERFACE:${OOPS_BUILD_DIR_INCLUDE_PATH}>
+                                $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+                                $<INSTALL_INTERFACE:include/oops>)
+
+#Fortran module output directory for build and install interfaces
+set(MODULE_DIR module/${PROJECT_NAME}/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_Fortran_COMPILER_VERSION})
+set_target_properties(${PROJECT_NAME} PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/${MODULE_DIR})
+install(DIRECTORY ${CMAKE_BINARY_DIR}/${MODULE_DIR}/ DESTINATION ${MODULE_DIR})
+target_include_directories(${PROJECT_NAME} INTERFACE
+                                $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/${MODULE_DIR}>
+                                $<INSTALL_INTERFACE:${MODULE_DIR}>)
+
+## Tests
 
 ecbuild_add_test( TARGET oops_coding_norms
                   TYPE SCRIPT
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/cpplint.py
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/${PROJECT_NAME}_cpplint.py
                   ARGS --quiet --recursive ${CMAKE_CURRENT_SOURCE_DIR} )
 
 ecbuild_add_test( TARGET  test_oops_base_variables

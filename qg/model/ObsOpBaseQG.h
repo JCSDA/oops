@@ -15,11 +15,13 @@
 #include <boost/noncopyable.hpp>
 
 #include "eckit/config/Configuration.h"
-#include "model/ObsSpaceQG.h"
+
 #include "oops/base/Variables.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Printable.h"
+
+#include "oops/qg/ObsSpaceQG.h"
 
 namespace qg {
 class GomQG;

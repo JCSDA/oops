@@ -13,6 +13,7 @@
 #include "boost/shared_ptr.hpp"
 
 #include "eckit/config/LocalConfiguration.h"
+
 #include "oops/base/Variables.h"
 #include "oops/util/Printable.h"
 

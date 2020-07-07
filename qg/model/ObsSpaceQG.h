@@ -25,8 +25,8 @@
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 
-#include "model/LocationsQG.h"
-#include "model/QgFortran.h"
+#include "oops/qg/LocationsQG.h"
+#include "oops/qg/QgFortran.h"
 
 namespace eckit {
   class Configuration;

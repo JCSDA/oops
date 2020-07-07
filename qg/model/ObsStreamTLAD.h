@@ -13,9 +13,10 @@
 
 #include <string>
 
-#include "model/ObsOpBaseTLAD.h"
 #include "oops/base/Variables.h"
 #include "oops/util/ObjectCounter.h"
+
+#include "oops/qg/ObsOpBaseTLAD.h"
 
 // Forward declarations
 namespace eckit {

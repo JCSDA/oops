@@ -22,7 +22,7 @@
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
-#include "model/QgTraits.h"
+#include "oops/qg/QgTraits.h"
 
 // Forward declarations
 namespace eckit {

@@ -11,12 +11,13 @@
 #ifndef QG_MODEL_INSTANTIATEQGCHANGEVARFACTORY_H_
 #define QG_MODEL_INSTANTIATEQGCHANGEVARFACTORY_H_
 
-#include "model/ChangeVarQG.h"
-#include "model/ChangeVarTLADQG.h"
-#include "model/ErrorStdDevQG.h"
-#include "model/QgTraits.h"
 #include "oops/interface/LinearVariableChange.h"
 #include "oops/interface/VariableChange.h"
+
+#include "oops/qg/ChangeVarQG.h"
+#include "oops/qg/ChangeVarTLADQG.h"
+#include "oops/qg/ErrorStdDevQG.h"
+#include "oops/qg/QgTraits.h"
 
 namespace qg {
 

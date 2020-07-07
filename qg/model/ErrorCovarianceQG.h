@@ -16,10 +16,12 @@
 #include <boost/noncopyable.hpp>
 
 #include "eckit/config/Configuration.h"
-#include "model/GeometryQG.h"
-#include "model/QgFortran.h"
+
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
+
+#include "oops/qg/GeometryQG.h"
+#include "oops/qg/QgFortran.h"
 
 // Forward declarations
 namespace oops {

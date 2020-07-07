@@ -21,15 +21,15 @@
 
 #include "eckit/config/LocalConfiguration.h"
 
-#include "model/GeometryQG.h"
-#include "model/GeometryQGIterator.h"
-
 #include "oops/base/LocalIncrement.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
+
+#include "oops/qg/GeometryQG.h"
+#include "oops/qg/GeometryQGIterator.h"
 
 // Forward declarations
 namespace eckit {
