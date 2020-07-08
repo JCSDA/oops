@@ -425,6 +425,7 @@ target_compile_features( ${PROJECT_NAME} PUBLIC cxx_std_14 )
 if(OpenMP_FOUND)
     target_link_libraries( ${PROJECT_NAME} PUBLIC OpenMP::OpenMP_Fortran OpenMP::OpenMP_CXX )
 endif()
+
 target_link_libraries( ${PROJECT_NAME} PUBLIC NetCDF::NetCDF_Fortran ) # For utils/netcdf_utils_mod
 target_link_libraries( ${PROJECT_NAME} PUBLIC MPI::MPI_Fortran MPI::MPI_CXX )
 target_link_libraries( ${PROJECT_NAME} PUBLIC ${LAPACK_LIBRARIES} )
@@ -432,6 +433,7 @@ target_link_libraries( ${PROJECT_NAME} PUBLIC Eigen3::Eigen )
 target_link_libraries( ${PROJECT_NAME} PUBLIC eckit )
 target_link_libraries( ${PROJECT_NAME} PUBLIC fckit )
 target_link_libraries( ${PROJECT_NAME} PUBLIC atlas_f )
+target_link_libraries( ${PROJECT_NAME} PUBLIC Boost::boost )
 
 #Configure include directory layout for build-tree to match install-tree
 set(OOPS_BUILD_DIR_INCLUDE_PATH ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/include)
