@@ -17,6 +17,7 @@
 #include <vector>
 #include <boost/noncopyable.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/range/adaptor/reversed.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/Increment4D.h"
@@ -143,7 +144,23 @@ ModelSpaceCovariance4DBase<MODEL>* Covariance4DFactory<MODEL>::create(
     }
     ABORT("Element does not exist in Covariance4DFactory.");
   }
-  return (*jcov).second->make(conf, resol, vars, xb, fg);
+  Variables vars_out(vars);
+  if (conf.has("variable_changes")) {
+    std::vector<eckit::LocalConfiguration> chvarconfs;
+    conf.get("variable_changes", chvarconfs);
+    for (const auto & config : boost::adaptors::reverse(chvarconfs)) {
+      eckit::LocalConfiguration config_in;
+      config.get("inputVariables", config_in);
+      Variables vars_in(config_in);
+      if (!(vars_in == vars_out)) {
+        ABORT("Sequence of variable changes is not consistent");
+      }
+      eckit::LocalConfiguration config_out;
+      config.get("outputVariables", config_out);
+      vars_out = Variables(config_out);
+    }
+  }
+  return (*jcov).second->make(conf, resol, vars_out, xb, fg);
 }
 
 // =============================================================================
