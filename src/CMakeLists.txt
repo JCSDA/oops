@@ -169,6 +169,7 @@ oops/generic/UnstructuredGrid.h
 oops/generic/InterpolatorAtlas.h
 oops/generic/InterpolatorAtlas.cc
 
+oops/interface/AnalyticInit.h
 oops/interface/ErrorCovariance.h
 oops/interface/Geometry.h
 oops/interface/GeometryIterator.h

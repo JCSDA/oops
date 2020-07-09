@@ -107,19 +107,6 @@ void GomQG::write(const eckit::Configuration & config) const {
   qg_gom_write_file_f90(keyGom_, config);
 }
 // -----------------------------------------------------------------------------
-/*! \brief GomQG Analytic Initialization
- *
- * \details This qg::GomQG constructor was introduced in May, 2018 for use with
- * the interpolation test. 
- *
- */
-void GomQG::analytic_init(const LocationsQG & locs,
-                          const eckit::Configuration & config) {
-  // Optionally replace values with analytic init
-  if (config.has("analytic_init"))
-    qg_gom_analytic_init_f90(keyGom_, locs.toFortran(), config);
-}
-// -----------------------------------------------------------------------------
 void GomQG::print(std::ostream & os) const {
   int nn;
   double scaling, zmin, zmax, zrms;

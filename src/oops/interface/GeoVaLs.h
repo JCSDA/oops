@@ -60,7 +60,6 @@ class GeoVaLs : public util::Printable,
   GeoVaLs & operator*=(const GeoVaLs &);
   double dot_product_with(const GeoVaLs &) const;
   void read(const eckit::Configuration &);
-  void analytic_init(const Locations_ &, const eckit::Configuration &);
   void write(const eckit::Configuration &) const;
 
  private:
@@ -236,37 +235,6 @@ void GeoVaLs<OBS>::write(const eckit::Configuration & conf) const {
   util::Timer timer(classname(), "write");
   gvals_->write(conf);
   Log::trace() << "GeoVaLs<OBS>::write done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-/*! \brief GeoVaLs Analytic Initialization
- *
- * \details **analytic_init()** was introduced in May, 2018 (initially as a
- * constructor) for use with the interpolation test.  The interpolation test
- * requires an initialization of a GeoVaLs object based on the same analytic
- * formulae used for the State initialization (see test::TestStateInterpolation()
- * for further information).  This in turn requires information about the
- * vertical profile in addition to the latitude and longitude positional
- * information in the Locations object.  Currently, this information
- * about the vertical profile is obtained from an existing GeoVaLs object
- * (passed as *other*) that represents the output of the State::interpolate()
- * method.  The State.StateGenerate section of the configuration file is
- * also passed to this constructor to provide further information required
- * for the analytic initialization.
- *
- * \date May, 2018: created as a constructor (M. Miesch, JCSDA)
- * \date June, 2018: moved to a method (M. Miesch, JCSDA)
- *
- * \sa test::TestStateInterpolation()
- */
-
-template <typename OBS>
-  void GeoVaLs<OBS>::analytic_init(const Locations_ & locs,
-                          const eckit::Configuration & conf) {
-  Log::trace() << "GeoVaLs<OBS>::GeoVaLs analytic init starting" << std::endl;
-  util::Timer timer(classname(), "GeoVaLs");
-  gvals_->analytic_init(locs.locations(), conf);
-  Log::trace() << "GeoVaLs<OBS>::GeoVaLs analytic init done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

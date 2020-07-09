@@ -25,6 +25,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "oops/base/Variables.h"
+#include "oops/interface/AnalyticInit.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/GetValues.h"
@@ -185,6 +186,7 @@ template <typename MODEL, typename OBS> void testGetValuesMultiWindow() {
 
 template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   typedef GetValuesFixture<MODEL, OBS>    Test_;
+  typedef oops::AnalyticInit<OBS>         AnalyticInit_;
   typedef oops::State<MODEL>              State_;
   typedef oops::GeoVaLs<OBS>              GeoVaLs_;
 
@@ -209,7 +211,8 @@ template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   // Now create another GeoVaLs object that contains the exact analytic solutions.
   GeoVaLs_ ref(gval);
 
-  ref.analytic_init(Test_::locs(), confgen);
+  AnalyticInit_ init(confgen);
+  init.fillGeoVaLs(Test_::locs(), ref);
 
   EXPECT(ref.rms() > 0.0);
   oops::Log::debug() << "RMS reference GeoVaLs: " << ref.rms() << std::endl;
