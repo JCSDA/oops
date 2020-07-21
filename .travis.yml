@@ -25,11 +25,9 @@ before_install:
 #======================================================================
 # Clone all repos
 #======================================================================
-  - git clone https://github.com/jcsda/oops-bundle.git ${REPO_SOURCE_DIR}/oops-bundle
-  - cd ${REPO_SOURCE_DIR}/oops-bundle
-  - git checkout $BRANCH || echo "No branch named $BRANCH in oops-bundle repo"
-  - cd $REPO_SOURCE_DIR
 
+  - mkdir ${REPO_SOURCE_DIR}/oops-bundle
+  - cp CI/CMakeLists.txt ${REPO_SOURCE_DIR}/oops-bundle/
 
   - if [ "$BRANCH" = "develop" ];
     then export BRANCH_FORK="release-stable";
