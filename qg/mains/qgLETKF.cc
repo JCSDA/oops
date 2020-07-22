@@ -6,11 +6,11 @@
  */
 
 #include "model/QgTraits.h"
-#include "oops/runs/LETKF.h"
+#include "oops/runs/LocalEnsembleDA.h"
 #include "oops/runs/Run.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  oops::LETKF<qg::QgTraits, qg::QgObsTraits> letkf;
+  oops::LocalEnsembleDA<qg::QgTraits, qg::QgObsTraits> letkf;
   return run.execute(letkf);
 }

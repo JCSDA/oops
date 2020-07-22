@@ -83,10 +83,8 @@ template <typename MODEL, typename OBS> class HofX : public Application {
 //  Setup and run observer
     CalcHofX<MODEL, OBS> hofx(obspace, geometry, fullConfig);
     const Observations_ & yobs = hofx.compute(model, xx, post);
-    for (size_t jj = 0; jj < obspace.size(); ++jj) {
-      hofx.qcFlags(jj).save("EffectiveQC");
-      hofx.obsErrors(jj).save("EffectiveError");
-    }
+    hofx.saveQcFlags("EffectiveQC");
+    hofx.saveObsErrors("EffectiveError");
 
     Log::test() << "Final state: " << xx << std::endl;
 

@@ -40,7 +40,6 @@ ObsTableView::ObsTableView(const ObsTableView & obstable,
 {
   std::vector<double> locations = obstable.locations();
   const double dist = conf.getDouble("lengthscale");
-  oops::Log::debug() << "locations: " << locations << std::endl;
   for (unsigned int jj = 0; jj < obstable.nobs(); ++jj) {
     double curdist = std::abs(center[0] - locations[jj]);
     curdist = std::min(curdist, 1.-curdist);

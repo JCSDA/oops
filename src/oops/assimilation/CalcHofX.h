@@ -60,10 +60,10 @@ class CalcHofX {
 /// \brief Computes 4D H(x) (using State4D)
   const Observations_ & compute(const State4D_ &);
 
-/// \brief accessor to QC flag
-  const ObsData_<int> & qcFlags(const size_t ii) const {return *(qc_->qcFlags(ii));}
-/// \brief accessor to Obs errors
-  const ObsData_<float> & obsErrors(const size_t ii) const {return *(qc_->obsErrors(ii));}
+/// \brief saves QC flags to ObsSpaces
+  void saveQcFlags(const std::string &) const;
+/// \brief saves obs error variances (modified in QC) to ObsSpaces
+  void saveObsErrors(const std::string &) const;
 
  private:
 /// \brief helper method to initialize qc flags and observer
@@ -151,6 +151,22 @@ const Observations<OBS> & CalcHofX<MODEL, OBS>::compute(const State4D_ & xx) {
 }
 
 // -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+void CalcHofX<MODEL, OBS>::saveQcFlags(const std::string & name) const {
+  for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
+    qc_->qcFlags(jj)->save(name);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+void CalcHofX<MODEL, OBS>::saveObsErrors(const std::string & name) const {
+  for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
+    qc_->obsErrors(jj)->save(name);
+  }
+}
 
 }  // namespace oops
 

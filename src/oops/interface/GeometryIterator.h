@@ -41,7 +41,7 @@ class GeometryIterator: public std::iterator<std::forward_iterator_tag,
 
   bool operator==(const GeometryIterator&);
   bool operator!=(const GeometryIterator&);
-  eckit::geometry::Point2 operator*();
+  eckit::geometry::Point2 operator*() const;
   GeometryIterator operator++();
 
 /// Interfacing
@@ -109,7 +109,7 @@ bool GeometryIterator<MODEL>::operator!=(const GeometryIterator& other) {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-eckit::geometry::Point2 GeometryIterator<MODEL>::operator*() {
+eckit::geometry::Point2 GeometryIterator<MODEL>::operator*() const {
   Log::trace() << "GeometryIterator<MODEL>::operator* starting" << std::endl;
   util::Timer timer(classname(), "operator*");
   eckit::geometry::Point2 loc = *(*geometryiter_);

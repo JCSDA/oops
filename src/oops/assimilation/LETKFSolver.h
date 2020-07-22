@@ -26,39 +26,48 @@
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/assimilation/LETKFSolverBase.h"
 #include "oops/assimilation/LETKFSolverParameters.h"
+#include "oops/assimilation/LocalEnsembleSolver.h"
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/LocalIncrement.h"
 #include "oops/base/ObsErrors.h"
+#include "oops/base/ObsSpaces.h"
+#include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
 
 template <typename MODEL, typename OBS>
-class LETKFSolver : public LETKFSolverBase<MODEL, OBS> {
+class LETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
   typedef Departures<OBS>           Departures_;
   typedef DeparturesEnsemble<OBS>   DeparturesEnsemble_;
+  typedef Geometry<MODEL>           Geometry_;
   typedef GeometryIterator<MODEL>   GeometryIterator_;
   typedef IncrementEnsemble<MODEL>  IncrementEnsemble_;
   typedef ObsErrors<OBS>            ObsErrors_;
+  typedef ObsSpaces<OBS>            ObsSpaces_;
 
  public:
-  LETKFSolver(const eckit::Configuration &, size_t);
+  LETKFSolver(ObsSpaces_ &, const Geometry_ &, const eckit::Configuration &, size_t);
+
+  /// KF update + posterior inflation at a grid point location (GeometryIterator_)
+  void measurementUpdate(const IncrementEnsemble_ &,
+                         const GeometryIterator_ &, IncrementEnsemble_ &) override;
 
  private:
   /// Computes weights
-  void computeWeights(const Departures_ &, const DeparturesEnsemble_ &,
-                      const ObsErrors_ &) override;
+  virtual void computeWeights(const Departures_ &, const DeparturesEnsemble_ &,
+                              const ObsErrors_ &);
 
   /// Applies weights and adds posterior inflation
-  void applyWeights(const IncrementEnsemble_ &, IncrementEnsemble_ &,
-                    const GeometryIterator_ &) override;
+  virtual void applyWeights(const IncrementEnsemble_ &, IncrementEnsemble_ &,
+                            const GeometryIterator_ &);
 
   LETKFSolverParameters options_;
+
   Eigen::MatrixXd Wa_;  // transformation matrix for ens. perts. Xa=Xf*Wa
   Eigen::VectorXd wa_;  // transformation matrix for ens. mean xa=xf*wa
 
@@ -66,16 +75,16 @@ class LETKFSolver : public LETKFSolverBase<MODEL, OBS> {
   Eigen::VectorXd eival_;
   Eigen::MatrixXd eivec_;
 
-  // parameters
-  int nens_;
+  const size_t nens_;   // ensemble size
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-LETKFSolver<MODEL, OBS>::LETKFSolver(const eckit::Configuration & config,
-                                size_t nens)
-                                : nens_(nens) {
+LETKFSolver<MODEL, OBS>::LETKFSolver(ObsSpaces_ & obspaces, const Geometry_ & geometry,
+                                     const eckit::Configuration & config, size_t nens)
+  : LocalEnsembleSolver<MODEL, OBS>(obspaces, geometry, config, nens), nens_(nens)
+{
   options_.deserialize(config);
   const LETKFInflationParameters & inflopt = options_.infl;
 
@@ -112,9 +121,33 @@ LETKFSolver<MODEL, OBS>::LETKFSolver(const eckit::Configuration & config,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
+void LETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble_ & bkg_pert,
+                                                const GeometryIterator_ & i,
+                                                IncrementEnsemble_ & ana_pert) {
+  // create the local subset of observations
+  ObsSpaces_ local_obs(this->obspaces_, *i, this->obsconf_);
+  Departures_ local_omb(local_obs, this->omb_);
+
+  if (local_omb.nobs() == 0) {
+    // no obs. so no need to update Wa_ and wa_
+    // ana_pert[i]=bkg_pert[i]
+    this->copyLocalIncrement(bkg_pert, i, ana_pert);
+  } else {
+    // if obs are present do normal KF update
+    DeparturesEnsemble_ local_Yb(local_obs, this->Yb_);
+    // create local obs errors
+    ObsErrors_ local_R(this->obsconf_, local_obs);
+    computeWeights(local_omb, local_Yb, local_R);
+    applyWeights(bkg_pert, ana_pert, i);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
 void LETKFSolver<MODEL, OBS>::computeWeights(const Departures_ & dy_oops,
-                                        const DeparturesEnsemble_ & Yb_oops,
-                                        const ObsErrors_ & R_oops) {
+                                             const DeparturesEnsemble_ & Yb_oops,
+                                             const ObsErrors_ & R_oops) {
   // compute transformation matrix, save in Wa_, wa_
   // uses C++ eigen interface
   // implements LETKF from Hunt et al. 2007
@@ -127,7 +160,7 @@ void LETKFSolver<MODEL, OBS>::computeWeights(const Departures_ & dy_oops,
   Eigen::MatrixXd diagInvR = R_oops.packInverseVarianceEigen();
 
   // fill in the work matrix
-  // work = Y^T R^-1 Y + (nens_-1)/infl I
+  // work = Y^T R^-1 Y + (nens-1)/infl I
   double infl = inflopt.mult;
   Eigen::MatrixXd work = Yb*(diagInvR.asDiagonal()*Yb.transpose());
   work.diagonal() += Eigen::VectorXd::Constant(nens_, (nens_-1)/infl);
@@ -137,10 +170,10 @@ void LETKFSolver<MODEL, OBS>::computeWeights(const Departures_ & dy_oops,
   eival_ = es.eigenvalues().real();
   eivec_ = es.eigenvectors().real();
 
-  // Pa   = [ Yb^T R^-1 Yb + (nens_-1)/infl I ] ^-1
+  // Pa   = [ Yb^T R^-1 Yb + (nens-1)/infl I ] ^-1
   work = eivec_ * eival_.cwiseInverse().asDiagonal() * eivec_.transpose();
 
-  // Wa = sqrt[ (nens_-1) Pa ]
+  // Wa = sqrt[ (nens-1) Pa ]
   Wa_ = eivec_
       * ((nens_-1) * eival_.array().inverse()).sqrt().matrix().asDiagonal()
       * eivec_.transpose();
@@ -153,8 +186,8 @@ void LETKFSolver<MODEL, OBS>::computeWeights(const Departures_ & dy_oops,
 
 template <typename MODEL, typename OBS>
 void LETKFSolver<MODEL, OBS>::applyWeights(const IncrementEnsemble_ & bkg_pert,
-                                      IncrementEnsemble_ & ana_pert,
-                                      const GeometryIterator_ & i) {
+                                           IncrementEnsemble_ & ana_pert,
+                                           const GeometryIterator_ & i) {
   // applies Wa_, wa_
 
   const LETKFInflationParameters & inflopt = options_.infl;

@@ -22,32 +22,35 @@
 #define OOPS_ASSIMILATION_LETKFSOLVEROOPS_H_
 
 #include <Eigen/Dense>
-#include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/assimilation/LETKFSolverBase.h"
+#include "oops/assimilation/LETKFSolver.h"
 #include "oops/assimilation/LETKFSolverParameters.h"
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/LocalIncrement.h"
 #include "oops/base/ObsErrors.h"
+#include "oops/base/ObsSpaces.h"
+#include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
 
 template <typename MODEL, typename OBS>
-class LETKFSolverOOPS : public LETKFSolverBase<MODEL, OBS> {
+class LETKFSolverOOPS : public LETKFSolver<MODEL, OBS> {
   typedef Departures<OBS>           Departures_;
   typedef DeparturesEnsemble<OBS>   DeparturesEnsemble_;
+  typedef Geometry<MODEL>           Geometry_;
   typedef GeometryIterator<MODEL>   GeometryIterator_;
   typedef IncrementEnsemble<MODEL>  IncrementEnsemble_;
   typedef ObsErrors<OBS>            ObsErrors_;
+  typedef ObsSpaces<OBS>            ObsSpaces_;
 
  public:
   /// Constructor (allocates Wa, wa, saves options from the config)
-  LETKFSolverOOPS(const eckit::Configuration &, size_t nens);
+  LETKFSolverOOPS(ObsSpaces_ &, const Geometry_ &, const eckit::Configuration &, size_t);
 
  private:
   /// Computes weights
@@ -68,15 +71,17 @@ class LETKFSolverOOPS : public LETKFSolverBase<MODEL, OBS> {
   Eigen::VectorXd eival_;
   Eigen::MatrixXd eivec_;
 
-  // parameters
-  int nens_;              // number of ensemble members
+  const size_t nens_;      // ensemble size
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-LETKFSolverOOPS<MODEL, OBS>::LETKFSolverOOPS(const eckit::Configuration & config,
-                                        size_t nens) : nens_(nens) {
+LETKFSolverOOPS<MODEL, OBS>::LETKFSolverOOPS(ObsSpaces_ & obspaces, const Geometry_ & geom,
+                                             const eckit::Configuration & config,
+                                             size_t nens)
+  : LETKFSolver<MODEL, OBS>(obspaces, geom, config, nens), nens_(nens)
+{
   // read and parse options
   options_.deserialize(config);
 
@@ -121,10 +126,10 @@ void LETKFSolverOOPS<MODEL, OBS>::computeWeights(const Departures_ & dy,
   // fill in the work matrix (note that since the matrix is symmetric,
   // only lower triangular half is filled)
   // work = Y^T R^-1 Y + (nens_-1)/infl I
-  for (int jj = 0; jj < nens_; ++jj) {
+  for (size_t jj = 0; jj < nens_; ++jj) {
     Departures_ Cj(Yb[jj]);
     R.inverseMultiply(Cj);
-    for (int ii = jj; ii < nens_; ++ii) {
+    for (size_t ii = jj; ii < nens_; ++ii) {
       work_(ii, jj) = Cj.dot_product_with(Yb[ii]);
     }
     work_(jj, jj) += (nens_-1.0) / infl;
@@ -154,7 +159,7 @@ void LETKFSolverOOPS<MODEL, OBS>::computeWeights(const Departures_ & dy,
   // wa = Pa Yb^T R^-1 dy
   Departures_ Rinvdy(dy);
   R.inverseMultiply(Rinvdy);
-  for (int jj = 0; jj < nens_; ++jj) {
+  for (size_t jj = 0; jj < nens_; ++jj) {
     wa_(jj) = Yb[jj].dot_product_with(Rinvdy);
   }
   wa_ = work_ * wa_;
@@ -170,12 +175,11 @@ void LETKFSolverOOPS<MODEL, OBS>::applyWeights(const IncrementEnsemble_ & bkg_pe
                                           IncrementEnsemble_ & ana_pert,
                                           const GeometryIterator_ & i) {
 // apply Wa_, wa_ (here combined in the trans_ matrix)
-
-  for (unsigned itime=0; itime < bkg_pert[0].size(); ++itime) {
-    for (int jj=0; jj < nens_; ++jj) {
+  for (size_t itime=0; itime < bkg_pert[0].size(); ++itime) {
+    for (size_t jj=0; jj < nens_; ++jj) {
       LocalIncrement gp = bkg_pert[0][itime].getLocal(i);
       gp *= trans_(0, jj);
-      for (int ii=1; ii < nens_; ++ii) {
+      for (size_t ii=1; ii < nens_; ++ii) {
         LocalIncrement gp2 = bkg_pert[ii][itime].getLocal(i);
         gp2 *= trans_(ii, jj);
         gp += gp2;
